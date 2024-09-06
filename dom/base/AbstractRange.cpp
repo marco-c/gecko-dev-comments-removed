@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AbstractRangeBinding.h"
+#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -94,22 +95,17 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 
 
-void UpdateDescendantsInFlattenedTree(const nsIContent& aNode,
-                                      bool aMarkDesendants) {
-  if (!aNode.IsElement()) {
-    return;
-  }
+void UpdateDescendantsByShadowIncludingOrder(const nsIContent& aNode,
+                                             bool aMarkDesendants) {
+  ShadowIncludingTreeIterator iter(*const_cast<nsIContent*>(&aNode));
+  ++iter;  
 
-  FlattenedChildIterator iter(&aNode);
-  for (nsIContent* child = iter.GetNextChild(); child;
-       child = iter.GetNextChild()) {
+  for (nsINode* node : iter) {
     if (aMarkDesendants) {
-      child->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
+      node->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
     } else {
-      child
-          ->ClearDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
+      node->ClearDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
     }
-    UpdateDescendantsInFlattenedTree(*child, aMarkDesendants);
   }
 }
 
@@ -122,7 +118,7 @@ void AbstractRange::MarkDescendants(const nsINode& aNode) {
     
     
     if (aNode.GetShadowRootForSelection()) {
-      UpdateDescendantsInFlattenedTree(*aNode.AsContent(), true);
+      UpdateDescendantsByShadowIncludingOrder(*aNode.AsContent(), true);
       return;
     }
     
@@ -131,7 +127,7 @@ void AbstractRange::MarkDescendants(const nsINode& aNode) {
       node->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
       if (!node->IsClosestCommonInclusiveAncestorForRangeInSelection()) {
         if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-          UpdateDescendantsInFlattenedTree(*node->AsContent(), true);
+          UpdateDescendantsByShadowIncludingOrder(*node->AsContent(), true);
           
           node = node->GetNextNonChildNode(&aNode);
         } else {
@@ -155,7 +151,7 @@ void AbstractRange::UnmarkDescendants(const nsINode& aNode) {
     
     
     if (aNode.GetShadowRootForSelection()) {
-      UpdateDescendantsInFlattenedTree(*aNode.AsContent(), false);
+      UpdateDescendantsByShadowIncludingOrder(*aNode.AsContent(), false);
       return;
     }
     
@@ -164,7 +160,7 @@ void AbstractRange::UnmarkDescendants(const nsINode& aNode) {
       node->ClearDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
       if (!node->IsClosestCommonInclusiveAncestorForRangeInSelection()) {
         if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-          UpdateDescendantsInFlattenedTree(*node->AsContent(), false);
+          UpdateDescendantsByShadowIncludingOrder(*node->AsContent(), false);
           
           node = node->GetNextNonChildNode(&aNode);
         } else {

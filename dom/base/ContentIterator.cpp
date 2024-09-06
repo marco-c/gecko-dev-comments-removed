@@ -1225,8 +1225,11 @@ void ContentSubtreeIterator::Next() {
     if (!root) {
       nextNode = nextNode->GetFirstChild();
     } else {
-      nextNode = mRange->MayCrossShadowBoundary() ? root->GetFirstChild()
-                                                  : nextNode->GetFirstChild();
+      
+      
+      
+      nextNode = IterAllowCrossShadowBoundary() ? root->GetFirstChild()
+                                                : nextNode->GetFirstChild();
     }
     NS_ASSERTION(nextNode, "Iterator error, expected a child node!");
 
