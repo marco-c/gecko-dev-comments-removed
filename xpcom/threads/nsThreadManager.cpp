@@ -155,24 +155,16 @@ NS_IMETHODIMP
 BackgroundEventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
                                 uint32_t aFlags) {
   
-  
-  
-  
-  
-  
-  uint32_t flags = aFlags & ~NS_DISPATCH_EVENT_MAY_BLOCK;
   bool mayBlock = bool(aFlags & NS_DISPATCH_EVENT_MAY_BLOCK);
   nsCOMPtr<nsIThreadPool>& pool = mayBlock ? mIOPool : mPool;
+  uint32_t flags = aFlags & ~NS_DISPATCH_EVENT_MAY_BLOCK;
 
   
   
   
   
   
-  
-  if (pool->IsOnCurrentThread()) {
-    flags |= NS_DISPATCH_AT_END;
-  } else {
+  if (flags & NS_DISPATCH_AT_END && !pool->IsOnCurrentThread()) {
     flags &= ~NS_DISPATCH_AT_END;
   }
 
