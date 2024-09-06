@@ -2626,7 +2626,7 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
       BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
   
   
-  bool isPBM = originAttributes.mPrivateBrowsingId ==
+  bool isPBM = originAttributes.mPrivateBrowsingId !=
                nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID;
   if (!ShouldResistFingerprinting_("Positive return check", isPBM, aTarget)) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
