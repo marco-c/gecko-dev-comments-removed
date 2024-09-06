@@ -752,13 +752,6 @@ nsCSPContext::LogViolationDetails(
       continue;
     }
 
-    nsAutoString violatedDirectiveName;
-    nsAutoString violatedDirectiveNameAndValue;
-    bool reportSample = false;
-    mPolicies[p]->getViolatedDirectiveInformation(
-        SCRIPT_SRC_DIRECTIVE, violatedDirectiveName,
-        violatedDirectiveNameAndValue, &reportSample);
-
     CSPViolationData cspViolationData{
         p,
         CSPViolationData::Resource{blockedContentSource},
@@ -769,12 +762,26 @@ nsCSPContext::LogViolationDetails(
         aTriggeringElement,
         aScriptSample};
 
-    AsyncReportViolation(aCSPEventListener, std::move(cspViolationData),
-                         nullptr, violatedDirectiveName,
-                         violatedDirectiveNameAndValue, observerSubject,
-                         reportSample);
+    LogViolationDetailsUnchecked(aCSPEventListener, std::move(cspViolationData),
+                                 observerSubject);
   }
   return NS_OK;
+}
+
+void nsCSPContext::LogViolationDetailsUnchecked(
+    nsICSPEventListener* aCSPEventListener,
+    CSPViolationData&& aCSPViolationData, const nsAString& aObserverSubject) {
+  nsAutoString violatedDirectiveName;
+  nsAutoString violatedDirectiveNameAndValue;
+  bool reportSample = false;
+  mPolicies[aCSPViolationData.mViolatedPolicyIndex]
+      ->getViolatedDirectiveInformation(
+          aCSPViolationData.mEffectiveDirective, violatedDirectiveName,
+          violatedDirectiveNameAndValue, &reportSample);
+
+  AsyncReportViolation(aCSPEventListener, std::move(aCSPViolationData), nullptr,
+                       violatedDirectiveName, violatedDirectiveNameAndValue,
+                       aObserverSubject, reportSample);
 }
 
 #undef CASE_CHECK_AND_REPORT
@@ -1603,23 +1610,6 @@ class CSPReportSenderRunnable final : public Runnable {
   nsCOMPtr<nsISupports> mObserverSubject;
   RefPtr<nsCSPContext> mCSPContext;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 nsresult nsCSPContext::AsyncReportViolation(
     nsICSPEventListener* aCSPEventListener,

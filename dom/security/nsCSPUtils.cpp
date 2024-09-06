@@ -1834,6 +1834,7 @@ bool nsCSPPolicy::ShouldCreateViolationForNewTrustedTypesPolicy(
 
 
 
+
 void nsCSPPolicy::getViolatedDirectiveInformation(
     CSPDirective aDirective, nsAString& aDirectiveName,
     nsAString& aDirectiveNameAndValue, bool* aReportSample) const {

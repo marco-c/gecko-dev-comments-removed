@@ -106,6 +106,23 @@ class nsCSPContext : public nsIContentSecurityPolicy {
       const mozilla::dom::SecurityPolicyViolationEventInit&
           aViolationEventInit);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   nsresult AsyncReportViolation(
       nsICSPEventListener* aCSPEventListener,
       mozilla::dom::CSPViolationData&& aCSPViolationData, nsIURI* aOriginalURI,
@@ -131,6 +148,15 @@ class nsCSPContext : public nsIContentSecurityPolicy {
       nsTArray<mozilla::ipc::ContentSecurityPolicy>& aPolicies);
 
  private:
+  
+
+
+
+  void LogViolationDetailsUnchecked(
+      nsICSPEventListener* aCSPEventListener,
+      mozilla::dom::CSPViolationData&& aCSPViolationData,
+      const nsAString& aObserverSubject);
+
   bool ShouldThrottleReport(
       const mozilla::dom::SecurityPolicyViolationEventInit&
           aViolationEventInit);
