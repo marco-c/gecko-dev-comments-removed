@@ -55,8 +55,12 @@ enum NaluType : uint8_t {
   kAud = 35,
   kPrefixSei = 39,
   kSuffixSei = 40,
+  
   kAp = 48,
-  kFu = 49
+  
+  kFu = 49,
+  
+  kPaci = 50
 };
 
 
