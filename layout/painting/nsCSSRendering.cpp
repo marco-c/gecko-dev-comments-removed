@@ -2184,15 +2184,15 @@ void nsCSSRendering::GetImageLayerClip(
     
     
     if (layerClip == StyleGeometryBox::ContentBox) {
-      nsIScrollableFrame* scrollableFrame = do_QueryFrame(aForFrame);
+      ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(aForFrame);
       
       aClipState->mHasAdditionalBGClipArea = true;
       aClipState->mAdditionalBGClipArea =
           nsRect(aClipState->mBGClipArea.TopLeft() +
-                     scrollableFrame->GetScrolledFrame()->GetPosition()
+                     scrollContainerFrame->GetScrolledFrame()->GetPosition()
                      
-                     + scrollableFrame->GetScrollRange().TopLeft(),
-                 scrollableFrame->GetScrolledRect().Size());
+                     + scrollContainerFrame->GetScrollRange().TopLeft(),
+                 scrollContainerFrame->GetScrolledRect().Size());
       nsMargin padding = aForFrame->GetUsedPadding();
       
       
@@ -2771,11 +2771,12 @@ nsRect nsCSSRendering::ComputeImageLayerPositioningArea(
   nsIFrame* geometryFrame = aForFrame;
   if (MOZ_UNLIKELY(frameType == LayoutFrameType::ScrollContainer &&
                    StyleImageLayerAttachment::Local == aLayer.mAttachment)) {
-    nsIScrollableFrame* scrollableFrame = do_QueryFrame(aForFrame);
-    positionArea = nsRect(scrollableFrame->GetScrolledFrame()->GetPosition()
-                              
-                              + scrollableFrame->GetScrollRange().TopLeft(),
-                          scrollableFrame->GetScrolledRect().Size());
+    ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(aForFrame);
+    positionArea =
+        nsRect(scrollContainerFrame->GetScrolledFrame()->GetPosition()
+                   
+                   + scrollContainerFrame->GetScrollRange().TopLeft(),
+               scrollContainerFrame->GetScrolledRect().Size());
     
     
     
@@ -2783,7 +2784,7 @@ nsRect nsCSSRendering::ComputeImageLayerPositioningArea(
       nsMargin border = geometryFrame->GetUsedBorder();
       border.ApplySkipSides(geometryFrame->GetSkipSides());
       positionArea.Inflate(border);
-      positionArea.Inflate(scrollableFrame->GetActualScrollbarSizes());
+      positionArea.Inflate(scrollContainerFrame->GetActualScrollbarSizes());
     } else if (layerOrigin != StyleGeometryBox::PaddingBox) {
       nsMargin padding = geometryFrame->GetUsedPadding();
       padding.ApplySkipSides(geometryFrame->GetSkipSides());

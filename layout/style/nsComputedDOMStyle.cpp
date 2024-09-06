@@ -23,7 +23,6 @@
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "mozilla/ComputedStyle.h"
-#include "nsIScrollableFrame.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsIContent.h"
@@ -2014,9 +2013,9 @@ nscoord nsComputedDOMStyle::GetUsedAbsoluteOffset(mozilla::Side aSide) {
     
     
     nsIFrame* scrollingChild = container->PrincipalChildList().FirstChild();
-    nsIScrollableFrame* scrollFrame = do_QueryFrame(scrollingChild);
-    if (scrollFrame) {
-      scrollbarSizes = scrollFrame->GetActualScrollbarSizes();
+    ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(scrollingChild);
+    if (scrollContainerFrame) {
+      scrollbarSizes = scrollContainerFrame->GetActualScrollbarSizes();
     }
 
     

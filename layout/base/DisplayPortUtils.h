@@ -102,15 +102,17 @@ struct DisplayPortMargins {
   
   
   ScreenMargin GetRelativeToLayoutViewport(
-      ContentGeometryType aGeometryType, nsIScrollableFrame* aScrollableFrame,
+      ContentGeometryType aGeometryType,
+      ScrollContainerFrame* aScrollContainerFrame,
       const CSSToScreenScale2D& aDisplayportScale) const;
 
   friend std::ostream& operator<<(std::ostream& aOs,
                                   const DisplayPortMargins& aMargins);
 
  private:
-  CSSPoint ComputeAsyncTranslation(ContentGeometryType aGeometryType,
-                                   nsIScrollableFrame* aScrollableFrame) const;
+  CSSPoint ComputeAsyncTranslation(
+      ContentGeometryType aGeometryType,
+      ScrollContainerFrame* aScrollContainerFrame) const;
 };
 
 struct DisplayPortMarginsPropertyData {

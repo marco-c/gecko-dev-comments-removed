@@ -22,6 +22,7 @@ class nsSliderFrame;
 namespace mozilla {
 class nsDisplaySliderMarks;
 class PresShell;
+class ScrollContainerFrame;
 }  
 
 nsIFrame* NS_NewSliderFrame(mozilla::PresShell* aPresShell,
@@ -153,7 +154,8 @@ class nsSliderFrame final : public nsContainerFrame {
   bool OnlySystemGroupDispatch(mozilla::EventMessage aMessage) const override;
 
   
-  nsIScrollableFrame* GetScrollFrame();
+  
+  mozilla::ScrollContainerFrame* GetScrollContainerFrame();
 
  private:
   bool GetScrollToClick();

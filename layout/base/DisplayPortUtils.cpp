@@ -73,7 +73,8 @@ DisplayPortMargins DisplayPortMargins::ForContent(
 }
 
 ScreenMargin DisplayPortMargins::GetRelativeToLayoutViewport(
-    ContentGeometryType aGeometryType, nsIScrollableFrame* aScrollableFrame,
+    ContentGeometryType aGeometryType,
+    ScrollContainerFrame* aScrollContainerFrame,
     const CSSToScreenScale2D& aDisplayportScale) const {
   
   
@@ -82,7 +83,7 @@ ScreenMargin DisplayPortMargins::GetRelativeToLayoutViewport(
   
   
   CSSPoint scrollDeltaCss =
-      ComputeAsyncTranslation(aGeometryType, aScrollableFrame);
+      ComputeAsyncTranslation(aGeometryType, aScrollContainerFrame);
   ScreenPoint scrollDelta = scrollDeltaCss * aDisplayportScale;
   ScreenMargin margins = mMargins;
   margins.left -= scrollDelta.x;
@@ -106,7 +107,7 @@ std::ostream& operator<<(std::ostream& aOs,
 
 CSSPoint DisplayPortMargins::ComputeAsyncTranslation(
     ContentGeometryType aGeometryType,
-    nsIScrollableFrame* aScrollableFrame) const {
+    ScrollContainerFrame* aScrollContainerFrame) const {
   
   
   
@@ -122,15 +123,14 @@ CSSPoint DisplayPortMargins::ComputeAsyncTranslation(
   
   
   
-  if (!aScrollableFrame) {
+  if (!aScrollContainerFrame) {
     
     
     return CSSPoint();
   }
   
-  MOZ_ASSERT(aScrollableFrame->IsRootScrollFrameOfDocument());
-  nsIFrame* scrollFrame = do_QueryFrame(aScrollableFrame);
-  if (!scrollFrame->PresShell()->IsVisualViewportSizeSet()) {
+  MOZ_ASSERT(aScrollContainerFrame->IsRootScrollFrameOfDocument());
+  if (!aScrollContainerFrame->PresShell()->IsVisualViewportSizeSet()) {
     
     
     return CSSPoint();
@@ -145,12 +145,13 @@ CSSPoint DisplayPortMargins::ComputeAsyncTranslation(
       
       
       
-      CSSSize::FromAppUnits(scrollFrame->PresShell()->GetVisualViewportSize())};
+      CSSSize::FromAppUnits(
+          aScrollContainerFrame->PresShell()->GetVisualViewportSize())};
   const CSSRect scrollableRect = CSSRect::FromAppUnits(
-      nsLayoutUtils::CalculateExpandedScrollableRect(scrollFrame));
+      nsLayoutUtils::CalculateExpandedScrollableRect(aScrollContainerFrame));
   CSSRect asyncLayoutViewport{
       mLayoutOffset,
-      CSSSize::FromAppUnits(aScrollableFrame->GetScrollPortRect().Size())};
+      CSSSize::FromAppUnits(aScrollContainerFrame->GetScrollPortRect().Size())};
   FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
       visualViewport, scrollableRect,  asyncLayoutViewport);
   return mVisualOffset - asyncLayoutViewport.TopLeft();
@@ -744,7 +745,7 @@ bool DisplayPortUtils::FrameHasDisplayPort(nsIFrame* aFrame,
   if (!aFrame->GetContent() || !HasDisplayPort(aFrame->GetContent())) {
     return false;
   }
-  nsIScrollableFrame* sf = do_QueryFrame(aFrame);
+  ScrollContainerFrame* sf = do_QueryFrame(aFrame);
   if (sf) {
     if (aScrolledFrame && aScrolledFrame != sf->GetScrolledFrame()) {
       return false;
@@ -900,12 +901,12 @@ void DisplayPortUtils::ExpireDisplayPortOnAsyncScrollableAncestor(
     if (!frame) {
       break;
     }
-    nsIScrollableFrame* scrollAncestor =
+    ScrollContainerFrame* scrollAncestor =
         nsLayoutUtils::GetAsyncScrollableAncestorFrame(frame);
     if (!scrollAncestor) {
       break;
     }
-    frame = do_QueryFrame(scrollAncestor);
+    frame = scrollAncestor;
     MOZ_ASSERT(frame);
     if (!frame) {
       break;
