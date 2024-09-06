@@ -9,6 +9,8 @@
 #include "RangeBoundary.h"
 #include "mozilla/Assertions.h"
 #include "Document.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/FragmentDirectiveBinding.h"
 #include "mozilla/dom/FragmentOrElement.h"
 #include "mozilla/dom/NodeBinding.h"
@@ -19,6 +21,7 @@
 #include "nsComputedDOMStyle.h"
 #include "nsContentUtils.h"
 #include "nsDOMAttributeMap.h"
+#include "nsDocShell.h"
 #include "nsFind.h"
 #include "nsGkAtoms.h"
 #include "nsICSSDeclaration.h"
@@ -31,9 +34,13 @@
 namespace mozilla::dom {
 static LazyLogModule sFragmentDirectiveLog("FragmentDirective");
 
-#define DBG(msg, ...)                             \
+#define DBG_FN(msg, func, ...)                    \
   MOZ_LOG(sFragmentDirectiveLog, LogLevel::Debug, \
-          ("%s(): " msg, __FUNCTION__, ##__VA_ARGS__))
+          ("%s(): " msg, func, ##__VA_ARGS__))
+
+
+
+#define DBG(msg, ...) DBG_FN(msg, __FUNCTION__, ##__VA_ARGS__)
 
 MOZ_ALWAYS_INLINE static bool ShouldLog() {
   return MOZ_LOG_TEST(sFragmentDirectiveLog, LogLevel::Debug);
@@ -202,6 +209,155 @@ nsTArray<RefPtr<nsRange>> FragmentDirective::FindTextFragmentsInDocument() {
   return textDirectiveRanges;
 }
 
+bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(mDocument);
+  DBG("Trying to find out if the load of URL '%s' is allowed to scroll to the "
+      "text fragment",
+      ToString(mDocument->GetDocumentURI()).Data());
+  
+  
+  
+  
+  
+
+  nsCOMPtr<nsILoadInfo> loadInfo =
+      mDocument->GetChannel() ? mDocument->GetChannel()->LoadInfo() : nullptr;
+  const bool isSameDocumentNavigation =
+      loadInfo && loadInfo->GetIsSameDocumentNavigation();
+
+  DBG("Current load is%s a same-document navigation.",
+      isSameDocumentNavigation ? "" : " not");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  const bool textDirectiveUserActivation =
+      mDocument->ConsumeTextDirectiveUserActivation();
+  DBG("Consumed Document's TextDirectiveUserActivation flag (value=%s)",
+      textDirectiveUserActivation ? "true" : "false");
+
+  
+  
+  
+  
+  const bool isUserInvolved = textDirectiveUserActivation;
+
+  
+  
+  const bool isAllowedMIMEType = [doc = this->mDocument, func = __FUNCTION__] {
+    nsAutoString contentType;
+    doc->GetContentType(contentType);
+    DBG_FN("Got document MIME type: %s", func,
+           NS_ConvertUTF16toUTF8(contentType).Data());
+    return contentType == u"text/html" || contentType == u"text/plain";
+  }();
+
+  if (!isAllowedMIMEType) {
+    DBG("Invalid document MIME type. Scrolling not allowed.");
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  if (!isUserInvolved && !isSameDocumentNavigation) {
+    DBG("User involvement is false and not same-document navigation. Scrolling "
+        "not allowed.");
+    return false;
+  }
+  
+  
+  
+  
+  
+  nsDocShell* docShell = nsDocShell::Cast(mDocument->GetDocShell());
+  if (!isSameDocumentNavigation &&
+      (!docShell || !docShell->GetIsTopLevelContentDocShell())) {
+    DBG("Document's node navigable has a parent and this is not a "
+        "same-document navigation. Scrolling not allowed.");
+    return false;
+  }
+  
+  
+  const bool isSameOrigin = [loadInfo, doc = mDocument] {
+    if (!loadInfo) {
+      return false;
+    }
+    auto* triggeringPrincipal = loadInfo->TriggeringPrincipal();
+    auto* docPrincipal = doc->GetPrincipal();
+    return triggeringPrincipal && docPrincipal &&
+           triggeringPrincipal->Equals(docPrincipal);
+  }();
+
+  if (isSameOrigin) {
+    DBG("Same origin. Scrolling allowed.");
+    return true;
+  }
+  DBG("Not same origin.");
+
+  
+  
+  
+  
+  
+  
+  
+  if (BrowsingContextGroup* group =
+          mDocument->GetBrowsingContext()
+              ? mDocument->GetBrowsingContext()->Group()
+              : nullptr) {
+    const bool isNoOpenerContext = group->Toplevels().Length() == 1;
+    if (!isNoOpenerContext) {
+      DBG("Cross-origin + noopener=false. Scrolling not allowed.");
+    }
+    return isNoOpenerContext;
+  }
+
+  
+  DBG("Scrolling not allowed.");
+  return false;
+}
+
 void FragmentDirective::HighlightTextDirectives(
     const nsTArray<RefPtr<nsRange>>& aTextDirectiveRanges) {
   MOZ_ASSERT(mDocument);
@@ -215,7 +371,8 @@ void FragmentDirective::HighlightTextDirectives(
   }
 
   DBG("Highlighting text directives for document '%s' (%zu ranges).",
-      ToString(mDocument->GetDocumentURI()).Data(), aTextDirectiveRanges.Length());
+      ToString(mDocument->GetDocumentURI()).Data(),
+      aTextDirectiveRanges.Length());
 
   const RefPtr<Selection> targetTextSelection =
       [doc = this->mDocument]() -> Selection* {

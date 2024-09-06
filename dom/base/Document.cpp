@@ -13178,18 +13178,13 @@ void Document::ScrollToRef() {
   
   
   
-  
-
-  
-  
-  
   const RefPtr fragmentDirective = FragmentDirective();
   const nsTArray<RefPtr<nsRange>> textDirectives =
       fragmentDirective->FindTextFragmentsInDocument();
   
   
-  RefPtr<nsRange> firstRange =
-      !textDirectives.IsEmpty() ? textDirectives.ElementAt(0) : nullptr;
+  const RefPtr<nsRange> textDirectiveToScroll =
+      !textDirectives.IsEmpty() ? textDirectives[0] : nullptr;
   
   
   
@@ -13207,7 +13202,7 @@ void Document::ScrollToRef() {
   }
   
   
-  if (textDirectives.IsEmpty() && mScrollToRef.IsEmpty()) {
+  if (!textDirectiveToScroll && mScrollToRef.IsEmpty()) {
     return;
   }
   
@@ -13215,8 +13210,14 @@ void Document::ScrollToRef() {
   NS_ConvertUTF8toUTF16 ref(mScrollToRef);
   
   
-  auto rv = presShell->GoToAnchor(ref, firstRange,
-                                  mChangeScrollPosWhenScrollingToRef);
+
+  const bool scrollToTextDirective =
+      textDirectiveToScroll
+          ? fragmentDirective->IsTextDirectiveAllowedToBeScrolledTo()
+          : mChangeScrollPosWhenScrollingToRef;
+
+  auto rv =
+      presShell->GoToAnchor(ref, textDirectiveToScroll, scrollToTextDirective);
 
   
   

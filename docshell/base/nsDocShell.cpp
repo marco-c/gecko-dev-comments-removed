@@ -10763,23 +10763,28 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
 
   const RefPtr fragmentDirective = GetDocument()->FragmentDirective();
-  const nsTArray<RefPtr<nsRange>> textDirectives =
+  const nsTArray<RefPtr<nsRange>> textDirectiveRanges =
       fragmentDirective->FindTextFragmentsInDocument();
-  const bool hasTextDirectives = !textDirectives.IsEmpty();
-  fragmentDirective->HighlightTextDirectives(textDirectives);
+  fragmentDirective->HighlightTextDirectives(textDirectiveRanges);
+  const bool scrollToTextDirective =
+      !textDirectiveRanges.IsEmpty() &&
+      fragmentDirective->IsTextDirectiveAllowedToBeScrolledTo();
+  const RefPtr<nsRange> textDirectiveToScroll =
+      scrollToTextDirective ? textDirectiveRanges[0] : nullptr;
 
   
   
   
   
-  if ((!aCurHasRef || aLoadType != LOAD_HISTORY) && !aNewHasRef) {
+  if ((!aCurHasRef || aLoadType != LOAD_HISTORY) && !aNewHasRef &&
+      !scrollToTextDirective) {
     return NS_OK;
   }
 
   
   
 
-  if (aNewHash.IsEmpty() && !hasTextDirectives) {
+  if (aNewHash.IsEmpty() && !scrollToTextDirective) {
     
     
     
@@ -10799,10 +10804,11 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
   
   NS_ConvertUTF8toUTF16 uStr(aNewHash);
-  RefPtr<nsRange> range =
-      !textDirectives.IsEmpty() ? textDirectives[0] : nullptr;
-  auto rv =
-      presShell->GoToAnchor(uStr, range, scroll, ScrollFlags::ScrollSmoothAuto);
+
+  MOZ_ASSERT(!uStr.IsEmpty() || scrollToTextDirective);
+
+  auto rv = presShell->GoToAnchor(uStr, textDirectiveToScroll, scroll,
+                                  ScrollFlags::ScrollSmoothAuto);
 
   
   
