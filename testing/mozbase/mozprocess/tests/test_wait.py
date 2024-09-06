@@ -57,7 +57,7 @@ class ProcTestWait(proctest.ProcTest):
         p.run(timeout=10)
         p.wait()
 
-        if mozinfo.isUnix:
+        if mozinfo.isLinux:
             
             self.assertLess(p.proc.returncode, 0)
 
