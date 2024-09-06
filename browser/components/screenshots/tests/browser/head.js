@@ -35,30 +35,15 @@ const gScreenshotUISelectors = {
 };
 
 
-const AnonymousContentEvents = {
+const MouseEvents = {
   mouse: new Proxy(
     {},
     {
       get: (target, name) =>
         async function (x, y, options = {}, browser) {
-          if (name.includes("click")) {
+          if (name === "click") {
             this.down(x, y, options, browser);
             this.up(x, y, options, browser);
-            if (name.includes("dbl")) {
-              this.down(x, y, options, browser);
-              this.up(x, y, options, browser);
-            }
-          } else if (name === "contextmenu") {
-            await safeSynthesizeMouseEventInContentPage(
-              ":root",
-              x,
-              y,
-              {
-                type: name,
-                ...options,
-              },
-              browser
-            );
           } else {
             await safeSynthesizeMouseEventInContentPage(
               ":root",
@@ -74,40 +59,9 @@ const AnonymousContentEvents = {
         },
     }
   ),
-  key: new Proxy(
-    {},
-    {
-      get: (target, name) =>
-        async function (key, options = {}, browser) {
-          await safeSynthesizeKeyEventInContentPage(
-            key,
-            { type: "key" + name, ...options },
-            browser
-          );
-        },
-    }
-  ),
-  touch: new Proxy(
-    {},
-    {
-      get: (target, name) =>
-        async function (x, y, options = {}, browser) {
-          await safeSynthesizeTouchEventInContentPage(
-            ":root",
-            x,
-            y,
-            {
-              type: "touch" + name,
-              ...options,
-            },
-            browser
-          );
-        },
-    }
-  ),
 };
 
-const { mouse, key, touch } = AnonymousContentEvents;
+const { mouse } = MouseEvents;
 
 class ScreenshotsHelper {
   constructor(browser) {
@@ -867,14 +821,6 @@ class ScreenshotsHelper {
     });
   }
 
-  waitForContentEventOnce(event) {
-    return ContentTask.spawn(this.browser, event, eventType => {
-      return new Promise(resolve => {
-        content.addEventListener(eventType, resolve, { once: true });
-      });
-    });
-  }
-
   
 
 
@@ -1030,49 +976,7 @@ async function safeSynthesizeMouseEventInContentPage(
   } else {
     context = browser.browsingContext;
   }
-  await BrowserTestUtils.synthesizeMouse(selector, x, y, options, context);
-}
-
-
-
-
-
-
-
-
-async function safeSynthesizeKeyEventInContentPage(aKey, options, browser) {
-  let context;
-  if (!browser) {
-    context = gBrowser.selectedBrowser.browsingContext;
-  } else {
-    context = browser.browsingContext;
-  }
-  await BrowserTestUtils.synthesizeKey(aKey, options, context);
-}
-
-
-
-
-
-
-
-
-
-
-async function safeSynthesizeTouchEventInContentPage(
-  selector,
-  x,
-  y,
-  options = {},
-  browser
-) {
-  let context;
-  if (!browser) {
-    context = gBrowser.selectedBrowser.browsingContext;
-  } else {
-    context = browser.browsingContext;
-  }
-  await BrowserTestUtils.synthesizeTouch(selector, x, y, options, context);
+  BrowserTestUtils.synthesizeMouse(selector, x, y, options, context);
 }
 
 add_setup(async () => {

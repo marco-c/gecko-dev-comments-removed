@@ -2442,9 +2442,6 @@ pref("screenshots.browser.component.enabled", true);
 pref("screenshots.browser.component.last-saved-method", "download");
 
 
-pref("screenshots.browser.component.preventContentEvents", true);
-
-
 pref("doh-rollout.clearModeOnShutdown", false);
 
 
