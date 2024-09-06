@@ -47,10 +47,10 @@ async function waitForDialogAndDragNDropURL(crossDomain) {
     ._tabDialogManager._topDialog;
   let dialogDocument = dialog._frame.contentDocument;
 
-  let urlbar = document.getElementById("urlbar-input");
+  let urlbar = gURLBar.inputField;
   let dataTran = new DataTransfer();
   let urlEvent = new DragEvent("dragstart", { dataTransfer: dataTran });
-  let urlBarContainer = document.getElementById("urlbar-input-container");
+  let urlBarContainer = gURLBar.querySelector(".urlbar-input-container");
   
   
   

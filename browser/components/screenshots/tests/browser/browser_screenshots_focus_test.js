@@ -117,9 +117,9 @@ add_task(async function testPanelFocused() {
 });
 
 add_task(async function testRestoreFocusToChromeOnEscape() {
-  for (let focusSelector of [
-    "#urlbar-input", 
-    "tab[selected='true']", 
+  for (let getInitialFocusElem of [
+    () => gURLBar.inputField, 
+    () => gBrowser.selectedTab, 
   ]) {
     await BrowserTestUtils.withNewTab(
       {
@@ -129,9 +129,8 @@ add_task(async function testRestoreFocusToChromeOnEscape() {
       async browser => {
         let helper = new ScreenshotsHelper(browser);
         helper.assertPanelNotVisible();
-        let initialFocusElem = document.querySelector(focusSelector);
         await SimpleTest.promiseFocus(window);
-        await restoreFocusOnEscape(initialFocusElem, helper);
+        await restoreFocusOnEscape(getInitialFocusElem(), helper);
       }
     );
   }

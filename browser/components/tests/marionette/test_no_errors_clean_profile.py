@@ -91,7 +91,7 @@ class TestNoErrorsNewProfile(MarionetteTestCase):
         else:
             self.mod_key = Keys.CONTROL
         
-        url_bar = self.marionette.find_element(By.ID, "urlbar-input")
+        url_bar = self.marionette.execute_script("return gURLBar.inputField")
         url_bar.send_keys(self.mod_key, "l")
         
         new_tab_button = self.marionette.find_element(By.ID, "new-tab-button")

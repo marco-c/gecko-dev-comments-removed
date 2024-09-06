@@ -31,7 +31,7 @@ add_task(async function test_readerModeURLDrag() {
       let promiseTabLoad = BrowserTestUtils.browserLoaded(browser);
       readerButton.click();
       await promiseTabLoad;
-      let urlbar = document.getElementById("urlbar-input");
+      let urlbar = gURLBar.inputField;
       let readerUrl = gBrowser.selectedBrowser.currentURI.spec;
       ok(
         readerUrl.startsWith("about:reader"),
@@ -41,7 +41,7 @@ add_task(async function test_readerModeURLDrag() {
       let dataTran = new DataTransfer();
       let urlEvent = new DragEvent("dragstart", { dataTransfer: dataTran });
       let oldUrl = TEST_PATH + "readerModeArticle.html";
-      let urlBarContainer = document.getElementById("urlbar-input-container");
+      let urlBarContainer = gURLBar.querySelector(".urlbar-input-container");
       
       
       
