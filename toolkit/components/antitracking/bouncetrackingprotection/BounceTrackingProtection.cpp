@@ -300,11 +300,8 @@ nsresult BounceTrackingProtection::RecordUserActivation(
   MOZ_ASSERT(globalState);
 
   
-  if (aActivationTime.isNothing()) {
-    aActivationTime = Some(PR_Now());
-  }
-
-  return globalState->RecordUserActivation(siteHost, aActivationTime.extract());
+  return globalState->RecordUserActivation(siteHost,
+                                           aActivationTime.valueOr(PR_Now()));
 }
 
 NS_IMETHODIMP
