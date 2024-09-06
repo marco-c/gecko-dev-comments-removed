@@ -329,7 +329,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSRuleList", insecureContext: true },
   
-  { name: "CSSStartingStyleRule", insecureContext: true, disabled: true },
+  { name: "CSSStartingStyleRule", insecureContext: true, nightly: true },
   
   { name: "CSSStyleDeclaration", insecureContext: true },
   
