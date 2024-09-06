@@ -5429,18 +5429,29 @@ MaybeGetSurfaceDescriptorForRemoteCanvas(
     return Nothing();
   }
 
-  const auto& sdv = sd.ref().get_SurfaceDescriptorGPUVideo();
+  auto& sdv = sd.ref().get_SurfaceDescriptorGPUVideo();
   const auto& sdvType = sdv.type();
   if (sdvType ==
       layers::SurfaceDescriptorGPUVideo::TSurfaceDescriptorRemoteDecoder) {
-    const auto& sdrd = sdv.get_SurfaceDescriptorRemoteDecoder();
-    const auto& subdesc = sdrd.subdesc();
+    auto& sdrd = sdv.get_SurfaceDescriptorRemoteDecoder();
+    auto& subdesc = sdrd.subdesc();
     const auto& subdescType = subdesc.type();
     if (subdescType == layers::RemoteDecoderVideoSubDescriptor::Tnull_t) {
       return sd;
     }
     if (subdescType == layers::RemoteDecoderVideoSubDescriptor::
                            TSurfaceDescriptorMacIOSurface) {
+      return sd;
+    }
+    if (subdescType ==
+        layers::RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorD3D10) {
+      auto& descD3D10 = subdesc.get_SurfaceDescriptorD3D10();
+      
+      
+      
+      
+      
+      descD3D10.handle() = nullptr;
       return sd;
     }
   }
