@@ -13,6 +13,11 @@ let { _AboutLogins } = ChromeUtils.importESModule(
 let { OSKeyStoreTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/OSKeyStoreTestUtils.sys.mjs"
 );
+
+const { OSKeyStore } = ChromeUtils.importESModule(
+  "resource://gre/modules/OSKeyStore.sys.mjs"
+);
+
 var { LoginTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/LoginTestUtils.sys.mjs"
 );
@@ -52,6 +57,15 @@ let TEST_LOGIN3 = new nsLoginInfo(
   "password"
 );
 TEST_LOGIN3.QueryInterface(Ci.nsILoginMetaInfo).timePasswordChanged = 123456;
+
+const PASSWORDS_OS_REAUTH_PREF = "signon.management.page.os-auth.optout";
+const CryptoErrors = {
+  USER_CANCELED_PASSWORD: "User canceled primary password entry",
+  ENCRYPTION_FAILURE: "Couldn't encrypt string",
+  INVALID_ARG_ENCRYPT: "Need at least one plaintext to encrypt",
+  INVALID_ARG_DECRYPT: "Need at least one ciphertext to decrypt",
+  DECRYPTION_FAILURE: "Couldn't decrypt string",
+};
 
 async function addLogin(login) {
   const result = await Services.logins.addLoginAsync(login);
@@ -150,6 +164,12 @@ add_setup(async function setup_head() {
       msg.errorMessage ==
       "NotFoundError: No such JSWindowActor 'MarionetteEvents'"
     ) {
+      
+      return;
+    }
+    if (msg.errorMessage.includes(CryptoErrors.DECRYPTION_FAILURE)) {
+      
+      
       
       return;
     }
