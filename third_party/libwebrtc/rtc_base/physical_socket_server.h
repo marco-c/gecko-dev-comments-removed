@@ -23,7 +23,7 @@
 #include <sys/epoll.h>
 
 #define WEBRTC_USE_EPOLL 1
-#elif defined(WEBRTC_FUCHSIA)
+#elif defined(WEBRTC_FUCHSIA) || defined(WEBRTC_MAC)
 
 
 #include <poll.h>
@@ -125,9 +125,6 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
   const int epoll_fd_ = INVALID_SOCKET;
 
 #elif defined(WEBRTC_USE_POLL)
-  void AddPoll(Dispatcher* dispatcher, uint64_t key);
-  void RemovePoll(Dispatcher* dispatcher);
-  void UpdatePoll(Dispatcher* dispatcher, uint64_t key);
   bool WaitPoll(int cmsWait, bool process_io);
 
 #endif  
