@@ -351,16 +351,17 @@ void StickyScrollContainer::UpdatePositions(nsPoint aScrollPosition,
 
   OverflowChangedTracker oct;
   oct.SetSubtreeRoot(aSubtreeRoot);
-  for (nsTArray<nsIFrame*>::size_type i = 0; i < mFrames.Length(); i++) {
-    nsIFrame* f = mFrames[i];
+  
+  
+  
+  for (size_t i = mFrames.Length(); i--;) {
+    nsIFrame* f = mFrames.ElementAt(i);
     if (!nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(f)) {
       
       
       mFrames.RemoveElementAt(i);
-      --i;
       continue;
     }
-
     if (aSubtreeRoot) {
       
       ComputeStickyOffsets(f);
