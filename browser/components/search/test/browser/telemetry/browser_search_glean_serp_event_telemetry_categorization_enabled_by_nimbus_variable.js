@@ -74,11 +74,14 @@ add_setup(async function () {
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 
-  await insertRecordIntoCollectionAndSync();
   
   
   if (lazy.serpEventsCategorizationEnabled) {
-    await waitForDomainToCategoriesUpdate();
+    let promise = waitForDomainToCategoriesUpdate();
+    await insertRecordIntoCollectionAndSync();
+    await promise;
+  } else {
+    await insertRecordIntoCollectionAndSync();
   }
 
   registerCleanupFunction(async () => {
@@ -98,6 +101,11 @@ add_task(async function test_enable_experiment_when_pref_is_not_enabled() {
   
   
   prefBranch.setBoolPref(TELEMETRY_PREF, false);
+
+  
+  if (originalPrefValue) {
+    await waitForDomainToCategoriesUninit();
+  }
 
   Assert.equal(
     lazy.serpEventsCategorizationEnabled,
@@ -161,6 +169,7 @@ add_task(async function test_enable_experiment_when_pref_is_not_enabled() {
 
   info("End experiment.");
   await doExperimentCleanup();
+  await waitForDomainToCategoriesUninit();
 
   Assert.equal(
     lazy.serpEventsCategorizationEnabled,

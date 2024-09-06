@@ -76,6 +76,7 @@ const db = client.db;
 
 
 const TIMEOUT_IN_MS = 250;
+let didPushPrefEnv = false;
 add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
@@ -84,9 +85,19 @@ add_setup(async function () {
 
   
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.serpEventTelemetryCategorization.enabled", false]],
-  });
+  
+  if (
+    Services.prefs.getBoolPref(
+      "browser.search.serpEventTelemetryCategorization.enabled"
+    )
+  ) {
+    didPushPrefEnv = true;
+    let promise = waitForDomainToCategoriesUninit();
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.search.serpEventTelemetryCategorization.enabled", false]],
+    });
+    await promise;
+  }
 
   let defaultDownloadSettings = {
     ...TELEMETRY_CATEGORIZATION_DOWNLOAD_SETTINGS,
@@ -104,6 +115,12 @@ add_setup(async function () {
   TELEMETRY_CATEGORIZATION_DOWNLOAD_SETTINGS.maxAdjust = 0;
 
   registerCleanupFunction(async () => {
+    
+    
+    if (didPushPrefEnv) {
+      await SpecialPowers.popPrefEnv();
+      await waitForDomainToCategoriesInit();
+    }
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     resetTelemetry();
     TELEMETRY_CATEGORIZATION_DOWNLOAD_SETTINGS = {
@@ -167,6 +184,7 @@ add_task(async function test_download_after_failure() {
 
   
   await SpecialPowers.popPrefEnv();
+  await waitForDomainToCategoriesUninit();
   await resetCategorizationCollection(record);
 });
 
@@ -215,6 +233,7 @@ add_task(async function test_download_after_multiple_failures() {
 
   
   await SpecialPowers.popPrefEnv();
+  await waitForDomainToCategoriesUninit();
   await resetCategorizationCollection(record);
 });
 
@@ -246,6 +265,7 @@ add_task(async function test_cancel_download_timer() {
   });
   await SpecialPowers.popPrefEnv();
   await observeCancel;
+  await waitForDomainToCategoriesUninit();
 
   
   
@@ -264,7 +284,6 @@ add_task(async function test_cancel_download_timer() {
   Assert.ok(SearchSERPDomainToCategoriesMap.empty, "Map is empty");
 
   
-  await SpecialPowers.popPrefEnv();
   await resetCategorizationCollection(record);
 });
 
@@ -311,6 +330,7 @@ add_task(async function test_download_adjust() {
 
   
   await SpecialPowers.popPrefEnv();
+  await waitForDomainToCategoriesUninit();
   await resetCategorizationCollection(record);
   TELEMETRY_CATEGORIZATION_DOWNLOAD_SETTINGS.base = TIMEOUT_IN_MS;
   TELEMETRY_CATEGORIZATION_DOWNLOAD_SETTINGS.minAdjust = 0;
