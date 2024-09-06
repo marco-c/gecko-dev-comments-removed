@@ -18,6 +18,18 @@
 #include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h"
 
+#ifdef MOZ_TSAN
+
+
+
+
+#  define MOZ_USE_SINGLETON_PORT_MUTEX 1
+#endif
+
+#ifdef MOZ_USE_SINGLETON_PORT_MUTEX
+#  include "mozilla/StaticMutex.h"
+#endif
+
 namespace mojo {
 namespace core {
 namespace ports {
@@ -28,11 +40,18 @@ namespace detail {
 
 
 
-class MOZ_CAPABILITY("mutex") PortMutex : private ::mozilla::detail::MutexImpl {
+class MOZ_CAPABILITY("mutex") PortMutex
+#ifndef MOZ_USE_SINGLETON_PORT_MUTEX
+    : private ::mozilla::detail::MutexImpl
+#endif
+{
  public:
   void AssertCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(this) {
 #ifdef DEBUG
     MOZ_ASSERT(mOwningThread == PR_GetCurrentThread());
+#endif
+#ifdef MOZ_USE_SINGLETON_PORT_MUTEX
+    sSingleton.AssertCurrentThreadOwns();
 #endif
   }
 
@@ -40,8 +59,19 @@ class MOZ_CAPABILITY("mutex") PortMutex : private ::mozilla::detail::MutexImpl {
   
   friend class ::mojo::core::ports::PortLocker;
 
+#ifdef MOZ_USE_SINGLETON_PORT_MUTEX
+  
+  
+  
+  static ::mozilla::StaticMutex sSingleton;
+#endif
+
   void Lock() MOZ_CAPABILITY_ACQUIRE() {
+#ifdef MOZ_USE_SINGLETON_PORT_MUTEX
+    sSingleton.AssertCurrentThreadOwns();
+#else
     ::mozilla::detail::MutexImpl::lock();
+#endif
 #ifdef DEBUG
     mOwningThread = PR_GetCurrentThread();
 #endif
@@ -51,7 +81,11 @@ class MOZ_CAPABILITY("mutex") PortMutex : private ::mozilla::detail::MutexImpl {
     MOZ_ASSERT(mOwningThread == PR_GetCurrentThread());
     mOwningThread = nullptr;
 #endif
+#ifdef MOZ_USE_SINGLETON_PORT_MUTEX
+    sSingleton.AssertCurrentThreadOwns();
+#else
     ::mozilla::detail::MutexImpl::unlock();
+#endif
   }
 
 #ifdef DEBUG
