@@ -34,11 +34,8 @@
 
 
 mod indices;
-mod report;
 
 pub use crate::indices::Utf8CharIndices;
-pub use crate::report::ErrorReportingUtf8Chars;
-pub use crate::report::Utf8CharsError;
 use core::iter::FusedIterator;
 
 #[repr(align(64))] 
@@ -162,12 +159,6 @@ impl<'a> Iterator for Utf8Chars<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<char> {
-        
-        
-        
-        
-        
-
         
         #[allow(clippy::never_loop)]
         loop {

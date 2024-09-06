@@ -332,9 +332,6 @@ fn get_base_domain(url: &MozURL) -> Result<Option<String>, nsresult> {
 
             if host_str.starts_with('[') && host_str.ends_with(']') {
                 host_str = &host_str[1..host_str.len() - 1];
-                
-                
-                return Ok(Some(host_str.to_string()))
             }
 
             let host = nsCString::from(host_str);

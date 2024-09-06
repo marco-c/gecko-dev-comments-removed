@@ -21,6 +21,7 @@
 #include "nsCRT.h"
 #include "nsEffectiveTLDService.h"
 #include "nsIFile.h"
+#include "nsIIDNService.h"
 #include "nsIObserverService.h"
 #include "nsIURI.h"
 #include "nsNetCID.h"
@@ -56,6 +57,12 @@ nsresult nsEffectiveTLDService::Init() {
 
   if (gService) {
     return NS_ERROR_ALREADY_INITIALIZED;
+  }
+
+  nsresult rv;
+  mIDNService = mozilla::components::IDN::Service(&rv);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   gService = this;
@@ -99,7 +106,10 @@ NS_IMETHODIMP nsEffectiveTLDService::Observe(nsISupports* aSubject,
 
 nsEffectiveTLDService::~nsEffectiveTLDService() {
   UnregisterWeakMemoryReporter(this);
-  gService = nullptr;
+  if (mIDNService) {
+    
+    gService = nullptr;
+  }
 }
 
 
@@ -138,6 +148,10 @@ nsEffectiveTLDService::CollectReports(nsIHandleReportCallback* aHandleReport,
 size_t nsEffectiveTLDService::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) {
   size_t n = aMallocSizeOf(this);
+
+  
+  
+  
 
   return n;
 }
@@ -245,8 +259,9 @@ NS_IMETHODIMP
 nsEffectiveTLDService::GetPublicSuffixFromHost(const nsACString& aHostname,
                                                nsACString& aPublicSuffix) {
   
-  nsAutoCString normHostname;
-  nsresult rv = NS_DomainToASCIIAllowAnyGlyphfulASCII(aHostname, normHostname);
+  
+  nsAutoCString normHostname(aHostname);
+  nsresult rv = NormalizeHostname(normHostname);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -258,8 +273,9 @@ NS_IMETHODIMP
 nsEffectiveTLDService::GetKnownPublicSuffixFromHost(const nsACString& aHostname,
                                                     nsACString& aPublicSuffix) {
   
-  nsAutoCString normHostname;
-  nsresult rv = NS_DomainToASCIIAllowAnyGlyphfulASCII(aHostname, normHostname);
+  
+  nsAutoCString normHostname(aHostname);
+  nsresult rv = NormalizeHostname(normHostname);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -277,8 +293,9 @@ nsEffectiveTLDService::GetBaseDomainFromHost(const nsACString& aHostname,
   NS_ENSURE_TRUE(((int32_t)aAdditionalParts) >= 0, NS_ERROR_INVALID_ARG);
 
   
-  nsAutoCString normHostname;
-  nsresult rv = NS_DomainToASCIIAllowAnyGlyphfulASCII(aHostname, normHostname);
+  
+  nsAutoCString normHostname(aHostname);
+  nsresult rv = NormalizeHostname(normHostname);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -291,11 +308,10 @@ NS_IMETHODIMP
 nsEffectiveTLDService::GetNextSubDomain(const nsACString& aHostname,
                                         nsACString& aBaseDomain) {
   
-  nsAutoCString normHostname;
-  nsresult rv = NS_DomainToASCIIAllowAnyGlyphfulASCII(aHostname, normHostname);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  
+  nsAutoCString normHostname(aHostname);
+  nsresult rv = NormalizeHostname(normHostname);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   return GetBaseDomainInternal(normHostname, -1, false, aBaseDomain);
 }
@@ -481,6 +497,21 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
   return NS_OK;
 }
 
+
+
+
+nsresult nsEffectiveTLDService::NormalizeHostname(nsCString& aHostname) {
+  if (!IsAscii(aHostname)) {
+    nsresult rv = mIDNService->ConvertUTF8toACE(aHostname, aHostname);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+
+  ToLowerCase(aHostname);
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 nsEffectiveTLDService::HasRootDomain(const nsACString& aInput,
                                      const nsACString& aHost, bool* aResult) {
@@ -505,8 +536,8 @@ nsEffectiveTLDService::HasKnownPublicSuffixFromHost(const nsACString& aHostname,
                                                     bool* aResult) {
   
   
-  nsAutoCString hostname;
-  nsresult rv = NS_DomainToASCIIAllowAnyGlyphfulASCII(aHostname, hostname);
+  nsCString hostname(aHostname);
+  nsresult rv = NormalizeHostname(hostname);
   if (NS_FAILED(rv)) {
     return rv;
   }

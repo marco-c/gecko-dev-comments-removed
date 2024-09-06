@@ -5996,11 +5996,6 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
           
           
           
-          
-          
-          
-          
-          
           bool isACE;
           nsAutoCString utf8Host;
           nsCOMPtr<nsIIDNService> idnSrv =

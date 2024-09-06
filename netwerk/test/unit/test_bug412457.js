@@ -34,11 +34,6 @@ function run_test() {
   Assert.equal(newURI.asciiHost, "example.com");
 
   
-  
-  newURI = newURI.mutate().setSpec("http://example.com%3bfoo").finalize();
-  Assert.equal(newURI.asciiHost, "example.com;foo");
-
-  
   Assert.throws(
     () => {
       newURI = newURI.mutate().setSpec("http://example.com%3ffoo").finalize();
@@ -49,6 +44,13 @@ function run_test() {
   Assert.throws(
     () => {
       newURI = newURI.mutate().setSpec("http://example.com%23foo").finalize();
+    },
+    /NS_ERROR_MALFORMED_URI/,
+    "bad escaped character"
+  );
+  Assert.throws(
+    () => {
+      newURI = newURI.mutate().setSpec("http://example.com%3bfoo").finalize();
     },
     /NS_ERROR_MALFORMED_URI/,
     "bad escaped character"
