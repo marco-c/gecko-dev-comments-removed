@@ -91,12 +91,6 @@ const TEST_PROVIDER_INFO = [
   },
 ];
 
-async function promiseResize(width, height) {
-  return TestUtils.waitForCondition(() => {
-    return window.outerWidth === width && window.outerHeight === height;
-  }, "Waiting for window to resize");
-}
-
 add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
@@ -110,14 +104,12 @@ add_setup(async function () {
   
   let originalWidth = window.outerWidth;
   let originalHeight = window.outerHeight;
-  window.resizeTo(WINDOW_WIDTH, WINDOW_HEIGHT);
-  await promiseResize(WINDOW_WIDTH, WINDOW_HEIGHT);
+  await resizeWindow(window, WINDOW_WIDTH, WINDOW_HEIGHT);
 
   registerCleanupFunction(async () => {
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     Services.telemetry.canRecordExtended = oldCanRecord;
-    window.resizeTo(originalWidth, originalHeight);
-    await promiseResize(originalWidth, originalHeight);
+    await resizeWindow(window, originalWidth, originalHeight);
     resetTelemetry();
   });
 });
@@ -210,6 +202,11 @@ add_task(
 
     await waitForPageWithAdImpressions();
 
+    
+    
+    
+    
+    
     assertSERPTelemetry([
       {
         impression: {
@@ -226,7 +223,7 @@ add_task(
           {
             component: SearchSERPTelemetryUtils.COMPONENTS.AD_CAROUSEL,
             ads_loaded: "4",
-            ads_visible: "3",
+            ads_visible: "4",
             ads_hidden: "0",
           },
         ],
@@ -346,7 +343,7 @@ add_task(async function test_ad_impressions_with_carousel_scrolled_left() {
         {
           component: SearchSERPTelemetryUtils.COMPONENTS.AD_CAROUSEL,
           ads_loaded: "4",
-          ads_visible: "2",
+          ads_visible: "3",
           ads_hidden: "0",
         },
       ],
@@ -390,6 +387,67 @@ add_task(async function test_ad_impressions_with_carousel_below_the_fold() {
 
   BrowserTestUtils.removeTab(tab);
 });
+
+
+
+add_task(
+  async function test_ad_impressions_visibility_with_carousel_at_the_fold() {
+    resetTelemetry();
+    let url = getSERPUrl(
+      "searchTelemetryAd_components_carousel_below_the_fold.html"
+    );
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+
+    
+    
+    await SpecialPowers.spawn(
+      gBrowser.selectedBrowser,
+      [VISIBILITY_THRESHOLD],
+      threshold => {
+        let el = content.document.querySelector(".moz-carousel-container");
+
+        let dimensions = el.getBoundingClientRect();
+        let adjustedHeight = dimensions.height * threshold;
+        
+        
+        let adjustment = 2;
+
+        let top = content.window.innerHeight - adjustedHeight - adjustment;
+        el.style.position = "absolute";
+        el.style.top = `${top}px`;
+      }
+    );
+
+    await waitForPageWithAdImpressions();
+
+    assertSERPTelemetry([
+      {
+        impression: {
+          provider: "example",
+          tagged: "true",
+          partner_code: "ff",
+          source: "unknown",
+          is_shopping_page: "false",
+          is_private: "false",
+          shopping_tab_displayed: "false",
+          is_signed_in: "false",
+        },
+        adImpressions: [
+          {
+            component: SearchSERPTelemetryUtils.COMPONENTS.AD_CAROUSEL,
+            ads_loaded: "4",
+            
+            
+            ads_visible: "3",
+            ads_hidden: "0",
+          },
+        ],
+      },
+    ]);
+
+    BrowserTestUtils.removeTab(tab);
+  }
+);
 
 add_task(async function test_ad_impressions_with_text_links() {
   resetTelemetry();
@@ -449,11 +507,11 @@ add_task(async function test_ad_visibility() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
 
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
-    let el = content.document
-      .getElementById("second-ad")
-      .getBoundingClientRect();
+    let el = content.document.getElementById("second-ad");
     
-    content.scrollTo(0, el.top + el.height + 100);
+    
+    
+    el.scrollIntoView(false);
   });
 
   await waitForPageWithAdImpressions();
