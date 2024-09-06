@@ -1722,6 +1722,10 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
   ::LoadLibraryW(L"softokn3.dll");
   
   ::LoadLibraryW(L"textshaping.dll");
+#    if defined(DEBUG)
+  
+  ::LoadLibraryW(L"dbghelp.dll");
+#    endif
   mozilla::SandboxTarget::Instance()->StartSandbox();
 #  elif defined(XP_MACOSX)
   sandboxEnabled = (GetEffectiveContentSandboxLevel() >= 1);
