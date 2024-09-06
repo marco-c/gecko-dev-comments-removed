@@ -396,7 +396,7 @@ LengthPercentage SVGSVGElement::GetIntrinsicWidthOrHeight(int aAttr) {
   
   
   
-  float rawSize = mLengthAttributes[aAttr].GetAnimValueWithZoom(this);
+  float rawSize = mLengthAttributes[aAttr].GetAnimValue(this);
   return LengthPercentage::FromPixels(rawSize);
 }
 
