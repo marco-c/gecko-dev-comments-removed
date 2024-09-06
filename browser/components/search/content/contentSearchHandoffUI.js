@@ -128,14 +128,21 @@ ContentSearchHandoffUIController.prototype = {
   },
 
   
-  
+
+
+
+
+
+
+
+
   _getFaviconURIFromIconData(data) {
-    if (typeof data === "string") {
+    if (typeof data == "string") {
       return data;
     }
 
     
-    let blob = new Blob([data]);
+    let blob = new Blob([data.icon], { type: data.mimeType });
     return URL.createObjectURL(blob);
   },
 
