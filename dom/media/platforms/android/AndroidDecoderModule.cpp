@@ -11,7 +11,6 @@
 #endif
 #include "MediaInfo.h"
 #include "RemoteDataDecoder.h"
-#include "TheoraDecoder.h"
 #include "VPXDecoder.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
@@ -109,9 +108,6 @@ DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
     
     
     
-    case MediaCodec::Theora:
-      SLOG("Rejecting video of type %s", aMimeType.Data());
-      return media::DecodeSupportSet{};
     
     case MediaCodec::MP3:
       [[fallthrough]];

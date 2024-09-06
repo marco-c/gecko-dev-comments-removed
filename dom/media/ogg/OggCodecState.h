@@ -16,7 +16,6 @@
 #  include <nsTArray.h>
 #  include <nsClassHashtable.h>
 
-#  include <theora/theoradec.h>
 #  include <vorbis/codec.h>
 
 
@@ -104,7 +103,6 @@ class OggCodecState {
   
   enum CodecType {
     TYPE_VORBIS = 0,
-    TYPE_THEORA,
     TYPE_OPUS,
     TYPE_SKELETON,
     TYPE_FLAC,
@@ -232,8 +230,6 @@ class OggCodecState {
   
   
   virtual TimeUnit MaxKeyframeOffset() { return TimeUnit::Zero(); }
-  
-  virtual int32_t KeyFrameGranuleJobs() { return 0; }
 
   
   uint64_t mPacketCount;
@@ -372,54 +368,6 @@ class VorbisState : public OggCodecState {
   
   
   void ValidateVorbisPacketSamples(ogg_packet* aPacket, long aSamples);
-};
-
-
-
-int TheoraVersion(th_info* info, unsigned char maj, unsigned char min,
-                  unsigned char sub);
-
-class TheoraState : public OggCodecState {
- public:
-  explicit TheoraState(rlbox_sandbox_ogg* aSandbox,
-                       tainted_opaque_ogg<ogg_page*> aBosPage,
-                       uint32_t aSerial);
-  virtual ~TheoraState();
-
-  CodecType GetType() override { return TYPE_THEORA; }
-  bool DecodeHeader(OggPacketPtr aPacket) override;
-  TimeUnit Time(int64_t aGranulepos) override;
-  TimeUnit StartTime(int64_t aGranulepos) override;
-  TimeUnit PacketDuration(ogg_packet* aPacket) override;
-  bool Init() override;
-  nsresult Reset() override;
-  bool IsHeader(ogg_packet* aPacket) override;
-  bool IsKeyframe(ogg_packet* aPacket) override;
-  nsresult PageIn(tainted_opaque_ogg<ogg_page*> aPage) override;
-  const TrackInfo* GetInfo() const override { return &mInfo; }
-  TimeUnit MaxKeyframeOffset() override;
-  int32_t KeyFrameGranuleJobs() override {
-    return mTheoraInfo.keyframe_granule_shift;
-  }
-
- private:
-  
-  static TimeUnit Time(th_info* aInfo, int64_t aGranulePos);
-
-  th_info mTheoraInfo = {};
-  th_comment mComment = {};
-  th_setup_info* mSetup;
-  th_dec_ctx* mCtx;
-
-  VideoInfo mInfo;
-  OggPacketQueue mHeaders;
-
-  
-  
-  
-  
-  
-  void ReconstructTheoraGranulepos();
 };
 
 class OpusState : public OggCodecState {

@@ -116,7 +116,6 @@ class OggDemuxer : public MediaDataDemuxer,
   
   
   
-  
   nsresult SeekInBufferedRange(TrackInfo::TrackType aType,
                                const media::TimeUnit& aTarget,
                                media::TimeUnit& aAdjustedTarget,
@@ -260,9 +259,6 @@ class OggDemuxer : public MediaDataDemuxer,
   OggCodecStore mCodecStore;
 
   
-  OggCodecState* mTheoraState;
-
-  
   OggCodecState* mVorbisState;
 
   
@@ -299,7 +295,6 @@ class OggDemuxer : public MediaDataDemuxer,
   MediaResourceIndex* Resource(TrackInfo::TrackType aType);
   MediaResourceIndex* CommonResource();
   OggStateContext mAudioOggState;
-  OggStateContext mVideoOggState;
 
   Maybe<media::TimeUnit> mStartTime;
 
@@ -313,10 +308,6 @@ class OggDemuxer : public MediaDataDemuxer,
   bool HaveStartTime(TrackInfo::TrackType aType);
   media::TimeUnit StartTime() const;
   media::TimeUnit StartTime(TrackInfo::TrackType aType);
-
-  
-  
-  gfx::IntRect mPicture;
 
   
   bool mIsChained;
