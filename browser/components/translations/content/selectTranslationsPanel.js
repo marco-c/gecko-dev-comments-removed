@@ -47,6 +47,49 @@ var SelectTranslationsPanel = new (class {
   
 
 
+  #shortTextHeight = "8em";
+
+  
+
+
+
+
+  get shortTextHeight() {
+    return this.#shortTextHeight;
+  }
+
+  
+
+
+  #longTextHeight = "16em";
+
+  
+
+
+
+
+  get longTextHeight() {
+    return this.#longTextHeight;
+  }
+
+  
+
+
+
+  #textLengthThreshold = 800;
+
+  
+
+
+
+
+  get textLengthThreshold() {
+    return this.#textLengthThreshold;
+  }
+
+  
+
+
 
 
   #idlePlaceholderText;
@@ -283,10 +326,18 @@ var SelectTranslationsPanel = new (class {
 
 
 
+
   #registerSourceText(sourceText) {
+    const { textArea } = this.elements;
     this.#changeStateTo("idle", /* retainEntries */ false, {
       sourceText,
     });
+
+    if (sourceText.length < SelectTranslationsPanel.textLengthThreshold) {
+      textArea.style.height = SelectTranslationsPanel.shortTextHeight;
+    } else {
+      textArea.style.height = SelectTranslationsPanel.longTextHeight;
+    }
   }
 
   
