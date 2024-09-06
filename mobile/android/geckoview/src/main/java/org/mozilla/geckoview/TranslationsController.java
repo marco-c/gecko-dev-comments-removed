@@ -130,8 +130,6 @@ public class TranslationsController {
 
 
 
-
-
     @AnyThread
     public static @NonNull GeckoResult<Void> manageLanguageModel(
         final @NonNull ModelManagementOptions options) {
