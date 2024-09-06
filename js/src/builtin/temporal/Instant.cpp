@@ -123,12 +123,14 @@ static constexpr auto NanosecondsMaxInstant() {
 }
 
 
+static constexpr auto EpochLimitBigIntDigits = NanosecondsMaxInstant();
+
+
 
 
 bool js::temporal::IsValidEpochNanoseconds(const BigInt* epochNanoseconds) {
   
-  static constexpr auto epochLimit = NanosecondsMaxInstant();
-  return AbsoluteValueIsLessOrEqual<epochLimit>(epochNanoseconds);
+  return AbsoluteValueIsLessOrEqual<EpochLimitBigIntDigits>(epochNanoseconds);
 }
 
 static bool IsValidEpochMicroseconds(const BigInt* epochMicroseconds) {
