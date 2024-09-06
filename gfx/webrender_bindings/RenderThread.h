@@ -275,7 +275,8 @@ class RenderThread final {
   RefPtr<layers::ShaderProgramOGLsHolder> GetProgramsForCompositorOGL();
 
   
-  void HandleDeviceReset(const char* aWhere, GLenum aReason);
+  void HandleDeviceReset(gfx::DeviceResetDetectPlace aPlace,
+                         gfx::DeviceResetReason aReason);
   
   bool IsHandlingDeviceReset();
   

@@ -150,26 +150,6 @@ inline const char* GetBackendName(mozilla::gfx::BackendType aBackend) {
   MOZ_CRASH("Incomplete switch");
 }
 
-enum class DeviceResetReason {
-  OK = 0,        
-  HUNG,          
-  REMOVED,       
-  RESET,         
-  DRIVER_ERROR,  
-  INVALID_CALL,  
-  OUT_OF_MEMORY,
-  FORCED_RESET,  
-  OTHER,         
-  D3D9_RESET,    
-  NVIDIA_VIDEO,  
-  UNKNOWN,       
-};
-
-enum class ForcedDeviceResetReason {
-  OPENSHAREDHANDLE = 0,
-  COMPOSITOR_UPDATED,
-};
-
 struct BackendPrefsData {
   uint32_t mCanvasBitmask = 0;
   mozilla::gfx::BackendType mCanvasDefault = mozilla::gfx::BackendType::NONE;
@@ -493,7 +473,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   bool IsKnownIconFontFamily(const nsAtom* aFamilyName) const;
 
   virtual bool DidRenderingDeviceReset(
-      DeviceResetReason* aResetReason = nullptr) {
+      mozilla::gfx::DeviceResetReason* aResetReason = nullptr) {
     return false;
   }
 

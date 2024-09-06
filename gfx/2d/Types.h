@@ -1022,6 +1022,39 @@ struct GradientStop {
 
 enum class JobStatus { Complete, Wait, Yield, Error };
 
+enum class DeviceResetReason {
+  OK = 0,        
+  HUNG,          
+  REMOVED,       
+  RESET,         
+  DRIVER_ERROR,  
+  INVALID_CALL,  
+  OUT_OF_MEMORY,
+  FORCED_RESET,  
+  OTHER,         
+  NVIDIA_VIDEO,  
+  UNKNOWN,       
+  _First = OK,
+  _Last = UNKNOWN,
+};
+
+enum class DeviceResetDetectPlace {
+  WR_BEGIN_FRAME = 0,
+  WR_WAIT_FOR_GPU,
+  WR_POST_UPDATE,
+  WR_SYNC_OBJRCT,
+  WR_SIMULATE,
+  WIDGET,
+  CANVAS_TRANSLATOR,
+  _First = WR_BEGIN_FRAME,
+  _Last = CANVAS_TRANSLATOR,
+};
+
+enum class ForcedDeviceResetReason {
+  OPENSHAREDHANDLE = 0,
+  COMPOSITOR_UPDATED,
+};
+
 }  
 }  
 
