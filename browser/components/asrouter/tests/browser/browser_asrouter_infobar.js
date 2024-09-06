@@ -107,7 +107,7 @@ add_task(async function react_to_trigger() {
     "Notification has default priority"
   );
   
-  notificationStack.currentNotification.closeButtonEl.click();
+  notificationStack.currentNotification.closeButton.click();
 });
 
 add_task(async function dismiss_telemetry() {
@@ -128,7 +128,7 @@ add_task(async function dismiss_telemetry() {
   
   dispatchStub.reset();
 
-  infobar.notification.closeButtonEl.click();
+  infobar.notification.closeButton.click();
 
   await BrowserTestUtils.waitForCondition(
     () => infobar.notification === null,
@@ -204,7 +204,7 @@ add_task(async function prevent_multiple_messages() {
   Assert.equal(dispatchStub.callCount, 2, "Impression count did not increase");
 
   
-  infobar.notification.closeButtonEl.click();
+  infobar.notification.closeButton.click();
   Assert.equal(InfoBar._activeInfobar, null, "Cleared the active notification");
 
   
@@ -218,6 +218,6 @@ add_task(async function prevent_multiple_messages() {
   Assert.ok(InfoBar._activeInfobar, "activeInfobar is set");
   Assert.equal(dispatchStub.callCount, 2, "Called twice with IMPRESSION");
   
-  infobar.notification.closeButtonEl.click();
+  infobar.notification.closeButton.click();
   Assert.equal(InfoBar._activeInfobar, null, "Cleared the active notification");
 });

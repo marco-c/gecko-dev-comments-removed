@@ -1,4 +1,4 @@
-/* globals ProcessHangMonitor */
+
 
 const { WebExtensionPolicy } = Cu.getGlobalForObject(Services);
 
@@ -36,18 +36,18 @@ const SLOW_SCRIPT = 1;
 const ADDON_HANG = 3;
 const ADDON_ID = "fake-addon";
 
-/**
- * A mock nsIHangReport that we can pass through nsIObserverService
- * to trigger notifications.
- *
- * @param hangType
- *        One of SLOW_SCRIPT, ADDON_HANG.
- * @param browser (optional)
- *        The <xul:browser> that this hang should be associated with.
- *        If not supplied, the hang will be associated with every browser,
- *        but the nsIHangReport.scriptBrowser attribute will return the
- *        currently selected browser in this window's gBrowser.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 let TestHangReport = function (
   hangType = SLOW_SCRIPT,
   browser = gBrowser.selectedBrowser
@@ -57,7 +57,7 @@ let TestHangReport = function (
   });
 
   if (hangType == ADDON_HANG) {
-    // Add-on hangs need an associated add-on ID for us to blame.
+    
     this._addonId = ADDON_ID;
   }
 
@@ -91,19 +91,19 @@ TestHangReport.prototype = {
     return this._browser;
   },
 
-  // Shut up warnings about this property missing:
+  
   get scriptFileName() {
     return "chrome://browser/content/browser.js";
   },
 };
 
-// on dev edition we add a button for js debugging of hung scripts.
+
 let buttonCount =
   AppConstants.MOZ_DEV_EDITION || AppConstants.NIGHTLY_BUILD ? 2 : 1;
 
 add_setup(async function () {
-  // Create a fake WebExtensionPolicy that we can use for
-  // the add-on hang notification.
+  
+  
   const uuidGen = Services.uuid;
   const uuid = uuidGen.generateUUID().number.slice(1, -1);
   let policy = new WebExtensionPolicy({
@@ -121,10 +121,10 @@ add_setup(async function () {
   });
 });
 
-/**
- * Test if hang reports receive a terminate script callback when the user selects
- * stop in response to a script hang.
- */
+
+
+
+
 add_task(async function terminateScriptTest() {
   let promise = promiseNotificationShown(window, "process-hang");
   let hangReport = new TestHangReport();
@@ -137,7 +137,7 @@ add_task(async function terminateScriptTest() {
     );
   is(buttons.length, buttonCount, "proper number of buttons");
 
-  // Click the "Stop" button, we should get a terminate script callback
+  
   buttons[0].click();
   let action = await hangReport.promise;
   is(
@@ -147,10 +147,10 @@ add_task(async function terminateScriptTest() {
   );
 });
 
-/**
- * Test if hang reports receive user canceled callbacks after a user selects wait
- * and the browser frees up from a script hang on its own.
- */
+
+
+
+
 add_task(async function waitForScriptTest() {
   let hangReport = new TestHangReport();
   let promise = promiseNotificationShown(window, "process-hang");
@@ -183,10 +183,10 @@ add_task(async function waitForScriptTest() {
     }
   });
 
-  // Click the "Close" button this time, we shouldn't get a callback at all.
-  notification.currentNotification.closeButtonEl.click();
+  
+  notification.currentNotification.closeButton.click();
 
-  // send another hang pulse, we should not get a notification here
+  
   Services.obs.notifyObservers(hangReport, "process-hang-report");
   is(
     notification.currentNotification,
@@ -194,8 +194,8 @@ add_task(async function waitForScriptTest() {
     "no notification should be visible"
   );
 
-  // Make sure that any queued Promises have run to give our report-ignoring
-  // then() a chance to fire.
+  
+  
   await Promise.resolve();
 
   ignoringReport = false;
@@ -204,10 +204,10 @@ add_task(async function waitForScriptTest() {
   await popPrefs();
 });
 
-/**
- * Test if hang reports receive user canceled callbacks after the content
- * process stops sending hang notifications.
- */
+
+
+
+
 add_task(async function hangGoesAwayTest() {
   await pushPrefs(["browser.hangNotification.expiration", 1000]);
 
@@ -223,10 +223,10 @@ add_task(async function hangGoesAwayTest() {
   await popPrefs();
 });
 
-/**
- * Tests that if we're shutting down, any pre-existing hang reports will
- * be terminated appropriately.
- */
+
+
+
+
 add_task(async function terminateAtShutdown() {
   let pausedHang = new TestHangReport(SLOW_SCRIPT);
   Services.obs.notifyObservers(pausedHang, "process-hang-report");
@@ -243,12 +243,12 @@ add_task(async function terminateAtShutdown() {
     Services.obs.notifyObservers(hangReport, "process-hang-report");
   });
 
-  // Simulate the browser being told to shutdown. This should cause
-  // hangs to terminate scripts.
+  
+  
   ProcessHangMonitor.onQuitApplicationGranted();
 
-  // In case this test happens to throw before it can finish, make
-  // sure to reset the shutting-down state.
+  
+  
   registerCleanupFunction(() => {
     ProcessHangMonitor._shuttingDown = false;
   });
@@ -273,9 +273,9 @@ add_task(async function terminateAtShutdown() {
     "On shutdown, should have terminated script for add-on hang."
   );
 
-  // ProcessHangMonitor should now be in the "shutting down" state,
-  // meaning that any further hangs should be handled immediately
-  // without user interaction.
+  
+  
+  
   let scriptHang2 = new TestHangReport(SLOW_SCRIPT);
   let addonHang2 = new TestHangReport(ADDON_HANG);
 
@@ -300,11 +300,11 @@ add_task(async function terminateAtShutdown() {
   ProcessHangMonitor._shuttingDown = false;
 });
 
-/**
- * Test that if there happens to be no open browser windows, that any
- * hang reports that exist or appear while in this state will be handled
- * automatically.
- */
+
+
+
+
+
 add_task(async function terminateNoWindows() {
   let testWin = await BrowserTestUtils.openNewBrowserWindow();
 
@@ -326,15 +326,15 @@ add_task(async function terminateNoWindows() {
     Services.obs.notifyObservers(hangReport, "process-hang-report");
   });
 
-  // Quick and dirty hack to trick the window mediator into thinking there
-  // are no browser windows without actually closing all browser windows.
+  
+  
   document.documentElement.setAttribute(
     "windowtype",
     "navigator:browsertestdummy"
   );
 
-  // In case this test happens to throw before it can finish, make
-  // sure to reset this.
+  
+  
   registerCleanupFunction(() => {
     document.documentElement.setAttribute("windowtype", "navigator:browser");
   });
@@ -361,9 +361,9 @@ add_task(async function terminateNoWindows() {
     "With no open windows, should have terminated script for add-on hang."
   );
 
-  // ProcessHangMonitor should notice we're in the "no windows" state,
-  // so any further hangs should be handled immediately without user
-  // interaction.
+  
+  
+  
   let scriptHang2 = new TestHangReport(SLOW_SCRIPT);
   let addonHang2 = new TestHangReport(ADDON_HANG);
 
@@ -388,13 +388,13 @@ add_task(async function terminateNoWindows() {
   document.documentElement.setAttribute("windowtype", "navigator:browser");
 });
 
-/**
- * Test that if a script hang occurs in one browser window, and that
- * browser window goes away, that we clear the hang. For plug-in hangs,
- * we do the conservative thing and terminate any plug-in hangs when a
- * window closes, even though we don't exactly know which window it
- * belongs to.
- */
+
+
+
+
+
+
+
 add_task(async function terminateClosedWindow() {
   let testWin = await BrowserTestUtils.openNewBrowserWindow();
   let testBrowser = testWin.gBrowser.selectedBrowser;
@@ -437,33 +437,33 @@ add_task(async function terminateClosedWindow() {
   );
 });
 
-/**
- * Test that permitUnload (used for closing or discarding tabs) does not
- * try to talk to the hung child
- */
+
+
+
+
 add_task(async function permitUnload() {
   let testWin = await BrowserTestUtils.openNewBrowserWindow();
   let testTab = testWin.gBrowser.selectedTab;
 
-  // Ensure we don't close the window:
+  
   BrowserTestUtils.addTab(testWin.gBrowser, "about:blank");
 
-  // Set up the test tab and another tab so we can check what happens when
-  // they are closed:
+  
+  
   let otherTab = BrowserTestUtils.addTab(testWin.gBrowser, "about:blank");
   let permitUnloadCount = 0;
   for (let tab of [testTab, otherTab]) {
     let browser = tab.linkedBrowser;
-    // Fake before unload state:
+    
     Object.defineProperty(browser, "hasBeforeUnload", { value: true });
-    // Increment permitUnloadCount if we ask for unload permission:
+    
     browser.asyncPermitUnload = () => {
       permitUnloadCount++;
       return Promise.resolve({ permitUnload: true });
     };
   }
 
-  // Set up a hang for the selected tab:
+  
   let testBrowser = testTab.linkedBrowser;
   let pausedHang = new TestHangReport(SLOW_SCRIPT, testBrowser);
   Services.obs.notifyObservers(pausedHang, "process-hang-report");
