@@ -17,20 +17,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 
-
-
-
-
-
-
-
-
-
-#if !defined(ANDROID) || !defined(RELEASE_OR_BETA)
-#  define MOZ_LOGGING_ENABLED 1
-#else
-#  define MOZ_LOGGING_ENABLED 0
-#endif
+#define MOZ_LOGGING_ENABLED 1
 
 
 
