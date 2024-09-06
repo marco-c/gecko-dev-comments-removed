@@ -57,18 +57,18 @@ class RTC_EXPORT Candidate {
             absl::string_view foundation,
             uint16_t network_id = 0,
             uint16_t network_cost = 0);
-  
-  Candidate(int component,
-            absl::string_view protocol,
-            const rtc::SocketAddress& address,
-            uint32_t priority,
-            absl::string_view username,
-            absl::string_view password,
-            absl::string_view type ABSL_ATTRIBUTE_LIFETIME_BOUND,
-            uint32_t generation,
-            absl::string_view foundation,
-            uint16_t network_id = 0,
-            uint16_t network_cost = 0);
+  [[deprecated("Use IceCandidateType version")]] Candidate(
+      int component,
+      absl::string_view protocol,
+      const rtc::SocketAddress& address,
+      uint32_t priority,
+      absl::string_view username,
+      absl::string_view password,
+      absl::string_view type ABSL_ATTRIBUTE_LIFETIME_BOUND,
+      uint32_t generation,
+      absl::string_view foundation,
+      uint16_t network_id = 0,
+      uint16_t network_cost = 0);
   Candidate(const Candidate&);
   ~Candidate();
 
@@ -77,7 +77,10 @@ class RTC_EXPORT Candidate {
   
   void generate_id();
   
-  [[deprecated]] void set_id(absl::string_view id) { Assign(id_, id); }
+  [[deprecated("Use IceCandidateType version")]] void set_id(
+      absl::string_view id) {
+    Assign(id_, id);
+  }
 
   int component() const { return component_; }
   void set_component(int component) { component_ = component; }
@@ -124,8 +127,8 @@ class RTC_EXPORT Candidate {
   
   void set_type(webrtc::IceCandidateType type) { type_ = type; }
 
-  
-  void set_type(absl::string_view type ABSL_ATTRIBUTE_LIFETIME_BOUND);
+  [[deprecated("Use IceCandidateType version")]] void set_type(
+      absl::string_view type ABSL_ATTRIBUTE_LIFETIME_BOUND);
 
   
   

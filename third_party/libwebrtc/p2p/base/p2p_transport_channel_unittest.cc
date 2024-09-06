@@ -154,7 +154,7 @@ cricket::IceConfig CreateIceConfig(
   return config;
 }
 
-cricket::Candidate CreateUdpCandidate(absl::string_view type,
+cricket::Candidate CreateUdpCandidate(IceCandidateType type,
                                       absl::string_view ip,
                                       int port,
                                       int priority,
@@ -2128,9 +2128,9 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
   
   
   ep1_ch1()->AddRemoteCandidate(
-      CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   ep1_ch1()->AddRemoteCandidate(
-      CreateUdpCandidate(RELAY_PORT_TYPE, "2.2.2.2", 2, 0));
+      CreateUdpCandidate(IceCandidateType::kRelay, "2.2.2.2", 2, 0));
   
   
   EXPECT_TRUE_WAIT(ep1_ch1()->selected_connection() != nullptr, kShortTimeout);
@@ -2226,7 +2226,7 @@ TEST_F(P2PTransportChannelTest, PresumedWritablePreferredOverUnreliable) {
   
   
   ep1_ch1()->AddRemoteCandidate(
-      CreateUdpCandidate(RELAY_PORT_TYPE, "2.2.2.2", 2, 0));
+      CreateUdpCandidate(IceCandidateType::kRelay, "2.2.2.2", 2, 0));
   EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_relay());
   EXPECT_TRUE(ep1_ch1()->writable());
@@ -2252,7 +2252,7 @@ TEST_F(P2PTransportChannelTest, SignalReadyToSendWithPresumedWritable) {
   EXPECT_EQ_WAIT(IceGatheringState::kIceGatheringComplete,
                  ep1_ch1()->gathering_state(), kDefaultTimeout);
   ep1_ch1()->AddRemoteCandidate(
-      CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 0));
+      CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 0));
   
   EXPECT_TRUE_WAIT(ep1_ch1()->selected_connection() != nullptr, kShortTimeout);
   EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
@@ -3422,7 +3422,7 @@ class P2PTransportChannelPingTest : public ::testing::Test,
                                             int priority,
                                             bool writable) {
     channel->AddRemoteCandidate(
-        CreateUdpCandidate(LOCAL_PORT_TYPE, ip_addr, port, priority));
+        CreateUdpCandidate(IceCandidateType::kHost, ip_addr, port, priority));
     EXPECT_TRUE_SIMULATED_WAIT(
         GetConnectionTo(channel, ip_addr, port) != nullptr, kMediumTimeout,
         *clock);
@@ -3567,8 +3567,10 @@ TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
   P2PTransportChannel ch("trigger checks", 1, &pa, &field_trials_);
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
 
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
@@ -3592,8 +3594,10 @@ TEST_F(P2PTransportChannelPingTest, TestAllConnectionsPingedSufficiently) {
   P2PTransportChannel ch("ping sufficiently", 1, &pa, &field_trials_);
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
 
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
@@ -3621,7 +3625,8 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   P2PTransportChannel ch("TestChannel", 1, &pa, &field_trials_);
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
 
   ASSERT_TRUE(conn != nullptr);
@@ -3750,8 +3755,10 @@ TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
   P2PTransportChannel ch("trigger checks", 1, &pa, &field_trials_);
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
 
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
@@ -3777,7 +3784,8 @@ TEST_F(P2PTransportChannelPingTest, TestFailedConnectionNotPingable) {
                          &field_trials_);
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
 
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
@@ -3795,7 +3803,8 @@ TEST_F(P2PTransportChannelPingTest, TestSignalStateChanged) {
   P2PTransportChannel ch("state change", 1, &pa, &field_trials_);
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   
@@ -3818,8 +3827,8 @@ TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithVariousUfrags) {
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
   
-  ch.AddRemoteCandidate(
-      CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1, kIceUfrag[2]));
+  ch.AddRemoteCandidate(CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1",
+                                           1, 1, kIceUfrag[2]));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   const Candidate& candidate = conn1->remote_candidate();
@@ -3836,15 +3845,15 @@ TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithVariousUfrags) {
   EXPECT_EQ(conn1, FindNextPingableConnectionAndPingIt(&ch));
 
   
-  ch.AddRemoteCandidate(
-      CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2, kIceUfrag[1]));
+  ch.AddRemoteCandidate(CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2",
+                                           2, 2, kIceUfrag[1]));
   rtc::Thread::Current()->ProcessMessages(500);
   EXPECT_TRUE(GetConnectionTo(&ch, "2.2.2.2", 2) == nullptr);
 
   
   
-  ch.AddRemoteCandidate(
-      CreateUdpCandidate(LOCAL_PORT_TYPE, "3.3.3.3", 3, 0, kIceUfrag[2]));
+  ch.AddRemoteCandidate(CreateUdpCandidate(IceCandidateType::kHost, "3.3.3.3",
+                                           3, 0, kIceUfrag[2]));
   Connection* conn3 = nullptr;
   ASSERT_TRUE_WAIT((conn3 = GetConnectionTo(&ch, "3.3.3.3", 3)) != nullptr,
                    kMediumTimeout);
@@ -3872,14 +3881,16 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   ch.MaybeStartGathering();
 
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   uint32_t remote_priority = conn1->remote_candidate().priority();
 
   
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();
@@ -3931,7 +3942,8 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   EXPECT_EQ(500, ch.config().receiving_timeout_or_default());
   EXPECT_EQ(50, ch.check_receiving_interval());
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
 
@@ -3957,7 +3969,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   PrepareChannel(&ch);
   ch.SetIceRole(ICEROLE_CONTROLLED);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   
@@ -3978,7 +3991,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
 
   
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 10));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 10));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");
@@ -3993,7 +4007,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   
   
   EXPECT_EQ(len, SendData(&ch, data, len, ++last_packet_id));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "3.3.3.3", 3, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "3.3.3.3", 3, 1));
   Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   
@@ -4014,7 +4029,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   
   
   EXPECT_EQ(len, SendData(&ch, data, len, ++last_packet_id));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "4.4.4.4", 4, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "4.4.4.4", 4, 100));
   Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
   ASSERT_TRUE(conn4 != nullptr);
   EXPECT_EQ(conn3, ch.selected_connection());
@@ -4049,7 +4065,8 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnNomination) {
   ch.SetIceConfig(ch.config());
   ch.SetIceRole(ICEROLE_CONTROLLED);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
 
@@ -4060,7 +4077,8 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnNomination) {
 
   
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 10));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 10));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");
@@ -4091,7 +4109,8 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSwitch) {
   ch.SetIceConfig(ch.config());
   ch.SetIceRole(ICEROLE_CONTROLLING);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
 
@@ -4102,7 +4121,8 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSwitch) {
 
   
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 10));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 10));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
 
@@ -4130,7 +4150,8 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSelected) {
   ch.SetIceConfig(ch.config());
   ch.SetIceRole(ICEROLE_CONTROLLING);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
 
@@ -4176,7 +4197,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_EQ_WAIT(conn1, ch.selected_connection(), kDefaultTimeout);
 
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 1));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   
@@ -4236,7 +4258,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   PrepareChannel(&ch);
   ch.SetIceRole(ICEROLE_CONTROLLED);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 10));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 10));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   conn1->ReceivedPingResponse(LOW_RTT, "id");
@@ -4245,7 +4268,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   
   
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 1));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");  
@@ -4561,8 +4585,8 @@ TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithAddressReuse) {
   const int port_num = 1;
 
   
-  Candidate candidate = CreateUdpCandidate(LOCAL_PORT_TYPE, host_address,
-                                           port_num, 1, kIceUfrag[1]);
+  Candidate candidate = CreateUdpCandidate(
+      IceCandidateType::kHost, host_address, port_num, 1, kIceUfrag[1]);
   ch.AddRemoteCandidate(candidate);
   Connection* conn1 = WaitForConnectionTo(&ch, host_address, port_num);
   ASSERT_TRUE(conn1 != nullptr);
@@ -4599,7 +4623,8 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   PrepareChannel(&ch);
   ch.SetIceRole(ICEROLE_CONTROLLED);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
@@ -4607,7 +4632,8 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
 
   
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 10));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 10));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");  
@@ -4618,7 +4644,8 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   
   EXPECT_TRUE_SIMULATED_WAIT(!conn2->receiving(), kMediumTimeout, clock);
 
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "3.3.3.3", 3, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "3.3.3.3", 3, 1));
   Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3, &clock);
   ASSERT_TRUE(conn3 != nullptr);
   
@@ -4666,8 +4693,10 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   
   EXPECT_EQ(webrtc::IceTransportState::kNew, ch.GetIceTransportState());
   EXPECT_EQ(IceTransportState::STATE_INIT, ch.GetState());
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 1));
   
   ASSERT_GT(ch.connections().size(), 0u);
   EXPECT_EQ(webrtc::IceTransportState::kChecking, ch.GetIceTransportState());
@@ -4706,7 +4735,8 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   config.receiving_switching_delay = 800;
   ch.SetIceConfig(config);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
@@ -4718,7 +4748,8 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   
   
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 1));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_TRUE_SIMULATED_WAIT(!conn2->active(), kDefaultTimeout, clock);
@@ -4755,7 +4786,8 @@ TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   conn1->ReceivedPing();  
@@ -4763,11 +4795,13 @@ TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
   EXPECT_TRUE_SIMULATED_WAIT(ch.connections().empty(), kShortTimeout, clock);
 
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 1));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();  
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "3.3.3.3", 3, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "3.3.3.3", 3, 2));
   Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3, &clock);
   ASSERT_TRUE(conn3 != nullptr);
   conn3->ReceivedPing();  
@@ -4788,7 +4822,8 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   PrepareChannel(&ch);
   ch.SetIceConfig(CreateIceConfig(2000, GATHER_ONCE));
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   conn1->ReceivedPingResponse(LOW_RTT, "id");  
@@ -4805,7 +4840,8 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
 
   
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 100));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");  
@@ -4825,7 +4861,8 @@ TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnRemovedPort) {
   IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
   ch.SetIceConfig(config);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
 
   Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn != nullptr);
@@ -4850,7 +4887,8 @@ TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnPortAfterIceRestart) {
   
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
 
   Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn != nullptr);
@@ -4876,7 +4914,8 @@ TEST_F(P2PTransportChannelPingTest, TestPortDestroyedAfterTimeoutAndPruned) {
   PrepareChannel(&ch);
   ch.SetIceRole(ICEROLE_CONTROLLED);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
 
   Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn != nullptr);
@@ -4906,8 +4945,10 @@ TEST_F(P2PTransportChannelPingTest, TestMaxOutstandingPingsFieldTrial) {
   ch.SetIceConfig(ch.config());
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
 
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
@@ -4993,8 +5034,10 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   EXPECT_EQ(ch.ports()[0]->Type(), LOCAL_PORT_TYPE);
   EXPECT_EQ(ch.ports()[1]->Type(), RELAY_PORT_TYPE);
 
-  ch.AddRemoteCandidate(CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
 
   EXPECT_TRUE_WAIT(ch.connections().size() == 4, kDefaultTimeout);
 
@@ -5052,7 +5095,8 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   EXPECT_EQ(ch.ports()[0]->Type(), LOCAL_PORT_TYPE);
   EXPECT_EQ(ch.ports()[1]->Type(), RELAY_PORT_TYPE);
 
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   EXPECT_TRUE_WAIT(ch.connections().size() == 2, kDefaultTimeout);
 
   
@@ -5062,7 +5106,8 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
                                IceCandidateType::kHost);
 
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(RELAY_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kRelay, "2.2.2.2", 2, 2));
   EXPECT_TRUE_WAIT(ch.connections().size() == 4, kDefaultTimeout);
 
   
@@ -5088,7 +5133,8 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   EXPECT_EQ(ch.ports()[0]->Type(), LOCAL_PORT_TYPE);
   EXPECT_EQ(ch.ports()[1]->Type(), RELAY_PORT_TYPE);
 
-  ch.AddRemoteCandidate(CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 1));
   EXPECT_TRUE_WAIT(ch.connections().size() == 2, kDefaultTimeout);
 
   
@@ -5100,7 +5146,8 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
                                IceCandidateType::kRelay);
 
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
   EXPECT_TRUE_WAIT(ch.connections().size() == 4, kDefaultTimeout);
 
   
@@ -5130,11 +5177,13 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   EXPECT_EQ(ch.ports()[1]->Type(), RELAY_PORT_TYPE);
 
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 1));
   EXPECT_TRUE_WAIT(ch.connections().size() == 1, kDefaultTimeout);
 
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
   EXPECT_TRUE_WAIT(ch.connections().size() == 2, kDefaultTimeout);
 }
 
@@ -5155,7 +5204,8 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest, TestTcpTurn) {
   EXPECT_EQ(ch.ports()[2]->Type(), RELAY_PORT_TYPE);
 
   
-  ch.AddRemoteCandidate(CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 1));
   EXPECT_TRUE_WAIT(ch.connections().size() == 3, kDefaultTimeout);
 
   
@@ -5609,16 +5659,19 @@ TEST_F(P2PTransportChannelTest,
   
   
   cricket::Candidate host_candidate = CreateUdpCandidate(
-      LOCAL_PORT_TYPE, "1.1.1.1", 1 , 0 );
+      IceCandidateType::kHost, "1.1.1.1", 1 , 0 );
   ep1_ch1()->AddRemoteCandidate(host_candidate);
 
   std::vector<cricket::Candidate> mdns_candidates;
-  mdns_candidates.push_back(CreateUdpCandidate(LOCAL_PORT_TYPE, "example.local",
-                                               2 , 0 ));
-  mdns_candidates.push_back(CreateUdpCandidate(STUN_PORT_TYPE, "example.local",
-                                               3 , 0 ));
-  mdns_candidates.push_back(CreateUdpCandidate(RELAY_PORT_TYPE, "example.local",
-                                               4 , 0 ));
+  mdns_candidates.push_back(CreateUdpCandidate(IceCandidateType::kHost,
+                                               "example.local", 2 ,
+                                               0 ));
+  mdns_candidates.push_back(CreateUdpCandidate(IceCandidateType::kSrflx,
+                                               "example.local", 3 ,
+                                               0 ));
+  mdns_candidates.push_back(CreateUdpCandidate(IceCandidateType::kRelay,
+                                               "example.local", 4 ,
+                                               0 ));
   
   
   
@@ -5993,7 +6046,8 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening0) {
   ch.SetIceConfig(ch.config());
   ch.MaybeStartGathering();
 
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
@@ -6018,7 +6072,8 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening) {
   ch.SetIceConfig(ch.config());
   ch.MaybeStartGathering();
 
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
@@ -6044,7 +6099,8 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningPingReceived) {
   ch.SetIceConfig(ch.config());
   ch.MaybeStartGathering();
 
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
@@ -6073,7 +6129,8 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningBoth) {
   ch.SetIceConfig(ch.config());
   ch.MaybeStartGathering();
 
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
@@ -6177,8 +6234,10 @@ TEST_F(P2PTransportChannelPingTest, TestForgetLearnedState) {
 
   PrepareChannel(ch.get());
   ch->MaybeStartGathering();
-  ch->AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
-  ch->AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  ch->AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
+  ch->AddRemoteCandidate(
+      CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
 
   Connection* conn1 = WaitForConnectionTo(ch.get(), "1.1.1.1", 1);
   Connection* conn2 = WaitForConnectionTo(ch.get(), "2.2.2.2", 2);
@@ -6223,7 +6282,7 @@ TEST_F(P2PTransportChannelTest, DisableDnsLookupsWithTransportPolicyRelay) {
   CreateChannels();
 
   ep1_ch1()->AddRemoteCandidate(
-      CreateUdpCandidate(LOCAL_PORT_TYPE, "hostname.test", 1, 100));
+      CreateUdpCandidate(IceCandidateType::kHost, "hostname.test", 1, 100));
 
   DestroyChannels();
 }
@@ -6249,7 +6308,7 @@ TEST_F(P2PTransportChannelTest, DisableDnsLookupsWithTransportPolicyNone) {
   CreateChannels();
 
   ep1_ch1()->AddRemoteCandidate(
-      CreateUdpCandidate(LOCAL_PORT_TYPE, "hostname.test", 1, 100));
+      CreateUdpCandidate(IceCandidateType::kHost, "hostname.test", 1, 100));
 
   DestroyChannels();
 }
@@ -6276,7 +6335,7 @@ TEST_F(P2PTransportChannelTest, EnableDnsLookupsWithTransportPolicyNoHost) {
   CreateChannels();
 
   ep1_ch1()->AddRemoteCandidate(
-      CreateUdpCandidate(LOCAL_PORT_TYPE, "hostname.test", 1, 100));
+      CreateUdpCandidate(IceCandidateType::kHost, "hostname.test", 1, 100));
 
   EXPECT_TRUE(lookup_started);
 
