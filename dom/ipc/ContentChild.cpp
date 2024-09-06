@@ -1737,29 +1737,31 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
         ContentProcessSandboxParams::ForThisProcess(aBroker));
   }
 #  elif defined(XP_WIN)
-  
-  ::LoadLibraryW(L"avrt.dll");
-  
-  ::LoadLibraryW(L"freebl3.dll");
-  ::LoadLibraryW(L"softokn3.dll");
-  
-  ::LoadLibraryW(L"textshaping.dll");
-  
-  ::LoadLibraryW(L"mozavcodec.dll");
-  ::LoadLibraryW(L"mozavutil.dll");
-  ::LoadLibraryW(L"mfplat.dll");
-  ::LoadLibraryW(L"mf.dll");
-  ::LoadLibraryW(L"dxva2.dll");
-  ::LoadLibraryW(L"evr.dll");
-  ::LoadLibraryW(L"mfh264enc.dll");
-  
-  Unused << GetCpuFrequencyMHz();
+  if (GetEffectiveContentSandboxLevel() > 7) {
+    
+    ::LoadLibraryW(L"avrt.dll");
+    
+    ::LoadLibraryW(L"freebl3.dll");
+    ::LoadLibraryW(L"softokn3.dll");
+    
+    ::LoadLibraryW(L"textshaping.dll");
+    
+    ::LoadLibraryW(L"mozavcodec.dll");
+    ::LoadLibraryW(L"mozavutil.dll");
+    ::LoadLibraryW(L"mfplat.dll");
+    ::LoadLibraryW(L"mf.dll");
+    ::LoadLibraryW(L"dxva2.dll");
+    ::LoadLibraryW(L"evr.dll");
+    ::LoadLibraryW(L"mfh264enc.dll");
+    
+    Unused << GetCpuFrequencyMHz();
 #    if defined(DEBUG)
-  
-  ::LoadLibraryW(L"dbghelp.dll");
-  
-  ::LoadLibraryW(L"ole32.dll");
+    
+    ::LoadLibraryW(L"dbghelp.dll");
+    
+    ::LoadLibraryW(L"ole32.dll");
 #    endif
+  }
   mozilla::SandboxTarget::Instance()->StartSandbox();
 #  elif defined(XP_MACOSX)
   sandboxEnabled = (GetEffectiveContentSandboxLevel() >= 1);
