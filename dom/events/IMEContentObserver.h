@@ -548,6 +548,48 @@ class IMEContentObserver final : public nsStubMutationObserver,
     ComputeTextLengthOfRemovingContent(const nsIContent& aRemovingContent,
                                        const dom::Element* aRootElement);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] static Result<uint32_t, nsresult>
+    ComputeTextLengthBeforeContent(const nsIContent& aContent,
+                                   const dom::Element* aRootElement);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] static Result<uint32_t, nsresult>
+    ComputeTextLengthStartOfContentToEndOfContent(
+        const nsIContent& aStartContent, const nsIContent& aEndContent,
+        const dom::Element* aRootElement);
+
     [[nodiscard]] bool CachesTextLengthBeforeContent(
         const nsIContent& aContent) const {
       MOZ_ASSERT(!aContent.IsBeingRemoved());
