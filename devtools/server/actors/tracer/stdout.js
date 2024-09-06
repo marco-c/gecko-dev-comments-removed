@@ -6,6 +6,8 @@
 
 
 
+
+
 class StdoutTracingListener {
   constructor({ targetActor, traceValues, traceActor }) {
     this.targetActor = targetActor;
@@ -17,7 +19,9 @@ class StdoutTracingListener {
   
 
 
-  stop() {}
+  stop() {
+    
+  }
 
   
 
@@ -52,6 +56,8 @@ class StdoutTracingListener {
   }
 
   
+
+
 
 
 

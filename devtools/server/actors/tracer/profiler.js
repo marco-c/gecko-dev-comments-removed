@@ -7,6 +7,8 @@
 
 
 
+
+
 const DEFAULT_COLOR = "grey";
 
 
@@ -340,7 +342,11 @@ class ProfilerTracingListener {
 
 
 
+
+
   onTracingDOMMutation({ depth, prefix, type, caller, element }) {
+    
+    
     return false;
   }
 
@@ -358,6 +364,7 @@ class ProfilerTracingListener {
 
 
   onTracingFrameStep({ frame, depth, prefix }) {
+    
     return false;
   }
 

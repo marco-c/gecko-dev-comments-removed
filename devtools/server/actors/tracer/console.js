@@ -160,6 +160,8 @@ class ConsoleTracingListener {
 
 
 
+
+
   onTracingDOMMutation({ depth, prefix, type, caller, element }) {
     const dbgObj = makeDebuggeeValue(this.targetActor, element);
     const frameIndex = this.#getFrameIndex(
