@@ -159,7 +159,6 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
     eSpinButtonDown,  
     eSegment,         
     eSeparator,
-    eToolbar,    
     eStatusBar,  
     eGroupBox,
     eTextField,           
@@ -203,9 +202,6 @@ class nsNativeThemeCocoa : public mozilla::widget::ThemeCocoa {
     }
     static WidgetInfo Separator() {
       return WidgetInfo(Widget::eSeparator, false);
-    }
-    static WidgetInfo Toolbar(bool aParams) {
-      return WidgetInfo(Widget::eToolbar, aParams);
     }
     static WidgetInfo StatusBar(bool aParams) {
       return WidgetInfo(Widget::eStatusBar, aParams);

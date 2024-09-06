@@ -118,6 +118,9 @@ class LookAndFeel {
     MacRTL,
 
     
+    MacTitlebarHeight,
+
+    
 
 
 

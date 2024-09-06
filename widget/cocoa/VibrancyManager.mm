@@ -30,18 +30,21 @@ static NSVisualEffectState VisualEffectStateForVibrancyType(
       
       
       return NSVisualEffectStateActive;
-    default:
-      return NSVisualEffectStateFollowsWindowActiveState;
+    case VibrancyType::TITLEBAR:
+      break;
   }
+  return NSVisualEffectStateFollowsWindowActiveState;
 }
 
 static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(
-    VibrancyType aType, BOOL* aOutIsEmphasized) {
+    VibrancyType aType) {
   switch (aType) {
     case VibrancyType::TOOLTIP:
       return (NSVisualEffectMaterial)NSVisualEffectMaterialToolTip;
     case VibrancyType::MENU:
       return NSVisualEffectMaterialMenu;
+    case VibrancyType::TITLEBAR:
+      return NSVisualEffectMaterialTitlebar;
   }
 }
 
@@ -53,11 +56,11 @@ static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(
 
   self.appearance = nil;
   self.state = VisualEffectStateForVibrancyType(mType);
-
-  BOOL isEmphasized = NO;
-  self.material = VisualEffectMaterialForVibrancyType(mType, &isEmphasized);
-  self.emphasized = isEmphasized;
-
+  self.material = VisualEffectMaterialForVibrancyType(mType);
+  self.emphasized = NO;
+  self.blendingMode = aType == VibrancyType::TITLEBAR
+                          ? NSVisualEffectBlendingModeWithinWindow
+                          : NSVisualEffectBlendingModeBehindWindow;
   return self;
 }
 
@@ -89,7 +92,7 @@ bool VibrancyManager::UpdateVibrantRegion(
   }
   auto& vr = *mVibrantRegions.GetOrInsertNew(uint32_t(aType));
   return vr.UpdateRegion(aRegion, mCoordinateConverter, mContainerView, ^() {
-    return this->CreateEffectView(aType);
+    return CreateEffectView(aType);
   });
 }
 
