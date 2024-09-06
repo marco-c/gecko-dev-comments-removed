@@ -7328,11 +7328,14 @@ static void AppendScrollPositionsForSnap(
   switch (styleDisplay->mScrollSnapAlign.block) {
     case StyleScrollSnapAlignKeyword::None:
       break;
-    case StyleScrollSnapAlignKeyword::Start:
-      blockDirectionPosition.emplace(
-          writingMode.IsVerticalRL() ? -logicalTargetRect.BStart(writingMode)
-                                     : logicalTargetRect.BStart(writingMode));
+    case StyleScrollSnapAlignKeyword::Start: {
+      nscoord candidate = std::clamp(logicalTargetRect.BStart(writingMode),
+                                     logicalScrollRange.BStart(writingMode),
+                                     logicalScrollRange.BEnd(writingMode));
+      blockDirectionPosition.emplace(writingMode.IsVerticalRL() ? -candidate
+                                                                : candidate);
       break;
+    }
     case StyleScrollSnapAlignKeyword::End: {
       nscoord candidate = std::clamp(
           
@@ -7369,12 +7372,14 @@ static void AppendScrollPositionsForSnap(
   switch (styleDisplay->mScrollSnapAlign.inline_) {
     case StyleScrollSnapAlignKeyword::None:
       break;
-    case StyleScrollSnapAlignKeyword::Start:
+    case StyleScrollSnapAlignKeyword::Start: {
+      nscoord candidate = std::clamp(logicalTargetRect.IStart(writingMode),
+                                     logicalScrollRange.IStart(writingMode),
+                                     logicalScrollRange.IEnd(writingMode));
       inlineDirectionPosition.emplace(
-          writingMode.IsInlineReversed()
-              ? -logicalTargetRect.IStart(writingMode)
-              : logicalTargetRect.IStart(writingMode));
+          writingMode.IsInlineReversed() ? -candidate : candidate);
       break;
+    }
     case StyleScrollSnapAlignKeyword::End: {
       nscoord candidate = std::clamp(
           
