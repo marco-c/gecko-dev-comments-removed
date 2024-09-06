@@ -301,10 +301,19 @@ static_assert(kMaxConnectionThreadCount, "Must have at least one thread!");
 
 
 
-const uint32_t kMaxIdleConnectionThreadCount = 2;
+
+const uint32_t kMaxIdleConnectionThreadCount = 1;
 
 static_assert(kMaxConnectionThreadCount >= kMaxIdleConnectionThreadCount,
               "Idle thread limit must be less than total thread limit!");
+
+
+
+const uint32_t kConnectionThreadMaxIdleMS = 30 * 1000;  
+
+
+
+const uint32_t kConnectionThreadGraceIdleMS = 500;  
 
 
 
@@ -314,9 +323,6 @@ const uint32_t kConnectionIdleMaintenanceMS = 2 * 1000;
 
 
 const uint32_t kConnectionIdleCloseMS = 10 * 1000;  
-
-
-const uint32_t kConnectionThreadIdleMS = 30 * 1000;  
 
 #define SAVEPOINT_CLAUSE "SAVEPOINT sp;"_ns
 
@@ -6576,7 +6582,10 @@ already_AddRefed<nsIThreadPool> MakeConnectionIOTarget() {
       threadPool->SetIdleThreadLimit(kMaxIdleConnectionThreadCount));
 
   MOZ_ALWAYS_SUCCEEDS(
-      threadPool->SetIdleThreadMaximumTimeout(kConnectionThreadIdleMS));
+      threadPool->SetIdleThreadMaximumTimeout(kConnectionThreadMaxIdleMS));
+
+  MOZ_ALWAYS_SUCCEEDS(
+      threadPool->SetIdleThreadGraceTimeout(kConnectionThreadGraceIdleMS));
 
   MOZ_ALWAYS_SUCCEEDS(threadPool->SetName("IndexedDB IO"_ns));
 
