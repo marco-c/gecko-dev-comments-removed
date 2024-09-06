@@ -1,11 +1,12 @@
+
 import sys
 from textwrap import dedent
 from typing import Generator
 from typing import List
 from typing import Optional
 
-import pytest
 from _pytest.pytester import Pytester
+import pytest
 
 
 @pytest.fixture()
@@ -94,12 +95,14 @@ def test_clean_up(pytester: Pytester) -> None:
     after: Optional[List[str]] = None
 
     class Plugin:
-        @pytest.hookimpl(hookwrapper=True, tryfirst=True)
+        @pytest.hookimpl(wrapper=True, tryfirst=True)
         def pytest_unconfigure(self) -> Generator[None, None, None]:
             nonlocal before, after
             before = sys.path.copy()
-            yield
-            after = sys.path.copy()
+            try:
+                return (yield)
+            finally:
+                after = sys.path.copy()
 
     result = pytester.runpytest_inprocess(plugins=[Plugin()])
     assert result.ret == 0

@@ -2,12 +2,13 @@ from typing import List
 from typing import Optional
 from typing import TYPE_CHECKING
 
-import pytest
 from _pytest import nodes
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from _pytest.main import Session
 from _pytest.reports import TestReport
+import pytest
+
 
 if TYPE_CHECKING:
     from _pytest.cacheprovider import Cache
@@ -23,7 +24,7 @@ def pytest_addoption(parser: Parser) -> None:
         action="store_true",
         default=False,
         dest="stepwise",
-        help="exit on test failure and continue from last failing test next time",
+        help="Exit on test failure and continue from last failing test next time",
     )
     group.addoption(
         "--sw-skip",
@@ -31,8 +32,8 @@ def pytest_addoption(parser: Parser) -> None:
         action="store_true",
         default=False,
         dest="stepwise_skip",
-        help="ignore the first failing test but stop on the next failing test.\n"
-        "implicitly enables --stepwise.",
+        help="Ignore the first failing test but stop on the next failing test. "
+        "Implicitly enables --stepwise.",
     )
 
 
@@ -48,6 +49,10 @@ def pytest_configure(config: Config) -> None:
 def pytest_sessionfinish(session: Session) -> None:
     if not session.config.getoption("stepwise"):
         assert session.config.cache is not None
+        if hasattr(session.config, "workerinput"):
+            
+            
+            return
         
         session.config.cache.set(STEPWISE_CACHE_DIR, [])
 
@@ -119,4 +124,8 @@ class StepwisePlugin:
         return None
 
     def pytest_sessionfinish(self) -> None:
+        if hasattr(self.config, "workerinput"):
+            
+            
+            return
         self.cache.set(STEPWISE_CACHE_DIR, self.lastfailed)

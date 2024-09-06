@@ -15,15 +15,14 @@
 
 
 
-import ast
 import os
 import shutil
 import sys
 from textwrap import dedent
-from typing import List
 from typing import TYPE_CHECKING
 
 from _pytest import __version__ as version
+
 
 if TYPE_CHECKING:
     import sphinx.application
@@ -38,6 +37,7 @@ release = ".".join(version.split(".")[:2])
 
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
 todo_include_todos = 1
 
 latex_engine = "lualatex"
@@ -162,12 +162,56 @@ linkcheck_workers = 5
 
 _repo = "https://github.com/pytest-dev/pytest"
 extlinks = {
-    "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
-    "pypi": ("https://pypi.org/project/%s/", ""),
-    "issue": (f"{_repo}/issues/%s", "issue #"),
-    "pull": (f"{_repo}/pull/%s", "pull request #"),
-    "user": ("https://github.com/%s", "@"),
+    "bpo": ("https://bugs.python.org/issue%s", "bpo-%s"),
+    "pypi": ("https://pypi.org/project/%s/", "%s"),
+    "issue": (f"{_repo}/issues/%s", "issue #%s"),
+    "pull": (f"{_repo}/pull/%s", "pull request #%s"),
+    "user": ("https://github.com/%s", "@%s"),
 }
+
+
+nitpicky = True
+nitpick_ignore = [
+    
+    ("py:class", "HookCaller"),
+    ("py:class", "HookspecMarker"),
+    ("py:exc", "PluginValidationError"),
+    
+    ("py:class", "ExceptionRepr"),
+    ("py:class", "Exit"),
+    ("py:class", "SubRequest"),
+    ("py:class", "SubRequest"),
+    ("py:class", "TerminalReporter"),
+    ("py:class", "_pytest._code.code.TerminalRepr"),
+    ("py:class", "_pytest.fixtures.FixtureFunctionMarker"),
+    ("py:class", "_pytest.logging.LogCaptureHandler"),
+    ("py:class", "_pytest.mark.structures.ParameterSet"),
+    
+    ("py:class", "_pytest._code.code.Traceback"),
+    ("py:class", "_pytest._py.path.LocalPath"),
+    ("py:class", "_pytest.capture.CaptureResult"),
+    ("py:class", "_pytest.compat.NotSetType"),
+    ("py:class", "_pytest.python.PyCollector"),
+    ("py:class", "_pytest.python.PyobjMixin"),
+    ("py:class", "_pytest.python_api.RaisesContext"),
+    ("py:class", "_pytest.recwarn.WarningsChecker"),
+    ("py:class", "_pytest.reports.BaseReport"),
+    
+    ("py:class", "_tracing.TagTracerSub"),
+    ("py:class", "warnings.WarningMessage"),
+    
+    ("py:class", "LEGACY_PATH"),
+    ("py:class", "_PluggyPlugin"),
+    
+    ("py:class", "_pytest._code.code.E"),
+    ("py:class", "_pytest.fixtures.FixtureFunction"),
+    ("py:class", "_pytest.nodes._NodeType"),
+    ("py:class", "_pytest.python_api.E"),
+    ("py:class", "_pytest.recwarn.T"),
+    ("py:class", "_pytest.runner.TResult"),
+    ("py:obj", "_pytest.fixtures.FixtureValue"),
+    ("py:obj", "_pytest.stash.T"),
+]
 
 
 
@@ -247,7 +291,7 @@ html_sidebars = {
 html_domain_indices = True
 
 
-html_use_index = True
+html_use_index = False
 
 
 
@@ -320,7 +364,9 @@ latex_domain_indices = False
 
 
 
-man_pages = [("usage", "pytest", "pytest usage", ["holger krekel at merlinux eu"], 1)]
+man_pages = [
+    ("how-to/usage", "pytest", "pytest usage", ["holger krekel at merlinux eu"], 1)
+]
 
 
 
@@ -382,7 +428,6 @@ texinfo_documents = [
 ]
 
 
-
 intersphinx_mapping = {
     "pluggy": ("https://pluggy.readthedocs.io/en/stable", None),
     "python": ("https://docs.python.org/3", None),
@@ -390,18 +435,16 @@ intersphinx_mapping = {
     "pip": ("https://pip.pypa.io/en/stable", None),
     "tox": ("https://tox.wiki/en/stable", None),
     "virtualenv": ("https://virtualenv.pypa.io/en/stable", None),
-    "django": (
-        "http://docs.djangoproject.com/en/stable",
-        "http://docs.djangoproject.com/en/stable/_objects",
-    ),
     "setuptools": ("https://setuptools.pypa.io/en/stable", None),
+    "packaging": ("https://packaging.python.org/en/latest", None),
 }
 
 
 def configure_logging(app: "sphinx.application.Sphinx") -> None:
     """Configure Sphinx's WarningHandler to handle (expected) missing include."""
-    import sphinx.util.logging
     import logging
+
+    import sphinx.util.logging
 
     class WarnLogFilter(logging.Filter):
         def filter(self, record: logging.LogRecord) -> bool:
@@ -422,8 +465,6 @@ def configure_logging(app: "sphinx.application.Sphinx") -> None:
 
 
 def setup(app: "sphinx.application.Sphinx") -> None:
-    
-    
     app.add_crossref_type(
         "fixture",
         "fixture",
@@ -453,25 +494,6 @@ def setup(app: "sphinx.application.Sphinx") -> None:
     )
 
     configure_logging(app)
-
-    
-    
-    
-    
-    
-    import sphinx.pycode.ast
-    import sphinx.pycode.parser
-
-    original_is_final = sphinx.pycode.parser.VariableCommentPicker.is_final
-
-    def patched_is_final(self, decorators: List[ast.expr]) -> bool:
-        if original_is_final(self, decorators):
-            return True
-        return any(
-            sphinx.pycode.ast.unparse(decorator) == "final" for decorator in decorators
-        )
-
-    sphinx.pycode.parser.VariableCommentPicker.is_final = patched_is_final
 
     
     

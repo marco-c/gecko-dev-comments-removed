@@ -1,6 +1,12 @@
 
 
 from importlib import metadata
+from pathlib import Path
+
+
+
+
+PROJECT_ROOT_DIR = Path(__file__).parents[1].resolve()
 
 
 
@@ -13,8 +19,7 @@ linkcheck_ignore = [
     
     r"https://github.com/.*/(issues|pull)/\d+",
     
-    "https://github.com/microsoft/pyright/blob/main/specs/"
-    "dataclass_transforms.md#attrs",
+    "https://github.com/python-attrs/attrs/tree/.*",
 ]
 
 
@@ -30,13 +35,20 @@ nitpick_ignore = [
 
 
 extensions = [
+    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "notfound.extension",
+    "sphinxcontrib.towncrier",
 ]
 
+myst_enable_extensions = [
+    "colon_fence",
+    "smartquotes",
+    "deflist",
+]
 
 
 templates_path = ["_templates"]
@@ -58,8 +70,11 @@ copyright = f"2015, {author}"
 
 
 release = metadata.version("attrs")
-
-version = release.rsplit(".", 1)[0]
+if "dev" in release:
+    release = version = "UNRELEASED"
+else:
+    
+    version = release.rsplit(".", 1)[0]
 
 
 
@@ -82,7 +97,14 @@ html_theme_options = {
     "sidebar_hide_name": True,
     "light_logo": "attrs_logo.svg",
     "dark_logo": "attrs_logo_white.svg",
+    "top_of_page_button": None,
+    "light_css_variables": {
+        "font-stack": "Inter,sans-serif",
+        "font-stack--monospace": "BerkeleyMono, MonoLisa, ui-monospace, "
+        "SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace",
+    },
 }
+html_css_files = ["custom.css"]
 
 
 
@@ -147,9 +169,15 @@ texinfo_documents = [
 
 epub_description = "Python Clases Without Boilerplate"
 
-intersphinx_mapping = {
-    "https://docs.python.org/3": None,
-}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 
 
 suppress_warnings = ["image.nonlocal_uri"]
+
+
+
+
+towncrier_draft_autoversion_mode = "draft"
+towncrier_draft_include_empty = True
+towncrier_draft_working_directory = PROJECT_ROOT_DIR
+towncrier_draft_config_path = "pyproject.toml"

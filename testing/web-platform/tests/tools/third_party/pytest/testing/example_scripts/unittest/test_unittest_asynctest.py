@@ -1,4 +1,6 @@
+
 """Issue #7110"""
+
 import asyncio
 from typing import List
 

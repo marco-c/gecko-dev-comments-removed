@@ -1,6 +1,7 @@
 
 
 import attr
+import attrs
 
 
 @attr.define()
@@ -20,6 +21,7 @@ class DefineConverter:
 
 reveal_type(DefineConverter.__init__)  
 
+DefineConverter(with_converter=b"42")
 
 
 @attr.frozen()
@@ -33,7 +35,6 @@ d.a = "new"
 reveal_type(d.a)  
 
 
-
 @attr.define(frozen=True)
 class FrozenDefine:
     a: str
@@ -43,3 +44,20 @@ d2 = FrozenDefine("a")
 d2.a = "new"
 
 reveal_type(d2.a)  
+
+
+
+@attrs.define
+class AliasedField:
+    _a: int = attrs.field(alias="_a")
+
+
+af = AliasedField(42)
+
+reveal_type(af.__init__)  
+
+
+
+@attrs.define(unsafe_hash=True)
+class Hashable:
+    pass

@@ -1,5 +1,6 @@
 """Provides a function to report all internal modules for using freezing
 tools."""
+
 import types
 from typing import Iterator
 from typing import List
@@ -34,7 +35,7 @@ def _iter_all_modules(
     else:
         
         
-        package_path = package.__path__  
+        package_path = package.__path__
         path, prefix = package_path[0], package.__name__ + "."
     for _, name, is_package in pkgutil.iter_modules([path]):
         if is_package:

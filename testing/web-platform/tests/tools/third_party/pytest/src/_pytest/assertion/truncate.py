@@ -1,12 +1,14 @@
 """Utilities for truncating assertion output.
 
 Current default behaviour is to truncate assertion explanations at
-~8 terminal lines, unless running in "-vv" mode or running on CI.
+terminal lines, unless running with an assertions verbosity level of at least 2 or running on CI.
 """
+
 from typing import List
 from typing import Optional
 
 from _pytest.assertion import util
+from _pytest.config import Config
 from _pytest.nodes import Item
 
 
@@ -26,7 +28,7 @@ def truncate_if_required(
 
 def _should_truncate_item(item: Item) -> bool:
     """Whether or not this test item is eligible for truncation."""
-    verbose = item.config.option.verbose
+    verbose = item.config.get_verbosity(Config.VERBOSITY_ASSERTIONS)
     return verbose < 2 and not util.running_on_ci()
 
 
@@ -38,9 +40,9 @@ def _truncate_explanation(
     """Truncate given list of strings that makes up the assertion explanation.
 
     Truncates to either 8 lines, or 640 characters - whichever the input reaches
-    first. The remaining lines will be replaced by a usage message.
+    first, taking the truncation explanation into account. The remaining lines
+    will be replaced by a usage message.
     """
-
     if max_lines is None:
         max_lines = DEFAULT_MAX_LINES
     if max_chars is None:
@@ -48,35 +50,57 @@ def _truncate_explanation(
 
     
     input_char_count = len("".join(input_lines))
-    if len(input_lines) <= max_lines and input_char_count <= max_chars:
-        return input_lines
-
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    tolerable_max_chars = (
+        max_chars + 70  
+    )
+    
+    tolerable_max_lines = max_lines + 2
+    if (
+        len(input_lines) <= tolerable_max_lines
+        and input_char_count <= tolerable_max_chars
+    ):
+        return input_lines
     
     truncated_explanation = input_lines[:max_lines]
-    truncated_explanation = _truncate_by_char_count(truncated_explanation, max_chars)
-
+    truncated_char = True
     
-    truncated_explanation[-1] = truncated_explanation[-1] + "..."
-
-    
-    truncated_line_count = len(input_lines) - len(truncated_explanation)
-    truncated_line_count += 1  
-    msg = "...Full output truncated"
-    if truncated_line_count == 1:
-        msg += f" ({truncated_line_count} line hidden)"
+    if len("".join(truncated_explanation)) > tolerable_max_chars:
+        truncated_explanation = _truncate_by_char_count(
+            truncated_explanation, max_chars
+        )
     else:
-        msg += f" ({truncated_line_count} lines hidden)"
-    msg += f", {USAGE_MSG}"
-    truncated_explanation.extend(["", str(msg)])
-    return truncated_explanation
+        truncated_char = False
+
+    truncated_line_count = len(input_lines) - len(truncated_explanation)
+    if truncated_explanation[-1]:
+        
+        truncated_explanation[-1] = truncated_explanation[-1] + "..."
+        if truncated_char:
+            
+            truncated_line_count += 1
+    else:
+        
+        truncated_explanation[-1] = "..."
+    return [
+        *truncated_explanation,
+        "",
+        f"...Full output truncated ({truncated_line_count} line"
+        f"{'' if truncated_line_count == 1 else 's'} hidden), {USAGE_MSG}",
+    ]
 
 
 def _truncate_by_char_count(input_lines: List[str], max_chars: int) -> List[str]:
-    
-    if len("".join(input_lines)) <= max_chars:
-        return input_lines
-
     
     iterated_char_count = 0
     for iterated_index, input_line in enumerate(input_lines):
