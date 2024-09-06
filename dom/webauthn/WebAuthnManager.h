@@ -48,10 +48,13 @@ namespace mozilla::dom {
 
 class Credential;
 
+enum class WebAuthnTransactionType { Create, Get };
+
 class WebAuthnTransaction {
  public:
-  explicit WebAuthnTransaction(const RefPtr<Promise>& aPromise)
-      : mPromise(aPromise), mId(NextId()) {
+  explicit WebAuthnTransaction(const RefPtr<Promise>& aPromise,
+                               WebAuthnTransactionType aType)
+      : mPromise(aPromise), mId(NextId()), mType(aType) {
     MOZ_ASSERT(mId > 0);
   }
 
@@ -60,6 +63,8 @@ class WebAuthnTransaction {
 
   
   uint64_t mId;
+
+  WebAuthnTransactionType mType;
 
  private:
   
@@ -125,15 +130,12 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
   }
 
   
+  void ResolveTransaction(const RefPtr<PublicKeyCredential>& aCredential);
+
+  
   
   template <typename T>
-  void RejectTransaction(const T& aReason) {
-    if (!NS_WARN_IF(mTransaction.isNothing())) {
-      mTransaction.ref().mPromise->MaybeReject(aReason);
-    }
-
-    ClearTransaction();
-  }
+  void RejectTransaction(const T& aReason);
 
   
   void CancelParent();
