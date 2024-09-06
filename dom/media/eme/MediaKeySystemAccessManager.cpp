@@ -68,33 +68,6 @@ void MediaKeySystemAccessManager::PendingRequest::RejectPromiseWithTypeError(
   }
 }
 
-void MediaKeySystemAccessManager::PendingRequest::ResolvePromise(
-    MediaKeySystemAccess* aAccess) {
-  if (mPromise) {
-    mPromise->MaybeResolve(aAccess);
-  }
-}
-
-void MediaKeySystemAccessManager::PendingRequestWithMozPromise::
-    RejectPromiseWithInvalidAccessError(const nsACString& aReason) {
-  mAccessPromise.RejectIfExists(NS_ERROR_FAILURE, __func__);
-}
-
-void MediaKeySystemAccessManager::PendingRequestWithMozPromise::
-    RejectPromiseWithNotSupportedError(const nsACString& aReason) {
-  mAccessPromise.RejectIfExists(NS_ERROR_FAILURE, __func__);
-}
-
-void MediaKeySystemAccessManager::PendingRequestWithMozPromise::
-    RejectPromiseWithTypeError(const nsACString& aReason) {
-  mAccessPromise.RejectIfExists(NS_ERROR_FAILURE, __func__);
-}
-
-void MediaKeySystemAccessManager::PendingRequestWithMozPromise::ResolvePromise(
-    MediaKeySystemAccess* aAccess) {
-  mAccessPromise.ResolveIfExists(aAccess, __func__);
-}
-
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(MediaKeySystemAccessManager)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIObserver)
   NS_INTERFACE_MAP_ENTRY(nsIObserver)
@@ -157,18 +130,6 @@ void MediaKeySystemAccessManager::Request(
       MakeUnique<PendingRequest>(aPromise, aKeySystem, aConfigs));
 }
 
-RefPtr<MediaKeySystemAccessManager::MediaKeySystemAccessPromise>
-MediaKeySystemAccessManager::Request(
-    const nsAString& aKeySystem,
-    const Sequence<MediaKeySystemConfiguration>& aConfigs) {
-  MOZ_ASSERT(NS_IsMainThread());
-  auto request = MakeUnique<PendingRequestWithMozPromise>(aKeySystem, aConfigs);
-  RefPtr<MediaKeySystemAccessPromise> promise =
-      request->mAccessPromise.Ensure(__func__);
-  CheckDoesWindowSupportProtectedMedia(std::move(request));
-  return promise;
-}
-
 void MediaKeySystemAccessManager::CheckDoesWindowSupportProtectedMedia(
     UniquePtr<PendingRequest> aRequest) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -185,8 +146,8 @@ void MediaKeySystemAccessManager::CheckDoesWindowSupportProtectedMedia(
     if (!XRE_IsParentProcess() || XRE_IsE10sParentProcess()) {
       
       
-      aRequest->RejectPromiseWithTypeError(
-          "Browsing context is no longer available"_ns);
+      aRequest->mPromise->MaybeRejectWithTypeError(
+          "Browsing context is no longer available");
     } else {
       
       
@@ -387,7 +348,7 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
   
   
   if (aRequest->mKeySystem.IsEmpty()) {
-    aRequest->RejectPromiseWithTypeError("Key system string is empty"_ns);
+    aRequest->mPromise->MaybeRejectWithTypeError("Key system string is empty");
     
     
     return;
@@ -395,8 +356,8 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
   
   
   if (aRequest->mConfigs.IsEmpty()) {
-    aRequest->RejectPromiseWithTypeError(
-        "Candidate MediaKeySystemConfigs is empty"_ns);
+    aRequest->mPromise->MaybeRejectWithTypeError(
+        "Candidate MediaKeySystemConfigs is empty");
     
     
     return;
@@ -573,7 +534,7 @@ void MediaKeySystemAccessManager::ProvideAccess(
 
   RefPtr<MediaKeySystemAccess> access(new MediaKeySystemAccess(
       mWindow, aRequest->mKeySystem, aRequest->mSupportedConfig.ref()));
-  aRequest->ResolvePromise(access);
+  aRequest->mPromise->MaybeResolve(access);
   diagnostics.StoreMediaKeySystemAccess(mWindow->GetExtantDoc(),
                                         aRequest->mKeySystem, true, __func__);
 }
