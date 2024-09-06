@@ -541,7 +541,12 @@ var FullPageTranslationsPanel = new (class {
     
     intro.hidden = true;
 
-    if (TranslationsPanelShared.getLangListsInitState(panel) === "error") {
+    if (
+      TranslationsPanelShared.getLangListsInitState(
+        panel,
+        gBrowser.selectedBrowser.innerWindowID
+      ) === "error"
+    ) {
       
       
       const { cancelButton, errorHintAction } = this.elements;
