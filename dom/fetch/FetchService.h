@@ -84,11 +84,13 @@ class FetchService final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
+  
   struct NavigationPreloadArgs {
     SafeRefPtr<InternalRequest> mRequest;
     nsCOMPtr<nsIChannel> mChannel;
   };
 
+  
   struct WorkerFetchArgs {
     SafeRefPtr<InternalRequest> mRequest;
     mozilla::ipc::PrincipalInfo mPrincipalInfo;
@@ -104,11 +106,33 @@ class FetchService final : public nsIObserver {
     bool mIsThirdPartyContext;
   };
 
+  
+  
+  
+  
+  
+  struct MainThreadFetchArgs {
+    SafeRefPtr<InternalRequest> mRequest;
+    mozilla::ipc::PrincipalInfo mPrincipalInfo;
+    Maybe<net::CookieJarSettingsArgs> mCookieJarSettings;
+    bool mNeedOnDataAvailable;
+    nsCOMPtr<nsICSPEventListener> mCSPEventListener;
+    uint64_t mAssociatedBrowsingContextID;
+    nsCOMPtr<nsISerialEventTarget> mEventTarget;
+    nsID mActorID;
+  };
+
   struct UnknownArgs {};
 
-  using FetchArgs =
-      Variant<NavigationPreloadArgs, WorkerFetchArgs, UnknownArgs>;
+  using FetchArgs = Variant<NavigationPreloadArgs, WorkerFetchArgs,
+                            MainThreadFetchArgs, UnknownArgs>;
 
+  enum class FetchArgsType {
+    NavigationPreload,
+    WorkerFetch,
+    MainThreadFetch,
+    Unknown,
+  };
   static already_AddRefed<FetchService> GetInstance();
 
   static RefPtr<FetchServicePromises> NetworkErrorResponse(
@@ -160,6 +184,8 @@ class FetchService final : public nsIObserver {
 
    private:
     ~FetchInstance() = default;
+    nsCOMPtr<nsISerialEventTarget> GetBackgroundEventTarget();
+    nsID GetActorID();
 
     SafeRefPtr<InternalRequest> mRequest;
     nsCOMPtr<nsIPrincipal> mPrincipal;
@@ -170,7 +196,8 @@ class FetchService final : public nsIObserver {
     RefPtr<FetchDriver> mFetchDriver;
     SafeRefPtr<InternalResponse> mResponse;
     RefPtr<FetchServicePromises> mPromises;
-    bool mIsWorkerFetch{false};
+
+    FetchArgsType mArgsType;
   };
 
   ~FetchService();
