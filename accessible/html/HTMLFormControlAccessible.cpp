@@ -751,6 +751,8 @@ role HTMLProgressAccessible::NativeRole() const { return roles::PROGRESSBAR; }
 
 uint64_t HTMLProgressAccessible::NativeState() const {
   uint64_t state = LeafAccessible::NativeState();
+  
+  state |= states::READONLY;
 
   
   nsAutoString attrValue;

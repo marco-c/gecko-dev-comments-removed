@@ -718,3 +718,27 @@ addAccessibleTask(
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
 );
+
+
+
+
+addAccessibleTask(
+  `
+<progress id="htmlProgress"></progress>
+<div id="ariaProgress" role="progressbar">ariaProgress</div>
+<div id="ariaProgressRoFalse" role="progressbar" aria-readonly="false">ariaProgressRoFalse</div>
+  `,
+  async function testProgressBarReadOnly(browser, docAcc) {
+    const htmlProgress = findAccessibleChildByID(docAcc, "htmlProgress");
+    testStates(htmlProgress, STATE_READONLY);
+    const ariaProgress = findAccessibleChildByID(docAcc, "ariaProgress");
+    testStates(ariaProgress, STATE_READONLY);
+    
+    const ariaProgressRoFalse = findAccessibleChildByID(
+      docAcc,
+      "ariaProgressRoFalse"
+    );
+    testStates(ariaProgressRoFalse, STATE_READONLY);
+  },
+  { chrome: true, topLevel: true }
+);
