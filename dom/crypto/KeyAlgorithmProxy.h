@@ -55,7 +55,7 @@ struct RsaHashedKeyAlgorithmStorage {
 
 
 struct KeyAlgorithmProxy {
-  enum KeyAlgorithmType { AES, HMAC, RSA, EC, KDF };
+  enum KeyAlgorithmType { AES, HMAC, RSA, EC, KDF, ED };
   KeyAlgorithmType mType;
 
   
@@ -66,6 +66,7 @@ struct KeyAlgorithmProxy {
   RsaHashedKeyAlgorithmStorage mRsa;
   EcKeyAlgorithm mEc;
   KeyAlgorithm mKDF;
+  KeyAlgorithm mEd;
 
   
   bool WriteStructuredClone(JSStructuredCloneWriter* aWriter) const;
@@ -120,6 +121,12 @@ struct KeyAlgorithmProxy {
     mName = aName;
     mEc.mName = aName;
     mEc.mNamedCurve = aNamedCurve;
+  }
+
+  void MakeEd(const nsString& aName) {
+    mType = ED;
+    mName = aName;
+    mEd.mName = aName;
   }
 };
 
