@@ -457,6 +457,39 @@ impl Parse for AnchorScope {
 }
 
 
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum PositionAnchor {
+    
+    Auto,
+    
+    Ident(DashedIdent),
+}
+
+impl PositionAnchor {
+    
+    pub fn auto() -> Self {
+        Self::Auto
+    }
+
+    
+    pub fn is_auto(&self) -> bool {
+        *self == Self::Auto
+    }
+}
+
+
 pub trait Side {
     
     fn start() -> Self;
