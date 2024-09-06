@@ -87,7 +87,13 @@ async function getPreparedAsyncDatabase() {
 
 
 
-async function createCopy(connection) {
+
+
+
+
+
+
+async function createCopy(connection, pagesPerStep, stepDelayMs) {
   let destFilePath = PathUtils.join(PathUtils.profileDir, BACKUP_FILE_NAME);
   let destFile = await IOUtils.getFile(destFilePath);
   Assert.ok(
@@ -96,10 +102,15 @@ async function createCopy(connection) {
   );
 
   await new Promise(resolve => {
-    connection.backupToFileAsync(destFile, result => {
-      Assert.ok(Components.isSuccessCode(result));
-      resolve(result);
-    });
+    connection.backupToFileAsync(
+      destFile,
+      result => {
+        Assert.ok(Components.isSuccessCode(result));
+        resolve(result);
+      },
+      pagesPerStep,
+      stepDelayMs
+    );
   });
 
   return destFile;
@@ -121,7 +132,7 @@ async function assertSuccessfulCopy(file, expectedEntries = TEST_ROWS) {
 
   await executeSimpleSQLAsync(conn, "PRAGMA page_size", resultSet => {
     let result = resultSet.getNextRow();
-    Assert.equal(TEST_PAGE_SIZE, result.getResultByIndex(0).getAsUint32());
+    Assert.equal(TEST_PAGE_SIZE, result.getResultByIndex(0));
   });
 
   let stmt = conn.createAsyncStatement("SELECT COUNT(*) FROM test");
@@ -193,6 +204,36 @@ add_task(async function test_backupToFileAsync_during_insert() {
 
 
 
+
+add_task(async function test_backupToFileAsync_during_insert() {
+  let newConnection = await getPreparedAsyncDatabase();
+
+  
+  let copyFile = await createCopy(newConnection, 15, 500);
+  Assert.ok(
+    await IOUtils.exists(copyFile.path),
+    "A new file was created by backupToFileAsync"
+  );
+
+  await assertSuccessfulCopy(copyFile);
+  await IOUtils.remove(copyFile.path);
+
+  
+  copyFile = await createCopy(newConnection, 1, 25);
+  Assert.ok(
+    await IOUtils.exists(copyFile.path),
+    "A new file was created by backupToFileAsync"
+  );
+
+  await assertSuccessfulCopy(copyFile);
+  await IOUtils.remove(copyFile.path);
+
+  await asyncClose(newConnection);
+});
+
+
+
+
 add_task(async function test_backupToFileAsync_via_Sqlite_module() {
   let xpcomConnection = await getPreparedAsyncDatabase();
   let moduleConnection = await Sqlite.openConnection({
@@ -206,6 +247,13 @@ add_task(async function test_backupToFileAsync_via_Sqlite_module() {
 
   await assertSuccessfulCopy(copyFile);
   await IOUtils.remove(copyFile.path);
+
+  
+  await moduleConnection.backup(copyFilePath, 15, 500);
+  Assert.ok(await IOUtils.exists(copyFilePath), "A new file was created");
+  await assertSuccessfulCopy(copyFile);
+  await IOUtils.remove(copyFile.path);
+
   await moduleConnection.close();
   await asyncClose(xpcomConnection);
 });
