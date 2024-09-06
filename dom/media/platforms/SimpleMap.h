@@ -44,6 +44,14 @@ class SimpleMap {
     MutexAutoLock lock(mMutex);
     mMap.Clear();
   }
+  
+  template <typename F>
+  void ForEach(F&& aCallback) {
+    MutexAutoLock lock(mMutex);
+    for (const auto& element : mMap) {
+      aCallback(element.first, element.second);
+    }
+  }
 
  private:
   Mutex mMutex MOZ_UNANNOTATED;  
