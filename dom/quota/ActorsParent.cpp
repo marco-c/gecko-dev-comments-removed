@@ -2387,6 +2387,18 @@ void QuotaManager::Shutdown() {
   
   
   
+  
+  
+  ClearPrivateRepository();
+
+  
+  
+  
+  
+  
+  
+  
+  
   ShutdownStorage();
 
   flagShutdownStarted();
