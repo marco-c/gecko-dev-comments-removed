@@ -507,6 +507,12 @@ class SnapshotIterator {
     return val.toNumber();
   }
 
+  JSString* readString() {
+    Value val = read();
+    MOZ_RELEASE_ASSERT(val.isString());
+    return val.toString();
+  }
+
   
   
   
