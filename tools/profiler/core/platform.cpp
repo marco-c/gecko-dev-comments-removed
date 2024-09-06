@@ -5326,13 +5326,6 @@ static ProfilingStack* locked_register_thread(
 
       if (ActivePS::FeatureJS(aLock)) {
         lockedRWFromAnyThread->StartJSSampling(ActivePS::JSFlags(aLock));
-        if (ThreadRegistration::LockedRWOnThread* lockedRWOnThread =
-                lockedRWFromAnyThread.GetLockedRWOnThread();
-            lockedRWOnThread) {
-          
-          
-          lockedRWOnThread->PollJSSampling();
-        }
         if (lockedRWFromAnyThread->GetJSContext()) {
           profiledThreadData->NotifyReceivedJSContext(
               ActivePS::Buffer(aLock).BufferRangeEnd());
@@ -5614,6 +5607,20 @@ void profiler_init_signal_handlers() {
 }
 #endif
 
+static void PollJSSamplingForCurrentThread() {
+  
+  
+  MOZ_ASSERT(!PSAutoLock::IsLockedOnCurrentThread());
+
+  ThreadRegistration::WithOnThreadRef(
+      [](ThreadRegistration::OnThreadRef aOnThreadRef) {
+        aOnThreadRef.WithLockedRWOnThread(
+            [](ThreadRegistration::LockedRWOnThread& aThreadData) {
+              aThreadData.PollJSSampling();
+            });
+      });
+}
+
 void profiler_init(void* aStackTop) {
   LOG("profiler_init");
 
@@ -5834,6 +5841,8 @@ void profiler_init(void* aStackTop) {
                           filters.length(), activeTabID, duration);
   }
 
+  PollJSSamplingForCurrentThread();
+
   
   
   profiler_mark_thread_awake();
@@ -5910,6 +5919,8 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown) {
 
     CorePS::Destroy(lock);
   }
+
+  PollJSSamplingForCurrentThread();
 
   
   
@@ -6203,16 +6214,6 @@ Maybe<ProfilerBufferInfo> profiler_get_buffer_info() {
   return Some(ActivePS::Buffer(lock).GetProfilerBufferInfo());
 }
 
-static void PollJSSamplingForCurrentThread() {
-  ThreadRegistration::WithOnThreadRef(
-      [](ThreadRegistration::OnThreadRef aOnThreadRef) {
-        aOnThreadRef.WithLockedRWOnThread(
-            [](ThreadRegistration::LockedRWOnThread& aThreadData) {
-              aThreadData.PollJSSampling();
-            });
-      });
-}
-
 
 
 
@@ -6363,13 +6364,7 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
       lockedThreadData->GetNewCpuTimeInNs();
       if (ActivePS::FeatureJS(aLock)) {
         lockedThreadData->StartJSSampling(ActivePS::JSFlags(aLock));
-        if (ThreadRegistration::LockedRWOnThread* lockedRWOnThread =
-                lockedThreadData.GetLockedRWOnThread();
-            lockedRWOnThread) {
-          
-          
-          lockedRWOnThread->PollJSSampling();
-        } else if (info.IsMainThread()) {
+        if (!lockedThreadData.GetLockedRWOnThread() && info.IsMainThread()) {
           
           
           
@@ -6474,6 +6469,8 @@ RefPtr<GenericPromise> profiler_start(PowerOfTwo32 aCapacity, double aInterval,
                           aFilterCount, aActiveTabID, aDuration);
   }
 
+  PollJSSamplingForCurrentThread();
+
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
   if (ProfilerFeature::ShouldInstallMemoryHooks(aFeatures)) {
     
@@ -6540,6 +6537,8 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
     }
   }
 
+  PollJSSamplingForCurrentThread();
+
   
   
   if (samplerThread) {
@@ -6592,13 +6591,8 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
 
     if (ActivePS::FeatureJS(aLock)) {
       lockedThreadData->StopJSSampling();
-      if (ThreadRegistration::LockedRWOnThread* lockedRWOnThread =
-              lockedThreadData.GetLockedRWOnThread();
-          lockedRWOnThread) {
-        
-        
-        lockedRWOnThread->PollJSSampling();
-      } else if (lockedThreadData->Info().IsMainThread()) {
+      if (!lockedThreadData.GetLockedRWOnThread() &&
+          lockedThreadData->Info().IsMainThread()) {
         
         
         
@@ -6660,6 +6654,8 @@ RefPtr<GenericPromise> profiler_stop() {
 
     samplerThread = locked_profiler_stop(lock);
   }
+
+  PollJSSamplingForCurrentThread();
 
   
   
@@ -6949,20 +6945,24 @@ void ThreadRegistry::Register(ThreadRegistration::OnThreadRef aOnThreadRef) {
         aOnThreadRef.UnlockedConstReaderCRef().Info().Name());
   }
 
-  PSAutoLock lock;
-
   {
-    RegistryLockExclusive lock{sRegistryMutex};
-    MOZ_RELEASE_ASSERT(sRegistryContainer.append(OffThreadRef{aOnThreadRef}));
+    PSAutoLock lock;
+
+    {
+      RegistryLockExclusive lock{sRegistryMutex};
+      MOZ_RELEASE_ASSERT(sRegistryContainer.append(OffThreadRef{aOnThreadRef}));
+    }
+
+    if (!CorePS::Exists()) {
+      
+      
+      return;
+    }
+
+    (void)locked_register_thread(lock, OffThreadRef{aOnThreadRef});
   }
 
-  if (!CorePS::Exists()) {
-    
-    
-    return;
-  }
-
-  (void)locked_register_thread(lock, OffThreadRef{aOnThreadRef});
+  PollJSSamplingForCurrentThread();
 }
 
 void profiler_unregister_thread() {
@@ -7482,10 +7482,6 @@ void profiler_set_js_context(JSContext* aCx) {
                 return;
               }
 
-              
-              
-              aThreadData.PollJSSampling();
-
               if (ProfiledThreadData* profiledThreadData =
                       aThreadData.GetProfiledThreadData(lock);
                   profiledThreadData) {
@@ -7494,6 +7490,10 @@ void profiler_set_js_context(JSContext* aCx) {
               }
             });
       });
+
+  
+  
+  PollJSSamplingForCurrentThread();
 }
 
 void profiler_clear_js_context() {
@@ -7508,14 +7508,21 @@ void profiler_clear_js_context() {
         }
 
         
-        PSAutoLock lock;
-        ThreadRegistration::OnThreadRef::RWOnThreadWithLock lockedThreadData =
-            aOnThreadRef.GetLockedRWOnThread();
+        {
+          PSAutoLock lock;
+          ThreadRegistration::OnThreadRef::RWOnThreadWithLock lockedThreadData =
+              aOnThreadRef.GetLockedRWOnThread();
 
-        if (ProfiledThreadData* profiledThreadData =
-                lockedThreadData->GetProfiledThreadData(lock);
-            profiledThreadData && ActivePS::Exists(lock) &&
-            ActivePS::FeatureJS(lock)) {
+          ProfiledThreadData* profiledThreadData =
+              lockedThreadData->GetProfiledThreadData(lock);
+          if (!(profiledThreadData && ActivePS::Exists(lock) &&
+                ActivePS::FeatureJS(lock))) {
+            
+            
+            lockedThreadData->ClearJSContext();
+            return;
+          }
+
           profiledThreadData->NotifyAboutToLoseJSContext(
               cx, CorePS::ProcessStartTime(), ActivePS::Buffer(lock));
 
@@ -7523,17 +7530,22 @@ void profiler_clear_js_context() {
           
           
           lockedThreadData->StopJSSampling();
-          lockedThreadData->PollJSSampling();
+        }
+
+        
+        
+        PollJSSamplingForCurrentThread();
+
+        {
+          PSAutoLock lock;
+          ThreadRegistration::OnThreadRef::RWOnThreadWithLock lockedThreadData =
+              aOnThreadRef.GetLockedRWOnThread();
 
           lockedThreadData->ClearJSContext();
 
           
           
           lockedThreadData->StartJSSampling(ActivePS::JSFlags(lock));
-        } else {
-          
-          
-          lockedThreadData->ClearJSContext();
         }
       });
 }
