@@ -89,15 +89,8 @@ inline nsresult nsresultForErrno(int aErr) {
     case EROFS: 
       return NS_ERROR_FILE_READ_ONLY;
 #endif
-      
-
-
-
-
-#if ENOTEMPTY != EEXIST
     case ENOTEMPTY:
       return NS_ERROR_FILE_DIR_NOT_EMPTY;
-#endif 
     
 
 

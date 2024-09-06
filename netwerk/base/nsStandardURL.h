@@ -139,7 +139,6 @@ class nsStandardURL : public nsIFileURL,
   static void InitGlobalObjects();
   static void ShutdownGlobalObjects();
 
- public: 
   
   
   
@@ -171,6 +170,7 @@ class nsStandardURL : public nsIFileURL,
     }
   };
 
+ public:
   
   
   
