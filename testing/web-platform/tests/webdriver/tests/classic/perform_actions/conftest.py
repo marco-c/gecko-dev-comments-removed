@@ -1,4 +1,5 @@
 import pytest
+import time
 
 from webdriver.error import NoSuchWindowException
 
@@ -59,10 +60,21 @@ def wheel_chain(session):
 
 
 @pytest.fixture(autouse=True)
-def release_actions(session, request):
+def release_actions(session):
     
     
-    request.addfinalizer(session.actions.release)
+    yield
+
+    
+    
+    
+    if (
+        session.capabilities["browserName"] == "firefox"
+        and session.capabilities["platformName"] == "windows"
+    ):
+        time.sleep(0.1)
+
+    session.actions.release()
 
 
 @pytest.fixture
