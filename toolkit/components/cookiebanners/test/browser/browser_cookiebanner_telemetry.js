@@ -86,7 +86,7 @@ async function reloadBrowser(browser, url) {
   let reloaded = BrowserTestUtils.browserLoaded(browser, false, url);
 
   
-  window.BrowserReload();
+  window.BrowserCommands.reload();
 
   await reloaded;
 }

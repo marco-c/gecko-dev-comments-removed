@@ -41,7 +41,7 @@ add_task(async function testTempPermissionOnReload() {
     reloaded = BrowserTestUtils.browserLoaded(browser, false, origin);
 
     
-    BrowserReload();
+    BrowserCommands.reload();
 
     await reloaded;
 

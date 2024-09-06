@@ -108,7 +108,7 @@ ChromeUtils.defineLazyGetter(this, "fxAccounts", () => {
 
 XPCOMUtils.defineLazyScriptGetter(
   this,
-  "BrowserCommands",
+  ["BrowserCommands", "kSkipCacheFlags"],
   "chrome://browser/content/browser-commands.js"
 );
 
@@ -2630,7 +2630,7 @@ function HandleAppCommandEvent(evt) {
       BrowserCommands.forward();
       break;
     case "Reload":
-      BrowserReloadSkipCache();
+      BrowserCommands.reloadSkipCache();
       break;
     case "Stop":
       if (XULBrowserWindow.stopCommand.getAttribute("disabled") != "true") {
@@ -2679,42 +2679,6 @@ function HandleAppCommandEvent(evt) {
 
 function BrowserStop() {
   gBrowser.webNavigation.stop(Ci.nsIWebNavigation.STOP_ALL);
-}
-
-function BrowserReloadOrDuplicate(aEvent) {
-  aEvent = getRootEvent(aEvent);
-  let accelKeyPressed =
-    AppConstants.platform == "macosx" ? aEvent.metaKey : aEvent.ctrlKey;
-  var backgroundTabModifier = aEvent.button == 1 || accelKeyPressed;
-
-  if (aEvent.shiftKey && !backgroundTabModifier) {
-    BrowserReloadSkipCache();
-    return;
-  }
-
-  let where = whereToOpenLink(aEvent, false, true);
-  if (where == "current") {
-    BrowserReload();
-  } else {
-    duplicateTabIn(gBrowser.selectedTab, where);
-  }
-}
-
-function BrowserReload() {
-  if (gBrowser.currentURI.schemeIs("view-source")) {
-    
-    return BrowserReloadSkipCache();
-  }
-  const reloadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-  BrowserReloadWithFlags(reloadFlags);
-}
-
-const kSkipCacheFlags =
-  Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_PROXY |
-  Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
-function BrowserReloadSkipCache() {
-  
-  BrowserReloadWithFlags(kSkipCacheFlags);
 }
 
 function BrowserHome(aEvent) {
@@ -3413,84 +3377,6 @@ function getDefaultHomePage() {
 
 function BrowserFullScreen() {
   window.fullScreen = !window.fullScreen || BrowserHandler.kiosk;
-}
-
-function BrowserReloadWithFlags(reloadFlags) {
-  let unchangedRemoteness = [];
-
-  for (let tab of gBrowser.selectedTabs) {
-    let browser = tab.linkedBrowser;
-    let url = browser.currentURI;
-    let urlSpec = url.spec;
-    
-    
-    
-    let principal = tab.linkedBrowser.contentPrincipal;
-    if (gBrowser.updateBrowserRemotenessByURL(browser, urlSpec)) {
-      
-      
-      
-      if (tab.linkedPanel) {
-        loadBrowserURI(browser, url, principal);
-      } else {
-        
-        
-        tab.addEventListener(
-          "SSTabRestoring",
-          () => loadBrowserURI(browser, url, principal),
-          { once: true }
-        );
-        gBrowser._insertBrowser(tab);
-      }
-    } else {
-      unchangedRemoteness.push(tab);
-    }
-  }
-
-  if (!unchangedRemoteness.length) {
-    return;
-  }
-
-  
-  
-  
-  for (let tab of unchangedRemoteness) {
-    SitePermissions.clearTemporaryBlockPermissions(tab.linkedBrowser);
-    
-    delete tab.linkedBrowser.authPromptAbuseCounter;
-  }
-  gIdentityHandler.hidePopup();
-  gPermissionPanel.hidePopup();
-
-  let handlingUserInput = document.hasValidTransientUserGestureActivation;
-
-  for (let tab of unchangedRemoteness) {
-    if (tab.linkedPanel) {
-      sendReloadMessage(tab);
-    } else {
-      
-      
-      tab.addEventListener("SSTabRestoring", () => sendReloadMessage(tab), {
-        once: true,
-      });
-      gBrowser._insertBrowser(tab);
-    }
-  }
-
-  function loadBrowserURI(browser, url, principal) {
-    browser.loadURI(url, {
-      flags: reloadFlags,
-      triggeringPrincipal: principal,
-    });
-  }
-
-  function sendReloadMessage(tab) {
-    tab.linkedBrowser.sendMessageToActor(
-      "Browser:Reload",
-      { flags: reloadFlags, handlingUserInput },
-      "BrowserTab"
-    );
-  }
 }
 
 
@@ -7224,7 +7110,9 @@ function handleDroppedLink(
 
 function BrowserForceEncodingDetection() {
   gBrowser.selectedBrowser.forceEncodingDetection();
-  BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_CHARSET_CHANGE);
+  BrowserCommands.reloadWithFlags(
+    Ci.nsIWebNavigation.LOAD_FLAGS_CHARSET_CHANGE
+  );
 }
 
 var ToolbarContextMenu = {

@@ -456,7 +456,9 @@ var gIdentityHandler = {
     );
 
     
-    BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
+    BrowserCommands.reloadWithFlags(
+      Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
+    );
     if (this._popupInitialized) {
       PanelMultiView.hidePopup(this._identityPopup);
     }
@@ -475,7 +477,7 @@ var gIdentityHandler = {
       "mixed-content"
     );
     if (reload) {
-      BrowserReload();
+      BrowserCommands.reload();
     }
     if (this._popupInitialized) {
       PanelMultiView.hidePopup(this._identityPopup);
@@ -496,7 +498,7 @@ var gIdentityHandler = {
       port,
       gBrowser.contentPrincipal.originAttributes
     );
-    BrowserReloadSkipCache();
+    BrowserCommands.reloadSkipCache();
     if (this._popupInitialized) {
       PanelMultiView.hidePopup(this._identityPopup);
     }
@@ -611,7 +613,7 @@ var gIdentityHandler = {
     
     
     if (newValue + oldValue !== 3) {
-      BrowserReloadSkipCache();
+      BrowserCommands.reloadSkipCache();
       if (this._popupInitialized) {
         PanelMultiView.hidePopup(this._identityPopup);
       }
