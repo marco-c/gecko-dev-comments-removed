@@ -112,21 +112,21 @@ DOMHighResTimeStamp PerformanceNavigationTiming::LoadEventEnd() const {
   REDUCE_TIME_PRECISION;
 }
 
-NavigationTimingType PerformanceNavigationTiming::Type() const {
+NavigationType PerformanceNavigationTiming::Type() const {
   switch (mPerformance->GetDOMTiming()->GetType()) {
     case nsDOMNavigationTiming::TYPE_NAVIGATE:
-      return NavigationTimingType::Navigate;
+      return NavigationType::Navigate;
       break;
     case nsDOMNavigationTiming::TYPE_RELOAD:
-      return NavigationTimingType::Reload;
+      return NavigationType::Reload;
       break;
     case nsDOMNavigationTiming::TYPE_BACK_FORWARD:
-      return NavigationTimingType::Back_forward;
+      return NavigationType::Back_forward;
       break;
     default:
       
       
-      return NavigationTimingType::Navigate;
+      return NavigationType::Navigate;
   }
 }
 
