@@ -31,6 +31,9 @@ var calendarNotification = getNotificationObject(
 
 
 function startNotificationDB() {
+  ChromeUtils.importESModule(
+    "resource://gre/modules/MemoryNotificationDB.sys.mjs"
+  );
   ChromeUtils.importESModule("resource://gre/modules/NotificationDB.sys.mjs");
 }
 
