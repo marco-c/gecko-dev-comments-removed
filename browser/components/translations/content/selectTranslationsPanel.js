@@ -441,6 +441,7 @@ var SelectTranslationsPanel = new (class {
 
   #handleCommandEvent(target) {
     const {
+      copyButton,
       doneButton,
       fromMenuList,
       fromMenuPopup,
@@ -451,6 +452,10 @@ var SelectTranslationsPanel = new (class {
       tryAnotherSourceMenuPopup,
     } = this.elements;
     switch (target.id) {
+      case copyButton.id: {
+        this.onClickCopyButton();
+        break;
+      }
       case doneButton.id: {
         this.close();
         break;
@@ -576,11 +581,42 @@ var SelectTranslationsPanel = new (class {
   
 
 
+  onClickCopyButton() {
+    this.#checkCopyButton();
+  }
+
+  
+
+
   onClickTranslateButton() {
     const { fromMenuList, tryAnotherSourceMenuList } = this.elements;
     fromMenuList.value = tryAnotherSourceMenuList.value;
     this.#deselectLanguage(tryAnotherSourceMenuList);
     this.#maybeRequestTranslation();
+  }
+
+  
+
+
+  #checkCopyButton() {
+    const { copyButton } = this.elements;
+    copyButton.classList.add("copied");
+    document.l10n.setAttributes(
+      copyButton,
+      "select-translations-panel-copy-button-copied"
+    );
+  }
+
+  
+
+
+  #uncheckCopyButton() {
+    const { copyButton } = this.elements;
+    copyButton.classList.remove("copied");
+    document.l10n.setAttributes(
+      copyButton,
+      "select-translations-panel-copy-button"
+    );
   }
 
   
@@ -860,6 +896,31 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  #handleCopyButtonChanges(phase) {
+    switch (phase) {
+      case "closed":
+      case "translated": {
+        this.#uncheckCopyButton();
+        break;
+      }
+      case "idle":
+      case "translatable":
+      case "translating":
+      case "unsupported": {
+        
+        break;
+      }
+      default: {
+        throw new Error(`Invalid state change to '${phase}'`);
+      }
+    }
+  }
+
+  
+
+
+
+
   #handleTextAreaBackgroundChanges(phase) {
     const { textArea } = this.elements;
     switch (phase) {
@@ -1035,6 +1096,7 @@ var SelectTranslationsPanel = new (class {
   #updatePanelUIFromState() {
     const phase = this.phase();
     this.#handlePrimaryUIChanges(phase);
+    this.#handleCopyButtonChanges(phase);
     this.#handleTextAreaBackgroundChanges(phase);
   }
 
@@ -1043,15 +1105,21 @@ var SelectTranslationsPanel = new (class {
 
   #showMainContent() {
     const {
+      copyButton,
+      doneButton,
       mainContent,
       unsupportedLanguageContent,
-      doneButton,
       translateButton,
       translateFullPageButton,
     } = this.elements;
     this.#setPanelElementAttributes({
       makeHidden: [unsupportedLanguageContent, translateButton],
-      makeVisible: [mainContent, doneButton, translateFullPageButton],
+      makeVisible: [
+        mainContent,
+        copyButton,
+        doneButton,
+        translateFullPageButton,
+      ],
       addDefault: [doneButton],
       removeDefault: [translateButton],
     });
@@ -1062,14 +1130,15 @@ var SelectTranslationsPanel = new (class {
 
   #showUnsupportedLanguageContent() {
     const {
+      copyButton,
+      doneButton,
       mainContent,
       unsupportedLanguageContent,
-      doneButton,
       translateButton,
       translateFullPageButton,
     } = this.elements;
     this.#setPanelElementAttributes({
-      makeHidden: [mainContent, translateFullPageButton],
+      makeHidden: [mainContent, copyButton, translateFullPageButton],
       makeVisible: [unsupportedLanguageContent, doneButton, translateButton],
       addDefault: [translateButton],
       removeDefault: [doneButton],
