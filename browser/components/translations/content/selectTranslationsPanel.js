@@ -26,6 +26,13 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
+
+
+
+
+
+
+
 var SelectTranslationsPanel = new (class {
   
   #console;
@@ -54,6 +61,8 @@ var SelectTranslationsPanel = new (class {
   
 
 
+
+
   #shortTextHeight = "8em";
 
   
@@ -68,6 +77,8 @@ var SelectTranslationsPanel = new (class {
   
 
 
+
+
   #longTextHeight = "16em";
 
   
@@ -80,6 +91,8 @@ var SelectTranslationsPanel = new (class {
   }
 
   
+
+
 
 
 
@@ -283,11 +296,7 @@ var SelectTranslationsPanel = new (class {
 
 
   async #ensureLangListsBuilt() {
-    await TranslationsPanelShared.ensureLangListsBuilt(
-      document,
-      this.elements.panel,
-      gBrowser.selectedBrowser.innerWindowID
-    );
+    await TranslationsPanelShared.ensureLangListsBuilt(document, this);
   }
 
   

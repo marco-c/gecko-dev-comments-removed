@@ -195,6 +195,13 @@ class CheckboxPageAction {
 
 
 
+
+
+
+
+
+
+
 var FullPageTranslationsPanel = new (class {
   
   #console;
@@ -407,11 +414,7 @@ var FullPageTranslationsPanel = new (class {
    */
   async #ensureLangListsBuilt() {
     try {
-      await TranslationsPanelShared.ensureLangListsBuilt(
-        document,
-        this.elements.panel,
-        gBrowser.selectedBrowser.innerWindowID
-      );
+      await TranslationsPanelShared.ensureLangListsBuilt(document, this);
     } catch (error) {
       this.console?.error(error);
     }
@@ -541,12 +544,7 @@ var FullPageTranslationsPanel = new (class {
     
     intro.hidden = true;
 
-    if (
-      TranslationsPanelShared.getLangListsInitState(
-        panel,
-        gBrowser.selectedBrowser.innerWindowID
-      ) === "error"
-    ) {
+    if (TranslationsPanelShared.getLangListsInitState(this) === "error") {
       
       
       const { cancelButton, errorHintAction } = this.elements;
