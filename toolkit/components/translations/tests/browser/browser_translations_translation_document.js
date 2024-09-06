@@ -1115,23 +1115,13 @@ add_task(async function test_tables() {
   cleanup();
 });
 
-
-add_task(async function test_attributes() {
+add_task(async function test_basic_attributes() {
   const { translate, htmlMatches, cleanup } = await createDoc( `
     <label title="Titles are user visible">Enter information:</label>
     <input type="text" placeholder="This is a placeholder">
   `);
 
   translate();
-
-  
-  
-  const actualExpected =  `
-    <label title="TITLES ARE USER VISIBLE">
-      ENTER INFORMATION:
-    </label>
-    <input type="text" placeholder="THIS IS A PLACEHOLDER" >
-  `;
 
   await htmlMatches(
     "Placeholders support added",
@@ -1146,7 +1136,7 @@ add_task(async function test_attributes() {
   cleanup();
 });
 
-add_task(async function test_html_attributes() {
+add_task(async function test_html_lang_attribute() {
   const { translate, document, cleanup } = await createDoc( `
     <!DOCTYPE html>
     <html lang="en" >
@@ -1168,28 +1158,7 @@ add_task(async function test_html_attributes() {
   cleanup();
 });
 
-
-add_task(async function test_attributes() {
-  const { translate, htmlMatches, cleanup } = await createDoc( `
-    <div title="Titles are user visible">
-    </div>
-  `);
-
-  translate();
-
-  await htmlMatches(
-    "Attribute translation for title",
-     `
-      <div title="TITLES ARE USER VISIBLE">
-    </div>
-    `
-  );
-
-  cleanup();
-});
-
-
-add_task(async function test_attributes() {
+add_task(async function test_attributes_with_innerhtml() {
   const { translate, htmlMatches, cleanup } = await createDoc( `
     <div title="Titles are user visible">
     Simple translation.
@@ -1210,10 +1179,9 @@ add_task(async function test_attributes() {
   cleanup();
 });
 
-
-add_task(async function test_attributes() {
+add_task(async function test_multiple_attributes() {
   const { translate, htmlMatches, cleanup } = await createDoc( `
-        <input type="text" placeholder="This is a placeholder" title="Titles are user visible">
+    <input type="text" placeholder="This is a placeholder" title="Titles are user visible">
   `);
 
   translate();
@@ -1221,24 +1189,7 @@ add_task(async function test_attributes() {
   await htmlMatches(
     "title and placeholder together",
      `
-        <input type="text" placeholder="THIS IS A PLACEHOLDER" title="TITLES ARE USER VISIBLE">
-    `
-  );
-  cleanup();
-});
-
-
-add_task(async function test_attributes() {
-  const { translate, htmlMatches, cleanup } = await createDoc( `
-        <input type="text" placeholder="This is a placeholder">
-  `);
-
-  translate();
-
-  await htmlMatches(
-    "Attribute translation for placeholder",
-     `
-        <input type="text" placeholder="THIS IS A PLACEHOLDER">
+      <input type="text" placeholder="THIS IS A PLACEHOLDER" title="TITLES ARE USER VISIBLE">
     `
   );
   cleanup();
@@ -1258,6 +1209,27 @@ add_task(async function test_translated_title() {
      `
     <div title="THE TITLE IS TRANSLATED" class="do-not-translate-this">
       INNER TEXT IS TRANSLATED.
+    </div>
+    `
+  );
+
+  cleanup();
+});
+
+add_task(async function test_translated_aria_attributes() {
+  const { translate, htmlMatches, cleanup } = await createDoc( `
+    <div aria-label="label" aria-description="description">
+      Content
+    </div>
+  `);
+
+  translate();
+
+  await htmlMatches(
+    "ARIA attributes are translated",
+     `
+    <div aria-label="LABEL" aria-description="DESCRIPTION">
+      CONTENT
     </div>
     `
   );
@@ -1327,8 +1299,7 @@ add_task(async function test_title_attribute_subnodes() {
   cleanup();
 });
 
-
-add_task(async function test_attributes() {
+add_task(async function test_nested_text_in_attributes() {
   const { translate, htmlMatches, cleanup } = await createDoc( `
     <div>
       This is the outer div
@@ -1357,8 +1328,7 @@ add_task(async function test_attributes() {
   cleanup();
 });
 
-
-add_task(async function test_attributes() {
+add_task(async function test_attributes_with_nested_attributes() {
   const { translate, htmlMatches, cleanup } = await createDoc( `
     <div title="Titles are user visible">
       This is the outer div
@@ -1387,7 +1357,7 @@ add_task(async function test_attributes() {
   cleanup();
 });
 
-add_task(async function test_attributes() {
+add_task(async function test_nested_elements() {
   const { translate, htmlMatches, cleanup } = await createDoc( `
     <div>
       This is the outer div
@@ -1414,6 +1384,26 @@ add_task(async function test_attributes() {
           </label>
         </label>
     </div>
+    `
+  );
+
+  cleanup();
+});
+
+add_task(async function test_node_specific_attributes() {
+  const { translate, htmlMatches, cleanup } = await createDoc( `
+    <div value="Do not translate div[value]"></div>
+    <input type="text" placeholder="This is a placeholder" value="This is a value">
+  `);
+
+  translate();
+
+  await htmlMatches(
+    "Placeholders support added",
+     `
+      <div value="Do not translate div[value]">
+      </div>
+      <input type="text" placeholder="THIS IS A PLACEHOLDER" value="THIS IS A VALUE">
     `
   );
 
@@ -1551,6 +1541,44 @@ add_task(async function test_mutations_subtree_attributes() {
         THIS IS SOME INNER TEXT.
         <input placeholder="THIS IS A PLACEHOLDER">
       </div>
+    `
+  );
+
+  cleanup();
+});
+
+add_task(async function test_node_specific_attribute_mutation() {
+  const { translate, htmlMatches, cleanup, document } =
+    await createDoc( `
+      <div value="Do not translate"></div>
+      <input type="text" value="Input value">
+    `);
+
+  translate();
+
+  await htmlMatches(
+    "The initial setup is translated",
+     `
+      <div value="Do not translate">
+      </div>
+      <input type="text" value="INPUT VALUE">
+    `
+  );
+
+  info("Trigger attribute mutations");
+  document
+    .querySelector("div")
+    .setAttribute("value", "New div attribute value");
+  document
+    .querySelector("input")
+    .setAttribute("value", "New input attribute value");
+
+  await htmlMatches(
+    "The changed node gets translated",
+     `
+      <div value="New div attribute value">
+      </div>
+      <input type="text" value="NEW INPUT ATTRIBUTE VALUE">
     `
   );
 
