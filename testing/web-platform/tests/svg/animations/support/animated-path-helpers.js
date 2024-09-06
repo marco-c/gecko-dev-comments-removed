@@ -58,19 +58,27 @@ function normalizeProperty(path_string) {
 
 
 
-function assert_animated_path_equals(target, expected_path_string) {
+function assert_animated_path_in_array(target, expected_paths) {
   const kDecimals = 2;
   let expected, actual;
   if ('animatedPathSegList' in target) {
     let probePathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    probePathElement.setAttribute('d', expected_path_string);
-    expected = serializePathSegList(probePathElement.pathSegList, kDecimals)
+    expected = expected_paths.map(p => {
+      probePathElement.setAttribute('d', p);
+      return serializePathSegList(probePathElement.pathSegList, kDecimals)
+    });
     actual = serializePathSegList(target.animatedPathSegList, kDecimals);
   } else if ('d' in target.style) {
-    expected = normalizeValue(normalizeProperty(expected_path_string), kDecimals);
+    expected = expected_paths.map(p => normalizeValue(normalizeProperty(p), kDecimals));
     actual = normalizeValue(getComputedStyle(target).getPropertyValue('d'), kDecimals);
   } else {
     assert_unreached('no animated path data');
   }
-  assert_equals(actual, expected);
+  assert_in_array(actual, expected);
+}
+
+
+
+function assert_animated_path_equals(target, expected_path_string) {
+  return assert_animated_path_in_array(target, [expected_path_string]);
 }
