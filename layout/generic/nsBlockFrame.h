@@ -966,10 +966,26 @@ class nsBlockFrame : public nsContainerFrame {
   nsFrameList* GetOutsideMarkerList() const;
 
   
-  bool HasPushedFloats() const {
-    return HasAnyStateBits(NS_BLOCK_HAS_PUSHED_FLOATS);
-  }
+  bool HasFloats() const;
 
+  
+  nsFrameList* GetFloats() const;
+
+  
+  
+  nsFrameList* EnsureFloats() MOZ_NONNULL_RETURN;
+
+  
+  
+  
+  
+  [[nodiscard]] nsFrameList* StealFloats();
+
+  
+  bool HasPushedFloats() const;
+
+  
+  
   
   
   
@@ -995,10 +1011,6 @@ class nsBlockFrame : public nsContainerFrame {
   nscoord mCachedPrefISize = NS_INTRINSIC_ISIZE_UNKNOWN;
 
   nsLineList mLines;
-
-  
-  
-  nsFrameList mFloats;
 
   friend class mozilla::BlockReflowState;
   friend class nsBlockInFlowLineIterator;
