@@ -31,6 +31,8 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     RecordAccessibilityTelemetry();
   }
 
+  nsresult GetKeyboardLayoutImpl(nsACString& aLayout) override;
+
   
   
   
