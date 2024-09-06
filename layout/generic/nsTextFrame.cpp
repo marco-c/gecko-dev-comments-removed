@@ -3611,6 +3611,20 @@ void nsTextFrame::PropertyProvider::GetSpacing(Range aRange,
       !(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasTab));
 }
 
+static bool CanAddSpacingBefore(const gfxTextRun* aTextRun, uint32_t aOffset,
+                                bool aNewlineIsSignificant) {
+  const auto* g = aTextRun->GetCharacterGlyphs();
+  MOZ_ASSERT(aOffset < aTextRun->GetLength());
+  if (aNewlineIsSignificant && g[aOffset].CharIsNewline()) {
+    return false;
+  }
+  if (!aOffset) {
+    return true;
+  }
+  return g[aOffset].IsClusterStart() && g[aOffset].IsLigatureGroupStart() &&
+         !g[aOffset - 1].CharIsFormattingControl() && !g[aOffset].CharIsTab();
+}
+
 static bool CanAddSpacingAfter(const gfxTextRun* aTextRun, uint32_t aOffset,
                                bool aNewlineIsSignificant) {
   const auto* g = aTextRun->GetCharacterGlyphs();
@@ -3683,14 +3697,45 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
     nsSkipCharsRunIterator run(
         start, nsSkipCharsRunIterator::LENGTH_UNSKIPPED_ONLY, aRange.Length());
     bool newlineIsSignificant = mTextStyle->NewlineIsSignificant(mFrame);
+    
+    
+    
+    
+    gfxFloat before, after;
+    switch (StaticPrefs::layout_css_letter_spacing_model()) {
+      default:  
+      case 0:
+        before = 0.0;
+        after = mLetterSpacing;
+        break;
+      case 1:
+        if (mTextRun->IsRightToLeft()) {
+          before = mLetterSpacing;
+          after = 0.0;
+        } else {
+          before = 0.0;
+          after = mLetterSpacing;
+        }
+        break;
+      case 2:
+        before = mLetterSpacing / 2.0;
+        after = mLetterSpacing - before;
+        break;
+    }
     while (run.NextRun()) {
       uint32_t runOffsetInSubstring = run.GetSkippedOffset() - aRange.start;
       gfxSkipCharsIterator iter = run.GetPos();
       for (int32_t i = 0; i < run.GetRunLength(); ++i) {
-        if (CanAddSpacingAfter(mTextRun, run.GetSkippedOffset() + i,
+        if (before != 0.0 &&
+            CanAddSpacingBefore(mTextRun, run.GetSkippedOffset() + i,
+                                newlineIsSignificant)) {
+          aSpacing[runOffsetInSubstring + i].mBefore += before;
+        }
+        if (after != 0.0 &&
+            CanAddSpacingAfter(mTextRun, run.GetSkippedOffset() + i,
                                newlineIsSignificant)) {
           
-          aSpacing[runOffsetInSubstring + i].mAfter += mLetterSpacing;
+          aSpacing[runOffsetInSubstring + i].mAfter += after;
         }
         if (IsCSSWordSpacingSpace(mFrag, i + run.GetOriginalOffset(), mFrame,
                                   mTextStyle)) {
