@@ -3572,7 +3572,15 @@ impl<'ctx> CoreStreamData<'ctx> {
             let r = audio_unit_get_property(
                 self.input_unit,
                 kAudioUnitProperty_StreamFormat,
-                kAudioUnitScope_Output,
+                if using_voice_processing_unit {
+                    
+                    
+                    kAudioUnitScope_Output
+                } else {
+                    
+                    
+                    kAudioUnitScope_Input
+                },
                 AU_IN_BUS,
                 &mut input_hw_desc,
                 &mut size,
