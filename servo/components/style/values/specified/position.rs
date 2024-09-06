@@ -508,9 +508,9 @@ impl PositionAnchor {
 #[repr(C)]
 
 
-pub struct PositionTryOptionsTryTactic(u8);
+pub struct PositionTryFallbacksTryTactic(u8);
 bitflags! {
-    impl PositionTryOptionsTryTactic: u8 {
+    impl PositionTryFallbacksTryTactic: u8 {
         /// `flip-block`
         const FLIP_BLOCK = 1 << 0;
         /// `flip-inline`
@@ -538,7 +538,7 @@ pub struct DashedIdentAndOrTryTactic {
     
     pub ident: DashedIdent,
     
-    pub try_tactic: PositionTryOptionsTryTactic,
+    pub try_tactic: PositionTryFallbacksTryTactic,
 }
 
 impl Parse for DashedIdentAndOrTryTactic {
@@ -548,7 +548,7 @@ impl Parse for DashedIdentAndOrTryTactic {
     ) -> Result<Self, ParseError<'i>> {
         let mut result = Self {
             ident: DashedIdent::empty(),
-            try_tactic: PositionTryOptionsTryTactic::empty(),
+            try_tactic: PositionTryFallbacksTryTactic::empty(),
         };
 
         loop {
@@ -560,7 +560,7 @@ impl Parse for DashedIdentAndOrTryTactic {
             }
             if result.try_tactic.is_empty() {
                 if let Ok(try_tactic) =
-                    input.try_parse(|i| PositionTryOptionsTryTactic::parse(context, i))
+                    input.try_parse(|i| PositionTryFallbacksTryTactic::parse(context, i))
                 {
                     result.try_tactic = try_tactic;
                     continue;
@@ -591,7 +591,7 @@ impl Parse for DashedIdentAndOrTryTactic {
 #[repr(u8)]
 
 
-pub enum PositionTryOptionsItem {
+pub enum PositionTryFallbacksItem {
     
     IdentAndOrTactic(DashedIdentAndOrTryTactic),
     #[parse(parse_fn = "InsetArea::parse_except_none")]
@@ -614,13 +614,13 @@ pub enum PositionTryOptionsItem {
 #[css(comma)]
 #[repr(C)]
 
-pub struct PositionTryOptions(
+pub struct PositionTryFallbacks(
     #[css(iterable, if_empty = "none")]
     #[ignore_malloc_size_of = "Arc"]
-    pub crate::ArcSlice<PositionTryOptionsItem>,
+    pub crate::ArcSlice<PositionTryFallbacksItem>,
 );
 
-impl PositionTryOptions {
+impl PositionTryFallbacks {
     #[inline]
     
     pub fn none() -> Self {
@@ -633,7 +633,7 @@ impl PositionTryOptions {
     }
 }
 
-impl Parse for PositionTryOptions {
+impl Parse for PositionTryFallbacks {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -643,10 +643,10 @@ impl Parse for PositionTryOptions {
         }
         
         
-        let mut items: SmallVec<[PositionTryOptionsItem; 4]> =
-            smallvec![PositionTryOptionsItem::parse(context, input)?];
+        let mut items: SmallVec<[PositionTryFallbacksItem; 4]> =
+            smallvec![PositionTryFallbacksItem::parse(context, input)?];
         while input.try_parse(|input| input.expect_comma()).is_ok() {
-            items.push(PositionTryOptionsItem::parse(context, input)?);
+            items.push(PositionTryFallbacksItem::parse(context, input)?);
         }
         Ok(Self(ArcSlice::from_iter(items.drain(..))))
     }
