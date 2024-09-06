@@ -112,6 +112,25 @@ function decimalPlaces(num) {
   return 0;
 }
 
+function timeoutPromise(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error("TIMEOUT"));
+    }, ms);
+
+    promise.then(
+      value => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      },
+      error => {
+        clearTimeout(timeoutId);
+        reject(error);
+      }
+    );
+  });
+}
+
 
 
 
@@ -627,7 +646,7 @@ function populateFingerprintJSCanvases() {
 
 
 
-function populateVoiceList() {
+async function populateVoiceList() {
   
   const uriPrefixes = [
     [/(?:urn:)?moz-tts:.*?:/, "#m:"],
@@ -705,7 +724,7 @@ function populateVoiceList() {
   };
 }
 
-function populateMediaCapabilities() {
+async function populateMediaCapabilities() {
   
   
   
@@ -794,7 +813,7 @@ function populateMediaCapabilities() {
   };
 }
 
-function populateAudioFingerprint() {
+async function populateAudioFingerprint() {
   
   
   const hashFromIndex = 4500;
@@ -925,7 +944,7 @@ function populateAudioFingerprint() {
   };
 }
 
-function populatePointerInfo() {
+async function populatePointerInfo() {
   const capabilities = {
     None: 0,
     Coarse: 1 << 0,
@@ -1059,7 +1078,7 @@ async function populateICEFoundations() {
   };
 }
 
-function populateSensorInfo() {
+async function populateSensorInfo() {
   const { promise, resolve } = Promise.withResolvers();
 
   const events = {
@@ -1122,6 +1141,36 @@ function populateSensorInfo() {
 
 
 
+function getCanvasSources() {
+  const canvasSources = [
+    populateTestCanvases,
+    populateWebGLCanvases,
+    populateFingerprintJSCanvases,
+  ];
+
+  
+  return canvasSources
+    .map(source => {
+      const functions = [
+        async () => source({ forceSoftwareRendering: true }),
+        async () => source({ forceSoftwareRendering: false }),
+      ];
+
+      
+      
+      Object.defineProperty(functions[0], "name", {
+        value: source.name + "Software",
+      });
+      Object.defineProperty(functions[1], "name", {
+        value: source.name,
+      });
+      return functions;
+    })
+    .flat();
+}
+
+
+
 
 
 const LocalFiraSans = new FontFace(
@@ -1130,18 +1179,21 @@ const LocalFiraSans = new FontFace(
 );
 
 (async () => {
-  const font = await LocalFiraSans.load();
-  document.fonts.add(font);
-
   const errors = [];
+
+  await LocalFiraSans.load()
+    .then(font => document.fonts.add(font))
+    .catch(async e => {
+      
+      errors.push(`LocalFiraSans: ${await stringifyError(e)}`);
+    });
+
   
   
   
   const data = {};
   const sources = [
-    populateTestCanvases,
-    populateWebGLCanvases,
-    populateFingerprintJSCanvases,
+    ...getCanvasSources(),
     populateVoiceList,
     populateMediaCapabilities,
     populateAudioFingerprint,
@@ -1154,7 +1206,7 @@ const LocalFiraSans = new FontFace(
   
   for (const source of sources) {
     try {
-      Object.assign(data, await source());
+      Object.assign(data, await timeoutPromise(source(), 5 * 60 * 1000));
     } catch (error) {
       errors.push(`${source.name}: ${await stringifyError(error)}`);
     }
