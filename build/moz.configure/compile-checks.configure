@@ -149,7 +149,9 @@ def check_symbol_flags(linker_ldflags, kernel):
 
 
 @template
-def check_symbol(symbol, language="C", flags=None, when=None, onerror=lambda: None):
+def check_symbol(
+    symbol, language="C", flags=None, msg_extra="", when=None, onerror=lambda: None
+):
     if when is None:
         when = always
 
@@ -183,10 +185,62 @@ def check_symbol(symbol, language="C", flags=None, when=None, onerror=lambda: No
         header=comment + ["%schar %s();" % (extern_c, symbol)],
         body="%s();" % symbol,
         flags=flags,
-        check_msg="for %s" % symbol,
+        check_msg="for %s%s" % (symbol, msg_extra),
         when=when,
         onerror=onerror,
     )
+
+
+
+
+
+
+@template
+def check_symbol_in_lib(libname, symbol, language="C", when=None, onerror=lambda: None):
+    flag = f"-l{libname}"
+    have_symbol = check_symbol(
+        symbol,
+        flags=[flag],
+        msg_extra=f" in {flag}",
+        language=language,
+        when=when,
+        onerror=onerror,
+    )
+
+    return have_symbol
+
+
+
+
+
+
+
+@template
+def check_symbol_in_libs(
+    libnames, symbol, language="C", when=None, onerror=lambda: None
+):
+    have_symbol = never
+
+    found_lib = dependable(namespace(found=False, lib=None))
+
+    kwargs = {
+        "symbol": symbol,
+        "language": language,
+        "when": when or always,
+        "onerror": onerror,
+    }
+
+    for libname in libnames:
+        kwargs["when"] &= ~have_symbol
+        if libname:
+            have_symbol = check_symbol_in_lib(libname, **kwargs)
+        else:
+            have_symbol = check_symbol(**kwargs)
+
+        add_lib = namespace(found=True, lib=libname)
+        found_lib = depends(have_symbol, found_lib)(lambda h, f: add_lib if h else f)
+
+    return found_lib
 
 
 
