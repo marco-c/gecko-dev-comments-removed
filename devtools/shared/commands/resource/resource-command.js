@@ -89,6 +89,9 @@ class ResourceCommand {
 
   addResourceToCache(resource) {
     const { resourceId, resourceType } = resource;
+    if (TRANSIENT_RESOURCE_TYPES.includes(resourceType)) {
+      return;
+    }
     this._cache.set(cacheKey(resourceType, resourceId), resource);
   }
 
@@ -1323,6 +1326,16 @@ const WORKER_RESOURCE_TYPES = [
   ResourceCommand.TYPES.ERROR_MESSAGE,
   ResourceCommand.TYPES.SOURCE,
   ResourceCommand.TYPES.THREAD_STATE,
+];
+
+
+
+
+
+
+const TRANSIENT_RESOURCE_TYPES = [
+  ResourceCommand.TYPES.JSTRACER_TRACE,
+  ResourceCommand.TYPES.JSTRACER_STATE,
 ];
 
 
