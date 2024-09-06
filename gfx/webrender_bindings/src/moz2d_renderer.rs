@@ -178,12 +178,6 @@ struct BlobReader<'a> {
     begin: usize,
 }
 
-#[derive(PartialEq, Debug, Eq, Clone, Copy)]
-struct IntPoint {
-    x: i32,
-    y: i32,
-}
-
 
 
 
