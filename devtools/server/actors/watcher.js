@@ -279,8 +279,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
   unwatchTargets(targetType, options = {}) {
     const isWatchingTargets = ParentProcessWatcherRegistry.unwatchTargets(
       this,
-      targetType,
-      options
+      targetType
     );
     if (!isWatchingTargets) {
       return;
@@ -293,13 +292,6 @@ exports.WatcherActor = class WatcherActor extends Actor {
         targetType,
         options,
       });
-    }
-
-    
-    
-    
-    if (!options.isModeSwitching) {
-      ParentProcessWatcherRegistry.maybeUnregisterJSActors();
     }
   }
 
@@ -661,9 +653,6 @@ exports.WatcherActor = class WatcherActor extends Actor {
       );
       targetActor.removeSessionDataEntry("resources", targetActorResourceTypes);
     }
-
-    
-    ParentProcessWatcherRegistry.maybeUnregisterJSActors();
   }
 
   clearResources(resourceTypes) {
