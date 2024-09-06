@@ -261,6 +261,7 @@ UniqueChars GeckoProfilerRuntime::allocProfileString(JSContext* cx,
                                                      BaseScript* script) {
   
   
+  
 
   
   bool hasName = false;
