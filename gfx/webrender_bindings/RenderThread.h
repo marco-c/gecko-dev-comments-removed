@@ -11,6 +11,7 @@
 #include "base/platform_thread.h"  
 #include "base/thread.h"           
 #include "base/message_loop.h"
+#include "gfxPlatform.h"
 #include "GLTypes.h"  
 #include "nsISupportsImpl.h"
 #include "mozilla/gfx/Point.h"
@@ -275,7 +276,8 @@ class RenderThread final {
   RefPtr<layers::ShaderProgramOGLsHolder> GetProgramsForCompositorOGL();
 
   
-  void HandleDeviceReset(const char* aWhere, GLenum aReason);
+  void HandleDeviceReset(DeviceResetDetectPlace aPlace,
+                         DeviceResetReason aReason);
   
   bool IsHandlingDeviceReset();
   

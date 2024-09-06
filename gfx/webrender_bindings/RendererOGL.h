@@ -109,7 +109,7 @@ class RendererOGL {
   bool IsPaused();
 
   
-  void CheckGraphicsResetStatus(const char* aCaller, bool aForce);
+  void CheckGraphicsResetStatus(DeviceResetDetectPlace aPlace, bool aForce);
 
   layers::SyncObjectHost* GetSyncObject() const;
 

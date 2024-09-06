@@ -742,8 +742,12 @@ bool CanvasTranslator::CheckForFreshCanvasDevice(int aLineNumber) {
     return CreateReferenceTexture();
   }
 
+  DeviceResetReason reason = DeviceResetReason::OTHER;
+
   if (mDevice) {
-    if (mDevice->GetDeviceRemovedReason() == S_OK) {
+    const auto d3d11Reason = mDevice->GetDeviceRemovedReason();
+    reason = DXGIErrorToDeviceResetReason(d3d11Reason);
+    if (reason == DeviceResetReason::OK) {
       return false;
     }
 
@@ -753,13 +757,9 @@ bool CanvasTranslator::CheckForFreshCanvasDevice(int aLineNumber) {
   }
 
   RefPtr<Runnable> runnable =
-      NS_NewRunnableFunction("CanvasTranslator NotifyDeviceReset", []() {
-        if (XRE_IsGPUProcess()) {
-          gfx::GPUParent::GetSingleton()->NotifyDeviceReset();
-        } else {
-          gfx::GPUProcessManager::Get()->OnInProcessDeviceReset(
-               false);
-        }
+      NS_NewRunnableFunction("CanvasTranslator NotifyDeviceReset", [reason]() {
+        gfx::GPUProcessManager::GPUProcessManager::NotifyDeviceReset(
+            reason, DeviceResetDetectPlace::CANVAS_TRANSLATOR);
       });
 
   
