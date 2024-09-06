@@ -119,7 +119,9 @@ test_description_schema = Schema(
         Required("run-without-variant"): optionally_keyed_by("test-platform", bool),
         
         Required("instance-size"): optionally_keyed_by(
-            "test-platform", Any("default", "large", "xlarge")
+            "test-platform",
+            "variant",
+            Any("default", "large", "large-noscratch", "xlarge", "xlarge-noscratch"),
         ),
         
         Required("virtualization"): optionally_keyed_by(

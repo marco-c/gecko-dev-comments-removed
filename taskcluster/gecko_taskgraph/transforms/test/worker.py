@@ -7,8 +7,10 @@ from taskgraph.transforms.base import TransformSequence
 
 LINUX_WORKER_TYPES = {
     "large": "t-linux-large",
+    "large-noscratch": "t-linux-large-noscratch",
     "xlarge": "t-linux-xlarge",
-    "default": "t-linux-large",
+    "xlarge-noscratch": "t-linux-xlarge-noscratch",
+    "default": "t-linux-large-noscratch",
 }
 
 
