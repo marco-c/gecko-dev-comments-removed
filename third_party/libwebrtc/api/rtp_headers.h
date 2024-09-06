@@ -77,6 +77,29 @@ struct AbsoluteCaptureTime {
   absl::optional<int64_t> estimated_capture_clock_offset;
 };
 
+
+
+
+class AudioLevel {
+ public:
+  AudioLevel();
+  AudioLevel(bool voice_activity, int audio_level);
+  AudioLevel(const AudioLevel& other) = default;
+  AudioLevel& operator=(const AudioLevel& other) = default;
+
+  
+  
+  bool voice_activity() const { return voice_activity_; }
+
+  
+  
+  int level() const { return audio_level_; }
+
+ private:
+  bool voice_activity_;
+  int audio_level_;
+};
+
 inline bool operator==(const AbsoluteCaptureTime& lhs,
                        const AbsoluteCaptureTime& rhs) {
   return (lhs.absolute_capture_timestamp == rhs.absolute_capture_timestamp) &&
@@ -124,6 +147,12 @@ struct RTPHeaderExtension {
   bool hasTransportSequenceNumber;
   uint16_t transportSequenceNumber;
   absl::optional<FeedbackRequest> feedback_request;
+
+  
+  
+  absl::optional<AudioLevel> audio_level() const;
+
+  void set_audio_level(absl::optional<AudioLevel> audio_level);
 
   
   
