@@ -38,15 +38,6 @@ const GOOGLE_DOMAINS = [
   "www.google.co.nz",
 ];
 
-
-
-
-
-
-
-const SEARCH_TERM = "chocolate";
-const SEARCH_SERP_URL = `https://example.com/?q=${SEARCH_TERM}`;
-
 add_setup(async function () {
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
@@ -55,10 +46,6 @@ add_setup(async function () {
     set: [
       [
         `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
-        0,
-      ],
-      [
-        `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}`,
         0,
       ],
       [
@@ -181,66 +168,6 @@ add_task(async function pickButton_redirect() {
 
 
 
-
-add_task(async function pickButton_persist() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
-  });
-
-  await setDefaultEngine("Example");
-
-  await BrowserTestUtils.withNewTab("about:blank", async () => {
-    let browserLoadedPromise = BrowserTestUtils.browserLoaded(
-      gBrowser.selectedBrowser,
-      false,
-      SEARCH_SERP_URL
-    );
-    BrowserTestUtils.startLoadingURIString(
-      gBrowser.selectedBrowser,
-      SEARCH_SERP_URL
-    );
-    await browserLoadedPromise;
-    await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.PERSIST, false);
-
-    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-    let button = result.element.row._buttons.get("0");
-
-    await UrlbarTestUtils.promisePopupClose(window, () => {
-      EventUtils.synthesizeMouseAtCenter(button, {});
-    });
-    gURLBar.blur();
-
-    Assert.equal(
-      gURLBar.value,
-      SEARCH_TERM,
-      "The Urlbar should keep its existing value."
-    );
-  });
-
-  
-  const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
-  TelemetryTestUtils.assertKeyedScalar(
-    scalars,
-    "urlbar.tips",
-    `${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}-picked`,
-    1
-  );
-
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}`
-    ),
-    MAX_SHOWN_COUNT,
-    "Persist tips are disabled after tip button is picked."
-  );
-  Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
-  resetSearchTipsProvider();
-  await SpecialPowers.popPrefEnv();
-});
-
-
-
 add_task(async function clickInInput_onboard() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await setDefaultEngine("Google");
@@ -358,60 +285,6 @@ add_task(async function clickInInput_redirect() {
 
 
 
-add_task(async function clickInInput_persist() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
-  });
-
-  await setDefaultEngine("Example");
-  await BrowserTestUtils.withNewTab("about:blank", async () => {
-    let browserLoadedPromise = BrowserTestUtils.browserLoaded(
-      gBrowser.selectedBrowser,
-      false,
-      SEARCH_SERP_URL
-    );
-    BrowserTestUtils.startLoadingURIString(
-      gBrowser.selectedBrowser,
-      SEARCH_SERP_URL
-    );
-    await browserLoadedPromise;
-    await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.PERSIST, false);
-
-    
-    await UrlbarTestUtils.promisePopupClose(window, () => {
-      EventUtils.synthesizeMouseAtCenter(gURLBar.textbox.parentNode, {});
-    });
-    gURLBar.blur();
-    Assert.equal(
-      gURLBar.value,
-      SEARCH_TERM,
-      "The Urlbar should keep its existing value."
-    );
-  });
-
-  
-  const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
-  TelemetryTestUtils.assertKeyedScalar(
-    scalars,
-    "urlbar.tips",
-    `${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}-picked`,
-    1
-  );
-
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}`
-    ),
-    MAX_SHOWN_COUNT,
-    "Persist tips are disabled after tip button is picked."
-  );
-  Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
-  resetSearchTipsProvider();
-});
-
-
-
 add_task(async function openLocation_redirect() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await setDefaultEngine("Google");
@@ -447,60 +320,6 @@ add_task(async function openLocation_redirect() {
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetSearchTipsProvider();
-});
-
-
-
-add_task(async function openLocation_persist() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
-  });
-  await setDefaultEngine("Example");
-  await BrowserTestUtils.withNewTab("about:blank", async () => {
-    let browserLoadedPromise = BrowserTestUtils.browserLoaded(
-      gBrowser.selectedBrowser,
-      false,
-      SEARCH_SERP_URL
-    );
-    BrowserTestUtils.startLoadingURIString(
-      gBrowser.selectedBrowser,
-      SEARCH_SERP_URL
-    );
-    await browserLoadedPromise;
-    await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.PERSIST, false);
-
-    
-    await UrlbarTestUtils.promisePopupClose(window, () => {
-      document.getElementById("Browser:OpenLocation").doCommand();
-    });
-    gURLBar.blur();
-    Assert.equal(
-      gURLBar.value,
-      SEARCH_TERM,
-      "The Urlbar should keep its existing value."
-    );
-  });
-
-  
-  const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
-  TelemetryTestUtils.assertKeyedScalar(
-    scalars,
-    "urlbar.tips",
-    `${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}-picked`,
-    1
-  );
-
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}`
-    ),
-    MAX_SHOWN_COUNT,
-    "Persist tips are disabled after tip button is picked."
-  );
-  Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
-  resetSearchTipsProvider();
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function pickingTipDoesNotDisableOtherKinds() {

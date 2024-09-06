@@ -165,15 +165,7 @@ add_task(async function focus_and_unfocus_modified() {
 
 add_task(async function focus_after_top_sites() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      
-      
-      [
-        `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}`,
-        10000,
-      ],
-      ["browser.newtabpage.activity-stream.feeds.topsites", true],
-    ],
+    set: [["browser.newtabpage.activity-stream.feeds.topsites", true]],
   });
 
   

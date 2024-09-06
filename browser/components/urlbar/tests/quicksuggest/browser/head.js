@@ -102,8 +102,6 @@ async function setUpTelemetryTest({
       
       
       ["browser.urlbar.suggest.openpage", false],
-      
-      ["browser.urlbar.tipShownCount.searchTip_persist", 999],
     ],
   });
 
