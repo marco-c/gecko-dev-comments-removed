@@ -723,6 +723,30 @@ pub fn namespace_empty_string<Impl: SelectorImpl>() -> Impl::NamespaceUrl {
 
 type SelectorData<Impl> = ThinArc<SpecificityAndFlags, Component<Impl>>;
 
+bitflags! {
+    /// What kind of selectors potentially matching featureless shawdow host are present.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct FeaturelessHostMatches: u8 {
+        /// This selector matches featureless shadow host via `:host`.
+        const FOR_HOST = 1 << 0;
+        /// This selector matches featureless shadow host via `:scope`.
+        /// Featureless match applies only if we're:
+        /// 1) In a scoping context, AND
+        /// 2) The scope is a shadow host.
+        const FOR_SCOPE = 1 << 1;
+    }
+}
+
+impl FeaturelessHostMatches {
+    fn insert_not_empty(&mut self, other: Self) -> bool {
+        if other.is_empty() {
+            return false;
+        }
+        self.insert(other);
+        true
+    }
+}
+
 
 
 
@@ -898,10 +922,20 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     #[inline]
-    pub fn is_featureless_host_selector_or_pseudo_element(&self) -> bool {
+    pub fn matches_featureless_host_selector_or_pseudo_element(&self) -> FeaturelessHostMatches {
         let flags = self.flags();
-        flags.intersects(SelectorFlags::HAS_HOST) &&
-            !flags.intersects(SelectorFlags::HAS_NON_FEATURELESS_COMPONENT)
+
+        let mut result = FeaturelessHostMatches::empty();
+        if flags.intersects(SelectorFlags::HAS_NON_FEATURELESS_COMPONENT) {
+            return result;
+        }
+        if flags.intersects(SelectorFlags::HAS_HOST) {
+            result.insert(FeaturelessHostMatches::FOR_HOST);
+        }
+        if flags.intersects(SelectorFlags::HAS_SCOPE) {
+            result.insert(FeaturelessHostMatches::FOR_SCOPE);
+        }
+        result
     }
 
     
@@ -1339,10 +1373,23 @@ impl<'a, Impl: 'a + SelectorImpl> SelectorIter<'a, Impl> {
     
     
     #[inline]
-    pub(crate) fn is_featureless_host_selector(&mut self) -> bool {
-        self.selector_length() > 0 &&
-            self.all(|component| component.matches_featureless_host()) &&
-            self.next_sequence().is_none()
+    pub(crate) fn is_featureless_host_selector(&mut self) -> FeaturelessHostMatches {
+        if self.selector_length() == 0 {
+            return FeaturelessHostMatches::empty();
+        }
+        let mut result = FeaturelessHostMatches::empty();
+        while let Some(c) = self.next() {
+            let component_matches = c.matches_featureless_host();
+            if component_matches.is_empty() {
+                return FeaturelessHostMatches::empty();
+            }
+            result.insert(component_matches);
+        }
+        if self.next_sequence().is_some() {
+            FeaturelessHostMatches::empty()
+        } else {
+            result
+        }
     }
 
     #[inline]
@@ -2022,19 +2069,28 @@ impl<Impl: SelectorImpl> Component<Impl> {
     }
 
     
+    
     #[inline]
-    pub fn matches_featureless_host(&self) -> bool {
+    pub fn matches_featureless_host(&self) -> FeaturelessHostMatches {
         match *self {
-            Component::Host(..) => true,
+            Component::Host(..) => FeaturelessHostMatches::FOR_HOST,
+            Component::Scope | Component::ImplicitScope => FeaturelessHostMatches::FOR_SCOPE,
             Component::Where(ref l) | Component::Is(ref l) => {
+                debug_assert!(l.len() > 0, "Zero length selector?");
                 
                 
                 
-                l.slice()
-                    .iter()
-                    .all(|i| i.is_featureless_host_selector_or_pseudo_element())
+                let mut result = FeaturelessHostMatches::empty();
+                for i in l.slice() {
+                    if !result.insert_not_empty(
+                        i.matches_featureless_host_selector_or_pseudo_element()
+                    ) {
+                        return FeaturelessHostMatches::empty();
+                    }
+                }
+                result
             },
-            _ => false,
+            _ => FeaturelessHostMatches::empty(),
         }
     }
 
@@ -3732,6 +3788,10 @@ pub mod tests {
             true
         }
 
+        fn parse_host(&self) -> bool {
+            true
+        }
+
         fn parse_non_ts_pseudo_class(
             &self,
             location: SourceLocation,
@@ -4523,6 +4583,21 @@ pub mod tests {
                 SelectorFlags::HAS_SCOPE | SelectorFlags::HAS_NON_FEATURELESS_COMPONENT,
             )])
         );
+    }
+
+    #[test]
+    fn test_featureless() {
+        let featureless = parse(":host, :scope").unwrap();
+        assert_eq!(featureless.slice().len(), 2);
+        for selector in featureless.slice() {
+            assert!(!selector.flags().intersects(SelectorFlags::HAS_NON_FEATURELESS_COMPONENT));
+        }
+
+        let non_featureless = parse(":host.foo, :scope.foo, :host .foo, :scope .foo").unwrap();
+        assert_eq!(non_featureless.slice().len(), 4);
+        for selector in non_featureless.slice() {
+            assert!(selector.flags().intersects(SelectorFlags::HAS_NON_FEATURELESS_COMPONENT));
+        }
     }
 
     struct TestVisitor {

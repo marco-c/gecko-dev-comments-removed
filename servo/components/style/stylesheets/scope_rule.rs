@@ -174,3 +174,13 @@ pub enum ImplicitScopeRoot {
     
     Constructed,
 }
+
+impl ImplicitScopeRoot {
+    
+    pub fn matches_shadow_host(&self) -> bool {
+        match self {
+            Self::InLightTree(..) | Self::InShadowTree(..) => false,
+            Self::ShadowHost(..) | Self::Constructed => true,
+        }
+    }
+}

@@ -9,7 +9,8 @@ use crate::attr::{
 use crate::bloom::{BloomFilter, BLOOM_HASH_MASK};
 use crate::kleene_value::KleeneValue;
 use crate::parser::{
-    AncestorHashes, Combinator, Component, LocalName, NthSelectorData, RelativeSelectorMatchHint,
+    AncestorHashes, Combinator, Component, FeaturelessHostMatches, LocalName, NthSelectorData,
+    RelativeSelectorMatchHint,
 };
 use crate::parser::{
     NonTSPseudoClass, RelativeSelector, Selector, SelectorImpl, SelectorIter, SelectorList,
@@ -792,11 +793,24 @@ where
             
             
             
-            if !selector.clone().is_featureless_host_selector() {
+            let matches_featureless_host = selector.clone().is_featureless_host_selector();
+            if matches_featureless_host.intersects(FeaturelessHostMatches::FOR_HOST) {
+                
+                return element.containing_shadow_host()
+            } else if matches_featureless_host.intersects(FeaturelessHostMatches::FOR_SCOPE) {
+                let host = element.containing_shadow_host();
+                
+                
+                
+                if context.scope_element.is_some() &&
+                    context.scope_element.clone() == host.clone().map(|e| e.opaque())
+                {
+                    return host;
+                }
+                return None;
+            } else {
                 return None;
             }
-
-            element.containing_shadow_host()
         },
         Combinator::Part => host_for_part(element, context),
         Combinator::SlotAssignment => assigned_slot(element, context),
