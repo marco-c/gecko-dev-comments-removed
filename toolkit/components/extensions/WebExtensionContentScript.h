@@ -57,6 +57,10 @@ class MOZ_STACK_CLASS DocInfo final {
   
   const URLInfo& PrincipalURL() const;
 
+  
+  
+  bool RequiresMatchOriginAsFallback() const;
+
   bool IsTopLevel() const;
   bool IsSameOriginWithTop() const;
   bool ShouldMatchActiveTabPermission() const;
@@ -94,6 +98,7 @@ class MOZ_STACK_CLASS DocInfo final {
 
   const URLInfo mURL;
   mutable Maybe<const URLInfo> mPrincipalURL;
+  mutable Maybe<bool> mRequiresMatchOriginAsFallback;
 
   mutable Maybe<bool> mIsTopLevel;
 

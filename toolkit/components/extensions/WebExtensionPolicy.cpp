@@ -836,9 +836,19 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
     
   }
 
-  if (!mMatchOriginAsFallback && aDoc.Principal() &&
-      aDoc.Principal()->GetIsNullPrincipal() && !aDoc.URL().IsNonOpaqueURL()) {
-    return false;
+  if (!mMatchOriginAsFallback && aDoc.RequiresMatchOriginAsFallback()) {
+    
+    
+    
+    
+    if (aDoc.URL().Scheme() != nsGkAtoms::blob || !mExtension ||
+        mExtension->ManifestVersion() != 2 ||
+        !StaticPrefs::
+            extensions_script_blob_without_match_origin_as_fallback()) {
+      return false;
+    }
+    
+    
   }
 
   if (mRestricted && WebExtensionPolicy::IsRestrictedDoc(aDoc)) {
@@ -1167,6 +1177,18 @@ const URLInfo& DocInfo::PrincipalURL() const {
   }
 
   return mPrincipalURL.ref();
+}
+
+bool DocInfo::RequiresMatchOriginAsFallback() const {
+  if (mRequiresMatchOriginAsFallback.isNothing()) {
+    mRequiresMatchOriginAsFallback.emplace(
+        
+        
+        URL().Scheme() == nsGkAtoms::blob ||
+        (Principal() && Principal()->GetIsNullPrincipal() &&
+         !URL().IsNonOpaqueURL()));
+  }
+  return mRequiresMatchOriginAsFallback.ref();
 }
 
 }  
