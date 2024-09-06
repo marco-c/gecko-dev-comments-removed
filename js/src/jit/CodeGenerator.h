@@ -495,11 +495,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   
   
   bool hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted() {
-    if (!JS::Prefs::use_emulates_undefined_fuse()) {
-      
-      return false;
-    }
-
     bool intact = gen->outerInfo().hasSeenObjectEmulateUndefinedFuseIntact();
     if (intact) {
       addHasSeenObjectEmulateUndefinedFuseDependency();
