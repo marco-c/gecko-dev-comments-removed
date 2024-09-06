@@ -611,6 +611,16 @@ impl DashedIdent {
         }
         Ok(Self(Atom::from(ident.as_ref())))
     }
+
+    
+    pub fn empty() -> Self {
+        Self(atom!(""))
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.0 == atom!("")
+    }
 }
 
 impl Parse for DashedIdent {
