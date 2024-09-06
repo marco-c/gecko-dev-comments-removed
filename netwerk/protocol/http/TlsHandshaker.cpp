@@ -316,39 +316,19 @@ void TlsHandshaker::EarlyDataTelemetry(int16_t tlsVersion,
                                        int64_t aContentBytesWritten0RTT) {
   
   if (tlsVersion > nsITLSSocketControl::TLS_VERSION_1_2) {
-    if (mEarlyDataState == EarlyData::NOT_AVAILABLE) {  
-      Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_NEGOTIATED,
-                            TLS_EARLY_DATA_NOT_AVAILABLE);
-      mozilla::glean::network::tls_early_data_negotiated.Get("not_available"_ns)
-          .Add(1);
-    } else if (mEarlyDataState == EarlyData::USED) {  
-      Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_NEGOTIATED,
-                            TLS_EARLY_DATA_AVAILABLE_AND_USED);
-      mozilla::glean::network::tls_early_data_negotiated
-          .Get("available_and_used"_ns)
-          .Add(1);
-    } else {  
-      Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_NEGOTIATED,
-                            TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED);
-      mozilla::glean::network::tls_early_data_negotiated
-          .Get("available_but_not_used"_ns)
-          .Add(1);
-    }
-
-    
+    Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_NEGOTIATED,
+                          (mEarlyDataState == EarlyData::NOT_AVAILABLE)
+                              ? TLS_EARLY_DATA_NOT_AVAILABLE
+                              : ((mEarlyDataState == EarlyData::USED)
+                                     ? TLS_EARLY_DATA_AVAILABLE_AND_USED
+                                     : TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED));
     if (EarlyDataUsed()) {
       Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_ACCEPTED,
                             earlyDataAccepted);
-      mozilla::glean::network::tls_early_data_accepted
-          .Get(earlyDataAccepted ? "accepted"_ns : "not_accepted"_ns)
-          .Add(1);
     }
-
-    
-    
     if (earlyDataAccepted) {
-      mozilla::glean::network::tls_early_data_bytes_written
-          .AccumulateSingleSample(aContentBytesWritten0RTT);
+      Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_BYTES_WRITTEN,
+                            aContentBytesWritten0RTT);
     }
   }
 }
