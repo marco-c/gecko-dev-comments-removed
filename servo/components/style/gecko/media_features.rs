@@ -8,6 +8,7 @@ use crate::gecko_bindings::bindings;
 use crate::gecko_bindings::structs;
 use crate::gecko_bindings::structs::ScreenColorGamut;
 use crate::media_queries::{Device, MediaType};
+use crate::parser::ParserContext;
 use crate::queries::feature::{AllowsRanges, Evaluator, FeatureFlags, QueryFeatureDescription};
 use crate::queries::values::Orientation;
 use crate::values::computed::{CSSPixelLength, Context, Ratio, Resolution};
@@ -287,15 +288,25 @@ pub enum ForcedColors {
     
     None,
     
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    Requested,
+    
     Active,
+}
+
+impl ForcedColors {
+    
+    pub fn is_active(self) -> bool {
+        matches!(self, Self::Active)
+    }
 }
 
 
 fn eval_forced_colors(context: &Context, query_value: Option<ForcedColors>) -> bool {
-    let forced = !context.device().use_document_colors();
+    let forced = context.device().forced_colors();
     match query_value {
-        Some(query_value) => forced == (query_value == ForcedColors::Active),
-        None => forced,
+        Some(query_value) => query_value == forced,
+        None => forced != ForcedColors::None,
     }
 }
 

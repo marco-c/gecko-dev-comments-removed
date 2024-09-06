@@ -29,6 +29,8 @@ use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use std::{cmp, fmt};
 use style_traits::{CSSPixel, DevicePixel};
 
+use super::media_features::ForcedColors;
+
 
 
 pub struct Device {
@@ -498,12 +500,27 @@ impl Device {
 
     
     #[inline]
-    pub fn use_document_colors(&self) -> bool {
-        let doc = self.document();
-        if doc.mIsBeingUsedAsImage() {
-            return true;
+    pub fn forced_colors(&self) -> ForcedColors {
+        if self.document().mIsBeingUsedAsImage() {
+            
+            return ForcedColors::None
         }
-        self.pref_sheet_prefs().mUseDocumentColors
+        let prefs = self.pref_sheet_prefs();
+        if !prefs.mUseDocumentColors {
+            return ForcedColors::Active
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        if cfg!(target_os = "windows") && prefs.mUseAccessibilityTheme && prefs.mIsChrome {
+            return ForcedColors::Requested;
+        }
+        ForcedColors::None
     }
 
     
