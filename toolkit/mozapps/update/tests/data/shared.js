@@ -75,7 +75,6 @@ const FILE_APPLICATION_INI = "application.ini";
 const FILE_BACKUP_UPDATE_CONFIG_JSON = "backup-update-config.json";
 const FILE_BACKUP_UPDATE_ELEVATED_LOG = "backup-update-elevated.log";
 const FILE_BACKUP_UPDATE_LOG = "backup-update.log";
-const FILE_BT_RESULT = "bt.result";
 const FILE_CHANNEL_PREFS =
   AppConstants.platform == "macosx" ? "ChannelPrefs" : "channel-prefs.js";
 const FILE_LAST_UPDATE_ELEVATED_LOG = "last-update-elevated.log";
@@ -371,17 +370,6 @@ function readStatusFailedCode() {
 
 
 
-function updateHasBinaryTransparencyErrorResult() {
-  let file = getUpdateDirFile(FILE_BT_RESULT);
-  return file.exists();
-}
-
-
-
-
-
-
-
 
 function readFile(aFile) {
   let fis = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
@@ -465,7 +453,6 @@ function getUpdateDirFile(aLeafName, aWhichDir = null) {
       file.append(DIR_UPDATES);
       file.append(aLeafName);
       return file;
-    case FILE_BT_RESULT:
     case FILE_UPDATE_LOG:
     case FILE_UPDATE_ELEVATED_LOG:
     case FILE_UPDATE_MAR:
@@ -537,7 +524,6 @@ function removeUpdateFiles(aRemoveLogFiles) {
   let files = [
     [FILE_ACTIVE_UPDATE_XML],
     [FILE_UPDATES_XML],
-    [FILE_BT_RESULT],
     [FILE_UPDATE_STATUS],
     [FILE_UPDATE_VERSION],
     [FILE_UPDATE_MAR],
