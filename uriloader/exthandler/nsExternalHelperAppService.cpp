@@ -281,15 +281,11 @@ static nsresult EnsureDirectoryExists(nsIFile* aDir) {
 
 
 
-static Result<nsCOMPtr<nsIFile>, nsresult> GetDownloadDirectory(
+static Result<nsCOMPtr<nsIFile>, nsresult> GetPreferredDownloadsDirectory(
     bool aSkipChecks = false) {
 #if defined(ANDROID)
   return Err(NS_ERROR_FAILURE);
 #endif
-
-  if (StaticPrefs::browser_download_start_downloads_in_tmp_dir()) {
-    return GetOsTmpDownloadDirectory();
-  }
 
   nsresult rv;
   
@@ -380,6 +376,26 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetDownloadDirectory(
   }
 
   return dir;
+}
+
+
+
+
+
+
+
+
+static Result<nsCOMPtr<nsIFile>, nsresult> GetInitialDownloadDirectory(
+    bool aSkipChecks = false) {
+#if defined(ANDROID)
+  return Err(NS_ERROR_FAILURE);
+#endif
+
+  if (StaticPrefs::browser_download_start_downloads_in_tmp_dir()) {
+    return GetOsTmpDownloadDirectory();
+  }
+
+  return GetPreferredDownloadsDirectory(aSkipChecks);
 }
 
 
@@ -1396,7 +1412,7 @@ void nsExternalAppHandler::RetargetLoadNotifications(nsIRequest* request) {
 nsresult nsExternalAppHandler::SetUpTempFile(nsIChannel* aChannel) {
   
   
-  auto res = GetDownloadDirectory();
+  auto res = GetInitialDownloadDirectory();
   if (res.isErr()) return res.unwrapErr();
   mTempFile = res.unwrap();
 
@@ -2379,7 +2395,7 @@ nsresult nsExternalAppHandler::CreateFailedTransfer() {
   if (!mFinalFileDestination) {
     
     
-    auto res = GetDownloadDirectory(true);
+    auto res = GetInitialDownloadDirectory(true);
     if (res.isErr()) return res.unwrapErr();
     nsCOMPtr<nsIFile> pseudoFile = res.unwrap();
 
@@ -2606,7 +2622,7 @@ NS_IMETHODIMP nsExternalAppHandler::SetDownloadToLaunch(
   if (aNewFileLocation) {
     fileToUse = aNewFileLocation;
   } else {
-    auto res = GetDownloadDirectory();
+    auto res = GetInitialDownloadDirectory();
     if (res.isErr()) return res.unwrapErr();
     fileToUse = res.unwrap();
 
