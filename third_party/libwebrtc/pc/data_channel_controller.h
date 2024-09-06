@@ -54,6 +54,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   void RemoveSctpDataStream(StreamId sid) override;
   void OnChannelStateChanged(SctpDataChannel* channel,
                              DataChannelInterface::DataState state) override;
+  size_t buffered_amount(StreamId sid) const override;
 
   
   void OnDataReceived(int channel_id,

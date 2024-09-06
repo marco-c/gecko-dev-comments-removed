@@ -55,6 +55,7 @@ class SctpDataChannelControllerInterface {
   
   virtual void OnChannelStateChanged(SctpDataChannel* data_channel,
                                      DataChannelInterface::DataState state) = 0;
+  virtual size_t buffered_amount(StreamId sid) const = 0;
 
  protected:
   virtual ~SctpDataChannelControllerInterface() {}
