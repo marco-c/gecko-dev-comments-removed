@@ -759,7 +759,12 @@ _cairo_surface_to_cgimage (cairo_surface_t       *source,
 
     if (acquired) {
 	_cairo_surface_release_source_image (source, image_surface->imageSurface, image_extra);
-	image_surface->imageSurface = NULL;
+	
+
+
+
+	if (source->type != CAIRO_SURFACE_TYPE_IMAGE)
+	    image_surface->imageSurface = NULL;
     }
     cairo_surface_destroy (&image_surface->base);
 
