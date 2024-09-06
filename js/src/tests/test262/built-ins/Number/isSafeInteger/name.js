@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(Number.isSafeInteger, "name", {
-  value: "isSafeInteger",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Number.isSafeInteger.name, "isSafeInteger");
+
+verifyNotEnumerable(Number.isSafeInteger, "name");
+verifyNotWritable(Number.isSafeInteger, "name");
+verifyConfigurable(Number.isSafeInteger, "name");
 
 reportCompare(0, 0);

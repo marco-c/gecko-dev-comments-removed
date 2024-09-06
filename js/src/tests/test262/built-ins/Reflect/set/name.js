@@ -13,11 +13,13 @@
 
 
 
-verifyProperty(Reflect.set, "name", {
-  value: "set",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(
+  Reflect.set.name, 'set',
+  'The value of `Reflect.set.name` is `"set"`'
+);
+
+verifyNotEnumerable(Reflect.set, 'name');
+verifyNotWritable(Reflect.set, 'name');
+verifyConfigurable(Reflect.set, 'name');
 
 reportCompare(0, 0);

@@ -21,11 +21,10 @@
 
 
 
-verifyProperty(Float64Array, "name", {
-  value: "Float64Array",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Float64Array.name, "Float64Array");
+
+verifyNotEnumerable(Float64Array, "name");
+verifyNotWritable(Float64Array, "name");
+verifyConfigurable(Float64Array, "name");
 
 reportCompare(0, 0);

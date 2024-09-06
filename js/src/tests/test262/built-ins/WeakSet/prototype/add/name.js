@@ -11,11 +11,13 @@
 
 
 
-verifyProperty(WeakSet.prototype.add, "name", {
-  value: "add",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(
+  WeakSet.prototype.add.name, 'add',
+  'The value of WeakSet.prototype.add.name is "add"'
+);
+
+verifyNotEnumerable(WeakSet.prototype.add, 'name');
+verifyNotWritable(WeakSet.prototype.add, 'name');
+verifyConfigurable(WeakSet.prototype.add, 'name');
 
 reportCompare(0, 0);

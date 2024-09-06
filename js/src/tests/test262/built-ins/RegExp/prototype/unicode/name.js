@@ -28,11 +28,10 @@
 
 var getter = Object.getOwnPropertyDescriptor(RegExp.prototype, 'unicode').get;
 
-verifyProperty(getter, "name", {
-  value: "get unicode",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(getter.name, 'get unicode');
+
+verifyNotEnumerable(getter, 'name');
+verifyNotWritable(getter, 'name');
+verifyConfigurable(getter, 'name');
 
 reportCompare(0, 0);

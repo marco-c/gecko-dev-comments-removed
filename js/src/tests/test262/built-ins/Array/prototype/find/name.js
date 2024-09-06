@@ -12,11 +12,13 @@
 
 
 
-verifyProperty(Array.prototype.find, "name", {
-  value: "find",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(
+  Array.prototype.find.name, 'find',
+  'The value of `Array.prototype.find.name` is `"find"`'
+);
+
+verifyNotEnumerable(Array.prototype.find, 'name');
+verifyNotWritable(Array.prototype.find, 'name');
+verifyConfigurable(Array.prototype.find, 'name');
 
 reportCompare(0, 0);

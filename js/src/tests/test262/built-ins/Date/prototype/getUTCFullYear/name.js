@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(Date.prototype.getUTCFullYear, "name", {
-  value: "getUTCFullYear",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Date.prototype.getUTCFullYear.name, "getUTCFullYear");
+
+verifyNotEnumerable(Date.prototype.getUTCFullYear, "name");
+verifyNotWritable(Date.prototype.getUTCFullYear, "name");
+verifyConfigurable(Date.prototype.getUTCFullYear, "name");
 
 reportCompare(0, 0);

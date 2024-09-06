@@ -14,11 +14,10 @@
 
 
 
-verifyProperty(Object.seal, "length", {
-  value: 1,
-  writable: false,
-  enumerable: false,
-  configurable: true,
-});
+assert.sameValue(Object.seal.length, 1);
+
+verifyNotEnumerable(Object.seal, "length");
+verifyNotWritable(Object.seal, "length");
+verifyConfigurable(Object.seal, "length");
 
 reportCompare(0, 0);

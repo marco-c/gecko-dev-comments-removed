@@ -22,11 +22,10 @@
 
 
 
-verifyProperty(Number.isSafeInteger, "length", {
-  value: 1,
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Number.isSafeInteger.length, 1);
+
+verifyNotEnumerable(Number.isSafeInteger, "length");
+verifyNotWritable(Number.isSafeInteger, "length");
+verifyConfigurable(Number.isSafeInteger, "length");
 
 reportCompare(0, 0);

@@ -21,11 +21,10 @@
 
 
 
-verifyProperty(Object.hasOwn, "name", {
-  value: "hasOwn",
-  writable: false,
-  enumerable: false,
-  configurable: true,
-});
+assert.sameValue(Object.hasOwn.name, "hasOwn");
+
+verifyNotEnumerable(Object.hasOwn, "name");
+verifyNotWritable(Object.hasOwn, "name");
+verifyConfigurable(Object.hasOwn, "name");
 
 reportCompare(0, 0);

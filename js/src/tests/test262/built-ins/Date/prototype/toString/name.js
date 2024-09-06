@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(Date.prototype.toString, "name", {
-  value: "toString",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Date.prototype.toString.name, "toString");
+
+verifyNotEnumerable(Date.prototype.toString, "name");
+verifyNotWritable(Date.prototype.toString, "name");
+verifyConfigurable(Date.prototype.toString, "name");
 
 reportCompare(0, 0);

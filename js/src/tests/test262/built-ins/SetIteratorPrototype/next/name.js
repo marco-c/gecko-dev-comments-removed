@@ -21,11 +21,10 @@
 
 var SetIteratorProto = Object.getPrototypeOf(new Set().values());
 
-verifyProperty(SetIteratorProto.next, "name", {
-  value: "next",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(SetIteratorProto.next.name, "next");
+
+verifyNotEnumerable(SetIteratorProto.next, "name");
+verifyNotWritable(SetIteratorProto.next, "name");
+verifyConfigurable(SetIteratorProto.next, "name");
 
 reportCompare(0, 0);

@@ -17,11 +17,10 @@
 
 
 
-verifyProperty(URIError, "name", {
-  value: "URIError",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(URIError.name, "URIError");
+
+verifyNotEnumerable(URIError, "name");
+verifyNotWritable(URIError, "name");
+verifyConfigurable(URIError, "name");
 
 reportCompare(0, 0);

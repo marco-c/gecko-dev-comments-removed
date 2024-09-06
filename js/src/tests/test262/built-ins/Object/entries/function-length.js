@@ -8,11 +8,10 @@
 
 
 
-verifyProperty(Object.entries, "length", {
-  value: 1,
-  writable: false,
-  enumerable: false,
-  configurable: true,
-});
+assert.sameValue(Object.entries.length, 1, 'Expected Object.entries.length to be 1');
+
+verifyNotEnumerable(Object.entries, 'length');
+verifyNotWritable(Object.entries, 'length');
+verifyConfigurable(Object.entries, 'length');
 
 reportCompare(0, 0);

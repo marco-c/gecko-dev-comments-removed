@@ -23,11 +23,10 @@
 
 
 
-verifyProperty(Symbol.keyFor, "length", {
-  value: 1,
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Symbol.keyFor.length, 1);
+
+verifyNotEnumerable(Symbol.keyFor, "length");
+verifyNotWritable(Symbol.keyFor, "length");
+verifyConfigurable(Symbol.keyFor, "length");
 
 reportCompare(0, 0);

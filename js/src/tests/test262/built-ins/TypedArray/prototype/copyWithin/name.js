@@ -20,11 +20,10 @@
 
 
 
-verifyProperty(TypedArray.prototype.copyWithin, "name", {
-  value: "copyWithin",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(TypedArray.prototype.copyWithin.name, "copyWithin");
+
+verifyNotEnumerable(TypedArray.prototype.copyWithin, "name");
+verifyNotWritable(TypedArray.prototype.copyWithin, "name");
+verifyConfigurable(TypedArray.prototype.copyWithin, "name");
 
 reportCompare(0, 0);
