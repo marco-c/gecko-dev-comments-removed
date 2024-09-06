@@ -624,7 +624,7 @@ static nsresult InitCharGlobals() {
 
   
   nsresult rv = NS_ERROR_OUT_OF_MEMORY;
-  RefPtr<nsGlyphTableList> glyphTableList = new nsGlyphTableList();
+  auto glyphTableList = MakeRefPtr<nsGlyphTableList>();
   if (glyphTableList) {
     rv = glyphTableList->Initialize();
   }
