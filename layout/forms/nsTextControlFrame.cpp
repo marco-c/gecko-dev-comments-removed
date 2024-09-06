@@ -553,19 +553,14 @@ void nsTextControlFrame::AppendAnonymousContentTo(
 }
 
 nscoord nsTextControlFrame::GetPrefISize(gfxContext* aRenderingContext) {
-  nscoord result = 0;
-  DISPLAY_PREF_INLINE_SIZE(this, result);
   WritingMode wm = GetWritingMode();
-  result = CalcIntrinsicSize(aRenderingContext, wm).ISize(wm);
-  return result;
+  return CalcIntrinsicSize(aRenderingContext, wm).ISize(wm);
 }
 
 nscoord nsTextControlFrame::GetMinISize(gfxContext* aRenderingContext) {
   
-  nscoord result;
-  DISPLAY_MIN_INLINE_SIZE(this, result);
-  result = GetPrefISize(aRenderingContext);
-  return result;
+  
+  return GetPrefISize(aRenderingContext);
 }
 
 Maybe<nscoord> nsTextControlFrame::ComputeBaseline(

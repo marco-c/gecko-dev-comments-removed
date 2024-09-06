@@ -32,7 +32,6 @@ FixedTableLayoutStrategy::~FixedTableLayoutStrategy() = default;
 
 
 nscoord FixedTableLayoutStrategy::GetMinISize(gfxContext* aRenderingContext) {
-  DISPLAY_MIN_INLINE_SIZE(mTableFrame, mMinISize);
   if (mMinISize != NS_INTRINSIC_ISIZE_UNKNOWN) {
     return mMinISize;
   }
@@ -119,9 +118,7 @@ nscoord FixedTableLayoutStrategy::GetPrefISize(gfxContext* aRenderingContext,
   
   
   
-  nscoord result = nscoord_MAX;
-  DISPLAY_PREF_INLINE_SIZE(mTableFrame, result);
-  return result;
+  return nscoord_MAX;
 }
 
 

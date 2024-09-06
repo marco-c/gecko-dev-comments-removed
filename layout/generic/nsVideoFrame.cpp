@@ -375,14 +375,9 @@ nsIFrame::SizeComputationResult nsVideoFrame::ComputeSize(
 }
 
 nscoord nsVideoFrame::GetMinISize(gfxContext* aRenderingContext) {
-  nscoord result;
-  
-  
-  DISPLAY_MIN_INLINE_SIZE(this, result);
   
   nsSize size = GetIntrinsicSize().ToSize().valueOr(nsSize());
-  result = GetWritingMode().IsVertical() ? size.height : size.width;
-  return result;
+  return GetWritingMode().IsVertical() ? size.height : size.width;
 }
 
 nscoord nsVideoFrame::GetPrefISize(gfxContext* aRenderingContext) {
