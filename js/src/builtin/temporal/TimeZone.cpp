@@ -1389,7 +1389,7 @@ static PlainDateTime BalanceISODateTime(const PlainDateTime& dateTime,
   MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
   MOZ_ASSERT(std::abs(nanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
-  auto& [date, time] = dateTime;
+  const auto& [date, time] = dateTime;
 
   
   auto balancedTime = BalanceTime(time, nanoseconds);

@@ -312,7 +312,7 @@ int32_t js::temporal::ToISODayOfYear(const PlainDate& date) {
   MOZ_ASSERT(ISODateTimeWithinLimits(date));
 
   
-  auto& [year, month, day] = date;
+  const auto& [year, month, day] = date;
   return ::ToISODayOfYear(year, month, day);
 }
 
@@ -423,7 +423,7 @@ struct YearWeek final {
 static YearWeek ToISOWeekOfYear(const PlainDate& date) {
   MOZ_ASSERT(ISODateTimeWithinLimits(date));
 
-  auto& [year, month, day] = date;
+  const auto& [year, month, day] = date;
 
   
   
@@ -2850,7 +2850,7 @@ static bool ISOFieldKeysToIgnore(JSContext* cx, const PropertyVector& keys,
 
   
   bool seenMonthOrMonthCode = false;
-  for (auto& key : keys) {
+  for (const auto& key : keys) {
     
     
 

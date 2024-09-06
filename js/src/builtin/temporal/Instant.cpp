@@ -348,7 +348,7 @@ BigInt* js::temporal::ToEpochNanoseconds(JSContext* cx,
 
 
 Instant js::temporal::GetUTCEpochNanoseconds(const PlainDateTime& dateTime) {
-  auto& [date, time] = dateTime;
+  const auto& [date, time] = dateTime;
 
   
   MOZ_ASSERT(IsValidISODateTime(dateTime));
