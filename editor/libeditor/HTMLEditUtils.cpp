@@ -2281,7 +2281,8 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
   
   
   
-  if (backwardScanFromPointToInsertResult.Failed() ||
+  if (NS_WARN_IF(backwardScanFromPointToInsertResult.Failed()) ||
+      backwardScanFromPointToInsertResult.ReachedInlineEditingHostBoundary() ||
       backwardScanFromPointToInsertResult.ReachedBRElement() ||
       backwardScanFromPointToInsertResult.ReachedCurrentBlockBoundary()) {
     return pointToInsert;

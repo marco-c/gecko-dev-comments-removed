@@ -1845,7 +1845,8 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
     return handled ? NS_OK : NS_SUCCESS_DOM_NO_OPERATION;
   }
 
-  if (aScanFromCaretPointResult.ReachedCurrentBlockBoundary()) {
+  if (aScanFromCaretPointResult.ReachedCurrentBlockBoundary() ||
+      aScanFromCaretPointResult.ReachedInlineEditingHostBoundary()) {
     MOZ_ASSERT(aScanFromCaretPointResult.ContentIsElement());
     MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
     bool handled = false;
@@ -2038,7 +2039,8 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
                                : std::move(ret);
   }
 
-  if (aScanFromCaretPointResult.ReachedCurrentBlockBoundary()) {
+  if (aScanFromCaretPointResult.ReachedCurrentBlockBoundary() ||
+      aScanFromCaretPointResult.ReachedInlineEditingHostBoundary()) {
     MOZ_ASSERT(aScanFromCaretPointResult.ContentIsElement());
     MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
     bool allRangesNotHandled = true;
@@ -4285,7 +4287,8 @@ HTMLEditor::AutoDeleteRangesHandler::DeleteParentBlocksWithTransactionIfEmpty(
   RefPtr<Element> editingHost = aHTMLEditor.ComputeEditingHost();
   WSRunScanner wsScannerForPoint(
       editingHost, aPoint, BlockInlineCheck::UseComputedDisplayOutsideStyle);
-  if (!wsScannerForPoint.StartsFromCurrentBlockBoundary()) {
+  if (!wsScannerForPoint.StartsFromCurrentBlockBoundary() &&
+      !wsScannerForPoint.StartsFromInlineEditingHostBoundary()) {
     
     
     return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
@@ -4338,13 +4341,15 @@ HTMLEditor::AutoDeleteRangesHandler::DeleteParentBlocksWithTransactionIfEmpty(
         NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
         return NS_ERROR_FAILURE;
       }
-      if (!scanResult.ReachedCurrentBlockBoundary()) {
+      if (!scanResult.ReachedCurrentBlockBoundary() &&
+          !scanResult.ReachedInlineEditingHostBoundary()) {
         
         
         return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
       }
     }
-  } else if (!forwardScanFromPointResult.ReachedCurrentBlockBoundary()) {
+  } else if (!forwardScanFromPointResult.ReachedCurrentBlockBoundary() &&
+             !forwardScanFromPointResult.ReachedInlineEditingHostBoundary()) {
     
     return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
   }
@@ -6790,7 +6795,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
           WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
               closestEditingHost, rangeToDelete.StartRef(),
               BlockInlineCheck::UseComputedDisplayOutsideStyle);
-      if (!backwardScanFromStartResult.ReachedCurrentBlockBoundary()) {
+      if (!backwardScanFromStartResult.ReachedCurrentBlockBoundary() &&
+          !backwardScanFromStartResult.ReachedInlineEditingHostBoundary()) {
         break;
       }
       MOZ_ASSERT(backwardScanFromStartResult.GetContent() ==
@@ -6869,7 +6875,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
         continue;
       }
 
-      if (forwardScanFromEndResult.ReachedCurrentBlockBoundary()) {
+      if (forwardScanFromEndResult.ReachedCurrentBlockBoundary() ||
+          forwardScanFromEndResult.ReachedInlineEditingHostBoundary()) {
         MOZ_ASSERT(forwardScanFromEndResult.ContentIsElement());
         MOZ_ASSERT(forwardScanFromEndResult.GetContent() ==
                    wsScannerAtEnd.GetEndReasonContent());

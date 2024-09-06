@@ -1624,9 +1624,18 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
       return Err(NS_ERROR_FAILURE);
     }
     const bool brElementIsAfterBlock =
-        backwardScanFromBeforeBRElementResult.ReachedBlockBoundary();
+        backwardScanFromBeforeBRElementResult.ReachedBlockBoundary() ||
+        
+        
+        
+        
+        
+        backwardScanFromBeforeBRElementResult
+            .ReachedInlineEditingHostBoundary();
     const bool brElementIsBeforeBlock =
-        forwardScanFromAfterBRElementResult.ReachedBlockBoundary();
+        forwardScanFromAfterBRElementResult.ReachedBlockBoundary() ||
+        
+        forwardScanFromAfterBRElementResult.ReachedInlineEditingHostBoundary();
     const bool isEmptyEditingHost = HTMLEditUtils::IsEmptyNode(
         *editingHost, {EmptyCheckOption::TreatNonEditableContentAsInvisible});
     if (brElementIsBeforeBlock &&
@@ -2261,14 +2270,24 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
         "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom() failed");
     return Err(NS_ERROR_FAILURE);
   }
-  const bool brElementIsAfterBlock = backwardScanResult.ReachedBlockBoundary();
+  const bool brElementIsAfterBlock =
+      backwardScanResult.ReachedBlockBoundary() ||
+      
+      
+      
+      
+      
+      backwardScanResult.ReachedInlineEditingHostBoundary();
   const WSScanResult forwardScanResult =
       wsRunScanner.ScanNextVisibleNodeOrBlockBoundaryFrom(aPointToBreak);
   if (MOZ_UNLIKELY(forwardScanResult.Failed())) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
     return Err(NS_ERROR_FAILURE);
   }
-  const bool brElementIsBeforeBlock = forwardScanResult.ReachedBlockBoundary();
+  const bool brElementIsBeforeBlock =
+      forwardScanResult.ReachedBlockBoundary() ||
+      
+      forwardScanResult.ReachedInlineEditingHostBoundary();
 
   
   RefPtr<Element> brElement;
@@ -2422,7 +2441,14 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
           rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
           "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
     }
-  } else if (forwardScanFromAfterBRElementResult.ReachedBlockBoundary() &&
+  } else if ((forwardScanFromAfterBRElementResult.ReachedBlockBoundary() ||
+              
+              
+              
+              
+              
+              forwardScanFromAfterBRElementResult
+                  .ReachedInlineEditingHostBoundary()) &&
              !brElementIsAfterBlock) {
     Result<CreateElementResult, nsresult> invisibleAdditionalBRElementResult =
         InsertAdditionalInvisibleLineBreak();
@@ -2530,7 +2556,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::HandleInsertLinefeed(
     WSRunScanner wsScannerAtCaret(&aEditingHost, pointToPutCaret,
                                   BlockInlineCheck::UseComputedDisplayStyle);
     if (wsScannerAtCaret.StartsFromPreformattedLineBreak() &&
-        wsScannerAtCaret.EndsByBlockBoundary() &&
+        (wsScannerAtCaret.EndsByBlockBoundary() ||
+         wsScannerAtCaret.EndsByInlineEditingHostBoundary()) &&
         HTMLEditUtils::CanNodeContain(*wsScannerAtCaret.GetEndReasonContent(),
                                       *nsGkAtoms::br)) {
       AutoTrackDOMPoint trackingInsertedPosition(RangeUpdaterRef(),
@@ -3343,12 +3370,14 @@ HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
                             BlockInlineCheck::UseComputedDisplayStyle);
   
   
-  if (!wsRunScanner.StartsFromHardLineBreak()) {
+  if (!wsRunScanner.StartsFromHardLineBreak() &&
+      !wsRunScanner.StartsFromInlineEditingHostBoundary()) {
     return CaretPoint(EditorDOMPoint());
   }
   
   
-  if (!wsRunScanner.EndsByBlockBoundary()) {
+  if (!wsRunScanner.EndsByBlockBoundary() &&
+      !wsRunScanner.EndsByInlineEditingHostBoundary()) {
     return CaretPoint(EditorDOMPoint());
   }
 
@@ -7673,7 +7702,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
         newRange.SetEnd(EditorRawDOMPoint::After(*child));
       }
       
-    } else if (wsScannerAtEnd.StartsFromCurrentBlockBoundary()) {
+    } else if (wsScannerAtEnd.StartsFromCurrentBlockBoundary() ||
+               wsScannerAtEnd.StartsFromInlineEditingHostBoundary()) {
       
       if (nsIContent* child = HTMLEditUtils::GetPreviousContent(
               endPoint, {WalkTreeOption::IgnoreNonEditableNode},
@@ -7710,7 +7740,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
         newRange.SetStart(EditorRawDOMPoint(child));
       }
       
-    } else if (wsScannerAtStart.EndsByCurrentBlockBoundary()) {
+    } else if (wsScannerAtStart.EndsByCurrentBlockBoundary() ||
+               wsScannerAtStart.EndsByInlineEditingHostBoundary()) {
       
       if (nsIContent* child = HTMLEditUtils::GetNextContent(
               startPoint, {WalkTreeOption::IgnoreNonEditableNode},
@@ -8966,7 +8997,13 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
 
   
   
-  if (forwardScanFromStartOfListItemResult.ReachedBlockBoundary()) {
+  if (forwardScanFromStartOfListItemResult.ReachedBlockBoundary() ||
+      
+      
+      
+      
+      
+      forwardScanFromStartOfListItemResult.ReachedInlineEditingHostBoundary()) {
     return InsertParagraphResult(
         &rightListItemElement,
         HTMLEditUtils::GetDeepestEditableStartPointOf<EditorDOMPoint>(

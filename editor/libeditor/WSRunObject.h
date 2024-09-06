@@ -61,6 +61,8 @@ class MOZ_STACK_CLASS WSScanResult final {
     OtherBlockBoundary,
     
     CurrentBlockBoundary,
+    
+    InlineEditingHostBoundary,
   };
 
   friend std::ostream& operator<<(std::ostream& aStream, const WSType& aType) {
@@ -89,6 +91,8 @@ class MOZ_STACK_CLASS WSScanResult final {
         return aStream << "WSType::OtherBlockBoundary";
       case WSType::CurrentBlockBoundary:
         return aStream << "WSType::CurrentBlockBoundary";
+      case WSType::InlineEditingHostBoundary:
+        return aStream << "WSType::InlineEditingHostBoundary";
     }
     return aStream << "<Illegal value>";
   }
@@ -129,7 +133,8 @@ class MOZ_STACK_CLASS WSScanResult final {
                mReason == WSType::PreformattedLineBreak ||
                mReason == WSType::SpecialContent ||
                mReason == WSType::CurrentBlockBoundary ||
-               mReason == WSType::OtherBlockBoundary);
+               mReason == WSType::OtherBlockBoundary ||
+               mReason == WSType::InlineEditingHostBoundary);
     MOZ_ASSERT_IF(mReason == WSType::UnexpectedError, !mContent);
     MOZ_ASSERT_IF(mReason != WSType::UnexpectedError, mContent);
     MOZ_ASSERT_IF(mReason == WSType::InUncomposedDoc,
@@ -151,33 +156,21 @@ class MOZ_STACK_CLASS WSScanResult final {
              !HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck)));
     MOZ_ASSERT_IF(mReason == WSType::OtherBlockBoundary,
                   HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck));
-    
-    
-    
-    
-    
-    if (mReason == WSType::CurrentBlockBoundary) {
-      MOZ_ASSERT_IF(mReason == WSType::CurrentBlockBoundary,
-                    mContent->IsElement());
-      MOZ_ASSERT_IF(mReason == WSType::CurrentBlockBoundary,
-                    mContent->IsEditable());
-      if (HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck)) {
-        return;
-      }
-      const DebugOnly<Element*> closestAncestorEditableBlockElement =
-          HTMLEditUtils::GetAncestorElement(
-              *mContent, HTMLEditUtils::ClosestEditableBlockElement,
-              aBlockInlineCheck);
-      MOZ_ASSERT_IF(
-          mReason == WSType::CurrentBlockBoundary,
-          
-          !closestAncestorEditableBlockElement ||
-              
-              
-              !closestAncestorEditableBlockElement->GetParentElement() ||
-              !closestAncestorEditableBlockElement->GetParentElement()
-                   ->IsEditable());
-    }
+    MOZ_ASSERT_IF(mReason == WSType::CurrentBlockBoundary,
+                  mContent->IsElement());
+    MOZ_ASSERT_IF(mReason == WSType::CurrentBlockBoundary,
+                  mContent->IsEditable());
+    MOZ_ASSERT_IF(mReason == WSType::CurrentBlockBoundary,
+                  HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck));
+    MOZ_ASSERT_IF(mReason == WSType::InlineEditingHostBoundary,
+                  mContent->IsElement());
+    MOZ_ASSERT_IF(mReason == WSType::InlineEditingHostBoundary,
+                  mContent->IsEditable());
+    MOZ_ASSERT_IF(mReason == WSType::InlineEditingHostBoundary,
+                  !HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck));
+    MOZ_ASSERT_IF(mReason == WSType::InlineEditingHostBoundary,
+                  !mContent->GetParentElement() ||
+                      !mContent->GetParentElement()->IsEditable());
 #endif  
   }
 
@@ -347,6 +340,13 @@ class MOZ_STACK_CLASS WSScanResult final {
 
   bool ReachedNonEditableOtherBlockElement() const {
     return ReachedOtherBlockElement() && !GetContent()->IsEditable();
+  }
+
+  
+
+
+  [[nodiscard]] bool ReachedInlineEditingHostBoundary() const {
+    return mReason == WSType::InlineEditingHostBoundary;
   }
 
   
@@ -601,6 +601,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
   bool StartsFromBlockBoundary() const {
     return TextFragmentDataAtStartRef().StartsFromBlockBoundary();
   }
+  bool StartsFromInlineEditingHostBoundary() const {
+    return TextFragmentDataAtStartRef().StartsFromInlineEditingHostBoundary();
+  }
   bool StartsFromHardLineBreak() const {
     return TextFragmentDataAtStartRef().StartsFromHardLineBreak();
   }
@@ -630,6 +633,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
   }
   bool EndsByBlockBoundary() const {
     return TextFragmentDataAtStartRef().EndsByBlockBoundary();
+  }
+  bool EndsByInlineEditingHostBoundary() const {
+    return TextFragmentDataAtStartRef().EndsByInlineEditingHostBoundary();
   }
 
   MOZ_NEVER_INLINE_DEBUG Element* StartReasonOtherBlockElementPtr() const {
@@ -700,6 +706,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool EndsByBlockBoundary() const {
       return mRightWSType == WSType::CurrentBlockBoundary ||
              mRightWSType == WSType::OtherBlockBoundary;
+    }
+    bool EndsByInlineEditingHostBoundary() const {
+      return mRightWSType == WSType::InlineEditingHostBoundary;
     }
 
     
@@ -929,6 +938,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
         return mReason == WSType::CurrentBlockBoundary ||
                mReason == WSType::OtherBlockBoundary;
       }
+      bool IsInlineEditingHostBoundary() const {
+        return mReason == WSType::InlineEditingHostBoundary;
+      }
       bool IsHardLineBreak() const {
         return mReason == WSType::CurrentBlockBoundary ||
                mReason == WSType::OtherBlockBoundary ||
@@ -1040,6 +1052,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
       return mStart.IsOtherBlockBoundary();
     }
     bool StartsFromBlockBoundary() const { return mStart.IsBlockBoundary(); }
+    bool StartsFromInlineEditingHostBoundary() const {
+      return mStart.IsInlineEditingHostBoundary();
+    }
     bool StartsFromHardLineBreak() const { return mStart.IsHardLineBreak(); }
     bool EndsByNonCollapsibleCharacters() const {
       return mEnd.IsNonCollapsibleCharacters();
@@ -1066,6 +1081,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
     }
     bool EndsByOtherBlockElement() const { return mEnd.IsOtherBlockBoundary(); }
     bool EndsByBlockBoundary() const { return mEnd.IsBlockBoundary(); }
+    bool EndsByInlineEditingHostBoundary() const {
+      return mEnd.IsInlineEditingHostBoundary();
+    }
 
     WSType StartRawReason() const { return mStart.RawReason(); }
     WSType EndRawReason() const { return mEnd.RawReason(); }
@@ -1237,7 +1255,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool FollowingContentMayBecomeFirstVisibleContent(
         const EditorDOMPointType& aPoint) const {
       MOZ_ASSERT(aPoint.IsSetAndValid());
-      if (!mStart.IsHardLineBreak()) {
+      if (!mStart.IsHardLineBreak() && !mStart.IsInlineEditingHostBoundary()) {
         return false;
       }
       
@@ -1273,7 +1291,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
       MOZ_ASSERT(aPoint.IsSetAndValid());
       
       
-      if (mEnd.IsBlockBoundary()) {
+      if (mEnd.IsBlockBoundary() || mEnd.IsInlineEditingHostBoundary()) {
         return true;
       }
 
