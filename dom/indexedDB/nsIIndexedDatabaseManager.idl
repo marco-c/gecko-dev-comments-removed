@@ -9,4 +9,18 @@
 [scriptable, builtinclass, uuid(6c62d204-cb7f-4762-8703-ebcccdd88Bde)]
 interface nsIIndexedDatabaseManager : nsISupports
 {
+  
+
+
+
+
+
+
+
+
+
+
+
+  [implicit_jscontext]
+  Promise doMaintenance();
 };
