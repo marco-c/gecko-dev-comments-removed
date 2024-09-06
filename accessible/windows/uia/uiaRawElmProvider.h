@@ -25,7 +25,8 @@ class uiaRawElmProvider : public IAccessibleEx,
                           public IInvokeProvider,
                           public IToggleProvider,
                           public IExpandCollapseProvider,
-                          public IScrollItemProvider {
+                          public IScrollItemProvider,
+                          public IValueProvider {
  public:
   static void RaiseUiaEventForGeckoEvent(Accessible* aAcc,
                                          uint32_t aGeckoEvent);
@@ -107,12 +108,23 @@ class uiaRawElmProvider : public IAccessibleEx,
   
   virtual HRESULT STDMETHODCALLTYPE ScrollIntoView(void);
 
+  
+  virtual HRESULT STDMETHODCALLTYPE SetValue(
+       __RPC__in LPCWSTR val);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_Value(
+       __RPC__deref_out_opt BSTR* pRetVal);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_IsReadOnly(
+       __RPC__out BOOL* pRetVal);
+
  private:
   Accessible* Acc() const;
   bool IsControl();
   long GetControlType() const;
   bool HasTogglePattern();
   bool HasExpandCollapsePattern();
+  bool HasValuePattern() const;
 };
 
 }  
