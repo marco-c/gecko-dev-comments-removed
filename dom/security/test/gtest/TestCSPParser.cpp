@@ -152,14 +152,9 @@ nsresult runTestSuite(const PolicyTest* aPolicies, uint32_t aPolicyCount,
 
   
   
-  bool trustedTypesEnabled = false;
-  constexpr auto kTrustedTypesEnabledPrefName =
-      "dom.security.trusted_types.enabled";
   if (prefs) {
     
     
-    prefs->GetBoolPref(kTrustedTypesEnabledPrefName, &trustedTypesEnabled);
-    prefs->SetBoolPref(kTrustedTypesEnabledPrefName, true);
   }
 
   for (uint32_t i = 0; i < aPolicyCount; i++) {
@@ -170,7 +165,6 @@ nsresult runTestSuite(const PolicyTest* aPolicies, uint32_t aPolicyCount,
 
   if (prefs) {
     
-    prefs->SetBoolPref(kTrustedTypesEnabledPrefName, trustedTypesEnabled);
   }
 
   return NS_OK;
@@ -226,8 +220,6 @@ TEST(CSPParser, Directives)
       "worker-src http://worker.com; frame-src http://frame.com; child-src http://child.com" },
     { "script-src 'unsafe-allow-redirects' http://example.com",
       "script-src http://example.com"},
-    { "require-trusted-types-for 'script'",
-      "require-trusted-types-for 'script'" },
       
   };
 
