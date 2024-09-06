@@ -539,6 +539,13 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   Variant<media::TimeUnit, double> mDuration;
 
+#  ifdef MOZ_WMF_MEDIA_ENGINE
+  
+  
+  bool mPendingStatusUpdateForNewlyCreatedStateMachine = false;
+  void SetStatusUpdateForNewlyCreatedStateMachineIfNeeded();
+#  endif
+
   
 
 
@@ -827,12 +834,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   bool mCanPlayThrough = false;
 
   UniquePtr<TelemetryProbesReporter> mTelemetryProbesReporter;
-
-#  ifdef MOZ_WMF_MEDIA_ENGINE
-  
-  
-  bool mPendingStatusUpdateForNewlyCreatedStateMachine = false;
-#  endif
 
   
   
