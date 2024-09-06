@@ -1882,9 +1882,8 @@ struct NewLayerData {
   ScrollableLayerGuid::ViewID mDeferredId = ScrollableLayerGuid::NULL_SCROLL_ID;
   bool mTransformShouldGetOwnLayer = false;
 
-  void ComputeDeferredTransformInfo(
-      const StackingContextHelper& aSc, nsDisplayItem* aItem,
-      nsDisplayTransform* aLastDeferredTransform) {
+  void ComputeDeferredTransformInfo(const StackingContextHelper& aSc,
+                                    nsDisplayItem* aItem) {
     
     
     
@@ -1900,14 +1899,6 @@ struct NewLayerData {
     
     
     mDeferredItem = aSc.GetDeferredTransformItem();
-    
-    
-    
-    
-    
-    if (mDeferredItem == aLastDeferredTransform) {
-      mDeferredItem = nullptr;
-    }
     if (mDeferredItem) {
       
       
@@ -2071,10 +2062,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         newLayerData->mLayerCountBeforeRecursing = mLayerScrollData.size();
         newLayerData->mStopAtAsr =
             mAsrStack.empty() ? nullptr : mAsrStack.back();
-        newLayerData->ComputeDeferredTransformInfo(
-            aSc, item,
-            mDeferredTransformStack.empty() ? nullptr
-                                            : mDeferredTransformStack.back());
+        newLayerData->ComputeDeferredTransformInfo(aSc, item);
 
         
         
@@ -2102,7 +2090,6 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         
         if (newLayerData->mDeferredItem) {
           aSc.ClearDeferredTransformItem();
-          mDeferredTransformStack.push_back(newLayerData->mDeferredItem);
         }
       }
     }
@@ -2147,8 +2134,6 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
 
         if (newLayerData->mDeferredItem) {
           aSc.RestoreDeferredTransformItem(newLayerData->mDeferredItem);
-          MOZ_ASSERT(!mDeferredTransformStack.empty());
-          mDeferredTransformStack.pop_back();
         }
 
         const ActiveScrolledRoot* stopAtAsr = newLayerData->mStopAtAsr;

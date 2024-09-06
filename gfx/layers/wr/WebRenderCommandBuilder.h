@@ -208,9 +208,6 @@ class WebRenderCommandBuilder final {
   
   
   std::vector<const ActiveScrolledRoot*> mAsrStack;
-  
-  
-  std::vector<nsDisplayTransform*> mDeferredTransformStack;
   const ActiveScrolledRoot* mLastAsr;
 
   WebRenderUserDataRefTable mWebRenderUserDatas;
