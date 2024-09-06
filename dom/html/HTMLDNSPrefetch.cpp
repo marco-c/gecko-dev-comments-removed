@@ -317,7 +317,7 @@ nsresult HTMLDNSPrefetch::CancelPrefetch(
     if (!hostname.IsEmpty() &&
         net_IsValidHostName(NS_ConvertUTF16toUTF8(hostname))) {
       
-      if (gNeckoChild) {
+      if (gNeckoChild && gNeckoChild->CanSend()) {
         gNeckoChild->SendCancelHTMLDNSPrefetch(
             hostname, isHttps, aPartitionedPrincipalOriginAttributes, flags,
             aReason);
