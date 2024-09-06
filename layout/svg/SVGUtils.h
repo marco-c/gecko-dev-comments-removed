@@ -511,6 +511,13 @@ class SVGUtils final {
                : AntialiasMode::SUBPIXEL;
   }
 
+  static AntialiasMode ToAntialiasMode(StyleShapeRendering aShapeRendering) {
+    return (aShapeRendering == StyleShapeRendering::Optimizespeed ||
+            aShapeRendering == StyleShapeRendering::Crispedges)
+               ? AntialiasMode::NONE
+               : AntialiasMode::SUBPIXEL;
+  }
+
   
 
 
