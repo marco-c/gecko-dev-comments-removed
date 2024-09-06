@@ -17,6 +17,7 @@ async function runTestCase(spawnArgs, spawnFn, { expectInstall, clickLink }) {
     set: [
       
       ["xpinstall.userActivation.required", true],
+      ["dom.security.https_first", false],
     ],
   });
   await BrowserTestUtils.withNewTab(TESTROOT, async browser => {
