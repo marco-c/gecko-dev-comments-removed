@@ -1260,16 +1260,11 @@ static Position MaybeResolvePositionForTransform(const LengthPercentage& aX,
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTransformOrigin() {
   
-
-
-
-  
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
 
   
   const auto& origin = StyleDisplay()->mTransformOrigin;
 
-  RefPtr<nsROCSSPrimitiveValue> width = new nsROCSSPrimitiveValue;
   auto position = MaybeResolvePositionForTransform(
       origin.horizontal, origin.vertical, mInnerFrame);
   SetValueToPosition(position, valueList);
@@ -1285,10 +1280,6 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTransformOrigin() {
 
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetPerspectiveOrigin() {
-  
-
-
-
   
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
 
@@ -1666,7 +1657,6 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
     
     for (uint32_t i = 0; i < repeatStart; i++) {
       AppendGridLineNames(valueList, aTrackInfo.mResolvedLineNames[i]);
-      RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
       valueList->AppendCSSValue(AppUnitsToCSSValue(*trackSizeIter++));
     }
     auto lineNameIter = aTrackInfo.mResolvedLineNames.cbegin() + repeatStart;
