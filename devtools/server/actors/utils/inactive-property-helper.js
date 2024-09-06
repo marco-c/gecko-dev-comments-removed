@@ -287,6 +287,13 @@ class InactivePropertyHelper {
       },
       
       {
+        invalidProperties: ["column-span"],
+        when: () => !this.inMultiColContainer,
+        fixId: "inactive-css-column-span-fix",
+        msgId: "inactive-css-column-span",
+      },
+      
+      {
         invalidProperties: ["vertical-align"],
         when: () =>
           !this.isInlineLevel() && !this.isFirstLetter && !this.isFirstLine,
@@ -962,6 +969,14 @@ class InactivePropertyHelper {
   
 
 
+
+  get inMultiColContainer() {
+    return !!this.getParentMultiColElement(this.node);
+  }
+
+  
+
+
   get tableRow() {
     return this.style && this.style.display === "table-row";
   }
@@ -1329,6 +1344,57 @@ class InactivePropertyHelper {
         return null; 
       }
       
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+  getParentMultiColElement(node) {
+    
+    
+    if (node.flattenedTreeParentNode === node.ownerDocument) {
+      return null;
+    }
+
+    
+    if (
+      node.nodeType !== node.ELEMENT_NODE &&
+      node.nodeType !== node.TEXT_NODE
+    ) {
+      return null;
+    }
+
+    if (node.nodeType === node.ELEMENT_NODE) {
+      const display = this.style ? this.style.display : null;
+
+      if (!display || display === "none" || display === "contents") {
+        
+        return null;
+      }
+      if (this.isAbsolutelyPositioned) {
+        
+        return null;
+      }
+    }
+
+    
+    
+    
+    for (
+      let p = node.flattenedTreeParentNode;
+      p && p !== node.ownerDocument;
+      p = p.flattenedTreeParentNode
+    ) {
+      const style = computedStyle(p, node.ownerGlobal);
+      if (style.columnWidth !== "auto" || style.columnCount !== "auto") {
+        
+        return p;
+      }
     }
     return null;
   }
