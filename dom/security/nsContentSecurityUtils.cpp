@@ -1332,20 +1332,19 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
   
   static nsLiteralCString sAllowedAboutPagesWithNoCSP[] = {
-      
-      "about:blank"_ns,
-      
-      "about:srcdoc"_ns,
-      
-      "about:sync-log"_ns,
-      
-      "about:logo"_ns,
-      
-      
-      
-      "about:sync"_ns,
+    
+    "about:blank"_ns,
+    
+    "about:srcdoc"_ns,
+    
+    "about:sync-log"_ns,
+    
+    "about:logo"_ns,
+    
+    
+    "about:sync"_ns,
 #  if defined(ANDROID)
-      "about:config"_ns,
+    "about:config"_ns,
 #  endif
   };
 
@@ -1364,20 +1363,20 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must contain a CSP denying object-src");
 
   
-  MOZ_ASSERT(
-      !foundScriptSrc || StringBeginsWith(aboutSpec, "about:preferences"_ns) ||
-          StringBeginsWith(aboutSpec, "about:settings"_ns) ||
-          StringBeginsWith(aboutSpec, "about:downloads"_ns) ||
-          StringBeginsWith(aboutSpec, "about:fingerprintingprotection"_ns) ||
-          StringBeginsWith(aboutSpec, "about:asrouter"_ns) ||
-          StringBeginsWith(aboutSpec, "about:newtab"_ns) ||
-          StringBeginsWith(aboutSpec, "about:logins"_ns) ||
-          StringBeginsWith(aboutSpec, "about:compat"_ns) ||
-          StringBeginsWith(aboutSpec, "about:welcome"_ns) ||
-          StringBeginsWith(aboutSpec, "about:profiling"_ns) ||
-          StringBeginsWith(aboutSpec, "about:studies"_ns) ||
-          StringBeginsWith(aboutSpec, "about:home"_ns),
-      "about: page must not contain a CSP including script-src");
+  MOZ_ASSERT(!foundScriptSrc ||
+                 StringBeginsWith(aboutSpec, "about:preferences"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:settings"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:downloads"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:fingerprinting"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:asrouter"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:newtab"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:logins"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:compat"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:welcome"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:profiling"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:studies"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:home"_ns),
+             "about: page must not contain a CSP including script-src");
 
   MOZ_ASSERT(!foundWorkerSrc,
              "about: page must not contain a CSP including worker-src");
