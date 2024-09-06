@@ -5,7 +5,7 @@
 
 
 
-use crate::applicable_declarations::ApplicableDeclarationList;
+use crate::applicable_declarations::{ApplicableDeclarationList, ScopeProximity};
 use crate::context::QuirksMode;
 use crate::dom::TElement;
 use crate::rule_tree::CascadeLevel;
@@ -367,7 +367,12 @@ impl SelectorMap<Rule> {
                 }
             }
 
-            matching_rules.push(rule.to_applicable_declaration_block(cascade_level, cascade_data));
+            
+            matching_rules.push(rule.to_applicable_declaration_block(
+                cascade_level,
+                cascade_data,
+                ScopeProximity::infinity(),
+            ));
         }
     }
 }

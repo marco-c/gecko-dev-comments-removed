@@ -5,7 +5,7 @@
 
 
 use crate::applicable_declarations::{
-    ApplicableDeclarationBlock, ApplicableDeclarationList, CascadePriority,
+    ApplicableDeclarationBlock, ApplicableDeclarationList, CascadePriority, ScopeProximity,
 };
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::{CascadeInputs, QuirksMode};
@@ -1763,8 +1763,7 @@ impl PageRuleMap {
 
         
         
-        matched_rules[start..]
-            .sort_by_key(|block| (block.layer_order(), block.specificity, block.source_order()));
+        matched_rules[start..].sort_by_key(|block| block.sort_key());
     }
 
     fn match_and_add_rules(
@@ -1793,6 +1792,7 @@ impl PageRuleMap {
                 level,
                 specificity,
                 cascade_data.layer_order_for(data.layer),
+                ScopeProximity::infinity(), 
             ));
         }
     }
@@ -2831,7 +2831,7 @@ impl CascadeData {
                                 debug_assert!(!has_nested_rules);
                                 debug_assert_eq!(stylesheet.contents().origin, Origin::UserAgent);
                                 debug_assert_eq!(containing_rule_state.layer_id, LayerId::root());
-
+                                
                                 precomputed_pseudo_element_decls
                                     .as_mut()
                                     .expect("Expected precomputed declarations for the UA level")
@@ -2842,6 +2842,7 @@ impl CascadeData {
                                         CascadeLevel::UANormal,
                                         selector.specificity(),
                                         LayerOrder::root(),
+                                        ScopeProximity::infinity(),
                                     ));
                                 continue;
                             }
@@ -3474,6 +3475,7 @@ impl Rule {
         &self,
         level: CascadeLevel,
         cascade_data: &CascadeData,
+        scope_proximity: ScopeProximity,
     ) -> ApplicableDeclarationBlock {
         let source = StyleSource::from_rule(self.style_rule.clone());
         ApplicableDeclarationBlock::new(
@@ -3482,6 +3484,7 @@ impl Rule {
             level,
             self.specificity(),
             cascade_data.layer_order_for(self.layer_id),
+            scope_proximity,
         )
     }
 

@@ -135,6 +135,45 @@ impl CascadePriority {
 
 
 
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
+pub struct ScopeProximity(u16);
+
+impl PartialOrd for ScopeProximity {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ScopeProximity {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        
+        other.0.cmp(&self.0)
+    }
+}
+
+
+
+const PROXIMITY_INFINITY: u16 = u16::MAX;
+
+impl ScopeProximity {
+    
+    pub fn new(proximity: usize) -> Self {
+        if cfg!(debug_assertions) && proximity >= PROXIMITY_INFINITY as usize {
+            warn!("Proximity out of bounds");
+        }
+        Self(proximity.clamp(0, (PROXIMITY_INFINITY - 1) as usize) as u16)
+    }
+
+    
+    pub fn infinity() -> Self {
+        Self(PROXIMITY_INFINITY)
+    }
+}
+
+
+
+
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq)]
@@ -148,6 +187,8 @@ pub struct ApplicableDeclarationBlock {
     source_order: u32,
     
     pub specificity: u32,
+    
+    pub scope_proximity: ScopeProximity,
     
     pub cascade_priority: CascadePriority,
 }
@@ -165,6 +206,7 @@ impl ApplicableDeclarationBlock {
             source: StyleSource::from_declarations(declarations),
             source_order: 0,
             specificity: 0,
+            scope_proximity: ScopeProximity::infinity(),
             cascade_priority: CascadePriority::new(level, layer_order),
         }
     }
@@ -177,11 +219,13 @@ impl ApplicableDeclarationBlock {
         level: CascadeLevel,
         specificity: u32,
         layer_order: LayerOrder,
+        scope_proximity: ScopeProximity,
     ) -> Self {
         ApplicableDeclarationBlock {
             source,
             source_order: source_order & SOURCE_ORDER_MASK,
             specificity,
+            scope_proximity,
             cascade_priority: CascadePriority::new(level, layer_order),
         }
     }
@@ -205,10 +249,27 @@ impl ApplicableDeclarationBlock {
     }
 
     
+    #[inline]
+    pub fn scope_proximity(&self) -> ScopeProximity {
+        self.scope_proximity
+    }
+
+    
     
     #[inline]
     pub fn for_rule_tree(self) -> (StyleSource, CascadePriority) {
         (self.source, self.cascade_priority)
+    }
+
+    
+    #[inline]
+    pub fn sort_key(&self) -> (LayerOrder, u32, ScopeProximity, u32) {
+        (
+            self.layer_order(),
+            self.specificity,
+            self.scope_proximity(),
+            self.source_order(),
+        )
     }
 }
 
