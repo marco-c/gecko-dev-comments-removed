@@ -49,16 +49,6 @@ class BodyUtil final {
 
 
 
-
-  static void ConsumeBytes(JSContext* aCx, JS::MutableHandle<JSObject*> aValue,
-                           uint32_t aInputLength,
-                           UniquePtr<uint8_t[], JS::FreePolicy> aInput,
-                           ErrorResult& aRv);
-
-  
-
-
-
   static already_AddRefed<FormData> ConsumeFormData(
       nsIGlobalObject* aParent, const nsCString& aMimeType,
       const nsACString& aMixedCaseMimeType, const nsCString& aStr,

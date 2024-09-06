@@ -29,13 +29,12 @@ class BodyConsumer final : public nsIObserver,
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  enum class ConsumeType {
-    ArrayBuffer,
-    Blob,
-    Bytes,
-    FormData,
-    JSON,
-    Text,
+  enum ConsumeType {
+    CONSUME_ARRAYBUFFER,
+    CONSUME_BLOB,
+    CONSUME_FORMDATA,
+    CONSUME_JSON,
+    CONSUME_TEXT,
   };
 
   
