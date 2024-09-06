@@ -11,6 +11,7 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocShell.h"  
@@ -448,44 +449,96 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
+
+
+
+
+
+
+
   struct FlatTextCache {
+   public:
+    void Clear() {
+      mContainerNode = nullptr;
+      mContent = nullptr;
+      mFlatTextLength = 0;
+    }
+
     
+
+
+
+    [[nodiscard]] bool IsCachingToEndOfContent() const {
+      return mContainerNode && mContent;
+    }
+
+    
+
+
+
+
+
+    [[nodiscard]] bool IsCachingToStartOfContainer() const {
+      return mContainerNode && !mContent;
+    }
+
+    void CacheFlatTextLengthBeforeEndOfContent(const nsIContent& aContent,
+                                               uint32_t aFlatTextLength) {
+      mContainerNode = aContent.GetParentNode();
+      mContent = const_cast<nsIContent*>(&aContent);
+      mFlatTextLength = aFlatTextLength;
+      MOZ_ASSERT(IsCachingToEndOfContent());
+    }
+
+    void CacheFlatTextLengthBeforeFirstContent(const nsINode& aContainer,
+                                               uint32_t aFlatTextLength) {
+      mContainerNode = const_cast<nsINode*>(&aContainer);
+      mContent = nullptr;
+      mFlatTextLength = aFlatTextLength;
+      MOZ_ASSERT(IsCachingToStartOfContainer());
+    }
+
+    [[nodiscard]] bool CachesTextLengthBeforeContent(
+        const nsIContent& aContent) const {
+      MOZ_ASSERT(!aContent.IsBeingRemoved());
+      return CachesTextLengthBeforeContent(aContent,
+                                           aContent.GetPreviousSibling());
+    }
+    [[nodiscard]] bool CachesTextLengthBeforeContent(
+        const nsIContent& aContent, const nsIContent* aPreviousSibling) const {
+      MOZ_ASSERT_IF(!aContent.IsBeingRemoved(),
+                    aContent.GetPreviousSibling() == aPreviousSibling);
+      if (!mContainerNode || mContainerNode != aContent.GetParentNode()) {
+        return false;
+      }
+      if (IsCachingToStartOfContainer()) {
+        MOZ_ASSERT(!mContent);
+        return !aPreviousSibling;
+      }
+      MOZ_ASSERT(mContent);
+      return mContainerNode == aContent.GetParentNode() &&
+             mContent == aPreviousSibling;
+    }
+
     
     nsCOMPtr<nsINode> mContainerNode;
     
     
     
-    nsCOMPtr<nsINode> mNode;
+    
+    nsCOMPtr<nsIContent> mContent;
     
     
-    uint32_t mFlatTextLength;
-
-    FlatTextCache() : mFlatTextLength(0) {}
-
-    void Clear() {
-      mContainerNode = nullptr;
-      mNode = nullptr;
-      mFlatTextLength = 0;
-    }
-
-    void Cache(nsINode* aContainer, nsINode* aNode, uint32_t aFlatTextLength) {
-      MOZ_ASSERT(aContainer, "aContainer must not be null");
-      MOZ_ASSERT(!aNode || aNode->GetParentNode() == aContainer,
-                 "aNode must be either null or a child of aContainer");
-      mContainerNode = aContainer;
-      mNode = aNode;
-      mFlatTextLength = aFlatTextLength;
-    }
-
-    bool Match(nsINode* aContainer, nsINode* aNode) const {
-      return aContainer == mContainerNode && aNode == mNode;
-    }
+    
+    uint32_t mFlatTextLength = 0;
   };
   
   
   
   
   FlatTextCache mEndOfAddedTextCache;
+  
+  
   
   
   
