@@ -37,17 +37,6 @@ let gExceptionsList = [
   },
   {
     file: "dom.properties",
-    key: "PatternAttributeCompileFailure",
-    type: "single-quote",
-  },
-  
-  {
-    file: "dom.properties",
-    key: "PatternAttributeCompileFailure",
-    type: "single-quote",
-  },
-  {
-    file: "dom.properties",
     key: "ImportMapExternalNotSupported",
     type: "single-quote",
   },
