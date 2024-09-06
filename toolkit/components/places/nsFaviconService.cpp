@@ -14,7 +14,6 @@
 
 
 #include "nsFaviconService.h"
-#include "PlacesCompletionCallback.h"
 
 #include "nsNavHistory.h"
 #include "nsPlacesMacros.h"
@@ -35,6 +34,13 @@
 #include "nsIScriptError.h"
 #include "nsContentUtils.h"
 #include "imgICache.h"
+
+#define UNASSOCIATED_FAVICONS_LENGTH 32
+
+
+
+
+#define UNASSOCIATED_ICON_EXPIRY_INTERVAL 60000
 
 using namespace mozilla;
 using namespace mozilla::places;
@@ -117,10 +123,12 @@ nsresult GetFramesInfoForContainer(imgIContainer* aContainer,
 PLACES_FACTORY_SINGLETON_IMPLEMENTATION(nsFaviconService, gFaviconService)
 
 NS_IMPL_CLASSINFO(nsFaviconService, nullptr, 0, NS_FAVICONSERVICE_CID)
-NS_IMPL_ISUPPORTS_CI(nsFaviconService, nsIFaviconService)
+NS_IMPL_ISUPPORTS_CI(nsFaviconService, nsIFaviconService, nsITimerCallback,
+                     nsINamed)
 
 nsFaviconService::nsFaviconService()
-    : mDefaultIconURIPreferredSize(UINT16_MAX) {
+    : mUnassociatedIcons(UNASSOCIATED_FAVICONS_LENGTH),
+      mDefaultIconURIPreferredSize(UINT16_MAX) {
   NS_ASSERTION(!gFaviconService,
                "Attempting to create two instances of the service!");
   gFaviconService = this;
@@ -144,6 +152,10 @@ nsFaviconService::StoreLastInsertedId(const nsACString& aTable,
 nsresult nsFaviconService::Init() {
   mDB = Database::GetDatabase();
   NS_ENSURE_STATE(mDB);
+
+  mExpireUnassociatedIconsTimer = NS_NewTimer();
+  NS_ENSURE_STATE(mExpireUnassociatedIconsTimer);
+
   return NS_OK;
 }
 
@@ -173,6 +185,41 @@ nsFaviconService::ExpireAllFavicons() {
   RefPtr<ExpireFaviconsStatementCallbackNotifier> callback =
       new ExpireFaviconsStatementCallbackNotifier();
   return conn->ExecuteAsync(stmts, callback, getter_AddRefs(ps));
+}
+
+
+
+
+NS_IMETHODIMP
+nsFaviconService::Notify(nsITimer* timer) {
+  if (timer != mExpireUnassociatedIconsTimer.get()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  PRTime now = PR_Now();
+  for (auto iter = mUnassociatedIcons.Iter(); !iter.Done(); iter.Next()) {
+    UnassociatedIconHashKey* iconKey = iter.Get();
+    if (now - iconKey->created >= UNASSOCIATED_ICON_EXPIRY_INTERVAL) {
+      iter.Remove();
+    }
+  }
+
+  
+  if (mUnassociatedIcons.Count() > 0) {
+    mExpireUnassociatedIconsTimer->InitWithCallback(
+        this, UNASSOCIATED_ICON_EXPIRY_INTERVAL, nsITimer::TYPE_ONE_SHOT);
+  }
+
+  return NS_OK;
+}
+
+
+
+
+NS_IMETHODIMP
+nsFaviconService::GetName(nsACString& aName) {
+  aName.AssignLiteral("nsFaviconService");
+  return NS_OK;
 }
 
 
@@ -209,161 +256,6 @@ void nsFaviconService::ClearImageCache(nsIURI* aImageURI) {
   if (NS_SUCCEEDED(rv)) {
     Unused << imgCache->RemoveEntry(aImageURI, nullptr);
   }
-}
-
-NS_IMETHODIMP
-nsFaviconService::SetFaviconForPage(
-    nsIURI* aPageURI, nsIURI* aFaviconURI, nsIURI* aDataURL,
-    PRTime aExpiration = 0, PlacesCompletionCallback* aCallback = nullptr) {
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG(aPageURI);
-  NS_ENSURE_ARG(aFaviconURI);
-  NS_ENSURE_ARG(aDataURL);
-
-  MOZ_DIAGNOSTIC_ASSERT(aDataURL->SchemeIs("data"));
-  if (!aDataURL->SchemeIs("data")) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-    return NS_OK;
-  }
-
-  PRTime now = PR_Now();
-  if (aExpiration < now + MIN_FAVICON_EXPIRATION) {
-    
-    aExpiration = now + MAX_FAVICON_EXPIRATION;
-  }
-
-  
-  nsresult rv = NS_OK;
-  auto guard = MakeScopeExit([&]() {
-    if (aCallback) {
-      aCallback->Complete(rv);
-    }
-  });
-
-  nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsIProtocolHandler> protocolHandler;
-  rv = ioService->GetProtocolHandler("data", getter_AddRefs(protocolHandler));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIPrincipal> loadingPrincipal =
-      NullPrincipal::CreateWithoutOriginAttributes();
-  if (MOZ_UNLIKELY(!(loadingPrincipal))) {
-    return (rv = NS_ERROR_NULL_POINTER);
-  }
-
-  nsCOMPtr<nsILoadInfo> loadInfo = new mozilla::net::LoadInfo(
-      loadingPrincipal,
-      nullptr,  
-      nullptr,  
-      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT |
-          nsILoadInfo::SEC_ALLOW_CHROME | nsILoadInfo::SEC_DISALLOW_SCRIPT,
-      nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON);
-
-  nsCOMPtr<nsIChannel> channel;
-  rv = protocolHandler->NewChannel(aDataURL, loadInfo, getter_AddRefs(channel));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  nsCOMPtr<nsIInputStream> stream;
-  rv = channel->Open(getter_AddRefs(stream));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  uint64_t available64;
-  rv = stream->Available(&available64);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (available64 == 0 || available64 > UINT32_MAX / sizeof(uint8_t)) {
-    return (rv = NS_ERROR_FILE_TOO_BIG);
-  }
-  uint32_t available = (uint32_t)available64;
-
-  
-  nsTArray<uint8_t> buffer;
-  buffer.SetLength(available);
-  uint32_t numRead;
-  rv = stream->Read(TO_CHARBUFFER(buffer.Elements()), available, &numRead);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (numRead != available) {
-    return (rv = NS_ERROR_UNEXPECTED);
-  }
-
-  nsAutoCString mimeType;
-  rv = channel->GetContentType(mimeType);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!imgLoader::SupportImageWithMimeType(
-          mimeType, AcceptedMimeTypes::IMAGES_AND_DOCUMENTS)) {
-    return (rv = NS_ERROR_UNEXPECTED);
-  }
-
-  
-  nsCOMPtr<nsIURI> faviconURI = GetExposableURI(aFaviconURI);
-  nsCOMPtr<nsIURI> pageURI = GetExposableURI(aPageURI);
-
-  IconData icon;
-  icon.expiration = aExpiration;
-  icon.status = ICON_STATUS_CACHED;
-  icon.fetchMode = FETCH_NEVER;
-  rv = faviconURI->GetSpec(icon.spec);
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  (void)faviconURI->GetHost(icon.host);
-  if (StringBeginsWith(icon.host, "www."_ns)) {
-    icon.host.Cut(0, 4);
-  }
-
-  IconPayload payload;
-  payload.mimeType = mimeType;
-  payload.data.Assign(TO_CHARBUFFER(buffer.Elements()), buffer.Length());
-  if (payload.mimeType.EqualsLiteral(SVG_MIME_TYPE)) {
-    payload.width = UINT16_MAX;
-  }
-  icon.payloads.AppendElement(payload);
-
-  rv = OptimizeIconSizes(icon);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  PageData page;
-  rv = pageURI->GetSpec(page.spec);
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  (void)pageURI->GetHost(page.host);
-  if (StringBeginsWith(page.host, "www."_ns)) {
-    page.host.Cut(0, 4);
-  }
-
-  
-  
-  
-  nsAutoCString path;
-  if (NS_SUCCEEDED(faviconURI->GetPathQueryRef(path)) && !icon.host.IsEmpty() &&
-      icon.host.Equals(page.host) && path.EqualsLiteral("/favicon.ico")) {
-    icon.rootIcon = 1;
-  }
-
-  
-  
-  
-  
-  if (icon.spec.Equals(page.spec) ||
-      icon.spec.EqualsLiteral(FAVICON_CERTERRORPAGE_URL) ||
-      icon.spec.EqualsLiteral(FAVICON_ERRORPAGE_URL)) {
-    return NS_OK;
-  }
-
-  RefPtr<AsyncSetIconForPage> event =
-      new AsyncSetIconForPage(icon, page, aCallback);
-  RefPtr<Database> DB = Database::GetDatabase();
-  if (MOZ_UNLIKELY(!DB)) {
-    return (rv = NS_ERROR_UNEXPECTED);
-  }
-
-  DB->DispatchToAsyncThread(event);
-
-  guard.release();
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -418,13 +310,20 @@ nsFaviconService::SetAndFetchFaviconForPage(
 
   
   IconData icon;
-  icon.fetchMode = aForceReload ? FETCH_ALWAYS : FETCH_IF_MISSING;
-  rv = faviconURI->GetSpec(icon.spec);
-  NS_ENSURE_SUCCESS(rv, rv);
   
-  Unused << faviconURI->GetHost(icon.host);
-  if (StringBeginsWith(icon.host, "www."_ns)) {
-    icon.host.Cut(0, 4);
+  UnassociatedIconHashKey* iconKey = mUnassociatedIcons.GetEntry(faviconURI);
+  if (iconKey) {
+    icon = iconKey->iconData;
+    mUnassociatedIcons.RemoveEntry(iconKey);
+  } else {
+    icon.fetchMode = aForceReload ? FETCH_ALWAYS : FETCH_IF_MISSING;
+    rv = faviconURI->GetSpec(icon.spec);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    Unused << faviconURI->GetHost(icon.host);
+    if (StringBeginsWith(icon.host, "www."_ns)) {
+      icon.host.Cut(0, 4);
+    }
   }
 
   
@@ -457,6 +356,182 @@ nsFaviconService::SetAndFetchFaviconForPage(
 
   
   event.forget(_canceler);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFaviconService::ReplaceFaviconData(nsIURI* aFaviconURI,
+                                     const nsTArray<uint8_t>& aData,
+                                     const nsACString& aMimeType,
+                                     PRTime aExpiration) {
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aFaviconURI);
+  NS_ENSURE_ARG(aData.Length() > 0);
+  NS_ENSURE_ARG(aMimeType.Length() > 0);
+  NS_ENSURE_ARG(imgLoader::SupportImageWithMimeType(
+      aMimeType, AcceptedMimeTypes::IMAGES_AND_DOCUMENTS));
+
+  nsCOMPtr<nsIURI> faviconURI = GetExposableURI(aFaviconURI);
+
+  PRTime now = PR_Now();
+  if (aExpiration < now + MIN_FAVICON_EXPIRATION) {
+    
+    aExpiration = now + MAX_FAVICON_EXPIRATION;
+  }
+
+  UnassociatedIconHashKey* iconKey = mUnassociatedIcons.PutEntry(faviconURI);
+  if (!iconKey) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  iconKey->created = now;
+
+  
+  
+  
+  uint32_t unassociatedCount = mUnassociatedIcons.Count();
+  if (unassociatedCount == 1) {
+    mExpireUnassociatedIconsTimer->Cancel();
+    mExpireUnassociatedIconsTimer->InitWithCallback(
+        this, UNASSOCIATED_ICON_EXPIRY_INTERVAL, nsITimer::TYPE_ONE_SHOT);
+  }
+
+  IconData* iconData = &(iconKey->iconData);
+  iconData->expiration = aExpiration;
+  iconData->status = ICON_STATUS_CACHED;
+  iconData->fetchMode = FETCH_NEVER;
+  nsresult rv = faviconURI->GetSpec(iconData->spec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+  Unused << faviconURI->GetHost(iconData->host);
+  if (StringBeginsWith(iconData->host, "www."_ns)) {
+    iconData->host.Cut(0, 4);
+  }
+
+  
+  
+  
+  
+  
+
+  IconPayload payload;
+  payload.mimeType = aMimeType;
+  payload.data.Assign(TO_CHARBUFFER(aData.Elements()), aData.Length());
+  if (payload.mimeType.EqualsLiteral(SVG_MIME_TYPE)) {
+    payload.width = UINT16_MAX;
+  }
+  
+  iconData->payloads.Clear();
+  iconData->payloads.AppendElement(payload);
+
+  rv = OptimizeIconSizes(*iconData);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  if ((*iconData).payloads.Length() == 0) {
+    
+    
+    mUnassociatedIcons.RemoveEntry(faviconURI);
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  RefPtr<AsyncReplaceFaviconData> event =
+      new AsyncReplaceFaviconData(*iconData);
+  RefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
+  DB->DispatchToAsyncThread(event);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFaviconService::ReplaceFaviconDataFromDataURL(
+    nsIURI* aFaviconURI, const nsAString& aDataURL, PRTime aExpiration,
+    nsIPrincipal* aLoadingPrincipal) {
+  NS_ENSURE_ARG(aFaviconURI);
+  NS_ENSURE_TRUE(aDataURL.Length() > 0, NS_ERROR_INVALID_ARG);
+  PRTime now = PR_Now();
+  if (aExpiration < now + MIN_FAVICON_EXPIRATION) {
+    
+    aExpiration = now + MAX_FAVICON_EXPIRATION;
+  }
+
+  nsCOMPtr<nsIURI> dataURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(dataURI), aDataURL);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIProtocolHandler> protocolHandler;
+  rv = ioService->GetProtocolHandler("data", getter_AddRefs(protocolHandler));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadingPrincipal;
+  MOZ_ASSERT(loadingPrincipal,
+             "please provide aLoadingPrincipal for this favicon");
+  if (!loadingPrincipal) {
+    
+    AutoTArray<nsString, 2> params = {
+        u"nsFaviconService::ReplaceFaviconDataFromDataURL()"_ns,
+        u"nsFaviconService::ReplaceFaviconDataFromDataURL(...,"
+        " [optional aLoadingPrincipal])"_ns};
+    nsContentUtils::ReportToConsole(
+        nsIScriptError::warningFlag, "Security by Default"_ns,
+        nullptr,  
+        nsContentUtils::eNECKO_PROPERTIES, "APIDeprecationWarning", params);
+
+    loadingPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
+  }
+  NS_ENSURE_TRUE(loadingPrincipal, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsILoadInfo> loadInfo = new mozilla::net::LoadInfo(
+      loadingPrincipal,
+      nullptr,  
+      nullptr,  
+      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT |
+          nsILoadInfo::SEC_ALLOW_CHROME | nsILoadInfo::SEC_DISALLOW_SCRIPT,
+      nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON);
+
+  nsCOMPtr<nsIChannel> channel;
+  rv = protocolHandler->NewChannel(dataURI, loadInfo, getter_AddRefs(channel));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsCOMPtr<nsIInputStream> stream;
+  rv = channel->Open(getter_AddRefs(stream));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  uint64_t available64;
+  rv = stream->Available(&available64);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (available64 == 0 || available64 > UINT32_MAX / sizeof(uint8_t)) {
+    return NS_ERROR_FILE_TOO_BIG;
+  }
+  uint32_t available = (uint32_t)available64;
+
+  
+  nsTArray<uint8_t> buffer;
+  buffer.SetLength(available);
+  uint32_t numRead;
+  rv = stream->Read(TO_CHARBUFFER(buffer.Elements()), available, &numRead);
+  if (NS_FAILED(rv) || numRead != available) {
+    return rv;
+  }
+
+  nsAutoCString mimeType;
+  rv = channel->GetContentType(mimeType);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  rv = ReplaceFaviconData(aFaviconURI, buffer, mimeType, aExpiration);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
 }
