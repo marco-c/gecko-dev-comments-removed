@@ -11,7 +11,6 @@
 
 
 
-use std::convert::From;
 use xpcom::interfaces::nsIBits;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
