@@ -485,8 +485,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
                                 nsIInterfaceRequestor* aCallbacks,
                                 const OriginAttributes& aOriginAttributes);
 
-  bool UseHTTPSRRAsAltSvcEnabled() const;
-
   bool EchConfigEnabled(bool aIsHttp3 = false) const;
   
   
