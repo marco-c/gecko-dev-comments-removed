@@ -137,6 +137,8 @@ pub fn prepare_quad(
     );
 
     if let QuadRenderStrategy::Direct = strategy {
+        
+        
         frame_state.push_prim(
             &PrimitiveCommand::quad(
                 pattern.kind,
@@ -163,6 +165,11 @@ pub fn prepare_quad(
     match strategy {
         QuadRenderStrategy::Direct => {}
         QuadRenderStrategy::Indirect => {
+            
+            
+            
+            
+            
             let task_id = add_render_task_with_mask(
                 pattern,
                 clipped_surface_rect.size(),
@@ -192,6 +199,12 @@ pub fn prepare_quad(
             );
         }
         QuadRenderStrategy::Tiled { x_tiles, y_tiles } => {
+            
+            
+            
+            
+            
+            
             let clip_coverage_rect = surface
                 .map_to_device_rect(&clip_chain.pic_coverage_rect, frame_context.spatial_tree);
             let clipped_surface_rect = clipped_surface_rect.to_f32();
@@ -353,6 +366,12 @@ pub fn prepare_quad(
             }
         }
         QuadRenderStrategy::NinePatch { clip_rect, radius } => {
+            
+            
+            
+            
+            
+            
             let clip_coverage_rect = surface
                 .map_to_device_rect(&clip_chain.pic_coverage_rect, frame_context.spatial_tree);
 
