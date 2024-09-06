@@ -143,12 +143,12 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   static mozilla::LazyLogModule gLog;
 
- private:
-  ~MobileViewportManager();
-
   
 
   void RefreshViewportSize(bool aForceAdjustResolution);
+
+ private:
+  ~MobileViewportManager();
 
   
   void RefreshVisualViewportSize();
