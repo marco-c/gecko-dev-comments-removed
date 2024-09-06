@@ -26,12 +26,52 @@
 namespace webrtc {
 
 class EventLogAnalyzer {
+  struct PlotDeclaration {
+    PlotDeclaration(const std::string& label, std::function<void(Plot*)> f)
+        : label(label), plot_func(f) {}
+    const std::string label;
+    
+    const std::function<void(Plot*)> plot_func;
+  };
+
+  class PlotMap {
+   public:
+    void RegisterPlot(const std::string& label, std::function<void(Plot*)> f) {
+      for (const auto& plot : plots_) {
+        RTC_DCHECK(plot.label != label)
+            << "Can't use the same label for multiple plots";
+      }
+      plots_.push_back({label, f});
+    }
+
+    std::vector<PlotDeclaration>::iterator begin() { return plots_.begin(); }
+    std::vector<PlotDeclaration>::iterator end() { return plots_.end(); }
+
+   private:
+    std::vector<PlotDeclaration> plots_;
+  };
+
  public:
   
   
   
   EventLogAnalyzer(const ParsedRtcEventLog& log, bool normalize_time);
   EventLogAnalyzer(const ParsedRtcEventLog& log, const AnalyzerConfig& config);
+
+  void CreateGraphsByName(const std::vector<std::string>& names,
+                          PlotCollection* collection);
+
+  void InitializeMapOfNamedGraphs(bool show_detector_state,
+                                  bool show_alr_state,
+                                  bool show_link_capacity);
+
+  std::vector<std::string> GetGraphNames() {
+    std::vector<std::string> plot_names;
+    for (const auto& plot : plots_) {
+      plot_names.push_back(plot.label);
+    }
+    return plot_names;
+  }
 
   void CreatePacketGraph(PacketDirection direction, Plot* plot);
 
@@ -108,6 +148,8 @@ class EventLogAnalyzer {
   std::map<uint32_t, std::string> candidate_pair_desc_by_id_;
 
   AnalyzerConfig config_;
+
+  PlotMap plots_;
 };
 
 }  
