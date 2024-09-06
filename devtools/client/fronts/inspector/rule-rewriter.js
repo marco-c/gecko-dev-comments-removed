@@ -489,10 +489,6 @@ RuleRewriter.prototype = {
 
 
   async getDefaultIndentation() {
-    if (!this.rule.parentStyleSheet) {
-      return null;
-    }
-
     const prefIndent = getIndentationFromPrefs();
     if (prefIndent) {
       const { indentUnit, indentWithTabs } = prefIndent;
@@ -502,6 +498,16 @@ RuleRewriter.prototype = {
     const styleSheetsFront = await this.rule.targetFront.getFront(
       "stylesheets"
     );
+
+    if (!this.rule.parentStyleSheet) {
+      
+      
+      
+      console.error(
+        "Cannot retrieve default indentation for rule if parentStyleSheet is not attached yet, falling back to 2 spaces"
+      );
+      return "  ";
+    }
     const { str: source } = await styleSheetsFront.getText(
       this.rule.parentStyleSheet.resourceId
     );
