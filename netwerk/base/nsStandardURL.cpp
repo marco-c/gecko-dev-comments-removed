@@ -46,6 +46,22 @@ static mozilla::LazyLogModule gStandardURLLog("nsStandardURL");
 
 using namespace mozilla::ipc;
 
+inline bool IsMailNews() {
+#if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
+  
+  
+  
+  
+  
+  
+  
+  
+  return true;
+#else
+  return false;
+#endif
+}
+
 
 
 
@@ -64,10 +80,10 @@ using namespace mozilla::ipc;
 
 
 inline nsresult NS_DomainToDisplayAndASCII(const nsACString& aDomain,
-                                           nsACString& aDisplay,
+                                           bool aMailnews, nsACString& aDisplay,
                                            nsACString& aASCII) {
-  return mozilla_net_domain_to_display_and_ascii_impl(&aDomain, &aDisplay,
-                                                      &aASCII);
+  return mozilla_net_domain_to_display_and_ascii_impl(&aDomain, aMailnews,
+                                                      &aDisplay, &aASCII);
 }
 
 namespace mozilla {
@@ -626,13 +642,14 @@ nsresult nsStandardURL::NormalizeIPv4(const nsACString& host,
 
 nsIIDNService* nsStandardURL::GetIDNService() { return gIDN.get(); }
 
-nsresult nsStandardURL::NormalizeIDN(const nsACString& aHost,
+nsresult nsStandardURL::NormalizeIDN(const nsACString& aHost, bool aMailnews,
                                      nsACString& aResult) {
   mDisplayHost.Truncate();
   mCheckedIfHostA = true;
   nsCString displayHost;  
                           
-  nsresult rv = NS_DomainToDisplayAndASCII(aHost, displayHost, aResult);
+  nsresult rv =
+      NS_DomainToDisplayAndASCII(aHost, aMailnews, displayHost, aResult);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -870,7 +887,7 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
         return rv;
       }
     } else {
-      rv = NormalizeIDN(tempHost, encHost);
+      rv = NormalizeIDN(tempHost, IsMailNews(), encHost);
       if (NS_FAILED(rv)) {
         return rv;
       }
@@ -2182,7 +2199,7 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
       return rv;
     }
   } else {
-    rv = NormalizeIDN(flat, hostBuf);
+    rv = NormalizeIDN(flat, IsMailNews(), hostBuf);
     if (NS_FAILED(rv)) {
       return rv;
     }
