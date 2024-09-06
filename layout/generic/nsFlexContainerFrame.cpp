@@ -2227,7 +2227,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   
 #ifdef DEBUG
   {
-    for (const auto side : AllLogicalSides()) {
+    for (const auto side : LogicalSides::All) {
       if (styleMargin->mMargin.Get(mCBWM, side).IsAuto()) {
         MOZ_ASSERT(GetMarginComponentForSide(side) == 0,
                    "Someone else tried to resolve our auto margin");
