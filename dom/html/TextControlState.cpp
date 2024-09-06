@@ -2877,8 +2877,7 @@ bool TextControlState::SetValueWithoutTextEditor(
 
   
   
-  if (!mValue.Equals(aHandlingSetValue.GetSettingValue()) ||
-      !StaticPrefs::dom_input_skip_cursor_move_for_same_value_set()) {
+  if (!mValue.Equals(aHandlingSetValue.GetSettingValue())) {
     bool handleSettingValue = true;
     
     
