@@ -3136,8 +3136,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   bool mPaintingSuppressed : 1;
 
-  bool mLastRootReflowHadUnconstrainedBSize : 1;
-
   
   
   bool mShouldUnsuppressPainting : 1;
