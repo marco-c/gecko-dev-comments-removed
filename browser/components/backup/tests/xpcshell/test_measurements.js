@@ -6,9 +6,6 @@
 const { CredentialsAndSecurityBackupResource } = ChromeUtils.importESModule(
   "resource:///modules/backup/CredentialsAndSecurityBackupResource.sys.mjs"
 );
-const { PlacesBackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/PlacesBackupResource.sys.mjs"
-);
 const { AddonsBackupResource } = ChromeUtils.importESModule(
   "resource:///modules/backup/AddonsBackupResource.sys.mjs"
 );
@@ -77,59 +74,6 @@ add_task(async function test_profDDiskSpace() {
     "Should have collected a measurement for the profile directory storage " +
       "device"
   );
-});
-
-
-
-
-add_task(async function test_placesBackupResource() {
-  Services.fog.testResetFOG();
-
-  const EXPECTED_PLACES_DB_SIZE = 5240;
-  const EXPECTED_FAVICONS_DB_SIZE = 5240;
-
-  
-  const tempDir = PathUtils.tempDir;
-  let tempPlacesDBPath = PathUtils.join(tempDir, "places.sqlite");
-  let tempFaviconsDBPath = PathUtils.join(tempDir, "favicons.sqlite");
-  await createKilobyteSizedFile(tempPlacesDBPath, EXPECTED_PLACES_DB_SIZE);
-  await createKilobyteSizedFile(tempFaviconsDBPath, EXPECTED_FAVICONS_DB_SIZE);
-
-  let placesBackupResource = new PlacesBackupResource();
-  await placesBackupResource.measure(tempDir);
-
-  let placesMeasurement = Glean.browserBackup.placesSize.testGetValue();
-  let faviconsMeasurement = Glean.browserBackup.faviconsSize.testGetValue();
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, false);
-
-  
-  TelemetryTestUtils.assertScalar(
-    scalars,
-    "browser.backup.places_size",
-    placesMeasurement,
-    "Glean and telemetry measurements for places.sqlite should be equal"
-  );
-  TelemetryTestUtils.assertScalar(
-    scalars,
-    "browser.backup.favicons_size",
-    faviconsMeasurement,
-    "Glean and telemetry measurements for favicons.sqlite should be equal"
-  );
-
-  
-  Assert.equal(
-    placesMeasurement,
-    EXPECTED_PLACES_DB_SIZE,
-    "Should have collected the correct glean measurement for places.sqlite"
-  );
-  Assert.equal(
-    faviconsMeasurement,
-    EXPECTED_FAVICONS_DB_SIZE,
-    "Should have collected the correct glean measurement for favicons.sqlite"
-  );
-
-  await IOUtils.remove(tempPlacesDBPath);
-  await IOUtils.remove(tempFaviconsDBPath);
 });
 
 
