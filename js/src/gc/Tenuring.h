@@ -98,6 +98,7 @@ class TenuringTracer final : public JSTracer {
   void traceObjectSlots(NativeObject* nobj, uint32_t start, uint32_t end);
   void traceObjectElements(JS::Value* vp, uint32_t count);
   void traceString(JSString* str);
+  void traceBigInt(JS::BigInt* bi);
 
   
   
@@ -115,6 +116,15 @@ class TenuringTracer final : public JSTracer {
   MOZ_ALWAYS_INLINE JSObject* onNonForwardedNurseryObject(JSObject* obj);
   MOZ_ALWAYS_INLINE JSString* onNonForwardedNurseryString(JSString* str);
   MOZ_ALWAYS_INLINE JS::BigInt* onNonForwardedNurseryBigInt(JS::BigInt* bi);
+
+  
+  
+  template <typename CharT>
+  void relocateDependentStringChars(JSDependentString* tenuredDependentStr,
+                                    JSLinearString* baseOrRelocOverlay,
+                                    size_t* offset,
+                                    bool* rootBaseNotYetForwarded,
+                                    JSLinearString** rootBase);
 
   inline void insertIntoObjectFixupList(gc::RelocationOverlay* entry);
   inline void insertIntoStringFixupList(gc::StringRelocationOverlay* entry);
