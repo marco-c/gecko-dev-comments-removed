@@ -173,12 +173,12 @@ nsresult nsCertOverrideService::Init() {
   
   
   if (observerService) {
+    observerService->AddObserver(this, "last-pb-context-exited", false);
     observerService->AddObserver(this, "profile-do-change", true);
     
     Observe(nullptr, "profile-do-change", nullptr);
   }
 
-  SharedSSLState::NoteCertOverrideServiceInstantiated();
   return NS_OK;
 }
 
@@ -201,6 +201,9 @@ nsCertOverrideService::Observe(nsISupports*, const char* aTopic,
     }
     Read(lock);
     CountPermanentOverrideTelemetry(lock);
+  } else if (!nsCRT::strcmp(aTopic, "last-pb-context-exited")) {
+    ClearValidityOverride("all:temporary-certificates"_ns, 0,
+                          OriginAttributes());
   }
 
   return NS_OK;

@@ -19,73 +19,8 @@
 #include "PublicSSL.h"
 #include "ssl.h"
 #include "nsNetCID.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/Unused.h"
-
-using mozilla::Atomic;
-using mozilla::Unused;
-using mozilla::psm::SyncRunnableBase;
-
-namespace {
-
-static Atomic<bool> sCertOverrideSvcExists(false);
-
-class MainThreadClearer : public SyncRunnableBase {
- public:
-  MainThreadClearer() : mShouldClearSessionCache(false) {}
-
-  void RunOnTargetThread() override {
-    
-    
-    
-    
-
-    bool certOverrideSvcExists = sCertOverrideSvcExists.exchange(false);
-    if (certOverrideSvcExists) {
-      sCertOverrideSvcExists = true;
-      nsCOMPtr<nsICertOverrideService> icos =
-          do_GetService(NS_CERTOVERRIDE_CONTRACTID);
-      if (icos) {
-        icos->ClearValidityOverride("all:temporary-certificates"_ns, 0,
-                                    OriginAttributes());
-      }
-    }
-
-    
-    
-    mShouldClearSessionCache = mozilla::psm::PrivateSSLState() &&
-                               mozilla::psm::PrivateSSLState()->SocketCreated();
-  }
-  bool mShouldClearSessionCache;
-};
-
-}  
 
 namespace mozilla {
-
-void ClearPrivateSSLState() {
-  
-  
-  
-#ifdef DEBUG
-  nsresult rv;
-  nsCOMPtr<nsIEventTarget> sts =
-      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-  bool onSTSThread;
-  rv = sts->IsOnCurrentThread(&onSTSThread);
-  MOZ_ASSERT(NS_SUCCEEDED(rv) && onSTSThread);
-#endif
-
-  RefPtr<MainThreadClearer> runnable = new MainThreadClearer;
-  runnable->DispatchToMainThreadAndWait();
-
-  
-  
-  if (runnable->mShouldClearSessionCache) {
-    nsNSSComponent::DoClearSSLExternalAndInternalSessionCache();
-  }
-}
 
 namespace psm {
 
@@ -119,9 +54,7 @@ PrivateBrowsingObserver::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 SharedSSLState::SharedSSLState(uint32_t aTlsFlags)
-    : mIOLayerHelpers(aTlsFlags),
-      mMutex("SharedSSLState::mMutex"),
-      mSocketCreated(false) {
+    : mIOLayerHelpers(aTlsFlags) {
   mIOLayerHelpers.Init();
 }
 
@@ -137,16 +70,6 @@ void SharedSSLState::NotePrivateBrowsingStatus() {
 void SharedSSLState::ResetStoredData() {
   MOZ_ASSERT(NS_IsMainThread(), "Not on main thread");
   mIOLayerHelpers.clearStoredData();
-}
-
-void SharedSSLState::NoteSocketCreated() {
-  MutexAutoLock lock(mMutex);
-  mSocketCreated = true;
-}
-
-bool SharedSSLState::SocketCreated() {
-  MutexAutoLock lock(mMutex);
-  return mSocketCreated;
 }
 
 
@@ -172,11 +95,6 @@ void SharedSSLState::GlobalCleanup() {
     delete gPublicState;
     gPublicState = nullptr;
   }
-}
-
-
-void SharedSSLState::NoteCertOverrideServiceInstantiated() {
-  sCertOverrideSvcExists = true;
 }
 
 void SharedSSLState::Cleanup() { mIOLayerHelpers.Cleanup(); }

@@ -28,11 +28,6 @@ class SharedSSLState {
   void ResetStoredData();
   void NotePrivateBrowsingStatus();
 
-  
-  bool SocketCreated();
-  void NoteSocketCreated();
-  static void NoteCertOverrideServiceInstantiated();
-
  private:
   ~SharedSSLState();
 
@@ -40,12 +35,6 @@ class SharedSSLState {
 
   nsCOMPtr<nsIObserver> mObserver;
   nsSSLIOLayerHelpers mIOLayerHelpers;
-
-  
-  
-  
-  Mutex mMutex MOZ_UNANNOTATED;
-  bool mSocketCreated;
 };
 
 SharedSSLState* PublicSSLState();
