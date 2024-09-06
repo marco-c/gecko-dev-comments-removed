@@ -1289,6 +1289,24 @@ class TestTranslationsTelemetry {
 
 
 
+  static async assertLabeledCounter(counter, expectations) {
+    for (const [label, expectedCount] of expectations) {
+      await Services.fog.testFlushAllChildren();
+      const count = counter[label].testGetValue() ?? 0;
+      is(
+        count,
+        expectedCount,
+        `Telemetry counter with label ${label} should have expected count.`
+      );
+    }
+  }
+
+  
+
+
+
+
+
 
 
 
