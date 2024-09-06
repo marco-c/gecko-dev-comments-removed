@@ -40,6 +40,8 @@ enum AVHWDeviceType {
     AV_HWDEVICE_TYPE_D3D12VA,
 };
 
+typedef struct AVHWDeviceInternal AVHWDeviceInternal;
+
 
 
 
@@ -62,6 +64,12 @@ typedef struct AVHWDeviceContext {
 
 
     const AVClass *av_class;
+
+    
+
+
+
+    AVHWDeviceInternal *internal;
 
     
 
@@ -102,6 +110,8 @@ typedef struct AVHWDeviceContext {
     void *user_opaque;
 } AVHWDeviceContext;
 
+typedef struct AVHWFramesInternal AVHWFramesInternal;
+
 
 
 
@@ -122,6 +132,12 @@ typedef struct AVHWFramesContext {
 
 
 
+    AVHWFramesInternal *internal;
+
+    
+
+
+
 
     AVBufferRef *device_ref;
 
@@ -134,9 +150,6 @@ typedef struct AVHWFramesContext {
     AVHWDeviceContext *device_ctx;
 
     
-
-
-
 
 
 

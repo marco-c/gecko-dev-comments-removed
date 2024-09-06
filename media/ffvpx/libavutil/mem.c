@@ -62,16 +62,14 @@ void  free(void *ptr);
 
 #endif 
 
-#define ALIGN (HAVE_SIMD_ALIGN_64 ? 64 : (HAVE_SIMD_ALIGN_32 ? 32 : 16))
-
-#define FF_MEMORY_POISON 0x2a
+#define ALIGN (HAVE_AVX512 ? 64 : (HAVE_AVX ? 32 : 16))
 
 
 
 
 
 
-static atomic_size_t max_alloc_size = INT_MAX;
+static atomic_size_t max_alloc_size = ATOMIC_VAR_INIT(INT_MAX);
 
 void av_max_alloc(size_t max){
     atomic_store_explicit(&max_alloc_size, max, memory_order_relaxed);

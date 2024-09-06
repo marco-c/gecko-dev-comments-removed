@@ -335,6 +335,19 @@ unsigned av_int_list_length_for_size(unsigned elsize,
 #define av_int_list_length(list, term) \
     av_int_list_length_for_size(sizeof(*(list)), list, term)
 
+#if FF_API_AV_FOPEN_UTF8
+
+
+
+
+
+
+
+
+attribute_deprecated
+FILE *av_fopen_utf8(const char *path, const char *mode);
+#endif
+
 
 
 

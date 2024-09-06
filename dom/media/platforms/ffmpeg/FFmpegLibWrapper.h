@@ -138,11 +138,9 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
                                      int flags);
 
   
+  AVPacket* (*av_packet_alloc)(void);
   void (*av_packet_unref)(AVPacket* pkt);
   void (*av_packet_free)(AVPacket** pkt);
-
-  
-  AVPacket* (*av_packet_alloc)();
 
   
   int (*avcodec_send_packet)(AVCodecContext* avctx, const AVPacket* avpkt);

@@ -76,19 +76,6 @@ typedef struct AVCodecParameters {
 
 
 
-
-
-    AVPacketSideData *coded_side_data;
-
-    
-
-
-    int nb_coded_side_data;
-
-    
-
-
-
     int format;
 
     
@@ -146,18 +133,6 @@ typedef struct AVCodecParameters {
     
 
 
-
-
-
-
-
-
-
-    AVRational framerate;
-
-    
-
-
     enum AVFieldOrder                  field_order;
 
     
@@ -174,10 +149,22 @@ typedef struct AVCodecParameters {
 
     int video_delay;
 
+#if FF_API_OLD_CHANNEL_LAYOUT
     
 
 
-    AVChannelLayout ch_layout;
+
+
+
+    attribute_deprecated
+    uint64_t channel_layout;
+    
+
+
+
+    attribute_deprecated
+    int      channels;
+#endif
     
 
 
@@ -212,6 +199,36 @@ typedef struct AVCodecParameters {
 
 
     int seek_preroll;
+
+    
+
+
+    AVChannelLayout ch_layout;
+
+    
+
+
+
+
+
+
+
+
+
+    AVRational framerate;
+
+    
+
+
+
+
+
+    AVPacketSideData *coded_side_data;
+
+    
+
+
+    int nb_coded_side_data;
 } AVCodecParameters;
 
 

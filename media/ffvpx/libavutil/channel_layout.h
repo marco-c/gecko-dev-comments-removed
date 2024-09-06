@@ -146,10 +146,6 @@ enum AVChannelOrder {
 
 
     AV_CHANNEL_ORDER_AMBISONIC,
-    
-
-
-    FF_CHANNEL_ORDER_NB
 };
 
 
@@ -195,6 +191,16 @@ enum AVChannelOrder {
 #define AV_CH_BOTTOM_FRONT_CENTER    (1ULL << AV_CHAN_BOTTOM_FRONT_CENTER  )
 #define AV_CH_BOTTOM_FRONT_LEFT      (1ULL << AV_CHAN_BOTTOM_FRONT_LEFT    )
 #define AV_CH_BOTTOM_FRONT_RIGHT     (1ULL << AV_CHAN_BOTTOM_FRONT_RIGHT   )
+
+#if FF_API_OLD_CHANNEL_LAYOUT
+
+
+
+
+
+
+#define AV_CH_LAYOUT_NATIVE          0x8000000000000000ULL
+#endif
 
 
 
@@ -424,6 +430,146 @@ typedef struct AVChannelLayout {
 
 struct AVBPrint;
 
+#if FF_API_OLD_CHANNEL_LAYOUT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+attribute_deprecated
+uint64_t av_get_channel_layout(const char *name);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+attribute_deprecated
+int av_get_extended_channel_layout(const char *name, uint64_t* channel_layout, int* nb_channels);
+
+
+
+
+
+
+
+
+
+
+
+attribute_deprecated
+void av_get_channel_layout_string(char *buf, int buf_size, int nb_channels, uint64_t channel_layout);
+
+
+
+
+
+attribute_deprecated
+void av_bprint_channel_layout(struct AVBPrint *bp, int nb_channels, uint64_t channel_layout);
+
+
+
+
+
+attribute_deprecated
+int av_get_channel_layout_nb_channels(uint64_t channel_layout);
+
+
+
+
+
+
+attribute_deprecated
+int64_t av_get_default_channel_layout(int nb_channels);
+
+
+
+
+
+
+
+
+
+
+
+
+
+attribute_deprecated
+int av_get_channel_layout_channel_index(uint64_t channel_layout,
+                                        uint64_t channel);
+
+
+
+
+
+attribute_deprecated
+uint64_t av_channel_layout_extract_channel(uint64_t channel_layout, int index);
+
+
+
+
+
+
+
+
+attribute_deprecated
+const char *av_get_channel_name(uint64_t channel);
+
+
+
+
+
+
+
+
+attribute_deprecated
+const char *av_get_channel_description(uint64_t channel);
+
+
+
+
+
+
+
+
+
+
+
+attribute_deprecated
+int av_get_standard_channel_layout(unsigned index, uint64_t *layout,
+                                   const char **name);
+
+
+
+#endif
+
 
 
 
@@ -481,28 +627,7 @@ enum AVChannel av_channel_from_string(const char *name);
 
 
 
-
-
-
-
-
-int av_channel_layout_custom_init(AVChannelLayout *channel_layout, int nb_channels);
-
-
-
-
-
-
-
-
-
-
-
 int av_channel_layout_from_mask(AVChannelLayout *channel_layout, uint64_t mask);
-
-
-
-
 
 
 
@@ -678,53 +803,6 @@ int av_channel_layout_check(const AVChannelLayout *channel_layout);
 
 
 int av_channel_layout_compare(const AVChannelLayout *chl, const AVChannelLayout *chl1);
-
-
-
-
-#define AV_CHANNEL_LAYOUT_RETYPE_FLAG_LOSSLESS (1 << 0)
-
-
-
-
-
-
-#define AV_CHANNEL_LAYOUT_RETYPE_FLAG_CANONICAL (1 << 1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av_channel_layout_retype(AVChannelLayout *channel_layout, enum AVChannelOrder order, int flags);
 
 
 
