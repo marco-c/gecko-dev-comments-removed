@@ -65,6 +65,7 @@
 use crate::lexer::{Float, Integer, Lexer, Token, TokenKind};
 use crate::token::Span;
 use crate::Error;
+use bumpalo::Bump;
 use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
@@ -303,7 +304,7 @@ pub struct ParseBuffer<'a> {
     cur: Cell<Position>,
     known_annotations: RefCell<HashMap<String, usize>>,
     depth: Cell<usize>,
-    strings: RefCell<Vec<Box<[u8]>>>,
+    strings: Bump,
 }
 
 
@@ -396,14 +397,7 @@ impl ParseBuffer<'_> {
     
     
     fn push_str(&self, s: Vec<u8>) -> &[u8] {
-        let s = Box::from(s);
-        let ret = &*s as *const [u8];
-        self.strings.borrow_mut().push(s);
-        
-        
-        
-        
-        unsafe { &*ret }
+        self.strings.alloc_slice_copy(&s)
     }
 
     

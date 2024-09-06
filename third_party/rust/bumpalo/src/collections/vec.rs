@@ -104,6 +104,8 @@ use core::ops::{Index, IndexMut, RangeBounds};
 use core::ptr;
 use core::ptr::NonNull;
 use core::slice;
+#[cfg(feature = "std")]
+use std::io;
 
 unsafe fn arith_offset<T>(p: *const T, offset: isize) -> *const T {
     p.offset(offset)
@@ -1775,6 +1777,132 @@ impl<'bump, T: 'bump + Clone> Vec<'bump, T> {
     }
 }
 
+impl<'bump, T: 'bump + Copy> Vec<'bump, T> {
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn extend_from_slice_copy_unchecked(&mut self, other: &[T]) {
+        let old_len = self.len();
+        debug_assert!(old_len + other.len() <= self.capacity());
+
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe {
+            let src = other.as_ptr();
+            let dst = self.as_mut_ptr().add(old_len);
+            ptr::copy_nonoverlapping(src, dst, other.len());
+            self.set_len(old_len + other.len());
+        }
+    }
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn extend_from_slice_copy(&mut self, other: &[T]) {
+        
+        self.reserve(other.len());
+
+        
+        
+        
+        
+        
+        
+        unsafe {
+            self.extend_from_slice_copy_unchecked(other);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn extend_from_slices_copy(&mut self, slices: &[&[T]]) {
+        
+        
+        let capacity_to_reserve: usize = slices.iter().map(|slice| slice.len()).sum();
+        self.reserve(capacity_to_reserve);
+
+        
+        
+        
+        
+        
+        unsafe {
+            
+            slices.iter().for_each(|slice| {
+                self.extend_from_slice_copy_unchecked(slice);
+            });
+        }
+    }
+}
+
 
 trait ExtendWith<T> {
     fn next(&mut self) -> T;
@@ -2610,5 +2738,25 @@ where
         unsafe {
             self.vec.set_len(self.old_len - self.del);
         }
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'bump> io::Write for Vec<'bump, u8> {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.extend_from_slice_copy(buf);
+        Ok(buf.len())
+    }
+
+    #[inline]
+    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        self.extend_from_slice_copy(buf);
+        Ok(())
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
     }
 }

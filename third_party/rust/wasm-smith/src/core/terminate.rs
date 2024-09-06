@@ -1,6 +1,5 @@
 use super::*;
-use std::mem;
-use wasm_encoder::BlockType;
+use anyhow::{bail, Result};
 
 impl Module {
     
@@ -12,16 +11,21 @@ impl Module {
     
     
     
-    pub fn ensure_termination(&mut self, default_fuel: u32) -> u32 {
+    
+    
+    
+    
+    
+    
+    
+    pub fn ensure_termination(&mut self, default_fuel: u32) -> Result<u32> {
         let fuel_global = self.globals.len() as u32;
         self.globals.push(GlobalType {
             val_type: ValType::I32,
             mutable: true,
         });
-        self.defined_globals.push((
-            fuel_global,
-            GlobalInitExpr::ConstExpr(ConstExpr::i32_const(default_fuel as i32)),
-        ));
+        self.defined_globals
+            .push((fuel_global, ConstExpr::i32_const(default_fuel as i32)));
 
         for code in &mut self.code {
             let check_fuel = |insts: &mut Vec<Instruction>| {
@@ -41,10 +45,12 @@ impl Module {
 
             let instrs = match &mut code.instructions {
                 Instructions::Generated(list) => list,
-                
-                
-                
-                Instructions::Arbitrary(_) => unreachable!(),
+                Instructions::Arbitrary(_) => {
+                    bail!(
+                        "failed to ensure that a function generated due to it \
+                         containing arbitrary instructions"
+                    )
+                }
             };
             let mut new_insts = Vec::with_capacity(instrs.len() * 2);
 
@@ -65,6 +71,6 @@ impl Module {
             *instrs = new_insts;
         }
 
-        fuel_global
+        Ok(fuel_global)
     }
 }

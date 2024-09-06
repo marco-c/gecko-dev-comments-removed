@@ -680,8 +680,19 @@ impl<'bump> String<'bump> {
     
     
     pub fn from_str_in(s: &str, bump: &'bump Bump) -> String<'bump> {
-        let mut t = String::with_capacity_in(s.len(), bump);
-        t.push_str(s);
+        let len = s.len();
+        let mut t = String::with_capacity_in(len, bump);
+        
+        
+        
+        
+        
+        
+        
+        unsafe { ptr::copy_nonoverlapping(s.as_ptr(), t.vec.as_mut_ptr(), len) };
+        
+        
+        unsafe { t.vec.set_len(len) };
         t
     }
 
@@ -925,7 +936,7 @@ impl<'bump> String<'bump> {
     
     #[inline]
     pub fn push_str(&mut self, string: &str) {
-        self.vec.extend_from_slice(string.as_bytes())
+        self.vec.extend_from_slice_copy(string.as_bytes())
     }
 
     

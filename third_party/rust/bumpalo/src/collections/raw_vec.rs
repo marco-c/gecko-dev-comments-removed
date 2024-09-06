@@ -319,7 +319,7 @@ impl<'a, T> RawVec<'a, T> {
         used_cap: usize,
         needed_extra_cap: usize,
     ) -> Result<(), CollectionAllocErr> {
-        self.reserve_internal(used_cap, needed_extra_cap, Fallible, Exact)
+        self.fallible_reserve_internal(used_cap, needed_extra_cap, Exact)
     }
 
     
@@ -343,11 +343,7 @@ impl<'a, T> RawVec<'a, T> {
     
     
     pub fn reserve_exact(&mut self, used_cap: usize, needed_extra_cap: usize) {
-        match self.reserve_internal(used_cap, needed_extra_cap, Infallible, Exact) {
-            Err(CapacityOverflow) => capacity_overflow(),
-            Err(AllocErr) => unreachable!(),
-            Ok(()) => {  }
-        }
+        self.infallible_reserve_internal(used_cap, needed_extra_cap, Exact)
     }
 
     
@@ -374,7 +370,7 @@ impl<'a, T> RawVec<'a, T> {
         used_cap: usize,
         needed_extra_cap: usize,
     ) -> Result<(), CollectionAllocErr> {
-        self.reserve_internal(used_cap, needed_extra_cap, Fallible, Amortized)
+        self.fallible_reserve_internal(used_cap, needed_extra_cap, Amortized)
     }
 
     
@@ -429,13 +425,11 @@ impl<'a, T> RawVec<'a, T> {
     
     
     
+    #[inline(always)]
     pub fn reserve(&mut self, used_cap: usize, needed_extra_cap: usize) {
-        match self.reserve_internal(used_cap, needed_extra_cap, Infallible, Amortized) {
-            Err(CapacityOverflow) => capacity_overflow(),
-            Err(AllocErr) => unreachable!(),
-            Ok(()) => {  }
-        }
+        self.infallible_reserve_internal(used_cap, needed_extra_cap, Amortized)
     }
+
     
     
     
@@ -593,6 +587,68 @@ enum ReserveStrategy {
 use self::ReserveStrategy::*;
 
 impl<'a, T> RawVec<'a, T> {
+    #[inline(always)]
+    fn fallible_reserve_internal(
+        &mut self,
+        used_cap: usize,
+        needed_extra_cap: usize,
+        strategy: ReserveStrategy,
+    ) -> Result<(), CollectionAllocErr> {
+        
+        if self.cap().wrapping_sub(used_cap) >= needed_extra_cap {
+            return Ok(());
+        }
+        
+        
+        self.reserve_internal_or_error(used_cap, needed_extra_cap, Fallible, strategy)
+    }
+
+    #[inline(always)]
+    fn infallible_reserve_internal(
+        &mut self,
+        used_cap: usize,
+        needed_extra_cap: usize,
+        strategy: ReserveStrategy,
+    ) {
+        
+        if self.cap().wrapping_sub(used_cap) >= needed_extra_cap {
+            return;
+        }
+        
+        
+        self.reserve_internal_or_panic(used_cap, needed_extra_cap, strategy)
+    }
+
+    #[inline(never)]
+    fn reserve_internal_or_panic(
+        &mut self,
+        used_cap: usize,
+        needed_extra_cap: usize,
+        strategy: ReserveStrategy,
+    ) {
+        
+        
+        
+        match self.reserve_internal(used_cap, needed_extra_cap, Infallible, strategy) {
+            Err(CapacityOverflow) => capacity_overflow(),
+            Err(AllocErr) => unreachable!(),
+            Ok(()) => {  }
+        }
+    }
+
+    #[inline(never)]
+    fn reserve_internal_or_error(
+        &mut self,
+         used_cap: usize,
+         needed_extra_cap: usize,
+         fallibility: Fallibility,
+         strategy: ReserveStrategy,)-> Result<(), CollectionAllocErr> {
+        
+        self.reserve_internal(used_cap, needed_extra_cap, fallibility, strategy)
+    }
+
+    
+    
     fn reserve_internal(
         &mut self,
         used_cap: usize,
@@ -607,12 +663,6 @@ impl<'a, T> RawVec<'a, T> {
             
             
             
-
-            
-            
-            if self.cap().wrapping_sub(used_cap) >= needed_extra_cap {
-                return Ok(());
-            }
 
             
             let new_cap = match strategy {

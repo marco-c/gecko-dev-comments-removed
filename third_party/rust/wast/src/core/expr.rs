@@ -1,3 +1,4 @@
+use crate::annotation;
 use crate::core::*;
 use crate::encode::Encode;
 use crate::kw;
@@ -14,6 +15,20 @@ use std::mem;
 #[allow(missing_docs)]
 pub struct Expression<'a> {
     pub instrs: Box<[Instruction<'a>]>,
+    pub branch_hints: Vec<BranchHint>,
+}
+
+
+
+
+
+#[derive(Debug)]
+pub struct BranchHint {
+    
+    
+    pub instr_index: usize,
+    
+    pub value: u32,
 }
 
 impl<'a> Parse<'a> for Expression<'a> {
@@ -22,6 +37,7 @@ impl<'a> Parse<'a> for Expression<'a> {
         exprs.parse(parser)?;
         Ok(Expression {
             instrs: exprs.instrs.into(),
+            branch_hints: exprs.branch_hints,
         })
     }
 }
@@ -47,6 +63,7 @@ impl<'a> Expression<'a> {
         exprs.parse_folded_instruction(parser)?;
         Ok(Expression {
             instrs: exprs.instrs.into(),
+            branch_hints: exprs.branch_hints,
         })
     }
 }
@@ -66,6 +83,11 @@ struct ExpressionParser<'a> {
     
     
     stack: Vec<Level<'a>>,
+
+    
+    
+    
+    branch_hints: Vec<BranchHint>,
 }
 
 enum Paren {
@@ -89,6 +111,9 @@ enum Level<'a> {
     
     
     IfArm,
+
+    
+    BranchHint,
 }
 
 
@@ -145,6 +170,14 @@ impl<'a> ExpressionParser<'a> {
                     if self.handle_if_lparen(parser)? {
                         continue;
                     }
+
+                    
+                    if parser.peek::<annotation::metadata_code_branch_hint>()? {
+                        self.parse_branch_hint(parser)?;
+                        self.stack.push(Level::BranchHint);
+                        continue;
+                    }
+
                     match parser.parse()? {
                         
                         
@@ -177,6 +210,7 @@ impl<'a> ExpressionParser<'a> {
                 Paren::Right => match self.stack.pop().unwrap() {
                     Level::EndWith(i) => self.instrs.push(i),
                     Level::IfArm => {}
+                    Level::BranchHint => {}
 
                     
                     
@@ -191,7 +225,6 @@ impl<'a> ExpressionParser<'a> {
                 },
             }
         }
-
         Ok(())
     }
 
@@ -286,6 +319,24 @@ impl<'a> ExpressionParser<'a> {
             
             If::Else => Err(parser.error("unexpected token: too many payloads inside of `(if)`")),
         }
+    }
+
+    fn parse_branch_hint(&mut self, parser: Parser<'a>) -> Result<()> {
+        parser.parse::<annotation::metadata_code_branch_hint>()?;
+
+        let hint = parser.parse::<String>()?;
+
+        let value = match hint.as_bytes() {
+            [0] => 0,
+            [1] => 1,
+            _ => return Err(parser.error("invalid value for branch hint")),
+        };
+
+        self.branch_hints.push(BranchHint {
+            instr_index: self.instrs.len(),
+            value,
+        });
+        Ok(())
     }
 }
 
