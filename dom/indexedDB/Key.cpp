@@ -16,6 +16,7 @@
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
+#include "js/SharedArrayBuffer.h"   
 #include "js/Value.h"
 #include "jsfriendapi.h"
 #include "mozilla/Casting.h"
@@ -102,6 +103,84 @@ IDBResult<Ok, IDBSpecialValue::Invalid> ConvertArrayValueToKey(
   aPolicy.EndSubkeyList();
   return Ok();
 }
+
+bool IsDetachedBuffer(JSContext* aCx, JS::Handle<JSObject*> aJsBufferSource) {
+  if (JS_IsArrayBufferViewObject(aJsBufferSource)) {
+    bool unused = false;
+    JS::Rooted<JSObject*> viewedArrayBuffer(
+        aCx, JS_GetArrayBufferViewBuffer(aCx, aJsBufferSource, &unused));
+    return JS::IsDetachedArrayBufferObject(viewedArrayBuffer);
+  }
+
+  return JS::IsDetachedArrayBufferObject(aJsBufferSource);
+}
+
+
+
+IDBResult<Span<const uint8_t>, IDBSpecialValue::Invalid>
+GetByteSpanFromJSBufferSource(JSContext* aCx,
+                              JS::Handle<JSObject*> aJsBufferSource) {
+  
+  
+
+  
+  JS::Handle<JSObject*>& jsArrayBuffer = aJsBufferSource;
+
+  
+  size_t offset = 0u;
+
+  
+  size_t length = 0u;
+
+  
+  uint8_t* bytes = nullptr;  
+
+  
+  if (JS_IsArrayBufferViewObject(aJsBufferSource)) {
+    
+    
+    
+
+    
+    
+    
+    (void)offset;
+    bool unused = false;
+    if (!JS_GetObjectAsArrayBufferView(jsArrayBuffer, &length, &unused,
+                                       &bytes)) {
+      return Err(IDBError(SpecialValues::Invalid));
+    }
+
+    
+  } else {
+    
+    MOZ_RELEASE_ASSERT(JS::IsArrayBufferObject(aJsBufferSource) ||
+                       JS::IsSharedArrayBufferObject(aJsBufferSource));
+
+    
+
+    
+    
+    
+    (void)offset;
+    if (!JS::GetObjectAsArrayBuffer(jsArrayBuffer, &length, &bytes)) {
+      return Err(IDBError(SpecialValues::Invalid));
+    }
+  }
+
+  
+  
+  if (IsDetachedBuffer(aCx, aJsBufferSource)) {
+    
+    
+    
+    return Err(IDBError(SpecialValues::Invalid));
+  }
+
+  
+  return Span<uint8_t>{bytes, length}.AsConst();
+}
+
 }  
 
 
@@ -435,8 +514,19 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
 
     
     if (JS::IsArrayBufferObject(object) || JS_IsArrayBufferViewObject(object)) {
-      const bool isViewObject = JS_IsArrayBufferViewObject(object);
-      return EncodeBinary(object, isViewObject, aTypeOffset);
+      
+      
+
+      auto res = GetByteSpanFromJSBufferSource(aCx, object);
+
+      
+      if (res.isErr()) {
+        return res.propagateErr();
+      }
+
+      
+      
+      return EncodeAsString(res.inspect(), eBinary + aTypeOffset);
     }
 
     
@@ -518,13 +608,14 @@ nsresult Key::DecodeJSValInternal(const EncodedDataType*& aPos,
   } else if (*aPos - aTypeOffset == eFloat) {
     aVal.setDouble(DecodeNumber(aPos, aEnd));
   } else if (*aPos - aTypeOffset == eBinary) {
-    JSObject* binary = DecodeBinary(aPos, aEnd, aCx);
-    if (!binary) {
+    JSObject* arrayBufferObject =
+        GetArrayBufferObjectFromDataRange(aPos, aEnd, aCx);
+    if (!arrayBufferObject) {
       IDB_REPORT_INTERNAL_ERR();
       return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
     }
 
-    aVal.setObject(*binary);
+    aVal.setObject(*arrayBufferObject);
   } else {
     MOZ_ASSERT_UNREACHABLE("Unknown key type!");
   }
@@ -869,28 +960,10 @@ double Key::DecodeNumber(const EncodedDataType*& aPos,
   return BitwiseCast<double>(bits);
 }
 
-Result<Ok, nsresult> Key::EncodeBinary(JSObject* aObject, bool aIsViewObject,
-                                       uint8_t aTypeOffset) {
-  uint8_t* bufferData;
-  size_t bufferLength;
 
-  
-  
-  
-  if (aIsViewObject) {
-    bool unused;
-    JS_GetObjectAsArrayBufferView(aObject, &bufferLength, &unused, &bufferData);
-  } else {
-    JS::GetObjectAsArrayBuffer(aObject, &bufferLength, &bufferData);
-  }
-
-  return EncodeAsString(Span{bufferData, bufferLength}.AsConst(),
-                        eBinary + aTypeOffset);
-}
-
-
-JSObject* Key::DecodeBinary(const EncodedDataType*& aPos,
-                            const EncodedDataType* aEnd, JSContext* aCx) {
+JSObject* Key::GetArrayBufferObjectFromDataRange(const EncodedDataType*& aPos,
+                                                 const EncodedDataType* aEnd,
+                                                 JSContext* aCx) {
   JS::Rooted<JSObject*> rv(aCx);
   DecodeStringy<eBinary, uint8_t>(
       aPos, aEnd,
