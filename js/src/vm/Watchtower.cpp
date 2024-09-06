@@ -88,8 +88,8 @@ static bool ReshapeForShadowedProp(JSContext* cx, Handle<NativeObject*> obj,
   return true;
 }
 
-static void InvalidateMegamorphicCache(JSContext* cx,
-                                       Handle<NativeObject*> obj) {
+static void InvalidateMegamorphicCache(JSContext* cx, Handle<NativeObject*> obj,
+                                       bool invalidateGetPropCache = true) {
   
   
   
@@ -97,7 +97,9 @@ static void InvalidateMegamorphicCache(JSContext* cx,
 
   MOZ_ASSERT(obj->isUsedAsPrototype());
 
-  cx->caches().megamorphicCache.bumpGeneration();
+  if (invalidateGetPropCache) {
+    cx->caches().megamorphicCache.bumpGeneration();
+  }
   cx->caches().megamorphicSetPropCache->bumpGeneration();
 }
 
@@ -392,9 +394,16 @@ template bool Watchtower::watchPropertyModificationSlow<AllowGC::NoGC>(
     typename MaybeRooted<PropertyKey, AllowGC::NoGC>::HandleType id);
 
 
-bool Watchtower::watchFreezeOrSealSlow(JSContext* cx,
-                                       Handle<NativeObject*> obj) {
+bool Watchtower::watchFreezeOrSealSlow(JSContext* cx, Handle<NativeObject*> obj,
+                                       IntegrityLevel level) {
   MOZ_ASSERT(watchesFreezeOrSeal(obj));
+
+  
+  
+  
+  if (level == IntegrityLevel::Frozen && obj->isUsedAsPrototype()) {
+    InvalidateMegamorphicCache(cx, obj,  false);
+  }
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
     if (!AddToWatchtowerLog(cx, "freeze-or-seal", obj,
