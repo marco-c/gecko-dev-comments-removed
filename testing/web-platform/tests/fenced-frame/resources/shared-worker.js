@@ -1,0 +1,14 @@
+
+
+const ports = [];
+
+onconnect = function (event) {
+  const port = event.ports[0];
+  ports.push(port);
+
+  port.onmessage = async function(e) {
+    ports.forEach(curPort => {
+      curPort.postMessage(e.data);
+    });
+  }
+}
