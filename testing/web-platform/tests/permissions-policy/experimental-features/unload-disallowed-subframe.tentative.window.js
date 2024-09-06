@@ -13,7 +13,9 @@ promise_test(async t => {
   const rcHelper =
       new RemoteContextHelper({scripts: ['./resources/unload-helper.js']});
   
-  const main = await rcHelper.addWindow();
+  const main = await rcHelper.addWindow(
+      {headers: [['Permissions-Policy', 'unload=*']]},
+  );
   const subframe =
       await main.addIframe({headers: [['Permissions-Policy', 'unload=()']]});
   await assertWindowRunsUnload(subframe, 'subframe', {shouldRunUnload: false});
