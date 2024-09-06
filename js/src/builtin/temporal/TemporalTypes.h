@@ -552,23 +552,36 @@ inline DateDuration Duration::toDateDuration() const {
 
 
 struct TimeDuration final {
-  double days = 0;
-  double hours = 0;
-  double minutes = 0;
-  double seconds = 0;
-  double milliseconds = 0;
+  
+  int64_t days = 0;
+
+  
+  int64_t hours = 0;
+
+  
+  int64_t minutes = 0;
+
+  
+  int64_t seconds = 0;
+
+  
+  int64_t milliseconds = 0;
+
+  
   double microseconds = 0;
+
+  
   double nanoseconds = 0;
 
   constexpr Duration toDuration() const {
     return {0,
             0,
             0,
-            days,
-            hours,
-            minutes,
-            seconds,
-            milliseconds,
+            double(days),
+            double(hours),
+            double(minutes),
+            double(seconds),
+            double(milliseconds),
             microseconds,
             nanoseconds};
   }

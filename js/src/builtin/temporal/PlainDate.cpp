@@ -975,8 +975,9 @@ static bool AddDate(JSContext* cx, const PlainDate& date,
   auto timeDuration = NormalizeTimeDuration(duration);
 
   
-  double days =
-      duration.days + BalanceTimeDuration(timeDuration, TemporalUnit::Day).days;
+  double balancedDays =
+      double(BalanceTimeDuration(timeDuration, TemporalUnit::Day).days);
+  double days = duration.days + balancedDays;
 
   
   return AddISODate(cx, date, {0, 0, 0, days}, overflow, result);
