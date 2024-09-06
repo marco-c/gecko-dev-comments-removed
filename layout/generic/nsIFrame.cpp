@@ -3800,7 +3800,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     if (aBuilder->GetFilterASR() && aBuilder->GetFilterASR() == stickyASR) {
       aBuilder->GetFilterASR()
-          ->mScrollableFrame->SetHasOutOfFlowContentInsideFilter();
+          ->mScrollContainerFrame->SetHasOutOfFlowContentInsideFilter();
     }
   }
 

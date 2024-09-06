@@ -16,7 +16,6 @@
 #include <functional>
 
 class nsIContent;
-class nsIScrollableFrame;
 class nsIWidget;
 class nsPresContext;
 template <class T>
@@ -27,6 +26,7 @@ class nsCOMPtr;
 namespace mozilla {
 
 class PresShell;
+class ScrollContainerFrame;
 enum class PreventDefaultResult : uint8_t;
 
 namespace layers {
@@ -183,7 +183,7 @@ class APZCCallbackHelper {
 
 
 
-  static bool IsScrollInProgress(nsIScrollableFrame* aFrame);
+  static bool IsScrollInProgress(ScrollContainerFrame* aFrame);
 
   
 
