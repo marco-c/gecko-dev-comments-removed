@@ -419,32 +419,6 @@ class PtrKind {
 #endif
 
 
-class GAtomic {
- public:
-  static void Init(Delay aFirstDelay);
-
-  
-  static int32_t DecrementDelay() { return --sAllocDelay; }
-
-  static void SetAllocDelay(Delay aAllocDelay) { sAllocDelay = aAllocDelay; }
-
-  static bool AllocDelayHasWrapped(Delay aAvgAllocDelay,
-                                   Delay aAvgFirstAllocDelay) {
-    
-    
-    return sAllocDelay > 2 * std::max(aAvgAllocDelay, aAvgFirstAllocDelay);
-  }
-
- private:
-  
-  
-  
-  static Atomic<Delay, ReleaseAcquire> sAllocDelay;
-};
-
-Atomic<Delay, ReleaseAcquire> GAtomic::sAllocDelay;
-
-
 
 
 class GConst {
@@ -604,6 +578,15 @@ class GMut {
     if (!tlsIsDisabled.init()) {
       MOZ_CRASH();
     }
+
+    
+    
+    
+    
+    MutexAutoLock lock(sMutex);
+    SetAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
+
+    LOG("Initial sAllocDelay <- %zu\n", size_t(sAllocDelay));
   }
 
   uint64_t Random64(GMutLock) { return mRNG.next(); }
@@ -868,7 +851,9 @@ class GMut {
       MutexAutoLock lock(GMut::sMutex);
       
       ResetRNG();
-      GAtomic::Init(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
+
+      SetAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
+      LOG("New initial sAllocDelay <- %zu\n", size_t(sAllocDelay));
     }
 
     mPhcState = aState;
@@ -898,8 +883,8 @@ class GMut {
     MutexAutoLock lock(sMutex);
     Delay avg_delay = GetAvgAllocDelay(lock);
     Delay avg_first_delay = GetAvgFirstAllocDelay(lock);
-    if (GAtomic::AllocDelayHasWrapped(avg_delay, avg_first_delay)) {
-      GAtomic::SetAllocDelay(Rnd64ToDelay(avg_delay, Random64(lock)));
+    if (AllocDelayHasWrapped(avg_delay, avg_first_delay)) {
+      SetAllocDelay(Rnd64ToDelay(avg_delay, Random64(lock)));
     }
     tlsIsDisabled.set(false);
   }
@@ -909,6 +894,18 @@ class GMut {
   static Time Now() { return sNow; }
 
   static void IncrementNow() { sNow++; }
+
+  
+  static int32_t DecrementDelay() { return --sAllocDelay; }
+
+  static void SetAllocDelay(Delay aAllocDelay) { sAllocDelay = aAllocDelay; }
+
+  static bool AllocDelayHasWrapped(Delay aAvgAllocDelay,
+                                   Delay aAvgFirstAllocDelay) {
+    
+    
+    return sAllocDelay > 2 * std::max(aAvgAllocDelay, aAvgFirstAllocDelay);
+  }
 
  private:
   template <int N>
@@ -1050,6 +1047,11 @@ class GMut {
   
   static Atomic<Time, Relaxed> sNow;
 
+  
+  
+  
+  static Atomic<Delay, ReleaseAcquire> sAllocDelay;
+
  public:
   Delay GetAvgAllocDelay(const MutexAutoLock&) { return mAvgAllocDelay; }
   Delay GetAvgFirstAllocDelay(const MutexAutoLock&) {
@@ -1063,15 +1065,10 @@ class GMut {
 Mutex GMut::sMutex;
 PHC_THREAD_LOCAL(bool) GMut::tlsIsDisabled;
 Atomic<Time, Relaxed> GMut::sNow;
+Atomic<Delay, ReleaseAcquire> GMut::sAllocDelay;
 
 static GMut* gMut;
 
-
-void GAtomic::Init(Delay aFirstDelay) {
-  sAllocDelay = aFirstDelay;
-
-  LOG("Initial sAllocDelay <- %zu\n", size_t(aFirstDelay));
-}
 
 GConst::GConst()
     : mPagesStart(AllocAllPages()), mPagesLimit(mPagesStart + kAllPagesSize) {
@@ -1098,7 +1095,6 @@ class AutoDisableOnCurrentThread {
   explicit AutoDisableOnCurrentThread() { GMut::DisableOnCurrentThread(); }
   ~AutoDisableOnCurrentThread() { gMut->EnableOnCurrentThread(); }
 };
-
 
 
 
@@ -1191,7 +1187,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   
   
   
-  int32_t newDelay = GAtomic::DecrementDelay();
+  int32_t newDelay = GMut::DecrementDelay();
   if (newDelay != 0) {
     return nullptr;
   }
@@ -1296,7 +1292,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   }
 
   
-  GAtomic::SetAllocDelay(newAllocDelay);
+  GMut::SetAllocDelay(newAllocDelay);
 
   return ptr;
 }
