@@ -140,6 +140,16 @@ var SelectTranslationsPanel = new (class {
 
 
 
+
+
+
+  #isFullPageTranslationsRestrictedForPage = true;
+
+  
+
+
+
+
   #translationState = { phase: "closed" };
 
   
@@ -422,6 +432,8 @@ var SelectTranslationsPanel = new (class {
     }
 
     try {
+      this.#isFullPageTranslationsRestrictedForPage =
+        TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser);
       this.#initializeEventListeners();
       await this.#ensureLangListsBuilt();
       await Promise.all([
@@ -1338,7 +1350,9 @@ var SelectTranslationsPanel = new (class {
     copyButton.disabled = invalidLangPairSelected || isTranslating;
     translateButton.disabled = !tryAnotherSourceMenuList.value;
     translateFullPageButton.disabled =
-      invalidLangPairSelected || fromLanguage === toLanguage;
+      invalidLangPairSelected ||
+      fromLanguage === toLanguage ||
+      this.#isFullPageTranslationsRestrictedForPage;
   }
 
   
@@ -1376,13 +1390,18 @@ var SelectTranslationsPanel = new (class {
         translationFailureMessageBar,
         tryAgainButton,
         unsupportedLanguageContent,
+        ...(this.#isFullPageTranslationsRestrictedForPage
+          ? [translateFullPageButton]
+          : []),
       ],
       makeVisible: [
         mainContent,
         copyButton,
         doneButton,
         textArea,
-        translateFullPageButton,
+        ...(this.#isFullPageTranslationsRestrictedForPage
+          ? []
+          : [translateFullPageButton]),
       ],
       addDefault: [doneButton],
       removeDefault: [translateButton, tryAgainButton],
