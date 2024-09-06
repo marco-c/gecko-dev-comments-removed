@@ -19,6 +19,7 @@
 #include "MainThreadUtils.h"
 #include "ScopedNSSTypes.h"
 
+#include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
@@ -1268,9 +1269,8 @@ Maybe<nsTArray<uint8_t>> nsRFPService::GenerateKey(nsIChannel* aChannel) {
   
   
   bool foreignByAncestorContext =
-      false;  
-              
-              
+      AntiTrackingUtils::IsThirdPartyChannel(aChannel) &&
+      loadInfo->GetIsThirdPartyContextToTopWindow();
   attrs.SetPartitionKey(topLevelURI, foreignByAncestorContext);
 
   nsAutoCString oaSuffix;
@@ -2050,7 +2050,7 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
   }
 
   
-  if (!loadInfo->GetIsThirdPartyContextToTopWindow()) {
+  if (!AntiTrackingUtils::IsThirdPartyChannel(aChannel)) {
     return GetOverriddenFingerprintingSettingsForURI(uri, nullptr);
   }
 
