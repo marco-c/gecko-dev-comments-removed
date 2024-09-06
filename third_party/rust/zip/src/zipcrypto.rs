@@ -3,17 +3,42 @@
 
 
 
+use std::fmt::{Debug, Formatter};
+use std::hash::Hash;
 use std::num::Wrapping;
 
+use crate::result::ZipError;
 
-struct ZipCryptoKeys {
+
+#[cfg_attr(fuzzing, derive(arbitrary::Arbitrary))]
+#[derive(Clone, Copy, Hash, Ord, PartialOrd, Eq, PartialEq)]
+pub(crate) struct ZipCryptoKeys {
     key_0: Wrapping<u32>,
     key_1: Wrapping<u32>,
     key_2: Wrapping<u32>,
 }
 
+impl Debug for ZipCryptoKeys {
+    #[allow(unreachable_code)]
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        #[cfg(not(any(test, fuzzing)))]
+        {
+            use std::collections::hash_map::DefaultHasher;
+            use std::hash::Hasher;
+            let mut t = DefaultHasher::new();
+            self.hash(&mut t);
+            return f.write_fmt(format_args!("ZipCryptoKeys(hash {})", t.finish()));
+        }
+        #[cfg(any(test, fuzzing))]
+        return f.write_fmt(format_args!(
+            "ZipCryptoKeys({:#10x},{:#10x},{:#10x})",
+            self.key_0, self.key_1, self.key_2
+        ));
+    }
+}
+
 impl ZipCryptoKeys {
-    fn new() -> ZipCryptoKeys {
+    const fn new() -> ZipCryptoKeys {
         ZipCryptoKeys {
             key_0: Wrapping(0x12345678),
             key_1: Wrapping(0x23456789),
@@ -49,6 +74,13 @@ impl ZipCryptoKeys {
     fn crc32(crc: Wrapping<u32>, input: u8) -> Wrapping<u32> {
         (crc >> 8) ^ Wrapping(CRCTABLE[((crc & Wrapping(0xff)).0 as u8 ^ input) as usize])
     }
+    pub(crate) fn derive(password: &[u8]) -> ZipCryptoKeys {
+        let mut keys = ZipCryptoKeys::new();
+        for byte in password.iter() {
+            keys.update(*byte);
+        }
+        keys
+    }
 }
 
 
@@ -70,24 +102,17 @@ impl<R: std::io::Read> ZipCryptoReader<R> {
     
     
     pub fn new(file: R, password: &[u8]) -> ZipCryptoReader<R> {
-        let mut result = ZipCryptoReader {
+        ZipCryptoReader {
             file,
-            keys: ZipCryptoKeys::new(),
-        };
-
-        
-        for byte in password.iter() {
-            result.keys.update(*byte);
+            keys: ZipCryptoKeys::derive(password),
         }
-
-        result
     }
 
     
     pub fn validate(
         mut self,
         validator: ZipCryptoValidator,
-    ) -> Result<Option<ZipCryptoReaderValid<R>>, std::io::Error> {
+    ) -> Result<ZipCryptoReaderValid<R>, ZipError> {
         
         let mut header_buf = [0u8; 12];
         self.file.read_exact(&mut header_buf)?;
@@ -102,7 +127,7 @@ impl<R: std::io::Read> ZipCryptoReader<R> {
                 
 
                 if (crc32_plaintext >> 24) as u8 != header_buf[11] {
-                    return Ok(None); 
+                    return Err(ZipError::InvalidPassword);
                 }
             }
             ZipCryptoValidator::InfoZipMsdosTime(last_mod_time) => {
@@ -114,12 +139,39 @@ impl<R: std::io::Read> ZipCryptoReader<R> {
                 
 
                 if (last_mod_time >> 8) as u8 != header_buf[11] {
-                    return Ok(None); 
+                    return Err(ZipError::InvalidPassword);
                 }
             }
         }
 
-        Ok(Some(ZipCryptoReaderValid { reader: self }))
+        Ok(ZipCryptoReaderValid { reader: self })
+    }
+}
+#[allow(unused)]
+pub(crate) struct ZipCryptoWriter<W> {
+    pub(crate) writer: W,
+    pub(crate) buffer: Vec<u8>,
+    pub(crate) keys: ZipCryptoKeys,
+}
+impl<W: std::io::Write> ZipCryptoWriter<W> {
+    #[allow(unused)]
+    pub(crate) fn finish(mut self, crc32: u32) -> std::io::Result<W> {
+        self.buffer[11] = (crc32 >> 24) as u8;
+        for byte in self.buffer.iter_mut() {
+            *byte = self.keys.encrypt_byte(*byte);
+        }
+        self.writer.write_all(&self.buffer)?;
+        self.writer.flush()?;
+        Ok(self.writer)
+    }
+}
+impl<W: std::io::Write> std::io::Write for ZipCryptoWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.buffer.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
     }
 }
 
@@ -133,11 +185,11 @@ impl<R: std::io::Read> std::io::Read for ZipCryptoReaderValid<R> {
         
         
 
-        let result = self.reader.file.read(buf);
-        for byte in buf.iter_mut() {
+        let n = self.reader.file.read(buf)?;
+        for byte in buf.iter_mut().take(n) {
             *byte = self.reader.keys.decrypt_byte(*byte);
         }
-        result
+        Ok(n)
     }
 }
 

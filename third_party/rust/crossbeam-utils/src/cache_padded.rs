@@ -58,7 +58,9 @@ use core::ops::{Deref, DerefMut};
 
 
 
+
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
+
 
 
 
@@ -91,12 +93,16 @@ use core::ops::{Deref, DerefMut};
 
 
 
+
 #[cfg_attr(
     any(
         target_arch = "arm",
         target_arch = "mips",
+        target_arch = "mips32r6",
         target_arch = "mips64",
-        target_arch = "riscv64",
+        target_arch = "mips64r6",
+        target_arch = "sparc",
+        target_arch = "hexagon",
     ),
     repr(align(32))
 )]
@@ -104,7 +110,15 @@ use core::ops::{Deref, DerefMut};
 
 
 
+#[cfg_attr(target_arch = "m68k", repr(align(16)))]
+
+
+
+
+
 #[cfg_attr(target_arch = "s390x", repr(align(256)))]
+
+
 
 
 
@@ -119,8 +133,12 @@ use core::ops::{Deref, DerefMut};
         target_arch = "powerpc64",
         target_arch = "arm",
         target_arch = "mips",
+        target_arch = "mips32r6",
         target_arch = "mips64",
-        target_arch = "riscv64",
+        target_arch = "mips64r6",
+        target_arch = "sparc",
+        target_arch = "hexagon",
+        target_arch = "m68k",
         target_arch = "s390x",
     )),
     repr(align(64))
@@ -187,5 +205,11 @@ impl<T: fmt::Debug> fmt::Debug for CachePadded<T> {
 impl<T> From<T> for CachePadded<T> {
     fn from(t: T) -> Self {
         CachePadded::new(t)
+    }
+}
+
+impl<T: fmt::Display> fmt::Display for CachePadded<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.value, f)
     }
 }

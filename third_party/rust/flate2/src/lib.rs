@@ -71,12 +71,33 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![doc(html_root_url = "https://docs.rs/flate2/0.2")]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![allow(trivial_numeric_casts)]
 #![cfg_attr(test, deny(warnings))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
+#[cfg(not(feature = "any_impl",))]
+compile_error!("You need to choose a zlib backend");
 
 pub use crate::crc::{Crc, CrcReader, CrcWriter};
 pub use crate::gz::GzBuilder;
@@ -92,6 +113,13 @@ mod gz;
 mod mem;
 mod zio;
 mod zlib;
+
+
+
+
+
+
+
 
 
 

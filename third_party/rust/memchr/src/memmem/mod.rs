@@ -66,99 +66,25 @@
 
 
 
-pub use self::prefilter::Prefilter;
+pub use crate::memmem::searcher::PrefilterConfig as Prefilter;
+
+
+
+
+
+
+pub(crate) use crate::memmem::searcher::Pre;
 
 use crate::{
-    cow::CowBytes,
-    memmem::{
-        prefilter::{Pre, PrefilterFn, PrefilterState},
-        rabinkarp::NeedleHash,
-        rarebytes::RareNeedleBytes,
+    arch::all::{
+        packedpair::{DefaultFrequencyRank, HeuristicFrequencyRank},
+        rabinkarp,
     },
+    cow::CowBytes,
+    memmem::searcher::{PrefilterState, Searcher, SearcherRev},
 };
 
-
-
-
-
-
-
-
-#[cfg(all(test, feature = "std"))]
-macro_rules! define_memmem_quickcheck_tests {
-    ($fwd:expr, $rev:expr) => {
-        use crate::memmem::proptests;
-
-        quickcheck::quickcheck! {
-            fn qc_fwd_prefix_is_substring(bs: Vec<u8>) -> bool {
-                proptests::prefix_is_substring(false, &bs, $fwd)
-            }
-
-            fn qc_fwd_suffix_is_substring(bs: Vec<u8>) -> bool {
-                proptests::suffix_is_substring(false, &bs, $fwd)
-            }
-
-            fn qc_fwd_matches_naive(
-                haystack: Vec<u8>,
-                needle: Vec<u8>
-            ) -> bool {
-                proptests::matches_naive(false, &haystack, &needle, $fwd)
-            }
-
-            fn qc_rev_prefix_is_substring(bs: Vec<u8>) -> bool {
-                proptests::prefix_is_substring(true, &bs, $rev)
-            }
-
-            fn qc_rev_suffix_is_substring(bs: Vec<u8>) -> bool {
-                proptests::suffix_is_substring(true, &bs, $rev)
-            }
-
-            fn qc_rev_matches_naive(
-                haystack: Vec<u8>,
-                needle: Vec<u8>
-            ) -> bool {
-                proptests::matches_naive(true, &haystack, &needle, $rev)
-            }
-        }
-    };
-}
-
-
-
-
-
-
-#[cfg(test)]
-macro_rules! define_memmem_simple_tests {
-    ($fwd:expr, $rev:expr) => {
-        use crate::memmem::testsimples;
-
-        #[test]
-        fn simple_forward() {
-            testsimples::run_search_tests_fwd($fwd);
-        }
-
-        #[test]
-        fn simple_reverse() {
-            testsimples::run_search_tests_rev($rev);
-        }
-    };
-}
-
-mod byte_frequencies;
-#[cfg(memchr_runtime_simd)]
-mod genericsimd;
-mod prefilter;
-mod rabinkarp;
-mod rarebytes;
-mod twoway;
-mod util;
-#[cfg(memchr_runtime_simd)]
-mod vector;
-#[cfg(all(memchr_runtime_wasm128))]
-mod wasm;
-#[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
-mod x86;
+mod searcher;
 
 
 
@@ -258,7 +184,7 @@ pub fn rfind_iter<'h, 'n, N: 'n + ?Sized + AsRef<[u8]>>(
 #[inline]
 pub fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     if haystack.len() < 64 {
-        rabinkarp::find(haystack, needle)
+        rabinkarp::Finder::new(needle).find(haystack, needle)
     } else {
         Finder::new(needle).find(haystack)
     }
@@ -295,7 +221,7 @@ pub fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 #[inline]
 pub fn rfind(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     if haystack.len() < 64 {
-        rabinkarp::rfind(haystack, needle)
+        rabinkarp::FinderRev::new(needle).rfind(haystack, needle)
     } else {
         FinderRev::new(needle).rfind(haystack)
     }
@@ -307,7 +233,7 @@ pub fn rfind(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FindIter<'h, 'n> {
     haystack: &'h [u8],
     prestate: PrefilterState,
@@ -321,7 +247,7 @@ impl<'h, 'n> FindIter<'h, 'n> {
         haystack: &'h [u8],
         finder: Finder<'n>,
     ) -> FindIter<'h, 'n> {
-        let prestate = finder.searcher.prefilter_state();
+        let prestate = PrefilterState::new();
         FindIter { haystack, prestate, finder, pos: 0 }
     }
 
@@ -332,7 +258,7 @@ impl<'h, 'n> FindIter<'h, 'n> {
     
     
     
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[inline]
     pub fn into_owned(self) -> FindIter<'h, 'static> {
         FindIter {
@@ -348,20 +274,32 @@ impl<'h, 'n> Iterator for FindIter<'h, 'n> {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
-        if self.pos > self.haystack.len() {
-            return None;
-        }
-        let result = self
-            .finder
-            .searcher
-            .find(&mut self.prestate, &self.haystack[self.pos..]);
-        match result {
-            None => None,
-            Some(i) => {
-                let pos = self.pos + i;
-                self.pos = pos + core::cmp::max(1, self.finder.needle().len());
-                Some(pos)
-            }
+        let needle = self.finder.needle();
+        let haystack = self.haystack.get(self.pos..)?;
+        let idx =
+            self.finder.searcher.find(&mut self.prestate, haystack, needle)?;
+
+        let pos = self.pos + idx;
+        self.pos = pos + needle.len().max(1);
+
+        Some(pos)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        
+        
+        
+        match self.haystack.len().checked_sub(self.pos) {
+            None => (0, Some(0)),
+            Some(haystack_len) => match self.finder.needle().len() {
+                
+                
+                0 => (
+                    haystack_len.saturating_add(1),
+                    haystack_len.checked_add(1),
+                ),
+                needle_len => (0, Some(haystack_len / needle_len)),
+            },
         }
     }
 }
@@ -372,7 +310,7 @@ impl<'h, 'n> Iterator for FindIter<'h, 'n> {
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FindRevIter<'h, 'n> {
     haystack: &'h [u8],
     finder: FinderRev<'n>,
@@ -398,7 +336,7 @@ impl<'h, 'n> FindRevIter<'h, 'n> {
     
     
     
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[inline]
     pub fn into_owned(self) -> FindRevIter<'h, 'static> {
         FindRevIter {
@@ -447,7 +385,8 @@ impl<'h, 'n> Iterator for FindRevIter<'h, 'n> {
 
 #[derive(Clone, Debug)]
 pub struct Finder<'n> {
-    searcher: Searcher<'n>,
+    needle: CowBytes<'n>,
+    searcher: Searcher,
 }
 
 impl<'n> Finder<'n> {
@@ -481,8 +420,11 @@ impl<'n> Finder<'n> {
     
     
     
+    #[inline]
     pub fn find(&self, haystack: &[u8]) -> Option<usize> {
-        self.searcher.find(&mut self.searcher.prefilter_state(), haystack)
+        let mut prestate = PrefilterState::new();
+        let needle = self.needle.as_slice();
+        self.searcher.find(&mut prestate, haystack, needle)
     }
 
     
@@ -526,10 +468,13 @@ impl<'n> Finder<'n> {
     
     
     
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[inline]
     pub fn into_owned(self) -> Finder<'static> {
-        Finder { searcher: self.searcher.into_owned() }
+        Finder {
+            needle: self.needle.into_owned(),
+            searcher: self.searcher.clone(),
+        }
     }
 
     
@@ -544,7 +489,10 @@ impl<'n> Finder<'n> {
     
     #[inline]
     pub fn as_ref(&self) -> Finder<'_> {
-        Finder { searcher: self.searcher.as_ref() }
+        Finder {
+            needle: CowBytes::new(self.needle()),
+            searcher: self.searcher.clone(),
+        }
     }
 
     
@@ -555,7 +503,7 @@ impl<'n> Finder<'n> {
     
     #[inline]
     pub fn needle(&self) -> &[u8] {
-        self.searcher.needle()
+        self.needle.as_slice()
     }
 }
 
@@ -574,7 +522,8 @@ impl<'n> Finder<'n> {
 
 #[derive(Clone, Debug)]
 pub struct FinderRev<'n> {
-    searcher: SearcherRev<'n>,
+    needle: CowBytes<'n>,
+    searcher: SearcherRev,
 }
 
 impl<'n> FinderRev<'n> {
@@ -612,7 +561,7 @@ impl<'n> FinderRev<'n> {
     
     
     pub fn rfind<B: AsRef<[u8]>>(&self, haystack: B) -> Option<usize> {
-        self.searcher.rfind(haystack.as_ref())
+        self.searcher.rfind(haystack.as_ref(), self.needle.as_slice())
     }
 
     
@@ -657,10 +606,13 @@ impl<'n> FinderRev<'n> {
     
     
     
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[inline]
     pub fn into_owned(self) -> FinderRev<'static> {
-        FinderRev { searcher: self.searcher.into_owned() }
+        FinderRev {
+            needle: self.needle.into_owned(),
+            searcher: self.searcher.clone(),
+        }
     }
 
     
@@ -675,7 +627,10 @@ impl<'n> FinderRev<'n> {
     
     #[inline]
     pub fn as_ref(&self) -> FinderRev<'_> {
-        FinderRev { searcher: self.searcher.as_ref() }
+        FinderRev {
+            needle: CowBytes::new(self.needle()),
+            searcher: self.searcher.clone(),
+        }
     }
 
     
@@ -686,7 +641,7 @@ impl<'n> FinderRev<'n> {
     
     #[inline]
     pub fn needle(&self) -> &[u8] {
-        self.searcher.needle()
+        self.needle.as_slice()
     }
 }
 
@@ -697,7 +652,7 @@ impl<'n> FinderRev<'n> {
 
 #[derive(Clone, Debug, Default)]
 pub struct FinderBuilder {
-    config: SearcherConfig,
+    prefilter: Prefilter,
 }
 
 impl FinderBuilder {
@@ -712,7 +667,26 @@ impl FinderBuilder {
         &self,
         needle: &'n B,
     ) -> Finder<'n> {
-        Finder { searcher: Searcher::new(self.config, needle.as_ref()) }
+        self.build_forward_with_ranker(DefaultFrequencyRank, needle)
+    }
+
+    
+    
+    
+    pub fn build_forward_with_ranker<
+        'n,
+        R: HeuristicFrequencyRank,
+        B: ?Sized + AsRef<[u8]>,
+    >(
+        &self,
+        ranker: R,
+        needle: &'n B,
+    ) -> Finder<'n> {
+        let needle = needle.as_ref();
+        Finder {
+            needle: CowBytes::new(needle),
+            searcher: Searcher::new(self.prefilter, ranker, needle),
+        }
     }
 
     
@@ -721,7 +695,11 @@ impl FinderBuilder {
         &self,
         needle: &'n B,
     ) -> FinderRev<'n> {
-        FinderRev { searcher: SearcherRev::new(needle.as_ref()) }
+        let needle = needle.as_ref();
+        FinderRev {
+            needle: CowBytes::new(needle),
+            searcher: SearcherRev::new(needle),
+        }
     }
 
     
@@ -729,593 +707,31 @@ impl FinderBuilder {
     
     
     pub fn prefilter(&mut self, prefilter: Prefilter) -> &mut FinderBuilder {
-        self.config.prefilter = prefilter;
+        self.prefilter = prefilter;
         self
     }
 }
 
-
-
-
-
-
-
-#[derive(Clone, Debug)]
-struct Searcher<'n> {
-    
-    
-    
-    
-    needle: CowBytes<'n>,
-    
-    
-    ninfo: NeedleInfo,
-    
-    
-    
-    
-    prefn: Option<PrefilterFn>,
-    
-    kind: SearcherKind,
-}
-
-
-
-
-
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct NeedleInfo {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) rarebytes: RareNeedleBytes,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) nhash: NeedleHash,
-}
-
-
-#[derive(Clone, Copy, Debug, Default)]
-struct SearcherConfig {
-    
-    
-    prefilter: Prefilter,
-}
-
-#[derive(Clone, Debug)]
-enum SearcherKind {
-    
-    
-    Empty,
-    
-    
-    OneByte(u8),
-    
-    
-    
-    TwoWay(twoway::Forward),
-    #[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
-    GenericSIMD128(x86::sse::Forward),
-    #[cfg(memchr_runtime_wasm128)]
-    GenericSIMD128(wasm::Forward),
-    #[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
-    GenericSIMD256(x86::avx::Forward),
-}
-
-impl<'n> Searcher<'n> {
-    fn new(config: SearcherConfig, needle: &'n [u8]) -> Searcher<'n> {
-        use self::SearcherKind::*;
-
-        let ninfo = NeedleInfo::new(needle);
-        let mk = |kind: SearcherKind| {
-            let prefn = prefilter::forward(
-                &config.prefilter,
-                &ninfo.rarebytes,
-                needle,
-            );
-            Searcher { needle: CowBytes::new(needle), ninfo, prefn, kind }
-        };
-        if needle.len() == 0 {
-            return mk(Empty);
-        }
-        if needle.len() == 1 {
-            return mk(OneByte(needle[0]));
-        }
-        #[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
-        {
-            if let Some(fwd) = x86::avx::Forward::new(&ninfo, needle) {
-                return mk(GenericSIMD256(fwd));
-            } else if let Some(fwd) = x86::sse::Forward::new(&ninfo, needle) {
-                return mk(GenericSIMD128(fwd));
-            }
-        }
-        #[cfg(all(target_arch = "wasm32", memchr_runtime_simd))]
-        {
-            if let Some(fwd) = wasm::Forward::new(&ninfo, needle) {
-                return mk(GenericSIMD128(fwd));
-            }
-        }
-
-        mk(TwoWay(twoway::Forward::new(needle)))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn prefilter_state(&self) -> PrefilterState {
-        if self.prefn.is_none() {
-            PrefilterState::inert()
-        } else {
-            PrefilterState::new()
-        }
-    }
-
-    fn needle(&self) -> &[u8] {
-        self.needle.as_slice()
-    }
-
-    fn as_ref(&self) -> Searcher<'_> {
-        use self::SearcherKind::*;
-
-        let kind = match self.kind {
-            Empty => Empty,
-            OneByte(b) => OneByte(b),
-            TwoWay(tw) => TwoWay(tw),
-            #[cfg(all(not(miri), memchr_runtime_simd))]
-            GenericSIMD128(gs) => GenericSIMD128(gs),
-            #[cfg(all(
-                not(miri),
-                target_arch = "x86_64",
-                memchr_runtime_simd
-            ))]
-            GenericSIMD256(gs) => GenericSIMD256(gs),
-        };
-        Searcher {
-            needle: CowBytes::new(self.needle()),
-            ninfo: self.ninfo,
-            prefn: self.prefn,
-            kind,
-        }
-    }
-
-    #[cfg(feature = "std")]
-    fn into_owned(self) -> Searcher<'static> {
-        use self::SearcherKind::*;
-
-        let kind = match self.kind {
-            Empty => Empty,
-            OneByte(b) => OneByte(b),
-            TwoWay(tw) => TwoWay(tw),
-            #[cfg(all(not(miri), memchr_runtime_simd))]
-            GenericSIMD128(gs) => GenericSIMD128(gs),
-            #[cfg(all(
-                not(miri),
-                target_arch = "x86_64",
-                memchr_runtime_simd
-            ))]
-            GenericSIMD256(gs) => GenericSIMD256(gs),
-        };
-        Searcher {
-            needle: self.needle.into_owned(),
-            ninfo: self.ninfo,
-            prefn: self.prefn,
-            kind,
-        }
-    }
-
-    
-    
-    
-    #[inline(always)]
-    fn find(
-        &self,
-        state: &mut PrefilterState,
-        haystack: &[u8],
-    ) -> Option<usize> {
-        use self::SearcherKind::*;
-
-        let needle = self.needle();
-        if haystack.len() < needle.len() {
-            return None;
-        }
-        match self.kind {
-            Empty => Some(0),
-            OneByte(b) => crate::memchr(b, haystack),
-            TwoWay(ref tw) => {
-                
-                
-                if rabinkarp::is_fast(haystack, needle) {
-                    rabinkarp::find_with(&self.ninfo.nhash, haystack, needle)
-                } else {
-                    self.find_tw(tw, state, haystack, needle)
-                }
-            }
-            #[cfg(all(not(miri), memchr_runtime_simd))]
-            GenericSIMD128(ref gs) => {
-                
-                
-                if haystack.len() < gs.min_haystack_len() {
-                    rabinkarp::find_with(&self.ninfo.nhash, haystack, needle)
-                } else {
-                    gs.find(haystack, needle)
-                }
-            }
-            #[cfg(all(
-                not(miri),
-                target_arch = "x86_64",
-                memchr_runtime_simd
-            ))]
-            GenericSIMD256(ref gs) => {
-                
-                
-                if haystack.len() < gs.min_haystack_len() {
-                    rabinkarp::find_with(&self.ninfo.nhash, haystack, needle)
-                } else {
-                    gs.find(haystack, needle)
-                }
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline(never)]
-    fn find_tw(
-        &self,
-        tw: &twoway::Forward,
-        state: &mut PrefilterState,
-        haystack: &[u8],
-        needle: &[u8],
-    ) -> Option<usize> {
-        if let Some(prefn) = self.prefn {
-            
-            
-            
-            
-            
-            if state.is_effective() {
-                let mut pre = Pre { state, prefn, ninfo: &self.ninfo };
-                return tw.find(Some(&mut pre), haystack, needle);
-            }
-        }
-        tw.find(None, haystack, needle)
-    }
-}
-
-impl NeedleInfo {
-    pub(crate) fn new(needle: &[u8]) -> NeedleInfo {
-        NeedleInfo {
-            rarebytes: RareNeedleBytes::forward(needle),
-            nhash: NeedleHash::forward(needle),
-        }
-    }
-}
-
-
-
-
-
-
-
-
-#[derive(Clone, Debug)]
-struct SearcherRev<'n> {
-    
-    needle: CowBytes<'n>,
-    
-    nhash: NeedleHash,
-    
-    kind: SearcherRevKind,
-}
-
-#[derive(Clone, Debug)]
-enum SearcherRevKind {
-    
-    
-    Empty,
-    
-    
-    OneByte(u8),
-    
-    
-    
-    TwoWay(twoway::Reverse),
-}
-
-impl<'n> SearcherRev<'n> {
-    fn new(needle: &'n [u8]) -> SearcherRev<'n> {
-        use self::SearcherRevKind::*;
-
-        let kind = if needle.len() == 0 {
-            Empty
-        } else if needle.len() == 1 {
-            OneByte(needle[0])
-        } else {
-            TwoWay(twoway::Reverse::new(needle))
-        };
-        SearcherRev {
-            needle: CowBytes::new(needle),
-            nhash: NeedleHash::reverse(needle),
-            kind,
-        }
-    }
-
-    fn needle(&self) -> &[u8] {
-        self.needle.as_slice()
-    }
-
-    fn as_ref(&self) -> SearcherRev<'_> {
-        use self::SearcherRevKind::*;
-
-        let kind = match self.kind {
-            Empty => Empty,
-            OneByte(b) => OneByte(b),
-            TwoWay(tw) => TwoWay(tw),
-        };
-        SearcherRev {
-            needle: CowBytes::new(self.needle()),
-            nhash: self.nhash,
-            kind,
-        }
-    }
-
-    #[cfg(feature = "std")]
-    fn into_owned(self) -> SearcherRev<'static> {
-        use self::SearcherRevKind::*;
-
-        let kind = match self.kind {
-            Empty => Empty,
-            OneByte(b) => OneByte(b),
-            TwoWay(tw) => TwoWay(tw),
-        };
-        SearcherRev {
-            needle: self.needle.into_owned(),
-            nhash: self.nhash,
-            kind,
-        }
-    }
-
-    
-    
-    
-    #[inline(always)]
-    fn rfind(&self, haystack: &[u8]) -> Option<usize> {
-        use self::SearcherRevKind::*;
-
-        let needle = self.needle();
-        if haystack.len() < needle.len() {
-            return None;
-        }
-        match self.kind {
-            Empty => Some(haystack.len()),
-            OneByte(b) => crate::memrchr(b, haystack),
-            TwoWay(ref tw) => {
-                
-                
-                if rabinkarp::is_fast(haystack, needle) {
-                    rabinkarp::rfind_with(&self.nhash, haystack, needle)
-                } else {
-                    tw.rfind(haystack, needle)
-                }
-            }
-        }
-    }
-}
-
-
-
-
-
-
-#[cfg(all(test, feature = "std", not(miri)))]
-mod proptests {
-    
-    
-    
-    define_memmem_quickcheck_tests!(super::find, super::rfind);
-
-    
-    pub(crate) fn prefix_is_substring(
-        reverse: bool,
-        bs: &[u8],
-        mut search: impl FnMut(&[u8], &[u8]) -> Option<usize>,
-    ) -> bool {
-        if bs.is_empty() {
-            return true;
-        }
-        for i in 0..(bs.len() - 1) {
-            let prefix = &bs[..i];
-            if reverse {
-                assert_eq!(naive_rfind(bs, prefix), search(bs, prefix));
-            } else {
-                assert_eq!(naive_find(bs, prefix), search(bs, prefix));
-            }
-        }
-        true
-    }
-
-    
-    pub(crate) fn suffix_is_substring(
-        reverse: bool,
-        bs: &[u8],
-        mut search: impl FnMut(&[u8], &[u8]) -> Option<usize>,
-    ) -> bool {
-        if bs.is_empty() {
-            return true;
-        }
-        for i in 0..(bs.len() - 1) {
-            let suffix = &bs[i..];
-            if reverse {
-                assert_eq!(naive_rfind(bs, suffix), search(bs, suffix));
-            } else {
-                assert_eq!(naive_find(bs, suffix), search(bs, suffix));
-            }
-        }
-        true
-    }
-
-    
-    
-    pub(crate) fn matches_naive(
-        reverse: bool,
-        haystack: &[u8],
-        needle: &[u8],
-        mut search: impl FnMut(&[u8], &[u8]) -> Option<usize>,
-    ) -> bool {
-        if reverse {
-            naive_rfind(haystack, needle) == search(haystack, needle)
-        } else {
-            naive_find(haystack, needle) == search(haystack, needle)
-        }
-    }
-
-    
-    fn naive_find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-        if needle.is_empty() {
-            return Some(0);
-        } else if haystack.len() < needle.len() {
-            return None;
-        }
-        for i in 0..(haystack.len() - needle.len() + 1) {
-            if needle == &haystack[i..i + needle.len()] {
-                return Some(i);
-            }
-        }
-        None
-    }
-
-    
-    fn naive_rfind(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-        if needle.is_empty() {
-            return Some(haystack.len());
-        } else if haystack.len() < needle.len() {
-            return None;
-        }
-        for i in (0..(haystack.len() - needle.len() + 1)).rev() {
-            if needle == &haystack[i..i + needle.len()] {
-                return Some(i);
-            }
-        }
-        None
-    }
-}
-
-
-
-
 #[cfg(test)]
-mod testsimples {
-    define_memmem_simple_tests!(super::find, super::rfind);
+mod tests {
+    use super::*;
 
-    
-    type SearchTest =
-        (&'static str, &'static str, Option<usize>, Option<usize>);
+    define_substring_forward_quickcheck!(|h, n| Some(Finder::new(n).find(h)));
+    define_substring_reverse_quickcheck!(|h, n| Some(
+        FinderRev::new(n).rfind(h)
+    ));
 
-    const SEARCH_TESTS: &'static [SearchTest] = &[
-        ("", "", Some(0), Some(0)),
-        ("", "a", Some(0), Some(1)),
-        ("", "ab", Some(0), Some(2)),
-        ("", "abc", Some(0), Some(3)),
-        ("a", "", None, None),
-        ("a", "a", Some(0), Some(0)),
-        ("a", "aa", Some(0), Some(1)),
-        ("a", "ba", Some(1), Some(1)),
-        ("a", "bba", Some(2), Some(2)),
-        ("a", "bbba", Some(3), Some(3)),
-        ("a", "bbbab", Some(3), Some(3)),
-        ("a", "bbbabb", Some(3), Some(3)),
-        ("a", "bbbabbb", Some(3), Some(3)),
-        ("a", "bbbbbb", None, None),
-        ("ab", "", None, None),
-        ("ab", "a", None, None),
-        ("ab", "b", None, None),
-        ("ab", "ab", Some(0), Some(0)),
-        ("ab", "aab", Some(1), Some(1)),
-        ("ab", "aaab", Some(2), Some(2)),
-        ("ab", "abaab", Some(0), Some(3)),
-        ("ab", "baaab", Some(3), Some(3)),
-        ("ab", "acb", None, None),
-        ("ab", "abba", Some(0), Some(0)),
-        ("abc", "ab", None, None),
-        ("abc", "abc", Some(0), Some(0)),
-        ("abc", "abcz", Some(0), Some(0)),
-        ("abc", "abczz", Some(0), Some(0)),
-        ("abc", "zabc", Some(1), Some(1)),
-        ("abc", "zzabc", Some(2), Some(2)),
-        ("abc", "azbc", None, None),
-        ("abc", "abzc", None, None),
-        ("abczdef", "abczdefzzzzzzzzzzzzzzzzzzzz", Some(0), Some(0)),
-        ("abczdef", "zzzzzzzzzzzzzzzzzzzzabczdef", Some(20), Some(20)),
-        ("xyz", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaxyz", Some(32), Some(32)),
-        
-        ("\u{0}\u{15}", "\u{0}\u{15}\u{15}\u{0}", Some(0), Some(0)),
-        ("\u{0}\u{1e}", "\u{1e}\u{0}", None, None),
-    ];
-
-    
-    
-    
-    
-    pub(crate) fn run_search_tests_fwd(
-        mut search: impl FnMut(&[u8], &[u8]) -> Option<usize>,
-    ) {
-        for &(needle, haystack, expected_fwd, _) in SEARCH_TESTS {
-            let (n, h) = (needle.as_bytes(), haystack.as_bytes());
-            assert_eq!(
-                expected_fwd,
-                search(h, n),
-                "needle: {:?}, haystack: {:?}, expected: {:?}",
-                n,
-                h,
-                expected_fwd
-            );
-        }
+    #[test]
+    fn forward() {
+        crate::tests::substring::Runner::new()
+            .fwd(|h, n| Some(Finder::new(n).find(h)))
+            .run();
     }
 
-    
-    
-    
-    
-    pub(crate) fn run_search_tests_rev(
-        mut search: impl FnMut(&[u8], &[u8]) -> Option<usize>,
-    ) {
-        for &(needle, haystack, _, expected_rev) in SEARCH_TESTS {
-            let (n, h) = (needle.as_bytes(), haystack.as_bytes());
-            assert_eq!(
-                expected_rev,
-                search(h, n),
-                "needle: {:?}, haystack: {:?}, expected: {:?}",
-                n,
-                h,
-                expected_rev
-            );
-        }
+    #[test]
+    fn reverse() {
+        crate::tests::substring::Runner::new()
+            .rev(|h, n| Some(FinderRev::new(n).rfind(h)))
+            .run();
     }
 }

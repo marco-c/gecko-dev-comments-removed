@@ -3,6 +3,7 @@ use std::io::prelude::*;
 
 use super::bufread;
 use crate::bufreader::BufReader;
+use crate::Decompress;
 
 
 
@@ -40,6 +41,14 @@ impl<R: Read> ZlibEncoder<R> {
     pub fn new(r: R, level: crate::Compression) -> ZlibEncoder<R> {
         ZlibEncoder {
             inner: bufread::ZlibEncoder::new(BufReader::new(r), level),
+        }
+    }
+
+    
+    
+    pub fn new_with_compress(r: R, compression: crate::Compress) -> ZlibEncoder<R> {
+        ZlibEncoder {
+            inner: bufread::ZlibEncoder::new_with_compress(BufReader::new(r), compression),
         }
     }
 }
@@ -164,9 +173,35 @@ impl<R: Read> ZlibDecoder<R> {
     
     
     
+    
     pub fn new_with_buf(r: R, buf: Vec<u8>) -> ZlibDecoder<R> {
         ZlibDecoder {
             inner: bufread::ZlibDecoder::new(BufReader::with_buf(buf, r)),
+        }
+    }
+
+    
+    
+    pub fn new_with_decompress(r: R, decompression: Decompress) -> ZlibDecoder<R> {
+        ZlibDecoder::new_with_decompress_and_buf(r, vec![0; 32 * 1024], decompression)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn new_with_decompress_and_buf(
+        r: R,
+        buf: Vec<u8>,
+        decompression: Decompress,
+    ) -> ZlibDecoder<R> {
+        ZlibDecoder {
+            inner: bufread::ZlibDecoder::new_with_decompress(
+                BufReader::with_buf(buf, r),
+                decompression,
+            ),
         }
     }
 }

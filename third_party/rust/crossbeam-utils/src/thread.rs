@@ -111,19 +111,23 @@
 
 
 
+use std::boxed::Box;
 use std::fmt;
 use std::io;
 use std::marker::PhantomData;
 use std::mem;
 use std::panic;
+use std::string::String;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::vec::Vec;
 
 use crate::sync::WaitGroup;
-use cfg_if::cfg_if;
 
 type SharedVec<T> = Arc<Mutex<Vec<T>>>;
 type SharedOption<T> = Arc<Mutex<Option<T>>>;
+
+
 
 
 
@@ -150,6 +154,15 @@ pub fn scope<'env, F, R>(f: F) -> thread::Result<R>
 where
     F: FnOnce(&Scope<'env>) -> R,
 {
+    struct AbortOnPanic;
+    impl Drop for AbortOnPanic {
+        fn drop(&mut self) {
+            if thread::panicking() {
+                std::process::abort();
+            }
+        }
+    }
+
     let wg = WaitGroup::new();
     let scope = Scope::<'env> {
         handles: SharedVec::default(),
@@ -159,6 +172,10 @@ where
 
     
     let result = panic::catch_unwind(panic::AssertUnwindSafe(|| f(&scope)));
+
+    
+    
+    let guard = AbortOnPanic;
 
     
     drop(scope.wait_group);
@@ -174,6 +191,8 @@ where
         .filter_map(|handle| handle.lock().unwrap().take())
         .filter_map(|handle| handle.join().err())
         .collect();
+
+    mem::forget(guard);
 
     
     
@@ -545,37 +564,42 @@ impl<T> ScopedJoinHandle<'_, T> {
     }
 }
 
-cfg_if! {
-    if #[cfg(unix)] {
-        use std::os::unix::thread::{JoinHandleExt, RawPthread};
 
-        impl<T> JoinHandleExt for ScopedJoinHandle<'_, T> {
-            fn as_pthread_t(&self) -> RawPthread {
-                // Borrow the handle. The handle will surely be available because the root scope waits
-                // for nested scopes before joining remaining threads.
-                let handle = self.handle.lock().unwrap();
-                handle.as_ref().unwrap().as_pthread_t()
-            }
-            fn into_pthread_t(self) -> RawPthread {
-                self.as_pthread_t()
-            }
+#[cfg(unix)]
+mod unix {
+    use super::ScopedJoinHandle;
+    use std::os::unix::thread::{JoinHandleExt, RawPthread};
+
+    impl<T> JoinHandleExt for ScopedJoinHandle<'_, T> {
+        fn as_pthread_t(&self) -> RawPthread {
+            
+            
+            let handle = self.handle.lock().unwrap();
+            handle.as_ref().unwrap().as_pthread_t()
         }
-    } else if #[cfg(windows)] {
-        use std::os::windows::io::{AsRawHandle, IntoRawHandle, RawHandle};
-
-        impl<T> AsRawHandle for ScopedJoinHandle<'_, T> {
-            fn as_raw_handle(&self) -> RawHandle {
-                // Borrow the handle. The handle will surely be available because the root scope waits
-                // for nested scopes before joining remaining threads.
-                let handle = self.handle.lock().unwrap();
-                handle.as_ref().unwrap().as_raw_handle()
-            }
+        fn into_pthread_t(self) -> RawPthread {
+            self.as_pthread_t()
         }
+    }
+}
 
-        impl<T> IntoRawHandle for ScopedJoinHandle<'_, T> {
-            fn into_raw_handle(self) -> RawHandle {
-                self.as_raw_handle()
-            }
+#[cfg(windows)]
+mod windows {
+    use super::ScopedJoinHandle;
+    use std::os::windows::io::{AsRawHandle, IntoRawHandle, RawHandle};
+
+    impl<T> AsRawHandle for ScopedJoinHandle<'_, T> {
+        fn as_raw_handle(&self) -> RawHandle {
+            
+            
+            let handle = self.handle.lock().unwrap();
+            handle.as_ref().unwrap().as_raw_handle()
+        }
+    }
+
+    impl<T> IntoRawHandle for ScopedJoinHandle<'_, T> {
+        fn into_raw_handle(self) -> RawHandle {
+            self.as_raw_handle()
         }
     }
 }

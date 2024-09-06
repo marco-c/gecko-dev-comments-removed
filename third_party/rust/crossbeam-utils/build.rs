@@ -10,18 +10,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #![warn(rust_2018_idioms)]
 
 use std::env;
@@ -30,6 +18,9 @@ include!("no_atomic.rs");
 include!("build-common.rs");
 
 fn main() {
+    println!("cargo:rerun-if-changed=no_atomic.rs");
+    println!("cargo:rustc-check-cfg=cfg(crossbeam_no_atomic,crossbeam_sanitize_thread)");
+
     let target = match env::var("TARGET") {
         Ok(target) => convert_custom_linux_target(target),
         Err(e) => {
@@ -45,17 +36,13 @@ fn main() {
     
     
     
-    if NO_ATOMIC_CAS.contains(&&*target) {
-        println!("cargo:rustc-cfg=crossbeam_no_atomic_cas");
-    }
     if NO_ATOMIC.contains(&&*target) {
         println!("cargo:rustc-cfg=crossbeam_no_atomic");
-        println!("cargo:rustc-cfg=crossbeam_no_atomic_64");
-    } else if NO_ATOMIC_64.contains(&&*target) {
-        println!("cargo:rustc-cfg=crossbeam_no_atomic_64");
-    } else {
-        
     }
 
-    println!("cargo:rerun-if-changed=no_atomic.rs");
+    
+    let sanitize = env::var("CARGO_CFG_SANITIZE").unwrap_or_default();
+    if sanitize.contains("thread") {
+        println!("cargo:rustc-cfg=crossbeam_sanitize_thread");
+    }
 }

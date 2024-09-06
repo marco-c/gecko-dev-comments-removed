@@ -153,9 +153,35 @@
 
 
 
-#![deny(missing_docs)]
-#![cfg_attr(not(feature = "std"), no_std)]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![deny(missing_docs)]
+#![no_std]
+
+
+
+#![cfg_attr(
+    not(any(
+        all(target_arch = "x86_64", target_feature = "sse2"),
+        all(target_arch = "wasm32", target_feature = "simd128"),
+        target_arch = "aarch64",
+    )),
+    allow(dead_code)
+)]
 
 #![cfg_attr(miri, allow(dead_code, unused_macros))]
 
@@ -168,14 +194,28 @@
 )))]
 compile_error!("memchr currently not supported on non-{16,32,64}");
 
+#[cfg(any(test, feature = "std"))]
+extern crate std;
+
+#[cfg(any(test, feature = "alloc"))]
+extern crate alloc;
+
 pub use crate::memchr::{
     memchr, memchr2, memchr2_iter, memchr3, memchr3_iter, memchr_iter,
     memrchr, memrchr2, memrchr2_iter, memrchr3, memrchr3_iter, memrchr_iter,
     Memchr, Memchr2, Memchr3,
 };
 
+#[macro_use]
+mod macros;
+
+#[cfg(test)]
+#[macro_use]
+mod tests;
+
+pub mod arch;
 mod cow;
+mod ext;
 mod memchr;
 pub mod memmem;
-#[cfg(test)]
-mod tests;
+mod vector;

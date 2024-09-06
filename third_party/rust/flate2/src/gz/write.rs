@@ -2,8 +2,7 @@ use std::cmp;
 use std::io;
 use std::io::prelude::*;
 
-use super::bufread::{corrupt, read_gz_header};
-use super::{GzBuilder, GzHeader};
+use super::{corrupt, GzBuilder, GzHeader, GzHeaderParser};
 use crate::crc::{Crc, CrcWriter};
 use crate::zio;
 use crate::{Compress, Compression, Decompress, Status};
@@ -199,12 +198,20 @@ impl<W: Write> Drop for GzEncoder<W> {
 
 
 
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct GzDecoder<W: Write> {
     inner: zio::Writer<CrcWriter<W>, Decompress>,
     crc_bytes: Vec<u8>,
-    header: Option<GzHeader>,
-    header_buf: Vec<u8>,
+    header_parser: GzHeaderParser,
 }
 
 const CRC_BYTES_LEN: usize = 8;
@@ -218,14 +225,13 @@ impl<W: Write> GzDecoder<W> {
         GzDecoder {
             inner: zio::Writer::new(CrcWriter::new(w), Decompress::new(false)),
             crc_bytes: Vec::with_capacity(CRC_BYTES_LEN),
-            header: None,
-            header_buf: Vec::new(),
+            header_parser: GzHeaderParser::new(),
         }
     }
 
     
     pub fn header(&self) -> Option<&GzHeader> {
-        self.header.as_ref()
+        self.header_parser.header()
     }
 
     
@@ -306,47 +312,24 @@ impl<W: Write> GzDecoder<W> {
     }
 }
 
-struct Counter<T: Read> {
-    inner: T,
-    pos: usize,
-}
-
-impl<T: Read> Read for Counter<T> {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let pos = self.inner.read(buf)?;
-        self.pos += pos;
-        Ok(pos)
-    }
-}
-
 impl<W: Write> Write for GzDecoder<W> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if self.header.is_none() {
-            
-            let (res, pos) = {
-                let mut counter = Counter {
-                    inner: self.header_buf.chain(buf),
-                    pos: 0,
-                };
-                let res = read_gz_header(&mut counter);
-                (res, counter.pos)
-            };
-
-            match res {
+    fn write(&mut self, mut buf: &[u8]) -> io::Result<usize> {
+        let buflen = buf.len();
+        if self.header().is_none() {
+            match self.header_parser.parse(&mut buf) {
                 Err(err) => {
                     if err.kind() == io::ErrorKind::UnexpectedEof {
                         
-                        self.header_buf.extend(buf);
-                        Ok(buf.len())
+                        Ok(buflen)
                     } else {
                         Err(err)
                     }
                 }
-                Ok(header) => {
-                    self.header = Some(header);
-                    let pos = pos - self.header_buf.len();
-                    self.header_buf.truncate(0);
-                    Ok(pos)
+                Ok(_) => {
+                    debug_assert!(self.header().is_some());
+                    
+                    let n = buflen - buf.len();
+                    Ok(n)
                 }
             }
         } else {
@@ -372,6 +355,8 @@ impl<W: Read + Write> Read for GzDecoder<W> {
         self.inner.get_mut().get_mut().read(buf)
     }
 }
+
+
 
 
 
@@ -524,6 +509,56 @@ mod tests {
     }
 
     #[test]
+    fn decode_writer_partial_header_filename() {
+        let filename = "test.txt";
+        let mut e = GzBuilder::new()
+            .filename(filename)
+            .read(STR.as_bytes(), Compression::default());
+        let mut bytes = Vec::new();
+        e.read_to_end(&mut bytes).unwrap();
+
+        let mut writer = Vec::new();
+        let mut decoder = GzDecoder::new(writer);
+        assert_eq!(decoder.write(&bytes[..12]).unwrap(), 12);
+        let n = decoder.write(&bytes[12..]).unwrap();
+        if n < bytes.len() - 12 {
+            decoder.write(&bytes[n + 12..]).unwrap();
+        }
+        assert_eq!(
+            decoder.header().unwrap().filename().unwrap(),
+            filename.as_bytes()
+        );
+        writer = decoder.finish().unwrap();
+        let return_string = String::from_utf8(writer).expect("String parsing error");
+        assert_eq!(return_string, STR);
+    }
+
+    #[test]
+    fn decode_writer_partial_header_comment() {
+        let comment = "test comment";
+        let mut e = GzBuilder::new()
+            .comment(comment)
+            .read(STR.as_bytes(), Compression::default());
+        let mut bytes = Vec::new();
+        e.read_to_end(&mut bytes).unwrap();
+
+        let mut writer = Vec::new();
+        let mut decoder = GzDecoder::new(writer);
+        assert_eq!(decoder.write(&bytes[..12]).unwrap(), 12);
+        let n = decoder.write(&bytes[12..]).unwrap();
+        if n < bytes.len() - 12 {
+            decoder.write(&bytes[n + 12..]).unwrap();
+        }
+        assert_eq!(
+            decoder.header().unwrap().comment().unwrap(),
+            comment.as_bytes()
+        );
+        writer = decoder.finish().unwrap();
+        let return_string = String::from_utf8(writer).expect("String parsing error");
+        assert_eq!(return_string, STR);
+    }
+
+    #[test]
     fn decode_writer_exact_header() {
         let mut e = GzEncoder::new(Vec::new(), Compression::default());
         e.write(STR.as_ref()).unwrap();
@@ -574,5 +609,33 @@ mod tests {
         let return_string = String::from_utf8(writer).expect("String parsing error");
         let expected = STR.repeat(2);
         assert_eq!(return_string, expected);
+    }
+
+    
+    
+    #[test]
+    fn decode_extra_data() {
+        let compressed = {
+            let mut e = GzEncoder::new(Vec::new(), Compression::default());
+            e.write(STR.as_ref()).unwrap();
+            let mut b = e.finish().unwrap();
+            b.push(b'x');
+            b
+        };
+
+        let mut writer = Vec::new();
+        let mut decoder = GzDecoder::new(writer);
+        let mut consumed_bytes = 0;
+        loop {
+            let n = decoder.write(&compressed[consumed_bytes..]).unwrap();
+            if n == 0 {
+                break;
+            }
+            consumed_bytes += n;
+        }
+        writer = decoder.finish().unwrap();
+        let actual = String::from_utf8(writer).expect("String parsing error");
+        assert_eq!(actual, STR);
+        assert_eq!(&compressed[consumed_bytes..], b"x");
     }
 }

@@ -36,17 +36,18 @@ fn wait() {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)] 
 fn wait_and_drop() {
     let wg = WaitGroup::new();
+    let wg2 = WaitGroup::new();
     let (tx, rx) = mpsc::channel();
 
     for _ in 0..THREADS {
         let wg = wg.clone();
+        let wg2 = wg2.clone();
         let tx = tx.clone();
 
         thread::spawn(move || {
-            thread::sleep(Duration::from_millis(100));
+            wg2.wait();
             tx.send(()).unwrap();
             drop(wg);
         });
@@ -55,6 +56,7 @@ fn wait_and_drop() {
     
     
     assert!(rx.try_recv().is_err());
+    drop(wg2);
 
     wg.wait();
 

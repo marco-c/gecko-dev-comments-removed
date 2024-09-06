@@ -1,5 +1,3 @@
-#[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
-use crate::primitive::sync::atomic::compiler_fence;
 #[cfg(not(crossbeam_no_atomic))]
 use core::sync::atomic::Ordering;
 
@@ -27,11 +25,21 @@ pub trait AtomicConsume {
 }
 
 #[cfg(not(crossbeam_no_atomic))]
-#[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+
+
+
+
+
+
+#[cfg(all(
+    any(target_arch = "arm", target_arch = "aarch64"),
+    not(any(miri, crossbeam_loom, crossbeam_sanitize_thread)),
+))]
 macro_rules! impl_consume {
     () => {
         #[inline]
         fn load_consume(&self) -> Self::Val {
+            use crate::primitive::sync::atomic::compiler_fence;
             let result = self.load(Ordering::Relaxed);
             compiler_fence(Ordering::Acquire);
             result
@@ -40,7 +48,10 @@ macro_rules! impl_consume {
 }
 
 #[cfg(not(crossbeam_no_atomic))]
-#[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
+#[cfg(not(all(
+    any(target_arch = "arm", target_arch = "aarch64"),
+    not(any(miri, crossbeam_loom, crossbeam_sanitize_thread)),
+)))]
 macro_rules! impl_consume {
     () => {
         #[inline]
@@ -72,11 +83,19 @@ impl_atomic!(AtomicU8, u8);
 impl_atomic!(AtomicI8, i8);
 impl_atomic!(AtomicU16, u16);
 impl_atomic!(AtomicI16, i16);
+#[cfg(any(target_has_atomic = "32", not(target_pointer_width = "16")))]
 impl_atomic!(AtomicU32, u32);
+#[cfg(any(target_has_atomic = "32", not(target_pointer_width = "16")))]
 impl_atomic!(AtomicI32, i32);
-#[cfg(not(crossbeam_no_atomic_64))]
+#[cfg(any(
+    target_has_atomic = "64",
+    not(any(target_pointer_width = "16", target_pointer_width = "32")),
+))]
 impl_atomic!(AtomicU64, u64);
-#[cfg(not(crossbeam_no_atomic_64))]
+#[cfg(any(
+    target_has_atomic = "64",
+    not(any(target_pointer_width = "16", target_pointer_width = "32")),
+))]
 impl_atomic!(AtomicI64, i64);
 
 #[cfg(not(crossbeam_no_atomic))]

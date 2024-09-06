@@ -1,4 +1,4 @@
-use crate::primitive::sync::atomic;
+use crate::primitive::hint;
 use core::cell::Cell;
 use core::fmt;
 
@@ -145,10 +145,7 @@ impl Backoff {
     #[inline]
     pub fn spin(&self) {
         for _ in 0..1 << self.step.get().min(SPIN_LIMIT) {
-            
-            
-            #[allow(deprecated)]
-            atomic::spin_loop_hint();
+            hint::spin_loop();
         }
 
         if self.step.get() <= SPIN_LIMIT {
@@ -209,18 +206,12 @@ impl Backoff {
     pub fn snooze(&self) {
         if self.step.get() <= SPIN_LIMIT {
             for _ in 0..1 << self.step.get() {
-                
-                
-                #[allow(deprecated)]
-                atomic::spin_loop_hint();
+                hint::spin_loop();
             }
         } else {
             #[cfg(not(feature = "std"))]
             for _ in 0..1 << self.step.get() {
-                
-                
-                #[allow(deprecated)]
-                atomic::spin_loop_hint();
+                hint::spin_loop();
             }
 
             #[cfg(feature = "std")]
