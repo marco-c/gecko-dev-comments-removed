@@ -372,8 +372,18 @@ class TaskController {
       const MutexAutoLock& aProofOfLock);
 
   Task* GetFinalDependency(Task* aTask);
-  void MaybeInterruptTask(Task* aTask);
+  void MaybeInterruptTask(Task* aTask, const MutexAutoLock& aProofOfLock);
   Task* GetHighestPriorityMTTask();
+
+  void DispatchThreadableTasks(const MutexAutoLock& aProofOfLock);
+  bool MaybeDispatchOneThreadableTask(const MutexAutoLock& aProofOfLock);
+  PoolThread* SelectThread(const MutexAutoLock& aProofOfLock);
+
+  struct TaskToRun {
+    RefPtr<Task> mTask;
+    uint32_t mEffectiveTaskPriority = 0;
+  };
+  TaskToRun TakeThreadableTaskToRun(const MutexAutoLock& aProofOfLock);
 
   void EnsureMainThreadTasksScheduled();
 
@@ -399,7 +409,6 @@ class TaskController {
   
   std::vector<UniquePtr<PoolThread>> mPoolThreads;
 
-  CondVar mThreadPoolCV;
   CondVar mMainThreadCV;
 
   
@@ -413,6 +422,9 @@ class TaskController {
   
   
   std::set<TaskManager*> mTaskManagers;
+
+  
+  size_t mIdleThreadCount = 0;
 
   
   bool mMayHaveMainThreadTask = true;
