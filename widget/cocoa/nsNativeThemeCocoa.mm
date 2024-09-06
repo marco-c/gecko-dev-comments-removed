@@ -2958,7 +2958,7 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::MozMacHelpButton:
     case StyleAppearance::MozMacDisclosureButtonOpen:
     case StyleAppearance::MozMacDisclosureButtonClosed:
-    case StyleAppearance::MozMacUnifiedToolbarWindow:
+    case StyleAppearance::MozMacWindow:
     case StyleAppearance::Button:
     case StyleAppearance::Toolbarbutton:
     case StyleAppearance::Spinner:
@@ -3076,7 +3076,7 @@ nsITheme::Transparency nsNativeThemeCocoa::GetWidgetTransparency(
     case StyleAppearance::Menupopup:
     case StyleAppearance::Tooltip:
       return eTransparent;
-    case StyleAppearance::MozMacUnifiedToolbarWindow:
+    case StyleAppearance::MozMacWindow:
       
       
       return eOpaque;
