@@ -136,6 +136,8 @@ class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator {
   
   
   
+  
+  
   void* stackAddress() const;
 
   enum FrameKind {
