@@ -7,8 +7,12 @@ const { CloseRemoteTab } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommands.sys.mjs"
 );
 
-const { COMMAND_CLOSETAB, COMMAND_CLOSETAB_TAIL } = ChromeUtils.importESModule(
+const { COMMAND_CLOSETAB } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommon.sys.mjs"
+);
+
+const { getRemoteCommandStore, RemoteCommand } = ChromeUtils.importESModule(
+  "resource://services-sync/TabsStore.sys.mjs"
 );
 
 class TelemetryMock {
@@ -31,20 +35,13 @@ class TelemetryMock {
   }
 }
 
-function FxaInternalMock() {
+function FxaInternalMock(recentDeviceList) {
   return {
     telemetry: new TelemetryMock(),
+    device: {
+      recentDeviceList,
+    },
   };
-}
-
-function promiseObserver(topic) {
-  return new Promise(resolve => {
-    let obs = (aSubject, aTopic) => {
-      Services.obs.removeObserver(obs, aTopic);
-      resolve(aSubject);
-    };
-    Services.obs.addObserver(obs, topic);
-  });
 }
 
 add_task(async function test_closetab_isDeviceCompatible() {
@@ -74,190 +71,212 @@ add_task(async function test_closetab_isDeviceCompatible() {
   Services.prefs.clearUserPref(
     "identity.fxaccounts.commands.remoteTabManagement.enabled"
   );
+  closeTab.shutdown();
 });
 
 add_task(async function test_closetab_send() {
-  const commands = {
-    invoke: sinon.spy((cmd, device, payload) => {
-      Assert.equal(payload.encrypted, "encryptedpayload");
-    }),
-  };
-  const fxai = FxaInternalMock();
-  const closeTab = new CloseRemoteTab(commands, fxai);
-  closeTab._encrypt = async () => {
-    return "encryptedpayload";
-  };
   const targetDevice = { id: "dev1", name: "Device 1" };
-  const tab = { url: "https://foo.bar/" };
+
+  const fxai = FxaInternalMock([targetDevice]);
+  const closeTab = new CloseRemoteTab(null, fxai);
+  let mock = sinon.mock(closeTab);
 
   
-  closeTab.enqueueTabToClose(targetDevice, tab, 0);
+  let now = Date.now();
+  closeTab.now = () => now;
 
   
-  Assert.equal(closeTab.pendingClosedTabs.get(targetDevice.id).tabs.length, 1);
+  closeTab.DELAY = 10;
 
   
-  await promiseObserver("test:fxaccounts:commands:close-uri:sent");
+  
+  mock.expects("_ensureTimer").once().withArgs(20);
+  mock
+    .expects("_sendCloseTabPush")
+    .once()
+    .withArgs(targetDevice, ["https://foo.bar/early"])
+    .resolves(true);
 
   
-  Assert.equal(
-    closeTab.pendingClosedTabs.has(targetDevice.id),
-    false,
-    "The device should be removed from the queue after sending."
+  closeTab.invoke = sinon.spy((cmd, device, payload) => {
+    Assert.equal(payload.encrypted, "encryptedpayload");
+  });
+
+  const store = await getRemoteCommandStore();
+  
+  
+  const command1 = new RemoteCommand.CloseTab("https://foo.bar/early");
+  Assert.ok(
+    await store.addRemoteCommandAt(targetDevice.id, command1, now - 15),
+    "adding the remote command should work"
+  );
+  const command2 = new RemoteCommand.CloseTab("https://foo.bar/late");
+  Assert.ok(
+    await store.addRemoteCommandAt(targetDevice.id, command2, now),
+    "adding the remote command should work"
   );
 
   
-  Assert.deepEqual(fxai.telemetry._events, [
-    {
-      object: "command-sent",
-      method: COMMAND_CLOSETAB_TAIL,
-      value: "dev1-san",
-      
-      extra: { flowID: "1", streamID: "2" },
-    },
-  ]);
-});
+  const pending = await store.getUnsentCommands();
+  Assert.equal(pending.length, 2);
 
-add_task(async function test_multiple_tabs_one_device() {
-  const commands = sinon.stub({
-    invoke: async () => {},
-  });
-  const fxai = FxaInternalMock();
-  const closeTab = new CloseRemoteTab(commands, fxai);
-  closeTab._encrypt = async () => "encryptedpayload";
+  Assert.equal(pending[0].deviceId, targetDevice.id);
+  Assert.ok(pending[0].command.url, "https://foo.bar/early");
+  Assert.equal(pending[1].deviceId, targetDevice.id);
+  Assert.ok(pending[1].command.url, "https://foo.bar/late");
 
-  const targetDevice = {
-    id: "dev1",
-    name: "Device 1",
-    availableCommands: { [COMMAND_CLOSETAB]: "payload" },
-  };
-  const tab1 = { url: "https://foo.bar/" };
-  const tab2 = { url: "https://example.com/" };
+  await closeTab.flushQueue();
+  
+  Assert.equal((await store.getUnsentCommands()).length, 1);
 
-  closeTab.enqueueTabToClose(targetDevice, tab1, 1000);
-  closeTab.enqueueTabToClose(targetDevice, tab2, 0);
+  mock.verify();
 
   
-  Assert.equal(closeTab.pendingClosedTabs.get("dev1").tabs.length, 2);
+  now += 20;
+  
+  mock = sinon.mock(closeTab);
+  mock.expects("_ensureTimer").never();
+  mock
+    .expects("_sendCloseTabPush")
+    .once()
+    .withArgs(targetDevice, ["https://foo.bar/late"])
+    .resolves(true);
+
+  await closeTab.flushQueue();
+  
+  Assert.equal((await store.getUnsentCommands()).length, 0);
+
+  mock.verify();
+  mock.restore();
+  closeTab.shutdown();
 
   
-  await promiseObserver("test:fxaccounts:commands:close-uri:sent");
 
-  Assert.equal(
-    closeTab.pendingClosedTabs.has(targetDevice.id),
-    false,
-    "The device should be removed from the queue after sending."
-  );
 
-  
-  Assert.deepEqual(fxai.telemetry._events, [
-    {
-      object: "command-sent",
-      method: COMMAND_CLOSETAB_TAIL,
-      value: "dev1-san",
-      extra: { flowID: "1", streamID: "2" },
-    },
-  ]);
-});
 
-add_task(async function test_timer_reset_on_new_tab() {
-  const commands = sinon.stub({
-    invoke: async () => {},
-  });
-  const fxai = FxaInternalMock();
-  const closeTab = new CloseRemoteTab(commands, fxai);
-  closeTab._encrypt = async () => "encryptedpayload";
 
-  const targetDevice = {
-    id: "dev1",
-    name: "Device 1",
-    availableCommands: { [COMMAND_CLOSETAB]: "payload" },
-  };
-  const tab1 = { url: "https://foo.bar/" };
-  const tab2 = { url: "https://example.com/" };
 
-  
-  closeTab.enqueueTabToClose(targetDevice, tab1);
 
-  Assert.equal(closeTab.pendingClosedTabs.get(targetDevice.id).tabs.length, 1);
 
-  
-  closeTab.enqueueTabToClose(targetDevice, tab2, 100);
 
-  
-  Assert.equal(closeTab.pendingClosedTabs.get(targetDevice.id).tabs.length, 2);
 
-  
-  await promiseObserver("test:fxaccounts:commands:close-uri:sent");
 
-  
-  sinon.assert.calledOnce(commands.invoke);
-  Assert.equal(closeTab.pendingClosedTabs.has(targetDevice.id), false);
 
-  
-  Assert.deepEqual(fxai.telemetry._events, [
-    {
-      object: "command-sent",
-      method: COMMAND_CLOSETAB_TAIL,
-      value: "dev1-san",
-      extra: { flowID: "1", streamID: "2" },
-    },
-  ]);
+
 });
 
 add_task(async function test_multiple_devices() {
-  const commands = sinon.stub({
-    invoke: async () => {},
-  });
-  const fxai = FxaInternalMock();
-  const closeTab = new CloseRemoteTab(commands, fxai);
-  closeTab._encrypt = async () => "encryptedpayload";
-
   const device1 = {
     id: "dev1",
     name: "Device 1",
-    availableCommands: { [COMMAND_CLOSETAB]: "payload" },
   };
   const device2 = {
     id: "dev2",
     name: "Device 2",
+  };
+  const fxai = FxaInternalMock([device1, device2]);
+  const closeTab = new CloseRemoteTab(null, fxai);
+  const store = await getRemoteCommandStore();
+
+  const tab1 = "https://foo.bar";
+  const tab2 = "https://example.com";
+
+  let mock = sinon.mock(closeTab);
+
+  let now = Date.now();
+  closeTab.now = () => now;
+
+  
+  closeTab.DELAY = 10;
+
+  mock.expects("_sendCloseTabPush").twice().resolves(true);
+
+  
+  closeTab.invoke = sinon.spy((cmd, device, payload) => {
+    Assert.equal(payload.encrypted, "encryptedpayload");
+  });
+
+  let command1 = new RemoteCommand.CloseTab(tab1);
+  Assert.ok(
+    await store.addRemoteCommandAt(device1.id, command1, now - 15),
+    "adding the remote command should work"
+  );
+
+  let command2 = new RemoteCommand.CloseTab(tab2);
+  Assert.ok(
+    await store.addRemoteCommandAt(device2.id, command2, now),
+    "adding the remote command should work"
+  );
+
+  
+  let unsentCommands = await store.getUnsentCommands();
+  Assert.equal(unsentCommands.length, 2);
+
+  
+  Assert.equal(unsentCommands[0].deviceId, "dev1");
+  Assert.equal(unsentCommands[0].command.url, "https://foo.bar");
+  Assert.equal(unsentCommands[1].deviceId, "dev2");
+  Assert.equal(unsentCommands[1].command.url, "https://example.com");
+
+  
+  now += 20;
+
+  await closeTab.flushQueue();
+
+  
+  unsentCommands = await store.getUnsentCommands();
+  Assert.equal(unsentCommands.length, 0);
+
+  
+  mock.verify();
+  closeTab.shutdown();
+  mock.restore();
+});
+
+add_task(async function test_timer_reset_on_new_tab() {
+  const targetDevice = {
+    id: "dev1",
+    name: "Device 1",
     availableCommands: { [COMMAND_CLOSETAB]: "payload" },
   };
-  const tab1 = { url: "https://foo.bar/" };
-  const tab2 = { url: "https://example.com/" };
+  const fxai = FxaInternalMock([targetDevice]);
+  const closeTab = new CloseRemoteTab(null, fxai);
+  const store = await getRemoteCommandStore();
 
-  closeTab.enqueueTabToClose(device1, tab1, 100);
-  closeTab.enqueueTabToClose(device2, tab2, 200);
+  const tab1 = "https://foo.bar/";
+  const tab2 = "https://example.com/";
 
-  Assert.equal(closeTab.pendingClosedTabs.get(device1.id).tabs.length, 1);
-  Assert.equal(closeTab.pendingClosedTabs.get(device2.id).tabs.length, 1);
+  let mock = sinon.mock(closeTab);
 
-  
-  await promiseObserver("test:fxaccounts:commands:close-uri:sent");
-
-  
-  sinon.assert.calledOnce(commands.invoke);
-  Assert.equal(closeTab.pendingClosedTabs.has(device1.id), false);
+  let now = Date.now();
+  closeTab.now = () => now;
 
   
-  await promiseObserver("test:fxaccounts:commands:close-uri:sent");
+  closeTab.DELAY = 10;
+
+  const ensureTimerSpy = sinon.spy(closeTab, "_ensureTimer");
+
+  mock.expects("_sendCloseTabPush").never();
+
+  let command1 = new RemoteCommand.CloseTab(tab1);
+  Assert.ok(
+    await store.addRemoteCommandAt(targetDevice.id, command1, now - 5),
+    "adding the remote command should work"
+  );
+  await closeTab.flushQueue();
+
+  let command2 = new RemoteCommand.CloseTab(tab2);
+  Assert.ok(
+    await store.addRemoteCommandAt(targetDevice.id, command2, now),
+    "adding the remote command should work"
+  );
+  await closeTab.flushQueue();
 
   
-  sinon.assert.calledTwice(commands.invoke);
+  Assert.equal((await store.getUnsentCommands()).length, 2);
 
   
-  Assert.deepEqual(fxai.telemetry._events, [
-    {
-      object: "command-sent",
-      method: COMMAND_CLOSETAB_TAIL,
-      value: "dev1-san",
-      extra: { flowID: "1", streamID: "2" },
-    },
-    {
-      object: "command-sent",
-      method: COMMAND_CLOSETAB_TAIL,
-      value: "dev2-san",
-      extra: { flowID: "3", streamID: "4" },
-    },
-  ]);
+  Assert.equal(ensureTimerSpy.callCount, 2);
+  mock.verify();
+  closeTab.shutdown();
 });
