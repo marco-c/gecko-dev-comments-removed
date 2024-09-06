@@ -43,34 +43,26 @@ add_task(async function test_setup_usbtoken() {
 });
 add_task(test_register);
 add_task(test_register_escape);
-add_task(test_register_direct_cancel);
-add_task(test_register_direct_presence);
 add_task(test_sign);
 add_task(test_sign_escape);
 add_task(test_tab_switching);
 add_task(test_window_switching);
-add_task(async function test_setup_fullscreen() {
+add_task(async function test_setup_softtoken() {
+  gAuthenticatorId = add_virtual_authenticator();
   return SpecialPowers.pushPrefEnv({
     set: [
       ["browser.fullscreen.autohide", true],
       ["full-screen-api.enabled", true],
       ["full-screen-api.allow-trusted-requests-only", false],
-    ],
-  });
-});
-add_task(test_fullscreen_show_nav_toolbar);
-add_task(test_no_fullscreen_dom);
-add_task(async function test_setup_softtoken() {
-  gAuthenticatorId = add_virtual_authenticator();
-  return SpecialPowers.pushPrefEnv({
-    set: [
       ["security.webauth.webauthn_enable_softtoken", true],
       ["security.webauth.webauthn_enable_usbtoken", false],
     ],
   });
 });
-add_task(test_register_direct_proceed);
-add_task(test_register_direct_proceed_anon);
+add_task(test_fullscreen_show_nav_toolbar);
+add_task(test_no_fullscreen_dom);
+add_task(test_register_direct_with_consent);
+add_task(test_register_direct_without_consent);
 add_task(test_select_sign_result);
 
 function promiseNavToolboxStatus(aExpectedStatus) {
@@ -215,53 +207,6 @@ async function test_sign_escape() {
   await BrowserTestUtils.removeTab(tab);
 }
 
-async function test_register_direct_cancel() {
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-
-  
-  let active = true;
-  let promise = promiseWebAuthnMakeCredential(tab, "direct")
-    .then(arrivingHereIsBad)
-    .catch(expectNotAllowedError)
-    .then(() => (active = false));
-  await promiseNotification("webauthn-prompt-register-direct");
-
-  
-  ok(active, "request should still be active");
-  PopupNotifications.panel.firstElementChild.secondaryButton.click();
-  await promise;
-
-  
-  await BrowserTestUtils.removeTab(tab);
-}
-
-async function test_register_direct_presence() {
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-
-  
-  let active = true;
-  let promise = promiseWebAuthnMakeCredential(tab, "direct")
-    .then(arrivingHereIsBad)
-    .catch(expectNotAllowedError)
-    .then(() => (active = false));
-  await promiseNotification("webauthn-prompt-register-direct");
-
-  
-  let presence = promiseNotification("webauthn-prompt-presence");
-  PopupNotifications.panel.firstElementChild.button.click();
-  await presence;
-
-  
-  ok(active, "request should still be active");
-  PopupNotifications.panel.firstElementChild.button.click();
-  await promise;
-
-  
-  await BrowserTestUtils.removeTab(tab);
-}
-
 
 
 async function test_tab_switching() {
@@ -359,7 +304,7 @@ async function test_window_switching() {
   await BrowserTestUtils.removeTab(tab);
 }
 
-async function test_register_direct_proceed() {
+async function test_register_direct_with_consent() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
@@ -377,7 +322,7 @@ async function test_register_direct_proceed() {
   await BrowserTestUtils.removeTab(tab);
 }
 
-async function test_register_direct_proceed_anon() {
+async function test_register_direct_without_consent() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
@@ -386,8 +331,7 @@ async function test_register_direct_proceed_anon() {
   await promiseNotification("webauthn-prompt-register-direct");
 
   
-  PopupNotifications.panel.firstElementChild.checkbox.checked = true;
-  PopupNotifications.panel.firstElementChild.button.click();
+  PopupNotifications.panel.firstElementChild.secondaryButton.click();
 
   
   await request.then(verifyAnonymizedCertificate);
@@ -444,10 +388,9 @@ async function test_fullscreen_show_nav_toolbar() {
   let navToolboxShownPromise = promiseNavToolboxStatus("shown");
 
   let active = true;
-  let requestPromise = promiseWebAuthnMakeCredential(tab, "direct")
-    .then(arrivingHereIsBad)
-    .catch(expectNotAllowedError)
-    .then(() => (active = false));
+  let requestPromise = promiseWebAuthnMakeCredential(tab, "direct").then(
+    () => (active = false)
+  );
 
   await Promise.all([promptPromise, navToolboxShownPromise]);
 
@@ -481,10 +424,9 @@ async function test_no_fullscreen_dom() {
   fullScreenPaintPromise = promiseFullScreenPaint();
 
   let active = true;
-  let requestPromise = promiseWebAuthnMakeCredential(tab, "direct")
-    .then(arrivingHereIsBad)
-    .catch(expectNotAllowedError)
-    .then(() => (active = false));
+  let requestPromise = promiseWebAuthnMakeCredential(tab, "direct").then(
+    () => (active = false)
+  );
 
   await Promise.all([promptPromise, fullScreenPaintPromise]);
 
