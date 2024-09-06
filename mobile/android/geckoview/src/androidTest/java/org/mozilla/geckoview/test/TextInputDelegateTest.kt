@@ -1296,14 +1296,40 @@ class TextInputDelegateTest : BaseSessionTest() {
         setupContent("")
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
 
+        val promise = mainSession.evaluatePromiseJS(
+            when (id) {
+                "#designmode" -> """
+                      new Promise(
+                          r => document.querySelector('$id').contentDocument.addEventListener('keyup', function handler(e) {
+                                if (e.key == "c") {
+                                  r();
+                                  document.querySelector('$id').contentDocument.removeEventListener('keyup', handler);
+                                }
+                              }))
+                """.trimIndent()
+
+                else -> """
+                      new Promise(
+                          r => document.querySelector('$id').addEventListener('keyup', function handler(e) {
+                                if (e.key == "c") {
+                                  r();
+                                  document.querySelector('$id').removeEventListener('keyup', handler);
+                                }
+                              }))
+                """.trimIndent()
+            },
+        )
+
         
         ic.beginBatchEdit()
-        ic.commitText("( ", 1)
-        ic.commitText(")", -1)
+        ic.commitText("ab", 1)
+        ic.commitText("c", -1)
         ic.endBatchEdit()
+
+        promise.value
         processChildEvents()
 
-        assertText("commit ()", ic, "( )")
+        assertText("committed text is \"abc\"", ic, "abc")
     }
 
     
