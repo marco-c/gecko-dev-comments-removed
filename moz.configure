@@ -432,7 +432,11 @@ fold_libs = dependable(False)
 
 dmd = dependable(False)
 
+
+pack_relative_relocs_flags = dependable(False)
+
 include(include_project_configure)
+
 
 
 
