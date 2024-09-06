@@ -34,7 +34,7 @@ ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
   
   mozilla::Maybe<mozilla::Variant<IPCTransferableData, nsresult>>
       maybeTransferableResult;
-  std::atomic<bool> transferableResultSet = false;
+  bool transferableResultSet = false;
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       __func__, [actorThread, aTypes = std::move(aTypes), aWhichClipboard,
@@ -44,17 +44,17 @@ ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
         
         auto sendRv = MakeScopeExit([&]() {
           maybeTransferableResult = Some(AsVariant(rv));
-          transferableResultSet = true;
           
-          
-          NS_DispatchToThreadQueue(NS_NewRunnableFunction(__func__, []() {}),
-                                   actorThread, EventQueuePriority::Normal);
+          NS_DispatchToThreadQueue(
+              NS_NewRunnableFunction(
+                  __func__,
+                  [&transferableResultSet]() { transferableResultSet = true; }),
+              actorThread, EventQueuePriority::Normal);
         });
         nsCOMPtr<nsIClipboard> clipboard;
         RefPtr<dom::WindowGlobalParent> window =
             dom::WindowGlobalParent::GetByInnerWindowId(
                 aRequestingWindowContextId);
-        
         
         
         
@@ -97,6 +97,10 @@ ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
                 [actorThread, transferable, aRequestingWindowContextId,
                  &maybeTransferableResult, &transferableResultSet](
                     RefPtr<nsIContentAnalysisResult>&& aResult) {
+                  
+                  
+                  
+                  
                   bool shouldAllow = aResult->GetShouldAllowContent();
                   if (!shouldAllow) {
                     maybeTransferableResult =
@@ -120,17 +124,14 @@ ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
                           window->BrowsingContext()->GetContentParent());
                     }
                   }
-                  transferableResultSet = true;
 
                   
-                  
-                  
-                  
-                  
-                  
                   NS_DispatchToThreadQueue(
-                      NS_NewRunnableFunction(__func__, []() {}), actorThread,
-                      EventQueuePriority::Normal);
+                      NS_NewRunnableFunction(__func__,
+                                             [&transferableResultSet]() {
+                                               transferableResultSet = true;
+                                             }),
+                      actorThread, EventQueuePriority::Normal);
                 });
 
         contentanalysis::ContentAnalysis::CheckClipboardContentAnalysis(
@@ -142,7 +143,7 @@ ipc::IPCResult ClipboardContentAnalysisParent::RecvGetClipboard(
 
   mozilla::SpinEventLoopUntil(
       "Waiting for clipboard and content analysis"_ns,
-      [&transferableResultSet] { return transferableResultSet.load(); });
+      [&transferableResultSet] { return transferableResultSet; });
 
   NS_ASSERTION(maybeTransferableResult.isSome(),
                "maybeTransferableResult should be set when "
