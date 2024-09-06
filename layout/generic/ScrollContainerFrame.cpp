@@ -6,7 +6,7 @@
 
 
 
-#include "nsGfxScrollFrame.h"
+#include "mozilla/ScrollContainerFrame.h"
 
 #include "ScrollPositionUpdate.h"
 #include "mozilla/layers/LayersTypes.h"

@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsGfxScrollFrame_h___
-#define nsGfxScrollFrame_h___
+#ifndef mozilla_ScrollContainerFrame_h_
+#define mozilla_ScrollContainerFrame_h_
 
 #include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"

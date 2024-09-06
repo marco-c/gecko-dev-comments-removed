@@ -68,6 +68,7 @@ class nsIScrollbarMediator : public nsQueryFrame {
 
 
 
+
   virtual void ThumbMoved(nsScrollbarFrame* aScrollbar, nscoord aOldPos,
                           nscoord aNewPos) = 0;
   
