@@ -7952,8 +7952,19 @@ OverflowAreas nsIFrame::GetActualAndNormalOverflowAreasRelativeToParent()
   }
 
   const OverflowAreas overflows = GetOverflowAreas();
-  OverflowAreas actualAndNormalOverflows = overflows + GetPosition();
-  actualAndNormalOverflows.UnionWith(overflows + GetNormalPosition());
+  OverflowAreas actualAndNormalOverflows = overflows + GetNormalPosition();
+  if (IsRelativelyPositioned()) {
+    actualAndNormalOverflows.UnionWith(overflows + GetPosition());
+  } else {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(IsStickyPositioned());
+    actualAndNormalOverflows.UnionWith(
+        OverflowAreas(overflows.InkOverflow() + GetPosition(), nsRect()));
+  }
   return actualAndNormalOverflows;
 }
 
