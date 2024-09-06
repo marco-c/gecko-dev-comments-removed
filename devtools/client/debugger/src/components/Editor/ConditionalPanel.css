@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .conditional-breakpoint-panel {
   cursor: initial;
@@ -34,6 +34,11 @@
 }
 
 .conditional-breakpoint-panel .CodeMirror pre.CodeMirror-placeholder {
-  
+  /* Match the color of the placeholder text to existing inputs in the Debugger */
   color: var(--theme-text-color-alt);
+}
+
+/* Removing the line padding for Codemirror 6 */
+.cm-line:has(div.conditional-breakpoint-panel) {
+  padding: 0;
 }
