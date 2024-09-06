@@ -59,30 +59,6 @@ add_setup(async function () {
 
 
 
-async function ensureSecurityDelayReady() {
-  await TestUtils.waitForCondition(
-    () => performance.now() > TEST_SECURITY_DELAY,
-    "Wait for performance.now() > SECURITY_DELAY",
-    500,
-    50
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
