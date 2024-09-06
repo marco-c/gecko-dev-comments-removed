@@ -11,8 +11,6 @@
 
 
 
-Services.prefs.setBoolPref("dom.block_download_insecure", false);
-
 
 
 var gUseLegacySaver = true;
