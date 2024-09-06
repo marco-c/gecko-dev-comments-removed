@@ -46,8 +46,17 @@ class BounceTrackingProtection final : public nsIObserver,
   
   
   
+  
   [[nodiscard]] static nsresult RecordUserActivation(
       nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime = Nothing());
+
+  
+  
+  
+  
+  
+  [[nodiscard]] static nsresult RecordUserActivation(
+      dom::WindowContext* aWindowContext);
 
   
   
