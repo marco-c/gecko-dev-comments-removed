@@ -81,7 +81,7 @@ impl<'a> Parse<'a> for Func<'a> {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Local<'a> {
     
     

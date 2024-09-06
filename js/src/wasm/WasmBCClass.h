@@ -774,14 +774,6 @@ struct BaseCompiler final {
 
   
   
-  inline RegI32 popTableIndexToClampedInt32(IndexType indexType);
-
-  
-  
-  inline void replaceTableIndexWithClampedInt32(IndexType indexType);
-
-  
-  
   inline void popValueStackTo(uint32_t stackSize);
 
   

@@ -31,7 +31,6 @@ use std::char;
 use std::fmt;
 use std::slice;
 use std::str;
-use std::str::Utf8Error;
 
 
 
@@ -102,12 +101,6 @@ pub enum TokenKind {
 
     
     
-    
-    
-    Annotation,
-
-    
-    
     Reserved,
 
     
@@ -143,15 +136,8 @@ pub enum FloatKind {
 }
 
 enum ReservedKind {
-    
     String,
-    
     Idchars,
-    
-    IdString,
-    
-    AnnotationString,
-    
     Reserved,
 }
 
@@ -213,16 +199,6 @@ pub enum LexError {
     
     
     ConfusingUnicode(char),
-
-    
-    
-    InvalidUtf8Id(Utf8Error),
-
-    
-    EmptyId,
-
-    
-    EmptyAnnotation,
 }
 
 
@@ -444,20 +420,13 @@ impl<'a> Lexer<'a> {
                         if let Some(ret) = self.classify_number(src) {
                             return Ok(Some(ret));
                         
-                        } else if *c == b'$' {
+                        } else if *c == b'$' && src.len() > 1 {
                             return Ok(Some(TokenKind::Id));
-                        
-                        
-                        } else if *c == b'@' {
-                            return Ok(Some(TokenKind::Annotation));
                         
                         } else if b'a' <= *c && *c <= b'z' {
                             return Ok(Some(TokenKind::Keyword));
                         }
                     }
-
-                    ReservedKind::IdString => return Ok(Some(TokenKind::Id)),
-                    ReservedKind::AnnotationString => return Ok(Some(TokenKind::Annotation)),
 
                     
                     
@@ -569,7 +538,7 @@ impl<'a> Lexer<'a> {
     
     
     fn parse_reserved(&self, pos: &mut usize) -> Result<(ReservedKind, &'a str), Error> {
-        let mut idchars = 0u32;
+        let mut idchars = false;
         let mut strings = 0u32;
         let start = *pos;
         while let Some(byte) = self.input.as_bytes().get(*pos) {
@@ -577,7 +546,7 @@ impl<'a> Lexer<'a> {
                 
                 
                 idchars!() => {
-                    idchars += 1;
+                    idchars = true;
                     *pos += 1;
                 }
 
@@ -606,13 +575,9 @@ impl<'a> Lexer<'a> {
         }
         let ret = &self.input[start..*pos];
         Ok(match (idchars, strings) {
-            (0, 0) => unreachable!(),
-            (0, 1) => (ReservedKind::String, ret),
-            (_, 0) => (ReservedKind::Idchars, ret),
-            
-            
-            (1, 1) if ret.starts_with("$") => (ReservedKind::IdString, ret),
-            (1, 1) if ret.starts_with("@") => (ReservedKind::AnnotationString, ret),
+            (false, 0) => unreachable!(),
+            (false, 1) => (ReservedKind::String, ret),
+            (true, 0) => (ReservedKind::Idchars, ret),
             _ => (ReservedKind::Reserved, ret),
         })
     }
@@ -848,37 +813,6 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn parse_name(it: &mut str::Chars<'a>) -> Result<Cow<'a, str>, LexError> {
-        if it.clone().next() == Some('"') {
-            it.next();
-            match Lexer::parse_str(it, true)? {
-                Cow::Borrowed(bytes) => match std::str::from_utf8(bytes) {
-                    Ok(s) => Ok(Cow::Borrowed(s)),
-                    Err(e) => Err(LexError::InvalidUtf8Id(e)),
-                },
-                Cow::Owned(bytes) => match String::from_utf8(bytes) {
-                    Ok(s) => Ok(Cow::Owned(s)),
-                    Err(e) => Err(LexError::InvalidUtf8Id(e.utf8_error())),
-                },
-            }
-        } else {
-            Ok(Cow::Borrowed(it.as_str()))
-        }
-    }
-
     fn hexnum(it: &mut str::Chars<'_>) -> Result<u32, LexError> {
         let n = Lexer::hexdigit(it)?;
         let mut last_underscore = false;
@@ -946,21 +880,26 @@ impl<'a> Lexer<'a> {
 
     
     
-    
-    
-    pub fn annotation(&self, mut pos: usize) -> Result<Option<Token>, Error> {
+    pub fn annotation(&self, mut pos: usize) -> Option<&'a str> {
         let bytes = self.input.as_bytes();
         
         
         if bytes.get(pos) != Some(&b'@') {
-            return Ok(None);
+            return None;
         }
-        match self.parse(&mut pos)? {
-            Some(token) => match token.kind {
-                TokenKind::Annotation => Ok(Some(token)),
-                _ => Ok(None),
-            },
-            None => Ok(None),
+        match self.parse(&mut pos) {
+            Ok(Some(token)) => {
+                match token.kind {
+                    TokenKind::Reserved => {}
+                    _ => return None,
+                }
+                if token.len == 1 {
+                    None 
+                } else {
+                    Some(&token.src(self.input)[1..])
+                }
+            }
+            Ok(None) | Err(_) => None,
         }
     }
 }
@@ -975,48 +914,8 @@ impl Token {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn id<'a>(&self, s: &'a str) -> Result<Cow<'a, str>, Error> {
-        let mut ch = self.src(s).chars();
-        let dollar = ch.next();
-        debug_assert_eq!(dollar, Some('$'));
-        let id = Lexer::parse_name(&mut ch).map_err(|e| self.error(s, e))?;
-        if id.is_empty() {
-            return Err(self.error(s, LexError::EmptyId));
-        }
-        Ok(id)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn annotation<'a>(&self, s: &'a str) -> Result<Cow<'a, str>, Error> {
-        let mut ch = self.src(s).chars();
-        let at = ch.next();
-        debug_assert_eq!(at, Some('@'));
-        let id = Lexer::parse_name(&mut ch).map_err(|e| self.error(s, e))?;
-        if id.is_empty() {
-            return Err(self.error(s, LexError::EmptyAnnotation));
-        }
-        Ok(id)
+    pub fn id<'a>(&self, s: &'a str) -> &'a str {
+        &self.src(s)[1..]
     }
 
     
@@ -1162,16 +1061,6 @@ impl Token {
             val,
         }
     }
-
-    fn error(&self, src: &str, err: LexError) -> Error {
-        Error::lex(
-            Span {
-                offset: self.offset,
-            },
-            src,
-            err,
-        )
-    }
 }
 
 impl<'a> Integer<'a> {
@@ -1218,9 +1107,6 @@ impl fmt::Display for LexError {
             InvalidUnicodeValue(c) => write!(f, "invalid unicode scalar value 0x{:x}", c)?,
             LoneUnderscore => write!(f, "bare underscore in numeric literal")?,
             ConfusingUnicode(c) => write!(f, "likely-confusing unicode character found {:?}", c)?,
-            InvalidUtf8Id(_) => write!(f, "malformed UTF-8 encoding of string-based id")?,
-            EmptyId => write!(f, "empty identifier")?,
-            EmptyAnnotation => write!(f, "empty annotation id")?,
         }
         Ok(())
     }
@@ -1368,10 +1254,10 @@ mod tests {
 
     #[test]
     fn id() {
-        fn get_id(input: &str) -> String {
+        fn get_id(input: &str) -> &str {
             let token = get_token(input);
             match token.kind {
-                TokenKind::Id => token.id(input).unwrap().to_string(),
+                TokenKind::Id => token.id(input),
                 other => panic!("not id {:?}", other),
             }
         }
@@ -1381,23 +1267,6 @@ mod tests {
         assert_eq!(get_id("$0^"), "0^");
         assert_eq!(get_id("$0^;;"), "0^");
         assert_eq!(get_id("$0^ ;;"), "0^");
-        assert_eq!(get_id("$\"x\" ;;"), "x");
-    }
-
-    #[test]
-    fn annotation() {
-        fn get_annotation(input: &str) -> String {
-            let token = get_token(input);
-            match token.kind {
-                TokenKind::Annotation => token.annotation(input).unwrap().to_string(),
-                other => panic!("not annotation {:?}", other),
-            }
-        }
-        assert_eq!(get_annotation("@foo"), "foo");
-        assert_eq!(get_annotation("@foo "), "foo");
-        assert_eq!(get_annotation("@f "), "f");
-        assert_eq!(get_annotation("@\"x\" "), "x");
-        assert_eq!(get_annotation("@0 "), "0");
     }
 
     #[test]
@@ -1425,6 +1294,7 @@ mod tests {
                 other => panic!("not reserved {:?}", other),
             }
         }
+        assert_eq!(get_reserved("$ "), "$");
         assert_eq!(get_reserved("^_x "), "^_x");
     }
 

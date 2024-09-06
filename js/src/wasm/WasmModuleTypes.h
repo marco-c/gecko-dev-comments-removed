@@ -616,6 +616,7 @@ enum class LimitsKind {
 
 struct Limits {
   
+  
   IndexType indexType;
 
   
@@ -694,43 +695,36 @@ using MemoryDescVector = Vector<MemoryDesc, 1, SystemAllocPolicy>;
 
 static_assert(MaxMemory32LimitField <= UINT64_MAX / PageSize);
 
+
+
+
+
+
+
+
+
+
+
 struct TableDesc {
-  Limits limits;
   RefType elemType;
   bool isImported;
   bool isExported;
   bool isAsmJS;
+  uint32_t initialLength;
+  Maybe<uint32_t> maximumLength;
   Maybe<InitExpr> initExpr;
 
   TableDesc() = default;
-  TableDesc(Limits limits, RefType elemType, Maybe<InitExpr>&& initExpr,
+  TableDesc(RefType elemType, uint32_t initialLength,
+            Maybe<uint32_t> maximumLength, Maybe<InitExpr>&& initExpr,
             bool isAsmJS, bool isImported = false, bool isExported = false)
-      : limits(limits),
-        elemType(elemType),
+      : elemType(elemType),
         isImported(isImported),
         isExported(isExported),
         isAsmJS(isAsmJS),
-        initExpr(std::move(initExpr)) {
-    
-    
-    
-    static_assert(MaxTableLimitField <= UINT32_MAX);
-    MOZ_ASSERT(limits.initial <= UINT32_MAX);
-    MOZ_ASSERT_IF(limits.maximum.isSome(),
-                  limits.maximum.value() <= UINT32_MAX);
-  }
-
-  IndexType indexType() const { return limits.indexType; }
-
-  uint32_t initialLength() const {
-    
-    return limits.initial;
-  }
-
-  Maybe<uint32_t> maximumLength() const {
-    
-    return limits.maximum;
-  }
+        initialLength(initialLength),
+        maximumLength(maximumLength),
+        initExpr(std::move(initExpr)) {}
 };
 
 using TableDescVector = Vector<TableDesc, 0, SystemAllocPolicy>;

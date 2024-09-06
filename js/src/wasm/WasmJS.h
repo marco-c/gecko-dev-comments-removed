@@ -380,7 +380,8 @@ class WasmTableObject : public NativeObject {
   
   
 
-  static WasmTableObject* create(JSContext* cx, wasm::Limits limits,
+  static WasmTableObject* create(JSContext* cx, uint32_t initialLength,
+                                 mozilla::Maybe<uint32_t> maximumLength,
                                  wasm::RefType tableType, HandleObject proto);
   wasm::Table& table() const;
 
