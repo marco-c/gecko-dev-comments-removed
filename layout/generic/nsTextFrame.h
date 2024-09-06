@@ -1061,6 +1061,14 @@ class nsTextFrame : public nsIFrame {
 
   nsPoint GetPointFromIterator(const gfxSkipCharsIterator& aIter,
                                PropertyProvider& aProperties);
+
+  
+
+
+
+  struct NewlineProperty;
+  int32_t GetContentNewLineOffset(int32_t aOffset,
+                                  NewlineProperty*& aCachedNewlineOffset);
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrame::TrimmedOffsetFlags)
