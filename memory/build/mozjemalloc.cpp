@@ -5217,6 +5217,9 @@ void _malloc_postfork_parent(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
 FORK_HOOK
 void _malloc_postfork_child(void) {
   
+  gArenas.PostForkFixMainThread();
+
+  
   huge_mtx.Init();
 
   base_mtx.Init();
@@ -5225,7 +5228,6 @@ void _malloc_postfork_child(void) {
     arena->mLock.Reinit(gForkingThread);
   }
 
-  gArenas.PostForkFixMainThread();
   gArenas.mLock.Init();
 }
 #endif  
