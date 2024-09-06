@@ -1387,11 +1387,12 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
       if (IsAsciiDigit(s[index])) {
         break;
       }
-    } else {
+    } else if (!strchr(" ,.-/", s[index])) {
       
-      if (IsAsciiDigit(s[index]) && IsAsciiAlpha(s[index - 1])) {
-        return false;
-      }
+      
+      
+      
+      return false;
     }
   }
 
@@ -3668,8 +3669,8 @@ static bool ToDateString(JSContext* cx, const CallArgs& args, ClippedTime t) {
   if (!locale) {
     return false;
   }
-  return FormatDate(cx, ForceUTC(cx->realm()), locale,
-                    t.toDouble(), FormatSpec::DateTime, args.rval());
+  return FormatDate(cx, ForceUTC(cx->realm()), locale, t.toDouble(),
+                    FormatSpec::DateTime, args.rval());
 }
 
 static bool DateNoArguments(JSContext* cx, const CallArgs& args) {
