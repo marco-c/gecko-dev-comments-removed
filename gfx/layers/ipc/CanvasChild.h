@@ -61,7 +61,8 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
 
-  void EnsureRecorder(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+
+  bool EnsureRecorder(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
                       TextureType aTextureType, TextureType aWebglTextureType);
 
   
