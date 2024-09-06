@@ -434,7 +434,7 @@ inline int64_t Divide(int64_t dividend, int64_t divisor,
 
 
 
-constexpr Int128 CeilDiv(const Int128& dividend, const Int128& divisor) {
+inline Int128 CeilDiv(const Int128& dividend, const Int128& divisor) {
   MOZ_ASSERT(divisor > Int128{0}, "negative divisor not supported");
 
   auto [quotient, remainder] = dividend.divrem(divisor);
@@ -459,7 +459,7 @@ constexpr Int128 CeilDiv(const Int128& dividend, const Int128& divisor) {
 
 
 
-constexpr Int128 FloorDiv(const Int128& dividend, const Int128& divisor) {
+inline Int128 FloorDiv(const Int128& dividend, const Int128& divisor) {
   MOZ_ASSERT(divisor > Int128{0}, "negative divisor not supported");
 
   auto [quotient, remainder] = dividend.divrem(divisor);
@@ -484,7 +484,7 @@ constexpr Int128 FloorDiv(const Int128& dividend, const Int128& divisor) {
 
 
 
-constexpr Int128 ExpandDiv(const Int128& dividend, const Int128& divisor) {
+inline Int128 ExpandDiv(const Int128& dividend, const Int128& divisor) {
   MOZ_ASSERT(divisor > Int128{0}, "negative divisor not supported");
 
   auto [quotient, remainder] = dividend.divrem(divisor);
@@ -513,7 +513,7 @@ constexpr Int128 ExpandDiv(const Int128& dividend, const Int128& divisor) {
 
 
 
-constexpr Int128 TruncDiv(const Int128& dividend, const Int128& divisor) {
+inline Int128 TruncDiv(const Int128& dividend, const Int128& divisor) {
   MOZ_ASSERT(divisor > Int128{0}, "negative divisor not supported");
 
   
