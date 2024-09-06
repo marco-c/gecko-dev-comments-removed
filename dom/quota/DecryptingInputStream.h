@@ -103,6 +103,8 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
   
   explicit DecryptingInputStream();
 
+  nsresult BaseStreamStatus();
+
   NS_IMETHOD Close() override;
   NS_IMETHOD Available(uint64_t* _retval) override;
   NS_IMETHOD StreamStatus() override;
@@ -125,7 +127,7 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
 
   
   
-  nsresult ParseNextChunk(uint32_t* aBytesReadOut);
+  nsresult ParseNextChunk(bool aCheckAvailableBytes, uint32_t* aBytesReadOut);
 
   
   
@@ -138,8 +140,13 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
   
   
   
+  
+  
+  
+  
+  
   nsresult ReadAll(char* aBuf, uint32_t aCount, uint32_t aMinValidCount,
-                   uint32_t* aBytesReadOut);
+                   bool aCheckAvailableBytes, uint32_t* aBytesReadOut);
 
   bool EnsureBuffers();
 
