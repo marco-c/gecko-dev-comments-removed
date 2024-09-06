@@ -1,3 +1,4 @@
+use std::ffi::CStr;
 use std::ptr;
 
 pub(super) use dxc::{compile_dxc, get_dxc_container, DxcContainer};
@@ -14,10 +15,10 @@ use crate::auxil::dxgi::result::HResult;
 pub(super) fn compile_fxc(
     device: &super::Device,
     source: &str,
-    source_name: &str,
+    source_name: Option<&CStr>,
     raw_ep: &std::ffi::CString,
     stage_bit: wgt::ShaderStages,
-    full_stage: String,
+    full_stage: &CStr,
 ) -> (
     Result<super::CompiledShader, crate::PipelineError>,
     log::Level,
@@ -32,13 +33,17 @@ pub(super) fn compile_fxc(
     {
         compile_flags |= d3dcompiler::D3DCOMPILE_DEBUG | d3dcompiler::D3DCOMPILE_SKIP_OPTIMIZATION;
     }
+
+    
+    let source_name = source_name.map(|cstr| cstr.as_ptr()).unwrap_or(ptr::null());
+
     let mut error = d3d12::Blob::null();
     let hr = unsafe {
         profiling::scope!("d3dcompiler::D3DCompile");
         d3dcompiler::D3DCompile(
             source.as_ptr().cast(),
             source.len(),
-            source_name.as_ptr().cast(),
+            source_name.cast(),
             ptr::null(),
             ptr::null_mut(),
             raw_ep.as_ptr(),
@@ -78,6 +83,7 @@ pub(super) fn compile_fxc(
 
 #[cfg(feature = "dxc_shader_compiler")]
 mod dxc {
+    use std::ffi::CStr;
     use std::path::PathBuf;
 
     
@@ -132,7 +138,7 @@ mod dxc {
     pub(crate) fn compile_dxc(
         device: &crate::dx12::Device,
         source: &str,
-        source_name: &str,
+        source_name: Option<&CStr>,
         raw_ep: &str,
         stage_bit: wgt::ShaderStages,
         full_stage: String,
@@ -165,6 +171,10 @@ mod dxc {
             Ok(blob) => blob,
             Err(e) => return (Err(e), log::Level::Error),
         };
+
+        let source_name = source_name
+            .and_then(|cstr| cstr.to_str().ok())
+            .unwrap_or("");
 
         let compiled = dxc_container.compiler.compile(
             &blob,
@@ -263,6 +273,7 @@ mod dxc {
 
 #[cfg(not(feature = "dxc_shader_compiler"))]
 mod dxc {
+    use std::ffi::CStr;
     use std::path::PathBuf;
 
     pub(crate) struct DxcContainer {}
@@ -280,7 +291,7 @@ mod dxc {
     pub(crate) fn compile_dxc(
         _device: &crate::dx12::Device,
         _source: &str,
-        _source_name: &str,
+        _source_name: Option<&CStr>,
         _raw_ep: &str,
         _stage_bit: wgt::ShaderStages,
         _full_stage: String,
