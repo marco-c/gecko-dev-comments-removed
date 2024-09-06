@@ -92,9 +92,7 @@ class ContentScriptParent {
       excludeGlobs: details.excludeGlobs,
       allFrames: details.allFrames,
       matchAboutBlank: details.matchAboutBlank,
-      
-      
-      matchOriginAsFallback: false,
+      matchOriginAsFallback: details.matchOriginAsFallback,
       runAt: details.runAt || "document_idle",
       jsPaths: [],
       cssPaths: [],
