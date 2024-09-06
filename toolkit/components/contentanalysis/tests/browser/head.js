@@ -183,6 +183,10 @@ function makeMockContentAnalysis() {
         callback.contentResult(response);
       }, 0);
     },
+
+    cancelAllRequests() {
+      
+    },
   };
 }
 
