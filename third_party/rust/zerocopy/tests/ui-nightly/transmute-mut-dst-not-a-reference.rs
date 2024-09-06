@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+extern crate zerocopy;
+
+use zerocopy::transmute_mut;
+
+fn main() {}
+
+
+
+const DST_NOT_A_REFERENCE: usize = transmute_mut!(&mut 0u8);

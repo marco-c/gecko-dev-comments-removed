@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+extern crate zerocopy;
+
+use zerocopy::{transmute_mut, AsBytes, FromBytes};
+
+fn main() {}
+
+fn transmute_mut<T: AsBytes + FromBytes, U: AsBytes + FromBytes>(t: &mut T) -> &mut U {
+    
+    
+    transmute_mut!(t)
+}

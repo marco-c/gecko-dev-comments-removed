@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+extern crate zerocopy;
+
+use zerocopy::transmute_ref;
+
+fn main() {}
+
+
+const SRC_UNSIZED: &[u8; 1] = transmute_ref!(&[0u8][..]);

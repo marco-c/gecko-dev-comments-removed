@@ -1,0 +1,12 @@
+
+
+
+
+#[macro_use]
+extern crate zerocopy;
+
+fn main() {}
+
+
+const NOT_FROM_BYTES: core::cell::UnsafeCell<u32> =
+    include_value!("../../testdata/include_value/data");

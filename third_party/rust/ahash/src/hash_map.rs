@@ -1,4 +1,5 @@
 use std::borrow::Borrow;
+use std::collections::hash_map::{IntoKeys, IntoValues};
 use std::collections::{hash_map, HashMap};
 use std::fmt::{self, Debug};
 use std::hash::{BuildHasher, Hash};
@@ -25,6 +26,24 @@ impl<K, V> From<HashMap<K, V, crate::RandomState>> for AHashMap<K, V> {
     }
 }
 
+impl<K, V, const N: usize> From<[(K, V); N]> for AHashMap<K, V>
+where
+    K: Eq + Hash,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(arr: [(K, V); N]) -> Self {
+        Self::from_iter(arr)
+    }
+}
+
 impl<K, V> Into<HashMap<K, V, crate::RandomState>> for AHashMap<K, V> {
     fn into(self) -> HashMap<K, V, crate::RandomState> {
         self.0
@@ -32,12 +51,16 @@ impl<K, V> Into<HashMap<K, V, crate::RandomState>> for AHashMap<K, V> {
 }
 
 impl<K, V> AHashMap<K, V, RandomState> {
+    
+    
     pub fn new() -> Self {
-        AHashMap(HashMap::with_hasher(RandomState::default()))
+        AHashMap(HashMap::with_hasher(RandomState::new()))
     }
 
+    
+    
     pub fn with_capacity(capacity: usize) -> Self {
-        AHashMap(HashMap::with_capacity_and_hasher(capacity, RandomState::default()))
+        AHashMap(HashMap::with_capacity_and_hasher(capacity, RandomState::new()))
     }
 }
 
@@ -158,11 +181,71 @@ where
     
     
     
-    
-    
     #[inline]
     pub fn insert(&mut self, k: K, v: V) -> Option<V> {
         self.0.insert(k, v)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn into_keys(self) -> IntoKeys<K, V> {
+        self.0.into_keys()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn into_values(self) -> IntoValues<K, V> {
+        self.0.into_values()
     }
 
     
@@ -261,13 +344,16 @@ where
     }
 }
 
-impl<K, V, S> FromIterator<(K, V)> for AHashMap<K, V, S>
+impl<K, V> FromIterator<(K, V)> for AHashMap<K, V, RandomState>
 where
     K: Eq + Hash,
-    S: BuildHasher + Default,
 {
+    
+    
     fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
-        AHashMap(HashMap::from_iter(iter))
+        let mut inner = HashMap::with_hasher(RandomState::new());
+        inner.extend(iter);
+        AHashMap(inner)
     }
 }
 
@@ -318,10 +404,14 @@ where
     }
 }
 
+
+
+
+#[cfg(any(feature = "compile-time-rng", feature = "runtime-rng", feature = "no-rng"))]
 impl<K, V> Default for AHashMap<K, V, RandomState> {
     #[inline]
     fn default() -> AHashMap<K, V, RandomState> {
-        AHashMap::new()
+        AHashMap(HashMap::default())
     }
 }
 
@@ -346,6 +436,40 @@ where
         let hash_map = HashMap::deserialize(deserializer);
         hash_map.map(|hash_map| Self(hash_map))
     }
+
+    fn deserialize_in_place<D: Deserializer<'de>>(deserializer: D, place: &mut Self) -> Result<(), D::Error> {
+        use serde::de::{MapAccess, Visitor};
+
+        struct MapInPlaceVisitor<'a, K: 'a, V: 'a>(&'a mut AHashMap<K, V>);
+
+        impl<'a, 'de, K, V> Visitor<'de> for MapInPlaceVisitor<'a, K, V>
+        where
+            K: Deserialize<'de> + Eq + Hash,
+            V: Deserialize<'de>,
+        {
+            type Value = ();
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a map")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: MapAccess<'de>,
+            {
+                self.0.clear();
+                self.0.reserve(map.size_hint().unwrap_or(0).min(4096));
+
+                while let Some((key, value)) = map.next_entry()? {
+                    self.0.insert(key, value);
+                }
+
+                Ok(())
+            }
+        }
+
+        deserializer.deserialize_map(MapInPlaceVisitor(place))
+    }
 }
 
 #[cfg(test)]
@@ -364,8 +488,14 @@ mod test {
         let mut map = AHashMap::new();
         map.insert("for".to_string(), 0);
         map.insert("bar".to_string(), 1);
-        let serialization = serde_json::to_string(&map).unwrap();
-        let deserialization: AHashMap<String, u64> = serde_json::from_str(&serialization).unwrap();
+        let mut serialization = serde_json::to_string(&map).unwrap();
+        let mut deserialization: AHashMap<String, u64> = serde_json::from_str(&serialization).unwrap();
+        assert_eq!(deserialization, map);
+
+        map.insert("baz".to_string(), 2);
+        serialization = serde_json::to_string(&map).unwrap();
+        let mut deserializer = serde_json::Deserializer::from_str(&serialization);
+        AHashMap::deserialize_in_place(&mut deserializer, &mut deserialization).unwrap();
         assert_eq!(deserialization, map);
     }
 }

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+fn main() {}
+
+fn increase_lifetime() {
+    let mut x = 0u64;
+    
+    let _: &'static mut u64 = zerocopy::transmute_mut!(&mut x);
+}

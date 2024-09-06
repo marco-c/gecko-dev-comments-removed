@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+extern crate zerocopy;
+
+use zerocopy::transmute_mut;
+
+fn main() {}
+
+
+
+const SRC_DST_UNSIZED: &mut [u8] = transmute_mut!(&mut [0u8][..]);

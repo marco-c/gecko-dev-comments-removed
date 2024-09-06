@@ -1,28 +1,31 @@
 use super::bitmask::BitMask;
 use super::EMPTY;
 use core::mem;
+use core::num::NonZeroU16;
 
 #[cfg(target_arch = "x86")]
 use core::arch::x86;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64 as x86;
 
-pub type BitMaskWord = u16;
-pub const BITMASK_STRIDE: usize = 1;
-pub const BITMASK_MASK: BitMaskWord = 0xffff;
+pub(crate) type BitMaskWord = u16;
+pub(crate) type NonZeroBitMaskWord = NonZeroU16;
+pub(crate) const BITMASK_STRIDE: usize = 1;
+pub(crate) const BITMASK_MASK: BitMaskWord = 0xffff;
+pub(crate) const BITMASK_ITER_MASK: BitMaskWord = !0;
 
 
 
 
 
 #[derive(Copy, Clone)]
-pub struct Group(x86::__m128i);
+pub(crate) struct Group(x86::__m128i);
 
 
 #[allow(clippy::use_self)]
 impl Group {
     
-    pub const WIDTH: usize = mem::size_of::<Self>();
+    pub(crate) const WIDTH: usize = mem::size_of::<Self>();
 
     
     
@@ -30,7 +33,7 @@ impl Group {
     
     #[inline]
     #[allow(clippy::items_after_statements)]
-    pub const fn static_empty() -> &'static [u8; Group::WIDTH] {
+    pub(crate) const fn static_empty() -> &'static [u8; Group::WIDTH] {
         #[repr(C)]
         struct AlignedBytes {
             _align: [Group; 0],
@@ -46,7 +49,7 @@ impl Group {
     
     #[inline]
     #[allow(clippy::cast_ptr_alignment)] 
-    pub unsafe fn load(ptr: *const u8) -> Self {
+    pub(crate) unsafe fn load(ptr: *const u8) -> Self {
         Group(x86::_mm_loadu_si128(ptr.cast()))
     }
 
@@ -54,7 +57,7 @@ impl Group {
     
     #[inline]
     #[allow(clippy::cast_ptr_alignment)]
-    pub unsafe fn load_aligned(ptr: *const u8) -> Self {
+    pub(crate) unsafe fn load_aligned(ptr: *const u8) -> Self {
         
         debug_assert_eq!(ptr as usize & (mem::align_of::<Self>() - 1), 0);
         Group(x86::_mm_load_si128(ptr.cast()))
@@ -64,7 +67,7 @@ impl Group {
     
     #[inline]
     #[allow(clippy::cast_ptr_alignment)]
-    pub unsafe fn store_aligned(self, ptr: *mut u8) {
+    pub(crate) unsafe fn store_aligned(self, ptr: *mut u8) {
         
         debug_assert_eq!(ptr as usize & (mem::align_of::<Self>() - 1), 0);
         x86::_mm_store_si128(ptr.cast(), self.0);
@@ -73,7 +76,7 @@ impl Group {
     
     
     #[inline]
-    pub fn match_byte(self, byte: u8) -> BitMask {
+    pub(crate) fn match_byte(self, byte: u8) -> BitMask {
         #[allow(
             clippy::cast_possible_wrap, 
             
@@ -91,14 +94,14 @@ impl Group {
     
     
     #[inline]
-    pub fn match_empty(self) -> BitMask {
+    pub(crate) fn match_empty(self) -> BitMask {
         self.match_byte(EMPTY)
     }
 
     
     
     #[inline]
-    pub fn match_empty_or_deleted(self) -> BitMask {
+    pub(crate) fn match_empty_or_deleted(self) -> BitMask {
         #[allow(
             
             
@@ -114,7 +117,7 @@ impl Group {
 
     
     #[inline]
-    pub fn match_full(&self) -> BitMask {
+    pub(crate) fn match_full(&self) -> BitMask {
         self.match_empty_or_deleted().invert()
     }
 
@@ -123,7 +126,7 @@ impl Group {
     
     
     #[inline]
-    pub fn convert_special_to_empty_and_full_to_deleted(self) -> Self {
+    pub(crate) fn convert_special_to_empty_and_full_to_deleted(self) -> Self {
         
         
         

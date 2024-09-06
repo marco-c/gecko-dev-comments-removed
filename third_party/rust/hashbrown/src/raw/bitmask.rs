@@ -1,6 +1,11 @@
-use super::imp::{BitMaskWord, BITMASK_MASK, BITMASK_STRIDE};
-#[cfg(feature = "nightly")]
-use core::intrinsics;
+use super::imp::{
+    BitMaskWord, NonZeroBitMaskWord, BITMASK_ITER_MASK, BITMASK_MASK, BITMASK_STRIDE,
+};
+
+
+
+
+
 
 
 
@@ -14,69 +19,44 @@ use core::intrinsics;
 
 
 #[derive(Copy, Clone)]
-pub struct BitMask(pub BitMaskWord);
+pub(crate) struct BitMask(pub(crate) BitMaskWord);
 
 #[allow(clippy::use_self)]
 impl BitMask {
     
     #[inline]
     #[must_use]
-    pub fn invert(self) -> Self {
+    #[allow(dead_code)]
+    pub(crate) fn invert(self) -> Self {
         BitMask(self.0 ^ BITMASK_MASK)
-    }
-
-    
-    
-    
-    #[inline]
-    #[allow(clippy::cast_ptr_alignment)]
-    #[cfg(feature = "raw")]
-    pub unsafe fn flip(&mut self, index: usize) -> bool {
-        
-        let mask = 1 << (index * BITMASK_STRIDE + BITMASK_STRIDE - 1);
-        self.0 ^= mask;
-        
-        self.0 & mask == 0
     }
 
     
     #[inline]
     #[must_use]
-    pub fn remove_lowest_bit(self) -> Self {
+    fn remove_lowest_bit(self) -> Self {
         BitMask(self.0 & (self.0 - 1))
     }
+
     
     #[inline]
-    pub fn any_bit_set(self) -> bool {
+    pub(crate) fn any_bit_set(self) -> bool {
         self.0 != 0
     }
 
     
     #[inline]
-    pub fn lowest_set_bit(self) -> Option<usize> {
-        if self.0 == 0 {
-            None
+    pub(crate) fn lowest_set_bit(self) -> Option<usize> {
+        if let Some(nonzero) = NonZeroBitMaskWord::new(self.0) {
+            Some(Self::nonzero_trailing_zeros(nonzero))
         } else {
-            Some(unsafe { self.lowest_set_bit_nonzero() })
+            None
         }
     }
 
     
-    
     #[inline]
-    #[cfg(feature = "nightly")]
-    pub unsafe fn lowest_set_bit_nonzero(self) -> usize {
-        intrinsics::cttz_nonzero(self.0) as usize / BITMASK_STRIDE
-    }
-    #[inline]
-    #[cfg(not(feature = "nightly"))]
-    pub unsafe fn lowest_set_bit_nonzero(self) -> usize {
-        self.trailing_zeros()
-    }
-
-    
-    #[inline]
-    pub fn trailing_zeros(self) -> usize {
+    pub(crate) fn trailing_zeros(self) -> usize {
         
         
         
@@ -91,7 +71,19 @@ impl BitMask {
 
     
     #[inline]
-    pub fn leading_zeros(self) -> usize {
+    fn nonzero_trailing_zeros(nonzero: NonZeroBitMaskWord) -> usize {
+        if cfg!(target_arch = "arm") && BITMASK_STRIDE % 8 == 0 {
+            
+            let swapped = unsafe { NonZeroBitMaskWord::new_unchecked(nonzero.get().swap_bytes()) };
+            swapped.leading_zeros() as usize / BITMASK_STRIDE
+        } else {
+            nonzero.trailing_zeros() as usize / BITMASK_STRIDE
+        }
+    }
+
+    
+    #[inline]
+    pub(crate) fn leading_zeros(self) -> usize {
         self.0.leading_zeros() as usize / BITMASK_STRIDE
     }
 }
@@ -102,13 +94,32 @@ impl IntoIterator for BitMask {
 
     #[inline]
     fn into_iter(self) -> BitMaskIter {
-        BitMaskIter(self)
+        
+        
+        BitMaskIter(BitMask(self.0 & BITMASK_ITER_MASK))
     }
 }
 
 
 
-pub struct BitMaskIter(BitMask);
+#[derive(Copy, Clone)]
+pub(crate) struct BitMaskIter(pub(crate) BitMask);
+
+impl BitMaskIter {
+    
+    
+    
+    #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
+    #[cfg(feature = "raw")]
+    pub(crate) unsafe fn flip(&mut self, index: usize) -> bool {
+        
+        let mask = 1 << (index * BITMASK_STRIDE + BITMASK_STRIDE - 1);
+        self.0 .0 ^= mask;
+        
+        self.0 .0 & mask == 0
+    }
+}
 
 impl Iterator for BitMaskIter {
     type Item = usize;

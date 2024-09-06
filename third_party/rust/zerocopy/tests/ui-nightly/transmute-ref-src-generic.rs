@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+extern crate zerocopy;
+
+use zerocopy::{transmute_ref, AsBytes};
+
+fn main() {}
+
+fn transmute_ref<T: AsBytes>(t: &T) -> &u8 {
+    
+    transmute_ref!(t)
+}

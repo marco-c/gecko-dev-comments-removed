@@ -1,6 +1,6 @@
 
 use core::{
-    mem,
+    mem::ManuallyDrop,
     ops::{Deref, DerefMut},
     ptr,
 };
@@ -29,14 +29,12 @@ where
     pub fn into_inner(guard: Self) -> T {
         
         
+        
+        let guard = ManuallyDrop::new(guard);
         unsafe {
             let value = ptr::read(&guard.value);
             
-            
-            
-            
-            let _dropfn = ptr::read(&guard.dropfn);
-            mem::forget(guard);
+            let _ = ptr::read(&guard.dropfn);
             value
         }
     }

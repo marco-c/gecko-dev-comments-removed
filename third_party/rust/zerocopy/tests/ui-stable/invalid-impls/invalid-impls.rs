@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+#![allow(unused)]
+
+extern crate zerocopy;
+extern crate zerocopy_derive;
+
+include!("../../../src/macros.rs");
+
+use zerocopy::*;
+use zerocopy_derive::*;
+
+fn main() {}
+
+#[derive(FromZeroes, FromBytes, AsBytes, Unaligned)]
+#[repr(transparent)]
+struct Foo<T>(T);
+
+impl_or_verify!(T => FromZeroes for Foo<T>);
+impl_or_verify!(T => FromBytes for Foo<T>);
+impl_or_verify!(T => AsBytes for Foo<T>);
+impl_or_verify!(T => Unaligned for Foo<T>);

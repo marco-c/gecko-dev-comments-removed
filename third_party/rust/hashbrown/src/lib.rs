@@ -20,9 +20,8 @@
         extend_one,
         allocator_api,
         slice_ptr_get,
-        nonnull_slice_from_raw_parts,
         maybe_uninit_array_assume_init,
-        build_hasher_simple_hash_one
+        strict_provenance
     )
 )]
 #![allow(
@@ -37,6 +36,7 @@
 )]
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
+#![cfg_attr(feature = "nightly", warn(fuzzy_provenance_casts))]
 
 #[cfg(test)]
 #[macro_use]
@@ -81,6 +81,7 @@ mod map;
 mod rustc_entry;
 mod scopeguard;
 mod set;
+mod table;
 
 pub mod hash_map {
     
@@ -113,9 +114,63 @@ pub mod hash_set {
         pub use crate::external_trait_impls::rayon::set::*;
     }
 }
+pub mod hash_table {
+    
+    pub use crate::table::*;
+
+    #[cfg(feature = "rayon")]
+    
+    
+    
+    
+    
+    pub mod rayon {
+        pub use crate::external_trait_impls::rayon::table::*;
+    }
+}
 
 pub use crate::map::HashMap;
 pub use crate::set::HashSet;
+pub use crate::table::HashTable;
+
+#[cfg(feature = "equivalent")]
+pub use equivalent::Equivalent;
+
+
+#[cfg(not(feature = "equivalent"))]
+
+
+
+
+
+
+
+
+
+
+
+pub trait Equivalent<K: ?Sized> {
+    
+    
+    
+    
+    
+    
+    
+    
+    fn equivalent(&self, key: &K) -> bool;
+}
+
+#[cfg(not(feature = "equivalent"))]
+impl<Q: ?Sized, K: ?Sized> Equivalent<K> for Q
+where
+    Q: Eq,
+    K: core::borrow::Borrow<Q>,
+{
+    fn equivalent(&self, key: &K) -> bool {
+        self == key.borrow()
+    }
+}
 
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -129,22 +184,4 @@ pub enum TryReserveError {
         
         layout: alloc::alloc::Layout,
     },
-}
-
-
-
-
-
-
-#[cfg(feature = "bumpalo")]
-#[derive(Clone, Copy, Debug)]
-pub struct BumpWrapper<'a>(pub &'a bumpalo::Bump);
-
-#[cfg(feature = "bumpalo")]
-#[test]
-fn test_bumpalo() {
-    use bumpalo::Bump;
-    let bump = Bump::new();
-    let mut map = HashMap::new_in(BumpWrapper(&bump));
-    map.insert(0, 1);
 }

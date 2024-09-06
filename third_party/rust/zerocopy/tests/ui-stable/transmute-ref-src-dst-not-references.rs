@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+extern crate zerocopy;
+
+use zerocopy::transmute_ref;
+
+fn main() {}
+
+
+
+const SRC_DST_NOT_REFERENCES: usize = transmute_ref!(0usize);

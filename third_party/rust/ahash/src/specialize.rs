@@ -17,28 +17,7 @@ use alloc::vec::Vec;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait CallHasher {
+pub(crate) trait CallHasher {
     fn get_hash<H: Hash + ?Sized, B: BuildHasher>(value: &H, build_hasher: &B) -> u64;
 }
 

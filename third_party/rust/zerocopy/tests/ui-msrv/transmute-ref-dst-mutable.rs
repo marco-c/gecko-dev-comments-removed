@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+extern crate zerocopy;
+
+use zerocopy::transmute_ref;
+
+fn main() {}
+
+fn ref_dst_mutable() {
+    
+    
+    let _: &mut u8 = transmute_ref!(&0u8);
+}

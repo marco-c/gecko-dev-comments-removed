@@ -1,5 +1,9 @@
 pub(crate) use self::inner::{do_alloc, Allocator, Global};
 
+
+
+
+
 #[cfg(feature = "nightly")]
 mod inner {
     use crate::alloc::alloc::Layout;
@@ -7,28 +11,44 @@ mod inner {
     use core::ptr::NonNull;
 
     #[allow(clippy::map_err_ignore)]
-    pub fn do_alloc<A: Allocator>(alloc: &A, layout: Layout) -> Result<NonNull<u8>, ()> {
+    pub(crate) fn do_alloc<A: Allocator>(alloc: &A, layout: Layout) -> Result<NonNull<u8>, ()> {
         match alloc.allocate(layout) {
             Ok(ptr) => Ok(ptr.as_non_null_ptr()),
             Err(_) => Err(()),
         }
     }
+}
 
-    #[cfg(feature = "bumpalo")]
-    unsafe impl Allocator for crate::BumpWrapper<'_> {
-        #[inline]
-        fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, core::alloc::AllocError> {
-            match self.0.try_alloc_layout(layout) {
-                Ok(ptr) => Ok(NonNull::slice_from_raw_parts(ptr, layout.size())),
-                Err(_) => Err(core::alloc::AllocError),
-            }
+
+
+
+
+
+
+#[cfg(all(not(feature = "nightly"), feature = "allocator-api2"))]
+mod inner {
+    use crate::alloc::alloc::Layout;
+    pub use allocator_api2::alloc::{Allocator, Global};
+    use core::ptr::NonNull;
+
+    #[allow(clippy::map_err_ignore)]
+    pub(crate) fn do_alloc<A: Allocator>(alloc: &A, layout: Layout) -> Result<NonNull<u8>, ()> {
+        match alloc.allocate(layout) {
+            Ok(ptr) => Ok(ptr.cast()),
+            Err(_) => Err(()),
         }
-        #[inline]
-        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}
     }
 }
 
-#[cfg(not(feature = "nightly"))]
+
+
+
+
+
+
+
+
+#[cfg(not(any(feature = "nightly", feature = "allocator-api2")))]
 mod inner {
     use crate::alloc::alloc::{alloc, dealloc, Layout};
     use core::ptr::NonNull;
@@ -41,6 +61,7 @@ mod inner {
 
     #[derive(Copy, Clone)]
     pub struct Global;
+
     unsafe impl Allocator for Global {
         #[inline]
         fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {
@@ -51,6 +72,7 @@ mod inner {
             dealloc(ptr.as_ptr(), layout);
         }
     }
+
     impl Default for Global {
         #[inline]
         fn default() -> Self {
@@ -58,16 +80,7 @@ mod inner {
         }
     }
 
-    pub fn do_alloc<A: Allocator>(alloc: &A, layout: Layout) -> Result<NonNull<u8>, ()> {
+    pub(crate) fn do_alloc<A: Allocator>(alloc: &A, layout: Layout) -> Result<NonNull<u8>, ()> {
         alloc.allocate(layout)
-    }
-
-    #[cfg(feature = "bumpalo")]
-    unsafe impl Allocator for crate::BumpWrapper<'_> {
-        #[allow(clippy::map_err_ignore)]
-        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {
-            self.0.try_alloc_layout(layout).map_err(|_| ())
-        }
-        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}
     }
 }
