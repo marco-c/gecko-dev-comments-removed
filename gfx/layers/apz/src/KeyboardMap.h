@@ -10,7 +10,6 @@
 #include <stdint.h>  
 
 #include "InputData.h"             
-#include "nsIScrollableFrame.h"    
 #include "nsTArray.h"              
 #include "mozilla/Maybe.h"         
 #include "KeyboardScrollAction.h"  
