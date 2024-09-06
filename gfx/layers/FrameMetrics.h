@@ -717,6 +717,15 @@ struct OverscrollBehaviorInfo final {
   OverscrollBehavior mBehaviorY;
 };
 
+struct OverflowInfo final {
+  StyleOverflow mOverflowX = StyleOverflow::Visible;
+  StyleOverflow mOverflowY = StyleOverflow::Visible;
+
+  bool operator==(const OverflowInfo& aOther) const;
+
+  auto MutTiedFields() { return std::tie(mOverflowX, mOverflowY); }
+};
+
 
 
 
@@ -770,6 +779,7 @@ struct ScrollMetadata {
            mIsPaginatedPresentation == aOther.mIsPaginatedPresentation &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
+           mOverflow == aOther.mOverflow &&
            mScrollUpdates == aOther.mScrollUpdates;
   }
 
@@ -876,6 +886,9 @@ struct ScrollMetadata {
     return mOverscrollBehavior;
   }
 
+  void SetOverflow(const OverflowInfo& aOverflow) { mOverflow = aOverflow; }
+  const OverflowInfo& GetOverflow() const { return mOverflow; }
+
   void SetScrollUpdates(const nsTArray<ScrollPositionUpdate>& aUpdates) {
     mScrollUpdates = aUpdates;
   }
@@ -981,6 +994,12 @@ struct ScrollMetadata {
 
   
   OverscrollBehaviorInfo mOverscrollBehavior;
+
+  
+  
+  
+  
+  OverflowInfo mOverflow;
 
   
   
