@@ -1255,6 +1255,22 @@ var gPrivacyPane = {
       document.querySelector("menuitem[value='dontremember']").hidden = true;
     }
 
+    let privateBrowsingPref = Preferences.get(
+      "browser.privatebrowsing.autostart"
+    );
+
+    if (privateBrowsingPref.locked) {
+      
+      
+      document.querySelector("menuitem[value='dontremember']").disabled =
+        !privateBrowsingPref.value;
+
+      
+      
+      document.getElementById("historyMode").disabled =
+        privateBrowsingPref.value;
+    }
+
     
     this.initHttpsOnly();
 
