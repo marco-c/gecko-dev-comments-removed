@@ -62,19 +62,21 @@ TEST(TestAudioInputProcessing, Buffering)
   GraphTime processedTime;
   GraphTime nextTime;
   AudioSegment output;
+  MediaEnginePrefs settings;
+  settings.mChannels = channels;
 
   
   {
-    EXPECT_EQ(aip->PassThrough(graph), false);
+    EXPECT_EQ(aip->IsPassThrough(graph), true);
     EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
 
-    aip->SetPassThrough(graph, true);
+    settings.mAgcOn = true;
+    aip->ApplySettings(graph, nullptr, settings);
+    EXPECT_EQ(aip->IsPassThrough(graph), false);
     EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
 
-    aip->SetPassThrough(graph, false);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
-
-    aip->SetPassThrough(graph, true);
+    settings.mAgcOn = false;
+    aip->ApplySettings(graph, nullptr, settings);
     EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
   }
 
@@ -95,7 +97,8 @@ TEST(TestAudioInputProcessing, Buffering)
   }
 
   
-  aip->SetPassThrough(graph, false);
+  settings.mAgcOn = true;
+  aip->ApplySettings(graph, nullptr, settings);
   {
     
     
@@ -184,7 +187,9 @@ TEST(TestAudioInputProcessing, Buffering)
     EXPECT_EQ(aip->NumBufferedFrames(graph), 64);
   }
 
-  aip->SetPassThrough(graph, true);
+  
+  settings.mAgcOn = false;
+  aip->ApplySettings(graph, nullptr, settings);
   {
     
     
@@ -269,7 +274,11 @@ TEST(TestAudioInputProcessing, ProcessDataWithDifferentPrincipals)
   };
 
   
-  EXPECT_EQ(aip->PassThrough(graph), false);
+  MediaEnginePrefs settings;
+  settings.mChannels = channels;
+  settings.mAgcOn = true;
+  aip->ApplySettings(graph, nullptr, settings);
+  EXPECT_EQ(aip->IsPassThrough(graph), false);
   aip->Start(graph);
   {
     AudioSegment output;
@@ -295,7 +304,9 @@ TEST(TestAudioInputProcessing, ProcessDataWithDifferentPrincipals)
   }
 
   
-  aip->SetPassThrough(graph, true);
+  settings.mAgcOn = false;
+  aip->ApplySettings(graph, nullptr, settings);
+  EXPECT_EQ(aip->IsPassThrough(graph), true);
   {
     AudioSegment output;
     aip->Process(graph, 0, 4800, &input, &output);
@@ -324,7 +335,11 @@ TEST(TestAudioInputProcessing, Downmixing)
   GraphTime processedTime;
   GraphTime nextTime;
 
-  aip->SetPassThrough(graph, false);
+  MediaEnginePrefs settings;
+  settings.mChannels = channels;
+  settings.mAgcOn = true;
+  aip->ApplySettings(graph, nullptr, settings);
+  EXPECT_EQ(aip->IsPassThrough(graph), false);
   aip->Start(graph);
 
   processedTime = 0;
@@ -365,7 +380,10 @@ TEST(TestAudioInputProcessing, Downmixing)
   }
 
   
-  aip->SetPassThrough(graph, true);
+  
+  settings.mAgcOn = false;
+  aip->ApplySettings(graph, nullptr, settings);
+  EXPECT_EQ(aip->IsPassThrough(graph), true);
 
   AudioSegment input, output;
   processedTime = nextTime;

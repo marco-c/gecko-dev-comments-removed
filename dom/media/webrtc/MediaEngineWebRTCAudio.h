@@ -116,7 +116,7 @@ class AudioInputProcessing : public AudioDataListener {
     
     
     
-    return !PassThrough(aGraph);
+    return !IsPassThrough(aGraph);
   }
 
   void Start(MediaTrackGraph* aGraph);
@@ -133,14 +133,10 @@ class AudioInputProcessing : public AudioDataListener {
   void PacketizeAndProcess(MediaTrackGraph* aGraph,
                            const AudioSegment& aSegment);
 
-  void SetPassThrough(MediaTrackGraph* aGraph, bool aPassThrough);
   uint32_t GetRequestedInputChannelCount();
-  void SetRequestedInputChannelCount(MediaTrackGraph* aGraph,
-                                     CubebUtils::AudioDeviceID aDeviceId,
-                                     uint32_t aRequestedInputChannelCount);
   
   
-  bool PassThrough(MediaTrackGraph* aGraph) const;
+  bool IsPassThrough(MediaTrackGraph* aGraph) const;
 
   
   
@@ -164,7 +160,11 @@ class AudioInputProcessing : public AudioDataListener {
   ~AudioInputProcessing() = default;
   webrtc::AudioProcessing::Config ConfigForPrefs(
       const MediaEnginePrefs& aPrefs);
-  void EnsurePacketizer(MediaTrackGraph* aGraph, uint32_t aChannels);
+  void PassThroughChanged(MediaTrackGraph* aGraph);
+  void RequestedInputChannelCountChanged(MediaTrackGraph* aGraph,
+                                         CubebUtils::AudioDeviceID aDeviceId);
+  void EnsurePacketizer(MediaTrackGraph* aGraph);
+  void EnsureAudioProcessing(MediaTrackGraph* aGraph);
   void ResetAudioProcessing(MediaTrackGraph* aGraph);
   PrincipalHandle GetCheckedPrincipal(const AudioSegment& aSegment);
   
@@ -172,17 +172,13 @@ class AudioInputProcessing : public AudioDataListener {
   
   
   
-  const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
+  UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
   
   
   Maybe<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
   
   
-  uint32_t mRequestedInputChannelCount;
-  
-  
-  
-  bool mSkipProcessing;
+  MediaEnginePrefs mSettings;
   
   
   
