@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
 #include "p2p/base/port.h"
 #include "rtc_base/async_packet_socket.h"
@@ -81,15 +82,13 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
   
   sigslot::signal1<PacketTransportInternal*> SignalReceivingState;
 
-  template <typename F>
-  void RegisterReceivedPacketCallback(void* id, F&& callback) {
-    RTC_DCHECK_RUN_ON(&network_checker_);
-    received_packet_callback_list_.AddReceiver(id, std::forward<F>(callback));
-  }
-  void DeregisterReceivedPacketCallback(void* id) {
-    RTC_DCHECK_RUN_ON(&network_checker_);
-    received_packet_callback_list_.RemoveReceivers(id);
-  }
+  
+  void RegisterReceivedPacketCallback(
+      void* id,
+      absl::AnyInvocable<void(PacketTransportInternal*,
+                              const rtc::ReceivedPacket&)> callback);
+
+  void DeregisterReceivedPacketCallback(void* id);
 
   
   
