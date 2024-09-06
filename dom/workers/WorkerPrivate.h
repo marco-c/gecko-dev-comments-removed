@@ -632,6 +632,13 @@ class WorkerPrivate final
     return mParentStatus < Canceling;
   }
 
+  
+  
+  bool IsDead() MOZ_EXCLUDES(mMutex) {
+    MutexAutoLock lock(mMutex);
+    return mStatus == Dead;
+  }
+
   WorkerStatus ParentStatusProtected() {
     AssertIsOnParentThread();
     MutexAutoLock lock(mMutex);
