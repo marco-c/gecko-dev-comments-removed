@@ -137,16 +137,6 @@ static Maybe<H264Setting> GetH264Profile(const H264_PROFILE& aProfile) {
 
 static Maybe<H264Setting> GetH264Level(const H264_LEVEL& aLevel) {
   int val = static_cast<int>(aLevel);
-  
-  
-  if (val < 10 || val > 52) {
-    return Nothing();
-  }
-  if ((val % 10) > 2) {
-    if (val != 13) {
-      return Nothing();
-    }
-  }
   nsPrintfCString str("%d", val);
   str.Insert('.', 1);
   return Some(H264Setting{val, str});
@@ -622,12 +612,12 @@ Result<MediaDataEncoder::EncodedData, nsresult> FFmpegVideoEncoder<
 #  endif
   
   if (mConfig.mCodec == CodecType::AV1) {
-      mFrame->pts = mFakePts;
-      mPtsMap.Insert(mFakePts, aSample->mTime.ToMicroseconds());
-      mFakePts += aSample->mDuration.ToMicroseconds();
-      mCurrentFramePts = aSample->mTime.ToMicroseconds();
+    mFrame->pts = mFakePts;
+    mPtsMap.Insert(mFakePts, aSample->mTime.ToMicroseconds());
+    mFakePts += aSample->mDuration.ToMicroseconds();
+    mCurrentFramePts = aSample->mTime.ToMicroseconds();
   } else {
-      mFrame->pts = aSample->mTime.ToMicroseconds();
+    mFrame->pts = aSample->mTime.ToMicroseconds();
   }
 #  if LIBAVCODEC_VERSION_MAJOR >= 60
   mFrame->duration = aSample->mDuration.ToMicroseconds();
@@ -666,8 +656,8 @@ RefPtr<MediaRawData> FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(
   RefPtr<MediaRawData> data = ToMediaRawDataCommon(aPacket);
 
   if (mConfig.mCodec == CodecType::AV1) {
-      auto found = mPtsMap.Take(aPacket->pts);
-      data->mTime = media::TimeUnit::FromMicroseconds(found.value());
+    auto found = mPtsMap.Take(aPacket->pts);
+    data->mTime = media::TimeUnit::FromMicroseconds(found.value());
   }
 
   if (mSVCInfo) {

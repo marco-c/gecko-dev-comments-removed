@@ -203,7 +203,7 @@ already_AddRefed<SharedThreadPool> GetMediaThreadPool(MediaThreadType aType);
 
 
 bool ExtractH264CodecDetails(const nsAString& aCodecs, uint8_t& aProfile,
-                             uint8_t& aConstraint, uint8_t& aLevel);
+                             uint8_t& aConstraint, H264_LEVEL& aLevel);
 
 struct VideoColorSpace {
   
