@@ -119,6 +119,12 @@ public class ContentBlockingController {
     
     public static final int ALLOWED_TRACKING_CONTENT = 0x00000020;
 
+    
+    public static final int PURGED_BOUNCETRACKER = 0x00000007;
+
+    
+    public static final int BLOCKED_SUSPICIOUS_FINGERPRINTING = 0x00000004;
+
     protected Event() {}
   }
 
@@ -140,7 +146,8 @@ public class ContentBlockingController {
         Event.COOKIES_BLOCKED_FOREIGN, Event.BLOCKED_SOCIALTRACKING_CONTENT,
         Event.LOADED_SOCIALTRACKING_CONTENT, Event.REPLACED_TRACKING_CONTENT,
         Event.LOADED_EMAILTRACKING_LEVEL_1_CONTENT, Event.LOADED_EMAILTRACKING_LEVEL_2_CONTENT,
-        Event.BLOCKED_EMAILTRACKING_CONTENT
+        Event.BLOCKED_EMAILTRACKING_CONTENT, Event.PURGED_BOUNCETRACKER,
+        Event.BLOCKED_SUSPICIOUS_FINGERPRINTING
       })
       public @interface LogEvent {}
 
