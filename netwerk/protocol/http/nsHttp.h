@@ -186,6 +186,10 @@ extern const nsCString kHttp3Versions[];
 
 #define NS_HTTP_DISALLOW_HTTP2_PROXY (1 << 28)
 
+
+
+#define NS_HTTP_TLS_TUNNEL (1 << 29)
+
 #define NS_HTTP_TRR_FLAGS_FROM_MODE(x) ((static_cast<uint32_t>(x) & 3) << 19)
 
 #define NS_HTTP_TRR_MODE_FROM_FLAGS(x) \

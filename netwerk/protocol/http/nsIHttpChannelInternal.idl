@@ -212,7 +212,10 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
-    [must_use] void setConnectOnly();
+
+
+
+    [must_use] void setConnectOnly(in boolean tlsTunnel);
 
     
 
