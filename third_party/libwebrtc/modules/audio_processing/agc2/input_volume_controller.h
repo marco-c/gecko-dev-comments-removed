@@ -50,7 +50,7 @@ class InputVolumeController final {
     
     int clipped_wait_frames = 300;
     
-    bool enable_clipping_predictor = false;
+    bool enable_clipping_predictor = true;
     
     
     
