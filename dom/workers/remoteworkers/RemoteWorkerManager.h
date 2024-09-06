@@ -19,6 +19,7 @@ namespace mozilla::dom {
 
 class RemoteWorkerController;
 class RemoteWorkerServiceParent;
+class RemoteWorkerNonLifeCycleOpControllerParent;
 
 
 

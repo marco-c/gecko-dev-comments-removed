@@ -1,0 +1,16 @@
+
+
+
+
+#include "RemoteWorkerNonLifeCycleOpControllerParent.h"
+#include "mozilla/dom/RemoteWorkerController.h"
+
+namespace mozilla::dom {
+
+RemoteWorkerNonLifeCycleOpControllerParent::
+    RemoteWorkerNonLifeCycleOpControllerParent() {}
+
+RemoteWorkerNonLifeCycleOpControllerParent::
+    ~RemoteWorkerNonLifeCycleOpControllerParent() = default;
+
+}  
