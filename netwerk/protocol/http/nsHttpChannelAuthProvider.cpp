@@ -620,28 +620,22 @@ nsresult nsHttpChannelAuthProvider::GetCredentials(
   }
 
   cc.StableSort([](const AuthChallenge& lhs, const AuthChallenge& rhs) {
-    if (StaticPrefs::network_auth_choose_most_secure_challenge()) {
-      
-      if (lhs.rank != rhs.rank) {
-        return lhs.rank < rhs.rank ? 1 : -1;
-      }
-
-      
-      
-      if (lhs.rank != ChallengeRank::Digest) {
-        return 0;
-      }
-    } else {
-      
-      if (lhs.algorithm == 0 || rhs.algorithm == 0) {
-        return 0;
-      }
+    
+    if (lhs.rank != rhs.rank) {
+      return lhs.rank < rhs.rank ? 1 : -1;
     }
 
     
-    if (lhs.algorithm == rhs.algorithm) {
+    
+    if (lhs.rank != ChallengeRank::Digest) {
       return 0;
     }
+
+    
+    if (lhs.algorithm == 0 || rhs.algorithm == 0) {
+      return 0;
+    }
+
     return lhs.algorithm < rhs.algorithm ? 1 : -1;
   });
 
