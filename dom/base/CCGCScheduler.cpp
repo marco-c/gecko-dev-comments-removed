@@ -705,18 +705,18 @@ JS::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
 
 JS::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
                                                          TimeStamp aNow) {
+  
+  
+  
+  
   TimeDuration budget =
-      aDeadline.IsNull() ? mActiveIntersliceGCBudget : aDeadline - aNow;
+      aDeadline.IsNull() ? mActiveIntersliceGCBudget * 2 : aDeadline - aNow;
   if (!mCCBlockStart) {
     return CreateGCSliceBudget(budget, !aDeadline.IsNull(), false);
   }
 
-  
-  
-  
-
   TimeDuration blockedTime = aNow - mCCBlockStart;
-  TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 5;
+  TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 10;
   double percentOfBlockedTime =
       std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
   TimeDuration extendedBudget =
@@ -726,7 +726,7 @@ JS::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
   }
 
   
-  auto result = js::SliceBudget(js::TimeBudget(extendedBudget), nullptr);
+  auto result = JS::SliceBudget(JS::TimeBudget(extendedBudget), nullptr);
   result.idle = !aDeadline.IsNull();
   result.extended = true;
   return result;
