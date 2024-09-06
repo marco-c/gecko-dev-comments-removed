@@ -1456,8 +1456,10 @@ void BrowserParent::MouseEnterIntoWidget() {
     
     
     mRemoteTargetSetsCursor = true;
-    widget->SetCursor(mCursor);
-    EventStateManager::ClearCursorSettingManager();
+    if (!EventStateManager::CursorSettingManagerHasLockedCursor()) {
+      widget->SetCursor(mCursor);
+      EventStateManager::ClearCursorSettingManager();
+    }
   }
 
   
@@ -1495,8 +1497,10 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
     
     if (eMouseEnterIntoWidget == aEvent.mMessage) {
       mRemoteTargetSetsCursor = true;
-      widget->SetCursor(mCursor);
-      EventStateManager::ClearCursorSettingManager();
+      if (!EventStateManager::CursorSettingManagerHasLockedCursor()) {
+        widget->SetCursor(mCursor);
+        EventStateManager::ClearCursorSettingManager();
+      }
     } else if (eMouseExitFromWidget == aEvent.mMessage) {
       mRemoteTargetSetsCursor = false;
     }
@@ -2351,6 +2355,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetCursor(
                               aHotspotY,
                               {aResolutionX, aResolutionY}};
   if (!mRemoteTargetSetsCursor) {
+    return IPC_OK();
+  }
+
+  if (EventStateManager::CursorSettingManagerHasLockedCursor()) {
     return IPC_OK();
   }
 
