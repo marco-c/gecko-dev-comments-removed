@@ -7,19 +7,6 @@
 
 
 
-const PREF_BAD_CERT_DOMAIN_FIX_ENABLED =
-  "security.bad_cert_domain_error.url_fix_enabled";
-const PREF_ALLOW_HIJACKING_LOCALHOST =
-  "network.proxy.allow_hijacking_localhost";
-
-const BAD_CERT_DOMAIN_ERROR_URL = "https://badcertdomain.example.com:443";
-const FIXED_URL = "https://www.badcertdomain.example.com/";
-
-const BAD_CERT_DOMAIN_ERROR_URL2 =
-  "https://mismatch.badcertdomain.example.com:443";
-const IPV4_ADDRESS = "https://127.0.0.3:433";
-const BAD_CERT_DOMAIN_ERROR_PORT = "https://badcertdomain.example.com:82";
-
 async function verifyErrorPage(errorPageURL) {
   let certErrorLoaded = BrowserTestUtils.waitForErrorPage(
     gBrowser.selectedBrowser
@@ -42,51 +29,72 @@ async function verifyErrorPage(errorPageURL) {
 }
 
 
-
-add_task(async function prefixBadCertDomain() {
-  
-  Services.prefs.setBoolPref(PREF_BAD_CERT_DOMAIN_FIX_ENABLED, false);
-
+add_task(async function testNoFixupDisabledByPref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.bad_cert_domain_error.url_fix_enabled", false]],
+  });
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  await verifyErrorPage(BAD_CERT_DOMAIN_ERROR_URL);
-  info("Cert error is shown as expected when the fixup pref is disabled");
 
-  
-  Services.prefs.setBoolPref(PREF_BAD_CERT_DOMAIN_FIX_ENABLED, true);
+  await verifyErrorPage("https://badcertdomain.example.com");
+  await verifyErrorPage("https://www.badcertdomain2.example.com");
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function testAddPrefixForBadCertDomain() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   let loadSuccessful = BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
     false,
-    FIXED_URL
+    "https://www.badcertdomain.example.com/"
   );
-  BrowserTestUtils.startLoadingURIString(gBrowser, BAD_CERT_DOMAIN_ERROR_URL);
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser,
+    "https://badcertdomain.example.com"
+  );
   await loadSuccessful;
 
-  info("The URL was fixed as expected");
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
 
-add_task(async function ignoreBadCertDomain() {
-  Services.prefs.setBoolPref(PREF_BAD_CERT_DOMAIN_FIX_ENABLED, true);
+add_task(async function testNoFixupCases() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
   
-  await verifyErrorPage(BAD_CERT_DOMAIN_ERROR_URL2);
-  info("Certificate error was shown as expected");
+  await verifyErrorPage("https://mismatch.badcertdomain.example.com");
 
   
-  Services.prefs.setBoolPref(PREF_ALLOW_HIJACKING_LOCALHOST, true);
-  await verifyErrorPage(IPV4_ADDRESS);
-  Services.prefs.clearUserPref(PREF_ALLOW_HIJACKING_LOCALHOST);
-  info("Certificate error was shown as expected for an IP address");
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.proxy.allow_hijacking_localhost", true]],
+  });
+  await verifyErrorPage("https://127.0.0.3:433");
+  await SpecialPowers.popPrefEnv();
 
   
-  await verifyErrorPage(BAD_CERT_DOMAIN_ERROR_PORT);
-  info("Certificate error was shown as expected for a host with port");
+  await verifyErrorPage("https://badcertdomain.example.com:82");
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+add_task(async function testRemovePrefixForBadCertDomain() {
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
+  let loadSuccessful = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    "https://badcertdomain2.example.com/"
+  );
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser,
+    "https://www.badcertdomain2.example.com"
+  );
+  await loadSuccessful;
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
