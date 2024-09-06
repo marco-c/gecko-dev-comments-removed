@@ -1,5 +1,3 @@
-
-
 function testImport(path, name, value) {
     let result = null;
     let error = null;

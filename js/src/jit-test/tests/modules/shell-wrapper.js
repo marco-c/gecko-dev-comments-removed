@@ -1,6 +1,5 @@
 
 
-
 load(libdir + "asserts.js");
 
 function testGetter(obj, name) {
@@ -49,10 +48,8 @@ const d = registerModule('d', parseModule(`
 f();
 `));
 moduleLink(d);
-try {
-  await moduleEvaluate(d);
-} catch (e) {
-}
+moduleEvaluate(d).catch(e => undefined);
+drainJobQueue();
 assertEq(d.evaluationError instanceof ReferenceError, true);
 testGetter(d, "evaluationError");
 
