@@ -402,29 +402,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
-    #[cfg(feature = "servo")]
-    fn adjust_for_alignment(&mut self, layout_parent_style: &ComputedValues) {
-        use crate::computed_values::align_items::T as AlignItems;
-        use crate::computed_values::align_self::T as AlignSelf;
-
-        if self.style.get_position().clone_align_self() == AlignSelf::Auto &&
-            !self.style.is_absolutely_positioned()
-        {
-            let self_align = match layout_parent_style.get_position().clone_align_items() {
-                AlignItems::Stretch => AlignSelf::Stretch,
-                AlignItems::Baseline => AlignSelf::Baseline,
-                AlignItems::FlexStart => AlignSelf::FlexStart,
-                AlignItems::FlexEnd => AlignSelf::FlexEnd,
-                AlignItems::Center => AlignSelf::Center,
-            };
-            self.style.mutate_position().set_align_self(self_align);
-        }
-    }
-
-    
-    
-    
-    
     fn adjust_for_border_width(&mut self) {
         properties::adjust_border_width(self.style);
     }
@@ -980,10 +957,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         {
             self.adjust_for_table_text_align();
             self.adjust_for_justify_items();
-        }
-        #[cfg(feature = "servo")]
-        {
-            self.adjust_for_alignment(layout_parent_style);
         }
         self.adjust_for_border_width();
         self.adjust_for_column_rule_width();
