@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?-g:a)", "");
+}, 'RegExp("(?-g:a)", ""): ');
+
+reportCompare(0, 0);

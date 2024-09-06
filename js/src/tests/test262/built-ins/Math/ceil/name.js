@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Math.ceil.name, "ceil");
-
-verifyNotEnumerable(Math.ceil, "name");
-verifyNotWritable(Math.ceil, "name");
-verifyConfigurable(Math.ceil, "name");
+verifyProperty(Math.ceil, "name", {
+  value: "ceil",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

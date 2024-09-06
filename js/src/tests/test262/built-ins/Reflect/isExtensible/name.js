@@ -13,13 +13,11 @@
 
 
 
-assert.sameValue(
-  Reflect.isExtensible.name, 'isExtensible',
-  'The value of `Reflect.isExtensible.name` is `"isExtensible"`'
-);
-
-verifyNotEnumerable(Reflect.isExtensible, 'name');
-verifyNotWritable(Reflect.isExtensible, 'name');
-verifyConfigurable(Reflect.isExtensible, 'name');
+verifyProperty(Reflect.isExtensible, "name", {
+  value: "isExtensible",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

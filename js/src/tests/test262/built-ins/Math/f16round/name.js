@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Math.f16round, 'name', {
+  value: 'f16round',
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

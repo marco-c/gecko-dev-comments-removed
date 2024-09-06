@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?imsi:a)", "");
+}, 'RegExp("(?imsi:a)", ""): ');
+
+reportCompare(0, 0);

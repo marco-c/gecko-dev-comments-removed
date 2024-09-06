@@ -8,7 +8,10 @@
 
 
 
-var desc = Object.getOwnPropertyDescriptor(Object, 'getOwnPropertyDescriptors');
-assertEq(desc.enumerable, false);
-assertEq(desc.writable, true);
-assertEq(desc.configurable, true);
+verifyProperty(Object, "getOwnPropertyDescriptors", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

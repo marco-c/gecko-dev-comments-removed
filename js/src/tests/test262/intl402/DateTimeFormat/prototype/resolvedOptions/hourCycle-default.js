@@ -24,24 +24,32 @@
 
 
 
-let locales = ["en", "fr", "it", "ja", "ja-u-hc-h11", "zh", "ko", "ar", "hi", "en-u-hc-h24"];
+let locales = ["en", "fr", "it", "ja", "zh", "ko", "ar", "hi"];
 
-locales.forEach(function(locale) {
-  let hcDefault = new Intl.DateTimeFormat(locale, { hour: "numeric" }).resolvedOptions().hourCycle;
+for (let locale of locales) {
+  let hcDefault = new Intl.DateTimeFormat(locale, {hour: "numeric"}).resolvedOptions().hourCycle;
+  assert(
+    hcDefault === "h11" || hcDefault === "h12" || hcDefault === "h23" || hcDefault === "h24",
+    "hcDefault is one of [h11, h12, h23, h24]"
+  );
+
+  let hour12 = new Intl.DateTimeFormat(locale, {hour: "numeric", hour12: true}).resolvedOptions().hourCycle;
+  assert(hour12 === "h11" || hour12 === "h12", "hour12 is one of [h11, h12]");
+
+  let hour24 = new Intl.DateTimeFormat(locale, {hour: "numeric", hour12: false}).resolvedOptions().hourCycle;
+  assert(hour24 === "h23" || hour24 === "h24", "hour24 is one of [h23, h24]");
+
   if (hcDefault === "h11" || hcDefault === "h12") {
-    assert.sameValue(new Intl.DateTimeFormat(locale, { hour: "numeric", hour12: true }).resolvedOptions().hourCycle, hcDefault);
-
-    
-    assert.sameValue(new Intl.DateTimeFormat(locale, { hour: "numeric", hour12: false }).resolvedOptions().hourCycle, "h23");
+    assert.sameValue(hour12, hcDefault, "hour12 matches hcDefault");
+  } else {
+    assert.sameValue(hour24, hcDefault, "hour24 matches hcDefault");
   }
 
   
-  if (hcDefault === "h23" || hcDefault === "h24") {
-    assert.sameValue(new Intl.DateTimeFormat(locale, { hour: "numeric", hour12: false }).resolvedOptions().hourCycle, hcDefault);
-  }
+  assert.sameValue(hour24, "h23");
 
-  let hcHour12 = new Intl.DateTimeFormat(locale, { hour: "numeric", hour12: true }).resolvedOptions().hourCycle;
-  assert(hcHour12 === "h11" || hcHour12 === "h12", "Expected `hourCycle`: " + hcHour12 + " to be in [\"h11\", \"h12\"]");
-});
+  
+  assert.sameValue(hour12, locale === "ja" ? "h11" : "h12");
+}
 
 reportCompare(0, 0);

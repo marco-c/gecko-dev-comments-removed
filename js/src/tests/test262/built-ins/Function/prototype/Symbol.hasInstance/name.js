@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Function.prototype[Symbol.hasInstance], "name", {
+  value: "[Symbol.hasInstance]",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

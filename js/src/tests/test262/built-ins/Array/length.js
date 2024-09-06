@@ -17,10 +17,11 @@
 
 
 
-assert.sameValue(Array.length, 1, 'The value of Array.length is expected to be 1');
-
-verifyNotEnumerable(Array, 'length');
-verifyNotWritable(Array, 'length');
-verifyConfigurable(Array, 'length');
+verifyProperty(Array, "length", {
+  value: 1,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

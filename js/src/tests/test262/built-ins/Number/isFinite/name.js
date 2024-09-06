@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Number.isFinite.name, "isFinite");
-
-verifyNotEnumerable(Number.isFinite, "name");
-verifyNotWritable(Number.isFinite, "name");
-verifyConfigurable(Number.isFinite, "name");
+verifyProperty(Number.isFinite, "name", {
+  value: "isFinite",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

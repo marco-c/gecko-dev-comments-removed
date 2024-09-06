@@ -18,10 +18,11 @@
 
 
 
-assert.sameValue(Math.sign.length, 1);
-
-verifyNotEnumerable(Math.sign, "length");
-verifyNotWritable(Math.sign, "length");
-verifyConfigurable(Math.sign, "length");
+verifyProperty(Math.sign, "length", {
+  value: 1,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

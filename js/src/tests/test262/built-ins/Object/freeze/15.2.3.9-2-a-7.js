@@ -17,8 +17,10 @@ argObj.foo = 10;
 
 Object.freeze(argObj);
 
-verifyNotWritable(argObj, "foo");
-verifyNotConfigurable(argObj, "foo");
-assert.sameValue(argObj.foo, 10);
+verifyProperty(argObj, "foo", {
+  value: 10,
+  writable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

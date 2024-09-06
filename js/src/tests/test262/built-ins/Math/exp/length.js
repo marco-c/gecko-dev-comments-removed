@@ -22,10 +22,11 @@
 
 
 
-assert.sameValue(Math.exp.length, 1);
-
-verifyNotEnumerable(Math.exp, "length");
-verifyNotWritable(Math.exp, "length");
-verifyConfigurable(Math.exp, "length");
+verifyProperty(Math.exp, "length", {
+  value: 1,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

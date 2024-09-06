@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var strObj = new String("abc");
+
+Object.freeze(strObj);
+
+verifyProperty(strObj, "0", {
+  value: "a",
+  writable: false,
+  configurable: false,
+});
+
+reportCompare(0, 0);

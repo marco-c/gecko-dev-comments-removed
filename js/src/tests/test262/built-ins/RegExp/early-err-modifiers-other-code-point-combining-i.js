@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?iͥ:a)", "");
+}, 'RegExp("(?iͥ:a)", ""): ');
+
+reportCompare(0, 0);

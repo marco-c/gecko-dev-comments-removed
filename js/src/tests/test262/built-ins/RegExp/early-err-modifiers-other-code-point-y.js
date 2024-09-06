@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?y:a)", "");
+}, 'RegExp("(?y:a)", ""): ');
+
+reportCompare(0, 0);

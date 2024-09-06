@@ -12,13 +12,11 @@
 
 
 
-assert.sameValue(
-  Reflect.construct.length, 2,
-  'The value of `Reflect.construct.length` is `2`'
-);
-
-verifyNotEnumerable(Reflect.construct, 'length');
-verifyNotWritable(Reflect.construct, 'length');
-verifyConfigurable(Reflect.construct, 'length');
+verifyProperty(Reflect.construct, "length", {
+  value: 2,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);
