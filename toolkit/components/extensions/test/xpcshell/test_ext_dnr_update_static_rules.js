@@ -20,6 +20,21 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+async function dropDNRStartupCache(dnrStore, extension) {
+  
+  
+  const { cacheFile } = dnrStore.getFilePaths(extension.uuid);
+  ok(
+    await IOUtils.exists(cacheFile),
+    `Expect a DNRStore cache file found at ${cacheFile}`
+  );
+  await IOUtils.remove(cacheFile);
+  ok(
+    !(await IOUtils.exists(cacheFile)),
+    `Expect a DNRStore cache file ${cacheFile} to be removed`
+  );
+}
+
 add_setup(async () => {
   Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
   Services.prefs.setBoolPref("extensions.dnr.enabled", true);
@@ -240,16 +255,7 @@ add_task(async function test_update_individual_static_rules() {
 
   
   
-  const { cacheFile } = dnrStore.getFilePaths(extension.uuid);
-  ok(
-    await IOUtils.exists(cacheFile),
-    `Expect a DNRStore cache file found at ${cacheFile}`
-  );
-  await IOUtils.remove(cacheFile);
-  ok(
-    !(await IOUtils.exists(cacheFile)),
-    `Expect a DNRStore cache file ${cacheFile} to be removed`
-  );
+  await dropDNRStartupCache(dnrStore, extension);
 
   
   ExtensionDNRStore._recreateStoreForTesting();
@@ -333,3 +339,227 @@ add_task(async function test_update_individual_static_rules() {
 
   await extension.unload();
 });
+
+add_task(
+  {
+    pref_set: [["extensions.dnr.max_number_of_disabled_static_rules", 5]],
+  },
+  async function test_max_disabled_static_rules_limit() {
+    const { MAX_NUMBER_OF_DISABLED_STATIC_RULES } = ExtensionDNRLimits;
+
+    const dnrRuleCommon = {
+      action: { type: "block" },
+      condition: {
+        resourceTypes: ["xmlhttprequest"],
+        requestDomains: ["example.com"],
+      },
+    };
+    const ruleset1 = [];
+    const ruleset2 = [];
+
+    for (let i = 0; i < MAX_NUMBER_OF_DISABLED_STATIC_RULES + 1; i++) {
+      const id = i + 1;
+      ruleset1.push(getDNRRule({ ...dnrRuleCommon, id }));
+      ruleset2.push(getDNRRule({ ...dnrRuleCommon, id }));
+    }
+
+    const rule_resources = [
+      {
+        id: "ruleset1",
+        enabled: false,
+        path: "ruleset1.json",
+      },
+      {
+        id: "ruleset2",
+        enabled: true,
+        path: "ruleset2.json",
+      },
+    ];
+
+    const files = {
+      "ruleset1.json": JSON.stringify(ruleset1),
+      "ruleset2.json": JSON.stringify(ruleset2),
+    };
+
+    const extension = ExtensionTestUtils.loadExtension(
+      getDNRExtension({
+        id: "max-disabled-static-rules-limit@xpcshell",
+        rule_resources,
+        files,
+      })
+    );
+
+    await extension.startup();
+    await extension.awaitMessage("bgpage:ready");
+
+    
+    await assertDNRGetEnabledRulesets(extension, ["ruleset2"]);
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset1" }, []);
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset2" }, []);
+
+    
+    extension.sendMessage("updateStaticRules", {
+      rulesetId: "ruleset1",
+      disableRuleIds: [1],
+    });
+    await extension.awaitMessage("updateStaticRules:done");
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset1" }, [
+      1,
+    ]);
+
+    extension.sendMessage("updateStaticRules", {
+      rulesetId: "ruleset2",
+      disableRuleIds: [2],
+    });
+    await extension.awaitMessage("updateStaticRules:done");
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset2" }, [
+      2,
+    ]);
+
+    
+    const rejectedWithErrorMessage =
+      "Number of individually disabled static rules exceeds MAX_NUMBER_OF_DISABLED_STATIC_RULES limit";
+
+    extension.sendMessage("updateStaticRules", {
+      rulesetId: "ruleset1",
+      disableRuleIds: ruleset1.map(rule => rule.id),
+    });
+    Assert.deepEqual(
+      await extension.awaitMessage("updateStaticRules:done"),
+      [{ rejectedWithErrorMessage }],
+      "Got the expected error rejected by updateStaticRules exceeding limit on disabled ruleset"
+    );
+
+    extension.sendMessage("updateStaticRules", {
+      rulesetId: "ruleset2",
+      disableRuleIds: ruleset1.map(rule => rule.id),
+    });
+    Assert.deepEqual(
+      await extension.awaitMessage("updateStaticRules:done"),
+      [{ rejectedWithErrorMessage }],
+      "Got the expected error rejected by updateStaticRules exceeding limit on enabled ruleset"
+    );
+
+    
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset1" }, [
+      1,
+    ]);
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset2" }, [
+      2,
+    ]);
+
+    info(
+      "Verify custom limit enforced when loading the DNR store data again (startup cache)"
+    );
+    
+    extension.sendMessage("updateStaticRules", {
+      rulesetId: "ruleset1",
+      disableRuleIds: [1, 2, 3, 4],
+    });
+    await extension.awaitMessage("updateStaticRules:done");
+    
+    await assertDNRGetDisabledRuleIds(
+      extension,
+      { rulesetId: "ruleset1" },
+      [1, 2, 3, 4]
+    );
+
+    
+    let dnrStore = ExtensionDNRStore._getStoreForTesting();
+    await dnrStore.waitSaveCacheDataForTesting();
+
+    await AddonTestUtils.promiseShutdownManager();
+
+    
+    
+    Services.prefs.setIntPref(
+      "extensions.dnr.max_number_of_disabled_static_rules",
+      2
+    );
+
+    
+    ExtensionDNRStore._recreateStoreForTesting();
+
+    await AddonTestUtils.promiseStartupManager();
+
+    await extension.awaitStartup();
+    await extension.awaitMessage("bgpage:ready");
+
+    
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset1" }, []);
+
+    
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset2" }, [
+      2,
+    ]);
+
+    
+    
+    info(
+      "Verify custom limit enforced when loading the DNR store data again (JSON store)"
+    );
+    
+    Services.prefs.setIntPref(
+      "extensions.dnr.max_number_of_disabled_static_rules",
+      5
+    );
+
+    
+    extension.sendMessage("updateStaticRules", {
+      rulesetId: "ruleset2",
+      disableRuleIds: [2, 3, 4, 5],
+    });
+    await extension.awaitMessage("updateStaticRules:done");
+    
+    extension.sendMessage("updateStaticRules", {
+      rulesetId: "ruleset1",
+      disableRuleIds: [3],
+    });
+    await extension.awaitMessage("updateStaticRules:done");
+
+    
+    await assertDNRGetDisabledRuleIds(
+      extension,
+      { rulesetId: "ruleset2" },
+      [2, 3, 4, 5]
+    );
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset1" }, [
+      3,
+    ]);
+
+    
+    dnrStore = ExtensionDNRStore._getStoreForTesting();
+    await dnrStore.waitSaveCacheDataForTesting();
+
+    await AddonTestUtils.promiseShutdownManager();
+
+    
+    
+    await dropDNRStartupCache(dnrStore, extension);
+
+    
+    
+    Services.prefs.setIntPref(
+      "extensions.dnr.max_number_of_disabled_static_rules",
+      2
+    );
+
+    
+    ExtensionDNRStore._recreateStoreForTesting();
+
+    await AddonTestUtils.promiseStartupManager();
+
+    await extension.awaitStartup();
+    await extension.awaitMessage("bgpage:ready");
+
+    
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset2" }, []);
+
+    
+    await assertDNRGetDisabledRuleIds(extension, { rulesetId: "ruleset1" }, [
+      3,
+    ]);
+
+    await extension.unload();
+  }
+);
