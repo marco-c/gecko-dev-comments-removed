@@ -48,6 +48,10 @@ add_task(async function test_events_prevented() {
       await helper.clickTestPageElement();
 
       
+      await mouse.over(100, 100);
+      await mouse.out(100, 100);
+
+      
       await mouse.dblclick(100, 100);
       await mouse.auxclick(100, 100, { button: 1 });
       await mouse.click(100, 100);
