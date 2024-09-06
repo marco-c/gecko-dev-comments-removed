@@ -184,20 +184,7 @@ struct SecondsAndNanoseconds {
   
 
 
-
-
-
-  constexpr mozilla::CheckedInt64 toNanoseconds() const {
-    mozilla::CheckedInt64 nanos = seconds;
-    nanos *= ToNanoseconds(TemporalUnit::Second);
-    nanos += nanoseconds;
-    return nanos;
-  }
-
-  
-
-
-  constexpr Int128 toTotalNanoseconds() const {
+  constexpr Int128 toNanoseconds() const {
     return Int128{seconds} * Int128{ToNanoseconds(TemporalUnit::Second)} +
            Int128{nanoseconds};
   }

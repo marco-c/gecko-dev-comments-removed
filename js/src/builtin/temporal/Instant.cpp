@@ -625,9 +625,8 @@ static Instant RoundNumberToIncrementAsIfPositive(
 
   
   
-  auto rounded =
-      RoundNumberToIncrement(x.toTotalNanoseconds(), Int128{increment},
-                             ToPositiveRoundingMode(roundingMode));
+  auto rounded = RoundNumberToIncrement(x.toNanoseconds(), Int128{increment},
+                                        ToPositiveRoundingMode(roundingMode));
   return Instant::fromNanoseconds(rounded);
 }
 
