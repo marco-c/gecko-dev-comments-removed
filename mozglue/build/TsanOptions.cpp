@@ -315,6 +315,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:libvulkan_lvp.so\n"
 
+         
+         
+         "race:LaunchAppWithForkServer\n"
+
       
       ;  
 }
