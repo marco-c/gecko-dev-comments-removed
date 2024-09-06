@@ -105,6 +105,9 @@ restart:
     
     case ParseNodeKind::LetDecl:
     case ParseNodeKind::ConstDecl:
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    case ParseNodeKind::UsingDecl:
+#endif
       MOZ_ASSERT(node->is<ListNode>());
       *result = false;
       return true;
