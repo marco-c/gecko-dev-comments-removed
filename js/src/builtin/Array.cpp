@@ -22,6 +22,7 @@
 #include "jsnum.h"
 #include "jstypes.h"
 
+#include "builtin/SelfHostingDefines.h"
 #include "ds/Sort.h"
 #include "jit/InlinableNatives.h"
 #include "jit/TrampolineNatives.h"
@@ -958,7 +959,7 @@ static SharedShape* AddLengthProperty(JSContext* cx,
                                       map, mapLength, objectFlags);
 }
 
-static bool IsArrayConstructor(const JSObject* obj) {
+bool js::IsArrayConstructor(const JSObject* obj) {
   
   
   return IsNativeFunction(obj, ArrayConstructor);
@@ -4247,6 +4248,11 @@ static bool array_of(JSContext* cx, unsigned argc, Value* vp) {
     
     
     return ArrayFromCallArgs(cx, args);
+  }
+
+  if (!ReportUsageCounter(cx, nullptr, SUBCLASSING_ARRAY,
+                          SUBCLASSING_TYPE_II)) {
+    return false;
   }
 
   

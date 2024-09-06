@@ -292,6 +292,12 @@ bool IsTupleUnchecked(JSContext* cx, const CallArgs& args);
 bool intrinsic_IsTuple(JSContext* cx, unsigned argc, JS::Value* vp);
 #endif
 
+bool intrinsic_ReportUsageCounter(JSContext* cx, unsigned argc, JS::Value* vp);
+
+
+bool ReportUsageCounter(JSContext* cx, HandleObject constructor,
+                        int32_t builtin, int32_t type);
+
 } 
 
 #endif 
