@@ -1224,6 +1224,18 @@ bool nsBlockFrame::IsInLineClampContext() const {
   return false;
 }
 
+bool nsBlockFrame::MaybeHasFloats() const {
+  if (!mFloats.IsEmpty()) {
+    return true;
+  }
+  if (HasPushedFloats()) {
+    return true;
+  }
+  
+  
+  return HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
+}
+
 
 
 
