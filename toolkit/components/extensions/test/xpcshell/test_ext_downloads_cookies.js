@@ -23,7 +23,7 @@ server.registerPathHandler("/download", (request, response) => {
   let cookies = request.hasHeader("Cookie") ? request.getHeader("Cookie") : "";
   
   
-  response.setHeader("Content-Type", `dummy/x${encodeURIComponent(cookies)}`);
+  response.setHeader("Content-Type", `dummy/${encodeURIComponent(cookies)}`);
   
   response.write("1234567");
 });
@@ -62,7 +62,7 @@ function createDownloadTestExtension(extraPermissions = []) {
         browser.test.assertEq(7, download.fileSize, "download succeeded");
 
         
-        let cookies = decodeURIComponent(download.mime.replace("dummy/x", ""));
+        let cookies = decodeURIComponent(download.mime.replace("dummy/", ""));
         return cookies;
       }
 
