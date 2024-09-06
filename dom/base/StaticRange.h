@@ -76,9 +76,14 @@ class StaticRange : public AbstractRange {
   
   bool mAreStartAndEndInSameTree = false;
 
+  
+  RangeBoundaryIsMutationObserved mIsMutationObserved;
+
  protected:
-  explicit StaticRange(nsINode* aNode)
-      : AbstractRange(aNode,  false) {}
+  explicit StaticRange(nsINode* aNode,
+                       RangeBoundaryIsMutationObserved aIsMutationObserved)
+      : AbstractRange(aNode,  false),
+        mIsMutationObserved(aIsMutationObserved) {}
   virtual ~StaticRange();
 
  public:
