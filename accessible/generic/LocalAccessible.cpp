@@ -1624,6 +1624,14 @@ void LocalAccessible::ApplyARIAState(uint64_t* aState) const {
   *aState |= aria::UniversalStatesFor(element);
 
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
+  if (!roleMapEntry && IsHTMLTableCell() && Role() == roles::GRID_CELL) {
+    
+    
+    
+    
+    roleMapEntry = aria::GetRoleMap(nsGkAtoms::gridcell);
+    MOZ_ASSERT(roleMapEntry, "Should have role map entry for gridcell");
+  }
   if (roleMapEntry) {
     
     
