@@ -501,6 +501,7 @@ class CssLogic {
 
 
 
+
   hasMatchedSelectors(properties) {
     if (!this._matchedRules) {
       this._buildMatchedRules();
@@ -515,7 +516,16 @@ class CssLogic {
         
         
         if (
-          rule.getPropertyValue(property) &&
+          
+          (rule.getPropertyValue(property) ||
+            
+            (property.startsWith("--") &&
+              
+              
+              
+              new RegExp(`${property}[^A-Za-z0-9_-]`).test(
+                rule.domRule.cssText
+              ))) &&
           (status == STATUS.MATCHED ||
             (status == STATUS.PARENT_MATCH &&
               InspectorUtils.isInheritedProperty(
