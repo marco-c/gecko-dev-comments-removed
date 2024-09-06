@@ -893,17 +893,45 @@ const LocalFiraSans = new FontFace(
   const font = await LocalFiraSans.load();
   document.fonts.add(font);
 
+  const errors = [];
   
   
   
-  const data = {
-    ...populateTestCanvases(),
-    ...populateWebGLCanvases(),
-    ...populateFingerprintJSCanvases(),
-    ...populateVoiceList(),
-    ...populateMediaCapabilities(),
-    ...populateAudioFingerprint(),
-  };
+  const data = {};
+  const sources = [
+    populateTestCanvases,
+    populateWebGLCanvases,
+    populateFingerprintJSCanvases,
+    populateVoiceList,
+    populateMediaCapabilities,
+    populateAudioFingerprint,
+  ];
+  
+  
+  
+  for (const source of sources) {
+    try {
+      Object.assign(data, source());
+    } catch (error) {
+      if (error instanceof Error) {
+        const stack = (error.stack ?? "").replaceAll(
+          /@chrome.+?usercharacteristics.js:/g,
+          ""
+        );
+        errors.push(`${source.name}: ${error.toString()} ${stack}`);
+        continue;
+      }
+      
+      const errStr = await (async () => {
+        const asStr = await (async () => error.toString())().catch(() => "");
+        const asJson = await (async () => JSON.stringify(error))().catch(
+          () => ""
+        );
+        return asStr.length > asJson.len ? asStr : asJson;
+      })();
+      errors.push(`${source.name}: ${errStr}`);
+    }
+  }
 
   debug("Awaiting", Object.keys(data).length, "data promises.");
   await Promise.allSettled(Object.values(data));
@@ -916,8 +944,24 @@ const LocalFiraSans = new FontFace(
       debug(key, output[key].length);
     } catch (e) {
       debug("Promise rejected for", key, "Error:", e);
+      if (e instanceof Error) {
+        const stack = (e.stack ?? "").replaceAll(
+          /@chrome.+?usercharacteristics.js:/g,
+          ""
+        );
+        errors.push(`${key}: ${e.toString()} ${stack}`);
+        continue;
+      }
+      
+      const errStr = await (async () => {
+        const asStr = await (async () => e.toString())().catch(() => "");
+        const asJson = await (async () => JSON.stringify(e))().catch(() => "");
+        return asStr.length > asJson.len ? asStr : asJson;
+      })();
+      errors.push(`${key}: ${errStr}`);
     }
   }
+  output.jsErrors = JSON.stringify(errors);
 
   document.dispatchEvent(
     new CustomEvent("UserCharacteristicsDataDone", {
