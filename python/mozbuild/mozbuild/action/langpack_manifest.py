@@ -26,7 +26,6 @@ import mozpack.path as mozpath
 import mozversioncontrol
 import requests
 from fluent.syntax.parser import FluentParser
-from hglib.error import ServerError
 from mozpack.chrome.manifest import Manifest, ManifestLocale, parse_manifest
 from redo import retry
 
@@ -119,16 +118,7 @@ def get_dt_from_hg(path):
 def get_timestamp_for_locale(path):
     dt = None
     if os.path.isdir(os.path.join(path, ".hg")):
-        dt = None
-        
-        try:
-            dt = get_dt_from_hg(path)
-        except ServerError as se:
-            
-            
-            
-            if "sharedpath points to nonexistent directory" not in str(se):
-                raise se
+        dt = get_dt_from_hg(path)
 
     if dt is None:
         dt = get_build_date()

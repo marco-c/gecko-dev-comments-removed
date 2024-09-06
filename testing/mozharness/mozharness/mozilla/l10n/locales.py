@@ -4,7 +4,8 @@
 
 
 
-"""Localization."""
+"""Localization.
+"""
 
 import os
 import pprint
@@ -21,6 +22,7 @@ class LocalesMixin(object):
         """
         self.abs_dirs = None
         self.locales = None
+        self.gecko_locale_revisions = None
         self.l10n_revisions = {}
 
     def query_locales(self):
@@ -136,53 +138,34 @@ class LocalesMixin(object):
         return self.abs_dirs
 
     
-    def pull_locale_source(self, hg_l10n_base=None, parent_dir=None):
+    def pull_locale_source(self, hg_l10n_base=None, parent_dir=None, vcs="hg"):
         c = self.config
-        git_repository = c["git_repository"]
         if not hg_l10n_base:
             hg_l10n_base = c["hg_l10n_base"]
         if parent_dir is None:
             parent_dir = self.query_abs_dirs()["abs_l10n_dir"]
         self.mkdir_p(parent_dir)
+        
+        
+        if c.get("l10n_repos"):
+            repos = c.get("l10n_repos")
+            self.vcs_checkout_repos(repos, tag_override=c.get("tag_override"))
+        
         locales = self.query_locales()
         locale_repos = []
-        if git_repository:
-            
-            
-            
-            
-            
-            
-            
-            revisions = set(self.l10n_revisions.values())
-            if len(revisions) != 1:
-                raise Exception(
-                    "All l10n revisions must be the same when pulling from a git repository!"
-                )
-
-            self.vcs_checkout(
-                vcs="gittool",
-                repo=git_repository,
-                dest=parent_dir,
-                revision=revisions.pop(),
+        for locale in locales:
+            tag = c.get("hg_l10n_tag", "default")
+            if self.l10n_revisions.get(locale):
+                tag = self.l10n_revisions[locale]
+            locale_repos.append(
+                {"repo": "%s/%s" % (hg_l10n_base, locale), "branch": tag, "vcs": vcs}
             )
-        else:
-            locale_repos = []
-            for locale in locales:
-                tag = c.get("hg_l10n_tag", "default")
-                if self.l10n_revisions.get(locale):
-                    tag = self.l10n_revisions[locale]
-                locale_repos.append(
-                    {
-                        "repo": "%s/%s" % (hg_l10n_base, locale),
-                        "branch": tag,
-                        "vcs": "hg",
-                    }
-                )
-            self.vcs_checkout_repos(
-                repo_list=locale_repos,
-                parent_dir=parent_dir,
-            )
+        revs = self.vcs_checkout_repos(
+            repo_list=locale_repos,
+            parent_dir=parent_dir,
+            tag_override=c.get("tag_override"),
+        )
+        self.gecko_locale_revisions = revs
 
 
 
