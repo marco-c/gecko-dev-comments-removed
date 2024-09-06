@@ -36,6 +36,7 @@
 #include "gc/WeakMap-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
+#include "vm/StringType-inl.h"
 
 using namespace js;
 
@@ -104,6 +105,17 @@ JSString* js::CopyStringPure(JSContext* cx, JSString* str) {
   size_t len = str->length();
   JSString* copy;
   if (str->isLinear()) {
+    
+    if (str->hasStringBuffer()) {
+      RefPtr<mozilla::StringBuffer> buffer(str->asLinear().stringBuffer());
+      if (str->hasLatin1Chars()) {
+        return JSLinearString::newValidLength<CanGC, Latin1Char>(
+            cx, std::move(buffer), len, gc::Heap::Default);
+      }
+      return JSLinearString::newValidLength<CanGC, char16_t>(
+          cx, std::move(buffer), len, gc::Heap::Default);
+    }
+
     
     if (str->hasLatin1Chars()) {
       JS::AutoCheckCannotGC nogc;
