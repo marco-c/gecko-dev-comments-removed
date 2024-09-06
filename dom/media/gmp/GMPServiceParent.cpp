@@ -312,15 +312,19 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
   } else if (!strcmp(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID, aTopic)) {
     mXPCOMWillShutdown = true;
   } else if (!strcmp("last-pb-context-exited", aTopic)) {
-    GMP_LOG_DEBUG("Received 'last-pb-context-exited', clear temporary node");
+    GMP_LOG_DEBUG(
+        "Received 'last-pb-context-exited', clearing temporary node and "
+        "storage");
     
     
     
     
     
     mTempNodeIds.Clear();
+    mTempGMPStorage.Clear();
   } else if (!strcmp("browser:purge-session-history", aTopic)) {
-    GMP_LOG_DEBUG("Received 'browser:purge-session-history', clear everything");
+    GMP_LOG_DEBUG(
+        "Received 'browser:purge-session-history', clearing everything");
     
     if (!aSomeData || nsDependentString(aSomeData).IsEmpty()) {
       return GMPDispatch(NewRunnableMethod(
