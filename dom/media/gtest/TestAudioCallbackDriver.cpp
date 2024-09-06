@@ -411,13 +411,14 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   });
 #endif
   EXPECT_CALL(*graph, NotifyInputData(_, 0, rate, 1, _)).Times(AnyNumber());
-  EXPECT_CALL(*graph, DeviceChanged);
 
   graph->SetCurrentDriver(driver);
   graph->SetEnsureNextIteration(true);
+  auto initPromise = TakeN(cubeb->StreamInitEvent(), 1);
   
   driver->Start();
-  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
+  RefPtr<SmartMockCubebStream> stream;
+  std::tie(stream) = WaitFor(initPromise).unwrap()[0];
 
   
   
@@ -427,43 +428,91 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   MOZ_ALWAYS_SUCCEEDS(SyncRunnable::DispatchToThread(
       cubebOpThread, NS_NewRunnableFunction(__func__, [] {})));
 
-#ifdef DEBUG
-  AutoSetter as(threadInDriverIteration, std::this_thread::get_id());
-#endif
+  initPromise = TakeN(cubeb->StreamInitEvent(), 1);
+  Monitor mon(__func__);
+  MonitorAutoLock lock(mon);
+  bool canContinueToStartNextDriver = false;
+  bool continued = false;
 
   
-  EXPECT_EQ(stream->ManualDataCallback(0),
+  EXPECT_EQ(stream->ManualDataCallback(1),
             MockCubebStream::KeepProcessing::Yes);
 
   
   
   
   
+  
+  
+  
+  
+  
 
   
-  {
-    Monitor mon(__func__);
-    MonitorAutoLock lock(mon);
-    bool switched = false;
-    graph->SwitchTo(newDriver, NS_NewRunnableFunction(__func__, [&] {
-                      MonitorAutoLock lock(mon);
-                      switched = true;
-                      lock.Notify();
-                    }));
-    while (!switched) {
-      lock.Wait();
-    }
+  
+  graph->SwitchTo(newDriver, NS_NewRunnableFunction(__func__, [&] {
+                    MonitorAutoLock lock(mon);
+                    
+                    
+                    
+                    while (!canContinueToStartNextDriver) {
+                      lock.Wait();
+                    }
+                    
+                    
+                    continued = true;
+                    lock.Notify();
+                  }));
+
+  
+  while (driver->OnFallback()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
-  {
+  if (driver->HasFallback()) {
+    
+    
+
+    EXPECT_CALL(*graph, DeviceChanged);
+
+    {
 #ifdef DEBUG
-    AutoSetter as(threadInDriverIteration, std::thread::id());
+      AutoSetter as(threadInDriverIteration, std::thread::id());
 #endif
-    
-    
-    
-    AudioCallbackDriver::DeviceChangedCallback_s(driver);
+      
+      
+      
+      AudioCallbackDriver::DeviceChangedCallback_s(driver);
+    }
+
+    EXPECT_FALSE(driver->OnFallback())
+        << "DeviceChangedCallback after stopping must not start the "
+           "fallback driver again";
   }
+
+  
+  
+  
+  
+  NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+      "DeviceChangeAfterStop::postSwitchManualAudioCallback", [stream] {
+        
+        EXPECT_EQ(stream->ManualDataCallback(1),
+                  MockCubebStream::KeepProcessing::No);
+      }));
+
+  
+  canContinueToStartNextDriver = true;
+  lock.Notify();
+
+  
+  
+  while (!continued) {
+    lock.Wait();
+  }
+
+  
+  std::tie(stream) = WaitFor(initPromise).unwrap()[0];
 
   graph->StopIterating();
   newDriver->EnsureNextIteration();
@@ -471,9 +520,14 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
-  
-  MOZ_KnownLive(driver)->Shutdown();
-  MOZ_KnownLive(newDriver)->Shutdown();
+  {
+#ifdef DEBUG
+    AutoSetter as(threadInDriverIteration, std::thread::id());
+#endif
+    EXPECT_EQ(stream->ManualDataCallback(1),
+              MockCubebStream::KeepProcessing::No);
+  }
+
   
   NS_ProcessPendingEvents(nullptr);
 }

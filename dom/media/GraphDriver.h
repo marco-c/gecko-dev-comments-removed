@@ -632,6 +632,9 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   TimeDuration AudioOutputLatency();
 
   
+
+  bool HasFallback() const;
+  
   bool OnFallback() const;
 
  private:
