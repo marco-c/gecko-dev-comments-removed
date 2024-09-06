@@ -1986,6 +1986,9 @@ pref("dom.ipc.processCount.webIsolated", 4);
 #endif
 
 
+pref("dom.ipc.processCount.inference", 1);
+
+
 
 
 pref("dom.ipc.keepProcessesAlive.privilegedabout", 1);

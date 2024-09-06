@@ -531,6 +531,9 @@ var View = {
         case "utility":
           fluentName = "about-processes-utility-process";
           break;
+        case "inference":
+          fluentName = "about-processes-inference-process";
+          break;
         
         
         
