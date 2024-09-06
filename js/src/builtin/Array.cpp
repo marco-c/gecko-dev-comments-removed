@@ -983,6 +983,11 @@ bool js::IsCrossRealmArrayConstructor(JSContext* cx, JSObject* obj,
   return true;
 }
 
+
+
+
+
+
 static MOZ_ALWAYS_INLINE bool IsArraySpecies(JSContext* cx,
                                              HandleObject origArray) {
   if (MOZ_UNLIKELY(origArray->is<ProxyObject>())) {
