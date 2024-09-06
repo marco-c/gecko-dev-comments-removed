@@ -3291,7 +3291,7 @@ void Element::DispatchChromeOnlyLinkClickEvent(
        true, nsGlobalWindowInner::Cast(doc->GetInnerWindow()),
       0, mouseEvent->CtrlKey(), mouseEvent->AltKey(), mouseEvent->ShiftKey(),
       mouseEvent->MetaKey(), mouseEvent->Button(), mouseDOMEvent,
-      mouseEvent->InputSource(), IgnoreErrors());
+      mouseEvent->InputSource(CallerType::System), IgnoreErrors());
   
   
   
