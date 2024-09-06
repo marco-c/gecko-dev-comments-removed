@@ -358,12 +358,6 @@ void VideoAdapter::OnSinkWants(const rtc::VideoSinkWants& sink_wants) {
   
   
   
-  if (webrtc::field_trial::IsDisabled(
-          "WebRTC-Video-RequestedResolutionOverrideOutputFormatRequest")) {
-    
-    return;
-  }
-
   if (!sink_wants.requested_resolution) {
     if (stashed_output_format_request_) {
       
