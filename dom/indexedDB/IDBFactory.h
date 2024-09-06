@@ -77,11 +77,16 @@ class IDBFactory final : public GlobalTeardownObserver, public nsWrapperCache {
   uint32_t mActiveTransactionCount;
   uint32_t mActiveDatabaseCount;
 
+  
+  
+  
+  
+  bool mAllowed;
   bool mBackgroundActorFailed;
   bool mPrivateBrowsingMode;
 
  public:
-  explicit IDBFactory(const IDBFactoryGuard&);
+  IDBFactory(const IDBFactoryGuard&, bool aAllowed);
 
   static Result<RefPtr<IDBFactory>, nsresult> CreateForWindow(
       nsPIDOMWindowInner* aWindow);
@@ -89,8 +94,9 @@ class IDBFactory final : public GlobalTeardownObserver, public nsWrapperCache {
   static Result<RefPtr<IDBFactory>, nsresult> CreateForMainThreadJS(
       nsIGlobalObject* aGlobal);
 
+  
   static Result<RefPtr<IDBFactory>, nsresult> CreateForWorker(
-      nsIGlobalObject* aGlobal, const PrincipalInfo& aPrincipalInfo,
+      nsIGlobalObject* aGlobal, UniquePtr<PrincipalInfo>&& aPrincipalInfo,
       uint64_t aInnerWindowID);
 
   static bool AllowedForWindow(nsPIDOMWindowInner* aWindow);
