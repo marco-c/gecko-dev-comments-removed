@@ -400,6 +400,11 @@ class StyleRuleActor extends Actor {
       const quirks =
         !userAgent && el && el.ownerDocument.compatMode == "BackCompat";
       const supportsOptions = { userAgent, chrome, quirks };
+
+      const targetDocument =
+        this.pageStyle.inspector.targetActor.window.document;
+      let registeredProperties;
+
       form.declarations = declarations.map(decl => {
         
         
@@ -418,6 +423,35 @@ class StyleRuleActor extends Actor {
 
         if (SharedCssLogic.isCssVariable(decl.name)) {
           decl.isCustomProperty = true;
+
+          
+          
+          
+          if (!registeredProperties) {
+            registeredProperties =
+              InspectorUtils.getCSSRegisteredProperties(targetDocument);
+          }
+          const registeredProperty = registeredProperties.find(
+            prop => prop.name === decl.name
+          );
+          if (
+            registeredProperty &&
+            
+            
+            
+            !decl.value.includes("var(") &&
+            !InspectorUtils.valueMatchesSyntax(
+              targetDocument,
+              decl.value,
+              registeredProperty.syntax
+            )
+          ) {
+            
+            decl.invalidAtComputedValueTime = true;
+            
+            decl.syntax = registeredProperty.syntax;
+          }
+
           
           
           

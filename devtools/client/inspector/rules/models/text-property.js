@@ -396,6 +396,45 @@ class TextProperty {
 
 
 
+  isInvalidAtComputedValueTime() {
+    const declaration = this.#getDomRuleDeclaration();
+    
+    
+    
+    
+    if (!declaration) {
+      return false;
+    }
+
+    return declaration.invalidAtComputedValueTime;
+  }
+
+  
+
+
+
+
+
+  getExpectedSyntax() {
+    const declaration = this.#getDomRuleDeclaration();
+    
+    
+    
+    
+    if (!declaration) {
+      return null;
+    }
+
+    return declaration.syntax;
+  }
+
+  
+
+
+
+
+
+
 
   hasCSSVariable(name) {
     return this.usedVariables.has(name);
