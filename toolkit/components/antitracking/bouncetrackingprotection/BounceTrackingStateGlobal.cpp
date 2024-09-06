@@ -42,6 +42,19 @@ nsresult BounceTrackingStateGlobal::RecordUserActivation(
              __FUNCTION__, PromiseFlatCString(aSiteHost).get()));
   }
 
+  
+  
+  
+  Maybe<PRTime> existingUserActivation = mUserActivation.MaybeGet(aSiteHost);
+  if (existingUserActivation.isSome() &&
+      existingUserActivation.value() >= aTime) {
+    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
+            ("%s: Skip: A more recent user activation "
+             "already exists for %s",
+             __FUNCTION__, PromiseFlatCString(aSiteHost).get()));
+    return NS_OK;
+  }
+
   mUserActivation.InsertOrUpdate(aSiteHost, aTime);
 
   if (aSkipStorage || !ShouldPersistToDisk()) {
