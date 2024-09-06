@@ -3134,13 +3134,21 @@ class nsIFrame : public nsQueryFrame {
   
   bool HasView() const { return !!(mState & NS_FRAME_HAS_VIEW); }
 
+  template <typename SizeOrMaxSize>
+  static inline bool IsIntrinsicKeyword(const SizeOrMaxSize& aSize) {
+    
+    
+    return aSize.IsMaxContent() || aSize.IsMinContent() ||
+           aSize.IsFitContent() || aSize.IsFitContentFunction();
+  }
+
   
   
   bool HasIntrinsicKeywordForBSize() const {
     const auto& bSize = StylePosition()->BSize(GetWritingMode());
-    return bSize.IsFitContent() || bSize.IsMinContent() ||
-           bSize.IsMaxContent() || bSize.IsFitContentFunction();
+    return IsIntrinsicKeyword(bSize);
   }
+
   
 
 
