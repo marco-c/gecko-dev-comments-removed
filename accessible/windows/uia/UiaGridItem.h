@@ -16,7 +16,7 @@ class TableCellAccessible;
 
 
 
-class UiaGridItem : public IGridItemProvider {
+class UiaGridItem : public IGridItemProvider, public ITableItemProvider {
  public:
   
   virtual  HRESULT STDMETHODCALLTYPE get_Row(
@@ -34,6 +34,13 @@ class UiaGridItem : public IGridItemProvider {
   virtual  HRESULT STDMETHODCALLTYPE get_ContainingGrid(
        __RPC__deref_out_opt IRawElementProviderSimple**
           aRetVal);
+
+  
+  virtual HRESULT STDMETHODCALLTYPE GetRowHeaderItems(
+       __RPC__deref_out_opt SAFEARRAY** aRetVal);
+
+  virtual HRESULT STDMETHODCALLTYPE GetColumnHeaderItems(
+       __RPC__deref_out_opt SAFEARRAY** aRetVal);
 
  private:
   TableCellAccessible* CellAcc();
