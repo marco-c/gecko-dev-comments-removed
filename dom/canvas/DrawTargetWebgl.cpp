@@ -39,129 +39,6 @@
 
 namespace mozilla::gfx {
 
-
-Maybe<IntPoint> TexturePacker::Insert(const IntSize& aSize) {
-  
-  
-  if (mAvailable < std::min(aSize.width, aSize.height) ||
-      mBounds.width < aSize.width || mBounds.height < aSize.height) {
-    return Nothing();
-  }
-  if (mChildren) {
-    
-    
-    Maybe<IntPoint> inserted = mChildren[0].Insert(aSize);
-    if (!inserted) {
-      inserted = mChildren[1].Insert(aSize);
-    }
-    
-    
-    if (inserted) {
-      mAvailable = std::max(mChildren[0].mAvailable, mChildren[1].mAvailable);
-      if (!mAvailable) {
-        DiscardChildren();
-      }
-    }
-    return inserted;
-  }
-  
-  
-  
-  if (mBounds.Size() == aSize) {
-    mAvailable = 0;
-    return Some(mBounds.TopLeft());
-  }
-  
-  
-  
-  if (mBounds.width - aSize.width > mBounds.height - aSize.height) {
-    mChildren.reset(new TexturePacker[2]{
-        TexturePacker(
-            IntRect(mBounds.x, mBounds.y, aSize.width, mBounds.height)),
-        TexturePacker(IntRect(mBounds.x + aSize.width, mBounds.y,
-                              mBounds.width - aSize.width, mBounds.height))});
-  } else {
-    mChildren.reset(new TexturePacker[2]{
-        TexturePacker(
-            IntRect(mBounds.x, mBounds.y, mBounds.width, aSize.height)),
-        TexturePacker(IntRect(mBounds.x, mBounds.y + aSize.height,
-                              mBounds.width, mBounds.height - aSize.height))});
-  }
-  
-  
-  
-  Maybe<IntPoint> inserted = mChildren[0].Insert(aSize);
-  mAvailable = std::max(mChildren[0].mAvailable, mChildren[1].mAvailable);
-  return inserted;
-}
-
-
-bool TexturePacker::Remove(const IntRect& aBounds) {
-  if (!mChildren) {
-    
-    
-    
-    
-    
-    if (mAvailable > 0 || !mBounds.Contains(aBounds)) {
-      return false;
-    }
-    
-    
-    if (mBounds == aBounds) {
-      mAvailable = std::min(mBounds.width, mBounds.height);
-      return true;
-    }
-    
-    
-    
-    
-    
-    
-    if (mBounds.width - aBounds.width > mBounds.height - aBounds.height) {
-      int split = aBounds.x - mBounds.x > mBounds.XMost() - aBounds.XMost()
-                      ? aBounds.x
-                      : aBounds.XMost();
-      mChildren.reset(new TexturePacker[2]{
-          TexturePacker(
-              IntRect(mBounds.x, mBounds.y, split - mBounds.x, mBounds.height),
-              false),
-          TexturePacker(IntRect(split, mBounds.y, mBounds.XMost() - split,
-                                mBounds.height),
-                        false)});
-    } else {
-      int split = aBounds.y - mBounds.y > mBounds.YMost() - aBounds.YMost()
-                      ? aBounds.y
-                      : aBounds.YMost();
-      mChildren.reset(new TexturePacker[2]{
-          TexturePacker(
-              IntRect(mBounds.x, mBounds.y, mBounds.width, split - mBounds.y),
-              false),
-          TexturePacker(
-              IntRect(mBounds.x, split, mBounds.width, mBounds.YMost() - split),
-              false)});
-    }
-  }
-  
-  
-  
-  
-  
-  bool next = mChildren[0].mBounds.x < mChildren[1].mBounds.x
-                  ? aBounds.x >= mChildren[1].mBounds.x
-                  : aBounds.y >= mChildren[1].mBounds.y;
-  bool removed = mChildren[next ? 1 : 0].Remove(aBounds);
-  if (removed) {
-    if (mChildren[0].IsFullyAvailable() && mChildren[1].IsFullyAvailable()) {
-      DiscardChildren();
-      mAvailable = std::min(mBounds.width, mBounds.height);
-    } else {
-      mAvailable = std::max(mChildren[0].mAvailable, mChildren[1].mAvailable);
-    }
-  }
-  return removed;
-}
-
 BackingTexture::BackingTexture(const IntSize& aSize, SurfaceFormat aFormat,
                                const RefPtr<WebGLTexture>& aTexture)
     : mSize(aSize), mFormat(aFormat), mTexture(aTexture) {}
@@ -169,30 +46,48 @@ BackingTexture::BackingTexture(const IntSize& aSize, SurfaceFormat aFormat,
 SharedTexture::SharedTexture(const IntSize& aSize, SurfaceFormat aFormat,
                              const RefPtr<WebGLTexture>& aTexture)
     : BackingTexture(aSize, aFormat, aTexture),
-      mPacker(IntRect(IntPoint(0, 0), aSize)) {}
+      mAtlasAllocator(
+          Etagere::etagere_atlas_allocator_new(aSize.width, aSize.height)) {}
 
-SharedTextureHandle::SharedTextureHandle(const IntRect& aBounds,
+SharedTexture::~SharedTexture() {
+  if (mAtlasAllocator) {
+    Etagere::etagere_atlas_allocator_delete(mAtlasAllocator);
+    mAtlasAllocator = nullptr;
+  }
+}
+
+SharedTextureHandle::SharedTextureHandle(Etagere::AllocationId aId,
+                                         const IntRect& aBounds,
                                          SharedTexture* aTexture)
-    : mBounds(aBounds), mTexture(aTexture) {}
+    : mAllocationId(aId), mBounds(aBounds), mTexture(aTexture) {}
 
 already_AddRefed<SharedTextureHandle> SharedTexture::Allocate(
     const IntSize& aSize) {
-  RefPtr<SharedTextureHandle> handle;
-  if (Maybe<IntPoint> origin = mPacker.Insert(aSize)) {
-    handle = new SharedTextureHandle(IntRect(*origin, aSize), this);
-    ++mAllocatedHandles;
+  Etagere::Allocation alloc = {{0, 0, 0, 0}, Etagere::INVALID_ALLOCATION_ID};
+  if (!mAtlasAllocator ||
+      !Etagere::etagere_atlas_allocator_allocate(mAtlasAllocator, aSize.width,
+                                                 aSize.height, &alloc) ||
+      alloc.id == Etagere::INVALID_ALLOCATION_ID) {
+    return nullptr;
   }
+  RefPtr<SharedTextureHandle> handle = new SharedTextureHandle(
+      alloc.id,
+      IntRect(IntPoint(alloc.rectangle.min_x, alloc.rectangle.min_y), aSize),
+      this);
   return handle.forget();
 }
 
-bool SharedTexture::Free(const SharedTextureHandle& aHandle) {
+bool SharedTexture::Free(SharedTextureHandle& aHandle) {
   if (aHandle.mTexture != this) {
     return false;
   }
-  if (!mPacker.Remove(aHandle.mBounds)) {
-    return false;
+  if (aHandle.mAllocationId != Etagere::INVALID_ALLOCATION_ID) {
+    if (mAtlasAllocator) {
+      Etagere::etagere_atlas_allocator_deallocate(mAtlasAllocator,
+                                                  aHandle.mAllocationId);
+    }
+    aHandle.mAllocationId = Etagere::INVALID_ALLOCATION_ID;
   }
-  --mAllocatedHandles;
   return true;
 }
 

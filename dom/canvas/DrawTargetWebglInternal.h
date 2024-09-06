@@ -10,46 +10,11 @@
 #include "DrawTargetWebgl.h"
 
 #include "mozilla/HashFunctions.h"
+#include "mozilla/gfx/Etagere.h"
 #include "mozilla/gfx/PathSkia.h"
 #include "mozilla/gfx/WPFGpuRaster.h"
 
 namespace mozilla::gfx {
-
-
-
-
-
-class TexturePacker {
- public:
-  explicit TexturePacker(const IntRect& aBounds, bool aAvailable = true)
-      : mBounds(aBounds),
-        mAvailable(aAvailable ? std::min(aBounds.width, aBounds.height) : 0) {}
-
-  Maybe<IntPoint> Insert(const IntSize& aSize);
-
-  bool Remove(const IntRect& aBounds);
-
-  const IntRect& GetBounds() const { return mBounds; }
-
- private:
-  bool IsLeaf() const { return !mChildren; }
-  bool IsFullyAvailable() const { return IsLeaf() && mAvailable > 0; }
-
-  void DiscardChildren() { mChildren.reset(); }
-
-  
-  
-  UniquePtr<TexturePacker[]> mChildren;
-  
-  IntRect mBounds;
-  
-  
-  
-  
-  
-  
-  int mAvailable = 0;
-};
 
 
 
@@ -257,15 +222,18 @@ class SharedTexture : public RefCounted<SharedTexture>, public BackingTexture {
 
   SharedTexture(const IntSize& aSize, SurfaceFormat aFormat,
                 const RefPtr<WebGLTexture>& aTexture);
+  ~SharedTexture();
 
   already_AddRefed<SharedTextureHandle> Allocate(const IntSize& aSize);
-  bool Free(const SharedTextureHandle& aHandle);
+  bool Free(SharedTextureHandle& aHandle);
 
-  bool HasAllocatedHandles() const { return mAllocatedHandles > 0; }
+  bool HasAllocatedHandles() const {
+    return mAtlasAllocator && Etagere::etagere_atlas_allocator_allocated_space(
+                                  mAtlasAllocator) > 0;
+  }
 
  private:
-  TexturePacker mPacker;
-  size_t mAllocatedHandles = 0;
+  Etagere::AtlasAllocator* mAtlasAllocator = nullptr;
 };
 
 
@@ -276,7 +244,8 @@ class SharedTextureHandle : public TextureHandle {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SharedTextureHandle, override)
 
-  SharedTextureHandle(const IntRect& aBounds, SharedTexture* aTexture);
+  SharedTextureHandle(Etagere::AllocationId aId, const IntRect& aBounds,
+                      SharedTexture* aTexture);
 
   Type GetType() const override { return Type::SHARED; }
 
@@ -291,6 +260,7 @@ class SharedTextureHandle : public TextureHandle {
   const RefPtr<SharedTexture>& GetOwner() const { return mTexture; }
 
  private:
+  Etagere::AllocationId mAllocationId = Etagere::INVALID_ALLOCATION_ID;
   IntRect mBounds;
   RefPtr<SharedTexture> mTexture;
 };
