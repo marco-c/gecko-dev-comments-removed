@@ -698,17 +698,7 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSContext* aCx)
   JS_SetGCCallback(aCx, GCCallback, this);
   mPrevGCSliceCallback = JS::SetGCSliceCallback(aCx, GCSliceCallback);
 
-  if (NS_IsMainThread()) {
-    
-    
-    
-    
-    
-    
-    
-    JS::AddGCNurseryCollectionCallback(aCx, GCNurseryCollectionCallback,
-                                       nullptr);
-  }
+  JS::AddGCNurseryCollectionCallback(aCx, GCNurseryCollectionCallback, this);
 
   JS_SetObjectsTenuredCallback(aCx, JSObjectsTenuredCb, this);
   JS::SetOutOfMemoryCallback(aCx, OutOfMemoryCallback, this);
@@ -769,10 +759,7 @@ void CycleCollectedJSRuntime::Shutdown(JSContext* aCx) {
 
   JS_SetDestroyZoneCallback(aCx, nullptr);
 
-  if (NS_IsMainThread()) {
-    JS::RemoveGCNurseryCollectionCallback(aCx, GCNurseryCollectionCallback,
-                                          nullptr);
-  }
+  JS::RemoveGCNurseryCollectionCallback(aCx, GCNurseryCollectionCallback, this);
 }
 
 CycleCollectedJSRuntime::~CycleCollectedJSRuntime() {
@@ -1134,9 +1121,8 @@ void CycleCollectedJSRuntime::GCSliceCallback(JSContext* aContext,
 void CycleCollectedJSRuntime::GCNurseryCollectionCallback(
     JSContext* aContext, JS::GCNurseryProgress aProgress, JS::GCReason aReason,
     void* data) {
-  CycleCollectedJSRuntime* self = CycleCollectedJSRuntime::Get();
-  MOZ_ASSERT(CycleCollectedJSContext::Get()->Context() == aContext);
-  MOZ_ASSERT(NS_IsMainThread());
+  CycleCollectedJSRuntime* self = static_cast<CycleCollectedJSRuntime*>(data);
+  MOZ_ASSERT(self->GetContext()->Context() == aContext);
 
   TimeStamp now = TimeStamp::Now();
   if (aProgress == JS::GCNurseryProgress::GC_NURSERY_COLLECTION_START) {
@@ -1684,8 +1670,7 @@ void IncrementalFinalizeRunnable::ReleaseNow(bool aLimited) {
           break;
         }
       } else {
-        while (!function.run(UINT32_MAX, function.data))
-          ;
+        while (!function.run(UINT32_MAX, function.data));
         ++mFinalizeFunctionToRun;
       }
     } while (mFinalizeFunctionToRun < mDeferredFinalizeFunctions.Length());
