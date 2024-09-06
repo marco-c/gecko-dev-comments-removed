@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html><head>
   <meta charset="utf-8">
   <title>CSS Lists: basic tests for 'counter-set'</title>
@@ -18,23 +18,23 @@ span::before { content: counters(n, '.'); }
 </head>
 <body>
 
-<span style="counter-set: n 7"></span>
-<span style="counter-set: n"></span>
-<span style="counter-set: n 8 n 7"></span>
-<span style="counter-set: n 6; counter-increment: n 2"></span>
-<span style="counter-set: n; counter-increment: n 2"></span>
+<span style="counter-set: n 7"></span><!-- "7" -->
+<span style="counter-set: n"></span><!-- "0" -->
+<span style="counter-set: n 8 n 7"></span><!-- "7" -->
+<span style="counter-set: n 6; counter-increment: n 2"></span><!-- "6" -->
+<span style="counter-set: n; counter-increment: n 2"></span><!-- "0" -->
 <x style="counter-reset: n 9">
-  <span style="counter-set: n 2"></span>
+  <span style="counter-set: n 2"></span><!-- "0.2" -->
 </x>
-<span style="counter-increment: n"></span>
+<span style="counter-increment: n"></span><!-- "0.3" -->
 <x style="counter-reset: n 9">
-  <span style="counter-set: n"></span>
-  <span style="counter-set: n 2"></span>
+  <span style="counter-set: n"></span><!-- "0.3.0" -->
+  <span style="counter-set: n 2"></span><!-- "0.3.2" -->
   <x style="counter-reset: n 1">
-    <span style="counter-set: n 5"></span>
+    <span style="counter-set: n 5"></span><!-- "0.3.2.5" -->
   </x>
 </x>
-<span style="counter-increment: n"></span>
+<span style="counter-increment: n"></span><!-- "0.3.3" -->
 
 </body>
 </html>
