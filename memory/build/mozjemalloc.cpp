@@ -1381,7 +1381,8 @@ class ArenaCollection {
 
   
   bool IsOnMainThread() const {
-    return mMainThreadId.isSome() && mMainThreadId.value() == GetThreadId();
+    return mMainThreadId.isSome() &&
+           ThreadIdEqual(mMainThreadId.value(), GetThreadId());
   }
 
   
