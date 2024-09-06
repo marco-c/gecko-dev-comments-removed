@@ -1053,6 +1053,9 @@ class PropertyView {
   matchedSelectorsContainer = null;
 
   
+  #matchedSelectorResponse = null;
+
+  
   matchedExpander = null;
 
   
@@ -1331,7 +1334,7 @@ class PropertyView {
             return;
           }
 
-          this._matchedSelectorResponse = matched;
+          this.#matchedSelectorResponse = matched;
 
           this.#buildMatchedSelectors();
           this.matchedExpander.setAttribute("open", "");
@@ -1375,7 +1378,7 @@ class PropertyView {
   }
 
   get matchedSelectors() {
-    return this._matchedSelectorResponse;
+    return this.#matchedSelectorResponse;
   }
 
   #buildMatchedSelectors() {
@@ -1451,7 +1454,7 @@ class PropertyView {
   get matchedSelectorViews() {
     if (!this.#matchedSelectorViews) {
       this.#matchedSelectorViews = [];
-      this._matchedSelectorResponse.forEach(selectorInfo => {
+      this.#matchedSelectorResponse.forEach(selectorInfo => {
         const selectorView = new SelectorView(this.tree, selectorInfo);
         this.#matchedSelectorViews.push(selectorView);
       }, this);
