@@ -313,10 +313,7 @@ class gfxUserFontSet {
 
   
   
-  uint64_t GetGeneration() {
-    mozilla::RecursiveMutexAutoLock lock(mMutex);
-    return mGeneration;
-  }
+  uint64_t GetGeneration() { return mGeneration; }
 
   
   void IncrementGeneration(bool aIsRebuild = false) {
