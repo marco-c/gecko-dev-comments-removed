@@ -1611,7 +1611,7 @@ static bool WasmLosslessInvoke(JSContext* cx, unsigned argc, Value* vp) {
   if (!wasmCallFrame.resize(len)) {
     return false;
   }
-  wasmCallFrame[0].set(args.calleev());
+  wasmCallFrame[0].set(ObjectValue(*func));
   wasmCallFrame[1].set(args.thisv());
   
   
