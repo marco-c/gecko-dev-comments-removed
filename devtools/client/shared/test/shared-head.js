@@ -282,15 +282,6 @@ Services.prefs.setBoolPref("dom.ipc.processPrelaunch.enabled", false);
 
 
 
-
-Services.prefs.setBoolPref(
-  "javascript.options.asyncstack_capture_debuggee_only",
-  false
-);
-
-
-
-
 Services.prefs.setBoolPref(
   "devtools.inspector.simple-highlighters.message-dismissed",
   true
@@ -304,9 +295,6 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.toolbox.previousHost");
   Services.prefs.clearUserPref("devtools.toolbox.splitconsole.open");
   Services.prefs.clearUserPref("devtools.toolbox.splitconsoleHeight");
-  Services.prefs.clearUserPref(
-    "javascript.options.asyncstack_capture_debuggee_only"
-  );
   Services.prefs.clearUserPref(
     "devtools.inspector.simple-highlighters.message-dismissed"
   );
