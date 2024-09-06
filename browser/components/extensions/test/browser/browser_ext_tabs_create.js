@@ -21,9 +21,6 @@ add_task(async function test_create_options() {
     ],
   });
 
-  
-  Services.perms.removeByType("https-only-load-insecure");
-
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["tabs"],
