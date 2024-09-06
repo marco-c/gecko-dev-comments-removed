@@ -400,7 +400,13 @@ RefPtr<IDBOpenDBRequest> IDBFactory::DeleteDatabase(JSContext* aCx,
                        true, aCallerType, aRv);
 }
 
-already_AddRefed<Promise> IDBFactory::Databases(JSContext* const aCx) {
+already_AddRefed<Promise> IDBFactory::Databases(JSContext* const aCx,
+                                                ErrorResult& aRv) {
+  if (NS_WARN_IF(!GetOwnerGlobal())) {
+    aRv.Throw(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+    return nullptr;
+  }
+
   RefPtr<Promise> promise = Promise::CreateInfallible(GetOwnerGlobal());
 
   
