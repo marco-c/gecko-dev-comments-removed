@@ -47,6 +47,10 @@ SDPUtils.matchPrefix = function(blob, prefix) {
   });
 };
 
+SDPUtils.matchPrefixAndTrim = function(blob, prefix) {
+  return SDPUtils.matchPrefix(blob, prefix).map(l => l.substr(prefix.length).trim());
+}
+
 
 
 
