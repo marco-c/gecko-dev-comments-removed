@@ -155,7 +155,6 @@ class Module : public JS::WasmModule {
 
   const Code& code() const { return *code_; }
   const CodeBlock& code(Tier t) const { return code_->codeBlock(t); }
-  const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
   const ModuleMetadata& moduleMeta() const { return *moduleMeta_; }
   const CodeMetadata& codeMeta() const { return code_->codeMeta(); }
   const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
@@ -163,7 +162,9 @@ class Module : public JS::WasmModule {
   }
   const CustomSectionVector& customSections() const { return customSections_; }
   const Bytes& debugBytecode() const { return debugBytecode_->bytes; }
-  uint32_t codeLength(Tier t) const { return code_->segment(t).length(); }
+  uint32_t codeMemoryUsed(Tier t) const {
+    return code_->segment(t).capacityBytes();
+  }
 
   
 

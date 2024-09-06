@@ -145,8 +145,6 @@ using UniqueCodeBytes = UniquePtr<uint8_t, FreeCode>;
 
 class Code;
 class CodeBlock;
-class ModuleSegment;
-class LazyStubSegment;
 
 using UniqueCodeBlock = UniquePtr<CodeBlock>;
 using UniqueConstCodeBlock = UniquePtr<const CodeBlock>;
@@ -159,145 +157,82 @@ using UniqueCodeBlockVector = Vector<UniqueCodeBlock, 0, SystemAllocPolicy>;
 
 
 
+
+
+
+
+
+
+
+
+
 class CodeSegment : public ShareableBase<CodeSegment> {
- protected:
-  enum class Kind { LazyStubs, Module };
-
-  CodeSegment(UniqueCodeBytes bytes, uint32_t length, Kind kind)
-      : bytes_(std::move(bytes)),
-        length_(length),
-        kind_(kind),
-        code_(nullptr) {}
-
-  bool initialize(const Code& code);
-
  private:
   const UniqueCodeBytes bytes_;
-  const uint32_t length_;
-  const Kind kind_;
+  uint32_t lengthBytes_;
+  const uint32_t capacityBytes_;
   const Code* code_;
 
- public:
-  bool initialized() const { return !!code_; }
+  bool linkAndMakeExecutable(jit::AutoMarkJitCodeWritableForThread& writable,
+                             const LinkData& linkData);
 
-  bool isLazyStubs() const { return kind_ == Kind::LazyStubs; }
-  bool isModule() const { return kind_ == Kind::Module; }
-  const ModuleSegment* asModule() const {
-    MOZ_ASSERT(isModule());
-    return (ModuleSegment*)this;
-  }
-  ModuleSegment* asModule() {
-    MOZ_ASSERT(isModule());
-    return (ModuleSegment*)this;
-  }
-  const LazyStubSegment* asLazyStub() const {
-    MOZ_ASSERT(isLazyStubs());
-    return (LazyStubSegment*)this;
-  }
-  LazyStubSegment* asLazyStub() {
-    MOZ_ASSERT(isLazyStubs());
-    return (LazyStubSegment*)this;
-  }
+ public:
+  CodeSegment(UniqueCodeBytes bytes, uint32_t lengthBytes,
+              uint32_t capacityBytes)
+      : bytes_(std::move(bytes)),
+        lengthBytes_(lengthBytes),
+        capacityBytes_(capacityBytes),
+        code_(nullptr) {}
+
+  static RefPtr<CodeSegment> createEmpty(size_t capacityBytes);
+  static RefPtr<CodeSegment> createFromMasm(jit::MacroAssembler& masm,
+                                            const LinkData& linkData);
+  static RefPtr<CodeSegment> createFromBytes(const uint8_t* unlinkedBytes,
+                                             size_t unlinkedBytesLength,
+                                             const LinkData& linkData);
+
+  void setCode(const Code& code) { code_ = &code; }
 
   uint8_t* base() const { return bytes_.get(); }
-  uint32_t length() const {
-    MOZ_ASSERT(length_ != UINT32_MAX);
-    return length_;
+  uint32_t lengthBytes() const {
+    MOZ_ASSERT(lengthBytes_ != UINT32_MAX);
+    return lengthBytes_;
+  }
+  uint32_t capacityBytes() const {
+    MOZ_ASSERT(capacityBytes_ != UINT32_MAX);
+    return capacityBytes_;
+  }
+
+  static size_t AlignBytesNeeded(size_t bytes) {
+    
+    return AlignBytes(bytes, gc::SystemPageSize());
+  }
+  bool hasSpace(size_t bytes) const {
+    MOZ_ASSERT(AlignBytesNeeded(bytes) == bytes);
+    return bytes <= capacityBytes() && lengthBytes_ <= capacityBytes() - bytes;
+  }
+  void claimSpace(size_t bytes, uint8_t** claimedBase) {
+    MOZ_RELEASE_ASSERT(hasSpace(bytes));
+    *claimedBase = base() + lengthBytes_;
+    lengthBytes_ += bytes;
   }
 
   const Code& code() const { return *code_; }
 
-  void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code) const;
+  void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf, size_t* code,
+                     size_t* data) const;
+  WASM_DECLARE_FRIEND_SERIALIZE(CodeSegment);
 };
 
 using SharedCodeSegment = RefPtr<CodeSegment>;
-
-
-
-using SharedModuleSegment = RefPtr<ModuleSegment>;
-
-class ModuleSegment : public CodeSegment {
-  const Tier tier_;
-  uint8_t* const trapCode_;
-
- public:
-  ModuleSegment(Tier tier, UniqueCodeBytes codeBytes, uint32_t codeLength,
-                const LinkData& linkData);
-
-  static SharedModuleSegment create(Tier tier, jit::MacroAssembler& masm,
-                                    const LinkData& linkData);
-  static SharedModuleSegment create(Tier tier, const Bytes& unlinkedBytes,
-                                    const LinkData& linkData);
-
-  bool initialize(const CodeBlock& codeBlock, const LinkData& linkData,
-                  const CodeMetadata& codeMeta,
-                  const CodeMetadataForAsmJS* codeMetaForAsmJS);
-
-  Tier tier() const { return tier_; }
-
-  const CodeBlock& codeBlock() const;
-
-  
-
-  uint8_t* trapCode() const { return trapCode_; }
-
-  const CodeRange* lookupRange(const void* pc) const;
-
-  void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf, size_t* code,
-                     size_t* data) const;
-
-  WASM_DECLARE_FRIEND_SERIALIZE(ModuleSegment);
-};
+using CodeSegmentVector = Vector<SharedCodeSegment, 0, SystemAllocPolicy>;
 
 extern UniqueCodeBytes AllocateCodeBytes(
     mozilla::Maybe<jit::AutoMarkJitCodeWritableForThread>& writable,
     uint32_t codeLength);
-extern bool StaticallyLink(const ModuleSegment& ms, const LinkData& linkData);
+extern bool StaticallyLink(jit::AutoMarkJitCodeWritableForThread& writable,
+                           uint8_t* base, const LinkData& linkData);
 extern void StaticallyUnlink(uint8_t* base, const LinkData& linkData);
-
-
-
-
-
-
-
-
-
-
-
-
-using SharedLazyStubSegment = RefPtr<LazyStubSegment>;
-using LazyStubSegmentVector =
-    Vector<SharedLazyStubSegment, 0, SystemAllocPolicy>;
-
-class LazyStubSegment : public CodeSegment {
-  CodeRangeVector codeRanges_;
-  size_t usedBytes_;
-
- public:
-  LazyStubSegment(UniqueCodeBytes bytes, size_t length)
-      : CodeSegment(std::move(bytes), length, CodeSegment::Kind::LazyStubs),
-        usedBytes_(0) {}
-
-  static SharedLazyStubSegment create(const Code& code, size_t codeLength);
-
-  static size_t AlignBytesNeeded(size_t bytes) {
-    return AlignBytes(bytes, gc::SystemPageSize());
-  }
-
-  bool hasSpace(size_t bytes) const;
-  [[nodiscard]] bool addStubs(const CodeMetadata& codeMeta, size_t codeLength,
-                              const Uint32Vector& funcExportIndices,
-                              const FuncExportVector& funcExports,
-                              const CodeRangeVector& codeRanges,
-                              uint8_t** codePtr, size_t* offsetInSegment);
-
-  const CodeRangeVector& codeRanges() const { return codeRanges_; }
-  [[nodiscard]] const CodeRange* lookupRange(const void* pc) const;
-
-  void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code,
-                     size_t* data) const;
-};
 
 
 
@@ -328,7 +263,7 @@ using LazyFuncExportVector = Vector<LazyFuncExport, 0, SystemAllocPolicy>;
 
 
 class LazyStubTier {
-  LazyStubSegmentVector stubSegments_;
+  CodeSegmentVector stubSegments_;
   UniqueCodeBlockVector codeBlocks_;
   LazyFuncExportVector exports_;
 
@@ -383,6 +318,7 @@ class CodeBlock {
 
   
   SharedCodeSegment segment;
+  
   const uint8_t* codeBase;
   size_t codeLength;
 
@@ -420,10 +356,9 @@ class CodeBlock {
   explicit CodeBlock(Tier tier) : CodeBlock(kindFromTier(tier)) {}
   ~CodeBlock();
 
-  bool initialized() const { return !!code && segment->initialized(); }
-  bool initialize(const Code& code, const LinkData* linkData,
-                  const CodeMetadata& codeMeta,
-                  const CodeMetadataForAsmJS* codeMetaForAsmJS);
+  bool initialized() const { return !!code; }
+
+  bool initialize(const Code& code);
 
   
   Tier tier() const {
@@ -441,11 +376,6 @@ class CodeBlock {
   uint32_t length() const { return codeLength; }
   bool containsCodePC(const void* pc) const {
     return pc >= base() && pc < (base() + length());
-  }
-
-  const ModuleSegment& moduleSegment() const { return *segment->asModule(); }
-  const LazyStubSegment& lazyStubSegment() const {
-    return *segment->asLazyStub();
   }
 
   const CodeRange& codeRange(const FuncExport& funcExport) const {
@@ -511,8 +441,7 @@ class JumpTables {
       "SelfHostedLazyScript");
 
  public:
-  bool init(CompileMode mode, const ModuleSegment& ms,
-            const CodeRangeVector& codeRanges);
+  bool initialize(CompileMode mode, const CodeBlock& tier1);
 
   void setJitEntry(size_t i, void* target) const {
     
@@ -603,6 +532,9 @@ class Code : public ShareableBase<Code> {
   
   RWExclusiveData<LazyStubTier> lazyStubs_;
 
+  
+  uint8_t* trapCode_;
+
  public:
   Code(const CodeMetadata& codeMeta,
        const CodeMetadataForAsmJS* codeMetaForAsmJS, UniqueCodeBlock tier1,
@@ -627,6 +559,8 @@ class Code : public ShareableBase<Code> {
   }
   uint32_t getFuncIndex(JSFunction* fun) const;
 
+  uint8_t* trapCode() const { return trapCode_; }
+
   
   
   
@@ -649,8 +583,8 @@ class Code : public ShareableBase<Code> {
     return codeMetaForAsmJS_;
   }
 
-  const ModuleSegment& segment(Tier iter) const {
-    return *codeBlock(iter).segment->asModule();
+  const CodeSegment& segment(Tier iter) const {
+    return *codeBlock(iter).segment;
   }
 
   const RWExclusiveData<LazyStubTier>& lazyStubs() const { return lazyStubs_; }

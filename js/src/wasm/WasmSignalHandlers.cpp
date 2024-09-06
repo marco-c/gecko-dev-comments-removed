@@ -549,10 +549,7 @@ struct AutoHandlingTrap {
   
   jit::JitActivation* activation = cx->activation()->asJit();
   activation->startWasmTrap(trap, bytecode.offset(), ToRegisterState(context));
-  
-  
-  MOZ_RELEASE_ASSERT(codeBlock->moduleSegment().trapCode() != nullptr);
-  SetContextPC(context, codeBlock->moduleSegment().trapCode());
+  SetContextPC(context, codeBlock->code->trapCode());
   return true;
 }
 
@@ -1040,10 +1037,7 @@ bool wasm::MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
   JSContext* cx = TlsContext.get();  
   jit::JitActivation* activation = cx->activation()->asJit();
   activation->startWasmTrap(trap, bytecode.offset(), regs);
-  
-  
-  MOZ_RELEASE_ASSERT(codeBlock->moduleSegment().trapCode() != nullptr);
-  *newPC = codeBlock->moduleSegment().trapCode();
+  *newPC = codeBlock->code->trapCode();
   return true;
 #endif
 }
@@ -1067,10 +1061,7 @@ bool wasm::HandleIllegalInstruction(const RegisterState& regs,
   JSContext* cx = TlsContext.get();  
   jit::JitActivation* activation = cx->activation()->asJit();
   activation->startWasmTrap(trap, bytecode.offset(), regs);
-  
-  
-  MOZ_RELEASE_ASSERT(codeBlock->moduleSegment().trapCode() != nullptr);
-  *newPC = codeBlock->moduleSegment().trapCode();
+  *newPC = codeBlock->code->trapCode();
   return true;
 #endif
 }
