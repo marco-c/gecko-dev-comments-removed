@@ -83,6 +83,10 @@ class GamepadManager final : public nsIObserver {
                                                    nsIGlobalObject* aGlobal,
                                                    ErrorResult& aRv);
 
+  
+  already_AddRefed<Promise> RequestAllGamepads(nsIGlobalObject* aGlobal,
+                                               ErrorResult& aRv);
+
  protected:
   GamepadManager();
   ~GamepadManager() = default;
