@@ -524,6 +524,12 @@ inline bool IsSpreadOp(JSOp op) { return CodeSpec(op).format & JOF_SPREAD; }
 
 inline bool IsSpreadPC(const jsbytecode* pc) { return IsSpreadOp(JSOp(*pc)); }
 
+
+
+inline bool IsTypeOfNameOp(JSOp op) {
+  return op == JSOp::Typeof || op == JSOp::TypeofEq;
+}
+
 inline bool OpUsesEnvironmentChain(JSOp op) {
   return CodeSpec(op).format & JOF_USES_ENV;
 }
