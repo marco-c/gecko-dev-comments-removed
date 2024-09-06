@@ -2592,14 +2592,6 @@ LayoutDeviceIntMargin nsNativeThemeCocoa::GetWidgetBorder(
       break;
     }
 
-    case StyleAppearance::Checkbox:
-    case StyleAppearance::Radio: {
-      
-      
-      result.SizeTo(2, 2, 2, 2);
-      break;
-    }
-
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistButton:
     case StyleAppearance::MozMenulistArrowButton:
