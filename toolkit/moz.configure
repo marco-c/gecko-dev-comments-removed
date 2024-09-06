@@ -3348,6 +3348,22 @@ set_define(
 
 
 
+with only_when(target_is_osx):
+    option(
+        "--with-macbundlename-prefix",
+        nargs=1,
+        help="prefix for the mac bundle name",
+    )
+
+    @depends_if("--with-macbundlename-prefix")
+    def mac_bundle_name(value):
+        return value[0]
+
+    add_old_configure_assignment("MOZ_MACBUNDLE_NAME_PREFIX", mac_bundle_name)
+
+
+
+
 @depends(target, tsan, asan)
 def sandbox_default(target, tsan, asan):
     
