@@ -124,7 +124,7 @@ class ShmemCharMapHashEntry final : public PLDHashEntryHdr {
     return aCharMap->GetChecksum();
   }
 
-  enum { ALLOW_MEMMOVE = true };
+  enum { ALLOW_MEMMOVE = false };  
 
  private:
   
