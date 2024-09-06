@@ -20,7 +20,6 @@
 
 
 
-#include "plstr.h"
 #include <windows.h>
 #include <tchar.h>
 
@@ -74,8 +73,7 @@ static nsReturnRef<nsHGLOBAL> CreateGlobalDevModeAndInit(
     const nsString& aPrintName, nsIPrintSettings* aPS) {
   nsHPRINTER hPrinter = nullptr;
   
-  LPWSTR printName =
-      const_cast<wchar_t*>(static_cast<const wchar_t*>(aPrintName.get()));
+  LPWSTR printName = const_cast<wchar_t*>(aPrintName.getW());
   BOOL status = ::OpenPrinterW(printName, &hPrinter, nullptr);
   if (!status) {
     return nsReturnRef<nsHGLOBAL>();
@@ -166,9 +164,8 @@ nsresult NativeShowPrintDialog(HWND aHWnd, bool aHaveSelection,
     GetDefaultPrinterNameFromGlobalPrinters(printerName);
   } else {
     HANDLE hPrinter = nullptr;
-    if (!::OpenPrinterW(const_cast<wchar_t*>(
-                            static_cast<const wchar_t*>(printerName.get())),
-                        &hPrinter, nullptr)) {
+    if (!::OpenPrinterW(const_cast<wchar_t*>(printerName.getW()), &hPrinter,
+                        nullptr)) {
       
       GetDefaultPrinterNameFromGlobalPrinters(printerName);
     } else {

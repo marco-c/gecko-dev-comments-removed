@@ -166,6 +166,18 @@ class nsTString : public nsTSubstring<T> {
     return this->mData;
   }
 
+#ifdef XP_WIN
+  
+
+
+  template <typename U = T>
+  typename std::enable_if<std::is_same<U, char16_t>::value,
+                          const wchar_t*>::type
+  getW() const {
+    return reinterpret_cast<const wchar_t*>(this->mData);
+  }
+#endif
+
   
 
 
