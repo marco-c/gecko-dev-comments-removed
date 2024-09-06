@@ -52,7 +52,7 @@ inline bool IsVideoCodec(AVCodecID aCodecID) {
 }
 
 
-template<typename T>
+template <typename T>
 inline int& ChannelCount(T* aObject) {
 #if LIBAVCODEC_VERSION_MAJOR <= 59
   return aObject->channels;
@@ -62,7 +62,7 @@ inline int& ChannelCount(T* aObject) {
 }
 
 
-template<typename T>
+template <typename T>
 inline int64_t& Duration(T* aObject) {
 #if LIBAVCODEC_VERSION_MAJOR < 61
   return aObject->pkt_duration;
@@ -72,7 +72,7 @@ inline int64_t& Duration(T* aObject) {
 }
 
 
-template<typename T>
+template <typename T>
 inline const int64_t& Duration(const T* aObject) {
 #if LIBAVCODEC_VERSION_MAJOR < 61
   return aObject->pkt_duration;
