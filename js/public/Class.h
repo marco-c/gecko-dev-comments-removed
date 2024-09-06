@@ -273,6 +273,9 @@ typedef JSString* (*JSFunToStringOp)(JSContext* cx, JS::HandleObject obj,
 
 
 
+
+
+
 typedef bool (*JSResolveOp)(JSContext* cx, JS::HandleObject obj,
                             JS::HandleId id, bool* resolvedp);
 
