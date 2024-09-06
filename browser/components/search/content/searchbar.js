@@ -796,6 +796,10 @@
           return true;
         }
         
+        if (!this.textbox.value) {
+          return true;
+        }
+        
         
         return this.textbox.mController.handleEnter(false, event || null);
       };
