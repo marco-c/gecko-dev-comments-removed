@@ -96,9 +96,9 @@ RefPtr<GenericPromise> CookieServiceChild::TrackCookieLoad(
   aChannel->GetURI(getter_AddRefs(uri));
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
-  OriginAttributes attrs = loadInfo->GetOriginAttributes();
+  OriginAttributes storageOriginAttributes = loadInfo->GetOriginAttributes();
   StoragePrincipalHelper::PrepareEffectiveStoragePrincipalOriginAttributes(
-      aChannel, attrs);
+      aChannel, storageOriginAttributes);
 
   bool isSafeTopLevelNav = CookieCommons::IsSafeTopLevelNav(aChannel);
   bool hadCrossSiteRedirects = false;
@@ -107,11 +107,30 @@ RefPtr<GenericPromise> CookieServiceChild::TrackCookieLoad(
 
   RefPtr<CookieServiceChild> self(this);
 
+  nsTArray<OriginAttributes> originAttributesList;
+  originAttributesList.AppendElement(storageOriginAttributes);
+
   
   
   
-  nsTArray<OriginAttributes> attrsList;
-  attrsList.AppendElement(attrs);
+  
+  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isUnpartitioned = storageOriginAttributes.mPartitionKey.IsEmpty();
+  if (isCHIPS && isUnpartitioned) {
+    
+    
+    MOZ_ASSERT(
+        !result.contains(ThirdPartyAnalysis::IsForeign) ||
+        result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted));
+    
+    OriginAttributes partitionedOriginAttributes;
+    StoragePrincipalHelper::GetOriginAttributes(
+        aChannel, partitionedOriginAttributes,
+        StoragePrincipalHelper::ePartitionedPrincipal);
+    originAttributesList.AppendElement(partitionedOriginAttributes);
+    
+    MOZ_ASSERT(!partitionedOriginAttributes.mPartitionKey.IsEmpty());
+  }
 
   return SendGetCookieList(
              uri, result.contains(ThirdPartyAnalysis::IsForeign),
@@ -121,7 +140,7 @@ RefPtr<GenericPromise> CookieServiceChild::TrackCookieLoad(
              result.contains(
                  ThirdPartyAnalysis::IsStorageAccessPermissionGranted),
              rejectedReason, isSafeTopLevelNav, isSameSiteForeign,
-             hadCrossSiteRedirects, attrsList)
+             hadCrossSiteRedirects, originAttributesList)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self, uri](const nsTArray<CookieStructTable>& aCookiesListTable) {
@@ -325,15 +344,6 @@ CookieServiceChild::GetCookieStringFromDocument(dom::Document* aDocument,
 
   aCookieString.Truncate();
 
-  nsCOMPtr<nsIPrincipal> cookiePrincipal =
-      aDocument->EffectiveCookiePrincipal();
-
-  
-  
-  
-  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
-  principals.AppendElement(cookiePrincipal);
-
   bool thirdParty = true;
   nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
   
@@ -345,6 +355,26 @@ CookieServiceChild::GetCookieStringFromDocument(dom::Document* aDocument,
       Unused << thirdPartyUtil->IsThirdPartyWindow(
           innerWindow->GetOuterWindow(), nullptr, &thirdParty);
     }
+  }
+
+  nsCOMPtr<nsIPrincipal> cookiePrincipal =
+      aDocument->EffectiveCookiePrincipal();
+
+  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
+  principals.AppendElement(cookiePrincipal);
+
+  
+  
+  
+  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isUnpartitioned =
+      cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty();
+  if (isCHIPS && isUnpartitioned) {
+    
+    
+    MOZ_ASSERT(!thirdParty || aDocument->UsingStorageAccess());
+    
+    principals.AppendElement(aDocument->PartitionedPrincipal());
   }
 
   for (auto& principal : principals) {

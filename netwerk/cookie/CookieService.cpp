@@ -373,15 +373,6 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPrincipal> cookiePrincipal =
-      aDocument->EffectiveCookiePrincipal();
-
-  
-  
-  
-  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
-  principals.AppendElement(cookiePrincipal);
-
   bool thirdParty = true;
   nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
   
@@ -393,6 +384,26 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
       Unused << thirdPartyUtil->IsThirdPartyWindow(
           innerWindow->GetOuterWindow(), nullptr, &thirdParty);
     }
+  }
+
+  nsCOMPtr<nsIPrincipal> cookiePrincipal =
+      aDocument->EffectiveCookiePrincipal();
+
+  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
+  principals.AppendElement(cookiePrincipal);
+
+  
+  
+  
+  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isUnpartitioned =
+      cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty();
+  if (isCHIPS && isUnpartitioned) {
+    
+    
+    MOZ_ASSERT(!thirdParty || aDocument->UsingStorageAccess());
+    
+    principals.AppendElement(aDocument->PartitionedPrincipal());
   }
 
   nsTArray<Cookie*> cookieList;
@@ -519,20 +530,40 @@ CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIChannel* aChannel,
   ThirdPartyAnalysisResult result = mThirdPartyUtil->AnalyzeChannel(
       aChannel, false, aHostURI, nullptr, &rejectedReason);
 
-  OriginAttributes attrs;
-  StoragePrincipalHelper::GetOriginAttributes(
-      aChannel, attrs, StoragePrincipalHelper::eStorageAccessPrincipal);
-
   bool isSafeTopLevelNav = CookieCommons::IsSafeTopLevelNav(aChannel);
   bool hadCrossSiteRedirects = false;
   bool isSameSiteForeign = CookieCommons::IsSameSiteForeign(
       aChannel, aHostURI, &hadCrossSiteRedirects);
 
-  
-  
-  
+  OriginAttributes storageOriginAttributes;
+  StoragePrincipalHelper::GetOriginAttributes(
+      aChannel, storageOriginAttributes,
+      StoragePrincipalHelper::eStorageAccessPrincipal);
+
   nsTArray<OriginAttributes> originAttributesList;
-  originAttributesList.AppendElement(attrs);
+  originAttributesList.AppendElement(storageOriginAttributes);
+
+  
+  
+  
+  
+  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isUnpartitioned = storageOriginAttributes.mPartitionKey.IsEmpty();
+  if (isCHIPS && isUnpartitioned) {
+    
+    
+    MOZ_ASSERT(
+        !result.contains(ThirdPartyAnalysis::IsForeign) ||
+        result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted));
+    
+    OriginAttributes partitionedOriginAttributes;
+    StoragePrincipalHelper::GetOriginAttributes(
+        aChannel, partitionedOriginAttributes,
+        StoragePrincipalHelper::ePartitionedPrincipal);
+    originAttributesList.AppendElement(partitionedOriginAttributes);
+    
+    MOZ_ASSERT(!partitionedOriginAttributes.mPartitionKey.IsEmpty());
+  }
 
   AutoTArray<Cookie*, 8> foundCookieList;
   GetCookiesForURI(

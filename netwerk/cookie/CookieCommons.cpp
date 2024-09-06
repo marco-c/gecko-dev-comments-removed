@@ -494,9 +494,11 @@ bool CookieCommons::ShouldIncludeCrossSiteCookieForDocument(
   int32_t sameSiteAttr = 0;
   aCookie->GetSameSite(&sameSiteAttr);
 
+  
+  
   if (aDocument->CookieJarSettings()->GetPartitionForeign() &&
       StaticPrefs::network_cookie_cookieBehavior_optInPartitioning() &&
-      !aCookie->IsPartitioned()) {
+      !aCookie->IsPartitioned() && !aDocument->UsingStorageAccess()) {
     return false;
   }
 

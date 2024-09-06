@@ -15,6 +15,7 @@
 #include "mozIThirdPartyUtil.h"
 #include "nsArrayUtils.h"
 #include "nsIChannel.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsNetCID.h"
 #include "nsMixedContentBlocker.h"
@@ -119,16 +120,10 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
   aChannel->GetURI(getter_AddRefs(uri));
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  OriginAttributes attrs = loadInfo->GetOriginAttributes();
   bool isSafeTopLevelNav = CookieCommons::IsSafeTopLevelNav(aChannel);
   bool hadCrossSiteRedirects = false;
   bool isSameSiteForeign =
       CookieCommons::IsSameSiteForeign(aChannel, uri, &hadCrossSiteRedirects);
-
-  
-  
-  StoragePrincipalHelper::PrepareEffectiveStoragePrincipalOriginAttributes(
-      aChannel, attrs);
 
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil;
   thirdPartyUtil = do_GetService(THIRDPARTYUTIL_CONTRACTID);
@@ -137,8 +132,34 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
   ThirdPartyAnalysisResult result = thirdPartyUtil->AnalyzeChannel(
       aChannel, false, nullptr, nullptr, &rejectedReason);
 
+  OriginAttributes storageOriginAttributes = loadInfo->GetOriginAttributes();
+  StoragePrincipalHelper::PrepareEffectiveStoragePrincipalOriginAttributes(
+      aChannel, storageOriginAttributes);
+
   nsTArray<OriginAttributes> originAttributesList;
-  originAttributesList.AppendElement(attrs);
+  originAttributesList.AppendElement(storageOriginAttributes);
+
+  
+  
+  
+  
+  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isUnpartitioned = storageOriginAttributes.mPartitionKey.IsEmpty();
+  if (isCHIPS && isUnpartitioned) {
+    
+    
+    MOZ_ASSERT(
+        !result.contains(ThirdPartyAnalysis::IsForeign) ||
+        result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted));
+    
+    OriginAttributes partitionedOriginAttributes;
+    StoragePrincipalHelper::GetOriginAttributes(
+        aChannel, partitionedOriginAttributes,
+        StoragePrincipalHelper::ePartitionedPrincipal);
+    originAttributesList.AppendElement(partitionedOriginAttributes);
+    
+    MOZ_ASSERT(!partitionedOriginAttributes.mPartitionKey.IsEmpty());
+  }
 
   for (auto& originAttributes : originAttributesList) {
     UpdateCookieInContentList(uri, originAttributes);
