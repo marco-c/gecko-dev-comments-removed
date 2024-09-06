@@ -438,6 +438,11 @@ BounceTrackingProtection::TestAddUserActivation(
   return stateGlobal->RecordUserActivation(host, aActivationTime);
 }
 
+NS_IMETHODIMP
+BounceTrackingProtection::TestMaybeMigrateUserInteractionPermissions() {
+  return MaybeMigrateUserInteractionPermissions();
+}
+
 RefPtr<BounceTrackingProtection::PurgeBounceTrackersMozPromise>
 BounceTrackingProtection::PurgeBounceTrackers() {
   
