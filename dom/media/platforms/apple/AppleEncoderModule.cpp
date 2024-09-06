@@ -27,7 +27,8 @@ bool AppleEncoderModule::Supports(const EncoderConfig& aConfig) const {
   if (!CanLikelyEncode(aConfig)) {
     return false;
   }
-  if (aConfig.mScalabilityMode != ScalabilityMode::None) {
+  
+  if (aConfig.mScalabilityMode == ScalabilityMode::L1T3) {
     return false;
   }
   return aConfig.mCodec == CodecType::H264;
