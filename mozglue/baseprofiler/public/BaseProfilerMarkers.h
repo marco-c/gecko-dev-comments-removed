@@ -140,7 +140,9 @@ namespace mozilla::baseprofiler::markers {
 
 struct TextMarker : public BaseMarkerType<TextMarker> {
   static constexpr const char* Name = "Text";
-  static constexpr const char* Description = "Generic text marker";
+  
+  
+  static constexpr const char* Description = nullptr;
 
   static constexpr bool StoreName = true;
 
@@ -167,7 +169,9 @@ struct TextMarker : public BaseMarkerType<TextMarker> {
 
 struct Tracing : public BaseMarkerType<Tracing> {
   static constexpr const char* Name = "tracing";
-  static constexpr const char* Description = "Generic tracing marker";
+  
+  
+  static constexpr const char* Description = nullptr;
 
   static constexpr bool StoreName = true;
 
