@@ -332,7 +332,7 @@ class IdentityCredential final : public Credential {
   static void CloseUserInterface(BrowsingContext* aBrowsingContext);
 
  private:
-  nsAutoString mToken;
+  nsAutoString mToken;  
   nsCOMPtr<nsIPrincipal> mIdentityProvider;
   Maybe<IdentityCredentialInit> mCreationOptions;
 
