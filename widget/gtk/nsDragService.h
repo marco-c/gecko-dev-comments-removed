@@ -264,6 +264,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   bool mCanDrop;
+  int mWaitingForDragDataRequests = 0;
 
   
   bool mTargetDragDataReceived;
@@ -276,6 +277,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   bool IsDragFlavorAvailable(GdkAtom aRequestedFlavor);
   
   
+  RefPtr<DragData> GetDragData(GdkAtom aRequestedFlavor);
   void GetTargetDragData(GdkAtom aFlavor, nsTArray<nsCString>& aDropFlavors,
                          bool aResetTargetData = true);
   
