@@ -134,13 +134,6 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  #translator;
-
-  
-
-
-
-
 
 
   #translationId = 0;
@@ -803,21 +796,6 @@ var SelectTranslationsPanel = new (class {
 
 
 
-
-
-
-  #translatorMatchesLangPair(fromLanguage, toLanguage) {
-    return (
-      this.#translator?.fromLanguage === fromLanguage &&
-      this.#translator?.toLanguage === toLanguage
-    );
-  }
-
-  
-
-
-
-
   #getSelectedLanguagePair() {
     const { fromMenuList, toMenuList } = this.elements;
     return {
@@ -1156,9 +1134,7 @@ var SelectTranslationsPanel = new (class {
       
       translationId === this.#translationId &&
       
-      this.#isSelectedLangPair(fromLanguage, toLanguage) &&
-      
-      this.#translatorMatchesLangPair(fromLanguage, toLanguage)
+      this.#isSelectedLangPair(fromLanguage, toLanguage)
     );
   }
 
@@ -1484,24 +1460,16 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  async #getOrCreateTranslator(fromLanguage, toLanguage) {
-    if (this.#translatorMatchesLangPair(fromLanguage, toLanguage)) {
-      return this.#translator;
-    }
-
+  async #createTranslator(fromLanguage, toLanguage) {
     this.console?.log(
       `Creating new Translator (${fromLanguage}-${toLanguage})`
     );
-    if (this.#translator) {
-      this.#translator.destroy();
-      this.#translator = null;
-    }
 
-    this.#translator = await Translator.create(fromLanguage, toLanguage, {
+    const translator = await Translator.create(fromLanguage, toLanguage, {
       allowSameLanguage: true,
       requestTranslationsPort: this.#requestTranslationsPort,
     });
-    return this.#translator;
+    return translator;
   }
 
   
@@ -1521,7 +1489,7 @@ var SelectTranslationsPanel = new (class {
     }
 
     const translationId = ++this.#translationId;
-    this.#getOrCreateTranslator(fromLanguage, toLanguage)
+    this.#createTranslator(fromLanguage, toLanguage)
       .then(translator => {
         if (
           this.#shouldContinueTranslation(
