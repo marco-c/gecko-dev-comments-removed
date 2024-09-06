@@ -165,6 +165,40 @@ struct ModuleSingleStepState {
         mData{} {}
 };
 
+namespace InstructionFilter {
+
+
+
+
+inline bool All(const uint8_t* aInstructionPointer) { return true; }
+
+
+
+inline bool CallRet(const uint8_t* aInstructionPointer) {
+  auto firstByte = aInstructionPointer[0];
+  
+  if (firstByte == 0xe8) {
+    return true;
+  }
+  
+  else if (firstByte == 0xff) {
+    auto secondByte = aInstructionPointer[1];
+    if ((secondByte & 0x38) == 0x10) {
+      return true;
+    }
+  }
+  
+  else if (firstByte == 0xc3) {
+    return true;
+  }
+  
+  else if (firstByte == 0xc2) {
+    return true;
+  }
+  return false;
+}
+
+}  
 
 
 
@@ -179,11 +213,16 @@ struct ModuleSingleStepState {
 
 
 
-template <int NMaxSteps, int NMaxErrorStates, typename CallbackToRun,
-          typename PostCollectionCallback>
+
+
+template <
+    int NMaxSteps, int NMaxErrorStates, typename CallbackToRun,
+    typename PostCollectionCallback,
+    typename InstructionFilterCallback = decltype(&InstructionFilter::All)>
 WindowsDiagnosticsError CollectModuleSingleStepData(
     const wchar_t* aModulePath, CallbackToRun aCallbackToRun,
-    PostCollectionCallback aPostCollectionCallback) {
+    PostCollectionCallback aPostCollectionCallback,
+    InstructionFilterCallback aInstructionFilter = InstructionFilter::All) {
   HANDLE mod = ::GetModuleHandleW(aModulePath);
   if (!mod) {
     return WindowsDiagnosticsError::ModuleNotFound;
@@ -202,12 +241,14 @@ WindowsDiagnosticsError CollectModuleSingleStepData(
 
   WindowsDiagnosticsError rv = CollectSingleStepData(
       std::move(aCallbackToRun),
-      [](void* aState, CONTEXT* aContextRecord) -> bool {
+      [&aInstructionFilter](void* aState, CONTEXT* aContextRecord) -> bool {
         auto& state = *reinterpret_cast<State*>(aState);
         auto instructionPointer = aContextRecord->Rip;
         
         if (state.mModuleStart <= instructionPointer &&
-            instructionPointer < state.mModuleEnd) {
+            instructionPointer < state.mModuleEnd &&
+            aInstructionFilter(
+                reinterpret_cast<const uint8_t*>(instructionPointer))) {
           
           if (state.mSteps < NMaxSteps) {
             state.mData.mStepsLog[state.mSteps] =
