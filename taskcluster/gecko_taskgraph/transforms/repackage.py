@@ -6,6 +6,7 @@ Transform the repackage task into an actual task description.
 """
 
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.copy import deepcopy
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.taskcluster import get_artifact_prefix
@@ -13,7 +14,6 @@ from voluptuous import Extra, Optional, Required
 
 from gecko_taskgraph.transforms.job import job_description_schema
 from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
-from gecko_taskgraph.util.copy_task import copy_task
 from gecko_taskgraph.util.platforms import architecture, archive_format
 from gecko_taskgraph.util.workertypes import worker_type_implementation
 
@@ -338,7 +338,7 @@ def handle_keyed_by(config, jobs):
         "worker.max-run-time",
     ]
     for job in jobs:
-        job = copy_task(job)  
+        job = deepcopy(job)  
         for field in fields:
             resolve_keyed_by(
                 item=job,
@@ -489,7 +489,7 @@ def make_job_description(config, jobs):
             
             package_formats += ["installer-stub"]
         for format in package_formats:
-            command = copy_task(PACKAGE_FORMATS[format])
+            command = deepcopy(PACKAGE_FORMATS[format])
             substs = {
                 "archive_format": archive_format(build_platform),
                 "_locale": _fetch_subst_locale,
@@ -506,7 +506,7 @@ def make_job_description(config, jobs):
 
             
             
-            temp_job = copy_task(job)
+            temp_job = deepcopy(job)
             for msix_key in (
                 "channel",
                 "identity-name",
