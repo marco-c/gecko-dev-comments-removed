@@ -34,6 +34,7 @@ use crate::{encode_section, ConstExpr, Encode, RefType, Section, SectionId};
 
 
 
+
 #[derive(Clone, Default, Debug)]
 pub struct ElementSection {
     bytes: Vec<u8>,

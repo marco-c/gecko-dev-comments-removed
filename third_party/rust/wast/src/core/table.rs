@@ -42,6 +42,8 @@ pub enum TableKind<'a> {
         
         elem: RefType<'a>,
         
+        is64: bool,
+        
         
         payload: ElemPayload<'a>,
     },
@@ -60,7 +62,14 @@ impl<'a> Parse<'a> for Table<'a> {
         
         
         let mut l = parser.lookahead1();
-        let kind = if l.peek::<RefType>()? {
+
+        let has_index_type = l.peek::<kw::i32>()? | l.peek::<kw::i64>()?;
+        let kind = if l.peek::<RefType>()? || (has_index_type && parser.peek2::<RefType>()?) {
+            let is64 = if parser.parse::<Option<kw::i32>>()?.is_some() {
+                false
+            } else {
+                parser.parse::<Option<kw::i64>>()?.is_some()
+            };
             let elem = parser.parse()?;
             let payload = parser.parens(|p| {
                 p.parse::<kw::elem>()?;
@@ -70,8 +79,12 @@ impl<'a> Parse<'a> for Table<'a> {
                     ElemPayload::parse_indices(p, Some(elem))
                 }
             })?;
-            TableKind::Inline { elem, payload }
-        } else if l.peek::<u32>()? {
+            TableKind::Inline {
+                elem,
+                is64,
+                payload,
+            }
+        } else if has_index_type || l.peek::<u64>()? {
             TableKind::Normal {
                 ty: parser.parse()?,
                 init_expr: if !parser.is_empty() {

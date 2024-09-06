@@ -35,7 +35,7 @@ pub enum MemoryKind<'a> {
     
     Inline {
         
-        is_32: bool,
+        is64: bool,
         
         data: Vec<DataVal<'a>>,
     },
@@ -63,10 +63,10 @@ impl<'a> Parse<'a> for Memory<'a> {
             || ((parser.peek::<kw::i32>()? || parser.peek::<kw::i64>()?)
                 && parser.peek2::<LParen>()?)
         {
-            let is_32 = if parser.parse::<Option<kw::i32>>()?.is_some() {
-                true
+            let is64 = if parser.parse::<Option<kw::i32>>()?.is_some() {
+                false
             } else {
-                parser.parse::<Option<kw::i64>>()?.is_none()
+                parser.parse::<Option<kw::i64>>()?.is_some()
             };
             let data = parser.parens(|parser| {
                 parser.parse::<kw::data>()?;
@@ -76,7 +76,7 @@ impl<'a> Parse<'a> for Memory<'a> {
                 }
                 Ok(data)
             })?;
-            MemoryKind::Inline { data, is_32 }
+            MemoryKind::Inline { data, is64 }
         } else if l.peek::<u32>()? || l.peek::<kw::i32>()? || l.peek::<kw::i64>()? {
             MemoryKind::Normal(parser.parse()?)
         } else {
