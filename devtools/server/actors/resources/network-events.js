@@ -243,6 +243,10 @@ class NetworkEventWatcher {
 
   shouldIgnoreChannel(channel) {
     
+    if (channel instanceof Ci.nsIDataChannel) {
+      return true;
+    }
+    
     const filters = { sessionContext: this.watcherActor.sessionContext };
     if (!lazy.NetworkUtils.matchRequest(channel, filters)) {
       return true;
