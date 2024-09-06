@@ -193,6 +193,12 @@ class FieldTrials : public FieldTrialsView {
         key == "WebRTC-VP9QualityScaler") {
       return "";
     }
+
+    
+    if (key == "WebRTC-LibvpxVp9Encoder-SvcFrameDropConfig") {
+      return "";
+    }
+
     
     
     RTC_CHECK(false) << "Unfuzzed field trial " << key << "\n";
