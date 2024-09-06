@@ -2204,12 +2204,8 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
     originAttributes = std::move(aOriginAttributes.ref());
   } else if (aPrincipal) {
     originAttributes = aPrincipal->OriginAttributesRef();
-    StoragePrincipalHelper::UpdateOriginAttributesForNetworkState(
-        aURI, originAttributes);
   } else if (loadContext) {
     loadContext->GetOriginAttributes(originAttributes);
-    StoragePrincipalHelper::UpdateOriginAttributesForNetworkState(
-        aURI, originAttributes);
   }
 
   nsCOMPtr<nsIURI> clone;
@@ -2220,6 +2216,15 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
       
       
     }
+  }
+
+  if (!aOriginAttributes) {
+    
+    
+    
+    
+    StoragePrincipalHelper::UpdateOriginAttributesForNetworkState(
+        aURI, originAttributes);
   }
 
   nsAutoCString scheme;
