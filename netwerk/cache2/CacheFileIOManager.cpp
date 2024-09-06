@@ -2026,26 +2026,46 @@ nsresult CacheFileIOManager::Write(CacheFileHandle* aHandle, int64_t aOffset,
        "validate=%d, truncate=%d, listener=%p]",
        aHandle, aOffset, aCount, aValidate, aTruncate, aCallback));
 
-  nsresult rv;
+  MOZ_ASSERT(aCallback);
+
   RefPtr<CacheFileIOManager> ioMan = gInstance;
 
-  if (aHandle->IsClosed() || (aCallback && aCallback->IsKilled()) || !ioMan) {
-    if (!aCallback) {
-      
-      
-      free(const_cast<char*>(aBuf));
-    }
+  if (aHandle->IsClosed() || aCallback->IsKilled() || !ioMan) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
   RefPtr<WriteEvent> ev = new WriteEvent(aHandle, aOffset, aBuf, aCount,
                                          aValidate, aTruncate, aCallback);
-  rv = ioMan->mIOThread->Dispatch(ev, aHandle->mPriority
-                                          ? CacheIOThread::WRITE_PRIORITY
-                                          : CacheIOThread::WRITE);
-  NS_ENSURE_SUCCESS(rv, rv);
+  return ioMan->mIOThread->Dispatch(ev, aHandle->mPriority
+                                            ? CacheIOThread::WRITE_PRIORITY
+                                            : CacheIOThread::WRITE);
+}
 
-  return NS_OK;
+
+nsresult CacheFileIOManager::WriteWithoutCallback(CacheFileHandle* aHandle,
+                                                  int64_t aOffset, char* aBuf,
+                                                  int32_t aCount,
+                                                  bool aValidate,
+                                                  bool aTruncate) {
+  LOG(("CacheFileIOManager::WriteWithoutCallback() [handle=%p, offset=%" PRId64
+       ", count=%d, "
+       "validate=%d, truncate=%d]",
+       aHandle, aOffset, aCount, aValidate, aTruncate));
+
+  RefPtr<CacheFileIOManager> ioMan = gInstance;
+
+  if (aHandle->IsClosed() || !ioMan) {
+    
+    
+    free(aBuf);
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  RefPtr<WriteEvent> ev = new WriteEvent(aHandle, aOffset, aBuf, aCount,
+                                         aValidate, aTruncate, nullptr);
+  return ioMan->mIOThread->Dispatch(ev, aHandle->mPriority
+                                            ? CacheIOThread::WRITE_PRIORITY
+                                            : CacheIOThread::WRITE);
 }
 
 static nsresult TruncFile(PRFileDesc* aFD, int64_t aEOF) {

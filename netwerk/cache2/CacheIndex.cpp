@@ -2214,15 +2214,9 @@ void CacheIndex::ParseRecords(const StaticMutexAutoLock& aProofOfLock) {
       NetworkEndian::writeUint32(isDirty, 1);
 
       
-      
-      
-      rv = CacheFileIOManager::Write(mIndexHandle, 2 * sizeof(uint32_t),
-                                     reinterpret_cast<char*>(isDirty),
-                                     sizeof(uint32_t), true, false, nullptr);
-      if (NS_FAILED(rv)) {
-        
-        free(isDirty);
-      }
+      CacheFileIOManager::WriteWithoutCallback(
+          mIndexHandle, 2 * sizeof(uint32_t), reinterpret_cast<char*>(isDirty),
+          sizeof(uint32_t), true, false);
     }
     pos += sizeof(uint32_t);
 
