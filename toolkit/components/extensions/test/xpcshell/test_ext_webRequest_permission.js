@@ -18,18 +18,6 @@ function sendMessage(page, msg, data) {
   return MessageChannel.sendMessage(page.browser.messageManager, msg, data);
 }
 
-add_setup(() => {
-  
-  
-  
-  
-  
-  
-  
-  
-  Services.obs.notifyObservers(null, "startupcache-invalidate");
-});
-
 add_task(async function test_permissions() {
   function background() {
     browser.webRequest.onBeforeRequest.addListener(

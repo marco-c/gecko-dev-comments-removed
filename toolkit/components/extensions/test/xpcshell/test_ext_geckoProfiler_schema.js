@@ -1,16 +1,6 @@
 "use strict";
 
 add_task(async function () {
-  
-  
-  
-  let file = PathUtils.join(
-    Services.dirsvc.get("ProfLD", Ci.nsIFile).path,
-    "startupCache",
-    "webext.sc.lz4"
-  );
-  await IOUtils.remove(file, { ignoreAbsent: true });
-
   const acceptedExtensionIdsPref =
     "extensions.geckoProfiler.acceptedExtensionIds";
   Services.prefs.setCharPref(
