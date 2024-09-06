@@ -496,6 +496,10 @@ HTMLInputElement::nsFilePickerShownCallback::Done(
     nsresult rv = mFilePicker->GetDomFileOrDirectory(getter_AddRefs(tmp));
     NS_ENSURE_SUCCESS(rv, rv);
 
+    if (!tmp) {
+      return NS_OK;
+    }
+
     
     
     
