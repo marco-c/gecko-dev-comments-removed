@@ -123,6 +123,9 @@ class RemoteProcessMonitor(object):
             time.sleep(interval)
             timer += interval
             interval *= 1.5
+            
+            
+            interval = min(15, interval)
             if timeout and timer > timeout:
                 status = False
                 self.log.info(
