@@ -606,7 +606,10 @@ void nsCocoaWindow::Destroy() {
   
   if (mWindow && mWindowMadeHere) {
     CancelAllTransitions();
-    DestroyNativeWindow();
+
+    
+    
+    
   }
 }
 
