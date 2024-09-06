@@ -100,8 +100,14 @@ DEFINE_STATIC_ATOM_SET(WildcardSchemes, nsGkAtoms::http, nsGkAtoms::https,
 
 
 
+
+
+
+
+
+
 DEFINE_STATIC_ATOM_SET(NonOpaqueSchemes, nsGkAtoms::http, nsGkAtoms::https,
-                       nsGkAtoms::file);
+                       nsGkAtoms::file, nsGkAtoms::view_source);
 
 #undef DEFINE_STATIC_ATOM_SET
 
