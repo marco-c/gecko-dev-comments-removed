@@ -225,6 +225,7 @@ var gLanguagesDialog = {
 
     this._acceptLanguages[selectedID] = true;
     this._availableLanguages.selectedItem = null;
+    this.onAvailableLanguageSelect();
 
     
     this._buildAvailableLanguageList().catch(console.error);
