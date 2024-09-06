@@ -268,7 +268,7 @@ static size_t GetTid() {
 #  endif
 #  define LOG(fmt, ...)                                                \
     FdPrintf(LOG_STDERR, "PHC[%zu,%zu,~%zu] " fmt, GetPid(), GetTid(), \
-             size_t(GAtomic::Now()), ##__VA_ARGS__)
+             size_t(GMut::Now()), ##__VA_ARGS__)
 
 #else
 
@@ -421,15 +421,7 @@ class PtrKind {
 
 class GAtomic {
  public:
-  static void Init(Delay aFirstDelay) {
-    sAllocDelay = aFirstDelay;
-
-    LOG("Initial sAllocDelay <- %zu\n", size_t(aFirstDelay));
-  }
-
-  static Time Now() { return sNow; }
-
-  static void IncrementNow() { sNow++; }
+  static void Init(Delay aFirstDelay);
 
   
   static int32_t DecrementDelay() { return --sAllocDelay; }
@@ -447,15 +439,9 @@ class GAtomic {
   
   
   
-  static Atomic<Time, Relaxed> sNow;
-
-  
-  
-  
   static Atomic<Delay, ReleaseAcquire> sAllocDelay;
 };
 
-Atomic<Time, Relaxed> GAtomic::sNow;
 Atomic<Delay, ReleaseAcquire> GAtomic::sAllocDelay;
 
 
@@ -499,10 +485,7 @@ class GConst {
   }
 
  public:
-  GConst()
-      : mPagesStart(AllocAllPages()), mPagesLimit(mPagesStart + kAllPagesSize) {
-    LOG("AllocAllPages at %p..%p\n", mPagesStart, mPagesLimit);
-  }
+  GConst();
 
   class PtrKind PtrKind(const void* aPtr) {
     class PtrKind pk(aPtr, mPagesStart, mPagesLimit);
@@ -528,6 +511,7 @@ static GConst* gConst;
 
 
 using GMutLock = const MutexAutoLock&;
+
 
 
 
@@ -722,7 +706,7 @@ class GMut {
     
 
     page.mFreeStack = Some(aFreeStack);
-    Time now = GAtomic::Now();
+    Time now = Now();
 #if PHC_LOGGING
     mFreeTime[aIndex] = now;
 #endif
@@ -922,6 +906,10 @@ class GMut {
 
   static bool IsDisabledOnCurrentThread() { return tlsIsDisabled.get(); }
 
+  static Time Now() { return sNow; }
+
+  static void IncrementNow() { sNow++; }
+
  private:
   template <int N>
   uint64_t RandomSeed() {
@@ -1057,6 +1045,11 @@ class GMut {
   
   static PHC_THREAD_LOCAL(bool) tlsIsDisabled;
 
+  
+  
+  
+  static Atomic<Time, Relaxed> sNow;
+
  public:
   Delay GetAvgAllocDelay(const MutexAutoLock&) { return mAvgAllocDelay; }
   Delay GetAvgFirstAllocDelay(const MutexAutoLock&) {
@@ -1068,10 +1061,22 @@ class GMut {
 };
 
 Mutex GMut::sMutex;
-
 PHC_THREAD_LOCAL(bool) GMut::tlsIsDisabled;
+Atomic<Time, Relaxed> GMut::sNow;
 
 static GMut* gMut;
+
+
+void GAtomic::Init(Delay aFirstDelay) {
+  sAllocDelay = aFirstDelay;
+
+  LOG("Initial sAllocDelay <- %zu\n", size_t(aFirstDelay));
+}
+
+GConst::GConst()
+    : mPagesStart(AllocAllPages()), mPagesLimit(mPagesStart + kAllPagesSize) {
+  LOG("AllocAllPages at %p..%p\n", mPagesStart, mPagesLimit);
+}
 
 
 
@@ -1153,7 +1158,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
     return nullptr;
   }
 
-  GAtomic::IncrementNow();
+  GMut::IncrementNow();
 
   
   
@@ -1207,7 +1212,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 
   MutexAutoLock lock(GMut::sMutex);
 
-  Time now = GAtomic::Now();
+  Time now = GMut::Now();
   Delay newAllocDelay =
       Rnd64ToDelay(gMut->GetAvgAllocDelay(lock), gMut->Random64(lock));
 
@@ -1477,7 +1482,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
   FreePage(lock, index, aArenaId, stack, reuseDelay);
   LOG("PageRealloc-Free(%p[%zu], %zu) -> %p, %zu delay, reuse at ~%zu\n",
       aOldPtr, index, aNewSize, newPtr, size_t(reuseDelay),
-      size_t(GAtomic::Now()) + reuseDelay);
+      size_t(GMut::Now()) + reuseDelay);
 
   return Some(newPtr);
 }
@@ -1542,7 +1547,7 @@ MOZ_ALWAYS_INLINE static bool MaybePageFree(const Maybe<arena_id_t>& aArenaId,
   phc::PHCStats stats = gMut->GetPageStats(lock);
 #endif
   LOG("PageFree(%p[%zu]), %zu delay, reuse at ~%zu, fullness %zu/%zu/%zu\n",
-      aPtr, index, size_t(reuseDelay), size_t(GAtomic::Now()) + reuseDelay,
+      aPtr, index, size_t(reuseDelay), size_t(GMut::Now()) + reuseDelay,
       stats.mSlotsAllocated, stats.mSlotsFreed, kNumAllocPages);
 
   return true;
