@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyServiceGetter(
   "mozISpellCheckingEngine"
 );
 
-add_task(async function setup() {
+add_setup(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "61", "61");
 
   
@@ -18,6 +18,12 @@ add_task(async function setup() {
   AddonTestUtils.initializeURLPreloader();
 
   await promiseStartupManager();
+  
+  Assert.deepEqual(
+    spellCheck.getDictionaryList(),
+    ["en-US"],
+    "Expect en-US builtin dictionary to be registered"
+  );
 
   
   AddonTestUtils.hookAMTelemetryEvents();
@@ -218,6 +224,13 @@ add_task(
 const WORD = "Flehgragh";
 
 add_task(async function test_registration() {
+  
+  Assert.deepEqual(
+    spellCheck.getDictionaryList(),
+    ["en-US"],
+    "Expect en-US builtin dictionary to be registered"
+  );
+
   spellCheck.dictionaries = ["en-US"];
 
   ok(!spellCheck.check(WORD), "Word should not pass check before add-on loads");
