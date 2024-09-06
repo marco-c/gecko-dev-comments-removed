@@ -18,8 +18,8 @@ add_task(async function () {
 
   
   
-  await TestUtils.waitForCondition(
-    () => document.documentElement.getAttribute("customizing") == "true"
+  await TestUtils.waitForCondition(() =>
+    document.documentElement.hasAttribute("customizing")
   );
   await endCustomizing();
 });

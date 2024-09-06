@@ -734,7 +734,7 @@
         
         
         
-        if (document.documentElement.getAttribute("customizing") == "true") {
+        if (document.documentElement.hasAttribute("customizing")) {
           return;
         }
 
