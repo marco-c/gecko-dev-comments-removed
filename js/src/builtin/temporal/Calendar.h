@@ -300,7 +300,7 @@ using CalendarFieldNames = JS::StackGCVector<JS::PropertyKey>;
 
 
 bool CalendarFields(JSContext* cx, JS::Handle<CalendarRecord> calendar,
-                    std::initializer_list<CalendarField> fieldNames,
+                    mozilla::EnumSet<CalendarField> fieldNames,
                     JS::MutableHandle<CalendarFieldNames> result);
 
 

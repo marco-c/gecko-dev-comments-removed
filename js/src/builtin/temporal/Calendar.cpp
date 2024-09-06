@@ -1033,62 +1033,62 @@ static bool ToCalendarField(JSContext* cx, JSLinearString* linear,
   return false;
 }
 
-static PropertyName* ToPropertyName(JSContext* cx, CalendarField field) {
+static constexpr auto sortedCalendarFields = std::array{
+    CalendarField::Day,
+    CalendarField::Month,
+    CalendarField::MonthCode,
+    CalendarField::Year,
+};
+
+
+
+
+using SortedCalendarFields = SortedEnumSet<CalendarField, sortedCalendarFields>;
+
+static TemporalField ToTemporalField(CalendarField field) {
   switch (field) {
     case CalendarField::Year:
-      return cx->names().year;
+      return TemporalField::Year;
     case CalendarField::Month:
-      return cx->names().month;
+      return TemporalField::Month;
     case CalendarField::MonthCode:
-      return cx->names().monthCode;
+      return TemporalField::MonthCode;
     case CalendarField::Day:
-      return cx->names().day;
+      return TemporalField::Day;
   }
   MOZ_CRASH("invalid calendar field name");
 }
 
-#ifdef DEBUG
-static const char* ToCString(CalendarField field) {
-  switch (field) {
-    case CalendarField::Year:
-      return "year";
-    case CalendarField::Month:
-      return "month";
-    case CalendarField::MonthCode:
-      return "monthCode";
-    case CalendarField::Day:
-      return "day";
-  }
-  MOZ_CRASH("invalid calendar field name");
-}
-#endif
 
 
 
-
-static bool BuiltinCalendarFields(
-    JSContext* cx, std::initializer_list<CalendarField> fieldNames,
-    CalendarFieldNames& result) {
+static bool BuiltinCalendarFields(JSContext* cx,
+                                  mozilla::EnumSet<CalendarField> fieldNames,
+                                  CalendarFieldNames& result) {
   MOZ_ASSERT(result.empty());
 
   
 
   
-  if (!result.reserve(fieldNames.size())) {
+  mozilla::EnumSet<TemporalField> temporalFields{};
+  for (auto fieldName : fieldNames) {
+    
+
+    
+    temporalFields += ToTemporalField(fieldName);
+  }
+
+  
+  if (!result.reserve(temporalFields.size())) {
     return false;
   }
 
   
-  for (auto fieldName : fieldNames) {
-    auto* name = ToPropertyName(cx, fieldName);
-
-    
-
-    
+  for (auto field : SortedTemporalFields{temporalFields}) {
+    auto* name = ToPropertyName(cx, field);
     result.infallibleAppend(NameToId(name));
   }
 
-  
   return true;
 }
 
@@ -1175,31 +1175,17 @@ static bool BuiltinCalendarFields(JSContext* cx, Handle<Value> fields,
   return true;
 }
 
-#ifdef DEBUG
-static bool IsSorted(std::initializer_list<CalendarField> fieldNames) {
-  return std::is_sorted(fieldNames.begin(), fieldNames.end(),
-                        [](auto x, auto y) {
-                          auto* a = ToCString(x);
-                          auto* b = ToCString(y);
-                          return std::strcmp(a, b) < 0;
-                        });
-}
-#endif
 
 
 
-
-bool js::temporal::CalendarFields(
-    JSContext* cx, Handle<CalendarRecord> calendar,
-    std::initializer_list<CalendarField> fieldNames,
-    MutableHandle<CalendarFieldNames> result) {
+bool js::temporal::CalendarFields(JSContext* cx,
+                                  Handle<CalendarRecord> calendar,
+                                  mozilla::EnumSet<CalendarField> fieldNames,
+                                  MutableHandle<CalendarFieldNames> result) {
   MOZ_ASSERT(
       CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::Fields));
 
   
-  MOZ_ASSERT(IsSorted(fieldNames));
-  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
-             fieldNames.end());
 
   
   auto fields = calendar.fields();
@@ -1231,10 +1217,12 @@ bool js::temporal::CalendarFields(
   }
   array->setDenseInitializedLength(fieldNames.size());
 
-  for (size_t i = 0; i < fieldNames.size(); i++) {
-    auto* name = ToPropertyName(cx, fieldNames.begin()[i]);
-    array->initDenseElement(i, StringValue(name));
+  size_t index = 0;
+  for (auto calendarField : SortedCalendarFields{fieldNames}) {
+    auto* name = ToPropertyName(cx, ::ToTemporalField(calendarField));
+    array->initDenseElement(index++, StringValue(name));
   }
+  MOZ_ASSERT(index == fieldNames.size());
 
   Rooted<Value> fieldsArray(cx, ObjectValue(*array));
   Rooted<Value> calendarFieldNames(cx);
@@ -2676,10 +2664,12 @@ static PlainDateObject* BuiltinCalendarDateFromFields(
   
 
   
+  auto relevantFieldNames = {TemporalField::Day, TemporalField::Month,
+                             TemporalField::MonthCode, TemporalField::Year};
+
+  
   Rooted<TemporalFields> dateFields(cx);
-  if (!PrepareTemporalFields(cx, fields,
-                             {TemporalField::Day, TemporalField::Month,
-                              TemporalField::MonthCode, TemporalField::Year},
+  if (!PrepareTemporalFields(cx, fields, relevantFieldNames,
                              {TemporalField::Day, TemporalField::Year},
                              &dateFields)) {
     return nullptr;
@@ -2704,8 +2694,8 @@ static PlainDateObject* BuiltinCalendarDateFromFields(
     return nullptr;
   }
 
-  
   Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
+  
   return CreateTemporalDate(cx, result, calendar);
 }
 
@@ -2860,11 +2850,13 @@ static PlainYearMonthObject* BuiltinCalendarYearMonthFromFields(
   
 
   
+  auto relevantFieldNames = {TemporalField::Month, TemporalField::MonthCode,
+                             TemporalField::Year};
+
+  
   Rooted<TemporalFields> dateFields(cx);
-  if (!PrepareTemporalFields(
-          cx, fields,
-          {TemporalField::Month, TemporalField::MonthCode, TemporalField::Year},
-          {TemporalField::Year}, &dateFields)) {
+  if (!PrepareTemporalFields(cx, fields, relevantFieldNames,
+                             {TemporalField::Year}, &dateFields)) {
     return nullptr;
   }
 
@@ -3011,10 +3003,12 @@ static PlainMonthDayObject* BuiltinCalendarMonthDayFromFields(
   
 
   
+  auto relevantFieldNames = {TemporalField::Day, TemporalField::Month,
+                             TemporalField::MonthCode, TemporalField::Year};
+
+  
   Rooted<TemporalFields> dateFields(cx);
-  if (!PrepareTemporalFields(cx, fields,
-                             {TemporalField::Day, TemporalField::Month,
-                              TemporalField::MonthCode, TemporalField::Year},
+  if (!PrepareTemporalFields(cx, fields, relevantFieldNames,
                              {TemporalField::Day}, &dateFields)) {
     return nullptr;
   }
@@ -3122,182 +3116,51 @@ Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
 using PropertyHashSet = JS::GCHashSet<JS::PropertyKey>;
 using PropertyVector = JS::StackGCVector<JS::PropertyKey>;
 
+static bool SetFromList(JSContext* cx, const PropertyVector& keys,
+                        PropertyHashSet& keysSet) {
+  MOZ_ASSERT(keysSet.empty(), "expected an empty output hashset");
 
-
-
-static bool ISOFieldKeysToIgnore(JSContext* cx, const PropertyVector& keys,
-                                 PropertyHashSet& ignoredKeys) {
-  MOZ_ASSERT(ignoredKeys.empty(), "expected an empty output hashset");
-
-  
-
-  if (!ignoredKeys.reserve(keys.length())) {
+  if (!keysSet.reserve(keys.length())) {
     return false;
   }
 
-  
-  bool seenMonthOrMonthCode = false;
   for (const auto& key : keys) {
-    
-    
-
-    
-    if (key.isAtom(cx->names().month) || key.isAtom(cx->names().monthCode)) {
-      
-      if (!seenMonthOrMonthCode) {
-        seenMonthOrMonthCode = true;
-
-        
-        if (!ignoredKeys.putNew(NameToId(cx->names().month)) ||
-            !ignoredKeys.putNew(NameToId(cx->names().monthCode))) {
-          return false;
-        }
-      }
-    } else {
-      
-      if (!ignoredKeys.putNew(key)) {
-        return false;
-      }
+    if (!keysSet.putNew(key)) {
+      return false;
     }
   }
-
-  
   return true;
 }
 
 
 
 
-static PlainObject* BuiltinCalendarMergeFields(
-    JSContext* cx, Handle<JSObject*> fields,
-    Handle<JSObject*> additionalFields) {
+static auto ISOFieldKeysToIgnore(mozilla::EnumSet<TemporalField> keys) {
   
-  
-  
-  
-  
+  auto ignoredKeys = keys;
 
   
-  
-
-  
-
-  
-  Rooted<PlainObject*> merged(cx, NewPlainObjectWithProto(cx, nullptr));
-  if (!merged) {
-    return nullptr;
+  if (keys.contains(TemporalField::Month)) {
+    ignoredKeys += TemporalField::MonthCode;
   }
 
   
-
-  
-
-  
-  
-  
-  
-  
-  JS::RootedVector<PropertyKey> keys(cx);
-  if (!GetPropertyKeys(cx, additionalFields, JSITER_OWNONLY, &keys)) {
-    return nullptr;
+  else if (keys.contains(TemporalField::MonthCode)) {
+    ignoredKeys += TemporalField::Month;
   }
 
   
-
-  
-  Rooted<PropertyHashSet> ignoredKeys(cx, PropertyHashSet(cx));
-  if (!ignoredKeys.reserve(keys.length())) {
-    return nullptr;
-  }
-
-  
-  Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
-  Rooted<Value> propValue(cx);
-  bool seenMonthOrMonthCode = false;
-  for (size_t i = 0; i < keys.length(); i++) {
-    Handle<PropertyKey> key = keys[i];
-
-    if (!GetOwnPropertyDescriptor(cx, additionalFields, key, &desc)) {
-      return nullptr;
-    }
-
-    propValue.set(desc->value());
-
-    
-    if (propValue.isUndefined()) {
-      continue;
-    }
-
-    
-    if (!DefineDataProperty(cx, merged, key, propValue)) {
-      return nullptr;
-    }
-
-    
-    if (key.isAtom(cx->names().month) || key.isAtom(cx->names().monthCode)) {
-      
-      if (!seenMonthOrMonthCode) {
-        seenMonthOrMonthCode = true;
-
-        if (!ignoredKeys.putNew(NameToId(cx->names().month)) ||
-            !ignoredKeys.putNew(NameToId(cx->names().monthCode))) {
-          return nullptr;
-        }
-      }
-    } else {
-      
-      if (!ignoredKeys.putNew(key)) {
-        return nullptr;
-      }
-    }
-  }
-
-  
-
-  
-
-  
-  keys.clear();
-
-  
-  
-  
-  if (!GetPropertyKeys(cx, fields, JSITER_OWNONLY, &keys)) {
-    return nullptr;
-  }
-
-  
-  for (size_t i = 0; i < keys.length(); i++) {
-    Handle<PropertyKey> key = keys[i];
-
-    
-    if (ignoredKeys.has(key)) {
-      continue;
-    }
-
-    if (!GetOwnPropertyDescriptor(cx, fields, key, &desc)) {
-      return nullptr;
-    }
-
-    propValue.set(desc->value());
-
-    
-    if (propValue.isUndefined()) {
-      continue;
-    }
-
-    
-    if (!DefineDataProperty(cx, merged, key, propValue)) {
-      return nullptr;
-    }
-  }
-
-  
-  return merged;
+  return ignoredKeys;
 }
 
 #ifdef DEBUG
 static bool IsPlainDataObject(PlainObject* obj) {
+  
+  if (obj->staticPrototype() != nullptr) {
+    return false;
+  }
+
+  
   for (ShapePropertyIter<NoGC> iter(obj->shape()); !iter.done(); iter++) {
     if (iter->flags() != PropertyFlags::defaultDataPropFlags) {
       return false;
@@ -3310,14 +3173,106 @@ static bool IsPlainDataObject(PlainObject* obj) {
 
 
 
+static PlainObject* BuiltinCalendarMergeFields(
+    JSContext* cx, Handle<PlainObject*> fields,
+    Handle<PlainObject*> additionalFields) {
+  MOZ_ASSERT(IsPlainDataObject(fields));
+  MOZ_ASSERT(IsPlainDataObject(additionalFields));
+
+  
+
+  
+  
+  
+  
+  JS::RootedVector<PropertyKey> additionalKeys(cx);
+  if (!GetPropertyKeys(cx, additionalFields, JSITER_OWNONLY | JSITER_SYMBOLS,
+                       &additionalKeys)) {
+    return nullptr;
+  }
+
+  
+  mozilla::EnumSet<TemporalField> additionalFieldKeys;
+  for (const auto& additionalKey : additionalKeys) {
+    auto field = ToTemporalField(cx, additionalKey);
+    if (field) {
+      additionalFieldKeys += *field;
+    }
+  }
+
+  auto toIgnore = ISOFieldKeysToIgnore(additionalFieldKeys);
+  MOZ_ASSERT(toIgnore.contains(additionalFieldKeys));
+
+  Rooted<PropertyHashSet> overriddenKeys(cx, PropertyHashSet(cx));
+  if (!SetFromList(cx, additionalKeys.get(), overriddenKeys.get())) {
+    return nullptr;
+  }
+
+  auto additionalFieldsToIgnore = toIgnore - additionalFieldKeys;
+  for (auto field : additionalFieldsToIgnore) {
+    auto* fieldName = ToPropertyName(cx, field);
+    if (!overriddenKeys.put(NameToId(fieldName))) {
+      return nullptr;
+    }
+  }
+
+  
+  Rooted<PlainObject*> merged(cx, NewPlainObjectWithProto(cx, nullptr));
+  if (!merged) {
+    return nullptr;
+  }
+
+  
+  
+  
+  JS::RootedVector<PropertyKey> fieldsKeys(cx);
+  if (!GetPropertyKeys(cx, fields, JSITER_OWNONLY | JSITER_SYMBOLS,
+                       &fieldsKeys)) {
+    return nullptr;
+  }
+
+  
+  Rooted<Value> propValue(cx);
+  for (size_t i = 0; i < fieldsKeys.length(); i++) {
+    Handle<PropertyKey> key = fieldsKeys[i];
+
+    
+    if (overriddenKeys.has(key)) {
+      if (!GetProperty(cx, additionalFields, additionalFields, key,
+                       &propValue)) {
+        return nullptr;
+      }
+    } else {
+      if (!GetProperty(cx, fields, fields, key, &propValue)) {
+        return nullptr;
+      }
+    }
+
+    
+    if (!propValue.isUndefined()) {
+      if (!DefineDataProperty(cx, merged, key, propValue)) {
+        return nullptr;
+      }
+    }
+  }
+
+  
+  if (!CopyDataProperties(cx, merged, additionalFields)) {
+    return nullptr;
+  }
+
+  
+  return merged;
+}
+
+
+
+
 JSObject* js::temporal::CalendarMergeFields(
     JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
     Handle<PlainObject*> additionalFields) {
   MOZ_ASSERT(
       CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::MergeFields));
-
-  MOZ_ASSERT(IsPlainDataObject(fields));
-  MOZ_ASSERT(IsPlainDataObject(additionalFields));
 
   
   auto mergeFields = calendar.mergeFields();
@@ -4833,74 +4788,9 @@ static bool Calendar_mergeFields(JSContext* cx, const CallArgs& args) {
   }
 
   
-  
-  
-  
-  JS::RootedVector<PropertyKey> additionalKeys(cx);
-  if (!GetPropertyKeys(cx, additionalFieldsCopy,
-                       JSITER_OWNONLY | JSITER_SYMBOLS, &additionalKeys)) {
-    return false;
-  }
-
-  
-  Rooted<PropertyHashSet> overriddenKeys(cx, PropertyHashSet(cx));
-  if (!ISOFieldKeysToIgnore(cx, additionalKeys, overriddenKeys.get())) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> merged(cx, NewPlainObjectWithProto(cx, nullptr));
+  auto* merged =
+      BuiltinCalendarMergeFields(cx, fieldsCopy, additionalFieldsCopy);
   if (!merged) {
-    return false;
-  }
-
-  
-  
-  
-  
-  JS::RootedVector<PropertyKey> fieldsKeys(cx);
-  if (!GetPropertyKeys(cx, fieldsCopy, JSITER_OWNONLY | JSITER_SYMBOLS,
-                       &fieldsKeys)) {
-    return false;
-  }
-
-  
-  Rooted<Value> propValue(cx);
-  for (size_t i = 0; i < fieldsKeys.length(); i++) {
-    Handle<PropertyKey> key = fieldsKeys[i];
-
-    
-    if (overriddenKeys.has(key)) {
-      if (!GetProperty(cx, additionalFieldsCopy, additionalFieldsCopy, key,
-                       &propValue)) {
-        return false;
-      }
-
-      
-      if (propValue.isUndefined()) {
-        
-        MOZ_ASSERT(key.isAtom(cx->names().month) ||
-                   key.isAtom(cx->names().monthCode));
-
-        continue;
-      }
-    } else {
-      if (!GetProperty(cx, fieldsCopy, fieldsCopy, key, &propValue)) {
-        return false;
-      }
-
-      
-      MOZ_ASSERT(!propValue.isUndefined());
-    }
-
-    
-    if (!DefineDataProperty(cx, merged, key, propValue)) {
-      return false;
-    }
-  }
-
-  
-  if (!CopyDataProperties(cx, merged, additionalFieldsCopy)) {
     return false;
   }
 
