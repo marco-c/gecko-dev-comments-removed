@@ -393,6 +393,12 @@ void gfxUserFontEntry::LoadNextSrc() {
 }
 
 void gfxUserFontEntry::ContinueLoad() {
+  if (mUserFontLoadState == STATUS_NOT_LOADED) {
+    
+    
+    return;
+  }
+
   MOZ_ASSERT(mUserFontLoadState == STATUS_LOAD_PENDING);
   MOZ_ASSERT(mSrcList[mCurrentSrcIndex].mSourceType ==
              gfxFontFaceSrc::eSourceType_URL);
