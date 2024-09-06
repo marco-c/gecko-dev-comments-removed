@@ -157,7 +157,7 @@ void Worker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   
   
   
-  Unused << NS_WARN_IF(!runnable->Dispatch());
+  Unused << NS_WARN_IF(!runnable->Dispatch(mWorkerPrivate));
 }
 
 void Worker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
@@ -191,7 +191,7 @@ void Worker::PostEventWithOptions(JSContext* aCx,
     return;
   }
 
-  Unused << NS_WARN_IF(!aRunnable->Dispatch());
+  Unused << NS_WARN_IF(!aRunnable->Dispatch(mWorkerPrivate));
 }
 
 void Worker::Terminate() {

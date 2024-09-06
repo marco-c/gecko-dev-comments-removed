@@ -85,6 +85,7 @@ class WorkerDebuggerGlobalScope;
 class WorkerErrorReport;
 class WorkerEventTarget;
 class WorkerGlobalScope;
+class WorkerParentRef;
 class WorkerRef;
 class WorkerRunnable;
 class WorkerDebuggeeRunnable;
@@ -1173,6 +1174,8 @@ class WorkerPrivate final
   
   void AdjustNonblockingCCBackgroundActorCount(int32_t aCount);
 
+  RefPtr<WorkerParentRef> GetWorkerParentRef() const;
+
  private:
   WorkerPrivate(
       WorkerPrivate* aParent, const nsAString& aScriptURL, bool aIsChromeWorker,
@@ -1626,6 +1629,8 @@ class WorkerPrivate final
   
   
   bool hasNotifiedStorageKeyUsed{false};
+
+  RefPtr<WorkerParentRef> mParentRef;
 };
 
 class AutoSyncLoopHolder {
@@ -1664,6 +1669,42 @@ class AutoSyncLoopHolder {
     
     return mTarget;
   }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class WorkerParentRef final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WorkerParentRef);
+
+  explicit WorkerParentRef(RefPtr<WorkerPrivate>& aWorkerPrivate);
+
+  const RefPtr<WorkerPrivate>& Private() const;
+
+  void DropWorkerPrivate();
+
+ private:
+  ~WorkerParentRef();
+
+  RefPtr<WorkerPrivate> mWorkerPrivate;
 };
 
 }  

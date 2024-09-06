@@ -57,8 +57,8 @@ already_AddRefed<Event> RTCTransformEventRunnable::BuildEvent(
   
   RefPtr<RTCRtpScriptTransformer> transformer =
       new RTCRtpScriptTransformer(aGlobal);
-  nsresult nrv =
-      transformer->Init(aCx, aTransformerOptions, mWorkerPrivate, mProxy);
+  nsresult nrv = transformer->Init(aCx, aTransformerOptions,
+                                   GetCurrentThreadWorkerPrivate(), mProxy);
   if (NS_WARN_IF(NS_FAILED(nrv))) {
     
     return nullptr;
