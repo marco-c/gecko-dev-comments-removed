@@ -98,6 +98,9 @@ if CONFIG['MOZ_ENABLE_CAIRO_FT']:
     SOURCES += [
         'cairo-ft-font.c',
     ]
+    
+    
+    DEFINES['HAVE_FT_LOAD_SFNT_TABLE'] = True
 
 SOURCES += [
     'cairo-bentley-ottmann-rectangular.c', 
