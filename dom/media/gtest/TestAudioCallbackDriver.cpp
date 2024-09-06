@@ -454,13 +454,17 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
 
   initPromise = TakeN(cubeb->StreamInitEvent(), 1);
   Monitor mon(__func__);
-  MonitorAutoLock lock(mon);
   bool canContinueToStartNextDriver = false;
   bool continued = false;
 
   
   EXPECT_EQ(stream->ManualDataCallback(0),
             MockCubebStream::KeepProcessing::Yes);
+
+  
+  
+  
+  MonitorAutoLock lock(mon);
 
   
   
