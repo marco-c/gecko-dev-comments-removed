@@ -474,7 +474,7 @@ impl SpatialNode {
                                 );
                             }
                             cs_scale_offset =
-                                state.coordinate_system_relative_scale_offset.accumulate(&maybe_snapped);
+                                state.coordinate_system_relative_scale_offset.pre_transform(&maybe_snapped);
                         }
                         None => reset_cs_id = true,
                     }
@@ -547,7 +547,7 @@ impl SpatialNode {
                 
                 let accumulated_offset = state.parent_accumulated_scroll_offset + sticky_offset + animated_offset;
                 self.viewport_transform = state.coordinate_system_relative_scale_offset
-                    .offset(snap_offset(accumulated_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
+                    .pre_offset(snap_offset(accumulated_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
                 self.content_transform = self.viewport_transform;
 
                 info.current_offset = sticky_offset + animated_offset;
@@ -559,13 +559,13 @@ impl SpatialNode {
                 
                 let accumulated_offset = state.parent_accumulated_scroll_offset;
                 self.viewport_transform = state.coordinate_system_relative_scale_offset
-                    .offset(snap_offset(accumulated_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
+                    .pre_offset(snap_offset(accumulated_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
 
                 
                 
                 let added_offset = accumulated_offset + self.scroll_offset();
                 self.content_transform = state.coordinate_system_relative_scale_offset
-                    .offset(snap_offset(added_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
+                    .pre_offset(snap_offset(added_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
 
                 self.coordinate_system_id = state.current_coordinate_system_id;
           }
