@@ -8,7 +8,7 @@ use crate::parser::{Parse, ParserContext};
 use crate::properties::{NonCustomPropertyId, PropertyId, ShorthandId};
 use crate::values::generics::animation as generics;
 use crate::values::specified::{LengthPercentage, NonNegativeNumber};
-use crate::values::{CustomIdent, KeyframesName, TimelineName};
+use crate::values::{CustomIdent, DashedIdent, KeyframesName};
 use crate::Atom;
 use cssparser::Parser;
 use std::fmt::{self, Write};
@@ -526,6 +526,63 @@ impl generics::ViewFunction<LengthPercentage> {
 }
 
 
+
+
+
+#[derive(
+    Clone,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct TimelineName(DashedIdent);
+
+impl TimelineName {
+    
+    pub fn none() -> Self {
+        Self(DashedIdent::empty())
+    }
+
+    
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl Parse for TimelineName {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
+            return Ok(Self::none())
+        }
+
+        DashedIdent::parse(context, input).map(TimelineName)
+    }
+}
+
+impl ToCss for TimelineName {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        if self.is_none() {
+            return dest.write_str("none")
+        }
+
+        self.0.to_css(dest)
+    }
+}
+
+
 pub type AnimationTimeline = generics::GenericAnimationTimeline<LengthPercentage>;
 
 impl Parse for AnimationTimeline {
@@ -542,10 +599,7 @@ impl Parse for AnimationTimeline {
             return Ok(Self::Auto);
         }
 
-        if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
-            return Ok(AnimationTimeline::Timeline(TimelineName::none()));
-        }
-
+        
         if let Ok(name) = input.try_parse(|i| TimelineName::parse(context, i)) {
             return Ok(AnimationTimeline::Timeline(name));
         }
@@ -566,9 +620,6 @@ impl Parse for AnimationTimeline {
         })
     }
 }
-
-
-pub type ScrollTimelineName = AnimationName;
 
 
 pub type ViewTimelineInset = generics::GenericViewTimelineInset<LengthPercentage>;

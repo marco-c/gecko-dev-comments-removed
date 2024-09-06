@@ -5,8 +5,7 @@
 
 
 use crate::values::generics::length::GenericLengthPercentageOrAuto;
-use crate::values::specified::animation::{ScrollAxis, ScrollFunction};
-use crate::values::TimelineName;
+use crate::values::specified::animation::{ScrollAxis, ScrollFunction, TimelineName};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -55,6 +54,7 @@ pub use self::GenericViewFunction as ViewFunction;
 pub enum GenericAnimationTimeline<LengthPercent> {
     
     Auto,
+    
     
     
     
