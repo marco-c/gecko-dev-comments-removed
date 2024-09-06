@@ -33,16 +33,15 @@ function checkFormFields(browsingContext, prefix, username, password) {
   );
 }
 
-function listenForNotifications(count, expectedFormOrigin) {
+function listenForNotifications(count, expectedFormOrigins = []) {
   return new Promise(resolve => {
     let notifications = [];
     LoginManagerParent.setListenerForTests((msg, data) => {
       if (msg == "FormProcessed") {
         notifications.push("FormProcessed: " + data.browsingContext.id);
       } else if (msg == "ShowDoorhanger") {
-        Assert.equal(
-          data.origin,
-          expectedFormOrigin,
+        Assert.ok(
+          expectedFormOrigins.includes(data.origin),
           "Message origin should match expected"
         );
         notifications.push("FormSubmit: " + data.data.usernameField.name);
@@ -103,6 +102,7 @@ async function autocompleteLoginInIFrame(
 
 
 
+
 async function submitSomeCrossSiteFrames(locationMode) {
   info("Check with location mode " + locationMode);
   let notifyPromise = listenForNotifications(2);
@@ -122,8 +122,9 @@ async function submitSomeCrossSiteFrames(locationMode) {
 
   
   
-  notifyPromise = listenForNotifications(1, "https://test2.example.org");
-  info("submit page after changing inner form");
+  notifyPromise = listenForNotifications(1, ["https://test2.example.org"]);
+
+  info("Submit inner page after changing outer and inner form");
 
   await SpecialPowers.spawn(outerFrameBC, [], () => {
     let doc = content.document;
@@ -142,9 +143,9 @@ async function submitSomeCrossSiteFrames(locationMode) {
     }
   });
 
-  await acceptPasswordSave();
-
   await verifyNotifications(notifyPromise, ["FormSubmit: username"]);
+
+  await acceptPasswordSave();
 
   
   notifyPromise = listenForNotifications(2);
@@ -173,8 +174,14 @@ async function submitSomeCrossSiteFrames(locationMode) {
   await checkFormFields(innerFrameBC2, "inner", "inner", "innerpass");
 
   
-  notifyPromise = listenForNotifications(1, "https://test1.example.com");
-  info("submit page after changing outer form");
+  notifyPromise = listenForNotifications(2, [
+    "https://test1.example.com", 
+    "https://test2.example.org", 
+  ]);
+
+  info(
+    "Submit outer page after changing outer form and autocompleting inner form"
+  );
 
   await SpecialPowers.spawn(outerFrameBC2, [locationMode], doClick => {
     let doc = content.document;
@@ -185,12 +192,16 @@ async function submitSomeCrossSiteFrames(locationMode) {
     } else {
       doc.getElementById("outer-form").submit();
     }
-
-    doc.getElementById("outer-form").submit();
   });
 
+  
+  
+  await verifyNotifications(notifyPromise, [
+    "FormSubmit: outer-username",
+    "FormSubmit: username",
+  ]);
+
   await acceptPasswordSave();
-  await verifyNotifications(notifyPromise, ["FormSubmit: outer-username"]);
 
   
   notifyPromise = listenForNotifications(2);
