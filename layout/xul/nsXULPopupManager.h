@@ -602,7 +602,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void GetVisiblePopups(nsTArray<nsIFrame*>& aPopups);
+  void GetVisiblePopups(nsTArray<nsMenuPopupFrame*>& aPopups);
 
   
 
