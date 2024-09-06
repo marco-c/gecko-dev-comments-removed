@@ -354,60 +354,13 @@ using RootedValVectorN = Rooted<ValVectorN<N>>;
 
 
 
-
-
+[[nodiscard]] extern bool CheckRefType(JSContext* cx, RefType targetType,
+                                       HandleValue v, MutableHandleAnyRef vp);
 
 
 [[nodiscard]] extern bool CheckRefType(JSContext* cx, RefType targetType,
-                                       HandleValue v,
-                                       MutableHandleFunction fnval,
-                                       MutableHandleAnyRef refval);
+                                       HandleValue v);
 
-
-[[nodiscard]] extern bool CheckFuncRefValue(JSContext* cx, HandleValue v,
-                                            MutableHandleFunction fun);
-
-
-[[nodiscard]] extern bool CheckAnyRefValue(JSContext* cx, HandleValue v,
-                                           MutableHandleAnyRef vp);
-
-
-[[nodiscard]] extern bool CheckNullExnRefValue(JSContext* cx, HandleValue v,
-                                               MutableHandleAnyRef vp);
-
-
-[[nodiscard]] extern bool CheckNullExternRefValue(JSContext* cx, HandleValue v,
-                                                  MutableHandleAnyRef vp);
-
-
-[[nodiscard]] extern bool CheckNullFuncRefValue(JSContext* cx, HandleValue v,
-                                                MutableHandleFunction fun);
-
-
-[[nodiscard]] extern bool CheckNullRefValue(JSContext* cx, HandleValue v,
-                                            MutableHandleAnyRef vp);
-
-
-[[nodiscard]] extern bool CheckEqRefValue(JSContext* cx, HandleValue v,
-                                          MutableHandleAnyRef vp);
-
-
-[[nodiscard]] extern bool CheckI31RefValue(JSContext* cx, HandleValue v,
-                                           MutableHandleAnyRef vp);
-
-
-[[nodiscard]] extern bool CheckStructRefValue(JSContext* cx, HandleValue v,
-                                              MutableHandleAnyRef vp);
-
-
-[[nodiscard]] extern bool CheckArrayRefValue(JSContext* cx, HandleValue v,
-                                             MutableHandleAnyRef vp);
-
-
-[[nodiscard]] extern bool CheckTypeRefValue(JSContext* cx,
-                                            const TypeDef* typeDef,
-                                            HandleValue v,
-                                            MutableHandleAnyRef vp);
 class NoDebug;
 class DebugCodegenVal;
 
