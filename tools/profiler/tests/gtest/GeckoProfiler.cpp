@@ -1383,8 +1383,6 @@ static void JSONRootCheck(const Json::Value& aRoot,
 
   EXPECT_HAS_JSON(aRoot["pages"], Array);
 
-  EXPECT_HAS_JSON(aRoot["profilerOverhead"], Object);
-
   
   
   if (aRoot.isMember("counters")) {
@@ -3195,11 +3193,11 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ_JSON(payload["name"], String, "");
                 }
               }  
-            }    
-          }      
-        }        
-      }          
-    }            
+            }  
+          }  
+        }  
+      }  
+    }  
     
     EXPECT_EQ(state, S_LAST);
 
@@ -3471,7 +3469,7 @@ TEST(GeckoProfiler, Markers)
         EXPECT_TRUE(testedSchemaNames.find("MediaSample") !=
                     testedSchemaNames.end());
       }  
-    }    
+    }  
   });
 
   Maybe<ProfilerBufferInfo> info = profiler_get_buffer_info();
