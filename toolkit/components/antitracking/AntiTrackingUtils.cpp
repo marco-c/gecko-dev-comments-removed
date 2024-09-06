@@ -870,13 +870,34 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
 bool AntiTrackingUtils::IsThirdPartyChannel(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 
+  
+  
+  
+  
+  nsAutoCString scheme;
+  nsCOMPtr<nsIURI> channelURI;
+  nsresult rv = aChannel->GetURI(getter_AddRefs(channelURI));
+  if (NS_SUCCEEDED(rv) && channelURI->SchemeIs("blob")) {
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    for (const nsCOMPtr<nsIPrincipal>& principal :
+         loadInfo->AncestorPrincipals()) {
+      bool thirdParty = true;
+      rv = loadInfo->PrincipalToInherit()->IsThirdPartyPrincipal(principal,
+                                                                 &thirdParty);
+      if (NS_SUCCEEDED(rv) && thirdParty) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   nsCOMPtr<mozIThirdPartyUtil> tpuService =
       mozilla::components::ThirdPartyUtil::Service();
   if (!tpuService) {
     return true;
   }
   bool thirdParty = true;
-  nsresult rv = tpuService->IsThirdPartyChannel(aChannel, nullptr, &thirdParty);
+  rv = tpuService->IsThirdPartyChannel(aChannel, nullptr, &thirdParty);
   if (NS_FAILED(rv)) {
     return true;
   }
@@ -939,7 +960,11 @@ bool AntiTrackingUtils::IsThirdPartyDocument(Document* aDocument) {
     return true;
   }
   bool thirdParty = true;
-  if (!aDocument->GetChannel()) {
+  if (!aDocument->GetChannel() ||
+      aDocument->GetDocumentURI()->SchemeIs("blob")) {
+    
+    
+    
     
     
     

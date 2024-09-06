@@ -24,7 +24,6 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsCOMPtr.h"
@@ -403,8 +402,6 @@ ThirdPartyUtil::GetTopWindowForChannel(nsIChannel* aChannel,
 
 
 
-
-
 NS_IMETHODIMP
 ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
   if (!aHostURI) {
@@ -413,24 +410,7 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
 
   
   
-  
-  nsresult rv;
-  nsCOMPtr<nsIPrincipal> blobPrincipal;
-  if (IsBlobURI(aHostURI)) {
-    if (BlobURLProtocolHandler::GetBlobURLPrincipal(
-            aHostURI, getter_AddRefs(blobPrincipal))) {
-      
-      rv = blobPrincipal->GetBaseDomain(aBaseDomain);
-    } else {
-      
-      rv = nsresult::NS_ERROR_DOM_BAD_URI;
-    }
-  } else {
-    rv = mTLDService->GetBaseDomain(aHostURI, 0, aBaseDomain);
-  }
-
-  
-  
+  nsresult rv = mTLDService->GetBaseDomain(aHostURI, 0, aBaseDomain);
   if (rv == NS_ERROR_HOST_IS_IP_ADDRESS ||
       rv == NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
     
