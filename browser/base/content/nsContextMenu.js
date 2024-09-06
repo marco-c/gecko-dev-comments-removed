@@ -2517,8 +2517,13 @@ class nsContextMenu {
 
 
   openSelectTranslationsPanel(event) {
+    const context = this.contentData.context;
+    let screenX = context.screenXDevPx / window.devicePixelRatio;
+    let screenY = context.screenYDevPx / window.devicePixelRatio;
     SelectTranslationsPanel.open(
       event,
+      screenX,
+      screenY,
       this.#getTextToTranslate(),
       this.#translationsLangPairPromise
     );

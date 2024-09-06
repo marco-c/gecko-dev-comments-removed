@@ -276,7 +276,9 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  async open(event, sourceText, langPairPromise) {
+
+
+  async open(event, screenX, screenY, sourceText, langPairPromise) {
     if (this.#isOpen()) {
       return;
     }
@@ -291,8 +293,7 @@ var SelectTranslationsPanel = new (class {
 
     this.#displayIdlePlaceholder();
     this.#maybeRequestTranslation();
-
-    await this.#openPopup(event);
+    await this.#openPopup(event, screenX, screenY);
   }
 
   
@@ -302,20 +303,12 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  async #openPopup(event) {
+  async #openPopup(event, screenX, screenY) {
+    await window.ensureCustomElements("moz-button-group");
+
     this.console?.log("Showing SelectTranslationsPanel");
     const { panel } = this.elements;
-
-    
-    
-    
-    
-    
-    const appMenuButton = document.getElementById("PanelUI-menu-button");
-    await PanelMultiView.openPopup(panel, appMenuButton, {
-      position: "bottomright topright",
-      triggerEvent: event,
-    }).catch(error => this.console?.error(error));
+    panel.openPopupAtScreen(screenX, screenY,  false, event);
   }
 
   
