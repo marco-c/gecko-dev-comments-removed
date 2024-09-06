@@ -870,7 +870,8 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
     cookie->SetCreationTime(
         Cookie::GenerateUniqueCreationTime(currentTimeInUsec));
 
-    RefPtr<BrowsingContext> bc = loadInfo->GetBrowsingContext();
+    
+    RefPtr<BrowsingContext> bc = loadInfo->GetTargetBrowsingContext();
 
     
     storage->AddCookie(crc, baseDomain, cookieOriginAttributes, cookie,
