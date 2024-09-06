@@ -52,6 +52,40 @@ function countDifferencesInArrayBuffers(buffer1, buffer2) {
   return differences;
 }
 
+function isDataRandomizedFuzzy(name, data1, data2, isCompareOriginal) {
+  let diffCnt = countDifferencesInUint8Arrays(data1, data2);
+  info(`For ${name} there are ${diffCnt} bits are different.`);
+
+  
+  
+  
+
+  
+  let expected = isCompareOriginal
+    ? NUM_RANDOMIZED_CANVAS_BITS
+    : NUM_RANDOMIZED_CANVAS_BITS * 2;
+
+  
+  
+  Assert.lessOrEqual(
+    diffCnt,
+    expected,
+    "The number of noise bits is expected."
+  );
+
+  return diffCnt <= expected && diffCnt > 0;
+}
+
+function isDataRandomizedNotEqual(name, data1, data2) {
+  return data1 !== data2;
+}
+
+function isDataRandomizedGreaterThanZero(name, data1, data2) {
+  let diffCnt = countDifferencesInArrayBuffers(data1, data2);
+  info(`For ${name} there are ${diffCnt} bits are different.`);
+  return diffCnt > 0;
+}
+
 function promiseObserver(topic) {
   return new Promise(resolve => {
     let obs = (aSubject, aTopic) => {

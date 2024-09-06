@@ -35,29 +35,7 @@ var TEST_CASES = [
 
       return [imageData.data, imageDataSecond.data];
     },
-    isDataRandomized(name, data1, data2, isCompareOriginal) {
-      let diffCnt = countDifferencesInUint8Arrays(data1, data2);
-      info(`For ${name} there are ${diffCnt} bits are different.`);
-
-      
-      
-      
-
-      
-      let expected = isCompareOriginal
-        ? NUM_RANDOMIZED_CANVAS_BITS
-        : NUM_RANDOMIZED_CANVAS_BITS * 2;
-
-      
-      
-      Assert.lessOrEqual(
-        diffCnt,
-        expected,
-        "The number of noise bits is expected."
-      );
-
-      return diffCnt <= expected && diffCnt > 0;
-    },
+    isDataRandomized: isDataRandomizedFuzzy,
   },
   {
     name: "OffscreenCanvas.convertToBlob() with a 2d context",
@@ -94,11 +72,7 @@ var TEST_CASES = [
 
       return [data, dataSecond];
     },
-    isDataRandomized(name, data1, data2) {
-      let diffCnt = countDifferencesInArrayBuffers(data1, data2);
-      info(`For ${name} there are ${diffCnt} bits are different.`);
-      return diffCnt > 0;
-    },
+    isDataRandomized: isDataRandomizedGreaterThanZero,
   },
   {
     name: "OffscreenCanvas.convertToBlob() with a webgl context",
@@ -140,11 +114,7 @@ var TEST_CASES = [
 
       return [data, dataSecond];
     },
-    isDataRandomized(name, data1, data2) {
-      let diffCnt = countDifferencesInArrayBuffers(data1, data2);
-      info(`For ${name} there are ${diffCnt} bits are different.`);
-      return diffCnt > 0;
-    },
+    isDataRandomized: isDataRandomizedGreaterThanZero,
   },
   {
     name: "OffscreenCanvas.convertToBlob() with a bitmaprenderer context",
@@ -187,11 +157,7 @@ var TEST_CASES = [
 
       return [data, dataSecond];
     },
-    isDataRandomized(name, data1, data2) {
-      let diffCnt = countDifferencesInArrayBuffers(data1, data2);
-      info(`For ${name} there are ${diffCnt} bits are different.`);
-      return diffCnt > 0;
-    },
+    isDataRandomized: isDataRandomizedGreaterThanZero,
   },
 ];
 
