@@ -57,6 +57,8 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   JS::Rooted<JS::Value> mDebuggerPrivateValue;
   JS::Rooted<JSScript*> mDebuggerIntroductionScript;
 
+  RefPtr<JS::Stencil> mStencil;
+
   
   
   nsresult mRv;
@@ -71,6 +73,8 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   bool mEncodeBytecode;
 
+  bool mKeepStencil = false;
+
 #ifdef DEBUG
   
   bool mWantsReturnValue;
@@ -82,11 +86,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   template <typename Unit>
   nsresult InternalCompile(JS::SourceText<Unit>& aSrcBuf);
-
-  
-  
-  nsresult InstantiateStencil(RefPtr<JS::Stencil>&& aStencil,
-                              JS::InstantiationStorage* aStorage = nullptr);
 
  public:
   
@@ -111,6 +110,9 @@ class MOZ_STACK_CLASS JSExecutionContext final {
     
     MOZ_ASSERT_IF(mEncodeBytecode && mScript && mRv == NS_OK, mScriptUsed);
   }
+
+  void SetKeepStencil() { mKeepStencil = true; }
+  already_AddRefed<JS::Stencil> StealStencil() { return mStencil.forget(); }
 
   
   
@@ -142,6 +144,12 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 
   
   nsresult Decode(const JS::TranscodeRange& aBytecodeBuf);
+
+  
+  
+  nsresult InstantiateStencil(RefPtr<JS::Stencil>&& aStencil,
+                              bool& incrementalEncodingAlreadyStarted,
+                              JS::InstantiationStorage* aStorage = nullptr);
 
   
   JSScript* GetScript();
