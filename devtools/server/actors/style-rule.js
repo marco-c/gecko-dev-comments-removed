@@ -834,6 +834,12 @@ class StyleRuleActor extends Actor {
         newText
       );
 
+      if (typeof cssText !== "string") {
+        throw new Error(
+          "Error in InspectorUtils.replaceBlockRuleBodyTextInStylesheet"
+        );
+      }
+
       
       
       if (sheetText !== newText) {
