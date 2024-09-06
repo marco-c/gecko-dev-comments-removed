@@ -417,7 +417,7 @@ DataChannelConnection::~DataChannelConnection() {
   
   ASSERT_WEBRTC(mState == DataChannelConnectionState::Closed);
   MOZ_ASSERT(!mMasterSocket);
-  MOZ_ASSERT(mPending.GetSize() == 0);
+  MOZ_ASSERT(mPending.empty());
 
   if (!IsSTSThread()) {
     
@@ -994,21 +994,8 @@ void DataChannelConnection::CompleteConnect() {
 
 
 void DataChannelConnection::ProcessQueuedOpens() {
-  
-  
-  
-
-  
-  
-  nsRefPtrDeque<DataChannel> temp;
-  RefPtr<DataChannel> temp_channel;
-  while (nullptr != (temp_channel = mPending.PopFront())) {
-    temp.Push(temp_channel.forget());
-  }
-
-  RefPtr<DataChannel> channel;
-
-  while (nullptr != (channel = temp.PopFront())) {
+  std::set<RefPtr<DataChannel>> temp(std::move(mPending));
+  for (auto channel : temp) {
     if (channel->mHasFinishedOpen) {
       DC_DEBUG(("Processing queued open for %p (%u)", channel.get(),
                 channel->mStream));
@@ -2482,7 +2469,7 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
     DC_DEBUG(("Queuing channel %p (%u) to finish open", channel.get(), stream));
     
     channel->mHasFinishedOpen = true;
-    mPending.Push(channel);
+    mPending.insert(channel);
     return channel.forget();
   }
 
@@ -2979,6 +2966,7 @@ void DataChannelConnection::CloseLocked(DataChannel* aChannel) {
     
     mChannels.Remove(channel);
   }
+  mPending.erase(channel);
 
   
   
@@ -3023,13 +3011,13 @@ void DataChannelConnection::CloseAll() {
   }
 
   
-  RefPtr<DataChannel> channel;
-  while (nullptr != (channel = mPending.PopFront())) {
+  for (const auto& channel : mPending) {
     DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
               channel->mStream));
     MutexAutoUnlock lock(mLock);
     channel->Close();  
   }
+  mPending.clear();
   
   
   SendOutgoingStreamReset();

@@ -368,8 +368,8 @@ class DataChannelConnection final : public net::NeckoTargetHolder,
   Channels mChannels;
   
   uint32_t mCurrentStream = 0;
-  nsRefPtrDeque<DataChannel> mPending;
   
+  std::set<RefPtr<DataChannel>> mPending MOZ_GUARDED_BY(mLock);
   size_t mNegotiatedIdLimit MOZ_GUARDED_BY(mLock) = 0;
   PendingType mPendingType MOZ_GUARDED_BY(mLock) = PendingType::None;
   
