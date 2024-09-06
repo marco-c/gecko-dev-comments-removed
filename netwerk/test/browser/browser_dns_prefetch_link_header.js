@@ -37,6 +37,11 @@ Services.prefs.setStringPref(
 Services.prefs.setBoolPref("network.dns.prefetch_via_proxy", true);
 
 
+let initialHttpsFirst = Services.prefs.getBoolPref("dom.security.https_first");
+Services.prefs.setBoolPref("dom.security.https_first", false);
+
+
+
 Services.dns.QueryInterface(Ci.nsPIDNSService).prefetchEnabled = true;
 
 
@@ -44,6 +49,7 @@ registerCleanupFunction(function () {
   
   Services.prefs.setCharPref("network.proxy.autoconfig_url", existingPACScript);
   Services.prefs.clearUserPref("network.dns.prefetch_via_proxy");
+  Services.prefs.setBoolPref("dom.security.https_first", initialHttpsFirst);
   Services.dns.QueryInterface(Ci.nsPIDNSService).prefetchEnabled = false;
 });
 
