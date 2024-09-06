@@ -54,6 +54,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
   PanelMultiView: "resource:///modules/PanelMultiView.sys.mjs",
   PanelView: "resource:///modules/PanelMultiView.sys.mjs",
+  PBMExitStatus: "resource:///modules/PBMExitStatus.sys.mjs",
   PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.sys.mjs",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
@@ -6458,6 +6459,10 @@ function warnAboutClosingWindow(source) {
     if (exitingCanceled.data) {
       return false;
     }
+    
+    
+    
+    Services.obs.notifyObservers(null, "last-pb-context-exiting-granted");
   }
 
   if (otherWindowExists) {
@@ -6772,6 +6777,9 @@ var gPrivateBrowsingUI = {
     if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
       return;
     }
+
+    
+    PBMExitStatus.init();
 
     
     
