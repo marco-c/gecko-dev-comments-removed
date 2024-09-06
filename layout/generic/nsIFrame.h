@@ -983,10 +983,6 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-
-
-
-
   void SetParent(nsContainerFrame* aParent);
 
   

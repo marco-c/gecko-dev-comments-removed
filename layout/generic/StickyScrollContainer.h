@@ -40,12 +40,6 @@ class StickyScrollContainer final : public nsIScrollPositionListener {
   static StickyScrollContainer* GetStickyScrollContainerForScrollFrame(
       nsIFrame* aScrollFrame);
 
-  
-
-
-  static void NotifyReparentedFrameAcrossScrollFrameBoundary(
-      nsIFrame* aFrame, nsIFrame* aOldParent);
-
   void AddFrame(nsIFrame* aFrame) { mFrames.AppendElement(aFrame); }
   void RemoveFrame(nsIFrame* aFrame) { mFrames.RemoveElement(aFrame); }
 
@@ -83,8 +77,8 @@ class StickyScrollContainer final : public nsIScrollPositionListener {
   void UpdatePositions(nsPoint aScrollPosition, nsIFrame* aSubtreeRoot);
 
   
-  virtual void ScrollPositionWillChange(nscoord aX, nscoord aY) override;
-  virtual void ScrollPositionDidChange(nscoord aX, nscoord aY) override;
+  void ScrollPositionWillChange(nscoord aX, nscoord aY) override;
+  void ScrollPositionDidChange(nscoord aX, nscoord aY) override;
 
   ~StickyScrollContainer();
 
