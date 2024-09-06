@@ -23,8 +23,15 @@ interface nsIX509Cert;
 
 [scriptable, builtinclass, uuid(418265c8-654e-4fbb-ba62-4eed27de1f03)]
 interface nsITLSSocketControl : nsISupports {
-    void proxyStartSSL();
-    void StartTLS();
+    [noscript] void proxyStartSSL();
+    [noscript] void StartTLS();
+
+    
+
+
+
+    [implicit_jscontext,must_use]
+    Promise asyncStartTLS();
 
     
 
