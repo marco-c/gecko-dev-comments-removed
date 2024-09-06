@@ -30,9 +30,9 @@ async function run_test() {
     
     
     
-    checkUpdateManager(STATE_NONE, false, STATE_PENDING_SVC, 0, 1);
+    await checkUpdateManager(STATE_NONE, false, STATE_PENDING_SVC, 0, 1);
   } else {
-    checkUpdateManager(
+    await checkUpdateManager(
       STATE_NONE,
       false,
       STATE_FAILED,
