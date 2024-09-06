@@ -25,6 +25,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -111,6 +112,9 @@ class IPCFuzzController {
   void AddToplevelActor(mojo::core::ports::PortName name,
                         mozilla::ipc::ProtocolId protocolId);
 
+  void InitAllowedIPCTypes();
+  void InitDisallowedIPCTypes();
+
   
   UniquePtr<IPC::Message> replaceIPCMessage(UniquePtr<IPC::Message> aMsg);
   void syncAfterReplace();
@@ -155,6 +159,13 @@ class IPCFuzzController {
 
   
   Atomic<int32_t> maybeLastActorId;
+
+  
+  
+  std::vector<uint32_t> actorAllowedMessages;
+
+  
+  std::set<uint32_t> actorDisallowedMessages;
 
   
   
