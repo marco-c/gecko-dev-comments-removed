@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
@@ -324,6 +324,9 @@ with Files("SubtleCrypto.webidl"):
 
 with Files("TCP*"):
     BUG_COMPONENT = ("Core", "DOM: Networking")
+
+with Files("TextEvent.webidl"):
+    BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
 
 with Files("TextTrack*"):
     BUG_COMPONENT = ("Core", "Audio/Video")
@@ -969,6 +972,7 @@ WEBIDL_FILES = [
     "TextDecoderStream.webidl",
     "TextEncoder.webidl",
     "TextEncoderStream.webidl",
+    "TextEvent.webidl",
     "TextTrack.webidl",
     "TextTrackCue.webidl",
     "TextTrackCueList.webidl",
@@ -1100,7 +1104,7 @@ WEBIDL_FILES += [
     "CustomEvent.webidl",
 ]
 
-# WebExtensions API.
+
 WEBIDL_FILES += [
     "ExtensionAlarms.webidl",
     "ExtensionBrowser.webidl",
@@ -1108,7 +1112,7 @@ WEBIDL_FILES += [
     "ExtensionBrowserSettingsColorManagement.webidl",
     "ExtensionDns.webidl",
     "ExtensionEventManager.webidl",
-    # ExtensionMockAPI is not a real WebExtensions API, and it is only enabled in tests.
+    
     "ExtensionMockAPI.webidl",
     "ExtensionPort.webidl",
     "ExtensionProxy.webidl",
@@ -1118,8 +1122,8 @@ WEBIDL_FILES += [
     "ExtensionTest.webidl",
 ]
 
-# We only expose our prefable test interfaces in debug builds, just to be on
-# the safe side.
+
+
 if CONFIG["MOZ_DEBUG"] and CONFIG["ENABLE_TESTS"]:
     WEBIDL_FILES += [
         "TestFunctions.webidl",
