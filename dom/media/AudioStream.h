@@ -333,7 +333,7 @@ class AudioStream final {
   const AudioConfig::ChannelLayout::ChannelMap mChannelMap;
 
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
 
   const uint32_t mOutChannels;
 
