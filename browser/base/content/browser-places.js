@@ -55,6 +55,7 @@ var StarUI = {
     delete this.panel;
     this._createPanelIfNeeded();
     var element = this._element("editBookmarkPanel");
+    window.ensureCustomElements("moz-button-group");
     
     
     element.hidden = false;
