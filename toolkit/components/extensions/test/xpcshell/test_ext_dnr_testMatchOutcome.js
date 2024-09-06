@@ -180,6 +180,11 @@ add_task(async function resource_type_validation() {
   });
 });
 
+
+
+
+
+
 add_task(async function url_validation() {
   await runAsDNRExtension({
     background: async dnrTestUtils => {
@@ -198,12 +203,14 @@ add_task(async function url_validation() {
         
         
         
+        
       ];
       const supportedInitiators = [
         
         ...supportedUrls,
         
         `moz-extension://${location.host}`,
+        
         "file:///tmp/",
         
         "data:text/plain,",
