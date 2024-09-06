@@ -226,8 +226,22 @@ class AnyRef {
     
     uintptr_t shiftedValue = wideValue << 1;
     uintptr_t taggedValue = shiftedValue | (uintptr_t)AnyRefTag::I31;
+#ifdef JS_64BIT
+    debugAssertCanonicalInt32(taggedValue);
+#endif
     return AnyRef(taggedValue);
   }
+
+#ifdef JS_64BIT
+  
+  static void debugAssertCanonicalInt32(uintptr_t value) {
+#  ifdef DEBUG
+#    if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
+    MOZ_ASSERT(value <= UINT32_MAX);
+#    endif
+#  endif
+  }
+#endif
 
   static bool int32NeedsBoxing(int32_t value) {
     
@@ -316,6 +330,9 @@ class AnyRef {
   
   int32_t toI31() const {
     MOZ_ASSERT(isI31());
+#ifdef JS_64BIT
+    debugAssertCanonicalInt32(value_);
+#endif
     
     uint32_t truncatedValue = *reinterpret_cast<const uint32_t*>(&value_);
     
