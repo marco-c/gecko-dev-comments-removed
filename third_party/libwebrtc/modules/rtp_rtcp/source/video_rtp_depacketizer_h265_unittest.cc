@@ -297,15 +297,15 @@ TEST(VideoRtpDepacketizerH265Test, Fu) {
                                 0x08, 0x4a, 0x31, 0x11, 0x15, 0xe5, 0xc0};
 
   uint8_t packet2[] = {
-      0x62, 0x02,       
-      H265::kIdrWRadl,  
-      0x02              
+      0x62, 0x02,     
+      H265::kBlaWLp,  
+      0x02            
   };
   const uint8_t kExpected2[] = {0x02};
 
   uint8_t packet3[] = {
       0x62, 0x02,  
-      0x33,        
+      0x53,        
       0x03         
   };
   const uint8_t kExpected3[] = {0x03};
@@ -330,6 +330,7 @@ TEST(VideoRtpDepacketizerH265Test, Fu) {
                                  parsed2->video_payload.size()),
               ElementsAreArray(kExpected2));
   EXPECT_FALSE(parsed2->video_header.is_first_packet_in_frame);
+  EXPECT_EQ(parsed2->video_header.frame_type, VideoFrameType::kVideoFrameKey);
   EXPECT_EQ(parsed2->video_header.codec, kVideoCodecH265);
 
   auto parsed3 = depacketizer.Parse(rtc::CopyOnWriteBuffer(packet3));
@@ -337,6 +338,7 @@ TEST(VideoRtpDepacketizerH265Test, Fu) {
                                  parsed3->video_payload.size()),
               ElementsAreArray(kExpected3));
   EXPECT_FALSE(parsed3->video_header.is_first_packet_in_frame);
+  EXPECT_EQ(parsed3->video_header.frame_type, VideoFrameType::kVideoFrameKey);
   EXPECT_EQ(parsed3->video_header.codec, kVideoCodecH265);
 }
 
