@@ -30,6 +30,7 @@
 #  ifdef MOZ_WIDGET_ANDROID
 #    include <android/native_window.h>
 #    include <android/native_window_jni.h>
+#    include "mozilla/jni/Utils.h"
 #    include "mozilla/widget/AndroidCompositorWidget.h"
 #  endif
 
@@ -417,6 +418,15 @@ bool GLContextEGL::Init() {
       mEgl->HasKHRImageBase() &&
       mEgl->IsExtensionSupported(EGLExtension::KHR_gl_texture_2D_image) &&
       IsExtensionSupported(OES_EGL_image);
+
+#if MOZ_WIDGET_ANDROID
+  
+  
+  
+  if (Renderer() == GLRenderer::SamsungXclipse && jni::GetAPIVersion() >= 34) {
+    mEgl->SetShouldLeakEGLDisplay();
+  }
+#endif
 
   return true;
 }

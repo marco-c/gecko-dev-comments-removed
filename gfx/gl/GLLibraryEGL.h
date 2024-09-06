@@ -695,21 +695,6 @@ class GLLibraryEGL final {
   } mSymbols = {};
 };
 
-static bool ShouldLeakEglDisplay() {
-  
-  
-  
-#ifdef MOZ_WIDGET_ANDROID
-  if (jni::GetAPIVersion() >= 34) {
-    const auto board = java::sdk::Build::BOARD()->ToString();
-    if (board.EqualsASCII("s5e9925")) {
-      return true;
-    }
-  }
-#endif
-  return false;
-}
-
 class EglDisplay final {
  public:
   const RefPtr<GLLibraryEGL> mLib;
@@ -718,6 +703,8 @@ class EglDisplay final {
 
  private:
   std::bitset<UnderlyingValue(EGLExtension::Max)> mAvailableExtensions;
+
+  bool mShouldLeakEGLDisplay = false;
 
   struct PrivateUseOnly final {};
 
@@ -743,6 +730,10 @@ class EglDisplay final {
   void DumpEGLConfig(EGLConfig) const;
   void DumpEGLConfigs() const;
 
+  
+  
+  void SetShouldLeakEGLDisplay() { mShouldLeakEGLDisplay = true; }
+
   void Shutdown();
 
   
@@ -760,8 +751,7 @@ class EglDisplay final {
   
 
   EGLBoolean fTerminate() {
-    static const bool shouldLeak = ShouldLeakEglDisplay();
-    if (shouldLeak) {
+    if (mShouldLeakEGLDisplay) {
       return LOCAL_EGL_TRUE;
     }
     return mLib->fTerminate(mDisplay);
