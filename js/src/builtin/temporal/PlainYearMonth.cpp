@@ -886,6 +886,51 @@ static bool PlainYearMonth_calendarId(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainYearMonth_era(JSContext* cx, const CallArgs& args) {
+  
+  Rooted<PlainYearMonthObject*> yearMonth(
+      cx, &args.thisv().toObject().as<PlainYearMonthObject>());
+  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
+
+  
+  return CalendarEra(cx, calendar, yearMonth, args.rval());
+}
+
+
+
+
+static bool PlainYearMonth_era(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainYearMonth, PlainYearMonth_era>(cx, args);
+}
+
+
+
+
+static bool PlainYearMonth_eraYear(JSContext* cx, const CallArgs& args) {
+  
+  Rooted<PlainYearMonthObject*> yearMonth(
+      cx, &args.thisv().toObject().as<PlainYearMonthObject>());
+  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
+
+  
+  return CalendarEraYear(cx, calendar, yearMonth, args.rval());
+}
+
+
+
+
+static bool PlainYearMonth_eraYear(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainYearMonth, PlainYearMonth_eraYear>(cx,
+                                                                        args);
+}
+
+
+
+
 static bool PlainYearMonth_year(JSContext* cx, const CallArgs& args) {
   
   Rooted<PlainYearMonthObject*> yearMonth(
@@ -1574,6 +1619,8 @@ static const JSFunctionSpec PlainYearMonth_prototype_methods[] = {
 
 static const JSPropertySpec PlainYearMonth_prototype_properties[] = {
     JS_PSG("calendarId", PlainYearMonth_calendarId, 0),
+    JS_PSG("era", PlainYearMonth_era, 0),
+    JS_PSG("eraYear", PlainYearMonth_eraYear, 0),
     JS_PSG("year", PlainYearMonth_year, 0),
     JS_PSG("month", PlainYearMonth_month, 0),
     JS_PSG("monthCode", PlainYearMonth_monthCode, 0),

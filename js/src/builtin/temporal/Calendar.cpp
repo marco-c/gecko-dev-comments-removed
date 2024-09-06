@@ -1307,6 +1307,16 @@ static bool RequireString(JSContext* cx, Handle<Value> value,
   return false;
 }
 
+static bool RequireStringOrUndefined(JSContext* cx, Handle<Value> value,
+                                     Handle<PropertyName*> name,
+                                     MutableHandle<Value> result) {
+  if (value.isUndefined()) {
+    result.setUndefined();
+    return true;
+  }
+  return RequireString(cx, value, name, result);
+}
+
 static bool RequireBoolean(JSContext* cx, Handle<Value> value,
                            Handle<PropertyName*> name,
                            MutableHandle<Value> result) {
@@ -1361,6 +1371,146 @@ static bool CallCalendarMethod(JSContext* cx, Handle<PropertyName*> name,
 
   
   return conversion(cx, result, name, result);
+}
+
+
+
+
+static bool BuiltinCalendarEra(JSContext* cx, const PlainDate& date,
+                               MutableHandle<Value> result) {
+  
+
+  
+  result.setUndefined();
+  return true;
+}
+
+static bool Calendar_era(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+static bool CalendarEra(JSContext* cx, Handle<CalendarValue> calendar,
+                        Handle<JSObject*> dateLike, const PlainDate& date,
+                        MutableHandle<Value> result) {
+  
+  return CallCalendarMethod<BuiltinCalendarEra, RequireStringOrUndefined>(
+      cx, cx->names().era, Calendar_era, calendar, dateLike, date, result);
+}
+
+
+
+
+bool js::temporal::CalendarEra(JSContext* cx, Handle<CalendarValue> calendar,
+                               Handle<PlainDateObject*> dateLike,
+                               MutableHandle<Value> result) {
+  return CalendarEra(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+}
+
+
+
+
+bool js::temporal::CalendarEra(JSContext* cx, Handle<CalendarValue> calendar,
+                               Handle<PlainDateTimeObject*> dateLike,
+                               MutableHandle<Value> result) {
+  return CalendarEra(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+}
+
+
+
+
+bool js::temporal::CalendarEra(JSContext* cx, Handle<CalendarValue> calendar,
+                               Handle<PlainYearMonthObject*> dateLike,
+                               MutableHandle<Value> result) {
+  return CalendarEra(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+}
+
+
+
+
+bool js::temporal::CalendarEra(JSContext* cx, Handle<CalendarValue> calendar,
+                               const PlainDateTime& dateTime,
+                               MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarEra(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
+static bool BuiltinCalendarEraYear(JSContext* cx, const PlainDate& date,
+                                   MutableHandle<Value> result) {
+  
+
+  
+  result.setUndefined();
+  return true;
+}
+
+static bool Calendar_eraYear(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+static bool CalendarEraYear(JSContext* cx, Handle<CalendarValue> calendar,
+                            Handle<JSObject*> dateLike, const PlainDate& date,
+                            MutableHandle<Value> result) {
+  
+  return CallCalendarMethod<BuiltinCalendarEraYear,
+                            RequireIntegralNumberOrUndefined>(
+      cx, cx->names().eraYear, Calendar_eraYear, calendar, dateLike, date,
+      result);
+}
+
+
+
+
+bool js::temporal::CalendarEraYear(JSContext* cx,
+                                   Handle<CalendarValue> calendar,
+                                   Handle<PlainDateObject*> dateLike,
+                                   MutableHandle<Value> result) {
+  return CalendarEraYear(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+}
+
+
+
+
+bool js::temporal::CalendarEraYear(JSContext* cx,
+                                   Handle<CalendarValue> calendar,
+                                   Handle<PlainDateTimeObject*> dateLike,
+                                   MutableHandle<Value> result) {
+  return CalendarEraYear(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+}
+
+
+
+
+bool js::temporal::CalendarEraYear(JSContext* cx,
+                                   Handle<CalendarValue> calendar,
+                                   Handle<PlainYearMonthObject*> dateLike,
+                                   MutableHandle<Value> result) {
+  return CalendarEraYear(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+}
+
+
+
+
+bool js::temporal::CalendarEraYear(JSContext* cx,
+                                   Handle<CalendarValue> calendar,
+                                   const PlainDateTime& dateTime,
+                                   MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarEraYear(cx, calendar, dateLike, dateTime.date, result);
 }
 
 
@@ -4261,6 +4411,58 @@ static bool Calendar_dateUntil(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool Calendar_era(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
+
+  
+  PlainDate date;
+  if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
+          cx, args.get(0), &date)) {
+    return false;
+  }
+
+  
+  return BuiltinCalendarEra(cx, date, args.rval());
+}
+
+
+
+
+static bool Calendar_era(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsCalendar, Calendar_era>(cx, args);
+}
+
+
+
+
+static bool Calendar_eraYear(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
+
+  
+  PlainDate date;
+  if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
+          cx, args.get(0), &date)) {
+    return false;
+  }
+
+  
+  return BuiltinCalendarEraYear(cx, date, args.rval());
+}
+
+
+
+
+static bool Calendar_eraYear(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsCalendar, Calendar_eraYear>(cx, args);
+}
+
+
+
+
 static bool Calendar_year(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
@@ -4797,6 +4999,8 @@ static const JSFunctionSpec Calendar_prototype_methods[] = {
     JS_FN("monthDayFromFields", Calendar_monthDayFromFields, 1, 0),
     JS_FN("dateAdd", Calendar_dateAdd, 2, 0),
     JS_FN("dateUntil", Calendar_dateUntil, 2, 0),
+    JS_FN("era", Calendar_era, 1, 0),
+    JS_FN("eraYear", Calendar_eraYear, 1, 0),
     JS_FN("year", Calendar_year, 1, 0),
     JS_FN("month", Calendar_month, 1, 0),
     JS_FN("monthCode", Calendar_monthCode, 1, 0),
