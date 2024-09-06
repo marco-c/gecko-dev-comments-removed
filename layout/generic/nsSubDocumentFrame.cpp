@@ -322,29 +322,28 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  nsFrameLoader* frameLoader = FrameLoader();
-  bool isRemoteFrame = frameLoader && frameLoader->IsRemoteFrame();
-
-  
   const bool pointerEventsNone =
       Style()->PointerEvents() == StylePointerEvents::None;
-  if (!aBuilder->IsForEventDelivery() || !pointerEventsNone) {
-    nsDisplayListCollection decorations(aBuilder);
-    DisplayBorderBackgroundOutline(aBuilder, decorations);
-    if (isRemoteFrame) {
-      
-      
-      
-      
-      WrapBackgroundColorInOwnLayer(aBuilder, this,
-                                    decorations.BorderBackground());
-    }
-    decorations.MoveTo(aLists);
-  }
-
   if (aBuilder->IsForEventDelivery() && pointerEventsNone) {
+    
+    
     return;
   }
+
+  nsFrameLoader* frameLoader = FrameLoader();
+  const bool isRemoteFrame = frameLoader && frameLoader->IsRemoteFrame();
+
+  nsDisplayListCollection decorations(aBuilder);
+  DisplayBorderBackgroundOutline(aBuilder, decorations);
+  if (isRemoteFrame) {
+    
+    
+    
+    
+    WrapBackgroundColorInOwnLayer(aBuilder, this,
+                                  decorations.BorderBackground());
+  }
+  decorations.MoveTo(aLists);
 
   if (HidesContent()) {
     return;
