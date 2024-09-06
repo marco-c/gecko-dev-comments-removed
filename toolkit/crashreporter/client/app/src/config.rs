@@ -370,40 +370,16 @@ impl Config {
     
     
     pub fn sibling_program_path<N: AsRef<OsStr>>(&self, program: N) -> PathBuf {
-        
-        
-        
-        
-        
-        
-        let self_path = PathBuf::from(std::env::args_os().next().expect("failed to get argv[0]"));
+        let self_path = self_path();
         let exe_extension = self_path.extension().unwrap_or_default();
-
-        let mut program_path = self_path.clone();
-        
-        program_path.pop();
-        program_path.push(program.as_ref());
-        program_path.set_extension(exe_extension);
-
-        if !program_path.exists() && cfg!(all(not(mock), target_os = "macos")) {
-            
-            
-            
-            
-            
-            
-            
-
-            
-            
-            for _ in 0..4 {
-                program_path.pop();
-            }
-            program_path.push(program.as_ref());
-            program_path.set_extension(exe_extension);
+        if !exe_extension.is_empty() {
+            let mut p = program.as_ref().to_os_string();
+            p.push(".");
+            p.push(exe_extension);
+            sibling_path(p)
+        } else {
+            sibling_path(program)
         }
-
-        program_path
     }
 
     cfg_if::cfg_if! {
@@ -506,6 +482,52 @@ impl Config {
             }
         }
     }
+}
+
+
+
+
+
+
+
+
+pub fn sibling_path<N: AsRef<OsStr>>(file: N) -> PathBuf {
+    
+    
+    
+    
+    
+    
+    let dir_path = {
+        let mut path = self_path();
+        
+        path.pop();
+        path
+    };
+
+    let mut path = dir_path.join(file.as_ref());
+
+    if !path.exists() && cfg!(all(not(mock), target_os = "macos")) {
+        
+        
+        
+        
+        
+        
+        
+        path = dir_path;
+        
+        for _ in 0..3 {
+            path.pop();
+        }
+        path.push(file.as_ref());
+    }
+
+    path
+}
+
+fn self_path() -> PathBuf {
+    PathBuf::from(std::env::args_os().next().expect("failed to get argv[0]"))
 }
 
 fn env_bool<K: AsRef<OsStr>>(name: K) -> bool {
