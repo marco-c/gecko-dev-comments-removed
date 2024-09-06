@@ -1,54 +1,296 @@
 use crate::error;
-use crate::pe::{optional_header, section_table, symbol};
+use crate::pe::{data_directories, optional_header, section_table, symbol};
 use crate::strtab;
 use alloc::vec::Vec;
 use log::debug;
 use scroll::{ctx, IOread, IOwrite, Pread, Pwrite, SizeWith};
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone, Default, Pwrite)]
+#[doc(alias("IMAGE_DOS_HEADER"))]
 pub struct DosHeader {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_magic"))]
     pub signature: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_cblp"))]
     pub bytes_on_last_page: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_cp"))]
     pub pages_in_file: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_crlc"))]
     pub relocations: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_cparhdr"))]
     pub size_of_header_in_paragraphs: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_minalloc"))]
     pub minimum_extra_paragraphs_needed: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_maxalloc"))]
     pub maximum_extra_paragraphs_needed: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_ss"))]
     pub initial_relative_ss: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_sp"))]
     pub initial_sp: u16,
     
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_csum"))]
     pub checksum: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_ip"))]
     pub initial_ip: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_cs"))]
     pub initial_relative_cs: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_lfarlc"))]
     pub file_address_of_relocation_table: u16,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_ovno"))]
     pub overlay_number: u16,
     
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_res"))]
     pub reserved: [u16; 4],
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_oemid"))]
     pub oem_id: u16,
     
+    
+    
+    #[doc(alias("e_oeminfo"))]
     pub oem_info: u16,
     
+    
+    
+    
+    
+    
+    
+    #[doc(alias("e_res2"))]
     pub reserved2: [u16; 10],
     
+    
+    
+    
+    
+    
+    #[doc(alias("e_lfanew"))]
     pub pe_pointer: u32,
 }
 
+#[doc(alias("IMAGE_DOS_SIGNATURE"))]
 pub const DOS_MAGIC: u16 = 0x5a4d;
 pub const PE_POINTER_OFFSET: u32 = 0x3c;
 pub const DOS_STUB_OFFSET: u32 = PE_POINTER_OFFSET + (core::mem::size_of::<u32>() as u32);
@@ -79,12 +321,10 @@ impl DosHeader {
         let initial_relative_cs = bytes.gread_with(&mut offset, scroll::LE)?;
         let file_address_of_relocation_table = bytes.gread_with(&mut offset, scroll::LE)?;
         let overlay_number = bytes.gread_with(&mut offset, scroll::LE)?;
-        let reserved = [0x0; 4];
-        offset += core::mem::size_of_val(&reserved);
+        let reserved = bytes.gread_with(&mut offset, scroll::LE)?; 
         let oem_id = bytes.gread_with(&mut offset, scroll::LE)?;
         let oem_info = bytes.gread_with(&mut offset, scroll::LE)?;
-        let reserved2 = [0x0; 10];
-        offset += core::mem::size_of_val(&reserved2);
+        let reserved2 = bytes.gread_with(&mut offset, scroll::LE)?; 
 
         debug_assert!(
             offset == PE_POINTER_OFFSET as usize,
@@ -144,6 +384,13 @@ impl DosHeader {
 #[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone, Pread, Pwrite)]
 
+
+
+
+
+
+
+
 pub struct DosStub(pub [u8; 0x40]);
 impl Default for DosStub {
     fn default() -> Self {
@@ -159,16 +406,98 @@ impl Default for DosStub {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone, Default, Pread, Pwrite, IOread, IOwrite, SizeWith)]
+#[doc(alias("IMAGE_FILE_HEADER"))]
 pub struct CoffHeader {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(alias("Machine"))]
     pub machine: u16,
+    
+    
+    
+    #[doc(alias("NumberOfSections"))]
     pub number_of_sections: u16,
+    
+    
+    
+    #[doc(alias("TimeDateStamp"))]
     pub time_date_stamp: u32,
+    
+    
+    
+    
+    
+    #[doc(alias("PointerToSymbolTable"))]
     pub pointer_to_symbol_table: u32,
+    
+    
+    
+    
+    
+    #[doc(alias("NumberOfSymbols"))]
     pub number_of_symbol_table: u32,
+    
+    
+    
+    
+    
+    #[doc(alias("SizeOfOptionalHeader"))]
     pub size_of_optional_header: u16,
+    
+    
+    
+    #[doc(alias("Characteristics"))]
     pub characteristics: u16,
 }
 
@@ -177,54 +506,199 @@ pub const SIZEOF_COFF_HEADER: usize = 20;
 pub const PE_MAGIC: u32 = 0x0000_4550;
 pub const SIZEOF_PE_MAGIC: usize = 4;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_UNKNOWN"))]
 pub const COFF_MACHINE_UNKNOWN: u16 = 0x0;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_ALPHA"))]
+pub const COFF_MACHINE_ALPHA: u16 = 0x184;
+
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_ALPHA64"))]
+#[doc(alias("IMAGE_FILE_MACHINE_AXP64"))]
+pub const COFF_MACHINE_ALPHA64: u16 = 0x284;
+
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_AM33"))]
 pub const COFF_MACHINE_AM33: u16 = 0x1d3;
+
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_AMD64"))]
+
 
 pub const COFF_MACHINE_X86_64: u16 = 0x8664;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_ARM"))]
 pub const COFF_MACHINE_ARM: u16 = 0x1c0;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_ARM64"))]
 pub const COFF_MACHINE_ARM64: u16 = 0xaa64;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_ARMNT"))]
 pub const COFF_MACHINE_ARMNT: u16 = 0x1c4;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_EBC"))]
 pub const COFF_MACHINE_EBC: u16 = 0xebc;
 
+
+
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_I386"))]
 pub const COFF_MACHINE_X86: u16 = 0x14c;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_IA64"))]
 pub const COFF_MACHINE_IA64: u16 = 0x200;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_LOONGARCH32"))]
+pub const COFF_MACHINE_LOONGARCH32: u16 = 0x6232;
+
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_LOONGARCH64"))]
+pub const COFF_MACHINE_LOONGARCH64: u16 = 0x6264;
+
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_M32R"))]
 pub const COFF_MACHINE_M32R: u16 = 0x9041;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_MIPS16"))]
 pub const COFF_MACHINE_MIPS16: u16 = 0x266;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_MIPSFPU"))]
 pub const COFF_MACHINE_MIPSFPU: u16 = 0x366;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_MIPSFPU16"))]
 pub const COFF_MACHINE_MIPSFPU16: u16 = 0x466;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_POWERPC"))]
 pub const COFF_MACHINE_POWERPC: u16 = 0x1f0;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_POWERPCFP"))]
 pub const COFF_MACHINE_POWERPCFP: u16 = 0x1f1;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_R4000"))]
 pub const COFF_MACHINE_R4000: u16 = 0x166;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_RISCV32"))]
 pub const COFF_MACHINE_RISCV32: u16 = 0x5032;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_RISCV64"))]
 pub const COFF_MACHINE_RISCV64: u16 = 0x5064;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_RISCV128"))]
 pub const COFF_MACHINE_RISCV128: u16 = 0x5128;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_SH3"))]
 pub const COFF_MACHINE_SH3: u16 = 0x1a2;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_SH3DSP"))]
 pub const COFF_MACHINE_SH3DSP: u16 = 0x1a3;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_SH4"))]
 pub const COFF_MACHINE_SH4: u16 = 0x1a6;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_SH5"))]
 pub const COFF_MACHINE_SH5: u16 = 0x1a8;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_THUMB"))]
 pub const COFF_MACHINE_THUMB: u16 = 0x1c2;
 
+
+
+
+#[doc(alias("IMAGE_FILE_MACHINE_WCEMIPSV2"))]
 pub const COFF_MACHINE_WCEMIPSV2: u16 = 0x169;
 
 impl CoffHeader {
@@ -293,11 +767,23 @@ impl CoffHeader {
     }
 }
 
+
+
+
+
+
+
 #[derive(Debug, PartialEq, Copy, Clone, Default)]
 pub struct Header {
     pub dos_header: DosHeader,
     
     pub dos_stub: DosStub,
+
+    
+    
+    
+    
+    
     
     pub signature: u32,
     pub coff_header: CoffHeader,
@@ -350,17 +836,166 @@ impl ctx::TryIntoCtx<scroll::Endian> for Header {
 }
 
 
+
+
+
+
+#[cfg(feature = "te")]
+#[repr(C)]
+#[derive(Debug, Default, PartialEq, Copy, Clone, Pread, Pwrite)]
+pub struct TeHeader {
+    
+    pub signature: u16,
+    
+    pub machine: u16,
+    
+    pub number_of_sections: u8,
+    
+    pub subsystem: u8,
+    
+    
+    pub stripped_size: u16,
+    
+    pub entry_point: u32,
+    
+    pub base_of_code: u32,
+    
+    pub image_base: u64,
+    
+    pub reloc_dir: data_directories::DataDirectory,
+    
+    pub debug_dir: data_directories::DataDirectory,
+}
+
+#[cfg(feature = "te")]
+#[doc(alias("IMAGE_TE_SIGNATURE"))]
+pub const TE_MAGIC: u16 = 0x5a56;
+
+#[cfg(feature = "te")]
+impl TeHeader {
+    
+    pub fn parse(bytes: &[u8], offset: &mut usize) -> error::Result<Self> {
+        let mut header: TeHeader = bytes.gread_with(offset, scroll::LE)?;
+        let adj_offset = header.stripped_size as u32 - core::mem::size_of::<TeHeader>() as u32;
+        header.fixup_header(adj_offset);
+        Ok(header)
+    }
+
+    
+    pub fn sections(
+        &self,
+        bytes: &[u8],
+        offset: &mut usize,
+    ) -> error::Result<Vec<section_table::SectionTable>> {
+        let adj_offset = self.stripped_size as u32 - core::mem::size_of::<TeHeader>() as u32;
+        let nsections = self.number_of_sections as usize;
+
+        
+        if nsections > bytes.len() / 40 {
+            return Err(error::Error::BufferTooShort(nsections, "sections"));
+        }
+
+        let mut sections = Vec::with_capacity(nsections);
+        for i in 0..nsections {
+            let mut section = section_table::SectionTable::parse(bytes, offset, 0)?;
+            TeHeader::fixup_section(&mut section, adj_offset);
+            debug!("({}) {:#?}", i, section);
+            sections.push(section);
+        }
+        Ok(sections)
+    }
+
+    
+    fn fixup_header(&mut self, adj_offset: u32) {
+        debug!(
+            "Entry point fixed up from: 0x{:x} to 0x{:X}",
+            self.entry_point,
+            self.entry_point.wrapping_sub(adj_offset)
+        );
+        self.entry_point = self.entry_point.wrapping_sub(adj_offset);
+
+        debug!(
+            "Base of code fixed up from: 0x{:x} to 0x{:X}",
+            self.base_of_code,
+            self.base_of_code.wrapping_sub(adj_offset)
+        );
+        self.base_of_code = self.base_of_code.wrapping_sub(adj_offset);
+
+        debug!(
+            "Relocation Directory fixed up from: 0x{:x} to 0x{:X}",
+            self.reloc_dir.virtual_address,
+            self.reloc_dir.virtual_address.wrapping_sub(adj_offset)
+        );
+        self.reloc_dir.virtual_address = self.reloc_dir.virtual_address.wrapping_sub(adj_offset);
+
+        debug!(
+            "Debug Directory fixed up from: 0x{:x} to 0x{:X}",
+            self.debug_dir.virtual_address,
+            self.debug_dir.virtual_address.wrapping_sub(adj_offset)
+        );
+        self.debug_dir.virtual_address = self.debug_dir.virtual_address.wrapping_sub(adj_offset);
+    }
+
+    
+    fn fixup_section(section: &mut section_table::SectionTable, adj_offset: u32) {
+        debug!(
+            "Section virtual address fixed up from: 0x{:X} to 0x{:X}",
+            section.virtual_address,
+            section.virtual_address.wrapping_sub(adj_offset)
+        );
+        section.virtual_address = section.virtual_address.wrapping_sub(adj_offset);
+
+        if section.pointer_to_linenumbers > 0 {
+            debug!(
+                "Section pointer to line numbers fixed up from: 0x{:X} to 0x{:X}",
+                section.pointer_to_linenumbers,
+                section.pointer_to_linenumbers.wrapping_sub(adj_offset)
+            );
+            section.pointer_to_linenumbers =
+                section.pointer_to_linenumbers.wrapping_sub(adj_offset);
+        }
+
+        if section.pointer_to_raw_data > 0 {
+            debug!(
+                "Section pointer to raw data fixed up from: 0x{:X} to 0x{:X}",
+                section.pointer_to_raw_data,
+                section.pointer_to_raw_data.wrapping_sub(adj_offset)
+            );
+            section.pointer_to_raw_data = section.pointer_to_raw_data.wrapping_sub(adj_offset);
+        }
+
+        if section.pointer_to_relocations > 0 {
+            debug!(
+                "Section pointer to relocations fixed up from: 0x{:X} to 0x{:X}",
+                section.pointer_to_relocations,
+                section.pointer_to_relocations.wrapping_sub(adj_offset)
+            );
+            section.pointer_to_relocations =
+                section.pointer_to_relocations.wrapping_sub(adj_offset);
+        }
+    }
+}
+
+
+
 pub fn machine_to_str(machine: u16) -> &'static str {
+    
     match machine {
         COFF_MACHINE_UNKNOWN => "UNKNOWN",
+        COFF_MACHINE_ALPHA => "ALPHA",
+        COFF_MACHINE_ALPHA64 => "ALPHA64",
         COFF_MACHINE_AM33 => "AM33",
+        
         COFF_MACHINE_X86_64 => "X86_64",
         COFF_MACHINE_ARM => "ARM",
         COFF_MACHINE_ARM64 => "ARM64",
         COFF_MACHINE_ARMNT => "ARM_NT",
         COFF_MACHINE_EBC => "EBC",
+        
         COFF_MACHINE_X86 => "X86",
         COFF_MACHINE_IA64 => "IA64",
+        COFF_MACHINE_LOONGARCH32 => "LOONGARCH32",
+        COFF_MACHINE_LOONGARCH64 => "LOONGARCH64",
         COFF_MACHINE_M32R => "M32R",
         COFF_MACHINE_MIPS16 => "MIPS_16",
         COFF_MACHINE_MIPSFPU => "MIPS_FPU",
