@@ -461,9 +461,9 @@ NS_IMETHODIMP EditorEventListener::HandleEvent(Event* aEvent) {
         widgetMouseEvent->PreventDefault();
         return NS_OK;
       }
-      nsresult rv = MouseClick(widgetMouseEvent);
+      nsresult rv = PointerClick(widgetMouseEvent);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "EditorEventListener::MouseClick() failed");
+                           "EditorEventListener::PointerClick() failed");
       return rv;
     }
     
@@ -697,14 +697,15 @@ nsresult EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent) {
   return NS_OK;
 }
 
-nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
-  if (NS_WARN_IF(!aMouseClickEvent) || DetachedFromEditor()) {
+nsresult EditorEventListener::PointerClick(
+    WidgetMouseEvent* aPointerClickEvent) {
+  if (NS_WARN_IF(!aPointerClickEvent) || DetachedFromEditor()) {
     return NS_OK;
   }
   
   OwningNonNull<EditorBase> editorBase = *mEditorBase;
   if (editorBase->IsReadonly() ||
-      !editorBase->IsAcceptableInputEvent(aMouseClickEvent)) {
+      !editorBase->IsAcceptableInputEvent(aPointerClickEvent)) {
     return NS_OK;
   }
 
@@ -714,14 +715,14 @@ nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
     if (RefPtr<nsPresContext> presContext = GetPresContext()) {
       RefPtr<Element> focusedElement = mEditorBase->GetFocusedElement();
       IMEStateManager::OnClickInEditor(*presContext, focusedElement,
-                                       *aMouseClickEvent);
+                                       *aPointerClickEvent);
       if (DetachedFromEditor()) {
         return NS_OK;
       }
     }
   }
 
-  if (DetachedFromEditorOrDefaultPrevented(aMouseClickEvent)) {
+  if (DetachedFromEditorOrDefaultPrevented(aPointerClickEvent)) {
     
     return NS_OK;
   }
@@ -742,7 +743,7 @@ nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
   
   
 
-  if (aMouseClickEvent->mButton != MouseButton::eMiddle ||
+  if (aPointerClickEvent->mButton != MouseButton::eMiddle ||
       !WidgetMouseEvent::IsMiddleClickPasteEnabled()) {
     return NS_OK;
   }
@@ -755,11 +756,11 @@ nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
   if (NS_WARN_IF(!presContext)) {
     return NS_OK;
   }
-  MOZ_ASSERT(!aMouseClickEvent->DefaultPrevented());
+  MOZ_ASSERT(!aPointerClickEvent->DefaultPrevented());
   nsEventStatus status = nsEventStatus_eIgnore;
   RefPtr<EventStateManager> esm = presContext->EventStateManager();
   DebugOnly<nsresult> rvIgnored = esm->HandleMiddleClickPaste(
-      presShell, aMouseClickEvent, &status, editorBase);
+      presShell, aPointerClickEvent, &status, editorBase);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rvIgnored),
       "EventStateManager::HandleMiddleClickPaste() failed, but ignored");
@@ -767,7 +768,7 @@ nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
     
     
     
-    aMouseClickEvent->PreventDefault();
+    aPointerClickEvent->PreventDefault();
   }
   return NS_OK;
 }
