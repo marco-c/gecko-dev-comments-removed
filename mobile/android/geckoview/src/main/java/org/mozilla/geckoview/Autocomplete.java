@@ -1129,8 +1129,7 @@ public class Autocomplete {
 
 
 
-     LoginSelectOption(
-        final @NonNull LoginEntry value, final @SelectOptionHint int hint) {
+    public LoginSelectOption(final @NonNull LoginEntry value, final @SelectOptionHint int hint) {
       super(value, hint);
     }
 
