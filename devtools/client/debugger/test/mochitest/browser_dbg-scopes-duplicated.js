@@ -154,7 +154,10 @@ add_task(async function () {
   const originalNodesCount = nodes.length;
   const targetNodeIndex = nodes.indexOf("target");
   Assert.greater(targetNodeIndex, -1, "Found the target node");
-  await toggleScopeNode(dbg, targetNodeIndex);
+  
+  
+  
+  await toggleScopeNode(dbg, targetNodeIndex + 1);
   nodes = getAllLabels(dbg);
   Assert.greater(
     nodes.length,

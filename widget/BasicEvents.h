@@ -774,6 +774,13 @@ class WidgetEvent : public WidgetEventTime {
 
 
   bool HasMouseEventMessage() const;
+
+  
+
+
+
+  [[nodiscard]] bool IsMouseEventClassOrHasClickRelatedPointerEvent() const;
+
   
 
 
@@ -886,21 +893,27 @@ class WidgetEvent : public WidgetEventTime {
         break;
       case eMouseEventClass:
         mFlags.mComposed =
-            mMessage == ePointerClick || mMessage == eMouseDoubleClick ||
-            mMessage == ePointerAuxClick || mMessage == eMouseDown ||
-            mMessage == eMouseUp || mMessage == eMouseOver ||
-            mMessage == eMouseOut || mMessage == eMouseMove ||
-            mMessage == eContextMenu || mMessage == eXULPopupShowing ||
-            mMessage == eXULPopupHiding || mMessage == eXULPopupShown ||
-            mMessage == eXULPopupHidden;
+            mMessage == eMouseDoubleClick || mMessage == ePointerAuxClick ||
+            mMessage == eMouseDown || mMessage == eMouseUp ||
+            mMessage == eMouseOver || mMessage == eMouseOut ||
+            mMessage == eMouseMove || mMessage == eContextMenu ||
+            mMessage == eXULPopupShowing || mMessage == eXULPopupHiding ||
+            mMessage == eXULPopupShown || mMessage == eXULPopupHidden ||
+            
+            
+            
+            
+            
+            mMessage == ePointerClick;
         break;
       case ePointerEventClass:
         
         mFlags.mComposed =
-            mMessage == ePointerDown || mMessage == ePointerMove ||
-            mMessage == ePointerUp || mMessage == ePointerCancel ||
-            mMessage == ePointerOver || mMessage == ePointerOut ||
-            mMessage == ePointerGotCapture || mMessage == ePointerLostCapture;
+            mMessage == ePointerClick || mMessage == ePointerDown ||
+            mMessage == ePointerMove || mMessage == ePointerUp ||
+            mMessage == ePointerCancel || mMessage == ePointerOver ||
+            mMessage == ePointerOut || mMessage == ePointerGotCapture ||
+            mMessage == ePointerLostCapture;
         break;
       case eTouchEventClass:
         

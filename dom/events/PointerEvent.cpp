@@ -36,7 +36,11 @@ PointerEvent::PointerEvent(EventTarget* aOwner, nsPresContext* aPresContext,
   }
   
   
-  mDetail = 0;
+  
+  mDetail =
+      IsPointerEventMessageOriginallyMouseEventMessage(mouseEvent->mMessage)
+          ? mouseEvent->mClickCount
+          : 0;
 }
 
 JSObject* PointerEvent::WrapObjectInternal(JSContext* aCx,

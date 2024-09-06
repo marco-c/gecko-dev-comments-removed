@@ -52,6 +52,7 @@ class ExtendableEvent;
 class KeyboardEvent;
 class MouseEvent;
 class MessageEvent;
+class PointerEvent;
 class TimeEvent;
 class UIEvent;
 class WantsPopupControlCheck;
@@ -123,6 +124,8 @@ class Event : public nsISupports, public nsWrapperCache {
   
   
   virtual MouseEvent* AsMouseEvent() { return nullptr; }
+
+  virtual PointerEvent* AsPointerEvent() { return nullptr; }
 
   
   virtual UIEvent* AsUIEvent() { return nullptr; }

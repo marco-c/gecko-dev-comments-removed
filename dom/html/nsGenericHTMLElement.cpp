@@ -2303,10 +2303,23 @@ void nsGenericHTMLElement::Click(CallerType aCallerType) {
   SetHandlingClick();
 
   
-  WidgetMouseEvent event(aCallerType == CallerType::System, ePointerClick,
-                         nullptr, WidgetMouseEvent::eReal);
+  Maybe<WidgetPointerEvent> pointerEvent;
+  Maybe<WidgetMouseEvent> mouseEvent;
+  if (StaticPrefs::dom_w3c_pointer_events_dispatch_click_as_pointer_event()) {
+    pointerEvent.emplace(aCallerType == CallerType::System, ePointerClick,
+                         nullptr);
+  } else {
+    mouseEvent.emplace(aCallerType == CallerType::System, ePointerClick,
+                       nullptr, WidgetMouseEvent::eReal);
+  }
+  WidgetMouseEvent& event =
+      pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
   event.mFlags.mIsPositionless = true;
   event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
+  
+  
+  
+  event.pointerId = -1;
 
   EventDispatcher::Dispatch(this, context, &event);
 
@@ -2459,10 +2472,22 @@ void nsGenericHTMLElement::HandleKeyboardActivation(
 nsresult nsGenericHTMLElement::DispatchSimulatedClick(
     nsGenericHTMLElement* aElement, bool aIsTrusted,
     nsPresContext* aPresContext) {
-  WidgetMouseEvent event(aIsTrusted, ePointerClick, nullptr,
-                         WidgetMouseEvent::eReal);
-  event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_KEYBOARD;
+  Maybe<WidgetPointerEvent> pointerEvent;
+  Maybe<WidgetMouseEvent> mouseEvent;
+  if (StaticPrefs::dom_w3c_pointer_events_dispatch_click_as_pointer_event()) {
+    pointerEvent.emplace(aIsTrusted, ePointerClick, nullptr);
+  } else {
+    mouseEvent.emplace(aIsTrusted, ePointerClick, nullptr,
+                       WidgetMouseEvent::eReal);
+  }
+  WidgetMouseEvent& event =
+      pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
   event.mFlags.mIsPositionless = true;
+  event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_KEYBOARD;
+  
+  
+  
+  event.pointerId = -1;
   return EventDispatcher::Dispatch(aElement, aPresContext, &event);
 }
 

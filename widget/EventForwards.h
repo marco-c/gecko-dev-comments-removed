@@ -74,6 +74,21 @@ const char* ToChar(EventMessage aEventMessage);
 
 
 
+[[nodiscard]] bool IsPointerEventMessage(EventMessage aMessage);
+
+
+
+
+
+
+
+
+[[nodiscard]] bool IsPointerEventMessageOriginallyMouseEventMessage(
+    EventMessage aMessage);
+
+
+
+
 
 typedef uint8_t EventClassIDType;
 
