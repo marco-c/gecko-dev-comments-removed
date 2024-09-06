@@ -5,6 +5,7 @@
 
 
 
+use crate::std;
 use anyhow::Context;
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -37,7 +38,7 @@ time::serde::format_description!(time_format, OffsetDateTime, TIME_FORMAT);
 )]
 pub enum Ping<'a> {
     Crash {
-        id: Uuid,
+        id: &'a Uuid,
         version: u64,
         #[serde(with = "time_format")]
         creation_date: time::OffsetDateTime,
@@ -87,6 +88,7 @@ pub struct Application<'a> {
 
 impl<'a> Ping<'a> {
     pub fn crash(
+        ping_id: &'a Uuid,
         extra: &'a serde_json::Value,
         crash_id: &'a str,
         minidump_sha256_hash: Option<&'a str>,
@@ -132,7 +134,7 @@ impl<'a> Ping<'a> {
             .map(ToOwned::to_owned);
 
         Ok(Ping::Crash {
-            id: crate::std::mock::hook(Uuid::new_v4(), "ping_uuid"),
+            id: ping_id,
             version: TELEMETRY_VERSION,
             creation_date: now,
             client_id: extra["TelemetryClientId"]
@@ -172,7 +174,9 @@ impl<'a> Ping<'a> {
         let url = extra["TelemetryServerURL"]
             .as_str()
             .context("missing TelemetryServerURL")?;
-        let id = self.id();
+        let id = match self {
+            Self::Crash { id, .. } => id,
+        };
         let name = extra["ProductName"]
             .as_str()
             .context("missing ProductName")?;
@@ -182,12 +186,5 @@ impl<'a> Ping<'a> {
             .context("missing ReleaseChannel")?;
         let buildid = extra["BuildID"].as_str().context("missing BuildID")?;
         Ok(format!("{url}/submit/telemetry/{id}/crash/{name}/{version}/{channel}/{buildid}?v={TELEMETRY_VERSION}"))
-    }
-
-    
-    pub fn id(&self) -> &Uuid {
-        match self {
-            Ping::Crash { id, .. } => id,
-        }
     }
 }

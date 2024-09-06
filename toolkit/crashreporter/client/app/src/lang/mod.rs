@@ -36,6 +36,11 @@ impl LangStrings {
     }
 
     
+    pub fn locale(&self) -> String {
+        self.bundle.locales.first().unwrap().to_string()
+    }
+
+    
     pub fn is_rtl(&self) -> bool {
         self.rtl
     }

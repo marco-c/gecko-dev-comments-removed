@@ -8,6 +8,7 @@ fn main() {
     windows_manifest();
     crash_ping_annotations();
     set_mock_cfg();
+    set_glean_metrics_file();
 }
 
 fn windows_manifest() {
@@ -87,4 +88,28 @@ fn set_mock_cfg() {
     if env::var_os("CARGO_FEATURE_MOCK").is_some() || mozbuild::config::MOZ_CRASHREPORTER_MOCK {
         println!("cargo:rustc-cfg=mock");
     }
+}
+
+
+
+
+
+fn set_glean_metrics_file() {
+    let full_path = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let relative_path = full_path
+        .strip_prefix(mozbuild::TOPSRCDIR)
+        .expect("CARGO_MANIFEST_DIR not a child of TOPSRCDIR");
+    let glean_metrics_path = {
+        let mut p = mozbuild::TOPOBJDIR.join(relative_path);
+        
+        p.push("glean_metrics.rs");
+        p
+    };
+    
+    
+    
+    println!(
+        "cargo:rustc-env=GLEAN_METRICS_FILE={}",
+        glean_metrics_path.display()
+    );
 }

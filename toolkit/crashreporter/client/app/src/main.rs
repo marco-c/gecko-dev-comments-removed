@@ -61,6 +61,7 @@ macro_rules! ekey {
 mod async_task;
 mod config;
 mod data;
+mod glean;
 mod lang;
 mod logging;
 mod logic;
@@ -81,6 +82,8 @@ fn main() {
     let mut config = Config::new();
     let config_result = config.read_from_environment();
     config.log_target = Some(log_target);
+
+    glean::init(&config);
 
     let mut config = Arc::new(config);
 
@@ -137,6 +140,10 @@ fn main() {
     const MOCK_REMOTE_CRASH_ID: &str = "8cbb847c-def2-4f68-be9e-000000000000";
 
     
+    
+    logging::init();
+
+    
     let mock_files = MockFiles::new();
     mock_files
         .add_file("minidump.dmp", MOCK_MINIDUMP_FILE)
@@ -186,6 +193,9 @@ fn main() {
         cfg.dump_file = Some("minidump.dmp".into());
         cfg.restart_command = Some("mockfox".into());
         cfg.strings = Some(lang::load().unwrap());
+
+        glean::init(&cfg);
+
         let mut cfg = Arc::new(cfg);
         try_run(&mut cfg)
     });

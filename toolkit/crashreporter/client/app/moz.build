@@ -4,4 +4,14 @@
 
 
 
-RUST_PROGRAMS = ["crashreporter"]
+GeneratedFile(
+    "glean_metrics.rs",
+    script="generate_glean.py",
+    inputs=[
+        "/toolkit/components/crashes/metrics.yaml",
+        "/toolkit/components/crashes/pings.yaml",
+        "/toolkit/components/glean/tags.yaml",
+    ],
+)
+
+RustProgram("crashreporter")
