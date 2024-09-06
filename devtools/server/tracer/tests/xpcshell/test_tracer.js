@@ -563,3 +563,56 @@ add_task(async function testTracingAllGlobals() {
   Assert.stringContains(logs[2], "sandbox2.js:1:18");
   Assert.equal(logs[3], "Stop tracing JavaScript\n");
 });
+
+add_task(async function testTracingInfiniteLoop() {
+  
+  Services.prefs.setIntPref(
+    "devtools.debugger.javascript-tracing-max-depth",
+    5
+  );
+
+  
+  const sandbox = Cu.Sandbox("https://example.com");
+  Cu.evalInSandbox(
+    `function foo(i=0) { if (i < 10) bar(i); } function bar(i) { foo(i+1) };`,
+    sandbox
+  );
+
+  
+  const logs = [];
+  function loggingMethod(str) {
+    logs.push(str);
+  }
+
+  info("Start tracing");
+  JSTracer.startTracing({
+    global: sandbox,
+    loggingMethod,
+  });
+
+  info("Call some code");
+  sandbox.foo();
+
+  Assert.equal(logs.length, 8);
+  Assert.equal(logs[0], "Start tracing JavaScript\n");
+
+  
+  Assert.stringContains(logs[1], "λ foo");
+  Assert.stringContains(logs[2], "λ bar");
+  Assert.stringContains(logs[3], "λ foo");
+  Assert.stringContains(logs[4], "λ bar");
+  Assert.stringContains(logs[5], "λ foo");
+
+  Assert.stringContains(logs[6], "Looks like an infinite recursion");
+  Assert.stringContains(
+    logs[7],
+    "Stop tracing JavaScript (reason: infinite-loop)"
+  );
+
+  info("Stop tracing");
+  JSTracer.stopTracing();
+
+  Services.prefs.clearUserPref(
+    "devtools.debugger.javascript-tracing-max-depth"
+  );
+}); 
