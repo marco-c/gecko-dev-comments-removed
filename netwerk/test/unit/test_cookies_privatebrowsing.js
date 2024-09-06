@@ -97,8 +97,19 @@ add_task(async () => {
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "oh=hai");
 
   
+  
+  
+  await privateBrowsingHolder.close();
+
+  
   await promise_close_profile();
   do_load_profile();
+
+  
+  const privateBrowsingHolder2 = await CookieXPCShellUtils.loadContentPage(
+    "http://bar.com/",
+    { privateBrowsing: true }
+  );
 
   
   
@@ -127,6 +138,6 @@ add_task(async () => {
   Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
 
   
-  privateBrowsingHolder.close();
+  await privateBrowsingHolder2.close();
   Services.prefs.clearUserPref("dom.security.https_first");
 });
