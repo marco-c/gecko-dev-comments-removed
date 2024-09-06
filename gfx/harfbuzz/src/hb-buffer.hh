@@ -116,6 +116,7 @@ struct hb_buffer_t
 
   uint8_t allocated_var_bits;
   uint8_t serial;
+  uint32_t random_state;
   hb_buffer_scratch_flags_t scratch_flags; 
   unsigned int max_len; 
   int max_ops; 

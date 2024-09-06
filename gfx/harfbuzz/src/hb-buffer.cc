@@ -309,6 +309,7 @@ hb_buffer_t::clear ()
 
   deallocate_var_all ();
   serial = 0;
+  random_state = 1;
   scratch_flags = HB_BUFFER_SCRATCH_FLAG_DEFAULT;
 }
 
@@ -1359,6 +1360,49 @@ hb_buffer_get_not_found_glyph (const hb_buffer_t *buffer)
   return buffer->not_found;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+hb_buffer_set_random_state (hb_buffer_t    *buffer,
+			    unsigned        state)
+{
+  if (unlikely (hb_object_is_immutable (buffer)))
+    return;
+
+  buffer->random_state = state;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+unsigned
+hb_buffer_get_random_state (const hb_buffer_t *buffer)
+{
+  return buffer->random_state;
+}
 
 
 
