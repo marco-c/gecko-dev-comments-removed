@@ -25,7 +25,6 @@ UNSUPPORTED_FEATURES = set(
         "legacy-regexp",  
         "set-methods",  
         "explicit-resource-management",  
-        "regexp-modifiers",
         "promise-try",
         "source-phase-imports",
         "source-phase-imports-module-source",
@@ -45,6 +44,7 @@ FEATURE_CHECK_NEEDED = {
     "uint8array-base64": "!Uint8Array.fromBase64",  
     "json-parse-with-source": "!JSON.hasOwnProperty('isRawJSON')",  
     "Float16Array": "!this.hasOwnProperty('Float16Array')",
+    "regexp-modifiers": "!(this.hasOwnProperty('getBuildConfiguration')&&!getBuildConfiguration('release_or_beta'))",
 }
 RELEASE_OR_BETA = set(
     [
@@ -62,6 +62,7 @@ SHELL_OPTIONS = {
     "json-parse-with-source": "--enable-json-parse-with-source",
     "Float16Array": "--enable-float16array",
     "regexp-duplicate-named-groups": "--enable-regexp-duplicate-named-groups",
+    "regexp-modifiers": "--enable-regexp-modifiers",
 }
 
 INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {
