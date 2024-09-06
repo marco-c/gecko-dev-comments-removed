@@ -513,7 +513,16 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
         for tag in c["exclude_tag"]:
             cmd.append(f"--exclude-tag={tag}")
 
-        cmd.extend(test_paths)
+        if mozinfo.info["os"] == "win":
+            
+            
+            import tempfile
+
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp.write("\n".join(test_paths).encode())
+                cmd.append(f"--include-file={tmp.name}")
+        else:
+            cmd.extend(test_paths)
 
         return cmd
 
