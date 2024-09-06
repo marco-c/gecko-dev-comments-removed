@@ -59,6 +59,9 @@ interface nsIDocumentEncoder : nsISupports
 
 
 
+
+
+
   const unsigned long OutputFormatted     = (1 << 1);
 
   
@@ -95,9 +98,15 @@ interface nsIDocumentEncoder : nsISupports
 
 
 
+
+
+
   const unsigned long OutputWrap          = (1 << 5);
 
   
+
+
+
 
 
 
