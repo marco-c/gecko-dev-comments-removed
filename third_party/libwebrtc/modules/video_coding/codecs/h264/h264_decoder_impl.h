@@ -21,10 +21,6 @@
 #error "See: bugs.webrtc.org/9213#c13."
 #endif
 
-#include <memory>
-
-#include "modules/video_coding/codecs/h264/include/h264.h"
-
 
 
 
@@ -40,11 +36,14 @@
 
 
 extern "C" {
-#include "third_party/ffmpeg/libavcodec/avcodec.h"
+#include <libavcodec/avcodec.h>
 }  
+
+#include <memory>
 
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/include/video_frame_buffer_pool.h"
+#include "modules/video_coding/codecs/h264/include/h264.h"
 
 namespace webrtc {
 
