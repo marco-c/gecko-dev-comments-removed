@@ -11,7 +11,6 @@
 #include "cubeb_resampler.h"
 #include "cubeb_triple_buffer.h"
 #include <aaudio/AAudio.h>
-#include <android/api-level.h>
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -646,8 +645,11 @@ aaudio_get_latency(cubeb_stream * stm, aaudio_direction_t direction,
   int64_t app_frame_hw_time = hw_tstamp + frame_time_delta;
   
   
-  int64_t latency_ns = is_output ? app_frame_hw_time - signed_tstamp_ns
-                                 : signed_tstamp_ns - app_frame_hw_time;
+  
+  int64_t latency_ns = is_output
+                           ? std::max(static_cast<int64_t>(0),
+                                      app_frame_hw_time - signed_tstamp_ns)
+                           : signed_tstamp_ns - app_frame_hw_time;
   int64_t latency_frames = stm->sample_rate * latency_ns / NS_PER_S;
 
   LOGV("Latency in frames (%s): %d (%dms)", is_output ? "output" : "input",
@@ -1773,9 +1775,6 @@ const static struct cubeb_ops aaudio_ops = {
 extern "C"  int
 aaudio_init(cubeb ** context, char const * )
 {
-  if (android_get_device_api_level() <= 30) {
-    return CUBEB_ERROR;
-  }
   
   void * libaaudio = nullptr;
 #ifndef DISABLE_LIBAAUDIO_DLOPEN
