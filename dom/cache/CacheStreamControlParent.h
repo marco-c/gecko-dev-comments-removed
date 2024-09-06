@@ -25,7 +25,12 @@ class CacheStreamControlParent final : public PCacheStreamControlParent,
   CacheStreamControlParent();
 
   void SetStreamList(SafeRefPtr<StreamList> aStreamList);
+
+  
+  
   void CloseAll();
+
+  
   void Shutdown();
 
   

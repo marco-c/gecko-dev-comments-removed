@@ -136,13 +136,9 @@ void StreamList::CloseAll() {
   NS_ASSERT_OWNINGTHREAD(StreamList);
 
   if (mStreamControl && mStreamControl->CanSend()) {
-    auto* streamControl = std::exchange(mStreamControl, nullptr);
-
-    streamControl->CloseAll();
-
-    mStreamControl = std::exchange(streamControl, nullptr);
-
-    mStreamControl->Shutdown();
+    
+    
+    mStreamControl->CloseAll();
   } else {
     
     
