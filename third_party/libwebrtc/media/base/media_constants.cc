@@ -124,7 +124,13 @@ const char kH265FmtpProfileCompatibilityIndicator[] =
 const char kH265FmtpInteropConstraints[] = "interop-constraints";
 const char kH265FmtpTxMode[] = "tx-mode";
 
+
 const char kVP9ProfileId[] = "profile-id";
+
+
+const char kAv1FmtpProfile[] = "profile";
+const char kAv1FmtpLevelIdx[] = "level-idx";
+const char kAv1FmtpTier[] = "tier";
 
 const int kDefaultVideoMaxFramerate = 60;
 

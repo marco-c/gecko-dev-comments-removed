@@ -228,11 +228,11 @@ TEST(CodecTest, TestAV1CodecMatches) {
   VideoCodec c_no_profile =
       cricket::CreateVideoCodec(95, cricket::kAv1CodecName);
   VideoCodec c_profile0 = cricket::CreateVideoCodec(95, cricket::kAv1CodecName);
-  c_profile0.params[webrtc::kAV1FmtpProfile] = kProfile0;
+  c_profile0.params[cricket::kAv1FmtpProfile] = kProfile0;
   VideoCodec c_profile1 = cricket::CreateVideoCodec(95, cricket::kAv1CodecName);
-  c_profile1.params[webrtc::kAV1FmtpProfile] = kProfile1;
+  c_profile1.params[cricket::kAv1FmtpProfile] = kProfile1;
   VideoCodec c_profile2 = cricket::CreateVideoCodec(95, cricket::kAv1CodecName);
-  c_profile2.params[webrtc::kAV1FmtpProfile] = kProfile2;
+  c_profile2.params[cricket::kAv1FmtpProfile] = kProfile2;
 
   
   EXPECT_TRUE(c_profile0.Matches(c_no_profile));
@@ -248,7 +248,7 @@ TEST(CodecTest, TestAV1CodecMatches) {
     
     VideoCodec c_profile0_eq =
         cricket::CreateVideoCodec(95, cricket::kAv1CodecName);
-    c_profile0_eq.params[webrtc::kAV1FmtpProfile] = kProfile0;
+    c_profile0_eq.params[cricket::kAv1FmtpProfile] = kProfile0;
     EXPECT_TRUE(c_profile0.Matches(c_profile0_eq));
   }
 
@@ -256,7 +256,7 @@ TEST(CodecTest, TestAV1CodecMatches) {
     
     VideoCodec c_profile1_eq =
         cricket::CreateVideoCodec(95, cricket::kAv1CodecName);
-    c_profile1_eq.params[webrtc::kAV1FmtpProfile] = kProfile1;
+    c_profile1_eq.params[cricket::kAv1FmtpProfile] = kProfile1;
     EXPECT_TRUE(c_profile1.Matches(c_profile1_eq));
   }
 
