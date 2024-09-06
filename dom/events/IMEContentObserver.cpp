@@ -19,6 +19,7 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
@@ -890,6 +891,9 @@ void IMEContentObserver::CharacterDataChanged(
     return;
   }
 
+  if (mAddedContentCache.HasCache()) {
+    NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
+  }
   mEndOfAddedTextCache.Clear(__FUNCTION__);
   mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
   MOZ_ASSERT(
@@ -945,6 +949,19 @@ void IMEContentObserver::ContentAdded(nsINode* aContainer,
     return;
   }
 
+  
+  
+  if (aFirstContent == aLastContent) {
+    if (const auto* brElement = HTMLBRElement::FromNode(aFirstContent)) {
+      if (MOZ_LIKELY(!brElement->HasChildNodes()) &&
+          (brElement->IsPaddingForEmptyEditor() ||
+           brElement->IsPaddingForEmptyLastLine())) {
+        return;
+      }
+    }
+  }
+
+  MOZ_ASSERT(IsInDocumentChange());
   MOZ_ASSERT_IF(aFirstContent, aFirstContent->GetParentNode() == aContainer);
   MOZ_ASSERT_IF(aLastContent, aLastContent->GetParentNode() == aContainer);
 
@@ -952,12 +969,60 @@ void IMEContentObserver::ContentAdded(nsINode* aContainer,
   
   
   
-  MOZ_ASSERT(IsInDocumentChange());
+  bool needToCache = true;
+  if (mAddedContentCache.HasCache()) {
+    MOZ_DIAGNOSTIC_ASSERT(aFirstContent->GetParentNode() ==
+                          aLastContent->GetParentNode());
+    if (mAddedContentCache.IsInRange(*aFirstContent, mRootElement)) {
+      
+      
+      
+      needToCache = false;
+      MOZ_LOG(sCacheLog, LogLevel::Info,
+              ("ContentAdded: mAddedContentCache already caches the give "
+               "content nodes"));
+      MOZ_ASSERT(mAddedContentCache.IsInRange(*aLastContent, mRootElement));
+    }
+    
+    
+    
+    else if (!mAddedContentCache.CanMergeWith(*aFirstContent, *aLastContent,
+                                              mRootElement)) {
+      MOZ_LOG(sCacheLog, LogLevel::Info,
+              ("ContentAdded: mAddedContentCache was cached not in current "
+               "document change and new content nodes cannot be merged"));
+      mEndOfAddedTextCache.Clear(__FUNCTION__);
+      mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
+      OffsetAndLengthAdjustments differences;
+      Result<std::pair<uint32_t, uint32_t>, nsresult> offsetAndLength =
+          mAddedContentCache.ComputeFlatTextRangeBeforeInsertingNewContent(
+              *aFirstContent, *aLastContent, mRootElement, differences);
+      if (NS_WARN_IF(offsetAndLength.isErr())) {
+        MOZ_LOG(sCacheLog, LogLevel::Error,
+                ("ContentAdded: "
+                 "AddedContentCache::"
+                 "ComputeFlatTextRangeExcludingInsertingNewContent() failed"));
+        mAddedContentCache.Clear(__FUNCTION__);
+        return;
+      }
+      NotifyIMEOfCachedConsecutiveNewNodes(
+          __FUNCTION__, Some(offsetAndLength.inspect().first),
+          Some(offsetAndLength.inspect().second), differences);
+      mAddedContentCache.Clear(__FUNCTION__);
+    }
+  }
+
   mEndOfAddedTextCache.ContentAdded(__FUNCTION__, *aFirstContent, *aLastContent,
                                     Nothing(), mRootElement);
   mStartOfRemovingTextRangeCache.ContentAdded(
       __FUNCTION__, *aFirstContent, *aLastContent, Nothing(), mRootElement);
 
+  if (!needToCache) {
+    return;
+  }
+
+  
+  
   if (!mAddedContentCache.TryToCache(*aFirstContent, *aLastContent,
                                      mRootElement)) {
     
@@ -974,7 +1039,10 @@ void IMEContentObserver::ContentAdded(nsINode* aContainer,
 }
 
 void IMEContentObserver::NotifyIMEOfCachedConsecutiveNewNodes(
-    const char* aCallerName) {
+    const char* aCallerName,
+    const Maybe<uint32_t>& aOffsetOfFirstContent ,
+    const Maybe<uint32_t>& aLengthOfContentNNodes ,
+    const OffsetAndLengthAdjustments& aAdjustments ) {
   MOZ_ASSERT(mAddedContentCache.HasCache());
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
@@ -995,9 +1063,12 @@ void IMEContentObserver::NotifyIMEOfCachedConsecutiveNewNodes(
   
   
   
-  Maybe<uint32_t> offset = mEndOfAddedTextCache.GetFlatTextLengthBeforeContent(
-      *mAddedContentCache.mFirst,
-      mAddedContentCache.mFirst->GetPreviousSibling(), mRootElement);
+  Maybe<uint32_t> offset =
+      aOffsetOfFirstContent.isSome()
+          ? aOffsetOfFirstContent
+          : mEndOfAddedTextCache.GetFlatTextLengthBeforeContent(
+                *mAddedContentCache.mFirst,
+                mAddedContentCache.mFirst->GetPreviousSibling(), mRootElement);
   if (offset.isNothing()) {
     Result<uint32_t, nsresult> textLengthBeforeFirstContentOrError =
         FlatTextCache::ComputeTextLengthBeforeContent(
@@ -1013,17 +1084,21 @@ void IMEContentObserver::NotifyIMEOfCachedConsecutiveNewNodes(
     }
     offset = Some(textLengthBeforeFirstContentOrError.unwrap());
   }
-  Result<uint32_t, nsresult> addingLengthOrError =
-      FlatTextCache::ComputeTextLengthStartOfContentToEndOfContent(
-          *mAddedContentCache.mFirst, *mAddedContentCache.mLast, mRootElement);
-  if (NS_WARN_IF(addingLengthOrError.isErr())) {
-    mEndOfAddedTextCache.Clear(__FUNCTION__);
-    mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
-    MOZ_LOG(
-        sCacheLog, LogLevel::Error,
-        ("NotifyContentAdded: failed to compute text length of added nodes"));
-    mAddedContentCache.Clear(__FUNCTION__);
-    return;
+  Maybe<uint32_t> length = aLengthOfContentNNodes;
+  if (aLengthOfContentNNodes.isNothing()) {
+    Result<uint32_t, nsresult> addingLengthOrError =
+        FlatTextCache::ComputeTextLengthStartOfContentToEndOfContent(
+            *mAddedContentCache.mFirst, *mAddedContentCache.mLast,
+            mRootElement);
+    if (NS_WARN_IF(addingLengthOrError.isErr())) {
+      mEndOfAddedTextCache.Clear(__FUNCTION__);
+      mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
+      MOZ_LOG(sCacheLog, LogLevel::Error,
+              ("NotifyContentAdded: failed to compute text length of added"));
+      mAddedContentCache.Clear(__FUNCTION__);
+      return;
+    }
+    length = Some(addingLengthOrError.inspect());
   }
 
   
@@ -1032,18 +1107,18 @@ void IMEContentObserver::NotifyIMEOfCachedConsecutiveNewNodes(
   
   mEndOfAddedTextCache.CacheFlatTextLengthBeforeEndOfContent(
       __FUNCTION__, *mAddedContentCache.mLast,
-      *offset + addingLengthOrError.inspect(), mRootElement);
+      aAdjustments.AdjustedEndOffset(*offset + *length), mRootElement);
   mStartOfRemovingTextRangeCache.ContentAdded(
       __FUNCTION__, *mAddedContentCache.mFirst, *mAddedContentCache.mLast,
-      Some(*offset + addingLengthOrError.inspect()), mRootElement);
+      Some(aAdjustments.AdjustedEndOffset(*offset + *length)), mRootElement);
 
   mAddedContentCache.Clear(__FUNCTION__);
 
-  if (!addingLengthOrError.inspect()) {
+  if (*length == 0u) {
     return;
   }
 
-  TextChangeData data(*offset, *offset, *offset + addingLengthOrError.inspect(),
+  TextChangeData data(*offset, *offset, *offset + *length,
                       IsEditorHandlingEventForComposition(),
                       IsEditorComposing());
   MaybeNotifyIMEOfTextChange(data);
@@ -1067,22 +1142,42 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
     return;
   }
 
-  if (mAddedContentCache.HasCache()) {
-    mEndOfAddedTextCache.Clear(__FUNCTION__);
-    mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
-    NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
+  
+  
+  if (const auto* brElement = HTMLBRElement::FromNode(aChild)) {
+    if (MOZ_LIKELY(!brElement->HasChildNodes()) &&
+        (brElement->IsPaddingForEmptyEditor() ||
+         brElement->IsPaddingForEmptyLastLine())) {
+      return;
+    }
   }
-
-  nsINode* containerNode = aChild->GetParentNode();
-  MOZ_ASSERT(containerNode);
 
   Result<uint32_t, nsresult> textLengthOrError =
       FlatTextCache::ComputeTextLengthOfContent(*aChild, mRootElement);
   if (NS_WARN_IF(textLengthOrError.isErr())) {
     mEndOfAddedTextCache.Clear(__FUNCTION__);
     mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
+    mAddedContentCache.Clear(__FUNCTION__);
     return;
   }
+
+  uint32_t pendingAddedLength = 0;
+  if (mAddedContentCache.HasCache()) {
+    mEndOfAddedTextCache.Clear(__FUNCTION__);
+    mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
+    if (mAddedContentCache.ContentRemoved(*aChild, aPreviousSibling,
+                                          mRootElement)) {
+      
+      
+      pendingAddedLength = textLengthOrError.inspect();
+    }
+    if (mAddedContentCache.HasCache()) {
+      NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
+    }
+  }
+
+  nsINode* containerNode = aChild->GetParentNode();
+  MOZ_ASSERT(containerNode);
 
   mEndOfAddedTextCache.ContentRemoved(
       *aChild, aPreviousSibling, textLengthOrError.inspect(), mRootElement);
@@ -1130,11 +1225,12 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
 
   
   
-  if (textLengthOrError.inspect() == 0u) {
+  if (textLengthOrError.inspect() == 0u && pendingAddedLength == 0u) {
     return;
   }
 
-  TextChangeData data(*offset, *offset + textLengthOrError.inspect(), *offset,
+  TextChangeData data(*offset, *offset + textLengthOrError.inspect(),
+                      *offset + pendingAddedLength,
                       IsEditorHandlingEventForComposition(),
                       IsEditorComposing());
   MaybeNotifyIMEOfTextChange(data);
@@ -1156,18 +1252,12 @@ void IMEContentObserver::OnTextControlValueChangedWhileNotObservable(
 
 void IMEContentObserver::BeginDocumentUpdate() {
   MOZ_LOG(sIMECOLog, LogLevel::Debug, ("0x%p BeginDocumentUpdate()", this));
-
-  if (mAddedContentCache.HasCache()) {
-    
-    
-    NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
-  }
 }
 
 void IMEContentObserver::EndDocumentUpdate() {
   MOZ_LOG(sIMECOLog, LogLevel::Debug, ("0x%p EndDocumentUpdate()", this));
 
-  if (mAddedContentCache.HasCache()) {
+  if (mAddedContentCache.HasCache() && !EditorIsHandlingEditSubAction()) {
     NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
   }
 }
@@ -1192,8 +1282,11 @@ void IMEContentObserver::UnsuppressNotifyingIME() {
 }
 
 void IMEContentObserver::OnEditActionHandled() {
-  MOZ_LOG(sIMECOLog, LogLevel::Debug, ("0x%p EditAction()", this));
+  MOZ_LOG(sIMECOLog, LogLevel::Debug, ("0x%p OnEditActionHandled()", this));
 
+  if (mAddedContentCache.HasCache()) {
+    NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
+  }
   mEndOfAddedTextCache.Clear(__FUNCTION__);
   mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
   FlushMergeableNotifications();
@@ -1202,6 +1295,9 @@ void IMEContentObserver::OnEditActionHandled() {
 void IMEContentObserver::BeforeEditAction() {
   MOZ_LOG(sIMECOLog, LogLevel::Debug, ("0x%p BeforeEditAction()", this));
 
+  if (mAddedContentCache.HasCache()) {
+    NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
+  }
   mEndOfAddedTextCache.Clear(__FUNCTION__);
   mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
 }
@@ -1209,9 +1305,16 @@ void IMEContentObserver::BeforeEditAction() {
 void IMEContentObserver::CancelEditAction() {
   MOZ_LOG(sIMECOLog, LogLevel::Debug, ("0x%p CancelEditAction()", this));
 
+  if (mAddedContentCache.HasCache()) {
+    NotifyIMEOfCachedConsecutiveNewNodes(__FUNCTION__);
+  }
   mEndOfAddedTextCache.Clear(__FUNCTION__);
   mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
   FlushMergeableNotifications();
+}
+
+bool IMEContentObserver::EditorIsHandlingEditSubAction() const {
+  return mEditorBase && mEditorBase->IsInEditSubAction();
 }
 
 void IMEContentObserver::PostFocusSetNotification() {
@@ -1429,7 +1532,7 @@ bool IMEContentObserver::IsSafeToNotifyIME() const {
   }
 
   
-  if (mEditorBase && mEditorBase->IsInEditSubAction()) {
+  if (EditorIsHandlingEditSubAction()) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
             ("0x%p   IsSafeToNotifyIME(), it's not safe because of focused "
              "editor handling somethings",
@@ -2139,8 +2242,8 @@ void IMEContentObserver::DocumentObserver::BeginUpdate(Document* aDocument) {
   if (NS_WARN_IF(Destroyed()) || NS_WARN_IF(!IsObserving())) {
     return;
   }
-  mDocumentUpdating++;
   mIMEContentObserver->BeginDocumentUpdate();
+  mDocumentUpdating++;
 }
 
 void IMEContentObserver::DocumentObserver::EndUpdate(Document* aDocument) {
@@ -2624,6 +2727,87 @@ void IMEContentObserver::AddedContentCache::Clear(const char* aCallerName) {
           ("AddedContentCache::Clear: called by %s", aCallerName));
 }
 
+bool IMEContentObserver::AddedContentCache::IsInRange(
+    const nsIContent& aContent, const dom::Element* aRootElement) const {
+  MOZ_ASSERT(HasCache());
+
+  
+  const nsIContent* sibling = [&]() -> const nsIContent* {
+    const nsIContent* maybeSibling = &aContent;
+    const nsIContent* const container = mFirst->GetParent();
+    for (const nsIContent* ancestor : aContent.AncestorsOfType<nsIContent>()) {
+      if (ancestor == container) {
+        return maybeSibling;
+      }
+      if (ancestor == aRootElement) {
+        return nullptr;
+      }
+      maybeSibling = ancestor;
+    }
+    return nullptr;
+  }();
+  if (!sibling) {
+    return false;  
+  }
+  
+  if (mFirst == sibling || mLast == sibling ||
+      (mFirst != mLast && (mFirst->GetNextSibling() == sibling ||
+                           sibling->GetNextSibling() == mLast))) {
+    return true;
+  }
+  if (mFirst == mLast || sibling->GetNextSibling() == mFirst ||
+      mLast->GetNextSibling() == sibling || !sibling->GetPreviousSibling() ||
+      !sibling->GetNextSibling()) {
+    return false;
+  }
+  const Maybe<uint32_t> index = aContent.ComputeIndexInParentNode();
+  MOZ_ASSERT(index.isSome());
+  const Maybe<uint32_t> firstIndex = mFirst->ComputeIndexInParentNode();
+  MOZ_ASSERT(firstIndex.isSome());
+  const Maybe<uint32_t> lastIndex = mLast->ComputeIndexInParentNode();
+  MOZ_ASSERT(lastIndex.isSome());
+  return firstIndex.value() < index.value() &&
+         index.value() < lastIndex.value();
+}
+
+bool IMEContentObserver::AddedContentCache::CanMergeWith(
+    const nsIContent& aFirstContent, const nsIContent& aLastContent,
+    const dom::Element* aRootElement) const {
+  MOZ_ASSERT(HasCache());
+  if (aLastContent.GetNextSibling() == mFirst ||
+      mLast->GetNextSibling() == &aFirstContent) {
+    return true;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(aFirstContent.GetParentNode() ==
+                        aLastContent.GetParentNode());
+  if (mFirst->GetParentNode() != aFirstContent.GetParentNode()) {
+    return false;
+  }
+  const Maybe<uint32_t> newFirstIndex =
+      aFirstContent.ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(newFirstIndex.isSome());
+  const Maybe<uint32_t> newLastIndex =
+      &aFirstContent == &aLastContent ? newFirstIndex
+                                      : aLastContent.ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(newLastIndex.isSome());
+  const Maybe<uint32_t> currentFirstIndex = mFirst->ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(currentFirstIndex.isSome());
+  const Maybe<uint32_t> currentLastIndex =
+      mFirst == mLast ? currentFirstIndex : mLast->ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(currentLastIndex.isSome());
+  MOZ_ASSERT(!(newFirstIndex.value() < currentFirstIndex.value() &&
+               newLastIndex.value() > currentLastIndex.value()),
+             "New content nodes shouldn't contain mFirst nor mLast");
+  MOZ_ASSERT(!(newFirstIndex.value() < currentFirstIndex.value() &&
+               newLastIndex.value() > currentFirstIndex.value()),
+             "New content nodes shouldn't contain mFirst");
+  MOZ_ASSERT(!(newFirstIndex.value() < currentLastIndex.value() &&
+               newLastIndex.value() > currentLastIndex.value()),
+             "New content nodes shouldn't contain mLast");
+  return *newFirstIndex > *currentFirstIndex &&
+         *newLastIndex < *currentLastIndex;
+}
+
 bool IMEContentObserver::AddedContentCache::TryToCache(
     const nsIContent& aFirstContent, const nsIContent& aLastContent,
     const dom::Element* aRootElement) {
@@ -2636,8 +2820,10 @@ bool IMEContentObserver::AddedContentCache::TryToCache(
          ToString(mFirst).c_str(), ToString(mLast).c_str()));
     return true;
   }
-  if (AddedContentCache::ContentIsPrevNodeOf(aLastContent, *mFirst,
-                                             aRootElement)) {
+  MOZ_ASSERT(mFirst != &aFirstContent);
+  MOZ_ASSERT(mLast != &aLastContent);
+  if (aLastContent.GetNextSibling() == mFirst) {
+    MOZ_ASSERT(CanMergeWith(aFirstContent, aLastContent, aRootElement));
     mFirst = const_cast<nsIContent*>(&aFirstContent);
     MOZ_LOG(
         sCacheLog, LogLevel::Info,
@@ -2645,8 +2831,8 @@ bool IMEContentObserver::AddedContentCache::TryToCache(
          ToString(mFirst).c_str()));
     return true;
   }
-  if (AddedContentCache::ContentIsPrevNodeOf(*mLast, aFirstContent,
-                                             aRootElement)) {
+  if (mLast->GetNextSibling() == &aFirstContent) {
+    MOZ_ASSERT(CanMergeWith(aFirstContent, aLastContent, aRootElement));
     mLast = const_cast<nsIContent*>(&aLastContent);
     MOZ_LOG(
         sCacheLog, LogLevel::Info,
@@ -2654,86 +2840,268 @@ bool IMEContentObserver::AddedContentCache::TryToCache(
          ToString(mLast).c_str()));
     return true;
   }
-#ifdef DEBUG
-  [&]() {
-    if (MOZ_LIKELY(
-            !StaticPrefs::test_ime_content_observer_assert_valid_cache())) {
-      return;
-    }
-    MOZ_ASSERT(mFirst != &aFirstContent);
-    MOZ_ASSERT(mLast != &aLastContent);
-    const Maybe<int32_t> newLastContentComparedWithCachedFirstContent =
-        nsContentUtils::ComparePoints(
-            RawRangeBoundary(aLastContent.GetParentNode(),
-                             aLastContent.GetPreviousSibling()),
-            RawRangeBoundary(mFirst->GetParentNode(),
-                             mFirst->GetPreviousSibling()));
-    MOZ_ASSERT(newLastContentComparedWithCachedFirstContent.isSome());
-    if (*newLastContentComparedWithCachedFirstContent == -1) {
-      
-      return;
-    }
-    const Maybe<int32_t> cachedLastContentComparedWithNewFirstContent =
-        nsContentUtils::ComparePoints(
-            RawRangeBoundary(mLast->GetParentNode(),
-                             mLast->GetPreviousSibling()),
-            RawRangeBoundary(aFirstContent.GetParentNode(),
-                             aFirstContent.GetPreviousSibling()));
-    MOZ_ASSERT(cachedLastContentComparedWithNewFirstContent.isSome());
-    if (*cachedLastContentComparedWithNewFirstContent == -1) {
-      
-      return;
-    }
-    const Maybe<int32_t> cachedFirstContentComparedWithNewFirstContent =
-        nsContentUtils::ComparePoints(
-            RawRangeBoundary(mFirst->GetParentNode(),
-                             mFirst->GetPreviousSibling()),
-            RawRangeBoundary(aFirstContent.GetParentNode(),
-                             aFirstContent.GetPreviousSibling()));
-    const Maybe<int32_t> newLastContentComparedWithCachedLastContent =
-        nsContentUtils::ComparePoints(
-            RawRangeBoundary(aLastContent.GetParentNode(),
-                             aLastContent.GetPreviousSibling()),
-            RawRangeBoundary(mLast->GetParentNode(),
-                             mLast->GetPreviousSibling()));
-    MOZ_ASSERT(cachedFirstContentComparedWithNewFirstContent.isSome());
-    MOZ_ASSERT(newLastContentComparedWithCachedLastContent.isSome());
-    
-    MOZ_ASSERT(!(*cachedFirstContentComparedWithNewFirstContent == -1 &&
-                 *newLastContentComparedWithCachedLastContent == -1),
-               "New content nodes shouldn't be in the cached range");
-    
-    MOZ_ASSERT(!(*cachedFirstContentComparedWithNewFirstContent == 1 &&
-                 *newLastContentComparedWithCachedLastContent == -1),
-               "New content nodes shouldn't contain mFirst");
-    
-    MOZ_ASSERT(!(*cachedFirstContentComparedWithNewFirstContent == -1 &&
-                 *newLastContentComparedWithCachedLastContent == 1),
-               "New content nodes shouldn't contain mLast");
-    
-    MOZ_ASSERT(!(*cachedFirstContentComparedWithNewFirstContent == 1 &&
-                 *newLastContentComparedWithCachedLastContent == 1),
-               "New content nodes shouldn't contain mFirst nor mLast");
-  }();
-#endif  
+
+  MOZ_DIAGNOSTIC_ASSERT(aFirstContent.GetParentNode() ==
+                        aLastContent.GetParentNode());
+  if (mFirst->GetParentNode() != aFirstContent.GetParentNode()) {
+    MOZ_ASSERT(!CanMergeWith(aFirstContent, aLastContent, aRootElement));
+    return false;
+  }
+  const Maybe<uint32_t> newFirstIndex =
+      aFirstContent.ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(newFirstIndex.isSome());
+  const Maybe<uint32_t> newLastIndex =
+      &aFirstContent == &aLastContent ? newFirstIndex
+                                      : aLastContent.ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(newLastIndex.isSome());
+  const Maybe<uint32_t> currentFirstIndex = mFirst->ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(currentFirstIndex.isSome());
+  const Maybe<uint32_t> currentLastIndex =
+      mFirst == mLast ? currentFirstIndex : mLast->ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(currentLastIndex.isSome());
+  MOZ_ASSERT(!(newFirstIndex.value() < currentFirstIndex.value() &&
+               newLastIndex.value() > currentLastIndex.value()),
+             "New content nodes shouldn't contain mFirst nor mLast");
+  MOZ_ASSERT(!(newFirstIndex.value() < currentFirstIndex.value() &&
+               newLastIndex.value() > currentFirstIndex.value()),
+             "New content nodes shouldn't contain mFirst");
+  MOZ_ASSERT(!(newFirstIndex.value() < currentLastIndex.value() &&
+               newLastIndex.value() > currentLastIndex.value()),
+             "New content nodes shouldn't contain mLast");
+  if (*newFirstIndex > *currentFirstIndex &&
+      *newLastIndex < *currentLastIndex) {
+    MOZ_ASSERT(CanMergeWith(aFirstContent, aLastContent, aRootElement));
+    MOZ_LOG(sCacheLog, LogLevel::Info,
+            ("AddedContentCache::TryToCache: New nodes in the range"));
+    return true;
+  }
+  MOZ_ASSERT(!CanMergeWith(aFirstContent, aLastContent, aRootElement));
   return false;
 }
 
-
-bool IMEContentObserver::AddedContentCache::ContentIsPrevNodeOf(
-    const nsIContent& aContent, const nsIContent& aMaybeNextNode,
+bool IMEContentObserver::AddedContentCache::ContentRemoved(
+    const nsIContent& aContent, const nsIContent* aPreviousSibling,
     const dom::Element* aRootElement) {
-  MOZ_ASSERT(aRootElement);
-  MOZ_ASSERT(&aContent != &aMaybeNextNode);
+  if (!HasCache()) {
+    return false;
+  }
 
-  
-  
-  if (aContent.GetParentNode() == aMaybeNextNode.GetParentNode()) {
-    return &aMaybeNextNode == aContent.GetNextSibling();
+  if ((mFirst == mLast && mFirst == &aContent) ||
+      mFirst->IsInclusiveDescendantOf(&aContent)) {
+    
+    Clear("AddedContentCache::ContentRemoved");
+    return true;
+  }
+
+  if (mFirst == &aContent) {
+    mFirst = aPreviousSibling
+                 ? aPreviousSibling->GetNextNonChildNode(aRootElement)
+                 : aContent.GetParentNode()->GetNextNode(aRootElement);
+    MOZ_LOG(sCacheLog, LogLevel::Info,
+            ("AddedContentCache::ContentRemoved: The first node was removed "
+             "(new first content: %s)",
+             ToString(mFirst).c_str()));
+    MOZ_ASSERT(mFirst);
+    MOZ_ASSERT(mFirst != &aContent);
+    MOZ_ASSERT(nsContentUtils::ComparePoints(
+                   RawRangeBoundary(mFirst->GetParentNode(),
+                                    mFirst->GetPreviousSibling()),
+                   RawRangeBoundary(mLast->GetParentNode(),
+                                    mLast->GetPreviousSibling()))
+                   .value() <= 0);
+    return true;
+  }
+
+  if (mLast == &aContent) {
+    if (aPreviousSibling) {
+      mLast = const_cast<nsIContent*>(aPreviousSibling);
+      MOZ_LOG(sCacheLog, LogLevel::Info,
+              ("AddedContentCache::ContentRemoved: The last node was removed "
+               "(new last content: %s)",
+               ToString(mLast).c_str()));
+    } else {
+      mLast = aPreviousSibling->GetParent();
+      MOZ_LOG(sCacheLog, LogLevel::Info,
+              ("AddedContentCache::ContentRemoved: The last node which was the "
+               "last child of the container was removed (new last content: %s)",
+               ToString(mLast).c_str()));
+      MOZ_ASSERT(mLast);
+      
+      
+      
+      
+      MOZ_RELEASE_ASSERT(!mLast->GetChildCount());
+    }
+    return true;
+  }
+
+  if (mFirst == mLast) {
+    
+    
+    return aContent.GetParentNode() != mFirst->GetParentNode() &&
+           aContent.IsInclusiveDescendantOf(mFirst);
+  }
+
+  if (!aPreviousSibling) {
+    
+    
+    if (aContent.GetParentNode() == mFirst->GetParentNode()) {
+      return false;
+    }
+  } else {
+    if (
+        
+        mLast == aPreviousSibling ||
+        
+        aPreviousSibling->GetNextSibling() == mFirst) {
+      return false;
+    }
+    if (
+        
+        mFirst == aPreviousSibling ||
+        
+        aPreviousSibling->GetNextSibling() == mLast) {
+      return true;
+    }
   }
 
   
-  return aContent.GetNextNode(aRootElement) == &aMaybeNextNode;
+  
+  
+  
+  const auto* const sibling = [&]() -> const nsIContent* {
+    const nsINode* const container = mFirst->GetParentNode();
+    for (const nsIContent* content :
+         aContent.InclusiveAncestorsOfType<nsIContent>()) {
+      if (content->GetParentNode() == container) {
+        return content;
+      }
+    }
+    return nullptr;
+  }();
+  if (!sibling) {
+    
+    return false;
+  }
+  const uint32_t contentIndex = [&]() -> uint32_t {
+    if (sibling != &aContent) {
+      MOZ_ASSERT(!sibling->IsBeingRemoved());
+      const Maybe<uint32_t> indexOfSibling =
+          sibling->ComputeIndexInParentNode();
+      MOZ_RELEASE_ASSERT(indexOfSibling.isSome());
+      return indexOfSibling.value();
+    }
+    if (!aPreviousSibling) {
+      return 0u;
+    }
+    const nsIContent* nextSibling = aPreviousSibling->GetNextSibling();
+    if (!nextSibling) {
+      
+      return aContent.GetParentNode()->GetChildCount();
+    }
+    const Maybe<uint32_t> indexOfNextSibling =
+        nextSibling->ComputeIndexInParentNode();
+    MOZ_RELEASE_ASSERT(indexOfNextSibling.isSome());
+    return indexOfNextSibling.value();
+  }();
+  const Maybe<uint32_t> firstIndex = mFirst->ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(firstIndex.isSome());
+  if (contentIndex < *firstIndex) {
+    return false;  
+  }
+  if (contentIndex == *firstIndex) {
+    return true;  
+  }
+  const Maybe<uint32_t> lastIndex = mLast->ComputeIndexInParentNode();
+  MOZ_RELEASE_ASSERT(lastIndex.isSome());
+  
+  
+  
+  return contentIndex <= *lastIndex;
+}
+
+Result<std::pair<uint32_t, uint32_t>, nsresult> IMEContentObserver::
+    AddedContentCache::ComputeFlatTextRangeBeforeInsertingNewContent(
+        const nsIContent& aNewFirstContent, const nsIContent& aNewLastContent,
+        const dom::Element* aRootElement,
+        OffsetAndLengthAdjustments& aDifferences) const {
+  MOZ_ASSERT(HasCache());
+  const Maybe<int32_t> newLastContentComparedWithCachedFirstContent =
+      nsContentUtils::ComparePoints(
+          RawRangeBoundary(aNewLastContent.GetParentNode(),
+                           aNewLastContent.GetPreviousSibling()),
+          RawRangeBoundary(mFirst->GetParentNode(),
+                           mFirst->GetPreviousSibling()));
+  MOZ_RELEASE_ASSERT(newLastContentComparedWithCachedFirstContent.isSome());
+  MOZ_ASSERT(*newLastContentComparedWithCachedFirstContent != 0);
+  MOZ_ASSERT((*nsContentUtils::ComparePoints(
+                  RawRangeBoundary(aNewFirstContent.GetParentNode(),
+                                   aNewFirstContent.GetPreviousSibling()),
+                  RawRangeBoundary(mFirst->GetParentNode(),
+                                   mFirst->GetPreviousSibling())) > 0) ==
+                 (*newLastContentComparedWithCachedFirstContent > 0),
+             "New nodes shouldn't contain mFirst");
+  const Maybe<int32_t> newFirstContentComparedWithCachedLastContent =
+      mLast->GetNextSibling() == &aNewFirstContent
+          ? Some(1)
+          : nsContentUtils::ComparePoints(
+                RawRangeBoundary(aNewFirstContent.GetParentNode(),
+                                 aNewFirstContent.GetPreviousSibling()),
+                
+                
+                
+                
+                RawRangeBoundary(mLast->GetParentNode(), mLast));
+  MOZ_RELEASE_ASSERT(newFirstContentComparedWithCachedLastContent.isSome());
+  MOZ_ASSERT(*newFirstContentComparedWithCachedLastContent != 0);
+  MOZ_ASSERT((*newFirstContentComparedWithCachedLastContent > 0) ==
+                 (*nsContentUtils::ComparePoints(
+                      RawRangeBoundary(aNewLastContent.GetParentNode(),
+                                       aNewLastContent.GetPreviousSibling()),
+                      RawRangeBoundary(mLast->GetParentNode(), mLast)) > 0),
+             "New nodes shouldn't contain mLast");
+
+  Result<uint32_t, nsresult> length =
+      FlatTextCache::ComputeTextLengthStartOfContentToEndOfContent(
+          *mFirst, *mLast, aRootElement);
+  if (NS_WARN_IF(length.isErr())) {
+    return length.propagateErr();
+  }
+  Result<uint32_t, nsresult> offset =
+      FlatTextCache::ComputeTextLengthBeforeContent(*mFirst, aRootElement);
+  if (NS_WARN_IF(offset.isErr())) {
+    return offset.propagateErr();
+  }
+
+  
+  
+  if (*newFirstContentComparedWithCachedLastContent == 1u) {
+    aDifferences = OffsetAndLengthAdjustments{0, 0};
+    return std::make_pair(offset.inspect(), length.inspect());
+  }
+
+  Result<uint32_t, nsresult> newLength =
+      FlatTextCache::ComputeTextLengthStartOfContentToEndOfContent(
+          aNewFirstContent, aNewLastContent, aRootElement);
+  if (NS_WARN_IF(newLength.isErr())) {
+    return newLength.propagateErr();
+  }
+
+  
+  
+  if (*newLastContentComparedWithCachedFirstContent == 1u) {
+    MOZ_RELEASE_ASSERT(length.inspect() >= newLength.inspect());
+    aDifferences = OffsetAndLengthAdjustments{0, newLength.inspect()};
+    return std::make_pair(offset.inspect(),
+                          length.inspect() - newLength.inspect());
+  }
+
+  
+  
+  MOZ_RELEASE_ASSERT(offset.inspect() >= newLength.inspect());
+  aDifferences = OffsetAndLengthAdjustments{newLength.inspect(), 0};
+  return std::make_pair(offset.inspect() - newLength.inspect(),
+                        length.inspect());
 }
 
 }  
