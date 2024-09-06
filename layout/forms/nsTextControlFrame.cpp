@@ -203,12 +203,11 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
                         nsPresContext::CSSPixelsToAppUnits(4));
     internalPadding = RoundToMultiple(internalPadding, AppUnitsPerCSSPixel());
     intrinsicSize.ISize(aWM) += internalPadding;
-  } else {
+  } else if (PresContext()->CompatibilityMode() ==
+             eCompatibility_FullStandards) {
     
     
-    if (PresContext()->CompatibilityMode() == eCompatibility_FullStandards) {
-      intrinsicSize.ISize(aWM) += 1;
-    }
+    intrinsicSize.ISize(aWM) += 1;
   }
 
   
