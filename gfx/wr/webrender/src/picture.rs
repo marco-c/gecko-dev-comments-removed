@@ -7686,38 +7686,26 @@ fn get_surface_rects(
 
             
             
-            
-            
-            
-            let (_coverage, _source, target) = composite_mode.get_coverage_svgfe(
+            let (coverage, _source, target) = composite_mode.get_coverage_svgfe(
                 filters, clipped, true, false);
 
             
-            let clipped: LayoutRect = target.cast_unit()
-                .intersection(&local_clip_rect)
-                .unwrap_or(PictureRect::zero())
-                .cast_unit();
-
             
             
             
             
             
             
-            
-            if clipped.is_empty() {
+            if target.is_empty() {
                 return None;
             }
 
             
             
             
-            
-            
-            let (coverage, _source, _target) = composite_mode.get_coverage_svgfe(
-                filters, clipped.cast_unit(), false, false);
+            let clipped = coverage;
 
-            (coverage.cast_unit(), unclipped)
+            (clipped.cast_unit(), unclipped)
         }
         PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
             let local_prim_rect = surface.clipped_local_rect;
