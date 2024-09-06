@@ -7,6 +7,9 @@ def _file_byte_generator(filename):
     with open(filename, "rb") as f:
         contents = f.read()
 
+        if b"-----BEGIN CERTIFICATE-----" in contents:
+            raise Exception(f"{filename} contains a PEM certificate. Expected DER.")
+
         
         
         
