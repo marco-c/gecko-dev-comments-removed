@@ -197,7 +197,6 @@ enum class FuncFlags : uint8_t {
 
 
 struct FuncDesc {
-  const FuncType* type;
   
   uint32_t typeIndex : 24;
   FuncFlags flags : 8;
@@ -207,8 +206,7 @@ struct FuncDesc {
   static_assert(sizeof(FuncFlags) == sizeof(uint8_t));
 
   FuncDesc() = default;
-  FuncDesc(const FuncType* type, uint32_t typeIndex)
-      : type(type), typeIndex(typeIndex), flags(FuncFlags::None) {}
+  explicit FuncDesc(uint32_t typeIndex) : typeIndex(typeIndex), flags(FuncFlags::None) {}
 
   bool isExported() const {
     return uint8_t(flags) & uint8_t(FuncFlags::Exported);
