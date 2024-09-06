@@ -371,6 +371,10 @@ CHILD_PROCESSES += [
 
     
     DllBlocklistEntry("hmpalert.dll", (3, 8, 8, 889)),
+
+    
+    DllBlocklistEntry("T_Prevent64.dll", ALL_VERSIONS),
+    DllBlocklistEntry("TDCommonLib64.dll", ALL_VERSIONS),
 ]
 
 GPU_PROCESSES += [
