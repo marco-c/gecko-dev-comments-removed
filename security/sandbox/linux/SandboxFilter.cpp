@@ -1895,13 +1895,27 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         static constexpr unsigned long kFbDevType =
             static_cast<unsigned long>('F') << _IOC_TYPESHIFT;
 
+#if defined(__aarch64__)
+        
+        
+        static constexpr unsigned long kNvidiaNvmapType =
+            static_cast<unsigned long>('N') << _IOC_TYPESHIFT;
+        static constexpr unsigned long kNvidiaNvhostType =
+            static_cast<unsigned long>('H') << _IOC_TYPESHIFT;
+#endif  
+
         
         return If(shifted_type == kDrmType, Allow())
             .ElseIf(shifted_type == kDmaBufType, Allow())
 #ifdef MOZ_ENABLE_V4L2
             .ElseIf(shifted_type == kVideoType, Allow())
 #endif
-            
+        
+#if defined(__aarch64__)
+            .ElseIf(shifted_type == kNvidiaNvmapType, Allow())
+            .ElseIf(shifted_type == kNvidiaNvhostType, Allow())
+#endif  
+        
             .ElseIf(shifted_type == kFbDevType, Error(ENOTTY))
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
