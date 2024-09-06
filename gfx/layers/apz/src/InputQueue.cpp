@@ -637,6 +637,12 @@ uint64_t InputQueue::InjectNewTouchBlock(AsyncPanZoomController* aTarget) {
 TouchBlockState* InputQueue::StartNewTouchBlock(
     const RefPtr<AsyncPanZoomController>& aTarget,
     TargetConfirmationFlags aFlags) {
+  if (mPrevActiveTouchBlock && mActiveTouchBlock &&
+      mActiveTouchBlock->ForLongTap()) {
+    mPrevActiveTouchBlock->SetWaitingLongTapResult(false);
+    mPrevActiveTouchBlock = nullptr;
+  }
+
   TouchBlockState* newBlock =
       new TouchBlockState(aTarget, aFlags, mTouchCounter);
 
@@ -664,7 +670,7 @@ TouchBlockState* InputQueue::StartNewTouchBlockForLongTap(
   
   
   
-  currentBlock->SetWaitingLongTapResult();
+  currentBlock->SetWaitingLongTapResult(true);
 
   
   
