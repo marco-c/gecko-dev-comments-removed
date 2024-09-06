@@ -113,11 +113,12 @@ add_task(async function multipleInterventionsInOneEngagement() {
     `${UrlbarProviderInterventions.TIP_TYPE.REFRESH}-shown`,
     1
   );
-  TelemetryTestUtils.assertKeyedScalar(
-    scalars,
-    "urlbar.tips",
-    `${UrlbarProviderInterventions.TIP_TYPE.CLEAR}-shown`,
-    1
+  Assert.ok(
+    !scalars["urlbar.tips"][
+      `${UrlbarProviderInterventions.TIP_TYPE.CLEAR}-shown`
+    ],
+    `${UrlbarProviderInterventions.TIP_TYPE.CLEAR}-shown is not recorded as an
+     impression`
   );
 });
 

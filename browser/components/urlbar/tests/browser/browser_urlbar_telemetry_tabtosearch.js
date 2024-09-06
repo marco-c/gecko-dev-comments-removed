@@ -89,11 +89,6 @@ add_setup(async function () {
   });
 
   
-  
-  UrlbarProviderTabToSearch.enginesShown.regular.clear();
-  UrlbarProviderTabToSearch.enginesShown.onboarding.clear();
-
-  
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 
@@ -257,7 +252,7 @@ async function impressions_test(isOnboarding) {
       scalars,
       "urlbar.tips",
       isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      3
+      2
     );
     TelemetryTestUtils.assertKeyedScalar(
       scalars,
@@ -265,7 +260,7 @@ async function impressions_test(isOnboarding) {
         ? "urlbar.tabtosearch.impressions_onboarding"
         : "urlbar.tabtosearch.impressions",
       "other",
-      3
+      2
     );
 
     info("Make a typo and return to autofill. Do not record impression.");
@@ -297,7 +292,7 @@ async function impressions_test(isOnboarding) {
       scalars,
       "urlbar.tips",
       isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      4
+      3
     );
     TelemetryTestUtils.assertKeyedScalar(
       scalars,
@@ -305,7 +300,7 @@ async function impressions_test(isOnboarding) {
         ? "urlbar.tabtosearch.impressions_onboarding"
         : "urlbar.tabtosearch.impressions",
       "other",
-      4
+      3
     );
 
     info(
@@ -332,7 +327,7 @@ async function impressions_test(isOnboarding) {
       scalars,
       "urlbar.tips",
       isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      5
+      4
     );
     TelemetryTestUtils.assertKeyedScalar(
       scalars,
@@ -341,7 +336,7 @@ async function impressions_test(isOnboarding) {
         : "urlbar.tabtosearch.impressions",
       
       "other",
-      5
+      4
     );
 
     
@@ -357,7 +352,7 @@ async function impressions_test(isOnboarding) {
       scalars,
       "urlbar.tips",
       isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      6
+      5
     );
     TelemetryTestUtils.assertKeyedScalar(
       scalars,
@@ -365,7 +360,7 @@ async function impressions_test(isOnboarding) {
         ? "urlbar.tabtosearch.impressions_onboarding"
         : "urlbar.tabtosearch.impressions",
       "other",
-      6
+      5
     );
 
     info(
@@ -401,7 +396,7 @@ async function impressions_test(isOnboarding) {
       scalars,
       "urlbar.tips",
       isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      8
+      7
     );
     TelemetryTestUtils.assertKeyedScalar(
       scalars,
@@ -409,7 +404,7 @@ async function impressions_test(isOnboarding) {
         ? "urlbar.tabtosearch.impressions_onboarding"
         : "urlbar.tabtosearch.impressions",
       "other",
-      8
+      7
     );
 
     await PlacesUtils.history.clear();

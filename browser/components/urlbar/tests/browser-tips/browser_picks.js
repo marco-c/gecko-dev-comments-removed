@@ -110,16 +110,15 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
     });
   }
 
+  const deferred = Promise.withResolvers();
+
   
   let provider = new UrlbarTestUtils.TestProvider({
     results: [makeTipResult({ buttonUrl, helpUrl })],
     priority: 1,
+    onEngagement: () => deferred.resolve(),
   });
   UrlbarProvidersManager.registerProvider(provider);
-
-  let onLegacyEngagementPromise = new Promise(
-    resolve => (provider.onLegacyEngagement = resolve)
-  );
 
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -160,7 +159,6 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
       EventUtils.synthesizeKey("KEY_Enter");
     }
   });
-  await onLegacyEngagementPromise;
   await loadPromise;
 
   
