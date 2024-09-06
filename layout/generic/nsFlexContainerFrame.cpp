@@ -5663,9 +5663,11 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
                         availableBSizeForItem)
                 .ConvertTo(itemWM, flexWM);
 
+        const bool isAdjacentWithBStart =
+            framePos.B(flexWM) == containerContentBoxOrigin.B(flexWM);
         const nsReflowStatus childReflowStatus =
             ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
-                           availableSize, aContainerSize);
+                           isAdjacentWithBStart, availableSize, aContainerSize);
 
         const bool shouldPushItem = [&]() {
           if (availableBSizeForItem == NS_UNCONSTRAINEDSIZE) {
@@ -5673,7 +5675,7 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
             
             return false;
           }
-          if (framePos.B(flexWM) == containerContentBoxOrigin.B(flexWM)) {
+          if (isAdjacentWithBStart) {
             
             
             return false;
@@ -6068,7 +6070,8 @@ void nsFlexContainerFrame::MoveFlexItemToFinalPosition(
 nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
     const FlexboxAxisTracker& aAxisTracker, const ReflowInput& aReflowInput,
     const FlexItem& aItem, const LogicalPoint& aFramePos,
-    const LogicalSize& aAvailableSize, const nsSize& aContainerSize) {
+    const bool aIsAdjacentWithBStart, const LogicalSize& aAvailableSize,
+    const nsSize& aContainerSize) {
   FLEX_ITEM_LOG(aItem.Frame(), "Doing final reflow");
 
   
@@ -6205,6 +6208,13 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
     
     
     aItem.Frame()->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
+  }
+
+  if (!aIsAdjacentWithBStart) {
+    
+    
+    
+    childReflowInput.mFlags.mIsTopOfPage = false;
   }
 
   

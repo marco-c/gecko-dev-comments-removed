@@ -610,10 +610,13 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 
 
 
+
+
   nsReflowStatus ReflowFlexItem(const FlexboxAxisTracker& aAxisTracker,
                                 const ReflowInput& aReflowInput,
                                 const FlexItem& aItem,
                                 const mozilla::LogicalPoint& aFramePos,
+                                const bool aIsAdjacentWithBStart,
                                 const mozilla::LogicalSize& aAvailableSize,
                                 const nsSize& aContainerSize);
 
