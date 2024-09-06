@@ -164,6 +164,9 @@ interface nsIFaviconService : nsISupports
 
 
 
+
+
+
   void setFaviconForPage(
     in nsIURI aPageURI,
     in nsIURI aFaviconURI,
