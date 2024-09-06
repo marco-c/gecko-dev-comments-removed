@@ -116,13 +116,16 @@ extern bool IsValidAsmJSHeapLength(size_t length);
 
 
 
-struct AsmJSMetadata;
 
-struct Metadata : public wasm::ShareableBase<Metadata> {
-  Metadata() {};
-  virtual ~Metadata() = default;
 
-  virtual const AsmJSMetadata& asAsmJS() const = 0;
+
+struct CodeMetadataForAsmJSImpl;
+
+struct CodeMetadataForAsmJS : public wasm::ShareableBase<CodeMetadataForAsmJS> {
+  CodeMetadataForAsmJS() {};
+  virtual ~CodeMetadataForAsmJS() = default;
+
+  virtual const CodeMetadataForAsmJSImpl& asAsmJS() const = 0;
 
   virtual bool mutedErrors() const = 0;
   virtual const char16_t* displayURL() const = 0;
@@ -134,8 +137,8 @@ struct Metadata : public wasm::ShareableBase<Metadata> {
       mozilla::MallocSizeOf mallocSizeOf) const = 0;
 };
 
-using MutableMetadata = RefPtr<Metadata>;
-using SharedMetadata = RefPtr<const Metadata>;
+using MutableCodeMetadataForAsmJS = RefPtr<CodeMetadataForAsmJS>;
+using SharedCodeMetadataForAsmJS = RefPtr<const CodeMetadataForAsmJS>;
 
 }  
 
