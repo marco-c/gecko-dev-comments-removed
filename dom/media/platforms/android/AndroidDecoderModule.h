@@ -54,25 +54,16 @@ class AndroidDecoderModule : public PlatformDecoderModule {
  private:
   explicit AndroidDecoderModule(CDMProxy* aProxy = nullptr);
   virtual ~AndroidDecoderModule() = default;
-
-  static bool AreSupportedMimeTypesReady();
-  static bool IsSupportedCodecsReady();
-
   RefPtr<MediaDrmCDMProxy> mProxy;
   
-  static inline StaticAutoPtr<nsTArray<nsCString>> sSupportedSwMimeTypes
-      MOZ_GUARDED_BY(sMutex);
+  static StaticAutoPtr<nsTArray<nsCString>> sSupportedSwMimeTypes;
   
-  static inline StaticAutoPtr<nsTArray<nsCString>> sSupportedHwMimeTypes
-      MOZ_GUARDED_BY(sMutex);
+  static StaticAutoPtr<nsTArray<nsCString>> sSupportedHwMimeTypes;
   
   
   
   
-  static inline StaticAutoPtr<media::MediaCodecsSupported> sSupportedCodecs
-      MOZ_GUARDED_BY(sMutex);
-
-  static inline StaticMutex sMutex;
+  static StaticAutoPtr<media::MediaCodecsSupported> sSupportedCodecs;
 };
 
 extern LazyLogModule sAndroidDecoderModuleLog;
