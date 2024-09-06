@@ -568,7 +568,7 @@ RefPtr<EncodedVideoChunk> VideoEncoder::EncodedDataToOutputType(
 
 VideoDecoderConfigInternal VideoEncoder::EncoderConfigToDecoderConfig(
     nsIGlobalObject* aGlobal, const RefPtr<MediaRawData>& aRawData,
-    const VideoEncoderConfigInternal& mOutputConfig) const {
+    const VideoEncoderConfigInternal& aOutputConfig) const {
   
   VideoColorSpaceInternal init;
   init.mFullRange.emplace(false);
@@ -577,16 +577,16 @@ VideoDecoderConfigInternal VideoEncoder::EncoderConfigToDecoderConfig(
   init.mTransfer.emplace(VideoTransferCharacteristics::Bt709);
 
   return VideoDecoderConfigInternal(
-      mOutputConfig.mCodec,        
-      Some(mOutputConfig.mHeight), 
-      Some(mOutputConfig.mWidth),  
+      aOutputConfig.mCodec,        
+      Some(aOutputConfig.mHeight), 
+      Some(aOutputConfig.mWidth),  
       Some(init),                  
       aRawData->mExtraData && !aRawData->mExtraData->IsEmpty()
           ? aRawData->mExtraData.forget()
           : nullptr,                                 
-      Maybe<uint32_t>(mOutputConfig.mDisplayHeight), 
-      Maybe<uint32_t>(mOutputConfig.mDisplayWidth),  
-      mOutputConfig.mHardwareAcceleration,           
+      Maybe<uint32_t>(aOutputConfig.mDisplayHeight), 
+      Maybe<uint32_t>(aOutputConfig.mDisplayWidth),  
+      aOutputConfig.mHardwareAcceleration,           
       Nothing()                                      
   );
 }
