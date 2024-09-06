@@ -132,10 +132,6 @@ impl GradientBuilder {
         let first = *stops.first().unwrap();
         let last = *stops.last().unwrap();
 
-        
-        
-        assert!(!(first.offset > last.offset));
-
         let stops_delta = last.offset - first.offset;
 
         if stops_delta > 0.000001 {
@@ -144,6 +140,14 @@ impl GradientBuilder {
             }
 
             (first.offset, last.offset)
+        } else if stops_delta.is_nan() {
+            
+            
+            stops.clear();
+            stops.push(di::GradientStop { color: last.color, offset: 0.0, });
+            stops.push(di::GradientStop { color: last.color, offset: 1.0, });
+
+            (0.0, 1.0)
         } else {
             
             
