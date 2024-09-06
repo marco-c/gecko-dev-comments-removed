@@ -6,6 +6,7 @@
 
 #include "Animation.h"
 
+#include "mozilla/Likely.h"
 #include "nsIFrame.h"
 #include "AnimationUtils.h"
 #include "mozAutoDocUpdate.h"
@@ -926,12 +927,13 @@ void Animation::SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
 
 void Animation::Tick(AnimationTimeline::TickState& aTickState) {
   if (Pending()) {
-    
-    
-    if (!mPendingReadyTime.IsNull() || mSawTickWhilePending) {
+    if (!mPendingReadyTime.IsNull()) {
       TryTriggerNow();
+    } else if (MOZ_LIKELY(mTimeline)) {
+      
+      
+      mPendingReadyTime = mTimeline->GetCurrentTimeAsTimeStamp();
     }
-    mSawTickWhilePending = true;
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Sync);
@@ -1351,17 +1353,21 @@ void Animation::NotifyEffectTargetUpdated() {
   MaybeScheduleReplacementCheck();
 }
 
-static bool EnsurePaintIsScheduled(Document& aDoc) {
+static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
   PresShell* presShell = aDoc.GetPresShell();
   if (!presShell) {
-    return false;
+    return {};
   }
   nsIFrame* rootFrame = presShell->GetRootFrame();
   if (!rootFrame) {
-    return false;
+    return {};
   }
   rootFrame->SchedulePaintWithoutInvalidatingObservers();
-  return rootFrame->PresContext()->RefreshDriver()->IsInRefresh();
+  auto* rd = rootFrame->PresContext()->RefreshDriver();
+  if (!rd->IsInRefresh()) {
+    return {};
+  }
+  return rd->MostRecentRefresh( false);
 }
 
 
@@ -1453,7 +1459,6 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
 
   mPendingState = PendingState::PlayPending;
   mPendingReadyTime = {};
-  mSawTickWhilePending = false;
   if (Document* doc = GetRenderedDocument()) {
     if (HasFiniteTimeline()) {
       
@@ -1464,7 +1469,7 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
       doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
     }
     
-    mSawTickWhilePending = EnsurePaintIsScheduled(*doc);
+    mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
@@ -1515,14 +1520,12 @@ void Animation::Pause(ErrorResult& aRv) {
 
   mPendingState = PendingState::PausePending;
   mPendingReadyTime = {};
-  mSawTickWhilePending = false;
-
   
   if (Document* doc = GetRenderedDocument()) {
     if (HasFiniteTimeline()) {
       doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
     }
-    mSawTickWhilePending = EnsurePaintIsScheduled(*doc);
+    mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);

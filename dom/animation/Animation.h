@@ -115,6 +115,7 @@ class Animation : public DOMEventTargetHelper,
   Nullable<TimeDuration> GetStartTime() const { return mStartTime; }
   Nullable<double> GetStartTimeAsDouble() const;
   void SetStartTime(const Nullable<TimeDuration>& aNewStartTime);
+  const TimeStamp& GetPendingReadyTime() const { return mPendingReadyTime; }
   void SetPendingReadyTime(const TimeStamp& aReadyTime) {
     mPendingReadyTime = aReadyTime;
   }
@@ -550,11 +551,6 @@ class Animation : public DOMEventTargetHelper,
 
   bool mFinishedAtLastComposeStyle = false;
   bool mWasReplaceableAtLastTick = false;
-  
-  
-  
-  
-  bool mSawTickWhilePending = false;
 
   bool mHiddenByContentVisibility = false;
 

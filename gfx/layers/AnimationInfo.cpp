@@ -494,11 +494,15 @@ void AnimationInfo::AddAnimationForProperty(
   }
 
   if (aAnimation->Pending()) {
-    const TimeStamp readyTime =
-        aFrame->PresContext()->RefreshDriver()->MostRecentRefresh(
-             false);
-    MOZ_ASSERT(!readyTime.IsNull());
-    aAnimation->SetPendingReadyTime(readyTime);
+    TimeStamp readyTime = aAnimation->GetPendingReadyTime();
+    if (readyTime.IsNull()) {
+      
+      
+      readyTime = aFrame->PresContext()->RefreshDriver()->MostRecentRefresh(
+           false);
+      MOZ_ASSERT(!readyTime.IsNull());
+      aAnimation->SetPendingReadyTime(readyTime);
+    }
     MaybeStartPendingAnimation(*animation, readyTime);
   }
 }
