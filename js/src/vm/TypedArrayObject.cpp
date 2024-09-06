@@ -2618,6 +2618,24 @@ static bool GetLastChunkHandlingOption(JSContext* cx, Handle<JSObject*> options,
   return false;
 }
 
+enum class OmitPadding : bool { No, Yes };
+
+
+
+
+
+
+static bool GetOmitPaddingOption(JSContext* cx, Handle<JSObject*> options,
+                                 OmitPadding* result) {
+  Rooted<Value> value(cx);
+  if (!GetProperty(cx, options, options, cx->names().omitPadding, &value)) {
+    return false;
+  }
+
+  *result = static_cast<OmitPadding>(JS::ToBoolean(value));
+  return true;
+}
+
 
 
 
@@ -2945,6 +2963,7 @@ static bool uint8array_toBase64(JSContext* cx, const CallArgs& args) {
 
   
   auto alphabet = Alphabet::Base64;
+  auto omitPadding = OmitPadding::No;
   if (args.hasDefined(0)) {
     
     Rooted<JSObject*> options(
@@ -2955,6 +2974,11 @@ static bool uint8array_toBase64(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetAlphabetOption(cx, options, &alphabet)) {
+      return false;
+    }
+
+    
+    if (!GetOmitPaddingOption(cx, options, &omitPadding)) {
       return false;
     }
   }
@@ -2968,10 +2992,15 @@ static bool uint8array_toBase64(JSContext* cx, const CallArgs& args) {
 
   
   
+  
   auto outLength = mozilla::CheckedInt<size_t>{*length};
   outLength += 2;
   outLength /= 3;
-  outLength *= 4;
+  if (omitPadding == OmitPadding::No) {
+    outLength *= 4;
+  } else {
+    outLength += *length;
+  }
   if (!outLength.isValid() || outLength.value() > JSString::MAX_LENGTH) {
     ReportAllocationOverflow(cx);
     return false;
@@ -3020,7 +3049,9 @@ static bool uint8array_toBase64(JSContext* cx, const CallArgs& args) {
     sb.infallibleAppend(encode(u24 >> 18));
     sb.infallibleAppend(encode(u24 >> 12));
     sb.infallibleAppend(encode(u24 >> 6));
-    sb.infallibleAppend('=');
+    if (omitPadding == OmitPadding::No) {
+      sb.infallibleAppend('=');
+    }
   } else if (toRead == 1) {
     
     auto byte0 = jit::AtomicOperations::loadSafeWhenRacy(data++);
@@ -3029,8 +3060,10 @@ static bool uint8array_toBase64(JSContext* cx, const CallArgs& args) {
     
     sb.infallibleAppend(encode(u24 >> 18));
     sb.infallibleAppend(encode(u24 >> 12));
-    sb.infallibleAppend('=');
-    sb.infallibleAppend('=');
+    if (omitPadding == OmitPadding::No) {
+      sb.infallibleAppend('=');
+      sb.infallibleAppend('=');
+    }
   } else {
     MOZ_ASSERT(toRead == 0);
   }
