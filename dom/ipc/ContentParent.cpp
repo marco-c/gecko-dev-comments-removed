@@ -3413,12 +3413,12 @@ mozilla::ipc::IPCResult ContentParent::RecvSetClipboard(
     const MaybeDiscarded<WindowContext>& aRequestingWindowContext) {
   
 
-  if (!ValidatePrincipal(aTransferable.requestingPrincipal(),
+  if (!ValidatePrincipal(aTransferable.dataPrincipal(),
                          {ValidatePrincipalOptions::AllowNullPtr,
                           ValidatePrincipalOptions::AllowExpanded,
                           ValidatePrincipalOptions::AllowSystem})) {
-    LogAndAssertFailedPrincipalValidationInfo(
-        aTransferable.requestingPrincipal(), __func__);
+    LogAndAssertFailedPrincipalValidationInfo(aTransferable.dataPrincipal(),
+                                              __func__);
   }
 
   nsresult rv;

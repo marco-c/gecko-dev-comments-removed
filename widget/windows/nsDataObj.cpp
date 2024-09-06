@@ -349,7 +349,7 @@ HRESULT nsDataObj::CreateStream(IStream** outStream) {
   
   
   nsCOMPtr<nsIPrincipal> requestingPrincipal =
-      mTransferable->GetRequestingPrincipal();
+      mTransferable->GetDataPrincipal();
   MOZ_ASSERT(requestingPrincipal, "can not create channel without a principal");
 
   

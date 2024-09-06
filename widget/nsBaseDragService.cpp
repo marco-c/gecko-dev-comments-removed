@@ -368,7 +368,7 @@ nsBaseDragService::InvokeDragSession(
       nsCOMPtr<nsITransferable> trans =
           do_CreateInstance("@mozilla.org/widget/transferable;1");
       trans->Init(nullptr);
-      trans->SetRequestingPrincipal(mSourceNode->NodePrincipal());
+      trans->SetDataPrincipal(mSourceNode->NodePrincipal());
       trans->SetContentPolicyType(mContentPolicyType);
       trans->SetCookieJarSettings(aCookieJarSettings);
       mutableArray->AppendElement(trans);
@@ -379,7 +379,7 @@ nsBaseDragService::InvokeDragSession(
           do_QueryElementAt(aTransferableArray, i);
       if (trans) {
         
-        trans->SetRequestingPrincipal(mSourceNode->NodePrincipal());
+        trans->SetDataPrincipal(mSourceNode->NodePrincipal());
         trans->SetContentPolicyType(mContentPolicyType);
         trans->SetCookieJarSettings(aCookieJarSettings);
       }
