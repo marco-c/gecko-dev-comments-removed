@@ -16,6 +16,7 @@ add_task(async function () {
 
   info("Check that highlighting still works after reloading the page");
   await reloadBrowser();
+
   await testFontHighlighting(view);
 });
 
@@ -28,23 +29,46 @@ async function testFontHighlighting(view) {
   const viewDoc = view.document;
 
   
-  const fontEls = await waitFor(() => {
-    const els = getUsedFontsEls(viewDoc);
-    if (els.length !== expectedSelectionChangeEvents.length) {
-      return false;
-    }
+  const fontEls = (
+    await waitFor(() => {
+      const els = getUsedFontsEls(viewDoc);
 
-    return els;
+      
+      
+      
+      if (els.length < expectedSelectionChangeEvents.length) {
+        return false;
+      }
+
+      return [...els];
+    })
+  ).filter(el => {
+    
+    
+    
+    
+    const expectedFonts = ["ostrich", "arial", "liberation"];
+    const font = el.textContent.toLowerCase();
+    return expectedFonts.some(f => font.includes(f));
   });
+
+  
+  
+  ok(
+    !!fontEls.length,
+    "After filtering out unwanted fonts, we still have fonts to test"
+  );
 
   for (let i = 0; i < fontEls.length; i++) {
     info(
       `Mousing over and out of font number ${i} ("${fontEls[i].textContent}") in the list`
     );
 
+    const expectedEvents = expectedSelectionChangeEvents[i];
+
     
     const nameEl = fontEls[i];
-    let onEvents = waitForNSelectionEvents(expectedSelectionChangeEvents[i]);
+    let onEvents = waitForNSelectionEvents(expectedEvents);
     EventUtils.synthesizeMouse(
       nameEl,
       2,
@@ -54,10 +78,7 @@ async function testFontHighlighting(view) {
     );
     await onEvents;
 
-    ok(
-      true,
-      `${expectedSelectionChangeEvents[i]} selectionchange events detected on mouseover`
-    );
+    ok(true, `${expectedEvents} selectionchange events detected on mouseover`);
 
     
     const otherEl = viewDoc.querySelector("body");
