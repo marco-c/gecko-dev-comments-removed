@@ -5031,8 +5031,11 @@ void nsFlexContainerFrame::CreateFlexLineAndFlexItemInfo(
       
       
       
+      nsIContent* content = nullptr;
       nsIFrame* targetFrame = GetFirstNonAnonBoxInSubtree(frame);
-      nsIContent* content = targetFrame->GetContent();
+      if (targetFrame) {
+        content = targetFrame->GetContent();
+      }
 
       
       
