@@ -135,6 +135,8 @@ class RootActor extends Actor {
             "dom.worker.console.dispatch_events_to_main_thread"
           )
         : true,
+      
+      throttledResources: true,
     };
   }
 
