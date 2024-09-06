@@ -631,6 +631,7 @@ add_task(async function test_fog_complex_object_works() {
 
 add_task(
   
+  
   {
     skip_if: () =>
       Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
