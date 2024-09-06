@@ -35,7 +35,6 @@ enum class IceCandidatePairConfigType {
 
 
 enum class IceCandidateType {
-  kUnknown,
   kLocal,
   kStun,
   kPrflx,
@@ -88,7 +87,8 @@ struct LoggedIceCandidatePairConfig {
 
 class IceCandidatePairDescription {
  public:
-  IceCandidatePairDescription();
+  IceCandidatePairDescription(IceCandidateType local_candidate_type,
+                              IceCandidateType remote_candidate_type);
   explicit IceCandidatePairDescription(
       const IceCandidatePairDescription& other);
 
