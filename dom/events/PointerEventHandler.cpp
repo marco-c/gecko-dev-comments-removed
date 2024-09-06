@@ -566,9 +566,13 @@ void PointerEventHandler::InitPointerEventFromTouch(
                         : MouseButtonsFlag::ePrimaryFlag;
 
   
-  aPointerEvent.mIsPrimary = aTouchEvent.mMessage == eTouchStart
-                                 ? !HasActiveTouchPointer()
-                                 : GetPointerPrimaryState(aTouch.Identifier());
+  if (aTouchEvent.mInputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+    
+    aPointerEvent.mIsPrimary =
+        aTouchEvent.mMessage == eTouchStart
+            ? !HasActiveTouchPointer()
+            : GetPointerPrimaryState(aTouch.Identifier());
+  }
   aPointerEvent.pointerId = aTouch.Identifier();
   aPointerEvent.mRefPoint = aTouch.mRefPoint;
   aPointerEvent.mModifiers = aTouchEvent.mModifiers;
