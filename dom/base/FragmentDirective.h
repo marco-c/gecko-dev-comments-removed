@@ -73,6 +73,9 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   };
 
   
+  void ClearUninvokedDirectives() { mUninvokedTextDirectives.Clear(); }
+
+  
 
 
 
@@ -93,6 +96,17 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   static void ParseAndRemoveFragmentDirectiveFromFragment(
       nsCOMPtr<nsIURI>& aURI,
       nsTArray<TextDirective>* aTextDirectives = nullptr);
+
+  
+
+
+
+
+
+
+
+  static bool ParseAndRemoveFragmentDirectiveFromFragmentString(
+      nsCString& aFragment, nsTArray<TextDirective>* aTextDirectives = nullptr);
 
  private:
   RefPtr<nsRange> FindRangeForTextDirective(

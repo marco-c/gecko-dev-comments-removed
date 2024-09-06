@@ -64,6 +64,7 @@
 #include "mozilla/dom/ContentFrameMessageManager.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/FragmentDirective.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/PerformanceNavigation.h"
@@ -8476,6 +8477,17 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
     rvURINew = aLoadState->URI()->GetHasRef(&aState.mNewURIHasRef);
   }
 
+  
+  
+  
+  nsTArray<TextDirective> textDirectives;
+  if (FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragmentString(
+          aState.mNewHash, &textDirectives)) {
+    if (Document* doc = GetDocument()) {
+      doc->FragmentDirective()->SetTextDirectives(std::move(textDirectives));
+    }
+  }
+
   if (currentURI && NS_SUCCEEDED(rvURINew)) {
     nsresult rvURIOld = currentURI->GetRef(aState.mCurrentHash);
     if (NS_SUCCEEDED(rvURIOld)) {
@@ -10704,6 +10716,24 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
   
   
+  bool scroll = aLoadType != LOAD_HISTORY && aLoadType != LOAD_RELOAD_NORMAL;
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool hasScrolledToTextFragment =
+      presShell->HighlightAndGoToTextFragment(scroll);
+  if (hasScrolledToTextFragment) {
+    return NS_OK;
+  }
+
+  
+  
+  
   
   if ((!aCurHasRef || aLoadType != LOAD_HISTORY) && !aNewHasRef) {
     return NS_OK;
@@ -10711,11 +10741,6 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
 
   
   
-
-  
-  
-  
-  bool scroll = aLoadType != LOAD_HISTORY && aLoadType != LOAD_RELOAD_NORMAL;
 
   if (aNewHash.IsEmpty()) {
     

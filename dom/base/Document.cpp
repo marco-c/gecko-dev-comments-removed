@@ -13121,6 +13121,8 @@ void Document::ScrollToRef() {
   const bool didScrollToTextFragment =
       presShell->HighlightAndGoToTextFragment(true);
 
+  FragmentDirective()->ClearUninvokedDirectives();
+
   
   
   if (didScrollToTextFragment || mScrollToRef.IsEmpty()) {
