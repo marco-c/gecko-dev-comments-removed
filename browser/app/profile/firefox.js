@@ -1870,6 +1870,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.en
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.enabled", false);
+pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact", false);
 
 
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
