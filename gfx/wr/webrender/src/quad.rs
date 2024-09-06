@@ -191,7 +191,7 @@ pub fn push_quad(
             );
         }
         QuadRenderStrategy::Tiled { x_tiles, y_tiles } => {
-            let unclipped_surface_rect = surface
+            let clip_coverage_rect = surface
                 .map_to_device_rect(&clip_chain.pic_coverage_rect, frame_context.spatial_tree);
 
             scratch.quad_indirect_segments.clear();
@@ -260,14 +260,14 @@ pub fn push_quad(
                 pattern,
                 is_masked,
                 prim_instance_index,
-                unclipped_surface_rect.cast_unit(),
+                clip_coverage_rect.cast_unit(),
                 frame_state,
                 targets,
                 &scratch.quad_indirect_segments,
             );
         }
         QuadRenderStrategy::NinePatch { clip_rect, radius } => {
-            let unclipped_surface_rect = surface
+            let clip_coverage_rect = surface
                 .map_to_device_rect(&clip_chain.pic_coverage_rect, frame_context.spatial_tree);
 
             let local_corner_0 = LayoutRect::new(
@@ -379,10 +379,18 @@ pub fn push_quad(
             }
 
             if !scratch.quad_direct_segments.is_empty() {
+                let clip_rect = clip_coverage_rect.cast_unit();
+                
+                
+                
+                
+                let rect = clip_rect;
+
                 add_pattern_prim(
                     pattern,
                     prim_instance_index,
-                    unclipped_surface_rect.cast_unit(),
+                    rect,
+                    clip_rect,
                     pattern.is_opaque,
                     frame_state,
                     targets,
@@ -396,7 +404,7 @@ pub fn push_quad(
                     pattern,
                     is_masked,
                     prim_instance_index,
-                    unclipped_surface_rect.cast_unit(),
+                    clip_coverage_rect.cast_unit(),
                     frame_state,
                     targets,
                     &scratch.quad_indirect_segments,
@@ -534,7 +542,10 @@ fn add_render_task_with_mask(
 fn add_pattern_prim(
     pattern: &Pattern,
     prim_instance_index: PrimitiveInstanceIndex,
+    
+    
     rect: LayoutRect,
+    clip_rect: LayoutRect,
     is_opaque: bool,
     frame_state: &mut FrameBuildingState,
     targets: &[CommandBufferIndex],
@@ -543,7 +554,7 @@ fn add_pattern_prim(
     let prim_address = write_prim_blocks(
         &mut frame_state.frame_gpu_data.f32,
         rect,
-        rect,
+        clip_rect,
         pattern.base_color,
         segments,
     );
