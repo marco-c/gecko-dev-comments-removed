@@ -155,4 +155,45 @@ int ff_hwaccel_frame_priv_alloc(AVCodecContext *avctx, void **hwaccel_picture_pr
 const AVPacketSideData *ff_get_coded_side_data(const AVCodecContext *avctx,
                                                enum AVPacketSideDataType type);
 
+
+
+
+
+
+
+int ff_frame_new_side_data(const AVCodecContext *avctx, AVFrame *frame,
+                           enum AVFrameSideDataType type, size_t size,
+                           AVFrameSideData **sd);
+
+
+
+
+
+
+
+int ff_frame_new_side_data_from_buf(const AVCodecContext *avctx,
+                                    AVFrame *frame, enum AVFrameSideDataType type,
+                                    AVBufferRef **buf, AVFrameSideData **sd);
+
+struct AVMasteringDisplayMetadata;
+struct AVContentLightMetadata;
+
+
+
+
+
+
+
+int ff_decode_mastering_display_new(const AVCodecContext *avctx, AVFrame *frame,
+                                    struct AVMasteringDisplayMetadata **mdm);
+
+
+
+
+
+
+
+int ff_decode_content_light_new(const AVCodecContext *avctx, AVFrame *frame,
+                                struct AVContentLightMetadata **clm);
+
 #endif 

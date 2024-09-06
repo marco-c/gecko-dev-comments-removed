@@ -41,11 +41,6 @@ typedef struct HWContextType {
 
 
     size_t             device_hwctx_size;
-    
-
-
-
-    size_t             device_priv_size;
 
     
 
@@ -58,11 +53,6 @@ typedef struct HWContextType {
 
 
     size_t             frames_hwctx_size;
-    
-
-
-
-    size_t             frames_priv_size;
 
     int              (*device_create)(AVHWDeviceContext *ctx, const char *device,
                                       AVDictionary *opts, int flags);
@@ -100,20 +90,13 @@ typedef struct HWContextType {
                                            AVHWFramesContext *src_ctx, int flags);
 } HWContextType;
 
-struct AVHWDeviceInternal {
-    const HWContextType *hw_type;
-    void                *priv;
-
+typedef struct FFHWFramesContext {
     
 
 
+    AVHWFramesContext p;
 
-    AVBufferRef *source_device;
-};
-
-struct AVHWFramesInternal {
     const HWContextType *hw_type;
-    void                *priv;
 
     AVBufferPool *pool_internal;
 
@@ -127,7 +110,12 @@ struct AVHWFramesInternal {
 
 
     int source_allocation_map_flags;
-};
+} FFHWFramesContext;
+
+static inline FFHWFramesContext *ffhwframesctx(AVHWFramesContext *ctx)
+{
+    return (FFHWFramesContext*)ctx;
+}
 
 typedef struct HWMapDescriptor {
     
