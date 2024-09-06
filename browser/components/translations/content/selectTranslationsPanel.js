@@ -325,12 +325,12 @@ var SelectTranslationsPanel = new (class {
       return { toLang: "en" };
     }
 
-    const [fromLang, toLang] = await Promise.all([
+    const [fromLanguage, toLanguage] = await Promise.all([
       SelectTranslationsPanel.getTopSupportedDetectedLanguage(textToTranslate),
       TranslationsParent.getTopPreferredSupportedToLang(),
     ]);
 
-    return { fromLang, toLang };
+    return { fromLanguage, toLanguage };
   }
 
   
@@ -384,7 +384,7 @@ var SelectTranslationsPanel = new (class {
 
 
   async #initializeLanguageMenuLists(langPairPromise) {
-    const { fromLang, toLang } = await langPairPromise;
+    const { fromLanguage, toLanguage } = await langPairPromise;
     const {
       fromMenuList,
       fromMenuPopup,
@@ -394,8 +394,8 @@ var SelectTranslationsPanel = new (class {
     } = this.elements;
 
     await Promise.all([
-      this.#initializeLanguageMenuList(fromLang, fromMenuList),
-      this.#initializeLanguageMenuList(toLang, toMenuList),
+      this.#initializeLanguageMenuList(fromLanguage, fromMenuList),
+      this.#initializeLanguageMenuList(toLanguage, toMenuList),
       this.#initializeLanguageMenuList(null, tryAnotherSourceMenuList),
     ]);
 
@@ -553,22 +553,22 @@ var SelectTranslationsPanel = new (class {
 
   async #registerSourceText(sourceText, langPairPromise) {
     const { textArea } = this.elements;
-    const { fromLang, toLang } = await langPairPromise;
+    const { fromLanguage, toLanguage } = await langPairPromise;
     const isFromLangSupported = await TranslationsParent.isSupportedAsFromLang(
-      fromLang
+      fromLanguage
     );
 
     if (isFromLangSupported) {
       this.#changeStateTo("idle", /* retainEntries */ false, {
         sourceText,
-        fromLanguage: fromLang,
-        toLanguage: toLang,
+        fromLanguage,
+        toLanguage,
       });
     } else {
       this.#changeStateTo("unsupported", /* retainEntries */ false, {
         sourceText,
-        detectedLanguage: fromLang,
-        toLanguage: toLang,
+        detectedLanguage: fromLanguage,
+        toLanguage,
       });
     }
 

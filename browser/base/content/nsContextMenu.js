@@ -2552,9 +2552,9 @@ class nsContextMenu {
 
 
   async localizeTranslateSelectionItem(translateSelectionItem) {
-    const { toLang } = await this.#translationsLangPairPromise;
+    const { toLanguage } = await this.#translationsLangPairPromise;
 
-    if (toLang) {
+    if (toLanguage) {
       
       let displayName;
 
@@ -2562,7 +2562,7 @@ class nsContextMenu {
         const displayNames = new Services.intl.DisplayNames(undefined, {
           type: "language",
         });
-        displayName = displayNames.of(toLang);
+        displayName = displayNames.of(toLanguage);
       } catch {
         
       }
