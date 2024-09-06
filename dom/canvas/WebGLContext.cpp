@@ -1126,7 +1126,7 @@ bool WebGLContext::PresentIntoXR(gl::SwapChain& swapChain,
 
 
 void InitSwapChain(gl::GLContext& gl, gl::SwapChain& swapChain,
-                   const layers::TextureType consumerType) {
+                   const layers::TextureType consumerType, bool useAsync) {
   if (!swapChain.mFactory) {
     auto typedFactory = gl::SurfaceFactory::Create(&gl, consumerType);
     if (typedFactory) {
@@ -1138,6 +1138,11 @@ void InitSwapChain(gl::GLContext& gl, gl::SwapChain& swapChain,
     swapChain.mFactory = MakeUnique<gl::SurfaceFactory_Basic>(gl);
   }
   MOZ_ASSERT(swapChain.mFactory);
+  if (useAsync) {
+    
+    
+    swapChain.DisablePool();
+  }
 }
 
 void WebGLContext::Present(WebGLFramebuffer* const xrFb,
@@ -1158,7 +1163,10 @@ void WebGLContext::Present(WebGLFramebuffer* const xrFb,
     mResolvedDefaultFB = nullptr;
   }
 
-  InitSwapChain(*gl, *swapChain, consumerType);
+  bool useAsync = options.remoteTextureOwnerId.IsValid() &&
+                  options.remoteTextureId.IsValid();
+
+  InitSwapChain(*gl, *swapChain, consumerType, useAsync);
 
   bool valid =
       maybeFB ? PresentIntoXR(*swapChain, *maybeFB) : PresentInto(*swapChain);
@@ -1167,8 +1175,6 @@ void WebGLContext::Present(WebGLFramebuffer* const xrFb,
     return;
   }
 
-  bool useAsync = options.remoteTextureOwnerId.IsValid() &&
-                  options.remoteTextureId.IsValid();
   if (useAsync) {
     PushRemoteTexture(nullptr, *swapChain, swapChain->FrontBuffer(), options);
   }
@@ -1205,10 +1211,11 @@ bool WebGLContext::CopyToSwapChain(
   }
   gfx::IntSize size(info->width, info->height);
 
-  InitSwapChain(*gl, srcFb->mSwapChain, consumerType);
-
   bool useAsync = options.remoteTextureOwnerId.IsValid() &&
                   options.remoteTextureId.IsValid();
+
+  InitSwapChain(*gl, srcFb->mSwapChain, consumerType, useAsync);
+
   
   
   
@@ -2429,7 +2436,7 @@ webgl::LinkActiveInfo GetLinkActiveInfo(
 
         ret.activeUniforms.push_back(std::move(info));
       }  
-    }    
+    }  
 
     if (webgl2) {
       
@@ -2475,7 +2482,7 @@ webgl::LinkActiveInfo GetLinkActiveInfo(
 
           ret.activeUniformBlocks.push_back(std::move(info));
         }  
-      }    
+      }  
 
       
       

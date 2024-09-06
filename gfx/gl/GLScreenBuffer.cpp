@@ -10,21 +10,12 @@
 #include "gfx2DGlue.h"
 #include "MozFramebuffer.h"
 #include "SharedSurface.h"
+#include "mozilla/gfx/BuildConstants.h"
 
 namespace mozilla::gl {
 
 
 
-
-
-
-
-static constexpr size_t kPoolSize =
-#if defined(MOZ_WIDGET_ANDROID)
-    4;
-#else
-    0;
-#endif
 
 UniquePtr<SwapChainPresenter> SwapChain::Acquire(
     const gfx::IntSize& size, const gfx::ColorSpace2 colorSpace) {
@@ -44,9 +35,7 @@ UniquePtr<SwapChainPresenter> SwapChain::Acquire(
 
   
   
-  const auto poolSize = mDestroyedCallback ? 0 : kPoolSize;
-
-  if (!mPool.empty() && (!poolSize || mPool.size() == poolSize)) {
+  if (!mPool.empty() && (!mPoolLimit || mPool.size() >= mPoolLimit)) {
     surf = mPool.front();
     mPool.pop();
   }
@@ -55,9 +44,11 @@ UniquePtr<SwapChainPresenter> SwapChain::Acquire(
     if (!uniquePtrSurf) return nullptr;
     surf.reset(uniquePtrSurf.release());
   }
-  mPool.push(surf);
-  while (mPool.size() > poolSize) {
-    mPool.pop();
+  if (mPoolLimit > 0) {
+    mPool.push(surf);
+    while (mPool.size() > mPoolLimit) {
+      mPool.pop();
+    }
   }
 
   auto ret = MakeUnique<SwapChainPresenter>(*this);
@@ -74,7 +65,10 @@ void SwapChain::ClearPool() {
 bool SwapChain::StoreRecycledSurface(
     const std::shared_ptr<SharedSurface>& surf) {
   MOZ_ASSERT(mFactory);
-  if (!mFactory || NS_WARN_IF(surf->mDesc.gl != mFactory->mDesc.gl)) {
+  
+  MOZ_ASSERT(!mPoolLimit);
+  if (mPoolLimit > 0 || !mFactory ||
+      NS_WARN_IF(surf->mDesc.gl != mFactory->mDesc.gl)) {
     
     
     return false;
@@ -130,7 +124,11 @@ GLuint SwapChainPresenter::Fb() const {
 
 
 
-SwapChain::SwapChain() = default;
+SwapChain::SwapChain()
+    :  
+       
+       
+      mPoolLimit(kIsAndroid ? 4 : 0) {}
 
 SwapChain::~SwapChain() {
   if (mPresenter) {
