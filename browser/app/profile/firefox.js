@@ -508,7 +508,7 @@ pref("browser.urlbar.quicksuggest.showOnboardingDialogAfterNRestarts", 0);
 
 
 pref("browser.urlbar.quicksuggest.sponsoredIndex", 0);
-pref("browser.urlbar.quicksuggest.nonSponsoredIndex", 0);
+pref("browser.urlbar.quicksuggest.nonSponsoredIndex", -1);
 
 
 
