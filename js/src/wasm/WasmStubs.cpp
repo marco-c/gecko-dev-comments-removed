@@ -986,56 +986,53 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     Label next;
     switch (funcType.args()[i].kind()) {
       case ValType::I32: {
-        ScratchTagScope tag(masm, scratchV);
-        masm.splitTagForTest(scratchV, tag);
-
-        
-        masm.branchTestInt32(Assembler::Equal, tag, &next);
-
-        
-        Label storeBack, notDouble;
-        masm.branchTestDouble(Assembler::NotEqual, tag, &notDouble);
+        Label isDouble, isUndefinedOrNull, isBoolean;
         {
-          ScratchTagScopeRelease _(&tag);
+          ScratchTagScope tag(masm, scratchV);
+          masm.splitTagForTest(scratchV, tag);
+
+          
+          masm.branchTestInt32(Assembler::Equal, tag, &next);
+
+          masm.branchTestDouble(Assembler::Equal, tag, &isDouble);
+          masm.branchTestUndefined(Assembler::Equal, tag, &isUndefinedOrNull);
+          masm.branchTestNull(Assembler::Equal, tag, &isUndefinedOrNull);
+          masm.branchTestBoolean(Assembler::Equal, tag, &isBoolean);
+
+          
+          masm.jump(&oolCall);
+        }
+
+        Label storeBack;
+
+        
+        masm.bind(&isDouble);
+        {
           masm.unboxDouble(scratchV, scratchF);
           masm.branchTruncateDoubleMaybeModUint32(scratchF, scratchG, &oolCall);
           masm.jump(&storeBack);
         }
-        masm.bind(&notDouble);
 
         
-        Label nullOrUndefined, notNullOrUndefined;
-        masm.branchTestUndefined(Assembler::Equal, tag, &nullOrUndefined);
-        masm.branchTestNull(Assembler::NotEqual, tag, &notNullOrUndefined);
-        masm.bind(&nullOrUndefined);
+        masm.bind(&isUndefinedOrNull);
         {
-          ScratchTagScopeRelease _(&tag);
           masm.storeValue(Int32Value(0), jitArgAddr);
+          masm.jump(&next);
         }
-        masm.jump(&next);
-        masm.bind(&notNullOrUndefined);
 
         
-        
-        masm.branchTestBoolean(Assembler::NotEqual, tag, &oolCall);
+        masm.bind(&isBoolean);
         masm.unboxBoolean(scratchV, scratchG);
         
 
         masm.bind(&storeBack);
-        {
-          ScratchTagScopeRelease _(&tag);
-          masm.storeValue(JSVAL_TYPE_INT32, scratchG, jitArgAddr);
-        }
+        masm.storeValue(JSVAL_TYPE_INT32, scratchG, jitArgAddr);
         break;
       }
       case ValType::I64: {
-        ScratchTagScope tag(masm, scratchV);
-        masm.splitTagForTest(scratchV, tag);
-
         
         
-        masm.branchTestBigInt(Assembler::NotEqual, tag, &oolCall);
-        masm.jump(&next);
+        masm.branchTestBigInt(Assembler::NotEqual, scratchV, &oolCall);
         break;
       }
       case ValType::F32:
@@ -1043,52 +1040,43 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
         
         
         
-        ScratchTagScope tag(masm, scratchV);
-        masm.splitTagForTest(scratchV, tag);
 
-        
-        masm.branchTestDouble(Assembler::Equal, tag, &next);
-
-        
-        Label storeBack, notInt32;
+        Label isInt32OrBoolean, isUndefined, isNull;
         {
-          ScratchTagScopeRelease _(&tag);
-          masm.branchTestInt32(Assembler::NotEqual, scratchV, &notInt32);
-          masm.int32ValueToDouble(scratchV, scratchF);
-          masm.jump(&storeBack);
+          ScratchTagScope tag(masm, scratchV);
+          masm.splitTagForTest(scratchV, tag);
+
+          
+          masm.branchTestDouble(Assembler::Equal, tag, &next);
+
+          masm.branchTestInt32(Assembler::Equal, tag, &isInt32OrBoolean);
+          masm.branchTestUndefined(Assembler::Equal, tag, &isUndefined);
+          masm.branchTestNull(Assembler::Equal, tag, &isNull);
+          masm.branchTestBoolean(Assembler::Equal, tag, &isInt32OrBoolean);
+
+          
+          masm.jump(&oolCall);
         }
-        masm.bind(&notInt32);
 
         
-        Label notUndefined;
-        masm.branchTestUndefined(Assembler::NotEqual, tag, &notUndefined);
+        masm.bind(&isInt32OrBoolean);
         {
-          ScratchTagScopeRelease _(&tag);
+          masm.convertInt32ToDouble(scratchV.payloadOrValueReg(), scratchF);
+          masm.boxDouble(scratchF, jitArgAddr);
+          masm.jump(&next);
+        }
+
+        
+        masm.bind(&isUndefined);
+        {
           masm.storeValue(DoubleValue(JS::GenericNaN()), jitArgAddr);
           masm.jump(&next);
         }
-        masm.bind(&notUndefined);
 
         
-        Label notNull;
-        masm.branchTestNull(Assembler::NotEqual, tag, &notNull);
+        masm.bind(&isNull);
         {
-          ScratchTagScopeRelease _(&tag);
           masm.storeValue(DoubleValue(0.), jitArgAddr);
-        }
-        masm.jump(&next);
-        masm.bind(&notNull);
-
-        
-        
-        masm.branchTestBoolean(Assembler::NotEqual, tag, &oolCall);
-        masm.boolValueToDouble(scratchV, scratchF);
-        
-
-        masm.bind(&storeBack);
-        {
-          ScratchTagScopeRelease _(&tag);
-          masm.boxDouble(scratchF, jitArgAddr);
         }
         break;
       }
