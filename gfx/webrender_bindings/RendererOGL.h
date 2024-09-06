@@ -138,6 +138,8 @@ class RendererOGL {
 
   bool EnsureAsyncScreenshot();
 
+  void CheckInactive();
+
  protected:
   
 
@@ -152,6 +154,7 @@ class RendererOGL {
   layers::CompositorBridgeParent* mBridge;
   wr::WindowId mWindowId;
   TimeStamp mFrameStartTime;
+  TimeStamp mLastRenderTime;
 
   bool mDisableNativeCompositor;
 

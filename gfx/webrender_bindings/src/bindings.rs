@@ -802,6 +802,11 @@ pub unsafe extern "C" fn wr_renderer_accumulate_memory_report(
     *report += renderer.report_memory(swgl);
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn wr_renderer_trigger_memory_pressure_event(renderer: &mut Renderer) {
+    let _ = renderer.api_sender().send(ApiMsg::MemoryPressure);
+}
+
 
 
 #[repr(C)]

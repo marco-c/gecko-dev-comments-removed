@@ -5417,6 +5417,11 @@ impl Renderer {
     }
 
     
+    pub fn api_sender(&self) -> &Sender<ApiMsg> {
+        &self.api_tx
+    }
+
+    
     
     fn set_blend(&mut self, mut blend: bool, framebuffer_kind: FramebufferKind) {
         if framebuffer_kind == FramebufferKind::Main &&
