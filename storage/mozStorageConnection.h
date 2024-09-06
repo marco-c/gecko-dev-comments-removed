@@ -86,7 +86,7 @@ class Connection final : public mozIStorageConnection,
   Connection(Service* aService, int aFlags,
              ConnectionOperation aSupportedOperations,
              const nsCString& aTelemetryFilename, bool aInterruptible = false,
-             bool aIgnoreLockingMode = false);
+             bool aIgnoreLockingMode = false, bool aOpenNotExclusive = false);
 
   
 
@@ -479,6 +479,12 @@ class Connection final : public mozIStorageConnection,
 
 
   const bool mIgnoreLockingMode;
+
+  
+
+
+
+  const bool mOpenNotExclusive;
 
   
 
