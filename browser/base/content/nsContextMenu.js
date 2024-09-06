@@ -2517,7 +2517,11 @@ class nsContextMenu {
 
 
   openSelectTranslationsPanel(event) {
-    SelectTranslationsPanel.open(event, this.#translationsLangPairPromise);
+    SelectTranslationsPanel.open(
+      event,
+      this.#getTextToTranslate(),
+      this.#translationsLangPairPromise
+    );
   }
 
   
@@ -2570,6 +2574,17 @@ class nsContextMenu {
   
 
 
+
+
+  #getTextToTranslate() {
+    return this.isTextSelected
+      ? this.selectionInfo.fullText.trim()
+      : this.linkTextStr.trim();
+  }
+
+  
+
+
   showTranslateSelectionItem() {
     const translateSelectionItem = document.getElementById(
       "context-translate-selection"
@@ -2581,10 +2596,7 @@ class nsContextMenu {
       "browser.translations.select.enable"
     );
 
-    
-    const textToTranslate = this.isTextSelected
-      ? this.selectedText.trim()
-      : this.linkTextStr.trim();
+    const textToTranslate = this.#getTextToTranslate();
 
     translateSelectionItem.hidden =
       
