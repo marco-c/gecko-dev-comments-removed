@@ -6,14 +6,10 @@
 
 #include "ScrollbarDrawingCocoa.h"
 
-#include "mozilla/gfx/Helpers.h"
 #include "mozilla/RelativeLuminanceUtils.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "nsContainerFrame.h"
 #include "nsAlgorithm.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
-#include "nsLookAndFeel.h"
 #include "nsNativeTheme.h"
 
 using namespace mozilla::gfx;
@@ -56,8 +52,7 @@ static ScrollbarParams ComputeScrollbarParams(nsIFrame* aFrame,
                                               const ThemeColors& aColors,
                                               ScrollbarKind aScrollbarKind) {
   ScrollbarParams params;
-  params.isOverlay =
-      nsLookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars) != 0;
+  params.isOverlay = aFrame->PresContext()->UseOverlayScrollbars();
   params.isRolledOver = ScrollbarDrawing::IsParentScrollbarRolledOver(aFrame);
   params.isSmall =
       aStyle.StyleUIReset()->ScrollbarWidth() == StyleScrollbarWidth::Thin;
@@ -117,13 +112,16 @@ static ThumbRect GetThumbRect(const LayoutDeviceRect& aRect,
   
   
   
+  
+  
   float thickness = aParams.isSmall ? 6.0f : 8.0f;
   if (aParams.isOverlay) {
     thickness -= 1.0f;
     if (aParams.isRolledOver) {
-      thickness += 4.0f;
+      thickness = aParams.isSmall ? 7.0f : 11.0f;
     }
   }
+
   thickness *= aScale;
 
   
@@ -470,7 +468,7 @@ void ScrollbarDrawingCocoa::RecomputeScrollbarParams() {
   ConfigureScrollbarSize(StyleScrollbarWidth::Auto, Overlay::No, 15);
   ConfigureScrollbarSize(StyleScrollbarWidth::Thin, Overlay::No, 11);
   ConfigureScrollbarSize(StyleScrollbarWidth::Auto, Overlay::Yes, 16);
-  ConfigureScrollbarSize(StyleScrollbarWidth::Thin, Overlay::Yes, 14);
+  ConfigureScrollbarSize(StyleScrollbarWidth::Thin, Overlay::Yes, 12);
 }
 
 }  
