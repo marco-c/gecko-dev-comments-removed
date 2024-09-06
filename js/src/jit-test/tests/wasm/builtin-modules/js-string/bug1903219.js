@@ -1,5 +1,7 @@
 
 
+
+
 var ins = wasmEvalText(`
 (module
   (import "wasm:js-string" "charCodeAt"
