@@ -14,6 +14,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class RTC_OBJC_TYPE(RTCRtpCapabilities);
 @class RTC_OBJC_TYPE(RTCAudioSource);
 @class RTC_OBJC_TYPE(RTCAudioTrack);
 @class RTC_OBJC_TYPE(RTCConfiguration);
@@ -50,6 +51,18 @@ RTC_OBJC_EXPORT
     initWithEncoderFactory:(nullable id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)>)encoderFactory
             decoderFactory:(nullable id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)>)decoderFactory
                audioDevice:(nullable id<RTC_OBJC_TYPE(RTCAudioDevice)>)audioDevice;
+
+
+
+
+
+- (RTC_OBJC_TYPE(RTCRtpCapabilities) *)rtpSenderCapabilitiesForKind:(NSString *)kind;
+
+
+
+
+
+- (RTC_OBJC_TYPE(RTCRtpCapabilities) *)rtpReceiverCapabilitiesForKind:(NSString *)kind;
 
 
 - (RTC_OBJC_TYPE(RTCAudioSource) *)audioSourceWithConstraints:

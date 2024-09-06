@@ -46,6 +46,7 @@ RTC_OBJC_EXPORT
 @end
 
 @class RTC_OBJC_TYPE(RTCRtpTransceiver);
+@class RTC_OBJC_TYPE(RTCRtpCodecCapability);
 
 
 
@@ -117,6 +118,12 @@ RTC_OBJC_EXPORT
 
 
 - (void)stopInternal;
+
+
+
+
+
+- (void)setCodecPreferences:(NSArray<RTC_OBJC_TYPE(RTCRtpCodecCapability) *> *)codecs;
 
 
 
