@@ -41,6 +41,9 @@ namespace mozilla {
 template <typename T, size_t Length>
 class Array;
 
+template <typename Enum, typename T, size_t Length>
+class EnumeratedArray;
+
 
 
 
@@ -490,6 +493,23 @@ class Span {
   
 
 
+  template <size_t N, class Enum,
+            class ArrayElementType = std::remove_const_t<element_type>>
+  constexpr MOZ_IMPLICIT Span(
+      mozilla::EnumeratedArray<Enum, ArrayElementType, N>& aArr)
+      : storage_(&aArr[Enum(0)], span_details::extent_type<N>()) {}
+
+  
+
+
+  template <size_t N, class Enum>
+  constexpr MOZ_IMPLICIT Span(const mozilla::EnumeratedArray<
+                              Enum, std::remove_const_t<element_type>, N>& aArr)
+      : storage_(&aArr[Enum(0)], span_details::extent_type<N>()) {}
+
+  
+
+
   template <class ArrayElementType = std::add_pointer<element_type>,
             class DeleterType>
   constexpr Span(const mozilla::UniquePtr<ArrayElementType, DeleterType>& aPtr,
@@ -851,6 +871,12 @@ Span(mozilla::Array<T, Extent>&) -> Span<T, Extent>;
 
 template <typename T, size_t Extent>
 Span(const mozilla::Array<T, Extent>&) -> Span<const T, Extent>;
+
+template <typename Enum, typename T, size_t Extent>
+Span(mozilla::EnumeratedArray<Enum, T, Extent>&) -> Span<T, Extent>;
+
+template <typename Enum, typename T, size_t Extent>
+Span(const mozilla::EnumeratedArray<Enum, T, Extent>&) -> Span<const T, Extent>;
 
 
 template <class ElementType, size_t FirstExtent, size_t SecondExtent>
