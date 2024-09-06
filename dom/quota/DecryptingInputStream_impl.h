@@ -433,37 +433,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return rv;
   }
 
-  
-  
-  if (!readBytes) {
-    
-    
-    if (baseBlocksOffset == 0) {
-      
-      return NS_OK;
-    }
-
-    nsresult rv = (*mBaseSeekableStream)->Seek(NS_SEEK_CUR, -*mBlockSize);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    rv = ParseNextChunk(&readBytes);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    readBytes = 0;
-  }
-
   mPlainBytes = readBytes;
   mNextByte = nextByteOffset;
 
