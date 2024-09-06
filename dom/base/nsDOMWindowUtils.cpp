@@ -2298,7 +2298,18 @@ NS_IMETHODIMP nsDOMWindowUtils::DispatchDOMEventViaPresShellForTesting(
   WidgetGUIEvent* guiEvent = internalEvent->AsGUIEvent();
   if (guiEvent && !guiEvent->mWidget) {
     auto* pc = GetPresContext();
-    guiEvent->mWidget = pc ? pc->GetRootWidget() : nullptr;
+    auto* widget = pc ? pc->GetRootWidget() : nullptr;
+    
+    
+    
+    if (widget) {
+      guiEvent->mWidget = widget;
+
+      
+      
+      
+      guiEvent->mRefPoint -= widget->WidgetToScreenOffset();
+    }
   }
 
   targetDoc->FlushPendingNotifications(FlushType::Layout);
