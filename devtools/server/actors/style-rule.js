@@ -278,41 +278,6 @@ class StyleRuleActor extends Actor {
     return sheet.associatedDocument;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getDesugaredSelectors() {
-    
-    if (!this._desugaredSelectors) {
-      this._desugaredSelectors = CssLogic.getSelectors(this.rawRule, true);
-    }
-
-    return this._desugaredSelectors;
-  }
-
   toString() {
     return "[StyleRuleActor for " + this.rawRule + "]";
   }
@@ -338,9 +303,7 @@ class StyleRuleActor extends Actor {
       form.userAdded = true;
     }
 
-    const { computeDesugaredSelector, ancestorData } =
-      this._getAncestorDataForForm();
-    form.ancestorData = ancestorData;
+    form.ancestorData = this._getAncestorDataForForm();
 
     if (this._parentSheet) {
       form.parentStyleSheet =
@@ -364,9 +327,6 @@ class StyleRuleActor extends Actor {
         const selectorWarnings = this.rawRule.getSelectorWarnings();
         if (selectorWarnings.length) {
           form.selectorWarnings = selectorWarnings;
-        }
-        if (computeDesugaredSelector) {
-          form.desugaredSelectors = this.getDesugaredSelectors();
         }
         form.cssText = this.rawStyle.cssText || "";
         break;
@@ -498,18 +458,13 @@ class StyleRuleActor extends Actor {
 
 
 
-
-
-
   _getAncestorDataForForm() {
     const ancestorData = [];
-    
-    let computeDesugaredSelector = false;
 
     
     
     if (this.ruleClassName === "CSSKeyframeRule") {
-      return { ancestorData, computeDesugaredSelector };
+      return ancestorData;
     }
 
     
@@ -560,7 +515,6 @@ class StyleRuleActor extends Actor {
         }
 
         ancestorData.push(ancestor);
-        computeDesugaredSelector = true;
       }
     }
 
@@ -600,7 +554,7 @@ class StyleRuleActor extends Actor {
         }
       }
     }
-    return { ancestorData, computeDesugaredSelector };
+    return ancestorData;
   }
 
   
@@ -1172,9 +1126,6 @@ class StyleRuleActor extends Actor {
     if (this.type === ELEMENT_STYLE || this.rawRule.selectorText === value) {
       return { ruleProps: null, isMatching: true };
     }
-
-    
-    this._desugaredSelectors = null;
 
     
     const oldValue = this.rawRule.selectorText;

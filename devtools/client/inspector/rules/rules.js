@@ -352,20 +352,33 @@ CssRuleView.prototype = {
 
 
 
-  async toggleSelectorHighlighter(selector) {
+
+
+  async toggleSelectorHighlighter(
+    rule,
+    selector,
+    highlightFromRulesSelector = true
+  ) {
     if (this.isSelectorHighlighted(selector)) {
       await this.inspector.highlighters.hideHighlighterType(
         this.inspector.highlighters.TYPES.SELECTOR
       );
     } else {
+      const options = {
+        hideInfoBar: true,
+        hideGuides: true,
+        
+        
+        
+        selector,
+      };
+      if (highlightFromRulesSelector) {
+        options.ruleActorID = rule.domRule.actorID;
+      }
       await this.inspector.highlighters.showHighlighterTypeForNode(
         this.inspector.highlighters.TYPES.SELECTOR,
         this.inspector.selection.nodeFront,
-        {
-          hideInfoBar: true,
-          hideGuides: true,
-          selector,
-        }
+        options
       );
     }
   },
@@ -433,12 +446,14 @@ CssRuleView.prototype = {
     if (target.classList.contains("js-toggle-selector-highlighter")) {
       event.stopPropagation();
       let selector = target.dataset.computedSelector;
+      const highlightFromRulesSelector =
+        !!selector && !target.dataset.isUniqueSelector;
       
       
       
+      const rule = getRuleFromNode(target, this._elementStyle);
       if (selector === "") {
         try {
-          const rule = getRuleFromNode(target, this._elementStyle);
           if (rule.inherited) {
             
             
@@ -451,12 +466,17 @@ CssRuleView.prototype = {
 
           
           target.dataset.computedSelector = selector;
+          target.dataset.isUniqueSelector = true;
         } finally {
           
         }
       }
 
-      this.toggleSelectorHighlighter(selector);
+      this.toggleSelectorHighlighter(
+        rule,
+        selector,
+        highlightFromRulesSelector
+      );
     }
 
     

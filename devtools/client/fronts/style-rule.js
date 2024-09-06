@@ -107,7 +107,38 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
   get desugaredSelectors() {
     
     
+    
     return this._form.desugaredSelectors || this._form.selectors;
+  }
+
+  
+
+
+
+
+
+
+
+
+  get computedSelector() {
+    let selector = "";
+    for (const ancestor of this.ancestorData) {
+      let ancestorSelector;
+      if (ancestor.selectors) {
+        ancestorSelector = ancestor.selectors.join(",");
+      } else if (ancestor.type === "container") {
+        ancestorSelector =
+          ancestor.containerName + " " + ancestor.containerQuery;
+      } else if (ancestor.type === "supports") {
+        ancestorSelector = ancestor.conditionText;
+      } else if (ancestor.value) {
+        ancestorSelector = ancestor.value;
+      }
+      selector +=
+        "/" + (ancestor.type ? ancestor.type + " " : "") + ancestorSelector;
+    }
+
+    return (selector ? selector + "/" : "") + this._form.selectors.join(",");
   }
 
   get selectorWarnings() {

@@ -336,17 +336,22 @@ RuleEditor.prototype = {
     }
 
     if (this.rule.domRule.type !== CSSRule.KEYFRAME_RULE) {
-      let selector = "";
-      let desugaredSelector = "";
+      
+      let computedSelector = "";
       if (this.rule.domRule.selectors) {
-        
-        selector = this.rule.domRule.selectors.join(", ");
-        desugaredSelector = this.rule.domRule.desugaredSelectors?.join(", ");
+        if (this.rule.domRule.hasMatchedSelectorIndexesTrait) {
+          computedSelector = this.rule.domRule.computedSelector;
+        } else {
+          
+          
+          computedSelector = this.rule.domRule.desugaredSelectors?.join(", ");
+        }
         
         
       }
 
-      const isHighlighted = this.ruleView.isSelectorHighlighted(selector);
+      const isHighlighted =
+        this.ruleView.isSelectorHighlighted(computedSelector);
       
       createChild(header, "button", {
         class:
@@ -354,7 +359,7 @@ RuleEditor.prototype = {
           (isHighlighted ? " highlighted" : ""),
         "aria-pressed": isHighlighted,
         
-        "data-computed-selector": desugaredSelector,
+        "data-computed-selector": computedSelector,
         title: l10n("rule.selectorHighlighter.tooltip"),
       });
     }
@@ -932,8 +937,16 @@ RuleEditor.prototype = {
     this.isEditing = true;
 
     
-    if (this.ruleView.isSelectorHighlighted(this.rule.selectorText)) {
-      await this.ruleView.toggleSelectorHighlighter(this.rule.selectorText);
+    const computedSelector = this.rule.domRule.hasMatchedSelectorIndexesTrait
+      ? this.rule.domRule.computedSelector
+      : 
+        
+        this.rule.domRule.desugaredSelectors?.join(", ");
+    if (this.ruleView.isSelectorHighlighted(computedSelector)) {
+      await this.ruleView.toggleSelectorHighlighter(
+        this.rule,
+        computedSelector
+      );
     }
 
     try {
