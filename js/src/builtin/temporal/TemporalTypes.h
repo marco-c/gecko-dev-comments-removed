@@ -388,6 +388,32 @@ struct Instant final : SecondsAndNanoseconds<Instant> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr inline int32_t MinEpochDay = -100'000'001;
+constexpr inline int32_t MaxEpochDay = 100'000'000;
+
+static_assert(MinEpochDay ==
+              Instant::min().seconds / ToSeconds(TemporalUnit::Day) - 1);
+static_assert(MaxEpochDay ==
+              Instant::max().seconds / ToSeconds(TemporalUnit::Day));
+
+
+constexpr inline int32_t MaxEpochDaysDuration = MaxEpochDay - MinEpochDay;
+
+
+
+
 struct PlainDate final {
   
   
