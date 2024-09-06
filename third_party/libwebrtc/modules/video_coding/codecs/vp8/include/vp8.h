@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "api/environment/environment.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_frame_buffer_controller.h"
@@ -21,21 +22,25 @@
 
 namespace webrtc {
 
+struct Vp8EncoderSettings {
+  
+  
+  
+  absl::Nullable<std::unique_ptr<Vp8FrameBufferControllerFactory>>
+      frame_buffer_controller_factory;
+
+  
+  
+  std::vector<VideoEncoder::ResolutionBitrateLimits> resolution_bitrate_limits;
+};
+absl::Nonnull<std::unique_ptr<VideoEncoder>> CreateVp8Encoder(
+    const Environment& env,
+    Vp8EncoderSettings settings = {});
+
 
 class VP8Encoder {
  public:
-  struct Settings {
-    
-    
-    
-    std::unique_ptr<Vp8FrameBufferControllerFactory>
-        frame_buffer_controller_factory = nullptr;
-
-    
-    
-    std::vector<VideoEncoder::ResolutionBitrateLimits>
-        resolution_bitrate_limits = {};
-  };
+  using Settings = Vp8EncoderSettings;
 
   static std::unique_ptr<VideoEncoder> Create();
   static std::unique_ptr<VideoEncoder> Create(Settings settings);
