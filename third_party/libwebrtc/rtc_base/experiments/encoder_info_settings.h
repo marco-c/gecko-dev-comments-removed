@@ -16,6 +16,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/field_trials_view.h"
 #include "api/video_codecs/video_encoder.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 
@@ -59,7 +60,8 @@ class EncoderInfoSettings {
           resolution_bitrate_limits);
 
  protected:
-  explicit EncoderInfoSettings(absl::string_view name);
+  EncoderInfoSettings(const FieldTrialsView& field_trials,
+                      absl::string_view name);
 
  private:
   FieldTrialOptional<uint32_t> requested_resolution_alignment_;
@@ -70,28 +72,29 @@ class EncoderInfoSettings {
 
 class SimulcastEncoderAdapterEncoderInfoSettings : public EncoderInfoSettings {
  public:
-  SimulcastEncoderAdapterEncoderInfoSettings();
+  explicit SimulcastEncoderAdapterEncoderInfoSettings(
+      const FieldTrialsView& field_trials);
   ~SimulcastEncoderAdapterEncoderInfoSettings() override {}
 };
 
 
 class LibvpxVp8EncoderInfoSettings : public EncoderInfoSettings {
  public:
-  LibvpxVp8EncoderInfoSettings();
+  explicit LibvpxVp8EncoderInfoSettings(const FieldTrialsView& field_trials);
   ~LibvpxVp8EncoderInfoSettings() override {}
 };
 
 
 class LibvpxVp9EncoderInfoSettings : public EncoderInfoSettings {
  public:
-  LibvpxVp9EncoderInfoSettings();
+  explicit LibvpxVp9EncoderInfoSettings(const FieldTrialsView& field_trials);
   ~LibvpxVp9EncoderInfoSettings() override {}
 };
 
 
 class LibaomAv1EncoderInfoSettings : public EncoderInfoSettings {
  public:
-  LibaomAv1EncoderInfoSettings();
+  explicit LibaomAv1EncoderInfoSettings(const FieldTrialsView& field_trials);
   ~LibaomAv1EncoderInfoSettings() override {}
 };
 
