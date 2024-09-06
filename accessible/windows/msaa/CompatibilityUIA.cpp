@@ -156,50 +156,118 @@ static bool FindHandle(const ComparatorFnT& aComparator) {
 }
 
 static void GetUiaClientPidsWin11(nsTArray<DWORD>& aPids) {
+  struct HandleAndPid {
+    explicit HandleAndPid(HANDLE aHandle) : mHandle(aHandle) {}
+    HANDLE mHandle;
+    ULONG mPid = 0;
+  };
+  
+  
+  
+  
+  using HandlesAndPids = AutoTArray<HandleAndPid, 128>;
+
+  
+  HandlesAndPids handlesAndPids;
   const DWORD ourPid = ::GetCurrentProcessId();
   FindHandle([&](auto aInfo, auto aHandle) {
-    if (aInfo.mPid != ourPid) {
+    
+    
+    
+    if (aInfo.mPid == ourPid && aInfo.mGrantedAccess == 0x0012019F) {
+      handlesAndPids.AppendElement(HandleAndPid(aHandle));
+    }
+    return true;
+  });
+
+  
+  
+  
+  
+  
+  struct ThreadData {
+    explicit ThreadData(HandlesAndPids& aHandlesAndPids)
+        : mHandlesAndPids(aHandlesAndPids) {}
+    HandlesAndPids& mHandlesAndPids;
+    
+    
+    
+    size_t mCurrentIndex = 0;
+  };
+  ThreadData threadData(handlesAndPids);
+  auto queryThreadProc = [](LPVOID aParameter) -> DWORD {
+    
+    
+    
+    auto& data = *(ThreadData*)aParameter;
+    for (; data.mCurrentIndex < data.mHandlesAndPids.Length();
+         ++data.mCurrentIndex) {
+      auto& entry = data.mHandlesAndPids[data.mCurrentIndex];
       
-      return true;
+      
+      ::GetNamedPipeServerProcessId(entry.mHandle, &entry.mPid);
+    }
+    return 0;
+  };
+  while (threadData.mCurrentIndex < handlesAndPids.Length()) {
+    
+    
+    
+    nsAutoHandle thread(::CreateThread(nullptr, 0, queryThreadProc,
+                                       (LPVOID)&threadData, 0, nullptr));
+    if (!thread) {
+      return;
+    }
+    if (::WaitForSingleObject(thread, 50) == WAIT_OBJECT_0) {
+      
+      MOZ_ASSERT(threadData.mCurrentIndex == handlesAndPids.Length());
+      break;
     }
     
+    ::TerminateThread(thread, 1);
     
     
     
     
-    ULONG pid = 0;
-    ::GetNamedPipeServerProcessId(aHandle, &pid);
-    if (!pid) {
-      return true;
+    
+    
+    
+    ++threadData.mCurrentIndex;
+  }
+
+  
+  
+  
+  
+  for (auto& entry : handlesAndPids) {
+    if (!entry.mPid) {
+      continue;  
     }
-    
-    
     ULONG objNameBufLen;
     NTSTATUS ntStatus = ::NtQueryObject(
-        aHandle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation, nullptr, 0,
-        &objNameBufLen);
+        entry.mHandle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation, nullptr,
+        0, &objNameBufLen);
     if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
-      return true;
+      continue;
     }
     auto objNameBuf = MakeUnique<std::byte[]>(objNameBufLen);
-    ntStatus = ::NtQueryObject(aHandle,
+    ntStatus = ::NtQueryObject(entry.mHandle,
                                (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
                                objNameBuf.get(), objNameBufLen, &objNameBufLen);
     if (!NT_SUCCESS(ntStatus)) {
-      return true;
+      continue;
     }
     auto objNameInfo =
         reinterpret_cast<OBJECT_NAME_INFORMATION*>(objNameBuf.get());
     if (!objNameInfo->Name.Length) {
-      return true;
+      continue;
     }
     nsDependentString objName(objNameInfo->Name.Buffer,
                               objNameInfo->Name.Length / sizeof(wchar_t));
     if (StringBeginsWith(objName, u"\\Device\\NamedPipe\\UIA_PIPE_"_ns)) {
-      aPids.AppendElement(pid);
+      aPids.AppendElement(entry.mPid);
     }
-    return true;
-  });
+  }
 }
 
 static DWORD GetUiaClientPidWin10() {
