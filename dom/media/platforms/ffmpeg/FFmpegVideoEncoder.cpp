@@ -376,6 +376,32 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
     if (mConfig.mCodec == CodecType::VP8 || mConfig.mCodec == CodecType::VP9) {
       mLib->av_opt_set(mCodecContext->priv_data, "error-resilient", "1", 0);
     }
+    if (mConfig.mCodec == CodecType::AV1) {
+      mLib->av_opt_set(mCodecContext->priv_data, "error-resilience", "1", 0);
+      
+      mLib->av_opt_set(mCodecContext->priv_data, "usage", "1", 0);
+      
+      mLib->av_opt_set(mCodecContext->priv_data, "rc_undershoot_percent", "50",
+                       0);
+      mLib->av_opt_set(mCodecContext->priv_data, "rc_overshoot_percent", "50",
+                       0);
+      
+      
+      mLib->av_opt_set(mCodecContext->priv_data, "row_mt", "1", 0);
+      
+      mLib->av_opt_set(mCodecContext->priv_data, "aq-mode", "3", 0);
+      
+      
+      mLib->av_opt_set(mCodecContext->priv_data, "cpu-used", "9", 0);
+      
+      mLib->av_opt_set(mCodecContext->priv_data, "enable-global-motion", "0",
+                       0);
+      mLib->av_opt_set(mCodecContext->priv_data, "enable-cfl-intra", "0", 0);
+      
+      
+      mLib->av_opt_set(mCodecContext->priv_data, "tile-columns", "0", 0);
+      mLib->av_opt_set(mCodecContext->priv_data, "tile-rows", "0", 0);
+    }
   }
 
   if (SvcEnabled()) {
@@ -438,11 +464,6 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
     }
   }
 
-  
-  
-  
-  
-  
   
   
   
