@@ -20,6 +20,8 @@ module.exports = {
     
     `${projectRoot}/browser/components/aboutlogins/content/components/**/*.stories.mjs`,
     
+    `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
+    
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     
     `${projectRoot}/toolkit/themes/shared/design-system/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,

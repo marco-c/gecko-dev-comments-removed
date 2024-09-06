@@ -41,28 +41,34 @@ add_task(async function () {
           dispatchMouseEvent(win, target, "click");
         }
 
+        async function testOpenCloseDropdown(target) {
+          let button = doc.querySelector(`.${target}-button`);
+
+          let dropdown = doc.querySelector(`.${target}-dropdown`);
+          ok(!dropdown.classList.contains("open"), "dropdown is closed");
+
+          simulateClick(button);
+          ok(dropdown.classList.contains("open"), "dropdown is open");
+
+          
+          let title = doc.querySelector(".reader-title");
+          simulateClick(title);
+          ok(!dropdown.classList.contains("open"), "dropdown is closed");
+
+          
+          simulateClick(button);
+          ok(dropdown.classList.contains("open"), "dropdown is open");
+
+          
+          simulateClick(button);
+          ok(!dropdown.classList.contains("open"), "dropdown is closed");
+        }
+
         let doc = content.document;
         let win = content.window;
-        let styleButton = doc.querySelector(".style-button");
 
-        let styleDropdown = doc.querySelector(".style-dropdown");
-        ok(!styleDropdown.classList.contains("open"), "dropdown is closed");
-
-        simulateClick(styleButton);
-        ok(styleDropdown.classList.contains("open"), "dropdown is open");
-
-        
-        let title = doc.querySelector("h1");
-        simulateClick(title);
-        ok(!styleDropdown.classList.contains("open"), "dropdown is closed");
-
-        
-        simulateClick(styleButton);
-        ok(styleDropdown.classList.contains("open"), "dropdown is open");
-
-        
-        simulateClick(styleButton);
-        ok(!styleDropdown.classList.contains("open"), "dropdown is closed");
+        testOpenCloseDropdown("style");
+        testOpenCloseDropdown("colors");
       });
     }
   );

@@ -3569,7 +3569,19 @@ pref("reader.line_height", 4);
 pref("reader.color_scheme", "auto");
 
 
-pref("reader.color_scheme.values", "[\"light\",\"dark\",\"sepia\",\"auto\"]");
+pref("reader.color_scheme.values", "[\"auto\",\"light\",\"dark\",\"sepia\",\"contrast\",\"gray\"]");
+
+
+pref("reader.colors_menu.enabled", false);
+
+
+pref("reader.custom_colors.foreground", "");
+pref("reader.custom_colors.background", "");
+
+pref("reader.custom_colors.unvisited-links", "");
+pref("reader.custom_colors.visited-links", "");
+
+pref("reader.custom_colors.selection-highlight", "");
 
 
 pref("reader.font_type", "sans-serif");
