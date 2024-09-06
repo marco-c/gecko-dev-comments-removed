@@ -508,6 +508,13 @@ MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
     return E_NOINTERFACE;
   }
 
+  if (NS_WARN_IF(!NS_IsMainThread())) {
+    
+    
+    
+    return RPC_E_WRONG_THREAD;
+  }
+
   
   
   if (IID_IUnknown == iid) {
