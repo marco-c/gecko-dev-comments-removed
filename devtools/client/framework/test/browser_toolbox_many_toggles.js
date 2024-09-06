@@ -30,7 +30,19 @@ add_task(
       if (!pid) {
         return;
       }
-      ProcessTools.kill(pid);
+
+      try {
+        ProcessTools.kill(pid);
+      } catch (ex) {
+        info(`ProcessTools.kill(${pid}) returned: ${ex.result}`);
+
+        
+        
+        if (ex.result !== Cr.NS_ERROR_NOT_AVAILABLE) {
+          throw ex;
+        }
+      }
+
       
       openedTabs.push(BrowserTestUtils.addTab(gBrowser, "about:home"));
     });
