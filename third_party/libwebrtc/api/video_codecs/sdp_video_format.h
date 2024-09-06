@@ -36,6 +36,14 @@ struct RTC_EXPORT SdpVideoFormat {
       const CodecParameterMap& parameters,
       const absl::InlinedVector<ScalabilityMode, kScalabilityModeCount>&
           scalability_modes);
+  
+  
+  
+  SdpVideoFormat(
+      const SdpVideoFormat& format,
+      const absl::InlinedVector<ScalabilityMode, kScalabilityModeCount>&
+          scalability_modes);
+
   SdpVideoFormat(const SdpVideoFormat&);
   SdpVideoFormat(SdpVideoFormat&&);
   SdpVideoFormat& operator=(const SdpVideoFormat&);
