@@ -7,6 +7,8 @@
 
 #include "mozilla/Attributes.h"
 
+#include "frontend/BytecodeOffset.h"
+
 namespace js::frontend {
 
 struct BytecodeEmitter;
@@ -14,6 +16,10 @@ struct BytecodeEmitter;
 class MOZ_STACK_CLASS UsingEmitter {
  private:
   BytecodeEmitter* bce_;
+
+  int depthAtDisposables_ = -1;
+
+  BytecodeOffset disposableStart_ = BytecodeOffset::invalidOffset();
 
   
   
@@ -23,7 +29,13 @@ class MOZ_STACK_CLASS UsingEmitter {
 
   explicit UsingEmitter(BytecodeEmitter* bce);
 
+  [[nodiscard]] bool prepareForDisposableScopeBody();
+
   [[nodiscard]] bool prepareForAssignment(Kind kind);
+
+  [[nodiscard]] bool prepareForForOfLoopIteration();
+
+  [[nodiscard]] bool prepareForForOfIteratorCloseOnThrow();
 
   [[nodiscard]] bool emitEnd();
 };

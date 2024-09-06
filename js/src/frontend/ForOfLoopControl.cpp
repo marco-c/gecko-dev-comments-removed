@@ -48,6 +48,15 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     
     return false;
   }
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  
+  
+  
+  
+  if (!bce->innermostEmitterScope()->prepareForForOfIteratorCloseOnThrow()) {
+    return false;
+  }
+#endif
   if (!emitIteratorCloseInInnermostScopeWithTryNote(bce,
                                                     CompletionKind::Throw)) {
     return false;  

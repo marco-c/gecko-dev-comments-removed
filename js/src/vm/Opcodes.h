@@ -2700,6 +2700,17 @@
 
 
 
+ \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(TryUsing, try_using, NULL, 1, 0, 0, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
+
 
 
 
@@ -3679,14 +3690,13 @@
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    IF_RECORD_TUPLE(, MACRO(238))     \
     IF_RECORD_TUPLE(, MACRO(239))     \
     IF_RECORD_TUPLE(, MACRO(240))     \
     IF_RECORD_TUPLE(, MACRO(241))     \
     IF_RECORD_TUPLE(, MACRO(242))     \
     IF_RECORD_TUPLE(, MACRO(243))     \
     IF_RECORD_TUPLE(, MACRO(244))     \
-    MACRO(245)                                   \
+    IF_RECORD_TUPLE(, MACRO(245))     \
     MACRO(246)                                   \
     MACRO(247)                                   \
     MACRO(248)                                   \

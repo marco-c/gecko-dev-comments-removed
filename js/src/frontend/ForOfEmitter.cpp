@@ -39,7 +39,7 @@ ForOfEmitter::ForOfEmitter(BytecodeEmitter* bce,
     
     
     MOZ_ASSERT(headLexicalEmitterScope == bce_->innermostEmitterScope());
-    bce_->innermostEmitterScope()->setHasDisposables();
+    MOZ_ASSERT(headLexicalEmitterScope->hasDisposables());
   }
 #endif
 }
@@ -107,21 +107,18 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
 
     if (headLexicalEmitterScope_->hasEnvironment()) {
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-      if (headLexicalEmitterScope_->hasDisposables()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        UsingEmitter ue(bce_);
-        if (!ue.emitEnd()) {
-          return false;
-        }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!bce_->innermostEmitterScope()->prepareForForOfLoopIteration()) {
+        return false;
       }
 #endif
       if (!bce_->emitInternedScopeOp(headLexicalEmitterScope_->index(),
