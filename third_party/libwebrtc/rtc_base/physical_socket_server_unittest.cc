@@ -484,6 +484,19 @@ TEST_F(PhysicalSocketTest, TestSocketRecvTimestampIPv6ScmExperimentDisabled) {
 }
 #endif
 
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+
+TEST_F(PhysicalSocketTest, TestSocketSendRecvWithEcnIPv4) {
+  MAYBE_SKIP_IPV6;
+  SocketTest::TestSocketSendRecvWithEcnIPV4();
+}
+#endif
+
+TEST_F(PhysicalSocketTest, TestSocketSendRecvWithEcnIPv6) {
+  MAYBE_SKIP_IPV6;
+  SocketTest::TestSocketSendRecvWithEcnIPV6();
+}
+
 
 
 TEST_F(PhysicalSocketTest,
