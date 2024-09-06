@@ -20,6 +20,7 @@
 #define wasm_generator_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 
 #include "jit/MacroAssembler.h"
@@ -174,6 +175,16 @@ class MOZ_STACK_CLASS ModuleGenerator {
     CallFarJump(uint32_t fi, jit::CodeOffset j) : funcIndex(fi), jump(j) {}
   };
   using CallFarJumpVector = Vector<CallFarJump, 0, SystemAllocPolicy>;
+  
+  
+  
+  struct MacroAssemblerScope {
+    jit::TempAllocator masmAlloc;
+    jit::WasmMacroAssembler masm;
+
+    explicit MacroAssemblerScope(LifoAlloc& lifo);
+    ~MacroAssemblerScope() = default;
+  };
 
   
   SharedCompileArgs const compileArgs_;
@@ -184,15 +195,14 @@ class MOZ_STACK_CLASS ModuleGenerator {
   CompilerEnvironment* const compilerEnv_;
 
   
-  UniqueLinkData linkData_;
-  UniqueCodeBlock codeBlock_;
   MutableCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   
-  CompileTaskState taskState_;
+  UniqueCodeBlock codeBlock_;
+  UniqueLinkData linkData_;
   LifoAlloc lifo_;
-  jit::TempAllocator masmAlloc_;
-  jit::WasmMacroAssembler masm_;
+  Maybe<MacroAssemblerScope> masmScope_;
+  jit::WasmMacroAssembler* masm_;
   uint32_t debugTrapCodeOffset_;
   CallFarJumpVector callFarJumps_;
   CallSiteTargetVector callSiteTargets_;
@@ -202,6 +212,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   
   bool parallel_;
   uint32_t outstanding_;
+  CompileTaskState taskState_;
   CompileTaskVector tasks_;
   CompileTaskPtrVector freeTasks_;
   CompileTask* currentTask_;
@@ -210,8 +221,8 @@ class MOZ_STACK_CLASS ModuleGenerator {
   
   DebugOnly<bool> finishedFuncDefs_;
 
-  bool funcIsCompiled(uint32_t funcIndex) const;
-  const CodeRange& funcCodeRange(uint32_t funcIndex) const;
+  bool funcIsCompiledInBlock(uint32_t funcIndex) const;
+  const CodeRange& funcCodeRangeInBlock(uint32_t funcIndex) const;
   bool linkCallSites();
   void noteCodeRange(uint32_t codeRangeIndex, const CodeRange& codeRange);
   bool linkCompiledCode(CompiledCode& code);
@@ -219,9 +230,23 @@ class MOZ_STACK_CLASS ModuleGenerator {
   bool finishTask(CompileTask* task);
   bool launchBatchCompile();
   bool finishOutstandingTask();
-  bool finishCodegen();
-  bool finishMetadataTier();
-  UniqueCodeBlock finishCodeBlock();
+
+  
+  
+  [[nodiscard]] bool startCodeBlock();
+  
+  
+  
+  UniqueCodeBlock finishCodeBlock(UniqueLinkData* linkData);
+
+  
+  
+  
+  [[nodiscard]] bool startCompleteTier();
+  
+  
+  UniqueCodeBlock finishCompleteTier(UniqueLinkData* linkData);
+
   bool finishCodeMetadata(const Bytes& bytecode);
 
   bool isAsmJS() const { return codeMeta_->isAsmJS(); }
