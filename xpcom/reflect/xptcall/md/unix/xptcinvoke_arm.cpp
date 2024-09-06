@@ -164,6 +164,18 @@ NS_InvokeByIndex(nsISupports* that, uint32_t methodIndex,
   vtable = *reinterpret_cast<vtable_func **>(that);
   func = vtable[methodIndex];
 
+
+
+
+
+
+
+
+
+
+
+  asm volatile(";");
+
   return func(that, stack_space[base_size * 2 - 3],
                     stack_space[base_size * 2 - 2],
                     stack_space[base_size * 2 - 1]);
