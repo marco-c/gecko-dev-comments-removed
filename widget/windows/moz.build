@@ -199,6 +199,7 @@ OS_LIBS += [
     "ktmw32",
     "rpcrt4",
     "urlmon",
+    "winmm",
 ]
 
 
