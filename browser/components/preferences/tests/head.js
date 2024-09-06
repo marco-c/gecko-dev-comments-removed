@@ -203,7 +203,7 @@ class DefinitionServer {
       id: "test-feature",
       
       title: "experimental-features-media-jxl",
-      description: "pane-experimental-description2",
+      description: "pane-experimental-description3",
       restartRequired: false,
       type: "boolean",
       preference: "test.feature",
