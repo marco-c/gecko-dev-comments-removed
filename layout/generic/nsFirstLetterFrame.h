@@ -76,6 +76,12 @@ class nsFirstLetterFrame : public nsContainerFrame {
 
   
   
+  
+  
+  nsTextFrame* CreateContinuationForFramesAfter(nsTextFrame* aFrame);
+
+  
+  
   bool UseTightBounds() const;
 
  protected:

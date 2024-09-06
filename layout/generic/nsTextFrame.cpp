@@ -62,6 +62,7 @@
 #include "nsUnicodeProperties.h"
 #include "nsStyleUtil.h"
 #include "nsRubyFrame.h"
+#include "PresShellInlines.h"
 #include "TextDrawTarget.h"
 
 #include "nsTextFragment.h"
@@ -8776,11 +8777,11 @@ void nsTextFrame::MaybeSplitFramesForFirstLetter() {
   
   nsTextFrame* f = GetParent()->IsFloating() ? GetNextInFlow() : this;
   gfxSkipCharsIterator iter = f->EnsureTextRun(nsTextFrame::eInflated);
-  gfxTextRun* textRun = f->GetTextRun(nsTextFrame::eInflated);
+  const gfxTextRun* textRun = f->GetTextRun(nsTextFrame::eInflated);
 
   const nsTextFragment* frag = TextFragment();
-  int32_t length = GetInFlowContentLength();
-  int32_t offset = GetContentOffset();
+  const int32_t length = GetInFlowContentLength();
+  const int32_t offset = GetContentOffset();
   int32_t firstLetterLength = length;
   NewlineProperty* cachedNewlineOffset = nullptr;
   int32_t newLineOffset = -1;  
@@ -8816,17 +8817,14 @@ void nsTextFrame::MaybeSplitFramesForFirstLetter() {
       firstLetterLength = std::min(firstLetterLength, length - 1);
     }
   }
-  length = firstLetterLength;
-  if (length) {
+  if (firstLetterLength) {
     AddStateBits(TEXT_FIRST_LETTER);
   }
+
   
   
   
-  SetLength(offset + length - GetContentOffset(), nullptr,
-            ALLOW_FRAME_CREATION_AND_DESTRUCTION);
-  
-  ClearTextRuns();
+  SetFirstLetterLength(firstLetterLength);
 }
 
 static bool IsUnreflowedLetterFrame(nsIFrame* aFrame) {
@@ -9327,6 +9325,35 @@ void nsTextFrame::SetLength(int32_t aLength, nsLineLayout* aLineLayout,
     ++iterations;
   }
 #endif
+}
+
+void nsTextFrame::SetFirstLetterLength(int32_t aLength) {
+  if (aLength == GetContentLength()) {
+    return;
+  }
+
+  mContentLengthHint = aLength;
+  nsTextFrame* next = static_cast<nsTextFrame*>(GetNextInFlow());
+  if (aLength > GetContentLength()) {
+    
+    
+    
+    if (!next) {
+      MOZ_ASSERT_UNREACHABLE("Expected a next-in-flow; first-letter broken?");
+      return;
+    }
+  } else {
+    
+    
+    
+    MOZ_ASSERT(GetParent()->IsLetterFrame());
+    auto* letterFrame = static_cast<nsFirstLetterFrame*>(GetParent());
+    next = letterFrame->CreateContinuationForFramesAfter(this);
+  }
+
+  next->mContentOffset = GetContentOffset() + aLength;
+
+  ClearTextRuns();
 }
 
 bool nsTextFrame::IsFloatingFirstLetterChild() const {
