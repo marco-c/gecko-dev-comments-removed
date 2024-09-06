@@ -152,6 +152,20 @@ bool AppleDecoderModule::IsVideoSupported(
             CreateDecoderParams::Option::HardwareDecoderNotAllowed)) {
       return false;
     }
+
+    
+    if (aConfig.mColorDepth != gfx::ColorDepth::COLOR_8 &&
+        aConfig.mColorDepth != gfx::ColorDepth::COLOR_10) {
+      return false;
+    }
+
+    if (aConfig.mColorSpace.isSome()) {
+      if (*aConfig.mColorSpace == YUVColorSpace::Identity) {
+        
+        return false;
+      }
+    }
+
     return true;
   }
 
