@@ -4800,7 +4800,7 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
   
   
   
-  else if (!droppedAt.ContainerAs<nsIContent>()->IsInDesignMode()) {
+  else if (!AsHTMLEditor()->IsInDesignMode()) {
     focusedElement = AsHTMLEditor()->ComputeEditingHost();
     if (focusedElement &&
         droppedAt.ContainerAs<nsIContent>()->IsInclusiveDescendantOf(
