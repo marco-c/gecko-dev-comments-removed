@@ -14,9 +14,12 @@
 #include <memory>
 #include <vector>
 
+#include "api/array_view.h"
+
 namespace webrtc {
 
 class PushSincResampler;
+
 
 
 
@@ -34,7 +37,7 @@ class PushResampler {
 
   
   
-  int Resample(const T* src, size_t src_length, T* dst, size_t dst_capacity);
+  int Resample(rtc::ArrayView<const T> src, rtc::ArrayView<T> dst);
 
  private:
   int src_sample_rate_hz_;

@@ -14,10 +14,29 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "api/array_view.h"
 #include "api/audio/channel_layout.h"
 #include "api/rtp_packet_infos.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
+
+
+constexpr size_t kDefaultAudioBufferLengthMs = 10u;
+
+
+constexpr size_t kDefaultAudioBuffersPerSec =
+    1000u / kDefaultAudioBufferLengthMs;
+
+
+
+
+inline size_t SampleRateToDefaultChannelSize(size_t sample_rate) {
+  
+  RTC_DCHECK_LE(sample_rate, 192000);
+  return sample_rate / kDefaultAudioBuffersPerSec;
+}
+
 
 
 
@@ -57,6 +76,15 @@ class AudioFrame {
 
   AudioFrame();
 
+  
+  
+  
+  
+  
+  AudioFrame(int sample_rate_hz,
+             size_t num_channels,
+             ChannelLayout layout = CHANNEL_LAYOUT_UNSUPPORTED);
+
   AudioFrame(const AudioFrame&) = delete;
   AudioFrame& operator=(const AudioFrame&) = delete;
 
@@ -68,6 +96,7 @@ class AudioFrame {
   
   void ResetWithoutMuting();
 
+  
   void UpdateFrame(uint32_t timestamp,
                    const int16_t* data,
                    size_t samples_per_channel,
@@ -91,9 +120,27 @@ class AudioFrame {
 
   
   
-  
   const int16_t* data() const;
+
+  
+  
+  
+  rtc::ArrayView<const int16_t> data_view() const;
+
+  
+  
+  
+  
   int16_t* mutable_data();
+
+  
+  
+  
+  
+  
+  
+  rtc::ArrayView<int16_t> mutable_data(size_t samples_per_channel,
+                                       size_t num_channels);
 
   
   void Mute();
@@ -118,6 +165,10 @@ class AudioFrame {
   absl::optional<int64_t> absolute_capture_timestamp_ms() const {
     return absolute_capture_timestamp_ms_;
   }
+
+  
+  
+  void SetSampleRateAndChannelSize(int sample_rate);
 
   
   uint32_t timestamp_ = 0;
@@ -159,7 +210,7 @@ class AudioFrame {
   
   
   
-  static const int16_t* empty_data();
+  static rtc::ArrayView<const int16_t> zeroed_data();
 
   int16_t data_[kMaxDataSizeSamples];
   bool muted_ = true;
