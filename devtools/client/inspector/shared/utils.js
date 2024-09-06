@@ -51,11 +51,11 @@ function advanceValidate(keyCode, value, insertionPoint) {
   
   
   value = value.slice(0, insertionPoint) + ";" + value.slice(insertionPoint);
-  const lexer = getCSSLexer(value);
+  const lexer = getCSSLexer(value, true);
   while (true) {
     const token = lexer.nextToken();
     if (token.endOffset > insertionPoint) {
-      if (token.tokenType === "symbol" && token.text === ";") {
+      if (token.tokenType === "Semicolon") {
         
         return true;
       }
