@@ -120,8 +120,8 @@ void CheckStunKeepaliveIntervalOfAllReadyPorts(
     int expected) {
   auto ready_ports = allocator_session->ReadyPorts();
   for (const auto* port : ready_ports) {
-    if (port->Type() == cricket::STUN_PORT_TYPE ||
-        (port->Type() == cricket::LOCAL_PORT_TYPE &&
+    if (port->Type() == IceCandidateType::kSrflx ||
+        (port->Type() == IceCandidateType::kHost &&
          port->GetProtocol() == cricket::PROTO_UDP)) {
       EXPECT_EQ(
           static_cast<const cricket::UDPPort*>(port)->stun_keepalive_delay(),
@@ -314,7 +314,7 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
   
   
   static int CountPorts(const std::vector<PortInterface*>& ports,
-                        absl::string_view type,
+                        IceCandidateType type,
                         ProtocolType protocol,
                         const SocketAddress& client_addr) {
     return absl::c_count_if(
@@ -613,10 +613,14 @@ class BasicPortAllocatorTest : public FakeClockBase,
     
     EXPECT_EQ(3U, session_->ReadyPorts().size());
     EXPECT_EQ(3U, ports_.size());
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr));
-    EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr));
-    EXPECT_EQ(0, CountPorts(ports_, "relay", PROTO_UDP, kClientAddr));
+    EXPECT_EQ(
+        1, CountPorts(ports_, IceCandidateType::kHost, PROTO_UDP, kClientAddr));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kHost, PROTO_UDP,
+                            kClientIPv6Addr));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kRelay, PROTO_UDP,
+                            kClientIPv6Addr));
+    EXPECT_EQ(0, CountPorts(ports_, IceCandidateType::kRelay, PROTO_UDP,
+                            kClientAddr));
 
     
     
@@ -656,12 +660,13 @@ class BasicPortAllocatorTest : public FakeClockBase,
     
     
     EXPECT_EQ(2U, ports_.size());
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
+    EXPECT_EQ(
+        1, CountPorts(ports_, IceCandidateType::kHost, PROTO_UDP, kClientAddr));
     int num_udp_ports = tcp_pruned ? 1 : 0;
-    EXPECT_EQ(num_udp_ports,
-              CountPorts(ports_, "relay", PROTO_UDP, kClientAddr));
-    EXPECT_EQ(1 - num_udp_ports,
-              CountPorts(ports_, "relay", PROTO_TCP, kClientAddr));
+    EXPECT_EQ(num_udp_ports, CountPorts(ports_, IceCandidateType::kRelay,
+                                        PROTO_UDP, kClientAddr));
+    EXPECT_EQ(1 - num_udp_ports, CountPorts(ports_, IceCandidateType::kRelay,
+                                            PROTO_TCP, kClientAddr));
 
     
     
@@ -711,16 +716,26 @@ class BasicPortAllocatorTest : public FakeClockBase,
     
     EXPECT_EQ(10U, session_->ReadyPorts().size());
     EXPECT_EQ(10U, ports_.size());
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr2));
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr));
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr2));
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientAddr));
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientAddr2));
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientIPv6Addr));
-    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientIPv6Addr2));
-    EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr));
-    EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr2));
+    EXPECT_EQ(
+        1, CountPorts(ports_, IceCandidateType::kHost, PROTO_UDP, kClientAddr));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kHost, PROTO_UDP,
+                            kClientAddr2));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kHost, PROTO_UDP,
+                            kClientIPv6Addr));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kHost, PROTO_UDP,
+                            kClientIPv6Addr2));
+    EXPECT_EQ(
+        1, CountPorts(ports_, IceCandidateType::kHost, PROTO_TCP, kClientAddr));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kHost, PROTO_TCP,
+                            kClientAddr2));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kHost, PROTO_TCP,
+                            kClientIPv6Addr));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kHost, PROTO_TCP,
+                            kClientIPv6Addr2));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kRelay, PROTO_UDP,
+                            kClientIPv6Addr));
+    EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kRelay, PROTO_UDP,
+                            kClientIPv6Addr2));
 
     
     
@@ -1268,11 +1283,15 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoAdapters) {
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
   EXPECT_EQ(4U, ports_.size());
-  EXPECT_EQ(1, CountPorts(ports_, "stun", PROTO_UDP, kAnyAddr));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kAnyAddr));
+  EXPECT_EQ(1,
+            CountPorts(ports_, IceCandidateType::kSrflx, PROTO_UDP, kAnyAddr));
+  EXPECT_EQ(1,
+            CountPorts(ports_, IceCandidateType::kHost, PROTO_TCP, kAnyAddr));
   
-  EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kAnyAddr));
-  EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_TCP, kAnyAddr));
+  EXPECT_EQ(1,
+            CountPorts(ports_, IceCandidateType::kRelay, PROTO_UDP, kAnyAddr));
+  EXPECT_EQ(1,
+            CountPorts(ports_, IceCandidateType::kRelay, PROTO_TCP, kAnyAddr));
   
   
   
@@ -2203,7 +2222,7 @@ TEST_F(BasicPortAllocatorTest, TestSetCandidateFilterAfterCandidatesGathered) {
   EXPECT_GT(initial_ports_size, ports.size());
   for (const PortInterface* port : ports) {
     
-    EXPECT_EQ(RELAY_PORT_TYPE, port->Type());
+    EXPECT_EQ(IceCandidateType::kRelay, port->Type());
   }
   for (const Candidate& candidate : candidates) {
     

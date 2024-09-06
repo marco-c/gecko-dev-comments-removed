@@ -241,7 +241,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
-  const absl::string_view Type() const override;
+  webrtc::IceCandidateType Type() const override;
   const rtc::Network* Network() const override;
 
   
