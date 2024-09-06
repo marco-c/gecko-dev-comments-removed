@@ -1491,14 +1491,8 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
-  if (resolvedOptions) {
-    Rooted<Value> largestUnitValue(
-        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
-    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
-                            largestUnitValue)) {
-      return false;
-    }
-  }
+  
+  
 
   
   NormalizedDuration difference;

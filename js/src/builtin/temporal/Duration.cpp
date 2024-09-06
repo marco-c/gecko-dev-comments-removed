@@ -1500,6 +1500,22 @@ TimeDuration js::temporal::BalanceTimeDuration(
       MOZ_ASSERT(std::abs(milliseconds) <= 999);
       milliseconds += millis;
 
+      
+      constexpr auto limit =
+          (int64_t(1) << 53) * ToMilliseconds(TemporalUnit::Second);
+      constexpr auto max = int64_t(0x7cff'ffff'ffff'fdff);
+
+      static_assert(
+          int64_t(double(max)) < limit && int64_t(double(max + 1)) >= limit,
+          "max is the maximum allowed milliseconds value");
+
+      auto totalMillis =
+          (seconds * ToMilliseconds(TemporalUnit::Second)) + milliseconds;
+      if (totalMillis > max) {
+        
+        
+      }
+
       break;
     }
 
@@ -1517,6 +1533,21 @@ TimeDuration js::temporal::BalanceTimeDuration(
                    double(microseconds));
 
       
+      constexpr auto limit = Int128{int64_t(1) << 53} *
+                             Int128{ToMicroseconds(TemporalUnit::Second)};
+      constexpr auto max =
+          (Int128{0x1e8} << 64) + Int128{0x47ff'ffff'fff7'ffff};
+      static_assert(max < limit);
+
+      auto totalMicros =
+          (Int128{seconds} * Int128{ToMicroseconds(TemporalUnit::Second)}) +
+          Int128{microseconds};
+      if (totalMicros > max) {
+        
+        
+      }
+
+      
       return CreateTimeDurationRecord(0, 0, 0, 0, 0, micros,
                                       double(nanoseconds));
     }
@@ -1527,6 +1558,21 @@ TimeDuration js::temporal::BalanceTimeDuration(
       double nanos =
           std::fma(double(seconds), ToNanoseconds(TemporalUnit::Second),
                    double(nanoseconds));
+
+      
+      constexpr auto limit = Int128{int64_t(1) << 53} *
+                             Int128{ToNanoseconds(TemporalUnit::Second)};
+      constexpr auto max =
+          (Int128{0x77359} << 64) + Int128{0x3fff'ffff'dfff'ffff};
+      static_assert(max < limit);
+
+      auto totalNanos =
+          (Int128{seconds} * Int128{ToNanoseconds(TemporalUnit::Second)}) +
+          Int128{nanoseconds};
+      if (totalNanos > max) {
+        
+        
+      }
 
       
       return CreateTimeDurationRecord(0, 0, 0, 0, 0, 0, nanos);
@@ -2174,25 +2220,6 @@ static bool AddDuration(
 
   
 
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
 
   
@@ -3951,6 +3978,7 @@ static bool RoundDuration(
 
   
   
+  
 
   
   switch (unit) {
@@ -5191,7 +5219,7 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
       double(balanceResult.seconds), double(balanceResult.milliseconds),
       balanceResult.microseconds,    balanceResult.nanoseconds,
   };
-  MOZ_ASSERT(IsValidDuration(result));
+
   auto* obj = CreateTemporalDuration(cx, result);
   if (!obj) {
     return false;
