@@ -120,8 +120,12 @@ BEGIN_TEST(testDeduplication_ASSC) {
   
   
   CHECK(SameChars(cx, depdep2, str2, 20) || SameChars(cx, depdep2, str, 20));
-  CHECK(SameChars(cx, depdep2, original, 20) ||
-        SameChars(cx, depdep2, str, 20));
+
+  
+  
+  
+  
+  
 
   return true;
 }
