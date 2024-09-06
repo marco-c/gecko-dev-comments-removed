@@ -55,21 +55,24 @@ class PrefetchAgent extends RemoteContext {
   
   
   
+  
   async navigate(url, {expectedDestinationUrl} = {}) {
     await this.execute_script((url) => {
       window.executor.suspend(() => {
         location.href = url;
       });
     }, [url]);
-    if (!expectedDestinationUrl) {
+    if (expectedDestinationUrl === undefined) {
       expectedDestinationUrl = url;
     }
-    expectedDestinationUrl.username = '';
-    expectedDestinationUrl.password = '';
-    assert_equals(
-        await this.execute_script(() => location.href),
-        expectedDestinationUrl.toString(),
-        "expected navigation to reach destination URL");
+    if (expectedDestinationUrl) {
+      expectedDestinationUrl.username = '';
+      expectedDestinationUrl.password = '';
+      assert_equals(
+          await this.execute_script(() => location.href),
+          expectedDestinationUrl.toString(),
+          "expected navigation to reach destination URL");
+    }
     await this.execute_script(() => {});
   }
 
