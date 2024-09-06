@@ -17,7 +17,7 @@
 
 
 
-use crate::{LiftReturn, RustCallStatus, UnexpectedUniFFICallbackError};
+use crate::{oneshot, LiftReturn, RustCallStatus};
 
 
 pub type ForeignFutureHandle = u64;
@@ -69,15 +69,8 @@ where
     
     let _foreign_future =
         call_scaffolding_function(foreign_future_complete::<T, UT>, sender.into_raw() as u64);
-    match receiver.await {
-        Ok(result) => T::lift_foreign_return(result.return_value, result.call_status),
-        Err(e) => {
-            
-            T::handle_callback_unexpected_error(UnexpectedUniFFICallbackError::new(format!(
-                "Error awaiting foreign future: {e}"
-            )))
-        }
-    }
+    let result = receiver.await;
+    T::lift_foreign_return(result.return_value, result.call_status)
 }
 
 pub extern "C" fn foreign_future_complete<T: LiftReturn<UT>, UT>(
@@ -85,10 +78,7 @@ pub extern "C" fn foreign_future_complete<T: LiftReturn<UT>, UT>(
     result: ForeignFutureResult<T::ReturnType>,
 ) {
     let channel = unsafe { oneshot::Sender::from_raw(oneshot_handle as *mut ()) };
-    
-    
-    
-    let _ = channel.send(result);
+    channel.send(result);
 }
 
 #[cfg(test)]
