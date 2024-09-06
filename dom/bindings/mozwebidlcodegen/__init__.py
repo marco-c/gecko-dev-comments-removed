@@ -18,14 +18,14 @@ import mozpack.path as mozpath
 from mach.mixin.logging import LoggingMixin
 from mozbuild.makeutil import Makefile
 from mozbuild.pythonutil import iter_modules_in_path
-from mozbuild.util import FileAvoidWrite
+from mozbuild.util import FileAvoidWrite, cpu_count
 
 
 
 
 
 
-DEFAULT_PROCESS_COUNT = 4 if sys.platform == "win32" else os.cpu_count()
+DEFAULT_PROCESS_COUNT = 4 if sys.platform == "win32" else cpu_count()
 
 
 class WebIDLPool:

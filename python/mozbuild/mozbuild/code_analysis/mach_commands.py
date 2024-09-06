@@ -4,7 +4,6 @@
 import concurrent.futures
 import json
 import logging
-import multiprocessing
 import ntpath
 import os
 import pathlib
@@ -28,7 +27,7 @@ from six.moves import input
 from mozbuild import build_commands
 from mozbuild.controller.clobber import Clobberer
 from mozbuild.nodeutil import find_node_executable
-from mozbuild.util import memoize
+from mozbuild.util import cpu_count, memoize
 
 
 
@@ -386,7 +385,7 @@ def check(
     ) as output_manager:
         import math
 
-        batch_size = int(math.ceil(float(len(source)) / multiprocessing.cpu_count()))
+        batch_size = int(math.ceil(float(len(source)) / cpu_count()))
         for i in range(0, len(source), batch_size):
             args = _get_clang_tidy_command(
                 command_context,
@@ -711,7 +710,7 @@ def autotest(
         )
         return TOOLS_UNSUPORTED_PLATFORM
 
-    max_workers = multiprocessing.cpu_count()
+    max_workers = cpu_count()
 
     command_context.log(
         logging.INFO,
@@ -1904,7 +1903,7 @@ def _run_clang_format_path(
     
     import math
 
-    max_workers = multiprocessing.cpu_count()
+    max_workers = cpu_count()
 
     
     
