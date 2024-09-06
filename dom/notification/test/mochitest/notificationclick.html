@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -13,10 +13,7 @@
   }
 
   navigator.serviceWorker.ready.then(function(swr) {
-    var ifr = document.createElement("iframe");
-    document.documentElement.appendChild(ifr);
-    ifr.contentWindow.ServiceWorkerRegistration.prototype.showNotification
-       .call(swr, "Hi there. The ServiceWorker should receive a click event for this.", { data: { complex: ["jsval", 5] }});
+    swr.showNotification("Hi there. The ServiceWorker should receive a click event for this.", { data: { complex: ["jsval", 5] }});
   });
 
   navigator.serviceWorker.onmessage = function(msg) {
