@@ -6002,6 +6002,15 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   
   
+  mUndecorated = IsAlwaysUndecoratedWindow();
+  if (mUndecorated) {
+    LOG("    Is undecorated Window\n");
+    gtk_window_set_titlebar(GTK_WINDOW(mShell), gtk_fixed_new());
+    gtk_window_set_decorated(GTK_WINDOW(mShell), false);
+  }
+
+  
+  
   Unused << gfxPlatform::GetPlatform();
 
   if (IsTopLevelWindowType()) {
@@ -6181,15 +6190,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   if (mAlwaysOnTop) {
     gtk_window_set_keep_above(GTK_WINDOW(mShell), TRUE);
-  }
-
-  
-  
-  mUndecorated = IsAlwaysUndecoratedWindow();
-  if (mUndecorated) {
-    LOG("    Is undecorated Window\n");
-    gtk_window_set_titlebar(GTK_WINDOW(mShell), gtk_fixed_new());
-    gtk_window_set_decorated(GTK_WINDOW(mShell), false);
   }
 
   
