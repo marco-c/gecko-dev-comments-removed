@@ -193,35 +193,29 @@ bool SVGPathElement::GetDistancesFromOriginToEndsOfVisibleSegments(
       aOutput);
 }
 
+static bool PathIsClosed(Span<const StylePathCommand> aPath) {
+  return !aPath.IsEmpty() && aPath.rbegin()->IsClose();
+}
+
 
 
 
 
 bool SVGPathElement::IsClosedLoop() const {
   bool isClosed = false;
+
   auto callback = [&](const ComputedStyle* s) {
     const nsStyleSVGReset* styleSVGReset = s->StyleSVGReset();
     if (styleSVGReset->mD.IsPath()) {
-      isClosed = !styleSVGReset->mD.AsPath()._0.IsEmpty() &&
-                 styleSVGReset->mD.AsPath()._0.AsSpan().rbegin()->IsClose();
+      isClosed = PathIsClosed(styleSVGReset->mD.AsPath()._0.AsSpan());
     }
   };
 
-  const bool success = SVGGeometryProperty::DoForComputedStyle(this, callback);
-  if (success) {
+  if (SVGGeometryProperty::DoForComputedStyle(this, callback)) {
     return isClosed;
   }
 
-  const SVGPathData& data = mD.GetAnimValue();
-  
-  
-  uint32_t i = 0;
-  uint32_t segType = PATHSEG_UNKNOWN;
-  while (i < data.Length()) {
-    segType = SVGPathSegUtils::DecodeType(data[i++]);
-    i += SVGPathSegUtils::ArgCountForType(segType);
-  }
-  return segType == PATHSEG_CLOSEPATH;
+  return PathIsClosed(mD.GetAnimValue().AsSpan());
 }
 
 

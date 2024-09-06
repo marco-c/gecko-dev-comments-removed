@@ -20,18 +20,10 @@ using namespace mozilla::dom;
 namespace mozilla {
 
 nsresult SVGAnimatedPathSegList::SetBaseValueString(const nsAString& aValue) {
-  SVGPathData newBaseValue;
-
   
   
   
-  nsresult rv = newBaseValue.SetValueFromString(aValue);
-
-  
-  
-  
-  mBaseVal.SwapWith(newBaseValue);
-  return rv;
+  return mBaseVal.SetValueFromString(NS_ConvertUTF16toUTF8(aValue));
 }
 
 void SVGAnimatedPathSegList::ClearBaseValue() {
@@ -52,14 +44,9 @@ nsresult SVGAnimatedPathSegList::SetAnimValue(const SVGPathData& aNewAnimValue,
   if (!mAnimVal) {
     mAnimVal = MakeUnique<SVGPathData>();
   }
-  nsresult rv = mAnimVal->CopyFrom(aNewAnimValue);
-  if (NS_FAILED(rv)) {
-    
-    
-    ClearAnimValue(aElement);
-  }
+  *mAnimVal = aNewAnimValue;
   aElement->DidAnimatePathSegList();
-  return rv;
+  return NS_OK;
 }
 
 void SVGAnimatedPathSegList::ClearAnimValue(SVGElement* aElement) {
@@ -80,7 +67,7 @@ nsresult SVGAnimatedPathSegList::SMILAnimatedPathSegList::ValueFromString(
     SMILValue& aValue, bool& aPreventCachingOfSandwich) const {
   SMILValue val(SVGPathSegListSMILType::Singleton());
   SVGPathDataAndInfo* list = static_cast<SVGPathDataAndInfo*>(val.mU.mPtr);
-  nsresult rv = list->SetValueFromString(aStr);
+  nsresult rv = list->SetValueFromString(NS_ConvertUTF16toUTF8(aStr));
   if (NS_SUCCEEDED(rv)) {
     list->SetElement(mElement);
     aValue = std::move(val);
@@ -93,16 +80,11 @@ SMILValue SVGAnimatedPathSegList::SMILAnimatedPathSegList::GetBaseValue()
   
   
   
-  SMILValue val;
-
   SMILValue tmp(SVGPathSegListSMILType::Singleton());
   auto* list = static_cast<SVGPathDataAndInfo*>(tmp.mU.mPtr);
-  nsresult rv = list->CopyFrom(mVal->mBaseVal);
-  if (NS_SUCCEEDED(rv)) {
-    list->SetElement(mElement);
-    val = std::move(tmp);
-  }
-  return val;
+  list->CopyFrom(mVal->mBaseVal);
+  list->SetElement(mElement);
+  return tmp;
 }
 
 nsresult SVGAnimatedPathSegList::SMILAnimatedPathSegList::SetAnimValue(

@@ -60,7 +60,9 @@ void SVGAttrValueWrapper::ToString(const SVGAnimatedNumberPair* aNumberPair,
 
 void SVGAttrValueWrapper::ToString(const SVGPathData* aPathData,
                                    nsAString& aResult) {
-  aPathData->GetValueAsString(aResult);
+  nsAutoCString result;
+  aPathData->GetValueAsString(result);
+  CopyUTF8toUTF16(result, aResult);
 }
 
 

@@ -338,7 +338,7 @@ class SVGContentUtils {
 
 
   static already_AddRefed<mozilla::gfx::Path> GetPath(
-      const nsAString& aPathString);
+      const nsACString& aPathString);
 
   
 

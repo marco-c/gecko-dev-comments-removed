@@ -11,7 +11,6 @@ use crate::values::generics::basic_shape::GenericShapeCommand;
 use crate::values::generics::basic_shape::{ArcSize, ArcSweep, ByTo, CoordinatePair};
 use crate::values::CSSFloat;
 use cssparser::Parser;
-use num_traits::FromPrimitive;
 use std::fmt::{self, Write};
 use std::iter::{Cloned, Peekable};
 use std::slice;
@@ -70,108 +69,8 @@ impl SVGPathData {
     
     
     
-    #[cfg(feature = "gecko")]
-    pub fn decode_from_f32_array(path: &[f32]) -> Result<Self, ()> {
-        use crate::gecko_bindings::structs::*;
-        use crate::values::generics::basic_shape::GenericShapeCommand::*;
-
-        let mut result: Vec<PathCommand> = Vec::new();
-        let mut i: usize = 0;
-        while i < path.len() {
-            
-            
-            
-            let seg_type = path[i].to_bits() as u16;
-            i = i + 1;
-            match seg_type {
-                PATHSEG_CLOSEPATH => result.push(Close),
-                PATHSEG_MOVETO_ABS | PATHSEG_MOVETO_REL => {
-                    debug_assert!(i + 1 < path.len());
-                    result.push(Move {
-                        point: CoordPair::new(path[i], path[i + 1]),
-                        by_to: ByTo::new(seg_type == PATHSEG_MOVETO_ABS),
-                    });
-                    i = i + 2;
-                },
-                PATHSEG_LINETO_ABS | PATHSEG_LINETO_REL => {
-                    debug_assert!(i + 1 < path.len());
-                    result.push(Line {
-                        point: CoordPair::new(path[i], path[i + 1]),
-                        by_to: ByTo::new(seg_type == PATHSEG_LINETO_ABS),
-                    });
-                    i = i + 2;
-                },
-                PATHSEG_CURVETO_CUBIC_ABS | PATHSEG_CURVETO_CUBIC_REL => {
-                    debug_assert!(i + 5 < path.len());
-                    result.push(CubicCurve {
-                        control1: CoordPair::new(path[i], path[i + 1]),
-                        control2: CoordPair::new(path[i + 2], path[i + 3]),
-                        point: CoordPair::new(path[i + 4], path[i + 5]),
-                        by_to: ByTo::new(seg_type == PATHSEG_CURVETO_CUBIC_ABS),
-                    });
-                    i = i + 6;
-                },
-                PATHSEG_CURVETO_QUADRATIC_ABS | PATHSEG_CURVETO_QUADRATIC_REL => {
-                    debug_assert!(i + 3 < path.len());
-                    result.push(QuadCurve {
-                        control1: CoordPair::new(path[i], path[i + 1]),
-                        point: CoordPair::new(path[i + 2], path[i + 3]),
-                        by_to: ByTo::new(seg_type == PATHSEG_CURVETO_QUADRATIC_ABS),
-                    });
-                    i = i + 4;
-                },
-                PATHSEG_ARC_ABS | PATHSEG_ARC_REL => {
-                    debug_assert!(i + 6 < path.len());
-                    result.push(Arc {
-                        radii: CoordPair::new(path[i], path[i + 1]),
-                        rotate: path[i + 2],
-                        arc_size: ArcSize::from_u8((path[i + 3] != 0.0f32) as u8).unwrap(),
-                        arc_sweep: ArcSweep::from_u8((path[i + 4] != 0.0f32) as u8).unwrap(),
-                        point: CoordPair::new(path[i + 5], path[i + 6]),
-                        by_to: ByTo::new(seg_type == PATHSEG_ARC_ABS),
-                    });
-                    i = i + 7;
-                },
-                PATHSEG_LINETO_HORIZONTAL_ABS | PATHSEG_LINETO_HORIZONTAL_REL => {
-                    debug_assert!(i < path.len());
-                    result.push(HLine {
-                        x: path[i],
-                        by_to: ByTo::new(seg_type == PATHSEG_LINETO_HORIZONTAL_ABS),
-                    });
-                    i = i + 1;
-                },
-                PATHSEG_LINETO_VERTICAL_ABS | PATHSEG_LINETO_VERTICAL_REL => {
-                    debug_assert!(i < path.len());
-                    result.push(VLine {
-                        y: path[i],
-                        by_to: ByTo::new(seg_type == PATHSEG_LINETO_VERTICAL_ABS),
-                    });
-                    i = i + 1;
-                },
-                PATHSEG_CURVETO_CUBIC_SMOOTH_ABS | PATHSEG_CURVETO_CUBIC_SMOOTH_REL => {
-                    debug_assert!(i + 3 < path.len());
-                    result.push(SmoothCubic {
-                        control2: CoordPair::new(path[i], path[i + 1]),
-                        point: CoordPair::new(path[i + 2], path[i + 3]),
-                        by_to: ByTo::new(seg_type == PATHSEG_CURVETO_CUBIC_SMOOTH_ABS),
-                    });
-                    i = i + 4;
-                },
-                PATHSEG_CURVETO_QUADRATIC_SMOOTH_ABS | PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL => {
-                    debug_assert!(i + 1 < path.len());
-                    result.push(SmoothQuad {
-                        point: CoordPair::new(path[i], path[i + 1]),
-                        by_to: ByTo::new(seg_type == PATHSEG_CURVETO_QUADRATIC_SMOOTH_ABS),
-                    });
-                    i = i + 2;
-                },
-                PATHSEG_UNKNOWN | _ => return Err(()),
-            }
-        }
-
-        Ok(SVGPathData(crate::ArcSlice::from_iter(result.into_iter())))
-    }
-
+    
+    
     
     
     
@@ -185,26 +84,50 @@ impl SVGPathData {
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
         let path_string = input.expect_string()?.as_ref();
+        let (path, ok) = Self::parse_bytes(path_string.as_bytes());
+        if !ok || (allow_empty == AllowEmpty::No && path.0.is_empty()) {
+            return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+        }
+        return Ok(path);
+    }
 
+    
+    
+    
+    
+    
+    pub fn parse_bytes(input: &[u8]) -> (Self, bool) {
         
-        let mut path_parser = PathParser::new(path_string);
+        let mut ok = true;
+        let mut path_parser = PathParser::new(input);
+
         while skip_wsp(&mut path_parser.chars) {
             if path_parser.parse_subpath().is_err() {
-                return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+                ok = false;
+                break;
             }
         }
 
-        
-        
-        
-        
-        if matches!(allow_empty, AllowEmpty::No) && path_parser.path.is_empty() {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        }
+        let path = Self(crate::ArcSlice::from_iter(path_parser.path.into_iter()));
+        (path, ok)
+    }
 
-        Ok(SVGPathData(crate::ArcSlice::from_iter(
-            path_parser.path.into_iter(),
-        )))
+    
+    pub fn to_css<W>(&self, dest: &mut CssWriter<W>, quote: bool) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        if quote {
+            dest.write_char('"')?;
+        }
+        let mut writer = SequenceWriter::new(dest, " ");
+        for command in self.commands() {
+            writer.write_item(|inner| command.to_css_for_svg(inner))?;
+        }
+        if quote {
+            dest.write_char('"')?;
+        }
+        Ok(())
     }
 }
 
@@ -214,14 +137,7 @@ impl ToCss for SVGPathData {
     where
         W: fmt::Write,
     {
-        dest.write_char('"')?;
-        {
-            let mut writer = SequenceWriter::new(dest, " ");
-            for command in self.commands() {
-                writer.write_item(|inner| command.to_css_for_svg(inner))?;
-            }
-        }
-        dest.write_char('"')
+        self.to_css(dest,  true)
     }
 }
 
@@ -547,9 +463,9 @@ macro_rules! parse_arguments {
 impl<'a> PathParser<'a> {
     
     #[inline]
-    fn new(string: &'a str) -> Self {
+    fn new(bytes: &'a [u8]) -> Self {
         PathParser {
-            chars: string.as_bytes().iter().cloned().peekable(),
+            chars: bytes.iter().cloned().peekable(),
             path: Vec::new(),
         }
     }

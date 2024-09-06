@@ -27,13 +27,6 @@ namespace mozilla {
 struct SVGMark;
 enum class StyleStrokeLinecap : uint8_t;
 
-class SVGPathDataParser;  
-
-namespace dom {
-class DOMSVGPathSeg;
-class DOMSVGPathSegList;
-}  
-
 
 
 
@@ -82,11 +75,7 @@ class DOMSVGPathSegList;
 
 class SVGPathData {
   friend class SVGAnimatedPathSegList;
-  friend class dom::DOMSVGPathSeg;
-  friend class dom::DOMSVGPathSegList;
-  friend class SVGPathDataParser;
-  
-  
+  friend class SVGPathDataAndInfo;
 
   using DrawTarget = gfx::DrawTarget;
   using Path = gfx::Path;
@@ -96,60 +85,32 @@ class SVGPathData {
   using CapStyle = gfx::CapStyle;
 
  public:
-  using const_iterator = const float*;
-
   SVGPathData() = default;
   ~SVGPathData() = default;
 
-  SVGPathData& operator=(const SVGPathData& aOther) {
-    mData.ClearAndRetainStorage();
-    
-    Unused << mData.AppendElements(aOther.mData, fallible);
-    return *this;
+  explicit SVGPathData(const nsACString& aString) {
+    SetValueFromString(aString);
   }
 
-  SVGPathData(const SVGPathData& aOther) { *this = aOther; }
+  SVGPathData& operator=(const SVGPathData&) = default;
+  SVGPathData(const SVGPathData&) = default;
+  SVGPathData& operator=(SVGPathData&&) = default;
+  SVGPathData(SVGPathData&&) = default;
+
+  
+  bool operator==(const SVGPathData& rhs) const { return mData == rhs.mData; }
 
   
   
 
   
-  void GetValueAsString(nsAString& aValue) const;
+  void GetValueAsString(nsACString& aValue) const;
 
-  bool IsEmpty() const { return mData.IsEmpty(); }
+  Span<const StylePathCommand> AsSpan() const { return mData._0.AsSpan(); }
+  bool IsEmpty() const { return AsSpan().IsEmpty(); }
 
-#ifdef DEBUG
-  
-
-
-
-  uint32_t CountItems() const;
-#endif
-
-  
-
-
-
-  uint32_t Length() const { return mData.Length(); }
-
-  const nsTArray<float>& RawData() const { return mData; }
-
-  const float& operator[](uint32_t aIndex) const { return mData[aIndex]; }
-
-  
-  bool operator==(const SVGPathData& rhs) const {
-    
-    
-    return mData.Length() == rhs.mData.Length() &&
-           memcmp(mData.Elements(), rhs.mData.Elements(),
-                  mData.Length() * sizeof(float)) == 0;
-  }
-
-  bool SetCapacity(uint32_t aSize) {
-    return mData.SetCapacity(aSize, fallible);
-  }
-
-  void Compact() { mData.Compact(); }
+  StyleSVGPathData& RawData() { return mData; }
+  const StyleSVGPathData& RawData() const { return mData; }
 
   float GetPathLength() const;
 
@@ -207,9 +168,6 @@ class SVGPathData {
       const CSSSize& aBasis, const gfx::Point& aOffset = gfx::Point(),
       float aZoomFactor = 1.0);
 
-  const_iterator begin() const { return mData.Elements(); }
-  const_iterator end() const { return mData.Elements() + mData.Length(); }
-
   
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
@@ -222,28 +180,9 @@ class SVGPathData {
   
 
  protected:
-  using iterator = float*;
+  nsresult SetValueFromString(const nsACString& aValue);
 
-  
-
-
-
-  nsresult CopyFrom(const SVGPathData& rhs);
-  void SwapWith(SVGPathData& aRhs) { mData.SwapElements(aRhs.mData); }
-
-  float& operator[](uint32_t aIndex) { return mData[aIndex]; }
-
-  
-
-
-
-  bool SetLength(uint32_t aLength) {
-    return mData.SetLength(aLength, fallible);
-  }
-
-  nsresult SetValueFromString(const nsAString& aValue);
-
-  void Clear() { mData.Clear(); }
+  void Clear() { mData = {}; }
 
   
   
@@ -255,10 +194,7 @@ class SVGPathData {
 
   nsresult AppendSeg(uint32_t aType, ...);  
 
-  iterator begin() { return mData.Elements(); }
-  iterator end() { return mData.Elements() + mData.Length(); }
-
-  FallibleTArray<float> mData;
+  mozilla::StyleSVGPathData mData;
 };
 
 
@@ -283,9 +219,11 @@ class SVGPathDataAndInfo final : public SVGPathData {
     return static_cast<dom::SVGElement*>(e.get());
   }
 
-  nsresult CopyFrom(const SVGPathDataAndInfo& rhs) {
-    mElement = rhs.mElement;
-    return SVGPathData::CopyFrom(rhs);
+  
+  void CopyFrom(const SVGPathData& aOther) { mData = aOther.mData; }
+  void CopyFrom(const SVGPathDataAndInfo& aOther) {
+    CopyFrom(static_cast<const SVGPathData&>(aOther));
+    mElement = aOther.mElement;
   }
 
   
@@ -300,20 +238,6 @@ class SVGPathDataAndInfo final : public SVGPathData {
     }
     return false;
   }
-
-  
-
-
-
-
-  using SVGPathData::CopyFrom;
-
-  
-  using SVGPathData::iterator;
-  using SVGPathData::operator[];
-  using SVGPathData::begin;
-  using SVGPathData::end;
-  using SVGPathData::SetLength;
 
  private:
   

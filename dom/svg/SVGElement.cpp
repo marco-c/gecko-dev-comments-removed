@@ -1111,16 +1111,8 @@ bool SVGElement::UpdateDeclarationBlockFromPath(
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  const nsTArray<float>& asInFallibleArray = pathData.RawData();
   Servo_DeclarationBlock_SetPathValue(&aBlock, eCSSProperty_d,
-                                      &asInFallibleArray);
+                                      &pathData.RawData());
   return true;
 }
 

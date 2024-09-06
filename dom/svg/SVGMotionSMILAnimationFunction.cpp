@@ -224,15 +224,11 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromPathAttr() {
   mPathSourceType = ePathSourceType_PathAttr;
 
   
-  SVGPathData path;
-  SVGPathDataParser pathParser(pathSpec, &path);
+  SVGPathData path{NS_ConvertUTF16toUTF8(pathSpec)};
 
   
   
-  
-  
-  pathParser.Parse();
-  if (!path.Length()) {
+  if (path.IsEmpty()) {
     return;
   }
 
