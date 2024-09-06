@@ -1,0 +1,5 @@
+
+evalInWorker(`
+  enqueueMark("drain")
+  startgc()
+`)

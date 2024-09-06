@@ -3109,6 +3109,10 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
     }
   }
 
+#ifdef DEBUG
+  AutoSetThreadIsMarking threadIsMarking;
+#endif  
+
   if (processTestMarkQueue() == QueueYielded) {
     return NotFinished;
   }
@@ -3127,10 +3131,6 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
     assertNoMarkingWork();
     return Finished;
   }
-
-#ifdef DEBUG
-  AutoSetThreadIsMarking threadIsMarking;
-#endif  
 
   return marker().markUntilBudgetExhausted(sliceBudget, reportTime)
              ? Finished
