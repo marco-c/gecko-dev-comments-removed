@@ -58,23 +58,27 @@ bitflags! {
 impl RestyleHint {
     
     
+    #[inline]
     pub fn restyle_subtree() -> Self {
         RestyleHint::RESTYLE_SELF | RestyleHint::RESTYLE_DESCENDANTS
     }
 
     
     
+    #[inline]
     pub fn recascade_subtree() -> Self {
         RestyleHint::RECASCADE_SELF | RestyleHint::RECASCADE_DESCENDANTS
     }
 
     
     
+    #[inline]
     pub fn contains_subtree(&self) -> bool {
         self.contains(Self::restyle_subtree())
     }
 
     
+    #[inline]
     pub fn will_recascade_subtree(&self) -> bool {
         self.contains_subtree() || self.contains(Self::recascade_subtree())
     }

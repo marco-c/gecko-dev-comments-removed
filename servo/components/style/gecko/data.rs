@@ -171,6 +171,7 @@ pub struct PerDocumentStyleDataImpl {
 
 
 
+#[derive(Deref)]
 pub struct PerDocumentStyleData(AtomicRefCell<PerDocumentStyleDataImpl>);
 
 impl PerDocumentStyleData {
