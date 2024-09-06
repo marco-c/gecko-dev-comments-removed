@@ -33,6 +33,12 @@ using namespace mozilla;
 #define DispatchMethod(t, m, args...) \
   NS_DispatchToCurrentThread(NewRunnableMethod(__func__, t, m, ##args))
 
+
+
+#define ProcessEventQueue()                     \
+  while (NS_ProcessNextEvent(nullptr, false)) { \
+  }
+
 namespace {
 #ifdef MOZ_WEBRTC
 
@@ -109,6 +115,26 @@ struct StopNonNativeInput : public ControlMessage {
   explicit StopNonNativeInput(NonNativeInputTrack* aInputTrack)
       : ControlMessage(aInputTrack), mInputTrack(aInputTrack) {}
   void Run() override { mInputTrack->StopAudio(); }
+};
+
+
+
+class OnFallbackListener : public MediaTrackListener {
+  const RefPtr<MediaTrack> mTrack;
+  Atomic<bool> mOnFallback{true};
+
+ public:
+  explicit OnFallbackListener(MediaTrack* aTrack) : mTrack(aTrack) {}
+
+  void Reset() { mOnFallback = true; }
+  bool OnFallback() { return mOnFallback; }
+
+  void NotifyOutput(MediaTrackGraph*, TrackTime) override {
+    if (auto* ad =
+            mTrack->GraphImpl()->CurrentDriver()->AsAudioCallbackDriver()) {
+      mOnFallback = ad->OnFallback();
+    }
+  }
 };
 
 }  
@@ -1327,13 +1353,17 @@ TEST(TestAudioTrackGraph, AudioProcessingTrack)
 
 TEST(TestAudioTrackGraph, ReConnectDeviceInput)
 {
-  MockCubeb* cubeb = new MockCubeb();
+  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   
   
   
   const TrackRate rate = 48000;
+  
+  
+  
+  const long step = 10 * rate * 1111 / 1000 / PR_MSEC_PER_SEC;
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1, rate, nullptr,
@@ -1345,7 +1375,8 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
   RefPtr<ProcessedMediaTrack> outputTrack;
   RefPtr<MediaInputPort> port;
   RefPtr<AudioInputProcessing> listener;
-  auto p = Invoke([&] {
+  RefPtr<OnFallbackListener> fallbackListener;
+  DispatchFunction([&] {
     processingTrack = AudioProcessingTrack::Create(graph);
     outputTrack = graph->CreateForwardedInputTrack(MediaSegment::AUDIO);
     outputTrack->QueueSetAutoend(false);
@@ -1367,54 +1398,65 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
     settings.mAgc2Forced = true;
     QueueApplySettings(processingTrack, listener, settings);
 
-    return graph->NotifyWhenDeviceStarted(nullptr);
+    fallbackListener = new OnFallbackListener(processingTrack);
+    processingTrack->AddListener(fallbackListener);
   });
 
   RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
   EXPECT_TRUE(stream->mHasInput);
-  Unused << WaitFor(p);
 
-  
-  
-  
-  stream->SetDriftFactor(1.111);
-
-  
-  
-  
-  
-  DispatchFunction([&] {
-    processingTrack->GraphImpl()->AppendMessage(MakeUnique<GoFaster>(cubeb));
-  });
-  {
-    uint32_t totalFrames = 0;
-    WaitUntil(stream->FramesProcessedEvent(), [&](uint32_t aFrames) {
-      totalFrames += aFrames;
-      return totalFrames > static_cast<uint32_t>(graph->GraphRate());
-    });
+  while (
+      stream->State()
+          .map([](cubeb_state aState) { return aState != CUBEB_STATE_STARTED; })
+          .valueOr(true)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
-  cubeb->DontGoFaster();
+
+  
+  while (fallbackListener->OnFallback()) {
+    EXPECT_EQ(stream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  
+  for (long frames = 0; frames < graph->GraphRate(); frames += step) {
+    stream->ManualDataCallback(step);
+  }
 
   
   DispatchFunction([&] { processingTrack->DisconnectDeviceInput(); });
 
-  stream = WaitFor(cubeb->StreamInitEvent());
+  
+  ProcessEventQueue();
+  
+  EXPECT_EQ(stream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::Yes);
+  
+  auto initPromise = TakeN(cubeb->StreamInitEvent(), 1);
+  EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
+  std::tie(stream) = WaitFor(initPromise).unwrap()[0];
   EXPECT_FALSE(stream->mHasInput);
-  Unused << WaitFor(
-      Invoke([&] { return graph->NotifyWhenDeviceStarted(nullptr); }));
+
+  while (
+      stream->State()
+          .map([](cubeb_state aState) { return aState != CUBEB_STATE_STARTED; })
+          .valueOr(true)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
 
   
-  DispatchFunction([&] {
-    processingTrack->GraphImpl()->AppendMessage(MakeUnique<GoFaster>(cubeb));
-  });
-  {
-    uint32_t totalFrames = 0;
-    WaitUntil(stream->FramesProcessedEvent(), [&](uint32_t aFrames) {
-      totalFrames += aFrames;
-      return totalFrames > static_cast<uint32_t>(graph->GraphRate());
-    });
+  fallbackListener->Reset();
+  while (fallbackListener->OnFallback()) {
+    EXPECT_EQ(stream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
-  cubeb->DontGoFaster();
+
+  
+  for (long frames = 0; frames < graph->GraphRate(); frames += step) {
+    stream->ManualDataCallback(step);
+  }
 
   
   DispatchFunction([&] {
@@ -1422,27 +1464,40 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
     processingTrack->ConnectDeviceInput(deviceId, listener,
                                         PRINCIPAL_HANDLE_NONE);
   });
-
-  stream = WaitFor(cubeb->StreamInitEvent());
+  
+  ProcessEventQueue();
+  
+  EXPECT_EQ(stream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::Yes);
+  
+  initPromise = TakeN(cubeb->StreamInitEvent(), 1);
+  EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
+  std::tie(stream) = WaitFor(initPromise).unwrap()[0];
   EXPECT_TRUE(stream->mHasInput);
-  Unused << WaitFor(
-      Invoke([&] { return graph->NotifyWhenDeviceStarted(nullptr); }));
 
-  
-  DispatchFunction([&] {
-    processingTrack->GraphImpl()->AppendMessage(MakeUnique<GoFaster>(cubeb));
-  });
-  {
-    uint32_t totalFrames = 0;
-    WaitUntil(stream->FramesProcessedEvent(), [&](uint32_t aFrames) {
-      totalFrames += aFrames;
-      return totalFrames > static_cast<uint32_t>(graph->GraphRate());
-    });
+  while (
+      stream->State()
+          .map([](cubeb_state aState) { return aState != CUBEB_STATE_STARTED; })
+          .valueOr(true)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
-  cubeb->DontGoFaster();
+
+  
+  fallbackListener->Reset();
+  while (fallbackListener->OnFallback()) {
+    EXPECT_EQ(stream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  
+  for (long frames = 0; frames < graph->GraphRate(); frames += step) {
+    stream->ManualDataCallback(step);
+  }
 
   
   DispatchFunction([&] {
+    processingTrack->RemoveListener(fallbackListener);
     outputTrack->RemoveAudioOutput((void*)1);
     outputTrack->Destroy();
     port->Destroy();
@@ -1452,7 +1507,14 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
     processingTrack->Destroy();
   });
 
-  uint32_t inputRate = stream->SampleRate();
+  
+  ProcessEventQueue();
+  
+  EXPECT_EQ(stream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::Yes);
+  
+  EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
+
   uint32_t inputFrequency = stream->InputFrequency();
   uint64_t preSilenceSamples;
   uint32_t estimatedFreq;
@@ -1461,17 +1523,12 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
       WaitFor(stream->OutputVerificationEvent());
 
   EXPECT_EQ(estimatedFreq, inputFrequency);
-  std::cerr << "PreSilence: " << preSilenceSamples << std::endl;
-  
-  
-  
-  EXPECT_GE(preSilenceSamples, 128U + inputRate / 100);
+  std::cerr << "PreSilence: " << preSilenceSamples << "\n";
   
   
   
   
-  
-  EXPECT_LE(preSilenceSamples, 128U + 3 * inputRate / 100 );
+  EXPECT_EQ(preSilenceSamples, WEBAUDIO_BLOCK_SIZE + rate / 100);
   
   
   
@@ -2350,23 +2407,6 @@ TEST(TestAudioTrackGraph, SwitchNativeAudioProcessingTrack)
   std::cerr << "No native input now" << std::endl;
 }
 
-class OnFallbackListener : public MediaTrackListener {
-  const RefPtr<MediaTrack> mTrack;
-  Atomic<bool> mOnFallback{true};
-
- public:
-  explicit OnFallbackListener(MediaTrack* aTrack) : mTrack(aTrack) {}
-
-  bool OnFallback() { return mOnFallback; }
-
-  void NotifyOutput(MediaTrackGraph*, TrackTime) override {
-    if (auto* ad =
-            mTrack->GraphImpl()->CurrentDriver()->AsAudioCallbackDriver()) {
-      mOnFallback = ad->OnFallback();
-    }
-  }
-};
-
 void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
                         float aDriftFactor, uint32_t aRunTimeSeconds = 10,
                         uint32_t aNumExpectedUnderruns = 0) {
@@ -2467,8 +2507,7 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
   }
 
   DispatchFunction([&] { receiver->RemoveListener(partnerFallbackListener); });
-  while (NS_ProcessNextEvent(nullptr, false)) {
-  }
+  ProcessEventQueue();
 
   nsIThread* currentThread = NS_GetCurrentThread();
   cubeb_state inputState = CUBEB_STATE_STARTED;
@@ -2513,8 +2552,7 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
     processingTrack->Destroy();
   });
 
-  while (NS_ProcessNextEvent(nullptr, false)) {
-  }
+  ProcessEventQueue();
 
   EXPECT_EQ(inputStream->ManualDataCallback(0),
             MockCubebStream::KeepProcessing::Yes);
