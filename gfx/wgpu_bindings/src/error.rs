@@ -68,13 +68,25 @@ impl ErrorBuffer {
         }
 
         assert_ne!(self.message_capacity, 0);
+        
+        
+        
         let length = if message.len() >= self.message_capacity {
+            
+            
+            
+            
+            
+            let truncated_length = (0..self.message_capacity)
+                .rfind(|&offset| message.is_char_boundary(offset))
+                .unwrap_or(0);
             log::warn!(
-                "Error message's length {} reached capacity {}, truncating",
+                "Error message's length {} reached capacity {}, truncating to {}",
                 message.len(),
-                self.message_capacity
+                self.message_capacity,
+                truncated_length,
             );
-            self.message_capacity - 1
+            truncated_length
         } else {
             message.len()
         };
