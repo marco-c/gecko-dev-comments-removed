@@ -3,6 +3,17 @@
 
 "use strict";
 
+const { SiteDataTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/SiteDataTestUtils.sys.mjs"
+);
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "bounceTrackingProtection",
+  "@mozilla.org/bounce-tracking-protection;1",
+  "nsIBounceTrackingProtection"
+);
+
 const SITE_A = "example.com";
 const ORIGIN_A = `https://${SITE_A}`;
 
@@ -24,13 +35,6 @@ const ORIGIN_TRACKER_B = `http://${SITE_TRACKER_B}`;
 const OBSERVER_MSG_RECORD_BOUNCES_FINISHED = "test-record-bounces-finished";
 
 const ROOT_DIR = getRootDirectory(gTestPath);
-
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "bounceTrackingProtection",
-  "@mozilla.org/bounce-tracking-protection;1",
-  "nsIBounceTrackingProtection"
-);
 
 
 
@@ -125,20 +129,55 @@ function getBounceURL({
 
 
 
-async function navigateLinkClick(browser, targetURL) {
-  await SpecialPowers.spawn(browser, [targetURL.href], targetURL => {
-    let link = content.document.createElement("a");
 
-    link.href = targetURL;
-    link.textContent = targetURL;
-    
-    
-    link.style.display = "block";
 
-    content.document.body.appendChild(link);
-  });
 
-  await BrowserTestUtils.synthesizeMouseAtCenter("a[href]", {}, browser);
+
+async function navigateLinkClick(
+  browser,
+  targetURL,
+  { spawnWindow = null } = {}
+) {
+  if (spawnWindow && !["newTab", "popup"].includes(spawnWindow)) {
+    throw new Error(`Invalid option '${spawnWindow}' for spawnWindow`);
+  }
+
+  await SpecialPowers.spawn(
+    browser,
+    [targetURL.href, spawnWindow],
+    async (targetURL, spawnWindow) => {
+      let link = content.document.createElement("a");
+      link.id = "link";
+      link.textContent = "Click Me";
+      link.style.display = "block";
+      link.style.fontSize = "40px";
+
+      
+      if (spawnWindow) {
+        link.href = "#";
+        link.addEventListener("click", event => {
+          event.preventDefault();
+          if (spawnWindow == "newTab") {
+            
+            content.window.open(targetURL, "bounce");
+          } else {
+            
+            content.window.open(targetURL, "bounce", "height=200,width=200");
+          }
+        });
+      } else {
+        
+        link.href = targetURL;
+      }
+
+      content.document.body.appendChild(link);
+
+      
+      SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+      content.document.userInteractionForTesting();
+      link.click();
+    }
+  );
 }
 
 
@@ -186,6 +225,9 @@ async function waitForRecordBounces(browser) {
 
 
 
+
+
+
 async function runTestBounce(options = {}) {
   let {
     bounceType,
@@ -197,6 +239,7 @@ async function runTestBounce(options = {}) {
     expectPurge = true,
     originAttributes = {},
     postBounceCallback = () => {},
+    skipSiteDataCleanup = false,
   } = options;
   info(`runTestBounce ${JSON.stringify(options)}`);
 
@@ -228,19 +271,27 @@ async function runTestBounce(options = {}) {
     win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
   }
 
-  let tab = win.gBrowser.addTab(getBaseUrl(ORIGIN_A) + "file_start.html", {
+  let initialURL = getBaseUrl(ORIGIN_A) + "file_start.html";
+  let tab = win.gBrowser.addTab(initialURL, {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     userContextId,
   });
   win.gBrowser.selectedTab = tab;
 
   let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser, true, initialURL);
 
   let promiseRecordBounces = waitForRecordBounces(browser);
 
   
   let targetURL = new URL(getBaseUrl(ORIGIN_B) + "file_start.html");
+
+  
+  let targetURLLoadedPromise = BrowserTestUtils.browserLoaded(
+    browser,
+    false,
+    targetURL
+  );
 
   
   await navigateLinkClick(
@@ -255,8 +306,7 @@ async function runTestBounce(options = {}) {
     })
   );
 
-  
-  await BrowserTestUtils.browserLoaded(browser, false, targetURL);
+  await targetURLLoadedPromise;
 
   
   
@@ -316,4 +366,7 @@ async function runTestBounce(options = {}) {
     );
   }
   bounceTrackingProtection.clearAll();
+  if (!skipSiteDataCleanup) {
+    await SiteDataTestUtils.clear();
+  }
 }
