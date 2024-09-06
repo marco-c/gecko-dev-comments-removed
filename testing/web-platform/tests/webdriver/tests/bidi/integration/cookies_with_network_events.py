@@ -115,6 +115,13 @@ async def test_fetch(
     
     await bidi_session.storage.delete_cookies()
 
+    
+    await bidi_session.browsing_context.navigate(
+        context=new_tab["context"],
+        url=url("/webdriver/tests/bidi/support/empty.html"),
+        wait="complete"
+    )
+
     cookie_name = "foo"
     cookie_value = "bar"
     
