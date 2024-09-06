@@ -1693,10 +1693,6 @@ void PresShell::EndObservingDocument() {
   mIsObservingDocument = false;
 }
 
-#ifdef DEBUG_kipp
-char* nsPresShell_ReflowStackPointerTop;
-#endif
-
 void PresShell::InitPaintSuppressionTimer() {
   
   Document* doc = mDocument->GetDisplayDocument()
@@ -10894,9 +10890,6 @@ void ReflowCountMgr::DoGrandHTMLTotals() {
 
 
 void ReflowCountMgr::DisplayTotals(const char* aStr) {
-#  ifdef DEBUG_rods
-  printf("%s\n", aStr ? aStr : "No name");
-#  endif
   if (mDumpFrameCounts) {
     DoGrandTotals();
   }

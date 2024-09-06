@@ -73,10 +73,6 @@ void nsXULTooltipListener::MouseOut(Event* aEvent) {
     return;
   }
 
-#ifdef DEBUG_crap
-  if (mNeedTitletip) return;
-#endif
-
   
   
   if (currentTooltip) {
