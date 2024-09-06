@@ -79,6 +79,8 @@ typedef Vector<Tier2GeneratorTask*, 0, SystemAllocPolicy>
 
 }  
 
+using HelperThreadTaskVector = Vector<HelperThreadTask*, 0, SystemAllocPolicy>;
+
 
 class GlobalHelperThreadState {
   friend class AutoLockHelperThreadState;
@@ -172,8 +174,6 @@ class GlobalHelperThreadState {
   
   GCParallelTaskList gcParallelWorklist_;
 
-  using HelperThreadTaskVector =
-      Vector<HelperThreadTask*, 0, SystemAllocPolicy>;
   
   
   HelperThreadTaskVector helperTasks_;
@@ -183,9 +183,11 @@ class GlobalHelperThreadState {
   
   JS::HelperThreadTaskCallback dispatchTaskCallback = nullptr;
 
+#ifdef DEBUG
   
   
   size_t tasksPending_ = 0;
+#endif
 
   bool isInitialized_ = false;
 
@@ -419,7 +421,7 @@ class GlobalHelperThreadState {
   bool submitTask(PromiseHelperTask* task);
   bool submitTask(GCParallelTask* task,
                   const AutoLockHelperThreadState& locked);
-  void runOneTask(AutoLockHelperThreadState& lock);
+  void runOneTask(HelperThreadTask* task, AutoLockHelperThreadState& lock);
   void runTaskLocked(HelperThreadTask* task, AutoLockHelperThreadState& lock);
 
   using Selector = HelperThreadTask* (

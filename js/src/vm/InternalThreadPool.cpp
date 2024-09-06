@@ -137,7 +137,7 @@ bool InternalThreadPool::ensureThreadCount(size_t threadCount,
     threads(lock).infallibleEmplaceBack(std::move(thread));
   }
 
-  return true;
+  return tasks_.ref().reserve(threadCount);
 }
 
 size_t InternalThreadPool::threadCount(const AutoLockHelperThreadState& lock) {
@@ -174,6 +174,11 @@ inline const HelperThreadVector& InternalThreadPool::threads(
   return threads_.ref();
 }
 
+inline HelperTaskVector& InternalThreadPool::tasks(
+    const AutoLockHelperThreadState& lock) {
+  return tasks_.ref();
+}
+
 size_t InternalThreadPool::sizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf,
     const AutoLockHelperThreadState& lock) const {
@@ -182,13 +187,17 @@ size_t InternalThreadPool::sizeOfIncludingThis(
 }
 
 
-void InternalThreadPool::DispatchTask(JS::DispatchReason reason) {
-  Get().dispatchTask(reason);
+void InternalThreadPool::DispatchTask(HelperThreadTask* task,
+                                      JS::DispatchReason reason) {
+  Get().dispatchTask(task, reason);
 }
 
-void InternalThreadPool::dispatchTask(JS::DispatchReason reason) {
+void InternalThreadPool::dispatchTask(HelperThreadTask* task,
+                                      JS::DispatchReason reason) {
   gHelperThreadLock.assertOwnedByCurrentThread();
-  queuedTasks++;
+
+  tasks_.ref().infallibleAppend(task);
+
   if (reason == JS::DispatchReason::NewTask) {
     wakeup.notify_one();
   } else {
@@ -277,9 +286,14 @@ void HelperThread::threadLoop(InternalThreadPool* pool) {
   AutoLockHelperThreadState lock;
 
   while (!pool->terminating) {
-    if (pool->queuedTasks != 0) {
-      pool->queuedTasks--;
-      HelperThreadState().runOneTask(lock);
+    HelperTaskVector& tasks = pool->tasks(lock);
+    if (!tasks.empty()) {
+      
+      
+      HelperThreadTask** taskp = tasks.begin();
+      HelperThreadTask* task = *taskp;
+      tasks.erase(taskp);
+      HelperThreadState().runOneTask(task, lock);
       continue;
     }
 
