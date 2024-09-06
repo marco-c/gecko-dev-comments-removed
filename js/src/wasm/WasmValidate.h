@@ -47,7 +47,7 @@ using mozilla::Some;
 
 
 
-struct ModuleEnvironment {
+struct ModuleMetadata {
   
   const ModuleKind kind;
   const FeatureArgs features;
@@ -97,8 +97,8 @@ struct ModuleEnvironment {
   
   bool parsedBranchHints;
 
-  explicit ModuleEnvironment(FeatureArgs features,
-                             ModuleKind kind = ModuleKind::Wasm)
+  explicit ModuleMetadata(FeatureArgs features,
+                          ModuleKind kind = ModuleKind::Wasm)
       : kind(kind),
         features(features),
         numFuncImports(0),
@@ -283,7 +283,8 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 
-[[nodiscard]] bool CheckIsSubtypeOf(Decoder& d, const ModuleEnvironment& env,
+[[nodiscard]] bool CheckIsSubtypeOf(Decoder& d,
+                                    const ModuleMetadata& moduleMeta,
                                     size_t opcodeOffset, StorageType subType,
                                     StorageType superType);
 
@@ -302,10 +303,9 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 
-[[nodiscard]] bool DecodeLocalEntriesWithParams(Decoder& d,
-                                                const ModuleEnvironment& env,
-                                                uint32_t funcIndex,
-                                                ValTypeVector* locals);
+[[nodiscard]] bool DecodeLocalEntriesWithParams(
+    Decoder& d, const ModuleMetadata& moduleMeta, uint32_t funcIndex,
+    ValTypeVector* locals);
 
 
 
@@ -323,13 +323,14 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 
-[[nodiscard]] bool DecodeModuleEnvironment(Decoder& d, ModuleEnvironment* env);
+[[nodiscard]] bool DecodeModuleEnvironment(Decoder& d,
+                                           ModuleMetadata* moduleMeta);
 
-[[nodiscard]] bool ValidateFunctionBody(const ModuleEnvironment& env,
+[[nodiscard]] bool ValidateFunctionBody(const ModuleMetadata& moduleMeta,
                                         uint32_t funcIndex, uint32_t bodySize,
                                         Decoder& d);
 
-[[nodiscard]] bool DecodeModuleTail(Decoder& d, ModuleEnvironment* env);
+[[nodiscard]] bool DecodeModuleTail(Decoder& d, ModuleMetadata* moduleMeta);
 
 
 
