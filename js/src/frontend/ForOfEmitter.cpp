@@ -19,11 +19,29 @@ using mozilla::Nothing;
 
 ForOfEmitter::ForOfEmitter(BytecodeEmitter* bce,
                            const EmitterScope* headLexicalEmitterScope,
-                           SelfHostedIter selfHostedIter, IteratorKind iterKind)
+                           SelfHostedIter selfHostedIter, IteratorKind iterKind
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+                           ,
+                           HasUsingDeclarationInHead hasUsingDeclarationInHead
+#endif
+                           )
     : bce_(bce),
       selfHostedIter_(selfHostedIter),
       iterKind_(iterKind),
-      headLexicalEmitterScope_(headLexicalEmitterScope) {}
+      headLexicalEmitterScope_(headLexicalEmitterScope) {
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  MOZ_ASSERT_IF(hasUsingDeclarationInHead == HasUsingDeclarationInHead::Yes,
+                headLexicalEmitterScope->hasEnvironment());
+  if (hasUsingDeclarationInHead == HasUsingDeclarationInHead::Yes) {
+    
+    
+    
+    
+    MOZ_ASSERT(headLexicalEmitterScope == bce_->innermostEmitterScope());
+    bce_->innermostEmitterScope()->setHasDisposables();
+  }
+#endif
+}
 
 bool ForOfEmitter::emitIterated() {
   MOZ_ASSERT(state_ == State::Start);
@@ -87,6 +105,26 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
                ScopeKind::Lexical);
 
     if (headLexicalEmitterScope_->hasEnvironment()) {
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+      if (headLexicalEmitterScope_->hasDisposables()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!bce_->emit1(JSOp::DisposeDisposables)) {
+          return false;
+        }
+      }
+#endif
       if (!bce_->emitInternedScopeOp(headLexicalEmitterScope_->index(),
                                      JSOp::RecreateLexicalEnv)) {
         
