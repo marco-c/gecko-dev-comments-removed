@@ -1281,75 +1281,52 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
 
   
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
-  int32_t pos = 0;
-  constexpr auto newlineStr = NS_LITERAL_STRING_FROM_CSTRING(LFSTR);
-
   {
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &pointToInsert);
+
+    const auto GetInsertTextTo = [](int32_t aInclusiveNextLinefeedOffset,
+                                    uint32_t aLineStartOffset) {
+      if (aInclusiveNextLinefeedOffset > 0) {
+        return aLineStartOffset > 0
+                   
+                   
+                   
+                   ? InsertTextTo::AlwaysCreateNewTextNode
+                   
+                   
+                   
+                   
+                   : InsertTextTo::ExistingTextNodeIfAvailableAndNotStart;
+      }
+      
+      
+      
+      return InsertTextTo::ExistingTextNodeIfAvailable;
+    };
 
     
     
     
     if (!isWhiteSpaceCollapsible || IsPlaintextMailComposer()) {
-      while (pos != -1 &&
-             pos < AssertedCast<int32_t>(aInsertionString.Length())) {
-        int32_t oldPos = pos;
-        int32_t subStrLen;
-        pos = aInsertionString.FindChar(nsCRT::LF, oldPos);
-
-        if (pos != -1) {
-          subStrLen = pos - oldPos;
+      uint32_t nextOffset = 0;
+      while (nextOffset < aInsertionString.Length()) {
+        const uint32_t lineStartOffset = nextOffset;
+        const int32_t inclusiveNextLinefeedOffset =
+            aInsertionString.FindChar(nsCRT::LF, lineStartOffset);
+        const uint32_t lineLength =
+            inclusiveNextLinefeedOffset != -1
+                ? static_cast<uint32_t>(inclusiveNextLinefeedOffset) -
+                      lineStartOffset
+                : aInsertionString.Length() - lineStartOffset;
+        if (lineLength) {
           
-          if (!subStrLen) {
-            subStrLen = 1;
-          }
-        } else {
-          subStrLen = aInsertionString.Length() - oldPos;
-          pos = aInsertionString.Length();
-        }
-
-        nsDependentSubstring subStr(aInsertionString, oldPos, subStrLen);
-
-        
-        if (subStr.Equals(newlineStr)) {
-          Result<CreateElementResult, nsresult> insertBRElementResult =
-              InsertBRElement(WithTransaction::Yes, currentPoint);
-          if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-            return insertBRElementResult.propagateErr();
-          }
-          CreateElementResult unwrappedInsertBRElementResult =
-              insertBRElementResult.unwrap();
-          
-          
-          
-          unwrappedInsertBRElementResult.IgnoreCaretPointSuggestion();
-          MOZ_ASSERT(!AllowsTransactionsToChangeSelection());
-
-          pos++;
-          RefPtr<Element> brElement =
-              unwrappedInsertBRElementResult.UnwrapNewNode();
-          if (brElement->GetNextSibling()) {
-            pointToInsert.Set(brElement->GetNextSibling());
-          } else {
-            pointToInsert.SetToEndOf(currentPoint.GetContainer());
-          }
-          
-          
-          
-          currentPoint.SetAfter(brElement);
-          NS_WARNING_ASSERTION(currentPoint.IsSet(),
-                               "Failed to set after the <br> element");
-          NS_WARNING_ASSERTION(currentPoint == pointToInsert,
-                               "Perhaps, <br> element position has been moved "
-                               "to different point "
-                               "by mutation observer");
-        } else {
+          const nsDependentSubstring lineText(aInsertionString, lineStartOffset,
+                                              lineLength);
           Result<InsertTextResult, nsresult> insertTextResult =
               InsertTextWithTransaction(
-                  *document, subStr, currentPoint,
-                  InsertTextTo::ExistingTextNodeIfAvailable);
+                  *document, lineText, currentPoint,
+                  GetInsertTextTo(inclusiveNextLinefeedOffset,
+                                  lineStartOffset));
           if (MOZ_UNLIKELY(insertTextResult.isErr())) {
             NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
             return insertTextResult.propagateErr();
@@ -1364,104 +1341,75 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
           } else {
             pointToInsert = currentPoint;
           }
+          if (inclusiveNextLinefeedOffset < 0) {
+            break;  
+          }
         }
+        MOZ_ASSERT(inclusiveNextLinefeedOffset >= 0);
+        Result<CreateElementResult, nsresult> insertBRElementResult =
+            InsertBRElement(WithTransaction::Yes, currentPoint);
+        if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
+          NS_WARNING(
+              "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
+          return insertBRElementResult.propagateErr();
+        }
+        CreateElementResult unwrappedInsertBRElementResult =
+            insertBRElementResult.unwrap();
+        
+        
+        
+        unwrappedInsertBRElementResult.IgnoreCaretPointSuggestion();
+        MOZ_ASSERT(!AllowsTransactionsToChangeSelection());
+
+        nextOffset = inclusiveNextLinefeedOffset + 1;
+        RefPtr<Element> brElement =
+            unwrappedInsertBRElementResult.UnwrapNewNode();
+        if (brElement->GetNextSibling()) {
+          pointToInsert.Set(brElement->GetNextSibling());
+        } else {
+          pointToInsert.SetToEndOf(currentPoint.GetContainer());
+        }
+        
+        
+        
+        currentPoint.SetAfter(brElement);
+        NS_WARNING_ASSERTION(currentPoint.IsSet(),
+                             "Failed to set after the <br> element");
+        NS_WARNING_ASSERTION(currentPoint == pointToInsert,
+                             "Perhaps, <br> element position has been moved to "
+                             "different point by mutation observer");
       }
     } else {
-      constexpr auto tabStr = u"\t"_ns;
-      constexpr auto spacesStr = u"    "_ns;
-      nsAutoString insertionString(aInsertionString);  
-      while (pos != -1 &&
-             pos < AssertedCast<int32_t>(insertionString.Length())) {
-        int32_t oldPos = pos;
-        int32_t subStrLen;
-        pos = insertionString.FindCharInSet(u"\t\n", oldPos);
+      uint32_t nextOffset = 0;
+      while (nextOffset < aInsertionString.Length()) {
+        const uint32_t lineStartOffset = nextOffset;
+        const int32_t inclusiveNextLinefeedOffset =
+            aInsertionString.FindChar(nsCRT::LF, lineStartOffset);
+        const uint32_t lineLength =
+            inclusiveNextLinefeedOffset != -1
+                ? static_cast<uint32_t>(inclusiveNextLinefeedOffset) -
+                      lineStartOffset
+                : aInsertionString.Length() - lineStartOffset;
 
-        if (pos != -1) {
-          subStrLen = pos - oldPos;
-          
-          if (!subStrLen) {
-            subStrLen = 1;
-          }
-        } else {
-          subStrLen = insertionString.Length() - oldPos;
-          pos = insertionString.Length();
-        }
-
-        nsDependentSubstring subStr(insertionString, oldPos, subStrLen);
-
-        
-        if (subStr.Equals(tabStr)) {
-          Result<InsertTextResult, nsresult> insertTextResult =
-              WhiteSpaceVisibilityKeeper::InsertText(
-                  *this, spacesStr, currentPoint,
-                  InsertTextTo::ExistingTextNodeIfAvailable, *editingHost);
-          if (MOZ_UNLIKELY(insertTextResult.isErr())) {
-            NS_WARNING("WhiteSpaceVisibilityKeeper::InsertText() failed");
-            return insertTextResult.propagateErr();
-          }
-          
-          
-          insertTextResult.inspect().IgnoreCaretPointSuggestion();
-          pos++;
-          if (insertTextResult.inspect().Handled()) {
-            pointToInsert = currentPoint = insertTextResult.unwrap()
-                                               .EndOfInsertedTextRef()
-                                               .To<EditorDOMPoint>();
-            MOZ_ASSERT(pointToInsert.IsSet());
-          } else {
-            pointToInsert = currentPoint;
-            MOZ_ASSERT(pointToInsert.IsSet());
-          }
-        }
-        
-        else if (subStr.Equals(newlineStr)) {
-          Result<CreateElementResult, nsresult> insertBRElementResult =
-              WhiteSpaceVisibilityKeeper::InsertBRElement(*this, currentPoint,
-                                                          *editingHost);
-          if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
-            NS_WARNING("WhiteSpaceVisibilityKeeper::InsertBRElement() failed");
-            return insertBRElementResult.propagateErr();
-          }
-          CreateElementResult unwrappedInsertBRElementResult =
-              insertBRElementResult.unwrap();
-          
-          
-          
-          nsresult rv = unwrappedInsertBRElementResult.SuggestCaretPointTo(
-              *this, {SuggestCaret::OnlyIfHasSuggestion,
-                      SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                      SuggestCaret::AndIgnoreTrivialError});
-          if (NS_FAILED(rv)) {
-            NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
-            return Err(rv);
-          }
-          NS_WARNING_ASSERTION(
-              rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-              "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
-          pos++;
-          RefPtr<Element> newBRElement =
-              unwrappedInsertBRElementResult.UnwrapNewNode();
-          MOZ_DIAGNOSTIC_ASSERT(newBRElement);
-          if (newBRElement->GetNextSibling()) {
-            pointToInsert.Set(newBRElement->GetNextSibling());
-          } else {
-            pointToInsert.SetToEndOf(currentPoint.GetContainer());
-          }
-          currentPoint.SetAfter(newBRElement);
-          NS_WARNING_ASSERTION(currentPoint.IsSet(),
-                               "Failed to set after the new <br> element");
-          
-          
-          
-          
-          NS_WARNING_ASSERTION(
-              currentPoint == pointToInsert,
-              "Perhaps, newBRElement has been moved or removed unexpectedly");
-        } else {
-          Result<InsertTextResult, nsresult> insertTextResult =
-              WhiteSpaceVisibilityKeeper::InsertText(
-                  *this, subStr, currentPoint,
-                  InsertTextTo::ExistingTextNodeIfAvailable, *editingHost);
+        if (lineLength) {
+          auto insertTextResult =
+              [&]() MOZ_CAN_RUN_SCRIPT -> Result<InsertTextResult, nsresult> {
+            
+            const nsDependentSubstring lineText(aInsertionString,
+                                                lineStartOffset, lineLength);
+            if (!lineText.Contains(u'\t')) {
+              return WhiteSpaceVisibilityKeeper::InsertText(
+                  *this, lineText, currentPoint,
+                  GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset),
+                  *editingHost);
+            }
+            nsAutoString formattedLineText(lineText);
+            formattedLineText.ReplaceSubstring(u"\t"_ns, u"    "_ns);
+            return WhiteSpaceVisibilityKeeper::InsertText(
+                *this, formattedLineText, currentPoint,
+                GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset),
+                *editingHost);
+          }();
           if (MOZ_UNLIKELY(insertTextResult.isErr())) {
             NS_WARNING("WhiteSpaceVisibilityKeeper::InsertText() failed");
             return insertTextResult.propagateErr();
@@ -1473,12 +1421,56 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
             pointToInsert = currentPoint = insertTextResult.unwrap()
                                                .EndOfInsertedTextRef()
                                                .To<EditorDOMPoint>();
-            MOZ_ASSERT(pointToInsert.IsSet());
           } else {
             pointToInsert = currentPoint;
-            MOZ_ASSERT(pointToInsert.IsSet());
+          }
+          if (inclusiveNextLinefeedOffset < 0) {
+            break;  
           }
         }
+
+        Result<CreateElementResult, nsresult> insertBRElementResult =
+            WhiteSpaceVisibilityKeeper::InsertBRElement(*this, currentPoint,
+                                                        *editingHost);
+        if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
+          NS_WARNING("WhiteSpaceVisibilityKeeper::InsertBRElement() failed");
+          return insertBRElementResult.propagateErr();
+        }
+        CreateElementResult unwrappedInsertBRElementResult =
+            insertBRElementResult.unwrap();
+        
+        
+        
+        nsresult rv = unwrappedInsertBRElementResult.SuggestCaretPointTo(
+            *this, {SuggestCaret::OnlyIfHasSuggestion,
+                    SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                    SuggestCaret::AndIgnoreTrivialError});
+        if (NS_FAILED(rv)) {
+          NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+          return Err(rv);
+        }
+        NS_WARNING_ASSERTION(
+            rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+            "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
+        nextOffset = inclusiveNextLinefeedOffset + 1;
+        RefPtr<Element> newBRElement =
+            unwrappedInsertBRElementResult.UnwrapNewNode();
+        MOZ_DIAGNOSTIC_ASSERT(newBRElement);
+        if (newBRElement->GetNextSibling()) {
+          pointToInsert.Set(newBRElement->GetNextSibling());
+        } else {
+          pointToInsert.SetToEndOf(currentPoint.GetContainer());
+        }
+        currentPoint.SetAfter(newBRElement);
+        NS_WARNING_ASSERTION(currentPoint.IsSet(),
+                             "Failed to set after the new <br> element");
+        
+        
+        
+        
+        NS_WARNING_ASSERTION(
+            currentPoint == pointToInsert,
+            "Perhaps, newBRElement has been moved or removed unexpectedly");
       }
     }
 
