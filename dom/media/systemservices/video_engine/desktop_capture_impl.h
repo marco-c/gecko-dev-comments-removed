@@ -24,8 +24,10 @@
 #include "api/video/video_sink_interface.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/video_capture/video_capture.h"
+#include "rtc_base/synchronization/mutex.h"
 
 #include "desktop_device_info.h"
+#include "MediaEngineSource.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
@@ -84,7 +86,7 @@ class ScreenDeviceInfoImpl : public VideoCaptureModule::DeviceInfo {
 
 class WindowDeviceInfoImpl : public VideoCaptureModule::DeviceInfo {
  public:
-  WindowDeviceInfoImpl(int32_t aId) : mId(aId){};
+  WindowDeviceInfoImpl(int32_t aId) : mId(aId) {};
   virtual ~WindowDeviceInfoImpl() = default;
 
   int32_t Init();
@@ -120,7 +122,7 @@ class WindowDeviceInfoImpl : public VideoCaptureModule::DeviceInfo {
 
 class BrowserDeviceInfoImpl : public VideoCaptureModule::DeviceInfo {
  public:
-  BrowserDeviceInfoImpl(int32_t aId) : mId(aId){};
+  BrowserDeviceInfoImpl(int32_t aId) : mId(aId) {};
   virtual ~BrowserDeviceInfoImpl() = default;
 
   int32_t Init();
@@ -162,7 +164,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
  public:
   
 
-  static VideoCaptureModule* Create(
+  static DesktopCaptureImpl* Create(
       const int32_t aModuleId, const char* aUniqueId,
       const mozilla::camera::CaptureDeviceType aType);
 
@@ -192,6 +194,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   int32_t CaptureSettings(VideoCaptureCapability& aSettings) override;
 
   void CaptureFrameOnThread();
+  mozilla::MediaEventSource<void>* CaptureEndedEvent();
 
   const int32_t mModuleId;
   const mozilla::TrackingId mTrackingId;
@@ -242,6 +245,8 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   
   
   mozilla::DataMutex<std::set<rtc::VideoSinkInterface<VideoFrame>*>> mCallbacks;
+  
+  mozilla::MediaEventProducer<void> mCaptureEndedEvent;
 };
 
 }  
