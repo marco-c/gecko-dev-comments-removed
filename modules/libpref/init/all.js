@@ -592,7 +592,7 @@ pref("toolkit.telemetry.dap_visit_counting_enabled", false);
 
 pref("toolkit.telemetry.dap_visit_counting_experiment_list", "[]");
 
-pref("toolkit.telemetry.dap_leader", "https://dap-07-1.api.divviup.org/");
+pref("toolkit.telemetry.dap_leader", "https://dap-09-3.api.divviup.org/");
 
 pref("toolkit.telemetry.dap_leader_owner", "ISRG");
 
