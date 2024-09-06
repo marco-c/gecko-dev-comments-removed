@@ -16,6 +16,8 @@
 #include <map>
 #include <vector>
 
+#include "api/neteq/neteq.h"
+
 namespace webrtc {
 namespace test {
 
@@ -74,6 +76,9 @@ class NetEqSimulator {
 
   
   virtual NetEqState GetNetEqState() = 0;
+
+  
+  virtual NetEq* GetNetEq() = 0;
 };
 
 }  
