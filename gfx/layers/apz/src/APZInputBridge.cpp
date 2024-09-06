@@ -58,6 +58,98 @@ APZHandledResult::APZHandledResult(APZHandledPlace aPlace,
   }
 }
 
+
+Maybe<APZHandledResult> APZHandledResult::Initialize(
+    const AsyncPanZoomController* aInitialTarget,
+    DispatchToContent aDispatchToContent) {
+  if (!aInitialTarget->IsRootContent()) {
+    
+    
+    
+    return Some(
+        APZHandledResult{APZHandledPlace::HandledByContent, aInitialTarget});
+  }
+
+  if (!bool(aDispatchToContent)) {
+    
+    
+    return Some(
+        APZHandledResult{APZHandledPlace::HandledByRoot, aInitialTarget});
+  }
+
+  
+  return Nothing();
+}
+
+
+void APZHandledResult::UpdateForTouchEvent(
+    Maybe<APZHandledResult>& aHandledResult, const InputBlockState& aBlock,
+    PointerEventsConsumableFlags aConsumableFlags,
+    const AsyncPanZoomController* aTarget,
+    DispatchToContent aDispatchToContent) {
+  
+  
+  
+  
+  if (!aConsumableFlags.mAllowedByTouchAction) {
+    aHandledResult =
+        Some(APZHandledResult{APZHandledPlace::HandledByContent, aTarget});
+    aHandledResult->mOverscrollDirections = ScrollDirections();
+    return;
+  }
+
+  if (aHandledResult && !bool(aDispatchToContent) &&
+      !aConsumableFlags.mHasRoom) {
+    
+    
+    
+    aHandledResult->mPlace = APZHandledPlace::Unhandled;
+  }
+
+  if (aTarget && !aTarget->IsRootContent()) {
+    
+    
+    
+    bool mayTriggerPullToRefresh =
+        aBlock.GetOverscrollHandoffChain()->ScrollingUpWillTriggerPullToRefresh(
+            aTarget);
+    if (mayTriggerPullToRefresh) {
+      
+      
+      
+      
+      aHandledResult = bool(aDispatchToContent)
+                           ? Nothing()
+                           : Some(APZHandledResult{APZHandledPlace::Unhandled,
+                                                   aTarget, true});
+    }
+
+    auto [mayMoveDynamicToolbar, rootApzc] =
+        aBlock.GetOverscrollHandoffChain()->ScrollingDownWillMoveDynamicToolbar(
+            aTarget);
+    if (mayMoveDynamicToolbar) {
+      MOZ_ASSERT(rootApzc && rootApzc->IsRootContent());
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      aHandledResult =
+          bool(aDispatchToContent)
+              ? Nothing()
+              : Some(APZHandledResult{aConsumableFlags.IsConsumable()
+                                          ? APZHandledPlace::HandledByRoot
+                                          : APZHandledPlace::Unhandled,
+                                      rootApzc});
+    }
+  }
+}
+
 APZEventResult::APZEventResult()
     : mStatus(nsEventStatus_eIgnore),
       mInputBlockId(InputBlockState::NO_BLOCK_ID) {}
@@ -66,25 +158,8 @@ APZEventResult::APZEventResult(
     const RefPtr<AsyncPanZoomController>& aInitialTarget,
     TargetConfirmationFlags aFlags)
     : APZEventResult() {
-  mHandledResult = [&]() -> Maybe<APZHandledResult> {
-    if (!aInitialTarget->IsRootContent()) {
-      
-      
-      
-      return Some(
-          APZHandledResult{APZHandledPlace::HandledByContent, aInitialTarget});
-    }
-
-    if (!aFlags.mDispatchToContent) {
-      
-      
-      return Some(
-          APZHandledResult{APZHandledPlace::HandledByRoot, aInitialTarget});
-    }
-
-    
-    return Nothing();
-  }();
+  mHandledResult = APZHandledResult::Initialize(aInitialTarget,
+                                                aFlags.NeedDispatchToContent());
   aInitialTarget->GetGuid(&mTargetGuid);
 }
 
@@ -114,74 +189,9 @@ void APZEventResult::SetStatusForTouchEvent(
   mStatus = aConsumableFlags.IsConsumable() ? nsEventStatus_eConsumeDoDefault
                                             : nsEventStatus_eIgnore;
 
-  UpdateHandledResult(aBlock, aConsumableFlags, aTarget,
-                      aFlags.mDispatchToContent);
-}
-
-void APZEventResult::UpdateHandledResult(
-    const InputBlockState& aBlock,
-    PointerEventsConsumableFlags aConsumableFlags,
-    const AsyncPanZoomController* aTarget, bool aDispatchToContent) {
-  
-  
-  
-  
-  if (!aConsumableFlags.mAllowedByTouchAction) {
-    mHandledResult =
-        Some(APZHandledResult{APZHandledPlace::HandledByContent, aTarget});
-    mHandledResult->mOverscrollDirections = ScrollDirections();
-    return;
-  }
-
-  if (mHandledResult && !aDispatchToContent && !aConsumableFlags.mHasRoom) {
-    
-    
-    
-    mHandledResult->mPlace = APZHandledPlace::Unhandled;
-  }
-
-  if (aTarget && !aTarget->IsRootContent()) {
-    
-    
-    
-    bool mayTriggerPullToRefresh =
-        aBlock.GetOverscrollHandoffChain()->ScrollingUpWillTriggerPullToRefresh(
-            aTarget);
-    if (mayTriggerPullToRefresh) {
-      
-      
-      
-      
-      mHandledResult = (aDispatchToContent)
-                           ? Nothing()
-                           : Some(APZHandledResult{APZHandledPlace::Unhandled,
-                                                   aTarget, true});
-    }
-
-    auto [mayMoveDynamicToolbar, rootApzc] =
-        aBlock.GetOverscrollHandoffChain()->ScrollingDownWillMoveDynamicToolbar(
-            aTarget);
-    if (mayMoveDynamicToolbar) {
-      MOZ_ASSERT(rootApzc && rootApzc->IsRootContent());
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      mHandledResult =
-          aDispatchToContent
-              ? Nothing()
-              : Some(APZHandledResult{aConsumableFlags.IsConsumable()
-                                          ? APZHandledPlace::HandledByRoot
-                                          : APZHandledPlace::Unhandled,
-                                      rootApzc});
-    }
-  }
+  APZHandledResult::UpdateForTouchEvent(mHandledResult, aBlock,
+                                        aConsumableFlags, aTarget,
+                                        aFlags.NeedDispatchToContent());
 }
 
 void APZEventResult::SetStatusForFastFling(
@@ -197,8 +207,8 @@ void APZEventResult::SetStatusForFastFling(
   
   
   
-  UpdateHandledResult(aBlock, aConsumableFlags, aTarget, false 
-);
+  APZHandledResult::UpdateForTouchEvent(
+      mHandledResult, aBlock, aConsumableFlags, aTarget, DispatchToContent::No);
 }
 
 static bool WillHandleMouseEvent(const WidgetMouseEventBase& aEvent) {

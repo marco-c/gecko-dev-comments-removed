@@ -10,6 +10,7 @@
 #include "Units.h"                  
 #include "mozilla/EventForwards.h"  
 #include "mozilla/layers/APZPublicUtils.h"       
+#include "mozilla/layers/APZUtils.h"             
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 
@@ -73,6 +74,21 @@ struct APZHandledResult {
            mScrollableDirections == aOther.mScrollableDirections &&
            mOverscrollDirections == aOther.mOverscrollDirections;
   }
+
+  
+  
+  static Maybe<APZHandledResult> Initialize(
+      const AsyncPanZoomController* aInitialTarget,
+      DispatchToContent aDispatchToContent);
+
+  
+  
+  
+  static void UpdateForTouchEvent(Maybe<APZHandledResult>& aHandledResult,
+                                  const InputBlockState& aBlock,
+                                  PointerEventsConsumableFlags aConsumableFlags,
+                                  const AsyncPanZoomController* aTarget,
+                                  DispatchToContent aDispatchToContent);
 };
 
 
@@ -148,11 +164,6 @@ struct APZEventResult {
   }
 
  private:
-  void UpdateHandledResult(const InputBlockState& aBlock,
-                           PointerEventsConsumableFlags aConsumableFlags,
-                           const AsyncPanZoomController* aTarget,
-                           bool aDispatchToContent);
-
   
 
 
