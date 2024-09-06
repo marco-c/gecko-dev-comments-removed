@@ -27,6 +27,7 @@ public final class SessionFinder {
 
   private static final List<Pair<Integer, String>> sFlagNames =
       Arrays.asList(
+          new Pair<>(GeckoSession.FINDER_FIND_FORWARD, "forward"),
           new Pair<>(GeckoSession.FINDER_FIND_BACKWARDS, "backwards"),
           new Pair<>(GeckoSession.FINDER_FIND_LINKS_ONLY, "linksOnly"),
           new Pair<>(GeckoSession.FINDER_FIND_MATCH_CASE, "matchCase"),
@@ -64,6 +65,7 @@ public final class SessionFinder {
   }
 
   
+
 
 
 

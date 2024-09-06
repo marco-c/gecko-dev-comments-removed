@@ -2448,12 +2448,16 @@ public class GeckoSession {
   @IntDef(
       flag = true,
       value = {
+        FINDER_FIND_FORWARD,
         FINDER_FIND_BACKWARDS,
         FINDER_FIND_LINKS_ONLY,
         FINDER_FIND_MATCH_CASE,
         FINDER_FIND_WHOLE_WORD
       })
   public @interface FinderFindFlags {}
+
+  
+  public static final int FINDER_FIND_FORWARD = 0;
 
   
   public static final int FINDER_FIND_BACKWARDS = 1;
