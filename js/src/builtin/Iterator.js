@@ -216,6 +216,29 @@ function WrapForValidIteratorReturn() {
   return callContentFunction(returnMethod, iterator);
 }
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+
+
+
+
+
+function IteratorDispose() {
+  
+  var O = this;
+
+  
+  var returnMethod = GetMethod(O, "return");
+
+  
+  if (returnMethod !== undefined) {
+    
+    callContentFunction(returnMethod, O);
+  }
+
+  
+}
+#endif
+
 
 
 
