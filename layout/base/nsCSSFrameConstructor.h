@@ -1665,13 +1665,35 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  void BuildScrollFrame(nsFrameConstructorState& aState, nsIContent* aContent,
-                        ComputedStyle* aContentStyle, nsIFrame* aScrolledFrame,
-                        nsContainerFrame* aParentFrame,
-                        nsContainerFrame*& aNewFrame);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void BuildScrollContainerFrame(nsFrameConstructorState& aState,
+                                 nsIContent* aContent,
+                                 ComputedStyle* aContentStyle,
+                                 nsIFrame* aScrolledFrame,
+                                 nsContainerFrame* aParentFrame,
+                                 nsContainerFrame*& aNewFrame);
 
   
-  already_AddRefed<ComputedStyle> BeginBuildingScrollFrame(
+  already_AddRefed<ComputedStyle> BeginBuildingScrollContainerFrame(
       nsFrameConstructorState& aState, nsIContent* aContent,
       ComputedStyle* aContentStyle, nsContainerFrame* aParentFrame,
       mozilla::PseudoStyleType aScrolledPseudo, bool aIsRoot,
@@ -1680,8 +1702,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  void FinishBuildingScrollFrame(nsContainerFrame* aScrollFrame,
-                                 nsIFrame* aScrolledFrame);
+  void FinishBuildingScrollContainerFrame(
+      nsContainerFrame* aScrollContainerFrame, nsIFrame* aScrolledFrame);
 
   void InitializeListboxSelect(nsFrameConstructorState& aState,
                                nsContainerFrame* aScrollFrame,
