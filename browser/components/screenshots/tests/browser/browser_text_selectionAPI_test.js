@@ -27,6 +27,15 @@ add_task(async function test_textSelectedDuringScreenshot() {
 
       await helper.clickTestPageElement("selection");
 
+      
+      
+      
+      
+      await ContentTask.spawn(browser, [], async () => {
+        let selection = content.window.getSelection();
+        selection.removeAllRanges();
+      });
+
       let clipboardChanged = helper.waitForRawClipboardChange(
         Math.round(rect.width),
         Math.round(rect.height),
