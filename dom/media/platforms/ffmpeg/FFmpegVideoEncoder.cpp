@@ -169,10 +169,6 @@ struct SVCLayerSettings {
 static Maybe<SVCLayerSettings> GetSVCLayerSettings(CodecType aCodec,
                                                    const ScalabilityMode& aMode,
                                                    uint32_t aBitPerSec) {
-  if (aMode == ScalabilityMode::None) {
-    return Nothing();
-  }
-
   
   
 
@@ -344,24 +340,28 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
     mLib->av_opt_set(mCodecContext->priv_data, "lag-in-frames", "0", 0);
   }
 
-  if (Maybe<SVCSettings> settings = GetSVCSettings()) {
-    if (mCodecName == "libaom-av1") {
-      if (mConfig.mBitrateMode != BitrateMode::Constant) {
-        return NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR;
+  if (SvcEnabled()) {
+    if (Maybe<SVCSettings> settings = GetSVCSettings()) {
+      if (mCodecName == "libaom-av1") {
+        if (mConfig.mBitrateMode != BitrateMode::Constant) {
+          return NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR;
+        }
       }
+
+      SVCSettings s = settings.extract();
+      FFMPEGV_LOG("SVC options string: %s=%s", s.mSettingKeyValue.first.get(),
+                  s.mSettingKeyValue.second.get());
+      mLib->av_opt_set(mCodecContext->priv_data, s.mSettingKeyValue.first.get(),
+                       s.mSettingKeyValue.second.get(), 0);
+
+      
+      
+      mSVCInfo.reset();
+      mSVCInfo.emplace(std::move(s.mTemporalLayerIds));
+
+      
+      
     }
-
-    SVCSettings s = settings.extract();
-    mLib->av_opt_set(mCodecContext->priv_data, s.mSettingKeyValue.first.get(),
-                     s.mSettingKeyValue.second.get(), 0);
-
-    
-    
-    mSVCInfo.reset();
-    mSVCInfo.emplace(std::move(s.mTemporalLayerIds));
-
-    
-    
   }
 
   nsAutoCString h264Log;
