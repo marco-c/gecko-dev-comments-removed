@@ -622,9 +622,6 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   
 
-  void OnThreadIdChanged();
-  
-
   bool CheckThreadIdChanged();
 
   bool OnThread() const override {
