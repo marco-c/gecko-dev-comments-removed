@@ -50,18 +50,13 @@ nsIFrame* nsSplittableFrame::GetPrevContinuation() const {
   return mPrevContinuation;
 }
 
-void nsSplittableFrame::SetPrevContinuationWithoutUpdatingCache(
-    nsIFrame* aFrame) {
+void nsSplittableFrame::SetPrevContinuation(nsIFrame* aFrame) {
   NS_ASSERTION(!aFrame || Type() == aFrame->Type(),
                "setting a prev continuation with incorrect type!");
   NS_ASSERTION(!IsInPrevContinuationChain(aFrame, this),
                "creating a loop in continuation chain!");
   mPrevContinuation = aFrame;
   RemoveStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
-}
-
-void nsSplittableFrame::SetPrevContinuation(nsIFrame* aFrame) {
-  SetPrevContinuationWithoutUpdatingCache(aFrame);
   UpdateFirstContinuationAndFirstInFlowCache();
 }
 
@@ -138,17 +133,13 @@ nsIFrame* nsSplittableFrame::GetPrevInFlow() const {
                                                          : nullptr;
 }
 
-void nsSplittableFrame::SetPrevInFlowWithoutUpdatingCache(nsIFrame* aFrame) {
+void nsSplittableFrame::SetPrevInFlow(nsIFrame* aFrame) {
   NS_ASSERTION(!aFrame || Type() == aFrame->Type(),
                "setting a prev in flow with incorrect type!");
   NS_ASSERTION(!IsInPrevContinuationChain(aFrame, this),
                "creating a loop in continuation chain!");
   mPrevContinuation = aFrame;
   AddStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
-}
-
-void nsSplittableFrame::SetPrevInFlow(nsIFrame* aFrame) {
-  SetPrevInFlowWithoutUpdatingCache(aFrame);
   UpdateFirstContinuationAndFirstInFlowCache();
 }
 
@@ -206,20 +197,23 @@ void nsSplittableFrame::RemoveFromFlow(nsIFrame* aFrame) {
       prevContinuation->SetNextInFlow(nextContinuation);
     }
     if (nextContinuation) {
-      nextContinuation->SetPrevInFlowWithoutUpdatingCache(prevContinuation);
+      nextContinuation->SetPrevInFlow(prevContinuation);
     }
   } else {
     if (prevContinuation) {
       prevContinuation->SetNextContinuation(nextContinuation);
     }
     if (nextContinuation) {
-      nextContinuation->SetPrevContinuationWithoutUpdatingCache(
-          prevContinuation);
+      nextContinuation->SetPrevContinuation(prevContinuation);
     }
   }
 
+  
+  
+  
+  
   aFrame->SetNextInFlow(nullptr);
-  aFrame->SetPrevInFlowWithoutUpdatingCache(nullptr);
+  aFrame->SetPrevInFlow(nullptr);
 }
 
 void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {

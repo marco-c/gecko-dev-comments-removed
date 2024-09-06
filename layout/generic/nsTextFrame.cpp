@@ -4115,7 +4115,7 @@ void nsTextFrame::Destroy(DestroyContext& aContext) {
   
   ClearTextRuns();
   if (mNextContinuation) {
-    mNextContinuation->SetPrevInFlowWithoutUpdatingCache(nullptr);
+    mNextContinuation->SetPrevInFlow(nullptr);
   }
   
   nsIFrame::Destroy(aContext);
@@ -4164,8 +4164,7 @@ class nsContinuingTextFrame final : public nsTextFrame {
 
   nsTextFrame* GetPrevContinuation() const final { return mPrevContinuation; }
 
-  void SetPrevContinuationWithoutUpdatingCache(
-      nsIFrame* aPrevContinuation) final {
+  void SetPrevContinuation(nsIFrame* aPrevContinuation) final {
     NS_ASSERTION(!aPrevContinuation || Type() == aPrevContinuation->Type(),
                  "setting a prev continuation with incorrect type!");
     NS_ASSERTION(
@@ -4173,10 +4172,6 @@ class nsContinuingTextFrame final : public nsTextFrame {
         "creating a loop in continuation chain!");
     mPrevContinuation = static_cast<nsTextFrame*>(aPrevContinuation);
     RemoveStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
-  }
-
-  void SetPrevContinuation(nsIFrame* aPrevContinuation) final {
-    SetPrevContinuationWithoutUpdatingCache(aPrevContinuation);
     UpdateCachedContinuations();
   }
 
@@ -4185,7 +4180,7 @@ class nsContinuingTextFrame final : public nsTextFrame {
                                                            : nullptr;
   }
 
-  void SetPrevInFlowWithoutUpdatingCache(nsIFrame* aPrevInFlow) final {
+  void SetPrevInFlow(nsIFrame* aPrevInFlow) final {
     NS_ASSERTION(!aPrevInFlow || Type() == aPrevInFlow->Type(),
                  "setting a prev in flow with incorrect type!");
     NS_ASSERTION(
@@ -4193,10 +4188,6 @@ class nsContinuingTextFrame final : public nsTextFrame {
         "creating a loop in continuation chain!");
     mPrevContinuation = static_cast<nsTextFrame*>(aPrevInFlow);
     AddStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
-  }
-
-  void SetPrevInFlow(nsIFrame* aPrevInFlow) final {
-    SetPrevInFlowWithoutUpdatingCache(aPrevInFlow);
     UpdateCachedContinuations();
   }
 
@@ -9200,8 +9191,10 @@ static void RemoveEmptyInFlows(nsTextFrame* aFrame,
   
   
   
+  
+  
   lastRemoved->SetNextInFlow(nullptr);
-  aFrame->SetPrevInFlowWithoutUpdatingCache(nullptr);
+  aFrame->SetPrevInFlow(nullptr);
 
   nsContainerFrame* parent = aFrame->GetParent();
   nsIFrame::DestroyContext context(aFrame->PresShell());

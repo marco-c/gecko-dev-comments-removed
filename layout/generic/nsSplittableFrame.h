@@ -84,10 +84,6 @@ class nsSplittableFrame : public nsIFrame {
   nsIFrame* LastInFlow() const final;
 
   
-  void SetPrevContinuationWithoutUpdatingCache(nsIFrame*) final;
-  void SetPrevInFlowWithoutUpdatingCache(nsIFrame*) final;
-
-  
   
   
   static void RemoveFromFlow(nsIFrame* aFrame);
