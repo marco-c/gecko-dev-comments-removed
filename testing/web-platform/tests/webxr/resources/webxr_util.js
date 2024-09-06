@@ -26,16 +26,19 @@ function xr_promise_test(name, func, properties, glContextType, glContextPropert
 
     
     if (!navigator.xr.test) {
-      
-      const script = document.createElement('script');
-      script.src = '/resources/test-only-api.js';
-      script.async = false;
-      const p = new Promise((resolve, reject) => {
-        script.onload = () => { resolve(); };
-        script.onerror = e => { reject(e); };
-      })
-      document.head.appendChild(script);
-      await p;
+
+      if (typeof isChromiumBased === 'undefined' || typeof isWebKitBased === 'undefined') {
+        
+        const script = document.createElement('script');
+        script.src = '/resources/test-only-api.js';
+        script.async = false;
+        const p = new Promise((resolve, reject) => {
+          script.onload = () => { resolve(); };
+          script.onerror = e => { reject(e); };
+        });
+        document.head.appendChild(script);
+        await p;
+      }
 
       if (isChromiumBased) {
         
