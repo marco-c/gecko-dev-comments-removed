@@ -981,6 +981,13 @@ static void ReloadPrefsCallback(const char* pref, void* aXpccx) {
   auto& contextOptions = JS::ContextOptionsRef(cx);
   SetPrefableContextOptions(contextOptions);
 
+#ifdef NIGHTLY_BUILD
+  JS_SetGlobalJitCompilerOption(
+      cx, JSJITCOMPILER_REGEXP_DUPLICATE_NAMED_GROUPS,
+      StaticPrefs::
+          javascript_options_experimental_regexp_duplicate_named_groups());
+#endif
+
   
   contextOptions
       .setThrowOnDebuggeeWouldRun(Preferences::GetBool(
