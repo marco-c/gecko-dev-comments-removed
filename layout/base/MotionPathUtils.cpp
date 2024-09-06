@@ -740,18 +740,22 @@ already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
     case StyleBasicShape::Tag::Polygon:
       return ShapeUtils::BuildPolygonPath(aBasicShape, aCoordBox,
                                           AppUnitsPerCSSPixel(), aPathBuilder);
-    case StyleBasicShape::Tag::Path:
+    case StyleBasicShape::Tag::PathOrShape: {
       
       
       
       
-      return BuildSVGPath(aBasicShape.AsPath().path, aPathBuilder);
-    case StyleBasicShape::Tag::Shape:
+      const auto& pathOrShape = aBasicShape.AsPathOrShape();
+      if (pathOrShape.IsPath()) {
+        return BuildSVGPath(pathOrShape.AsPath().path, aPathBuilder);
+      }
+
       
       
       
-      return BuildShape(aBasicShape.AsShape().commands.AsSpan(), aPathBuilder,
+      return BuildShape(pathOrShape.AsShape().commands.AsSpan(), aPathBuilder,
                         aCoordBox);
+    }
   }
 
   return nullptr;

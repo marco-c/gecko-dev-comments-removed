@@ -205,9 +205,7 @@ pub enum GenericBasicShape<
     
     Polygon(GenericPolygon<LengthPercentage>),
     
-    Path(Path),
-    
-    Shape(#[css(field_bound)] Shape<Angle, LengthPercentage>),
+    PathOrShape(#[css(field_bound)] GenericPathOrShapeFunction<Angle, LengthPercentage>),
 }
 
 pub use self::GenericBasicShape as BasicShape;
@@ -370,6 +368,31 @@ pub use self::GenericPolygon as Polygon;
 )]
 #[repr(C)]
 pub struct PolygonCoord<LengthPercentage>(pub LengthPercentage, pub LengthPercentage);
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum GenericPathOrShapeFunction<Angle, LengthPercentage> {
+    
+    Path(Path),
+    
+    Shape(#[css(field_bound)] Shape<Angle, LengthPercentage>),
+}
 
 
 

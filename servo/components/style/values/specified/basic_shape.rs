@@ -64,6 +64,9 @@ pub type ShapeRadius = generic::ShapeRadius<NonNegativeLengthPercentage>;
 pub type Polygon = generic::GenericPolygon<LengthPercentage>;
 
 
+pub type PathOrShapeFunction = generic::GenericPathOrShapeFunction<Angle, LengthPercentage>;
+
+
 pub type ShapeCommand = generic::GenericShapeCommand<Angle, LengthPercentage>;
 
 
@@ -335,14 +338,17 @@ impl BasicShape {
                         .map(BasicShape::Polygon)
                 },
                 "path" if flags.contains(AllowedBasicShapes::PATH) => {
-                    Path::parse_function_arguments(i, shape_type).map(BasicShape::Path)
+                    Path::parse_function_arguments(i, shape_type)
+                        .map(PathOrShapeFunction::Path)
+                        .map(BasicShape::PathOrShape)
                 },
                 "shape"
                     if flags.contains(AllowedBasicShapes::SHAPE)
                         && static_prefs::pref!("layout.css.basic-shape-shape.enabled") =>
                 {
                     generic::Shape::parse_function_arguments(context, i, shape_type)
-                        .map(BasicShape::Shape)
+                        .map(PathOrShapeFunction::Shape)
+                        .map(BasicShape::PathOrShape)
                 },
                 _ => Err(location
                     .new_custom_error(StyleParseErrorKind::UnexpectedFunction(function.clone()))),
