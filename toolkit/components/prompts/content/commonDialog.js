@@ -44,40 +44,43 @@ function commonDialogOnLoad() {
     root.setAttribute("neediconheader", "true");
   }
   let title = { raw: args.title };
-  let { promptPrincipal } = args;
-  if (promptPrincipal) {
-    if (promptPrincipal.isNullPrincipal) {
-      title = { l10nId: "common-dialog-title-null" };
-    } else if (promptPrincipal.isSystemPrincipal) {
-      title = { l10nId: "common-dialog-title-system" };
-      root.style.setProperty(
-        "--icon-url",
-        "url('chrome://branding/content/icon32.png')"
-      );
-    } else if (promptPrincipal.addonPolicy) {
-      title.raw = promptPrincipal.addonPolicy.name;
-    } else if (promptPrincipal.isContentPrincipal) {
-      try {
-        title.raw = promptPrincipal.URI.displayHostPort;
-      } catch (ex) {
+  let { useTitle, promptPrincipal } = args;
+  if (!useTitle) {
+    if (promptPrincipal) {
+      if (promptPrincipal.isNullPrincipal) {
+        title = { l10nId: "common-dialog-title-null" };
+      } else if (promptPrincipal.isSystemPrincipal) {
+        title = { l10nId: "common-dialog-title-system" };
+        root.style.setProperty(
+          "--icon-url",
+          "url('chrome://branding/content/icon32.png')"
+        );
+      } else if (promptPrincipal.addonPolicy) {
+        title.raw = promptPrincipal.addonPolicy.name;
+      } else if (promptPrincipal.isContentPrincipal) {
+        try {
+          title.raw = promptPrincipal.URI.displayHostPort;
+        } catch (ex) {
+          
+          title.raw = promptPrincipal.originNoSuffix;
+        }
         
-        title.raw = promptPrincipal.originNoSuffix;
+        if (!title.raw) {
+          title.raw = promptPrincipal.prePath;
+        }
+      } else {
+        title = { l10nId: "common-dialog-title-unknown" };
       }
-      
-      if (!title.raw) {
-        title.raw = promptPrincipal.prePath;
-      }
-    } else {
-      title = { l10nId: "common-dialog-title-unknown" };
+    } else if (args.authOrigin) {
+      title = { raw: args.authOrigin };
     }
-  } else if (args.authOrigin) {
-    title = { raw: args.authOrigin };
   }
   if (args.headerIconURL) {
     root.style.setProperty("--icon-url", `url('${args.headerIconURL}')`);
   }
   
-  title.shouldUseMaskFade = title.raw && (args.authOrigin || promptPrincipal);
+  title.shouldUseMaskFade =
+    !useTitle && title.raw && (args.authOrigin || promptPrincipal);
   root.setAttribute("headertitle", JSON.stringify(title));
   if (args.isInsecureAuth) {
     dialog.setAttribute("insecureauth", "true");

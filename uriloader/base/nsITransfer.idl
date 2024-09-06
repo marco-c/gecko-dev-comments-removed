@@ -134,6 +134,12 @@ interface nsITransfer : nsIWebProgressListener2 {
 
 
     void setRedirects(in nsIArray aRedirects);
+
+    
+
+
+
+    readonly attribute Promise downloadPromise;
 };
 
 %{C++

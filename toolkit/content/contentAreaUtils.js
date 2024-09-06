@@ -77,7 +77,8 @@ function saveURL(
   aCookieJarSettings,
   aSourceDocument,
   aIsContentWindowPrivate,
-  aPrincipal
+  aPrincipal,
+  aSaveCompleteCallback
 ) {
   internalSave(
     aURL,
@@ -95,7 +96,8 @@ function saveURL(
     aSkipPrompt,
     null,
     aIsContentWindowPrivate,
-    aPrincipal
+    aPrincipal,
+    aSaveCompleteCallback
   );
 }
 
@@ -257,6 +259,8 @@ XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
 
 
 
+
+
 function internalSave(
   aURL,
   aOriginalURL,
@@ -273,7 +277,8 @@ function internalSave(
   aSkipPrompt,
   aCacheKey,
   aIsContentWindowPrivate,
-  aPrincipal
+  aPrincipal,
+  aSaveCompleteCallback
 ) {
   if (aSkipPrompt == undefined) {
     aSkipPrompt = false;
@@ -331,6 +336,7 @@ function internalSave(
     promiseTargetFile(fpParams, aSkipPrompt, relatedURI)
       .then(aDialogAccepted => {
         if (!aDialogAccepted) {
+          aSaveCompleteCallback?.();
           return;
         }
 
@@ -389,12 +395,15 @@ function internalSave(
       contentPolicyType,
       cookieJarSettings: aCookieJarSettings,
       isPrivate,
+      saveCompleteCallback: aSaveCompleteCallback,
     };
 
     
     internalPersist(persistArgs);
   }
 }
+
+
 
 
 
@@ -467,6 +476,13 @@ function internalPersist(persistArgs) {
     persistArgs.sourceReferrerInfo
   );
   persist.progressListener = new DownloadListener(window, tr);
+  const { saveCompleteCallback } = persistArgs;
+  if (saveCompleteCallback) {
+    tr.downloadPromise
+      .then(aDownload => aDownload.whenSucceeded())
+      .catch(console.error)
+      .finally(saveCompleteCallback);
+  }
 
   if (persistArgs.sourceDocument) {
     
