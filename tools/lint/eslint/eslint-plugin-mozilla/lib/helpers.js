@@ -638,13 +638,19 @@ module.exports = {
 
 
 
+
+
   get rootDir() {
     if (!gRootDir) {
-      function searchUpForIgnore(dirName, filename) {
+      function searchUpForPackage(dirName) {
         let parsed = path.parse(dirName);
         while (parsed.root !== dirName) {
-          if (fs.existsSync(path.join(dirName, filename))) {
-            return dirName;
+          let possibleFile = path.join(dirName, "package.json");
+          if (fs.existsSync(possibleFile)) {
+            let packageData = require(possibleFile);
+            if (packageData.name == "mozilla-central") {
+              return dirName;
+            }
           }
           
           dirName = parsed.dir;
@@ -653,15 +659,9 @@ module.exports = {
         return null;
       }
 
-      let possibleRoot = searchUpForIgnore(
-        path.dirname(module.filename),
-        ".eslintignore"
-      );
+      let possibleRoot = searchUpForPackage(path.dirname(module.filename));
       if (!possibleRoot) {
-        possibleRoot = searchUpForIgnore(path.resolve(), ".eslintignore");
-      }
-      if (!possibleRoot) {
-        possibleRoot = searchUpForIgnore(path.resolve(), "package.json");
+        possibleRoot = searchUpForPackage(path.resolve());
       }
       if (!possibleRoot) {
         
