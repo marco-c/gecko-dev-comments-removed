@@ -194,7 +194,7 @@ RuleRewriter.prototype = {
     
     
     text = text.replace(/;$/, "");
-    const lexer = getCSSLexer(text);
+    const lexer = getCSSLexer(text, true, true);
 
     let result = "";
     let previousOffset = 0;
@@ -210,7 +210,7 @@ RuleRewriter.prototype = {
       
       
       
-      parenStack.push({ closer, offset: result.length - 1 });
+      parenStack.push({ closer, offset: result.length - 1, token });
       previousOffset = token.endOffset;
     };
 
@@ -225,6 +225,18 @@ RuleRewriter.prototype = {
 
         
         
+        
+        if (
+          paren.closer === ")" &&
+          closer == null &&
+          paren.token.tokenType === "Function" &&
+          paren.token.value === "url"
+        ) {
+          return true;
+        }
+
+        
+        
         result =
           result.substring(0, paren.offset) +
           "\\" +
@@ -234,50 +246,43 @@ RuleRewriter.prototype = {
       return false;
     };
 
-    while (true) {
-      const token = lexer.nextToken();
-      if (!token) {
-        break;
-      }
+    let token;
+    while ((token = lexer.nextToken())) {
+      switch (token.tokenType) {
+        case "Semicolon":
+          
+          
+          
+          result += text.substring(previousOffset, token.startOffset);
+          previousOffset = token.endOffset;
+          break;
 
-      if (token.tokenType === "symbol") {
-        switch (token.text) {
-          case ";":
-            
-            
+        case "CurlyBracketBlock":
+          pushParen(token, "}");
+          break;
+
+        case "ParenthesisBlock":
+        case "Function":
+          pushParen(token, ")");
+          break;
+
+        case "SquareBracketBlock":
+          pushParen(token, "]");
+          break;
+
+        case "CloseCurlyBracket":
+        case "CloseParenthesis":
+        case "CloseSquareBracket":
+          
+          if (!popSomeParens(token.text)) {
             
             result += text.substring(previousOffset, token.startOffset);
-            previousOffset = token.endOffset;
-            break;
-
-          case "{":
-            pushParen(token, "}");
-            break;
-
-          case "(":
-            pushParen(token, ")");
-            break;
-
-          case "[":
-            pushParen(token, "]");
-            break;
-
-          case "}":
-          case ")":
-          case "]":
             
-            if (!popSomeParens(token.text)) {
-              
-              result += text.substring(previousOffset, token.startOffset);
-              
-              result += "\\" + token.text;
-              previousOffset = token.endOffset;
-              anySanitized = true;
-            }
-            break;
-        }
-      } else if (token.tokenType === "function") {
-        pushParen(token, ")");
+            result += "\\" + token.text;
+            previousOffset = token.endOffset;
+            anySanitized = true;
+          }
+          break;
       }
     }
 
@@ -286,6 +291,7 @@ RuleRewriter.prototype = {
 
     
     result += text.substring(previousOffset, text.length);
+
     const eofFixup = lexer.performEOFFixup("", true);
     if (eofFixup) {
       anySanitized = true;
