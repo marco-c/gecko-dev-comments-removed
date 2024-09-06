@@ -83,6 +83,7 @@ enum class DeclarationKind : uint8_t {
   Const,
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   Using,
+  AwaitUsing,
 #endif
   Class,  
   Import,
@@ -124,8 +125,9 @@ static inline BindingKind DeclarationKindToBindingKind(DeclarationKind kind) {
 
     case DeclarationKind::Const:
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    case DeclarationKind::Using:  
-                                  
+    
+    case DeclarationKind::Using:
+    case DeclarationKind::AwaitUsing:
 #endif
       return BindingKind::Const;
 
