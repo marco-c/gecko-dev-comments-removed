@@ -164,6 +164,10 @@ struct ModuleMetadata {
     funcs[funcIndex].flags = flags;
   }
 
+  
+  
+  [[nodiscard]] Maybe<uint32_t> doInstanceLayout();
+
   uint32_t offsetOfFuncImportInstanceData(uint32_t funcIndex) const {
     MOZ_ASSERT(funcIndex < numFuncImports);
     return funcImportsOffsetStart + funcIndex * sizeof(FuncImportInstanceData);

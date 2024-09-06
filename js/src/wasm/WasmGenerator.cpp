@@ -136,60 +136,6 @@ ModuleGenerator::~ModuleGenerator() {
   }
 }
 
-
-
-static const uint32_t MaxInstanceDataOffset =
-    INT32_MAX - Instance::offsetOfData();
-
-bool ModuleGenerator::allocateInstanceDataBytes(uint32_t bytes, uint32_t align,
-                                                uint32_t* instanceDataOffset) {
-  CheckedInt<uint32_t> newInstanceDataLength(metadata_->instanceDataLength);
-
-  
-  newInstanceDataLength +=
-      ComputeByteAlignment(newInstanceDataLength.value(), align);
-  if (!newInstanceDataLength.isValid()) {
-    return false;
-  }
-
-  
-  *instanceDataOffset = newInstanceDataLength.value();
-
-  
-  newInstanceDataLength += bytes;
-  if (!newInstanceDataLength.isValid()) {
-    return false;
-  }
-
-  
-  
-  if (newInstanceDataLength.value() > MaxInstanceDataOffset + 1) {
-    return false;
-  }
-
-  metadata_->instanceDataLength = newInstanceDataLength.value();
-  return true;
-}
-
-bool ModuleGenerator::allocateInstanceDataBytesN(uint32_t bytes, uint32_t align,
-                                                 uint32_t count,
-                                                 uint32_t* instanceDataOffset) {
-  
-  
-  MOZ_ASSERT(bytes % align == 0);
-
-  
-  CheckedInt<uint32_t> totalBytes = bytes;
-  totalBytes *= count;
-  if (!totalBytes.isValid()) {
-    return false;
-  }
-
-  
-  return allocateInstanceDataBytes(totalBytes.value(), align,
-                                   instanceDataOffset);
-}
-
 bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
   
 
@@ -266,60 +212,16 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
   
   MOZ_ASSERT(metadata_->instanceDataLength == 0);
 
-  
-  if (!allocateInstanceDataBytesN(
-          sizeof(TypeDefInstanceData), alignof(TypeDefInstanceData),
-          moduleMeta_->types->length(), &moduleMeta_->typeDefsOffsetStart)) {
+  Maybe<uint32_t> maybeInstanceDataLength = moduleMeta_->doInstanceLayout();
+  if (!maybeInstanceDataLength) {
     return false;
   }
+
   metadata_->typeDefsOffsetStart = moduleMeta_->typeDefsOffsetStart;
-
-  
-  if (!allocateInstanceDataBytesN(
-          sizeof(FuncImportInstanceData), alignof(FuncImportInstanceData),
-          moduleMeta_->numFuncImports, &moduleMeta_->funcImportsOffsetStart)) {
-    return false;
-  }
-
-  
-  if (!allocateInstanceDataBytesN(
-          sizeof(MemoryInstanceData), alignof(MemoryInstanceData),
-          moduleMeta_->memories.length(), &moduleMeta_->memoriesOffsetStart)) {
-    return false;
-  }
   metadata_->memoriesOffsetStart = moduleMeta_->memoriesOffsetStart;
-
-  
-  if (!allocateInstanceDataBytesN(
-          sizeof(TableInstanceData), alignof(TableInstanceData),
-          moduleMeta_->tables.length(), &moduleMeta_->tablesOffsetStart)) {
-    return false;
-  }
   metadata_->tablesOffsetStart = moduleMeta_->tablesOffsetStart;
-
-  
-  if (!allocateInstanceDataBytesN(
-          sizeof(TagInstanceData), alignof(TagInstanceData),
-          moduleMeta_->tags.length(), &moduleMeta_->tagsOffsetStart)) {
-    return false;
-  }
   metadata_->tagsOffsetStart = moduleMeta_->tagsOffsetStart;
-
-  
-  for (GlobalDesc& global : moduleMeta_->globals) {
-    if (global.isConstant()) {
-      continue;
-    }
-
-    uint32_t width = global.isIndirect() ? sizeof(void*) : global.type().size();
-
-    uint32_t instanceDataOffset;
-    if (!allocateInstanceDataBytes(width, width, &instanceDataOffset)) {
-      return false;
-    }
-
-    global.setOffset(instanceDataOffset);
-  }
+  metadata_->instanceDataLength = *maybeInstanceDataLength;
 
   
   if (!metadataTier_->funcImports.resize(moduleMeta_->numFuncImports)) {
