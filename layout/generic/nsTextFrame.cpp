@@ -8761,6 +8761,10 @@ bool nsTextFrame::IsCurrentFontInflation(float aInflation) const {
 }
 
 void nsTextFrame::MaybeSplitFramesForFirstLetter() {
+  if (!StaticPrefs::layout_css_intrinsic_size_first_letter_enabled()) {
+    return;
+  }
+
   if (GetParent()->IsFloating() && GetContentLength() > 0) {
     
     return;
@@ -9334,6 +9338,10 @@ void nsTextFrame::SetFirstLetterLength(int32_t aLength) {
 
   mContentLengthHint = aLength;
   nsTextFrame* next = static_cast<nsTextFrame*>(GetNextInFlow());
+  if (!aLength && !next) {
+    return;
+  }
+
   if (aLength > GetContentLength()) {
     
     
@@ -9342,7 +9350,7 @@ void nsTextFrame::SetFirstLetterLength(int32_t aLength) {
       MOZ_ASSERT_UNREACHABLE("Expected a next-in-flow; first-letter broken?");
       return;
     }
-  } else {
+  } else if (!next) {
     
     
     
