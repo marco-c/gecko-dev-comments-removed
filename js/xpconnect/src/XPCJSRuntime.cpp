@@ -2572,6 +2572,8 @@ static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
   
 
   switch (id) {
+
+#ifndef MOZ_WIDGET_ANDROID
     case JSMetric::DESERIALIZE_BYTES:
       glean::performance_clone_deserialize::size.Accumulate(sample);
       break;
@@ -2583,6 +2585,7 @@ static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
       glean::performance_clone_deserialize::time.AccumulateRawDuration(
           TimeDuration::FromMicroseconds(sample));
       break;
+#endif  
     case JSMetric::GC_MS:
       glean::javascript_gc::total_time.AccumulateRawDuration(
           TimeDuration::FromMilliseconds(sample));
