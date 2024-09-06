@@ -747,12 +747,12 @@ MessageProcessedResult DecoderTemplate<DecoderType>::ProcessFlushMessage(
                   
                   
                   
-                  RefPtr<Promise> p;
-                  if (self->mPendingFlushPromises.Find(flushPromiseId, p)) {
+                  if (Maybe<RefPtr<Promise>> p =
+                          self->mPendingFlushPromises.Take(flushPromiseId)) {
                     LOG("%s %p, resolving the promise for flush %" PRId64
                         " (unique id)",
                         DecoderType::Name.get(), self.get(), flushPromiseId);
-                    p->MaybeResolveWithUndefined();
+                    p.value()->MaybeResolveWithUndefined();
                   }
                 });
             self->mProcessingMessage.reset();
