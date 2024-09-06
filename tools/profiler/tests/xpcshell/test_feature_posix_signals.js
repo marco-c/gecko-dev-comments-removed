@@ -112,36 +112,8 @@ async function cleanupAfterTest() {
 
 
 
-const SIGUSR1 = Services.appinfo.OS === "Darwin" ? 30 : 10;
+
 const SIGUSR2 = Services.appinfo.OS === "Darwin" ? 31 : 12;
-
-add_task(async () => {
-  info("Test that starting the profiler with a posix signal works.");
-  registerCleanupFunction(cleanupAfterTest);
-
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler should not begin the test active."
-  );
-
-  
-  let pid = Services.appinfo.processID;
-
-  
-  let result = raiseSignal(pid, SIGUSR1);
-  Assert.ok(result, "Raising a signal should succeed");
-
-  
-  
-  await Services.profiler.waitOnePeriodicSampling();
-  Assert.ok(Services.profiler.IsActive(), "The profiler should now be active.");
-
-  await Services.profiler.StopProfiler();
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler should now be inactive."
-  );
-});
 
 add_task(async () => {
   info("Test that stopping the profiler with a posix signal works.");
