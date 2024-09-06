@@ -2,6 +2,9 @@
 
 
 
+from datetime import datetime
+from pathlib import Path
+
 import mozunit
 
 from mozversioncontrol import get_repository_object
@@ -30,13 +33,20 @@ def test_commit(repo):
     repo.execute_next_step()
     assert not vcs.working_directory_clean()
 
+    date_string = "2017-07-14 02:40:00 +0000"
+
     
     vcs.commit(
         message="Modify bar\n\nbut not baz",
         author="Testing McTesterson <test@example.org>",
-        date="2017-07-14 02:40:00 UTC",
+        date=date_string,
         paths=["bar"],
     )
+
+    original_date = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S %z")
+    date_from_vcs = vcs.get_last_modified_time_for_file(Path("bar"))
+
+    assert original_date == date_from_vcs
 
     
     assert not vcs.working_directory_clean()
