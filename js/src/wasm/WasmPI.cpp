@@ -565,6 +565,11 @@ static void CleanupActiveSuspender(JSContext* cx) {
 
 
 
+
+
+
+
+
 class SuspendingFunctionModuleFactory {
  public:
   enum TypeIdx {
@@ -1171,6 +1176,10 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
                                       std::move(results),
                                       SuspenderArgPosition::None);
 }
+
+
+
+
 
 
 
