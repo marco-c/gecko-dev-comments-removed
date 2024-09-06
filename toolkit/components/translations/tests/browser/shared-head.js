@@ -9,6 +9,9 @@
 const { EngineProcess } = ChromeUtils.importESModule(
   "chrome://global/content/ml/EngineProcess.sys.mjs"
 );
+const { TranslationsPanelShared } = ChromeUtils.importESModule(
+  "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs"
+);
 
 
 const BLANK_PAGE =
@@ -474,6 +477,7 @@ async function createAndMockRemoteSettings({
   
   
   TranslationsParent.clearCache();
+  TranslationsPanelShared.clearCache();
 
   TranslationsParent.mockTranslationsEngine(
     remoteClients.translationModels.client,
@@ -488,6 +492,7 @@ async function createAndMockRemoteSettings({
 
       TranslationsParent.unmockTranslationsEngine();
       TranslationsParent.clearCache();
+      TranslationsPanelShared.clearCache();
     },
     remoteClients,
   };
