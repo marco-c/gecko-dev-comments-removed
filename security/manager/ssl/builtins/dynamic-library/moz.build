@@ -30,7 +30,13 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "bcrypt",
         "ntdll",
     ]
-
+    
+    
+    
+    if CONFIG["RUSTC_VERSION"] and CONFIG["RUSTC_VERSION"] >= "1.78.0":
+        OS_LIBS += [
+            "synchronization",
+        ]
 
 SharedLibrary("nssckbi")
 
