@@ -652,10 +652,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   
   bool collectCoverageInfo;
 
-  
-  
-  bool shouldAvoidSideEffects;
-
   template <typename T>
   struct DebuggerLinkAccess {
     static mozilla::DoublyLinkedListElement<T>& Get(T* aThis) {
