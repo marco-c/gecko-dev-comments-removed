@@ -124,13 +124,6 @@ extern "C" uint32_t FOG_MaxPingLimit(void) {
 }
 
 
-
-extern "C" bool FOG_EventTimestampsEnabled(void) {
-  return NimbusFeatures::GetBool("gleanInternalSdk"_ns,
-                                 "enableEventTimestamps"_ns, false);
-}
-
-
 extern "C" bool FOG_IPCIsInAutomation(void) { return xpc::IsInAutomation(); }
 
 NS_IMETHODIMP
