@@ -1,25 +1,9 @@
-import os
-from shutil import rmtree
+from __future__ import annotations
 
 from pip._internal.utils.appdirs import user_cache_dir
-
-from .click import secho
 
 
 CACHE_DIR = user_cache_dir("pip-tools")
 
 
-
-
-
-
-LEGACY_CACHE_DIR = os.path.expanduser("~/.pip-tools")
-
-if os.path.exists(LEGACY_CACHE_DIR):
-    secho(
-        "Removing old cache dir {} (new cache dir is {})".format(
-            LEGACY_CACHE_DIR, CACHE_DIR
-        ),
-        fg="yellow",
-    )
-    rmtree(LEGACY_CACHE_DIR)
+DEFAULT_CONFIG_FILE_NAMES = (".pip-tools.toml", "pyproject.toml")

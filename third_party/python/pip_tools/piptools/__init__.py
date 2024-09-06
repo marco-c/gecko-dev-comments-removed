@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import locale
 
-from piptools.click import secho
+from click import secho
 
 
 
@@ -8,4 +10,4 @@ try:
     locale.setlocale(locale.LC_ALL, "")
 except locale.Error as e:  
     
-    secho("Ignoring error when setting locale: {}".format(e), fg="red")
+    secho(f"Ignoring error when setting locale: {e}", fg="red")
