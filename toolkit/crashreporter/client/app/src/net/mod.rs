@@ -2,6 +2,7 @@
 
 
 
+pub mod http;
 pub mod legacy_telemetry;
 mod libcurl;
 pub mod report;

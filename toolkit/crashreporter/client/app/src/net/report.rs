@@ -7,18 +7,17 @@
 
 
 
-use crate::std::{ffi::OsStr, path::Path, process::Child};
-use anyhow::Context;
+use super::http;
+use crate::std::path::Path;
 
 #[cfg(mock)]
 use crate::std::mock::{mock_key, MockKey};
 
 #[cfg(mock)]
 mock_key! {
-    pub struct MockLibCurl => Box<dyn Fn(&CrashReport) -> std::io::Result<std::io::Result<String>> + Send + Sync>
+    /// The outer Result is for CrashReport::send(), the inner is for CrashReporterSender::finish().
+    pub struct MockReport => Box<dyn Fn(&CrashReport) -> std::io::Result<std::io::Result<String>> + Send + Sync>
 }
-
-pub const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
 
 
@@ -35,180 +34,58 @@ pub struct CrashReport<'a> {
     pub extra: &'a serde_json::Value,
     pub dump_file: &'a Path,
     pub memory_file: Option<&'a Path>,
-    pub url: &'a OsStr,
+    pub url: &'a str,
 }
 
 impl CrashReport<'_> {
     
     pub fn send(&self) -> std::io::Result<CrashReportSender> {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        #[cfg(mock)]
+        if let Some(r) = MockReport.try_get(|f| f(self)) {
+            return r.map(|inner| {
+                CrashReportSender(http::Request::Mock {
+                    response: inner.map(|s| s.into()),
+                })
+            });
+        }
 
         let extra_json_data = serde_json::to_string(self.extra)?;
 
-        self.send_with_curl_binary(extra_json_data.clone())
-            .or_else(|e| {
-                log::info!("failed to invoke curl ({e}), trying libcurl");
-                self.send_with_libcurl(extra_json_data.clone())
+        let mut parts = vec![
+            http::MimePart {
+                name: "extra",
+                content: http::MimePartContent::String(&extra_json_data),
+                filename: Some("extra.json"),
+                mime_type: Some("application/json"),
+            },
+            http::MimePart {
+                name: "upload_file_minidump",
+                content: http::MimePartContent::File(self.dump_file),
+                filename: None,
+                mime_type: None,
+            },
+        ];
+        if let Some(path) = self.memory_file {
+            parts.push(http::MimePart {
+                name: "memory_report",
+                content: http::MimePartContent::File(path),
+                filename: None,
+                mime_type: None,
             })
-    }
-
-    
-    fn send_with_curl_binary(&self, extra_json_data: String) -> std::io::Result<CrashReportSender> {
-        let mut cmd = crate::process::background_command("curl");
-
-        cmd.args(["--user-agent", USER_AGENT]);
-
-        cmd.arg("--form");
-        
-        
-        
-        cmd.arg("extra=@-;filename=extra.json;type=application/json");
-
-        cmd.arg("--form");
-        cmd.arg(format!(
-            "upload_file_minidump=@{}",
-            CurlQuote(&self.dump_file.display().to_string())
-        ));
-
-        if let Some(path) = self.memory_file {
-            cmd.arg("--form");
-            cmd.arg(format!(
-                "memory_report=@{}",
-                CurlQuote(&path.display().to_string())
-            ));
         }
 
-        cmd.arg(self.url);
-
-        cmd.stdin(std::process::Stdio::piped());
-        cmd.stdout(std::process::Stdio::piped());
-        cmd.stderr(std::process::Stdio::piped());
-
-        cmd.spawn().map(move |child| CrashReportSender::CurlChild {
-            child,
-            extra_json_data,
-        })
-    }
-
-    
-    fn send_with_libcurl(&self, extra_json_data: String) -> std::io::Result<CrashReportSender> {
-        #[cfg(mock)]
-        if !crate::std::mock::try_hook(false, "use_system_libcurl") {
-            return self.send_with_mock_libcurl(extra_json_data);
-        }
-
-        let curl = super::libcurl::load()?;
-        let mut easy = curl.easy()?;
-
-        easy.set_url(&self.url.to_string_lossy())?;
-        easy.set_user_agent(USER_AGENT)?;
-        easy.set_max_redirs(30)?;
-
-        let mut mime = easy.mime()?;
-        {
-            let mut part = mime.add_part()?;
-            part.set_name("extra")?;
-            part.set_filename("extra.json")?;
-            part.set_type("application/json")?;
-            part.set_data(extra_json_data.as_bytes())?;
-        }
-        {
-            let mut part = mime.add_part()?;
-            part.set_name("upload_file_minidump")?;
-            part.set_filename(&self.dump_file.display().to_string())?;
-            part.set_filedata(self.dump_file)?;
-        }
-        if let Some(path) = self.memory_file {
-            let mut part = mime.add_part()?;
-            part.set_name("memory_report")?;
-            part.set_filename(&path.display().to_string())?;
-            part.set_filedata(path)?;
-        }
-        easy.set_mime_post(mime)?;
-
-        Ok(CrashReportSender::LibCurl { easy })
-    }
-
-    #[cfg(mock)]
-    fn send_with_mock_libcurl(
-        &self,
-        _extra_json_data: String,
-    ) -> std::io::Result<CrashReportSender> {
-        MockLibCurl
-            .get(|f| f(&self))
-            .map(|response| CrashReportSender::MockLibCurl { response })
+        http::RequestBuilder::MimePost { parts }
+            .build(self.url)
+            .map(CrashReportSender)
     }
 }
 
-pub enum CrashReportSender {
-    CurlChild {
-        child: Child,
-        extra_json_data: String,
-    },
-    LibCurl {
-        easy: super::libcurl::Easy<'static>,
-    },
-    #[cfg(mock)]
-    MockLibCurl {
-        response: std::io::Result<String>,
-    },
-}
+pub struct CrashReportSender(http::Request);
 
 impl CrashReportSender {
     pub fn finish(self) -> anyhow::Result<Response> {
-        let response = match self {
-            Self::CurlChild {
-                mut child,
-                extra_json_data,
-            } => {
-                {
-                    let mut stdin = child
-                        .stdin
-                        .take()
-                        .context("failed to get curl process stdin")?;
-                    std::io::copy(&mut std::io::Cursor::new(extra_json_data), &mut stdin)
-                        .context("failed to write extra file data to stdin of curl process")?;
-                    
-                    
-                }
-                let output = child
-                    .wait_with_output()
-                    .context("failed to wait on curl process")?;
-                anyhow::ensure!(
-                    output.status.success(),
-                    "process failed (exit status {}) with stderr: {}",
-                    output.status,
-                    String::from_utf8_lossy(&output.stderr)
-                );
-                String::from_utf8_lossy(&output.stdout).into_owned()
-            }
-            Self::LibCurl { easy } => {
-                let response = easy.perform()?;
-                let response_code = easy.get_response_code()?;
-
-                let response = String::from_utf8_lossy(&response).into_owned();
-                dbg!(&response, &response_code);
-
-                anyhow::ensure!(
-                    response_code == 200,
-                    "unexpected response code ({response_code}): {response}"
-                );
-
-                response
-            }
-            #[cfg(mock)]
-            Self::MockLibCurl { response } => response?.into(),
-        };
-
+        let response = self.0.send()?;
+        let response = String::from_utf8_lossy(&response).into_owned();
         log::debug!("received response from sending report: {:?}", &*response);
         Ok(Response::parse(response))
     }
@@ -248,29 +125,89 @@ impl Response {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::std::mock;
 
+    #[test]
+    fn report_http() {
+        for memory_file in [None, Some(Path::new("minidump.memory.gz"))] {
+            let report = CrashReport {
+                extra: &serde_json::json! {{
+                    "Foo": "Bar"
+                }},
+                dump_file: Path::new("minidump.dmp"),
+                memory_file,
+                url: "reports.example.com".as_ref(),
+            };
 
-struct CurlQuote<'a>(&'a str);
-impl std::fmt::Display for CurlQuote<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use std::fmt::Write;
+            let checked = crate::test::Counter::new();
 
-        f.write_char('"')?;
-        const ESCAPE_CHARS: [char; 2] = ['"', '\\'];
-        for substr in self.0.split_inclusive(ESCAPE_CHARS) {
-            
-            
-            if substr.ends_with(ESCAPE_CHARS) {
-                
-                
-                let (s, escape) = substr.split_at(substr.len() - 1);
-                f.write_str(s)?;
-                f.write_char('\\')?;
-                f.write_str(escape)?;
-            } else {
-                f.write_str(substr)?;
-            }
+            mock::builder()
+                .set(
+                    http::MockHttp,
+                    Box::new(cc!(
+                        (checked)
+                        move |request, url| {
+                            checked.inc();
+                            assert_eq!(url, "reports.example.com");
+                            let mut parts = vec![
+                                http::MimePart {
+                                    name: "extra",
+                                    content: http::MimePartContent::String(r#"{"Foo":"Bar"}"#),
+                                    filename: Some("extra.json"),
+                                    mime_type: Some("application/json"),
+                                },
+                                http::MimePart {
+                                    name: "upload_file_minidump",
+                                    content: http::MimePartContent::File(Path::new("minidump.dmp")),
+                                    filename: None,
+                                    mime_type: None,
+                                },
+                            ];
+                            if let Some(name) = memory_file {
+                                parts.push(http::MimePart {
+                                    name: "memory_report",
+                                    content: http::MimePartContent::File(name),
+                                    filename: None,
+                                    mime_type: None,
+                                });
+                            }
+                            assert_eq!(request, &http::RequestBuilder::MimePost { parts });
+
+                            Ok(Ok(vec![]))
+                        }
+                    )),
+                )
+                .run(|| report.send().unwrap());
+
+            checked.assert_one();
         }
-        f.write_char('"')
+    }
+
+    #[test]
+    fn report_response() {
+        let report = CrashReport {
+            extra: &serde_json::json! {{}},
+            dump_file: Path::new("minidump.dmp"),
+            memory_file: None,
+            url: "reports.example.com".as_ref(),
+        };
+
+        mock::builder()
+                .set(
+                    http::MockHttp,
+                    Box::new(|_request, _url| {
+                        Ok(Ok("CrashID=1234\nDiscarded=1\nStopSendingReportsFor=100\nViewURL=reports.example.com/foo".into()))
+                    }),
+                )
+                .run(|| {
+                    let response = report.send().unwrap().finish().unwrap();
+                    assert_eq!(response.crash_id.as_deref(), Some("1234"));
+                    assert!(response.discarded);
+                    assert_eq!(response.stop_sending_reports_for.as_deref(), Some("100"));
+                    assert_eq!(response.view_url.as_deref(), Some("reports.example.com/foo"));
+                });
     }
 }
