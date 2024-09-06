@@ -17,5 +17,5 @@ CppUnitTests(
 )
 
 
-if CONFIG["MOZ_PHC"]:
+if CONFIG["MOZ_PHC"] and CONFIG["MOZ_BUILD_APP"] != "memory":
     TEST_DIRS += ["gtest"]
