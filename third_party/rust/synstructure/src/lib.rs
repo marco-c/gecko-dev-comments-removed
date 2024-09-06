@@ -147,8 +147,6 @@
 
 
 
-
-
 #![allow(
     clippy::default_trait_access,
     clippy::missing_errors_doc,
@@ -178,8 +176,6 @@ use quote::{format_ident, quote_spanned, ToTokens};
 
 #[doc(hidden)]
 pub use quote::quote;
-
-use unicode_xid::UnicodeXID;
 
 use proc_macro2::{Span, TokenStream, TokenTree};
 
@@ -252,22 +248,6 @@ fn fetch_generics<'a>(set: &[bool], generics: &'a Generics) -> Vec<&'a Ident> {
         }
     }
     tys
-}
-
-
-fn sanitize_ident(s: &str) -> Ident {
-    let mut res = String::with_capacity(s.len());
-    for mut c in s.chars() {
-        if !UnicodeXID::is_xid_continue(c) {
-            c = '_';
-        }
-        
-        if res.ends_with('_') && c == '_' {
-            continue;
-        }
-        res.push(c);
-    }
-    Ident::new(&res, Span::call_site())
 }
 
 
@@ -1013,7 +993,6 @@ impl<'a> VariantInfo<'a> {
 pub struct Structure<'a> {
     variants: Vec<VariantInfo<'a>>,
     omitted_variants: bool,
-    underscore_const: bool,
     ast: &'a DeriveInput,
     extra_impl: Vec<GenericParam>,
     extra_predicates: Vec<WherePredicate>,
@@ -1077,7 +1056,6 @@ impl<'a> Structure<'a> {
         Ok(Structure {
             variants,
             omitted_variants: false,
-            underscore_const: false,
             ast,
             extra_impl: vec![],
             extra_predicates: vec![],
@@ -1360,7 +1338,6 @@ impl<'a> Structure<'a> {
                 .map(|variant| variant.drain_filter(&mut f))
                 .collect(),
             omitted_variants: self.omitted_variants,
-            underscore_const: self.underscore_const,
             ast: self.ast,
             extra_impl: self.extra_impl.clone(),
             extra_predicates: self.extra_predicates.clone(),
@@ -1405,15 +1382,11 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
     pub fn add_where_predicate(&mut self, pred: WherePredicate) -> &mut Self {
         self.extra_predicates.push(pred);
         self
     }
 
-    
-    
     
     
     
@@ -1551,7 +1524,6 @@ impl<'a> Structure<'a> {
         let mut other = Self {
             variants: vec![],
             omitted_variants: self.omitted_variants,
-            underscore_const: self.underscore_const,
             ast: self.ast,
             extra_impl: self.extra_impl.clone(),
             extra_predicates: self.extra_predicates.clone(),
@@ -1735,8 +1707,6 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
     pub fn add_impl_generic(&mut self, param: GenericParam) -> &mut Self {
         self.extra_impl.push(param);
         self
@@ -1818,53 +1788,10 @@ impl<'a> Structure<'a> {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn underscore_const(&mut self, enabled: bool) -> &mut Self {
-        self.underscore_const = enabled;
+    pub fn underscore_const(&mut self, _enabled: bool) -> &mut Self {
         self
     }
 
-    
-    
     
     
     
@@ -1992,8 +1919,6 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
     pub fn unsafe_bound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> TokenStream {
         self.impl_internal(
             path.into_token_stream(),
@@ -2003,8 +1928,6 @@ impl<'a> Structure<'a> {
         )
     }
 
-    
-    
     
     
     
@@ -2112,8 +2035,6 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
     #[deprecated]
     pub fn unsafe_unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> TokenStream {
         self.impl_internal(
@@ -2134,7 +2055,7 @@ impl<'a> Structure<'a> {
         let mode = mode.unwrap_or(self.add_bounds);
         let name = &self.ast.ident;
         let mut gen_clone = self.ast.generics.clone();
-        gen_clone.params.extend(self.extra_impl.clone().into_iter());
+        gen_clone.params.extend(self.extra_impl.iter().cloned());
         let (impl_generics, _, _) = gen_clone.split_for_impl();
         let (_, ty_generics, where_clause) = self.ast.generics.split_for_impl();
 
@@ -2163,42 +2084,11 @@ impl<'a> Structure<'a> {
             }
         };
 
-        if self.underscore_const {
-            quote! {
-                const _: () = { #generated };
-            }
-        } else {
-            let dummy_const: Ident = sanitize_ident(&format!(
-                "_DERIVE_{}_FOR_{}",
-                (&bound).into_token_stream(),
-                name.into_token_stream(),
-            ));
-            quote! {
-                #[allow(non_upper_case_globals)]
-                #[doc(hidden)]
-                const #dummy_const: () = {
-                    #generated
-                };
-            }
+        quote! {
+            const _: () = { #generated };
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -2483,33 +2373,14 @@ impl<'a> Structure<'a> {
         };
 
         if wrap {
-            if self.underscore_const {
-                Ok(quote! {
-                    const _: () = { #generated };
-                })
-            } else {
-                let dummy_const: Ident = sanitize_ident(&format!(
-                    "_DERIVE_{}_FOR_{}",
-                    (&bound).into_token_stream(),
-                    name.into_token_stream(),
-                ));
-                Ok(quote! {
-                    #[allow(non_upper_case_globals)]
-                    const #dummy_const: () = {
-                        #generated
-                    };
-                })
-            }
+            Ok(quote! {
+                const _: () = { #generated };
+            })
         } else {
             Ok(generated)
         }
     }
 }
-
-
-
-
-
 
 
 
