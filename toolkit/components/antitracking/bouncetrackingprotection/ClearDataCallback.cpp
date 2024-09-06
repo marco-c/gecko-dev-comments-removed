@@ -177,9 +177,7 @@ ClearDataCallback::OnClassifyComplete(
 }
 
 void ClearDataCallback::RecordPurgeEventTelemetry(bool aSuccess) {
-
-
-#if defined(EARLY_BETA_OR_EARLIER)
+  
   glean::bounce_tracking_protection::PurgeActionExtra extra = {
       .bounceTime = Some(mBounceTime / PR_USEC_PER_SEC),
       .isDryRun = Some(
@@ -188,5 +186,4 @@ void ClearDataCallback::RecordPurgeEventTelemetry(bool aSuccess) {
       .success = Some(aSuccess),
   };
   glean::bounce_tracking_protection::purge_action.Record(Some(extra));
-#endif  
 }

@@ -349,10 +349,8 @@ BounceTrackingProtection::Observe(nsISupports* aSubject, const char* aTopic,
           ("%s: aTopic: %s", __FUNCTION__, aTopic));
 
   if (!strcmp(aTopic, "idle-daily")) {
-#if defined(EARLY_BETA_OR_EARLIER)
     
     glean_pings::BounceTrackingProtection.Submit();
-#endif  
   }
   return NS_OK;
 }
