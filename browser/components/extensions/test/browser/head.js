@@ -40,6 +40,7 @@
 
 
 
+
 const { PromiseTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
@@ -165,6 +166,44 @@ function getListStyleImage(button) {
 
 function promiseAnimationFrame(win = window) {
   return AppUiTestInternals.promiseAnimationFrame(win);
+}
+
+async function promiseBrowserContentUnloaded(browser) {
+  
+  
+  const MSG_WINDOW_DESTROYED = "Test:BrowserContentDestroyed";
+  let unloadPromise = new Promise(resolve => {
+    Services.ppmm.addMessageListener(MSG_WINDOW_DESTROYED, function listener() {
+      Services.ppmm.removeMessageListener(MSG_WINDOW_DESTROYED, listener);
+      resolve();
+    });
+  });
+
+  await ContentTask.spawn(
+    browser,
+    MSG_WINDOW_DESTROYED,
+    MSG_WINDOW_DESTROYED => {
+      let innerWindowId = this.content.windowGlobalChild.innerWindowId;
+      let observer = subject => {
+        if (
+          innerWindowId === subject.QueryInterface(Ci.nsISupportsPRUint64).data
+        ) {
+          Services.obs.removeObserver(observer, "inner-window-destroyed");
+
+          
+          
+          Services.cpmm.sendAsyncMessage(MSG_WINDOW_DESTROYED);
+        }
+      };
+      
+      
+      
+      Services.obs.addObserver(observer, "inner-window-destroyed");
+    }
+  );
+
+  
+  return { unloadPromise };
 }
 
 function promisePopupHidden(popup) {
