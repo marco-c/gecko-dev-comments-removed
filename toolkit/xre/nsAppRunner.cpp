@@ -575,7 +575,7 @@ bool BrowserTabsRemoteAutostart() {
   
   if (gBrowserTabsRemoteAutostart && xpc::AreNonLocalConnectionsDisabled()) {
     const char* forceDisable = PR_GetEnv("MOZ_FORCE_DISABLE_E10S");
-    if (forceDisable && *forceDisable == '1') {
+    if (forceDisable && !strcmp(forceDisable, "1")) {
       gBrowserTabsRemoteAutostart = false;
       status = kE10sForceDisabled;
     }
