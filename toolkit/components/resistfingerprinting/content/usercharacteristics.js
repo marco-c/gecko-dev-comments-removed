@@ -944,6 +944,12 @@ async function populateAudioFingerprint() {
   };
 }
 
+async function populateCSSQueries() {
+  return {
+    monochrome: matchMedia("(monochrome)").matches,
+  };
+}
+
 async function populatePointerInfo() {
   const capabilities = {
     None: 0,
@@ -1221,6 +1227,7 @@ const LocalFiraSans = new FontFace(
     populateICEFoundations,
     populateSensorInfo,
     populateMathML,
+    populateCSSQueries,
   ];
   
   
