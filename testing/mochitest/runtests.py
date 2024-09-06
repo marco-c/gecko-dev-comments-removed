@@ -60,9 +60,11 @@ try:
     from marionette_driver.addons import Addons
     from marionette_driver.marionette import Marionette
 except ImportError as e:  
+    error = e
+
     
     def reraise(*args, **kwargs):
-        raise (e)  
+        raise error  
 
     Marionette = reraise
 
