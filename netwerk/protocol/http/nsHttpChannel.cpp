@@ -1352,24 +1352,37 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
     
     
     
-    rv = mRequestHead.SetHeaderOnce(nsHttp::Pragma, "no-cache", true);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
     
     
-    if (mRequestHead.Version() >= HttpVersion::v1_1) {
+    if (!mRequestHead.HasHeader(nsHttp::Pragma)) {
+      rv = mRequestHead.SetHeaderOnce(nsHttp::Pragma, "no-cache", true);
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+    
+    
+    if (mRequestHead.Version() >= HttpVersion::v1_1 &&
+        !mRequestHead.HasHeader(nsHttp::Cache_Control)) {
       rv = mRequestHead.SetHeaderOnce(nsHttp::Cache_Control, "no-cache", true);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
-  } else if ((mLoadFlags & VALIDATE_ALWAYS) && !LoadCacheEntryIsWriteOnly()) {
+  } else if (mLoadFlags & VALIDATE_ALWAYS) {
+    
+    
+    
     
     
     
     
     
     if (mRequestHead.Version() >= HttpVersion::v1_1) {
-      rv = mRequestHead.SetHeaderOnce(nsHttp::Cache_Control, "max-age=0", true);
+      if (!mRequestHead.HasHeader(nsHttp::Cache_Control)) {
+        rv = mRequestHead.SetHeaderOnce(nsHttp::Cache_Control, "max-age=0",
+                                        true);
+      }
     } else {
-      rv = mRequestHead.SetHeaderOnce(nsHttp::Pragma, "no-cache", true);
+      if (!mRequestHead.HasHeader(nsHttp::Pragma)) {
+        rv = mRequestHead.SetHeaderOnce(nsHttp::Pragma, "no-cache", true);
+      }
     }
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
