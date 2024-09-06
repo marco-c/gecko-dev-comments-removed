@@ -13,6 +13,7 @@
 
 
 
+
 "use strict";
 
 
@@ -154,12 +155,12 @@ add_setup(async function () {
 
 const rfpFullyRandomized = [10000, 999999999, 20000, 999999999];
 const fppRandomizedSameDomain = [1, 260, 0, 0];
-const fppRandomizedCrossDomain = [1, 260, 2, 520];
 const noRandom = [0, 0, 0, 0];
 
 
 
-let uri = `https://${IFRAME_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_canvascompare_iframer.html?mode=popup`;
+
+let uri = `https://${IFRAME_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_canvascompare_aboutblank_popupmaker.html?mode=addOnLoadCallback`;
 
 expectedResults = structuredClone(noRandom);
 add_task(
@@ -211,7 +212,7 @@ add_task(
 );
 
 
-uri = `https://${FRAMER_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_canvascompare_iframer.html?mode=popup`;
+uri = `https://${IFRAME_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_canvascompare_aboutblank_popupmaker.html?mode=skipOnLoadCallback`;
 
 expectedResults = structuredClone(noRandom);
 add_task(
@@ -229,13 +230,13 @@ add_task(
   simplePBMRFPTest.bind(null, uri, testCanvasRandomization, expectedResults)
 );
 
-expectedResults = structuredClone(fppRandomizedCrossDomain);
+expectedResults = structuredClone(fppRandomizedSameDomain);
 add_task(
   simpleFPPTest.bind(null, uri, testCanvasRandomization, expectedResults)
 );
 
 
-expectedResults = structuredClone(fppRandomizedCrossDomain);
+expectedResults = structuredClone(fppRandomizedSameDomain);
 add_task(
   simplePBMFPPTest.bind(null, uri, testCanvasRandomization, expectedResults)
 );
@@ -252,7 +253,7 @@ add_task(
 );
 
 
-expectedResults = structuredClone(fppRandomizedCrossDomain);
+expectedResults = structuredClone(fppRandomizedSameDomain);
 add_task(
   RFPPBMFPP_NormalMode_ProtectionsTest.bind(
     null,
