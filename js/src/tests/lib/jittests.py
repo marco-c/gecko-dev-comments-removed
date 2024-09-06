@@ -592,15 +592,19 @@ def print_automation_format(ok, res, slog):
         return
     print("INFO exit-status     : {}".format(res.rc))
     print("INFO timed-out       : {}".format(res.timed_out))
-    for line in res.out.splitlines():
-        print("INFO stdout          > " + line.strip())
     warnings = []
+    for line in res.out.splitlines():
+        
+        if line.startswith("WARNING") and "unused DT entry" in line:
+            warnings.append(line)
+            continue
+        print("INFO stdout          > " + line.strip())
     for line in res.err.splitlines():
         
         if line.startswith("WARNING") and "unused DT entry" in line:
             warnings.append(line)
-        else:
-            print("INFO stderr         2> " + line.strip())
+            continue
+        print("INFO stderr         2> " + line.strip())
     for line in warnings:
         print("INFO (warn-stderr)  2> " + line.strip())
 
