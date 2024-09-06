@@ -5,6 +5,7 @@
 
 #include "NotificationController.h"
 
+#include "CssAltContent.h"
 #include "DocAccessible-inl.h"
 #include "DocAccessibleChild.h"
 #include "LocalAccessible-inl.h"
@@ -822,6 +823,14 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
         logging::MsgEnd();
       }
 #endif
+
+      if (CssAltContent(textNode)) {
+        
+        
+        
+        
+        continue;
+      }
 
       TextUpdater::Run(mDocument, textAcc->AsTextLeaf(), text.mString);
       continue;
