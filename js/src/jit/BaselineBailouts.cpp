@@ -2167,7 +2167,17 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
         ionScript->incNumFixableBailouts();
         if (ionScript->shouldInvalidate()) {
 #ifdef DEBUG
-          if (saveFailedICHash && !JitOptions.disableBailoutLoopCheck) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (saveFailedICHash && !JitOptions.disableBailoutLoopCheck &&
+              JitOptions.frequentBailoutThreshold > 1) {
             outerScript->jitScript()->setFailedICHash(ionScript->icHash());
           }
 #endif
