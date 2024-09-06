@@ -950,6 +950,14 @@ async function populateCSSQueries() {
   };
 }
 
+async function populateNavigatorProperties() {
+  return {
+    oscpu: navigator.oscpu,
+    pdfViewer: navigator.pdfViewerEnabled,
+    platform: navigator.platform,
+  };
+}
+
 async function populatePointerInfo() {
   const capabilities = {
     None: 0,
@@ -1228,6 +1236,7 @@ const LocalFiraSans = new FontFace(
     populateSensorInfo,
     populateMathML,
     populateCSSQueries,
+    populateNavigatorProperties,
   ];
   
   
