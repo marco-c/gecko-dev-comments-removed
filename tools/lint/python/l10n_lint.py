@@ -103,6 +103,15 @@ def source_repo_setup(**lint_args):
             raise MissingVCSTool("Unable to obtain git path.")
         print("warning: l10n linter requires Git but was unable to find 'git'")
         return 1
+
+    
+    
+    
+    
+    
+    if "GIT_INDEX_FILE" in os.environ:
+        os.environ.pop("GIT_INDEX_FILE")
+
     if os.path.exists(gs):
         check_call([git, "pull", L10N_SOURCE_REPO], cwd=gs)
     else:
