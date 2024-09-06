@@ -2833,7 +2833,7 @@ class Editor extends EventEmitter {
 
 
 
-  #isVisible(cm, line, column) {
+  #isPositionVisible(cm, line, column) {
     let inXView, inYView;
 
     function withinBounds(x, min, max) {
@@ -2848,8 +2848,17 @@ class Editor extends EventEmitter {
       }
       const { scrollTop, scrollLeft, clientHeight, clientWidth } = cm.scrollDOM;
 
-      inXView = withinBounds(coords.left, scrollLeft, scrollLeft + clientWidth);
-      inYView = withinBounds(coords.top, scrollTop, scrollTop + clientHeight);
+      
+      inXView = withinBounds(
+        coords.left + scrollLeft,
+        scrollLeft,
+        scrollLeft + clientWidth
+      );
+      inYView = withinBounds(
+        coords.top + scrollTop,
+        scrollTop,
+        scrollTop + clientHeight
+      );
     } else {
       const { top, left } = cm.charCoords({ line, ch: column }, "local");
       const scrollArea = cm.getScrollInfo();
@@ -2942,7 +2951,7 @@ class Editor extends EventEmitter {
         codemirrorView: { EditorView },
       } = this.#CodeMirror6;
 
-      if (!this.#isVisible(cm, line, column)) {
+      if (!this.#isPositionVisible(cm, line, column)) {
         const offset = this.#posToOffset(cm.state.doc, line, column);
         if (!offset) {
           return;
@@ -2964,7 +2973,7 @@ class Editor extends EventEmitter {
 
       const { top, left } = cm.charCoords({ line, ch: column }, "local");
 
-      if (!this.#isVisible(cm, line, column)) {
+      if (!this.#isPositionVisible(cm, line, column)) {
         const scroller = cm.getScrollerElement();
         const centeredX = Math.max(left - scroller.offsetWidth / 2, 0);
         const centeredY = Math.max(top - scroller.offsetHeight / 2, 0);
