@@ -145,19 +145,6 @@ class TestMainImpl : public TestMain {
 
     
     
-    if (!absl::GetFlag(FLAGS_test_launcher_shard_index).empty() &&
-        !absl::GetFlag(FLAGS_test_launcher_total_shards).empty()) {
-      std::string shard_index =
-          "GTEST_SHARD_INDEX=" + absl::GetFlag(FLAGS_test_launcher_shard_index);
-      std::string total_shards =
-          "GTEST_TOTAL_SHARDS=" +
-          absl::GetFlag(FLAGS_test_launcher_total_shards);
-      putenv(shard_index.data());
-      putenv(total_shards.data());
-    }
-
-    
-    
     field_trials_ = absl::GetFlag(FLAGS_force_fieldtrials);
     webrtc::field_trial::InitFieldTrialsFromString(field_trials_.c_str());
     webrtc::metrics::Enable();
@@ -190,6 +177,18 @@ class TestMainImpl : public TestMain {
           (*metrics_to_plot)[0] == kPlotAllMetrics) {
         metrics_to_plot->clear();
       }
+    }
+    
+    
+    if (!absl::GetFlag(FLAGS_test_launcher_shard_index).empty() &&
+        !absl::GetFlag(FLAGS_test_launcher_total_shards).empty()) {
+      std::string shard_index =
+          "GTEST_SHARD_INDEX=" + absl::GetFlag(FLAGS_test_launcher_shard_index);
+      std::string total_shards =
+          "GTEST_TOTAL_SHARDS=" +
+          absl::GetFlag(FLAGS_test_launcher_total_shards);
+      putenv(total_shards.data());
+      putenv(shard_index.data());
     }
 
 #if defined(WEBRTC_IOS)
