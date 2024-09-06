@@ -703,8 +703,8 @@ class ChromeChromiumBase(Browser):
 
         try:
             
-            url = ("https://storage.googleapis.com/chrome-wpt-mojom/"
-                   f"{chrome_version}/linux64/mojojs.zip")
+            url = ("https://storage.googleapis.com/chrome-for-testing-public/"
+                   f"{chrome_version}/mojojs.zip")
             
             get(url)
         except requests.RequestException:
