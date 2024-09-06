@@ -67,12 +67,16 @@ function getBaseUrl(origin) {
 
 
 
+
+
+
 function getBounceURL({
   bounceType,
   bounceOrigin = ORIGIN_TRACKER,
   targetURL = new URL(getBaseUrl(ORIGIN_B) + "file_start.html"),
   setState = null,
   setStateSameSiteFrame = false,
+  setStateCrossSiteFrame = false,
   setStateInWebWorker = false,
   setStateInNestedWebWorker = false,
   statusCode = 302,
@@ -92,9 +96,7 @@ function getBounceURL({
   if (setState) {
     searchParams.set("setState", setState);
   }
-  if (setStateSameSiteFrame) {
-    searchParams.set("setStateSameSiteFrame", setStateSameSiteFrame);
-  }
+
   if (setStateInWebWorker) {
     if (setState != "indexedDB") {
       throw new Error(
@@ -116,6 +118,32 @@ function getBounceURL({
     searchParams.set("statusCode", statusCode);
   } else if (bounceType == "client") {
     searchParams.set("redirectDelay", redirectDelayMS);
+  }
+
+  
+  
+  
+  if (setStateSameSiteFrame || setStateCrossSiteFrame) {
+    
+    let bounceUrlIframe = new URL(bounceUrl.href);
+
+    
+    bounceUrlIframe.searchParams.set("isThirdParty", true);
+
+    
+    
+    if (setState == "cookie-server") {
+      bounceUrlIframe.pathname = bounceUrlIframe.pathname.replace(
+        "file_bounce.html",
+        "file_bounce.sjs"
+      );
+    }
+    if (setStateSameSiteFrame) {
+      searchParams.set("setStateInFrameWithURI", bounceUrlIframe.href);
+    } else {
+      bounceUrlIframe.host = SITE_C;
+      searchParams.set("setStateInFrameWithURI", bounceUrlIframe.href);
+    }
   }
 
   return bounceUrl;
@@ -228,11 +256,15 @@ async function waitForRecordBounces(browser) {
 
 
 
+
+
+
 async function runTestBounce(options = {}) {
   let {
     bounceType,
     setState = null,
     setStateSameSiteFrame = false,
+    setStateCrossSiteFrame = false,
     setStateInWebWorker = false,
     setStateInNestedWebWorker = false,
     expectCandidate = true,
@@ -301,6 +333,7 @@ async function runTestBounce(options = {}) {
       targetURL,
       setState,
       setStateSameSiteFrame,
+      setStateCrossSiteFrame,
       setStateInWebWorker,
       setStateInNestedWebWorker,
     })
