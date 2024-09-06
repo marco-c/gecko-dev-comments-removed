@@ -81,7 +81,7 @@ struct ImportValues {
 class Module : public JS::WasmModule {
   
   
-  SharedModuleMetadata moduleMeta_;
+  const SharedModuleMetadata moduleMeta_;
 
   const SharedCode code_;
   const DataSegmentVector dataSegments_;
@@ -161,8 +161,6 @@ class Module : public JS::WasmModule {
     return code_->codeMetaForAsmJS();
   }
   const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
-  
-  
   const CustomSectionVector& customSections() const { return customSections_; }
   const Bytes& debugBytecode() const { return debugBytecode_->bytes; }
   uint32_t codeLength(Tier t) const { return code_->segment(t).length(); }

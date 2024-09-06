@@ -1051,9 +1051,30 @@ CoderResult CodeMetadataTier(Coder<mode>& coder,
   return Ok();
 }
 
+
+
+template <CoderMode mode>
+CoderResult CodeModuleMetadata(Coder<mode>& coder,
+                               CoderArg<mode, wasm::ModuleMetadata> item) {
+  
+  
+
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::ModuleMetadata, 128);
+  MOZ_TRY(Magic(coder, Marker::ModuleMetadata));
+  MOZ_TRY(Magic(coder, Marker::Imports));
+  MOZ_TRY((CodeVector<mode, Import, &CodeImport<mode>>(coder, &item->imports)));
+  MOZ_TRY(Magic(coder, Marker::Exports));
+  MOZ_TRY((CodeVector<mode, Export, &CodeExport<mode>>(coder, &item->exports)));
+  
+  return Ok();
+}
+
 template <CoderMode mode>
 CoderResult CodeCodeMetadata(Coder<mode>& coder,
                              CoderArg<mode, wasm::CodeMetadata> item) {
+  
+  
+
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeMetadata, 728);
   
   MOZ_RELEASE_ASSERT(!item->isAsmJS());
@@ -1062,47 +1083,57 @@ CoderResult CodeCodeMetadata(Coder<mode>& coder,
   }
 
   MOZ_TRY(Magic(coder, Marker::CodeMetadata));
+  
+  MOZ_TRY(CodePod(coder, &item->features));
+  
+  MOZ_TRY(CodePodVector(coder, &item->memories));
+  
+  
+  
+  MOZ_TRY(
+      (CodeRefPtr<mode, TypeContext, &CodeTypeContext>(coder, &item->types)));
+  
+  
+  
+  MOZ_TRY((CodeVector<mode, GlobalDesc, &CodeGlobalDesc<mode>>(
+      coder, &item->globals)));
+  MOZ_TRY((CodeVector<mode, TagDesc, &CodeTagDesc<mode>>(coder, &item->tags)));
+  MOZ_TRY((
+      CodeVector<mode, TableDesc, &CodeTableDesc<mode>>(coder, &item->tables)));
+  
   MOZ_TRY(CodePod(coder, &item->typeDefsOffsetStart));
   MOZ_TRY(CodePod(coder, &item->memoriesOffsetStart));
   MOZ_TRY(CodePod(coder, &item->tablesOffsetStart));
   MOZ_TRY(CodePod(coder, &item->tagsOffsetStart));
   MOZ_TRY(CodePod(coder, &item->instanceDataLength));
-  MOZ_TRY(CodePod(coder, &item->builtinModules));
   MOZ_TRY(CodePod(coder, &item->featureUsage));
   MOZ_TRY(CodePod(coder, &item->filenameIsURL));
-  MOZ_TRY(CodePod(coder, &item->parsedBranchHints));
   MOZ_TRY(CodeCacheableChars(coder, &item->filename));
   MOZ_TRY(CodeCacheableChars(coder, &item->sourceMapURL));
+  
   MOZ_TRY(CodePod(coder, &item->moduleName));
   MOZ_TRY(CodePodVector(coder, &item->funcNames));
   MOZ_TRY((CodeMaybe<mode, uint32_t, &CodePod>(coder, &item->startFuncIndex)));
   MOZ_TRY((CodeMaybe<mode, uint32_t, &CodePod>(coder,
                                                &item->nameCustomSectionIndex)));
-
-  MOZ_TRY(CodePodVector(coder, &item->memories));
-
   
   
   
   
   
-  MOZ_TRY((CodeRefPtr<mode, const TypeContext, &CodeTypeContext>(
-      coder, (SharedTypeContext*)&item->types)));
-
-  MOZ_TRY((CodeVector<mode, GlobalDesc, &CodeGlobalDesc<mode>>(
-      coder, &item->globals)));
-  MOZ_TRY((
-      CodeVector<mode, TableDesc, &CodeTableDesc<mode>>(coder, &item->tables)));
-  MOZ_TRY((CodeVector<mode, TagDesc, &CodeTagDesc<mode>>(coder, &item->tags)));
-
+  MOZ_TRY(CodePod(coder, &item->parsedBranchHints));
   if constexpr (mode == MODE_DECODE) {
     
     item->debugEnabled = false;
     item->debugFuncTypeIndices.clear();
     MOZ_ASSERT(!item->isAsmJS());
   }
+  
+
   return Ok();
 }
+
+
 
 CoderResult CodeCodeTier(Coder<MODE_DECODE>& coder, wasm::UniqueCodeTier* item,
                          const wasm::LinkData& linkData) {
@@ -1183,18 +1214,6 @@ CoderResult CodeSharedCode(Coder<mode>& coder,
 }
 
 
-
-template <CoderMode mode>
-CoderResult CodeModuleMetadata(Coder<mode>& coder,
-                               CoderArg<mode, wasm::ModuleMetadata> item) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::ModuleMetadata, 128);
-  MOZ_TRY(Magic(coder, Marker::ModuleMetadata));
-  MOZ_TRY(Magic(coder, Marker::Imports));
-  MOZ_TRY((CodeVector<mode, Import, &CodeImport<mode>>(coder, &item->imports)));
-  MOZ_TRY(Magic(coder, Marker::Exports));
-  MOZ_TRY((CodeVector<mode, Export, &CodeExport<mode>>(coder, &item->exports)));
-  return Ok();
-}
 
 CoderResult CodeModule(Coder<MODE_DECODE>& coder, MutableModule* item) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Module, 184);

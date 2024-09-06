@@ -55,7 +55,7 @@
 #include "wasm/WasmExprType.h"
 #include "wasm/WasmGC.h"
 #include "wasm/WasmLog.h"
-#include "wasm/WasmMetadata.h"  
+#include "wasm/WasmMetadata.h"
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmShareable.h"
@@ -251,31 +251,6 @@ extern UniqueCodeBytes AllocateCodeBytes(
     uint32_t codeLength);
 extern bool StaticallyLink(const ModuleSegment& ms, const LinkData& linkData);
 extern void StaticallyUnlink(uint8_t* base, const LinkData& linkData);
-
-
-
-
-
-
-
-
-enum class NameContext { Standalone, BeforeLocation };
-
-
-
-bool GetFuncNameForWasm(NameContext ctx, uint32_t funcIndex,
-                        SharedBytes namePayload, const Maybe<Name>& moduleName,
-                        const NameVector& funcNames, UTF8Bytes* name);
-
-
-
-
-
-
-
-
-
-
 
 
 
