@@ -806,4 +806,11 @@ interface nsIAccessibleRole : nsISupports
 
 
   const unsigned long ROLE_GRID = 138;
+
+  
+
+
+
+
+  const unsigned long ROLE_ROWGROUP = 139;
 };
