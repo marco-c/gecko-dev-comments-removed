@@ -41,7 +41,6 @@ FEATURE_CHECK_NEEDED = {
     "uint8array-base64": "!Uint8Array.fromBase64",  
     "json-parse-with-source": "!JSON.hasOwnProperty('isRawJSON')",  
     "Float16Array": "!this.hasOwnProperty('Float16Array')",
-    "regexp-duplicate-named-groups": "!(this.hasOwnProperty('getBuildConfiguration')&&!getBuildConfiguration('release_or_beta'))",
 }
 RELEASE_OR_BETA = set(
     [
