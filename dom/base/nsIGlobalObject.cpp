@@ -7,6 +7,7 @@
 #include "nsIGlobalObject.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/GlobalFreezeObserver.h"
 #include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/Result.h"
 #include "mozilla/StorageAccess.h"
@@ -29,6 +30,7 @@ using mozilla::AutoSlowOperation;
 using mozilla::CycleCollectedJSContext;
 using mozilla::DOMEventTargetHelper;
 using mozilla::ErrorResult;
+using mozilla::GlobalFreezeObserver;
 using mozilla::GlobalTeardownObserver;
 using mozilla::IgnoredErrorResult;
 using mozilla::MallocSizeOf;
@@ -70,7 +72,9 @@ bool nsIGlobalObject::IsScriptForbidden(JSObject* aCallback,
 nsIGlobalObject::~nsIGlobalObject() {
   UnlinkObjectsInGlobal();
   DisconnectGlobalTeardownObservers();
+  DisconnectGlobalFreezeObservers();
   MOZ_DIAGNOSTIC_ASSERT(mGlobalTeardownObservers.isEmpty());
+  MOZ_DIAGNOSTIC_ASSERT(mGlobalFreezeObservers.isEmpty());
 }
 
 nsIPrincipal* nsIGlobalObject::PrincipalOrNull() const {
@@ -174,6 +178,19 @@ void nsIGlobalObject::RemoveGlobalTeardownObserver(
   aObject->remove();
 }
 
+void nsIGlobalObject::AddGlobalFreezeObserver(GlobalFreezeObserver* aObserver) {
+  MOZ_DIAGNOSTIC_ASSERT(aObserver);
+  MOZ_ASSERT(!aObserver->isInList());
+  mGlobalFreezeObservers.insertBack(aObserver);
+}
+
+void nsIGlobalObject::RemoveGlobalFreezeObserver(
+    GlobalFreezeObserver* aObserver) {
+  MOZ_DIAGNOSTIC_ASSERT(aObserver);
+  MOZ_ASSERT(aObserver->isInList());
+  aObserver->remove();
+}
+
 void nsIGlobalObject::ForEachGlobalTeardownObserver(
     const std::function<void(GlobalTeardownObserver*, bool* aDoneOut)>& aFunc)
     const {
@@ -181,9 +198,8 @@ void nsIGlobalObject::ForEachGlobalTeardownObserver(
   
   
   AutoTArray<RefPtr<GlobalTeardownObserver>, 64> targetList;
-  for (const GlobalTeardownObserver* gto = mGlobalTeardownObservers.getFirst();
-       gto; gto = gto->getNext()) {
-    targetList.AppendElement(const_cast<GlobalTeardownObserver*>(gto));
+  for (const GlobalTeardownObserver* observer : mGlobalTeardownObservers) {
+    targetList.AppendElement(const_cast<GlobalTeardownObserver*>(observer));
   }
 
   
@@ -209,6 +225,53 @@ void nsIGlobalObject::DisconnectGlobalTeardownObservers() {
         
         
         MOZ_DIAGNOSTIC_ASSERT(aTarget->GetOwnerGlobal() != this);
+      });
+}
+
+void nsIGlobalObject::ForEachGlobalFreezeObserver(
+    const std::function<void(GlobalFreezeObserver*, bool* aDoneOut)>& aFunc)
+    const {
+  
+  
+  
+  AutoTArray<RefPtr<GlobalFreezeObserver>, 64> targetList;
+  for (const GlobalFreezeObserver* observer : mGlobalFreezeObservers) {
+    targetList.AppendElement(const_cast<GlobalFreezeObserver*>(observer));
+  }
+
+  
+  bool done = false;
+  for (auto& target : targetList) {
+    
+    
+    if (!target->Observing()) {
+      continue;
+    }
+    aFunc(target, &done);
+    if (done) {
+      break;
+    }
+  }
+}
+
+void nsIGlobalObject::DisconnectGlobalFreezeObservers() {
+  ForEachGlobalFreezeObserver(
+      [&](GlobalFreezeObserver* aTarget, bool* aDoneOut) {
+        aTarget->DisconnectFreezeObserver();
+      });
+}
+
+void nsIGlobalObject::NotifyGlobalFrozen() {
+  ForEachGlobalFreezeObserver(
+      [&](GlobalFreezeObserver* aTarget, bool* aDoneOut) {
+        aTarget->FrozenCallback(this);
+      });
+}
+
+void nsIGlobalObject::NotifyGlobalThawed() {
+  ForEachGlobalFreezeObserver(
+      [&](GlobalFreezeObserver* aTarget, bool* aDoneOut) {
+        aTarget->ThawedCallback(this);
       });
 }
 
