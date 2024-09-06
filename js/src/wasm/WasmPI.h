@@ -148,7 +148,7 @@ class SuspenderObjectData
 
   SuspenderState state_;
 
-#ifdef _WIN64
+#if defined(_WIN32)
   
   
   void* savedStackBase_;
@@ -173,7 +173,7 @@ class SuspenderObjectData
 
   void releaseStackMemory();
 
-#ifdef _WIN64
+#if defined(_WIN32)
   void updateTIBStackFields();
   void restoreTIBStackFields();
 #endif

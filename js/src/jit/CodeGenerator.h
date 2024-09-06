@@ -211,7 +211,10 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
 #ifdef ENABLE_WASM_JSPI
   void callWasmUpdateSuspenderState(wasm::UpdateSuspenderStateAction kind,
-                                    Register suspender);
+                                    Register suspender, Register temp);
+  
+  
+  void prepareWasmStackSwitchTrampolineCall(Register suspender, Register data);
 #endif
 
  private:
