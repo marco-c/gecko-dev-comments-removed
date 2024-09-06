@@ -1238,53 +1238,37 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
     return NS_OK;
   }
 
+  GdkAtom requestedFlavor = gdk_atom_intern(aDataFlavor, FALSE);
+  if (IsDragFlavorAvailable(requestedFlavor)) {
+    LOGDRAGSERVICE("  %s is supported", aDataFlavor);
+    *_retval = true;
+    return NS_OK;
+  }
+  if (requestedFlavor == sTextUriListTypeAtom &&
+      (IsDragFlavorAvailable(sURLMimeAtom) ||
+       IsDragFlavorAvailable(sFileMimeAtom))) {
+    *_retval = true;
+  }
   
-  GList* tmp = nullptr;
-  if (mTargetDragContext) {
-    tmp = gdk_drag_context_list_targets(mTargetDragContext);
+  if (requestedFlavor == sMozUrlTypeAtom &&
+      IsDragFlavorAvailable(sURLMimeAtom)) {
+    *_retval = true;
   }
-
-  for (; tmp; tmp = tmp->next) {
-    
-    GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
-    GUniquePtr<gchar> name(gdk_atom_name(atom));
-    if (!name) {
-      continue;
-    }
-
-    if (strcmp(name.get(), aDataFlavor) == 0) {
-      *_retval = true;
-    }
-    
-    else if (strcmp(name.get(), gTextUriListType) == 0 &&
-             (strcmp(aDataFlavor, kURLMime) == 0 ||
-              strcmp(aDataFlavor, kFileMime) == 0)) {
-      *_retval = true;
-    }
-    
-    else if (strcmp(name.get(), gMozUrlType) == 0 &&
-             (strcmp(aDataFlavor, kURLMime) == 0)) {
-      *_retval = true;
-    }
-    
-    
-    
-    else if ((strcmp(name.get(), gPortalFile) == 0 ||
-              strcmp(name.get(), gPortalFileTransfer) == 0) &&
-             (strcmp(aDataFlavor, kURLMime) == 0 ||
-              strcmp(aDataFlavor, kFileMime) == 0)) {
-      *_retval = true;
-    }
-    if (*_retval) {
-      LOGDRAGSERVICE("  supported, with converting %s => %s", name.get(),
-                     aDataFlavor);
-    }
+  
+  
+  
+  if ((requestedFlavor == sPortalFileAtom ||
+       requestedFlavor == sPortalFileTransferAtom) &&
+      (IsDragFlavorAvailable(sURLMimeAtom) ||
+       IsDragFlavorAvailable(sFileMimeAtom))) {
+    *_retval = true;
   }
-
+  if (*_retval) {
+    LOGDRAGSERVICE("  %s supported with conversion", aDataFlavor);
+  }
   if (!*_retval) {
     LOGDRAGSERVICE("  %s is not supported", aDataFlavor);
   }
-
   return NS_OK;
 }
 
@@ -1359,34 +1343,16 @@ void nsDragService::SetCachedDragContext(GdkDragContext* aDragContext) {
 }
 
 bool nsDragService::IsTargetContextList(void) {
-  bool retval = false;
-
   
   
   
   
   if (mTargetDragContext &&
       gtk_drag_get_source_widget(mTargetDragContext) == nullptr) {
-    return retval;
+    return false;
   }
 
-  GList* tmp = nullptr;
-  if (mTargetDragContext) {
-    tmp = gdk_drag_context_list_targets(mTargetDragContext);
-  }
-
-  
-  
-  for (; tmp; tmp = tmp->next) {
-    
-    GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
-    GUniquePtr<gchar> name(gdk_atom_name(atom));
-    if (name && !strcmp(name.get(), gMimeListType)) {
-      return true;
-    }
-  }
-
-  return retval;
+  return IsDragFlavorAvailable(sMimeListTypeAtom);
 }
 
 bool nsDragService::IsDragFlavorAvailable(GdkAtom aRequestedFlavor) {
@@ -2481,31 +2447,25 @@ static void invisibleSourceDragDataGet(GtkWidget* aWidget,
 static gboolean invisibleSourceDragFailed(GtkWidget* aWidget,
                                           GdkDragContext* aContext,
                                           gint aResult, gpointer aData) {
-#ifdef MOZ_WAYLAND
-  
-  
-  
-  
-  
-  
-  
-  
-  if (widget::GdkIsWaylandDisplay() && aResult == GTK_DRAG_RESULT_ERROR) {
-    for (GList* tmp = gdk_drag_context_list_targets(aContext); tmp;
-         tmp = tmp->next) {
-      GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
-      if (atom == nsDragService::sTabDropTypeAtom) {
-        aResult = GTK_DRAG_RESULT_NO_TARGET;
-        LOGDRAGSERVICESTATIC("invisibleSourceDragFailed(%p): Wayland tab drop",
-                             aContext);
-        break;
-      }
-    }
-  }
-#endif
-  LOGDRAGSERVICESTATIC("invisibleSourceDragFailed(%p) %s", aContext,
-                       kGtkDragResults[aResult]);
   nsDragService* dragService = (nsDragService*)aData;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (widget::GdkIsWaylandDisplay() && aResult == GTK_DRAG_RESULT_ERROR &&
+      dragService->IsDragFlavorAvailable(nsDragService::sTabDropTypeAtom)) {
+    aResult = GTK_DRAG_RESULT_NO_TARGET;
+    LOGDRAGSERVICESTATIC("invisibleSourceDragFailed(%p): Wayland tab drop",
+                         aContext);
+  } else {
+    LOGDRAGSERVICESTATIC("invisibleSourceDragFailed(%p) %s", aContext,
+                         kGtkDragResults[aResult]);
+  }
   
   
   
