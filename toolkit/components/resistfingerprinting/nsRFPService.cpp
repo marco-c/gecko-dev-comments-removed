@@ -1267,7 +1267,11 @@ Maybe<nsTArray<uint8_t>> nsRFPService::GenerateKey(nsIChannel* aChannel) {
 
   
   
-  attrs.SetPartitionKey(topLevelURI);
+  bool foreignByAncestorContext =
+      false;  
+              
+              
+  attrs.SetPartitionKey(topLevelURI, foreignByAncestorContext);
 
   nsAutoCString oaSuffix;
   attrs.CreateSuffix(oaSuffix);
@@ -1337,8 +1341,14 @@ nsRFPService::CleanRandomKeyByPrincipal(nsIPrincipal* aPrincipal) {
 
   OriginAttributes attrs = aPrincipal->OriginAttributesRef();
   nsCOMPtr<nsIURI> uri = aPrincipal->GetURI();
-  attrs.SetPartitionKey(uri);
 
+  attrs.SetPartitionKey(uri, false);
+  ClearBrowsingSessionKey(attrs);
+
+  
+  
+  
+  attrs.SetPartitionKey(uri, true);
   ClearBrowsingSessionKey(attrs);
   return NS_OK;
 }
@@ -1354,14 +1364,21 @@ nsRFPService::CleanRandomKeyByDomain(const nsACString& aDomain) {
 
   
   OriginAttributes attrs;
-  attrs.SetPartitionKey(httpURI);
+  attrs.SetPartitionKey(httpURI, false);
 
   
   
   OriginAttributesPattern pattern;
   pattern.mPartitionKey.Reset();
   pattern.mPartitionKey.Construct(attrs.mPartitionKey);
+  ClearBrowsingSessionKey(pattern);
 
+  
+  
+  
+  attrs.SetPartitionKey(httpURI, true);
+  pattern.mPartitionKey.Reset();
+  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
   ClearBrowsingSessionKey(pattern);
 
   
@@ -1370,10 +1387,17 @@ nsRFPService::CleanRandomKeyByDomain(const nsACString& aDomain) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  attrs.SetPartitionKey(httpsURI);
+  attrs.SetPartitionKey(httpsURI, false);
   pattern.mPartitionKey.Reset();
   pattern.mPartitionKey.Construct(attrs.mPartitionKey);
+  ClearBrowsingSessionKey(pattern);
 
+  
+  
+  
+  attrs.SetPartitionKey(httpsURI, true);
+  pattern.mPartitionKey.Reset();
+  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
   ClearBrowsingSessionKey(pattern);
   return NS_OK;
 }
@@ -1395,7 +1419,7 @@ nsRFPService::CleanRandomKeyByHost(const nsACString& aHost,
 
   
   OriginAttributes attrs;
-  attrs.SetPartitionKey(httpURI);
+  attrs.SetPartitionKey(httpURI, false);
 
   
   pattern.mPartitionKey.Reset();
@@ -1404,15 +1428,30 @@ nsRFPService::CleanRandomKeyByHost(const nsACString& aHost,
   ClearBrowsingSessionKey(pattern);
 
   
+  
+  
+  attrs.SetPartitionKey(httpURI, true);
+  pattern.mPartitionKey.Reset();
+  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
+  ClearBrowsingSessionKey(pattern);
+
+  
   nsCOMPtr<nsIURI> httpsURI;
   rv = NS_NewURI(getter_AddRefs(httpsURI), "https://"_ns + aHost);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  attrs.SetPartitionKey(httpsURI);
+  attrs.SetPartitionKey(httpsURI, false);
   pattern.mPartitionKey.Reset();
   pattern.mPartitionKey.Construct(attrs.mPartitionKey);
+  ClearBrowsingSessionKey(pattern);
 
+  
+  
+  
+  attrs.SetPartitionKey(httpsURI, true);
+  pattern.mPartitionKey.Reset();
+  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
   ClearBrowsingSessionKey(pattern);
   return NS_OK;
 }
@@ -2054,8 +2093,9 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
     nsAutoString scheme;
     nsAutoString domain;
     int32_t unused;
+    bool unused2;
     if (!OriginAttributes::ParsePartitionKey(partitionKey, scheme, domain,
-                                             unused)) {
+                                             unused, unused2)) {
       MOZ_ASSERT(false);
       return Nothing();
     }
@@ -2096,12 +2136,16 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
   cookieJarSettings->GetPartitionKey(partitionKey);
 
   OriginAttributes attrs;
-  attrs.SetPartitionKey(topURI);
+  attrs.SetPartitionKey(topURI, false);
+
+  OriginAttributes attrsForeignByAncestor;
+  attrsForeignByAncestor.SetPartitionKey(topURI, true);
 
   
   
   MOZ_ASSERT_IF(!partitionKey.IsEmpty(),
-                attrs.mPartitionKey.Equals(partitionKey));
+                attrs.mPartitionKey.Equals(partitionKey) ||
+                    attrsForeignByAncestor.mPartitionKey.Equals(partitionKey));
 #endif
 
   return GetOverriddenFingerprintingSettingsForURI(topURI, uri);
