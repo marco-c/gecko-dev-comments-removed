@@ -142,6 +142,7 @@ where
 
 
 
+
 #[derive(Debug)]
 pub struct Glean {
     upload_enabled: bool,
@@ -164,6 +165,7 @@ pub struct Glean {
     pub(crate) remote_settings_epoch: AtomicU8,
     pub(crate) remote_settings_config: Arc<Mutex<RemoteSettingsConfig>>,
     pub(crate) with_timestamps: bool,
+    pub(crate) ping_schedule: HashMap<String, Vec<String>>,
 }
 
 impl Glean {
@@ -224,6 +226,7 @@ impl Glean {
             remote_settings_epoch: AtomicU8::new(0),
             remote_settings_config: Arc::new(Mutex::new(RemoteSettingsConfig::new())),
             with_timestamps: cfg.enable_event_timestamps,
+            ping_schedule: cfg.ping_schedule.clone(),
         };
 
         
@@ -325,6 +328,7 @@ impl Glean {
             enable_event_timestamps: true,
             experimentation_id: None,
             enable_internal_pings,
+            ping_schedule: Default::default(),
         };
 
         let mut glean = Self::new(cfg).unwrap();
