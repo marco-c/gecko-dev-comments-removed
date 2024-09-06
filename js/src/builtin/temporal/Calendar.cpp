@@ -50,6 +50,7 @@
 #include "builtin/temporal/Crash.h"
 #include "builtin/temporal/Duration.h"
 #include "builtin/temporal/Era.h"
+#include "builtin/temporal/MonthCode.h"
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/PlainMonthDay.h"
@@ -486,6 +487,99 @@ static JSString* ISOMonthCode(JSContext* cx, int32_t month) {
   
   char monthCode[3] = {'M', char('0' + (month / 10)), char('0' + (month % 10))};
   return NewStringCopyN<CanGC>(cx, monthCode, std::size(monthCode));
+}
+
+template <typename CharT>
+static auto ToMonthCode(std::basic_string_view<CharT> view) {
+  
+  MOZ_ASSERT(view.length() >= std::string_view{MonthCode{1}}.length());
+  MOZ_ASSERT(view.length() <=
+             std::string_view{MonthCode::maxLeapMonth()}.length());
+
+  
+  bool isLeapMonth = view.length() == 4;
+  if (view[0] != 'M' || (isLeapMonth && view[3] != 'L')) {
+    return MonthCode{};
+  }
+
+  
+  if (!mozilla::IsAsciiDigit(view[1]) || !mozilla::IsAsciiDigit(view[2])) {
+    return MonthCode{};
+  }
+
+  int32_t ordinal =
+      AsciiDigitToNumber(view[1]) * 10 + AsciiDigitToNumber(view[2]);
+
+  constexpr int32_t minMonth = MonthCode{1}.ordinal();
+  constexpr int32_t maxNonLeapMonth = MonthCode::maxNonLeapMonth().ordinal();
+  constexpr int32_t maxLeapMonth = MonthCode::maxLeapMonth().ordinal();
+
+  
+  
+  const int32_t maxMonth = isLeapMonth ? maxLeapMonth : maxNonLeapMonth;
+  if (ordinal < minMonth || ordinal > maxMonth) {
+    return MonthCode{};
+  }
+
+  return MonthCode{ordinal, isLeapMonth};
+}
+
+static MonthCode ToMonthCode(const JSLinearString* linear) {
+  JS::AutoCheckCannotGC nogc;
+
+  if (linear->hasLatin1Chars()) {
+    auto* chars = reinterpret_cast<const char*>(linear->latin1Chars(nogc));
+    return ToMonthCode(std::string_view{chars, linear->length()});
+  }
+
+  auto* chars = linear->twoByteChars(nogc);
+  return ToMonthCode(std::u16string_view{chars, linear->length()});
+}
+
+static bool ParseMonthCode(JSContext* cx, CalendarId calendarId,
+                           Handle<JSString*> monthCode, MonthCode* result) {
+  auto reportInvalidMonthCode = [&]() {
+    if (auto code = QuoteString(cx, monthCode)) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_TEMPORAL_CALENDAR_INVALID_MONTHCODE,
+                               code.get());
+    }
+    return false;
+  };
+
+  
+  constexpr size_t MinLength = std::string_view{MonthCode{1}}.length();
+
+  
+  constexpr size_t MaxLength =
+      std::string_view{MonthCode::maxLeapMonth()}.length();
+  static_assert(
+      MaxLength > std::string_view{MonthCode::maxNonLeapMonth()}.length(),
+      "string representation of max-leap month is larger");
+
+  
+  if (monthCode->length() < MinLength || monthCode->length() > MaxLength) {
+    return reportInvalidMonthCode();
+  }
+
+  auto* linear = monthCode->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
+
+  auto code = ToMonthCode(linear);
+  if (code == MonthCode{}) {
+    return reportInvalidMonthCode();
+  }
+
+  
+  const auto& monthCodes = CalendarMonthCodes(calendarId);
+  if (!monthCodes.contains(code)) {
+    return reportInvalidMonthCode();
+  }
+
+  *result = code;
+  return true;
 }
 
 template <typename T, typename... Ts>
@@ -1417,6 +1511,54 @@ static bool CalendarDateYear(JSContext* cx, CalendarId calendar,
   return true;
 }
 
+
+
+
+static bool CalendarDateMonthCode(JSContext* cx, CalendarId calendar,
+                                  const capi::ICU4XDate* date,
+                                  MonthCode* result) {
+  MOZ_ASSERT(calendar != CalendarId::ISO8601);
+
+  
+  constexpr size_t MaxLength =
+      std::string_view{MonthCode::maxLeapMonth()}.length();
+  static_assert(
+      MaxLength > std::string_view{MonthCode::maxNonLeapMonth()}.length(),
+      "string representation of max-leap month is larger");
+
+  
+  char buf[MaxLength + 1] = {};
+  auto writable = capi::diplomat_simple_writeable(buf, std::size(buf));
+
+  if (!capi::ICU4XDate_month_code(date, &writable).is_ok) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INTERNAL_ERROR);
+    return false;
+  }
+  MOZ_ASSERT(writable.buf == buf, "unexpected buffer relocation");
+
+  auto view = std::string_view{writable.buf, writable.len};
+
+  auto monthCode = ToMonthCode(view);
+  MOZ_ASSERT(monthCode != MonthCode{}, "invalid month code returned");
+
+  static constexpr auto IrregularAdarII =
+      MonthCode{6,  true};
+  static constexpr auto RegularAdarII = MonthCode{6};
+
+  
+  
+  
+  if (calendar == CalendarId::Hebrew && monthCode == IrregularAdarII) {
+    monthCode = RegularAdarII;
+  }
+
+  
+  MOZ_ASSERT(CalendarMonthCodes(calendar).contains(monthCode));
+
+  *result = monthCode;
+  return true;
+}
 #endif
 
 
@@ -1544,6 +1686,42 @@ static bool CalendarDateMonth(JSContext* cx, CalendarId calendar,
 
   int32_t month = capi::ICU4XDate_ordinal_month(dt.get());
   result.setInt32(month);
+  return true;
+#else
+  MOZ_CRASH("ICU4X disabled");
+#endif
+}
+
+
+
+
+static bool CalendarDateMonthCode(JSContext* cx, CalendarId calendar,
+                                  const PlainDate& date,
+                                  MutableHandle<Value> result) {
+#if defined(MOZ_ICU4X)
+  MOZ_ASSERT(calendar != CalendarId::ISO8601);
+
+  auto cal = CreateICU4XCalendar(cx, calendar);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  MonthCode monthCode;
+  if (!CalendarDateMonthCode(cx, calendar, dt.get(), &monthCode)) {
+    return false;
+  }
+
+  auto* str = NewStringCopy<CanGC>(cx, std::string_view{monthCode});
+  if (!str) {
+    return false;
+  }
+
+  result.setString(str);
   return true;
 #else
   MOZ_CRASH("ICU4X disabled");
@@ -1818,6 +1996,94 @@ static bool CalendarDateMonthsInYear(JSContext* cx, CalendarId calendar,
 
   int32_t months = capi::ICU4XDate_months_in_year(dt.get());
   result.setInt32(months);
+  return true;
+#else
+  MOZ_CRASH("ICU4X disabled");
+#endif
+}
+
+
+
+
+static bool CalendarDateInLeapYear(JSContext* cx, CalendarId calendar,
+                                   const PlainDate& date,
+                                   MutableHandle<Value> result) {
+#if defined(MOZ_ICU4X)
+  MOZ_ASSERT(calendar != CalendarId::ISO8601);
+
+  
+  
+  
+
+  auto cal = CreateICU4XCalendar(cx, calendar);
+  if (!cal) {
+    return false;
+  }
+
+  auto dt = CreateICU4XDate(cx, date, cal.get());
+  if (!dt) {
+    return false;
+  }
+
+  bool inLeapYear = false;
+  switch (calendar) {
+    case CalendarId::ISO8601:
+    case CalendarId::Buddhist:
+    case CalendarId::Gregorian:
+    case CalendarId::Japanese:
+    case CalendarId::Coptic:
+    case CalendarId::Ethiopian:
+    case CalendarId::EthiopianAmeteAlem:
+    case CalendarId::Indian:
+    case CalendarId::Persian:
+    case CalendarId::ROC: {
+      MOZ_ASSERT(!CalendarHasLeapMonths(calendar));
+
+      
+      int32_t days = capi::ICU4XDate_days_in_year(dt.get());
+      MOZ_ASSERT(days == 365 || days == 366);
+
+      
+      inLeapYear = days == 366;
+      break;
+    }
+
+    case CalendarId::Islamic:
+    case CalendarId::IslamicCivil:
+    case CalendarId::IslamicRGSA:
+    case CalendarId::IslamicTabular:
+    case CalendarId::IslamicUmmAlQura: {
+      MOZ_ASSERT(!CalendarHasLeapMonths(calendar));
+
+      
+      
+      
+      
+      int32_t days = capi::ICU4XDate_days_in_year(dt.get());
+      MOZ_ASSERT(days == 353 || days == 354 || days == 355);
+
+      
+      inLeapYear = days == 355;
+      break;
+    }
+
+    case CalendarId::Chinese:
+    case CalendarId::Dangi:
+    case CalendarId::Hebrew: {
+      MOZ_ASSERT(CalendarHasLeapMonths(calendar));
+
+      
+      
+      int32_t months = capi::ICU4XDate_months_in_year(dt.get());
+      MOZ_ASSERT(months == 12 || months == 13);
+
+      
+      inLeapYear = months == 13;
+      break;
+    }
+  }
+
+  result.setBoolean(inLeapYear);
   return true;
 #else
   MOZ_CRASH("ICU4X disabled");
@@ -2566,13 +2832,16 @@ static bool BuiltinCalendarMonthCode(JSContext* cx, CalendarId calendarId,
   
 
   
-  JSString* str = ISOMonthCode(cx, date.month);
-  if (!str) {
-    return false;
-  }
+  if (calendarId == CalendarId::ISO8601) {
+    JSString* str = ISOMonthCode(cx, date.month);
+    if (!str) {
+      return false;
+    }
 
-  result.setString(str);
-  return true;
+    result.setString(str);
+    return true;
+  }
+  return CalendarDateMonthCode(cx, calendarId, date, result);
 }
 
 static bool Calendar_monthCode(JSContext* cx, unsigned argc, Value* vp);
@@ -3373,8 +3642,11 @@ static bool BuiltinCalendarInLeapYear(JSContext* cx, CalendarId calendarId,
   
 
   
-  result.setBoolean(IsISOLeapYear(date.year));
-  return true;
+  if (calendarId == CalendarId::ISO8601) {
+    result.setBoolean(IsISOLeapYear(date.year));
+    return true;
+  }
+  return CalendarDateInLeapYear(cx, calendarId, date, result);
 }
 
 static bool Calendar_inLeapYear(JSContext* cx, unsigned argc, Value* vp);
@@ -3472,67 +3744,27 @@ static bool ISOResolveMonth(JSContext* cx,
   }
 
   
+  MonthCode parsedMonthCode;
+  if (!ParseMonthCode(cx, CalendarId::ISO8601, monthCode, &parsedMonthCode)) {
+    return false;
+  }
+  int32_t ordinal = parsedMonthCode.ordinal();
 
   
-  if (monthCode->length() != 3) {
+  if (!std::isnan(month) && month != ordinal) {
+    ToCStringBuf cbuf;
+    const char* monthStr = NumberToCString(&cbuf, month);
+
     if (auto code = QuoteString(cx, monthCode)) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_TEMPORAL_CALENDAR_INVALID_MONTHCODE,
-                               code.get());
-    }
-    return false;
-  }
-
-  JSLinearString* linear = monthCode->ensureLinear(cx);
-  if (!linear) {
-    return false;
-  }
-
-  char16_t chars[3] = {
-      linear->latin1OrTwoByteChar(0),
-      linear->latin1OrTwoByteChar(1),
-      linear->latin1OrTwoByteChar(2),
-  };
-
-  
-  if (chars[0] != 'M' || !mozilla::IsAsciiDigit(chars[1]) ||
-      !mozilla::IsAsciiDigit(chars[2])) {
-    if (auto code = QuoteString(cx, linear)) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_TEMPORAL_CALENDAR_INVALID_MONTHCODE,
-                               code.get());
+                               JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE_MONTHCODE,
+                               code.get(), monthStr);
     }
     return false;
   }
 
   
-  int32_t monthCodeInteger =
-      AsciiDigitToNumber(chars[1]) * 10 + AsciiDigitToNumber(chars[2]);
-
-  
-  if (monthCodeInteger < 1 || monthCodeInteger > 12) {
-    if (auto code = QuoteString(cx, linear)) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_TEMPORAL_CALENDAR_INVALID_MONTHCODE,
-                               code.get());
-    }
-    return false;
-  }
-
-  
-
-  
-  if (!std::isnan(month) && month != monthCodeInteger) {
-    if (auto code = QuoteString(cx, linear)) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_TEMPORAL_CALENDAR_INVALID_MONTHCODE,
-                               code.get());
-    }
-    return false;
-  }
-
-  
-  fields.month() = monthCodeInteger;
+  fields.month() = ordinal;
 
   
   return true;
