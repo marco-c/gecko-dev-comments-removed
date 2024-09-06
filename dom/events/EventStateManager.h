@@ -14,6 +14,7 @@
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsRefPtrHashtable.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
@@ -32,6 +33,7 @@ class imgIContainer;
 class nsIDocumentViewer;
 class nsIScrollableFrame;
 class nsITimer;
+class nsIWidget;
 class nsPresContext;
 
 enum class FormControlType : uint8_t;
@@ -65,15 +67,13 @@ class OverOutElementsWrapper final : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(OverOutElementsWrapper)
 
+  already_AddRefed<nsIWidget> GetLastOverWidget() const;
+
   void ContentRemoved(nsIContent& aContent);
-  void WillDispatchOverAndEnterEvent(nsIContent* aOverEventTarget) {
-    StoreOverEventTargetAndDeepestEnterEventTarget(aOverEventTarget);
-    
-    
-    mDispatchingOverEventTarget = aOverEventTarget;
-  }
+  void WillDispatchOverAndEnterEvent(nsIContent* aOverEventTarget);
   void DidDispatchOverAndEnterEvent(
-      nsIContent* aOriginalOverTargetInComposedDoc);
+      nsIContent* aOriginalOverTargetInComposedDoc,
+      nsIWidget* aOverEventTargetWidget);
   [[nodiscard]] bool IsDispatchingOverEventOn(
       nsIContent* aOverEventTarget) const {
     MOZ_ASSERT(aOverEventTarget);
@@ -96,6 +96,10 @@ class OverOutElementsWrapper final : public nsISupports {
   }
   void OverrideOverEventTarget(nsIContent* aOverEventTarget) {
     StoreOverEventTargetAndDeepestEnterEventTarget(aOverEventTarget);
+    
+    
+    
+    mLastOverWidget = nullptr;
   }
 
   [[nodiscard]] nsIContent* GetDeepestLeaveEventTarget() const {
@@ -113,9 +117,6 @@ class OverOutElementsWrapper final : public nsISupports {
                ? mDeepestEnterEventTarget.get()
                : nullptr;
   }
-
- public:
-  WeakFrame mLastOverFrame;
 
  private:
   
@@ -145,6 +146,11 @@ class OverOutElementsWrapper final : public nsISupports {
   
   
   nsCOMPtr<nsIContent> mDispatchingOutOrDeepestLeaveEventTarget;
+
+  
+  
+  
+  nsWeakPtr mLastOverWidget;
 
   const BoundaryEventType mType;
 
@@ -479,9 +485,11 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsIFrame* DispatchMouseOrPointerEvent(
-      WidgetMouseEvent* aMouseEvent, EventMessage aMessage,
-      nsIContent* aTargetContent, nsIContent* aRelatedContent);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIWidget>
+  DispatchMouseOrPointerEvent(WidgetMouseEvent* aMouseEvent,
+                              EventMessage aMessage, nsIContent* aTargetContent,
+                              nsIContent* aRelatedContent);
   
 
 

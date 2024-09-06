@@ -73,6 +73,7 @@
 #include "nsICookieJarSettings.h"
 #include "nsIFrame.h"
 #include "nsFrameLoaderOwner.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsIWidget.h"
 #include "nsLiteralString.h"
 #include "nsPresContext.h"
@@ -296,6 +297,11 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(OverOutElementsWrapper)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
+already_AddRefed<nsIWidget> OverOutElementsWrapper::GetLastOverWidget() const {
+  nsCOMPtr<nsIWidget> widget = do_QueryReferent(mLastOverWidget);
+  return widget.forget();
+}
+
 void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
   if (!mDeepestEnterEventTarget) {
     return;
@@ -358,9 +364,19 @@ void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
   UpdateDeepestEnterEventTarget(aContent.GetFlattenedTreeParent());
 }
 
+void OverOutElementsWrapper::WillDispatchOverAndEnterEvent(
+    nsIContent* aOverEventTarget) {
+  StoreOverEventTargetAndDeepestEnterEventTarget(aOverEventTarget);
+  
+  
+  mDispatchingOverEventTarget = aOverEventTarget;
+}
+
 void OverOutElementsWrapper::DidDispatchOverAndEnterEvent(
-    nsIContent* aOriginalOverTargetInComposedDoc) {
+    nsIContent* aOriginalOverTargetInComposedDoc,
+    nsIWidget* aOverEventTargetWidget) {
   mDispatchingOverEventTarget = nullptr;
+  mLastOverWidget = do_GetWeakReference(aOverEventTargetWidget);
 
   
   
@@ -409,7 +425,7 @@ void OverOutElementsWrapper::StoreOverEventTargetAndDeepestEnterEventTarget(
     nsIContent* aOverEventTargetAndDeepestEnterEventTarget) {
   mDeepestEnterEventTarget = aOverEventTargetAndDeepestEnterEventTarget;
   mDeepestEnterEventTargetIsOverEventTarget = true;
-  mLastOverFrame = nullptr;  
+  mLastOverWidget = nullptr;  
 }
 
 void OverOutElementsWrapper::UpdateDeepestEnterEventTarget(
@@ -421,6 +437,9 @@ void OverOutElementsWrapper::UpdateDeepestEnterEventTarget(
   } else {
     mDeepestEnterEventTarget = aDeepestEnterEventTarget;
     mDeepestEnterEventTargetIsOverEventTarget = false;
+    
+    
+    
   }
 }
 
@@ -4795,7 +4814,7 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
   return newEvent;
 }
 
-nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
+already_AddRefed<nsIWidget> EventStateManager::DispatchMouseOrPointerEvent(
     WidgetMouseEvent* aMouseEvent, EventMessage aMessage,
     nsIContent* aTargetContent, nsIContent* aRelatedContent) {
   
@@ -4812,13 +4831,27 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
       NS_WARNING("Should have pointer locked element, but didn't.");
       return nullptr;
     }
-    return mPresContext->GetPrimaryFrameFor(pointerLockedElement);
+    nsIFrame* const pointerLockedFrame =
+        mPresContext->GetPrimaryFrameFor(pointerLockedElement);
+    if (NS_WARN_IF(!pointerLockedFrame)) {
+      return nullptr;
+    }
+    return do_AddRef(pointerLockedFrame->GetNearestWidget());
   }
 
   mCurrentTargetContent = nullptr;
 
   if (!aTargetContent) {
     return nullptr;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIWidget> targetWidget;
+  if (nsIFrame* const targetFrame =
+          mPresContext->GetPrimaryFrameFor(aTargetContent)) {
+    targetWidget = targetFrame->GetNearestWidget();
   }
 
   nsCOMPtr<nsIContent> targetContent = aTargetContent;
@@ -4830,8 +4863,6 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
   AutoWeakFrame previousTarget = mCurrentTarget;
   mCurrentTargetContent = targetContent;
 
-  nsIFrame* targetFrame = nullptr;
-
   nsEventStatus status = nsEventStatus_eIgnore;
   ESMEventCB callback(targetContent);
   RefPtr<nsPresContext> presContext = mPresContext;
@@ -4839,10 +4870,6 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
                             nullptr, &status, &callback);
 
   if (mPresContext) {
-    
-    
-    targetFrame = mPresContext->GetPrimaryFrameFor(targetContent);
-
     
     
     if (IsTopLevelRemoteTarget(targetContent)) {
@@ -4857,7 +4884,7 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
         
         
         
-        mCurrentTarget = targetFrame;
+        mCurrentTarget = mPresContext->GetPrimaryFrameFor(targetContent);
         HandleCrossProcessEvent(remoteEvent.get(), &status);
       } else if (aMessage == eMouseOver) {
         UniquePtr<WidgetMouseEvent> remoteEvent =
@@ -4871,7 +4898,7 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
   mCurrentTargetContent = nullptr;
   mCurrentTarget = previousTarget;
 
-  return targetFrame;
+  return targetWidget.forget();
 }
 
 static nsIContent* FindCommonAncestor(nsIContent* aNode1, nsIContent* aNode2) {
@@ -4913,15 +4940,15 @@ class EnterLeaveDispatcher {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Dispatch() {
     if (mEventMessage == eMouseEnter || mEventMessage == ePointerEnter) {
       for (int32_t i = mTargets.Count() - 1; i >= 0; --i) {
-        mESM->DispatchMouseOrPointerEvent(mMouseEvent, mEventMessage,
-                                          MOZ_KnownLive(mTargets[i]),
-                                          mRelatedTarget);
+        nsCOMPtr<nsIWidget> widget = mESM->DispatchMouseOrPointerEvent(
+            mMouseEvent, mEventMessage, MOZ_KnownLive(mTargets[i]),
+            mRelatedTarget);
       }
     } else {
       for (int32_t i = 0; i < mTargets.Count(); ++i) {
-        mESM->DispatchMouseOrPointerEvent(mMouseEvent, mEventMessage,
-                                          MOZ_KnownLive(mTargets[i]),
-                                          mRelatedTarget);
+        nsCOMPtr<nsIWidget> widget = mESM->DispatchMouseOrPointerEvent(
+            mMouseEvent, mEventMessage, MOZ_KnownLive(mTargets[i]),
+            mRelatedTarget);
       }
     }
   }
@@ -5010,9 +5037,9 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
              isPointer ? "ePointerOut" : "eMouseOut",
              outEventTarget ? ToString(*outEventTarget).c_str() : "nullptr",
              outEventTarget.get()));
-    DispatchMouseOrPointerEvent(aMouseEvent,
-                                isPointer ? ePointerOut : eMouseOut,
-                                outEventTarget, aMovingInto);
+    nsCOMPtr<nsIWidget> widget = DispatchMouseOrPointerEvent(
+        aMouseEvent, isPointer ? ePointerOut : eMouseOut, outEventTarget,
+        aMovingInto);
   }
 
   MOZ_LOG(logModule, LogLevel::Info,
@@ -5115,7 +5142,7 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
           ("Dispatching %s event to %s (%p)",
            isPointer ? "ePointerOver" : "eMoustOver",
            aContent ? ToString(*aContent).c_str() : "nullptr", aContent));
-  wrapper->mLastOverFrame = DispatchMouseOrPointerEvent(
+  nsCOMPtr<nsIWidget> targetWidget = DispatchMouseOrPointerEvent(
       aMouseEvent, isPointer ? ePointerOver : eMouseOver, aContent,
       deepestLeaveEventTarget);
 
@@ -5130,7 +5157,8 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
            "event target was in the document %p, and now in %p)",
            aContent->GetComposedDoc(), mDocument.get()));
   wrapper->DidDispatchOverAndEnterEvent(
-      aContent->GetComposedDoc() == mDocument ? aContent : nullptr);
+      aContent->GetComposedDoc() == mDocument ? aContent : nullptr,
+      targetWidget);
 }
 
 
@@ -5292,13 +5320,16 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
       
 
       RefPtr<OverOutElementsWrapper> helper = GetWrapperByEventID(aMouseEvent);
-      if (helper && helper->mLastOverFrame &&
-          nsContentUtils::GetTopLevelWidget(aMouseEvent->mWidget) !=
-              nsContentUtils::GetTopLevelWidget(
-                  helper->mLastOverFrame->GetNearestWidget())) {
-        
-        
-        break;
+      if (helper) {
+        nsCOMPtr<nsIWidget> lastOverWidget = helper->GetLastOverWidget();
+        if (lastOverWidget &&
+            nsContentUtils::GetTopLevelWidget(aMouseEvent->mWidget) !=
+                nsContentUtils::GetTopLevelWidget(lastOverWidget)) {
+          
+          
+          
+          break;
+        }
       }
 
       
