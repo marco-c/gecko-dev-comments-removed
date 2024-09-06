@@ -39,7 +39,6 @@
 namespace mozilla {
 
 using RawNodePosition = ContentEventHandler::RawNodePosition;
-using RawNodePositionBefore = ContentEventHandler::RawNodePositionBefore;
 
 using namespace dom;
 using namespace widget;
@@ -47,27 +46,6 @@ using namespace widget;
 LazyLogModule sIMECOLog("IMEContentObserver");
 
 static const char* ToChar(bool aBool) { return aBool ? "true" : "false"; }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static nsIContent* PointBefore(nsINode* aContainer, nsIContent* aContent) {
-  if (aContent) {
-    return aContent->GetPreviousSibling();
-  }
-  return aContainer->GetLastChild();
-}
 
 
 
@@ -928,7 +906,7 @@ void IMEContentObserver::CharacterDataChanged(
     }
   } else {
     nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
-        RawNodePosition(mRootElement, 0u),
+        RawNodePosition::BeforeFirstContentOf(*mRootElement),
         RawNodePosition(aContent, aInfo.mChangeStart), mRootElement, &offset,
         LINE_BREAK_TYPE_NATIVE);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1000,28 +978,33 @@ void IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
   MOZ_ASSERT(!HasAddedNodesDuringDocumentChange(),
              "The cache should be cleared when document change finished");
 
+  
+  
+  
+  
+  
+  
+  
+  
   uint32_t offset = 0;
   nsresult rv = NS_OK;
   if (!mEndOfAddedTextCache.Match(aContainer,
                                   aFirstContent->GetPreviousSibling())) {
     mEndOfAddedTextCache.Clear();
     rv = ContentEventHandler::GetFlatTextLengthInRange(
-        RawNodePosition(mRootElement, 0u),
-        RawNodePositionBefore(aContainer,
-                              PointBefore(aContainer, aFirstContent)),
-        mRootElement, &offset, LINE_BREAK_TYPE_NATIVE);
+        RawNodePosition::BeforeFirstContentOf(*mRootElement),
+        RawNodePosition::Before(*aFirstContent), mRootElement, &offset,
+        LINE_BREAK_TYPE_NATIVE);
     if (NS_WARN_IF(NS_FAILED((rv)))) {
       return;
     }
   } else {
     offset = mEndOfAddedTextCache.mFlatTextLength;
   }
-
-  
   uint32_t addingLength = 0;
   rv = ContentEventHandler::GetFlatTextLengthInRange(
-      RawNodePositionBefore(aContainer, PointBefore(aContainer, aFirstContent)),
-      RawNodePosition(aContainer, aLastContent), mRootElement, &addingLength,
+      RawNodePosition::Before(*aFirstContent),
+      RawNodePosition::After(*aLastContent), mRootElement, &addingLength,
       LINE_BREAK_TYPE_NATIVE);
   if (NS_WARN_IF(NS_FAILED((rv)))) {
     mEndOfAddedTextCache.Clear();
@@ -1074,8 +1057,13 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
     
     
 
+    
+    
+    
+    
+    
     rv = ContentEventHandler::GetFlatTextLengthInRange(
-        RawNodePosition(mRootElement, 0u),
+        RawNodePosition::BeforeFirstContentOf(*mRootElement),
         RawNodePosition(containerNode, aPreviousSibling), mRootElement, &offset,
         LINE_BREAK_TYPE_NATIVE);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1093,10 +1081,18 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
   if (const Text* textNode = Text::FromNode(aChild)) {
     textLength = ContentEventHandler::GetNativeTextLength(*textNode);
   } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
-        RawNodePositionBefore(aChild, 0u),
-        RawNodePosition(aChild, aChild->GetChildCount()), mRootElement,
-        &textLength, LINE_BREAK_TYPE_NATIVE, true);
+        RawNodePosition::Before(*aChild), RawNodePosition::AtEndOf(*aChild),
+        mRootElement, &textLength, LINE_BREAK_TYPE_NATIVE, true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       mStartOfRemovingTextRangeCache.Clear();
       return;
@@ -1174,24 +1170,26 @@ void IMEContentObserver::MaybeNotifyIMEOfAddedTextDuringDocumentChange() {
 
   
   
+  
+  
+  
+  
+  
+  
   uint32_t offset;
   nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
-      RawNodePosition(mRootElement, 0u),
-      RawNodePosition(mFirstAddedContainer,
-                      PointBefore(mFirstAddedContainer, mFirstAddedContent)),
-      mRootElement, &offset, LINE_BREAK_TYPE_NATIVE);
+      RawNodePosition::BeforeFirstContentOf(*mRootElement),
+      RawNodePosition::Before(*mFirstAddedContent), mRootElement, &offset,
+      LINE_BREAK_TYPE_NATIVE);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ClearAddedNodesDuringDocumentChange();
     return;
   }
-
-  
   uint32_t length;
   rv = ContentEventHandler::GetFlatTextLengthInRange(
-      RawNodePosition(mFirstAddedContainer,
-                      PointBefore(mFirstAddedContainer, mFirstAddedContent)),
-      RawNodePosition(mLastAddedContainer, mLastAddedContent), mRootElement,
-      &length, LINE_BREAK_TYPE_NATIVE);
+      RawNodePosition::Before(*mFirstAddedContent),
+      RawNodePosition::After(*mLastAddedContent), mRootElement, &length,
+      LINE_BREAK_TYPE_NATIVE);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ClearAddedNodesDuringDocumentChange();
     return;
