@@ -645,7 +645,7 @@ pref("browser.urlbar.yelp.featureGate", false);
 
 
 
-pref("browser.urlbar.yelp.minKeywordLength", 5);
+pref("browser.urlbar.yelp.minKeywordLength", 0);
 
 
 pref("browser.urlbar.yelp.priority", false);
