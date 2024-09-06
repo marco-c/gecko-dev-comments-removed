@@ -20,7 +20,6 @@
 
 #include <chrono>
 
-#include "jit/FlushICache.h"  
 #include "js/BuildId.h"       
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
@@ -168,66 +167,8 @@ void Module::startTier2(const CompileArgs& args, const ShareableBytes& bytecode,
 
 bool Module::finishTier2(const LinkData& linkData2,
                          UniqueCodeBlock code2) const {
-  MOZ_ASSERT(code().bestTier() == Tier::Baseline &&
-             code2->tier() == Tier::Optimized);
-
-  
-  
-
-  const CodeBlock* borrowedTier2;
-  if (!code().setAndBorrowTier2(std::move(code2), linkData2, &borrowedTier2)) {
+  if (!code_->finishCompleteTier2(linkData2, std::move(code2))) {
     return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  {
-    
-    
-    
-
-    auto lazyStubs = code().lazyStubs().writeLock();
-
-    Maybe<size_t> stub2Index;
-    if (!lazyStubs->createTier2(codeMeta(), *borrowedTier2, &stub2Index)) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    jit::FlushExecutionContextForAllThreads();
-
-    
-
-    MOZ_ASSERT(!code().hasTier2());
-    code().commitTier2();
-
-    lazyStubs->setJitEntries(stub2Index, code());
-  }
-
-  
-  
-  
-
-  uint8_t* base = code().segment(Tier::Optimized).base();
-  for (const CodeRange& cr : code(Tier::Optimized).codeRanges) {
-    
-    
-    
-    
-    if (cr.isFunction()) {
-      code().setTieringEntry(cr.funcIndex(), base + cr.funcTierEntry());
-    } else if (cr.isJitEntry()) {
-      code().setJitEntry(cr.funcIndex(), base + cr.begin());
-    }
   }
 
   

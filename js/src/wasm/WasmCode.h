@@ -258,52 +258,6 @@ using LazyFuncExportVector = Vector<LazyFuncExport, 0, SystemAllocPolicy>;
 
 
 
-
-
-
-
-class LazyStubTier {
-  CodeSegmentVector stubSegments_;
-  UniqueCodeBlockVector codeBlocks_;
-  LazyFuncExportVector exports_;
-
-  [[nodiscard]] bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
-                                          const CodeMetadata& codeMeta,
-                                          const CodeBlock& tierCodeBlock,
-                                          size_t* stubBlockIndex);
-
- public:
-  LazyStubTier() = default;
-
-  
-  
-  [[nodiscard]] bool createOneEntryStub(uint32_t funcExportIndex,
-                                        const CodeMetadata& codeMeta,
-                                        const CodeBlock& tierCodeBlock);
-
-  bool entryStubsEmpty() const { return codeBlocks_.empty(); }
-  bool hasEntryStub(uint32_t funcIndex) const;
-
-  
-  
-  [[nodiscard]] void* lookupInterpEntry(uint32_t funcIndex) const;
-
-  
-  
-  
-  
-  [[nodiscard]] bool createTier2(const CodeMetadata& codeMeta,
-                                 const CodeBlock& tierCodeBlock,
-                                 Maybe<size_t>* outStubBlockIndex);
-  void setJitEntries(const Maybe<size_t>& stubBlockIndex, const Code& code);
-
-  void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code,
-                     size_t* data) const;
-};
-
-
-
-
 enum class CodeBlockKind { BaselineTier, OptimizedTier, LazyStubs };
 
 class CodeBlock {
@@ -496,6 +450,18 @@ using MetadataAnalysisHashMap =
     HashMap<const char*, uint32_t, mozilla::CStringHasher, SystemAllocPolicy>;
 
 class Code : public ShareableBase<Code> {
+  struct ProtectedData {
+    CodeSegmentVector segments;
+    UniqueCodeBlockVector blocks;
+    LazyFuncExportVector lazyExports;
+  };
+  using ReadGuard = RWExclusiveData<ProtectedData>::ReadGuard;
+  using WriteGuard = RWExclusiveData<ProtectedData>::WriteGuard;
+
+  
+  
+  RWExclusiveData<ProtectedData> data_;
+
   
   
   
@@ -504,6 +470,7 @@ class Code : public ShareableBase<Code> {
   
   SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
 
+  UniqueCodeBlock tier1_;
   
   
   
@@ -524,16 +491,31 @@ class Code : public ShareableBase<Code> {
   mutable UniqueConstCodeBlock tier2_;
   mutable Atomic<bool> hasTier2_;
 
-  UniqueCodeBlock tier1_;
-
   ExclusiveData<CacheableCharsVector> profilingLabels_;
   JumpTables jumpTables_;
 
   
-  RWExclusiveData<LazyStubTier> lazyStubs_;
+  uint8_t* trapCode_;
 
   
-  uint8_t* trapCode_;
+  
+  [[nodiscard]] void* lookupLazyInterpEntry(const WriteGuard& guard,
+                                            uint32_t funcIndex) const;
+
+  [[nodiscard]] bool createOneLazyEntryStub(const WriteGuard& guard,
+                                            uint32_t funcExportIndex,
+                                            const CodeBlock& tierCodeBlock,
+                                            void** interpEntry) const;
+  [[nodiscard]] bool createManyLazyEntryStubs(
+      const WriteGuard& guard, const Uint32Vector& funcExportIndices,
+      const CodeBlock& tierCodeBlock, size_t* stubBlockIndex) const;
+  
+  
+  
+  
+  [[nodiscard]] bool createTier2LazyEntryStubs(
+      const WriteGuard& guard, const CodeBlock& tier2Code,
+      Maybe<size_t>* outStubBlockIndex) const;
 
  public:
   Code(const CodeMetadata& codeMeta,
@@ -543,14 +525,14 @@ class Code : public ShareableBase<Code> {
 
   bool initialize(const LinkData& linkData);
 
-  void setTieringEntry(size_t i, void* target) const {
-    jumpTables_.setTieringEntry(i, target);
-  }
+  [[nodiscard]] bool getOrCreateInterpEntry(uint32_t funcIndex,
+                                            const FuncExport** funcExport,
+                                            void** interpEntry) const;
+  [[nodiscard]] bool finishCompleteTier2(const LinkData& linkData,
+                                         UniqueCodeBlock tierCodeBlock) const;
+
   void** tieringJumpTable() const { return jumpTables_.tiering(); }
 
-  void setJitEntry(size_t i, void* target) const {
-    jumpTables_.setJitEntry(i, target);
-  }
   void setJitEntryIfNull(size_t i, void* target) const {
     jumpTables_.setJitEntryIfNull(i, target);
   }
@@ -560,14 +542,6 @@ class Code : public ShareableBase<Code> {
   uint32_t getFuncIndex(JSFunction* fun) const;
 
   uint8_t* trapCode() const { return trapCode_; }
-
-  
-  
-  
-  
-  bool setAndBorrowTier2(UniqueCodeBlock tier2, const LinkData& linkData,
-                         const CodeBlock** borrowedTier) const;
-  void commitTier2() const;
 
   bool hasTier2() const { return hasTier2_; }
   Tiers tiers() const;
@@ -586,8 +560,6 @@ class Code : public ShareableBase<Code> {
   const CodeSegment& segment(Tier iter) const {
     return *codeBlock(iter).segment;
   }
-
-  const RWExclusiveData<LazyStubTier>& lazyStubs() const { return lazyStubs_; }
 
   
 
