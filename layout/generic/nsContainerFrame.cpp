@@ -207,7 +207,11 @@ void nsContainerFrame::SafelyDestroyFrameListProp(
   
   
   while (nsFrameList* frameList = GetProperty(aProp)) {
-    nsIFrame* frame = frameList->RemoveFirstChild();
+    
+    
+    
+    
+    nsIFrame* frame = frameList->RemoveLastChild();
     if (MOZ_LIKELY(frame)) {
       frame->Destroy(aContext);
     } else {

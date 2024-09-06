@@ -353,22 +353,24 @@ void nsLineBox::DeleteLineList(nsPresContext* aPresContext, nsLineList& aLines,
   
   
   
+  
+  
+  
+  
   while (!aLines.empty()) {
-    nsLineBox* line = aLines.front();
+    nsLineBox* line = aLines.back();
     if (MOZ_UNLIKELY(line->mFlags.mHasHashedFrames)) {
       line->SwitchToCounter();  
     }
     while (line->GetChildCount() > 0) {
-      nsIFrame* child = aFrames->RemoveFirstChild();
+      nsIFrame* child = aFrames->RemoveLastChild();
       MOZ_DIAGNOSTIC_ASSERT(child->PresContext() == aPresContext);
-      MOZ_DIAGNOSTIC_ASSERT(child == line->mFirstChild, "Lines out of sync");
-      line->mFirstChild = aFrames->FirstChild();
       line->NoteFrameRemoved(child);
       child->Destroy(aContext);
     }
-    MOZ_DIAGNOSTIC_ASSERT(line == aLines.front(),
+    MOZ_DIAGNOSTIC_ASSERT(line == aLines.back(),
                           "destroying child frames messed up our lines!");
-    aLines.pop_front();
+    aLines.pop_back();
     line->Destroy(presShell);
   }
 }
