@@ -1126,6 +1126,9 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
         boundary = searchFrom.FindParagraphSameAcc(aDirection, includeOrigin,
                                                    ignoreListItemMarker);
         break;
+      case nsIAccessibleText::BOUNDARY_CLUSTER:
+        boundary = searchFrom.FindClusterSameAcc(aDirection, includeOrigin);
+        break;
       default:
         MOZ_ASSERT_UNREACHABLE();
         break;
@@ -1364,6 +1367,62 @@ TextLeafPoint TextLeafPoint::FindParagraphSameAcc(
     prevLeaf->AppendTextTo(text, nsAccUtils::TextLength(prevLeaf) - 1, 1);
     if (text.CharAt(0) == '\n') {
       return TextLeafPoint(mAcc, 0);
+    }
+  }
+  return TextLeafPoint();
+}
+
+TextLeafPoint TextLeafPoint::FindClusterSameAcc(nsDirection aDirection,
+                                                bool aIncludeOrigin) const {
+  
+  
+  if (aIncludeOrigin && mOffset == 0) {
+    
+    return *this;
+  }
+  if (aDirection == eDirPrevious) {
+    if (mOffset == 0) {
+      
+      return TextLeafPoint();
+    }
+    if (!aIncludeOrigin && mOffset == 1) {
+      
+      
+      
+      return TextLeafPoint(mAcc, 0);
+    }
+  }
+  nsAutoString text;
+  mAcc->AppendTextTo(text);
+  if (text.IsEmpty()) {
+    return TextLeafPoint();
+  }
+  if (aDirection == eDirNext &&
+      mOffset == static_cast<int32_t>(text.Length())) {
+    return TextLeafPoint();
+  }
+  
+  
+  
+  
+  
+  
+  intl::GraphemeClusterBreakIteratorUtf16 iter(text);
+  
+  int32_t prevCluster = 0;
+  while (Maybe<uint32_t> next = iter.Next()) {
+    int32_t cluster = static_cast<int32_t>(*next);
+    if (aIncludeOrigin && cluster == mOffset) {
+      return *this;
+    }
+    if (aDirection == eDirPrevious) {
+      if (cluster >= mOffset) {
+        return TextLeafPoint(mAcc, prevCluster);
+      }
+      prevCluster = cluster;
+    } else if (cluster > mOffset) {
+      MOZ_ASSERT(aDirection == eDirNext);
+      return TextLeafPoint(mAcc, cluster);
     }
   }
   return TextLeafPoint();
