@@ -1,5 +1,6 @@
 
 
+
 function convertSizeToUrgency(size) {
     return Math.round(size / 10 - 1);
 }
@@ -9,11 +10,6 @@ function convertRectToUrgency(rect) {
         throw "not a square";
     }
     return convertSizeToUrgency(rect.width);
-}
-
-function convertDurationToUrgency(duration) {
-    
-    return Math.floor(duration * 100 - 1);
 }
 
 function getElementUrgencyFromSize(id) {

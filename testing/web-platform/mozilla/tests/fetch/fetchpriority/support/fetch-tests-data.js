@@ -103,13 +103,6 @@ const kExpectedRequestsOfFetchAPIDisabled = [
     },
 ];
 
-
-
-
-
-
-
-
 export const kTestData = [
     {   testFileName: "fetch-init.h2.html",
         expectedRequests: kExpectedRequestsOfFetchAPI
