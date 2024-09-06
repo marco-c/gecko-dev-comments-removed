@@ -1656,10 +1656,8 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
       unwrappedInvisibleAdditionalBRElement.IgnoreCaretPointSuggestion();
     } else if (forwardScanFromAfterBRElementResult
                    .InVisibleOrCollapsibleCharacters()) {
-      
-      
       pointToPutCaret = forwardScanFromAfterBRElementResult
-                            .Point_Deprecated<EditorDOMPoint>();
+                            .PointAtReachedContent<EditorDOMPoint>();
     } else if (forwardScanFromAfterBRElementResult.ReachedSpecialContent()) {
       
       
@@ -9019,10 +9017,9 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
   
   
   
-  return InsertParagraphResult(
-      &rightListItemElement,
-      
-      forwardScanFromStartOfListItemResult.Point_Deprecated<EditorDOMPoint>());
+  return InsertParagraphResult(&rightListItemElement,
+                               forwardScanFromStartOfListItemResult
+                                   .PointAtReachedContent<EditorDOMPoint>());
 }
 
 Result<CreateElementResult, nsresult>
