@@ -106,6 +106,10 @@ class APZUpdater {
 
   void AssertOnUpdaterThread() const;
 
+  enum class DuringShutdown {
+    No,
+    Yes,
+  };
   
 
 
@@ -116,7 +120,11 @@ class APZUpdater {
 
 
 
-  void RunOnUpdaterThread(LayersId aLayersId, already_AddRefed<Runnable> aTask);
+
+
+
+  void RunOnUpdaterThread(LayersId aLayersId, already_AddRefed<Runnable> aTask,
+                          DuringShutdown aDuringShutdown = DuringShutdown::No);
 
   
 

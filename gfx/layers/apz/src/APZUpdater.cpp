@@ -136,22 +136,28 @@ void APZUpdater::ProcessPendingTasks(const wr::WrWindowId& aWindowId) {
 void APZUpdater::ClearTree(LayersId aRootLayersId) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZUpdater> self = this;
-  RunOnUpdaterThread(aRootLayersId,
-                     NS_NewRunnableFunction("APZUpdater::ClearTree", [=]() {
-                       self->mApz->ClearTree();
-                       self->mDestroyed = true;
+  RunOnUpdaterThread(
+      aRootLayersId,
+      NS_NewRunnableFunction("APZUpdater::ClearTree",
+                             [=]() {
+                               self->mApz->ClearTree();
+                               self->mDestroyed = true;
 
-                       
-                       
-                       
-                       
-                       
-                       StaticMutexAutoLock lock(sWindowIdLock);
-                       if (self->mWindowId) {
-                         MOZ_ASSERT(sWindowIdMap);
-                         sWindowIdMap->erase(wr::AsUint64(*(self->mWindowId)));
-                       }
-                     }));
+                               
+                               
+                               
+                               
+                               
+                               
+                               
+                               StaticMutexAutoLock lock(sWindowIdLock);
+                               if (self->mWindowId) {
+                                 MOZ_ASSERT(sWindowIdMap);
+                                 sWindowIdMap->erase(
+                                     wr::AsUint64(*(self->mWindowId)));
+                               }
+                             }),
+      DuringShutdown::Yes);
 }
 
 void APZUpdater::UpdateFocusState(LayersId aRootLayerTreeId,
@@ -338,7 +344,8 @@ void APZUpdater::AssertOnUpdaterThread() const {
 }
 
 void APZUpdater::RunOnUpdaterThread(LayersId aLayersId,
-                                    already_AddRefed<Runnable> aTask) {
+                                    already_AddRefed<Runnable> aTask,
+                                    DuringShutdown aDuringShutdown) {
   RefPtr<Runnable> task = aTask;
 
   
@@ -365,19 +372,21 @@ void APZUpdater::RunOnUpdaterThread(LayersId aLayersId,
     
     
 
-    bool sendWakeMessage = true;
+    bool sendWakeMessage = aDuringShutdown == DuringShutdown::No;
     {  
       MutexAutoLock lock(mQueueLock);
-      for (const auto& queuedTask : mUpdaterQueue) {
-        if (queuedTask.mLayersId == aLayersId) {
-          
-          
-          
-          
-          
-          
-          sendWakeMessage = false;
-          break;
+      if (sendWakeMessage) {
+        for (const auto& queuedTask : mUpdaterQueue) {
+          if (queuedTask.mLayersId == aLayersId) {
+            
+            
+            
+            
+            
+            
+            sendWakeMessage = false;
+            break;
+          }
         }
       }
       mUpdaterQueue.push_back(QueuedTask{aLayersId, task});
