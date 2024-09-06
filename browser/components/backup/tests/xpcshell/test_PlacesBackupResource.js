@@ -84,13 +84,6 @@ add_task(async function test_measure() {
 
 
 add_task(async function test_backup() {
-  Services.fog.testResetFOG();
-  const placesTimeHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "BROWSER_BACKUP_PLACES_TIME_MS"
-  );
-  const faviconsTimeHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "BROWSER_BACKUP_FAVICONS_TIME_MS"
-  );
   let sandbox = sinon.createSandbox();
 
   let placesBackupResource = new PlacesBackupResource();
@@ -142,11 +135,6 @@ add_task(async function test_backup() {
     ),
     "favicons.sqlite should have been backed up second"
   );
-  
-  assertSingleTimeMeasurement(Glean.browserBackup.placesTime.testGetValue());
-  assertSingleTimeMeasurement(Glean.browserBackup.faviconsTime.testGetValue());
-  assertHistogramMeasurementQuantity(placesTimeHistogram, 1);
-  assertHistogramMeasurementQuantity(faviconsTimeHistogram, 1);
 
   await maybeRemovePath(stagingPath);
   await maybeRemovePath(sourcePath);
@@ -159,13 +147,6 @@ add_task(async function test_backup() {
 
 
 add_task(async function test_backup_no_saved_history() {
-  Services.fog.testResetFOG();
-  const placesTimeHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "BROWSER_BACKUP_PLACES_TIME_MS"
-  );
-  const faviconsTimeHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "BROWSER_BACKUP_FAVICONS_TIME_MS"
-  );
   let sandbox = sinon.createSandbox();
 
   let placesBackupResource = new PlacesBackupResource();
@@ -207,20 +188,6 @@ add_task(async function test_backup_no_saved_history() {
     "No sqlite connections should have been made with remember history disabled"
   );
   await assertFilesExist(stagingPath, [{ path: "bookmarks.jsonlz4" }]);
-  
-  Assert.equal(
-    Glean.browserBackup.placesTime.testGetValue(),
-    null,
-    "Should not have timed places backup when it did not occur"
-  );
-  Assert.equal(
-    Glean.browserBackup.faviconsTime.testGetValue(),
-    null,
-    "Should not have timed favicons backup when it did not occur"
-  );
-  assertHistogramMeasurementQuantity(placesTimeHistogram, 0);
-  assertHistogramMeasurementQuantity(faviconsTimeHistogram, 0);
-
   await IOUtils.remove(PathUtils.join(stagingPath, "bookmarks.jsonlz4"));
 
   
@@ -244,19 +211,6 @@ add_task(async function test_backup_no_saved_history() {
     "No sqlite connections should have been made with sanitize shutdown enabled"
   );
   await assertFilesExist(stagingPath, [{ path: "bookmarks.jsonlz4" }]);
-  
-  Assert.equal(
-    Glean.browserBackup.placesTime.testGetValue(),
-    null,
-    "Should not have timed places backup when it did not occur"
-  );
-  Assert.equal(
-    Glean.browserBackup.faviconsTime.testGetValue(),
-    null,
-    "Should not have timed favicons backup when it did not occur"
-  );
-  assertHistogramMeasurementQuantity(placesTimeHistogram, 0);
-  assertHistogramMeasurementQuantity(faviconsTimeHistogram, 0);
 
   await maybeRemovePath(stagingPath);
   await maybeRemovePath(sourcePath);
@@ -271,13 +225,6 @@ add_task(async function test_backup_no_saved_history() {
 
 
 add_task(async function test_backup_private_browsing() {
-  Services.fog.testResetFOG();
-  const placesTimeHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "BROWSER_BACKUP_PLACES_TIME_MS"
-  );
-  const faviconsTimeHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "BROWSER_BACKUP_FAVICONS_TIME_MS"
-  );
   let sandbox = sinon.createSandbox();
 
   let placesBackupResource = new PlacesBackupResource();
@@ -313,19 +260,6 @@ add_task(async function test_backup_private_browsing() {
     "No sqlite connections should have been made with permanent private browsing enabled"
   );
   await assertFilesExist(stagingPath, [{ path: "bookmarks.jsonlz4" }]);
-  
-  Assert.equal(
-    Glean.browserBackup.placesTime.testGetValue(),
-    null,
-    "Should not have timed places backup when it did not occur"
-  );
-  Assert.equal(
-    Glean.browserBackup.faviconsTime.testGetValue(),
-    null,
-    "Should not have timed favicons backup when it did not occur"
-  );
-  assertHistogramMeasurementQuantity(placesTimeHistogram, 0);
-  assertHistogramMeasurementQuantity(faviconsTimeHistogram, 0);
 
   await maybeRemovePath(stagingPath);
   await maybeRemovePath(sourcePath);

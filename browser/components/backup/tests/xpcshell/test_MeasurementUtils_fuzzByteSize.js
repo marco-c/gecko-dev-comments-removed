@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { MeasurementUtils } = ChromeUtils.importESModule(
+  "resource:///modules/backup/MeasurementUtils.sys.mjs"
+);
+
 add_task(async function test_minimumFallback() {
   const fuzzed = MeasurementUtils.fuzzByteSize(250, 1000);
   Assert.equal(
