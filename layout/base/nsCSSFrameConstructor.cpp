@@ -7057,6 +7057,11 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     if (LayoutFrameType::Table == frameType ||
         LayoutFrameType::TableWrapper == frameType) {
       PullOutCaptionFrames(frameList, captionList);
+      if (prevSibling && prevSibling->IsTableCaption()) {
+        
+        
+        prevSibling = nullptr;
+      }
     }
   }
 
@@ -11156,6 +11161,25 @@ bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
 #undef TRACE
 }
 
+static bool SafeToInsertPseudoNeedingChildren(nsIFrame* aFrame) {
+  for (auto& [list, listID] : aFrame->ChildLists()) {
+    if (list.IsEmpty()) {
+      continue;
+    }
+    
+    
+    
+    if (listID == FrameChildListID::ColGroup) {
+      if (nsIFrame* f = list.OnlyChild();
+          f && static_cast<nsTableColGroupFrame*>(f)->IsSynthetic()) {
+        continue;
+      }
+    }
+    return false;
+  }
+  return true;
+}
+
 bool nsCSSFrameConstructor::WipeContainingBlock(
     nsFrameConstructorState& aState, nsIFrame* aContainingBlock,
     nsIFrame* aFrame, FrameConstructionItemList& aItems, bool aIsAppend,
@@ -11419,7 +11443,10 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
       return false;
     }
 
-    if (!aItems.AllWantParentType(parentType)) {
+    
+    
+    if (!aItems.AllWantParentType(parentType) &&
+        !SafeToInsertPseudoNeedingChildren(aFrame)) {
       
       
       TRACE("Pseudo-frames going wrong");
