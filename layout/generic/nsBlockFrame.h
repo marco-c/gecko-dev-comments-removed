@@ -977,7 +977,7 @@ class nsBlockFrame : public nsContainerFrame {
 
   
   
-  nsFrameList* EnsurePushedFloats();
+  nsFrameList* EnsurePushedFloats() MOZ_NONNULL_RETURN;
 
   
   
