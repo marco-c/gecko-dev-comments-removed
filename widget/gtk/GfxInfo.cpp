@@ -1128,7 +1128,6 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0),
         "FEATURE_FAILURE_THREADSAFE_GL_NOUVEAU", "");
 
-#ifdef EARLY_BETA_OR_EARLIER
     
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
@@ -1136,15 +1135,6 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::NvidiaAll,
         nsIGfxInfo::FEATURE_THREADSAFE_GL, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
         DRIVER_LESS_THAN, V(545, 23, 6, 0), "FEATURE_FAILURE_BUG_1788573", "");
-#else
-    
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::NvidiaAll,
-        nsIGfxInfo::FEATURE_THREADSAFE_GL, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_FAILURE_BUG_1788573",
-        "");
-#endif
 
     
     APPEND_TO_DRIVER_BLOCKLIST(
