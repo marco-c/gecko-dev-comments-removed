@@ -486,7 +486,8 @@ void Event::SetEventType(const nsAString& aEventTypeArg) {
       
       
       
-      if (aEventTypeArg.EqualsLiteral(u"click")) {
+      if (aEventTypeArg.EqualsLiteral(u"click") ||
+          aEventTypeArg.EqualsLiteral(u"auxclick")) {
         classID = ePointerEventClass;
       }
     }

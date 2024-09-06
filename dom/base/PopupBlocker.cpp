@@ -4,17 +4,18 @@
 
 
 
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/UserActivation.h"
-#include "mozilla/BasePrincipal.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TimeStamp.h"
-#include "nsXULPopupManager.h"
 #include "nsIPermissionManager.h"
+#include "nsXULPopupManager.h"
 
 namespace mozilla::dom {
 
@@ -292,8 +293,6 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
         } else if (aEvent->mMessage == ePointerAuxClick) {
           
           
-          
-          
           if (PopupAllowedForEvent("auxclick")) {
             abuse = PopupBlocker::openControlled;
           }
@@ -311,30 +310,42 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
       }
       break;
     case ePointerEventClass:
-      if (aEvent->IsTrusted() &&
-          (aEvent->AsPointerEvent()->mButton == MouseButton::ePrimary ||
-           aEvent->AsPointerEvent()->mButton == MouseButton::eMiddle)) {
-        switch (aEvent->mMessage) {
-          case ePointerClick:
-            
-            
-            
-            if (PopupAllowedForEvent("click")) {
-              abuse = PopupBlocker::openAllowed;
-            }
-            break;
-          case ePointerUp:
-            if (PopupAllowedForEvent("pointerup")) {
-              abuse = PopupBlocker::openControlled;
-            }
-            break;
-          case ePointerDown:
-            if (PopupAllowedForEvent("pointerdown")) {
-              abuse = PopupBlocker::openControlled;
-            }
-            break;
-          default:
-            break;
+      if (aEvent->IsTrusted()) {
+        if ((aEvent->AsPointerEvent()->mButton == MouseButton::ePrimary ||
+             aEvent->AsPointerEvent()->mButton == MouseButton::eMiddle)) {
+          switch (aEvent->mMessage) {
+            case ePointerClick:
+              
+
+
+
+              if (PopupAllowedForEvent("click")) {
+                abuse = PopupBlocker::openAllowed;
+              }
+              break;
+            case ePointerUp:
+              if (PopupAllowedForEvent("pointerup")) {
+                abuse = PopupBlocker::openControlled;
+              }
+              break;
+            case ePointerDown:
+              if (PopupAllowedForEvent("pointerdown")) {
+                abuse = PopupBlocker::openControlled;
+              }
+              break;
+            default:
+              break;
+          }
+        }
+        
+        else if (aEvent->mMessage == ePointerAuxClick) {
+          
+          
+          
+          
+          if (PopupAllowedForEvent("auxclick")) {
+            abuse = PopupBlocker::openControlled;
+          }
         }
       }
       break;

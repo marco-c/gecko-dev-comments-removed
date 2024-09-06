@@ -1902,6 +1902,7 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
   }
 
   MOZ_ASSERT(aEvent->mMessage != ePointerClick);
+  MOZ_ASSERT(aEvent->mMessage != ePointerAuxClick);
 
   
   
