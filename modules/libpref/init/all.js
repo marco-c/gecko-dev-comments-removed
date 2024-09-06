@@ -1036,6 +1036,11 @@ pref("image.animation_mode",                "normal");
 
 
 
+pref("logging.config.clear_on_startup", true);
+
+
+
+
 
 
 

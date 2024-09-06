@@ -10,7 +10,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
-#include "NSPRLogModulesParser.h"
 #include "nsString.h"
 #include "nsXULAppAPI.h"
 #include "base/process_util.h"
@@ -24,7 +23,6 @@ static const char kLoggingPrefLogFile[] = "logging.config.LOG_FILE";
 static const char kLoggingPrefAddTimestamp[] = "logging.config.add_timestamp";
 static const char kLoggingPrefSync[] = "logging.config.sync";
 static const char kLoggingPrefStacks[] = "logging.config.profilerstacks";
-static const char kLoggingPrefLogModules[] = "logging.config.modules";
 
 namespace mozilla {
 
@@ -87,30 +85,6 @@ static void LoadPrefValue(const char* aName) {
     } else if (prefName.EqualsLiteral(kLoggingPrefStacks)) {
       bool captureStacks = Preferences::GetBool(aName, false);
       LogModule::SetCaptureStacks(captureStacks);
-    } else if (prefName.EqualsLiteral(kLoggingPrefLogModules)) {
-      
-      
-      
-      LogModule::DisableModules();
-
-      rv = Preferences::GetCString(aName, prefValue);
-      if (NS_FAILED(rv)) {
-        
-        return;
-      }
-
-      NSPRLogModulesParser(
-          prefValue.BeginReading(),
-          [](const char* aName, LogLevel aLevel, int32_t aValue) mutable {
-            
-            
-            
-            if (strcmp(aName, "profilerstacks") == 0) {
-              LogModule::SetCaptureStacks(true);
-            } else {
-              LogModule::Get(aName)->SetLevel(aLevel);
-            }
-          });
     }
     return;
   }
