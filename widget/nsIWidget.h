@@ -1397,6 +1397,8 @@ class nsIWidget : public nsISupports {
                               const nsAString& xulWinClass,
                               const nsAString& xulWinName) = 0;
 
+  virtual void SetIsEarlyBlankWindow(bool) {}
+
   
 
 

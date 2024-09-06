@@ -1632,29 +1632,32 @@ void AppWindow::SyncAttributesToWidget() {
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
+  
+  if (mChromeLoaded) {
+    mWindow->SetIsEarlyBlankWindow(attr.EqualsLiteral("navigator:blank"));
+    NS_ENSURE_TRUE_VOID(mWindow);
+  }
+
+  
   windowElement->GetAttribute(u"icon"_ns, attr);
   if (!attr.IsEmpty()) {
     mWindow->SetIcon(attr);
-
     NS_ENSURE_TRUE_VOID(mWindow);
   }
 
   
   windowElement->GetAttribute(u"drawtitle"_ns, attr);
   mWindow->SetDrawsTitle(attr.LowerCaseEqualsLiteral("true"));
-
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
   windowElement->GetAttribute(u"toggletoolbar"_ns, attr);
   mWindow->SetShowsToolbarButton(attr.LowerCaseEqualsLiteral("true"));
-
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
   windowElement->GetAttribute(u"macnativefullscreen"_ns, attr);
   mWindow->SetSupportsNativeFullscreen(attr.LowerCaseEqualsLiteral("true"));
-
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
