@@ -10,13 +10,13 @@
 #  include <arpa/inet.h>
 #  include <arpa/nameser.h>
 #  include <resolv.h>
+#  define RES_RETRY_ON_FAILURE
 #endif
 
 #include <stdlib.h>
 #include <ctime>
 #include "nsHostResolver.h"
 #include "nsError.h"
-#include "nsIOService.h"
 #include "nsISupports.h"
 #include "nsISupportsUtils.h"
 #include "nsIThreadManager.h"
@@ -98,47 +98,38 @@ LazyLogModule gHostResolverLog("nsHostResolver");
 
 
 
-#if defined(HAVE_RES_NINIT)
+#if defined(RES_RETRY_ON_FAILURE)
 
 
 
 
-class MOZ_STACK_CLASS nsResState {
+
+
+
+
+class nsResState {
  public:
-  
-  
-  nsResState() : mLastReset(PR_IntervalNow()) {}
+  nsResState()
+      
+      
+      
+      
+      
+      
+      
+      : mLastReset(PR_IntervalNow()) {}
 
-  ~nsResState() {
-    if (_res.options & RES_INIT) {
-      res_nclose(&_res);
-    }
-  }
-
-  void Init() {
-    if (!(_res.options & RES_INIT)) {
-      auto result = res_ninit(&_res);
-      LOG(("nsResState > 'res_ninit' returned %d ", result));
-    }
-  }
-
-  void MaybeReset() {
-    if (mLastReset > gIOService->LastNetworkLinkChange()) {
-      return;
-    }
-
-    PRIntervalTime now = PR_IntervalNow();
+  bool Reset() {
     
-    if (PR_IntervalToSeconds(now - mLastReset) < 1) {
-      return;
+    if (PR_IntervalToSeconds(PR_IntervalNow() - mLastReset) < 1) {
+      return false;
     }
 
-    if (_res.options & RES_INIT) {
-      res_nclose(&_res);
-    }
+    mLastReset = PR_IntervalNow();
+    auto result = res_ninit(&_res);
 
-    mLastReset = now;
-    Init();
+    LOG(("nsResState::Reset() > 'res_ninit' returned %d", result));
+    return (result == 0);
   }
 
  private:
@@ -232,6 +223,19 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Could not register DNS pref callback.");
   }
+
+#if defined(HAVE_RES_NINIT)
+  
+  
+  
+  
+  
+  static int initCount = 0;
+  if (initCount++ > 0) {
+    auto result = res_ninit(&_res);
+    LOG(("nsHostResolver::Init > 'res_ninit' returned %d", result));
+  }
+#endif
 
   
   
@@ -1841,9 +1845,8 @@ size_t nsHostResolver::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const {
 void nsHostResolver::ThreadFunc() {
   LOG(("DNS lookup thread - starting execution.\n"));
 
-#if defined(HAVE_RES_NINIT)
+#if defined(RES_RETRY_ON_FAILURE)
   nsResState rs;
-  rs.Init();
 #endif
   RefPtr<nsHostRecord> rec;
   RefPtr<AddrInfo> ai;
@@ -1884,11 +1887,14 @@ void nsHostResolver::ThreadFunc() {
       continue;
     }
 
-#if defined(HAVE_RES_NINIT)
-    rs.MaybeReset();
-#endif
     nsresult status =
         GetAddrInfo(rec->host, rec->af, rec->flags, getter_AddRefs(ai), getTtl);
+#if defined(RES_RETRY_ON_FAILURE)
+    if (NS_FAILED(status) && rs.Reset()) {
+      status = GetAddrInfo(rec->host, rec->af, rec->flags, getter_AddRefs(ai),
+                           getTtl);
+    }
+#endif
 
     mozilla::glean::networking::dns_native_count
         .EnumGet(rec->pb ? glean::networking::DnsNativeCountLabel::ePrivate
