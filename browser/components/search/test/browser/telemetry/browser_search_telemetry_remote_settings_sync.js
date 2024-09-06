@@ -86,7 +86,6 @@ add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.serpEventTelemetry.enabled", true],
       
       
       ["dom.ipc.processCount.webIsolated", 1],

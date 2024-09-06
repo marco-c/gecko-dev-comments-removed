@@ -740,9 +740,6 @@ pref("browser.search.separatePrivateDefault.ui.enabled", false);
 pref("browser.search.separatePrivateDefault.ui.banner.max", 0);
 
 
-pref("browser.search.serpEventTelemetry.enabled", true);
-
-
 #ifdef NIGHTLY_BUILD
 pref("browser.search.serpEventTelemetryCategorization.enabled", true);
 #else

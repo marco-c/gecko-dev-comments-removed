@@ -63,7 +63,6 @@ add_setup(async function () {
       ],
       
       ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
-      ["browser.search.serpEventTelemetry.enabled", true],
     ],
   });
   
