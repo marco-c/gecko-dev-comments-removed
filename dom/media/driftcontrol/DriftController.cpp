@@ -81,6 +81,23 @@ uint32_t DriftController::GetCorrectedSourceRate() const {
   return std::lround(mCorrectedSourceRate);
 }
 
+int64_t DriftController::NearThreshold() const {
+  
+  
+  
+  static constexpr uint32_t kNearDenominator = 5;  
+
+  
+  const media::TimeUnit nearCap = media::TimeUnit::FromSeconds(0.01);
+
+  
+  
+  
+  
+  return std::min(nearCap, mDesiredBuffering / kNearDenominator)
+      .ToTicksAtRate(mSourceRate);
+}
+
 void DriftController::UpdateClock(media::TimeUnit aSourceDuration,
                                   media::TimeUnit aTargetDuration,
                                   uint32_t aBufferedFrames,
@@ -176,6 +193,17 @@ void DriftController::UpdateClock(media::TimeUnit aSourceDuration,
     mStage1Buffered = mAvgBufferedFramesEst;
   }
 
+  uint32_t desiredBufferedFrames = mDesiredBuffering.ToTicksAtRate(mSourceRate);
+  int32_t error =
+      (CheckedInt32(aBufferedFrames) - desiredBufferedFrames).value();
+  if (std::abs(error) > NearThreshold()) {
+    
+    mDurationNearDesired = media::TimeUnit::Zero();
+  } else {
+    
+    mDurationNearDesired += mTargetClock;
+  };
+
   if (mTargetClock >= mAdjustmentInterval) {
     
     CalculateCorrection(aBufferedFrames, aBufferSize);
@@ -194,34 +222,8 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
   
   
   uint32_t desiredBufferedFrames = mDesiredBuffering.ToTicksAtRate(mSourceRate);
-  int32_t error =
-      (CheckedInt32(aBufferedFrames) - desiredBufferedFrames).value();
   float avgError = static_cast<float>(mAvgBufferedFramesEst) -
                    static_cast<float>(desiredBufferedFrames);
-
-  
-  
-  
-  static constexpr uint32_t kNearDenominator = 5;  
-
-  
-  const media::TimeUnit nearCap = media::TimeUnit::FromSeconds(0.01);
-
-  
-  
-  
-  
-  const auto nearThreshold =
-      std::min(nearCap, mDesiredBuffering / kNearDenominator)
-          .ToTicksAtRate(mSourceRate);
-
-  if (std::abs(error) > nearThreshold) {
-    
-    mDurationNearDesired = media::TimeUnit::Zero();
-  } else {
-    
-    mDurationNearDesired += mTargetClock;
-  };
 
   
   float rateError =
@@ -258,8 +260,11 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
           "%.2fms), buffering: %.2fms, desired buffering: %.2fms",
           mSourceRate, mTargetRate, cappedRate, mTargetRate,
           cappedRate - mCorrectedSourceRate,
-          media::TimeUnit(error, mSourceRate).ToSeconds() * 1000.0,
-          media::TimeUnit(nearThreshold, mSourceRate).ToSeconds() * 1000.0,
+          media::TimeUnit(CheckedInt64(aBufferedFrames) - desiredBufferedFrames,
+                          mSourceRate)
+                  .ToSeconds() *
+              1000.0,
+          media::TimeUnit(NearThreshold(), mSourceRate).ToSeconds() * 1000.0,
           media::TimeUnit(aBufferedFrames, mSourceRate).ToSeconds() * 1000.0,
           mDesiredBuffering.ToSeconds() * 1000.0);
 
@@ -275,7 +280,7 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
       aBufferSize, mMeasuredSourceLatency.mean().ToTicksAtRate(mSourceRate),
       mMeasuredTargetLatency.mean().ToTicksAtRate(mTargetRate),
       mInputDurationAvg * mSourceRate, mOutputDurationAvg * mTargetRate,
-      mSourceRate, mTargetRate, steadyStateRate, nearThreshold, correctedRate,
+      mSourceRate, mTargetRate, steadyStateRate, NearThreshold(), correctedRate,
       hysteresisCorrectedRate, std::lround(mCorrectedSourceRate));
 
   
