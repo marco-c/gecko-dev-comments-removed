@@ -201,7 +201,7 @@ bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
   SVGGeometryProperty::DoForComputedStyle(this, [&](const ComputedStyle* s) {
     
     if (s->StyleSVGReset()->HasNonScalingStroke()) {
-      auto mat = SVGContentUtils::GetCTM(this, true);
+      auto mat = SVGContentUtils::GetCTM(this);
       if (mat.HasNonTranslation()) {
         
         
