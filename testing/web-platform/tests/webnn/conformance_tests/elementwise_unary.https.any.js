@@ -3,11 +3,15 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation(
-  ['abs', 'ceil', 'cos', 'erf', 'exp', 'floor', 'identity', 'log', 'neg', 'reciprocal', 'sin', 'sqrt', 'tan'],
-  buildOperationWithSingleInput
-);
+runWebNNConformanceTests(
+    [
+      'abs', 'ceil', 'cos', 'erf', 'exp', 'floor', 'identity', 'log', 'neg',
+      'reciprocal', 'sin', 'sqrt', 'tan'
+    ],
+    buildOperationWithSingleInput);

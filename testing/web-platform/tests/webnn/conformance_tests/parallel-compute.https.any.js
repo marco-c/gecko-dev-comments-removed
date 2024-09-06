@@ -3,8 +3,17 @@
 
 
 
+
+
 'use strict';
 
 
 
-testParallelCompute();
+if (navigator.ml) {
+  testParallelCompute();
+} else {
+  
+  test(
+      () => assert_not_equals(
+          navigator.ml, undefined, 'ml property is defined on navigator'));
+}

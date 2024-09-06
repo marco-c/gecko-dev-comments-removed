@@ -3,18 +3,23 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation(
-  [
-    'equal',
-    'greater',
-    'greaterOrEqual',
-    'lesser',
-    'lesserOrEqual',
-  ],
-  buildOperationWithTwoInputs
-);
-testWebNNOperation('logicalNot', buildOperationWithSingleInput);
+if (navigator.ml) {
+  testWebNNOperation(
+      [
+        'equal',
+        'greater',
+        'greaterOrEqual',
+        'lesser',
+        'lesserOrEqual',
+      ],
+      buildOperationWithTwoInputs);
+  testWebNNOperation('logicalNot', buildOperationWithSingleInput);
+} else {
+  test(() => assert_implements(navigator.ml, 'missing navigator.ml'));
+}

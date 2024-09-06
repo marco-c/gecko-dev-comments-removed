@@ -3,14 +3,17 @@
 
 
 
+
+
 'use strict';
 
 
 
-testCreateWebNNBuffer("create", 4);
-
-testDestroyWebNNBuffer('destroyTwice');
-
-testReadWebNNBuffer('read');
-
-testWriteWebNNBuffer('write');
+if (navigator.ml) {
+  testCreateWebNNBuffer('create', 4);
+  testDestroyWebNNBuffer('destroyTwice');
+  testReadWebNNBuffer('read');
+  testWriteWebNNBuffer('write');
+} else {
+  test(() => assert_implements(navigator.ml, 'missing navigator.ml'));
+}

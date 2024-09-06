@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('gemm', buildGemm);
+runWebNNConformanceTests('gemm', buildGemm);

@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('concat', buildConcat);
+runWebNNConformanceTests('concat', buildConcat);

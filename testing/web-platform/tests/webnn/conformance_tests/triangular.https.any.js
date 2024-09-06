@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('triangular', buildOperationWithSingleInput);
+runWebNNConformanceTests('triangular', buildOperationWithSingleInput);

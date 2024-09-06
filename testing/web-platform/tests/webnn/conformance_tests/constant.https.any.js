@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('constant', buildConstantRange);
+runWebNNConformanceTests('constant', buildConstantRange);

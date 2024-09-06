@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('leakyRelu', buildOperationWithSingleInput);
+runWebNNConformanceTests('leakyRelu', buildOperationWithSingleInput);

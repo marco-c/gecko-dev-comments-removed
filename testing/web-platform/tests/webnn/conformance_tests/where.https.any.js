@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('where', buildWhere);
+runWebNNConformanceTests('where', buildWhere);

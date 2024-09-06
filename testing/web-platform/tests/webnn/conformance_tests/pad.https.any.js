@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('pad', buildPad);
+runWebNNConformanceTests('pad', buildPad);

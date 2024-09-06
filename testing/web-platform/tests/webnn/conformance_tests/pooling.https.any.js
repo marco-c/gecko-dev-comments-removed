@@ -3,8 +3,11 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation(['averagePool2d', 'l2Pool2d', 'maxPool2d'], buildOperationWithSingleInput);
+runWebNNConformanceTests(
+    ['averagePool2d', 'l2Pool2d', 'maxPool2d'], buildOperationWithSingleInput);

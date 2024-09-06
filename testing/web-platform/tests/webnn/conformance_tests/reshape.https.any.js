@@ -3,9 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('reshape', buildReshape);
-
+runWebNNConformanceTests('reshape', buildReshape);

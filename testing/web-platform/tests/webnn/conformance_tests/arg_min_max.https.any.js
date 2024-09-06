@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation(['argMin', 'argMax'], buildOperationWithSingleInput);
+runWebNNConformanceTests(['argMin', 'argMax'], buildOperationWithSingleInput);

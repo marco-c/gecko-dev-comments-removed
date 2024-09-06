@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('hardSigmoid', buildOperationWithSingleInput);
+runWebNNConformanceTests('hardSigmoid', buildOperationWithSingleInput);

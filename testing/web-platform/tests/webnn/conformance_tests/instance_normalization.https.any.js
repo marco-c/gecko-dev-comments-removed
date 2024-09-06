@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('instanceNormalization', buildLayerNorm);
+runWebNNConformanceTests('instanceNormalization', buildLayerNorm);

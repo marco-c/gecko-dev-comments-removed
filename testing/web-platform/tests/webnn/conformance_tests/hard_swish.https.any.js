@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('hardSwish', buildOperationWithSingleInput);
+runWebNNConformanceTests('hardSwish', buildOperationWithSingleInput);

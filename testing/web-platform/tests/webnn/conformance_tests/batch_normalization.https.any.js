@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('batchNormalization', buildBatchNorm);
+runWebNNConformanceTests('batchNormalization', buildBatchNorm);

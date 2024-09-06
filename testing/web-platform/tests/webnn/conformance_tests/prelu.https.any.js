@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('prelu', buildOperationWithTwoInputs);
+runWebNNConformanceTests('prelu', buildOperationWithTwoInputs);

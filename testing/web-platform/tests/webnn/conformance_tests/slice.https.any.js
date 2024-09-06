@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('slice', buildSlice);
+runWebNNConformanceTests('slice', buildSlice);

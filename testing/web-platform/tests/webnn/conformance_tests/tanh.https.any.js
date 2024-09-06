@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('tanh', buildOperationWithSingleInput);
+runWebNNConformanceTests('tanh', buildOperationWithSingleInput);

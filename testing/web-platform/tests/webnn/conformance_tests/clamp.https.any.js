@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('clamp', buildOperationWithSingleInput);
+runWebNNConformanceTests('clamp', buildOperationWithSingleInput);

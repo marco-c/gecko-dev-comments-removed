@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('softsign', buildOperationWithSingleInput);
+runWebNNConformanceTests('softsign', buildOperationWithSingleInput);

@@ -3,8 +3,12 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation(['add', 'sub', 'mul', 'div', 'max', 'min', 'pow'], buildOperationWithTwoInputs);
+runWebNNConformanceTests(
+    ['add', 'sub', 'mul', 'div', 'max', 'min', 'pow'],
+    buildOperationWithTwoInputs);

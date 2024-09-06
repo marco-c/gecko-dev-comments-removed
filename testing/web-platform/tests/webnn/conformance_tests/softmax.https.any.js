@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('softmax', buildOperationWithSingleInput);
+runWebNNConformanceTests('softmax', buildOperationWithSingleInput);

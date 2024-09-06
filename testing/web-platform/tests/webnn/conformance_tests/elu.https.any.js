@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('elu', buildOperationWithSingleInput);
+runWebNNConformanceTests('elu', buildOperationWithSingleInput);

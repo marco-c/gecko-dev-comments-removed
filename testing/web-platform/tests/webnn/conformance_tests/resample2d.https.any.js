@@ -3,8 +3,10 @@
 
 
 
+
+
 'use strict';
 
 
 
-testWebNNOperation('resample2d', buildOperationWithSingleInput);
+runWebNNConformanceTests('resample2d', buildOperationWithSingleInput);
