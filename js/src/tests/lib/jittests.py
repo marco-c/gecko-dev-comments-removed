@@ -399,8 +399,10 @@ class JitTest:
 
         
         
+        
+        
         cmd = prefix + []
-        cmd += list(set(self.jitflags))
+        cmd += list(dict.fromkeys(self.jitflags))
         
         if self.selfhosted_xdr_mode != "off":
             cmd += [
