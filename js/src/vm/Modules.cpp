@@ -1260,7 +1260,8 @@ static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
 
 
 static bool AllImportAttributesSupported(
-    JSContext* cx, mozilla::Span<const ImportAttribute> attributes) {
+    JSContext* cx, mozilla::Span<const ImportAttribute> attributes,
+    MutableHandle<JSAtom*> invalidKey) {
   
   
   
@@ -1273,13 +1274,7 @@ static bool AllImportAttributesSupported(
   for (const ImportAttribute& attribute : attributes) {
     
     if (attribute.key() != cx->names().type) {
-      UniqueChars printableKey = AtomToPrintableString(cx, attribute.key());
-      if (!printableKey) {
-        return false;
-      }
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_IMPORT_ATTRIBUTES_UNSUPPORTED_ATTRIBUTE,
-                                printableKey.get());
+      invalidKey.set(attribute.key());
       return false;
     }
   }
@@ -1347,7 +1342,15 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
     
     
     
-    if (!AllImportAttributesSupported(cx, moduleRequest->attributes())) {
+    Rooted<JSAtom*> invalidKey(cx);
+    if (!AllImportAttributesSupported(cx, moduleRequest->attributes(),
+                                      &invalidKey)) {
+      UniqueChars printableKey = AtomToPrintableString(cx, invalidKey);
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr,
+          JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
+          printableKey ? printableKey.get() : "");
+
       return false;
     }
 
