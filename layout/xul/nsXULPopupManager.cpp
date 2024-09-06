@@ -54,6 +54,7 @@
 #include "mozilla/EventStateManager.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/PointerLockManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_ui.h"
@@ -987,6 +988,7 @@ bool nsXULPopupManager::ShowPopupAsNativeMenu(Element* aPopup, int32_t aXPos,
     EventStateManager::ClearGlobalActiveContent(activeESM);
     activeESM->StopTrackingDragGesture(true);
   }
+  PointerLockManager::Unlock();
   PresShell::ReleaseCapturingContent();
 
   return true;
@@ -1201,6 +1203,10 @@ void nsXULPopupManager::ShowPopupCallback(Element* aPopup,
   
   
   CheckCaretDrawingState();
+
+  if (popupType != PopupType::Tooltip) {
+    PointerLockManager::Unlock();
+  }
 }
 
 nsMenuChainItem* nsXULPopupManager::FindPopup(Element* aPopup) const {
@@ -1850,8 +1856,17 @@ nsIContent* nsXULPopupManager::GetTopActiveMenuItemContent() {
   return nullptr;
 }
 
-void nsXULPopupManager::GetVisiblePopups(nsTArray<nsMenuPopupFrame*>& aPopups) {
+void nsXULPopupManager::GetVisiblePopups(nsTArray<nsMenuPopupFrame*>& aPopups,
+                                         bool aIncludeNativeMenu) {
   aPopups.Clear();
+  if (aIncludeNativeMenu && mNativeMenu) {
+    nsCOMPtr<nsIContent> popup = mNativeMenu->Element();
+    nsMenuPopupFrame* popupFrame = GetPopupFrameForContent(popup, true);
+    if (popupFrame && popupFrame->IsVisible() &&
+        !popupFrame->IsMouseTransparent()) {
+      aPopups.AppendElement(popupFrame);
+    }
+  }
   for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
     
     

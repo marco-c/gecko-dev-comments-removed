@@ -556,14 +556,19 @@ parent:
     
 
 
-    async RequestPointerLock() returns (nsCString error);
-    async ReleasePointerLock();
+    async RequestPointerCapture(uint32_t aPointerId) returns (bool aSuccess);
+    async ReleasePointerCapture(uint32_t aPointerId);
 
     
 
 
-    async RequestPointerCapture(uint32_t aPointerId) returns (bool aSuccess);
-    async ReleasePointerCapture(uint32_t aPointerId);
+    async RequestPointerLock() returns (nsCString error);
+
+both:
+    
+
+
+    async ReleasePointerLock();
 
 child:
     async NativeSynthesisResponse(uint64_t aObserverId, nsCString aResponse);
