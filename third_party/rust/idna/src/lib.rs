@@ -42,35 +42,73 @@ extern crate alloc;
 #[cfg(not(feature = "alloc"))]
 compile_error!("the `alloc` feature must be enabled");
 
-#[cfg(test)]
-#[macro_use]
-extern crate assert_matches;
 
+
+
+#[cfg(not(feature = "compiled_data"))]
+compile_error!("the `compiled_data` feature must be enabled");
+
+use alloc::borrow::Cow;
 use alloc::string::String;
+pub use uts46::AsciiDenyList;
+use uts46::Uts46;
 
+mod deprecated;
 pub mod punycode;
-mod uts46;
+pub mod uts46;
 
-pub use crate::uts46::{Config, Errors, Idna};
-
-
-
+#[allow(deprecated)]
+pub use crate::deprecated::{Config, Idna};
 
 
+#[derive(Default, Debug)]
+#[non_exhaustive]
+pub struct Errors {}
 
+impl From<Errors> for Result<(), Errors> {
+    fn from(e: Errors) -> Result<(), Errors> {
+        Err(e)
+    }
+}
 
+#[cfg(feature = "std")]
+impl std::error::Error for Errors {}
 
-pub fn domain_to_ascii(domain: &str) -> Result<String, uts46::Errors> {
-    Config::default().to_ascii(domain)
+impl core::fmt::Display for Errors {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::Debug::fmt(self, f)
+    }
 }
 
 
 
-pub fn domain_to_ascii_strict(domain: &str) -> Result<String, uts46::Errors> {
-    Config::default()
-        .use_std3_ascii_rules(true)
-        .verify_dns_length(true)
-        .to_ascii(domain)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn domain_to_ascii_cow(
+    domain: &[u8],
+    ascii_deny_list: AsciiDenyList,
+) -> Result<Cow<'_, str>, Errors> {
+    Uts46::new().to_ascii(
+        domain,
+        ascii_deny_list,
+        uts46::Hyphens::Allow,
+        uts46::DnsLength::Ignore,
+    )
 }
 
 
@@ -81,6 +119,50 @@ pub fn domain_to_ascii_strict(domain: &str) -> Result<String, uts46::Errors> {
 
 
 
-pub fn domain_to_unicode(domain: &str) -> (String, Result<(), uts46::Errors>) {
-    Config::default().to_unicode(domain)
+
+
+
+pub fn domain_to_ascii(domain: &str) -> Result<String, Errors> {
+    domain_to_ascii_cow(domain.as_bytes(), AsciiDenyList::EMPTY).map(|cow| cow.into_owned())
+}
+
+
+
+
+
+
+
+
+pub fn domain_to_ascii_strict(domain: &str) -> Result<String, Errors> {
+    Uts46::new()
+        .to_ascii(
+            domain.as_bytes(),
+            uts46::AsciiDenyList::STD3,
+            uts46::Hyphens::Check,
+            uts46::DnsLength::Verify,
+        )
+        .map(|cow| cow.into_owned())
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn domain_to_unicode(domain: &str) -> (String, Result<(), Errors>) {
+    let (cow, result) = Uts46::new().to_unicode(
+        domain.as_bytes(),
+        uts46::AsciiDenyList::EMPTY,
+        uts46::Hyphens::Allow,
+    );
+    (cow.into_owned(), result)
 }
