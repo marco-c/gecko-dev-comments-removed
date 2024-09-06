@@ -243,15 +243,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-  void NotifyIMEOfAddedContentTextLengthDuringDocumentChange(
-      const char* aCallerName);
-
-  
-
-
-
-
-
   bool IsInDocumentChange() const {
     return mDocumentObserver && mDocumentObserver->IsUpdating();
   }
@@ -291,8 +282,18 @@ class IMEContentObserver final : public nsStubMutationObserver,
   void CancelNotifyingIMEOfPositionChange();
   void PostCompositionEventHandledNotification();
 
-  void NotifyContentAdded(nsINode* aContainer, nsIContent* aFirstContent,
-                          nsIContent* aLastContent);
+  void ContentAdded(nsINode* aContainer, nsIContent* aFirstContent,
+                    nsIContent* aLastContent);
+
+  
+
+
+
+
+
+
+  void NotifyIMEOfCachedConsecutiveNewNodes(const char* aCallerName);
+
   void ObserveEditableNode();
   
 
@@ -641,11 +642,25 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
+
+
+
+
+    void ContentAdded(const char* aCallerName, const nsIContent& aFirstContent,
+                      const nsIContent& aLastContent,
+                      const Maybe<uint32_t>& aAddedFlatTextLength,
+                      const dom::Element* aRootElement);
+
+    
+
+
+
     void ContentRemoved(const nsIContent& aContent,
                         const nsIContent* aPreviousSibling,
                         uint32_t aFlatTextLengthOfContent,
                         const dom::Element* aRootElement);
 
+   public:
     
     nsCOMPtr<nsINode> mContainerNode;
     
