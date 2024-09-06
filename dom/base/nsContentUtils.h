@@ -1570,8 +1570,9 @@ class nsContentUtils {
 
 
 
-  static bool HasMutationListeners(nsINode* aNode, uint32_t aType,
-                                   nsINode* aTargetForSubtreeModified);
+
+  static bool WantMutationEvents(nsINode* aNode, uint32_t aType,
+                                 nsINode* aTargetForSubtreeModified);
 
   
 

@@ -5217,8 +5217,8 @@ bool nsContentUtils::HasNonEmptyAttr(const nsIContent* aContent,
 }
 
 
-bool nsContentUtils::HasMutationListeners(nsINode* aNode, uint32_t aType,
-                                          nsINode* aTargetForSubtreeModified) {
+bool nsContentUtils::WantMutationEvents(nsINode* aNode, uint32_t aType,
+                                        nsINode* aTargetForSubtreeModified) {
   Document* doc = aNode->OwnerDoc();
 
   
@@ -5309,8 +5309,7 @@ void nsContentUtils::MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent) {
     }
   }
 
-  if (HasMutationListeners(aChild, NS_EVENT_BITS_MUTATION_NODEREMOVED,
-                           aParent)) {
+  if (WantMutationEvents(aChild, NS_EVENT_BITS_MUTATION_NODEREMOVED, aParent)) {
     InternalMutationEvent mutation(true, eLegacyNodeRemoved);
     mutation.mRelatedNode = aParent;
 
