@@ -260,13 +260,9 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
   }
 
   
-  
-  
-  
-  
-  nsDragService* winDragService =
-      static_cast<nsDragService*>(mDragService.get());
-  winDragService->SetIDataObject(pIDataSource);
+  RefPtr<nsDragSession> session =
+      static_cast<nsDragSession*>(mDragService->GetCurrentSession(mWidget));
+  session->SetIDataObject(pIDataSource);
 
   
   ProcessDrag(eDragEnter, grfKeyState, ptl, pdwEffect);
@@ -298,8 +294,8 @@ nsNativeDragTarget::DragOver(DWORD grfKeyState, POINTL ptl, LPDWORD pdwEffect) {
   
   mEffectsAllowed = (*pdwEffect) | (mEffectsAllowed & DROPEFFECT_LINK);
 
-  nsCOMPtr<nsIDragSession> currentDragSession =
-      mDragService->GetCurrentSession(mWidget);
+  RefPtr<nsDragSession> currentDragSession =
+      static_cast<nsDragSession*>(mDragService->GetCurrentSession(mWidget));
   if (!currentDragSession) {
     return S_OK;  
   }
@@ -315,10 +311,8 @@ nsNativeDragTarget::DragOver(DWORD grfKeyState, POINTL ptl, LPDWORD pdwEffect) {
       
       
       POINT pt = {ptl.x, ptl.y};
-      nsDragService* dragService =
-          static_cast<nsDragService*>(mDragService.get());
-      GetDropTargetHelper()->DragEnter(mHWnd, dragService->GetDataObject(), &pt,
-                                       *pdwEffect);
+      GetDropTargetHelper()->DragEnter(
+          mHWnd, currentDragSession->GetDataObject(), &pt, *pdwEffect);
     }
     POINT pt = {ptl.x, ptl.y};
     GetDropTargetHelper()->DragOver(&pt, *pdwEffect);
@@ -410,13 +404,12 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
   }
 
   
-  
-  
-  
-  
-  nsDragService* winDragService =
-      static_cast<nsDragService*>(mDragService.get());
-  winDragService->SetIDataObject(pData);
+  RefPtr<nsDragSession> currentDragSession =
+      static_cast<nsDragSession*>(mDragService->GetCurrentSession(mWidget));
+  if (!currentDragSession) {
+    return S_OK;
+  }
+  currentDragSession->SetIDataObject(pData);
 
   
   
@@ -426,8 +419,8 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
   
   ProcessDrag(eDrop, grfKeyState, aPT, pdwEffect);
 
-  nsCOMPtr<nsIDragSession> currentDragSession =
-      serv->GetCurrentSession(mWidget);
+  currentDragSession =
+      static_cast<nsDragSession*>(mDragService->GetCurrentSession(mWidget));
   if (!currentDragSession) {
     return S_OK;  
   }
@@ -435,6 +428,8 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
   
   
   
+  RefPtr<nsDragService> winDragService =
+      static_cast<nsDragService*>(mDragService.get());
   winDragService->SetDroppedLocal();
 
   

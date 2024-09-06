@@ -23,7 +23,6 @@ namespace gfx {
 class SourceSurface;
 }
 }  
-
 class DragData final {
  public:
   NS_INLINE_DECL_REFCOUNTING(DragData)
@@ -91,8 +90,130 @@ class DragData final {
 
 
 
+class nsDragSession : public nsBaseDragService {
+ public:
+  
+  NS_IMETHOD SetCanDrop(bool aCanDrop) override;
+  NS_IMETHOD GetCanDrop(bool* aCanDrop) override;
+  NS_IMETHOD GetNumDropItems(uint32_t* aNumItems) override;
+  NS_IMETHOD GetData(nsITransferable* aTransferable,
+                     uint32_t aItemIndex) override;
+  NS_IMETHOD IsDataFlavorSupported(const char* aDataFlavor,
+                                   bool* _retval) override;
 
-class nsDragService final : public nsBaseDragService, public nsIObserver {
+  
+  
+  
+  
+  NS_IMETHOD UpdateDragEffect() override;
+
+  class AutoEventLoop {
+    RefPtr<nsDragSession> mSession;
+
+   public:
+    explicit AutoEventLoop(RefPtr<nsDragSession> aSession)
+        : mSession(std::move(aSession)) {
+      nsDragSession::sEventLoopDepth++;
+    }
+    ~AutoEventLoop() { nsDragSession::sEventLoopDepth--; }
+  };
+
+  static int GetLoopDepth() { return sEventLoopDepth; };
+
+ protected:
+  virtual ~nsDragSession() = default;
+
+  void ReplyToDragMotion(GdkDragContext* aDragContext, guint aTime);
+  void ReplyToDragMotion();
+
+  void GetDragFlavors(nsTArray<nsCString>& aFlavors);
+  
+  
+  void GetTargetDragData(GdkAtom aFlavor, nsTArray<nsCString>& aDropFlavors,
+                         bool aResetTargetData = true);
+  
+  void TargetResetData(void);
+
+  
+  bool IsTargetContextList(void);
+
+  
+  
+  void EnsureCachedDataValidForContext(GdkDragContext* aDragContext);
+
+  
+  nsCOMPtr<nsIArray> mSourceDataItems;
+
+  
+  
+  RefPtr<GtkWidget> mTargetWidget;
+  RefPtr<GdkDragContext> mTargetDragContext;
+
+  
+  void* mTargetDragData = nullptr;
+  uint32_t mTargetDragDataLen = 0;
+
+  
+  bool mTargetDragDataReceived = false;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<GdkDragContext> mTargetDragContextForRemote;
+  guint mTargetTime;
+
+  mozilla::GUniquePtr<gchar*> mTargetDragUris = nullptr;
+
+  nsTHashMap<nsCStringHashKey, mozilla::GUniquePtr<gchar*>> mCachedUris;
+
+  
+  
+  nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mCachedData;
+
+  
+  
+  
+  
+  uintptr_t mCachedDragContext = 0;
+
+  
+  static int sEventLoopDepth;
+
+  
+  bool mCanDrop = false;
+
+ public:
+  static GdkAtom sJPEGImageMimeAtom;
+  static GdkAtom sJPGImageMimeAtom;
+  static GdkAtom sPNGImageMimeAtom;
+  static GdkAtom sGIFImageMimeAtom;
+  static GdkAtom sCustomTypesMimeAtom;
+  static GdkAtom sURLMimeAtom;
+  static GdkAtom sRTFMimeAtom;
+  static GdkAtom sTextMimeAtom;
+  static GdkAtom sMozUrlTypeAtom;
+  static GdkAtom sMimeListTypeAtom;
+  static GdkAtom sTextUriListTypeAtom;
+  static GdkAtom sTextPlainUTF8TypeAtom;
+  static GdkAtom sXdndDirectSaveTypeAtom;
+  static GdkAtom sTabDropTypeAtom;
+  static GdkAtom sFileMimeAtom;
+  static GdkAtom sPortalFileAtom;
+  static GdkAtom sPortalFileTransferAtom;
+  static GdkAtom sFilePromiseURLMimeAtom;
+  static GdkAtom sFilePromiseMimeAtom;
+  static GdkAtom sNativeImageMimeAtom;
+};
+
+
+
+
+class nsDragService final : public nsDragSession, public nsIObserver {
  public:
   nsDragService();
 
@@ -113,21 +234,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   NS_IMETHOD StartDragSession() override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD EndDragSession(bool aDoneDrag,
                                                uint32_t aKeyModifiers) override;
-
-  
-  NS_IMETHOD SetCanDrop(bool aCanDrop) override;
-  NS_IMETHOD GetCanDrop(bool* aCanDrop) override;
-  NS_IMETHOD GetNumDropItems(uint32_t* aNumItems) override;
-  NS_IMETHOD GetData(nsITransferable* aTransferable,
-                     uint32_t aItemIndex) override;
-  NS_IMETHOD IsDataFlavorSupported(const char* aDataFlavor,
-                                   bool* _retval) override;
-
-  
-  
-  
-  
-  NS_IMETHOD UpdateDragEffect() override;
 
   
   
@@ -177,18 +283,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   void SetDragIcon(GdkDragContext* aContext);
 
-  class AutoEventLoop {
-    RefPtr<nsDragService> mService;
-
-   public:
-    explicit AutoEventLoop(RefPtr<nsDragService> aService)
-        : mService(std::move(aService)) {
-      mService->mEventLoopDepth++;
-    }
-    ~AutoEventLoop() { mService->mEventLoopDepth--; }
-  };
-  int GetLoopDepth() const { return mEventLoopDepth; };
-
  protected:
   virtual ~nsDragService();
 
@@ -229,13 +323,10 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   
   
-  uintptr_t mCachedDragContext;
   nsTHashMap<void*, RefPtr<DragData>> mCachedDragData;
   nsTArray<GdkAtom> mCachedDragFlavors;
 
   void SetCachedDragContext(GdkDragContext* aDragContext);
-
-  nsTHashMap<nsCStringHashKey, mozilla::GUniquePtr<gchar*>> mCachedUris;
 
   guint mPendingTime;
 
@@ -244,28 +335,9 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   RefPtr<nsWindow> mTargetWindow;
   mozilla::LayoutDeviceIntPoint mTargetWindowPoint;
-  
-  
-  RefPtr<GtkWidget> mTargetWidget;
-  RefPtr<GdkDragContext> mTargetDragContext;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<GdkDragContext> mTargetDragContextForRemote;
-  guint mTargetTime;
-
-  
-  bool mCanDrop;
   int mWaitingForDragDataRequests = 0;
 
-  
-  bool IsTargetContextList(void);
   bool IsDragFlavorAvailable(GdkAtom aRequestedFlavor);
 
   
@@ -276,8 +348,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   GtkWidget* mHiddenWidget;
-  
-  nsCOMPtr<nsIArray> mSourceDataItems;
 
   
   GtkTargetList* GetSourceList(void);
@@ -296,8 +366,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   MOZ_CAN_RUN_SCRIPT static gboolean TaskDispatchCallback(gpointer data);
   MOZ_CAN_RUN_SCRIPT gboolean RunScheduledTask();
   MOZ_CAN_RUN_SCRIPT void DispatchMotionEvents();
-  void ReplyToDragMotion(GdkDragContext* aDragContext, guint aTime);
-  void ReplyToDragMotion();
   void UpdateDragAction(GdkDragContext* aDragContext);
   void UpdateDragAction();
 
@@ -318,30 +386,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   nsCOMArray<nsIFile> mTemporaryFiles;
   
   guint mTempFileTimerID;
-  
-  int mEventLoopDepth;
-
- public:
-  static GdkAtom sJPEGImageMimeAtom;
-  static GdkAtom sJPGImageMimeAtom;
-  static GdkAtom sPNGImageMimeAtom;
-  static GdkAtom sGIFImageMimeAtom;
-  static GdkAtom sCustomTypesMimeAtom;
-  static GdkAtom sURLMimeAtom;
-  static GdkAtom sRTFMimeAtom;
-  static GdkAtom sTextMimeAtom;
-  static GdkAtom sMozUrlTypeAtom;
-  static GdkAtom sMimeListTypeAtom;
-  static GdkAtom sTextUriListTypeAtom;
-  static GdkAtom sTextPlainUTF8TypeAtom;
-  static GdkAtom sXdndDirectSaveTypeAtom;
-  static GdkAtom sTabDropTypeAtom;
-  static GdkAtom sFileMimeAtom;
-  static GdkAtom sPortalFileAtom;
-  static GdkAtom sPortalFileTransferAtom;
-  static GdkAtom sFilePromiseURLMimeAtom;
-  static GdkAtom sFilePromiseMimeAtom;
-  static GdkAtom sNativeImageMimeAtom;
 };
 
 #endif  

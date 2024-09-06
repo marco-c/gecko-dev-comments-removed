@@ -51,17 +51,9 @@ using namespace mozilla::widget;
 
 
 
-nsDragService::nsDragService()
-    : mDataObject(nullptr), mSentLocalDropEvent(false) {}
+nsDragSession::~nsDragSession() { NS_IF_RELEASE(mDataObject); }
 
-
-
-
-
-
-nsDragService::~nsDragService() { NS_IF_RELEASE(mDataObject); }
-
-bool nsDragService::CreateDragImage(nsINode* aDOMNode,
+bool nsDragSession::CreateDragImage(nsINode* aDOMNode,
                                     const Maybe<CSSIntRegion>& aRegion,
                                     SHDRAGIMAGE* psdi) {
   if (!psdi) return false;
@@ -327,7 +319,8 @@ nsresult nsDragService::StartInvokingDragSession(IDataObject* aDataObj,
 
 
 
-nsDataObjCollection* nsDragService::GetDataObjCollection(
+
+nsDataObjCollection* nsDragSession::GetDataObjCollection(
     IDataObject* aDataObj) {
   nsDataObjCollection* dataObjCol = nullptr;
   if (aDataObj) {
@@ -344,7 +337,7 @@ nsDataObjCollection* nsDragService::GetDataObjCollection(
 
 
 NS_IMETHODIMP
-nsDragService::GetNumDropItems(uint32_t* aNumItems) {
+nsDragSession::GetNumDropItems(uint32_t* aNumItems) {
   if (!mDataObject) {
     *aNumItems = 0;
     return NS_OK;
@@ -403,7 +396,7 @@ nsDragService::GetNumDropItems(uint32_t* aNumItems) {
 
 
 NS_IMETHODIMP
-nsDragService::GetData(nsITransferable* aTransferable, uint32_t anItem) {
+nsDragSession::GetData(nsITransferable* aTransferable, uint32_t anItem) {
   
   
   
@@ -447,8 +440,7 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t anItem) {
 }
 
 
-NS_IMETHODIMP
-nsDragService::SetIDataObject(IDataObject* aDataObj) {
+void nsDragSession::SetIDataObject(IDataObject* aDataObj) {
   
   
   NS_IF_RELEASE(mDataObject);
@@ -456,7 +448,7 @@ nsDragService::SetIDataObject(IDataObject* aDataObj) {
   NS_IF_ADDREF(mDataObject);
 
   if (MOZ_DRAGSERVICE_LOG_ENABLED()) {
-    MOZ_DRAGSERVICE_LOG("nsDragService::SetIDataObject (%p)", mDataObject);
+    MOZ_DRAGSERVICE_LOG("nsDragSession::SetIDataObject (%p)", mDataObject);
     IEnumFORMATETC* pEnum = nullptr;
     if (mDataObject &&
         S_OK == mDataObject->EnumFormatEtc(DATADIR_GET, &pEnum)) {
@@ -472,8 +464,6 @@ nsDragService::SetIDataObject(IDataObject* aDataObj) {
       pEnum->Release();
     }
   }
-
-  return NS_OK;
 }
 
 
@@ -486,7 +476,7 @@ void nsDragService::SetDroppedLocal() {
 
 
 NS_IMETHODIMP
-nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
+nsDragSession::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
   if (!aDataFlavor || !mDataObject || !_retval) {
     MOZ_DRAGSERVICE_LOG("%s: error", __PRETTY_FUNCTION__);
     return NS_ERROR_FAILURE;
@@ -596,7 +586,8 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
 
 
 
-bool nsDragService::IsCollectionObject(IDataObject* inDataObj) {
+
+bool nsDragSession::IsCollectionObject(IDataObject* inDataObj) {
   bool isCollection = false;
 
   
@@ -639,13 +630,13 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
 }
 
 NS_IMETHODIMP
-nsDragService::UpdateDragImage(nsINode* aImage, int32_t aImageX,
+nsDragSession::UpdateDragImage(nsINode* aImage, int32_t aImageX,
                                int32_t aImageY) {
   if (!mDataObject) {
     return NS_OK;
   }
 
-  nsBaseDragService::UpdateDragImage(aImage, aImageX, aImageY);
+  nsBaseDragSession::UpdateDragImage(aImage, aImageX, aImageY);
 
   IDragSourceHelper* pdsh;
   if (SUCCEEDED(CoCreateInstance(CLSID_DragDropHelper, nullptr,

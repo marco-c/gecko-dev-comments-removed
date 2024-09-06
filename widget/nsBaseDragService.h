@@ -54,18 +54,8 @@ class MockDragServiceController;
 
 
 
-
-class nsBaseDragService : public nsIDragService, public nsIDragSession {
+class nsBaseDragSession : public nsIDragSession {
  public:
-  typedef mozilla::gfx::SourceSurface SourceSurface;
-
-  nsBaseDragService();
-
-  
-  NS_DECL_ISUPPORTS
-
-  
-  NS_DECL_NSIDRAGSERVICE
   NS_DECL_NSIDRAGSESSION
 
   void SetDragEndPoint(nsIntPoint aEndDragPoint) {
@@ -75,6 +65,73 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
   void SetDragEndPoint(mozilla::LayoutDeviceIntPoint aEndDragPoint) {
     mEndDragPoint = aEndDragPoint;
   }
+
+ protected:
+  ~nsBaseDragSession() = default;
+
+  RefPtr<mozilla::dom::WindowContext> mSourceWindowContext;
+  RefPtr<mozilla::dom::WindowContext> mSourceTopWindowContext;
+  nsCOMPtr<nsINode> mSourceNode;
+  
+  
+  RefPtr<mozilla::dom::Document> mSourceDocument;
+  
+  RefPtr<mozilla::dom::Selection> mSelection;
+
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  RefPtr<mozilla::dom::DataTransfer> mDataTransfer;
+
+  
+  nsCOMPtr<nsINode> mImage;
+  
+  mozilla::CSSIntPoint mImageOffset;
+  
+  
+  nsCOMPtr<mozilla::dom::Element> mDragPopup;
+
+  
+  mozilla::LayoutDeviceIntPoint mEndDragPoint;
+
+  uint32_t mDragAction = nsIDragService::DRAGDROP_ACTION_NONE;
+  uint32_t mDragActionFromChildProcess =
+      nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
+
+  
+  
+  uint32_t mEffectAllowedForTests =
+      nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
+
+  bool mDoingDrag = false;
+
+  bool mCanDrop = false;
+  bool mOnlyChromeDrop = false;
+
+  
+  bool mUserCancelled = false;
+
+  bool mDragEventDispatchedToChildProcess = false;
+
+  bool mIsDraggingTextInTextControl = false;
+  bool mSessionIsSynthesizedForTests = false;
+};
+
+
+
+
+
+
+
+class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
+ public:
+  typedef mozilla::gfx::SourceSurface SourceSurface;
+
+  nsBaseDragService();
+
+  
+  NS_DECL_ISUPPORTS
+
+  NS_DECL_NSIDRAGSERVICE
 
   uint16_t GetInputSource() { return mInputSource; }
 
@@ -154,67 +211,21 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
 
   virtual bool IsMockService() { return false; }
 
-  bool mCanDrop;
-  bool mOnlyChromeDrop;
-  bool mDoingDrag;
-  bool mSessionIsSynthesizedForTests;
-
-  bool mIsDraggingTextInTextControl;
-
   
   bool mEndingSession;
   
   bool mHasImage;
-  
-  bool mUserCancelled;
-
-  bool mDragEventDispatchedToChildProcess;
-
-  uint32_t mDragAction;
-  uint32_t mDragActionFromChildProcess;
-
-  
-  
-  uint32_t mEffectAllowedForTests;
-
-  nsCOMPtr<nsINode> mSourceNode;
-  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
-
-  
-  
-  RefPtr<mozilla::dom::Document> mSourceDocument;
-
-  RefPtr<mozilla::dom::WindowContext> mSourceWindowContext;
-  RefPtr<mozilla::dom::WindowContext> mSourceTopWindowContext;
 
   
   
   nsContentPolicyType mContentPolicyType;
-
-  RefPtr<mozilla::dom::DataTransfer> mDataTransfer;
-
-  
-  nsCOMPtr<nsINode> mImage;
-  
-  mozilla::CSSIntPoint mImageOffset;
-
-  
-  RefPtr<mozilla::dom::Selection> mSelection;
 
   
   RefPtr<mozilla::dom::RemoteDragStartData> mDragStartData;
 
   
   
-  nsCOMPtr<mozilla::dom::Element> mDragPopup;
-
-  
-  
   mozilla::CSSIntPoint mScreenPosition;
-
-  
-  mozilla::LayoutDeviceIntPoint mEndDragPoint;
 
   uint32_t mSuppressLevel;
 
