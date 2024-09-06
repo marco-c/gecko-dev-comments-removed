@@ -134,15 +134,30 @@ class FilterInstance {
 
 
 
-
-  static bool BuildWebRenderFilters(
+  static WrFiltersStatus BuildWebRenderFilters(
       nsIFrame* aFilteredFrame,
       mozilla::Span<const mozilla::StyleFilter> aFilters,
       StyleFilterType aStyleFilterType, WrFiltersHolder& aWrFilters,
-      bool& aInitialized);
+      const nsPoint& aOffsetForSVGFilters);
+
+  
+
+
+
+
+
+
+
+  static WrFiltersStatus BuildWebRenderSVGFiltersImpl(
+      nsIFrame* aFilteredFrame,
+      mozilla::Span<const mozilla::StyleFilter> aFilters,
+      StyleFilterType aStyleFilterType, WrFiltersHolder& aWrFilters,
+      const nsPoint& aOffsetForSVGFilters);
 
  private:
   
+
+
 
 
 
@@ -177,13 +192,13 @@ class FilterInstance {
       const nsRegion* aPostFilterDirtyRegion = nullptr,
       const nsRegion* aPreFilterDirtyRegion = nullptr,
       const nsRect* aPreFilterInkOverflowRectOverride = nullptr,
-      const gfxRect* aOverrideBBox = nullptr);
+      const gfxRect* aOverrideBBox = nullptr,
+      gfxRect* aFilterSpaceBoundsNotSnapped = nullptr);
 
-  static bool BuildWebRenderFiltersImpl(
+  static WrFiltersStatus BuildWebRenderFiltersImpl(
       nsIFrame* aFilteredFrame,
       mozilla::Span<const mozilla::StyleFilter> aFilters,
-      StyleFilterType aStyleFilterType, WrFiltersHolder& aWrFilters,
-      bool& aInitialized);
+      StyleFilterType aStyleFilterType, WrFiltersHolder& aWrFilters);
 
   
 
@@ -365,6 +380,11 @@ class FilterInstance {
 
 
   nsIntRect mTargetBBoxInFilterSpace;
+
+  
+
+
+  gfxRect mFilterSpaceBoundsNotSnapped;
 
   
 
