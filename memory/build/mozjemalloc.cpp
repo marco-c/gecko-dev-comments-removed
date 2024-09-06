@@ -194,9 +194,6 @@ using namespace mozilla;
 
 
 
-
-
-
 #ifdef XP_DARWIN
 #  define MALLOC_DOUBLE_PURGE
 #endif
