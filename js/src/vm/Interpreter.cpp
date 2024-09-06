@@ -1695,7 +1695,7 @@ bool js::GetDisposeMethod(JSContext* cx, JS::Handle<JS::Value> objVal,
       
       if (disposeMethod.isNullOrUndefined() || !IsCallable(disposeMethod)) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_NO_DISPOSE_IN_USING);
+                                  JSMSG_DISPOSE_NOT_CALLABLE);
         return false;
       }
 
@@ -1709,31 +1709,44 @@ bool js::GetDisposeMethod(JSContext* cx, JS::Handle<JS::Value> objVal,
 
 
 
-bool js::CreateDisposableResource(JSContext* cx, JS::Handle<JS::Value> obj,
-                                  UsingHint hint,
-                                  JS::MutableHandle<JS::Value> result) {
-  
-  
+bool js::CreateDisposableResource(
+    JSContext* cx, JS::Handle<JS::Value> obj, UsingHint hint,
+    JS::Handle<mozilla::Maybe<JS::Value>> methodVal,
+    JS::MutableHandle<JS::Value> result) {
   
   JS::Rooted<JS::Value> method(cx);
   JS::Rooted<JS::Value> object(cx);
-  if (obj.isNullOrUndefined()) {
+  if (!methodVal.isSome()) {
     
-    
-    object.setUndefined();
-    method.setUndefined();
+    if (obj.isNullOrUndefined()) {
+      
+      
+      object.setUndefined();
+      method.setUndefined();
+    } else {
+      
+      
+      if (!obj.isObject()) {
+        return ThrowCheckIsObject(cx, CheckIsObjectKind::Disposable);
+      }
+
+      
+      
+      object.set(obj);
+      if (!GetDisposeMethod(cx, object, hint, &method)) {
+        return false;
+      }
+    }
   } else {
     
     
-    if (!obj.isObject()) {
-      return ThrowCheckIsObject(cx, CheckIsObjectKind::Disposable);
-    }
-    
-    
-    object.set(obj);
-    if (!GetDisposeMethod(cx, object, hint, &method)) {
+    if (!IsCallable(*methodVal)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DISPOSE_NOT_CALLABLE);
       return false;
     }
+    object.set(obj);
+    method.set(*methodVal);
   }
 
   
@@ -1789,119 +1802,71 @@ ErrorObject* js::CreateSuppressedError(JSContext* cx,
   return errorObj;
 }
 
-
-
-
 bool js::DisposeDisposablesOnScopeLeave(JSContext* cx,
                                         JS::Handle<JSObject*> env) {
-  if (!env->is<LexicalEnvironmentObject>() &&
-      !env->is<ModuleEnvironmentObject>()) {
-    return true;
-  }
+  MOZ_ASSERT(env->is<LexicalEnvironmentObject>() ||
+             env->is<ModuleEnvironmentObject>());
 
-  Value maybeDisposables =
+  JS::Value maybeDisposables =
       env->is<LexicalEnvironmentObject>()
           ? env->as<LexicalEnvironmentObject>().getDisposables()
           : env->as<ModuleEnvironmentObject>().getDisposables();
 
   MOZ_ASSERT(maybeDisposables.isObject() || maybeDisposables.isUndefined());
 
-  if (maybeDisposables.isObject()) {
-    JS::Rooted<ListObject*> disposables(
-        cx, &maybeDisposables.toObject().as<ListObject>());
+  if (!maybeDisposables.isObject()) {
+    return true;
+  }
 
-    uint32_t index = disposables->length();
-
-    
-    bool hadError = false;
-    JS::Rooted<JS::Value> latestException(cx);
-
-    if (cx->isExceptionPending()) {
-      hadError = true;
-      if (!cx->getPendingException(&latestException)) {
-        return false;
-      }
-      cx->clearPendingException();
-    }
-
-    
-    
-    while (index) {
-      --index;
-      Value val = disposables->get(index);
-
-      MOZ_ASSERT(val.isObject());
-
-      JS::Rooted<DisposableRecordObject*> resource(
-          cx, &val.toObject().as<DisposableRecordObject>());
-
-      
-      JS::Rooted<JS::Value> value(cx, resource->getObject());
-
-      
-      
-      
-      
-      JS::Rooted<JS::Value> method(cx, resource->getMethod());
-
-      
-      if (method.isUndefined()) {
-        continue;
-      }
-
-      
-      JS::Rooted<JS::Value> rval(cx);
-      if (!Call(cx, method, value, &rval)) {
-        
-        if (hadError) {
-          
-          JS::Rooted<JS::Value> result(cx);
-          if (!cx->getPendingException(&result)) {
-            return false;
-          }
-          cx->clearPendingException();
-
-          
-          JS::Rooted<JS::Value> suppressed(cx, latestException);
-
-          
-          ErrorObject* errorObj = CreateSuppressedError(cx, result, suppressed);
-          if (!errorObj) {
-            return false;
-          }
-          
-          latestException.set(ObjectValue(*errorObj));
-        } else {
-          
-          
-          hadError = true;
-          if (cx->isExceptionPending()) {
-            if (!cx->getPendingException(&latestException)) {
-              return false;
-            }
-            cx->clearPendingException();
-          }
-        }
-      }
-    }
-
-    
-    
+  auto clearFn = [env]() {
     if (env->is<LexicalEnvironmentObject>()) {
       env->as<LexicalEnvironmentObject>().clearDisposables();
     } else {
       env->as<ModuleEnvironmentObject>().clearDisposables();
     }
+  };
+
+  JS::Rooted<ListObject*> disposables(
+      cx, &maybeDisposables.toObject().as<ListObject>());
+
+  return DisposeResources(cx, disposables, clearFn);
+}
+
+
+
+
+bool js::AddDisposableResource(
+    JSContext* cx, JS::Handle<ListObject*> disposeCapability,
+    JS::Handle<JS::Value> val, UsingHint hint,
+    JS::Handle<mozilla::Maybe<JS::Value>> methodVal) {
+  JS::Rooted<JS::Value> resource(cx);
+
+  
+  if (!methodVal.isSome()) {
+    
+    
+    if (val.isNullOrUndefined() && hint == UsingHint::Sync) {
+      return true;
+    }
 
     
-    if (hadError) {
-      cx->setPendingException(latestException, ShouldCaptureStack::Maybe);
+    if (!CreateDisposableResource(cx, val, hint, methodVal, &resource)) {
+      return false;
+    }
+  } else {
+    
+    
+    MOZ_ASSERT(val.isUndefined());
+
+    
+    
+    if (!CreateDisposableResource(cx, val, hint, methodVal, &resource)) {
       return false;
     }
   }
 
   
-  return true;
+  return disposeCapability->append(cx, resource);
 }
 #endif
 
@@ -2260,23 +2225,27 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
                                     REGS.fp()->environmentChain());
 
       ReservedRooted<Value> val(&rootValue0, REGS.sp[-1]);
+      UsingHint hint = UsingHint::Sync;
+      JS::Rooted<ListObject*> disposableCapability(cx);
 
-      ReservedRooted<Value> recordVal(&rootValue1);
+      if (env->is<LexicalEnvironmentObject>()) {
+        disposableCapability =
+            env->as<LexicalEnvironmentObject>().getOrCreateDisposeCapability(
+                cx);
+      } else if (env->is<ModuleEnvironmentObject>()) {
+        disposableCapability =
+            env->as<ModuleEnvironmentObject>().getOrCreateDisposeCapability(cx);
+      } else {
+        MOZ_CRASH("Unexpected environment object for JSOp::AddDispose");
+      }
 
-      if (!CreateDisposableResource(cx, val, UsingHint::Sync, &recordVal)) {
+      if (!disposableCapability) {
         goto error;
       }
 
-      if (env->is<LexicalEnvironmentObject>()) {
-        if (!env->as<LexicalEnvironmentObject>().addDisposableObject(
-                cx, recordVal)) {
-          goto error;
-        }
-      } else if (env->is<ModuleEnvironmentObject>()) {
-        if (!env->as<ModuleEnvironmentObject>().addDisposableObject(
-                cx, recordVal)) {
-          goto error;
-        }
+      if (!AddDisposableResource(cx, disposableCapability, val, hint,
+                                 JS::NothingHandleValue)) {
+        goto error;
       }
     }
     END_CASE(AddDisposable)
