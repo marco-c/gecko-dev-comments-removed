@@ -432,8 +432,8 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     if (revocationState == nsICertStorage::STATE_ENFORCE) {
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
               ("NSSCertDBTrustDomain: certificate is in blocklist"));
-      Telemetry::AccumulateCategorical(
-          Telemetry::LABELS_CERT_REVOCATION_MECHANISMS::OneCRL);
+      mozilla::glean::cert_verifier::cert_revocation_mechanisms.Get("OneCRL"_ns)
+          .Add(1);
       return Result::ERROR_REVOKED_CERTIFICATE;
     }
   }
@@ -787,8 +787,8 @@ Result NSSCertDBTrustDomain::CheckRevocation(
     }
 
     if (crliteCoversCertificate) {
-      Telemetry::AccumulateCategorical(
-          Telemetry::LABELS_CERT_REVOCATION_MECHANISMS::CRLite);
+      mozilla::glean::cert_verifier::cert_revocation_mechanisms.Get("CRLite"_ns)
+          .Add(1);
       
       
       
@@ -889,8 +889,9 @@ Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
     stapledOCSPResponseResult = VerifyAndMaybeCacheEncodedOCSPResponse(
         certID, time, maxOCSPLifetimeInDays, *stapledOCSPResponse,
         ResponseWasStapled, expired);
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_CERT_REVOCATION_MECHANISMS::StapledOCSP);
+    mozilla::glean::cert_verifier::cert_revocation_mechanisms
+        .Get("StapledOCSP"_ns)
+        .Add(1);
     if (stapledOCSPResponseResult == Success) {
       
       mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_GOOD;
@@ -935,8 +936,9 @@ Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
       mOCSPCache.Get(certID, mOriginAttributes, cachedResponseResult,
                      cachedResponseValidThrough);
   if (cachedResponsePresent) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_CERT_REVOCATION_MECHANISMS::CachedOCSP);
+    mozilla::glean::cert_verifier::cert_revocation_mechanisms
+        .Get("CachedOCSP"_ns)
+        .Add(1);
     if (cachedResponseResult == Success && cachedResponseValidThrough >= time) {
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
               ("NSSCertDBTrustDomain: cached OCSP response: good"));
@@ -986,8 +988,9 @@ Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
   
   Duration shortLifetime(mCertShortLifetimeInDays * Time::ONE_DAY_IN_SECONDS);
   if (validityDuration < shortLifetime) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_CERT_REVOCATION_MECHANISMS::ShortValidity);
+    mozilla::glean::cert_verifier::cert_revocation_mechanisms
+        .Get("ShortValidity"_ns)
+        .Add(1);
   }
   if ((mOCSPFetching == NeverFetchOCSP) || (validityDuration < shortLifetime)) {
     
@@ -1072,8 +1075,8 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
   mOCSPFetchStatus = OCSPFetchStatus::Fetched;
   rv = DoOCSPRequest(aiaLocation, mOriginAttributes, ocspRequestBytes,
                      ocspRequestLength, GetOCSPTimeout(), ocspResponse);
-  Telemetry::AccumulateCategorical(
-      Telemetry::LABELS_CERT_REVOCATION_MECHANISMS::OCSP);
+  mozilla::glean::cert_verifier::cert_revocation_mechanisms.Get("OCSP"_ns).Add(
+      1);
   if (rv == Success &&
       response.Init(ocspResponse.begin(), ocspResponse.length()) != Success) {
     rv = Result::ERROR_OCSP_MALFORMED_RESPONSE;  
@@ -1091,16 +1094,12 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
       return cacheRV;
     }
 
-    if (crliteCoversCertificate) {
-      if (crliteResult == Success) {
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteOkOCSPFail);
-      } else {
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteRevOCSPFail);
-      }
+    if (crliteCoversCertificate &&
+        crliteResult == Result::ERROR_REVOKED_CERTIFICATE) {
+      
+      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
+          .Get("CRLiteRevOCSPFail"_ns)
+          .Add(1);
     }
 
     return HandleOCSPFailure(cachedResponseResult, stapledOCSPResponseResult,
@@ -1121,51 +1120,24 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
   
   
   
-  
-  if (crliteCoversCertificate) {
+  if (crliteCoversCertificate &&
+      crliteResult == Result::ERROR_REVOKED_CERTIFICATE) {
     if (rv == Success) {
-      if (crliteResult == Success) {
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteOkOCSPOk);
-      } else {
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteRevOCSPOk);
-      }
+      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
+          .Get("CRLiteRevOCSPOk"_ns)
+          .Add(1);
     } else if (rv == Result::ERROR_REVOKED_CERTIFICATE) {
-      if (crliteResult == Success) {
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteOkOCSPRev);
-      } else {
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteRevOCSPRev);
-      }
+      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
+          .Get("CRLiteRevOCSPRev"_ns)
+          .Add(1);
     } else if (rv == Result::ERROR_OCSP_UNKNOWN_CERT) {
-      if (crliteResult == Success) {
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteOkOCSPUnk);
-      } else {
-        
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteRevOCSPUnk);
-      }
+      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
+          .Get("CRLiteRevOCSPUnk"_ns)
+          .Add(1);
     } else {
-      if (crliteResult == Success) {
-        
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteOkOCSPSoft);
-      } else {
-        
-        
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteRevOCSPSoft);
-      }
+      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
+          .Get("CRLiteRevOCSPSoft"_ns)
+          .Add(1);
     }
   }
 
