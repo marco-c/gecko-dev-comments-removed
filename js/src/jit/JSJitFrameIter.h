@@ -513,6 +513,12 @@ class SnapshotIterator {
     return val.toString();
   }
 
+  JS::BigInt* readBigInt() {
+    Value val = read();
+    MOZ_RELEASE_ASSERT(val.isBigInt());
+    return val.toBigInt();
+  }
+
   
   
   
