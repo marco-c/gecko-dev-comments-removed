@@ -131,6 +131,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
     PLAY_STATE_SHUTDOWN
   };
 
+  static const char* ToPlayStateStr(MediaDecoder::PlayState aState);
+
   
   static void InitStatics();
 
