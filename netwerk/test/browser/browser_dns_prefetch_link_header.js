@@ -78,11 +78,13 @@ add_task(async function test_https_dns_prefetch() {
     async function () {}
   );
 
-  Assert.ok(await isRecordFound("example.com"), "Host record should be found");
   Assert.ok(
-    await isRecordFound("example.org"),
-    "Prefetched dns record should be found"
+    await TestUtils.waitForCondition(() => {
+      return isRecordFound("example.org");
+    }),
+    "Record from link rel=dns-prefetch element should be found"
   );
+  Assert.ok(await isRecordFound("example.com"), "Host record should be found");
 });
 
 
@@ -98,11 +100,13 @@ add_task(async function test_http_dns_prefetch() {
     async function () {}
   );
 
-  Assert.ok(await isRecordFound("example.com"), "Host record should be found");
   Assert.ok(
-    await isRecordFound("example.org"),
-    "Prefetched dns record should be found"
+    await TestUtils.waitForCondition(() => {
+      return isRecordFound("example.org");
+    }),
+    "Record from link rel=dns-prefetch element should be found"
   );
+  Assert.ok(await isRecordFound("example.com"), "Host record should be found");
 });
 
 
@@ -124,7 +128,7 @@ add_task(async function test_https_dns_prefetch_disabled() {
   Assert.ok(await isRecordFound("example.com"), "Host record should be found");
   Assert.ok(
     !(await isRecordFound("example.org")),
-    "Prefetched dns record should not be found with disablePrefetchFromHTTPS set"
+    "Record from link rel=dns-prefetch element should not be found with disablePrefetchFromHTTPS set"
   );
 
   Services.prefs.clearUserPref("network.dns.disablePrefetchFromHTTPS");
@@ -146,11 +150,13 @@ add_task(async function test_http_dns_prefetch_disabled() {
     async function () {}
   );
 
-  Assert.ok(await isRecordFound("example.com"), "Host record should be found");
   Assert.ok(
-    await isRecordFound("example.org"),
-    "Prefetched dns record should still be found on http page with disablePrefetchFromHTTPS set"
+    await TestUtils.waitForCondition(() => {
+      return isRecordFound("example.org");
+    }),
+    "Record from link rel=dns-prefetch element should be found on http page with disablePrefetchFromHTTPS set"
   );
+  Assert.ok(await isRecordFound("example.com"), "Host record should be found");
 
   Services.prefs.clearUserPref("network.dns.disablePrefetchFromHTTPS");
 });
@@ -165,17 +171,16 @@ add_task(async function test_https_anchor_speculative_dns_prefetch() {
       url: https_requestUrl,
       waitForLoad: true,
     },
-    async function () {}
-  );
-
-  Assert.ok(await isRecordFound("example.com"), "Host record should be found");
-  Assert.ok(
-    await isRecordFound("example.org"),
-    "Prefetched dns record should still be found on http page with disablePrefetchFromHTTPS set"
-  );
-  Assert.ok(
-    !(await isRecordFound("www.mozilla.org")),
-    "By default we do not speculatively prefetch dns for anchor elements on https documents"
+    async function () {
+      Assert.ok(
+        await isRecordFound("example.com"),
+        "Host record should be found"
+      );
+      Assert.ok(
+        !(await isRecordFound("www.mozilla.org")),
+        "By default we do not speculatively prefetch dns for anchor elements on https documents"
+      );
+    }
   );
 
   
@@ -192,23 +197,16 @@ add_task(async function test_https_anchor_speculative_dns_prefetch() {
       waitForLoad: true,
     },
     async function () {
+      
+      Assert.ok(
+        await TestUtils.waitForCondition(() => {
+          return isRecordFound("www.mozilla.org");
+        }),
+        "Speculatively prefetch dns for anchor elements on https documents"
+      );
       Assert.ok(
         await isRecordFound("example.com"),
         "Host record should be found"
-      );
-      Assert.ok(
-        await isRecordFound("example.org"),
-        "Prefetched dns record should still be found on http page with disablePrefetchFromHTTPS set"
-      );
-
-      
-      await TestUtils.waitForCondition(() => {
-        return isRecordFound("www.mozilla.org");
-      });
-
-      Assert.ok(
-        await isRecordFound("www.mozilla.org"),
-        "Speculatively prefetch dns for anchor elements on https documents"
       );
     }
   );
@@ -228,22 +226,23 @@ add_task(async function test_http_anchor_speculative_dns_prefetch() {
     },
     async function () {
       Assert.ok(
-        await isRecordFound("example.com"),
-        "Host record should be found"
-      );
-      Assert.ok(
-        await isRecordFound("example.org"),
-        "Prefetched dns record should still be found on http page with disablePrefetchFromHTTPS set"
+        await TestUtils.waitForCondition(() => {
+          return isRecordFound("example.org");
+        }),
+        "Record from link rel=dns-prefetch element should be found"
       );
 
       
-      await TestUtils.waitForCondition(() => {
-        return isRecordFound("www.mozilla.org");
-      });
+      Assert.ok(
+        await TestUtils.waitForCondition(() => {
+          return isRecordFound("www.mozilla.org");
+        }),
+        "By default we speculatively prefetch dns for anchor elements on http documents"
+      );
 
       Assert.ok(
-        await isRecordFound("www.mozilla.org"),
-        "By default we speculatively prefetch dns for anchor elements on http documents"
+        await isRecordFound("example.com"),
+        "Host record should be found"
       );
     }
   );
@@ -263,16 +262,18 @@ add_task(async function test_http_anchor_speculative_dns_prefetch() {
     },
     async function () {
       Assert.ok(
-        await isRecordFound("example.com"),
-        "Host record should be found"
-      );
-      Assert.ok(
-        await isRecordFound("example.org"),
-        "Prefetched dns record should still be found on http page with disablePrefetchFromHTTPS set"
+        await TestUtils.waitForCondition(() => {
+          return isRecordFound("example.org");
+        }),
+        "Record from link rel=dns-prefetch element should be found"
       );
       Assert.ok(
         !(await isRecordFound("www.mozilla.org")),
         "We disabled speculative prefetch dns for anchor elements on http documents"
+      );
+      Assert.ok(
+        await isRecordFound("example.com"),
+        "Host record should be found"
       );
     }
   );
