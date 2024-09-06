@@ -1007,6 +1007,14 @@ void InspectorUtils::GetCSSRegisteredProperties(
 }
 
 
+bool InspectorUtils::ValueMatchesSyntax(GlobalObject&, Document& aDocument,
+                                        const nsACString& aValue,
+                                        const nsACString& aSyntax) {
+  return Servo_Value_Matches_Syntax(&aValue, &aSyntax,
+                                    aDocument.DefaultStyleAttrURLData());
+}
+
+
 void InspectorUtils::GetRuleBodyText(GlobalObject&,
                                      const nsACString& aInitialText,
                                      nsACString& aBodyText) {

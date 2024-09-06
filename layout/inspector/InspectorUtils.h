@@ -274,6 +274,13 @@ class InspectorUtils {
   
 
 
+  static bool ValueMatchesSyntax(GlobalObject&, Document& aDocument,
+                                 const nsACString& aValue,
+                                 const nsACString& aSyntax);
+
+  
+
+
   static void GetRuleBodyText(GlobalObject&, const nsACString& aInitialText,
                               nsACString& aBodyText);
 
