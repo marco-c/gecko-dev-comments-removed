@@ -730,18 +730,14 @@ var SelectTranslationsPanel = new (class {
 
 
   #changeStateTo(phase, retainEntries, data = null) {
-    const { textArea } = this.elements;
     switch (phase) {
-      case "translating": {
-        textArea.classList.add("translating");
-        break;
-      }
       case "closed":
       case "idle":
       case "translatable":
+      case "translating":
       case "translated":
       case "unsupported": {
-        textArea.classList.remove("translating");
+        
         break;
       }
       default: {
@@ -864,6 +860,66 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  #handleTextAreaBackgroundChanges(phase) {
+    const { textArea } = this.elements;
+    switch (phase) {
+      case "translating": {
+        textArea.classList.add("translating");
+        break;
+      }
+      case "closed":
+      case "idle":
+      case "translatable":
+      case "translated":
+      case "unsupported": {
+        textArea.classList.remove("translating");
+        break;
+      }
+      default: {
+        throw new Error(`Invalid state change to '${phase}'`);
+      }
+    }
+  }
+
+  
+
+
+
+
+  #handlePrimaryUIChanges(phase) {
+    switch (phase) {
+      case "closed":
+      case "idle": {
+        this.#displayIdlePlaceholder();
+        break;
+      }
+      case "translatable": {
+        
+        break;
+      }
+      case "translating": {
+        this.#displayTranslatingPlaceholder();
+        break;
+      }
+      case "translated": {
+        this.#displayTranslatedText();
+        break;
+      }
+      case "unsupported": {
+        this.#displayUnsupportedLanguageMessage();
+        break;
+      }
+      default: {
+        throw new Error(`Invalid state change to '${phase}'`);
+      }
+    }
+  }
+
+  
+
+
+
+
 
 
 
@@ -977,23 +1033,9 @@ var SelectTranslationsPanel = new (class {
 
 
   #updatePanelUIFromState() {
-    switch (this.phase()) {
-      case "idle": {
-        this.#displayIdlePlaceholder();
-        break;
-      }
-      case "translating": {
-        this.#displayTranslatingPlaceholder();
-        break;
-      }
-      case "translated": {
-        this.#displayTranslatedText();
-        break;
-      }
-      case "unsupported": {
-        this.#displayUnsupportedLanguageMessage();
-      }
-    }
+    const phase = this.phase();
+    this.#handlePrimaryUIChanges(phase);
+    this.#handleTextAreaBackgroundChanges(phase);
   }
 
   
