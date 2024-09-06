@@ -105,6 +105,7 @@ inline PlainDateTime ToPlainDateTime(const PlainDateTimeObject* dateTime) {
   return {ToPlainDate(dateTime), ToPlainTime(dateTime)};
 }
 
+struct DifferenceSettings;
 class Increment;
 enum class TemporalRoundingMode;
 enum class TemporalUnit;
@@ -179,6 +180,38 @@ bool InterpretTemporalDateTimeFields(JSContext* cx,
 PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
                                Increment increment, TemporalUnit unit,
                                TemporalRoundingMode roundingMode);
+
+
+
+
+
+bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
+                           const PlainDateTime& two,
+                           JS::Handle<CalendarRecord> calendar,
+                           TemporalUnit largestUnit,
+                           NormalizedDuration* result);
+
+
+
+
+
+
+bool DifferencePlainDateTimeWithRounding(JSContext* cx,
+                                         const PlainDateTime& one,
+                                         const PlainDateTime& two,
+                                         JS::Handle<CalendarRecord> calendar,
+                                         const DifferenceSettings& settings,
+                                         Duration* result);
+
+
+
+
+
+bool DifferencePlainDateTimeWithRounding(JSContext* cx,
+                                         const PlainDateTime& one,
+                                         const PlainDateTime& two,
+                                         JS::Handle<CalendarRecord> calendar,
+                                         TemporalUnit unit, double* result);
 
 class MOZ_STACK_CLASS PlainDateTimeWithCalendar final {
   PlainDateTime dateTime_;

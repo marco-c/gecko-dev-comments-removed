@@ -1671,116 +1671,6 @@ bool js::temporal::BalanceTimeDuration(JSContext* cx,
 
 
 
-
-static bool BalanceTimeDurationRelative(
-    JSContext* cx, const NormalizedDuration& duration, TemporalUnit largestUnit,
-    Handle<ZonedDateTime> relativeTo, Handle<TimeZoneRecord> timeZone,
-    mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime,
-    TimeDuration* result) {
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  
-  const auto& startNs = relativeTo.instant();
-
-  
-  const auto& startInstant = startNs;
-
-  
-  auto intermediateNs = startNs;
-
-  
-  PlainDateTime startDateTime;
-  if (duration.date.days != 0) {
-    
-    if (!precalculatedPlainDateTime) {
-      if (!GetPlainDateTimeFor(cx, timeZone, startInstant, &startDateTime)) {
-        return false;
-      }
-      precalculatedPlainDateTime =
-          mozilla::SomeRef<const PlainDateTime>(startDateTime);
-    }
-
-    
-    Rooted<CalendarValue> isoCalendar(cx, CalendarValue(CalendarId::ISO8601));
-    if (!AddDaysToZonedDateTime(cx, startInstant, *precalculatedPlainDateTime,
-                                timeZone, isoCalendar, duration.date.days,
-                                &intermediateNs)) {
-      return false;
-    }
-  }
-
-  
-  Instant endNs;
-  if (!AddInstant(cx, intermediateNs, duration.time, &endNs)) {
-    return false;
-  }
-  MOZ_ASSERT(IsValidEpochInstant(endNs));
-
-  
-  auto normalized =
-      NormalizedTimeDurationFromEpochNanosecondsDifference(endNs, startInstant);
-
-  
-  if (normalized == NormalizedTimeDuration{}) {
-    *result = {};
-    return true;
-  }
-
-  
-  int64_t days = 0;
-  if (TemporalUnit::Year <= largestUnit && largestUnit <= TemporalUnit::Day) {
-    
-    if (!precalculatedPlainDateTime) {
-      if (!GetPlainDateTimeFor(cx, timeZone, startInstant, &startDateTime)) {
-        return false;
-      }
-      precalculatedPlainDateTime =
-          mozilla::SomeRef<const PlainDateTime>(startDateTime);
-    }
-
-    
-    NormalizedTimeAndDays timeAndDays;
-    if (!NormalizedTimeDurationToDays(cx, normalized, relativeTo, timeZone,
-                                      *precalculatedPlainDateTime,
-                                      &timeAndDays)) {
-      return false;
-    }
-
-    
-    days = timeAndDays.days;
-
-    
-    normalized = NormalizedTimeDuration::fromNanoseconds(timeAndDays.time);
-    MOZ_ASSERT_IF(days > 0, normalized >= NormalizedTimeDuration{});
-    MOZ_ASSERT_IF(days < 0, normalized <= NormalizedTimeDuration{});
-
-    
-    largestUnit = TemporalUnit::Hour;
-  }
-
-  
-  TimeDuration balanceResult;
-  if (!BalanceTimeDuration(cx, normalized, largestUnit, &balanceResult)) {
-    return false;
-  }
-
-  
-  *result = {
-      days,
-      balanceResult.hours,
-      balanceResult.minutes,
-      balanceResult.seconds,
-      balanceResult.milliseconds,
-      balanceResult.microseconds,
-      balanceResult.nanoseconds,
-  };
-  MOZ_ASSERT(IsValidDuration(result->toDuration()));
-  return true;
-}
-
-
-
-
 static DateDuration CreateDateDurationRecord(int64_t years, int64_t months,
                                              int64_t weeks, int64_t days) {
   MOZ_ASSERT(IsValidDuration(Duration{
@@ -1795,116 +1685,24 @@ static DateDuration CreateDateDurationRecord(int64_t years, int64_t months,
 
 
 
-static bool CreateDateDurationRecord(JSContext* cx, int64_t years,
-                                     int64_t months, int64_t weeks,
-                                     int64_t days, DateDuration* result) {
-  auto duration = DateDuration{years, months, weeks, days};
-  if (!ThrowIfInvalidDuration(cx, duration)) {
-    return false;
-  }
-
-  *result = duration;
-  return true;
-}
-
-static bool UnbalanceDateDurationRelativeHasEffect(const DateDuration& duration,
-                                                   TemporalUnit largestUnit) {
-  MOZ_ASSERT(largestUnit != TemporalUnit::Auto);
-
-  
-  return (largestUnit > TemporalUnit::Year && duration.years != 0) ||
-         (largestUnit > TemporalUnit::Month && duration.months != 0) ||
-         (largestUnit > TemporalUnit::Week && duration.weeks != 0);
-}
-
-
-
-
 
 static bool UnbalanceDateDurationRelative(
-    JSContext* cx, const DateDuration& duration, TemporalUnit largestUnit,
+    JSContext* cx, const DateDuration& duration,
     Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    Handle<CalendarRecord> calendar, DateDuration* result) {
+    Handle<CalendarRecord> calendar, int64_t* result) {
   MOZ_ASSERT(IsValidDuration(duration));
 
   auto [years, months, weeks, days] = duration;
 
   
-
-  
-  if (!UnbalanceDateDurationRelativeHasEffect(duration, largestUnit)) {
-    *result = duration;
+  if (years == 0 && months == 0 && weeks == 0) {
+    *result = days;
     return true;
   }
 
   
-  MOZ_ASSERT(largestUnit != TemporalUnit::Year);
-
-  
-
-  
   MOZ_ASSERT(
       CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-  
-  if (largestUnit == TemporalUnit::Month) {
-    
-    MOZ_ASSERT(
-        CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
-
-    
-    auto yearsDuration = DateDuration{years};
-
-    
-    Rooted<Wrapped<PlainDateObject*>> later(
-        cx, CalendarDateAdd(cx, calendar, plainRelativeTo, yearsDuration));
-    if (!later) {
-      return false;
-    }
-
-    
-    DateDuration untilResult;
-    if (!CalendarDateUntil(cx, calendar, plainRelativeTo, later,
-                           TemporalUnit::Month, &untilResult)) {
-      return false;
-    }
-
-    
-    int64_t yearsInMonths = untilResult.months;
-
-    
-    return CreateDateDurationRecord(cx, 0, months + yearsInMonths, weeks, days,
-                                    result);
-  }
-
-  
-  if (largestUnit == TemporalUnit::Week) {
-    
-    auto yearsMonthsDuration = DateDuration{years, months};
-
-    
-    auto later =
-        CalendarDateAdd(cx, calendar, plainRelativeTo, yearsMonthsDuration);
-    if (!later) {
-      return false;
-    }
-    auto laterDate = ToPlainDate(&later.unwrap());
-
-    auto* unwrappedRelativeTo = plainRelativeTo.unwrap(cx);
-    if (!unwrappedRelativeTo) {
-      return false;
-    }
-    auto relativeToDate = ToPlainDate(unwrappedRelativeTo);
-
-    
-    int32_t yearsMonthsInDays = DaysUntil(relativeToDate, laterDate);
-
-    
-    return CreateDateDurationRecord(cx, 0, 0, weeks, days + yearsMonthsInDays,
-                                    result);
-  }
-
-  
 
   
   auto yearsMonthsWeeksDuration = DateDuration{years, months, weeks};
@@ -1927,48 +1725,23 @@ static bool UnbalanceDateDurationRelative(
   int32_t yearsMonthsWeeksInDay = DaysUntil(relativeToDate, laterDate);
 
   
-  return CreateDateDurationRecord(cx, 0, 0, 0, days + yearsMonthsWeeksInDay,
-                                  result);
+  *result = days + yearsMonthsWeeksInDay;
+  return true;
 }
 
 
 
 
 
-static bool UnbalanceDateDurationRelative(JSContext* cx,
-                                          const DateDuration& duration,
-                                          TemporalUnit largestUnit,
-                                          DateDuration* result) {
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  
-
-  
-  if (!UnbalanceDateDurationRelativeHasEffect(duration, largestUnit)) {
-    *result = duration;
-    return true;
-  }
-
-  
-  MOZ_ASSERT(largestUnit != TemporalUnit::Year);
-
-  
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_TEMPORAL_DURATION_UNCOMPARABLE, "calendar");
-  return false;
-}
-
-
-
-
-
-static bool BalanceDateDurationRelative(
+bool js::temporal::BalanceDateDurationRelative(
     JSContext* cx, const DateDuration& duration, TemporalUnit largestUnit,
     TemporalUnit smallestUnit,
     Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
     Handle<CalendarRecord> calendar, DateDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
   MOZ_ASSERT(largestUnit <= smallestUnit);
+  MOZ_ASSERT(plainRelativeTo);
+  MOZ_ASSERT(calendar.receiver());
 
   auto [years, months, weeks, days] = duration;
 
@@ -1981,21 +1754,11 @@ static bool BalanceDateDurationRelative(
   
 
   
-
-  
   if (largestUnit > TemporalUnit::Week ||
       (years == 0 && months == 0 && weeks == 0 && days == 0)) {
     
     *result = duration;
     return true;
-  }
-
-  
-  if (!plainRelativeTo) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_DURATION_UNCOMPARABLE,
-                              "relativeTo");
-    return false;
   }
 
   
@@ -2108,22 +1871,6 @@ static bool BalanceDateDurationRelative(
   
   *result = CreateDateDurationRecord(0, 0, untilResult.weeks, untilResult.days);
   return true;
-}
-
-
-
-
-
-bool js::temporal::BalanceDateDurationRelative(
-    JSContext* cx, const DateDuration& duration, TemporalUnit largestUnit,
-    TemporalUnit smallestUnit,
-    Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    Handle<CalendarRecord> calendar, DateDuration* result) {
-  MOZ_ASSERT(plainRelativeTo);
-  MOZ_ASSERT(calendar.receiver());
-
-  return ::BalanceDateDurationRelative(cx, duration, largestUnit, smallestUnit,
-                                       plainRelativeTo, calendar, result);
 }
 
 
@@ -4169,8 +3916,9 @@ bool js::temporal::RoundDuration(
 bool js::temporal::RoundDuration(
     JSContext* cx, const NormalizedDuration& duration, Increment increment,
     TemporalUnit unit, TemporalRoundingMode roundingMode,
-    Handle<PlainDateObject*> plainRelativeTo, Handle<CalendarRecord> calendar,
-    Handle<ZonedDateTime> zonedRelativeTo, Handle<TimeZoneRecord> timeZone,
+    Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
+    Handle<CalendarRecord> calendar, Handle<ZonedDateTime> zonedRelativeTo,
+    Handle<TimeZoneRecord> timeZone,
     const PlainDateTime& precalculatedPlainDateTime,
     NormalizedDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
@@ -4184,6 +3932,75 @@ bool js::temporal::RoundDuration(
   }
 
   *result = rounded.duration;
+  return true;
+}
+
+
+
+
+
+
+static bool DifferencePlainDateTimeWithRounding(
+    JSContext* cx, const PlainDateTime& one, const PlainDateTime& two,
+    Handle<CalendarRecord> calendar, TemporalUnit unit, double* result) {
+  
+  MOZ_ASSERT(ISODateTimeWithinLimits(one));
+  MOZ_ASSERT(ISODateTimeWithinLimits(two));
+
+  
+
+  
+  if (one == two) {
+    
+    *result = 0;
+    return true;
+  }
+
+  
+  NormalizedDuration diff;
+  if (!DifferenceISODateTime(cx, one, two, calendar, unit, &diff)) {
+    return false;
+  }
+
+  
+  if (unit == TemporalUnit::Nanosecond) {
+    
+    NormalizedTimeDuration withDays;
+    if (!Add24HourDaysToNormalizedTimeDuration(cx, diff.time, diff.date.days,
+                                               &withDays)) {
+      return false;
+    }
+
+    
+
+    
+    *result = double(withDays.toNanoseconds());
+    return true;
+  }
+
+  
+  
+  
+  Rooted<PlainDateObject*> relativeTo(
+      cx, CreateTemporalDate(cx, one.date, calendar.receiver()));
+  if (!relativeTo) {
+    return false;
+  }
+
+  
+  Rooted<ZonedDateTime> zonedRelativeTo(cx, ZonedDateTime{});
+  Rooted<TimeZoneRecord> timeZone(cx, TimeZoneRecord{});
+  mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime{};
+
+  RoundedDuration rounded;
+  if (!::RoundDuration(cx, diff, Increment{1}, unit,
+                       TemporalRoundingMode::Trunc, relativeTo, calendar,
+                       zonedRelativeTo, timeZone, precalculatedPlainDateTime,
+                       ComputeRemainder::Yes, &rounded)) {
+    return false;
+  }
+
+  *result = rounded.total;
   return true;
 }
 
@@ -4501,44 +4318,24 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
   int64_t days1, days2;
   if (calendarUnitsPresent) {
     
-
-    
-    DateDuration unbalanceResult1;
-    if (plainRelativeTo) {
-      if (!UnbalanceDateDurationRelative(cx, one.toDateDuration(),
-                                         TemporalUnit::Day, plainRelativeTo,
-                                         calendar, &unbalanceResult1)) {
-        return false;
-      }
-    } else {
-      if (!UnbalanceDateDurationRelative(
-              cx, one.toDateDuration(), TemporalUnit::Day, &unbalanceResult1)) {
-        return false;
-      }
-      MOZ_ASSERT(one.toDateDuration() == unbalanceResult1);
+    if (!plainRelativeTo) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_DURATION_UNCOMPARABLE,
+                                "relativeTo");
+      return false;
     }
 
     
-    DateDuration unbalanceResult2;
-    if (plainRelativeTo) {
-      if (!UnbalanceDateDurationRelative(cx, two.toDateDuration(),
-                                         TemporalUnit::Day, plainRelativeTo,
-                                         calendar, &unbalanceResult2)) {
-        return false;
-      }
-    } else {
-      if (!UnbalanceDateDurationRelative(
-              cx, two.toDateDuration(), TemporalUnit::Day, &unbalanceResult2)) {
-        return false;
-      }
-      MOZ_ASSERT(two.toDateDuration() == unbalanceResult2);
+    if (!UnbalanceDateDurationRelative(cx, one.toDateDuration(),
+                                       plainRelativeTo, calendar, &days1)) {
+      return false;
     }
 
     
-    days1 = unbalanceResult1.days;
-
-    
-    days2 = unbalanceResult2.days;
+    if (!UnbalanceDateDurationRelative(cx, two.toDateDuration(),
+                                       plainRelativeTo, calendar, &days2)) {
+      return false;
+    }
   } else {
     
     days1 = mozilla::AssertedCast<int64_t>(one.days);
@@ -5126,9 +4923,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime{};
 
   
-  bool plainDateTimeOrRelativeToWillBeUsed =
-      !roundingGranularityIsNoop || largestUnit <= TemporalUnit::Day ||
-      calendarUnitsPresent || duration.days != 0;
+  bool plainDateTimeOrRelativeToWillBeUsed = largestUnit <= TemporalUnit::Day ||
+                                             calendarUnitsPresent ||
+                                             duration.days != 0;
 
   
   PlainDateTime relativeToDateTime;
@@ -5142,6 +4939,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     }
     precalculatedPlainDateTime =
         mozilla::SomeRef<const PlainDateTime>(relativeToDateTime);
+
+    
+    
 
     
     plainRelativeTo = CreateTemporalDate(cx, relativeToDateTime.date,
@@ -5164,116 +4964,143 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  DateDuration unbalanceResult;
-  if (plainRelativeTo) {
-    if (!UnbalanceDateDurationRelative(cx, duration.toDateDuration(),
-                                       largestUnit, plainRelativeTo, calendar,
-                                       &unbalanceResult)) {
-      return false;
-    }
-  } else {
-    if (!UnbalanceDateDurationRelative(cx, duration.toDateDuration(),
-                                       largestUnit, &unbalanceResult)) {
-      return false;
-    }
-    MOZ_ASSERT(duration.toDateDuration() == unbalanceResult);
-  }
-  MOZ_ASSERT(IsValidDuration(unbalanceResult));
+  auto normDuration = CreateNormalizedDurationRecord(duration);
 
   
-  auto roundInput =
-      NormalizedDuration{unbalanceResult, NormalizeTimeDuration(duration)};
-  RoundedDuration rounded;
-  if (plainRelativeTo || zonedRelativeTo) {
-    if (!::RoundDuration(cx, roundInput, roundingIncrement, smallestUnit,
-                         roundingMode, plainRelativeTo, calendar,
-                         zonedRelativeTo, timeZone, precalculatedPlainDateTime,
-                         ComputeRemainder::No, &rounded)) {
+
+  
+  Duration roundResult;
+  if (zonedRelativeTo) {
+    
+    auto relativeEpochNs = zonedRelativeTo.instant();
+
+    
+    const auto& relativeInstant = relativeEpochNs;
+
+    
+    if (precalculatedPlainDateTime) {
+      
+      Instant targetEpochNs;
+      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
+                            normDuration, *precalculatedPlainDateTime,
+                            &targetEpochNs)) {
+        return false;
+      }
+
+      
+      if (!DifferenceZonedDateTimeWithRounding(
+              cx, relativeEpochNs, targetEpochNs, timeZone, calendar,
+              plainRelativeTo, zonedRelativeTo, *precalculatedPlainDateTime,
+              {
+                  smallestUnit,
+                  largestUnit,
+                  roundingMode,
+                  roundingIncrement,
+              },
+              &roundResult)) {
+        return false;
+      }
+    } else {
+      
+      Instant targetEpochNs;
+      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
+                            normDuration, &targetEpochNs)) {
+        return false;
+      }
+
+      
+      if (!DifferenceZonedDateTimeWithRounding(cx, relativeEpochNs,
+                                               targetEpochNs,
+                                               {
+                                                   smallestUnit,
+                                                   largestUnit,
+                                                   roundingMode,
+                                                   roundingIncrement,
+                                               },
+                                               &roundResult)) {
+        return false;
+      }
+    }
+  } else if (plainRelativeTo) {
+    
+    auto targetTime = AddTime(PlainTime{}, normDuration.time);
+
+    
+    auto dateDuration = DateDuration{
+        normDuration.date.years,
+        normDuration.date.months,
+        normDuration.date.weeks,
+        normDuration.date.days + targetTime.days,
+    };
+    MOZ_ASSERT(IsValidDuration(dateDuration));
+
+    
+    PlainDate targetDate;
+    if (!AddDate(cx, calendar, plainRelativeTo, dateDuration, &targetDate)) {
+      return false;
+    }
+    auto targetDateTime = PlainDateTime{targetDate, targetTime.time};
+
+    auto* unwrappedRelativeTo = plainRelativeTo.unwrap(cx);
+    if (!unwrappedRelativeTo) {
+      return false;
+    }
+    auto sourceDateTime = PlainDateTime{ToPlainDate(unwrappedRelativeTo), {}};
+
+    
+    if (!DifferencePlainDateTimeWithRounding(cx, sourceDateTime, targetDateTime,
+                                             calendar,
+                                             {
+                                                 smallestUnit,
+                                                 largestUnit,
+                                                 roundingMode,
+                                                 roundingIncrement,
+                                             },
+                                             &roundResult)) {
       return false;
     }
   } else {
-    MOZ_ASSERT(IsValidDuration(roundInput));
+    
+    
 
-    if (!::RoundDuration(cx, roundInput, roundingIncrement, smallestUnit,
+    
+    if (calendarUnitsPresent || largestUnit < TemporalUnit::Day) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_DURATION_UNCOMPARABLE,
+                                "relativeTo");
+      return false;
+    }
+
+    
+    RoundedDuration rounded;
+    if (!::RoundDuration(cx, normDuration, roundingIncrement, smallestUnit,
                          roundingMode, ComputeRemainder::No, &rounded)) {
       return false;
     }
-  }
-
-  
-  auto roundResult = rounded.duration;
-
-  
-  TimeDuration balanceResult;
-  if (zonedRelativeTo) {
-    
-    NormalizedDuration adjustResult;
-    if (!AdjustRoundedDurationDays(cx, roundResult, roundingIncrement,
-                                   smallestUnit, roundingMode, zonedRelativeTo,
-                                   calendar, timeZone,
-                                   precalculatedPlainDateTime, &adjustResult)) {
-      return false;
-    }
-    roundResult = adjustResult;
 
     
-    Rooted<ZonedDateTime> intermediate(cx);
-    if (!MoveRelativeZonedDateTime(cx, zonedRelativeTo, calendar, timeZone,
-                                   DateDuration{
-                                       roundResult.date.years,
-                                       roundResult.date.months,
-                                       roundResult.date.weeks,
-                                       0,
-                                   },
-                                   precalculatedPlainDateTime, &intermediate)) {
-      return false;
-    }
-
     
-    if (!BalanceTimeDurationRelative(cx, roundResult, largestUnit, intermediate,
-                                     timeZone, precalculatedPlainDateTime,
-                                     &balanceResult)) {
-      return false;
-    }
-  } else {
+
     
     NormalizedTimeDuration withDays;
     if (!Add24HourDaysToNormalizedTimeDuration(
-            cx, roundResult.time, roundResult.date.days, &withDays)) {
+            cx, rounded.duration.time, rounded.duration.date.days, &withDays)) {
       return false;
     }
 
     
+    TimeDuration balanceResult;
     if (!temporal::BalanceTimeDuration(cx, withDays, largestUnit,
                                        &balanceResult)) {
       return false;
     }
+
+    
+    roundResult = balanceResult.toDuration();
   }
 
   
-  auto balanceInput = DateDuration{
-      roundResult.date.years,
-      roundResult.date.months,
-      roundResult.date.weeks,
-      balanceResult.days,
-  };
-  DateDuration dateResult;
-  if (!::BalanceDateDurationRelative(cx, balanceInput, largestUnit,
-                                     smallestUnit, plainRelativeTo, calendar,
-                                     &dateResult)) {
-    return false;
-  }
-
-  
-  auto result = Duration{
-      double(dateResult.years),      double(dateResult.months),
-      double(dateResult.weeks),      double(dateResult.days),
-      double(balanceResult.hours),   double(balanceResult.minutes),
-      double(balanceResult.seconds), double(balanceResult.milliseconds),
-      balanceResult.microseconds,    balanceResult.nanoseconds,
-  };
-
-  auto* obj = CreateTemporalDuration(cx, result);
+  auto* obj = CreateTemporalDuration(cx, roundResult);
   if (!obj) {
     return false;
   }
@@ -5386,163 +5213,137 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   }
 
   
-  DateDuration unbalanceResult;
-  if (plainRelativeTo) {
-    if (!UnbalanceDateDurationRelative(cx, duration.toDateDuration(), unit,
-                                       plainRelativeTo, calendar,
-                                       &unbalanceResult)) {
-      return false;
-    }
-  } else {
-    if (!UnbalanceDateDurationRelative(cx, duration.toDateDuration(), unit,
-                                       &unbalanceResult)) {
-      return false;
-    }
-    MOZ_ASSERT(duration.toDateDuration() == unbalanceResult);
-  }
+  auto normDuration = CreateNormalizedDurationRecord(duration);
 
   
-  int64_t unbalancedDays = unbalanceResult.days;
 
   
-  int64_t days;
-  NormalizedTimeDuration normTime;
+  double total;
   if (zonedRelativeTo) {
     
-    Rooted<ZonedDateTime> intermediate(cx);
-    if (!MoveRelativeZonedDateTime(
-            cx, zonedRelativeTo, calendar, timeZone,
-            {unbalanceResult.years, unbalanceResult.months,
-             unbalanceResult.weeks, 0},
-            precalculatedPlainDateTime, &intermediate)) {
+    auto relativeEpochNs = zonedRelativeTo.instant();
+
+    
+    const auto& relativeInstant = relativeEpochNs;
+
+    
+    if (precalculatedPlainDateTime) {
+      
+      Instant targetEpochNs;
+      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
+                            normDuration, *precalculatedPlainDateTime,
+                            &targetEpochNs)) {
+        return false;
+      }
+
+      
+
+      
+
+      
+      NormalizedDuration difference;
+      if (!DifferenceZonedDateTime(cx, relativeEpochNs, targetEpochNs, timeZone,
+                                   calendar, unit, *precalculatedPlainDateTime,
+                                   &difference)) {
+        return false;
+      }
+
+      
+
+      
+      RoundedDuration rounded;
+      if (!::RoundDuration(
+              cx, difference, Increment{1}, unit, TemporalRoundingMode::Trunc,
+              plainRelativeTo, calendar, zonedRelativeTo, timeZone,
+              precalculatedPlainDateTime, ComputeRemainder::Yes, &rounded)) {
+        return false;
+      }
+      total = rounded.total;
+    } else {
+      MOZ_ASSERT(unit > TemporalUnit::Day);
+
+      
+      Instant targetEpochNs;
+      if (!AddZonedDateTime(cx, relativeInstant, timeZone, calendar,
+                            normDuration, &targetEpochNs)) {
+        return false;
+      }
+
+      
+      
+      
+      
+      
+      
+      auto diff = NormalizedTimeDurationFromEpochNanosecondsDifference(
+          targetEpochNs, relativeEpochNs);
+      MOZ_ASSERT(IsValidInstantSpan(diff.to<InstantSpan>()));
+
+      total = TotalNormalizedTimeDuration(diff, unit);
+    }
+  } else if (plainRelativeTo) {
+    
+    auto targetTime = AddTime(PlainTime{}, normDuration.time);
+
+    
+    auto dateDuration = DateDuration{
+        normDuration.date.years,
+        normDuration.date.months,
+        normDuration.date.weeks,
+        normDuration.date.days + targetTime.days,
+    };
+    MOZ_ASSERT(IsValidDuration(dateDuration));
+
+    
+    PlainDate targetDate;
+    if (!AddDate(cx, calendar, plainRelativeTo, dateDuration, &targetDate)) {
       return false;
     }
+    auto targetDateTime = PlainDateTime{targetDate, targetTime.time};
 
-    
-    auto timeDuration = NormalizeTimeDuration(duration);
-
-    
-    const auto& startNs = intermediate.instant();
-
-    
-    const auto& startInstant = startNs;
-
-    
-    mozilla::Maybe<PlainDateTime> startDateTime{};
-
-    
-    Instant intermediateNs;
-    if (unbalancedDays != 0) {
-      
-      PlainDateTime dateTime;
-      if (!GetPlainDateTimeFor(cx, timeZone, startInstant, &dateTime)) {
-        return false;
-      }
-      startDateTime = mozilla::Some(dateTime);
-
-      
-      Rooted<CalendarValue> isoCalendar(cx, CalendarValue(CalendarId::ISO8601));
-      Instant addResult;
-      if (!AddDaysToZonedDateTime(cx, startInstant, dateTime, timeZone,
-                                  isoCalendar, unbalancedDays, &addResult)) {
-        return false;
-      }
-
-      
-      intermediateNs = addResult;
-    } else {
-      
-      intermediateNs = startNs;
-    }
-
-    
-    Instant endNs;
-    if (!AddInstant(cx, intermediateNs, timeDuration, &endNs)) {
+    auto* unwrappedRelativeTo = plainRelativeTo.unwrap(cx);
+    if (!unwrappedRelativeTo) {
       return false;
     }
+    auto sourceDateTime = PlainDateTime{ToPlainDate(unwrappedRelativeTo), {}};
 
     
-    auto difference =
-        NormalizedTimeDurationFromEpochNanosecondsDifference(endNs, startNs);
-
-    
-    
-    
-    if (TemporalUnit::Year <= unit && unit <= TemporalUnit::Day &&
-        difference != NormalizedTimeDuration{}) {
-      
-      if (!startDateTime) {
-        PlainDateTime dateTime;
-        if (!GetPlainDateTimeFor(cx, timeZone, startInstant, &dateTime)) {
-          return false;
-        }
-        startDateTime = mozilla::Some(dateTime);
-      }
-
-      
-      NormalizedTimeAndDays timeAndDays;
-      if (!NormalizedTimeDurationToDays(cx, difference, intermediate, timeZone,
-                                        *startDateTime, &timeAndDays)) {
-        return false;
-      }
-
-      
-      normTime = NormalizedTimeDuration::fromNanoseconds(timeAndDays.time);
-
-      
-      days = timeAndDays.days;
-    } else {
-      
-      normTime = difference;
-      days = 0;
+    if (!::DifferencePlainDateTimeWithRounding(
+            cx, sourceDateTime, targetDateTime, calendar, unit, &total)) {
+      return false;
     }
   } else {
     
-    auto timeDuration = NormalizeTimeDuration(duration);
-
-    
-    if (!Add24HourDaysToNormalizedTimeDuration(cx, timeDuration, unbalancedDays,
-                                               &normTime)) {
+    if (normDuration.date.years || normDuration.date.months ||
+        normDuration.date.weeks || unit < TemporalUnit::Day) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_DURATION_UNCOMPARABLE,
+                                "relativeTo");
       return false;
     }
 
     
-    days = 0;
-  }
-  MOZ_ASSERT(IsValidNormalizedTimeDuration(normTime));
-
-  
-  auto roundInput = NormalizedDuration{
-      {
-          unbalanceResult.years,
-          unbalanceResult.months,
-          unbalanceResult.weeks,
-          days,
-      },
-      normTime,
-  };
-  MOZ_ASSERT_IF(unit > TemporalUnit::Day, IsValidDuration(roundInput.date));
-
-  RoundedDuration rounded;
-  if (plainRelativeTo || zonedRelativeTo) {
-    if (!::RoundDuration(cx, roundInput, Increment{1}, unit,
-                         TemporalRoundingMode::Trunc, plainRelativeTo, calendar,
-                         zonedRelativeTo, timeZone, precalculatedPlainDateTime,
-                         ComputeRemainder::Yes, &rounded)) {
+    NormalizedTimeDuration withDays;
+    if (!Add24HourDaysToNormalizedTimeDuration(
+            cx, normDuration.time, normDuration.date.days, &withDays)) {
       return false;
     }
-  } else {
-    MOZ_ASSERT(IsValidDuration(roundInput));
 
+    
+    auto roundInput = NormalizedDuration{{}, withDays};
+    RoundedDuration rounded;
     if (!::RoundDuration(cx, roundInput, Increment{1}, unit,
                          TemporalRoundingMode::Trunc, ComputeRemainder::Yes,
                          &rounded)) {
       return false;
     }
+    total = rounded.total;
   }
 
   
-  args.rval().setNumber(rounded.total);
+
+  
+  args.rval().setNumber(total);
   return true;
 }
 

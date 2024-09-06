@@ -1157,8 +1157,7 @@ static bool DifferenceZonedDateTime(
     JSContext* cx, const Instant& ns1, const Instant& ns2,
     Handle<TimeZoneRecord> timeZone, Handle<CalendarRecord> calendar,
     TemporalUnit largestUnit, Handle<PlainObject*> maybeOptions,
-    const PlainDateTime& precalculatedPlainDateTime,
-    NormalizedDuration* result) {
+    const PlainDateTime& startDateTime, NormalizedDuration* result) {
   MOZ_ASSERT(IsValidEpochInstant(ns1));
   MOZ_ASSERT(IsValidEpochInstant(ns2));
 
@@ -1167,12 +1166,6 @@ static bool DifferenceZonedDateTime(
     *result = CreateNormalizedDurationRecord({}, {});
     return true;
   }
-
-  
-  
-
-  
-  const auto& startDateTime = precalculatedPlainDateTime;
 
   
   PlainDateTime endDateTime;
@@ -1281,14 +1274,15 @@ static bool DifferenceZonedDateTime(
 
 
 
-bool js::temporal::DifferenceZonedDateTime(
-    JSContext* cx, const Instant& ns1, const Instant& ns2,
-    Handle<TimeZoneRecord> timeZone, Handle<CalendarRecord> calendar,
-    TemporalUnit largestUnit, const PlainDateTime& precalculatedPlainDateTime,
-    NormalizedDuration* result) {
+bool js::temporal::DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
+                                           const Instant& ns2,
+                                           Handle<TimeZoneRecord> timeZone,
+                                           Handle<CalendarRecord> calendar,
+                                           TemporalUnit largestUnit,
+                                           const PlainDateTime& startDateTime,
+                                           NormalizedDuration* result) {
   return ::DifferenceZonedDateTime(cx, ns1, ns2, timeZone, calendar,
-                                   largestUnit, nullptr,
-                                   precalculatedPlainDateTime, result);
+                                   largestUnit, nullptr, startDateTime, result);
 }
 
 
@@ -1332,6 +1326,168 @@ static bool TimeZoneEqualsOrThrow(JSContext* cx, Handle<TimeZoneValue> one,
     }
   }
   return false;
+}
+
+
+
+
+
+
+static bool DifferenceZonedDateTimeWithRounding(
+    JSContext* cx, const Instant& ns1, const Instant& ns2,
+    Handle<TimeZoneRecord> timeZone, Handle<CalendarRecord> calendar,
+    Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
+    Handle<ZonedDateTime> zonedDateTime,
+    const PlainDateTime& precalculatedPlainDateTime,
+    Handle<PlainObject*> maybeResolvedOptions,
+    const DifferenceSettings& settings, Duration* result) {
+  
+  
+
+  
+  
+
+  
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  if (settings.largestUnit > TemporalUnit::Day) {
+    return DifferenceZonedDateTimeWithRounding(cx, ns1, ns2, settings, result);
+  }
+
+  
+  NormalizedDuration difference;
+  if (!::DifferenceZonedDateTime(cx, ns1, ns2, timeZone, calendar,
+                                 settings.largestUnit, maybeResolvedOptions,
+                                 precalculatedPlainDateTime, &difference)) {
+    return false;
+  }
+
+  
+  
+
+  
+  bool roundingGranularityIsNoop =
+      settings.smallestUnit == TemporalUnit::Nanosecond &&
+      settings.roundingIncrement == Increment{1};
+
+  
+  if (roundingGranularityIsNoop) {
+    
+    auto timeDuration =
+        BalanceTimeDuration(difference.time, TemporalUnit::Hour);
+
+    
+
+    
+    *result = {
+        double(difference.date.years), double(difference.date.months),
+        double(difference.date.weeks), double(difference.date.days),
+        double(timeDuration.hours),    double(timeDuration.minutes),
+        double(timeDuration.seconds),  double(timeDuration.milliseconds),
+        timeDuration.microseconds,     timeDuration.nanoseconds,
+    };
+    return true;
+  }
+
+  
+  NormalizedDuration roundResult;
+  if (!RoundDuration(cx, difference, settings.roundingIncrement,
+                     settings.smallestUnit, settings.roundingMode,
+                     plainRelativeTo, calendar, zonedDateTime, timeZone,
+                     precalculatedPlainDateTime, &roundResult)) {
+    return false;
+  }
+
+  
+  NormalizedDuration adjustResult;
+  if (!AdjustRoundedDurationDays(cx, roundResult, settings.roundingIncrement,
+                                 settings.smallestUnit, settings.roundingMode,
+                                 zonedDateTime, calendar, timeZone,
+                                 precalculatedPlainDateTime, &adjustResult)) {
+    return false;
+  }
+
+  
+  DateDuration balanceResult;
+  if (!temporal::BalanceDateDurationRelative(
+          cx, adjustResult.date, settings.largestUnit, settings.smallestUnit,
+          plainRelativeTo, calendar, &balanceResult)) {
+    return false;
+  }
+
+  
+  NormalizedDuration combined;
+  if (!CombineDateAndNormalizedTimeDuration(cx, balanceResult,
+                                            adjustResult.time, &combined)) {
+    return false;
+  }
+
+  
+  auto timeDuration = BalanceTimeDuration(combined.time, TemporalUnit::Hour);
+
+  
+  *result = {
+      double(combined.date.years),  double(combined.date.months),
+      double(combined.date.weeks),  double(combined.date.days),
+      double(timeDuration.hours),   double(timeDuration.minutes),
+      double(timeDuration.seconds), double(timeDuration.milliseconds),
+      timeDuration.microseconds,    timeDuration.nanoseconds,
+  };
+  return true;
+}
+
+
+
+
+
+
+bool js::temporal::DifferenceZonedDateTimeWithRounding(
+    JSContext* cx, const Instant& ns1, const Instant& ns2,
+    const DifferenceSettings& settings, Duration* result) {
+  MOZ_ASSERT(settings.largestUnit > TemporalUnit::Day);
+  MOZ_ASSERT(settings.smallestUnit >= settings.largestUnit);
+
+  
+  auto difference =
+      DifferenceInstant(ns1, ns2, settings.roundingIncrement,
+                        settings.smallestUnit, settings.roundingMode);
+
+  
+  TimeDuration balancedTime;
+  if (!BalanceTimeDuration(cx, difference, settings.largestUnit,
+                           &balancedTime)) {
+    return false;
+  }
+  MOZ_ASSERT(balancedTime.days == 0);
+
+  
+  *result = balancedTime.toDuration();
+  return true;
+}
+
+
+
+
+
+
+bool js::temporal::DifferenceZonedDateTimeWithRounding(
+    JSContext* cx, const Instant& ns1, const Instant& ns2,
+    Handle<TimeZoneRecord> timeZone, Handle<CalendarRecord> calendar,
+    Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
+    Handle<ZonedDateTime> zonedDateTime,
+    const PlainDateTime& precalculatedPlainDateTime,
+    const DifferenceSettings& settings, Duration* result) {
+  return ::DifferenceZonedDateTimeWithRounding(
+      cx, ns1, ns2, timeZone, calendar, plainRelativeTo, zonedDateTime,
+      precalculatedPlainDateTime, nullptr, settings, result);
 }
 
 
@@ -1473,88 +1629,19 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
-  NormalizedDuration difference;
-  if (!::DifferenceZonedDateTime(cx, zonedDateTime.instant(), other.instant(),
-                                 timeZone, calendar, settings.largestUnit,
-                                 resolvedOptions, precalculatedPlainDateTime,
-                                 &difference)) {
+  Duration duration;
+  if (!DifferenceZonedDateTimeWithRounding(
+          cx, zonedDateTime.instant(), other.instant(), timeZone, calendar,
+          plainRelativeTo, zonedDateTime, precalculatedPlainDateTime,
+          resolvedOptions, settings, &duration)) {
     return false;
   }
+  MOZ_ASSERT(IsValidDuration(duration));
 
   
-  bool roundingGranularityIsNoop =
-      settings.smallestUnit == TemporalUnit::Nanosecond &&
-      settings.roundingIncrement == Increment{1};
-
-  
-  if (!roundingGranularityIsNoop) {
-    
-    NormalizedDuration roundResult;
-    if (!RoundDuration(cx, difference, settings.roundingIncrement,
-                       settings.smallestUnit, settings.roundingMode,
-                       plainRelativeTo, calendar, zonedDateTime, timeZone,
-                       precalculatedPlainDateTime, &roundResult)) {
-      return false;
-    }
-
-    
-    NormalizedTimeAndDays timeAndDays;
-    if (!NormalizedTimeDurationToDays(cx, roundResult.time, zonedDateTime,
-                                      timeZone, &timeAndDays)) {
-      return false;
-    }
-
-    
-    int64_t days = roundResult.date.days + timeAndDays.days;
-
-    
-    auto toAdjust = NormalizedDuration{
-        {
-            roundResult.date.years,
-            roundResult.date.months,
-            roundResult.date.weeks,
-            days,
-        },
-        NormalizedTimeDuration::fromNanoseconds(timeAndDays.time),
-    };
-    NormalizedDuration adjustResult;
-    if (!AdjustRoundedDurationDays(cx, toAdjust, settings.roundingIncrement,
-                                   settings.smallestUnit, settings.roundingMode,
-                                   zonedDateTime, calendar, timeZone,
-                                   precalculatedPlainDateTime, &adjustResult)) {
-      return false;
-    }
-
-    
-    DateDuration balanceResult;
-    if (!temporal::BalanceDateDurationRelative(
-            cx, adjustResult.date, settings.largestUnit, settings.smallestUnit,
-            plainRelativeTo, calendar, &balanceResult)) {
-      return false;
-    }
-
-    
-    if (!CombineDateAndNormalizedTimeDuration(cx, balanceResult,
-                                              adjustResult.time, &difference)) {
-      return false;
-    }
-  }
-
-  
-  auto timeDuration = BalanceTimeDuration(difference.time, TemporalUnit::Hour);
-
-  
-  auto duration = Duration{
-      double(difference.date.years), double(difference.date.months),
-      double(difference.date.weeks), double(difference.date.days),
-      double(timeDuration.hours),    double(timeDuration.minutes),
-      double(timeDuration.seconds),  double(timeDuration.milliseconds),
-      timeDuration.microseconds,     timeDuration.nanoseconds,
-  };
   if (operation == TemporalDifference::Since) {
     duration = duration.negate();
   }
-  MOZ_ASSERT(IsValidDuration(duration));
 
   auto* obj = CreateTemporalDuration(cx, duration);
   if (!obj) {
