@@ -3,13 +3,24 @@
 
 
 
+#include "GMPLog.h"
 #include "GMPStorage.h"
 #include "nsClassHashtable.h"
 
 namespace mozilla::gmp {
 
+#define LOG(msg, ...)                   \
+  MOZ_LOG(GetGMPLog(), LogLevel::Debug, \
+          ("GMPMemoryStorage=%p, " msg, this, ##__VA_ARGS__))
+
 class GMPMemoryStorage : public GMPStorage {
  public:
+  GMPMemoryStorage(const nsACString& aNodeId, const nsAString& aGMPName) {
+    LOG("Created GMPMemoryStorage, nodeId=%s, gmpName=%s",
+        aNodeId.BeginReading(), NS_ConvertUTF16toUTF8(aGMPName).get());
+  }
+  ~GMPMemoryStorage() { LOG("Destroyed GMPMemoryStorage"); }
+
   GMPErr Open(const nsACString& aRecordName) override {
     MOZ_ASSERT(!IsOpen(aRecordName));
 
@@ -68,8 +79,11 @@ class GMPMemoryStorage : public GMPStorage {
   nsClassHashtable<nsCStringHashKey, Record> mRecords;
 };
 
-already_AddRefed<GMPStorage> CreateGMPMemoryStorage() {
-  return RefPtr<GMPStorage>(new GMPMemoryStorage()).forget();
+already_AddRefed<GMPStorage> CreateGMPMemoryStorage(const nsACString& aNodeId,
+                                                    const nsAString& aGMPName) {
+  return RefPtr<GMPStorage>(new GMPMemoryStorage(aNodeId, aGMPName)).forget();
 }
+
+#undef LOG
 
 }  

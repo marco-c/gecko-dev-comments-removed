@@ -312,6 +312,7 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
   } else if (!strcmp(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID, aTopic)) {
     mXPCOMWillShutdown = true;
   } else if (!strcmp("last-pb-context-exited", aTopic)) {
+    GMP_LOG_DEBUG("Received 'last-pb-context-exited', clear temporary node");
     
     
     
@@ -319,6 +320,7 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
     
     mTempNodeIds.Clear();
   } else if (!strcmp("browser:purge-session-history", aTopic)) {
+    GMP_LOG_DEBUG("Received 'browser:purge-session-history', clear everything");
     
     if (!aSomeData || nsDependentString(aSomeData).IsEmpty()) {
       return GMPDispatch(NewRunnableMethod(
@@ -1311,9 +1313,9 @@ nsresult ReadSalt(nsIFile* aPath, nsACString& aOutData) {
 }
 
 already_AddRefed<GMPStorage> GeckoMediaPluginServiceParent::GetMemoryStorageFor(
-    const nsACString& aNodeId) {
+    const nsACString& aNodeId, const nsAString& aGMPName) {
   return do_AddRef(mTempGMPStorage.LookupOrInsertWith(
-      aNodeId, [] { return CreateGMPMemoryStorage(); }));
+      aNodeId, [&] { return CreateGMPMemoryStorage(aNodeId, aGMPName); }));
 }
 
 NS_IMETHODIMP
@@ -1375,7 +1377,6 @@ nsresult GeckoMediaPluginServiceParent::GetNodeId(
         auto salt = MakeUnique<nsCString>(newSalt);
 
         mPersistentStorageAllowed.InsertOrUpdate(*salt, false);
-
         entry.Insert(std::move(salt));
       }
 
