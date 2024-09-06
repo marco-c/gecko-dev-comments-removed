@@ -206,13 +206,12 @@ bool ModuleGenerator::init(CodeMetadataForAsmJS* codeMetaForAsmJS) {
       codeSectionSize / ByteCodesPerOOBTrap);
 
   
+  
+  
   MOZ_ASSERT(codeMeta_->instanceDataLength == 0);
-
-  Maybe<uint32_t> maybeInstanceDataLength = codeMeta_->doInstanceLayout();
-  if (!maybeInstanceDataLength) {
+  if (!codeMeta_->initInstanceLayout()) {
     return false;
   }
-  codeMeta_->instanceDataLength = *maybeInstanceDataLength;
 
   
   if (!metadataTier_->funcImports.resize(codeMeta_->numFuncImports)) {
@@ -1014,12 +1013,6 @@ bool ModuleGenerator::finishCodeMetadata(const Bytes& bytecode) {
   
   
   MOZ_ASSERT(mode() != CompileMode::Tier2);
-
-  
-
-  
-  
-  codeMeta_->builtinModules = codeMeta_->features.builtinModules;
 
   
 

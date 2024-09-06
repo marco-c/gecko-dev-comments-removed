@@ -8,9 +8,9 @@
 #define wasm_WasmMetadata_h
 
 #include "wasm/WasmBinaryTypes.h"
-#include "wasm/WasmInstanceData.h"
+#include "wasm/WasmInstanceData.h"  
 #include "wasm/WasmModuleTypes.h"
-#include "wasm/WasmProcess.h"
+#include "wasm/WasmProcess.h"  
 
 namespace js {
 namespace wasm {
@@ -116,14 +116,7 @@ using FuncImportVector = Vector<FuncImport, 0, SystemAllocPolicy>;
 
 
 
-
-
-
-
-
-
-
-
+enum class NameContext { Standalone, BeforeLocation };
 
 
 
@@ -133,13 +126,16 @@ using FuncImportVector = Vector<FuncImport, 0, SystemAllocPolicy>;
 struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
   
   
+
+  
+  
   ImportVector imports;
   ExportVector exports;
 
   
   DataSegmentRangeVector dataSegmentRanges;
 
-  explicit ModuleMetadata() {}
+  explicit ModuleMetadata() = default;
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
@@ -159,8 +155,13 @@ using ModuleHash = uint8_t[8];
 
 struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
-  const ModuleKind kind;
-  const FeatureArgs features;  
+  
+
+  
+  
+  
+  ModuleKind kind;
+  FeatureArgs features;
 
   
   
@@ -197,7 +198,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
 
   
   
-  BuiltinModuleIds builtinModules;  
   FeatureUsage featureUsage;
 
   
@@ -254,13 +254,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   Uint32Vector debugFuncTypeIndices;
   ModuleHash debugHash;
 
-  
-  WASM_CHECK_CACHEABLE_POD(typeDefsOffsetStart, memoriesOffsetStart,
-                           tablesOffsetStart, tagsOffsetStart,
-                           instanceDataLength, builtinModules, featureUsage,
-                           startFuncIndex, nameCustomSectionIndex);
-
-  
   explicit CodeMetadata()
       : kind(ModuleKind::Wasm),
         features(),
@@ -272,38 +265,24 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
         tablesOffsetStart(UINT32_MAX),
         tagsOffsetStart(UINT32_MAX),
         instanceDataLength(0),
-        builtinModules(),
         featureUsage(FeatureUsage::None),
         filenameIsURL(false),
         parsedBranchHints(false),
         debugEnabled(false),
         debugHash() {}
 
-  explicit CodeMetadata(FeatureArgs features,
-                        ModuleKind kind = ModuleKind::Wasm)
-      : kind(kind),
-        features(features),
-        numFuncImports(0),
-        numGlobalImports(0),
-        funcImportsOffsetStart(UINT32_MAX),
-        typeDefsOffsetStart(UINT32_MAX),
-        memoriesOffsetStart(UINT32_MAX),
-        tablesOffsetStart(UINT32_MAX),
-        tagsOffsetStart(UINT32_MAX),
-        instanceDataLength(0),
-        builtinModules(),
-        featureUsage(FeatureUsage::None),
-        filenameIsURL(false),
-        parsedBranchHints(false),
-        debugEnabled(false),
-        debugHash() {}
+  explicit CodeMetadata(FeatureArgs features_,
+                        ModuleKind kind_ = ModuleKind::Wasm)
+      : CodeMetadata() {
+    features = features_;
+    kind = kind_;
+  }
 
   [[nodiscard]] bool init() {
     types = js_new<TypeContext>(features);
     return types;
   }
 
-  
   const TypeDef& getFuncImportTypeDef(const FuncImport& funcImport) const {
     return types->type(funcImport.typeIndex());
   }
@@ -322,7 +301,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     MOZ_ASSERT(debugEnabled);
     return types->type(debugFuncTypeIndices[funcIndex]).funcType();
   }
-  
 
   size_t numTables() const { return tables.length(); }
   size_t numTypes() const { return types->length(); }
@@ -375,7 +353,19 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
 
   
   
-  [[nodiscard]] Maybe<uint32_t> doInstanceLayout();
+  
+  
+  [[nodiscard]] bool allocateInstanceDataBytes(uint32_t bytes, uint32_t align,
+                                               uint32_t* assignedOffset);
+  
+  [[nodiscard]] bool allocateInstanceDataBytesN(uint32_t bytes, uint32_t align,
+                                                uint32_t count,
+                                                uint32_t* assignedOffset);
+  
+  
+  
+  
+  [[nodiscard]] bool initInstanceLayout();
 
   uint32_t offsetOfFuncImportInstanceData(uint32_t funcIndex) const {
     MOZ_ASSERT(funcIndex < numFuncImports);
@@ -411,13 +401,18 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   }
 
   bool addDefinedFunc(
-       ModuleMetadata* meta, ValTypeVector&& params,
-      ValTypeVector&& results, bool declareForRef = false,
+      ModuleMetadata* meta, ValTypeVector&& params, ValTypeVector&& results,
+      bool declareForRef = false,
       Maybe<CacheableName>&& optionalExportedName = mozilla::Nothing());
 
-  bool addImportedFunc( ModuleMetadata* meta, ValTypeVector&& params,
+  bool addImportedFunc(ModuleMetadata* meta, ValTypeVector&& params,
                        ValTypeVector&& results, CacheableName&& importModName,
                        CacheableName&& importFieldName);
+
+  
+  
+  bool getFuncNameForWasm(NameContext ctx, uint32_t funcIndex,
+                          UTF8Bytes* name) const;
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
