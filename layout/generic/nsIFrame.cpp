@@ -8010,7 +8010,7 @@ bool nsIFrame::UpdateOverflow() {
     if (nsView* view = GetView()) {
       
       nsViewManager* vm = view->GetViewManager();
-      vm->ResizeView(view, overflowAreas.InkOverflow(), true);
+      vm->ResizeView(view, overflowAreas.InkOverflow());
     }
 
     return true;

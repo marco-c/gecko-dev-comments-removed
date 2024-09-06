@@ -181,11 +181,7 @@ class nsViewManager final {
 
 
 
-
-
-
-  void ResizeView(nsView* aView, const nsRect& aRect,
-                  bool aRepaintExposedAreaOnly = false);
+  void ResizeView(nsView* aView, const nsRect& aRect);
 
   
 
