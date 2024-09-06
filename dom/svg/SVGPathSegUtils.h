@@ -7,15 +7,14 @@
 #ifndef DOM_SVG_SVGPATHSEGUTILS_H_
 #define DOM_SVG_SVGPATHSEGUTILS_H_
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/Span.h"
-#include "nsStringFwd.h"
 
 namespace mozilla {
 template <typename Angle, typename LP>
 struct StyleGenericShapeCommand;
+using StylePathCommand = StyleGenericShapeCommand<float, float>;
 
 
 
@@ -76,9 +75,8 @@ class SVGPathSegUtils {
 
 
 
-  static void TraversePathSegment(
-      const StyleGenericShapeCommand<float, float>& aCommand,
-      SVGPathTraversalState& aState);
+  static void TraversePathSegment(const StylePathCommand&,
+                                  SVGPathTraversalState&);
 };
 
 
@@ -93,8 +91,7 @@ class SVGPathSegUtils {
 
 
 
-Maybe<gfx::Rect> SVGPathToAxisAlignedRect(
-    Span<const StyleGenericShapeCommand<float, float>> aPath);
+Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand>);
 
 }  
 

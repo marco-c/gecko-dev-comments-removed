@@ -38,14 +38,6 @@ void SVGPathData::GetValueAsString(nsACString& aValue) const {
   Servo_SVGPathData_ToString(&mData, &aValue);
 }
 
-float SVGPathData::GetPathLength() const {
-  SVGPathTraversalState state;
-  for (const auto& segment : AsSpan()) {
-    SVGPathSegUtils::TraversePathSegment(segment, state);
-  }
-  return state.length;
-}
-
 bool SVGPathData::GetDistancesFromOriginToEndsOfVisibleSegments(
     FallibleTArray<double>* aOutput) const {
   return GetDistancesFromOriginToEndsOfVisibleSegments(AsSpan(), aOutput);
@@ -78,27 +70,6 @@ bool SVGPathData::GetDistancesFromOriginToEndsOfVisibleSegments(
   }
 
   return true;
-}
-
-
-uint32_t SVGPathData::GetPathSegAtLength(Span<const StylePathCommand> aPath,
-                                         float aDistance) {
-  
-  
-  
-  
-  uint32_t segIndex = 0;
-  SVGPathTraversalState state;
-
-  for (const auto& cmd : aPath) {
-    SVGPathSegUtils::TraversePathSegment(cmd, state);
-    if (state.length >= aDistance) {
-      return segIndex;
-    }
-    segIndex++;
-  }
-
-  return std::max(1U, segIndex) - 1;
 }
 
 
