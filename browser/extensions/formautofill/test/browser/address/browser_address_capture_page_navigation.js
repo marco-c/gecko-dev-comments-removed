@@ -1,22 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 const ADDRESS_VALUES = {
@@ -39,7 +20,7 @@ add_setup(async function () {
 
 
 
-add_task(async function test_address_captured_on_history_pushState() {
+add_task(async function test_address_captured_after_changing_request_state() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: ADDRESS_FORM_WITH_PAGE_NAVIGATION_BUTTONS },
     async function (browser) {
@@ -55,11 +36,11 @@ add_task(async function test_address_captured_on_history_pushState() {
         false 
       );
 
-      info("Navigate the page by pushing a history entry");
+      info("Change request state");
       await SpecialPowers.spawn(browser, [], () => {
-        const historyPushStateBtn =
+        const historyPushStateButton =
           content.document.getElementById("historyPushState");
-        historyPushStateBtn.click();
+        historyPushStateButton.click();
       });
 
       info("Wait for address doorhanger");
@@ -74,43 +55,7 @@ add_task(async function test_address_captured_on_history_pushState() {
 
 
 
-add_task(async function test_address_captured_on_history_replaceState() {
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: ADDRESS_FORM_WITH_PAGE_NAVIGATION_BUTTONS },
-    async function (browser) {
-      const onPopupShown = waitForPopupShown();
-
-      info("Update identified address fields");
-      await focusUpdateSubmitForm(
-        browser,
-        {
-          focusSelector: "#given-name",
-          newValues: ADDRESS_VALUES,
-        },
-        false 
-      );
-
-      info("Navigate the page by replacing the current history entry");
-      await SpecialPowers.spawn(browser, [], () => {
-        const historyReplaceStateBtn = content.document.getElementById(
-          "historyReplaceState"
-        );
-        historyReplaceStateBtn.click();
-      });
-
-      info("Wait for address doorhanger");
-      await onPopupShown;
-
-      ok(true, "Address doorhanger is shown");
-    }
-  );
-});
-
-
-
-
-
-add_task(async function test_address_captured_on_location_href_change() {
+add_task(async function test_address_captured_after_navigation_same_window() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: ADDRESS_FORM_WITH_PAGE_NAVIGATION_BUTTONS },
     async function (browser) {
@@ -127,10 +72,11 @@ add_task(async function test_address_captured_on_location_href_change() {
         false 
       );
 
-      info("Navigate the page by changing location.href");
+      info("Navigate with window.location");
       await SpecialPowers.spawn(browser, [], () => {
-        const locationHrefBtn = content.document.getElementById("locationHref");
-        locationHrefBtn.click();
+        const windowLocationButton =
+          content.document.getElementById("windowLocation");
+        windowLocationButton.click();
       });
 
       info("Wait for address doorhanger");
@@ -144,135 +90,36 @@ add_task(async function test_address_captured_on_location_href_change() {
 
 
 
+add_task(async function test_form_submission_infered_only_once() {
+  await setStorage(TEST_ADDRESS_1);
 
-add_task(async function test_address_captured_on_location_replace() {
+  let onUsed = waitForStorageChangedEvents("notifyUsed");
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: ADDRESS_FORM_WITH_PAGE_NAVIGATION_BUTTONS },
     async function (browser) {
-      const onPopupShown = waitForPopupShown();
-
-      info("Update identified address fields");
       
-      await focusUpdateSubmitForm(
-        browser,
-        {
-          focusSelector: "#given-name",
-          newValues: ADDRESS_VALUES,
-        },
-        false 
-      );
+      await openPopupOn(browser, "form #given-name");
 
-      info("Navigate page by replacing current location");
-      await SpecialPowers.spawn(browser, [], () => {
-        const locationReplaceBtn =
-          content.document.getElementById("locationReplace");
-        locationReplaceBtn.click();
+      info("Fill address input fields without changing the values");
+      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+      await BrowserTestUtils.synthesizeKey("VK_RETURN", {}, browser);
+
+      info("Submit form");
+      await SpecialPowers.spawn(browser, [], async function () {
+        
+        let form = content.document.getElementById("form");
+        form.querySelector("input[type=submit]").click();
       });
-
-      info("Wait for address doorhanger");
-      await onPopupShown;
-
-      ok(true, "Address doorhanger is shown");
     }
   );
-});
+  await onUsed;
 
+  const addresses = await getAddresses();
 
-
-
-
-add_task(async function test_address_captured_on_location_reload() {
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: ADDRESS_FORM_WITH_PAGE_NAVIGATION_BUTTONS },
-    async function (browser) {
-      info("Update identified address fields");
-      
-      await focusUpdateSubmitForm(
-        browser,
-        {
-          focusSelector: "#given-name",
-          newValues: ADDRESS_VALUES,
-        },
-        false 
-      );
-
-      info("Reload the current location");
-      await SpecialPowers.spawn(browser, [], () => {
-        const locationReloadBtn =
-          content.document.getElementById("locationReload");
-        locationReloadBtn.click();
-      });
-
-      info("Ensure address doorhanger not shown");
-      await ensureNoDoorhanger();
-
-      ok(true, "Address doorhanger is not shown");
-    }
+  is(
+    addresses[0].timesUsed,
+    1,
+    "timesUsed field set to 1, so form submission was only infered once"
   );
-});
-
-
-
-
-
-add_task(async function test_address_captured_on_history_go() {
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: ADDRESS_FORM_WITH_PAGE_NAVIGATION_BUTTONS },
-    async function (browser) {
-      info("Update identified address fields");
-      
-      await focusUpdateSubmitForm(
-        browser,
-        {
-          focusSelector: "#given-name",
-          newValues: ADDRESS_VALUES,
-        },
-        false 
-      );
-
-      info("Go to specific page in session history");
-      await SpecialPowers.spawn(browser, [], () => {
-        const historyGoBtn = content.document.getElementById("historyGo");
-        historyGoBtn.click();
-      });
-
-      info("Ensure address doorhanger not shown");
-      await ensureNoDoorhanger();
-
-      ok(true, "Address doorhanger is not shown");
-    }
-  );
-});
-
-
-
-
-
-add_task(async function test_address_not_captured_on_history_back() {
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: ADDRESS_FORM_WITH_PAGE_NAVIGATION_BUTTONS },
-    async function (browser) {
-      info("Update identified address fields");
-      
-      await focusUpdateSubmitForm(
-        browser,
-        {
-          focusSelector: "#given-name",
-          newValues: ADDRESS_VALUES,
-        },
-        false 
-      );
-
-      info("Move back in the session history");
-      await SpecialPowers.spawn(browser, [], () => {
-        const historyBackBtn = content.document.getElementById("historyBack");
-        historyBackBtn.click();
-      });
-
-      info("Ensure address doorhanger not shown");
-      await ensureNoDoorhanger();
-
-      ok(true, "Address doorhanger is not shown");
-    }
-  );
+  await removeAllRecords();
 });

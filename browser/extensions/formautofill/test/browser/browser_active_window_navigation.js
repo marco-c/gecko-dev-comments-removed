@@ -2,17 +2,12 @@
 
 
 
-
-
-
-
 "use strict";
 
 const ADDRESS_VALUES = {
   "#postal-code": "02139",
   "#organization": "Sesame Street",
   "#street-address": "123 Sesame Street",
-  "#country": "US",
 };
 
 add_setup(async function () {
@@ -21,7 +16,10 @@ add_setup(async function () {
       ["extensions.formautofill.addresses.capture.enabled", true],
       ["extensions.formautofill.addresses.supported", "on"],
       ["extensions.formautofill.heuristics.captureOnPageNavigation", true],
-      ["extensions.formautofill.addresses.capture.requiredFields", ""],
+      [
+        "extensions.formautofill.addresses.capture.requiredFields",
+        "street-address,postal-code,organization",
+      ],
     ],
   });
 });
@@ -32,14 +30,14 @@ add_setup(async function () {
 
 
 add_task(
-  async function test_parent_window_not_effected_when_same_origin_iframe_window_is_navigated() {
+  async function test_active_parent_window_not_effected_when_same_origin_iframe_window_is_navigated() {
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
         url: ADDRESS_FORM_URL,
       },
       async function (browser) {
-        info("Update address fields in parent window");
+        info("Update address fields");
         await focusUpdateSubmitForm(
           browser,
           {
@@ -83,14 +81,14 @@ add_task(
 
 
 add_task(
-  async function test_parent_window_not_effected_when_cross_origin_iframe_window_is_navigated() {
+  async function test_active_parent_window_not_effected_when_cross_origin_iframe_window_is_navigated() {
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
         url: ADDRESS_FORM_URL,
       },
       async function (browser) {
-        info("Update address fields in parent window");
+        info("Update address fields");
         await focusUpdateSubmitForm(
           browser,
           {
@@ -138,7 +136,7 @@ add_task(
 
 
 add_task(
-  async function test_same_origin_window_is_effected_when_parent_window_is_navigated() {
+  async function test_active_same_origin_window_is_effected_when_parent_window_is_navigated() {
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
@@ -167,7 +165,7 @@ add_task(
 
         let iframeBC = browser.browsingContext.children[0];
 
-        info("Update address fields in same-origin iframe");
+        info("Update address fields");
         await focusUpdateSubmitForm(
           iframeBC,
           {
@@ -197,15 +195,13 @@ add_task(
 
 
 add_task(
-  async function test_cross_origin_window_is_effected_when_parent_window_is_navigated() {
+  async function test_active_cross_origin_window_not_effected_when_parent_window_is_navigated() {
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
         url: "https://example.org/browser/browser/extensions/formautofill/test/fixtures/page_navigation.html",
       },
       async function (browser) {
-        const onPopupShown = waitForPopupShown();
-
         info("Load cross-origin iframe with address form");
         await SpecialPowers.spawn(browser, [], async () => {
           let doc = content.document;
@@ -226,7 +222,7 @@ add_task(
 
         let iframeBC = browser.browsingContext.children[0];
 
-        info("Update address fields in cross-origin iframe");
+        info("Update address fields");
         await focusUpdateSubmitForm(
           iframeBC,
           {
@@ -241,10 +237,10 @@ add_task(
           content.document.getElementById("windowLocationBtn").click();
         });
 
-        info("Wait for address doorhanger");
-        await onPopupShown;
+        info("Ensure address doorhanger not shown");
+        await ensureNoDoorhanger();
 
-        ok(true, "Address doorhanger is shown");
+        ok(true, "Address doorhanger is not shown");
       }
     );
   }
@@ -255,7 +251,7 @@ add_task(
 
 
 
-add_task(async function test_same_origin_iframe_window_is_navigated() {
+add_task(async function test_active_same_origin_iframe_window_is_navigated() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -265,7 +261,7 @@ add_task(async function test_same_origin_iframe_window_is_navigated() {
       const onPopupShown = waitForPopupShown();
 
       info(
-        "Load same-origin iframe with address fields and page navigation button"
+        "Load same-origin iframe with formautofill fields and page navigation button"
       );
       await SpecialPowers.spawn(browser, [], async () => {
         let doc = content.document;
@@ -286,7 +282,7 @@ add_task(async function test_same_origin_iframe_window_is_navigated() {
 
       let iframeBC = browser.browsingContext.children[0];
 
-      info("Update address fields in same-origin iframe");
+      info("Update address fields");
       await focusUpdateSubmitForm(
         iframeBC,
         {
@@ -298,7 +294,7 @@ add_task(async function test_same_origin_iframe_window_is_navigated() {
 
       info("Infer page navigation in same-origin iframe's window");
       await SpecialPowers.spawn(iframeBC, [], async () => {
-        content.document.getElementById("locationHref").click();
+        content.document.getElementById("windowLocation").click();
       });
 
       info("Wait for address doorhanger");
@@ -314,7 +310,7 @@ add_task(async function test_same_origin_iframe_window_is_navigated() {
 
 
 
-add_task(async function test_cross_origin_iframe_window_is_navigated() {
+add_task(async function test_active_cross_origin_iframe_window_is_navigated() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -324,7 +320,7 @@ add_task(async function test_cross_origin_iframe_window_is_navigated() {
       const onPopupShown = waitForPopupShown();
 
       info(
-        "Load same-origin iframe with address fields and page navigation button"
+        "Load same-origin iframe with formautofill fields and page navigation button"
       );
       await SpecialPowers.spawn(browser, [], async () => {
         let doc = content.document;
@@ -345,7 +341,7 @@ add_task(async function test_cross_origin_iframe_window_is_navigated() {
 
       let iframeBC = browser.browsingContext.children[0];
 
-      info("Update address fields in cross-origin iframe");
+      info("Update address fields");
       await focusUpdateSubmitForm(
         iframeBC,
         {
@@ -357,7 +353,7 @@ add_task(async function test_cross_origin_iframe_window_is_navigated() {
 
       info("Infer page navigation in cross-origin iframe's window");
       await SpecialPowers.spawn(iframeBC, [], async () => {
-        content.document.getElementById("locationHref").click();
+        content.document.getElementById("windowLocation").click();
       });
 
       info("Wait for address doorhanger");
@@ -367,221 +363,3 @@ add_task(async function test_cross_origin_iframe_window_is_navigated() {
     }
   );
 });
-
-
-
-
-
-
-
-
-
-
-
-add_task(
-  async function test_third_level_same_origin_window_is_effected_when_second_level_same_origin_window_is_navigated() {
-    await BrowserTestUtils.withNewTab(
-      {
-        gBrowser,
-        url: "https://example.org/browser/browser/extensions/formautofill/test/browser/empty.html",
-      },
-      async function (browser) {
-        const onPopupShown = waitForPopupShown();
-
-        info("Load second level same-origin iframe with navigation button");
-        await SpecialPowers.spawn(browser, [], async () => {
-          let doc = content.document;
-
-          let iframe = doc.createElement("iframe");
-          const iframeLoadPromise = new Promise(
-            resolve => (iframe.onload = resolve)
-          );
-          iframe.setAttribute(
-            "src",
-            "https://example.org/browser/browser/extensions/formautofill/test/fixtures/page_navigation.html"
-          );
-          doc.body.appendChild(iframe);
-
-          await iframeLoadPromise;
-        });
-
-        let secondIframeBC = browser.browsingContext.children[0];
-
-        info("Load third level same-origin iframe with address fields");
-        await SpecialPowers.spawn(secondIframeBC, [], async () => {
-          let doc = content.document;
-
-          let iframe = doc.createElement("iframe");
-          const iframeLoadPromise = new Promise(
-            resolve => (iframe.onload = resolve)
-          );
-          iframe.setAttribute(
-            "src",
-            "https://example.org/browser/browser/extensions/formautofill/test/fixtures/autocomplete_address_basic.html"
-          );
-          doc.body.appendChild(iframe);
-
-          await iframeLoadPromise;
-        });
-
-        let thirdIframeBC = secondIframeBC.children[0];
-
-        info("Update address fields in third level iframe");
-        await focusUpdateSubmitForm(
-          thirdIframeBC,
-          {
-            focusSelector: "#street-address",
-            newValues: ADDRESS_VALUES,
-          },
-          false 
-        );
-
-        info(
-          "Infer page navigation in second level same-origin iframe's window"
-        );
-        await SpecialPowers.spawn(secondIframeBC, [], async () => {
-          content.document.getElementById("windowLocationBtn").click();
-        });
-
-        info("Wait for address doorhanger");
-        await onPopupShown;
-
-        ok(true, "Address doorhanger is shown");
-
-        info(
-          "Check that the FormHandler actor pair isn't instantiated unnecessarily in the second level window"
-        );
-        await SpecialPowers.spawn(secondIframeBC, [], async () => {
-          is(
-            content.windowGlobalChild.getExistingActor("FormHandler"),
-            null,
-            "FormHandlerChild doesn't exist in second level window"
-          );
-        });
-        is(
-          secondIframeBC.currentWindowGlobal.getExistingActor("FormHandler"),
-          null,
-          "FormHandlerParent doesn't exist in second level window"
-        );
-      }
-    );
-  }
-);
-
-
-
-
-
-
-
-
-
-
-
-add_task(
-  async function test_third_level_cross_origin_window_is_effected_when_second_level_cross_origin_window_is_navigated() {
-    await BrowserTestUtils.withNewTab(
-      {
-        gBrowser,
-        url: "https://example.org/browser/browser/extensions/formautofill/test/browser/empty.html",
-      },
-      async function (browser) {
-        const onPopupShown = waitForPopupShown();
-
-        info("Load second level cross-origin iframe with navigation button");
-        await SpecialPowers.spawn(browser, [], async () => {
-          let doc = content.document;
-
-          let iframe = doc.createElement("iframe");
-          const iframeLoadPromise = new Promise(
-            resolve => (iframe.onload = resolve)
-          );
-          iframe.setAttribute(
-            "src",
-            "https://example.com/browser/browser/extensions/formautofill/test/fixtures/page_navigation.html"
-          );
-          doc.body.appendChild(iframe);
-
-          await iframeLoadPromise;
-        });
-
-        let secondIframeBC = browser.browsingContext.children[0];
-
-        info("Load third level cross-origin iframe with address fields");
-        await SpecialPowers.spawn(secondIframeBC, [], async () => {
-          let doc = content.document;
-
-          let iframe = doc.createElement("iframe");
-          const iframeLoadPromise = new Promise(
-            resolve => (iframe.onload = resolve)
-          );
-          iframe.setAttribute(
-            "src",
-            "https://example.com/browser/browser/extensions/formautofill/test/fixtures/autocomplete_address_basic.html"
-          );
-          doc.body.appendChild(iframe);
-
-          await iframeLoadPromise;
-        });
-
-        let thirdIframeBC = secondIframeBC.children[0];
-
-        info("Update address fields in third level iframe");
-        await focusUpdateSubmitForm(
-          thirdIframeBC,
-          {
-            focusSelector: "#street-address",
-            newValues: ADDRESS_VALUES,
-          },
-          false 
-        );
-
-        info(
-          "Check that the FormHandler actor pair is instantiated in the top window"
-        );
-        await SpecialPowers.spawn(browser, [], async () => {
-          isnot(
-            content.windowGlobalChild.getExistingActor("FormHandler"),
-            null,
-            "FormHandlerChild exists in top window"
-          );
-        });
-        isnot(
-          browser.browsingContext.currentWindowGlobal.getExistingActor(
-            "FormHandler"
-          ),
-          null,
-          "FormHandlerParent exists in top window"
-        );
-
-        info(
-          "Check that only the FormHandlerChild is instantiated in the second level window (parent will be created on navigation)"
-        );
-        await SpecialPowers.spawn(secondIframeBC, [], async () => {
-          isnot(
-            content.windowGlobalChild.getExistingActor("FormHandler"),
-            null,
-            "FormHandlerChild exists in second level window"
-          );
-        });
-        is(
-          secondIframeBC.currentWindowGlobal.getExistingActor("FormHandler"),
-          null,
-          "FormHandlerParent doesn't exist in second level window"
-        );
-
-        info(
-          "Infer page navigation in second level cross-origin iframe's window"
-        );
-        await SpecialPowers.spawn(secondIframeBC, [], async () => {
-          content.document.getElementById("windowLocationBtn").click();
-        });
-
-        info("Wait for address doorhanger");
-        await onPopupShown;
-
-        ok(true, "Address doorhanger is shown");
-      }
-    );
-  }
-);
