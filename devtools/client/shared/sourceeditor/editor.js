@@ -707,9 +707,16 @@ class Editor extends EventEmitter {
 
   #lineContentMarkersExtension({ markers, domEventHandlers }) {
     const {
-      codemirrorView: { Decoration, ViewPlugin },
+      codemirrorView: { Decoration, ViewPlugin, WidgetType },
       codemirrorState: { RangeSetBuilder, RangeSet },
     } = this.#CodeMirror6;
+
+    class LineContentWidget extends WidgetType {
+      constructor(createElementNode) {
+        super();
+        this.toDOM = createElementNode;
+      }
+    }
 
     
     function buildDecorations(view) {
@@ -720,13 +727,20 @@ class Editor extends EventEmitter {
       for (const { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
           const line = view.state.doc.lineAt(pos);
-          for (const { lineClassName, condition } of markers) {
-            if (condition(line.number)) {
-              builder.add(
-                line.from,
-                line.from,
-                Decoration.line({ class: lineClassName })
-              );
+          for (const marker of markers) {
+            if (marker.condition(line.number)) {
+              if (marker.lineClassName) {
+                const classDecoration = Decoration.line({
+                  class: marker.lineClassName,
+                });
+                builder.add(line.from, line.from, classDecoration);
+              }
+              if (marker.createLineElementNode) {
+                const nodeDecoration = Decoration.widget({
+                  widget: new LineContentWidget(marker.createLineElementNode),
+                });
+                builder.add(line.to, line.to, nodeDecoration);
+              }
             }
           }
           pos = line.to + 1;
@@ -792,6 +806,8 @@ class Editor extends EventEmitter {
   }
 
   
+
+
 
 
 
