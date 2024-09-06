@@ -1235,11 +1235,11 @@ static bool AxisPolarityFlipped(LogicalAxis aThisAxis, WritingMode aThisWm,
 }
 
 static bool InlinePolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
-  return AxisPolarityFlipped(eLogicalAxisInline, aThisWm, aOtherWm);
+  return AxisPolarityFlipped(LogicalAxis::Inline, aThisWm, aOtherWm);
 }
 
 static bool BlockPolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
-  return AxisPolarityFlipped(eLogicalAxisBlock, aThisWm, aOtherWm);
+  return AxisPolarityFlipped(LogicalAxis::Block, aThisWm, aOtherWm);
 }
 
 
@@ -1297,8 +1297,9 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     
     nscoord insideBoxISizing, outsideBoxISizing;
-    CalculateBorderPaddingMargin(eLogicalAxisInline, blockContentSize.ISize(wm),
-                                 &insideBoxISizing, &outsideBoxISizing);
+    CalculateBorderPaddingMargin(LogicalAxis::Inline,
+                                 blockContentSize.ISize(wm), &insideBoxISizing,
+                                 &outsideBoxISizing);
 
     if (mFlags.mIsReplaced && isAutoISize) {
       
@@ -1315,7 +1316,7 @@ void ReflowInput::CalculateHypotheticalPosition(
       
       
       nscoord insideBoxBSizing, dummy;
-      CalculateBorderPaddingMargin(eLogicalAxisBlock,
+      CalculateBorderPaddingMargin(LogicalAxis::Block,
                                    blockContentSize.ISize(wm),
                                    &insideBoxBSizing, &dummy);
       boxISize.emplace(
@@ -1495,7 +1496,7 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     
     nscoord insideBoxSizing, outsideBoxSizing;
-    CalculateBorderPaddingMargin(eLogicalAxisBlock, blockContentSize.BSize(wm),
+    CalculateBorderPaddingMargin(LogicalAxis::Block, blockContentSize.BSize(wm),
                                  &insideBoxSizing, &outsideBoxSizing);
 
     nscoord boxBSize;
@@ -1622,7 +1623,7 @@ LogicalSize ReflowInput::CalculateAbsoluteSizeWithResolvedAutoBlockSize(
           : LogicalSize(wm);
   auto transferredISize =
       mStylePosition->mAspectRatio.ToLayoutRatio().ComputeRatioDependentSize(
-          LogicalAxis::eLogicalAxisInline, wm, aAutoBSize, boxSizingAdjust);
+          LogicalAxis::Inline, wm, aAutoBSize, boxSizingAdjust);
   resultSize.ISize(wm) = ApplyMinMaxISize(transferredISize);
 
   MOZ_ASSERT(mFlags.mIsBSizeSetByAspectRatio,
@@ -2558,7 +2559,7 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
       }
       mComputedPadding.Side(side, wm) += val;
       needPaddingProp = true;
-      if (aAxis == eLogicalAxisBlock && val > 0) {
+      if (aAxis == LogicalAxis::Block && val > 0) {
         
         
         this->mFrame->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
@@ -2566,10 +2567,10 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
     }
   };
   if (!aFlags.contains(ComputeSizeFlag::IsGridMeasuringReflow)) {
-    ApplyBaselinePadding(eLogicalAxisBlock, nsIFrame::BBaselinePadProperty());
+    ApplyBaselinePadding(LogicalAxis::Block, nsIFrame::BBaselinePadProperty());
   }
   if (!aFlags.contains(ComputeSizeFlag::ShrinkWrap)) {
-    ApplyBaselinePadding(eLogicalAxisInline, nsIFrame::IBaselinePadProperty());
+    ApplyBaselinePadding(LogicalAxis::Inline, nsIFrame::IBaselinePadProperty());
   }
 
   LogicalMargin border(wm);

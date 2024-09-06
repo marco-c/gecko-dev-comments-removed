@@ -547,7 +547,7 @@ ComputeSizeFlags nsTableWrapperFrame::CreateComputeSizeFlagsForChild() const {
   
   if (MOZ_UNLIKELY(IsGridItem())) {
     auto* gridContainer = static_cast<nsGridContainerFrame*>(GetParent());
-    if (gridContainer->GridItemShouldStretch(this, eLogicalAxisInline)) {
+    if (gridContainer->GridItemShouldStretch(this, LogicalAxis::Inline)) {
       return {};
     }
   }

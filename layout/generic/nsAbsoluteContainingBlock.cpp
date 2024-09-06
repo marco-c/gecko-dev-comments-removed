@@ -522,7 +522,7 @@ static nscoord OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
     return 0;  
   }
 
-  nscoord alignAreaSizeInAxis = (pcAxis == eLogicalAxisInline)
+  nscoord alignAreaSizeInAxis = (pcAxis == LogicalAxis::Inline)
                                     ? alignAreaSize.ISize(pcWM)
                                     : alignAreaSize.BSize(pcWM);
 
@@ -619,7 +619,7 @@ void nsAbsoluteContainingBlock::ResolveSizeDependentOffsets(
       placeholderContainer = GetPlaceholderContainer(aKidReflowInput.mFrame);
       nscoord offset = OffsetToAlignedStaticPos(
           aKidReflowInput, aKidSize, logicalCBSizeOuterWM, placeholderContainer,
-          outerWM, eLogicalAxisInline);
+          outerWM, LogicalAxis::Inline);
       
       
       
@@ -639,7 +639,7 @@ void nsAbsoluteContainingBlock::ResolveSizeDependentOffsets(
       }
       nscoord offset = OffsetToAlignedStaticPos(
           aKidReflowInput, aKidSize, logicalCBSizeOuterWM, placeholderContainer,
-          outerWM, eLogicalAxisBlock);
+          outerWM, LogicalAxis::Block);
       
       
       

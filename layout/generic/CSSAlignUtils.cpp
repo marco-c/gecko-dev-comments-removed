@@ -68,7 +68,7 @@ nscoord CSSAlignUtils::AlignJustifySelf(const StyleAlignFlags& aAlignment,
     
     
     hasAutoMarginStart = hasAutoMarginEnd = false;
-  } else if (aAxis == eLogicalAxisBlock) {
+  } else if (aAxis == LogicalAxis::Block) {
     hasAutoMarginStart = styleMargin.GetBStart(wm).IsAuto();
     hasAutoMarginEnd = styleMargin.GetBEnd(wm).IsAuto();
   } else { 
