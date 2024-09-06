@@ -548,7 +548,10 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
   const auto& child = mNotLost->outOfProcess;
   child->FlushPendingCmds();
 
-  Maybe<layers::SurfaceDescriptor> ret;
+  
+  bool needsSync = true;
+  Maybe<layers::SurfaceDescriptor> syncDesc;
+  Maybe<layers::SurfaceDescriptor> remoteDesc;
   auto& info = child->GetFlushedCmdInfo();
 
   
@@ -556,33 +559,31 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
     const auto tooManyFlushes = 10;
     
     
-    if (XRE_IsParentProcess() ||
-        gfx::gfxVars::WebglOopAsyncPresentForceSync() ||
-        info.flushesSinceLastCongestionCheck > tooManyFlushes) {
-      
-      
-      (void)child->SendGetFrontBuffer(fb ? fb->mId : 0, vr, &ret);
-    }
     
-    info.flushesSinceLastCongestionCheck = 0;
-    info.congestionCheckGeneration++;
+    needsSync = XRE_IsParentProcess() ||
+                gfx::gfxVars::WebglOopAsyncPresentForceSync() ||
+                info.flushesSinceLastCongestionCheck > tooManyFlushes;
 
     
-    if (!child->CanSend()) {
-      return {};
+    
+    if (child->CanSend()) {
+      remoteDesc = Some(layers::SurfaceDescriptorRemoteTexture(
+          *mLastRemoteTextureId, *mRemoteTextureOwnerId));
     }
-
-    return Some(layers::SurfaceDescriptorRemoteTexture(*mLastRemoteTextureId,
-                                                       *mRemoteTextureOwnerId));
   }
 
-  if (!child->SendGetFrontBuffer(fb ? fb->mId : 0, vr, &ret)) return {};
+  if (needsSync &&
+      !child->SendGetFrontBuffer(fb ? fb->mId : 0, vr, &syncDesc)) {
+    return {};
+  }
 
   
   info.flushesSinceLastCongestionCheck = 0;
   info.congestionCheckGeneration++;
 
-  return ret;
+  
+  
+  return remoteDesc ? remoteDesc : syncDesc;
 }
 
 Maybe<layers::SurfaceDescriptor> ClientWebGLContext::PresentFrontBuffer(
