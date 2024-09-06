@@ -36,7 +36,7 @@ const MAX_CACHE_TASK_SIZE: f32 = 4096.0;
 
 pub enum RenderTaskParent {
     
-    Surface(SurfaceIndex),
+    Surface,
     
     RenderTask(RenderTaskId),
 }
@@ -288,9 +288,7 @@ impl RenderTaskCache {
         
         if let Some(render_task_id) = cache_entry.render_task_id {
             match parent {
-                
-                
-                RenderTaskParent::Surface(_surface_index) => {
+                RenderTaskParent::Surface => {
                     
                     
                     
