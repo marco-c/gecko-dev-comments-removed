@@ -26,10 +26,7 @@
 
 #include <stdint.h>
 
-#include "libavutil/buffer.h"
 #include "libavutil/channel_layout.h"
-#include "libavutil/mathematics.h"
-#include "libavutil/pixfmt.h"
 #include "avcodec.h"
 #include "config.h"
 
@@ -147,6 +144,12 @@ typedef struct AVCodecInternal {
 #if CONFIG_LCMS2
     FFIccContext icc; 
 #endif
+
+    
+
+
+
+    int warned_on_failed_allocation_from_fixed_pool;
 } AVCodecInternal;
 
 
@@ -156,25 +159,6 @@ typedef struct AVCodecInternal {
 int ff_match_2uint16(const uint16_t (*tab)[2], int size, int a, int b);
 
 unsigned int ff_toupper4(unsigned int x);
-
-
-
-
-
-static av_always_inline float ff_exp2fi(int x) {
-    
-    if (-126 <= x && x <= 128)
-        return av_int2float((x+127) << 23);
-    
-    else if (x > 128)
-        return INFINITY;
-    
-    else if (x > -150)
-        return av_int2float(1 << (x+149));
-    
-    else
-        return 0;
-}
 
 int avpriv_h264_has_num_reorder_frames(AVCodecContext *avctx);
 

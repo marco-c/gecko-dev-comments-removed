@@ -37,6 +37,13 @@
 
 
 
+#define AV_VIDEO_MAX_PLANES 4
+
+
+
+
+
+
 
 
 
@@ -287,10 +294,6 @@ enum AVPixelFormat {
     AV_PIX_FMT_BAYER_GBRG16BE, 
     AV_PIX_FMT_BAYER_GRBG16LE, 
     AV_PIX_FMT_BAYER_GRBG16BE, 
-
-#if FF_API_XVMC
-    AV_PIX_FMT_XVMC,
-#endif
 
     AV_PIX_FMT_YUV440P10LE, 
     AV_PIX_FMT_YUV440P10BE, 
@@ -620,6 +623,9 @@ enum AVColorSpace {
     AVCOL_SPC_CHROMA_DERIVED_NCL = 12, 
     AVCOL_SPC_CHROMA_DERIVED_CL = 13, 
     AVCOL_SPC_ICTCP       = 14, 
+    AVCOL_SPC_IPT_C2      = 15, 
+    AVCOL_SPC_YCGCO_RE    = 16, 
+    AVCOL_SPC_YCGCO_RO    = 17, 
     AVCOL_SPC_NB                
 };
 
