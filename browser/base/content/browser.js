@@ -2801,55 +2801,6 @@ function readFromClipboard() {
   return url;
 }
 
-
-
-
-
-
-function BrowserPageInfo(
-  documentURL,
-  initialTab,
-  imageElement,
-  browsingContext,
-  browser
-) {
-  let args = { initialTab, imageElement, browsingContext, browser };
-
-  documentURL = documentURL || window.gBrowser.selectedBrowser.currentURI.spec;
-
-  let isPrivate = PrivateBrowsingUtils.isWindowPrivate(window);
-
-  
-  for (let currentWindow of Services.wm.getEnumerator("Browser:page-info")) {
-    if (currentWindow.closed) {
-      continue;
-    }
-    if (
-      currentWindow.document.documentElement.getAttribute("relatedUrl") ==
-        documentURL &&
-      PrivateBrowsingUtils.isWindowPrivate(currentWindow) == isPrivate
-    ) {
-      currentWindow.focus();
-      currentWindow.resetPageInfo(args);
-      return currentWindow;
-    }
-  }
-
-  
-  let options = "chrome,toolbar,dialog=no,resizable";
-
-  
-  if (isPrivate) {
-    options += ",private";
-  }
-  return openDialog(
-    "chrome://browser/content/pageinfo/pageInfo.xhtml",
-    "",
-    options,
-    args
-  );
-}
-
 function UpdateUrlbarSearchSplitterState() {
   var splitter = document.getElementById("urlbar-search-splitter");
   var urlbar = document.getElementById("urlbar-container");
@@ -6291,7 +6242,7 @@ var gTabletModePageCounter = {
 };
 
 function displaySecurityInfo() {
-  BrowserPageInfo(null, "securityTab");
+  BrowserCommands.pageInfo(null, "securityTab");
 }
 
 

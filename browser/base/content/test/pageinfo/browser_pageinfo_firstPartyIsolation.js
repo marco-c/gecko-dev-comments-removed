@@ -76,7 +76,7 @@ async function test() {
   
   
   
-  let pageInfo = BrowserPageInfo(url, "mediaTab", {});
+  let pageInfo = BrowserCommands.pageInfo(url, "mediaTab", {});
   info("waitForEvent pageInfo");
   await BrowserTestUtils.waitForEvent(pageInfo, "load");
 
