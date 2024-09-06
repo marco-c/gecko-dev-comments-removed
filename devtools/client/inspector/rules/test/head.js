@@ -451,15 +451,19 @@ var togglePropStatus = async function (view, textProp) {
 
 
 
+
 async function addNewRule(inspector, view) {
   const onNewRuleAdded = view.once("new-rule-added");
   info("Adding the new rule using the button");
   view.addRuleButton.click();
 
   info("Waiting for new-rule-added event…");
-  await onNewRuleAdded;
+  const rule = await onNewRuleAdded;
   info("…received new-rule-added");
+
+  return rule;
 }
+
 
 
 
@@ -481,7 +485,7 @@ async function addNewRuleAndDismissEditor(
   expectedSelector,
   expectedIndex
 ) {
-  await addNewRule(inspector, view);
+  const rule = await addNewRule(inspector, view);
 
   info("Getting the new rule at index " + expectedIndex);
   const ruleEditor = getRuleViewRuleEditor(view, expectedIndex);
@@ -500,6 +504,8 @@ async function addNewRuleAndDismissEditor(
     expectedSelector,
     "The new selector has the correct text: " + expectedSelector
   );
+
+  return rule;
 }
 
 

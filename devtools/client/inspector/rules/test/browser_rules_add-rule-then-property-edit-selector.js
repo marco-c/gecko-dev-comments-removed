@@ -21,7 +21,21 @@ add_task(async function () {
   const { inspector, view } = await openRuleView();
   await selectNode("#testid", inspector);
 
-  await addNewRuleAndDismissEditor(inspector, view, "#testid", 1);
+  const rule = await addNewRuleAndDismissEditor(inspector, view, "#testid", 1);
+
+  
+  
+  
+  
+  
+  await waitFor(
+    () => rule.domRule.parentStyleSheet,
+    "Wait until the stylesheet resource owning the style rule was received"
+  );
+  ok(
+    rule.domRule.parentStyleSheet,
+    "The rule front is connected to its parent stylesheet"
+  );
 
   info("Adding a new property to the new rule");
   await testAddingProperty(view, 1);
