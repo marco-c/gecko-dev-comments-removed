@@ -1101,7 +1101,6 @@ using SharedRecGroupVector = Vector<SharedRecGroup, 0, SystemAllocPolicy>;
 
 
 class TypeContext : public AtomicRefCounted<TypeContext> {
-  FeatureArgs features_;
   
   MutableRecGroup pendingRecGroup_;
   
@@ -1116,7 +1115,6 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
 
  public:
   TypeContext() = default;
-  explicit TypeContext(const FeatureArgs& features) : features_(features) {}
   ~TypeContext();
 
   size_t sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {

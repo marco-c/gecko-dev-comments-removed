@@ -817,7 +817,6 @@ class Code : public ShareableBase<Code> {
   
   
   const SharedBytes bytecode_;
-  const SharedCompileArgs compileArgs_;
 
   
   
@@ -851,8 +850,7 @@ class Code : public ShareableBase<Code> {
  public:
   Code(CompileMode mode, const CodeMetadata& codeMeta,
        const CodeMetadataForAsmJS* codeMetaForAsmJS,
-       const ShareableBytes* maybeBytecode,
-       const CompileArgs* maybeCompileArgs);
+       const ShareableBytes* maybeBytecode);
   bool initialized() const {
     return !!completeTier1_ && completeTier1_->initialized();
   }

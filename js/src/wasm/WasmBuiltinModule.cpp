@@ -144,7 +144,7 @@ bool CompileBuiltinModule(JSContext* cx,
 
   
   MutableModuleMetadata moduleMeta = js_new<ModuleMetadata>();
-  if (!moduleMeta || !moduleMeta->init(compileArgs->features)) {
+  if (!moduleMeta || !moduleMeta->init(*compileArgs)) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -211,6 +211,10 @@ bool CompileBuiltinModule(JSContext* cx,
       ReportOutOfMemory(cx);
       return false;
     }
+  }
+
+  if (!moduleMeta->prepareForCompile(compilerEnv.mode())) {
+    return false;
   }
 
   

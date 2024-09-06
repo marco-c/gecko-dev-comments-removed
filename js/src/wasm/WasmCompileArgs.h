@@ -213,6 +213,8 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   
   
   
+  
+  
 
   static SharedCompileArgs build(JSContext* cx, ScriptedCaller&& scriptedCaller,
                                  const FeatureOptions& options,
@@ -222,9 +224,10 @@ struct CompileArgs : ShareableBase<CompileArgs> {
                                           ScriptedCaller&& scriptedCaller,
                                           const FeatureOptions& options,
                                           bool reportOOM = false);
+  static SharedCompileArgs buildForValidation(const FeatureArgs& args);
 
-  explicit CompileArgs(ScriptedCaller&& scriptedCaller)
-      : scriptedCaller(std::move(scriptedCaller)),
+  explicit CompileArgs()
+      : scriptedCaller(),
         baselineEnabled(false),
         ionEnabled(false),
         debugEnabled(false),

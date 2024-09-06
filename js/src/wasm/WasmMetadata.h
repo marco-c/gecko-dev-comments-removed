@@ -129,7 +129,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   ModuleKind kind;
-  FeatureArgs features;
+
+  
+  SharedCompileArgs compileArgs;
 
   
   
@@ -167,11 +169,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   uint32_t instanceDataLength;
 
-  
-  
-  bool filenameIsURL;
-  CacheableChars filename;
-  CacheableChars sourceMapURL;
   
   
   
@@ -215,9 +212,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   bool debugEnabled;
   ModuleHash debugHash;
 
-  explicit CodeMetadata()
-      : kind(ModuleKind::Wasm),
-        features(),
+  explicit CodeMetadata(const CompileArgs* compileArgs = nullptr,
+                        ModuleKind kind = ModuleKind::Wasm)
+      : kind(kind),
+        compileArgs(compileArgs),
         numFuncImports(0),
         numGlobalImports(0),
         funcDefsOffsetStart(UINT32_MAX),
@@ -226,24 +224,28 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
         memoriesOffsetStart(UINT32_MAX),
         tablesOffsetStart(UINT32_MAX),
         tagsOffsetStart(UINT32_MAX),
-        instanceDataLength(0),
-        filenameIsURL(false),
+        instanceDataLength(UINT32_MAX),
         parsedBranchHints(false),
         debugEnabled(false),
         debugHash() {}
 
-  explicit CodeMetadata(FeatureArgs features_,
-                        ModuleKind kind_ = ModuleKind::Wasm)
-      : CodeMetadata() {
-    features = features_;
-    kind = kind_;
-  }
-
   [[nodiscard]] bool init() {
     MOZ_ASSERT(!types);
-    types = js_new<TypeContext>(features);
+    types = js_new<TypeContext>();
     return types;
   }
+
+  
+  
+  
+  [[nodiscard]] bool prepareForCompile(CompileMode mode);
+  bool isPreparedForCompile() const { return instanceDataLength != UINT32_MAX; }
+
+  const FeatureArgs& features() const { return compileArgs->features; }
+  const ScriptedCaller& scriptedCaller() const {
+    return compileArgs->scriptedCaller;
+  }
+  const UniqueChars& sourceMapURL() const { return compileArgs->sourceMapURL; }
 
   const TypeDef& getFuncTypeDef(uint32_t funcIndex) const {
     return types->type(funcs[funcIndex].typeIndex);
@@ -263,17 +265,17 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   size_t numMemories() const { return memories.length(); }
 
 #define WASM_FEATURE(NAME, SHORT_NAME, ...) \
-  bool SHORT_NAME##Enabled() const { return features.SHORT_NAME; }
+  bool SHORT_NAME##Enabled() const { return features().SHORT_NAME; }
   JS_FOR_WASM_FEATURES(WASM_FEATURE)
 #undef WASM_FEATURE
-  Shareable sharedMemoryEnabled() const { return features.sharedMemory; }
-  bool simdAvailable() const { return features.simd; }
+  Shareable sharedMemoryEnabled() const { return features().sharedMemory; }
+  bool simdAvailable() const { return features().simd; }
 
   bool isAsmJS() const { return kind == ModuleKind::AsmJS; }
   
   
   
-  bool isBuiltinModule() const { return features.isBuiltinModule; }
+  bool isBuiltinModule() const { return features().isBuiltinModule; }
 
   bool hugeMemoryEnabled(uint32_t memoryIndex) const {
     return !isAsmJS() && memoryIndex < memories.length() &&
@@ -311,11 +313,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   [[nodiscard]] bool allocateInstanceDataBytesN(uint32_t bytes, uint32_t align,
                                                 uint32_t count,
                                                 uint32_t* assignedOffset);
-  
-  
-  
-  
-  [[nodiscard]] bool initInstanceLayout(CompileMode mode);
 
   uint32_t offsetOfFuncDefInstanceData(uint32_t funcIndex) const {
     MOZ_ASSERT(funcIndex >= numFuncImports && funcIndex < numFuncs());
@@ -414,15 +411,19 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
 
   explicit ModuleMetadata() = default;
 
-  [[nodiscard]] bool init() {
-    codeMeta = js_new<CodeMetadata>();
-    return !!codeMeta && codeMeta->init();
-  }
-  [[nodiscard]] bool init(FeatureArgs features,
+  [[nodiscard]] bool init(const CompileArgs& compileArgs,
                           ModuleKind kind = ModuleKind::Wasm) {
-    codeMeta = js_new<CodeMetadata>(features, kind);
+    codeMeta = js_new<CodeMetadata>(&compileArgs, kind);
     return !!codeMeta && codeMeta->init();
   }
+
+  
+  
+  
+  [[nodiscard]] bool prepareForCompile(CompileMode mode) {
+    return codeMeta->prepareForCompile(mode);
+  }
+  bool isPreparedForCompile() const { return codeMeta->isPreparedForCompile(); }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
