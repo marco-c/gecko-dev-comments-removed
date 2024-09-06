@@ -25,6 +25,20 @@ export var LayoutUtils = {
     return win.ownerGlobal.windowUtils.toScreenRect(x, y, width, height);
   },
 
+  
+
+
+
+  rectToTopLevelWidgetRect(win, rect) {
+    const { x, y, width, height } = this._rectToClientRect(win, rect);
+    return win.ownerGlobal.windowUtils.toTopLevelWidgetRect(
+      x,
+      y,
+      width,
+      height
+    );
+  },
+
   _rectToClientRect(win, rect) {
     
     
