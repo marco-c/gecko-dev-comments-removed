@@ -45,6 +45,11 @@ std::string OutputPath();
 
 
 
+std::string OutputPathWithRandomDirectory();
+
+
+
+
 std::string TempFilename(absl::string_view dir, absl::string_view prefix);
 
 
