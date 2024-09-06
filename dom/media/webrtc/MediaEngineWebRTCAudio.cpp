@@ -715,6 +715,10 @@ void AudioInputProcessing::ProcessOutputData(AudioProcessingTrack* aTrack,
     return;
   }
 
+  if (aChunk.mDuration == 0) {
+    return;
+  }
+
   TrackRate sampleRate = aTrack->mSampleRate;
   uint32_t framesPerPacket = GetPacketSize(sampleRate);  
   
