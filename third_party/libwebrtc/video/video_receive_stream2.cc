@@ -520,7 +520,7 @@ void VideoReceiveStream2::CreateAndRegisterExternalDecoder(
   TRACE_EVENT0("webrtc",
                "VideoReceiveStream2::CreateAndRegisterExternalDecoder");
   std::unique_ptr<VideoDecoder> video_decoder =
-      config_.decoder_factory->CreateVideoDecoder(decoder.video_format);
+      config_.decoder_factory->Create(env_, decoder.video_format);
   
   
   
