@@ -5,13 +5,17 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 
 
+const MAX_FLOAT_MILLISECONDS: f64 = ((1u64 << f64::MANTISSA_DIGITS) - 1) as f64;
+
+
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Default)]
 pub struct ServerTimestamp(pub i64);
 
 impl ServerTimestamp {
     pub fn from_float_seconds(ts: f64) -> Self {
         let rf = (ts * 1000.0).round();
-        if !rf.is_finite() || rf < 0.0 || rf >= i64::max_value() as f64 {
+        if !(0.0..=MAX_FLOAT_MILLISECONDS).contains(&rf) {
             error_support::report_error!("sync15-illegal-timestamp", "Illegal timestamp: {}", ts);
             ServerTimestamp(0)
         } else {
