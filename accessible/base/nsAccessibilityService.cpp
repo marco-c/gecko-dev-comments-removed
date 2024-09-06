@@ -139,48 +139,6 @@ static LocalAccessible* MaybeCreateSpecificARIAAccessible(
 
 
 
-static bool AttributesMustBeAccessible(nsIContent* aContent,
-                                       DocAccessible* aDocument) {
-  if (aContent->IsElement()) {
-    uint32_t attrCount = aContent->AsElement()->GetAttrCount();
-    for (uint32_t attrIdx = 0; attrIdx < attrCount; attrIdx++) {
-      const nsAttrName* attr = aContent->AsElement()->GetAttrNameAt(attrIdx);
-      if (attr->NamespaceEquals(kNameSpaceID_None)) {
-        nsAtom* attrAtom = attr->Atom();
-        if (attrAtom == nsGkAtoms::title && aContent->IsHTMLElement()) {
-          
-          
-          return true;
-        }
-
-        nsDependentAtomString attrStr(attrAtom);
-        if (!StringBeginsWith(attrStr, u"aria-"_ns)) continue;  
-
-        
-        uint8_t attrFlags = aria::AttrCharacteristicsFor(attrAtom);
-        if ((attrFlags & ATTR_GLOBAL) &&
-            (!(attrFlags & ATTR_VALTOKEN) ||
-             nsAccUtils::HasDefinedARIAToken(aContent, attrAtom))) {
-          return true;
-        }
-      }
-    }
-
-    
-    
-    nsAutoString id;
-    if (nsCoreUtils::GetID(aContent, id) && !id.IsEmpty()) {
-      return aDocument->IsDependentID(aContent->AsElement(), id);
-    }
-  }
-
-  return false;
-}
-
-
-
-
-
 
 
 
@@ -224,19 +182,54 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
 
 
 static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
-  nsIFrame* frame = aContent->GetPrimaryFrame();
-  MOZ_ASSERT(frame);
-  
-  
-  
-  
-  
-  if (frame->IsFocusable( false,
-                          false)) {
-    return true;
+  if (nsIFrame* frame = aContent->GetPrimaryFrame()) {
+    
+    
+    
+    
+    
+    if (frame->IsFocusable( false,
+                            false)) {
+      return true;
+    }
   }
 
-  return AttributesMustBeAccessible(aContent, aDocument);
+  
+  
+  if (aContent->IsElement()) {
+    uint32_t attrCount = aContent->AsElement()->GetAttrCount();
+    for (uint32_t attrIdx = 0; attrIdx < attrCount; attrIdx++) {
+      const nsAttrName* attr = aContent->AsElement()->GetAttrNameAt(attrIdx);
+      if (attr->NamespaceEquals(kNameSpaceID_None)) {
+        nsAtom* attrAtom = attr->Atom();
+        if (attrAtom == nsGkAtoms::title && aContent->IsHTMLElement()) {
+          
+          
+          return true;
+        }
+
+        nsDependentAtomString attrStr(attrAtom);
+        if (!StringBeginsWith(attrStr, u"aria-"_ns)) continue;  
+
+        
+        uint8_t attrFlags = aria::AttrCharacteristicsFor(attrAtom);
+        if ((attrFlags & ATTR_GLOBAL) &&
+            (!(attrFlags & ATTR_VALTOKEN) ||
+             nsAccUtils::HasDefinedARIAToken(aContent, attrAtom))) {
+          return true;
+        }
+      }
+    }
+
+    
+    
+    nsAutoString id;
+    if (nsCoreUtils::GetID(aContent, id) && !id.IsEmpty()) {
+      return aDocument->IsDependentID(aContent->AsElement(), id);
+    }
+  }
+
+  return false;
 }
 
 bool nsAccessibilityService::ShouldCreateImgAccessible(
@@ -291,6 +284,38 @@ static bool MustSVGElementBeAccessible(nsIContent* aContent,
     }
   }
   return MustBeAccessible(aContent, aDocument);
+}
+
+
+
+
+
+static RefPtr<LocalAccessible> MaybeCreateSVGAccessible(
+    nsIContent* aContent, DocAccessible* aDocument) {
+  if (aContent->IsSVGGeometryElement() ||
+      aContent->IsSVGElement(nsGkAtoms::image)) {
+    
+    
+    if (MustSVGElementBeAccessible(aContent, aDocument)) {
+      return new EnumRoleAccessible<roles::GRAPHIC>(aContent, aDocument);
+    }
+  } else if (aContent->IsSVGElement(nsGkAtoms::text)) {
+    return new HyperTextAccessible(aContent->AsElement(), aDocument);
+  } else if (aContent->IsSVGElement(nsGkAtoms::svg)) {
+    
+    
+    
+    
+    return new EnumRoleHyperTextAccessible<roles::DIAGRAM>(aContent, aDocument);
+  } else if (aContent->IsSVGElement(nsGkAtoms::g) &&
+             MustSVGElementBeAccessible(aContent, aDocument)) {
+    
+    return new EnumRoleHyperTextAccessible<roles::GROUPING>(aContent,
+                                                            aDocument);
+  } else if (aContent->IsSVGElement(nsGkAtoms::a)) {
+    return new HTMLLinkAccessible(aContent, aDocument);
+  }
+  return nullptr;
 }
 
 
@@ -1140,11 +1165,17 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
     
     
+    if (!newAcc && content->IsSVGElement()) {
+      newAcc = MaybeCreateSVGAccessible(content, document);
+    }
+
+    
+    
     const bool hasNonPresentationalARIARole =
         roleMapEntry && !roleMapEntry->Is(nsGkAtoms::presentation) &&
         !roleMapEntry->Is(nsGkAtoms::none);
-    if (!newAcc && (hasNonPresentationalARIARole ||
-                    AttributesMustBeAccessible(content, document))) {
+    if (!newAcc &&
+        (hasNonPresentationalARIARole || MustBeAccessible(content, document))) {
       newAcc = new HyperTextAccessible(content, document);
     }
 
@@ -1365,32 +1396,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
   if (!newAcc) {
     if (content->IsSVGElement()) {
-      if (content->IsSVGGeometryElement() ||
-          content->IsSVGElement(nsGkAtoms::image)) {
-        
-        
-        
-        if (MustSVGElementBeAccessible(content, document)) {
-          newAcc = new EnumRoleAccessible<roles::GRAPHIC>(content, document);
-        }
-      } else if (content->IsSVGElement(nsGkAtoms::text)) {
-        newAcc = new HyperTextAccessible(content->AsElement(), document);
-      } else if (content->IsSVGElement(nsGkAtoms::svg)) {
-        
-        
-        
-        
-        newAcc =
-            new EnumRoleHyperTextAccessible<roles::DIAGRAM>(content, document);
-      } else if (content->IsSVGElement(nsGkAtoms::g) &&
-                 MustSVGElementBeAccessible(content, document)) {
-        
-        newAcc =
-            new EnumRoleHyperTextAccessible<roles::GROUPING>(content, document);
-      } else if (content->IsSVGElement(nsGkAtoms::a)) {
-        newAcc = new HTMLLinkAccessible(content, document);
-      }
-
+      newAcc = MaybeCreateSVGAccessible(content, document);
     } else if (content->IsMathMLElement()) {
       const MarkupMapInfo* markupMap =
           mMathMLMarkupMap.Get(content->NodeInfo()->NameAtom());
