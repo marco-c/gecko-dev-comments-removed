@@ -4,7 +4,9 @@ from .base import WebDriverBrowser, require_arg
 from .base import get_timeout_multiplier   
 from ..executors import executor_kwargs as base_executor_kwargs
 from ..executors.base import WdspecExecutor  
-from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
+from ..executors.executorchrome import ChromeDriverPrintRefTestExecutor  
+from ..executors.executorwebdriver import (WebDriverCrashtestExecutor,  
+                                           WebDriverTestharnessExecutor,  
                                            WebDriverRefTestExecutor)  
 
 
@@ -12,7 +14,9 @@ __wptrunner__ = {"product": "chrome_ios",
                  "check_args": "check_args",
                  "browser": "ChromeiOSBrowser",
                  "executor": {"testharness": "WebDriverTestharnessExecutor",
-                              "reftest": "WebDriverRefTestExecutor"},
+                              "reftest": "WebDriverRefTestExecutor",
+                              "print-reftest": "ChromeDriverPrintRefTestExecutor",
+                              "crashtest": "WebDriverCrashtestExecutor"},
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",
