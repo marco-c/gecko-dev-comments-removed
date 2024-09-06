@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(Array.prototype.sort, "name", {
-  value: "sort",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Array.prototype.sort.name, "sort");
+
+verifyNotEnumerable(Array.prototype.sort, "name");
+verifyNotWritable(Array.prototype.sort, "name");
+verifyConfigurable(Array.prototype.sort, "name");
 
 reportCompare(0, 0);

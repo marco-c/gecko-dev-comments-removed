@@ -15,10 +15,9 @@ funObj.foo = 10;
 
 Object.freeze(funObj);
 
-verifyProperty(funObj, "foo", {
-  value: 10,
-  writable: false,
-  configurable: false,
-});
+verifyNotWritable(funObj, "foo");
+verifyNotConfigurable(funObj, "foo");
+
+assert.sameValue(funObj.foo, 10);
 
 reportCompare(0, 0);

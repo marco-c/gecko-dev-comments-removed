@@ -306,6 +306,10 @@ assert.compareArray(actual, [
   
   "call this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
+  
+  "call this.timeZone.getOffsetNanosecondsFor",
+  "call this.timeZone.getOffsetNanosecondsFor",
+  
   "call this.timeZone.getPossibleInstantsFor",
 ], "order of operations with identical wall-clock times and largestUnit a calendar unit");
 actual.splice(0); 
@@ -324,8 +328,17 @@ const expectedOpsForCalendarDifference = [
   "call this.timeZone.getOffsetNanosecondsFor",
   
   "call this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getPossibleInstantsFor",
+  
   "call this.calendar.dateUntil",
+  
+  "call this.calendar.dateAdd",
+  "call this.timeZone.getPossibleInstantsFor",
+  
+  "call this.timeZone.getOffsetNanosecondsFor",
+  "call this.timeZone.getOffsetNanosecondsFor",
+  
+  "call this.timeZone.getPossibleInstantsFor",
+  "call this.timeZone.getPossibleInstantsFor",
 ];
 
 const expectedOpsForCalendarRounding = [

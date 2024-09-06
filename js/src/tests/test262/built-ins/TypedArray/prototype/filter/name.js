@@ -20,11 +20,10 @@
 
 
 
-verifyProperty(TypedArray.prototype.filter, "name", {
-  value: "filter",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(TypedArray.prototype.filter.name, "filter");
+
+verifyNotEnumerable(TypedArray.prototype.filter, "name");
+verifyNotWritable(TypedArray.prototype.filter, "name");
+verifyConfigurable(TypedArray.prototype.filter, "name");
 
 reportCompare(0, 0);

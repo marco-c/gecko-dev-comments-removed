@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(Number.prototype.valueOf, "name", {
-  value: "valueOf",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Number.prototype.valueOf.name, "valueOf");
+
+verifyNotEnumerable(Number.prototype.valueOf, "name");
+verifyNotWritable(Number.prototype.valueOf, "name");
+verifyConfigurable(Number.prototype.valueOf, "name");
 
 reportCompare(0, 0);

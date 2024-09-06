@@ -8,11 +8,14 @@
 
 
 
-verifyProperty(Object.values, "name", {
-  value: "values",
-  writable: false,
-  enumerable: false,
-  configurable: true,
-});
+assert.sameValue(
+  Object.values.name,
+  'values',
+  'Expected Object.values.name to be "values"'
+);
+
+verifyNotEnumerable(Object.values, 'name');
+verifyNotWritable(Object.values, 'name');
+verifyConfigurable(Object.values, 'name');
 
 reportCompare(0, 0);

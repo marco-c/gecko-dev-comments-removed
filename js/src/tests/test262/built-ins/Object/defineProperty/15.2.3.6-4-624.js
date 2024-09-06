@@ -8,11 +8,31 @@
 
 
 
+var desc = Object.getOwnPropertyDescriptor(Date.prototype, "toJSON");
 
-verifyProperty(Date.prototype, "toJSON", {
-  writable: true,
-  enumerable: false,
-  configurable: true,
-});
+var propertyAreCorrect = (desc.writable === true && desc.enumerable === false && desc.configurable === true);
+
+var temp = Date.prototype.toJSON;
+
+Date.prototype.toJSON = "2010";
+
+var isWritable = (Date.prototype.toJSON === "2010");
+
+var isEnumerable = false;
+
+for (var prop in Date.prototype) {
+  if (prop === "toJSON") {
+    isEnumerable = true;
+  }
+}
+
+delete Date.prototype.toJSON;
+
+var isConfigurable = !Date.prototype.hasOwnProperty("toJSON");
+
+assert(propertyAreCorrect, 'propertyAreCorrect !== true');
+assert(isWritable, 'isWritable !== true');
+assert.sameValue(isEnumerable, false, 'isEnumerable');
+assert(isConfigurable, 'isConfigurable !== true');
 
 reportCompare(0, 0);

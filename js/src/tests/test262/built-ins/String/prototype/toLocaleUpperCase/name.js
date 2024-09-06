@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(String.prototype.toLocaleUpperCase, "name", {
-  value: "toLocaleUpperCase",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(String.prototype.toLocaleUpperCase.name, "toLocaleUpperCase");
+
+verifyNotEnumerable(String.prototype.toLocaleUpperCase, "name");
+verifyNotWritable(String.prototype.toLocaleUpperCase, "name");
+verifyConfigurable(String.prototype.toLocaleUpperCase, "name");
 
 reportCompare(0, 0);

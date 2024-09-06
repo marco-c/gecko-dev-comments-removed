@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(Math.min, "name", {
-  value: "min",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Math.min.name, "min");
+
+verifyNotEnumerable(Math.min, "name");
+verifyNotWritable(Math.min, "name");
+verifyConfigurable(Math.min, "name");
 
 reportCompare(0, 0);

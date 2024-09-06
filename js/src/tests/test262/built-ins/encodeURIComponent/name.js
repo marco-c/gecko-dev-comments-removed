@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(encodeURIComponent, "name", {
-  value: "encodeURIComponent",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(encodeURIComponent.name, "encodeURIComponent");
+
+verifyNotEnumerable(encodeURIComponent, "name");
+verifyNotWritable(encodeURIComponent, "name");
+verifyConfigurable(encodeURIComponent, "name");
 
 reportCompare(0, 0);

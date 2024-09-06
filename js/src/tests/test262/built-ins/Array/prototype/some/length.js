@@ -21,11 +21,10 @@
 
 
 
-verifyProperty(Array.prototype.some, "length", {
-  value: 1,
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Array.prototype.some.length, 1);
+
+verifyNotEnumerable(Array.prototype.some, 'length');
+verifyNotWritable(Array.prototype.some, 'length');
+verifyConfigurable(Array.prototype.some, 'length');
 
 reportCompare(0, 0);

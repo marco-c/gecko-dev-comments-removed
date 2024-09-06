@@ -9,6 +9,7 @@
 
 
 const badResults = [
+  [undefined, TypeError],
   [Infinity, RangeError],
   [-Infinity, RangeError],
   [Symbol("foo"), TypeError],

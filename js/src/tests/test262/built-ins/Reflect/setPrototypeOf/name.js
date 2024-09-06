@@ -12,11 +12,13 @@
 
 
 
-verifyProperty(Reflect.setPrototypeOf, "name", {
-  value: "setPrototypeOf",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(
+  Reflect.setPrototypeOf.name, 'setPrototypeOf',
+  'The value of `Reflect.setPrototypeOf.name` is `"setPrototypeOf"`'
+);
+
+verifyNotEnumerable(Reflect.setPrototypeOf, 'name');
+verifyNotWritable(Reflect.setPrototypeOf, 'name');
+verifyConfigurable(Reflect.setPrototypeOf, 'name');
 
 reportCompare(0, 0);

@@ -20,27 +20,59 @@
 
 
 
+
+
+
+
+
+const calls = [];
 const dayLengthNs = 86400000000000n;
-const dayInstant = new Temporal.Instant(dayLengthNs);
-let calls = 0;
-const timeZone = new class extends Temporal.TimeZone {
-  getPossibleInstantsFor() {
-    calls++;
-    return [dayInstant];
+const other = new Temporal.ZonedDateTime(dayLengthNs, "UTC", "iso8601");
+
+function createRelativeTo(count) {
+  const dayInstant = new Temporal.Instant(dayLengthNs);
+  const substitutions = [];
+  const timeZone = new Temporal.TimeZone("UTC");
+  
+  TemporalHelpers.substituteMethod(
+    timeZone,
+    "getPossibleInstantsFor",
+    substitutions
+  );
+  substitutions.length = count;
+  let i = 0;
+  for (i = 0; i < substitutions.length; i++) {
+    
+    substitutions[i] = [dayInstant];
   }
-}("UTC");
+  
+  TemporalHelpers.observeMethod(calls, timeZone, "getPossibleInstantsFor");
+  return new Temporal.ZonedDateTime(0n, timeZone);
+}
 
-const zdt = new Temporal.ZonedDateTime(0n, timeZone);
-const other = new Temporal.ZonedDateTime(dayLengthNs * 2n, "UTC", "iso8601");
+let zdt = createRelativeTo(50);
+calls.splice(0); 
+zdt.since(other, {
+  largestUnit: "day",
+});
+assert.sameValue(
+  calls.length,
+  50 + 1,
+  "Expected ZonedDateTime.since to call getPossibleInstantsFor correct number of times"
+);
 
-assert.throws(RangeError, () => zdt.since(other, { largestUnit: "day", smallestUnit: "second" }), "indefinite loop is prevented");
-assert.sameValue(calls, 4, "getPossibleInstantsFor is not called indefinitely");
-  
-  
-  
-  
-  
-  
-  
+zdt = createRelativeTo(100);
+calls.splice(0); 
+zdt.since(other, {
+  largestUnit: "day",
+});
+assert.sameValue(
+  calls.length,
+  100 + 1,
+  "Expected ZonedDateTime.since to call getPossibleInstantsFor correct number of times"
+);
+
+zdt = createRelativeTo(105);
+assert.throws(RangeError, () => zdt.since(other, { largestUnit: "day" }), "105 days > 2⁵³ ns");
 
 reportCompare(0, 0);

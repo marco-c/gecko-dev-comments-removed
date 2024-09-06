@@ -19,29 +19,61 @@
 
 
 
+
+
+
+
+
+const calls = [];
 const duration = Temporal.Duration.from({ days: 1 });
 
-const dayLengthNs = 86400000000000n;
-const dayInstant = new Temporal.Instant(dayLengthNs);
-let calls = 0;
-const timeZone = new class extends Temporal.TimeZone {
-  getPossibleInstantsFor() {
-    calls++;
-    return [dayInstant];
+function createRelativeTo(count) {
+  const dayLengthNs = 86400000000000n;
+  const dayInstant = new Temporal.Instant(dayLengthNs);
+  const substitutions = [];
+  const timeZone = new Temporal.TimeZone("UTC");
+  
+  TemporalHelpers.substituteMethod(
+    timeZone,
+    "getPossibleInstantsFor",
+    substitutions
+  );
+  substitutions.length = count;
+  let i = 0;
+  for (i = 0; i < substitutions.length; i++) {
+    
+    substitutions[i] = [dayInstant];
   }
-}("UTC");
+  
+  TemporalHelpers.observeMethod(calls, timeZone, "getPossibleInstantsFor");
+  return new Temporal.ZonedDateTime(0n, timeZone);
+}
 
-const relativeTo = new Temporal.ZonedDateTime(0n, timeZone);
+let zdt = createRelativeTo(50);
+calls.splice(0); 
+duration.round({
+  smallestUnit: "days",
+  relativeTo: zdt,
+});
+assert.sameValue(
+  calls.length,
+  50 + 1,
+  "Expected duration.round to call getPossibleInstantsFor correct number of times"
+);
 
-assert.throws(RangeError, () => duration.round({ smallestUnit: "days", relativeTo }), "indefinite loop is prevented");
-assert.sameValue(calls, 5, "getPossibleInstantsFor is not called indefinitely");
-  
-  
-  
-  
-  
-  
-  
-  
+zdt = createRelativeTo(100);
+calls.splice(0); 
+duration.round({
+  smallestUnit: "days",
+  relativeTo: zdt,
+});
+assert.sameValue(
+  calls.length,
+  100 + 1,
+  "Expected duration.round to call getPossibleInstantsFor correct number of times"
+);
+
+zdt = createRelativeTo(107);
+assert.throws(RangeError, () => duration.round({ smallestUnit: "days", relativeTo: zdt }), "107-2 days > 2⁵³ ns");
 
 reportCompare(0, 0);

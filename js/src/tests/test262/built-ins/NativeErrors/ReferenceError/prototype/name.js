@@ -17,11 +17,10 @@
 
 
 
-verifyProperty(ReferenceError.prototype, "name", {
-  value: "ReferenceError",
-  writable: true,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(ReferenceError.prototype.name, "ReferenceError");
+
+verifyNotEnumerable(ReferenceError.prototype, "name");
+verifyWritable(ReferenceError.prototype, "name");
+verifyConfigurable(ReferenceError.prototype, "name");
 
 reportCompare(0, 0);

@@ -19,11 +19,10 @@
 
 
 
-verifyProperty(Date.now, "name", {
-  value: "now",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(Date.now.name, "now");
+
+verifyNotEnumerable(Date.now, "name");
+verifyNotWritable(Date.now, "name");
+verifyConfigurable(Date.now, "name");
 
 reportCompare(0, 0);

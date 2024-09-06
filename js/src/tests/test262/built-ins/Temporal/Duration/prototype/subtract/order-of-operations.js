@@ -339,8 +339,18 @@ const expectedOpsForZonedRelativeTo = expected.concat([
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
   "call options.relativeTo.calendar.dateUntil",
+  
+  "call options.relativeTo.calendar.dateAdd",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
 ]);
 
 const zonedRelativeTo = TemporalHelpers.propertyBagObserver(actual, {

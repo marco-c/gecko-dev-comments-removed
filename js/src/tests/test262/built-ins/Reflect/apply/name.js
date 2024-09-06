@@ -13,11 +13,13 @@
 
 
 
-verifyProperty(Reflect.apply, "name", {
-  value: "apply",
-  writable: false,
-  enumerable: false,
-  configurable: true
-});
+assert.sameValue(
+  Reflect.apply.name, 'apply',
+  'The value of `Reflect.apply.name` is `"apply"`'
+);
+
+verifyNotEnumerable(Reflect.apply, 'name');
+verifyNotWritable(Reflect.apply, 'name');
+verifyConfigurable(Reflect.apply, 'name');
 
 reportCompare(0, 0);
