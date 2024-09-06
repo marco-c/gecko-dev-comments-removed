@@ -543,14 +543,157 @@ var SidebarUI = {
 
   _loadSidebarExtension(commandID) {
     let sidebar = this.sidebars.get(commandID);
-    let { extensionId } = sidebar;
-    if (extensionId) {
-      SidebarUI.browser.contentWindow.loadPanel(
-        extensionId,
-        sidebar.panel,
-        sidebar.browserStyle
-      );
+    if (typeof sidebar.onload === "function") {
+      sidebar.onload();
     }
+  },
+
+  
+
+
+
+
+
+
+  registerExtension(commandID, props) {
+    const sidebar = {
+      title: props.title,
+      url: "chrome://browser/content/webext-panels.xhtml",
+      menuId: props.menuId,
+      switcherMenuId: `sidebarswitcher_menu_${commandID}`,
+      keyId: `ext-key-id-${commandID}`,
+      
+      extensionId: props.extensionId,
+      onload: props.onload,
+    };
+    this.sidebars.set(commandID, sidebar);
+
+    
+    const menuitem = this.createMenuItem(commandID, sidebar);
+    document.getElementById("viewSidebarMenu").appendChild(menuitem);
+    window.dispatchEvent(
+      new CustomEvent("SidebarItemAdded", {
+        detail: { commandID, icon: props.icon, label: props.title },
+      })
+    );
+
+    if (!this.sidebarRevampEnabled) {
+      
+      let switcherMenuitem = this.createMenuItem(commandID, sidebar);
+      switcherMenuitem.setAttribute("id", sidebar.switcherMenuId);
+      switcherMenuitem.removeAttribute("type");
+
+      let separator = document.getElementById("sidebar-extensions-separator");
+      separator.parentNode.insertBefore(switcherMenuitem, separator);
+    }
+    this._setExtensionAttributes(
+      commandID,
+      { icon: props.icon, label: props.title },
+      sidebar
+    );
+  },
+
+  
+
+
+
+
+
+
+  createMenuItem(commandID, sidebar) {
+    const menuitem = document.createXULElement("menuitem");
+    menuitem.setAttribute("id", sidebar.menuId);
+    menuitem.setAttribute("type", "checkbox");
+    menuitem.addEventListener("command", () => this.toggle(commandID));
+    menuitem.setAttribute("class", "menuitem-iconic webextension-menuitem");
+    menuitem.setAttribute("key", sidebar.keyId);
+    return menuitem;
+  },
+
+  
+
+
+
+
+
+
+
+
+  setExtensionAttributes(commandID, attributes, needsRefresh) {
+    const sidebar = this.sidebars.get(commandID);
+    this._setExtensionAttributes(commandID, attributes, sidebar, needsRefresh);
+    window.dispatchEvent(
+      new CustomEvent("SidebarItemChanged", {
+        detail: { commandID, ...attributes },
+      })
+    );
+  },
+
+  _setExtensionAttributes(
+    commandID,
+    { icon, label },
+    sidebar,
+    needsRefresh = false
+  ) {
+    sidebar.icon = icon;
+    sidebar.label = label;
+
+    const updateAttributes = el => {
+      el.style.setProperty("--webextension-menuitem-image", sidebar.icon);
+      el.setAttribute("label", sidebar.label);
+    };
+
+    updateAttributes(document.getElementById(sidebar.menuId), sidebar);
+    const switcherMenu = document.getElementById(sidebar.switcherMenuId);
+    if (switcherMenu) {
+      updateAttributes(switcherMenu, sidebar);
+    }
+    if (this.initialized && this.currentID === commandID) {
+      
+      updateAttributes(this._switcherTarget, sidebar);
+      this.title = label;
+      if (this.isOpen && needsRefresh) {
+        this.show(commandID);
+      }
+    }
+  },
+
+  
+
+
+
+
+  getExtensions() {
+    const extensions = [];
+    for (const [commandID, sidebar] of this.sidebars.entries()) {
+      if (Object.hasOwn(sidebar, "extensionId")) {
+        extensions.push({ commandID, ...sidebar });
+      }
+    }
+    return extensions;
+  },
+
+  
+
+
+
+
+  removeExtension(commandID) {
+    const sidebar = this.sidebars.get(commandID);
+    if (!sidebar) {
+      return;
+    }
+    if (this.currentID === commandID) {
+      this.hide();
+    }
+    document.getElementById(sidebar.menuId)?.remove();
+    document.getElementById(sidebar.switcherMenuId)?.remove();
+    this.sidebars.delete(commandID);
+    window.dispatchEvent(
+      new CustomEvent("SidebarItemRemoved", {
+        detail: { commandID },
+      })
+    );
   },
 
   
@@ -632,7 +775,17 @@ var SidebarUI = {
       this._box.setAttribute("checked", "true");
       this._box.setAttribute("sidebarcommand", commandID);
 
-      let { url, title, sourceL10nEl } = this.sidebars.get(commandID);
+      let { icon, url, title, sourceL10nEl } = this.sidebars.get(commandID);
+      if (icon) {
+        this._switcherTarget.style.setProperty(
+          "--webextension-menuitem-image",
+          icon
+        );
+      } else {
+        this._switcherTarget.style.removeProperty(
+          "--webextension-menuitem-image"
+        );
+      }
 
       
       this.lastOpenedId = commandID;
