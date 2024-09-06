@@ -579,20 +579,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
-  static void AddCompositor(CompositorBridgeParent* compositor, uint64_t* id);
-  
-
-
-  static CompositorBridgeParent* RemoveCompositor(uint64_t id);
-
-  
-
-
-  static void Setup();
-
-  
-
-
   static void FinishShutdown();
 
   
@@ -624,7 +610,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
   CompositorOptions mOptions;
 
-  uint64_t mCompositorBridgeID;
   LayersId mRootLayerTreeID;
 
   RefPtr<APZCTreeManager> mApzcTreeManager;
