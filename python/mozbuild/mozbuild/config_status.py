@@ -12,6 +12,7 @@ import sys
 import time
 from argparse import ArgumentParser
 from itertools import chain
+from multiprocessing import Pool, get_start_method
 
 from mach.logging import LoggingManager
 
@@ -37,6 +38,45 @@ See the documentation at
 https://firefox-source-docs.mozilla.org/mobile/android/geckoview/contributor/geckoview-quick-start.html#build-using-android-studio
 =============
 """.strip()
+
+
+
+
+
+
+
+
+class BackendPool:
+    per_process_definitions = None
+
+    def __init__(self, definitions, *, processes=None):
+        definitions = list(definitions)
+        BackendPool._init_worker(definitions)
+        self.pool = Pool(
+            initializer=BackendPool._init_worker,
+            initargs=(definitions,),
+            processes=processes,
+        )
+
+    def run(self, backends):
+        
+        
+        
+        
+        
+        
+        
+        async_tasks = self.pool.map_async(BackendPool._run_worker, backends[1:])
+        BackendPool._run_worker(backends[0])
+        async_tasks.wait()
+
+    @staticmethod
+    def _init_worker(state):
+        BackendPool.per_process_definitions = state
+
+    @staticmethod
+    def _run_worker(backend):
+        return backend.consume(BackendPool.per_process_definitions)
 
 
 def config_status(
@@ -148,11 +188,20 @@ def config_status(
     log_manager.enable_unstructured()
 
     print("Reticulating splines...", file=sys.stderr)
-    if len(selected_backends) > 1:
-        definitions = list(definitions)
 
-    for the_backend in selected_backends:
-        the_backend.consume(definitions)
+    
+    
+    
+    if len(selected_backends) > 1 and get_start_method() == "fork":
+        
+        
+        
+        processes = min(len(selected_backends) - 1, 4)
+        pool = BackendPool(definitions, processes=processes)
+        pool.run(selected_backends)
+    else:
+        for backend in selected_backends:
+            backend.consume(definitions)
 
     execution_time = 0.0
     for obj in chain((reader, emitter), selected_backends):
