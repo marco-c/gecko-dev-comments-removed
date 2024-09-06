@@ -325,8 +325,6 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-
-  
   AUTO_PROFILER_INIT2;
 
   
@@ -465,11 +463,6 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   
   
   nsDirectoryService::gService->RegisterCategoryProviders();
-
-  
-  
-  
-  profiler_lookup_download_directory();
 
   
   mozilla::SharedThreadPool::InitStatics();
