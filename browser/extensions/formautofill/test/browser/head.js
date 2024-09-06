@@ -549,7 +549,7 @@ async function focusAndWaitForFieldsIdentified(browserOrContext, selector) {
 
 
 
-async function runAndWaitForAutocompletePopupOpen(browser, taskFunction) {
+async function runAndWaitForAutocompletePopupOpen(browser, taskFn) {
   info("runAndWaitForAutocompletePopupOpen");
   let popupShown = BrowserTestUtils.waitForPopupEvent(
     browser.autoCompletePopup,
@@ -557,7 +557,7 @@ async function runAndWaitForAutocompletePopupOpen(browser, taskFunction) {
   );
 
   
-  await taskFunction();
+  await taskFn();
 
   await popupShown;
 }
@@ -575,21 +575,34 @@ async function waitForPopupEnabled(browser) {
 }
 
 
-async function waitForAutoCompletePopupOpen(browser, taskFunction) {
-  const popupShown = BrowserTestUtils.waitForPopupEvent(
-    browser.autoCompletePopup,
-    "shown"
-  );
+function waitPopupStateInChild(bc, messageName) {
+  return SpecialPowers.spawn(bc, [messageName], expectedMessage => {
+    return new Promise(resolve => {
+      const { AutoCompleteChild } = ChromeUtils.importESModule(
+        "resource://gre/actors/AutoCompleteChild.sys.mjs"
+      );
 
-  if (taskFunction) {
-    await taskFunction();
-  }
+      let listener = {
+        popupStateChanged: name => {
+          if (name != expectedMessage) {
+            info("Expected " + expectedMessage + " but received " + name);
+            return;
+          }
 
-  return popupShown;
+          AutoCompleteChild.removePopupStateListener(listener);
+          resolve();
+        },
+      };
+      AutoCompleteChild.addPopupStateListener(listener);
+    });
+  });
 }
 
 async function openPopupOn(browser, selector) {
-  const popupOpenPromise = waitForAutoCompletePopupOpen(browser);
+  let childNotifiedPromise = waitPopupStateInChild(
+    browser,
+    "AutoComplete:PopupOpened"
+  );
   await SimpleTest.promiseFocus(browser);
 
   await runAndWaitForAutocompletePopupOpen(browser, async () => {
@@ -600,11 +613,14 @@ async function openPopupOn(browser, selector) {
     }
   });
 
-  await popupOpenPromise;
+  await childNotifiedPromise;
 }
 
 async function openPopupOnSubframe(browser, frameBrowsingContext, selector) {
-  const popupOpenPromise = waitForAutoCompletePopupOpen(browser);
+  let childNotifiedPromise = waitPopupStateInChild(
+    frameBrowsingContext,
+    "AutoComplete:PopupOpened"
+  );
 
   await SimpleTest.promiseFocus(browser);
 
@@ -616,7 +632,7 @@ async function openPopupOnSubframe(browser, frameBrowsingContext, selector) {
     }
   });
 
-  await popupOpenPromise;
+  await childNotifiedPromise;
 }
 
 async function closePopup(browser) {
@@ -625,6 +641,10 @@ async function closePopup(browser) {
     return;
   }
 
+  let childNotifiedPromise = waitPopupStateInChild(
+    browser,
+    "AutoComplete:PopupClosed"
+  );
   let popupClosePromise = BrowserTestUtils.waitForPopupEvent(
     browser.autoCompletePopup,
     "hidden"
@@ -635,10 +655,16 @@ async function closePopup(browser) {
   });
 
   await popupClosePromise;
+  await childNotifiedPromise;
 }
 
 async function closePopupForSubframe(browser, frameBrowsingContext) {
-  const popupClosePromise = BrowserTestUtils.waitForPopupEvent(
+  let childNotifiedPromise = waitPopupStateInChild(
+    browser,
+    "AutoComplete:PopupClosed"
+  );
+
+  let popupClosePromise = BrowserTestUtils.waitForPopupEvent(
     browser.autoCompletePopup,
     "hidden"
   );
@@ -648,6 +674,7 @@ async function closePopupForSubframe(browser, frameBrowsingContext) {
   });
 
   await popupClosePromise;
+  await childNotifiedPromise;
 }
 
 function emulateMessageToBrowser(name, data) {
@@ -655,7 +682,6 @@ function emulateMessageToBrowser(name, data) {
     gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
       "FormAutofill"
     );
-
   return actor.receiveMessage({ name, data });
 }
 
@@ -879,17 +905,24 @@ async function setStorage(...items) {
   }
 }
 
-function verifySectionAutofillResult(section, result, expectedSection) {
-  const fieldDetails = section.fieldDetails;
-  const expectedFieldDetails = expectedSection.fields;
+function verifySectionAutofillResult(sections, expectedSectionsInfo) {
+  sections.forEach((section, index) => {
+    const expectedSection = expectedSectionsInfo[index];
 
-  fieldDetails.forEach((field, fieldIndex) => {
-    const expected = expectedFieldDetails[fieldIndex];
-    Assert.equal(
-      result[field.elementId].value,
-      expected.autofill ?? "",
-      `Autofilled value for element(identifier:${field.identifier}, field name:${field.fieldName}) should be equal`
-    );
+    const fieldDetails = section.fieldDetails;
+    const expectedFieldDetails = expectedSection.fields;
+
+    info(`verify autofill section[${index}]`);
+
+    fieldDetails.forEach((field, fieldIndex) => {
+      const expeceted = expectedFieldDetails[fieldIndex];
+
+      Assert.equal(
+        field.element.value,
+        expeceted.autofill ?? "",
+        `Autofilled value for element(id=${field.element.id}, field name=${field.fieldName}) should be equal`
+      );
+    });
   });
 }
 
@@ -913,7 +946,7 @@ function verifySectionFieldDetails(sections, expectedSectionsInfo) {
       `Expected field count.`
     );
 
-    fieldDetails.forEach((fieldDetail, fieldIndex) => {
+    fieldDetails.forEach((field, fieldIndex) => {
       const expectedFieldDetail = expectedFieldDetails[fieldIndex];
 
       const expected = {
@@ -922,28 +955,28 @@ function verifySectionFieldDetails(sections, expectedSectionsInfo) {
           section: "",
           contactType: "",
           addressType: "",
-          part: undefined,
+          credentialType: "",
         },
         ...expectedSection.default,
         ...expectedFieldDetail,
       };
 
-      const keys = [
-        "reason",
-        "section",
-        "contactType",
-        "addressType",
-        "fieldName",
+      const keys = new Set([...Object.keys(field), ...Object.keys(expected)]);
+      [
+        "identifier",
+        "autofill",
+        "elementWeakRef",
+        "confidence",
         "part",
-      ];
+      ].forEach(k => keys.delete(k));
 
       for (const key of keys) {
         const expectedValue = expected[key];
-        const actualValue = fieldDetail[key];
+        const actualValue = field[key];
         Assert.equal(
           actualValue,
           expectedValue,
-          `[${fieldDetail.fieldName}]: ${key} should be equal, expect ${expectedValue}, got ${actualValue}`
+          `[${field.fieldName}]: ${key} should be equal, expect ${expectedValue}, got ${actualValue}`
         );
       }
     });
@@ -1068,48 +1101,73 @@ async function add_heuristic_tests(
     }
 
     await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
-      await SpecialPowers.spawn(browser, [], async function () {
-        const elements = Array.from(
-          content.document.querySelectorAll("input, select")
-        );
-        
-        
-        elements.forEach(element => element.focus());
-      });
+      await SpecialPowers.spawn(
+        browser,
+        [
+          {
+            testPattern,
+            verifySection: verifySectionFieldDetails.toString(),
+            verifyAutofill: options.testAutofill
+              ? verifySectionAutofillResult.toString()
+              : null,
+          },
+        ],
+        async obj => {
+          const { FormLikeFactory } = ChromeUtils.importESModule(
+            "resource://gre/modules/FormLikeFactory.sys.mjs"
+          );
+          const { FormAutofillHandler } = ChromeUtils.importESModule(
+            "resource://gre/modules/shared/FormAutofillHandler.sys.mjs"
+          );
 
-      const actor =
-        browser.browsingContext.currentWindowGlobal.getActor("FormAutofill");
-      await BrowserTestUtils.waitForCondition(() => {
-        return actor.getSections().length == testPattern.expectedResult.length;
-      }, "Expected section count.");
+          const elements = Array.from(
+            content.document.querySelectorAll("input, select")
+          );
 
-      
-      const sections = actor.getSections();
-      verifySectionFieldDetails(sections, testPattern.expectedResult);
-
-      
-      if (options.testAutofill) {
-        for (let index = 0; index < sections.length; index++) {
-          const section = sections[index];
           
-          if (!section.isValidSection()) {
-            continue;
+          
+          const forms = elements.reduce((acc, element) => {
+            const formLike = FormLikeFactory.createFromField(element);
+            if (!acc.some(form => form.rootElement === formLike.rootElement)) {
+              acc.push(formLike);
+            }
+            return acc;
+          }, []);
+
+          const sections = forms.flatMap(form => {
+            const handler = new FormAutofillHandler(form);
+            handler.collectFormFields(false );
+            return handler.sections;
+          });
+
+          Assert.equal(
+            sections.length,
+            obj.testPattern.expectedResult.length,
+            "Expected section count."
+          );
+
+          
+          let verify = eval(`(() => {return (${obj.verifySection});})();`);
+          verify(sections, obj.testPattern.expectedResult);
+
+          if (obj.verifyAutofill) {
+            for (const section of sections) {
+              if (!section.isValidSection()) {
+                continue;
+              }
+
+              section.focusedInput = section.fieldDetails[0].element;
+              await section.autofillFields(
+                section.getAdaptedProfiles([obj.testPattern.profile])[0]
+              );
+            }
+
+            
+            verify = eval(`(() => {return (${obj.verifyAutofill});})();`);
+            verify(sections, obj.testPattern.expectedResult);
           }
-
-          
-          const elementId = section.fieldDetails[0].elementId;
-          const result = await actor.autofillFields(
-            elementId,
-            testPattern.profile
-          );
-
-          verifySectionAutofillResult(
-            section,
-            result,
-            testPattern.expectedResult[index]
-          );
         }
-      }
+      );
     });
 
     if (testPattern.prefs) {
