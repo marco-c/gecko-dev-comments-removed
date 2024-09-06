@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib.metadata
+
 
 __all__ = ["tag", "version", "commit"]
 
@@ -18,7 +20,7 @@ __all__ = ["tag", "version", "commit"]
 
 released = True
 
-tag = version = commit = "10.3"
+tag = version = commit = "12.0"
 
 
 if not released:  
@@ -44,7 +46,11 @@ if not released:
                 text=True,
             ).stdout.strip()
         
-        except (FileNotFoundError, subprocess.CalledProcessError):
+        except (
+            FileNotFoundError,
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+        ):
             pass
         else:
             description_re = r"[0-9.]+-([0-9]+)-(g[0-9a-f]{7,}(?:-dirty)?)"
@@ -56,8 +62,6 @@ if not released:
 
         
         try:
-            import importlib.metadata  
-
             return importlib.metadata.version("websockets")
         except ImportError:
             pass

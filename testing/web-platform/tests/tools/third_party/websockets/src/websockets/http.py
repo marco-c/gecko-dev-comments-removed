@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import typing
 
 from .imports import lazy_import
 from .version import version as websockets_version
@@ -9,18 +10,22 @@ from .version import version as websockets_version
 
 
 
-lazy_import(
-    globals(),
-    
-    aliases={
-        "Headers": ".datastructures",
-        "MultipleValuesError": ".datastructures",
-    },
-    deprecated_aliases={
-        "read_request": ".legacy.http",
-        "read_response": ".legacy.http",
-    },
-)
+
+if typing.TYPE_CHECKING:
+    from .datastructures import Headers, MultipleValuesError  
+else:
+    lazy_import(
+        globals(),
+        
+        aliases={
+            "Headers": ".datastructures",
+            "MultipleValuesError": ".datastructures",
+        },
+        deprecated_aliases={
+            "read_request": ".legacy.http",
+            "read_response": ".legacy.http",
+        },
+    )
 
 
 __all__ = ["USER_AGENT"]

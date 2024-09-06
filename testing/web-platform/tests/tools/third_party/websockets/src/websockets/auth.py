@@ -1,4 +1,6 @@
 from __future__ import annotations
 
 
-from .legacy.auth import *  
+
+from .legacy.auth import *
+from .legacy.auth import __all__  

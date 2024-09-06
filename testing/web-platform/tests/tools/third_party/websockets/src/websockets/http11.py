@@ -9,13 +9,11 @@ from . import datastructures, exceptions
 
 
 
-MAX_HEADERS = 256
+MAX_HEADERS = 128
 
 
 
-
-
-MAX_LINE = 4111
+MAX_LINE = 8192
 
 
 
@@ -70,7 +68,7 @@ class Request:
     def exception(self) -> Optional[Exception]:  
         warnings.warn(
             "Request.exception is deprecated; "
-            "use ServerConnection.handshake_exc instead",
+            "use ServerProtocol.handshake_exc instead",
             DeprecationWarning,
         )
         return self._exception
@@ -174,7 +172,7 @@ class Response:
     def exception(self) -> Optional[Exception]:  
         warnings.warn(
             "Response.exception is deprecated; "
-            "use ClientConnection.handshake_exc instead",
+            "use ClientProtocol.handshake_exc instead",
             DeprecationWarning,
         )
         return self._exception
