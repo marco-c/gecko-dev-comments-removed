@@ -90,6 +90,19 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     lineOrBytecode_ = trapData.bytecodeOffset;
     failedUnwindSignatureMismatch_ = trapData.failedUnwindSignatureMismatch;
 
+#ifdef ENABLE_WASM_TAIL_CALLS
+    
+    
+    
+    
+    
+    const CallSite* site = code_->lookupCallSite(unwoundPC);
+    if (site && site->kind() == CallSite::ReturnStub) {
+      MOZ_ASSERT(trapData.trap == Trap::IndirectCallBadSig);
+      resumePCinCurrentFrame_ = (uint8_t*)unwoundPC;
+    }
+#endif
+
     MOZ_ASSERT(!done());
     return;
   }
