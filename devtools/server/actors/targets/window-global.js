@@ -745,6 +745,12 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
     
     
+    if (!this.isDestroyed()) {
+      this.emitResources();
+    }
+
+    
+    
     
     if (this.threadActor) {
       this.threadActor._parentClosed = true;
