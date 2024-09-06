@@ -98,7 +98,7 @@ class AudioRingBuffer final {
 
 
 
-  bool SetLengthBytes(uint32_t aLengthBytes);
+  bool EnsureLengthBytes(uint32_t aLengthBytes);
 
   
 
