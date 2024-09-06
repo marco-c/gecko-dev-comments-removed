@@ -207,9 +207,9 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   bool IsTargetContextList(void);
   
   
-  void GetTargetDragData(GdkAtom aFlavor,
-                         const nsTArray<nsCString>& aDropFlavors,
-                         bool aResetTargetData = true);
+  void GetDragData(GdkAtom aRequestedFlavor,
+                   const nsTArray<nsCString>& aAvailableDragFlavors,
+                   bool aResetDragData = true);
   
   void TargetResetData(void);
   
