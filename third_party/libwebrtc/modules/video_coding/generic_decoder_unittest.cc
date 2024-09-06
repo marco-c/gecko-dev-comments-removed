@@ -118,7 +118,7 @@ TEST_F(GenericDecoderTest, FrameDroppedIfTooManyFramesInFlight) {
   ASSERT_EQ(10U, frames.size());
   
   
-  EXPECT_EQ(frames[0].timestamp(), 90000u);
+  EXPECT_EQ(frames[0].rtp_timestamp(), 90000u);
   EXPECT_EQ(1u, user_callback_.frames_dropped());
 }
 

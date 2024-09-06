@@ -111,6 +111,8 @@ class RTC_EXPORT VideoFrame {
         const absl::optional<Timestamp>& capture_time_identifier);
     Builder& set_reference_time(
         const absl::optional<Timestamp>& reference_time);
+    Builder& set_rtp_timestamp(uint32_t rtp_timestamp);
+    
     Builder& set_timestamp_rtp(uint32_t timestamp_rtp);
     Builder& set_ntp_time_ms(int64_t ntp_time_ms);
     Builder& set_rotation(VideoRotation rotation);
@@ -188,8 +190,14 @@ class RTC_EXPORT VideoFrame {
   }
 
   
+  void set_rtp_timestamp(uint32_t rtp_timestamp) {
+    timestamp_rtp_ = rtp_timestamp;
+  }
+  
   void set_timestamp(uint32_t timestamp) { timestamp_rtp_ = timestamp; }
 
+  
+  uint32_t rtp_timestamp() const { return timestamp_rtp_; }
   
   uint32_t timestamp() const { return timestamp_rtp_; }
 

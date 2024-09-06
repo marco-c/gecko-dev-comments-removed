@@ -81,7 +81,7 @@ EncodedImage FakeEncode(const VideoFrame& frame) {
   packet_infos.push_back(RtpPacketInfo(
       1,
       {},
-      frame.timestamp(),
+      frame.rtp_timestamp(),
       Timestamp::Micros(frame.timestamp_us() + 10000)));
   image.SetPacketInfos(RtpPacketInfos(packet_infos));
   return image;

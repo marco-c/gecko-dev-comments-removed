@@ -534,7 +534,7 @@ int SimulcastEncoderAdapter::Encode(
 
     
     const Timestamp frame_timestamp =
-        Timestamp::Micros((1000 * input_image.timestamp()) / 90);
+        Timestamp::Micros((1000 * input_image.rtp_timestamp()) / 90);
 
     
     
