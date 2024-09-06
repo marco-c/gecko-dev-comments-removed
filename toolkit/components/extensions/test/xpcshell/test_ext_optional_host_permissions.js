@@ -6,13 +6,6 @@ async function runTest({
   expectOptionalOrigins = [],
   expectWarning = false,
 }) {
-  
-  if (Services.env.get("CONDPROF_RUNNER") && new Date().toJSON() < "2024-06") {
-    
-    
-    return;
-  }
-
   ExtensionTestUtils.failOnSchemaWarnings(!expectWarning);
 
   const extension = ExtensionTestUtils.loadExtension({
