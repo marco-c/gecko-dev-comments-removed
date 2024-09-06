@@ -796,7 +796,17 @@
           return true;
         }
         
-        if (!this.textbox.value) {
+        
+        if (
+          !this.textbox.value &&
+          !(
+            this.textbox.selectedButton?.getAttribute("id") ==
+              "searchbar-anon-search-settings" ||
+            this.textbox.selectedButton?.classList.contains(
+              "searchbar-engine-one-off-add-engine"
+            )
+          )
+        ) {
           return true;
         }
         
