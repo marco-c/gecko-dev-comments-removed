@@ -3,7 +3,6 @@
 
 
 use crate::interfaces::nsISupports;
-use libc;
 use nserror::{nsresult, NS_OK};
 use std::cell::Cell;
 use std::convert::TryInto;
