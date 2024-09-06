@@ -80,9 +80,7 @@ class FakeAPIManager extends ExtensionCommon.SchemaAPIManager {
     });
   }
 
-  async loadAllModules(reverseOrder = false) {
-    await this.lazyInit();
-
+  getAllApiModuleNames(reverseOrder = false) {
     let apiModuleNames = Array.from(this.modules.keys())
       .filter(moduleName => {
         let moduleDesc = this.modules.get(moduleName);
@@ -91,6 +89,13 @@ class FakeAPIManager extends ExtensionCommon.SchemaAPIManager {
       .sort();
 
     apiModuleNames = reverseOrder ? apiModuleNames.reverse() : apiModuleNames;
+    return apiModuleNames;
+  }
+
+  async loadAllModules(reverseOrder = false) {
+    await this.lazyInit();
+
+    let apiModuleNames = this.getAllApiModuleNames(reverseOrder);
 
     for (let apiModule of apiModuleNames) {
       info(
@@ -137,6 +142,46 @@ async function test_loading_api_modules(createAPIManager) {
   fakeAPIManager = createAPIManager();
   await fakeAPIManager.loadAllModules(true);
 }
+
+add_task(async function test_loading_main_process_sync_load_module() {
+  let fakeAPIManager = new FakeAPIManager();
+  await fakeAPIManager.lazyInit();
+
+  let names = fakeAPIManager.getAllApiModuleNames();
+
+  
+  
+  
+  let promisesBefore = names.map(name => fakeAPIManager.asyncLoadModule(name));
+  let syncResults = names.map(name => fakeAPIManager.loadModule(name));
+  let promisesAfter = names.map(name => fakeAPIManager.asyncLoadModule(name));
+
+  
+  
+  for (let [i, name] of names.entries()) {
+    let asyncResultBefore = await promisesBefore[i];
+    let syncResult = syncResults[i];
+    let asyncResultAfter = await promisesAfter[i];
+    
+    
+    
+    if (asyncResultBefore !== syncResult || syncResult !== asyncResultAfter) {
+      info(`asyncResultBefore: ${uneval(asyncResultBefore)}`);
+      info(`syncResult: ${uneval(syncResult)}`);
+      info(`asyncResultAfter: ${uneval(asyncResultAfter)}`);
+    }
+    
+    ok(
+      asyncResultBefore === syncResult,
+      `loadModule() after asyncLoadModule() should return the same for: ${name}`
+    );
+    
+    ok(
+      syncResult === asyncResultAfter,
+      `asyncLoadModule() after loadModule() should return the same for: ${name}`
+    );
+  }
+});
 
 add_task(function test_loading_main_process_api_modules() {
   return test_loading_api_modules(() => {
