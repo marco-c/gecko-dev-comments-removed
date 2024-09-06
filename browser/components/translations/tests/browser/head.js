@@ -320,6 +320,10 @@ class SharedTranslationsTestUtils {
 
 
   static _assertSelectedLanguage(menuList, { langTag, l10nId }) {
+    ok(
+      menuList.label,
+      `The label for the menulist ${menuList.id} should not be empty.`
+    );
     if (langTag) {
       is(
         menuList.value,
