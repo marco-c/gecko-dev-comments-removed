@@ -38,9 +38,6 @@ namespace test {
 class FakeEncoder : public VideoEncoder {
  public:
   explicit FakeEncoder(const Environment& env_);
-  
-  
-  explicit FakeEncoder(Clock* clock);
   virtual ~FakeEncoder() = default;
 
   
@@ -86,8 +83,6 @@ class FakeEncoder : public VideoEncoder {
     std::vector<SpatialLayer> layers;
   };
 
-  FakeEncoder(absl::optional<Environment> env, Clock* clock);
-
   FrameInfo NextFrame(const std::vector<VideoFrameType>* frame_types,
                       bool keyframe,
                       uint8_t num_simulcast_streams,
@@ -105,11 +100,8 @@ class FakeEncoder : public VideoEncoder {
   void SetRatesLocked(const RateControlParameters& parameters)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  
-  
-  const absl::optional<Environment> env_;
+  const Environment env_;
   FrameInfo last_frame_info_ RTC_GUARDED_BY(mutex_);
-  Clock* const clock_;
 
   VideoCodec config_ RTC_GUARDED_BY(mutex_);
   int num_initializations_ RTC_GUARDED_BY(mutex_);
@@ -131,7 +123,6 @@ class FakeEncoder : public VideoEncoder {
 class FakeH264Encoder : public FakeEncoder {
  public:
   explicit FakeH264Encoder(const Environment& env);
-  [[deprecated]] explicit FakeH264Encoder(Clock* clock);
   virtual ~FakeH264Encoder() = default;
 
  private:
