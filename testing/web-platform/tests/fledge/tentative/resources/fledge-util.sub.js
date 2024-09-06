@@ -298,7 +298,7 @@ async function joinNegativeInterestGroup(
     name: name,
     additionalBidKey: additionalBidKey
   };
-  if (owner != window.location.origin) {
+  if (owner !== window.location.origin) {
     let iframe = await createIframe(test, owner, 'join-ad-interest-group');
     await runInFrame(
       test, iframe,
@@ -557,7 +557,7 @@ async function runInFrame(test, child_window, script, param) {
 
   let promise = new Promise(function(resolve, reject) {
     function WaitForMessage(event) {
-      if (event.data.messageUuid != messageUuid)
+      if (event.data.messageUuid !== messageUuid)
         return;
       receivedResponse = event.data;
       if (event.data.result === 'success') {
@@ -589,7 +589,7 @@ async function createFrame(test, origin, is_iframe = true, permissions = null) {
       `${origin}${RESOURCE_PATH}subordinate-frame.sub.html?uuid=${frameUuid}`;
   let promise = new Promise(function(resolve, reject) {
     function WaitForMessage(event) {
-      if (event.data.messageUuid != frameUuid)
+      if (event.data.messageUuid !== frameUuid)
         return;
       if (event.data.result === 'load complete') {
         resolve();
@@ -703,35 +703,35 @@ function directFromSellerSignalsValidatorCode(uuid, expectedSellerSignals,
   return {
     
     scoreAd:
-      `if (directFromSellerSignals === null ||
+      `if (directFromSellerSignals == null ||
            directFromSellerSignals.sellerSignals !== ${expectedSellerSignals} ||
            directFromSellerSignals.auctionSignals !== ${expectedAuctionSignals} ||
-           Object.keys(directFromSellerSignals).length != 2) {
+           Object.keys(directFromSellerSignals).length !== 2) {
               throw 'Failed to get expected directFromSellerSignals in scoreAd(): ' +
                 JSON.stringify(directFromSellerSignals);
           }`,
     reportResultSuccessCondition:
-      `directFromSellerSignals !== null &&
+      `directFromSellerSignals != null &&
            directFromSellerSignals.sellerSignals === ${expectedSellerSignals} &&
            directFromSellerSignals.auctionSignals === ${expectedAuctionSignals} &&
-           Object.keys(directFromSellerSignals).length == 2`,
+           Object.keys(directFromSellerSignals).length === 2`,
     reportResult:
       `sendReportTo("${createSellerReportURL(uuid)}");`,
 
     
     generateBid:
-      `if (directFromSellerSignals === null ||
+      `if (directFromSellerSignals == null ||
            directFromSellerSignals.perBuyerSignals !== ${expectedPerBuyerSignals} ||
            directFromSellerSignals.auctionSignals !== ${expectedAuctionSignals} ||
-           Object.keys(directFromSellerSignals).length != 2) {
+           Object.keys(directFromSellerSignals).length !== 2) {
               throw 'Failed to get expected directFromSellerSignals in generateBid(): ' +
                 JSON.stringify(directFromSellerSignals);
         }`,
     reportWinSuccessCondition:
-      `directFromSellerSignals !== null &&
+      `directFromSellerSignals != null &&
            directFromSellerSignals.perBuyerSignals === ${expectedPerBuyerSignals} &&
            directFromSellerSignals.auctionSignals === ${expectedAuctionSignals} &&
-           Object.keys(directFromSellerSignals).length == 2`,
+           Object.keys(directFromSellerSignals).length === 2`,
     reportWin:
       `sendReportTo("${createBidderReportURL(uuid)}");`,
   };
