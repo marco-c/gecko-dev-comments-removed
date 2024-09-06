@@ -4122,39 +4122,39 @@ static JSFunction* WasmFunctionCreate(JSContext* cx, HandleObject func,
     return nullptr;
   }
 
-  ModuleEnvironment moduleEnv(compileArgs->features);
+  ModuleMetadata moduleMeta(compileArgs->features);
   CompilerEnvironment compilerEnv(CompileMode::Once, Tier::Optimized,
                                   DebugEnabled::False);
   compilerEnv.computeParameters();
 
-  if (!moduleEnv.init()) {
+  if (!moduleMeta.init()) {
     return nullptr;
   }
 
   FuncType funcType = FuncType(std::move(params), std::move(results));
-  if (!moduleEnv.types->addType(std::move(funcType))) {
+  if (!moduleMeta.types->addType(std::move(funcType))) {
     return nullptr;
   }
 
   
-  FuncDesc funcDesc = FuncDesc(&(*moduleEnv.types)[0].funcType(), 0);
-  if (!moduleEnv.funcs.append(funcDesc)) {
+  FuncDesc funcDesc = FuncDesc(&(*moduleMeta.types)[0].funcType(), 0);
+  if (!moduleMeta.funcs.append(funcDesc)) {
     return nullptr;
   }
-  moduleEnv.numFuncImports = 1;
+  moduleMeta.numFuncImports = 1;
 
   
-  moduleEnv.declareFuncExported(0,  true,  true);
+  moduleMeta.declareFuncExported(0,  true,  true);
 
   
   
   CacheableName fieldName;
-  if (!moduleEnv.exports.emplaceBack(std::move(fieldName), 0,
-                                     DefinitionKind::Function)) {
+  if (!moduleMeta.exports.emplaceBack(std::move(fieldName), 0,
+                                      DefinitionKind::Function)) {
     return nullptr;
   }
 
-  ModuleGenerator mg(*compileArgs, &moduleEnv, &compilerEnv, nullptr, nullptr,
+  ModuleGenerator mg(*compileArgs, &moduleMeta, &compilerEnv, nullptr, nullptr,
                      nullptr);
   if (!mg.init(nullptr)) {
     return nullptr;

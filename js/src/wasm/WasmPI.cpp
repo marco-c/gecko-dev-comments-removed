@@ -646,11 +646,11 @@ class SuspendingFunctionModuleFactory {
   
   
   
-  bool encodeExportedFunction(ModuleEnvironment& moduleEnv, uint32_t paramsSize,
+  bool encodeExportedFunction(ModuleMetadata& moduleMeta, uint32_t paramsSize,
                               uint32_t resultSize, uint32_t paramsOffset,
                               uint32_t suspenderIndex, bool checkSuspender,
                               RefType resultType, Bytes& bytecode) {
-    Encoder encoder(bytecode, *moduleEnv.types);
+    Encoder encoder(bytecode, *moduleMeta.types);
     ValTypeVector locals;
     if (!checkSuspender && !locals.emplaceBack(RefType::extern_())) {
       return false;
@@ -748,9 +748,9 @@ class SuspendingFunctionModuleFactory {
   
   
   
-  bool encodeTrampolineFunction(ModuleEnvironment& moduleEnv,
-                                uint32_t paramsSize, Bytes& bytecode) {
-    Encoder encoder(bytecode, *moduleEnv.types);
+  bool encodeTrampolineFunction(ModuleMetadata& moduleMeta, uint32_t paramsSize,
+                                Bytes& bytecode) {
+    Encoder encoder(bytecode, *moduleMeta.types);
     if (!EncodeLocalEntries(encoder, ValTypeVector())) {
       return false;
     }
@@ -797,10 +797,10 @@ class SuspendingFunctionModuleFactory {
   
   
   
-  bool encodeContinueOnSuspendableFunction(ModuleEnvironment& moduleEnv,
+  bool encodeContinueOnSuspendableFunction(ModuleMetadata& moduleMeta,
                                            uint32_t resultsSize,
                                            Bytes& bytecode) {
-    Encoder encoder(bytecode, *moduleEnv.types);
+    Encoder encoder(bytecode, *moduleMeta.types);
     if (!EncodeLocalEntries(encoder, ValTypeVector())) {
       return false;
     }
@@ -844,13 +844,13 @@ class SuspendingFunctionModuleFactory {
       return nullptr;
     }
 
-    ModuleEnvironment moduleEnv(compileArgs->features);
+    ModuleMetadata moduleMeta(compileArgs->features);
     MOZ_ASSERT(IonAvailable(cx));
     CompilerEnvironment compilerEnv(CompileMode::Once, Tier::Optimized,
                                     DebugEnabled::False);
     compilerEnv.computeParameters();
 
-    if (!moduleEnv.init()) {
+    if (!moduleMeta.init()) {
       return nullptr;
     }
 
@@ -905,8 +905,8 @@ class SuspendingFunctionModuleFactory {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.types->length() == ParamsTypeIndex);
-    if (!moduleEnv.types->addType(std::move(boxedParamsStruct))) {
+    MOZ_ASSERT(moduleMeta.types->length() == ParamsTypeIndex);
+    if (!moduleMeta.types->addType(std::move(boxedParamsStruct))) {
       return nullptr;
     }
 
@@ -915,14 +915,14 @@ class SuspendingFunctionModuleFactory {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.types->length() == ResultsTypeIndex);
-    if (!moduleEnv.types->addType(std::move(boxedResultType))) {
+    MOZ_ASSERT(moduleMeta.types->length() == ResultsTypeIndex);
+    if (!moduleMeta.types->addType(std::move(boxedResultType))) {
       return nullptr;
     }
 
-    MOZ_ASSERT(moduleEnv.funcs.length() == WrappedFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(paramsWithoutSuspender),
-                                  std::move(resultsRef))) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == WrappedFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(paramsWithoutSuspender),
+                                   std::move(resultsRef))) {
       return nullptr;
     }
 
@@ -933,35 +933,35 @@ class SuspendingFunctionModuleFactory {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.funcs.length() == GetSuspendingResultsFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(paramsGetSuspendingResults),
-                                  std::move(resultsGetSuspendingResults))) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == GetSuspendingResultsFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(paramsGetSuspendingResults),
+                                   std::move(resultsGetSuspendingResults))) {
       return nullptr;
     }
 
     
-    moduleEnv.numFuncImports = moduleEnv.funcs.length();
+    moduleMeta.numFuncImports = moduleMeta.funcs.length();
 
     
     
-    MOZ_ASSERT(moduleEnv.funcs.length() == ExportedFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(params), std::move(results),
-                                   true,
-                                  mozilla::Some(CacheableName()))) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == ExportedFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(params), std::move(results),
+                                    true,
+                                   mozilla::Some(CacheableName()))) {
       return nullptr;
     }
 
     ValTypeVector paramsTrampoline, resultsTrampoline;
     if (!paramsTrampoline.emplaceBack(suspenderType) ||
         !paramsTrampoline.emplaceBack(RefType::fromTypeDef(
-            &(*moduleEnv.types)[ParamsTypeIndex], false))) {
+            &(*moduleMeta.types)[ParamsTypeIndex], false))) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.funcs.length() == TrampolineFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(paramsTrampoline),
-                                  std::move(resultsTrampoline),
-                                   true)) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == TrampolineFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(paramsTrampoline),
+                                   std::move(resultsTrampoline),
+                                    true)) {
       return nullptr;
     }
 
@@ -971,24 +971,24 @@ class SuspendingFunctionModuleFactory {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.funcs.length() == ContinueOnSuspendableFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(paramsContinueOnSuspendable),
-                                  std::move(resultsContinueOnSuspendable),
-                                   true)) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == ContinueOnSuspendableFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(paramsContinueOnSuspendable),
+                                   std::move(resultsContinueOnSuspendable),
+                                    true)) {
       return nullptr;
     }
 
-    ModuleGenerator mg(*compileArgs, &moduleEnv, &compilerEnv, nullptr, nullptr,
-                       nullptr);
+    ModuleGenerator mg(*compileArgs, &moduleMeta, &compilerEnv, nullptr,
+                       nullptr, nullptr);
     if (!mg.init(nullptr)) {
       return nullptr;
     }
     
     Bytes bytecode;
     if (!encodeExportedFunction(
-            moduleEnv, paramsSize, resultsSize, paramsOffset, suspenderIndex,
+            moduleMeta, paramsSize, resultsSize, paramsOffset, suspenderIndex,
             checkSuspender,
-            RefType::fromTypeDef(&(*moduleEnv.types)[ResultsTypeIndex], false),
+            RefType::fromTypeDef(&(*moduleMeta.types)[ResultsTypeIndex], false),
             bytecode)) {
       ReportOutOfMemory(cx);
       return nullptr;
@@ -998,7 +998,7 @@ class SuspendingFunctionModuleFactory {
       return nullptr;
     }
     Bytes bytecode2;
-    if (!encodeTrampolineFunction(moduleEnv, paramsSize, bytecode2)) {
+    if (!encodeTrampolineFunction(moduleMeta, paramsSize, bytecode2)) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -1007,7 +1007,7 @@ class SuspendingFunctionModuleFactory {
       return nullptr;
     }
     Bytes bytecode3;
-    if (!encodeContinueOnSuspendableFunction(moduleEnv, paramsSize,
+    if (!encodeContinueOnSuspendableFunction(moduleMeta, paramsSize,
                                              bytecode3)) {
       ReportOutOfMemory(cx);
       return nullptr;
@@ -1257,9 +1257,9 @@ class PromisingFunctionModuleFactory {
   
   
   
-  bool encodeExportedFunction(ModuleEnvironment& moduleEnv, uint32_t paramsSize,
+  bool encodeExportedFunction(ModuleMetadata& moduleMeta, uint32_t paramsSize,
                               Bytes& bytecode) {
-    Encoder encoder(bytecode, *moduleEnv.types);
+    Encoder encoder(bytecode, *moduleMeta.types);
     ValTypeVector locals;
     if (!locals.emplaceBack(RefType::extern_())) {
       return false;
@@ -1313,11 +1313,10 @@ class PromisingFunctionModuleFactory {
   
   
   
-  bool encodeTrampolineFunction(ModuleEnvironment& moduleEnv,
-                                uint32_t paramsSize,
+  bool encodeTrampolineFunction(ModuleMetadata& moduleMeta, uint32_t paramsSize,
                                 SuspenderArgPosition argPosition,
                                 Bytes& bytecode) {
-    Encoder encoder(bytecode, *moduleEnv.types);
+    Encoder encoder(bytecode, *moduleMeta.types);
     if (!EncodeLocalEntries(encoder, ValTypeVector())) {
       return false;
     }
@@ -1390,13 +1389,13 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
 
-    ModuleEnvironment moduleEnv(compileArgs->features);
+    ModuleMetadata moduleMeta(compileArgs->features);
     MOZ_ASSERT(IonAvailable(cx));
     CompilerEnvironment compilerEnv(CompileMode::Once, Tier::Optimized,
                                     DebugEnabled::False);
     compilerEnv.computeParameters();
 
-    if (!moduleEnv.init()) {
+    if (!moduleMeta.init()) {
       return nullptr;
     }
 
@@ -1405,8 +1404,8 @@ class PromisingFunctionModuleFactory {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.types->length() == ParamsTypeIndex);
-    if (!moduleEnv.types->addType(std::move(boxedParamsStruct))) {
+    MOZ_ASSERT(moduleMeta.types->length() == ParamsTypeIndex);
+    if (!moduleMeta.types->addType(std::move(boxedParamsStruct))) {
       return nullptr;
     }
 
@@ -1415,8 +1414,8 @@ class PromisingFunctionModuleFactory {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.types->length() == ResultsTypeIndex);
-    if (!moduleEnv.types->addType(std::move(boxedResultType))) {
+    MOZ_ASSERT(moduleMeta.types->length() == ResultsTypeIndex);
+    if (!moduleMeta.types->addType(std::move(boxedResultType))) {
       return nullptr;
     }
 
@@ -1427,9 +1426,9 @@ class PromisingFunctionModuleFactory {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.funcs.length() == WrappedFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(paramsForWrapper),
-                                  std::move(resultsForWrapper))) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == WrappedFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(paramsForWrapper),
+                                   std::move(resultsForWrapper))) {
       return nullptr;
     }
 
@@ -1439,46 +1438,46 @@ class PromisingFunctionModuleFactory {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.funcs.length() == CreateSuspenderFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(paramsCreateSuspender),
-                                  std::move(resultsCreateSuspender))) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == CreateSuspenderFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(paramsCreateSuspender),
+                                   std::move(resultsCreateSuspender))) {
       return nullptr;
     }
 
     
-    moduleEnv.numFuncImports = moduleEnv.funcs.length();
+    moduleMeta.numFuncImports = moduleMeta.funcs.length();
 
     
     
-    MOZ_ASSERT(moduleEnv.funcs.length() == ExportedFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(params), std::move(results),
-                                   true,
-                                  mozilla::Some(CacheableName()))) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == ExportedFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(params), std::move(results),
+                                    true,
+                                   mozilla::Some(CacheableName()))) {
       return nullptr;
     }
 
     ValTypeVector paramsTrampoline, resultsTrampoline;
     if (!paramsTrampoline.emplaceBack(suspenderType) ||
         !paramsTrampoline.emplaceBack(RefType::fromTypeDef(
-            &(*moduleEnv.types)[ParamsTypeIndex], false))) {
+            &(*moduleMeta.types)[ParamsTypeIndex], false))) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(moduleEnv.funcs.length() == TrampolineFnIndex);
-    if (!moduleEnv.addDefinedFunc(std::move(paramsTrampoline),
-                                  std::move(resultsTrampoline),
-                                   true)) {
+    MOZ_ASSERT(moduleMeta.funcs.length() == TrampolineFnIndex);
+    if (!moduleMeta.addDefinedFunc(std::move(paramsTrampoline),
+                                   std::move(resultsTrampoline),
+                                    true)) {
       return nullptr;
     }
 
-    ModuleGenerator mg(*compileArgs, &moduleEnv, &compilerEnv, nullptr, nullptr,
-                       nullptr);
+    ModuleGenerator mg(*compileArgs, &moduleMeta, &compilerEnv, nullptr,
+                       nullptr, nullptr);
     if (!mg.init(nullptr)) {
       return nullptr;
     }
     
     Bytes bytecode;
-    if (!encodeExportedFunction(moduleEnv, paramsSize, bytecode)) {
+    if (!encodeExportedFunction(moduleMeta, paramsSize, bytecode)) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -1487,7 +1486,7 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
     Bytes bytecode2;
-    if (!encodeTrampolineFunction(moduleEnv, paramsSize, argPosition,
+    if (!encodeTrampolineFunction(moduleMeta, paramsSize, argPosition,
                                   bytecode2)) {
       ReportOutOfMemory(cx);
       return nullptr;
