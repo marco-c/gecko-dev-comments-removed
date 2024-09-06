@@ -1235,6 +1235,13 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       CASES_FOR_statfs:
         return Trap(StatFsTrap, nullptr);
 
+        
+        
+        
+        
+      case __NR_getcwd:
+        return Error(ENOENT);
+
       default:
         return SandboxPolicyBase::EvaluateSyscall(sysno);
     }
@@ -1381,11 +1388,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 #ifdef DESKTOP
       case __NR_getppid:
         return Trap(GetPPidTrap, nullptr);
-
-        
-        
-      case __NR_getcwd:
-        return Error(ENOENT);
 
 #  ifdef MOZ_PULSEAUDIO
       CASES_FOR_fchown:

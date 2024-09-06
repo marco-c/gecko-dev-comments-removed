@@ -713,6 +713,13 @@ void RunTestsRDD(SandboxTestingChild* child) {
 
   
   
+  child->ErrnoValueTest("getcwd"_ns, ENOENT, [] {
+    char buf[4096];
+    return (getcwd(buf, sizeof(buf)) == nullptr) ? -1 : 0;
+  });
+
+  
+  
   child->ErrnoValueTest("ioctl_nvidia"_ns, ENOTTY,
                         [] { return ioctl(0, 0x46c8, nullptr); });
 
