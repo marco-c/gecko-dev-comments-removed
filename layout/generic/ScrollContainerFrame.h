@@ -190,12 +190,6 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
-  bool IsForTextControlWithNoScrollbars() const;
-
-  
-
-
-
   bool HasAllNeededScrollbars() const {
     return GetCurrentAnonymousContent().contains(GetNeededAnonymousContent());
   }

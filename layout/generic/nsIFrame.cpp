@@ -10762,7 +10762,7 @@ void nsIFrame::GetLastLeaf(nsIFrame** aFrame) {
 void nsIFrame::GetFirstLeaf(nsIFrame** aFrame) {
   if (!aFrame || !*aFrame) return;
   nsIFrame* child = *aFrame;
-  while (1) {
+  while (true) {
     child = child->PrincipalChildList().FirstChild();
     if (!child) return;  
     *aFrame = child;
@@ -10798,17 +10798,11 @@ bool nsIFrame::IsFocusableDueToScrollFrame() {
   
   
   
-  ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(this);
-  if (!scrollContainerFrame) {
+  auto* scrollContainer = static_cast<ScrollContainerFrame*>(this);
+  if (scrollContainer->GetScrollStyles().IsHiddenInBothDirections()) {
     return false;
   }
-  if (scrollContainerFrame->IsForTextControlWithNoScrollbars()) {
-    return false;
-  }
-  if (scrollContainerFrame->GetScrollStyles().IsHiddenInBothDirections()) {
-    return false;
-  }
-  if (scrollContainerFrame->GetScrollRange().IsEqualEdges(nsRect(0, 0, 0, 0))) {
+  if (scrollContainer->GetScrollRange().IsEqualEdges(nsRect())) {
     return false;
   }
   return true;

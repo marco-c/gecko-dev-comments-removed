@@ -1786,26 +1786,12 @@ bool ScrollContainerFrame::WantAsyncScroll() const {
       GetScrolledFrame()->PresContext()->AppUnitsPerDevPixel();
   nsRect scrollRange = GetLayoutScrollRange();
 
-  bool isVScrollable = (scrollRange.height >= oneDevPixel) &&
-                       (styles.mVertical != StyleOverflow::Hidden);
-  bool isHScrollable = (scrollRange.width >= oneDevPixel) &&
-                       (styles.mHorizontal != StyleOverflow::Hidden);
+  bool isVScrollable = scrollRange.height >= oneDevPixel &&
+                       styles.mVertical != StyleOverflow::Hidden;
+  bool isHScrollable = scrollRange.width >= oneDevPixel &&
+                       styles.mHorizontal != StyleOverflow::Hidden;
 
-#if defined(MOZ_WIDGET_ANDROID)
-  
-  bool canScrollWithoutScrollbars =
-      !IsForTextControlWithNoScrollbars() || IsFocused(GetContent());
-#else
-  bool canScrollWithoutScrollbars = true;
-#endif
-
-  
-  
-  bool isVAsyncScrollable =
-      isVScrollable && (mVScrollbarBox || canScrollWithoutScrollbars);
-  bool isHAsyncScrollable =
-      isHScrollable && (mHScrollbarBox || canScrollWithoutScrollbars);
-  if (isVAsyncScrollable || isHAsyncScrollable) {
+  if (isHScrollable || isVScrollable) {
     return true;
   }
 
@@ -5535,19 +5521,6 @@ already_AddRefed<Element> ScrollContainerFrame::MakeScrollbar(
   return e.forget();
 }
 
-bool ScrollContainerFrame::IsForTextControlWithNoScrollbars() const {
-  
-  
-  
-  
-  auto* content = GetContent();
-  if (!content) {
-    return false;
-  }
-  auto* input = content->GetClosestNativeAnonymousSubtreeRootParentOrHost();
-  return input && input->IsHTMLElement(nsGkAtoms::input);
-}
-
 auto ScrollContainerFrame::GetCurrentAnonymousContent() const
     -> EnumSet<AnonymousContentType> {
   EnumSet<AnonymousContentType> result;
@@ -5574,10 +5547,6 @@ auto ScrollContainerFrame::GetNeededAnonymousContent() const
   
   if (pc->Document()->IsBeingUsedAsImage() ||
       (!pc->IsDynamic() && !(mIsRoot && pc->HasPaginatedScrolling()))) {
-    return {};
-  }
-
-  if (IsForTextControlWithNoScrollbars()) {
     return {};
   }
 
