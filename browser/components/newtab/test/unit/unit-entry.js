@@ -119,23 +119,6 @@ const TEST_GLOBAL = {
     },
     platform: "win",
   },
-  ASRouterPreferences: {
-    console: new FakeConsoleAPI({
-      maxLogLevel: "off", 
-      prefix: "ASRouter",
-    }),
-  },
-  AWScreenUtils: {
-    evaluateTargetingAndRemoveScreens() {
-      return true;
-    },
-    async removeScreens() {
-      return true;
-    },
-    evaluateScreenTargeting() {
-      return true;
-    },
-  },
   BrowserUtils: {
     sendToDeviceEmailsSupported() {
       return true;
