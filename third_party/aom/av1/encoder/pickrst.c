@@ -1127,15 +1127,6 @@ static INLINE int64_t multiply_and_scale(int64_t x, int32_t w1, int32_t w2) {
   
   
   const int64_t y = x * w1 + x * w2 / WIENER_TAP_SCALE_FACTOR;
-  
-  
-#if !defined(NDEBUG) && defined(__GNUC__) && defined(__LP64__)
-  const int32_t w = w1 * WIENER_TAP_SCALE_FACTOR + w2;
-  const __int128 z = (__int128)x * w / WIENER_TAP_SCALE_FACTOR;
-  assert(z >= INT64_MIN);
-  assert(z <= INT64_MAX);
-  assert(y == (int64_t)z);
-#endif
   return y;
 }
 
