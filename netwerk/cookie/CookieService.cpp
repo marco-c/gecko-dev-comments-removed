@@ -72,10 +72,24 @@ void MigrateCookieLifetimePrefs() {
     mozilla::Preferences::SetBool("privacy.clearOnShutdown.sessions", false);
     mozilla::Preferences::SetBool("privacy.clearOnShutdown.siteSettings",
                                   false);
+
+    
+    
+    
+    
+    mozilla::Preferences::SetBool(
+        "privacy.clearOnShutdown_v2.historyFormDataAndDownloads", false);
+    mozilla::Preferences::SetBool("privacy.clearOnShutdown_v2.siteSettings",
+                                  false);
   }
   mozilla::Preferences::SetBool("privacy.clearOnShutdown.cookies", true);
   mozilla::Preferences::SetBool("privacy.clearOnShutdown.cache", true);
   mozilla::Preferences::SetBool("privacy.clearOnShutdown.offlineApps", true);
+
+  
+  mozilla::Preferences::SetBool("privacy.clearOnShutdown_v2.cookiesAndStorage",
+                                true);
+  mozilla::Preferences::SetBool("privacy.clearOnShutdown_v2.cache", true);
   mozilla::Preferences::ClearUser("network.cookie.lifetimePolicy");
 }
 
