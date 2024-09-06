@@ -304,12 +304,6 @@ function TimeZoneOffsetString(offsetString) {
   
   
   
-  
-  
-  
-  
-  
-  
 
   
   if (offsetString.length < 3 || offsetString.length > 6) {
@@ -317,39 +311,18 @@ function TimeZoneOffsetString(offsetString) {
   }
 
   
-  
-  
-  
-  
-  
-  
-
-  #define PLUS_SIGN 0x2b
-  #define HYPHEN_MINUS 0x2d
-  #define MINUS 0x2212
-  #define COLON 0x3a
-  #define DIGIT_ZERO 0x30
-  #define DIGIT_TWO 0x32
-  #define DIGIT_THREE 0x33
-  #define DIGIT_FIVE 0x35
-  #define DIGIT_NINE 0x39
-
-  
-  
-
-  
-  var sign = callFunction(std_String_charCodeAt, offsetString, 0);
-  if (sign !== PLUS_SIGN && sign !== HYPHEN_MINUS && sign !== MINUS) {
+  var sign = offsetString[0];
+  if (sign !== "+" && sign !== "-") {
     return null;
   }
 
   
-  var hourTens = callFunction(std_String_charCodeAt, offsetString, 1);
-  var hourOnes = callFunction(std_String_charCodeAt, offsetString, 2);
+  var hourTens = offsetString[1];
+  var hourOnes = offsetString[2];
 
   
-  var minutesTens = DIGIT_ZERO;
-  var minutesOnes = DIGIT_ZERO;
+  var minutesTens = "0";
+  var minutesOnes = "0";
   if (offsetString.length > 3) {
     
     var separatorLength = offsetString[3] === ":" ? 1 : 0;
@@ -359,65 +332,38 @@ function TimeZoneOffsetString(offsetString) {
       return null;
     }
 
-    minutesTens = callFunction(
-      std_String_charCodeAt,
-      offsetString,
-      3 + separatorLength,
-    );
-    minutesOnes = callFunction(
-      std_String_charCodeAt,
-      offsetString,
-      4 + separatorLength,
-    );
+    minutesTens = offsetString[3 + separatorLength];
+    minutesOnes = offsetString[4 + separatorLength];
   }
 
   
   
   
   if (
-    hourTens < DIGIT_ZERO ||
-    hourOnes < DIGIT_ZERO ||
-    minutesTens < DIGIT_ZERO ||
-    minutesOnes < DIGIT_ZERO ||
-    hourTens > DIGIT_TWO ||
-    hourOnes > DIGIT_NINE ||
-    minutesTens > DIGIT_FIVE ||
-    minutesOnes > DIGIT_NINE ||
-    (hourTens === DIGIT_TWO && hourOnes > DIGIT_THREE)
+    hourTens < "0" ||
+    hourOnes < "0" ||
+    minutesTens < "0" ||
+    minutesOnes < "0" ||
+    hourTens > "2" ||
+    hourOnes > "9" ||
+    minutesTens > "5" ||
+    minutesOnes > "9" ||
+    (hourTens === "2" && hourOnes > "3")
   ) {
     return null;
   }
 
   
   if (
-    hourTens === DIGIT_ZERO &&
-    hourOnes === DIGIT_ZERO &&
-    minutesTens === DIGIT_ZERO &&
-    minutesOnes === DIGIT_ZERO
+    hourTens === "0" &&
+    hourOnes === "0" &&
+    minutesTens === "0" &&
+    minutesOnes === "0"
   ) {
-    sign = PLUS_SIGN;
-  } else if (sign === MINUS) {
-    sign = HYPHEN_MINUS;
+    sign = "+";
   }
 
-  return std_String_fromCharCode(
-    sign,
-    hourTens,
-    hourOnes,
-    COLON,
-    minutesTens,
-    minutesOnes,
-  );
-
-  #undef PLUS_SIGN
-  #undef HYPHEN_MINUS
-  #undef MINUS
-  #undef COLON
-  #undef DIGIT_ZERO
-  #undef DIGIT_TWO
-  #undef DIGIT_THREE
-  #undef DIGIT_FIVE
-  #undef DIGIT_NINE
+  return sign + hourTens + hourOnes + ":" + minutesTens + minutesOnes;
 }
 
 
