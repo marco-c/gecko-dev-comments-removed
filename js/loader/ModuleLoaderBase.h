@@ -347,10 +347,6 @@ class ModuleLoaderBase : public nsISupports {
 
   
   
-  bool RemoveFetchedModule(nsIURI* aURL);
-
-  
-  
   
   
   
