@@ -19,6 +19,11 @@ struct ParamTraits;
 
 }  
 
+namespace JS {
+class ArrayBufferOrView;
+class AutoCheckCannotGC;
+}  
+
 namespace mozilla::dom::indexedDB {
 
 class Key {
@@ -218,13 +223,18 @@ class Key {
   Result<Ok, nsresult> EncodeString(Span<const T> aInput, uint8_t aTypeOffset);
 
   template <typename T>
-  Result<Ok, nsresult> EncodeAsString(Span<const T> aInput, uint8_t aType);
+  Result<Ok, nsresult> EncodeAsString(Span<const T> aInput,
+                                      JS::AutoCheckCannotGC&& aNoGC,
+                                      uint8_t aType);
 
   Result<Ok, nsresult> EncodeLocaleString(const nsAString& aString,
                                           uint8_t aTypeOffset,
                                           const nsCString& aLocale);
 
   Result<Ok, nsresult> EncodeNumber(double aFloat, uint8_t aType);
+
+  Result<Ok, nsresult> EncodeBinary(
+      const JS::ArrayBufferOrView& aArrayBufferOrView, uint8_t aTypeOffset);
 
   
   
@@ -238,9 +248,8 @@ class Key {
   static double DecodeNumber(const EncodedDataType*& aPos,
                              const EncodedDataType* aEnd);
 
-  static JSObject* GetArrayBufferObjectFromDataRange(
-      const EncodedDataType*& aPos, const EncodedDataType* aEnd,
-      JSContext* aCx);
+  static JSObject* DecodeBinary(const EncodedDataType*& aPos,
+                                const EncodedDataType* aEnd, JSContext* aCx);
 
   
   
