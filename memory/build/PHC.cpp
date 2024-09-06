@@ -421,7 +421,7 @@ class PtrKind {
 
 
 
-class GConst {
+class PHCRegion {
  private:
   
   uint8_t* const mPagesStart;
@@ -459,7 +459,7 @@ class GConst {
   }
 
  public:
-  GConst();
+  PHCRegion();
 
   class PtrKind PtrKind(const void* aPtr) {
     class PtrKind pk(aPtr, mPagesStart, mPagesLimit);
@@ -479,8 +479,6 @@ class GConst {
     return mPagesStart + (2 * aIndex + 1) * kPageSize;
   }
 };
-
-static GConst* gConst;
 
 
 
@@ -923,7 +921,7 @@ class PHC {
     } else if (N == 1) {
       seed = uintptr_t(&seed) ^ (uintptr_t(&seed) << 32);
     } else {
-      seed = uintptr_t(&gConst) ^ (uintptr_t(&gConst) << 32);
+      seed = uintptr_t(&sRegion) ^ (uintptr_t(&sRegion) << 32);
     }
     return seed;
   }
@@ -1061,6 +1059,11 @@ class PHC {
     return mAvgPageReuseDelay;
   }
 
+  
+  
+  
+  
+  static PHCRegion* sRegion;
   static PHC* sPHC;
 };
 
@@ -1069,10 +1072,11 @@ PHC_THREAD_LOCAL(bool) PHC::tlsIsDisabled;
 Atomic<Time, Relaxed> PHC::sNow;
 Atomic<Delay, ReleaseAcquire> PHC::sAllocDelay;
 
+PHCRegion* PHC::sRegion;
 PHC* PHC::sPHC;
 
 
-GConst::GConst()
+PHCRegion::PHCRegion()
     : mPagesStart(AllocAllPages()), mPagesLimit(mPagesStart + kAllPagesSize) {
   LOG("AllocAllPages at %p..%p\n", mPagesStart, mPagesLimit);
 }
@@ -1111,7 +1115,7 @@ static bool phc_init() {
   }
 
   
-  gConst = InfallibleAllocPolicy::new_<GConst>();
+  PHC::sRegion = InfallibleAllocPolicy::new_<PHCRegion>();
 
   PHC::sPHC = InfallibleAllocPolicy::new_<PHC>();
 
@@ -1226,7 +1230,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 #if PHC_LOGGING
     Time lifetime = 0;
 #endif
-    pagePtr = gConst->AllocPagePtr(i);
+    pagePtr = PHC::sRegion->AllocPagePtr(i);
     MOZ_ASSERT(pagePtr);
     bool ok =
 #ifdef XP_WIN
@@ -1303,7 +1307,7 @@ static void FreePage(PHCLock aLock, uintptr_t aIndex,
                      const Maybe<arena_id_t>& aArenaId,
                      const StackTrace& aFreeStack, Delay aReuseDelay)
     MOZ_REQUIRES(PHC::sMutex) {
-  void* pagePtr = gConst->AllocPagePtr(aIndex);
+  void* pagePtr = PHC::sRegion->AllocPagePtr(aIndex);
 
 #ifdef XP_WIN
   if (!VirtualFree(pagePtr, kPageSize, MEM_DECOMMIT)) {
@@ -1404,7 +1408,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
     return Nothing();
   }
 
-  PtrKind pk = gConst->PtrKind(aOldPtr);
+  PtrKind pk = PHC::sRegion->PtrKind(aOldPtr);
   if (pk.IsNothing()) {
     
     return Nothing();
@@ -1447,7 +1451,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
     
     size_t oldUsableSize = PHC::sPHC->PageUsableSize(lock, index);
     size_t newUsableSize = MozJemalloc::malloc_good_size(aNewSize);
-    uint8_t* pagePtr = gConst->AllocPagePtr(index);
+    uint8_t* pagePtr = PHC::sRegion->AllocPagePtr(index);
     uint8_t* newPtr = pagePtr + kPageSize - newUsableSize;
     memmove(newPtr, aOldPtr, std::min(oldUsableSize, aNewSize));
     PHC::sPHC->ResizePageInUse(lock, index, aArenaId, newPtr, stack);
@@ -1507,7 +1511,7 @@ MOZ_ALWAYS_INLINE static bool MaybePageFree(const Maybe<arena_id_t>& aArenaId,
     return false;
   }
 
-  PtrKind pk = gConst->PtrKind(aPtr);
+  PtrKind pk = PHC::sRegion->PtrKind(aPtr);
   if (pk.IsNothing()) {
     
     return false;
@@ -1590,7 +1594,7 @@ inline size_t MozJemallocPHC::malloc_usable_size(usable_ptr_t aPtr) {
     return MozJemalloc::malloc_usable_size(aPtr);
   }
 
-  PtrKind pk = gConst->PtrKind(aPtr);
+  PtrKind pk = PHC::sRegion->PtrKind(aPtr);
   if (pk.IsNothing()) {
     
     return MozJemalloc::malloc_usable_size(aPtr);
@@ -1617,7 +1621,7 @@ inline size_t MozJemallocPHC::malloc_usable_size(usable_ptr_t aPtr) {
 }
 
 static size_t metadata_size() {
-  return MozJemalloc::malloc_usable_size(gConst) +
+  return MozJemalloc::malloc_usable_size(PHC::sRegion) +
          MozJemalloc::malloc_usable_size(PHC::sPHC);
 }
 
@@ -1677,7 +1681,7 @@ inline void MozJemallocPHC::jemalloc_ptr_info(const void* aPtr,
 
   
   
-  PtrKind pk = gConst->PtrKind(aPtr);
+  PtrKind pk = PHC::sRegion->PtrKind(aPtr);
   if (pk.IsNothing()) {
     
     return MozJemalloc::jemalloc_ptr_info(aPtr, aInfo);
@@ -1736,7 +1740,7 @@ bool IsPHCAllocation(const void* aPtr, AddrInfo* aOut) {
     return false;
   }
 
-  PtrKind pk = gConst->PtrKind(aPtr);
+  PtrKind pk = PHC::sRegion->PtrKind(aPtr);
   if (pk.IsNothing()) {
     return false;
   }
@@ -1747,17 +1751,17 @@ bool IsPHCAllocation(const void* aPtr, AddrInfo* aOut) {
       
       
       
-      if (gConst->IsInFirstGuardPage(aPtr)) {
+      if (PHC::sRegion->IsInFirstGuardPage(aPtr)) {
         return false;
       }
 
       
-      pk = gConst->PtrKind(static_cast<const uint8_t*>(aPtr) - kPageSize);
+      pk = PHC::sRegion->PtrKind(static_cast<const uint8_t*>(aPtr) - kPageSize);
 
     } else {
       
       
-      pk = gConst->PtrKind(static_cast<const uint8_t*>(aPtr) + kPageSize);
+      pk = PHC::sRegion->PtrKind(static_cast<const uint8_t*>(aPtr) + kPageSize);
     }
 
     
