@@ -312,7 +312,7 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
         return StyleAlignFlags::START;
       }
 
-      MOZ_ASSERT(wm.PhysicalAxis(MainAxis()) == eAxisHorizontal,
+      MOZ_ASSERT(wm.PhysicalAxis(MainAxis()) == PhysicalAxis::Horizontal,
                  "Vertical column-oriented flex container's main axis should "
                  "be parallel to physical left <-> right axis!");
       
@@ -2354,7 +2354,7 @@ nscoord FlexItem::BaselineOffsetFromOuterCrossEdge(
     
     
     const bool isMainAxisHorizontal =
-        mCBWM.PhysicalAxis(MainAxis()) == mozilla::eAxisHorizontal;
+        mCBWM.PhysicalAxis(MainAxis()) == PhysicalAxis::Horizontal;
 
     
     
