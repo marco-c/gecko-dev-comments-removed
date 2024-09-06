@@ -60,8 +60,11 @@ async function assertExtensionsProgressState(wizard, state, description) {
   } else if (state == MigrationWizardConstants.PROGRESS_VALUE.WARNING) {
     Assert.stringMatches(progressIcon.getAttribute("state"), "warning");
     Assert.stringMatches(messageText.textContent, description.message);
-    Assert.stringMatches(supportLink.textContent, description.linkText);
-    Assert.stringMatches(supportLink.href, description.linkURL);
+    await assertSupportLink(
+      supportLink,
+      description.linkURL,
+      description.linkText
+    );
     await assertSuccessLink(extensionsSuccessLink, "");
   } else if (state == MigrationWizardConstants.PROGRESS_VALUE.INFO) {
     Assert.stringMatches(progressIcon.getAttribute("state"), "info");
@@ -93,6 +96,32 @@ async function assertSuccessLink(link, message) {
     );
     EventUtils.synthesizeMouseAtCenter(link, {}, link.ownerGlobal);
     let tab = await aboutAddonsOpened;
+    BrowserTestUtils.removeTab(tab);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertSupportLink(link, url, message) {
+  Assert.stringMatches(link.textContent, message);
+  Assert.stringMatches(link.href, url);
+  if (message && url) {
+    let linkOpened = BrowserTestUtils.waitForNewTab(gBrowser, link.href);
+    EventUtils.synthesizeMouseAtCenter(link, {}, link.ownerGlobal);
+    let tab = await linkOpened;
     BrowserTestUtils.removeTab(tab);
   }
 }
