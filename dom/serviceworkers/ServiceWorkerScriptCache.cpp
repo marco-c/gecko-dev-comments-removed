@@ -678,8 +678,7 @@ nsresult CompareNetwork::Initialize(nsIPrincipal* aPrincipal,
     net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetPartitionKey(aPrincipal->OriginAttributesRef().mPartitionKey);
   } else {
-    net::CookieJarSettings::Cast(cookieJarSettings)
-        ->SetPartitionKey(uri, false);
+    net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
   }
 
   

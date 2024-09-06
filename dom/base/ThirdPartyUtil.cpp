@@ -202,7 +202,7 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
 
   
   
-  if (aURI && !NS_IsAboutBlank(aURI) && !NS_IsAboutSrcdoc(aURI)) {
+  if (aURI && !NS_IsAboutBlank(aURI)) {
     nsCOMPtr<nsIPrincipal> prin;
     nsresult rv = GetPrincipalFromWindow(aWindow, getter_AddRefs(prin));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -323,7 +323,7 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel, nsIURI* aURI,
   
   
   
-  if (NS_IsAboutBlank(channelURI) || NS_IsAboutSrcdoc(channelURI)) {
+  if (NS_IsAboutBlank(channelURI)) {
     nsCOMPtr<nsIPrincipal> principalToInherit =
         loadInfo->FindPrincipalToInherit(aChannel);
     if (!principalToInherit) {

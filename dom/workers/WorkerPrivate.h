@@ -972,7 +972,9 @@ class WorkerPrivate final
   }
 
   
-  bool IsThirdPartyContext() const { return mLoadInfo.mIsThirdPartyContext; }
+  bool IsThirdPartyContextToTopWindow() const {
+    return mLoadInfo.mIsThirdPartyContextToTopWindow;
+  }
 
   bool IsWatchedByDevTools() const { return mLoadInfo.mWatchedByDevTools; }
 

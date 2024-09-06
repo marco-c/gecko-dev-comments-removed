@@ -1063,8 +1063,8 @@ nsresult WorkerScriptLoader::LoadScript(
     
     
     nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-    loadInfo->SetIsInThirdPartyContext(
-        mWorkerRef->Private()->IsThirdPartyContext());
+    loadInfo->SetIsThirdPartyContextToTopWindow(
+        mWorkerRef->Private()->IsThirdPartyContextToTopWindow());
 
     Maybe<ClientInfo> clientInfo;
     clientInfo.emplace(loadContext->mClientInfo.ref());
