@@ -979,6 +979,12 @@ async function populatePointerInfo() {
 }
 
 async function populateICEFoundations() {
+  
+  if (window.location.hash === "#automation") {
+    debug("Skipping ICE Foundations for automation");
+    return {};
+  }
+
   function getFoundationsAndLatencies() {
     const { promise, resolve, reject } = Promise.withResolvers();
 
