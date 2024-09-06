@@ -869,12 +869,6 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
               fillInAppUnits.height),
       aContext);
 
-  if (vertical) {
-    fill.Scale(1.0, mLengthAdjustScaleFactor);
-  } else {
-    fill.Scale(mLengthAdjustScaleFactor, 1.0);
-  }
-
   
   fill.Scale(1.0 / mFontSizeScaleFactor);
 
