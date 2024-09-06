@@ -163,23 +163,13 @@ TESTCASES.forEach(testcase => {
       testcase.document
     );
 
-    for (let i in testcase.targetInput) {
-      let input = doc.getElementById(testcase.targetInput[i]);
+    for (const i in testcase.targetInput) {
+      const input = doc.getElementById(testcase.targetInput[i]);
       const fsm = new FormStateManager();
-      fsm.updateActiveInput(input);
       fsm.identifyAutofillFields(input);
 
-      
-      
-      testcase.expectedResult[i].input.elementWeakRef = new WeakRef(input);
-
-      inputDetailAssertion(
-        fsm.activeFieldDetail,
-        testcase.expectedResult[i].input
-      );
-
-      let formDetails = testcase.expectedResult[i].form;
-      for (let formDetail of formDetails) {
+      const formDetails = testcase.expectedResult[i].form;
+      for (const formDetail of formDetails) {
         
         
         let queryString =
@@ -191,7 +181,8 @@ TESTCASES.forEach(testcase => {
         formDetail.elementWeakRef = new WeakRef(doc.querySelector(queryString));
       }
 
-      fsm.activeFormDetails.forEach((detail, index) => {
+      const handler = fsm.getFormHandler(input);
+      handler.fieldDetails.forEach((detail, index) => {
         inputDetailAssertion(detail, formDetails[index]);
       });
     }
