@@ -13,10 +13,12 @@ const { getWebDriverSessionById, WebDriverSession } =
   );
 
 function createSession(options = {}) {
-  const { capabilities = {}, connection, isHttp = false } = options;
+  const { capabilities = {}, connection, isBidi = false } = options;
 
   const flags = new Set();
-  if (isHttp) {
+  if (isBidi) {
+    flags.add("bidi");
+  } else {
     flags.add("http");
   }
 
@@ -24,7 +26,16 @@ function createSession(options = {}) {
 }
 
 add_task(function test_WebDriverSession_ctor() {
+  
   Assert.throws(() => new WebDriverSession({}), /TypeError/);
+
+  
+  for (const flags of [[], ["bidi", "http"]]) {
+    Assert.throws(
+      () => new WebDriverSession({}, new Set(flags)),
+      /SessionNotCreatedError:/
+    );
+  }
 
   
   let session = createSession();
@@ -32,9 +43,11 @@ add_task(function test_WebDriverSession_ctor() {
   equal(session.path, `/session/${session.id}`);
 
   
-  session = createSession({ isHttp: true });
+  session = createSession({ isBidi: false });
+  equal(session.bidi, false);
   equal(session.http, true);
-  session = createSession({ isHttp: false });
+  session = createSession({ isBidi: true });
+  equal(session.bidi, true);
   equal(session.http, false);
 
   
@@ -49,7 +62,7 @@ add_task(function test_WebDriverSession_ctor() {
   };
 
   
-  session = createSession({ isHttp: true, capabilities });
+  session = createSession({ capabilities, isBidi: false });
   equal(session.acceptInsecureCerts, true);
   equal(session.pageLoadStrategy, "eager");
   equal(session.strictFileInteractability, true);
@@ -57,12 +70,13 @@ add_task(function test_WebDriverSession_ctor() {
   equal(session.userPromptHandler.toJSON(), "ignore");
 
   
-  session = createSession({ isHttp: false, capabilities });
+  session = createSession({ capabilities, isBidi: true });
   equal(session.acceptInsecureCerts, true);
-  equal(session.pageLoadStrategy, "normal");
-  equal(session.strictFileInteractability, false);
-  equal(session.timeouts.script, 30000);
   equal(session.userPromptHandler.toJSON(), "dismiss and notify");
+
+  equal(session.pageLoadStrategy, undefined);
+  equal(session.strictFileInteractability, undefined);
+  equal(session.timeouts, undefined);
 });
 
 add_task(function test_WebDriverSession_destroy() {
