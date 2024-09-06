@@ -47,8 +47,7 @@ class PointerLockManager final {
 
   
   
-  static void SetLockedRemoteTarget(dom::BrowserParent* aBrowserParent,
-                                    nsACString& aError);
+  static bool SetLockedRemoteTarget(dom::BrowserParent* aBrowserParent);
   static void ReleaseLockedRemoteTarget(dom::BrowserParent* aBrowserParent);
 
  private:

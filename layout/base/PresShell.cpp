@@ -8692,19 +8692,15 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
     }
   }
 
-  if (XRE_IsParentProcess() &&
-      !mPresShell->mIsLastChromeOnlyEscapeKeyConsumed) {
-    if (PointerLockManager::GetLockedRemoteTarget() ||
-        PointerLockManager::IsLocked()) {
-      
-      
-      
-      aKeyboardEvent->PreventDefaultBeforeDispatch(
-          CrossProcessForwarding::eStop);
-      aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
-      if (aKeyboardEvent->mMessage == eKeyUp) {
-        PointerLockManager::Unlock();
-      }
+  nsCOMPtr<Document> pointerLockedDoc = PointerLockManager::GetLockedDocument();
+  if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed && pointerLockedDoc) {
+    
+    
+    
+    aKeyboardEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
+    aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
+    if (aKeyboardEvent->mMessage == eKeyUp) {
+      PointerLockManager::Unlock();
     }
   }
 }

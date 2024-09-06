@@ -17,10 +17,8 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/WindowContext.h"
 #include "nsCOMPtr.h"
-#include "nsMenuPopupFrame.h"
 #include "nsSandboxFlags.h"
 
 namespace mozilla {
@@ -88,25 +86,6 @@ static void DispatchPointerLockError(Document* aTarget, const char* aMessage) {
                                   aMessage);
 }
 
-static bool IsPopupOpened() {
-  
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (!pm) {
-    return false;
-  }
-
-  nsTArray<nsMenuPopupFrame*> popups;
-  pm->GetVisiblePopups(popups, true);
-
-  for (nsMenuPopupFrame* popup : popups) {
-    if (popup->GetPopupType() != widget::PopupType::Tooltip) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 static const char* GetPointerLockError(Element* aElement, Element* aCurrentLock,
                                        bool aNoFocusCheck = false) {
   
@@ -157,10 +136,6 @@ static const char* GetPointerLockError(Element* aElement, Element* aCurrentLock,
     }
   }
 
-  if (IsPopupOpened()) {
-    return "PointerLockDeniedFailedToLock";
-  }
-
   return nullptr;
 }
 
@@ -192,14 +167,6 @@ void PointerLockManager::RequestLock(Element* aElement,
 
 
 void PointerLockManager::Unlock(Document* aDoc) {
-  if (sLockedRemoteTarget) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    MOZ_ASSERT(!sIsLocked);
-    Unused << sLockedRemoteTarget->SendReleasePointerLock();
-    sLockedRemoteTarget = nullptr;
-    return;
-  }
-
   if (!sIsLocked) {
     return;
   }
@@ -344,24 +311,14 @@ bool PointerLockManager::IsInLockContext(BrowsingContext* aContext) {
 }
 
 
-void PointerLockManager::SetLockedRemoteTarget(BrowserParent* aBrowserParent,
-                                               nsACString& aError) {
+bool PointerLockManager::SetLockedRemoteTarget(BrowserParent* aBrowserParent) {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (sLockedRemoteTarget) {
-    if (sLockedRemoteTarget != aBrowserParent) {
-      aError = "PointerLockDeniedInUse"_ns;
-    }
-    return;
-  }
-
-  
-  if (IsPopupOpened()) {
-    aError = "PointerLockDeniedFailedToLock"_ns;
-    return;
+    return sLockedRemoteTarget == aBrowserParent;
   }
 
   sLockedRemoteTarget = aBrowserParent;
-  PointerEventHandler::ReleaseAllPointerCaptureRemoteTarget();
+  return true;
 }
 
 
