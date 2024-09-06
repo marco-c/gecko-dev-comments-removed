@@ -1009,6 +1009,14 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
       ->MarkOverriddenFingerprintingSettingsAsSet();
 #endif
 
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+  
+  
+  
+  net::CookieJarSettings::Cast(cookieJarSettings)
+      ->UpdatePartitionKeyForDocumentLoadedByChannel(aChannel);
+
   
   
   
@@ -1024,9 +1032,6 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
     return;
   }
 
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
-
   
   
   
@@ -1037,7 +1042,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   nsCOMPtr<nsIURI> uri;
   Unused << aChannel->GetURI(getter_AddRefs(uri));
-  net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
+  net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri, false);
 
   
   
