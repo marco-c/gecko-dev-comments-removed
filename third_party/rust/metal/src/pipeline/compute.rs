@@ -303,8 +303,12 @@ impl ComputePipelineStateRef {
     
 
     
-    
-    
+    pub fn new_visible_function_table_with_descriptor(
+        &self,
+        descriptor: &VisibleFunctionTableDescriptorRef,
+    ) -> VisibleFunctionTable {
+        unsafe { msg_send![self, newVisibleFunctionTableWithDescriptor: descriptor ] }
+    }
 
     
     pub fn new_intersection_function_table_with_descriptor(

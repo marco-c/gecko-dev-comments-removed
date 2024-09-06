@@ -3,7 +3,7 @@ use metal::*;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    platform::macos::WindowExtMacOS,
+    raw_window_handle::{HasWindowHandle, RawWindowHandle},
 };
 
 use cocoa::{appkit::NSView, base::id as cocoa_id};
@@ -33,7 +33,7 @@ pub struct AAPLVertex {
 
 fn main() {
     
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::new().unwrap();
     let size = winit::dpi::LogicalSize::new(800, 600);
 
     let window = winit::window::WindowBuilder::new()
@@ -100,9 +100,11 @@ fn main() {
     layer.set_presents_with_transaction(false);
 
     unsafe {
-        let view = window.ns_view() as cocoa_id;
-        view.setWantsLayer(YES);
-        view.setLayer(mem::transmute(layer.as_ref()));
+        if let Ok(RawWindowHandle::AppKit(rw)) = window.window_handle().map(|wh| wh.as_raw()) {
+            let view = rw.ns_view.as_ptr() as cocoa_id;
+            view.setWantsLayer(YES);
+            view.setLayer(mem::transmute(layer.as_ref()));
+        }
     }
 
     let draw_size = window.inner_size();
@@ -119,80 +121,87 @@ fn main() {
         )
     };
 
-    event_loop.run(move |event, _, control_flow| {
-        autoreleasepool(|| {
-            
-            
-            
-            *control_flow = ControlFlow::Wait;
+    event_loop
+        .run(move |event, event_loop| {
+            autoreleasepool(|| {
+                
+                
+                
+                event_loop.set_control_flow(ControlFlow::Wait);
 
-            match event {
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => {
-                    println!("The close button was pressed; stopping");
-                    *control_flow = ControlFlow::Exit
+                match event {
+                    Event::AboutToWait => window.request_redraw(),
+                    Event::WindowEvent { event, .. } => {
+                        match event {
+                            WindowEvent::CloseRequested => {
+                                println!("The close button was pressed; stopping");
+                                event_loop.exit();
+                            }
+                            WindowEvent::RedrawRequested => {
+                                
+                                
+                                
+                                let drawable = match layer.next_drawable() {
+                                    Some(drawable) => drawable,
+                                    None => return,
+                                };
+
+                                
+                                let command_buffer = command_queue.new_command_buffer();
+
+                                
+                                let render_pass_descriptor = RenderPassDescriptor::new();
+                                handle_render_pass_color_attachment(
+                                    &render_pass_descriptor,
+                                    drawable.texture(),
+                                );
+                                handle_render_pass_sample_buffer_attachment(
+                                    &render_pass_descriptor,
+                                    &counter_sample_buffer,
+                                );
+
+                                
+                                let encoder = command_buffer
+                                    .new_render_command_encoder(&render_pass_descriptor);
+                                encoder.set_render_pipeline_state(&pipeline_state);
+                                
+                                encoder.set_vertex_buffer(0, Some(&vbuf), 0);
+                                
+                                encoder.draw_primitives(MTLPrimitiveType::TriangleStrip, 0, 1080);
+                                encoder.end_encoding();
+
+                                resolve_samples_into_buffer(
+                                    &command_buffer,
+                                    &counter_sample_buffer,
+                                    &destination_buffer,
+                                );
+
+                                
+                                command_buffer.present_drawable(&drawable);
+
+                                
+                                command_buffer.commit();
+                                command_buffer.wait_until_completed();
+
+                                let mut cpu_end = 0;
+                                let mut gpu_end = 0;
+                                device.sample_timestamps(&mut cpu_end, &mut gpu_end);
+                                handle_timestamps(
+                                    &destination_buffer,
+                                    cpu_start,
+                                    cpu_end,
+                                    gpu_start,
+                                    gpu_end,
+                                );
+                            }
+                            _ => (),
+                        }
+                    }
+                    _ => (),
                 }
-                Event::MainEventsCleared => {
-                    
-                    window.request_redraw();
-                }
-                Event::RedrawRequested(_) => {
-                    
-                    
-                    
-                    let drawable = match layer.next_drawable() {
-                        Some(drawable) => drawable,
-                        None => return,
-                    };
-
-                    
-                    let command_buffer = command_queue.new_command_buffer();
-
-                    
-                    let render_pass_descriptor = RenderPassDescriptor::new();
-                    handle_render_pass_color_attachment(
-                        &render_pass_descriptor,
-                        drawable.texture(),
-                    );
-                    handle_render_pass_sample_buffer_attachment(
-                        &render_pass_descriptor,
-                        &counter_sample_buffer,
-                    );
-
-                    
-                    let encoder =
-                        command_buffer.new_render_command_encoder(&render_pass_descriptor);
-                    encoder.set_render_pipeline_state(&pipeline_state);
-                    
-                    encoder.set_vertex_buffer(0, Some(&vbuf), 0);
-                    
-                    encoder.draw_primitives(MTLPrimitiveType::TriangleStrip, 0, 1080);
-                    encoder.end_encoding();
-
-                    resolve_samples_into_buffer(
-                        &command_buffer,
-                        &counter_sample_buffer,
-                        &destination_buffer,
-                    );
-
-                    
-                    command_buffer.present_drawable(&drawable);
-
-                    
-                    command_buffer.commit();
-                    command_buffer.wait_until_completed();
-
-                    let mut cpu_end = 0;
-                    let mut gpu_end = 0;
-                    device.sample_timestamps(&mut cpu_end, &mut gpu_end);
-                    handle_timestamps(&destination_buffer, cpu_start, cpu_end, gpu_start, gpu_end);
-                }
-                _ => (),
-            }
-        });
-    });
+            });
+        })
+        .unwrap();
 }
 
 

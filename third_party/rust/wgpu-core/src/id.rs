@@ -83,18 +83,6 @@ impl RawId {
 
 
 
-pub fn as_option_slice<T: Marker>(ids: &[Id<T>]) -> &[Option<Id<T>>] {
-    
-    
-    unsafe { std::slice::from_raw_parts(ids.as_ptr().cast(), ids.len()) }
-}
-
-
-
-
-
-
-
 
 
 
