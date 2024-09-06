@@ -30,6 +30,7 @@
 #include "jit/InlineScriptTree.h"
 #include "jit/InstructionReordering.h"
 #include "jit/Invalidation.h"
+#include "jit/InvalidationScriptSet.h"
 #include "jit/IonAnalysis.h"
 #include "jit/IonCompileTask.h"
 #include "jit/IonIC.h"
@@ -2515,6 +2516,18 @@ static void ClearIonScriptAfterInvalidation(JSContext* cx, JSScript* script,
   }
 }
 
+
+
+
+
+
+
+
+static void ClearPendingInvalidationDependencies(JSScript* script) {
+  script->realm()->zone()->fuseDependencies.removeScript(script);
+  script->realm()->realmFuses.fuseDependencies.removeScript(script);
+}
+
 void jit::Invalidate(JSContext* cx, const RecompileInfoVector& invalid,
                      bool resetUses, bool cancelOffThread) {
   JitSpew(JitSpew_IonInvalidate, "Start invalidation.");
@@ -2535,6 +2548,8 @@ void jit::Invalidate(JSContext* cx, const RecompileInfoVector& invalid,
     JitSpew(JitSpew_IonInvalidate, " Invalidate %s:%u:%u, IonScript %p",
             info.script()->filename(), info.script()->lineno(),
             info.script()->column().oneOriginValue(), ionScript);
+
+    ClearPendingInvalidationDependencies(info.script());
 
     
     

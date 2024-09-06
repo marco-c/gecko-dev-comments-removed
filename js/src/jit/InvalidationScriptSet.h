@@ -28,6 +28,9 @@ void InvalidateAndClearScriptSet(JSContext* cx, WeakScriptCache& scripts,
                                  const char* reason);
 bool AddScriptToSet(WeakScriptCache& scripts, Handle<JSScript*> script);
 
+
+void RemoveFromScriptSet(WeakScriptCache& scripts, JSScript* script);
+
 }  
 
 #endif 

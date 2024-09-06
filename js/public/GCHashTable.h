@@ -646,6 +646,21 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
 
   bool needsIncrementalBarrier() const override { return barrierTracer; }
 
+  
+  Set stealContents() {
+    
+    
+    
+    MOZ_ASSERT(!barrierTracer);
+
+    auto rval = std::move(set);
+    
+    set.clear();
+
+    
+    return rval;
+  }
+
  private:
   static bool entryNeedsSweep(JSTracer* barrierTracer, const Entry& prior) {
     Entry entry(prior);
