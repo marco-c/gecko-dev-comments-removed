@@ -97,18 +97,18 @@ class FunctionFlags {
     
     
     
-    
-    
-    
-    
-    
-    
-    CONSTRUCTOR = 1 << 7,
+    NATIVE_JIT_ENTRY = 1 << 7,
 
     
     
     
-    LAZY_ACCESSOR_NAME = 1 << 8,
+    
+    
+    
+    
+    
+    
+    CONSTRUCTOR = 1 << 8,
 
     
     
@@ -119,7 +119,7 @@ class FunctionFlags {
     
     
     
-    NATIVE_JIT_ENTRY = 1 << 10,
+    LAZY_ACCESSOR_NAME = 1 << 10,
 
     
     
