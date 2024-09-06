@@ -996,8 +996,6 @@ class WorkerPrivate final
 
   void PropagateStorageAccessPermissionGranted();
 
-  void NotifyStorageKeyUsed();
-
   void EnableDebugger();
 
   void DisableDebugger();
@@ -1620,10 +1618,6 @@ class WorkerPrivate final
 
   
   bool mWorkerLoopIsIdle MOZ_GUARDED_BY(mMutex){false};
-
-  
-  
-  bool hasNotifiedStorageKeyUsed{false};
 };
 
 class AutoSyncLoopHolder {

@@ -45,7 +45,7 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   static already_AddRefed<BounceTrackingState> GetOrCreate(
-      dom::BrowsingContextWebProgress* aWebProgress, nsresult& aRv);
+      dom::BrowsingContextWebProgress* aWebProgress);
 
   
   
@@ -62,19 +62,18 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   
-  [[nodiscard]] nsresult OnDocumentStartRequest(nsIChannel* aChannel);
+  nsresult OnDocumentStartRequest(nsIChannel* aChannel);
 
   
   
   
   
-  [[nodiscard]] nsresult OnStartNavigation(
-      nsIPrincipal* aTriggeringPrincipal,
-      const bool aHasValidUserGestureActivation);
+  nsresult OnStartNavigation(nsIPrincipal* aTriggeringPrincipal,
+                             const bool aHasValidUserGestureActivation);
 
   
   
-  [[nodiscard]] nsresult OnCookieWrite(const nsACString& aSiteHost);
+  nsresult OnCookieWrite(const nsACString& aSiteHost);
 
   
   
@@ -82,15 +81,12 @@ class BounceTrackingState : public nsIWebProgressListener,
       dom::CanonicalBrowsingContext* aBrowsingContext);
 
   
-  static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
-
   
   
   
   
-  
-  [[nodiscard]] static nsresult HasBounceTrackingStateForSite(
-      const nsACString& aSiteHost, bool& aResult);
+  static nsresult HasBounceTrackingStateForSite(const nsACString& aSiteHost,
+                                                bool& aResult);
 
   
   
@@ -103,15 +99,9 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   nsCString Describe();
 
-  
-  
-  [[nodiscard]] nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
-
  private:
   explicit BounceTrackingState();
   virtual ~BounceTrackingState();
-
-  bool mIsInitialized{false};
 
   uint64_t mBrowserId{};
 
@@ -140,20 +130,25 @@ class BounceTrackingState : public nsIWebProgressListener,
       dom::BrowsingContextWebProgress* aWebProgress);
 
   
-  [[nodiscard]] nsresult Init(dom::BrowsingContextWebProgress* aWebProgress);
+  nsresult Init(dom::BrowsingContextWebProgress* aWebProgress);
 
   
   
-  [[nodiscard]] nsresult OnResponseReceived(
-      const nsTArray<nsCString>& aSiteList);
+  nsresult OnResponseReceived(const nsTArray<nsCString>& aSiteList);
 
   
   
-  [[nodiscard]] nsresult OnDocumentLoaded(nsIPrincipal* aDocumentPrincipal);
+  nsresult OnDocumentLoaded(nsIPrincipal* aDocumentPrincipal);
+
+  
 
   
   
-  [[nodiscard]] nsresult OnServiceWorkerActivation();
+  nsresult OnStorageAccess();
+
+  
+  
+  nsresult OnServiceWorkerActivation();
 };
 
 }  

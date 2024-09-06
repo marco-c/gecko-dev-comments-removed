@@ -13,7 +13,6 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ContentBlockingAllowList.h"
-#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -136,11 +135,6 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   
   for (const nsACString& host : record->GetBounceHosts()) {
     
-    if (host.EqualsLiteral("null")) {
-      continue;
-    }
-
-    
     
     if (host == record->GetInitialHost()) {
       MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
@@ -228,11 +222,9 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
 nsresult BounceTrackingProtection::RecordUserActivation(
     nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  NS_ENSURE_ARG_POINTER(aPrincipal);
 
-  if (!BounceTrackingState::ShouldTrackPrincipal(aPrincipal)) {
-    return NS_OK;
-  }
+  NS_ENSURE_ARG_POINTER(aPrincipal);
+  NS_ENSURE_TRUE(aPrincipal->GetIsContentPrincipal(), NS_ERROR_FAILURE);
 
   nsAutoCString siteHost;
   nsresult rv = aPrincipal->GetBaseDomain(siteHost);
@@ -587,26 +579,17 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
 
     RefPtr<ClearDataMozPromise::Private> clearPromise =
         new ClearDataMozPromise::Private(__func__);
-    RefPtr<ClearDataCallback> cb =
-        new ClearDataCallback(clearPromise, host, bounceTime);
+    RefPtr<ClearDataCallback> cb = new ClearDataCallback(clearPromise, host);
 
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
             ("%s: Purge state for host: %s", __FUNCTION__,
              PromiseFlatCString(host).get()));
 
-    if (StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode()) {
-      
-      
-      
-      
-      cb->OnDataDeleted(0);
-    } else {
-      
-      rv = clearDataService->DeleteDataFromBaseDomain(host, false,
-                                                      TRACKER_PURGE_FLAGS, cb);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        clearPromise->Reject(0, __func__);
-      }
+    
+    rv = clearDataService->DeleteDataFromBaseDomain(host, false,
+                                                    TRACKER_PURGE_FLAGS, cb);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      clearPromise->Reject(0, __func__);
     }
 
     aClearPromises.AppendElement(clearPromise);
@@ -668,36 +651,13 @@ NS_IMPL_ISUPPORTS(BounceTrackingProtection::ClearDataCallback,
 NS_IMETHODIMP BounceTrackingProtection::ClearDataCallback::OnDataDeleted(
     uint32_t aFailedFlags) {
   if (aFailedFlags) {
-    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Error,
-            ("%s: Failed to clear %s, aFailedFlags: %d", __FUNCTION__,
-             mHost.get(), aFailedFlags));
-    RecordClearDataTelemetry(false);
-
     mPromise->Reject(aFailedFlags, __func__);
   } else {
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Info,
             ("%s: Cleared %s", __FUNCTION__, mHost.get()));
-    RecordClearDataTelemetry(true);
-
     mPromise->Resolve(std::move(mHost), __func__);
   }
   return NS_OK;
-}
-
-void BounceTrackingProtection::ClearDataCallback::RecordClearDataTelemetry(
-    bool success) {
-
-
-
-
-#if defined(EARLY_BETA_OR_EARLIER)
-  glean::bounce_tracking_protection::ActionPurgeExtra extra = {
-      .bounceTime = Some(mBounceTime / PR_USEC_PER_SEC),
-      .siteHost = Some(mHost),
-      .success = Some(success),
-  };
-  glean::bounce_tracking_protection::action_purge.Record(Some(extra));
-#endif  
 }
 
 }  

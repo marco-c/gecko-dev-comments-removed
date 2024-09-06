@@ -219,10 +219,6 @@ parent:
                                       bool fromHttp,
                                       CookieStruct[] cookies);
 
-  
-  
-  async OnInitialStorageAccess();
-
 child:
   async NotifyPermissionChange(nsCString type, uint32_t permission);
 };

@@ -6,15 +6,14 @@
 
 #include "BounceTrackingState.h"
 #include "mozilla/Services.h"
-#include "mozilla/dom/WindowContext.h"
-#include "mozilla/dom/WindowGlobalChild.h"
-#include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "nsCOMPtr.h"
 #include "nsICookieNotification.h"
 #include "nsIObserverService.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "nsICookie.h"
-#include "nsIPrincipal.h"
 
 namespace mozilla {
 
@@ -71,24 +70,12 @@ BounceTrackingStorageObserver::Observe(nsISupports* aSubject,
   }
 
   
+  
   nsCOMPtr<nsICookie> cookie;
   rv = notification->GetCookie(getter_AddRefs(cookie));
   NS_ENSURE_SUCCESS(rv, rv);
   MOZ_ASSERT(cookie);
 
-  nsICookie::schemeType schemeMap;
-  rv = cookie->GetSchemeMap(&schemeMap);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (!(schemeMap & (nsICookie::schemeType::SCHEME_HTTP |
-                     nsICookie::schemeType::SCHEME_HTTPS))) {
-    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Verbose,
-            ("Skipping non-HTTP(S) cookie."));
-    return NS_OK;
-  }
-
-  
-  
   if (!cookie->OriginAttributesNative().mPartitionKey.IsEmpty()) {
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Verbose,
             ("Skipping partitioned cookie."));
@@ -115,67 +102,6 @@ BounceTrackingStorageObserver::Observe(nsISupports* aSubject,
   NS_ENSURE_SUCCESS(rv, rv);
 
   return bounceTrackingState->OnCookieWrite(baseDomain);
-}
-
-
-nsresult BounceTrackingStorageObserver::OnInitialStorageAccess(
-    dom::WindowContext* aWindowContext) {
-  NS_ENSURE_ARG_POINTER(aWindowContext);
-
-  if (!XRE_IsParentProcess()) {
-    
-    
-    nsIPrincipal* storagePrincipal =
-        aWindowContext->GetInnerWindow()->GetEffectiveStoragePrincipal();
-    if (!BounceTrackingState::ShouldTrackPrincipal(storagePrincipal)) {
-      MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Verbose,
-              ("%s: Skipping principal (content process).", __FUNCTION__));
-      return NS_OK;
-    }
-
-    dom::WindowGlobalChild* windowGlobalChild =
-        aWindowContext->GetWindowGlobalChild();
-    NS_ENSURE_TRUE(windowGlobalChild, NS_ERROR_FAILURE);
-    NS_ENSURE_TRUE(windowGlobalChild->SendOnInitialStorageAccess(),
-                   NS_ERROR_FAILURE);
-
-    return NS_OK;
-  }
-
-  MOZ_ASSERT(XRE_IsParentProcess());
-  nsCOMPtr<nsIPrincipal> storagePrincipal =
-      aWindowContext->Canonical()->DocumentStoragePrincipal();
-  NS_ENSURE_TRUE(storagePrincipal, NS_ERROR_FAILURE);
-
-  if (!BounceTrackingState::ShouldTrackPrincipal(storagePrincipal)) {
-    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Verbose,
-            ("%s: Skipping principal.", __FUNCTION__));
-    return NS_OK;
-  }
-
-  if (!storagePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
-    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Verbose,
-            ("Skipping partitioned storage access."));
-    return NS_OK;
-  }
-
-  dom::BrowsingContext* browsingContext = aWindowContext->GetBrowsingContext();
-  NS_ENSURE_TRUE(browsingContext, NS_ERROR_FAILURE);
-
-  nsresult rv = NS_OK;
-  RefPtr<BounceTrackingState> bounceTrackingState =
-      BounceTrackingState::GetOrCreate(
-          browsingContext->Top()->Canonical()->GetWebProgress(), rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  if (!bounceTrackingState) {
-    return NS_OK;
-  }
-
-  return bounceTrackingState->OnStorageAccess(storagePrincipal);
 }
 
 }  
