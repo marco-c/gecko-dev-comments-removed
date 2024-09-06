@@ -139,10 +139,6 @@ rtclog::IceCandidatePairConfig::IceCandidateType ConvertIceCandidateType(
       return rtclog::IceCandidatePairConfig::PRFLX;
     case IceCandidateType::kRelay:
       return rtclog::IceCandidatePairConfig::RELAY;
-    default:
-      
-      RTC_DCHECK_NOTREACHED();
-      return rtclog::IceCandidatePairConfig::UNKNOWN_CANDIDATE_TYPE;
   }
 }
 
@@ -200,6 +196,7 @@ rtclog::IceCandidatePairConfig::NetworkType ConvertIceCandidateNetworkType(
       return rtclog::IceCandidatePairConfig::CELLULAR;
     case IceCandidateNetworkType::kNumValues:
       RTC_DCHECK_NOTREACHED();
+      break;
   }
   RTC_DCHECK_NOTREACHED();
   return rtclog::IceCandidatePairConfig::UNKNOWN_NETWORK_TYPE;
