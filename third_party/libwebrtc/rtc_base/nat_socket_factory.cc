@@ -10,7 +10,9 @@
 
 #include "rtc_base/nat_socket_factory.h"
 
+#include "api/units/timestamp.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nat_server.h"
@@ -47,21 +49,20 @@ size_t PackAddressForNAT(char* buf,
 
 
 
-size_t UnpackAddressFromNAT(const char* buf,
-                            size_t buf_size,
+size_t UnpackAddressFromNAT(rtc::ArrayView<const uint8_t> buf,
                             SocketAddress* remote_addr) {
-  RTC_DCHECK(buf_size >= 8);
-  RTC_DCHECK(buf[0] == 0);
+  RTC_CHECK(buf.size() >= 8);
+  RTC_DCHECK(buf.data()[0] == 0);
   int family = buf[1];
   uint16_t port =
-      NetworkToHost16(*(reinterpret_cast<const uint16_t*>(&buf[2])));
+      NetworkToHost16(*(reinterpret_cast<const uint16_t*>(&buf.data()[2])));
   if (family == AF_INET) {
-    const in_addr* v4addr = reinterpret_cast<const in_addr*>(&buf[4]);
+    const in_addr* v4addr = reinterpret_cast<const in_addr*>(&buf.data()[4]);
     *remote_addr = SocketAddress(IPAddress(*v4addr), port);
     return kNATEncodedIPv4AddressSize;
   } else if (family == AF_INET6) {
-    RTC_DCHECK(buf_size >= 20);
-    const in6_addr* v6addr = reinterpret_cast<const in6_addr*>(&buf[4]);
+    RTC_DCHECK(buf.size() >= 20);
+    const in6_addr* v6addr = reinterpret_cast<const in6_addr*>(&buf.data()[4]);
     *remote_addr = SocketAddress(IPAddress(*v6addr), port);
     return kNATEncodedIPv6AddressSize;
   }
@@ -76,14 +77,9 @@ class NATSocket : public Socket, public sigslot::has_slots<> {
         family_(family),
         type_(type),
         connected_(false),
-        socket_(nullptr),
-        buf_(nullptr),
-        size_(0) {}
+        socket_(nullptr) {}
 
-  ~NATSocket() override {
-    delete socket_;
-    delete[] buf_;
-  }
+  ~NATSocket() override { delete socket_; }
 
   SocketAddress GetLocalAddress() const override {
     return (socket_) ? socket_->GetLocalAddress() : SocketAddress();
@@ -165,23 +161,21 @@ class NATSocket : public Socket, public sigslot::has_slots<> {
     }
     
     
-    SocketAddress remote_addr;
-    Grow(size + kNATEncodedIPv6AddressSize);
+    buf_.EnsureCapacity(size + kNATEncodedIPv6AddressSize);
 
     
-    int result = socket_->RecvFrom(buf_, size_, &remote_addr, timestamp);
+    Socket::ReceiveBuffer receive_buffer(buf_);
+    int result = socket_->RecvFrom(receive_buffer);
     if (result >= 0) {
-      RTC_DCHECK(remote_addr == server_addr_);
-
-      
-      
-      
-      RTC_DCHECK((size_t)result < size_);
+      RTC_DCHECK(receive_buffer.source_address == server_addr_);
+      *timestamp =
+          receive_buffer.arrival_time.value_or(webrtc::Timestamp::Micros(0))
+              .us();
 
       
       SocketAddress real_remote_addr;
-      size_t addrlength = UnpackAddressFromNAT(buf_, result, &real_remote_addr);
-      memcpy(data, buf_ + addrlength, result - addrlength);
+      size_t addrlength = UnpackAddressFromNAT(buf_, &real_remote_addr);
+      memcpy(data, buf_.data() + addrlength, result - addrlength);
 
       
       if (!connected_ || (real_remote_addr == remote_addr_)) {
@@ -286,15 +280,6 @@ class NATSocket : public Socket, public sigslot::has_slots<> {
   }
 
   
-  void Grow(size_t new_size) {
-    if (size_ < new_size) {
-      delete[] buf_;
-      size_ = new_size;
-      buf_ = new char[size_];
-    }
-  }
-
-  
   void SendConnectRequest() {
     char buf[kNATEncodedIPv6AddressSize];
     size_t length = PackAddressForNAT(buf, arraysize(buf), remote_addr_);
@@ -323,8 +308,7 @@ class NATSocket : public Socket, public sigslot::has_slots<> {
   Socket* socket_;
   
   int error_ = 0;
-  char* buf_;
-  size_t size_;
+  Buffer buf_;
 };
 
 
