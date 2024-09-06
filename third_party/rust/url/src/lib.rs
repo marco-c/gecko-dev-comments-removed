@@ -134,7 +134,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/url/2.5.0")]
+#![doc(html_root_url = "https://docs.rs/url/2.5.1")]
 #![cfg_attr(
     feature = "debugger_visualizer",
     debugger_visualizer(natvis_file = "../../debug_metadata/url.natvis")
@@ -146,15 +146,20 @@ pub use form_urlencoded;
 extern crate serde;
 
 use crate::host::HostInternal;
-use crate::parser::{to_u32, Context, Parser, SchemeType, PATH_SEGMENT, USERINFO};
+use crate::parser::{
+    to_u32, Context, Parser, SchemeType, PATH_SEGMENT, SPECIAL_PATH_SEGMENT, USERINFO,
+};
 use percent_encoding::{percent_decode, percent_encode, utf8_percent_encode};
 use std::borrow::Borrow;
 use std::cmp;
 use std::fmt::{self, Write};
 use std::hash;
+#[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
 use std::io;
 use std::mem;
-use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use std::net::IpAddr;
+#[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::ops::{Range, RangeFrom, RangeTo};
 use std::path::{Path, PathBuf};
 use std::str;
@@ -213,6 +218,9 @@ pub struct ParseOptions<'a> {
 }
 
 impl<'a> ParseOptions<'a> {
+    
+    
+    
     
     pub fn base_url(mut self, new: Option<&'a Url>) -> Self {
         self.base_url = new;
@@ -383,6 +391,24 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     
     
     
@@ -1250,6 +1276,7 @@ impl Url {
     
     
     
+    #[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
     pub fn socket_addrs(
         &self,
         default_port_number: impl Fn() -> Option<u16>,
@@ -1524,6 +1551,7 @@ impl Url {
         }
     }
 
+    
     
     
     
@@ -2816,7 +2844,7 @@ fn path_to_file_url_segments(
         serialization.push('/');
         serialization.extend(percent_encode(
             component.as_os_str().as_bytes(),
-            PATH_SEGMENT,
+            SPECIAL_PATH_SEGMENT,
         ));
     }
     if empty {
