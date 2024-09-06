@@ -500,6 +500,13 @@ void nsHttpChannel::HandleContinueCancellingByURLClassifier(
 }
 
 void nsHttpChannel::SetPriorityHeader() {
+  nsAutoCString userSetPriority;
+  Unused << GetRequestHeader("Priority"_ns, userSetPriority);
+  if (!userSetPriority.IsEmpty()) {
+    
+    return;
+  }
+
   uint8_t urgency =
       nsHttpHandler::UrgencyFromCoSFlags(mClassOfService.Flags(), mPriority);
   bool incremental = mClassOfService.Incremental();
