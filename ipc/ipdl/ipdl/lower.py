@@ -941,7 +941,7 @@ class _UnionMember(_CompoundTypeComponent):
         flatname = _flatTypeName(ipdltype)
         assert _validCxxIdentifier(flatname)
 
-        _CompoundTypeComponent.__init__(self, ipdltype, "V" + flatname)
+        _CompoundTypeComponent.__init__(self, ipdltype, "mV" + flatname)
         self.flattypename = flatname
 
         
@@ -966,11 +966,10 @@ class _UnionMember(_CompoundTypeComponent):
         if self.recursive:
             return self.ptrToType()
         else:
-            return Type("mozilla::AlignedStorage2", T=self.internalType())
+            return self.internalType()
 
     def unionValue(self):
-        
-        return ExprSelect(ExprVar("mValue"), ".", self.name)
+        return ExprVar(self.name)
 
     def typedef(self):
         return self.flattypename + "__tdef"
@@ -1033,14 +1032,11 @@ class _UnionMember(_CompoundTypeComponent):
         if self.recursive:
             return v
         else:
-            return ExprCall(ExprSelect(v, ".", "addr"))
+            return ExprAddrOf(v)
 
     def constptrToSelfExpr(self):
         """|*constptrToSelfExpr()| has type |self.constType()|"""
-        v = self.unionValue()
-        if self.recursive:
-            return v
-        return ExprCall(ExprSelect(v, ".", "addr"))
+        return self.ptrToSelfExpr()
 
     def ptrToInternalType(self):
         t = self.ptrToType()
@@ -2783,9 +2779,7 @@ def _generateCxxUnion(ud):
     refClsType = Type(ud.name, ref=True)
     rvalueRefClsType = Type(ud.name, rvalref=True)
     typetype = Type("Type")
-    valuetype = Type("Value")
     mtypevar = ExprVar("mType")
-    mvaluevar = ExprVar("mValue")
     maybedtorvar = ExprVar("MaybeDestroy")
     assertsanityvar = ExprVar("AssertSanity")
     tnonevar = ExprVar("T__None")
@@ -2832,10 +2826,9 @@ def _generateCxxUnion(ud):
     cls.addstmt(Whitespace.NL)
 
     
-    valueunion = TypeUnion(valuetype.name)
+    valuetype = TypeUnion()
     for c in ud.components:
-        valueunion.addComponent(c.unionType(), c.name)
-    cls.addstmts([StmtDecl(Decl(valueunion, "")), Whitespace.NL])
+        valuetype.addComponent(c.unionType(), c.name)
 
     
     
@@ -3291,7 +3284,7 @@ def _generateCxxUnion(ud):
     cls.addstmts(
         [
             Label.PRIVATE,
-            StmtDecl(Decl(valuetype, mvaluevar.name)),
+            StmtDecl(Decl(valuetype, "")),
             StmtDecl(Decl(typetype, mtypevar.name)),
         ]
     )
