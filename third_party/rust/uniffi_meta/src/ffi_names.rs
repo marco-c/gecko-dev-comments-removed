@@ -34,15 +34,24 @@ pub fn method_symbol_name(namespace: &str, object_name: &str, name: &str) -> Str
 }
 
 
+pub fn clone_fn_symbol_name(namespace: &str, object_name: &str) -> String {
+    let object_name = object_name.to_ascii_lowercase();
+    format!("uniffi_{namespace}_fn_clone_{object_name}")
+}
+
+
 pub fn free_fn_symbol_name(namespace: &str, object_name: &str) -> String {
     let object_name = object_name.to_ascii_lowercase();
     format!("uniffi_{namespace}_fn_free_{object_name}")
 }
 
 
-pub fn init_callback_fn_symbol_name(namespace: &str, callback_interface_name: &str) -> String {
+pub fn init_callback_vtable_fn_symbol_name(
+    namespace: &str,
+    callback_interface_name: &str,
+) -> String {
     let callback_interface_name = callback_interface_name.to_ascii_lowercase();
-    format!("uniffi_{namespace}_fn_init_callback_{callback_interface_name}")
+    format!("uniffi_{namespace}_fn_init_callback_vtable_{callback_interface_name}")
 }
 
 

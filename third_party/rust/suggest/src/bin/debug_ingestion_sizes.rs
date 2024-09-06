@@ -1,0 +1,9 @@
+
+
+
+
+use suggest::benchmarks::ingest;
+
+fn main() {
+    ingest::print_debug_ingestion_sizes()
+}

@@ -35,6 +35,11 @@ impl<'a> Strtab<'a> {
     }
 
     
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+
+    
     
     
     pub fn from_slice_unparsed(bytes: &'a [u8], offset: usize, len: usize, delim: u8) -> Self {

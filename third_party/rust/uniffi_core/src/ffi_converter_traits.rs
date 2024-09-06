@@ -51,7 +51,10 @@ use std::{borrow::Borrow, sync::Arc};
 use anyhow::bail;
 use bytes::Buf;
 
-use crate::{FfiDefault, MetadataBuffer, Result, RustBuffer, UnexpectedUniFFICallbackError};
+use crate::{
+    FfiDefault, Handle, MetadataBuffer, Result, RustBuffer, RustCallStatus, RustCallStatusCode,
+    UnexpectedUniFFICallbackError,
+};
 
 
 
@@ -303,13 +306,40 @@ pub unsafe trait LowerReturn<UT>: Sized {
 
 pub unsafe trait LiftReturn<UT>: Sized {
     
-    fn lift_callback_return(buf: RustBuffer) -> Self;
+    type ReturnType;
+
+    
+    fn try_lift_successful_return(v: Self::ReturnType) -> Result<Self>;
 
     
     
     
     
-    fn lift_callback_error(_buf: RustBuffer) -> Self {
+    
+    fn lift_foreign_return(ffi_return: Self::ReturnType, call_status: RustCallStatus) -> Self {
+        match call_status.code {
+            RustCallStatusCode::Success => Self::try_lift_successful_return(ffi_return)
+                .unwrap_or_else(|e| {
+                    Self::handle_callback_unexpected_error(UnexpectedUniFFICallbackError::new(e))
+                }),
+            RustCallStatusCode::Error => {
+                Self::lift_error(unsafe { call_status.error_buf.assume_init() })
+            }
+            _ => {
+                let e = <String as FfiConverter<crate::UniFfiTag>>::try_lift(unsafe {
+                    call_status.error_buf.assume_init()
+                })
+                .unwrap_or_else(|e| format!("(Error lifting message: {e}"));
+                Self::handle_callback_unexpected_error(UnexpectedUniFFICallbackError::new(e))
+            }
+        }
+    }
+
+    
+    
+    
+    
+    fn lift_error(_buf: RustBuffer) -> Self {
         panic!("Callback interface method returned unexpected error")
     }
 
@@ -349,6 +379,66 @@ pub unsafe trait LiftRef<UT> {
 
 pub trait ConvertError<UT>: Sized {
     fn try_convert_unexpected_callback_error(e: UnexpectedUniFFICallbackError) -> Result<Self>;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe trait HandleAlloc<UT>: Send + Sync {
+    
+    
+    
+    
+    fn new_handle(value: Arc<Self>) -> Handle;
+
+    
+    
+    
+    
+    
+    fn clone_handle(handle: Handle) -> Handle;
+
+    
+    
+    
+    
+    fn get_arc(handle: Handle) -> Arc<Self> {
+        Self::consume_handle(Self::clone_handle(handle))
+    }
+
+    
+    fn consume_handle(handle: Handle) -> Arc<Self>;
 }
 
 
@@ -439,9 +529,10 @@ macro_rules! derive_ffi_traits {
     (impl $(<$($generic:ident),*>)? $(::uniffi::)? LiftReturn<$ut:path> for $ty:ty $(where $($where:tt)*)?) => {
         unsafe impl $(<$($generic),*>)* $crate::LiftReturn<$ut> for $ty $(where $($where)*)*
         {
-            fn lift_callback_return(buf: $crate::RustBuffer) -> Self {
-                <Self as $crate::Lift<$ut>>::try_lift_from_rust_buffer(buf)
-                    .expect("Error reading callback interface result")
+            type ReturnType = <Self as $crate::Lift<$ut>>::FfiType;
+
+            fn try_lift_successful_return(v: Self::ReturnType) -> $crate::Result<Self> {
+                <Self as $crate::Lift<$ut>>::try_lift(v)
             }
 
             const TYPE_ID_META: $crate::MetadataBuffer = <Self as $crate::Lift<$ut>>::TYPE_ID_META;
@@ -463,4 +554,50 @@ macro_rules! derive_ffi_traits {
             }
         }
     };
+
+    (impl $(<$($generic:ident),*>)? $(::uniffi::)? HandleAlloc<$ut:path> for $ty:ty $(where $($where:tt)*)?) => {
+        // Derived HandleAlloc implementation.
+        //
+        // This is only needed for !Sized types like `dyn Trait`, below is a blanket implementation
+        // for any sized type.
+        unsafe impl $(<$($generic),*>)* $crate::HandleAlloc<$ut> for $ty $(where $($where)*)*
+        {
+            // To implement HandleAlloc for an unsized type, wrap it with a second Arc which
+            // converts the wide pointer into a normal pointer.
+
+            fn new_handle(value: ::std::sync::Arc<Self>) -> $crate::Handle {
+                $crate::Handle::from_pointer(::std::sync::Arc::into_raw(::std::sync::Arc::new(value)))
+            }
+
+            fn clone_handle(handle: $crate::Handle) -> $crate::Handle {
+                unsafe {
+                    ::std::sync::Arc::<::std::sync::Arc<Self>>::increment_strong_count(handle.as_pointer::<::std::sync::Arc<Self>>());
+                }
+                handle
+            }
+
+            fn consume_handle(handle: $crate::Handle) -> ::std::sync::Arc<Self> {
+                unsafe {
+                    ::std::sync::Arc::<Self>::clone(
+                        &std::sync::Arc::<::std::sync::Arc::<Self>>::from_raw(handle.as_pointer::<::std::sync::Arc<Self>>())
+                    )
+                }
+            }
+        }
+    };
+}
+
+unsafe impl<T: Send + Sync, UT> HandleAlloc<UT> for T {
+    fn new_handle(value: Arc<Self>) -> Handle {
+        Handle::from_pointer(Arc::into_raw(value))
+    }
+
+    fn clone_handle(handle: Handle) -> Handle {
+        unsafe { Arc::increment_strong_count(handle.as_pointer::<T>()) };
+        handle
+    }
+
+    fn consume_handle(handle: Handle) -> Arc<Self> {
+        unsafe { Arc::from_raw(handle.as_pointer()) }
+    }
 }

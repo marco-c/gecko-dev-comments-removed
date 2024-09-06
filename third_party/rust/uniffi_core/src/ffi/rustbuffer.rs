@@ -53,10 +53,10 @@ use crate::ffi::{rust_call, ForeignBytes, RustCallStatus};
 pub struct RustBuffer {
     
     
-    capacity: i32,
+    capacity: u64,
     
     
-    len: i32,
+    len: u64,
     
     data: *mut u8,
 }
@@ -84,7 +84,7 @@ impl RustBuffer {
     
     
     
-    pub unsafe fn from_raw_parts(data: *mut u8, len: i32, capacity: i32) -> Self {
+    pub unsafe fn from_raw_parts(data: *mut u8, len: u64, capacity: u64) -> Self {
         Self {
             capacity,
             len,
@@ -126,12 +126,8 @@ impl RustBuffer {
     
     
     
-    pub fn new_with_size(size: usize) -> Self {
-        assert!(
-            size < i32::MAX as usize,
-            "RustBuffer requested size too large"
-        );
-        Self::from_vec(vec![0u8; size])
+    pub fn new_with_size(size: u64) -> Self {
+        Self::from_vec(vec![0u8; size as usize])
     }
 
     
@@ -144,8 +140,8 @@ impl RustBuffer {
     
     
     pub fn from_vec(v: Vec<u8>) -> Self {
-        let capacity = i32::try_from(v.capacity()).expect("buffer capacity cannot fit into a i32.");
-        let len = i32::try_from(v.len()).expect("buffer length cannot fit into a i32.");
+        let capacity = u64::try_from(v.capacity()).expect("buffer capacity cannot fit into a u64.");
+        let len = u64::try_from(v.len()).expect("buffer length cannot fit into a u64.");
         let mut v = std::mem::ManuallyDrop::new(v);
         unsafe { Self::from_raw_parts(v.as_mut_ptr(), len, capacity) }
     }
@@ -208,29 +204,8 @@ impl Default for RustBuffer {
 
 
 
-
-
-
-
-
-#[cfg(feature = "extern-rustbuffer")]
-#[no_mangle]
-pub extern "C" fn uniffi_rustbuffer_alloc(
-    size: i32,
-    call_status: &mut RustCallStatus,
-) -> RustBuffer {
-    _uniffi_rustbuffer_alloc(size, call_status)
-}
-
-#[cfg(not(feature = "extern-rustbuffer"))]
-pub fn uniffi_rustbuffer_alloc(size: i32, call_status: &mut RustCallStatus) -> RustBuffer {
-    _uniffi_rustbuffer_alloc(size, call_status)
-}
-
-fn _uniffi_rustbuffer_alloc(size: i32, call_status: &mut RustCallStatus) -> RustBuffer {
-    rust_call(call_status, || {
-        Ok(RustBuffer::new_with_size(size.max(0) as usize))
-    })
+pub fn uniffi_rustbuffer_alloc(size: u64, call_status: &mut RustCallStatus) -> RustBuffer {
+    rust_call(call_status, || Ok(RustBuffer::new_with_size(size)))
 }
 
 
@@ -241,24 +216,7 @@ fn _uniffi_rustbuffer_alloc(size: i32, call_status: &mut RustCallStatus) -> Rust
 
 
 
-#[cfg(feature = "extern-rustbuffer")]
-#[no_mangle]
-pub extern "C" fn uniffi_rustbuffer_from_bytes(
-    bytes: ForeignBytes,
-    call_status: &mut RustCallStatus,
-) -> RustBuffer {
-    _uniffi_rustbuffer_from_bytes(bytes, call_status)
-}
-
-#[cfg(not(feature = "extern-rustbuffer"))]
 pub fn uniffi_rustbuffer_from_bytes(
-    bytes: ForeignBytes,
-    call_status: &mut RustCallStatus,
-) -> RustBuffer {
-    _uniffi_rustbuffer_from_bytes(bytes, call_status)
-}
-
-fn _uniffi_rustbuffer_from_bytes(
     bytes: ForeignBytes,
     call_status: &mut RustCallStatus,
 ) -> RustBuffer {
@@ -274,18 +232,7 @@ fn _uniffi_rustbuffer_from_bytes(
 
 
 
-#[cfg(feature = "extern-rustbuffer")]
-#[no_mangle]
-pub extern "C" fn uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
-    _uniffi_rustbuffer_free(buf, call_status)
-}
-
-#[cfg(not(feature = "extern-rustbuffer"))]
 pub fn uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
-    _uniffi_rustbuffer_free(buf, call_status)
-}
-
-fn _uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
     rust_call(call_status, || {
         RustBuffer::destroy(buf);
         Ok(())
@@ -307,28 +254,9 @@ fn _uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
 
 
 
-#[cfg(feature = "extern-rustbuffer")]
-#[no_mangle]
-pub extern "C" fn uniffi_rustbuffer_reserve(
-    buf: RustBuffer,
-    additional: i32,
-    call_status: &mut RustCallStatus,
-) -> RustBuffer {
-    _uniffi_rustbuffer_reserve(buf, additional, call_status)
-}
-
-#[cfg(not(feature = "extern-rustbuffer"))]
 pub fn uniffi_rustbuffer_reserve(
     buf: RustBuffer,
-    additional: i32,
-    call_status: &mut RustCallStatus,
-) -> RustBuffer {
-    _uniffi_rustbuffer_reserve(buf, additional, call_status)
-}
-
-fn _uniffi_rustbuffer_reserve(
-    buf: RustBuffer,
-    additional: i32,
+    additional: u64,
     call_status: &mut RustCallStatus,
 ) -> RustBuffer {
     rust_call(call_status, || {
@@ -389,24 +317,6 @@ mod test {
     fn test_rustbuffer_null_must_have_zero_length() {
         
         let rbuf = unsafe { RustBuffer::from_raw_parts(std::ptr::null_mut(), 12, 0) };
-        rbuf.destroy_into_vec();
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_rustbuffer_provided_capacity_must_be_non_negative() {
-        
-        let mut v = vec![0u8, 1, 2];
-        let rbuf = unsafe { RustBuffer::from_raw_parts(v.as_mut_ptr(), 3, -7) };
-        rbuf.destroy_into_vec();
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_rustbuffer_provided_len_must_be_non_negative() {
-        
-        let mut v = vec![0u8, 1, 2];
-        let rbuf = unsafe { RustBuffer::from_raw_parts(v.as_mut_ptr(), -1, 3) };
         rbuf.destroy_into_vec();
     }
 

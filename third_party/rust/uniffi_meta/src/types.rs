@@ -21,8 +21,12 @@ use crate::Checksum;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd)]
 pub enum ObjectImpl {
+    
     Struct,
+    
     Trait,
+    
+    CallbackTrait,
 }
 
 impl ObjectImpl {
@@ -31,27 +35,26 @@ impl ObjectImpl {
     
     
     pub fn rust_name_for(&self, name: &str) -> String {
-        if self == &ObjectImpl::Trait {
+        if self.is_trait_interface() {
             format!("dyn r#{name}")
         } else {
             format!("r#{name}")
         }
     }
 
-    
-    
-    pub fn from_is_trait(is_trait: bool) -> Self {
-        if is_trait {
-            ObjectImpl::Trait
-        } else {
-            ObjectImpl::Struct
-        }
+    pub fn is_trait_interface(&self) -> bool {
+        matches!(self, Self::Trait | Self::CallbackTrait)
+    }
+
+    pub fn has_callback_interface(&self) -> bool {
+        matches!(self, Self::CallbackTrait)
     }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Checksum, Ord, PartialOrd)]
 pub enum ExternalKind {
     Interface,
+    Trait,
     
     DataClass,
 }
@@ -85,7 +88,6 @@ pub enum Type {
         
         imp: ObjectImpl,
     },
-    ForeignExecutor,
     
     Record {
         module_path: String,

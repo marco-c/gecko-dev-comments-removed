@@ -160,15 +160,16 @@ pub trait BindingGenerator: Sized {
         ci: &ComponentInterface,
         config: &Self::Config,
         out_dir: &Utf8Path,
+        try_format_code: bool,
     ) -> Result<()>;
 
     
     fn check_library_path(&self, library_path: &Utf8Path, cdylib_name: Option<&str>) -> Result<()>;
 }
 
-struct BindingGeneratorDefault {
-    target_languages: Vec<TargetLanguage>,
-    try_format_code: bool,
+pub struct BindingGeneratorDefault {
+    pub target_languages: Vec<TargetLanguage>,
+    pub try_format_code: bool,
 }
 
 impl BindingGenerator for BindingGeneratorDefault {
@@ -179,6 +180,7 @@ impl BindingGenerator for BindingGeneratorDefault {
         ci: &ComponentInterface,
         config: &Self::Config,
         out_dir: &Utf8Path,
+        _try_format_code: bool,
     ) -> Result<()> {
         for &language in &self.target_languages {
             bindings::write_bindings(
@@ -219,12 +221,13 @@ impl BindingGenerator for BindingGeneratorDefault {
 
 
 pub fn generate_external_bindings<T: BindingGenerator>(
-    binding_generator: T,
+    binding_generator: &T,
     udl_file: impl AsRef<Utf8Path>,
     config_file_override: Option<impl AsRef<Utf8Path>>,
     out_dir_override: Option<impl AsRef<Utf8Path>>,
     library_file: Option<impl AsRef<Utf8Path>>,
     crate_name: Option<&str>,
+    try_format_code: bool,
 ) -> Result<()> {
     let crate_name = crate_name
         .map(|c| Ok(c.to_string()))
@@ -253,7 +256,7 @@ pub fn generate_external_bindings<T: BindingGenerator>(
         udl_file.as_ref(),
         out_dir_override.as_ref().map(|p| p.as_ref()),
     )?;
-    binding_generator.write_bindings(&component, &config, &out_dir)
+    binding_generator.write_bindings(&component, &config, &out_dir, try_format_code)
 }
 
 
@@ -301,25 +304,23 @@ fn generate_component_scaffolding_inner(
 
 
 
-pub fn generate_bindings(
+pub fn generate_bindings<T: BindingGenerator>(
     udl_file: &Utf8Path,
     config_file_override: Option<&Utf8Path>,
-    target_languages: Vec<TargetLanguage>,
+    binding_generator: T,
     out_dir_override: Option<&Utf8Path>,
     library_file: Option<&Utf8Path>,
     crate_name: Option<&str>,
     try_format_code: bool,
 ) -> Result<()> {
     generate_external_bindings(
-        BindingGeneratorDefault {
-            target_languages,
-            try_format_code,
-        },
+        &binding_generator,
         udl_file,
         config_file_override,
         out_dir_override,
         library_file,
         crate_name,
+        try_format_code,
     )
 }
 
@@ -417,22 +418,53 @@ fn format_code_with_rustfmt(path: &Utf8Path) -> Result<()> {
     Ok(())
 }
 
+
+fn load_toml_file(source: Option<&Utf8Path>) -> Result<Option<toml::value::Table>> {
+    if let Some(source) = source {
+        if source.exists() {
+            let contents =
+                fs::read_to_string(source).with_context(|| format!("read file: {:?}", source))?;
+            return Ok(Some(
+                toml::de::from_str(&contents)
+                    .with_context(|| format!("parse toml: {:?}", source))?,
+            ));
+        }
+    }
+
+    Ok(None)
+}
+
+
 fn load_initial_config<Config: DeserializeOwned>(
     crate_root: &Utf8Path,
     config_file_override: Option<&Utf8Path>,
 ) -> Result<Config> {
-    let path = match config_file_override {
-        Some(cfg) => Some(cfg.to_owned()),
-        None => crate_root.join("uniffi.toml").canonicalize_utf8().ok(),
-    };
-    let toml_config = match path {
-        Some(path) => {
-            let contents = fs::read_to_string(path).context("Failed to read config file")?;
-            toml::de::from_str(&contents)?
+    let mut config = load_toml_file(Some(crate_root.join("uniffi.toml").as_path()))
+        .context("default config")?
+        .unwrap_or(toml::value::Table::default());
+
+    let override_config = load_toml_file(config_file_override).context("override config")?;
+    if let Some(override_config) = override_config {
+        merge_toml(&mut config, override_config);
+    }
+
+    Ok(toml::Value::from(config).try_into()?)
+}
+
+fn merge_toml(a: &mut toml::value::Table, b: toml::value::Table) {
+    for (key, value) in b.into_iter() {
+        match a.get_mut(&key) {
+            Some(existing_value) => match (existing_value, value) {
+                (toml::Value::Table(ref mut t0), toml::Value::Table(t1)) => {
+                    merge_toml(t0, t1);
+                }
+                (v, value) => *v = value,
+            },
+            None => {
+                a.insert(key, value);
+            }
         }
-        None => toml::Value::from(toml::value::Table::default()),
-    };
-    Ok(toml_config.try_into()?)
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -515,5 +547,57 @@ mod test {
 
         let not_a_crate_root = &this_crate_root.join("src/templates");
         assert!(guess_crate_root(&not_a_crate_root.join("src/example.udl")).is_err());
+    }
+
+    #[test]
+    fn test_merge_toml() {
+        let default = r#"
+            foo = "foo"
+            bar = "bar"
+
+            [table1]
+            foo = "foo"
+            bar = "bar"
+        "#;
+        let mut default = toml::de::from_str(default).unwrap();
+
+        let override_toml = r#"
+            # update key
+            bar = "BAR"
+            # insert new key
+            baz = "BAZ"
+
+            [table1]
+            # update key
+            bar = "BAR"
+            # insert new key
+            baz = "BAZ"
+
+            # new table
+            [table1.table2]
+            bar = "BAR"
+            baz = "BAZ"
+        "#;
+        let override_toml = toml::de::from_str(override_toml).unwrap();
+
+        let expected = r#"
+            foo = "foo"
+            bar = "BAR"
+            baz = "BAZ"
+
+            [table1]
+            foo = "foo"
+            bar = "BAR"
+            baz = "BAZ"
+
+            [table1.table2]
+            bar = "BAR"
+            baz = "BAZ"
+        "#;
+        let expected: toml::value::Table = toml::de::from_str(expected).unwrap();
+
+        merge_toml(&mut default, override_toml);
+
+        assert_eq!(&expected, &default);
     }
 }
