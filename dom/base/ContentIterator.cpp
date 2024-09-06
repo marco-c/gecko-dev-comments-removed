@@ -715,7 +715,7 @@ nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
     
     
     
-    if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(aNode)) {
+    if (aNode->IsShadowRoot()) {
       if (nsIContent* child = parent->GetFirstChild()) {
         return child;
       }
