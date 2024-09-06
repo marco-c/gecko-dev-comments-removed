@@ -172,14 +172,15 @@ nscoord ColumnSetWrapperFrame::GetMinISize(gfxContext* aRenderingContext) {
       
       iSize = 0;
     } else {
-      MOZ_ASSERT(colStyle->mColumnCount != nsStyleColumn::kColumnCountAuto,
+      MOZ_ASSERT(!colStyle->mColumnCount.IsAuto(),
                  "column-count and column-width can't both be auto!");
       
       
       
       const nscoord colGap =
           ColumnUtils::GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
-      iSize = ColumnUtils::IntrinsicISize(colStyle->mColumnCount, colGap, 0);
+      iSize = ColumnUtils::IntrinsicISize(colStyle->mColumnCount.AsInteger(),
+                                          colGap, 0);
     }
   } else {
     for (nsIFrame* f : PrincipalChildList()) {
@@ -205,16 +206,15 @@ nscoord ColumnSetWrapperFrame::GetPrefISize(gfxContext* aRenderingContext) {
       colISize =
           ColumnUtils::ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
     } else {
-      MOZ_ASSERT(colStyle->mColumnCount != nsStyleColumn::kColumnCountAuto,
+      MOZ_ASSERT(!colStyle->mColumnCount.IsAuto(),
                  "column-count and column-width can't both be auto!");
       colISize = 0;
     }
 
     
-    const uint32_t numColumns =
-        colStyle->mColumnCount == nsStyleColumn::kColumnCountAuto
-            ? 1
-            : colStyle->mColumnCount;
+    const uint32_t numColumns = colStyle->mColumnCount.IsAuto()
+                                    ? 1
+                                    : colStyle->mColumnCount.AsInteger();
     const nscoord colGap =
         ColumnUtils::GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
     iSize = ColumnUtils::IntrinsicISize(numColumns, colGap, colISize);

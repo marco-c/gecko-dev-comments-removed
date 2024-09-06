@@ -4,7 +4,7 @@
 
 
 
-use crate::values::generics::column::ColumnCount as GenericColumnCount;
+use crate::values::generics::column::GenericColumnCount;
 use crate::values::specified::PositiveInteger;
 
 

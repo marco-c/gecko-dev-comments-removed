@@ -699,8 +699,6 @@ nsChangeHint nsStyleXUL::CalcDifference(const nsStyleXUL& aNewData) const {
 
 
 
- const uint32_t nsStyleColumn::kMaxColumnCount;
- const uint32_t nsStyleColumn::kColumnCountAuto;
 
 nsStyleColumn::nsStyleColumn()
     : mColumnWidth(LengthOrAuto::Auto()),

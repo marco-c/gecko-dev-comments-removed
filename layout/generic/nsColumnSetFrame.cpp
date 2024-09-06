@@ -97,6 +97,9 @@ bool nsDisplayColumnRule::CreateWebRenderCommands(
 }
 
 
+static constexpr int32_t kMaxColumnCount = 1000;
+
+
 
 
 
@@ -271,7 +274,10 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   nscoord colBSize = aReflowInput.AvailableBSize();
   nscoord colGap =
       ColumnUtils::GetColumnGap(this, aReflowInput.ComputedISize());
-  int32_t numColumns = colStyle->mColumnCount;
+  int32_t numColumns =
+      colStyle->mColumnCount.IsAuto()
+          ? 0
+          : std::min(colStyle->mColumnCount.AsInteger(), kMaxColumnCount);
 
   
   
@@ -304,7 +310,7 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
       
       
       int32_t maxColumns =
-          std::min(nscoord(nsStyleColumn::kMaxColumnCount),
+          std::min(nscoord(kMaxColumnCount),
                    (availContentISize + colGap) / (colGap + colISize));
       numColumns = std::max(1, std::min(numColumns, maxColumns));
     }
@@ -333,8 +339,7 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
       if (colGap + colISize > 0) {
         numColumns = (availContentISize + colGap) / (colGap + colISize);
         
-        numColumns =
-            std::min(nscoord(nsStyleColumn::kMaxColumnCount), numColumns);
+        numColumns = std::min(kMaxColumnCount, numColumns);
       }
       if (numColumns <= 0) {
         numColumns = 1;
@@ -424,13 +429,14 @@ nscoord nsColumnSetFrame::GetMinISize(gfxContext* aRenderingContext) {
     
     iSize = std::min(iSize, colISize);
   } else {
-    NS_ASSERTION(colStyle->mColumnCount > 0,
+    NS_ASSERTION(!colStyle->mColumnCount.IsAuto(),
                  "column-count and column-width can't both be auto");
     
     
     
     nscoord colGap = ColumnUtils::GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
-    iSize = ColumnUtils::IntrinsicISize(colStyle->mColumnCount, colGap, iSize);
+    iSize = ColumnUtils::IntrinsicISize(colStyle->mColumnCount.AsInteger(),
+                                        colGap, iSize);
   }
   
   
@@ -459,9 +465,7 @@ nscoord nsColumnSetFrame::GetPrefISize(gfxContext* aRenderingContext) {
 
   
   uint32_t numColumns =
-      colStyle->mColumnCount == nsStyleColumn::kColumnCountAuto
-          ? 1
-          : colStyle->mColumnCount;
+      colStyle->mColumnCount.IsAuto() ? 1 : colStyle->mColumnCount.AsInteger();
   nscoord colGap = ColumnUtils::GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
   return ColumnUtils::IntrinsicISize(numColumns, colGap, colISize);
 }
