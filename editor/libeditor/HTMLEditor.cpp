@@ -1151,7 +1151,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       
       
       const WSScanResult scanResultInTextNode =
-          WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
               editingHost, EditorRawDOMPoint(text, 0),
               BlockInlineCheck::UseComputedDisplayStyle);
       if ((scanResultInTextNode.InVisibleOrCollapsibleCharacters() ||

@@ -49,9 +49,11 @@ template WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     const EditorDOMPoint& aPoint) const;
 template WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     const EditorRawDOMPoint& aPoint) const;
-template WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
+template WSScanResult
+WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
     const EditorDOMPoint& aPoint) const;
-template WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
+template WSScanResult
+WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
     const EditorRawDOMPoint& aPoint) const;
 template EditorDOMPoint WSRunScanner::GetAfterLastVisiblePoint(
     Text& aTextNode, const Element* aAncestorLimiter);
@@ -1735,7 +1737,8 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   
   
   if (MOZ_UNLIKELY(!aPoint.IsInComposedDoc())) {
-    return WSScanResult(*aPoint.template ContainerAs<nsIContent>(),
+    return WSScanResult(WSScanResult::ScanDirection::Backward,
+                        *aPoint.template ContainerAs<nsIContent>(),
                         WSType::InUncomposedDoc, mBlockInlineCheck);
   }
 
@@ -1753,7 +1756,8 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     
     
     if (aPoint.GetChild() && !aPoint.GetChild()->IsEditable()) {
-      return WSScanResult(*aPoint.GetChild(), WSType::SpecialContent,
+      return WSScanResult(WSScanResult::ScanDirection::Backward,
+                          *aPoint.GetChild(), WSType::SpecialContent,
                           mBlockInlineCheck);
     }
     const auto atPreviousChar =
@@ -1761,9 +1765,12 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     
     if (atPreviousChar.IsSet() && !atPreviousChar.IsContainerEmpty()) {
       MOZ_ASSERT(!atPreviousChar.IsEndOfContainer());
-      return WSScanResult(atPreviousChar.template NextPoint<EditorDOMPoint>(),
+      return WSScanResult(WSScanResult::ScanDirection::Backward,
+                          atPreviousChar.template NextPoint<EditorDOMPoint>(),
                           atPreviousChar.IsCharCollapsibleASCIISpaceOrNBSP()
                               ? WSType::CollapsibleWhiteSpaces
+                          : atPreviousChar.IsCharPreformattedNewLine()
+                              ? WSType::PreformattedLineBreak
                               : WSType::NonCollapsibleCharacters,
                           mBlockInlineCheck);
     }
@@ -1774,6 +1781,22 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     return WSScanResult::Error();
   }
 
+  switch (TextFragmentDataAtStartRef().StartRawReason()) {
+    case WSType::CollapsibleWhiteSpaces:
+    case WSType::NonCollapsibleCharacters:
+    case WSType::PreformattedLineBreak:
+      MOZ_ASSERT(TextFragmentDataAtStartRef().StartRef().IsSet());
+      
+      
+      
+      return WSScanResult(WSScanResult::ScanDirection::Backward,
+                          TextFragmentDataAtStartRef().StartRef(),
+                          TextFragmentDataAtStartRef().StartRawReason(),
+                          mBlockInlineCheck);
+    default:
+      break;
+  }
+
   
   if (TextFragmentDataAtStartRef().GetStartReasonContent() !=
       TextFragmentDataAtStartRef().StartRef().GetContainer()) {
@@ -1782,20 +1805,22 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     }
     
     
-    return WSScanResult(*TextFragmentDataAtStartRef().GetStartReasonContent(),
+    return WSScanResult(WSScanResult::ScanDirection::Backward,
+                        *TextFragmentDataAtStartRef().GetStartReasonContent(),
                         TextFragmentDataAtStartRef().StartRawReason(),
                         mBlockInlineCheck);
   }
   if (NS_WARN_IF(!TextFragmentDataAtStartRef().StartRef().IsSet())) {
     return WSScanResult::Error();
   }
-  return WSScanResult(TextFragmentDataAtStartRef().StartRef(),
+  return WSScanResult(WSScanResult::ScanDirection::Backward,
+                      TextFragmentDataAtStartRef().StartRef(),
                       TextFragmentDataAtStartRef().StartRawReason(),
                       mBlockInlineCheck);
 }
 
 template <typename PT, typename CT>
-WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
+WSScanResult WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
     const EditorDOMPointBase<PT, CT>& aPoint) const {
   MOZ_ASSERT(aPoint.IsSet());
   MOZ_ASSERT(aPoint.IsInComposedDoc());
@@ -1809,7 +1834,8 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   
   
   if (MOZ_UNLIKELY(!aPoint.IsInComposedDoc())) {
-    return WSScanResult(*aPoint.template ContainerAs<nsIContent>(),
+    return WSScanResult(WSScanResult::ScanDirection::Forward,
+                        *aPoint.template ContainerAs<nsIContent>(),
                         WSType::InUncomposedDoc, mBlockInlineCheck);
   }
 
@@ -1827,17 +1853,21 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
     
     
     if (aPoint.GetChild() && !aPoint.GetChild()->IsEditable()) {
-      return WSScanResult(*aPoint.GetChild(), WSType::SpecialContent,
+      return WSScanResult(WSScanResult::ScanDirection::Forward,
+                          *aPoint.GetChild(), WSType::SpecialContent,
                           mBlockInlineCheck);
     }
     const auto atNextChar =
         GetInclusiveNextEditableCharPoint<EditorDOMPoint>(aPoint);
     
     if (atNextChar.IsSet() && !atNextChar.IsContainerEmpty()) {
-      return WSScanResult(atNextChar,
+      return WSScanResult(WSScanResult::ScanDirection::Forward, atNextChar,
                           !atNextChar.IsEndOfContainer() &&
                                   atNextChar.IsCharCollapsibleASCIISpaceOrNBSP()
                               ? WSType::CollapsibleWhiteSpaces
+                          : !atNextChar.IsEndOfContainer() &&
+                                  atNextChar.IsCharPreformattedNewLine()
+                              ? WSType::PreformattedLineBreak
                               : WSType::NonCollapsibleCharacters,
                           mBlockInlineCheck);
     }
@@ -1848,6 +1878,23 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
     return WSScanResult::Error();
   }
 
+  switch (TextFragmentDataAtStartRef().EndRawReason()) {
+    case WSType::CollapsibleWhiteSpaces:
+    case WSType::NonCollapsibleCharacters:
+    case WSType::PreformattedLineBreak:
+      MOZ_ASSERT(TextFragmentDataAtStartRef().StartRef().IsSet());
+      
+      
+      
+      
+      return WSScanResult(WSScanResult::ScanDirection::Forward,
+                          TextFragmentDataAtStartRef().EndRef(),
+                          TextFragmentDataAtStartRef().EndRawReason(),
+                          mBlockInlineCheck);
+    default:
+      break;
+  }
+
   
   if (TextFragmentDataAtStartRef().GetEndReasonContent() !=
       TextFragmentDataAtStartRef().EndRef().GetContainer()) {
@@ -1856,14 +1903,16 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
     }
     
     
-    return WSScanResult(*TextFragmentDataAtStartRef().GetEndReasonContent(),
+    return WSScanResult(WSScanResult::ScanDirection::Forward,
+                        *TextFragmentDataAtStartRef().GetEndReasonContent(),
                         TextFragmentDataAtStartRef().EndRawReason(),
                         mBlockInlineCheck);
   }
   if (NS_WARN_IF(!TextFragmentDataAtStartRef().EndRef().IsSet())) {
     return WSScanResult::Error();
   }
-  return WSScanResult(TextFragmentDataAtStartRef().EndRef(),
+  return WSScanResult(WSScanResult::ScanDirection::Forward,
+                      TextFragmentDataAtStartRef().EndRef(),
                       TextFragmentDataAtStartRef().EndRawReason(),
                       mBlockInlineCheck);
 }

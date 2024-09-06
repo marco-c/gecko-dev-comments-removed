@@ -1616,7 +1616,7 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     }
 
     const WSScanResult forwardScanFromAfterBRElementResult =
-        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
             editingHost, pointToPutCaret,
             BlockInlineCheck::UseComputedDisplayStyle);
     if (MOZ_UNLIKELY(forwardScanFromAfterBRElementResult.Failed())) {
@@ -1663,8 +1663,8 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     } else if (forwardScanFromAfterBRElementResult.ReachedSpecialContent()) {
       
       
-      pointToPutCaret =
-          forwardScanFromAfterBRElementResult.PointAtContent<EditorDOMPoint>();
+      pointToPutCaret = forwardScanFromAfterBRElementResult
+                            .PointAtReachedContent<EditorDOMPoint>();
     }
 
     nsresult rv = CollapseSelectionTo(pointToPutCaret);
@@ -2281,7 +2281,8 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
       
       backwardScanResult.ReachedInlineEditingHostBoundary();
   const WSScanResult forwardScanResult =
-      wsRunScanner.ScanNextVisibleNodeOrBlockBoundaryFrom(aPointToBreak);
+      wsRunScanner.ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
+          aPointToBreak);
   if (MOZ_UNLIKELY(forwardScanResult.Failed())) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
     return Err(NS_ERROR_FAILURE);
@@ -2405,7 +2406,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
   }
 
   const WSScanResult forwardScanFromAfterBRElementResult =
-      WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+      WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
           &aEditingHost, afterBRElement,
           BlockInlineCheck::UseComputedDisplayStyle);
   if (MOZ_UNLIKELY(forwardScanFromAfterBRElementResult.Failed())) {
@@ -2642,7 +2643,7 @@ HTMLEditor::HandleInsertParagraphInMailCiteElement(
     
     
     const WSScanResult forwardScanFromPointToSplitResult =
-        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
             &aEditingHost, pointToSplit, BlockInlineCheck::UseHTMLDefaultStyle);
     if (forwardScanFromPointToSplitResult.Failed()) {
       return Err(NS_ERROR_FAILURE);
@@ -2653,8 +2654,8 @@ HTMLEditor::HandleInsertParagraphInMailCiteElement(
         forwardScanFromPointToSplitResult.BRElementPtr() != &aMailCiteElement &&
         aMailCiteElement.Contains(
             forwardScanFromPointToSplitResult.BRElementPtr())) {
-      pointToSplit =
-          forwardScanFromPointToSplitResult.PointAfterContent<EditorDOMPoint>();
+      pointToSplit = forwardScanFromPointToSplitResult
+                         .PointAfterReachedContent<EditorDOMPoint>();
     }
 
     if (NS_WARN_IF(!pointToSplit.IsInContentNode())) {
@@ -2773,7 +2774,7 @@ HTMLEditor::HandleInsertParagraphInMailCiteElement(
         return NS_SUCCESS_DOM_NO_OPERATION;
       }
       const WSScanResult forwardScanFromPointAfterNewBRElementResult =
-          WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
               &aEditingHost,
               EditorRawDOMPoint::After(pointToCreateNewBRElement),
               BlockInlineCheck::UseComputedDisplayStyle);
@@ -7725,7 +7726,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
   WSRunScanner wsScannerAtStart(&aEditingHost, startPoint,
                                 BlockInlineCheck::UseHTMLDefaultStyle);
   const WSScanResult scanResultAtStart =
-      wsScannerAtStart.ScanNextVisibleNodeOrBlockBoundaryFrom(startPoint);
+      wsScannerAtStart.ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
+          startPoint);
   if (scanResultAtStart.Failed()) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
     return Err(NS_ERROR_FAILURE);
@@ -8978,7 +8980,7 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
   
   
   const WSScanResult forwardScanFromStartOfListItemResult =
-      WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+      WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
           &aEditingHost, EditorRawDOMPoint(&rightListItemElement, 0u),
           BlockInlineCheck::UseComputedDisplayStyle);
   if (MOZ_UNLIKELY(forwardScanFromStartOfListItemResult.Failed())) {
@@ -8988,8 +8990,8 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
   if (forwardScanFromStartOfListItemResult.ReachedSpecialContent() ||
       forwardScanFromStartOfListItemResult.ReachedBRElement() ||
       forwardScanFromStartOfListItemResult.ReachedHRElement()) {
-    auto atFoundElement =
-        forwardScanFromStartOfListItemResult.PointAtContent<EditorDOMPoint>();
+    auto atFoundElement = forwardScanFromStartOfListItemResult
+                              .PointAtReachedContent<EditorDOMPoint>();
     if (NS_WARN_IF(!atFoundElement.IsSetAndValid())) {
       return Err(NS_ERROR_FAILURE);
     }

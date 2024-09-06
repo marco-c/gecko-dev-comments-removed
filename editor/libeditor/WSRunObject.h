@@ -106,17 +106,24 @@ class MOZ_STACK_CLASS WSScanResult final {
 
  public:
   WSScanResult() = delete;
-  MOZ_NEVER_INLINE_DEBUG WSScanResult(nsIContent& aContent, WSType aReason,
+  enum class ScanDirection : bool { Backward, Forward };
+  MOZ_NEVER_INLINE_DEBUG WSScanResult(ScanDirection aScanDirection,
+                                      nsIContent& aContent, WSType aReason,
                                       BlockInlineCheck aBlockInlineCheck)
-      : mContent(&aContent), mReason(aReason) {
+      : mContent(&aContent), mReason(aReason), mDirection(aScanDirection) {
+    MOZ_ASSERT(aReason != WSType::CollapsibleWhiteSpaces &&
+               aReason != WSType::NonCollapsibleCharacters &&
+               aReason != WSType::PreformattedLineBreak);
     AssertIfInvalidData(aBlockInlineCheck);
   }
-  MOZ_NEVER_INLINE_DEBUG WSScanResult(const EditorDOMPoint& aPoint,
+  MOZ_NEVER_INLINE_DEBUG WSScanResult(ScanDirection aScanDirection,
+                                      const EditorDOMPoint& aPoint,
                                       WSType aReason,
                                       BlockInlineCheck aBlockInlineCheck)
       : mContent(aPoint.GetContainerAs<nsIContent>()),
         mOffset(Some(aPoint.Offset())),
-        mReason(aReason) {
+        mReason(aReason),
+        mDirection(aScanDirection) {
     AssertIfInvalidData(aBlockInlineCheck);
   }
 
@@ -142,13 +149,31 @@ class MOZ_STACK_CLASS WSScanResult final {
     MOZ_ASSERT_IF(mContent && !mContent->IsInComposedDoc(),
                   mReason == WSType::InUncomposedDoc);
     MOZ_ASSERT_IF(mReason == WSType::NonCollapsibleCharacters ||
-                      mReason == WSType::CollapsibleWhiteSpaces,
+                      mReason == WSType::CollapsibleWhiteSpaces ||
+                      mReason == WSType::PreformattedLineBreak,
                   mContent->IsText());
+    MOZ_ASSERT_IF(mReason == WSType::NonCollapsibleCharacters ||
+                      mReason == WSType::CollapsibleWhiteSpaces ||
+                      mReason == WSType::PreformattedLineBreak,
+                  mOffset.isSome());
+    MOZ_ASSERT_IF(mReason == WSType::NonCollapsibleCharacters ||
+                      mReason == WSType::CollapsibleWhiteSpaces ||
+                      mReason == WSType::PreformattedLineBreak,
+                  mContent->AsText()->TextDataLength() > 0);
+    MOZ_ASSERT_IF(mDirection == ScanDirection::Backward &&
+                      (mReason == WSType::NonCollapsibleCharacters ||
+                       mReason == WSType::CollapsibleWhiteSpaces ||
+                       mReason == WSType::PreformattedLineBreak),
+                  *mOffset > 0);
+    MOZ_ASSERT_IF(mDirection == ScanDirection::Forward &&
+                      (mReason == WSType::NonCollapsibleCharacters ||
+                       mReason == WSType::CollapsibleWhiteSpaces ||
+                       mReason == WSType::PreformattedLineBreak),
+                  *mOffset < mContent->AsText()->TextDataLength());
     MOZ_ASSERT_IF(mReason == WSType::BRElement,
                   mContent->IsHTMLElement(nsGkAtoms::br));
-    MOZ_ASSERT_IF(
-        mReason == WSType::PreformattedLineBreak,
-        mContent->IsText() && EditorUtils::IsNewLinePreformatted(*mContent));
+    MOZ_ASSERT_IF(mReason == WSType::PreformattedLineBreak,
+                  EditorUtils::IsNewLinePreformatted(*mContent));
     MOZ_ASSERT_IF(
         mReason == WSType::SpecialContent,
         (mContent->IsText() && !mContent->IsEditable()) ||
@@ -245,9 +270,20 @@ class MOZ_STACK_CLASS WSScanResult final {
 
 
   template <typename EditorDOMPointType>
-  EditorDOMPointType PointAtContent() const {
+  EditorDOMPointType PointAtReachedContent() const {
     MOZ_ASSERT(mContent);
-    return EditorDOMPointType(mContent);
+    switch (mReason) {
+      case WSType::CollapsibleWhiteSpaces:
+      case WSType::NonCollapsibleCharacters:
+      case WSType::PreformattedLineBreak:
+        MOZ_DIAGNOSTIC_ASSERT(mOffset.isSome());
+        return mDirection == ScanDirection::Forward
+                   ? EditorDOMPointType(mContent, mOffset.valueOr(0))
+                   : EditorDOMPointType(mContent,
+                                        std::max(mOffset.valueOr(1), 1u) - 1);
+      default:
+        return EditorDOMPointType(mContent);
+    }
   }
 
   
@@ -255,10 +291,9 @@ class MOZ_STACK_CLASS WSScanResult final {
 
 
   template <typename EditorDOMPointType>
-  EditorDOMPointType PointAfterContent() const {
+  EditorDOMPointType PointAfterReachedContent() const {
     MOZ_ASSERT(mContent);
-    return mContent ? EditorDOMPointType::After(mContent)
-                    : EditorDOMPointType();
+    return PointAtReachedContent<EditorDOMPointType>().template NextPoint();
   }
 
   
@@ -362,6 +397,7 @@ class MOZ_STACK_CLASS WSScanResult final {
   nsCOMPtr<nsIContent> mContent;
   Maybe<uint32_t> mOffset;
   WSType mReason;
+  ScanDirection mDirection = ScanDirection::Backward;
 };
 
 class MOZ_STACK_CLASS WSRunScanner final {
@@ -382,17 +418,21 @@ class MOZ_STACK_CLASS WSRunScanner final {
   
   
   
+  
+  
   template <typename PT, typename CT>
-  WSScanResult ScanNextVisibleNodeOrBlockBoundaryFrom(
+  WSScanResult ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
       const EditorDOMPointBase<PT, CT>& aPoint) const;
   template <typename PT, typename CT>
-  static WSScanResult ScanNextVisibleNodeOrBlockBoundary(
+  static WSScanResult ScanInclusiveNextVisibleNodeOrBlockBoundary(
       const Element* aEditingHost, const EditorDOMPointBase<PT, CT>& aPoint,
       BlockInlineCheck aBlockInlineCheck) {
     return WSRunScanner(aEditingHost, aPoint, aBlockInlineCheck)
-        .ScanNextVisibleNodeOrBlockBoundaryFrom(aPoint);
+        .ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(aPoint);
   }
 
+  
+  
   
   
   

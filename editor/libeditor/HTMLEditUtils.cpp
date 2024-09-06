@@ -2204,7 +2204,7 @@ nsIContent* HTMLEditUtils::GetContentToPreserveInlineStyles(
   }
   for (auto point = aPoint.template To<EditorRawDOMPoint>(); point.IsSet();) {
     const WSScanResult nextVisibleThing =
-        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
             &aEditingHost, point,
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (nextVisibleThing.InVisibleOrCollapsibleCharacters()) {
@@ -2261,7 +2261,7 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
   
   
   const WSScanResult forwardScanFromPointToInsertResult =
-      wsScannerForPointToInsert.ScanNextVisibleNodeOrBlockBoundaryFrom(
+      wsScannerForPointToInsert.ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
           pointToInsert);
   
   
@@ -2289,7 +2289,7 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
   }
 
   return forwardScanFromPointToInsertResult
-      .template PointAfterContent<EditorDOMPointType>();
+      .template PointAfterReachedContent<EditorDOMPointType>();
 }
 
 
