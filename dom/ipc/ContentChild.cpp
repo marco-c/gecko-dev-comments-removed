@@ -142,6 +142,7 @@
 #  include "mozilla/SandboxSettings.h"
 #  if defined(XP_WIN)
 #    include "mozilla/sandboxTarget.h"
+#    include "mozilla/ProcInfo.h"
 #  elif defined(XP_LINUX)
 #    include "CubebUtils.h"
 #    include "mozilla/Sandbox.h"
@@ -1722,6 +1723,8 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
   ::LoadLibraryW(L"softokn3.dll");
   
   ::LoadLibraryW(L"textshaping.dll");
+  
+  Unused << GetCpuFrequencyMHz();
 #    if defined(DEBUG)
   
   ::LoadLibraryW(L"dbghelp.dll");
