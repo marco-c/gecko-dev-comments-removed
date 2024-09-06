@@ -56,6 +56,7 @@ class MockDragServiceController;
 
 class nsBaseDragSession : public nsIDragSession {
  public:
+  NS_DECL_ISUPPORTS
   NS_DECL_NSIDRAGSESSION
 
   int32_t TakeChildProcessDragAction();
@@ -68,9 +69,106 @@ class nsBaseDragSession : public nsIDragSession {
     mEndDragPoint = aEndDragPoint;
   }
 
+  uint16_t GetInputSource() { return mInputSource; }
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT nsresult InitWithRemoteImage(
+      nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
+      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
+      nsIArray* aTransferableArray, uint32_t aActionType,
+      mozilla::dom::RemoteDragStartData* aDragStartData,
+      mozilla::dom::DragEvent* aDragEvent,
+      mozilla::dom::DataTransfer* aDataTransfer, bool aIsSynthesizedForTests);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT nsresult InitWithSelection(
+      nsIWidget* aWidget, mozilla::dom::Selection* aSelection,
+      nsIPrincipal* aPrincipal, nsIContentSecurityPolicy* aCsp,
+      nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+      uint32_t aActionType, mozilla::dom::DragEvent* aDragEvent,
+      mozilla::dom::DataTransfer* aDataTransfer, bool aIsSynthesizedForTests);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT nsresult InitWithImage(
+      nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
+      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
+      nsIArray* aTransferableArray, uint32_t aActionType, nsINode* aImage,
+      int32_t aImageX, int32_t aImageY, mozilla::dom::DragEvent* aDragEvent,
+      mozilla::dom::DataTransfer* aDataTransfer, bool aIsSynthesizedForTests);
+
  protected:
   nsBaseDragSession();
-  ~nsBaseDragSession();
+  virtual ~nsBaseDragSession();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSession(
+      nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
+      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
+      nsIArray* aTransferableArray, uint32_t aActionType,
+      nsContentPolicyType aContentPolicyType = nsIContentPolicy::TYPE_OTHER);
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
+      nsIWidget* aWidget, nsIArray* aTransferableArray,
+      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      uint32_t aActionType) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult DrawDrag(nsINode* aDOMNode,
+                    const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+                    mozilla::CSSIntPoint aScreenPosition,
+                    mozilla::LayoutDeviceIntRect* aScreenDragRect,
+                    RefPtr<mozilla::gfx::SourceSurface>* aSurface,
+                    nsPresContext** aPresContext);
+
+  
+
+
+
+  nsresult DrawDragForImage(nsPresContext* aPresContext,
+                            nsIImageLoadingContent* aImageLoader,
+                            mozilla::dom::HTMLCanvasElement* aCanvas,
+                            mozilla::LayoutDeviceIntRect* aScreenDragRect,
+                            RefPtr<mozilla::gfx::SourceSurface>* aSurface);
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult EndDragSessionImpl(
       bool aDoneDrag, uint32_t aKeyModifiers);
@@ -133,6 +231,10 @@ class nsBaseDragSession : public nsIDragSession {
   
   mozilla::LayoutDeviceIntPoint mEndDragPoint;
 
+  
+  
+  nsContentPolicyType mContentPolicyType = nsIContentPolicy::TYPE_OTHER;
+
   uint32_t mDragAction = nsIDragService::DRAGDROP_ACTION_NONE;
   uint32_t mDragActionFromChildProcess =
       nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
@@ -145,7 +247,8 @@ class nsBaseDragSession : public nsIDragSession {
   
   uint16_t mInputSource = mozilla::dom::MouseEvent_Binding::MOZ_SOURCE_MOUSE;
 
-  bool mDoingDrag = false;
+  
+  bool mDoingDrag = true;
 
   bool mCanDrop = false;
   bool mOnlyChromeDrop = false;
@@ -167,21 +270,14 @@ class nsBaseDragSession : public nsIDragSession {
 
 
 
-
-
-
-class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
+class nsBaseDragService : public nsIDragService {
  public:
-  typedef mozilla::gfx::SourceSurface SourceSurface;
-
   nsBaseDragService();
 
   
   NS_DECL_ISUPPORTS
 
   NS_DECL_NSIDRAGSERVICE
-
-  uint16_t GetInputSource() { return mInputSource; }
 
   using nsIDragService::GetCurrentSession;
 
@@ -191,88 +287,33 @@ class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
     return std::move(mBrowsers);
   }
 
+  void ClearCurrentParentDragSession() {
+    mCurrentParentDragSession = nullptr;
+  }
+
+  static nsIWidget* GetWidgetFromWidgetProvider(nsISupports* aWidgetProvider);
+
  protected:
   virtual ~nsBaseDragService();
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSession(
-      nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-      nsIArray* aTransferableArray, uint32_t aActionType,
-      nsContentPolicyType aContentPolicyType = nsIContentPolicy::TYPE_OTHER);
-
-   
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
-      nsIWidget* aWidget, nsIArray* aTransferableArray,
-      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-      uint32_t aActionType) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult DrawDrag(nsINode* aDOMNode,
-                    const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-                    mozilla::CSSIntPoint aScreenPosition,
-                    mozilla::LayoutDeviceIntRect* aScreenDragRect,
-                    RefPtr<SourceSurface>* aSurface,
-                    nsPresContext** aPresContext);
-
-  
-
-
-
-  nsresult DrawDragForImage(nsPresContext* aPresContext,
-                            nsIImageLoadingContent* aImageLoader,
-                            mozilla::dom::HTMLCanvasElement* aCanvas,
-                            mozilla::LayoutDeviceIntRect* aScreenDragRect,
-                            RefPtr<SourceSurface>* aSurface);
-
-  virtual bool IsMockService() { return false; }
+  virtual already_AddRefed<nsIDragSession> CreateDragSession() = 0;
 
   
   
-  nsContentPolicyType mContentPolicyType;
-
-  uint32_t mSuppressLevel;
+  
+  RefPtr<nsIDragSession> mCurrentParentDragSession;
 
   
   mozilla::Maybe<mozilla::CSSIntRegion> mRegion;
 
   RefPtr<mozilla::test::MockDragServiceController> mMockController;
+
+  
+  
+  
+  nsTArray<nsWeakPtr> mBrowsers;
+
+  uint32_t mSuppressLevel = 0;
 
   
   

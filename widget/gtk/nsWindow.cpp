@@ -593,8 +593,12 @@ void nsWindow::Destroy() {
 
   
   RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  if (dragService && this == dragService->GetMostRecentDestWindow()) {
-    dragService->ScheduleLeaveEvent();
+  if (dragService) {
+    nsDragSession* dragSession =
+        static_cast<nsDragSession*>(dragService->GetCurrentSession(this));
+    if (dragSession && this == dragSession->GetMostRecentDestWindow()) {
+      dragSession->ScheduleLeaveEvent();
+    }
   }
 
   nsIRollupListener* rollupListener = nsBaseWidget::GetActiveRollupListener();
@@ -5465,9 +5469,13 @@ void nsWindow::OnDragDataReceivedEvent(GtkWidget* aWidget,
   LOGDRAG("nsWindow::OnDragDataReceived");
 
   RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  nsDragService::AutoEventLoop loop(dragService);
-  dragService->TargetDataReceived(aWidget, aDragContext, aX, aY, aSelectionData,
-                                  aInfo, aTime);
+  nsDragSession* dragSession =
+      static_cast<nsDragSession*>(dragService->GetCurrentSession(this));
+  if (dragSession) {
+    nsDragSession::AutoEventLoop loop(dragSession);
+    dragSession->TargetDataReceived(aWidget, aDragContext, aX, aY, aSelectionData,
+                                    aInfo, aTime);
+  }
 }
 
 nsWindow* nsWindow::GetTransientForWindowIfPopup() {
@@ -8704,8 +8712,20 @@ gboolean WindowDragMotionHandler(GtkWidget* aWidget,
   LOGDRAG("WindowDragMotionHandler target nsWindow [%p]", window.get());
 
   RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  nsDragService::AutoEventLoop loop(dragService);
-  if (!dragService->ScheduleMotionEvent(
+  NS_ENSURE_TRUE(dragService, FALSE);
+  nsDragSession* dragSession =
+      static_cast<nsDragSession*>(dragService->GetCurrentSession(window));
+  if (!dragSession) {
+    
+    nsIWidget* widget = window;
+    static_cast<nsDragSession*>(dragService->StartDragSession(widget));
+    dragSession =
+      static_cast<nsDragSession*>(dragService->GetCurrentSession(window));
+  }
+  NS_ENSURE_TRUE(dragSession, FALSE);
+
+  nsDragSession::AutoEventLoop loop(dragSession);
+  if (!dragSession->ScheduleMotionEvent(
           window, aDragContext, GetWindowDropPosition(window, aX, aY), aTime)) {
     return FALSE;
   }
@@ -8728,9 +8748,17 @@ void WindowDragLeaveHandler(GtkWidget* aWidget) {
   }
 
   RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  nsDragService::AutoEventLoop loop(dragService);
+  nsIWidget* widget = window;
+  nsDragSession* dragSession =
+      static_cast<nsDragSession*>(dragService->GetCurrentSession(widget));
+  if (!dragSession) {
+    LOGDRAG("    Received dragleave after drag had ended.\n");
+    return;
+  }
 
-  nsWindow* mostRecentDragWindow = dragService->GetMostRecentDestWindow();
+  nsDragSession::AutoEventLoop loop(dragSession);
+
+  nsWindow* mostRecentDragWindow = dragSession->GetMostRecentDestWindow();
   if (!mostRecentDragWindow) {
     
     
@@ -8750,7 +8778,7 @@ void WindowDragLeaveHandler(GtkWidget* aWidget) {
   }
 
   LOGDRAG("WindowDragLeaveHandler nsWindow %p\n", (void*)mostRecentDragWindow);
-  dragService->ScheduleLeaveEvent();
+  dragSession->ScheduleLeaveEvent();
 }
 
 static void drag_leave_event_cb(GtkWidget* aWidget,
@@ -8778,8 +8806,10 @@ gboolean WindowDragDropHandler(GtkWidget* aWidget, GdkDragContext* aDragContext,
 
   LOGDRAG("WindowDragDropHandler nsWindow [%p]", window.get());
   RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  nsDragService::AutoEventLoop loop(dragService);
-  return dragService->ScheduleDropEvent(
+  nsDragSession* dragSession =
+      static_cast<nsDragSession*>(dragService->GetCurrentSession(window));
+  nsDragSession::AutoEventLoop loop(dragSession);
+  return dragSession->ScheduleDropEvent(
       window, aDragContext, GetWindowDropPosition(window, aX, aY), aTime);
 }
 

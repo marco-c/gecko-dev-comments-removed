@@ -16,7 +16,7 @@ class nsDataObjCollection;
 
 
 
-class nsDragSession : public nsBaseDragService {
+class nsDragSession : public nsBaseDragSession {
  public:
   virtual ~nsDragSession();
 
@@ -30,8 +30,20 @@ class nsDragSession : public nsBaseDragService {
   void SetIDataObject(IDataObject* aDataObj);
   IDataObject* GetDataObject() { return mDataObject; }
 
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
+      nsIWidget* aWidget, nsIArray* anArrayTransferables,
+      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      uint32_t aActionType);
+
   MOZ_CAN_RUN_SCRIPT nsresult EndDragSessionImpl(
       bool aDoneDrag, uint32_t aKeyModifiers) override;
+
+  MOZ_CAN_RUN_SCRIPT nsresult StartInvokingDragSession(nsIWidget* aWidget,
+                                                       IDataObject* aDataObj,
+                                                       uint32_t aActionType);
+
+  
+  void SetDroppedLocal();
 
  protected:
   
@@ -45,29 +57,16 @@ class nsDragSession : public nsBaseDragService {
                        SHDRAGIMAGE* psdi);
 
   IDataObject* mDataObject = nullptr;
+  bool mSentLocalDropEvent = false;
 };
 
 
 
 
-class nsDragService final : public nsDragSession {
+class nsDragService final : public nsBaseDragService {
  public:
-  
-  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
-      nsIWidget* aWidget, nsIArray* anArrayTransferables,
-      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-      uint32_t aActionType);
+  already_AddRefed<nsIDragSession> CreateDragSession() override;
 
-  
-  MOZ_CAN_RUN_SCRIPT nsresult StartInvokingDragSession(nsIWidget* aWidget,
-                                                       IDataObject* aDataObj,
-                                                       uint32_t aActionType);
-
-  
-  void SetDroppedLocal();
-
- protected:
-  bool mSentLocalDropEvent = false;
 };
 
 #endif  

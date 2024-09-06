@@ -16,6 +16,7 @@
 #include "nsClipboard.h"
 #include "KeyboardLayout.h"
 
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/MouseEvents.h"
 
 using namespace mozilla;
@@ -152,8 +153,13 @@ void nsNativeDragTarget::DispatchDragDropEvent(EventMessage aEventMessage,
   ModifierKeyState modifierKeyState;
   modifierKeyState.InitInputEvent(event);
 
-  event.mInputSource =
-      static_cast<nsBaseDragService*>(mDragService.get())->GetInputSource();
+  nsDragSession* currSession =
+      static_cast<nsDragSession*>(mDragService->GetCurrentSession(mWidget));
+  if (currSession) {
+    event.mInputSource = currSession->GetInputSource();
+  } else {
+    event.mInputSource = dom::MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+  }
 
   mWidget->DispatchInputEvent(&event);
 }
@@ -429,9 +435,7 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
   
   
   
-  RefPtr<nsDragService> winDragService =
-      static_cast<nsDragService*>(mDragService.get());
-  winDragService->SetDroppedLocal();
+  currentDragSession->SetDroppedLocal();
 
   
   

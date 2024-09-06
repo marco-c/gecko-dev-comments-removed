@@ -14,7 +14,7 @@
 
 
 
-class nsDragSession : public nsBaseDragService {
+class nsDragSession : public nsBaseDragSession {
  public:
   
   NS_IMETHOD GetData(nsITransferable* aTransferable,
@@ -34,6 +34,12 @@ class nsDragSession : public nsBaseDragService {
       bool aDoneDrag, uint32_t aKeyModifiers) override;
 
  protected:
+  
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
+      nsIWidget* aWidget, nsIArray* anArrayTransferables,
+      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      uint32_t aActionType) override;
+
   
   
   NSImage* ConstructDragImage(
@@ -62,18 +68,9 @@ class nsDragSession : public nsBaseDragService {
 
 
 
-class nsDragService final : public nsDragSession {
+class nsDragService final : public nsBaseDragService {
  public:
-  nsDragService();
-
-  
-  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
-      nsIWidget* aWidget, nsIArray* anArrayTransferables,
-      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-      uint32_t aActionType) override;
-
- protected:
-  virtual ~nsDragService();
+  already_AddRefed<nsIDragSession> CreateDragSession() override;
 };
 
 #endif  
