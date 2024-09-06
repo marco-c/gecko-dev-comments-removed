@@ -961,7 +961,8 @@ __webpack_require__.r(__webpack_exports__);
    ToggleMessageJSON: () => ( ToggleMessageJSON),
    TogglePrefCheckbox: () => ( TogglePrefCheckbox),
    ToggleStoryButton: () => ( ToggleStoryButton),
-   renderASRouterAdmin: () => ( renderASRouterAdmin)
+   renderASRouterAdmin: () => ( renderASRouterAdmin),
+   toBinary: () => ( toBinary)
  });
  var _asrouter_utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
@@ -985,6 +986,16 @@ function _extends() { _extends = Object.assign ? Object.assign.bind() : function
 const Row = props => react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tr", _extends({
   className: "message-item"
 }, props), props.children);
+
+
+
+function toBinary(string) {
+  const codeUnits = new Uint16Array(string.length);
+  for (let i = 0; i < codeUnits.length; i++) {
+    codeUnits[i] = string.charCodeAt(i);
+  }
+  return btoa(String.fromCharCode(...Array.from(new Uint8Array(codeUnits.buffer))));
+}
 function relativeTime(timestamp) {
   if (!timestamp) {
     return "";
@@ -1427,7 +1438,7 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
       className: "button modify",
       onClick: () => this.modifyJson(msg)
     }, "Modify"), aboutMessagePreviewSupported ? react__WEBPACK_IMPORTED_MODULE_1___default().createElement(_CopyButton__WEBPACK_IMPORTED_MODULE_4__.CopyButton, {
-      transformer: text => `about:messagepreview?json=${encodeURIComponent(btoa(text))}`,
+      transformer: text => `about:messagepreview?json=${encodeURIComponent(toBinary(text))}`,
       label: "Share",
       copiedLabel: "Copied!",
       inputSelector: `#${msg.id}-textarea`,
