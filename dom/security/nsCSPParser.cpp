@@ -689,13 +689,6 @@ nsCSPBaseSrc* nsCSPParser::sourceExpression() {
   return nullptr;
 }
 
-void nsCSPParser::logWarningForIgnoringNoneKeywordToConsole() {
-  AutoTArray<nsString, 1> params;
-  params.AppendElement(CSP_EnumToUTF16Keyword(CSP_NONE));
-  logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringUnknownOption",
-                           params);
-}
-
 
 
 void nsCSPParser::sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs) {
@@ -736,7 +729,10 @@ void nsCSPParser::sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs) {
     }
     
     else {
-      logWarningForIgnoringNoneKeywordToConsole();
+      AutoTArray<nsString, 1> params;
+      params.AppendElement(CSP_EnumToUTF16Keyword(CSP_NONE));
+      logWarningErrorToConsole(nsIScriptError::warningFlag,
+                               "ignoringUnknownOption", params);
     }
   }
 }
@@ -869,6 +865,15 @@ void nsCSPParser::handleRequireTrustedTypesForDirective(nsCSPDirective* aDir) {
   mPolicy->addDirective(aDir);
 }
 
+static constexpr auto kTrustedTypesKeywordAllowDuplicates =
+    u"'allow-duplicates'"_ns;
+static constexpr auto kTrustedTypesKeywordNone = u"'none'"_ns;
+
+static bool IsValidTrustedTypesKeyword(const nsAString& aToken) {
+  
+  return aToken.Equals(kTrustedTypesKeywordAllowDuplicates) ||
+         aToken.Equals(kTrustedTypesKeywordNone);
+}
 
 static bool IsValidTrustedTypesWildcard(const nsAString& aToken) {
   
@@ -883,7 +888,6 @@ static bool IsValidTrustedTypesPolicyNameChar(char16_t aChar) {
          aChar == SLASH || aChar == ATSYMBOL || aChar == DOT ||
          aChar == PERCENT_SIGN;
 }
-
 
 static bool IsValidTrustedTypesPolicyName(const nsAString& aToken) {
   
@@ -902,12 +906,18 @@ static bool IsValidTrustedTypesPolicyName(const nsAString& aToken) {
   return true;
 }
 
+
+static bool IsValidTrustedTypesExpression(const nsAString& aToken) {
+  
+  return IsValidTrustedTypesPolicyName(aToken) ||
+         IsValidTrustedTypesKeyword(aToken) ||
+         IsValidTrustedTypesWildcard(aToken);
+}
+
 void nsCSPParser::handleTrustedTypesDirective(nsCSPDirective* aDir) {
   CSPPARSERLOG(("nsCSPParser::handleTrustedTypesDirective"));
 
   nsTArray<nsCSPBaseSrc*> trustedTypesExpressions;
-
-  bool containsKeywordNone = false;
 
   
   
@@ -917,19 +927,7 @@ void nsCSPParser::handleTrustedTypesDirective(nsCSPDirective* aDir) {
     CSPPARSERLOG(("nsCSPParser::handleTrustedTypesDirective, mCurToken: %s",
                   NS_ConvertUTF16toUTF8(mCurToken).get()));
 
-    
-    if (IsValidTrustedTypesPolicyName(mCurToken)) {
-      trustedTypesExpressions.AppendElement(
-          new nsCSPTrustedTypesDirectivePolicyName(mCurToken));
-    } else if (CSP_IsKeyword(mCurToken, CSP_NONE)) {
-      containsKeywordNone = true;
-    } else if (CSP_IsKeyword(mCurToken, CSP_ALLOW_DUPLICATES)) {
-      trustedTypesExpressions.AppendElement(
-          new nsCSPKeywordSrc(CSP_ALLOW_DUPLICATES));
-    } else if (IsValidTrustedTypesWildcard(mCurToken)) {
-      trustedTypesExpressions.AppendElement(
-          new nsCSPTrustedTypesDirectivePolicyName(mCurToken));
-    } else {
+    if (!IsValidTrustedTypesExpression(mCurToken)) {
       AutoTArray<nsString, 1> token = {mCurToken};
       logWarningErrorToConsole(nsIScriptError::errorFlag,
                                "invalidTrustedTypesExpression", token);
@@ -940,16 +938,15 @@ void nsCSPParser::handleTrustedTypesDirective(nsCSPDirective* aDir) {
 
       return;
     }
+
+    trustedTypesExpressions.AppendElement(
+        new nsCSPTrustedTypesDirectivePolicyName(mCurToken));
   }
 
   if (trustedTypesExpressions.IsEmpty()) {
     
     
     trustedTypesExpressions.AppendElement(new nsCSPKeywordSrc(CSP_NONE));
-  } else if (containsKeywordNone) {
-    
-    
-    logWarningForIgnoringNoneKeywordToConsole();
   }
 
   aDir->addSrcs(trustedTypesExpressions);

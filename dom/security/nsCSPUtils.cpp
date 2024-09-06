@@ -1326,42 +1326,6 @@ bool nsCSPDirective::allowsAllInlineBehavior(CSPDirective aDir) const {
   return allowAll;
 }
 
-static constexpr auto kWildcard = u"*"_ns;
-
-bool nsCSPDirective::ShouldCreateViolationForNewTrustedTypesPolicy(
-    const nsAString& aPolicyName,
-    const nsTArray<nsString>& aCreatedPolicyNames) const {
-  MOZ_ASSERT(mDirective == nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE);
-
-  if (mDirective == nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE) {
-    if (allows(CSP_NONE, EmptyString())) {
-      
-      
-      
-      
-      return true;
-    }
-
-    if (aCreatedPolicyNames.Contains(aPolicyName) &&
-        !allows(CSP_ALLOW_DUPLICATES, EmptyString())) {
-      
-      
-      
-      return true;
-    }
-
-    if (!ContainsTrustedTypesDirectivePolicyName(aPolicyName) &&
-        !ContainsTrustedTypesDirectivePolicyName(kWildcard)) {
-      
-      
-      
-      return true;
-    }
-  }
-
-  return false;
-}
-
 void nsCSPDirective::toString(nsAString& outStr) const {
   
   outStr.AppendASCII(CSP_CSPDirectiveToString(mDirective));
@@ -1557,26 +1521,6 @@ bool nsCSPDirective::hasReportSampleKeyword() const {
   for (nsCSPBaseSrc* src : mSrcs) {
     if (src->isReportSample()) {
       return true;
-    }
-  }
-
-  return false;
-}
-
-bool nsCSPDirective::ContainsTrustedTypesDirectivePolicyName(
-    const nsAString& aPolicyName) const {
-  MOZ_ASSERT(mDirective == nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE);
-
-  if (mDirective == nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE) {
-    for (const auto* src : mSrcs) {
-      if (src->isTrustedTypesDirectivePolicyName()) {
-        const auto& name =
-            static_cast<const nsCSPTrustedTypesDirectivePolicyName*>(src)
-                ->GetName();
-        if (name.Equals(aPolicyName)) {
-          return true;
-        }
-      }
     }
   }
 
@@ -1812,19 +1756,6 @@ bool nsCSPPolicy::allowsAllInlineBehavior(CSPDirective aDir) const {
   }
 
   return directive->allowsAllInlineBehavior(aDir);
-}
-
-bool nsCSPPolicy::ShouldCreateViolationForNewTrustedTypesPolicy(
-    const nsAString& aPolicyName,
-    const nsTArray<nsString>& aCreatedPolicyNames) const {
-  for (const auto* directive : mDirectives) {
-    if (directive->equals(nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE)) {
-      return directive->ShouldCreateViolationForNewTrustedTypesPolicy(
-          aPolicyName, aCreatedPolicyNames);
-    }
-  }
-
-  return false;
 }
 
 
