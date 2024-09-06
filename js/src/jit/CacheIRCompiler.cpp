@@ -6679,6 +6679,11 @@ void CacheIRCompiler::emitTypedArrayBoundsCheck(ArrayBufferViewKind viewKind,
   MOZ_ASSERT(index != maybeScratch);
   MOZ_ASSERT(index != spectreScratch);
 
+  
+  if (spectreScratch == InvalidReg) {
+    spectreScratch = maybeScratch;
+  }
+
   if (viewKind == ArrayBufferViewKind::FixedLength) {
     masm.loadArrayBufferViewLengthIntPtr(obj, scratch);
     masm.spectreBoundsCheckPtr(index, scratch, spectreScratch, fail);
@@ -6688,11 +6693,6 @@ void CacheIRCompiler::emitTypedArrayBoundsCheck(ArrayBufferViewKind viewKind,
       masm.push(index);
 
       maybeScratch = index;
-    } else {
-      
-      if (spectreScratch == InvalidReg) {
-        spectreScratch = maybeScratch;
-      }
     }
 
     
