@@ -5005,7 +5005,7 @@ static bool EmitIf(FunctionCompiler& f) {
   }
 
   
-  if (branchHint != BranchHint::Invalid) {
+  if (!f.inDeadCode() && branchHint != BranchHint::Invalid) {
     f.getCurBlock()->setBranchHinting(branchHint);
   }
 
