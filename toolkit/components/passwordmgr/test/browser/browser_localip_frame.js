@@ -1,6 +1,11 @@
 "use strict";
 
 add_setup(async () => {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first", false]],
+  });
+
   const login1 = LoginTestUtils.testData.formLogin({
     origin: "http://10.0.0.0",
     formActionOrigin: "https://example.org",

@@ -53,6 +53,11 @@ requestLongerTimeout(2);
 
 add_setup(async function () {
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first", false]],
+  });
+
+  
   let recipeParent = await LoginManagerParent.recipeParentPromise;
   await recipeParent.load({
     siteRecipes: [
