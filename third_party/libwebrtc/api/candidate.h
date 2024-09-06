@@ -32,10 +32,10 @@ namespace cricket {
 
 
 
-RTC_EXPORT extern const char LOCAL_PORT_TYPE[];
-RTC_EXPORT extern const char STUN_PORT_TYPE[];
-RTC_EXPORT extern const char PRFLX_PORT_TYPE[];
-RTC_EXPORT extern const char RELAY_PORT_TYPE[];
+RTC_EXPORT extern const absl::string_view LOCAL_PORT_TYPE;
+RTC_EXPORT extern const absl::string_view STUN_PORT_TYPE;
+RTC_EXPORT extern const absl::string_view PRFLX_PORT_TYPE;
+RTC_EXPORT extern const absl::string_view RELAY_PORT_TYPE;
 
 
 
