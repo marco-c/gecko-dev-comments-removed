@@ -422,11 +422,7 @@ inline JSLinearString::JSLinearString(const char16_t* chars, size_t length,
   uint32_t flags = INIT_LINEAR_FLAGS | (hasBuffer ? HAS_STRING_BUFFER_BIT : 0);
   setLengthAndFlags(length, flags);
   
-  
-  
-  if (!hasBuffer) {
-    checkStringCharsArena(chars);
-  }
+  checkStringCharsArena(chars, hasBuffer);
   d.s.u2.nonInlineCharsTwoByte = chars;
 }
 
@@ -436,11 +432,7 @@ inline JSLinearString::JSLinearString(const JS::Latin1Char* chars,
                    (hasBuffer ? HAS_STRING_BUFFER_BIT : 0);
   setLengthAndFlags(length, flags);
   
-  
-  
-  if (!hasBuffer) {
-    checkStringCharsArena(chars);
-  }
+  checkStringCharsArena(chars, hasBuffer);
   d.s.u2.nonInlineCharsLatin1 = chars;
 }
 
@@ -451,7 +443,7 @@ inline JSLinearString::JSLinearString(
   
   
   MOZ_ASSERT(chars.data());
-  checkStringCharsArena(chars.data());
+  checkStringCharsArena(chars.data(),  false);
   if (isTenured()) {
     chars.ensureNonNursery();
   }
@@ -744,7 +736,7 @@ inline js::NormalAtom::NormalAtom(const char16_t* chars, size_t length,
     : hash_(hash) {
   setLengthAndFlags(length, INIT_LINEAR_FLAGS | ATOM_BIT);
   
-  checkStringCharsArena(chars);
+  checkStringCharsArena(chars,  false);
   d.s.u2.nonInlineCharsTwoByte = chars;
 }
 
@@ -753,7 +745,7 @@ inline js::NormalAtom::NormalAtom(const JS::Latin1Char* chars, size_t length,
     : hash_(hash) {
   setLengthAndFlags(length, INIT_LINEAR_FLAGS | LATIN1_CHARS_BIT | ATOM_BIT);
   
-  checkStringCharsArena(chars);
+  checkStringCharsArena(chars,  false);
   d.s.u2.nonInlineCharsLatin1 = chars;
 }
 
