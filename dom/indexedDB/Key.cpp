@@ -817,7 +817,15 @@ Result<Ok, nsresult> Key::EncodeLocaleString(const nsAString& aString,
 nsresult Key::DecodeJSVal(const EncodedDataType*& aPos,
                           const EncodedDataType* aEnd, JSContext* aCx,
                           JS::MutableHandle<JS::Value> aVal) {
-  return DecodeJSValInternal(aPos, aEnd, aCx, 0, aVal, 0);
+  
+  
+  
+  
+  
+  QM_TRY(MOZ_TO_RESULT(DecodeJSValInternal(aPos, aEnd, aCx, 0, aVal, 0)),
+         QM_PROPAGATE, [aCx](const auto&) { JS_ClearPendingException(aCx); });
+
+  return NS_OK;
 }
 
 
