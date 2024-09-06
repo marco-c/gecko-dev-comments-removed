@@ -224,15 +224,7 @@ class HTTPWireProtocol:
                 raise ValueError("Failed to encode request body as JSON:\n"
                                  "%s" % json.dumps(body, indent=2))
 
-        
-        
-        
-        
-        
-        
-        self._last_request_is_blocked = True
         response = self._request(method, uri, payload, headers, timeout=None)
-        self._last_request_is_blocked = False
         return Response.from_http(response, decoder=decoder, **codec_kwargs)
 
     def _request(self, method, uri, payload, headers=None, timeout=None):
@@ -248,6 +240,13 @@ class HTTPWireProtocol:
         if self._last_request_is_blocked or self._has_unread_data():
             self.close()
 
+        
+        
+        
+        
+        
+        
+        self._last_request_is_blocked = True
         self.connection.request(method, url, payload, headers)
 
         
@@ -261,6 +260,7 @@ class HTTPWireProtocol:
             if timeout:
                 self._conn.settimeout(previous_timeout)
 
+        self._last_request_is_blocked = False
         return response
 
     def _has_unread_data(self):
