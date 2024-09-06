@@ -2,7 +2,6 @@
 
 
 
-use bytemuck::{Pod, Zeroable};
 use peek_poke::PeekPoke;
 use std::cmp;
 use std::hash::{Hash, Hasher};
@@ -15,7 +14,7 @@ use std::hash::{Hash, Hasher};
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, PartialOrd, Serialize, Pod, Zeroable)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
 pub struct PremultipliedColorF {
     pub r: f32,
     pub g: f32,
@@ -113,7 +112,7 @@ impl Hash for PremultipliedColorF {
 
 #[repr(C)]
 #[derive(Clone, Copy, Hash, Eq, Debug, Deserialize, MallocSizeOf, PartialEq)]
-#[derive(PartialOrd, Ord, Serialize, PeekPoke, Default, Pod, Zeroable)]
+#[derive(PartialOrd, Ord, Serialize, PeekPoke, Default)]
 pub struct ColorU {
     pub r: u8,
     pub g: u8,
