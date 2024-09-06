@@ -2935,58 +2935,18 @@ static bool EnsureEntryStubs(const Instance& instance, uint32_t funcIndex,
 
   MOZ_ASSERT(!instance.isAsmJS(), "only wasm can lazily export functions");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  auto stubs = instance.code(tier).lazyStubs().writeLock();
+  auto stubs = instance.code().lazyStubs().writeLock();
   *interpEntry = stubs->lookupInterpEntry(fe.funcIndex());
   if (*interpEntry) {
     return true;
   }
 
-  
-  Tier prevTier = tier;
-  tier = instance.code().bestTier();
   const CodeMetadata& codeMeta = instance.codeMeta();
   const CodeTier& codeTier = instance.code(tier);
-  if (tier == prevTier) {
-    if (!stubs->createOneEntryStub(funcExportIndex, codeMeta, codeTier)) {
-      return false;
-    }
-
-    *interpEntry = stubs->lookupInterpEntry(fe.funcIndex());
-    MOZ_ASSERT(*interpEntry);
-    return true;
-  }
-
-  MOZ_RELEASE_ASSERT(prevTier == Tier::Baseline && tier == Tier::Optimized);
-  auto stubs2 = instance.code(tier).lazyStubs().writeLock();
-
-  
-  
-  MOZ_ASSERT(!stubs2->hasEntryStub(fe.funcIndex()));
-
-  if (!stubs2->createOneEntryStub(funcExportIndex, codeMeta, codeTier)) {
+  if (!stubs->createOneEntryStub(funcExportIndex, codeMeta, codeTier)) {
     return false;
   }
-
-  *interpEntry = stubs2->lookupInterpEntry(fe.funcIndex());
+  *interpEntry = stubs->lookupInterpEntry(fe.funcIndex());
   MOZ_ASSERT(*interpEntry);
   return true;
 }
