@@ -266,6 +266,9 @@ impl TextDirective {
 
 
 
+
+
+
 pub fn parse_fragment_directive_and_remove_it_from_hash(
     url: &str,
 ) -> Option<(&str, &str, Vec<TextDirective>)> {
@@ -283,7 +286,13 @@ pub fn parse_fragment_directive_and_remove_it_from_hash(
     if let Some(fragment_directive) = fragment_directive_iter.next() {
         if fragment_directive_iter.next().is_some() {
             
-            return None;
+            return Some((
+                url_with_stripped_fragment_directive
+                    .strip_suffix("#")
+                    .unwrap_or(url_with_stripped_fragment_directive),
+                fragment_directive,
+                vec![],
+            ));
         }
         
         
@@ -295,15 +304,14 @@ pub fn parse_fragment_directive_and_remove_it_from_hash(
             })
             .filter_map(|maybe_text_directive| maybe_text_directive)
             .collect();
-        if !text_directives.is_empty() {
-            return Some((
-                url_with_stripped_fragment_directive
-                    .strip_suffix("#")
-                    .unwrap_or(url_with_stripped_fragment_directive),
-                fragment_directive,
-                text_directives,
-            ));
-        }
+
+        return Some((
+            url_with_stripped_fragment_directive
+                .strip_suffix("#")
+                .unwrap_or(url_with_stripped_fragment_directive),
+            fragment_directive,
+            text_directives,
+        ));
     }
     None
 }

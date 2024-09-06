@@ -12,6 +12,8 @@ mod test {
     
     #[test]
     fn test_parse_fragment_directive_with_one_text_directive() {
+        
+        let checkmark = String::from_utf8(vec![0xE2, 0x9C, 0x85]).unwrap();
         let test_cases = vec![
             ("#:~:text=start", (None, Some("start"), None, None)),
             (
@@ -39,6 +41,14 @@ mod test {
                 (None, Some("start"), Some("end"), Some("suffix")),
             ),
             ("#:~:text=text=", (None, Some("text="), None, None)),
+            ("#:~:text=%25", (None, Some("%"), None, None)),
+            ("#:~:text=%", (None, Some("%"), None, None)),
+            ("#:~:text=%%", (None, Some("%%"), None, None)),
+            ("#:~:text=%25%25F", (None, Some("%%F"), None, None)),
+            (
+                "#:~:text=%E2%9C%85",
+                (None, Some(checkmark.as_str()), None, None),
+            ),
         ];
         for (url, (prefix, start, end, suffix)) in test_cases {
             let (stripped_url, fragment_directive, result) =
@@ -333,18 +343,27 @@ mod test {
     
     #[test]
     fn test_parse_invalid_or_unknown_fragment_directive() {
-        for url in [
-            "#foo",
-            "#foo:",
-            "#foo:~:",
-            "#foo:~:bar",
-            "text=prefix-,start",
-            "#:~:text=foo-,bar,-baz:~:text=foo",
-        ] {
+        
+        for url in ["#foo", "#foo:", "text=prefix-,start"] {
             let text_directives = parse_fragment_directive_and_remove_it_from_hash(&url);
             assert!(
                 text_directives.is_none(),
                 "The fragment `{}` does not contain a valid or known fragment directive.",
+                url
+            );
+        }
+        
+        for (url, url_without_fragment_directive_ref) in [
+            ("#foo:~:", "#foo"),
+            ("#foo:~:bar", "#foo"),
+            ("#:~:text=foo-,bar,-baz:~:text=foo", ""),
+        ] {
+            let (url_without_fragment_directive, _, _) =
+                parse_fragment_directive_and_remove_it_from_hash(&url)
+                    .expect("There is a fragment directive which should have been removed.");
+            assert_eq!(
+                url_without_fragment_directive, url_without_fragment_directive_ref,
+                "The fragment directive has not been removed correctly from  fragment `{}`.",
                 url
             );
         }
@@ -370,10 +389,12 @@ mod test {
             "#:~:text=,prefix,start",
             "#:~:text=",
         ] {
-            let text_directives = parse_fragment_directive_and_remove_it_from_hash(&url);
+            let (url_without_fragment_directive, _, _) =
+                parse_fragment_directive_and_remove_it_from_hash(&url).expect("");
             assert!(
-                text_directives.is_none(),
-                "The fragment directive `{}` does not contain a valid text directive.",
+                url_without_fragment_directive.is_empty(),
+                "The fragment directive `{}` does not contain a valid fragment directive. \
+                 It must be removed from the original url anyway.",
                 url
             );
         }
