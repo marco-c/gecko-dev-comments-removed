@@ -927,9 +927,10 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
   
   
   if (aFlags.contains(CapabilitesFlag::NeedClearLeadCheck)) {
-    for (const auto& scheme : aCapabilitiesOut.encryptionSchemes()) {
-      nsTArray<KeySystemConfig::EMECodecString> noClearLeadCodecs;
-      for (const auto& codec : supportedVideoCodecs) {
+    nsTArray<KeySystemConfig::EMECodecString> noClearLeadCodecs;
+    for (const auto& codec : supportedVideoCodecs) {
+      bool foundSupportedScheme = false;
+      for (const auto& scheme : aCapabilitiesOut.encryptionSchemes()) {
         nsAutoString additionalFeature(u"encryption-type=");
         
         
@@ -951,7 +952,8 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
                           CryptoSchemeToString(scheme), codec.get(),
                           rv ? "supported" : "not supported");
         if (rv) {
-          continue;
+          foundSupportedScheme = true;
+          break;
         }
         
         additionalFeature.AppendLiteral(u"encryption-iv-size=16,");
@@ -961,19 +963,24 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         MFCDM_PARENT_SLOG("clearlead %s IV 16 bytes %s %s",
                           CryptoSchemeToString(scheme), codec.get(),
                           rv ? "supported" : "not supported");
-        
-        if (!rv) {
-          noClearLeadCodecs.AppendElement(codec);
+
+        if (rv) {
+          foundSupportedScheme = true;
+          break;
         }
       }
-      for (const auto& codec : noClearLeadCodecs) {
-        MFCDM_PARENT_SLOG("%s: -video:%s", __func__, codec.get());
-        aCapabilitiesOut.videoCapabilities().RemoveElementsBy(
-            [&codec](const MFCDMMediaCapability& aCapbilities) {
-              return aCapbilities.contentType() == NS_ConvertUTF8toUTF16(codec);
-            });
-        supportedVideoCodecs.RemoveElement(codec);
+      
+      if (!foundSupportedScheme) {
+        noClearLeadCodecs.AppendElement(codec);
       }
+    }
+    for (const auto& codec : noClearLeadCodecs) {
+      MFCDM_PARENT_SLOG("%s: -video:%s", __func__, codec.get());
+      aCapabilitiesOut.videoCapabilities().RemoveElementsBy(
+          [&codec](const MFCDMMediaCapability& aCapbilities) {
+            return aCapbilities.contentType() == NS_ConvertUTF8toUTF16(codec);
+          });
+      supportedVideoCodecs.RemoveElement(codec);
     }
   }
 
