@@ -56,6 +56,10 @@
 template <typename T>
 class SharedMem;
 
+namespace mozilla {
+class StringBuffer;
+};
+
 namespace js {
 
 struct StringStats;
@@ -245,6 +249,8 @@ class Nursery {
     MOZ_ASSERT(isEnabled());
     return cellsWithUid_.append(cell);
   }
+
+  [[nodiscard]] inline bool addStringBuffer(JSLinearString* s);
 
   size_t sizeOfMallocedBuffers(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -713,6 +719,15 @@ class Nursery {
   MapObjectVector mapsWithNurseryMemory_;
   using SetObjectVector = Vector<SetObject*, 0, SystemAllocPolicy>;
   SetObjectVector setsWithNurseryMemory_;
+
+  
+  
+  
+  
+  using StringAndBuffer = std::pair<JSLinearString*, mozilla::StringBuffer*>;
+  using StringBufferVector =
+      JS::GCVector<StringAndBuffer, 8, SystemAllocPolicy>;
+  StringBufferVector stringBuffers_;
 
   UniquePtr<NurseryDecommitTask> decommitTask;
 

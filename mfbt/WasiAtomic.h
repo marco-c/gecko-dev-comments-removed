@@ -7,12 +7,13 @@
 #ifndef mozilla_WasiAtomic_h
 #define mozilla_WasiAtomic_h
 
+#include <cstddef>  
+
 
 #if _LIBCPP_VERSION >= 14000
 #  include <atomic>
 #else
 
-#  include <cstddef>  
 #  include <cstdint>
 
 

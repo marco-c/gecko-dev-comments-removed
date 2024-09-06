@@ -1265,6 +1265,19 @@ size_t js::gc::TenuringTracer::moveString(JSString* dst, JSString* src,
     return size;
   }
 
+  if (src->asLinear().hasStringBuffer()) {
+    auto* buffer = src->asLinear().stringBuffer();
+    if (dst->isTenured()) {
+      
+      
+      
+      buffer->AddRef();
+      AddCellMemory(dst, dst->asLinear().allocSize(),
+                    MemoryUse::StringContents);
+    }
+    return size;
+  }
+
   
 
   MOZ_ASSERT(nursery().isInside(src->asLinear().nonInlineCharsRaw()));

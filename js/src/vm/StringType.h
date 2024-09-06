@@ -10,7 +10,9 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
+#include "mozilla/StringBuffer.h"
 #include "mozilla/TextUtils.h"
 
 #include <string_view>  
@@ -420,6 +422,15 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   
   
   
+  
+  
+  
+  
+  static const uint32_t HAS_STRING_BUFFER_BIT = js::Bit(12);
+
+  
+  
+  
   static const uint32_t NON_DEDUP_BIT = js::Bit(15);
 
   
@@ -747,6 +758,13 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   inline bool ownsMallocedChars() const;
 
+  bool hasStringBuffer() const {
+    MOZ_ASSERT_IF(flags() & HAS_STRING_BUFFER_BIT,
+                  isLinear() && !isInline() && !isDependent() &&
+                      !isExternal() && !isExtensible());
+    return flags() & HAS_STRING_BUFFER_BIT;
+  }
+
   
 
 
@@ -1009,8 +1027,8 @@ class JSLinearString : public JSString {
   bool isLinear() const = delete;
   JSLinearString& asLinear() const = delete;
 
-  JSLinearString(const char16_t* chars, size_t length);
-  JSLinearString(const JS::Latin1Char* chars, size_t length);
+  JSLinearString(const char16_t* chars, size_t length, bool hasBuffer);
+  JSLinearString(const JS::Latin1Char* chars, size_t length, bool hasBuffer);
   template <typename CharT>
   explicit inline JSLinearString(JS::MutableHandle<OwnedChars<CharT>> chars);
 
@@ -1042,6 +1060,11 @@ class JSLinearString : public JSString {
   static inline JSLinearString* newValidLength(
       JSContext* cx, JS::MutableHandle<OwnedChars<CharT>> chars,
       js::gc::Heap heap);
+
+  template <js::AllowGC allowGC, typename CharT>
+  static inline JSLinearString* newValidLength(
+      JSContext* cx, RefPtr<mozilla::StringBuffer>&& buffer, const CharT* chars,
+      size_t length, js::gc::Heap heap);
 
   
   
@@ -1143,6 +1166,12 @@ class JSLinearString : public JSString {
 
     setFlagBit((index << INDEX_VALUE_SHIFT) | INDEX_VALUE_BIT);
     MOZ_ASSERT(getIndexValue() == index);
+  }
+
+  mozilla::StringBuffer* stringBuffer() const {
+    MOZ_ASSERT(hasStringBuffer());
+    auto* chars = nonInlineCharsRaw();
+    return mozilla::StringBuffer::FromData(const_cast<void*>(chars));
   }
 
   

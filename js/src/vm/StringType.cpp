@@ -112,13 +112,18 @@ size_t JSString::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
     return 0;
   }
 
+  JSLinearString& linear = asLinear();
+
+  if (hasStringBuffer()) {
+    return linear.stringBuffer()->SizeOfIncludingThisIfUnshared(mallocSizeOf);
+  }
+
   
   if (!ownsMallocedChars()) {
     return 0;
   }
 
   
-  JSLinearString& linear = asLinear();
   return linear.hasLatin1Chars() ? mallocSizeOf(linear.rawLatin1Chars())
                                  : mallocSizeOf(linear.rawTwoByteChars());
 }
@@ -404,6 +409,9 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
         break;
       case JSString::LATIN1_CHARS_BIT:
         known("LATIN1_CHARS_BIT");
+        break;
+      case JSString::HAS_STRING_BUFFER_BIT:
+        known("HAS_STRING_BUFFER_BIT");
         break;
       case JSString::ATOM_IS_INDEX_BIT:
         if (str->isAtom()) {
@@ -2277,6 +2285,12 @@ void JSExtensibleString::dumpOwnRepresentationFields(
 void JSInlineString::dumpOwnRepresentationFields(js::JSONPrinter& json) const {}
 
 void JSLinearString::dumpOwnRepresentationFields(js::JSONPrinter& json) const {
+  if (hasStringBuffer()) {
+#  ifdef DEBUG
+    json.property("bufferRefCount", stringBuffer()->RefCount());
+#  endif
+    return;
+  }
   if (!isInline()) {
     
     
@@ -2540,17 +2554,27 @@ bool JSString::tryReplaceWithAtomRef(JSAtom* atom) {
 
   AutoCheckCannotGC nogc;
   if (hasOutOfLineChars()) {
-    void* buffer = asLinear().nonInlineCharsRaw();
-    
-    
-    
-    
-    
-    
-    
-    if (isTenured()) {
-      RemoveCellMemory(this, allocSize(), MemoryUse::StringContents);
-      js_free(buffer);
+    if (asLinear().hasStringBuffer()) {
+      
+      
+      
+      if (isTenured()) {
+        RemoveCellMemory(this, allocSize(), MemoryUse::StringContents);
+        asLinear().stringBuffer()->Release();
+      }
+    } else {
+      void* buffer = asLinear().nonInlineCharsRaw();
+      
+      
+      
+      
+      
+      
+      
+      if (isTenured()) {
+        RemoveCellMemory(this, allocSize(), MemoryUse::StringContents);
+        js_free(buffer);
+      }
     }
   }
 
