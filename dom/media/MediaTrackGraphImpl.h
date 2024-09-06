@@ -1115,12 +1115,14 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   const float mGlobalVolume;
 
 #ifdef DEBUG
+ protected:
   
 
 
   bool mCanRunMessagesSynchronously;
 #endif
 
+ private:
   
 
 
