@@ -225,7 +225,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
 
   
   bool debugEnabled;
-  Uint32Vector debugFuncTypeIndices;
   ModuleHash debugHash;
 
   explicit CodeMetadata()
@@ -275,12 +274,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   }
   const FuncType& getFuncExportType(const FuncExport& funcExport) const {
     return types->type(funcExport.typeIndex()).funcType();
-  }
-
-  size_t debugNumFuncs() const { return debugFuncTypeIndices.length(); }
-  const FuncType& debugFuncType(uint32_t funcIndex) const {
-    MOZ_ASSERT(debugEnabled);
-    return types->type(debugFuncTypeIndices[funcIndex]).funcType();
   }
 
   size_t numTables() const { return tables.length(); }
