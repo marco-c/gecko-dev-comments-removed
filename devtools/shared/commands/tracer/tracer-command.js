@@ -6,6 +6,13 @@
 
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
+loader.lazyRequireGetter(
+  this,
+  "TRACER_LOG_METHODS",
+  "resource://devtools/shared/specs/tracer.js",
+  true
+);
+
 class TracerCommand extends EventEmitter {
   constructor({ commands }) {
     super();
@@ -41,9 +48,6 @@ class TracerCommand extends EventEmitter {
       if (resource.resourceType != this.#resourceCommand.TYPES.JSTRACER_STATE) {
         continue;
       }
-      this.isTracingActive = resource.enabled;
-      
-      this.isTracingEnabled = resource.enabled;
 
       
       
@@ -51,6 +55,17 @@ class TracerCommand extends EventEmitter {
       if (resource.enabled) {
         resource.targetFront.getJsTracerCollectedFramesArray().length = 0;
       }
+
+      if (
+        resource.enabled == this.isTracingActive &&
+        resource.enabled == this.isTracingEnabled
+      ) {
+        continue;
+      }
+
+      this.isTracingActive = resource.enabled;
+      
+      this.isTracingEnabled = resource.enabled;
 
       this.emit("toggle");
     }
@@ -64,11 +79,17 @@ class TracerCommand extends EventEmitter {
 
 
   getTracingOptions() {
+    const logMethod = Services.prefs.getStringPref(
+      "devtools.debugger.javascript-tracing-log-method",
+      ""
+    );
     return {
-      logMethod: Services.prefs.getStringPref(
-        "devtools.debugger.javascript-tracing-log-method",
-        ""
-      ),
+      logMethod,
+      
+      traceDOMMutations:
+        logMethod == TRACER_LOG_METHODS.DEBUGGER_SIDEBAR
+          ? ["add", "attributes", "remove"]
+          : null,
       traceValues: Services.prefs.getBoolPref(
         "devtools.debugger.javascript-tracing-values",
         false

@@ -1,11 +1,11 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Test scroll position when showing items both in traversal and/or rendered.
+-->
 <head>
   <meta charset="utf-8">
   <title>Tree component test</title>
@@ -91,11 +91,11 @@ window.onload = async function () {
     await forceRender(tree);
 
     isRenderedTree(document.body.textContent, [
-      "---K:false",
-      "---L:false",
       "--F:false",
       "--G:false",
       "-C:false",
+      "--H:false",
+      "--I:false",
     ], "Should render shown item correctly");
 
     info("Test mid item shown when it's already rendered.");
@@ -103,11 +103,11 @@ window.onload = async function () {
     await forceRender(tree);
 
     isRenderedTree(document.body.textContent, [
-      "---L:false",
       "--F:false",
       "--G:false",
       "-C:false",
       "--H:false",
+      "--I:false",
     ], "Should render shown item correctly");
 
     info("Test item that is not in traversal.");
@@ -115,11 +115,11 @@ window.onload = async function () {
     await forceRender(tree);
 
     isRenderedTree(document.body.textContent, [
-      "---L:false",
       "--F:false",
       "--G:false",
       "-C:false",
       "--H:false",
+      "--I:false",
     ], "Should render without changes");
 
     info("Test item that is already shown.");
