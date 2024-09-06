@@ -18,7 +18,6 @@ typedef void(*GrGLFuncPtr)();
 struct GrGLInterface;
 
 
-#if !defined(SK_DISABLE_LEGACY_GL_MAKE_NATIVE_INTERFACE)
 
 
 
@@ -32,7 +31,6 @@ struct GrGLInterface;
 
 
 SK_API sk_sp<const GrGLInterface> GrGLMakeNativeInterface();
-#endif
 
 
 
@@ -70,7 +68,7 @@ public:
     void suppressErrorLogging();
 #endif
 
-#if defined(GR_TEST_UTILS)
+#if GR_TEST_UTILS
     GrGLInterface(const GrGLInterface& that)
             : fStandard(that.fStandard)
             , fExtensions(that.fExtensions)
@@ -78,7 +76,11 @@ public:
 #endif
 
     
-    GrGLStandard fStandard;
+    union {
+        GrGLStandard fStandard;
+        GrGLStandard fBindingsExported; 
+    };
+
     GrGLExtensions fExtensions;
 
     bool hasExtension(const char ext[]) const { return fExtensions.has(ext); }
@@ -329,7 +331,7 @@ public:
         GrGLFunction<GrGLEndTilingFn> fEndTiling;
     } fFunctions;
 
-#if defined(GR_TEST_UTILS)
+#if GR_TEST_UTILS
     
     virtual void abandon() const;
 #endif

@@ -10,7 +10,6 @@
 
 #include "include/core/SkRect.h"
 #include "src/base/SkMathPriv.h"
-#include "src/base/SkVx.h"
 
 class SkM44;
 class SkMatrix;
@@ -58,13 +57,18 @@ public:
                SkFitsInFixed(r.fRight) && SkFitsInFixed(r.fBottom);
     }
 
+    static bool Is16Bit(const SkIRect& r) {
+        return  SkTFitsIn<int16_t>(r.fLeft)  && SkTFitsIn<int16_t>(r.fTop) &&
+                SkTFitsIn<int16_t>(r.fRight) && SkTFitsIn<int16_t>(r.fBottom);
+    }
+
     
-    static constexpr float HalfWidth(const SkRect& r) {
-        return sk_float_midpoint(-r.fLeft, r.fRight);
+    static SkScalar HalfWidth(const SkRect& r) {
+        return SkScalarHalf(r.fRight) - SkScalarHalf(r.fLeft);
     }
     
-    static constexpr float HalfHeight(const SkRect& r) {
-        return sk_float_midpoint(-r.fTop, r.fBottom);
+    static SkScalar HalfHeight(const SkRect& r) {
+        return SkScalarHalf(r.fBottom) - SkScalarHalf(r.fTop);
     }
 
     
@@ -87,24 +91,8 @@ public:
     }
 
     
-    
-    static bool QuadContainsRect(const SkMatrix& m,
-                                 const SkIRect& a,
-                                 const SkIRect& b,
-                                 float tol=0.f);
-    static bool QuadContainsRect(const SkM44& m, const SkRect& a, const SkRect& b, float tol=0.f);
-    
-    static skvx::int4 QuadContainsRectMask(const SkM44& m, const SkRect& a, const SkRect& b,
-                                           float tol=0.f);
-
-    
-    
-    
-    
-    
-    
-    
-    static SkIRect ClosestDisjointEdge(const SkIRect& src, const SkIRect& dst);
+    static bool QuadContainsRect(const SkMatrix& m, const SkIRect& a, const SkIRect& b);
+    static bool QuadContainsRect(const SkM44& m, const SkRect& a, const SkRect& b);
 };
 
 

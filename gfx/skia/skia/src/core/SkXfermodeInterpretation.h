@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+#ifndef SkXfermodeInterpretation_DEFINED
+#define SkXfermodeInterpretation_DEFINED
+
+class SkPaint;
+
+
+
+
+
+enum SkXfermodeInterpretation {
+    kNormal_SkXfermodeInterpretation,      
+    kSrcOver_SkXfermodeInterpretation,     
+    kSkipDrawing_SkXfermodeInterpretation  
+};
+
+
+
+
+
+
+SkXfermodeInterpretation SkInterpretXfermode(const SkPaint&, bool dstIsOpaque);
+
+#endif  

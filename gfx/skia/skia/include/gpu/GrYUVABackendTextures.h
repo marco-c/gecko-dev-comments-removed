@@ -33,7 +33,7 @@ public:
 
     GrYUVABackendTextureInfo(const SkYUVAInfo&,
                              const GrBackendFormat[kMaxPlanes],
-                             skgpu::Mipmapped,
+                             GrMipmapped,
                              GrSurfaceOrigin);
 
     GrYUVABackendTextureInfo(const GrYUVABackendTextureInfo&) = default;
@@ -47,7 +47,7 @@ public:
 
     SkYUVColorSpace yuvColorSpace() const { return fYUVAInfo.yuvColorSpace(); }
 
-    skgpu::Mipmapped mipmapped() const { return fMipmapped; }
+    GrMipmapped mipmapped() const { return fMipmapped; }
 
     GrSurfaceOrigin textureOrigin() const { return fTextureOrigin; }
 
@@ -72,7 +72,7 @@ public:
 private:
     SkYUVAInfo fYUVAInfo;
     GrBackendFormat fPlaneFormats[kMaxPlanes];
-    skgpu::Mipmapped fMipmapped = skgpu::Mipmapped::kNo;
+    GrMipmapped fMipmapped = GrMipmapped::kNo;
     GrSurfaceOrigin fTextureOrigin = kTopLeft_GrSurfaceOrigin;
 };
 

@@ -17,7 +17,7 @@ extern "C" {
     
     
     #include <stdio.h> 
-    #include "jpeglib.h"  
+    #include "jpeglib.h"
 }
 
 class SkWStream;

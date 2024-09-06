@@ -16,7 +16,7 @@
 
 
 struct SK_API SkFontMetrics {
-    bool operator==(const SkFontMetrics& that) const {
+    bool operator==(const SkFontMetrics& that) {
         return
         this->fFlags == that.fFlags &&
         this->fTop == that.fTop &&

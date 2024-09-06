@@ -8,9 +8,7 @@
 #ifndef SkSwizzle_DEFINED
 #define SkSwizzle_DEFINED
 
-#include "include/private/base/SkAPI.h"
-
-#include <cstdint>
+#include "include/core/SkTypes.h"
 
 
 

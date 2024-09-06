@@ -5,13 +5,54 @@
 
 
 
-#include "src/shaders/SkEmptyShader.h"
+#include "src/shaders/SkShaderBase.h"
 
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkShader.h"
+#include "src/core/SkVM.h"
 
-class SkReadBuffer;
+
+
+
+
+class SkEmptyShader : public SkShaderBase {
+public:
+    SkEmptyShader() {}
+
+protected:
+    void flatten(SkWriteBuffer& buffer) const override {
+        
+        
+        
+    }
+
+    bool appendStages(const SkStageRec&, const MatrixRec&) const override { return false; }
+
+    skvm::Color program(skvm::Builder*,
+                        skvm::Coord,
+                        skvm::Coord,
+                        skvm::Color,
+                        const MatrixRec&,
+                        const SkColorInfo&,
+                        skvm::Uniforms*,
+                        SkArenaAlloc*) const override;
+
+private:
+    friend void ::SkRegisterEmptyShaderFlattenable();
+    SK_FLATTENABLE_HOOKS(SkEmptyShader)
+
+    using INHERITED = SkShaderBase;
+};
+
+skvm::Color SkEmptyShader::program(skvm::Builder*,
+                                   skvm::Coord,
+                                   skvm::Coord,
+                                   skvm::Color,
+                                   const MatrixRec&,
+                                   const SkColorInfo&,
+                                   skvm::Uniforms*,
+                                   SkArenaAlloc*) const {
+    return {};  
+}
 
 sk_sp<SkFlattenable> SkEmptyShader::CreateProc(SkReadBuffer&) {
     return SkShaders::Empty();

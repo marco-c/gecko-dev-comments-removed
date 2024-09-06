@@ -58,18 +58,9 @@ public:
     
 
 
-
-    SkTBlockList() : SkTBlockList(SkBlockAllocator::GrowthPolicy::kFixed) {}
-
-    
-
-
-
-    explicit SkTBlockList(SkBlockAllocator::GrowthPolicy policy)
-            : SkTBlockList(StartingItems, policy) {}
+    SkTBlockList() : SkTBlockList(StartingItems) {}
 
     
-
 
 
 

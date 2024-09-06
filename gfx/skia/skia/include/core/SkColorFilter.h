@@ -8,21 +8,12 @@
 #ifndef SkColorFilter_DEFINED
 #define SkColorFilter_DEFINED
 
+#include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkRefCnt.h"
-#include "include/private/base/SkAPI.h"
-
-#include <cstddef>
-#include <cstdint>
-#include <utility>
 
 class SkColorMatrix;
 class SkColorSpace;
-class SkColorTable;
-
-enum class SkBlendMode;
-struct SkDeserialProcs;
 
 
 
@@ -49,12 +40,6 @@ public:
     
     bool isAlphaUnchanged() const;
 
-    
-
-
-
-
-
     SkColor filterColor(SkColor) const;
 
     
@@ -71,12 +56,6 @@ public:
 
     sk_sp<SkColorFilter> makeComposed(sk_sp<SkColorFilter> inner) const;
 
-    
-
-
-
-    sk_sp<SkColorFilter> makeWithWorkingColorSpace(sk_sp<SkColorSpace>) const;
-
     static sk_sp<SkColorFilter> Deserialize(const void* data, size_t size,
                                             const SkDeserialProcs* procs = nullptr);
 
@@ -89,10 +68,8 @@ private:
 
 class SK_API SkColorFilters {
 public:
-    static sk_sp<SkColorFilter> Compose(const sk_sp<SkColorFilter>& outer,
-                                        sk_sp<SkColorFilter> inner) {
-        return outer ? outer->makeComposed(std::move(inner))
-                     : std::move(inner);
+    static sk_sp<SkColorFilter> Compose(sk_sp<SkColorFilter> outer, sk_sp<SkColorFilter> inner) {
+        return outer ? outer->makeComposed(inner) : inner;
     }
 
     
@@ -135,11 +112,6 @@ public:
                                           const uint8_t tableR[256],
                                           const uint8_t tableG[256],
                                           const uint8_t tableB[256]);
-
-    
-
-
-    static sk_sp<SkColorFilter> Table(sk_sp<SkColorTable> table);
 
     
 

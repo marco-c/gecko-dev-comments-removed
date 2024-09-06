@@ -8,50 +8,30 @@
 #ifndef skgpu_graphite_DawnTypesPriv_DEFINED
 #define skgpu_graphite_DawnTypesPriv_DEFINED
 
-#include "include/core/SkString.h"
 #include "include/gpu/graphite/dawn/DawnTypes.h"
 
 namespace skgpu::graphite {
 
 struct DawnTextureSpec {
-    DawnTextureSpec() = default;
+    DawnTextureSpec()
+            : fFormat(wgpu::TextureFormat::Undefined)
+            , fUsage(wgpu::TextureUsage::None) {}
     DawnTextureSpec(const DawnTextureInfo& info)
             : fFormat(info.fFormat)
-            , fViewFormat(info.fViewFormat)
-            , fUsage(info.fUsage)
-            , fAspect(info.fAspect) {}
+            , fUsage(info.fUsage) {}
 
     bool operator==(const DawnTextureSpec& that) const {
-        return fUsage == that.fUsage && fFormat == that.fFormat &&
-               fViewFormat == that.fViewFormat && fAspect == that.fAspect;
+        return fUsage == that.fUsage &&
+               fFormat == that.fFormat;
     }
 
-    bool isCompatible(const DawnTextureSpec& that) const {
-        
-        
-        return getViewFormat() == that.getViewFormat() && (fUsage & that.fUsage) == fUsage &&
-               (fAspect == that.fAspect || fAspect == wgpu::TextureAspect::All);
-    }
-
-    wgpu::TextureFormat getViewFormat() const {
-        return fViewFormat != wgpu::TextureFormat::Undefined ? fViewFormat : fFormat;
-    }
-
-    SkString toString() const;
-
-    wgpu::TextureFormat fFormat = wgpu::TextureFormat::Undefined;
-    
-    
-    wgpu::TextureFormat fViewFormat = wgpu::TextureFormat::Undefined;
-    wgpu::TextureUsage fUsage = wgpu::TextureUsage::None;
-    wgpu::TextureAspect fAspect = wgpu::TextureAspect::All;
+    wgpu::TextureFormat fFormat;
+    wgpu::TextureUsage fUsage;
 };
 
 DawnTextureInfo DawnTextureSpecToTextureInfo(const DawnTextureSpec& dawnSpec,
                                              uint32_t sampleCount,
                                              Mipmapped mipmapped);
-
-DawnTextureInfo DawnTextureInfoFromWGPUTexture(WGPUTexture texture);
 
 } 
 

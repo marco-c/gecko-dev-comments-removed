@@ -9,6 +9,7 @@
 #define skgpu_graphite_Recording_DEFINED
 
 #include "include/core/SkRefCnt.h"
+#include "include/private/SkChecksum.h"
 #include "include/private/base/SkTArray.h"
 
 #include <memory>
@@ -25,16 +26,20 @@ class CommandBuffer;
 class RecordingPriv;
 class Resource;
 class ResourceProvider;
-class TaskList;
+class TaskGraph;
 class Texture;
 class TextureInfo;
 class TextureProxy;
 
-class SK_API Recording final {
+class Recording final {
 public:
     ~Recording();
 
     RecordingPriv priv();
+
+#if GRAPHITE_TEST_UTILS
+    bool isTargetProxyInstantiated() const;
+#endif
 
 private:
     friend class Recorder;  
@@ -57,25 +62,21 @@ private:
     };
 
     struct ProxyHash {
-        std::size_t operator()(const sk_sp<TextureProxy>& proxy) const;
+        std::size_t operator()(const sk_sp<TextureProxy>& proxy) const {
+            return SkGoodHash()(proxy.get());
+        }
     };
 
-    Recording(uint32_t uniqueID,
-              uint32_t recorderID,
+    Recording(std::unique_ptr<TaskGraph>,
               std::unordered_set<sk_sp<TextureProxy>, ProxyHash>&& nonVolatileLazyProxies,
               std::unordered_set<sk_sp<TextureProxy>, ProxyHash>&& volatileLazyProxies,
               std::unique_ptr<LazyProxyData> targetProxyData,
-              skia_private::TArray<sk_sp<RefCntedCallback>>&& finishedProcs);
+              SkTArray<sk_sp<RefCntedCallback>>&& finishedProcs);
 
     bool addCommands(CommandBuffer*, ResourceProvider*);
     void addResourceRef(sk_sp<Resource>);
 
-    
-    uint32_t fUniqueID;
-    uint32_t fRecorderID;
-
-    
-    std::unique_ptr<TaskList> fRootTaskList;
+    std::unique_ptr<TaskGraph> fGraph;
     
     
     
@@ -87,7 +88,7 @@ private:
 
     std::unique_ptr<LazyProxyData> fTargetProxyData;
 
-    skia_private::TArray<sk_sp<RefCntedCallback>> fFinishedProcs;
+    SkTArray<sk_sp<RefCntedCallback>> fFinishedProcs;
 };
 
 } 

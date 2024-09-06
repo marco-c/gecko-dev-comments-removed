@@ -11,8 +11,8 @@
 #include "include/core/SkMilestone.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkString.h"
+#include "include/core/SkTime.h"
 #include "include/private/base/SkNoncopyable.h"
-#include "src/base/SkTime.h"
 
 #define SKPDF_STRING(X) SKPDF_STRING_IMPL(X)
 #define SKPDF_STRING_IMPL(X) #X
@@ -63,20 +63,6 @@ struct StructureElementNode {
     SkString fLang;
 };
 
-struct DateTime {
-    int16_t  fTimeZoneMinutes;  
-                                
-    uint16_t fYear;          
-    uint8_t  fMonth;         
-    uint8_t  fDayOfWeek;     
-    uint8_t  fDay;           
-    uint8_t  fHour;          
-    uint8_t  fMinute;        
-    uint8_t  fSecond;        
-
-    void toISO8601(SkString* dst) const;
-};
-
 
 
 struct Metadata {
@@ -110,18 +96,12 @@ struct Metadata {
     
 
 
-    DateTime fCreation = {0, 0, 0, 0, 0, 0, 0, 0};
+    SkTime::DateTime fCreation = {0, 0, 0, 0, 0, 0, 0, 0};
 
     
 
 
-    DateTime fModified = {0, 0, 0, 0, 0, 0, 0, 0};
-
-    
-
-
-
-    SkString fLang;
+    SkTime::DateTime fModified = {0, 0, 0, 0, 0, 0, 0, 0};
 
     
 
@@ -151,11 +131,6 @@ struct Metadata {
 
     StructureElementNode* fStructureElementTreeRoot = nullptr;
 
-    enum class Outline : int {
-        None = 0,
-        StructureElementHeaders = 1,
-    } fOutline = Outline::None;
-
     
 
 
@@ -180,8 +155,14 @@ struct Metadata {
     } fCompressionLevel = CompressionLevel::Default;
 
     
+
+
+
+
+
     enum Subsetter {
         kHarfbuzz_Subsetter,
+        kSfntly_Subsetter,
     } fSubsetter = kHarfbuzz_Subsetter;
 };
 

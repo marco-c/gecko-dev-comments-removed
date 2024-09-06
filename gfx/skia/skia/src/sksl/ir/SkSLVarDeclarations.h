@@ -9,25 +9,23 @@
 #define SKSL_VARDECLARATIONS
 
 #include "include/core/SkTypes.h"
+#include "include/private/SkSLIRNode.h"
+#include "include/private/SkSLProgramElement.h"
+#include "include/private/SkSLStatement.h"
 #include "src/sksl/ir/SkSLExpression.h"
-#include "src/sksl/ir/SkSLIRNode.h"
-#include "src/sksl/ir/SkSLModifierFlags.h"
-#include "src/sksl/ir/SkSLProgramElement.h"
-#include "src/sksl/ir/SkSLStatement.h"
 #include "src/sksl/ir/SkSLVariable.h"
 
 #include <memory>
 #include <string>
-#include <string_view>
 #include <utility>
 
 namespace SkSL {
 
 class Context;
-struct Layout;
-struct Modifiers;
 class Position;
 class Type;
+
+struct Modifiers;
 
 
 
@@ -61,34 +59,18 @@ public:
     
     
     static void ErrorCheck(const Context& context, Position pos, Position modifiersPosition,
-                           const Layout& layout, ModifierFlags modifierFlags, const Type* type,
-                           const Type* baseType, Variable::Storage storage);
+            const Modifiers& modifiers, const Type* type, Variable::Storage storage);
 
     
-    
-    
-    static std::unique_ptr<VarDeclaration> Convert(const Context& context,
-                                                   Position overallPos,
-                                                   const Modifiers& modifiers,
-                                                   const Type& type,
-                                                   Position namePos,
-                                                   std::string_view name,
-                                                   VariableStorage storage,
-                                                   std::unique_ptr<Expression> value);
+    static std::unique_ptr<Statement> Convert(const Context& context, std::unique_ptr<Variable> var,
+            std::unique_ptr<Expression> value, bool addToSymbolTable = true);
 
     
-    
-    
-    static std::unique_ptr<VarDeclaration> Convert(const Context& context,
-                                                   std::unique_ptr<Variable> var,
-                                                   std::unique_ptr<Expression> value);
-
-    
-    static std::unique_ptr<VarDeclaration> Make(const Context& context,
-                                                Variable* var,
-                                                const Type* baseType,
-                                                int arraySize,
-                                                std::unique_ptr<Expression> value);
+    static std::unique_ptr<Statement> Make(const Context& context,
+                                           Variable* var,
+                                           const Type* baseType,
+                                           int arraySize,
+                                           std::unique_ptr<Expression> value);
     const Type& baseType() const {
         return fBaseType;
     }
@@ -113,12 +95,13 @@ public:
         return fValue;
     }
 
+    std::unique_ptr<Statement> clone() const override;
+
     std::string description() const override;
 
 private:
     static bool ErrorCheckAndCoerce(const Context& context,
                                     const Variable& var,
-                                    const Type* baseType,
                                     std::unique_ptr<Expression>& value);
 
     Variable* fVar;
@@ -160,6 +143,10 @@ public:
 
     const VarDeclaration& varDeclaration() const {
         return fDeclaration->as<VarDeclaration>();
+    }
+
+    std::unique_ptr<ProgramElement> clone() const override {
+        return std::make_unique<GlobalVarDeclaration>(this->declaration()->clone());
     }
 
     std::string description() const override {

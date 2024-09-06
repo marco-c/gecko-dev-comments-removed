@@ -8,121 +8,130 @@
 #ifndef SkJpegEncoder_DEFINED
 #define SkJpegEncoder_DEFINED
 
-#include "include/core/SkRefCnt.h"
+#include "include/encode/SkEncoder.h"
 #include "include/private/base/SkAPI.h"
 
 #include <memory>
 
 class SkColorSpace;
 class SkData;
-class SkEncoder;
+class SkJpegEncoderMgr;
 class SkPixmap;
 class SkWStream;
-class SkImage;
-class GrDirectContext;
 class SkYUVAPixmaps;
 struct skcms_ICCProfile;
 
-namespace SkJpegEncoder {
+class SK_API SkJpegEncoder : public SkEncoder {
+public:
 
-enum class AlphaOption {
-    kIgnore,
-    kBlendOnBlack,
+    enum class AlphaOption {
+        kIgnore,
+        kBlendOnBlack,
+    };
+
+    enum class Downsample {
+        
+
+
+        k420,
+
+        
+
+
+        k422,
+
+        
+
+
+        k444,
+    };
+
+    struct Options {
+        
+
+
+        int fQuality = 100;
+
+        
+
+
+
+
+
+
+        Downsample fDownsample = Downsample::k420;
+
+        
+
+
+
+
+
+
+
+        AlphaOption fAlphaOption = AlphaOption::kIgnore;
+
+        
+
+
+        const SkData* xmpMetadata = nullptr;
+
+        
+
+
+
+
+
+
+        const skcms_ICCProfile* fICCProfile = nullptr;
+        const char* fICCProfileDescription = nullptr;
+    };
+
+    
+
+
+
+
+
+    static bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
+    static bool Encode(SkWStream* dst,
+                       const SkYUVAPixmaps& src,
+                       const SkColorSpace* srcColorSpace,
+                       const Options& options);
+
+    
+
+
+
+
+
+
+
+    static std::unique_ptr<SkEncoder> Make(SkWStream* dst, const SkPixmap& src,
+                                           const Options& options);
+    static std::unique_ptr<SkEncoder> Make(SkWStream* dst,
+                                           const SkYUVAPixmaps& src,
+                                           const SkColorSpace* srcColorSpace,
+                                           const Options& options);
+
+    ~SkJpegEncoder() override;
+
+protected:
+    bool onEncodeRows(int numRows) override;
+
+private:
+    SkJpegEncoder(std::unique_ptr<SkJpegEncoderMgr>, const SkPixmap& src);
+    SkJpegEncoder(std::unique_ptr<SkJpegEncoderMgr>, const SkYUVAPixmaps* srcYUVA);
+
+    static std::unique_ptr<SkEncoder> Make(SkWStream* dst,
+                                           const SkPixmap* src,
+                                           const SkYUVAPixmaps* srcYUVA,
+                                           const SkColorSpace* srcYUVAColorSpace,
+                                           const Options& options);
+
+    std::unique_ptr<SkJpegEncoderMgr> fEncoderMgr;
+    const SkYUVAPixmaps* fSrcYUVA = nullptr;
+    using INHERITED = SkEncoder;
 };
-
-enum class Downsample {
-    
-
-
-    k420,
-
-    
-
-
-    k422,
-
-    
-
-
-    k444,
-};
-
-struct Options {
-    
-
-
-    int fQuality = 100;
-
-    
-
-
-
-
-
-
-    Downsample fDownsample = Downsample::k420;
-
-    
-
-
-
-
-
-
-
-    AlphaOption fAlphaOption = AlphaOption::kIgnore;
-
-    
-
-
-    const SkData* xmpMetadata = nullptr;
-
-    
-
-
-
-
-
-
-    const skcms_ICCProfile* fICCProfile = nullptr;
-    const char* fICCProfileDescription = nullptr;
-};
-
-
-
-
-
-
-
-SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
-SK_API bool Encode(SkWStream* dst,
-                   const SkYUVAPixmaps& src,
-                   const SkColorSpace* srcColorSpace,
-                   const Options& options);
-
-
-
-
-
-
-
-
-
-SK_API sk_sp<SkData> Encode(GrDirectContext* ctx, const SkImage* img, const Options& options);
-
-
-
-
-
-
-
-
-
-SK_API std::unique_ptr<SkEncoder> Make(SkWStream* dst, const SkPixmap& src, const Options& options);
-SK_API std::unique_ptr<SkEncoder> Make(SkWStream* dst,
-                                       const SkYUVAPixmaps& src,
-                                       const SkColorSpace* srcColorSpace,
-                                       const Options& options);
-}  
 
 #endif

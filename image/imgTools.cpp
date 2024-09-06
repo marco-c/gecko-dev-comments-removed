@@ -531,9 +531,8 @@ imgTools::EncodeScaledImage(imgIContainer* aContainer,
   }
 
   
-  
-  RefPtr<DataSourceSurface> dataSurface = Factory::CreateDataSourceSurface(
-      scaledSize, SurfaceFormat::B8G8R8A8, true);
+  RefPtr<DataSourceSurface> dataSurface =
+      Factory::CreateDataSourceSurface(scaledSize, SurfaceFormat::B8G8R8A8);
   if (NS_WARN_IF(!dataSurface)) {
     return NS_ERROR_FAILURE;
   }
@@ -551,14 +550,11 @@ imgTools::EncodeScaledImage(imgIContainer* aContainer,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  
-  
-  
   IntSize frameSize = frame->GetSize();
   dt->DrawSurface(frame, Rect(0, 0, scaledSize.width, scaledSize.height),
                   Rect(0, 0, frameSize.width, frameSize.height),
                   DrawSurfaceOptions(),
-                  DrawOptions(1.0f, CompositionOp::OP_OVER));
+                  DrawOptions(1.0f, CompositionOp::OP_SOURCE));
 
   return EncodeImageData(dataSurface, map, aMimeType, aOutputOptions, aStream);
 }

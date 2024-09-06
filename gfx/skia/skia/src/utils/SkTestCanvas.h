@@ -15,15 +15,11 @@
 #ifndef SkTestCanvas_DEFINED
 #define SkTestCanvas_DEFINED
 
-#include "include/core/SkCanvas.h"
-#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
 #include "include/private/chromium/SkChromeRemoteGlyphCache.h"
-
-#include <memory>
-
-class SkPaint;
-
-namespace sktext { class GlyphRunList; }
+#include "include/utils/SkNWayCanvas.h"
+#include "src/core/SkDevice.h"
+#include "src/text/GlyphRun.h"
 
 
 template <typename Key> class SkTestCanvas;

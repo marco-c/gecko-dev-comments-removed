@@ -8,26 +8,31 @@
 #ifndef SKSL_CONTEXT
 #define SKSL_CONTEXT
 
-#include "include/private/base/SkAssert.h"
-
 namespace SkSL {
 
 class BuiltinTypes;
 class ErrorReporter;
+class ModifiersPool;
 struct Module;
 struct ProgramConfig;
-class SymbolTable;
+struct ShaderCaps;
 
 
 
 
 class Context {
 public:
-    Context(const BuiltinTypes& types, ErrorReporter& errors);
+    Context(const BuiltinTypes& types, const ShaderCaps* caps, ErrorReporter& errors);
     ~Context();
 
     
     const BuiltinTypes& fTypes;
+
+    
+    const ShaderCaps* fCaps;
+
+    
+    ModifiersPool* fModifiersPool = nullptr;
 
     
     ProgramConfig* fConfig = nullptr;
@@ -35,17 +40,8 @@ public:
     
     ErrorReporter* fErrors;
 
-    void setErrorReporter(ErrorReporter* e) {
-        SkASSERT(e);
-        fErrors = e;
-    }
-
     
     const Module* fModule = nullptr;
-
-    
-    
-    SymbolTable* fSymbolTable = nullptr;
 };
 
 }  

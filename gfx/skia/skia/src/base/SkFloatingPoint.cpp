@@ -7,49 +7,45 @@
 
 #include "include/private/base/SkFloatingPoint.h"
 
-#include <algorithm>
+#include "include/private/base/SkAssert.h"
+
 #include <cmath>
-#include <limits>
 
-
-
-
-
-static double magnitude(double a) {
-    static constexpr int64_t extractMagnitude =
-            0b0'11111111111'0000000000000000000000000000000000000000000000000000;
-    int64_t bits;
-    memcpy(&bits, &a, sizeof(bits));
-    bits &= extractMagnitude;
-    double out;
-    memcpy(&out, &bits, sizeof(out));
-    return out;
+static inline int64_t double_to_twos_complement_bits(double x) {
+    
+    int64_t bits = 0;
+    static_assert(sizeof(x) == sizeof(bits));
+    std::memcpy(&bits, &x, sizeof(bits));
+    
+    
+    
+    if (bits < 0) {
+        bits &= 0x7FFFFFFFFFFFFFFF;
+        bits = -bits;
+    }
+    return bits;
 }
 
-bool sk_doubles_nearly_equal_ulps(double a, double b, uint8_t maxUlpsDiff) {
+
+constexpr static double sk_double_epsilon = 0.0000000001;
+
+bool sk_doubles_nearly_equal_ulps(double a, double b, uint8_t max_ulps_diff) {
+    
+    
+    SkASSERT(!(fabs(a) < sk_double_epsilon && fabs(b) < sk_double_epsilon));
+    
+    SkASSERT(!(std::isnan(a) && std::isnan(b)));
+    
+    if (a == b) {
+        return true;
+    }
+    int64_t aBits = double_to_twos_complement_bits(a);
+    int64_t bBits = double_to_twos_complement_bits(b);
 
     
-    
-    
-    
-    
-    static constexpr double minMagnitude = std::numeric_limits<double>::min();
-    const double maxMagnitude = std::max(std::max(magnitude(a), minMagnitude), magnitude(b));
-
-    
-    
-    static constexpr double ulpFactor = std::numeric_limits<double>::epsilon();
-
-    
-    
-    
-    const double tolerance = maxMagnitude * (ulpFactor * (maxUlpsDiff + 1));
-
-    
-    
-    return a == b || std::abs(b - a) < tolerance;
+    return aBits < bBits + max_ulps_diff && bBits < aBits + max_ulps_diff;
 }
 
 bool sk_double_nearly_zero(double a) {
-    return a == 0 || fabs(a) < std::numeric_limits<float>::epsilon();
+    return a == 0 || fabs(a) < sk_double_epsilon;
 }

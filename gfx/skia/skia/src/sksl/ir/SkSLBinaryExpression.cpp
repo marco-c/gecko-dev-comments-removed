@@ -7,19 +7,73 @@
 
 #include "src/sksl/ir/SkSLBinaryExpression.h"
 
+#include "include/private/SkSLDefines.h"
+#include "include/sksl/SkSLErrorReporter.h"
 #include "src/sksl/SkSLAnalysis.h"
 #include "src/sksl/SkSLConstantFolder.h"
 #include "src/sksl/SkSLContext.h"
-#include "src/sksl/SkSLErrorReporter.h"
 #include "src/sksl/SkSLProgramSettings.h"
+#include "src/sksl/SkSLUtil.h"
 #include "src/sksl/ir/SkSLFieldAccess.h"
 #include "src/sksl/ir/SkSLIndexExpression.h"
+#include "src/sksl/ir/SkSLLiteral.h"
+#include "src/sksl/ir/SkSLSetting.h"
 #include "src/sksl/ir/SkSLSwizzle.h"
 #include "src/sksl/ir/SkSLTernaryExpression.h"
 #include "src/sksl/ir/SkSLType.h"
 #include "src/sksl/ir/SkSLVariableReference.h"
 
 namespace SkSL {
+
+static bool is_low_precision_matrix_vector_multiply(const Expression& left,
+                                                    const Operator& op,
+                                                    const Expression& right,
+                                                    const Type& resultType) {
+    return !resultType.highPrecision() &&
+           op.kind() == Operator::Kind::STAR &&
+           left.type().isMatrix() &&
+           right.type().isVector() &&
+           left.type().rows() == right.type().columns() &&
+           Analysis::IsTrivialExpression(left) &&
+           Analysis::IsTrivialExpression(right);
+}
+
+static std::unique_ptr<Expression> rewrite_matrix_vector_multiply(const Context& context,
+                                                                  Position pos,
+                                                                  const Expression& left,
+                                                                  const Operator& op,
+                                                                  const Expression& right,
+                                                                  const Type& resultType) {
+    
+    std::unique_ptr<Expression> sum;
+    for (int n = 0; n < left.type().rows(); ++n) {
+        
+        std::unique_ptr<Expression> matN = IndexExpression::Make(
+                context, pos, left.clone(), Literal::MakeInt(context, left.fPosition, n));
+        
+        std::unique_ptr<Expression> vecN = Swizzle::Make(context,
+                left.fPosition.rangeThrough(right.fPosition), right.clone(),
+                ComponentArray{(SkSL::SwizzleComponent::Type)n});
+        
+        const Type* matNType = &matN->type();
+        std::unique_ptr<Expression> product =
+                BinaryExpression::Make(context, pos, std::move(matN), op, std::move(vecN),
+                                       matNType);
+        
+        if (!sum) {
+            sum = std::move(product);
+        } else {
+            sum = BinaryExpression::Make(context,
+                                         pos,
+                                         std::move(sum),
+                                         Operator(Operator::Kind::PLUS),
+                                         std::move(product),
+                                         matNType);
+        }
+    }
+
+    return sum;
+}
 
 std::unique_ptr<Expression> BinaryExpression::Convert(const Context& context,
                                                       Position pos,
@@ -52,35 +106,28 @@ std::unique_ptr<Expression> BinaryExpression::Convert(const Context& context,
     if (!op.determineBinaryType(context, *rawLeftType, *rawRightType,
                                 &leftType, &rightType, &resultType)) {
         context.fErrors->error(pos, "type mismatch: '" + std::string(op.tightOperatorName()) +
-                                    "' cannot operate on '" + left->type().displayName() + "', '" +
-                                    right->type().displayName() + "'");
+                "' cannot operate on '" + left->type().displayName() + "', '" +
+                right->type().displayName() + "'");
         return nullptr;
     }
 
     if (isAssignment && (leftType->componentType().isOpaque() || leftType->isOrContainsAtomic())) {
         context.fErrors->error(pos, "assignments to opaque type '" + left->type().displayName() +
-                                    "' are not permitted");
+                "' are not permitted");
         return nullptr;
     }
-    if (context.fConfig->strictES2Mode() && !op.isAllowedInStrictES2Mode()) {
-        context.fErrors->error(pos, "operator '" + std::string(op.tightOperatorName()) +
-                                    "' is not allowed");
-        return nullptr;
-    }
-    if (context.fConfig->strictES2Mode() || op.kind() == OperatorKind::COMMA) {
-        
-        
-        
-        
-        
-        
-        const Expression* arrayExpr =  leftType->isOrContainsArray() ? left.get() :
-                                      rightType->isOrContainsArray() ? right.get() :
-                                                                       nullptr;
-        if (arrayExpr) {
-            context.fErrors->error(arrayExpr->position(),
-                                   "operator '" + std::string(op.tightOperatorName()) +
-                                   "' can not operate on arrays (or structs containing arrays)");
+    if (context.fConfig->strictES2Mode()) {
+        if (!op.isAllowedInStrictES2Mode()) {
+            context.fErrors->error(pos, "operator '" + std::string(op.tightOperatorName()) +
+                    "' is not allowed");
+            return nullptr;
+        }
+        if (leftType->isOrContainsArray()) {
+            
+            
+            
+            context.fErrors->error(pos, "operator '" + std::string(op.tightOperatorName()) +
+                    "' can not operate on arrays (or structs containing arrays)");
             return nullptr;
         }
     }
@@ -132,6 +179,49 @@ std::unique_ptr<Expression> BinaryExpression::Make(const Context& context,
     if (std::unique_ptr<Expression> result = ConstantFolder::Simplify(context, pos, *left,
                                                                       op, *right, *resultType)) {
         return result;
+    }
+
+    if (context.fConfig->fSettings.fOptimize && !context.fConfig->fIsBuiltinCode) {
+        
+        
+        
+        
+        if (is_low_precision_matrix_vector_multiply(*left, op, *right, *resultType)) {
+            
+            auto caps = Setting::Make(context, pos, &ShaderCaps::fRewriteMatrixVectorMultiply);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            bool capsBitIsTrue = caps->isBoolLiteral() && caps->as<Literal>().boolValue();
+            if (capsBitIsTrue || !caps->isBoolLiteral()) {
+                
+                std::unique_ptr<Expression> rewrite =
+                        rewrite_matrix_vector_multiply(context, pos, *left, op, *right,
+                                                       *resultType);
+
+                
+                if (capsBitIsTrue) {
+                    return rewrite;
+                }
+
+                
+                
+                return TernaryExpression::Make(
+                        context,
+                        pos,
+                        std::move(caps),
+                        std::move(rewrite),
+                        std::make_unique<BinaryExpression>(pos, std::move(left), op,
+                                                           std::move(right), resultType));
+            }
+        }
     }
 
     return std::make_unique<BinaryExpression>(pos, std::move(left), op,

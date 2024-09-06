@@ -8,20 +8,23 @@
 #ifndef SkShader_DEFINED
 #define SkShader_DEFINED
 
+#include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkRefCnt.h"
-#include "include/private/base/SkAPI.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkTileMode.h"
 
+class SkArenaAlloc;
+class SkBitmap;
 class SkBlender;
 class SkColorFilter;
 class SkColorSpace;
 class SkImage;
-class SkMatrix;
-enum class SkBlendMode;
-enum class SkTileMode;
-struct SkRect;
-struct SkSamplingOptions;
+class SkPath;
+class SkPicture;
+class SkRasterPipeline;
+class GrFragmentProcessor;
 
 
 
@@ -68,15 +71,6 @@ public:
 
     sk_sp<SkShader> makeWithColorFilter(sk_sp<SkColorFilter>) const;
 
-    
-
-
-
-
-
-
-    sk_sp<SkShader> makeWithWorkingColorSpace(sk_sp<SkColorSpace>) const;
-
 private:
     SkShader() = default;
     friend class SkShaderBase;
@@ -84,29 +78,16 @@ private:
     using INHERITED = SkFlattenable;
 };
 
-namespace SkShaders {
-SK_API sk_sp<SkShader> Empty();
-SK_API sk_sp<SkShader> Color(SkColor);
-SK_API sk_sp<SkShader> Color(const SkColor4f&, sk_sp<SkColorSpace>);
-SK_API sk_sp<SkShader> Blend(SkBlendMode mode, sk_sp<SkShader> dst, sk_sp<SkShader> src);
-SK_API sk_sp<SkShader> Blend(sk_sp<SkBlender>, sk_sp<SkShader> dst, sk_sp<SkShader> src);
-SK_API sk_sp<SkShader> CoordClamp(sk_sp<SkShader>, const SkRect& subset);
-
-
-
-
-SK_API sk_sp<SkShader> Image(sk_sp<SkImage> image,
-                             SkTileMode tmx, SkTileMode tmy,
-                             const SkSamplingOptions& options,
-                             const SkMatrix* localMatrix = nullptr);
-
-
-
-
-SK_API sk_sp<SkShader> RawImage(sk_sp<SkImage> image,
-                                SkTileMode tmx, SkTileMode tmy,
-                                const SkSamplingOptions& options,
-                                const SkMatrix* localMatrix = nullptr);
-}
+class SK_API SkShaders {
+public:
+    static sk_sp<SkShader> Empty();
+    static sk_sp<SkShader> Color(SkColor);
+    static sk_sp<SkShader> Color(const SkColor4f&, sk_sp<SkColorSpace>);
+    static sk_sp<SkShader> Blend(SkBlendMode mode, sk_sp<SkShader> dst, sk_sp<SkShader> src);
+    static sk_sp<SkShader> Blend(sk_sp<SkBlender>, sk_sp<SkShader> dst, sk_sp<SkShader> src);
+    static sk_sp<SkShader> CoordClamp(sk_sp<SkShader>, const SkRect& subset);
+private:
+    SkShaders() = delete;
+};
 
 #endif

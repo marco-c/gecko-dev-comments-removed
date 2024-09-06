@@ -16,6 +16,7 @@
 class GrBackendSemaphore;
 
 namespace skgpu {
+enum class Mipmapped : bool;
 enum class Protected : bool;
 enum class Renderable : bool;
 }
@@ -97,17 +98,12 @@ enum class GrBackendApi : unsigned {
     kVulkan,
     kMetal,
     kDirect3D,
-
+    kDawn,
     
 
 
 
     kMock,
-
-    
-
-
-    kUnsupported,
 
     
 
@@ -127,6 +123,14 @@ static constexpr GrBackendApi kVulkan_GrBackend = GrBackendApi::kVulkan;
 static constexpr GrBackendApi kMock_GrBackend = GrBackendApi::kMock;
 
 
+
+
+
+
+
+using GrMipmapped = skgpu::Mipmapped;
+
+using GrMipMapped = skgpu::Mipmapped;
 
 
 
@@ -213,6 +217,12 @@ typedef void (*GrDirectContextDestroyedProc)(GrDirectContextDestroyedContext des
 
 
 
+
+
+
+
+
+
 struct GrFlushInfo {
     size_t fNumSemaphores = 0;
     GrBackendSemaphore* fSignalSemaphores = nullptr;
@@ -229,16 +239,6 @@ struct GrFlushInfo {
 enum class GrSemaphoresSubmitted : bool {
     kNo = false,
     kYes = true
-};
-
-enum class GrPurgeResourceOptions {
-    kAllResources,
-    kScratchResourcesOnly,
-};
-
-enum class GrSyncCpu : bool {
-    kNo = false,
-    kYes = true,
 };
 
 #endif

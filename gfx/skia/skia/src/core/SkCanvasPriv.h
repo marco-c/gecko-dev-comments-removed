@@ -9,21 +9,26 @@
 #define SkCanvasPriv_DEFINED
 
 #include "include/core/SkCanvas.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkScalar.h"
-#include "include/private/base/SkDebug.h"
 #include "include/private/base/SkNoncopyable.h"
 
-#include <cstddef>
-
-class SkDevice;
-class SkImageFilter;
-class SkMatrix;
 class SkReadBuffer;
-struct SkRect;
 class SkWriteBuffer;
 
-#if defined(GRAPHITE_TEST_UTILS)
+#if GR_TEST_UTILS && defined(SK_GANESH)
+namespace skgpu::ganesh {
+class SurfaceDrawContext;
+class SurfaceFillContext;
+}  
+#endif
+
+
+#if defined(SK_GANESH)
+class GrRenderTargetProxy;
+#else
+using GrRenderTargetProxy = SkRefCnt;
+#endif 
+
+#if GRAPHITE_TEST_UTILS
 namespace skgpu::graphite {
     class TextureProxy;
 }
@@ -62,9 +67,19 @@ public:
         canvas->internal_private_resetClip();
     }
 
-    static SkDevice* TopDevice(const SkCanvas* canvas) {
+    static SkBaseDevice* TopDevice(SkCanvas* canvas) {
         return canvas->topDevice();
     }
+
+#if GR_TEST_UTILS && defined(SK_GANESH)
+    static skgpu::ganesh::SurfaceDrawContext* TopDeviceSurfaceDrawContext(SkCanvas*);
+    static skgpu::ganesh::SurfaceFillContext* TopDeviceSurfaceFillContext(SkCanvas*);
+#endif
+    static GrRenderTargetProxy* TopDeviceTargetProxy(SkCanvas*);
+
+#if GRAPHITE_TEST_UTILS
+    static skgpu::graphite::TextureProxy* TopDeviceGraphiteTargetProxy(SkCanvas*);
+#endif
 
     
     
@@ -76,10 +91,8 @@ public:
                                                       const SkPaint* paint,
                                                       const SkImageFilter* backdrop,
                                                       SkScalar backdropScale,
-                                                      SkCanvas::SaveLayerFlags saveLayerFlags,
-                                                      SkCanvas::FilterSpan filters = {}) {
-        return SkCanvas::SaveLayerRec(
-                bounds, paint, backdrop, backdropScale, saveLayerFlags, filters);
+                                                      SkCanvas::SaveLayerFlags saveLayerFlags) {
+        return SkCanvas::SaveLayerRec(bounds, paint, backdrop, backdropScale, saveLayerFlags);
     }
 
     static SkScalar GetBackdropScaleFactor(const SkCanvas::SaveLayerRec& rec) {
@@ -89,13 +102,6 @@ public:
     static void SetBackdropScaleFactor(SkCanvas::SaveLayerRec* rec, SkScalar scale) {
         rec->fExperimentalBackdropScale = scale;
     }
-
-    
-    
-    
-    
-    
-    static bool ImageToColorFilter(SkPaint*);
 };
 
 
@@ -106,57 +112,5 @@ public:
 
 
 constexpr int kMaxPictureOpsToUnrollInsteadOfRef = 1;
-
-
-
-
-
-
-
-
-
-
-
-
-
-class AutoLayerForImageFilter {
-public:
-    
-    
-    
-    
-    
-    
-    
-    
-    AutoLayerForImageFilter(SkCanvas* canvas,
-                            const SkPaint& paint,
-                            const SkRect* rawBounds,
-                            bool skipMaskFilterLayer);
-
-    AutoLayerForImageFilter(const AutoLayerForImageFilter&) = delete;
-    AutoLayerForImageFilter& operator=(const AutoLayerForImageFilter&) = delete;
-    AutoLayerForImageFilter(AutoLayerForImageFilter&&);
-    AutoLayerForImageFilter& operator=(AutoLayerForImageFilter&&);
-
-    ~AutoLayerForImageFilter();
-
-    const SkPaint& paint() const { return fPaint; }
-
-    
-    
-    void addMaskFilterLayer(const SkRect* drawBounds);
-
-private:
-    void addImageFilterLayer(const SkRect* drawBounds);
-
-    void addLayer(const SkPaint& restorePaint, const SkRect* drawBounds, bool coverageOnly);
-
-    SkPaint         fPaint;
-    SkCanvas*       fCanvas;
-    int             fTempLayersForFilters;
-
-    SkDEBUGCODE(int fSaveCount;)
-};
 
 #endif

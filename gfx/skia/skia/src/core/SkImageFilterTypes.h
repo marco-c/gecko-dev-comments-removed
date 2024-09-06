@@ -8,40 +8,20 @@
 #ifndef SkImageFilterTypes_DEFINED
 #define SkImageFilterTypes_DEFINED
 
-#include "include/core/SkColorFilter.h"
 #include "include/core/SkColorSpace.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
 #include "include/core/SkSamplingOptions.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkSize.h"
-#include "include/core/SkSpan.h"
-#include "include/core/SkSurfaceProps.h"
-#include "include/core/SkTileMode.h"
 #include "include/core/SkTypes.h"
-#include "include/private/base/SkTArray.h"
-#include "include/private/base/SkTPin.h"
-#include "include/private/base/SkTo.h"
-#include "src/base/SkEnumBitMask.h"
 #include "src/core/SkSpecialImage.h"
+#include "src/core/SkSpecialSurface.h"
 
-#include <cstdint>
-#include <optional>
-#include <utility>
-
-class FilterResultTestAccess;  
-class SkBitmap;
-class SkBlender;
-class SkBlurEngine;
-class SkDevice;
-class SkImage;
+class GrRecordingContext;
 class SkImageFilter;
 class SkImageFilterCache;
-class SkPicture;
-class SkShader;
-enum SkColorType : int;
+class SkSpecialSurface;
+class SkSurfaceProps;
 
 
 
@@ -74,8 +54,6 @@ struct Vector {
     Vector() = default;
     Vector(SkScalar x, SkScalar y) : fX(x), fY(y) {}
     explicit Vector(const SkVector& v) : fX(v.fX), fY(v.fY) {}
-
-    bool isFinite() const { return SkScalarsAreFinite(fX, fY); }
 };
 
 
@@ -111,6 +89,9 @@ public:
 
     explicit operator const T&() const { return fData; }
 
+    static const ParameterSpace<T>* Optional(const T* ptr) {
+        return static_cast<const ParameterSpace<T>*>(reinterpret_cast<const void*>(ptr));
+    }
 private:
     T fData;
 };
@@ -357,9 +338,9 @@ public:
     bool isEmpty() const { return fData.isEmpty(); }
     bool isZero() const { return fData.isZero(); }
 
-    LayerSpace<SkISize> round() const;
-    LayerSpace<SkISize> ceil() const;
-    LayerSpace<SkISize> floor() const;
+    LayerSpace<SkISize> round() const { return LayerSpace<SkISize>(fData.toRound()); }
+    LayerSpace<SkISize> ceil() const { return LayerSpace<SkISize>(fData.toCeil()); }
+    LayerSpace<SkISize> floor() const { return LayerSpace<SkISize>(fData.toFloor()); }
 
 private:
     SkSize fData;
@@ -377,29 +358,8 @@ public:
 
     static LayerSpace<SkIRect> Empty() { return LayerSpace<SkIRect>(SkIRect::MakeEmpty()); }
 
-    static constexpr std::optional<LayerSpace<SkIRect>> Unbounded() { return {}; }
-
     
-    
-    
-    template<typename BoundsFn>
-    static LayerSpace<SkIRect> Union(int boundsCount, BoundsFn boundsFn) {
-        if (boundsCount <= 0) {
-            return LayerSpace<SkIRect>::Empty();
-        }
-        LayerSpace<SkIRect> output = boundsFn(0);
-        for (int i = 1; i < boundsCount; ++i) {
-            output.join(boundsFn(i));
-        }
-        return output;
-    }
-
-    
-    
-    LayerSpace<SkIRect> relevantSubset(const LayerSpace<SkIRect> dstRect, SkTileMode) const;
-
-    
-    bool isEmpty() const { return fData.isEmpty64(); }
+    bool isEmpty() const { return fData.isEmpty(); }
     bool contains(const LayerSpace<SkIRect>& r) const { return fData.contains(r.fData); }
 
     int32_t left() const { return fData.fLeft; }
@@ -413,15 +373,10 @@ public:
     LayerSpace<SkIPoint> topLeft() const { return LayerSpace<SkIPoint>(fData.topLeft()); }
     LayerSpace<SkISize> size() const { return LayerSpace<SkISize>(fData.size()); }
 
-    static bool Intersects(const LayerSpace<SkIRect>& a, const LayerSpace<SkIRect>& b) {
-        return SkIRect::Intersects(a.fData, b.fData);
-    }
-
     bool intersect(const LayerSpace<SkIRect>& r) { return fData.intersect(r.fData); }
     void join(const LayerSpace<SkIRect>& r) { fData.join(r.fData); }
     void offset(const LayerSpace<IVector>& v) { fData.offset(SkIVector(v)); }
     void outset(const LayerSpace<SkISize>& delta) { fData.outset(delta.width(), delta.height()); }
-    void inset(const LayerSpace<SkISize>& delta) { fData.inset(delta.width(), delta.height()); }
 
 private:
     SkIRect fData;
@@ -454,9 +409,6 @@ public:
     LayerSpace<SkPoint> topLeft() const {
         return LayerSpace<SkPoint>(SkPoint::Make(fData.fLeft, fData.fTop));
     }
-    LayerSpace<SkPoint> center() const {
-        return LayerSpace<SkPoint>(fData.center());
-    }
     LayerSpace<SkSize> size() const {
         return LayerSpace<SkSize>(SkSize::Make(fData.width(), fData.height()));
     }
@@ -469,12 +421,6 @@ public:
     void join(const LayerSpace<SkRect>& r) { fData.join(r.fData); }
     void offset(const LayerSpace<Vector>& v) { fData.offset(SkVector(v)); }
     void outset(const LayerSpace<SkSize>& delta) { fData.outset(delta.width(), delta.height()); }
-    void inset(const LayerSpace<SkSize>& delta) { fData.inset(delta.width(), delta.height()); }
-
-    LayerSpace<SkPoint> clamp(LayerSpace<SkPoint> pt) const {
-        return LayerSpace<SkPoint>(SkPoint::Make(SkTPin(pt.x(), fData.fLeft, fData.fRight),
-                                                 SkTPin(pt.y(), fData.fTop, fData.fBottom)));
-    }
 
 private:
     SkRect fData;
@@ -493,11 +439,6 @@ public:
     explicit LayerSpace(SkMatrix&& m) : fData(std::move(m)) {}
     explicit operator const SkMatrix&() const { return fData; }
 
-    static LayerSpace<SkMatrix> RectToRect(const LayerSpace<SkRect>& from,
-                                           const LayerSpace<SkRect>& to) {
-        return LayerSpace<SkMatrix>(SkMatrix::RectToRect(SkRect(from), SkRect(to)));
-    }
-
     
     LayerSpace<SkRect> mapRect(const LayerSpace<SkRect>& r) const;
 
@@ -505,11 +446,13 @@ public:
     
     LayerSpace<SkIRect> mapRect(const LayerSpace<SkIRect>& r) const;
 
-    LayerSpace<SkPoint> mapPoint(const LayerSpace<SkPoint>& p) const;
+    LayerSpace<SkPoint> mapPoint(const LayerSpace<SkPoint>& p) const {
+        return LayerSpace<SkPoint>(fData.mapPoint(SkPoint(p)));
+    }
 
-    LayerSpace<Vector> mapVector(const LayerSpace<Vector>& v) const;
-
-    LayerSpace<SkSize> mapSize(const LayerSpace<SkSize>& s) const;
+    LayerSpace<Vector> mapVector(const LayerSpace<Vector>& v) const {
+        return LayerSpace<Vector>(Vector(fData.mapVector(v.x(), v.y())));
+    }
 
     LayerSpace<SkMatrix>& preConcat(const LayerSpace<SkMatrix>& m) {
         fData = SkMatrix::Concat(fData, m.fData);
@@ -525,26 +468,11 @@ public:
         return fData.invert(&inverse->fData);
     }
 
-    
-    
-    bool inverseMapRect(const LayerSpace<SkRect>& r, LayerSpace<SkRect>* out) const;
-    bool inverseMapRect(const LayerSpace<SkIRect>& r, LayerSpace<SkIRect>* out) const;
-
     float rc(int row, int col) const { return fData.rc(row, col); }
     float get(int i) const { return fData.get(i); }
 
 private:
     SkMatrix fData;
-};
-
-
-
-
-
-enum class MatrixCapability {
-    kTranslate,
-    kScaleTranslate,
-    kComplex,
 };
 
 
@@ -573,12 +501,9 @@ public:
     
     
     
-    [[nodiscard]] bool decomposeCTM(const SkMatrix& ctm,
-                                    const SkImageFilter* filter,
-                                    const skif::ParameterSpace<SkPoint>& representativePt);
-    [[nodiscard]] bool decomposeCTM(const SkMatrix& ctm,
-                                    MatrixCapability,
-                                    const skif::ParameterSpace<SkPoint>& representativePt);
+    bool SK_WARN_UNUSED_RESULT decomposeCTM(const SkMatrix& ctm,
+                                            const SkImageFilter* filter,
+                                            const skif::ParameterSpace<SkPoint>& representativePt);
 
     
     
@@ -623,9 +548,6 @@ public:
     }
 
 private:
-    friend class LayerSpace<SkMatrix>; 
-    friend class FilterResult;         
-
     
     
     
@@ -664,71 +586,27 @@ class Context;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class FilterResult {
+    
+    
+    
+    static constexpr SkSamplingOptions kDefaultSampling{SkFilterMode::kLinear};
 public:
     FilterResult() : FilterResult(nullptr) {}
 
     explicit FilterResult(sk_sp<SkSpecialImage> image)
             : FilterResult(std::move(image), LayerSpace<SkIPoint>({0, 0})) {}
 
+    FilterResult(std::pair<sk_sp<SkSpecialImage>, LayerSpace<SkIPoint>> imageAndOrigin)
+            : FilterResult(std::move(std::get<0>(imageAndOrigin)), std::get<1>(imageAndOrigin)) {}
+
     FilterResult(sk_sp<SkSpecialImage> image, const LayerSpace<SkIPoint>& origin)
-            : FilterResult(std::move(image), origin, PixelBoundary::kUnknown) {}
-
-    
-    
-    
-    static FilterResult MakeFromPicture(const Context& ctx,
-                                        sk_sp<SkPicture> pic,
-                                        ParameterSpace<SkRect> cullRect);
-
-    
-    
-    
-    
-    static FilterResult MakeFromShader(const Context& ctx,
-                                       sk_sp<SkShader> shader,
-                                       bool dither);
-
-    
-    
-    
-    static FilterResult MakeFromImage(const Context& ctx,
-                                      sk_sp<SkImage> image,
-                                      SkRect srcRect,
-                                      ParameterSpace<SkRect> dstRect,
-                                      const SkSamplingOptions& sampling);
-
-    
-    
-    
-    static constexpr SkSamplingOptions kDefaultSampling{SkFilterMode::kLinear};
+            : fImage(std::move(image))
+            , fSamplingOptions(kDefaultSampling)
+            , fTransform(SkMatrix::Translate(origin.x(), origin.y()))
+            , fLayerBounds(
+                    fTransform.mapRect(LayerSpace<SkIRect>(fImage ? fImage->dimensions()
+                                                                  : SkISize{0, 0}))) {}
 
     explicit operator bool() const { return SkToBool(fImage); }
 
@@ -739,19 +617,20 @@ public:
     sk_sp<SkSpecialImage> refImage() const { return fImage; }
 
     
-    LayerSpace<SkIRect> layerBounds() const { return fLayerBounds; }
-    SkTileMode tileMode() const { return fTileMode; }
-    SkSamplingOptions sampling() const { return fSamplingOptions; }
+    LayerSpace<SkIRect> layerBounds() const {
+        return fLayerBounds;
+    }
 
-    const SkColorFilter* colorFilter() const { return fColorFilter.get(); }
-
+    
+    
     
     
     
     
     FilterResult applyCrop(const Context& ctx,
-                           const LayerSpace<SkIRect>& crop,
-                           SkTileMode tileMode=SkTileMode::kDecal) const;
+                           const LayerSpace<SkIRect>& crop) const;
+                           
+                           
 
     
     
@@ -763,373 +642,38 @@ public:
     
     
     
-    FilterResult applyColorFilter(const Context& ctx,
-                                  sk_sp<SkColorFilter> colorFilter) const;
-
     
     
     
     
     
-    
-    
-    
-    sk_sp<SkSpecialImage> imageAndOffset(const Context& ctx, SkIPoint* offset) const;
-    
-    
-    
-    
-    
-    std::pair<sk_sp<SkSpecialImage>, LayerSpace<SkIPoint>> imageAndOffset(const Context& ctx) const;
-
-     
-     
-     
-    void draw(const Context& ctx, SkDevice* target, const SkBlender* blender) const;
-
-    
-    
-    
-    
-    FilterResult insetForSaveLayer() const;
-
-    class Builder;
-
-    enum class ShaderFlags : int {
-        kNone = 0,
-        
-        
-        
-        kSampledRepeatedly = 1 << 0,
-        
-        
-        
-        kNonTrivialSampling = 1 << 1,
-        
-        
-    };
-    SK_DECL_BITMASK_OPS_FRIENDS(ShaderFlags)
+    sk_sp<SkSpecialImage> imageAndOffset(SkIPoint* offset) const;
 
 private:
-    friend class ::FilterResultTestAccess; 
-
-    class AutoSurface;
-
-    enum class PixelBoundary : int {
-        kUnknown,     
-        kTransparent, 
-        kInitialized, 
-    };
-
-    FilterResult(sk_sp<SkSpecialImage> image,
-                 const LayerSpace<SkIPoint>& origin,
-                 PixelBoundary boundary)
-            : fImage(std::move(image))
-            , fBoundary(boundary)
-            , fSamplingOptions(kDefaultSampling)
-            , fTileMode(SkTileMode::kDecal)
-            , fTransform(SkMatrix::Translate(origin.x(), origin.y()))
-            , fColorFilter(nullptr)
-            , fLayerBounds(
-                    fTransform.mapRect(LayerSpace<SkIRect>(fImage ? fImage->dimensions()
-                                                                  : SkISize{0, 0}))) {}
+    
+    
+    std::pair<sk_sp<SkSpecialImage>, LayerSpace<SkIPoint>>
+    resolve(LayerSpace<SkIRect> dstBounds) const;
 
     
-    
-    
-    
-    FilterResult resolve(const Context& ctx, LayerSpace<SkIRect> dstBounds,
-                         bool preserveDstBounds=false) const;
-    
-    
-    
-    
-    FilterResult subset(const LayerSpace<SkIPoint>& knownOrigin,
-                        const LayerSpace<SkIRect>& subsetBounds,
-                        bool clampSrcIfDisjoint=false) const;
-    
-    FilterResult insetByPixel() const;
-
-    enum class BoundsAnalysis : int {
-        
-        
-        kSimple = 0,
-        
-        
-        kDstBoundsNotCovered = 1 << 0,
-        
-        
-        
-        kHasLayerFillingEffect = 1 << 1,
-        
-        
-        
-        kRequiresLayerCrop = 1 << 2,
-        
-        
-        
-        
-        kRequiresShaderTiling = 1 << 3,
-        
-        
-        kRequiresDecalInLayerSpace = 1 << 4,
-    };
-    SK_DECL_BITMASK_OPS_FRIENDS(BoundsAnalysis)
-
-    enum class BoundsScope : int {
-        kDeferred,        
-        kCanDrawDirectly, 
-        kShaderOnly       
-    };
-
-    
-    
-    
-    
-    
-    SkEnumBitMask<BoundsAnalysis> analyzeBounds(const SkMatrix& xtraTransform,
-                                                const SkIRect& dstBounds,
-                                                BoundsScope scope = BoundsScope::kDeferred) const;
-    SkEnumBitMask<BoundsAnalysis> analyzeBounds(const LayerSpace<SkIRect>& dstBounds,
-                                                BoundsScope scope = BoundsScope::kDeferred) const {
-        return this->analyzeBounds(SkMatrix::I(), SkIRect(dstBounds), scope);
-    }
-
-    
-    
-    
-    bool canClampToTransparentBoundary(SkEnumBitMask<BoundsAnalysis> analysis) const {
-        return fTileMode == SkTileMode::kDecal &&
-               fBoundary == PixelBoundary::kTransparent &&
-               !(analysis & BoundsAnalysis::kRequiresDecalInLayerSpace);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    FilterResult rescale(const Context& ctx,
-                         const LayerSpace<SkSize>& scale,
-                         bool enforceDecal) const;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void draw(const Context& ctx,
-              SkDevice* device,
-              bool preserveDeviceState,
-              const SkBlender* blender=nullptr) const;
-
-    
-    
-    void drawAnalyzedImage(const Context& ctx,
-                           SkDevice* device,
-                           const SkSamplingOptions& finalSampling,
-                           SkEnumBitMask<BoundsAnalysis> analysis,
-                           const SkBlender* blender=nullptr) const;
-
-    
-    
-    
-    
-    
-    
-    sk_sp<SkShader> asShader(const Context& ctx,
-                             const SkSamplingOptions& xtraSampling,
-                             SkEnumBitMask<ShaderFlags> flags,
-                             const LayerSpace<SkIRect>& sampleBounds) const;
-
-    
-    
-    
-    
-    sk_sp<SkShader> getAnalyzedShaderView(const Context& ctx,
-                                          const SkSamplingOptions& finalSampling,
-                                          SkEnumBitMask<BoundsAnalysis> analysis) const;
-
-    
-    
-    void updateTileMode(const Context& ctx, SkTileMode tileMode);
+    void concatTransform(const LayerSpace<SkMatrix>& transform,
+                         const SkSamplingOptions& newSampling,
+                         const LayerSpace<SkIRect>& outputBounds);
 
     
     
     
     sk_sp<SkSpecialImage> fImage;
-    PixelBoundary         fBoundary;
-
     SkSamplingOptions     fSamplingOptions;
-    SkTileMode            fTileMode;
+    
     
     
     LayerSpace<SkMatrix>  fTransform;
 
     
     
-    sk_sp<SkColorFilter>  fColorFilter;
-
-    
-    
     
     LayerSpace<SkIRect>   fLayerBounds;
-};
-SK_MAKE_BITMASK_OPS(FilterResult::ShaderFlags)
-SK_MAKE_BITMASK_OPS(FilterResult::BoundsAnalysis)
-
-
-
-
-class FilterResult::Builder {
-public:
-    Builder(const Context& context);
-    ~Builder();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Builder& add(const FilterResult& input,
-                 std::optional<LayerSpace<SkIRect>> sampleBounds = {},
-                 SkEnumBitMask<ShaderFlags> inputFlags = ShaderFlags::kNone,
-                 const SkSamplingOptions& inputSampling = kDefaultSampling) {
-        fInputs.push_back({input, sampleBounds, inputFlags, inputSampling});
-        return *this;
-    }
-
-    
-    FilterResult merge();
-
-    
-    
-    
-    
-    FilterResult blur(const LayerSpace<SkSize>& sigma);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    template <typename ShaderFn>
-    FilterResult eval(ShaderFn shaderFn,
-                      std::optional<LayerSpace<SkIRect>> explicitOutput = {},
-                      bool evaluateInParameterSpace=false) {
-        auto outputBounds = this->outputBounds(explicitOutput);
-        if (outputBounds.isEmpty()) {
-            return {};
-        }
-
-        auto inputShaders = this->createInputShaders(outputBounds, evaluateInParameterSpace);
-        return this->drawShader(shaderFn(inputShaders), outputBounds, evaluateInParameterSpace);
-    }
-
-private:
-    struct SampledFilterResult {
-        FilterResult fImage;
-        std::optional<LayerSpace<SkIRect>> fSampleBounds;
-        SkEnumBitMask<ShaderFlags> fFlags;
-        SkSamplingOptions fSampling;
-    };
-
-    SkSpan<sk_sp<SkShader>> createInputShaders(const LayerSpace<SkIRect>& outputBounds,
-                                               bool evaluateInParameterSpace);
-
-    LayerSpace<SkIRect> outputBounds(std::optional<LayerSpace<SkIRect>> explicitOutput) const;
-
-    FilterResult drawShader(sk_sp<SkShader> shader,
-                            const LayerSpace<SkIRect>& outputBounds,
-                            bool evaluateInParameterSpace) const;
-
-    const Context& fContext; 
-    skia_private::STArray<1, SampledFilterResult> fInputs;
-    
-    skia_private::STArray<1, sk_sp<SkShader>> fInputShaders;
-};
-
-
-
-
-class Backend : public SkRefCnt {
-public:
-    ~Backend() override;
-
-    
-    virtual sk_sp<SkDevice> makeDevice(SkISize size,
-                                       sk_sp<SkColorSpace>,
-                                       const SkSurfaceProps* props=nullptr) const = 0;
-
-    
-    virtual sk_sp<SkSpecialImage> makeImage(const SkIRect& subset, sk_sp<SkImage> image) const = 0;
-
-    
-    virtual sk_sp<SkImage> getCachedBitmap(const SkBitmap& data) const = 0;
-
-    
-    virtual const SkBlurEngine* getBlurEngine() const = 0;
-
-    
-    const SkSurfaceProps& surfaceProps() const { return fSurfaceProps; }
-    SkColorType colorType() const { return fColorType; }
-
-    SkImageFilterCache* cache() const { return fCache.get(); }
-
-protected:
-    Backend(sk_sp<SkImageFilterCache> cache,
-            const SkSurfaceProps& surfaceProps,
-            const SkColorType colorType);
-
-private:
-    sk_sp<SkImageFilterCache> fCache;
-    SkSurfaceProps fSurfaceProps;
-    SkColorType fColorType;
-};
-
-sk_sp<Backend> MakeRasterBackend(const SkSurfaceProps& surfaceProps, SkColorType colorType);
-
-
-struct Stats {
-    int fNumVisitedImageFilters = 0; 
-    int fNumCacheHits = 0; 
-    int fNumOffscreenSurfaces = 0; 
-    int fNumShaderClampedDraws = 0; 
-    int fNumShaderBasedTilingDraws = 0; 
-
-    void dumpStats() const;   
-    void reportStats() const; 
 };
 
 
@@ -1139,20 +683,26 @@ struct Stats {
 
 class Context {
 public:
-    Context(sk_sp<Backend> backend,
-            const Mapping& mapping,
-            const LayerSpace<SkIRect>& desiredOutput,
-            const FilterResult& source,
-            const SkColorSpace* colorSpace,
-            Stats* stats)
-        : fBackend(std::move(backend))
-        , fMapping(mapping)
-        , fDesiredOutput(desiredOutput)
-        , fSource(source)
-        , fColorSpace(sk_ref_sp(colorSpace))
-        , fStats(stats) {}
+    
+    
+    Context(const SkMatrix& layerMatrix, const SkIRect& clipBounds, SkImageFilterCache* cache,
+            SkColorType colorType, SkColorSpace* colorSpace, const SkSpecialImage* source)
+        : fMapping(layerMatrix)
+        , fDesiredOutput(clipBounds)
+        , fCache(cache)
+        , fColorType(colorType)
+        , fColorSpace(colorSpace)
+        , fSource(sk_ref_sp(source), LayerSpace<SkIPoint>({0, 0})) {}
 
-    const Backend* backend() const { return fBackend.get(); }
+    Context(const Mapping& mapping, const LayerSpace<SkIRect>& desiredOutput,
+            SkImageFilterCache* cache, SkColorType colorType, SkColorSpace* colorSpace,
+            const FilterResult& source)
+        : fMapping(mapping)
+        , fDesiredOutput(desiredOutput)
+        , fCache(cache)
+        , fColorType(colorType)
+        , fColorSpace(colorSpace)
+        , fSource(source) {}
 
     
     
@@ -1164,16 +714,29 @@ public:
     
     
     const Mapping& mapping() const { return fMapping; }
-
+    
+    const SkMatrix& ctm() const { return fMapping.layerMatrix(); }
     
     
     
     const LayerSpace<SkIRect>& desiredOutput() const { return fDesiredOutput; }
-
+    
+    const SkIRect& clipBounds() const { return static_cast<const SkIRect&>(fDesiredOutput); }
     
     
-    SkColorSpace* colorSpace() const { return fColorSpace.get(); }
-    sk_sp<SkColorSpace> refColorSpace() const { return fColorSpace; }
+    SkImageFilterCache* cache() const { return fCache; }
+    
+    
+    SkColorType colorType() const { return fColorType; }
+#if defined(SK_GANESH)
+    GrColorType grColorType() const { return SkColorTypeToGrColorType(fColorType); }
+#endif
+    
+    
+    SkColorSpace* colorSpace() const { return fColorSpace; }
+    sk_sp<SkColorSpace> refColorSpace() const { return sk_ref_sp(fColorSpace); }
+    
+    const SkSurfaceProps& surfaceProps() const { return fSource.image()->props(); }
 
     
     
@@ -1181,75 +744,54 @@ public:
     
     
     const FilterResult& source() const { return fSource; }
+    
+    const SkSpecialImage* sourceImage() const { return fSource.image(); }
 
+    
+    bool gpuBacked() const { return fSource.image()->isTextureBacked(); }
+    
+    GrRecordingContext* getContext() const { return fSource.image()->getContext(); }
+
+    
+
+
+
+
+
+
+
+    bool isValid() const { return fSource.image() != nullptr && fMapping.layerMatrix().isFinite(); }
+
+    
+    
+    
+    sk_sp<SkSpecialSurface> makeSurface(const SkISize& size,
+                                        const SkSurfaceProps* props = nullptr) const {
+        if (!props) {
+             props = &this->surfaceProps();
+        }
+        return fSource.image()->makeSurface(fColorType, fColorSpace, size,
+                                            kPremul_SkAlphaType, *props);
+    }
 
     
     Context withNewMapping(const Mapping& mapping) const {
-        Context c = *this;
-        c.fMapping = mapping;
-        return c;
+        return Context(mapping, fDesiredOutput, fCache, fColorType, fColorSpace, fSource);
     }
     
     Context withNewDesiredOutput(const LayerSpace<SkIRect>& desiredOutput) const {
-        Context c = *this;
-        c.fDesiredOutput = desiredOutput;
-        return c;
-    }
-    
-    Context withNewColorSpace(SkColorSpace* cs) const {
-        Context c = *this;
-        c.fColorSpace = sk_ref_sp(cs);
-        return c;
-    }
-
-    
-    Context withNewSource(const FilterResult& source) const {
-        Context c = *this;
-        c.fSource = source;
-        return c;
-    }
-
-
-    
-    void markVisitedImageFilter() const {
-        if (fStats) {
-            fStats->fNumVisitedImageFilters++;
-        }
-    }
-    void markCacheHit() const {
-        if (fStats) {
-            fStats->fNumCacheHits++;
-        }
-    }
-    void markNewSurface() const {
-        if (fStats) {
-            fStats->fNumOffscreenSurfaces++;
-        }
-    }
-    void markShaderBasedTilingRequired(SkTileMode tileMode) const {
-        if (fStats) {
-            if (tileMode == SkTileMode::kClamp) {
-                fStats->fNumShaderClampedDraws++;
-            } else {
-                fStats->fNumShaderBasedTilingDraws++;
-            }
-        }
+        return Context(fMapping, desiredOutput, fCache, fColorType, fColorSpace, fSource);
     }
 
 private:
-    friend class ::FilterResultTestAccess; 
-
-    sk_sp<Backend> fBackend;
-
-    
     Mapping             fMapping;
     LayerSpace<SkIRect> fDesiredOutput;
+    SkImageFilterCache* fCache;
+    SkColorType         fColorType;
     
+    
+    SkColorSpace*       fColorSpace;
     FilterResult        fSource;
-    
-    sk_sp<SkColorSpace> fColorSpace;
-
-    Stats* fStats;
 };
 
 } 

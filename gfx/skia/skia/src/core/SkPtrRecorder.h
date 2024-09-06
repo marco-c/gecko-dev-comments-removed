@@ -13,8 +13,6 @@
 #include "include/core/SkRefCnt.h"
 #include "include/private/base/SkTDArray.h"
 
-#include <cstdint>
-
 
 
 

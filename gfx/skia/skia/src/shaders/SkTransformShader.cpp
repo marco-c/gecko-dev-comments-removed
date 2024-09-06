@@ -5,31 +5,23 @@
 
 
 
-#include "src/shaders/SkTransformShader.h"
-
-#include "include/core/SkMatrix.h"
-#include "src/core/SkEffectPriv.h"
+#include "src/core/SkMatrixProvider.h"
 #include "src/core/SkRasterPipeline.h"
-#include "src/core/SkRasterPipelineOpList.h"
-
-#include <optional>
+#include "src/shaders/SkTransformShader.h"
 
 SkTransformShader::SkTransformShader(const SkShaderBase& shader, bool allowPerspective)
         : fShader{shader}, fAllowPerspective{allowPerspective} {
     SkMatrix::I().get9(fMatrixStorage);
 }
 
-bool SkTransformShader::update(const SkMatrix& matrix) {
-    if (!fAllowPerspective && matrix.hasPerspective()) {
-        return false;
-    }
-
-    matrix.get9(fMatrixStorage);
-    return true;
-}
-
-bool SkTransformShader::appendStages(const SkStageRec& rec,
-                                     const SkShaders::MatrixRec& mRec) const {
+skvm::Color SkTransformShader::program(skvm::Builder* b,
+                                       skvm::Coord device,
+                                       skvm::Coord local,
+                                       skvm::Color color,
+                                       const MatrixRec& mRec,
+                                       const SkColorInfo& dst,
+                                       skvm::Uniforms* uniforms,
+                                       SkArenaAlloc* alloc) const {
     
     
     
@@ -37,7 +29,59 @@ bool SkTransformShader::appendStages(const SkStageRec& rec,
     
     
     SkASSERT(!mRec.hasPendingMatrix());
-    std::optional<SkShaders::MatrixRec> childMRec = mRec.apply(rec);
+
+    std::optional<MatrixRec> childMRec = mRec.apply(b, &local, uniforms);
+    if (!childMRec.has_value()) {
+        return {};
+    }
+    
+    
+    
+    childMRec->markTotalMatrixInvalid();
+
+    auto matrix = uniforms->pushPtr(&fMatrixStorage);
+
+    skvm::F32 x = local.x,
+              y = local.y;
+
+    auto dot = [&, x, y](int row) {
+        return b->mad(x,
+                      b->arrayF(matrix, 3 * row + 0),
+                      b->mad(y, b->arrayF(matrix, 3 * row + 1), b->arrayF(matrix, 3 * row + 2)));
+    };
+
+    x = dot(0);
+    y = dot(1);
+    if (fAllowPerspective) {
+        x = x * (1.0f / dot(2));
+        y = y * (1.0f / dot(2));
+    }
+
+    skvm::Coord newLocal = {x, y};
+    return fShader.program(b, device, newLocal, color, *childMRec, dst, uniforms, alloc);
+}
+
+bool SkTransformShader::update(const SkMatrix& matrix) {
+    if (SkMatrix inv; matrix.invert(&inv)) {
+        if (!fAllowPerspective && inv.hasPerspective()) {
+            return false;
+        }
+
+        inv.get9(fMatrixStorage);
+        return true;
+    }
+    return false;
+}
+
+bool SkTransformShader::appendStages(const SkStageRec& rec, const MatrixRec& mRec) const {
+    
+    
+    
+    
+    
+    
+    SkASSERT(!mRec.hasPendingMatrix());
+    std::optional<MatrixRec> childMRec = mRec.apply(rec);
     if (!childMRec.has_value()) {
         return false;
     }

@@ -7,20 +7,21 @@
 
 #include "src/core/SkStrikeSpec.h"
 
-#include "include/core/SkFont.h"
-#include "include/core/SkFontTypes.h"
-#include "include/core/SkMatrix.h"
+#include "include/core/SkGraphics.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkPathEffect.h"
-#include "include/core/SkSurfaceProps.h"
+#include "include/effects/SkDashPathEffect.h"
 #include "src/base/SkTLazy.h"
+#include "src/core/SkDraw.h"
 #include "src/core/SkFontPriv.h"
-#include "src/core/SkGlyph.h"
 #include "src/core/SkStrike.h"
 #include "src/core/SkStrikeCache.h"
-#include "src/text/StrikeForGPU.h"
 
-#include <utility>
+#if defined(SK_GANESH) || defined(SK_GRAPHITE)
+#include "src/text/gpu/SDFMaskFilter.h"
+#include "src/text/gpu/SDFTControl.h"
+#include "src/text/gpu/StrikeCache.h"
+#endif
 
 SkStrikeSpec::SkStrikeSpec(const SkDescriptor& descriptor, sk_sp<SkTypeface> typeface)
     : fAutoDescriptor{descriptor}
@@ -152,10 +153,55 @@ SkStrikeSpec SkStrikeSpec::MakePDFVector(const SkTypeface& typeface, int* size) 
 
     return SkStrikeSpec(font,
                         SkPaint(),
-                        SkSurfaceProps(),
+                        SkSurfaceProps(0, kUnknown_SkPixelGeometry),
                         SkScalerContextFlags::kFakeGammaAndBoostContrast,
                         SkMatrix::I());
 }
+
+#if (defined(SK_GANESH) || defined(SK_GRAPHITE)) && !defined(SK_DISABLE_SDF_TEXT)
+std::tuple<SkStrikeSpec, SkScalar, sktext::gpu::SDFTMatrixRange>
+SkStrikeSpec::MakeSDFT(const SkFont& font, const SkPaint& paint,
+                       const SkSurfaceProps& surfaceProps, const SkMatrix& deviceMatrix,
+                       const SkPoint& textLocation, const sktext::gpu::SDFTControl& control) {
+    
+    SkPaint dfPaint{paint};
+    dfPaint.setMaskFilter(sktext::gpu::SDFMaskFilter::Make());
+
+    auto [dfFont, strikeToSourceScale, matrixRange] = control.getSDFFont(font, deviceMatrix,
+                                                                         textLocation);
+
+    
+    dfPaint.setStrokeWidth(paint.getStrokeWidth() / strikeToSourceScale);
+
+    
+    if (SkPathEffect* pathEffect = paint.getPathEffect(); pathEffect != nullptr) {
+        SkPathEffect::DashInfo dashInfo;
+        if (pathEffect->asADash(&dashInfo) == SkPathEffect::kDash_DashType) {
+            if (dashInfo.fCount > 0) {
+                
+                std::vector<SkScalar> scaledIntervals(dashInfo.fCount);
+                dashInfo.fIntervals = scaledIntervals.data();
+                
+                (void)pathEffect->asADash(&dashInfo);
+                for (SkScalar& interval : scaledIntervals) {
+                    interval /= strikeToSourceScale;
+                }
+                auto scaledDashes = SkDashPathEffect::Make(scaledIntervals.data(),
+                                                           scaledIntervals.size(),
+                                                           dashInfo.fPhase / strikeToSourceScale);
+                dfPaint.setPathEffect(scaledDashes);
+            }
+        }
+    }
+
+    
+    
+    SkScalerContextFlags flags = SkScalerContextFlags::kNone;
+    SkStrikeSpec strikeSpec(dfFont, dfPaint, surfaceProps, flags, SkMatrix::I());
+
+    return std::make_tuple(std::move(strikeSpec), strikeToSourceScale, matrixRange);
+}
+#endif
 
 SkStrikeSpec::SkStrikeSpec(const SkFont& font, const SkPaint& paint,
                            const SkSurfaceProps& surfaceProps,
@@ -169,7 +215,7 @@ SkStrikeSpec::SkStrikeSpec(const SkFont& font, const SkPaint& paint,
 
     fMaskFilter = sk_ref_sp(effects.fMaskFilter);
     fPathEffect = sk_ref_sp(effects.fPathEffect);
-    fTypeface = font.refTypeface();
+    fTypeface = font.refTypefaceOrDefault();
 }
 
 sk_sp<sktext::StrikeForGPU> SkStrikeSpec::findOrCreateScopedStrike(
@@ -189,8 +235,6 @@ sk_sp<SkStrike> SkStrikeSpec::findOrCreateStrike(SkStrikeCache* cache) const {
 
 SkBulkGlyphMetrics::SkBulkGlyphMetrics(const SkStrikeSpec& spec)
     : fStrike{spec.findOrCreateStrike()} { }
-
-SkBulkGlyphMetrics::~SkBulkGlyphMetrics() = default;
 
 SkSpan<const SkGlyph*> SkBulkGlyphMetrics::glyphs(SkSpan<const SkGlyphID> glyphIDs) {
     fGlyphs.reset(glyphIDs.size());

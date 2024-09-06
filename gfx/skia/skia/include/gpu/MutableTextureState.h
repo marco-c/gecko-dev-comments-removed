@@ -8,15 +8,17 @@
 #ifndef skgpu_MutableTextureState_DEFINED
 #define skgpu_MutableTextureState_DEFINED
 
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkAnySubclass.h"
+#include "include/gpu/GpuTypes.h"
 
-#include <cstddef>
+#ifdef SK_VULKAN
+#include "include/private/gpu/vk/VulkanTypesPriv.h"
+#endif
+
+#include <new>
+
+class GrVkGpu;
 
 namespace skgpu {
-enum class BackendApi : unsigned int;
-class MutableTextureStateData;
 
 
 
@@ -27,16 +29,63 @@ class MutableTextureStateData;
 
 
 
-class SK_API MutableTextureState : public SkRefCnt {
+
+class SK_API MutableTextureState {
 public:
-    MutableTextureState();
-    ~MutableTextureState() override;
+    MutableTextureState() {}
 
-    MutableTextureState(const MutableTextureState& that);
+#ifdef SK_VULKAN
+    MutableTextureState(VkImageLayout layout, uint32_t queueFamilyIndex)
+            : fVkState(layout, queueFamilyIndex)
+            , fBackend(BackendApi::kVulkan)
+            , fIsValid(true) {}
+#endif
 
-    MutableTextureState& operator=(const MutableTextureState& that);
+    MutableTextureState(const MutableTextureState& that)
+            : fBackend(that.fBackend), fIsValid(that.fIsValid) {
+        if (!fIsValid) {
+            return;
+        }
+        switch (fBackend) {
+            case BackendApi::kVulkan:
+    #ifdef SK_VULKAN
+                SkASSERT(that.fBackend == BackendApi::kVulkan);
+                fVkState = that.fVkState;
+    #endif
+                break;
+            default:
+                (void)that;
+                SkUNREACHABLE;
+        }
+    }
 
-    void set(const MutableTextureState& that);
+    MutableTextureState& operator=(const MutableTextureState& that) {
+        if (this != &that) {
+            this->~MutableTextureState();
+            new (this) MutableTextureState(that);
+        }
+        return *this;
+    }
+
+#ifdef SK_VULKAN
+    
+    
+    VkImageLayout getVkImageLayout() const {
+        if (this->isValid() && fBackend != BackendApi::kVulkan) {
+            return VK_IMAGE_LAYOUT_UNDEFINED;
+        }
+        return fVkState.getImageLayout();
+    }
+
+    
+    
+    uint32_t getQueueFamilyIndex() const {
+        if (this->isValid() && fBackend != BackendApi::kVulkan) {
+            return VK_QUEUE_FAMILY_IGNORED;
+        }
+        return fVkState.getQueueFamilyIndex();
+    }
+#endif
 
     BackendApi backend() const { return fBackend; }
 
@@ -44,23 +93,28 @@ public:
     bool isValid() const { return fIsValid; }
 
 private:
-    friend class MutableTextureStateData;
-    friend class MutableTextureStatePriv;
-    
-    
-    
-    inline constexpr static size_t kMaxSubclassSize = 16;
-    using AnyStateData = SkAnySubclass<MutableTextureStateData, kMaxSubclassSize>;
+    friend class MutableTextureStateRef;
+    friend class ::GrVkGpu;
 
-    template <typename StateData>
-    MutableTextureState(BackendApi api, const StateData& data) : fBackend(api), fIsValid(true) {
-        fStateData.emplace<StateData>(data);
+#ifdef SK_VULKAN
+    void setVulkanState(VkImageLayout layout, uint32_t queueFamilyIndex) {
+        SkASSERT(!this->isValid() || fBackend == BackendApi::kVulkan);
+        fVkState.setImageLayout(layout);
+        fVkState.setQueueFamilyIndex(queueFamilyIndex);
+        fBackend = BackendApi::kVulkan;
+        fIsValid = true;
     }
+#endif
 
-    AnyStateData fStateData;
+    union {
+        char fPlaceholder;
+#ifdef SK_VULKAN
+        VulkanMutableTextureState fVkState;
+#endif
+    };
 
-    BackendApi fBackend;
-    bool fIsValid;
+    BackendApi fBackend = BackendApi::kMock;
+    bool fIsValid = false;
 };
 
 } 

@@ -10,7 +10,6 @@
 #include "include/core/SkPath.h"
 #include "include/core/SkPoint3.h"
 #include "include/core/SkRSXform.h"
-#include "include/core/SkSamplingOptions.h"
 #include "include/core/SkSize.h"
 #include "include/core/SkString.h"
 #include "include/private/base/SkDebug.h"
@@ -26,6 +25,8 @@
 
 #include <algorithm>
 #include <cmath>
+
+struct SkSamplingOptions;
 
 void SkMatrix::doNormalizePerspective() {
     
@@ -546,8 +547,8 @@ bool SkMatrix::setRectToRect(const SkRect& src, const SkRect& dst, ScaleToFit al
         fMat[kMPersp2] = 1;
         this->setTypeMask(kScale_Mask);
     } else {
-        SkScalar    tx, sx = sk_ieee_float_divide(dst.width(), src.width());
-        SkScalar    ty, sy = sk_ieee_float_divide(dst.height(), src.height());
+        SkScalar    tx, sx = dst.width() / src.width();
+        SkScalar    ty, sy = dst.height() / src.height();
         bool        xLarger = false;
 
         if (align != kFill_ScaleToFit) {
@@ -819,13 +820,13 @@ bool SkMatrix::invertNonIdentity(SkMatrix* inv) const {
         bool invertible = true;
         if (inv) {
             if (mask & kScale_Mask) {
-                SkScalar invX = sk_ieee_float_divide(1.f, fMat[kMScaleX]);
-                SkScalar invY = sk_ieee_float_divide(1.f, fMat[kMScaleY]);
-                
-                
-                if (!SkScalarsAreFinite(invX, invY)) {
+                SkScalar invX = fMat[kMScaleX];
+                SkScalar invY = fMat[kMScaleY];
+                if (0 == invX || 0 == invY) {
                     return false;
                 }
+                invX = SkScalarInvert(invX);
+                invY = SkScalarInvert(invY);
 
                 
                 
@@ -1630,15 +1631,6 @@ bool SkTreatAsSprite(const SkMatrix& mat, const SkISize& size, const SkSamplingO
     }
 
     
-    
-    
-    if (sampling.filter == SkFilterMode::kLinear &&
-        (mat.getTranslateX() != (int)mat.getTranslateX() ||
-         mat.getTranslateY() != (int)mat.getTranslateY())) {
-        return false;
-    }
-
-    
     if (!subpixelBits && !(mat.getType() & ~SkMatrix::kTranslate_Mask)) {
         return true;
     }
@@ -1881,7 +1873,8 @@ SkScalar SkMatrixPriv::ComputeResScaleForStroking(const SkMatrix& matrix) {
     if (SkScalarsAreFinite(sx, sy)) {
         SkScalar scale = std::max(sx, sy);
         if (scale > 0) {
-            return scale;
+            static const SkScalar kMaxStrokeScale = 1e5f;
+            return std::min(scale, kMaxStrokeScale);
         }
     }
     return 1;

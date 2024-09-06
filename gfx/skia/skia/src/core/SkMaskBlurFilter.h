@@ -27,7 +27,7 @@ public:
     bool hasNoBlur() const;
 
     
-    SkIPoint blur(const SkMask& src, SkMaskBuilder* dst) const;
+    SkIPoint blur(const SkMask& src, SkMask* dst) const;
 
 private:
     const double fSigmaW;

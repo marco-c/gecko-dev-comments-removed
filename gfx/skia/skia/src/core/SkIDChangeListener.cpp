@@ -7,9 +7,6 @@
 
 #include "include/private/SkIDChangeListener.h"
 
-#include "include/private/base/SkAssert.h"
-
-#include <utility>
 
 
 

@@ -13,7 +13,6 @@
 #include "include/private/SkColorData.h"
 
 class SkRasterPipeline;
-class SkPaint;
 
 
 
@@ -33,16 +32,9 @@ void SkBlendMode_AppendStages(SkBlendMode, SkRasterPipeline*);
 
 SkPMColor4f SkBlendMode_Apply(SkBlendMode, const SkPMColor4f& src, const SkPMColor4f& dst);
 
-enum class SkBlendFastPath {
-    kNormal,      
-    kSrcOver,     
-    kSkipDrawing  
-};
-
-
-
-
-
-SkBlendFastPath CheckFastPath(const SkPaint&, bool dstIsOpaque);
+#if defined(SK_GANESH)
+#include "src/gpu/ganesh/GrXferProcessor.h"
+const GrXPFactory* SkBlendMode_AsXPFactory(SkBlendMode);
+#endif
 
 #endif

@@ -7,21 +7,11 @@
 
 #include "src/sksl/ir/SkSLSymbolTable.h"
 
-#include "src/sksl/SkSLContext.h"
-#include "src/sksl/SkSLErrorReporter.h"
-#include "src/sksl/SkSLPosition.h"
-#include "src/sksl/SkSLProgramSettings.h"
-#include "src/sksl/ir/SkSLExpression.h"
+#include "src/sksl/SkSLThreadContext.h"
 #include "src/sksl/ir/SkSLFunctionDeclaration.h"
 #include "src/sksl/ir/SkSLType.h"
 
 namespace SkSL {
-
-std::unique_ptr<SymbolTable> SymbolTable::insertNewParent() {
-    auto newTable = std::make_unique<SymbolTable>(fParent, fBuiltin);
-    fParent = newTable.get();
-    return newTable;
-}
 
 bool SymbolTable::isType(std::string_view name) const {
     const Symbol* symbol = this->find(name);
@@ -42,29 +32,6 @@ const Symbol* SymbolTable::findBuiltinSymbol(std::string_view name) const {
     return this->find(name);
 }
 
-bool SymbolTable::wouldShadowSymbolsFrom(const SymbolTable* other) const {
-    
-    
-    const SymbolTable* self = this;
-    if (self->count() > other->count()) {
-        std::swap(self, other);
-    }
-
-    bool foundShadow = false;
-
-    self->fSymbols.foreach([&](const SymbolKey& key, const Symbol* symbol) {
-        if (foundShadow) {
-            
-            return;
-        }
-        if (other->fSymbols.find(key) != nullptr) {
-            foundShadow = true;
-        }
-    });
-
-    return foundShadow;
-}
-
 Symbol* SymbolTable::lookup(const SymbolKey& key) const {
     Symbol** symbolPPtr = fSymbols.find(key);
     if (symbolPPtr) {
@@ -75,7 +42,7 @@ Symbol* SymbolTable::lookup(const SymbolKey& key) const {
     return fParent ? fParent->lookup(key) : nullptr;
 }
 
-void SymbolTable::renameSymbol(const Context& context, Symbol* symbol, std::string_view newName) {
+void SymbolTable::renameSymbol(Symbol* symbol, std::string_view newName) {
     if (symbol->is<FunctionDeclaration>()) {
         
         for (FunctionDeclaration* fn = &symbol->as<FunctionDeclaration>(); fn != nullptr;
@@ -87,31 +54,7 @@ void SymbolTable::renameSymbol(const Context& context, Symbol* symbol, std::stri
         symbol->setName(newName);
     }
 
-    this->addWithoutOwnership(context, symbol);
-}
-
-std::unique_ptr<Symbol> SymbolTable::removeSymbol(const Symbol* symbol) {
-    
-    if (fSymbols.removeIfExists(MakeSymbolKey(symbol->name()))) {
-        
-        
-        for (std::unique_ptr<Symbol>& owned : fOwnedSymbols) {
-            if (symbol == owned.get()) {
-                return std::move(owned);
-            }
-        }
-    }
-
-    
-    return nullptr;
-}
-
-void SymbolTable::moveSymbolTo(SymbolTable* otherTable, Symbol* sym, const Context& context) {
-    if (std::unique_ptr<Symbol> ownedSymbol = this->removeSymbol(sym)) {
-        otherTable->add(context, std::move(ownedSymbol));
-    } else {
-        otherTable->addWithoutOwnership(context, sym);
-    }
+    this->addWithoutOwnership(symbol);
 }
 
 const std::string* SymbolTable::takeOwnershipOfString(std::string str) {
@@ -120,26 +63,7 @@ const std::string* SymbolTable::takeOwnershipOfString(std::string str) {
     return &fOwnedStrings.front();
 }
 
-void SymbolTable::addWithoutOwnership(const Context& context, Symbol* symbol) {
-    if (!this->addWithoutOwnership(symbol)) {
-        context.fErrors->error(symbol->position(),
-                               "symbol '" + std::string(symbol->name()) + "' was already defined");
-    }
-}
-
-void SymbolTable::addWithoutOwnershipOrDie(Symbol* symbol) {
-    if (!this->addWithoutOwnership(symbol)) {
-        SK_ABORT("symbol '%.*s' was already defined",
-                 (int)symbol->name().size(), symbol->name().data());
-    }
-}
-
-bool SymbolTable::addWithoutOwnership(Symbol* symbol) {
-    if (symbol->name().empty()) {
-        
-        
-        return true;
-    }
+void SymbolTable::addWithoutOwnership(Symbol* symbol) {
     auto key = MakeSymbolKey(symbol->name());
 
     
@@ -151,18 +75,24 @@ bool SymbolTable::addWithoutOwnership(Symbol* symbol) {
             FunctionDeclaration* existingDecl = &existingSymbol->as<FunctionDeclaration>();
             symbol->as<FunctionDeclaration>().setNextOverload(existingDecl);
             fSymbols[key] = symbol;
-            return true;
+            return;
         }
     }
 
     if (fAtModuleBoundary && fParent && fParent->lookup(key)) {
         
         
-        return false;
+    } else {
+        Symbol*& refInSymbolTable = fSymbols[key];
+
+        if (refInSymbolTable == nullptr) {
+            refInSymbolTable = symbol;
+            return;
+        }
     }
 
-    std::swap(symbol, fSymbols[key]);
-    return symbol == nullptr;
+    ThreadContext::ReportError("symbol '" + std::string(symbol->name()) + "' was already defined",
+                               symbol->fPosition);
 }
 
 void SymbolTable::injectWithoutOwnership(Symbol* symbol) {
@@ -170,16 +100,14 @@ void SymbolTable::injectWithoutOwnership(Symbol* symbol) {
     fSymbols[key] = symbol;
 }
 
-const Type* SymbolTable::addArrayDimension(const Context& context,
-                                           const Type* type,
-                                           int arraySize) {
+const Type* SymbolTable::addArrayDimension(const Type* type, int arraySize) {
     if (arraySize == 0) {
         return type;
     }
     
     
-    if (fParent && !fAtModuleBoundary && !context.fConfig->fIsBuiltinCode && type->isBuiltin()) {
-        return fParent->addArrayDimension(context, type, arraySize);
+    if (type->isInBuiltinTypes() && fParent && !fAtModuleBoundary) {
+        return fParent->addArrayDimension(type, arraySize);
     }
     
     std::string arrayName = type->getArrayName(arraySize);
@@ -188,17 +116,7 @@ const Type* SymbolTable::addArrayDimension(const Context& context,
     }
     
     const std::string* arrayNamePtr = this->takeOwnershipOfString(std::move(arrayName));
-    return this->add(context, Type::MakeArrayType(context, *arrayNamePtr, *type, arraySize));
-}
-
-std::unique_ptr<Expression> SymbolTable::instantiateSymbolRef(const Context& context,
-                                                              std::string_view name,
-                                                              Position pos) {
-    if (const Symbol* symbol = this->find(name)) {
-        return symbol->instantiate(context, pos);
-    }
-    context.fErrors->error(pos, "unknown identifier '" + std::string(name) + "'");
-    return nullptr;
+    return this->add(Type::MakeArrayType(*arrayNamePtr, *type, arraySize));
 }
 
 }  

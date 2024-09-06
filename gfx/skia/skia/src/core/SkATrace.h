@@ -10,8 +10,6 @@
 
 #include "include/utils/SkEventTracer.h"
 
-#include <cstdint>
-
 
 
 

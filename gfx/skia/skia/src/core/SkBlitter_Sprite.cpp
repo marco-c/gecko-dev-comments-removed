@@ -5,35 +5,18 @@
 
 
 
-#include "include/core/SkAlphaType.h"
-#include "include/core/SkBlendMode.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkColorType.h"
-#include "include/core/SkImageInfo.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkPixmap.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkShader.h"
-#include "include/private/base/SkAssert.h"
+#include "include/core/SkColorSpace.h"
 #include "src/base/SkArenaAlloc.h"
-#include "src/core/SkBlitter.h"
 #include "src/core/SkColorSpacePriv.h"
 #include "src/core/SkColorSpaceXformSteps.h"
 #include "src/core/SkCoreBlitters.h"
 #include "src/core/SkImageInfoPriv.h"
+#include "src/core/SkOpts.h"
 #include "src/core/SkRasterPipeline.h"
-#include "src/core/SkRasterPipelineOpContexts.h"
-#include "src/core/SkRasterPipelineOpList.h"
 #include "src/core/SkSpriteBlitter.h"
+#include "src/core/SkVMBlitter.h"
 
-#include <cstdint>
-#include <cstring>
-#include <optional>
-#include <utility>
-
-struct SkIRect;
-struct SkMask;
-
+extern bool gUseSkVMBlitter;
 extern bool gSkForceRasterPipelineBlitter;
 
 SkSpriteBlitter::SkSpriteBlitter(const SkPixmap& source)
@@ -137,11 +120,11 @@ public:
         fPaintColor = paint.getColor4f();
 
         SkRasterPipeline p(fAlloc);
-        p.appendLoad(fSource.colorType(), &fSrcPtr);
+        p.append_load(fSource.colorType(), &fSrcPtr);
 
         if (SkColorTypeIsAlphaOnly(fSource.colorType())) {
             
-            p.appendSetRGB(fAlloc, fPaintColor);
+            p.append_set_rgb(fAlloc, fPaintColor);
             p.append(SkRasterPipelineOp::premul);
         }
         if (auto dstCS = fDst.colorSpace()) {
@@ -174,8 +157,8 @@ public:
         
         
         size_t bpp = fSource.info().bytesPerPixel();
-        fSrcPtr.pixels = (char*)fSource.writable_addr(-fLeft+x, -fTop+y) - bpp * x
-                                                                         - bpp * y * fSrcPtr.stride;
+        fSrcPtr.pixels = (char*)fSource.addr(-fLeft+x, -fTop+y) - bpp * x
+                                                                - bpp * y * fSrcPtr.stride;
 
         fBlitter->blitRect(x,y,width,height);
     }
@@ -205,6 +188,10 @@ SkBlitter* SkBlitter::ChooseSprite(const SkPixmap& dst, const SkPaint& paint,
 
 
     SkASSERT(alloc != nullptr);
+
+    if (gUseSkVMBlitter) {
+        return SkVMBlitter::Make(dst, paint, source,left,top, alloc, std::move(clipShader));
+    }
 
     
     if (source.alphaType() == kUnpremul_SkAlphaType) {
@@ -237,5 +224,5 @@ SkBlitter* SkBlitter::ChooseSprite(const SkPixmap& dst, const SkPaint& paint,
         return blitter;
     }
 
-    return nullptr;
+    return SkVMBlitter::Make(dst, paint, source,left,top, alloc, std::move(clipShader));
 }

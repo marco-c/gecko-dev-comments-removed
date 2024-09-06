@@ -14,8 +14,12 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkStrokeRec.h"
 #include "include/private/base/SkNoncopyable.h"
-#include "src/base/SkTLazy.h"
 #include "src/core/SkMask.h"
+
+#if defined(SK_GANESH)
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/shaders/SkShaderBase.h"
+#endif
 
 class GrClip;
 struct GrFPArgs;
@@ -62,18 +66,80 @@ public:
 
 
 
-    virtual bool filterMask(SkMaskBuilder* dst, const SkMask& src, const SkMatrix&,
+    virtual bool filterMask(SkMask* dst, const SkMask& src, const SkMatrix&,
                             SkIPoint* margin) const = 0;
 
-    enum class Type {
-        kBlur,
-        kEmboss,
-        kSDF,
-        kShader,
-        kTable,
-    };
+#if defined(SK_GANESH)
+    
 
-    virtual Type type() const = 0;
+
+
+
+
+
+    std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(const GrFPArgs& args,
+                                                             const SkMatrix& ctm) const;
+
+    
+
+
+    bool hasFragmentProcessor() const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual bool canFilterMaskGPU(const GrStyledShape&,
+                                  const SkIRect& devSpaceShapeBounds,
+                                  const SkIRect& clipBounds,
+                                  const SkMatrix& ctm,
+                                  SkIRect* maskRect) const;
+
+    
+
+
+
+    virtual bool directFilterMaskGPU(GrRecordingContext*,
+                                     skgpu::ganesh::SurfaceDrawContext*,
+                                     GrPaint&& paint,
+                                     const GrClip*,
+                                     const SkMatrix& viewMatrix,
+                                     const GrStyledShape& shape) const;
+
+    
+
+
+
+
+
+
+    virtual GrSurfaceProxyView filterMaskGPU(GrRecordingContext*,
+                                             GrSurfaceProxyView srcView,
+                                             GrColorType srcColorType,
+                                             SkAlphaType srcAlphaType,
+                                             const SkMatrix& ctm,
+                                             const SkIRect& maskRect) const;
+#endif
 
     
 
@@ -99,12 +165,6 @@ public:
 
     virtual bool asABlur(BlurRec*) const;
 
-    
-
-
-
-    virtual sk_sp<SkImageFilter> asImageFilter(const SkMatrix& ctm) const;
-
     static SkFlattenable::Type GetFlattenableType() {
         return kSkMaskFilter_Type;
     }
@@ -116,6 +176,13 @@ public:
 protected:
     SkMaskFilterBase() {}
 
+#if defined(SK_GANESH)
+    using MatrixRec = SkShaderBase::MatrixRec;
+    virtual std::unique_ptr<GrFragmentProcessor> onAsFragmentProcessor(const GrFPArgs&,
+                                                                       const MatrixRec&) const;
+    virtual bool onHasFragmentProcessor() const;
+#endif
+
     enum FilterReturn {
         kFalse_FilterReturn,
         kTrue_FilterReturn,
@@ -124,14 +191,13 @@ protected:
 
     class NinePatch : ::SkNoncopyable {
     public:
-        NinePatch(const SkMask& mask, SkIRect outerRect, SkIPoint center, SkCachedData* cache)
-            : fMask(mask), fOuterRect(outerRect), fCenter(center), fCache(cache) {}
+        NinePatch() : fCache(nullptr) { }
         ~NinePatch();
 
         SkMask      fMask;      
         SkIRect     fOuterRect; 
         SkIPoint    fCenter;    
-        SkCachedData* fCache = nullptr;
+        SkCachedData* fCache;
     };
 
     
@@ -152,13 +218,13 @@ protected:
     virtual FilterReturn filterRectsToNine(const SkRect[], int count,
                                            const SkMatrix&,
                                            const SkIRect& clipBounds,
-                                           SkTLazy<NinePatch>*) const;
+                                           NinePatch*) const;
     
 
 
     virtual FilterReturn filterRRectToNine(const SkRRect&, const SkMatrix&,
                                            const SkIRect& clipBounds,
-                                           SkTLazy<NinePatch>*) const;
+                                           NinePatch*) const;
 
 private:
     friend class SkDraw;

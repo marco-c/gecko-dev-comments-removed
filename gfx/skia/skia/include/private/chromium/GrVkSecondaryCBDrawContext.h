@@ -15,15 +15,15 @@
 #include <memory>
 
 class GrBackendSemaphore;
-class GrDeferredDisplayList;
 class GrRecordingContext;
-class GrSurfaceCharacterization;
 struct GrVkDrawableInfo;
 namespace skgpu::ganesh {
 class Device;
 }
 class SkCanvas;
+class SkDeferredDisplayList;
 struct SkImageInfo;
+class SkSurfaceCharacterization;
 class SkSurfaceProps;
 
 
@@ -92,7 +92,6 @@ public:
 
 
 
-
     bool wait(int numSemaphores,
               const GrBackendSemaphore waitSemaphores[],
               bool deleteSemaphoresAfterWait = true);
@@ -108,15 +107,15 @@ public:
     const SkSurfaceProps& props() const { return fProps; }
 
     
-    bool characterize(GrSurfaceCharacterization* characterization) const;
+    bool characterize(SkSurfaceCharacterization* characterization) const;
 
 #ifndef SK_DDL_IS_UNIQUE_POINTER
-    bool draw(sk_sp<const GrDeferredDisplayList> deferredDisplayList);
+    bool draw(sk_sp<const SkDeferredDisplayList> deferredDisplayList);
 #else
-    bool draw(const GrDeferredDisplayList* deferredDisplayList);
+    bool draw(const SkDeferredDisplayList* deferredDisplayList);
 #endif
 
-    bool isCompatible(const GrSurfaceCharacterization& characterization) const;
+    bool isCompatible(const SkSurfaceCharacterization& characterization) const;
 
 private:
     explicit GrVkSecondaryCBDrawContext(sk_sp<skgpu::ganesh::Device>, const SkSurfaceProps*);

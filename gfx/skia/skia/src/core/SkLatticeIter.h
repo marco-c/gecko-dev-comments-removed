@@ -9,13 +9,11 @@
 #define SkLatticeIter_DEFINED
 
 #include "include/core/SkCanvas.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkRect.h"
 #include "include/core/SkScalar.h"
-#include "include/private/base/SkAPI.h"
 #include "include/private/base/SkTArray.h"
 
-class SkMatrix;
+struct SkIRect;
+struct SkRect;
 
 
 

@@ -4,8 +4,6 @@
 
 
 
-#ifndef SkRescaleAndReadPixels_DEFINED
-#define SkRescaleAndReadPixels_DEFINED
 
 #include "include/core/SkImage.h"
 
@@ -21,5 +19,3 @@ void SkRescaleAndReadPixels(SkBitmap src,
                             SkImage::RescaleMode,
                             SkImage::ReadPixelsCallback,
                             SkImage::ReadPixelsContext);
-
-#endif  

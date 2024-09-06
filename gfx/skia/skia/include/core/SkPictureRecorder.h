@@ -8,10 +8,9 @@
 #ifndef SkPictureRecorder_DEFINED
 #define SkPictureRecorder_DEFINED
 
-#include "include/core/SkRect.h"
+#include "include/core/SkBBHFactory.h"
+#include "include/core/SkPicture.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkScalar.h"
-#include "include/private/base/SkAPI.h"
 
 #include <memory>
 
@@ -21,11 +20,9 @@ namespace android {
 };
 #endif
 
-class SkBBHFactory;
-class SkBBoxHierarchy;
 class SkCanvas;
 class SkDrawable;
-class SkPicture;
+class SkPictureRecord;
 class SkRecord;
 class SkRecorder;
 
@@ -33,6 +30,9 @@ class SK_API SkPictureRecorder {
 public:
     SkPictureRecorder();
     ~SkPictureRecorder();
+
+    enum FinishFlags {
+    };
 
     
 

@@ -14,7 +14,6 @@
 #include "src/core/SkCachedData.h"
 #include "src/core/SkImageInfoPriv.h"
 #include "src/shaders/SkShaderBase.h"
-#include <memory>
 
 class SkBitmap;
 class SkData;
@@ -22,12 +21,6 @@ class SkDiscardableMemory;
 class SkMipmapBuilder;
 
 typedef SkDiscardableMemory* (*SkDiscardableFactoryProc)(size_t bytes);
-
-struct SkMipmapDownSampler {
-    virtual ~SkMipmapDownSampler() {}
-
-    virtual void buildLevel(const SkPixmap& dst, const SkPixmap& src) = 0;
-};
 
 
 
@@ -56,9 +49,6 @@ public:
     
     
     static SkISize ComputeLevelSize(int baseWidth, int baseHeight, int level);
-    static SkISize ComputeLevelSize(SkISize s, int level) {
-        return ComputeLevelSize(s.width(), s.height(), level);
-    }
 
     
     static float ComputeLevel(SkSize scaleSize);
@@ -84,7 +74,8 @@ public:
 
     bool validForRootLevel(const SkImageInfo&) const;
 
-    static std::unique_ptr<SkMipmapDownSampler> MakeDownSampler(const SkPixmap&);
+    sk_sp<SkData> serialize() const;
+    static bool Deserialize(SkMipmapBuilder*, const void* data, size_t size);
 
 protected:
     void onDataChange(void* oldData, void* newData) override {

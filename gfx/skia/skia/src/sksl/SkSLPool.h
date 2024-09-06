@@ -8,12 +8,12 @@
 #ifndef SKSL_POOL
 #define SKSL_POOL
 
+#include "src/sksl/SkSLMemoryPool.h"
+
 #include <cstddef>
 #include <memory>
 
 namespace SkSL {
-
-class MemoryPool;
 
 
 
@@ -51,7 +51,7 @@ public:
     static bool IsAttached();
 
 private:
-    Pool();  
+    Pool() = default;  
     std::unique_ptr<SkSL::MemoryPool> fMemPool;
 };
 

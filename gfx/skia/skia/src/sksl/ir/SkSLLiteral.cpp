@@ -5,7 +5,7 @@
 
 
 
-#include "src/sksl/SkSLString.h"
+#include "include/private/SkSLString.h"
 #include "src/sksl/ir/SkSLLiteral.h"
 
 namespace SkSL {

@@ -130,7 +130,7 @@ public:
 
 
 
-    [[nodiscard]] T release() {
+    T SK_WARN_UNUSED_RESULT release() {
         T obj = fObject;
         fObject = nil;
         return obj;

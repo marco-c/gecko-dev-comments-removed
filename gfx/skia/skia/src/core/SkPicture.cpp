@@ -7,11 +7,9 @@
 
 #include "include/core/SkPicture.h"
 
-#include "include/core/SkData.h"
+#include "include/core/SkImageGenerator.h"
 #include "include/core/SkPictureRecorder.h"
 #include "include/core/SkSerialProcs.h"
-#include "include/core/SkStream.h"
-#include "include/private/base/SkTFitsIn.h"
 #include "include/private/base/SkTo.h"
 #include "src/base/SkMathPriv.h"
 #include "src/core/SkCanvasPriv.h"
@@ -19,14 +17,14 @@
 #include "src/core/SkPicturePlayback.h"
 #include "src/core/SkPicturePriv.h"
 #include "src/core/SkPictureRecord.h"
-#include "src/core/SkReadBuffer.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkStreamPriv.h"
-#include "src/core/SkWriteBuffer.h"
 
 #include <atomic>
-#include <cstring>
-#include <memory>
+
+#if defined(SK_GANESH)
+#include "include/private/chromium/Slug.h"
+#endif
 
 
 
@@ -319,7 +317,7 @@ void SkPicturePriv::Flatten(const sk_sp<const SkPicture> picture, SkWriteBuffer&
     buffer.writeUInt(info.getVersion());
     buffer.writeRect(info.fCullRect);
 
-    if (auto custom = custom_serialize(picture.get(), buffer.serialProcs())) {
+    if (auto custom = custom_serialize(picture.get(), buffer.fProcs)) {
         int32_t size = SkToS32(custom->size());
         buffer.write32(-size);    
         buffer.writePad32(custom->data(), size);

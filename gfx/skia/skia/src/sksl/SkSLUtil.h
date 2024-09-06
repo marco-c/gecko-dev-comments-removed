@@ -81,7 +81,6 @@ struct ShaderCaps {
 
     SkSL::GLSLGeneration fGLSLGeneration = SkSL::GLSLGeneration::k330;
 
-    bool fDualSourceBlendingSupport = false;
     bool fShaderDerivativeSupport = false;
     
     bool fExplicitTextureLodSupport = false;
@@ -107,7 +106,6 @@ struct ShaderCaps {
     bool fBuiltinDeterminantSupport = true;
 
     
-    bool fCanUseVoidInSequenceExpressions = true;
     bool fCanUseMinAndAbsTogether = true;
     bool fCanUseFractForNegativeValues = true;
     bool fMustForceNegatedAtanParamToFloat = false;
@@ -123,6 +121,9 @@ struct ShaderCaps {
     bool fMustGuardDivisionEvenAfterExplicitZeroCheck = false;
     
     bool fCanUseFragCoord = true;
+    
+    
+    bool fIncompleteShortIntPrecision = false;
     
     bool fAddAndTrueToLoopCondition = false;
     
@@ -142,13 +143,6 @@ struct ShaderCaps {
     bool fRewriteMatrixComparisons = false;
     
     bool fRemoveConstFromFunctionParameters = false;
-    
-    
-    bool fPerlinNoiseRoundingFix = false;
-    
-    
-    
-    bool fMustDeclareFragmentFrontFacing = false;
 
     const char* fVersionDeclString = "";
 
@@ -182,7 +176,9 @@ protected:
     static std::unique_ptr<ShaderCaps> MakeShaderCaps();
 };
 
+#if !defined(SKSL_STANDALONE) && (defined(SK_GANESH) || defined(SK_GRAPHITE))
 bool type_to_sksltype(const Context& context, const Type& type, SkSLType* outType);
+#endif
 
 void write_stringstream(const StringStream& d, OutputStream& out);
 

@@ -10,16 +10,15 @@
 #include "include/core/SkTypes.h"
 #include "include/effects/SkBlenders.h"
 
+#ifdef SK_ENABLE_SKSL
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkData.h"
 #include "include/core/SkScalar.h"
+#include "include/core/SkString.h"
 #include "include/effects/SkRuntimeEffect.h"
-#include "src/core/SkKnownRuntimeEffects.h"
 
 sk_sp<SkBlender> SkBlenders::Arithmetic(float k1, float k2, float k3, float k4,
                                         bool enforcePremul) {
-    using namespace SkKnownRuntimeEffects;
-
     if (!SkScalarIsFinite(k1) ||
         !SkScalarIsFinite(k2) ||
         !SkScalarIsFinite(k3) ||
@@ -46,11 +45,34 @@ sk_sp<SkBlender> SkBlenders::Arithmetic(float k1, float k2, float k3, float k4,
     }
 
     
-    const SkRuntimeEffect* arithmeticEffect = GetKnownRuntimeEffect(StableKey::kArithmetic);
+
+    static SkRuntimeEffect* gArithmeticEffect = []{
+        const char prog[] =
+            "uniform half4 k;"
+            "uniform half pmClamp;"
+
+            "half4 main(half4 src, half4 dst) {"
+                "half4 c = k.x * src * dst + k.y * src + k.z * dst + k.w;"
+                "c.rgb = min(c.rgb, max(c.a, pmClamp));"
+                
+                "return c;"
+            "}"
+        ;
+        auto result = SkRuntimeEffect::MakeForBlender(SkString(prog));
+        SkASSERTF(result.effect, "SkBlenders::Arithmetic: %s", result.errorText.c_str());
+        return result.effect.release();
+    }();
 
     const float array[] = {
         k1, k2, k3, k4,
         enforcePremul ? 0.0f : 1.0f,
     };
-    return arithmeticEffect->makeBlender(SkData::MakeWithCopy(array, sizeof(array)));
+    return gArithmeticEffect->makeBlender(SkData::MakeWithCopy(array, sizeof(array)));
 }
+#else 
+sk_sp<SkBlender> SkBlenders::Arithmetic(float k1, float k2, float k3, float k4,
+                                        bool enforcePremul) {
+    
+    return nullptr;
+}
+#endif

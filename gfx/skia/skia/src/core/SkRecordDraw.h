@@ -10,22 +10,36 @@
 
 #include "include/core/SkBBHFactory.h"
 #include "include/core/SkCanvas.h"
-#include "include/core/SkM44.h"
-#include "include/core/SkPicture.h"
-#include "include/private/base/SkNoncopyable.h"
+#include "include/core/SkMatrix.h"
+#include "src/core/SkBigPicture.h"
+#include "src/core/SkRecord.h"
 
 class SkDrawable;
-class SkRecord;
-struct SkRect;
+class SkLayerInfo;
 
 
 void SkRecordFillBounds(const SkRect& cullRect, const SkRecord&,
                         SkRect bounds[], SkBBoxHierarchy::Metadata[]);
 
 
+
+
+void SkRecordComputeLayers(const SkRect& cullRect, const SkRecord&, SkRect bounds[],
+                           const SkBigPicture::SnapshotArray*, SkLayerInfo* data);
+
+
 void SkRecordDraw(const SkRecord&, SkCanvas*, SkPicture const* const drawablePicts[],
                   SkDrawable* const drawables[], int drawableCount,
                   const SkBBoxHierarchy*, SkPicture::AbortCallback*);
+
+
+
+
+
+
+void SkRecordPartialDraw(const SkRecord&, SkCanvas*,
+                         SkPicture const* const drawablePicts[], int drawableCount,
+                         int start, int stop, const SkM44& initialCTM);
 
 namespace SkRecords {
 

@@ -8,11 +8,11 @@
 #ifndef SKSL_TYPEREFERENCE
 #define SKSL_TYPEREFERENCE
 
+#include "include/private/SkSLIRNode.h"
+#include "include/sksl/SkSLPosition.h"
 #include "src/sksl/SkSLBuiltinTypes.h"
 #include "src/sksl/SkSLContext.h"
-#include "src/sksl/SkSLPosition.h"
 #include "src/sksl/ir/SkSLExpression.h"
-#include "src/sksl/ir/SkSLIRNode.h"
 #include "src/sksl/ir/SkSLType.h"
 
 #include <cstdint>
@@ -32,12 +32,7 @@ public:
     inline static constexpr Kind kIRNodeKind = Kind::kTypeReference;
 
     TypeReference(const Context& context, Position pos, const Type* value)
-            : TypeReference(pos, value, context.fTypes.fInvalid.get()) {}
-
-    
-    
-    
-    static bool VerifyType(const Context& context, const SkSL::Type* type, Position pos);
+        : TypeReference(pos, value, context.fTypes.fInvalid.get()) {}
 
     
     static std::unique_ptr<TypeReference> Convert(const Context& context,

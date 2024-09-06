@@ -40,13 +40,6 @@ SK_SPI SkUnichar NextUTF8(const char** ptr, const char* end);
 
 
 
-SK_SPI SkUnichar NextUTF8WithReplacement(const char** ptr, const char* end);
-
-
-
-
-
-
 SK_SPI SkUnichar NextUTF16(const uint16_t** ptr, const uint16_t* end);
 
 

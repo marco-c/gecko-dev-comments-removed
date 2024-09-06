@@ -7,26 +7,12 @@
 
 #include "src/core/SkCanvasPriv.h"
 
-#include "include/core/SkBlendMode.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkColorFilter.h"
-#include "include/core/SkImageFilter.h"
-#include "include/core/SkMaskFilter.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkShader.h"
-#include "include/private/base/SkAlign.h"
-#include "include/private/base/SkAssert.h"
-#include "include/private/base/SkTo.h"
 #include "src/base/SkAutoMalloc.h"
-#include "src/core/SkMaskFilterBase.h"
+#include "src/core/SkDevice.h"
 #include "src/core/SkReadBuffer.h"
-#include "src/core/SkWriteBuffer.h"
 #include "src/core/SkWriter32.h"
 
-#include <utility>
-#include <cstdint>
+#include <locale>
 
 SkAutoCanvasMatrixPaint::SkAutoCanvasMatrixPaint(SkCanvas* canvas, const SkMatrix* matrix,
                                                  const SkPaint* paint, const SkRect& bounds)
@@ -115,185 +101,56 @@ void SkCanvasPriv::GetDstClipAndMatrixCounts(const SkCanvas::ImageSetEntry set[]
     *totalMatrixCount = maxMatrixIndex + 1;
 }
 
+#if GR_TEST_UTILS && defined(SK_GANESH)
 
+#include "src/gpu/ganesh/Device_v1.h"
 
-
-bool SkCanvasPriv::ImageToColorFilter(SkPaint* paint) {
-    SkASSERT(SkToBool(paint) && paint->getImageFilter());
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (paint->getMaskFilter()) {
-        return false;
+skgpu::ganesh::SurfaceDrawContext* SkCanvasPriv::TopDeviceSurfaceDrawContext(SkCanvas* canvas) {
+    if (auto gpuDevice = canvas->topDevice()->asGaneshDevice()) {
+        return gpuDevice->surfaceDrawContext();
     }
 
-    SkColorFilter* imgCFPtr;
-    if (!paint->getImageFilter()->asAColorFilter(&imgCFPtr)) {
-        return false;
-    }
-    sk_sp<SkColorFilter> imgCF(imgCFPtr);
+    return nullptr;
+}
 
-    SkColorFilter* paintCF = paint->getColorFilter();
-    if (paintCF) {
-        
-        
-        imgCF = imgCF->makeComposed(sk_ref_sp(paintCF));
+skgpu::ganesh::SurfaceFillContext* SkCanvasPriv::TopDeviceSurfaceFillContext(SkCanvas* canvas) {
+    if (auto gpuDevice = canvas->topDevice()->asGaneshDevice()) {
+        return gpuDevice->surfaceFillContext();
     }
 
-    paint->setColorFilter(std::move(imgCF));
-    paint->setImageFilter(nullptr);
-    return true;
+    return nullptr;
 }
 
-AutoLayerForImageFilter::AutoLayerForImageFilter(SkCanvas* canvas,
-                                                 const SkPaint& paint,
-                                                 const SkRect* rawBounds,
-                                                 bool skipMaskFilterLayer)
-            : fPaint(paint)
-            , fCanvas(canvas)
-            , fTempLayersForFilters(0) {
-    SkDEBUGCODE(fSaveCount = canvas->getSaveCount();)
+#endif 
 
-    
-    
-    
-    
-    
-    
-    if (fPaint.getImageFilter() && !SkCanvasPriv::ImageToColorFilter(&fPaint)) {
-        this->addImageFilterLayer(rawBounds);
+
+#if defined(SK_GANESH)
+#include "src/gpu/ganesh/Device_v1.h"
+
+GrRenderTargetProxy* SkCanvasPriv::TopDeviceTargetProxy(SkCanvas* canvas) {
+    if (auto gpuDevice = canvas->topDevice()->asGaneshDevice()) {
+        return gpuDevice->targetProxy();
     }
 
-    
-    
-    
-    
-    
-    if (fPaint.getMaskFilter() && !skipMaskFilterLayer) {
-        this->addMaskFilterLayer(rawBounds);
+    return nullptr;
+}
+
+#else 
+
+GrRenderTargetProxy* SkCanvasPriv::TopDeviceTargetProxy(SkCanvas* canvas) {
+    return nullptr;
+}
+
+#endif 
+
+#if GRAPHITE_TEST_UTILS
+#include "src/gpu/graphite/Device.h"
+
+skgpu::graphite::TextureProxy* SkCanvasPriv::TopDeviceGraphiteTargetProxy(SkCanvas* canvas) {
+    if (auto gpuDevice = canvas->topDevice()->asGraphiteDevice()) {
+        return gpuDevice->target();
     }
-
-   
-   
-   
-   
+    return nullptr;
 }
 
-AutoLayerForImageFilter::~AutoLayerForImageFilter() {
-    for (int i = 0; i < fTempLayersForFilters; ++i) {
-        fCanvas->fSaveCount -= 1;
-        fCanvas->internalRestore();
-    }
-    
-    SkASSERT(fSaveCount < 0 || fCanvas->getSaveCount() == fSaveCount);
-}
-
-AutoLayerForImageFilter::AutoLayerForImageFilter(AutoLayerForImageFilter&& other) {
-    *this = std::move(other);
-}
-
-AutoLayerForImageFilter& AutoLayerForImageFilter::operator=(AutoLayerForImageFilter&& other) {
-    fPaint = std::move(other.fPaint);
-    fCanvas = other.fCanvas;
-    fTempLayersForFilters = other.fTempLayersForFilters;
-    SkDEBUGCODE(fSaveCount = other.fSaveCount;)
-
-    other.fTempLayersForFilters = 0;
-    SkDEBUGCODE(other.fSaveCount = -1;)
-
-    return *this;
-}
-
-void AutoLayerForImageFilter::addImageFilterLayer(const SkRect* drawBounds) {
-    
-    SkASSERT(fPaint.getImageFilter());
-
-    
-    
-    
-    SkPaint restorePaint;
-    restorePaint.setImageFilter(fPaint.refImageFilter());
-    restorePaint.setBlender(fPaint.refBlender());
-
-    
-    
-    
-    fPaint.setImageFilter(nullptr);
-    fPaint.setBlendMode(SkBlendMode::kSrcOver);
-
-    this->addLayer(restorePaint, drawBounds, false);
-}
-
-void AutoLayerForImageFilter::addMaskFilterLayer(const SkRect* drawBounds) {
-    
-    SkASSERT(fPaint.getMaskFilter());
-
-    
-    
-    SkASSERT(!fPaint.getImageFilter());
-
-    
-    sk_sp<SkImageFilter> maskFilterAsImageFilter =
-            as_MFB(fPaint.getMaskFilter())->asImageFilter(fCanvas->getTotalMatrix());
-    if (!maskFilterAsImageFilter) {
-        
-        
-        
-        return;
-    }
-
-    
-    
-    
-    SkPaint restorePaint;
-    restorePaint.setColor4f(fPaint.getColor4f());
-    restorePaint.setShader(fPaint.refShader());
-    restorePaint.setColorFilter(fPaint.refColorFilter());
-    restorePaint.setBlender(fPaint.refBlender());
-    restorePaint.setDither(fPaint.isDither());
-    restorePaint.setImageFilter(maskFilterAsImageFilter);
-
-    
-    
-    
-    fPaint.setColor4f(SkColors::kWhite);
-    fPaint.setShader(nullptr);
-    fPaint.setColorFilter(nullptr);
-    fPaint.setMaskFilter(nullptr);
-    fPaint.setDither(false);
-    fPaint.setBlendMode(SkBlendMode::kSrcOver);
-
-    this->addLayer(restorePaint, drawBounds, true);
-}
-
-void AutoLayerForImageFilter::addLayer(const SkPaint& restorePaint,
-                                       const SkRect* drawBounds,
-                                       bool coverageOnly) {
-    SkRect storage;
-    const SkRect* contentBounds = nullptr;
-    if (drawBounds && fPaint.canComputeFastBounds()) {
-        
-        
-        contentBounds = &fPaint.computeFastBounds(*drawBounds, &storage);
-    }
-
-    fCanvas->fSaveCount += 1;
-    fCanvas->internalSaveLayer(SkCanvas::SaveLayerRec(contentBounds, &restorePaint),
-                               SkCanvas::kFullLayer_SaveLayerStrategy,
-                               coverageOnly);
-    fTempLayersForFilters += 1;
-}
+#endif 

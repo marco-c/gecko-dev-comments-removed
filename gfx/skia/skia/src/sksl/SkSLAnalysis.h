@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace SkSL {
@@ -46,6 +47,7 @@ namespace Analysis {
 
 
 
+
 SampleUsage GetSampleUsage(const Program& program,
                            const Variable& child,
                            bool writesToSampleCoords = true,
@@ -71,20 +73,12 @@ bool ReturnsOpaqueColor(const FunctionDefinition& function);
 
 
 
-bool ReturnsInputAlpha(const FunctionDefinition& function, const ProgramUsage& usage);
-
-
-
-
 
 
 bool CheckProgramStructure(const Program& program, bool enforceSizeLimit);
 
 
 bool ContainsRTAdjust(const Expression& expr);
-
-
-bool ContainsVariable(const Expression& expr, const Variable& var);
 
 
 bool HasSideEffects(const Expression& expr);
@@ -110,13 +104,13 @@ int NodeCountUpToLimit(const FunctionDefinition& function, int limit);
 
 
 
-bool SwitchCaseContainsUnconditionalExit(const Statement& stmt);
+bool SwitchCaseContainsUnconditionalExit(Statement& stmt);
 
 
 
 
 
-bool SwitchCaseContainsConditionalExit(const Statement& stmt);
+bool SwitchCaseContainsConditionalExit(Statement& stmt);
 
 std::unique_ptr<ProgramUsage> GetUsage(const Program& program);
 std::unique_ptr<ProgramUsage> GetUsage(const Module& module);
@@ -169,10 +163,6 @@ bool UpdateVariableRefKind(Expression* expr, VariableRefKind kind, ErrorReporter
 
 
 
-
-
-
-
 bool IsTrivialExpression(const Expression& expr);
 
 
@@ -203,14 +193,8 @@ bool IsConstantExpression(const Expression& expr);
 
 
 
-void ValidateIndexingForES2(const ProgramElement& pe, ErrorReporter& errors);
-
-
-
-
-
-void CheckSymbolTableCorrectness(const Program& program);
-
+bool IsConstantIndexExpression(const Expression& expr,
+                               const std::set<const Variable*>* loopIndices);
 
 
 
@@ -219,17 +203,15 @@ void CheckSymbolTableCorrectness(const Program& program);
 
 
 
-
-
-
-std::unique_ptr<LoopUnrollInfo> GetLoopUnrollInfo(const Context& context,
-                                                  Position pos,
+std::unique_ptr<LoopUnrollInfo> GetLoopUnrollInfo(Position pos,
                                                   const ForLoopPositions& positions,
                                                   const Statement* loopInitializer,
-                                                  std::unique_ptr<Expression>* loopTestPtr,
+                                                  const Expression* loopTest,
                                                   const Expression* loopNext,
                                                   const Statement* loopStatement,
                                                   ErrorReporter* errors);
+
+void ValidateIndexingForES2(const ProgramElement& pe, ErrorReporter& errors);
 
 
 bool CanExitWithoutReturningValue(const FunctionDeclaration& funcDecl, const Statement& body);
@@ -252,8 +234,8 @@ void DoFinalizationChecks(const Program& program);
 
 
 
-skia_private::TArray<const SkSL::Variable*> GetComputeShaderMainParams(const Context& context,
-                                                                       const Program& program);
+SkTArray<const SkSL::Variable*> GetComputeShaderMainParams(const Context& context,
+                                                           const Program& program);
 
 
 
@@ -263,18 +245,14 @@ skia_private::TArray<const SkSL::Variable*> GetComputeShaderMainParams(const Con
 class SymbolTableStackBuilder {
 public:
     
-    SymbolTableStackBuilder(const Statement* stmt, std::vector<SymbolTable*>* stack);
+    SymbolTableStackBuilder(const Statement* stmt,
+                            std::vector<std::shared_ptr<SymbolTable>>* stack);
 
     
     ~SymbolTableStackBuilder();
 
-    
-    bool foundSymbolTable() {
-        return fStackToPop != nullptr;
-    }
-
 private:
-    std::vector<SymbolTable*>* fStackToPop = nullptr;
+    std::vector<std::shared_ptr<SymbolTable>>* fStackToPop = nullptr;
 };
 
 }  

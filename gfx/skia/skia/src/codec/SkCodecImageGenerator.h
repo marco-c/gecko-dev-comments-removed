@@ -30,8 +30,7 @@ public:
     static std::unique_ptr<SkImageGenerator> MakeFromEncodedCodec(
             sk_sp<SkData>, std::optional<SkAlphaType> = std::nullopt);
 
-    static std::unique_ptr<SkImageGenerator> MakeFromCodec(
-            std::unique_ptr<SkCodec>, std::optional<SkAlphaType> = std::nullopt);
+    static std::unique_ptr<SkImageGenerator> MakeFromCodec(std::unique_ptr<SkCodec>);
 
     
 
@@ -119,9 +118,11 @@ private:
     
 
 
-    SkCodecImageGenerator(std::unique_ptr<SkCodec>, std::optional<SkAlphaType>);
+    SkCodecImageGenerator(std::unique_ptr<SkCodec>, sk_sp<SkData>, std::optional<SkAlphaType>);
 
     std::unique_ptr<SkCodec> fCodec;
-    sk_sp<SkData> fCachedData = nullptr;
+    sk_sp<SkData> fData;
+
+    using INHERITED = SkImageGenerator;
 };
 #endif  

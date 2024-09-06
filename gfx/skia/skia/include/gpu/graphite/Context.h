@@ -16,13 +16,9 @@
 #include "include/gpu/graphite/Recorder.h"
 #include "include/private/base/SingleOwner.h"
 
-#include <chrono>
-#include <functional>
 #include <memory>
 
-class SkColorSpace;
 class SkRuntimeEffect;
-class SkTraceMemoryDump;
 
 namespace skgpu::graphite {
 
@@ -56,64 +52,17 @@ public:
     bool insertRecording(const InsertRecordingInfo&);
     bool submit(SyncToCpu = SyncToCpu::kNo);
 
-    
-    bool hasUnfinishedGpuWork() const;
+    void asyncReadPixels(const SkImage* image,
+                         const SkColorInfo& dstColorInfo,
+                         const SkIRect& srcRect,
+                         SkImage::ReadPixelsCallback callback,
+                         SkImage::ReadPixelsContext context);
 
-    void asyncRescaleAndReadPixels(const SkImage* image,
-                                   const SkImageInfo& dstImageInfo,
-                                   const SkIRect& srcRect,
-                                   SkImage::RescaleGamma rescaleGamma,
-                                   SkImage::RescaleMode rescaleMode,
-                                   SkImage::ReadPixelsCallback callback,
-                                   SkImage::ReadPixelsContext context);
-
-    void asyncRescaleAndReadPixels(const SkSurface* surface,
-                                   const SkImageInfo& dstImageInfo,
-                                   const SkIRect& srcRect,
-                                   SkImage::RescaleGamma rescaleGamma,
-                                   SkImage::RescaleMode rescaleMode,
-                                   SkImage::ReadPixelsCallback callback,
-                                   SkImage::ReadPixelsContext context);
-
-    void asyncRescaleAndReadPixelsYUV420(const SkImage*,
-                                         SkYUVColorSpace yuvColorSpace,
-                                         sk_sp<SkColorSpace> dstColorSpace,
-                                         const SkIRect& srcRect,
-                                         const SkISize& dstSize,
-                                         SkImage::RescaleGamma rescaleGamma,
-                                         SkImage::RescaleMode rescaleMode,
-                                         SkImage::ReadPixelsCallback callback,
-                                         SkImage::ReadPixelsContext context);
-
-    void asyncRescaleAndReadPixelsYUV420(const SkSurface*,
-                                         SkYUVColorSpace yuvColorSpace,
-                                         sk_sp<SkColorSpace> dstColorSpace,
-                                         const SkIRect& srcRect,
-                                         const SkISize& dstSize,
-                                         SkImage::RescaleGamma rescaleGamma,
-                                         SkImage::RescaleMode rescaleMode,
-                                         SkImage::ReadPixelsCallback callback,
-                                         SkImage::ReadPixelsContext context);
-
-    void asyncRescaleAndReadPixelsYUVA420(const SkImage*,
-                                          SkYUVColorSpace yuvColorSpace,
-                                          sk_sp<SkColorSpace> dstColorSpace,
-                                          const SkIRect& srcRect,
-                                          const SkISize& dstSize,
-                                          SkImage::RescaleGamma rescaleGamma,
-                                          SkImage::RescaleMode rescaleMode,
-                                          SkImage::ReadPixelsCallback callback,
-                                          SkImage::ReadPixelsContext context);
-
-    void asyncRescaleAndReadPixelsYUVA420(const SkSurface*,
-                                          SkYUVColorSpace yuvColorSpace,
-                                          sk_sp<SkColorSpace> dstColorSpace,
-                                          const SkIRect& srcRect,
-                                          const SkISize& dstSize,
-                                          SkImage::RescaleGamma rescaleGamma,
-                                          SkImage::RescaleMode rescaleMode,
-                                          SkImage::ReadPixelsCallback callback,
-                                          SkImage::ReadPixelsContext context);
+    void asyncReadPixels(const SkSurface* surface,
+                         const SkColorInfo& dstColorInfo,
+                         const SkIRect& srcRect,
+                         SkImage::ReadPixelsCallback callback,
+                         SkImage::ReadPixelsContext context);
 
     
 
@@ -129,55 +78,7 @@ public:
 
 
 
-    void deleteBackendTexture(const BackendTexture&);
-
-    
-
-
-
-
-
-    void freeGpuResources();
-
-    
-
-
-
-
-    void performDeferredCleanup(std::chrono::milliseconds msNotUsed);
-
-    
-
-
-
-    size_t currentBudgetedBytes() const;
-
-    
-
-
-    size_t maxBudgetedBytes() const;
-
-    
-
-
-
-    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
-
-    
-
-
-
-    bool isDeviceLost() const;
-
-    
-
-
-    int maxTextureSize() const;
-
-    
-
-
-    bool supportsProtectedContent() const;
+    void deleteBackendTexture(BackendTexture&);
 
     
     ContextPriv priv();
@@ -209,39 +110,11 @@ private:
     friend class ContextPriv;
     friend class ContextCtorAccessor;
 
-    struct PixelTransferResult {
-        using ConversionFn = void(void* dst, const void* mappedBuffer);
-        
-        
-        sk_sp<Buffer> fTransferBuffer;
-        
-        SkISize fSize;
-        
-        size_t fRowBytes;
-        
-        
-        
-        std::function<ConversionFn> fPixelConverter;
-    };
-
     SingleOwner* singleOwner() const { return &fSingleOwner; }
 
     
     
     bool finishInitialization();
-
-    void checkForFinishedWork(SyncToCpu);
-
-    void asyncRescaleAndReadPixelsYUV420Impl(const SkImage*,
-                                             SkYUVColorSpace yuvColorSpace,
-                                             bool readAlpha,
-                                             sk_sp<SkColorSpace> dstColorSpace,
-                                             const SkIRect& srcRect,
-                                             const SkISize& dstSize,
-                                             SkImage::RescaleGamma rescaleGamma,
-                                             SkImage::RescaleMode rescaleMode,
-                                             SkImage::ReadPixelsCallback callback,
-                                             SkImage::ReadPixelsContext context);
 
     void asyncReadPixels(const TextureProxy* textureProxy,
                          const SkImageInfo& srcImageInfo,
@@ -250,19 +123,17 @@ private:
                          SkImage::ReadPixelsCallback callback,
                          SkImage::ReadPixelsContext context);
 
-    void asyncReadPixelsYUV420(Recorder*,
-                               const SkImage*,
-                               SkYUVColorSpace yuvColorSpace,
-                               bool readAlpha,
-                               const SkIRect& srcRect,
-                               SkImage::ReadPixelsCallback callback,
-                               SkImage::ReadPixelsContext context);
-
-    void finalizeAsyncReadPixels(SkSpan<PixelTransferResult>,
-                                 SkImage::ReadPixelsCallback callback,
-                                 SkImage::ReadPixelsContext callbackContext);
-
     
+    struct PixelTransferResult {
+        using ConversionFn = void(void* dst, const void* mappedBuffer);
+        
+        
+        sk_sp<Buffer> fTransferBuffer;
+        
+        
+        
+        std::function<ConversionFn> fPixelConverter;
+    };
     PixelTransferResult transferPixels(const TextureProxy*,
                                        const SkImageInfo& srcImageInfo,
                                        const SkColorInfo& dstColorInfo,
@@ -272,12 +143,13 @@ private:
     std::unique_ptr<ResourceProvider> fResourceProvider;
     std::unique_ptr<QueueManager> fQueueManager;
     std::unique_ptr<ClientMappedBufferManager> fMappedBufferManager;
+    std::unique_ptr<PlotUploadTracker> fPlotUploadTracker;
 
     
     
     mutable SingleOwner fSingleOwner;
 
-#if defined(GRAPHITE_TEST_UTILS)
+#if GRAPHITE_TEST_UTILS
     
     bool fStoreContextRefInRecorder = false;
     

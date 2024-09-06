@@ -34,11 +34,7 @@ public:
                      const SkSurfaceProps*);
     SkSurface_Raster(const SkImageInfo& info, sk_sp<SkPixelRef>, const SkSurfaceProps*);
 
-    
     SkImageInfo imageInfo() const override { return fBitmap.info(); }
-
-    
-    SkSurface_Base::Type type() const override { return SkSurface_Base::Type::kRaster; }
 
     SkCanvas* onNewCanvas() override;
     sk_sp<SkSurface> onNewSurface(const SkImageInfo&) override;

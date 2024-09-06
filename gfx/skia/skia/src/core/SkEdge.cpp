@@ -7,12 +7,10 @@
 
 #include "src/core/SkEdge.h"
 
-#include "include/private/base/SkDebug.h"
 #include "include/private/base/SkTo.h"
 #include "src/base/SkMathPriv.h"
 #include "src/core/SkFDot6.h"
 
-#include <algorithm>
 #include <utility>
 
 
@@ -193,7 +191,7 @@ static inline int diff_to_shift(SkFDot6 dx, SkFDot6 dy, int shiftAA = 2)
     
     
     
-    dist = (dist + (1 << (2 + shiftAA))) >> (3 + shiftAA);
+    dist = (dist + (1 << 4)) >> (3 + shiftAA);
 
     
     return (32 - SkCLZ(dist)) >> 1;

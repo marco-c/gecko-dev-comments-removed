@@ -4,9 +4,8 @@
 
 
 
-#include "include/core/SkFontMetrics.h"
-#include "include/private/base/SkAssert.h"
 #include "src/core/SkFontMetricsPriv.h"
+
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
 

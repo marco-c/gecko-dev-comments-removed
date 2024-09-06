@@ -7,26 +7,25 @@
 
 #include "src/sksl/ir/SkSLVariable.h"
 
-#include "src/base/SkEnumBitMask.h"
+#include "include/private/SkSLIRNode.h"
+#include "include/private/SkSLLayout.h"
+#include "include/sksl/SkSLErrorReporter.h"
 #include "src/base/SkStringView.h"
 #include "src/sksl/SkSLCompiler.h"
 #include "src/sksl/SkSLContext.h"
-#include "src/sksl/SkSLErrorReporter.h"
-#include "src/sksl/SkSLIntrinsicList.h"
 #include "src/sksl/SkSLMangler.h"
+#include "src/sksl/SkSLModifiersPool.h"
 #include "src/sksl/SkSLProgramSettings.h"
+#include "src/sksl/SkSLThreadContext.h"
 #include "src/sksl/ir/SkSLExpression.h"
-#include "src/sksl/ir/SkSLIRNode.h"
 #include "src/sksl/ir/SkSLInterfaceBlock.h"
-#include "src/sksl/ir/SkSLLayout.h"
 #include "src/sksl/ir/SkSLSymbolTable.h"
 #include "src/sksl/ir/SkSLVarDeclarations.h"
 
+#include <type_traits>
 #include <utility>
 
 namespace SkSL {
-
-static constexpr Layout kDefaultLayout;
 
 Variable::~Variable() {
     
@@ -35,7 +34,7 @@ Variable::~Variable() {
     }
 }
 
-ExtendedVariable::~ExtendedVariable() {
+InterfaceBlockVariable::~InterfaceBlockVariable() {
     
     if (fInterfaceBlockElement) {
         fInterfaceBlockElement->detachDeadVariable();
@@ -81,98 +80,86 @@ void Variable::setGlobalVarDeclaration(GlobalVarDeclaration* global) {
     fDeclaringElement = global;
 }
 
-const Layout& Variable::layout() const {
-    return kDefaultLayout;
-}
+std::string Variable::mangledName() const {
+    
+    std::string_view name = this->name();
+    if (!skstd::starts_with(name, '$')) {
+        return std::string(name);
+    }
 
-std::string_view ExtendedVariable::mangledName() const {
-    return fMangledName.empty() ? this->name() : fMangledName;
+    
+    name.remove_prefix(1);
+    return "sk_Priv" + std::string(name);
 }
 
 std::unique_ptr<Variable> Variable::Convert(const Context& context,
                                             Position pos,
                                             Position modifiersPos,
-                                            const Layout& layout,
-                                            ModifierFlags flags,
-                                            const Type* type,
+                                            const Modifiers& modifiers,
+                                            const Type* baseType,
                                             Position namePos,
                                             std::string_view name,
-                                            Storage storage) {
-    if (layout.fLocation == 0 &&
-        layout.fIndex == 0 &&
-        (flags & ModifierFlag::kOut) &&
-        ProgramConfig::IsFragment(context.fConfig->fKind) &&
-        name != Compiler::FRAGCOLOR_NAME) {
+                                            bool isArray,
+                                            std::unique_ptr<Expression> arraySize,
+                                            Variable::Storage storage) {
+    if (modifiers.fLayout.fLocation == 0 && modifiers.fLayout.fIndex == 0 &&
+        (modifiers.fFlags & Modifiers::kOut_Flag) &&
+        ProgramConfig::IsFragment(context.fConfig->fKind) && name != Compiler::FRAGCOLOR_NAME) {
         context.fErrors->error(modifiersPos,
                                "out location=0, index=0 is reserved for sk_FragColor");
     }
-    if (type->isUnsizedArray() && storage != Variable::Storage::kInterfaceBlock) {
+    if (baseType->isUnsizedArray() && storage != Variable::Storage::kInterfaceBlock) {
         context.fErrors->error(pos, "unsized arrays are not permitted here");
     }
-    if (ProgramConfig::IsCompute(context.fConfig->fKind) && layout.fBuiltin == -1) {
+    if (ProgramConfig::IsCompute(ThreadContext::Context().fConfig->fKind) &&
+            modifiers.fLayout.fBuiltin == -1) {
         if (storage == Variable::Storage::kGlobal) {
-            if (flags & ModifierFlag::kIn) {
+            if (modifiers.fFlags & Modifiers::kIn_Flag) {
                 context.fErrors->error(pos, "pipeline inputs not permitted in compute shaders");
-            } else if (flags & ModifierFlag::kOut) {
+            } else if (modifiers.fFlags & Modifiers::kOut_Flag) {
                 context.fErrors->error(pos, "pipeline outputs not permitted in compute shaders");
             }
         }
     }
-    if (storage == Variable::Storage::kParameter) {
-        
-        
-        if ((flags & (ModifierFlag::kOut | ModifierFlag::kIn)) == ModifierFlag::kIn) {
-            flags &= ~(ModifierFlag::kOut | ModifierFlag::kIn);
-        }
-    }
 
-    
-    std::string mangledName;
-    if (skstd::starts_with(name, '$')) {
-        
-        mangledName = "sk_Priv" + std::string(name.substr(1));
-    } else if (FindIntrinsicKind(name) != kNotIntrinsic) {
-        
-        
-        
-        mangledName = Mangler{}.uniqueName(name, context.fSymbolTable);
-    }
-
-    return Make(pos, modifiersPos, layout, flags, type, name, std::move(mangledName),
-                context.fConfig->fIsBuiltinCode, storage);
+    return Make(context, pos, modifiersPos, modifiers, baseType, name, isArray,
+                std::move(arraySize), storage);
 }
 
-std::unique_ptr<Variable> Variable::Make(Position pos,
-                                         Position modifiersPosition,
-                                         const Layout& layout,
-                                         ModifierFlags flags,
-                                         const Type* type,
+std::unique_ptr<Variable> Variable::Make(const Context& context,
+                                         Position pos,
+                                         Position modifiersPos,
+                                         const Modifiers& modifiers,
+                                         const Type* baseType,
                                          std::string_view name,
-                                         std::string mangledName,
-                                         bool builtin,
+                                         bool isArray,
+                                         std::unique_ptr<Expression> arraySize,
                                          Variable::Storage storage) {
-    
-    SkASSERT(!(storage == Variable::Storage::kParameter &&
-               (flags & (ModifierFlag::kOut | ModifierFlag::kIn)) == ModifierFlag::kIn));
-
-    if (type->componentType().isInterfaceBlock() || !mangledName.empty() ||
-        layout != kDefaultLayout) {
-        return std::make_unique<ExtendedVariable>(pos,
-                                                  modifiersPosition,
-                                                  layout,
-                                                  flags,
-                                                  name,
-                                                  type,
-                                                  builtin,
-                                                  storage,
-                                                  std::move(mangledName));
+    const Type* type = baseType;
+    int arraySizeValue = 0;
+    if (isArray) {
+        SkASSERT(arraySize);
+        arraySizeValue = type->convertArraySize(context, pos, std::move(arraySize));
+        if (!arraySizeValue) {
+            return nullptr;
+        }
+        type = ThreadContext::SymbolTable()->addArrayDimension(type, arraySizeValue);
+    }
+    if (type->componentType().isInterfaceBlock()) {
+        return std::make_unique<InterfaceBlockVariable>(pos,
+                                                        modifiersPos,
+                                                        context.fModifiersPool->add(modifiers),
+                                                        name,
+                                                        type,
+                                                        context.fConfig->fIsBuiltinCode,
+                                                        storage);
     } else {
         return std::make_unique<Variable>(pos,
-                                          modifiersPosition,
-                                          flags,
+                                          modifiersPos,
+                                          context.fModifiersPool->add(modifiers),
                                           name,
                                           type,
-                                          builtin,
+                                          context.fConfig->fIsBuiltinCode,
                                           storage);
     }
 }
@@ -181,6 +168,7 @@ Variable::ScratchVariable Variable::MakeScratchVariable(const Context& context,
                                                         Mangler& mangler,
                                                         std::string_view baseName,
                                                         const Type* type,
+                                                        const Modifiers& modifiers,
                                                         SymbolTable* symbolTable,
                                                         std::unique_ptr<Expression> initialValue) {
     
@@ -192,6 +180,9 @@ Variable::ScratchVariable Variable::MakeScratchVariable(const Context& context,
     }
 
     
+    SkASSERT(!(modifiers.fFlags & Modifiers::kOut_Flag));
+
+    
     const std::string* name =
             symbolTable->takeOwnershipOfString(mangler.uniqueName(baseName, symbolTable));
 
@@ -199,7 +190,7 @@ Variable::ScratchVariable Variable::MakeScratchVariable(const Context& context,
     ScratchVariable result;
     auto var = std::make_unique<Variable>(initialValue ? initialValue->fPosition : Position(),
                                           Position(),
-                                          ModifierFlag::kNone,
+                                          context.fModifiersPool->add(Modifiers{}),
                                           name->c_str(),
                                           type,
                                           symbolTable->isBuiltin(),
@@ -214,7 +205,7 @@ Variable::ScratchVariable Variable::MakeScratchVariable(const Context& context,
     
     result.fVarDecl = VarDeclaration::Make(context, var.get(), type, arraySize,
                                            std::move(initialValue));
-    result.fVarSymbol = symbolTable->add(context, std::move(var));
+    result.fVarSymbol = symbolTable->add(std::move(var));
     return result;
 }
 

@@ -5,21 +5,18 @@
 
 
 
-#include "src/sksl/codegen/SkSLRasterPipelineBuilder.h"
-
 #include "include/core/SkStream.h"
+#include "include/private/SkSLString.h"
 #include "include/private/base/SkMalloc.h"
 #include "include/private/base/SkTo.h"
+#include "include/sksl/SkSLPosition.h"
 #include "src/base/SkArenaAlloc.h"
 #include "src/core/SkOpts.h"
-#include "src/core/SkRasterPipelineContextUtils.h"
 #include "src/core/SkRasterPipelineOpContexts.h"
 #include "src/core/SkRasterPipelineOpList.h"
-#include "src/core/SkTHash.h"
-#include "src/sksl/SkSLPosition.h"
-#include "src/sksl/SkSLString.h"
-#include "src/sksl/tracing/SkSLDebugTracePriv.h"
-#include "src/sksl/tracing/SkSLTraceHook.h"
+#include "src/sksl/codegen/SkSLRasterPipelineBuilder.h"
+#include "src/sksl/tracing/SkRPDebugTrace.h"
+#include "src/sksl/tracing/SkSLDebugInfo.h"
 #include "src/utils/SkBitSet.h"
 
 #if !defined(SKSL_STANDALONE)
@@ -28,7 +25,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <cstring>
 #include <iterator>
 #include <string>
@@ -37,9 +33,8 @@
 #include <utility>
 #include <vector>
 
-using namespace skia_private;
-
-namespace SkSL::RP {
+namespace SkSL {
+namespace RP {
 
 #define ALL_SINGLE_SLOT_UNARY_OP_CASES  \
          BuilderOp::acos_float:         \
@@ -55,7 +50,9 @@ namespace SkSL::RP {
     case BuilderOp::tan_float
 
 #define ALL_MULTI_SLOT_UNARY_OP_CASES        \
-         BuilderOp::abs_int:                 \
+         BuilderOp::abs_float:               \
+    case BuilderOp::abs_int:                 \
+    case BuilderOp::bitwise_not_int:         \
     case BuilderOp::cast_to_float_from_int:  \
     case BuilderOp::cast_to_float_from_uint: \
     case BuilderOp::cast_to_int_from_float:  \
@@ -99,29 +96,6 @@ namespace SkSL::RP {
     case BuilderOp::cmpne_n_floats:     \
     case BuilderOp::cmpne_n_ints
 
-#define ALL_IMMEDIATE_BINARY_OP_CASES    \
-         BuilderOp::add_imm_float:       \
-    case BuilderOp::add_imm_int:         \
-    case BuilderOp::mul_imm_float:       \
-    case BuilderOp::mul_imm_int:         \
-    case BuilderOp::bitwise_and_imm_int: \
-    case BuilderOp::bitwise_xor_imm_int: \
-    case BuilderOp::min_imm_float:       \
-    case BuilderOp::max_imm_float:       \
-    case BuilderOp::cmple_imm_float:     \
-    case BuilderOp::cmple_imm_int:       \
-    case BuilderOp::cmple_imm_uint:      \
-    case BuilderOp::cmplt_imm_float:     \
-    case BuilderOp::cmplt_imm_int:       \
-    case BuilderOp::cmplt_imm_uint:      \
-    case BuilderOp::cmpeq_imm_float:     \
-    case BuilderOp::cmpeq_imm_int:       \
-    case BuilderOp::cmpne_imm_float:     \
-    case BuilderOp::cmpne_imm_int
-
-#define ALL_IMMEDIATE_MULTI_SLOT_BINARY_OP_CASES \
-         BuilderOp::bitwise_and_imm_int
-
 #define ALL_N_WAY_TERNARY_OP_CASES       \
          BuilderOp::smoothstep_n_floats
 
@@ -129,88 +103,11 @@ namespace SkSL::RP {
          BuilderOp::mix_n_floats:       \
     case BuilderOp::mix_n_ints
 
-static bool is_immediate_op(BuilderOp op) {
-    switch (op) {
-        case ALL_IMMEDIATE_BINARY_OP_CASES: return true;
-        default:                            return false;
-    }
-}
-
-static bool is_multi_slot_immediate_op(BuilderOp op) {
-    switch (op) {
-        case ALL_IMMEDIATE_MULTI_SLOT_BINARY_OP_CASES: return true;
-        default:                                       return false;
-    }
-}
-
-static BuilderOp convert_n_way_op_to_immediate(BuilderOp op, int slots, int32_t* constantValue) {
-    
-    
-    
-    BuilderOp immOp = (BuilderOp)((int)op - 1);
-
-    
-    if (is_multi_slot_immediate_op(immOp)) {
-        return immOp;
-    }
-
-    
-    
-    
-    if (slots <= 2) {
-        if (is_immediate_op(immOp)) {
-            return immOp;
-        }
-
-        
-        switch (op) {
-            case BuilderOp::sub_n_ints:
-                *constantValue *= -1;
-                return BuilderOp::add_imm_int;
-
-            case BuilderOp::sub_n_floats: {
-                
-                *constantValue ^= 0x80000000;
-                return BuilderOp::add_imm_float;
-            }
-            default:
-                break;
-        }
-    }
-
-    
-    return op;
-}
-
-void Builder::appendInstruction(BuilderOp op, SlotList slots,
-                                int immA, int immB, int immC, int immD) {
-    fInstructions.push_back({op, slots.fSlotA, slots.fSlotB,
-                             immA, immB, immC, immD, fCurrentStackID});
-}
-
-Instruction* Builder::lastInstruction(int fromBack) {
-    if (fInstructions.size() <= fromBack) {
-        return nullptr;
-    }
-    Instruction* inst = &fInstructions.fromBack(fromBack);
-    if (inst->fStackID != fCurrentStackID) {
-        return nullptr;
-    }
-    return inst;
-}
-
-Instruction* Builder::lastInstructionOnAnyStack(int fromBack) {
-    if (fInstructions.size() <= fromBack) {
-        return nullptr;
-    }
-    return &fInstructions.fromBack(fromBack);
-}
-
 void Builder::unary_op(BuilderOp op, int32_t slots) {
     switch (op) {
         case ALL_SINGLE_SLOT_UNARY_OP_CASES:
         case ALL_MULTI_SLOT_UNARY_OP_CASES:
-            this->appendInstruction(op, {}, slots);
+            fInstructions.push_back({op, {}, slots});
             break;
 
         default:
@@ -220,26 +117,10 @@ void Builder::unary_op(BuilderOp op, int32_t slots) {
 }
 
 void Builder::binary_op(BuilderOp op, int32_t slots) {
-    if (Instruction* lastInstruction = this->lastInstruction()) {
-        
-        if (lastInstruction->fOp == BuilderOp::push_constant &&
-            lastInstruction->fImmA >= slots) {
-            
-            int32_t constantValue = lastInstruction->fImmB;
-            BuilderOp immOp = convert_n_way_op_to_immediate(op, slots, &constantValue);
-            if (immOp != op) {
-                
-                this->discard_stack(slots);
-                this->appendInstruction(immOp, {}, slots, constantValue);
-                return;
-            }
-        }
-    }
-
     switch (op) {
         case ALL_N_WAY_BINARY_OP_CASES:
         case ALL_MULTI_SLOT_BINARY_OP_CASES:
-            this->appendInstruction(op, {}, slots);
+            fInstructions.push_back({op, {}, slots});
             break;
 
         default:
@@ -252,7 +133,7 @@ void Builder::ternary_op(BuilderOp op, int32_t slots) {
     switch (op) {
         case ALL_N_WAY_TERNARY_OP_CASES:
         case ALL_MULTI_SLOT_TERNARY_OP_CASES:
-            this->appendInstruction(op, {}, slots);
+            fInstructions.push_back({op, {}, slots});
             break;
 
         default:
@@ -263,10 +144,10 @@ void Builder::ternary_op(BuilderOp op, int32_t slots) {
 
 void Builder::dot_floats(int32_t slots) {
     switch (slots) {
-        case 1: this->appendInstruction(BuilderOp::mul_n_floats, {}, slots); break;
-        case 2: this->appendInstruction(BuilderOp::dot_2_floats, {}, slots); break;
-        case 3: this->appendInstruction(BuilderOp::dot_3_floats, {}, slots); break;
-        case 4: this->appendInstruction(BuilderOp::dot_4_floats, {}, slots); break;
+        case 1: fInstructions.push_back({BuilderOp::mul_n_floats, {}, slots}); break;
+        case 2: fInstructions.push_back({BuilderOp::dot_2_floats, {}, slots}); break;
+        case 3: fInstructions.push_back({BuilderOp::dot_3_floats, {}, slots}); break;
+        case 4: fInstructions.push_back({BuilderOp::dot_4_floats, {}, slots}); break;
 
         default:
             SkDEBUGFAIL("invalid number of slots");
@@ -275,104 +156,48 @@ void Builder::dot_floats(int32_t slots) {
 }
 
 void Builder::refract_floats() {
-    this->appendInstruction(BuilderOp::refract_4_floats, {});
+    fInstructions.push_back({BuilderOp::refract_4_floats, {}});
 }
 
 void Builder::inverse_matrix(int32_t n) {
     switch (n) {
-        case 2:  this->appendInstruction(BuilderOp::inverse_mat2, {}, 4);  break;
-        case 3:  this->appendInstruction(BuilderOp::inverse_mat3, {}, 9);  break;
-        case 4:  this->appendInstruction(BuilderOp::inverse_mat4, {}, 16); break;
+        case 2:  fInstructions.push_back({BuilderOp::inverse_mat2, {}, 4});  break;
+        case 3:  fInstructions.push_back({BuilderOp::inverse_mat3, {}, 9});  break;
+        case 4:  fInstructions.push_back({BuilderOp::inverse_mat4, {}, 16}); break;
         default: SkUNREACHABLE;
     }
 }
 
-void Builder::pad_stack(int32_t count) {
-    if (count > 0) {
-        this->appendInstruction(BuilderOp::pad_stack, {}, count);
-    }
-}
-
-bool Builder::simplifyImmediateUnmaskedOp() {
-    if (fInstructions.size() < 3) {
-        return false;
-    }
-
+void Builder::discard_stack(int32_t count) {
     
     
-    
-    Instruction* popInstruction  = this->lastInstruction(0);
-    Instruction* immInstruction  = this->lastInstruction(1);
-    Instruction* pushInstruction = this->lastInstruction(2);
+    while (count > 0 && !fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
 
-    
-    if (popInstruction && immInstruction && pushInstruction &&
-        popInstruction->fOp == BuilderOp::copy_stack_to_slots_unmasked) {
-        
-        if (is_immediate_op(immInstruction->fOp) &&
-            immInstruction->fImmA == popInstruction->fImmA) {
-            
-            if (immInstruction->fImmA == 1 || is_multi_slot_immediate_op(immInstruction->fOp)) {
-                
-                
-                if ((pushInstruction->fOp == BuilderOp::push_slots ||
-                     pushInstruction->fOp == BuilderOp::push_immutable) &&
-                    pushInstruction->fImmA >= popInstruction->fImmA) {
-                    
-                    Slot immSlot = popInstruction->fSlotA + popInstruction->fImmA;
-                    Slot pushSlot = pushInstruction->fSlotA + pushInstruction->fImmA;
-                    if (immSlot == pushSlot) {
-                        
-                        
-                        pushInstruction->fImmA -= immInstruction->fImmA;
-                        immInstruction->fSlotA = immSlot - immInstruction->fImmA;
-                        fInstructions.pop_back();
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-void Builder::discard_stack(int32_t count, int stackID) {
-    
-    
-    while (count > 0) {
-        Instruction* lastInstruction = this->lastInstructionOnAnyStack();
-        if (!lastInstruction || lastInstruction->fStackID != stackID) {
-            break;
-        }
-
-        switch (lastInstruction->fOp) {
+        switch (lastInstruction.fOp) {
             case BuilderOp::discard_stack:
                 
-                lastInstruction->fImmA += count;
+                lastInstruction.fImmA += count;
                 return;
 
+            case BuilderOp::push_zeros:
             case BuilderOp::push_clone:
             case BuilderOp::push_clone_from_stack:
             case BuilderOp::push_clone_indirect_from_stack:
-            case BuilderOp::push_constant:
-            case BuilderOp::push_immutable:
-            case BuilderOp::push_immutable_indirect:
             case BuilderOp::push_slots:
             case BuilderOp::push_slots_indirect:
             case BuilderOp::push_uniform:
             case BuilderOp::push_uniform_indirect:
-            case BuilderOp::pad_stack: {
                 
                 
-                int cancelOut = std::min(count, lastInstruction->fImmA);
-                count                  -= cancelOut;
-                lastInstruction->fImmA -= cancelOut;
-                if (lastInstruction->fImmA == 0) {
+                --count;
+                --lastInstruction.fImmA;
+                if (lastInstruction.fImmA == 0) {
                     fInstructions.pop_back();
                 }
                 continue;
-            }
+
+            case BuilderOp::push_literal:
             case BuilderOp::push_condition_mask:
             case BuilderOp::push_loop_mask:
             case BuilderOp::push_return_mask:
@@ -381,38 +206,6 @@ void Builder::discard_stack(int32_t count, int stackID) {
                 fInstructions.pop_back();
                 continue;
 
-            case BuilderOp::copy_stack_to_slots_unmasked: {
-                
-                
-                if (count == 1) {
-                    if (this->simplifyImmediateUnmaskedOp()) {
-                        return;
-                    }
-                }
-
-                
-                
-                
-                
-                if (count == lastInstruction->fImmA) {
-                    SlotRange dst{lastInstruction->fSlotA, lastInstruction->fImmA};
-                    fInstructions.pop_back();
-
-                    
-                    this->simplifyPopSlotsUnmasked(&dst);
-
-                    
-                    if (dst.count == 0) {
-                        return;
-                    }
-
-                    
-                    
-                    this->copy_stack_to_slots_unmasked(dst);
-                    count = dst.count;
-                }
-                break;
-            }
             default:
                 break;
         }
@@ -422,7 +215,7 @@ void Builder::discard_stack(int32_t count, int stackID) {
     }
 
     if (count > 0) {
-        this->appendInstruction(BuilderOp::discard_stack, {}, count);
+        fInstructions.push_back({BuilderOp::discard_stack, {}, count});
     }
 }
 
@@ -431,14 +224,15 @@ void Builder::label(int labelID) {
 
     
     
-    while (const Instruction* lastInstruction = this->lastInstructionOnAnyStack()) {
-        switch (lastInstruction->fOp) {
+    while (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+        switch (lastInstruction.fOp) {
             case BuilderOp::jump:
             case BuilderOp::branch_if_all_lanes_active:
             case BuilderOp::branch_if_any_lanes_active:
             case BuilderOp::branch_if_no_lanes_active:
             case BuilderOp::branch_if_no_active_lanes_on_stack_top_equal:
-                if (lastInstruction->fImmA == labelID) {
+                if (lastInstruction.fImmA == labelID) {
                     fInstructions.pop_back();
                     continue;
                 }
@@ -449,18 +243,16 @@ void Builder::label(int labelID) {
         }
         break;
     }
-    this->appendInstruction(BuilderOp::label, {}, labelID);
+    fInstructions.push_back({BuilderOp::label, {}, labelID});
 }
 
 void Builder::jump(int labelID) {
     SkASSERT(labelID >= 0 && labelID < fNumLabels);
-    if (const Instruction* lastInstruction = this->lastInstructionOnAnyStack()) {
-        if (lastInstruction->fOp == BuilderOp::jump) {
-            
-            return;
-        }
+    if (!fInstructions.empty() && fInstructions.back().fOp == BuilderOp::jump) {
+        
+        return;
     }
-    this->appendInstruction(BuilderOp::jump, {}, labelID);
+    fInstructions.push_back({BuilderOp::jump, {}, labelID});
 }
 
 void Builder::branch_if_any_lanes_active(int labelID) {
@@ -470,15 +262,14 @@ void Builder::branch_if_any_lanes_active(int labelID) {
     }
 
     SkASSERT(labelID >= 0 && labelID < fNumLabels);
-    if (const Instruction* lastInstruction = this->lastInstructionOnAnyStack()) {
-        if (lastInstruction->fOp == BuilderOp::branch_if_any_lanes_active ||
-            lastInstruction->fOp == BuilderOp::jump) {
-            
-            
-            return;
-        }
+    if (!fInstructions.empty() &&
+        (fInstructions.back().fOp == BuilderOp::branch_if_any_lanes_active ||
+         fInstructions.back().fOp == BuilderOp::jump)) {
+        
+        
+        return;
     }
-    this->appendInstruction(BuilderOp::branch_if_any_lanes_active, {}, labelID);
+    fInstructions.push_back({BuilderOp::branch_if_any_lanes_active, {}, labelID});
 }
 
 void Builder::branch_if_all_lanes_active(int labelID) {
@@ -488,15 +279,14 @@ void Builder::branch_if_all_lanes_active(int labelID) {
     }
 
     SkASSERT(labelID >= 0 && labelID < fNumLabels);
-    if (const Instruction* lastInstruction = this->lastInstructionOnAnyStack()) {
-        if (lastInstruction->fOp == BuilderOp::branch_if_all_lanes_active ||
-            lastInstruction->fOp == BuilderOp::jump) {
-            
-            
-            return;
-        }
+    if (!fInstructions.empty() &&
+        (fInstructions.back().fOp == BuilderOp::branch_if_all_lanes_active ||
+         fInstructions.back().fOp == BuilderOp::jump)) {
+        
+        
+        return;
     }
-    this->appendInstruction(BuilderOp::branch_if_all_lanes_active, {}, labelID);
+    fInstructions.push_back({BuilderOp::branch_if_all_lanes_active, {}, labelID});
 }
 
 void Builder::branch_if_no_lanes_active(int labelID) {
@@ -505,104 +295,92 @@ void Builder::branch_if_no_lanes_active(int labelID) {
     }
 
     SkASSERT(labelID >= 0 && labelID < fNumLabels);
-    if (const Instruction* lastInstruction = this->lastInstructionOnAnyStack()) {
-        if (lastInstruction->fOp == BuilderOp::branch_if_no_lanes_active ||
-            lastInstruction->fOp == BuilderOp::jump) {
-            
-            
-            return;
-        }
+    if (!fInstructions.empty() &&
+        (fInstructions.back().fOp == BuilderOp::branch_if_no_lanes_active ||
+         fInstructions.back().fOp == BuilderOp::jump)) {
+        
+        
+        return;
     }
-    this->appendInstruction(BuilderOp::branch_if_no_lanes_active, {}, labelID);
+    fInstructions.push_back({BuilderOp::branch_if_no_lanes_active, {}, labelID});
 }
 
 void Builder::branch_if_no_active_lanes_on_stack_top_equal(int value, int labelID) {
     SkASSERT(labelID >= 0 && labelID < fNumLabels);
-    if (const Instruction* lastInstruction = this->lastInstructionOnAnyStack()) {
-        if (lastInstruction->fOp == BuilderOp::jump ||
-            (lastInstruction->fOp == BuilderOp::branch_if_no_active_lanes_on_stack_top_equal &&
-             lastInstruction->fImmB == value)) {
-            
-            
-            return;
-        }
+    if (!fInstructions.empty() &&
+        (fInstructions.back().fOp == BuilderOp::jump ||
+         (fInstructions.back().fOp == BuilderOp::branch_if_no_active_lanes_on_stack_top_equal &&
+          fInstructions.back().fImmB == value))) {
+        
+        
+        return;
     }
-    this->appendInstruction(BuilderOp::branch_if_no_active_lanes_on_stack_top_equal,
-                            {}, labelID, value);
+    fInstructions.push_back({BuilderOp::branch_if_no_active_lanes_on_stack_top_equal,
+                             {}, labelID, value});
 }
 
-void Builder::push_slots_or_immutable(SlotRange src, BuilderOp op) {
+void Builder::push_slots(SlotRange src) {
     SkASSERT(src.count >= 0);
-    if (Instruction* lastInstruction = this->lastInstruction()) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+
         
         
-        if (lastInstruction->fOp == op &&
-            lastInstruction->fSlotA + lastInstruction->fImmA == src.index) {
-            lastInstruction->fImmA += src.count;
-            src.count = 0;
+        if (lastInstruction.fOp == BuilderOp::push_slots &&
+            lastInstruction.fSlotA + lastInstruction.fImmA == src.index) {
+            lastInstruction.fImmA += src.count;
+            return;
+        }
+
+        
+        if (lastInstruction.fOp == BuilderOp::discard_stack && lastInstruction.fImmA == src.count) {
+            
+            Instruction& prevInstruction = fInstructions.fromBack(1);
+            if ((prevInstruction.fOp == BuilderOp::copy_stack_to_slots ||
+                 prevInstruction.fOp == BuilderOp::copy_stack_to_slots_unmasked) &&
+                prevInstruction.fSlotA == src.index &&
+                prevInstruction.fImmA == src.count) {
+                
+                
+                
+                fInstructions.pop_back();
+                return;
+            }
         }
     }
 
     if (src.count > 0) {
-        this->appendInstruction(op, {src.index}, src.count);
-    }
-
-    
-    
-    
-    if (fInstructions.size() >= 3) {
-        const Instruction* pushInst        = this->lastInstruction(0);
-        const Instruction* discardInst     = this->lastInstruction(1);
-        const Instruction* copyToSlotsInst = this->lastInstruction(2);
-
-        if (pushInst && discardInst && copyToSlotsInst && pushInst->fOp == BuilderOp::push_slots) {
-            int pushIndex = pushInst->fSlotA;
-            int pushCount = pushInst->fImmA;
-
-            
-            if (discardInst->fOp == BuilderOp::discard_stack && discardInst->fImmA == pushCount) {
-                
-                if ((copyToSlotsInst->fOp == BuilderOp::copy_stack_to_slots ||
-                     copyToSlotsInst->fOp == BuilderOp::copy_stack_to_slots_unmasked) &&
-                    copyToSlotsInst->fSlotA == pushIndex && copyToSlotsInst->fImmA == pushCount) {
-                    
-                    fInstructions.pop_back();
-                    fInstructions.pop_back();
-                    return;
-                }
-            }
-        }
+        fInstructions.push_back({BuilderOp::push_slots, {src.index}, src.count});
     }
 }
 
-void Builder::push_slots_or_immutable_indirect(SlotRange fixedRange,
-                                               int dynamicStackID,
-                                               SlotRange limitRange,
-                                               BuilderOp op) {
+void Builder::push_slots_indirect(SlotRange fixedRange, int dynamicStackID, SlotRange limitRange) {
     
     
     
     
-    this->appendInstruction(op,
-                            {fixedRange.index, limitRange.index + limitRange.count},
-                            fixedRange.count,
-                            dynamicStackID);
+    fInstructions.push_back({BuilderOp::push_slots_indirect,
+                             {fixedRange.index, limitRange.index + limitRange.count},
+                             fixedRange.count,
+                             dynamicStackID});
 }
 
 void Builder::push_uniform(SlotRange src) {
     SkASSERT(src.count >= 0);
-    if (Instruction* lastInstruction = this->lastInstruction()) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+
         
         
-        if (lastInstruction->fOp == BuilderOp::push_uniform &&
-            lastInstruction->fSlotA + lastInstruction->fImmA == src.index) {
-            lastInstruction->fImmA += src.count;
+        if (lastInstruction.fOp == BuilderOp::push_uniform &&
+            lastInstruction.fSlotA + lastInstruction.fImmA == src.index) {
+            lastInstruction.fImmA += src.count;
             return;
         }
     }
 
     if (src.count > 0) {
-        this->appendInstruction(BuilderOp::push_uniform, {src.index}, src.count);
+        fInstructions.push_back({BuilderOp::push_uniform, {src.index}, src.count});
     }
 }
 
@@ -613,47 +391,19 @@ void Builder::push_uniform_indirect(SlotRange fixedRange,
     
     
     
-    this->appendInstruction(BuilderOp::push_uniform_indirect,
-                            {fixedRange.index, limitRange.index + limitRange.count},
-                            fixedRange.count,
-                            dynamicStackID);
-}
-
-void Builder::trace_var_indirect(int traceMaskStackID,
-                                 SlotRange fixedRange,
-                                 int dynamicStackID,
-                                 SlotRange limitRange) {
-    
-    
-    
-    
-    
-    this->appendInstruction(BuilderOp::trace_var_indirect,
-                            {fixedRange.index, limitRange.index + limitRange.count},
-                            traceMaskStackID,
-                            fixedRange.count,
-                            dynamicStackID);
-}
-
-void Builder::push_constant_i(int32_t val, int count) {
-    SkASSERT(count >= 0);
-    if (count > 0) {
-        if (Instruction* lastInstruction = this->lastInstruction()) {
-            
-            if (lastInstruction->fOp == BuilderOp::push_constant && lastInstruction->fImmB == val) {
-                lastInstruction->fImmA += count;
-                return;
-            }
-        }
-        this->appendInstruction(BuilderOp::push_constant, {}, count, val);
-    }
+    fInstructions.push_back({BuilderOp::push_uniform_indirect,
+                             {fixedRange.index, limitRange.index + limitRange.count},
+                             fixedRange.count,
+                             dynamicStackID});
 }
 
 void Builder::push_duplicates(int count) {
-    if (Instruction* lastInstruction = this->lastInstruction()) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+
         
-        if (lastInstruction->fOp == BuilderOp::push_constant) {
-            lastInstruction->fImmA += count;
+        if (lastInstruction.fOp == BuilderOp::push_zeros) {
+            lastInstruction.fImmA += count;
             return;
         }
     }
@@ -676,42 +426,29 @@ void Builder::push_duplicates(int count) {
     }
 }
 
-void Builder::push_clone(int numSlots, int offsetFromStackTop) {
-    
-    if (numSlots == 1 && offsetFromStackTop == 0) {
-        
-        if (Instruction* lastInstruction = this->lastInstruction()) {
-            if (lastInstruction->fOp == BuilderOp::push_constant) {
-                
-                lastInstruction->fImmA += 1;
-                return;
-            }
-        }
-    }
-    this->appendInstruction(BuilderOp::push_clone, {}, numSlots, numSlots + offsetFromStackTop);
-}
-
 void Builder::push_clone_from_stack(SlotRange range, int otherStackID, int offsetFromStackTop) {
     
     
     
     offsetFromStackTop -= range.index;
 
-    if (Instruction* lastInstruction = this->lastInstruction()) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+
         
-        if (lastInstruction->fOp == BuilderOp::push_clone_from_stack &&
+        if (lastInstruction.fOp == BuilderOp::push_clone_from_stack &&
             
-            lastInstruction->fImmB == otherStackID &&
+            lastInstruction.fImmB == otherStackID &&
             
-            lastInstruction->fImmC - lastInstruction->fImmA == offsetFromStackTop) {
+            lastInstruction.fImmC - lastInstruction.fImmA == offsetFromStackTop) {
             
-            lastInstruction->fImmA += range.count;
+            lastInstruction.fImmA += range.count;
             return;
         }
     }
 
-    this->appendInstruction(BuilderOp::push_clone_from_stack, {},
-                            range.count, otherStackID, offsetFromStackTop);
+    fInstructions.push_back({BuilderOp::push_clone_from_stack, {},
+                             range.count, otherStackID, offsetFromStackTop});
 }
 
 void Builder::push_clone_indirect_from_stack(SlotRange fixedOffset,
@@ -724,8 +461,8 @@ void Builder::push_clone_indirect_from_stack(SlotRange fixedOffset,
     
     offsetFromStackTop -= fixedOffset.index;
 
-    this->appendInstruction(BuilderOp::push_clone_indirect_from_stack, {},
-                            fixedOffset.count, otherStackID, offsetFromStackTop, dynamicStackID);
+    fInstructions.push_back({BuilderOp::push_clone_indirect_from_stack, {},
+                             fixedOffset.count, otherStackID, offsetFromStackTop, dynamicStackID});
 }
 
 void Builder::pop_slots(SlotRange dst) {
@@ -739,26 +476,19 @@ void Builder::pop_slots(SlotRange dst) {
 }
 
 void Builder::simplifyPopSlotsUnmasked(SlotRange* dst) {
-    if (!dst->count) {
+    if (!dst->count || fInstructions.empty()) {
         
         return;
     }
-    Instruction* lastInstruction = this->lastInstruction();
-    if (!lastInstruction) {
-        
-        return;
-    }
-    BuilderOp lastOp = lastInstruction->fOp;
+
+    Instruction& lastInstruction = fInstructions.back();
 
     
     
-    if (lastOp == BuilderOp::push_constant) {
+    if (lastInstruction.fOp == BuilderOp::push_literal) {
         
-        int32_t value = lastInstruction->fImmB;
-        lastInstruction->fImmA--;
-        if (lastInstruction->fImmA == 0) {
-            fInstructions.pop_back();
-        }
+        int value = lastInstruction.fImmA;
+        fInstructions.pop_back();
 
         
         dst->count--;
@@ -774,11 +504,10 @@ void Builder::simplifyPopSlotsUnmasked(SlotRange* dst) {
 
     
     
-    if (lastOp == BuilderOp::push_uniform) {
+    if (lastInstruction.fOp == BuilderOp::push_zeros) {
         
-        Slot sourceSlot = lastInstruction->fSlotA + lastInstruction->fImmA - 1;
-        lastInstruction->fImmA--;
-        if (lastInstruction->fImmA == 0) {
+        lastInstruction.fImmA--;
+        if (lastInstruction.fImmA == 0) {
             fInstructions.pop_back();
         }
 
@@ -790,16 +519,16 @@ void Builder::simplifyPopSlotsUnmasked(SlotRange* dst) {
         this->simplifyPopSlotsUnmasked(dst);
 
         
-        this->copy_uniform_to_slots_unmasked({destinationSlot, 1}, {sourceSlot, 1});
+        this->zero_slots_unmasked({destinationSlot, 1});
         return;
     }
 
     
-    if (lastOp == BuilderOp::push_slots || lastOp == BuilderOp::push_immutable) {
+    if (lastInstruction.fOp == BuilderOp::push_slots) {
         
-        Slot sourceSlot = lastInstruction->fSlotA + lastInstruction->fImmA - 1;
-        lastInstruction->fImmA--;
-        if (lastInstruction->fImmA == 0) {
+        Slot sourceSlot = lastInstruction.fSlotA + lastInstruction.fImmA - 1;
+        lastInstruction.fImmA--;
+        if (lastInstruction.fImmA == 0) {
             fInstructions.pop_back();
         }
 
@@ -811,15 +540,8 @@ void Builder::simplifyPopSlotsUnmasked(SlotRange* dst) {
         this->simplifyPopSlotsUnmasked(dst);
 
         
-        if (lastOp == BuilderOp::push_slots) {
-            if (destinationSlot != sourceSlot) {
-                this->copy_slots_unmasked({destinationSlot, 1}, {sourceSlot, 1});
-            } else {
-                
-            }
-        } else {
-            
-            this->copy_immutable_unmasked({destinationSlot, 1}, {sourceSlot, 1});
+        if (destinationSlot != sourceSlot) {
+            this->copy_slots_unmasked({destinationSlot, 1}, {sourceSlot, 1});
         }
         return;
     }
@@ -827,35 +549,16 @@ void Builder::simplifyPopSlotsUnmasked(SlotRange* dst) {
 
 void Builder::pop_slots_unmasked(SlotRange dst) {
     SkASSERT(dst.count >= 0);
-    this->copy_stack_to_slots_unmasked(dst);
-    this->discard_stack(dst.count);
-}
 
-void Builder::exchange_src() {
-    if (Instruction* lastInstruction = this->lastInstruction()) {
-        
-        if (lastInstruction->fOp == BuilderOp::exchange_src) {
-            
-            fInstructions.pop_back();
-            return;
-        }
+    
+    
+    this->simplifyPopSlotsUnmasked(&dst);
+
+    
+    if (dst.count > 0) {
+        this->copy_stack_to_slots_unmasked(dst);
+        this->discard_stack(dst.count);
     }
-
-    this->appendInstruction(BuilderOp::exchange_src, {});
-}
-
-void Builder::pop_src_rgba() {
-    if (Instruction* lastInstruction = this->lastInstruction()) {
-        
-        if (lastInstruction->fOp == BuilderOp::exchange_src) {
-            
-            fInstructions.pop_back();
-            this->discard_stack(4);
-            return;
-        }
-    }
-
-    this->appendInstruction(BuilderOp::pop_src_rgba, {});
 }
 
 void Builder::copy_stack_to_slots(SlotRange dst, int offsetFromStackTop) {
@@ -866,21 +569,23 @@ void Builder::copy_stack_to_slots(SlotRange dst, int offsetFromStackTop) {
     }
 
     
-    if (Instruction* lastInstruction = this->lastInstruction()) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+
         
-        if (lastInstruction->fOp == BuilderOp::copy_stack_to_slots &&
+        if (lastInstruction.fOp == BuilderOp::copy_stack_to_slots &&
             
-            lastInstruction->fSlotA + lastInstruction->fImmA == dst.index &&
+            lastInstruction.fSlotA + lastInstruction.fImmA == dst.index &&
             
-            lastInstruction->fImmB - lastInstruction->fImmA == offsetFromStackTop) {
+            lastInstruction.fImmB - lastInstruction.fImmA == offsetFromStackTop) {
             
-            lastInstruction->fImmA += dst.count;
+            lastInstruction.fImmA += dst.count;
             return;
         }
     }
 
-    this->appendInstruction(BuilderOp::copy_stack_to_slots, {dst.index},
-                            dst.count, offsetFromStackTop);
+    fInstructions.push_back({BuilderOp::copy_stack_to_slots, {dst.index},
+                             dst.count, offsetFromStackTop});
 }
 
 void Builder::copy_stack_to_slots_indirect(SlotRange fixedRange,
@@ -890,10 +595,10 @@ void Builder::copy_stack_to_slots_indirect(SlotRange fixedRange,
     
     
     
-    this->appendInstruction(BuilderOp::copy_stack_to_slots_indirect,
-                            {fixedRange.index, limitRange.index + limitRange.count},
-                            fixedRange.count,
-                            dynamicStackID);
+    fInstructions.push_back({BuilderOp::copy_stack_to_slots_indirect,
+                             {fixedRange.index, limitRange.index + limitRange.count},
+                             fixedRange.count,
+                             dynamicStackID});
 }
 
 static bool slot_ranges_overlap(SlotRange x, SlotRange y) {
@@ -901,102 +606,49 @@ static bool slot_ranges_overlap(SlotRange x, SlotRange y) {
            y.index < x.index + x.count;
 }
 
-void Builder::copy_constant(Slot slot, int constantValue) {
-    
-    if (Instruction* lastInstr = this->lastInstruction()) {
-        
-        if (lastInstr->fOp == BuilderOp::copy_constant &&
-            
-            lastInstr->fImmB == constantValue &&
-            
-            lastInstr->fSlotA + lastInstr->fImmA == slot) {
-            
-            lastInstr->fImmA += 1;
-            return;
-        }
-    }
-
-    this->appendInstruction(BuilderOp::copy_constant, {slot}, 1, constantValue);
-}
-
 void Builder::copy_slots_unmasked(SlotRange dst, SlotRange src) {
     
-    if (Instruction* lastInstr = this->lastInstruction()) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstr = fInstructions.back();
+
         
-        if (lastInstr->fOp == BuilderOp::copy_slot_unmasked &&
+        if (lastInstr.fOp == BuilderOp::copy_slot_unmasked &&
             
-            lastInstr->fSlotA + lastInstr->fImmA == dst.index &&
+            lastInstr.fSlotA + lastInstr.fImmA == dst.index &&
             
-            lastInstr->fSlotB + lastInstr->fImmA == src.index &&
+            lastInstr.fSlotB + lastInstr.fImmA == src.index &&
             
-            !slot_ranges_overlap({lastInstr->fSlotB, lastInstr->fImmA + dst.count},
-                                 {lastInstr->fSlotA, lastInstr->fImmA + dst.count})) {
+            !slot_ranges_overlap({lastInstr.fSlotB, lastInstr.fImmA + dst.count},
+                                 {lastInstr.fSlotA, lastInstr.fImmA + dst.count})) {
             
-            lastInstr->fImmA += dst.count;
+            lastInstr.fImmA += dst.count;
             return;
         }
     }
 
     SkASSERT(dst.count == src.count);
-    this->appendInstruction(BuilderOp::copy_slot_unmasked, {dst.index, src.index}, dst.count);
-}
-
-void Builder::copy_immutable_unmasked(SlotRange dst, SlotRange src) {
-    
-    if (Instruction* lastInstr = this->lastInstruction()) {
-        
-        if (lastInstr->fOp == BuilderOp::copy_immutable_unmasked &&
-            
-            lastInstr->fSlotA + lastInstr->fImmA == dst.index &&
-            
-            lastInstr->fSlotB + lastInstr->fImmA == src.index) {
-            
-            lastInstr->fImmA += dst.count;
-            return;
-        }
-    }
-
-    SkASSERT(dst.count == src.count);
-    this->appendInstruction(BuilderOp::copy_immutable_unmasked, {dst.index, src.index}, dst.count);
-}
-
-void Builder::copy_uniform_to_slots_unmasked(SlotRange dst, SlotRange src) {
-    
-    if (Instruction* lastInstr = this->lastInstruction()) {
-        
-        if (lastInstr->fOp == BuilderOp::copy_uniform_to_slots_unmasked &&
-            
-            lastInstr->fSlotB + lastInstr->fImmA == dst.index &&
-            
-            lastInstr->fSlotA + lastInstr->fImmA == src.index) {
-            
-            lastInstr->fImmA += dst.count;
-            return;
-        }
-    }
-
-    SkASSERT(dst.count == src.count);
-    this->appendInstruction(BuilderOp::copy_uniform_to_slots_unmasked, {src.index, dst.index},
-                            dst.count);
+    fInstructions.push_back({BuilderOp::copy_slot_unmasked, {dst.index, src.index}, dst.count});
 }
 
 void Builder::copy_stack_to_slots_unmasked(SlotRange dst, int offsetFromStackTop) {
     
-    if (Instruction* lastInstr = this->lastInstruction()) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+
         
-        if (lastInstr->fOp == BuilderOp::copy_stack_to_slots_unmasked &&
+        if (lastInstruction.fOp == BuilderOp::copy_stack_to_slots_unmasked &&
             
-            lastInstr->fSlotA + lastInstr->fImmA == dst.index &&
+            lastInstruction.fSlotA + lastInstruction.fImmA == dst.index &&
             
-            lastInstr->fImmB - lastInstr->fImmA == offsetFromStackTop) {
+            lastInstruction.fImmB - lastInstruction.fImmA == offsetFromStackTop) {
             
-            lastInstr->fImmA += dst.count;
+            lastInstruction.fImmA += dst.count;
             return;
         }
     }
 
-    this->appendInstruction(BuilderOp::copy_stack_to_slots_unmasked, {dst.index},
-                            dst.count, offsetFromStackTop);
+    fInstructions.push_back({BuilderOp::copy_stack_to_slots_unmasked, {dst.index},
+                             dst.count, offsetFromStackTop});
 }
 
 void Builder::pop_return_mask() {
@@ -1004,66 +656,42 @@ void Builder::pop_return_mask() {
 
     
     
-    if (Instruction* lastInstruction = this->lastInstructionOnAnyStack()) {
-        if (lastInstruction->fOp == BuilderOp::mask_off_return_mask) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+
+        if (lastInstruction.fOp == BuilderOp::mask_off_return_mask) {
             fInstructions.pop_back();
         }
     }
 
-    this->appendInstruction(BuilderOp::pop_return_mask, {});
-}
-
-void Builder::push_condition_mask() {
-    SkASSERT(this->executionMaskWritesAreEnabled());
-
-    
-    
-    if (Instruction* lastInstruction = this->lastInstruction()) {
-        if (lastInstruction->fOp == BuilderOp::pop_condition_mask) {
-            this->pad_stack(1);
-            return;
-        }
-    }
-    this->appendInstruction(BuilderOp::push_condition_mask, {});
-}
-
-void Builder::merge_condition_mask() {
-    SkASSERT(this->executionMaskWritesAreEnabled());
-
-    
-    
-    if (Instruction* lastInstruction = this->lastInstructionOnAnyStack()) {
-        if (lastInstruction->fOp == BuilderOp::pop_condition_mask) {
-            int stackID = lastInstruction->fStackID;
-            fInstructions.pop_back();
-            this->discard_stack(1, stackID);
-        }
-    }
-
-    this->appendInstruction(BuilderOp::merge_condition_mask, {});
+    fInstructions.push_back({BuilderOp::pop_return_mask, {}});
 }
 
 void Builder::zero_slots_unmasked(SlotRange dst) {
-    if (Instruction* lastInstruction = this->lastInstruction()) {
-        if (lastInstruction->fOp == BuilderOp::copy_constant && lastInstruction->fImmB == 0) {
-            if (lastInstruction->fSlotA + lastInstruction->fImmA == dst.index) {
+    if (!fInstructions.empty()) {
+        Instruction& lastInstruction = fInstructions.back();
+
+        if (lastInstruction.fOp == BuilderOp::zero_slot_unmasked) {
+            if (lastInstruction.fSlotA + lastInstruction.fImmA == dst.index) {
                 
                 
-                lastInstruction->fImmA += dst.count;
+                lastInstruction.fImmA += dst.count;
                 return;
             }
+        }
 
-            if (lastInstruction->fSlotA == dst.index + dst.count) {
+        if (lastInstruction.fOp == BuilderOp::zero_slot_unmasked) {
+            if (lastInstruction.fSlotA == dst.index + dst.count) {
                 
                 
-                lastInstruction->fSlotA = dst.index;
-                lastInstruction->fImmA += dst.count;
+                lastInstruction.fSlotA = dst.index;
+                lastInstruction.fImmA += dst.count;
                 return;
             }
         }
     }
 
-    this->appendInstruction(BuilderOp::copy_constant, {dst.index}, dst.count, 0);
+    fInstructions.push_back({BuilderOp::zero_slot_unmasked, {dst.index}, dst.count});
 }
 
 static int pack_nybbles(SkSpan<const int8_t> components) {
@@ -1077,8 +705,7 @@ static int pack_nybbles(SkSpan<const int8_t> components) {
     return packed;
 }
 
-template <typename T>
-static void unpack_nybbles_to_offsets(uint32_t components, SkSpan<T> offsets) {
+static void unpack_nybbles_to_offsets(uint32_t components, SkSpan<uint16_t> offsets) {
     
     for (size_t index = 0; index < offsets.size(); ++index) {
         offsets[index] = (components & 0xF) * SkOpts::raster_pipeline_highp_stride * sizeof(float);
@@ -1105,10 +732,10 @@ void Builder::swizzle_copy_stack_to_slots(SlotRange dst,
     
     
     
-    this->appendInstruction(BuilderOp::swizzle_copy_stack_to_slots, {dst.index},
-                            (int)components.size(),
-                            pack_nybbles(components),
-                            offsetFromStackTop);
+    fInstructions.push_back({BuilderOp::swizzle_copy_stack_to_slots, {dst.index},
+                             (int)components.size(),
+                             pack_nybbles(components),
+                             offsetFromStackTop});
 }
 
 void Builder::swizzle_copy_stack_to_slots_indirect(SlotRange fixedRange,
@@ -1125,12 +752,12 @@ void Builder::swizzle_copy_stack_to_slots_indirect(SlotRange fixedRange,
     
     
     
-    this->appendInstruction(BuilderOp::swizzle_copy_stack_to_slots_indirect,
-                            {fixedRange.index, limitRange.index + limitRange.count},
-                            (int)components.size(),
-                            pack_nybbles(components),
-                            offsetFromStackTop,
-                            dynamicStackID);
+    fInstructions.push_back({BuilderOp::swizzle_copy_stack_to_slots_indirect,
+                             {fixedRange.index, limitRange.index + limitRange.count},
+                             (int)components.size(),
+                             pack_nybbles(components),
+                             offsetFromStackTop,
+                             dynamicStackID});
 }
 
 void Builder::swizzle(int consumedSlots, SkSpan<const int8_t> components) {
@@ -1175,17 +802,21 @@ void Builder::swizzle(int consumedSlots, SkSpan<const int8_t> components) {
     if (consumedSlots <= 4 && numElements <= 4) {
         
         int op = (int)BuilderOp::swizzle_1 + numElements - 1;
-        this->appendInstruction((BuilderOp)op, {}, consumedSlots,
-                                pack_nybbles(SkSpan(elements, numElements)));
+        fInstructions.push_back({(BuilderOp)op, {}, consumedSlots,
+                                 pack_nybbles(SkSpan(elements, numElements))});
         return;
     }
 
     
     
-    this->appendInstruction(BuilderOp::shuffle, {},
-                            consumedSlots, numElements,
-                            pack_nybbles(SkSpan(&elements[0], 8)),
-                            pack_nybbles(SkSpan(&elements[8], 8)));
+    
+    int slotUsage = consumedSlots << 16;
+    slotUsage |= numElements;
+
+    
+    fInstructions.push_back({BuilderOp::shuffle, {}, slotUsage,
+                             pack_nybbles(SkSpan(&elements[0], 8)),
+                             pack_nybbles(SkSpan(&elements[8], 8))});
 }
 
 void Builder::transpose(int columns, int rows) {
@@ -1230,14 +861,14 @@ void Builder::matrix_resize(int origColumns, int origRows, int newColumns, int n
                 if (c == r) {
                     
                     if (oneOffset == 0) {
-                        this->push_constant_f(1.0f);
+                        this->push_literal_f(1.0f);
                         oneOffset = consumedSlots++;
                     }
                     elements[index++] = oneOffset;
                 } else {
                     
                     if (zeroOffset == 0) {
-                        this->push_constant_f(0.0f);
+                        this->push_zeros(1);
                         zeroOffset = consumedSlots++;
                     }
                     elements[index++] = zeroOffset;
@@ -1248,27 +879,14 @@ void Builder::matrix_resize(int origColumns, int origRows, int newColumns, int n
     this->swizzle(consumedSlots, SkSpan(elements, index));
 }
 
-void Builder::matrix_multiply(int leftColumns, int leftRows, int rightColumns, int rightRows) {
-    BuilderOp op;
-    switch (leftColumns) {
-        case 2:  op = BuilderOp::matrix_multiply_2; break;
-        case 3:  op = BuilderOp::matrix_multiply_3; break;
-        case 4:  op = BuilderOp::matrix_multiply_4; break;
-        default: SkDEBUGFAIL("unsupported matrix dimensions"); return;
-    }
-
-    this->appendInstruction(op, {}, leftColumns, leftRows, rightColumns, rightRows);
-}
-
 std::unique_ptr<Program> Builder::finish(int numValueSlots,
                                          int numUniformSlots,
-                                         int numImmutableSlots,
-                                         DebugTracePriv* debugTrace) {
+                                         SkRPDebugTrace* debugTrace) {
     
     SkASSERT(fExecutionMaskWritesEnabled == 0);
 
     return std::make_unique<Program>(std::move(fInstructions), numValueSlots, numUniformSlots,
-                                     numImmutableSlots, fNumLabels, debugTrace);
+                                     fNumLabels, debugTrace);
 }
 
 void Program::optimize() {
@@ -1277,6 +895,7 @@ void Program::optimize() {
 
 static int stack_usage(const Instruction& inst) {
     switch (inst.fOp) {
+        case BuilderOp::push_literal:
         case BuilderOp::push_condition_mask:
         case BuilderOp::push_loop_mask:
         case BuilderOp::push_return_mask:
@@ -1284,20 +903,16 @@ static int stack_usage(const Instruction& inst) {
 
         case BuilderOp::push_src_rgba:
         case BuilderOp::push_dst_rgba:
-        case BuilderOp::push_device_xy01:
             return 4;
 
-        case BuilderOp::push_immutable:
-        case BuilderOp::push_immutable_indirect:
-        case BuilderOp::push_constant:
         case BuilderOp::push_slots:
         case BuilderOp::push_slots_indirect:
         case BuilderOp::push_uniform:
         case BuilderOp::push_uniform_indirect:
+        case BuilderOp::push_zeros:
         case BuilderOp::push_clone:
         case BuilderOp::push_clone_from_stack:
         case BuilderOp::push_clone_indirect_from_stack:
-        case BuilderOp::pad_stack:
             return inst.fImmA;
 
         case BuilderOp::pop_condition_mask:
@@ -1305,6 +920,9 @@ static int stack_usage(const Instruction& inst) {
         case BuilderOp::pop_and_reenable_loop_mask:
         case BuilderOp::pop_return_mask:
             return -1;
+
+        case BuilderOp::pop_src_rg:
+            return -2;
 
         case BuilderOp::pop_src_rgba:
         case BuilderOp::pop_dst_rgba:
@@ -1339,64 +957,48 @@ static int stack_usage(const Instruction& inst) {
         case BuilderOp::refract_4_floats:
             return -5;  
 
-        case BuilderOp::matrix_multiply_2:
-        case BuilderOp::matrix_multiply_3:
-        case BuilderOp::matrix_multiply_4:
-            
-            return -(inst.fImmA * inst.fImmB + inst.fImmC * inst.fImmD);
-
         case BuilderOp::shuffle: {
-            int consumed = inst.fImmA;
-            int generated = inst.fImmB;
+            int consumed = inst.fImmA >> 16;
+            int generated = inst.fImmA & 0xFFFF;
             return generated - consumed;
         }
         case ALL_SINGLE_SLOT_UNARY_OP_CASES:
         case ALL_MULTI_SLOT_UNARY_OP_CASES:
-        case ALL_IMMEDIATE_BINARY_OP_CASES:
         default:
             return 0;
     }
 }
 
-Program::StackDepths Program::tempStackMaxDepths() const {
-    
-    int numStacks = 1;
+Program::StackDepthMap Program::tempStackMaxDepths() const {
+    StackDepthMap largest;
+    StackDepthMap current;
+
+    int curIdx = 0;
     for (const Instruction& inst : fInstructions) {
-        numStacks = std::max(numStacks, inst.fStackID + 1);
+        if (inst.fOp == BuilderOp::set_current_stack) {
+            curIdx = inst.fImmA;
+        }
+        current[curIdx] += stack_usage(inst);
+        largest[curIdx] = std::max(current[curIdx], largest[curIdx]);
+        SkASSERTF(current[curIdx] >= 0, "unbalanced temp stack push/pop on stack %d", curIdx);
     }
 
-    
-    StackDepths largest, current;
-    largest.push_back_n(numStacks, 0);
-    current.push_back_n(numStacks, 0);
-
-    for (const Instruction& inst : fInstructions) {
-        int stackID = inst.fStackID;
-        current[stackID] += stack_usage(inst);
-        largest[stackID] = std::max(current[stackID], largest[stackID]);
-        
-        SkASSERTF(current[stackID] >= 0, "unbalanced temp stack push/pop on stack %d", stackID);
-    }
-
-    
-    for (int stackID = 0; stackID < numStacks; ++stackID) {
-        
-        SkASSERTF(current[stackID] == 0, "unbalanced temp stack push/pop on stack %d", stackID);
+    for (const auto& [stackIdx, depth] : current) {
+        (void)stackIdx;
+        SkASSERTF(depth == 0, "unbalanced temp stack push/pop");
     }
 
     return largest;
 }
 
-Program::Program(TArray<Instruction> instrs,
+Program::Program(SkTArray<Instruction> instrs,
                  int numValueSlots,
                  int numUniformSlots,
-                 int numImmutableSlots,
                  int numLabels,
-                 DebugTracePriv* debugTrace)
+                 SkRPDebugTrace* debugTrace)
         : fInstructions(std::move(instrs))
         , fNumValueSlots(numValueSlots)
         , fNumUniformSlots(numUniformSlots)
-        , fNumImmutableSlots(numImmutableSlots)
         , fNumLabels(numLabels)
         , fDebugTrace(debugTrace) {
     this->optimize();
@@ -1404,113 +1006,73 @@ Program::Program(TArray<Instruction> instrs,
     fTempStackMaxDepths = this->tempStackMaxDepths();
 
     fNumTempStackSlots = 0;
-    for (const int depth : fTempStackMaxDepths) {
+    for (const auto& [stackIdx, depth] : fTempStackMaxDepths) {
+        (void)stackIdx;
         fNumTempStackSlots += depth;
     }
-
-    if (fDebugTrace) {
-        fTraceHook = SkSL::Tracer::Make(&fDebugTrace->fTraceInfo);
-    }
 }
 
-Program::~Program() = default;
-
-static bool immutable_data_is_splattable(int32_t* immutablePtr, int numSlots) {
-    
-    
-    for (int index = 1; index < numSlots; ++index) {
-        if (immutablePtr[0] != immutablePtr[index]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-void Program::appendCopy(TArray<Stage>* pipeline,
+void Program::appendCopy(SkTArray<Stage>* pipeline,
                          SkArenaAlloc* alloc,
-                         std::byte* basePtr,  
                          ProgramOp baseStage,
-                         SkRPOffset dst, int dstStride,
-                         SkRPOffset src, int srcStride,
+                         float* dst, int dstStride,
+                         const float* src, int srcStride,
                          int numSlots) const {
     SkASSERT(numSlots >= 0);
     while (numSlots > 4) {
-        
-        this->appendCopy(pipeline, alloc, basePtr,
-                         baseStage,
-                         dst, dstStride,
-                         src, srcStride,
-                         4);
-        dst += 4 * dstStride * sizeof(float);
-        src += 4 * srcStride * sizeof(float);
+        this->appendCopy(pipeline, alloc, baseStage, dst, dstStride, src, srcStride,4);
+        dst += 4 * dstStride;
+        src += 4 * srcStride;
         numSlots -= 4;
     }
 
-    SkASSERT(numSlots <= 4);
-
     if (numSlots > 0) {
-        
-        
-        if (basePtr) {
-            SkASSERT(srcStride == 1);
-            int32_t* immutablePtr = reinterpret_cast<int32_t*>(basePtr + src);
-            if (immutable_data_is_splattable(immutablePtr, numSlots)) {
-                auto stage = (ProgramOp)((int)ProgramOp::copy_constant + numSlots - 1);
-                SkRasterPipeline_ConstantCtx ctx;
-                ctx.dst = dst;
-                ctx.value = *immutablePtr;
-                pipeline->push_back({stage, SkRPCtxUtils::Pack(ctx, alloc)});
-                return;
-            }
-        }
-
-        
+        SkASSERT(numSlots <= 4);
         auto stage = (ProgramOp)((int)baseStage + numSlots - 1);
-        SkRasterPipeline_BinaryOpCtx ctx;
-        ctx.dst = dst;
-        ctx.src = src;
-        pipeline->push_back({stage, SkRPCtxUtils::Pack(ctx, alloc)});
+        auto* ctx = alloc->make<SkRasterPipeline_BinaryOpCtx>();
+        ctx->dst = dst;
+        ctx->src = src;
+        pipeline->push_back({stage, ctx});
     }
 }
 
-void Program::appendCopySlotsUnmasked(TArray<Stage>* pipeline,
+void Program::appendCopySlotsUnmasked(SkTArray<Stage>* pipeline,
                                       SkArenaAlloc* alloc,
-                                      SkRPOffset dst,
-                                      SkRPOffset src,
+                                      float* dst,
+                                      const float* src,
                                       int numSlots) const {
-    this->appendCopy(pipeline, alloc, nullptr,
+    this->appendCopy(pipeline, alloc,
                      ProgramOp::copy_slot_unmasked,
                      dst, SkOpts::raster_pipeline_highp_stride,
                      src, SkOpts::raster_pipeline_highp_stride,
                      numSlots);
 }
 
-void Program::appendCopyImmutableUnmasked(TArray<Stage>* pipeline,
-                                          SkArenaAlloc* alloc,
-                                          std::byte* basePtr,
-                                          SkRPOffset dst,
-                                          SkRPOffset src,
-                                          int numSlots) const {
-    this->appendCopy(pipeline, alloc, basePtr,
-                     ProgramOp::copy_immutable_unmasked,
-                     dst, SkOpts::raster_pipeline_highp_stride,
-                     src, 1,
-                     numSlots);
-}
-
-void Program::appendCopySlotsMasked(TArray<Stage>* pipeline,
+void Program::appendCopySlotsMasked(SkTArray<Stage>* pipeline,
                                     SkArenaAlloc* alloc,
-                                    SkRPOffset dst,
-                                    SkRPOffset src,
+                                    float* dst,
+                                    const float* src,
                                     int numSlots) const {
-    this->appendCopy(pipeline, alloc, nullptr,
+    this->appendCopy(pipeline, alloc,
                      ProgramOp::copy_slot_masked,
                      dst, SkOpts::raster_pipeline_highp_stride,
                      src, SkOpts::raster_pipeline_highp_stride,
                      numSlots);
 }
 
-void Program::appendSingleSlotUnaryOp(TArray<Stage>* pipeline, ProgramOp stage,
+void Program::appendCopyConstants(SkTArray<Stage>* pipeline,
+                                  SkArenaAlloc* alloc,
+                                  float* dst,
+                                  const float* src,
+                                  int numSlots) const {
+    this->appendCopy(pipeline, alloc,
+                     ProgramOp::copy_constant,
+                     dst, SkOpts::raster_pipeline_highp_stride,
+                     src, 1,
+                     numSlots);
+}
+
+void Program::appendSingleSlotUnaryOp(SkTArray<Stage>* pipeline, ProgramOp stage,
                                       float* dst, int numSlots) const {
     SkASSERT(numSlots >= 0);
     while (numSlots--) {
@@ -1519,61 +1081,41 @@ void Program::appendSingleSlotUnaryOp(TArray<Stage>* pipeline, ProgramOp stage,
     }
 }
 
-void Program::appendMultiSlotUnaryOp(TArray<Stage>* pipeline, ProgramOp baseStage,
+void Program::appendMultiSlotUnaryOp(SkTArray<Stage>* pipeline, ProgramOp baseStage,
                                      float* dst, int numSlots) const {
     SkASSERT(numSlots >= 0);
-    while (numSlots > 0) {
-        int currentSlots = std::min(numSlots, 4);
-        auto stage = (ProgramOp)((int)baseStage + currentSlots - 1);
-        pipeline->push_back({stage, dst});
-
+    while (numSlots > 4) {
+        this->appendMultiSlotUnaryOp(pipeline, baseStage, dst, 4);
         dst += 4 * SkOpts::raster_pipeline_highp_stride;
         numSlots -= 4;
     }
+
+    SkASSERT(numSlots <= 4);
+    auto stage = (ProgramOp)((int)baseStage + numSlots - 1);
+    pipeline->push_back({stage, dst});
 }
 
-void Program::appendImmediateBinaryOp(TArray<Stage>* pipeline, SkArenaAlloc* alloc,
-                                      ProgramOp baseStage,
-                                      SkRPOffset dst, int32_t value, int numSlots) const {
-    SkASSERT(is_immediate_op((BuilderOp)baseStage));
-    int slotsPerStage = is_multi_slot_immediate_op((BuilderOp)baseStage) ? 4 : 1;
-
-    SkRasterPipeline_ConstantCtx ctx;
-    ctx.dst = dst;
-    ctx.value = value;
-
-    SkASSERT(numSlots >= 0);
-    while (numSlots > 0) {
-        int currentSlots = std::min(numSlots, slotsPerStage);
-        auto stage = (ProgramOp)((int)baseStage - (currentSlots - 1));
-        pipeline->push_back({stage, SkRPCtxUtils::Pack(ctx, alloc)});
-
-        ctx.dst += slotsPerStage * SkOpts::raster_pipeline_highp_stride * sizeof(float);
-        numSlots -= slotsPerStage;
-    }
-}
-
-void Program::appendAdjacentNWayBinaryOp(TArray<Stage>* pipeline, SkArenaAlloc* alloc,
+void Program::appendAdjacentNWayBinaryOp(SkTArray<Stage>* pipeline, SkArenaAlloc* alloc,
                                          ProgramOp stage,
-                                         SkRPOffset dst, SkRPOffset src, int numSlots) const {
+                                         float* dst, const float* src, int numSlots) const {
     
     SkASSERT(numSlots >= 0);
-    SkASSERT((dst + SkOpts::raster_pipeline_highp_stride * numSlots * sizeof(float)) == src);
+    SkASSERT((dst + SkOpts::raster_pipeline_highp_stride * numSlots) == src);
 
     if (numSlots > 0) {
-        SkRasterPipeline_BinaryOpCtx ctx;
-        ctx.dst = dst;
-        ctx.src = src;
-        pipeline->push_back({stage, SkRPCtxUtils::Pack(ctx, alloc)});
+        auto ctx = alloc->make<SkRasterPipeline_BinaryOpCtx>();
+        ctx->dst = dst;
+        ctx->src = src;
+        pipeline->push_back({stage, ctx});
     }
 }
 
-void Program::appendAdjacentMultiSlotBinaryOp(TArray<Stage>* pipeline, SkArenaAlloc* alloc,
-                                              ProgramOp baseStage, std::byte* basePtr,
-                                              SkRPOffset dst, SkRPOffset src, int numSlots) const {
+void Program::appendAdjacentMultiSlotBinaryOp(SkTArray<Stage>* pipeline, SkArenaAlloc* alloc,
+                                              ProgramOp baseStage,
+                                              float* dst, const float* src, int numSlots) const {
     
     SkASSERT(numSlots >= 0);
-    SkASSERT((dst + SkOpts::raster_pipeline_highp_stride * numSlots * sizeof(float)) == src);
+    SkASSERT((dst + SkOpts::raster_pipeline_highp_stride * numSlots) == src);
 
     if (numSlots > 4) {
         this->appendAdjacentNWayBinaryOp(pipeline, alloc, baseStage, dst, src, numSlots);
@@ -1581,47 +1123,46 @@ void Program::appendAdjacentMultiSlotBinaryOp(TArray<Stage>* pipeline, SkArenaAl
     }
     if (numSlots > 0) {
         auto specializedStage = (ProgramOp)((int)baseStage + numSlots);
-        pipeline->push_back({specializedStage, basePtr + dst});
+        pipeline->push_back({specializedStage, dst});
     }
 }
 
-void Program::appendAdjacentNWayTernaryOp(TArray<Stage>* pipeline, SkArenaAlloc* alloc,
-                                          ProgramOp stage, std::byte* basePtr, SkRPOffset dst,
-                                          SkRPOffset src0, SkRPOffset src1, int numSlots) const {
+void Program::appendAdjacentNWayTernaryOp(SkTArray<Stage>* pipeline, SkArenaAlloc* alloc,
+                                          ProgramOp stage, float* dst, const float* src0,
+                                          const float* src1, int numSlots) const {
     
     SkASSERT(numSlots >= 0);
-    SkASSERT((dst  + SkOpts::raster_pipeline_highp_stride * numSlots * sizeof(float)) == src0);
-    SkASSERT((src0 + SkOpts::raster_pipeline_highp_stride * numSlots * sizeof(float)) == src1);
+    SkASSERT((dst  + SkOpts::raster_pipeline_highp_stride * numSlots) == src0);
+    SkASSERT((src0 + SkOpts::raster_pipeline_highp_stride * numSlots) == src1);
 
     if (numSlots > 0) {
-        SkRasterPipeline_TernaryOpCtx ctx;
-        ctx.dst = dst;
-        ctx.delta = src0 - dst;
-        pipeline->push_back({stage, SkRPCtxUtils::Pack(ctx, alloc)});
+        auto ctx = alloc->make<SkRasterPipeline_TernaryOpCtx>();
+        ctx->dst = dst;
+        ctx->src0 = src0;
+        ctx->src1 = src1;
+        pipeline->push_back({stage, ctx});
     }
 }
 
-void Program::appendAdjacentMultiSlotTernaryOp(TArray<Stage>* pipeline, SkArenaAlloc* alloc,
-                                               ProgramOp baseStage, std::byte* basePtr,
-                                               SkRPOffset dst, SkRPOffset src0, SkRPOffset src1,
-                                               int numSlots) const {
+void Program::appendAdjacentMultiSlotTernaryOp(SkTArray<Stage>* pipeline, SkArenaAlloc* alloc,
+                                               ProgramOp baseStage, float* dst, const float* src0,
+                                               const float* src1, int numSlots) const {
     
     SkASSERT(numSlots >= 0);
-    SkASSERT((dst  + SkOpts::raster_pipeline_highp_stride * numSlots * sizeof(float)) == src0);
-    SkASSERT((src0 + SkOpts::raster_pipeline_highp_stride * numSlots * sizeof(float)) == src1);
+    SkASSERT((dst  + SkOpts::raster_pipeline_highp_stride * numSlots) == src0);
+    SkASSERT((src0 + SkOpts::raster_pipeline_highp_stride * numSlots) == src1);
 
     if (numSlots > 4) {
-        this->appendAdjacentNWayTernaryOp(pipeline, alloc, baseStage, basePtr,
-                                          dst, src0, src1, numSlots);
+        this->appendAdjacentNWayTernaryOp(pipeline, alloc, baseStage, dst, src0, src1, numSlots);
         return;
     }
     if (numSlots > 0) {
         auto specializedStage = (ProgramOp)((int)baseStage + numSlots);
-        pipeline->push_back({specializedStage, basePtr + dst});
+        pipeline->push_back({specializedStage, dst});
     }
 }
 
-void Program::appendStackRewind(TArray<Stage>* pipeline) const {
+void Program::appendStackRewind(SkTArray<Stage>* pipeline) const {
 #if defined(SKSL_STANDALONE) || !SK_HAS_MUSTTAIL
     pipeline->push_back({ProgramOp::stack_rewind, nullptr});
 #endif
@@ -1634,93 +1175,73 @@ static void* context_bit_pun(intptr_t val) {
 Program::SlotData Program::allocateSlotData(SkArenaAlloc* alloc) const {
     
     const int N = SkOpts::raster_pipeline_highp_stride;
-    const int scalarWidth = 1 * sizeof(float);
     const int vectorWidth = N * sizeof(float);
-    const int allocSize = vectorWidth * (fNumValueSlots + fNumTempStackSlots) +
-                          scalarWidth * fNumImmutableSlots;
+    const int allocSize = vectorWidth * (fNumValueSlots + fNumTempStackSlots);
     float* slotPtr = static_cast<float*>(alloc->makeBytesAlignedTo(allocSize, vectorWidth));
     sk_bzero(slotPtr, allocSize);
 
     
     SlotData s;
-    s.values    = SkSpan(slotPtr,        N * fNumValueSlots);
-    s.stack     = SkSpan(s.values.end(), N * fNumTempStackSlots);
-    s.immutable = SkSpan(s.stack.end(),  1 * fNumImmutableSlots);
+    s.values = SkSpan(slotPtr,        N * fNumValueSlots);
+    s.stack  = SkSpan(s.values.end(), N * fNumTempStackSlots);
     return s;
 }
+
+#if !defined(SKSL_STANDALONE)
 
 bool Program::appendStages(SkRasterPipeline* pipeline,
                            SkArenaAlloc* alloc,
                            RP::Callbacks* callbacks,
                            SkSpan<const float> uniforms) const {
-#if defined(SKSL_STANDALONE)
-    return false;
-#else
     
-    TArray<Stage> stages;
-    SlotData slotData = this->allocateSlotData(alloc);
-    this->makeStages(&stages, alloc, uniforms, slotData);
+    SkTArray<Stage> stages;
+    this->makeStages(&stages, alloc, uniforms, this->allocateSlotData(alloc));
 
     
     
-    TArray<SkRasterPipeline_BranchCtx*> branchContexts;
-    branchContexts.reserve_exact(fNumLabels);
-    TArray<int> labelOffsets;
+    SkTArray<SkRasterPipeline_BranchCtx*> branchContexts;
+    branchContexts.reserve_back(fNumLabels);
+    SkTArray<int> labelOffsets;
     labelOffsets.push_back_n(fNumLabels, -1);
-    TArray<int> branchGoesToLabel;
-    branchGoesToLabel.reserve_exact(fNumLabels);
-
-    auto resetBasePointer = [&]() {
-        
-        
-        pipeline->append(SkRasterPipelineOp::set_base_pointer, slotData.values.data());
-    };
-
-    resetBasePointer();
+    SkTArray<int> branchGoesToLabel;
+    branchGoesToLabel.reserve_back(fNumLabels);
 
     for (const Stage& stage : stages) {
         switch (stage.op) {
             case ProgramOp::stack_rewind:
-                pipeline->appendStackRewind();
+                pipeline->append_stack_rewind();
                 break;
 
             case ProgramOp::invoke_shader:
                 if (!callbacks || !callbacks->appendShader(sk_bit_cast<intptr_t>(stage.ctx))) {
                     return false;
                 }
-                resetBasePointer();
                 break;
 
             case ProgramOp::invoke_color_filter:
                 if (!callbacks || !callbacks->appendColorFilter(sk_bit_cast<intptr_t>(stage.ctx))) {
                     return false;
                 }
-                resetBasePointer();
                 break;
 
             case ProgramOp::invoke_blender:
                 if (!callbacks || !callbacks->appendBlender(sk_bit_cast<intptr_t>(stage.ctx))) {
                     return false;
                 }
-                resetBasePointer();
                 break;
 
             case ProgramOp::invoke_to_linear_srgb:
                 if (!callbacks) {
                     return false;
                 }
-                callbacks->toLinearSrgb(stage.ctx);
-                
-                
+                callbacks->toLinearSrgb();
                 break;
 
             case ProgramOp::invoke_from_linear_srgb:
                 if (!callbacks) {
                     return false;
                 }
-                callbacks->fromLinearSrgb(stage.ctx);
-                
-                
+                callbacks->fromLinearSrgb();
                 break;
 
             case ProgramOp::label: {
@@ -1767,26 +1288,28 @@ bool Program::appendStages(SkRasterPipeline* pipeline,
     }
 
     return true;
-#endif
 }
 
-void Program::makeStages(TArray<Stage>* pipeline,
+#endif
+
+void Program::makeStages(SkTArray<Stage>* pipeline,
                          SkArenaAlloc* alloc,
                          SkSpan<const float> uniforms,
                          const SlotData& slots) const {
     SkASSERT(fNumUniformSlots == SkToInt(uniforms.size()));
 
     const int N = SkOpts::raster_pipeline_highp_stride;
+    StackDepthMap tempStackDepth;
+    int currentStack = 0;
     int mostRecentRewind = 0;
 
     
     
     int pos = 0;
-    TArray<float*> tempStackMap;
-    tempStackMap.resize(fTempStackMaxDepths.size());
-    for (int idx = 0; idx < fTempStackMaxDepths.size(); ++idx) {
+    SkTHashMap<int, float*> tempStackMap;
+    for (auto& [idx, depth] : fTempStackMaxDepths) {
         tempStackMap[idx] = slots.stack.begin() + (pos * N);
-        pos += fTempStackMaxDepths[idx];
+        pos += depth;
     }
 
     
@@ -1802,35 +1325,16 @@ void Program::makeStages(TArray<Stage>* pipeline,
         }
     };
 
-    auto* const basePtr = (std::byte*)slots.values.data();
-    auto OffsetFromBase = [&](const void* ptr) -> SkRPOffset {
-        return (SkRPOffset)((const std::byte*)ptr - basePtr);
-    };
+    
+    SkTHashMap<int, int*> constantLookupMap; 
 
     
+    pipeline->reserve_back(fInstructions.size());
     for (const Instruction& inst : fInstructions) {
-        if (inst.fOp == BuilderOp::store_immutable_value) {
-            slots.immutable[inst.fSlotA] = sk_bit_cast<float>(inst.fImmA);
-        }
-    }
-
-    
-    pipeline->reserve_exact(pipeline->size() + fInstructions.size());
-    for (const Instruction& inst : fInstructions) {
-        auto ImmutableA = [&]() { return &slots.immutable[1 * inst.fSlotA]; };
-        auto ImmutableB = [&]() { return &slots.immutable[1 * inst.fSlotB]; };
-        auto SlotA      = [&]() { return &slots.values[N * inst.fSlotA]; };
-        auto SlotB      = [&]() { return &slots.values[N * inst.fSlotB]; };
-        auto UniformA   = [&]() { return &uniforms[inst.fSlotA]; };
-        auto AllocTraceContext = [&](auto* ctx) {
-            
-            using ContextType = typename std::remove_reference<decltype(*ctx)>::type;
-            ctx = alloc->make<ContextType>();
-            ctx->traceMask = reinterpret_cast<int*>(tempStackMap[inst.fImmA] - N);
-            ctx->traceHook = fTraceHook.get();
-            return ctx;
-        };
-        float*& tempStackPtr = tempStackMap[inst.fStackID];
+        auto SlotA    = [&]() { return &slots.values[N * inst.fSlotA]; };
+        auto SlotB    = [&]() { return &slots.values[N * inst.fSlotB]; };
+        auto UniformA = [&]() { return &uniforms[inst.fSlotA]; };
+        float*& tempStackPtr = tempStackMap[currentStack];
 
         switch (inst.fOp) {
             case BuilderOp::label:
@@ -1840,6 +1344,7 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 break;
 
             case BuilderOp::jump:
+            case BuilderOp::branch_if_all_lanes_active:
             case BuilderOp::branch_if_any_lanes_active:
             case BuilderOp::branch_if_no_lanes_active: {
                 SkASSERT(inst.fImmA >= 0 && inst.fImmA < fNumLabels);
@@ -1848,15 +1353,6 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 auto* ctx = alloc->make<SkRasterPipeline_BranchCtx>();
                 ctx->offset = inst.fImmA;
                 pipeline->push_back({(ProgramOp)inst.fOp, ctx});
-                break;
-            }
-            case BuilderOp::branch_if_all_lanes_active: {
-                SkASSERT(inst.fImmA >= 0 && inst.fImmA < fNumLabels);
-                EmitStackRewindForBackwardsBranch(inst.fImmA);
-
-                auto* ctx = alloc->make<SkRasterPipeline_BranchIfAllLanesActiveCtx>();
-                ctx->offset = inst.fImmA;
-                pipeline->push_back({ProgramOp::branch_if_all_lanes_active, ctx});
                 break;
             }
             case BuilderOp::branch_if_no_active_lanes_on_stack_top_equal: {
@@ -1870,11 +1366,10 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 pipeline->push_back({ProgramOp::branch_if_no_active_lanes_eq, ctx});
                 break;
             }
-            case BuilderOp::init_lane_masks: {
-                auto* ctx = alloc->make<SkRasterPipeline_InitLaneMasksCtx>();
-                pipeline->push_back({ProgramOp::init_lane_masks, ctx});
+            case BuilderOp::init_lane_masks:
+                pipeline->push_back({ProgramOp::init_lane_masks, nullptr});
                 break;
-            }
+
             case BuilderOp::store_src_rg:
                 pipeline->push_back({ProgramOp::store_src_rg, SlotA()});
                 break;
@@ -1889,10 +1384,6 @@ void Program::makeStages(TArray<Stage>* pipeline,
 
             case BuilderOp::store_device_xy01:
                 pipeline->push_back({ProgramOp::store_device_xy01, SlotA()});
-                break;
-
-            case BuilderOp::store_immutable_value:
-                
                 break;
 
             case BuilderOp::load_src:
@@ -1913,82 +1404,53 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 this->appendMultiSlotUnaryOp(pipeline, (ProgramOp)inst.fOp, dst, inst.fImmA);
                 break;
             }
-            case ALL_IMMEDIATE_BINARY_OP_CASES: {
-                float* dst = (inst.fSlotA == NA) ? tempStackPtr - (inst.fImmA * N)
-                                                 : SlotA();
-
-                this->appendImmediateBinaryOp(pipeline, alloc, (ProgramOp)inst.fOp,
-                                              OffsetFromBase(dst), inst.fImmB, inst.fImmA);
-                break;
-            }
             case ALL_N_WAY_BINARY_OP_CASES: {
                 float* src = tempStackPtr - (inst.fImmA * N);
                 float* dst = tempStackPtr - (inst.fImmA * 2 * N);
                 this->appendAdjacentNWayBinaryOp(pipeline, alloc, (ProgramOp)inst.fOp,
-                                                 OffsetFromBase(dst), OffsetFromBase(src),
-                                                 inst.fImmA);
+                                                 dst, src, inst.fImmA);
                 break;
             }
             case ALL_MULTI_SLOT_BINARY_OP_CASES: {
                 float* src = tempStackPtr - (inst.fImmA * N);
                 float* dst = tempStackPtr - (inst.fImmA * 2 * N);
                 this->appendAdjacentMultiSlotBinaryOp(pipeline, alloc, (ProgramOp)inst.fOp,
-                                                      basePtr,
-                                                      OffsetFromBase(dst),
-                                                      OffsetFromBase(src),
-                                                      inst.fImmA);
+                                                      dst, src, inst.fImmA);
                 break;
             }
             case ALL_N_WAY_TERNARY_OP_CASES: {
                 float* src1 = tempStackPtr - (inst.fImmA * N);
                 float* src0 = tempStackPtr - (inst.fImmA * 2 * N);
                 float* dst  = tempStackPtr - (inst.fImmA * 3 * N);
-                this->appendAdjacentNWayTernaryOp(pipeline, alloc, (ProgramOp)inst.fOp, basePtr,
-                                                  OffsetFromBase(dst),
-                                                  OffsetFromBase(src0),
-                                                  OffsetFromBase(src1),
-                                                  inst.fImmA);
+                this->appendAdjacentNWayTernaryOp(pipeline, alloc, (ProgramOp)inst.fOp,
+                                                  dst, src0, src1, inst.fImmA);
                 break;
             }
             case ALL_MULTI_SLOT_TERNARY_OP_CASES: {
                 float* src1 = tempStackPtr - (inst.fImmA * N);
                 float* src0 = tempStackPtr - (inst.fImmA * 2 * N);
                 float* dst  = tempStackPtr - (inst.fImmA * 3 * N);
-                this->appendAdjacentMultiSlotTernaryOp(pipeline, alloc,(ProgramOp)inst.fOp, basePtr,
-                                                       OffsetFromBase(dst),
-                                                       OffsetFromBase(src0),
-                                                       OffsetFromBase(src1),
-                                                       inst.fImmA);
+                this->appendAdjacentMultiSlotTernaryOp(pipeline, alloc, (ProgramOp)inst.fOp,
+                                                       dst, src0, src1, inst.fImmA);
                 break;
             }
             case BuilderOp::select: {
                 float* src = tempStackPtr - (inst.fImmA * N);
                 float* dst = tempStackPtr - (inst.fImmA * 2 * N);
-                this->appendCopySlotsMasked(pipeline, alloc,
-                                            OffsetFromBase(dst),
-                                            OffsetFromBase(src),
-                                            inst.fImmA);
+                this->appendCopySlotsMasked(pipeline, alloc, dst, src, inst.fImmA);
                 break;
             }
             case BuilderOp::copy_slot_masked:
-                this->appendCopySlotsMasked(pipeline, alloc,
-                                            OffsetFromBase(SlotA()),
-                                            OffsetFromBase(SlotB()),
-                                            inst.fImmA);
+                this->appendCopySlotsMasked(pipeline, alloc, SlotA(), SlotB(), inst.fImmA);
                 break;
 
             case BuilderOp::copy_slot_unmasked:
-                this->appendCopySlotsUnmasked(pipeline, alloc,
-                                              OffsetFromBase(SlotA()),
-                                              OffsetFromBase(SlotB()),
-                                              inst.fImmA);
+                this->appendCopySlotsUnmasked(pipeline, alloc, SlotA(), SlotB(), inst.fImmA);
                 break;
 
-            case BuilderOp::copy_immutable_unmasked:
-                this->appendCopyImmutableUnmasked(pipeline, alloc, basePtr,
-                                                  OffsetFromBase(SlotA()),
-                                                  OffsetFromBase(ImmutableB()),
-                                                  inst.fImmA);
+            case BuilderOp::zero_slot_unmasked:
+                this->appendMultiSlotUnaryOp(pipeline, ProgramOp::zero_slot_unmasked,
+                                             SlotA(), inst.fImmA);
                 break;
 
             case BuilderOp::refract_4_floats: {
@@ -2010,63 +1472,28 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 pipeline->push_back({(ProgramOp)inst.fOp, dst});
                 break;
             }
-            case BuilderOp::swizzle_1: {
-                
-                
-                int offset = inst.fImmB;
-                SkASSERT(offset >= 0 && offset <= 15);
-                float* dst = tempStackPtr - (inst.fImmA * N);
-                float* src = dst + (offset * N);
-                if (src != dst) {
-                    this->appendCopySlotsUnmasked(pipeline, alloc,
-                                                  OffsetFromBase(dst),
-                                                  OffsetFromBase(src),
-                                                  1);
-                }
-                break;
-            }
+            case BuilderOp::swizzle_1:
             case BuilderOp::swizzle_2:
             case BuilderOp::swizzle_3:
             case BuilderOp::swizzle_4: {
-                SkRasterPipeline_SwizzleCtx ctx;
-                ctx.dst = OffsetFromBase(tempStackPtr - (N * inst.fImmA));
+                auto* ctx = alloc->make<SkRasterPipeline_SwizzleCtx>();
+                ctx->ptr = tempStackPtr - (N * inst.fImmA);
                 
-                unpack_nybbles_to_offsets(inst.fImmB, SkSpan(ctx.offsets));
-                pipeline->push_back({(ProgramOp)inst.fOp, SkRPCtxUtils::Pack(ctx, alloc)});
+                unpack_nybbles_to_offsets(inst.fImmB, SkSpan(ctx->offsets));
+                pipeline->push_back({(ProgramOp)inst.fOp, ctx});
                 break;
             }
             case BuilderOp::shuffle: {
-                int consumed = inst.fImmA;
-                int generated = inst.fImmB;
+                int consumed = inst.fImmA >> 16;
+                int generated = inst.fImmA & 0xFFFF;
 
                 auto* ctx = alloc->make<SkRasterPipeline_ShuffleCtx>();
-                ctx->ptr = reinterpret_cast<int32_t*>(tempStackPtr) - (N * consumed);
+                ctx->ptr = tempStackPtr - (N * consumed);
                 ctx->count = generated;
                 
-                unpack_nybbles_to_offsets(inst.fImmC, SkSpan(&ctx->offsets[0], 8));
-                unpack_nybbles_to_offsets(inst.fImmD, SkSpan(&ctx->offsets[8], 8));
+                unpack_nybbles_to_offsets(inst.fImmB, SkSpan(&ctx->offsets[0], 8));
+                unpack_nybbles_to_offsets(inst.fImmC, SkSpan(&ctx->offsets[8], 8));
                 pipeline->push_back({ProgramOp::shuffle, ctx});
-                break;
-            }
-            case BuilderOp::matrix_multiply_2:
-            case BuilderOp::matrix_multiply_3:
-            case BuilderOp::matrix_multiply_4: {
-                int consumed = (inst.fImmB * inst.fImmC) +  
-                               (inst.fImmA * inst.fImmB) +  
-                               (inst.fImmC * inst.fImmD);   
-
-                SkRasterPipeline_MatrixMultiplyCtx ctx;
-                ctx.dst = OffsetFromBase(tempStackPtr - (N * consumed));
-                ctx.leftColumns  = inst.fImmA;
-                ctx.leftRows     = inst.fImmB;
-                ctx.rightColumns = inst.fImmC;
-                ctx.rightRows    = inst.fImmD;
-                pipeline->push_back({(ProgramOp)inst.fOp, SkRPCtxUtils::Pack(ctx, alloc)});
-                break;
-            }
-            case BuilderOp::exchange_src: {
-                float* dst = tempStackPtr - (4 * N);
-                pipeline->push_back({ProgramOp::exchange_src, dst});
                 break;
             }
             case BuilderOp::push_src_rgba: {
@@ -2079,9 +1506,9 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 pipeline->push_back({ProgramOp::store_dst, dst});
                 break;
             }
-            case BuilderOp::push_device_xy01: {
-                float* dst = tempStackPtr;
-                pipeline->push_back({ProgramOp::store_device_xy01, dst});
+            case BuilderOp::pop_src_rg: {
+                float* src = tempStackPtr - (2 * N);
+                pipeline->push_back({ProgramOp::load_src_rg, src});
                 break;
             }
             case BuilderOp::pop_src_rgba: {
@@ -2096,22 +1523,10 @@ void Program::makeStages(TArray<Stage>* pipeline,
             }
             case BuilderOp::push_slots: {
                 float* dst = tempStackPtr;
-                this->appendCopySlotsUnmasked(pipeline, alloc,
-                                              OffsetFromBase(dst),
-                                              OffsetFromBase(SlotA()),
-                                              inst.fImmA);
-                break;
-            }
-            case BuilderOp::push_immutable: {
-                float* dst = tempStackPtr;
-                this->appendCopyImmutableUnmasked(pipeline, alloc, basePtr,
-                                                  OffsetFromBase(dst),
-                                                  OffsetFromBase(ImmutableA()),
-                                                  inst.fImmA);
+                this->appendCopySlotsUnmasked(pipeline, alloc, dst, SlotA(), inst.fImmA);
                 break;
             }
             case BuilderOp::copy_stack_to_slots_indirect:
-            case BuilderOp::push_immutable_indirect:
             case BuilderOp::push_slots_indirect:
             case BuilderOp::push_uniform_indirect: {
                 
@@ -2126,43 +1541,29 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 ctx->slots = inst.fImmA;
                 if (inst.fOp == BuilderOp::push_slots_indirect) {
                     op = ProgramOp::copy_from_indirect_unmasked;
-                    ctx->src = reinterpret_cast<const int32_t*>(SlotA());
-                    ctx->dst = reinterpret_cast<int32_t*>(tempStackPtr);
-                } else if (inst.fOp == BuilderOp::push_immutable_indirect) {
-                    
-                    op = ProgramOp::copy_from_indirect_uniform_unmasked;
-                    ctx->src = reinterpret_cast<const int32_t*>(ImmutableA());
-                    ctx->dst = reinterpret_cast<int32_t*>(tempStackPtr);
+                    ctx->src = SlotA();
+                    ctx->dst = tempStackPtr;
                 } else if (inst.fOp == BuilderOp::push_uniform_indirect) {
                     op = ProgramOp::copy_from_indirect_uniform_unmasked;
-                    ctx->src = reinterpret_cast<const int32_t*>(UniformA());
-                    ctx->dst = reinterpret_cast<int32_t*>(tempStackPtr);
+                    ctx->src = UniformA();
+                    ctx->dst = tempStackPtr;
                 } else {
                     op = ProgramOp::copy_to_indirect_masked;
-                    ctx->src = reinterpret_cast<const int32_t*>(tempStackPtr) - (ctx->slots * N);
-                    ctx->dst = reinterpret_cast<int32_t*>(SlotA());
+                    ctx->src = tempStackPtr - (ctx->slots * N);
+                    ctx->dst = SlotA();
                 }
                 pipeline->push_back({op, ctx});
                 break;
             }
-            case BuilderOp::push_uniform:
-            case BuilderOp::copy_uniform_to_slots_unmasked: {
-                const float* src = UniformA();
-                float* dst = (inst.fOp == BuilderOp::push_uniform) ? tempStackPtr : SlotB();
-
-                for (int remaining = inst.fImmA; remaining > 0; remaining -= 4) {
-                    auto ctx = alloc->make<SkRasterPipeline_UniformCtx>();
-                    ctx->dst = reinterpret_cast<int32_t*>(dst);
-                    ctx->src = reinterpret_cast<const int32_t*>(src);
-                    switch (remaining) {
-                        case 1:  pipeline->push_back({ProgramOp::copy_uniform,    ctx}); break;
-                        case 2:  pipeline->push_back({ProgramOp::copy_2_uniforms, ctx}); break;
-                        case 3:  pipeline->push_back({ProgramOp::copy_3_uniforms, ctx}); break;
-                        default: pipeline->push_back({ProgramOp::copy_4_uniforms, ctx}); break;
-                    }
-                    dst += 4 * N;
-                    src += 4;
-                }
+            case BuilderOp::push_uniform: {
+                float* dst = tempStackPtr;
+                this->appendCopyConstants(pipeline, alloc, dst, UniformA(), inst.fImmA);
+                break;
+            }
+            case BuilderOp::push_zeros: {
+                float* dst = tempStackPtr;
+                this->appendMultiSlotUnaryOp(pipeline, ProgramOp::zero_slot_unmasked, dst,
+                                             inst.fImmA);
                 break;
             }
             case BuilderOp::push_condition_mask: {
@@ -2175,10 +1576,9 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 pipeline->push_back({ProgramOp::load_condition_mask, src});
                 break;
             }
-            case BuilderOp::merge_condition_mask:
-            case BuilderOp::merge_inv_condition_mask: {
+            case BuilderOp::merge_condition_mask: {
                 float* ptr = tempStackPtr - (2 * N);
-                pipeline->push_back({(ProgramOp)inst.fOp, ptr});
+                pipeline->push_back({ProgramOp::merge_condition_mask, ptr});
                 break;
             }
             case BuilderOp::push_loop_mask: {
@@ -2224,38 +1624,27 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 break;
 
             case BuilderOp::copy_constant:
-            case BuilderOp::push_constant: {
-                float* dst = (inst.fOp == BuilderOp::copy_constant) ? SlotA() : tempStackPtr;
-                
-                for (int remaining = inst.fImmA; remaining > 0; remaining -= 4) {
-                    SkRasterPipeline_ConstantCtx ctx;
-                    ctx.dst = OffsetFromBase(dst);
-                    ctx.value = inst.fImmB;
-                    void* ptr = SkRPCtxUtils::Pack(ctx, alloc);
-                    switch (remaining) {
-                        case 1:  pipeline->push_back({ProgramOp::copy_constant,     ptr}); break;
-                        case 2:  pipeline->push_back({ProgramOp::splat_2_constants, ptr}); break;
-                        case 3:  pipeline->push_back({ProgramOp::splat_3_constants, ptr}); break;
-                        default: pipeline->push_back({ProgramOp::splat_4_constants, ptr}); break;
-                    }
-                    dst += 4 * N;
+            case BuilderOp::push_literal: {
+                float* dst = (inst.fOp == BuilderOp::push_literal) ? tempStackPtr : SlotA();
+                int* constantPtr;
+                if (int** lookup = constantLookupMap.find(inst.fImmA)) {
+                    constantPtr = *lookup;
+                } else {
+                    constantPtr = alloc->make<int>(inst.fImmA);
+                    constantLookupMap[inst.fImmA] = constantPtr;
                 }
+                SkASSERT(constantPtr);
+                this->appendCopyConstants(pipeline, alloc, dst, (float*)constantPtr,1);
                 break;
             }
             case BuilderOp::copy_stack_to_slots: {
                 float* src = tempStackPtr - (inst.fImmB * N);
-                this->appendCopySlotsMasked(pipeline, alloc,
-                                            OffsetFromBase(SlotA()),
-                                            OffsetFromBase(src),
-                                            inst.fImmA);
+                this->appendCopySlotsMasked(pipeline, alloc, SlotA(), src, inst.fImmA);
                 break;
             }
             case BuilderOp::copy_stack_to_slots_unmasked: {
                 float* src = tempStackPtr - (inst.fImmB * N);
-                this->appendCopySlotsUnmasked(pipeline, alloc,
-                                              OffsetFromBase(SlotA()),
-                                              OffsetFromBase(src),
-                                              inst.fImmA);
+                this->appendCopySlotsUnmasked(pipeline, alloc, SlotA(), src, inst.fImmA);
                 break;
             }
             case BuilderOp::swizzle_copy_stack_to_slots: {
@@ -2265,8 +1654,8 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 
                 auto stage = (ProgramOp)((int)ProgramOp::swizzle_copy_slot_masked + inst.fImmA - 1);
                 auto* ctx = alloc->make<SkRasterPipeline_SwizzleCopyCtx>();
-                ctx->src = reinterpret_cast<const int32_t*>(tempStackPtr) - (inst.fImmC * N);
-                ctx->dst = reinterpret_cast<int32_t*>(SlotA());
+                ctx->src = tempStackPtr - (inst.fImmC * N);
+                ctx->dst = SlotA();
                 unpack_nybbles_to_offsets(inst.fImmB, SkSpan(ctx->offsets));
                 pipeline->push_back({stage, ctx});
                 break;
@@ -2274,10 +1663,7 @@ void Program::makeStages(TArray<Stage>* pipeline,
             case BuilderOp::push_clone: {
                 float* src = tempStackPtr - (inst.fImmB * N);
                 float* dst = tempStackPtr;
-                this->appendCopySlotsUnmasked(pipeline, alloc,
-                                              OffsetFromBase(dst),
-                                              OffsetFromBase(src),
-                                              inst.fImmA);
+                this->appendCopySlotsUnmasked(pipeline, alloc, dst, src, inst.fImmA);
                 break;
             }
             case BuilderOp::push_clone_from_stack: {
@@ -2287,10 +1673,7 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 float* sourceStackPtr = tempStackMap[inst.fImmB];
                 float* src = sourceStackPtr - (inst.fImmC * N);
                 float* dst = tempStackPtr;
-                this->appendCopySlotsUnmasked(pipeline, alloc,
-                                              OffsetFromBase(dst),
-                                              OffsetFromBase(src),
-                                              inst.fImmA);
+                this->appendCopySlotsUnmasked(pipeline, alloc, dst, src, inst.fImmA);
                 break;
             }
             case BuilderOp::push_clone_indirect_from_stack: {
@@ -2301,8 +1684,8 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 float* sourceStackPtr = tempStackMap[inst.fImmB];
 
                 auto* ctx = alloc->make<SkRasterPipeline_CopyIndirectCtx>();
-                ctx->dst = reinterpret_cast<int32_t*>(tempStackPtr);
-                ctx->src = reinterpret_cast<const int32_t*>(sourceStackPtr) - (inst.fImmC * N);
+                ctx->dst = tempStackPtr;
+                ctx->src = sourceStackPtr - (inst.fImmC * N);
                 ctx->indirectOffset =
                         reinterpret_cast<const uint32_t*>(tempStackMap[inst.fImmD]) - (1 * N);
                 ctx->indirectLimit = inst.fImmC - inst.fImmA;
@@ -2318,8 +1701,8 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 
                 
                 auto* ctx = alloc->make<SkRasterPipeline_SwizzleCopyIndirectCtx>();
-                ctx->src = reinterpret_cast<const int32_t*>(tempStackPtr) - (inst.fImmC * N);
-                ctx->dst = reinterpret_cast<int32_t*>(SlotA());
+                ctx->src = tempStackPtr - (inst.fImmC * N);
+                ctx->dst = SlotA();
                 ctx->indirectOffset =
                         reinterpret_cast<const uint32_t*>(tempStackMap[inst.fImmD]) - (1 * N);
                 ctx->indirectLimit =
@@ -2330,18 +1713,17 @@ void Program::makeStages(TArray<Stage>* pipeline,
                 break;
             }
             case BuilderOp::case_op: {
-                SkRasterPipeline_CaseOpCtx ctx;
-                ctx.expectedValue = inst.fImmA;
-                ctx.offset = OffsetFromBase(tempStackPtr - (2 * N));
-                pipeline->push_back({ProgramOp::case_op, SkRPCtxUtils::Pack(ctx, alloc)});
+                auto* ctx = alloc->make<SkRasterPipeline_CaseOpCtx>();
+                ctx->ptr = reinterpret_cast<int*>(tempStackPtr - 2 * N);
+                ctx->expectedValue = inst.fImmA;
+                pipeline->push_back({ProgramOp::case_op, ctx});
                 break;
             }
-            case BuilderOp::continue_op:
-                pipeline->push_back({ProgramOp::continue_op, tempStackMap[inst.fImmA] - (1 * N)});
+            case BuilderOp::discard_stack:
                 break;
 
-            case BuilderOp::pad_stack:
-            case BuilderOp::discard_stack:
+            case BuilderOp::set_current_stack:
+                currentStack = inst.fImmA;
                 break;
 
             case BuilderOp::invoke_shader:
@@ -2352,61 +1734,17 @@ void Program::makeStages(TArray<Stage>* pipeline,
 
             case BuilderOp::invoke_to_linear_srgb:
             case BuilderOp::invoke_from_linear_srgb:
-                pipeline->push_back({(ProgramOp)inst.fOp, tempStackMap[inst.fImmA] - (4 * N)});
+                pipeline->push_back({(ProgramOp)inst.fOp, nullptr});
                 break;
 
-            case BuilderOp::trace_line: {
-                auto* ctx = AllocTraceContext((SkRasterPipeline_TraceLineCtx*)nullptr);
-                ctx->lineNumber = inst.fImmB;
-                pipeline->push_back({ProgramOp::trace_line, ctx});
-                break;
-            }
-            case BuilderOp::trace_scope: {
-                auto* ctx = AllocTraceContext((SkRasterPipeline_TraceScopeCtx*)nullptr);
-                ctx->delta = inst.fImmB;
-                pipeline->push_back({ProgramOp::trace_scope, ctx});
-                break;
-            }
-            case BuilderOp::trace_enter:
-            case BuilderOp::trace_exit: {
-                auto* ctx = AllocTraceContext((SkRasterPipeline_TraceFuncCtx*)nullptr);
-                ctx->funcIdx = inst.fImmB;
-                pipeline->push_back({(ProgramOp)inst.fOp, ctx});
-                break;
-            }
-            case BuilderOp::trace_var:
-            case BuilderOp::trace_var_indirect: {
-                
-                
-                
-                
-                
-                auto* ctx = AllocTraceContext((SkRasterPipeline_TraceVarCtx*)nullptr);
-                ctx->slotIdx = inst.fSlotA;
-                ctx->numSlots = inst.fImmB;
-                ctx->data = reinterpret_cast<int*>(SlotA());
-                if (inst.fOp == BuilderOp::trace_var_indirect) {
-                    ctx->indirectOffset =
-                            reinterpret_cast<const uint32_t*>(tempStackMap[inst.fImmC]) - (1 * N);
-                    ctx->indirectLimit = inst.fSlotB - inst.fSlotA - inst.fImmB;
-                } else {
-                    ctx->indirectOffset = nullptr;
-                    ctx->indirectLimit = 0;
-                }
-                pipeline->push_back({ProgramOp::trace_var, ctx});
-                break;
-            }
             default:
                 SkDEBUGFAILF("Raster Pipeline: unsupported instruction %d", (int)inst.fOp);
                 break;
         }
 
-        int stackUsage = stack_usage(inst);
-        if (stackUsage != 0) {
-            tempStackPtr += stackUsage * N;
-            SkASSERT(tempStackPtr >= slots.stack.begin());
-            SkASSERT(tempStackPtr <= slots.stack.end());
-        }
+        tempStackPtr += stack_usage(inst) * N;
+        SkASSERT(tempStackPtr >= slots.stack.begin());
+        SkASSERT(tempStackPtr <= slots.stack.end());
 
         
         
@@ -2420,554 +1758,406 @@ void Program::makeStages(TArray<Stage>* pipeline,
     }
 }
 
-class Program::Dumper {
-public:
-    Dumper(const Program& p) : fProgram(p) {}
 
-    void dump(SkWStream* out, bool writeInstructionCount);
+SkTArray<std::string> build_unique_slot_name_list(const SkRPDebugTrace* debugTrace) {
+    SkTArray<std::string> slotName;
+    if (debugTrace) {
+        slotName.reserve_back(debugTrace->fSlotInfo.size());
 
-    
-    void buildLabelToStageMap() {
-        for (int index = 0; index < fStages.size(); ++index) {
-            if (fStages[index].op == ProgramOp::label) {
-                int labelID = sk_bit_cast<intptr_t>(fStages[index].ctx);
-                SkASSERT(!fLabelToStageMap.find(labelID));
-                fLabelToStageMap[labelID] = index;
-            }
-        }
-    }
+        
+        SkTHashMap<std::string_view, SkTHashMap<int, std::string>> uniqueNameMap;
 
-    
-    
-    void buildUniqueSlotNameList() {
-        if (fProgram.fDebugTrace) {
-            fSlotNameList.reserve_exact(fProgram.fDebugTrace->fSlotInfo.size());
+        for (const SlotDebugInfo& slotInfo : debugTrace->fSlotInfo) {
+            
+            int pos = slotInfo.pos.valid() ? slotInfo.pos.startOffset() : 0;
+            SkTHashMap<int, std::string>& positionMap = uniqueNameMap[slotInfo.name];
+            std::string& uniqueName = positionMap[pos];
 
             
-            THashMap<std::string_view, THashMap<int, std::string>> uniqueNameMap;
-
-            for (const SlotDebugInfo& slotInfo : fProgram.fDebugTrace->fSlotInfo) {
+            if (uniqueName.empty()) {
                 
-                int pos = slotInfo.pos.valid() ? slotInfo.pos.startOffset() : 0;
-                THashMap<int, std::string>& positionMap = uniqueNameMap[slotInfo.name];
-                std::string& uniqueName = positionMap[pos];
+                uniqueName = slotInfo.name;
 
                 
-                if (uniqueName.empty()) {
-                    
-                    uniqueName = slotInfo.name;
-
-                    
-                    int subscript = positionMap.count() - 1;
-                    if (subscript > 0) {
-                        for (char digit : std::to_string(subscript)) {
-                            
-                            uniqueName.push_back((char)0xE2);
-                            uniqueName.push_back((char)0x82);
-                            uniqueName.push_back((char)(0x80 + digit - '0'));
-                        }
+                int subscript = positionMap.count() - 1;
+                if (subscript > 0) {
+                    for (char digit : std::to_string(subscript)) {
+                        
+                        uniqueName.push_back((char)0xE2);
+                        uniqueName.push_back((char)0x82);
+                        uniqueName.push_back((char)(0x80 + digit - '0'));
                     }
                 }
-
-                fSlotNameList.push_back(uniqueName);
             }
+
+            slotName.push_back(uniqueName);
         }
     }
+    return slotName;
+}
 
-    
-    std::string branchOffset(const SkRasterPipeline_BranchCtx* ctx, int index) const {
-        
-        int labelID = ctx->offset;
-        const int* targetIndex = fLabelToStageMap.find(labelID);
-        SkASSERT(targetIndex);
-        return SkSL::String::printf("%+d (label %d at #%d)", *targetIndex - index, labelID,
-                                                             *targetIndex + 1);
-    }
-
-    
-    std::string imm(float immFloat, bool showAsFloat = true) const {
-        
-        if (sk_bit_cast<int32_t>(immFloat) == 0) {
-            return "0";
-        }
-        
-        uint32_t immUnsigned;
-        memcpy(&immUnsigned, &immFloat, sizeof(uint32_t));
-        auto text = SkSL::String::printf("0x%08X", immUnsigned);
-
-        
-        if (showAsFloat && std::isfinite(immFloat)) {
-            text += " (";
-            text += skstd::to_string(immFloat);
-            text += ')';
-        }
-        return text;
-    }
-
-    
-    std::string immCtx(const void* ctx, bool showAsFloat = true) const {
-        float f;
-        memcpy(&f, &ctx, sizeof(float));
-        return this->imm(f, showAsFloat);
-    }
-
-    
-    std::string asRange(int first, int count) const {
-        std::string text = std::to_string(first);
-        if (count > 1) {
-            text += ".." + std::to_string(first + count - 1);
-        }
-        return text;
-    }
-
-    
-    
-    
-    
-    
-    std::string slotOrUniformName(SkSpan<const SlotDebugInfo> debugInfo,
-                                  SkSpan<const std::string> names,
-                                  SlotRange range) const {
-        SkASSERT(range.index >= 0 && (range.index + range.count) <= (int)debugInfo.size());
-
-        std::string text;
-        auto separator = SkSL::String::Separator();
-        while (range.count > 0) {
-            const SlotDebugInfo& slotInfo = debugInfo[range.index];
-            text += separator();
-            text += names.empty() ? slotInfo.name : names[range.index];
-
-            
-            int entireVariable = slotInfo.columns * slotInfo.rows;
-            int slotsToChomp = std::min(range.count, entireVariable - slotInfo.componentIndex);
-            
-            if (slotsToChomp != entireVariable) {
-                
-                text += '(' + this->asRange(slotInfo.componentIndex, slotsToChomp) + ')';
-            }
-            range.index += slotsToChomp;
-            range.count -= slotsToChomp;
-        }
-
-        return text;
-    }
-
-    
-    std::string slotName(SlotRange range) const {
-        return this->slotOrUniformName(fProgram.fDebugTrace->fSlotInfo, fSlotNameList, range);
-    }
-
-    
-    std::string uniformName(SlotRange range) const {
-        return this->slotOrUniformName(fProgram.fDebugTrace->fUniformInfo, {}, range);
-    }
-
-    
-    std::string uniformPtrCtx(const float* ptr, int numSlots) const {
-        const float* end = ptr + numSlots;
-        if (ptr >= fUniforms.begin() && end <= fUniforms.end()) {
-            int uniformIdx = ptr - fUniforms.begin();
-            if (fProgram.fDebugTrace) {
-                
-                std::string name = this->uniformName({uniformIdx, numSlots});
-                if (!name.empty()) {
-                    return name;
-                }
-            }
-            
-            return 'u' + this->asRange(uniformIdx, numSlots);
-        }
-        return {};
-    }
-
-    
-    std::string valuePtrCtx(const float* ptr, int numSlots) const {
-        const float* end = ptr + (N * numSlots);
-        if (ptr >= fSlots.values.begin() && end <= fSlots.values.end()) {
-            int valueIdx = ptr - fSlots.values.begin();
-            SkASSERT((valueIdx % N) == 0);
-            valueIdx /= N;
-            if (fProgram.fDebugTrace) {
-                
-                std::string name = this->slotName({valueIdx, numSlots});
-                if (!name.empty()) {
-                    return name;
-                }
-            }
-            
-            return 'v' + this->asRange(valueIdx, numSlots);
-        }
-        return {};
-    }
-
-    
-    std::string immutablePtrCtx(const float* ptr, int numSlots) const {
-        const float* end = ptr + numSlots;
-        if (ptr >= fSlots.immutable.begin() && end <= fSlots.immutable.end()) {
-            int index = ptr - fSlots.immutable.begin();
-            return 'i' + this->asRange(index, numSlots) + ' ' +
-                   this->multiImmCtx(ptr, numSlots);
-        }
-        return {};
-    }
-
-    
-    std::string multiImmCtx(const float* ptr, int count) const {
-        
-        if (std::string text = this->uniformPtrCtx(ptr, count); !text.empty()) {
-            return text;
-        }
-        
-        if (count == 1) {
-            return '[' + this->imm(*ptr) + ']';
-        }
-        
-        std::string text = "[";
-        auto separator = SkSL::String::Separator();
-        while (count--) {
-            text += separator();
-            text += this->imm(*ptr++);
-        }
-        return text + ']';
-    }
-
-    
-    std::string ptrCtx(const void* ctx, int numSlots) const {
-        const float *ctxAsSlot = static_cast<const float*>(ctx);
-        
-        if (std::string uniform = this->uniformPtrCtx(ctxAsSlot, numSlots); !uniform.empty()) {
-            return uniform;
-        }
-        if (std::string value = this->valuePtrCtx(ctxAsSlot, numSlots); !value.empty()) {
-            return value;
-        }
-        if (std::string value = this->immutablePtrCtx(ctxAsSlot, numSlots); !value.empty()) {
-            return value;
-        }
-        
-        if (ctxAsSlot >= fSlots.stack.begin() && ctxAsSlot < fSlots.stack.end()) {
-            int stackIdx = ctxAsSlot - fSlots.stack.begin();
-            SkASSERT((stackIdx % N) == 0);
-            return '$' + this->asRange(stackIdx / N, numSlots);
-        }
-        
-        return "ExternalPtr(" + this->asRange(0, numSlots) + ")";
-    }
-
-    
-    std::byte* offsetToPtr(SkRPOffset offset) const {
-        return (std::byte*)fSlots.values.data() + offset;
-    }
-
-    
-    std::string offsetCtx(SkRPOffset offset, int numSlots) const {
-        return this->ptrCtx(this->offsetToPtr(offset), numSlots);
-    }
-
-    
-    std::tuple<std::string, std::string> constantCtx(const void* v,
-                                                     int slots,
-                                                     bool showAsFloat = true) const {
-        auto ctx = SkRPCtxUtils::Unpack((const SkRasterPipeline_ConstantCtx*)v);
-        return {this->offsetCtx(ctx.dst, slots),
-                this->imm(sk_bit_cast<float>(ctx.value), showAsFloat)};
-    }
-
-    
-    
-    std::tuple<std::string, std::string> binaryOpCtx(const void* v, int numSlots) const {
-        auto ctx = SkRPCtxUtils::Unpack((const SkRasterPipeline_BinaryOpCtx*)v);
-        return {this->offsetCtx(ctx.dst, numSlots),
-                this->offsetCtx(ctx.src, numSlots)};
-    }
-
-    
-    
-    std::tuple<std::string, std::string> copyUniformCtx(const void* v, int numSlots) const {
-        const auto *ctx = static_cast<const SkRasterPipeline_UniformCtx*>(v);
-        return {this->ptrCtx(ctx->dst, numSlots),
-                this->multiImmCtx(reinterpret_cast<const float*>(ctx->src), numSlots)};
-    }
-
-    
-    std::tuple<std::string, std::string> adjacentPtrCtx(const void* ctx, int numSlots) const {
-        const float *ctxAsSlot = static_cast<const float*>(ctx);
-        return std::make_tuple(this->ptrCtx(ctxAsSlot, numSlots),
-                               this->ptrCtx(ctxAsSlot + (N * numSlots), numSlots));
-    }
-
-    
-    std::tuple<std::string, std::string> adjacentOffsetCtx(SkRPOffset offset, int numSlots) const {
-        return this->adjacentPtrCtx((std::byte*)fSlots.values.data() + offset, numSlots);
-    }
-
-    
-    
-    std::tuple<std::string, std::string> adjacentBinaryOpCtx(const void* v) const {
-        auto ctx = SkRPCtxUtils::Unpack((const SkRasterPipeline_BinaryOpCtx*)v);
-        int numSlots = (ctx.src - ctx.dst) / (N * sizeof(float));
-        return this->adjacentOffsetCtx(ctx.dst, numSlots);
-    }
-
-    
-    std::tuple<std::string, std::string, std::string> adjacent3PtrCtx(const void* ctx,
-                                                                      int numSlots) const {
-        const float *ctxAsSlot = static_cast<const float*>(ctx);
-        return {this->ptrCtx(ctxAsSlot, numSlots),
-                this->ptrCtx(ctxAsSlot + (N * numSlots), numSlots),
-                this->ptrCtx(ctxAsSlot + (2 * N * numSlots), numSlots)};
-    }
-
-    
-    std::tuple<std::string, std::string, std::string> adjacent3OffsetCtx(SkRPOffset offset,
-                                                                         int numSlots) const {
-        return this->adjacent3PtrCtx((std::byte*)fSlots.values.data() + offset, numSlots);
-    }
-
-    
-    std::tuple<std::string, std::string, std::string> adjacentTernaryOpCtx(const void* v) const {
-        auto ctx = SkRPCtxUtils::Unpack((const SkRasterPipeline_TernaryOpCtx*)v);
-        int numSlots = ctx.delta / (sizeof(float) * N);
-        return this->adjacent3OffsetCtx(ctx.dst, numSlots);
-    }
-
-    
-    template <typename T>
-    std::string swizzleOffsetSpan(SkSpan<T> offsets) const {
-        std::string src;
-        for (uint16_t offset : offsets) {
-            if (offset == (0 * N * sizeof(float))) {
-                src.push_back('x');
-            } else if (offset == (1 * N * sizeof(float))) {
-                src.push_back('y');
-            } else if (offset == (2 * N * sizeof(float))) {
-                src.push_back('z');
-            } else if (offset == (3 * N * sizeof(float))) {
-                src.push_back('w');
-            } else {
-                src.push_back('?');
-            }
-        }
-        return src;
-    }
-
-    
-    
-    
-    
-    template <typename T>
-    size_t swizzleWidth(SkSpan<T> offsets) const {
-        size_t highestComponent = *std::max_element(offsets.begin(), offsets.end()) /
-                                  (N * sizeof(float));
-        size_t swizzleWidth = offsets.size();
-        return std::max(swizzleWidth, highestComponent + 1);
-    }
-
-    
-    template <typename T>
-    std::string swizzlePtr(const void* ptr, SkSpan<T> offsets) const {
-        return "(" + this->ptrCtx(ptr, this->swizzleWidth(SkSpan(offsets))) + ")." +
-               this->swizzleOffsetSpan(SkSpan(offsets));
-    }
-
-    
-    std::tuple<std::string, std::string> swizzleCtx(ProgramOp op, const void* v) const {
-        auto ctx = SkRPCtxUtils::Unpack((const SkRasterPipeline_SwizzleCtx*)v);
-        int destSlots = (int)op - (int)BuilderOp::swizzle_1 + 1;
-        return {this->offsetCtx(ctx.dst, destSlots),
-                this->swizzlePtr(this->offsetToPtr(ctx.dst), SkSpan(ctx.offsets, destSlots))};
-    }
-
-    
-    std::tuple<std::string, std::string> swizzleCopyCtx(ProgramOp op, const void* v) const {
-        const auto* ctx = static_cast<const SkRasterPipeline_SwizzleCopyCtx*>(v);
-        int destSlots = (int)op - (int)BuilderOp::swizzle_copy_slot_masked + 1;
-
-        return {this->swizzlePtr(ctx->dst, SkSpan(ctx->offsets, destSlots)),
-                this->ptrCtx(ctx->src, destSlots)};
-    }
-
-    
-    std::tuple<std::string, std::string> shuffleCtx(const void* v) const {
-        const auto* ctx = static_cast<const SkRasterPipeline_ShuffleCtx*>(v);
-
-        std::string dst = this->ptrCtx(ctx->ptr, ctx->count);
-        std::string src = "(" + dst + ")[";
-        for (int index = 0; index < ctx->count; ++index) {
-            if (ctx->offsets[index] % (N * sizeof(float))) {
-                src.push_back('?');
-            } else {
-                src += std::to_string(ctx->offsets[index] / (N * sizeof(float)));
-            }
-            src.push_back(' ');
-        }
-        src.back() = ']';
-        return std::make_tuple(dst, src);
-    }
-
-    
-    std::tuple<std::string, std::string, std::string> matrixMultiply(const void* v) const {
-        auto ctx = SkRPCtxUtils::Unpack((const SkRasterPipeline_MatrixMultiplyCtx*)v);
-        int leftMatrix = ctx.leftColumns * ctx.leftRows;
-        int rightMatrix = ctx.rightColumns * ctx.rightRows;
-        int resultMatrix = ctx.rightColumns * ctx.leftRows;
-        SkRPOffset leftOffset = ctx.dst + (ctx.rightColumns * ctx.leftRows * sizeof(float) * N);
-        SkRPOffset rightOffset = leftOffset + (ctx.leftColumns * ctx.leftRows * sizeof(float) * N);
-        return {SkSL::String::printf("mat%dx%d(%s)",
-                                     ctx.rightColumns,
-                                     ctx.leftRows,
-                                     this->offsetCtx(ctx.dst, resultMatrix).c_str()),
-                SkSL::String::printf("mat%dx%d(%s)",
-                                     ctx.leftColumns,
-                                     ctx.leftRows,
-                                     this->offsetCtx(leftOffset, leftMatrix).c_str()),
-                SkSL::String::printf("mat%dx%d(%s)",
-                                     ctx.rightColumns,
-                                     ctx.rightRows,
-                                     this->offsetCtx(rightOffset, rightMatrix).c_str())};
-    }
-
-private:
-    const int N = SkOpts::raster_pipeline_highp_stride;
-    const Program& fProgram;
-    TArray<Stage> fStages;
-    TArray<std::string> fSlotNameList;
-    THashMap<int, int> fLabelToStageMap;  
-    SlotData fSlots;
-    SkSpan<float> fUniforms;
-};
-
-void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
-    using POp = ProgramOp;
-
+void Program::dump(SkWStream* out) const {
     
     
     
     SkArenaAlloc alloc(1000);
-    fSlots = fProgram.allocateSlotData(&alloc);
-    float* uniformPtr = alloc.makeArray<float>(fProgram.fNumUniformSlots);
-    fUniforms = SkSpan(uniformPtr, fProgram.fNumUniformSlots);
+    const int N = SkOpts::raster_pipeline_highp_stride;
+    SlotData slots = this->allocateSlotData(&alloc);
+    float* uniformPtr = alloc.makeArray<float>(fNumUniformSlots);
+    SkSpan<float> uniforms = SkSpan(uniformPtr, fNumUniformSlots);
 
     
-    fProgram.makeStages(&fStages, &alloc, fUniforms, fSlots);
+    SkTArray<Stage> stages;
+    this->makeStages(&stages, &alloc, uniforms, slots);
 
     
-    this->buildLabelToStageMap();
-    this->buildUniqueSlotNameList();
+    SkTHashMap<int, int> labelToStageMap; 
+    for (int index = 0; index < stages.size(); ++index) {
+        if (stages[index].op == ProgramOp::label) {
+            int labelID = sk_bit_cast<intptr_t>(stages[index].ctx);
+            SkASSERT(!labelToStageMap.find(labelID));
+            labelToStageMap[labelID] = index;
+        }
+    }
 
     
-    if (writeInstructionCount) {
-        int invocationCount = 0, instructionCount = 0;
-        for (const Stage& stage : fStages) {
-            switch (stage.op) {
-                case POp::label:
-                    
-                    break;
+    
+    SkTArray<std::string> slotName = build_unique_slot_name_list(fDebugTrace);
 
-                case POp::invoke_shader:
-                case POp::invoke_color_filter:
-                case POp::invoke_blender:
-                case POp::invoke_to_linear_srgb:
-                case POp::invoke_from_linear_srgb:
-                    ++invocationCount;
-                    break;
+    
+    for (int index = 0; index < stages.size(); ++index) {
+        const Stage& stage = stages[index];
 
-                default:
-                    ++instructionCount;
-                    break;
+        
+        auto BranchOffset = [&](const SkRasterPipeline_BranchCtx* ctx) -> std::string {
+            
+            int labelID = ctx->offset;
+            SkASSERT(labelToStageMap.find(labelID));
+            int labelIndex = labelToStageMap[labelID];
+            return SkSL::String::printf("%+d (label %d at #%d)",
+                                        labelIndex - index, labelID, labelIndex + 1);
+        };
+
+        
+        auto Imm = [&](float immFloat, bool showAsFloat = true) -> std::string {
+            
+            uint32_t immUnsigned;
+            memcpy(&immUnsigned, &immFloat, sizeof(uint32_t));
+            auto text = SkSL::String::printf("0x%08X", immUnsigned);
+
+            
+            if (showAsFloat && std::isfinite(immFloat)) {
+                text += " (";
+                text += skstd::to_string(immFloat);
+                text += ")";
             }
-        }
+            return text;
+        };
 
-        out->writeText(std::to_string(instructionCount).c_str());
-        out->writeText(" instructions");
-        if (invocationCount > 0) {
-            out->writeText(", ");
-            out->writeText(std::to_string(invocationCount).c_str());
-            out->writeText(" invocations");
-        }
-        out->writeText("\n\n");
-    }
+        
+        auto ImmCtx = [&](const void* ctx, bool showAsFloat = true) -> std::string {
+            float f;
+            memcpy(&f, &ctx, sizeof(float));
+            return Imm(f, showAsFloat);
+        };
 
-    
-    const char* header = "[immutable slots]\n";
-    const char* footer = "";
-    for (const Instruction& inst : fProgram.fInstructions) {
-        if (inst.fOp == BuilderOp::store_immutable_value) {
-            out->writeText(header);
-            out->writeText("i");
-            out->writeText(std::to_string(inst.fSlotA).c_str());
-            out->writeText(" = ");
-            out->writeText(this->imm(sk_bit_cast<float>(inst.fImmA)).c_str());
-            out->writeText("\n");
+        
+        auto AsRange = [](int first, int count) -> std::string {
+            std::string text = std::to_string(first);
+            if (count > 1) {
+                text += ".." + std::to_string(first + count - 1);
+            }
+            return text;
+        };
 
-            header = "";
-            footer = "\n";
-        }
-    }
-    out->writeText(footer);
+        
+        
+        
+        
+        
+        auto SlotName = [&](SkSpan<const SlotDebugInfo> debugInfo,
+                            SkSpan<const std::string> names,
+                            SlotRange range) -> std::string {
+            SkASSERT(range.index >= 0 && (range.index + range.count) <= (int)debugInfo.size());
 
-    
-    for (int index = 0; index < fStages.size(); ++index) {
-        const Stage& stage = fStages[index];
+            std::string text;
+            auto separator = SkSL::String::Separator();
+            while (range.count > 0) {
+                const SlotDebugInfo& slotInfo = debugInfo[range.index];
+                text += separator();
+                text += names.empty() ? slotInfo.name : names[range.index];
+
+                
+                int entireVariable = slotInfo.columns * slotInfo.rows;
+                int slotsToChomp = std::min(range.count, entireVariable - slotInfo.componentIndex);
+                
+                if (slotsToChomp != entireVariable) {
+                    
+                    text += "(" + AsRange(slotInfo.componentIndex, slotsToChomp) + ")";
+                }
+                range.index += slotsToChomp;
+                range.count -= slotsToChomp;
+            }
+
+            return text;
+        };
+
+        
+        auto UniformPtrCtx = [&](const float* ptr, int numSlots) -> std::string {
+            const float* end = ptr + numSlots;
+            if (ptr >= uniforms.begin() && end <= uniforms.end()) {
+                int uniformIdx = ptr - uniforms.begin();
+                if (fDebugTrace) {
+                    
+                    std::string name = SlotName(fDebugTrace->fUniformInfo, {},
+                                                {uniformIdx, numSlots});
+                    if (!name.empty()) {
+                        return name;
+                    }
+                }
+                
+                return "u" + AsRange(uniformIdx, numSlots);
+            }
+            return {};
+        };
+
+        
+        auto ValuePtrCtx = [&](const float* ptr, int numSlots) -> std::string {
+            const float* end = ptr + (N * numSlots);
+            if (ptr >= slots.values.begin() && end <= slots.values.end()) {
+                int valueIdx = ptr - slots.values.begin();
+                SkASSERT((valueIdx % N) == 0);
+                valueIdx /= N;
+                if (fDebugTrace) {
+                    
+                    std::string name = SlotName(fDebugTrace->fSlotInfo, slotName,
+                                                {valueIdx, numSlots});
+                    if (!name.empty()) {
+                        return name;
+                    }
+                }
+                
+                return "v" + AsRange(valueIdx, numSlots);
+            }
+            return {};
+        };
+
+        
+        auto MultiImmCtx = [&](const float* ptr, int count) -> std::string {
+            
+            if (std::string text = UniformPtrCtx(ptr, count); !text.empty()) {
+                return text;
+            }
+            
+            if (count == 1) {
+                return Imm(*ptr);
+            }
+            
+            std::string text = "[";
+            auto separator = SkSL::String::Separator();
+            while (count--) {
+                text += separator();
+                text += Imm(*ptr++);
+            }
+            return text + "]";
+        };
+
+        
+        auto PtrCtx = [&](const void* ctx, int numSlots) -> std::string {
+            const float *ctxAsSlot = static_cast<const float*>(ctx);
+            
+            if (std::string uniform = UniformPtrCtx(ctxAsSlot, numSlots); !uniform.empty()) {
+                return uniform;
+            }
+            if (std::string value = ValuePtrCtx(ctxAsSlot, numSlots); !value.empty()) {
+                return value;
+            }
+            
+            if (ctxAsSlot >= slots.stack.begin() && ctxAsSlot < slots.stack.end()) {
+                int stackIdx = ctxAsSlot - slots.stack.begin();
+                SkASSERT((stackIdx % N) == 0);
+                return "$" + AsRange(stackIdx / N, numSlots);
+            }
+            
+            return "ExternalPtr(" + AsRange(0, numSlots) + ")";
+        };
+
+        
+        auto AdjacentPtrCtx = [&](const void* ctx,
+                                  int numSlots) -> std::tuple<std::string, std::string> {
+            const float *ctxAsSlot = static_cast<const float*>(ctx);
+            return std::make_tuple(PtrCtx(ctxAsSlot, numSlots),
+                                   PtrCtx(ctxAsSlot + (N * numSlots), numSlots));
+        };
+
+        
+        auto Adjacent3PtrCtx = [&](const void* ctx, int numSlots) ->
+                                  std::tuple<std::string, std::string, std::string> {
+            const float *ctxAsSlot = static_cast<const float*>(ctx);
+            return std::make_tuple(PtrCtx(ctxAsSlot, numSlots),
+                                   PtrCtx(ctxAsSlot + (N * numSlots), numSlots),
+                                   PtrCtx(ctxAsSlot + (2 * N * numSlots), numSlots));
+        };
+
+        
+        
+        auto BinaryOpCtx = [&](const void* v,
+                               int numSlots) -> std::tuple<std::string, std::string> {
+            const auto *ctx = static_cast<const SkRasterPipeline_BinaryOpCtx*>(v);
+            return std::make_tuple(PtrCtx(ctx->dst, numSlots),
+                                   PtrCtx(ctx->src, numSlots));
+        };
+
+        
+        
+        auto CopyConstantCtx = [&](const void* v,
+                                   int numSlots) -> std::tuple<std::string, std::string> {
+            const auto *ctx = static_cast<const SkRasterPipeline_BinaryOpCtx*>(v);
+            return std::make_tuple(PtrCtx(ctx->dst, numSlots),
+                                   MultiImmCtx(ctx->src, numSlots));
+        };
+
+        
+        
+        auto AdjacentBinaryOpCtx = [&](const void* v) -> std::tuple<std::string, std::string> {
+            const auto *ctx = static_cast<const SkRasterPipeline_BinaryOpCtx*>(v);
+            int numSlots = (ctx->src - ctx->dst) / N;
+            return AdjacentPtrCtx(ctx->dst, numSlots);
+        };
+
+        
+        
+        auto AdjacentTernaryOpCtx = [&](const void* v) ->
+                                       std::tuple<std::string, std::string, std::string> {
+            const auto* ctx = static_cast<const SkRasterPipeline_TernaryOpCtx*>(v);
+            int numSlots = (ctx->src0 - ctx->dst) / N;
+            return Adjacent3PtrCtx(ctx->dst, numSlots);
+        };
+
+        
+        auto SwizzleOffsetSpan = [&](SkSpan<const uint16_t> offsets) {
+            std::string src;
+            for (uint16_t offset : offsets) {
+                if (offset == (0 * N * sizeof(float))) {
+                    src.push_back('x');
+                } else if (offset == (1 * N * sizeof(float))) {
+                    src.push_back('y');
+                } else if (offset == (2 * N * sizeof(float))) {
+                    src.push_back('z');
+                } else if (offset == (3 * N * sizeof(float))) {
+                    src.push_back('w');
+                } else {
+                    src.push_back('?');
+                }
+            }
+            return src;
+        };
+
+        
+        
+        
+        auto SwizzleWidth = [&](SkSpan<const uint16_t> offsets) {
+            size_t highestComponent = *std::max_element(offsets.begin(), offsets.end()) /
+                                      (N * sizeof(float));
+            size_t swizzleWidth = offsets.size();
+            return std::max(swizzleWidth, highestComponent + 1);
+        };
+
+        
+        auto SwizzlePtr = [&](const float* ptr, SkSpan<const uint16_t> offsets) {
+            return "(" + PtrCtx(ptr, SwizzleWidth(offsets)) + ")." + SwizzleOffsetSpan(offsets);
+        };
+
+        
+        auto SwizzleCtx = [&](ProgramOp op, const void* v) -> std::tuple<std::string, std::string> {
+            const auto* ctx = static_cast<const SkRasterPipeline_SwizzleCtx*>(v);
+            int destSlots = (int)op - (int)BuilderOp::swizzle_1 + 1;
+
+            return std::make_tuple(PtrCtx(ctx->ptr, destSlots),
+                                   SwizzlePtr(ctx->ptr, SkSpan(ctx->offsets, destSlots)));
+        };
+
+        
+        auto SwizzleCopyCtx = [&](ProgramOp op,
+                                  const void* v) -> std::tuple<std::string, std::string> {
+            const auto* ctx = static_cast<const SkRasterPipeline_SwizzleCopyCtx*>(v);
+            int destSlots = (int)op - (int)BuilderOp::swizzle_copy_slot_masked + 1;
+
+            return std::make_tuple(SwizzlePtr(ctx->dst, SkSpan(ctx->offsets, destSlots)),
+                                   PtrCtx(ctx->src, destSlots));
+        };
+
+        
+        auto ShuffleCtx = [&](const void* v) -> std::tuple<std::string, std::string> {
+            const auto* ctx = static_cast<const SkRasterPipeline_ShuffleCtx*>(v);
+
+            std::string dst = PtrCtx(ctx->ptr, ctx->count);
+            std::string src = "(" + dst + ")[";
+            for (int index = 0; index < ctx->count; ++index) {
+                if (ctx->offsets[index] % (N * sizeof(float))) {
+                    src.push_back('?');
+                } else {
+                    src += std::to_string(ctx->offsets[index] / (N * sizeof(float)));
+                }
+                src.push_back(' ');
+            }
+            src.back() = ']';
+            return std::make_tuple(dst, src);
+        };
 
         std::string opArg1, opArg2, opArg3, opSwizzle;
+        using POp = ProgramOp;
         switch (stage.op) {
             case POp::label:
             case POp::invoke_shader:
             case POp::invoke_color_filter:
             case POp::invoke_blender:
-                opArg1 = this->immCtx(stage.ctx, false);
+                opArg1 = ImmCtx(stage.ctx, false);
                 break;
 
             case POp::case_op: {
-                auto ctx = SkRPCtxUtils::Unpack((const SkRasterPipeline_CaseOpCtx*)stage.ctx);
-                opArg1 = this->offsetCtx(ctx.offset, 1);
-                opArg2 = this->offsetCtx(ctx.offset + sizeof(int32_t) * N, 1);
-                opArg3 = this->imm(sk_bit_cast<float>(ctx.expectedValue), false);
+                const auto* ctx = static_cast<SkRasterPipeline_CaseOpCtx*>(stage.ctx);
+                opArg1 = PtrCtx(ctx->ptr, 1);
+                opArg2 = PtrCtx(ctx->ptr + N, 1);
+                opArg3 = Imm(sk_bit_cast<float>(ctx->expectedValue), false);
                 break;
             }
             case POp::swizzle_1:
             case POp::swizzle_2:
             case POp::swizzle_3:
             case POp::swizzle_4:
-                std::tie(opArg1, opArg2) = this->swizzleCtx(stage.op, stage.ctx);
+                std::tie(opArg1, opArg2) = SwizzleCtx(stage.op, stage.ctx);
                 break;
 
             case POp::swizzle_copy_slot_masked:
             case POp::swizzle_copy_2_slots_masked:
             case POp::swizzle_copy_3_slots_masked:
             case POp::swizzle_copy_4_slots_masked:
-                std::tie(opArg1, opArg2) = this->swizzleCopyCtx(stage.op, stage.ctx);
+                std::tie(opArg1, opArg2) = SwizzleCopyCtx(stage.op, stage.ctx);
                 break;
 
             case POp::refract_4_floats:
-                std::tie(opArg1, opArg2) = this->adjacentPtrCtx(stage.ctx, 4);
-                opArg3 = this->ptrCtx((const float*)(stage.ctx) + (8 * N), 1);
+                std::tie(opArg1, opArg2) = AdjacentPtrCtx(stage.ctx, 4);
+                opArg3 = PtrCtx((const float*)(stage.ctx) + (8 * N), 1);
                 break;
 
             case POp::dot_2_floats:
-                opArg1 = this->ptrCtx(stage.ctx, 1);
-                std::tie(opArg2, opArg3) = this->adjacentPtrCtx(stage.ctx, 2);
+                opArg1 = PtrCtx(stage.ctx, 1);
+                std::tie(opArg2, opArg3) = AdjacentPtrCtx(stage.ctx, 2);
                 break;
 
             case POp::dot_3_floats:
-                opArg1 = this->ptrCtx(stage.ctx, 1);
-                std::tie(opArg2, opArg3) = this->adjacentPtrCtx(stage.ctx, 3);
+                opArg1 = PtrCtx(stage.ctx, 1);
+                std::tie(opArg2, opArg3) = AdjacentPtrCtx(stage.ctx, 3);
                 break;
 
             case POp::dot_4_floats:
-                opArg1 = this->ptrCtx(stage.ctx, 1);
-                std::tie(opArg2, opArg3) = this->adjacentPtrCtx(stage.ctx, 4);
+                opArg1 = PtrCtx(stage.ctx, 1);
+                std::tie(opArg2, opArg3) = AdjacentPtrCtx(stage.ctx, 4);
                 break;
 
             case POp::shuffle:
-                std::tie(opArg1, opArg2) = this->shuffleCtx(stage.ctx);
-                break;
-
-            case POp::matrix_multiply_2:
-            case POp::matrix_multiply_3:
-            case POp::matrix_multiply_4:
-                std::tie(opArg1, opArg2, opArg3) = this->matrixMultiply(stage.ctx);
+                std::tie(opArg1, opArg2) = ShuffleCtx(stage.ctx);
                 break;
 
             case POp::load_condition_mask:
@@ -2978,10 +2168,11 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::reenable_loop_mask:
             case POp::load_return_mask:
             case POp::store_return_mask:
-            case POp::continue_op:
+            case POp::zero_slot_unmasked:
+            case POp::bitwise_not_int:
             case POp::cast_to_float_from_int: case POp::cast_to_float_from_uint:
             case POp::cast_to_int_from_float: case POp::cast_to_uint_from_float:
-            case POp::abs_int:
+            case POp::abs_float:              case POp::abs_int:
             case POp::acos_float:
             case POp::asin_float:
             case POp::atan_float:
@@ -2996,155 +2187,119 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::sin_float:
             case POp::sqrt_float:
             case POp::tan_float:
-                opArg1 = this->ptrCtx(stage.ctx, 1);
+                opArg1 = PtrCtx(stage.ctx, 1);
                 break;
 
-            case POp::store_src_rg:
+            case POp::zero_2_slots_unmasked:
+            case POp::bitwise_not_2_ints:
+            case POp::load_src_rg:               case POp::store_src_rg:
             case POp::cast_to_float_from_2_ints: case POp::cast_to_float_from_2_uints:
             case POp::cast_to_int_from_2_floats: case POp::cast_to_uint_from_2_floats:
-            case POp::abs_2_ints:
+            case POp::abs_2_floats:              case POp::abs_2_ints:
             case POp::ceil_2_floats:
             case POp::floor_2_floats:
             case POp::invsqrt_2_floats:
-                opArg1 = this->ptrCtx(stage.ctx, 2);
+                opArg1 = PtrCtx(stage.ctx, 2);
                 break;
 
+            case POp::zero_3_slots_unmasked:
+            case POp::bitwise_not_3_ints:
             case POp::cast_to_float_from_3_ints: case POp::cast_to_float_from_3_uints:
             case POp::cast_to_int_from_3_floats: case POp::cast_to_uint_from_3_floats:
-            case POp::abs_3_ints:
+            case POp::abs_3_floats:              case POp::abs_3_ints:
             case POp::ceil_3_floats:
             case POp::floor_3_floats:
             case POp::invsqrt_3_floats:
-                opArg1 = this->ptrCtx(stage.ctx, 3);
+                opArg1 = PtrCtx(stage.ctx, 3);
                 break;
 
             case POp::load_src:
             case POp::load_dst:
-            case POp::exchange_src:
             case POp::store_src:
             case POp::store_dst:
             case POp::store_device_xy01:
-            case POp::invoke_to_linear_srgb:
-            case POp::invoke_from_linear_srgb:
+            case POp::zero_4_slots_unmasked:
+            case POp::bitwise_not_4_ints:
             case POp::cast_to_float_from_4_ints: case POp::cast_to_float_from_4_uints:
             case POp::cast_to_int_from_4_floats: case POp::cast_to_uint_from_4_floats:
-            case POp::abs_4_ints:
+            case POp::abs_4_floats:              case POp::abs_4_ints:
             case POp::ceil_4_floats:
             case POp::floor_4_floats:
             case POp::invsqrt_4_floats:
             case POp::inverse_mat2:
-                opArg1 = this->ptrCtx(stage.ctx, 4);
+                opArg1 = PtrCtx(stage.ctx, 4);
                 break;
 
             case POp::inverse_mat3:
-                opArg1 = this->ptrCtx(stage.ctx, 9);
+                opArg1 = PtrCtx(stage.ctx, 9);
                 break;
 
             case POp::inverse_mat4:
-                opArg1 = this->ptrCtx(stage.ctx, 16);
+                opArg1 = PtrCtx(stage.ctx, 16);
                 break;
+
 
             case POp::copy_constant:
-            case POp::add_imm_float:
-            case POp::mul_imm_float:
-            case POp::cmple_imm_float:
-            case POp::cmplt_imm_float:
-            case POp::cmpeq_imm_float:
-            case POp::cmpne_imm_float:
-            case POp::min_imm_float:
-            case POp::max_imm_float:
-                std::tie(opArg1, opArg2) = this->constantCtx(stage.ctx, 1);
+                std::tie(opArg1, opArg2) = CopyConstantCtx(stage.ctx, 1);
                 break;
 
-            case POp::add_imm_int:
-            case POp::mul_imm_int:
-            case POp::bitwise_and_imm_int:
-            case POp::bitwise_xor_imm_int:
-            case POp::cmple_imm_int:
-            case POp::cmple_imm_uint:
-            case POp::cmplt_imm_int:
-            case POp::cmplt_imm_uint:
-            case POp::cmpeq_imm_int:
-            case POp::cmpne_imm_int:
-                std::tie(opArg1, opArg2) = this->constantCtx(stage.ctx, 1, false);
+            case POp::copy_2_constants:
+                std::tie(opArg1, opArg2) = CopyConstantCtx(stage.ctx, 2);
                 break;
 
-            case POp::splat_2_constants:
-            case POp::bitwise_and_imm_2_ints:
-                std::tie(opArg1, opArg2) = this->constantCtx(stage.ctx, 2);
+            case POp::copy_3_constants:
+                std::tie(opArg1, opArg2) = CopyConstantCtx(stage.ctx, 3);
                 break;
 
-            case POp::splat_3_constants:
-            case POp::bitwise_and_imm_3_ints:
-                std::tie(opArg1, opArg2) = this->constantCtx(stage.ctx, 3);
-                break;
-
-            case POp::splat_4_constants:
-            case POp::bitwise_and_imm_4_ints:
-                std::tie(opArg1, opArg2) = this->constantCtx(stage.ctx, 4);
-                break;
-
-            case POp::copy_uniform:
-                std::tie(opArg1, opArg2) = this->copyUniformCtx(stage.ctx, 1);
-                break;
-
-            case POp::copy_2_uniforms:
-                std::tie(opArg1, opArg2) = this->copyUniformCtx(stage.ctx, 2);
-                break;
-
-            case POp::copy_3_uniforms:
-                std::tie(opArg1, opArg2) = this->copyUniformCtx(stage.ctx, 3);
-                break;
-
-            case POp::copy_4_uniforms:
-                std::tie(opArg1, opArg2) = this->copyUniformCtx(stage.ctx, 4);
+            case POp::copy_4_constants:
+                std::tie(opArg1, opArg2) = CopyConstantCtx(stage.ctx, 4);
                 break;
 
             case POp::copy_slot_masked:
             case POp::copy_slot_unmasked:
-            case POp::copy_immutable_unmasked:
-                std::tie(opArg1, opArg2) = this->binaryOpCtx(stage.ctx, 1);
+                std::tie(opArg1, opArg2) = BinaryOpCtx(stage.ctx, 1);
                 break;
 
             case POp::copy_2_slots_masked:
             case POp::copy_2_slots_unmasked:
-            case POp::copy_2_immutables_unmasked:
-                std::tie(opArg1, opArg2) = this->binaryOpCtx(stage.ctx, 2);
+                std::tie(opArg1, opArg2) = BinaryOpCtx(stage.ctx, 2);
                 break;
 
             case POp::copy_3_slots_masked:
             case POp::copy_3_slots_unmasked:
-            case POp::copy_3_immutables_unmasked:
-                std::tie(opArg1, opArg2) = this->binaryOpCtx(stage.ctx, 3);
+                std::tie(opArg1, opArg2) = BinaryOpCtx(stage.ctx, 3);
                 break;
 
             case POp::copy_4_slots_masked:
             case POp::copy_4_slots_unmasked:
-            case POp::copy_4_immutables_unmasked:
-                std::tie(opArg1, opArg2) = this->binaryOpCtx(stage.ctx, 4);
+                std::tie(opArg1, opArg2) = BinaryOpCtx(stage.ctx, 4);
                 break;
 
-            case POp::copy_from_indirect_uniform_unmasked:
             case POp::copy_from_indirect_unmasked:
             case POp::copy_to_indirect_masked: {
                 const auto* ctx = static_cast<SkRasterPipeline_CopyIndirectCtx*>(stage.ctx);
                 
-                opArg1 = this->ptrCtx(ctx->dst, ctx->slots);
-                opArg2 = this->ptrCtx(ctx->src, ctx->slots);
-                opArg3 = this->ptrCtx(ctx->indirectOffset, 1);
+                opArg1 = PtrCtx(ctx->dst, ctx->slots);
+                opArg2 = PtrCtx(ctx->src, ctx->slots);
+                opArg3 = PtrCtx(ctx->indirectOffset, 1);
+                break;
+            }
+            case POp::copy_from_indirect_uniform_unmasked: {
+                const auto* ctx = static_cast<SkRasterPipeline_CopyIndirectCtx*>(stage.ctx);
+                opArg1 = PtrCtx(ctx->dst, ctx->slots);
+                opArg2 = UniformPtrCtx(ctx->src, ctx->slots);
+                opArg3 = PtrCtx(ctx->indirectOffset, 1);
                 break;
             }
             case POp::swizzle_copy_to_indirect_masked: {
                 const auto* ctx = static_cast<SkRasterPipeline_SwizzleCopyIndirectCtx*>(stage.ctx);
-                opArg1 = this->ptrCtx(ctx->dst, this->swizzleWidth(SkSpan(ctx->offsets,
-                                                                          ctx->slots)));
-                opArg2 = this->ptrCtx(ctx->src, ctx->slots);
-                opArg3 = this->ptrCtx(ctx->indirectOffset, 1);
-                opSwizzle = this->swizzleOffsetSpan(SkSpan(ctx->offsets, ctx->slots));
+                opArg1 = PtrCtx(ctx->dst, SwizzleWidth(SkSpan(ctx->offsets, ctx->slots)));
+                opArg2 = PtrCtx(ctx->src, ctx->slots);
+                opArg3 = PtrCtx(ctx->indirectOffset, 1);
+                opSwizzle = SwizzleOffsetSpan(SkSpan(ctx->offsets, ctx->slots));
                 break;
             }
             case POp::merge_condition_mask:
-            case POp::merge_inv_condition_mask:
             case POp::add_float:   case POp::add_int:
             case POp::sub_float:   case POp::sub_int:
             case POp::mul_float:   case POp::mul_int:
@@ -3159,11 +2314,11 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::cmple_float: case POp::cmple_int: case POp::cmple_uint:
             case POp::cmpeq_float: case POp::cmpeq_int:
             case POp::cmpne_float: case POp::cmpne_int:
-                std::tie(opArg1, opArg2) = this->adjacentPtrCtx(stage.ctx, 1);
+                std::tie(opArg1, opArg2) = AdjacentPtrCtx(stage.ctx, 1);
                 break;
 
             case POp::mix_float:   case POp::mix_int:
-                std::tie(opArg1, opArg2, opArg3) = this->adjacent3PtrCtx(stage.ctx, 1);
+                std::tie(opArg1, opArg2, opArg3) = Adjacent3PtrCtx(stage.ctx, 1);
                 break;
 
             case POp::add_2_floats:   case POp::add_2_ints:
@@ -3180,11 +2335,11 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::cmple_2_floats: case POp::cmple_2_ints: case POp::cmple_2_uints:
             case POp::cmpeq_2_floats: case POp::cmpeq_2_ints:
             case POp::cmpne_2_floats: case POp::cmpne_2_ints:
-                std::tie(opArg1, opArg2) = this->adjacentPtrCtx(stage.ctx, 2);
+                std::tie(opArg1, opArg2) = AdjacentPtrCtx(stage.ctx, 2);
                 break;
 
             case POp::mix_2_floats:   case POp::mix_2_ints:
-                std::tie(opArg1, opArg2, opArg3) = this->adjacent3PtrCtx(stage.ctx, 2);
+                std::tie(opArg1, opArg2, opArg3) = Adjacent3PtrCtx(stage.ctx, 2);
                 break;
 
             case POp::add_3_floats:   case POp::add_3_ints:
@@ -3201,11 +2356,11 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::cmple_3_floats: case POp::cmple_3_ints: case POp::cmple_3_uints:
             case POp::cmpeq_3_floats: case POp::cmpeq_3_ints:
             case POp::cmpne_3_floats: case POp::cmpne_3_ints:
-                std::tie(opArg1, opArg2) = this->adjacentPtrCtx(stage.ctx, 3);
+                std::tie(opArg1, opArg2) = AdjacentPtrCtx(stage.ctx, 3);
                 break;
 
             case POp::mix_3_floats:   case POp::mix_3_ints:
-                std::tie(opArg1, opArg2, opArg3) = this->adjacent3PtrCtx(stage.ctx, 3);
+                std::tie(opArg1, opArg2, opArg3) = Adjacent3PtrCtx(stage.ctx, 3);
                 break;
 
             case POp::add_4_floats:   case POp::add_4_ints:
@@ -3222,11 +2377,11 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::cmple_4_floats: case POp::cmple_4_ints: case POp::cmple_4_uints:
             case POp::cmpeq_4_floats: case POp::cmpeq_4_ints:
             case POp::cmpne_4_floats: case POp::cmpne_4_ints:
-                std::tie(opArg1, opArg2) = this->adjacentPtrCtx(stage.ctx, 4);
+                std::tie(opArg1, opArg2) = AdjacentPtrCtx(stage.ctx, 4);
                 break;
 
             case POp::mix_4_floats:   case POp::mix_4_ints:
-                std::tie(opArg1, opArg2, opArg3) = this->adjacent3PtrCtx(stage.ctx, 4);
+                std::tie(opArg1, opArg2, opArg3) = Adjacent3PtrCtx(stage.ctx, 4);
                 break;
 
             case POp::add_n_floats:   case POp::add_n_ints:
@@ -3245,59 +2400,26 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::cmpne_n_floats: case POp::cmpne_n_ints:
             case POp::atan2_n_floats:
             case POp::pow_n_floats:
-                std::tie(opArg1, opArg2) = this->adjacentBinaryOpCtx(stage.ctx);
+                std::tie(opArg1, opArg2) = AdjacentBinaryOpCtx(stage.ctx);
                 break;
 
             case POp::mix_n_floats:        case POp::mix_n_ints:
             case POp::smoothstep_n_floats:
-                std::tie(opArg1, opArg2, opArg3) = this->adjacentTernaryOpCtx(stage.ctx);
+                std::tie(opArg1, opArg2, opArg3) = AdjacentTernaryOpCtx(stage.ctx);
                 break;
 
             case POp::jump:
             case POp::branch_if_all_lanes_active:
             case POp::branch_if_any_lanes_active:
             case POp::branch_if_no_lanes_active:
-                opArg1 = this->branchOffset(static_cast<SkRasterPipeline_BranchCtx*>(stage.ctx),
-                                            index);
+                opArg1 = BranchOffset(static_cast<SkRasterPipeline_BranchCtx*>(stage.ctx));
                 break;
 
             case POp::branch_if_no_active_lanes_eq: {
                 const auto* ctx = static_cast<SkRasterPipeline_BranchIfEqualCtx*>(stage.ctx);
-                opArg1 = this->branchOffset(ctx, index);
-                opArg2 = this->ptrCtx(ctx->ptr, 1);
-                opArg3 = this->imm(sk_bit_cast<float>(ctx->value));
-                break;
-            }
-            case POp::trace_var: {
-                const auto* ctx = static_cast<SkRasterPipeline_TraceVarCtx*>(stage.ctx);
-                opArg1 = this->ptrCtx(ctx->traceMask, 1);
-                opArg2 = this->ptrCtx(ctx->data, ctx->numSlots);
-                if (ctx->indirectOffset != nullptr) {
-                    opArg3 = " + " + this->ptrCtx(ctx->indirectOffset, 1);
-                }
-                break;
-            }
-            case POp::trace_line: {
-                const auto* ctx = static_cast<SkRasterPipeline_TraceLineCtx*>(stage.ctx);
-                opArg1 = this->ptrCtx(ctx->traceMask, 1);
-                opArg2 = std::to_string(ctx->lineNumber);
-                break;
-            }
-            case POp::trace_enter:
-            case POp::trace_exit: {
-                const auto* ctx = static_cast<SkRasterPipeline_TraceFuncCtx*>(stage.ctx);
-                opArg1 = this->ptrCtx(ctx->traceMask, 1);
-                opArg2 = (fProgram.fDebugTrace &&
-                          ctx->funcIdx >= 0 &&
-                          ctx->funcIdx < (int)fProgram.fDebugTrace->fFuncInfo.size())
-                                 ? fProgram.fDebugTrace->fFuncInfo[ctx->funcIdx].name
-                                 : "???";
-                break;
-            }
-            case POp::trace_scope: {
-                const auto* ctx = static_cast<SkRasterPipeline_TraceScopeCtx*>(stage.ctx);
-                opArg1 = this->ptrCtx(ctx->traceMask, 1);
-                opArg2 = SkSL::String::printf("%+d", ctx->delta);
+                opArg1 = BranchOffset(ctx);
+                opArg2 = PtrCtx(ctx->ptr, 1);
+                opArg3 = Imm(sk_bit_cast<float>(ctx->value));
                 break;
             }
             default:
@@ -3308,32 +2430,17 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
         switch (stage.op) {
         #define M(x) case POp::x: opName = #x; break;
             SK_RASTER_PIPELINE_OPS_ALL(M)
-            SKRP_EXTENDED_OPS(M)
         #undef M
+            case POp::label:                   opName = "label";                   break;
+            case POp::invoke_shader:           opName = "invoke_shader";           break;
+            case POp::invoke_color_filter:     opName = "invoke_color_filter";     break;
+            case POp::invoke_blender:          opName = "invoke_blender";          break;
+            case POp::invoke_to_linear_srgb:   opName = "invoke_to_linear_srgb";   break;
+            case POp::invoke_from_linear_srgb: opName = "invoke_from_linear_srgb"; break;
         }
 
         std::string opText;
         switch (stage.op) {
-            case POp::trace_var:
-                opText = "TraceVar(" + opArg2 + opArg3 + ") when " + opArg1 + " is true";
-                break;
-
-            case POp::trace_line:
-                opText = "TraceLine(" + opArg2 + ") when " + opArg1 + " is true";
-                break;
-
-            case POp::trace_enter:
-                opText = "TraceEnter(" + opArg2 + ") when " + opArg1 + " is true";
-                break;
-
-            case POp::trace_exit:
-                opText = "TraceExit(" + opArg2 + ") when " + opArg1 + " is true";
-                break;
-
-            case POp::trace_scope:
-                opText = "TraceScope(" + opArg2 + ") when " + opArg1 + " is true";
-                break;
-
             case POp::init_lane_masks:
                 opText = "CondMask = LoopMask = RetMask = true";
                 break;
@@ -3348,10 +2455,6 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
 
             case POp::merge_condition_mask:
                 opText = "CondMask = " + opArg1 + " & " + opArg2;
-                break;
-
-            case POp::merge_inv_condition_mask:
-                opText = "CondMask = " + opArg1 + " & ~" + opArg2;
                 break;
 
             case POp::load_loop_mask:
@@ -3390,10 +2493,6 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                 opText = opArg1 + " = src.rg";
                 break;
 
-            case POp::exchange_src:
-                opText = "swap(src.rgba, " + opArg1 + ")";
-                break;
-
             case POp::store_src:
                 opText = opArg1 + " = src.rgba";
                 break;
@@ -3404,6 +2503,10 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
 
             case POp::store_device_xy01:
                 opText = opArg1 + " = DeviceCoords.xy01";
+                break;
+
+            case POp::load_src_rg:
+                opText = "src.rg = " + opArg1;
                 break;
 
             case POp::load_src:
@@ -3419,10 +2522,6 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::bitwise_and_3_ints:
             case POp::bitwise_and_4_ints:
             case POp::bitwise_and_n_ints:
-            case POp::bitwise_and_imm_int:
-            case POp::bitwise_and_imm_2_ints:
-            case POp::bitwise_and_imm_3_ints:
-            case POp::bitwise_and_imm_4_ints:
                 opText = opArg1 + " &= " + opArg2;
                 break;
 
@@ -3439,8 +2538,14 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
             case POp::bitwise_xor_3_ints:
             case POp::bitwise_xor_4_ints:
             case POp::bitwise_xor_n_ints:
-            case POp::bitwise_xor_imm_int:
                 opText = opArg1 + " ^= " + opArg2;
+                break;
+
+            case POp::bitwise_not_int:
+            case POp::bitwise_not_2_ints:
+            case POp::bitwise_not_3_ints:
+            case POp::bitwise_not_4_ints:
+                opText = opArg1 + " = ~" + opArg1;
                 break;
 
             case POp::cast_to_float_from_int:
@@ -3478,14 +2583,10 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                 opText = opArg1 + " = Mask(" + opArg2 + ")";
                 break;
 
-            case POp::copy_uniform:                case POp::copy_2_uniforms:
-            case POp::copy_3_uniforms:             case POp::copy_4_uniforms:
+            case POp::copy_constant:               case POp::copy_2_constants:
+            case POp::copy_3_constants:            case POp::copy_4_constants:
             case POp::copy_slot_unmasked:          case POp::copy_2_slots_unmasked:
             case POp::copy_3_slots_unmasked:       case POp::copy_4_slots_unmasked:
-            case POp::copy_immutable_unmasked:     case POp::copy_2_immutables_unmasked:
-            case POp::copy_3_immutables_unmasked:  case POp::copy_4_immutables_unmasked:
-            case POp::copy_constant:               case POp::splat_2_constants:
-            case POp::splat_3_constants:           case POp::splat_4_constants:
             case POp::swizzle_1:                   case POp::swizzle_2:
             case POp::swizzle_3:                   case POp::swizzle_4:
             case POp::shuffle:
@@ -3506,10 +2607,15 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                          opArg2 + ")";
                 break;
 
-            case POp::abs_int:
-            case POp::abs_2_ints:
-            case POp::abs_3_ints:
-            case POp::abs_4_ints:
+            case POp::zero_slot_unmasked:    case POp::zero_2_slots_unmasked:
+            case POp::zero_3_slots_unmasked: case POp::zero_4_slots_unmasked:
+                opText = opArg1 + " = 0";
+                break;
+
+            case POp::abs_float:    case POp::abs_int:
+            case POp::abs_2_floats: case POp::abs_2_ints:
+            case POp::abs_3_floats: case POp::abs_3_ints:
+            case POp::abs_4_floats: case POp::abs_4_ints:
                 opText = opArg1 + " = abs(" + opArg1 + ")";
                 break;
 
@@ -3602,12 +2708,11 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                 opText = opArg1 + " = inverse(" + opArg1 + ")";
                 break;
 
-            case POp::add_float:     case POp::add_int:
-            case POp::add_2_floats:  case POp::add_2_ints:
-            case POp::add_3_floats:  case POp::add_3_ints:
-            case POp::add_4_floats:  case POp::add_4_ints:
-            case POp::add_n_floats:  case POp::add_n_ints:
-            case POp::add_imm_float: case POp::add_imm_int:
+            case POp::add_float:    case POp::add_int:
+            case POp::add_2_floats: case POp::add_2_ints:
+            case POp::add_3_floats: case POp::add_3_ints:
+            case POp::add_4_floats: case POp::add_4_ints:
+            case POp::add_n_floats: case POp::add_n_ints:
                 opText = opArg1 + " += " + opArg2;
                 break;
 
@@ -3619,12 +2724,11 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                 opText = opArg1 + " -= " + opArg2;
                 break;
 
-            case POp::mul_float:     case POp::mul_int:
-            case POp::mul_2_floats:  case POp::mul_2_ints:
-            case POp::mul_3_floats:  case POp::mul_3_ints:
-            case POp::mul_4_floats:  case POp::mul_4_ints:
-            case POp::mul_n_floats:  case POp::mul_n_ints:
-            case POp::mul_imm_float: case POp::mul_imm_int:
+            case POp::mul_float:    case POp::mul_int:
+            case POp::mul_2_floats: case POp::mul_2_ints:
+            case POp::mul_3_floats: case POp::mul_3_ints:
+            case POp::mul_4_floats: case POp::mul_4_ints:
+            case POp::mul_n_floats: case POp::mul_n_ints:
                 opText = opArg1 + " *= " + opArg2;
                 break;
 
@@ -3636,12 +2740,6 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                 opText = opArg1 + " /= " + opArg2;
                 break;
 
-            case POp::matrix_multiply_2:
-            case POp::matrix_multiply_3:
-            case POp::matrix_multiply_4:
-                opText = opArg1 + " = " + opArg2 + " * " + opArg3;
-                break;
-
             case POp::mod_float:
             case POp::mod_2_floats:
             case POp::mod_3_floats:
@@ -3650,57 +2748,51 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                 opText = opArg1 + " = mod(" + opArg1 + ", " + opArg2 + ")";
                 break;
 
-            case POp::min_float:        case POp::min_int:          case POp::min_uint:
-            case POp::min_2_floats:     case POp::min_2_ints:       case POp::min_2_uints:
-            case POp::min_3_floats:     case POp::min_3_ints:       case POp::min_3_uints:
-            case POp::min_4_floats:     case POp::min_4_ints:       case POp::min_4_uints:
-            case POp::min_n_floats:     case POp::min_n_ints:       case POp::min_n_uints:
-            case POp::min_imm_float:
+            case POp::min_float:    case POp::min_int:    case POp::min_uint:
+            case POp::min_2_floats: case POp::min_2_ints: case POp::min_2_uints:
+            case POp::min_3_floats: case POp::min_3_ints: case POp::min_3_uints:
+            case POp::min_4_floats: case POp::min_4_ints: case POp::min_4_uints:
+            case POp::min_n_floats: case POp::min_n_ints: case POp::min_n_uints:
                 opText = opArg1 + " = min(" + opArg1 + ", " + opArg2 + ")";
                 break;
 
-            case POp::max_float:        case POp::max_int:          case POp::max_uint:
-            case POp::max_2_floats:     case POp::max_2_ints:       case POp::max_2_uints:
-            case POp::max_3_floats:     case POp::max_3_ints:       case POp::max_3_uints:
-            case POp::max_4_floats:     case POp::max_4_ints:       case POp::max_4_uints:
-            case POp::max_n_floats:     case POp::max_n_ints:       case POp::max_n_uints:
-            case POp::max_imm_float:
+            case POp::max_float:    case POp::max_int:    case POp::max_uint:
+            case POp::max_2_floats: case POp::max_2_ints: case POp::max_2_uints:
+            case POp::max_3_floats: case POp::max_3_ints: case POp::max_3_uints:
+            case POp::max_4_floats: case POp::max_4_ints: case POp::max_4_uints:
+            case POp::max_n_floats: case POp::max_n_ints: case POp::max_n_uints:
                 opText = opArg1 + " = max(" + opArg1 + ", " + opArg2 + ")";
                 break;
 
-            case POp::cmplt_float:     case POp::cmplt_int:     case POp::cmplt_uint:
-            case POp::cmplt_2_floats:  case POp::cmplt_2_ints:  case POp::cmplt_2_uints:
-            case POp::cmplt_3_floats:  case POp::cmplt_3_ints:  case POp::cmplt_3_uints:
-            case POp::cmplt_4_floats:  case POp::cmplt_4_ints:  case POp::cmplt_4_uints:
-            case POp::cmplt_n_floats:  case POp::cmplt_n_ints:  case POp::cmplt_n_uints:
-            case POp::cmplt_imm_float: case POp::cmplt_imm_int: case POp::cmplt_imm_uint:
+            case POp::cmplt_float:    case POp::cmplt_int:    case POp::cmplt_uint:
+            case POp::cmplt_2_floats: case POp::cmplt_2_ints: case POp::cmplt_2_uints:
+            case POp::cmplt_3_floats: case POp::cmplt_3_ints: case POp::cmplt_3_uints:
+            case POp::cmplt_4_floats: case POp::cmplt_4_ints: case POp::cmplt_4_uints:
+            case POp::cmplt_n_floats: case POp::cmplt_n_ints: case POp::cmplt_n_uints:
                 opText = opArg1 + " = lessThan(" + opArg1 + ", " + opArg2 + ")";
                 break;
 
-            case POp::cmple_float:     case POp::cmple_int:     case POp::cmple_uint:
-            case POp::cmple_2_floats:  case POp::cmple_2_ints:  case POp::cmple_2_uints:
-            case POp::cmple_3_floats:  case POp::cmple_3_ints:  case POp::cmple_3_uints:
-            case POp::cmple_4_floats:  case POp::cmple_4_ints:  case POp::cmple_4_uints:
-            case POp::cmple_n_floats:  case POp::cmple_n_ints:  case POp::cmple_n_uints:
-            case POp::cmple_imm_float: case POp::cmple_imm_int: case POp::cmple_imm_uint:
+            case POp::cmple_float:    case POp::cmple_int:    case POp::cmple_uint:
+            case POp::cmple_2_floats: case POp::cmple_2_ints: case POp::cmple_2_uints:
+            case POp::cmple_3_floats: case POp::cmple_3_ints: case POp::cmple_3_uints:
+            case POp::cmple_4_floats: case POp::cmple_4_ints: case POp::cmple_4_uints:
+            case POp::cmple_n_floats: case POp::cmple_n_ints: case POp::cmple_n_uints:
                 opText = opArg1 + " = lessThanEqual(" + opArg1 + ", " + opArg2 + ")";
                 break;
 
-            case POp::cmpeq_float:     case POp::cmpeq_int:
-            case POp::cmpeq_2_floats:  case POp::cmpeq_2_ints:
-            case POp::cmpeq_3_floats:  case POp::cmpeq_3_ints:
-            case POp::cmpeq_4_floats:  case POp::cmpeq_4_ints:
-            case POp::cmpeq_n_floats:  case POp::cmpeq_n_ints:
-            case POp::cmpeq_imm_float: case POp::cmpeq_imm_int:
+            case POp::cmpeq_float:    case POp::cmpeq_int:
+            case POp::cmpeq_2_floats: case POp::cmpeq_2_ints:
+            case POp::cmpeq_3_floats: case POp::cmpeq_3_ints:
+            case POp::cmpeq_4_floats: case POp::cmpeq_4_ints:
+            case POp::cmpeq_n_floats: case POp::cmpeq_n_ints:
                 opText = opArg1 + " = equal(" + opArg1 + ", " + opArg2 + ")";
                 break;
 
-            case POp::cmpne_float:     case POp::cmpne_int:
-            case POp::cmpne_2_floats:  case POp::cmpne_2_ints:
-            case POp::cmpne_3_floats:  case POp::cmpne_3_ints:
-            case POp::cmpne_4_floats:  case POp::cmpne_4_ints:
-            case POp::cmpne_n_floats:  case POp::cmpne_n_ints:
-            case POp::cmpne_imm_float: case POp::cmpne_imm_int:
+            case POp::cmpne_float:    case POp::cmpne_int:
+            case POp::cmpne_2_floats: case POp::cmpne_2_ints:
+            case POp::cmpne_3_floats: case POp::cmpne_3_ints:
+            case POp::cmpne_4_floats: case POp::cmpne_4_ints:
+            case POp::cmpne_n_floats: case POp::cmpne_n_ints:
                 opText = opArg1 + " = notEqual(" + opArg1 + ", " + opArg2 + ")";
                 break;
 
@@ -3727,11 +2819,11 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                 break;
 
             case POp::invoke_to_linear_srgb:
-                opText = opArg1 + " = toLinearSrgb(" + opArg1 + ")";
+                opText = "src.rgba = toLinearSrgb(src.rgba)";
                 break;
 
             case POp::invoke_from_linear_srgb:
-                opText = opArg1 + " = fromLinearSrgb(" + opArg1 + ")";
+                opText = "src.rgba = fromLinearSrgb(src.rgba)";
                 break;
 
             case POp::branch_if_no_active_lanes_eq:
@@ -3742,34 +2834,28 @@ void Program::Dumper::dump(SkWStream* out, bool writeInstructionCount) {
                 opText = "label " + opArg1;
                 break;
 
-            case POp::case_op:
+            case POp::case_op: {
                 opText = "if (" + opArg1 + " == " + opArg3 +
                          ") { LoopMask = true; " + opArg2 + " = false; }";
                 break;
-
-            case POp::continue_op:
-                opText = opArg1 +
-                         " |= Mask(0xFFFFFFFF); LoopMask &= ~(CondMask & LoopMask & RetMask)";
-                break;
-
+            }
             default:
                 break;
         }
 
         opName = opName.substr(0, 30);
         if (!opText.empty()) {
-            out->writeText(SkSL::String::printf("%-30.*s %s\n",
+            out->writeText(SkSL::String::printf("% 5d. %-30.*s %s\n",
+                                                index + 1,
                                                 (int)opName.size(), opName.data(),
                                                 opText.c_str()).c_str());
         } else {
-            out->writeText(SkSL::String::printf("%.*s\n",
+            out->writeText(SkSL::String::printf("% 5d. %.*s\n",
+                                                index + 1,
                                                 (int)opName.size(), opName.data()).c_str());
         }
     }
 }
 
-void Program::dump(SkWStream* out, bool writeInstructionCount) const {
-    Dumper(*this).dump(out, writeInstructionCount);
-}
-
+}  
 }  

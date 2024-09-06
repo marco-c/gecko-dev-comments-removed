@@ -10,24 +10,19 @@
 
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkShader.h"  
+#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkShader.h"
+#include "include/core/SkTileMode.h"
 #include "include/core/SkTypes.h"
-
-#include <atomic>
-#include <cstddef>
-#include <cstdint>
 
 class SkCanvas;
 class SkData;
+struct SkDeserialProcs;
+class SkImage;
 class SkMatrix;
+struct SkSerialProcs;
 class SkStream;
 class SkWStream;
-enum class SkFilterMode;
-struct SkDeserialProcs;
-struct SkSerialProcs;
-
-
-#include "include/core/SkTileMode.h"  
 
 
 
@@ -167,17 +162,9 @@ public:
 
 
 
-
-
-
-
     sk_sp<SkData> serialize(const SkSerialProcs* procs = nullptr) const;
 
     
-
-
-
-
 
 
 

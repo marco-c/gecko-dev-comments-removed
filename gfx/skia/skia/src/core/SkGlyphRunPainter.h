@@ -8,23 +8,15 @@
 #ifndef SkGlyphRunPainter_DEFINED
 #define SkGlyphRunPainter_DEFINED
 
-#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkColorType.h"
 #include "include/core/SkSurfaceProps.h"
 #include "src/base/SkZip.h"
+#include "src/core/SkScalerContext.h"
 
-#include <cstdint>
-
-class SkBitmap;
-class SkCanvas;
 class SkColorSpace;
-class SkGlyph;
-class SkMatrix;
-class SkPaint;
-enum SkColorType : int;
-enum class SkScalerContextFlags : uint32_t;
+class SkDrawableGlyphBuffer;
 namespace sktext { class GlyphRunList; }
-struct SkPoint;
-struct SkRect;
+
 
 class SkGlyphRunListPainterCPU {
 public:

@@ -10,108 +10,106 @@
 
 #include "include/core/SkDataTable.h"
 #include "include/core/SkRefCnt.h"
+#include "include/encode/SkEncoder.h"
 #include "include/private/base/SkAPI.h"
-
-
-#include "include/encode/SkEncoder.h"  
 
 #include <memory>
 
-class GrDirectContext;
-class SkData;
-class SkImage;
 class SkPixmap;
+class SkPngEncoderMgr;
 class SkWStream;
 struct skcms_ICCProfile;
 
-namespace SkPngEncoder {
+class SK_API SkPngEncoder : public SkEncoder {
+public:
 
-enum class FilterFlag : int {
-    kZero = 0x00,
-    kNone = 0x08,
-    kSub = 0x10,
-    kUp = 0x20,
-    kAvg = 0x40,
-    kPaeth = 0x80,
-    kAll = kNone | kSub | kUp | kAvg | kPaeth,
+    enum class FilterFlag : int {
+        kZero  = 0x00,
+        kNone  = 0x08,
+        kSub   = 0x10,
+        kUp    = 0x20,
+        kAvg   = 0x40,
+        kPaeth = 0x80,
+        kAll   = kNone | kSub | kUp | kAvg | kPaeth,
+    };
+
+    struct Options {
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+        FilterFlag fFilterFlags = FilterFlag::kAll;
+
+        
+
+
+
+
+
+
+        int fZLibLevel = 6;
+
+        
+
+
+
+
+        sk_sp<SkDataTable> fComments;
+
+        
+
+
+
+
+
+
+        const skcms_ICCProfile* fICCProfile = nullptr;
+        const char* fICCProfileDescription = nullptr;
+    };
+
+    
+
+
+
+
+
+    static bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
+
+    
+
+
+
+
+
+
+
+    static std::unique_ptr<SkEncoder> Make(SkWStream* dst, const SkPixmap& src,
+                                           const Options& options);
+
+    ~SkPngEncoder() override;
+
+protected:
+    bool onEncodeRows(int numRows) override;
+
+    SkPngEncoder(std::unique_ptr<SkPngEncoderMgr>, const SkPixmap& src);
+
+    std::unique_ptr<SkPngEncoderMgr> fEncoderMgr;
+    using INHERITED = SkEncoder;
 };
 
-inline FilterFlag operator|(FilterFlag x, FilterFlag y) { return (FilterFlag)((int)x | (int)y); }
-
-struct Options {
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    FilterFlag fFilterFlags = FilterFlag::kAll;
-
-    
-
-
-
-
-
-
-    int fZLibLevel = 6;
-
-    
-
-
-
-
-    sk_sp<SkDataTable> fComments;
-
-    
-
-
-
-
-
-
-    const skcms_ICCProfile* fICCProfile = nullptr;
-    const char* fICCProfileDescription = nullptr;
-};
-
-
-
-
-
-
-
-SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
-
-
-
-
-
-
-
-
-
-SK_API sk_sp<SkData> Encode(GrDirectContext* ctx, const SkImage* img, const Options& options);
-
-
-
-
-
-
-
-
-
-
-
-SK_API std::unique_ptr<SkEncoder> Make(SkWStream* dst, const SkPixmap& src, const Options& options);
-
-}  
+static inline SkPngEncoder::FilterFlag operator|(SkPngEncoder::FilterFlag x,
+                                                 SkPngEncoder::FilterFlag y) {
+    return (SkPngEncoder::FilterFlag)((int)x | (int)y);
+}
 
 #endif

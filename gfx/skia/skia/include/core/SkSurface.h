@@ -17,138 +17,55 @@
 #include "include/core/SkSurfaceProps.h"
 #include "include/core/SkTypes.h"
 
+#if defined(SK_GANESH)
+#include "include/gpu/GrTypes.h"
+#else
+enum GrSurfaceOrigin: int;
+#endif
+
+#if defined(SK_GRAPHITE)
+#include "include/gpu/GpuTypes.h"
+namespace skgpu::graphite {
+class BackendTexture;
+}
+#endif
+
+#if defined(SK_BUILD_FOR_ANDROID) && __ANDROID_API__ >= 26
+#include <android/hardware_buffer.h>
+class GrDirectContext;
+#endif
+
+#if defined(SK_GANESH) && defined(SK_METAL)
+#include "include/gpu/mtl/GrMtlTypes.h"
+#endif
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 
+class GrBackendRenderTarget;
 class GrBackendSemaphore;
 class GrBackendTexture;
 class GrRecordingContext;
-class GrSurfaceCharacterization;
-enum GrSurfaceOrigin : int;
 class SkBitmap;
 class SkCanvas;
 class SkCapabilities;
 class SkColorSpace;
+class SkDeferredDisplayList;
 class SkPaint;
-class SkSurface;
+class SkSurfaceCharacterization;
+enum SkColorType : int;
 struct SkIRect;
 struct SkISize;
+
+namespace skgpu {
+class MutableTextureState;
+enum class Budgeted : bool;
+}
 
 namespace skgpu::graphite {
 class Recorder;
 }
-
-namespace SkSurfaces {
-
-enum class BackendSurfaceAccess {
-    kNoAccess,  
-    kPresent,   
-};
-
-
-
-
-
-
-
-
-
-
-SK_API sk_sp<SkSurface> Null(int width, int height);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SK_API sk_sp<SkSurface> Raster(const SkImageInfo& imageInfo,
-                               size_t rowBytes,
-                               const SkSurfaceProps* surfaceProps);
-inline sk_sp<SkSurface> Raster(const SkImageInfo& imageInfo,
-                               const SkSurfaceProps* props = nullptr) {
-    return Raster(imageInfo, 0, props);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SK_API sk_sp<SkSurface> WrapPixels(const SkImageInfo& imageInfo,
-                                   void* pixels,
-                                   size_t rowBytes,
-                                   const SkSurfaceProps* surfaceProps = nullptr);
-inline sk_sp<SkSurface> WrapPixels(const SkPixmap& pm, const SkSurfaceProps* props = nullptr) {
-    return WrapPixels(pm.info(), pm.writable_addr(), pm.rowBytes(), props);
-}
-
-using PixelsReleaseProc = void(void* pixels, void* context);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SK_API sk_sp<SkSurface> WrapPixels(const SkImageInfo& imageInfo,
-                                   void* pixels,
-                                   size_t rowBytes,
-                                   PixelsReleaseProc,
-                                   void* context,
-                                   const SkSurfaceProps* surfaceProps = nullptr);
-}  
-
-
-
 
 
 
@@ -160,6 +77,7 @@ SK_API sk_sp<SkSurface> WrapPixels(const SkImageInfo& imageInfo,
 
 class SK_API SkSurface : public SkRefCnt {
 public:
+
     
 
 
@@ -169,7 +87,453 @@ public:
 
 
 
-    bool isCompatible(const GrSurfaceCharacterization& characterization) const;
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRasterDirect(const SkImageInfo& imageInfo, void* pixels,
+                                             size_t rowBytes,
+                                             const SkSurfaceProps* surfaceProps = nullptr);
+
+    static sk_sp<SkSurface> MakeRasterDirect(const SkPixmap& pm,
+                                             const SkSurfaceProps* props = nullptr) {
+        return MakeRasterDirect(pm.info(), pm.writable_addr(), pm.rowBytes(), props);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRasterDirectReleaseProc(const SkImageInfo& imageInfo, void* pixels,
+                                    size_t rowBytes,
+                                    void (*releaseProc)(void* pixels, void* context),
+                                    void* context, const SkSurfaceProps* surfaceProps = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo& imageInfo, size_t rowBytes,
+                                       const SkSurfaceProps* surfaceProps);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo& imageInfo,
+                                       const SkSurfaceProps* props = nullptr) {
+        return MakeRaster(imageInfo, 0, props);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRasterN32Premul(int width, int height,
+                                                const SkSurfaceProps* surfaceProps = nullptr);
+
+    
+    typedef void* ReleaseContext;
+
+    
+    typedef void (*RenderTargetReleaseProc)(ReleaseContext releaseContext);
+
+    
+    typedef void (*TextureReleaseProc)(ReleaseContext releaseContext);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendTexture(GrRecordingContext* context,
+                                                   const GrBackendTexture& backendTexture,
+                                                   GrSurfaceOrigin origin, int sampleCnt,
+                                                   SkColorType colorType,
+                                                   sk_sp<SkColorSpace> colorSpace,
+                                                   const SkSurfaceProps* surfaceProps,
+                                                   TextureReleaseProc textureReleaseProc = nullptr,
+                                                   ReleaseContext releaseContext = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrRecordingContext* context,
+                                                const GrBackendRenderTarget& backendRenderTarget,
+                                                GrSurfaceOrigin origin,
+                                                SkColorType colorType,
+                                                sk_sp<SkColorSpace> colorSpace,
+                                                const SkSurfaceProps* surfaceProps,
+                                                RenderTargetReleaseProc releaseProc = nullptr,
+                                                ReleaseContext releaseContext = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
+                                             skgpu::Budgeted budgeted,
+                                             const SkImageInfo& imageInfo,
+                                             int sampleCount,
+                                             GrSurfaceOrigin surfaceOrigin,
+                                             const SkSurfaceProps* surfaceProps,
+                                             bool shouldCreateWithMips = false);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
+                                             skgpu::Budgeted budgeted,
+                                             const SkImageInfo& imageInfo,
+                                             int sampleCount,
+                                             const SkSurfaceProps* surfaceProps) {
+#if defined(SK_GANESH)
+        return MakeRenderTarget(context, budgeted, imageInfo, sampleCount,
+                                kBottomLeft_GrSurfaceOrigin, surfaceProps);
+#else
+        
+        return nullptr;
+#endif
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
+                                             skgpu::Budgeted budgeted,
+                                             const SkImageInfo& imageInfo) {
+#if defined(SK_GANESH)
+        if (!imageInfo.width() || !imageInfo.height()) {
+            return nullptr;
+        }
+        return MakeRenderTarget(context, budgeted, imageInfo, 0, kBottomLeft_GrSurfaceOrigin,
+                                nullptr);
+#else
+        
+        return nullptr;
+#endif
+    }
+
+    
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
+                                             const SkSurfaceCharacterization& characterization,
+                                             skgpu::Budgeted budgeted);
+
+#if defined(SK_BUILD_FOR_ANDROID) && __ANDROID_API__ >= 26
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromAHardwareBuffer(GrDirectContext* context,
+                                                    AHardwareBuffer* hardwareBuffer,
+                                                    GrSurfaceOrigin origin,
+                                                    sk_sp<SkColorSpace> colorSpace,
+                                                    const SkSurfaceProps* surfaceProps
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+                                                    , bool fromWindow = false
+#endif  
+                                                    );
+#endif
+
+#if defined(SK_GRAPHITE)
+    
+
+
+
+
+
+    static sk_sp<SkSurface> MakeGraphite(
+            skgpu::graphite::Recorder*,
+            const SkImageInfo& imageInfo,
+            skgpu::Mipmapped = skgpu::Mipmapped::kNo,
+            const SkSurfaceProps* surfaceProps = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeGraphiteFromBackendTexture(skgpu::graphite::Recorder*,
+                                                           const skgpu::graphite::BackendTexture&,
+                                                           SkColorType colorType,
+                                                           sk_sp<SkColorSpace> colorSpace,
+                                                           const SkSurfaceProps* props);
+
+#endif 
+
+#if defined(SK_GANESH) && defined(SK_METAL)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromCAMetalLayer(GrRecordingContext* context,
+                                                 GrMTLHandle layer,
+                                                 GrSurfaceOrigin origin,
+                                                 int sampleCnt,
+                                                 SkColorType colorType,
+                                                 sk_sp<SkColorSpace> colorSpace,
+                                                 const SkSurfaceProps* surfaceProps,
+                                                 GrMTLHandle* drawable)
+                                                 SK_API_AVAILABLE_CA_METAL_LAYER;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromMTKView(GrRecordingContext* context,
+                                            GrMTLHandle mtkView,
+                                            GrSurfaceOrigin origin,
+                                            int sampleCnt,
+                                            SkColorType colorType,
+                                            sk_sp<SkColorSpace> colorSpace,
+                                            const SkSurfaceProps* surfaceProps)
+                                            SK_API_AVAILABLE(macos(10.11), ios(9.0));
+#endif
+
+    
+
+
+
+
+
+
+
+
+    bool isCompatible(const SkSurfaceCharacterization& characterization) const;
+
+    
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeNull(int width, int height);
 
     
 
@@ -218,40 +582,58 @@ public:
 
 
 
-    GrRecordingContext* recordingContext() const;
+    GrRecordingContext* recordingContext();
 
     
 
 
 
-    skgpu::graphite::Recorder* recorder() const;
+    skgpu::graphite::Recorder* recorder();
 
-    enum class BackendHandleAccess {
-        kFlushRead,     
-        kFlushWrite,    
-        kDiscardWrite,  
-
-        
-        kFlushRead_BackendHandleAccess = kFlushRead,
-        kFlushWrite_BackendHandleAccess = kFlushWrite,
-        kDiscardWrite_BackendHandleAccess = kDiscardWrite,
+#if defined(SK_GANESH)
+    enum BackendHandleAccess {
+        kFlushRead_BackendHandleAccess,    
+        kFlushWrite_BackendHandleAccess,   
+        kDiscardWrite_BackendHandleAccess, 
     };
 
     
-    static constexpr BackendHandleAccess kFlushRead_BackendHandleAccess =
-            BackendHandleAccess::kFlushRead;
-    static constexpr BackendHandleAccess kFlushWrite_BackendHandleAccess =
-            BackendHandleAccess::kFlushWrite;
-    static constexpr BackendHandleAccess kDiscardWrite_BackendHandleAccess =
-            BackendHandleAccess::kDiscardWrite;
 
-    
-    using ReleaseContext = void*;
-    
-    using TextureReleaseProc = void (*)(ReleaseContext);
+    static const BackendHandleAccess kFlushRead_TextureHandleAccess =
+            kFlushRead_BackendHandleAccess;
 
     
 
+    static const BackendHandleAccess kFlushWrite_TextureHandleAccess =
+            kFlushWrite_BackendHandleAccess;
+
+    
+
+    static const BackendHandleAccess kDiscardWrite_TextureHandleAccess =
+            kDiscardWrite_BackendHandleAccess;
+
+    
+
+
+
+
+
+
+
+    GrBackendTexture getBackendTexture(BackendHandleAccess backendHandleAccess);
+
+    
+
+
+
+
+
+
+
+
+    GrBackendRenderTarget getBackendRenderTarget(BackendHandleAccess backendHandleAccess);
+
+    
 
 
 
@@ -265,11 +647,13 @@ public:
 
 
 
-    virtual bool replaceBackendTexture(const GrBackendTexture& backendTexture,
-                                       GrSurfaceOrigin origin,
-                                       ContentChangeMode mode = kRetain_ContentChangeMode,
-                                       TextureReleaseProc = nullptr,
-                                       ReleaseContext = nullptr) = 0;
+
+    bool replaceBackendTexture(const GrBackendTexture& backendTexture,
+                               GrSurfaceOrigin origin,
+                               ContentChangeMode mode = kRetain_ContentChangeMode,
+                               TextureReleaseProc textureReleaseProc = nullptr,
+                               ReleaseContext releaseContext = nullptr);
+#endif
 
     
 
@@ -329,6 +713,34 @@ public:
 
 
     sk_sp<SkImage> makeImageSnapshot(const SkIRect& bounds);
+
+#if defined(SK_GRAPHITE)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkImage> asImage();
+
+    sk_sp<SkImage> makeImageCopy(const SkIRect* subset = nullptr,
+                                 skgpu::Mipmapped mipmapped = skgpu::Mipmapped::kNo);
+#endif
 
     
 
@@ -554,20 +966,6 @@ public:
 
 
 
-    void asyncRescaleAndReadPixelsYUVA420(SkYUVColorSpace yuvColorSpace,
-                                          sk_sp<SkColorSpace> dstColorSpace,
-                                          const SkIRect& srcRect,
-                                          const SkISize& dstSize,
-                                          RescaleGamma rescaleGamma,
-                                          RescaleMode rescaleMode,
-                                          ReadPixelsCallback callback,
-                                          ReadPixelsContext context);
-
-    
-
-
-
-
 
 
 
@@ -611,6 +1009,128 @@ public:
 
 
 
+    void flushAndSubmit(bool syncCpu = false);
+
+    enum class BackendSurfaceAccess {
+        kNoAccess,  
+        kPresent,   
+    };
+
+#if defined(SK_GANESH)
+    
+
+
+
+
+
+
+
+
+
+
+    void resolveMSAA();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(BackendSurfaceAccess access, const GrFlushInfo& info);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(const GrFlushInfo& info,
+                                const skgpu::MutableTextureState* newState = nullptr);
+#endif 
+
+    void flush();
+
+    
+
+
+
+
 
 
 
@@ -636,7 +1156,27 @@ public:
 
 
 
-    bool characterize(GrSurfaceCharacterization* characterization) const;
+    bool characterize(SkSurfaceCharacterization* characterization) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool draw(sk_sp<const SkDeferredDisplayList> deferredDisplayList,
+              int xOffset = 0,
+              int yOffset = 0);
 
 protected:
     SkSurface(int width, int height, const SkSurfaceProps* surfaceProps);

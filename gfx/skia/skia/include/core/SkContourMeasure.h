@@ -8,16 +8,11 @@
 #ifndef SkContourMeasure_DEFINED
 #define SkContourMeasure_DEFINED
 
-#include "include/core/SkPoint.h"
+#include "include/core/SkPath.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkScalar.h"
-#include "include/private/base/SkAPI.h"
 #include "include/private/base/SkTDArray.h"
 
-#include <memory>
-
-class SkMatrix;
-class SkPath;
+struct SkConic;
 
 class SK_API SkContourMeasure : public SkRefCnt {
 public:
@@ -28,7 +23,8 @@ public:
     
 
 
-    [[nodiscard]] bool getPosTan(SkScalar distance, SkPoint* position, SkVector* tangent) const;
+    bool SK_WARN_UNUSED_RESULT getPosTan(SkScalar distance, SkPoint* position,
+                                         SkVector* tangent) const;
 
     enum MatrixFlags {
         kGetPosition_MatrixFlag     = 0x01,
@@ -41,8 +37,8 @@ public:
 
 
 
-    [[nodiscard]] bool getMatrix(SkScalar distance, SkMatrix* matrix,
-                                 MatrixFlags flags = kGetPosAndTan_MatrixFlag) const;
+    bool SK_WARN_UNUSED_RESULT getMatrix(SkScalar distance, SkMatrix* matrix,
+                                         MatrixFlags flags = kGetPosAndTan_MatrixFlag) const;
 
     
 
@@ -50,8 +46,8 @@ public:
 
 
 
-    [[nodiscard]] bool getSegment(SkScalar startD, SkScalar stopD, SkPath* dst,
-                                  bool startWithMoveTo) const;
+    bool SK_WARN_UNUSED_RESULT getSegment(SkScalar startD, SkScalar stopD, SkPath* dst,
+                                          bool startWithMoveTo) const;
 
     
 
@@ -90,7 +86,6 @@ private:
     const Segment* distanceToSegment(SkScalar distance, SkScalar* t) const;
 
     friend class SkContourMeasureIter;
-    friend class SkPathMeasurePriv;
 };
 
 class SK_API SkContourMeasureIter {
@@ -106,9 +101,6 @@ public:
 
     SkContourMeasureIter(const SkPath& path, bool forceClosed, SkScalar resScale = 1);
     ~SkContourMeasureIter();
-
-    SkContourMeasureIter(SkContourMeasureIter&&);
-    SkContourMeasureIter& operator=(SkContourMeasureIter&&);
 
     
 

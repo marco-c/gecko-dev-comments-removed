@@ -10,7 +10,6 @@
 
 #include "include/core/SkFontArguments.h"
 #include "include/core/SkTypeface.h"
-#include "include/private/base/SkAPI.h"
 #include "src/base/SkLeanWindows.h"
 #include "src/core/SkAdvancedTypefaceMetrics.h"
 #include "src/core/SkTypefaceCache.h"
@@ -23,10 +22,6 @@
 #include <dwrite_2.h>
 #include <dwrite_3.h>
 
-#if !defined(__MINGW32__) && WINVER < 0x0A00
-#include "mozilla/gfx/dw-extra.h"
-#endif
-
 class SkFontDescriptor;
 struct SkScalerContextRec;
 
@@ -37,7 +32,6 @@ struct SkScalerContextRec;
 
 
 interface IDWriteFontFace4;
-interface IDWriteFontFace7;
 
 static SkFontStyle get_style(IDWriteFont* font) {
     int weight = font->GetWeight();
@@ -74,8 +68,7 @@ public:
     };
 
     static constexpr SkTypeface::FactoryId FactoryId = SkSetFourByteTag('d','w','r','t');
-    static sk_sp<SkTypeface> SK_SPI MakeFromStream(std::unique_ptr<SkStreamAsset>,
-                                                   const SkFontArguments&);
+    static sk_sp<SkTypeface> MakeFromStream(std::unique_ptr<SkStreamAsset>, const SkFontArguments&);
 
     ~DWriteFontTypeface() override;
 private:
@@ -97,15 +90,6 @@ public:
     SkTScopedComPtr<IDWriteFontFace1> fDWriteFontFace1;
     SkTScopedComPtr<IDWriteFontFace2> fDWriteFontFace2;
     SkTScopedComPtr<IDWriteFontFace4> fDWriteFontFace4;
-    
-    
-    
-    
-    
-    
-    
-    
-    IDWriteFontFace7* fDWriteFontFace7 = nullptr;
     bool fIsColorFont;
 
     std::unique_ptr<SkFontArguments::Palette::Override> fRequestedPaletteEntryOverrides;
@@ -113,7 +97,6 @@ public:
 
     size_t fPaletteEntryCount;
     std::unique_ptr<SkColor[]> fPalette;
-    std::unique_ptr<DWRITE_COLOR_F[]> fDWPalette;
 
     static sk_sp<DWriteFontTypeface> Make(
         IDWriteFactory* factory,

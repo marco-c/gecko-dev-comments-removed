@@ -172,7 +172,7 @@ protected:
     bool fDuplicatePt;  
     
     mutable bool fCoincident;  
-    SkDEBUGCODE(int fID;)
+    SkDEBUGCODE(int fID);
 };
 
 class SkOpSpanBase {
@@ -410,9 +410,9 @@ protected:
     int fSpanAdds;  
     bool fAligned;
     bool fChased;  
-    SkDEBUGCODE(int fCount;)  
-    SkDEBUGCODE(int fID;)
-    SkDEBUGCODE(bool fDebugDeleted;)  
+    SkDEBUGCODE(int fCount);  
+    SkDEBUGCODE(int fID);
+    SkDEBUGCODE(bool fDebugDeleted);  
 };
 
 class SkOpSpan : public SkOpSpanBase {

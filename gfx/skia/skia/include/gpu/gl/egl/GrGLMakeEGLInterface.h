@@ -4,20 +4,11 @@
 
 
 
-#ifndef GrGLMakeEGLInterface_DEFINED
-#define GrGLMakeEGLInterface_DEFINED
+
+#include "include/gpu/GrTypes.h"
 
 #include "include/core/SkRefCnt.h"
-#include "include/gpu/GrTypes.h"
 
 struct GrGLInterface;
 
-namespace GrGLInterfaces {
-SK_API sk_sp<const GrGLInterface> MakeEGL();
-}
-
-#if !defined(SK_DISABLE_LEGACY_EGLINTERFACE_FACTORY)
 sk_sp<const GrGLInterface> GrGLMakeEGLInterface();
-#endif
-
-#endif  

@@ -10,30 +10,27 @@
 
 #include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
-#include "include/private/base/SkTArray.h"
-#include "src/sksl/SkSLDefines.h"
-#include "src/sksl/SkSLPosition.h"
-#include "src/sksl/ir/SkSLIRNode.h"
-#include "src/sksl/ir/SkSLLayout.h"
-#include "src/sksl/ir/SkSLModifierFlags.h"
-#include "src/sksl/ir/SkSLSymbol.h"
+#include "include/private/SkSLDefines.h"
+#include "include/private/SkSLIRNode.h"
+#include "include/private/SkSLModifiers.h"
+#include "include/private/SkSLSymbol.h"
+#include "include/sksl/SkSLPosition.h"
 #include "src/sksl/spirv.h"
 
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <vector>
 
 namespace SkSL {
 
 class Context;
 class Expression;
 class SymbolTable;
-class Type;
 
 struct CoercionCost {
     static CoercionCost Free()              { return {    0,    0, false }; }
@@ -71,32 +68,26 @@ struct CoercionCost {
 
 
 
-struct Field {
-    Field(Position pos, Layout layout, ModifierFlags flags, std::string_view name, const Type* type)
-            : fPosition(pos)
-            , fLayout(layout)
-            , fModifierFlags(flags)
-            , fName(name)
-            , fType(type) {}
-
-    std::string description() const;
-
-    Position fPosition;
-    Layout fLayout;
-    ModifierFlags fModifierFlags;
-    std::string_view fName;
-    const Type* fType;
-};
-
-
-
-
 class Type : public Symbol {
 public:
     inline static constexpr Kind kIRNodeKind = Kind::kType;
     inline static constexpr int kMaxAbbrevLength = 3;
     
     inline static constexpr int kUnsizedArray = -1;
+    struct Field {
+        Field(Position pos, Modifiers modifiers, std::string_view name, const Type* type)
+                : fPosition(pos)
+                , fModifiers(modifiers)
+                , fName(name)
+                , fType(type) {}
+
+        std::string description() const;
+
+        Position fPosition;
+        Modifiers fModifiers;
+        std::string_view fName;
+        const Type* fType;
+    };
 
     enum class TypeKind : int8_t {
         kArray,
@@ -137,8 +128,8 @@ public:
     Type(const Type& other) = delete;
 
     
-    static std::unique_ptr<Type> MakeArrayType(const Context& context, std::string_view name,
-                                               const Type& componentType, int columns);
+    static std::unique_ptr<Type> MakeArrayType(std::string_view name, const Type& componentType,
+                                               int columns);
 
     
     std::string getArrayName(int arraySize) const;
@@ -152,9 +143,7 @@ public:
 
 
 
-    static std::unique_ptr<Type> MakeGenericType(const char* name,
-                                                 SkSpan<const Type* const> types,
-                                                 const Type* slotType);
+    static std::unique_ptr<Type> MakeGenericType(const char* name, SkSpan<const Type* const> types);
 
     
     static std::unique_ptr<Type> MakeLiteralType(const char* name, const Type& scalarType,
@@ -186,7 +175,7 @@ public:
     static std::unique_ptr<Type> MakeStructType(const Context& context,
                                                 Position pos,
                                                 std::string_view name,
-                                                skia_private::TArray<Field> fields,
+                                                std::vector<Field> fields,
                                                 bool interfaceBlock = false);
 
     
@@ -219,7 +208,7 @@ public:
     }
 
     
-    const Type* clone(const Context& context, SymbolTable* symbolTable) const;
+    const Type* clone(SymbolTable* symbolTable) const;
 
     
 
@@ -227,8 +216,8 @@ public:
 
 
 
-    virtual bool isBuiltin() const {
-        return true;
+    bool isInBuiltinTypes() const {
+        return !(this->isArray() || this->isStruct());
     }
 
     std::string displayName() const {
@@ -245,19 +234,6 @@ public:
     
     virtual bool isAllowedInES2() const {
         return true;
-    }
-
-    
-
-
-
-
-
-
-    virtual bool isAllowedInUniform(Position* errorPosition = nullptr) const {
-        
-        
-        return !this->isOpaque();
     }
 
     
@@ -368,13 +344,6 @@ public:
     
 
 
-    bool isStorageTexture() const {
-        return fTypeKind == TypeKind::kTexture && this->dimensions() != SpvDimSubpassData;
-    }
-
-    
-
-
 
     virtual int priority() const {
         SkDEBUGFAIL("not a number type");
@@ -403,13 +372,6 @@ public:
 
     virtual const Type& componentType() const {
         return *this;
-    }
-
-    
-
-
-    const Type& columnType(const Context& context) const {
-        return this->componentType().toCompound(context, this->rows(), 1);
     }
 
     
@@ -458,15 +420,7 @@ public:
         return 0;
     }
 
-    
-
-
-
-    virtual const Type& slotType(size_t) const {
-        return *this;
-    }
-
-    virtual SkSpan<const Field> fields() const {
+    virtual const std::vector<Field>& fields() const {
         SK_ABORT("Internal error: not a struct");
     }
 
@@ -479,17 +433,17 @@ public:
     }
 
     virtual SpvDim_ dimensions() const {
-        SkDEBUGFAIL("Internal error: not a texture type");
+        SkASSERT(false);
         return SpvDim1D;
     }
 
     virtual bool isDepth() const {
-        SkDEBUGFAIL("Internal error: not a texture type");
+        SkASSERT(false);
         return false;
     }
 
     virtual bool isArrayedTexture() const {
-        SkDEBUGFAIL("Internal error: not a texture type");
+        SkASSERT(false);
         return false;
     }
 
@@ -501,13 +455,7 @@ public:
         return fTypeKind == TypeKind::kGeneric;
     }
 
-    bool isSampler() const {
-        return fTypeKind == TypeKind::kSampler;
-    }
-
-    bool isAtomic() const {
-        return this->typeKind() == TypeKind::kAtomic;
-    }
+    bool isAtomic() const { return this->typeKind() == TypeKind::kAtomic; }
 
     virtual bool isScalar() const {
         return false;
@@ -564,7 +512,7 @@ public:
     }
 
     bool hasPrecision() const {
-        return this->componentType().isNumber() || this->isSampler();
+        return this->componentType().isNumber() || fTypeKind == TypeKind::kSampler;
     }
 
     bool highPrecision() const {
@@ -575,17 +523,9 @@ public:
         return 0;
     }
 
-    virtual bool isOrContainsArray() const {
-        return false;
-    }
-
-    virtual bool isOrContainsUnsizedArray() const {
-        return false;
-    }
-
-    virtual bool isOrContainsAtomic() const {
-        return false;
-    }
+    bool isOrContainsArray() const;
+    bool isOrContainsUnsizedArray() const;
+    bool isOrContainsAtomic() const;
 
     
 
@@ -599,9 +539,9 @@ public:
 
 
 
-
     const Type* applyQualifiers(const Context& context,
-                                ModifierFlags* modifierFlags,
+                                Modifiers* modifiers,
+                                SymbolTable* symbols,
                                 Position pos) const;
 
     
@@ -626,40 +566,27 @@ public:
 
 
 
-    SKSL_INT convertArraySize(const Context& context,
-                              Position arrayPos,
-                              std::unique_ptr<Expression> size) const;
-
-    SKSL_INT convertArraySize(const Context& context,
-                              Position arrayPos,
-                              Position sizePos,
-                              SKSL_INT size) const;
+    SKSL_INT convertArraySize(const Context& context, Position arrayPos,
+            std::unique_ptr<Expression> size) const;
 
 protected:
-    Type(std::string_view name, const char* abbrev, TypeKind kind, Position pos = Position())
-            : INHERITED(pos, kIRNodeKind, name)
-            , fTypeKind(kind) {
+    Type(std::string_view name, const char* abbrev, TypeKind kind,
+            Position pos = Position())
+        : INHERITED(pos, kIRNodeKind, name)
+        , fTypeKind(kind) {
         SkASSERT(strlen(abbrev) <= kMaxAbbrevLength);
         strcpy(fAbbreviatedName, abbrev);
     }
 
     const Type* applyPrecisionQualifiers(const Context& context,
-                                         ModifierFlags* modifierFlags,
+                                         Modifiers* modifiers,
+                                         SymbolTable* symbols,
                                          Position pos) const;
 
     const Type* applyAccessQualifiers(const Context& context,
-                                      ModifierFlags* modifierFlags,
+                                      Modifiers* modifiers,
+                                      SymbolTable* symbols,
                                       Position pos) const;
-
-    
-    bool isInRootSymbolTable() const {
-        return !(this->isArray() || this->isStruct());
-    }
-
-    
-    virtual int structNestingDepth() const {
-        return 0;
-    }
 
 private:
     using INHERITED = Symbol;

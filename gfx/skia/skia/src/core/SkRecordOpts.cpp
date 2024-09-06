@@ -7,19 +7,10 @@
 
 #include "src/core/SkRecordOpts.h"
 
-#include "include/core/SkBlendMode.h"
-#include "include/core/SkCanvas.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkRefCnt.h"
-#include "include/private/base/SkMath.h"
-#include "include/private/base/SkTemplates.h"
-#include "src/core/SkRecord.h"
+#include "include/private/base/SkTDArray.h"
+#include "src/core/SkCanvasPriv.h"
 #include "src/core/SkRecordPattern.h"
 #include "src/core/SkRecords.h"
-
-#include <cstdint>
-#include <optional>
 
 using namespace SkRecords;
 
@@ -42,6 +33,43 @@ static bool apply(Pass* pass, SkRecord* record) {
     }
     return changed;
 }
+
+
+
+static void multiple_set_matrices(SkRecord* record) {
+    struct {
+        typedef Pattern<Is<SetMatrix>,
+                        Greedy<Is<NoOp>>,
+                        Is<SetMatrix> >
+            Match;
+
+        bool onMatch(SkRecord* record, Match* pattern, int begin, int end) {
+            record->replace<NoOp>(begin);  
+            return true;
+        }
+    } pass;
+    while (apply(&pass, record));
+}
+
+
+
+#if 0   
+static void apply_matrix_to_draw_params(SkRecord* record) {
+    struct {
+        typedef Pattern<Is<SetMatrix>,
+                        Greedy<Is<NoOp>>,
+                        Is<SetMatrix> >
+            Pattern;
+
+        bool onMatch(SkRecord* record, Pattern* pattern, int begin, int end) {
+            record->replace<NoOp>(begin);  
+            return true;
+        }
+    } pass;
+    
+    apply(&pass, record);
+}
+#endif
 
 
 
@@ -154,18 +182,10 @@ static bool effectively_srcover(const SkPaint* paint) {
 
 
 struct SaveLayerDrawRestoreNooper {
-    
-    
-    
-    typedef Pattern<Is<SaveLayer>, IsSingleDraw, Is<Restore>> Match;
+    typedef Pattern<Is<SaveLayer>, IsDraw, Is<Restore>> Match;
 
     bool onMatch(SkRecord* record, Match* match, int begin, int end) {
         if (match->first<SaveLayer>()->backdrop) {
-            
-            return false;
-        }
-
-        if (!match->first<SaveLayer>()->filters.empty()) {
             
             return false;
         }
@@ -223,12 +243,6 @@ struct SvgOpacityAndFilterLayerMergePass {
             return false;
         }
 
-        if (!match->first<SaveLayer>()->filters.empty() ||
-            !match->fourth<SaveLayer>()->filters.empty()) {
-            
-            return false;
-        }
-
         SkPaint* opacityPaint = match->first<SaveLayer>()->paint;
         if (nullptr == opacityPaint) {
             
@@ -278,6 +292,18 @@ void SkRecordOptimize(SkRecord* record) {
 
     
     
+    
+#ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
+    SkRecordNoopSaveLayerDrawRestores(record);
+#endif
+    SkRecordMergeSvgOpacityAndFilterLayers(record);
+
+    record->defrag();
+}
+
+void SkRecordOptimize2(SkRecord* record) {
+    multiple_set_matrices(record);
+    SkRecordNoopSaveRestores(record);
     
 #ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
     SkRecordNoopSaveLayerDrawRestores(record);

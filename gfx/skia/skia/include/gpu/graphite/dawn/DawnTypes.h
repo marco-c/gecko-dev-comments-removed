@@ -9,7 +9,7 @@
 #define skgpu_graphite_DawnTypes_DEFINED
 
 #include "include/gpu/graphite/GraphiteTypes.h"
-#include "webgpu/webgpu_cpp.h"  
+#include "webgpu/webgpu_cpp.h"
 
 namespace skgpu::graphite {
 
@@ -19,40 +19,18 @@ struct DawnTextureInfo {
 
     
     wgpu::TextureFormat fFormat = wgpu::TextureFormat::Undefined;
-    
-    wgpu::TextureFormat fViewFormat = wgpu::TextureFormat::Undefined;
-    wgpu::TextureUsage fUsage = wgpu::TextureUsage::None;
-    
-    wgpu::TextureAspect fAspect = wgpu::TextureAspect::All;
-
-    wgpu::TextureFormat getViewFormat() const {
-        return fViewFormat != wgpu::TextureFormat::Undefined ? fViewFormat : fFormat;
-    }
+    wgpu::TextureUsage  fUsage = wgpu::TextureUsage::None;
 
     DawnTextureInfo() = default;
+    DawnTextureInfo(const wgpu::Texture& texture);
     DawnTextureInfo(uint32_t sampleCount,
                     Mipmapped mipmapped,
                     wgpu::TextureFormat format,
-                    wgpu::TextureUsage usage,
-                    wgpu::TextureAspect aspect)
-            : DawnTextureInfo(sampleCount,
-                              mipmapped,
-                              format,
-                              format,
-                              usage,
-                              aspect) {}
-    DawnTextureInfo(uint32_t sampleCount,
-                    Mipmapped mipmapped,
-                    wgpu::TextureFormat format,
-                    wgpu::TextureFormat viewFormat,
-                    wgpu::TextureUsage usage,
-                    wgpu::TextureAspect aspect)
+                    wgpu::TextureUsage usage)
             : fSampleCount(sampleCount)
             , fMipmapped(mipmapped)
             , fFormat(format)
-            , fViewFormat(viewFormat)
-            , fUsage(usage)
-            , fAspect(aspect) {}
+            , fUsage(usage) {}
 };
 
 } 

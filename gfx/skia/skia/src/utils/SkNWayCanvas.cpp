@@ -53,7 +53,7 @@ void SkNWayCanvas::addCanvas(SkCanvas* canvas) {
         
         
         
-        SkASSERT(fList[0]->rootDevice() != this->rootDevice());
+        SkASSERT(fList[0]->baseDevice() != this->baseDevice());
     }
     if (canvas) {
         *fList.append() = canvas;
@@ -332,12 +332,14 @@ void SkNWayCanvas::onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y
     }
 }
 
-void SkNWayCanvas::onDrawSlug(const sktext::gpu::Slug* slug, const SkPaint& paint) {
+#if defined(SK_GANESH)
+void SkNWayCanvas::onDrawSlug(const sktext::gpu::Slug* slug) {
     Iter iter(fList);
     while (iter.next()) {
-        iter->drawSlug(slug, paint);
+        iter->drawSlug(slug);
     }
 }
+#endif
 
 void SkNWayCanvas::onDrawPicture(const SkPicture* picture, const SkMatrix* matrix,
                                  const SkPaint* paint) {
@@ -401,5 +403,12 @@ void SkNWayCanvas::onDrawEdgeAAImageSet2(const ImageSetEntry set[], int count,
     while (iter.next()) {
         iter->experimental_DrawEdgeAAImageSet(
                 set, count, dstClips, preViewMatrices, sampling, paint, constraint);
+    }
+}
+
+void SkNWayCanvas::onFlush() {
+    Iter iter(fList);
+    while (iter.next()) {
+        iter->flush();
     }
 }

@@ -460,7 +460,7 @@ private:
     mutable SkScalar fDebugLastMin;  
     mutable SkScalar fDebugLastMax;
 #endif
-    SkDEBUGCODE(int fID;)
+    SkDEBUGCODE(int fID);
 };
 
 #endif

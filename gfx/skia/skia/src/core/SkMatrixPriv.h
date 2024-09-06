@@ -51,36 +51,16 @@ public:
 
 
 
-    [[nodiscard]] static bool InverseMapRect(const SkMatrix& mx, SkRect* dst, const SkRect& src) {
-        if (mx.isScaleTranslate()) {
-            
-            if (mx.getScaleX() == 0.f || mx.getScaleY() == 0.f) {
-                return false;
-            }
-
-            const SkScalar tx = mx.getTranslateX();
-            const SkScalar ty = mx.getTranslateY();
-            
-            
-            
-            auto inverted = skvx::float4::Load(&src.fLeft);
-            inverted -= skvx::float4(tx, ty, tx, ty);
-
-            if (mx.getType() > SkMatrix::kTranslate_Mask) {
-                const SkScalar sx = 1.f / mx.getScaleX();
-                const SkScalar sy = 1.f / mx.getScaleY();
-                inverted *= skvx::float4(sx, sy, sx, sy);
-                if (sx < 0.f && sy < 0.f) {
-                    inverted = skvx::shuffle<2, 3, 0, 1>(inverted); 
-                } else if (sx < 0.f) {
-                    inverted = skvx::shuffle<2, 1, 0, 3>(inverted); 
-                } else if (sy < 0.f) {
-                    inverted = skvx::shuffle<0, 3, 2, 1>(inverted); 
-                }
-            }
-            inverted.store(&dst->fLeft);
+    static bool SK_WARN_UNUSED_RESULT InverseMapRect(const SkMatrix& mx,
+                                                     SkRect* dst, const SkRect& src) {
+        if (mx.getType() <= SkMatrix::kTranslate_Mask) {
+            SkScalar tx = mx.getTranslateX();
+            SkScalar ty = mx.getTranslateY();
+            skvx::float4 trans(tx, ty, tx, ty);
+            (skvx::float4::Load(&src.fLeft) - trans).store(&dst->fLeft);
             return true;
         }
+        
 
         
         SkMatrix inverse;

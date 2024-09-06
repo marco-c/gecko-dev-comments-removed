@@ -8,13 +8,16 @@
 #include "src/sksl/ir/SkSLBlock.h"
 
 #include "src/sksl/ir/SkSLNop.h"
+#include "src/sksl/ir/SkSLSymbolTable.h"
+
+#include <type_traits>
 
 namespace SkSL {
 
 std::unique_ptr<Statement> Block::Make(Position pos,
                                        StatementArray statements,
                                        Kind kind,
-                                       std::unique_ptr<SymbolTable> symbols) {
+                                       std::shared_ptr<SymbolTable> symbols) {
     
     if (kind == Kind::kBracedScope || (symbols && symbols->count())) {
         return std::make_unique<Block>(pos, std::move(statements), kind, std::move(symbols));
@@ -59,39 +62,22 @@ std::unique_ptr<Statement> Block::Make(Position pos,
 std::unique_ptr<Block> Block::MakeBlock(Position pos,
                                         StatementArray statements,
                                         Kind kind,
-                                        std::unique_ptr<SymbolTable> symbols) {
+                                        std::shared_ptr<SymbolTable> symbols) {
     
     
     return std::make_unique<Block>(pos, std::move(statements), kind, std::move(symbols));
 }
 
-std::unique_ptr<Statement> Block::MakeCompoundStatement(std::unique_ptr<Statement> existing,
-                                                        std::unique_ptr<Statement> additional) {
-    
-    if (!existing || existing->isEmpty()) {
-        return additional;
+std::unique_ptr<Statement> Block::clone() const {
+    StatementArray cloned;
+    cloned.reserve_back(this->children().size());
+    for (const std::unique_ptr<Statement>& stmt : this->children()) {
+        cloned.push_back(stmt->clone());
     }
-    if (!additional || additional->isEmpty()) {
-        return existing;
-    }
-
-    
-    if (existing->is<Block>()) {
-        SkSL::Block& block = existing->as<Block>();
-        if (block.blockKind() == Block::Kind::kCompoundStatement) {
-            block.children().push_back(std::move(additional));
-            return existing;
-        }
-    }
-
-    
-    
-    Position pos = existing->fPosition.rangeThrough(additional->fPosition);
-    StatementArray stmts;
-    stmts.reserve_exact(2);
-    stmts.push_back(std::move(existing));
-    stmts.push_back(std::move(additional));
-    return Block::Make(pos, std::move(stmts), Block::Kind::kCompoundStatement);
+    return std::make_unique<Block>(fPosition,
+                                   std::move(cloned),
+                                   fBlockKind,
+                                   SymbolTable::WrapIfBuiltin(this->symbolTable()));
 }
 
 std::string Block::description() const {

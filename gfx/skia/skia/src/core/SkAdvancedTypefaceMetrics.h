@@ -10,10 +10,7 @@
 
 #include "include/core/SkRect.h"
 #include "include/core/SkString.h"
-#include "src/base/SkBitmaskEnum.h"  
-
-#include <cstdint>
-#include <type_traits>
+#include "include/private/SkBitmaskEnum.h"
 
 
 
@@ -24,6 +21,7 @@
 struct SkAdvancedTypefaceMetrics {
     
     SkString fPostScriptName;
+    SkString fFontName;
 
     
     enum StyleFlags : uint32_t {

@@ -5,7 +5,7 @@
 
 
 
-#include "src/sksl/tracing/SkSLDebugTracePriv.h"
+#include "src/sksl/tracing/SkSLDebugInfo.h"
 #include "src/sksl/tracing/SkSLTraceHook.h"
 
 namespace SkSL {

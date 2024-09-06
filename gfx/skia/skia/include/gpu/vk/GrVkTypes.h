@@ -14,7 +14,47 @@
 
 using GrVkBackendMemory = skgpu::VulkanBackendMemory;
 using GrVkAlloc = skgpu::VulkanAlloc;
-using GrVkYcbcrConversionInfo = skgpu::VulkanYcbcrConversionInfo;
+
+
+
+struct GrVkYcbcrConversionInfo {
+    bool operator==(const GrVkYcbcrConversionInfo& that) const {
+        
+        if (!this->isValid() && !that.isValid()) {
+            return true;
+        }
+        return this->fFormat == that.fFormat &&
+               this->fExternalFormat == that.fExternalFormat &&
+               this->fYcbcrModel == that.fYcbcrModel &&
+               this->fYcbcrRange == that.fYcbcrRange &&
+               this->fXChromaOffset == that.fXChromaOffset &&
+               this->fYChromaOffset == that.fYChromaOffset &&
+               this->fChromaFilter == that.fChromaFilter &&
+               this->fForceExplicitReconstruction == that.fForceExplicitReconstruction;
+    }
+    bool operator!=(const GrVkYcbcrConversionInfo& that) const { return !(*this == that); }
+
+    bool isValid() const { return fYcbcrModel != VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY; }
+
+    
+    
+    VkFormat fFormat = VK_FORMAT_UNDEFINED;
+
+    
+    
+    uint64_t fExternalFormat = 0;
+
+    VkSamplerYcbcrModelConversion fYcbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    VkSamplerYcbcrRange fYcbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    VkChromaLocation fXChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    VkChromaLocation fYChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    VkFilter fChromaFilter = VK_FILTER_NEAREST;
+    VkBool32 fForceExplicitReconstruction = false;
+
+    
+    
+    VkFormatFeatureFlags fFormatFeatures = 0;
+};
 
 
 
@@ -39,6 +79,7 @@ struct GrVkImageInfo {
     bool                     fPartOfSwapchainOrAndroidWindow = false;
 #endif
 
+#if GR_TEST_UTILS
     bool operator==(const GrVkImageInfo& that) const {
         bool equal = fImage == that.fImage && fAlloc == that.fAlloc &&
                      fImageTiling == that.fImageTiling &&
@@ -56,6 +97,7 @@ struct GrVkImageInfo {
 #endif
         return equal;
     }
+#endif
 };
 
 using GrVkGetProc = skgpu::VulkanGetProc;

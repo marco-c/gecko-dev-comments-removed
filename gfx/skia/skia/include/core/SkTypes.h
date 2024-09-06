@@ -26,7 +26,11 @@
 #include <climits>
 #include <cstdint>
 
-#if !defined(SK_GANESH) && !defined(SK_GRAPHITE)
+#if defined(SK_GANESH) || defined(SK_GRAPHITE)
+#  if !defined(SK_ENABLE_SKSL)
+#    define SK_ENABLE_SKSL
+#  endif
+#else
 #  undef SK_GL
 #  undef SK_VULKAN
 #  undef SK_METAL
@@ -86,13 +90,10 @@
     #define SK_GAMMA_EXPONENT (0.0f)  // SRGB
 #endif
 
-#if !defined(SK_GAMMA_CONTRAST)
-    
-    
-    
-    
-    #define SK_GAMMA_CONTRAST (0.5f)
+#ifndef GR_TEST_UTILS
+#  define GR_TEST_UTILS 0
 #endif
+
 
 #if defined(SK_HISTOGRAM_ENUMERATION)  || \
     defined(SK_HISTOGRAM_BOOLEAN)      || \
@@ -124,10 +125,8 @@
 
 
 #if defined(SK_ENABLE_OPTIMIZE_SIZE)
-    #if !defined(SK_FORCE_RASTER_PIPELINE_BLITTER)
-        #define SK_FORCE_RASTER_PIPELINE_BLITTER
-    #endif
-    #define SK_DISABLE_SDF_TEXT
+#   define SK_FORCE_RASTER_PIPELINE_BLITTER
+#   define SK_DISABLE_SDF_TEXT
 #endif
 
 #ifndef SK_DISABLE_LEGACY_SHADERCONTEXT
@@ -144,7 +143,6 @@
 
 
 
-
 #if !defined(GR_CACHE_STATS)
   #if defined(SK_DEBUG) || defined(SK_DUMP_STATS)
       #define GR_CACHE_STATS  1
@@ -154,7 +152,7 @@
 #endif
 
 #if !defined(GR_GPU_STATS)
-  #if defined(SK_DEBUG) || defined(SK_DUMP_STATS) || defined(GR_TEST_UTILS)
+  #if defined(SK_DEBUG) || defined(SK_DUMP_STATS) || GR_TEST_UTILS
       #define GR_GPU_STATS    1
   #else
       #define GR_GPU_STATS    0

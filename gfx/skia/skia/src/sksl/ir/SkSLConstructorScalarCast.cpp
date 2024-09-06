@@ -8,11 +8,11 @@
 #include "src/sksl/ir/SkSLConstructorScalarCast.h"
 
 #include "include/core/SkTypes.h"
+#include "include/private/SkSLDefines.h"
 #include "include/private/base/SkTArray.h"
+#include "include/sksl/SkSLErrorReporter.h"
 #include "src/sksl/SkSLConstantFolder.h"
 #include "src/sksl/SkSLContext.h"
-#include "src/sksl/SkSLDefines.h"
-#include "src/sksl/SkSLErrorReporter.h"
 #include "src/sksl/ir/SkSLLiteral.h"
 #include "src/sksl/ir/SkSLType.h"
 
@@ -30,8 +30,8 @@ std::unique_ptr<Expression> ConstructorScalarCast::Convert(const Context& contex
 
     if (args.size() != 1) {
         context.fErrors->error(pos, "invalid arguments to '" + type.displayName() +
-                                    "' constructor, (expected exactly 1 argument, but found " +
-                                    std::to_string(args.size()) + ")");
+                "' constructor, (expected exactly 1 argument, but found " +
+                std::to_string(args.size()) + ")");
         return nullptr;
     }
 
@@ -70,7 +70,6 @@ std::unique_ptr<Expression> ConstructorScalarCast::Make(const Context& context,
 
     
     if (arg->type().matches(type)) {
-        arg->setPosition(pos);
         return arg;
     }
     
@@ -88,20 +87,6 @@ std::unique_ptr<Expression> ConstructorScalarCast::Make(const Context& context,
         }
         return Literal::Make(pos, value, &type);
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (arg->is<ConstructorScalarCast>() && arg->type().isLiteral()) {
-        std::unique_ptr<Expression> inner = std::move(arg->as<ConstructorScalarCast>().argument());
-        return ConstructorScalarCast::Make(context, pos, type, std::move(inner));
-    }
-
     return std::make_unique<ConstructorScalarCast>(pos, type, std::move(arg));
 }
 

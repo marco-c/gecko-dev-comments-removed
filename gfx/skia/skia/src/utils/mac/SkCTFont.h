@@ -48,5 +48,5 @@ SkCTFontWeightMapping& SkCTFontGetNSFontWeightMapping();
 
 SkCTFontWeightMapping& SkCTFontGetDataFontWeightMapping();
 
-#endif  
-#endif  
+#endif
+#endif 

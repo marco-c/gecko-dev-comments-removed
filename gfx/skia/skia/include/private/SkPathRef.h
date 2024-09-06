@@ -55,15 +55,9 @@ class SK_API SkPathRef final : public SkNVRefCnt<SkPathRef> {
 public:
     
     
-    using PointsArray = skia_private::STArray<4, SkPoint>;
-    using VerbsArray = skia_private::STArray<4, uint8_t>;
-    using ConicWeightsArray = skia_private::STArray<2, SkScalar>;
-
-    enum class PathType : uint8_t {
-        kGeneral,
-        kOval,
-        kRRect,
-    };
+    using PointsArray = SkSTArray<4, SkPoint>;
+    using VerbsArray = SkSTArray<4, uint8_t>;
+    using ConicWeightsArray = SkSTArray<2, SkScalar>;
 
     SkPathRef(PointsArray points, VerbsArray verbs, ConicWeightsArray weights,
               unsigned segmentMask)
@@ -74,7 +68,8 @@ public:
         fBoundsIsDirty = true;    
         fGenerationID = 0;        
         fSegmentMask = segmentMask;
-        fType = PathType::kGeneral;
+        fIsOval = false;
+        fIsRRect = false;
         
         fRRectOrOvalIsCCW = false;
         fRRectOrOvalStartIdx = 0xAC;
@@ -88,8 +83,7 @@ public:
     public:
         Editor(sk_sp<SkPathRef>* pathRef,
                int incReserveVerbs = 0,
-               int incReservePoints = 0,
-               int incReserveConics = 0);
+               int incReservePoints = 0);
 
         ~Editor() { SkDEBUGCODE(fPathRef->fEditorsAttached--;) }
 
@@ -152,12 +146,12 @@ public:
 
         SkPathRef* pathRef() { return fPathRef; }
 
-        void setIsOval(bool isCCW, unsigned start) {
-            fPathRef->setIsOval(isCCW, start);
+        void setIsOval(bool isOval, bool isCCW, unsigned start) {
+            fPathRef->setIsOval(isOval, isCCW, start);
         }
 
-        void setIsRRect(bool isCCW, unsigned start) {
-            fPathRef->setIsRRect(isCCW, start);
+        void setIsRRect(bool isRRect, bool isCCW, unsigned start) {
+            fPathRef->setIsRRect(isRRect, isCCW, start);
         }
 
         void setBounds(const SkRect& rect) { fPathRef->setBounds(rect); }
@@ -232,7 +226,7 @@ public:
 
 
     bool isOval(SkRect* rect, bool* isCCW, unsigned* start) const {
-        if (fType == PathType::kOval) {
+        if (fIsOval) {
             if (rect) {
                 *rect = this->getBounds();
             }
@@ -244,7 +238,7 @@ public:
             }
         }
 
-        return fType == PathType::kOval;
+        return SkToBool(fIsOval);
     }
 
     bool isRRect(SkRRect* rrect, bool* isCCW, unsigned* start) const;
@@ -357,28 +351,24 @@ private:
         kSegmentMask_SerializationShift = 0                 
     };
 
-    SkPathRef(int numVerbs = 0, int numPoints = 0, int numConics = 0) {
+    SkPathRef(int numVerbs = 0, int numPoints = 0) {
         fBoundsIsDirty = true;    
         fGenerationID = kEmptyGenID;
         fSegmentMask = 0;
-        fType = PathType::kGeneral;
+        fIsOval = false;
+        fIsRRect = false;
         
         fRRectOrOvalIsCCW = false;
         fRRectOrOvalStartIdx = 0xAC;
-        if (numPoints > 0) {
-            fPoints.reserve_exact(numPoints);
-        }
-        if (numVerbs > 0) {
-            fVerbs.reserve_exact(numVerbs);
-        }
-        if (numConics > 0) {
-            fConicWeights.reserve_exact(numConics);
-        }
+        if (numPoints > 0)
+            fPoints.reserve_back(numPoints);
+        if (numVerbs > 0)
+            fVerbs.reserve_back(numVerbs);
         SkDEBUGCODE(fEditorsAttached.store(0);)
         SkDEBUGCODE(this->validate();)
     }
 
-    void copy(const SkPathRef& ref, int additionalReserveVerbs, int additionalReservePoints, int additionalReserveConics);
+    void copy(const SkPathRef& ref, int additionalReserveVerbs, int additionalReservePoints);
 
     
     static bool ComputePtBounds(SkRect* bounds, const SkPathRef& ref) {
@@ -404,19 +394,14 @@ private:
     }
 
     
-    void incReserve(int additionalVerbs, int additionalPoints, int additionalConics) {
+    void incReserve(int additionalVerbs, int additionalPoints) {
         SkDEBUGCODE(this->validate();)
         
         
-        if (additionalPoints > 0) {
+        if (additionalPoints > 0)
             fPoints.reserve(fPoints.size() + additionalPoints);
-        }
-        if (additionalVerbs > 0) {
+        if (additionalVerbs > 0)
             fVerbs.reserve(fVerbs.size() + additionalVerbs);
-        }
-        if (additionalConics > 0) {
-            fConicWeights.reserve(fConicWeights.size() + additionalConics);
-        }
         SkDEBUGCODE(this->validate();)
     }
 
@@ -431,23 +416,26 @@ private:
         fGenerationID = 0;
 
         fSegmentMask = 0;
-        fType = PathType::kGeneral;
+        fIsOval = false;
+        fIsRRect = false;
     }
 
     
 
     void resetToSize(int verbCount, int pointCount, int conicCount,
-                     int reserveVerbs = 0, int reservePoints = 0,
-                     int reserveConics = 0) {
-        this->commonReset();
+                     int reserveVerbs = 0, int reservePoints = 0) {
+        commonReset();
         
-        fPoints.reserve_exact(pointCount + reservePoints);
+        const int pointDelta = pointCount + reservePoints - fPoints.size();
+        if (pointDelta > 0) {
+            fPoints.reserve_back(pointDelta);
+        }
         fPoints.resize_back(pointCount);
-
-        fVerbs.reserve_exact(verbCount + reserveVerbs);
+        const int verbDelta = verbCount + reserveVerbs - fVerbs.size();
+        if (verbDelta > 0) {
+            fVerbs.reserve_back(verbDelta);
+        }
         fVerbs.resize_back(verbCount);
-
-        fConicWeights.reserve_exact(conicCount + reserveConics);
         fConicWeights.resize_back(conicCount);
         SkDEBUGCODE(this->validate();)
     }
@@ -485,14 +473,14 @@ private:
 
     friend SkPathRef* sk_create_empty_pathref();
 
-    void setIsOval(bool isCCW, unsigned start) {
-        fType = PathType::kOval;
+    void setIsOval(bool isOval, bool isCCW, unsigned start) {
+        fIsOval = isOval;
         fRRectOrOvalIsCCW = isCCW;
         fRRectOrOvalStartIdx = SkToU8(start);
     }
 
-    void setIsRRect(bool isCCW, unsigned start) {
-        fType = PathType::kRRect;
+    void setIsRRect(bool isRRect, bool isCCW, unsigned start) {
+        fIsRRect = isRRect;
         fRRectOrOvalIsCCW = isCCW;
         fRRectOrOvalStartIdx = SkToU8(start);
     }
@@ -500,7 +488,8 @@ private:
     
     SkPoint* getWritablePoints() {
         SkDEBUGCODE(this->validate();)
-        fType = PathType::kGeneral;
+        fIsOval = false;
+        fIsRRect = false;
         return fPoints.begin();
     }
 
@@ -532,7 +521,8 @@ private:
     mutable uint8_t  fBoundsIsDirty;
     mutable bool     fIsFinite;    
 
-    PathType fType;
+    bool     fIsOval;
+    bool     fIsRRect;
     
     
     bool     fRRectOrOvalIsCCW;

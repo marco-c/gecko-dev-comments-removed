@@ -20,6 +20,7 @@
 
 class SkExecutor;
 
+#if defined(SK_GANESH)
 struct SK_API GrContextOptions {
     enum class Enable {
         
@@ -95,12 +96,6 @@ struct SK_API GrContextOptions {
 
 
     int  fBufferMapThreshold = -1;
-
-    
-
-
-
-    size_t fMinimumStagingBufferSize = 64 * 1024;
 
     
 
@@ -297,7 +292,7 @@ struct SK_API GrContextOptions {
     GrDirectContextDestroyedContext fContextDeleteContext = nullptr;
     GrDirectContextDestroyedProc fContextDeleteProc = nullptr;
 
-#if defined(GR_TEST_UTILS)
+#if GR_TEST_UTILS
     
 
 
@@ -370,5 +365,10 @@ struct SK_API GrContextOptions {
 
     GrDriverBugWorkarounds fDriverBugWorkarounds;
 };
+#else
+struct GrContextOptions {
+    struct PersistentCache {};
+};
+#endif
 
 #endif

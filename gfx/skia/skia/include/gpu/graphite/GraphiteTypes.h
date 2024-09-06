@@ -16,13 +16,8 @@
 
 class SkSurface;
 
-namespace skgpu {
-class MutableTextureState;
-}
-
 namespace skgpu::graphite {
 
-class BackendSemaphore;
 class Recording;
 class Task;
 
@@ -44,30 +39,11 @@ using GpuFinishedProc = void (*)(GpuFinishedContext finishedContext, CallbackRes
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 struct InsertRecordingInfo {
     Recording* fRecording = nullptr;
 
     SkSurface* fTargetSurface = nullptr;
     SkIVector fTargetTranslation = {0, 0};
-    MutableTextureState* fTargetTextureState = nullptr;
-
-    size_t fNumWaitSemaphores = 0;
-    BackendSemaphore* fWaitSemaphores = nullptr;
-    size_t fNumSignalSemaphores = 0;
-    BackendSemaphore* fSignalSemaphores = nullptr;
 
     GpuFinishedContext fFinishedContext = nullptr;
     GpuFinishedProc fFinishedProc = nullptr;
@@ -109,29 +85,19 @@ enum class Volatile : bool {
 
 enum DrawTypeFlags : uint8_t {
 
-    kNone           = 0b0000,
+    kNone         = 0b000,
 
     
-    kText           = 0b0001,
+    kText         = 0b001,
 
     
-    kDrawVertices   = 0b0010,
+    kDrawVertices = 0b010,
 
     
-    
-    
-    
-    
-    
-    
-    kSimpleShape    = 0b0100,
-    
-    kNonSimpleShape = 0b1000,
+    kShape        = 0b100,
 
-    kShape          = kSimpleShape | kNonSimpleShape,
-
-    kMostCommon     = kText | kShape,
-    kAll            = kText | kDrawVertices | kShape
+    kMostCommon = kText | kShape,
+    kAll = kText | kDrawVertices | kShape
 };
 
 } 

@@ -8,26 +8,17 @@
 #ifndef SkFont_DEFINED
 #define SkFont_DEFINED
 
-#include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
+#include "include/core/SkFontTypes.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypeface.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkTo.h"
-#include "include/private/base/SkTypeTraits.h"
+#include "include/private/base/SkTemplates.h"
 
-#include <cstddef>
-#include <cstdint>
-#include <type_traits>
 #include <vector>
 
 class SkMatrix;
 class SkPaint;
 class SkPath;
-enum class SkFontHinting;
-enum class SkTextEncoding;
 struct SkFontMetrics;
-struct SkPoint;
 
 
 
@@ -205,10 +196,16 @@ public:
 
 
 
-    SkTypeface* getTypeface() const {
-        SkASSERT(fTypeface);
-        return fTypeface.get();
-    }
+
+    SkTypeface* getTypeface() const {return fTypeface.get(); }
+
+    
+
+
+
+
+
+    SkTypeface* getTypefaceOrDefault() const;
 
     
 
@@ -234,10 +231,14 @@ public:
 
 
 
-    sk_sp<SkTypeface> refTypeface() const {
-        SkASSERT(fTypeface);
-        return fTypeface;
-    }
+    sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
+
+    
+
+
+
+
+    sk_sp<SkTypeface> refTypefaceOrDefault() const;
 
     
 
@@ -245,7 +246,7 @@ public:
 
 
 
-    void setTypeface(sk_sp<SkTypeface> tf);
+    void setTypeface(sk_sp<SkTypeface> tf) { fTypeface = tf; }
 
     
 

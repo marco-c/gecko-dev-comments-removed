@@ -8,12 +8,11 @@
 #ifndef SKSL_SWITCHSTATEMENT
 #define SKSL_SWITCHSTATEMENT
 
-#include "src/sksl/SkSLDefines.h"
-#include "src/sksl/SkSLPosition.h"
-#include "src/sksl/ir/SkSLBlock.h"
+#include "include/private/SkSLDefines.h"
+#include "include/private/SkSLIRNode.h"
+#include "include/private/SkSLStatement.h"
+#include "include/sksl/SkSLPosition.h"
 #include "src/sksl/ir/SkSLExpression.h"
-#include "src/sksl/ir/SkSLIRNode.h"
-#include "src/sksl/ir/SkSLStatement.h"
 
 #include <memory>
 #include <string>
@@ -22,6 +21,7 @@
 namespace SkSL {
 
 class Context;
+class SwitchCase;
 class SymbolTable;
 
 
@@ -31,12 +31,12 @@ class SwitchStatement final : public Statement {
 public:
     inline static constexpr Kind kIRNodeKind = Kind::kSwitch;
 
-    SwitchStatement(Position pos,
-                    std::unique_ptr<Expression> value,
-                    std::unique_ptr<Statement> caseBlock)
-            : INHERITED(pos, kIRNodeKind)
-            , fValue(std::move(value))
-            , fCaseBlock(std::move(caseBlock)) {}
+    SwitchStatement(Position pos, std::unique_ptr<Expression> value,
+                    StatementArray cases, std::shared_ptr<SymbolTable> symbols)
+        : INHERITED(pos, kIRNodeKind)
+        , fValue(std::move(value))
+        , fCases(std::move(cases))
+        , fSymbols(std::move(symbols)) {}
 
     
     
@@ -46,14 +46,24 @@ public:
                                               std::unique_ptr<Expression> value,
                                               ExpressionArray caseValues,
                                               StatementArray caseStatements,
-                                              std::unique_ptr<SymbolTable> symbolTable);
+                                              std::shared_ptr<SymbolTable> symbolTable);
 
     
     
     static std::unique_ptr<Statement> Make(const Context& context,
                                            Position pos,
                                            std::unique_ptr<Expression> value,
-                                           std::unique_ptr<Statement> caseBlock);
+                                           StatementArray cases,
+                                           std::shared_ptr<SymbolTable> symbolTable);
+
+    
+    
+    
+    
+    
+    static std::unique_ptr<Statement> BlockForCase(StatementArray* cases,
+                                                   SwitchCase* caseToCapture,
+                                                   std::shared_ptr<SymbolTable> symbolTable);
 
     std::unique_ptr<Expression>& value() {
         return fValue;
@@ -63,27 +73,26 @@ public:
         return fValue;
     }
 
-    std::unique_ptr<Statement>& caseBlock() {
-        return fCaseBlock;
-    }
-
-    const std::unique_ptr<Statement>& caseBlock() const {
-        return fCaseBlock;
-    }
-
     StatementArray& cases() {
-        return fCaseBlock->as<Block>().children();
+        return fCases;
     }
 
     const StatementArray& cases() const {
-        return fCaseBlock->as<Block>().children();
+        return fCases;
     }
+
+    const std::shared_ptr<SymbolTable>& symbols() const {
+        return fSymbols;
+    }
+
+    std::unique_ptr<Statement> clone() const override;
 
     std::string description() const override;
 
 private:
     std::unique_ptr<Expression> fValue;
-    std::unique_ptr<Statement> fCaseBlock; 
+    StatementArray fCases;  
+    std::shared_ptr<SymbolTable> fSymbols;
 
     using INHERITED = Statement;
 };

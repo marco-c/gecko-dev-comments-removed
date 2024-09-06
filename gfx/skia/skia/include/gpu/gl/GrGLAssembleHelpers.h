@@ -4,12 +4,8 @@
 
 
 
-#ifndef GrGLAssembleHelpers_DEFINED
-#define GrGLAssembleHelpers_DEFINED
 
 #include "include/gpu/gl/GrGLAssembleInterface.h"
 
 void GrGetEGLQueryAndDisplay(GrEGLQueryStringFn** queryString, GrEGLDisplay* display,
                              void* ctx, GrGLGetProc get);
-
-#endif  

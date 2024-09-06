@@ -8,8 +8,11 @@
 #ifndef GrContextThreadSafeProxy_DEFINED
 #define GrContextThreadSafeProxy_DEFINED
 
-#include "include/core/SkImageInfo.h"
 #include "include/core/SkRefCnt.h"
+
+#if defined(SK_GANESH)
+
+#include "include/core/SkImageInfo.h"
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/GrContextOptions.h"
 #include "include/gpu/GrTypes.h"
@@ -19,9 +22,9 @@
 class GrBackendFormat;
 class GrCaps;
 class GrContextThreadSafeProxyPriv;
-class GrSurfaceCharacterization;
 class GrThreadSafeCache;
 class GrThreadSafePipelineBuilder;
+class SkSurfaceCharacterization;
 class SkSurfaceProps;
 enum class SkTextureCompressionType;
 
@@ -31,9 +34,9 @@ namespace sktext::gpu { class TextBlobRedrawCoordinator; }
 
 
 
-class SK_API GrContextThreadSafeProxy : public SkNVRefCnt<GrContextThreadSafeProxy> {
+class SK_API GrContextThreadSafeProxy final : public SkNVRefCnt<GrContextThreadSafeProxy> {
 public:
-    virtual ~GrContextThreadSafeProxy();
+    ~GrContextThreadSafeProxy();
 
     
 
@@ -82,19 +85,19 @@ public:
 
 
 
-    GrSurfaceCharacterization createCharacterization(
-            size_t cacheMaxResourceBytes,
-            const SkImageInfo& ii,
-            const GrBackendFormat& backendFormat,
-            int sampleCount,
-            GrSurfaceOrigin origin,
-            const SkSurfaceProps& surfaceProps,
-            skgpu::Mipmapped isMipmapped,
-            bool willUseGLFBO0 = false,
-            bool isTextureable = true,
-            skgpu::Protected isProtected = GrProtected::kNo,
-            bool vkRTSupportsInputAttachment = false,
-            bool forVulkanSecondaryCommandBuffer = false);
+    SkSurfaceCharacterization createCharacterization(
+                                  size_t cacheMaxResourceBytes,
+                                  const SkImageInfo& ii,
+                                  const GrBackendFormat& backendFormat,
+                                  int sampleCount,
+                                  GrSurfaceOrigin origin,
+                                  const SkSurfaceProps& surfaceProps,
+                                  bool isMipMapped,
+                                  bool willUseGLFBO0 = false,
+                                  bool isTextureable = true,
+                                  GrProtected isProtected = GrProtected::kNo,
+                                  bool vkRTSupportsInputAttachment = false,
+                                  bool forVulkanSecondaryCommandBuffer = false);
 
     
 
@@ -135,12 +138,11 @@ public:
     GrContextThreadSafeProxyPriv priv();
     const GrContextThreadSafeProxyPriv priv() const;  
 
-protected:
+private:
+    friend class GrContextThreadSafeProxyPriv; 
+
     
     GrContextThreadSafeProxy(GrBackendApi, const GrContextOptions&);
-
-private:
-    friend class GrContextThreadSafeProxyPriv;  
 
     void abandonContext();
     bool abandoned() const;
@@ -149,13 +151,6 @@ private:
     
     
     void init(sk_sp<const GrCaps>, sk_sp<GrThreadSafePipelineBuilder>);
-
-    virtual bool isValidCharacterizationForVulkan(sk_sp<const GrCaps>,
-                                                  bool isTextureable,
-                                                  skgpu::Mipmapped isMipmapped,
-                                                  skgpu::Protected isProtected,
-                                                  bool vkRTSupportsInputAttachment,
-                                                  bool forVulkanSecondaryCommandBuffer);
 
     const GrBackendApi                                      fBackend;
     const GrContextOptions                                  fOptions;
@@ -166,5 +161,9 @@ private:
     sk_sp<GrThreadSafePipelineBuilder>                      fPipelineBuilder;
     std::atomic<bool>                                       fAbandoned{false};
 };
+
+#else 
+class SK_API GrContextThreadSafeProxy final : public SkNVRefCnt<GrContextThreadSafeProxy> {};
+#endif
 
 #endif

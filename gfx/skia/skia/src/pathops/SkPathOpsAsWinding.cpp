@@ -433,7 +433,7 @@ bool AsWinding(const SkPath& path, SkPath* result) {
     }
     
     if (std::all_of(sorted.fChildren.begin(), sorted.fChildren.end(),
-            [](const Contour* contour) -> bool { return contour->fChildren.empty(); } )) {
+            [](const Contour* contour) -> bool { return !contour->fChildren.size(); } )) {
         return set_result_path(result, path, fillType);
     }
     

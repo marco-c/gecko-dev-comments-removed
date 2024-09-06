@@ -32,7 +32,6 @@ class SkRRect;
 class SkWStream;
 enum class SkPathConvexity;
 enum class SkPathFirstDirection;
-struct SkPathVerbAnalysis;
 
 
 
@@ -545,9 +544,7 @@ public:
 
 
 
-
-
-    void incReserve(int extraPtCount, int extraVerbCount = 0, int extraConicCount = 0);
+    void incReserve(int extraPtCount);
 
 #ifdef SK_HIDE_PATH_EDIT_METHODS
 private:
@@ -1250,16 +1247,8 @@ public:
 
 
     enum AddPathMode {
-        
-
-        kAppend_AddPathMode,
-        
-
-
-
-
-
-        kExtend_AddPathMode,
+        kAppend_AddPathMode, 
+        kExtend_AddPathMode, 
     };
 
     
@@ -1793,6 +1782,7 @@ private:
     
 
 
+
     void resetFields();
 
     
@@ -1883,16 +1873,6 @@ private:
 
 
     void shrinkToFit();
-
-    
-    
-    static SkPath MakeInternal(const SkPathVerbAnalysis& analsis,
-                               const SkPoint points[],
-                               const uint8_t verbs[],
-                               int verbCount,
-                               const SkScalar conics[],
-                               SkPathFillType fillType,
-                               bool isVolatile);
 
     friend class SkAutoPathBoundsUpdate;
     friend class SkAutoDisableOvalCheck;

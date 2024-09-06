@@ -15,7 +15,7 @@ namespace SkSL {
 
 class FunctionDefinition;
 struct Program;
-class DebugTracePriv;
+class SkRPDebugTrace;
 namespace RP { class Program; }
 
 
@@ -25,8 +25,7 @@ namespace RP { class Program; }
 
 std::unique_ptr<RP::Program> MakeRasterPipelineProgram(const Program& program,
                                                        const FunctionDefinition& function,
-                                                       DebugTracePriv* debugTrace = nullptr,
-                                                       bool writeTraceOps = false);
+                                                       SkRPDebugTrace* debugTrace = nullptr);
 
 }  
 

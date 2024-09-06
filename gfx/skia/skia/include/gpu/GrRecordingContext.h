@@ -8,27 +8,26 @@
 #ifndef GrRecordingContext_DEFINED
 #define GrRecordingContext_DEFINED
 
-#include "include/core/SkColorType.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkString.h" 
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkTArray.h"
-#include "include/private/gpu/ganesh/GrContext_Base.h"
 #include "include/private/gpu/ganesh/GrImageContext.h"
 
+#if GR_GPU_STATS && GR_TEST_UTILS
 #include <map>
-#include <memory>
 #include <string>
+#endif
 
 class GrAuditTrail;
-class GrContextThreadSafeProxy;
-class GrDirectContext;
+class GrBackendFormat;
 class GrDrawingManager;
 class GrOnFlushCallbackObject;
+class GrMemoryPool;
 class GrProgramDesc;
 class GrProgramInfo;
 class GrProxyProvider;
 class GrRecordingContextPriv;
+class GrSurfaceProxy;
 class GrThreadSafeCache;
 class SkArenaAlloc;
 class SkCapabilities;
@@ -39,9 +38,17 @@ class SubRunAllocator;
 class TextBlobRedrawCoordinator;
 }
 
+#if GR_TEST_UTILS
+class SkString;
+#endif
+
 class GrRecordingContext : public GrImageContext {
 public:
     ~GrRecordingContext() override;
+
+    SK_API GrBackendFormat defaultBackendFormat(SkColorType ct, GrRenderable renderable) const {
+        return INHERITED::defaultBackendFormat(ct, renderable);
+    }
 
     
 
@@ -49,7 +56,7 @@ public:
 
 
 
-    bool abandoned() override { return GrImageContext::abandoned(); }
+    bool abandoned() override { return INHERITED::abandoned(); }
 
     
 
@@ -86,15 +93,10 @@ public:
     
 
 
-    SK_API bool supportsProtectedContent() const;
-
-    
-
-
 
 
     SK_API int maxSurfaceSampleCountForColorType(SkColorType colorType) const {
-        return GrImageContext::maxSurfaceSampleCountForColorType(colorType);
+        return INHERITED::maxSurfaceSampleCountForColorType(colorType);
     }
 
     SK_API sk_sp<const SkCapabilities> skCapabilities() const;
@@ -124,8 +126,8 @@ public:
 
 protected:
     friend class GrRecordingContextPriv;    
-    friend class GrDeferredDisplayList;     
-    friend class GrDeferredDisplayListPriv; 
+    friend class SkDeferredDisplayList;     
+    friend class SkDeferredDisplayListPriv; 
 
     
     class OwnedArenas {
@@ -189,7 +191,7 @@ protected:
     
     
     
-    virtual void detachProgramData(skia_private::TArray<ProgramData>*) {}
+    virtual void detachProgramData(SkTArray<ProgramData>*) {}
 
     sktext::gpu::TextBlobRedrawCoordinator* getTextBlobRedrawCoordinator();
     const sktext::gpu::TextBlobRedrawCoordinator* getTextBlobRedrawCoordinator() const;
@@ -220,10 +222,9 @@ protected:
         int numPathMaskCacheHits() const { return fNumPathMaskCacheHits; }
         void incNumPathMasksCacheHits() { fNumPathMaskCacheHits++; }
 
-#if defined(GR_TEST_UTILS)
+#if GR_TEST_UTILS
         void dump(SkString* out) const;
-        void dumpKeyValuePairs(skia_private::TArray<SkString>* keys,
-                               skia_private::TArray<double>* values) const;
+        void dumpKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* values) const;
 #endif
 
     private:
@@ -234,18 +235,16 @@ protected:
         void incNumPathMasksGenerated() {}
         void incNumPathMasksCacheHits() {}
 
-#if defined(GR_TEST_UTILS)
+#if GR_TEST_UTILS
         void dump(SkString*) const {}
-        void dumpKeyValuePairs(skia_private::TArray<SkString>* keys,
-                               skia_private::TArray<double>* values) const {}
+        void dumpKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* values) const {}
 #endif
 #endif 
     } fStats;
 
-#if GR_GPU_STATS && defined(GR_TEST_UTILS)
+#if GR_GPU_STATS && GR_TEST_UTILS
     struct DMSAAStats {
-        void dumpKeyValuePairs(skia_private::TArray<SkString>* keys,
-                               skia_private::TArray<double>* values) const;
+        void dumpKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* values) const;
         void dump() const;
         void merge(const DMSAAStats&);
         int fNumRenderPasses = 0;
@@ -270,9 +269,11 @@ private:
     std::unique_ptr<GrDrawingManager> fDrawingManager;
     std::unique_ptr<GrProxyProvider>  fProxyProvider;
 
-#if defined(GR_TEST_UTILS)
+#if GR_TEST_UTILS
     int fSuppressWarningMessages = 0;
 #endif
+
+    using INHERITED = GrImageContext;
 };
 
 

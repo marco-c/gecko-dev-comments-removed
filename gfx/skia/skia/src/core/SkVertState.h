@@ -10,8 +10,6 @@
 
 #include "include/core/SkVertices.h"
 
-#include <cstdint>
-
 
 
 

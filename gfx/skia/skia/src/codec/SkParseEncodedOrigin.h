@@ -8,13 +8,12 @@
 #ifndef SkParseEncodedOrigin_DEFINED
 #define SkParseEncodedOrigin_DEFINED
 
-#include <cstddef>
 #include "include/codec/SkEncodedOrigin.h"
 
 
 
 
 
-bool SkParseEncodedOrigin(const void* data, size_t data_length, SkEncodedOrigin* out);
+bool SkParseEncodedOrigin(const uint8_t* data, size_t data_length, SkEncodedOrigin* out);
 
 #endif 

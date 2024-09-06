@@ -8,39 +8,27 @@
 #ifndef SkScalerContext_DEFINED
 #define SkScalerContext_DEFINED
 
-#include "include/core/SkColor.h"
+#include <memory>
+
+#include "include/core/SkFont.h"
+#include "include/core/SkFontTypes.h"
+#include "include/core/SkMaskFilter.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkString.h"
-#include "include/core/SkSurfaceProps.h"
 #include "include/core/SkTypeface.h"
-#include "include/core/SkTypes.h"
 #include "include/private/base/SkMacros.h"
-#include "include/private/base/SkPoint_impl.h"
-#include "include/private/base/SkTemplates.h"
-#include "include/private/base/SkTo.h"
 #include "src/core/SkGlyph.h"
 #include "src/core/SkMask.h"
 #include "src/core/SkMaskGamma.h"
+#include "src/core/SkSurfacePriv.h"
+#include "src/core/SkWriteBuffer.h"
 
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-#include <utility>
-
-class SkArenaAlloc;
 class SkAutoDescriptor;
 class SkDescriptor;
-class SkDrawable;
-class SkFont;
 class SkMaskFilter;
-class SkPath;
 class SkPathEffect;
-enum class SkFontHinting;
-struct SkFontMetrics;
+class SkScalerContext;
+class SkScalerContext_DW;
 
 enum class SkScalerContextFlags : uint32_t {
     kNone                      = 0,
@@ -83,8 +71,7 @@ public:
         return SkIntToScalar(fDeviceGamma) / (1 << 6);
     }
     void setDeviceGamma(SkScalar dg) {
-        SkASSERT(SkSurfaceProps::kMinGammaInclusive <= dg &&
-                 dg < SkIntToScalar(SkSurfaceProps::kMaxGammaExclusive));
+        SkASSERT(0 <= dg && dg < SkIntToScalar(4));
         fDeviceGamma = SkScalarFloorToInt(dg * (1 << 6));
     }
 
@@ -92,8 +79,7 @@ public:
         return SkIntToScalar(fPaintGamma) / (1 << 6);
     }
     void setPaintGamma(SkScalar pg) {
-        SkASSERT(SkSurfaceProps::kMinGammaInclusive <= pg &&
-                 pg < SkIntToScalar(SkSurfaceProps::kMaxGammaExclusive));
+        SkASSERT(0 <= pg && pg < SkIntToScalar(4));
         fPaintGamma = SkScalarFloorToInt(pg * (1 << 6));
     }
 
@@ -102,8 +88,7 @@ public:
         return SkIntToScalar(fContrast) / ((1 << 8) - 1);
     }
     void setContrast(SkScalar c) {
-        SkASSERT(SkSurfaceProps::kMinContrastInclusive <= c &&
-                 c <= SkIntToScalar(SkSurfaceProps::kMaxContrastInclusive));
+        SkASSERT(0 <= c && c <= SK_Scalar1);
         fContrast = SkScalarRoundToInt(c * ((1 << 8) - 1));
     }
 
@@ -380,32 +365,19 @@ public:
 protected:
     SkScalerContextRec fRec;
 
-    struct GlyphMetrics {
-        SkVector       advance;
-        SkRect         bounds;
-        SkMask::Format maskFormat;
-        uint16_t       extraBits;
-        bool           neverRequestPath;
-        bool           computeFromPath;
+    
 
-        GlyphMetrics(SkMask::Format format)
-            : advance{0, 0}
-            , bounds{0, 0, 0, 0}
-            , maskFormat(format)
-            , extraBits(0)
-            , neverRequestPath(false)
-            , computeFromPath(false)
-        {}
-    };
 
-    virtual GlyphMetrics generateMetrics(const SkGlyph&, SkArenaAlloc*) = 0;
+    virtual bool generateAdvance(SkGlyph* glyph) = 0;
 
-    static void GenerateMetricsFromPath(
+    
+
+
+
+    virtual void generateMetrics(SkGlyph* glyph, SkArenaAlloc*) = 0;
+    static bool GenerateMetricsFromPath(
         SkGlyph* glyph, const SkPath& path, SkMask::Format format,
         bool verticalLCD, bool a8FromLCD, bool hairline);
-
-    static void SaturateGlyphBounds(SkGlyph* glyph, SkRect&&);
-    static void SaturateGlyphBounds(SkGlyph* glyph, SkIRect const &);
 
     
 
@@ -415,9 +387,9 @@ protected:
 
 
 
-    virtual void generateImage(const SkGlyph& glyph, void* imageBuffer) = 0;
+    virtual void generateImage(const SkGlyph& glyph) = 0;
     static void GenerateImageFromPath(
-        SkMaskBuilder& dst, const SkPath& path, const SkMaskGamma::PreBlend& maskPreBlend,
+        const SkMask& mask, const SkPath& path, const SkMaskGamma::PreBlend& maskPreBlend,
         bool doBGR, bool verticalLCD, bool a8FromLCD, bool hairline);
 
     
@@ -425,7 +397,7 @@ protected:
 
 
 
-    [[nodiscard]] virtual bool generatePath(const SkGlyph&, SkPath*) = 0;
+    virtual bool SK_WARN_UNUSED_RESULT generatePath(const SkGlyph&, SkPath*) = 0;
 
     
 

@@ -14,7 +14,6 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSize.h"
-#include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "include/core/SkYUVAPixmaps.h"
 #include "include/private/SkEncodedInfo.h"
@@ -24,8 +23,6 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
-#include <optional>
-#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -44,13 +41,10 @@ enum class Blend;
 enum class DisposalMethod;
 }
 
+
 namespace DM {
 class CodecSrc;
 } 
-
-namespace SkCodecs {
-struct Decoder;
-}
 
 
 
@@ -138,8 +132,6 @@ public:
 
 
 
-
-
         kPreferStillImage,
         
 
@@ -183,15 +175,7 @@ public:
 
 
     static std::unique_ptr<SkCodec> MakeFromStream(
-            std::unique_ptr<SkStream>,
-            SkSpan<const SkCodecs::Decoder> decoders,
-            Result* = nullptr,
-            SkPngChunkReader* = nullptr,
-            SelectionPolicy selectionPolicy = SelectionPolicy::kPreferStillImage);
-    
-    static std::unique_ptr<SkCodec> MakeFromStream(
-            std::unique_ptr<SkStream>,
-            Result* = nullptr,
+            std::unique_ptr<SkStream>, Result* = nullptr,
             SkPngChunkReader* = nullptr,
             SelectionPolicy selectionPolicy = SelectionPolicy::kPreferStillImage);
 
@@ -211,10 +195,6 @@ public:
 
 
 
-    static std::unique_ptr<SkCodec> MakeFromData(sk_sp<SkData>,
-                                                 SkSpan<const SkCodecs::Decoder> decoders,
-                                                 SkPngChunkReader* = nullptr);
-    
     static std::unique_ptr<SkCodec> MakeFromData(sk_sp<SkData>, SkPngChunkReader* = nullptr);
 
     virtual ~SkCodec();
@@ -290,12 +270,6 @@ public:
 
 
     SkEncodedImageFormat getEncodedFormat() const { return this->onGetEncodedFormat(); }
-
-    
-
-
-
-    virtual std::unique_ptr<SkStream> getEncodedData() const;
 
     
 
@@ -418,7 +392,6 @@ public:
     }
 
     
-
 
 
     std::tuple<sk_sp<SkImage>, SkCodec::Result> getImage(const SkImageInfo& info,
@@ -848,7 +821,7 @@ protected:
 
 
 
-    [[nodiscard]] bool rewindIfNeeded();
+    bool SK_WARN_UNUSED_RESULT rewindIfNeeded();
 
     
 
@@ -1035,51 +1008,8 @@ private:
     virtual SkSampler* getSampler(bool ) { return nullptr; }
 
     friend class DM::CodecSrc;  
-    friend class PNGCodecGM;    
     friend class SkSampledCodec;
     friend class SkIcoCodec;
     friend class SkAndroidCodec; 
-    friend class SkPDFBitmap; 
 };
-
-namespace SkCodecs {
-
-using DecodeContext = void*;
-using IsFormatCallback = bool (*)(const void* data, size_t len);
-using MakeFromStreamCallback = std::unique_ptr<SkCodec> (*)(std::unique_ptr<SkStream>,
-                                                            SkCodec::Result*,
-                                                            DecodeContext);
-
-struct SK_API Decoder {
-    
-    
-    std::string_view id;
-    IsFormatCallback isFormat;
-    MakeFromStreamCallback makeFromStream;
-};
-
-
-
-
-
-void SK_API Register(Decoder d);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SK_API sk_sp<SkImage> DeferredImage(std::unique_ptr<SkCodec> codec,
-                                    std::optional<SkAlphaType> alphaType = std::nullopt);
-}
-
 #endif 

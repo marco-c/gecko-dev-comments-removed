@@ -8,22 +8,17 @@
 #ifndef sktext_gpu_Slug_DEFINED
 #define sktext_gpu_Slug_DEFINED
 
+#include "include/core/SkData.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#include "include/private/base/SkAPI.h"
-
-#include <cstddef>
-#include <cstdint>
 
 class SkCanvas;
-class SkData;
+class SkMatrix;
 class SkPaint;
+class SkTextBlob;
 class SkReadBuffer;
 class SkStrikeClient;
-class SkTextBlob;
 class SkWriteBuffer;
-struct SkDeserialProcs;
-struct SkPoint;
 
 namespace sktext::gpu {
 
@@ -43,19 +38,21 @@ public:
 
     
     
-    static sk_sp<Slug> Deserialize(const void* data,
-                                   size_t size,
-                                   const SkStrikeClient* client = nullptr);
+    static sk_sp<Slug> Deserialize(
+            const void* data, size_t size, const SkStrikeClient* client = nullptr);
     static sk_sp<Slug> MakeFromBuffer(SkReadBuffer& buffer);
 
-    
-    static void AddDeserialProcs(SkDeserialProcs* procs, const SkStrikeClient* client = nullptr);
 
     
-    void draw(SkCanvas* canvas, const SkPaint& paint) const;
+    void draw(SkCanvas* canvas) const;
 
     virtual SkRect sourceBounds() const = 0;
     virtual SkRect sourceBoundsWithOrigin () const = 0;
+
+    
+    
+    
+    virtual const SkPaint& initialPaint() const = 0;
 
     virtual void doFlatten(SkWriteBuffer&) const = 0;
 
@@ -65,8 +62,6 @@ private:
     static uint32_t NextUniqueID();
     const uint32_t  fUniqueID{NextUniqueID()};
 };
-
-
 }  
 
 #endif  

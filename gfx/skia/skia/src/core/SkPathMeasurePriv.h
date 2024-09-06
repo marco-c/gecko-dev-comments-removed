@@ -26,13 +26,4 @@ enum SkSegType {
 void SkPathMeasure_segTo(const SkPoint pts[], unsigned segType,
                    SkScalar startT, SkScalar stopT, SkPath* dst);
 
-
-
-class SkPathMeasure;
-
-class SkPathMeasurePriv {
-public:
-    static size_t CountSegments(const SkPathMeasure&);
-};
-
 #endif  

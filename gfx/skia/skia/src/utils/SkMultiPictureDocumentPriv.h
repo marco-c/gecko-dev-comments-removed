@@ -8,17 +8,14 @@
 #ifndef SkMultiPictureDocumentPriv_DEFINED
 #define SkMultiPictureDocumentPriv_DEFINED
 
-#include "include/docs/SkMultiPictureDocument.h"
-
-namespace SkMultiPictureDocument {
+#include "src/utils/SkMultiPictureDocument.h"
 
 
 
 
-bool ReadPageSizes(SkStreamSeekable* src,
-                   SkDocumentPage* dstArray,
-                   int dstArrayCount);
 
-}  
+bool SkMultiPictureDocumentReadPageSizes(SkStreamSeekable* src,
+                                         SkDocumentPage* dstArray,
+                                         int dstArrayCount);
 
 #endif  

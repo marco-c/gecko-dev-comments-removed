@@ -76,20 +76,6 @@ enum SkYUVColorSpace : int {
     kBT2020_10bit_Limited_SkYUVColorSpace,
     kBT2020_12bit_Full_SkYUVColorSpace,
     kBT2020_12bit_Limited_SkYUVColorSpace,
-    kFCC_Full_SkYUVColorSpace,                  
-    kFCC_Limited_SkYUVColorSpace,
-    kSMPTE240_Full_SkYUVColorSpace,             
-    kSMPTE240_Limited_SkYUVColorSpace,
-    kYDZDX_Full_SkYUVColorSpace,                
-    kYDZDX_Limited_SkYUVColorSpace,
-    kGBR_Full_SkYUVColorSpace,                  
-    kGBR_Limited_SkYUVColorSpace,
-    kYCgCo_8bit_Full_SkYUVColorSpace,           
-    kYCgCo_8bit_Limited_SkYUVColorSpace,
-    kYCgCo_10bit_Full_SkYUVColorSpace,
-    kYCgCo_10bit_Limited_SkYUVColorSpace,
-    kYCgCo_12bit_Full_SkYUVColorSpace,
-    kYCgCo_12bit_Limited_SkYUVColorSpace,
     kIdentity_SkYUVColorSpace,                  
 
     kLastEnum_SkYUVColorSpace = kIdentity_SkYUVColorSpace, 
@@ -557,6 +543,8 @@ public:
     }
 
     
+
+
 
 
 

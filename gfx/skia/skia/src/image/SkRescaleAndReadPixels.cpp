@@ -86,7 +86,7 @@ void SkRescaleAndReadPixels(SkBitmap bmp,
         
         auto ii = SkImageInfo::Make(srcW, srcH, kRGBA_F16_SkColorType, bmp.info().alphaType(),
                                     std::move(cs));
-        auto linearSurf = SkSurfaces::Raster(ii);
+        auto linearSurf = SkSurface::MakeRaster(ii);
         if (!linearSurf) {
             callback(context, nullptr);
             return;
@@ -99,7 +99,7 @@ void SkRescaleAndReadPixels(SkBitmap bmp,
         constraint = SkCanvas::kFast_SrcRectConstraint;
     } else {
         
-        srcImage = SkImages::RasterFromPixmap(bmp.pixmap(), nullptr, nullptr);
+        srcImage = SkImage::MakeFromRaster(bmp.pixmap(), nullptr, nullptr);
     }
     while (stepsX || stepsY) {
         int nextW = resultInfo.width();
@@ -127,7 +127,7 @@ void SkRescaleAndReadPixels(SkBitmap bmp,
             
             ii = resultInfo;
         }
-        auto next = SkSurfaces::Raster(ii);
+        auto next = SkSurface::MakeRaster(ii);
         if (!next) {
             callback(context, nullptr);
             return;

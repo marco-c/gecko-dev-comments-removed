@@ -42,9 +42,8 @@ public:
     
     SkMask::Format getFormat() const override;
     
-    bool filterMask(SkMaskBuilder* dst, const SkMask& src, const SkMatrix&,
+    bool filterMask(SkMask* dst, const SkMask& src, const SkMatrix&,
                     SkIPoint* margin) const override;
-    SkMaskFilterBase::Type type() const override { return SkMaskFilterBase::Type::kEmboss; }
 
 protected:
     SkEmbossMaskFilter(SkScalar blurSigma, const Light& light);

@@ -73,12 +73,6 @@ struct SK_API GrVkBackendContext {
     
     
     skgpu::Protected                    fProtectedContext = skgpu::Protected::kNo;
-    
-    
-    
-    
-    skgpu::VulkanDeviceLostContext      fDeviceLostContext = nullptr;
-    skgpu::VulkanDeviceLostProc         fDeviceLostProc = nullptr;
 };
 
 #endif

@@ -17,6 +17,7 @@
 #include "include/core/SkSize.h"
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkAssert.h"
+#include "include/private/base/SkAttributes.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -114,7 +115,7 @@ public:
 
     
 
-    [[nodiscard]] bool reset(const SkMask& mask);
+    bool SK_WARN_UNUSED_RESULT reset(const SkMask& mask);
 
     
 
@@ -126,7 +127,7 @@ public:
 
 
 
-    [[nodiscard]] bool extractSubset(SkPixmap* subset, const SkIRect& area) const;
+    bool SK_WARN_UNUSED_RESULT extractSubset(SkPixmap* subset, const SkIRect& area) const;
 
     
 
@@ -720,7 +721,23 @@ public:
 
 
 
-    bool erase(const SkColor4f& color, const SkIRect* subset = nullptr) const;
+
+
+    bool erase(const SkColor4f& color, const SkIRect* subset = nullptr) const {
+        return this->erase(color, nullptr, subset);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    bool erase(const SkColor4f& color, SkColorSpace* cs, const SkIRect* subset = nullptr) const;
 
 private:
     const void*     fPixels;

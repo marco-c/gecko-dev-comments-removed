@@ -4,13 +4,13 @@
 
 
 
+
+
 #ifndef SkTextFormatParams_DEFINES
 #define SkTextFormatParams_DEFINES
 
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
-
-#include <iterator>
 
 
 

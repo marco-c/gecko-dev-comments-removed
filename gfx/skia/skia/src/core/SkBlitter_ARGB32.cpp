@@ -5,30 +5,12 @@
 
 
 
-#include "include/core/SkColor.h"
-#include "include/core/SkColorPriv.h"
-#include "include/core/SkColorType.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkPixmap.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkTypes.h"
+#include "include/core/SkShader.h"
 #include "include/private/SkColorData.h"
-#include "include/private/base/SkCPUTypes.h"
-#include "include/private/base/SkDebug.h"
-#include "include/private/base/SkMalloc.h"
-#include "include/private/base/SkTo.h"
-#include "src/base/SkUtils.h"
 #include "src/base/SkVx.h"
-#include "src/core/SkBlitMask.h"
-#include "src/core/SkBlitRow.h"
 #include "src/core/SkCoreBlitters.h"
-#include "src/core/SkMask.h"
-#include "src/core/SkMemset.h"
-#include "src/shaders/SkShaderBase.h"
-
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
+#include "src/core/SkOpts.h"
+#include "src/core/SkXfermodePriv.h"
 
 static inline int upscale_31_to_32(int value) {
     SkASSERT((unsigned)value <= 31);
@@ -65,17 +47,13 @@ static inline SkPMColor blend_lcd16(int srcA, int srcR, int srcG, int srcB,
     maskG = maskG * srcA >> 8;
     maskB = maskB * srcA >> 8;
 
-    int dstA = SkGetPackedA32(dst);
     int dstR = SkGetPackedR32(dst);
     int dstG = SkGetPackedG32(dst);
     int dstB = SkGetPackedB32(dst);
 
     
     
-    int maskA = (srcA-1) < dstA ? std::min(maskR, std::min(maskG, maskB))
-                                : std::max(maskR, std::max(maskG, maskB));
-
-    return SkPackARGB32(blend_32(0xFF, dstA, maskA),
+    return SkPackARGB32(0xFF,
                         blend_32(srcR, dstR, maskR),
                         blend_32(srcG, dstG, maskG),
                         blend_32(srcB, dstB, maskB));
@@ -104,17 +82,13 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
     maskG = upscale_31_to_32(maskG);
     maskB = upscale_31_to_32(maskB);
 
-    int dstA = SkGetPackedA32(dst);
     int dstR = SkGetPackedR32(dst);
     int dstG = SkGetPackedG32(dst);
     int dstB = SkGetPackedB32(dst);
 
     
-    int maskA = std::max(maskR, std::max(maskG, maskB));
-
     
-    
-    return SkPackARGB32(blend_32(0xFF, dstA, maskA),
+    return SkPackARGB32(0xFF,
                         blend_32(srcR, dstR, maskR),
                         blend_32(srcG, dstG, maskG),
                         blend_32(srcB, dstB, maskB));
@@ -188,26 +162,11 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
                                   _mm_set1_epi32(0x1F << SK_B32_SHIFT));
 
         
-        __m128i aMin = _mm_min_epu8(_mm_slli_epi32(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                       _mm_min_epu8(_mm_slli_epi32(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                    _mm_slli_epi32(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-        __m128i aMax = _mm_max_epu8(_mm_slli_epi32(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                       _mm_max_epu8(_mm_slli_epi32(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                    _mm_slli_epi32(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-        
-        __m128i a = _mm_cmplt_epi32(srcA,
-                                    _mm_and_si128(
-                                            _mm_add_epi32(dst, _mm_set1_epi32(1 << SK_A32_SHIFT)),
-                                            _mm_set1_epi32(SK_A32_MASK)));
-        
-        a = _mm_or_si128(_mm_and_si128(a, aMin), _mm_andnot_si128(a, aMax));
-
         
         
         
         
-        
-        mask = _mm_or_si128(_mm_or_si128(a, r), _mm_or_si128(g, b));
+        mask = _mm_or_si128(_mm_or_si128(r, g), b);
 
         
         
@@ -288,16 +247,11 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
                                   _mm_set1_epi32(0x1F << SK_B32_SHIFT));
 
         
-        __m128i a = _mm_max_epu8(_mm_slli_epi32(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                    _mm_max_epu8(_mm_slli_epi32(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                 _mm_slli_epi32(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-
         
         
         
         
-        
-        mask = _mm_or_si128(_mm_or_si128(a, r), _mm_or_si128(g, b));
+        mask = _mm_or_si128(_mm_or_si128(r, g), b);
 
         
         
@@ -336,7 +290,10 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
 
         
         
-        return _mm_packus_epi16(resultLo, resultHi);
+        
+        
+        return _mm_or_si128(_mm_packus_epi16(resultLo, resultHi),
+                            _mm_set1_epi32(SK_A32_MASK << SK_A32_SHIFT));
     }
 
     void blit_row_lcd16(SkPMColor dst[], const uint16_t mask[], SkColor src, int width, SkPMColor) {
@@ -372,7 +329,8 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
                 
                 __m128i dst_sse = _mm_load_si128(d);
                 
-                __m128i mask_sse = _mm_loadl_epi64((const __m128i*)mask);
+                __m128i mask_sse = _mm_loadl_epi64(
+                                       reinterpret_cast<const __m128i*>(mask));
 
                 
                 
@@ -438,7 +396,8 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
                 
                 __m128i dst_sse = _mm_load_si128(d);
                 
-                __m128i mask_sse =  _mm_loadl_epi64((const __m128i*)mask);
+                __m128i mask_sse = _mm_loadl_epi64(
+                                       reinterpret_cast<const __m128i*>(mask));
 
                 
                 
@@ -503,18 +462,26 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
         int colG = SkColorGetG(color);
         int colB = SkColorGetB(color);
 
-        uint8x8_t vcolA = vdup_n_u8(0xFF);
         uint8x8_t vcolR = vdup_n_u8(colR);
         uint8x8_t vcolG = vdup_n_u8(colG);
         uint8x8_t vcolB = vdup_n_u8(colB);
+        uint8x8_t vopqDstA = vdup_n_u8(SkGetPackedA32(opaqueDst));
+        uint8x8_t vopqDstR = vdup_n_u8(SkGetPackedR32(opaqueDst));
+        uint8x8_t vopqDstG = vdup_n_u8(SkGetPackedG32(opaqueDst));
+        uint8x8_t vopqDstB = vdup_n_u8(SkGetPackedB32(opaqueDst));
 
         while (width >= 8) {
             uint8x8x4_t vdst;
             uint16x8_t vmask;
-            uint16x8_t vmaskR, vmaskG, vmaskB, vmaskA;
+            uint16x8_t vmaskR, vmaskG, vmaskB;
+            uint8x8_t vsel_trans, vsel_opq;
 
             vdst = vld4_u8((uint8_t*)dst);
             vmask = vld1q_u16(src);
+
+            
+            vsel_trans = vmovn_u16(vceqq_u16(vmask, vdupq_n_u16(0)));
+            vsel_opq = vmovn_u16(vceqq_u16(vmask, vdupq_n_u16(0xFFFF)));
 
             
             vmaskR = vshrq_n_u16(vmask, SK_R16_SHIFT);
@@ -526,13 +493,17 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
             vmaskR = vmaskR + vshrq_n_u16(vmaskR, 4);
             vmaskG = vmaskG + vshrq_n_u16(vmaskG, 4);
             vmaskB = vmaskB + vshrq_n_u16(vmaskB, 4);
-            
-            vmaskA = vmaxq_u16(vmaskR, vmaxq_u16(vmaskG, vmaskB));
+
+            vdst.val[NEON_A] = vbsl_u8(vsel_trans, vdst.val[NEON_A], vdup_n_u8(0xFF));
+            vdst.val[NEON_A] = vbsl_u8(vsel_opq, vopqDstA, vdst.val[NEON_A]);
 
             vdst.val[NEON_R] = blend_32_neon(vcolR, vdst.val[NEON_R], vmaskR);
             vdst.val[NEON_G] = blend_32_neon(vcolG, vdst.val[NEON_G], vmaskG);
             vdst.val[NEON_B] = blend_32_neon(vcolB, vdst.val[NEON_B], vmaskB);
-            vdst.val[NEON_A] = blend_32_neon(vcolA, vdst.val[NEON_A], vmaskA);
+
+            vdst.val[NEON_R] = vbsl_u8(vsel_opq, vopqDstR, vdst.val[NEON_R]);
+            vdst.val[NEON_G] = vbsl_u8(vsel_opq, vopqDstG, vdst.val[NEON_G]);
+            vdst.val[NEON_B] = vbsl_u8(vsel_opq, vopqDstB, vdst.val[NEON_B]);
 
             vst4_u8((uint8_t*)dst, vdst);
 
@@ -554,11 +525,9 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
         int colG = SkColorGetG(color);
         int colB = SkColorGetB(color);
 
-        
-        uint16x8_t vcolACmp = vdupq_n_u16(colA);
         colA = SkAlpha255To256(colA);
 
-        uint16x8_t vcolA = vdupq_n_u16(colA); 
+        uint16x8_t vcolA = vdupq_n_u16(colA);
         uint8x8_t vcolR = vdup_n_u8(colR);
         uint8x8_t vcolG = vdup_n_u8(colG);
         uint8x8_t vcolB = vdup_n_u8(colB);
@@ -566,7 +535,7 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
         while (width >= 8) {
             uint8x8x4_t vdst;
             uint16x8_t vmask;
-            uint16x8_t vmaskR, vmaskG, vmaskB, vmaskA;
+            uint16x8_t vmaskR, vmaskG, vmaskB;
 
             vdst = vld4_u8((uint8_t*)dst);
             vmask = vld1q_u16(src);
@@ -586,17 +555,11 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
             vmaskG = vshrq_n_u16(vmaskG * vcolA, 8);
             vmaskB = vshrq_n_u16(vmaskB * vcolA, 8);
 
-            
-            
-            vmaskA = vbslq_u16(vcleq_u16(vcolACmp, vmovl_u8(vdst.val[NEON_A])), 
-                               vminq_u16(vmaskR, vminq_u16(vmaskG, vmaskB)),    
-                               vmaxq_u16(vmaskR, vmaxq_u16(vmaskG, vmaskB)));   
-
+            vdst.val[NEON_A] = vdup_n_u8(0xFF);
             vdst.val[NEON_R] = blend_32_neon(vcolR, vdst.val[NEON_R], vmaskR);
             vdst.val[NEON_G] = blend_32_neon(vcolG, vdst.val[NEON_G], vmaskG);
             vdst.val[NEON_B] = blend_32_neon(vcolB, vdst.val[NEON_B], vmaskB);
-            
-            vdst.val[NEON_A] = blend_32_neon(vdup_n_u8(0xFF), vdst.val[NEON_A], vmaskA);
+
             vst4_u8((uint8_t*)dst, vdst);
 
             dst += 8;
@@ -606,743 +569,6 @@ static inline SkPMColor blend_lcd16_opaque(int srcR, int srcG, int srcB,
 
         for (int i = 0; i < width; i++) {
             dst[i] = blend_lcd16(colA, colR, colG, colB, dst[i], src[i]);
-        }
-    }
-
-#elif SK_CPU_LSX_LEVEL >= SK_CPU_LSX_LEVEL_LASX
-
-    
-    
-    
-    #define SK_R16x5_R32x5_SHIFT (SK_R32_SHIFT - SK_R16_SHIFT - SK_R16_BITS + 5)
-    #define SK_G16x5_G32x5_SHIFT (SK_G32_SHIFT - SK_G16_SHIFT - SK_G16_BITS + 5)
-    #define SK_B16x5_B32x5_SHIFT (SK_B32_SHIFT - SK_B16_SHIFT - SK_B16_BITS + 5)
-
-    #if SK_R16x5_R32x5_SHIFT == 0
-        #define SkPackedR16x5ToUnmaskedR32x5_LASX(x) (x)
-    #elif SK_R16x5_R32x5_SHIFT > 0
-        #define SkPackedR16x5ToUnmaskedR32x5_LASX(x) (__lasx_xvslli_w(x, SK_R16x5_R32x5_SHIFT))
-    #else
-        #define SkPackedR16x5ToUnmaskedR32x5_LASX(x) (__lasx_xvsrli_w(x, -SK_R16x5_R32x5_SHIFT))
-    #endif
-
-    #if SK_G16x5_G32x5_SHIFT == 0
-        #define SkPackedG16x5ToUnmaskedG32x5_LASX(x) (x)
-    #elif SK_G16x5_G32x5_SHIFT > 0
-        #define SkPackedG16x5ToUnmaskedG32x5_LASX(x) (__lasx_xvslli_w(x, SK_G16x5_G32x5_SHIFT))
-    #else
-        #define SkPackedG16x5ToUnmaskedG32x5_LASX(x) (__lasx_xvsrli_w(x, -SK_G16x5_G32x5_SHIFT))
-    #endif
-
-    #if SK_B16x5_B32x5_SHIFT == 0
-        #define SkPackedB16x5ToUnmaskedB32x5_LASX(x) (x)
-    #elif SK_B16x5_B32x5_SHIFT > 0
-        #define SkPackedB16x5ToUnmaskedB32x5_LASX(x) (__lasx_xvslli_w(x, SK_B16x5_B32x5_SHIFT))
-    #else
-        #define SkPackedB16x5ToUnmaskedB32x5_LASX(x) (__lasx_xvsrli_w(x, -SK_B16x5_B32x5_SHIFT))
-    #endif
-
-    static __m256i blend_lcd16_lasx(__m256i &src, __m256i &dst, __m256i &mask, __m256i &srcA) {
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        __m256i xv_zero = __lasx_xvldi(0);
-
-        
-        
-        
-        __m256i r = __lasx_xvand_v(SkPackedR16x5ToUnmaskedR32x5_LASX(mask),
-                                   __lasx_xvreplgr2vr_w(0x1F << SK_R32_SHIFT));
-
-        
-        
-        __m256i g = __lasx_xvand_v(SkPackedG16x5ToUnmaskedG32x5_LASX(mask),
-                                   __lasx_xvreplgr2vr_w(0x1F << SK_G32_SHIFT));
-
-        
-        
-        __m256i b = __lasx_xvand_v(SkPackedB16x5ToUnmaskedB32x5_LASX(mask),
-                                   __lasx_xvreplgr2vr_w(0x1F << SK_B32_SHIFT));
-
-        
-        __m256i aMin = __lasx_xvmin_b(__lasx_xvslli_w(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                       __lasx_xvmin_b(__lasx_xvslli_w(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                      __lasx_xvslli_w(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-        __m256i aMax = __lasx_xvmax_b(__lasx_xvslli_w(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                       __lasx_xvmax_b(__lasx_xvslli_w(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                      __lasx_xvslli_w(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-        
-        __m256i a = __lasx_xvmskltz_w(srcA -
-                                    __lasx_xvand_v(
-                                           __lasx_xvadd_w(dst,
-                                                          __lasx_xvreplgr2vr_w(1 << SK_A32_SHIFT)),
-                                           __lasx_xvreplgr2vr_w(SK_A32_MASK)));
-        
-        a = __lasx_xvor_v(__lasx_xvand_v(a, aMin), __lasx_xvandn_v(a, aMax));
-
-        
-        
-        
-        
-        
-        
-        
-        mask = __lasx_xvor_v(__lasx_xvor_v(a, r), __lasx_xvor_v(g, b));
-
-        
-        
-        
-        __m256i maskLo, maskHi;
-        
-        
-        maskLo = __lasx_xvilvl_b(xv_zero, mask);
-        
-        
-        maskHi = __lasx_xvilvh_b(xv_zero, mask);
-
-        
-        
-        
-        
-        maskLo = __lasx_xvadd_h(maskLo, __lasx_xvsrli_h(maskLo, 4));
-        maskHi = __lasx_xvadd_h(maskHi, __lasx_xvsrli_h(maskHi, 4));
-
-        
-        maskLo = __lasx_xvmul_h(maskLo, srcA);
-        maskHi = __lasx_xvmul_h(maskHi, srcA);
-
-        
-        maskLo = __lasx_xvsrli_h(maskLo, 8);
-        maskHi = __lasx_xvsrli_h(maskHi, 8);
-
-        
-        
-        
-        __m256i dstLo = __lasx_xvilvl_b(xv_zero, dst);
-        
-        
-        __m256i dstHi = __lasx_xvilvh_b(xv_zero, dst);
-
-        
-        maskLo = __lasx_xvmul_h(maskLo, __lasx_xvsub_h(src, dstLo));
-        maskHi = __lasx_xvmul_h(maskHi, __lasx_xvsub_h(src, dstHi));
-
-        
-        maskLo = __lasx_xvsrai_h(maskLo, 5);
-        maskHi = __lasx_xvsrai_h(maskHi, 5);
-
-        
-        
-        __m256i resultLo = __lasx_xvadd_h(dstLo, maskLo);
-        __m256i resultHi = __lasx_xvadd_h(dstHi, maskHi);
-
-        
-        
-        
-        
-        __m256i tmpl = __lasx_xvsat_hu(resultLo, 7);
-        __m256i tmph = __lasx_xvsat_hu(resultHi, 7);
-        return __lasx_xvpickev_b(tmph, tmpl);
-    }
-
-    static __m256i blend_lcd16_opaque_lasx(__m256i &src, __m256i &dst, __m256i &mask) {
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        __m256i xv_zero = __lasx_xvldi(0);
-
-        
-        
-        
-        __m256i r = __lasx_xvand_v(SkPackedR16x5ToUnmaskedR32x5_LASX(mask),
-                                   __lasx_xvreplgr2vr_w(0x1F << SK_R32_SHIFT));
-
-        
-        
-        __m256i g = __lasx_xvand_v(SkPackedG16x5ToUnmaskedG32x5_LASX(mask),
-                                   __lasx_xvreplgr2vr_w(0x1F << SK_G32_SHIFT));
-
-        
-        
-        __m256i b = __lasx_xvand_v(SkPackedB16x5ToUnmaskedB32x5_LASX(mask),
-                                   __lasx_xvreplgr2vr_w(0x1F << SK_B32_SHIFT));
-
-        
-        __m256i a = __lasx_xvmax_b(__lasx_xvslli_w(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                    __lasx_xvmax_b(__lasx_xvslli_w(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                   __lasx_xvslli_w(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-
-        
-        
-        
-        
-        
-        
-        
-        
-        mask = __lasx_xvor_v(__lasx_xvor_v(a, r), __lasx_xvor_v(g, b));
-
-        
-        
-        
-        __m256i maskLo, maskHi;
-        
-        
-        maskLo = __lasx_xvilvl_b(xv_zero, mask);
-        
-        
-        maskHi = __lasx_xvilvh_b(xv_zero, mask);
-
-        
-        
-        
-        
-        maskLo = __lasx_xvadd_h(maskLo, __lasx_xvsrli_h(maskLo, 4));
-        maskHi = __lasx_xvadd_h(maskHi, __lasx_xvsrli_h(maskHi, 4));
-
-        
-        
-        
-        __m256i dstLo = __lasx_xvilvl_b(xv_zero, dst);
-        
-        
-        __m256i dstHi = __lasx_xvilvh_b(xv_zero, dst);
-
-        
-        maskLo = __lasx_xvmul_h(maskLo, __lasx_xvsub_h(src, dstLo));
-        maskHi = __lasx_xvmul_h(maskHi, __lasx_xvsub_h(src, dstHi));
-
-        
-        maskLo = __lasx_xvsrai_h(maskLo, 5);
-        maskHi = __lasx_xvsrai_h(maskHi, 5);
-
-        
-        
-        __m256i resultLo = __lasx_xvadd_h(dstLo, maskLo);
-        __m256i resultHi = __lasx_xvadd_h(dstHi, maskHi);
-
-        
-        
-        __m256i tmpl = __lasx_xvsat_hu(resultLo, 7);
-        __m256i tmph = __lasx_xvsat_hu(resultHi, 7);
-
-        return __lasx_xvpickev_b(tmph, tmpl);
-    }
-
-    void blit_row_lcd16(SkPMColor dst[], const uint16_t mask[], SkColor src, int width, SkPMColor) {
-        if (width <= 0) {
-            return;
-        }
-
-        int srcA = SkColorGetA(src);
-        int srcR = SkColorGetR(src);
-        int srcG = SkColorGetG(src);
-        int srcB = SkColorGetB(src);
-        __m256i xv_zero = __lasx_xvldi(0);
-
-        srcA = SkAlpha255To256(srcA);
-        if (width >= 8) {
-            SkASSERT(((size_t)dst & 0x03) == 0);
-            while (((size_t)dst & 0x0F) != 0) {
-                *dst = blend_lcd16(srcA, srcR, srcG, srcB, *dst, *mask);
-                mask++;
-                dst++;
-                width--;
-            }
-
-            __m256i *d = reinterpret_cast<__m256i*>(dst);
-            
-            unsigned int skpackargb32 = SkPackARGB32(0xFF, srcR, srcG, srcB);
-            __m256i src_lasx = __lasx_xvreplgr2vr_w(skpackargb32);
-            
-            src_lasx = __lasx_xvilvl_b(xv_zero, src_lasx);
-            
-            
-            
-            __m256i srcA_lasx = __lasx_xvreplgr2vr_h(srcA);
-
-            while (width >= 8) {
-                
-                __m256i dst_lasx = __lasx_xvld(d, 0);
-                
-                __m256i mask_lasx = __lasx_xvld(mask, 0);
-                mask_lasx = (__m256i){mask_lasx[0], 0, mask_lasx[1], 0};
-
-                int pack_cmp = __lasx_xbz_v(mask_lasx);
-                
-                if (pack_cmp != 1) {
-                    
-                    
-                    
-                    
-                    
-                    mask_lasx = __lasx_xvilvl_h(xv_zero, mask_lasx);
-
-                    
-                    __m256i result = blend_lcd16_lasx(src_lasx, dst_lasx, mask_lasx, srcA_lasx);
-                    __lasx_xvst(result, d, 0);
-                }
-                d++;
-                mask += 8;
-                width -= 8;
-            }
-            dst = reinterpret_cast<SkPMColor*>(d);
-        }
-
-        while (width > 0) {
-            *dst = blend_lcd16(srcA, srcR, srcG, srcB, *dst, *mask);
-            mask++;
-            dst++;
-            width--;
-        }
-    }
-
-    void blit_row_lcd16_opaque(SkPMColor dst[], const uint16_t mask[],
-                               SkColor src, int width, SkPMColor opaqueDst) {
-        if (width <= 0) {
-            return;
-        }
-
-        int srcR = SkColorGetR(src);
-        int srcG = SkColorGetG(src);
-        int srcB = SkColorGetB(src);
-        __m256i xv_zero = __lasx_xvldi(0);
-
-        if (width >= 8) {
-            SkASSERT(((size_t)dst & 0x03) == 0);
-            while (((size_t)dst & 0x0F) != 0) {
-                *dst = blend_lcd16_opaque(srcR, srcG, srcB, *dst, *mask, opaqueDst);
-                mask++;
-                dst++;
-                width--;
-            }
-
-            __m256i *d = reinterpret_cast<__m256i*>(dst);
-            
-            unsigned int sk_pack_argb32 = SkPackARGB32(0xFF, srcR, srcG, srcB);
-            __m256i src_lasx = __lasx_xvreplgr2vr_w(sk_pack_argb32);
-            
-            
-            
-            src_lasx = __lasx_xvilvl_b(xv_zero, src_lasx);
-
-            while (width >= 8) {
-                
-                __m256i dst_lasx = __lasx_xvld(d, 0);
-                
-                __m256i mask_lasx = __lasx_xvld(mask, 0);
-                mask_lasx = (__m256i){mask_lasx[0], 0, mask_lasx[1], 0};
-
-                int32_t pack_cmp = __lasx_xbz_v(mask_lasx);
-                
-                if (pack_cmp != 1) {
-                    
-                    
-                    
-                    
-                    
-                    mask_lasx = __lasx_xvilvl_h(xv_zero, mask_lasx);
-                    
-                    __m256i result = blend_lcd16_opaque_lasx(src_lasx, dst_lasx, mask_lasx);
-                    __lasx_xvst(result, d, 0);
-                }
-                d++;
-                mask += 8;
-                width -= 8;
-            }
-
-            dst = reinterpret_cast<SkPMColor*>(d);
-        }
-
-        while (width > 0) {
-            *dst = blend_lcd16_opaque(srcR, srcG, srcB, *dst, *mask, opaqueDst);
-            mask++;
-            dst++;
-            width--;
-        }
-    }
-
-#elif SK_CPU_LSX_LEVEL >= SK_CPU_LSX_LEVEL_LSX
-
-    
-    
-    
-    #define SK_R16x5_R32x5_SHIFT (SK_R32_SHIFT - SK_R16_SHIFT - SK_R16_BITS + 5)
-    #define SK_G16x5_G32x5_SHIFT (SK_G32_SHIFT - SK_G16_SHIFT - SK_G16_BITS + 5)
-    #define SK_B16x5_B32x5_SHIFT (SK_B32_SHIFT - SK_B16_SHIFT - SK_B16_BITS + 5)
-
-    #if SK_R16x5_R32x5_SHIFT == 0
-        #define SkPackedR16x5ToUnmaskedR32x5_LSX(x) (x)
-    #elif SK_R16x5_R32x5_SHIFT > 0
-        #define SkPackedR16x5ToUnmaskedR32x5_LSX(x) (__lsx_vslli_w(x, SK_R16x5_R32x5_SHIFT))
-    #else
-        #define SkPackedR16x5ToUnmaskedR32x5_LSX(x) (__lsx_vsrli_w(x, -SK_R16x5_R32x5_SHIFT))
-    #endif
-
-    #if SK_G16x5_G32x5_SHIFT == 0
-        #define SkPackedG16x5ToUnmaskedG32x5_LSX(x) (x)
-    #elif SK_G16x5_G32x5_SHIFT > 0
-        #define SkPackedG16x5ToUnmaskedG32x5_LSX(x) (__lsx_vslli_w(x, SK_G16x5_G32x5_SHIFT))
-    #else
-        #define SkPackedG16x5ToUnmaskedG32x5_LSX(x) (__lsx_vsrli_w(x, -SK_G16x5_G32x5_SHIFT))
-    #endif
-
-    #if SK_B16x5_B32x5_SHIFT == 0
-        #define SkPackedB16x5ToUnmaskedB32x5_LSX(x) (x)
-    #elif SK_B16x5_B32x5_SHIFT > 0
-        #define SkPackedB16x5ToUnmaskedB32x5_LSX(x) (__lsx_vslli_w(x, SK_B16x5_B32x5_SHIFT))
-    #else
-        #define SkPackedB16x5ToUnmaskedB32x5_LSX(x) (__lsx_vsrli_w(x, -SK_B16x5_B32x5_SHIFT))
-    #endif
-
-    static __m128i blend_lcd16_lsx(__m128i &src, __m128i &dst, __m128i &mask, __m128i &srcA) {
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-
-        __m128i v_zero = __lsx_vldi(0);
-
-        
-        
-        __m128i r = __lsx_vand_v(SkPackedR16x5ToUnmaskedR32x5_LSX(mask),
-                                 __lsx_vreplgr2vr_w(0x1F << SK_R32_SHIFT));
-
-        
-        __m128i g = __lsx_vand_v(SkPackedG16x5ToUnmaskedG32x5_LSX(mask),
-                                 __lsx_vreplgr2vr_w(0x1F << SK_G32_SHIFT));
-
-        
-        __m128i b = __lsx_vand_v(SkPackedB16x5ToUnmaskedB32x5_LSX(mask),
-                                 __lsx_vreplgr2vr_w(0x1F << SK_B32_SHIFT));
-
-        
-        __m128i aMin = __lsx_vmin_b(__lsx_vslli_w(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                       __lsx_vmin_b(__lsx_vslli_w(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                    __lsx_vslli_w(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-        __m128i aMax = __lsx_vmax_b(__lsx_vslli_w(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                       __lsx_vmax_b(__lsx_vslli_w(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                    __lsx_vslli_w(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-        
-        __m128i a = __lsx_vmskltz_w(srcA -
-                                    __lsx_vand_v(
-                                          __lsx_vadd_w(dst,
-                                                       __lsx_vreplgr2vr_w(1 << SK_A32_SHIFT)),
-                                          __lsx_vreplgr2vr_w(SK_A32_MASK)));
-        
-        a = __lsx_vor_v(__lsx_vand_v(a, aMin), __lsx_vandn_v(a, aMax));
-
-        
-        
-        
-        
-        
-        mask = __lsx_vor_v(__lsx_vor_v(a, r), __lsx_vor_v(g, b));
-
-        
-        
-        
-        __m128i maskLo, maskHi;
-        
-        maskLo = __lsx_vilvl_b(v_zero, mask);
-        
-        maskHi = __lsx_vilvh_b(v_zero, mask);
-
-        
-        
-        
-        
-        maskLo = __lsx_vadd_h(maskLo, __lsx_vsrli_h(maskLo, 4));
-        maskHi = __lsx_vadd_h(maskHi, __lsx_vsrli_h(maskHi, 4));
-
-        
-        maskLo = __lsx_vmul_h(maskLo, srcA);
-        maskHi = __lsx_vmul_h(maskHi, srcA);
-
-        
-        maskLo = __lsx_vsrli_h(maskLo, 8);
-        maskHi = __lsx_vsrli_h(maskHi, 8);
-
-        
-        
-        __m128i dstLo = __lsx_vilvl_b(v_zero, dst);
-        
-        __m128i dstHi = __lsx_vilvh_b(v_zero, dst);
-
-        
-        maskLo = __lsx_vmul_h(maskLo, __lsx_vsub_h(src, dstLo));
-        maskHi = __lsx_vmul_h(maskHi, __lsx_vsub_h(src, dstHi));
-
-        
-        maskLo = __lsx_vsrai_h(maskLo, 5);
-        maskHi = __lsx_vsrai_h(maskHi, 5);
-
-        
-        
-        __m128i resultLo = __lsx_vadd_h(dstLo, maskLo);
-        __m128i resultHi = __lsx_vadd_h(dstHi, maskHi);
-
-        
-        
-        
-        
-        __m128i tmpl = __lsx_vsat_hu(resultLo, 7);
-        __m128i tmph = __lsx_vsat_hu(resultHi, 7);
-        return __lsx_vpickev_b(tmph, tmpl);
-    }
-
-    static __m128i blend_lcd16_opaque_lsx(__m128i &src, __m128i &dst, __m128i &mask) {
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-
-        __m128i v_zero = __lsx_vldi(0);
-
-        
-        
-        __m128i r = __lsx_vand_v(SkPackedR16x5ToUnmaskedR32x5_LSX(mask),
-                                 __lsx_vreplgr2vr_w(0x1F << SK_R32_SHIFT));
-
-        
-        __m128i g = __lsx_vand_v(SkPackedG16x5ToUnmaskedG32x5_LSX(mask),
-                                 __lsx_vreplgr2vr_w(0x1F << SK_G32_SHIFT));
-
-        
-        __m128i b = __lsx_vand_v(SkPackedB16x5ToUnmaskedB32x5_LSX(mask),
-                                 __lsx_vreplgr2vr_w(0x1F << SK_B32_SHIFT));
-
-        
-        __m128i a = __lsx_vmax_b(__lsx_vslli_w(r, SK_A32_SHIFT - SK_R32_SHIFT),
-                    __lsx_vmax_b(__lsx_vslli_w(g, SK_A32_SHIFT - SK_G32_SHIFT),
-                                 __lsx_vslli_w(b, SK_A32_SHIFT - SK_B32_SHIFT)));
-
-        
-        
-        
-        
-        
-        mask = __lsx_vor_v(__lsx_vor_v(a, r), __lsx_vor_v(g, b));
-
-        
-        
-        
-        __m128i maskLo, maskHi;
-        
-        maskLo = __lsx_vilvl_b(v_zero, mask);
-        
-        maskHi = __lsx_vilvh_b(v_zero, mask);
-
-        
-        
-        
-        
-        maskLo = __lsx_vadd_h(maskLo, __lsx_vsrli_h(maskLo, 4));
-        maskHi = __lsx_vadd_h(maskHi, __lsx_vsrli_h(maskHi, 4));
-
-        
-        
-        __m128i dstLo = __lsx_vilvl_b(v_zero, dst);
-        
-        __m128i dstHi = __lsx_vilvh_b(v_zero, dst);
-
-        
-        maskLo = __lsx_vmul_h(maskLo, __lsx_vsub_h(src, dstLo));
-        maskHi = __lsx_vmul_h(maskHi, __lsx_vsub_h(src, dstHi));
-
-        
-        maskLo = __lsx_vsrai_h(maskLo, 5);
-        maskHi = __lsx_vsrai_h(maskHi, 5);
-
-        
-        
-        __m128i resultLo = __lsx_vadd_h(dstLo, maskLo);
-        __m128i resultHi = __lsx_vadd_h(dstHi, maskHi);
-
-        
-        
-        __m128i tmpl = __lsx_vsat_hu(resultLo, 7);
-        __m128i tmph = __lsx_vsat_hu(resultHi, 7);
-        return __lsx_vpickev_b(tmph, tmpl);
-    }
-
-    void blit_row_lcd16(SkPMColor dst[], const uint16_t mask[], SkColor src, int width, SkPMColor) {
-        if (width <= 0) {
-            return;
-        }
-
-        int srcA = SkColorGetA(src);
-        int srcR = SkColorGetR(src);
-        int srcG = SkColorGetG(src);
-        int srcB = SkColorGetB(src);
-        __m128i v_zero = __lsx_vldi(0);
-
-        srcA = SkAlpha255To256(srcA);
-        if (width >= 4) {
-            SkASSERT(((size_t)dst & 0x03) == 0);
-            while (((size_t)dst & 0x0F) != 0) {
-                *dst = blend_lcd16(srcA, srcR, srcG, srcB, *dst, *mask);
-                mask++;
-                dst++;
-                width--;
-            }
-
-            __m128i *d = reinterpret_cast<__m128i*>(dst);
-            
-            unsigned int skpackargb32 = SkPackARGB32(0xFF, srcR, srcG, srcB);
-            __m128i src_lsx = __lsx_vreplgr2vr_w(skpackargb32);
-            
-            src_lsx = __lsx_vilvl_b(v_zero, src_lsx);
-            
-            
-            __m128i srcA_lsx = __lsx_vreplgr2vr_h(srcA);
-
-            while (width >= 4) {
-                
-                __m128i dst_lsx = __lsx_vld(d, 0);
-                
-                __m128i mask_lsx = __lsx_vldrepl_d((void *)mask, 0);
-                mask_lsx =  __lsx_vilvl_d(v_zero, mask_lsx);
-
-                int pack_cmp = __lsx_bz_v(mask_lsx);
-                
-                if (pack_cmp != 1) {
-                    
-                    
-                    
-                    mask_lsx = __lsx_vilvl_h(v_zero, mask_lsx);
-
-                    
-                    __m128i result = blend_lcd16_lsx(src_lsx, dst_lsx, mask_lsx, srcA_lsx);
-                    __lsx_vst(result, d, 0);
-                }
-
-                d++;
-                mask += 4;
-                width -= 4;
-            }
-
-            dst = reinterpret_cast<SkPMColor*>(d);
-        }
-
-        while (width > 0) {
-            *dst = blend_lcd16(srcA, srcR, srcG, srcB, *dst, *mask);
-            mask++;
-            dst++;
-            width--;
-        }
-    }
-
-    void blit_row_lcd16_opaque(SkPMColor dst[], const uint16_t mask[],
-                               SkColor src, int width, SkPMColor opaqueDst) {
-        if (width <= 0) {
-            return;
-        }
-
-        int srcR = SkColorGetR(src);
-        int srcG = SkColorGetG(src);
-        int srcB = SkColorGetB(src);
-        __m128i v_zero = __lsx_vldi(0);
-
-        if (width >= 4) {
-            SkASSERT(((size_t)dst & 0x03) == 0);
-            while (((size_t)dst & 0x0F) != 0) {
-                *dst = blend_lcd16_opaque(srcR, srcG, srcB, *dst, *mask, opaqueDst);
-                mask++;
-                dst++;
-                width--;
-            }
-
-            __m128i *d = reinterpret_cast<__m128i*>(dst);
-            
-            unsigned int sk_pack_argb32 = SkPackARGB32(0xFF, srcR, srcG, srcB);
-            __m128i src_lsx = __lsx_vreplgr2vr_w(sk_pack_argb32);
-            
-            
-            src_lsx = __lsx_vilvl_b(v_zero, src_lsx);
-
-            while (width >= 4) {
-                
-                __m128i dst_lsx = __lsx_vld(d, 0);
-                
-                __m128i mask_lsx = __lsx_vldrepl_d((void *)(mask), 0);
-                mask_lsx =  __lsx_vilvl_d(v_zero, mask_lsx);
-
-                int pack_cmp = __lsx_bz_v(mask_lsx);
-                
-                if (pack_cmp != 1) {
-                    
-                    mask_lsx = __lsx_vilvl_h(v_zero, mask_lsx);
-
-                    
-                    __m128i result = blend_lcd16_opaque_lsx(src_lsx, dst_lsx, mask_lsx);
-                    __lsx_vst(result, d, 0);
-                }
-                d++;
-                mask += 4;
-                width -= 4;
-            }
-
-            dst = reinterpret_cast<SkPMColor*>(d);
-        }
-
-        while (width > 0) {
-            *dst = blend_lcd16_opaque(srcR, srcG, srcB, *dst, *mask, opaqueDst);
-            mask++;
-            dst++;
-            width--;
         }
     }
 
@@ -1456,6 +682,14 @@ SkARGB32_Blitter::SkARGB32_Blitter(const SkPixmap& device, const SkPaint& paint)
     fPMColor = SkPackARGB32(fSrcA, fSrcR, fSrcG, fSrcB);
 }
 
+const SkPixmap* SkARGB32_Blitter::justAnOpaqueColor(uint32_t* value) {
+    if (255 == fSrcA) {
+        *value = fPMColor;
+        return &fDevice;
+    }
+    return nullptr;
+}
+
 #if defined _WIN32  
 #pragma warning ( push )
 #pragma warning ( disable : 4701 )
@@ -1465,7 +699,7 @@ void SkARGB32_Blitter::blitH(int x, int y, int width) {
     SkASSERT(x >= 0 && y >= 0 && x + width <= fDevice.width());
 
     uint32_t* device = fDevice.writable_addr32(x, y);
-    SkBlitRow::Color32(device, width, fPMColor);
+    SkBlitRow::Color32(device, device, width, fPMColor);
 }
 
 void SkARGB32_Blitter::blitAntiH(int x, int y, const SkAlpha antialias[],
@@ -1490,7 +724,7 @@ void SkARGB32_Blitter::blitAntiH(int x, int y, const SkAlpha antialias[],
                 SkOpts::memset32(device, color, count);
             } else {
                 uint32_t sc = SkAlphaMulQ(color, SkAlpha255To256(aa));
-                SkBlitRow::Color32(device, count, sc);
+                SkBlitRow::Color32(device, device, count, sc);
             }
         }
         runs += count;
@@ -1654,7 +888,7 @@ void SkARGB32_Blitter::blitRect(int x, int y, int width, int height) {
         SkOpts::rect_memset32(device, color, width, rowBytes, height);
     } else {
         while (height --> 0) {
-            SkBlitRow::Color32(device, width, color);
+            SkBlitRow::Color32(device, device, width, color);
             device = (uint32_t*)((char*)device + rowBytes);
         }
     }
@@ -1716,13 +950,24 @@ void SkARGB32_Black_Blitter::blitAntiV2(int x, int y, U8CPU a0, U8CPU a1) {
 
 
 
+
+
+static void blend_srcmode(SkPMColor* SK_RESTRICT device,
+                          const SkPMColor* SK_RESTRICT span,
+                          int count, U8CPU aa) {
+    int aa256 = SkAlpha255To256(aa);
+    for (int i = 0; i < count; ++i) {
+        device[i] = SkFourByteInterp256(span[i], device[i], aa256);
+    }
+}
+
 SkARGB32_Shader_Blitter::SkARGB32_Shader_Blitter(const SkPixmap& device,
         const SkPaint& paint, SkShaderBase::Context* shaderContext)
     : INHERITED(device, paint, shaderContext)
 {
     fBuffer = (SkPMColor*)sk_malloc_throw(device.width() * (sizeof(SkPMColor)));
 
-    SkASSERT(paint.isSrcOver());
+    fXfermode = SkXfermode::Peek(paint.getBlendMode_or(SkBlendMode::kSrcOver));
 
     int flags = 0;
     if (!(shaderContext->getFlags() & SkShaderBase::kOpaqueAlpha_Flag)) {
@@ -1733,8 +978,19 @@ SkARGB32_Shader_Blitter::SkARGB32_Shader_Blitter(const SkPixmap& device,
     
     fProc32Blend = SkBlitRow::Factory32(flags | SkBlitRow::kGlobalAlpha_Flag32);
 
-    fShadeDirectlyIntoDevice =
-            SkToBool(shaderContext->getFlags() & SkShaderBase::kOpaqueAlpha_Flag);
+    fShadeDirectlyIntoDevice = false;
+    if (fXfermode == nullptr) {
+        if (shaderContext->getFlags() & SkShaderBase::kOpaqueAlpha_Flag) {
+            fShadeDirectlyIntoDevice = true;
+        }
+    } else {
+        if (SkBlendMode::kSrc == paint.asBlendMode()) {
+            fShadeDirectlyIntoDevice = true;
+            fProc32Blend = blend_srcmode;
+        }
+    }
+
+    fConstInY = SkToBool(shaderContext->getFlags() & SkShaderBase::kConstInY32_Flag);
 }
 
 SkARGB32_Shader_Blitter::~SkARGB32_Shader_Blitter() {
@@ -1751,7 +1007,11 @@ void SkARGB32_Shader_Blitter::blitH(int x, int y, int width) {
     } else {
         SkPMColor*  span = fBuffer;
         fShaderContext->shadeSpan(x, y, span, width);
-        fProc32(device, span, width, 255);
+        if (fXfermode) {
+            fXfermode->xfer32(device, span, width, nullptr);
+        } else {
+            fProc32(device, span, width, 255);
+        }
     }
 }
 
@@ -1764,6 +1024,36 @@ void SkARGB32_Shader_Blitter::blitRect(int x, int y, int width, int height) {
     auto*      shaderContext = fShaderContext;
     SkPMColor* span = fBuffer;
 
+    if (fConstInY) {
+        if (fShadeDirectlyIntoDevice) {
+            
+            shaderContext->shadeSpan(x, y, device, width);
+            span = device;
+            while (--height > 0) {
+                device = (uint32_t*)((char*)device + deviceRB);
+                memcpy(device, span, width << 2);
+            }
+        } else {
+            shaderContext->shadeSpan(x, y, span, width);
+            SkXfermode* xfer = fXfermode;
+            if (xfer) {
+                do {
+                    xfer->xfer32(device, span, width, nullptr);
+                    y += 1;
+                    device = (uint32_t*)((char*)device + deviceRB);
+                } while (--height > 0);
+            } else {
+                SkBlitRow::Proc32 proc = fProc32;
+                do {
+                    proc(device, span, width, 255);
+                    y += 1;
+                    device = (uint32_t*)((char*)device + deviceRB);
+                } while (--height > 0);
+            }
+        }
+        return;
+    }
+
     if (fShadeDirectlyIntoDevice) {
         do {
             shaderContext->shadeSpan(x, y, device, width);
@@ -1771,13 +1061,23 @@ void SkARGB32_Shader_Blitter::blitRect(int x, int y, int width, int height) {
             device = (uint32_t*)((char*)device + deviceRB);
         } while (--height > 0);
     } else {
-        SkBlitRow::Proc32 proc = fProc32;
-        do {
-            shaderContext->shadeSpan(x, y, span, width);
-            proc(device, span, width, 255);
-            y += 1;
-            device = (uint32_t*)((char*)device + deviceRB);
-        } while (--height > 0);
+        SkXfermode* xfer = fXfermode;
+        if (xfer) {
+            do {
+                shaderContext->shadeSpan(x, y, span, width);
+                xfer->xfer32(device, span, width, nullptr);
+                y += 1;
+                device = (uint32_t*)((char*)device + deviceRB);
+            } while (--height > 0);
+        } else {
+            SkBlitRow::Proc32 proc = fProc32;
+            do {
+                shaderContext->shadeSpan(x, y, span, width);
+                proc(device, span, width, 255);
+                y += 1;
+                device = (uint32_t*)((char*)device + deviceRB);
+            } while (--height > 0);
+        }
     }
 }
 
@@ -1787,7 +1087,32 @@ void SkARGB32_Shader_Blitter::blitAntiH(int x, int y, const SkAlpha antialias[],
     uint32_t*  device = fDevice.writable_addr32(x, y);
     auto*      shaderContext = fShaderContext;
 
-    if (fShadeDirectlyIntoDevice || (shaderContext->getFlags() & SkShaderBase::kOpaqueAlpha_Flag)) {
+    if (fXfermode && !fShadeDirectlyIntoDevice) {
+        for (;;) {
+            SkXfermode* xfer = fXfermode;
+
+            int count = *runs;
+            if (count <= 0)
+                break;
+            int aa = *antialias;
+            if (aa) {
+                shaderContext->shadeSpan(x, y, span, count);
+                if (aa == 255) {
+                    xfer->xfer32(device, span, count, nullptr);
+                } else {
+                    
+                    for (int i = count - 1; i >= 0; --i) {
+                        xfer->xfer32(&device[i], &span[i], 1, antialias);
+                    }
+                }
+            }
+            device += count;
+            runs += count;
+            antialias += count;
+            x += count;
+        }
+    } else if (fShadeDirectlyIntoDevice ||
+               (shaderContext->getFlags() & SkShaderBase::kOpaqueAlpha_Flag)) {
         for (;;) {
             int count = *runs;
             if (count <= 0) {
@@ -1840,9 +1165,9 @@ static void drive(SkPMColor* dst, const SkPMColor* src, const uint8_t* cov, int 
 
     auto apply = [kernel](U32 dst, U32 src, U8 cov) -> U32 {
         U8x4 cov_splat = skvx::shuffle<0,0,0,0, 1,1,1,1, 2,2,2,2, 3,3,3,3>(cov);
-        return sk_bit_cast<U32>(kernel(sk_bit_cast<U8x4>(dst),
-                                       sk_bit_cast<U8x4>(src),
-                                       cov_splat));
+        return skvx::bit_pun<U32>(kernel(skvx::bit_pun<U8x4>(dst),
+                                         skvx::bit_pun<U8x4>(src),
+                                         cov_splat));
     };
     while (n >= 4) {
         apply(U32::Load(dst), U32::Load(src), U8::Load(cov)).store(dst);
@@ -1955,23 +1280,31 @@ static void blend_row_LCD16_opaque(SkPMColor* dst, const void* vmask, const SkPM
 }
 
 void SkARGB32_Shader_Blitter::blitMask(const SkMask& mask, const SkIRect& clip) {
+    
+    if (fXfermode && (SkMask::kA8_Format != mask.fFormat)) {
+        this->INHERITED::blitMask(mask, clip);
+        return;
+    }
+
     SkASSERT(mask.fBounds.contains(clip));
 
     void (*blend_row)(SkPMColor*, const void* mask, const SkPMColor*, int) = nullptr;
 
-    bool opaque = (fShaderContext->getFlags() & SkShaderBase::kOpaqueAlpha_Flag);
+    if (!fXfermode) {
+        bool opaque = (fShaderContext->getFlags() & SkShaderBase::kOpaqueAlpha_Flag);
 
-    if (mask.fFormat == SkMask::kA8_Format && opaque) {
-        blend_row = blend_row_A8_opaque;
-    } else if (mask.fFormat == SkMask::kA8_Format) {
-        blend_row = blend_row_A8;
-    } else if (mask.fFormat == SkMask::kLCD16_Format && opaque) {
-        blend_row = blend_row_LCD16_opaque;
-    } else if (mask.fFormat == SkMask::kLCD16_Format) {
-        blend_row = blend_row_lcd16;
-    } else {
-        this->INHERITED::blitMask(mask, clip);
-        return;
+        if (mask.fFormat == SkMask::kA8_Format && opaque) {
+            blend_row = blend_row_A8_opaque;
+        } else if (mask.fFormat == SkMask::kA8_Format) {
+            blend_row = blend_row_A8;
+        } else if (mask.fFormat == SkMask::kLCD16_Format && opaque) {
+            blend_row = blend_row_LCD16_opaque;
+        } else if (mask.fFormat == SkMask::kLCD16_Format) {
+            blend_row = blend_row_lcd16;
+        } else {
+            this->INHERITED::blitMask(mask, clip);
+            return;
+        }
     }
 
     const int x = clip.fLeft;
@@ -1985,14 +1318,27 @@ void SkARGB32_Shader_Blitter::blitMask(const SkMask& mask, const SkIRect& clip) 
     const size_t maskRB = mask.fRowBytes;
 
     SkPMColor* span = fBuffer;
-    SkASSERT(blend_row);
-    do {
-        fShaderContext->shadeSpan(x, y, span, width);
-        blend_row(reinterpret_cast<SkPMColor*>(dstRow), maskRow, span, width);
-        dstRow += dstRB;
-        maskRow += maskRB;
-        y += 1;
-    } while (--height > 0);
+
+    if (fXfermode) {
+        SkASSERT(SkMask::kA8_Format == mask.fFormat);
+        SkXfermode* xfer = fXfermode;
+        do {
+            fShaderContext->shadeSpan(x, y, span, width);
+            xfer->xfer32(reinterpret_cast<SkPMColor*>(dstRow), span, width, maskRow);
+            dstRow += dstRB;
+            maskRow += maskRB;
+            y += 1;
+        } while (--height > 0);
+    } else {
+        SkASSERT(blend_row);
+        do {
+            fShaderContext->shadeSpan(x, y, span, width);
+            blend_row(reinterpret_cast<SkPMColor*>(dstRow), maskRow, span, width);
+            dstRow += dstRB;
+            maskRow += maskRB;
+            y += 1;
+        } while (--height > 0);
+    }
 }
 
 void SkARGB32_Shader_Blitter::blitV(int x, int y, int height, SkAlpha alpha) {
@@ -2000,6 +1346,40 @@ void SkARGB32_Shader_Blitter::blitV(int x, int y, int height, SkAlpha alpha) {
 
     uint32_t* device = fDevice.writable_addr32(x, y);
     size_t    deviceRB = fDevice.rowBytes();
+
+    if (fConstInY) {
+        SkPMColor c;
+        fShaderContext->shadeSpan(x, y, &c, 1);
+
+        if (fShadeDirectlyIntoDevice) {
+            if (255 == alpha) {
+                do {
+                    *device = c;
+                    device = (uint32_t*)((char*)device + deviceRB);
+                } while (--height > 0);
+            } else {
+                do {
+                    *device = SkFourByteInterp(c, *device, alpha);
+                    device = (uint32_t*)((char*)device + deviceRB);
+                } while (--height > 0);
+            }
+        } else {
+            SkXfermode* xfer = fXfermode;
+            if (xfer) {
+                do {
+                    xfer->xfer32(device, &c, 1, &alpha);
+                    device = (uint32_t*)((char*)device + deviceRB);
+                } while (--height > 0);
+            } else {
+                SkBlitRow::Proc32 proc = (255 == alpha) ? fProc32 : fProc32Blend;
+                do {
+                    proc(device, &c, 1, alpha);
+                    device = (uint32_t*)((char*)device + deviceRB);
+                } while (--height > 0);
+            }
+        }
+        return;
+    }
 
     if (fShadeDirectlyIntoDevice) {
         if (255 == alpha) {
@@ -2019,12 +1399,22 @@ void SkARGB32_Shader_Blitter::blitV(int x, int y, int height, SkAlpha alpha) {
         }
     } else {
         SkPMColor* span = fBuffer;
-        SkBlitRow::Proc32 proc = (255 == alpha) ? fProc32 : fProc32Blend;
-        do {
-            fShaderContext->shadeSpan(x, y, span, 1);
-            proc(device, span, 1, alpha);
-            y += 1;
-            device = (uint32_t*)((char*)device + deviceRB);
-        } while (--height > 0);
+        SkXfermode* xfer = fXfermode;
+        if (xfer) {
+            do {
+                fShaderContext->shadeSpan(x, y, span, 1);
+                xfer->xfer32(device, span, 1, &alpha);
+                y += 1;
+                device = (uint32_t*)((char*)device + deviceRB);
+            } while (--height > 0);
+        } else {
+            SkBlitRow::Proc32 proc = (255 == alpha) ? fProc32 : fProc32Blend;
+            do {
+                fShaderContext->shadeSpan(x, y, span, 1);
+                proc(device, span, 1, alpha);
+                y += 1;
+                device = (uint32_t*)((char*)device + deviceRB);
+            } while (--height > 0);
+        }
     }
 }

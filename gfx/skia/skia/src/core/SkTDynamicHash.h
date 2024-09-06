@@ -52,7 +52,7 @@ private:
         static const Key& GetKey(T* entry) { return Traits::GetKey(*entry); }
         static uint32_t Hash(const Key& key) { return Traits::Hash(key); }
     };
-    skia_private::THashTable<T*, Key, AdaptedTraits> fTable;
+    SkTHashTable<T*, Key, AdaptedTraits> fTable;
 };
 
 #endif

@@ -7,20 +7,22 @@
 
 #include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
+#include "include/private/SkSLIRNode.h"
+#include "include/private/SkSLLayout.h"
+#include "include/private/SkSLModifiers.h"
+#include "include/private/SkSLProgramElement.h"
+#include "include/private/SkSLSymbol.h"
 #include "src/core/SkTHash.h"
 #include "src/sksl/SkSLBuiltinTypes.h"
 #include "src/sksl/SkSLCompiler.h"
 #include "src/sksl/SkSLContext.h"
 #include "src/sksl/SkSLProgramSettings.h"
+#include "src/sksl/SkSLUtil.h"
 #include "src/sksl/analysis/SkSLProgramUsage.h"
 #include "src/sksl/ir/SkSLFunctionDeclaration.h"
 #include "src/sksl/ir/SkSLFunctionDefinition.h"
-#include "src/sksl/ir/SkSLIRNode.h"
 #include "src/sksl/ir/SkSLInterfaceBlock.h"
-#include "src/sksl/ir/SkSLLayout.h"
 #include "src/sksl/ir/SkSLProgram.h"
-#include "src/sksl/ir/SkSLProgramElement.h"
-#include "src/sksl/ir/SkSLSymbol.h"
 #include "src/sksl/ir/SkSLSymbolTable.h"
 #include "src/sksl/ir/SkSLType.h"
 #include "src/sksl/ir/SkSLVarDeclarations.h"
@@ -103,12 +105,11 @@ public:
                       }
                       switch (a->kind()) {
                           case ProgramElement::Kind::kGlobalVar:
-                              SkASSERT(a == b ||
-                                       GlobalVarBuiltinName(*a) != GlobalVarBuiltinName(*b));
+                              SkASSERT(GlobalVarBuiltinName(*a) != GlobalVarBuiltinName(*b));
                               return GlobalVarBuiltinName(*a) < GlobalVarBuiltinName(*b);
 
                           case ProgramElement::Kind::kInterfaceBlock:
-                              SkASSERT(a == b || InterfaceBlockName(*a) != InterfaceBlockName(*b));
+                              SkASSERT(InterfaceBlockName(*a) != InterfaceBlockName(*b));
                               return InterfaceBlockName(*a) < InterfaceBlockName(*b);
 
                           default:
@@ -125,7 +126,6 @@ public:
 }  
 
 void FindAndDeclareBuiltinVariables(Program& program) {
-    using Interface = Program::Interface;
     const Context& context = *program.fContext;
     const SymbolTable& symbols = *program.fSymbols;
     BuiltinVariableScanner scanner(context, symbols);
@@ -134,6 +134,11 @@ void FindAndDeclareBuiltinVariables(Program& program) {
         
         
         scanner.addImplicitFragColorWrite(program.fOwnedElements);
+
+        
+        
+        
+        scanner.addDeclaringElement(symbols.findBuiltinSymbol("sk_Clockwise"));
     }
 
     
@@ -141,29 +146,17 @@ void FindAndDeclareBuiltinVariables(Program& program) {
         if (var->isBuiltin()) {
             scanner.addDeclaringElement(var);
 
-            switch (var->layout().fBuiltin) {
-                
+            
+            switch (var->modifiers().fLayout.fBuiltin) {
                 case SK_FRAGCOORD_BUILTIN:
-                    if (!context.fConfig->fSettings.fForceNoRTFlip) {
-                        program.fInterface.fRTFlipUniform |= Interface::kRTFlip_FragCoord;
+                    if (context.fCaps->fCanUseFragCoord) {
+                        program.fInputs.fUseFlipRTUniform =
+                                !context.fConfig->fSettings.fForceNoRTFlip;
                     }
                     break;
 
                 case SK_CLOCKWISE_BUILTIN:
-                    if (!context.fConfig->fSettings.fForceNoRTFlip) {
-                        program.fInterface.fRTFlipUniform |= Interface::kRTFlip_Clockwise;
-                    }
-                    break;
-
-                
-                
-                case SK_LASTFRAGCOLOR_BUILTIN:
-                    program.fInterface.fUseLastFragColor = true;
-                    break;
-
-                
-                case SK_SECONDARYFRAGCOLOR_BUILTIN:
-                    program.fInterface.fOutputSecondaryColor = true;
+                    program.fInputs.fUseFlipRTUniform = !context.fConfig->fSettings.fForceNoRTFlip;
                     break;
             }
         }

@@ -9,20 +9,13 @@
 #define SkPathEffect_DEFINED
 
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
-#include "include/private/base/SkAPI.h"
 
+#include "include/core/SkPath.h"
 
-#include "include/core/SkPath.h"  
-
-#include <cstddef>
-#include <cstdint>
-
-class SkMatrix;
-class SkStrokeRec;
-struct SkDeserialProcs;
+class SkPath;
 struct SkRect;
+class SkStrokeRec;
 
 
 

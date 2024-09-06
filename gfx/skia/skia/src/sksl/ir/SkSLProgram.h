@@ -10,10 +10,10 @@
 
 #include "src/sksl/ir/SkSLType.h"
 
-#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
+
 
 
 #define SKSL_RTFLIP_NAME "u_skRTFlip"
@@ -22,6 +22,7 @@ namespace SkSL {
 
 class Context;
 class FunctionDeclaration;
+class ModifiersPool;
 class Pool;
 class ProgramElement;
 class ProgramUsage;
@@ -42,33 +43,26 @@ struct UniformInfo {
 };
 
 
-struct ProgramInterface {
-    enum RTFlip : uint8_t {
-        kRTFlip_None       = 0b0000'0000,
-        kRTFlip_FragCoord  = 0b0000'0001,
-        kRTFlip_Clockwise  = 0b0000'0010,
-        kRTFlip_Derivative = 0b0000'0100,
-    };
-    uint8_t fRTFlipUniform = kRTFlip_None;
-    bool fUseLastFragColor = false;
-    bool fOutputSecondaryColor = false;
-
-    bool operator==(const ProgramInterface& that) const {
-        return fRTFlipUniform == that.fRTFlipUniform &&
-               fUseLastFragColor == that.fUseLastFragColor &&
-               fOutputSecondaryColor == that.fOutputSecondaryColor;
-    }
-    bool operator!=(const ProgramInterface& that) const { return !(*this == that); }
-};
 
 
 struct Program {
+    struct Inputs {
+        bool fUseFlipRTUniform = false;
+        bool operator==(const Inputs& that) const {
+            return fUseFlipRTUniform == that.fUseFlipRTUniform;
+        }
+        bool operator!=(const Inputs& that) const { return !(*this == that); }
+    };
+
     Program(std::unique_ptr<std::string> source,
             std::unique_ptr<ProgramConfig> config,
             std::shared_ptr<Context> context,
             std::vector<std::unique_ptr<ProgramElement>> elements,
-            std::unique_ptr<SymbolTable> symbols,
-            std::unique_ptr<Pool> pool);
+            std::vector<const ProgramElement*> sharedElements,
+            std::unique_ptr<ModifiersPool> modifiers,
+            std::shared_ptr<SymbolTable> symbols,
+            std::unique_ptr<Pool> pool,
+            Inputs inputs);
 
     ~Program();
 
@@ -146,6 +140,12 @@ struct Program {
 
     const FunctionDeclaration* getFunction(const char* functionName) const;
 
+    
+
+
+
+    std::unique_ptr<UniformInfo> getUniformInfo();
+
     std::string description() const;
     const ProgramUsage* usage() const { return fUsage.get(); }
 
@@ -153,18 +153,17 @@ struct Program {
     std::unique_ptr<ProgramConfig> fConfig;
     std::shared_ptr<Context> fContext;
     std::unique_ptr<ProgramUsage> fUsage;
+    std::unique_ptr<ModifiersPool> fModifiers;
     
     
-    std::unique_ptr<SymbolTable> fSymbols;
+    std::shared_ptr<SymbolTable> fSymbols;
     std::unique_ptr<Pool> fPool;
     
     std::vector<std::unique_ptr<ProgramElement>> fOwnedElements;
     
     
     std::vector<const ProgramElement*> fSharedElements;
-    ProgramInterface fInterface;
-
-    using Interface = ProgramInterface;
+    Inputs fInputs;
 };
 
 }  

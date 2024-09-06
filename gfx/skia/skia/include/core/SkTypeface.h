@@ -11,31 +11,29 @@
 #include "include/core/SkFontArguments.h"
 #include "include/core/SkFontParameters.h"
 #include "include/core/SkFontStyle.h"
+#include "include/core/SkFontTypes.h"
 #include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
 #include "include/core/SkString.h"
-#include "include/core/SkTypes.h"
 #include "include/private/SkWeakRefCnt.h"
 #include "include/private/base/SkOnce.h"
 
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-
 class SkData;
 class SkDescriptor;
-class SkFontMgr;
+class SkFontData;
 class SkFontDescriptor;
 class SkScalerContext;
 class SkStream;
 class SkStreamAsset;
 class SkWStream;
-enum class SkTextEncoding;
 struct SkAdvancedTypefaceMetrics;
 struct SkScalerContextEffects;
 struct SkScalerContextRec;
 
 using SkTypefaceID = uint32_t;
+
+
+using SkFontID = SkTypefaceID;
+
 
 
 typedef uint32_t SkFontTableTag;
@@ -103,10 +101,43 @@ public:
     
 
 
+
+    static SkTypefaceID UniqueID(const SkTypeface* face);
+
+    
+
+
     static bool Equal(const SkTypeface* facea, const SkTypeface* faceb);
 
     
-    static sk_sp<SkTypeface> MakeEmpty();
+    static sk_sp<SkTypeface> MakeDefault();
+
+    
+
+
+
+
+
+
+
+
+    static sk_sp<SkTypeface> MakeFromName(const char familyName[], SkFontStyle fontStyle);
+
+    
+
+
+    static sk_sp<SkTypeface> MakeFromFile(const char path[], int index = 0);
+
+    
+
+
+
+    static sk_sp<SkTypeface> MakeFromStream(std::unique_ptr<SkStreamAsset> stream, int index = 0);
+
+    
+
+
+    static sk_sp<SkTypeface> MakeFromData(sk_sp<SkData>, int index = 0);
 
     
 
@@ -143,9 +174,7 @@ public:
 
 
 
-
-
-    static sk_sp<SkTypeface> MakeDeserialize(SkStream*, sk_sp<SkFontMgr> lastResortMgr);
+    static sk_sp<SkTypeface> MakeDeserialize(SkStream*);
 
     
 
@@ -426,7 +455,21 @@ private:
     friend class SkRandomTypeface;   
     friend class SkPDFFont;          
 
+    
+    enum Style {
+        kNormal = 0,
+        kBold   = 0x01,
+        kItalic = 0x02,
+
+        
+        kBoldItalic = 0x03
+    };
+    static SkFontStyle FromOldStyle(Style oldStyle);
+    static SkTypeface* GetDefaultTypeface(Style style = SkTypeface::kNormal);
+
     friend class SkFontPriv;         
+    friend class SkPaintPriv;        
+    friend class SkFont;             
 
 private:
     SkTypefaceID        fUniqueID;

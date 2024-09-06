@@ -4,11 +4,10 @@
 
 
 
-#include "src/core/SkTaskGroup.h"
 
 #include "include/core/SkExecutor.h"
+#include "src/core/SkTaskGroup.h"
 
-#include <type_traits>
 #include <utility>
 
 SkTaskGroup::SkTaskGroup(SkExecutor& executor) : fPending(0), fExecutor(executor) {}
@@ -25,7 +24,7 @@ void SkTaskGroup::batch(int N, std::function<void(int)> fn) {
     
     fPending.fetch_add(+N, std::memory_order_relaxed);
     for (int i = 0; i < N; i++) {
-        fExecutor.add([fn, i, this] {
+        fExecutor.add([=] {
             fn(i);
             fPending.fetch_add(-1, std::memory_order_release);
         });

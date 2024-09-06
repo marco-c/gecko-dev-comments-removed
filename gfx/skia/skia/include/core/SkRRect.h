@@ -394,7 +394,7 @@ public:
 
 
 
-    [[nodiscard]] SkRRect makeOffset(SkScalar dx, SkScalar dy) const {
+    SkRRect SK_WARN_UNUSED_RESULT makeOffset(SkScalar dx, SkScalar dy) const {
         return SkRRect(fRect.makeOffset(dx, dy), fRadii, fType);
     }
 

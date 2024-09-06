@@ -7,8 +7,6 @@
 #ifndef SkCubics_DEFINED
 #define SkCubics_DEFINED
 
-#include <cmath>
-
 
 
 
@@ -49,7 +47,10 @@ public:
 
 
     static double EvalAt(double A, double B, double C, double D, double t) {
-        return std::fma(t, std::fma(t, std::fma(t, A, B), C), D);
+        return A * t * t * t +
+               B * t * t +
+               C * t +
+               D;
     }
 
     static double EvalAt(double coefficients[4], double t) {

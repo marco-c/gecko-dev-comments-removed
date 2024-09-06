@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+#ifndef SkFuzzLogging_DEFINED
+#define SkFuzzLogging_DEFINED
+
+
+
+
+
+
+
+#ifdef SK_FUZZ_LOGGING
+    #define SkFUZZF(args) SkDebugf("SkFUZZ: "); SkDebugf args
+#else
+    #define SkFUZZF(args)
+#endif
+
+#endif

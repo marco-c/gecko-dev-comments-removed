@@ -13,7 +13,6 @@
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkMalloc.h"
 #include "include/private/base/SkTLogic.h"
-#include "include/private/base/SkTo.h"
 
 #include <array>
 #include <cstddef>
@@ -100,68 +99,48 @@ template <typename T> class AutoTArray  {
 public:
     AutoTArray() {}
     
-    explicit AutoTArray(size_t size) {
-        fSize = check_size_bytes_too_big<T>(size);
-        fData.reset(size > 0 ? new T[size] : nullptr);
+
+    explicit AutoTArray(int count) {
+        SkASSERT(count >= 0);
+        if (count) {
+            fArray.reset(new T[count]);
+        }
+        SkDEBUGCODE(fCount = count;)
     }
 
-    
-    explicit AutoTArray(int size) : AutoTArray(SkToSizeT(size)) {}
-
-    AutoTArray(AutoTArray&& other) : fData(std::move(other.fData)) {
-        fSize = std::exchange(other.fSize, 0);
+    AutoTArray(AutoTArray&& other) : fArray(std::move(other.fArray)) {
+        SkDEBUGCODE(fCount = other.fCount; other.fCount = 0;)
     }
     AutoTArray& operator=(AutoTArray&& other) {
         if (this != &other) {
-            fData = std::move(other.fData);
-            fSize = std::exchange(other.fSize, 0);
+            fArray = std::move(other.fArray);
+            SkDEBUGCODE(fCount = other.fCount; other.fCount = 0;)
         }
         return *this;
     }
 
     
-    void reset(size_t count = 0) {
-        *this = AutoTArray(count);
-    }
 
-    T* get() const { return fData.get(); }
+    void reset(int count = 0) { *this = AutoTArray(count); }
 
-    T&  operator[](size_t index) const {
-        return fData[sk_collection_check_bounds(index, fSize)];
-    }
+    
 
-    const T* data() const { return fData.get(); }
-    T* data() { return fData.get(); }
+    T* get() const { return fArray.get(); }
 
-    size_t size() const { return fSize; }
-    bool empty() const { return fSize == 0; }
-    size_t size_bytes() const { return sizeof(T) * fSize; }
+    
 
-    T* begin() {
-        return fData;
-    }
-    const T* begin() const {
-        return fData;
+    T&  operator[](int index) const {
+        SkASSERT((unsigned)index < (unsigned)fCount);
+        return fArray[index];
     }
 
     
-    
-    T* end() {
-        if (fData == nullptr) {
-            SkASSERT(fSize == 0);
-        }
-        return fData + fSize;
-    }
-    const T* end() const {
-        if (fData == nullptr) {
-            SkASSERT(fSize == 0);
-        }
-        return fData + fSize;
-    }
+    const T* data() const { return fArray.get(); }
+    T* data() { return fArray.get(); }
 
 private:
-    std::unique_ptr<T[]> fData;
-    size_t fSize = 0;
+    std::unique_ptr<T[]> fArray;
+    SkDEBUGCODE(int fCount = 0;)
 };
 
 
@@ -244,7 +223,8 @@ public:
     
 
     T&  operator[](int index) const {
-        return fArray[sk_collection_check_bounds(index, fCount)];
+        SkASSERT(index < fCount);
+        return fArray[index];
     }
 
     

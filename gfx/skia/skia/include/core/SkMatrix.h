@@ -71,7 +71,7 @@ public:
 
 
 
-    [[nodiscard]] static SkMatrix Scale(SkScalar sx, SkScalar sy) {
+    static SkMatrix SK_WARN_UNUSED_RESULT Scale(SkScalar sx, SkScalar sy) {
         SkMatrix m;
         m.setScale(sx, sy);
         return m;
@@ -87,30 +87,30 @@ public:
 
 
 
-    [[nodiscard]] static SkMatrix Translate(SkScalar dx, SkScalar dy) {
+    static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkScalar dx, SkScalar dy) {
         SkMatrix m;
         m.setTranslate(dx, dy);
         return m;
     }
-    [[nodiscard]] static SkMatrix Translate(SkVector t) { return Translate(t.x(), t.y()); }
-    [[nodiscard]] static SkMatrix Translate(SkIVector t) { return Translate(t.x(), t.y()); }
+    static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkVector t) { return Translate(t.x(), t.y()); }
+    static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkIVector t) { return Translate(t.x(), t.y()); }
 
     
 
 
 
 
-    [[nodiscard]] static SkMatrix RotateDeg(SkScalar deg) {
+    static SkMatrix SK_WARN_UNUSED_RESULT RotateDeg(SkScalar deg) {
         SkMatrix m;
         m.setRotate(deg);
         return m;
     }
-    [[nodiscard]] static SkMatrix RotateDeg(SkScalar deg, SkPoint pt) {
+    static SkMatrix SK_WARN_UNUSED_RESULT RotateDeg(SkScalar deg, SkPoint pt) {
         SkMatrix m;
         m.setRotate(deg, pt.x(), pt.y());
         return m;
     }
-    [[nodiscard]] static SkMatrix RotateRad(SkScalar rad) {
+    static SkMatrix SK_WARN_UNUSED_RESULT RotateRad(SkScalar rad) {
         return RotateDeg(SkRadiansToDegrees(rad));
     }
 
@@ -120,7 +120,7 @@ public:
 
 
 
-    [[nodiscard]] static SkMatrix Skew(SkScalar kx, SkScalar ky) {
+    static SkMatrix SK_WARN_UNUSED_RESULT Skew(SkScalar kx, SkScalar ky) {
         SkMatrix m;
         m.setSkew(kx, ky);
         return m;
@@ -153,8 +153,8 @@ public:
 
 
 
-    [[nodiscard]] static SkMatrix RectToRect(const SkRect& src, const SkRect& dst,
-                                             ScaleToFit mode = kFill_ScaleToFit) {
+    static SkMatrix SK_WARN_UNUSED_RESULT RectToRect(const SkRect& src, const SkRect& dst,
+                                                     ScaleToFit mode = kFill_ScaleToFit) {
         return MakeRectToRect(src, dst, mode);
     }
 
@@ -175,9 +175,9 @@ public:
 
 
 
-    [[nodiscard]] static SkMatrix MakeAll(SkScalar scaleX, SkScalar skewX,  SkScalar transX,
-                                          SkScalar skewY,  SkScalar scaleY, SkScalar transY,
-                                          SkScalar pers0, SkScalar pers1, SkScalar pers2) {
+    static SkMatrix SK_WARN_UNUSED_RESULT MakeAll(SkScalar scaleX, SkScalar skewX,  SkScalar transX,
+                                                  SkScalar skewY,  SkScalar scaleY, SkScalar transY,
+                                                  SkScalar pers0, SkScalar pers1, SkScalar pers2) {
         SkMatrix m;
         m.setAll(scaleX, skewX, transX, skewY, scaleY, transY, pers0, pers1, pers2);
         return m;
@@ -1202,7 +1202,7 @@ public:
 
 
 
-    [[nodiscard]] bool invert(SkMatrix* inverse) const {
+    bool SK_WARN_UNUSED_RESULT invert(SkMatrix* inverse) const {
         
         if (this->isIdentity()) {
             if (inverse) {
@@ -1237,7 +1237,7 @@ public:
 
 
 
-    [[nodiscard]] bool asAffine(SkScalar affine[6]) const;
+    bool SK_WARN_UNUSED_RESULT asAffine(SkScalar affine[6]) const;
 
     
 
@@ -1705,7 +1705,7 @@ public:
 
 
 
-    [[nodiscard]] bool getMinMaxScales(SkScalar scaleFactors[2]) const;
+    bool SK_WARN_UNUSED_RESULT getMinMaxScales(SkScalar scaleFactors[2]) const;
 
     
 
@@ -1944,7 +1944,7 @@ private:
         return GetMapPtsProc(this->getType());
     }
 
-    [[nodiscard]] bool invertNonIdentity(SkMatrix* inverse) const;
+    bool SK_WARN_UNUSED_RESULT invertNonIdentity(SkMatrix* inverse) const;
 
     static bool Poly2Proc(const SkPoint[], SkMatrix*);
     static bool Poly3Proc(const SkPoint[], SkMatrix*);

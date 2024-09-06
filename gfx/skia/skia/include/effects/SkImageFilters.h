@@ -8,32 +8,27 @@
 #ifndef SkImageFilters_DEFINED
 #define SkImageFilters_DEFINED
 
+#include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkImageFilter.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkShader.h"
 #include "include/core/SkTileMode.h"
 #include "include/core/SkTypes.h"
+#include "include/effects/SkRuntimeEffect.h"
 
 #include <cstddef>
-#include <optional>
-#include <string_view>
-#include <utility>
 
 class SkBlender;
 class SkColorFilter;
-class SkMatrix;
-class SkRuntimeShaderBuilder;
-enum class SkBlendMode;
-struct SkIPoint;
-struct SkISize;
-struct SkPoint3;
-struct SkSamplingOptions;
+class SkPaint;
+class SkRegion;
 
+namespace skif {
+  static constexpr SkRect kNoCropRect = {SK_ScalarNegativeInfinity, SK_ScalarNegativeInfinity,
+                                         SK_ScalarInfinity, SK_ScalarInfinity};
+}
 
 
 
@@ -44,34 +39,39 @@ public:
     
     
     
-    struct CropRect : public std::optional<SkRect> {
-        CropRect() {}
+    struct CropRect {
+        CropRect() : fCropRect(skif::kNoCropRect) {}
         
         
-        CropRect(const SkIRect& crop) : std::optional<SkRect>(SkRect::Make(crop)) {}
-        CropRect(const SkRect& crop) : std::optional<SkRect>(crop) {}
-        CropRect(const std::optional<SkRect>& crop) : std::optional<SkRect>(crop) {}
-        CropRect(const std::nullopt_t&) : std::optional<SkRect>() {}
+        CropRect(std::nullptr_t) : fCropRect(skif::kNoCropRect) {}
+        CropRect(const SkIRect& crop) : fCropRect(SkRect::Make(crop)) {}
+        CropRect(const SkRect& crop) : fCropRect(crop) {}
+        CropRect(const SkIRect* optionalCrop) : fCropRect(optionalCrop ? SkRect::Make(*optionalCrop)
+                                                                       : skif::kNoCropRect) {}
+        CropRect(const SkRect* optionalCrop) : fCropRect(optionalCrop ? *optionalCrop
+                                                                      : skif::kNoCropRect) {}
 
-        
-        CropRect(std::nullptr_t) {}
-        CropRect(const SkIRect* optionalCrop) {
-            if (optionalCrop) {
-                *this = SkRect::Make(*optionalCrop);
-            }
-        }
-        CropRect(const SkRect* optionalCrop) {
-            if (optionalCrop) {
-                *this = *optionalCrop;
-            }
-        }
+        operator const SkRect*() const { return fCropRect == skif::kNoCropRect ? nullptr : &fCropRect; }
 
-        
-        bool operator==(const CropRect& o) const {
-            return this->has_value() == o.has_value() &&
-                   (!this->has_value() || this->value() == *o);
-        }
+        SkRect fCropRect;
     };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkImageFilter> AlphaThreshold(const SkRegion& region, SkScalar innerMin,
+                                               SkScalar outerMax, sk_sp<SkImageFilter> input,
+                                               const CropRect& cropRect = {});
 
     
 
@@ -158,27 +158,6 @@ public:
 
 
 
-
-    static sk_sp<SkImageFilter> Crop(const SkRect& rect,
-                                     SkTileMode tileMode,
-                                     sk_sp<SkImageFilter> input);
-    static sk_sp<SkImageFilter> Crop(const SkRect& rect, sk_sp<SkImageFilter> input) {
-        return Crop(rect, SkTileMode::kDecal, std::move(input));
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
     static sk_sp<SkImageFilter> DisplacementMap(SkColorChannel xChannelSelector,
                                                 SkColorChannel yChannelSelector,
                                                 SkScalar scale, sk_sp<SkImageFilter> displacement,
@@ -220,13 +199,6 @@ public:
     
 
 
-    static sk_sp<SkImageFilter> Empty();
-
-    
-
-
-
-
 
 
 
@@ -236,8 +208,6 @@ public:
                                       const SkRect& dstRect, const SkSamplingOptions& sampling);
 
     
-
-
 
 
 
@@ -256,16 +226,18 @@ public:
 
 
 
+    static sk_sp<SkImageFilter> Image(sk_sp<SkImage> image) {
+        return Image(std::move(image), SkSamplingOptions({1/3.0f, 1/3.0f}));
+    }
+
+    
 
 
 
 
 
 
-    static sk_sp<SkImageFilter> Magnifier(const SkRect& lensBounds,
-                                          SkScalar zoomAmount,
-                                          SkScalar inset,
-                                          const SkSamplingOptions& sampling,
+    static sk_sp<SkImageFilter> Magnifier(const SkRect& srcRect, SkScalar inset,
                                           sk_sp<SkImageFilter> input,
                                           const CropRect& cropRect = {});
 
@@ -345,8 +317,6 @@ public:
 
 
 
-
-
     static sk_sp<SkImageFilter> Picture(sk_sp<SkPicture> pic, const SkRect& targetRect);
     
     static sk_sp<SkImageFilter> Picture(sk_sp<SkPicture> pic) {
@@ -354,6 +324,7 @@ public:
         return Picture(std::move(pic), target);
     }
 
+#ifdef SK_ENABLE_SKSL
     
 
 
@@ -368,30 +339,7 @@ public:
 
 
 
-
-
-
-
-
     static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeShaderBuilder& builder,
-                                              std::string_view childShaderName,
-                                              sk_sp<SkImageFilter> input) {
-        return RuntimeShader(builder, 0.f, childShaderName, std::move(input));
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeShaderBuilder& builder,
-                                              SkScalar sampleRadius,
                                               std::string_view childShaderName,
                                               sk_sp<SkImageFilter> input);
 
@@ -410,30 +358,11 @@ public:
 
 
 
-
-
     static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeShaderBuilder& builder,
-                                              std::string_view childShaderNames[],
-                                              const sk_sp<SkImageFilter> inputs[],
-                                              int inputCount) {
-        return RuntimeShader(builder, 0.f, childShaderNames,
-                             inputs, inputCount);
-    }
-
-    
-
-
-
-
-
-
-
-
-    static sk_sp<SkImageFilter> RuntimeShader(const SkRuntimeShaderBuilder& builder,
-                                              SkScalar maxSampleRadius,
                                               std::string_view childShaderNames[],
                                               const sk_sp<SkImageFilter> inputs[],
                                               int inputCount);
+#endif  
 
     enum class Dither : bool {
         kNo = false,
@@ -441,9 +370,6 @@ public:
     };
 
     
-
-
-
 
 
 

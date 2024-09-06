@@ -11,14 +11,12 @@
 #include "include/core/SkPath.h"
 #include "include/core/SkShader.h"
 #include "include/core/SkStream.h"
-#include "include/docs/SkPDFDocument.h"
 #include "src/base/SkUTF.h"
 #include "src/base/SkUtils.h"
 #include "src/pdf/SkPDFTypes.h"
 #include "src/shaders/SkShaderBase.h"
 #include "src/utils/SkFloatToDecimal.h"
 
-class SkBitmap;
 class SkMatrix;
 class SkPDFArray;
 struct SkRect;
@@ -134,10 +132,6 @@ void Base85Encode(std::unique_ptr<SkStreamAsset> src, SkDynamicMemoryWStream* ds
 #endif 
 
 void AppendTransform(const SkMatrix&, SkWStream*);
-
-
-void GetDateTime(SkPDF::DateTime*);
-
 }  
 
 #endif

@@ -97,8 +97,11 @@ public:
 
 
 
+    virtual sk_sp<SkTypeface> makeTypeface(const FontIdentity& identity) {
+        return SkTypeface::MakeFromStream(std::unique_ptr<SkStreamAsset>(this->openStream(identity)),
+                                          identity.fTTCIndex);
 
-    virtual sk_sp<SkTypeface> makeTypeface(const FontIdentity& identity, sk_sp<SkFontMgr> mgr);
+    }
 
     
 

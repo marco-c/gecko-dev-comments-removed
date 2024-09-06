@@ -57,13 +57,16 @@
 #include "src/utils/mac/SkCGBase.h"
 #include "src/utils/mac/SkCGGeometry.h"
 #include "src/utils/mac/SkCTFont.h"
-#include "src/utils/mac/SkCTFontCreateExactCopy.h"
 #include "src/utils/mac/SkUniqueCFRef.h"
 
 #include <dlfcn.h>
 #include <limits.h>
 #include <string.h>
 #include <memory>
+
+#if defined(MOZ_SKIA) && defined(XP_MACOSX)
+#include "nsCocoaFeatures.h"
+#endif
 
 using namespace skia_private;
 
@@ -150,6 +153,169 @@ static bool SkCFNumberDynamicCast(CFTypeRef cf, T* number, CFNumberRef* cfNumber
         *cfNumber = cfAsCFNumber;
     }
     return true;
+}
+
+
+
+
+
+
+
+
+
+
+static void add_opsz_attr(CFMutableDictionaryRef attr, double opsz) {
+    SkUniqueCFRef<CFNumberRef> opszValueNumber(
+        CFNumberCreate(kCFAllocatorDefault, kCFNumberDoubleType, &opsz));
+    
+    CFStringRef SkCTFontOpticalSizeAttribute = CFSTR("NSCTFontOpticalSizeAttribute");
+    CFDictionarySetValue(attr, SkCTFontOpticalSizeAttribute, opszValueNumber.get());
+}
+
+
+static void add_notrak_attr(CFMutableDictionaryRef attr) {
+    int zero = 0;
+    SkUniqueCFRef<CFNumberRef> unscaledTrackingNumber(
+        CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &zero));
+    CFStringRef SkCTFontUnscaledTrackingAttribute = CFSTR("NSCTFontUnscaledTrackingAttribute");
+    CFDictionarySetValue(attr, SkCTFontUnscaledTrackingAttribute, unscaledTrackingNumber.get());
+}
+
+SkUniqueCFRef<CTFontRef> SkCTFontCreateExactCopy(CTFontRef baseFont, CGFloat textSize,
+                                                 OpszVariation opszVariation)
+{
+    SkUniqueCFRef<CFMutableDictionaryRef> attr(
+    CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+                              &kCFTypeDictionaryKeyCallBacks,
+                              &kCFTypeDictionaryValueCallBacks));
+
+    if (opszVariation.isSet) {
+        add_opsz_attr(attr.get(), opszVariation.value);
+#ifdef MOZ_SKIA
+    }
+#else
+    } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        CFStringRef SkCTFontOpticalSizeAttribute = CFSTR("NSCTFontOpticalSizeAttribute");
+        SkUniqueCFRef<CFTypeRef> opsz(CTFontCopyAttribute(baseFont, SkCTFontOpticalSizeAttribute));
+        double opsz_val;
+        if (!opsz ||
+            CFGetTypeID(opsz.get()) != CFNumberGetTypeID() ||
+            !CFNumberGetValue(static_cast<CFNumberRef>(opsz.get()),kCFNumberDoubleType,&opsz_val) ||
+            opsz_val <= 0)
+        {
+            opsz_val = CTFontGetSize(baseFont);
+        }
+        add_opsz_attr(attr.get(), opsz_val);
+    }
+    add_notrak_attr(attr.get());
+#endif
+
+    
+    
+    
+    
+    auto IsInstalledFont = [](CTFontRef aFont) {
+        CTFontDescriptorRef desc = CTFontCopyFontDescriptor(aFont);
+        CFTypeRef attr = CTFontDescriptorCopyAttribute(desc, kCTFontURLAttribute);
+        CFRelease(desc);
+        bool result = false;
+        if (attr) {
+            result = true;
+            CFRelease(attr);
+        }
+        return result;
+    };
+
+    SkUniqueCFRef<CGFontRef> baseCGFont;
+
+    
+    
+    CFDictionaryRef variations = nullptr;
+    if (IsInstalledFont(baseFont)) {
+        baseCGFont.reset(CTFontCopyGraphicsFont(baseFont, nullptr));
+
+        
+        
+        
+        
+
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        variations = CGFontCopyVariations(baseCGFont.get());
+        if (variations) {
+            CFDictionarySetValue(attr.get(), kCTFontVariationAttribute, variations);
+        }
+    }
+
+    SkUniqueCFRef<CTFontDescriptorRef> desc(CTFontDescriptorCreateWithAttributes(attr.get()));
+
+    if (baseCGFont.get()) {
+        auto ctFont = SkUniqueCFRef<CTFontRef>(
+            CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, nullptr, desc.get()));
+        if (variations) {
+#if defined(MOZ_SKIA) && defined(XP_MACOSX)
+            if (nsCocoaFeatures::OnVenturaOrLater()) {
+                
+                
+                
+                
+                
+                SkUniqueCFRef<CFDictionaryRef> attrs(CFDictionaryCreate(
+                    nullptr, (const void**)&kCTFontVariationAttribute,
+                    (const void**)&variations, 1, &kCFTypeDictionaryKeyCallBacks,
+                    &kCFTypeDictionaryValueCallBacks));
+                
+                
+                SkUniqueCFRef<CTFontDescriptorRef> desc(CTFontCopyFontDescriptor(ctFont.get()));
+                desc.reset(CTFontDescriptorCreateCopyWithAttributes(desc.get(), attrs.get()));
+                
+                ctFont.reset(CTFontCreateCopyWithAttributes(ctFont.get(), 0.0, nullptr, desc.get()));
+            }
+#endif
+            CFRelease(variations);
+        }
+        return ctFont;
+    }
+
+    return SkUniqueCFRef<CTFontRef>(
+            CTFontCreateCopyWithAttributes(baseFont, textSize, nullptr, desc.get()));
 }
 
 CTFontRef SkTypeface_GetCTFontRef(const SkTypeface* face) {
@@ -499,6 +665,7 @@ std::unique_ptr<SkAdvancedTypefaceMetrics> SkTypeface_Mac::onGetAdvancedMetrics(
         SkUniqueCFRef<CFStringRef> fontName(CTFontCopyPostScriptName(ctFont.get()));
         if (fontName.get()) {
             SkStringFromCFString(fontName.get(), &info->fPostScriptName);
+            info->fFontName = info->fPostScriptName;
         }
     }
 
@@ -519,11 +686,8 @@ std::unique_ptr<SkAdvancedTypefaceMetrics> SkTypeface_Mac::onGetAdvancedMetrics(
     
     
     
-    constexpr SkFontTableTag glyf = SkSetFourByteTag('g','l','y','f');
-    constexpr SkFontTableTag loca = SkSetFourByteTag('l','o','c','a');
-    constexpr SkFontTableTag CFF  = SkSetFourByteTag('C','F','F',' ');
-    if (!((this->getTableSize(glyf) && this->getTableSize(loca)) ||
-           this->getTableSize(CFF)))
+    if (!this->getTableSize(SkSetFourByteTag('g','l','y','f')) ||
+        !this->getTableSize(SkSetFourByteTag('l','o','c','a')))
     {
         return info;
     }
@@ -671,8 +835,9 @@ std::unique_ptr<SkStreamAsset> SkTypeface_Mac::onOpenStream(int* ttcIndex) const
     }
 
     
-    sk_sp<SkData> streamData = SkData::MakeZeroInitialized(totalSize);
-    char* dataStart = (char*)streamData->writable_data();
+    fStream = std::make_unique<SkMemoryStream>(totalSize);
+    char* dataStart = (char*)fStream->getMemoryBase();
+    sk_bzero(dataStart, totalSize);
     char* dataPtr = dataStart;
 
     
@@ -709,7 +874,6 @@ std::unique_ptr<SkStreamAsset> SkTypeface_Mac::onOpenStream(int* ttcIndex) const
         dataPtr += (tableSize + 3) & ~3;
         ++entry;
     }
-    fStream = std::make_unique<SkMemoryStream>(std::move(streamData));
     });
     return fStream->duplicate();
 }
@@ -1307,7 +1471,7 @@ sk_sp<SkTypeface> SkTypeface_Mac::MakeFromStream(std::unique_ptr<SkStreamAsset> 
     SkUniqueCFRef<CTFontRef> ctVariant;
     CTFontVariation ctVariation;
     if (args.getVariationDesignPosition().coordinateCount == 0) {
-        ctVariant = std::move(ct);
+        ctVariant.reset(ct.release());
     } else {
         SkUniqueCFRef<CFArrayRef> axes(CTFontCopyVariationAxes(ct.get()));
         ctVariation = ctvariation_from_SkFontArguments(ct.get(), axes.get(), args);
@@ -1323,7 +1487,7 @@ sk_sp<SkTypeface> SkTypeface_Mac::MakeFromStream(std::unique_ptr<SkStreamAsset> 
                     CTFontDescriptorCreateWithAttributes(attributes.get()));
             ctVariant.reset(CTFontCreateCopyWithAttributes(ct.get(), 0, nullptr, varDesc.get()));
         } else {
-            ctVariant = std::move(ct);
+            ctVariant.reset(ct.release());
         }
     }
     if (!ctVariant) {
