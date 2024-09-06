@@ -2162,7 +2162,7 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   auto dateLargestUnit = std::min(TemporalUnit::Day, largestUnit);
 
   
-  Duration dateDifference;
+  DateDuration dateDifference;
   if (!DifferenceDate(cx, calendar, plainRelativeTo, end, dateLargestUnit,
                       &dateDifference)) {
     return false;
@@ -2193,11 +2193,11 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
 
   
   *result = {
-      dateDifference.years,     dateDifference.months,
-      dateDifference.weeks,     double(balanced.days),
-      double(balanced.hours),   double(balanced.minutes),
-      double(balanced.seconds), double(balanced.milliseconds),
-      balanced.microseconds,    balanced.nanoseconds,
+      double(dateDifference.years), double(dateDifference.months),
+      double(dateDifference.weeks), double(balanced.days),
+      double(balanced.hours),       double(balanced.minutes),
+      double(balanced.seconds),     double(balanced.milliseconds),
+      balanced.microseconds,        balanced.nanoseconds,
   };
   MOZ_ASSERT(IsValidDuration(*result));
   return true;
@@ -3536,14 +3536,14 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   }
 
   
-  Duration timePassed;
+  DateDuration timePassed;
   if (!DifferenceDate(cx, calendar, newRelativeTo, wholeDaysLater,
                       TemporalUnit::Year, &timePassed)) {
     return false;
   }
 
   
-  int64_t yearsPassed = int64_t(timePassed.years);
+  int64_t yearsPassed = timePassed.years;
 
   
   years += yearsPassed;
@@ -3678,14 +3678,14 @@ static bool RoundDurationMonth(JSContext* cx,
   }
 
   
-  Duration timePassed;
+  DateDuration timePassed;
   if (!DifferenceDate(cx, calendar, newRelativeTo, wholeDaysLater,
                       TemporalUnit::Month, &timePassed)) {
     return false;
   }
 
   
-  int64_t monthsPassed = int64_t(timePassed.months);
+  int64_t monthsPassed = timePassed.months;
 
   
   months += monthsPassed;
@@ -3788,14 +3788,14 @@ static bool RoundDurationWeek(JSContext* cx, const NormalizedDuration& duration,
   }
 
   
-  Duration timePassed;
+  DateDuration timePassed;
   if (!DifferenceDate(cx, calendar, dateRelativeTo, wholeDaysLater,
                       TemporalUnit::Week, &timePassed)) {
     return false;
   }
 
   
-  int64_t weeksPassed = int64_t(timePassed.weeks);
+  int64_t weeksPassed = timePassed.weeks;
 
   
   weeks += weeksPassed;

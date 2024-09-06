@@ -843,7 +843,7 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
   
   auto dateLargestUnit = std::min(TemporalUnit::Day, largestUnit);
 
-  Duration dateDifference;
+  DateDuration dateDifference;
   if (maybeOptions) {
     
     
@@ -878,8 +878,8 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
   }
 
   
-  return CreateNormalizedDurationRecord(cx, dateDifference.toDateDuration(),
-                                        timeDuration, result);
+  return CreateNormalizedDurationRecord(cx, dateDifference, timeDuration,
+                                        result);
 }
 
 
