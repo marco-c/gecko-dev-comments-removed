@@ -347,6 +347,19 @@ function attachFrameContext(
       num_components);
 }
 
+
+
+
+async function navigateFrameContext(frame_proxy, {headers = [], origin = ''}) {
+  const [uuid, url] = generateRemoteContextURL(headers, origin);
+  frame_proxy.execute((url) => {
+    window.executor.suspend(() => {
+      window.location = url;
+    });
+  }, [url])
+  frame_proxy.context_id = uuid;
+}
+
 function replaceFrameContext(frame_proxy, {
   generator_api = '',
   resolve_to_config = false,
