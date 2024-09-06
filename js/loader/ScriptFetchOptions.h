@@ -86,6 +86,21 @@ class ScriptFetchOptions {
 
 
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+
+  
+  
+  inline bool IsCompatible(ScriptFetchOptions* other) {
+    bool equals;
+    (void)mTriggeringPrincipal->Equals(other->mTriggeringPrincipal, &equals);
+
+    if (!equals) {
+      return false;
+    }
+
+    
+    return mCORSMode == other->mCORSMode && mNonce == other->mNonce &&
+           mFetchPriority == other->mFetchPriority;
+  }
 };
 
 }  
