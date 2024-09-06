@@ -535,6 +535,23 @@ export class ContextMenuChild extends JSWindowActorChild {
     }
 
     let doc = aEvent.composedTarget.ownerDocument;
+    if (!doc && Cu.isInAutomation) {
+      
+      
+      
+      
+      dump(
+        `doc is unexpectedly null (bug 1478596), composedTarget=${aEvent.composedTarget}\n`
+      );
+      
+      
+      
+      for (let k of ["target", "originalTarget", "explicitOriginalTarget"]) {
+        dump(
+          ` Alternative: ${k}=${aEvent[k]} and its doc=${aEvent[k]?.ownerDocument}\n`
+        );
+      }
+    }
     let {
       mozDocumentURIIfNotForErrorPages: docLocation,
       characterSet: charSet,
