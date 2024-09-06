@@ -1055,6 +1055,23 @@ SimpleTest.registerCleanupFunction(() => {
 
 
 
+function loginToVanillaObject(login) {
+  let obj = {};
+  for (let i in SpecialPowers.do_QueryInterface(
+    login,
+    SpecialPowers.Ci.nsILoginMetaInfo
+  )) {
+    if (typeof login[i] !== "function") {
+      obj[i] = login[i];
+    }
+  }
+  return obj;
+}
+
+
+
+
+
 
 this.LoginManager = new Proxy(
   {},
@@ -1067,7 +1084,7 @@ this.LoginManager = new Proxy(
             SpecialPowers.call_Instanceof(val, SpecialPowers.Ci.nsILoginInfo)
           ) {
             loginInfoIndices.push(index);
-            return LoginHelper.loginToVanillaObject(val);
+            return loginToVanillaObject(val);
           }
 
           return val;
