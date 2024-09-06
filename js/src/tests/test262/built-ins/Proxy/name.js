@@ -11,10 +11,11 @@
 
 
 
-assert.sameValue(Proxy.name, "Proxy", "The value of `Proxy.name` is `'Proxy'`");
-
-verifyNotEnumerable(Proxy, "name");
-verifyNotWritable(Proxy, "name");
-verifyConfigurable(Proxy, "name");
+verifyProperty(Proxy, "name", {
+  value: "Proxy",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

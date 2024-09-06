@@ -21,10 +21,11 @@
 
 
 
-assert.sameValue(Math.expm1.length, 1);
-
-verifyNotEnumerable(Math.expm1, "length");
-verifyNotWritable(Math.expm1, "length");
-verifyConfigurable(Math.expm1, "length");
+verifyProperty(Math.expm1, "length", {
+  value: 1,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

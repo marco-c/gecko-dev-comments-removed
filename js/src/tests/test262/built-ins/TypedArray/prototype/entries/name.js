@@ -20,10 +20,11 @@
 
 
 
-assert.sameValue(TypedArray.prototype.entries.name, "entries");
-
-verifyNotEnumerable(TypedArray.prototype.entries, "name");
-verifyNotWritable(TypedArray.prototype.entries, "name");
-verifyConfigurable(TypedArray.prototype.entries, "name");
+verifyProperty(TypedArray.prototype.entries, "name", {
+  value: "entries",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

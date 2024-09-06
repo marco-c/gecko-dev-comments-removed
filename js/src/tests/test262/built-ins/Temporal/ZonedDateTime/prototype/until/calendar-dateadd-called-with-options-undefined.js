@@ -14,14 +14,7 @@
 const calendar = TemporalHelpers.calendarDateAddUndefinedOptions();
 const timeZone = TemporalHelpers.oneShiftTimeZone(new Temporal.Instant(0n), 3600e9);
 const earlier = new Temporal.ZonedDateTime(0n, timeZone, calendar);
-
-
-
-
-
-const later1 = new Temporal.ZonedDateTime(1_213_200_000_000_000n, timeZone, calendar);
-earlier.until(later1, { largestUnit: "weeks" });
-assert.sameValue(calendar.dateAddCallCount, 1, "basic difference with largestUnit >days");
+const later = new Temporal.ZonedDateTime(1_213_200_000_000_000n, timeZone, calendar);
 
 
 
@@ -31,10 +24,7 @@ assert.sameValue(calendar.dateAddCallCount, 1, "basic difference with largestUni
 
 
 
-
-calendar.dateAddCallCount = 0;
-
-earlier.until(later1, { smallestUnit: "weeks" });
-assert.sameValue(calendar.dateAddCallCount, 4, "rounding difference with calendar smallestUnit");
+earlier.until(later, { smallestUnit: "weeks" });
+assert.sameValue(calendar.dateAddCallCount, 3, "rounding difference with calendar smallestUnit");
 
 reportCompare(0, 0);

@@ -17,10 +17,11 @@
 
 
 
-assert.sameValue(RangeError.name, "RangeError");
-
-verifyNotEnumerable(RangeError, "name");
-verifyNotWritable(RangeError, "name");
-verifyConfigurable(RangeError, "name");
+verifyProperty(RangeError, "name", {
+  value: "RangeError",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

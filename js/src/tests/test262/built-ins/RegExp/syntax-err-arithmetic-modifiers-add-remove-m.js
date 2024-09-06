@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?m-m:a)", "");
+}, 'RegExp("(?m-m:a)", ""): ');
+
+reportCompare(0, 0);

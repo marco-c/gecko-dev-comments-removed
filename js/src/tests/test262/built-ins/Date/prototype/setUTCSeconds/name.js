@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Date.prototype.setUTCSeconds.name, "setUTCSeconds");
-
-verifyNotEnumerable(Date.prototype.setUTCSeconds, "name");
-verifyNotWritable(Date.prototype.setUTCSeconds, "name");
-verifyConfigurable(Date.prototype.setUTCSeconds, "name");
+verifyProperty(Date.prototype.setUTCSeconds, "name", {
+  value: "setUTCSeconds",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

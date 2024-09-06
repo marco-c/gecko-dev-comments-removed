@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Math.atanh.name, "atanh");
-
-verifyNotEnumerable(Math.atanh, "name");
-verifyNotWritable(Math.atanh, "name");
-verifyConfigurable(Math.atanh, "name");
+verifyProperty(Math.atanh, "name", {
+  value: "atanh",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

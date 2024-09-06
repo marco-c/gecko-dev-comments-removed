@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?m-ims:a)", "");
+}, 'RegExp("(?m-ims:a)", ""): ');
+
+reportCompare(0, 0);

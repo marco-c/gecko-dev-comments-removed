@@ -15,30 +15,18 @@ const df = new Intl.DurationFormat("en", {
   hours: "numeric",
 });
 
-const lf = new Intl.ListFormat("en", {
-  type: "unit",
-  style: "short",
-});
-
 const duration = {
   hours: 1,
-
-  
   minutes: 0,
-
-  
   seconds: 3,
 };
 
-const expected = lf.format([
-  new Intl.NumberFormat("en", {minimumIntegerDigits: 1}).format(duration.hours),
-  new Intl.NumberFormat("en", {minimumIntegerDigits: 2}).format(duration.seconds),
-]);
+const expected = "1:00:03"
 
 assert.sameValue(
   df.format(duration),
   expected,
-  `No time separator is used when minutes is zero`
+  `Minutes always displayed when between displayed hours and seconds, even if minutes is 0`
 );
 
 reportCompare(0, 0);

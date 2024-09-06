@@ -40,13 +40,16 @@ const dayNs = 86_400_000_000_000;
 const zeroZDT = new Temporal.ZonedDateTime(0n, "UTC");
 const oneZDT = new Temporal.ZonedDateTime(1n, "UTC");
 const epochInstant = new Temporal.Instant(0n);
-const options = { largestUnit: "days" };
+const options = { largestUnit: "days", smallestUnit: "seconds", roundingMode: "expand" };
 
 
 let start = new Temporal.ZonedDateTime(
   0n, 
   timeZoneSubstituteValues(
-    [[epochInstant]], 
+    [
+      TemporalHelpers.SUBSTITUTE_SKIP,  
+      [epochInstant], 
+    ],
     [
       
       TemporalHelpers.SUBSTITUTE_SKIP,
@@ -60,14 +63,18 @@ assert.throws(RangeError, () =>
   start.until(
     oneZDT, 
     options
-  )
+  ),
+  "days < 0 and sign = 1"
 );
 
 
 start = new Temporal.ZonedDateTime(
   1n, 
   timeZoneSubstituteValues(
-    [[epochInstant]], 
+    [
+      TemporalHelpers.SUBSTITUTE_SKIP,  
+      [epochInstant], 
+    ],
     [
       
       TemporalHelpers.SUBSTITUTE_SKIP,
@@ -81,14 +88,18 @@ assert.throws(RangeError, () =>
   start.until(
     zeroZDT, 
     options
-  )
+  ),
+  "days > 0 and sign = -1"
 );
 
 
 start = new Temporal.ZonedDateTime(
   1n, 
   timeZoneSubstituteValues(
-    [[new Temporal.Instant(-1n)]], 
+    [
+      TemporalHelpers.SUBSTITUTE_SKIP,  
+      [new Temporal.Instant(-2_000_000_000n)], 
+    ],
     [
       
       TemporalHelpers.SUBSTITUTE_SKIP,
@@ -102,16 +113,20 @@ assert.throws(RangeError, () =>
   start.until(
     zeroZDT, 
     options
-  )
+  ),
+  "norm > 0 and sign = -1"
 );
 
 
 start = new Temporal.ZonedDateTime(
   0n,
   timeZoneSubstituteValues(
-    
-    
-    [[new Temporal.Instant(2n ** 53n)]],
+    [
+      TemporalHelpers.SUBSTITUTE_SKIP,  
+      
+      
+      [new Temporal.Instant(2n ** 53n)],
+    ],
     []
   )
 );

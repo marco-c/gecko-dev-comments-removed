@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?s-\u{0073}:a)", "");
+}, 'RegExp("(?s-\u{0073}:a)", ""): ');
+
+reportCompare(0, 0);

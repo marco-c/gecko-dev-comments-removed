@@ -14,15 +14,38 @@
 
 
 
-const instance = new Temporal.Duration(0, 0, 0,  500_000_000);
-const relativeTo = new Temporal.PlainDate(2000, 1, 1);
-assert.throws(RangeError, () => instance.total({relativeTo, unit: "years"}));
-assert.throws(RangeError, () => instance.total({relativeTo, unit: "months"}));
-assert.throws(RangeError, () => instance.total({relativeTo, unit: "weeks"}));
 
-const negInstance = new Temporal.Duration(0, 0, 0,  -500_000_000);
-assert.throws(RangeError, () => negInstance.total({relativeTo, unit: "years"}));
-assert.throws(RangeError, () => negInstance.total({relativeTo, unit: "months"}));
-assert.throws(RangeError, () => negInstance.total({relativeTo, unit: "weeks"}));
+
+
+
+
+
+
+
+
+
+
+
+const relativeTo = new Temporal.PlainDate(2000, 1, 1);
+
+{
+  const instance = new Temporal.Duration(0, 0, 0,  500_000_000);
+  assert.throws(RangeError, () => instance.total({relativeTo, unit: "years"}), "days out of range, positive, unit years");
+  assert.throws(RangeError, () => instance.total({relativeTo, unit: "months"}), "days out of range, positive, unit months");
+  assert.throws(RangeError, () => instance.total({relativeTo, unit: "weeks"}), "days out of range, positive, unit weeks");
+
+  const negInstance = new Temporal.Duration(0, 0, 0,  -500_000_000);
+  assert.throws(RangeError, () => negInstance.total({relativeTo, unit: "years"}), "days out of range, negative, unit years");
+  assert.throws(RangeError, () => negInstance.total({relativeTo, unit: "months"}), "days out of range, negative, unit months");
+  assert.throws(RangeError, () => negInstance.total({relativeTo, unit: "weeks"}), "days out of range, negative, unit weeks");
+}
+
+{
+  const instance = new Temporal.Duration(0, 0,  1,  Math.trunc((2 ** 53) / 86_400));
+  assert.throws(RangeError, () => instance.total({relativeTo, unit: "days"}), "weeks + days out of range, positive");
+
+  const negInstance = new Temporal.Duration(0, 0,  -1,  -Math.trunc((2 ** 53) / 86_400));
+  assert.throws(RangeError, () => instance.total({relativeTo, unit: "days"}), "weeks + days out of range, negative");
+}
 
 reportCompare(0, 0);

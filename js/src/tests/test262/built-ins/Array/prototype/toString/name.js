@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Array.prototype.toString.name, "toString");
-
-verifyNotEnumerable(Array.prototype.toString, "name");
-verifyNotWritable(Array.prototype.toString, "name");
-verifyConfigurable(Array.prototype.toString, "name");
+verifyProperty(Array.prototype.toString, "name", {
+  value: "toString",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

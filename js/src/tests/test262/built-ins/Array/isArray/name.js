@@ -20,10 +20,11 @@
 
 
 
-assert.sameValue(Array.isArray.name, "isArray", 'The value of Array.isArray.name is expected to be "isArray"');
-
-verifyNotEnumerable(Array.isArray, "name");
-verifyNotWritable(Array.isArray, "name");
-verifyConfigurable(Array.isArray, "name");
+verifyProperty(Array.isArray, "name", {
+  value: "isArray",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

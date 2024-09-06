@@ -7,8 +7,10 @@
 
 
 
-verifyWritable(Object, "assign");
-verifyNotEnumerable(Object, "assign");
-verifyConfigurable(Object, "assign");
+verifyProperty(Object, "assign", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

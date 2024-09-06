@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?-ii:a)", "");
+}, 'RegExp("(?-ii:a)", ""): ');
+
+reportCompare(0, 0);

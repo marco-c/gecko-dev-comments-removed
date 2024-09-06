@@ -13,13 +13,11 @@
 
 
 
-assert.sameValue(
-  Reflect.preventExtensions.name, 'preventExtensions',
-  'The value of `Reflect.preventExtensions.name` is `"preventExtensions"`'
-);
-
-verifyNotEnumerable(Reflect.preventExtensions, 'name');
-verifyNotWritable(Reflect.preventExtensions, 'name');
-verifyConfigurable(Reflect.preventExtensions, 'name');
+verifyProperty(Reflect.preventExtensions, "name", {
+  value: "preventExtensions",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

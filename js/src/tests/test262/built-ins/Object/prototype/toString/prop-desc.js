@@ -16,8 +16,10 @@
 
 
 
-verifyWritable(Object.prototype, "toString");
-verifyNotEnumerable(Object.prototype, "toString");
-verifyConfigurable(Object.prototype, "toString");
+verifyProperty(Object.prototype, "toString", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

@@ -12,13 +12,11 @@
 
 
 
-assert.sameValue(
-  Array.prototype.findIndex.name, 'findIndex',
-  'The value of `Array.prototype.findIndex.name` is `"findIndex"`'
-);
-
-verifyNotEnumerable(Array.prototype.findIndex, 'name');
-verifyNotWritable(Array.prototype.findIndex, 'name');
-verifyConfigurable(Array.prototype.findIndex, 'name');
+verifyProperty(Array.prototype.findIndex, "name", {
+  value: "findIndex",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);
