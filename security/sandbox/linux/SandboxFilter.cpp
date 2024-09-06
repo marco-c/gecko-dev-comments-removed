@@ -2125,6 +2125,9 @@ class UtilitySandboxPolicy : public SandboxPolicyCommon {
                 PR_GET_PDEATHSIG),  
                                     
                Allow())
+        .CASES((PR_CAPBSET_READ),  
+                                   
+               Error(EINVAL))
         .Default(InvalidSyscall());
   }
 
