@@ -13,6 +13,7 @@
 #include "nsString.h"
 
 #include <oleacc.h>
+#include <uiautomation.h>
 
 class nsIFile;
 
@@ -29,9 +30,13 @@ class MsaaRootAccessible;
 
 
 
-class LazyInstantiator final : public IAccessible, public IServiceProvider {
+class LazyInstantiator final : public IAccessible,
+                               public IServiceProvider,
+                               public IRawElementProviderSimple {
  public:
   [[nodiscard]] static already_AddRefed<IAccessible> GetRootAccessible(
+      HWND aHwnd);
+  [[nodiscard]] static already_AddRefed<IRawElementProviderSimple> GetRootUia(
       HWND aHwnd);
   static void EnableBlindAggregation(HWND aHwnd);
 
@@ -84,6 +89,22 @@ class LazyInstantiator final : public IAccessible, public IServiceProvider {
                             void** aOutInterface) override;
 
   
+  virtual  HRESULT STDMETHODCALLTYPE get_ProviderOptions(
+       __RPC__out enum ProviderOptions* aProviderOptions);
+
+  virtual HRESULT STDMETHODCALLTYPE GetPatternProvider(
+       PATTERNID aPatternId,
+       __RPC__deref_out_opt IUnknown** aPatternProvider);
+
+  virtual HRESULT STDMETHODCALLTYPE GetPropertyValue(
+       PROPERTYID aPropertyId,
+       __RPC__out VARIANT* aPropertyValue);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_HostRawElementProvider(
+       __RPC__deref_out_opt IRawElementProviderSimple**
+          aRawElmProvider);
+
+  
 
 
 
@@ -117,6 +138,9 @@ class LazyInstantiator final : public IAccessible, public IServiceProvider {
   void TransplantRefCnt();
   void ClearProp();
 
+  template <class T>
+  static already_AddRefed<T> GetRoot(HWND aHwnd);
+
  private:
   mozilla::a11y::AutoRefCnt mRefCnt;
   HWND mHwnd;
@@ -133,6 +157,7 @@ class LazyInstantiator final : public IAccessible, public IServiceProvider {
   MsaaRootAccessible* mWeakMsaaRoot;
   IAccessible* mWeakAccessible;
   IDispatch* mWeakDispatch;
+  IRawElementProviderSimple* mWeakUia;
   static Maybe<bool> sShouldBlockUia;
 };
 

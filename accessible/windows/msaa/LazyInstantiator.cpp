@@ -12,6 +12,7 @@
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/mscom/ProcessRuntime.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "MsaaRootAccessible.h"
@@ -41,9 +42,9 @@ static const wchar_t kLazyInstantiatorProp[] =
 
 Maybe<bool> LazyInstantiator::sShouldBlockUia;
 
-
-already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
-  RefPtr<IAccessible> result;
+template <class T>
+already_AddRefed<T> LazyInstantiator::GetRoot(HWND aHwnd) {
+  RefPtr<T> result;
   
   
   if (!GetAccService()) {
@@ -80,7 +81,7 @@ already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
   if (!rootAcc->IsRoot()) {
     
     
-    rootAcc->GetNativeInterface(getter_AddRefs(result));
+    result = MsaaAccessible::GetFrom(rootAcc);
     return result.forget();
   }
 
@@ -98,8 +99,22 @@ already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
     return nullptr;
   }
 
-  punk->QueryInterface(IID_IAccessible, getter_AddRefs(result));
+  punk->QueryInterface(__uuidof(T), getter_AddRefs(result));
   return result.forget();
+}
+
+
+already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
+  return GetRoot<IAccessible>(aHwnd);
+}
+
+
+already_AddRefed<IRawElementProviderSimple> LazyInstantiator::GetRootUia(
+    HWND aHwnd) {
+  if (!StaticPrefs::accessibility_uia_enable()) {
+    return nullptr;
+  }
+  return GetRoot<IRawElementProviderSimple>(aHwnd);
 }
 
 
@@ -135,7 +150,8 @@ LazyInstantiator::LazyInstantiator(HWND aHwnd)
       mAllowBlindAggregation(false),
       mWeakMsaaRoot(nullptr),
       mWeakAccessible(nullptr),
-      mWeakDispatch(nullptr) {
+      mWeakDispatch(nullptr),
+      mWeakUia(nullptr) {
   MOZ_ASSERT(aHwnd);
   
   DebugOnly<BOOL> setPropOk =
@@ -374,9 +390,16 @@ LazyInstantiator::MaybeResolveRoot() {
     if (FAILED(hr)) {
       return hr;
     }
-
     
     mWeakAccessible->Release();
+    if (StaticPrefs::accessibility_uia_enable()) {
+      hr = mRealRootUnk->QueryInterface(IID_IRawElementProviderSimple,
+                                        (void**)&mWeakUia);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      mWeakUia->Release();
+    }
 
     
     
@@ -401,6 +424,9 @@ IMPL_IUNKNOWN_QUERY_IFACE_AMBIGIOUS(IUnknown, IAccessible)
 IMPL_IUNKNOWN_QUERY_IFACE(IAccessible)
 IMPL_IUNKNOWN_QUERY_IFACE(IDispatch)
 IMPL_IUNKNOWN_QUERY_IFACE(IServiceProvider)
+if (StaticPrefs::accessibility_uia_enable()) {
+  IMPL_IUNKNOWN_QUERY_IFACE(IRawElementProviderSimple)
+}
 
 if (!mAllowBlindAggregation) {
   return E_NOINTERFACE;
@@ -769,6 +795,46 @@ LazyInstantiator::QueryService(REFGUID aServiceId, REFIID aServiceIid,
   }
 
   return servProv->QueryService(aServiceId, aServiceIid, aOutInterface);
+}
+
+STDMETHODIMP
+LazyInstantiator::get_ProviderOptions(
+    __RPC__out enum ProviderOptions* aOptions) {
+  
+  
+  
+  if (!aOptions) {
+    return E_INVALIDARG;
+  }
+  *aOptions = uiaRawElmProvider::kProviderOptions;
+  return S_OK;
+}
+
+STDMETHODIMP
+LazyInstantiator::GetPatternProvider(
+    PATTERNID aPatternId, __RPC__deref_out_opt IUnknown** aPatternProvider) {
+  RESOLVE_ROOT;
+  return mWeakUia->GetPatternProvider(aPatternId, aPatternProvider);
+}
+
+STDMETHODIMP
+LazyInstantiator::GetPropertyValue(PROPERTYID aPropertyId,
+                                   __RPC__out VARIANT* aPropertyValue) {
+  RESOLVE_ROOT;
+  return mWeakUia->GetPropertyValue(aPropertyId, aPropertyValue);
+}
+
+STDMETHODIMP
+LazyInstantiator::get_HostRawElementProvider(
+    __RPC__deref_out_opt IRawElementProviderSimple** aRawElmProvider) {
+  
+  
+  
+  if (!aRawElmProvider) {
+    return E_INVALIDARG;
+  }
+  *aRawElmProvider = nullptr;
+  return UiaHostProviderFromHwnd(mHwnd, aRawElmProvider);
 }
 
 }  
