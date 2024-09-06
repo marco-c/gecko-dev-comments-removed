@@ -26,7 +26,6 @@
 
 #include "js/WasmFeatures.h"
 
-#include "wasm/WasmBinaryTypes.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmCompileArgs.h"
 #include "wasm/WasmConstants.h"
@@ -39,6 +38,8 @@ namespace wasm {
 
 using mozilla::DebugOnly;
 using mozilla::Maybe;
+
+struct ModuleEnvironment;
 
 
 
@@ -114,6 +115,21 @@ class Opcode {
   bool operator==(const Opcode& that) const { return bits_ == that.bits_; }
   bool operator!=(const Opcode& that) const { return bits_ != that.bits_; }
 };
+
+
+
+
+struct SectionRange {
+  uint32_t start;
+  uint32_t size;
+
+  uint32_t end() const { return start + size; }
+  bool operator==(const SectionRange& rhs) const {
+    return start == rhs.start && size == rhs.size;
+  }
+};
+
+using MaybeSectionRange = Maybe<SectionRange>;
 
 
 
@@ -558,7 +574,7 @@ class Decoder {
 
   [[nodiscard]] bool readSectionHeader(uint8_t* id, SectionRange* range);
 
-  [[nodiscard]] bool startSection(SectionId id, CodeMetadata* codeMeta,
+  [[nodiscard]] bool startSection(SectionId id, ModuleEnvironment* env,
                                   MaybeSectionRange* range,
                                   const char* sectionName);
   [[nodiscard]] bool finishSection(const SectionRange& range,
@@ -569,21 +585,21 @@ class Decoder {
 
   [[nodiscard]] bool startCustomSection(const char* expected,
                                         size_t expectedLength,
-                                        CodeMetadata* codeMeta,
+                                        ModuleEnvironment* env,
                                         MaybeSectionRange* range);
 
   template <size_t NameSizeWith0>
   [[nodiscard]] bool startCustomSection(const char (&name)[NameSizeWith0],
-                                        CodeMetadata* codeMeta,
+                                        ModuleEnvironment* env,
                                         MaybeSectionRange* range) {
     MOZ_ASSERT(name[NameSizeWith0 - 1] == '\0');
-    return startCustomSection(name, NameSizeWith0 - 1, codeMeta, range);
+    return startCustomSection(name, NameSizeWith0 - 1, env, range);
   }
 
   void finishCustomSection(const char* name, const SectionRange& range);
   void skipAndFinishCustomSection(const SectionRange& range);
 
-  [[nodiscard]] bool skipCustomSection(CodeMetadata* codeMeta);
+  [[nodiscard]] bool skipCustomSection(ModuleEnvironment* env);
 
   
 

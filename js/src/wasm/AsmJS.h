@@ -23,9 +23,8 @@
 
 #include <stdint.h>  
 
-#include "jstypes.h"             
-#include "js/CallArgs.h"         
-#include "wasm/WasmShareable.h"  
+#include "jstypes.h"      
+#include "js/CallArgs.h"  
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSFunction;
@@ -42,7 +41,6 @@ class Handle;
 namespace js {
 
 class FrontendContext;
-class ScriptSource;
 
 namespace frontend {
 
@@ -112,33 +110,6 @@ extern JSString* AsmJSModuleToString(JSContext* cx, JS::Handle<JSFunction*> fun,
 
 
 extern bool IsValidAsmJSHeapLength(size_t length);
-
-
-
-
-
-
-
-struct CodeMetadataForAsmJSImpl;
-
-struct CodeMetadataForAsmJS : public wasm::ShareableBase<CodeMetadataForAsmJS> {
-  CodeMetadataForAsmJS() {};
-  virtual ~CodeMetadataForAsmJS() = default;
-
-  virtual const CodeMetadataForAsmJSImpl& asAsmJS() const = 0;
-
-  virtual bool mutedErrors() const = 0;
-  virtual const char16_t* displayURL() const = 0;
-  virtual ScriptSource* maybeScriptSource() const = 0;
-  virtual bool getFuncNameForAsmJS(uint32_t funcIndex,
-                                   wasm::UTF8Bytes* name) const = 0;
-
-  virtual size_t sizeOfExcludingThis(
-      mozilla::MallocSizeOf mallocSizeOf) const = 0;
-};
-
-using MutableCodeMetadataForAsmJS = RefPtr<CodeMetadataForAsmJS>;
-using SharedCodeMetadataForAsmJS = RefPtr<const CodeMetadataForAsmJS>;
 
 }  
 

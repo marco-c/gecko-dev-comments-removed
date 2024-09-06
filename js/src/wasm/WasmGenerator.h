@@ -26,8 +26,8 @@
 #include "threading/ProtectedData.h"
 #include "vm/HelperThreadTask.h"
 #include "wasm/WasmCompile.h"
-#include "wasm/WasmMetadata.h"
 #include "wasm/WasmModule.h"
+#include "wasm/WasmValidate.h"
 
 namespace JS {
 class OptimizedEncodingListener;
@@ -35,8 +35,6 @@ class OptimizedEncodingListener;
 
 namespace js {
 namespace wasm {
-
-using mozilla::DebugOnly;
 
 struct CompileTask;
 using CompileTaskPtrVector = Vector<CompileTask*, 0, SystemAllocPolicy>;
@@ -135,7 +133,7 @@ struct CompileTaskState {
 
 
 struct CompileTask : public HelperThreadTask {
-  const CodeMetadata& codeMeta;
+  const ModuleEnvironment& moduleEnv;
   const CompilerEnvironment& compilerEnv;
 
   CompileTaskState& state;
@@ -143,10 +141,10 @@ struct CompileTask : public HelperThreadTask {
   FuncCompileInputVector inputs;
   CompiledCode output;
 
-  CompileTask(const CodeMetadata& codeMeta,
+  CompileTask(const ModuleEnvironment& moduleEnv,
               const CompilerEnvironment& compilerEnv, CompileTaskState& state,
               size_t defaultChunkSize)
-      : codeMeta(codeMeta),
+      : moduleEnv(moduleEnv),
         compilerEnv(compilerEnv),
         state(state),
         lifo(defaultChunkSize) {}
@@ -180,13 +178,13 @@ class MOZ_STACK_CLASS ModuleGenerator {
   UniqueChars* const error_;
   UniqueCharsVector* const warnings_;
   const Atomic<bool>* const cancelled_;
-  CodeMetadata* const codeMeta_;
+  ModuleEnvironment* const moduleEnv_;
   CompilerEnvironment* const compilerEnv_;
 
   
   UniqueLinkData linkData_;
   UniqueMetadataTier metadataTier_;
-  MutableCodeMetadataForAsmJS codeMetaForAsmJS_;
+  MutableMetadata metadata_;
 
   
   CompileTaskState taskState_;
@@ -211,6 +209,11 @@ class MOZ_STACK_CLASS ModuleGenerator {
   
   DebugOnly<bool> finishedFuncDefs_;
 
+  bool allocateInstanceDataBytes(uint32_t bytes, uint32_t align,
+                                 uint32_t* instanceDataOffset);
+  bool allocateInstanceDataBytesN(uint32_t bytes, uint32_t align,
+                                  uint32_t count, uint32_t* instanceDataOffset);
+
   bool funcIsCompiled(uint32_t funcIndex) const;
   const CodeRange& funcCodeRange(uint32_t funcIndex) const;
   bool linkCallSites();
@@ -223,9 +226,9 @@ class MOZ_STACK_CLASS ModuleGenerator {
   bool finishCodegen();
   bool finishMetadataTier();
   UniqueCodeTier finishCodeTier();
-  bool finishCodeMetadata(const Bytes& bytecode);
+  SharedMetadata finishMetadata(const Bytes& bytecode);
 
-  bool isAsmJS() const { return codeMeta_->isAsmJS(); }
+  bool isAsmJS() const { return moduleEnv_->isAsmJS(); }
   Tier tier() const { return compilerEnv_->tier(); }
   CompileMode mode() const { return compilerEnv_->mode(); }
   bool debugEnabled() const { return compilerEnv_->debugEnabled(); }
@@ -233,12 +236,12 @@ class MOZ_STACK_CLASS ModuleGenerator {
   void warnf(const char* msg, ...) MOZ_FORMAT_PRINTF(2, 3);
 
  public:
-  ModuleGenerator(const CompileArgs& args, CodeMetadata* codeMeta,
+  ModuleGenerator(const CompileArgs& args, ModuleEnvironment* moduleEnv,
                   CompilerEnvironment* compilerEnv,
                   const Atomic<bool>* cancelled, UniqueChars* error,
                   UniqueCharsVector* warnings);
   ~ModuleGenerator();
-  [[nodiscard]] bool init(CodeMetadataForAsmJS* codeMetaForAsmJS);
+  [[nodiscard]] bool init(Metadata* maybeAsmJSMetadata = nullptr);
 
   
   
@@ -255,13 +258,10 @@ class MOZ_STACK_CLASS ModuleGenerator {
   
   
   
-  
-  
-  
 
-  SharedModule finishModule(const ShareableBytes& bytecode,
-                            MutableModuleMetadata moduleMeta,
-                            JS::OptimizedEncodingListener* maybeTier2Listener);
+  SharedModule finishModule(
+      const ShareableBytes& bytecode,
+      JS::OptimizedEncodingListener* maybeTier2Listener = nullptr);
   [[nodiscard]] bool finishTier2(const Module& module);
 };
 

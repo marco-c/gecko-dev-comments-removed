@@ -276,7 +276,7 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
 
     
     
-    const ImportVector& importVec = module->moduleMeta().imports;
+    const ImportVector& importVec = module->imports();
 
     
     

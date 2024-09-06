@@ -305,21 +305,17 @@ void WasmFrameIter::popFrame() {
 
 const char* WasmFrameIter::filename() const {
   MOZ_ASSERT(!done());
-  return code_->codeMeta().filename.get();
+  return code_->metadata().filename.get();
 }
 
 const char16_t* WasmFrameIter::displayURL() const {
   MOZ_ASSERT(!done());
-  return code_->codeMetaForAsmJS()
-             ? code_->codeMetaForAsmJS()->displayURL()  
-             : nullptr;                                 
+  return code_->metadata().displayURL();
 }
 
 bool WasmFrameIter::mutedErrors() const {
   MOZ_ASSERT(!done());
-  return code_->codeMetaForAsmJS()
-             ? code_->codeMetaForAsmJS()->mutedErrors()  
-             : false;                                    
+  return code_->metadata().mutedErrors();
 }
 
 JSAtom* WasmFrameIter::functionDisplayAtom() const {
@@ -378,7 +374,7 @@ bool WasmFrameIter::debugEnabled() const {
   
   
   
-  if (!code_->codeMeta().debugEnabled) {
+  if (!code_->metadata().debugEnabled) {
     return false;
   }
 

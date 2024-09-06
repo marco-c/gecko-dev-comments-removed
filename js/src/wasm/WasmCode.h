@@ -45,7 +45,6 @@
 #include "threading/ExclusiveData.h"
 #include "util/Memory.h"
 #include "vm/MutexIDs.h"
-#include "wasm/AsmJS.h"  
 #include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCodegenConstants.h"
@@ -55,7 +54,6 @@
 #include "wasm/WasmExprType.h"
 #include "wasm/WasmGC.h"
 #include "wasm/WasmLog.h"
-#include "wasm/WasmMetadata.h"
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmShareable.h"
@@ -63,12 +61,13 @@
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
 
-using js::CodeMetadataForAsmJS;
-
 struct JS_PUBLIC_API JSContext;
 class JSFunction;
 
 namespace js {
+
+struct AsmJSMetadata;
+class ScriptSource;
 
 namespace jit {
 class MacroAssembler;
@@ -77,6 +76,7 @@ class MacroAssembler;
 namespace wasm {
 
 struct MetadataTier;
+struct Metadata;
 
 
 
@@ -228,9 +228,7 @@ class ModuleSegment : public CodeSegment {
                                     const LinkData& linkData);
 
   bool initialize(const CodeTier& codeTier, const LinkData& linkData,
-                  const CodeMetadata& codeMeta,
-                  const CodeMetadataForAsmJS* codeMetaForAsmJS,
-                  const MetadataTier& metadataTier);
+                  const Metadata& metadata, const MetadataTier& metadataTier);
 
   Tier tier() const { return tier_; }
 
@@ -255,6 +253,233 @@ extern void StaticallyUnlink(uint8_t* base, const LinkData& linkData);
 
 
 
+
+
+
+
+class FuncExport {
+  uint32_t typeIndex_;
+  uint32_t funcIndex_;
+  uint32_t eagerInterpEntryOffset_;  
+  bool hasEagerStubs_;
+
+  WASM_CHECK_CACHEABLE_POD(typeIndex_, funcIndex_, eagerInterpEntryOffset_,
+                           hasEagerStubs_);
+
+ public:
+  FuncExport() = default;
+  explicit FuncExport(uint32_t typeIndex, uint32_t funcIndex,
+                      bool hasEagerStubs) {
+    typeIndex_ = typeIndex;
+    funcIndex_ = funcIndex;
+    eagerInterpEntryOffset_ = UINT32_MAX;
+    hasEagerStubs_ = hasEagerStubs;
+  }
+  void initEagerInterpEntryOffset(uint32_t entryOffset) {
+    MOZ_ASSERT(eagerInterpEntryOffset_ == UINT32_MAX);
+    MOZ_ASSERT(hasEagerStubs());
+    eagerInterpEntryOffset_ = entryOffset;
+  }
+
+  bool hasEagerStubs() const { return hasEagerStubs_; }
+  uint32_t typeIndex() const { return typeIndex_; }
+  uint32_t funcIndex() const { return funcIndex_; }
+  uint32_t eagerInterpEntryOffset() const {
+    MOZ_ASSERT(eagerInterpEntryOffset_ != UINT32_MAX);
+    MOZ_ASSERT(hasEagerStubs());
+    return eagerInterpEntryOffset_;
+  }
+};
+
+WASM_DECLARE_CACHEABLE_POD(FuncExport);
+
+using FuncExportVector = Vector<FuncExport, 0, SystemAllocPolicy>;
+
+
+
+
+
+
+
+class FuncImport {
+ private:
+  uint32_t typeIndex_;
+  uint32_t instanceOffset_;
+  uint32_t interpExitCodeOffset_;  
+  uint32_t jitExitCodeOffset_;     
+
+  WASM_CHECK_CACHEABLE_POD(typeIndex_, instanceOffset_, interpExitCodeOffset_,
+                           jitExitCodeOffset_);
+
+ public:
+  FuncImport()
+      : typeIndex_(0),
+        instanceOffset_(0),
+        interpExitCodeOffset_(0),
+        jitExitCodeOffset_(0) {}
+
+  FuncImport(uint32_t typeIndex, uint32_t instanceOffset) {
+    typeIndex_ = typeIndex;
+    instanceOffset_ = instanceOffset;
+    interpExitCodeOffset_ = 0;
+    jitExitCodeOffset_ = 0;
+  }
+
+  void initInterpExitOffset(uint32_t off) {
+    MOZ_ASSERT(!interpExitCodeOffset_);
+    interpExitCodeOffset_ = off;
+  }
+  void initJitExitOffset(uint32_t off) {
+    MOZ_ASSERT(!jitExitCodeOffset_);
+    jitExitCodeOffset_ = off;
+  }
+
+  uint32_t typeIndex() const { return typeIndex_; }
+  uint32_t instanceOffset() const { return instanceOffset_; }
+  uint32_t interpExitCodeOffset() const { return interpExitCodeOffset_; }
+  uint32_t jitExitCodeOffset() const { return jitExitCodeOffset_; }
+};
+
+WASM_DECLARE_CACHEABLE_POD(FuncImport)
+
+using FuncImportVector = Vector<FuncImport, 0, SystemAllocPolicy>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct MetadataCacheablePod {
+  ModuleKind kind;
+  uint32_t instanceDataLength;
+  Maybe<uint32_t> startFuncIndex;
+  Maybe<uint32_t> nameCustomSectionIndex;
+  BuiltinModuleIds builtinModules;
+  FeatureUsage featureUsage;
+  bool filenameIsURL;
+  bool parsedBranchHints;
+  uint32_t typeDefsOffsetStart;
+  uint32_t memoriesOffsetStart;
+  uint32_t tablesOffsetStart;
+  uint32_t tagsOffsetStart;
+  uint32_t padding;
+
+  WASM_CHECK_CACHEABLE_POD(kind, instanceDataLength, startFuncIndex,
+                           nameCustomSectionIndex, builtinModules, featureUsage,
+                           filenameIsURL, parsedBranchHints,
+                           typeDefsOffsetStart, memoriesOffsetStart,
+                           tablesOffsetStart, tagsOffsetStart)
+
+  explicit MetadataCacheablePod(ModuleKind kind)
+      : kind(kind),
+        instanceDataLength(0),
+        featureUsage(FeatureUsage::None),
+        filenameIsURL(false),
+        parsedBranchHints(false),
+        typeDefsOffsetStart(UINT32_MAX),
+        memoriesOffsetStart(UINT32_MAX),
+        tablesOffsetStart(UINT32_MAX),
+        tagsOffsetStart(UINT32_MAX),
+        padding(0) {}
+};
+
+WASM_DECLARE_CACHEABLE_POD(MetadataCacheablePod)
+
+WASM_CHECK_CACHEABLE_POD_PADDING(MetadataCacheablePod)
+
+using ModuleHash = uint8_t[8];
+
+struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
+  SharedTypeContext types;
+  MemoryDescVector memories;
+  GlobalDescVector globals;
+  TableDescVector tables;
+  TagDescVector tags;
+  CacheableChars filename;
+  CacheableChars sourceMapURL;
+
+  
+  
+  
+  SharedBytes namePayload;
+  Maybe<Name> moduleName;
+  NameVector funcNames;
+
+  
+  bool debugEnabled;
+  Uint32Vector debugFuncTypeIndices;
+  ModuleHash debugHash;
+
+  explicit Metadata(ModuleKind kind = ModuleKind::Wasm)
+      : MetadataCacheablePod(kind), debugEnabled(false), debugHash() {}
+  virtual ~Metadata() = default;
+
+  MetadataCacheablePod& pod() { return *this; }
+  const MetadataCacheablePod& pod() const { return *this; }
+
+  const TypeDef& getFuncImportTypeDef(const FuncImport& funcImport) const {
+    return types->type(funcImport.typeIndex());
+  }
+  const FuncType& getFuncImportType(const FuncImport& funcImport) const {
+    return types->type(funcImport.typeIndex()).funcType();
+  }
+  const TypeDef& getFuncExportTypeDef(const FuncExport& funcExport) const {
+    return types->type(funcExport.typeIndex());
+  }
+  const FuncType& getFuncExportType(const FuncExport& funcExport) const {
+    return types->type(funcExport.typeIndex()).funcType();
+  }
+
+  size_t debugNumFuncs() const { return debugFuncTypeIndices.length(); }
+  const FuncType& debugFuncType(uint32_t funcIndex) const {
+    MOZ_ASSERT(debugEnabled);
+    return types->type(debugFuncTypeIndices[funcIndex]).funcType();
+  }
+
+  
+  
+  
+  
+
+  bool isAsmJS() const { return kind == ModuleKind::AsmJS; }
+  const AsmJSMetadata& asAsmJS() const {
+    MOZ_ASSERT(isAsmJS());
+    return *(const AsmJSMetadata*)this;
+  }
+  virtual bool mutedErrors() const { return false; }
+  virtual const char16_t* displayURL() const { return nullptr; }
+  virtual ScriptSource* maybeScriptSource() const { return nullptr; }
+
+  
+  
+  
+  
+
+  enum NameContext { Standalone, BeforeLocation };
+
+  virtual bool getFuncName(NameContext ctx, uint32_t funcIndex,
+                           UTF8Bytes* name) const;
+
+  bool getFuncNameStandalone(uint32_t funcIndex, UTF8Bytes* name) const {
+    return getFuncName(NameContext::Standalone, funcIndex, name);
+  }
+  bool getFuncNameBeforeLocation(uint32_t funcIndex, UTF8Bytes* name) const {
+    return getFuncName(NameContext::BeforeLocation, funcIndex, name);
+  }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  WASM_DECLARE_FRIEND_SERIALIZE(Metadata);
+};
+
+using MutableMetadata = RefPtr<Metadata>;
+using SharedMetadata = RefPtr<const Metadata>;
 
 struct MetadataTier {
   explicit MetadataTier(Tier tier = Tier::Serialized)
@@ -317,7 +542,7 @@ class LazyStubSegment : public CodeSegment {
   }
 
   bool hasSpace(size_t bytes) const;
-  [[nodiscard]] bool addStubs(const CodeMetadata& codeMeta, size_t codeLength,
+  [[nodiscard]] bool addStubs(const Metadata& metadata, size_t codeLength,
                               const Uint32Vector& funcExportIndices,
                               const FuncExportVector& funcExports,
                               const CodeRangeVector& codeRanges,
@@ -361,7 +586,7 @@ class LazyStubTier {
   size_t lastStubSegmentIndex_;
 
   [[nodiscard]] bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
-                                          const CodeMetadata& codeMeta,
+                                          const Metadata& metadata,
                                           const CodeTier& codeTier,
                                           size_t* stubSegmentIndex);
 
@@ -371,7 +596,7 @@ class LazyStubTier {
   
   
   [[nodiscard]] bool createOneEntryStub(uint32_t funcExportIndex,
-                                        const CodeMetadata& codeMeta,
+                                        const Metadata& metadata,
                                         const CodeTier& codeTier);
 
   bool entryStubsEmpty() const { return stubSegments_.empty(); }
@@ -386,7 +611,7 @@ class LazyStubTier {
   
   
   [[nodiscard]] bool createTier2(const Uint32Vector& funcExportIndices,
-                                 const CodeMetadata& codeMeta,
+                                 const Metadata& metadata,
                                  const CodeTier& codeTier,
                                  Maybe<size_t>* stubSegmentIndex);
   void setJitEntries(const Maybe<size_t>& stubSegmentIndex, const Code& code);
@@ -428,8 +653,7 @@ class CodeTier {
 
   bool initialized() const { return !!code_ && segment_->initialized(); }
   bool initialize(const Code& code, const LinkData& linkData,
-                  const CodeMetadata& codeMeta,
-                  const CodeMetadataForAsmJS* codeMetaForAsmJS);
+                  const Metadata& metadata);
 
   Tier tier() const { return segment_->tier(); }
   const RWExclusiveData<LazyStubTier>& lazyStubs() const { return lazyStubs_; }
@@ -551,13 +775,7 @@ using MetadataAnalysisHashMap =
     HashMap<const char*, uint32_t, mozilla::CStringHasher, SystemAllocPolicy>;
 
 class Code : public ShareableBase<Code> {
-  
-  
-  
-  
-  SharedCodeMetadata codeMeta_;
-  
-  SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
+  UniqueCodeTier tier1_;
 
   
   
@@ -579,14 +797,12 @@ class Code : public ShareableBase<Code> {
   mutable UniqueConstCodeTier tier2_;
   mutable Atomic<bool> hasTier2_;
 
-  UniqueCodeTier tier1_;
-
+  SharedMetadata metadata_;
   ExclusiveData<CacheableCharsVector> profilingLabels_;
   JumpTables jumpTables_;
 
  public:
-  Code(const CodeMetadata& codeMeta,
-       const CodeMetadataForAsmJS* codeMetaForAsmJS, UniqueCodeTier tier1,
+  Code(UniqueCodeTier tier1, const Metadata& metadata,
        JumpTables&& maybeJumpTables);
   bool initialized() const { return tier1_->initialized(); }
 
@@ -625,10 +841,7 @@ class Code : public ShareableBase<Code> {
       const;  
 
   const CodeTier& codeTier(Tier tier) const;
-  const CodeMetadata& codeMeta() const { return *codeMeta_; }
-  const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
-    return codeMetaForAsmJS_;
-  }
+  const Metadata& metadata() const { return *metadata_; }
 
   const ModuleSegment& segment(Tier iter) const {
     return codeTier(iter).segment();
@@ -664,10 +877,10 @@ class Code : public ShareableBase<Code> {
 
   
 
-  void addSizeOfMiscIfNotSeen(
-      MallocSizeOf mallocSizeOf, CodeMetadata::SeenSet* seenCodeMeta,
-      CodeMetadataForAsmJS::SeenSet* seenCodeMetaForAsmJS,
-      Code::SeenSet* seenCode, size_t* code, size_t* data) const;
+  void addSizeOfMiscIfNotSeen(MallocSizeOf mallocSizeOf,
+                              Metadata::SeenSet* seenMetadata,
+                              Code::SeenSet* seenCode, size_t* code,
+                              size_t* data) const;
 
   WASM_DECLARE_FRIEND_SERIALIZE_ARGS(SharedCode, const wasm::LinkData& data);
 };

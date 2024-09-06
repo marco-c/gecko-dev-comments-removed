@@ -79,11 +79,9 @@ struct ImportValues {
 
 
 class Module : public JS::WasmModule {
-  
-  
-  const SharedModuleMetadata moduleMeta_;
-
   const SharedCode code_;
+  const ImportVector imports_;
+  const ExportVector exports_;
   const DataSegmentVector dataSegments_;
   const ModuleElemSegmentVector elemSegments_;
   const CustomSectionVector customSections_;
@@ -135,14 +133,15 @@ class Module : public JS::WasmModule {
   class Tier2GeneratorTaskImpl;
 
  public:
-  Module(const ModuleMetadata& moduleMeta, const Code& code,
+  Module(const Code& code, ImportVector&& imports, ExportVector&& exports,
          DataSegmentVector&& dataSegments,
          ModuleElemSegmentVector&& elemSegments,
          CustomSectionVector&& customSections,
          const ShareableBytes* debugBytecode = nullptr,
          bool loggingDeserialized = false)
-      : moduleMeta_(&moduleMeta),
-        code_(&code),
+      : code_(&code),
+        imports_(std::move(imports)),
+        exports_(std::move(exports)),
         dataSegments_(std::move(dataSegments)),
         elemSegments_(std::move(elemSegments)),
         customSections_(std::move(customSections)),
@@ -155,12 +154,10 @@ class Module : public JS::WasmModule {
 
   const Code& code() const { return *code_; }
   const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
-  const ModuleMetadata& moduleMeta() const { return *moduleMeta_; }
-  const CodeMetadata& codeMeta() const { return code_->codeMeta(); }
-  const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
-    return code_->codeMetaForAsmJS();
-  }
+  const Metadata& metadata() const { return code_->metadata(); }
   const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
+  const ImportVector& imports() const { return imports_; }
+  const ExportVector& exports() const { return exports_; }
   const CustomSectionVector& customSections() const { return customSections_; }
   const Bytes& debugBytecode() const { return debugBytecode_->bytes; }
   uint32_t codeLength(Tier t) const { return code_->segment(t).length(); }
@@ -196,9 +193,7 @@ class Module : public JS::WasmModule {
 
   
 
-  void addSizeOfMisc(MallocSizeOf mallocSizeOf,
-                     CodeMetadata::SeenSet* seenCodeMeta,
-                     CodeMetadataForAsmJS::SeenSet* seenCodeMetaForAsmJS,
+  void addSizeOfMisc(MallocSizeOf mallocSizeOf, Metadata::SeenSet* seenMetadata,
                      Code::SeenSet* seenCode, size_t* code, size_t* data) const;
 
   
