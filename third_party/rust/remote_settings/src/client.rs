@@ -64,7 +64,7 @@ impl Client {
     
     pub fn get_records_since(&self, timestamp: u64) -> Result<RemoteSettingsResponse> {
         self.get_records_with_options(
-            GetItemsOptions::new().gt("last_modified", timestamp.to_string()),
+            GetItemsOptions::new().filter_gt("last_modified", timestamp.to_string()),
         )
     }
 
@@ -307,7 +307,7 @@ struct AttachmentsCapability {
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetItemsOptions {
     filters: Vec<Filter>,
     sort: Vec<Sort>,
@@ -328,14 +328,14 @@ impl GetItemsOptions {
     
     
     
-    pub fn eq(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn filter_eq(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::Eq(field.into(), value.into()));
         self
     }
 
     
     
-    pub fn not(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn filter_not(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::Not(field.into(), value.into()));
         self
     }
@@ -343,7 +343,11 @@ impl GetItemsOptions {
     
     
     
-    pub fn contains(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn filter_contains(
+        &mut self,
+        field: impl Into<String>,
+        value: impl Into<String>,
+    ) -> &mut Self {
         self.filters
             .push(Filter::Contains(field.into(), value.into()));
         self
@@ -351,47 +355,47 @@ impl GetItemsOptions {
 
     
     
-    pub fn lt(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn filter_lt(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::Lt(field.into(), value.into()));
         self
     }
 
     
     
-    pub fn gt(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn filter_gt(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::Gt(field.into(), value.into()));
         self
     }
 
     
     
-    pub fn max(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn filter_max(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::Max(field.into(), value.into()));
         self
     }
 
     
     
-    pub fn min(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn filter_min(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::Min(field.into(), value.into()));
         self
     }
 
     
     
-    pub fn like(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
+    pub fn filter_like(&mut self, field: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::Like(field.into(), value.into()));
         self
     }
 
     
-    pub fn has(&mut self, field: impl Into<String>) -> &mut Self {
+    pub fn filter_has(&mut self, field: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::Has(field.into()));
         self
     }
 
     
-    pub fn has_not(&mut self, field: impl Into<String>) -> &mut Self {
+    pub fn filter_has_not(&mut self, field: impl Into<String>) -> &mut Self {
         self.filters.push(Filter::HasNot(field.into()));
         self
     }
@@ -454,7 +458,7 @@ impl GetItemsOptions {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum SortOrder {
     
     Ascending,
@@ -462,7 +466,7 @@ pub enum SortOrder {
     Descending,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 enum Filter {
     Eq(String, String),
     Not(String, String),
@@ -495,7 +499,7 @@ impl Filter {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Sort(String, SortOrder);
 
 impl Sort {
@@ -692,16 +696,16 @@ mod test {
             .field("a")
             .field("c")
             .field("b")
-            .eq("a", "b")
-            .lt("c.d", "5")
-            .gt("e", "15")
-            .max("f", "20")
-            .min("g", "10")
-            .not("h", "i")
-            .like("j", "*k*")
-            .has("l")
-            .has_not("m")
-            .contains("n", "o")
+            .filter_eq("a", "b")
+            .filter_lt("c.d", "5")
+            .filter_gt("e", "15")
+            .filter_max("f", "20")
+            .filter_min("g", "10")
+            .filter_not("h", "i")
+            .filter_like("j", "*k*")
+            .filter_has("l")
+            .filter_has_not("m")
+            .filter_contains("n", "o")
             .sort("b", SortOrder::Descending)
             .sort("a", SortOrder::Ascending)
             .limit(3);

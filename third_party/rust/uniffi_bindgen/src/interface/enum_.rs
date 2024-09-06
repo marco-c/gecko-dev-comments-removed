@@ -155,11 +155,15 @@
 
 
 
+
+
+
+
 use anyhow::Result;
 use uniffi_meta::Checksum;
 
 use super::record::Field;
-use super::{AsType, Type, TypeIterator};
+use super::{AsType, Literal, Type, TypeIterator};
 
 
 
@@ -170,6 +174,7 @@ use super::{AsType, Type, TypeIterator};
 pub struct Enum {
     pub(super) name: String,
     pub(super) module_path: String,
+    pub(super) discr_type: Option<Type>,
     pub(super) variants: Vec<Variant>,
     
     
@@ -189,6 +194,9 @@ pub struct Enum {
     
     
     pub(super) flat: bool,
+    pub(super) non_exhaustive: bool,
+    #[checksum_ignore]
+    pub(super) docstring: Option<String>,
 }
 
 impl Enum {
@@ -200,12 +208,59 @@ impl Enum {
         &self.variants
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn variant_discr(&self, variant_index: usize) -> Result<Literal> {
+        if variant_index >= self.variants.len() {
+            anyhow::bail!("Invalid variant index {variant_index}");
+        }
+        let mut next = 0;
+        let mut this;
+        let mut this_lit = Literal::new_uint(0);
+        for v in self.variants().iter().take(variant_index + 1) {
+            (this, this_lit) = match v.discr {
+                None => (
+                    next,
+                    if (next as i64) < 0 {
+                        Literal::new_int(next as i64)
+                    } else {
+                        Literal::new_uint(next)
+                    },
+                ),
+                Some(Literal::UInt(v, _, _)) => (v, Literal::new_uint(v)),
+                
+                Some(Literal::Int(v, _, _)) => (v as u64, Literal::new_int(v)),
+                _ => anyhow::bail!("Invalid literal type {v:?}"),
+            };
+            next = this.wrapping_add(1);
+        }
+        Ok(this_lit)
+    }
+
+    pub fn variant_discr_type(&self) -> &Option<Type> {
+        &self.discr_type
+    }
+
     pub fn is_flat(&self) -> bool {
         self.flat
     }
 
+    pub fn is_non_exhaustive(&self) -> bool {
+        self.non_exhaustive
+    }
+
     pub fn iter_types(&self) -> TypeIterator<'_> {
         Box::new(self.variants.iter().flat_map(Variant::iter_types))
+    }
+
+    pub fn docstring(&self) -> Option<&str> {
+        self.docstring.as_deref()
     }
 
     
@@ -218,12 +273,15 @@ impl Enum {
         Ok(Self {
             name: meta.name,
             module_path: meta.module_path,
+            discr_type: meta.discr_type,
             variants: meta
                 .variants
                 .into_iter()
                 .map(TryInto::try_into)
                 .collect::<Result<_>>()?,
             flat,
+            non_exhaustive: meta.non_exhaustive,
+            docstring: meta.docstring.clone(),
         })
     }
 }
@@ -243,7 +301,10 @@ impl AsType for Enum {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Checksum)]
 pub struct Variant {
     pub(super) name: String,
+    pub(super) discr: Option<Literal>,
     pub(super) fields: Vec<Field>,
+    #[checksum_ignore]
+    pub(super) docstring: Option<String>,
 }
 
 impl Variant {
@@ -259,6 +320,14 @@ impl Variant {
         !self.fields.is_empty()
     }
 
+    pub fn has_nameless_fields(&self) -> bool {
+        self.fields.iter().any(|f| f.name.is_empty())
+    }
+
+    pub fn docstring(&self) -> Option<&str> {
+        self.docstring.as_deref()
+    }
+
     pub fn iter_types(&self) -> TypeIterator<'_> {
         Box::new(self.fields.iter().flat_map(Field::iter_types))
     }
@@ -270,11 +339,13 @@ impl TryFrom<uniffi_meta::VariantMetadata> for Variant {
     fn try_from(meta: uniffi_meta::VariantMetadata) -> Result<Self> {
         Ok(Self {
             name: meta.name,
+            discr: meta.discr,
             fields: meta
                 .fields
                 .into_iter()
                 .map(TryInto::try_into)
                 .collect::<Result<_>>()?,
+            docstring: meta.docstring.clone(),
         })
     }
 }
@@ -447,7 +518,10 @@ mod test {
     #[test]
     fn test_variants() {
         const UDL: &str = r#"
-            namespace test{};
+            namespace test{
+                [Throws=Testing]
+                void func();
+            };
             [Error]
             enum Testing { "one", "two", "three" };
         "#;
@@ -486,7 +560,10 @@ mod test {
     #[test]
     fn test_variant_data() {
         const UDL: &str = r#"
-            namespace test{};
+            namespace test{
+                [Throws=Testing]
+                void func();
+            };
 
             [Error]
             interface Testing {
@@ -562,6 +639,143 @@ mod test {
                 .map(|v| v.name())
                 .collect::<Vec<_>>(),
             vec!["Normal", "Error"]
+        );
+    }
+
+    fn variant(val: Option<u64>) -> Variant {
+        Variant {
+            name: "v".to_string(),
+            discr: val.map(Literal::new_uint),
+            fields: vec![],
+            docstring: None,
+        }
+    }
+
+    fn check_discrs(e: &mut Enum, vs: Vec<Variant>) -> Vec<u64> {
+        e.variants = vs;
+        (0..e.variants.len())
+            .map(|i| e.variant_discr(i).unwrap())
+            .map(|l| match l {
+                Literal::UInt(v, _, _) => v,
+                _ => unreachable!(),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn test_variant_values() {
+        let mut e = Enum {
+            module_path: "test".to_string(),
+            name: "test".to_string(),
+            discr_type: None,
+            variants: vec![],
+            flat: false,
+            non_exhaustive: false,
+            docstring: None,
+        };
+
+        assert!(e.variant_discr(0).is_err());
+
+        
+        assert_eq!(check_discrs(&mut e, vec![variant(None)]), vec![0]);
+        assert_eq!(check_discrs(&mut e, vec![variant(Some(3))]), vec![3]);
+
+        
+        assert_eq!(
+            check_discrs(&mut e, vec![variant(None), variant(None)]),
+            vec![0, 1]
+        );
+
+        
+        assert_eq!(
+            check_discrs(&mut e, vec![variant(Some(1)), variant(Some(3))]),
+            vec![1, 3]
+        );
+
+        
+        assert_eq!(
+            check_discrs(&mut e, vec![variant(None), variant(Some(3)), variant(None)]),
+            vec![0, 3, 4]
+        );
+
+        assert_eq!(
+            check_discrs(
+                &mut e,
+                vec![variant(Some(4)), variant(None), variant(Some(1))]
+            ),
+            vec![4, 5, 1]
+        );
+    }
+
+    #[test]
+    fn test_docstring_enum() {
+        const UDL: &str = r#"
+            namespace test{};
+            /// informative docstring
+            enum Testing { "foo" };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_enum_definition("Testing")
+                .unwrap()
+                .docstring()
+                .unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_enum_variant() {
+        const UDL: &str = r#"
+            namespace test{};
+            enum Testing {
+                /// informative docstring
+                "foo"
+            };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_enum_definition("Testing").unwrap().variants()[0]
+                .docstring()
+                .unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_associated_enum() {
+        const UDL: &str = r#"
+            namespace test{};
+            /// informative docstring
+            [Enum]
+            interface Testing { };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_enum_definition("Testing")
+                .unwrap()
+                .docstring()
+                .unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_associated_enum_variant() {
+        const UDL: &str = r#"
+            namespace test{};
+            [Enum]
+            interface Testing {
+                /// informative docstring
+                testing();
+            };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_enum_definition("Testing").unwrap().variants()[0]
+                .docstring()
+                .unwrap(),
+            "informative docstring"
         );
     }
 }

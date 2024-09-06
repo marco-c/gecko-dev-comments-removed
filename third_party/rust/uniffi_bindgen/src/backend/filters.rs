@@ -13,12 +13,12 @@ use std::fmt;
 
 
 #[derive(Debug)]
-struct UniFFIError {
+pub struct UniFFIError {
     message: String,
 }
 
 impl UniFFIError {
-    fn new(message: String) -> Self {
+    pub fn new(message: String) -> Self {
         Self { message }
     }
 }

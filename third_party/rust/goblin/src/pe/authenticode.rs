@@ -8,9 +8,13 @@
 
 
 
+use alloc::collections::VecDeque;
 use core::ops::Range;
+use log::debug;
 
-use super::PE;
+use super::{section_table::SectionTable, PE};
+
+static PADDING: [u8; 7] = [0; 7];
 
 impl PE<'_> {
     
@@ -19,6 +23,7 @@ impl PE<'_> {
         ExcludedSectionsIter {
             pe: self,
             state: IterState::default(),
+            sections: VecDeque::default(),
         }
     }
 }
@@ -29,19 +34,22 @@ impl PE<'_> {
 pub(super) struct ExcludedSections {
     checksum: Range<usize>,
     datadir_entry_certtable: Range<usize>,
-    certtable: Option<Range<usize>>,
+    certificate_table_size: usize,
+    end_image_header: usize,
 }
 
 impl ExcludedSections {
     pub(super) fn new(
         checksum: Range<usize>,
         datadir_entry_certtable: Range<usize>,
-        certtable: Option<Range<usize>>,
+        certificate_table_size: usize,
+        end_image_header: usize,
     ) -> Self {
         Self {
             checksum,
             datadir_entry_certtable,
-            certtable,
+            certificate_table_size,
+            end_image_header,
         }
     }
 }
@@ -49,14 +57,26 @@ impl ExcludedSections {
 pub struct ExcludedSectionsIter<'s> {
     pe: &'s PE<'s>,
     state: IterState,
+    sections: VecDeque<SectionTable>,
 }
 
 #[derive(Debug, PartialEq)]
 enum IterState {
     Initial,
-    DatadirEntry(usize),
-    CertTable(usize),
-    Final(usize),
+    ChecksumEnd(usize),
+    CertificateTableEnd(usize),
+    HeaderEnd {
+        end_image_header: usize,
+        sum_of_bytes_hashed: usize,
+    },
+    Sections {
+        tail: usize,
+        sum_of_bytes_hashed: usize,
+    },
+    Final {
+        sum_of_bytes_hashed: usize,
+    },
+    Padding(usize),
     Done,
 }
 
@@ -76,24 +96,166 @@ impl<'s> Iterator for ExcludedSectionsIter<'s> {
             loop {
                 match self.state {
                     IterState::Initial => {
-                        self.state = IterState::DatadirEntry(sections.checksum.end);
-                        return Some(&bytes[..sections.checksum.start]);
+                        
+                        
+                        let out = Some(&bytes[..sections.checksum.start]);
+                        debug!("hashing {:#x} {:#x}", 0, sections.checksum.start);
+
+                        
+                        debug_assert_eq!(sections.checksum.end - sections.checksum.start, 4);
+                        self.state = IterState::ChecksumEnd(sections.checksum.end);
+
+                        return out;
                     }
-                    IterState::DatadirEntry(start) => {
-                        self.state = IterState::CertTable(sections.datadir_entry_certtable.end);
-                        return Some(&bytes[start..sections.datadir_entry_certtable.start]);
+                    IterState::ChecksumEnd(checksum_end) => {
+                        
+                        
+                        let out =
+                            Some(&bytes[checksum_end..sections.datadir_entry_certtable.start]);
+                        debug!(
+                            "hashing {checksum_end:#x} {:#x}",
+                            sections.datadir_entry_certtable.start
+                        );
+
+                        
+                        
+                        
+                        self.state =
+                            IterState::CertificateTableEnd(sections.datadir_entry_certtable.end);
+
+                        return out;
                     }
-                    IterState::CertTable(start) => {
-                        if let Some(certtable) = sections.certtable.as_ref() {
-                            self.state = IterState::Final(certtable.end);
-                            return Some(&bytes[start..certtable.start]);
+                    IterState::CertificateTableEnd(start) => {
+                        
+                        
+                        
+                        
+                        let end_image_header = sections.end_image_header;
+                        let buf = Some(&bytes[start..end_image_header]);
+                        debug!("hashing {start:#x} {:#x}", end_image_header - start);
+
+                        
+                        
+                        
+                        let sum_of_bytes_hashed = end_image_header;
+
+                        self.state = IterState::HeaderEnd {
+                            end_image_header,
+                            sum_of_bytes_hashed,
+                        };
+
+                        return buf;
+                    }
+                    IterState::HeaderEnd {
+                        end_image_header,
+                        sum_of_bytes_hashed,
+                    } => {
+                        
+                        
+                        
+                        
+
+                        
+                        
+                        
+                        let mut sections: VecDeque<SectionTable> = self
+                            .pe
+                            .sections
+                            .iter()
+                            .filter(|section| section.size_of_raw_data != 0)
+                            .cloned()
+                            .collect();
+
+                        
+                        
+                        
+                        
+                        sections
+                            .make_contiguous()
+                            .sort_by_key(|section| section.pointer_to_raw_data);
+
+                        self.sections = sections;
+
+                        self.state = IterState::Sections {
+                            tail: end_image_header,
+                            sum_of_bytes_hashed,
+                        };
+                    }
+                    IterState::Sections {
+                        mut tail,
+                        mut sum_of_bytes_hashed,
+                    } => {
+                        
+                        
+                        
+                        if let Some(section) = self.sections.pop_front() {
+                            let start = section.pointer_to_raw_data as usize;
+                            let end = start + section.size_of_raw_data as usize;
+                            tail = end;
+
+                            
+                            sum_of_bytes_hashed += section.size_of_raw_data as usize;
+
+                            debug!("hashing {start:#x} {:#x}", end - start);
+                            let buf = &bytes[start..end];
+
+                            
+                            self.state = IterState::Sections {
+                                tail,
+                                sum_of_bytes_hashed,
+                            };
+
+                            return Some(buf);
                         } else {
-                            self.state = IterState::Final(start)
+                            self.state = IterState::Final {
+                                sum_of_bytes_hashed,
+                            };
                         }
                     }
-                    IterState::Final(start) => {
+                    IterState::Final {
+                        sum_of_bytes_hashed,
+                    } => {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        let file_size = bytes.len();
+
+                        
+                        
+                        let pad_size = (8 - file_size % 8) % 8;
+                        self.state = IterState::Padding(pad_size);
+
+                        if file_size > sum_of_bytes_hashed {
+                            let extra_data_start = sum_of_bytes_hashed;
+                            let len =
+                                file_size - sections.certificate_table_size - sum_of_bytes_hashed;
+
+                            debug!("hashing {extra_data_start:#x} {len:#x}",);
+                            let buf = &bytes[extra_data_start..extra_data_start + len];
+
+                            return Some(buf);
+                        }
+                    }
+                    IterState::Padding(pad_size) => {
                         self.state = IterState::Done;
-                        return Some(&bytes[start..]);
+
+                        if pad_size != 0 {
+                            debug!("hashing {pad_size:#x}");
+
+                            
+                            
+                            debug_assert!(pad_size <= 7);
+                            debug_assert_eq!(PADDING.len(), 7);
+
+                            return Some(&PADDING[..pad_size]);
+                        }
                     }
                     IterState::Done => return None,
                 }

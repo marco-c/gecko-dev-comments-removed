@@ -109,6 +109,37 @@ impl Ord for Suggestion {
     }
 }
 
+impl Suggestion {
+    
+    pub fn url(&self) -> Option<&str> {
+        match self {
+            Self::Amp { url, .. }
+            | Self::Pocket { url, .. }
+            | Self::Wikipedia { url, .. }
+            | Self::Amo { url, .. }
+            | Self::Yelp { url, .. }
+            | Self::Mdn { url, .. } => Some(url),
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    
+    pub fn raw_url(&self) -> Option<&str> {
+        match self {
+            Self::Amp { raw_url: url, .. }
+            | Self::Pocket { url, .. }
+            | Self::Wikipedia { url, .. }
+            | Self::Amo { url, .. }
+            | Self::Yelp { url, .. }
+            | Self::Mdn { url, .. } => Some(url),
+            _ => None,
+        }
+    }
+}
+
 impl Eq for Suggestion {}
 
 

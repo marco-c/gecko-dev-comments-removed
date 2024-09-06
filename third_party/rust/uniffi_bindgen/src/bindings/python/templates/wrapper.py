@@ -1,3 +1,4 @@
+{%- call py::docstring_value(ci.namespace_docstring(), 0) %}
 
 
 
@@ -13,6 +14,8 @@
 
 
 
+
+from __future__ import annotations
 import os
 import sys
 import ctypes
@@ -20,6 +23,9 @@ import enum
 import struct
 import contextlib
 import datetime
+import threading
+import itertools
+import traceback
 import typing
 {%- if ci.has_async_fns() %}
 import asyncio
@@ -34,19 +40,19 @@ _DEFAULT = object()
 
 {% include "RustBufferTemplate.py" %}
 {% include "Helpers.py" %}
-{% include "PointerManager.py" %}
+{% include "HandleMap.py" %}
 {% include "RustBufferHelper.py" %}
 
 
 {% include "NamespaceLibraryTemplate.py" %}
 
 
+{{ type_helper_code }}
+
+
 {%- if ci.has_async_fns() %}
 {%- include "Async.py" %}
 {%- endif %}
-
-
-{{ type_helper_code }}
 
 {%- for func in ci.function_definitions() %}
 {%- include "TopLevelFunctionTemplate.py" %}
@@ -69,6 +75,9 @@ __all__ = [
     {%- for c in ci.callback_interface_definitions() %}
     "{{ c.name()|class_name }}",
     {%- endfor %}
+    {%- if ci.has_async_fns() %}
+    "uniffi_set_event_loop",
+    {%- endif %}
 ]
 
 {% import "macros.py" as py %}

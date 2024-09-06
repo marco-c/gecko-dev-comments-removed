@@ -1,10 +1,7 @@
 use core::fmt::{self, Display};
 use core::result;
-
 #[cfg(feature = "std")]
-use std::error;
-#[cfg(feature = "std")]
-use std::io;
+use std::{error, io};
 
 #[derive(Debug)]
 
@@ -20,18 +17,19 @@ pub enum Error {
         size: usize,
         msg: &'static str,
     },
-    #[cfg(feature = "std")]
     
+    
+    #[cfg(feature = "std")]
     Custom(String),
-    #[cfg(feature = "std")]
     
+    #[cfg(feature = "std")]
     IO(io::Error),
 }
 
 #[cfg(feature = "std")]
 impl error::Error for Error {
     fn description(&self) -> &str {
-        match *self {
+        match self {
             Error::TooBig { .. } => "TooBig",
             Error::BadOffset(_) => "BadOffset",
             Error::BadInput { .. } => "BadInput",
@@ -40,7 +38,7 @@ impl error::Error for Error {
         }
     }
     fn cause(&self) -> Option<&dyn error::Error> {
-        match *self {
+        match self {
             Error::TooBig { .. } => None,
             Error::BadOffset(_) => None,
             Error::BadInput { .. } => None,
@@ -59,23 +57,23 @@ impl From<io::Error> for Error {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+        match self {
             Error::TooBig { ref size, ref len } => {
-                write!(fmt, "type is too big ({}) for {}", size, len)
+                write!(fmt, "type is too big ({size}) for {len}")
             }
             Error::BadOffset(ref offset) => {
-                write!(fmt, "bad offset {}", offset)
+                write!(fmt, "bad offset {offset}")
             }
             Error::BadInput { ref msg, ref size } => {
-                write!(fmt, "bad input {} ({})", msg, size)
+                write!(fmt, "bad input {msg} ({size})")
             }
             #[cfg(feature = "std")]
             Error::Custom(ref msg) => {
-                write!(fmt, "{}", msg)
+                write!(fmt, "{msg}")
             }
             #[cfg(feature = "std")]
             Error::IO(ref err) => {
-                write!(fmt, "{}", err)
+                write!(fmt, "{err}")
             }
         }
     }

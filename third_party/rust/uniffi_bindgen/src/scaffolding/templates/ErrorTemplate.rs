@@ -1,10 +1,5 @@
 {#
 
-
-
-
-
-
 #}
 
 #[::uniffi::derive_error_for_udl(
@@ -13,6 +8,9 @@
     {% if ci.should_generate_error_read(e) -%}
     with_try_read,
     {%- endif %}
+    {%- endif %}
+    {%- if e.is_non_exhaustive() -%}
+    non_exhaustive,
     {%- endif %}
 )]
 enum r#{{ e.name() }} {

@@ -8,96 +8,32 @@
 
 
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-
-use crate::{ForeignExecutorHandle, RustBuffer, RustTaskCallback};
-
-
-
+use std::{
+    ptr::{null_mut, NonNull},
+    sync::atomic::{AtomicPtr, Ordering},
+};
 
 
+#[doc(hidden)]
+pub struct UniffiForeignPointerCell<T>(AtomicPtr<T>);
 
+impl<T> UniffiForeignPointerCell<T> {
+    pub const fn new() -> Self {
+        Self(AtomicPtr::new(null_mut()))
+    }
 
+    pub fn set(&self, callback: NonNull<T>) {
+        self.0.store(callback.as_ptr(), Ordering::Relaxed);
+    }
 
-
-
-
-
-
-
-
-
-
-
-pub type ForeignCallback = unsafe extern "C" fn(
-    handle: u64,
-    method: u32,
-    args_data: *const u8,
-    args_len: i32,
-    buf_ptr: *mut RustBuffer,
-) -> i32;
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub type ForeignExecutorCallback = extern "C" fn(
-    executor: ForeignExecutorHandle,
-    delay: u32,
-    task: Option<RustTaskCallback>,
-    task_data: *const (),
-) -> i8;
-
-
-pub(crate) struct ForeignCallbackCell(AtomicUsize);
-
-
-pub(crate) struct ForeignExecutorCallbackCell(AtomicUsize);
-
-
-macro_rules! impl_foreign_callback_cell {
-    ($callback_type:ident, $cell_type:ident) => {
-        // Overly-paranoid sanity checking to ensure that these types are
-        // convertible between each-other. `transmute` actually should check this for
-        // us too, but this helps document the invariants we rely on in this code.
-        //
-        // Note that these are guaranteed by
-        // https://rust-lang.github.io/unsafe-code-guidelines/layout/function-pointers.html
-        // and thus this is a little paranoid.
-        static_assertions::assert_eq_size!(usize, $callback_type);
-        static_assertions::assert_eq_size!(usize, Option<$callback_type>);
-
-        impl $cell_type {
-            pub const fn new() -> Self {
-                Self(AtomicUsize::new(0))
-            }
-
-            pub fn set(&self, callback: $callback_type) {
-                // Store the pointer using Ordering::Relaxed.  This is sufficient since callback
-                // should be set at startup, before there's any chance of using them.
-                self.0.store(callback as usize, Ordering::Relaxed);
-            }
-
-            pub fn get(&self) -> $callback_type {
-                let ptr_value = self.0.load(Ordering::Relaxed);
-                unsafe {
-                    // SAFETY: self.0 was set in `set` from our function pointer type, so
-                    // it's safe to transmute it back here.
-                    ::std::mem::transmute::<usize, Option<$callback_type>>(ptr_value)
-                        .expect("Bug: callback not set.  This is likely a uniffi bug.")
-                }
-            }
+    pub fn get(&self) -> &T {
+        unsafe {
+            NonNull::new(self.0.load(Ordering::Relaxed))
+                .expect("Foreign pointer not set.  This is likely a uniffi bug.")
+                .as_mut()
         }
-    };
+    }
 }
 
-impl_foreign_callback_cell!(ForeignCallback, ForeignCallbackCell);
-impl_foreign_callback_cell!(ForeignExecutorCallback, ForeignExecutorCallbackCell);
+unsafe impl<T> Send for UniffiForeignPointerCell<T> {}
+unsafe impl<T> Sync for UniffiForeignPointerCell<T> {}

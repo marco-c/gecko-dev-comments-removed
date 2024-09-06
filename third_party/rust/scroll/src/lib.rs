@@ -219,6 +219,10 @@
 
 
 
+
+
+
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "derive")]
@@ -249,8 +253,7 @@ pub use crate::pwrite::*;
 
 #[doc(hidden)]
 pub mod export {
-    pub use ::core::mem;
-    pub use ::core::result;
+    pub use ::core::{mem, result};
 }
 
 #[allow(unused)]
@@ -267,7 +270,6 @@ doc_comment!(include_str!("../README.md"));
 
 #[cfg(test)]
 mod tests {
-    #[allow(overflowing_literals)]
     use super::LE;
 
     #[test]
@@ -355,36 +357,48 @@ mod tests {
         let bytes: [u8; 2] = [0x2e, 0x0];
         let b = &bytes[..];
         let s: &str = b.pread(0).unwrap();
-        println!("str: {}", s);
+        #[cfg(feature = "std")]
+        println!("str: {s}");
         assert_eq!(s.len(), bytes[..].len() - 1);
         let bytes: &[u8] = b"hello, world!\0some_other_things";
         let hello_world: &str = bytes.pread_with(0, StrCtx::Delimiter(NULL)).unwrap();
-        println!("{:?}", &hello_world);
+        #[cfg(feature = "std")]
+        println!("{hello_world:?}");
         assert_eq!(hello_world.len(), 13);
         let hello: &str = bytes.pread_with(0, StrCtx::Delimiter(SPACE)).unwrap();
-        println!("{:?}", &hello);
+        #[cfg(feature = "std")]
+        println!("{hello:?}");
         assert_eq!(hello.len(), 6);
         
         let _error = bytes.pread_with::<&str>(6, StrCtx::Delimiter(SPACE));
         let error = bytes.pread_with::<&str>(7, StrCtx::Delimiter(SPACE));
-        println!("{:?}", &error);
+        #[cfg(feature = "std")]
+        println!("{error:?}");
         assert!(error.is_ok());
     }
 
+    
+    
+    
+    
+    
     #[test]
     fn pread_str_weird() {
         use super::ctx::*;
         use super::Pread;
         let bytes: &[u8] = b"";
         let hello_world = bytes.pread_with::<&str>(0, StrCtx::Delimiter(NULL));
-        println!("1 {:?}", &hello_world);
-        assert_eq!(hello_world.is_err(), true);
+        #[cfg(feature = "std")]
+        println!("1 {hello_world:?}");
+        assert!(hello_world.unwrap().is_empty());
         let error = bytes.pread_with::<&str>(7, StrCtx::Delimiter(SPACE));
-        println!("2 {:?}", &error);
+        #[cfg(feature = "std")]
+        println!("2 {error:?}");
         assert!(error.is_err());
         let bytes: &[u8] = b"\0";
         let null = bytes.pread::<&str>(0).unwrap();
-        println!("3 {:?}", &null);
+        #[cfg(feature = "std")]
+        println!("3 {null:?}");
         assert_eq!(null.len(), 0);
     }
 
@@ -413,8 +427,7 @@ mod tests {
         assert_eq!(bytes, "bytes");
     }
 
-    use std::error;
-    use std::fmt::{self, Display};
+    use core::fmt::{self, Display};
 
     #[derive(Debug)]
     pub struct ExternalError {}
@@ -425,11 +438,12 @@ mod tests {
         }
     }
 
-    impl error::Error for ExternalError {
+    #[cfg(feature = "std")]
+    impl std::error::Error for ExternalError {
         fn description(&self) -> &str {
             "ExternalError"
         }
-        fn cause(&self) -> Option<&dyn error::Error> {
+        fn cause(&self) -> Option<&dyn std::error::Error> {
             None
         }
     }
@@ -451,7 +465,7 @@ mod tests {
         fn try_into_ctx(self, this: &mut [u8], le: super::Endian) -> Result<usize, Self::Error> {
             use super::Pwrite;
             if this.len() < 2 {
-                return Err((ExternalError {}).into());
+                return Err(ExternalError {});
             }
             this.pwrite_with(self.0, 0, le)?;
             Ok(2)
@@ -463,7 +477,7 @@ mod tests {
         fn try_from_ctx(this: &'a [u8], le: super::Endian) -> Result<(Self, usize), Self::Error> {
             use super::Pread;
             if this.len() > 2 {
-                return Err((ExternalError {}).into());
+                return Err(ExternalError {});
             }
             let n = this.pread_with(0, le)?;
             Ok((Foo(n), 2))
@@ -499,7 +513,7 @@ mod tests {
                 let mut offset = 0;
                 let deadbeef: $typ = bytes.gread_with(&mut offset, LE).unwrap();
                 assert_eq!(deadbeef, $deadbeef as $typ);
-                assert_eq!(offset, ::std::mem::size_of::<$typ>());
+                assert_eq!(offset, ::core::mem::size_of::<$typ>());
             }
         };
     }
@@ -518,7 +532,7 @@ mod tests {
                 let mut offset = 0;
                 let deadbeef: $typ = bytes.gread_with(&mut offset, LE).unwrap();
                 assert_eq!(deadbeef, $deadbeef as $typ);
-                assert_eq!(offset, ::std::mem::size_of::<$typ>());
+                assert_eq!(offset, ::core::mem::size_of::<$typ>());
             }
         };
     }
@@ -537,8 +551,8 @@ mod tests {
                 let o2 = &mut 0;
                 let val: $typ = buffer.gread_with(o2, LE).unwrap();
                 assert_eq!(val, $val);
-                assert_eq!(*offset, ::std::mem::size_of::<$typ>());
-                assert_eq!(*o2, ::std::mem::size_of::<$typ>());
+                assert_eq!(*offset, ::core::mem::size_of::<$typ>());
+                assert_eq!(*o2, ::core::mem::size_of::<$typ>());
                 assert_eq!(*o2, *offset);
                 buffer.gwrite_with($val.clone(), offset, BE).unwrap();
                 let val: $typ = buffer.gread_with(o2, BE).unwrap();
@@ -612,16 +626,17 @@ mod tests {
         let res = b.gread_with::<&str>(offset, StrCtx::Length(3));
         assert!(res.is_err());
         *offset = 0;
-        let astring: [u8; 3] = [0x45, 042, 0x44];
+        let astring: [u8; 3] = [0x45, 0x42, 0x44];
         let string = astring.gread_with::<&str>(offset, StrCtx::Length(2));
         match &string {
-            &Ok(_) => {}
-            &Err(ref err) => {
-                println!("{}", &err);
+            Ok(_) => {}
+            Err(_err) => {
+                #[cfg(feature = "std")]
+                println!("{_err}");
                 panic!();
             }
         }
-        assert_eq!(string.unwrap(), "E*");
+        assert_eq!(string.unwrap(), "EB");
         *offset = 0;
         let bytes2: &[u8] = b.gread_with(offset, 2).unwrap();
         assert_eq!(*offset, 2);
