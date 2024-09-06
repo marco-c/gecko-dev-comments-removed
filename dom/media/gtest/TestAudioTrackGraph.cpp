@@ -21,9 +21,12 @@
 #include "WavDumper.h"
 
 using namespace mozilla;
+using testing::AtLeast;
 using testing::Eq;
 using testing::InSequence;
+using testing::MockFunction;
 using testing::Return;
+using testing::StrEq;
 using testing::StrictMock;
 
 
@@ -584,9 +587,7 @@ class TestDeviceInputConsumerTrack : public DeviceInputConsumerTrack {
   }
 
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override {
-    if (aFrom >= aTo) {
-      return;
-    }
+    MOZ_RELEASE_ASSERT(aFrom < aTo);
 
     if (mInputs.IsEmpty()) {
       GetData<AudioSegment>()->AppendNullData(aTo - aFrom);
@@ -3042,6 +3043,92 @@ TEST(TestAudioTrackGraph, PlatformProcessing)
     NativeInputTrack* native = graph->GetNativeInputTrackMainThread();
     ASSERT_TRUE(!native);
   }
+}
+
+class MockProcessedMediaTrack : public ProcessedMediaTrack {
+ public:
+  explicit MockProcessedMediaTrack(TrackRate aRate)
+      : ProcessedMediaTrack(aRate, MediaSegment::AUDIO, new AudioSegment()) {
+    ON_CALL(*this, ProcessInput)
+        .WillByDefault([segment = GetData<AudioSegment>()](
+                           GraphTime aFrom, GraphTime aTo, uint32_t aFlags) {
+          segment->AppendNullData(aTo - aFrom);
+        });
+  }
+
+  MOCK_METHOD(void, ProcessInput,
+              (GraphTime aFrom, GraphTime aTo, uint32_t aFlags), (override));
+
+  uint32_t NumberOfChannels() const override { return 2; };
+};
+
+TEST(TestAudioTrackGraph, EmptyProcessingInterval)
+{
+  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
+      MediaTrackGraph::AUDIO_THREAD_DRIVER,  1,
+      CubebUtils::PreferredSampleRate( false),
+      nullptr, GetMainThreadSerialEventTarget());
+
+  RefPtr processedTrack = new MockProcessedMediaTrack(graph->GraphRate());
+  RefPtr fallbackListener = new OnFallbackListener(processedTrack);
+  MockFunction<void(const char* name)> checkpoint;
+  {
+    InSequence s;
+    EXPECT_CALL(*processedTrack, ProcessInput).Times(AtLeast(1));
+    EXPECT_CALL(checkpoint, Call(StrEq("before single iteration")));
+    EXPECT_CALL(*processedTrack, ProcessInput).Times(1);
+    EXPECT_CALL(checkpoint, Call(StrEq("before empty iteration")));
+    EXPECT_CALL(checkpoint, Call(StrEq("after empty iteration")));
+  }
+  DispatchFunction([&] {
+    graph->AddTrack(processedTrack);
+    processedTrack->AddAudioOutput(reinterpret_cast<void*>(1), nullptr);
+    processedTrack->AddListener(fallbackListener);
+  });
+
+  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
+  while (stream->State().isNothing()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  EXPECT_EQ(*stream->State(), CUBEB_STATE_STARTED);
+  
+  while (fallbackListener->OnFallback()) {
+    EXPECT_EQ(stream->ManualDataCallback(1),
+              MockCubebStream::KeepProcessing::Yes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  
+  GraphTime processedUpTo0 = processedTrack->GetEnd();
+  EXPECT_GT(processedUpTo0, 0u);
+  checkpoint.Call("before single iteration");
+  
+  
+  EXPECT_EQ(stream->ManualDataCallback(128),
+            MockCubebStream::KeepProcessing::Yes);
+  GraphTime processedUpTo1 = processedTrack->GetEnd();
+  EXPECT_EQ(processedUpTo1, processedUpTo0 + 128);
+  
+  
+  checkpoint.Call("before empty iteration");
+  EXPECT_EQ(stream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::Yes);
+  checkpoint.Call("after empty iteration");
+  EXPECT_EQ(processedTrack->GetEnd(), processedUpTo1);
+
+  DispatchFunction([&] { processedTrack->Destroy(); });
+  ProcessEventQueue();
+  
+  auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
+  while (stream->ManualDataCallback(0) ==
+         MockCubebStream::KeepProcessing::Yes) {
+  }
+  
+  
+  
+  (void)WaitFor(destroyPromise).unwrap()[0];
 }
 
 #undef Invoke
