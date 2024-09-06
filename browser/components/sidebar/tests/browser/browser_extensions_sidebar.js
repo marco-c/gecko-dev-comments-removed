@@ -6,88 +6,22 @@
 add_setup(() => SpecialPowers.pushPrefEnv({ set: [["sidebar.revamp", true]] }));
 registerCleanupFunction(() => SpecialPowers.popPrefEnv());
 
-const imageBuffer = imageBufferFromDataURI(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg=="
-);
-
-function imageBufferFromDataURI(encodedImageData) {
-  const decodedImageData = atob(encodedImageData);
-  return Uint8Array.from(decodedImageData, byte => byte.charCodeAt(0)).buffer;
-}
-
-
-const extData = {
-  manifest: {
-    sidebar_action: {
-      default_icon: "default.png",
-      default_panel: "default.html",
-      default_title: "Default Title",
-    },
-  },
-  useAddonManager: "temporary",
-
-  files: {
-    "default.html": `
-      <!DOCTYPE html>
-      <html>
-      <head><meta charset="utf-8"/>
-      <script src="sidebar.js"></script>
-      </head>
-      <body>
-      A Test Sidebar
-      </body></html>
-    `,
-    "sidebar.js": function () {
-      window.onload = () => {
-        browser.test.sendMessage("sidebar");
-      };
-    },
-    "1.html": `
-      <!DOCTYPE html>
-      <html>
-      <head><meta charset="utf-8"/></head>
-      <body>
-      A Test Sidebar
-      </body></html>
-    `,
-    "default.png": imageBuffer,
-    "1.png": imageBuffer,
-  },
-
-  background() {
-    browser.test.onMessage.addListener(async ({ msg, data }) => {
-      switch (msg) {
-        case "set-icon":
-          await browser.sidebarAction.setIcon({ path: data });
-          break;
-        case "set-panel":
-          await browser.sidebarAction.setPanel({ panel: data });
-          break;
-        case "set-title":
-          await browser.sidebarAction.setTitle({ title: data });
-          break;
-      }
-      browser.test.sendMessage("done");
-    });
-  },
-};
-
 async function sendMessage(extension, msg, data) {
   extension.sendMessage({ msg, data });
   await extension.awaitMessage("done");
 }
 
 add_task(async function test_extension_sidebar_actions() {
-  
-  
-  
   const win = await BrowserTestUtils.openNewBrowserWindow();
   const { document } = win;
-  const sidebar = document.getElementById("sidebar-main");
+  const sidebar = document.querySelector("sidebar-main");
   ok(sidebar, "Sidebar is shown.");
 
   const extension = ExtensionTestUtils.loadExtension({ ...extData });
   await extension.startup();
+  
+  
+  
   await extension.awaitMessage("sidebar");
   await extension.awaitMessage("sidebar");
   is(sidebar.extensionButtons.length, 1, "Extension is shown in the sidebar.");
@@ -144,7 +78,7 @@ add_task(async function test_open_new_window_after_install() {
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
   const { document } = win;
-  const sidebar = document.getElementById("sidebar-main");
+  const sidebar = document.querySelector("sidebar-main");
   ok(sidebar, "Sidebar is shown.");
   await extension.awaitMessage("sidebar");
   is(
@@ -205,7 +139,7 @@ add_task(async function test_open_new_private_window_after_install() {
     private: true,
   });
   const { document } = privateWin;
-  const sidebar = document.getElementById("sidebar-main");
+  const sidebar = document.querySelector("sidebar-main");
   ok(sidebar, "Sidebar is shown.");
   await TestUtils.waitForCondition(
     () => sidebar.extensionButtons,
