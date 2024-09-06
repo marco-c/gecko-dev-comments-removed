@@ -13,8 +13,6 @@ use std::time::Instant;
 
 use crate::maybe_cached::MaybeCached;
 
-pub struct Conn(rusqlite::Connection);
-
 
 
 pub trait ConnExt {

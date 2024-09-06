@@ -4,7 +4,6 @@
 
 use crate::{rs, Result};
 use parking_lot::Mutex;
-use remote_settings::{Client, RemoteSettingsConfig};
 use std::collections::HashMap;
 
 
@@ -13,20 +12,14 @@ use std::collections::HashMap;
 
 
 pub struct RemoteSettingsWarmUpClient {
-    client: Client,
+    client: rs::RemoteSettingsClient,
     pub get_records_responses: Mutex<HashMap<rs::RecordRequest, Vec<rs::Record>>>,
 }
 
 impl RemoteSettingsWarmUpClient {
     pub fn new() -> Self {
         Self {
-            client: Client::new(RemoteSettingsConfig {
-                server: None,
-                server_url: None,
-                bucket_name: None,
-                collection_name: crate::rs::REMOTE_SETTINGS_COLLECTION.into(),
-            })
-            .unwrap(),
+            client: rs::RemoteSettingsClient::new(None, None, None).unwrap(),
             get_records_responses: Mutex::new(HashMap::new()),
         }
     }
@@ -40,7 +33,7 @@ impl Default for RemoteSettingsWarmUpClient {
 
 impl rs::Client for RemoteSettingsWarmUpClient {
     fn get_records(&self, request: rs::RecordRequest) -> Result<Vec<rs::Record>> {
-        let response = <Client as rs::Client>::get_records(&self.client, request.clone())?;
+        let response = self.client.get_records(request.clone())?;
         self.get_records_responses
             .lock()
             .insert(request, response.clone());
