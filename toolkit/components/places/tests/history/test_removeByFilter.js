@@ -19,6 +19,7 @@
 
 
 
+
 add_task(async function test_removeByFilter() {
   
   await PlacesUtils.history.clear();
@@ -114,6 +115,7 @@ add_task(async function test_removeByFilter() {
     "http://localhost/" + Math.random(),
   ];
   const fileUriList = ["file:///home/user/files" + Math.random()];
+  const trailingDotUriList = ["http://example.com./" + Math.random()];
   const title = "Title " + Math.random();
   let sameHostVisits = [
     {
@@ -162,6 +164,12 @@ add_task(async function test_removeByFilter() {
   let fileVisits = [
     {
       uri: fileUriList[0],
+      title,
+    },
+  ];
+  let trailingDotVisits = [
+    {
+      uri: trailingDotUriList[0],
       title,
     },
   ];
@@ -246,6 +254,22 @@ add_task(async function test_removeByFilter() {
       },
       async () => {
         for (let uri of fileUriList) {
+          await assertNotInDB(uri);
+        }
+      },
+      callbackUse
+    );
+    
+    await removeByFilterTester(
+      trailingDotVisits,
+      { host: "example.com." },
+      async () => {
+        for (let uri of trailingDotUriList) {
+          await assertInDB(uri);
+        }
+      },
+      async () => {
+        for (let uri of trailingDotUriList) {
           await assertNotInDB(uri);
         }
       },
@@ -398,10 +422,6 @@ add_task(async function test_error_cases() {
   );
   Assert.throws(
     () => PlacesUtils.history.removeByFilter({ host: "*" }),
-    /TypeError: Expected well formed hostname string for/
-  );
-  Assert.throws(
-    () => PlacesUtils.history.removeByFilter({ host: "local.host." }),
     /TypeError: Expected well formed hostname string for/
   );
   Assert.throws(
