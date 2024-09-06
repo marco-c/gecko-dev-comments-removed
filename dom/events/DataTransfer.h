@@ -425,6 +425,9 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
 
   nsIClipboardDataSnapshot* GetClipboardDataSnapshot() const;
 
+  
+  nsIDragSession* GetOwnerDragSession();
+
  protected:
   
   
@@ -473,6 +476,9 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   void MozClearDataAtHelper(const nsAString& aFormat, uint32_t aIndex,
                             nsIPrincipal& aSubjectPrincipal,
                             mozilla::ErrorResult& aRv);
+
+  
+  nsIWidget* GetOwnerWidget();
 
   nsCOMPtr<nsISupports> mParent;
 
