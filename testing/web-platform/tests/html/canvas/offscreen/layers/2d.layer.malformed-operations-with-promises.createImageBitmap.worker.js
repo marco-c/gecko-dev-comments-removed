@@ -7,7 +7,6 @@ importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
 promise_test(async t => {
-
   var canvas = new OffscreenCanvas(200, 200);
   var ctx = canvas.getContext('2d');
 
@@ -18,6 +17,5 @@ promise_test(async t => {
   
   ctx.beginLayer();
   await promise_rejects_dom(t, 'InvalidStateError', createImageBitmap(canvas));
-  t.done();
 }, "Check that exceptions are thrown for operations that are malformed while layers are open.");
 done();
