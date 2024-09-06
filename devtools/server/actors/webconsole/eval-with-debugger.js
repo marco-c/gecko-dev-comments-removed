@@ -458,10 +458,14 @@ function makeSideeffectFreeDebugger(targetActorDbg) {
       dbg.addDebuggee(global);
     } catch (e) {
       
+      
+      
+      
       if (
         !e.message.includes(
           "debugger and debuggee must be in different compartments"
-        )
+        ) &&
+        !e.message.includes("can't access dead object")
       ) {
         throw e;
       }
