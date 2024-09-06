@@ -182,10 +182,8 @@ RuleEditor.prototype = {
             }`,
           });
 
-          
-          const jumpToNodeButton = createChild(selectorContainer, "span", {
+          const jumpToNodeButton = createChild(selectorContainer, "button", {
             class: "open-inspector",
-            role: "button",
             title: l10n("rule.containerQuery.selectContainerButton.tooltip"),
           });
 
