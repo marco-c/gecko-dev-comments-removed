@@ -106,9 +106,12 @@ struct CompressParams {
 
   
   ModularOptions options;
+
+  
   int responsive = -1;
   int colorspace = -1;
   int move_to_front_from_channel = -1;
+
   
   float channel_colors_pre_transform_percent = 95.f;
   

@@ -63,7 +63,7 @@ struct State {
   pixel_type_w pred = 0;  
   std::vector<uint32_t> pred_errors[kNumPredictors];
   std::vector<int32_t> error;
-  const Header header;
+  const Header &header;
 
   
   
@@ -82,7 +82,7 @@ struct State {
     return static_cast<uint64_t>(x) << kPredExtraBits;
   }
 
-  State(Header header, size_t xsize, size_t ysize) : header(header) {
+  State(const Header &header, size_t xsize, size_t ysize) : header(header) {
     
     
     for (auto &pred_error : pred_errors) {

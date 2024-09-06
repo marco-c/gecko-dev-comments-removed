@@ -13,6 +13,16 @@
 namespace jxl {
 namespace {
 
+AlphaBlendingInputLayer makeAbil(const Color& rgb, const float& a) {
+  const float* data = rgb.data();
+  return {data, data + 1, data + 2, &a};
+}
+
+AlphaBlendingOutput makeAbo(Color& rgb, float& a) {
+  float* data = rgb.data();
+  return {data, data + 1, data + 2, &a};
+}
+
 TEST(AlphaTest, BlendingWithNonPremultiplied) {
   const Color bg_rgb{100, 110, 120};
   const float bg_a = 180.f / 255;
@@ -22,16 +32,16 @@ TEST(AlphaTest, BlendingWithNonPremultiplied) {
   Color out_rgb;
   float out_a;
   PerformAlphaBlending(
-      {&bg_rgb[0], &bg_rgb[1], &bg_rgb[2], &bg_a},
-      {&fg_rgb[0], &fg_rgb[1], &fg_rgb[2], &fg_a},
-      {&out_rgb[0], &out_rgb[1], &out_rgb[2], &out_a}, 1,
+      makeAbil(bg_rgb, bg_a),
+      makeAbil(fg_rgb, fg_a),
+      makeAbo(out_rgb, out_a), 1,
       false, false);
   EXPECT_ARRAY_NEAR(out_rgb, (Color{77.2f, 83.0f, 90.6f}), 0.05f);
   EXPECT_NEAR(out_a, 3174.f / 4095, 1e-5);
   PerformAlphaBlending(
-      {&bg_rgb[0], &bg_rgb[1], &bg_rgb[2], &bg_a},
-      {&fg_rgb[0], &fg_rgb[1], &fg_rgb[2], &fg_a2},
-      {&out_rgb[0], &out_rgb[1], &out_rgb[2], &out_a}, 1,
+      makeAbil(bg_rgb, bg_a),
+      makeAbil(fg_rgb, fg_a2),
+      makeAbo(out_rgb, out_a), 1,
       false, true);
   EXPECT_ARRAY_NEAR(out_rgb, fg_rgb, 0.05f);
   EXPECT_NEAR(out_a, 1.0f, 1e-5);
@@ -46,16 +56,16 @@ TEST(AlphaTest, BlendingWithPremultiplied) {
   Color out_rgb;
   float out_a;
   PerformAlphaBlending(
-      {&bg_rgb[0], &bg_rgb[1], &bg_rgb[2], &bg_a},
-      {&fg_rgb[0], &fg_rgb[1], &fg_rgb[2], &fg_a},
-      {&out_rgb[0], &out_rgb[1], &out_rgb[2], &out_a}, 1,
+      makeAbil(bg_rgb, bg_a),
+      makeAbil(fg_rgb, fg_a),
+      makeAbo(out_rgb, out_a), 1,
       true, false);
   EXPECT_ARRAY_NEAR(out_rgb, (Color{101.5f, 105.1f, 114.8f}), 0.05f);
   EXPECT_NEAR(out_a, 3174.f / 4095, 1e-5);
   PerformAlphaBlending(
-      {&bg_rgb[0], &bg_rgb[1], &bg_rgb[2], &bg_a},
-      {&fg_rgb[0], &fg_rgb[1], &fg_rgb[2], &fg_a2},
-      {&out_rgb[0], &out_rgb[1], &out_rgb[2], &out_a}, 1,
+      makeAbil(bg_rgb, bg_a),
+      makeAbil(fg_rgb, fg_a2),
+      makeAbo(out_rgb, out_a), 1,
       true, true);
   EXPECT_ARRAY_NEAR(out_rgb, fg_rgb, 0.05f);
   EXPECT_NEAR(out_a, 1.0f, 1e-5);
