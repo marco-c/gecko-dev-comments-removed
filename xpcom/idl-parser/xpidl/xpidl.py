@@ -524,6 +524,8 @@ class Typedef(object):
         return "%s%s" % ("*mut " if "out" in calltype else "", self.name)
 
     def tsType(self):
+        
+        self.realtype.tsType()
         return self.name
 
     def __str__(self):
