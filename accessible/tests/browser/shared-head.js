@@ -354,6 +354,9 @@ function wrapWithIFrame(doc, options = {}) {
     if (doc.endsWith("html")) {
       srcURL.searchParams.append("file", `${CURRENT_FILE_DIR}${doc}`);
     } else {
+      
+      
+      doc = doc.replace(/[\u00A0-\u2666]/g, c => `&#${c.charCodeAt(0)}`);
       srcURL.searchParams.append(
         "html",
         `<!doctype html>

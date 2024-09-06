@@ -552,6 +552,30 @@ std::pair<nsIContent*, int32_t> TextLeafPoint::ToDOMPoint(
   return {content, RenderedToContentOffset(mAcc->AsLocal(), mOffset)};
 }
 
+static bool IsLineBreakContinuation(nsTextFrame* aContinuation) {
+  
+  if (aContinuation->HasAnyStateBits(NS_FRAME_IS_FLUID_CONTINUATION)) {
+    return true;
+  }
+  
+  
+  
+  if (!aContinuation->HasAnyStateBits(NS_FRAME_IS_BIDI)) {
+    return true;
+  }
+  nsTextFrame* prev = aContinuation->GetPrevContinuation();
+  if (!prev) {
+    
+    
+    
+    return false;
+  }
+  if (!prev->HasAnyStateBits(NS_FRAME_IS_BIDI)) {
+    return true;
+  }
+  return AreFramesOnDifferentLines(aContinuation, prev);
+}
+
 
 
 TextLeafPoint::TextLeafPoint(Accessible* aAcc, int32_t aOffset) {
@@ -670,14 +694,25 @@ TextLeafPoint TextLeafPoint::FindPrevLineStartSameLocalAcc(
       origOffset, true, &unusedOffsetInContinuation, (nsIFrame**)&continuation);
   MOZ_ASSERT(continuation);
   int32_t lineStart = continuation->GetContentOffset();
-  if (!aIncludeOrigin && lineStart > 0 && lineStart == origOffset) {
+  if (lineStart > 0 && (
+                           
+                           
+                           (!aIncludeOrigin && lineStart == origOffset) ||
+                           !IsLineBreakContinuation(continuation))) {
     
     
-    continuation = continuation->GetPrevContinuation();
+    for (nsTextFrame* prev = continuation->GetPrevContinuation(); prev;
+         prev = prev->GetPrevContinuation()) {
+      continuation = prev;
+      if (IsLineBreakContinuation(continuation)) {
+        break;
+      }
+    }
     MOZ_ASSERT(continuation);
     lineStart = continuation->GetContentOffset();
   }
   MOZ_ASSERT(lineStart >= 0);
+  MOZ_ASSERT(lineStart == 0 || IsLineBreakContinuation(continuation));
   if (lineStart == 0 && !IsLocalAccAtLineStart(acc)) {
     
     
@@ -717,13 +752,19 @@ TextLeafPoint TextLeafPoint::FindNextLineStartSameLocalAcc(
   if (
       
       aIncludeOrigin && continuation->GetContentOffset() == origOffset &&
+      IsLineBreakContinuation(continuation) &&
       
       
       
       !(origOffset == 0 && !IsLocalAccAtLineStart(acc))) {
     return *this;
   }
-  continuation = continuation->GetNextContinuation();
+  
+  while ((continuation = continuation->GetNextContinuation())) {
+    if (IsLineBreakContinuation(continuation)) {
+      break;
+    }
+  }
   if (!continuation) {
     return TextLeafPoint();
   }
@@ -1785,6 +1826,8 @@ bool TextLeafPoint::ContainsPoint(int32_t aX, int32_t aY) {
 
   return CharBounds().Contains(aX, aY);
 }
+
+
 
 bool TextLeafRange::Crop(Accessible* aContainer) {
   TextLeafPoint containerStart(aContainer, 0);
