@@ -498,7 +498,7 @@ interface nsIPrincipal : nsISupports
 
 
 
-    nsIReferrerInfo createReferrerInfo(in ReferrerPolicy aReferrerPolicy);
+    [noscript] nsIReferrerInfo createReferrerInfo(in ReferrerPolicy aReferrerPolicy);
 
     
 

@@ -1216,9 +1216,10 @@ def ensureInfallibleIsSound(methodOrAttribute):
 
     if methodOrAttribute.notxpcom:
         raise IDLError(
-            "[infallible] does not make sense for a [notxpcom] " "method or attribute",
+            "[infallible] does not make sense for a [notxpcom] method or attribute",
             methodOrAttribute.location,
         )
+
 
 
 
@@ -1229,6 +1230,10 @@ def ensureBuiltinClassIfNeeded(methodOrAttribute):
         return
     if iface.name == "nsISupports":
         return
+
+    
+    
+    
     if methodOrAttribute.notxpcom:
         raise IDLError(
             (
@@ -1247,6 +1252,84 @@ def ensureBuiltinClassIfNeeded(methodOrAttribute):
             % (iface.name, methodOrAttribute.kind, methodOrAttribute.name),
             methodOrAttribute.location,
         )
+
+    
+    
+    
+    
+    
+    
+    
+    def typeNeedsBuiltinclass(type):
+        inner = type
+        while inner.kind == "typedef":
+            inner = inner.realtype
+        return (
+            inner.kind == "native"
+            and inner.specialtype is None
+            and inner.modifier is None
+        )
+
+    if methodOrAttribute.kind == "method":
+        for p in methodOrAttribute.params:
+            if p.paramtype == "in" and typeNeedsBuiltinclass(p.realtype):
+                raise IDLError(
+                    (
+                        "scriptable interface '%s' must be marked [builtinclass] "
+                        "because it contains method '%s' with a by-value custom native "
+                        "parameter '%s'"
+                    )
+                    % (iface.name, methodOrAttribute.name, p.name),
+                    methodOrAttribute.location,
+                )
+    elif methodOrAttribute.kind == "attribute" and not methodOrAttribute.readonly:
+        if typeNeedsBuiltinclass(methodOrAttribute.realtype):
+            raise IDLError(
+                (
+                    "scriptable interface '%s' must be marked [builtinclass] because it "
+                    "contains writable attribute '%s' with a by-value custom native type"
+                )
+                % (iface.name, methodOrAttribute.name),
+                methodOrAttribute.location,
+            )
+
+
+def ensureNoscriptIfNeeded(methodOrAttribute):
+    if not methodOrAttribute.isScriptable():
+        return
+
+    
+    
+    
+    def typeNeedsNoscript(type):
+        if type.kind in ["array", "legacyarray"]:
+            return typeNeedsNoscript(type.type)
+        if type.kind == "typedef":
+            return typeNeedsNoscript(type.realtype)
+        if type.kind == "native":
+            return type.specialtype is None
+        if type.kind == "interface":
+            return not type.attributes.scriptable
+        return False
+
+    if typeNeedsNoscript(methodOrAttribute.realtype):
+        raise IDLError(
+            "%s '%s' must be marked [noscript] because it has a non-scriptable type"
+            % (methodOrAttribute.kind, methodOrAttribute.name),
+            methodOrAttribute.location,
+        )
+    if methodOrAttribute.kind == "method":
+        for p in methodOrAttribute.params:
+            
+            if not p.iid_is and typeNeedsNoscript(p.realtype):
+                raise IDLError(
+                    (
+                        "method '%s' must be marked [noscript] because it has a "
+                        "non-scriptable parameter '%s'"
+                    )
+                    % (methodOrAttribute.name, p.name),
+                    methodOrAttribute.location,
+                )
 
 
 class Attribute(object):
@@ -1336,6 +1419,7 @@ class Attribute(object):
 
         ensureInfallibleIsSound(self)
         ensureBuiltinClassIfNeeded(self)
+        ensureNoscriptIfNeeded(self)
 
     def toIDL(self):
         attribs = attlistToIDL(self.attlist)
@@ -1422,9 +1506,6 @@ class Method(object):
         self.iface = iface
         self.realtype = self.iface.idl.getName(self.type, self.location)
 
-        ensureInfallibleIsSound(self)
-        ensureBuiltinClassIfNeeded(self)
-
         for p in self.params:
             p.resolve(self)
         for p in self.params:
@@ -1463,6 +1544,10 @@ class Method(object):
                         "iid_is parameter must be an nsIID",
                         self.location,
                     )
+
+        ensureInfallibleIsSound(self)
+        ensureBuiltinClassIfNeeded(self)
+        ensureNoscriptIfNeeded(self)
 
     def isScriptable(self):
         if not self.iface.attributes.scriptable:
