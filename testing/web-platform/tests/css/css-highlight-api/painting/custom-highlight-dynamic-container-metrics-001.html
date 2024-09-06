@@ -4,7 +4,7 @@
 <title>CSS Highlight API Test: Highlights using container sizes update on container changes</title>
 <link rel="help" href="https://drafts.csswg.org/css-highlight-api-1/">
 <link rel="help" href="https://drafts.csswg.org/css-pseudo/#highlight-styling">
-<link rel="help" href="https://drafts.csswg.org/css-contain-3/#container-lengths">
+<link rel="help" href="https://drafts.csswg.org/css-conditional-5/#container-lengths">
 <link rel="match" href="custom-highlight-dynamic-container-metrics-001-ref.html">
 <meta name="assert" value="lengths depending on containers take the correct values in a universal highlight with no container when the container size changes">
 <script src="/common/reftest-wait.js"></script>
@@ -13,8 +13,6 @@
     iframe {
       width: 200px;
       height: 100px;
-      margin: 0px;
-      border: none;
     }
 
     iframe.resize {
@@ -25,12 +23,10 @@
 </head>
 <iframe id="iframe" src="resources/iframe-container.html"></iframe>
 <script>
-  let iframe = document.getElementById('iframe');
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      iframe.classList.add('resize');
-      requestAnimationFrame(() => takeScreenshot());
-    });
-  });
+  function runtest() {
+    iframe.classList.add('resize');
+    requestAnimationFrame(() => takeScreenshot());
+  }
+  iframe.onload = runtest;
 </script>
 </html>
