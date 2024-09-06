@@ -300,6 +300,12 @@ class TextLeafRange final {
 
 
 
+  static void GetSelection(Accessible* aAcc, nsTArray<TextLeafRange>& aRanges);
+
+  
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT bool SetSelection(int32_t aSelectionNum) const;
