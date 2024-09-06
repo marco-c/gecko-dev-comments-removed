@@ -43,18 +43,28 @@ function waitForDocLoadComplete(aBrowser = gBrowser) {
   });
 }
 
-function setupMockAlertsService() {
+function setupMockAlertsService(expectedObj) {
   const alertsService = {
     showAlertNotification: (
       image,
       title,
-      text,
+      body,
       clickable,
       cookie,
       clickCallback
     ) => {
       
+      clickCallback(null, "alertshow", null);
+
+      
+      if (expectedObj) {
+        expectedObj.title && Assert.equal(title, expectedObj.title);
+        expectedObj.body && Assert.equal(body, expectedObj.body);
+      }
+
+      
       clickCallback(null, "alertclickcallback", null);
+      clickCallback(null, "alertfinished", null);
     },
   };
   const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
