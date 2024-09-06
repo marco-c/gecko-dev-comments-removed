@@ -172,8 +172,6 @@
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/FontFaceSet.h"
-#include "mozilla/dom/FragmentDirective.h"
-#include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/HighlightRegistry.h"
 #include "mozilla/dom/HTMLAllCollection.h"
@@ -2486,7 +2484,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentL10n)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFragmentDirective)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHighlightRegistry)
 
   
@@ -2634,7 +2631,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentL10n)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFragmentDirective)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mHighlightRegistry)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mParser)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOnloadBlocker)
@@ -4069,21 +4065,6 @@ void Document::StopDocumentLoad() {
 void Document::SetDocumentURI(nsIURI* aURI) {
   nsCOMPtr<nsIURI> oldBase = GetDocBaseURI();
   mDocumentURI = aURI;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsTArray<TextDirective> textDirectives;
-  FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
-      mDocumentURI, &textDirectives);
-  FragmentDirective()->SetTextDirectives(std::move(textDirectives));
-
   nsIURI* newBase = GetDocBaseURI();
 
   mChromeRulesEnabled = URLExtraData::ChromeRulesEnabled(aURI);
@@ -13104,29 +13085,25 @@ void Document::SetScrollToRef(nsIURI* aDocumentURI) {
 
 
 void Document::ScrollToRef() {
+  if (mScrolledToRefAlready) {
+    RefPtr<PresShell> presShell = GetPresShell();
+    if (presShell) {
+      presShell->ScrollToAnchor();
+    }
+    return;
+  }
+
+  
+  
+  if (mScrollToRef.IsEmpty()) {
+    return;
+  }
+
   RefPtr<PresShell> presShell = GetPresShell();
   if (!presShell) {
     return;
   }
-  if (mScrolledToRefAlready) {
-    presShell->ScrollToAnchor();
-    return;
-  }
 
-  
-  
-  
-  
-  
-  
-  const bool didScrollToTextFragment =
-      presShell->HighlightAndGoToTextFragment(true);
-
-  
-  
-  if (didScrollToTextFragment || mScrollToRef.IsEmpty()) {
-    return;
-  }
   
   
   NS_ConvertUTF8toUTF16 ref(mScrollToRef);
@@ -19082,13 +19059,6 @@ HighlightRegistry& Document::HighlightRegistry() {
     mHighlightRegistry = MakeRefPtr<class HighlightRegistry>(this);
   }
   return *mHighlightRegistry;
-}
-
-FragmentDirective* Document::FragmentDirective() {
-  if (!mFragmentDirective) {
-    mFragmentDirective = MakeRefPtr<class FragmentDirective>(this);
-  }
-  return mFragmentDirective;
 }
 
 RadioGroupContainer& Document::OwnedRadioGroupContainer() {
