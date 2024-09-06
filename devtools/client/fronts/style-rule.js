@@ -88,6 +88,9 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
   get selectors() {
     return this._form.selectors;
   }
+  get selectorsSpecificity() {
+    return this._form.selectorsSpecificity;
+  }
 
   
 
