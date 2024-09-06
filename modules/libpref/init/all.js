@@ -472,20 +472,6 @@ pref("accessibility.warn_on_browsewithcaret", true);
 
 pref("accessibility.browsewithcaret_shortcut.enabled", true);
 
-#ifndef XP_MACOSX
-  
-  
-  
-  
-  
-  pref("accessibility.tabfocus", 7);
-  pref("accessibility.tabfocus_applies_to_xul", false);
-#else
-  
-  
-  pref("accessibility.tabfocus_applies_to_xul", true);
-#endif
-
 
 
 

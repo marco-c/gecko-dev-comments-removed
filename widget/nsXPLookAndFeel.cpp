@@ -146,7 +146,6 @@ static const char sIntPrefs[][45] = {
     "ui.treeLazyScrollDelay",
     "ui.treeScrollDelay",
     "ui.treeScrollLinesMax",
-    "accessibility.tabfocus",  
     "ui.chosenMenuItemsShouldBlink",
     "ui.windowsAccentColorInTitlebar",
     "ui.macBigSurTheme",
@@ -527,9 +526,6 @@ void nsXPLookAndFeel::Init() {
   
   
   Preferences::RegisterPrefixCallback(OnPrefChanged, "ui.");
-  
-  
-  Preferences::RegisterCallback(OnPrefChanged, "accessibility.tabfocus");
 
   for (const auto& pref : kMediaQueryPrefs) {
     Preferences::RegisterCallback(
