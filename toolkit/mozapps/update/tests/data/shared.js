@@ -18,6 +18,8 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 ChromeUtils.defineESModuleGetters(this, {
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   ctypes: "resource://gre/modules/ctypes.sys.mjs",
+  TelemetryArchiveTesting:
+    "resource://testing-common/TelemetryArchiveTesting.sys.mjs",
 });
 
 const PREF_APP_UPDATE_AUTO = "app.update.auto";
@@ -932,4 +934,25 @@ async function continueFileHandler(leafName) {
         continueFile.path
     );
   });
+}
+
+async function waitForUpdatePing(archiveChecker, expectedProperties) {
+  
+  
+  let updatePing;
+  await TestUtils.waitForCondition(
+    async function () {
+      
+      
+      updatePing = await archiveChecker.promiseFindPing(
+        "update",
+        expectedProperties
+      );
+      return !!updatePing;
+    },
+    "Wait for Update Ping to be generated",
+    500,
+    100
+  );
+  return updatePing;
 }

@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { TelemetryArchiveTesting } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryArchiveTesting.sys.mjs"
-);
-
 
 
 
@@ -29,23 +25,10 @@ add_task(async function telemetry_updatePing_ready() {
   let updateParams = "";
   await runTelemetryUpdateTest(updateParams, "update-staged");
 
-  
-  
-  let updatePing;
-  await TestUtils.waitForCondition(
-    async function () {
-      
-      
-      updatePing = await archiveChecker.promiseFindPing("update", [
-        [["payload", "reason"], "ready"],
-        [["payload", "targetBuildId"], "20080811053724"],
-      ]);
-      return !!updatePing;
-    },
-    "Make sure the ping is generated before trying to validate it.",
-    500,
-    100
-  );
+  const updatePing = await waitForUpdatePing(archiveChecker, [
+    [["payload", "reason"], "ready"],
+    [["payload", "targetBuildId"], "20080811053724"],
+  ]);
 
   ok(updatePing, "The 'update' ping must be correctly sent.");
 
