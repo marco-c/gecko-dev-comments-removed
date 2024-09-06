@@ -19,27 +19,111 @@ struct IFileOpenDialog;
 
 namespace mozilla::widget::filedialog {
 
+namespace detail {
+
+template <typename T, typename E, bool B>
+struct PromiseInfo {
+  using ResolveT = T;
+  using RejectT = E;
+  constexpr static const bool IsExclusive = B;
+  using Promise = MozPromise<T, E, B>;
+};
+
+template <typename P>
+auto DestructurePromiseImpl(P&&) {
+  
+  
+  static_assert(false, "expected P = RefPtr<MozPromise< ... >>");
+}
+
+template <typename T, typename E, bool B>
+auto DestructurePromiseImpl(RefPtr<MozPromise<T, E, B>>&&)
+    -> PromiseInfo<T, E, B>;
+
+template <typename P>
+using DestructurePromise =
+    std::decay_t<decltype(DestructurePromiseImpl(std::declval<P>()))>;
+
+template <typename T, typename E>
+struct ResultInfo {
+  using OkT = T;
+  using ErrorT = E;
+};
+
+template <typename R>
+auto DestructureResultImpl(R&&) {
+  
+  
+  static_assert(false, "expected R = mozilla::Result< ... >");
+}
+
+template <typename T, typename E>
+auto DestructureResultImpl(mozilla::Result<T, E>&&) -> ResultInfo<T, E>;
+
+template <typename R>
+using DestructureResult =
+    std::decay_t<decltype(DestructureResultImpl(std::declval<R>()))>;
+
+#define MOZ_ASSERT_SAME_TYPE(T1, T2, ...) \
+  static_assert(std::is_same_v<T1, T2>, ##__VA_ARGS__)
+}  
+
 extern LazyLogModule sLogFileDialog;
+
+
+struct Error {
+  enum Kind {
+    
+    LocalError,
+    
+    
+    RemoteError,
+    
+    
+    IPCError,
+  };
+
+  
+  Kind kind;
+  
+  
+  nsCString where;
+  
+  uint32_t why;
+
+  
+  static const char* KindName(Kind);
+
+  template <size_t N>
+  static Error Local(const char (&where)[N], HRESULT why) {
+    return Error{.kind = LocalError,
+                 .where = nsLiteralCString(where),
+                 .why = (uint32_t)why};
+  }
+};
+
+template <typename R>
+using Promise = MozPromise<R, Error, true>;
 
 enum class FileDialogType : uint8_t { Open, Save };
 
 
-mozilla::Result<RefPtr<IFileDialog>, HRESULT> MakeFileDialog(FileDialogType);
+mozilla::Result<RefPtr<IFileDialog>, Error> MakeFileDialog(FileDialogType);
 
 
 
-[[nodiscard]] HRESULT ApplyCommands(::IFileDialog*,
-                                    nsTArray<Command> const& commands);
-
-
-
-
-mozilla::Result<Results, HRESULT> GetFileResults(::IFileDialog*);
+mozilla::Result<Ok, Error> ApplyCommands(::IFileDialog*,
+                                         nsTArray<Command> const& commands);
 
 
 
 
-mozilla::Result<nsString, HRESULT> GetFolderResults(::IFileDialog*);
+mozilla::Result<Results, Error> GetFileResults(::IFileDialog*);
+
+
+
+
+mozilla::Result<nsString, Error> GetFolderResults(::IFileDialog*);
 
 namespace detail {
 
@@ -47,9 +131,6 @@ void LogProcessingError(LogModule* aModule, ipc::IProtocol* aCaller,
                         ipc::HasResultCodes::Result aCode, const char* aReason);
 
 }  
-
-template <typename R>
-using Promise = MozPromise<R, HRESULT, true>;
 
 
 RefPtr<Promise<Maybe<Results>>> SpawnFilePicker(HWND parent,
