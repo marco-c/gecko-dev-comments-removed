@@ -9491,6 +9491,10 @@ interface Document extends Node, DocumentOrShadowRoot, FontFaceSource, GeometryU
 
 
 
+    createElement<K extends keyof HTMLElementTagNameMap>(tagName: K, options?: ElementCreationOptions): HTMLElementTagNameMap[K];
+    
+    createElement<K extends keyof HTMLElementDeprecatedTagNameMap>(tagName: K, options?: ElementCreationOptions): HTMLElementDeprecatedTagNameMap[K];
+    createElement(tagName: string, options?: ElementCreationOptions): HTMLElement;
     
     createElementNS(namespace: string | null, qualifiedName: string, options?: ElementCreationOptions | string): Element;
     
