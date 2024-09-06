@@ -147,7 +147,12 @@ class RTC_EXPORT Socket {
                                
                                
     OPT_SEND_ECN,              
-    OPT_RECV_ECN
+    OPT_RECV_ECN,
+    OPT_KEEPALIVE,         
+    OPT_TCP_KEEPCNT,       
+    OPT_TCP_KEEPIDLE,      
+    OPT_TCP_KEEPINTVL,     
+    OPT_TCP_USER_TIMEOUT,  
   };
   virtual int GetOption(Option opt, int* value) = 0;
   virtual int SetOption(Option opt, int value) = 0;
