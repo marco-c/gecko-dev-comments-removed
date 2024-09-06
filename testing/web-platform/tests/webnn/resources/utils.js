@@ -12,6 +12,27 @@ const TypedArrayDict = {
   uint8: Uint8Array,
   int64: BigInt64Array,
 };
+const kIntTypes = ['uint8', 'int8', 'uint32', 'int32', 'uint64', 'int64'];
+const kFloatTypes = ['float16', 'float32'];
+
+const findCompatibleType =
+    (dataType, context) => {
+      for (let supportedType of context.opSupportLimits().input.dataTypes) {
+        if (kIntTypes.includes(dataType)) {
+          if (kIntTypes.indexOf(supportedType) > kIntTypes.indexOf(dataType)) {
+            return supportedType;
+          }
+        }
+
+        if (kFloatTypes.includes(dataType)) {
+          if (kFloatTypes.indexOf(supportedType) >
+              kFloatTypes.indexOf(dataType)) {
+            return supportedType;
+          }
+        }
+      }
+      return null;
+    }
 
 const kContextOptionsForVariant = {
   cpu: {
@@ -617,13 +638,20 @@ const checkResults = (operationName, namedOutputOperands, outputs, resources) =>
 
 
 
-const createConstantOperand = (builder, resources) => {
+
+const createConstantOperand = (builder, resources, dataType = null) => {
+  if (!dataType) {
+    dataType = resources.type;
+  }
+
   const bufferView = (typeof (resources.data) === 'number' &&
                       sizeOfShape(resources.shape) > 1) ?
-      new TypedArrayDict[resources.type](sizeOfShape(resources.shape))
+      new TypedArrayDict[dataType](sizeOfShape(resources.shape))
           .fill(resources.data) :
-      new TypedArrayDict[resources.type](resources.data);
-  return builder.constant({dataType: resources.type, type: resources.type, dimensions: resources.shape}, bufferView);
+      new TypedArrayDict[dataType](resources.data);
+  return builder.constant(
+      {dataType: dataType, type: dataType, dimensions: resources.shape},
+      bufferView);
 };
 
 
@@ -633,17 +661,40 @@ const createConstantOperand = (builder, resources) => {
 
 
 
-const createSingleInputOperand = (builder, resources, inputOperandName) => {
-  inputOperandName = inputOperandName ? inputOperandName : Object.keys(resources.inputs)[0];
-  const inputResources = resources.inputs[inputOperandName];
-  let operand;
-  if (resources.inputs[inputOperandName].hasOwnProperty('constant') && resources.inputs[inputOperandName]['constant']) {
-    operand = createConstantOperand(builder, resources.inputs[inputOperandName]);
-  } else {
-    operand = builder.input(inputOperandName, {dataType: inputResources.type, type: inputResources.type, dimensions: inputResources.shape});
-  }
-  return operand;
-};
+
+const createSingleInputOperand =
+    (context, builder, resources, inputOperandName) => {
+      inputOperandName ||= Object.keys(resources.inputs)[0];
+      const inputResources = resources.inputs[inputOperandName];
+      let operand;
+      let dataType = inputResources.type;
+      
+      
+      if (!context.opSupportLimits().input.dataTypes.includes(
+              inputResources.type)) {
+        const compatible_type =
+            findCompatibleType(inputResources.type, context);
+        if (compatible_type) {
+          inputResources.castedType = compatible_type;
+          dataType = compatible_type;
+        }
+      }
+      if (resources.inputs[inputOperandName].hasOwnProperty('constant') &&
+          resources.inputs[inputOperandName]['constant']) {
+        operand = createConstantOperand(
+            builder, resources.inputs[inputOperandName], dataType);
+      } else {
+        operand = builder.input(inputOperandName, {
+          dataType: dataType,
+          type: dataType,
+          dimensions: inputResources.shape
+        });
+      }
+      if (inputResources.castedType) {
+        operand = builder.cast(operand, inputResources.type);
+      }
+      return operand;
+    };
 
 
 
@@ -651,11 +702,13 @@ const createSingleInputOperand = (builder, resources, inputOperandName) => {
 
 
 
-const createMultiInputOperands = (builder, resources) => {
+
+const createMultiInputOperands = (context, builder, resources) => {
   let inputOperands = [];
   const inputOperandNameArray = Object.keys(resources.inputs);
   inputOperandNameArray.forEach(inputOperandName => {
-    const operand = createSingleInputOperand(builder, resources, inputOperandName);
+    const operand =
+        createSingleInputOperand(context, builder, resources, inputOperandName);
     inputOperands.push(operand);
   });
   return inputOperands;
@@ -668,14 +721,18 @@ const createMultiInputOperands = (builder, resources) => {
 
 
 
-const buildOperationWithSingleInput = (operationName, builder, resources) => {
-  const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
-  const outputOperand = resources.options ?
-      builder[operationName](inputOperand, resources.options) : builder[operationName](inputOperand);
-  namedOutputOperand[resources.expected.name] = outputOperand;
-  return namedOutputOperand;
-};
+
+const buildOperationWithSingleInput =
+    (operationName, context, builder, resources) => {
+      const namedOutputOperand = {};
+      const inputOperand =
+          createSingleInputOperand(context, builder, resources);
+      const outputOperand = resources.options ?
+          builder[operationName](inputOperand, resources.options) :
+          builder[operationName](inputOperand);
+      namedOutputOperand[resources.expected.name] = outputOperand;
+      return namedOutputOperand;
+    };
 
 
 
@@ -684,21 +741,27 @@ const buildOperationWithSingleInput = (operationName, builder, resources) => {
 
 
 
-const buildOperationWithTwoInputs = (operationName, builder, resources) => {
+
+const buildOperationWithTwoInputs =
+    (operationName, context, builder, resources) => {
+      
+      const namedOutputOperand = {};
+      const [inputOperandA, inputOperandB] =
+          createMultiInputOperands(context, builder, resources);
+      const outputOperand = resources.options ?
+          builder[operationName](
+              inputOperandA, inputOperandB, resources.options) :
+          builder[operationName](inputOperandA, inputOperandB);
+      namedOutputOperand[resources.expected.name] = outputOperand;
+      return namedOutputOperand;
+    };
+
+const buildBatchNorm = (operationName, context, builder, resources) => {
+  
   
   const namedOutputOperand = {};
-  const [inputOperandA, inputOperandB] = createMultiInputOperands(builder, resources);
-  const outputOperand = resources.options ?
-      builder[operationName](inputOperandA, inputOperandB, resources.options) : builder[operationName](inputOperandA, inputOperandB);
-  namedOutputOperand[resources.expected.name] = outputOperand;
-  return namedOutputOperand;
-};
-
-const buildBatchNorm = (operationName, builder, resources) => {
-  
-  
-  const namedOutputOperand = {};
-  const [inputOperand, meanOperand, varianceOperand] = createMultiInputOperands(builder, resources);
+  const [inputOperand, meanOperand, varianceOperand] =
+      createMultiInputOperands(context, builder, resources);
   const batchNormOptions = {...resources.options};
   if (batchNormOptions.scale) {
     batchNormOptions.scale = createConstantOperand(builder, batchNormOptions.scale);
@@ -712,16 +775,16 @@ const buildBatchNorm = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
-const buildCast = (operationName, builder, resources) => {
+const buildCast = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
+  const inputOperand = createSingleInputOperand(context, builder, resources);
   
   namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.type);
   return namedOutputOperand;
 };
 
-const buildConcat = (operationName, builder, resources) => {
+const buildConcat = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
   const inputOperands = [];
@@ -739,17 +802,18 @@ const buildConcat = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
-const buildConstantRange = (operationName, builder, resources) => {
+const buildConstantRange = (operationName, context, builder, resources) => {
   const namedOutputOperand = {};
   
   namedOutputOperand[resources.expected.name] = builder[operationName](resources.inputs.start, resources.inputs.step, resources.outputShape, resources.type);
   return namedOutputOperand;
 };
 
-const buildConvTranspose2d = (operationName, builder, resources) => {
+const buildConvTranspose2d = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
-  const [inputOperand, filterOperand] = createMultiInputOperands(builder, resources);
+  const [inputOperand, filterOperand] =
+      createMultiInputOperands(context, builder, resources);
   let convTranspose2dOptions = {...resources.options};
   if (convTranspose2dOptions.bias) {
     convTranspose2dOptions.bias = createConstantOperand(builder, convTranspose2dOptions.bias);
@@ -758,10 +822,11 @@ const buildConvTranspose2d = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
-const buildConv2d = (operationName, builder, resources) => {
+const buildConv2d = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
-  const [inputOperand, filterOperand] = createMultiInputOperands(builder, resources);
+  const [inputOperand, filterOperand] =
+      createMultiInputOperands(context, builder, resources);
   let conv2dOptions = {...resources.options};
   if (conv2dOptions.bias) {
     conv2dOptions.bias = createConstantOperand(builder, conv2dOptions.bias);
@@ -770,10 +835,11 @@ const buildConv2d = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
-const buildGemm = (operationName, builder, resources) => {
+const buildGemm = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
-  const [inputOperandA, inputOperandB] = createMultiInputOperands(builder, resources);
+  const [inputOperandA, inputOperandB] =
+      createMultiInputOperands(context, builder, resources);
   let gemmOptions = {...resources.options};
   if (gemmOptions.c) {
     if (gemmOptions.c.shape) {
@@ -788,11 +854,11 @@ const buildGemm = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
-const buildLayerNorm = (operationName, builder, resources) => {
+const buildLayerNorm = (operationName, context, builder, resources) => {
   
   
   const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
+  const inputOperand = createSingleInputOperand(context, builder, resources);
   const layerNormOptions = {...resources.options};
   if (layerNormOptions.scale) {
     layerNormOptions.scale = createConstantOperand(builder, layerNormOptions.scale);
@@ -805,38 +871,38 @@ const buildLayerNorm = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
-const buildPad = (operationName, builder, resources) => {
+const buildPad = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
+  const inputOperand = createSingleInputOperand(context, builder, resources);
   
   namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.beginningPadding, resources.endingPadding, resources.options);
   return namedOutputOperand;
 };
 
-const buildReshape = (operationName, builder, resources) => {
+const buildReshape = (operationName, context, builder, resources) => {
   
   
   const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
+  const inputOperand = createSingleInputOperand(context, builder, resources);
   
   namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.newShape);
   return namedOutputOperand;
 };
 
-const buildSlice = (operationName, builder, resources) => {
+const buildSlice = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
+  const inputOperand = createSingleInputOperand(context, builder, resources);
   
   namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.starts, resources.sizes);
   return namedOutputOperand;
 };
 
-const buildSoftmax = (operationName, builder, resources) => {
+const buildSoftmax = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
+  const inputOperand = createSingleInputOperand(context, builder, resources);
   if (resources.axis !== undefined) {
     
     namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.axis);
@@ -847,12 +913,12 @@ const buildSoftmax = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
-const buildSplit = (operationName, builder, resources) => {
+const buildSplit = (operationName, context, builder, resources) => {
   
   
   
   const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
+  const inputOperand = createSingleInputOperand(context, builder, resources);
   
   const outputOperands = builder[operationName](inputOperand, resources.splits, resources.options);
   resources.expected.forEach((resourceDict, index) => {
@@ -861,10 +927,11 @@ const buildSplit = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
-const buildWhere = (operationName, builder, resources) => {
+const buildWhere = (operationName, context, builder, resources) => {
   
   const namedOutputOperand = {};
-  const [conditionOperand, trueValuesOperand, falseValuesOperand] = createMultiInputOperands(builder, resources);
+  const [conditionOperand, trueValuesOperand, falseValuesOperand] =
+      createMultiInputOperands(context, builder, resources);
   
   namedOutputOperand[resources.expected.name] = builder[operationName](conditionOperand, trueValuesOperand, falseValuesOperand);
   return namedOutputOperand;
@@ -878,15 +945,17 @@ const buildWhere = (operationName, builder, resources) => {
 
 
 
-const buildGraph = (operationName, builder, resources, buildFunc) => {
-  const namedOperands = buildFunc(operationName, builder, resources);
+
+const buildGraph = (operationName, context, builder, resources, buildFunc) => {
+  const namedOperands = buildFunc(operationName, context, builder, resources);
   let inputs = {};
   if (Array.isArray(resources.inputs)) {
     
     for (let subInput of resources.inputs) {
       if (!subInput.hasOwnProperty('constant') || !subInput.constant) {
         inputs[subInput.name] = getTypedArrayData(
-            subInput.type, sizeOfShape(subInput.shape), subInput.data);
+            subInput.castedType ? subInput.castedType : subInput.type,
+            sizeOfShape(subInput.shape), subInput.data);
       }
     }
   } else {
@@ -894,8 +963,9 @@ const buildGraph = (operationName, builder, resources, buildFunc) => {
       const subTestByName = resources.inputs[inputName];
       if (!subTestByName.hasOwnProperty('constant') || !subTestByName.constant) {
         inputs[inputName] = getTypedArrayData(
-            subTestByName.type, sizeOfShape(subTestByName.shape),
-            subTestByName.data);
+            subTestByName.castedType ? subTestByName.castedType :
+                                       subTestByName.type,
+            sizeOfShape(subTestByName.shape), subTestByName.data);
       }
     }
   }
@@ -924,7 +994,8 @@ const buildGraph = (operationName, builder, resources, buildFunc) => {
 
 const run = async (operationName, context, builder, resources, buildFunc) => {
   
-  const [namedOutputOperands, inputs, outputs] = buildGraph(operationName, builder, resources, buildFunc);
+  const [namedOutputOperands, inputs, outputs] =
+      buildGraph(operationName, context, builder, resources, buildFunc);
   
   const graph = await builder.build(namedOutputOperands);
   
