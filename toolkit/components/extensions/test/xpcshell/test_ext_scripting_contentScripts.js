@@ -99,6 +99,7 @@ add_task(async function test_registerContentScripts_runAt() {
             id: "script-idle",
             allFrames: false,
             matches: ["http://*/*/file_sample.html"],
+            matchOriginAsFallback: false,
             runAt: "document_idle",
             persistAcrossSessions: false,
             js: ["script-idle.js"],
@@ -107,6 +108,7 @@ add_task(async function test_registerContentScripts_runAt() {
             id: "script-idle-default",
             allFrames: false,
             matches: ["http://*/*/file_sample.html"],
+            matchOriginAsFallback: false,
             runAt: "document_idle",
             persistAcrossSessions: false,
             js: ["script-idle-default.js"],
@@ -115,6 +117,7 @@ add_task(async function test_registerContentScripts_runAt() {
             id: "script-end",
             allFrames: false,
             matches: ["http://*/*/file_sample.html"],
+            matchOriginAsFallback: false,
             runAt: "document_end",
             persistAcrossSessions: false,
             js: ["script-end.js"],
@@ -123,6 +126,7 @@ add_task(async function test_registerContentScripts_runAt() {
             id: "script-start",
             allFrames: false,
             matches: ["http://*/*/file_sample.html"],
+            matchOriginAsFallback: false,
             runAt: "document_start",
             persistAcrossSessions: false,
             js: ["script-start.js"],
@@ -363,6 +367,7 @@ add_task(async function test_register_update_and_unregister() {
             id: "a-script",
             allFrames: false,
             matches: ["http://*/*/file_sample.html"],
+            matchOriginAsFallback: false,
             runAt: "document_idle",
             persistAcrossSessions: false,
             js: ["script-3.js"],
@@ -448,93 +453,5 @@ add_task(
     await extension.startup();
     await extension.awaitMessage("background-done");
     await extension.unload();
-  }
-);
-
-async function test_matchAboutBlank_registerContentScripts_default({
-  extId,
-  expectedMatchAboutBlankValue,
-}) {
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      manifest_version: 2,
-      permissions: ["scripting", "<all_urls>"],
-      browser_specific_settings: {
-        gecko: { id: extId },
-      },
-    },
-    async background() {
-      await browser.scripting.registerContentScripts([
-        {
-          id: "test-content-script",
-          matches: ["http://example.com/*"],
-          js: ["cs.js"],
-        },
-      ]);
-      browser.test.sendMessage("background-done");
-    },
-    file: {
-      "cs.js": "",
-    },
-  });
-
-  await extension.startup();
-  await extension.awaitMessage("background-done");
-
-  equal(
-    extension.extension.registeredContentScripts.size,
-    1,
-    "Got the expected number of registered content scripts"
-  );
-  const [{ id, matchAboutBlank }] = Array.from(
-    extension.extension.registeredContentScripts.values()
-  );
-
-  equal(id, "test-content-script", "Got the expected content script id");
-  equal(
-    matchAboutBlank,
-    expectedMatchAboutBlankValue,
-    "Expect matchAboutBlank to be false"
-  );
-
-  await extension.unload();
-}
-
-
-
-
-add_task(async function test_webcompat_matchAboutBlank_default() {
-  await test_matchAboutBlank_registerContentScripts_default({
-    
-    
-    extId: "webcompat@mozilla.org",
-    expectedMatchAboutBlankValue: false,
-  });
-});
-
-
-
-
-
-add_task(async function test_matchAboutBlank_default() {
-  await test_matchAboutBlank_registerContentScripts_default({
-    extId: "some-unknown-extension-id@test.extension",
-    expectedMatchAboutBlankValue: true,
-  });
-});
-
-
-
-
-
-add_task(
-  {
-    pref_set: [["extensions.scripting.matchAboutBlankDefaultFalse", true]],
-  },
-  async function test_matchAboutBlank_defaultChange_by_hiddenPref() {
-    await test_matchAboutBlank_registerContentScripts_default({
-      extId: "some-unknown-extension-id@test.extension",
-      expectedMatchAboutBlankValue: false,
-    });
   }
 );

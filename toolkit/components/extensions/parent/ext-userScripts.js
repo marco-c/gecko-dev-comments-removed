@@ -43,6 +43,10 @@ class UserScriptParent {
       excludeGlobs: details.excludeGlobs,
       allFrames: details.allFrames,
       matchAboutBlank: details.matchAboutBlank,
+      
+      
+      
+      matchOriginAsFallback: false,
       runAt: details.runAt || "document_idle",
       jsPaths: details.js,
       userScriptOptions: {
