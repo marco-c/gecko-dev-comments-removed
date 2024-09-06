@@ -481,6 +481,11 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
     
     if (aReason != ContentBlockingNotifier::eOpener) {
       dom::ContentParent* cp = aParentContext->Canonical()->GetContentParent();
+      if (!cp) {
+        return StorageAccessPermissionGrantPromise::CreateAndReject(false,
+                                                                    __func__);
+      }
+
       Unused << cp->SendOnAllowAccessFor(aParentContext, trackingOrigin,
                                          aCookieBehavior, aReason);
     }
