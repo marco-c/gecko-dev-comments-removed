@@ -159,6 +159,7 @@ PeekOffsetStruct::PeekOffsetStruct(nsSelectionAmount aAmount,
 
 
 
+
 static const int8_t kIndexOfSelections[] = {
     -1,  
     -1,  
@@ -172,6 +173,7 @@ static const int8_t kIndexOfSelections[] = {
     7,   
     8,   
     9,   
+    10,  
     -1,  
 };
 
