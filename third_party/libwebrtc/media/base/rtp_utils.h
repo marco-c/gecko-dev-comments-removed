@@ -11,6 +11,8 @@
 #ifndef MEDIA_BASE_RTP_UTILS_H_
 #define MEDIA_BASE_RTP_UTILS_H_
 
+#include <cstdint>
+
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "rtc_base/byte_order.h"
@@ -46,7 +48,7 @@ bool GetRtcpType(const void* data, size_t len, int* value);
 bool GetRtcpSsrc(const void* data, size_t len, uint32_t* value);
 
 
-RtpPacketType InferRtpPacketType(rtc::ArrayView<const char> packet);
+RtpPacketType InferRtpPacketType(rtc::ArrayView<const uint8_t> packet);
 
 bool IsValidRtpPayloadType(int payload_type);
 
