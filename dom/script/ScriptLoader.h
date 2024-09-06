@@ -462,12 +462,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
  private:
   ~ScriptLoader();
 
+  enum class RequestType { Inline, External, Preload };
+
   already_AddRefed<ScriptLoadRequest> CreateLoadRequest(
       ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
       nsIPrincipal* aTriggeringPrincipal, mozilla::CORSMode aCORSMode,
       const nsAString& aNonce, RequestPriority aRequestPriority,
       const SRIMetadata& aIntegrity, ReferrerPolicy aReferrerPolicy,
-      JS::loader::ParserMetadata aParserMetadata);
+      JS::loader::ParserMetadata aParserMetadata, RequestType requestType);
 
   
 
@@ -626,9 +628,23 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   
   
-  nsresult CompileOrDecodeClassicScript(JSContext* aCx,
-                                        JSExecutionContext& aExec,
-                                        ScriptLoadRequest* aRequest);
+  
+  
+  nsresult InstantiateClassicScriptFromAny(JSContext* aCx,
+                                           JSExecutionContext& aExec,
+                                           ScriptLoadRequest* aRequest);
+
+  
+  
+  
+  nsresult InstantiateClassicScriptFromMaybeEncodedSource(
+      JSContext* aCx, JSExecutionContext& aExec, ScriptLoadRequest* aRequest);
+
+  
+  
+  nsresult InstantiateClassicScriptFromCachedStencil(
+      JSContext* aCx, JSExecutionContext& aExec, ScriptLoadRequest* aRequest,
+      JS::Stencil* aStencil);
 
   static nsCString& BytecodeMimeTypeFor(ScriptLoadRequest* aRequest);
 
