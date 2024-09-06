@@ -3643,6 +3643,12 @@ class Document : public nsINode,
 
   
   
+  
+  
+  bool ConsumeTextDirectiveUserActivation();
+
+  
+  
   DOMHighResTimeStamp LastUserGestureTimeStamp();
 
   
