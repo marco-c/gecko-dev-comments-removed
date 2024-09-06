@@ -843,6 +843,13 @@ var gPrivacyPane = {
       }
     }
 
+    
+    
+    
+    if (value == Ci.nsIDNSService.MODE_TRROFF) {
+      Services.prefs.clearUserPref("network.trr.uri");
+    }
+
     gPrivacyPane.updateDoHStatus();
   },
 
