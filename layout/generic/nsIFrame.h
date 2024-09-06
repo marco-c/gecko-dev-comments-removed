@@ -795,7 +795,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsIContent* GetContent() const { return mContent; }
+  [[nodiscard]] nsIContent* GetContent() const { return mContent; }
+
+  [[nodiscard]] bool ContentIsRootOfNativeAnonymousSubtree() const {
+    return mContent && mContent->IsRootOfNativeAnonymousSubtree();
+  }
+
+  [[nodiscard]] inline bool ContentIsEditable() const;
 
   
 

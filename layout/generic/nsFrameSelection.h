@@ -112,7 +112,19 @@ struct MOZ_STACK_CLASS PeekOffsetStruct {
                    
                    
                    const PeekOffsetOptions aOptions,
-                   EWordMovementType aWordMovementType = eDefaultBehavior);
+                   EWordMovementType aWordMovementType = eDefaultBehavior,
+                   const dom::Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
+  [[nodiscard]] bool FrameContentIsInAncestorLimiter(
+      const nsIFrame* aFrame) const {
+    return !mAncestorLimiter ||
+           (aFrame->GetContent() &&
+            aFrame->GetContent()->IsInclusiveDescendantOf(mAncestorLimiter));
+  }
 
   
   
@@ -155,6 +167,9 @@ struct MOZ_STACK_CLASS PeekOffsetStruct {
   EWordMovementType mWordMovementType;
 
   PeekOffsetOptions mOptions;
+
+  
+  const dom::Element* const mAncestorLimiter;
 
   
 
