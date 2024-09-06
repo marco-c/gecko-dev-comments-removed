@@ -452,7 +452,7 @@ LogicalSides nsFirstLetterFrame::GetLogicalSkipSides() const {
     
     
     
-    return LogicalSides(mWritingMode, eLogicalSideBitsAll);
+    return LogicalSides(mWritingMode, LogicalSides::All);
   }
   return LogicalSides(mWritingMode);  
 }
