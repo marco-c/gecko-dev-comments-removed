@@ -15,8 +15,6 @@
 #ifndef VPX_VPX_VPX_TPL_H_
 #define VPX_VPX_VPX_TPL_H_
 
-#include <stdio.h>
-
 #include "./vpx_integer.h"
 #include "./vpx_codec.h"
 
@@ -32,7 +30,7 @@ extern "C" {
 
 
 
-#define VPX_TPL_ABI_VERSION (3) /**<\hideinitializer*/
+#define VPX_TPL_ABI_VERSION 4 /**<\hideinitializer*/
 
 
 typedef struct VpxTplBlockStats {
@@ -62,40 +60,6 @@ typedef struct VpxTplGopStats {
   int size; 
   VpxTplFrameStats *frame_stats_list; 
 } VpxTplGopStats;
-
-
-
-
-
-
-
-
-
-
-
-vpx_codec_err_t vpx_write_tpl_gop_stats(FILE *tpl_file,
-                                        const VpxTplGopStats *tpl_gop_stats);
-
-
-
-
-
-
-
-
-
-
-
-
-vpx_codec_err_t vpx_read_tpl_gop_stats(FILE *tpl_file,
-                                       VpxTplGopStats *tpl_gop_stats);
-
-
-
-
-
-
-void vpx_free_tpl_gop_stats(VpxTplGopStats *tpl_gop_stats);
 
 #ifdef __cplusplus
 }  

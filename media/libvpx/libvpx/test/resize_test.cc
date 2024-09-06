@@ -15,6 +15,7 @@
 #include "test/i420_video_source.h"
 #include "test/video_source.h"
 #include "test/util.h"
+#include "vpx_config.h"
 
 
 #define WRITE_COMPRESSED_STREAM 0

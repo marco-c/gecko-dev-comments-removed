@@ -65,7 +65,11 @@ typedef enum vpx_color_space {
 
 typedef enum vpx_color_range {
   VPX_CR_STUDIO_RANGE = 0, 
+                           
+                           
   VPX_CR_FULL_RANGE = 1    
+                           
+                           
 } vpx_color_range_t;       
 
 
@@ -141,9 +145,15 @@ typedef struct vpx_image_rect {
 
 
 
+
+
+
 vpx_image_t *vpx_img_alloc(vpx_image_t *img, vpx_img_fmt_t fmt,
                            unsigned int d_w, unsigned int d_h,
                            unsigned int align);
+
+
+
 
 
 

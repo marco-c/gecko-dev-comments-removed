@@ -263,6 +263,7 @@ struct EncodeFrameResult {
   
   
   std::unique_ptr<unsigned char[]> coding_data;
+  size_t max_coding_data_byte_size;
   double psnr;
   uint64_t sse;
   int quantize_index;

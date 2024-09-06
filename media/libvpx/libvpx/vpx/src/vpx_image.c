@@ -8,6 +8,7 @@
 
 
 
+#include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,13 +22,22 @@ static vpx_image_t *img_alloc_helper(vpx_image_t *img, vpx_img_fmt_t fmt,
                                      unsigned int buf_align,
                                      unsigned int stride_align,
                                      unsigned char *img_data) {
-  unsigned int h, w, s, xcs, ycs, bps;
-  unsigned int stride_in_bytes;
+  unsigned int h, w, xcs, ycs, bps;
+  uint64_t s;
+  int stride_in_bytes;
   unsigned int align;
 
   if (img != NULL) memset(img, 0, sizeof(vpx_image_t));
 
   if (fmt == VPX_IMG_FMT_NONE) goto fail;
+
+  
+
+
+  if (d_w > 0x08000000 || d_h > 0x08000000 || buf_align > 65536 ||
+      stride_align > 65536) {
+    goto fail;
+  }
 
   
   if (!buf_align) buf_align = 1;
@@ -79,12 +89,27 @@ static vpx_image_t *img_alloc_helper(vpx_image_t *img, vpx_img_fmt_t fmt,
   }
 
   
+  if (img_data) {
+    
 
-  w = d_w;
-  h = d_h;
-  s = (fmt & VPX_IMG_FMT_PLANAR) ? w : bps * w / 8;
-  s = (s + stride_align - 1) & ~(stride_align - 1);
-  stride_in_bytes = (fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? s * 2 : s;
+    w = d_w;
+    h = d_h;
+  } else {
+    
+    align = (1 << xcs) - 1;
+    w = (d_w + align) & ~align;
+    assert(d_w <= w);
+    align = (1 << ycs) - 1;
+    h = (d_h + align) & ~align;
+    assert(d_h <= h);
+  }
+
+  s = (fmt & VPX_IMG_FMT_PLANAR) ? w : (uint64_t)bps * w / 8;
+  s = (fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? s * 2 : s;
+  s = (s + stride_align - 1) & ~((uint64_t)stride_align - 1);
+  if (s > INT_MAX) goto fail;
+  stride_in_bytes = (int)s;
+  s = (fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? s / 2 : s;
 
   
   if (!img) {
@@ -99,15 +124,6 @@ static vpx_image_t *img_alloc_helper(vpx_image_t *img, vpx_img_fmt_t fmt,
 
   if (!img_data) {
     uint64_t alloc_size;
-    
-    align = (1 << xcs) - 1;
-    w = (d_w + align) & ~align;
-    align = (1 << ycs) - 1;
-    h = (d_h + align) & ~align;
-
-    s = (fmt & VPX_IMG_FMT_PLANAR) ? w : bps * w / 8;
-    s = (s + stride_align - 1) & ~(stride_align - 1);
-    stride_in_bytes = (fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? s * 2 : s;
     alloc_size = (fmt & VPX_IMG_FMT_PLANAR) ? (uint64_t)h * s * bps / 8
                                             : (uint64_t)h * s;
 
@@ -172,34 +188,33 @@ int vpx_img_set_rect(vpx_image_t *img, unsigned int x, unsigned int y,
       if (img->fmt & VPX_IMG_FMT_HAS_ALPHA) {
         img->planes[VPX_PLANE_ALPHA] =
             data + x * bytes_per_sample + y * img->stride[VPX_PLANE_ALPHA];
-        data += img->h * img->stride[VPX_PLANE_ALPHA];
+        data += (size_t)img->h * img->stride[VPX_PLANE_ALPHA];
       }
 
       img->planes[VPX_PLANE_Y] =
           data + x * bytes_per_sample + y * img->stride[VPX_PLANE_Y];
-      data += img->h * img->stride[VPX_PLANE_Y];
+      data += (size_t)img->h * img->stride[VPX_PLANE_Y];
 
+      unsigned int uv_x = x >> img->x_chroma_shift;
+      unsigned int uv_y = y >> img->y_chroma_shift;
       if (img->fmt == VPX_IMG_FMT_NV12) {
         img->planes[VPX_PLANE_U] =
-            data + (x >> img->x_chroma_shift) +
-            (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
+            data + uv_x + uv_y * img->stride[VPX_PLANE_U];
         img->planes[VPX_PLANE_V] = img->planes[VPX_PLANE_U] + 1;
       } else if (!(img->fmt & VPX_IMG_FMT_UV_FLIP)) {
         img->planes[VPX_PLANE_U] =
-            data + (x >> img->x_chroma_shift) * bytes_per_sample +
-            (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
-        data += (img->h >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
+            data + uv_x * bytes_per_sample + uv_y * img->stride[VPX_PLANE_U];
+        data +=
+            (size_t)(img->h >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
         img->planes[VPX_PLANE_V] =
-            data + (x >> img->x_chroma_shift) * bytes_per_sample +
-            (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_V];
+            data + uv_x * bytes_per_sample + uv_y * img->stride[VPX_PLANE_V];
       } else {
         img->planes[VPX_PLANE_V] =
-            data + (x >> img->x_chroma_shift) * bytes_per_sample +
-            (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_V];
-        data += (img->h >> img->y_chroma_shift) * img->stride[VPX_PLANE_V];
+            data + uv_x * bytes_per_sample + uv_y * img->stride[VPX_PLANE_V];
+        data +=
+            (size_t)(img->h >> img->y_chroma_shift) * img->stride[VPX_PLANE_V];
         img->planes[VPX_PLANE_U] =
-            data + (x >> img->x_chroma_shift) * bytes_per_sample +
-            (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
+            data + uv_x * bytes_per_sample + uv_y * img->stride[VPX_PLANE_U];
       }
     }
     return 0;

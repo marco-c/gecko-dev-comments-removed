@@ -9,13 +9,14 @@
 
 
 #include "./vpx_config.h"
-#include "arm_cpudetect.h"
+#include "vpx_ports/arm.h"
+#include "vpx_ports/arm_cpudetect.h"
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
 #endif
 
-#if !CONFIG_RUNTIME_CPU_DETECT || defined(__OpenBSD__)
+#if !CONFIG_RUNTIME_CPU_DETECT
 
 static int arm_get_cpu_caps(void) {
   

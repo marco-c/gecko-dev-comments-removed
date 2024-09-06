@@ -19,11 +19,11 @@
 #include "vpx_dsp/psnr.h"
 #include "vpx_ports/static_assert.h"
 #include "vpx_ports/system_state.h"
-#include "vpx_util/vpx_thread.h"
 #include "vpx_util/vpx_timestamp.h"
 #include "vpx/internal/vpx_codec_internal.h"
 #include "./vpx_version.h"
 #include "vp9/encoder/vp9_encoder.h"
+#include "vp9/encoder/vp9_ethread.h"
 #include "vpx/vp8cx.h"
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_scale.h"
@@ -1436,22 +1436,13 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
           timebase_units_to_ticks(timebase_in_ts, pts_end);
       res = image2yuvconfig(img, &sd);
 
-      if (sd.y_width != ctx->cfg.g_w || sd.y_height != ctx->cfg.g_h) {
-        
-
-
-
-        ctx->base.err_detail = "Invalid input frame resolution";
-        res = VPX_CODEC_INVALID_PARAM;
-      } else {
-        
-        
-        if (vp9_receive_raw_frame(cpi, flags | ctx->next_frame_flags, &sd,
+      
+      
+      if (vp9_receive_raw_frame(cpi, flags | ctx->next_frame_flags, &sd,
                                 dst_time_stamp, dst_end_time_stamp)) {
-          res = update_error_state(ctx, &cpi->common.error);
-        }
-        ctx->next_frame_flags = 0;
+        res = update_error_state(ctx, &cpi->common.error);
       }
+      ctx->next_frame_flags = 0;
     }
 
     cx_data = ctx->cx_data;
@@ -1459,6 +1450,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
 
     
     if (ctx->pending_cx_data) {
+      assert(cx_data_sz >= ctx->pending_cx_data_sz);
       memmove(cx_data, ctx->pending_cx_data, ctx->pending_cx_data_sz);
       ctx->pending_cx_data = cx_data;
       cx_data += ctx->pending_cx_data_sz;
@@ -1484,9 +1476,9 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
         ENCODE_FRAME_RESULT encode_frame_result;
         vp9_init_encode_frame_result(&encode_frame_result);
         
-        ret = vp9_get_compressed_data(cpi, &lib_flags, &size, cx_data,
-                                      &dst_time_stamp, &dst_end_time_stamp,
-                                      !img, &encode_frame_result);
+        ret = vp9_get_compressed_data(
+            cpi, &lib_flags, &size, cx_data, cx_data_sz, &dst_time_stamp,
+            &dst_end_time_stamp, !img, &encode_frame_result);
         assert(size == 0);  
         (void)ret;
         assert(ret == 0);
@@ -1510,8 +1502,9 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
       vp9_init_encode_frame_result(&encode_frame_result);
       while (cx_data_sz >= ctx->cx_data_sz / 2 &&
              -1 != vp9_get_compressed_data(cpi, &lib_flags, &size, cx_data,
-                                           &dst_time_stamp, &dst_end_time_stamp,
-                                           !img, &encode_frame_result)) {
+                                           cx_data_sz, &dst_time_stamp,
+                                           &dst_end_time_stamp, !img,
+                                           &encode_frame_result)) {
         
         if (size > 0 && !cpi->use_svc) {
           
@@ -1528,7 +1521,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
           if (!cpi->common.show_frame ||
               (cpi->use_svc && cpi->svc.spatial_layer_id <
                                    cpi->svc.number_spatial_layers - 1)) {
-            if (ctx->pending_cx_data == 0) ctx->pending_cx_data = cx_data;
+            if (ctx->pending_cx_data == NULL) ctx->pending_cx_data = cx_data;
             ctx->pending_cx_data_sz += size;
             if (size)
               ctx->pending_frame_sizes[ctx->pending_frame_count++] = size;

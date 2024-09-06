@@ -31,6 +31,15 @@ extern "C" {
 
 
 
+#define VPX_RC_MAX_STATIC_GF_GROUP_LENGTH 250
+
+
+
+#define VPX_RC_MAX_REF_FRAMES 4
+
+
+
+
 
 
 
@@ -55,6 +64,29 @@ typedef enum vpx_ext_rc_mode {
   VPX_RC_VBR = 1,
   VPX_RC_CQ = 2,
 } vpx_ext_rc_mode_t;
+
+
+
+typedef enum vpx_rc_frame_update_type {
+  VPX_RC_INVALID_UPDATE_TYPE = -1,
+  VPX_RC_KF_UPDATE = 0,
+  VPX_RC_LF_UPDATE = 1,
+  VPX_RC_GF_UPDATE = 2,
+  VPX_RC_ARF_UPDATE = 3,
+  VPX_RC_OVERLAY_UPDATE = 4,
+  VPX_RC_MID_OVERLAY_UPDATE = 5,
+  VPX_RC_USE_BUF_FRAME = 6,
+} vpx_rc_frame_update_type_t;
+
+
+
+typedef enum vpx_rc_ref_name {
+  VPX_RC_INVALID_REF_FRAME = -1,
+  VPX_RC_INTRA_FRAME = 0,
+  VPX_RC_LAST_FRAME = 1,
+  VPX_RC_GOLDEN_FRAME = 2,
+  VPX_RC_ALTREF_FRAME = 3,
+} vpx_rc_ref_name_t;
 
 
 
@@ -320,73 +352,10 @@ typedef struct vpx_rc_config {
 
 
 
-
-typedef struct vpx_rc_gop_info {
-  
-
-
-
-
-
-
-  int min_gf_interval;
-  
-
-
-  int max_gf_interval;
-  
-
-
-
-  int active_min_gf_interval;
-  
-
-
-
-  int active_max_gf_interval;
-  
-
-
-
-
-  int allow_alt_ref;
-  
-
-
-  int is_key_frame;
-  
-
-
-  int last_gop_use_alt_ref;
-  
-
-
-
-  int frames_since_key;
-  
-
-
-
-  int frames_to_key;
-  
-
-
-  int lag_in_frames;
-  
-
-
-
-  int show_index;
-  
-
-
-  int coding_index;
-  
-
-
-
-  int gop_global_index;
-} vpx_rc_gop_info_t;
+typedef struct vpx_rc_ref_frame {
+  int index[VPX_RC_MAX_REF_FRAMES];
+  vpx_rc_ref_name_t name[VPX_RC_MAX_REF_FRAMES];
+} vpx_rc_ref_frame_t;
 
 
 
@@ -395,6 +364,14 @@ typedef struct vpx_rc_gop_decision {
   int gop_coding_frames; 
   int use_alt_ref;       
   int use_key_frame;     
+  
+  
+  
+  vpx_rc_frame_update_type_t update_type[VPX_RC_MAX_STATIC_GF_GROUP_LENGTH + 2];
+  
+  int update_ref_index[VPX_RC_MAX_STATIC_GF_GROUP_LENGTH + 2];
+  
+  vpx_rc_ref_frame_t ref_frame_list[VPX_RC_MAX_STATIC_GF_GROUP_LENGTH + 2];
 } vpx_rc_gop_decision_t;
 
 
