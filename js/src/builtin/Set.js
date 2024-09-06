@@ -120,7 +120,6 @@ function SetIteratorNext() {
   return retVal;
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -564,4 +563,3 @@ function SetIsDisjointFrom(other) {
   
   return true;
 }
-#endif
