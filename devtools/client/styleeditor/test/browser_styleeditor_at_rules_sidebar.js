@@ -38,6 +38,7 @@ const NEW_RULE = `
 waitForExplicitFinish();
 
 add_task(async function () {
+  await pushPref("layout.css.container-queries.enabled", true);
   
   await pushPref("layout.css.properties-and-values.enabled", true);
 
