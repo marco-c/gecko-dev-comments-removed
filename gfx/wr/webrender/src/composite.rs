@@ -521,9 +521,9 @@ impl Default for CompositeStatePreallocator {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositorTransform {
     
-    local_to_raster: ScaleOffset,
+    local_to_surface: ScaleOffset,
     
-    raster_to_device: ScaleOffset,
+    surface_to_device: ScaleOffset,
     
     local_to_device: ScaleOffset,
 }
@@ -590,16 +590,16 @@ impl CompositeState {
     
     pub fn register_transform(
         &mut self,
-        local_to_raster: ScaleOffset,
-        raster_to_device: ScaleOffset,
+        local_to_surface: ScaleOffset,
+        surface_to_device: ScaleOffset,
     ) -> CompositorTransformIndex {
         let index = CompositorTransformIndex(self.transforms.len());
 
-        let local_to_device = local_to_raster.accumulate(&raster_to_device);
+        let local_to_device = local_to_surface.accumulate(&surface_to_device);
 
         self.transforms.push(CompositorTransform {
-            local_to_raster,
-            raster_to_device,
+            local_to_surface,
+            surface_to_device,
             local_to_device,
         });
 
@@ -626,8 +626,8 @@ impl CompositeState {
     ) -> DeviceRect {
         let transform = &self.transforms[transform_index.0];
 
-        let surface_bounds = transform.local_to_raster.map_rect(&local_bounds);
-        let surface_rect = transform.local_to_raster.map_rect(&local_sub_rect);
+        let surface_bounds = transform.local_to_surface.map_rect(&local_bounds);
+        let surface_rect = transform.local_to_surface.map_rect(&local_sub_rect);
 
         surface_rect
             .round_out()
@@ -652,7 +652,7 @@ impl CompositeState {
         transform_index: CompositorTransformIndex,
     ) -> ScaleOffset {
         let transform = &self.transforms[transform_index.0];
-        transform.raster_to_device
+        transform.surface_to_device
     }
 
     

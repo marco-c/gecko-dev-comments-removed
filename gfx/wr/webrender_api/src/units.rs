@@ -49,6 +49,7 @@ pub type FramebufferIntSize = Size2D<i32, FramebufferPixel>;
 pub type FramebufferIntRect = Box2D<i32, FramebufferPixel>;
 
 
+
 #[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PicturePixel;
 
