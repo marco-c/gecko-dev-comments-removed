@@ -117,7 +117,8 @@ class AudioInputProcessing : public AudioDataListener {
     
     
     
-    return !IsPassThrough(aGraph);
+    return !IsPassThrough(aGraph) ||
+           mPlatformProcessingSetParams != CUBEB_INPUT_PROCESSING_PARAM_NONE;
   }
 
   void Start(MediaTrackGraph* aGraph);
@@ -142,6 +143,8 @@ class AudioInputProcessing : public AudioDataListener {
                            const AudioSegment& aSegment);
 
   uint32_t GetRequestedInputChannelCount() const;
+
+  
   
   
   bool IsPassThrough(MediaTrackGraph* aGraph) const;
@@ -152,6 +155,9 @@ class AudioInputProcessing : public AudioDataListener {
   void ApplySettings(MediaTrackGraph* aGraph,
                      CubebUtils::AudioDeviceID aDeviceID,
                      const MediaEnginePrefs& aSettings);
+
+  
+  webrtc::AudioProcessing::Config AppliedConfig(MediaTrackGraph* aGraph) const;
 
   void End();
 
@@ -170,13 +176,15 @@ class AudioInputProcessing : public AudioDataListener {
  private:
   ~AudioInputProcessing() = default;
   webrtc::AudioProcessing::Config ConfigForPrefs(
-      const MediaEnginePrefs& aPrefs);
+      const MediaEnginePrefs& aPrefs) const;
   void PassThroughChanged(MediaTrackGraph* aGraph);
   void RequestedInputChannelCountChanged(MediaTrackGraph* aGraph,
                                          CubebUtils::AudioDeviceID aDeviceId);
   void EnsurePacketizer(AudioProcessingTrack* aTrack);
   void EnsureAudioProcessing(AudioProcessingTrack* aTrack);
   void ResetAudioProcessing(MediaTrackGraph* aGraph);
+  void ApplySettingsInternal(MediaTrackGraph* aGraph,
+                             const MediaEnginePrefs& aSettings);
   PrincipalHandle GetCheckedPrincipal(const AudioSegment& aSegment);
   
   
@@ -193,6 +201,17 @@ class AudioInputProcessing : public AudioDataListener {
   
   
   MediaEnginePrefs mSettings;
+  
+  
+  bool mPlatformProcessingEnabled = false;
+  
+  
+  
+  Maybe<int> mPlatformProcessingSetError;
+  
+  
+  cubeb_input_processing_params mPlatformProcessingSetParams =
+      CUBEB_INPUT_PROCESSING_PARAM_NONE;
   
   
   
