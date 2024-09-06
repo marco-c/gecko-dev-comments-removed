@@ -324,7 +324,7 @@ class RegExpZone {
 
 
 
-  using Set = WeakCache<
+  using Set = JS::WeakCache<
       JS::GCHashSet<WeakHeapPtr<RegExpShared*>, Key, ZoneAllocPolicy>>;
   Set set_;
 

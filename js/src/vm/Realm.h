@@ -240,7 +240,7 @@ class ObjectRealm {
 
  public:
   
-  WeakCache<js::InnerViewTable> innerViews;
+  JS::WeakCache<js::InnerViewTable> innerViews;
 
   
   

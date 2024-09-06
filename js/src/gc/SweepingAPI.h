@@ -33,9 +33,22 @@ class AutoLockStoreBuffer {
   ~AutoLockStoreBuffer() { UnlockStoreBuffer(runtime); }
 };
 
+}  
+}  
+
+namespace JS {
+namespace detail {
 class WeakCacheBase;
-JS_PUBLIC_API void RegisterWeakCache(JS::Zone* zone, WeakCacheBase* cachep);
-JS_PUBLIC_API void RegisterWeakCache(JSRuntime* rt, WeakCacheBase* cachep);
+}  
+
+namespace shadow {
+JS_PUBLIC_API void RegisterWeakCache(JS::Zone* zone,
+                                     JS::detail::WeakCacheBase* cachep);
+JS_PUBLIC_API void RegisterWeakCache(JSRuntime* rt,
+                                     JS::detail::WeakCacheBase* cachep);
+}  
+
+namespace detail {
 
 class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
   WeakCacheBase() = delete;
@@ -44,8 +57,10 @@ class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
  public:
   enum NeedsLock : bool { LockStoreBuffer = true, DontLockStoreBuffer = false };
 
-  explicit WeakCacheBase(JS::Zone* zone) { RegisterWeakCache(zone, this); }
-  explicit WeakCacheBase(JSRuntime* rt) { RegisterWeakCache(rt, this); }
+  explicit WeakCacheBase(JS::Zone* zone) {
+    shadow::RegisterWeakCache(zone, this);
+  }
+  explicit WeakCacheBase(JSRuntime* rt) { shadow::RegisterWeakCache(rt, this); }
   WeakCacheBase(WeakCacheBase&& other) = default;
   virtual ~WeakCacheBase() = default;
 
@@ -73,7 +88,7 @@ class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
 
 
 template <typename T>
-class WeakCache : protected gc::WeakCacheBase,
+class WeakCache : protected detail::WeakCacheBase,
                   public js::MutableWrappedPtrOperations<T, WeakCache<T>> {
   T cache;
 
@@ -99,7 +114,7 @@ class WeakCache : protected gc::WeakCacheBase,
       lock.emplace(trc->runtime());
     }
 
-    JS::GCPolicy<T>::traceWeak(trc, &cache);
+    GCPolicy<T>::traceWeak(trc, &cache);
     return 0;
   }
 
@@ -112,7 +127,7 @@ template <typename Key, typename Value, typename HashPolicy,
           typename AllocPolicy, typename MapEntryGCPolicy>
 class WeakCache<
     GCHashMap<Key, Value, HashPolicy, AllocPolicy, MapEntryGCPolicy>>
-    final : protected gc::WeakCacheBase {
+    final : protected detail::WeakCacheBase {
   using Map = GCHashMap<Key, Value, HashPolicy, AllocPolicy, MapEntryGCPolicy>;
   using Self = WeakCache<Map>;
 
@@ -307,7 +322,7 @@ class WeakCache<
 
 template <typename T, typename HashPolicy, typename AllocPolicy>
 class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
-    : protected gc::WeakCacheBase {
+    : protected detail::WeakCacheBase {
   using Set = GCHashSet<T, HashPolicy, AllocPolicy>;
   using Self = WeakCache<Set>;
 
@@ -358,7 +373,7 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
  private:
   static bool entryNeedsSweep(JSTracer* barrierTracer, const Entry& prior) {
     Entry entry(prior);
-    bool needsSweep = !JS::GCPolicy<T>::traceWeak(barrierTracer, &entry);
+    bool needsSweep = !GCPolicy<T>::traceWeak(barrierTracer, &entry);
     MOZ_ASSERT_IF(!needsSweep, prior == entry);  
     return needsSweep;
   }
