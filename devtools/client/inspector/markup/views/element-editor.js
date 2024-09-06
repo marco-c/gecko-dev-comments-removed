@@ -1167,22 +1167,54 @@ ElementEditor.prototype = {
   
 
 
-  onTagEdit(newTagName, isCommit) {
-    if (
-      !isCommit ||
-      newTagName.toLowerCase() === this.node.tagName.toLowerCase() ||
-      !("editTagName" in this.markup.walker)
-    ) {
+  async onTagEdit(inputValue, isCommit) {
+    if (!isCommit) {
+      return;
+    }
+
+    inputValue = inputValue.trim();
+    const spaceIndex = inputValue.indexOf(" ");
+    const newTagName =
+      spaceIndex === -1 ? inputValue : inputValue.substring(0, spaceIndex);
+
+    const shouldUpdateTagName =
+      newTagName.toLowerCase() !== this.node.tagName.toLowerCase();
+
+    
+    
+    
+    const newAttributes =
+      spaceIndex === -1 ? null : inputValue.substring(spaceIndex + 1).trim();
+    if (newAttributes?.length) {
+      const doMods = this._startModifyingAttributes();
+      const undoMods = this._startModifyingAttributes();
+      this._applyAttributes(newAttributes, null, doMods, undoMods);
+      
+      
+      if (shouldUpdateTagName) {
+        await doMods.apply();
+        undoMods.destroy();
+      } else {
+        this.container.undo.do(
+          () => doMods.apply(),
+          () => undoMods.apply()
+        );
+      }
+    }
+
+    if (!shouldUpdateTagName) {
       return;
     }
 
     
     
     this.markup.reselectOnRemoved(this.node, "edittagname");
-    this.node.walkerFront.editTagName(this.node, newTagName).catch(() => {
+    try {
+      await this.node.walkerFront.editTagName(this.node, newTagName);
+    } catch (e) {
       
       this.markup.cancelReselectOnRemoved();
-    });
+    }
   },
 
   destroy() {
