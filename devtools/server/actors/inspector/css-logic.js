@@ -254,18 +254,27 @@ class CssLogic {
       cssSheet._passId = this._passId;
 
       
-      for (const aDomRule of cssSheet.getCssRules()) {
-        const ruleClassName = ChromeUtils.getClassName(aDomRule);
-        if (
-          ruleClassName === "CSSImportRule" &&
-          aDomRule.styleSheet &&
-          this.mediaMatches(aDomRule)
-        ) {
-          this._cacheSheet(aDomRule.styleSheet);
-        } else if (ruleClassName === "CSSKeyframesRule") {
-          this._keyframesRules.push(aDomRule);
+      
+      const traverseRules = ruleList => {
+        for (const aDomRule of ruleList) {
+          const ruleClassName = ChromeUtils.getClassName(aDomRule);
+          if (
+            ruleClassName === "CSSImportRule" &&
+            aDomRule.styleSheet &&
+            this.mediaMatches(aDomRule)
+          ) {
+            this._cacheSheet(aDomRule.styleSheet);
+          } else if (ruleClassName === "CSSKeyframesRule") {
+            this._keyframesRules.push(aDomRule);
+          }
+
+          if (aDomRule.cssRules) {
+            traverseRules(aDomRule.cssRules);
+          }
         }
-      }
+      };
+
+      traverseRules(cssSheet.getCssRules());
     }
   }
 

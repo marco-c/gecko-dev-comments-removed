@@ -506,6 +506,12 @@ class StyleRuleActor extends Actor {
 
     
     
+    if (this.ruleClassName === "CSSKeyframeRule") {
+      return { ancestorData, computeDesugaredSelector };
+    }
+
+    
+    
     for (const ancestorRule of this.ancestorRules) {
       const rawRule = ancestorRule.rawRule;
       const ruleClassName = ChromeUtils.getClassName(rawRule);
