@@ -2205,31 +2205,32 @@ void nsRefreshDriver::DispatchResizeEvents() {
     
     
     
+    
     MOZ_KnownLive(presShell)->FireResizeEvent();
   }
 }
 
 void nsRefreshDriver::FlushLayoutOnPendingDocsAndFixUpFocus() {
-  AutoTArray<RefPtr<PresShell>, 16> observers;
+  AutoTArray<PresShell*, 16> observers;
   observers.AppendElements(mStyleFlushObservers);
-  for (RefPtr<PresShell>& presShell : Reversed(observers)) {
-    if (!mPresContext || !mPresContext->GetPresShell()) {
-      break;
-    }
+  for (uint32_t j = observers.Length();
+       j && mPresContext && mPresContext->GetPresShell(); --j) {
     
     
-    if (!mStyleFlushObservers.RemoveElement(presShell)) {
+    PresShell* rawPresShell = observers[j - 1];
+    if (!mStyleFlushObservers.RemoveElement(rawPresShell)) {
       continue;
     }
 
-    LogPresShellObserver::Run run(presShell, this);
+    LogPresShellObserver::Run run(rawPresShell, this);
+
+    RefPtr<PresShell> presShell = rawPresShell;
     presShell->mWasLastReflowInterrupted = false;
     const ChangesToFlush ctf(FlushType::InterruptibleLayout, false);
-    
-    MOZ_KnownLive(presShell)->FlushPendingNotifications(ctf);
+    presShell->FlushPendingNotifications(ctf);
     const bool fixedUpFocus = presShell->FixUpFocus();
     if (fixedUpFocus) {
-      MOZ_KnownLive(presShell)->FlushPendingNotifications(ctf);
+      presShell->FlushPendingNotifications(ctf);
     }
     
     
@@ -2243,9 +2244,7 @@ void nsRefreshDriver::FlushLayoutOnPendingDocsAndFixUpFocus() {
     if (NS_WARN_IF(presShell->NeedStyleFlush()) ||
         NS_WARN_IF(presShell->NeedLayoutFlush()) ||
         NS_WARN_IF(fixedUpFocus && presShell->NeedsFocusFixUp())) {
-      if (MOZ_LIKELY(!presShell->IsDestroying())) {
-        presShell->ObserveStyleFlushes();
-      }
+      presShell->ObserveStyleFlushes();
     }
 
     
