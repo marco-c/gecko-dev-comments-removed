@@ -591,6 +591,29 @@ with only_when(depends(c_compiler)(lambda c: c.type == "clang-cl")):
         "-SUBSYSTEM:WINDOWS,{}".format(win32_subsystem_version()),
     )
 
+    add_flag("-Gy")
+    add_flag("-Zc:inline")
+
+    
+    
+    
+    add_flag("-Gw", when=~asan)
+
+    
+    add_linker_flag("-opt:nolldtailmerge", when=asan)
+
+    
+    add_flag("-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING", compiler=cxx_compiler)
+
+    with only_when(depends(target.cpu)(lambda cpu: cpu == "x86")):
+        add_linker_flag("-LARGEADDRESSAWARE")
+        add_linker_flag("-SAFESEH")
+
+    set_define("WIN32_LEAN_AND_MEAN", True)
+
+    
+    set_define("NOMINMAX", True)
+
 
 with only_when(depends(c_compiler)(lambda c: c.type != "clang-cl")):
     
@@ -599,3 +622,11 @@ with only_when(depends(c_compiler)(lambda c: c.type != "clang-cl")):
 
     set_config("WIN32_CONSOLE_EXE_LDFLAGS", "-mconsole")
     set_config("WIN32_GUI_EXE_LDFLAGS", "-mwindows")
+
+    
+    add_flag("-Wno-incompatible-ms-struct", compiler=cxx_compiler)
+    add_linker_flag("-Wl,--no-insert-timestamp")
+
+    with only_when(depends(target.cpu)(lambda cpu: cpu == "x86")):
+        add_flag("-mstackrealign")
+        add_linker_flag("-Wl,--large-address-aware")
