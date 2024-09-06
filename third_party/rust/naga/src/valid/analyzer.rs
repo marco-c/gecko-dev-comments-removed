@@ -145,10 +145,35 @@ pub struct SamplingKey {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+
 pub struct ExpressionInfo {
+    
+    
+    
+    
+    
     pub uniformity: Uniformity,
+
+    
+    
     pub ref_count: usize,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     assignable_global: Option<Handle<crate::GlobalVariable>>,
+
+    
     pub ty: TypeResolution,
 }
 
@@ -312,13 +337,19 @@ pub enum UniformityDisruptor {
 
 impl FunctionInfo {
     
+    
+    
+    
+    
+    
+    
     #[must_use]
     fn add_ref_impl(
         &mut self,
-        handle: Handle<crate::Expression>,
+        expr: Handle<crate::Expression>,
         global_use: GlobalUse,
     ) -> NonUniformResult {
-        let info = &mut self.expressions[handle.index()];
+        let info = &mut self.expressions[expr.index()];
         info.ref_count += 1;
         
         if let Some(global) = info.assignable_global {
@@ -328,21 +359,37 @@ impl FunctionInfo {
     }
 
     
+    
+    
+    
+    
+    
     #[must_use]
-    fn add_ref(&mut self, handle: Handle<crate::Expression>) -> NonUniformResult {
-        self.add_ref_impl(handle, GlobalUse::READ)
+    fn add_ref(&mut self, expr: Handle<crate::Expression>) -> NonUniformResult {
+        self.add_ref_impl(expr, GlobalUse::READ)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
     #[must_use]
     fn add_assignable_ref(
         &mut self,
-        handle: Handle<crate::Expression>,
+        expr: Handle<crate::Expression>,
         assignable_global: &mut Option<Handle<crate::GlobalVariable>>,
     ) -> NonUniformResult {
-        let info = &mut self.expressions[handle.index()];
+        let info = &mut self.expressions[expr.index()];
         info.ref_count += 1;
         
         

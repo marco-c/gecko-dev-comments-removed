@@ -480,8 +480,8 @@ impl<A: HalApi> RenderBundleScope<A> {
     
     pub fn new() -> Self {
         Self {
-            buffers: RwLock::new(BufferUsageScope::new()),
-            textures: RwLock::new(TextureUsageScope::new()),
+            buffers: RwLock::new(BufferUsageScope::default()),
+            textures: RwLock::new(TextureUsageScope::default()),
             bind_groups: RwLock::new(StatelessTracker::new()),
             render_pipelines: RwLock::new(StatelessTracker::new()),
             query_sets: RwLock::new(StatelessTracker::new()),
@@ -514,26 +514,50 @@ impl<A: HalApi> RenderBundleScope<A> {
 
 
 
+
+pub(crate) type UsageScopePool<A> = Mutex<Vec<(BufferUsageScope<A>, TextureUsageScope<A>)>>;
+
+
+
 #[derive(Debug)]
-pub(crate) struct UsageScope<A: HalApi> {
+pub(crate) struct UsageScope<'a, A: HalApi> {
+    pub pool: &'a UsageScopePool<A>,
     pub buffers: BufferUsageScope<A>,
     pub textures: TextureUsageScope<A>,
 }
 
-impl<A: HalApi> UsageScope<A> {
-    
-    pub fn new(tracker_indices: &TrackerIndexAllocators) -> Self {
-        let mut value = Self {
-            buffers: BufferUsageScope::new(),
-            textures: TextureUsageScope::new(),
+impl<'a, A: HalApi> Drop for UsageScope<'a, A> {
+    fn drop(&mut self) {
+        
+        self.buffers.clear();
+        self.textures.clear();
+        self.pool.lock().push((
+            std::mem::take(&mut self.buffers),
+            std::mem::take(&mut self.textures),
+        ));
+    }
+}
+
+impl<A: HalApi> UsageScope<'static, A> {
+    pub fn new_pooled<'d>(
+        pool: &'d UsageScopePool<A>,
+        tracker_indices: &TrackerIndexAllocators,
+    ) -> UsageScope<'d, A> {
+        let pooled = pool.lock().pop().unwrap_or_default();
+
+        let mut scope = UsageScope::<'d, A> {
+            pool,
+            buffers: pooled.0,
+            textures: pooled.1,
         };
 
-        value.buffers.set_size(tracker_indices.buffers.size());
-        value.textures.set_size(tracker_indices.textures.size());
-
-        value
+        scope.buffers.set_size(tracker_indices.buffers.size());
+        scope.textures.set_size(tracker_indices.textures.size());
+        scope
     }
+}
 
+impl<'a, A: HalApi> UsageScope<'a, A> {
     
     
     

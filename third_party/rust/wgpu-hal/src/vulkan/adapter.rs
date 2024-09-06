@@ -21,24 +21,84 @@ fn indexing_features() -> wgt::Features {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Default)]
 pub struct PhysicalDeviceFeatures {
+    
     core: vk::PhysicalDeviceFeatures,
+
+    
     pub(super) descriptor_indexing: Option<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>,
+
+    
     imageless_framebuffer: Option<vk::PhysicalDeviceImagelessFramebufferFeaturesKHR>,
+
+    
     timeline_semaphore: Option<vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR>,
+
+    
     image_robustness: Option<vk::PhysicalDeviceImageRobustnessFeaturesEXT>,
+
+    
     robustness2: Option<vk::PhysicalDeviceRobustness2FeaturesEXT>,
+
+    
     multiview: Option<vk::PhysicalDeviceMultiviewFeaturesKHR>,
+
+    
     sampler_ycbcr_conversion: Option<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>,
+
+    
     astc_hdr: Option<vk::PhysicalDeviceTextureCompressionASTCHDRFeaturesEXT>,
+
+    
+    
+    
     shader_float16: Option<(
         vk::PhysicalDeviceShaderFloat16Int8Features,
         vk::PhysicalDevice16BitStorageFeatures,
     )>,
+
+    
     acceleration_structure: Option<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     buffer_device_address: Option<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>,
+
+    
+    
+    
+    
+    
+    
+    
     ray_query: Option<vk::PhysicalDeviceRayQueryFeaturesKHR>,
+
+    
+    
     zero_initialize_workgroup_memory:
         Option<vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeatures>,
 }
@@ -91,6 +151,29 @@ impl PhysicalDeviceFeatures {
         info
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -354,11 +437,16 @@ impl PhysicalDeviceFeatures {
         }
     }
 
+    
+    
+    
+    
+    
     fn to_wgpu(
         &self,
         instance: &ash::Instance,
         phd: vk::PhysicalDevice,
-        caps: &PhysicalDeviceCapabilities,
+        caps: &PhysicalDeviceProperties,
     ) -> (wgt::Features, wgt::DownlevelFlags) {
         use crate::auxil::db;
         use wgt::{DownlevelFlags as Df, Features as F};
@@ -640,14 +728,51 @@ impl PhysicalDeviceFeatures {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Default, Debug)]
-pub struct PhysicalDeviceCapabilities {
+pub struct PhysicalDeviceProperties {
+    
+    
     supported_extensions: Vec<vk::ExtensionProperties>,
+
+    
+    
     properties: vk::PhysicalDeviceProperties,
+
+    
+    
     maintenance_3: Option<vk::PhysicalDeviceMaintenance3Properties>,
+
+    
+    
     descriptor_indexing: Option<vk::PhysicalDeviceDescriptorIndexingPropertiesEXT>,
+
+    
+    
     acceleration_structure: Option<vk::PhysicalDeviceAccelerationStructurePropertiesKHR>,
+
+    
+    
     driver: Option<vk::PhysicalDeviceDriverPropertiesKHR>,
+
     
     
     
@@ -657,10 +782,10 @@ pub struct PhysicalDeviceCapabilities {
 }
 
 
-unsafe impl Send for PhysicalDeviceCapabilities {}
-unsafe impl Sync for PhysicalDeviceCapabilities {}
+unsafe impl Send for PhysicalDeviceProperties {}
+unsafe impl Sync for PhysicalDeviceProperties {}
 
-impl PhysicalDeviceCapabilities {
+impl PhysicalDeviceProperties {
     pub fn properties(&self) -> vk::PhysicalDeviceProperties {
         self.properties
     }
@@ -899,9 +1024,9 @@ impl super::InstanceShared {
     fn inspect(
         &self,
         phd: vk::PhysicalDevice,
-    ) -> (PhysicalDeviceCapabilities, PhysicalDeviceFeatures) {
+    ) -> (PhysicalDeviceProperties, PhysicalDeviceFeatures) {
         let capabilities = {
-            let mut capabilities = PhysicalDeviceCapabilities::default();
+            let mut capabilities = PhysicalDeviceProperties::default();
             capabilities.supported_extensions =
                 unsafe { self.raw.enumerate_device_extension_properties(phd).unwrap() };
             capabilities.properties = unsafe { self.raw.get_physical_device_properties(phd) };
@@ -923,9 +1048,10 @@ impl super::InstanceShared {
 
                 let mut builder = vk::PhysicalDeviceProperties2KHR::builder();
                 if supports_maintenance3 {
-                    capabilities.maintenance_3 =
-                        Some(vk::PhysicalDeviceMaintenance3Properties::default());
-                    builder = builder.push_next(capabilities.maintenance_3.as_mut().unwrap());
+                    let next = capabilities
+                        .maintenance_3
+                        .insert(vk::PhysicalDeviceMaintenance3Properties::default());
+                    builder = builder.push_next(next);
                 }
 
                 if supports_descriptor_indexing {
@@ -1002,6 +1128,7 @@ impl super::InstanceShared {
             }
 
             
+            
             if capabilities.supports_extension(vk::KhrImagelessFramebufferFn::name()) {
                 let next = features
                     .imageless_framebuffer
@@ -1009,6 +1136,7 @@ impl super::InstanceShared {
                 builder = builder.push_next(next);
             }
 
+            
             
             if capabilities.supports_extension(vk::KhrTimelineSemaphoreFn::name()) {
                 let next = features
@@ -1295,7 +1423,7 @@ impl super::Adapter {
         self.raw
     }
 
-    pub fn physical_device_capabilities(&self) -> &PhysicalDeviceCapabilities {
+    pub fn physical_device_capabilities(&self) -> &PhysicalDeviceProperties {
         &self.phd_capabilities
     }
 
@@ -1320,6 +1448,19 @@ impl super::Adapter {
         supported_extensions
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn physical_device_features(
         &self,
@@ -1607,7 +1748,9 @@ impl super::Adapter {
     }
 }
 
-impl crate::Adapter<super::Api> for super::Adapter {
+impl crate::Adapter for super::Adapter {
+    type A = super::Api;
+
     unsafe fn open(
         &self,
         features: wgt::Features,

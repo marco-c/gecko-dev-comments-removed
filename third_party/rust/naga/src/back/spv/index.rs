@@ -3,8 +3,9 @@
 
 
 use super::{
-    helpers::global_needs_wrapper, selection::Selection, Block, BlockContext, Error, IdGenerator,
-    Instruction, Word,
+    helpers::{global_needs_wrapper, map_storage_class},
+    selection::Selection,
+    Block, BlockContext, Error, IdGenerator, Instruction, Word,
 };
 use crate::{arena::Handle, proc::BoundsCheckPolicy};
 
@@ -47,27 +48,108 @@ impl<'w> BlockContext<'w> {
         
         
         
-        let (structure_id, last_member_index) = match self.ir_function.expressions[array] {
+        let (opt_array_index_id, global_handle, opt_last_member_index) = match self
+            .ir_function
+            .expressions[array]
+        {
             crate::Expression::AccessIndex { base, index } => {
                 match self.ir_function.expressions[base] {
-                    crate::Expression::GlobalVariable(handle) => (
-                        self.writer.global_variables[handle.index()].access_id,
-                        index,
-                    ),
-                    _ => return Err(Error::Validation("array length expression")),
+                    
+                    
+                    
+                    crate::Expression::AccessIndex {
+                        base: base_outer,
+                        index: index_outer,
+                    } => match self.ir_function.expressions[base_outer] {
+                        crate::Expression::GlobalVariable(handle) => {
+                            let index_id = self.get_index_constant(index_outer);
+                            (Some(index_id), handle, Some(index))
+                        }
+                        _ => return Err(Error::Validation("array length expression case-1a")),
+                    },
+                    
+                    
+                    
+                    crate::Expression::Access {
+                        base: base_outer,
+                        index: index_outer,
+                    } => match self.ir_function.expressions[base_outer] {
+                        crate::Expression::GlobalVariable(handle) => {
+                            let index_id = self.cached[index_outer];
+                            (Some(index_id), handle, Some(index))
+                        }
+                        _ => return Err(Error::Validation("array length expression case-1b")),
+                    },
+                    
+                    crate::Expression::GlobalVariable(handle) => {
+                        let global = &self.ir_module.global_variables[handle];
+                        match self.ir_module.types[global.ty].inner {
+                            
+                            crate::TypeInner::BindingArray { .. } => (Some(index), handle, None),
+                            
+                            _ => (None, handle, Some(index)),
+                        }
+                    }
+                    _ => return Err(Error::Validation("array length expression case-1c")),
                 }
             }
+            
+            crate::Expression::Access { base, index } => match self.ir_function.expressions[base] {
+                crate::Expression::GlobalVariable(handle) => {
+                    let index_id = self.cached[index];
+                    let global = &self.ir_module.global_variables[handle];
+                    match self.ir_module.types[global.ty].inner {
+                        crate::TypeInner::BindingArray { .. } => (Some(index_id), handle, None),
+                        _ => return Err(Error::Validation("array length expression case-2a")),
+                    }
+                }
+                _ => return Err(Error::Validation("array length expression case-2b")),
+            },
+            
             crate::Expression::GlobalVariable(handle) => {
                 let global = &self.ir_module.global_variables[handle];
                 if !global_needs_wrapper(self.ir_module, global) {
-                    return Err(Error::Validation("array length expression"));
+                    return Err(Error::Validation("array length expression case-3"));
                 }
-
-                (self.writer.global_variables[handle.index()].var_id, 0)
+                (None, handle, None)
             }
-            _ => return Err(Error::Validation("array length expression")),
+            _ => return Err(Error::Validation("array length expression case-4")),
         };
 
+        let gvar = self.writer.global_variables[global_handle.index()].clone();
+        let global = &self.ir_module.global_variables[global_handle];
+        let (last_member_index, gvar_id) = match opt_last_member_index {
+            Some(index) => (index, gvar.access_id),
+            None => {
+                if !global_needs_wrapper(self.ir_module, global) {
+                    return Err(Error::Validation(
+                        "pointer to a global that is not a wrapped array",
+                    ));
+                }
+                (0, gvar.var_id)
+            }
+        };
+        let structure_id = match opt_array_index_id {
+            
+            Some(index_id) => {
+                let element_type_id = match self.ir_module.types[global.ty].inner {
+                    crate::TypeInner::BindingArray { base, size: _ } => {
+                        let class = map_storage_class(global.space);
+                        self.get_pointer_id(base, class)?
+                    }
+                    _ => return Err(Error::Validation("array length expression case-5")),
+                };
+                let structure_id = self.gen_id();
+                block.body.push(Instruction::access_chain(
+                    element_type_id,
+                    structure_id,
+                    gvar_id,
+                    &[index_id],
+                ));
+                structure_id
+            }
+            None => gvar_id,
+        };
         let length_id = self.gen_id();
         block.body.push(Instruction::array_length(
             self.writer.get_uint_type_id(),
