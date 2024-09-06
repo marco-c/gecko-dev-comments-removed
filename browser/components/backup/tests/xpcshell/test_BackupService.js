@@ -111,10 +111,7 @@ async function testCreateBackupHelper(sandbox, taskFn) {
 
   
   
-  let backupsFolderPath = PathUtils.join(
-    fakeProfilePath,
-    BackupService.PROFILE_FOLDER_NAME
-  );
+  let backupsFolderPath = PathUtils.join(fakeProfilePath, "backups");
   let stagingPath = PathUtils.join(backupsFolderPath, "staging");
 
   
