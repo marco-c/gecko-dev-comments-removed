@@ -1757,6 +1757,8 @@ void AutoHelperTaskQueue::queueTaskToDispatch(JS::HelperThreadTask* task,
                                               JS::DispatchReason reason) const {
   
 
+  task->onThreadPoolDispatch();
+
   AutoEnterOOMUnsafeRegion oomUnsafe;
   if (!tasksToDispatch.append(task) || !dispatchReasons.append(reason)) {
     oomUnsafe.crash("AutoLockHelperThreadState::queueTaskToDispatch");

@@ -117,6 +117,8 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
 
   UnprotectedData<State> state_;
 
+  HelperThreadLockData<bool> dispatchedToThreadPool;
+
   
   mozilla::TimeStamp maybeQueueTime_;
 
@@ -255,6 +257,7 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
     return ThreadType::THREAD_TYPE_GCPARALLEL;
   }
   void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
+  void onThreadPoolDispatch() override;
 };
 
 } 
