@@ -63,7 +63,7 @@ html_theme_options = {
     'display_version': True,
 }
 
-top_doc = 'index'
+master_doc = 'index'
 
  
 
@@ -134,7 +134,7 @@ for version in versions:
  
 
 rinoh_documents = [(
- top_doc,
+ master_doc,
  'target',
  project+ ' Documentation',
  '© ' +copyright,

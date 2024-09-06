@@ -13,7 +13,6 @@
 
 
 
-#include <stdint.h>
 #include <stdio.h>
 
 #include <cfloat>  
@@ -32,64 +31,31 @@ HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
 
-
-
-
-
-#undef HWY_MATH_TEST_EXCESS_PRECISION
-#if HWY_ARCH_X86_32 && HWY_COMPILER_GCC_ACTUAL && \
-    (HWY_TARGET == HWY_SCALAR || HWY_TARGET == HWY_EMU128)
-
-
-
-
-#if HWY_COMPILER_GCC_ACTUAL >= 1300
-#define HWY_MATH_TEST_EXCESS_PRECISION 0
-
-#else                  
-
-
-
-#if defined(__SSE2__)  
-#define HWY_MATH_TEST_EXCESS_PRECISION 0
-#else
-#define HWY_MATH_TEST_EXCESS_PRECISION 1
-#pragma message( \
-    "Skipping scalar math_test on 32-bit x86 GCC <13 without HWY_CMAKE_SSE2")
-#endif  
-
-#endif  
-#else   
-#define HWY_MATH_TEST_EXCESS_PRECISION 0
-#endif  
+template <class Out, class In>
+inline Out BitCast(const In& in) {
+  static_assert(sizeof(Out) == sizeof(In), "");
+  Out out;
+  CopyBytes<sizeof(out)>(&in, &out);
+  return out;
+}
 
 template <class T, class D>
 HWY_NOINLINE void TestMath(const char* name, T (*fx1)(T),
                            Vec<D> (*fxN)(D, VecArg<Vec<D>>), D d, T min, T max,
                            uint64_t max_error_ulp) {
-  if (HWY_MATH_TEST_EXCESS_PRECISION) {
-    static bool once = true;
-    if (once) {
-      once = false;
-      fprintf(stderr,
-              "Skipping math_test due to GCC issue with excess precision.\n");
-    }
-    return;
-  }
-
   using UintT = MakeUnsigned<T>;
 
-  const UintT min_bits = BitCastScalar<UintT>(min);
-  const UintT max_bits = BitCastScalar<UintT>(max);
+  const UintT min_bits = BitCast<UintT>(min);
+  const UintT max_bits = BitCast<UintT>(max);
 
   
   
   int range_count = 1;
   UintT ranges[2][2] = {{min_bits, max_bits}, {0, 0}};
   if ((min < 0.0) && (max > 0.0)) {
-    ranges[0][0] = BitCastScalar<UintT>(ConvertScalarTo<T>(+0.0));
+    ranges[0][0] = BitCast<UintT>(static_cast<T>(+0.0));
     ranges[0][1] = max_bits;
-    ranges[1][0] = BitCastScalar<UintT>(ConvertScalarTo<T>(-0.0));
+    ranges[1][0] = BitCast<UintT>(static_cast<T>(-0.0));
     ranges[1][1] = min_bits;
     range_count = 2;
   }
@@ -104,8 +70,7 @@ HWY_NOINLINE void TestMath(const char* name, T (*fx1)(T),
     for (UintT value_bits = start; value_bits <= stop; value_bits += step) {
       
       
-      const T value =
-          BitCastScalar<T>(HWY_MIN(HWY_MAX(start, value_bits), stop));
+      const T value = BitCast<T>(HWY_MIN(HWY_MAX(start, value_bits), stop));
       const T actual = GetLane(fxN(d, Set(d, value)));
       const T expected = fx1(value);
 
@@ -131,9 +96,9 @@ HWY_NOINLINE void TestMath(const char* name, T (*fx1)(T),
   HWY_ASSERT(max_ulp <= max_error_ulp);
 }
 
-#define DEFINE_MATH_TEST_FUNC(NAME)                     \
-  HWY_NOINLINE void TestAll##NAME() {                   \
-    ForFloat3264Types(ForPartialVectors<Test##NAME>()); \
+#define DEFINE_MATH_TEST_FUNC(NAME)                 \
+  HWY_NOINLINE void TestAll##NAME() {               \
+    ForFloatTypes(ForPartialVectors<Test##NAME>()); \
   }
 
 #undef DEFINE_MATH_TEST
@@ -155,10 +120,8 @@ HWY_NOINLINE void TestMath(const char* name, T (*fx1)(T),
   DEFINE_MATH_TEST_FUNC(NAME)
 
 
-
-
-float kNearOneF() { return BitCastScalar<float>(0x3F7FFFFF); }
-double kNearOneD() { return BitCastScalar<double>(0x3FEFFFFFFFFFFFFFULL); }
+const float kNearOneF = BitCast<float>(0x3F7FFFFF);
+const double kNearOneD = BitCast<double>(0x3FEFFFFFFFFFFFFFULL);
 
 
 
@@ -173,37 +136,6 @@ constexpr uint64_t Cos64ULP() {
 constexpr uint64_t ACosh32ULP() {
 #if defined(__MINGW32__)
   return 8;
-#else
-  return 3;
-#endif
-}
-
-template <class D>
-static Vec<D> SinCosSin(const D d, VecArg<Vec<D>> x) {
-  Vec<D> s, c;
-  SinCos(d, x, s, c);
-  return s;
-}
-
-template <class D>
-static Vec<D> SinCosCos(const D d, VecArg<Vec<D>> x) {
-  Vec<D> s, c;
-  SinCos(d, x, s, c);
-  return c;
-}
-
-
-constexpr uint64_t SinCosSin32ULP() {
-#if !(HWY_NATIVE_FMA)
-  return 256;
-#else
-  return 3;
-#endif
-}
-
-constexpr uint64_t SinCosCos32ULP() {
-#if !(HWY_NATIVE_FMA)
-  return 64;
 #else
   return 3;
 #endif
@@ -225,10 +157,9 @@ DEFINE_MATH_TEST(Asinh,
 DEFINE_MATH_TEST(Atan,
   std::atan,  CallAtan,  -FLT_MAX,   +FLT_MAX,    3,
   std::atan,  CallAtan,  -DBL_MAX,   +DBL_MAX,    3)
-
 DEFINE_MATH_TEST(Atanh,
-  std::atanh, CallAtanh, -kNearOneF(), +kNearOneF(),  4,
-  std::atanh, CallAtanh, -kNearOneD(), +kNearOneD(),  3)
+  std::atanh, CallAtanh, -kNearOneF, +kNearOneF,  4,  
+  std::atanh, CallAtanh, -kNearOneD, +kNearOneD,  3)
 DEFINE_MATH_TEST(Cos,
   std::cos,   CallCos,   -39000.0f,  +39000.0f,   3,
   std::cos,   CallCos,   -39000.0,   +39000.0,    Cos64ULP())
@@ -259,12 +190,6 @@ DEFINE_MATH_TEST(Sinh,
 DEFINE_MATH_TEST(Tanh,
   std::tanh,  CallTanh,  -FLT_MAX,   +FLT_MAX,    4,
   std::tanh,  CallTanh,  -DBL_MAX,   +DBL_MAX,    4)
-DEFINE_MATH_TEST(SinCosSin,
-  std::sin,   SinCosSin,   -39000.0f,  +39000.0f,   SinCosSin32ULP(),
-  std::sin,   SinCosSin,   -39000.0,   +39000.0,    1)
-DEFINE_MATH_TEST(SinCosCos,
-  std::cos,   SinCosCos,   -39000.0f,  +39000.0f,   SinCosCos32ULP(),
-  std::cos,   SinCosCos,   -39000.0,   +39000.0,    1)
 
 
 template <typename T, class D>
@@ -277,38 +202,22 @@ void Atan2TestCases(T , D d, size_t& padded,
     T x;
     T expected;
   };
-  const T pos = ConvertScalarTo<T>(1E5);
-  const T neg = ConvertScalarTo<T>(-1E7);
-  const T p0 = ConvertScalarTo<T>(0);
+  const T pos = static_cast<T>(1E5);
+  const T neg = static_cast<T>(-1E7);
   
-  const T n0 = ConvertScalarTo<T>(-0.0);
-  const T p1 = ConvertScalarTo<T>(1);
-  const T n1 = ConvertScalarTo<T>(-1);
-  const T p2 = ConvertScalarTo<T>(2);
-  const T n2 = ConvertScalarTo<T>(-2);
+  const T n0 = static_cast<T>(-0.0);
   const T inf = GetLane(Inf(d));
   const T nan = GetLane(NaN(d));
-
-  const T pi = ConvertScalarTo<T>(3.141592653589793238);
-  const YX test_cases[] = {                        
-                           {p0, p1, p0},           
-                           {n1, p1, -pi / 4},      
-                           {n1, p0, -pi / 2},      
-                           {n1, n1, -3 * pi / 4},  
-                           {p0, n1, pi},           
-                           {p1, n1, 3 * pi / 4},   
-                           {p1, p0, pi / 2},       
-                           {p1, p1, pi / 4},       
-
+  const T pi = static_cast<T>(3.141592653589793238);
+  const YX test_cases[] = {
+                           {T{0}, T{-1}, pi},
+                           {n0, T{-2}, -pi},
                            
-                           {p0, n1, pi},
-                           {n0, n2, -pi},
+                           {T{0}, T{2}, T{0}},
+                           {n0, T{2}, n0},
                            
-                           {p0, p2, p0},
-                           {n0, p2, n0},
-                           
-                           {inf, p2, pi / 2},
-                           {-inf, p2, -pi / 2},
+                           {inf, T{3}, pi / 2},
+                           {-inf, T{3}, -pi / 2},
                            
                            {inf, -inf, 3 * pi / 4},
                            {-inf, -inf, -3 * pi / 4},
@@ -316,21 +225,21 @@ void Atan2TestCases(T , D d, size_t& padded,
                            {inf, inf, pi / 4},
                            {-inf, inf, -pi / 4},
                            
-                           {n2, p0, -pi / 2},
-                           {n1, n0, -pi / 2},
+                           {T{-2}, T{0}, -pi / 2},
+                           {T{-1}, n0, -pi / 2},
                            
-                           {pos, p0, pi / 2},
-                           {p2, n0, pi / 2},
+                           {pos, T{0}, pi / 2},
+                           {T{4}, n0, pi / 2},
                            
                            {pos, -inf, pi},
                            
                            {neg, -inf, -pi},
                            
-                           {pos, inf, p0},
+                           {pos, inf, T{0}},
                            
                            {neg, inf, n0},
                            
-                           {nan, p0, nan},
+                           {nan, T{0}, nan},
                            {pos, nan, nan}};
   const size_t kNumTestCases = sizeof(test_cases) / sizeof(test_cases[0]);
   const size_t N = Lanes(d);
@@ -346,9 +255,9 @@ void Atan2TestCases(T , D d, size_t& padded,
     out_expected[i] = test_cases[i].expected;
   }
   for (; i < padded; ++i) {
-    out_y[i] = p0;
-    out_x[i] = p0;
-    out_expected[i] = p0;
+    out_y[i] = T{0};
+    out_x[i] = T{0};
+    out_expected[i] = T{0};
   }
 }
 
@@ -361,10 +270,11 @@ struct TestAtan2 {
     AlignedFreeUniquePtr<T[]> in_y, in_x, expected;
     Atan2TestCases(t, d, padded, in_y, in_x, expected);
 
-    const Vec<D> tolerance = Set(d, ConvertScalarTo<T>(1E-5));
+    const Vec<D> tolerance = Set(d, 1E-5);
+    auto lanes = AllocateAligned<T>(N);
 
     for (size_t i = 0; i < padded; ++i) {
-      const T actual = ConvertScalarTo<T>(atan2(in_y[i], in_x[i]));
+      const T actual = atan2(in_y[i], in_x[i]);
       
       HWY_ASSERT_EQ(expected[i], actual);
     }
@@ -390,19 +300,18 @@ struct TestAtan2 {
       if (!AllTrue(d, ok)) {
         const size_t mismatch =
             static_cast<size_t>(FindKnownFirstTrue(d, Not(ok)));
+        Store(actual, d, &lanes[0]);
         fprintf(stderr, "Mismatch for i=%d expected %f actual %f\n",
                 static_cast<int>(i + mismatch), expected[i + mismatch],
-                ExtractLane(actual, mismatch));
-        HWY_ASSERT(0);
+                lanes[mismatch]);
+        HWY_ABORT("");
       }
     }
   }
 };
 
 HWY_NOINLINE void TestAllAtan2() {
-  if (HWY_MATH_TEST_EXCESS_PRECISION) return;
-
-  ForFloat3264Types(ForPartialVectors<TestAtan2>());
+  ForFloatTypes(ForPartialVectors<TestAtan2>());
 }
 
 
@@ -431,8 +340,6 @@ HWY_EXPORT_AND_TEST_P(HwyMathTest, TestAllSin);
 HWY_EXPORT_AND_TEST_P(HwyMathTest, TestAllSinh);
 HWY_EXPORT_AND_TEST_P(HwyMathTest, TestAllTanh);
 HWY_EXPORT_AND_TEST_P(HwyMathTest, TestAllAtan2);
-HWY_EXPORT_AND_TEST_P(HwyMathTest, TestAllSinCosSin);
-HWY_EXPORT_AND_TEST_P(HwyMathTest, TestAllSinCosCos);
 }  
 
 #endif

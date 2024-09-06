@@ -22,12 +22,10 @@
 #define HIGHWAY_HWY_CONTRIB_SORT_TRAITS_TOGGLE
 #endif
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include "hwy/contrib/sort/order.h"       
 #include "hwy/contrib/sort/shared-inl.h"  
+#include "hwy/contrib/sort/vqsort.h"      
 #include "hwy/highway.h"
+#include "hwy/print.h"
 
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
@@ -35,128 +33,43 @@ namespace HWY_NAMESPACE {
 namespace detail {
 
 
-template <typename LaneTypeArg, typename KeyTypeArg>
+template <typename T>
 struct KeyLaneBase {
   static constexpr bool Is128() { return false; }
   constexpr size_t LanesPerKey() const { return 1; }
 
   
-  using LaneType = LaneTypeArg;
+  using LaneType = T;
   
-  using KeyType = KeyTypeArg;
+  using KeyType = T;
 
   const char* KeyString() const {
-    return IsSame<KeyTypeArg, float16_t>()     ? "f16"
-           : IsSame<KeyTypeArg, float>()       ? "f32"
-           : IsSame<KeyTypeArg, double>()      ? "f64"
-           : IsSame<KeyTypeArg, int16_t>()     ? "i16"
-           : IsSame<KeyTypeArg, int32_t>()     ? "i32"
-           : IsSame<KeyTypeArg, int64_t>()     ? "i64"
-           : IsSame<KeyTypeArg, uint16_t>()    ? "u32"
-           : IsSame<KeyTypeArg, uint32_t>()    ? "u32"
-           : IsSame<KeyTypeArg, uint64_t>()    ? "u64"
-           : IsSame<KeyTypeArg, hwy::K32V32>() ? "k+v=64"
-                                               : "?";
+    return IsSame<T, float>()      ? "f32"
+           : IsSame<T, double>()   ? "f64"
+           : IsSame<T, int16_t>()  ? "i16"
+           : IsSame<T, int32_t>()  ? "i32"
+           : IsSame<T, int64_t>()  ? "i64"
+           : IsSame<T, uint16_t>() ? "u32"
+           : IsSame<T, uint32_t>() ? "u32"
+           : IsSame<T, uint64_t>() ? "u64"
+                                   : "?";
   }
 };
-
-
-
-
-
-
-template <class D, HWY_IF_FLOAT_OR_SPECIAL_D(D)>
-Vec<D> LargestSortValue(D d) {
-  return Inf(d);
-}
-template <class D, HWY_IF_NOT_FLOAT_NOR_SPECIAL_D(D)>
-Vec<D> LargestSortValue(D d) {
-  return Set(d, hwy::HighestValue<TFromD<D>>());
-}
-
-template <class D, HWY_IF_FLOAT_OR_SPECIAL_D(D)>
-Vec<D> SmallestSortValue(D d) {
-  return Neg(Inf(d));
-}
-template <class D, HWY_IF_NOT_FLOAT_NOR_SPECIAL_D(D)>
-Vec<D> SmallestSortValue(D d) {
-  return Set(d, hwy::LowestValue<TFromD<D>>());
-}
-
-
-template <class D, HWY_IF_FLOAT_OR_SPECIAL_D(D)>
-Vec<D> LargerSortValue(D d, Vec<D> v) {
-  HWY_DASSERT(AllFalse(d, IsNaN(v)));  
-  using T = TFromD<decltype(d)>;
-  const RebindToUnsigned<D> du;
-  using VU = Vec<decltype(du)>;
-  using TU = TFromD<decltype(du)>;
-
-  const VU vu = BitCast(du, Abs(v));
-
-  
-  
-  const Mask<decltype(du)> was_pos = Le(BitCast(du, v), SignBit(du));
-  
-  const VU add = IfThenElse(was_pos, Set(du, 1u), Set(du, LimitsMax<TU>()));
-  
-  v = BitCast(d, Add(vu, add));
-  
-  
-  const Mask<D> was_pos_f = RebindMask(d, was_pos);
-  v = IfThenElse(IsFinite(v), v,
-                 IfThenElse(was_pos_f, Inf(d), Set(d, HighestValue<T>())));
-  
-  return IfThenElse(was_pos_f, v, Neg(v));
-}
-
-
-template <class D, HWY_IF_FLOAT_OR_SPECIAL_D(D)>
-Vec<D> SmallerSortValue(D d, Vec<D> v) {
-  HWY_DASSERT(AllFalse(d, IsNaN(v)));  
-  using T = TFromD<decltype(d)>;
-  const RebindToUnsigned<D> du;
-  using VU = Vec<decltype(du)>;
-  using TU = TFromD<decltype(du)>;
-
-  const VU vu = BitCast(du, Abs(v));
-
-  
-  
-  const Mask<D> was_pos = Gt(v, Zero(d));
-  
-  const VU add =
-      IfThenElse(RebindMask(du, was_pos), Set(du, LimitsMax<TU>()), Set(du, 1));
-  
-  v = BitCast(d, Add(vu, add));
-  
-  
-  v = IfThenElse(IsFinite(v), v,
-                 IfThenElse(was_pos, Set(d, HighestValue<T>()), Inf(d)));
-  
-  return IfThenElse(was_pos, v, Neg(v));
-}
-
-template <class D, HWY_IF_NOT_FLOAT_NOR_SPECIAL_D(D)>
-Vec<D> LargerSortValue(D d, Vec<D> v) {
-  return Add(v, Set(d, TFromD<D>{1}));
-}
-
-template <class D, HWY_IF_NOT_FLOAT_NOR_SPECIAL_D(D)>
-Vec<D> SmallerSortValue(D d, Vec<D> v) {
-  return Sub(v, Set(d, TFromD<D>{1}));
-}
 
 #if VQSORT_ENABLED || HWY_IDE
 
 
 
 
-template <typename LaneType, typename KeyType>
-struct KeyLane : public KeyLaneBase<LaneType, KeyType> {
+template <typename T>
+struct KeyLane : public KeyLaneBase<T> {
   
-  HWY_INLINE void Swap(LaneType* a, LaneType* b) const {
-    const LaneType temp = *a;
+  
+  static constexpr bool IsKV() { return false; }
+
+  
+  HWY_INLINE void Swap(T* a, T* b) const {
+    const T temp = *a;
     *a = *b;
     *b = temp;
   }
@@ -168,7 +81,7 @@ struct KeyLane : public KeyLaneBase<LaneType, KeyType> {
 
   
   template <class D>
-  HWY_INLINE Vec<D> SetKey(D d, const LaneType* key) const {
+  HWY_INLINE Vec<D> SetKey(D d, const T* key) const {
     return Set(d, *key);
   }
 
@@ -190,9 +103,7 @@ struct KeyLane : public KeyLaneBase<LaneType, KeyType> {
     return AllTrue(du, Eq(BitCast(du, diff), Zero(du)));
   }
 
-  HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) const {
-    return *a == *b;
-  }
+  HWY_INLINE bool Equal1(const T* a, const T* b) const { return *a == *b; }
 
   template <class D>
   HWY_INLINE Vec<D> ReverseKeys(D d, Vec<D> v) const {
@@ -244,7 +155,7 @@ struct KeyLane : public KeyLaneBase<LaneType, KeyType> {
 #if HWY_HAVE_FLOAT64  
     const RepartitionToWide<D> dw;
 #else
-    const RepartitionToWide<RebindToUnsigned<D>> dw;
+    const RepartitionToWide<RebindToUnsigned<D> > dw;
 #endif
     return BitCast(d, SwapAdjacentPairs(dw, BitCast(dw, v)));
   }
@@ -260,7 +171,7 @@ struct KeyLane : public KeyLaneBase<LaneType, KeyType> {
 #if HWY_HAVE_FLOAT64  
     const RepartitionToWide<D> dw;
 #else
-    const RepartitionToWide<RebindToUnsigned<D>> dw;
+    const RepartitionToWide<RebindToUnsigned<D> > dw;
 #endif
     return BitCast(d, OddEven(BitCast(dw, odd), BitCast(dw, even)));
   }
@@ -274,7 +185,7 @@ struct KeyLane : public KeyLaneBase<LaneType, KeyType> {
 #if HWY_HAVE_FLOAT64  
     const RepartitionToWide<D> dw;
 #else
-    const RepartitionToWide<RebindToUnsigned<D>> dw;
+    const RepartitionToWide<RebindToUnsigned<D> > dw;
 #endif
     return BitCast(d, OddEvenPairs(dw, BitCast(dw, odd), BitCast(dw, even)));
   }
@@ -292,15 +203,10 @@ struct KeyLane : public KeyLaneBase<LaneType, KeyType> {
 
 
 template <typename T>
-struct OrderAscending : public KeyLane<T, T> {
-  
-  
-  static constexpr bool IsKV() { return false; }
-
+struct OrderAscending : public KeyLane<T> {
   using Order = SortAscending;
-  using OrderForSortingNetwork = OrderAscending<T>;
 
-  HWY_INLINE bool Compare1(const T* a, const T* b) const { return *a < *b; }
+  HWY_INLINE bool Compare1(const T* a, const T* b) { return *a < *b; }
 
   template <class D>
   HWY_INLINE Mask<D> Compare(D , Vec<D> a, Vec<D> b) const {
@@ -332,30 +238,25 @@ struct OrderAscending : public KeyLane<T, T> {
 
   template <class D>
   HWY_INLINE Vec<D> FirstValue(D d) const {
-    return SmallestSortValue(d);
+    return Set(d, hwy::LowestValue<T>());
   }
 
   template <class D>
   HWY_INLINE Vec<D> LastValue(D d) const {
-    return LargestSortValue(d);
+    return Set(d, hwy::HighestValue<T>());
   }
 
   template <class D>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    return SmallerSortValue(d, v);
+    return Sub(v, Set(d, hwy::Epsilon<T>()));
   }
 };
 
 template <typename T>
-struct OrderDescending : public KeyLane<T, T> {
-  
-  
-  static constexpr bool IsKV() { return false; }
-
+struct OrderDescending : public KeyLane<T> {
   using Order = SortDescending;
-  using OrderForSortingNetwork = OrderDescending<T>;
 
-  HWY_INLINE bool Compare1(const T* a, const T* b) const { return *b < *a; }
+  HWY_INLINE bool Compare1(const T* a, const T* b) { return *b < *a; }
 
   template <class D>
   HWY_INLINE Mask<D> Compare(D , Vec<D> a, Vec<D> b) const {
@@ -386,21 +287,21 @@ struct OrderDescending : public KeyLane<T, T> {
 
   template <class D>
   HWY_INLINE Vec<D> FirstValue(D d) const {
-    return LargestSortValue(d);
+    return Set(d, hwy::HighestValue<T>());
   }
 
   template <class D>
   HWY_INLINE Vec<D> LastValue(D d) const {
-    return SmallestSortValue(d);
+    return Set(d, hwy::LowestValue<T>());
   }
 
   template <class D>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    return LargerSortValue(d, v);
+    return Add(v, Set(d, hwy::Epsilon<T>()));
   }
 };
 
-struct KeyValue64 : public KeyLane<uint64_t, hwy::K32V32> {
+struct KeyValue64 : public KeyLane<uint64_t> {
   
   
   static constexpr bool IsKV() { return true; }
@@ -432,9 +333,8 @@ struct KeyValue64 : public KeyLane<uint64_t, hwy::K32V32> {
 
 struct OrderAscendingKV64 : public KeyValue64 {
   using Order = SortAscending;
-  using OrderForSortingNetwork = OrderAscending<LaneType>;
 
-  HWY_INLINE bool Compare1(const LaneType* a, const LaneType* b) const {
+  HWY_INLINE bool Compare1(const LaneType* a, const LaneType* b) {
     return (*a >> 32) < (*b >> 32);
   }
 
@@ -470,25 +370,24 @@ struct OrderAscendingKV64 : public KeyValue64 {
   
   template <class D>
   HWY_INLINE Vec<D> FirstValue(D d) const {
-    return Set(d, hwy::LowestValue<TFromD<D>>());
+    return Set(d, hwy::LowestValue<TFromD<D> >());
   }
 
   template <class D>
   HWY_INLINE Vec<D> LastValue(D d) const {
-    return Set(d, hwy::HighestValue<TFromD<D>>());
+    return Set(d, hwy::HighestValue<TFromD<D> >());
   }
 
   template <class D>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    return Sub(v, Set(d, uint64_t{1} << 32));
+    return Sub(v, Set(d, uint64_t{1}));
   }
 };
 
 struct OrderDescendingKV64 : public KeyValue64 {
   using Order = SortDescending;
-  using OrderForSortingNetwork = OrderDescending<LaneType>;
 
-  HWY_INLINE bool Compare1(const LaneType* a, const LaneType* b) const {
+  HWY_INLINE bool Compare1(const LaneType* a, const LaneType* b) {
     return (*b >> 32) < (*a >> 32);
   }
 
@@ -523,26 +422,23 @@ struct OrderDescendingKV64 : public KeyValue64 {
 
   template <class D>
   HWY_INLINE Vec<D> FirstValue(D d) const {
-    return Set(d, hwy::HighestValue<TFromD<D>>());
+    return Set(d, hwy::HighestValue<TFromD<D> >());
   }
 
   template <class D>
   HWY_INLINE Vec<D> LastValue(D d) const {
-    return Set(d, hwy::LowestValue<TFromD<D>>());
+    return Set(d, hwy::LowestValue<TFromD<D> >());
   }
 
   template <class D>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    return Add(v, Set(d, uint64_t{1} << 32));
+    return Add(v, Set(d, uint64_t{1}));
   }
 };
 
 
 template <class Base>
 struct TraitsLane : public Base {
-  using TraitsForSortingNetwork =
-      TraitsLane<typename Base::OrderForSortingNetwork>;
-
   
   
   
@@ -615,36 +511,26 @@ struct TraitsLane : public Base {
 #else
 
 template <typename T>
-struct OrderAscending : public KeyLaneBase<T, T> {
+struct OrderAscending : public KeyLaneBase<T> {
   using Order = SortAscending;
 
-  HWY_INLINE bool Compare1(const T* a, const T* b) const { return *a < *b; }
+  HWY_INLINE bool Compare1(const T* a, const T* b) { return *a < *b; }
 
   template <class D>
   HWY_INLINE Mask<D> Compare(D , Vec<D> a, Vec<D> b) {
     return Lt(a, b);
   }
-
-  template <class D>
-  HWY_INLINE Vec<D> LastValue(D d) const {
-    return LargestSortValue(d);
-  }
 };
 
 template <typename T>
-struct OrderDescending : public KeyLaneBase<T, T> {
+struct OrderDescending : public KeyLaneBase<T> {
   using Order = SortDescending;
 
-  HWY_INLINE bool Compare1(const T* a, const T* b) const { return *b < *a; }
+  HWY_INLINE bool Compare1(const T* a, const T* b) { return *b < *a; }
 
   template <class D>
   HWY_INLINE Mask<D> Compare(D , Vec<D> a, Vec<D> b) {
     return Lt(b, a);
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> LastValue(D d) const {
-    return SmallestSortValue(d);
   }
 };
 

@@ -13,8 +13,6 @@
 
 
 
-#include <stddef.h>
-
 #include "hwy/aligned_allocator.h"
 
 
@@ -41,7 +39,7 @@ namespace HWY_NAMESPACE {
 
 template <typename T>
 T Random7Bit(RandomState& rng) {
-  return ConvertScalarTo<T>(Random32(&rng) & 127);
+  return static_cast<T>(Random32(&rng) & 127);
 }
 
 
@@ -94,9 +92,9 @@ struct TestFill {
     }
     T* actual = pb.get() + misalign_b;
 
-    actual[count] = ConvertScalarTo<T>(0);  
+    actual[count] = T{0};  
     Fill(d, value, count, actual);
-    HWY_ASSERT_EQ(ConvertScalarTo<T>(0), actual[count]);  
+    HWY_ASSERT_EQ(T{0}, actual[count]);  
 
     const auto info = hwy::detail::MakeTypeInfo<T>();
     const char* target_name = hwy::TargetName(HWY_TARGET);

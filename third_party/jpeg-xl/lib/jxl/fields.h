@@ -21,7 +21,6 @@
 namespace jxl {
 
 struct AuxOut;
-enum class LayerType : uint8_t;
 struct BitWriter;
 
 
@@ -183,8 +182,8 @@ Status Read(BitReader* reader, Fields* JXL_RESTRICT fields);
 
 bool CanRead(BitReader* reader, Fields* JXL_RESTRICT fields);
 
-Status Write(const Fields& fields, BitWriter* JXL_RESTRICT writer,
-             LayerType layer, AuxOut* aux_out);
+Status Write(const Fields& fields, BitWriter* JXL_RESTRICT writer, size_t layer,
+             AuxOut* aux_out);
 }  
 
 

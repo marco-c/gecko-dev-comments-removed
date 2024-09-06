@@ -16,7 +16,6 @@
 namespace jxl {
 
 struct AuxOut;
-enum class LayerType : uint8_t;
 
 
 
@@ -25,7 +24,7 @@ static const size_t kClustersLimit = 128;
 
 
 void EncodeContextMap(const std::vector<uint8_t>& context_map,
-                      size_t num_histograms, BitWriter* writer, LayerType layer,
+                      size_t num_histograms, BitWriter* writer, size_t layer,
                       AuxOut* aux_out);
 
 void EncodeBlockCtxMap(const BlockCtxMap& block_ctx_map, BitWriter* writer,

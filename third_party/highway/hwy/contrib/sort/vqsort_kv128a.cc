@@ -13,7 +13,7 @@
 
 
 
-#include "hwy/contrib/sort/vqsort.h"  
+#include "hwy/contrib/sort/vqsort.h"
 
 #undef HWY_TARGET_INCLUDE
 
@@ -23,14 +23,23 @@
 #include "hwy/foreach_target.h"  
 
 
+#include "hwy/contrib/sort/traits128-inl.h"
 #include "hwy/contrib/sort/vqsort-inl.h"
 
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
 
-void SortKV128Asc(K64V64* HWY_RESTRICT keys, size_t num) {
-  return VQSortStatic(keys, num, SortAscending());
+void SortKV128Asc(uint64_t* HWY_RESTRICT keys, size_t num) {
+#if VQSORT_ENABLED
+  SortTag<uint64_t> d;
+  detail::SharedTraits<detail::Traits128<detail::OrderAscendingKV128>> st;
+  Sort(d, st, keys, num);
+#else
+  (void)keys;
+  (void)num;
+  HWY_ASSERT(0);
+#endif
 }
 
 
@@ -45,7 +54,8 @@ HWY_EXPORT(SortKV128Asc);
 }  
 
 void VQSort(K64V64* HWY_RESTRICT keys, size_t n, SortAscending) {
-  HWY_DYNAMIC_DISPATCH(SortKV128Asc)(keys, n);
+  HWY_DYNAMIC_DISPATCH(SortKV128Asc)
+  (reinterpret_cast<uint64_t*>(keys), n * 2);
 }
 
 }  

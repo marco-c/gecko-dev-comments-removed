@@ -25,15 +25,11 @@
 #define HWY_DISABLE_CACHE_CONTROL
 #endif
 
-#ifndef HWY_DISABLE_CACHE_CONTROL
 
-#if HWY_ARCH_X86 && !HWY_COMPILER_MSVC
+#if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL) && !HWY_COMPILER_MSVC
 #include <emmintrin.h>  
 #include <xmmintrin.h>  
-#elif HWY_ARCH_ARM_A64
-#include <arm_acle.h>
 #endif
-#endif  
 
 namespace hwy {
 
@@ -80,16 +76,15 @@ HWY_INLINE HWY_ATTR_CACHE void FlushStream() {
 
 template <typename T>
 HWY_INLINE HWY_ATTR_CACHE void Prefetch(const T* p) {
-  (void)p;
-#ifndef HWY_DISABLE_CACHE_CONTROL
-#if HWY_ARCH_X86
+#if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL)
   _mm_prefetch(reinterpret_cast<const char*>(p), _MM_HINT_T0);
 #elif HWY_COMPILER_GCC  
   
   
   __builtin_prefetch(p, 0, 3);
+#else
+  (void)p;
 #endif
-#endif  
 }
 
 
@@ -102,23 +97,10 @@ HWY_INLINE HWY_ATTR_CACHE void FlushCacheline(const void* p) {
 }
 
 
-
-
-
 HWY_INLINE HWY_ATTR_CACHE void Pause() {
-#ifndef HWY_DISABLE_CACHE_CONTROL
-#if HWY_ARCH_X86
+#if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL)
   _mm_pause();
-#elif HWY_ARCH_ARM_A64 && HWY_COMPILER_CLANG
-  
-  
-  __yield();
-#elif HWY_ARCH_ARM && HWY_COMPILER_GCC  
-  __asm__ volatile("yield" ::: "memory");
-#elif HWY_ARCH_PPC && HWY_COMPILER_GCC  
-  __asm__ volatile("or 27,27,27" ::: "memory");
 #endif
-#endif  
 }
 
 }  
