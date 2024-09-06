@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "absl/base/attributes.h"
+#include "api/environment/environment.h"
 #include "api/field_trials_view.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/transport/network_types.h"
@@ -35,6 +36,12 @@ class TargetTransferRateObserver {
 
 
 struct NetworkControllerConfig {
+  
+  
+  [[deprecated]] NetworkControllerConfig() = default;
+  explicit NetworkControllerConfig(const Environment& env)
+      : key_value_config(&env.field_trials()), event_log(&env.event_log()) {}
+
   
   
   
