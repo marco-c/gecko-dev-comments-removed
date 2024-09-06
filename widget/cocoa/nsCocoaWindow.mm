@@ -773,6 +773,20 @@ void nsCocoaWindow::Show(bool aState) {
       mPopupContentView->Show(true);
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    bool savedValueForSupportsNativeFullscreen = GetSupportsNativeFullscreen();
+    if (!mInFullScreenMode &&
+        ((mWindowType == WindowType::Popup) || mAlwaysOnTop || mIsAlert)) {
+      SetSupportsNativeFullscreen(false);
+    }
+
     if (mWindowType == WindowType::Popup) {
       
       
@@ -836,6 +850,7 @@ void nsCocoaWindow::Show(bool aState) {
       NS_OBJC_END_TRY_IGNORE_BLOCK;
       SendSetZLevelEvent();
     }
+    SetSupportsNativeFullscreen(savedValueForSupportsNativeFullscreen);
   } else {
     
     if (mWindowType == WindowType::TopLevel ||
@@ -2433,6 +2448,11 @@ void nsCocoaWindow::SetShowsToolbarButton(bool aShow) {
   if (mWindow) [mWindow setShowsToolbarButton:aShow];
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+bool nsCocoaWindow::GetSupportsNativeFullscreen() {
+  return mWindow.collectionBehavior &
+         NSWindowCollectionBehaviorFullScreenPrimary;
 }
 
 void nsCocoaWindow::SetSupportsNativeFullscreen(
