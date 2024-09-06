@@ -615,7 +615,7 @@ void nsXPCWrappedJS::SystemIsBeingShutDown() {
   
   
   MOZ_ASSERT(!JS::IsIncrementalGCInProgress(xpc_GetSafeJSContext()));
-  *mJSObj.unsafeGet() = nullptr;
+  mJSObj.unbarrieredSet(nullptr);
   if (isInList()) {
     remove();
   }
