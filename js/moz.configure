@@ -1438,7 +1438,6 @@ set_config(
 
 
 
-
 @depends("--enable-simulator", target)
 def wasm_has_heapreg(simulator, target):
     if target.cpu != "x86":
