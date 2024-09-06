@@ -3126,9 +3126,9 @@ pref("browser.backup.scheduled.enabled", false);
 
 pref("browser.backup.preferences.ui.enabled", false);
 
-pref("browser.backup.sqlite.pages_per_step", 5);
+pref("browser.backup.sqlite.pages_per_step", 50);
 
-pref("browser.backup.sqlite.step_delay_ms", 250);
+pref("browser.backup.sqlite.step_delay_ms", 50);
 pref("browser.backup.scheduled.idle-threshold-seconds", 300);
 pref("browser.backup.scheduled.minimum-time-between-backups-seconds", 3600);
 
