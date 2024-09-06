@@ -936,9 +936,7 @@ impl<T, A: Allocator> RawTable<T, A> {
         
         
         
-        
-        
-        unsafe { NonNull::new_unchecked(self.table.ctrl.as_ptr().cast()) }
+        self.table.ctrl.cast()
     }
 
     
@@ -2595,10 +2593,7 @@ impl RawTableInner {
     
     #[inline]
     fn data_end<T>(&self) -> NonNull<T> {
-        unsafe {
-            
-            NonNull::new_unchecked(self.ctrl.as_ptr().cast())
-        }
+        self.ctrl.cast()
     }
 
     
@@ -3587,7 +3582,7 @@ impl<T: Clone, A: Allocator + Clone> RawTable<T, A> {
         
         let mut guard = guard((0, &mut *self), |(index, self_)| {
             if T::NEEDS_DROP {
-                for i in 0..=*index {
+                for i in 0..*index {
                     if self_.is_bucket_full(i) {
                         self_.bucket(i).drop();
                     }
@@ -3601,7 +3596,7 @@ impl<T: Clone, A: Allocator + Clone> RawTable<T, A> {
             to.write(from.as_ref().clone());
 
             
-            guard.0 = index;
+            guard.0 = index + 1;
         }
 
         
