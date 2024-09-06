@@ -60,20 +60,18 @@
 #include <type_traits>
 #include <vector>
 
-#include "gtest/gtest-assertion-result.h"
-#include "gtest/gtest-death-test.h"
-#include "gtest/gtest-matchers.h"
-#include "gtest/gtest-message.h"
-#include "gtest/gtest-param-test.h"
-#include "gtest/gtest-printers.h"
-#include "gtest/gtest-test-part.h"
-#include "gtest/gtest-typed-test.h"
-#include "gtest/gtest_pred_impl.h"
-#include "gtest/gtest_prod.h"
+#include "gtest/gtest-assertion-result.h"  
+#include "gtest/gtest-death-test.h"  
+#include "gtest/gtest-matchers.h"  
+#include "gtest/gtest-message.h"  
+#include "gtest/gtest-param-test.h"  
+#include "gtest/gtest-printers.h"  
+#include "gtest/gtest-test-part.h"  
+#include "gtest/gtest-typed-test.h"  
+#include "gtest/gtest_pred_impl.h"  
+#include "gtest/gtest_prod.h"  
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
-
-#include "mozilla/Attributes.h"
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
@@ -327,7 +325,7 @@ class GTEST_API_ Test {
   
   
   
-  MOZ_CAN_RUN_SCRIPT virtual void TestBody() = 0;
+  virtual void TestBody() = 0;
 
   
   void Run();
@@ -609,7 +607,7 @@ class GTEST_API_ TestInfo {
   friend class internal::UnitTestImpl;
   friend class internal::StreamingListenerTest;
   friend TestInfo* internal::MakeAndRegisterTestInfo(
-      const char* test_suite_name, const char* name, const char* type_param,
+      std::string test_suite_name, const char* name, const char* type_param,
       const char* value_param, internal::CodeLocation code_location,
       internal::TypeId fixture_class_id, internal::SetUpTestSuiteFunc set_up_tc,
       internal::TearDownTestSuiteFunc tear_down_tc,
@@ -617,7 +615,7 @@ class GTEST_API_ TestInfo {
 
   
   
-  TestInfo(const std::string& test_suite_name, const std::string& name,
+  TestInfo(std::string test_suite_name, std::string name,
            const char* a_type_param,   
            const char* a_value_param,  
            internal::CodeLocation a_code_location,
@@ -685,7 +683,7 @@ class GTEST_API_ TestSuite {
   
   
   
-  TestSuite(const char* name, const char* a_type_param,
+  TestSuite(const std::string& name, const char* a_type_param,
             internal::SetUpTestSuiteFunc set_up_tc,
             internal::TearDownTestSuiteFunc tear_down_tc);
 
@@ -1265,6 +1263,20 @@ class GTEST_API_ UnitTest {
   TestSuite* GetMutableTestSuite(int i);
 
   
+  
+  
+  
+  void UponLeavingGTest();
+
+  
+  void set_current_test_suite(TestSuite* a_current_test_suite)
+      GTEST_LOCK_EXCLUDED_(mutex_);
+
+  
+  void set_current_test_info(TestInfo* a_current_test_info)
+      GTEST_LOCK_EXCLUDED_(mutex_);
+
+  
   internal::UnitTestImpl* impl() { return impl_; }
   const internal::UnitTestImpl* impl() const { return impl_; }
 
@@ -1272,6 +1284,8 @@ class GTEST_API_ UnitTest {
   
   friend class ScopedTrace;
   friend class Test;
+  friend class TestInfo;
+  friend class TestSuite;
   friend class internal::AssertHelper;
   friend class internal::StreamingListenerTest;
   friend class internal::UnitTestRecordPropertyTestHelper;
@@ -2305,6 +2319,7 @@ TestInfo* RegisterTest(const char* test_suite_name, const char* test_name,
 }
 
 }  
+
 
 
 

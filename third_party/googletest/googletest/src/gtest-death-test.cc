@@ -32,6 +32,8 @@
 
 #include "gtest/gtest-death-test.h"
 
+#include <stdlib.h>
+
 #include <functional>
 #include <memory>
 #include <sstream>
@@ -115,7 +117,7 @@ GTEST_DEFINE_string_(
 GTEST_DEFINE_bool_(
     death_test_use_fork,
     testing::internal::BoolFromGTestEnv("death_test_use_fork", false),
-    "Instructs to use fork()/_exit() instead of clone() in death tests. "
+    "Instructs to use fork()/_Exit() instead of clone() in death tests. "
     "Ignored and always uses fork() on POSIX systems where clone() is not "
     "implemented. Useful when running under valgrind or similar tools if "
     "those do not support clone(). Valgrind 3.3.1 will just fail if "
@@ -299,7 +301,7 @@ enum DeathTestOutcome { IN_PROGRESS, DIED, LIVED, RETURNED, THREW };
     fputc(kDeathTestInternalError, parent);
     fprintf(parent, "%s", message.c_str());
     fflush(parent);
-    _exit(1);
+    _Exit(1);
   } else {
     fprintf(stderr, "%s", message.c_str());
     fflush(stderr);
@@ -529,7 +531,7 @@ void DeathTestImpl::Abort(AbortReason reason) {
   
   
   
-  _exit(1);  
+  _Exit(1);  
 }
 
 
@@ -628,13 +630,13 @@ bool DeathTestImpl::Passed(bool status_ok) {
 #ifndef GTEST_OS_WINDOWS
 
 
-static std::unique_ptr<char*[]> CreateArgvFromArgs(
-    std::vector<std::string>& args) {
-  auto result = std::make_unique<char*[]>(args.size() + 1);
-  for (size_t i = 0; i < args.size(); ++i) {
-    result[i] = &args[i][0];
+static std::vector<char*> CreateArgvFromArgs(std::vector<std::string>& args) {
+  std::vector<char*> result;
+  result.reserve(args.size() + 1);
+  for (auto& arg : args) {
+    result.push_back(&arg[0]);
   }
-  result[args.size()] = nullptr;  
+  result.push_back(nullptr);  
   return result;
 }
 #endif
@@ -1034,8 +1036,8 @@ DeathTest::TestRole FuchsiaDeathTest::AssumeRole() {
   
   
   
-  std::unique_ptr<char*[]> argv = CreateArgvFromArgs(args);
-  status = fdio_spawn_etc(child_job, FDIO_SPAWN_CLONE_ALL, argv[0], argv.get(),
+  std::vector<char*> argv = CreateArgvFromArgs(args);
+  status = fdio_spawn_etc(child_job, FDIO_SPAWN_CLONE_ALL, argv[0], argv.data(),
                           nullptr, 2, spawn_actions,
                           child_process_.reset_and_get_address(), nullptr);
   GTEST_DEATH_TEST_CHECK_(status == ZX_OK);
@@ -1333,7 +1335,7 @@ static pid_t ExecDeathTestSpawnChild(char* const* argv, int close_fd) {
 #endif  
 
   if (use_fork && (child_pid = fork()) == 0) {
-    _exit(ExecDeathTestChildMain(&args));
+    _Exit(ExecDeathTestChildMain(&args));
   }
 #endif  
 #ifdef GTEST_OS_LINUX
@@ -1386,8 +1388,8 @@ DeathTest::TestRole ExecDeathTest::AssumeRole() {
   
   FlushInfoLog();
 
-  std::unique_ptr<char*[]> argv = CreateArgvFromArgs(args);
-  const pid_t child_pid = ExecDeathTestSpawnChild(argv.get(), pipe_fd[0]);
+  std::vector<char*> argv = CreateArgvFromArgs(args);
+  const pid_t child_pid = ExecDeathTestSpawnChild(argv.data(), pipe_fd[0]);
   GTEST_DEATH_TEST_CHECK_SYSCALL_(close(pipe_fd[1]));
   set_child_pid(child_pid);
   set_read_fd(pipe_fd[0]);

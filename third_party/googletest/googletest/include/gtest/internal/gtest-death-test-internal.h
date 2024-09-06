@@ -46,6 +46,7 @@
 
 #include "gtest/gtest-matchers.h"
 #include "gtest/internal/gtest-internal.h"
+#include "gtest/internal/gtest-port.h"
 
 GTEST_DECLARE_string_(internal_run_death_test);
 
@@ -54,6 +55,28 @@ namespace internal {
 
 
 const char kInternalRunDeathTestFlag[] = "internal_run_death_test";
+
+
+
+
+inline Matcher<const ::std::string&> MakeDeathTestMatcher(
+    ::testing::internal::RE regex) {
+  return ContainsRegex(regex.pattern());
+}
+inline Matcher<const ::std::string&> MakeDeathTestMatcher(const char* regex) {
+  return ContainsRegex(regex);
+}
+inline Matcher<const ::std::string&> MakeDeathTestMatcher(
+    const ::std::string& regex) {
+  return ContainsRegex(regex);
+}
+
+
+
+inline Matcher<const ::std::string&> MakeDeathTestMatcher(
+    Matcher<const ::std::string&> matcher) {
+  return matcher;
+}
 
 #ifdef GTEST_HAS_DEATH_TEST
 
@@ -167,28 +190,6 @@ class DefaultDeathTestFactory : public DeathTestFactory {
 
 
 GTEST_API_ bool ExitedUnsuccessfully(int exit_status);
-
-
-
-
-inline Matcher<const ::std::string&> MakeDeathTestMatcher(
-    ::testing::internal::RE regex) {
-  return ContainsRegex(regex.pattern());
-}
-inline Matcher<const ::std::string&> MakeDeathTestMatcher(const char* regex) {
-  return ContainsRegex(regex);
-}
-inline Matcher<const ::std::string&> MakeDeathTestMatcher(
-    const ::std::string& regex) {
-  return ContainsRegex(regex);
-}
-
-
-
-inline Matcher<const ::std::string&> MakeDeathTestMatcher(
-    Matcher<const ::std::string&> matcher) {
-  return matcher;
-}
 
 
 

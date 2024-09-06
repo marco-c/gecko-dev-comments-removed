@@ -268,8 +268,6 @@
 
 
 
-
-
 #if defined(_MSVC_LANG)
 #define GTEST_INTERNAL_CPLUSPLUS_LANG _MSVC_LANG
 #elif defined(__cplusplus)
@@ -338,7 +336,8 @@
 #define GTEST_HAS_NOTIFICATION_ 0
 #endif
 
-#ifdef GTEST_HAS_ABSL
+#if defined(GTEST_HAS_ABSL) && !defined(GTEST_NO_ABSL_FLAGS)
+#define GTEST_INTERNAL_HAS_ABSL_FLAGS
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/reflection.h"
@@ -608,7 +607,8 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
      defined(GTEST_OS_NETBSD) || defined(GTEST_OS_FUCHSIA) ||         \
      defined(GTEST_OS_DRAGONFLY) || defined(GTEST_OS_GNU_KFREEBSD) || \
      defined(GTEST_OS_OPENBSD) || defined(GTEST_OS_HAIKU) ||          \
-     defined(GTEST_OS_GNU_HURD))
+     defined(GTEST_OS_GNU_HURD) || defined(GTEST_OS_SOLARIS) ||       \
+     defined(GTEST_OS_AIX) || defined(GTEST_OS_ZOS))
 #define GTEST_HAS_PTHREAD 1
 #else
 #define GTEST_HAS_PTHREAD 0
@@ -658,9 +658,9 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 #if defined(GTEST_OS_WINDOWS_MOBILE) || defined(GTEST_OS_WINDOWS_PHONE) || \
-    defined(GTEST_OS_WINDOWS_RT) || defined(GTEST_OS_ESP8266) ||           \
-    defined(GTEST_OS_XTENSA) || defined(GTEST_OS_QURT) ||                  \
-    !GTEST_HAS_FILE_SYSTEM
+    defined(GTEST_OS_WINDOWS_RT) || defined(GTEST_OS_WINDOWS_GAMES) ||     \
+    defined(GTEST_OS_ESP8266) || defined(GTEST_OS_XTENSA) ||               \
+    defined(GTEST_OS_QURT) || !GTEST_HAS_FILE_SYSTEM
 #define GTEST_HAS_STREAM_REDIRECTION 0
 #else
 #define GTEST_HAS_STREAM_REDIRECTION 1
@@ -670,7 +670,7 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 #if (defined(GTEST_OS_LINUX) || defined(GTEST_OS_CYGWIN) ||           \
-     defined(GTEST_OS_SOLARIS) ||                                     \
+     defined(GTEST_OS_SOLARIS) || defined(GTEST_OS_ZOS) ||            \
      (defined(GTEST_OS_MAC) && !defined(GTEST_OS_IOS)) ||             \
      (defined(GTEST_OS_WINDOWS_DESKTOP) && _MSC_VER) ||               \
      defined(GTEST_OS_WINDOWS_MINGW) || defined(GTEST_OS_AIX) ||      \
@@ -752,6 +752,20 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
+
+
+#if defined(__has_cpp_attribute)
+
+
+#define GTEST_INTERNAL_HAVE_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+#define GTEST_INTERNAL_HAVE_CPP_ATTRIBUTE(x) 0
+#endif
+
+
+
+
+
 #ifdef __has_feature
 #define GTEST_HAVE_FEATURE_(x) __has_feature(x)
 #else
@@ -763,10 +777,18 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
-#if GTEST_HAVE_ATTRIBUTE_(unused)
-#define GTEST_ATTRIBUTE_UNUSED_ __attribute__((unused))
+
+
+
+#if GTEST_INTERNAL_HAVE_CPP_ATTRIBUTE(maybe_unused)
+#define GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED [[maybe_unused]]
+#elif GTEST_HAVE_ATTRIBUTE_(unused)
+
+
+
+#define GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED __attribute__((__unused__))
 #else
-#define GTEST_ATTRIBUTE_UNUSED_
+#define GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED
 #endif
 
 
@@ -2005,7 +2027,9 @@ inline std::string StripTrailingSpaces(std::string str) {
 namespace posix {
 
 
-#if GTEST_HAS_FILE_SYSTEM
+
+
+
 #ifdef GTEST_OS_WINDOWS
 
 typedef struct _stat StatStruct;
@@ -2016,27 +2040,32 @@ inline int FileNo(FILE* file) { return reinterpret_cast<int>(_fileno(file)); }
 
 #else
 inline int FileNo(FILE* file) { return _fileno(file); }
+#if GTEST_HAS_FILE_SYSTEM
 inline int Stat(const char* path, StatStruct* buf) { return _stat(path, buf); }
 inline int RmDir(const char* dir) { return _rmdir(dir); }
 inline bool IsDir(const StatStruct& st) { return (_S_IFDIR & st.st_mode) != 0; }
+#endif
 #endif  
 
 #elif defined(GTEST_OS_ESP8266)
 typedef struct stat StatStruct;
 
 inline int FileNo(FILE* file) { return fileno(file); }
+#if GTEST_HAS_FILE_SYSTEM
 inline int Stat(const char* path, StatStruct* buf) {
   
   return 0;
 }
 inline int RmDir(const char* dir) { return rmdir(dir); }
 inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
+#endif
 
 #else
 
 typedef struct stat StatStruct;
 
 inline int FileNo(FILE* file) { return fileno(file); }
+#if GTEST_HAS_FILE_SYSTEM
 inline int Stat(const char* path, StatStruct* buf) { return stat(path, buf); }
 #ifdef GTEST_OS_QURT
 
@@ -2045,8 +2074,8 @@ inline int RmDir(const char*) { return 0; }
 inline int RmDir(const char* dir) { return rmdir(dir); }
 #endif
 inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
+#endif
 
-#endif  
 #endif  
 
 
@@ -2100,8 +2129,9 @@ GTEST_DISABLE_MSC_DEPRECATED_PUSH_()
 
 #if GTEST_HAS_FILE_SYSTEM
 #if !defined(GTEST_OS_WINDOWS_MOBILE) && !defined(GTEST_OS_WINDOWS_PHONE) && \
-    !defined(GTEST_OS_WINDOWS_RT) && !defined(GTEST_OS_ESP8266) &&           \
-    !defined(GTEST_OS_XTENSA) && !defined(GTEST_OS_QURT)
+    !defined(GTEST_OS_WINDOWS_RT) && !defined(GTEST_OS_WINDOWS_GAMES) &&     \
+    !defined(GTEST_OS_ESP8266) && !defined(GTEST_OS_XTENSA) &&               \
+    !defined(GTEST_OS_QURT)
 inline int ChDir(const char* dir) { return chdir(dir); }
 #endif
 inline FILE* FOpen(const char* path, const char* mode) {
@@ -2245,7 +2275,7 @@ using TimeInMillis = int64_t;
 #endif  
 
 
-#ifdef GTEST_HAS_ABSL
+#ifdef GTEST_INTERNAL_HAS_ABSL_FLAGS
 
 
 #define GTEST_DEFINE_bool_(name, default_val, doc) \
@@ -2270,6 +2300,7 @@ using TimeInMillis = int64_t;
   (void)(::absl::SetFlag(&GTEST_FLAG(name), value))
 #define GTEST_USE_OWN_FLAGFILE_FLAG_ 0
 
+#undef GTEST_INTERNAL_HAS_ABSL_FLAGS
 #else  
 
 

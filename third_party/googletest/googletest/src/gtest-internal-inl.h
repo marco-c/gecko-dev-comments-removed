@@ -46,6 +46,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "gtest/internal/gtest-port.h"
@@ -649,13 +650,15 @@ class GTEST_API_ UnitTestImpl {
   
   
   
-  TestSuite* GetTestSuite(const char* test_suite_name, const char* type_param,
+  TestSuite* GetTestSuite(const std::string& test_suite_name,
+                          const char* type_param,
                           internal::SetUpTestSuiteFunc set_up_tc,
                           internal::TearDownTestSuiteFunc tear_down_tc);
 
 
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
-  TestCase* GetTestCase(const char* test_case_name, const char* type_param,
+  TestCase* GetTestCase(const std::string& test_case_name,
+                        const char* type_param,
                         internal::SetUpTestSuiteFunc set_up_tc,
                         internal::TearDownTestSuiteFunc tear_down_tc) {
     return GetTestSuite(test_case_name, type_param, set_up_tc, tear_down_tc);
@@ -681,13 +684,13 @@ class GTEST_API_ UnitTestImpl {
     
     
     if (original_working_dir_.IsEmpty()) {
-      original_working_dir_.Set(FilePath::GetCurrentDir());
+      original_working_dir_ = FilePath::GetCurrentDir();
       GTEST_CHECK_(!original_working_dir_.IsEmpty())
           << "Failed to get the current working directory.";
     }
 #endif  
 
-    GetTestSuite(test_info->test_suite_name(), test_info->type_param(),
+    GetTestSuite(test_info->test_suite_name_, test_info->type_param(),
                  set_up_tc, tear_down_tc)
         ->AddTestInfo(test_info);
   }
@@ -707,18 +710,6 @@ class GTEST_API_ UnitTestImpl {
   internal::TypeParameterizedTestSuiteRegistry&
   type_parameterized_test_registry() {
     return type_parameterized_test_registry_;
-  }
-
-  
-  void set_current_test_suite(TestSuite* a_current_test_suite) {
-    current_test_suite_ = a_current_test_suite;
-  }
-
-  
-  
-  
-  void set_current_test_info(TestInfo* a_current_test_info) {
-    current_test_info_ = a_current_test_info;
   }
 
   
@@ -835,11 +826,29 @@ class GTEST_API_ UnitTestImpl {
   bool catch_exceptions() const { return catch_exceptions_; }
 
  private:
+  struct CompareTestSuitesByPointer {
+    bool operator()(const TestSuite* lhs, const TestSuite* rhs) const {
+      return lhs->name_ < rhs->name_;
+    }
+  };
+
   friend class ::testing::UnitTest;
 
   
   
   void set_catch_exceptions(bool value) { catch_exceptions_ = value; }
+
+  
+  void set_current_test_suite(TestSuite* a_current_test_suite) {
+    current_test_suite_ = a_current_test_suite;
+  }
+
+  
+  
+  
+  void set_current_test_info(TestInfo* a_current_test_info) {
+    current_test_info_ = a_current_test_info;
+  }
 
   
   UnitTest* const parent_;
@@ -872,6 +881,9 @@ class GTEST_API_ UnitTestImpl {
   
   
   std::vector<TestSuite*> test_suites_;
+
+  
+  std::unordered_map<std::string, TestSuite*> test_suites_by_name_;
 
   
   

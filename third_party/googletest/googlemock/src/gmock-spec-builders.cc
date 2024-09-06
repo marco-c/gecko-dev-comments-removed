@@ -531,7 +531,7 @@ class MockObjectRegistry {
 #ifdef GTEST_OS_QURT
       qurt_exception_raise_fatal();
 #else
-      _exit(1);  
+      _Exit(1);  
                  
 #endif
     }
