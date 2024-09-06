@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 
 #include "Common.h"
+#include "mozilla/Monitor.h"
 #include "AnimationSurfaceProvider.h"
 #include "DecodePool.h"
 #include "Decoder.h"
@@ -122,6 +123,67 @@ static void CheckDecoderBadBuffer(const ImageTestCase& aTestCase) {
   });
 }
 
+
+
+
+
+class MonitorAnonymousDecodingTask final : public AnonymousDecodingTask {
+ public:
+  explicit MonitorAnonymousDecodingTask(NotNull<Decoder*> aDecoder,
+                                        bool aResumable);
+
+  void Run() override;
+
+  void WaitUntilFinished();
+
+ private:
+  virtual ~MonitorAnonymousDecodingTask() = default;
+
+  Monitor mMonitor MOZ_UNANNOTATED;
+};
+
+MonitorAnonymousDecodingTask::MonitorAnonymousDecodingTask(
+    NotNull<Decoder*> aDecoder, bool aResumable)
+    : AnonymousDecodingTask(aDecoder, aResumable),
+      mMonitor("MonitorAnonymousDecodingTask") {}
+
+void MonitorAnonymousDecodingTask::Run() {
+  MonitorAutoLock lock(mMonitor);
+
+  while (true) {
+    LexerResult result = mDecoder->Decode(WrapNotNull(this));
+
+    if (result.is<TerminalState>()) {
+      mMonitor.NotifyAll();
+      return;  
+    }
+
+    if (result == LexerResult(Yield::NEED_MORE_DATA)) {
+      
+      
+      mMonitor.NotifyAll();
+      return;
+    }
+
+    
+    
+    MOZ_ASSERT(result.is<Yield>());
+  }
+}
+
+void MonitorAnonymousDecodingTask::WaitUntilFinished() {
+  MonitorAutoLock lock(mMonitor);
+
+  while (true) {
+    if (mDecoder->GetDecodeDone()) {
+      return;
+    }
+
+    
+    mMonitor.Wait();
+  }
+}
+
 template <typename Func>
 void WithSingleChunkDecode(const ImageTestCase& aTestCase,
                            const Maybe<IntSize>& aOutputSize,
@@ -150,15 +212,13 @@ void WithSingleChunkDecode(const ImageTestCase& aTestCase,
       decoderType, sourceBuffer, aOutputSize, decoderFlags,
       aTestCase.mSurfaceFlags);
   ASSERT_TRUE(decoder != nullptr);
-  RefPtr<IDecodingTask> task =
-      new AnonymousDecodingTask(WrapNotNull(decoder),  false);
+  RefPtr<MonitorAnonymousDecodingTask> task = new MonitorAnonymousDecodingTask(
+      WrapNotNull(decoder),  false);
 
   if (aUseDecodePool) {
     DecodePool::Singleton()->AsyncRun(task.get());
 
-    while (!decoder->GetDecodeDone()) {
-      task->Resume();
-    }
+    task->WaitUntilFinished();
   } else {  
     task->Run();
   }
