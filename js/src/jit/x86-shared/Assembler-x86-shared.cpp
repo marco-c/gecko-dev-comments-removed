@@ -214,6 +214,7 @@ bool CPUInfo::bmi2Present = false;
 bool CPUInfo::lzcntPresent = false;
 bool CPUInfo::avx2Present = false;
 bool CPUInfo::fmaPresent = false;
+bool CPUInfo::f16cPresent = false;
 
 namespace js {
 namespace jit {
@@ -334,6 +335,10 @@ void CPUInfo::ComputeFlags() {
   
   static constexpr int FMABit = 1 << 12;
   fmaPresent = (flagsEcx & FMABit) && avxEnabled;
+
+  
+  static constexpr int F16CBit = 1 << 29;
+  f16cPresent = avxPresent && (flagsEcx & F16CBit);
 
   flagsEax = 0x80000001;
   ReadCPUInfo(&flagsEax, &flagsEbx, &flagsEcx, &flagsEdx);
