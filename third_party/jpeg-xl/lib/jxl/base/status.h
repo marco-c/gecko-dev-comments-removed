@@ -8,11 +8,10 @@
 
 
 
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cstdarg>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <type_traits>
 #include <utility>
 
@@ -135,20 +134,8 @@ inline JXL_NOINLINE bool Debug(const char* format, ...) {
 #define JXL_DEBUG_V(level, format, ...)
 #endif
 
-
-
-#ifdef JXL_DEBUG_WARNING
-#undef JXL_DEBUG_WARNING
-#define JXL_DEBUG_WARNING 1
-#else  
-#ifdef NDEBUG
-#define JXL_DEBUG_WARNING 0
-#else  
-#define JXL_DEBUG_WARNING 1
-#endif  
-#endif  
 #define JXL_WARNING(format, ...) \
-  JXL_DEBUG(JXL_DEBUG_WARNING, format, ##__VA_ARGS__)
+  JXL_DEBUG(JXL_DEBUG_BUILD, format, ##__VA_ARGS__)
 
 
 JXL_NORETURN inline JXL_NOINLINE bool Abort() {
@@ -173,20 +160,25 @@ JXL_NORETURN inline JXL_NOINLINE bool Abort() {
                                         __FILE__, __LINE__, ##__VA_ARGS__), \
    ::jxl::Abort())
 
+#if JXL_DEBUG_BUILD
+#define JXL_DEBUG_ABORT(format, ...) JXL_ABORT(format, ##__VA_ARGS__)
+#else
+#define JXL_DEBUG_ABORT(format, ...)
+#endif
 
 
 
 
-#define JXL_UNREACHABLE(format, ...)                                   \
-  do {                                                                 \
-    if (JXL_DEBUG_WARNING) {                                           \
-      ::jxl::Debug(("%s:%d: JXL_UNREACHABLE: " format "\n"), __FILE__, \
-                   __LINE__, ##__VA_ARGS__);                           \
-      ::jxl::Abort();                                                  \
-    } else {                                                           \
-      JXL_UNREACHABLE_BUILTIN;                                         \
-    }                                                                  \
-  } while (0)
+
+#if JXL_DEBUG_BUILD
+#define JXL_UNREACHABLE(format, ...)                                          \
+  (::jxl::Debug(("%s:%d: JXL_UNREACHABLE: " format "\n"), __FILE__, __LINE__, \
+                ##__VA_ARGS__),                                               \
+   ::jxl::Abort(), JXL_FAILURE(format, ##__VA_ARGS__))
+#else  
+#define JXL_UNREACHABLE(format, ...) \
+  JXL_FAILURE("internal: " format, ##__VA_ARGS__)
+#endif
 
 
 #if JXL_ENABLE_ASSERT

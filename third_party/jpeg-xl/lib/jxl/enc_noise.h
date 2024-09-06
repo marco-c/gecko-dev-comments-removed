@@ -8,7 +8,7 @@
 
 
 
-#include <stddef.h>
+#include <cstdint>
 
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/enc_bit_writer.h"
@@ -18,6 +18,7 @@
 namespace jxl {
 
 struct AuxOut;
+enum class LayerType : uint8_t;
 
 
 
@@ -27,7 +28,7 @@ Status GetNoiseParameter(const Image3F& opsin, NoiseParams* noise_params,
 
 
 void EncodeNoise(const NoiseParams& noise_params, BitWriter* writer,
-                 size_t layer, AuxOut* aux_out);
+                 LayerType layer, AuxOut* aux_out);
 
 }  
 
