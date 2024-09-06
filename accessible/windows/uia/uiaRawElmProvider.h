@@ -23,7 +23,8 @@ class uiaRawElmProvider : public IAccessibleEx,
                           public IRawElementProviderSimple,
                           public IRawElementProviderFragment,
                           public IInvokeProvider,
-                          public IToggleProvider {
+                          public IToggleProvider,
+                          public IExpandCollapseProvider {
  public:
   static void RaiseUiaEventForGeckoEvent(Accessible* aAcc,
                                          uint32_t aGeckoEvent);
@@ -94,12 +95,20 @@ class uiaRawElmProvider : public IAccessibleEx,
   virtual  HRESULT STDMETHODCALLTYPE get_ToggleState(
        __RPC__out enum ToggleState* aRetVal);
 
+  
+  virtual HRESULT STDMETHODCALLTYPE Expand(void);
+
+  virtual HRESULT STDMETHODCALLTYPE Collapse(void);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_ExpandCollapseState(
+       __RPC__out enum ExpandCollapseState* aRetVal);
+
  private:
   Accessible* Acc() const;
   bool IsControl();
   long GetControlType() const;
   bool HasTogglePattern();
-  static ToggleState ToToggleState(uint64_t aState);
+  bool HasExpandCollapsePattern();
 };
 
 }  
