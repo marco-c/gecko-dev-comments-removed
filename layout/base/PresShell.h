@@ -426,11 +426,6 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  bool IsLayoutFlushObserver();
-
-  
-
-
   void LoadComplete();
   
 
@@ -564,13 +559,10 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
-  
   void StopObservingRefreshDriver();
   void StartObservingRefreshDriver();
 
   bool ObservingStyleFlushes() const { return mObservingStyleFlushes; }
-  bool ObservingLayoutFlushes() const { return mObservingLayoutFlushes; }
-
   void ObserveStyleFlushes() {
     if (!ObservingStyleFlushes()) {
       DoObserveStyleFlushes();
@@ -1243,12 +1235,8 @@ class PresShell final : public nsStubDocumentObserver,
     mIsNeverPainting = aNeverPainting;
   }
 
-  
-
-
-
-  bool HasPendingReflow() const {
-    return mObservingLayoutFlushes || mReflowContinueTimer;
+  bool MightHavePendingFontLoads() const {
+    return ObservingStyleFlushes() || mReflowContinueTimer;
   }
 
   void SyncWindowProperties(bool aSync);
@@ -1288,6 +1276,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
+  bool NeedsFocusFixUp() const;
   MOZ_CAN_RUN_SCRIPT bool FixUpFocus();
 
   
@@ -1413,6 +1402,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   inline void EnsureStyleFlush();
+  inline void EnsureLayoutFlush();
   inline void SetNeedStyleFlush();
   inline void SetNeedLayoutFlush();
   inline void SetNeedThrottledAnimationFlush();
@@ -1427,15 +1417,10 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   bool NeedFlush(FlushType aType) const {
-    
-    
-    
-    
     MOZ_ASSERT(aType >= FlushType::Style);
     return mNeedStyleFlush ||
            (mNeedLayoutFlush && aType >= FlushType::InterruptibleLayout) ||
-           aType >= FlushType::Display || mNeedThrottledAnimationFlush ||
-           mInFlush;
+           aType >= FlushType::Display || mNeedThrottledAnimationFlush;
   }
 
   
@@ -1801,7 +1786,6 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   void DoObserveStyleFlushes();
-  void DoObserveLayoutFlushes();
 
   
 
@@ -1870,17 +1854,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   DOMHighResTimeStamp GetPerformanceNowUnclamped();
 
-  
-  static void sReflowContinueCallback(nsITimer* aTimer, void* aPresShell);
   bool ScheduleReflowOffTimer();
-  
-  
-  
-  void MaybeScheduleReflow();
-  
-  
-  
-  void ScheduleReflow();
 
   friend class ::AutoPointerEventTargetUpdater;
 
@@ -3159,12 +3133,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   RenderingStateFlags mRenderingStateFlags;
 
-  
-  
-  
-  
-  bool mInFlush;
-
   bool mCaretEnabled : 1;
 
   
@@ -3216,12 +3184,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   bool mObservingStyleFlushes : 1;
-
-  
-  
-  
-  
-  bool mObservingLayoutFlushes : 1;
 
   bool mResizeEventPending : 1;
 

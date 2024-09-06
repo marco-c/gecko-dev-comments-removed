@@ -179,33 +179,18 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     mDelayedResizeEventFlushObservers.RemoveElement(aPresShell);
   }
 
-  
-
-
   void AddStyleFlushObserver(mozilla::PresShell* aPresShell) {
-    MOZ_DIAGNOSTIC_ASSERT(!mStyleFlushObservers.Contains(aPresShell),
+    MOZ_DIAGNOSTIC_ASSERT(!IsStyleFlushObserver(aPresShell),
                           "Double-adding style flush observer");
     LogPresShellObserver::LogDispatch(aPresShell, this);
     mStyleFlushObservers.AppendElement(aPresShell);
     EnsureTimerStarted();
   }
-
   void RemoveStyleFlushObserver(mozilla::PresShell* aPresShell) {
     mStyleFlushObservers.RemoveElement(aPresShell);
   }
-  void AddLayoutFlushObserver(mozilla::PresShell* aPresShell) {
-    MOZ_DIAGNOSTIC_ASSERT(!IsLayoutFlushObserver(aPresShell),
-                          "Double-adding layout flush observer");
-    LogPresShellObserver::LogDispatch(aPresShell, this);
-    mLayoutFlushObservers.AppendElement(aPresShell);
-    EnsureTimerStarted();
-  }
-  void RemoveLayoutFlushObserver(mozilla::PresShell* aPresShell) {
-    mLayoutFlushObservers.RemoveElement(aPresShell);
-  }
-
-  bool IsLayoutFlushObserver(mozilla::PresShell* aPresShell) {
-    return mLayoutFlushObservers.Contains(aPresShell);
+  bool IsStyleFlushObserver(mozilla::PresShell* aPresShell) {
+    return mStyleFlushObservers.Contains(aPresShell);
   }
 
   
@@ -684,7 +669,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   mozilla::TimeStamp mBeforeFirstContentfulPaintTimerRunningLimit;
 
   
-  ObserverArray mObservers[4];
+  ObserverArray mObservers[3];
   
   
   
@@ -707,7 +692,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   AutoTArray<mozilla::PresShell*, 16> mResizeEventFlushObservers;
   AutoTArray<mozilla::PresShell*, 16> mDelayedResizeEventFlushObservers;
   AutoTArray<mozilla::PresShell*, 16> mStyleFlushObservers;
-  AutoTArray<mozilla::PresShell*, 16> mLayoutFlushObservers;
   
   nsTArray<Document*> mFrameRequestCallbackDocs;
   nsTArray<Document*> mThrottledFrameRequestCallbackDocs;

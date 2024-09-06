@@ -944,11 +944,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
 
 
-  bool HasPendingRestyleOrReflow();
-
-  
-
-
 
 
 

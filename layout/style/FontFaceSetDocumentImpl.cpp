@@ -692,24 +692,26 @@ bool FontFaceSetDocumentImpl::MightHavePendingFontLoads() {
     return true;
   }
 
+  if (!mDocument) {
+    return false;
+  }
+
   
   
-  nsPresContext* presContext = GetPresContext();
-  if (presContext && presContext->HasPendingRestyleOrReflow()) {
+  PresShell* ps = mDocument->GetPresShell();
+  if (ps && ps->MightHavePendingFontLoads()) {
     return true;
   }
 
-  if (mDocument) {
-    
-    if (!mDocument->DidFireDOMContentLoaded()) {
-      return true;
-    }
+  
+  if (!mDocument->DidFireDOMContentLoaded()) {
+    return true;
+  }
 
-    
-    
-    if (mDocument->CSSLoader()->HasPendingLoads()) {
-      return true;
-    }
+  
+  
+  if (mDocument->CSSLoader()->HasPendingLoads()) {
+    return true;
   }
 
   return false;

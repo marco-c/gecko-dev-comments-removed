@@ -1914,7 +1914,6 @@ uint32_t nsRefreshDriver::ObserverCount() const {
   sum += mAnimationEventFlushObservers.Length();
   sum += mResizeEventFlushObservers.Length();
   sum += mStyleFlushObservers.Length();
-  sum += mLayoutFlushObservers.Length();
   sum += mPendingFullscreenEvents.Length();
   sum += mFrameRequestCallbackDocs.Length();
   sum += mThrottledFrameRequestCallbackDocs.Length();
@@ -1936,7 +1935,7 @@ bool nsRefreshDriver::HasObservers() const {
   
   
   return (mViewManagerFlushIsPending && !mThrottled) ||
-         !mStyleFlushObservers.IsEmpty() || !mLayoutFlushObservers.IsEmpty() ||
+         !mStyleFlushObservers.IsEmpty() ||
          !mAnimationEventFlushObservers.IsEmpty() ||
          !mResizeEventFlushObservers.IsEmpty() ||
          !mPendingFullscreenEvents.IsEmpty() ||
@@ -1967,10 +1966,6 @@ void nsRefreshDriver::AppendObserverDescriptionsToString(
   if (!mStyleFlushObservers.IsEmpty()) {
     aStr.AppendPrintf("%zux Style flush observer, ",
                       mStyleFlushObservers.Length());
-  }
-  if (!mLayoutFlushObservers.IsEmpty()) {
-    aStr.AppendPrintf("%zux Layout flush observer, ",
-                      mLayoutFlushObservers.Length());
   }
   if (!mPendingFullscreenEvents.IsEmpty()) {
     aStr.AppendPrintf("%zux Pending fullscreen event, ",
@@ -2151,12 +2146,9 @@ nsRefreshDriver::ObserverArray& nsRefreshDriver::ArrayFor(
     case FlushType::Event:
       return mObservers[0];
     case FlushType::Style:
-    case FlushType::Frames:
       return mObservers[1];
-    case FlushType::Layout:
-      return mObservers[2];
     case FlushType::Display:
-      return mObservers[3];
+      return mObservers[2];
     default:
       MOZ_CRASH("We don't track refresh observers for this flush type");
   }
@@ -2487,56 +2479,44 @@ bool nsRefreshDriver::TickObserverArray(uint32_t aIdx, TimeStamp aNowTime) {
     RunFrameRequestCallbacks(aNowTime);
     MaybeIncreaseMeasuredTicksSinceLoading();
 
-    if (mPresContext && mPresContext->GetPresShell()) {
-      AutoTArray<PresShell*, 16> observers;
-      observers.AppendElements(mStyleFlushObservers);
-      for (uint32_t j = observers.Length();
-           j && mPresContext && mPresContext->GetPresShell(); --j) {
-        
-        
-        PresShell* rawPresShell = observers[j - 1];
-        if (!mStyleFlushObservers.RemoveElement(rawPresShell)) {
-          continue;
-        }
-
-        LogPresShellObserver::Run run(rawPresShell, this);
-
-        RefPtr<PresShell> presShell = rawPresShell;
-        presShell->mObservingStyleFlushes = false;
-        presShell->FlushPendingNotifications(
-            ChangesToFlush(FlushType::Style, false));
-        
-        
-        
-        presShell->NotifyFontFaceSetOnRefresh();
-        mNeedToRecomputeVisibility = true;
-
-        
-        presShell->PingPerTickTelemetry(FlushType::Style);
-      }
+    if (!mPresContext || !mPresContext->GetPresShell()) {
+      return false;
     }
-  } else if (aIdx == 2) {
-    
+
     AutoTArray<PresShell*, 16> observers;
-    observers.AppendElements(mLayoutFlushObservers);
+    observers.AppendElements(mStyleFlushObservers);
     for (uint32_t j = observers.Length();
          j && mPresContext && mPresContext->GetPresShell(); --j) {
       
       
       PresShell* rawPresShell = observers[j - 1];
-      if (!mLayoutFlushObservers.RemoveElement(rawPresShell)) {
+      if (!mStyleFlushObservers.RemoveElement(rawPresShell)) {
         continue;
       }
 
       LogPresShellObserver::Run run(rawPresShell, this);
 
       RefPtr<PresShell> presShell = rawPresShell;
-      presShell->mObservingLayoutFlushes = false;
       presShell->mWasLastReflowInterrupted = false;
       const ChangesToFlush ctf(FlushType::InterruptibleLayout, false);
       presShell->FlushPendingNotifications(ctf);
-      if (presShell->FixUpFocus()) {
+      const bool fixedUpFocus = presShell->FixUpFocus();
+      if (fixedUpFocus) {
         presShell->FlushPendingNotifications(ctf);
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+      presShell->mObservingStyleFlushes = false;
+      if (NS_WARN_IF(presShell->NeedStyleFlush()) ||
+          NS_WARN_IF(presShell->NeedLayoutFlush()) ||
+          NS_WARN_IF(fixedUpFocus && presShell->NeedsFocusFixUp())) {
+        presShell->ObserveStyleFlushes();
       }
 
       
@@ -2733,13 +2713,12 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   
   
   bool keepGoing = true;
-  MOZ_ASSERT(ArrayLength(mObservers) == 4,
+  MOZ_ASSERT(ArrayLength(mObservers) == 3,
              "if this changes, then we need to add or remove calls to "
              "TickObserverArray below");
   keepGoing = keepGoing && TickObserverArray(0, aNowTime);
   keepGoing = keepGoing && TickObserverArray(1, aNowTime);
   keepGoing = keepGoing && TickObserverArray(2, aNowTime);
-  keepGoing = keepGoing && TickObserverArray(3, aNowTime);
   if (!keepGoing) {
     StopTimer();
     return;
