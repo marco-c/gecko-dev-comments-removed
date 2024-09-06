@@ -48,11 +48,11 @@ class nsSplittableFrame : public nsIFrame {
   nsIFrame* GetNextContinuation() const final;
 
   
+  
+  
+  
   void SetPrevContinuation(nsIFrame*) final;
 
-  
-  
-  
   
   void SetNextContinuation(nsIFrame*) final;
 
@@ -71,11 +71,11 @@ class nsSplittableFrame : public nsIFrame {
   nsIFrame* GetNextInFlow() const final;
 
   
+  
+  
+  
   void SetPrevInFlow(nsIFrame*) final;
 
-  
-  
-  
   
   void SetNextInFlow(nsIFrame*) final;
 

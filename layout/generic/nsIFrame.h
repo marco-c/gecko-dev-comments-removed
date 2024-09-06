@@ -2533,14 +2533,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  
-
-
-
-
   virtual void MarkIntrinsicISizesDirty();
 
- public:
   
 
 
