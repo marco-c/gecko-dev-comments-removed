@@ -1877,8 +1877,9 @@ def add_index_routes(config, tasks):
         if rank == "by-tier":
             
             
+            
             tier = task.get("treeherder", {}).get("tier", 3)
-            extra_index["rank"] = 0 if tier > 1 else int(config.params["build_date"])
+            extra_index["rank"] = 1 if tier > 1 else int(config.params["build_date"])
         elif rank == "build_date":
             extra_index["rank"] = int(config.params["build_date"])
         else:
