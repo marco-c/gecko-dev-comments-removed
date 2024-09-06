@@ -152,28 +152,14 @@ class InspectorCSSParserWrapper {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  performEOFFixup(inputString, preserveBackslash) {
+  performEOFFixup(inputString) {
     let result = inputString;
 
     let eofChars = this.#eofCharacters;
     if (
-      preserveBackslash &&
       (eofChars &
         (EEOFCHARACTERS_DROPBACKSLASH | EEOFCHARACTERS_REPLACEMENTCHAR)) !=
-        0
+      0
     ) {
       eofChars &= ~(
         EEOFCHARACTERS_DROPBACKSLASH | EEOFCHARACTERS_REPLACEMENTCHAR
