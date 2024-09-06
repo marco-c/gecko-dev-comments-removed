@@ -313,94 +313,94 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
+  
+  
+  int64_t current;
+  nsresult rv = Tell(&current);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  auto decryptedStreamSizeOrErr = [this]() -> Result<int64_t, nsresult> {
+    nsresult rv = (*mBaseSeekableStream)->Seek(NS_SEEK_SET, 0);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return Err(rv);
+    }
+
+    uint64_t baseStreamSize;
+    rv = (*mBaseStream)->Available(&baseStreamSize);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return Err(rv);
+    }
+
+    if (!baseStreamSize) {
+      return 0;
+    }
+
+    rv = (*mBaseSeekableStream)
+             ->Seek(NS_SEEK_END, -static_cast<int64_t>(*mBlockSize));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return Err(rv);
+    }
+
+    mNextByte = 0;
+    mPlainBytes = 0;
+
+    uint32_t bytesRead;
+    rv = ParseNextChunk(&bytesRead);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return Err(rv);
+    }
+    MOZ_ASSERT(bytesRead);
+
+    
+    mPlainBytes = bytesRead;
+
+    mNextByte = bytesRead;
+
+    int64_t current;
+    rv = Tell(&current);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return Err(rv);
+    }
+
+    return current;
+  }();
+
+  if (decryptedStreamSizeOrErr.isErr()) {
+    return decryptedStreamSizeOrErr.unwrapErr();
+  }
+
   int64_t baseBlocksOffset;
   int64_t nextByteOffset;
   switch (aWhence) {
     case NS_SEEK_CUR:
       
-      {
-        int64_t current;
-        nsresult rv = Tell(&current);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-
-        aOffset += current;
-      }
+      aOffset += current;
       break;
+
     case NS_SEEK_SET:
       break;
 
     case NS_SEEK_END:
       
-      {
-        
-        
-        nsresult rv = (*mBaseSeekableStream)->Seek(NS_SEEK_SET, 0);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-
-        uint64_t baseStreamSize;
-        rv = (*mBaseStream)->Available(&baseStreamSize);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-
-        auto decryptedStreamSizeOrErr = [baseStreamSize,
-                                         this]() -> Result<int64_t, nsresult> {
-          if (!baseStreamSize) {
-            return 0;
-          }
-
-          nsresult rv =
-              (*mBaseSeekableStream)
-                  ->Seek(NS_SEEK_END, -static_cast<int64_t>(*mBlockSize));
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return Err(rv);
-          }
-
-          mNextByte = 0;
-          mPlainBytes = 0;
-
-          uint32_t bytesRead;
-          rv = ParseNextChunk(&bytesRead);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return Err(rv);
-          }
-          MOZ_ASSERT(bytesRead);
-
-          
-          mPlainBytes = bytesRead;
-
-          mNextByte = bytesRead;
-
-          int64_t current;
-          rv = Tell(&current);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return Err(rv);
-          }
-
-          return current;
-        }();
-
-        if (decryptedStreamSizeOrErr.isErr()) {
-          return decryptedStreamSizeOrErr.unwrapErr();
-        }
-
-        aOffset += decryptedStreamSizeOrErr.unwrap();
-      }
+      aOffset += decryptedStreamSizeOrErr.inspect();
       break;
 
     default:
       return NS_ERROR_ILLEGAL_VALUE;
   }
 
+  if (aOffset < 0 || aOffset > decryptedStreamSizeOrErr.inspect()) {
+    return NS_ERROR_ILLEGAL_VALUE;
+  }
+
   baseBlocksOffset = aOffset / mEncryptedBlock->MaxPayloadLength();
   nextByteOffset = aOffset % mEncryptedBlock->MaxPayloadLength();
 
   
-  nsresult rv =
+  rv =
       (*mBaseSeekableStream)->Seek(NS_SEEK_SET, baseBlocksOffset * *mBlockSize);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -421,14 +421,9 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
   if (!readBytes) {
     
     
-    
-    
-    
-    
-    
     if (baseBlocksOffset == 0) {
       
-      return aOffset == 0 ? NS_OK : NS_ERROR_ILLEGAL_VALUE;
+      return NS_OK;
     }
 
     nsresult rv = (*mBaseSeekableStream)->Seek(NS_SEEK_CUR, -*mBlockSize);

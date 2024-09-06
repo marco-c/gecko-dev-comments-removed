@@ -762,7 +762,7 @@ class ParametrizedSeekCryptTest
         MOZ_CRASH("Unknown SeekOffset");
       }();
       nsresult rv = inStream->Seek(std::get<0>(seekOp), offset);
-      
+      EXPECT_EQ(std::get<2>(seekOp), rv);
       
       if (std::get<0>(seekOp) == nsISeekableStream::NS_SEEK_END &&
           std::get<1>(seekOp) == SeekOffset::PlusOne &&
@@ -770,14 +770,11 @@ class ParametrizedSeekCryptTest
         
         
         
-        
-        EXPECT_EQ(NS_OK, rv);
-      } else {
-        EXPECT_EQ(std::get<2>(seekOp), rv);
+        return;
       }
       
-      if (std::get<0>(seekOp) == nsISeekableStream::NS_SEEK_END &&
-          std::get<1>(seekOp) == SeekOffset::PlusOne &&
+      if (std::get<0>(seekOp) == nsISeekableStream::NS_SEEK_CUR &&
+          std::get<1>(seekOp) == SeekOffset::MinusOne &&
           testParams.mDataSize != 0) {
         
         
