@@ -112,6 +112,11 @@ class TrackBuffersManager final
                             TrackType aType);
 
   
+  
+  
+  void EvictDataWithoutSize(TrackType aType, const media::TimeUnit& aTarget);
+
+  
   void ChangeType(const MediaContainerType& aType);
 
   
@@ -296,7 +301,8 @@ class TrackBuffersManager final
   void MaybeDispatchEncryptedEvent(
       const nsTArray<RefPtr<MediaRawData>>& aSamples);
 
-  void DoEvictData(const media::TimeUnit& aPlaybackTime, int64_t aSizeToEvict)
+  void DoEvictData(const media::TimeUnit& aPlaybackTime,
+                   Maybe<int64_t> aSizeToEvict)
       MOZ_REQUIRES(mTaskQueueCapability);
 
   void GetDebugInfo(dom::TrackBuffersManagerDebugInfo& aInfo) const
@@ -542,6 +548,8 @@ class TrackBuffersManager final
   Atomic<int64_t> mSizeSourceBuffer;
   const int64_t mVideoEvictionThreshold;
   const int64_t mAudioEvictionThreshold;
+  
+  const double mEvictionBufferWatermarkRatio;
   enum class EvictionState {
     NO_EVICTION_NEEDED,
     EVICTION_NEEDED,
