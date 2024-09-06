@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_riscv64_MacroAssembler_riscv64_inl_h
 #define jit_riscv64_MacroAssembler_riscv64_inl_h
@@ -61,7 +61,7 @@ inline void MacroAssembler::cmp32Set(Assembler::Condition cond, Address lhs,
   cmp32Set(cond, Register(scratch2), rhs, dest);
 }
 
-
+//{{{ check_macroassembler_style
 CodeOffset MacroAssembler::sub32FromStackPtrWithPatch(Register dest) {
   CodeOffset offset = CodeOffset(currentOffset());
   MacroAssemblerRiscv64::ma_liPatchable(dest, Imm32(0));
@@ -142,7 +142,7 @@ void MacroAssembler::branchRshift32(Condition cond, T src, Register dest,
   rshift32(src, dest);
   branch32(cond == Zero ? Equal : NotEqual, dest, Imm32(0), label);
 }
-
+// the type of 'T src' maybe a Register, maybe a Imm32,depends on who call it.
 template <typename T>
 void MacroAssembler::branchSub32(Condition cond, T src, Register dest,
                                  Label* label) {
@@ -240,7 +240,7 @@ void MacroAssembler::testSymbolSet(Condition cond, const T& src,
   ma_cmp_set(dest, tag, ImmTag(JSVAL_TAG_SYMBOL), cond);
 }
 
-
+// Also see below for specializations of cmpPtrSet.
 template <typename T1, typename T2>
 void MacroAssembler::cmp32Set(Condition cond, T1 lhs, T2 rhs, Register dest) {
   ma_cmp_set(dest, lhs, rhs, cond);
@@ -1229,13 +1229,13 @@ void MacroAssembler::byteSwap16SignExtend(Register src) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   Register scratch2 = temps.Acquire();
-  
-  andi(scratch, src, 0xFF);   
-  slli(scratch, scratch, 8);  
-  ma_li(scratch2, 0xFF00);    
-  and_(src, src, scratch2);   
-  srli(src, src, 8);          
-  or_(src, src, scratch);     
+  // src 0xFFFFFFFFFFFF8000
+  andi(scratch, src, 0xFF);   //
+  slli(scratch, scratch, 8);  // scratch 0x00
+  ma_li(scratch2, 0xFF00);    // scratch2 0xFF00
+  and_(src, src, scratch2);   // src 0x8000
+  srli(src, src, 8);          // src 0x0080
+  or_(src, src, scratch);     // src 0x0080
   slliw(src, src, 16);
   sraiw(src, src, 16);
   JitSpew(JitSpew_Codegen, "]");
@@ -1268,14 +1268,14 @@ void MacroAssembler::byteSwap64(Register64 src) {
   ByteSwap(src.reg, src.reg, 8, scratch);
 }
 void MacroAssembler::clampIntToUint8(Register reg) {
-  
+  // If reg is < 0, then we want to clamp to 0.
   Label skip, skip2;
   slti(ScratchRegister, reg, 0);
   ma_branch(&skip, NotEqual, ScratchRegister, Operand(1));
   ma_li(reg, Imm32(0));
   jump(&skip2);
   bind(&skip);
-  
+  // If reg is >= 255, then we want to clamp to 255.
   ma_branch(&skip2, LessThanOrEqual, reg, Operand(255));
   ma_li(reg, Imm32(255));
   bind(&skip2);
@@ -1454,11 +1454,11 @@ void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
                                       JSValueType type, Label* fail) {
   MOZ_ASSERT(type == JSVAL_TYPE_OBJECT || type == JSVAL_TYPE_STRING ||
              type == JSVAL_TYPE_SYMBOL || type == JSVAL_TYPE_BIGINT);
-  
-  
-  
-  
-  
+  // dest := src XOR mask
+  // scratch := dest >> JSVAL_TAG_SHIFT
+  // fail if scratch != 0
+  //
+  // Note: src and dest can be the same register
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   MOZ_ASSERT(src.valueReg() != scratch);
@@ -1605,6 +1605,9 @@ void MacroAssembler::moveFloat32ToGPR(FloatRegister src, Register dest) {
 }
 void MacroAssembler::moveGPRToFloat32(Register src, FloatRegister dest) {
   fmv_w_x(dest, src);
+}
+void MacroAssembler::moveGPRToFloat16(Register src, FloatRegister dest) {
+  MOZ_CRASH("Not supported for this target");
 }
 void MacroAssembler::mul32(Register rhs, Register srcDest) {
   mulw(srcDest, srcDest, rhs);
@@ -2061,19 +2064,19 @@ void MacroAssembler::xorPtr(Register src, Register dest) {
 void MacroAssembler::xorPtr(Imm32 imm, Register dest) {
   ma_xor(dest, dest, imm);
 }
-
+//}}} check_macroassembler_style
 
 void MacroAssemblerRiscv64Compat::incrementInt32Value(const Address& addr) {
   asMasm().add32(Imm32(1), addr);
 }
 
 void MacroAssemblerRiscv64Compat::retn(Imm32 n) {
-  
+  // pc <- [sp]; sp += n
   loadPtr(Address(StackPointer, 0), ra);
   asMasm().addPtr(n, StackPointer);
   jr(ra, 0);
 }
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_riscv64_MacroAssembler_riscv64_inl_h */

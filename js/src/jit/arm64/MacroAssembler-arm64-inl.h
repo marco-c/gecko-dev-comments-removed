@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_arm64_MacroAssembler_arm64_inl_h
 #define jit_arm64_MacroAssembler_arm64_inl_h
@@ -12,7 +12,7 @@
 namespace js {
 namespace jit {
 
-
+//{{{ check_macroassembler_style
 
 void MacroAssembler::move64(Register64 src, Register64 dest) {
   Mov(ARMRegister(dest.reg, 64), ARMRegister(src.reg, 64));
@@ -20,6 +20,15 @@ void MacroAssembler::move64(Register64 src, Register64 dest) {
 
 void MacroAssembler::move64(Imm64 imm, Register64 dest) {
   Mov(ARMRegister(dest.reg, 64), imm.value);
+}
+
+void MacroAssembler::moveGPRToFloat16(Register src, FloatRegister dest) {
+  // Ensure the hi-word is zeroed.
+  Uxth(ARMRegister(src, 32), ARMRegister(src, 32));
+
+  // Direct "32-bit to half-precision" move requires (FEAT_FP16), so we
+  // instead use a "32-bit to single-precision" move.
+  Fmov(ARMFPRegister(dest, 32), ARMRegister(src, 32));
 }
 
 void MacroAssembler::moveFloat32ToGPR(FloatRegister src, Register dest) {
@@ -78,8 +87,8 @@ void MacroAssembler::move32ZeroExtendToPtr(Register src, Register dest) {
   Uxtw(ARMRegister(dest, 64), ARMRegister(src, 64));
 }
 
-
-
+// ===============================================================
+// Load instructions
 
 void MacroAssembler::load32SignExtendToPtr(const Address& src, Register dest) {
   load32(src, dest);
@@ -88,8 +97,8 @@ void MacroAssembler::load32SignExtendToPtr(const Address& src, Register dest) {
 
 void MacroAssembler::loadAbiReturnAddress(Register dest) { movePtr(lr, dest); }
 
-
-
+// ===============================================================
+// Logical instructions
 
 void MacroAssembler::not32(Register reg) {
   Orn(ARMRegister(reg, 32), vixl::wzr, ARMRegister(reg, 32));
@@ -225,8 +234,8 @@ void MacroAssembler::xor64(Imm64 imm, Register64 dest) {
   Eor(ARMRegister(dest.reg, 64), ARMRegister(dest.reg, 64), Operand(imm.value));
 }
 
-
-
+// ===============================================================
+// Swap instructions
 
 void MacroAssembler::byteSwap16SignExtend(Register reg) {
   rev16(ARMRegister(reg, 32), ARMRegister(reg, 32));
@@ -246,8 +255,8 @@ void MacroAssembler::byteSwap64(Register64 reg) {
   rev(ARMRegister(reg.reg, 64), ARMRegister(reg.reg, 64));
 }
 
-
-
+// ===============================================================
+// Arithmetic functions
 
 void MacroAssembler::add32(Register src, Register dest) {
   Add(ARMRegister(dest, 32), ARMRegister(dest, 32),
@@ -328,7 +337,7 @@ CodeOffset MacroAssembler::sub32FromStackPtrWithPatch(Register dest) {
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch = temps.AcquireX();
   AutoForbidPoolsAndNops afp(this,
-                              3);
+                             /* max number of instructions in scope = */ 3);
   CodeOffset offs = CodeOffset(currentOffset());
   movz(scratch, 0, 0);
   movk(scratch, 0, 16);
@@ -441,7 +450,7 @@ void MacroAssembler::mul32(Register src1, Register src2, Register dest,
     Cmp(ARMRegister(dest, 64), Operand(ARMRegister(dest, 32), vixl::SXTW));
     B(onOver, NotEqual);
 
-    
+    // Clear upper 32 bits.
     Uxtw(ARMRegister(dest, 64), ARMRegister(dest, 64));
   } else {
     Mul(ARMRegister(dest, 32), ARMRegister(src1, 32), ARMRegister(src2, 32));
@@ -530,8 +539,8 @@ void MacroAssembler::quotient32(Register rhs, Register srcDest,
   }
 }
 
-
-
+// This does not deal with x % 0 or INT_MIN % -1, the caller needs to filter
+// those cases when they may occur.
 
 void MacroAssembler::remainder32(Register rhs, Register srcDest,
                                  bool isUnsigned) {
@@ -608,34 +617,34 @@ void MacroAssembler::sqrtDouble(FloatRegister src, FloatRegister dest) {
 
 void MacroAssembler::minFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
-  MOZ_ASSERT(handleNaN);  
+  MOZ_ASSERT(handleNaN);  // Always true for wasm
   fmin(ARMFPRegister(srcDest, 32), ARMFPRegister(srcDest, 32),
        ARMFPRegister(other, 32));
 }
 
 void MacroAssembler::minDouble(FloatRegister other, FloatRegister srcDest,
                                bool handleNaN) {
-  MOZ_ASSERT(handleNaN);  
+  MOZ_ASSERT(handleNaN);  // Always true for wasm
   fmin(ARMFPRegister(srcDest, 64), ARMFPRegister(srcDest, 64),
        ARMFPRegister(other, 64));
 }
 
 void MacroAssembler::maxFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
-  MOZ_ASSERT(handleNaN);  
+  MOZ_ASSERT(handleNaN);  // Always true for wasm
   fmax(ARMFPRegister(srcDest, 32), ARMFPRegister(srcDest, 32),
        ARMFPRegister(other, 32));
 }
 
 void MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest,
                                bool handleNaN) {
-  MOZ_ASSERT(handleNaN);  
+  MOZ_ASSERT(handleNaN);  // Always true for wasm
   fmax(ARMFPRegister(srcDest, 64), ARMFPRegister(srcDest, 64),
        ARMFPRegister(other, 64));
 }
 
-
-
+// ===============================================================
+// Shift functions
 
 void MacroAssembler::lshiftPtr(Imm32 imm, Register dest) {
   MOZ_ASSERT(0 <= imm.value && imm.value < 64);
@@ -733,8 +742,8 @@ void MacroAssembler::rshift64Arithmetic(Register shift, Register64 srcDest) {
       ARMRegister(shift, 64));
 }
 
-
-
+// ===============================================================
+// Condition functions
 
 void MacroAssembler::cmp8Set(Condition cond, Address lhs, Imm32 rhs,
                              Register dest) {
@@ -813,8 +822,8 @@ void MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest) {
   emitSet(cond, dest);
 }
 
-
-
+// ===============================================================
+// Rotation functions
 
 void MacroAssembler::rotateLeft(Imm32 count, Register input, Register dest) {
   Ror(ARMRegister(dest, 32), ARMRegister(input, 32), (32 - count.value) & 31);
@@ -823,7 +832,7 @@ void MacroAssembler::rotateLeft(Imm32 count, Register input, Register dest) {
 void MacroAssembler::rotateLeft(Register count, Register input, Register dest) {
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch = temps.AcquireW();
-  
+  // Really 32 - count, but the upper bits of the result are ignored.
   Neg(scratch, ARMRegister(count, 32));
   Ror(ARMRegister(dest, 32), ARMRegister(input, 32), scratch);
 }
@@ -843,7 +852,7 @@ void MacroAssembler::rotateLeft64(Register count, Register64 input,
 
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch = temps.AcquireX();
-  
+  // Really 64 - count, but the upper bits of the result are ignored.
   Neg(scratch, ARMRegister(count, 64));
   Ror(ARMRegister(dest.reg, 64), ARMRegister(input.reg, 64), scratch);
 }
@@ -871,8 +880,8 @@ void MacroAssembler::rotateRight64(Imm32 count, Register64 input,
   Ror(ARMRegister(dest.reg, 64), ARMRegister(input.reg, 64), count.value & 63);
 }
 
-
-
+// ===============================================================
+// Bit counting functions
 
 void MacroAssembler::clz32(Register src, Register dest, bool knownNotZero) {
   Clz(ARMRegister(dest, 32), ARMRegister(src, 32));
@@ -895,7 +904,7 @@ void MacroAssembler::ctz64(Register64 src, Register dest) {
 void MacroAssembler::popcnt32(Register src_, Register dest_, Register tmp_) {
   MOZ_ASSERT(tmp_ != Register::Invalid());
 
-  
+  // Equivalent to mozilla::CountPopulation32().
 
   ARMRegister src(src_, 32);
   ARMRegister dest(dest_, 32);
@@ -923,7 +932,7 @@ void MacroAssembler::popcnt64(Register64 src_, Register64 dest_,
                               Register tmp_) {
   MOZ_ASSERT(tmp_ != Register::Invalid());
 
-  
+  // Equivalent to mozilla::CountPopulation64(), though likely more efficient.
 
   ARMRegister src(src_.reg, 64);
   ARMRegister dest(dest_.reg, 64);
@@ -948,8 +957,8 @@ void MacroAssembler::popcnt64(Register64 src_, Register64 dest_,
   Lsr(dest, dest, 56);
 }
 
-
-
+// ===============================================================
+// Branch functions
 
 void MacroAssembler::branch8(Condition cond, const Address& lhs, Imm32 rhs,
                              Label* label) {
@@ -1327,7 +1336,7 @@ void MacroAssembler::branchFloat(DoubleCondition cond, FloatRegister lhs,
   switch (cond) {
     case DoubleNotEqual: {
       Label unordered;
-      
+      // not equal *and* ordered
       branch(Overflow, &unordered);
       branch(NotEqual, label);
       bind(&unordered);
@@ -1353,17 +1362,17 @@ void MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src,
 
   MOZ_ASSERT(!scratch64.Is(dest64));
 
-  
-  
-  
+  // Convert scalar to signed 64-bit fixed-point, rounding toward zero.
+  // In the case of overflow, the output is saturated.
+  // In the case of NaN and -0, the output is zero.
   Fcvtzs(dest64, src32);
 
-  
+  // Fail if the result is saturated, i.e. it's either INT64_MIN or INT64_MAX.
   Add(scratch64, dest64, Operand(0x7fff'ffff'ffff'ffff));
   Cmn(scratch64, 3);
   B(fail, Assembler::Above);
 
-  
+  // Clear upper 32 bits.
   Uxtw(dest64, dest64);
 }
 
@@ -1378,7 +1387,7 @@ void MacroAssembler::branchDouble(DoubleCondition cond, FloatRegister lhs,
   switch (cond) {
     case DoubleNotEqual: {
       Label unordered;
-      
+      // not equal *and* ordered
       branch(Overflow, &unordered);
       branch(NotEqual, label);
       bind(&unordered);
@@ -1396,8 +1405,8 @@ void MacroAssembler::branchDouble(DoubleCondition cond, FloatRegister lhs,
 void MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src,
                                                         Register dest,
                                                         Label* fail) {
-  
-  
+  // ARMv8.3 chips support the FJCVTZS instruction, which handles exactly this
+  // logic. But the simulator does not implement it.
 #if defined(JS_SIMULATOR_ARM64)
   const bool fjscvt = false;
 #else
@@ -1411,23 +1420,23 @@ void MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src,
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch64 = temps.AcquireX();
 
-  
+  // An out of range integer will be saturated to the destination size.
   ARMFPRegister src64(src, 64);
   ARMRegister dest64(dest, 64);
 
   MOZ_ASSERT(!scratch64.Is(dest64));
 
-  
-  
-  
+  // Convert scalar to signed 64-bit fixed-point, rounding toward zero.
+  // In the case of overflow, the output is saturated.
+  // In the case of NaN and -0, the output is zero.
   Fcvtzs(dest64, src64);
 
-  
+  // Fail if the result is saturated, i.e. it's either INT64_MIN or INT64_MAX.
   Add(scratch64, dest64, Operand(0x7fff'ffff'ffff'ffff));
   Cmn(scratch64, 3);
   B(fail, Assembler::Above);
 
-  
+  // Clear upper 32 bits.
   Uxtw(dest64, dest64);
 }
 
@@ -1437,16 +1446,16 @@ void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
   ARMRegister dest64(dest, 64);
   ARMRegister dest32(dest, 32);
 
-  
-  
-  
+  // Convert scalar to signed 64-bit fixed-point, rounding toward zero.
+  // In the case of overflow, the output is saturated.
+  // In the case of NaN and -0, the output is zero.
   Fcvtzs(dest64, src64);
 
-  
+  // Fail on overflow cases.
   Cmp(dest64, Operand(dest32, vixl::SXTW));
   B(fail, Assembler::NotEqual);
 
-  
+  // Clear upper 32 bits.
   Uxtw(dest64, dest64);
 }
 
@@ -1526,8 +1535,8 @@ void MacroAssembler::branchTest32(Condition cond, Register lhs, Register rhs,
                                   L label) {
   MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
              cond == NotSigned);
-  
-  
+  // The x86-biased front end prefers |test foo, foo| to |cmp foo, #0|.  We look
+  // for the former pattern and expand as Cbz/Cbnz when possible.
   if (lhs == rhs && cond == Zero) {
     Cbz(ARMRegister(lhs, 32), label);
   } else if (lhs == rhs && cond == NonZero) {
@@ -1567,7 +1576,7 @@ void MacroAssembler::branchTest32(Condition cond, const AbsoluteAddress& lhs,
 template <class L>
 void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Register rhs,
                                    L label) {
-  
+  // See branchTest32.
   MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
              cond == NotSigned);
   if (lhs == rhs && cond == Zero) {
@@ -1695,12 +1704,12 @@ void MacroAssembler::branchTestDoubleTruthy(bool truthy, FloatRegister reg,
                                             Label* label) {
   Fcmp(ARMFPRegister(reg, 64), 0.0);
   if (!truthy) {
-    
+    // falsy values are zero, and NaN.
     branch(Zero, label);
     branch(Overflow, label);
   } else {
-    
-    
+    // truthy values are non-zero and not nan.
+    // If it is overflow
     Label onFalse;
     branch(Zero, &onFalse);
     branch(Overflow, &onFalse);
@@ -2079,13 +2088,13 @@ void MacroAssembler::cmp32Load32(Condition cond, Register lhs, Register rhs,
 
 void MacroAssembler::cmp32Load32(Condition cond, Register lhs, Imm32 rhs,
                                  const Address& src, Register dest) {
-  
-  
+  // ARM64 does not support conditional loads, so we use a branch with a CSel
+  // (to prevent Spectre attacks).
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch32 = temps.AcquireW();
 
-  
-  
+  // Can't use branch32() here, because it may select Cbz/Cbnz which don't
+  // affect condition flags.
   Label done;
   cmp32(lhs, rhs);
   B(&done, Assembler::InvertCondition(cond));
@@ -2105,13 +2114,13 @@ void MacroAssembler::cmp32MovePtr(Condition cond, Register lhs, Imm32 rhs,
 
 void MacroAssembler::cmp32LoadPtr(Condition cond, const Address& lhs, Imm32 rhs,
                                   const Address& src, Register dest) {
-  
-  
+  // ARM64 does not support conditional loads, so we use a branch with a CSel
+  // (to prevent Spectre attacks).
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch64 = temps.AcquireX();
 
-  
-  
+  // Can't use branch32() here, because it may select Cbz/Cbnz which don't
+  // affect condition flags.
   Label done;
   cmp32(lhs, rhs);
   B(&done, Assembler::InvertCondition(cond));
@@ -2126,8 +2135,8 @@ void MacroAssembler::test32LoadPtr(Condition cond, const Address& addr,
                                    Register dest) {
   MOZ_ASSERT(cond == Assembler::Zero || cond == Assembler::NonZero);
 
-  
-  
+  // ARM64 does not support conditional loads, so we use a branch with a CSel
+  // (to prevent Spectre attacks).
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch64 = temps.AcquireX();
   Label done;
@@ -2216,8 +2225,8 @@ void MacroAssembler::spectreBoundsCheckPtr(Register index,
   }
 }
 
-
-
+// ========================================================================
+// Memory access primitives.
 FaultingCodeOffset MacroAssembler::storeUncanonicalizedDouble(
     FloatRegister src, const Address& dest) {
   return Str(ARMFPRegister(src, 64), toMemOperand(dest));
@@ -2237,15 +2246,15 @@ FaultingCodeOffset MacroAssembler::storeUncanonicalizedFloat32(
 }
 
 void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
-  
-  
+  // Bug 1715494: Discriminating barriers such as StoreStore are hard to reason
+  // about.  Execute the full barrier for everything that requires a barrier.
   if (barrier) {
     Dmb(vixl::InnerShareable, vixl::BarrierAll);
   }
 }
 
-
-
+// ===============================================================
+// Clamping functions.
 
 void MacroAssembler::clampIntToUint8(Register reg) {
   vixl::UseScratchRegisterScope temps(this);
@@ -2263,8 +2272,8 @@ void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
                                       JSValueType type, Label* fail) {
   MOZ_ASSERT(type == JSVAL_TYPE_OBJECT || type == JSVAL_TYPE_STRING ||
              type == JSVAL_TYPE_SYMBOL || type == JSVAL_TYPE_BIGINT);
-  
-  
+  // dest := src XOR mask
+  // fail if dest >> JSVAL_TAG_SHIFT != 0
   const ARMRegister src64(src.valueReg(), 64);
   const ARMRegister dest64(dest, 64);
   Eor(dest64, src64, Operand(JSVAL_TYPE_TO_SHIFTED_TAG(type)));
@@ -2284,9 +2293,9 @@ void MacroAssembler::fallibleUnboxPtr(const BaseIndex& src, Register dest,
   fallibleUnboxPtr(ValueOperand(dest), dest, type, fail);
 }
 
+//}}} check_macroassembler_style
 
-
-
+// Wasm SIMD
 
 static inline ARMFPRegister SimdReg(FloatRegister r) {
   MOZ_ASSERT(r.isSimd128());
@@ -2313,9 +2322,9 @@ static inline ARMFPRegister Simd1D(FloatRegister r) { return SimdReg(r).V1D(); }
 
 static inline ARMFPRegister SimdQ(FloatRegister r) { return SimdReg(r).Q(); }
 
+//{{{ check_macroassembler_style
 
-
-
+// Moves
 
 void MacroAssembler::moveSimd128(FloatRegister src, FloatRegister dest) {
   if (src != dest) {
@@ -2325,12 +2334,12 @@ void MacroAssembler::moveSimd128(FloatRegister src, FloatRegister dest) {
 
 void MacroAssembler::loadConstantSimd128(const SimdConstant& v,
                                          FloatRegister dest) {
-  
+  // Movi does not yet generate good code for many cases, bug 1664397.
   SimdConstant c = SimdConstant::CreateX2((const int64_t*)v.bytes());
   Movi(SimdReg(dest), c.asInt64x2()[1], c.asInt64x2()[0]);
 }
 
-
+// Splat
 
 void MacroAssembler::splatX16(Register src, FloatRegister dest) {
   Dup(Simd16B(dest), ARMRegister(src, 32));
@@ -2366,7 +2375,7 @@ void MacroAssembler::splatX2(FloatRegister src, FloatRegister dest) {
   Dup(Simd2D(dest), ARMFPRegister(src), 0);
 }
 
-
+// Extract lane as scalar.  Float extraction does not canonicalize the value.
 
 void MacroAssembler::extractLaneInt8x16(uint32_t lane, FloatRegister src,
                                         Register dest_) {
@@ -2428,7 +2437,7 @@ void MacroAssembler::extractLaneFloat64x2(uint32_t lane, FloatRegister src,
   Mov(ARMFPRegister(dest).V2D(), 0, Simd2D(src), lane);
 }
 
-
+// Replace lane value
 
 void MacroAssembler::replaceLaneInt8x16(unsigned lane, Register rhs,
                                         FloatRegister lhsDest) {
@@ -2466,18 +2475,18 @@ void MacroAssembler::replaceLaneFloat64x2(unsigned lane, FloatRegister rhs,
   Mov(Simd2D(lhsDest), lane, ARMFPRegister(rhs).V2D(), 0);
 }
 
+// Shuffle - blend and permute with immediate indices, and its many
+// specializations.  Lane values other than those mentioned are illegal.
 
-
-
-
+// lane values 0..31
 void MacroAssembler::shuffleInt8x16(const uint8_t lanes[16], FloatRegister lhs,
                                     FloatRegister rhs, FloatRegister dest) {
-  
-  
-  
+  // The general solution generates ho-hum code.  Realistic programs will use
+  // patterns that can be specialized, and this will be much better.  That will
+  // be handled by bug 1656834, so don't worry about it here.
 
-  
-  
+  // Set scratch to the lanevalue when it selects from lhs or ~lanevalue when it
+  // selects from rhs.
   ScratchSimd128Scope scratch(*this);
   int8_t idx[16];
 
@@ -2536,7 +2545,7 @@ void MacroAssembler::blendInt8x16(const uint8_t lanes[16], FloatRegister lhs,
 
 void MacroAssembler::blendInt16x8(const uint16_t lanes[8], FloatRegister lhs,
                                   FloatRegister rhs, FloatRegister dest) {
-  static_assert(sizeof(const uint16_t [8]) == sizeof(uint8_t[16]));
+  static_assert(sizeof(const uint16_t /*lanes*/[8]) == sizeof(uint8_t[16]));
   blendInt8x16(reinterpret_cast<const uint8_t*>(lanes), lhs, rhs, dest);
 }
 
@@ -2658,7 +2667,7 @@ void MacroAssembler::concatAndRightShiftSimd128(FloatRegister lhs,
   Ext(Simd16B(dest), Simd16B(rhs), Simd16B(lhs), shift);
 }
 
-
+// Zero extend int values.
 
 void MacroAssembler::zeroExtend8x16To16x8(FloatRegister src,
                                           FloatRegister dest) {
@@ -2694,7 +2703,7 @@ void MacroAssembler::zeroExtend32x4To64x2(FloatRegister src,
   Ushll(Simd2D(dest), Simd2S(src), 0);
 }
 
-
+// Reverse bytes in lanes.
 
 void MacroAssembler::reverseInt16x8(FloatRegister src, FloatRegister dest) {
   Rev16(Simd16B(dest), Simd16B(src));
@@ -2708,7 +2717,7 @@ void MacroAssembler::reverseInt64x2(FloatRegister src, FloatRegister dest) {
   Rev64(Simd16B(dest), Simd16B(src));
 }
 
-
+// Swizzle - permute with variable indices.  `rhs` holds the lanes parameter.
 
 void MacroAssembler::swizzleInt8x16(FloatRegister lhs, FloatRegister rhs,
                                     FloatRegister dest) {
@@ -2720,7 +2729,7 @@ void MacroAssembler::swizzleInt8x16Relaxed(FloatRegister lhs, FloatRegister rhs,
   Tbl(Simd16B(dest), Simd16B(lhs), Simd16B(rhs));
 }
 
-
+// Integer Add
 
 void MacroAssembler::addInt8x16(FloatRegister lhs, FloatRegister rhs,
                                 FloatRegister dest) {
@@ -2742,7 +2751,7 @@ void MacroAssembler::addInt64x2(FloatRegister lhs, FloatRegister rhs,
   Add(Simd2D(dest), Simd2D(lhs), Simd2D(rhs));
 }
 
-
+// Integer Subtract
 
 void MacroAssembler::subInt8x16(FloatRegister lhs, FloatRegister rhs,
                                 FloatRegister dest) {
@@ -2764,7 +2773,7 @@ void MacroAssembler::subInt64x2(FloatRegister lhs, FloatRegister rhs,
   Sub(Simd2D(dest), Simd2D(lhs), Simd2D(rhs));
 }
 
-
+// Integer Multiply
 
 void MacroAssembler::mulInt16x8(FloatRegister lhs, FloatRegister rhs,
                                 FloatRegister dest) {
@@ -2779,18 +2788,18 @@ void MacroAssembler::mulInt32x4(FloatRegister lhs, FloatRegister rhs,
 void MacroAssembler::mulInt64x2(FloatRegister lhs, FloatRegister rhs,
                                 FloatRegister dest, FloatRegister temp1,
                                 FloatRegister temp2) {
-  
-  
-  
-  
+  // As documented at https://chromium-review.googlesource.com/c/v8/v8/+/1781696
+  // lhs = <D C> <B A>
+  // rhs = <H G> <F E>
+  // result = <(DG+CH)_low+CG_high CG_low> <(BE+AF)_low+AE_high AE_low>
   ScratchSimd128Scope scratch(*this);
-  Rev64(Simd4S(temp2), Simd4S(lhs));                  
-  Mul(Simd4S(temp2), Simd4S(temp2), Simd4S(rhs));     
-  Xtn(Simd2S(temp1), Simd2D(rhs));                    
-  Addp(Simd4S(temp2), Simd4S(temp2), Simd4S(temp2));  
-  Xtn(Simd2S(scratch), Simd2D(lhs));                  
-  Shll(Simd2D(dest), Simd2S(temp2), 32);              
-                                                      
+  Rev64(Simd4S(temp2), Simd4S(lhs));                  // temp2 = <C D> <A B>
+  Mul(Simd4S(temp2), Simd4S(temp2), Simd4S(rhs));     // temp2 = <CH DG> <AF BE>
+  Xtn(Simd2S(temp1), Simd2D(rhs));                    // temp1 = <0 0> <G E>
+  Addp(Simd4S(temp2), Simd4S(temp2), Simd4S(temp2));  // temp2 = <CH+DG AF+BE>..
+  Xtn(Simd2S(scratch), Simd2D(lhs));                  // scratch = <0 0> <C A>
+  Shll(Simd2D(dest), Simd2S(temp2), 32);              // dest = <(DG+CH)_low 0>
+                                                      //        <(BE+AF)_low 0>
   Umlal(Simd2D(dest), Simd2S(scratch), Simd2S(temp1));
 }
 
@@ -2870,7 +2879,7 @@ void MacroAssembler::q15MulrInt16x8Relaxed(FloatRegister lhs, FloatRegister rhs,
   Sqrdmulh(Simd8H(dest), Simd8H(lhs), Simd8H(rhs));
 }
 
-
+// Integer Negate
 
 void MacroAssembler::negInt8x16(FloatRegister src, FloatRegister dest) {
   Neg(Simd16B(dest), Simd16B(src));
@@ -2888,7 +2897,7 @@ void MacroAssembler::negInt64x2(FloatRegister src, FloatRegister dest) {
   Neg(Simd2D(dest), Simd2D(src));
 }
 
-
+// Saturating integer add
 
 void MacroAssembler::addSatInt8x16(FloatRegister lhs, FloatRegister rhs,
                                    FloatRegister dest) {
@@ -2910,7 +2919,7 @@ void MacroAssembler::unsignedAddSatInt16x8(FloatRegister lhs, FloatRegister rhs,
   Uqadd(Simd8H(dest), Simd8H(lhs), Simd8H(rhs));
 }
 
-
+// Saturating integer subtract
 
 void MacroAssembler::subSatInt8x16(FloatRegister lhs, FloatRegister rhs,
                                    FloatRegister dest) {
@@ -2932,7 +2941,7 @@ void MacroAssembler::unsignedSubSatInt16x8(FloatRegister lhs, FloatRegister rhs,
   Uqsub(Simd8H(dest), Simd8H(lhs), Simd8H(rhs));
 }
 
-
+// Lane-wise integer minimum
 
 void MacroAssembler::minInt8x16(FloatRegister lhs, FloatRegister rhs,
                                 FloatRegister dest) {
@@ -2964,7 +2973,7 @@ void MacroAssembler::unsignedMinInt32x4(FloatRegister lhs, FloatRegister rhs,
   Umin(Simd4S(dest), Simd4S(lhs), Simd4S(rhs));
 }
 
-
+// Lane-wise integer maximum
 
 void MacroAssembler::maxInt8x16(FloatRegister lhs, FloatRegister rhs,
                                 FloatRegister dest) {
@@ -2996,7 +3005,7 @@ void MacroAssembler::unsignedMaxInt32x4(FloatRegister lhs, FloatRegister rhs,
   Umax(Simd4S(dest), Simd4S(lhs), Simd4S(rhs));
 }
 
-
+// Lane-wise integer rounding average
 
 void MacroAssembler::unsignedAverageInt8x16(FloatRegister lhs,
                                             FloatRegister rhs,
@@ -3010,7 +3019,7 @@ void MacroAssembler::unsignedAverageInt16x8(FloatRegister lhs,
   Urhadd(Simd8H(dest), Simd8H(lhs), Simd8H(rhs));
 }
 
-
+// Lane-wise integer absolute value
 
 void MacroAssembler::absInt8x16(FloatRegister src, FloatRegister dest) {
   Abs(Simd16B(dest), Simd16B(src));
@@ -3028,7 +3037,7 @@ void MacroAssembler::absInt64x2(FloatRegister src, FloatRegister dest) {
   Abs(Simd2D(dest), Simd2D(src));
 }
 
-
+// Left shift by variable scalar
 
 void MacroAssembler::leftShiftInt8x16(FloatRegister lhs, Register rhs,
                                       FloatRegister dest) {
@@ -3078,12 +3087,12 @@ void MacroAssembler::leftShiftInt64x2(Imm32 count, FloatRegister src,
   Shl(Simd2D(dest), Simd2D(src), count.value);
 }
 
-
+// Right shift by variable scalar
 
 void MacroAssembler::rightShiftInt8x16(FloatRegister lhs, Register rhs,
                                        FloatRegister dest) {
   MacroAssemblerCompat::rightShiftInt8x16(lhs, rhs, dest,
-                                           false);
+                                          /* isUnsigned */ false);
 }
 
 void MacroAssembler::rightShiftInt8x16(Imm32 count, FloatRegister src,
@@ -3094,7 +3103,7 @@ void MacroAssembler::rightShiftInt8x16(Imm32 count, FloatRegister src,
 void MacroAssembler::unsignedRightShiftInt8x16(FloatRegister lhs, Register rhs,
                                                FloatRegister dest) {
   MacroAssemblerCompat::rightShiftInt8x16(lhs, rhs, dest,
-                                           true);
+                                          /* isUnsigned */ true);
 }
 
 void MacroAssembler::unsignedRightShiftInt8x16(Imm32 count, FloatRegister src,
@@ -3105,7 +3114,7 @@ void MacroAssembler::unsignedRightShiftInt8x16(Imm32 count, FloatRegister src,
 void MacroAssembler::rightShiftInt16x8(FloatRegister lhs, Register rhs,
                                        FloatRegister dest) {
   MacroAssemblerCompat::rightShiftInt16x8(lhs, rhs, dest,
-                                           false);
+                                          /* isUnsigned */ false);
 }
 
 void MacroAssembler::rightShiftInt16x8(Imm32 count, FloatRegister src,
@@ -3116,7 +3125,7 @@ void MacroAssembler::rightShiftInt16x8(Imm32 count, FloatRegister src,
 void MacroAssembler::unsignedRightShiftInt16x8(FloatRegister lhs, Register rhs,
                                                FloatRegister dest) {
   MacroAssemblerCompat::rightShiftInt16x8(lhs, rhs, dest,
-                                           true);
+                                          /* isUnsigned */ true);
 }
 
 void MacroAssembler::unsignedRightShiftInt16x8(Imm32 count, FloatRegister src,
@@ -3127,7 +3136,7 @@ void MacroAssembler::unsignedRightShiftInt16x8(Imm32 count, FloatRegister src,
 void MacroAssembler::rightShiftInt32x4(FloatRegister lhs, Register rhs,
                                        FloatRegister dest) {
   MacroAssemblerCompat::rightShiftInt32x4(lhs, rhs, dest,
-                                           false);
+                                          /* isUnsigned */ false);
 }
 
 void MacroAssembler::rightShiftInt32x4(Imm32 count, FloatRegister src,
@@ -3138,7 +3147,7 @@ void MacroAssembler::rightShiftInt32x4(Imm32 count, FloatRegister src,
 void MacroAssembler::unsignedRightShiftInt32x4(FloatRegister lhs, Register rhs,
                                                FloatRegister dest) {
   MacroAssemblerCompat::rightShiftInt32x4(lhs, rhs, dest,
-                                           true);
+                                          /* isUnsigned */ true);
 }
 
 void MacroAssembler::unsignedRightShiftInt32x4(Imm32 count, FloatRegister src,
@@ -3149,7 +3158,7 @@ void MacroAssembler::unsignedRightShiftInt32x4(Imm32 count, FloatRegister src,
 void MacroAssembler::rightShiftInt64x2(FloatRegister lhs, Register rhs,
                                        FloatRegister dest) {
   MacroAssemblerCompat::rightShiftInt64x2(lhs, rhs, dest,
-                                           false);
+                                          /* isUnsigned */ false);
 }
 
 void MacroAssembler::rightShiftInt64x2(Imm32 count, FloatRegister src,
@@ -3160,7 +3169,7 @@ void MacroAssembler::rightShiftInt64x2(Imm32 count, FloatRegister src,
 void MacroAssembler::unsignedRightShiftInt64x2(FloatRegister lhs, Register rhs,
                                                FloatRegister dest) {
   MacroAssemblerCompat::rightShiftInt64x2(lhs, rhs, dest,
-                                           true);
+                                          /* isUnsigned */ true);
 }
 
 void MacroAssembler::unsignedRightShiftInt64x2(Imm32 count, FloatRegister src,
@@ -3168,7 +3177,7 @@ void MacroAssembler::unsignedRightShiftInt64x2(Imm32 count, FloatRegister src,
   Ushr(Simd2D(dest), Simd2D(src), count.value);
 }
 
-
+// Bitwise and, or, xor, not
 
 void MacroAssembler::bitwiseAndSimd128(FloatRegister rhs,
                                        FloatRegister lhsDest) {
@@ -3209,16 +3218,16 @@ void MacroAssembler::bitwiseAndNotSimd128(FloatRegister lhs, FloatRegister rhs,
   Bic(Simd16B(dest), Simd16B(lhs), Simd16B(rhs));
 }
 
-
-
-
+// Bitwise AND with complement: dest = ~lhs & rhs, note this is not what Wasm
+// wants but what the x86 hardware offers.  Hence the name.  Since arm64 has
+// dest = lhs & ~rhs we just swap operands.
 
 void MacroAssembler::bitwiseNotAndSimd128(FloatRegister rhs,
                                           FloatRegister lhsDest) {
   Bic(Simd16B(lhsDest), Simd16B(rhs), Simd16B(lhsDest));
 }
 
-
+// Bitwise select
 
 void MacroAssembler::bitwiseSelectSimd128(FloatRegister onTrue,
                                           FloatRegister onFalse,
@@ -3226,13 +3235,13 @@ void MacroAssembler::bitwiseSelectSimd128(FloatRegister onTrue,
   Bsl(Simd16B(maskDest), Simd16B(onTrue), Simd16B(onFalse));
 }
 
-
+// Population count
 
 void MacroAssembler::popcntInt8x16(FloatRegister src, FloatRegister dest) {
   Cnt(Simd16B(dest), Simd16B(src));
 }
 
-
+// Any lane true, ie, any bit set
 
 void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest_) {
   ScratchSimd128Scope scratch_(*this);
@@ -3244,7 +3253,7 @@ void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest_) {
   Cset(dest, Assembler::NonZero);
 }
 
-
+// All lanes true
 
 void MacroAssembler::allTrueInt8x16(FloatRegister src, Register dest_) {
   ScratchSimd128Scope scratch(*this);
@@ -3286,14 +3295,14 @@ void MacroAssembler::allTrueInt64x2(FloatRegister src, Register dest_) {
   Cset(dest, Assembler::Zero);
 }
 
-
-
-
-
-
-
-
-
+// Bitmask, ie extract and compress high bits of all lanes
+//
+// There's no direct support for this on the chip.  These implementations come
+// from the writeup that added the instruction to the SIMD instruction set.
+// Generally, shifting and masking is used to isolate the sign bit of each
+// element in the right position, then a horizontal add creates the result.  For
+// 8-bit elements an intermediate step is needed to assemble the bits of the
+// upper and lower 8 bytes into 8 halfwords.
 
 void MacroAssembler::bitmaskInt8x16(FloatRegister src, Register dest,
                                     FloatRegister temp) {
@@ -3339,7 +3348,7 @@ void MacroAssembler::bitmaskInt64x2(FloatRegister src, Register dest,
   Fmov(ARMRegister(dest, 32), ARMFPRegister(temp, 32));
 }
 
-
+// Comparisons (integer and floating-point)
 
 void MacroAssembler::compareInt8x16(Assembler::Condition cond,
                                     FloatRegister rhs, FloatRegister lhsDest) {
@@ -3409,7 +3418,7 @@ void MacroAssembler::compareFloat64x2(Assembler::Condition cond,
   compareSimd128Float(cond, Simd2D(dest), Simd2D(lhs), Simd2D(rhs));
 }
 
-
+// Load
 
 FaultingCodeOffset MacroAssembler::loadUnalignedSimd128(const Address& src,
                                                         FloatRegister dest) {
@@ -3421,7 +3430,7 @@ FaultingCodeOffset MacroAssembler::loadUnalignedSimd128(
   return doBaseIndex(ARMFPRegister(dest, 128), address, vixl::LDR_q);
 }
 
-
+// Store
 
 FaultingCodeOffset MacroAssembler::storeUnalignedSimd128(FloatRegister src,
                                                          const Address& dest) {
@@ -3433,7 +3442,7 @@ FaultingCodeOffset MacroAssembler::storeUnalignedSimd128(
   return doBaseIndex(ARMFPRegister(src, 128), dest, vixl::STR_q);
 }
 
-
+// Floating point negation
 
 void MacroAssembler::negFloat32x4(FloatRegister src, FloatRegister dest) {
   Fneg(Simd4S(dest), Simd4S(src));
@@ -3443,7 +3452,7 @@ void MacroAssembler::negFloat64x2(FloatRegister src, FloatRegister dest) {
   Fneg(Simd2D(dest), Simd2D(src));
 }
 
-
+// Floating point absolute value
 
 void MacroAssembler::absFloat32x4(FloatRegister src, FloatRegister dest) {
   Fabs(Simd4S(dest), Simd4S(src));
@@ -3453,7 +3462,7 @@ void MacroAssembler::absFloat64x2(FloatRegister src, FloatRegister dest) {
   Fabs(Simd2D(dest), Simd2D(src));
 }
 
-
+// NaN-propagating minimum
 
 void MacroAssembler::minFloat32x4(FloatRegister lhs, FloatRegister rhs,
                                   FloatRegister dest) {
@@ -3473,7 +3482,7 @@ void MacroAssembler::minFloat64x2(FloatRegister lhs, FloatRegister rhs,
   Fmin(Simd2D(dest), Simd2D(lhs), Simd2D(rhs));
 }
 
-
+// NaN-propagating maximum
 
 void MacroAssembler::maxFloat32x4(FloatRegister lhs, FloatRegister rhs,
                                   FloatRegister dest) {
@@ -3493,7 +3502,7 @@ void MacroAssembler::maxFloat64x2(FloatRegister rhs, FloatRegister lhsDest) {
   Fmax(Simd2D(lhsDest), Simd2D(lhsDest), Simd2D(rhs));
 }
 
-
+// Floating add
 
 void MacroAssembler::addFloat32x4(FloatRegister lhs, FloatRegister rhs,
                                   FloatRegister dest) {
@@ -3505,7 +3514,7 @@ void MacroAssembler::addFloat64x2(FloatRegister lhs, FloatRegister rhs,
   Fadd(Simd2D(dest), Simd2D(lhs), Simd2D(rhs));
 }
 
-
+// Floating subtract
 
 void MacroAssembler::subFloat32x4(FloatRegister lhs, FloatRegister rhs,
                                   FloatRegister dest) {
@@ -3517,7 +3526,7 @@ void MacroAssembler::subFloat64x2(FloatRegister lhs, FloatRegister rhs,
   Fsub(Simd2D(dest), Simd2D(lhs), Simd2D(rhs));
 }
 
-
+// Floating division
 
 void MacroAssembler::divFloat32x4(FloatRegister lhs, FloatRegister rhs,
                                   FloatRegister dest) {
@@ -3529,7 +3538,7 @@ void MacroAssembler::divFloat64x2(FloatRegister lhs, FloatRegister rhs,
   Fdiv(Simd2D(dest), Simd2D(lhs), Simd2D(rhs));
 }
 
-
+// Floating Multiply
 
 void MacroAssembler::mulFloat32x4(FloatRegister lhs, FloatRegister rhs,
                                   FloatRegister dest) {
@@ -3541,7 +3550,7 @@ void MacroAssembler::mulFloat64x2(FloatRegister lhs, FloatRegister rhs,
   Fmul(Simd2D(dest), Simd2D(lhs), Simd2D(rhs));
 }
 
-
+// Pairwise add
 
 void MacroAssembler::extAddPairwiseInt8x16(FloatRegister src,
                                            FloatRegister dest) {
@@ -3563,7 +3572,7 @@ void MacroAssembler::unsignedExtAddPairwiseInt16x8(FloatRegister src,
   Uaddlp(Simd4S(dest), Simd8H(src));
 }
 
-
+// Floating square root
 
 void MacroAssembler::sqrtFloat32x4(FloatRegister src, FloatRegister dest) {
   Fsqrt(Simd4S(dest), Simd4S(src));
@@ -3573,7 +3582,7 @@ void MacroAssembler::sqrtFloat64x2(FloatRegister src, FloatRegister dest) {
   Fsqrt(Simd2D(dest), Simd2D(src));
 }
 
-
+// Integer to floating point with rounding
 
 void MacroAssembler::convertInt32x4ToFloat32x4(FloatRegister src,
                                                FloatRegister dest) {
@@ -3597,7 +3606,7 @@ void MacroAssembler::unsignedConvertInt32x4ToFloat64x2(FloatRegister src,
   Ucvtf(Simd2D(dest), Simd2D(dest));
 }
 
-
+// Floating point to integer with saturation
 
 void MacroAssembler::truncSatFloat32x4ToInt32x4(FloatRegister src,
                                                 FloatRegister dest) {
@@ -3645,21 +3654,21 @@ void MacroAssembler::unsignedTruncFloat64x2ToInt32x4Relaxed(
   Uqxtn(Simd2S(dest), Simd2D(dest));
 }
 
-
+// Floating point narrowing
 
 void MacroAssembler::convertFloat64x2ToFloat32x4(FloatRegister src,
                                                  FloatRegister dest) {
   Fcvtn(Simd2S(dest), Simd2D(src));
 }
 
-
+// Floating point widening
 
 void MacroAssembler::convertFloat32x4ToFloat64x2(FloatRegister src,
                                                  FloatRegister dest) {
   Fcvtl(Simd2D(dest), Simd2S(src));
 }
 
-
+// Integer to integer narrowing
 
 void MacroAssembler::narrowInt16x8(FloatRegister lhs, FloatRegister rhs,
                                    FloatRegister dest) {
@@ -3705,7 +3714,7 @@ void MacroAssembler::unsignedNarrowInt32x4(FloatRegister lhs, FloatRegister rhs,
   Sqxtun2(Simd8H(dest), Simd4S(rhs));
 }
 
-
+// Integer to integer widening
 
 void MacroAssembler::widenLowInt8x16(FloatRegister src, FloatRegister dest) {
   Sshll(Simd8H(dest), Simd8B(src), 0);
@@ -3761,13 +3770,13 @@ void MacroAssembler::unsignedWidenHighInt32x4(FloatRegister src,
   Ushll2(Simd2D(dest), Simd4S(src), 0);
 }
 
-
-
+// Compare-based minimum/maximum (experimental as of August, 2020)
+// https://github.com/WebAssembly/simd/pull/122
 
 void MacroAssembler::pseudoMinFloat32x4(FloatRegister rhsOrRhsDest,
                                         FloatRegister lhsOrLhsDest) {
-  
-  
+  // Shut up the linter by using the same names as in the declaration, then
+  // aliasing here.
   FloatRegister rhs = rhsOrRhsDest;
   FloatRegister lhsDest = lhsOrLhsDest;
   ScratchSimd128Scope scratch(*this);
@@ -3838,8 +3847,8 @@ void MacroAssembler::pseudoMaxFloat64x2(FloatRegister lhs, FloatRegister rhs,
   Mov(SimdReg(dest), scratch);
 }
 
-
-
+// Widening/pairwise integer dot product (experimental as of August, 2020)
+// https://github.com/WebAssembly/simd/pull/127
 
 void MacroAssembler::widenDotInt16x8(FloatRegister lhs, FloatRegister rhs,
                                      FloatRegister dest) {
@@ -3868,8 +3877,8 @@ void MacroAssembler::dotInt8x16Int7x16ThenAdd(FloatRegister lhs,
   Sadalp(Simd4S(dest), Simd8H(temp));
 }
 
-
-
+// Floating point rounding (experimental as of August, 2020)
+// https://github.com/WebAssembly/simd/pull/232
 
 void MacroAssembler::ceilFloat32x4(FloatRegister src, FloatRegister dest) {
   Frintp(Simd4S(dest), Simd4S(src));
@@ -3903,7 +3912,7 @@ void MacroAssembler::nearestFloat64x2(FloatRegister src, FloatRegister dest) {
   Frintn(Simd2D(dest), Simd2D(src));
 }
 
-
+// Floating multiply-accumulate: srcDest [+-]= src1 * src2
 
 void MacroAssembler::fmaFloat32x4(FloatRegister src1, FloatRegister src2,
                                   FloatRegister srcDest) {
@@ -3965,19 +3974,19 @@ void MacroAssembler::maxFloat64x2Relaxed(FloatRegister lhs, FloatRegister rhs,
   Fmax(Simd2D(dest), Simd2D(rhs), Simd2D(lhs));
 }
 
-
-
+//}}} check_macroassembler_style
+// ===============================================================
 
 void MacroAssemblerCompat::addToStackPtr(Register src) {
   Add(GetStackPointer64(), GetStackPointer64(), ARMRegister(src, 64));
-  
-  
+  // Given that required invariant SP <= PSP, this is probably pointless,
+  // since it gives PSP a larger value.
   syncStackPtr();
 }
 
 void MacroAssemblerCompat::addToStackPtr(Imm32 imm) {
   Add(GetStackPointer64(), GetStackPointer64(), Operand(imm.value));
-  
+  // As above, probably pointless.
   syncStackPtr();
 }
 
@@ -3986,7 +3995,7 @@ void MacroAssemblerCompat::addToStackPtr(const Address& src) {
   const ARMRegister scratch = temps.AcquireX();
   Ldr(scratch, toMemOperand(src));
   Add(GetStackPointer64(), GetStackPointer64(), scratch);
-  
+  // As above, probably pointless.
   syncStackPtr();
 }
 
@@ -4014,7 +4023,7 @@ void MacroAssemblerCompat::andToStackPtr(Imm32 imm) {
     const ARMRegister scratch = temps.AcquireX();
     Mov(scratch, sp);
     And(sp, scratch, Operand(imm.value));
-    
+    // syncStackPtr() not needed since our SP is the real SP.
   } else {
     And(GetStackPointer64(), GetStackPointer64(), Operand(imm.value));
     syncStackPtr();
@@ -4036,7 +4045,7 @@ void MacroAssemblerCompat::loadStackPtr(const Address& src) {
     const ARMRegister scratch = temps.AcquireX();
     Ldr(scratch, toMemOperand(src));
     Mov(sp, scratch);
-    
+    // syncStackPtr() not needed since our SP is the real SP.
   } else {
     Ldr(GetStackPointer64(), toMemOperand(src));
     syncStackPtr();
@@ -4086,8 +4095,8 @@ void MacroAssemblerCompat::branchStackPtrRhs(Condition cond, Address lhs,
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch = temps.AcquireX();
   Ldr(scratch, toMemOperand(lhs));
-  
-  
+  // Cmp disallows SP as the rhs, so flip the operands and invert the
+  // condition.
   Cmp(GetStackPointer64(), scratch);
   B(label, Assembler::InvertCondition(cond));
 }
@@ -4098,8 +4107,8 @@ void MacroAssemblerCompat::branchStackPtrRhs(Condition cond,
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch = temps.AcquireX();
   loadPtr(lhs, scratch.asUnsized());
-  
-  
+  // Cmp disallows SP as the rhs, so flip the operands and invert the
+  // condition.
   Cmp(GetStackPointer64(), scratch);
   B(label, Assembler::InvertCondition(cond));
 }
@@ -4119,7 +4128,7 @@ void MacroAssemblerCompat::unboxValue(const ValueOperand& src, AnyRegister dest,
   }
 }
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_arm64_MacroAssembler_arm64_inl_h */

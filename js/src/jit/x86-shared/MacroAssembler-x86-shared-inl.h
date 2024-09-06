@@ -18,6 +18,13 @@ namespace jit {
 
 
 
+void MacroAssembler::moveGPRToFloat16(Register src, FloatRegister dest) {
+  
+  movzwl(src, src);
+
+  vmovd(src, dest);
+}
+
 void MacroAssembler::moveFloat32ToGPR(FloatRegister src, Register dest) {
   vmovd(src, dest);
 }
