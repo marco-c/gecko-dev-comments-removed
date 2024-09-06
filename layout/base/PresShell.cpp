@@ -12104,6 +12104,13 @@ void PresShell::EventHandler::EventTargetData::UpdateWheelEventTarget(
 
   
   
+  if (!groupFrame->PresContext() || !groupFrame->PresShell() ||
+      groupFrame->PresContext() != GetPresContext()) {
+    return;
+  }
+
+  
+  
   SetFrameAndComputePresShellAndContent(groupFrame, aGUIEvent);
 }
 
