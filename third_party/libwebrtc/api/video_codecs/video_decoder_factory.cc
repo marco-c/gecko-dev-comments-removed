@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/video_codecs/video_decoder_factory.h"
+
+#include <memory>
+
+#include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_decoder.h"
+#include "rtc_base/checks.h"
+
+namespace webrtc {
+
+VideoDecoderFactory::CodecSupport VideoDecoderFactory::QueryCodecSupport(
+    const SdpVideoFormat& format,
+    bool reference_scaling) const {
+  
+  
+  
+  return {.is_supported = !reference_scaling &&
+                          format.IsCodecInList(GetSupportedFormats())};
+}
+
+std::unique_ptr<VideoDecoder> VideoDecoderFactory::Create(
+    const Environment& env,
+    const SdpVideoFormat& format) {
+  return CreateVideoDecoder(format);
+}
+
+std::unique_ptr<VideoDecoder> VideoDecoderFactory::CreateVideoDecoder(
+    const SdpVideoFormat& format) {
+  
+  
+  RTC_CHECK_NOTREACHED();
+  return nullptr;
+}
+
+}  
