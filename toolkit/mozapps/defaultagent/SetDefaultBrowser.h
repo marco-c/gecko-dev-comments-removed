@@ -39,8 +39,11 @@ namespace mozilla::default_agent {
 
 
 
+
+
+
 nsresult SetDefaultBrowserUserChoice(
-    const wchar_t* aAumi,
+    const wchar_t* aAumi, const bool aRegRename,
     const nsTArray<nsString>& aExtraFileExtensions = nsTArray<nsString>());
 
 
@@ -58,8 +61,12 @@ nsresult SetDefaultBrowserUserChoice(
 
 
 
+
+
+
 nsresult SetDefaultExtensionHandlersUserChoice(
-    const wchar_t* aAumi, const nsTArray<nsString>& aFileExtensions);
+    const wchar_t* aAumi, const bool aRegRename,
+    const nsTArray<nsString>& aFileExtensions);
 
 }  
 
