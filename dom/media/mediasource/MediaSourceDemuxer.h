@@ -101,12 +101,15 @@ class MediaSourceDemuxer : public MediaDataDemuxer,
 
 class MediaSourceTrackDemuxer
     : public MediaTrackDemuxer,
-      public DecoderDoctorLifeLogger<MediaSourceTrackDemuxer> {
+      public DecoderDoctorLifeLogger<MediaSourceTrackDemuxer>,
+      public SingleWriterLockOwner {
  public:
   MediaSourceTrackDemuxer(MediaSourceDemuxer* aParent,
                           TrackInfo::TrackType aType,
                           TrackBuffersManager* aManager)
       MOZ_REQUIRES(aParent->mMutex);
+
+  bool OnWritingThread() const override { return OnTaskQueue(); }
 
   UniquePtr<TrackInfo> GetInfo() const override;
 
@@ -146,12 +149,12 @@ class MediaSourceTrackDemuxer
 
   TrackInfo::TrackType mType;
   
-  Mutex mMutex MOZ_UNANNOTATED;
-  media::TimeUnit mNextRandomAccessPoint;
+  MutexSingleWriter mMutex;
+  media::TimeUnit mNextRandomAccessPoint MOZ_GUARDED_BY(mMutex);
   
   
   
-  RefPtr<TrackBuffersManager> mManager;
+  RefPtr<TrackBuffersManager> mManager MOZ_GUARDED_BY(mMutex);
 
   
   Maybe<RefPtr<MediaRawData>> mNextSample;
