@@ -516,6 +516,7 @@ class CroppingVideoStreamFactory
 
  private:
   std::vector<VideoStream> CreateEncoderStreams(
+      const FieldTrialsView& ,
       int frame_width,
       int frame_height,
       const VideoEncoderConfig& encoder_config) override {

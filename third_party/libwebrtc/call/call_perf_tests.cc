@@ -795,6 +795,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
 
    private:
     std::vector<VideoStream> CreateEncoderStreams(
+        const FieldTrialsView& ,
         int frame_width,
         int frame_height,
         const webrtc::VideoEncoderConfig& encoder_config) override {

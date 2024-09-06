@@ -106,6 +106,7 @@ class VideoStreamFactory
 
  private:
   std::vector<VideoStream> CreateEncoderStreams(
+      const FieldTrialsView& ,
       int frame_width,
       int frame_height,
       const VideoEncoderConfig& encoder_config) override {
@@ -591,7 +592,6 @@ VideoStream VideoQualityTest::DefaultThumbnailStream() {
   return stream;
 }
 
-
 void VideoQualityTest::FillScalabilitySettings(
     Params* params,
     size_t video_idx,
@@ -624,8 +624,8 @@ void VideoQualityTest::FillScalabilitySettings(
             params->screenshare[video_idx].enabled, true, encoder_info);
     params->ss[video_idx].streams =
         encoder_config.video_stream_factory->CreateEncoderStreams(
-            params->video[video_idx].width, params->video[video_idx].height,
-            encoder_config);
+            env().field_trials(), params->video[video_idx].width,
+            params->video[video_idx].height, encoder_config);
   } else {
     
     
