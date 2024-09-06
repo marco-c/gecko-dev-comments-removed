@@ -1772,6 +1772,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-spocs-config", "
 pref("browser.newtabpage.activity-stream.discoverystream.region-basic-config", "");
 
 
+pref("browser.newtabpage.activity-stream.discoverystream.pocket-feed-parameters", "&enableRankingByRegion=1");
+
+
 pref("browser.newtabpage.activity-stream.discoverystream.isCollectionDismissible", true);
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.enabled", true);
 
