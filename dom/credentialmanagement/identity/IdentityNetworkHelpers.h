@@ -69,8 +69,8 @@ RefPtr<TPromise> FetchJSONStructure(Request* aRequest) {
 
         
         IgnoredErrorResult error;
-        RefPtr<Promise> jsonPromise = response->ConsumeBody(
-            aCx, BodyConsumer::ConsumeType::CONSUME_JSON, error);
+        RefPtr<Promise> jsonPromise =
+            response->ConsumeBody(aCx, BodyConsumer::ConsumeType::Blob, error);
         if (NS_WARN_IF(error.Failed())) {
           resultPromise->Reject(NS_ERROR_FAILURE, __func__);
           return;
