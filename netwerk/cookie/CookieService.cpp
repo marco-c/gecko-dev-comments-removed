@@ -1624,6 +1624,21 @@ bool CookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
     
     if (isterminator(*aIter)) {
       ++aIter;
+      while (aIter != aEndIter && isvalueseparator(*aIter)) {
+        ++aIter;
+      }
+      nsACString::const_char_iterator end = aIter - 1;
+      if (!isterminator(*end)) {
+        
+        
+        
+        if (aEqualsFound) {
+          aTokenString.Rebind(start, end);
+        } else {
+          aTokenValue.Rebind(start, end);
+        }
+        return false;
+      }
       return true;
     }
     
