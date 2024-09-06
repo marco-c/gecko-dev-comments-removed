@@ -1767,7 +1767,7 @@ JSObject* GetSuspendingPromiseResult(Instance* instance,
 
     
     
-    const wasm::FuncType& sig = instance->code().getFuncExportType(
+    const wasm::FuncType& sig = instance->codeMeta().getFuncType(
         SuspendingFunctionModuleFactory::ExportedFnIndex);
 
     if (fields.length() == 1) {

@@ -928,25 +928,6 @@ class Code : public ShareableBase<Code> {
   }
 
   
-  const TypeDef& getFuncImportTypeDef(uint32_t funcIndex) const {
-    return codeMeta().types->type(funcImports_[funcIndex].typeIndex());
-  }
-  const FuncType& getFuncImportType(uint32_t funcIndex) const {
-    return getFuncImportTypeDef(funcIndex).funcType();
-  }
-  const FuncType& getFuncExportType(FuncExport funcExport) const {
-    return codeMeta().types->type(funcExport.typeIndex()).funcType();
-  }
-  const TypeDef& getFuncExportTypeDef(uint32_t funcIndex) const {
-    const CodeBlock& code = funcCodeBlock(funcIndex);
-    const FuncExport& funcExport = code.lookupFuncExport(funcIndex);
-    return codeMeta().types->type(funcExport.typeIndex());
-  }
-  const FuncType& getFuncExportType(uint32_t funcIndex) const {
-    return getFuncExportTypeDef(funcIndex).funcType();
-  }
-
-  
   const CallSite* lookupCallSite(void* pc) const {
     const CodeBlock* block = blockMap_.lookup(pc);
     if (!block) {
