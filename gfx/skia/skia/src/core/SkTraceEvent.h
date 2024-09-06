@@ -11,6 +11,7 @@
 #define SkTraceEvent_DEFINED
 
 #include "include/utils/SkEventTracer.h"
+#include "src/base/SkUtils.h"
 #include "src/core/SkTraceEventCommon.h"
 #include <atomic>
 
@@ -85,8 +86,6 @@
 
 
 
-
-
 #define TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED \
     SkEventTracer::GetInstance()->getCategoryGroupEnabled
 
@@ -144,7 +143,6 @@
 
 
 
-
 #define INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO_CUSTOM_VARIABLES( \
     category_group, atomic, category_group_enabled) \
     category_group_enabled = \
@@ -191,7 +189,6 @@
             ##__VA_ARGS__); \
       } \
     } while (0)
-
 
 
 
@@ -252,16 +249,6 @@ private:
 };
 
 
-union TraceValueUnion {
-  bool as_bool;
-  uint64_t as_uint;
-  long long as_int;
-  double as_double;
-  const void* as_pointer;
-  const char* as_string;
-};
-
-
 class TraceStringWithCopy {
  public:
   explicit TraceStringWithCopy(const char* str) : str_(str) {}
@@ -273,48 +260,46 @@ class TraceStringWithCopy {
 
 
 
-#define INTERNAL_DECLARE_SET_TRACE_VALUE(actual_type, \
-                                         union_member, \
-                                         value_type_id) \
-    static inline void SetTraceValue( \
-        actual_type arg, \
-        unsigned char* type, \
-        uint64_t* value) { \
-      TraceValueUnion type_value; \
-      type_value.union_member = arg; \
-      *type = value_type_id; \
-      *value = type_value.as_uint; \
+template <typename T>
+static inline void SetTraceValue(const T& arg, unsigned char* type, uint64_t* value) {
+    static_assert(sizeof(T) <= sizeof(uint64_t), "Trace value is larger than uint64_t");
+
+    if constexpr (std::is_same<bool, T>::value) {
+        *type = TRACE_VALUE_TYPE_BOOL;
+        *value = arg;
+    } else if constexpr (std::is_same<const char*, T>::value) {
+        *type = TRACE_VALUE_TYPE_STRING;
+        *value = reinterpret_cast<uintptr_t>(arg);
+    } else if constexpr (std::is_same<TraceStringWithCopy, T>::value) {
+        *type = TRACE_VALUE_TYPE_COPY_STRING;
+        *value = reinterpret_cast<uintptr_t>(static_cast<const char*>(arg));
+    } else if constexpr (std::is_pointer<T>::value) {
+        *type = TRACE_VALUE_TYPE_POINTER;
+        *value = reinterpret_cast<uintptr_t>(arg);
+    } else if constexpr (std::is_unsigned_v<T>) {
+        *type = TRACE_VALUE_TYPE_UINT;
+        *value = arg;
+    } else if constexpr (std::is_signed_v<T>) {
+        *type = TRACE_VALUE_TYPE_INT;
+        *value = static_cast<uint64_t>(arg);
+    } else if constexpr (std::is_floating_point_v<T>) {
+        *type = TRACE_VALUE_TYPE_DOUBLE;
+        *value = sk_bit_cast<uint64_t>(arg);
+    } else {
+        
+        
+        static_assert(!sizeof(T), "Unsupported type for trace argument");
     }
+}
 
-#define INTERNAL_DECLARE_SET_TRACE_VALUE_INT(actual_type, \
-                                             value_type_id) \
-    static inline void SetTraceValue( \
-        actual_type arg, \
-        unsigned char* type, \
-        uint64_t* value) { \
-      *type = value_type_id; \
-      *value = static_cast<uint64_t>(arg); \
-    }
 
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(uint64_t, TRACE_VALUE_TYPE_UINT)
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(unsigned int, TRACE_VALUE_TYPE_UINT)
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(unsigned short, TRACE_VALUE_TYPE_UINT)
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(unsigned char, TRACE_VALUE_TYPE_UINT)
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(long long, TRACE_VALUE_TYPE_INT)
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(long, TRACE_VALUE_TYPE_INT)
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(int, TRACE_VALUE_TYPE_INT)
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(short, TRACE_VALUE_TYPE_INT)
-INTERNAL_DECLARE_SET_TRACE_VALUE_INT(signed char, TRACE_VALUE_TYPE_INT)
-INTERNAL_DECLARE_SET_TRACE_VALUE(bool, as_bool, TRACE_VALUE_TYPE_BOOL)
-INTERNAL_DECLARE_SET_TRACE_VALUE(double, as_double, TRACE_VALUE_TYPE_DOUBLE)
-INTERNAL_DECLARE_SET_TRACE_VALUE(const void*, as_pointer, TRACE_VALUE_TYPE_POINTER)
-INTERNAL_DECLARE_SET_TRACE_VALUE(const char*, as_string, TRACE_VALUE_TYPE_STRING)
-INTERNAL_DECLARE_SET_TRACE_VALUE(const TraceStringWithCopy&, as_string,
-                                 TRACE_VALUE_TYPE_COPY_STRING)
+static inline const char* TraceValueAsString(uint64_t value) {
+    return reinterpret_cast<const char*>(static_cast<uintptr_t>(value));
+}
 
-#undef INTERNAL_DECLARE_SET_TRACE_VALUE
-#undef INTERNAL_DECLARE_SET_TRACE_VALUE_INT
-
+static inline const void* TraceValueAsPointer(uint64_t value) {
+    return reinterpret_cast<const void*>(static_cast<uintptr_t>(value));
+}
 
 
 
@@ -400,7 +385,6 @@ class TRACE_EVENT_API_CLASS_EXPORT ScopedTracer {
     ScopedTracer(const ScopedTracer&) = delete;
     ScopedTracer& operator=(const ScopedTracer&) = delete;
 
-  
   
   
   

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#include "include/private/base/SkDebug.h"
+
+#include "include/private/base/SkAssert.h" 
+#include "include/private/base/SkAttributes.h" 
+
+#if defined(SK_BUILD_FOR_GOOGLE3)
+void SkDebugfForDumpStackTrace(const char* data, void* unused) {
+    SkDebugf("%s", data);
+}
+#endif

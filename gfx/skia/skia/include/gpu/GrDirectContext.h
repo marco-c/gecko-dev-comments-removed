@@ -34,16 +34,15 @@ class GrGpu;
 class GrResourceCache;
 class GrResourceProvider;
 class SkData;
+class SkImage;
 class SkPixmap;
+class SkSurface;
 class SkTaskGroup;
 class SkTraceMemoryDump;
 enum SkColorType : int;
 enum class SkTextureCompressionType;
-struct GrGLInterface;
 struct GrMockOptions;
-struct GrVkBackendContext; 
 struct GrD3DBackendContext; 
-struct GrMtlBackendContext; 
 
 namespace skgpu {
     class MutableTextureState;
@@ -54,53 +53,12 @@ namespace skgpu {
 namespace sktext { namespace gpu { class StrikeCache; } }
 namespace wgpu { class Device; } 
 
+namespace SkSurfaces {
+enum class BackendSurfaceAccess;
+}
+
 class SK_API GrDirectContext : public GrRecordingContext {
 public:
-#ifdef SK_GL
-    
-
-
-
-    static sk_sp<GrDirectContext> MakeGL(sk_sp<const GrGLInterface>, const GrContextOptions&);
-    static sk_sp<GrDirectContext> MakeGL(sk_sp<const GrGLInterface>);
-    static sk_sp<GrDirectContext> MakeGL(const GrContextOptions&);
-    static sk_sp<GrDirectContext> MakeGL();
-#endif
-
-#ifdef SK_VULKAN
-    
-
-
-
-
-
-
-    static sk_sp<GrDirectContext> MakeVulkan(const GrVkBackendContext&, const GrContextOptions&);
-    static sk_sp<GrDirectContext> MakeVulkan(const GrVkBackendContext&);
-#endif
-
-#ifdef SK_METAL
-    
-
-
-
-
-
-
-    static sk_sp<GrDirectContext> MakeMetal(const GrMtlBackendContext&, const GrContextOptions&);
-    static sk_sp<GrDirectContext> MakeMetal(const GrMtlBackendContext&);
-    
-
-
-
-
-
-
-
-    static sk_sp<GrDirectContext> MakeMetal(void* device, void* queue, const GrContextOptions&);
-    static sk_sp<GrDirectContext> MakeMetal(void* device, void* queue);
-#endif
-
 #ifdef SK_DIRECT3D
     
 
@@ -108,12 +66,6 @@ public:
 
     static sk_sp<GrDirectContext> MakeDirect3D(const GrD3DBackendContext&, const GrContextOptions&);
     static sk_sp<GrDirectContext> MakeDirect3D(const GrD3DBackendContext&);
-#endif
-
-#ifdef SK_DAWN
-    static sk_sp<GrDirectContext> MakeDawn(const wgpu::Device&,
-                                           const GrContextOptions&);
-    static sk_sp<GrDirectContext> MakeDawn(const wgpu::Device&);
 #endif
 
     static sk_sp<GrDirectContext> MakeMock(const GrMockOptions*, const GrContextOptions&);
@@ -171,6 +123,13 @@ public:
 
 
     bool abandoned() override;
+
+    
+
+
+
+
+    bool isDeviceLost();
 
     
     sk_sp<GrContextThreadSafeProxy> threadSafeProxy();
@@ -276,8 +235,9 @@ public:
 
 
 
-    void performDeferredCleanup(std::chrono::milliseconds msNotUsed,
-                                bool scratchResourcesOnly=false);
+    void performDeferredCleanup(
+            std::chrono::milliseconds msNotUsed,
+            GrPurgeResourceOptions opts = GrPurgeResourceOptions::kAllResources);
 
     
     void purgeResourcesNotUsedInMs(std::chrono::milliseconds msNotUsed) {
@@ -309,7 +269,7 @@ public:
 
 
 
-    void purgeUnlockedResources(bool scratchResourcesOnly);
+    void purgeUnlockedResources(GrPurgeResourceOptions opts);
 
     
 
@@ -325,6 +285,11 @@ public:
 
 
     using GrRecordingContext::colorTypeSupportedAsImage;
+
+    
+
+
+    using GrRecordingContext::supportsProtectedContent;
 
     
 
@@ -353,6 +318,9 @@ public:
 
 
 
+
+
+
     bool wait(int numSemaphores, const GrBackendSemaphore* waitSemaphores,
               bool deleteSemaphoresAfterWait = true);
 
@@ -361,9 +329,9 @@ public:
 
 
 
-    void flushAndSubmit(bool syncCpu = false) {
+    void flushAndSubmit(GrSyncCpu sync = GrSyncCpu::kNo) {
         this->flush(GrFlushInfo());
-        this->submit(syncCpu);
+        this->submit(sync);
     }
 
     
@@ -392,7 +360,24 @@ public:
 
     GrSemaphoresSubmitted flush(const GrFlushInfo& info);
 
-    void flush() { this->flush({}); }
+    void flush() { this->flush(GrFlushInfo()); }
+
+    
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(const sk_sp<const SkImage>& image, const GrFlushInfo& info);
+    void flush(const sk_sp<const SkImage>& image);
+
+    
+
+
+    void flushAndSubmit(const sk_sp<const SkImage>& image);
 
     
 
@@ -408,7 +393,96 @@ public:
 
 
 
-    bool submit(bool syncCpu = false);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(SkSurface* surface,
+                                SkSurfaces::BackendSurfaceAccess access,
+                                const GrFlushInfo& info);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(SkSurface* surface,
+                                const GrFlushInfo& info,
+                                const skgpu::MutableTextureState* newState = nullptr);
+
+    
+
+
+
+
+
+
+
+    void flushAndSubmit(SkSurface* surface, GrSyncCpu sync = GrSyncCpu::kNo);
+
+    
+
+
+
+
+    void flush(SkSurface* surface);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool submit(GrSyncCpu sync = GrSyncCpu::kNo);
 
     
 
@@ -456,12 +530,12 @@ public:
     GrBackendTexture createBackendTexture(int width,
                                           int height,
                                           const GrBackendFormat&,
-                                          GrMipmapped,
+                                          skgpu::Mipmapped,
                                           GrRenderable,
                                           GrProtected = GrProtected::kNo,
                                           std::string_view label = {});
 
-     
+    
 
 
 
@@ -469,33 +543,15 @@ public:
 
 
 
-     GrBackendTexture createBackendTexture(int width, int height,
-                                           SkColorType,
-                                           GrMipmapped,
-                                           GrRenderable,
-                                           GrProtected = GrProtected::kNo,
-                                           std::string_view label = {});
+    GrBackendTexture createBackendTexture(int width,
+                                          int height,
+                                          SkColorType,
+                                          skgpu::Mipmapped,
+                                          GrRenderable,
+                                          GrProtected = GrProtected::kNo,
+                                          std::string_view label = {});
 
-     
-
-
-
-
-
-
-
-
-     GrBackendTexture createBackendTexture(int width, int height,
-                                           const GrBackendFormat&,
-                                           const SkColor4f& color,
-                                           GrMipmapped,
-                                           GrRenderable,
-                                           GrProtected = GrProtected::kNo,
-                                           GrGpuFinishedProc finishedProc = nullptr,
-                                           GrGpuFinishedContext finishedContext = nullptr,
-                                           std::string_view label = {});
-
-     
+    
 
 
 
@@ -504,19 +560,18 @@ public:
 
 
 
+    GrBackendTexture createBackendTexture(int width,
+                                          int height,
+                                          const GrBackendFormat&,
+                                          const SkColor4f& color,
+                                          skgpu::Mipmapped,
+                                          GrRenderable,
+                                          GrProtected = GrProtected::kNo,
+                                          GrGpuFinishedProc finishedProc = nullptr,
+                                          GrGpuFinishedContext finishedContext = nullptr,
+                                          std::string_view label = {});
 
-
-     GrBackendTexture createBackendTexture(int width, int height,
-                                           SkColorType,
-                                           const SkColor4f& color,
-                                           GrMipmapped,
-                                           GrRenderable,
-                                           GrProtected = GrProtected::kNo,
-                                           GrGpuFinishedProc finishedProc = nullptr,
-                                           GrGpuFinishedContext finishedContext = nullptr,
-                                           std::string_view label = {});
-
-     
+    
 
 
 
@@ -527,6 +582,18 @@ public:
 
 
 
+    GrBackendTexture createBackendTexture(int width,
+                                          int height,
+                                          SkColorType,
+                                          const SkColor4f& color,
+                                          skgpu::Mipmapped,
+                                          GrRenderable,
+                                          GrProtected = GrProtected::kNo,
+                                          GrGpuFinishedProc finishedProc = nullptr,
+                                          GrGpuFinishedContext finishedContext = nullptr,
+                                          std::string_view label = {});
+
+    
 
 
 
@@ -535,14 +602,24 @@ public:
 
 
 
-     GrBackendTexture createBackendTexture(const SkPixmap srcData[],
-                                           int numLevels,
-                                           GrSurfaceOrigin,
-                                           GrRenderable,
-                                           GrProtected,
-                                           GrGpuFinishedProc finishedProc = nullptr,
-                                           GrGpuFinishedContext finishedContext = nullptr,
-                                           std::string_view label = {});
+
+
+
+
+
+
+
+
+
+
+    GrBackendTexture createBackendTexture(const SkPixmap srcData[],
+                                          int numLevels,
+                                          GrSurfaceOrigin,
+                                          GrRenderable,
+                                          GrProtected,
+                                          GrGpuFinishedProc finishedProc = nullptr,
+                                          GrGpuFinishedContext finishedContext = nullptr,
+                                          std::string_view label = {});
 
     
 
@@ -668,18 +745,20 @@ public:
 
 
 
-    GrBackendTexture createCompressedBackendTexture(int width, int height,
+    GrBackendTexture createCompressedBackendTexture(int width,
+                                                    int height,
                                                     const GrBackendFormat&,
                                                     const SkColor4f& color,
-                                                    GrMipmapped,
+                                                    skgpu::Mipmapped,
                                                     GrProtected = GrProtected::kNo,
                                                     GrGpuFinishedProc finishedProc = nullptr,
                                                     GrGpuFinishedContext finishedContext = nullptr);
 
-    GrBackendTexture createCompressedBackendTexture(int width, int height,
+    GrBackendTexture createCompressedBackendTexture(int width,
+                                                    int height,
                                                     SkTextureCompressionType,
                                                     const SkColor4f& color,
-                                                    GrMipmapped,
+                                                    skgpu::Mipmapped,
                                                     GrProtected = GrProtected::kNo,
                                                     GrGpuFinishedProc finishedProc = nullptr,
                                                     GrGpuFinishedContext finishedContext = nullptr);
@@ -696,18 +775,22 @@ public:
 
 
 
-    GrBackendTexture createCompressedBackendTexture(int width, int height,
+    GrBackendTexture createCompressedBackendTexture(int width,
+                                                    int height,
                                                     const GrBackendFormat&,
-                                                    const void* data, size_t dataSize,
-                                                    GrMipmapped,
+                                                    const void* data,
+                                                    size_t dataSize,
+                                                    skgpu::Mipmapped,
                                                     GrProtected = GrProtected::kNo,
                                                     GrGpuFinishedProc finishedProc = nullptr,
                                                     GrGpuFinishedContext finishedContext = nullptr);
 
-    GrBackendTexture createCompressedBackendTexture(int width, int height,
+    GrBackendTexture createCompressedBackendTexture(int width,
+                                                    int height,
                                                     SkTextureCompressionType,
-                                                    const void* data, size_t dataSize,
-                                                    GrMipmapped,
+                                                    const void* data,
+                                                    size_t dataSize,
+                                                    skgpu::Mipmapped,
                                                     GrProtected = GrProtected::kNo,
                                                     GrGpuFinishedProc finishedProc = nullptr,
                                                     GrGpuFinishedContext finishedContext = nullptr);
@@ -774,7 +857,7 @@ public:
                                      GrGpuFinishedProc finishedProc = nullptr,
                                      GrGpuFinishedContext finishedContext = nullptr);
 
-    void deleteBackendTexture(GrBackendTexture);
+    void deleteBackendTexture(const GrBackendTexture&);
 
     
     
@@ -824,7 +907,9 @@ public:
     const GrDirectContextPriv priv() const;  
 
 protected:
-    GrDirectContext(GrBackendApi backend, const GrContextOptions& options);
+    GrDirectContext(GrBackendApi backend,
+                    const GrContextOptions& options,
+                    sk_sp<GrContextThreadSafeProxy> proxy);
 
     bool init() override;
 
@@ -878,7 +963,7 @@ private:
     
     std::unique_ptr<SkTaskGroup>              fTaskGroup;
     std::unique_ptr<sktext::gpu::StrikeCache> fStrikeCache;
-    sk_sp<GrGpu>                              fGpu;
+    std::unique_ptr<GrGpu>                    fGpu;
     std::unique_ptr<GrResourceCache>          fResourceCache;
     std::unique_ptr<GrResourceProvider>       fResourceProvider;
 

@@ -9,8 +9,13 @@
 #define SkPathMeasure_DEFINED
 
 #include "include/core/SkContourMeasure.h"
-#include "include/core/SkPath.h"
-#include "include/private/base/SkTDArray.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/private/base/SkAPI.h"
+
+class SkMatrix;
+class SkPath;
 
 class SK_API SkPathMeasure {
 public:
@@ -23,6 +28,9 @@ public:
 
     SkPathMeasure(const SkPath& path, bool forceClosed, SkScalar resScale = 1);
     ~SkPathMeasure();
+
+    SkPathMeasure(SkPathMeasure&&) = default;
+    SkPathMeasure& operator=(SkPathMeasure&&) = default;
 
     
 
@@ -39,8 +47,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT getPosTan(SkScalar distance, SkPoint* position,
-                                         SkVector* tangent);
+    [[nodiscard]] bool getPosTan(SkScalar distance, SkPoint* position, SkVector* tangent);
 
     enum MatrixFlags {
         kGetPosition_MatrixFlag     = 0x01,
@@ -53,8 +60,8 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT getMatrix(SkScalar distance, SkMatrix* matrix,
-                                  MatrixFlags flags = kGetPosAndTan_MatrixFlag);
+    [[nodiscard]] bool getMatrix(SkScalar distance, SkMatrix* matrix,
+                                 MatrixFlags flags = kGetPosAndTan_MatrixFlag);
 
     
 
@@ -77,12 +84,11 @@ public:
     void    dump();
 #endif
 
+    const SkContourMeasure* currentMeasure() const { return fContour.get(); }
+
 private:
     SkContourMeasureIter    fIter;
     sk_sp<SkContourMeasure> fContour;
-
-    SkPathMeasure(const SkPathMeasure&) = delete;
-    SkPathMeasure& operator=(const SkPathMeasure&) = delete;
 };
 
 #endif

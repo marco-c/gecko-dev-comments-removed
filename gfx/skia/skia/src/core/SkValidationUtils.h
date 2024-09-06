@@ -10,7 +10,6 @@
 
 #include "include/core/SkBitmap.h"
 #include "include/core/SkBlendMode.h"
-#include "src/core/SkXfermodePriv.h"
 
 
 

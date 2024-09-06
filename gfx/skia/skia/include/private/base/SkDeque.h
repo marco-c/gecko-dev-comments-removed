@@ -42,13 +42,8 @@ public:
     const void* front() const { return fFront; }
     const void* back() const  { return fBack; }
 
-    void* front() {
-        return (void*)((const SkDeque*)this)->front();
-    }
-
-    void* back() {
-        return (void*)((const SkDeque*)this)->back();
-    }
+    void* front() { return fFront; }
+    void* back() { return fBack; }
 
     
 

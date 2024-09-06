@@ -12,7 +12,7 @@
 
 
 
-#if SKIA_IMPLEMENTATION || !defined(SK_VULKAN)
+#if (SKIA_IMPLEMENTATION || !defined(SK_VULKAN)) && !defined(SK_USE_EXTERNAL_VULKAN_HEADERS)
 #include "include/third_party/vulkan/vulkan/vulkan_core.h"
 #else
 
@@ -22,7 +22,7 @@
 
 #ifdef SK_BUILD_FOR_ANDROID
 
-#if SKIA_IMPLEMENTATION || !defined(SK_VULKAN)
+#if (SKIA_IMPLEMENTATION || !defined(SK_VULKAN)) && !defined(SK_USE_EXTERNAL_VULKAN_HEADERS)
 #include "include/third_party/vulkan/vulkan/vulkan_android.h"
 #else
 

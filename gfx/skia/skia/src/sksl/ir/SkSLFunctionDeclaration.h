@@ -8,28 +8,27 @@
 #ifndef SKSL_FUNCTIONDECLARATION
 #define SKSL_FUNCTIONDECLARATION
 
+#include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/private/SkSLSymbol.h"
 #include "include/private/base/SkTArray.h"
 #include "src/sksl/SkSLIntrinsicList.h"
+#include "src/sksl/ir/SkSLIRNode.h"
+#include "src/sksl/ir/SkSLModifierFlags.h"
+#include "src/sksl/ir/SkSLSymbol.h"
 
 #include <memory>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace SkSL {
 
 class Context;
 class ExpressionArray;
 class FunctionDefinition;
+struct Modifiers;
 class Position;
-class SymbolTable;
 class Type;
 class Variable;
-
-struct Modifiers;
 
 
 
@@ -38,29 +37,28 @@ class FunctionDeclaration final : public Symbol {
 public:
     inline static constexpr Kind kIRNodeKind = Kind::kFunctionDeclaration;
 
-    FunctionDeclaration(Position pos,
-                        const Modifiers* modifiers,
+    FunctionDeclaration(const Context& context,
+                        Position pos,
+                        ModifierFlags modifierFlags,
                         std::string_view name,
-                        std::vector<Variable*> parameters,
+                        skia_private::TArray<Variable*> parameters,
                         const Type* returnType,
-                        bool builtin);
+                        IntrinsicKind intrinsicKind);
 
     static FunctionDeclaration* Convert(const Context& context,
-                                        SymbolTable& symbols,
                                         Position pos,
-                                        Position modifiersPos,
-                                        const Modifiers* modifiers,
+                                        const Modifiers& modifiers,
                                         std::string_view name,
-                                        std::vector<std::unique_ptr<Variable>> parameters,
+                                        skia_private::TArray<std::unique_ptr<Variable>> parameters,
                                         Position returnTypePos,
                                         const Type* returnType);
 
-    const Modifiers& modifiers() const {
-        return *fModifiers;
+    ModifierFlags modifierFlags() const {
+        return fModifierFlags;
     }
 
-    void setModifiers(const Modifiers* m) {
-        fModifiers = m;
+    void setModifierFlags(ModifierFlags m) {
+        fModifierFlags = m;
     }
 
     const FunctionDefinition* definition() const {
@@ -77,7 +75,7 @@ public:
         fNextOverload = overload;
     }
 
-    const std::vector<Variable*>& parameters() const {
+    SkSpan<Variable* const> parameters() const {
         return fParameters;
     }
 
@@ -121,6 +119,17 @@ public:
 
 
 
+    const Variable* getMainCoordsParameter() const {
+        return fHasMainCoordsParameter ? fParameters[0] : nullptr;
+    }
+    const Variable* getMainInputColorParameter() const {
+        return fHasMainInputColorParameter ? fParameters[0] : nullptr;
+    }
+    const Variable* getMainDestColorParameter() const {
+        return fHasMainDestColorParameter ? fParameters[1] : nullptr;
+    }
+
+    
 
 
 
@@ -130,7 +139,12 @@ public:
 
 
 
-    using ParamTypes = SkSTArray<8, const Type*>;
+
+
+
+
+
+    using ParamTypes = skia_private::STArray<8, const Type*>;
     bool determineFinalTypes(const ExpressionArray& arguments,
                              ParamTypes* outParameterTypes,
                              const Type** outReturnType) const;
@@ -138,12 +152,15 @@ public:
 private:
     const FunctionDefinition* fDefinition;
     FunctionDeclaration* fNextOverload = nullptr;
-    const Modifiers* fModifiers;
-    std::vector<Variable*> fParameters;
-    const Type* fReturnType;
-    bool fBuiltin;
-    bool fIsMain;
+    skia_private::TArray<Variable*> fParameters;
+    const Type* fReturnType = nullptr;
+    ModifierFlags fModifierFlags;
     mutable IntrinsicKind fIntrinsicKind = kNotIntrinsic;
+    bool fBuiltin = false;
+    bool fIsMain = false;
+    bool fHasMainCoordsParameter = false;
+    bool fHasMainInputColorParameter = false;
+    bool fHasMainDestColorParameter = false;
 
     using INHERITED = Symbol;
 };

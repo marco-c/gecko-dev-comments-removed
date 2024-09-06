@@ -5,11 +5,10 @@
 
 
 
-#include "include/private/SkSLModifiers.h"
+#include "src/base/SkEnumBitMask.h"
 #include "src/sksl/SkSLAnalysis.h"
-#include "src/sksl/SkSLContext.h"
-#include "src/sksl/SkSLModifiersPool.h"
 #include "src/sksl/analysis/SkSLProgramUsage.h"
+#include "src/sksl/ir/SkSLModifierFlags.h"
 #include "src/sksl/ir/SkSLVariable.h"
 #include "src/sksl/transform/SkSLTransform.h"
 
@@ -17,28 +16,25 @@ namespace SkSL {
 
 class Expression;
 
-const Modifiers* Transform::AddConstToVarModifiers(const Context& context,
-                                                   const Variable& var,
-                                                   const Expression* initialValue,
-                                                   const ProgramUsage* usage) {
+ModifierFlags Transform::AddConstToVarModifiers(const Variable& var,
+                                                const Expression* initialValue,
+                                                const ProgramUsage* usage) {
     
-    const Modifiers* modifiers = &var.modifiers();
-    if (modifiers->fFlags & Modifiers::kConst_Flag) {
-        return modifiers;
+    ModifierFlags flags = var.modifierFlags();
+    if (flags.isConst()) {
+        return flags;
     }
     
     if (!initialValue || !Analysis::IsCompileTimeConstant(*initialValue)) {
-        return modifiers;
+        return flags;
     }
     
     ProgramUsage::VariableCounts counts = usage->get(var);
     if (counts.fWrite != 1) {
-        return modifiers;
+        return flags;
     }
     
-    Modifiers constModifiers = *modifiers;
-    constModifiers.fFlags |= Modifiers::kConst_Flag;
-    return context.fModifiersPool->add(constModifiers);
+    return flags | ModifierFlag::kConst;
 }
 
 }  

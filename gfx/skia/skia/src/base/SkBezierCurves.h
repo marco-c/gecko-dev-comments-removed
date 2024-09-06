@@ -7,7 +7,11 @@
 #ifndef SkBezierCurves_DEFINED
 #define SkBezierCurves_DEFINED
 
+#include "include/private/base/SkSpan_impl.h"
+
 #include <array>
+
+struct SkPoint;
 
 
 
@@ -58,6 +62,41 @@ public:
 
 
     static std::array<double, 4> ConvertToPolynomial(const double curve[8], bool yValues);
+
+    static SkSpan<const float> IntersectWithHorizontalLine(
+            SkSpan<const SkPoint> controlPoints, float yIntercept,
+            float intersectionStorage[3]);
+
+    static SkSpan<const float> Intersect(
+            double AX, double BX, double CX, double DX,
+            double AY, double BY, double CY, double DY,
+            float toIntersect, float intersectionsStorage[3]);
 };
 
-#endif
+class SkBezierQuad {
+public:
+    static SkSpan<const float> IntersectWithHorizontalLine(
+            SkSpan<const SkPoint> controlPoints, float yIntercept,
+            float intersectionStorage[2]);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static SkSpan<const float> Intersect(
+            double AX, double BX, double CX,
+            double AY, double BY, double CY,
+            double yIntercept,
+            float intersectionStorage[2]);
+};
+
+#endif  

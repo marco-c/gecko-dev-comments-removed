@@ -8,30 +8,24 @@
 #ifndef SkHalf_DEFINED
 #define SkHalf_DEFINED
 
-#include "src/base/SkVx.h"
+#include <cstdint>
 
 
 
 
-typedef uint16_t SkHalf;
+using SkHalf = uint16_t;
 
-static constexpr uint16_t SK_HalfMin     = 0x0400; 
-static constexpr uint16_t SK_HalfMax     = 0x7bff; 
-static constexpr uint16_t SK_HalfEpsilon = 0x1400; 
-static constexpr uint16_t SK_Half1       = 0x3C00; 
+static constexpr uint16_t SK_HalfNaN      = 0x7c01; 
+static constexpr uint16_t SK_HalfInfinity = 0x7c00;
+static constexpr uint16_t SK_HalfMin      = 0x0400; 
+static constexpr uint16_t SK_HalfMax      = 0x7bff; 
+static constexpr uint16_t SK_HalfEpsilon  = 0x1400; 
+static constexpr uint16_t SK_Half1        = 0x3C00; 
+
+
 
 
 float SkHalfToFloat(SkHalf h);
 SkHalf SkFloatToHalf(float f);
-
-
-
-
-static inline skvx::float4 SkHalfToFloat_finite_ftz(uint64_t rgba) {
-    return skvx::from_half(skvx::half4::Load(&rgba));
-}
-static inline skvx::half4 SkFloatToHalf_finite_ftz(const skvx::float4& c) {
-    return skvx::to_half(c);
-}
 
 #endif

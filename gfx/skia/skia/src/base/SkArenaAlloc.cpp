@@ -159,6 +159,11 @@ void SkArenaAllocWithReset::reset() {
     new (this) SkArenaAllocWithReset{firstBlock, firstSize, firstHeapAllocationSize};
 }
 
+bool SkArenaAllocWithReset::isEmpty() {
+    return this->cursor() == nullptr ||
+           this->cursor() == fFirstBlock + sizeof(Footer);
+}
+
 
 
 std::array<const uint32_t, 47> SkFibonacci47 {

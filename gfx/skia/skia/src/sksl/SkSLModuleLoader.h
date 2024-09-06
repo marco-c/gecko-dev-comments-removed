@@ -14,7 +14,6 @@
 namespace SkSL {
 
 class Compiler;
-class ModifiersPool;
 struct Module;
 class Type;
 
@@ -39,9 +38,6 @@ public:
     const Module* rootModule();
 
     
-    ModifiersPool& coreModifiers();
-
-    
     
     const Module* loadSharedModule(SkSL::Compiler* compiler);
     const Module* loadGPUModule(SkSL::Compiler* compiler);
@@ -50,6 +46,8 @@ public:
     const Module* loadComputeModule(SkSL::Compiler* compiler);
     const Module* loadGraphiteVertexModule(SkSL::Compiler* compiler);
     const Module* loadGraphiteFragmentModule(SkSL::Compiler* compiler);
+    const Module* loadGraphiteVertexES2Module(SkSL::Compiler* compiler);
+    const Module* loadGraphiteFragmentES2Module(SkSL::Compiler* compiler);
 
     const Module* loadPublicModule(SkSL::Compiler* compiler);
     const Module* loadPrivateRTShaderModule(SkSL::Compiler* compiler);

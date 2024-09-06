@@ -22,17 +22,17 @@
 #endif
 
 #ifdef SK_VULKAN
+#include "include/gpu/vk/VulkanTypes.h"
 #include "include/private/gpu/vk/SkiaVulkan.h"
 #endif
 
 namespace skgpu {
 class MutableTextureState;
-class MutableTextureStateRef;
 }
 
 namespace skgpu::graphite {
 
-class BackendTexture {
+class SK_API BackendTexture {
 public:
     BackendTexture();
 #ifdef SK_DAWN
@@ -43,19 +43,39 @@ public:
     
     
     
-    BackendTexture(wgpu::Texture texture);
+    
+    
+    BackendTexture(WGPUTexture texture);
+
     
     
     
     
-    BackendTexture(SkISize dimensions,
-                   const DawnTextureInfo& info,
-                   wgpu::TextureView textureView);
+    
+    
+    
+    
+    BackendTexture(SkISize planeDimensions, const DawnTextureInfo& info, WGPUTexture texture);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    BackendTexture(SkISize dimensions, const DawnTextureInfo& info, WGPUTextureView textureView);
 #endif
 #ifdef SK_METAL
     
     
-    BackendTexture(SkISize dimensions, MtlHandle mtlTexture);
+    BackendTexture(SkISize dimensions, CFTypeRef mtlTexture);
 #endif
 
 #ifdef SK_VULKAN
@@ -63,7 +83,8 @@ public:
                    const VulkanTextureInfo&,
                    VkImageLayout,
                    uint32_t queueFamilyIndex,
-                   VkImage);
+                   VkImage,
+                   VulkanAlloc);
 #endif
 
     BackendTexture(const BackendTexture&);
@@ -90,60 +111,50 @@ public:
     void setMutableState(const skgpu::MutableTextureState&);
 
 #ifdef SK_DAWN
-    wgpu::Texture getDawnTexture() const;
-    wgpu::TextureView getDawnTextureView() const;
+    WGPUTexture getDawnTexturePtr() const;
+    WGPUTextureView getDawnTextureViewPtr() const;
 #endif
 #ifdef SK_METAL
-    MtlHandle getMtlTexture() const;
+    CFTypeRef getMtlTexture() const;
 #endif
 
 #ifdef SK_VULKAN
     VkImage getVkImage() const;
     VkImageLayout getVkImageLayout() const;
     uint32_t getVkQueueFamilyIndex() const;
+    const VulkanAlloc* getMemoryAlloc() const;
 #endif
 
 private:
-    sk_sp<MutableTextureStateRef> mutableState() const;
+    friend class VulkanResourceProvider;    
+    sk_sp<MutableTextureState> getMutableState() const;
 
     SkISize fDimensions;
     TextureInfo fInfo;
 
-    sk_sp<MutableTextureStateRef> fMutableState;
+    sk_sp<MutableTextureState> fMutableState;
 
-#ifdef SK_DAWN
-    struct Dawn {
-        Dawn(wgpu::Texture texture) : fTexture(std::move(texture)) {}
-        Dawn(wgpu::TextureView textureView) : fTextureView(std::move(textureView)) {}
-
-        bool operator==(const Dawn& that) const {
-            return fTexture.Get() == that.fTexture.Get() &&
-                   fTextureView.Get() == that.fTextureView.Get();
-        }
-        bool operator!=(const Dawn& that) const {
-            return !this->operator==(that);
-        }
-        Dawn& operator=(const Dawn& that) {
-            fTexture = that.fTexture;
-            fTextureView = that.fTextureView;
-            return *this;
-        }
-
-        wgpu::Texture fTexture;
-        wgpu::TextureView fTextureView;
-    };
+#ifdef SK_VULKAN
+    
+    
+    
+    VulkanAlloc fMemoryAlloc = VulkanAlloc();
 #endif
 
     union {
 #ifdef SK_DAWN
-        Dawn fDawn;
+        struct {
+            WGPUTexture fDawnTexture;
+            WGPUTextureView fDawnTextureView;
+        };
 #endif
 #ifdef SK_METAL
-        MtlHandle fMtlTexture;
+        CFTypeRef fMtlTexture;
 #endif
 #ifdef SK_VULKAN
-        VkImage fVkImage;
+        VkImage fVkImage = VK_NULL_HANDLE;
 #endif
+        void* fEnsureUnionNonEmpty;
     };
 };
 

@@ -8,7 +8,12 @@
 #ifndef SkPerlinNoiseShader_DEFINED
 #define SkPerlinNoiseShader_DEFINED
 
-#include "include/core/SkShader.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkShader.h" 
+#include "include/private/base/SkAPI.h"
+
+struct SkISize;
 
 
 
@@ -22,9 +27,7 @@
 
 
 
-class SK_API SkPerlinNoiseShader {
-public:
-    
+namespace SkShaders {
 
 
 
@@ -38,17 +41,13 @@ public:
 
 
 
-    static sk_sp<SkShader> MakeFractalNoise(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
-                                            int numOctaves, SkScalar seed,
-                                            const SkISize* tileSize = nullptr);
-    static sk_sp<SkShader> MakeTurbulence(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
-                                          int numOctaves, SkScalar seed,
-                                          const SkISize* tileSize = nullptr);
 
-    static void RegisterFlattenables();
-
-private:
-    SkPerlinNoiseShader() = delete;
-};
+SK_API sk_sp<SkShader> MakeFractalNoise(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
+                                        int numOctaves, SkScalar seed,
+                                        const SkISize* tileSize = nullptr);
+SK_API sk_sp<SkShader> MakeTurbulence(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
+                                      int numOctaves, SkScalar seed,
+                                      const SkISize* tileSize = nullptr);
+}  
 
 #endif

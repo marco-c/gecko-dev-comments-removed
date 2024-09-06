@@ -5,10 +5,34 @@
 
 
 
+#ifndef SkSwizzlePriv_DEFINED
+#define SkSwizzlePriv_DEFINED
+
 #include "include/private/SkColorData.h"
 #include "src/base/SkVx.h"
 
 #include <cstdint>
+
+namespace SkOpts {
+    
+    using Swizzle_8888_u32 = void (*)(uint32_t*, const uint32_t*, int);
+    extern Swizzle_8888_u32 RGBA_to_BGRA,          
+                            RGBA_to_rgbA,          
+                            RGBA_to_bgrA,          
+                            rgbA_to_RGBA,          
+                            rgbA_to_BGRA,          
+                            inverted_CMYK_to_RGB1, 
+                            inverted_CMYK_to_BGR1; 
+
+    using Swizzle_8888_u8 = void (*)(uint32_t*, const uint8_t*, int);
+    extern Swizzle_8888_u8 RGB_to_RGB1,     
+                           RGB_to_BGR1,     
+                           gray_to_RGB1,    
+                           grayA_to_RGBA,   
+                           grayA_to_rgbA;   
+
+    void Init_Swizzler();
+}  
 
 static inline skvx::float4 swizzle_rb(const skvx::float4& x) {
     return skvx::shuffle<2, 1, 0, 3>(x);
@@ -34,3 +58,4 @@ static inline uint32_t Sk4f_toL32(const skvx::float4& px) {
                        .store(&l32);
     return l32;
 }
+#endif  

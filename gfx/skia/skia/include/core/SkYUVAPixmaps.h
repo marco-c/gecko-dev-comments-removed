@@ -8,16 +8,20 @@
 #ifndef SkYUVAPixmaps_DEFINED
 #define SkYUVAPixmaps_DEFINED
 
+#include "include/core/SkColorType.h"
 #include "include/core/SkData.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkPixmap.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
+#include "include/core/SkTypes.h"
 #include "include/core/SkYUVAInfo.h"
 #include "include/private/base/SkTo.h"
 
 #include <array>
 #include <bitset>
-
-class GrImageContext;
+#include <cstddef>
+#include <tuple>
 
 
 
@@ -48,9 +52,6 @@ public:
     public:
         
         constexpr SupportedDataTypes() = default;
-
-        
-        SupportedDataTypes(const GrImageContext&);
 
         
         static constexpr SupportedDataTypes All();

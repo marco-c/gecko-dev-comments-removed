@@ -29,27 +29,49 @@ namespace SkHexadecimalDigits {
 
 
 
+
+
+
+
+
+
+
+#if defined(_MSC_VER) && defined(_M_IX86)
+    #define SK_FP_SAFE_ABI __vectorcall
+#else
+    #define SK_FP_SAFE_ABI
+#endif
+
 template <typename T, typename P>
-static SK_ALWAYS_INLINE T sk_unaligned_load(const P* ptr) {
-    static_assert(std::is_trivially_copyable<T>::value);
-    static_assert(std::is_trivially_copyable<P>::value);
+static SK_ALWAYS_INLINE T SK_FP_SAFE_ABI sk_unaligned_load(const P* ptr) {
+    static_assert(std::is_trivially_copyable_v<P> || std::is_void_v<P>);
+    static_assert(std::is_trivially_copyable_v<T>);
     T val;
-    memcpy(&val, ptr, sizeof(val));
+    
+    
+    
+    
+    
+    
+    memcpy(&val, static_cast<const void*>(ptr), sizeof(val));
     return val;
 }
 
 template <typename T, typename P>
-static SK_ALWAYS_INLINE void sk_unaligned_store(P* ptr, T val) {
+static SK_ALWAYS_INLINE void SK_FP_SAFE_ABI sk_unaligned_store(P* ptr, T val) {
     static_assert(std::is_trivially_copyable<T>::value);
-    static_assert(std::is_trivially_copyable<P>::value);
     memcpy(ptr, &val, sizeof(val));
 }
 
 
 template <typename Dst, typename Src>
-static SK_ALWAYS_INLINE Dst sk_bit_cast(const Src& src) {
+static SK_ALWAYS_INLINE Dst SK_FP_SAFE_ABI sk_bit_cast(const Src& src) {
     static_assert(sizeof(Dst) == sizeof(Src));
+    static_assert(std::is_trivially_copyable<Dst>::value);
+    static_assert(std::is_trivially_copyable<Src>::value);
     return sk_unaligned_load<Dst>(&src);
 }
+
+#undef SK_FP_SAFE_ABI
 
 #endif

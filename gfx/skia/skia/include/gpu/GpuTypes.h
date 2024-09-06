@@ -24,6 +24,11 @@ enum class BackendApi : unsigned {
     kMetal,
     kVulkan,
     kMock,
+
+    
+
+
+    kUnsupported,
 };
 
 
@@ -64,6 +69,14 @@ enum class Protected : bool {
 enum class Renderable : bool {
     kNo = false,
     kYes = true,
+};
+
+
+
+
+enum class Origin : unsigned {
+    kTopLeft,
+    kBottomLeft,
 };
 
 } 

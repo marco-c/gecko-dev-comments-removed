@@ -190,7 +190,7 @@ SkCanvasState* SkCanvasStateUtils::CaptureCanvasState(SkCanvas* canvas) {
     
     
     
-    SkBaseDevice* device = canvas->topDevice();
+    SkDevice* device = canvas->topDevice();
     SkASSERT(device);
 
     SkSWriter32<sizeof(SkCanvasLayerState)> layerWriter;
@@ -324,7 +324,7 @@ std::unique_ptr<SkCanvas> SkCanvasStateUtils::MakeFromCanvasState(const SkCanvas
                                                                   state_v1->layers[i].y));
     }
 
-    return std::move(canvas);
+    return canvas;
 }
 
 

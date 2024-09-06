@@ -8,18 +8,17 @@
 #ifndef SKSL_BLOCK
 #define SKSL_BLOCK
 
-#include "include/private/SkSLDefines.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/private/SkSLStatement.h"
-#include "include/sksl/SkSLPosition.h"
+#include "src/sksl/SkSLDefines.h"
+#include "src/sksl/SkSLPosition.h"
+#include "src/sksl/ir/SkSLIRNode.h"
+#include "src/sksl/ir/SkSLStatement.h"
+#include "src/sksl/ir/SkSLSymbolTable.h"
 
 #include <memory>
 #include <string>
 #include <utility>
 
 namespace SkSL {
-
-class SymbolTable;
 
 
 
@@ -39,26 +38,35 @@ public:
                              
     };
 
-    Block(Position pos, StatementArray statements,
-          Kind kind = Kind::kBracedScope, const std::shared_ptr<SymbolTable> symbols = nullptr)
-    : INHERITED(pos, kIRNodeKind)
-    , fChildren(std::move(statements))
-    , fBlockKind(kind)
-    , fSymbolTable(std::move(symbols)) {}
+    Block(Position pos,
+          StatementArray statements,
+          Kind kind = Kind::kBracedScope,
+          std::unique_ptr<SymbolTable> symbols = nullptr)
+            : INHERITED(pos, kIRNodeKind)
+            , fSymbolTable(std::move(symbols))
+            , fChildren(std::move(statements))
+            , fBlockKind(kind) {}
 
     
     
     static std::unique_ptr<Statement> Make(Position pos,
                                            StatementArray statements,
                                            Kind kind = Kind::kBracedScope,
-                                           std::shared_ptr<SymbolTable> symbols = nullptr);
+                                           std::unique_ptr<SymbolTable> symbols = nullptr);
+
+    
+    
+    
+    
+    static std::unique_ptr<Statement> MakeCompoundStatement(std::unique_ptr<Statement> existing,
+                                                            std::unique_ptr<Statement> additional);
 
     
     
     static std::unique_ptr<Block> MakeBlock(Position pos,
                                             StatementArray statements,
                                             Kind kind = Kind::kBracedScope,
-                                            std::shared_ptr<SymbolTable> symbols = nullptr);
+                                            std::unique_ptr<SymbolTable> symbols = nullptr);
 
     const StatementArray& children() const {
         return fChildren;
@@ -80,8 +88,8 @@ public:
         fBlockKind = kind;
     }
 
-    std::shared_ptr<SymbolTable> symbolTable() const {
-        return fSymbolTable;
+    SymbolTable* symbolTable() const {
+        return fSymbolTable.get();
     }
 
     bool isEmpty() const override {
@@ -93,14 +101,12 @@ public:
         return true;
     }
 
-    std::unique_ptr<Statement> clone() const override;
-
     std::string description() const override;
 
 private:
+    std::unique_ptr<SymbolTable> fSymbolTable;
     StatementArray fChildren;
     Kind fBlockKind;
-    std::shared_ptr<SymbolTable> fSymbolTable;
 
     using INHERITED = Statement;
 };

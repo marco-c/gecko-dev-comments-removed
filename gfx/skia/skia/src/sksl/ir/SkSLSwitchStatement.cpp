@@ -8,53 +8,40 @@
 #include "src/sksl/ir/SkSLSwitchStatement.h"
 
 #include "include/core/SkTypes.h"
-#include "include/private/SkSLString.h"
 #include "include/private/base/SkTArray.h"
-#include "include/sksl/SkSLErrorReporter.h"
+#include "include/private/base/SkTo.h"
 #include "src/core/SkTHash.h"
 #include "src/sksl/SkSLAnalysis.h"
 #include "src/sksl/SkSLBuiltinTypes.h"
 #include "src/sksl/SkSLConstantFolder.h"
 #include "src/sksl/SkSLContext.h"
+#include "src/sksl/SkSLErrorReporter.h"
 #include "src/sksl/SkSLProgramSettings.h"
 #include "src/sksl/ir/SkSLBlock.h"
+#include "src/sksl/ir/SkSLBreakStatement.h"
 #include "src/sksl/ir/SkSLNop.h"
 #include "src/sksl/ir/SkSLSwitchCase.h"
 #include "src/sksl/ir/SkSLSymbolTable.h"
 #include "src/sksl/ir/SkSLType.h"
+#include "src/sksl/transform/SkSLProgramWriter.h"
+#include "src/sksl/transform/SkSLTransform.h"
 
 #include <algorithm>
 #include <forward_list>
 #include <iterator>
 
+using namespace skia_private;
+
 namespace SkSL {
 
-std::unique_ptr<Statement> SwitchStatement::clone() const {
-    StatementArray cases;
-    cases.reserve_back(this->cases().size());
-    for (const std::unique_ptr<Statement>& stmt : this->cases()) {
-        cases.push_back(stmt->clone());
-    }
-    return std::make_unique<SwitchStatement>(fPosition,
-                                             this->value()->clone(),
-                                             std::move(cases),
-                                             SymbolTable::WrapIfBuiltin(this->symbols()));
-}
-
 std::string SwitchStatement::description() const {
-    std::string result;
-    result += String::printf("switch (%s) {\n", this->value()->description().c_str());
-    for (const auto& c : this->cases()) {
-        result += c->description();
-    }
-    result += "}";
-    return result;
+    return "switch (" + this->value()->description() + ") " + this->caseBlock()->description();
 }
 
 static std::forward_list<const SwitchCase*> find_duplicate_case_values(
         const StatementArray& cases) {
     std::forward_list<const SwitchCase*> duplicateCases;
-    SkTHashSet<SKSL_INT> intValues;
+    THashSet<SKSL_INT> intValues;
     bool foundDefault = false;
 
     for (const std::unique_ptr<Statement>& stmt : cases) {
@@ -78,42 +65,38 @@ static std::forward_list<const SwitchCase*> find_duplicate_case_values(
     return duplicateCases;
 }
 
-static void move_all_but_break(std::unique_ptr<Statement>& stmt, StatementArray* target) {
-    switch (stmt->kind()) {
-        case Statement::Kind::kBlock: {
-            
-            Block& block = stmt->as<Block>();
-
-            StatementArray blockStmts;
-            blockStmts.reserve_back(block.children().size());
-            for (std::unique_ptr<Statement>& blockStmt : block.children()) {
-                move_all_but_break(blockStmt, &blockStmts);
+static void remove_break_statements(std::unique_ptr<Statement>& stmt) {
+    class RemoveBreaksWriter : public ProgramWriter {
+    public:
+        bool visitStatementPtr(std::unique_ptr<Statement>& stmt) override {
+            if (stmt->is<BreakStatement>()) {
+                stmt = Nop::Make();
+                return false;
             }
-
-            target->push_back(Block::Make(block.fPosition, std::move(blockStmts), block.blockKind(),
-                                          block.symbolTable()));
-            break;
+            return ProgramWriter::visitStatementPtr(stmt);
         }
 
-        case Statement::Kind::kBreak:
-            
-            break;
-
-        default:
-            
-            target->push_back(std::move(stmt));
-            break;
-    }
+        bool visitExpressionPtr(std::unique_ptr<Expression>& expr) override {
+            return false;
+        }
+    };
+    RemoveBreaksWriter{}.visitStatementPtr(stmt);
 }
 
-std::unique_ptr<Statement> SwitchStatement::BlockForCase(StatementArray* cases,
-                                                         SwitchCase* caseToCapture,
-                                                         std::shared_ptr<SymbolTable> symbolTable) {
+static bool block_for_case(Statement* caseBlock, SwitchCase* caseToCapture) {
     
     
     
-    auto iter = cases->begin();
-    for (; iter != cases->end(); ++iter) {
+    
+    
+    
+    
+    
+    
+    
+    StatementArray& cases = caseBlock->as<Block>().children();
+    auto iter = cases.begin();
+    for (; iter != cases.end(); ++iter) {
         const SwitchCase& sc = (*iter)->as<SwitchCase>();
         if (&sc == caseToCapture) {
             break;
@@ -124,42 +107,42 @@ std::unique_ptr<Statement> SwitchStatement::BlockForCase(StatementArray* cases,
     
     
     auto startIter = iter;
-    Statement* stripBreakStmt = nullptr;
-    for (; iter != cases->end(); ++iter) {
+    bool removeBreakStatements = false;
+    for (; iter != cases.end(); ++iter) {
         std::unique_ptr<Statement>& stmt = (*iter)->as<SwitchCase>().statement();
         if (Analysis::SwitchCaseContainsConditionalExit(*stmt)) {
             
-            return nullptr;
+            return false;
         }
         if (Analysis::SwitchCaseContainsUnconditionalExit(*stmt)) {
             
             
-            stripBreakStmt = stmt.get();
+            removeBreakStatements = true;
+            ++iter;
             break;
         }
     }
 
     
     
-    StatementArray caseStmts;
-    caseStmts.reserve_back(std::distance(startIter, iter) + 1);
-
     
-    while (startIter != iter) {
-        caseStmts.push_back(std::move((*startIter)->as<SwitchCase>().statement()));
-        ++startIter;
+    
+    
+    int numElements = SkToInt(std::distance(startIter, iter));
+    for (int index = 0; index < numElements; ++index, ++startIter) {
+        cases[index] = std::move((*startIter)->as<SwitchCase>().statement());
     }
 
     
+    cases.pop_back_n(cases.size() - numElements);
+
     
-    if (stripBreakStmt != nullptr) {
-        SkASSERT((*startIter)->as<SwitchCase>().statement().get() == stripBreakStmt);
-        move_all_but_break((*startIter)->as<SwitchCase>().statement(), &caseStmts);
+    if (removeBreakStatements) {
+        remove_break_statements(cases.back());
     }
 
     
-    return Block::Make(caseToCapture->fPosition, std::move(caseStmts), Block::Kind::kBracedScope,
-                       std::move(symbolTable));
+    return true;
 }
 
 std::unique_ptr<Statement> SwitchStatement::Convert(const Context& context,
@@ -167,7 +150,7 @@ std::unique_ptr<Statement> SwitchStatement::Convert(const Context& context,
                                                     std::unique_ptr<Expression> value,
                                                     ExpressionArray caseValues,
                                                     StatementArray caseStatements,
-                                                    std::shared_ptr<SymbolTable> symbolTable) {
+                                                    std::unique_ptr<SymbolTable> symbolTable) {
     SkASSERT(caseValues.size() == caseStatements.size());
 
     value = context.fTypes.fInt->coerceExpression(std::move(value), context);
@@ -206,22 +189,27 @@ std::unique_ptr<Statement> SwitchStatement::Convert(const Context& context,
                 context.fErrors->error(sc->fPosition, "duplicate default case");
             } else {
                 context.fErrors->error(sc->fPosition, "duplicate case value '" +
-                                                  std::to_string(sc->value()) + "'");
+                                                      std::to_string(sc->value()) + "'");
             }
         }
         return nullptr;
     }
 
-    return SwitchStatement::Make(
-            context, pos, std::move(value), std::move(cases), std::move(symbolTable));
+    return SwitchStatement::Make(context,
+                                 pos,
+                                 std::move(value),
+                                 Block::MakeBlock(pos,
+                                                  std::move(cases),
+                                                  Block::Kind::kBracedScope,
+                                                  std::move(symbolTable)));
 }
 
 std::unique_ptr<Statement> SwitchStatement::Make(const Context& context,
                                                  Position pos,
                                                  std::unique_ptr<Expression> value,
-                                                 StatementArray cases,
-                                                 std::shared_ptr<SymbolTable> symbolTable) {
+                                                 std::unique_ptr<Statement> caseBlock) {
     
+    const StatementArray& cases = caseBlock->as<Block>().children();
     SkASSERT(std::all_of(cases.begin(), cases.end(), [&](const std::unique_ptr<Statement>& stmt) {
         return stmt->is<SwitchCase>();
     }));
@@ -260,16 +248,20 @@ std::unique_ptr<Statement> SwitchStatement::Make(const Context& context,
             }
 
             
-            std::unique_ptr<Statement> newBlock = BlockForCase(&cases, matchingCase, symbolTable);
-            if (newBlock) {
-                return newBlock;
+            if (block_for_case(caseBlock.get(), matchingCase)) {
+                return caseBlock;
             }
         }
     }
 
     
-    return std::make_unique<SwitchStatement>(
-            pos, std::move(value), std::move(cases), std::move(symbolTable));
+    auto stmt = std::make_unique<SwitchStatement>(pos, std::move(value), std::move(caseBlock));
+
+    
+    
+    
+    
+    return Transform::HoistSwitchVarDeclarationsAtTopLevel(context, std::move(stmt));
 }
 
 }  

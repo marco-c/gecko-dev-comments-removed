@@ -41,12 +41,12 @@ private:
     void lineTo();
     bool matchedLast(const SkOpPtT*) const;
     void moveTo();
-    const SkTArray<SkPath>& partials() const { return fPartials; }
+    const skia_private::TArray<SkPath>& partials() const { return fPartials; }
     bool someAssemblyRequired();
     SkPoint update(const SkOpPtT* pt);
 
     SkPath fCurrent;  
-    SkTArray<SkPath> fPartials;   
+    skia_private::TArray<SkPath> fPartials;   
     SkTDArray<const SkOpPtT*> fEndPtTs;  
     SkPath* fPathPtr;  
     const SkOpPtT* fDefer[2];  

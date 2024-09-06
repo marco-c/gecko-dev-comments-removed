@@ -56,6 +56,14 @@ SK_API extern void* sk_malloc_flags(size_t size, unsigned flags);
 
 SK_API extern void* sk_realloc_throw(void* buffer, size_t size);
 
+
+
+
+
+
+
+SK_API extern size_t sk_malloc_size(void* addr, size_t size);
+
 static inline void* sk_malloc_throw(size_t size) {
     return sk_malloc_flags(size, SK_MALLOC_THROW);
 }

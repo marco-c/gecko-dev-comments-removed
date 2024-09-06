@@ -5,15 +5,14 @@
 
 
 
-
-
-
-
-
 #ifndef SkUnPreMultiply_DEFINED
 #define SkUnPreMultiply_DEFINED
 
 #include "include/core/SkColor.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkCPUTypes.h"
+
+#include <cstdint>
 
 class SK_API SkUnPreMultiply {
 public:

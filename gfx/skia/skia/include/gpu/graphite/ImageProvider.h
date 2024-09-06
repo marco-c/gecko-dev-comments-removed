@@ -44,6 +44,14 @@ class Recorder;
 
 
 
+
+
+
+
+
+
+
+
 class SK_API ImageProvider : public SkRefCnt {
 public:
     
@@ -52,7 +60,7 @@ public:
     
     virtual sk_sp<SkImage> findOrCreate(Recorder* recorder,
                                         const SkImage* image,
-                                        SkImage::RequiredImageProperties) = 0;
+                                        SkImage::RequiredProperties) = 0;
 };
 
 } 

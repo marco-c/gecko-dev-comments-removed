@@ -39,6 +39,12 @@ struct SK_API VulkanBackendContext {
     sk_sp<VulkanMemoryAllocator>     fMemoryAllocator;
     skgpu::VulkanGetProc             fGetProc;
     Protected                        fProtectedContext;
+    
+    
+    
+    
+    skgpu::VulkanDeviceLostContext   fDeviceLostContext = nullptr;
+    skgpu::VulkanDeviceLostProc      fDeviceLostProc = nullptr;
 };
 
 } 

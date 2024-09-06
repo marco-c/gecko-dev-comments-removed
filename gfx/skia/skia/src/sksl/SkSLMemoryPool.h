@@ -11,34 +11,36 @@
 #include <memory>
 
 #include "include/core/SkTypes.h"
-
-#if defined(SK_GANESH)
-
-#include "src/gpu/ganesh/GrMemoryPool.h"
-
-namespace SkSL {
-using MemoryPool = ::GrMemoryPool;
-}
-
-#else
-
-
+#include "src/base/SkArenaAlloc.h"
 
 namespace SkSL {
 
 class MemoryPool {
 public:
-    static std::unique_ptr<MemoryPool> Make(size_t, size_t) {
+    static std::unique_ptr<MemoryPool> Make() {
         return std::make_unique<MemoryPool>();
     }
-    void resetScratchSpace() {}
-    void reportLeaks() const {}
-    bool isEmpty() const { return true; }
-    void* allocate(size_t size) { return ::operator new(size); }
-    void release(void* p) { ::operator delete(p); }
+    void* allocate(size_t size) {
+        return fArena.makeBytesAlignedTo(size, kAlignment);
+    }
+    void release(void*) {
+        
+    }
+
+private:
+#ifdef SK_FORCE_8_BYTE_ALIGNMENT
+    
+    
+    
+    static constexpr size_t kAlignment = 8;
+#else
+    
+    static constexpr size_t kAlignment = alignof(std::max_align_t);
+#endif
+
+    SkSTArenaAlloc<65536> fArena{32768};
 };
 
 }  
 
-#endif 
 #endif 

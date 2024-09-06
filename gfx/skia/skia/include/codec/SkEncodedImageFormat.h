@@ -14,9 +14,6 @@
 
 
 enum class SkEncodedImageFormat {
-#ifdef SK_BUILD_FOR_GOOGLE3
-    kUnknown,
-#endif
     kBMP,
     kGIF,
     kICO,

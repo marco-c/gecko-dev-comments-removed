@@ -5,17 +5,12 @@
 
 
 
-#include "src/core/SkPathPriv.h"
 #include "src/core/SkRecords.h"
 
 namespace SkRecords {
     PreCachedPath::PreCachedPath(const SkPath& path) : SkPath(path) {
         this->updateBoundsCache();
         (void)this->getGenerationID();
-#if 0  
-        SkPathPriv::FirstDirection junk;
-        (void)SkPathPriv::CheapComputeFirstDirection(*this, &junk);
-#endif
     }
 
     TypedMatrix::TypedMatrix(const SkMatrix& matrix) : SkMatrix(matrix) {

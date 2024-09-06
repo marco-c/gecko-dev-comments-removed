@@ -5,6 +5,7 @@
 
 
 
+#include "include/private/base/SkDebug.h"
 #include "include/private/base/SkFeatures.h"
 #include "include/private/base/SkLoadUserConfig.h"
 
@@ -22,4 +23,4 @@ void SkDebugf(const char format[], ...) {
 #pragma GCC diagnostic pop
     va_end(args);
 }
-#endif
+#endif  

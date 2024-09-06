@@ -33,10 +33,8 @@ struct VulkanTextureInfo {
     
     
     
-    VkImageAspectFlags fAspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    
-    
-    
+    VkImageAspectFlags         fAspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    VulkanYcbcrConversionInfo  fYcbcrConversionInfo;
 
     VulkanTextureInfo() = default;
     VulkanTextureInfo(uint32_t sampleCount,
@@ -46,7 +44,8 @@ struct VulkanTextureInfo {
                       VkImageTiling imageTiling,
                       VkImageUsageFlags imageUsageFlags,
                       VkSharingMode sharingMode,
-                      VkImageAspectFlags aspectMask)
+                      VkImageAspectFlags aspectMask,
+                      VulkanYcbcrConversionInfo ycbcrConversionInfo)
             : fSampleCount(sampleCount)
             , fMipmapped(mipmapped)
             , fFlags(flags)
@@ -54,7 +53,8 @@ struct VulkanTextureInfo {
             , fImageTiling(imageTiling)
             , fImageUsageFlags(imageUsageFlags)
             , fSharingMode(sharingMode)
-            , fAspectMask(aspectMask) {}
+            , fAspectMask(aspectMask)
+            , fYcbcrConversionInfo(ycbcrConversionInfo) {}
 };
 
 } 

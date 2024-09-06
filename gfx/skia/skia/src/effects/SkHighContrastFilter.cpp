@@ -7,20 +7,17 @@
 
 #include "include/effects/SkHighContrastFilter.h"
 
-#include "include/core/SkColorFilter.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkTypes.h"
-
-#ifdef SK_ENABLE_SKSL
 #include "include/core/SkAlphaType.h"
+#include "include/core/SkColorFilter.h"
 #include "include/core/SkColorSpace.h"
 #include "include/core/SkData.h"
-#include "include/core/SkString.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkTypes.h"
 #include "include/effects/SkRuntimeEffect.h"
 #include "include/private/base/SkTPin.h"
 #include "modules/skcms/skcms.h"
 #include "src/core/SkColorFilterPriv.h"
-#include "src/core/SkRuntimeEffectPriv.h"
+#include "src/core/SkKnownRuntimeEffects.h"
 
 #include <cfloat>
 
@@ -30,52 +27,6 @@ sk_sp<SkColorFilter> SkHighContrastFilter::Make(const SkHighContrastConfig& conf
     }
 
     struct Uniforms { float grayscale, invertStyle, contrast; };
-
-    static constexpr char kHighContrastFilterCode[] =
-            "uniform half grayscale, invertStyle, contrast;"
-
-            
-            "half3 rgb_to_hsl(half3 c) {"
-                "half mx = max(max(c.r,c.g),c.b),"
-                     "mn = min(min(c.r,c.g),c.b),"
-                      "d = mx-mn,"
-                   "invd = 1.0 / d,"
-                 "g_lt_b = c.g < c.b ? 6.0 : 0.0;"
-
-            
-            
-                "half h = (1/6.0) * (mx == mn                 ? 0.0 :"
-                         "c.r >= c.g && c.r >= c.b ? invd * (c.g - c.b) + g_lt_b :"
-                         "c.g >= c.b               ? invd * (c.b - c.r) + 2.0"
-                                                  ": invd * (c.r - c.g) + 4.0);"
-                "half sum = mx+mn,"
-                       "l = sum * 0.5,"
-                       "s = mx == mn ? 0.0"
-                                    ": d / (l > 0.5 ? 2.0 - sum : sum);"
-                "return half3(h,s,l);"
-            "}"
-            "half4 main(half4 inColor) {"
-                "half4 c = inColor;"  
-                "if (grayscale == 1) {"
-                    "c.rgb = dot(half3(0.2126, 0.7152, 0.0722), c.rgb).rrr;"
-                "}"
-                "if (invertStyle == 1) {"  
-                    "c.rgb = 1 - c.rgb;"
-                "} else if (invertStyle == 2) {"  
-                    "c.rgb = rgb_to_hsl(c.rgb);"
-                    "c.b = 1 - c.b;"
-                    "c.rgb = $hsl_to_rgb(c.rgb);"
-                "}"
-                "c.rgb = mix(half3(0.5), c.rgb, contrast);"
-                "return half4(saturate(c.rgb), c.a);"
-            "}";
-
-    static const SkRuntimeEffect* effect = SkMakeCachedRuntimeEffect(
-        SkRuntimeEffect::MakeForColorFilter,
-        SkString(kHighContrastFilterCode)
-    ).release();
-
-    SkASSERT(effect);
 
     
     
@@ -89,16 +40,12 @@ sk_sp<SkColorFilter> SkHighContrastFilter::Make(const SkHighContrastConfig& conf
         (1+c)/(1-c),
     };
 
+    const SkRuntimeEffect* highContrastEffect =
+            GetKnownRuntimeEffect(SkKnownRuntimeEffects::StableKey::kHighContrast);
+
     skcms_TransferFunction linear = SkNamedTransferFn::kLinear;
     SkAlphaType          unpremul = kUnpremul_SkAlphaType;
     return SkColorFilterPriv::WithWorkingFormat(
-            effect->makeColorFilter(SkData::MakeWithCopy(&uniforms,sizeof(uniforms))),
+            highContrastEffect->makeColorFilter(SkData::MakeWithCopy(&uniforms,sizeof(uniforms))),
             &linear, nullptr, &unpremul);
 }
-#else 
-sk_sp<SkColorFilter> SkHighContrastFilter::Make(const SkHighContrastConfig& config) {
-    
-    return nullptr;
-}
-#endif
-

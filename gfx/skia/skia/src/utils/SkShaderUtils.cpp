@@ -8,12 +8,14 @@
 #include "src/utils/SkShaderUtils.h"
 
 #include "include/core/SkString.h"
-#include "include/private/SkSLString.h"
 #include "include/private/base/SkTArray.h"
 #include "src/core/SkStringUtils.h"
 #include "src/sksl/SkSLProgramSettings.h"
+#include "src/sksl/SkSLString.h"
 
 #include <cstddef>
+
+using namespace skia_private;
 
 namespace SkShaderUtils {
 
@@ -64,36 +66,73 @@ public:
 
 
 
+
+
+
             if (fInParseUntilNewline) {
                 this->parseUntilNewline();
-            } else if (fInParseUntil) {
+                continue;
+            }
+            if (fInParseUntil) {
                 this->parseUntil(fInParseUntilToken);
-            } else if (this->hasToken("#") || this->hasToken("//")) {
+                continue;
+            }
+            if (this->hasToken("#") || this->hasToken("//")) {
                 this->parseUntilNewline();
-            } else if (this->hasToken("/*")) {
+                continue;
+            }
+            if (this->hasToken("/*")) {
                 this->parseUntil("*/");
-            } else if ('{' == fInput[fIndex]) {
+                continue;
+            }
+            if (fInput[fIndex] == '{') {
                 this->newline();
                 this->appendChar('{');
                 fTabs++;
                 this->newline();
-            } else if ('}' == fInput[fIndex]) {
+                continue;
+            }
+            if (fInput[fIndex] == '}') {
                 fTabs--;
                 this->newline();
                 this->appendChar('}');
                 this->newline();
-            } else if (this->hasToken(")")) {
-                parensDepth--;
-            } else if (this->hasToken("(")) {
-                parensDepth++;
-            } else if (!parensDepth && this->hasToken(";")) {
-                this->newline();
-            } else if ('\t' == fInput[fIndex] || '\n' == fInput[fIndex] ||
-                        (fFreshline && ' ' == fInput[fIndex])) {
-                fIndex++;
-            } else {
-                this->appendChar(fInput[fIndex]);
+                continue;
             }
+            if (fFreshline && fInput[fIndex] == ';') {
+                this->undoNewlineAfter('}');
+                this->appendChar(fInput[fIndex]);
+                this->newline();
+                continue;
+            }
+            if (fFreshline && fInput[fIndex] == ',') {
+                this->undoNewlineAfter('}');
+                this->appendChar(fInput[fIndex]);
+                continue;
+            }
+            if (this->hasToken(")")) {
+                parensDepth--;
+                continue;
+            }
+            if (this->hasToken("(")) {
+                parensDepth++;
+                continue;
+            }
+            if (this->hasToken(")")) {
+                parensDepth--;
+                continue;
+            }
+            if (!parensDepth && this->hasToken(";")) {
+                this->newline();
+                continue;
+            }
+            if (fInput[fIndex] == '\t' || fInput[fIndex] == '\n' ||
+                (fFreshline && fInput[fIndex] == ' ')) {
+                fIndex++;
+                continue;
+            }
+
+            this->appendChar(fInput[fIndex]);
         }
 
         return fPretty;
@@ -102,7 +141,7 @@ public:
 private:
     void appendChar(char c) {
         this->tabString();
-        SkSL::String::appendf(&fPretty, "%c", fInput[fIndex++]);
+        fPretty += fInput[fIndex++];
         fFreshline = false;
     }
 
@@ -124,13 +163,13 @@ private:
 
     void parseUntilNewline() {
         while (fLength > fIndex) {
-            if ('\n' == fInput[fIndex]) {
+            if (fInput[fIndex] == '\n') {
                 fIndex++;
                 this->newline();
                 fInParseUntilNewline = false;
                 break;
             }
-            SkSL::String::appendf(&fPretty, "%c", fInput[fIndex++]);
+            fPretty += fInput[fIndex++];
             fInParseUntilNewline = true;
         }
     }
@@ -143,7 +182,7 @@ private:
             
             
             
-            if ('\n' == fInput[fIndex]) {
+            if (fInput[fIndex] == '\n') {
                 this->newline();
                 this->tabString();
                 fIndex++;
@@ -153,7 +192,7 @@ private:
                 break;
             }
             fFreshline = false;
-            SkSL::String::appendf(&fPretty, "%c", fInput[fIndex++]);
+            fPretty += fInput[fIndex++];
             fInParseUntil = true;
             fInParseUntilToken = token;
         }
@@ -163,7 +202,7 @@ private:
     void tabString() {
         if (fFreshline) {
             for (int t = 0; t < fTabs; t++) {
-                fPretty.append("\t");
+                fPretty += '\t';
             }
         }
     }
@@ -173,7 +212,18 @@ private:
     void newline() {
         if (!fFreshline) {
             fFreshline = true;
-            fPretty.append("\n");
+            fPretty += '\n';
+        }
+    }
+
+    
+    
+    void undoNewlineAfter(char c) {
+        if (fFreshline) {
+            if (fPretty.size() >= 2 && fPretty.rbegin()[0] == '\n' && fPretty.rbegin()[1] == c) {
+                fFreshline = false;
+                fPretty.pop_back();
+            }
         }
     }
 
@@ -196,7 +246,7 @@ std::string PrettyPrint(const std::string& string) {
 
 void VisitLineByLine(const std::string& text,
                      const std::function<void(int lineNumber, const char* lineText)>& visitFn) {
-    SkTArray<SkString> lines;
+    TArray<SkString> lines;
     SkStrSplit(text.c_str(), "\n", kStrict_SkStrSplitMode, &lines);
     for (int i = 0; i < lines.size(); ++i) {
         visitFn(i + 1, lines[i].c_str());

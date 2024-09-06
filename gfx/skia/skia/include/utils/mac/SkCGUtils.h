@@ -24,6 +24,7 @@
 #endif
 
 class SkBitmap;
+class SkColorSpace;
 class SkData;
 class SkPixmap;
 class SkStreamRewindable;
@@ -45,12 +46,17 @@ SK_API sk_sp<SkImage> SkMakeImageFromCGImage(CGImageRef);
 
 
 
+SK_API sk_sp<SkColorSpace> SkMakeColorSpaceFromCGColorSpace(CGColorSpaceRef);
+
+
+
+
+
 SK_API bool SkCopyPixelsFromCGImage(const SkImageInfo& info, size_t rowBytes, void* dstPixels,
                                     CGImageRef src);
 static inline bool SkCopyPixelsFromCGImage(const SkPixmap& dst, CGImageRef src) {
     return SkCopyPixelsFromCGImage(dst.info(), dst.rowBytes(), dst.writable_addr(), src);
 }
-
 
 
 
@@ -61,12 +67,18 @@ SK_API CGImageRef SkCreateCGImageRefWithColorspace(const SkBitmap& bm,
 
 
 
-
-static inline CGImageRef SkCreateCGImageRef(const SkBitmap& bm) {
-    return SkCreateCGImageRefWithColorspace(bm, nil);
-}
+SK_API CGImageRef SkCreateCGImageRef(const SkBitmap& bm);
 
 
+
+
+
+SK_API CGColorSpaceRef SkCreateCGColorSpace(const SkColorSpace*);
+
+
+
+
+SK_API CGDataProviderRef SkCreateCGDataProvider(sk_sp<SkData>);
 
 
 

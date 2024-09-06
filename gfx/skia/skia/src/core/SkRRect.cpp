@@ -85,6 +85,33 @@ void SkRRect::setRectXY(const SkRect& rect, SkScalar xRad, SkScalar yRad) {
     SkASSERT(this->isValid());
 }
 
+static bool clamp_to_zero(SkVector radii[4]) {
+    bool allCornersSquare = true;
+
+    
+    for (int i = 0; i < 4; ++i) {
+        if (radii[i].fX <= 0 || radii[i].fY <= 0) {
+            
+            
+            
+            
+            radii[i].fX = 0;
+            radii[i].fY = 0;
+        } else {
+            allCornersSquare = false;
+        }
+    }
+
+    return allCornersSquare;
+}
+
+static bool radii_are_nine_patch(const SkVector radii[4]) {
+    return radii[SkRRect::kUpperLeft_Corner].fX == radii[SkRRect::kLowerLeft_Corner].fX &&
+           radii[SkRRect::kUpperLeft_Corner].fY == radii[SkRRect::kUpperRight_Corner].fY &&
+           radii[SkRRect::kUpperRight_Corner].fX == radii[SkRRect::kLowerRight_Corner].fX &&
+           radii[SkRRect::kLowerLeft_Corner].fY == radii[SkRRect::kLowerRight_Corner].fY;
+}
+
 void SkRRect::setNinePatch(const SkRect& rect, SkScalar leftRad, SkScalar topRad,
                            SkScalar rightRad, SkScalar bottomRad) {
     if (!this->initializeRect(rect)) {
@@ -139,6 +166,13 @@ void SkRRect::setNinePatch(const SkRect& rect, SkScalar leftRad, SkScalar topRad
     fRadii[kUpperRight_Corner].set(rightRad, topRad);
     fRadii[kLowerRight_Corner].set(rightRad, bottomRad);
     fRadii[kLowerLeft_Corner].set(leftRad, bottomRad);
+    if (clamp_to_zero(fRadii)) {
+        this->setRect(rect);    
+        return;
+    }
+    if (fType == kNinePatch_Type && !radii_are_nine_patch(fRadii)) {
+        fType = kComplex_Type;
+    }
 
     SkASSERT(this->isValid());
 }
@@ -151,26 +185,6 @@ static double compute_min_scale(double rad1, double rad2, double limit, double c
         return std::min(curMin, limit / (rad1 + rad2));
     }
     return curMin;
-}
-
-static bool clamp_to_zero(SkVector radii[4]) {
-    bool allCornersSquare = true;
-
-    
-    for (int i = 0; i < 4; ++i) {
-        if (radii[i].fX <= 0 || radii[i].fY <= 0) {
-            
-            
-            
-            
-            radii[i].fX = 0;
-            radii[i].fY = 0;
-        } else {
-            allCornersSquare = false;
-        }
-    }
-
-    return allCornersSquare;
 }
 
 void SkRRect::setRectRadii(const SkRect& rect, const SkVector radii[4]) {
@@ -363,13 +377,6 @@ bool SkRRect::contains(const SkRect& rect) const {
            this->checkCornerContainment(rect.fRight, rect.fTop) &&
            this->checkCornerContainment(rect.fRight, rect.fBottom) &&
            this->checkCornerContainment(rect.fLeft, rect.fBottom);
-}
-
-static bool radii_are_nine_patch(const SkVector radii[4]) {
-    return radii[SkRRect::kUpperLeft_Corner].fX == radii[SkRRect::kLowerLeft_Corner].fX &&
-           radii[SkRRect::kUpperLeft_Corner].fY == radii[SkRRect::kUpperRight_Corner].fY &&
-           radii[SkRRect::kUpperRight_Corner].fX == radii[SkRRect::kLowerRight_Corner].fX &&
-           radii[SkRRect::kLowerLeft_Corner].fY == radii[SkRRect::kLowerRight_Corner].fY;
 }
 
 

@@ -15,6 +15,10 @@ class SkWriteBuffer;
 
 
 
+static constexpr int kBicubicFilterTexelPad = 2;
+
+
+
 enum SkLegacyFQ {
     kNone_SkLegacyFQ   = 0,    
     kLow_SkLegacyFQ    = 1,    

@@ -5,93 +5,22 @@
 
 
 
-#include "include/private/base/SkFloatBits.h"
 #include "src/base/SkHalf.h"
 
-uint16_t halfMantissa(SkHalf h) {
-    return h & 0x03ff;
-}
+#include "include/private/base/SkFloatingPoint.h"
+#include "src/base/SkVx.h"
 
-uint16_t halfExponent(SkHalf h) {
-    return (h >> 10) & 0x001f;
-}
-
-uint16_t halfSign(SkHalf h) {
-    return h >> 15;
-}
-
-union FloatUIntUnion {
-    uint32_t fUInt;    
-    float    fFloat;
-};
 
 
 
 SkHalf SkFloatToHalf(float f) {
-    static const uint32_t f32infty = { 255 << 23 };
-    static const uint32_t f16infty = { 31 << 23 };
-    static const FloatUIntUnion magic = { 15 << 23 };
-    static const uint32_t sign_mask = 0x80000000u;
-    static const uint32_t round_mask = ~0xfffu;
-    SkHalf o = 0;
-
-    FloatUIntUnion floatUnion;
-    floatUnion.fFloat = f;
-
-    uint32_t sign = floatUnion.fUInt & sign_mask;
-    floatUnion.fUInt ^= sign;
-
-    
-    
-    
-    
-
-    
-    if (floatUnion.fUInt >= f32infty)
-        
-        o = (floatUnion.fUInt > f32infty) ? 0x7e00 : 0x7c00;
-    
-    else {
-        floatUnion.fUInt &= round_mask;
-        floatUnion.fFloat *= magic.fFloat;
-        floatUnion.fUInt -= round_mask;
-        
-        if (floatUnion.fUInt > f16infty) {
-            floatUnion.fUInt = f16infty;
-        }
-
-        o = floatUnion.fUInt >> 13; 
+    if (sk_float_isnan(f)) {
+        return SK_HalfNaN;
+    } else {
+        return to_half(skvx::Vec<1,float>(f))[0];
     }
-
-    o |= sign >> 16;
-    return o;
 }
 
-
-
 float SkHalfToFloat(SkHalf h) {
-    static const FloatUIntUnion magic = { 126 << 23 };
-    FloatUIntUnion o;
-
-    if (halfExponent(h) == 0)
-    {
-        
-        o.fUInt = magic.fUInt + halfMantissa(h);
-        o.fFloat -= magic.fFloat;
-    }
-    else
-    {
-        
-        o.fUInt = halfMantissa(h) << 13;
-        
-        if (halfExponent(h) == 0x1f)
-            
-            o.fUInt |= (255 << 23);
-        else
-            o.fUInt |= ((127 - 15 + halfExponent(h)) << 23);
-    }
-
-    
-    o.fUInt |= (halfSign(h) << 31);
-    return o.fFloat;
+    return from_half(skvx::Vec<1,uint16_t>(h))[0];
 }

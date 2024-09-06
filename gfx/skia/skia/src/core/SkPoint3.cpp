@@ -7,6 +7,10 @@
 
 #include "include/core/SkPoint3.h"
 
+#include "include/private/base/SkFloatingPoint.h"
+
+#include <cmath>
+
 
 static inline float get_length_squared(float x, float y, float z) {
     return x * x + y * y + z * z;

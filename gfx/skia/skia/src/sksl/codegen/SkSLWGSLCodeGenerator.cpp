@@ -7,73 +7,419 @@
 
 #include "src/sksl/codegen/SkSLWGSLCodeGenerator.h"
 
-#include <algorithm>
-#include <cstddef>
-#include <memory>
-#include <optional>
-#include <string>
-#include <vector>
-
 #include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkBitmaskEnum.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/private/SkSLLayout.h"
-#include "include/private/SkSLModifiers.h"
-#include "include/private/SkSLProgramElement.h"
-#include "include/private/SkSLStatement.h"
-#include "include/private/SkSLString.h"
-#include "include/private/SkSLSymbol.h"
 #include "include/private/base/SkTArray.h"
 #include "include/private/base/SkTo.h"
-#include "include/sksl/SkSLErrorReporter.h"
-#include "include/sksl/SkSLOperator.h"
-#include "include/sksl/SkSLPosition.h"
+#include "src/base/SkEnumBitMask.h"
+#include "src/base/SkStringView.h"
+#include "src/core/SkTHash.h"
+#include "src/core/SkTraceEvent.h"
 #include "src/sksl/SkSLAnalysis.h"
 #include "src/sksl/SkSLBuiltinTypes.h"
 #include "src/sksl/SkSLCompiler.h"
+#include "src/sksl/SkSLConstantFolder.h"
 #include "src/sksl/SkSLContext.h"
+#include "src/sksl/SkSLDefines.h"
+#include "src/sksl/SkSLErrorReporter.h"
+#include "src/sksl/SkSLIntrinsicList.h"
+#include "src/sksl/SkSLMemoryLayout.h"
+#include "src/sksl/SkSLOperator.h"
 #include "src/sksl/SkSLOutputStream.h"
+#include "src/sksl/SkSLPosition.h"
 #include "src/sksl/SkSLProgramSettings.h"
+#include "src/sksl/SkSLString.h"
 #include "src/sksl/SkSLStringStream.h"
 #include "src/sksl/SkSLUtil.h"
+#include "src/sksl/analysis/SkSLProgramUsage.h"
 #include "src/sksl/analysis/SkSLProgramVisitor.h"
+#include "src/sksl/codegen/SkSLCodeGenerator.h"
 #include "src/sksl/ir/SkSLBinaryExpression.h"
 #include "src/sksl/ir/SkSLBlock.h"
 #include "src/sksl/ir/SkSLConstructor.h"
+#include "src/sksl/ir/SkSLConstructorArrayCast.h"
 #include "src/sksl/ir/SkSLConstructorCompound.h"
 #include "src/sksl/ir/SkSLConstructorDiagonalMatrix.h"
 #include "src/sksl/ir/SkSLConstructorMatrixResize.h"
+#include "src/sksl/ir/SkSLDoStatement.h"
 #include "src/sksl/ir/SkSLExpression.h"
 #include "src/sksl/ir/SkSLExpressionStatement.h"
 #include "src/sksl/ir/SkSLFieldAccess.h"
+#include "src/sksl/ir/SkSLForStatement.h"
 #include "src/sksl/ir/SkSLFunctionCall.h"
 #include "src/sksl/ir/SkSLFunctionDeclaration.h"
 #include "src/sksl/ir/SkSLFunctionDefinition.h"
+#include "src/sksl/ir/SkSLIRNode.h"
 #include "src/sksl/ir/SkSLIfStatement.h"
 #include "src/sksl/ir/SkSLIndexExpression.h"
 #include "src/sksl/ir/SkSLInterfaceBlock.h"
+#include "src/sksl/ir/SkSLLayout.h"
 #include "src/sksl/ir/SkSLLiteral.h"
+#include "src/sksl/ir/SkSLModifierFlags.h"
+#include "src/sksl/ir/SkSLModifiersDeclaration.h"
+#include "src/sksl/ir/SkSLPostfixExpression.h"
+#include "src/sksl/ir/SkSLPrefixExpression.h"
 #include "src/sksl/ir/SkSLProgram.h"
+#include "src/sksl/ir/SkSLProgramElement.h"
 #include "src/sksl/ir/SkSLReturnStatement.h"
+#include "src/sksl/ir/SkSLSetting.h"
+#include "src/sksl/ir/SkSLStatement.h"
 #include "src/sksl/ir/SkSLStructDefinition.h"
+#include "src/sksl/ir/SkSLSwitchCase.h"
+#include "src/sksl/ir/SkSLSwitchStatement.h"
 #include "src/sksl/ir/SkSLSwizzle.h"
-#include "src/sksl/ir/SkSLSymbolTable.h"
 #include "src/sksl/ir/SkSLTernaryExpression.h"
 #include "src/sksl/ir/SkSLType.h"
 #include "src/sksl/ir/SkSLVarDeclarations.h"
 #include "src/sksl/ir/SkSLVariable.h"
 #include "src/sksl/ir/SkSLVariableReference.h"
+#include "src/sksl/spirv.h"
+#include "src/sksl/transform/SkSLTransform.h"
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <initializer_list>
+#include <iterator>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+
+#ifdef SK_ENABLE_WGSL_VALIDATION
+#include "tint/tint.h"
+#include "src/tint/lang/wgsl/reader/options.h"
+#include "src/tint/lang/wgsl/extension.h"
+#endif
+
+using namespace skia_private;
+
+namespace {
 
 
 
-#define DUMP_SRC_IR 0
+
+
+
+enum class WGSLFunctionDependency : uint8_t {
+    kNone = 0,
+    kPipelineInputs  = 1 << 0,
+    kPipelineOutputs = 1 << 1,
+};
+using WGSLFunctionDependencies = SkEnumBitMask<WGSLFunctionDependency>;
+
+SK_MAKE_BITMASK_OPS(WGSLFunctionDependency)
+
+}  
 
 namespace SkSL {
+
+class WGSLCodeGenerator : public CodeGenerator {
+public:
+    
+    enum class Builtin {
+        
+        kVertexIndex,    
+        kInstanceIndex,  
+        kPosition,       
+
+        
+        kLastFragColor,  
+        kFrontFacing,    
+        kSampleIndex,    
+        kFragDepth,      
+        kSampleMaskIn,   
+        kSampleMask,     
+
+        
+        kLocalInvocationId,     
+        kLocalInvocationIndex,  
+        kGlobalInvocationId,    
+        kWorkgroupId,           
+        kNumWorkgroups,         
+    };
+
+    
+    
+    
+    
+    
+    enum class Delimiter {
+        kComma,
+        kSemicolon,
+        kNone,
+    };
+
+    struct ProgramRequirements {
+        using DepsMap = skia_private::THashMap<const FunctionDeclaration*,
+                                               WGSLFunctionDependencies>;
+
+        
+        
+        DepsMap fDependencies;
+
+        
+        bool fPixelLocalExtension = false;
+    };
+
+    WGSLCodeGenerator(const Context* context,
+                      const ShaderCaps* caps,
+                      const Program* program,
+                      OutputStream* out)
+            : INHERITED(context, caps, program, out) {}
+
+    bool generateCode() override;
+
+private:
+    using INHERITED = CodeGenerator;
+    using Precedence = OperatorPrecedence;
+
+    
+    void preprocessProgram();
+
+    
+    void write(std::string_view s);
+    void writeLine(std::string_view s = std::string_view());
+    void finishLine();
+
+    
+    void writePipelineIODeclaration(const Layout& layout,
+                                    const Type& type,
+                                    std::string_view name,
+                                    Delimiter delimiter);
+    void writeUserDefinedIODecl(const Layout& layout,
+                                const Type& type,
+                                std::string_view name,
+                                Delimiter delimiter);
+    void writeBuiltinIODecl(const Type& type,
+                            std::string_view name,
+                            Builtin builtin,
+                            Delimiter delimiter);
+    void writeVariableDecl(const Layout& layout,
+                           const Type& type,
+                           std::string_view name,
+                           Delimiter delimiter);
+
+    
+    void writeFunction(const FunctionDefinition& f);
+    void writeFunctionDeclaration(const FunctionDeclaration& f,
+                                  SkSpan<const bool> paramNeedsDedicatedStorage);
+
+    
+    void writeEntryPoint(const FunctionDefinition& f);
+
+    
+    void writeStatement(const Statement& s);
+    void writeStatements(const StatementArray& statements);
+    void writeBlock(const Block& b);
+    void writeDoStatement(const DoStatement& expr);
+    void writeExpressionStatement(const Expression& expr);
+    void writeForStatement(const ForStatement& s);
+    void writeIfStatement(const IfStatement& s);
+    void writeReturnStatement(const ReturnStatement& s);
+    void writeSwitchStatement(const SwitchStatement& s);
+    void writeSwitchCases(SkSpan<const SwitchCase* const> cases);
+    void writeEmulatedSwitchFallthroughCases(SkSpan<const SwitchCase* const> cases,
+                                             std::string_view switchValue);
+    void writeSwitchCaseList(SkSpan<const SwitchCase* const> cases);
+    void writeVarDeclaration(const VarDeclaration& varDecl);
+
+    
+    class LValue;
+    class PointerLValue;
+    class SwizzleLValue;
+    class VectorComponentLValue;
+    std::unique_ptr<LValue> makeLValue(const Expression& e);
+
+    std::string variableReferenceNameForLValue(const VariableReference& r);
+    std::string variablePrefix(const Variable& v);
+
+    bool binaryOpNeedsComponentwiseMatrixPolyfill(const Type& left, const Type& right, Operator op);
+
+    
+    
+    
+    std::string assembleExpression(const Expression& e, Precedence parentPrecedence);
+    std::string assembleBinaryExpression(const BinaryExpression& b, Precedence parentPrecedence);
+    std::string assembleBinaryExpression(const Expression& left,
+                                         Operator op,
+                                         const Expression& right,
+                                         const Type& resultType,
+                                         Precedence parentPrecedence);
+    std::string assembleFieldAccess(const FieldAccess& f);
+    std::string assembleFunctionCall(const FunctionCall& call, Precedence parentPrecedence);
+    std::string assembleIndexExpression(const IndexExpression& i);
+    std::string assembleLiteral(const Literal& l);
+    std::string assemblePostfixExpression(const PostfixExpression& p, Precedence parentPrecedence);
+    std::string assemblePrefixExpression(const PrefixExpression& p, Precedence parentPrecedence);
+    std::string assembleSwizzle(const Swizzle& swizzle);
+    std::string assembleTernaryExpression(const TernaryExpression& t, Precedence parentPrecedence);
+    std::string assembleVariableReference(const VariableReference& r);
+    std::string assembleName(std::string_view name);
+
+    std::string assembleIncrementExpr(const Type& type);
+
+    
+    std::string assembleIntrinsicCall(const FunctionCall& call,
+                                      IntrinsicKind kind,
+                                      Precedence parentPrecedence);
+    std::string assembleSimpleIntrinsic(std::string_view intrinsicName, const FunctionCall& call);
+    std::string assembleUnaryOpIntrinsic(Operator op,
+                                         const FunctionCall& call,
+                                         Precedence parentPrecedence);
+    std::string assembleBinaryOpIntrinsic(Operator op,
+                                          const FunctionCall& call,
+                                          Precedence parentPrecedence);
+    std::string assembleVectorizedIntrinsic(std::string_view intrinsicName,
+                                            const FunctionCall& call);
+    std::string assembleOutAssignedIntrinsic(std::string_view intrinsicName,
+                                             std::string_view returnFieldName,
+                                             std::string_view outFieldName,
+                                             const FunctionCall& call);
+    std::string assemblePartialSampleCall(std::string_view intrinsicName,
+                                          const Expression& sampler,
+                                          const Expression& coords);
+    std::string assembleInversePolyfill(const FunctionCall& call);
+    std::string assembleComponentwiseMatrixBinary(const Type& leftType,
+                                                  const Type& rightType,
+                                                  const std::string& left,
+                                                  const std::string& right,
+                                                  Operator op);
+
+    
+    std::string assembleAnyConstructor(const AnyConstructor& c);
+    std::string assembleConstructorCompound(const ConstructorCompound& c);
+    std::string assembleConstructorCompoundVector(const ConstructorCompound& c);
+    std::string assembleConstructorCompoundMatrix(const ConstructorCompound& c);
+    std::string assembleConstructorDiagonalMatrix(const ConstructorDiagonalMatrix& c);
+    std::string assembleConstructorMatrixResize(const ConstructorMatrixResize& ctor);
+
+    
+    std::string assembleEqualityExpression(const Type& left,
+                                           const std::string& leftName,
+                                           const Type& right,
+                                           const std::string& rightName,
+                                           Operator op,
+                                           Precedence parentPrecedence);
+    std::string assembleEqualityExpression(const Expression& left,
+                                           const Expression& right,
+                                           Operator op,
+                                           Precedence parentPrecedence);
+
+    
+    std::string writeScratchVar(const Type& type, const std::string& value = "");
+
+    
+    
+    std::string writeScratchLet(const std::string& expr);
+    std::string writeScratchLet(const Expression& expr, Precedence parentPrecedence);
+
+    
+    
+    
+    std::string writeNontrivialScratchLet(const Expression& expr, Precedence parentPrecedence);
+
+    
+    void writeProgramElement(const ProgramElement& e);
+    void writeGlobalVarDeclaration(const GlobalVarDeclaration& d);
+    void writeStructDefinition(const StructDefinition& s);
+    void writeModifiersDeclaration(const ModifiersDeclaration&);
+
+    
+    
+    
+    
+    void writeFields(SkSpan<const Field> fields, const MemoryLayout* memoryLayout = nullptr);
+
+    
+    bool needsStageInputStruct() const;
+    void writeStageInputStruct();
+    bool needsStageOutputStruct() const;
+    void writeStageOutputStruct();
+    void writeUniformsAndBuffers();
+    void prepareUniformPolyfillsForInterfaceBlock(const InterfaceBlock* interfaceBlock,
+                                                  std::string_view instanceName,
+                                                  MemoryLayout::Standard nativeLayout);
+    void writeEnables();
+    void writeUniformPolyfills();
+
+    void writeTextureOrSampler(const Variable& var,
+                               int bindingLocation,
+                               std::string_view suffix,
+                               std::string_view wgslType);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void writeNonBlockUniformsForTests();
+
+    
+    
+    
+    
+    std::string functionDependencyArgs(const FunctionDeclaration&);
+    bool writeFunctionDependencyParams(const FunctionDeclaration&);
+
+    
+    StringStream fHeader;
+
+    
+    skia_private::THashMap<const Type*, std::string> fInterfaceBlockNameMap;
+
+    
+    ProgramRequirements fRequirements;
+    skia_private::TArray<const Variable*> fPipelineInputs;
+    skia_private::TArray<const Variable*> fPipelineOutputs;
+
+    
+    
+    bool fWrittenInverse2 = false;
+    bool fWrittenInverse3 = false;
+    bool fWrittenInverse4 = false;
+
+    
+    
+    
+    
+    
+    struct FieldPolyfillInfo {
+        const InterfaceBlock* fInterfaceBlock;
+        std::string fReplacementName;
+        bool fIsArray = false;
+        bool fIsMatrix = false;
+        bool fWasAccessed = false;
+    };
+    using FieldPolyfillMap = skia_private::THashMap<const Field*, FieldPolyfillInfo>;
+    FieldPolyfillMap fFieldPolyfillMap;
+
+    
+    int fIndentation = 0;
+    bool fAtLineStart = false;
+    bool fHasUnconditionalReturn = false;
+    bool fAtFunctionScope = false;
+    int fConditionalScopeDepth = 0;
+    int fLocalSizeX = 1;
+    int fLocalSizeY = 1;
+    int fLocalSizeZ = 1;
+
+    int fScratchCount = 0;
+};
 
 enum class ProgramKind : int8_t;
 
 namespace {
+
+static constexpr char kSamplerSuffix[] = "_Sampler";
+static constexpr char kTextureSuffix[] = "_Texture";
 
 
 enum class PtrAddressSpace {
@@ -82,6 +428,282 @@ enum class PtrAddressSpace {
     kStorage,
 };
 
+const char* operator_name(Operator op) {
+    switch (op.kind()) {
+        case Operator::Kind::LOGICALXOR:  return " != ";
+        default:                          return op.operatorName();
+    }
+}
+
+bool is_reserved_word(std::string_view word) {
+    static const THashSet<std::string_view> kReservedWords{
+            
+            "FSIn",
+            "FSOut",
+            "VSIn",
+            "VSOut",
+            "CSIn",
+            "_globalUniforms",
+            "_GlobalUniforms",
+            "_return",
+            "_stageIn",
+            "_stageOut",
+            
+            "alias",
+            "break",
+            "case",
+            "const",
+            "const_assert",
+            "continue",
+            "continuing",
+            "default",
+            "diagnostic",
+            "discard",
+            "else",
+            "enable",
+            "false",
+            "fn",
+            "for",
+            "if",
+            "let",
+            "loop",
+            "override",
+            "requires",
+            "return",
+            "struct",
+            "switch",
+            "true",
+            "var",
+            "while",
+            
+            "bool",
+            "f16",
+            "f32",
+            "i32",
+            "u32",
+            
+            "array",
+            "atomic",
+            "mat2x2",
+            "mat2x3",
+            "mat2x4",
+            "mat3x2",
+            "mat3x3",
+            "mat3x4",
+            "mat4x2",
+            "mat4x3",
+            "mat4x4",
+            "ptr",
+            "texture_1d",
+            "texture_2d",
+            "texture_2d_array",
+            "texture_3d",
+            "texture_cube",
+            "texture_cube_array",
+            "texture_multisampled_2d",
+            "texture_storage_1d",
+            "texture_storage_2d",
+            "texture_storage_2d_array",
+            "texture_storage_3d",
+            "vec2",
+            "vec3",
+            "vec4",
+            
+            "read",
+            "write",
+            "read_write",
+            "function",
+            "private",
+            "workgroup",
+            "uniform",
+            "storage",
+            "perspective",
+            "linear",
+            "flat",
+            "center",
+            "centroid",
+            "sample",
+            "vertex_index",
+            "instance_index",
+            "position",
+            "front_facing",
+            "frag_depth",
+            "local_invocation_id",
+            "local_invocation_index",
+            "global_invocation_id",
+            "workgroup_id",
+            "num_workgroups",
+            "sample_index",
+            "sample_mask",
+            "rgba8unorm",
+            "rgba8snorm",
+            "rgba8uint",
+            "rgba8sint",
+            "rgba16uint",
+            "rgba16sint",
+            "rgba16float",
+            "r32uint",
+            "r32sint",
+            "r32float",
+            "rg32uint",
+            "rg32sint",
+            "rg32float",
+            "rgba32uint",
+            "rgba32sint",
+            "rgba32float",
+            "bgra8unorm",
+            
+            "_",
+            "NULL",
+            "Self",
+            "abstract",
+            "active",
+            "alignas",
+            "alignof",
+            "as",
+            "asm",
+            "asm_fragment",
+            "async",
+            "attribute",
+            "auto",
+            "await",
+            "become",
+            "binding_array",
+            "cast",
+            "catch",
+            "class",
+            "co_await",
+            "co_return",
+            "co_yield",
+            "coherent",
+            "column_major",
+            "common",
+            "compile",
+            "compile_fragment",
+            "concept",
+            "const_cast",
+            "consteval",
+            "constexpr",
+            "constinit",
+            "crate",
+            "debugger",
+            "decltype",
+            "delete",
+            "demote",
+            "demote_to_helper",
+            "do",
+            "dynamic_cast",
+            "enum",
+            "explicit",
+            "export",
+            "extends",
+            "extern",
+            "external",
+            "fallthrough",
+            "filter",
+            "final",
+            "finally",
+            "friend",
+            "from",
+            "fxgroup",
+            "get",
+            "goto",
+            "groupshared",
+            "highp",
+            "impl",
+            "implements",
+            "import",
+            "inline",
+            "instanceof",
+            "interface",
+            "layout",
+            "lowp",
+            "macro",
+            "macro_rules",
+            "match",
+            "mediump",
+            "meta",
+            "mod",
+            "module",
+            "move",
+            "mut",
+            "mutable",
+            "namespace",
+            "new",
+            "nil",
+            "noexcept",
+            "noinline",
+            "nointerpolation",
+            "noperspective",
+            "null",
+            "nullptr",
+            "of",
+            "operator",
+            "package",
+            "packoffset",
+            "partition",
+            "pass",
+            "patch",
+            "pixelfragment",
+            "precise",
+            "precision",
+            "premerge",
+            "priv",
+            "protected",
+            "pub",
+            "public",
+            "readonly",
+            "ref",
+            "regardless",
+            "register",
+            "reinterpret_cast",
+            "require",
+            "resource",
+            "restrict",
+            "self",
+            "set",
+            "shared",
+            "sizeof",
+            "smooth",
+            "snorm",
+            "static",
+            "static_assert",
+            "static_cast",
+            "std",
+            "subroutine",
+            "super",
+            "target",
+            "template",
+            "this",
+            "thread_local",
+            "throw",
+            "trait",
+            "try",
+            "type",
+            "typedef",
+            "typeid",
+            "typename",
+            "typeof",
+            "union",
+            "unless",
+            "unorm",
+            "unsafe",
+            "unsized",
+            "use",
+            "using",
+            "varying",
+            "virtual",
+            "volatile",
+            "wgsl",
+            "where",
+            "with",
+            "writeonly",
+            "yield",
+    };
+
+    return kReservedWords.contains(word);
+}
+
 std::string_view pipeline_struct_prefix(ProgramKind kind) {
     if (ProgramConfig::IsVertex(kind)) {
         return "VS";
@@ -89,6 +711,10 @@ std::string_view pipeline_struct_prefix(ProgramKind kind) {
     if (ProgramConfig::IsFragment(kind)) {
         return "FS";
     }
+    if (ProgramConfig::IsCompute(kind)) {
+        return "CS";
+    }
+    
     return "";
 }
 
@@ -129,25 +755,58 @@ std::string_view to_scalar_type(const Type& type) {
 
 
 
-std::string to_wgsl_type(const Type& type) {
+std::string to_wgsl_type(const Context& context, const Type& raw, const Layout* layout = nullptr) {
+    const Type& type = raw.resolve().scalarTypeForLiteral();
     switch (type.typeKind()) {
         case Type::TypeKind::kScalar:
             return std::string(to_scalar_type(type));
+
+        case Type::TypeKind::kAtomic:
+            SkASSERT(type.matches(*context.fTypes.fAtomicUInt));
+            return "atomic<u32>";
+
         case Type::TypeKind::kVector: {
             std::string_view ct = to_scalar_type(type.componentType());
             return String::printf("vec%d<%.*s>", type.columns(), (int)ct.length(), ct.data());
         }
         case Type::TypeKind::kMatrix: {
             std::string_view ct = to_scalar_type(type.componentType());
-            return String::printf(
-                    "mat%dx%d<%.*s>", type.columns(), type.rows(), (int)ct.length(), ct.data());
+            return String::printf("mat%dx%d<%.*s>",
+                                  type.columns(), type.rows(), (int)ct.length(), ct.data());
         }
         case Type::TypeKind::kArray: {
-            std::string elementType = to_wgsl_type(type.componentType());
-            if (type.isUnsizedArray()) {
-                return String::printf("array<%s>", elementType.c_str());
+            std::string result = "array<" + to_wgsl_type(context, type.componentType(), layout);
+            if (!type.isUnsizedArray()) {
+                result += ", ";
+                result += std::to_string(type.columns());
             }
-            return String::printf("array<%s, %d>", elementType.c_str(), type.columns());
+            return result + '>';
+        }
+        case Type::TypeKind::kTexture: {
+            if (type.matches(*context.fTypes.fWriteOnlyTexture2D)) {
+                std::string result = "texture_storage_2d<";
+                
+                SkASSERT(layout);
+                LayoutFlags pixelFormat = layout->fFlags & LayoutFlag::kAllPixelFormats;
+                switch (pixelFormat.value()) {
+                    case (int)LayoutFlag::kRGBA8:
+                        return result + "rgba8unorm, write>";
+
+                    case (int)LayoutFlag::kRGBA32F:
+                        return result + "rgba32float, write>";
+
+                    case (int)LayoutFlag::kR32F:
+                        return result + "r32float, write>";
+
+                    default:
+                        
+                        return result + "write>";
+                }
+            }
+            if (type.matches(*context.fTypes.fReadOnlyTexture2D)) {
+                return "texture_2d<f32>";
+            }
+            break;
         }
         default:
             break;
@@ -155,68 +814,44 @@ std::string to_wgsl_type(const Type& type) {
     return std::string(type.name());
 }
 
-
-
-
-std::string to_mangled_wgsl_type_name(const Type& type) {
-    switch (type.typeKind()) {
-        case Type::TypeKind::kScalar:
-            return std::string(to_scalar_type(type));
-        case Type::TypeKind::kVector: {
-            std::string_view ct = to_scalar_type(type.componentType());
-            return String::printf("vec%d%.*s", type.columns(), (int)ct.length(), ct.data());
-        }
-        case Type::TypeKind::kMatrix: {
-            std::string_view ct = to_scalar_type(type.componentType());
-            return String::printf(
-                    "mat%dx%d%.*s", type.columns(), type.rows(), (int)ct.length(), ct.data());
-        }
-        case Type::TypeKind::kArray: {
-            std::string elementType = to_wgsl_type(type.componentType());
-            if (type.isUnsizedArray()) {
-                return String::printf("arrayof%s", elementType.c_str());
-            }
-            return String::printf("array%dof%s", type.columns(), elementType.c_str());
-        }
-        default:
-            break;
-    }
-    return std::string(type.name());
-}
-
-std::string to_ptr_type(const Type& type,
+std::string to_ptr_type(const Context& context,
+                        const Type& type,
+                        const Layout* layout,
                         PtrAddressSpace addressSpace = PtrAddressSpace::kFunction) {
-    return "ptr<" + std::string(address_space_to_str(addressSpace)) + ", " + to_wgsl_type(type) +
-           ">";
+    return "ptr<" + std::string(address_space_to_str(addressSpace)) + ", " +
+           to_wgsl_type(context, type, layout) + '>';
 }
 
 std::string_view wgsl_builtin_name(WGSLCodeGenerator::Builtin builtin) {
     using Builtin = WGSLCodeGenerator::Builtin;
     switch (builtin) {
         case Builtin::kVertexIndex:
-            return "vertex_index";
+            return "@builtin(vertex_index)";
         case Builtin::kInstanceIndex:
-            return "instance_index";
+            return "@builtin(instance_index)";
         case Builtin::kPosition:
-            return "position";
+            return "@builtin(position)";
+        case Builtin::kLastFragColor:
+            return "@color(0)";
         case Builtin::kFrontFacing:
-            return "front_facing";
+            return "@builtin(front_facing)";
         case Builtin::kSampleIndex:
-            return "sample_index";
+            return "@builtin(sample_index)";
         case Builtin::kFragDepth:
-            return "frag_depth";
+            return "@builtin(frag_depth)";
         case Builtin::kSampleMask:
-            return "sample_mask";
+        case Builtin::kSampleMaskIn:
+            return "@builtin(sample_mask)";
         case Builtin::kLocalInvocationId:
-            return "local_invocation_id";
+            return "@builtin(local_invocation_id)";
         case Builtin::kLocalInvocationIndex:
-            return "local_invocation_index";
+            return "@builtin(local_invocation_index)";
         case Builtin::kGlobalInvocationId:
-            return "global_invocation_id";
+            return "@builtin(global_invocation_id)";
         case Builtin::kWorkgroupId:
-            return "workgroup_id";
+            return "@builtin(workgroup_id)";
         case Builtin::kNumWorkgroups:
-            return "num_workgroups";
+            return "@builtin(num_workgroups)";
         default:
             break;
     }
@@ -234,6 +869,8 @@ std::string_view wgsl_builtin_type(WGSLCodeGenerator::Builtin builtin) {
             return "u32";
         case Builtin::kPosition:
             return "vec4<f32>";
+        case Builtin::kLastFragColor:
+            return "vec4<f32>";
         case Builtin::kFrontFacing:
             return "bool";
         case Builtin::kSampleIndex:
@@ -241,6 +878,8 @@ std::string_view wgsl_builtin_type(WGSLCodeGenerator::Builtin builtin) {
         case Builtin::kFragDepth:
             return "f32";
         case Builtin::kSampleMask:
+            return "u32";
+        case Builtin::kSampleMaskIn:
             return "u32";
         case Builtin::kLocalInvocationId:
             return "vec3<u32>";
@@ -265,7 +904,7 @@ std::string_view wgsl_builtin_type(WGSLCodeGenerator::Builtin builtin) {
 
 
 std::optional<std::string_view> needs_builtin_type_conversion(const Variable& v) {
-    switch (v.modifiers().fLayout.fBuiltin) {
+    switch (v.layout().fBuiltin) {
         case SK_VERTEXID_BUILTIN:
         case SK_INSTANCEID_BUILTIN:
             return {"i32"};
@@ -285,25 +924,37 @@ std::optional<WGSLCodeGenerator::Builtin> builtin_from_sksl_name(int builtin) {
         case SK_POSITION_BUILTIN:
             [[fallthrough]];
         case SK_FRAGCOORD_BUILTIN:
-            return {Builtin::kPosition};
+            return Builtin::kPosition;
         case SK_VERTEXID_BUILTIN:
-            return {Builtin::kVertexIndex};
+            return Builtin::kVertexIndex;
         case SK_INSTANCEID_BUILTIN:
-            return {Builtin::kInstanceIndex};
+            return Builtin::kInstanceIndex;
+        case SK_LASTFRAGCOLOR_BUILTIN:
+            return Builtin::kLastFragColor;
         case SK_CLOCKWISE_BUILTIN:
             
             
             
             
-            return {Builtin::kFrontFacing};
+            return Builtin::kFrontFacing;
+        case SK_SAMPLEMASKIN_BUILTIN:
+            return Builtin::kSampleMaskIn;
+        case SK_SAMPLEMASK_BUILTIN:
+            return Builtin::kSampleMask;
+        case SK_NUMWORKGROUPS_BUILTIN:
+            return Builtin::kNumWorkgroups;
+        case SK_WORKGROUPID_BUILTIN:
+            return Builtin::kWorkgroupId;
+        case SK_LOCALINVOCATIONID_BUILTIN:
+            return Builtin::kLocalInvocationId;
+        case SK_GLOBALINVOCATIONID_BUILTIN:
+            return Builtin::kGlobalInvocationId;
+        case SK_LOCALINVOCATIONINDEX_BUILTIN:
+            return Builtin::kLocalInvocationIndex;
         default:
             break;
     }
     return std::nullopt;
-}
-
-const SymbolTable* top_level_symbol_table(const FunctionDefinition& f) {
-    return f.body()->as<Block>().symbolTable()->fParent.get();
 }
 
 const char* delimiter_to_str(WGSLCodeGenerator::Delimiter delimiter) {
@@ -325,7 +976,7 @@ const char* delimiter_to_str(WGSLCodeGenerator::Delimiter delimiter) {
 
 class FunctionDependencyResolver : public ProgramVisitor {
 public:
-    using Deps = WGSLCodeGenerator::FunctionDependencies;
+    using Deps = WGSLFunctionDependencies;
     using DepsMap = WGSLCodeGenerator::ProgramRequirements::DepsMap;
 
     FunctionDependencyResolver(const Program* p,
@@ -334,7 +985,7 @@ public:
             : fProgram(p), fFunction(f), fDependencyMap(programDependencyMap) {}
 
     Deps resolve() {
-        fDeps = Deps::kNone;
+        fDeps = WGSLFunctionDependency::kNone;
         this->visit(*fProgram);
         return fDeps;
     }
@@ -352,13 +1003,13 @@ private:
     bool visitExpression(const Expression& e) override {
         if (e.is<VariableReference>()) {
             const VariableReference& v = e.as<VariableReference>();
-            const Modifiers& modifiers = v.variable()->modifiers();
             if (v.variable()->storage() == Variable::Storage::kGlobal) {
-                if (modifiers.fFlags & Modifiers::kIn_Flag) {
-                    fDeps |= Deps::kPipelineInputs;
+                ModifierFlags flags = v.variable()->modifierFlags();
+                if (flags & ModifierFlag::kIn) {
+                    fDeps |= WGSLFunctionDependency::kPipelineInputs;
                 }
-                if (modifiers.fFlags & Modifiers::kOut_Flag) {
-                    fDeps |= Deps::kPipelineOutputs;
+                if (flags & ModifierFlag::kOut) {
+                    fDeps |= WGSLFunctionDependency::kPipelineOutputs;
                 }
             }
         } else if (e.is<FunctionCall>()) {
@@ -396,61 +1047,207 @@ private:
     const Program* const fProgram;
     const FunctionDeclaration* const fFunction;
     DepsMap* const fDependencyMap;
-    Deps fDeps = Deps::kNone;
+    Deps fDeps = WGSLFunctionDependency::kNone;
 
     using INHERITED = ProgramVisitor;
 };
 
 WGSLCodeGenerator::ProgramRequirements resolve_program_requirements(const Program* program) {
-    bool mainNeedsCoordsArgument = false;
-    WGSLCodeGenerator::ProgramRequirements::DepsMap dependencies;
+    WGSLCodeGenerator::ProgramRequirements requirements;
 
     for (const ProgramElement* e : program->elements()) {
-        if (!e->is<FunctionDefinition>()) {
-            continue;
-        }
+        switch (e->kind()) {
+            case ProgramElement::Kind::kFunction: {
+                const FunctionDeclaration& decl = e->as<FunctionDefinition>().declaration();
 
-        const FunctionDeclaration& decl = e->as<FunctionDefinition>().declaration();
-        if (decl.isMain()) {
-            for (const Variable* v : decl.parameters()) {
-                if (v->modifiers().fLayout.fBuiltin == SK_MAIN_COORDS_BUILTIN) {
-                    mainNeedsCoordsArgument = true;
-                    break;
-                }
+                FunctionDependencyResolver resolver(program, &decl, &requirements.fDependencies);
+                requirements.fDependencies.set(&decl, resolver.resolve());
+                break;
             }
+            case ProgramElement::Kind::kGlobalVar: {
+                const GlobalVarDeclaration& decl = e->as<GlobalVarDeclaration>();
+                if (decl.varDeclaration().var()->modifierFlags().isPixelLocal()) {
+                    requirements.fPixelLocalExtension = true;
+                }
+                break;
+            }
+            default:
+                break;
         }
-
-        FunctionDependencyResolver resolver(program, &decl, &dependencies);
-        dependencies.set(&decl, resolver.resolve());
     }
 
-    return WGSLCodeGenerator::ProgramRequirements(std::move(dependencies), mainNeedsCoordsArgument);
+    return requirements;
 }
 
-int count_pipeline_inputs(const Program* program) {
-    int inputCount = 0;
+void collect_pipeline_io_vars(const Program* program,
+                              TArray<const Variable*>* ioVars,
+                              ModifierFlag ioType) {
     for (const ProgramElement* e : program->elements()) {
         if (e->is<GlobalVarDeclaration>()) {
             const Variable* v = e->as<GlobalVarDeclaration>().varDeclaration().var();
-            if (v->modifiers().fFlags & Modifiers::kIn_Flag) {
-                inputCount++;
+            if (v->modifierFlags() & ioType) {
+                ioVars->push_back(v);
             }
         } else if (e->is<InterfaceBlock>()) {
             const Variable* v = e->as<InterfaceBlock>().var();
-            if (v->modifiers().fFlags & Modifiers::kIn_Flag) {
-                inputCount++;
+            if (v->modifierFlags() & ioType) {
+                ioVars->push_back(v);
             }
         }
     }
-    return inputCount;
 }
 
-static bool is_in_global_uniforms(const Variable& var) {
+bool is_in_global_uniforms(const Variable& var) {
     SkASSERT(var.storage() == VariableStorage::kGlobal);
-    return var.modifiers().fFlags & Modifiers::kUniform_Flag && !var.type().isOpaque();
+    return  var.modifierFlags().isUniform() &&
+           !var.type().isOpaque() &&
+           !var.interfaceBlock();
 }
 
 }  
+
+class WGSLCodeGenerator::LValue {
+public:
+    virtual ~LValue() = default;
+
+    
+    
+    virtual std::string load() = 0;
+
+    
+    
+    virtual std::string store(const std::string& value) = 0;
+};
+
+class WGSLCodeGenerator::PointerLValue : public WGSLCodeGenerator::LValue {
+public:
+    
+    
+    PointerLValue(std::string name) : fName(std::move(name)) {}
+
+    std::string load() override {
+        return fName;
+    }
+
+    std::string store(const std::string& value) override {
+        return fName + " = " + value + ";";
+    }
+
+private:
+    std::string fName;
+};
+
+class WGSLCodeGenerator::VectorComponentLValue : public WGSLCodeGenerator::LValue {
+public:
+    
+    
+    VectorComponentLValue(std::string name) : fName(std::move(name)) {}
+
+    std::string load() override {
+        return fName;
+    }
+
+    std::string store(const std::string& value) override {
+        return fName + " = " + value + ";";
+    }
+
+private:
+    std::string fName;
+};
+
+class WGSLCodeGenerator::SwizzleLValue : public WGSLCodeGenerator::LValue {
+public:
+    
+    SwizzleLValue(const Context& ctx, std::string name, const Type& t, const ComponentArray& c)
+            : fContext(ctx)
+            , fName(std::move(name))
+            , fType(t)
+            , fComponents(c) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        int fullSlotCount = fType.slotCount();
+        SkASSERT(fullSlotCount <= 4);
+
+        
+        
+        bool used[4] = {};
+        for (int8_t component : fComponents) {
+            SkASSERT(!used[component]);
+            used[component] = true;
+        }
+
+        
+        for (int index = 0; index < fullSlotCount; ++index) {
+            if (!used[index]) {
+                fUntouchedComponents.push_back(index);
+            }
+        }
+
+        
+        
+        fReintegrationSwizzle.resize(fullSlotCount);
+        for (int index = 0; index < fComponents.size(); ++index) {
+            fReintegrationSwizzle[fComponents[index]] = index;
+        }
+        
+        int originalValueComponentIndex = fComponents.size();
+        for (int index = 0; index < fullSlotCount; ++index) {
+            if (!used[index]) {
+                fReintegrationSwizzle[index] = originalValueComponentIndex++;
+            }
+        }
+    }
+
+    std::string load() override {
+        return fName + "." + Swizzle::MaskString(fComponents);
+    }
+
+    std::string store(const std::string& value) override {
+        
+        std::string result = fName;
+        result += " = ";
+
+        if (fUntouchedComponents.empty()) {
+            
+            result += '(';
+            result += value;
+            result += ").";
+            result += Swizzle::MaskString(fReintegrationSwizzle);
+        } else {
+            
+            result += to_wgsl_type(fContext, fType);
+            result += "((";
+            result += value;
+            result += "), ";
+
+            
+            result += fName;
+            result += '.';
+            result += Swizzle::MaskString(fUntouchedComponents);
+            result += ").";
+            result += Swizzle::MaskString(fReintegrationSwizzle);
+        }
+        return result + ';';
+    }
+
+private:
+    const Context& fContext;
+    std::string fName;
+    const Type& fType;
+    ComponentArray fComponents;
+    ComponentArray fUntouchedComponents;
+    ComponentArray fReintegrationSwizzle;
+};
 
 bool WGSLCodeGenerator::generateCode() {
     
@@ -459,53 +1256,271 @@ bool WGSLCodeGenerator::generateCode() {
     
     this->preprocessProgram();
 
-    StringStream header;
     {
-        AutoOutputStream outputToHeader(this, &header, &fIndentation);
-        
-        
+        AutoOutputStream outputToHeader(this, &fHeader, &fIndentation);
+        this->writeEnables();
         this->writeStageInputStruct();
         this->writeStageOutputStruct();
+        this->writeUniformsAndBuffers();
         this->writeNonBlockUniformsForTests();
     }
     StringStream body;
     {
+        
         AutoOutputStream outputToBody(this, &body, &fIndentation);
+        const FunctionDefinition* mainFunc = nullptr;
         for (const ProgramElement* e : fProgram.elements()) {
             this->writeProgramElement(*e);
+
+            if (e->is<FunctionDefinition>()) {
+                const FunctionDefinition& func = e->as<FunctionDefinition>();
+                if (func.declaration().isMain()) {
+                    mainFunc = &func;
+                }
+            }
         }
 
-
-
-#if DUMP_SRC_IR
-        this->writeLine("\n----------");
-        this->writeLine("Source IR:\n");
-        for (const ProgramElement* e : fProgram.elements()) {
-            this->writeLine(e->description().c_str());
+        
+        
+        
+        if (mainFunc) {
+            this->writeEntryPoint(*mainFunc);
         }
-#endif
     }
 
-    write_stringstream(header, *fOut);
-    write_stringstream(fExtraFunctions, *fOut);
+    write_stringstream(fHeader, *fOut);
     write_stringstream(body, *fOut);
+
+    this->writeUniformPolyfills();
+
     return fContext.fErrors->errorCount() == 0;
 }
 
+void WGSLCodeGenerator::writeUniformPolyfills() {
+    
+    if (fFieldPolyfillMap.empty()) {
+        return;
+    }
+
+    
+    
+    TArray<const FieldPolyfillMap::Pair*> orderedFields;
+    orderedFields.reserve_exact(fFieldPolyfillMap.count());
+
+    fFieldPolyfillMap.foreach([&](const FieldPolyfillMap::Pair& pair) {
+        orderedFields.push_back(&pair);
+    });
+
+    std::sort(orderedFields.begin(),
+              orderedFields.end(),
+              [](const FieldPolyfillMap::Pair* a, const FieldPolyfillMap::Pair* b) {
+                  return a->second.fReplacementName < b->second.fReplacementName;
+              });
+
+    THashSet<const Type*> writtenArrayElementPolyfill;
+    bool writtenUniformMatrixPolyfill[5][5] = {};  
+    bool writtenUniformRowPolyfill[5] = {};        
+    bool anyFieldAccessed = false;
+    for (const FieldPolyfillMap::Pair* pair : orderedFields) {
+        const auto& [field, info] = *pair;
+        const Type* fieldType = field->fType;
+        const Layout* fieldLayout = &field->fLayout;
+
+        if (info.fIsArray) {
+            fieldType = &fieldType->componentType();
+            if (!writtenArrayElementPolyfill.contains(fieldType)) {
+                writtenArrayElementPolyfill.add(fieldType);
+                this->write("struct _skArrayElement_");
+                this->write(fieldType->abbreviatedName());
+                this->writeLine(" {");
+
+                if (info.fIsMatrix) {
+                    
+                    this->write("  e : _skMatrix");
+                    this->write(std::to_string(fieldType->columns()));
+                    this->writeLine(std::to_string(fieldType->rows()));
+                } else {
+                    
+                    this->write("  @size(16) e : ");
+                    this->writeLine(to_wgsl_type(fContext, *fieldType, fieldLayout));
+                }
+                this->writeLine("};");
+            }
+        }
+
+        if (info.fIsMatrix) {
+            
+            
+            
+            int c = fieldType->columns();
+            int r = fieldType->rows();
+            if (!writtenUniformRowPolyfill[r]) {
+                writtenUniformRowPolyfill[r] = true;
+
+                this->write("struct _skRow");
+                this->write(std::to_string(r));
+                this->writeLine(" {");
+                this->write("  @size(16) r : vec");
+                this->write(std::to_string(r));
+                this->write("<");
+                this->write(to_wgsl_type(fContext, fieldType->componentType(), fieldLayout));
+                this->writeLine(">");
+                this->writeLine("};");
+            }
+
+            if (!writtenUniformMatrixPolyfill[c][r]) {
+                writtenUniformMatrixPolyfill[c][r] = true;
+
+                this->write("struct _skMatrix");
+                this->write(std::to_string(c));
+                this->write(std::to_string(r));
+                this->writeLine(" {");
+                this->write("  c : array<_skRow");
+                this->write(std::to_string(r));
+                this->write(", ");
+                this->write(std::to_string(c));
+                this->writeLine(">");
+                this->writeLine("};");
+            }
+        }
+
+        
+        if (!info.fWasAccessed) {
+            continue;
+        }
+        anyFieldAccessed = true;
+        this->write("var<private> ");
+        this->write(info.fReplacementName);
+        this->write(": ");
+
+        const Type& interfaceBlockType = info.fInterfaceBlock->var()->type();
+        if (interfaceBlockType.isArray()) {
+            this->write("array<");
+            this->write(to_wgsl_type(fContext, *field->fType, fieldLayout));
+            this->write(", ");
+            this->write(std::to_string(interfaceBlockType.columns()));
+            this->write(">");
+        } else {
+            this->write(to_wgsl_type(fContext, *field->fType, fieldLayout));
+        }
+        this->writeLine(";");
+    }
+
+    
+    
+    if (!anyFieldAccessed) {
+        return;
+    }
+
+    this->writeLine("fn _skInitializePolyfilledUniforms() {");
+    ++fIndentation;
+
+    for (const FieldPolyfillMap::Pair* pair : orderedFields) {
+        
+        const auto& [field, info] = *pair;
+        if (!info.fWasAccessed) {
+            continue;
+        }
+
+        
+        std::string_view instanceName = info.fInterfaceBlock->instanceName();
+        const Type& interfaceBlockType = info.fInterfaceBlock->var()->type();
+        if (instanceName.empty()) {
+            instanceName = fInterfaceBlockNameMap[&interfaceBlockType.componentType()];
+        }
+
+        
+        
+        int numIBElements = interfaceBlockType.isArray() ? interfaceBlockType.columns() : 1;
+        for (int ibIdx = 0; ibIdx < numIBElements; ++ibIdx) {
+            this->write(info.fReplacementName);
+            if (interfaceBlockType.isArray()) {
+                this->write("[");
+                this->write(std::to_string(ibIdx));
+                this->write("]");
+            }
+            this->write(" = ");
+
+            const Type* fieldType = field->fType;
+            const Layout* fieldLayout = &field->fLayout;
+
+            int numArrayElements;
+            if (info.fIsArray) {
+                this->write(to_wgsl_type(fContext, *fieldType, fieldLayout));
+                this->write("(");
+                numArrayElements = fieldType->columns();
+                fieldType = &fieldType->componentType();
+            } else {
+                numArrayElements = 1;
+            }
+
+            auto arraySeparator = String::Separator();
+            for (int arrayIdx = 0; arrayIdx < numArrayElements; arrayIdx++) {
+                this->write(arraySeparator());
+
+                std::string fieldName{instanceName};
+                if (interfaceBlockType.isArray()) {
+                    fieldName += '[';
+                    fieldName += std::to_string(ibIdx);
+                    fieldName += ']';
+                }
+                fieldName += '.';
+                fieldName += this->assembleName(field->fName);
+
+                if (info.fIsArray) {
+                    fieldName += '[';
+                    fieldName += std::to_string(arrayIdx);
+                    fieldName += "].e";
+                }
+
+                if (info.fIsMatrix) {
+                    this->write(to_wgsl_type(fContext, *fieldType, fieldLayout));
+                    this->write("(");
+                    int numColumns = fieldType->columns();
+                    auto matrixSeparator = String::Separator();
+                    for (int column = 0; column < numColumns; column++) {
+                        this->write(matrixSeparator());
+                        this->write(fieldName);
+                        this->write(".c[");
+                        this->write(std::to_string(column));
+                        this->write("].r");
+                    }
+                    this->write(")");
+                } else {
+                    this->write(fieldName);
+                }
+            }
+
+            if (info.fIsArray) {
+                this->write(")");
+            }
+
+            this->writeLine(";");
+        }
+    }
+
+    --fIndentation;
+    this->writeLine("}");
+}
+
+
 void WGSLCodeGenerator::preprocessProgram() {
     fRequirements = resolve_program_requirements(&fProgram);
-    fPipelineInputCount = count_pipeline_inputs(&fProgram);
+    collect_pipeline_io_vars(&fProgram, &fPipelineInputs, ModifierFlag::kIn);
+    collect_pipeline_io_vars(&fProgram, &fPipelineOutputs, ModifierFlag::kOut);
 }
 
 void WGSLCodeGenerator::write(std::string_view s) {
     if (s.empty()) {
         return;
     }
+#if defined(SK_DEBUG) || defined(SKSL_STANDALONE)
     if (fAtLineStart) {
         for (int i = 0; i < fIndentation; i++) {
-            fOut->writeText("    ");
+            fOut->writeText("  ");
         }
     }
+#endif
     fOut->writeText(std::string(s).c_str());
     fAtLineStart = false;
 }
@@ -522,23 +1537,29 @@ void WGSLCodeGenerator::finishLine() {
     }
 }
 
-void WGSLCodeGenerator::writeName(std::string_view name) {
-    
-    if (fReservedWords.contains(name)) {
-        this->write("_");
+std::string WGSLCodeGenerator::assembleName(std::string_view name) {
+    if (name.empty()) {
+        
+        return "_skAnonymous" + std::to_string(fScratchCount++);
     }
-    this->write(name);
+    
+    return (skstd::starts_with(name, "_sk") ||
+            skstd::starts_with(name, "R_") ||
+            is_reserved_word(name))
+                   ? std::string("R_") + std::string(name)
+                   : std::string(name);
 }
 
-void WGSLCodeGenerator::writeVariableDecl(const Type& type,
+void WGSLCodeGenerator::writeVariableDecl(const Layout& layout,
+                                          const Type& type,
                                           std::string_view name,
                                           Delimiter delimiter) {
-    this->writeName(name);
-    this->write(": " + to_wgsl_type(type));
+    this->write(this->assembleName(name));
+    this->write(": " + to_wgsl_type(fContext, type, &layout));
     this->writeLine(delimiter_to_str(delimiter));
 }
 
-void WGSLCodeGenerator::writePipelineIODeclaration(Modifiers modifiers,
+void WGSLCodeGenerator::writePipelineIODeclaration(const Layout& layout,
                                                    const Type& type,
                                                    std::string_view name,
                                                    Delimiter delimiter) {
@@ -554,23 +1575,35 @@ void WGSLCodeGenerator::writePipelineIODeclaration(Modifiers modifiers,
     
     
     
-    
-    int location = modifiers.fLayout.fLocation;
-    if (location >= 0) {
-        this->writeUserDefinedIODecl(type, name, location, delimiter);
-    } else if (modifiers.fLayout.fBuiltin >= 0) {
-        auto builtin = builtin_from_sksl_name(modifiers.fLayout.fBuiltin);
+    if (layout.fLocation >= 0) {
+        this->writeUserDefinedIODecl(layout, type, name, delimiter);
+        return;
+    }
+    if (layout.fBuiltin >= 0) {
+        if (layout.fBuiltin == SK_POINTSIZE_BUILTIN) {
+            
+            
+            return;
+        }
+        auto builtin = builtin_from_sksl_name(layout.fBuiltin);
         if (builtin.has_value()) {
             this->writeBuiltinIODecl(type, name, *builtin, delimiter);
+            return;
         }
     }
+    fContext.fErrors->error(Position(), "declaration '" + std::string(name) + "' is not supported");
 }
 
-void WGSLCodeGenerator::writeUserDefinedIODecl(const Type& type,
+void WGSLCodeGenerator::writeUserDefinedIODecl(const Layout& layout,
+                                               const Type& type,
                                                std::string_view name,
-                                               int location,
                                                Delimiter delimiter) {
-    this->write("@location(" + std::to_string(location) + ") ");
+    this->write("@location(" + std::to_string(layout.fLocation) + ") ");
+
+    
+    if (layout.fLocation == 0 && layout.fIndex >= 0 && fProgram.fInterface.fOutputSecondaryColor) {
+        this->write("@blend_src(" + std::to_string(layout.fIndex) + ") ");
+    }
 
     
     
@@ -578,138 +1611,269 @@ void WGSLCodeGenerator::writeUserDefinedIODecl(const Type& type,
         this->write("@interpolate(flat) ");
     }
 
-    this->writeVariableDecl(type, name, delimiter);
+    this->writeVariableDecl(layout, type, name, delimiter);
 }
 
 void WGSLCodeGenerator::writeBuiltinIODecl(const Type& type,
                                            std::string_view name,
                                            Builtin builtin,
                                            Delimiter delimiter) {
-    this->write("@builtin(");
     this->write(wgsl_builtin_name(builtin));
-    this->write(") ");
-
-    this->writeName(name);
+    this->write(" ");
+    this->write(this->assembleName(name));
     this->write(": ");
     this->write(wgsl_builtin_type(builtin));
     this->writeLine(delimiter_to_str(delimiter));
 }
 
 void WGSLCodeGenerator::writeFunction(const FunctionDefinition& f) {
-    this->writeFunctionDeclaration(f.declaration());
-    this->write(" ");
+    const FunctionDeclaration& decl = f.declaration();
+    fHasUnconditionalReturn = false;
+    fConditionalScopeDepth = 0;
+
+    SkASSERT(!fAtFunctionScope);
+    fAtFunctionScope = true;
+
+    
+    
+    
+    
+    
+    STArray<32, bool> paramNeedsDedicatedStorage;
+    paramNeedsDedicatedStorage.push_back_n(decl.parameters().size(), true);
+
+    for (size_t index = 0; index < decl.parameters().size(); ++index) {
+        const Variable& param = *decl.parameters()[index];
+        if (param.type().isOpaque() || param.name().empty()) {
+            
+            paramNeedsDedicatedStorage[index] = false;
+            continue;
+        }
+
+        const ProgramUsage::VariableCounts counts = fProgram.fUsage->get(param);
+        if ((param.modifierFlags() & ModifierFlag::kOut) || counts.fWrite == 0) {
+            
+            
+            
+            paramNeedsDedicatedStorage[index] = false;
+        }
+    }
+
+    this->writeFunctionDeclaration(decl, paramNeedsDedicatedStorage);
+    this->writeLine(" {");
+    ++fIndentation;
+
+    
+    
+    
+    for (size_t index = 0; index < decl.parameters().size(); ++index) {
+        if (paramNeedsDedicatedStorage[index]) {
+            const Variable& param = *decl.parameters()[index];
+            this->write("var ");
+            this->write(this->assembleName(param.mangledName()));
+            this->write(" = _skParam");
+            this->write(std::to_string(index));
+            this->writeLine(";");
+        }
+    }
+
     this->writeBlock(f.body()->as<Block>());
 
-    if (f.declaration().isMain()) {
-        
-        
-        this->writeEntryPoint(f);
+    
+    SkASSERT(fConditionalScopeDepth == 0);
+    if (!fHasUnconditionalReturn && !f.declaration().returnType().isVoid()) {
+        this->write("return ");
+        this->write(to_wgsl_type(fContext, f.declaration().returnType()));
+        this->writeLine("();");
     }
+
+    --fIndentation;
+    this->writeLine("}");
+
+    SkASSERT(fAtFunctionScope);
+    fAtFunctionScope = false;
 }
 
-void WGSLCodeGenerator::writeFunctionDeclaration(const FunctionDeclaration& f) {
+void WGSLCodeGenerator::writeFunctionDeclaration(const FunctionDeclaration& decl,
+                                                 SkSpan<const bool> paramNeedsDedicatedStorage) {
     this->write("fn ");
-    this->write(f.mangledName());
-    this->write("(");
+    if (decl.isMain()) {
+        this->write("_skslMain(");
+    } else {
+        this->write(this->assembleName(decl.mangledName()));
+        this->write("(");
+    }
     auto separator = SkSL::String::Separator();
-    if (this->writeFunctionDependencyParams(f)) {
+    if (this->writeFunctionDependencyParams(decl)) {
         separator();  
     }
-    for (const Variable* param : f.parameters()) {
+    for (size_t index = 0; index < decl.parameters().size(); ++index) {
         this->write(separator());
-        this->writeName(param->mangledName());
-        this->write(": ");
 
-        
-        if (param->modifiers().fFlags & Modifiers::kOut_Flag) {
-            this->write(to_ptr_type(param->type()));
+        const Variable& param = *decl.parameters()[index];
+        if (param.type().isOpaque()) {
+            SkASSERT(!paramNeedsDedicatedStorage[index]);
+            if (param.type().isSampler()) {
+                
+                this->write(param.name());
+                this->write(kTextureSuffix);
+                this->write(": texture_2d<f32>, ");
+                this->write(param.name());
+                this->write(kSamplerSuffix);
+                this->write(": sampler");
+            } else {
+                
+                this->write(param.name());
+                this->write(": ");
+                this->write(to_wgsl_type(fContext, param.type(), &param.layout()));
+            }
         } else {
-            this->write(to_wgsl_type(param->type()));
+            if (paramNeedsDedicatedStorage[index] || param.name().empty()) {
+                
+                
+                
+                this->write("_skParam");
+                this->write(std::to_string(index));
+            } else {
+                
+                this->write(this->assembleName(param.name()));
+            }
+            this->write(": ");
+            if (param.modifierFlags() & ModifierFlag::kOut) {
+                
+                this->write(to_ptr_type(fContext, param.type(), &param.layout()));
+            } else {
+                this->write(to_wgsl_type(fContext, param.type(), &param.layout()));
+            }
         }
     }
     this->write(")");
-    if (!f.returnType().isVoid()) {
+    if (!decl.returnType().isVoid()) {
         this->write(" -> ");
-        this->write(to_wgsl_type(f.returnType()));
+        this->write(to_wgsl_type(fContext, decl.returnType()));
     }
 }
 
 void WGSLCodeGenerator::writeEntryPoint(const FunctionDefinition& main) {
     SkASSERT(main.declaration().isMain());
+    const ProgramKind programKind = fProgram.fConfig->fKind;
+
+#if defined(SKSL_STANDALONE)
+    if (ProgramConfig::IsRuntimeShader(programKind)) {
+        
+        
+        
+        this->writeLine("@fragment fn main(@location(0) _coords: vec2<f32>) -> "
+                                     "@location(0) vec4<f32> {");
+        ++fIndentation;
+        this->writeLine("return _skslMain(_coords);");
+        --fIndentation;
+        this->writeLine("}");
+        return;
+    }
+#endif
 
     
     
     
     
-    std::string outputType;
-    if (ProgramConfig::IsVertex(fProgram.fConfig->fKind)) {
-        this->write("@vertex fn vertexMain(");
-        if (fPipelineInputCount > 0) {
-            this->write("_stageIn: VSIn");
-        }
-        this->writeLine(") -> VSOut {");
-        outputType = "VSOut";
-    } else if (ProgramConfig::IsFragment(fProgram.fConfig->fKind)) {
-        this->write("@fragment fn fragmentMain(");
-        if (fPipelineInputCount > 0) {
-            this->write("_stageIn: FSIn");
-        }
-        this->writeLine(") -> FSOut {");
-        outputType = "FSOut";
+    if (ProgramConfig::IsVertex(programKind)) {
+        this->write("@vertex");
+    } else if (ProgramConfig::IsFragment(programKind)) {
+        this->write("@fragment");
+    } else if (ProgramConfig::IsCompute(programKind)) {
+        this->write("@compute @workgroup_size(");
+        this->write(std::to_string(fLocalSizeX));
+        this->write(", ");
+        this->write(std::to_string(fLocalSizeY));
+        this->write(", ");
+        this->write(std::to_string(fLocalSizeZ));
+        this->write(")");
     } else {
         fContext.fErrors->error(Position(), "program kind not supported");
         return;
     }
 
+    this->write(" fn main(");
+    
+    if (this->needsStageInputStruct()) {
+        this->write("_stageIn: ");
+        this->write(pipeline_struct_prefix(programKind));
+        this->write("In");
+    }
+    
+    if (this->needsStageOutputStruct()) {
+        this->write(") -> ");
+        this->write(pipeline_struct_prefix(programKind));
+        this->writeLine("Out {");
+    } else {
+        this->writeLine(") {");
+    }
     
     fIndentation++;
-    this->write("var _stageOut: ");
-    this->write(outputType);
-    this->writeLine(";");
-
+    for (const auto& [field, info] : fFieldPolyfillMap) {
+        if (info.fWasAccessed) {
+            this->writeLine("_skInitializePolyfilledUniforms();");
+            break;
+        }
+    }
     
-    if (ProgramConfig::IsFragment(fProgram.fConfig->fKind)) {
-        const SymbolTable* symbolTable = top_level_symbol_table(main);
-        const Symbol* symbol = symbolTable->find("sk_FragColor");
-        SkASSERT(symbol);
-        if (main.declaration().returnType().matches(symbol->type())) {
+    if (this->needsStageOutputStruct()) {
+        this->write("var _stageOut: ");
+        this->write(pipeline_struct_prefix(programKind));
+        this->writeLine("Out;");
+    }
+
+#if defined(SKSL_STANDALONE)
+    
+    
+    
+    
+    
+    if (ProgramConfig::IsFragment(programKind)) {
+        if (main.declaration().returnType().matches(*fContext.fTypes.fHalf4)) {
             this->write("_stageOut.sk_FragColor = ");
         }
     }
+#endif
 
     
-    this->write(main.declaration().mangledName());
-    this->write("(");
+    this->write("_skslMain(");
     auto separator = SkSL::String::Separator();
-    FunctionDependencies* deps = fRequirements.dependencies.find(&main.declaration());
+    WGSLFunctionDependencies* deps = fRequirements.fDependencies.find(&main.declaration());
     if (deps) {
-        if ((*deps & FunctionDependencies::kPipelineInputs) != FunctionDependencies::kNone) {
+        if (*deps & WGSLFunctionDependency::kPipelineInputs) {
             this->write(separator());
             this->write("_stageIn");
         }
-        if ((*deps & FunctionDependencies::kPipelineOutputs) != FunctionDependencies::kNone) {
+        if (*deps & WGSLFunctionDependency::kPipelineOutputs) {
             this->write(separator());
             this->write("&_stageOut");
         }
     }
-    
-    if (main.declaration().parameters().size() != 0) {
-        const Variable* v = main.declaration().parameters()[0];
-        const Type& type = v->type();
-        if (v->modifiers().fLayout.fBuiltin == SK_MAIN_COORDS_BUILTIN) {
-            if (!type.matches(*fContext.fTypes.fFloat2)) {
-                fContext.fErrors->error(
-                        main.fPosition,
-                        "main function has unsupported parameter: " + type.description());
-                return;
-            }
 
-            this->write(separator());
-            this->write("_stageIn.sk_FragCoord.xy");
+#if defined(SKSL_STANDALONE)
+    if (const Variable* v = main.declaration().getMainCoordsParameter()) {
+        
+        
+        SkASSERT(ProgramConfig::IsFragment(programKind));
+        const Type& type = v->type();
+        if (!type.matches(*fContext.fTypes.fFloat2)) {
+            fContext.fErrors->error(main.fPosition, "main function has unsupported parameter: " +
+                                                    type.description());
+            return;
         }
+        this->write(separator());
+        this->write("/*fragcoord*/ vec2<f32>()");
     }
+#endif
+
     this->writeLine(");");
-    this->writeLine("return _stageOut;");
+
+    if (this->needsStageOutputStruct()) {
+        
+        this->writeLine("return _stageOut;");
+    }
 
     fIndentation--;
     this->writeLine("}");
@@ -720,21 +1884,41 @@ void WGSLCodeGenerator::writeStatement(const Statement& s) {
         case Statement::Kind::kBlock:
             this->writeBlock(s.as<Block>());
             break;
+        case Statement::Kind::kBreak:
+            this->writeLine("break;");
+            break;
+        case Statement::Kind::kContinue:
+            this->writeLine("continue;");
+            break;
+        case Statement::Kind::kDiscard:
+            this->writeLine("discard;");
+            break;
+        case Statement::Kind::kDo:
+            this->writeDoStatement(s.as<DoStatement>());
+            break;
         case Statement::Kind::kExpression:
-            this->writeExpressionStatement(s.as<ExpressionStatement>());
+            this->writeExpressionStatement(*s.as<ExpressionStatement>().expression());
+            break;
+        case Statement::Kind::kFor:
+            this->writeForStatement(s.as<ForStatement>());
             break;
         case Statement::Kind::kIf:
             this->writeIfStatement(s.as<IfStatement>());
             break;
+        case Statement::Kind::kNop:
+            this->writeLine(";");
+            break;
         case Statement::Kind::kReturn:
             this->writeReturnStatement(s.as<ReturnStatement>());
             break;
+        case Statement::Kind::kSwitch:
+            this->writeSwitchStatement(s.as<SwitchStatement>());
+            break;
+        case Statement::Kind::kSwitchCase:
+            SkDEBUGFAIL("switch-case statements should only be present inside a switch");
+            break;
         case Statement::Kind::kVarDeclaration:
             this->writeVarDeclaration(s.as<VarDeclaration>());
-            break;
-        default:
-            SkDEBUGFAILF("unsupported statement (kind: %d) %s",
-                         static_cast<int>(s.kind()), s.description().c_str());
             break;
     }
 }
@@ -763,182 +1947,1455 @@ void WGSLCodeGenerator::writeBlock(const Block& b) {
     }
 }
 
-void WGSLCodeGenerator::writeExpressionStatement(const ExpressionStatement& s) {
-    if (Analysis::HasSideEffects(*s.expression())) {
-        this->writeExpression(*s.expression(), Precedence::kTopLevel);
-        this->write(";");
+void WGSLCodeGenerator::writeExpressionStatement(const Expression& expr) {
+    
+    
+    
+    
+    (void)this->assembleExpression(expr, Precedence::kStatement);
+}
+
+void WGSLCodeGenerator::writeDoStatement(const DoStatement& s) {
+    
+    
+    
+    
+    
+    
+    
+
+    ++fConditionalScopeDepth;
+
+    std::unique_ptr<Expression> invertedTestExpr = PrefixExpression::Make(
+            fContext, s.test()->fPosition, OperatorKind::LOGICALNOT, s.test()->clone());
+
+    this->writeLine("loop {");
+    fIndentation++;
+    this->writeStatement(*s.statement());
+    this->finishLine();
+
+    this->writeLine("continuing {");
+    fIndentation++;
+    std::string breakIfExpr = this->assembleExpression(*invertedTestExpr, Precedence::kExpression);
+    this->write("break if ");
+    this->write(breakIfExpr);
+    this->writeLine(";");
+    fIndentation--;
+    this->writeLine("}");
+    fIndentation--;
+    this->writeLine("}");
+
+    --fConditionalScopeDepth;
+}
+
+void WGSLCodeGenerator::writeForStatement(const ForStatement& s) {
+    
+    
+    
+    
+    
+    
+    
+    
+
+    ++fConditionalScopeDepth;
+
+    if (s.initializer()) {
+        this->writeLine("{");
+        fIndentation++;
+        this->writeStatement(*s.initializer());
+        this->writeLine();
     }
+
+    this->writeLine("loop {");
+    fIndentation++;
+
+    if (s.unrollInfo()) {
+        if (s.unrollInfo()->fCount <= 0) {
+            
+            
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            this->writeStatement(*s.statement());
+            this->finishLine();
+            this->writeLine("continuing {");
+            ++fIndentation;
+
+            if (s.next()) {
+                this->writeExpressionStatement(*s.next());
+                this->finishLine();
+            }
+
+            if (s.test()) {
+                std::unique_ptr<Expression> invertedTestExpr = PrefixExpression::Make(
+                        fContext, s.test()->fPosition, OperatorKind::LOGICALNOT, s.test()->clone());
+
+                std::string breakIfExpr =
+                        this->assembleExpression(*invertedTestExpr, Precedence::kExpression);
+                this->write("break if ");
+                this->write(breakIfExpr);
+                this->writeLine(";");
+            }
+
+            --fIndentation;
+            this->writeLine("}");
+        }
+    } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        if (s.test()) {
+            std::string testExpr = this->assembleExpression(*s.test(), Precedence::kExpression);
+            this->write("if ");
+            this->write(testExpr);
+            this->writeLine(" {");
+
+            fIndentation++;
+            this->writeStatement(*s.statement());
+            this->finishLine();
+            fIndentation--;
+
+            this->writeLine("} else {");
+
+            fIndentation++;
+            this->writeLine("break;");
+            fIndentation--;
+
+            this->writeLine("}");
+        }
+        else {
+            this->writeStatement(*s.statement());
+            this->finishLine();
+        }
+
+        if (s.next()) {
+            this->writeLine("continuing {");
+            fIndentation++;
+            this->writeExpressionStatement(*s.next());
+            this->finishLine();
+            fIndentation--;
+            this->writeLine("}");
+        }
+    }
+
+    
+    fIndentation--;
+    this->writeLine("}");
+
+    if (s.initializer()) {
+        
+        fIndentation--;
+        this->writeLine("}");
+    }
+
+    --fConditionalScopeDepth;
 }
 
 void WGSLCodeGenerator::writeIfStatement(const IfStatement& s) {
-    this->write("if (");
-    this->writeExpression(*s.test(), Precedence::kTopLevel);
-    this->write(") ");
+    ++fConditionalScopeDepth;
+
+    std::string testExpr = this->assembleExpression(*s.test(), Precedence::kExpression);
+    this->write("if ");
+    this->write(testExpr);
+    this->writeLine(" {");
+    fIndentation++;
     this->writeStatement(*s.ifTrue());
+    this->finishLine();
+    fIndentation--;
     if (s.ifFalse()) {
-        this->write("else ");
+        this->writeLine("} else {");
+        fIndentation++;
         this->writeStatement(*s.ifFalse());
+        this->finishLine();
+        fIndentation--;
     }
+    this->writeLine("}");
+
+    --fConditionalScopeDepth;
 }
 
 void WGSLCodeGenerator::writeReturnStatement(const ReturnStatement& s) {
-    this->write("return");
-    if (s.expression()) {
-        this->write(" ");
-        this->writeExpression(*s.expression(), Precedence::kTopLevel);
-    }
+    fHasUnconditionalReturn |= (fConditionalScopeDepth == 0);
+
+    std::string expr = s.expression()
+                               ? this->assembleExpression(*s.expression(), Precedence::kExpression)
+                               : std::string();
+    this->write("return ");
+    this->write(expr);
     this->write(";");
 }
 
-void WGSLCodeGenerator::writeVarDeclaration(const VarDeclaration& varDecl) {
-    bool isConst = varDecl.var()->modifiers().fFlags & Modifiers::kConst_Flag;
-    if (isConst) {
-        this->write("let ");
-    } else {
-        this->write("var ");
-    }
-    this->writeName(varDecl.var()->mangledName());
-    this->write(": ");
-    this->write(to_wgsl_type(varDecl.var()->type()));
-
-    if (varDecl.value()) {
-        this->write(" = ");
-        this->writeExpression(*varDecl.value(), Precedence::kTopLevel);
-    } else if (isConst) {
-        SkDEBUGFAILF("A let-declared constant must specify a value");
-    }
-
-    this->write(";");
-}
-
-void WGSLCodeGenerator::writeExpression(const Expression& e, Precedence parentPrecedence) {
-    switch (e.kind()) {
-        case Expression::Kind::kBinary:
-            this->writeBinaryExpression(e.as<BinaryExpression>(), parentPrecedence);
-            break;
-        case Expression::Kind::kConstructorCompound:
-            this->writeConstructorCompound(e.as<ConstructorCompound>(), parentPrecedence);
-            break;
-        case Expression::Kind::kConstructorCompoundCast:
-        case Expression::Kind::kConstructorScalarCast:
-        case Expression::Kind::kConstructorSplat:
-            this->writeAnyConstructor(e.asAnyConstructor(), parentPrecedence);
-            break;
-        case Expression::Kind::kConstructorDiagonalMatrix:
-            this->writeConstructorDiagonalMatrix(e.as<ConstructorDiagonalMatrix>(),
-                                                 parentPrecedence);
-            break;
-        case Expression::Kind::kConstructorMatrixResize:
-            this->writeConstructorMatrixResize(e.as<ConstructorMatrixResize>(), parentPrecedence);
-            break;
-        case Expression::Kind::kFieldAccess:
-            this->writeFieldAccess(e.as<FieldAccess>());
-            break;
-        case Expression::Kind::kFunctionCall:
-            this->writeFunctionCall(e.as<FunctionCall>());
-            break;
-        case Expression::Kind::kIndex:
-            this->writeIndexExpression(e.as<IndexExpression>());
-            break;
-        case Expression::Kind::kLiteral:
-            this->writeLiteral(e.as<Literal>());
-            break;
-        case Expression::Kind::kSwizzle:
-            this->writeSwizzle(e.as<Swizzle>());
-            break;
-        case Expression::Kind::kTernary:
-            this->writeTernaryExpression(e.as<TernaryExpression>(), parentPrecedence);
-            break;
-        case Expression::Kind::kVariableReference:
-            this->writeVariableReference(e.as<VariableReference>());
-            break;
-        default:
-            SkDEBUGFAILF("unsupported expression (kind: %d) %s",
-                         static_cast<int>(e.kind()),
-                         e.description().c_str());
-            break;
+void WGSLCodeGenerator::writeSwitchCaseList(SkSpan<const SwitchCase* const> cases) {
+    auto separator = SkSL::String::Separator();
+    for (const SwitchCase* const sc : cases) {
+        this->write(separator());
+        if (sc->isDefault()) {
+            this->write("default");
+        } else {
+            this->write(std::to_string(sc->value()));
+        }
     }
 }
 
-void WGSLCodeGenerator::writeBinaryExpression(const BinaryExpression& b,
-                                              Precedence parentPrecedence) {
-    const Expression& left = *b.left();
-    const Expression& right = *b.right();
-    Operator op = b.getOperator();
+void WGSLCodeGenerator::writeSwitchCases(SkSpan<const SwitchCase* const> cases) {
+    if (!cases.empty()) {
+        
+        SkASSERT(std::all_of(cases.begin(), std::prev(cases.end()), [](const SwitchCase* sc) {
+            return sc->statement()->isEmpty();
+        }));
+
+        
+        this->write("case ");
+        this->writeSwitchCaseList(cases);
+        this->writeLine(" {");
+        ++fIndentation;
+
+        
+        this->writeStatement(*cases.back()->statement());
+        this->finishLine();
+
+        --fIndentation;
+        this->writeLine("}");
+    }
+}
+
+void WGSLCodeGenerator::writeEmulatedSwitchFallthroughCases(SkSpan<const SwitchCase* const> cases,
+                                                            std::string_view switchValue) {
+    
+    if (cases.size() < 2) {
+        this->writeSwitchCases(cases);
+        return;
+    }
 
     
-    if (op.isEquality() && !left.type().isScalar() && !left.type().isVector()) {
-        if (left.type().isMatrix()) {
-            if (op.kind() == OperatorKind::NEQ) {
-                this->write("!");
+    this->write("case ");
+    this->writeSwitchCaseList(cases);
+    this->writeLine(" {");
+    ++fIndentation;
+
+    std::string fallthroughVar = this->writeScratchVar(*fContext.fTypes.fBool, "false");
+    const size_t secondToLastCaseIndex = cases.size() - 2;
+    const size_t lastCaseIndex = cases.size() - 1;
+
+    for (size_t index = 0; index < cases.size(); ++index) {
+        const SwitchCase& sc = *cases[index];
+        if (index < lastCaseIndex) {
+            
+            
+            SkASSERT(!sc.isDefault());
+
+            this->write("if ");
+            if (index > 0) {
+                this->write(fallthroughVar);
+                this->write(" || ");
             }
-            this->writeMatrixEquality(left, right);
-            return;
+            this->write(switchValue);
+            this->write(" == ");
+            this->write(std::to_string(sc.value()));
+            this->writeLine(" {");
+            fIndentation++;
+
+            
+            
+            
+            
+            
+            
+            this->writeStatement(*sc.statement());
+            this->finishLine();
+
+            if (index < secondToLastCaseIndex) {
+                
+                
+                
+                
+                this->write(fallthroughVar);
+                this->write(" = true;  ");
+            }
+            this->writeLine("// fallthrough");
+
+            fIndentation--;
+            this->writeLine("}");
+        } else {
+            
+            
+            
+            
+            this->writeStatement(*sc.statement());
+            this->finishLine();
+        }
+    }
+
+    --fIndentation;
+    this->writeLine("}");
+}
+
+void WGSLCodeGenerator::writeSwitchStatement(const SwitchStatement& s) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    std::string valueExpr = this->writeNontrivialScratchLet(*s.value(), Precedence::kExpression);
+    this->write("switch ");
+    this->write(valueExpr);
+    this->writeLine(" {");
+    ++fIndentation;
+
+    
+    TArray<const SwitchCase*> nativeCases;
+    TArray<const SwitchCase*> fallthroughCases;
+    bool previousCaseFellThrough = false;
+    bool foundNativeDefault = false;
+    [[maybe_unused]] bool foundFallthroughDefault = false;
+
+    const int lastSwitchCaseIdx = s.cases().size() - 1;
+    for (int index = 0; index <= lastSwitchCaseIdx; ++index) {
+        const SwitchCase& sc = s.cases()[index]->as<SwitchCase>();
+
+        if (sc.statement()->isEmpty()) {
+            
+            
+            if (previousCaseFellThrough) {
+                fallthroughCases.push_back(&sc);
+                foundFallthroughDefault |= sc.isDefault();
+            } else {
+                nativeCases.push_back(&sc);
+                foundNativeDefault |= sc.isDefault();
+            }
+            continue;
+        }
+
+        if (index == lastSwitchCaseIdx || Analysis::SwitchCaseContainsUnconditionalExit(sc)) {
+            
+            if (previousCaseFellThrough) {
+                
+                fallthroughCases.push_back(&sc);
+                foundFallthroughDefault |= sc.isDefault();
+
+                this->writeEmulatedSwitchFallthroughCases(fallthroughCases, valueExpr);
+                fallthroughCases.clear();
+
+                
+                
+                previousCaseFellThrough = false;
+            } else {
+                
+                nativeCases.push_back(&sc);
+                foundNativeDefault |= sc.isDefault();
+
+                this->writeSwitchCases(nativeCases);
+                nativeCases.clear();
+            }
+            continue;
         }
 
         
-        return;
+        
+        
+        fallthroughCases.push_back_n(nativeCases.size(), nativeCases.data());
+        nativeCases.clear();
+
+        fallthroughCases.push_back(&sc);
+        foundFallthroughDefault |= sc.isDefault();
+        previousCaseFellThrough = true;
+    }
+
+    
+    this->writeSwitchCases(nativeCases);
+    nativeCases.clear();
+
+    this->writeEmulatedSwitchFallthroughCases(fallthroughCases, valueExpr);
+    fallthroughCases.clear();
+
+    
+    if (!foundNativeDefault && !foundFallthroughDefault) {
+        this->writeLine("case default {}");
+    }
+
+    --fIndentation;
+    this->writeLine("}");
+}
+
+void WGSLCodeGenerator::writeVarDeclaration(const VarDeclaration& varDecl) {
+    std::string initialValue =
+            varDecl.value() ? this->assembleExpression(*varDecl.value(), Precedence::kAssignment)
+                            : std::string();
+
+    if (varDecl.var()->modifierFlags().isConst()) {
+        
+        SkASSERTF(varDecl.value(), "a constant variable must specify a value");
+        this->write((!fAtFunctionScope || Analysis::IsCompileTimeConstant(*varDecl.value()))
+                            ? "const "
+                            : "let ");
+    } else {
+        this->write("var ");
+    }
+    this->write(this->assembleName(varDecl.var()->mangledName()));
+    this->write(": ");
+    this->write(to_wgsl_type(fContext, varDecl.var()->type(), &varDecl.var()->layout()));
+
+    if (varDecl.value()) {
+        this->write(" = ");
+        this->write(initialValue);
+    }
+
+    this->write(";");
+}
+
+std::unique_ptr<WGSLCodeGenerator::LValue> WGSLCodeGenerator::makeLValue(const Expression& e) {
+    if (e.is<VariableReference>()) {
+        return std::make_unique<PointerLValue>(
+                this->variableReferenceNameForLValue(e.as<VariableReference>()));
+    }
+    if (e.is<FieldAccess>()) {
+        return std::make_unique<PointerLValue>(this->assembleFieldAccess(e.as<FieldAccess>()));
+    }
+    if (e.is<IndexExpression>()) {
+        const IndexExpression& idx = e.as<IndexExpression>();
+        if (idx.base()->type().isVector()) {
+            
+            if (std::unique_ptr<Expression> rewrite =
+                        Transform::RewriteIndexedSwizzle(fContext, idx)) {
+                return std::make_unique<VectorComponentLValue>(
+                        this->assembleExpression(*rewrite, Precedence::kAssignment));
+            } else {
+                return std::make_unique<VectorComponentLValue>(this->assembleIndexExpression(idx));
+            }
+        } else {
+            return std::make_unique<PointerLValue>(this->assembleIndexExpression(idx));
+        }
+    }
+    if (e.is<Swizzle>()) {
+        const Swizzle& swizzle = e.as<Swizzle>();
+        if (swizzle.components().size() == 1) {
+            return std::make_unique<VectorComponentLValue>(this->assembleSwizzle(swizzle));
+        } else {
+            return std::make_unique<SwizzleLValue>(
+                    fContext,
+                    this->assembleExpression(*swizzle.base(), Precedence::kAssignment),
+                    swizzle.base()->type(),
+                    swizzle.components());
+        }
+    }
+
+    fContext.fErrors->error(e.fPosition, "unsupported lvalue type");
+    return nullptr;
+}
+
+std::string WGSLCodeGenerator::assembleExpression(const Expression& e,
+                                                  Precedence parentPrecedence) {
+    switch (e.kind()) {
+        case Expression::Kind::kBinary:
+            return this->assembleBinaryExpression(e.as<BinaryExpression>(), parentPrecedence);
+
+        case Expression::Kind::kConstructorCompound:
+            return this->assembleConstructorCompound(e.as<ConstructorCompound>());
+
+        case Expression::Kind::kConstructorArrayCast:
+            
+            
+            return this->assembleExpression(*e.as<ConstructorArrayCast>().argument(),
+                                            parentPrecedence);
+
+        case Expression::Kind::kConstructorArray:
+        case Expression::Kind::kConstructorCompoundCast:
+        case Expression::Kind::kConstructorScalarCast:
+        case Expression::Kind::kConstructorSplat:
+        case Expression::Kind::kConstructorStruct:
+            return this->assembleAnyConstructor(e.asAnyConstructor());
+
+        case Expression::Kind::kConstructorDiagonalMatrix:
+            return this->assembleConstructorDiagonalMatrix(e.as<ConstructorDiagonalMatrix>());
+
+        case Expression::Kind::kConstructorMatrixResize:
+            return this->assembleConstructorMatrixResize(e.as<ConstructorMatrixResize>());
+
+        case Expression::Kind::kEmpty:
+            return "false";
+
+        case Expression::Kind::kFieldAccess:
+            return this->assembleFieldAccess(e.as<FieldAccess>());
+
+        case Expression::Kind::kFunctionCall:
+            return this->assembleFunctionCall(e.as<FunctionCall>(), parentPrecedence);
+
+        case Expression::Kind::kIndex:
+            return this->assembleIndexExpression(e.as<IndexExpression>());
+
+        case Expression::Kind::kLiteral:
+            return this->assembleLiteral(e.as<Literal>());
+
+        case Expression::Kind::kPrefix:
+            return this->assemblePrefixExpression(e.as<PrefixExpression>(), parentPrecedence);
+
+        case Expression::Kind::kPostfix:
+            return this->assemblePostfixExpression(e.as<PostfixExpression>(), parentPrecedence);
+
+        case Expression::Kind::kSetting:
+            return this->assembleExpression(*e.as<Setting>().toLiteral(fCaps), parentPrecedence);
+
+        case Expression::Kind::kSwizzle:
+            return this->assembleSwizzle(e.as<Swizzle>());
+
+        case Expression::Kind::kTernary:
+            return this->assembleTernaryExpression(e.as<TernaryExpression>(), parentPrecedence);
+
+        case Expression::Kind::kVariableReference:
+            return this->assembleVariableReference(e.as<VariableReference>());
+
+        default:
+            SkDEBUGFAILF("unsupported expression:\n%s", e.description().c_str());
+            return {};
+    }
+}
+
+static bool is_nontrivial_expression(const Expression& expr) {
+    
+    
+    
+    if (expr.is<VariableReference>() || expr.is<Literal>()) {
+        
+        return false;
+    }
+    if (expr.type().isVector() && Analysis::IsConstantExpression(expr)) {
+        
+        return false;
+    }
+    return true;
+}
+
+static bool binary_op_is_ambiguous_in_wgsl(Operator op) {
+    
+    
+    switch (op.kind()) {
+        case OperatorKind::LOGICALOR:
+        case OperatorKind::LOGICALAND:
+        case OperatorKind::BITWISEOR:
+        case OperatorKind::BITWISEAND:
+        case OperatorKind::BITWISEXOR:
+        case OperatorKind::SHL:
+        case OperatorKind::SHR:
+        case OperatorKind::LT:
+        case OperatorKind::GT:
+        case OperatorKind::LTEQ:
+        case OperatorKind::GTEQ:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+bool WGSLCodeGenerator::binaryOpNeedsComponentwiseMatrixPolyfill(const Type& left,
+                                                                 const Type& right,
+                                                                 Operator op) {
+    switch (op.kind()) {
+        case OperatorKind::SLASH:
+            
+            if (left.isMatrix() && right.isMatrix()) {
+                return true;
+            }
+            [[fallthrough]];
+
+        case OperatorKind::PLUS:
+        case OperatorKind::MINUS:
+            
+            
+            return (left.isMatrix() && right.isScalar()) ||
+                   (left.isScalar() && right.isMatrix());
+
+        default:
+            return false;
+    }
+}
+
+std::string WGSLCodeGenerator::assembleBinaryExpression(const BinaryExpression& b,
+                                                        Precedence parentPrecedence) {
+    return this->assembleBinaryExpression(*b.left(), b.getOperator(), *b.right(), b.type(),
+                                          parentPrecedence);
+}
+
+std::string WGSLCodeGenerator::assembleBinaryExpression(const Expression& left,
+                                                        Operator op,
+                                                        const Expression& right,
+                                                        const Type& resultType,
+                                                        Precedence parentPrecedence) {
+    
+    
+    
+    
+    
+    
+    
+    
+    std::string expr;
+    if (op.kind() == OperatorKind::LOGICALAND && Analysis::HasSideEffects(right)) {
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+
+        expr = this->writeScratchVar(resultType);
+
+        std::string leftExpr = this->assembleExpression(left, Precedence::kExpression);
+        this->write("if ");
+        this->write(leftExpr);
+        this->writeLine(" {");
+
+        ++fIndentation;
+        std::string rightExpr = this->assembleExpression(right, Precedence::kAssignment);
+        this->write(expr);
+        this->write(" = ");
+        this->write(rightExpr);
+        this->writeLine(";");
+        --fIndentation;
+
+        this->writeLine("} else {");
+
+        ++fIndentation;
+        this->write(expr);
+        this->writeLine(" = false;");
+        --fIndentation;
+
+        this->writeLine("}");
+        return expr;
+    }
+
+    if (op.kind() == OperatorKind::LOGICALOR && Analysis::HasSideEffects(right)) {
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+
+        expr = this->writeScratchVar(resultType);
+
+        std::string leftExpr = this->assembleExpression(left, Precedence::kExpression);
+        this->write("if ");
+        this->write(leftExpr);
+        this->writeLine(" {");
+
+        ++fIndentation;
+        this->write(expr);
+        this->writeLine(" = true;");
+        --fIndentation;
+
+        this->writeLine("} else {");
+
+        ++fIndentation;
+        std::string rightExpr = this->assembleExpression(right, Precedence::kAssignment);
+        this->write(expr);
+        this->write(" = ");
+        this->write(rightExpr);
+        this->writeLine(";");
+        --fIndentation;
+
+        this->writeLine("}");
+        return expr;
+    }
+
+    
+    if (op.kind() == OperatorKind::COMMA) {
+        
+        this->assembleExpression(left, Precedence::kStatement);
+
+        
+        return this->assembleExpression(right, parentPrecedence);
+    }
+
+    
+    if (op.isAssignment()) {
+        std::unique_ptr<LValue> lvalue = this->makeLValue(left);
+        if (!lvalue) {
+            return "";
+        }
+
+        if (op.kind() == OperatorKind::EQ) {
+            
+            expr = this->assembleExpression(right, Precedence::kAssignment);
+        } else {
+            
+            op = op.removeAssignment();
+
+            std::string lhs = lvalue->load();
+            std::string rhs = this->assembleExpression(right, op.getBinaryPrecedence());
+
+            if (this->binaryOpNeedsComponentwiseMatrixPolyfill(left.type(), right.type(), op)) {
+                if (is_nontrivial_expression(right)) {
+                    rhs = this->writeScratchLet(rhs);
+                }
+
+                expr = this->assembleComponentwiseMatrixBinary(left.type(), right.type(),
+                                                               lhs, rhs, op);
+            } else {
+                expr = lhs + operator_name(op) + rhs;
+            }
+        }
+
+        
+        this->writeLine(lvalue->store(expr));
+
+        
+        return lvalue->load();
+    }
+
+    if (op.isEquality()) {
+        return this->assembleEqualityExpression(left, right, op, parentPrecedence);
     }
 
     Precedence precedence = op.getBinaryPrecedence();
     bool needParens = precedence >= parentPrecedence;
+    if (binary_op_is_ambiguous_in_wgsl(op)) {
+        precedence = Precedence::kParentheses;
+    }
+    if (needParens) {
+        expr = "(";
+    }
 
     
     
-    if (left.type().isVector()) {
-        if (op.kind() == Operator::Kind::EQEQ) {
-            this->write("all");
-            needParens = true;
-        } else if (op.kind() == Operator::Kind::NEQ) {
-            this->write("any");
-            needParens = true;
+    
+    
+    
+    
+    bool bothSidesConstant = ConstantFolder::GetConstantValueOrNull(left) &&
+                             ConstantFolder::GetConstantValueOrNull(right);
+
+    std::string lhs = this->assembleExpression(left, precedence);
+    std::string rhs = this->assembleExpression(right, precedence);
+
+    if (this->binaryOpNeedsComponentwiseMatrixPolyfill(left.type(), right.type(), op)) {
+        if (bothSidesConstant || is_nontrivial_expression(left)) {
+            lhs = this->writeScratchLet(lhs);
+        }
+        if (is_nontrivial_expression(right)) {
+            rhs = this->writeScratchLet(rhs);
+        }
+
+        expr += this->assembleComponentwiseMatrixBinary(left.type(), right.type(), lhs, rhs, op);
+    } else {
+        if (bothSidesConstant) {
+            lhs = this->writeScratchLet(lhs);
+        }
+
+        expr += lhs + operator_name(op) + rhs;
+    }
+
+    if (needParens) {
+        expr += ')';
+    }
+
+    return expr;
+}
+
+std::string WGSLCodeGenerator::assembleFieldAccess(const FieldAccess& f) {
+    const Field* field = &f.base()->type().fields()[f.fieldIndex()];
+    std::string expr;
+
+    if (FieldPolyfillInfo* polyfillInfo = fFieldPolyfillMap.find(field)) {
+        
+        
+        
+        
+        polyfillInfo->fWasAccessed = true;
+
+        
+        
+        const Expression* base = f.base().get();
+        const IndexExpression* indexExpr = nullptr;
+        if (base->is<IndexExpression>()) {
+            indexExpr = &base->as<IndexExpression>();
+            base = indexExpr->base().get();
+        }
+
+        SkASSERT(base->is<VariableReference>());
+        expr = polyfillInfo->fReplacementName;
+
+        
+        if (indexExpr) {
+            expr += '[';
+            expr += this->assembleExpression(*indexExpr->index(), Precedence::kSequence);
+            expr += ']';
+        }
+        return expr;
+    }
+
+    switch (f.ownerKind()) {
+        case FieldAccess::OwnerKind::kDefault:
+            expr = this->assembleExpression(*f.base(), Precedence::kPostfix) + '.';
+            break;
+
+        case FieldAccess::OwnerKind::kAnonymousInterfaceBlock:
+            if (f.base()->is<VariableReference>() &&
+                field->fLayout.fBuiltin != SK_POINTSIZE_BUILTIN) {
+                expr = this->variablePrefix(*f.base()->as<VariableReference>().variable());
+            }
+            break;
+    }
+
+    expr += this->assembleName(field->fName);
+    return expr;
+}
+
+static bool all_arguments_constant(const ExpressionArray& arguments) {
+    
+    
+    
+    
+    
+    
+    for (const std::unique_ptr<Expression>& arg : arguments) {
+        if (!ConstantFolder::GetConstantValueOrNull(*arg)) {
+            return false;
         }
     }
+    return true;
+}
 
-    if (needParens) {
-        this->write("(");
-    }
-
+std::string WGSLCodeGenerator::assembleSimpleIntrinsic(std::string_view intrinsicName,
+                                                       const FunctionCall& call) {
     
+    std::string expr = std::string(intrinsicName);
+    expr.push_back('(');
+    const ExpressionArray& args = call.arguments();
+    auto separator = SkSL::String::Separator();
+    bool allConstant = all_arguments_constant(call.arguments());
+    for (int index = 0; index < args.size(); ++index) {
+        expr += separator();
 
-    this->writeExpression(left, precedence);
-    this->write(op.operatorName());
-    this->writeExpression(right, precedence);
+        std::string argument = this->assembleExpression(*args[index], Precedence::kSequence);
+        if (args[index]->type().isAtomic()) {
+            
+            expr += '&';
+            expr += argument;
+        } else if (allConstant && index == 0) {
+            
+            expr += this->writeScratchLet(argument);
+        } else {
+            expr += argument;
+        }
+    }
+    expr.push_back(')');
 
-    if (needParens) {
-        this->write(")");
+    if (call.type().isVoid()) {
+        this->write(expr);
+        this->writeLine(";");
+        return std::string();
+    } else {
+        return this->writeScratchLet(expr);
     }
 }
 
-void WGSLCodeGenerator::writeFieldAccess(const FieldAccess& f) {
-    const Type::Field* field = &f.base()->type().fields()[f.fieldIndex()];
-    if (FieldAccess::OwnerKind::kDefault == f.ownerKind()) {
-        this->writeExpression(*f.base(), Precedence::kPostfix);
-        this->write(".");
+std::string WGSLCodeGenerator::assembleVectorizedIntrinsic(std::string_view intrinsicName,
+                                                           const FunctionCall& call) {
+    SkASSERT(!call.type().isVoid());
+
+    
+    std::string expr = std::string(intrinsicName);
+    expr.push_back('(');
+
+    auto separator = SkSL::String::Separator();
+    const ExpressionArray& args = call.arguments();
+    bool returnsVector = call.type().isVector();
+    bool allConstant = all_arguments_constant(call.arguments());
+    for (int index = 0; index < args.size(); ++index) {
+        expr += separator();
+
+        bool vectorize = returnsVector && args[index]->type().isScalar();
+        if (vectorize) {
+            expr += to_wgsl_type(fContext, call.type());
+            expr.push_back('(');
+        }
+
+        
+        std::string argument = this->assembleExpression(*args[index], Precedence::kSequence);
+        expr += (allConstant && index == 0) ? this->writeScratchLet(argument)
+                                            : argument;
+        if (vectorize) {
+            expr.push_back(')');
+        }
+    }
+    expr.push_back(')');
+
+    return this->writeScratchLet(expr);
+}
+
+std::string WGSLCodeGenerator::assembleUnaryOpIntrinsic(Operator op,
+                                                        const FunctionCall& call,
+                                                        Precedence parentPrecedence) {
+    SkASSERT(!call.type().isVoid());
+
+    bool needParens = Precedence::kPrefix >= parentPrecedence;
+
+    std::string expr;
+    if (needParens) {
+        expr.push_back('(');
+    }
+
+    expr += operator_name(op);
+    expr += this->assembleExpression(*call.arguments()[0], Precedence::kPrefix);
+
+    if (needParens) {
+        expr.push_back(')');
+    }
+
+    return expr;
+}
+
+std::string WGSLCodeGenerator::assembleBinaryOpIntrinsic(Operator op,
+                                                         const FunctionCall& call,
+                                                         Precedence parentPrecedence) {
+    SkASSERT(!call.type().isVoid());
+
+    Precedence precedence = op.getBinaryPrecedence();
+    bool needParens = precedence >= parentPrecedence ||
+                      binary_op_is_ambiguous_in_wgsl(op);
+    std::string expr;
+    if (needParens) {
+        expr.push_back('(');
+    }
+
+    
+    std::string argument = this->assembleExpression(*call.arguments()[0], precedence);
+    expr += all_arguments_constant(call.arguments()) ? this->writeScratchLet(argument)
+                                                     : argument;
+    expr += operator_name(op);
+    expr += this->assembleExpression(*call.arguments()[1], precedence);
+
+    if (needParens) {
+        expr.push_back(')');
+    }
+
+    return expr;
+}
+
+
+
+
+std::string WGSLCodeGenerator::assembleOutAssignedIntrinsic(std::string_view intrinsicName,
+                                                            std::string_view returnField,
+                                                            std::string_view outField,
+                                                            const FunctionCall& call) {
+    SkASSERT(call.type().componentType().isNumber());
+    SkASSERT(call.arguments().size() == 2);
+    SkASSERT(call.function().parameters()[1]->modifierFlags() & ModifierFlag::kOut);
+
+    std::string expr = std::string(intrinsicName);
+    expr += "(";
+
+    
+    
+    std::string argument = this->assembleExpression(*call.arguments()[0], Precedence::kSequence);
+    expr += ConstantFolder::GetConstantValueOrNull(*call.arguments()[0])
+            ? this->writeScratchLet(argument) : argument;
+    expr += ")";
+    
+    
+    expr = this->writeScratchLet(expr);
+    expr += ".";
+
+    
+    std::unique_ptr<LValue> lvalue = this->makeLValue(*call.arguments()[1]);
+    if (!lvalue) {
+        return "";
+    }
+    std::string outValue = expr;
+    outValue += outField;
+    this->writeLine(lvalue->store(outValue));
+
+    
+    expr += returnField;
+    return expr;
+}
+
+std::string WGSLCodeGenerator::assemblePartialSampleCall(std::string_view functionName,
+                                                         const Expression& sampler,
+                                                         const Expression& coords) {
+    
+    
+    
+    SkASSERT(sampler.type().typeKind() == Type::TypeKind::kSampler);
+    std::string expr = std::string(functionName) + '(';
+    expr += this->assembleExpression(sampler, Precedence::kSequence);
+    expr += kTextureSuffix;
+    expr += ", ";
+    expr += this->assembleExpression(sampler, Precedence::kSequence);
+    expr += kSamplerSuffix;
+    expr += ", ";
+
+    
+    SkASSERT(coords.type().isVector());
+    if (coords.type().columns() == 3) {
+        
+        std::string vec3Coords = this->writeScratchLet(coords, Precedence::kMultiplicative);
+        expr += vec3Coords + ".xy / " + vec3Coords + ".z";
     } else {
         
-        
-        
-        
-        
-        const Variable& v = *f.base()->as<VariableReference>().variable();
-        if (v.modifiers().fFlags & Modifiers::kIn_Flag) {
-            this->write("_stageIn.");
-        } else if (v.modifiers().fFlags & Modifiers::kOut_Flag &&
-                   field->fModifiers.fLayout.fBuiltin != SK_POINTSIZE_BUILTIN) {
-            this->write("(*_stageOut).");
-        } else {
-            
-            
-        }
+        SkASSERT(coords.type().columns() == 2);
+        expr += this->assembleExpression(coords, Precedence::kSequence);
     }
-    this->writeName(field->fName);
+
+    return expr;
 }
 
-void WGSLCodeGenerator::writeFunctionCall(const FunctionCall& c) {
-    const FunctionDeclaration& func = c.function();
+std::string WGSLCodeGenerator::assembleComponentwiseMatrixBinary(const Type& leftType,
+                                                                 const Type& rightType,
+                                                                 const std::string& left,
+                                                                 const std::string& right,
+                                                                 Operator op) {
+    bool leftIsMatrix = leftType.isMatrix();
+    bool rightIsMatrix = rightType.isMatrix();
+    const Type& matrixType = leftIsMatrix ? leftType : rightType;
+
+    std::string expr = to_wgsl_type(fContext, matrixType) + '(';
+    auto separator = String::Separator();
+    int columns = matrixType.columns();
+    for (int c = 0; c < columns; ++c) {
+        expr += separator();
+        expr += left;
+        if (leftIsMatrix) {
+            expr += '[';
+            expr += std::to_string(c);
+            expr += ']';
+        }
+        expr += op.operatorName();
+        expr += right;
+        if (rightIsMatrix) {
+            expr += '[';
+            expr += std::to_string(c);
+            expr += ']';
+        }
+    }
+    return expr + ')';
+}
+
+std::string WGSLCodeGenerator::assembleIntrinsicCall(const FunctionCall& call,
+                                                     IntrinsicKind kind,
+                                                     Precedence parentPrecedence) {
+    
+    
+    
+    
+    
+
+    const ExpressionArray& arguments = call.arguments();
+    switch (kind) {
+        case k_atan_IntrinsicKind: {
+            const char* name = (arguments.size() == 1) ? "atan" : "atan2";
+            return this->assembleSimpleIntrinsic(name, call);
+        }
+        case k_dFdx_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("dpdx", call);
+
+        case k_dFdy_IntrinsicKind:
+            
+            return this->assembleSimpleIntrinsic("dpdy", call);
+
+        case k_dot_IntrinsicKind: {
+            if (arguments[0]->type().isScalar()) {
+                return this->assembleBinaryOpIntrinsic(OperatorKind::STAR, call, parentPrecedence);
+            }
+            return this->assembleSimpleIntrinsic("dot", call);
+        }
+        case k_equal_IntrinsicKind:
+            return this->assembleBinaryOpIntrinsic(OperatorKind::EQEQ, call, parentPrecedence);
+
+        case k_faceforward_IntrinsicKind: {
+            if (arguments[0]->type().isScalar()) {
+                
+                std::string N = this->writeNontrivialScratchLet(*arguments[0],
+                                                                Precedence::kAssignment);
+                return this->writeScratchLet(
+                        "select(-" + N + ", " + N + ", " +
+                        this->assembleBinaryExpression(*arguments[1],
+                                                       OperatorKind::STAR,
+                                                       *arguments[2],
+                                                       arguments[1]->type(),
+                                                       Precedence::kRelational) +
+                        " < 0)");
+            }
+            return this->assembleSimpleIntrinsic("faceForward", call);
+        }
+        case k_frexp_IntrinsicKind:
+            
+            
+            return this->assembleOutAssignedIntrinsic("frexp", "fract", "exp", call);
+
+        case k_greaterThan_IntrinsicKind:
+            return this->assembleBinaryOpIntrinsic(OperatorKind::GT, call, parentPrecedence);
+
+        case k_greaterThanEqual_IntrinsicKind:
+            return this->assembleBinaryOpIntrinsic(OperatorKind::GTEQ, call, parentPrecedence);
+
+        case k_inverse_IntrinsicKind:
+            return this->assembleInversePolyfill(call);
+
+        case k_inversesqrt_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("inverseSqrt", call);
+
+        case k_lessThan_IntrinsicKind:
+            return this->assembleBinaryOpIntrinsic(OperatorKind::LT, call, parentPrecedence);
+
+        case k_lessThanEqual_IntrinsicKind:
+            return this->assembleBinaryOpIntrinsic(OperatorKind::LTEQ, call, parentPrecedence);
+
+        case k_matrixCompMult_IntrinsicKind: {
+            
+            std::string arg0 = all_arguments_constant(arguments)
+                            ? this->writeScratchLet(*arguments[0], Precedence::kPostfix)
+                            : this->writeNontrivialScratchLet(*arguments[0], Precedence::kPostfix);
+            std::string arg1 = this->writeNontrivialScratchLet(*arguments[1], Precedence::kPostfix);
+            return this->writeScratchLet(
+                    this->assembleComponentwiseMatrixBinary(arguments[0]->type(),
+                                                            arguments[1]->type(),
+                                                            arg0,
+                                                            arg1,
+                                                            OperatorKind::STAR));
+        }
+        case k_mix_IntrinsicKind: {
+            const char* name = arguments[2]->type().componentType().isBoolean() ? "select" : "mix";
+            return this->assembleVectorizedIntrinsic(name, call);
+        }
+        case k_mod_IntrinsicKind: {
+            
+            
+            
+            std::string arg0 = all_arguments_constant(arguments)
+                            ? this->writeScratchLet(*arguments[0], Precedence::kAdditive)
+                            : this->writeNontrivialScratchLet(*arguments[0], Precedence::kAdditive);
+            std::string arg1 = this->writeNontrivialScratchLet(*arguments[1],
+                                                               Precedence::kAdditive);
+            return this->writeScratchLet(arg0 + " - " + arg1 + " * floor(" +
+                                         arg0 + " / " + arg1 + ")");
+        }
+
+        case k_modf_IntrinsicKind:
+            
+            
+            return this->assembleOutAssignedIntrinsic("modf", "fract", "whole", call);
+
+        case k_normalize_IntrinsicKind: {
+            const char* name = arguments[0]->type().isScalar() ? "sign" : "normalize";
+            return this->assembleSimpleIntrinsic(name, call);
+        }
+        case k_not_IntrinsicKind:
+            return this->assembleUnaryOpIntrinsic(OperatorKind::LOGICALNOT, call, parentPrecedence);
+
+        case k_notEqual_IntrinsicKind:
+            return this->assembleBinaryOpIntrinsic(OperatorKind::NEQ, call, parentPrecedence);
+
+        case k_packHalf2x16_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("pack2x16float", call);
+
+        case k_packSnorm2x16_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("pack2x16snorm", call);
+
+        case k_packSnorm4x8_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("pack4x8snorm", call);
+
+        case k_packUnorm2x16_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("pack2x16unorm", call);
+
+        case k_packUnorm4x8_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("pack4x8unorm", call);
+
+        case k_reflect_IntrinsicKind:
+            if (arguments[0]->type().isScalar()) {
+                
+                
+                std::string I = this->writeNontrivialScratchLet(*arguments[0],
+                                                                Precedence::kAdditive);
+                std::string N = all_arguments_constant(arguments)
+                      ? this->writeScratchLet(*arguments[1], Precedence::kMultiplicative)
+                      : this->writeNontrivialScratchLet(*arguments[1], Precedence::kMultiplicative);
+                return this->writeScratchLet(String::printf("%s - 2 * %s * %s * %s",
+                                                            I.c_str(), N.c_str(),
+                                                            I.c_str(), N.c_str()));
+            }
+            return this->assembleSimpleIntrinsic("reflect", call);
+
+        case k_refract_IntrinsicKind:
+            if (arguments[0]->type().isScalar()) {
+                
+                
+                std::string I = this->writeNontrivialScratchLet(*arguments[0],
+                                                                Precedence::kSequence);
+                std::string N = this->writeNontrivialScratchLet(*arguments[1],
+                                                                Precedence::kSequence);
+                
+                std::string Eta = all_arguments_constant(arguments)
+                      ? this->writeScratchLet(*arguments[2], Precedence::kSequence)
+                      : this->writeNontrivialScratchLet(*arguments[2], Precedence::kSequence);
+                return this->writeScratchLet(
+                        String::printf("refract(vec2<%s>(%s, 0), vec2<%s>(%s, 0), %s).x",
+                                       to_wgsl_type(fContext, arguments[0]->type()).c_str(),
+                                       I.c_str(),
+                                       to_wgsl_type(fContext, arguments[1]->type()).c_str(),
+                                       N.c_str(),
+                                       Eta.c_str()));
+            }
+            return this->assembleSimpleIntrinsic("refract", call);
+
+        case k_sample_IntrinsicKind: {
+            
+            SkASSERT(arguments.size() == 2 || arguments.size() == 3);
+            bool callIncludesBias = (arguments.size() == 3);
+
+            if (fProgram.fConfig->fSettings.fSharpenTextures || callIncludesBias) {
+                
+                std::string expr = this->assemblePartialSampleCall("textureSampleBias",
+                                                                   *arguments[0],
+                                                                   *arguments[1]);
+                expr += ", ";
+                if (callIncludesBias) {
+                    expr += this->assembleExpression(*arguments[2], Precedence::kAdditive) +
+                            " + ";
+                }
+                expr += skstd::to_string(fProgram.fConfig->fSettings.fSharpenTextures
+                                                 ? kSharpenTexturesBias
+                                                 : 0.0f);
+                return expr + ')';
+            }
+
+            
+            return this->assemblePartialSampleCall("textureSample",
+                                                   *arguments[0],
+                                                   *arguments[1]) + ')';
+        }
+        case k_sampleLod_IntrinsicKind: {
+            std::string expr = this->assemblePartialSampleCall("textureSampleLevel",
+                                                               *arguments[0],
+                                                               *arguments[1]);
+            expr += ", " + this->assembleExpression(*arguments[2], Precedence::kSequence);
+            return expr + ')';
+        }
+        case k_sampleGrad_IntrinsicKind: {
+            std::string expr = this->assemblePartialSampleCall("textureSampleGrad",
+                                                               *arguments[0],
+                                                               *arguments[1]);
+            expr += ", " + this->assembleExpression(*arguments[2], Precedence::kSequence);
+            expr += ", " + this->assembleExpression(*arguments[3], Precedence::kSequence);
+            return expr + ')';
+        }
+        case k_textureHeight_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("textureDimensions", call) + ".y";
+
+        case k_textureRead_IntrinsicKind: {
+            
+            
+            std::string tex = this->assembleExpression(*arguments[0], Precedence::kSequence);
+            std::string pos = this->writeScratchLet(*arguments[1], Precedence::kSequence);
+            return std::string("textureLoad(") + tex + ", " + pos + ", 0)";
+        }
+        case k_textureWidth_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("textureDimensions", call) + ".x";
+
+        case k_textureWrite_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("textureStore", call);
+
+        case k_unpackHalf2x16_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("unpack2x16float", call);
+
+        case k_unpackSnorm2x16_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("unpack2x16snorm", call);
+
+        case k_unpackSnorm4x8_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("unpack4x8snorm", call);
+
+        case k_unpackUnorm2x16_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("unpack2x16unorm", call);
+
+        case k_unpackUnorm4x8_IntrinsicKind:
+            return this->assembleSimpleIntrinsic("unpack4x8unorm", call);
+
+        case k_clamp_IntrinsicKind:
+        case k_max_IntrinsicKind:
+        case k_min_IntrinsicKind:
+        case k_smoothstep_IntrinsicKind:
+        case k_step_IntrinsicKind:
+            return this->assembleVectorizedIntrinsic(call.function().name(), call);
+
+        case k_abs_IntrinsicKind:
+        case k_acos_IntrinsicKind:
+        case k_all_IntrinsicKind:
+        case k_any_IntrinsicKind:
+        case k_asin_IntrinsicKind:
+        case k_atomicAdd_IntrinsicKind:
+        case k_atomicLoad_IntrinsicKind:
+        case k_atomicStore_IntrinsicKind:
+        case k_ceil_IntrinsicKind:
+        case k_cos_IntrinsicKind:
+        case k_cross_IntrinsicKind:
+        case k_degrees_IntrinsicKind:
+        case k_distance_IntrinsicKind:
+        case k_exp_IntrinsicKind:
+        case k_exp2_IntrinsicKind:
+        case k_floor_IntrinsicKind:
+        case k_fract_IntrinsicKind:
+        case k_length_IntrinsicKind:
+        case k_log_IntrinsicKind:
+        case k_log2_IntrinsicKind:
+        case k_radians_IntrinsicKind:
+        case k_pow_IntrinsicKind:
+        case k_saturate_IntrinsicKind:
+        case k_sign_IntrinsicKind:
+        case k_sin_IntrinsicKind:
+        case k_sqrt_IntrinsicKind:
+        case k_storageBarrier_IntrinsicKind:
+        case k_tan_IntrinsicKind:
+        case k_workgroupBarrier_IntrinsicKind:
+        default:
+            return this->assembleSimpleIntrinsic(call.function().name(), call);
+    }
+}
+
+static constexpr char kInverse2x2[] =
+     "fn mat2_inverse(m: mat2x2<f32>) -> mat2x2<f32> {"
+"\n"     "return mat2x2<f32>(m[1].y, -m[0].y, -m[1].x, m[0].x) * (1/determinant(m));"
+"\n" "}"
+"\n";
+
+static constexpr char kInverse3x3[] =
+     "fn mat3_inverse(m: mat3x3<f32>) -> mat3x3<f32> {"
+"\n"     "let a00 = m[0].x; let a01 = m[0].y; let a02 = m[0].z;"
+"\n"     "let a10 = m[1].x; let a11 = m[1].y; let a12 = m[1].z;"
+"\n"     "let a20 = m[2].x; let a21 = m[2].y; let a22 = m[2].z;"
+"\n"     "let b01 =  a22*a11 - a12*a21;"
+"\n"     "let b11 = -a22*a10 + a12*a20;"
+"\n"     "let b21 =  a21*a10 - a11*a20;"
+"\n"     "let det = a00*b01 + a01*b11 + a02*b21;"
+"\n"     "return mat3x3<f32>(b01, (-a22*a01 + a02*a21), ( a12*a01 - a02*a11),"
+"\n"                        "b11, ( a22*a00 - a02*a20), (-a12*a00 + a02*a10),"
+"\n"                        "b21, (-a21*a00 + a01*a20), ( a11*a00 - a01*a10)) * (1/det);"
+"\n" "}"
+"\n";
+
+static constexpr char kInverse4x4[] =
+     "fn mat4_inverse(m: mat4x4<f32>) -> mat4x4<f32>{"
+"\n"     "let a00 = m[0].x; let a01 = m[0].y; let a02 = m[0].z; let a03 = m[0].w;"
+"\n"     "let a10 = m[1].x; let a11 = m[1].y; let a12 = m[1].z; let a13 = m[1].w;"
+"\n"     "let a20 = m[2].x; let a21 = m[2].y; let a22 = m[2].z; let a23 = m[2].w;"
+"\n"     "let a30 = m[3].x; let a31 = m[3].y; let a32 = m[3].z; let a33 = m[3].w;"
+"\n"     "let b00 = a00*a11 - a01*a10;"
+"\n"     "let b01 = a00*a12 - a02*a10;"
+"\n"     "let b02 = a00*a13 - a03*a10;"
+"\n"     "let b03 = a01*a12 - a02*a11;"
+"\n"     "let b04 = a01*a13 - a03*a11;"
+"\n"     "let b05 = a02*a13 - a03*a12;"
+"\n"     "let b06 = a20*a31 - a21*a30;"
+"\n"     "let b07 = a20*a32 - a22*a30;"
+"\n"     "let b08 = a20*a33 - a23*a30;"
+"\n"     "let b09 = a21*a32 - a22*a31;"
+"\n"     "let b10 = a21*a33 - a23*a31;"
+"\n"     "let b11 = a22*a33 - a23*a32;"
+"\n"     "let det = b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06;"
+"\n"     "return mat4x4<f32>(a11*b11 - a12*b10 + a13*b09,"
+"\n"                        "a02*b10 - a01*b11 - a03*b09,"
+"\n"                        "a31*b05 - a32*b04 + a33*b03,"
+"\n"                        "a22*b04 - a21*b05 - a23*b03,"
+"\n"                        "a12*b08 - a10*b11 - a13*b07,"
+"\n"                        "a00*b11 - a02*b08 + a03*b07,"
+"\n"                        "a32*b02 - a30*b05 - a33*b01,"
+"\n"                        "a20*b05 - a22*b02 + a23*b01,"
+"\n"                        "a10*b10 - a11*b08 + a13*b06,"
+"\n"                        "a01*b08 - a00*b10 - a03*b06,"
+"\n"                        "a30*b04 - a31*b02 + a33*b00,"
+"\n"                        "a21*b02 - a20*b04 - a23*b00,"
+"\n"                        "a11*b07 - a10*b09 - a12*b06,"
+"\n"                        "a00*b09 - a01*b07 + a02*b06,"
+"\n"                        "a31*b01 - a30*b03 - a32*b00,"
+"\n"                        "a20*b03 - a21*b01 + a22*b00) * (1/det);"
+"\n" "}"
+"\n";
+
+std::string WGSLCodeGenerator::assembleInversePolyfill(const FunctionCall& call) {
+    const ExpressionArray& arguments = call.arguments();
+    const Type& type = arguments.front()->type();
 
     
+    
+    
+    SkASSERT(arguments.size() == 1);
+    SkASSERT(type.isMatrix());
+    SkASSERT(type.rows() == type.columns());
+
+    switch (type.slotCount()) {
+        case 4:
+            if (!fWrittenInverse2) {
+                fWrittenInverse2 = true;
+                fHeader.writeText(kInverse2x2);
+            }
+            return this->assembleSimpleIntrinsic("mat2_inverse", call);
+
+        case 9:
+            if (!fWrittenInverse3) {
+                fWrittenInverse3 = true;
+                fHeader.writeText(kInverse3x3);
+            }
+            return this->assembleSimpleIntrinsic("mat3_inverse", call);
+
+        case 16:
+            if (!fWrittenInverse4) {
+                fWrittenInverse4 = true;
+                fHeader.writeText(kInverse4x4);
+            }
+            return this->assembleSimpleIntrinsic("mat4_inverse", call);
+
+        default:
+            
+            SkUNREACHABLE;
+    }
+}
+
+std::string WGSLCodeGenerator::assembleFunctionCall(const FunctionCall& call,
+                                                    Precedence parentPrecedence) {
+    const FunctionDeclaration& func = call.function();
+    std::string result;
+
+    
+    if (func.isIntrinsic()) {
+        return this->assembleIntrinsicCall(call, func.intrinsicKind(), parentPrecedence);
+    }
 
     
     
@@ -952,197 +3409,407 @@ void WGSLCodeGenerator::writeFunctionCall(const FunctionCall& c) {
     
 
     
-    const ExpressionArray& args = c.arguments();
-    const std::vector<Variable*>& params = func.parameters();
+    
+    const ExpressionArray& args = call.arguments();
+    SkSpan<Variable* const> params = func.parameters();
     SkASSERT(SkToSizeT(args.size()) == params.size());
 
-    bool foundOutParam = false;
-    SkSTArray<16, VariableReference*> outVars;
-    outVars.push_back_n(args.size(), static_cast<VariableReference*>(nullptr));
+    STArray<16, std::unique_ptr<LValue>> writeback;
+    STArray<16, std::string> substituteArgument;
+    writeback.reserve_exact(args.size());
+    substituteArgument.reserve_exact(args.size());
 
-    for (int i = 0; i < args.size(); ++i) {
-        if (params[i]->modifiers().fFlags & Modifiers::kOut_Flag) {
-            
-            
-            Analysis::AssignmentInfo info;
-            SkAssertResult(Analysis::IsAssignable(*args[i], &info));
-            outVars[i] = info.fAssignedVar;
-            foundOutParam = true;
+    for (int index = 0; index < args.size(); ++index) {
+        if (params[index]->modifierFlags() & ModifierFlag::kOut) {
+            std::unique_ptr<LValue> lvalue = this->makeLValue(*args[index]);
+            if (params[index]->modifierFlags() & ModifierFlag::kIn) {
+                
+                substituteArgument.push_back(this->writeScratchVar(args[index]->type(),
+                                                                   lvalue->load()));
+            } else {
+                
+                substituteArgument.push_back(this->writeScratchVar(args[index]->type()));
+            }
+            writeback.push_back(std::move(lvalue));
+        } else {
+            substituteArgument.push_back(std::string());
+            writeback.push_back(nullptr);
         }
     }
 
-    if (foundOutParam) {
-        this->writeName(this->writeOutParamHelper(c, args, outVars));
-    } else {
-        this->writeName(func.mangledName());
-    }
-
-    this->write("(");
+    std::string expr = this->assembleName(func.mangledName());
+    expr.push_back('(');
     auto separator = SkSL::String::Separator();
-    if (this->writeFunctionDependencyArgs(func)) {
+
+    if (std::string funcDepArgs = this->functionDependencyArgs(func); !funcDepArgs.empty()) {
+        expr += funcDepArgs;
         separator();
     }
-    for (int i = 0; i < args.size(); ++i) {
-        this->write(separator());
-        if (outVars[i]) {
+
+    
+    for (int index = 0; index < args.size(); ++index) {
+        expr += separator();
+        if (!substituteArgument[index].empty()) {
             
-            this->write("&");
-            this->writeExpression(*outVars[i], Precedence::kSequence);
+            expr += '&' + substituteArgument[index];
+        } else if (args[index]->type().isSampler()) {
+            
+            
+            
+            expr += this->assembleExpression(*args[index], Precedence::kSequence);
+            expr += kTextureSuffix;
+            expr += ", ";
+            expr += this->assembleExpression(*args[index], Precedence::kSequence);
+            expr += kSamplerSuffix;
         } else {
-            this->writeExpression(*args[i], Precedence::kSequence);
+            expr += this->assembleExpression(*args[index], Precedence::kSequence);
         }
     }
-    this->write(")");
+    expr += ')';
+
+    if (call.type().isVoid()) {
+        
+        
+        
+        SkASSERT(parentPrecedence >= Precedence::kSequence);
+        this->write(expr);
+        this->writeLine(";");
+    } else {
+        result = this->writeScratchLet(expr);
+    }
+
+    
+    for (int index = 0; index < args.size(); ++index) {
+        if (!substituteArgument[index].empty()) {
+            this->writeLine(writeback[index]->store(substituteArgument[index]));
+        }
+    }
+
+    
+    return result;
 }
 
-void WGSLCodeGenerator::writeIndexExpression(const IndexExpression& i) {
-    this->writeExpression(*i.base(), Precedence::kPostfix);
-    this->write("[");
-    this->writeExpression(*i.index(), Precedence::kTopLevel);
-    this->write("]");
+std::string WGSLCodeGenerator::assembleIndexExpression(const IndexExpression& i) {
+    
+    std::string idx = this->writeNontrivialScratchLet(*i.index(), Precedence::kExpression);
+    return this->assembleExpression(*i.base(), Precedence::kPostfix) + "[" + idx + "]";
 }
 
-void WGSLCodeGenerator::writeLiteral(const Literal& l) {
+std::string WGSLCodeGenerator::assembleLiteral(const Literal& l) {
     const Type& type = l.type();
     if (type.isFloat() || type.isBoolean()) {
-        this->write(l.description(OperatorPrecedence::kTopLevel));
-        return;
+        return l.description(OperatorPrecedence::kExpression);
     }
     SkASSERT(type.isInteger());
     if (type.matches(*fContext.fTypes.fUInt)) {
-        this->write(std::to_string(l.intValue() & 0xffffffff));
-        this->write("u");
+        return std::to_string(l.intValue() & 0xffffffff) + "u";
     } else if (type.matches(*fContext.fTypes.fUShort)) {
-        this->write(std::to_string(l.intValue() & 0xffff));
-        this->write("u");
+        return std::to_string(l.intValue() & 0xffff) + "u";
     } else {
-        this->write(std::to_string(l.intValue()));
+        return std::to_string(l.intValue());
     }
 }
 
-void WGSLCodeGenerator::writeSwizzle(const Swizzle& swizzle) {
-    this->writeExpression(*swizzle.base(), Precedence::kPostfix);
-    this->write(".");
-    for (int c : swizzle.components()) {
-        SkASSERT(c >= 0 && c <= 3);
-        this->write(&("x\0y\0z\0w\0"[c * 2]));
+std::string WGSLCodeGenerator::assembleIncrementExpr(const Type& type) {
+    
+    std::string expr = to_wgsl_type(fContext, type);
+    expr.push_back('(');
+
+    
+    auto separator = SkSL::String::Separator();
+    for (int slots = type.slotCount(); slots > 0; --slots) {
+        expr += separator();
+        expr += "1";
     }
+    expr.push_back(')');
+    return expr;
 }
 
-void WGSLCodeGenerator::writeTernaryExpression(const TernaryExpression& t,
-                                               Precedence parentPrecedence) {
-    bool needParens = Precedence::kTernary >= parentPrecedence;
+std::string WGSLCodeGenerator::assemblePrefixExpression(const PrefixExpression& p,
+                                                        Precedence parentPrecedence) {
+    
+    Operator op = p.getOperator();
+    if (op.kind() == Operator::Kind::PLUS) {
+        return this->assembleExpression(*p.operand(), Precedence::kPrefix);
+    }
+
+    
+    if (op.kind() == Operator::Kind::PLUSPLUS || op.kind() == Operator::Kind::MINUSMINUS) {
+        std::unique_ptr<LValue> lvalue = this->makeLValue(*p.operand());
+        if (!lvalue) {
+            return "";
+        }
+
+        
+        std::string newValue =
+                lvalue->load() +
+                (p.getOperator().kind() == Operator::Kind::PLUSPLUS ? " + " : " - ") +
+                this->assembleIncrementExpr(p.operand()->type());
+        this->writeLine(lvalue->store(newValue));
+        return lvalue->load();
+    }
+
+    
+    SkASSERT(op.kind() == OperatorKind::LOGICALNOT ||
+             op.kind() == OperatorKind::BITWISENOT ||
+             op.kind() == OperatorKind::MINUS);
+
+    
+    
+    std::string expr;
+    const bool needsNegation = op.kind() == Operator::Kind::MINUS &&
+                               !p.operand()->type().isScalar() && !p.operand()->type().isVector();
+    const bool needParens = needsNegation || Precedence::kPrefix >= parentPrecedence;
+
     if (needParens) {
-        this->write("(");
+        expr.push_back('(');
+    }
+
+    if (needsNegation) {
+        expr += "-1.0 * ";
+        expr += this->assembleExpression(*p.operand(), Precedence::kMultiplicative);
+    } else {
+        expr += p.getOperator().tightOperatorName();
+        expr += this->assembleExpression(*p.operand(), Precedence::kPrefix);
+    }
+
+    if (needParens) {
+        expr.push_back(')');
+    }
+
+    return expr;
+}
+
+std::string WGSLCodeGenerator::assemblePostfixExpression(const PostfixExpression& p,
+                                                         Precedence parentPrecedence) {
+    SkASSERT(p.getOperator().kind() == Operator::Kind::PLUSPLUS ||
+             p.getOperator().kind() == Operator::Kind::MINUSMINUS);
+
+    
+    
+    std::unique_ptr<LValue> lvalue = this->makeLValue(*p.operand());
+    if (!lvalue) {
+        return "";
     }
 
     
     
+    std::string originalValue;
+    if (parentPrecedence != Precedence::kStatement) {
+        originalValue = this->writeScratchLet(lvalue->load());
+    }
     
-    if ((t.type().isScalar() || t.type().isVector()) && !Analysis::HasSideEffects(*t.ifTrue()) &&
-        !Analysis::HasSideEffects(*t.ifFalse())) {
-        this->write("select(");
-        this->writeExpression(*t.ifFalse(), Precedence::kTernary);
-        this->write(", ");
-        this->writeExpression(*t.ifTrue(), Precedence::kTernary);
-        this->write(", ");
+    std::string newValue = lvalue->load() +
+                           (p.getOperator().kind() == Operator::Kind::PLUSPLUS ? " + " : " - ") +
+                           this->assembleIncrementExpr(p.operand()->type());
+    this->writeLine(lvalue->store(newValue));
+
+    return originalValue;
+}
+
+std::string WGSLCodeGenerator::assembleSwizzle(const Swizzle& swizzle) {
+    return this->assembleExpression(*swizzle.base(), Precedence::kPostfix) + "." +
+           Swizzle::MaskString(swizzle.components());
+}
+
+std::string WGSLCodeGenerator::writeScratchVar(const Type& type, const std::string& value) {
+    std::string scratchVarName = "_skTemp" + std::to_string(fScratchCount++);
+    this->write("var ");
+    this->write(scratchVarName);
+    this->write(": ");
+    this->write(to_wgsl_type(fContext, type));
+    if (!value.empty()) {
+        this->write(" = ");
+        this->write(value);
+    }
+    this->writeLine(";");
+    return scratchVarName;
+}
+
+std::string WGSLCodeGenerator::writeScratchLet(const std::string& expr) {
+    std::string scratchVarName = "_skTemp" + std::to_string(fScratchCount++);
+    this->write(fAtFunctionScope ? "let " : "const ");
+    this->write(scratchVarName);
+    this->write(" = ");
+    this->write(expr);
+    this->writeLine(";");
+    return scratchVarName;
+}
+
+std::string WGSLCodeGenerator::writeScratchLet(const Expression& expr,
+                                               Precedence parentPrecedence) {
+    return this->writeScratchLet(this->assembleExpression(expr, parentPrecedence));
+}
+
+std::string WGSLCodeGenerator::writeNontrivialScratchLet(const Expression& expr,
+                                                         Precedence parentPrecedence) {
+    std::string result = this->assembleExpression(expr, parentPrecedence);
+    return is_nontrivial_expression(expr) ? this->writeScratchLet(result)
+                                          : result;
+}
+
+std::string WGSLCodeGenerator::assembleTernaryExpression(const TernaryExpression& t,
+                                                         Precedence parentPrecedence) {
+    std::string expr;
+
+    
+    
+    
+    
+    if ((t.type().isScalar() || t.type().isVector()) &&
+        !Analysis::HasSideEffects(*t.test()) &&
+        Analysis::IsTrivialExpression(*t.ifTrue()) &&
+        Analysis::IsTrivialExpression(*t.ifFalse())) {
+
+        bool needParens = Precedence::kTernary >= parentPrecedence;
+        if (needParens) {
+            expr.push_back('(');
+        }
+        expr += "select(";
+        expr += this->assembleExpression(*t.ifFalse(), Precedence::kSequence);
+        expr += ", ";
+        expr += this->assembleExpression(*t.ifTrue(), Precedence::kSequence);
+        expr += ", ";
 
         bool isVector = t.type().isVector();
         if (isVector) {
             
-            this->write(String::printf("vec%d<bool>(", t.type().columns()));
+            expr += String::printf("vec%d<bool>(", t.type().columns());
         }
-        this->writeExpression(*t.test(), Precedence::kTernary);
+        expr += this->assembleExpression(*t.test(), Precedence::kSequence);
         if (isVector) {
-            this->write(")");
+            expr.push_back(')');
         }
-        this->write(")");
+        expr.push_back(')');
         if (needParens) {
-            this->write(")");
+            expr.push_back(')');
         }
-        return;
-    }
+    } else {
+        
+        
+        
+        expr = this->writeScratchVar(t.ifTrue()->type());
 
-    
-    
-    
-    
-    
-    
-    
+        std::string testExpr = this->assembleExpression(*t.test(), Precedence::kExpression);
+        this->write("if ");
+        this->write(testExpr);
+        this->writeLine(" {");
+
+        ++fIndentation;
+        std::string trueExpr = this->assembleExpression(*t.ifTrue(), Precedence::kAssignment);
+        this->write(expr);
+        this->write(" = ");
+        this->write(trueExpr);
+        this->writeLine(";");
+        --fIndentation;
+
+        this->writeLine("} else {");
+
+        ++fIndentation;
+        std::string falseExpr = this->assembleExpression(*t.ifFalse(), Precedence::kAssignment);
+        this->write(expr);
+        this->write(" = ");
+        this->write(falseExpr);
+        this->writeLine(";");
+        --fIndentation;
+
+        this->writeLine("}");
+    }
+    return expr;
 }
 
-void WGSLCodeGenerator::writeVariableReference(const VariableReference& r) {
+std::string WGSLCodeGenerator::variablePrefix(const Variable& v) {
+    if (v.storage() == Variable::Storage::kGlobal) {
+        
+        
+        
+        
+        if (v.modifierFlags() & ModifierFlag::kIn) {
+            return "_stageIn.";
+        }
+        if (v.modifierFlags() & ModifierFlag::kOut) {
+            return "(*_stageOut).";
+        }
+
+        
+        
+        if (const InterfaceBlock* ib = v.interfaceBlock()) {
+            const Type& ibType = ib->var()->type().componentType();
+            if (const std::string* ibName = fInterfaceBlockNameMap.find(&ibType)) {
+                return *ibName + '.';
+            }
+        }
+
+        
+        
+        
+        if (is_in_global_uniforms(v)) {
+            return "_globalUniforms.";
+        }
+    }
+
+    return "";
+}
+
+std::string WGSLCodeGenerator::variableReferenceNameForLValue(const VariableReference& r) {
+    const Variable& v = *r.variable();
+
+    if ((v.storage() == Variable::Storage::kParameter &&
+         v.modifierFlags() & ModifierFlag::kOut)) {
+        
+        
+        return "(*" + this->assembleName(v.mangledName()) + ')';
+    }
+
+    return this->variablePrefix(v) + this->assembleName(v.mangledName());
+}
+
+std::string WGSLCodeGenerator::assembleVariableReference(const VariableReference& r) {
     
     const Variable& v = *r.variable();
 
     
     
+    std::string expr;
     std::optional<std::string_view> conversion = needs_builtin_type_conversion(v);
     if (conversion.has_value()) {
-        this->write(*conversion);
-        this->write("(");
+        expr += *conversion;
+        expr.push_back('(');
     }
 
-    bool needsDeref = false;
-    bool isSynthesizedOutParamArg = fOutParamArgVars.contains(&v);
+    expr += this->variableReferenceNameForLValue(r);
 
-    
-    
-    
-    
-    
-    if (v.storage() == Variable::Storage::kGlobal && !isSynthesizedOutParamArg) {
-        if (v.modifiers().fFlags & Modifiers::kIn_Flag) {
-            this->write("_stageIn.");
-        } else if (v.modifiers().fFlags & Modifiers::kOut_Flag) {
-            this->write("(*_stageOut).");
-        } else if (is_in_global_uniforms(v)) {
-            this->write("_globalUniforms.");
-        }
-    } else if ((v.storage() == Variable::Storage::kParameter &&
-                v.modifiers().fFlags & Modifiers::kOut_Flag) ||
-               isSynthesizedOutParamArg) {
-        
-        
-        
-        needsDeref = true;
-        this->write("(*");
-    }
-
-    this->writeName(v.mangledName());
-    if (needsDeref) {
-        this->write(")");
-    }
     if (conversion.has_value()) {
-        this->write(")");
+        expr.push_back(')');
     }
+
+    return expr;
 }
 
-void WGSLCodeGenerator::writeAnyConstructor(const AnyConstructor& c, Precedence parentPrecedence) {
-    this->write(to_wgsl_type(c.type()));
-    this->write("(");
+std::string WGSLCodeGenerator::assembleAnyConstructor(const AnyConstructor& c) {
+    std::string expr = to_wgsl_type(fContext, c.type());
+    expr.push_back('(');
     auto separator = SkSL::String::Separator();
     for (const auto& e : c.argumentSpan()) {
-        this->write(separator());
-        this->writeExpression(*e, Precedence::kSequence);
+        expr += separator();
+        expr += this->assembleExpression(*e, Precedence::kSequence);
     }
-    this->write(")");
+    expr.push_back(')');
+    return expr;
 }
 
-void WGSLCodeGenerator::writeConstructorCompound(const ConstructorCompound& c,
-                                                 Precedence parentPrecedence) {
+std::string WGSLCodeGenerator::assembleConstructorCompound(const ConstructorCompound& c) {
     if (c.type().isVector()) {
-        this->writeConstructorCompoundVector(c, parentPrecedence);
+        return this->assembleConstructorCompoundVector(c);
     } else if (c.type().isMatrix()) {
-        this->writeConstructorCompoundMatrix(c, parentPrecedence);
+        return this->assembleConstructorCompoundMatrix(c);
     } else {
         fContext.fErrors->error(c.fPosition, "unsupported compound constructor");
+        return {};
     }
 }
 
-void WGSLCodeGenerator::writeConstructorCompoundVector(const ConstructorCompound& c,
-                                                       Precedence parentPrecedence) {
+std::string WGSLCodeGenerator::assembleConstructorCompoundVector(const ConstructorCompound& c) {
     
     
     
@@ -1150,373 +3817,202 @@ void WGSLCodeGenerator::writeConstructorCompoundVector(const ConstructorCompound
     if (c.type().columns() == 4 && c.argumentSpan().size() == 1) {
         const Expression& arg = *c.argumentSpan().front();
         if (arg.type().isMatrix()) {
-            
             SkASSERT(arg.type().columns() == 2);
             SkASSERT(arg.type().rows() == 2);
 
-            
-            std::string name = String::printf("%s_from_%s",
-                                              to_mangled_wgsl_type_name(c.type()).c_str(),
-                                              to_mangled_wgsl_type_name(arg.type()).c_str());
-            if (!fHelpers.contains(name)) {
-                fHelpers.add(name);
-                std::string returnType = to_wgsl_type(c.type());
-                std::string argType = to_wgsl_type(arg.type());
-                fExtraFunctions.printf(
-                        "fn %s(x: %s) -> %s {\n    return %s(x[0].xy, x[1].xy);\n}\n",
-                        name.c_str(),
-                        argType.c_str(),
-                        returnType.c_str(),
-                        returnType.c_str());
-            }
-            this->write(name);
-            this->write("(");
-            this->writeExpression(arg, Precedence::kSequence);
-            this->write(")");
-            return;
+            std::string matrix = this->writeNontrivialScratchLet(arg, Precedence::kPostfix);
+            return String::printf("%s(%s[0], %s[1])", to_wgsl_type(fContext, c.type()).c_str(),
+                                                      matrix.c_str(),
+                                                      matrix.c_str());
         }
     }
-    this->writeAnyConstructor(c, parentPrecedence);
+    return this->assembleAnyConstructor(c);
 }
 
-void WGSLCodeGenerator::writeConstructorCompoundMatrix(const ConstructorCompound& c,
-                                                       Precedence parentPrecedence) {
-    SkASSERT(c.type().isMatrix());
+std::string WGSLCodeGenerator::assembleConstructorCompoundMatrix(const ConstructorCompound& ctor) {
+    SkASSERT(ctor.type().isMatrix());
 
-    
-    if (this->isMatrixConstructorHelperNeeded(c)) {
-        this->write(this->getMatrixConstructorHelper(c));
-        this->write("(");
-        auto separator = String::Separator();
-        for (const std::unique_ptr<Expression>& expr : c.arguments()) {
-            this->write(separator());
-            this->writeExpression(*expr, Precedence::kSequence);
-        }
-        this->write(")");
-        return;
-    }
-
-    
-    
-    
-    
-    const Type& matrixType = c.type();
-    const Type& columnType = matrixType.componentType().toCompound(
-            fContext, matrixType.rows(), 1);
-
-    this->write(to_wgsl_type(matrixType));
-    this->write("(");
+    std::string expr = to_wgsl_type(fContext, ctor.type()) + '(';
     auto separator = String::Separator();
-    int scalarCount = 0;
-    for (const std::unique_ptr<Expression>& arg : c.arguments()) {
-        this->write(separator());
-        if (arg->type().columns() < matrixType.rows()) {
-            
-            if (!scalarCount) {
-                this->write(to_wgsl_type(columnType));
-                this->write("(");
+    for (const std::unique_ptr<Expression>& arg : ctor.arguments()) {
+        SkASSERT(arg->type().isScalar() || arg->type().isVector());
+
+        if (arg->type().isScalar()) {
+            expr += separator();
+            expr += this->assembleExpression(*arg, Precedence::kSequence);
+        } else {
+            std::string inner = this->writeNontrivialScratchLet(*arg, Precedence::kSequence);
+            int numSlots = arg->type().slotCount();
+            for (int slot = 0; slot < numSlots; ++slot) {
+                String::appendf(&expr, "%s%s[%d]", separator().c_str(), inner.c_str(), slot);
             }
-            scalarCount += arg->type().columns();
-        }
-        this->writeExpression(*arg, Precedence::kSequence);
-        if (scalarCount && scalarCount == matrixType.rows()) {
-            
-            this->write(")");
-            scalarCount = 0;
         }
     }
-    this->write(")");
+    return expr + ')';
 }
 
-void WGSLCodeGenerator::writeConstructorDiagonalMatrix(const ConstructorDiagonalMatrix& c,
-                                                       Precedence parentPrecedence) {
+std::string WGSLCodeGenerator::assembleConstructorDiagonalMatrix(
+        const ConstructorDiagonalMatrix& c) {
     const Type& type = c.type();
     SkASSERT(type.isMatrix());
     SkASSERT(c.argument()->type().isScalar());
 
     
-    std::string name = String::printf("%s_diagonal", to_mangled_wgsl_type_name(type).c_str());
-    if (!fHelpers.contains(name)) {
-        fHelpers.add(name);
-
-        std::string typeName = to_wgsl_type(type);
-        fExtraFunctions.printf("fn %s(x: %s) -> %s {\n",
-                               name.c_str(),
-                               to_wgsl_type(c.argument()->type()).c_str(),
-                               typeName.c_str());
-        fExtraFunctions.printf("    return %s(", typeName.c_str());
-        auto separator = String::Separator();
-        for (int col = 0; col < type.columns(); ++col) {
-            for (int row = 0; row < type.rows(); ++row) {
-                fExtraFunctions.printf("%s%s", separator().c_str(), (col == row) ? "x" : "0.0");
-            }
-        }
-        fExtraFunctions.printf(");\n}\n");
-    }
-    this->write(name);
-    this->write("(");
-    this->writeExpression(*c.argument(), Precedence::kSequence);
-    this->write(")");
-}
-
-void WGSLCodeGenerator::writeConstructorMatrixResize(const ConstructorMatrixResize& c,
-                                                     Precedence parentPrecedence) {
-    this->write(this->getMatrixConstructorHelper(c));
-    this->write("(");
-    this->writeExpression(*c.argument(), Precedence::kSequence);
-    this->write(")");
-}
-
-bool WGSLCodeGenerator::isMatrixConstructorHelperNeeded(const ConstructorCompound& c) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int position = 0;
-    for (const std::unique_ptr<Expression>& expr : c.arguments()) {
-        if (expr->type().isMatrix()) {
-            return true;
-        }
-        position += expr->type().columns();
-        if (position > c.type().rows()) {
-            
-            return true;
-        }
-        if (position == c.type().rows()) {
-            
-            position = 0;
-        }
-    }
-    return false;
-}
-
-std::string WGSLCodeGenerator::getMatrixConstructorHelper(const AnyConstructor& c) {
-    const Type& type = c.type();
-    int columns = type.columns();
-    int rows = type.rows();
-    auto args = c.argumentSpan();
-    std::string typeName = to_wgsl_type(type);
+    std::string inner = this->writeNontrivialScratchLet(*c.argument(), Precedence::kAssignment);
 
     
-    std::string name = String::printf("%s_from", to_mangled_wgsl_type_name(type).c_str());
-    for (const std::unique_ptr<Expression>& expr : args) {
-        String::appendf(&name, "_%s", to_mangled_wgsl_type_name(expr->type()).c_str());
-    }
-
-    
-    if (!fHelpers.contains(name)) {
-        fHelpers.add(name);
-
-        fExtraFunctions.printf("fn %s(", name.c_str());
-
-        auto separator = String::Separator();
-        for (size_t i = 0; i < args.size(); ++i) {
-            fExtraFunctions.printf(
-                    "%sx%zu: %s", separator().c_str(), i, to_wgsl_type(args[i]->type()).c_str());
-        }
-
-        fExtraFunctions.printf(") -> %s {\n    return %s(", typeName.c_str(), typeName.c_str());
-
-        if (args.size() == 1 && args.front()->type().isMatrix()) {
-            this->writeMatrixFromMatrixArgs(args.front()->type(), columns, rows);
-        } else {
-            this->writeMatrixFromScalarAndVectorArgs(c, columns, rows);
-        }
-
-        fExtraFunctions.writeText(");\n}\n");
-    }
-    return name;
-}
-
-
-
-void WGSLCodeGenerator::writeMatrixFromMatrixArgs(const Type& sourceMatrix, int columns, int rows) {
-    SkASSERT(rows <= 4);
-    SkASSERT(columns <= 4);
-
-    const char* separator = "";
-    std::string matrixType = to_wgsl_type(sourceMatrix.componentType());
-    for (int c = 0; c < columns; ++c) {
-        fExtraFunctions.printf("%svec%d<%s>(", separator, rows, matrixType.c_str());
-        separator = "), ";
-
-        
-        int swizzleLength = 0;
-        if (c < sourceMatrix.columns()) {
-            swizzleLength = std::min<>(rows, sourceMatrix.rows());
-        }
-
-        
-        bool firstItem;
-        switch (swizzleLength) {
-            case 0:
-                firstItem = true;
-                break;
-            case 1:
-                firstItem = false;
-                fExtraFunctions.printf("x0[%d].x", c);
-                break;
-            case 2:
-                firstItem = false;
-                fExtraFunctions.printf("x0[%d].xy", c);
-                break;
-            case 3:
-                firstItem = false;
-                fExtraFunctions.printf("x0[%d].xyz", c);
-                break;
-            case 4:
-                firstItem = false;
-                fExtraFunctions.printf("x0[%d].xyzw", c);
-                break;
-            default:
-                SkUNREACHABLE;
-        }
-
-        
-        for (int r = swizzleLength; r < rows; ++r) {
-            fExtraFunctions.printf("%s%s", firstItem ? "" : ", ", (r == c) ? "1.0" : "0.0");
-            firstItem = false;
-        }
-    }
-
-    fExtraFunctions.writeText(")");
-}
-
-
-
-void WGSLCodeGenerator::writeMatrixFromScalarAndVectorArgs(const AnyConstructor& ctor,
-                                                           int columns,
-                                                           int rows) {
-    SkASSERT(rows <= 4);
-    SkASSERT(columns <= 4);
-
-    std::string matrixType = to_wgsl_type(ctor.type().componentType());
-    size_t argIndex = 0;
-    int argPosition = 0;
-    auto args = ctor.argumentSpan();
-
-    static constexpr char kSwizzle[] = "xyzw";
-    const char* separator = "";
-    for (int c = 0; c < columns; ++c) {
-        fExtraFunctions.printf("%svec%d<%s>(", separator, rows, matrixType.c_str());
-        separator = "), ";
-
-        auto columnSeparator = String::Separator();
-        for (int r = 0; r < rows;) {
-            fExtraFunctions.writeText(columnSeparator().c_str());
-            if (argIndex < args.size()) {
-                const Type& argType = args[argIndex]->type();
-                switch (argType.typeKind()) {
-                    case Type::TypeKind::kScalar: {
-                        fExtraFunctions.printf("x%zu", argIndex);
-                        ++r;
-                        ++argPosition;
-                        break;
-                    }
-                    case Type::TypeKind::kVector: {
-                        fExtraFunctions.printf("x%zu.", argIndex);
-                        do {
-                            fExtraFunctions.write8(kSwizzle[argPosition]);
-                            ++r;
-                            ++argPosition;
-                        } while (r < rows && argPosition < argType.columns());
-                        break;
-                    }
-                    case Type::TypeKind::kMatrix: {
-                        fExtraFunctions.printf("x%zu[%d].", argIndex, argPosition / argType.rows());
-                        do {
-                            fExtraFunctions.write8(kSwizzle[argPosition]);
-                            ++r;
-                            ++argPosition;
-                        } while (r < rows && (argPosition % argType.rows()) != 0);
-                        break;
-                    }
-                    default: {
-                        SkDEBUGFAIL("incorrect type of argument for matrix constructor");
-                        fExtraFunctions.writeText("<error>");
-                        break;
-                    }
-                }
-
-                if (argPosition >= argType.columns() * argType.rows()) {
-                    ++argIndex;
-                    argPosition = 0;
-                }
+    std::string expr = to_wgsl_type(fContext, type) + '(';
+    auto separator = String::Separator();
+    for (int col = 0; col < type.columns(); ++col) {
+        for (int row = 0; row < type.rows(); ++row) {
+            expr += separator();
+            if (col == row) {
+                expr += inner;
             } else {
-                SkDEBUGFAIL("not enough arguments for matrix constructor");
-                fExtraFunctions.writeText("<error>");
+                expr += "0.0";
+            }
+        }
+    }
+    return expr + ')';
+}
+
+std::string WGSLCodeGenerator::assembleConstructorMatrixResize(
+        const ConstructorMatrixResize& ctor) {
+    std::string source = this->writeScratchLet(this->assembleExpression(*ctor.argument(),
+                                                                        Precedence::kSequence));
+    int columns = ctor.type().columns();
+    int rows = ctor.type().rows();
+    int sourceColumns = ctor.argument()->type().columns();
+    int sourceRows = ctor.argument()->type().rows();
+    auto separator = String::Separator();
+    std::string expr = to_wgsl_type(fContext, ctor.type()) + '(';
+
+    for (int c = 0; c < columns; ++c) {
+        for (int r = 0; r < rows; ++r) {
+            expr += separator();
+            if (c < sourceColumns && r < sourceRows) {
+                String::appendf(&expr, "%s[%d][%d]", source.c_str(), c, r);
+            } else if (r == c) {
+                expr += "1.0";
+            } else {
+                expr += "0.0";
             }
         }
     }
 
-    if (argPosition != 0 || argIndex != args.size()) {
-        SkDEBUGFAIL("incorrect number of arguments for matrix constructor");
-        fExtraFunctions.writeText(", <error>");
-    }
-
-    fExtraFunctions.writeText(")");
+    return expr + ')';
 }
 
-void WGSLCodeGenerator::writeMatrixEquality(const Expression& left, const Expression& right) {
-    const Type& leftType = left.type();
-    const Type& rightType = right.type();
-    SkASSERT(leftType.isMatrix());
-    SkASSERT(rightType.isMatrix());
-    SkASSERT(leftType.rows() == rightType.rows());
-    SkASSERT(leftType.columns() == rightType.columns());
+std::string WGSLCodeGenerator::assembleEqualityExpression(const Type& left,
+                                                          const std::string& leftName,
+                                                          const Type& right,
+                                                          const std::string& rightName,
+                                                          Operator op,
+                                                          Precedence parentPrecedence) {
+    SkASSERT(op.kind() == OperatorKind::EQEQ || op.kind() == OperatorKind::NEQ);
 
-    std::string name = String::printf("%s_eq_%s",
-                                      to_mangled_wgsl_type_name(leftType).c_str(),
-                                      to_mangled_wgsl_type_name(rightType).c_str());
-    if (!fHelpers.contains(name)) {
-        fHelpers.add(name);
-        fExtraFunctions.printf("fn %s(left: %s, right: %s) -> bool {\n    return ",
-                               name.c_str(),
-                               to_wgsl_type(leftType).c_str(),
-                               to_wgsl_type(rightType).c_str());
-        const char* separator = "";
-        for (int i = 0; i < leftType.columns(); ++i) {
-            fExtraFunctions.printf("%sall(left[%d] == right[%d])", separator, i, i);
-            separator = " &&\n           ";
+    std::string expr;
+    bool isEqual = (op.kind() == Operator::Kind::EQEQ);
+    const char* const combiner = isEqual ? " && " : " || ";
+
+    if (left.isMatrix()) {
+        
+        SkASSERT(right.isMatrix());
+        SkASSERT(left.rows() == right.rows());
+        SkASSERT(left.columns() == right.columns());
+        int columns = left.columns();
+        const Type& vecType = left.columnType(fContext);
+        const char* separator = "(";
+        for (int index = 0; index < columns; ++index) {
+            expr += separator;
+            std::string suffix = '[' + std::to_string(index) + ']';
+            expr += this->assembleEqualityExpression(vecType, leftName + suffix,
+                                                     vecType, rightName + suffix,
+                                                     op, Precedence::kParentheses);
+            separator = combiner;
         }
-        fExtraFunctions.printf(";\n}\n");
+        return expr + ')';
     }
-    this->write(name);
-    this->write("(");
-    this->writeExpression(left, Precedence::kSequence);
-    this->write(", ");
-    this->writeExpression(right, Precedence::kSequence);
-    this->write(")");
+
+    if (left.isArray()) {
+        SkASSERT(right.matches(left));
+        const Type& indexedType = left.componentType();
+        const char* separator = "(";
+        for (int index = 0; index < left.columns(); ++index) {
+            expr += separator;
+            std::string suffix = '[' + std::to_string(index) + ']';
+            expr += this->assembleEqualityExpression(indexedType, leftName + suffix,
+                                                     indexedType, rightName + suffix,
+                                                     op, Precedence::kParentheses);
+            separator = combiner;
+        }
+        return expr + ')';
+    }
+
+    if (left.isStruct()) {
+        
+        SkASSERT(right.matches(left));
+        SkSpan<const Field> fields = left.fields();
+
+        const char* separator = "(";
+        for (const Field& field : fields) {
+            expr += separator;
+            expr += this->assembleEqualityExpression(
+                            *field.fType, leftName + '.' + this->assembleName(field.fName),
+                            *field.fType, rightName + '.' + this->assembleName(field.fName),
+                            op, Precedence::kParentheses);
+            separator = combiner;
+        }
+        return expr + ')';
+    }
+
+    if (left.isVector()) {
+        
+        SkASSERT(right.isVector());
+        SkASSERT(left.slotCount() == right.slotCount());
+
+        expr += isEqual ? "all(" : "any(";
+        expr += leftName;
+        expr += operator_name(op);
+        expr += rightName;
+        return expr + ')';
+    }
+
+    
+    SkASSERT(right.isScalar());
+    if (parentPrecedence < Precedence::kSequence) {
+        expr = '(';
+    }
+    expr += leftName;
+    expr += operator_name(op);
+    expr += rightName;
+    if (parentPrecedence < Precedence::kSequence) {
+        expr += ')';
+    }
+    return expr;
+}
+
+std::string WGSLCodeGenerator::assembleEqualityExpression(const Expression& left,
+                                                          const Expression& right,
+                                                          Operator op,
+                                                          Precedence parentPrecedence) {
+    std::string leftName, rightName;
+    if (left.type().isScalar() || left.type().isVector()) {
+        
+        
+        leftName = this->assembleExpression(left, Precedence::kParentheses);
+        rightName = this->assembleExpression(right, Precedence::kParentheses);
+    } else {
+        leftName = this->writeNontrivialScratchLet(left, Precedence::kAssignment);
+        rightName = this->writeNontrivialScratchLet(right, Precedence::kAssignment);
+    }
+    return this->assembleEqualityExpression(left.type(), leftName, right.type(), rightName,
+                                            op, parentPrecedence);
 }
 
 void WGSLCodeGenerator::writeProgramElement(const ProgramElement& e) {
     switch (e.kind()) {
         case ProgramElement::Kind::kExtension:
-            
             
             
             
@@ -1542,153 +4038,272 @@ void WGSLCodeGenerator::writeProgramElement(const ProgramElement& e) {
         case ProgramElement::Kind::kFunction:
             this->writeFunction(e.as<FunctionDefinition>());
             break;
+        case ProgramElement::Kind::kModifiers:
+            this->writeModifiersDeclaration(e.as<ModifiersDeclaration>());
+            break;
         default:
             SkDEBUGFAILF("unsupported program element: %s\n", e.description().c_str());
             break;
     }
 }
 
+void WGSLCodeGenerator::writeTextureOrSampler(const Variable& var,
+                                              int bindingLocation,
+                                              std::string_view suffix,
+                                              std::string_view wgslType) {
+    if (var.type().dimensions() != SpvDim2D) {
+        
+        fContext.fErrors->error(var.varDeclaration()->position(), "unsupported texture dimensions");
+        return;
+    }
+
+    this->write("@group(");
+    this->write(std::to_string(std::max(0, var.layout().fSet)));
+    this->write(") @binding(");
+    this->write(std::to_string(bindingLocation));
+    this->write(") var ");
+    this->write(this->assembleName(var.mangledName()));
+    this->write(suffix);
+    this->write(": ");
+    this->write(wgslType);
+    this->writeLine(";");
+}
+
 void WGSLCodeGenerator::writeGlobalVarDeclaration(const GlobalVarDeclaration& d) {
-    const Variable& var = *d.declaration()->as<VarDeclaration>().var();
-    if ((var.modifiers().fFlags & (Modifiers::kIn_Flag | Modifiers::kOut_Flag)) ||
+    const VarDeclaration& decl = d.varDeclaration();
+    const Variable& var = *decl.var();
+    if ((var.modifierFlags() & (ModifierFlag::kIn | ModifierFlag::kOut)) ||
         is_in_global_uniforms(var)) {
         
         
         return;
     }
 
-    
-    this->write("var<private> ");
-    this->writeVariableDecl(var.type(), var.name(), Delimiter::kSemicolon);
+    const Type::TypeKind varKind = var.type().typeKind();
+    if (varKind == Type::TypeKind::kSampler) {
+        
+        
+        int samplerLocation = var.layout().fSampler >= 0 ? var.layout().fSampler
+                                                         : 10000 + fScratchCount++;
+        this->writeTextureOrSampler(var, samplerLocation, kSamplerSuffix, "sampler");
+
+        
+        int textureLocation = var.layout().fTexture >= 0 ? var.layout().fTexture
+                                                         : 10000 + fScratchCount++;
+        this->writeTextureOrSampler(var, textureLocation, kTextureSuffix, "texture_2d<f32>");
+        return;
+    }
+
+    if (varKind == Type::TypeKind::kTexture) {
+        
+        int textureLocation = var.layout().fBinding >= 0 ? var.layout().fBinding
+                                                         : 10000 + fScratchCount++;
+        
+        this->writeTextureOrSampler(var, textureLocation, "",
+                                    to_wgsl_type(fContext, var.type(), &var.layout()));
+        return;
+    }
+
+    std::string initializer;
+    if (decl.value()) {
+        
+        
+        
+        initializer += " = ";
+        initializer += this->assembleExpression(*decl.value(), Precedence::kAssignment);
+    }
+
+    if (var.modifierFlags().isConst()) {
+        this->write("const ");
+    } else if (var.modifierFlags().isWorkgroup()) {
+        this->write("var<workgroup> ");
+    } else if (var.modifierFlags().isPixelLocal()) {
+        this->write("var<pixel_local> ");
+    } else {
+        this->write("var<private> ");
+    }
+    this->write(this->assembleName(var.mangledName()));
+    this->write(": " + to_wgsl_type(fContext, var.type(), &var.layout()));
+    this->write(initializer);
+    this->writeLine(";");
 }
 
 void WGSLCodeGenerator::writeStructDefinition(const StructDefinition& s) {
     const Type& type = s.type();
     this->writeLine("struct " + type.displayName() + " {");
-    fIndentation++;
-    this->writeFields(SkSpan(type.fields()), type.fPosition);
-    fIndentation--;
+    this->writeFields(type.fields(), nullptr);
     this->writeLine("};");
 }
 
-void WGSLCodeGenerator::writeFields(SkSpan<const Type::Field> fields,
-                                    Position parentPos,
-                                    const MemoryLayout*) {
-    
-    
-    for (const Type::Field& field : fields) {
-        const Type* fieldType = field.fType;
-        this->writeVariableDecl(*fieldType, field.fName, Delimiter::kComma);
+void WGSLCodeGenerator::writeModifiersDeclaration(const ModifiersDeclaration& modifiers) {
+    LayoutFlags flags = modifiers.layout().fFlags;
+    flags &= ~(LayoutFlag::kLocalSizeX | LayoutFlag::kLocalSizeY | LayoutFlag::kLocalSizeZ);
+    if (flags != LayoutFlag::kNone) {
+        fContext.fErrors->error(modifiers.position(), "unsupported declaration");
+        return;
+    }
+
+    if (modifiers.layout().fLocalSizeX >= 0) {
+        fLocalSizeX = modifiers.layout().fLocalSizeX;
+    }
+    if (modifiers.layout().fLocalSizeY >= 0) {
+        fLocalSizeY = modifiers.layout().fLocalSizeY;
+    }
+    if (modifiers.layout().fLocalSizeZ >= 0) {
+        fLocalSizeZ = modifiers.layout().fLocalSizeZ;
     }
 }
 
-void WGSLCodeGenerator::writeStageInputStruct() {
-    std::string_view structNamePrefix = pipeline_struct_prefix(fProgram.fConfig->fKind);
-    if (structNamePrefix.empty()) {
+void WGSLCodeGenerator::writeFields(SkSpan<const Field> fields, const MemoryLayout* memoryLayout) {
+    fIndentation++;
+
+    
+    
+    for (size_t index = 0; index < fields.size(); ++index) {
+        const Field& field = fields[index];
+        if (memoryLayout && !memoryLayout->isSupported(*field.fType)) {
+            
+            fContext.fErrors->error(field.fPosition, "type '" + std::string(field.fType->name()) +
+                                                     "' is not permitted here");
+            return;
+        }
+
         
+        
+        if (index < fields.size() - 1) {
+            int thisFieldOffset = field.fLayout.fOffset;
+            int nextFieldOffset = fields[index + 1].fLayout.fOffset;
+            if (index == 0 && thisFieldOffset > 0) {
+                fContext.fErrors->error(field.fPosition, "field must have an offset of zero");
+                return;
+            }
+            if (thisFieldOffset >= 0 && nextFieldOffset > thisFieldOffset) {
+                this->write("@size(");
+                this->write(std::to_string(nextFieldOffset - thisFieldOffset));
+                this->write(") ");
+            }
+        }
+
+        this->write(this->assembleName(field.fName));
+        this->write(": ");
+        if (const FieldPolyfillInfo* info = fFieldPolyfillMap.find(&field)) {
+            if (info->fIsArray) {
+                
+                SkASSERT(field.fType->isArray());
+                this->write("array<_skArrayElement_");
+                this->write(field.fType->abbreviatedName());
+                this->write(", ");
+                this->write(std::to_string(field.fType->columns()));
+                this->write(">");
+            } else if (info->fIsMatrix) {
+                this->write("_skMatrix");
+                this->write(std::to_string(field.fType->columns()));
+                this->write(std::to_string(field.fType->rows()));
+            } else {
+                SkDEBUGFAILF("need polyfill for %s", info->fReplacementName.c_str());
+            }
+        } else {
+            this->write(to_wgsl_type(fContext, *field.fType, &field.fLayout));
+        }
+        this->writeLine(",");
+    }
+
+    fIndentation--;
+}
+
+void WGSLCodeGenerator::writeEnables() {
+    this->writeLine("diagnostic(off, derivative_uniformity);");
+    this->writeLine("diagnostic(off, chromium.unreachable_code);");
+
+    if (fRequirements.fPixelLocalExtension) {
+        this->writeLine("enable chromium_experimental_pixel_local;");
+    }
+    if (fProgram.fInterface.fUseLastFragColor) {
+        this->writeLine("enable chromium_experimental_framebuffer_fetch;");
+    }
+    if (fProgram.fInterface.fOutputSecondaryColor) {
+        this->writeLine("enable chromium_internal_dual_source_blending;");
+    }
+}
+
+bool WGSLCodeGenerator::needsStageInputStruct() const {
+    
+    
+    return !fPipelineInputs.empty();
+}
+
+void WGSLCodeGenerator::writeStageInputStruct() {
+    if (!this->needsStageInputStruct()) {
         return;
     }
 
-    
-    if (fPipelineInputCount < 1) {
-        return;
-    }
+    std::string_view structNamePrefix = pipeline_struct_prefix(fProgram.fConfig->fKind);
+    SkASSERT(!structNamePrefix.empty());
 
     this->write("struct ");
     this->write(structNamePrefix);
     this->writeLine("In {");
     fIndentation++;
 
-    bool declaredFragCoordsBuiltin = false;
-    for (const ProgramElement* e : fProgram.elements()) {
-        if (e->is<GlobalVarDeclaration>()) {
-            const Variable* v = e->as<GlobalVarDeclaration>().declaration()
-                                 ->as<VarDeclaration>().var();
-            if (v->modifiers().fFlags & Modifiers::kIn_Flag) {
-                this->writePipelineIODeclaration(v->modifiers(), v->type(), v->mangledName(),
-                                                 Delimiter::kComma);
-                if (v->modifiers().fLayout.fBuiltin == SK_FRAGCOORD_BUILTIN) {
-                    declaredFragCoordsBuiltin = true;
-                }
+    for (const Variable* v : fPipelineInputs) {
+        if (v->type().isInterfaceBlock()) {
+            for (const Field& f : v->type().fields()) {
+                this->writePipelineIODeclaration(f.fLayout, *f.fType, f.fName, Delimiter::kComma);
             }
-        } else if (e->is<InterfaceBlock>()) {
-            const Variable* v = e->as<InterfaceBlock>().var();
-            
-            
-            
-            
-            
-            if (v->modifiers().fFlags & Modifiers::kIn_Flag) {
-                for (const auto& f : v->type().fields()) {
-                    this->writePipelineIODeclaration(f.fModifiers, *f.fType, f.fName,
-                                                     Delimiter::kComma);
-                    if (f.fModifiers.fLayout.fBuiltin == SK_FRAGCOORD_BUILTIN) {
-                        declaredFragCoordsBuiltin = true;
-                    }
-                }
-            }
+        } else {
+            this->writePipelineIODeclaration(v->layout(), v->type(), v->mangledName(),
+                                             Delimiter::kComma);
         }
-    }
-
-    if (ProgramConfig::IsFragment(fProgram.fConfig->fKind) &&
-        fRequirements.mainNeedsCoordsArgument && !declaredFragCoordsBuiltin) {
-        this->writeLine("@builtin(position) sk_FragCoord: vec4<f32>,");
     }
 
     fIndentation--;
     this->writeLine("};");
 }
 
+bool WGSLCodeGenerator::needsStageOutputStruct() const {
+    
+    
+    
+    return !fPipelineOutputs.empty() || ProgramConfig::IsVertex(fProgram.fConfig->fKind);
+}
+
 void WGSLCodeGenerator::writeStageOutputStruct() {
-    std::string_view structNamePrefix = pipeline_struct_prefix(fProgram.fConfig->fKind);
-    if (structNamePrefix.empty()) {
-        
+    if (!this->needsStageOutputStruct()) {
         return;
     }
+
+    std::string_view structNamePrefix = pipeline_struct_prefix(fProgram.fConfig->fKind);
+    SkASSERT(!structNamePrefix.empty());
 
     this->write("struct ");
     this->write(structNamePrefix);
     this->writeLine("Out {");
     fIndentation++;
 
-    
-    
     bool declaredPositionBuiltin = false;
     bool requiresPointSizeBuiltin = false;
-    for (const ProgramElement* e : fProgram.elements()) {
-        if (e->is<GlobalVarDeclaration>()) {
-            const Variable* v = e->as<GlobalVarDeclaration>().declaration()
-                                 ->as<VarDeclaration>().var();
-            if (v->modifiers().fFlags & Modifiers::kOut_Flag) {
-                this->writePipelineIODeclaration(v->modifiers(), v->type(), v->mangledName(),
-                                                 Delimiter::kComma);
-            }
-        } else if (e->is<InterfaceBlock>()) {
-            const Variable* v = e->as<InterfaceBlock>().var();
-            
-            
-            
-            
-            
-            if (v->modifiers().fFlags & Modifiers::kOut_Flag) {
-                for (const auto& f : v->type().fields()) {
-                    this->writePipelineIODeclaration(f.fModifiers, *f.fType, f.fName,
-                                                     Delimiter::kComma);
-                    if (f.fModifiers.fLayout.fBuiltin == SK_POSITION_BUILTIN) {
-                        declaredPositionBuiltin = true;
-                    } else if (f.fModifiers.fLayout.fBuiltin == SK_POINTSIZE_BUILTIN) {
-                        
-                        
-                        
-                        requiresPointSizeBuiltin = true;
-                    }
+    for (const Variable* v : fPipelineOutputs) {
+        if (v->type().isInterfaceBlock()) {
+            for (const auto& f : v->type().fields()) {
+                this->writePipelineIODeclaration(f.fLayout, *f.fType, f.fName, Delimiter::kComma);
+                if (f.fLayout.fBuiltin == SK_POSITION_BUILTIN) {
+                    declaredPositionBuiltin = true;
+                } else if (f.fLayout.fBuiltin == SK_POINTSIZE_BUILTIN) {
+                    
+                    
+                    
+                    requiresPointSizeBuiltin = true;
                 }
             }
+        } else {
+            this->writePipelineIODeclaration(v->layout(), v->type(), v->mangledName(),
+                                             Delimiter::kComma);
         }
     }
 
     
-    if (ProgramConfig::IsVertex(fProgram.fConfig->fKind) && !declaredPositionBuiltin) {
+    const bool positionBuiltinRequired = ProgramConfig::IsVertex(fProgram.fConfig->fKind);
+    if (positionBuiltinRequired && !declaredPositionBuiltin) {
         this->writeLine("@builtin(position) sk_Position: vec4<f32>,");
     }
 
@@ -1706,22 +4321,138 @@ void WGSLCodeGenerator::writeStageOutputStruct() {
     }
 }
 
+void WGSLCodeGenerator::prepareUniformPolyfillsForInterfaceBlock(
+        const InterfaceBlock* interfaceBlock,
+        std::string_view instanceName,
+        MemoryLayout::Standard nativeLayout) {
+    SkSL::MemoryLayout std140(MemoryLayout::Standard::k140);
+    SkSL::MemoryLayout native(nativeLayout);
+
+    const Type& structType = interfaceBlock->var()->type().componentType();
+    for (const Field& field : structType.fields()) {
+        const Type* type = field.fType;
+        bool needsArrayPolyfill = false;
+        bool needsMatrixPolyfill = false;
+
+        auto isPolyfillableMatrixType = [&](const Type* type) {
+            return type->isMatrix() && std140.stride(*type) != native.stride(*type);
+        };
+
+        if (isPolyfillableMatrixType(type)) {
+            
+            
+            needsMatrixPolyfill = true;
+        } else if (type->isArray() && !type->isUnsizedArray() &&
+                   !type->componentType().isOpaque()) {
+            const Type* innerType = &type->componentType();
+            if (isPolyfillableMatrixType(innerType)) {
+                
+                needsArrayPolyfill = true;
+                needsMatrixPolyfill = true;
+            } else if (native.size(*innerType) < 16) {
+                
+                
+                needsArrayPolyfill = true;
+            }
+        }
+
+        if (needsArrayPolyfill || needsMatrixPolyfill) {
+            
+            FieldPolyfillInfo info;
+            info.fInterfaceBlock = interfaceBlock;
+            info.fReplacementName = "_skUnpacked_" + std::string(instanceName) + '_' +
+                                    this->assembleName(field.fName);
+            info.fIsArray = needsArrayPolyfill;
+            info.fIsMatrix = needsMatrixPolyfill;
+            fFieldPolyfillMap.set(&field, info);
+        }
+    }
+}
+
+void WGSLCodeGenerator::writeUniformsAndBuffers() {
+    for (const ProgramElement* e : fProgram.elements()) {
+        
+        if (!e->is<InterfaceBlock>()) {
+            continue;
+        }
+        const InterfaceBlock& ib = e->as<InterfaceBlock>();
+
+        
+        std::string_view addressSpace;
+        std::string_view accessMode;
+        MemoryLayout::Standard nativeLayout;
+        if (ib.var()->modifierFlags().isUniform()) {
+            addressSpace = "uniform";
+            nativeLayout = MemoryLayout::Standard::kWGSLUniform_Base;
+        } else if (ib.var()->modifierFlags().isBuffer()) {
+            addressSpace = "storage";
+            nativeLayout = MemoryLayout::Standard::kWGSLStorage_Base;
+            accessMode = ib.var()->modifierFlags().isReadOnly() ? ", read" : ", read_write";
+        } else {
+            continue;
+        }
+
+        
+        std::string instanceName;
+        if (ib.instanceName().empty()) {
+            instanceName = "_" + std::string(addressSpace) + std::to_string(fScratchCount++);
+            fInterfaceBlockNameMap[&ib.var()->type().componentType()] = instanceName;
+        } else {
+            instanceName = std::string(ib.instanceName());
+        }
+
+        this->prepareUniformPolyfillsForInterfaceBlock(&ib, instanceName, nativeLayout);
+
+        
+        SkASSERT(!ib.typeName().empty());
+        this->write("struct ");
+        this->write(ib.typeName());
+        this->writeLine(" {");
+
+        
+        const Type& ibType = ib.var()->type().componentType();
+        SkASSERT(ibType.isStruct());
+
+        SkSpan<const Field> ibFields = ibType.fields();
+        SkASSERT(!ibFields.empty());
+
+        MemoryLayout layout(MemoryLayout::Standard::k140);
+        this->writeFields(ibFields, &layout);
+        this->writeLine("};");
+        this->write("@group(");
+        this->write(std::to_string(std::max(0, ib.var()->layout().fSet)));
+        this->write(") @binding(");
+        this->write(std::to_string(std::max(0, ib.var()->layout().fBinding)));
+        this->write(") var<");
+        this->write(addressSpace);
+        this->write(accessMode);
+        this->write("> ");
+        this->write(instanceName);
+        this->write(" : ");
+        this->write(to_wgsl_type(fContext, ib.var()->type(), &ib.var()->layout()));
+        this->writeLine(";");
+    }
+}
+
 void WGSLCodeGenerator::writeNonBlockUniformsForTests() {
+    bool declaredUniformsStruct = false;
+
     for (const ProgramElement* e : fProgram.elements()) {
         if (e->is<GlobalVarDeclaration>()) {
             const GlobalVarDeclaration& decls = e->as<GlobalVarDeclaration>();
             const Variable& var = *decls.varDeclaration().var();
             if (is_in_global_uniforms(var)) {
-                if (!fDeclaredUniformsStruct) {
+                if (!declaredUniformsStruct) {
                     this->write("struct _GlobalUniforms {\n");
-                    fDeclaredUniformsStruct = true;
+                    declaredUniformsStruct = true;
                 }
-                this->write("    ");
-                this->writeVariableDecl(var.type(), var.mangledName(), Delimiter::kComma);
+                this->write("  ");
+                this->writeVariableDecl(var.layout(), var.type(), var.mangledName(),
+                                        Delimiter::kComma);
             }
         }
     }
-    if (fDeclaredUniformsStruct) {
+    if (declaredUniformsStruct) {
         int binding = fProgram.fConfig->fSettings.fDefaultUniformBinding;
         int set = fProgram.fConfig->fSettings.fDefaultUniformSet;
         this->write("};\n");
@@ -1731,27 +4462,26 @@ void WGSLCodeGenerator::writeNonBlockUniformsForTests() {
     }
 }
 
-bool WGSLCodeGenerator::writeFunctionDependencyArgs(const FunctionDeclaration& f) {
-    FunctionDependencies* deps = fRequirements.dependencies.find(&f);
-    if (!deps || *deps == FunctionDependencies::kNone) {
-        return false;
+std::string WGSLCodeGenerator::functionDependencyArgs(const FunctionDeclaration& f) {
+    WGSLFunctionDependencies* deps = fRequirements.fDependencies.find(&f);
+    std::string args;
+    if (deps && *deps) {
+        const char* separator = "";
+        if (*deps & WGSLFunctionDependency::kPipelineInputs) {
+            args += "_stageIn";
+            separator = ", ";
+        }
+        if (*deps & WGSLFunctionDependency::kPipelineOutputs) {
+            args += separator;
+            args += "_stageOut";
+        }
     }
-
-    const char* separator = "";
-    if ((*deps & FunctionDependencies::kPipelineInputs) != FunctionDependencies::kNone) {
-        this->write("_stageIn");
-        separator = ", ";
-    }
-    if ((*deps & FunctionDependencies::kPipelineOutputs) != FunctionDependencies::kNone) {
-        this->write(separator);
-        this->write("_stageOut");
-    }
-    return true;
+    return args;
 }
 
 bool WGSLCodeGenerator::writeFunctionDependencyParams(const FunctionDeclaration& f) {
-    FunctionDependencies* deps = fRequirements.dependencies.find(&f);
-    if (!deps || *deps == FunctionDependencies::kNone) {
+    WGSLFunctionDependencies* deps = fRequirements.fDependencies.find(&f);
+    if (!deps || !*deps) {
         return false;
     }
 
@@ -1760,13 +4490,13 @@ bool WGSLCodeGenerator::writeFunctionDependencyParams(const FunctionDeclaration&
         return false;
     }
     const char* separator = "";
-    if ((*deps & FunctionDependencies::kPipelineInputs) != FunctionDependencies::kNone) {
+    if (*deps & WGSLFunctionDependency::kPipelineInputs) {
         this->write("_stageIn: ");
         separator = ", ";
         this->write(structNamePrefix);
         this->write("In");
     }
-    if ((*deps & FunctionDependencies::kPipelineOutputs) != FunctionDependencies::kNone) {
+    if (*deps & WGSLFunctionDependency::kPipelineOutputs) {
         this->write(separator);
         this->write("_stageOut: ptr<function, ");
         this->write(structNamePrefix);
@@ -1775,165 +4505,78 @@ bool WGSLCodeGenerator::writeFunctionDependencyParams(const FunctionDeclaration&
     return true;
 }
 
-std::string WGSLCodeGenerator::writeOutParamHelper(const FunctionCall& c,
-                                                   const ExpressionArray& args,
-                                                   const SkTArray<VariableReference*>& outVars) {
+#if defined(SK_ENABLE_WGSL_VALIDATION)
+static bool validate_wgsl(ErrorReporter& reporter, const std::string& wgsl, std::string* warnings) {
     
-    
-    
-    StringStream tmpStream;
-    AutoOutputStream outputToExtraFunctions(this, &tmpStream, &fIndentation);
-
-    
-    
-    bool atLineStart = fAtLineStart;
-    fAtLineStart = false;
-    const FunctionDeclaration& func = c.function();
-
-    
-    
-    
-    
-    std::string name =
-            "_outParamHelper_" + std::to_string(fSwizzleHelperCount++) + "_" + func.mangledName();
-    auto separator = SkSL::String::Separator();
-    this->write("fn ");
-    this->write(name);
-    this->write("(");
-    if (this->writeFunctionDependencyParams(func)) {
-        separator();
+    tint::wgsl::reader::Options options;
+    for (auto extension : {tint::wgsl::Extension::kChromiumExperimentalPixelLocal,
+                           tint::wgsl::Extension::kChromiumInternalDualSourceBlending}) {
+        options.allowed_features.extensions.insert(extension);
     }
 
-    SkASSERT(outVars.size() == args.size());
-    SkASSERT(SkToSizeT(outVars.size()) == func.parameters().size());
+    
+    tint::Source::File srcFile("", wgsl);
+    tint::Program program(tint::wgsl::reader::Parse(&srcFile, options));
 
-    
-    
-    
-    
-    auto parentOutParamArgVars = std::move(fOutParamArgVars);
-    SkASSERT(fOutParamArgVars.empty());
+    if (program.Diagnostics().ContainsErrors()) {
+        
+#if defined(SKSL_STANDALONE)
+        reporter.error(Position(), std::string("Tint compilation failed.\n\n") + wgsl);
+#else
+        
+        
+        tint::diag::Formatter diagFormatter;
+        std::string diagOutput = diagFormatter.Format(program.Diagnostics()).Plain();
+        diagOutput += "\n";
+        diagOutput += wgsl;
+        SkDEBUGFAILF("%s", diagOutput.c_str());
+#endif
+        return false;
+    }
 
-    for (int i = 0; i < args.size(); ++i) {
-        this->write(separator());
+    if (!program.Diagnostics().empty()) {
+        
+        tint::diag::Formatter diagFormatter;
+        *warnings = diagFormatter.Format(program.Diagnostics()).Plain();
+    }
+    return true;
+}
+#endif  
 
-        if (outVars[i]) {
-            const Variable* var = outVars[i]->variable();
-            if (!fOutParamArgVars.contains(var)) {
-                fOutParamArgVars.add(var);
-                this->writeName(var->mangledName());
-            } else {
-                this->write("_unused");
-                this->write(std::to_string(i));
-            }
-        } else {
-            this->write("_var");
-            this->write(std::to_string(i));
+bool ToWGSL(Program& program, const ShaderCaps* caps, OutputStream& out) {
+    TRACE_EVENT0("skia.shaders", "SkSL::ToWGSL");
+    SkASSERT(caps != nullptr);
+
+    program.fContext->fErrors->setSource(*program.fSource);
+#ifdef SK_ENABLE_WGSL_VALIDATION
+    StringStream wgsl;
+    WGSLCodeGenerator cg(program.fContext.get(), caps, &program, &wgsl);
+    bool result = cg.generateCode();
+    if (result) {
+        std::string wgslString = wgsl.str();
+        std::string warnings;
+        result = validate_wgsl(*program.fContext->fErrors, wgslString, &warnings);
+        if (!warnings.empty()) {
+            out.writeText("/* Tint reported warnings. */\n\n");
         }
-
-        this->write(": ");
-
-        
-        
-        
-        const Type& type = outVars[i] ? outVars[i]->type() : args[i]->type();
-
-        
-        if (func.parameters()[i]->modifiers().fFlags & Modifiers::kOut_Flag) {
-            this->write(to_ptr_type(type));
-        } else {
-            this->write(to_wgsl_type(type));
-        }
+        out.writeString(wgslString);
     }
+#else
+    WGSLCodeGenerator cg(program.fContext.get(), caps, &program, &out);
+    bool result = cg.generateCode();
+#endif
+    program.fContext->fErrors->setSource(std::string_view());
 
-    this->write(")");
-    if (!func.returnType().isVoid()) {
-        this->write(" -> ");
-        this->write(to_wgsl_type(func.returnType()));
+    return result;
+}
+
+bool ToWGSL(Program& program, const ShaderCaps* caps, std::string* out) {
+    StringStream buffer;
+    if (!ToWGSL(program, caps, buffer)) {
+        return false;
     }
-    this->writeLine(" {");
-    ++fIndentation;
-
-    
-    for (int i = 0; i < outVars.size(); ++i) {
-        if (!outVars[i]) {
-            continue;
-        }
-        this->write("var ");
-        this->write("_var");
-        this->write(std::to_string(i));
-        this->write(": ");
-        this->write(to_wgsl_type(args[i]->type()));
-
-        
-        
-        if (func.parameters()[i]->modifiers().fFlags & Modifiers::kIn_Flag) {
-            this->write(" = ");
-            this->writeExpression(*args[i], Precedence::kAssignment);
-        }
-
-        this->writeLine(";");
-    }
-
-    
-    
-    bool hasReturn = !c.type().isVoid();
-    if (hasReturn) {
-        this->write("var _return: ");
-        this->write(to_wgsl_type(c.type()));
-        this->write(" = ");
-    }
-
-    
-    this->writeName(func.mangledName());
-    this->write("(");
-    auto newSeparator = SkSL::String::Separator();
-    if (this->writeFunctionDependencyArgs(func)) {
-        newSeparator();
-    }
-    for (int i = 0; i < args.size(); ++i) {
-        this->write(newSeparator());
-        
-        
-        
-        
-        if (outVars[i]) {
-            this->write("&");
-        }
-        this->write("_var");
-        this->write(std::to_string(i));
-    }
-    this->writeLine(");");
-
-    
-    for (int i = 0; i < outVars.size(); ++i) {
-        if (!outVars[i]) {
-            continue;
-        }
-        
-        
-        
-        this->writeExpression(*args[i], Precedence::kAssignment);
-        this->write(" = _var");
-        this->write(std::to_string(i));
-        this->writeLine(";");
-    }
-
-    
-    if (hasReturn) {
-        this->writeLine("return _return;");
-    }
-
-    --fIndentation;
-    this->writeLine("}");
-
-    
-    write_stringstream(tmpStream, fExtraFunctions);
-
-    
-    fOutParamArgVars = std::move(parentOutParamArgVars);
-    fAtLineStart = atLineStart;
-    return name;
+    *out = buffer.str();
+    return true;
 }
 
 }  

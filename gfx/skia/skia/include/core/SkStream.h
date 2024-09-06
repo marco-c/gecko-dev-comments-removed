@@ -26,19 +26,6 @@ class SkStreamAsset;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class SK_API SkStream {
 public:
     virtual ~SkStream() {}
@@ -84,24 +71,27 @@ public:
 
 
 
+
+
+
     virtual bool isAtEnd() const = 0;
 
-    bool SK_WARN_UNUSED_RESULT readS8(int8_t*);
-    bool SK_WARN_UNUSED_RESULT readS16(int16_t*);
-    bool SK_WARN_UNUSED_RESULT readS32(int32_t*);
+    [[nodiscard]] bool readS8(int8_t*);
+    [[nodiscard]] bool readS16(int16_t*);
+    [[nodiscard]] bool readS32(int32_t*);
 
-    bool SK_WARN_UNUSED_RESULT readU8(uint8_t* i) { return this->readS8((int8_t*)i); }
-    bool SK_WARN_UNUSED_RESULT readU16(uint16_t* i) { return this->readS16((int16_t*)i); }
-    bool SK_WARN_UNUSED_RESULT readU32(uint32_t* i) { return this->readS32((int32_t*)i); }
+    [[nodiscard]] bool readU8(uint8_t* i) { return this->readS8((int8_t*)i); }
+    [[nodiscard]] bool readU16(uint16_t* i) { return this->readS16((int16_t*)i); }
+    [[nodiscard]] bool readU32(uint32_t* i) { return this->readS32((int32_t*)i); }
 
-    bool SK_WARN_UNUSED_RESULT readBool(bool* b) {
+    [[nodiscard]] bool readBool(bool* b) {
         uint8_t i;
         if (!this->readU8(&i)) { return false; }
         *b = (i != 0);
         return true;
     }
-    bool SK_WARN_UNUSED_RESULT readScalar(SkScalar*);
-    bool SK_WARN_UNUSED_RESULT readPackedUInt(size_t*);
+    [[nodiscard]] bool readScalar(SkScalar*);
+    [[nodiscard]] bool readPackedUInt(size_t*);
 
 
     
@@ -148,8 +138,8 @@ public:
 
 
     
-    
     virtual const void* getMemoryBase() { return nullptr; }
+    virtual sk_sp<SkData> getData() const { return nullptr; }
 
 private:
     virtual SkStream* onDuplicate() const { return nullptr; }
@@ -402,10 +392,9 @@ public:
 
     void setMemoryOwned(const void* data, size_t length);
 
-    sk_sp<SkData> asData() const { return fData; }
+    sk_sp<SkData> getData() const override { return fData; }
     void setData(sk_sp<SkData> data);
 
-    void skipToAlign4();
     const void* getAtPos();
 
     size_t read(void* buffer, size_t size) override;

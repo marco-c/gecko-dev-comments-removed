@@ -9,15 +9,14 @@
 #include "src/encode/SkJPEGWriteUtility.h"
 
 #include "include/core/SkStream.h"
-#include "include/private/base/SkTArray.h"
 #include "src/codec/SkJpegPriv.h"
 
 #include <csetjmp>
 #include <cstddef>
 
 extern "C" {
-    #include "jerror.h"
-    #include "jmorecfg.h"
+    #include "jerror.h"    
+    #include "jpeglib.h"   
 }
 
 
@@ -72,8 +71,8 @@ void skjpeg_error_exit(j_common_ptr cinfo) {
     
     jpeg_destroy(cinfo);
 
-    if (error->fJmpBufStack.empty()) {
+    if (error->fStack[0] == nullptr) {
         SK_ABORT("JPEG error with no jmp_buf set.");
     }
-    longjmp(*error->fJmpBufStack.back(), -1);
+    longjmp(*error->fStack[0], -1);
 }

@@ -150,7 +150,7 @@ struct SkDCubic {
 
     static const int gPrecisionUnit;
     SkDPoint fPts[kPointCount];
-    SkDEBUGCODE(SkOpGlobalState* fDebugGlobalState);
+    SkDEBUGCODE(SkOpGlobalState* fDebugGlobalState;)
 };
 
 
