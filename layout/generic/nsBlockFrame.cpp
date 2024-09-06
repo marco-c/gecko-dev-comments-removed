@@ -6368,7 +6368,7 @@ void nsBlockFrame::RemoveFloat(nsIFrame* aFloat) {
     MOZ_ASSERT(
         (GetOverflowOutOfFlows() &&
          GetOverflowOutOfFlows()->ContainsFrame(aFloat)) ||
-            (GetPushedFloats() && GetPushedFloats()->ContainsFrame(aFloat)),
+            (HasPushedFloats() && GetPushedFloats()->ContainsFrame(aFloat)),
         "aFloat is not our child or on an unexpected frame list");
   }
 #endif
@@ -6379,13 +6379,9 @@ void nsBlockFrame::RemoveFloat(nsIFrame* aFloat) {
 
   nsFrameList* list = GetPushedFloats();
   if (list && list->ContinueRemoveFrame(aFloat)) {
-#if 0
-    
-    
     if (list->IsEmpty()) {
-      delete RemovePushedFloats();
+      StealPushedFloats()->Delete(PresShell());
     }
-#endif
     return;
   }
 
@@ -7389,13 +7385,7 @@ bool nsBlockFrame::HasPushedFloatsFromPrevContinuation() const {
 #endif
 
   
-  if (HasPushedFloats()) {
-    
-    
-    auto* pushedFloats = GetPushedFloats();
-    return pushedFloats && !pushedFloats->IsEmpty();
-  }
-  return false;
+  return HasPushedFloats();
 }
 
 
