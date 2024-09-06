@@ -1907,7 +1907,6 @@ bool js::RegExpExec(JSContext* cx, Handle<JSObject*> regexp,
     return cx->compartment()->wrap(cx, rval);
   }
 
-  ReportUsageCounter(cx, nullptr, SUBCLASSING_REGEXP, SUBCLASSING_TYPE_IV);
   
   Rooted<Value> thisv(cx, ObjectValue(*regexp));
   FixedInvokeArgs<1> args(cx);

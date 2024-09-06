@@ -22,7 +22,6 @@
 #include "jsnum.h"
 #include "jstypes.h"
 
-#include "builtin/SelfHostingDefines.h"
 #include "ds/Sort.h"
 #include "jit/InlinableNatives.h"
 #include "jit/TrampolineNatives.h"
@@ -959,7 +958,7 @@ static SharedShape* AddLengthProperty(JSContext* cx,
                                       map, mapLength, objectFlags);
 }
 
-bool js::IsArrayConstructor(const JSObject* obj) {
+static bool IsArrayConstructor(const JSObject* obj) {
   
   
   return IsNativeFunction(obj, ArrayConstructor);
@@ -983,11 +982,6 @@ bool js::IsCrossRealmArrayConstructor(JSContext* cx, JSObject* obj,
       IsArrayConstructor(obj) && obj->as<JSFunction>().realm() != cx->realm();
   return true;
 }
-
-
-
-
-
 
 static MOZ_ALWAYS_INLINE bool IsArraySpecies(JSContext* cx,
                                              HandleObject origArray) {
@@ -4248,11 +4242,6 @@ static bool array_of(JSContext* cx, unsigned argc, Value* vp) {
     
     
     return ArrayFromCallArgs(cx, args);
-  }
-
-  if (!ReportUsageCounter(cx, nullptr, SUBCLASSING_ARRAY,
-                          SUBCLASSING_TYPE_II)) {
-    return false;
   }
 
   

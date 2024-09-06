@@ -1803,9 +1803,6 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
   }
 
   
-  ReportUsageCounter(cx, C, SUBCLASSING_PROMISE, SUBCLASSING_TYPE_II);
-
-  
   
   
   Handle<PropertyName*> funName = cx->names().empty_;
@@ -2792,12 +2789,6 @@ static bool PromiseConstructor(JSContext* cx, unsigned argc, Value* vp) {
     return cx->compartment()->wrap(cx, args.rval());
   }
   return true;
-}
-
-bool js::IsPromiseConstructor(const JSObject* obj) {
-  
-  
-  return IsNativeFunction(obj, PromiseConstructor);
 }
 
 

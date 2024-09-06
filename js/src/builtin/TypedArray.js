@@ -103,7 +103,6 @@ function TypedArraySpeciesConstructor(obj) {
 
   
   if (IsConstructor(s)) {
-    ReportUsageCounter(s, SUBCLASS_TYPEDARRAY_TYPE_III)
     return s;
   }
 
@@ -1593,9 +1592,6 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
     var len = values.length;
 
     
-    if (!IsTypedArrayConstructor(C)) {
-      ReportUsageCounter(C, SUBCLASS_TYPEDARRAY_TYPE_II);
-    }
     var targetObj = TypedArrayCreateWithLength(C, len);
 
     
@@ -1631,7 +1627,6 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
   var len = ToLength(arrayLike.length);
 
   
-  ReportUsageCounter(C, SUBCLASS_TYPEDARRAY_TYPE_II);
   var targetObj = TypedArrayCreateWithLength(C, len);
 
   

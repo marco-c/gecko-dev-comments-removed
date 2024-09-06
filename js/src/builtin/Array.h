@@ -257,8 +257,6 @@ class MOZ_NON_TEMPORARY_CLASS ArraySpeciesLookup final {
   }
 };
 
-bool IsArrayConstructor(const JSObject* obj);
-
 } 
 
 #endif 
