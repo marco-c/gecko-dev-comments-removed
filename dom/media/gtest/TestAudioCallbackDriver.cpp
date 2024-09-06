@@ -457,7 +457,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   bool continued = false;
 
   
-  EXPECT_EQ(stream->ManualDataCallback(1),
+  EXPECT_EQ(stream->ManualDataCallback(0),
             MockCubebStream::KeepProcessing::Yes);
 
   
@@ -519,7 +519,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
       "DeviceChangeAfterStop::postSwitchManualAudioCallback", [stream] {
         
-        EXPECT_EQ(stream->ManualDataCallback(1),
+        EXPECT_EQ(stream->ManualDataCallback(0),
                   MockCubebStream::KeepProcessing::No);
       }));
 
@@ -546,7 +546,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
 #ifdef DEBUG
     AutoSetter as(threadInDriverIteration, std::thread::id());
 #endif
-    EXPECT_EQ(stream->ManualDataCallback(1),
+    EXPECT_EQ(stream->ManualDataCallback(0),
               MockCubebStream::KeepProcessing::No);
   }
 
