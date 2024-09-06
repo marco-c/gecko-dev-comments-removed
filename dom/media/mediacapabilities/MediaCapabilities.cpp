@@ -27,6 +27,7 @@
 #include "mozilla/dom/MediaCapabilitiesBinding.h"
 #include "mozilla/dom/MediaSource.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/layers/KnowsCompositor.h"
@@ -116,6 +117,7 @@ static nsCString MediaDecodingConfigurationToStr(
 MediaCapabilities::MediaCapabilities(nsIGlobalObject* aParent)
     : mParent(aParent) {}
 
+
 already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv) {
   RefPtr<Promise> promise = Promise::Create(mParent, aRv);
@@ -131,6 +133,27 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
         "'audio' or 'video' member of argument of "
         "MediaCapabilities.decodingInfo");
     return nullptr;
+  }
+
+  
+  if (aConfiguration.mKeySystemConfiguration.WasPassed()) {
+    
+    
+    
+    if (IsWorkerGlobal(mParent->GetGlobalJSObject())) {
+      promise->MaybeRejectWithInvalidStateError(
+          "key system configuration is not allowed in the worker scope");
+      return promise.forget();
+    }
+    
+    
+    
+    if (auto* window = mParent->GetAsInnerWindow();
+        window && !window->IsSecureContext()) {
+      promise->MaybeRejectWithSecurityError(
+          "key system configuration is not allowed in a non-secure context");
+      return promise.forget();
+    }
   }
 
   LOG("Processing %s", MediaDecodingConfigurationToStr(aConfiguration).get());
