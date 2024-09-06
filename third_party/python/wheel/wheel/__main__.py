@@ -2,16 +2,20 @@
 Wheel command line tool (enable python -m wheel syntax)
 """
 
+from __future__ import annotations
+
 import sys
 
 
 def main():  
-    if __package__ == '':
+    if __package__ == "":
         
         import os.path
+
         path = os.path.dirname(os.path.dirname(__file__))
         sys.path[0:0] = [path]
     import wheel.cli
+
     sys.exit(wheel.cli.main())
 
 
