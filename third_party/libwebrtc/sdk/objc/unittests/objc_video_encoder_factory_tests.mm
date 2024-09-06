@@ -1,12 +1,12 @@
-
-
-
-
-
-
-
-
-
+/*
+ *  Copyright 2017 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
@@ -14,6 +14,7 @@
 
 #include "sdk/objc/native/src/objc_video_encoder_factory.h"
 
+#include "api/environment/environment_factory.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #import "base/RTCVideoEncoder.h"
@@ -55,7 +56,7 @@ std::unique_ptr<webrtc::VideoEncoder> GetObjCEncoder(
     id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)> factory) {
   webrtc::ObjCVideoEncoderFactory encoder_factory(factory);
   webrtc::SdpVideoFormat format("H264");
-  return encoder_factory.CreateVideoEncoder(format);
+  return encoder_factory.Create(webrtc::CreateEnvironment(), format);
 }
 
 #pragma mark -
