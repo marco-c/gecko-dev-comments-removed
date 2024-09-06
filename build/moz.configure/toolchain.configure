@@ -2475,6 +2475,11 @@ set_config("PREPROCESS_OPTION", preprocess_option)
 
 
 
+include("windows.configure", when=is_windows)
+
+
+
+
 set_config(
     "PPC_VMX_FLAGS",
     ["-maltivec"],
@@ -2818,10 +2823,6 @@ any_ubsan = ubsan | ub_signed_overflow_san | ub_unsigned_overflow_san
 set_define("MOZ_UBSAN", True, when=any_ubsan)
 set_config("MOZ_UBSAN", any_ubsan)
 
-
-
-
-include("windows.configure", when=is_windows)
 
 
 
