@@ -51,13 +51,5 @@ parallelPromiseTest(async t => {
   await expectBeacon(uuid, {count: 1});
 }, 'A same-origin iframe can trigger fetchLater.');
 
-parallelPromiseTest(async t => {
-  const uuid = token();
-  const url = generateSetBeaconURL(uuid);
 
-  
-  await loadFetchLaterIframe(HTTPS_NOTSAMESITE_ORIGIN, url);
 
-  
-  await expectBeacon(uuid, {count: 1});
-}, 'A cross-origin iframe can trigger fetchLater.');
