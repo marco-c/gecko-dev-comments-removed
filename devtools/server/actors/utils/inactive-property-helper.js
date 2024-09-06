@@ -399,6 +399,13 @@ class InactivePropertyHelper {
         msgId: "inactive-css-position-property-on-unpositioned-box",
       },
       
+      {
+        invalidProperties: ["object-fit", "object-position"],
+        when: () => !this.replaced,
+        fixId: "inactive-css-only-replaced-elements-fix",
+        msgId: "inactive-css-only-replaced-elements",
+      },
+      
       
       
       
