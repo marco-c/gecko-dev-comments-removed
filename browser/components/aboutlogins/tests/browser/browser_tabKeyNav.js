@@ -100,14 +100,6 @@ add_task(async function test_tab_key_nav() {
         expectedSelector
       );
 
-      
-      if (
-        content.window.navigator.platform.toLowerCase().includes("mac") &&
-        expectedElement.tagName === "A"
-      ) {
-        continue;
-      }
-
       const actualElement = getFocusedElement();
 
       Assert.equal(
@@ -126,13 +118,6 @@ add_task(async function test_tab_key_nav() {
         content.document,
         expectedSelector
       );
-      
-      if (
-        content.window.navigator.platform.toLowerCase().includes("mac") &&
-        expectedElement.tagName === "A"
-      ) {
-        continue;
-      }
 
       const actualElement = getFocusedElement();
       Assert.equal(
