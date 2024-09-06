@@ -205,6 +205,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   const bool mLowLatency;
   const Maybe<TrackingId> mTrackingId;
   PerformanceRecorderMulti<DecodeStage> mPerformanceRecorder;
+  PerformanceRecorderMulti<DecodeStage> mPerformanceRecorder2;
 
   
   Maybe<Atomic<bool>> mIsUsingShmemBufferForDecode;
