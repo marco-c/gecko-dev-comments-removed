@@ -1,0 +1,15 @@
+
+
+
+
+
+
+#import "MOXOuterDoc.h"
+
+@implementation MOXOuterDoc
+
+- (NSArray* _Nullable)moxContents {
+  return [self moxUnignoredChildren];
+}
+
+@end

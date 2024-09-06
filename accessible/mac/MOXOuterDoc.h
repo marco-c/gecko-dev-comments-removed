@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+#import "mozAccessible.h"
+
+@interface MOXOuterDoc : mozAccessible
+
+
+- (NSString*)moxContents;
+
+@end
