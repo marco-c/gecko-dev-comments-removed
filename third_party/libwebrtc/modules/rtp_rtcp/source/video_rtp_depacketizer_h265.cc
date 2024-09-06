@@ -29,6 +29,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
+
+
 namespace webrtc {
 namespace {
 
@@ -54,6 +56,10 @@ bool ParseApStartOffsets(const uint8_t* nalu_ptr,
   }
   return true;
 }
+
+
+
+
 
 absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessApOrSingleNalu(
     rtc::CopyOnWriteBuffer rtp_payload) {
@@ -122,6 +128,10 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessApOrSingleNalu(
       case H265::NaluType::kIdrNLp:
       case H265::NaluType::kCra:
       case H265::NaluType::kRsvIrapVcl23:
+        
+        
+        
+        
         parsed_payload->video_header.frame_type =
             VideoFrameType::kVideoFrameKey;
         ABSL_FALLTHROUGH_INTENDED;
@@ -170,6 +180,8 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessApOrSingleNalu(
   return parsed_payload;
 }
 
+
+
 absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ParseFuNalu(
     rtc::CopyOnWriteBuffer rtp_payload) {
   if (rtp_payload.size() < kH265FuHeaderSizeBytes + kH265NalHeaderSizeBytes) {
@@ -204,6 +216,8 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ParseFuNalu(
 
   if (original_nal_type >= H265::NaluType::kBlaWLp &&
       original_nal_type <= H265::NaluType::kRsvIrapVcl23) {
+    
+    
     parsed_payload->video_header.frame_type = VideoFrameType::kVideoFrameKey;
   } else {
     parsed_payload->video_header.frame_type = VideoFrameType::kVideoFrameDelta;
