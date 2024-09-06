@@ -18,8 +18,7 @@
 #include "mozilla/layers/CanvasChild.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/PTextureChild.h"
-#include "mozilla/layers/TextureClient.h"      
-#include "mozilla/layers/TextureClientPool.h"  
+#include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/layers/SyncObject.h"  
 #include "mozilla/gfx/CanvasManagerChild.h"
@@ -134,10 +133,6 @@ void CompositorBridgeChild::Destroy() {
   
   
   RefPtr<CompositorBridgeChild> selfRef = this;
-
-  for (size_t i = 0; i < mTexturePools.Length(); i++) {
-    mTexturePools[i]->Destroy();
-  }
 
   if (mSectionAllocator) {
     delete mSectionAllocator;
@@ -275,9 +270,6 @@ bool CompositorBridgeChild::CompositorIsInGPUProcess() {
 mozilla::ipc::IPCResult CompositorBridgeChild::RecvDidComposite(
     const LayersId& aId, const nsTArray<TransactionId>& aTransactionIds,
     const TimeStamp& aCompositeStart, const TimeStamp& aCompositeEnd) {
-  
-  const auto texturePools = mTexturePools.Clone();
-
   for (const auto& id : aTransactionIds) {
     if (mLayerManager) {
       MOZ_ASSERT(!aId.IsValid());
@@ -291,10 +283,6 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvDidComposite(
         child->DidComposite(id, aCompositeStart, aCompositeEnd);
       }
     }
-  }
-
-  for (size_t i = 0; i < texturePools.Length(); i++) {
-    texturePools[i]->ReturnDeferredClients();
   }
 
   return IPC_OK();
