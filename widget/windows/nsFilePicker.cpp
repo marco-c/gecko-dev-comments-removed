@@ -226,7 +226,7 @@ static nsTArray<T> Copy(nsTArray<T> const& arr) {
 }
 
 
-enum Strategy { Local, Remote, RemoteWithFallback };
+enum Strategy { LocalOnly, RemoteOnly, RemoteWithFallback };
 
 
 
@@ -235,9 +235,9 @@ static Strategy GetStrategy() {
       mozilla::StaticPrefs::widget_windows_utility_process_file_picker();
   switch (pref) {
     case -1:
-      return Local;
+      return LocalOnly;
     case 2:
-      return Remote;
+      return RemoteOnly;
     case 1:
       return RemoteWithFallback;
 
@@ -247,7 +247,7 @@ static Strategy GetStrategy() {
       return RemoteWithFallback;
 #else
       
-      return Local;
+      return LocalOnly;
 #endif
   }
 };
@@ -432,8 +432,13 @@ static auto AsyncExecute(Fn1 local, Fn2 remote, Args const&... args) ->
   };
   uint64_t const t0 = GetTime();
 
+  bool (*useLocalFallback)(Error const& err) = [](Error const& err) {
+    MOZ_ASSERT_UNREACHABLE("useLocalFallback not set?!");
+    return true;
+  };
+
   switch (GetStrategy()) {
-    case Local: {
+    case LocalOnly: {
       return local(args...)->MapErr(
           NS_GetCurrentThread(), __func__, [](Error const& err) {
             MOZ_ASSERT(err.kind == Error::LocalError);
@@ -444,30 +449,12 @@ static auto AsyncExecute(Fn1 local, Fn2 remote, Args const&... args) ->
           });
     }
 
-    case Remote:
-      return remote(args...)->Then(
-          NS_GetCurrentThread(), __func__,
-          [t0](
-              typename RPromiseT::ResolveValueType result) -> RefPtr<PromiseT> {
-            
-            auto const t1 = GetTime();
-            
-            telemetry::RecordSuccess({t0, t1});
-            return PromiseT::CreateAndResolve(std::move(result), kFunctionName);
-          },
-          [t0](Error const& err) {
-            auto const t1 = GetTime();
-            telemetry::RecordFailure({t0, t1}, err);
-
-            MOZ_LOG(filedialog::sLogFileDialog, LogLevel::Info,
-                    ("remote file-dialog failed: kind=%s, where=%s, "
-                     "why=%08" PRIX32,
-                     Error::KindName(err.kind), err.where.c_str(), err.why));
-            return PromiseT::CreateAndReject(err, kFunctionName);
-          });
+    case RemoteOnly:
+      useLocalFallback = [](Error const&) { return false; };
+      break;
 
     case RemoteWithFallback:
-      
+      useLocalFallback = [](Error const&) { return true; };
       break;
   }
 
@@ -486,6 +473,18 @@ static auto AsyncExecute(Fn1 local, Fn2 remote, Args const&... args) ->
           typename RPromiseT::RejectValueType err) mutable -> RefPtr<PromiseT> {
         
         auto const t1 = GetTime();
+
+        
+        if (!useLocalFallback(err)) {
+          
+          telemetry::RecordFailure({t0, t1}, err);
+          MOZ_LOG(filedialog::sLogFileDialog, LogLevel::Info,
+                  ("remote file-dialog failed: kind=%s, where=%s, "
+                   "why=%08" PRIX32,
+                   Error::KindName(err.kind), err.where.c_str(), err.why));
+          
+          return PromiseT::CreateAndReject(err, kFunctionName);
+        }
 
         
         auto p0 = std::apply(local, std::move(tuple));
