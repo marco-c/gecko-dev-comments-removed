@@ -172,3 +172,18 @@ async function assert_focus_navigation_bidirectional_with_shadow_root(elements) 
   await assert_focus_navigation_backward_with_shadow_root(elements);
 }
 
+
+
+
+
+
+
+async function runFocusTestCases() {
+  const testCases = Array.from(document.querySelectorAll('.test-case'));
+  for (let testCase of testCases) {
+    promise_test(async () => {
+      const expected = testCase.dataset.expect.split(',');
+      await assert_focus_navigation_forward(expected);
+    }, testCase.dataset.description);
+  }
+}
