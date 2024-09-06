@@ -10,7 +10,7 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Utf8.h"        
+#include "mozilla/Utf8.h"  
 
 #include <stdint.h>  
 
