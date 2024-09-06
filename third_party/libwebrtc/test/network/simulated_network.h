@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 
+#include <cstdint>
 #include <deque>
 #include <queue>
 #include <vector>
@@ -19,7 +20,6 @@
 #include "absl/types/optional.h"
 #include "api/sequence_checker.h"
 #include "api/test/simulated_network.h"
-#include "api/units/data_size.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/random.h"
@@ -27,6 +27,7 @@
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
+
 
 
 
@@ -49,7 +50,17 @@ class RTC_EXPORT SimulatedNetwork : public SimulatedNetworkInterface {
   
   
   
+  
   void SetConfig(const Config& config) override;
+  
+  
+  
+  
+  
+  
+  void SetConfig(const BuiltInNetworkBehaviorConfig& config,
+                 Timestamp config_update_time);
+
   void UpdateConfig(std::function<void(BuiltInNetworkBehaviorConfig*)>
                         config_modifier) override;
   void PauseTransmissionUntil(int64_t until_us) override;
@@ -60,12 +71,20 @@ class RTC_EXPORT SimulatedNetwork : public SimulatedNetworkInterface {
       int64_t receive_time_us) override;
 
   absl::optional<int64_t> NextDeliveryTimeUs() const override;
+  void RegisterDeliveryTimeChangedCallback(
+      absl::AnyInvocable<void()> callback) override;
 
  private:
   struct PacketInfo {
     PacketInFlightInfo packet;
     
-    int64_t arrival_time_us;
+    Timestamp last_update_time;
+    
+    
+    
+    int64_t bits_left_to_send;
+    
+    Timestamp arrival_time;
   };
   
   struct ConfigState {
@@ -81,7 +100,11 @@ class RTC_EXPORT SimulatedNetwork : public SimulatedNetworkInterface {
   };
 
   
-  void UpdateCapacityQueue(ConfigState state, int64_t time_now_us)
+  bool UpdateNextProcessTime() RTC_RUN_ON(&process_checker_);
+  
+  
+  
+  void UpdateCapacityQueue(ConfigState state, Timestamp time_now)
       RTC_RUN_ON(&process_checker_);
   ConfigState GetConfigState() const;
 
@@ -110,8 +133,10 @@ class RTC_EXPORT SimulatedNetwork : public SimulatedNetworkInterface {
   
   
   
-  absl::optional<int64_t> next_process_time_us_
-      RTC_GUARDED_BY(process_checker_);
+  Timestamp next_process_time_ RTC_GUARDED_BY(process_checker_) =
+      Timestamp::PlusInfinity();
+  absl::AnyInvocable<void()> next_process_time_changed_callback_
+      RTC_GUARDED_BY(process_checker_) = nullptr;
 
   ConfigState config_state_ RTC_GUARDED_BY(config_lock_);
 
@@ -126,7 +151,7 @@ class RTC_EXPORT SimulatedNetwork : public SimulatedNetworkInterface {
   
   
   
-  int64_t last_capacity_link_exit_time_;
+  Timestamp last_capacity_link_exit_time_ = Timestamp::MinusInfinity();
 };
 
 }  

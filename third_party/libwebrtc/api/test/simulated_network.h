@@ -14,11 +14,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <deque>
-#include <queue>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
+#include "api/units/data_rate.h"
 #include "rtc_base/random.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -59,7 +59,10 @@ struct BuiltInNetworkBehaviorConfig {
   
   int delay_standard_deviation_ms = 0;
   
+  
+  
   int link_capacity_kbps = 0;
+  DataRate link_capacity = DataRate::Infinity();
   
   double loss_percent = 0.;
   
@@ -115,6 +118,14 @@ class NetworkBehaviorInterface {
   
   
   virtual absl::optional<int64_t> NextDeliveryTimeUs() const = 0;
+  
+  
+  
+  
+  
+  
+  virtual void RegisterDeliveryTimeChangedCallback(
+      absl::AnyInvocable<void()> callback) {}
   virtual ~NetworkBehaviorInterface() = default;
 };
 

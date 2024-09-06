@@ -10,6 +10,7 @@
 #include "test/network/simulated_network.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <set>
@@ -19,6 +20,7 @@
 #include "api/test/simulated_network.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -26,6 +28,8 @@ namespace webrtc {
 namespace {
 
 using ::testing::ElementsAre;
+using ::testing::MockFunction;
+using ::testing::SizeIs;
 
 PacketInFlightInfo PacketWithSize(size_t size) {
   return PacketInFlightInfo(size, 0, 1);
@@ -194,6 +198,115 @@ TEST(SimulatedNetworkTest,
                   TimeDelta::Millis(1100).us())));
 }
 
+TEST(SimulatedNetworkTest,
+     SetConfigUpdateNextDeliveryTimeIfLinkCapacityChange) {
+  
+  
+  SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
+  MockFunction<void()> delivery_time_changed_callback;
+  network.RegisterDeliveryTimeChangedCallback(
+      delivery_time_changed_callback.AsStdFunction());
+  const PacketInFlightInfo packet_1 =
+      PacketInFlightInfo(125, 0, 1);
+  ASSERT_TRUE(network.EnqueuePacket(packet_1));
+  EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Seconds(1).us());
+
+  
+  
+  
+  EXPECT_CALL(delivery_time_changed_callback, Call).WillOnce([&]() {
+    EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Millis(500 + 50).us());
+  });
+  network.SetConfig({.link_capacity_kbps = 10},
+                     Timestamp::Millis(500));
+}
+
+TEST(SimulatedNetworkTest,
+     SetConfigUpdateNextDeliveryTimeIfLinkCapacityChangeFromZero) {
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::Zero()});
+  MockFunction<void()> delivery_time_changed_callback;
+  network.RegisterDeliveryTimeChangedCallback(
+      delivery_time_changed_callback.AsStdFunction());
+  const PacketInFlightInfo packet_1 =
+      PacketInFlightInfo(125, 0, 1);
+  const PacketInFlightInfo packet_2 =
+      PacketInFlightInfo(125, 0, 2);
+  ASSERT_TRUE(network.EnqueuePacket(packet_1));
+  ASSERT_TRUE(network.EnqueuePacket(packet_2));
+  EXPECT_FALSE(network.NextDeliveryTimeUs().has_value());
+
+  
+  
+  
+  ::testing::Sequence s;
+  EXPECT_CALL(delivery_time_changed_callback, Call)
+      .InSequence(s)
+      .WillOnce([&]() {
+        EXPECT_EQ(network.NextDeliveryTimeUs(),
+                  TimeDelta::Millis(500 + 100).us());
+      });
+  EXPECT_CALL(delivery_time_changed_callback, Call)
+      .InSequence(s)
+      .WillOnce(
+          [&]() { EXPECT_FALSE(network.NextDeliveryTimeUs().has_value()); });
+  EXPECT_CALL(delivery_time_changed_callback, Call)
+      .InSequence(s)
+      .WillOnce([&]() {
+        EXPECT_EQ(network.NextDeliveryTimeUs(),
+                  TimeDelta::Millis(610 + 90).us());
+      });
+  network.SetConfig({.link_capacity = DataRate::KilobitsPerSec(10)},
+                     Timestamp::Millis(500));
+  network.SetConfig({.link_capacity = DataRate::Zero()},
+                     Timestamp::Millis(510));
+  network.SetConfig({.link_capacity = DataRate::KilobitsPerSec(10)},
+                     Timestamp::Millis(610));
+}
+
+TEST(SimulatedNetworkTest, SetConfigUpdateQueueDelayAfterDelivery) {
+  
+  
+  SimulatedNetwork network =
+      SimulatedNetwork({.queue_delay_ms = 1000, .link_capacity_kbps = 1000});
+  MockFunction<void()> delivery_time_changed_callback;
+  network.RegisterDeliveryTimeChangedCallback(
+      delivery_time_changed_callback.AsStdFunction());
+  EXPECT_CALL(delivery_time_changed_callback, Call).Times(0);
+  const PacketInFlightInfo packet_1 =
+      PacketInFlightInfo(125, 0, 1);
+  ASSERT_TRUE(network.EnqueuePacket(packet_1));
+  EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Millis(1).us());
+  
+  EXPECT_TRUE(network
+                  .DequeueDeliverablePackets(
+                      TimeDelta::Millis(1).us())
+                  .empty());
+  EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Millis(1000 + 1).us());
+
+  
+  network.SetConfig({.queue_delay_ms = 1, .link_capacity_kbps = 100},
+                     Timestamp::Millis(500));
+  EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Millis(1000 + 1).us());
+
+  
+  
+  const PacketInFlightInfo packet_2 = PacketInFlightInfo(
+      125, TimeDelta::Millis(500).us(),
+      2);
+  ASSERT_TRUE(network.EnqueuePacket(packet_2));
+  EXPECT_EQ(network.NextDeliveryTimeUs(), TimeDelta::Millis(1000 + 1).us());
+  
+  
+  
+  std::vector<PacketDeliveryInfo> delivered_packets =
+      network.DequeueDeliverablePackets(
+          TimeDelta::Millis(1000 + 1).us());
+  ASSERT_THAT(delivered_packets, SizeIs(2));
+  EXPECT_EQ(delivered_packets[0].receive_time_us,
+            delivered_packets[1].receive_time_us);
+}
+
 TEST(SimulatedNetworkTest, NetworkEmptyAfterLastPacketDequeued) {
   
   
@@ -356,7 +469,8 @@ TEST(SimulatedNetworkTest, QueueDelayMsWithStandardDeviationAndReorderAllowed) {
 
 TEST(SimulatedNetworkTest, PacketLoss) {
   
-  SimulatedNetwork network = SimulatedNetwork({.loss_percent = 50});
+  SimulatedNetwork network =
+      SimulatedNetwork({.loss_percent = 50}, 1);
 
   
   for (int i = 0; i < 8; i++) {
@@ -377,6 +491,46 @@ TEST(SimulatedNetworkTest, PacketLoss) {
     }
   }
   EXPECT_EQ(lost_packets, 4);
+}
+
+TEST(SimulatedNetworkTest, NextDeliveryTimeSetAfterLostPackets) {
+  
+  SimulatedNetwork network = SimulatedNetwork(
+      {.queue_delay_ms = 10, .link_capacity_kbps = 1000, .loss_percent = 50},
+      1);
+  
+  
+  
+  
+  for (int i = 0; i < 8; i++) {
+    ASSERT_TRUE(network.EnqueuePacket(PacketInFlightInfo(
+        125, 0, i + 1)));
+  }
+  int64_t time_us = 0;
+  std::vector<PacketDeliveryInfo> delivered_packets;
+  
+  while (delivered_packets.size() != 8) {
+    ASSERT_TRUE(network.NextDeliveryTimeUs().has_value());
+    time_us = *network.NextDeliveryTimeUs();
+    std::vector<PacketDeliveryInfo> packets =
+        network.DequeueDeliverablePackets(time_us);
+    delivered_packets.insert(delivered_packets.end(), packets.begin(),
+                             packets.end());
+  }
+  
+  int lost_packets = 0;
+  int received_packets = 0;
+  for (const auto& packet : delivered_packets) {
+    if (packet.receive_time_us == PacketDeliveryInfo::kNotReceived) {
+      lost_packets++;
+    } else {
+      received_packets++;
+    }
+  }
+  EXPECT_EQ(delivered_packets.back().receive_time_us,
+            Timestamp::Millis(10 + 8).us());
+  EXPECT_EQ(lost_packets, 4);
+  EXPECT_EQ(received_packets, 4);
 }
 
 TEST(SimulatedNetworkTest, PacketLossBurst) {
@@ -412,6 +566,7 @@ TEST(SimulatedNetworkTest, PacketLossBurst) {
 }
 
 TEST(SimulatedNetworkTest, PauseTransmissionUntil) {
+  
   
   
   SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
@@ -453,8 +608,8 @@ TEST(SimulatedNetworkTest, PauseTransmissionUntil) {
 TEST(SimulatedNetworkTest, CongestedNetworkRespectsLinkCapacity) {
   SimulatedNetwork network = SimulatedNetwork({.link_capacity_kbps = 1});
   for (size_t i = 0; i < 1'000; ++i) {
-    ASSERT_TRUE(network.EnqueuePacket(
-        PacketInFlightInfo(125, 0, i)));
+    ASSERT_TRUE(network.EnqueuePacket(PacketInFlightInfo(
+        125, 0, i)));
   }
   PacketDeliveryInfo last_delivered_packet{
       PacketInFlightInfo(0, 0, 0), 0};

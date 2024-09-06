@@ -15,9 +15,12 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/types/optional.h"
+#include "api/test/simulated_network.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -26,29 +29,39 @@ namespace {
 
 
 
-int64_t CalculateArrivalTimeUs(int64_t start_time_us,
+Timestamp CalculateArrivalTime(Timestamp start_time,
                                int64_t bits,
-                               int capacity_kbps) {
-  
-  if (capacity_kbps == 0) {
-    return start_time_us;
+                               DataRate capacity) {
+  if (capacity.IsInfinite()) {
+    return start_time;
   }
+  if (capacity.IsZero()) {
+    return Timestamp::PlusInfinity();
+  }
+
   
   
   
   
   
   
-  return start_time_us + ((1000 * bits + capacity_kbps - 1) / capacity_kbps);
+  return start_time + TimeDelta::Micros((1000 * bits + capacity.kbps() - 1) /
+                                        capacity.kbps());
+}
+
+void UpdateLegacyConfiguration(SimulatedNetwork::Config& config) {
+  if (config.link_capacity_kbps != 0) {
+    RTC_DCHECK(config.link_capacity ==
+                   DataRate::KilobitsPerSec(config.link_capacity_kbps) ||
+               config.link_capacity == DataRate::Infinity());
+    config.link_capacity = DataRate::KilobitsPerSec(config.link_capacity_kbps);
+  }
 }
 
 }  
 
 SimulatedNetwork::SimulatedNetwork(Config config, uint64_t random_seed)
-    : random_(random_seed),
-      bursting_(false),
-      last_enqueue_time_us_(0),
-      last_capacity_link_exit_time_(0) {
+    : random_(random_seed), bursting_(false), last_enqueue_time_us_(0) {
   SetConfig(config);
 }
 
@@ -57,6 +70,8 @@ SimulatedNetwork::~SimulatedNetwork() = default;
 void SimulatedNetwork::SetConfig(const Config& config) {
   MutexLock lock(&config_lock_);
   config_state_.config = config;  
+  UpdateLegacyConfiguration(config_state_.config);
+
   double prob_loss = config.loss_percent / 100.0;
   if (config_state_.config.avg_burst_loss_length == -1) {
     
@@ -79,10 +94,35 @@ void SimulatedNetwork::SetConfig(const Config& config) {
   }
 }
 
+void SimulatedNetwork::SetConfig(const BuiltInNetworkBehaviorConfig& new_config,
+                                 Timestamp config_update_time) {
+  RTC_DCHECK_RUNS_SERIALIZED(&process_checker_);
+
+  if (!capacity_link_.empty()) {
+    
+    
+    const BuiltInNetworkBehaviorConfig& current_config =
+        GetConfigState().config;
+    TimeDelta duration_with_current_config =
+        config_update_time - capacity_link_.front().last_update_time;
+    RTC_DCHECK_GE(duration_with_current_config, TimeDelta::Zero());
+    capacity_link_.front().bits_left_to_send -= std::min(
+        duration_with_current_config.ms() * current_config.link_capacity.kbps(),
+        capacity_link_.front().bits_left_to_send);
+    capacity_link_.front().last_update_time = config_update_time;
+  }
+  SetConfig(new_config);
+  UpdateCapacityQueue(GetConfigState(), config_update_time);
+  if (UpdateNextProcessTime() && next_process_time_changed_callback_) {
+    next_process_time_changed_callback_();
+  }
+}
+
 void SimulatedNetwork::UpdateConfig(
     std::function<void(BuiltInNetworkBehaviorConfig*)> config_modifier) {
   MutexLock lock(&config_lock_);
   config_modifier(&config_state_.config);
+  UpdateLegacyConfiguration(config_state_.config);
 }
 
 void SimulatedNetwork::PauseTransmissionUntil(int64_t until_us) {
@@ -120,21 +160,28 @@ bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
   
   
   
-  int64_t packet_send_time_us = packet.send_time_us;
-  if (!capacity_link_.empty()) {
-    packet_send_time_us =
-        std::max(packet_send_time_us, capacity_link_.back().arrival_time_us);
-  }
-  capacity_link_.push({.packet = packet,
-                       .arrival_time_us = CalculateArrivalTimeUs(
-                           packet_send_time_us, packet.size * 8,
-                           state.config.link_capacity_kbps)});
+  Timestamp enqueue_time = Timestamp::Micros(packet.send_time_us);
+  Timestamp arrival_time =
+      capacity_link_.empty()
+          ? CalculateArrivalTime(
+                std::max(enqueue_time, last_capacity_link_exit_time_),
+                packet.size * 8, state.config.link_capacity)
+          : Timestamp::PlusInfinity();
+  capacity_link_.push(
+      {.packet = packet,
+       .last_update_time = enqueue_time,
+       .bits_left_to_send = 8 * static_cast<int64_t>(packet.size),
+       .arrival_time = arrival_time});
 
   
   
-  if (!next_process_time_us_) {
+  
+  
+  
+  
+  if (next_process_time_.IsInfinite() && arrival_time.IsFinite()) {
     RTC_DCHECK_EQ(capacity_link_.size(), 1);
-    next_process_time_us_ = capacity_link_.front().arrival_time_us;
+    next_process_time_ = arrival_time;
   }
 
   last_enqueue_time_us_ = packet.send_time_us;
@@ -143,25 +190,30 @@ bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
 
 absl::optional<int64_t> SimulatedNetwork::NextDeliveryTimeUs() const {
   RTC_DCHECK_RUNS_SERIALIZED(&process_checker_);
-  return next_process_time_us_;
+  if (next_process_time_.IsFinite()) {
+    return next_process_time_.us();
+  }
+  return absl::nullopt;
 }
 
 void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
-                                           int64_t time_now_us) {
+                                           Timestamp time_now) {
+  
+  
   
   
   
   if (!capacity_link_.empty()) {
-    capacity_link_.front().arrival_time_us = CalculateArrivalTimeUs(
-        std::max(capacity_link_.front().packet.send_time_us,
-                 last_capacity_link_exit_time_),
-        capacity_link_.front().packet.size * 8,
-        state.config.link_capacity_kbps);
+    capacity_link_.front().last_update_time = std::max(
+        capacity_link_.front().last_update_time, last_capacity_link_exit_time_);
+    capacity_link_.front().arrival_time = CalculateArrivalTime(
+        capacity_link_.front().last_update_time,
+        capacity_link_.front().bits_left_to_send, state.config.link_capacity);
   }
 
   
   if (capacity_link_.empty() ||
-      time_now_us < capacity_link_.front().arrival_time_us) {
+      time_now < capacity_link_.front().arrival_time) {
     return;
   }
   bool reorder_packets = false;
@@ -170,47 +222,49 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
     
     
     PacketInfo packet = capacity_link_.front();
+    RTC_DCHECK(packet.arrival_time.IsFinite());
     capacity_link_.pop();
 
     
     
-    if (state.pause_transmission_until_us > packet.arrival_time_us) {
-      packet.arrival_time_us = state.pause_transmission_until_us;
+    if (state.pause_transmission_until_us > packet.arrival_time.us()) {
+      packet.arrival_time =
+          Timestamp::Micros(state.pause_transmission_until_us);
     }
 
     
     
     
-    last_capacity_link_exit_time_ = packet.arrival_time_us;
+    last_capacity_link_exit_time_ = packet.arrival_time;
 
     
     
     if ((bursting_ && random_.Rand<double>() < state.prob_loss_bursting) ||
         (!bursting_ && random_.Rand<double>() < state.prob_start_bursting)) {
       bursting_ = true;
-      packet.arrival_time_us = PacketDeliveryInfo::kNotReceived;
+      packet.arrival_time = Timestamp::MinusInfinity();
     } else {
       
       bursting_ = false;
-      int64_t arrival_time_jitter_us = std::max(
+      TimeDelta arrival_time_jitter = TimeDelta::Micros(std::max(
           random_.Gaussian(state.config.queue_delay_ms * 1000,
                            state.config.delay_standard_deviation_ms * 1000),
-          0.0);
+          0.0));
 
       
       
-      int64_t last_arrival_time_us =
-          delay_link_.empty() ? -1 : delay_link_.back().arrival_time_us;
+      Timestamp last_arrival_time = delay_link_.empty()
+                                        ? Timestamp::MinusInfinity()
+                                        : delay_link_.back().arrival_time;
       if (!state.config.allow_reordering && !delay_link_.empty() &&
-          packet.arrival_time_us + arrival_time_jitter_us <
-              last_arrival_time_us) {
-        arrival_time_jitter_us = last_arrival_time_us - packet.arrival_time_us;
+          packet.arrival_time + arrival_time_jitter < last_arrival_time) {
+        arrival_time_jitter = last_arrival_time - packet.arrival_time;
       }
-      packet.arrival_time_us += arrival_time_jitter_us;
+      packet.arrival_time += arrival_time_jitter;
 
       
       
-      if (last_arrival_time_us > packet.arrival_time_us) {
+      if (last_arrival_time > packet.arrival_time) {
         reorder_packets = true;
       }
     }
@@ -223,13 +277,13 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
     
     
     
-    int64_t next_start = std::max(last_capacity_link_exit_time_,
-                                  capacity_link_.front().packet.send_time_us);
-    capacity_link_.front().arrival_time_us = CalculateArrivalTimeUs(
-        next_start, capacity_link_.front().packet.size * 8,
-        state.config.link_capacity_kbps);
+    Timestamp next_start = std::max(last_capacity_link_exit_time_,
+                                    capacity_link_.front().last_update_time);
+    capacity_link_.front().arrival_time =
+        CalculateArrivalTime(next_start, capacity_link_.front().packet.size * 8,
+                             state.config.link_capacity);
     
-  } while (capacity_link_.front().arrival_time_us <= time_now_us);
+  } while (capacity_link_.front().arrival_time <= time_now);
 
   if (state.config.allow_reordering && reorder_packets) {
     
@@ -237,7 +291,7 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
     
     std::stable_sort(delay_link_.begin(), delay_link_.end(),
                      [](const PacketInfo& p1, const PacketInfo& p2) {
-                       return p1.arrival_time_us < p2.arrival_time_us;
+                       return p1.arrival_time < p2.arrival_time;
                      });
   }
 }
@@ -250,27 +304,49 @@ SimulatedNetwork::ConfigState SimulatedNetwork::GetConfigState() const {
 std::vector<PacketDeliveryInfo> SimulatedNetwork::DequeueDeliverablePackets(
     int64_t receive_time_us) {
   RTC_DCHECK_RUNS_SERIALIZED(&process_checker_);
+  Timestamp receive_time = Timestamp::Micros(receive_time_us);
 
-  UpdateCapacityQueue(GetConfigState(), receive_time_us);
+  UpdateCapacityQueue(GetConfigState(), receive_time);
   std::vector<PacketDeliveryInfo> packets_to_deliver;
 
   
   while (!delay_link_.empty() &&
-         receive_time_us >= delay_link_.front().arrival_time_us) {
+         receive_time >= delay_link_.front().arrival_time) {
     PacketInfo packet_info = delay_link_.front();
-    packets_to_deliver.emplace_back(
-        PacketDeliveryInfo(packet_info.packet, packet_info.arrival_time_us));
+    packets_to_deliver.emplace_back(PacketDeliveryInfo(
+        packet_info.packet, packet_info.arrival_time.IsFinite()
+                                ? packet_info.arrival_time.us()
+                                : PacketDeliveryInfo::kNotReceived));
     delay_link_.pop_front();
   }
-
-  if (!delay_link_.empty()) {
-    next_process_time_us_ = delay_link_.front().arrival_time_us;
-  } else if (!capacity_link_.empty()) {
-    next_process_time_us_ = capacity_link_.front().arrival_time_us;
-  } else {
-    next_process_time_us_.reset();
-  }
+  
+  
+  
+  
+  UpdateNextProcessTime();
   return packets_to_deliver;
+}
+
+bool SimulatedNetwork::UpdateNextProcessTime() {
+  Timestamp next_process_time = next_process_time_;
+
+  next_process_time_ = Timestamp::PlusInfinity();
+  for (const PacketInfo& packet : delay_link_) {
+    if (packet.arrival_time.IsFinite()) {
+      next_process_time_ = packet.arrival_time;
+      break;
+    }
+  }
+  if (next_process_time_.IsInfinite() && !capacity_link_.empty()) {
+    next_process_time_ = capacity_link_.front().arrival_time;
+  }
+  return next_process_time != next_process_time_;
+}
+
+void SimulatedNetwork::RegisterDeliveryTimeChangedCallback(
+    absl::AnyInvocable<void()> callback) {
+  RTC_DCHECK_RUNS_SERIALIZED(&process_checker_);
+  next_process_time_changed_callback_ = std::move(callback);
 }
 
 }  
