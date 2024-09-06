@@ -39,12 +39,12 @@ mozilla::Maybe<Int96> Int96::fromInteger(double value) {
 
   
   
-  constexpr size_t DigitBits = 32;
+  constexpr int DigitBits = 32;
 
   
   Int96::Digits digits = {};
 
-  int exponent = mozilla::ExponentComponent(value);
+  int exponent = int(mozilla::ExponentComponent(value));
   MOZ_ASSERT(0 <= exponent && exponent <= 95,
              "exponent is lower than exponent of 0x1p+96");
 
@@ -62,7 +62,7 @@ mozilla::Maybe<Int96> Int96::fromInteger(double value) {
   int msdTopBit = exponent % DigitBits;
 
   
-  int remainingMantissaBits = Double::kSignificandWidth - msdTopBit;
+  int remainingMantissaBits = int(Double::kSignificandWidth - msdTopBit);
   digits[--length] = mantissa >> remainingMantissaBits;
 
   

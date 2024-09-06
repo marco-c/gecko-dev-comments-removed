@@ -80,11 +80,11 @@ bool EqualCharIgnoreCaseAscii(CharT c1, char c2) {
   
   char c = c1;
   if (mozilla::IsAsciiUppercaseAlpha(c1)) {
-    c = c + toLower;
+    c = char(c + toLower);
   }
   char d = c2;
   if (mozilla::IsAsciiUppercaseAlpha(c2)) {
-    d = d + toLower;
+    d = char(d + toLower);
   }
   return c == d;
 }
@@ -2106,14 +2106,14 @@ bool js::temporal::ParseTemporalDurationString(JSContext* cx,
 
     
     int64_t h = int64_t(parsed.hoursFraction) * 60;
-    minutes = h / 1'000'000'000;
+    minutes = double(h / 1'000'000'000);
 
     
     int64_t min = (h % 1'000'000'000) * 60;
-    seconds = min / 1'000'000'000;
-    milliseconds = (min % 1'000'000'000) / 1'000'000;
-    microseconds = (min % 1'000'000) / 1'000;
-    nanoseconds = (min % 1'000);
+    seconds = double(min / 1'000'000'000);
+    milliseconds = double((min % 1'000'000'000) / 1'000'000);
+    microseconds = double((min % 1'000'000) / 1'000);
+    nanoseconds = double(min % 1'000);
   }
 
   
@@ -2130,10 +2130,10 @@ bool js::temporal::ParseTemporalDurationString(JSContext* cx,
 
     
     int64_t min = int64_t(parsed.minutesFraction) * 60;
-    seconds = min / 1'000'000'000;
-    milliseconds = (min % 1'000'000'000) / 1'000'000;
-    microseconds = (min % 1'000'000) / 1'000;
-    nanoseconds = (min % 1'000);
+    seconds = double(min / 1'000'000'000);
+    milliseconds = double((min % 1'000'000'000) / 1'000'000);
+    microseconds = double((min % 1'000'000) / 1'000);
+    nanoseconds = double(min % 1'000);
   }
 
   
@@ -2148,9 +2148,9 @@ bool js::temporal::ParseTemporalDurationString(JSContext* cx,
     seconds = parsed.seconds;
 
     
-    milliseconds = (parsed.secondsFraction / 1'000'000);
-    microseconds = ((parsed.secondsFraction % 1'000'000) / 1'000);
-    nanoseconds = (parsed.secondsFraction % 1'000);
+    milliseconds = double(parsed.secondsFraction / 1'000'000);
+    microseconds = double((parsed.secondsFraction % 1'000'000) / 1'000);
+    nanoseconds = double(parsed.secondsFraction % 1'000);
   } else {
     
     minutes = parsed.minutes;

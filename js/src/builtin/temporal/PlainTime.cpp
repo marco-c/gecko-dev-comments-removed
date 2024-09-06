@@ -335,25 +335,28 @@ static PlainTimeObject* CreateTemporalTime(JSContext* cx, const CallArgs& args,
   }
 
   
-  object->setFixedSlot(PlainTimeObject::ISO_HOUR_SLOT, Int32Value(hour));
+  object->setFixedSlot(PlainTimeObject::ISO_HOUR_SLOT,
+                       Int32Value(int32_t(hour)));
 
   
-  object->setFixedSlot(PlainTimeObject::ISO_MINUTE_SLOT, Int32Value(minute));
+  object->setFixedSlot(PlainTimeObject::ISO_MINUTE_SLOT,
+                       Int32Value(int32_t(minute)));
 
   
-  object->setFixedSlot(PlainTimeObject::ISO_SECOND_SLOT, Int32Value(second));
+  object->setFixedSlot(PlainTimeObject::ISO_SECOND_SLOT,
+                       Int32Value(int32_t(second)));
 
   
   object->setFixedSlot(PlainTimeObject::ISO_MILLISECOND_SLOT,
-                       Int32Value(millisecond));
+                       Int32Value(int32_t(millisecond)));
 
   
   object->setFixedSlot(PlainTimeObject::ISO_MICROSECOND_SLOT,
-                       Int32Value(microsecond));
+                       Int32Value(int32_t(microsecond)));
 
   
   object->setFixedSlot(PlainTimeObject::ISO_NANOSECOND_SLOT,
-                       Int32Value(nanosecond));
+                       Int32Value(int32_t(nanosecond)));
 
   
   return object;

@@ -177,7 +177,7 @@ bool js::temporal::ValidateTemporalRoundingIncrement(JSContext* cx,
   
   if (increment.value() > maximum || dividend % increment.value() != 0) {
     Int32ToCStringBuf cbuf;
-    const char* numStr = Int32ToCString(&cbuf, increment.value());
+    const char* numStr = Int32ToCString(&cbuf, int32_t(increment.value()));
 
     
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
