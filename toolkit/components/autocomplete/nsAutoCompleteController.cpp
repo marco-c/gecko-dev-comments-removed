@@ -492,6 +492,13 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool* _retval) {
 
       
       
+      
+      nsAutoString value;
+      input->GetTextValue(value);
+      SetSearchStringInternal(value);
+
+      
+      
       bool hadPreviousSearch = false;
       for (uint32_t i = 0; i < mResults.Length(); ++i) {
         nsAutoString oldSearchString;
@@ -521,13 +528,6 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool* _retval) {
           
           return NS_OK;
         }
-
-        
-        
-        
-        nsAutoString value;
-        input->GetTextValue(value);
-        SetSearchStringInternal(value);
 
         StartSearches();
       }
