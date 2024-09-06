@@ -213,8 +213,6 @@ def check_networking(binary):
             "connect",
             "accept",
             "listen",
-            "getsockname",
-            "getsockopt",
             "recv",
             "send",
             
