@@ -628,10 +628,27 @@ MacOSWebAuthnService::MakeCredential(uint64_t aTransactionId,
 
         
         
-        
-        ASAuthorizationPublicKeyCredentialAttestationKind
-            attestationPreference =
-                ASAuthorizationPublicKeyCredentialAttestationKindNone;
+        ASAuthorizationPublicKeyCredentialAttestationKind attestationPreference;
+        nsAutoString mozAttestationPreference;
+        Unused << aArgs->GetAttestationConveyancePreference(
+            mozAttestationPreference);
+        if (mozAttestationPreference.EqualsLiteral(
+                MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_INDIRECT)) {
+          attestationPreference =
+              ASAuthorizationPublicKeyCredentialAttestationKindIndirect;
+        } else if (mozAttestationPreference.EqualsLiteral(
+                       MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT)) {
+          attestationPreference =
+              ASAuthorizationPublicKeyCredentialAttestationKindDirect;
+        } else if (
+            mozAttestationPreference.EqualsLiteral(
+                MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ENTERPRISE)) {
+          attestationPreference =
+              ASAuthorizationPublicKeyCredentialAttestationKindEnterprise;
+        } else {
+          attestationPreference =
+              ASAuthorizationPublicKeyCredentialAttestationKindNone;
+        }
 
         
         ASAuthorizationPlatformPublicKeyCredentialProvider* platformProvider =
@@ -645,8 +662,10 @@ MacOSWebAuthnService::MakeCredential(uint64_t aTransactionId,
                                                             name:userNameNS
                                                           userID:userIdNS];
         [platformProvider release];
+
+        
         platformRegistrationRequest.attestationPreference =
-            attestationPreference;
+            ASAuthorizationPublicKeyCredentialAttestationKindNone;
         if (userVerificationPreference.isSome()) {
           platformRegistrationRequest.userVerificationPreference =
               *userVerificationPreference;
