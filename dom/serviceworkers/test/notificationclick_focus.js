@@ -2,7 +2,6 @@
 
 
 
-
 function promisifyTimerFocus(client, delay) {
   return new Promise(function (resolve, reject) {
     setTimeout(function () {
@@ -26,7 +25,7 @@ onnotificationclick = function (e) {
 
       var afterTimeout = promisifyTimerFocus(clients[0], 2000).then(
         function () {
-          throw new Error("Should have failed!");
+          throw "Should have failed!";
         },
         function () {
           return Promise.resolve();
