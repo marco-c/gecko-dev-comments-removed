@@ -498,6 +498,12 @@ class SimExclusiveGlobalMonitor {
 };
 
 class Redirection;
+class Simulator;
+
+
+
+
+typedef void (*SingleStepCallback)(void* arg, Simulator* sim, void* pc);
 
 class Simulator : public DecoderVisitor {
  public:
@@ -535,6 +541,10 @@ class Simulator : public DecoderVisitor {
   JS::ProfilingFrameIterator::RegisterState registerState();
 
   void ResetState();
+
+  
+  void enable_single_stepping(SingleStepCallback cb, void* arg);
+  void disable_single_stepping();
 
   
   virtual void Run();
@@ -2504,6 +2514,11 @@ class Simulator : public DecoderVisitor {
   
   
   bool oom_;
+
+  
+  bool single_stepping_;
+  SingleStepCallback single_step_callback_;
+  void* single_step_callback_arg_;
 
  public:
   

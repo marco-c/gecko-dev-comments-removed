@@ -6,7 +6,7 @@ if (!wasmDebuggingEnabled())
     throw "TestComplete";
 
 
-if (!getBuildConfiguration("arm-simulator"))
+if (!getBuildConfiguration("arm-simulator") && !getBuildConfiguration("arm64-simulator"))
     throw "TestComplete";
 
 enableGeckoProfiling();
