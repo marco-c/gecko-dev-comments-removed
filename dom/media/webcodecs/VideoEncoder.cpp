@@ -591,8 +591,8 @@ VideoDecoderConfigInternal VideoEncoder::EncoderConfigToDecoderConfig(
       Some(mOutputConfig.mWidth),  
       Some(init),                  
       aRawData->mExtraData && !aRawData->mExtraData->IsEmpty()
-          ? Some(aRawData->mExtraData)
-          : Nothing(),                               
+          ? aRawData->mExtraData.forget()
+          : nullptr,                                 
       Maybe<uint32_t>(mOutputConfig.mDisplayHeight), 
       Maybe<uint32_t>(mOutputConfig.mDisplayWidth),  
       mOutputConfig.mHardwareAcceleration,           
