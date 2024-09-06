@@ -1713,7 +1713,17 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
       
       answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
                                  cricket::kMsidSignalingMediaSection);
-    } else if (msid_signaling == cricket::kMsidSignalingSemantic) {
+    } else if (msid_signaling == (cricket::kMsidSignalingSemantic |
+                                  cricket::kMsidSignalingSsrcAttribute) ||
+               msid_signaling == cricket::kMsidSignalingSsrcAttribute) {
+      
+      
+      answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
+                                 cricket::kMsidSignalingSsrcAttribute);
+    } else {
+      
+      
+      
       
       
       
@@ -1723,13 +1733,7 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
       
       
       answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
-                                 cricket::kMsidSignalingMediaSection |
-                                 cricket::kMsidSignalingSsrcAttribute);
-    } else {
-      
-      
-      
-      answer->set_msid_signaling(msid_signaling);
+                                 cricket::kMsidSignalingMediaSection);
     }
   } else {
     
