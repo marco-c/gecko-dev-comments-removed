@@ -25,28 +25,7 @@ interface nsIJumpListBuilder : nsISupports
 
 
 
-
-
-
   AString obtainAndCacheFavicon(in nsIURI faviconURL);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  Promise obtainAndCacheFaviconAsync(in nsIURI faviconURL);
 
   
 

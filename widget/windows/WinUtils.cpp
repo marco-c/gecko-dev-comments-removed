@@ -713,20 +713,12 @@ MSG WinUtils::InitMSG(UINT aMessage, WPARAM wParam, LPARAM lParam, HWND aWnd) {
 
 
 
-
-
-
-
-
 AsyncFaviconDataReady::AsyncFaviconDataReady(
-    nsIURI* aNewURI, RefPtr<nsISerialEventTarget> aIOThread,
-    const bool aURLShortcut, already_AddRefed<nsIRunnable> aRunnable,
-    UniquePtr<MozPromiseHolder<ObtainCachedIconFileAsyncPromise>>
-        aPromiseHolder)
+    nsIURI* aNewURI, RefPtr<LazyIdleThread>& aIOThread, const bool aURLShortcut,
+    already_AddRefed<nsIRunnable> aRunnable)
     : mNewURI(aNewURI),
       mIOThread(aIOThread),
       mRunnable(aRunnable),
-      mPromiseHolder(std::move(aPromiseHolder)),
       mURLShortcut(aURLShortcut) {}
 
 NS_IMETHODIMP
@@ -863,9 +855,9 @@ AsyncFaviconDataReady::OnComplete(nsIURI* aFaviconURI, uint32_t aDataLen,
   int32_t stride = 4 * size.width;
 
   
-  nsCOMPtr<nsIRunnable> event = new AsyncEncodeAndWriteIcon(
-      path, std::move(data), stride, size.width, size.height,
-      mRunnable.forget(), std::move(mPromiseHolder));
+  nsCOMPtr<nsIRunnable> event =
+      new AsyncEncodeAndWriteIcon(path, std::move(data), stride, size.width,
+                                  size.height, mRunnable.forget());
   mIOThread->Dispatch(event, NS_DISPATCH_NORMAL);
 
   return NS_OK;
@@ -876,13 +868,10 @@ AsyncFaviconDataReady::OnComplete(nsIURI* aFaviconURI, uint32_t aDataLen,
 
 AsyncEncodeAndWriteIcon::AsyncEncodeAndWriteIcon(
     const nsAString& aIconPath, UniquePtr<uint8_t[]> aBuffer, uint32_t aStride,
-    uint32_t aWidth, uint32_t aHeight, already_AddRefed<nsIRunnable> aRunnable,
-    UniquePtr<MozPromiseHolder<ObtainCachedIconFileAsyncPromise>>
-        aPromiseHolder)
+    uint32_t aWidth, uint32_t aHeight, already_AddRefed<nsIRunnable> aRunnable)
     : mIconPath(aIconPath),
       mBuffer(std::move(aBuffer)),
       mRunnable(aRunnable),
-      mPromiseHolder(std::move(aPromiseHolder)),
       mStride(aStride),
       mWidth(aWidth),
       mHeight(aHeight) {}
@@ -929,17 +918,10 @@ NS_IMETHODIMP AsyncEncodeAndWriteIcon::Run() {
   if (mRunnable) {
     mRunnable->Run();
   }
-  if (mPromiseHolder) {
-    mPromiseHolder->ResolveIfExists(mIconPath, __func__);
-  }
   return rv;
 }
 
-AsyncEncodeAndWriteIcon::~AsyncEncodeAndWriteIcon() {
-  if (mPromiseHolder) {
-    mPromiseHolder->RejectIfExists(NS_ERROR_FAILURE, __func__);
-  }
-}
+AsyncEncodeAndWriteIcon::~AsyncEncodeAndWriteIcon() {}
 
 AsyncDeleteAllFaviconsFromDisk::AsyncDeleteAllFaviconsFromDisk(
     bool aIgnoreRecent)
@@ -1047,124 +1029,20 @@ nsresult FaviconHelper::ObtainCachedIconFile(
     
     if (NS_FAILED(rv) || (nowTime - fileModTime) > icoReCacheSecondsTimeout) {
       CacheIconFileFromFaviconURIAsync(aFaviconPageURI, icoFile, aIOThread,
-                                       aURLShortcut, runnable.forget(),
-                                       nullptr);
+                                       aURLShortcut, runnable.forget());
       return NS_ERROR_NOT_AVAILABLE;
     }
   } else {
     
     
     CacheIconFileFromFaviconURIAsync(aFaviconPageURI, icoFile, aIOThread,
-                                     aURLShortcut, runnable.forget(), nullptr);
+                                     aURLShortcut, runnable.forget());
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   
   rv = icoFile->GetPath(aICOFilePath);
   return rv;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-auto FaviconHelper::ObtainCachedIconFileAsync(
-    nsCOMPtr<nsIURI> aFaviconPageURI, RefPtr<LazyIdleThread>& aIOThread,
-    FaviconHelper::IconCacheDir aCacheDir)
-    -> RefPtr<ObtainCachedIconFileAsyncPromise> {
-  bool useShortcutCacheDir =
-      aCacheDir == FaviconHelper::IconCacheDir::ShortcutCacheDir;
-
-  
-  
-  nsCOMPtr<nsIFile> icoFile;
-  nsresult rv =
-      GetOutputIconPath(aFaviconPageURI, icoFile, useShortcutCacheDir);
-  if (NS_FAILED(rv)) {
-    return ObtainCachedIconFileAsyncPromise::CreateAndReject(rv, __func__);
-  }
-
-  int32_t icoReCacheSecondsTimeout = GetICOCacheSecondsTimeout();
-
-  return InvokeAsync(
-      aIOThread, "FaviconHelper::ObtainCachedIconFileAsync disk cache check",
-      [icoFile = std::move(icoFile), icoReCacheSecondsTimeout,
-       pageURI = std::move(aFaviconPageURI), useShortcutCacheDir]() {
-        MOZ_ASSERT(!NS_IsMainThread());
-        bool exists;
-        nsresult rv = icoFile->Exists(&exists);
-
-        if (NS_FAILED(rv)) {
-          return ObtainCachedIconFileAsyncPromise::CreateAndReject(
-              rv, "ObtainCachedIconFileAsync disk cache check: exists failed");
-        }
-
-        if (exists) {
-          
-          int64_t fileModTime = 0;
-          rv = icoFile->GetLastModifiedTime(&fileModTime);
-          fileModTime /= PR_MSEC_PER_SEC;
-          int64_t nowTime = PR_Now() / int64_t(PR_USEC_PER_SEC);
-
-          
-          
-          if (NS_SUCCEEDED(rv) &&
-              (nowTime - fileModTime) < icoReCacheSecondsTimeout) {
-            nsAutoString icoFilePath;
-            rv = icoFile->GetPath(icoFilePath);
-            if (NS_SUCCEEDED(rv)) {
-              return ObtainCachedIconFileAsyncPromise::CreateAndResolve(
-                  icoFilePath,
-                  "ObtainCachedIconFileAsync disk cache check: found");
-            }
-          }
-        }
-
-        
-        
-        RefPtr<nsISerialEventTarget> currentThread =
-            GetCurrentSerialEventTarget();
-
-        return InvokeAsync(
-            GetMainThreadSerialEventTarget(),
-            "ObtainCachedIconFileAsync call to "
-            "PromiseCacheIconFileFromFaviconURIAsync",
-            [useShortcutCacheDir, pageURI = std::move(pageURI),
-             icoFile = std::move(icoFile),
-             aIOThread = std::move(currentThread)]() {
-              auto holder = MakeUnique<
-                  MozPromiseHolder<ObtainCachedIconFileAsyncPromise>>();
-              RefPtr<ObtainCachedIconFileAsyncPromise> promise =
-                  holder->Ensure(__func__);
-              CacheIconFileFromFaviconURIAsync(pageURI, icoFile, aIOThread,
-                                               useShortcutCacheDir, nullptr,
-                                               std::move(holder));
-              return promise;
-            });
-      });
 }
 
 
@@ -1239,11 +1117,8 @@ nsresult FaviconHelper::GetOutputIconPath(nsCOMPtr<nsIURI> aFaviconPageURI,
 
 nsresult FaviconHelper::CacheIconFileFromFaviconURIAsync(
     nsCOMPtr<nsIURI> aFaviconPageURI, nsCOMPtr<nsIFile> aICOFile,
-    RefPtr<nsISerialEventTarget> aIOThread, bool aURLShortcut,
-    already_AddRefed<nsIRunnable> aRunnable,
-    UniquePtr<MozPromiseHolder<ObtainCachedIconFileAsyncPromise>>
-        aPromiseHolder) {
-  MOZ_ASSERT(NS_IsMainThread());
+    RefPtr<LazyIdleThread>& aIOThread, bool aURLShortcut,
+    already_AddRefed<nsIRunnable> aRunnable) {
   nsCOMPtr<nsIRunnable> runnable = aRunnable;
 #ifdef MOZ_PLACES
   
@@ -1253,8 +1128,7 @@ nsresult FaviconHelper::CacheIconFileFromFaviconURIAsync(
 
   nsCOMPtr<nsIFaviconDataCallback> callback =
       new mozilla::widget::AsyncFaviconDataReady(
-          aFaviconPageURI, aIOThread, aURLShortcut, runnable.forget(),
-          std::move(aPromiseHolder));
+          aFaviconPageURI, aIOThread, aURLShortcut, runnable.forget());
 
   favIconSvc->GetFaviconDataForPage(aFaviconPageURI, callback, 0);
 #endif
