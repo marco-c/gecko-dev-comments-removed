@@ -181,6 +181,8 @@ def process_results(flank_config: str, test_type: str = "instrumentation") -> No
         flank_config,
     ]
     if exit_code == 0:
+        
+        
         command.append("--report-treeherder-failures")
     run_command(
         command,
