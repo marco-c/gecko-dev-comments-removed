@@ -195,7 +195,7 @@ function injectTestTabs(win) {
 function closeWindowForRestoration(win) {
   return new Promise(resolve => {
     let closePromise = BrowserTestUtils.windowClosed(win);
-    win.BrowserTryToCloseWindow();
+    win.BrowserCommands.tryToCloseWindow();
     if (!win.closed) {
       resolve(false);
       return;

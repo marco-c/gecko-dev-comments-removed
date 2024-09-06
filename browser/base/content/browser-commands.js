@@ -378,4 +378,40 @@ var BrowserCommands = {
       fp.open(fpCallback);
     } catch (ex) {}
   },
+
+  closeTabOrWindow(event) {
+    
+    if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
+      closeWindow(true);
+      return;
+    }
+
+    
+    if (gBrowser.multiSelectedTabsCount) {
+      gBrowser.removeMultiSelectedTabs();
+      return;
+    }
+
+    
+    
+    if (
+      event &&
+      (event.ctrlKey || event.metaKey || event.altKey) &&
+      gBrowser.selectedTab.pinned
+    ) {
+      if (gBrowser.visibleTabs.length > gBrowser._numPinnedTabs) {
+        gBrowser.tabContainer.selectedIndex = gBrowser._numPinnedTabs;
+      }
+      return;
+    }
+
+    
+    gBrowser.removeCurrentTab({ animate: true });
+  },
+
+  tryToCloseWindow(event) {
+    if (WindowIsClosing(event)) {
+      window.close();
+    } 
+  },
 };

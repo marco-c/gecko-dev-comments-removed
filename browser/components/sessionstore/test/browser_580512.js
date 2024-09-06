@@ -35,7 +35,7 @@ function closeFirstWin(win) {
   
   
   
-  win.BrowserTryToCloseWindow();
+  win.BrowserCommands.tryToCloseWindow();
   ok(win.closed, "window closed");
 
   winClosed.then(() => {

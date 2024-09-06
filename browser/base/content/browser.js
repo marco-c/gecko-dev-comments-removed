@@ -2650,7 +2650,7 @@ function HandleAppCommandEvent(evt) {
       BrowserCommands.openTab();
       break;
     case "Close":
-      BrowserCloseTabOrWindow();
+      BrowserCommands.closeTabOrWindow();
       break;
     case "Find":
       gLazyFindCommand("onFindCommand");
@@ -2764,42 +2764,6 @@ var gLastOpenDirectory = {
     this._lastDir = null;
   },
 };
-
-function BrowserCloseTabOrWindow(event) {
-  
-  if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
-    closeWindow(true);
-    return;
-  }
-
-  
-  if (gBrowser.multiSelectedTabsCount) {
-    gBrowser.removeMultiSelectedTabs();
-    return;
-  }
-
-  
-  
-  if (
-    event &&
-    (event.ctrlKey || event.metaKey || event.altKey) &&
-    gBrowser.selectedTab.pinned
-  ) {
-    if (gBrowser.visibleTabs.length > gBrowser._numPinnedTabs) {
-      gBrowser.tabContainer.selectedIndex = gBrowser._numPinnedTabs;
-    }
-    return;
-  }
-
-  
-  gBrowser.removeCurrentTab({ animate: true });
-}
-
-function BrowserTryToCloseWindow(event) {
-  if (WindowIsClosing(event)) {
-    window.close();
-  } 
-}
 
 function getLoadContext() {
   return window.docShell.QueryInterface(Ci.nsILoadContext);
