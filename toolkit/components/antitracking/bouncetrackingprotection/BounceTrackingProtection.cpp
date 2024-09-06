@@ -14,6 +14,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/Promise.h"
@@ -40,6 +41,10 @@ LazyLogModule gBounceTrackingProtectionLog("BounceTrackingProtection");
 
 static StaticRefPtr<BounceTrackingProtection> sBounceTrackingProtection;
 
+
+
+Maybe<bool> BounceTrackingProtection::sFeatureIsEnabled;
+
 static constexpr uint32_t TRACKER_PURGE_FLAGS =
     nsIClearDataService::CLEAR_ALL_CACHES | nsIClearDataService::CLEAR_COOKIES |
     nsIClearDataService::CLEAR_DOM_STORAGES |
@@ -54,10 +59,33 @@ already_AddRefed<BounceTrackingProtection>
 BounceTrackingProtection::GetSingleton() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  if (!StaticPrefs::privacy_bounceTrackingProtection_enabled_AtStartup()) {
+  
+  if (sFeatureIsEnabled.isNothing()) {
+    if (StaticPrefs::privacy_bounceTrackingProtection_enabled_AtStartup()) {
+      sFeatureIsEnabled = Some(true);
+
+      glean::bounce_tracking_protection::enabled_at_startup.Set(true);
+      glean::bounce_tracking_protection::enabled_dry_run_mode_at_startup.Set(
+          StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode());
+    } else {
+      sFeatureIsEnabled = Some(false);
+
+      glean::bounce_tracking_protection::enabled_at_startup.Set(false);
+      glean::bounce_tracking_protection::enabled_dry_run_mode_at_startup.Set(
+          false);
+
+      
+      return nullptr;
+    }
+  }
+  MOZ_ASSERT(sFeatureIsEnabled.isSome());
+
+  
+  if (!sFeatureIsEnabled.value()) {
     return nullptr;
   }
 
+  
   if (!sBounceTrackingProtection) {
     sBounceTrackingProtection = new BounceTrackingProtection();
 

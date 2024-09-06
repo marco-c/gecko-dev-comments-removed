@@ -9,6 +9,7 @@
 #include "mozilla/glean/GleanMetrics.h"
 #include "nsIBounceTrackingProtection.h"
 #include "nsIClearDataService.h"
+#include "mozilla/Maybe.h"
 
 class nsIPrincipal;
 class nsITimer;
@@ -53,6 +54,10 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
  private:
   BounceTrackingProtection();
   ~BounceTrackingProtection() = default;
+
+  
+  
+  static Maybe<bool> sFeatureIsEnabled;
 
   
   nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
