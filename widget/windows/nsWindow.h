@@ -518,8 +518,6 @@ class nsWindow final : public nsBaseWidget {
   bool UpdateNonClientMargins(bool aReflowWindow = true);
   void UpdateDarkModeToolbar();
   void ResetLayout();
-  
-  HRGN ComputeNonClientHRGN();
   void InvalidateNonClientRegion();
   HWND GetOwnerWnd() const { return ::GetWindow(mWnd, GW_OWNER); }
   bool IsOwnerForegroundWindow() const {
@@ -630,7 +628,8 @@ class nsWindow final : public nsBaseWidget {
   void StopFlashing();
   static HWND WindowAtMouse();
   static bool IsTopLevelMouseExit(HWND aWnd);
-  LayoutDeviceIntRegion GetRegionToPaint(const PAINTSTRUCT& ps, HDC aDC) const;
+  LayoutDeviceIntRegion GetRegionToPaint(bool aForceFullRepaint, PAINTSTRUCT ps,
+                                         HDC aDC);
   nsIWidgetListener* GetPaintListener();
 
   void CreateCompositor() override;
@@ -895,7 +894,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   
-  bool mNeedsNCAreaClear = false;
+  mozilla::Maybe<UINT> mClearNCEdge;
 
   friend class nsWindowGfx;
 

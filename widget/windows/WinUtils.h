@@ -424,10 +424,6 @@ class WinUtils {
 
 
   static LayoutDeviceIntRect ToIntRect(const RECT& aRect);
-  
-
-
-  static RECT ToWinRect(const LayoutDeviceIntRect& aRect);
 
   
 
