@@ -82,7 +82,6 @@ typedef Vector<Tier2GeneratorTask*, 0, SystemAllocPolicy>
 
 class GlobalHelperThreadState {
   friend class AutoLockHelperThreadState;
-  friend class AutoUnlockHelperThreadState;
 
  public:
   
