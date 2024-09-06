@@ -226,11 +226,6 @@ class ScreenshotTest : BaseSessionTest() {
     @Test
     fun capturePixelsWhileSessionDeactivated() {
         
-        val geckoPrefs = sessionRule.getPrefs(
-            "fission.disableSessionHistoryInParent",
-        )
-        assumeThat(geckoPrefs[0] as Boolean, equalTo(true))
-        
         assumeThat(sessionRule.env.isFission, equalTo(false))
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 

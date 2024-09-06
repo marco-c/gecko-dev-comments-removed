@@ -534,11 +534,6 @@ class ProgressDelegateTest : BaseSessionTest() {
     @Test
     fun flushSessionState() {
         
-        val geckoPrefs = sessionRule.getPrefs(
-            "fission.disableSessionHistoryInParent",
-        )
-        assumeThat(geckoPrefs[0] as Boolean, equalTo(true))
-        
         assumeThat(sessionRule.env.isFission, equalTo(false))
         val startUri = createTestUrl(SAVE_STATE_PATH)
         mainSession.loadUri(startUri)
