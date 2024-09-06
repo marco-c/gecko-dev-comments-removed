@@ -17,6 +17,7 @@
 #  include "MediaStatistics.h"
 #  include "MediaTimer.h"
 #  include "SeekJob.h"
+#  include "mozilla/Atomics.h"
 #  include "mozilla/Attributes.h"
 #  include "mozilla/ReentrantMonitor.h"
 #  include "mozilla/StateMirroring.h"
@@ -561,6 +562,8 @@ class MediaDecoderStateMachine
   
   
   bool mIsMediaSinkSuspended = false;
+
+  Atomic<bool> mShuttingDown;
 
  public:
   AbstractCanonical<PrincipalHandle>* CanonicalOutputPrincipal() {
