@@ -220,7 +220,7 @@ class MediaManager final : public nsIMediaManagerService,
 
 
   template <typename MozPromiseType, typename FunctionType>
-  static RefPtr<MozPromiseType> Dispatch(const char* aName,
+  static RefPtr<MozPromiseType> Dispatch(StaticString aName,
                                          FunctionType&& aFunction);
 
 #ifdef DEBUG

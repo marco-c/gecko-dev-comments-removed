@@ -603,7 +603,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   RefPtr<dom::ContentParent> mContentParent;
 
   void RejectOpenPromise(nsresult aStatus, nsresult aLoadGroupStatus,
-                         bool aContinueNavigating, const char* aLocation) {
+                         bool aContinueNavigating, StaticString aLocation) {
     
     
     if (!mOpenPromiseResolved && mOpenPromise) {
