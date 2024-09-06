@@ -64,6 +64,8 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
   
   void ActivateByHyperlink();
 
+  bool IsDisabled();
+
   
   SVGElement* GetTargetElement();
   float GetStartTime(ErrorResult& rv);
