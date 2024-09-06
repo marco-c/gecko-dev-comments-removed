@@ -410,13 +410,20 @@ RefPtr<IDBObjectStore> IDBObjectStore::Create(
 void IDBObjectStore::AppendIndexUpdateInfo(
     const int64_t aIndexID, const KeyPath& aKeyPath, const bool aMultiEntry,
     const nsCString& aLocale, JSContext* const aCx, JS::Handle<JS::Value> aVal,
-    nsTArray<IndexUpdateInfo>* const aUpdateInfoArray, ErrorResult* const aRv) {
+    nsTArray<IndexUpdateInfo>* const aUpdateInfoArray,
+    const VoidOrObjectStoreKeyPathString& aAutoIncrementedObjectStoreKeyPath,
+    ErrorResult* const aRv) {
   
   js::AutoAssertNoContentJS noContentJS(aCx);
 
+  static_assert(std::is_same_v<IDBObjectStore::VoidOrObjectStoreKeyPathString,
+                               KeyPath::VoidOrObjectStoreKeyPathString>,
+                "Inconsistent types");
+
   if (!aMultiEntry) {
     Key key;
-    *aRv = aKeyPath.ExtractKey(aCx, aVal, key);
+    *aRv =
+        aKeyPath.ExtractKey(aCx, aVal, key, aAutoIncrementedObjectStoreKeyPath);
 
     
     if (aRv->ErrorCodeIs(NS_ERROR_DOM_INDEXEDDB_DATA_ERR) || key.IsUnset()) {
@@ -625,6 +632,21 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
     const nsTArray<IndexMetadata>& indexes = mSpec->indexes();
     const uint32_t idxCount = indexes.Length();
 
+    const auto& autoIncrementedObjectStoreKeyPath =
+        [this]() -> const nsAString& {
+      if (AutoIncrement() && GetKeyPath().IsValid()) {
+        
+        
+        
+        
+        MOZ_ASSERT(GetKeyPath().IsString());
+        MOZ_ASSERT(!GetKeyPath().IsEmpty());
+        return GetKeyPath().mStrings[0];
+      }
+
+      return VoidString();
+    }();
+
     aUpdateInfoArray.SetCapacity(idxCount);  
 
     for (uint32_t idxIndex = 0; idxIndex < idxCount; idxIndex++) {
@@ -632,7 +654,8 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
 
       AppendIndexUpdateInfo(metadata.id(), metadata.keyPath(),
                             metadata.multiEntry(), metadata.locale(), aCx,
-                            aValueWrapper.Value(), &aUpdateInfoArray, &aRv);
+                            aValueWrapper.Value(), &aUpdateInfoArray,
+                            autoIncrementedObjectStoreKeyPath, &aRv);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
