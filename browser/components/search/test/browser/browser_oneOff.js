@@ -27,6 +27,14 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     await BrowserTestUtils.closeWindow(win);
+    
+    
+    searchBar = undefined;
+    searchIcon = undefined;
+    searchPopup = undefined;
+    oneOffInstance = undefined;
+    oneOffButtons = undefined;
+    win = undefined;
     gCUITestUtils.removeSearchBar();
   });
 

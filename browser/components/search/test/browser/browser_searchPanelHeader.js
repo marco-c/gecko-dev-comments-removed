@@ -22,6 +22,12 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     await BrowserTestUtils.closeWindow(win);
+    
+    
+    searchBar = undefined;
+    searchPopup = undefined;
+    searchIcon = undefined;
+    win = undefined;
     gCUITestUtils.removeSearchBar();
   });
   await SearchTestUtils.installOpenSearchEngine({
