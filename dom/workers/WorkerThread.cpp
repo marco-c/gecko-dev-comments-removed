@@ -117,50 +117,54 @@ SafeRefPtr<WorkerThread> WorkerThread::Create(
 void WorkerThread::SetWorker(const WorkerThreadFriendKey& ,
                              WorkerPrivate* aWorkerPrivate) {
   MOZ_ASSERT(PR_GetCurrentThread() == mThread);
+  MOZ_ASSERT(aWorkerPrivate);
 
-  if (aWorkerPrivate) {
-    {
-      MutexAutoLock lock(mLock);
+  {
+    MutexAutoLock lock(mLock);
 
-      MOZ_ASSERT(!mWorkerPrivate);
-      MOZ_ASSERT(mAcceptingNonWorkerRunnables);
+    MOZ_ASSERT(!mWorkerPrivate);
+    MOZ_ASSERT(mAcceptingNonWorkerRunnables);
 
-      mWorkerPrivate = aWorkerPrivate;
+    mWorkerPrivate = aWorkerPrivate;
 #ifdef DEBUG
-      mAcceptingNonWorkerRunnables = false;
+    mAcceptingNonWorkerRunnables = false;
 #endif
+  }
+
+  mObserver = new Observer(aWorkerPrivate);
+  MOZ_ALWAYS_SUCCEEDS(AddObserver(mObserver));
+}
+
+void WorkerThread::ClearEventQueueAndWorker(
+    const WorkerThreadFriendKey& ) {
+  MOZ_ASSERT(PR_GetCurrentThread() == mThread);
+
+  MOZ_ALWAYS_SUCCEEDS(RemoveObserver(mObserver));
+  mObserver = nullptr;
+
+  {
+    MutexAutoLock lock(mLock);
+
+    MOZ_ASSERT(mWorkerPrivate);
+    MOZ_ASSERT(!mAcceptingNonWorkerRunnables);
+    
+    
+    
+    
+    
+    
+    while (mOtherThreadsDispatchingViaEventTarget) {
+      mWorkerPrivateCondVar.Wait();
     }
-
-    mObserver = new Observer(aWorkerPrivate);
-    MOZ_ALWAYS_SUCCEEDS(AddObserver(mObserver));
-  } else {
-    MOZ_ALWAYS_SUCCEEDS(RemoveObserver(mObserver));
-    mObserver = nullptr;
-
-    {
-      MutexAutoLock lock(mLock);
-
-      MOZ_ASSERT(mWorkerPrivate);
-      MOZ_ASSERT(!mAcceptingNonWorkerRunnables);
-      
-      
-      
-      
-      
-      
-      while (mOtherThreadsDispatchingViaEventTarget) {
-        mWorkerPrivateCondVar.Wait();
-      }
-      
-      
-      if (NS_HasPendingEvents(nullptr)) {
-        NS_ProcessPendingEvents(nullptr);
-      }
+    
+    
+    if (NS_HasPendingEvents(nullptr)) {
+      NS_ProcessPendingEvents(nullptr);
+    }
 #ifdef DEBUG
-      mAcceptingNonWorkerRunnables = true;
+    mAcceptingNonWorkerRunnables = true;
 #endif
-      mWorkerPrivate = nullptr;
-    }
+    mWorkerPrivate = nullptr;
   }
 }
 

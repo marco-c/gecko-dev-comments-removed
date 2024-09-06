@@ -3247,8 +3247,6 @@ void WorkerPrivate::RunLoopNeverRan() {
   
   
   NotifyWorkerRefs(Dead);
-
-  ScheduleDeletion(WorkerPrivate::WorkerRan);
 }
 
 void WorkerPrivate::UnrootGlobalScopes() {
@@ -5854,10 +5852,11 @@ void WorkerPrivate::ResetWorkerPrivateInWorkerThread() {
 
   
   MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(mStatus == Dead);
 
   MOZ_ASSERT(mThread);
 
-  mThread->SetWorker(WorkerThreadFriendKey{}, nullptr);
+  mThread->ClearEventQueueAndWorker(WorkerThreadFriendKey{});
   mThread.swap(doomedThread);
 }
 

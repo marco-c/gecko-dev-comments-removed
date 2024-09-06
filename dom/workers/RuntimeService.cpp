@@ -2066,14 +2066,12 @@ WorkerThreadPrimaryRunnable::Run() {
                                    url.get());
 
   using mozilla::ipc::BackgroundChild;
-
   {
+    bool runLoopRan = false;
     auto failureCleanup = MakeScopeExit([&]() {
       
       
-      
-      
-      mWorkerPrivate->RunLoopNeverRan();
+      mWorkerPrivate->ScheduleDeletion(WorkerPrivate::WorkerRan);
     });
 
     mWorkerPrivate->SetWorkerPrivateInWorkerThread(mThread.unsafeGetRawPtr());
@@ -2081,6 +2079,11 @@ WorkerThreadPrimaryRunnable::Run() {
     const auto threadCleanup = MakeScopeExit([&] {
       
       
+      
+      
+      if (!runLoopRan) {
+        mWorkerPrivate->RunLoopNeverRan();
+      }
       mWorkerPrivate->ResetWorkerPrivateInWorkerThread();
     });
 
@@ -2117,6 +2120,7 @@ WorkerThreadPrimaryRunnable::Run() {
       }
 
       failureCleanup.release();
+      runLoopRan = true;
 
       {
         PROFILER_SET_JS_CONTEXT(cx);

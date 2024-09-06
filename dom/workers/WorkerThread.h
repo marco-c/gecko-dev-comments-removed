@@ -72,6 +72,13 @@ class WorkerThread final : public nsThread {
   void SetWorker(const WorkerThreadFriendKey& aKey,
                  WorkerPrivate* aWorkerPrivate);
 
+  
+  
+  
+  
+  
+  void ClearEventQueueAndWorker(const WorkerThreadFriendKey& aKey);
+
   nsresult DispatchPrimaryRunnable(const WorkerThreadFriendKey& aKey,
                                    already_AddRefed<nsIRunnable> aRunnable);
 
