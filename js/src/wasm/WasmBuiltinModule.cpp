@@ -218,8 +218,8 @@ bool CompileBuiltinModule(JSContext* cx,
 
   
   UniqueChars error;
-  ModuleGenerator mg(*compileArgs, codeMeta, moduleMeta, &compilerEnv, nullptr,
-                     &error, nullptr);
+  ModuleGenerator mg(*compileArgs, codeMeta, &compilerEnv, nullptr, &error,
+                     nullptr);
   if (!mg.init(nullptr)) {
     ReportOutOfMemory(cx);
     return false;
@@ -269,7 +269,8 @@ bool CompileBuiltinModule(JSContext* cx,
   }
 
   
-  SharedModule module = mg.finishModule(*bytecode, nullptr);
+  SharedModule module = mg.finishModule(*bytecode, moduleMeta,
+                                        nullptr);
   if (!module) {
     ReportOutOfMemory(cx);
     return false;
