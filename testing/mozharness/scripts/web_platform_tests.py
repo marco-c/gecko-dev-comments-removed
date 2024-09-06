@@ -377,10 +377,6 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             "--suppress-handler-traceback",
         ]
 
-        is_windows_7 = (
-            mozinfo.info["os"] == "win" and mozinfo.info["os_version"] == "6.1"
-        )
-
         if self.repeat > 0:
             
             cmd.append("--repeat=%s" % (self.repeat + 1))
@@ -391,8 +387,8 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             or "wdspec" in test_types
             or not c["disable_fission"]
             
-            or is_windows_7
-            and mozinfo.info["debug"]
+            or "reftest" in test_types
+            and sys.platform.startswith("darwin")
         ):
             processes = 1
         else:
@@ -408,11 +404,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
         else:
             cmd += ["--binary=%s" % self.binary_path, "--product=firefox"]
 
-        if is_windows_7:
-            
-            self._install_fonts()
-        else:
-            cmd += ["--install-fonts"]
+        cmd += ["--install-fonts"]
 
         for test_type in test_types:
             cmd.append("--test-type=%s" % test_type)
