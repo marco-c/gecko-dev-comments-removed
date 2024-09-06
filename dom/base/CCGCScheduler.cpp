@@ -661,8 +661,13 @@ void CCGCScheduler::EnsureGCRunner(TimeDuration aDelay) {
   }
 
   TimeDuration minimumBudget = TimeDuration::FromMilliseconds(
+      
+      
+      
+      
+      
       std::max(nsRefreshDriver::HighRateMultiplier() *
-                   mActiveIntersliceGCBudget.ToMilliseconds(),
+                   mActiveIntersliceGCBudget.ToMilliseconds() / 2,
                1.0));
 
   
@@ -821,18 +826,18 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
 
 js::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
                                                          TimeStamp aNow) {
-  
-  
-  
-  
   TimeDuration budget =
-      aDeadline.IsNull() ? mActiveIntersliceGCBudget * 2 : aDeadline - aNow;
+      aDeadline.IsNull() ? mActiveIntersliceGCBudget : aDeadline - aNow;
   if (!mCCBlockStart) {
     return CreateGCSliceBudget(budget, !aDeadline.IsNull(), false);
   }
 
+  
+  
+  
+
   TimeDuration blockedTime = aNow - mCCBlockStart;
-  TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 10;
+  TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 5;
   double percentOfBlockedTime =
       std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
   TimeDuration extendedBudget =

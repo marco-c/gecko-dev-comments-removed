@@ -535,7 +535,7 @@ class CCGCScheduler {
 
   
 
-  TimeDuration mActiveIntersliceGCBudget = TimeDuration::FromMilliseconds(5);
+  TimeDuration mActiveIntersliceGCBudget = TimeDuration::FromMilliseconds(10);
 };
 
 }  
