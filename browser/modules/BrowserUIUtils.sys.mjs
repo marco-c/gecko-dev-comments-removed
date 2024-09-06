@@ -3,15 +3,9 @@
 
 
 
+import { UrlbarPrefs } from "resource:///modules/UrlbarPrefs.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "trimHttps",
-  "browser.urlbar.trimHttps"
-);
 export var BrowserUIUtils = {
   
 
@@ -149,7 +143,9 @@ export var BrowserUIUtils = {
   },
 
   get trimURLProtocol() {
-    return lazy.trimHttps ? "https://" : "http://";
+    return UrlbarPrefs.getScotchBonnetPref("trimHttps")
+      ? "https://"
+      : "http://";
   },
 
   

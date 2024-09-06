@@ -143,7 +143,9 @@ const tests = [
     get selection() {
       
       
-      let startOffset = UrlbarPrefs.get("untrimOnUserInteraction.featureGate")
+      let startOffset = UrlbarPrefs.getScotchBonnetPref(
+        "untrimOnUserInteraction.featureGate"
+      )
         ? gURLBar.value.indexOf(this._expectedSelectedText)
         : 0;
       return [startOffset, startOffset + this._expectedSelectedText.length];
