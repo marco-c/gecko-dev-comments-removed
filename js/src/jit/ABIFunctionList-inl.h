@@ -206,7 +206,11 @@ namespace jit {
 
 
 
-#define ABIFUNCTION_AND_TYPE_LIST(_) _(JS::ToInt32, int32_t (*)(double))
+#define ABIFUNCTION_AND_TYPE_LIST(_)                    \
+  _(JS::ToInt32, int32_t (*)(double))                   \
+  _(js::jit::RoundFloat16ToFloat32, float (*)(int32_t)) \
+  _(js::jit::RoundFloat16ToFloat32, float (*)(float))   \
+  _(js::jit::RoundFloat16ToFloat32, float (*)(double))
 
 
 
