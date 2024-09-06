@@ -1899,6 +1899,10 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
     
   }
 
+  
+  
+  
+  AutoRestore<LayoutDeviceIntPoint> restore(aEvent->mRefPoint);
   switch (aEvent->mClass) {
     case eMouseEventClass: {
       BrowserParent* oldRemote = BrowserParent::GetLastMouseRemoteTarget();
