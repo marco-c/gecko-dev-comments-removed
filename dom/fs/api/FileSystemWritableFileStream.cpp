@@ -492,22 +492,26 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
   ArrayBufferViewOrArrayBufferOrBlobOrUTF8StringOrWriteParams data;
   if (!data.Init(aCx, aChunk)) {
     aError.StealExceptionFromJSContext(aCx);
+    
+    
+    
+    
+    
+    
+    
+    if (IsOpen()) {
+      (void)BeginAbort();
+    }
     return nullptr;
   }
 
   
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
-  if (aError.Failed()) {
-    return nullptr;
-  }
-
-  RefPtr<Promise> innerPromise = Promise::Create(GetParentObject(), aError);
-  if (aError.Failed()) {
-    return nullptr;
-  }
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
 
   RefPtr<Command> command = CreateCommand();
 
+  
+  
   
   Write(data)->Then(
       GetCurrentSerialEventTarget(), __func__,
