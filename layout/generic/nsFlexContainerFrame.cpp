@@ -2257,7 +2257,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       
       
       mozilla::Side containerStartSideInCrossAxis = mCBWM.PhysicalSide(
-          MakeLogicalSide(aAxisTracker.CrossAxis(), eLogicalEdgeStart));
+          MakeLogicalSide(aAxisTracker.CrossAxis(), LogicalEdge::Start));
 
       
       
@@ -2448,7 +2448,7 @@ void FlexItem::ResolveFlexBaseSizeFromAspectRatio(
 uint32_t FlexItem::NumAutoMarginsInAxis(LogicalAxis aAxis) const {
   uint32_t numAutoMargins = 0;
   const auto& styleMargin = mFrame->StyleMargin()->mMargin;
-  for (const auto edge : {eLogicalEdgeStart, eLogicalEdgeEnd}) {
+  for (const auto edge : {LogicalEdge::Start, LogicalEdge::End}) {
     const auto side = MakeLogicalSide(aAxis, edge);
     if (styleMargin.Get(mCBWM, side).IsAuto()) {
       numAutoMargins++;
@@ -2708,12 +2708,12 @@ class MOZ_STACK_CLASS PositionTracker {
 
   inline LogicalSide StartSide() {
     return MakeLogicalSide(
-        mAxis, mIsAxisReversed ? eLogicalEdgeEnd : eLogicalEdgeStart);
+        mAxis, mIsAxisReversed ? LogicalEdge::End : LogicalEdge::Start);
   }
 
   inline LogicalSide EndSide() {
     return MakeLogicalSide(
-        mAxis, mIsAxisReversed ? eLogicalEdgeStart : eLogicalEdgeEnd);
+        mAxis, mIsAxisReversed ? LogicalEdge::Start : LogicalEdge::End);
   }
 
   
@@ -4111,12 +4111,13 @@ FlexboxAxisTracker::FlexboxAxisTracker(
 
 LogicalSide FlexboxAxisTracker::MainAxisStartSide() const {
   return MakeLogicalSide(
-      MainAxis(), IsMainAxisReversed() ? eLogicalEdgeEnd : eLogicalEdgeStart);
+      MainAxis(), IsMainAxisReversed() ? LogicalEdge::End : LogicalEdge::Start);
 }
 
 LogicalSide FlexboxAxisTracker::CrossAxisStartSide() const {
-  return MakeLogicalSide(
-      CrossAxis(), IsCrossAxisReversed() ? eLogicalEdgeEnd : eLogicalEdgeStart);
+  return MakeLogicalSide(CrossAxis(), IsCrossAxisReversed()
+                                          ? LogicalEdge::End
+                                          : LogicalEdge::Start);
 }
 
 void nsFlexContainerFrame::GenerateFlexLines(
