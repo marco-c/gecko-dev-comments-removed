@@ -1571,8 +1571,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   MOZ_CAN_RUN_SCRIPT
-  nsresult GoToAnchor(const nsAString& aAnchorName,
-                      const nsRange* aFirstTextDirective, bool aScroll,
+  nsresult GoToAnchor(const nsAString& aAnchorName, bool aScroll,
                       ScrollFlags aAdditionalScrollFlags = ScrollFlags::None);
 
   
@@ -1584,6 +1583,18 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   MOZ_CAN_RUN_SCRIPT nsresult ScrollToAnchor();
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT bool HighlightAndGoToTextFragment(
+      bool aScrollToTextFragment);
 
   
 

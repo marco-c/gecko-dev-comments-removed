@@ -10736,12 +10736,11 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
   
   
-
-  const RefPtr fragmentDirective = GetDocument()->FragmentDirective();
-  const nsTArray<RefPtr<nsRange>> textDirectives =
-      fragmentDirective->FindTextFragmentsInDocument();
-  const bool hasTextDirectives = !textDirectives.IsEmpty();
-  fragmentDirective->HighlightTextDirectives(textDirectives);
+  const bool hasScrolledToTextFragment =
+      presShell->HighlightAndGoToTextFragment(scroll);
+  if (hasScrolledToTextFragment) {
+    return NS_OK;
+  }
 
   
   
@@ -10754,12 +10753,12 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
   
 
-  if (aNewHash.IsEmpty() && !hasTextDirectives) {
+  if (aNewHash.IsEmpty()) {
     
     
     
     
-    presShell->GoToAnchor(u""_ns, nullptr, false);
+    presShell->GoToAnchor(u""_ns, false);
 
     if (scroll) {
       
@@ -10774,10 +10773,7 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
   
   NS_ConvertUTF8toUTF16 uStr(aNewHash);
-  RefPtr<nsRange> range =
-      !textDirectives.IsEmpty() ? textDirectives[0] : nullptr;
-  auto rv =
-      presShell->GoToAnchor(uStr, range, scroll, ScrollFlags::ScrollSmoothAuto);
+  auto rv = presShell->GoToAnchor(uStr, scroll, ScrollFlags::ScrollSmoothAuto);
 
   
   
@@ -10798,7 +10794,7 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   if (fragmentBytes.IsEmpty()) {
     
     
-    presShell->GoToAnchor(u""_ns, nullptr, false);
+    presShell->GoToAnchor(u""_ns, false);
     return NS_OK;
   }
 
@@ -10815,8 +10811,7 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
   
   
-  presShell->GoToAnchor(decodedFragment, nullptr, scroll,
-                        ScrollFlags::ScrollSmoothAuto);
+  presShell->GoToAnchor(decodedFragment, scroll, ScrollFlags::ScrollSmoothAuto);
 
   return NS_OK;
 }

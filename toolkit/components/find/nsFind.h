@@ -28,19 +28,6 @@ class nsFind : public nsIFind {
   NS_DECL_NSIFIND
   NS_DECL_CYCLE_COLLECTION_CLASS(nsFind)
 
-  
-  
-  
-  
-  
-  
-  void SetWordStartBounded(bool aWordStartBounded) {
-    mWordStartBounded = aWordStartBounded;
-  }
-  void SetWordEndBounded(bool aWordEndBounded) {
-    mWordEndBounded = aWordEndBounded;
-  }
-
  protected:
   virtual ~nsFind() = default;
 
@@ -49,8 +36,9 @@ class nsFind : public nsIFind {
   bool mCaseSensitive = false;
   bool mMatchDiacritics = false;
 
-  bool mWordStartBounded = false;
-  bool mWordEndBounded = false;
+  
+  
+  bool mEntireWord = false;
 
   struct State;
   class StateRestorer;

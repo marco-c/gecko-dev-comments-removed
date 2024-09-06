@@ -30,7 +30,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/FragmentDirective.h"
 #include "mozilla/widget/Screen.h"
 #include "nsPresContext.h"
 #include "nsIFrame.h"
@@ -1078,10 +1077,6 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
 
   if (!mStopped) {
     if (mDocument) {
-      
-      
-      
-      
       nsCOMPtr<Document> document = mDocument;
       document->ScrollToRef();
     }
@@ -1098,19 +1093,6 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mDocument) {
-    mDocument->FragmentDirective()->ClearUninvokedDirectives();
-  }
   if (mDocument && !restoring) {
     mDocument->LoadEventFired();
   }
