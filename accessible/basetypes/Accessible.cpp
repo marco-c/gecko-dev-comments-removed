@@ -508,6 +508,24 @@ const Accessible* Accessible::ActionAncestor() const {
 }
 
 nsStaticAtom* Accessible::LandmarkRole() const {
+  
+  
+  
+  if (const nsRoleMapEntry* roleMapEntry = ARIARoleMap()) {
+    
+    if (roleMapEntry->Is(nsGkAtoms::region)) {
+      if (Role() == roles::REGION) {
+        return nsGkAtoms::region;
+      }
+    } else if (roleMapEntry->Is(nsGkAtoms::form)) {
+      if (Role() == roles::FORM) {
+        return nsGkAtoms::form;
+      }
+    } else if (roleMapEntry->IsOfType(eLandmark)) {
+      return roleMapEntry->roleAtom;
+    }
+  }
+
   nsAtom* tagName = TagName();
   if (!tagName) {
     
@@ -539,13 +557,13 @@ nsStaticAtom* Accessible::LandmarkRole() const {
   }
 
   if (tagName == nsGkAtoms::section) {
-    if (!NameIsEmpty()) {
+    if (Role() == roles::REGION) {
       return nsGkAtoms::region;
     }
   }
 
   if (tagName == nsGkAtoms::form) {
-    if (!NameIsEmpty()) {
+    if (Role() == roles::FORM_LANDMARK) {
       return nsGkAtoms::form;
     }
   }
@@ -554,10 +572,7 @@ nsStaticAtom* Accessible::LandmarkRole() const {
     return nsGkAtoms::search;
   }
 
-  const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-  return roleMapEntry && roleMapEntry->IsOfType(eLandmark)
-             ? roleMapEntry->roleAtom
-             : nullptr;
+  return nullptr;
 }
 
 nsStaticAtom* Accessible::ComputedARIARole() const {
