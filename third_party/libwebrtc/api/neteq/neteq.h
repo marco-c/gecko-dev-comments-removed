@@ -130,7 +130,6 @@ class NetEq {
     std::string ToString() const;
 
     int sample_rate_hz = 48000;  
-    bool enable_post_decode_vad = false;
     size_t max_packets_in_buffer = 200;
     int max_delay_ms = 0;
     int min_delay_ms = 0;
@@ -195,7 +194,6 @@ class NetEq {
   
   virtual void InsertEmptyPacket(const RTPHeader& rtp_header) = 0;
 
-  
   
   
   
@@ -277,13 +275,6 @@ class NetEq {
   
   
   virtual NetEqOperationsAndState GetOperationsAndState() const = 0;
-
-  
-  
-  virtual void EnableVad() {}
-
-  
-  virtual void DisableVad() {}
 
   
   

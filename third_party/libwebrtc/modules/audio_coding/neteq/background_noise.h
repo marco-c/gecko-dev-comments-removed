@@ -41,7 +41,7 @@ class BackgroundNoise {
   
   
   
-  bool Update(const AudioMultiVector& sync_buffer, const PostDecodeVad& vad);
+  bool Update(const AudioMultiVector& sync_buffer);
 
   
   

@@ -179,7 +179,6 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   
   NetEqTest::Callbacks callbacks;
   NetEq::Config config;
-  config.enable_post_decode_vad = true;
   config.enable_fast_accelerate = true;
   auto codecs = NetEqTest::StandardDecoderMap();
   
