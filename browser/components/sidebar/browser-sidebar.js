@@ -418,7 +418,8 @@ var SidebarController = {
     [...browser.children].forEach((node, i) => {
       node.style.order = i + 1;
     });
-    let sidebarMain = document.getElementById("sidebar-main");
+    let sidebarContainer = document.getElementById("sidebar-main");
+    let sidebarMain = document.querySelector("sidebar-main");
     if (!this._positionStart) {
       
       
@@ -429,13 +430,15 @@ var SidebarController = {
 
       appcontent.style.order = boxOrdinal;
       
-      sidebarMain.style.order = parseInt(this._box.style.order) + 1;
+      sidebarContainer.style.order = parseInt(this._box.style.order) + 1;
       
       this._box.setAttribute("positionend", true);
       sidebarMain.setAttribute("positionend", true);
+      sidebarContainer.setAttribute("positionend", true);
     } else {
       this._box.removeAttribute("positionend");
       sidebarMain.removeAttribute("positionend");
+      sidebarContainer.removeAttribute("positionend");
     }
 
     this.hideSwitcherPanel();
