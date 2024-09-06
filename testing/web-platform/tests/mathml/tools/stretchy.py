@@ -4,7 +4,9 @@ from utils import mathfont
 import fontforge
 
 
-font = mathfont.create("stretchy", "Copyright (c) 2021 Igalia S.L.")
+font = mathfont.create("stretchy", "Copyright (c) 2021-2024 Igalia S.L.")
+
+font.math.AxisHeight = 0
 
 
 font.math.MinConnectorOverlap = mathfont.em // 2
@@ -27,6 +29,7 @@ font.math.OverbarExtraAscender = 0
 
 horizontalArrow = 0x295A  
 verticalArrow = 0x295C  
+upDownArrowWithBase = 0x21A8 
 
 mathfont.createSizeVariants(font, aUsePUA=True, aCenterOnBaseline=False)
 
@@ -39,5 +42,11 @@ mathfont.createStretchy(font, horizontalArrow, False)
 mathfont.createSquareGlyph(font, verticalArrow)
 mathfont.createStretchy(font, verticalArrow, True)
 mathfont.createStretchy(font, verticalArrow, False)
+
+
+
+g = font.createChar(upDownArrowWithBase)
+mathfont.drawRectangleGlyph(g, mathfont.em, mathfont.em/2, 0)
+font[upDownArrowWithBase].verticalVariants = "uni21A8 v0 v1 v2 v3"
 
 mathfont.save(font)
