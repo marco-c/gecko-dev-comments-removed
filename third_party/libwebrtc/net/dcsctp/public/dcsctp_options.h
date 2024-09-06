@@ -200,10 +200,9 @@ struct DcSctpOptions {
   
   
   
-  
-  
-  
-  bool enable_zero_checksum = false;
+  ZeroChecksumAlternateErrorDetectionMethod
+      zero_checksum_alternate_error_detection_method =
+          ZeroChecksumAlternateErrorDetectionMethod::None();
 };
 }  
 

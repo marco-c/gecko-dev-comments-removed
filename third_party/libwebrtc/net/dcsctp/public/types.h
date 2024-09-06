@@ -151,6 +151,27 @@ class LifecycleId : public webrtc::StrongAlias<class LifecycleIdTag, uint64_t> {
 
   static constexpr LifecycleId NotSet() { return LifecycleId(0); }
 };
+
+
+
+
+class ZeroChecksumAlternateErrorDetectionMethod
+    : public webrtc::StrongAlias<
+          class ZeroChecksumAlternateErrorDetectionMethodTag,
+          uint32_t> {
+ public:
+  constexpr explicit ZeroChecksumAlternateErrorDetectionMethod(
+      const UnderlyingType& v)
+      : webrtc::StrongAlias<class ZeroChecksumAlternateErrorDetectionMethodTag,
+                            uint32_t>(v) {}
+
+  static constexpr ZeroChecksumAlternateErrorDetectionMethod None() {
+    return ZeroChecksumAlternateErrorDetectionMethod(0);
+  }
+  static constexpr ZeroChecksumAlternateErrorDetectionMethod LowerLayerDtls() {
+    return ZeroChecksumAlternateErrorDetectionMethod(1);
+  }
+};
 }  
 
 #endif  
