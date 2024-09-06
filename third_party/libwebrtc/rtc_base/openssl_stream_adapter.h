@@ -223,6 +223,10 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter,
   
 #ifdef OPENSSL_IS_BORINGSSL
   std::unique_ptr<BoringSSLIdentity> identity_;
+  
+  
+  
+  const bool permute_extension_;
 #else
   std::unique_ptr<OpenSSLIdentity> identity_;
 #endif
