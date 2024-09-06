@@ -103,8 +103,20 @@ function logAccessDeniedWarning(window, callerInfo, extensionPolicy) {
   Services.console.logMessage(error);
 }
 
-function extensionAllowedToInspectPrincipal(extensionPolicy, principal) {
+
+
+
+
+
+
+
+function extensionAllowedToInspectPrincipal(extensionPolicy, principal, location) {
   if (principal.isNullPrincipal) {
+    if (location.protocol === "view-source:") {
+      
+      
+      return false;
+    }
     
     
     
@@ -555,7 +567,8 @@ class WebExtensionInspectedWindowActor extends Actor {
     if (
       !extensionAllowedToInspectPrincipal(
         extensionPolicy,
-        window.document.nodePrincipal
+        window.document.nodePrincipal,
+        window.location
       )
     ) {
       
