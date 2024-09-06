@@ -658,6 +658,10 @@ pref("browser.urlbar.pocket.featureGate", false);
 
 
 
+pref("browser.urlbar.pocket.suggestedIndex", 0);
+
+
+
 pref("browser.urlbar.suggest.pocket", true);
 
 pref("browser.altClickSave", false);
