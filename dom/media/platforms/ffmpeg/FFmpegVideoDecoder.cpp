@@ -44,6 +44,7 @@
 #  define AV_PIX_FMT_YUV422P PIX_FMT_YUV422P
 #  define AV_PIX_FMT_YUV422P10LE PIX_FMT_YUV422P10LE
 #  define AV_PIX_FMT_YUV444P PIX_FMT_YUV444P
+#  define AV_PIX_FMT_YUVJ444P PIX_FMT_YUVJ444P
 #  define AV_PIX_FMT_YUV444P10LE PIX_FMT_YUV444P10LE
 #  define AV_PIX_FMT_GBRP PIX_FMT_GBRP
 #  define AV_PIX_FMT_GBRP10LE PIX_FMT_GBRP10LE
@@ -98,6 +99,7 @@ using media::TimeUnit;
 
 
 
+
 static AVPixelFormat ChoosePixelFormat(AVCodecContext* aCodecContext,
                                        const AVPixelFormat* aFormats) {
   FFMPEGV_LOG("Choosing FFmpeg pixel format for video decoding.");
@@ -121,6 +123,9 @@ static AVPixelFormat ChoosePixelFormat(AVCodecContext* aCodecContext,
       case AV_PIX_FMT_YUV444P:
         FFMPEGV_LOG("Requesting pixel format YUV444P.");
         return AV_PIX_FMT_YUV444P;
+      case AV_PIX_FMT_YUVJ444P:
+        FFMPEGV_LOG("Requesting pixel format YUVJ444P.");
+        return AV_PIX_FMT_YUVJ444P;
       case AV_PIX_FMT_YUV444P10LE:
         FFMPEGV_LOG("Requesting pixel format YUV444P10LE.");
         return AV_PIX_FMT_YUV444P10LE;
@@ -613,6 +618,7 @@ static gfx::ColorDepth GetColorDepth(const AVPixelFormat& aFormat) {
     case AV_PIX_FMT_YUVJ420P:
     case AV_PIX_FMT_YUV422P:
     case AV_PIX_FMT_YUV444P:
+    case AV_PIX_FMT_YUVJ444P:
       return gfx::ColorDepth::COLOR_8;
     case AV_PIX_FMT_YUV420P10LE:
     case AV_PIX_FMT_YUV422P10LE:
@@ -685,14 +691,16 @@ static bool IsColorFormatSupportedForUsingCustomizedBuffer(
   
   
   return aFormat == AV_PIX_FMT_YUV420P || aFormat == AV_PIX_FMT_YUVJ420P ||
-         aFormat == AV_PIX_FMT_YUV444P;
+         aFormat == AV_PIX_FMT_YUV444P || aFormat == AV_PIX_FMT_YUVJ444P;
 #  else
+  
   
   
   return aFormat == AV_PIX_FMT_YUV420P || aFormat == AV_PIX_FMT_YUVJ420P ||
          aFormat == AV_PIX_FMT_YUV420P10LE ||
          aFormat == AV_PIX_FMT_YUV420P12LE || aFormat == AV_PIX_FMT_YUV444P ||
-         aFormat == AV_PIX_FMT_YUV444P10LE || aFormat == AV_PIX_FMT_YUV444P12LE;
+         aFormat == AV_PIX_FMT_YUVJ444P || aFormat == AV_PIX_FMT_YUV444P10LE ||
+         aFormat == AV_PIX_FMT_YUV444P12LE;
 #  endif
 }
 
@@ -1209,6 +1217,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
 #  endif
             return Some(DecodeStage::YUV422P);
           case AV_PIX_FMT_YUV444P:
+          case AV_PIX_FMT_YUVJ444P:
           case AV_PIX_FMT_YUV444P10LE:
 #  if LIBAVCODEC_VERSION_MAJOR >= 57
           case AV_PIX_FMT_YUV444P12LE:
@@ -1316,6 +1325,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
 #  endif
             return Some(DecodeStage::YUV422P);
           case AV_PIX_FMT_YUV444P:
+          case AV_PIX_FMT_YUVJ444P:
           case AV_PIX_FMT_YUV444P10LE:
 #  if LIBAVCODEC_VERSION_MAJOR >= 57
           case AV_PIX_FMT_YUV444P12LE:
