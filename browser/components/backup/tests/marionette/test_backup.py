@@ -49,20 +49,9 @@ class BackupTest(MarionetteTestCase):
         self.marionette.start_session()
         self.marionette.set_context("chrome")
 
-        self.marionette.execute_script(
-            """
-          const DefaultBackupResources = ChromeUtils.importESModule("resource:///modules/backup/BackupResources.sys.mjs");
-          let resourceKeys = [];
-          for (const resourceName in DefaultBackupResources) {
-            let resource = DefaultBackupResources[resourceName];
-            resourceKeys.push(resource.key);
-          }
-          return resourceKeys;
-        """
-        )
-
+        archiveDestPath = os.path.join(tempfile.gettempdir(), "backup-dest")
         recoveryCode = "This is a test password"
-        originalArchivePath = self.marionette.execute_async_script(
+        archivePath = self.marionette.execute_async_script(
             """
           const { OSKeyStore } = ChromeUtils.importESModule(
             "resource://gre/modules/OSKeyStore.sys.mjs"
@@ -73,7 +62,9 @@ class BackupTest(MarionetteTestCase):
             throw new Error("Could not get initialized BackupService.");
           }
 
-          let [recoveryCode, outerResolve] = arguments;
+          let [archiveDestPath, recoveryCode, outerResolve] = arguments;
+          bs.setParentDirPath(archiveDestPath);
+
           (async () => {
             // This is some hackery to make it so that OSKeyStore doesn't kick
             // off an OS authentication dialog in our test, and also to make
@@ -94,20 +85,8 @@ class BackupTest(MarionetteTestCase):
             return archivePath;
           })().then(outerResolve);
         """,
-            script_args=[recoveryCode],
+            script_args=[archiveDestPath, recoveryCode],
         )
-
-        
-        
-        
-        
-        
-        
-        
-        archivePath = os.path.join(tempfile.gettempdir(), "archive.html")
-        
-        shutil.rmtree(archivePath, ignore_errors=True)
-        shutil.move(originalArchivePath, archivePath)
 
         recoveryPath = os.path.join(tempfile.gettempdir(), "recovery")
         shutil.rmtree(recoveryPath, ignore_errors=True)
