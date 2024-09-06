@@ -105,19 +105,20 @@ class BaseDevToolsPanel {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class ParentDevToolsPanel extends BaseDevToolsPanel {
+  
+
+
+
+
+
+
+
+
+
+
+
+
   constructor(context, panelOptions) {
     super(context, panelOptions);
 
@@ -340,15 +341,16 @@ class DevToolsSelectionObserver extends EventEmitter {
 
 
 
-
-
-
-
-
-
-
-
 class ParentDevToolsInspectorSidebar extends BaseDevToolsPanel {
+  
+
+
+
+
+
+
+
+
   constructor(context, panelOptions) {
     super(context, panelOptions);
 
