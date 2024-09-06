@@ -2664,82 +2664,126 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
   }
 
   auto* colr = GetFontEntry()->GetCOLR();
-  if (const auto* paintGraph = COLRFonts::GetGlyphPaintGraph(colr, aGlyphId)) {
-    const auto* hbShaper = GetHarfBuzzShaper();
-    if (hbShaper && hbShaper->IsInitialized()) {
-      if (aTextDrawer) {
-        aTextDrawer->FoundUnsupportedFeature();
-        return true;
+  const auto* paintGraph = COLRFonts::GetGlyphPaintGraph(colr, aGlyphId);
+  const gfxHarfBuzzShaper* hbShaper = nullptr;
+  if (paintGraph) {
+    
+    
+    hbShaper = GetHarfBuzzShaper();
+    if (!hbShaper && !hbShaper->IsInitialized()) {
+      return false;
+    }
+    if (aTextDrawer) {
+      aTextDrawer->FoundUnsupportedFeature();
+      return true;
+    }
+  }
+  const auto* layers =
+      paintGraph ? nullptr : COLRFonts::GetGlyphLayers(colr, aGlyphId);
+
+  if (!paintGraph && !layers) {
+    return false;
+  }
+
+  
+  bool useCache = GetAdjustedSize() <= 256.0;
+
+  
+  
+  
+  
+  RefPtr<SourceSurface> snapshot;
+  if ((useCache ||
+       aFontParams.drawOptions.mCompositionOp != CompositionOp::OP_OVER) &&
+      aDrawTarget->GetBackendType() != BackendType::WEBRENDER_TEXT) {
+    AutoWriteLock lock(mLock);
+    if (!mColorGlyphCache && useCache) {
+      mColorGlyphCache = MakeUnique<ColorGlyphCache>();
+    }
+
+    Rect bounds;
+    if (paintGraph) {
+      bounds = COLRFonts::GetColorGlyphBounds(
+          colr, hbShaper->GetHBFont(), aGlyphId, aDrawTarget,
+          aFontParams.scaledFont, mFUnitsConvFactor);
+    } else {
+      bounds = GetFontEntry()->GetFontExtents(mFUnitsConvFactor);
+    }
+    bounds.RoundOut();
+
+    
+    
+    HashMap<uint32_t, RefPtr<SourceSurface>>::AddPtr cached;
+    if (useCache) {
+      mColorGlyphCache->SetColors(aFontParams.currentColor,
+                                  aFontParams.palette);
+      cached = mColorGlyphCache->mCache.lookupForAdd(aGlyphId);
+      if (cached) {
+        snapshot = cached->value();
       }
+    }
 
+    if (!snapshot) {
       
-      if (GetAdjustedSize() <= 256.0) {
-        AutoWriteLock lock(mLock);
-        if (!mColorGlyphCache) {
-          mColorGlyphCache = MakeUnique<ColorGlyphCache>();
-        }
-
+      IntSize size(int(bounds.width), int(bounds.height));
+      SurfaceFormat format = SurfaceFormat::B8G8R8A8;
+      RefPtr target =
+          Factory::CreateDrawTarget(BackendType::SKIA, size, format);
+      if (target) {
         
-        
-        mColorGlyphCache->SetColors(aFontParams.currentColor,
-                                    aFontParams.palette);
-
+        DrawOptions drawOptions(aFontParams.drawOptions);
+        drawOptions.mCompositionOp = CompositionOp::OP_OVER;
         bool ok = false;
-        auto cached = mColorGlyphCache->mCache.lookupForAdd(aGlyphId);
-        Rect bounds = COLRFonts::GetColorGlyphBounds(
-            colr, hbShaper->GetHBFont(), aGlyphId, aDrawTarget,
-            aFontParams.scaledFont, mFUnitsConvFactor);
-        bounds.RoundOut();
-
-        if (cached) {
-          ok = true;
+        if (paintGraph) {
+          ok = COLRFonts::PaintGlyphGraph(
+              colr, hbShaper->GetHBFont(), paintGraph, target, nullptr,
+              aFontParams.scaledFont, drawOptions, -bounds.TopLeft(),
+              aFontParams.currentColor, aFontParams.palette->Colors(), aGlyphId,
+              mFUnitsConvFactor);
         } else {
-          
-          
-          IntSize size(int(bounds.width), int(bounds.height));
-          SurfaceFormat format = SurfaceFormat::B8G8R8A8;
-          RefPtr target =
-              Factory::CreateDrawTarget(BackendType::SKIA, size, format);
-          if (target) {
-            ok = COLRFonts::PaintGlyphGraph(
-                GetFontEntry()->GetCOLR(), hbShaper->GetHBFont(), paintGraph,
-                target, nullptr, aFontParams.scaledFont,
-                aFontParams.drawOptions, -bounds.TopLeft(),
-                aFontParams.currentColor, aFontParams.palette->Colors(),
-                aGlyphId, mFUnitsConvFactor);
-            if (ok) {
-              RefPtr snapshot = target->Snapshot();
-              ok = mColorGlyphCache->mCache.add(cached, aGlyphId, snapshot);
-            }
-          }
+          auto face(GetFontEntry()->GetHBFace());
+          ok = COLRFonts::PaintGlyphLayers(
+              colr, face, layers, target, nullptr, aFontParams.scaledFont,
+              drawOptions, -bounds.TopLeft(), aFontParams.currentColor,
+              aFontParams.palette->Colors());
         }
         if (ok) {
-          
-          aDrawTarget->DrawSurface(
-              cached->value(), Rect(aPoint + bounds.TopLeft(), bounds.Size()),
-              Rect(Point(), bounds.Size()));
-          return true;
+          snapshot = target->Snapshot();
+          if (useCache) {
+            
+            
+            
+            Unused << mColorGlyphCache->mCache.add(cached, aGlyphId, snapshot);
+          }
         }
       }
-
+    }
+    if (snapshot) {
       
-      
-      return COLRFonts::PaintGlyphGraph(
-          colr, hbShaper->GetHBFont(), paintGraph, aDrawTarget, aTextDrawer,
-          aFontParams.scaledFont, aFontParams.drawOptions, aPoint,
-          aFontParams.currentColor, aFontParams.palette->Colors(), aGlyphId,
-          mFUnitsConvFactor);
+      aDrawTarget->DrawSurface(snapshot,
+                               Rect(aPoint + bounds.TopLeft(), bounds.Size()),
+                               Rect(Point(), bounds.Size()),
+                               DrawSurfaceOptions(), aFontParams.drawOptions);
+      return true;
     }
   }
 
-  if (const auto* layers =
-          COLRFonts::GetGlyphLayers(GetFontEntry()->GetCOLR(), aGlyphId)) {
+  
+  
+  if (paintGraph) {
+    return COLRFonts::PaintGlyphGraph(
+        colr, hbShaper->GetHBFont(), paintGraph, aDrawTarget, aTextDrawer,
+        aFontParams.scaledFont, aFontParams.drawOptions, aPoint,
+        aFontParams.currentColor, aFontParams.palette->Colors(), aGlyphId,
+        mFUnitsConvFactor);
+  }
+
+  if (layers) {
     auto face(GetFontEntry()->GetHBFace());
-    bool ok = COLRFonts::PaintGlyphLayers(
+    return COLRFonts::PaintGlyphLayers(
         colr, face, layers, aDrawTarget, aTextDrawer, aFontParams.scaledFont,
         aFontParams.drawOptions, aPoint, aFontParams.currentColor,
         aFontParams.palette->Colors());
-    return ok;
   }
 
   return false;
