@@ -743,6 +743,8 @@ static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
 
   
   MOZ_ASSERT(IsValidISODateTime(dateTime));
+
+  
   MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
 
   
@@ -868,6 +870,8 @@ PlainDateTime js::temporal::RoundISODateTime(
 
   
   MOZ_ASSERT(IsValidISODateTime(dateTime));
+
+  
   MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
 
   

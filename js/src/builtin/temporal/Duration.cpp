@@ -2148,18 +2148,18 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   auto largestUnit = std::min(largestUnit1, largestUnit2);
 
   
+  auto normalized1 = NormalizeTimeDuration(one);
+
+  
+  auto normalized2 = NormalizeTimeDuration(two);
+
+  
   if (largestUnit <= TemporalUnit::Week) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_DURATION_UNCOMPARABLE,
                               "relativeTo");
     return false;
   }
-
-  
-  auto normalized1 = NormalizeTimeDuration(one);
-
-  
-  auto normalized2 = NormalizeTimeDuration(two);
 
   
   NormalizedTimeDuration normalized;
@@ -2212,6 +2212,12 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   auto largestUnit = std::min(largestUnit1, largestUnit2);
 
   
+  auto normalized1 = NormalizeTimeDuration(one);
+
+  
+  auto normalized2 = NormalizeTimeDuration(two);
+
+  
 
   
 
@@ -2244,12 +2250,6 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
                       &dateDifference)) {
     return false;
   }
-
-  
-  auto normalized1 = NormalizeTimeDuration(one);
-
-  
-  auto normalized2 = NormalizeTimeDuration(two);
 
   
   NormalizedTimeDuration normalized1WithDays;
@@ -2306,6 +2306,12 @@ static bool AddDuration(
   auto largestUnit = std::min(largestUnit1, largestUnit2);
 
   
+  auto normalized1 = NormalizeTimeDuration(one);
+
+  
+  auto normalized2 = NormalizeTimeDuration(two);
+
+  
 
   
 
@@ -2315,12 +2321,6 @@ static bool AddDuration(
   
   if (!startDateTimeNeeded) {
     
-
-    
-    auto normalized1 = NormalizeTimeDuration(one);
-
-    
-    auto normalized2 = NormalizeTimeDuration(two);
 
     
     Instant intermediateNs;
@@ -2364,22 +2364,20 @@ static bool AddDuration(
   }
 
   
-  auto normalized1 = CreateNormalizedDurationRecord(one);
-
-  
-  auto normalized2 = CreateNormalizedDurationRecord(two);
-
-  
+  auto norm1 =
+      CreateNormalizedDurationRecord(one.toDateDuration(), normalized1);
   Instant intermediateNs;
   if (!AddZonedDateTime(cx, zonedRelativeTo.instant(), timeZone, calendar,
-                        normalized1, startDateTime, &intermediateNs)) {
+                        norm1, startDateTime, &intermediateNs)) {
     return false;
   }
   MOZ_ASSERT(IsValidEpochInstant(intermediateNs));
 
   
+  auto norm2 =
+      CreateNormalizedDurationRecord(two.toDateDuration(), normalized2);
   Instant endNs;
-  if (!AddZonedDateTime(cx, intermediateNs, timeZone, calendar, normalized2,
+  if (!AddZonedDateTime(cx, intermediateNs, timeZone, calendar, norm2,
                         &endNs)) {
     return false;
   }
