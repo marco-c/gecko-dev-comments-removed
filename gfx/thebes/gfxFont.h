@@ -1527,7 +1527,9 @@ class gfxFont {
   
   
   bool AlwaysNeedsMaskForShadow() const {
-    return mFontEntry->AlwaysNeedsMaskForShadow();
+    return mFontEntry->TryGetColorGlyphs() || mFontEntry->TryGetSVGData(this) ||
+           mFontEntry->HasFontTable(TRUETYPE_TAG('C', 'B', 'D', 'T')) ||
+           mFontEntry->HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'));
   }
 
   
