@@ -41,7 +41,7 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
   
   void AddBlocker(ContentParent* aParent);
   void RemoveBlocker(ContentParent* aParent);
-  already_AddRefed<ContentParent> Take(const nsACString& aRemoteType);
+  UniqueContentParentKeepAlive Take(const nsACString& aRemoteType);
   void Erase(ContentParent* aParent);
 
  private:
@@ -77,7 +77,7 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
 
   bool mEnabled;
   uint32_t mNumberPreallocs;
-  AutoTArray<RefPtr<ContentParent>, 3> mPreallocatedProcesses;
+  AutoTArray<UniqueContentParentKeepAlive, 3> mPreallocatedProcesses;
   
   
   static uint32_t sNumBlockers;
@@ -192,14 +192,14 @@ void PreallocatedProcessManagerImpl::RereadPrefs() {
   }
 }
 
-already_AddRefed<ContentParent> PreallocatedProcessManagerImpl::Take(
+UniqueContentParentKeepAlive PreallocatedProcessManagerImpl::Take(
     const nsACString& aRemoteType) {
   if (!IsEnabled()) {
     return nullptr;
   }
-  RefPtr<ContentParent> process;
+  UniqueContentParentKeepAlive process;
   if (!IsEmpty()) {
-    process = mPreallocatedProcesses.ElementAt(0);
+    process = std::move(mPreallocatedProcesses.ElementAt(0));
     mPreallocatedProcesses.RemoveElementAt(0);
 
     
@@ -207,7 +207,7 @@ already_AddRefed<ContentParent> PreallocatedProcessManagerImpl::Take(
 
     
     
-    ContentParent* last = mPreallocatedProcesses.SafeLastElement(nullptr);
+    ContentParent* last = mPreallocatedProcesses.SafeLastElement(nullptr).get();
     
     
     if (!last || !last->IsLaunching()) {
@@ -219,11 +219,11 @@ already_AddRefed<ContentParent> PreallocatedProcessManagerImpl::Take(
              (unsigned long)mPreallocatedProcesses.Length()));
   }
   if (process && !process->IsLaunching()) {
-    ProcessPriorityManager::SetProcessPriority(process,
+    ProcessPriorityManager::SetProcessPriority(process.get(),
                                                PROCESS_PRIORITY_FOREGROUND);
   }  
 
-  return process.forget();
+  return process;
 }
 
 void PreallocatedProcessManagerImpl::Erase(ContentParent* aParent) {
@@ -315,19 +315,14 @@ void PreallocatedProcessManagerImpl::AllocateNow() {
     return;
   }
 
-  RefPtr<ContentParent> process = ContentParent::MakePreallocProcess();
-  mPreallocatedProcesses.AppendElement(process);
-  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("Preallocated = %lu of %d processes",
-           (unsigned long)mPreallocatedProcesses.Length(), mNumberPreallocs));
-
-  RefPtr<PreallocatedProcessManagerImpl> self(this);
-  process->LaunchSubprocessAsync(PROCESS_PRIORITY_PREALLOC)
+  UniqueContentParentKeepAlive process = ContentParent::MakePreallocProcess();
+  process->WaitForLaunchAsync(PROCESS_PRIORITY_PREALLOC)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self, this, process](const RefPtr<ContentParent>&) {
+          [self = RefPtr{this},
+           process = RefPtr{process.get()}](UniqueContentParentKeepAlive) {
             if (process->IsDead()) {
-              Erase(process);
+              self->Erase(process);
               
               
               
@@ -335,24 +330,22 @@ void PreallocatedProcessManagerImpl::AllocateNow() {
               
               
               
-            } else {
+            } else if (self->CanAllocate()) {
               
-              if (CanAllocate()) {
-                if (mPreallocatedProcesses.Length() < mNumberPreallocs) {
-                  AllocateOnIdle();
-                }
-              } else if (!IsEnabled()) {
-                
-                
-                if (process->mRemoteType == PREALLOC_REMOTE_TYPE) {
-                  
-                  process->ShutDownProcess(
-                      ContentParent::SEND_SHUTDOWN_MESSAGE);
-                }
+              if (self->mPreallocatedProcesses.Length() <
+                  self->mNumberPreallocs) {
+                self->AllocateOnIdle();
               }
             }
           },
-          [self, this, process]() { Erase(process); });
+          [self = RefPtr{this}, process = RefPtr{process.get()}]() {
+            self->Erase(process);
+          });
+
+  mPreallocatedProcesses.AppendElement(std::move(process));
+  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+          ("Preallocated = %lu of %d processes",
+           (unsigned long)mPreallocatedProcesses.Length(), mNumberPreallocs));
 }
 
 void PreallocatedProcessManagerImpl::Disable() {
@@ -365,12 +358,9 @@ void PreallocatedProcessManagerImpl::Disable() {
 }
 
 void PreallocatedProcessManagerImpl::CloseProcesses() {
-  while (!IsEmpty()) {
-    RefPtr<ContentParent> process(mPreallocatedProcesses.ElementAt(0));
-    mPreallocatedProcesses.RemoveElementAt(0);
-    process->ShutDownProcess(ContentParent::SEND_SHUTDOWN_MESSAGE);
-    
-  }
+  
+  
+  mPreallocatedProcesses.Clear();
 }
 
 inline PreallocatedProcessManagerImpl*
@@ -414,7 +404,7 @@ void PreallocatedProcessManager::RemoveBlocker(const nsACString& aRemoteType,
 }
 
 
-already_AddRefed<ContentParent> PreallocatedProcessManager::Take(
+UniqueContentParentKeepAlive PreallocatedProcessManager::Take(
     const nsACString& aRemoteType) {
   if (auto impl = GetPPMImpl()) {
     return impl->Take(aRemoteType);
