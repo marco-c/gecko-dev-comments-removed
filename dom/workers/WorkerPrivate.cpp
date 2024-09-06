@@ -3963,7 +3963,11 @@ bool WorkerPrivate::InterruptCallback(JSContext* aCx) {
   SetGCTimerMode(PeriodicTimer);
 
   if (data->mDebuggerInterruptRequested) {
-    bool debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+    bool debuggerRunnablesPending = false;
+    {
+      MutexAutoLock lock(mMutex);
+      debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+    }
     if (debuggerRunnablesPending) {
       
       
@@ -3971,8 +3975,12 @@ bool WorkerPrivate::InterruptCallback(JSContext* aCx) {
       if (globalScope) {
         JSObject* global = JS::CurrentGlobalOrNull(aCx);
         if (global && global == globalScope->GetGlobalJSObject()) {
-          while (!mDebuggerQueue.IsEmpty()) {
+          while (debuggerRunnablesPending) {
             ProcessSingleDebuggerRunnable();
+            {
+              MutexAutoLock lock(mMutex);
+              debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+            }
           }
         }
       }
@@ -4223,9 +4231,18 @@ void WorkerPrivate::ProcessSingleDebuggerRunnable() {
 }
 
 void WorkerPrivate::ClearDebuggerEventQueue() {
-  while (!mDebuggerQueue.IsEmpty()) {
+  bool debuggerRunnablesPending = false;
+  {
+    MutexAutoLock lock(mMutex);
+    debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+  }
+  while (debuggerRunnablesPending) {
     WorkerRunnable* runnable = nullptr;
-    mDebuggerQueue.Pop(runnable);
+    {
+      MutexAutoLock lock(mMutex);
+      mDebuggerQueue.Pop(runnable);
+      debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+    }
     
     runnable->Release();
 
