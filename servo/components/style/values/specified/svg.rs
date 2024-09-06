@@ -421,10 +421,9 @@ impl Parse for DProperty {
 #[css(bitflags(single = "none", mixed = "non-scaling-stroke"))]
 #[repr(C)]
 
-
-pub struct VectorEffectType(u8);
+pub struct VectorEffect(u8);
 bitflags! {
-    impl VectorEffectType: u8 {
+    impl VectorEffect: u8 {
         /// `none`
         const NONE = 0;
         /// `non-scaling-stroke`
@@ -432,92 +431,10 @@ bitflags! {
     }
 }
 
-#[allow(missing_docs)]
-impl VectorEffectType {
-    pub fn is_none(&self) -> bool {
-        *self == VectorEffectType::NONE
-    }
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    Eq,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(C)]
-
-
-pub enum CoordinateSpace {
-    #[default]
-    
-    Viewport,
-    
-    Screen,
-}
-
-#[allow(missing_docs)]
-impl CoordinateSpace {
-    pub fn is_viewport(&self) -> bool {
-        *self == Self::Viewport
-    }
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToCss,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(C)]
-
-
-
-
-pub struct VectorEffect {
-    
-    pub effect_type: VectorEffectType,
-    
-    #[css(skip_if = "CoordinateSpace::is_viewport")]
-    pub coordinate_space: CoordinateSpace,
-}
-
-#[allow(missing_docs)]
 impl VectorEffect {
+    
     #[inline]
     pub fn none() -> Self {
-        Self {
-            effect_type: VectorEffectType::NONE,
-            coordinate_space: CoordinateSpace::Viewport,
-        }
-    }
-}
-
-impl Parse for VectorEffect {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let effect_type = VectorEffectType::parse(context, input)?;
-        if effect_type.is_none() {
-            return Ok(Self::none());
-        }
-        let coordinate_space = input.try_parse(CoordinateSpace::parse).unwrap_or(CoordinateSpace::Viewport);
-        Ok(Self { effect_type, coordinate_space })
+        Self::NONE
     }
 }
