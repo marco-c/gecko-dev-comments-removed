@@ -223,9 +223,6 @@ parent:
   
   async OnInitialStorageAccess();
 
-  
-  async RecordUserActivationForBTP();
-
 child:
   async NotifyPermissionChange(nsCString type, uint32_t permission);
 };

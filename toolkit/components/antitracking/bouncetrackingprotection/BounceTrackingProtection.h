@@ -42,7 +42,7 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   
   
   
-  [[nodiscard]] static nsresult RecordUserActivation(
+  [[nodiscard]] nsresult RecordUserActivation(
       nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime = Nothing());
 
   
