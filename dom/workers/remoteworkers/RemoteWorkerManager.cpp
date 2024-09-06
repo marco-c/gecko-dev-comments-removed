@@ -232,7 +232,7 @@ void RemoteWorkerManager::RegisterActor(RemoteWorkerServiceParent* aActor) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  if (!BackgroundParent::IsOtherProcessActor(aActor->Manager())) {
+  if (!aActor->IsOtherProcessActor()) {
     MOZ_ASSERT(!mParentActor);
     mParentActor = aActor;
     MOZ_ASSERT(mPendings.IsEmpty());
@@ -342,7 +342,7 @@ void RemoteWorkerManager::LaunchInternal(
   
   if (aTargetActor != mParentActor) {
     RefPtr<ThreadsafeContentParentHandle> contentHandle =
-        BackgroundParent::GetContentParentHandle(aTargetActor->Manager());
+        aTargetActor->GetContentParentHandle();
 
     
     
@@ -362,8 +362,7 @@ void RemoteWorkerManager::LaunchInternal(
   }
 
   RefPtr<RemoteWorkerParent> workerActor = MakeAndAddRef<RemoteWorkerParent>();
-  if (!aTargetActor->Manager()->SendPRemoteWorkerConstructor(workerActor,
-                                                             aData)) {
+  if (!aTargetActor->SendPRemoteWorkerConstructor(workerActor, aData)) {
     AsyncCreationFailed(aController);
     return;
   }
@@ -413,7 +412,7 @@ void RemoteWorkerManager::ForEachActor(
 
     if (MatchRemoteType(actor->GetRemoteType(), aRemoteType)) {
       ThreadsafeContentParentHandle* contentHandle =
-          BackgroundParent::GetContentParentHandle(actor->Manager());
+          actor->GetContentParentHandle();
 
       if (!aCallback(actor, contentHandle)) {
         break;

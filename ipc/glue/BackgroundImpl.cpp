@@ -652,7 +652,7 @@ void AssertIsOnBackgroundThread() { ParentImpl::AssertIsOnBackgroundThread(); }
 
 
 
-already_AddRefed<nsISerialEventTarget> GetBackgroundThread() {
+already_AddRefed<nsISerialEventTarget> BackgroundParent::GetBackgroundThread() {
   return ParentImpl::GetBackgroundThread();
 }
 
