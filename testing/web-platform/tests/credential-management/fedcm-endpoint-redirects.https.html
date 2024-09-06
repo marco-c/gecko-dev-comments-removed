@@ -20,7 +20,7 @@ fedcm_test(async t => {
   let test_options = request_options_with_mediation_required("manifest_redirect_accounts.json");
   await select_manifest(t, test_options);
 
-  const cred = fedcm_get_and_select_first_account(t, test_options);
+  const cred = navigator.credentials.get(test_options);
   // We expect a mismatch dialog.
   const type = await fedcm_get_dialog_type_promise(t);
   assert_equals(type, 'ConfirmIdpLogin');
@@ -40,7 +40,8 @@ fedcm_test(async t => {
   } catch (e) {
     assert_true(e instanceof DOMException);
     assert_equals(e.name, "IdentityCredentialError");
-    assert_equals(e.code, "server_error");
+    // 308 should not produce a valid error code
+    assert_equals(e.code, "");
   }
 }, 'Test that token endpoint does not follow redirects');
 </script>
