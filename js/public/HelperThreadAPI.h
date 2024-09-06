@@ -23,15 +23,9 @@ class HelperThreadTask;
 
 
 
-enum class DispatchReason { NewTask, FinishedTask };
 
 
-
-
-
-
-using HelperThreadTaskCallback = void (*)(HelperThreadTask* task,
-                                          DispatchReason reason);
+using HelperThreadTaskCallback = void (*)(HelperThreadTask* task);
 extern JS_PUBLIC_API void SetHelperThreadTaskCallback(
     HelperThreadTaskCallback callback, size_t threadCount, size_t stackSize);
 
