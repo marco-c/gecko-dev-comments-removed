@@ -15,6 +15,16 @@ using namespace js::wasm;
 
 
 
+size_t ModuleMetadata::sizeOfExcludingThis(
+    mozilla::MallocSizeOf mallocSizeOf) const {
+  
+  return imports.sizeOfExcludingThis(mallocSizeOf) +
+         exports.sizeOfExcludingThis(mallocSizeOf) +
+         dataSegmentRanges.sizeOfExcludingThis(mallocSizeOf);
+}
+
+
+
 bool CodeMetadata::addDefinedFunc(
      ModuleMetadata* moduleMeta, ValTypeVector&& params,
     ValTypeVector&& results, bool declareForRef,

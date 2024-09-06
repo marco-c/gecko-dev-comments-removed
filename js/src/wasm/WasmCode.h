@@ -576,7 +576,13 @@ using MetadataAnalysisHashMap =
     HashMap<const char*, uint32_t, mozilla::CStringHasher, SystemAllocPolicy>;
 
 class Code : public ShareableBase<Code> {
-  UniqueCodeTier tier1_;
+  
+  
+  
+  
+  SharedCodeMetadata codeMeta_;
+  
+  SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   
   
@@ -598,15 +604,14 @@ class Code : public ShareableBase<Code> {
   mutable UniqueConstCodeTier tier2_;
   mutable Atomic<bool> hasTier2_;
 
-  SharedCodeMetadata codeMeta_;
-  SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
+  UniqueCodeTier tier1_;
 
   ExclusiveData<CacheableCharsVector> profilingLabels_;
   JumpTables jumpTables_;
 
  public:
-  Code(UniqueCodeTier tier1, const CodeMetadata& codeMeta,
-       const CodeMetadataForAsmJS* codeMetaForAsmJS,
+  Code(const CodeMetadata& codeMeta,
+       const CodeMetadataForAsmJS* codeMetaForAsmJS, UniqueCodeTier tier1,
        JumpTables&& maybeJumpTables);
   bool initialized() const { return tier1_->initialized(); }
 

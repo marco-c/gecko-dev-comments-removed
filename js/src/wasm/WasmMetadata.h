@@ -130,7 +130,7 @@ using FuncImportVector = Vector<FuncImport, 0, SystemAllocPolicy>;
 
 
 
-struct ModuleMetadata {
+struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
   
   
   ImportVector imports;
@@ -140,7 +140,12 @@ struct ModuleMetadata {
   DataSegmentRangeVector dataSegmentRanges;
 
   explicit ModuleMetadata() {}
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
+
+using MutableModuleMetadata = RefPtr<ModuleMetadata>;
+using SharedModuleMetadata = RefPtr<const ModuleMetadata>;
 
 
 
