@@ -23,6 +23,7 @@ class FFmpegVideoEncoder : public MediaDataEncoder {};
 template <>
 class FFmpegVideoEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
   using DurationMap = SimpleMap<int64_t, int64_t, ThreadSafePolicy>;
+  using PtsMap = SimpleMap<int64_t, int64_t, NoOpPolicy>;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FFmpegVideoEncoder, final);
@@ -70,6 +71,12 @@ class FFmpegVideoEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
     uint8_t CurrentTemporalLayerId();
   };
   Maybe<SVCInfo> mSVCInfo{};
+  
+  
+  
+  int64_t mFakePts = 0;
+  int64_t mCurrentFramePts = 0;
+  PtsMap mPtsMap;
 };
 
 }  
