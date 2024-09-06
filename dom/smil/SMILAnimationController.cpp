@@ -264,10 +264,7 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
     return;
   }
 
-  bool isStyleFlushNeeded = mResampleNeeded;
   mResampleNeeded = false;
-
-  nsCOMPtr<Document> document(mDocument);  
 
   
   
@@ -327,8 +324,7 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
 
   for (SVGAnimationElement* animElem : mAnimationElementTable.Keys()) {
     SampleTimedElement(animElem, &activeContainers);
-    AddAnimationToCompositorTable(animElem, currentCompositorTable.get(),
-                                  isStyleFlushNeeded);
+    AddAnimationToCompositorTable(animElem, currentCompositorTable.get());
     animElems.AppendElement(animElem);
   }
   activeContainers.Clear();
@@ -374,15 +370,6 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
     mLastCompositorTable = nullptr;
     return;
   }
-
-  if (isStyleFlushNeeded) {
-    document->FlushPendingNotifications(FlushType::Style);
-  }
-
-  
-  
-  
-  
 
   
   
@@ -533,8 +520,7 @@ void SMILAnimationController::SampleTimedElement(
 
 
 void SMILAnimationController::AddAnimationToCompositorTable(
-    SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable,
-    bool& aStyleFlushNeeded) {
+    SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable) {
   
   SMILTargetIdentifier key;
   if (!GetTargetIdentifierForAnimation(aElement, key))
@@ -550,7 +536,6 @@ void SMILAnimationController::AddAnimationToCompositorTable(
     
     
     SMILCompositor* result = aCompositorTable->PutEntry(key);
-    aStyleFlushNeeded |= func.ValueNeedsReparsingEverySample();
     result->AddAnimationFunction(&func);
 
   } else if (func.HasChanged()) {
@@ -560,7 +545,6 @@ void SMILAnimationController::AddAnimationToCompositorTable(
     
     
     SMILCompositor* result = aCompositorTable->PutEntry(key);
-    aStyleFlushNeeded |= func.ValueNeedsReparsingEverySample();
     result->ToggleForceCompositing();
 
     

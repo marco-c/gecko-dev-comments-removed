@@ -82,20 +82,6 @@ nsresult SVGAFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
     NotifySVGChanged(TRANSFORM_CHANGED);
   }
 
-  
-  
-  
-  if (aModType == dom::MutationEvent_Binding::SMIL &&
-      aAttribute == nsGkAtoms::href &&
-      (aNameSpaceID == kNameSpaceID_None ||
-       aNameSpaceID == kNameSpaceID_XLink)) {
-    auto* content = static_cast<dom::SVGAElement*>(GetContent());
-
-    
-    
-    content->ResetLinkState(true, content->ElementHasHref());
-  }
-
   return NS_OK;
 }
 

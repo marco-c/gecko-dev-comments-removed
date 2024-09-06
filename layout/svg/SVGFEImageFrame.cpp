@@ -121,24 +121,6 @@ nsresult SVGFEImageFrame::AttributeChanged(int32_t aNameSpaceID,
     SVGObserverUtils::InvalidateRenderingObservers(GetParent());
   }
 
-  
-  
-  
-  if (aModType == MutationEvent_Binding::SMIL &&
-      aAttribute == nsGkAtoms::href &&
-      (aNameSpaceID == kNameSpaceID_XLink ||
-       aNameSpaceID == kNameSpaceID_None)) {
-    bool hrefIsSet =
-        element->mStringAttributes[SVGFEImageElement::HREF].IsExplicitlySet() ||
-        element->mStringAttributes[SVGFEImageElement::XLINK_HREF]
-            .IsExplicitlySet();
-    if (hrefIsSet) {
-      element->LoadSVGImage(true, true);
-    } else {
-      element->CancelImageRequests(true);
-    }
-  }
-
   return nsIFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 }
 
