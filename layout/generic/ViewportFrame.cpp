@@ -289,6 +289,9 @@ nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
   nsIFrame* kidFrame = mFrames.FirstChild();
 
   if (ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(kidFrame)) {
+    
+    
+    
     WritingMode wm = aReflowInput->GetWritingMode();
     LogicalMargin scrollbars(wm,
                              scrollContainerFrame->GetActualScrollbarSizes());
