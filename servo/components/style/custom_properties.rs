@@ -1055,8 +1055,36 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
     }
 
     
+    #[inline]
+    pub fn might_have_non_custom_dependency(id: LonghandId, decl: &PropertyDeclaration) -> bool {
+        if id == LonghandId::ColorScheme {
+            return true;
+        }
+        if matches!(id, LonghandId::LineHeight | LonghandId::FontSize) {
+            return matches!(decl, PropertyDeclaration::WithVariables(..));
+        }
+        false
+    }
+
+    
     
     pub fn maybe_note_non_custom_dependency(&mut self, id: LonghandId, decl: &PropertyDeclaration) {
+        debug_assert!(Self::might_have_non_custom_dependency(id, decl));
+        if id == LonghandId::ColorScheme {
+            
+            self.has_color_scheme = true;
+            return;
+        }
+
+        let refs = match decl {
+            PropertyDeclaration::WithVariables(ref v) => &v.value.variable_value.references,
+            _ => return,
+        };
+
+        if !refs.any_var {
+            return;
+        }
+
         
         
         
@@ -1075,20 +1103,9 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
                     NonCustomReferences::LH_UNITS | NonCustomReferences::FONT_UNITS
                 }
             },
-            LonghandId::ColorScheme => {
-                
-                self.has_color_scheme = true;
-                return;
-            },
             _ => return,
         };
-        let refs = match decl {
-            PropertyDeclaration::WithVariables(ref v) => &v.value.variable_value.references,
-            _ => return,
-        };
-        if !refs.any_var {
-            return;
-        }
+
         let variables: Vec<Atom> = refs
             .refs
             .iter()
