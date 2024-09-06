@@ -200,7 +200,6 @@ ABSL_FLAG(bool,
 
 ABSL_FLAG(bool, video, true, "Add video stream");
 
-
 ABSL_FLAG(std::string,
           clip,
           "",
