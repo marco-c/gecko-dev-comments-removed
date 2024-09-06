@@ -75,6 +75,8 @@ fn build_image(
         .arg("--no-push")
         .args(&["--cache=true", "--cache-dir", "/workspace/cache", "--cache-repo", "oci:/workspace/repo"])
         .arg("--single-snapshot")
+         
+        .arg("--compressed-caching=false")
         
         
         .arg("--ignore-var-run=false")
