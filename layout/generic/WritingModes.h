@@ -156,14 +156,6 @@ class WritingMode {
   
 
 
-  enum BidiDir {
-    eBidiLTR = 0x00,  
-    eBidiRTL = 0x10,  
-  };
-
-  
-
-
   InlineDir GetInlineDir() const {
     if (IsVertical()) {
       return IsInlineReversed() ? InlineDir::BTT : InlineDir::TTB;
@@ -185,13 +177,6 @@ class WritingMode {
   
 
 
-  BidiDir GetBidiDir() const {
-    return BidiDir((mWritingMode & StyleWritingMode::RTL)._0);
-  }
-
-  
-
-
 
 
 
@@ -202,12 +187,12 @@ class WritingMode {
   
 
 
-  bool IsBidiLTR() const { return eBidiLTR == GetBidiDir(); }
+  bool IsBidiLTR() const { return !IsBidiRTL(); }
 
   
 
 
-  bool IsBidiRTL() const { return eBidiRTL == GetBidiDir(); }
+  bool IsBidiRTL() const { return !!(mWritingMode & StyleWritingMode::RTL); }
 
   
 
