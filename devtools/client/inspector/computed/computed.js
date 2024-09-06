@@ -559,6 +559,14 @@ CssComputedView.prototype = {
     const viewedElement = this._viewedElement;
 
     return Promise.all([
+      
+      
+      
+      
+      
+      
+      
+      
       this._createPropertyViews(),
       this.viewedElementPageStyle.getComputed(this._viewedElement, {
         filter: this._sourceFilter,
@@ -1101,6 +1109,24 @@ class PropertyView {
 
 
 
+  get invalidAtComputedValueTime() {
+    return this.tree._computed[this.name].invalidAtComputedValueTime;
+  }
+
+  
+
+
+
+
+  get registeredPropertySyntax() {
+    return this.tree._computed[this.name].registeredPropertySyntax;
+  }
+
+  
+
+
+
+
   createListItemElement() {
     const doc = this.tree.styleDocument;
     const baseEventListenerConfig = { signal: this.#abortController.signal };
@@ -1192,11 +1218,23 @@ class PropertyView {
     valueSeparator.classList.add("visually-hidden");
     valueSeparator.textContent = ";";
 
+    valueContainer.append(this.valueNode, valueSeparator);
+
+    
+    
+    if (this.isCustomProperty) {
+      this.invalidAtComputedValueTimeNode = doc.createElement("div");
+      this.invalidAtComputedValueTimeNode.classList.add(
+        "invalid-at-computed-value-time-warning"
+      );
+      this.refreshInvalidAtComputedValueTime();
+      valueContainer.append(this.invalidAtComputedValueTimeNode);
+    }
+
     
     this.matchedSelectorsContainer = doc.createElement("div");
     this.matchedSelectorsContainer.classList.add("matchedselectors");
 
-    valueContainer.append(this.valueNode, valueSeparator);
     this.element.append(
       this.matchedExpander,
       nameContainer,
@@ -1247,6 +1285,7 @@ class PropertyView {
     this.valueNode.innerHTML = "";
     this.valueNode.appendChild(frag);
 
+    this.refreshInvalidAtComputedValueTime();
     this.refreshMatchedSelectors();
   }
 
@@ -1289,6 +1328,29 @@ class PropertyView {
     this.matchedExpander.setAttribute("aria-label", L10N_TWISTY_EXPAND_LABEL);
     this.tree.inspector.emit("computed-view-property-collapsed");
     return Promise.resolve(undefined);
+  }
+
+  
+
+
+  refreshInvalidAtComputedValueTime() {
+    if (!this.isCustomProperty) {
+      return;
+    }
+
+    if (!this.invalidAtComputedValueTime) {
+      this.invalidAtComputedValueTimeNode.setAttribute("hidden", "");
+      this.invalidAtComputedValueTimeNode.removeAttribute("title");
+    } else {
+      this.invalidAtComputedValueTimeNode.removeAttribute("hidden", "");
+      this.invalidAtComputedValueTimeNode.setAttribute(
+        "title",
+        STYLE_INSPECTOR_L10N.getFormatStr(
+          "rule.warningInvalidAtComputedValueTime.title",
+          `"${this.registeredPropertySyntax}"`
+        )
+      );
+    }
   }
 
   get matchedSelectors() {
@@ -1343,6 +1405,18 @@ class PropertyView {
           "fix-get-selection computed-other-property-value theme-fg-color1",
       });
       valueDiv.appendChild(selector.outputFragment);
+
+      
+      
+      if (selector.selectorInfo.invalidAtComputedValueTime) {
+        createChild(status, "div", {
+          class: "invalid-at-computed-value-time-warning",
+          title: STYLE_INSPECTOR_L10N.getFormatStr(
+            "rule.warningInvalidAtComputedValueTime.title",
+            `"${selector.selectorInfo.registeredPropertySyntax}"`
+          ),
+        });
+      }
     }
 
     this.matchedSelectorsContainer.innerHTML = "";
