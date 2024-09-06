@@ -489,40 +489,29 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
 
     
     case UIA_AriaPropertiesPropertyId: {
-      if (!localAcc) {
-        
-        
-        
-        
-        break;
-      }
       nsAutoString ariaProperties;
-
-      aria::AttrIterator attribIter(localAcc->GetContent());
-      while (attribIter.Next()) {
-        nsAutoString attribName, attribValue;
-        nsAutoString value;
-        attribIter.AttrName()->ToString(attribName);
-        attribIter.AttrValue(attribValue);
-        if (StringBeginsWith(attribName, u"aria-"_ns)) {
-          
-          attribName.ReplaceLiteral(0, 5, u"");
-        }
-
-        ariaProperties.Append(attribName);
-        ariaProperties.Append('=');
-        ariaProperties.Append(attribValue);
-        ariaProperties.Append(';');
-      }
-
-      if (!ariaProperties.IsEmpty()) {
+      
+      nsAutoString live;
+      nsAccUtils::GetLiveRegionSetting(acc, live);
+      if (!live.IsEmpty()) {
         
-        ariaProperties.Truncate(ariaProperties.Length() - 1);
+        
+        
+        Maybe<bool> atomic;
+        acc->LiveRegionAttributes(nullptr, nullptr, &atomic, nullptr);
+        if (atomic && *atomic) {
+          ariaProperties.AppendLiteral("atomic=true");
+        } else {
+          
+          
+          ariaProperties.AppendLiteral("atomic=false");
+        }
+      }
+      if (!ariaProperties.IsEmpty()) {
         aPropertyValue->vt = VT_BSTR;
         aPropertyValue->bstrVal = ::SysAllocString(ariaProperties.get());
         return S_OK;
       }
-
       break;
     }
 
