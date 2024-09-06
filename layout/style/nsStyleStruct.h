@@ -1533,8 +1533,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     }
   }
 
+  
+  
+  
   bool BreakBefore() const { return ShouldBreak(mBreakBefore); }
-
   bool BreakAfter() const { return ShouldBreak(mBreakAfter); }
 
   

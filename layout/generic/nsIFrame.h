@@ -1386,7 +1386,25 @@ class nsIFrame : public nsQueryFrame {
 
   bool HasUnreflowedContainerQueryAncestor() const;
 
+  
+  
+  
+  
+  
+  bool ShouldBreakBefore(const ReflowInput::BreakType aBreakType) const;
+
+  
+  
+  
+  
+  
+  bool ShouldBreakAfter(const ReflowInput::BreakType aBreakType) const;
+
  private:
+  bool ShouldBreakBetween(const nsStyleDisplay* aDisplay,
+                          const mozilla::StyleBreakBetween aBreakBetween,
+                          const ReflowInput::BreakType aBreakType) const;
+
   
   
   

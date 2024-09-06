@@ -5527,14 +5527,19 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
 
   const bool isSingleLine =
       StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
-
-  
-  
   const FlexLine& startmostLine = StartmostLine(aFlr.mLines, aAxisTracker);
+  const FlexLine& endmostLine = EndmostLine(aFlr.mLines, aAxisTracker);
   const FlexItem* startmostItem =
       startmostLine.IsEmpty() ? nullptr
                               : &startmostLine.StartmostItem(aAxisTracker);
+  const FlexItem* endmostItem =
+      endmostLine.IsEmpty() ? nullptr : &endmostLine.EndmostItem(aAxisTracker);
 
+  bool endmostItemOrLineHasBreakAfter = false;
+  
+  bool shouldPushRemainingItems = false;
+
+  
   const size_t numLines = aFlr.mLines.Length();
   for (size_t lineIdx = 0; lineIdx < numLines; ++lineIdx) {
     
@@ -5544,6 +5549,11 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
                                                        : lineIdx];
     MOZ_ASSERT(lineIdx != 0 || &line == &startmostLine,
                "Logic for finding startmost line should be consistent!");
+
+    
+    
+    bool lineHasBreakBefore = false;
+    bool lineHasBreakAfter = false;
 
     const size_t numItems = line.Items().Length();
     for (size_t itemIdx = 0; itemIdx < numItems; ++itemIdx) {
@@ -5646,12 +5656,19 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
       
       
       
-      
-      const bool childBPosExceedAvailableSpaceBEnd =
-          availableBSizeForItem != NS_UNCONSTRAINEDSIZE &&
-          availableBSizeForItem <= 0;
       bool itemInPushedItems = false;
-      if (childBPosExceedAvailableSpaceBEnd) {
+      if (shouldPushRemainingItems) {
+        FLEX_ITEM_LOG(
+            item.Frame(),
+            "[frag] Item needed to be pushed to container's next-in-flow due "
+            "to a forced break before it");
+        pushedItems.Insert(item.Frame());
+        itemInPushedItems = true;
+      } else if (availableBSizeForItem != NS_UNCONSTRAINEDSIZE &&
+                 availableBSizeForItem <= 0) {
+        
+        
+        
         
         
         
@@ -5680,7 +5697,38 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
             ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
                            isAdjacentWithBStart, availableSize, aContainerSize);
 
+        if (aReflowInput.IsInFragmentedContext()) {
+          const bool itemHasBreakBefore =
+              item.Frame()->ShouldBreakBefore(aReflowInput.mBreakType) ||
+              childStatus.IsInlineBreakBefore();
+          if (itemHasBreakBefore) {
+            if (aAxisTracker.IsRowOriented()) {
+              lineHasBreakBefore = true;
+            } else if (isSingleLine) {
+              if (&item == startmostItem) {
+                if (!GetPrevInFlow() && !aReflowInput.mFlags.mIsTopOfPage) {
+                  
+                  
+                  
+                  nsReflowStatus childrenStatus;
+                  childrenStatus.SetInlineLineBreakBeforeAndReset();
+                  return {0, childrenStatus};
+                }
+              } else {
+                shouldPushRemainingItems = true;
+              }
+            } else {
+              
+              
+              
+            }
+          }
+        }
+
         const bool shouldPushItem = [&]() {
+          if (shouldPushRemainingItems) {
+            return true;
+          }
           if (availableBSizeForItem == NS_UNCONSTRAINEDSIZE) {
             
             
@@ -5705,7 +5753,8 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
           FLEX_ITEM_LOG(
               item.Frame(),
               "[frag] Item needed to be pushed to container's next-in-flow "
-              "because its block-size is larger than the available space");
+              "because it encounters a forced break before it, or its "
+              "block-size is larger than the available space");
           pushedItems.Insert(item.Frame());
           itemInPushedItems = true;
         } else if (childStatus.IsIncomplete()) {
@@ -5713,7 +5762,29 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
         } else if (childStatus.IsOverflowIncomplete()) {
           overflowIncompleteItems.Insert(item.Frame());
         }
+
+        if (aReflowInput.IsInFragmentedContext()) {
+          const bool itemHasBreakAfter =
+              item.Frame()->ShouldBreakAfter(aReflowInput.mBreakType) ||
+              childStatus.IsInlineBreakAfter();
+          if (itemHasBreakAfter) {
+            if (aAxisTracker.IsRowOriented()) {
+              lineHasBreakAfter = true;
+            } else if (isSingleLine) {
+              shouldPushRemainingItems = true;
+              if (&item == endmostItem) {
+                endmostItemOrLineHasBreakAfter = true;
+              }
+            } else {
+              
+              
+              
+            }
+          }
+        }
       } else {
+        
+        
         MoveFlexItemToFinalPosition(item, framePos, aContainerSize);
       }
 
@@ -5801,6 +5872,37 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
       }
     }
 
+    if (aReflowInput.IsInFragmentedContext() && aAxisTracker.IsRowOriented()) {
+      
+      if (lineHasBreakBefore) {
+        if (&line == &startmostLine) {
+          if (!GetPrevInFlow() && !aReflowInput.mFlags.mIsTopOfPage) {
+            
+            
+            
+            nsReflowStatus childrenStatus;
+            childrenStatus.SetInlineLineBreakBeforeAndReset();
+            return {0, childrenStatus};
+          }
+        } else {
+          
+          
+          for (const FlexItem& item : line.Items()) {
+            pushedItems.Insert(item.Frame());
+            incompleteItems.Remove(item.Frame());
+            overflowIncompleteItems.Remove(item.Frame());
+          }
+          shouldPushRemainingItems = true;
+        }
+      }
+      if (lineHasBreakAfter) {
+        shouldPushRemainingItems = true;
+        if (&line == &endmostLine) {
+          endmostItemOrLineHasBreakAfter = true;
+        }
+      }
+    }
+
     
     
     
@@ -5822,6 +5924,8 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
     childrenStatus.SetIncomplete();
   } else if (!overflowIncompleteItems.IsEmpty()) {
     childrenStatus.SetOverflowIncomplete();
+  } else if (endmostItemOrLineHasBreakAfter) {
+    childrenStatus.SetInlineLineBreakAfter();
   }
   PushIncompleteChildren(pushedItems, incompleteItems, overflowIncompleteItems);
 
@@ -5964,6 +6068,14 @@ void nsFlexContainerFrame::PopulateReflowOutput(
       ShouldAvoidBreakInside(aReflowInput)) {
     aStatus.SetInlineLineBreakBeforeAndReset();
     return;
+  }
+
+  
+  if (aChildrenStatus.IsInlineBreakBefore()) {
+    aStatus.SetInlineLineBreakBeforeAndReset();
+  }
+  if (aChildrenStatus.IsInlineBreakAfter()) {
+    aStatus.SetInlineLineBreakAfter();
   }
 
   
