@@ -88,10 +88,10 @@ const HIGHLIGHT_PSEUDO_ELEMENTS_STYLING_SPEC_URL =
 const HIGHLIGHT_PSEUDO_ELEMENTS = [
   "::highlight",
   "::selection",
+  "::target-text",
   
   "::grammar-error",
   "::spelling-error",
-  "::target-text",
 ];
 const REGEXP_HIGHLIGHT_PSEUDO_ELEMENTS = new RegExp(
   `${HIGHLIGHT_PSEUDO_ELEMENTS.join("|")}`
