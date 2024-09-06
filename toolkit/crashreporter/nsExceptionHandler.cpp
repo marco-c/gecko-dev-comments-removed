@@ -40,10 +40,6 @@
 #include "mozilla/toolkit/crashreporter/mozannotation_client_ffi_generated.h"
 #include "mozilla/toolkit/crashreporter/mozannotation_server_ffi_generated.h"
 
-#ifdef MOZ_BACKGROUNDTASKS
-#  include "mozilla/BackgroundTasks.h"
-#endif
-
 #if defined(XP_WIN)
 #  ifdef WIN32_LEAN_AND_MEAN
 #    undef WIN32_LEAN_AND_MEAN
@@ -1452,12 +1448,6 @@ static void WriteCrashEventFile(time_t crashTime, const char* crashTimeString,
                                 const XP_CHAR* minidump_id
 #endif
 ) {
-  if (!BackgroundTasks::IsBackgroundTaskMode()) {
-    
-    
-    return;
-  }
-
   
   static char id_ascii[37] = {};
 #ifdef XP_LINUX
@@ -1578,7 +1568,7 @@ bool MinidumpCallback(
     WriteAnnotationsForMainProcessCrash(apiData, addrInfo, crashTime);
   }
 
-  if (doReport && isSafeToDump && !BackgroundTasks::IsBackgroundTaskMode()) {
+  if (doReport && isSafeToDump) {
     
     
     
