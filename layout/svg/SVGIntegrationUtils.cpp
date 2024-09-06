@@ -949,17 +949,9 @@ void SVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams,
                                      opacity);
 }
 
-WrFiltersStatus SVGIntegrationUtils::CreateWebRenderCSSFilters(
+bool SVGIntegrationUtils::CreateWebRenderCSSFilters(
     Span<const StyleFilter> aFilters, nsIFrame* aFrame,
     WrFiltersHolder& aWrFilters) {
-  
-  
-  
-  if (StaticPrefs::gfx_webrender_svg_filter_effects() &&
-      StaticPrefs::
-          gfx_webrender_svg_filter_effects_also_convert_css_filters()) {
-    return WrFiltersStatus::BLOB_FALLBACK;
-  }
   
   
 
@@ -967,10 +959,8 @@ WrFiltersStatus SVGIntegrationUtils::CreateWebRenderCSSFilters(
   
   if (aFilters.Length() >
       StaticPrefs::gfx_webrender_max_filter_ops_per_chain()) {
-    return WrFiltersStatus::DISABLED_FOR_PERFORMANCE;
+    return true;
   }
-  
-  WrFiltersStatus status = WrFiltersStatus::CHAIN;
   aWrFilters.filters.SetCapacity(aFilters.Length());
   auto& wrFilters = aWrFilters.filters;
   for (const StyleFilter& filter : aFilters) {
@@ -1034,39 +1024,28 @@ WrFiltersStatus SVGIntegrationUtils::CreateWebRenderCSSFilters(
         break;
       }
       default:
-        status = WrFiltersStatus::BLOB_FALLBACK;
-        break;
-    }
-    if (status != WrFiltersStatus::CHAIN) {
-      break;
+        return false;
     }
   }
-  if (status != WrFiltersStatus::CHAIN) {
-    
-    aWrFilters = {};
-  }
-  return status;
+
+  return true;
 }
 
-WrFiltersStatus SVGIntegrationUtils::BuildWebRenderFilters(
+bool SVGIntegrationUtils::BuildWebRenderFilters(
     nsIFrame* aFilteredFrame, Span<const StyleFilter> aFilters,
     StyleFilterType aStyleFilterType, WrFiltersHolder& aWrFilters,
-    const nsPoint& aOffsetForSVGFilters) {
-  return FilterInstance::BuildWebRenderFilters(aFilteredFrame, aFilters,
-                                               aStyleFilterType, aWrFilters,
-                                               aOffsetForSVGFilters);
+    bool& aInitialized) {
+  return FilterInstance::BuildWebRenderFilters(
+      aFilteredFrame, aFilters, aStyleFilterType, aWrFilters, aInitialized);
 }
 
 bool SVGIntegrationUtils::CanCreateWebRenderFiltersForFrame(nsIFrame* aFrame) {
   WrFiltersHolder wrFilters;
   auto filterChain = aFrame->StyleEffects()->mFilters.AsSpan();
-  WrFiltersStatus status =
-      CreateWebRenderCSSFilters(filterChain, aFrame, wrFilters);
-  if (status == WrFiltersStatus::BLOB_FALLBACK) {
-    status = BuildWebRenderFilters(aFrame, filterChain, StyleFilterType::Filter,
-                                   wrFilters, nsPoint());
-  }
-  return status == WrFiltersStatus::CHAIN || status == WrFiltersStatus::SVGFE;
+  bool initialized = true;
+  return CreateWebRenderCSSFilters(filterChain, aFrame, wrFilters) ||
+         BuildWebRenderFilters(aFrame, filterChain, StyleFilterType::Filter,
+                               wrFilters, initialized);
 }
 
 bool SVGIntegrationUtils::UsesSVGEffectsNotSupportedInCompositor(
