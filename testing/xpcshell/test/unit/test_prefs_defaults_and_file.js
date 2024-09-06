@@ -2,9 +2,6 @@
 
 
 
-
-
-
 function run_test() {
   
   load("prefs_test_common.js");
