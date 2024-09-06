@@ -29,6 +29,7 @@
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/SimpleGestureEventBinding.h"
 #include "mozilla/dom/WheelEventBinding.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 
 #include "nsArrayUtils.h"
 #include "nsExceptionHandler.h"
@@ -829,6 +830,11 @@ void nsChildView::SuspendAsyncCATransactions() {
   
   [mView markLayerForDisplay];
 
+  
+  
+  if (mCompositorBridgeChild) {
+    mCompositorBridgeChild->SetForceSyncFlushRendering(true);
+  }
   mNativeLayerRoot->SuspendOffMainThreadCommits();
 }
 
@@ -852,6 +858,11 @@ void nsChildView::UnsuspendAsyncCATransactions() {
     
     
     [mView markLayerForDisplay];
+  }
+
+  
+  if (mCompositorBridgeChild) {
+    mCompositorBridgeChild->SetForceSyncFlushRendering(false);
   }
 }
 
