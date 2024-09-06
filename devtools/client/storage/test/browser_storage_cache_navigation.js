@@ -51,7 +51,10 @@ add_task(async function () {
   
   await navigateTo(URL2);
 
-  
+  info("Waiting until Cache > example.net is available in the UI");
+  await waitUntil(() => gUI.tree.exists(["Cache", "https://example.net"]));
+
+  info("Select the Cache view in order to force updating it");
   await selectTreeItem(["Cache", "https://example.net"]);
 
   
