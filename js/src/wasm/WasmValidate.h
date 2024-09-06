@@ -88,8 +88,8 @@ struct ModuleMetadata {
   uint32_t tagsOffsetStart;
 
   
-  DataSegmentEnvVector dataSegments;
-  CustomSectionEnvVector customSections;
+  DataSegmentRangeVector dataSegmentRanges;
+  CustomSectionRangeVector customSectionRanges;
   Maybe<uint32_t> nameCustomSectionIndex;
   Maybe<Name> moduleName;
   NameVector funcNames;
