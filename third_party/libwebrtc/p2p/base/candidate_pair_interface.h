@@ -23,6 +23,18 @@ class CandidatePairInterface {
   virtual const Candidate& remote_candidate() const = 0;
 };
 
+
+
+struct CandidatePair final : public CandidatePairInterface {
+  ~CandidatePair() override = default;
+
+  const Candidate& local_candidate() const override { return local; }
+  const Candidate& remote_candidate() const override { return remote; }
+
+  Candidate local;
+  Candidate remote;
+};
+
 }  
 
 #endif  

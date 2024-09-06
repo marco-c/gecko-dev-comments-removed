@@ -370,7 +370,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   }
 
   
-  bool IsPortPruned(const Port* port) const;
+  bool IsPortPruned(const PortInterface* port) const;
 
   
   bool IsRemoteCandidatePruned(const Candidate& cand) const;
