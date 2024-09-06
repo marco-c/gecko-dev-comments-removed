@@ -22,6 +22,26 @@ const PREDEFINED_COLORS = {
   baseline: "orange",
   ion: "blue",
   wasm: "purple",
+
+  label: "lightblue",
+};
+
+
+const INDEXES = {
+  stacks: {
+    prefix: 0,
+    frame: 1,
+  },
+  frames: {
+    location: 0,
+    relevantForJS: 1,
+    innerWindowID: 2,
+    implementation: 3,
+    line: 4,
+    column: 5,
+    category: 6,
+    subcategory: 7,
+  },
 };
 
 
@@ -155,27 +175,34 @@ class GeckoProfileCollector {
         data: [],
       },
       stackTable: {
-        schema: {
-          prefix: 0,
-          frame: 1,
-        },
+        schema: INDEXES.stacks,
         data: [],
       },
       frameTable: {
-        schema: {
-          location: 0,
-          relevantForJS: 1,
-          innerWindowID: 2,
-          implementation: 3,
-          line: 4,
-          column: 5,
-          category: 6,
-          subcategory: 7,
-        },
+        schema: INDEXES.frames,
         data: [],
       },
       stringTable: [],
     };
+  }
+
+  
+
+
+
+
+  logDOMEvent(domEventName) {
+    const frameIndex = this.#getOrCreateLabelFrame(domEventName);
+    this.#currentStackIndex = this.#getOrCreateStack(
+      frameIndex,
+      this.#currentStackIndex
+    );
+
+    this.#thread.samples.data.push([
+      this.#currentStackIndex,
+      ChromeUtils.dateNow() - this.#startTime,
+      0, 
+    ]);
   }
 
   
@@ -206,7 +233,9 @@ class GeckoProfileCollector {
     }
 
     this.#currentStackIndex =
-      this.#thread.stackTable.data[this.#currentStackIndex][0];
+      this.#thread.stackTable.data[this.#currentStackIndex][
+        INDEXES.stacks.prefix
+      ];
 
     
     
@@ -215,6 +244,57 @@ class GeckoProfileCollector {
       ChromeUtils.dateNow() - this.#startTime,
       0, 
     ]);
+
+    
+    
+    if (this.#currentStackIndex !== null) {
+      const currentFrameIndex =
+        this.#thread.stackTable.data[this.#currentStackIndex][
+          INDEXES.stacks.frame
+        ];
+      const currentFrameLine =
+        this.#thread.frameTable.data[currentFrameIndex][INDEXES.frames.line];
+      if (currentFrameLine == null) {
+        this.onFramePop();
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  #getOrCreateLabelFrame(label) {
+    const { frameTable, stringTable } = this.#thread;
+    const key = `label:${label}`;
+    let frameIndex = this.#frameMap.get(key);
+
+    if (frameIndex === undefined) {
+      frameIndex = frameTable.data.length;
+      const locationStringIndex = stringTable.length;
+
+      stringTable.push(label);
+
+      const categoryIndex = this.#getOrCreateCategory("label");
+
+      frameTable.data.push([
+        locationStringIndex,
+        true, 
+        0, 
+        null, 
+        null, 
+        null, 
+        categoryIndex,
+        0, 
+      ]);
+      this.#frameMap.set(key, frameIndex);
+    }
+
+    return frameIndex;
   }
 
   

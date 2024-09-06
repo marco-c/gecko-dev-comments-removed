@@ -490,6 +490,9 @@ class TracerActor extends Actor {
       });
       this.throttleEmitTraces();
     } else if (this.logMethod == LOG_METHODS.PROFILER) {
+      if (currentDOMEvent && depth == 0) {
+        this.geckoProfileCollector.logDOMEvent(currentDOMEvent);
+      }
       this.geckoProfileCollector.onEnterFrame({
         
         name: formatedDisplayName.replace("λ ", ""),
