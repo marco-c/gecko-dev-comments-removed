@@ -58,7 +58,7 @@ class XMLHttpRequestStringBuffer final {
 
     
     
-    if (nsStringBuffer* buf = mData.GetStringBuffer()) {
+    if (StringBuffer* buf = mData.GetStringBuffer()) {
       
       
       

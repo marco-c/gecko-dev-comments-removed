@@ -8,10 +8,10 @@
 #define mozilla_dom_DOMString_h
 
 #include "nsString.h"
-#include "nsStringBuffer.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/StringBuffer.h"
 #include "nsDOMString.h"
 #include "nsAtom.h"
 
@@ -88,7 +88,7 @@ class MOZ_STACK_CLASS DOMString {
   
   
   
-  nsStringBuffer* StringBuffer() const {
+  mozilla::StringBuffer* StringBuffer() const {
     MOZ_ASSERT(HasStringBuffer(),
                "Don't ask for the stringbuffer if we don't have it");
     MOZ_ASSERT(mStringBuffer, "We better have a stringbuffer if we claim to");
@@ -141,7 +141,7 @@ class MOZ_STACK_CLASS DOMString {
   
   
   
-  void SetKnownLiveStringBuffer(nsStringBuffer* aStringBuffer,
+  void SetKnownLiveStringBuffer(mozilla::StringBuffer* aStringBuffer,
                                 uint32_t aLength) {
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     if (aLength != 0) {
@@ -152,7 +152,8 @@ class MOZ_STACK_CLASS DOMString {
   }
 
   
-  void SetStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength) {
+  
+  void SetStringBuffer(mozilla::StringBuffer* aStringBuffer, uint32_t aLength) {
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     if (aLength != 0) {
       SetStringBufferInternal(aStringBuffer, aLength);
@@ -169,7 +170,7 @@ class MOZ_STACK_CLASS DOMString {
     if (MOZ_UNLIKELY(aString.IsVoid())) {
       SetNull();
     } else if (!aString.IsEmpty()) {
-      if (nsStringBuffer* buf = aString.GetStringBuffer()) {
+      if (mozilla::StringBuffer* buf = aString.GetStringBuffer()) {
         SetKnownLiveStringBuffer(buf, aString.Length());
       } else if (aString.IsLiteral()) {
         SetLiteralInternal(aString.BeginReading(), aString.Length());
@@ -230,7 +231,7 @@ class MOZ_STACK_CLASS DOMString {
     } else if (HasStringBuffer()) {
       
       
-      nsStringBuffer* buf = StringBuffer();
+      mozilla::StringBuffer* buf = StringBuffer();
       uint32_t len = StringBufferLength();
       auto chars = static_cast<char16_t*>(buf->Data());
       if (chars[len] == '\0') {
@@ -248,7 +249,7 @@ class MOZ_STACK_CLASS DOMString {
   }
 
  private:
-  void SetStringBufferInternal(nsStringBuffer* aStringBuffer,
+  void SetStringBufferInternal(mozilla::StringBuffer* aStringBuffer,
                                uint32_t aLength) {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
@@ -286,7 +287,8 @@ class MOZ_STACK_CLASS DOMString {
 
   union {
     
-    nsStringBuffer* MOZ_UNSAFE_REF(
+    
+    mozilla::StringBuffer* MOZ_UNSAFE_REF(
         "The ways in which this can be safe are "
         "documented above and enforced through "
         "assertions") mStringBuffer;

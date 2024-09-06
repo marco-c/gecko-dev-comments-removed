@@ -165,7 +165,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
         return true;
       }
 
-      nsStringBuffer* buf;
+      StringBuffer* buf;
       if (!XPCStringConvert::ReadableToJSVal(cx, *p, &buf, d)) {
         return false;
       }
@@ -255,7 +255,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
       
       
       if (mozilla::IsAscii(*utf8String)) {
-        nsStringBuffer* buf;
+        StringBuffer* buf;
         if (!XPCStringConvert::Latin1ToJSVal(cx, *utf8String, &buf, d)) {
           return false;
         }
@@ -312,7 +312,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
       }
 
       
-      nsStringBuffer* buf;
+      StringBuffer* buf;
       if (!XPCStringConvert::Latin1ToJSVal(cx, *cString, &buf, d)) {
         return false;
       }

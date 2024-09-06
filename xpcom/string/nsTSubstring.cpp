@@ -50,7 +50,7 @@ char16_t* const nsCharTraits<char16_t>::sEmptyBuffer =
 
 static void ReleaseData(void* aData, nsAString::DataFlags aFlags) {
   if (aFlags & nsAString::DataFlags::REFCOUNTED) {
-    nsStringBuffer::FromData(aData)->Release();
+    mozilla::StringBuffer::FromData(aData)->Release();
   } else if (aFlags & nsAString::DataFlags::OWNED) {
     
     
@@ -172,8 +172,8 @@ auto nsTSubstring<T>::StartBulkWriteImpl(size_type aCapacity,
     
     
     
-    static_assert((sizeof(nsStringBuffer) & 0x1) == 0,
-                  "bad size for nsStringBuffer");
+    static_assert((sizeof(mozilla::StringBuffer) & 0x1) == 0,
+                  "bad size for mozilla::StringBuffer");
     if (MOZ_UNLIKELY(!this->CheckCapacity(aCapacity))) {
       return mozilla::Err(NS_ERROR_OUT_OF_MEMORY);
     }
@@ -187,7 +187,7 @@ auto nsTSubstring<T>::StartBulkWriteImpl(size_type aCapacity,
     
     
     const size_type neededExtraSpace =
-        sizeof(nsStringBuffer) / sizeof(char_type) + 1;
+        sizeof(mozilla::StringBuffer) / sizeof(char_type) + 1;
 
     size_type temp;
     if (aCapacity >= slowGrowthThreshold) {
@@ -222,7 +222,8 @@ auto nsTSubstring<T>::StartBulkWriteImpl(size_type aCapacity,
       
       
       
-      nsStringBuffer* newHdr = nsStringBuffer::Alloc(storageSize).take();
+      mozilla::StringBuffer* newHdr =
+          mozilla::StringBuffer::Alloc(storageSize).take();
       if (newHdr) {
         newData = (char_type*)newHdr->Data();
       } else if (shrinking) {
@@ -336,7 +337,7 @@ typename nsTSubstring<T>::size_type nsTSubstring<T>::Capacity() const {
   size_type capacity;
   if (this->mDataFlags & DataFlags::REFCOUNTED) {
     
-    nsStringBuffer* hdr = nsStringBuffer::FromData(this->mData);
+    mozilla::StringBuffer* hdr = mozilla::StringBuffer::FromData(this->mData);
     if (hdr->IsReadonly()) {
       capacity = 0;
     } else {
@@ -365,7 +366,7 @@ bool nsTSubstring<T>::EnsureMutable(size_type aNewLen) {
       return true;
     }
     if ((this->mDataFlags & DataFlags::REFCOUNTED) &&
-        !nsStringBuffer::FromData(this->mData)->IsReadonly()) {
+        !mozilla::StringBuffer::FromData(this->mData)->IsReadonly()) {
       return true;
     }
 
@@ -404,9 +405,9 @@ void nsTSubstring<T>::Assign(const char_type* aData, size_type aLength) {
 }
 
 template <typename T>
-void nsTSubstring<T>::Assign(already_AddRefed<nsStringBuffer> aBuffer,
+void nsTSubstring<T>::Assign(already_AddRefed<mozilla::StringBuffer> aBuffer,
                              size_type aLength) {
-  nsStringBuffer* buffer = aBuffer.take();
+  mozilla::StringBuffer* buffer = aBuffer.take();
   auto* data = reinterpret_cast<char_type*>(buffer->Data());
   MOZ_DIAGNOSTIC_ASSERT(data[aLength] == char_type(0),
                         "data should be null terminated");
@@ -517,7 +518,7 @@ bool nsTSubstring<T>::Assign(const self_type& aStr,
             DataFlags::TERMINATED | DataFlags::REFCOUNTED);
 
     
-    nsStringBuffer::FromData(this->mData)->AddRef();
+    mozilla::StringBuffer::FromData(this->mData)->AddRef();
     return true;
   }
   if (aStr.mDataFlags & DataFlags::LITERAL) {
@@ -1236,7 +1237,7 @@ template <typename T>
 size_t nsTSubstring<T>::SizeOfExcludingThisIfUnshared(
     mozilla::MallocSizeOf aMallocSizeOf) const {
   if (this->mDataFlags & DataFlags::REFCOUNTED) {
-    return nsStringBuffer::FromData(this->mData)
+    return mozilla::StringBuffer::FromData(this->mData)
         ->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
   }
   if (this->mDataFlags & DataFlags::OWNED) {
@@ -1260,7 +1261,7 @@ size_t nsTSubstring<T>::SizeOfExcludingThisEvenIfShared(
   
   
   if (this->mDataFlags & DataFlags::REFCOUNTED) {
-    return nsStringBuffer::FromData(this->mData)
+    return mozilla::StringBuffer::FromData(this->mData)
         ->SizeOfIncludingThisEvenIfShared(aMallocSizeOf);
   }
   if (this->mDataFlags & DataFlags::OWNED) {

@@ -1,0 +1,249 @@
+
+
+
+
+
+
+#ifndef StringBuffer_h__
+#define StringBuffer_h__
+
+#include <atomic>
+#include <cstring>
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/RefCounted.h"
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+class StringBuffer {
+ private:
+  std::atomic<uint32_t> mRefCount;
+  uint32_t mStorageSize;
+
+ public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(StringBuffer)
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<StringBuffer> Alloc(size_t aSize) {
+    MOZ_ASSERT(aSize != 0, "zero capacity allocation not allowed");
+    MOZ_ASSERT(sizeof(StringBuffer) + aSize <= size_t(uint32_t(-1)) &&
+                   sizeof(StringBuffer) + aSize > aSize,
+               "mStorageSize will truncate");
+
+    auto* hdr = (StringBuffer*)malloc(sizeof(StringBuffer) + aSize);
+    if (hdr) {
+      hdr->mRefCount = 1;
+      hdr->mStorageSize = aSize;
+      detail::RefCountLogger::logAddRef(hdr, 1);
+    }
+    return already_AddRefed(hdr);
+  }
+
+  
+
+
+
+
+
+  static already_AddRefed<StringBuffer> Create(const char16_t* aData,
+                                               size_t aLength) {
+    return DoCreate(aData, aLength);
+  }
+  static already_AddRefed<StringBuffer> Create(const char* aData,
+                                               size_t aLength) {
+    return DoCreate(aData, aLength);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  static StringBuffer* Realloc(StringBuffer* aHdr, size_t aSize) {
+    MOZ_ASSERT(aSize != 0, "zero capacity allocation not allowed");
+    MOZ_ASSERT(sizeof(StringBuffer) + aSize <= size_t(uint32_t(-1)) &&
+                   sizeof(StringBuffer) + aSize > aSize,
+               "mStorageSize will truncate");
+
+    
+    MOZ_ASSERT(!aHdr->IsReadonly(), "|Realloc| attempted on readonly string");
+
+    
+    
+    
+    {
+      detail::RefCountLogger::ReleaseLogger logger(aHdr);
+      logger.logRelease(0);
+    }
+
+    aHdr = (StringBuffer*)realloc(aHdr, sizeof(StringBuffer) + aSize);
+    if (aHdr) {
+      detail::RefCountLogger::logAddRef(aHdr, 1);
+      aHdr->mStorageSize = aSize;
+    }
+
+    return aHdr;
+  }
+
+  void AddRef() {
+    
+    
+    
+    
+    
+    
+    
+    
+    uint32_t count = mRefCount.fetch_add(1, std::memory_order_relaxed) + 1;
+    detail::RefCountLogger::logAddRef(this, count);
+  }
+
+  void Release() {
+    
+    
+    
+    detail::RefCountLogger::ReleaseLogger logger(this);
+    uint32_t count = mRefCount.fetch_sub(1, std::memory_order_release) - 1;
+    logger.logRelease(count);
+    if (count == 0) {
+      
+      
+      
+      
+      count = mRefCount.load(std::memory_order_acquire);
+      free(this);  
+    }
+  }
+
+  
+
+
+
+
+  static StringBuffer* FromData(void* aData) {
+    return reinterpret_cast<StringBuffer*>(aData) - 1;
+  }
+
+  
+
+
+  void* Data() const {
+    return const_cast<char*>(reinterpret_cast<const char*>(this + 1));
+  }
+
+  
+
+
+
+
+  uint32_t StorageSize() const { return mStorageSize; }
+
+  
+
+
+
+
+
+
+
+  bool IsReadonly() const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+#if defined(MOZ_TSAN)
+    return mRefCount.load(std::memory_order_acquire) > 1;
+#else
+    return mRefCount.load(std::memory_order_relaxed) > 1;
+#endif
+  }
+
+  
+
+
+  size_t SizeOfIncludingThisIfUnshared(MallocSizeOf aMallocSizeOf) const {
+    return IsReadonly() ? 0 : aMallocSizeOf(this);
+  }
+
+  
+
+
+
+
+
+
+
+
+  size_t SizeOfIncludingThisEvenIfShared(MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this);
+  }
+
+ private:
+  template <typename CharT>
+  static already_AddRefed<StringBuffer> DoCreate(const CharT* aData,
+                                                 size_t aLength) {
+    StringBuffer* buffer = Alloc((aLength + 1) * sizeof(CharT)).take();
+    if (MOZ_LIKELY(buffer)) {
+      auto* data = reinterpret_cast<CharT*>(buffer->Data());
+      memcpy(data, aData, aLength * sizeof(CharT));
+      data[aLength] = 0;
+    }
+    return already_AddRefed(buffer);
+  }
+};
+
+}  
+
+#endif

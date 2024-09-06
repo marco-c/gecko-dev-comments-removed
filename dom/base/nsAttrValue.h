@@ -16,7 +16,7 @@
 
 #include "nscore.h"
 #include "nsString.h"
-#include "nsStringBuffer.h"
+#include "mozilla/StringBuffer.h"
 #include "nsColor.h"
 #include "nsCaseTreatment.h"
 #include "nsMargin.h"
@@ -107,7 +107,7 @@ const uintptr_t NS_ATTRVALUE_BASETYPE_MASK = 3;
 
 class nsCheapString : public nsString {
  public:
-  explicit nsCheapString(nsStringBuffer* aBuf) {
+  explicit nsCheapString(mozilla::StringBuffer* aBuf) {
     if (aBuf) {
       Assign(aBuf, aBuf->StorageSize() / sizeof(char16_t) - 1);
     }
@@ -486,7 +486,7 @@ class nsAttrValue {
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   nsAtom* GetStoredAtom() const;
-  nsStringBuffer* GetStoredStringBuffer() const;
+  mozilla::StringBuffer* GetStoredStringBuffer() const;
 
  private:
   
@@ -532,7 +532,7 @@ class nsAttrValue {
   
   
   MiscContainer* EnsureEmptyMiscContainer();
-  already_AddRefed<nsStringBuffer> GetStringBuffer(
+  already_AddRefed<mozilla::StringBuffer> GetStringBuffer(
       const nsAString& aValue) const;
   
   

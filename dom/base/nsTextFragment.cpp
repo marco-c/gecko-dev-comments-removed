@@ -106,7 +106,7 @@ nsTextFragment& nsTextFragment::operator=(const nsTextFragment& aOther) {
         memcpy(const_cast<char*>(m1b), aOther.m1b, aOther.mState.mLength);
       } else {
         
-        m2b = nsStringBuffer::Alloc(sizeof(char16_t) * 2).take();
+        m2b = StringBuffer::Alloc(sizeof(char16_t) * 2).take();
         if (!m2b) {
           MOZ_CRASH("OOM!");
         }
@@ -296,7 +296,7 @@ bool nsTextFragment::SetTo(const char16_t* aBuffer, uint32_t aLength,
       return false;
     }
 
-    m2b = nsStringBuffer::Alloc(m2bSize.value()).take();
+    m2b = StringBuffer::Alloc(m2bSize.value()).take();
     if (!m2b) {
       return false;
     }
@@ -373,10 +373,10 @@ bool nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength,
     size *= sizeof(char16_t);
 
     
-    nsStringBuffer* buff = nullptr;
-    nsStringBuffer* bufferToRelease = nullptr;
+    StringBuffer* buff = nullptr;
+    StringBuffer* bufferToRelease = nullptr;
     if (m2b->IsReadonly()) {
-      buff = nsStringBuffer::Alloc(size).take();
+      buff = StringBuffer::Alloc(size).take();
       if (!buff) {
         return false;
       }
@@ -384,7 +384,7 @@ bool nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength,
       memcpy(static_cast<char16_t*>(buff->Data()), m2b->Data(),
              mState.mLength * sizeof(char16_t));
     } else {
-      buff = nsStringBuffer::Realloc(m2b, size);
+      buff = StringBuffer::Realloc(m2b, size);
       if (!buff) {
         return false;
       }
@@ -418,7 +418,7 @@ bool nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength,
 
     
     
-    nsStringBuffer* buff = nsStringBuffer::Alloc(size).take();
+    StringBuffer* buff = StringBuffer::Alloc(size).take();
     if (!buff) {
       return false;
     }

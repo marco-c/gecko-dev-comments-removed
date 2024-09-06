@@ -7,7 +7,10 @@
 
 #include "nsAtom.h"
 #include "nsString.h"
-#include "nsStringBuffer.h"
+
+namespace mozilla {
+class StringBuffer;
+}
 
 class nsHtml5TreeBuilder;
 
@@ -36,9 +39,9 @@ class nsHtml5String final {
 
   inline Kind GetKind() const { return (Kind)(mBits & kKindMask); }
 
-  inline nsStringBuffer* AsStringBuffer() const {
+  inline mozilla::StringBuffer* AsStringBuffer() const {
     MOZ_ASSERT(GetKind() == eStringBuffer);
-    return reinterpret_cast<nsStringBuffer*>(mBits & kPtrMask);
+    return reinterpret_cast<mozilla::StringBuffer*>(mBits & kPtrMask);
   }
 
   inline nsAtom* AsAtom() const {
