@@ -23,7 +23,13 @@ bool FFmpegEncoderModule<V>::Supports(const EncoderConfig& aConfig) const {
   
   
   if ((aConfig.mScalabilityMode != ScalabilityMode::None)) {
-    if (aConfig.mCodec != CodecType::VP8 && aConfig.mCodec != CodecType::VP9) {
+    if (aConfig.mCodec == CodecType::AV1) {
+      
+      if (aConfig.mBitrateMode != BitrateMode::Constant) {
+        return false;
+      }
+    } else if (aConfig.mCodec != CodecType::VP8 &&
+               aConfig.mCodec != CodecType::VP9) {
       return false;
     }
   }
