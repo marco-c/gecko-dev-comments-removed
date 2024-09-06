@@ -294,7 +294,11 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
     
     item.addEventListener("click", e => {
       
-      let object = this._getEntryPointForElement(e.currentTarget);
+      let object = "fxa_avatar_menu";
+      const appMenuPanel = document.getElementById("appMenu-popup");
+      if (appMenuPanel.contains(e.currentTarget)) {
+        object = "fxa_app_menu";
+      }
       SyncedTabs.recordSyncedTabsTelemetry(object, "click", {
         tab_pos: index.toString(),
       });
@@ -677,7 +681,7 @@ var gSync = {
       case "PanelUI-fxa-menu-sendtab-connect-device-button":
       
       case "PanelUI-fxa-menu-connect-device-button":
-        this.clickOpenConnectAnotherDevice(button);
+        this.openConnectAnotherDeviceFromFxaMenu(button);
         break;
 
       case "fxa-manage-account-button":
@@ -691,6 +695,9 @@ var gSync = {
         break;
       case "PanelUI-fxa-menu-account-signout-button":
         this.disconnect();
+        break;
+      case "PanelUI-fxa-menu-sync-button":
+        this.openPrefsFromFxaButton("sync_cta", button);
         break;
       case "PanelUI-fxa-menu-monitor-button":
         this.openMonitorLink(button);
@@ -739,6 +746,7 @@ var gSync = {
     this.updateSyncButtonsTooltip(state);
     this.updateSyncStatus(state);
     this.updateFxAPanel(state);
+    
     this.ensureFxaDevices();
   },
 
@@ -876,6 +884,16 @@ var gSync = {
       bodyNode.setAttribute("state", "notready");
     }
     if (reloadDevices) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
       
       
       this.refreshFxaDevices().then(_ => {
@@ -1096,11 +1114,8 @@ var gSync = {
     ).hidden = !canSendAllURIs;
   },
 
-  
-  
-  
   emitFxaToolbarTelemetry(type, sourceElement) {
-    if (UIState.isReady()) {
+    if (UIState.isReady() && sourceElement) {
       const state = UIState.get();
       const hasAvatar = state.avatarURL && !state.avatarIsDefault;
       let extraOptions = {
@@ -1108,7 +1123,13 @@ var gSync = {
         fxa_avatar: hasAvatar ? "true" : "false",
       };
 
-      let eventName = this._getEntryPointForElement(sourceElement);
+      
+      
+      let eventName = "fxa_avatar_menu";
+      if (this.isInsideAppMenu(sourceElement)) {
+        eventName = "fxa_app_menu";
+      }
+
       Services.telemetry.recordEvent(
         eventName,
         "click",
@@ -1117,6 +1138,14 @@ var gSync = {
         extraOptions
       );
     }
+  },
+
+  isInsideAppMenu(sourceElement = undefined) {
+    const appMenuPanel = document.getElementById("appMenu-popup");
+    if (sourceElement && appMenuPanel.contains(sourceElement)) {
+      return true;
+    }
+    return false;
   },
 
   updatePanelPopup({ email, displayName, status }) {
@@ -1290,9 +1319,12 @@ var gSync = {
     openTrustedLinkIn(url, "tab");
   },
 
-  async clickOpenConnectAnotherDevice(sourceElement) {
+  async openConnectAnotherDeviceFromFxaMenu(sourceElement = undefined) {
     this.emitFxaToolbarTelemetry("cad", sourceElement);
-    let entryPoint = this._getEntryPointForElement(sourceElement);
+    let entryPoint = "fxa_discoverability_native";
+    if (this.isInsideAppMenu(sourceElement)) {
+      entryPoint = "fxa_app_menu";
+    }
     this.openConnectAnotherDevice(entryPoint);
   },
 
@@ -1303,7 +1335,7 @@ var gSync = {
     switchToTabHavingURI(url, true, { replaceQueryString: true });
   },
 
-  async clickFxAMenuHeaderButton(sourceElement) {
+  async clickFxAMenuHeaderButton(sourceElement = undefined) {
     
     
     
@@ -1320,36 +1352,8 @@ var gSync = {
         this.openFxAEmailFirstPage("fxa_app_menu_reverify");
         break;
       case UIState.STATUS_SIGNED_IN:
-        this._openFxAManagePageFromElement(sourceElement);
+        this.openFxAManagePageFromFxaMenu(sourceElement);
     }
-  },
-
-  
-  
-  
-  
-  
-  
-  
-  _getEntryPointForElement(sourceElement) {
-    
-    
-    
-    
-    const appMenuPanel = document.getElementById("appMenu-popup");
-    if (appMenuPanel.contains(sourceElement)) {
-      return "fxa_app_menu";
-    }
-    
-    if (sourceElement.id == "fxa-toolbar-menu-button") {
-      return "fxa_toolbar_button";
-    }
-    
-    const fxaMenu = document.getElementById("PanelUI-fxa-menu");
-    if (fxaMenu && fxaMenu.contains(sourceElement)) {
-      return "fxa_toolbar_button";
-    }
-    return "fxa_discoverability_native";
   },
 
   async openFxAEmailFirstPage(entryPoint, extraParams = {}) {
@@ -1363,12 +1367,16 @@ var gSync = {
     switchToTabHavingURI(url, true, { replaceQueryString: true });
   },
 
-  async openFxAEmailFirstPageFromFxaMenu(sourceElement, extraParams = {}) {
+  async openFxAEmailFirstPageFromFxaMenu(
+    sourceElement = undefined,
+    extraParams = {}
+  ) {
     this.emitFxaToolbarTelemetry("login", sourceElement);
-    this.openFxAEmailFirstPage(
-      this._getEntryPointForElement(sourceElement),
-      extraParams
-    );
+    let entryPoint = "fxa_discoverability_native";
+    if (sourceElement) {
+      entryPoint = "fxa_toolbar_button";
+    }
+    this.openFxAEmailFirstPage(entryPoint, extraParams);
   },
 
   async openFxAManagePage(entryPoint) {
@@ -1376,9 +1384,13 @@ var gSync = {
     switchToTabHavingURI(url, true, { replaceQueryString: true });
   },
 
-  async _openFxAManagePageFromElement(sourceElement) {
+  async openFxAManagePageFromFxaMenu(sourceElement = undefined) {
     this.emitFxaToolbarTelemetry("account_settings", sourceElement);
-    this.openFxAManagePage(this._getEntryPointForElement(sourceElement));
+    let entryPoint = "fxa_discoverability_native";
+    if (this.isInsideAppMenu(sourceElement)) {
+      entryPoint = "fxa_app_menu";
+    }
+    this.openFxAManagePage(entryPoint);
   },
 
   
@@ -1992,7 +2004,16 @@ var gSync = {
 
   openPrefsFromFxaMenu(type, sourceElement) {
     this.emitFxaToolbarTelemetry(type, sourceElement);
-    let entryPoint = this._getEntryPointForElement(sourceElement);
+    let entryPoint = "fxa_discoverability_native";
+    if (this.isInsideAppMenu(sourceElement)) {
+      entryPoint = "fxa_app_menu";
+    }
+    this.openPrefs(entryPoint);
+  },
+
+  openPrefsFromFxaButton(type, sourceElement) {
+    let entryPoint = "fxa_toolbar_button_sync";
+    this.emitFxaToolbarTelemetry(type, sourceElement);
     this.openPrefs(entryPoint);
   },
 
@@ -2185,7 +2206,6 @@ var gSync = {
       !monitorEnabled && !relayEnabled && !vpnEnabled;
     mainPanelEl.hidden = false;
   },
-
   async openMonitorLink(sourceElement) {
     this.emitFxaToolbarTelemetry("monitor_cta", sourceElement);
     await this.openCtaLink(
