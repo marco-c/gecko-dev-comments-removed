@@ -840,6 +840,7 @@ class BuildReader(object):
         self.finder = finder
 
         
+        
         ignores = {
             
             "python/mozbuild/mozbuild/test",
@@ -922,8 +923,41 @@ class BuildReader(object):
         
         
         
-        for path, f in self._relevant_mozbuild_finder.find("**/moz.build"):
-            yield path
+        
+        
+        
+        
+
+        base_dir = self._relevant_mozbuild_finder.base
+        
+        ignores = self._relevant_mozbuild_finder.ignore
+
+        def should_include_dir(relpath, d):
+            d = mozpath.join(relpath, d)
+            
+            return all(not mozpath.match(d, p) for p in ignores)
+
+        for full_path, dirs, files in os.walk(base_dir, topdown=True):
+            if "config.status" in files:
+                
+                
+                continue
+
+            
+            
+            relpath = full_path[len(base_dir) + len(os.path.sep) :]
+
+            dirs[:] = [
+                d
+                for d in dirs
+                
+                if d[0] != "."
+                
+                and should_include_dir(relpath, d)
+            ]
+
+            if "moz.build" in files:
+                yield mozpath.join(relpath, "moz.build")
 
     def find_variables_from_ast(self, variables, path=None):
         """Finds all assignments to the specified variables by parsing
