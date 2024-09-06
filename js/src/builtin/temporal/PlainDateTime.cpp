@@ -852,9 +852,6 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
   
   if (largestUnit != dateLargestUnit) {
     
-    
-
-    
     if (!Add24HourDaysToNormalizedTimeDuration(
             cx, timeDuration, dateDifference.days, &timeDuration)) {
       return false;
@@ -1129,9 +1126,6 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
     args.rval().setObject(*obj);
     return true;
   }
-
-  
-  
 
   
   Rooted<CalendarRecord> calendar(cx);

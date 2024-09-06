@@ -4360,15 +4360,15 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     }
   } else {
     
-    
-
-    
     if (calendarUnitsPresent || largestUnit < TemporalUnit::Day) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_DURATION_UNCOMPARABLE,
                                 "relativeTo");
       return false;
     }
+
+    
+    MOZ_ASSERT(smallestUnit >= TemporalUnit::Day);
 
     
     
@@ -4380,9 +4380,6 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
                              roundingMode, ComputeRemainder::No, &rounded)) {
       return false;
     }
-
-    
-    
 
     
     NormalizedTimeDuration withDays;
@@ -4615,6 +4612,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   }
 
   
+  MOZ_ASSERT(!std::isnan(total));
 
   
   args.rval().setNumber(total);
