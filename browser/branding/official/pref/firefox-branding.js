@@ -8,7 +8,7 @@ pref("startup.homepage_override_url", "");
 pref("startup.homepage_welcome_url", "about:welcome");
 pref("startup.homepage_welcome_url.additional", "");
 
-pref("app.update.interval", 43200); 
+pref("app.update.interval", 21600); 
 
 pref("app.update.promptWaitTime", 691200);
 

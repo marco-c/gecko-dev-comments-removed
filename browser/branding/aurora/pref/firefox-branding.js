@@ -7,7 +7,7 @@
 pref("startup.homepage_welcome_url", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%a2/firstrun/");
 pref("startup.homepage_welcome_url.additional", "");
 
-pref("app.update.interval", 28800); 
+pref("app.update.interval", 21600); 
 
 pref("app.update.promptWaitTime", 691200);
 
