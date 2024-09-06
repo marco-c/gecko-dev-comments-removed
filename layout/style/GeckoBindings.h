@@ -316,23 +316,6 @@ void Gecko_CopyImageOrientationFrom(nsStyleVisibility* aDst,
                                     const nsStyleVisibility* aSrc);
 
 
-void Gecko_CounterStyle_ToPtr(const mozilla::StyleCounterStyle*,
-                              mozilla::CounterStylePtr*);
-
-void Gecko_SetCounterStyleToNone(mozilla::CounterStylePtr*);
-
-void Gecko_SetCounterStyleToString(mozilla::CounterStylePtr* ptr,
-                                   const nsACString* symbol);
-
-void Gecko_CopyCounterStyle(mozilla::CounterStylePtr* dst,
-                            const mozilla::CounterStylePtr* src);
-
-nsAtom* Gecko_CounterStyle_GetName(const mozilla::CounterStylePtr* ptr);
-
-const mozilla::AnonymousCounterStyle* Gecko_CounterStyle_GetAnonymous(
-    const mozilla::CounterStylePtr* ptr);
-
-
 void Gecko_SetListStyleImageNone(nsStyleList* style_struct);
 
 void Gecko_SetListStyleImageImageValue(

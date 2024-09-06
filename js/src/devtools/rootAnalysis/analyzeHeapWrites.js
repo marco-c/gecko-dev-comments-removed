@@ -99,7 +99,6 @@ function checkOverridableVirtualCall(entry, location, callee)
         "Gecko_AddRefAtom",
         "Gecko_ReleaseAtom",
         /nsPrincipal::Get/,
-        /CounterStylePtr::Reset/,
     ];
     if (entry.matches(whitelist))
         return;
@@ -149,11 +148,6 @@ function treatAsSafeArgument(entry, varName, csuName)
         
         
         
-        ["Gecko_SetCounterStyleToName", "aPtr", null],
-        ["Gecko_SetCounterStyleToSymbols", "aPtr", null],
-        ["Gecko_SetCounterStyleToString", "aPtr", null],
-        ["Gecko_CopyCounterStyle", "aDst", null],
-        ["Gecko_SetMozBinding", "aDisplay", null],
         [/ClassOrClassList/, /aClass/, null],
         ["Gecko_GetAtomAsUTF16", "aLength", null],
         ["Gecko_CopyMozBindingFrom", "aDest", null],
@@ -223,8 +217,6 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_ClearAlternateValues", "aFont", null],
         ["Gecko_AppendAlternateValues", "aFont", null],
         ["Gecko_CopyAlternateValuesFrom", "aDest", null],
-        ["Gecko_CounterStyle_GetName", "aResult", null],
-        ["Gecko_CounterStyle_GetSingleString", "aResult", null],
         ["Gecko_nsTArray_FontFamilyName_AppendNamed", "aNames", null],
         ["Gecko_nsTArray_FontFamilyName_AppendGeneric", "aNames", null],
     ];
@@ -344,12 +336,6 @@ function ignoreCallEdge(entry, callee)
     {
         return true;
     }
-
-    
-    
-    
-    if (/nsStyleList::SetCounterStyle/.test(callee))
-        return true;
 
     
     

@@ -750,7 +750,7 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
     }
     
     
-    if (aPseudoStyle.StyleList()->mCounterStyle.IsNone() &&
+    if (aPseudoStyle.StyleList()->mListStyleType.IsNone() &&
         aPseudoStyle.StyleList()->mListStyleImage.IsNone() &&
         content.IsNormal()) {
       return false;
