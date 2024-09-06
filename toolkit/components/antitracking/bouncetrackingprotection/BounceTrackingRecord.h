@@ -32,9 +32,9 @@ class BounceTrackingRecord final {
 
   void AddStorageAccessHost(const nsACString& aHost);
 
-  const nsTHashSet<nsCStringHashKey>& GetBounceHosts() const;
+  const nsTHashSet<nsCString>& GetBounceHosts() const;
 
-  const nsTHashSet<nsCStringHashKey>& GetStorageAccessHosts() const;
+  const nsTHashSet<nsCString>& GetStorageAccessHosts() const;
 
   
   nsCString Describe();
@@ -49,15 +49,15 @@ class BounceTrackingRecord final {
 
   
   
-  nsTHashSet<nsCStringHashKey> mBounceHosts;
+  nsTHashSet<nsCString> mBounceHosts;
 
   
   
-  nsTHashSet<nsCStringHashKey> mStorageAccessHosts;
+  nsTHashSet<nsCString> mStorageAccessHosts;
 
   
   
-  static nsCString DescribeSet(const nsTHashSet<nsCStringHashKey>& set);
+  static nsCString DescribeSet(const nsTHashSet<nsCString>& set);
 };
 
 }  
