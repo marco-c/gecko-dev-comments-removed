@@ -1434,6 +1434,13 @@ void NotifyEmbedVisit(VisitData& aPlace,
   (void)NS_DispatchToMainThread(event);
 }
 
+void NotifyOriginRestrictedVisit(nsIURI* aURI) {
+  MOZ_ASSERT(NS_IsMainThread(), "Must be called on the main thread!");
+
+  nsCOMPtr<nsIRunnable> event = new NotifyManyVisitsObservers(VisitData(aURI));
+  (void)NS_DispatchToMainThread(event);
+}
+
 void NotifyVisitIfHavingUserPass(nsIURI* aURI) {
   MOZ_ASSERT(NS_IsMainThread(), "Must be called on the main thread!");
 
@@ -1868,6 +1875,68 @@ const mozIStorageConnection* History::GetConstDBConn() {
   return mDB->MainConn();
 }
 
+void History::UpdateOriginFloodingRestriction(nsACString& aOrigin) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  TimeStamp latestInputTimeStamp = UserActivation::LatestUserInputStart();
+  if (latestInputTimeStamp.IsNull()) {
+    
+    return;
+  }
+
+  TimeStamp now = TimeStamp::Now();
+
+  
+  for (auto iter = mOriginFloodingRestrictions.Iter(); !iter.Done();
+       iter.Next()) {
+    if ((now - iter.Data().mLastVisitTimeStamp).ToSeconds() >
+        iter.Data().mExpireIntervalSeconds) {
+      iter.Remove();
+    }
+  }
+
+  
+  
+  if ((now - latestInputTimeStamp).ToSeconds() <
+      Preferences::GetUint("places.history.floodingPrevention."
+                           "maxSecondsFromLastUserInteraction",
+                           3)) {
+    mOriginFloodingRestrictions.Remove(aOrigin);
+    return;
+  }
+
+  
+  auto restriction = mOriginFloodingRestrictions.Lookup(aOrigin);
+  if (restriction) {
+    if (restriction->mAllowedVisitCount) {
+      
+      restriction->mAllowedVisitCount -= 1;
+    } else {
+      
+      
+      restriction->mExpireIntervalSeconds *= 2;
+    }
+  } else {
+    
+    mOriginFloodingRestrictions.InsertOrUpdate(
+        aOrigin,
+        OriginFloodingRestriction{
+            now,
+            static_cast<uint8_t>(
+                Preferences::GetUint("places.history.floodingPrevention."
+                                     "restrictionExpireSeconds",
+                                     5)),
+            static_cast<uint8_t>(Preferences::GetUint(
+                "places.history.floodingPrevention.restrictionCount", 3))});
+  }
+}
+
+bool History::IsRestrictedOrigin(nsACString& aOrigin) {
+  auto restriction = mOriginFloodingRestrictions.Lookup(aOrigin);
+  
+  return restriction && !restriction->mAllowedVisitCount;
+}
+
 void History::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   MutexAutoLock lockedScope(mBlockShutdownMutex);
@@ -2019,6 +2088,32 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
   
   place.isUnrecoverableError = aFlags & IHistory::UNRECOVERABLE_ERROR;
 
+  
+  
+  if (place.transitionType == nsINavHistoryService::TRANSITION_EMBED) {
+    NotifyEmbedVisit(place);
+    return NS_OK;
+  }
+
+  if (Preferences::GetBool("places.history.floodingPrevention.enabled",
+                           false)) {
+    
+    
+    nsAutoCString origin;
+    Unused << visitedURI->GetHost(origin);
+    if (StringBeginsWith(origin, "www."_ns)) {
+      origin.Cut(0, 4);
+    }
+
+    UpdateOriginFloodingRestriction(origin);
+
+    if (IsRestrictedOrigin(origin)) {
+      NotifyOriginRestrictedVisit(visitedURI);
+      NotifyVisitIfHavingUserPass(aURI);
+      return NS_OK;
+    }
+  }
+
   nsCOMPtr<nsIBrowserWindowTracker> bwt =
       do_ImportESModule("resource:///modules/BrowserWindowTracker.sys.mjs",
                         "BrowserWindowTracker", &rv);
@@ -2075,17 +2170,11 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
     }
   }
 
-  
-  
-  if (place.transitionType == nsINavHistoryService::TRANSITION_EMBED) {
-    NotifyEmbedVisit(place);
-  } else {
-    mozIStorageConnection* dbConn = GetDBConn();
-    NS_ENSURE_STATE(dbConn);
+  mozIStorageConnection* dbConn = GetDBConn();
+  NS_ENSURE_STATE(dbConn);
 
-    rv = InsertVisitedURIs::Start(dbConn, std::move(placeArray));
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  rv = InsertVisitedURIs::Start(dbConn, std::move(placeArray));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
@@ -2323,6 +2412,7 @@ History::IsURIVisited(nsIURI* aURI, mozIVisitedStatusCallback* aCallback) {
 NS_IMETHODIMP
 History::ClearCache() {
   mRecentlyVisitedURIs.Clear();
+  mOriginFloodingRestrictions.Clear();
   return NS_OK;
 }
 
