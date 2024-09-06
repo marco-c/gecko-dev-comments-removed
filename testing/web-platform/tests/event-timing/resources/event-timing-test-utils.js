@@ -418,9 +418,13 @@ async function createPerformanceObserverPromise(observeTypes, callback, readyToR
 
 
 
-async function interactAndObserve(interactionType, target, observerPromise) {
+async function interactAndObserve(interactionType, target, observerPromise, key = '') {
   let interactionPromise;
   switch (interactionType) {
+    case 'key': {
+      addListeners(target, ['keydown', 'keyup']);
+      interactionPromise = pressKey(target, key);
+    }
     case 'tap': {
       addListeners(target, ['pointerdown', 'pointerup']);
       interactionPromise = tap(target);
