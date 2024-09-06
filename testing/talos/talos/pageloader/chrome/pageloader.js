@@ -388,17 +388,22 @@ function startAndLoadURI(pageURL) {
     TalosParentProfiler.subtestStart("Starting to load URI " + pageURL.spec);
   }
 
-  start_time = window.performance.now();
-  if (loadNoCache) {
-    gBrowser.loadURI(pageURL, {
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE,
-    });
-  } else {
-    gBrowser.loadURI(pageURL, {
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    });
-  }
+  
+  setTimeout(function () {
+    start_time = window.performance.now();
+    if (loadNoCache) {
+      gBrowser.loadURI(pageURL, {
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+        flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE,
+      });
+    } else {
+      gBrowser.loadURI(pageURL, {
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+      });
+    }
+  }, 200);
 }
 
 function getTestName() {
