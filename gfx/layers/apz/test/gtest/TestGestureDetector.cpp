@@ -558,7 +558,7 @@ class APZCLongPressTester : public APZCGestureDetectorTester {
   
   
   
-  void DoLongPressDiscardTouchBlockTest() {
+  void DoLongPressDiscardTouchBlockTest(bool aWithTouchMove) {
     
     
     SCOPED_GFX_PREF_INT("apz.content_response_timeout", 60);
@@ -603,8 +603,10 @@ class APZCLongPressTester : public APZCGestureDetectorTester {
     EXPECT_TRUE(secondTouchBlock->ForLongTap());
     uint64_t secondTouchBlockId = secondTouchBlock->GetBlockId();
 
-    mcc->AdvanceByMillis(10);
-    TouchMove(apzc, ScreenIntPoint(10, 20), mcc->Time());
+    if (aWithTouchMove) {
+      mcc->AdvanceByMillis(10);
+      TouchMove(apzc, ScreenIntPoint(10, 20), mcc->Time());
+    }
 
     
     mcc->AdvanceByMillis(10);
@@ -634,14 +636,25 @@ TEST_F(APZCLongPressTester, LongPressPreventDefault) {
 }
 
 TEST_F(APZCLongPressTester, LongPressDiscardBlock) {
-  DoLongPressDiscardTouchBlockTest();
+  DoLongPressDiscardTouchBlockTest(true );
 }
 
 
 
 TEST_F(APZCLongPressTester, LongPressDiscardBlock2) {
   MakeApzcWaitForMainThread();
-  DoLongPressDiscardTouchBlockTest();
+  DoLongPressDiscardTouchBlockTest(true );
+}
+
+
+
+TEST_F(APZCLongPressTester, LongPressDiscardBlock3) {
+  DoLongPressDiscardTouchBlockTest(false );
+}
+
+TEST_F(APZCLongPressTester, LongPressDiscardBlock4) {
+  MakeApzcWaitForMainThread();
+  DoLongPressDiscardTouchBlockTest(false );
 }
 
 TEST_F(APZCGestureDetectorTester, DoubleTap) {
