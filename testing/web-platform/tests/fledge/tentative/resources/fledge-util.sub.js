@@ -262,6 +262,15 @@ function createInterestGroupForOrigin(uuid, origin,
 
 
 
+async function joinInterestGroupWithoutDefaults(test, interestGroup,
+                                                durationSeconds = 60) {
+  await navigator.joinAdInterestGroup(interestGroup, durationSeconds);
+  test.add_cleanup(
+    async () => { await navigator.leaveAdInterestGroup(interestGroup); });
+}
+
+
+
 
 
 
@@ -271,12 +280,33 @@ function createInterestGroupForOrigin(uuid, origin,
 
 async function joinInterestGroup(test, uuid, interestGroupOverrides = {},
                                  durationSeconds = 60) {
-  let interestGroup = createInterestGroupForOrigin(uuid, window.location.origin,
-                                                   interestGroupOverrides);
+  await joinInterestGroupWithoutDefaults(
+      test, createInterestGroupForOrigin(
+          uuid, window.location.origin, interestGroupOverrides),
+      durationSeconds);
+}
 
-  await navigator.joinAdInterestGroup(interestGroup, durationSeconds);
-  test.add_cleanup(
-    async () => { await navigator.leaveAdInterestGroup(interestGroup) });
+
+
+
+
+
+async function joinNegativeInterestGroup(
+    test, owner, name, additionalBidKey) {
+  let interestGroup = {
+    owner: owner,
+    name: name,
+    additionalBidKey: additionalBidKey
+  };
+  if (owner != window.location.origin) {
+    let iframe = await createIframe(test, owner, 'join-ad-interest-group');
+    await runInFrame(
+      test, iframe,
+      `await joinInterestGroupWithoutDefaults(` +
+          `test_instance, ${JSON.stringify(interestGroup)})`);
+  } else {
+    await joinInterestGroupWithoutDefaults(test_instance, interestGroup);
+  }
 }
 
 
@@ -487,6 +517,17 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportURLs,
   await waitForObservedRequests(uuid, expectedReportURLs);
 }
 
+
+
+
+
+
+
+
+
+
+
+
 async function runAdditionalBidTest(test, uuid, buyers, auctionNonce,
                                     additionalBidsPromise,
                                     highestScoringOtherBid,
@@ -696,45 +737,96 @@ function directFromSellerSignalsValidatorCode(uuid, expectedSellerSignals,
   };
 }
 
-
-
-
-
-
-
-function createAdditionalBid(uuid, auctionNonce, seller, buyer, interestGroupName, bidAmount,
-                             additionalBidOverrides = {}) {
-  return {
-    interestGroup: {
-      name: interestGroupName,
-      biddingLogicURL: createBiddingScriptURL(
-        {
-          origin: buyer,
-          reportAdditionalBidWin: `sendReportTo("${createBidderReportURL(uuid, interestGroupName)}");`
-        }),
-      owner: buyer
-    },
-    bid: {
-      ad: ['metadata'],
-      bid: bidAmount,
-      render: createRenderURL(uuid)
-    },
-    auctionNonce: auctionNonce,
-    seller: seller,
-    ...additionalBidOverrides
+let additionalBidHelper = function() {
+  
+  
+  
+  
+  
+  
+  function createAdditionalBid(uuid, auctionNonce, seller, buyer, interestGroupName, bidAmount,
+                               additionalBidOverrides = {}) {
+    return {
+      interestGroup: {
+        name: interestGroupName,
+        biddingLogicURL: createBiddingScriptURL(
+          {
+            origin: buyer,
+            reportAdditionalBidWin: `sendReportTo("${createBidderReportURL(uuid, interestGroupName)}");`
+          }),
+        owner: buyer
+      },
+      bid: {
+        ad: ['metadata'],
+        bid: bidAmount,
+        render: createRenderURL(uuid)
+      },
+      auctionNonce: auctionNonce,
+      seller: seller,
+      ...additionalBidOverrides
+    };
   }
-}
 
+  
+  function getAndMaybeInitializeTestMetadata(additionalBid) {
+    if (additionalBid.testMetadata === undefined) {
+      additionalBid.testMetadata = {};
+    }
+    return additionalBid.testMetadata;
+  }
 
+  
+  
+  function signWithSecretKeys(additionalBid, secretKeys) {
+    getAndMaybeInitializeTestMetadata(additionalBid).
+        secretKeysForValidSignatures = secretKeys;
+  }
 
+  
+  
+  
+  
+  function incorrectlySignWithSecretKeys(additionalBid, secretKeys) {
+    getAndMaybeInitializeTestMetadata(additionalBid).
+        secretKeysForInvalidSignatures = secretKeys;
+  }
 
-async function fetchAdditionalBids(seller, additionalBids) {
-  const url = new URL(`${seller}${RESOURCE_PATH}additional-bids.py`);
-  url.searchParams.append('additionalBids', JSON.stringify(additionalBids));
-  const response = await fetch(url.href, {adAuctionHeaders: true});
+  
+  
+  function addNegativeInterestGroup(additionalBid, negativeInterestGroup) {
+    additionalBid["negativeInterestGroup"] = negativeInterestGroup;
+  }
 
-  assert_equals(response.status, 200, 'Failed to fetch additional bid: ' + await response.text());
-  assert_false(
-      response.headers.has('Ad-Auction-Additional-Bid'),
-      'Header "Ad-Auction-Additional-Bid" should not be available in JavaScript context.');
-}
+  
+  
+  function addNegativeInterestGroups(additionalBid, negativeInterestGroups,
+                                     joiningOrigin) {
+    additionalBid["negativeInterestGroups"] = {
+      joiningOrigin: joiningOrigin,
+      interestGroupNames: negativeInterestGroups
+    };
+  }
+
+  
+  
+  
+  async function fetchAdditionalBids(seller, additionalBids) {
+    const url = new URL(`${seller}${RESOURCE_PATH}additional-bids.py`);
+    url.searchParams.append('additionalBids', JSON.stringify(additionalBids));
+    const response = await fetch(url.href, {adAuctionHeaders: true});
+
+    assert_equals(response.status, 200, 'Failed to fetch additional bid: ' + await response.text());
+    assert_false(
+        response.headers.has('Ad-Auction-Additional-Bid'),
+        'Header "Ad-Auction-Additional-Bid" should not be available in JavaScript context.');
+  }
+
+  return {
+    createAdditionalBid: createAdditionalBid,
+    signWithSecretKeys: signWithSecretKeys,
+    incorrectlySignWithSecretKeys: incorrectlySignWithSecretKeys,
+    addNegativeInterestGroup: addNegativeInterestGroup,
+    addNegativeInterestGroups: addNegativeInterestGroups,
+    fetchAdditionalBids: fetchAdditionalBids
+  };
+}();
