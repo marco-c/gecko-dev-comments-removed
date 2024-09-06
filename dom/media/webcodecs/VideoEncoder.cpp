@@ -409,26 +409,33 @@ bool VideoEncoderTraits::Validate(const VideoEncoderConfig& aConfig,
   Maybe<nsString> codec = ParseCodecString(aConfig.mCodec);
   
   if (!codec || codec->IsEmpty()) {
-    LOGE("Invalid VideoEncoderConfig: invalid codec string");
+    aErrorMessage.AssignLiteral(
+        "Invalid VideoEncoderConfig: invalid codec string");
+    LOGE("%s", aErrorMessage.get());
     return false;
   }
 
   
   if (aConfig.mWidth == 0 || aConfig.mHeight == 0) {
-    LOGE("Invalid VideoEncoderConfig: %s equal to 0",
-         aConfig.mWidth == 0 ? "width" : "height");
+    aErrorMessage.AppendPrintf("Invalid VideoEncoderConfig: %s equal to 0",
+                               aConfig.mWidth == 0 ? "width" : "height");
+    LOGE("%s", aErrorMessage.get());
     return false;
   }
 
   
   if ((aConfig.mDisplayWidth.WasPassed() &&
        aConfig.mDisplayWidth.Value() == 0)) {
-    LOGE("Invalid VideoEncoderConfig: displayWidth equal to 0");
+    aErrorMessage.AssignLiteral(
+        "Invalid VideoEncoderConfig: displayWidth equal to 0");
+    LOGE("%s", aErrorMessage.get());
     return false;
   }
   if ((aConfig.mDisplayHeight.WasPassed() &&
        aConfig.mDisplayHeight.Value() == 0)) {
-    LOGE("Invalid VideoEncoderConfig: displayHeight equal to 0");
+    aErrorMessage.AssignLiteral(
+        "Invalid VideoEncoderConfig: displayHeight equal to 0");
+    LOGE("%s", aErrorMessage.get());
     return false;
   }
 
