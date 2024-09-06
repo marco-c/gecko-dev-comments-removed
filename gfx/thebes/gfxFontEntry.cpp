@@ -476,6 +476,7 @@ hb_blob_t* gfxFontEntry::FontTableHashEntry::ShareTableAndGetBlob(
     
     
     
+    mSharedBlobData = nullptr;
     return hb_blob_reference(mBlob);
   }
 
