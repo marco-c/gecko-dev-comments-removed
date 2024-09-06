@@ -509,6 +509,9 @@ void ConnectionEntry::VerifyTraffic() {
             mActiveConns.RemoveElementAt(index);
             gHttpHandler->ConnMgr()->DecrementActiveConnCount(conn);
             mPendingConns.AppendElement(conn);
+            
+            
+            conn->DontReuse();
             LOG(("Move active connection to pending list [conn=%p]\n",
                  conn.get()));
           }
