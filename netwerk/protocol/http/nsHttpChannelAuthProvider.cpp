@@ -619,25 +619,35 @@ nsresult nsHttpChannelAuthProvider::GetCredentials(
     cc.AppendElement(ac);
   }
 
-  cc.StableSort([](const AuthChallenge& lhs, const AuthChallenge& rhs) {
-    
-    if (lhs.rank != rhs.rank) {
-      return lhs.rank < rhs.rank ? 1 : -1;
-    }
+  
+  auto authInProgress = [&]() -> bool {
+    return proxyAuth ? mProxyAuthContinuationState : mAuthContinuationState;
+  };
 
-    
-    
-    if (lhs.rank != ChallengeRank::Digest) {
-      return 0;
-    }
+  
+  
+  if (!authInProgress() ||
+      StaticPrefs::network_auth_sort_challenge_in_progress()) {
+    cc.StableSort([](const AuthChallenge& lhs, const AuthChallenge& rhs) {
+      
+      if (lhs.rank != rhs.rank) {
+        return lhs.rank < rhs.rank ? 1 : -1;
+      }
 
-    
-    if (lhs.algorithm == 0 || rhs.algorithm == 0) {
-      return 0;
-    }
+      
+      
+      if (lhs.rank != ChallengeRank::Digest) {
+        return 0;
+      }
 
-    return lhs.algorithm < rhs.algorithm ? 1 : -1;
-  });
+      
+      if (lhs.algorithm == 0 || rhs.algorithm == 0) {
+        return 0;
+      }
+
+      return lhs.algorithm < rhs.algorithm ? 1 : -1;
+    });
+  }
 
   nsCOMPtr<nsIHttpAuthenticator> auth;
   nsCString authType;  
