@@ -76,7 +76,8 @@ class DecoderTemplate : public DOMEventTargetHelper {
     const ConfigTypeInternal& Config() { return *mConfig; }
     UniquePtr<ConfigTypeInternal> TakeConfig() { return std::move(mConfig); }
 
-    const Id mId;  
+    
+    const Id mId;
 
    private:
     ConfigureMessage(Id aId, UniquePtr<ConfigTypeInternal>&& aConfig);
@@ -88,16 +89,18 @@ class DecoderTemplate : public DOMEventTargetHelper {
       : public ControlMessage,
         public MessageRequestHolder<DecoderAgent::DecodePromise> {
    public:
-    using Id = size_t;
+    using SeqId = size_t;
     using ConfigId = typename Self::ConfigureMessage::Id;
-    DecodeMessage(Id aId, ConfigId aConfigId,
+    DecodeMessage(SeqId aSeqId, ConfigId aConfigId,
                   UniquePtr<InputTypeInternal>&& aData);
     ~DecodeMessage() = default;
     virtual void Cancel() override { Disconnect(); }
     virtual bool IsProcessing() override { return Exists(); };
     virtual DecodeMessage* AsDecodeMessage() override { return this; }
-    const Id mId;  
 
+    
+    
+    const SeqId mSeqId;
     UniquePtr<InputTypeInternal> mData;
   };
 
@@ -105,9 +108,9 @@ class DecoderTemplate : public DOMEventTargetHelper {
       : public ControlMessage,
         public MessageRequestHolder<DecoderAgent::DecodePromise> {
    public:
-    using Id = size_t;
+    using SeqId = size_t;
     using ConfigId = typename Self::ConfigureMessage::Id;
-    FlushMessage(Id aId, ConfigId aConfigId, Promise* aPromise);
+    FlushMessage(SeqId aSeqId, ConfigId aConfigId, Promise* aPromise);
     ~FlushMessage() = default;
     virtual void Cancel() override { Disconnect(); }
     virtual bool IsProcessing() override { return Exists(); };
@@ -115,7 +118,9 @@ class DecoderTemplate : public DOMEventTargetHelper {
     already_AddRefed<Promise> TakePromise() { return mPromise.forget(); }
     void RejectPromiseIfAny(const nsresult& aReason);
 
-    const Id mId;  
+    
+    
+    const SeqId mSeqId;
 
    private:
     RefPtr<Promise> mPromise;
