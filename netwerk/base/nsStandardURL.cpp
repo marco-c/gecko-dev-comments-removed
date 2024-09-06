@@ -671,13 +671,21 @@ void nsStandardURL::CoalescePath(netCoalesceFlags coalesceFlag, char* path) {
 
     int32_t diff = newLen - mPath.mLen;
     mPath.mLen = newLen;
+
+    
     
     mDirectory.mLen = static_cast<int32_t>(lastSlash) + 1;
+
     
     
     mBasename.mLen = static_cast<int32_t>(endOfBasename - mDirectory.mLen);
+    mBasename.mPos = mDirectory.mPos + mDirectory.mLen;
+
+    
+    
+    ShiftFromExtension(diff);
+
     mFilepath.mLen += diff;
-    ShiftFromBasename(diff);
   }
 }
 
