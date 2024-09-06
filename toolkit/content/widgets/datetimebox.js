@@ -650,6 +650,10 @@ this.DateTimeBoxWidget = class {
   onKeyDown(aEvent) {
     this.log("onKeyDown key: " + aEvent.key);
 
+    if (aEvent.defaultPrevented) {
+      return;
+    }
+
     switch (aEvent.key) {
       
       
@@ -691,21 +695,17 @@ this.DateTimeBoxWidget = class {
           aEvent.preventDefault();
           break;
         }
-        if (this.isEditable()) {
+        
+        
+        if (aEvent.getModifierState("Accel")) {
           
-          
-          
-          
-          if (aEvent.getModifierState("Accel")) {
-            
-            this.clearInputFields(false);
-          } else {
-            let targetField = aEvent.originalTarget;
-            this.clearFieldValue(targetField);
-            this.setInputValueFromFields();
-          }
-          aEvent.preventDefault();
+          this.clearInputFields(false);
+        } else {
+          let targetField = aEvent.originalTarget;
+          this.clearFieldValue(targetField);
+          this.setInputValueFromFields();
         }
+        aEvent.preventDefault();
         break;
       }
       case "ArrowRight":
