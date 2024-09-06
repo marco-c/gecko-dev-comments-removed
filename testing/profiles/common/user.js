@@ -76,6 +76,8 @@ user_pref("browser.topsites.contile.enabled", false);
 
 user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 
+user_pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "");
+
 
 user_pref("telemetry.fog.test.localhost_port", -1);
 
