@@ -85,26 +85,20 @@ const loadTests = (operationName) => {
 
 
 
-const getExpectedDataAndType = (resources, outputName) => {
+const getNamedResource = (resources, outputName) => {
   let ret;
-  for (let subResources of resources) {
-    if (subResources.name === outputName) {
-      if (typeof (subResources.data) === 'number' && subResources.shape &&
-          sizeOfShape(subResources.shape) > 1) {
-        const size =
-            Math.min(kMaximumIndexToValidate, sizeOfShape(subResources.shape));
-        ret = [new Array(size).fill(subResources.data), subResources.type];
-        break;
-      }
-      ret = [subResources.data, subResources.type];
+  for (let resource of resources) {
+    if (resource.name === outputName) {
+      ret = resource;
       break;
     }
   }
   if (ret === undefined) {
-    throw new Error(`Failed to get expected data sources and type by ${outputName}`);
+    throw new Error(`Failed to get expected resource by ${outputName}`);
   }
   return ret;
 };
+
 
 
 
@@ -541,28 +535,16 @@ const checkResults = (operationName, namedOutputOperands, outputs, resources) =>
   if (Array.isArray(expected)) {
     
     for (let operandName in namedOutputOperands) {
+      const suboutputResource = getNamedResource(expected, operandName);
+      assert_array_equals(namedOutputOperands[operandName].shape(), suboutputResource.shape ?? []);
       outputData = outputs[operandName];
-      if (outputData.length > kMaximumIndexToValidate) {
-        outputData = outputData.subarray(0, kMaximumIndexToValidate);
-      }
-      
-      [expectedData, operandType] = getExpectedDataAndType(expected, operandName);
       tolerance = getPrecisonTolerance(operationName, metricType, resources);
-      doAssert(operationName, outputData, expectedData, tolerance, operandType, metricType)
+      doAssert(operationName, outputData, suboutputResource.data, tolerance, suboutputResource.type, metricType)
     }
   } else {
+    assert_array_equals(namedOutputOperands[expected.name].shape(), expected.shape ?? []);
     outputData = outputs[expected.name];
-    if (outputData.length > kMaximumIndexToValidate) {
-      outputData = outputData.subarray(0, kMaximumIndexToValidate);
-    }
-    if (typeof (expected.data) === 'number' && expected.shape &&
-        sizeOfShape(expected.shape) > 1) {
-      const size =
-          Math.min(kMaximumIndexToValidate, sizeOfShape(expected.shape));
-      expectedData = new Array(size).fill(expected.data);
-    } else {
-      expectedData = expected.data;
-    }
+    expectedData = expected.data;
     operandType = expected.type;
     tolerance = getPrecisonTolerance(operationName, metricType, resources);
     doAssert(operationName, outputData, expectedData, tolerance, operandType, metricType)
