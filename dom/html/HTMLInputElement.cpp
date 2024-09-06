@@ -677,8 +677,13 @@ nsColorPickerShownCallback::Done(const nsAString& aColor) {
 
 NS_IMPL_ISUPPORTS(nsColorPickerShownCallback, nsIColorPickerShownCallback)
 
-static bool IsPickerBlocked(Document* aDoc) {
+static bool IsPopupBlocked(Document* aDoc) {
   if (aDoc->ConsumeTransientUserGestureActivation()) {
+    return false;
+  }
+
+  WindowContext* wc = aDoc->GetWindowContext();
+  if (wc && wc->CanShowPopup()) {
     return false;
   }
 
@@ -730,7 +735,7 @@ nsresult HTMLInputElement::InitColorPicker() {
     return NS_ERROR_FAILURE;
   }
 
-  if (IsPickerBlocked(doc)) {
+  if (IsPopupBlocked(doc)) {
     return NS_OK;
   }
 
@@ -778,7 +783,7 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
     return NS_ERROR_FAILURE;
   }
 
-  if (IsPickerBlocked(doc)) {
+  if (IsPopupBlocked(doc)) {
     return NS_OK;
   }
 
@@ -5842,10 +5847,6 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
 
   
   
-  
-
-  
-  
   if (mType == FormControlType::InputFile) {
     FilePickerType type = FILE_PICKER_FILE;
     if (StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
@@ -5863,9 +5864,6 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
     InitColorPicker();
     return;
   }
-
-  
-  OwnerDoc()->ConsumeTransientUserGestureActivation();
 
   if (!IsInComposedDoc()) {
     return;
