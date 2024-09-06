@@ -1259,6 +1259,36 @@ static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
 }
 
 
+static bool AllImportAttributesSupported(
+    JSContext* cx, mozilla::Span<const ImportAttribute> attributes) {
+  
+  
+  
+  
+  
+  
+  
+
+  
+  for (const ImportAttribute& attribute : attributes) {
+    
+    if (attribute.key() != cx->names().type) {
+      UniqueChars printableKey = AtomToPrintableString(cx, attribute.key());
+      if (!printableKey) {
+        return false;
+      }
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_IMPORT_ATTRIBUTES_UNSUPPORTED_ATTRIBUTE,
+                                printableKey.get());
+      return false;
+    }
+  }
+
+  
+  return true;
+}
+
+
 
 static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
                                MutableHandle<ModuleVector> stack, size_t index,
@@ -1313,6 +1343,13 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
     moduleRequest = request.moduleRequest();
+
+    
+    
+    
+    if (!AllImportAttributesSupported(cx, moduleRequest->attributes())) {
+      return false;
+    }
 
     
     
