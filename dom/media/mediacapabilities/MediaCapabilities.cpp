@@ -129,10 +129,10 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
   
   if (!aConfiguration.mVideo.WasPassed() &&
       !aConfiguration.mAudio.WasPassed()) {
-    aRv.ThrowTypeError<MSG_MISSING_REQUIRED_DICTIONARY_MEMBER>(
+    promise->MaybeRejectWithTypeError(
         "'audio' or 'video' member of argument of "
         "MediaCapabilities.decodingInfo");
-    return nullptr;
+    return promise.forget();
   }
 
   
@@ -156,6 +156,16 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     }
   }
 
+  
+  
+  CreateMediaCapabilitiesDecodingInfo(aConfiguration, aRv, promise);
+  return promise.forget();
+}
+
+
+void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
+    const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv,
+    Promise* aPromise) {
   LOG("Processing %s", MediaDecodingConfigurationToStr(aConfiguration).get());
 
   bool supported = true;
@@ -167,8 +177,8 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
   if (aConfiguration.mVideo.WasPassed()) {
     videoContainer = CheckVideoConfiguration(aConfiguration.mVideo.Value());
     if (!videoContainer) {
-      aRv.ThrowTypeError<MSG_INVALID_MEDIA_VIDEO_CONFIGURATION>();
-      return nullptr;
+      aPromise->MaybeRejectWithTypeError("Invalid VideoConfiguration");
+      return;
     }
 
     
@@ -181,8 +191,8 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
   if (aConfiguration.mAudio.WasPassed()) {
     audioContainer = CheckAudioConfiguration(aConfiguration.mAudio.Value());
     if (!audioContainer) {
-      aRv.ThrowTypeError<MSG_INVALID_MEDIA_AUDIO_CONFIGURATION>();
-      return nullptr;
+      aPromise->MaybeRejectWithTypeError("Invalid AudioConfiguration");
+      return;
     }
     
     supported &=
@@ -197,8 +207,8 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
         false , false , false );
     LOG("%s -> %s", MediaDecodingConfigurationToStr(aConfiguration).get(),
         MediaCapabilitiesInfoToStr(info.get()).get());
-    promise->MaybeResolve(std::move(info));
-    return promise.forget();
+    aPromise->MaybeResolve(std::move(info));
+    return;
   }
 
   nsTArray<UniquePtr<TrackInfo>> tracks;
@@ -210,17 +220,17 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     
     
     if (videoTracks.Length() != 1) {
-      promise->MaybeRejectWithTypeError<MSG_NO_CODECS_PARAMETER>(
-          videoContainer->OriginalString());
-      return promise.forget();
+      aPromise->MaybeRejectWithTypeError(nsPrintfCString(
+          "The provided type '%s' does not have a 'codecs' parameter.",
+          videoContainer->OriginalString().get()));
+      return;
     }
     MOZ_DIAGNOSTIC_ASSERT(videoTracks.ElementAt(0),
                           "must contain a valid trackinfo");
     
     if (videoTracks[0]->GetType() != TrackInfo::kVideoTrack) {
-      promise
-          ->MaybeRejectWithTypeError<MSG_INVALID_MEDIA_VIDEO_CONFIGURATION>();
-      return promise.forget();
+      aPromise->MaybeRejectWithTypeError("Invalid VideoConfiguration");
+      return;
     }
     tracks.AppendElements(std::move(videoTracks));
   }
@@ -232,17 +242,17 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     
     
     if (audioTracks.Length() != 1) {
-      promise->MaybeRejectWithTypeError<MSG_NO_CODECS_PARAMETER>(
-          audioContainer->OriginalString());
-      return promise.forget();
+      aPromise->MaybeRejectWithTypeError(nsPrintfCString(
+          "The provided type '%s' does not have a 'codecs' parameter.",
+          audioContainer->OriginalString().get()));
+      return;
     }
     MOZ_DIAGNOSTIC_ASSERT(audioTracks.ElementAt(0),
                           "must contain a valid trackinfo");
     
     if (audioTracks[0]->GetType() != TrackInfo::kAudioTrack) {
-      promise
-          ->MaybeRejectWithTypeError<MSG_INVALID_MEDIA_AUDIO_CONFIGURATION>();
-      return promise.forget();
+      aPromise->MaybeRejectWithTypeError("Invalid AudioConfiguration");
+      return;
     }
     tracks.AppendElements(std::move(audioTracks));
   }
@@ -462,9 +472,8 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
           holder->DisconnectIfExists();
         });
     if (NS_WARN_IF(!workerRef)) {
-      
-      aRv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
+      aPromise->MaybeRejectWithInvalidStateError("The worker is shutting down");
+      return;
     }
   }
 
@@ -475,8 +484,8 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
 
   CapabilitiesPromise::All(targetThread, promises)
       ->Then(targetThread, __func__,
-             [promise, tracks = std::move(tracks), workerRef, holder,
-              aConfiguration, self,
+             [promise = RefPtr<Promise>{aPromise}, tracks = std::move(tracks),
+              workerRef, holder, aConfiguration, self,
               this](CapabilitiesPromise::AllPromiseType::ResolveOrRejectValue&&
                         aValue) {
                holder->Complete();
@@ -504,8 +513,6 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
                promise->MaybeResolve(std::move(info));
              })
       ->Track(*holder);
-
-  return promise.forget();
 }
 
 already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
