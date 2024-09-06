@@ -70,6 +70,13 @@ interface nsILoadGroup : nsIRequest
 
 
 
+
+    attribute unsigned long long totalKeepAliveBytes;
+
+    
+
+
+
     readonly attribute unsigned long activeCount;
 
     

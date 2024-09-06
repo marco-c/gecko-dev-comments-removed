@@ -24,6 +24,8 @@ class Document;
 class InternalRequest;
 class WorkerPrivate;
 
+#define FETCH_KEEPALIVE_MAX_SIZE 65536
+
 class FetchUtil final {
  private:
   FetchUtil() = delete;
@@ -76,6 +78,23 @@ class FetchUtil final {
 
 
   static void ReportJSStreamError(JSContext* aCx, size_t aErrorCode);
+
+  
+
+
+
+
+  static bool IncrementPendingKeepaliveRequestSize(nsILoadGroup* aLoadGroup,
+                                                   const uint64_t aBodyLength);
+
+  static void DecrementPendingKeepaliveRequestSize(nsILoadGroup* aLoadGroup,
+                                                   const uint64_t aBodyLength);
+
+  
+
+
+  static nsCOMPtr<nsILoadGroup> GetLoadGroupFromGlobal(
+      nsIGlobalObject* aGlobal);
 };
 
 }  

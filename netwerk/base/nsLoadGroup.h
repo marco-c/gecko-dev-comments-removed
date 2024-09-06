@@ -100,6 +100,9 @@ class nsLoadGroup : public nsILoadGroup,
   bool mNotifyObserverAboutBackgroundRequests{false};
 
   
+  uint64_t mPendingKeepaliveRequestSize{0};
+
+  
   mozilla::TimeStamp mDefaultRequestCreationTime;
   uint32_t mTimedRequests{0};
   uint32_t mCachedRequests{0};
