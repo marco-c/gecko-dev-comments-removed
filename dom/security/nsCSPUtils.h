@@ -684,7 +684,15 @@ class nsCSPPolicy {
 
   inline void setReportOnlyFlag(bool aFlag) { mReportOnly = aFlag; }
 
+  
+  
   inline bool getReportOnlyFlag() const { return mReportOnly; }
+
+  enum class Disposition { Enforce, Report };
+
+  Disposition getDisposition() const {
+    return getReportOnlyFlag() ? Disposition::Report : Disposition::Enforce;
+  }
 
   void getReportURIs(nsTArray<nsString>& outReportURIs) const;
 
