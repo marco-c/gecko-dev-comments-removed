@@ -26,6 +26,7 @@ pub mod ffi {
         Typedef,
         hidden
     )]
+    #[diplomat::rust_link(icu::segmenter::GraphemeClusterBreakIteratorUtf8, Typedef, hidden)]
     pub struct ICU4XGraphemeClusterBreakIteratorUtf8<'a>(
         GraphemeClusterBreakIteratorPotentiallyIllFormedUtf8<'a, 'a>,
     );
@@ -47,6 +48,7 @@ pub mod ffi {
     impl ICU4XGraphemeClusterSegmenter {
         
         #[diplomat::rust_link(icu::segmenter::GraphemeClusterSegmenter::new, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors), constructor)]
         pub fn create(
             provider: &ICU4XDataProvider,
         ) -> Result<Box<ICU4XGraphemeClusterSegmenter>, ICU4XError> {
@@ -59,27 +61,34 @@ pub mod ffi {
         }
 
         
+        
+        
+        
         #[diplomat::rust_link(
             icu::segmenter::GraphemeClusterSegmenter::segment_str,
             FnInStruct,
             hidden
         )]
         #[diplomat::rust_link(icu::segmenter::GraphemeClusterSegmenter::segment_utf8, FnInStruct)]
+        #[diplomat::attr(dart, disable)]
         pub fn segment_utf8<'a>(
             &'a self,
-            input: &'a str,
+            input: &'a DiplomatStr,
         ) -> Box<ICU4XGraphemeClusterBreakIteratorUtf8<'a>> {
-            let input = input.as_bytes(); 
             Box::new(ICU4XGraphemeClusterBreakIteratorUtf8(
                 self.0.segment_utf8(input),
             ))
         }
 
         
+        
+        
+        
         #[diplomat::rust_link(icu::segmenter::GraphemeClusterSegmenter::segment_utf16, FnInStruct)]
+        #[diplomat::attr(dart, rename = "segment")]
         pub fn segment_utf16<'a>(
             &'a self,
-            input: &'a [u16],
+            input: &'a DiplomatStr16,
         ) -> Box<ICU4XGraphemeClusterBreakIteratorUtf16<'a>> {
             Box::new(ICU4XGraphemeClusterBreakIteratorUtf16(
                 self.0.segment_utf16(input),
@@ -88,6 +97,7 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::segmenter::GraphemeClusterSegmenter::segment_latin1, FnInStruct)]
+        #[diplomat::attr(dart, disable)]
         pub fn segment_latin1<'a>(
             &'a self,
             input: &'a [u8],
@@ -101,7 +111,6 @@ pub mod ffi {
     impl<'a> ICU4XGraphemeClusterBreakIteratorUtf8<'a> {
         
         
-        #[allow(clippy::should_implement_trait)]
         #[diplomat::rust_link(icu::segmenter::GraphemeClusterBreakIterator::next, FnInStruct)]
         #[diplomat::rust_link(
             icu::segmenter::GraphemeClusterBreakIterator::Item,
@@ -119,7 +128,6 @@ pub mod ffi {
     impl<'a> ICU4XGraphemeClusterBreakIteratorUtf16<'a> {
         
         
-        #[allow(clippy::should_implement_trait)]
         #[diplomat::rust_link(icu::segmenter::GraphemeClusterBreakIterator::next, FnInStruct)]
         #[diplomat::rust_link(
             icu::segmenter::GraphemeClusterBreakIterator::Item,
@@ -137,7 +145,6 @@ pub mod ffi {
     impl<'a> ICU4XGraphemeClusterBreakIteratorLatin1<'a> {
         
         
-        #[allow(clippy::should_implement_trait)]
         #[diplomat::rust_link(icu::segmenter::GraphemeClusterBreakIterator::next, FnInStruct)]
         #[diplomat::rust_link(
             icu::segmenter::GraphemeClusterBreakIterator::Item,

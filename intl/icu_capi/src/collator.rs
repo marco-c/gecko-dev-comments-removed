@@ -18,6 +18,7 @@ pub mod ffi {
 
     #[diplomat::rust_link(icu::collator::CollatorOptions, Struct)]
     #[diplomat::rust_link(icu::collator::CollatorOptions::new, FnInStruct, hidden)]
+    #[diplomat::attr(dart, rename = "CollatorOptions")]
     pub struct ICU4XCollatorOptionsV1 {
         pub strength: ICU4XCollatorStrength,
         pub alternate_handling: ICU4XCollatorAlternateHandling,
@@ -28,7 +29,24 @@ pub mod ffi {
         pub backward_second_level: ICU4XCollatorBackwardSecondLevel,
     }
 
+    
+    
+    
+    #[diplomat::rust_link(icu::collator::ResolvedCollatorOptions, Struct)]
+    #[diplomat::out]
+    #[diplomat::attr(dart, rename = "ResolvedCollatorOptions")]
+    pub struct ICU4XCollatorResolvedOptionsV1 {
+        pub strength: ICU4XCollatorStrength,
+        pub alternate_handling: ICU4XCollatorAlternateHandling,
+        pub case_first: ICU4XCollatorCaseFirst,
+        pub max_variable: ICU4XCollatorMaxVariable,
+        pub case_level: ICU4XCollatorCaseLevel,
+        pub numeric: ICU4XCollatorNumeric,
+        pub backward_second_level: ICU4XCollatorBackwardSecondLevel,
+    }
+
     #[diplomat::rust_link(icu::collator::Strength, Enum)]
+    #[derive(Eq, PartialEq, Debug, PartialOrd, Ord)]
     pub enum ICU4XCollatorStrength {
         Auto = 0,
         Primary = 1,
@@ -39,6 +57,7 @@ pub mod ffi {
     }
 
     #[diplomat::rust_link(icu::collator::AlternateHandling, Enum)]
+    #[derive(Eq, PartialEq, Debug, PartialOrd, Ord)]
     pub enum ICU4XCollatorAlternateHandling {
         Auto = 0,
         NonIgnorable = 1,
@@ -46,6 +65,7 @@ pub mod ffi {
     }
 
     #[diplomat::rust_link(icu::collator::CaseFirst, Enum)]
+    #[derive(Eq, PartialEq, Debug, PartialOrd, Ord)]
     pub enum ICU4XCollatorCaseFirst {
         Auto = 0,
         Off = 1,
@@ -54,6 +74,7 @@ pub mod ffi {
     }
 
     #[diplomat::rust_link(icu::collator::MaxVariable, Enum)]
+    #[derive(Eq, PartialEq, Debug, PartialOrd, Ord)]
     pub enum ICU4XCollatorMaxVariable {
         Auto = 0,
         Space = 1,
@@ -63,6 +84,7 @@ pub mod ffi {
     }
 
     #[diplomat::rust_link(icu::collator::CaseLevel, Enum)]
+    #[derive(Eq, PartialEq, Debug, PartialOrd, Ord)]
     pub enum ICU4XCollatorCaseLevel {
         Auto = 0,
         Off = 1,
@@ -70,6 +92,7 @@ pub mod ffi {
     }
 
     #[diplomat::rust_link(icu::collator::Numeric, Enum)]
+    #[derive(Eq, PartialEq, Debug, PartialOrd, Ord)]
     pub enum ICU4XCollatorNumeric {
         Auto = 0,
         Off = 1,
@@ -77,6 +100,7 @@ pub mod ffi {
     }
 
     #[diplomat::rust_link(icu::collator::BackwardSecondLevel, Enum)]
+    #[derive(Eq, PartialEq, Debug, PartialOrd, Ord)]
     pub enum ICU4XCollatorBackwardSecondLevel {
         Auto = 0,
         Off = 1,
@@ -86,6 +110,7 @@ pub mod ffi {
     impl ICU4XCollator {
         
         #[diplomat::rust_link(icu::collator::Collator::try_new, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors), constructor)]
         pub fn create_v1(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -108,37 +133,58 @@ pub mod ffi {
         
         
         
-        
         #[diplomat::rust_link(icu::collator::Collator::compare_utf8, FnInStruct)]
         #[diplomat::attr(dart, disable)]
-        pub fn compare(&self, left: &str, right: &str) -> ICU4XOrdering {
-            let left = left.as_bytes(); 
-            let right = right.as_bytes(); 
+        pub fn compare(&self, left: &DiplomatStr, right: &DiplomatStr) -> ICU4XOrdering {
             self.0.compare_utf8(left, right).into()
         }
 
         
-        
-        
-        
         #[diplomat::rust_link(icu::collator::Collator::compare, FnInStruct)]
-        #[diplomat::attr(dart, rename = "compare")]
+        #[diplomat::attr(*, disable)]
         pub fn compare_valid_utf8(&self, left: &str, right: &str) -> ICU4XOrdering {
             self.0.compare(left, right).into()
         }
 
         
         
+        
+        
         #[diplomat::rust_link(icu::collator::Collator::compare_utf16, FnInStruct)]
-        pub fn compare_utf16(&self, left: &[u16], right: &[u16]) -> ICU4XOrdering {
+        #[diplomat::attr(dart, disable)]
+        pub fn compare_utf16(&self, left: &DiplomatStr16, right: &DiplomatStr16) -> ICU4XOrdering {
             self.0.compare_utf16(left, right).into()
+        }
+
+        
+        
+        
+        
+        #[diplomat::rust_link(icu::collator::Collator::compare_utf16, FnInStruct)]
+        #[diplomat::skip_if_ast]
+        #[diplomat::attr(dart, rename = "compare")]
+        pub fn compare_utf16_(
+            &self,
+            left: &DiplomatStr16,
+            right: &DiplomatStr16,
+        ) -> core::cmp::Ordering {
+            self.0.compare_utf16(left, right)
+        }
+
+        
+        
+        
+        #[diplomat::rust_link(icu::collator::Collator::resolved_options, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
+        pub fn resolved_options(&self) -> ICU4XCollatorResolvedOptionsV1 {
+            self.0.resolved_options().into()
         }
     }
 }
 
 use icu_collator::{
     AlternateHandling, BackwardSecondLevel, CaseFirst, CaseLevel, CollatorOptions, MaxVariable,
-    Numeric, Strength,
+    Numeric, ResolvedCollatorOptions, Strength,
 };
 
 impl From<ffi::ICU4XCollatorStrength> for Option<Strength> {
@@ -221,6 +267,105 @@ impl From<ffi::ICU4XCollatorBackwardSecondLevel> for Option<BackwardSecondLevel>
     }
 }
 
+impl From<Strength> for ffi::ICU4XCollatorStrength {
+    fn from(strength: Strength) -> ffi::ICU4XCollatorStrength {
+        match strength {
+            Strength::Primary => ffi::ICU4XCollatorStrength::Primary,
+            Strength::Secondary => ffi::ICU4XCollatorStrength::Secondary,
+            Strength::Tertiary => ffi::ICU4XCollatorStrength::Tertiary,
+            Strength::Quaternary => ffi::ICU4XCollatorStrength::Quaternary,
+            Strength::Identical => ffi::ICU4XCollatorStrength::Identical,
+            _ => {
+                debug_assert!(false, "FFI out of sync");
+                ffi::ICU4XCollatorStrength::Identical 
+            }
+        }
+    }
+}
+
+impl From<AlternateHandling> for ffi::ICU4XCollatorAlternateHandling {
+    fn from(alternate_handling: AlternateHandling) -> ffi::ICU4XCollatorAlternateHandling {
+        match alternate_handling {
+            AlternateHandling::NonIgnorable => ffi::ICU4XCollatorAlternateHandling::NonIgnorable,
+            AlternateHandling::Shifted => ffi::ICU4XCollatorAlternateHandling::Shifted,
+            _ => {
+                debug_assert!(false, "FFI out of sync");
+                
+                ffi::ICU4XCollatorAlternateHandling::Shifted 
+            }
+        }
+    }
+}
+
+impl From<CaseFirst> for ffi::ICU4XCollatorCaseFirst {
+    fn from(case_first: CaseFirst) -> ffi::ICU4XCollatorCaseFirst {
+        match case_first {
+            CaseFirst::Off => ffi::ICU4XCollatorCaseFirst::Off,
+            CaseFirst::LowerFirst => ffi::ICU4XCollatorCaseFirst::LowerFirst,
+            CaseFirst::UpperFirst => ffi::ICU4XCollatorCaseFirst::UpperFirst,
+            _ => {
+                debug_assert!(false, "FFI out of sync");
+                
+                ffi::ICU4XCollatorCaseFirst::Off 
+            }
+        }
+    }
+}
+
+impl From<MaxVariable> for ffi::ICU4XCollatorMaxVariable {
+    fn from(max_variable: MaxVariable) -> ffi::ICU4XCollatorMaxVariable {
+        match max_variable {
+            MaxVariable::Space => ffi::ICU4XCollatorMaxVariable::Space,
+            MaxVariable::Punctuation => ffi::ICU4XCollatorMaxVariable::Punctuation,
+            MaxVariable::Symbol => ffi::ICU4XCollatorMaxVariable::Symbol,
+            MaxVariable::Currency => ffi::ICU4XCollatorMaxVariable::Currency,
+            _ => {
+                debug_assert!(false, "FFI out of sync");
+                ffi::ICU4XCollatorMaxVariable::Currency 
+            }
+        }
+    }
+}
+
+impl From<CaseLevel> for ffi::ICU4XCollatorCaseLevel {
+    fn from(case_level: CaseLevel) -> ffi::ICU4XCollatorCaseLevel {
+        match case_level {
+            CaseLevel::Off => ffi::ICU4XCollatorCaseLevel::Off,
+            CaseLevel::On => ffi::ICU4XCollatorCaseLevel::On,
+            _ => {
+                debug_assert!(false, "FFI out of sync");
+                ffi::ICU4XCollatorCaseLevel::On 
+            }
+        }
+    }
+}
+
+impl From<Numeric> for ffi::ICU4XCollatorNumeric {
+    fn from(numeric: Numeric) -> ffi::ICU4XCollatorNumeric {
+        match numeric {
+            Numeric::Off => ffi::ICU4XCollatorNumeric::Off,
+            Numeric::On => ffi::ICU4XCollatorNumeric::On,
+            _ => {
+                debug_assert!(false, "FFI out of sync");
+                ffi::ICU4XCollatorNumeric::On 
+            }
+        }
+    }
+}
+
+impl From<BackwardSecondLevel> for ffi::ICU4XCollatorBackwardSecondLevel {
+    fn from(backward_second_level: BackwardSecondLevel) -> ffi::ICU4XCollatorBackwardSecondLevel {
+        match backward_second_level {
+            BackwardSecondLevel::Off => ffi::ICU4XCollatorBackwardSecondLevel::Off,
+            BackwardSecondLevel::On => ffi::ICU4XCollatorBackwardSecondLevel::On,
+            _ => {
+                debug_assert!(false, "FFI out of sync");
+                ffi::ICU4XCollatorBackwardSecondLevel::On 
+            }
+        }
+    }
+}
+
 impl From<ffi::ICU4XCollatorOptionsV1> for CollatorOptions {
     fn from(options: ffi::ICU4XCollatorOptionsV1) -> CollatorOptions {
         let mut result = CollatorOptions::new();
@@ -233,5 +378,19 @@ impl From<ffi::ICU4XCollatorOptionsV1> for CollatorOptions {
         result.backward_second_level = options.backward_second_level.into();
 
         result
+    }
+}
+
+impl From<ResolvedCollatorOptions> for ffi::ICU4XCollatorResolvedOptionsV1 {
+    fn from(options: ResolvedCollatorOptions) -> ffi::ICU4XCollatorResolvedOptionsV1 {
+        Self {
+            strength: options.strength.into(),
+            alternate_handling: options.alternate_handling.into(),
+            case_first: options.case_first.into(),
+            max_variable: options.max_variable.into(),
+            case_level: options.case_level.into(),
+            numeric: options.numeric.into(),
+            backward_second_level: options.backward_second_level.into(),
+        }
     }
 }

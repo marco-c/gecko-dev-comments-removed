@@ -2,8 +2,9 @@
 
 
 
-#[cfg(feature = "icu_decimal")]
-use alloc::borrow::{Cow, ToOwned};
+#![cfg(feature = "icu_decimal")]
+
+use alloc::borrow::Cow;
 
 #[diplomat::bridge]
 pub mod ffi {
@@ -19,27 +20,27 @@ pub mod ffi {
     
     
     
-    #[diplomat::attr(dart, disable)]
+    #[diplomat::attr(*, disable)]
     pub struct ICU4XDataStruct(#[allow(dead_code)] AnyPayload);
 
     impl ICU4XDataStruct {
         
         
         
+        
         #[diplomat::rust_link(icu::decimal::provider::DecimalSymbolsV1, Struct)]
         #[allow(clippy::too_many_arguments)]
-        #[cfg(feature = "icu_decimal")]
         pub fn create_decimal_symbols_v1(
-            plus_sign_prefix: &str,
-            plus_sign_suffix: &str,
-            minus_sign_prefix: &str,
-            minus_sign_suffix: &str,
-            decimal_separator: &str,
-            grouping_separator: &str,
+            plus_sign_prefix: &DiplomatStr,
+            plus_sign_suffix: &DiplomatStr,
+            minus_sign_prefix: &DiplomatStr,
+            minus_sign_suffix: &DiplomatStr,
+            decimal_separator: &DiplomatStr,
+            grouping_separator: &DiplomatStr,
             primary_group_size: u8,
             secondary_group_size: u8,
             min_group_size: u8,
-            digits: &[char],
+            digits: &[DiplomatChar],
         ) -> Result<Box<ICU4XDataStruct>, ICU4XError> {
             use super::str_to_cow;
             use icu_decimal::provider::{
@@ -47,7 +48,9 @@ pub mod ffi {
             };
             let digits = if digits.len() == 10 {
                 let mut new_digits = ['\0'; 10];
-                new_digits.copy_from_slice(digits);
+                for (old, new) in digits.iter().zip(new_digits.iter_mut()) {
+                    *new = char::from_u32(*old).ok_or(ICU4XError::DataStructValidityError)?;
+                }
                 new_digits
             } else {
                 return Err(ICU4XError::DataStructValidityError);
@@ -80,11 +83,11 @@ pub mod ffi {
         }
     }
 }
-#[cfg(feature = "icu_decimal")]
-fn str_to_cow(s: &str) -> Cow<'static, str> {
+
+fn str_to_cow(s: &diplomat_runtime::DiplomatStr) -> Cow<'static, str> {
     if s.is_empty() {
         Cow::default()
     } else {
-        Cow::from(s.to_owned())
+        Cow::Owned(alloc::string::String::from_utf8_lossy(s).into_owned())
     }
 }

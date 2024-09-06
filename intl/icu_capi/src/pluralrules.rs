@@ -4,8 +4,6 @@
 
 #[diplomat::bridge]
 pub mod ffi {
-    use core::str::{self};
-
     use alloc::boxed::Box;
 
     use fixed_decimal::FixedDecimal;
@@ -15,7 +13,6 @@ pub mod ffi {
 
     use crate::errors::ffi::ICU4XError;
 
-    
     #[diplomat::rust_link(icu::plurals::PluralCategory, Enum)]
     #[diplomat::enum_convert(PluralCategory)]
     pub enum ICU4XPluralCategory {
@@ -32,15 +29,11 @@ pub mod ffi {
         
         #[diplomat::rust_link(icu::plurals::PluralCategory::get_for_cldr_string, FnInEnum)]
         #[diplomat::rust_link(icu::plurals::PluralCategory::get_for_cldr_bytes, FnInEnum)]
-        pub fn get_for_cldr_string(s: &str) -> Result<ICU4XPluralCategory, ()> {
-            let s = s.as_bytes(); 
-            PluralCategory::get_for_cldr_bytes(s)
-                .ok_or(())
-                .map(Into::into)
+        pub fn get_for_cldr_string(s: &DiplomatStr) -> Option<ICU4XPluralCategory> {
+            PluralCategory::get_for_cldr_bytes(s).map(Into::into)
         }
     }
 
-    
     #[diplomat::rust_link(icu::plurals::PluralRules, Struct)]
     #[diplomat::opaque]
     pub struct ICU4XPluralRules(PluralRules);
@@ -50,6 +43,7 @@ pub mod ffi {
         #[diplomat::rust_link(icu::plurals::PluralRules::try_new_cardinal, FnInStruct)]
         #[diplomat::rust_link(icu::plurals::PluralRules::try_new, FnInStruct, hidden)]
         #[diplomat::rust_link(icu::plurals::PluralRuleType, Enum, hidden)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "cardinal")]
         pub fn create_cardinal(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -68,6 +62,7 @@ pub mod ffi {
         #[diplomat::rust_link(icu::plurals::PluralRules::try_new_ordinal, FnInStruct)]
         #[diplomat::rust_link(icu::plurals::PluralRules::try_new, FnInStruct, hidden)]
         #[diplomat::rust_link(icu::plurals::PluralRuleType, Enum, hidden)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "ordinal")]
         pub fn create_ordinal(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -90,12 +85,12 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::plurals::PluralRules::categories, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn categories(&self) -> ICU4XPluralCategories {
             ICU4XPluralCategories::from_iter(self.0.categories())
         }
     }
 
-    
     #[diplomat::opaque]
     #[diplomat::rust_link(icu::plurals::PluralOperands, Struct)]
     pub struct ICU4XPluralOperands(pub icu_plurals::PluralOperands);
@@ -103,16 +98,27 @@ pub mod ffi {
     impl ICU4XPluralOperands {
         
         #[diplomat::rust_link(icu::plurals::PluralOperands::from_str, FnInStruct)]
-        pub fn create_from_string(s: &str) -> Result<Box<ICU4XPluralOperands>, ICU4XError> {
-            let s = s.as_bytes(); 
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "from_string")]
+        pub fn create_from_string(s: &DiplomatStr) -> Result<Box<ICU4XPluralOperands>, ICU4XError> {
             Ok(Box::new(ICU4XPluralOperands(PluralOperands::from(
                 
                 &FixedDecimal::try_from(s).map_err(|_| ICU4XError::PluralsParserError)?,
             ))))
         }
+
+        
+        
+        
+        #[cfg(feature = "icu_decimal")]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "from_fixed_decimal")]
+        pub fn create_from_fixed_decimal(
+            x: &crate::fixed_decimal::ffi::ICU4XFixedDecimal,
+        ) -> Box<Self> {
+            Box::new(Self((&x.0).into()))
+        }
     }
 
-    
+    #[diplomat::out]
     pub struct ICU4XPluralCategories {
         pub zero: bool,
         pub one: bool,

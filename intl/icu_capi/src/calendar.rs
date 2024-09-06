@@ -62,10 +62,8 @@ pub mod ffi {
         
         
         #[diplomat::rust_link(icu::calendar::AnyCalendarKind::get_for_locale, FnInEnum)]
-        pub fn get_for_locale(locale: &ICU4XLocale) -> Result<ICU4XAnyCalendarKind, ()> {
-            AnyCalendarKind::get_for_locale(&locale.0)
-                .map(Into::into)
-                .ok_or(())
+        pub fn get_for_locale(locale: &ICU4XLocale) -> Option<ICU4XAnyCalendarKind> {
+            AnyCalendarKind::get_for_locale(&locale.0).map(Into::into)
         }
 
         
@@ -82,16 +80,14 @@ pub mod ffi {
             FnInEnum,
             hidden
         )]
-        pub fn get_for_bcp47(s: &str) -> Result<ICU4XAnyCalendarKind, ()> {
-            let s = s.as_bytes(); 
-            AnyCalendarKind::get_for_bcp47_bytes(s)
-                .map(Into::into)
-                .ok_or(())
+        pub fn get_for_bcp47(s: &DiplomatStr) -> Option<ICU4XAnyCalendarKind> {
+            AnyCalendarKind::get_for_bcp47_bytes(s).map(Into::into)
         }
 
         
         #[diplomat::rust_link(icu::calendar::AnyCalendarKind::as_bcp47_string, FnInEnum)]
         #[diplomat::rust_link(icu::calendar::AnyCalendarKind::as_bcp47_value, FnInEnum, hidden)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn bcp47(
             self,
             write: &mut diplomat_runtime::DiplomatWriteable,
@@ -109,6 +105,7 @@ pub mod ffi {
     impl ICU4XCalendar {
         
         #[diplomat::rust_link(icu::calendar::AnyCalendar::new_for_locale, FnInEnum)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "for_locale")]
         pub fn create_for_locale(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -126,6 +123,7 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::AnyCalendar::new, FnInEnum)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "for_kind")]
         pub fn create_for_kind(
             provider: &ICU4XDataProvider,
             kind: ICU4XAnyCalendarKind,
@@ -141,6 +139,7 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::AnyCalendar::kind, FnInEnum)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn kind(&self) -> ICU4XAnyCalendarKind {
             self.0.kind().into()
         }

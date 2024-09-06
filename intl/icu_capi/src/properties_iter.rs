@@ -14,6 +14,7 @@ pub mod ffi {
     
     
     
+    #[diplomat::out]
     pub struct CodePointRangeIteratorResult {
         pub start: u32,
         pub end: u32,
@@ -29,7 +30,6 @@ pub mod ffi {
         
         
         
-        #[allow(clippy::should_implement_trait)] 
         pub fn next(&mut self) -> CodePointRangeIteratorResult {
             self.0
                 .next()

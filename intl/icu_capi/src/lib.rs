@@ -3,7 +3,7 @@
 
 
 
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(
     not(test),
     deny(
@@ -14,9 +14,13 @@
         
     )
 )]
-#![allow(clippy::upper_case_acronyms)]
-#![allow(clippy::needless_lifetimes)]
-#![allow(clippy::result_unit_err)]
+
+#![allow(
+    clippy::needless_lifetimes,
+    clippy::result_unit_err,
+    clippy::should_implement_trait
+)]
+
 
 
 
@@ -42,7 +46,15 @@
 #[cfg(target_arch = "wasm32")]
 extern crate std as rust_std;
 
+#[cfg(all(not(feature = "std"), feature = "looping_panic_handler"))]
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    loop {}
+}
+
 extern crate alloc;
+#[cfg(all(not(feature = "std"), feature = "libc_alloc"))]
+extern crate libc_alloc;
 
 
 
@@ -54,6 +66,7 @@ pub mod locale;
 pub mod logging;
 #[macro_use]
 pub mod provider;
+mod utf;
 
 
 
@@ -87,7 +100,7 @@ pub mod datetime;
 pub mod datetime_formatter;
 #[cfg(feature = "icu_decimal")]
 pub mod decimal;
-#[cfg(feature = "icu_displaynames")]
+#[cfg(feature = "experimental_components")]
 pub mod displaynames;
 #[cfg(feature = "icu_locid_transform")]
 pub mod fallbacker;
@@ -139,6 +152,10 @@ pub mod time;
 pub mod timezone;
 #[cfg(feature = "icu_datetime")]
 pub mod timezone_formatter;
+#[cfg(any(feature = "icu_datetime", feature = "icu_timezone"))]
+pub mod timezone_mapper;
+#[cfg(feature = "experimental_components")]
+pub mod units_converter;
 #[cfg(feature = "icu_calendar")]
 pub mod week;
 #[cfg(feature = "icu_datetime")]

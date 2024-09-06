@@ -25,6 +25,7 @@ pub mod ffi {
         Typedef,
         hidden
     )]
+    #[diplomat::rust_link(icu::segmenter::SentenceBreakIteratorUtf8, Typedef, hidden)]
     pub struct ICU4XSentenceBreakIteratorUtf8<'a>(
         SentenceBreakIteratorPotentiallyIllFormedUtf8<'a, 'a>,
     );
@@ -42,6 +43,7 @@ pub mod ffi {
     impl ICU4XSentenceSegmenter {
         
         #[diplomat::rust_link(icu::segmenter::SentenceSegmenter::new, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors), constructor)]
         pub fn create(
             provider: &ICU4XDataProvider,
         ) -> Result<Box<ICU4XSentenceSegmenter>, ICU4XError> {
@@ -54,27 +56,35 @@ pub mod ffi {
         }
 
         
+        
+        
+        
         #[diplomat::rust_link(icu::segmenter::SentenceSegmenter::segment_utf8, FnInStruct)]
         #[diplomat::rust_link(icu::segmenter::SentenceSegmenter::segment_str, FnInStruct, hidden)]
+        #[diplomat::attr(dart, disable)]
         pub fn segment_utf8<'a>(
             &'a self,
-            input: &'a str,
+            input: &'a DiplomatStr,
         ) -> Box<ICU4XSentenceBreakIteratorUtf8<'a>> {
-            let input = input.as_bytes(); 
             Box::new(ICU4XSentenceBreakIteratorUtf8(self.0.segment_utf8(input)))
         }
 
         
+        
+        
+        
         #[diplomat::rust_link(icu::segmenter::SentenceSegmenter::segment_utf16, FnInStruct)]
+        #[diplomat::attr(dart, rename = "segment")]
         pub fn segment_utf16<'a>(
             &'a self,
-            input: &'a [u16],
+            input: &'a DiplomatStr16,
         ) -> Box<ICU4XSentenceBreakIteratorUtf16<'a>> {
             Box::new(ICU4XSentenceBreakIteratorUtf16(self.0.segment_utf16(input)))
         }
 
         
         #[diplomat::rust_link(icu::segmenter::SentenceSegmenter::segment_latin1, FnInStruct)]
+        #[diplomat::attr(dart, disable)]
         pub fn segment_latin1<'a>(
             &'a self,
             input: &'a [u8],
@@ -88,7 +98,6 @@ pub mod ffi {
     impl<'a> ICU4XSentenceBreakIteratorUtf8<'a> {
         
         
-        #[allow(clippy::should_implement_trait)]
         #[diplomat::rust_link(icu::segmenter::SentenceBreakIterator::next, FnInStruct)]
         #[diplomat::rust_link(
             icu::segmenter::SentenceBreakIterator::Item,
@@ -106,7 +115,6 @@ pub mod ffi {
     impl<'a> ICU4XSentenceBreakIteratorUtf16<'a> {
         
         
-        #[allow(clippy::should_implement_trait)]
         #[diplomat::rust_link(icu::segmenter::SentenceBreakIterator::next, FnInStruct)]
         #[diplomat::rust_link(
             icu::segmenter::SentenceBreakIterator::Item,
@@ -124,7 +132,6 @@ pub mod ffi {
     impl<'a> ICU4XSentenceBreakIteratorLatin1<'a> {
         
         
-        #[allow(clippy::should_implement_trait)]
         #[diplomat::rust_link(icu::segmenter::SentenceBreakIterator::next, FnInStruct)]
         #[diplomat::rust_link(
             icu::segmenter::SentenceBreakIterator::Item,

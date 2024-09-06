@@ -6,7 +6,6 @@
 pub mod ffi {
     use crate::{errors::ffi::ICU4XError, provider::ffi::ICU4XDataProvider};
     use alloc::boxed::Box;
-    use diplomat_runtime::DiplomatWriteable;
     use icu_normalizer::{ComposingNormalizer, DecomposingNormalizer};
 
     #[diplomat::opaque]
@@ -16,6 +15,7 @@ pub mod ffi {
     impl ICU4XComposingNormalizer {
         
         #[diplomat::rust_link(icu::normalizer::ComposingNormalizer::new_nfc, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "nfc")]
         pub fn create_nfc(
             provider: &ICU4XDataProvider,
         ) -> Result<Box<ICU4XComposingNormalizer>, ICU4XError> {
@@ -29,6 +29,7 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::normalizer::ComposingNormalizer::new_nfkc, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "nfkc")]
         pub fn create_nfkc(
             provider: &ICU4XDataProvider,
         ) -> Result<Box<ICU4XComposingNormalizer>, ICU4XError> {
@@ -40,6 +41,7 @@ pub mod ffi {
             )?)))
         }
 
+        
         
         
         
@@ -55,12 +57,16 @@ pub mod ffi {
             FnInStruct,
             hidden
         )]
-        pub fn normalize(&self, s: &str, write: &mut DiplomatWriteable) -> Result<(), ICU4XError> {
-            let s = s.as_bytes(); 
+        pub fn normalize(
+            &self,
+            s: &DiplomatStr,
+            write: &mut DiplomatWriteable,
+        ) -> Result<(), ICU4XError> {
             self.0.normalize_utf8_to(s, write)?;
             Ok(())
         }
 
+        
         
         
         
@@ -70,8 +76,7 @@ pub mod ffi {
             FnInStruct,
             hidden
         )]
-        pub fn is_normalized(&self, s: &str) -> bool {
-            let s = s.as_bytes(); 
+        pub fn is_normalized(&self, s: &DiplomatStr) -> bool {
             self.0.is_normalized_utf8(s)
         }
     }
@@ -83,6 +88,7 @@ pub mod ffi {
     impl ICU4XDecomposingNormalizer {
         
         #[diplomat::rust_link(icu::normalizer::DecomposingNormalizer::new_nfd, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "nfd")]
         pub fn create_nfd(
             provider: &ICU4XDataProvider,
         ) -> Result<Box<ICU4XDecomposingNormalizer>, ICU4XError> {
@@ -96,6 +102,7 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::normalizer::DecomposingNormalizer::new_nfkd, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "nfkd")]
         pub fn create_nfkd(
             provider: &ICU4XDataProvider,
         ) -> Result<Box<ICU4XDecomposingNormalizer>, ICU4XError> {
@@ -107,6 +114,7 @@ pub mod ffi {
             )?)))
         }
 
+        
         
         
         
@@ -126,12 +134,16 @@ pub mod ffi {
             FnInStruct,
             hidden
         )]
-        pub fn normalize(&self, s: &str, write: &mut DiplomatWriteable) -> Result<(), ICU4XError> {
-            let s = s.as_bytes(); 
+        pub fn normalize(
+            &self,
+            s: &DiplomatStr,
+            write: &mut DiplomatWriteable,
+        ) -> Result<(), ICU4XError> {
             self.0.normalize_utf8_to(s, write)?;
             Ok(())
         }
 
+        
         
         
         
@@ -144,8 +156,7 @@ pub mod ffi {
             FnInStruct,
             hidden
         )]
-        pub fn is_normalized(&self, s: &str) -> bool {
-            let s = s.as_bytes(); 
+        pub fn is_normalized(&self, s: &DiplomatStr) -> bool {
             self.0.is_normalized_utf8(s)
         }
     }

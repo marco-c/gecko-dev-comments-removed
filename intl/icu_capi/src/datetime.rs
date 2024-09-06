@@ -9,9 +9,7 @@ pub mod ffi {
     use core::convert::TryInto;
     use core::fmt::Write;
 
-    use icu_calendar::types::Time;
-    use icu_calendar::AnyCalendar;
-    use icu_calendar::{DateTime, Iso};
+    use icu_calendar::{AnyCalendar, DateTime, Iso, Time};
     use tinystr::TinyAsciiStr;
 
     use crate::calendar::ffi::ICU4XCalendar;
@@ -30,6 +28,7 @@ pub mod ffi {
     impl ICU4XIsoDateTime {
         
         #[diplomat::rust_link(icu::calendar::DateTime::try_new_iso_datetime, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors), constructor)]
         pub fn create(
             year: i32,
             month: u8,
@@ -46,7 +45,7 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::DateTime::new, FnInStruct)]
-        #[diplomat::attr(dart, rename = "create_from_date_and_time")]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "from_date_and_time")]
         pub fn crate_from_date_and_time(
             date: &ICU4XIsoDate,
             time: &ICU4XTime,
@@ -56,10 +55,19 @@ pub mod ffi {
         }
 
         
+        #[diplomat::rust_link(icu::calendar::DateTime::local_unix_epoch, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "local_unix_epoch")]
+        pub fn local_unix_epoch() -> Box<ICU4XIsoDateTime> {
+            let dt = DateTime::local_unix_epoch();
+            Box::new(ICU4XIsoDateTime(dt))
+        }
+
+        
         #[diplomat::rust_link(
             icu::calendar::DateTime::from_minutes_since_local_unix_epoch,
             FnInStruct
         )]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "from_minutes_since_local_unix_epoch")]
         pub fn create_from_minutes_since_local_unix_epoch(minutes: i32) -> Box<ICU4XIsoDateTime> {
             Box::new(ICU4XIsoDateTime(
                 DateTime::from_minutes_since_local_unix_epoch(minutes),
@@ -68,12 +76,14 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::DateTime::date, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn date(&self) -> Box<ICU4XIsoDate> {
             Box::new(ICU4XIsoDate(self.0.date))
         }
 
         
         #[diplomat::rust_link(icu::calendar::DateTime::time, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn time(&self) -> Box<ICU4XTime> {
             Box::new(ICU4XTime(self.0.time))
         }
@@ -88,6 +98,7 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::DateTime::minutes_since_local_unix_epoch, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn minutes_since_local_unix_epoch(&self) -> i32 {
             self.0.minutes_since_local_unix_epoch()
         }
@@ -99,34 +110,47 @@ pub mod ffi {
         }
 
         
-        #[diplomat::rust_link(icu::calendar::types::Time::hour, StructField)]
+        #[diplomat::rust_link(icu::calendar::Time::hour, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn hour(&self) -> u8 {
             self.0.time.hour.into()
         }
         
-        #[diplomat::rust_link(icu::calendar::types::Time::minute, StructField)]
+        #[diplomat::rust_link(icu::calendar::Time::minute, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn minute(&self) -> u8 {
             self.0.time.minute.into()
         }
         
-        #[diplomat::rust_link(icu::calendar::types::Time::second, StructField)]
+        #[diplomat::rust_link(icu::calendar::Time::second, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn second(&self) -> u8 {
             self.0.time.second.into()
         }
         
-        #[diplomat::rust_link(icu::calendar::types::Time::nanosecond, StructField)]
+        #[diplomat::rust_link(icu::calendar::Time::nanosecond, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn nanosecond(&self) -> u32 {
             self.0.time.nanosecond.into()
         }
 
         
+        #[diplomat::rust_link(icu::calendar::Date::day_of_year_info, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
+        pub fn day_of_year(&self) -> u16 {
+            self.0.date.day_of_year_info().day_of_year
+        }
+
+        
         #[diplomat::rust_link(icu::calendar::Date::day_of_month, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn day_of_month(&self) -> u32 {
             self.0.date.day_of_month().0
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::day_of_week, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn day_of_week(&self) -> ICU4XIsoWeekday {
             self.0.date.day_of_week().into()
         }
@@ -162,36 +186,42 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::Date::month, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn month(&self) -> u32 {
             self.0.date.month().ordinal
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::year, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn year(&self) -> i32 {
             self.0.date.year().number
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::is_in_leap_year, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn is_in_leap_year(&self) -> bool {
             self.0.date.is_in_leap_year()
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::months_in_year, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn months_in_year(&self) -> u8 {
             self.0.date.months_in_year()
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::days_in_month, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn days_in_month(&self) -> u8 {
             self.0.date.days_in_month()
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::days_in_year, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn days_in_year(&self) -> u16 {
             self.0.date.days_in_year()
         }
@@ -206,6 +236,7 @@ pub mod ffi {
         
         
         #[diplomat::rust_link(icu::DateTime::new_from_iso, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "from_iso_in_calendar")]
         #[allow(clippy::too_many_arguments)]
         pub fn create_from_iso_in_calendar(
             year: i32,
@@ -224,11 +255,12 @@ pub mod ffi {
         }
         
         #[diplomat::rust_link(icu::calendar::DateTime::try_new_from_codes, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "from_codes_in_calendar")]
         #[allow(clippy::too_many_arguments)]
         pub fn create_from_codes_in_calendar(
-            era_code: &str,
+            era_code: &DiplomatStr,
             year: i32,
-            month_code: &str,
+            month_code: &DiplomatStr,
             day: u8,
             hour: u8,
             minute: u8,
@@ -236,10 +268,12 @@ pub mod ffi {
             nanosecond: u32,
             calendar: &ICU4XCalendar,
         ) -> Result<Box<ICU4XDateTime>, ICU4XError> {
-            let era_code = era_code.as_bytes(); 
-            let month_code = month_code.as_bytes(); 
-            let era = TinyAsciiStr::from_bytes(era_code)?.into();
-            let month = TinyAsciiStr::from_bytes(month_code)?.into();
+            let era = TinyAsciiStr::from_bytes(era_code)
+                .map_err(|_| ICU4XError::CalendarUnknownEraError)?
+                .into();
+            let month = TinyAsciiStr::from_bytes(month_code)
+                .map_err(|_| ICU4XError::CalendarUnknownMonthCodeError)?
+                .into();
             let cal = calendar.0.clone();
             let hour = hour.try_into()?;
             let minute = minute.try_into()?;
@@ -257,6 +291,7 @@ pub mod ffi {
         }
         
         #[diplomat::rust_link(icu::calendar::DateTime::new, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "from_date_and_time")]
         pub fn create_from_date_and_time(date: &ICU4XDate, time: &ICU4XTime) -> Box<ICU4XDateTime> {
             let dt = DateTime::new(date.0.clone(), time.0);
             Box::new(ICU4XDateTime(dt))
@@ -264,12 +299,14 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::DateTime::date, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn date(&self) -> Box<ICU4XDate> {
             Box::new(ICU4XDate(self.0.date.clone()))
         }
 
         
         #[diplomat::rust_link(icu::calendar::DateTime::time, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn time(&self) -> Box<ICU4XTime> {
             Box::new(ICU4XTime(self.0.time))
         }
@@ -287,34 +324,47 @@ pub mod ffi {
         }
 
         
-        #[diplomat::rust_link(icu::calendar::types::Time::hour, StructField)]
+        #[diplomat::rust_link(icu::calendar::Time::hour, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn hour(&self) -> u8 {
             self.0.time.hour.into()
         }
         
-        #[diplomat::rust_link(icu::calendar::types::Time::minute, StructField)]
+        #[diplomat::rust_link(icu::calendar::Time::minute, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn minute(&self) -> u8 {
             self.0.time.minute.into()
         }
         
-        #[diplomat::rust_link(icu::calendar::types::Time::second, StructField)]
+        #[diplomat::rust_link(icu::calendar::Time::second, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn second(&self) -> u8 {
             self.0.time.second.into()
         }
         
-        #[diplomat::rust_link(icu::calendar::types::Time::nanosecond, StructField)]
+        #[diplomat::rust_link(icu::calendar::Time::nanosecond, StructField)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn nanosecond(&self) -> u32 {
             self.0.time.nanosecond.into()
         }
 
         
+        #[diplomat::rust_link(icu::calendar::Date::day_of_year_info, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
+        pub fn day_of_year(&self) -> u16 {
+            self.0.date.day_of_year_info().day_of_year
+        }
+
+        
         #[diplomat::rust_link(icu::calendar::Date::day_of_month, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn day_of_month(&self) -> u32 {
             self.0.date.day_of_month().0
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::day_of_week, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn day_of_week(&self) -> ICU4XIsoWeekday {
             self.0.date.day_of_week().into()
         }
@@ -354,6 +404,7 @@ pub mod ffi {
         
         
         #[diplomat::rust_link(icu::calendar::Date::month, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn ordinal_month(&self) -> u32 {
             self.0.date.month().ordinal
         }
@@ -361,6 +412,7 @@ pub mod ffi {
         
         
         #[diplomat::rust_link(icu::calendar::Date::month, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn month_code(
             &self,
             write: &mut diplomat_runtime::DiplomatWriteable,
@@ -372,12 +424,14 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::Date::year, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn year_in_era(&self) -> i32 {
             self.0.date.year().number
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::year, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn era(
             &self,
             write: &mut diplomat_runtime::DiplomatWriteable,
@@ -389,18 +443,21 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(icu::calendar::Date::months_in_year, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn months_in_year(&self) -> u8 {
             self.0.date.months_in_year()
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::days_in_month, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn days_in_month(&self) -> u8 {
             self.0.date.days_in_month()
         }
 
         
         #[diplomat::rust_link(icu::calendar::Date::days_in_year, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn days_in_year(&self) -> u16 {
             self.0.date.days_in_year()
         }
@@ -408,6 +465,7 @@ pub mod ffi {
         
         #[diplomat::rust_link(icu::calendar::Date::calendar, FnInStruct)]
         #[diplomat::rust_link(icu::calendar::Date::calendar_wrapper, FnInStruct, hidden)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn calendar(&self) -> Box<ICU4XCalendar> {
             Box::new(ICU4XCalendar(self.0.date.calendar_wrapper().clone()))
         }

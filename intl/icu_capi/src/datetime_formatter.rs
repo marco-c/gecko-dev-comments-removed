@@ -39,6 +39,7 @@ pub mod ffi {
     impl ICU4XTimeFormatter {
         
         #[diplomat::rust_link(icu::datetime::TimeFormatter::try_new_with_length, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "with_length")]
         pub fn create_with_length(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -111,6 +112,7 @@ pub mod ffi {
     impl ICU4XGregorianDateFormatter {
         
         #[diplomat::rust_link(icu::datetime::TypedDateFormatter::try_new_with_length, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "with_length")]
         pub fn create_with_length(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -171,6 +173,7 @@ pub mod ffi {
     impl ICU4XGregorianDateTimeFormatter {
         
         #[diplomat::rust_link(icu::datetime::TypedDateTimeFormatter::try_new, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "with_lengths")]
         pub fn create_with_lengths(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -220,6 +223,7 @@ pub mod ffi {
     impl ICU4XDateFormatter {
         
         #[diplomat::rust_link(icu::datetime::DateFormatter::try_new_with_length, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "with_length")]
         pub fn create_with_length(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -296,11 +300,13 @@ pub mod ffi {
     
     
     #[diplomat::rust_link(icu::datetime::DateTimeFormatter, Struct)]
+    #[diplomat::rust_link(icu::datetime::FormattedDateTime, Struct, hidden)]
     pub struct ICU4XDateTimeFormatter(pub DateTimeFormatter);
 
     impl ICU4XDateTimeFormatter {
         
         #[diplomat::rust_link(icu::datetime::DateTimeFormatter::try_new, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors, supports = named_constructors), named_constructor = "with_lengths")]
         pub fn create_with_lengths(
             provider: &ICU4XDataProvider,
             locale: &ICU4XLocale,
@@ -327,6 +333,7 @@ pub mod ffi {
             FnInStruct,
             hidden
         )]
+        #[diplomat::rust_link(icu::datetime::FormattedDateTime::write_to, FnInStruct, hidden)]
         pub fn format_datetime(
             &self,
             value: &ICU4XDateTime,

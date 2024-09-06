@@ -1,0 +1,13 @@
+
+
+
+
+
+export enum ICU4XTransformResult {
+  
+
+  Modified = 'Modified',
+  
+
+  Unmodified = 'Unmodified',
+}

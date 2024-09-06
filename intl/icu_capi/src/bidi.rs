@@ -6,7 +6,6 @@
 pub mod ffi {
     use alloc::boxed::Box;
     use alloc::vec::Vec;
-    use diplomat_runtime::DiplomatWriteable;
 
     use core::fmt::Write;
     use icu_properties::bidi::BidiClassAdapter;
@@ -34,6 +33,7 @@ pub mod ffi {
     impl ICU4XBidi {
         
         #[diplomat::rust_link(icu::properties::bidi::BidiClassAdapter::new, FnInStruct)]
+        #[diplomat::attr(all(supports = constructors, supports = fallible_constructors), constructor)]
         pub fn create(provider: &ICU4XDataProvider) -> Result<Box<ICU4XBidi>, ICU4XError> {
             Ok(Box::new(ICU4XBidi(call_constructor_unstable!(
                 maps::bidi_class [m => Ok(m.static_to_owned())],
@@ -45,13 +45,45 @@ pub mod ffi {
         
         
         
+        
+        
         #[diplomat::rust_link(unicode_bidi::BidiInfo::new_with_data_source, FnInStruct)]
         #[diplomat::rust_link(
             icu::properties::bidi::BidiClassAdapter::bidi_class,
             FnInStruct,
             hidden
         )]
+        #[diplomat::attr(dart, disable)]
         pub fn for_text<'text>(
+            &self,
+            text: &'text DiplomatStr,
+            default_level: u8,
+        ) -> Option<Box<ICU4XBidiInfo<'text>>> {
+            let text = core::str::from_utf8(text).ok()?;
+
+            let data = self.0.as_borrowed();
+            let adapter = BidiClassAdapter::new(data);
+
+            Some(Box::new(ICU4XBidiInfo(BidiInfo::new_with_data_source(
+                &adapter,
+                text,
+                Level::new(default_level).ok(),
+            ))))
+        }
+
+        
+        
+        
+        #[diplomat::rust_link(unicode_bidi::BidiInfo::new_with_data_source, FnInStruct)]
+        #[diplomat::rust_link(
+            icu::properties::bidi::BidiClassAdapter::bidi_class,
+            FnInStruct,
+            hidden
+        )]
+        #[diplomat::attr(not(dart), disable)]
+        #[diplomat::attr(*, rename = "for_text")]
+        #[diplomat::skip_if_ast]
+        pub fn for_text_valid_utf8<'text>(
             &self,
             text: &'text str,
             default_level: u8,
@@ -65,6 +97,7 @@ pub mod ffi {
                 Level::new(default_level).ok(),
             )))
         }
+
         
         
         
@@ -118,20 +151,27 @@ pub mod ffi {
 
     impl ICU4XReorderedIndexMap {
         
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn as_slice<'a>(&'a self) -> &'a [usize] {
             &self.0
         }
 
         
-        #[allow(clippy::len_without_is_empty)]
-        #[diplomat::attr(dart, rename = "length")]
+        #[diplomat::attr(supports = accessors, getter = "length")]
         pub fn len(&self) -> usize {
             self.0.len()
         }
 
         
+        #[diplomat::attr(supports = accessors, getter)]
+        pub fn is_empty(&self) -> bool {
+            self.0.is_empty()
+        }
+
         
         
+        
+        #[diplomat::attr(supports = indexing, indexer)]
         pub fn get(&self, index: usize) -> usize {
             self.0.get(index).copied().unwrap_or(0)
         }
@@ -144,6 +184,7 @@ pub mod ffi {
 
     impl<'text> ICU4XBidiInfo<'text> {
         
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn paragraph_count(&self) -> usize {
             self.0.paragraphs.len()
         }
@@ -157,6 +198,7 @@ pub mod ffi {
         }
 
         
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn size(&self) -> usize {
             self.0.levels.len()
         }
@@ -196,6 +238,7 @@ pub mod ffi {
             Ok(())
         }
         #[diplomat::rust_link(unicode_bidi::Paragraph::level_at, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         
         pub fn direction(&self) -> ICU4XBidiDirection {
             self.0.direction().into()
@@ -203,16 +246,19 @@ pub mod ffi {
 
         
         #[diplomat::rust_link(unicode_bidi::ParagraphInfo::len, FnInStruct)]
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn size(&self) -> usize {
             self.0.para.len()
         }
 
         
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn range_start(&self) -> usize {
             self.0.para.range.start
         }
 
         
+        #[diplomat::attr(supports = accessors, getter)]
         pub fn range_end(&self) -> usize {
             self.0.para.range.end
         }
