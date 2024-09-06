@@ -7,6 +7,7 @@
 
 {
   ChromeUtils.defineESModuleGetters(this, {
+    BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
     SearchOneOffs: "resource:///modules/SearchOneOffs.sys.mjs",
   });
 
@@ -194,7 +195,7 @@
       let search = this.input.controller.getValueAt(this.selectedIndex);
 
       
-      let where = whereToOpenLink(aEvent, false, true);
+      let where = BrowserUtils.whereToOpenLink(aEvent, false, true);
       let params = {};
 
       
