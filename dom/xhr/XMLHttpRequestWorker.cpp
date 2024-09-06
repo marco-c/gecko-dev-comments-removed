@@ -117,7 +117,6 @@ class Proxy final : public nsIDOMEventListener {
   uint32_t mOutstandingSendCount;
 
   
-  uint32_t mOuterEventStreamId;
   uint32_t mOuterChannelId;
   uint32_t mOpenCount;
   uint64_t mLastLoaded;
@@ -128,10 +127,8 @@ class Proxy final : public nsIDOMEventListener {
   bool mIsSyncXHR;
   bool mLastLengthComputable;
   bool mLastUploadLengthComputable;
-  bool mSeenLoadStart;
   bool mSeenUploadLoadStart;
-  bool mDispatchPrematureAbortEvent;
-  bool mDispatchPrematureAbortEventToUpload;
+  bool mSeenUploadLoadEnd;
 
   
   bool mUploadEventListenersAttached;
@@ -148,10 +145,9 @@ class Proxy final : public nsIDOMEventListener {
         mXMLHttpRequestPrivate(aXHRPrivate),
         mMozAnon(aMozAnon),
         mMozSystem(aMozSystem),
-        mInnerEventStreamId(0),
+        mInnerEventStreamId(aXHRPrivate->EventStreamId()),
         mInnerChannelId(0),
         mOutstandingSendCount(0),
-        mOuterEventStreamId(0),
         mOuterChannelId(0),
         mOpenCount(0),
         mLastLoaded(0),
@@ -162,10 +158,8 @@ class Proxy final : public nsIDOMEventListener {
         mIsSyncXHR(false),
         mLastLengthComputable(false),
         mLastUploadLengthComputable(false),
-        mSeenLoadStart(false),
         mSeenUploadLoadStart(false),
-        mDispatchPrematureAbortEvent(false),
-        mDispatchPrematureAbortEventToUpload(false),
+        mSeenUploadLoadEnd(false),
         mUploadEventListenersAttached(false),
         mMainThreadSeenLoadStart(false),
         mInOpen(false) {}
@@ -1021,12 +1015,12 @@ bool EventRunnable::PreDispatch(WorkerPrivate* ) {
 }
 
 bool EventRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
-  if (mEventStreamId != mProxy->mOuterEventStreamId) {
+  if (!mProxy->mXMLHttpRequestPrivate) {
     
     return true;
   }
 
-  if (!mProxy->mXMLHttpRequestPrivate) {
+  if (mEventStreamId != mProxy->mXMLHttpRequestPrivate->EventStreamId()) {
     
     return true;
   }
@@ -1035,31 +1029,16 @@ bool EventRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
     mProxy->mLastErrorDetailAtLoadend = mErrorDetail;
   }
 
-  if (mType == Events::loadstart) {
-    if (mUploadEvent) {
+  bool isLoadStart = mType == Events::loadstart;
+  if (mUploadEvent) {
+    if (isLoadStart) {
+      MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+              ("Saw upload.loadstart event on main thread"));
       mProxy->mSeenUploadLoadStart = true;
-    } else {
-      mProxy->mSeenLoadStart = true;
-    }
-  } else if (mType == Events::loadend) {
-    if (mUploadEvent) {
-      mProxy->mSeenUploadLoadStart = false;
-      if (mProxy->mDispatchPrematureAbortEventToUpload) {
-        
-        return true;
-      }
-    } else {
-      mProxy->mSeenLoadStart = false;
-      if (mProxy->mDispatchPrematureAbortEvent) {
-        
-        return true;
-      }
-    }
-  } else if (mType == Events::abort) {
-    if ((mUploadEvent && mProxy->mDispatchPrematureAbortEventToUpload) ||
-        (!mUploadEvent && mProxy->mDispatchPrematureAbortEvent)) {
-      
-      return true;
+    } else if (mType == Events::loadend) {
+      MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+              ("Saw upload.loadend event on main thread"));
+      mProxy->mSeenUploadLoadEnd = true;
     }
   }
 
@@ -1125,19 +1104,19 @@ bool EventRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
   }
 
   if (!event) {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+            ("%p unable to fire %s event (%u,%u,%" PRIu64 ",%" PRIu64 ")",
+             mProxy->mXHR.get(), mType.cStr, mUploadEvent, mLengthComputable,
+             mLoaded, mTotal));
     return false;
   }
 
   event->SetTrusted(true);
 
-  if (MOZ_LOG_TEST(gXMLHttpRequestLog, LogLevel::Debug)) {
-    nsAutoString type;
-    event->GetType(type);
-    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
-            ("%p firing %s event (%u,%u,%" PRIu64 ",%" PRIu64 ")",
-             mProxy->mXHR.get(), NS_ConvertUTF16toUTF8(type).get(),
-             mUploadEvent, mLengthComputable, mLoaded, mTotal));
-  }
+  MOZ_LOG(
+      gXMLHttpRequestLog, LogLevel::Debug,
+      ("%p firing %s event (%u,%u,%" PRIu64 ",%" PRIu64 ")", mProxy->mXHR.get(),
+       mType.cStr, mUploadEvent, mLengthComputable, mLoaded, mTotal));
 
   target->DispatchEvent(*event);
 
@@ -1427,7 +1406,7 @@ void XMLHttpRequestWorker::ReleaseProxy(ReleaseType aType) {
       
       if (aType == Default) {
         
-        mProxy->mOuterEventStreamId++;
+        mEventStreamId++;
       }
 
       
@@ -1477,71 +1456,95 @@ void XMLHttpRequestWorker::MaybePin(ErrorResult& aRv) {
 #endif
 }
 
-void XMLHttpRequestWorker::MaybeDispatchPrematureAbortEvents(ErrorResult& aRv) {
+void XMLHttpRequestWorker::SetResponseToNetworkError() {
+  MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("SetResponseToNetworkError"));
+  mStateData->mStatus = 0;
+  mStateData->mStatusText.Truncate();
+  mProxy->mLastLengthComputable = false;
+  mProxy->mLastLoaded = 0;
+  mProxy->mLastTotal = 0;
+  mProxy->mLastUploadLengthComputable = false;
+  mProxy->mLastUploadLoaded = 0;
+  mProxy->mLastUploadTotal = 0;
+}
+
+void XMLHttpRequestWorker::RequestErrorSteps(
+    ErrorResult& aRv, const ErrorProgressEventType& aEventType,
+    nsresult aException) {
+  
+  MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+          ("RequestErrorSteps(%s)", aEventType.cStr));
+
   mWorkerPrivate->AssertIsOnWorkerThread();
   MOZ_ASSERT(mProxy);
 
   
-  bool isStateChanged = false;
-  if ((mStateData->mReadyState == 1 && mStateData->mFlagSend) ||
-      mStateData->mReadyState == 2 || mStateData->mReadyState == 3) {
-    isStateChanged = true;
-    mStateData->mReadyState = 4;
+  mStateData->mReadyState = XMLHttpRequest_Binding::DONE;
+
+  
+  mFlagSend = false;
+
+  
+  SetResponseToNetworkError();
+
+  
+  if (mProxy->mIsSyncXHR) {
+    aRv.Throw(aException);
+    return;
   }
 
-  if (mProxy->mSeenUploadLoadStart) {
-    MOZ_ASSERT(mUpload);
+  
+  if (!FireEvent(this, Events::readystatechange, false, aRv)) {
+    return;
+  }
 
-    FireEvent(mUpload, Events::abort, true, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+  
+  if (mUpload && mProxy->mSeenUploadLoadStart && !mProxy->mSeenUploadLoadEnd) {
+    
+    
+    
+    
 
-    FireEvent(mUpload, Events::loadend, true, aRv);
-    if (aRv.Failed()) {
+    
+    
+
+    
+    
+    if (!FireEvent(mUpload, Events::loadstart, true, aRv)) {
       return;
     }
 
     
-    if (!mProxy) {
-      aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-      return;
-    }
+    
 
-    mProxy->mSeenUploadLoadStart = false;
-    mProxy->mDispatchPrematureAbortEventToUpload = true;
-  }
-
-  if (mProxy->mSeenLoadStart) {
-    if (isStateChanged) {
-      FireEvent(this, Events::readystatechange, false, aRv);
-      if (aRv.Failed()) {
-        return;
-      }
-    }
-
-    FireEvent(this, Events::abort, false, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-
-    FireEvent(this, Events::loadend, false, aRv);
-    if (aRv.Failed()) {
+    
+    
+    if (!FireEvent(mUpload, aEventType, true, aRv)) {
       return;
     }
 
     
-    if (!mProxy) {
-      aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    
+    if (!FireEvent(mUpload, Events::loadend, true, aRv)) {
       return;
     }
-
-    mProxy->mSeenLoadStart = false;
-    mProxy->mDispatchPrematureAbortEvent = true;
   }
+
+  
+  if (!FireEvent(this, aEventType, true, aRv)) {
+    return;
+  }
+
+  
+  FireEvent(this, Events::loadend, true, aRv);
 }
 
-void XMLHttpRequestWorker::FireEvent(EventTarget* aTarget,
+
+
+
+
+
+bool XMLHttpRequestWorker::FireEvent(EventTarget* aTarget,
                                      const EventType& aEventType,
                                      bool aUploadTarget, ErrorResult& aRv) {
   mWorkerPrivate->AssertIsOnWorkerThread();
@@ -1549,16 +1552,17 @@ void XMLHttpRequestWorker::FireEvent(EventTarget* aTarget,
 
   if (!mProxy) {
     aRv.Throw(NS_ERROR_FAILURE);
-    return;
+    return false;
   }
 
+  uint32_t currentEventStreamId = mEventStreamId;
   RefPtr<Event> event;
   if (aEventType == Events::readystatechange) {
     event = NS_NewDOMEvent(aTarget, nullptr, nullptr);
     event->InitEvent(aEventType, false, false);
   } else {
     if (mProxy->mIsSyncXHR && aEventType == Events::progress) {
-      return;
+      return true;
     }
 
     ProgressEventInit init;
@@ -1578,7 +1582,7 @@ void XMLHttpRequestWorker::FireEvent(EventTarget* aTarget,
 
   if (!event) {
     aRv.Throw(NS_ERROR_FAILURE);
-    return;
+    return false;
   }
 
   event->SetTrusted(true);
@@ -1591,6 +1595,10 @@ void XMLHttpRequestWorker::FireEvent(EventTarget* aTarget,
            aUploadTarget ? mProxy->mLastUploadLoaded : mProxy->mLastLoaded,
            aUploadTarget ? mProxy->mLastUploadTotal : mProxy->mLastTotal));
   aTarget->DispatchEvent(*event);
+
+  
+  
+  return currentEventStreamId == mEventStreamId;
 }
 
 void XMLHttpRequestWorker::Unpin() {
@@ -1608,6 +1616,12 @@ void XMLHttpRequestWorker::Unpin() {
   mWorkerRef = nullptr;
 
   mPinnedSelfRef = nullptr;
+}
+
+uint16_t XMLHttpRequestWorker::ReadyState() const {
+  MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+          ("GetReadyState(%u)", mStateData->mReadyState));
+  return mStateData->mReadyState;
 }
 
 void XMLHttpRequestWorker::SendInternal(const BodyExtractorBase* aBody,
@@ -1670,13 +1684,11 @@ void XMLHttpRequestWorker::SendInternal(const BodyExtractorBase* aBody,
   }
 
   mProxy->mOuterChannelId++;
-  mProxy->mDispatchPrematureAbortEvent = false;
-  mProxy->mDispatchPrematureAbortEventToUpload = false;
 
   sendRunnable->SetSyncLoopTarget(syncLoopTarget);
   sendRunnable->SetHaveUploadListeners(hasUploadListeners);
 
-  mStateData->mFlagSend = true;
+  mFlagSend = true;
 
   sendRunnable->Dispatch(Canceling, aRv);
   if (aRv.Failed()) {
@@ -1697,7 +1709,6 @@ void XMLHttpRequestWorker::SendInternal(const BodyExtractorBase* aBody,
   autoUnpin.Clear();
 
   bool succeeded = NS_SUCCEEDED(autoSyncLoop->Run());
-  mStateData->mFlagSend = false;
 
   
   if (isSyncXHR && mProxy) {
@@ -1752,13 +1763,10 @@ void XMLHttpRequestWorker::Open(const nsACString& aMethod,
     return;
   }
 
+  mFlagSend = false;
+
   bool alsoOverrideMimeType = false;
-  if (mProxy) {
-    MaybeDispatchPrematureAbortEvents(aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-  } else {
+  if (!mProxy) {
     Maybe<ClientInfo> clientInfo(
         mWorkerPrivate->GlobalScope()->GetClientInfo());
     if (clientInfo.isNothing()) {
@@ -1771,7 +1779,11 @@ void XMLHttpRequestWorker::Open(const nsACString& aMethod,
     alsoOverrideMimeType = true;
   }
 
-  mProxy->mOuterEventStreamId++;
+  mProxy->mSeenUploadLoadStart = false;
+  mProxy->mSeenUploadLoadEnd = false;
+  SetResponseToNetworkError();
+
+  mEventStreamId++;
 
   UniquePtr<SerializedStackHolder> stack;
   if (mWorkerPrivate->IsWatchedByDevTools()) {
@@ -1914,6 +1926,8 @@ void XMLHttpRequestWorker::Send(
     ErrorResult& aRv) {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
+  MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("Send()"));
+
   if (mFlagSendActive) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_XHR_HAS_INVALID_CONTEXT);
     return;
@@ -1935,7 +1949,7 @@ void XMLHttpRequestWorker::Send(
     return;
   }
 
-  if (!mProxy || !mProxy->mXMLHttpRequestPrivate || mStateData->mFlagSend) {
+  if (!mProxy || !mProxy->mXMLHttpRequestPrivate || mFlagSend) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
@@ -1994,41 +2008,39 @@ void XMLHttpRequestWorker::Abort(ErrorResult& aRv) {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
   if (mCanceled) {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("Abort(canceled)"));
     aRv.ThrowUncatchableException();
     return;
   }
 
   if (!mProxy) {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("Abort(no proxy)"));
     return;
   }
 
   
-  
-  
-  if ((mStateData->mReadyState == XMLHttpRequest_Binding::OPENED &&
-       mStateData->mFlagSend) ||
-      mStateData->mReadyState == XMLHttpRequest_Binding::HEADERS_RECEIVED ||
-      mStateData->mReadyState == XMLHttpRequest_Binding::LOADING ||
-      mStateData->mReadyState == XMLHttpRequest_Binding::DONE) {
-    mStateData->mStatus = 0;
-    mStateData->mStatusText.Truncate();
-  }
-
-  MaybeDispatchPrematureAbortEvents(aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  if (mStateData->mReadyState == 4) {
-    
-    
-    mStateData->mReadyState = 0;
-  }
-
-  mProxy->mOuterEventStreamId++;
-
+  MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("Abort(step 1))"));
+  mEventStreamId++;
   RefPtr<AbortRunnable> runnable = new AbortRunnable(mWorkerPrivate, mProxy);
   runnable->Dispatch(Canceling, aRv);
+
+  
+  if ((mStateData->mReadyState == XMLHttpRequest_Binding::OPENED &&
+       mFlagSend) ||
+      mStateData->mReadyState == XMLHttpRequest_Binding::HEADERS_RECEIVED ||
+      mStateData->mReadyState == XMLHttpRequest_Binding::LOADING) {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("Abort(step 2)"));
+    RequestErrorSteps(aRv, Events::abort);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+
+  
+  if (mStateData->mReadyState == XMLHttpRequest_Binding::DONE) {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("Abort(step 3)"));
+    mStateData->mReadyState = XMLHttpRequest_Binding::UNSENT;
+  }
 }
 
 void XMLHttpRequestWorker::GetResponseHeader(const nsACString& aHeader,
@@ -2146,6 +2158,7 @@ void XMLHttpRequestWorker::GetResponse(JSContext* aCx,
                                        JS::MutableHandle<JS::Value> aResponse,
                                        ErrorResult& aRv) {
   if (NS_FAILED(mResponseData->mResponseResult)) {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("GetResponse(none)"));
     aRv.Throw(mResponseData->mResponseResult);
     return;
   }
@@ -2153,6 +2166,8 @@ void XMLHttpRequestWorker::GetResponse(JSContext* aCx,
   switch (mResponseType) {
     case XMLHttpRequestResponseType::_empty:
     case XMLHttpRequestResponseType::Text: {
+      MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("GetResponse(text)"));
+
       JSString* str;
 
       if (mResponseData->mResponseText.IsEmpty()) {
@@ -2172,11 +2187,15 @@ void XMLHttpRequestWorker::GetResponse(JSContext* aCx,
 
     case XMLHttpRequestResponseType::Arraybuffer: {
       if (!mResponseData->mResponseArrayBufferBuilder) {
+        MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+                ("GetResponse(arraybuffer, null)"));
         aResponse.setNull();
         return;
       }
 
       if (!mResponseArrayBufferValue) {
+        MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+                ("GetResponse(arraybuffer)"));
         mResponseArrayBufferValue =
             mResponseData->mResponseArrayBufferBuilder->TakeArrayBuffer(aCx);
         if (!mResponseArrayBufferValue) {
@@ -2191,6 +2210,8 @@ void XMLHttpRequestWorker::GetResponse(JSContext* aCx,
 
     case XMLHttpRequestResponseType::Blob: {
       if (!mResponseData->mResponseBlobImpl) {
+        MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+                ("GetResponse(blob, none)"));
         aResponse.setNull();
         return;
       }
@@ -2202,7 +2223,11 @@ void XMLHttpRequestWorker::GetResponse(JSContext* aCx,
 
       if (!mResponseBlob ||
           !GetOrCreateDOMReflector(aCx, mResponseBlob, aResponse)) {
+        MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+                ("GetResponse(blob, null)"));
         aResponse.setNull();
+      } else {
+        MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("GetResponse(blob)"));
       }
 
       return;
@@ -2211,6 +2236,8 @@ void XMLHttpRequestWorker::GetResponse(JSContext* aCx,
     case XMLHttpRequestResponseType::Json: {
       if (mResponseData->mResponseJSON.IsVoid()) {
         aResponse.setNull();
+        MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+                ("GetResponse(json, none)"));
         return;
       }
 
@@ -2220,8 +2247,11 @@ void XMLHttpRequestWorker::GetResponse(JSContext* aCx,
         if (!JS_ParseJSON(aCx, mResponseData->mResponseJSON.BeginReading(),
                           mResponseData->mResponseJSON.Length(), &value)) {
           JS_ClearPendingException(aCx);
+          MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+                  ("GetResponse(json, null)"));
           mResponseJSONValue.setNull();
         } else {
+          MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("GetResponse(json)"));
           mResponseJSONValue = value;
         }
 
@@ -2233,6 +2263,8 @@ void XMLHttpRequestWorker::GetResponse(JSContext* aCx,
     }
 
     default:
+      MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+              ("GetResponse(invalid type)"));
       MOZ_ASSERT_UNREACHABLE("Invalid type");
       aResponse.setNull();
       return;
@@ -2263,8 +2295,14 @@ void XMLHttpRequestWorker::UpdateState(
 
   UniquePtr<ResponseData> responseData = std::move(aResponseData);
   if (responseData) {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+            ("UpdateState(readyState=%u, new response data)",
+             mStateData->mReadyState));
     ResetResponseData();
     mResponseData = std::move(responseData);
+  } else {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+            ("UpdateState(readyState=%u)", mStateData->mReadyState));
   }
 
   XMLHttpRequest_Binding::ClearCachedResponseTextValue(this);
