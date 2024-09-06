@@ -24,37 +24,91 @@ ok(
 
 try {
   indexedDB;
-  ok(false, "WORKER getting indexedDB should have thrown");
+  ok(true, "WORKER getting indexedDB didn't throw");
 } catch (e) {
-  ok(true, "WORKER getting indexedDB threw");
+  ok(false, "WORKER getting indexedDB threw");
 }
 
 
-try {
-  var promise = caches.keys();
-  ok(true, "WORKER getting caches didn't throw");
+idbOpenTest();
 
-  promise.then(
-    function () {
-      ok(false, "WORKER The promise should have rejected");
-      workerTest();
-    },
-    function () {
-      ok(true, "WORKER The promise was rejected");
-      workerTest();
-    }
-  );
-} catch (e) {
-  ok(
-    location.protocol !== "https:",
-    "WORKER getting caches should not have thrown"
-  );
-  workerTest();
+
+function idbDeleteTest() {
+  try {
+    indexedDB.deleteDatabase("door");
+    ok(false, "WORKER deleting indexedDB database succeeded");
+  } catch (e) {
+    ok(true, "WORKER deleting indexedDB database failed");
+    ok(
+      e.name == "SecurityError",
+      "WORKER deleting indexedDB database threw a security error"
+    );
+  } finally {
+    cacheTest();
+  }
+}
+
+
+function idbDatabasesTest() {
+  indexedDB
+    .databases()
+    .then(() => {
+      ok(false, "WORKER querying indexedDB databases succeeded");
+    })
+    .catch(e => {
+      ok(true, "WORKER querying indexedDB databases failed");
+      ok(
+        e.name == "SecurityError",
+        "WORKER querying indexedDB databases threw a security error"
+      );
+    })
+    .finally(idbDeleteTest);
+}
+
+
+function idbOpenTest() {
+  try {
+    indexedDB.open("door");
+    ok(false, "WORKER opening indexedDB database succeeded");
+  } catch (e) {
+    ok(true, "WORKER opening indexedDB database failed");
+    ok(
+      e.name == "SecurityError",
+      "WORKER opening indexedDB database threw a security error"
+    );
+  } finally {
+    idbDatabasesTest();
+  }
+}
+
+
+function cacheTest() {
+  try {
+    var promise = caches.keys();
+    ok(true, "WORKER getting caches didn't throw");
+
+    promise.then(
+      function () {
+        ok(false, "WORKER The promise should have rejected");
+        workerTest();
+      },
+      function () {
+        ok(true, "WORKER The promise was rejected");
+        workerTest();
+      }
+    );
+  } catch (e) {
+    ok(
+      location.protocol !== "https:",
+      "WORKER getting caches should not have thrown"
+    );
+    workerTest();
+  }
 }
 
 
 function workerTest() {
-  if (location.hash == "#inner") {
+  if (location.hash != "#outer") {
     
     finishTest();
     return;
@@ -62,14 +116,16 @@ function workerTest() {
   
   var worker = new Worker("workerStoragePrevented.js#inner");
   worker.addEventListener("message", function (e) {
-    if (e.data == "done") {
-      finishTest();
-      return;
-    }
+    const isFail = e.data.match(/^FAILURE/);
+    ok(!isFail, e.data + " (WORKER = workerStoragePrevented.js#inner)");
 
-    ok(
-      !e.data.match(/^FAILURE/),
-      e.data + " (WORKER = workerStoragePrevented.js#inner)"
-    );
+    if (e.data == "done" || isFail) {
+      finishTest();
+    }
+  });
+  worker.addEventListener("error", function (e) {
+    ok(false, e.data + " (WORKER = workerStoragePrevented.js#inner)");
+
+    finishTest();
   });
 }
