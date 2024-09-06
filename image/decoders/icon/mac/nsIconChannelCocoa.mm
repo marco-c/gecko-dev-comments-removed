@@ -318,6 +318,8 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval,
   
   
   
+  
+  
   size_t bufferCapacity = 4 + width * height * 4;
   UniquePtr<uint8_t[]> fileBuf = MakeUniqueFallible<uint8_t[]>(bufferCapacity);
   if (NS_WARN_IF(!fileBuf)) {

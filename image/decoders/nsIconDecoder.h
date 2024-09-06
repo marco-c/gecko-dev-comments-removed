@@ -32,6 +32,8 @@ class RasterImage;
 
 
 
+
+
 class nsIconDecoder : public Decoder {
  public:
   virtual ~nsIconDecoder();
