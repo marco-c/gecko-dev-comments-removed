@@ -40,15 +40,14 @@ def lint_strings(name, paths, lintconfig, **lintargs):
     extensions = lintconfig.get("extensions")
 
     
-    l10nconfigs = load_configs(lintconfig, root, l10n_base, name)
+    l10nconfigs = load_configs(lintconfig["l10n_configs"], root, l10n_base, name)
 
-    
-    
     
     
     if lintconfig["path"] in paths:
         results = validate_linter_includes(lintconfig, l10nconfigs, lintargs)
         paths.remove(lintconfig["path"])
+        lintconfig["include"].remove(mozpath.relpath(lintconfig["path"], root))
     else:
         results = []
 
@@ -62,7 +61,6 @@ def lint_strings(name, paths, lintconfig, **lintargs):
             all_files.append(p)
     
     
-    
     all_files, _ = pathutils.filterpaths(
         lintargs["root"],
         all_files,
@@ -70,6 +68,7 @@ def lint_strings(name, paths, lintconfig, **lintargs):
         exclude=exclude,
         extensions=extensions,
     )
+    
     
     skips = {p for p in all_files if not parser.hasParser(p)}
     results.extend(
@@ -142,11 +141,11 @@ def strings_repo_setup(repo: str, name: str):
         fh.flush()
 
 
-def load_configs(lintconfig, root, l10n_base, locale):
+def load_configs(l10n_configs, root, l10n_base, locale):
     """Load l10n configuration files specified in the linter configuration."""
     configs = []
     env = {"l10n_base": l10n_base}
-    for toml in lintconfig["l10n_configs"]:
+    for toml in l10n_configs:
         cfg = TOMLParser().parse(
             mozpath.join(root, toml), env=env, ignore_missing_includes=True
         )
