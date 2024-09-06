@@ -243,4 +243,13 @@ void CrossShadowBoundaryRange::CharacterDataChanged(
                mOwner);
   }
 }
+
+
+
+void CrossShadowBoundaryRange::ParentChainChanged(nsIContent* aContent) {
+  MOZ_ASSERT(mCommonAncestor == aContent,
+             "Wrong ParentChainChanged notification");
+  MOZ_ASSERT(mOwner);
+  mOwner->ResetCrossShadowBoundaryRange();
+}
 }  
