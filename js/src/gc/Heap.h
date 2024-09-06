@@ -796,8 +796,9 @@ enum class MarkInfo : int {
   BLACK = 0,
   GRAY = 1,
   UNMARKED = -1,
-  NURSERY = -2,
-  UNKNOWN = -3,
+  NURSERY_FROMSPACE = -2,
+  NURSERY_TOSPACE = -3,  
+  UNKNOWN = -4,
 };
 
 
