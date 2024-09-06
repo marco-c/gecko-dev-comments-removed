@@ -933,31 +933,31 @@ class Editor extends EventEmitter {
     
     
     const builder = new RangeSetBuilder();
-    for (const { from, to } of cm.visibleRanges) {
-      for (let pos = from; pos <= to; ) {
-        const line = cm.state.doc.lineAt(pos);
-        for (const {
-          lineClassName,
-          condition,
-          createLineElementNode,
-        } of markers) {
-          if (typeof condition !== "function") {
-            throw new Error("The `condition` is not a valid function");
-          }
-          if (condition(line.number)) {
-            builder.add(
-              line.from,
-              line.to,
-              new LineGutterMarker(
-                lineClassName,
-                line.number,
-                createLineElementNode
-              )
-            );
-          }
+    const { from, to } = cm.viewport;
+    let pos = from;
+    while (pos <= to) {
+      const line = cm.state.doc.lineAt(pos);
+      for (const {
+        lineClassName,
+        condition,
+        createLineElementNode,
+      } of markers) {
+        if (typeof condition !== "function") {
+          throw new Error("The `condition` is not a valid function");
         }
-        pos = line.to + 1;
+        if (condition(line.number)) {
+          builder.add(
+            line.from,
+            line.to,
+            new LineGutterMarker(
+              lineClassName,
+              line.number,
+              createLineElementNode
+            )
+          );
+        }
       }
+      pos = line.to + 1;
     }
 
     
