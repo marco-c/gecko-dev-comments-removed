@@ -175,9 +175,8 @@ impl Device {
     }
 
     
-    pub fn set_root_font_size(&self, size: Length) {
-        self.root_font_size
-            .store(size.px().to_bits(), Ordering::Relaxed)
+    pub fn set_root_font_size(&self, size: f32) {
+        self.root_font_size.store(size.to_bits(), Ordering::Relaxed)
     }
 
     
@@ -189,9 +188,8 @@ impl Device {
     }
 
     
-    pub fn set_root_line_height(&self, size: Length) {
-        self.root_line_height
-            .store(size.px().to_bits(), Ordering::Relaxed);
+    pub fn set_root_line_height(&self, size: f32) {
+        self.root_line_height.store(size.to_bits(), Ordering::Relaxed);
     }
 
     
