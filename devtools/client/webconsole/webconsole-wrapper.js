@@ -31,9 +31,6 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const App = createFactory(
   require("resource://devtools/client/webconsole/components/App.js")
 );
-const {
-  getAllFilters,
-} = require("resource://devtools/client/webconsole/selectors/filters.js");
 
 loader.lazyGetter(this, "AppErrorBoundary", () =>
   createFactory(
@@ -172,19 +169,6 @@ class WebConsoleWrapper {
     if (this.parentNode) {
       ReactDOM.unmountComponentAtNode(this.parentNode);
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-  getFilterState(filter) {
-    return getAllFilters(this.getStore().getState())[filter];
   }
 
   dispatchMessageAdd(packet) {
