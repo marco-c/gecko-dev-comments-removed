@@ -65,6 +65,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFormFillController)
 
 nsFormFillController::nsFormFillController()
     : mFocusedInput(nullptr),
+      mRestartAfterAttributeChangeTask(nullptr),
       mListNode(nullptr),
       
       
@@ -131,15 +132,35 @@ void nsFormFillController::AttributeChanged(mozilla::dom::Element* aElement,
     
     
     
-    nsCOMPtr<nsIRunnable> event =
-        mozilla::NewRunnableMethod<RefPtr<HTMLInputElement>>(
+    
+    
+    MaybeCancelAttributeChangeTask();
+    mRestartAfterAttributeChangeTask =
+        mozilla::NewCancelableRunnableMethod<RefPtr<HTMLInputElement>>(
             "nsFormFillController::MaybeStartControllingInput", this,
-            &nsFormFillController::MaybeStartControllingInput, focusedInput);
-    aElement->OwnerDoc()->Dispatch(event.forget());
+            &nsFormFillController::MaybeStartControllingInputScheduled,
+            focusedInput);
+    RefPtr<Runnable> addrefedRunnable = mRestartAfterAttributeChangeTask;
+    aElement->OwnerDoc()->Dispatch(addrefedRunnable.forget());
   }
 
   if (mListNode && mListNode->Contains(aElement)) {
     RevalidateDataList();
+  }
+}
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
+void nsFormFillController::MaybeStartControllingInputScheduled(
+    HTMLInputElement* aInput) {
+  mRestartAfterAttributeChangeTask = nullptr;
+  MaybeStartControllingInput(aInput);
+}
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
+void nsFormFillController::MaybeCancelAttributeChangeTask() {
+  if (mRestartAfterAttributeChangeTask) {
+    mRestartAfterAttributeChangeTask->Cancel();
+    mRestartAfterAttributeChangeTask = nullptr;
   }
 }
 
@@ -842,6 +863,10 @@ nsresult nsFormFillController::HandleFocus(HTMLInputElement* aInput) {
   if (!mFocusedInput) {
     return NS_OK;
   }
+
+  
+  
+  MaybeCancelAttributeChangeTask();
 
   
   
