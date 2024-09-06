@@ -17516,6 +17516,18 @@ Document::CreatePermissionGrantPromise(
         p = new StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
             Private(__func__);
 
+    
+    if (aFrameOnly) {
+      nsIChannel* channel = self->GetChannel();
+      if (channel) {
+        nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+        if (!loadInfo->GetIsThirdPartyContextToTopWindow()) {
+          p->Resolve(StorageAccessAPIHelper::eAllow, __func__);
+          return p;
+        }
+      }
+    }
+
     RefPtr<PWindowGlobalChild::GetStorageAccessPermissionPromise> promise;
     
     MOZ_ASSERT(XRE_IsContentProcess());
