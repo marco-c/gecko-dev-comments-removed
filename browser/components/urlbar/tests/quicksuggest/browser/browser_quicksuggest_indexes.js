@@ -99,17 +99,17 @@ add_task(async function otherSuggestedIndex_noSuggestions() {
     
     { suggestedIndex: 1, resultSpan: 2 },
     
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    
     {
       type: UrlbarUtils.RESULT_TYPE.URL,
       providerName: UrlbarProviderQuickSuggest.name,
     },
+    
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarUtils.RESULT_TYPE.URL },
   ]);
 });
 
@@ -135,15 +135,15 @@ add_task(async function otherSuggestedIndex_suggestionsFirst() {
         payload: { suggestion: SPONSORED_SEARCH_STRING + "bar" },
       },
       
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      
       {
         type: UrlbarUtils.RESULT_TYPE.URL,
         providerName: UrlbarProviderQuickSuggest.name,
       },
+      
+      { type: UrlbarUtils.RESULT_TYPE.URL },
+      { type: UrlbarUtils.RESULT_TYPE.URL },
+      { type: UrlbarUtils.RESULT_TYPE.URL },
+      { type: UrlbarUtils.RESULT_TYPE.URL },
     ]);
   });
   await SpecialPowers.popPrefEnv();
@@ -162,15 +162,15 @@ add_task(async function otherSuggestedIndex_suggestionsLast() {
       
       { suggestedIndex: 1, resultSpan: 2 },
       
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      
       {
         type: UrlbarUtils.RESULT_TYPE.URL,
         providerName: UrlbarProviderQuickSuggest.name,
       },
+      
+      { type: UrlbarUtils.RESULT_TYPE.URL },
+      { type: UrlbarUtils.RESULT_TYPE.URL },
+      { type: UrlbarUtils.RESULT_TYPE.URL },
+      { type: UrlbarUtils.RESULT_TYPE.URL },
       
       {
         type: UrlbarUtils.RESULT_TYPE.SEARCH,
