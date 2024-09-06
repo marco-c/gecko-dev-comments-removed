@@ -11,31 +11,12 @@ import io
 import json
 import logging
 import os
-from multiprocessing import Pool
 
 import mozpack.path as mozpath
 from mach.mixin.logging import LoggingMixin
 from mozbuild.makeutil import Makefile
 from mozbuild.pythonutil import iter_modules_in_path
 from mozbuild.util import FileAvoidWrite
-
-
-
-
-
-
-
-
-
-
-def build_files_for_webidl_worker_init(state):
-    global process_state  
-    process_state = state
-
-
-def build_files_for_webidl_worker_run(filename):
-    return process_state._generate_build_files_for_webidl(filename)
-
 
 
 
@@ -336,23 +317,10 @@ class WebIDLCodegenManager(LoggingMixin):
         )
 
         
-        
-        
-        ordered_changed_inputs = sorted(changed_inputs)
-        with Pool(
-            initializer=build_files_for_webidl_worker_init, initargs=(self,)
-        ) as pool:
-            generation_results = pool.map(
-                build_files_for_webidl_worker_run, ordered_changed_inputs
-            )
-
-        
-        for filename, generation_result in zip(
-            ordered_changed_inputs, generation_results
-        ):
+        for filename in sorted(changed_inputs):
             basename = mozpath.basename(filename)
             result.inputs.add(filename)
-            written, deps = generation_result
+            written, deps = self._generate_build_files_for_webidl(filename)
             result.created |= written[0]
             result.updated |= written[1]
             result.unchanged |= written[2]
@@ -597,8 +565,6 @@ class WebIDLCodegenManager(LoggingMixin):
 
         return paths
 
-    
-    
     def _generate_build_files_for_webidl(self, filename):
         from Codegen import CGBindingRoot, CGEventRoot
 
