@@ -3,23 +3,22 @@
 
 
 
-
-
 use super::collect;
 use rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use rayon::prelude::*;
 
 use crate::vec::Vec;
+use alloc::boxed::Box;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::ops::RangeBounds;
 
+use crate::set::Slice;
 use crate::Entries;
 use crate::IndexSet;
 
 type Bucket<T> = crate::Bucket<T, ()>;
-
 
 impl<T, S> IntoParallelIterator for IndexSet<T, S>
 where
@@ -35,8 +34,19 @@ where
     }
 }
 
+impl<T> IntoParallelIterator for Box<Slice<T>>
+where
+    T: Send,
+{
+    type Item = T;
+    type Iter = IntoParIter<T>;
 
-
+    fn into_par_iter(self) -> Self::Iter {
+        IntoParIter {
+            entries: self.into_entries(),
+        }
+    }
+}
 
 
 
@@ -63,7 +73,6 @@ impl<T: Send> IndexedParallelIterator for IntoParIter<T> {
     indexed_parallel_iterator_methods!(Bucket::key);
 }
 
-
 impl<'a, T, S> IntoParallelIterator for &'a IndexSet<T, S>
 where
     T: Sync,
@@ -78,6 +87,19 @@ where
     }
 }
 
+impl<'a, T> IntoParallelIterator for &'a Slice<T>
+where
+    T: Sync,
+{
+    type Item = &'a T;
+    type Iter = ParIter<'a, T>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        ParIter {
+            entries: &self.entries,
+        }
+    }
+}
 
 
 
@@ -112,7 +134,6 @@ impl<T: Sync> IndexedParallelIterator for ParIter<'_, T> {
     indexed_parallel_iterator_methods!(Bucket::key_ref);
 }
 
-
 impl<'a, T, S> ParallelDrainRange<usize> for &'a mut IndexSet<T, S>
 where
     T: Send,
@@ -126,7 +147,6 @@ where
         }
     }
 }
-
 
 
 
@@ -273,9 +293,6 @@ where
 
 
 
-
-
-
 pub struct ParDifference<'a, T, S1, S2> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
@@ -319,9 +336,6 @@ where
             .drive_unindexed(consumer)
     }
 }
-
-
-
 
 
 
@@ -375,9 +389,6 @@ where
 
 
 
-
-
-
 pub struct ParSymmetricDifference<'a, T, S1, S2> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
@@ -421,9 +432,6 @@ where
             .drive_unindexed(consumer)
     }
 }
-
-
-
 
 
 
@@ -476,8 +484,7 @@ where
 
 impl<T, S> IndexSet<T, S>
 where
-    T: Hash + Eq + Send,
-    S: BuildHasher + Send,
+    T: Send,
 {
     
     pub fn par_sort(&mut self)
@@ -540,8 +547,18 @@ where
         entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
         IntoParIter { entries }
     }
-}
 
+    
+    pub fn par_sort_by_cached_key<K, F>(&mut self, sort_key: F)
+    where
+        K: Ord + Send,
+        F: Fn(&T) -> K + Sync,
+    {
+        self.with_entries(move |entries| {
+            entries.par_sort_by_cached_key(move |a| sort_key(&a.key));
+        });
+    }
+}
 
 impl<T, S> FromParallelIterator<T> for IndexSet<T, S>
 where
@@ -562,7 +579,6 @@ where
     }
 }
 
-
 impl<T, S> ParallelExtend<T> for IndexSet<T, S>
 where
     T: Eq + Hash + Send,
@@ -577,7 +593,6 @@ where
         }
     }
 }
-
 
 impl<'a, T: 'a, S> ParallelExtend<&'a T> for IndexSet<T, S>
 where

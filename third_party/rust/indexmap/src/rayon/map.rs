@@ -3,22 +3,21 @@
 
 
 
-
-
 use super::collect;
 use rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use rayon::prelude::*;
 
 use crate::vec::Vec;
+use alloc::boxed::Box;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::ops::RangeBounds;
 
+use crate::map::Slice;
 use crate::Bucket;
 use crate::Entries;
 use crate::IndexMap;
-
 
 impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
 where
@@ -35,8 +34,20 @@ where
     }
 }
 
+impl<K, V> IntoParallelIterator for Box<Slice<K, V>>
+where
+    K: Send,
+    V: Send,
+{
+    type Item = (K, V);
+    type Iter = IntoParIter<K, V>;
 
-
+    fn into_par_iter(self) -> Self::Iter {
+        IntoParIter {
+            entries: self.into_entries(),
+        }
+    }
+}
 
 
 
@@ -63,7 +74,6 @@ impl<K: Send, V: Send> IndexedParallelIterator for IntoParIter<K, V> {
     indexed_parallel_iterator_methods!(Bucket::key_value);
 }
 
-
 impl<'a, K, V, S> IntoParallelIterator for &'a IndexMap<K, V, S>
 where
     K: Sync,
@@ -79,6 +89,20 @@ where
     }
 }
 
+impl<'a, K, V> IntoParallelIterator for &'a Slice<K, V>
+where
+    K: Sync,
+    V: Sync,
+{
+    type Item = (&'a K, &'a V);
+    type Iter = ParIter<'a, K, V>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        ParIter {
+            entries: &self.entries,
+        }
+    }
+}
 
 
 
@@ -113,7 +137,6 @@ impl<K: Sync, V: Sync> IndexedParallelIterator for ParIter<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::refs);
 }
 
-
 impl<'a, K, V, S> IntoParallelIterator for &'a mut IndexMap<K, V, S>
 where
     K: Sync + Send,
@@ -129,6 +152,20 @@ where
     }
 }
 
+impl<'a, K, V> IntoParallelIterator for &'a mut Slice<K, V>
+where
+    K: Sync + Send,
+    V: Send,
+{
+    type Item = (&'a K, &'a mut V);
+    type Iter = ParIterMut<'a, K, V>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        ParIterMut {
+            entries: &mut self.entries,
+        }
+    }
+}
 
 
 
@@ -157,7 +194,6 @@ impl<K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::ref_mut);
 }
 
-
 impl<'a, K, V, S> ParallelDrainRange<usize> for &'a mut IndexMap<K, V, S>
 where
     K: Send,
@@ -172,7 +208,6 @@ where
         }
     }
 }
-
 
 
 
@@ -225,6 +260,37 @@ where
     }
 }
 
+
+
+
+
+
+impl<K, V> Slice<K, V>
+where
+    K: Sync,
+    V: Sync,
+{
+    
+    
+    
+    
+    pub fn par_keys(&self) -> ParKeys<'_, K, V> {
+        ParKeys {
+            entries: &self.entries,
+        }
+    }
+
+    
+    
+    
+    
+    pub fn par_values(&self) -> ParValues<'_, K, V> {
+        ParValues {
+            entries: &self.entries,
+        }
+    }
+}
+
 impl<K, V, S> IndexMap<K, V, S>
 where
     K: Hash + Eq + Sync,
@@ -245,9 +311,6 @@ where
                 .all(move |(key, value)| other.get(key).map_or(false, |v| *value == *v))
     }
 }
-
-
-
 
 
 
@@ -284,9 +347,6 @@ impl<K: Sync, V: Sync> IndexedParallelIterator for ParKeys<'_, K, V> {
 
 
 
-
-
-
 pub struct ParValues<'a, K, V> {
     entries: &'a [Bucket<K, V>],
 }
@@ -314,7 +374,6 @@ impl<K: Sync, V: Sync> IndexedParallelIterator for ParValues<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::value_ref);
 }
 
-
 impl<K, V, S> IndexMap<K, V, S>
 where
     K: Send,
@@ -331,11 +390,26 @@ where
     }
 }
 
+impl<K, V> Slice<K, V>
+where
+    K: Send,
+    V: Send,
+{
+    
+    
+    
+    
+    pub fn par_values_mut(&mut self) -> ParValuesMut<'_, K, V> {
+        ParValuesMut {
+            entries: &mut self.entries,
+        }
+    }
+}
+
 impl<K, V, S> IndexMap<K, V, S>
 where
-    K: Hash + Eq + Send,
+    K: Send,
     V: Send,
-    S: BuildHasher,
 {
     
     pub fn par_sort_keys(&mut self)
@@ -406,10 +480,19 @@ where
         entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         IntoParIter { entries }
     }
+
+    
+    
+    pub fn par_sort_by_cached_key<T, F>(&mut self, sort_key: F)
+    where
+        T: Ord + Send,
+        F: Fn(&K, &V) -> T + Sync,
+    {
+        self.with_entries(move |entries| {
+            entries.par_sort_by_cached_key(move |a| sort_key(&a.key, &a.value));
+        });
+    }
 }
-
-
-
 
 
 
@@ -436,7 +519,6 @@ impl<K: Send, V: Send> IndexedParallelIterator for ParValuesMut<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::value_mut);
 }
 
-
 impl<K, V, S> FromParallelIterator<(K, V)> for IndexMap<K, V, S>
 where
     K: Eq + Hash + Send,
@@ -457,7 +539,6 @@ where
     }
 }
 
-
 impl<K, V, S> ParallelExtend<(K, V)> for IndexMap<K, V, S>
 where
     K: Eq + Hash + Send,
@@ -473,7 +554,6 @@ where
         }
     }
 }
-
 
 impl<'a, K: 'a, V: 'a, S> ParallelExtend<(&'a K, &'a V)> for IndexMap<K, V, S>
 where

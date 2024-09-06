@@ -2,9 +2,7 @@
 
 
 
-use super::{equivalent, Bucket, Entry, HashValue, IndexMapCore, VacantEntry};
-use core::fmt;
-use core::mem::replace;
+use super::{equivalent, get_hash, Bucket, HashValue, IndexMapCore};
 use hashbrown::raw::RawTable;
 
 type RawBucket = hashbrown::raw::Bucket<usize>;
@@ -22,11 +20,14 @@ pub(super) fn insert_bulk_no_grow<K, V>(indices: &mut RawTable<usize>, entries: 
     }
 }
 
+#[cfg(feature = "test_debug")]
 pub(super) struct DebugIndices<'a>(pub &'a RawTable<usize>);
-impl fmt::Debug for DebugIndices<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
+#[cfg(feature = "test_debug")]
+impl core::fmt::Debug for DebugIndices<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         
-        let indices = unsafe { self.0.iter().map(|raw_bucket| raw_bucket.read()) };
+        let indices = unsafe { self.0.iter().map(|raw_bucket| *raw_bucket.as_ref()) };
         f.debug_list().entries(indices).finish()
     }
 }
@@ -38,34 +39,57 @@ impl<K, V> IndexMapCore<K, V> {
         unsafe {
             let offset = end - start;
             for bucket in self.indices.iter() {
-                let i = bucket.read();
-                if i >= end {
-                    bucket.write(i - offset);
-                } else if i >= start {
+                let i = bucket.as_mut();
+                if *i >= end {
+                    *i -= offset;
+                } else if *i >= start {
                     self.indices.erase(bucket);
                 }
             }
         }
     }
 
-    pub(crate) fn entry(&mut self, hash: HashValue, key: K) -> Entry<'_, K, V>
+    
+    
+    
+    
+    
+    
+    pub(crate) fn find_or_insert(&mut self, hash: HashValue, key: &K) -> Result<usize, usize>
     where
         K: Eq,
     {
-        let eq = equivalent(&key, &self.entries);
+        let hash = hash.get();
+        let eq = equivalent(key, &self.entries);
+        let hasher = get_hash(&self.entries);
+        
+        unsafe {
+            match self.indices.find_or_find_insert_slot(hash, eq, hasher) {
+                Ok(raw_bucket) => Ok(*raw_bucket.as_ref()),
+                Err(slot) => {
+                    let index = self.indices.len();
+                    self.indices.insert_in_slot(hash, slot, index);
+                    Err(index)
+                }
+            }
+        }
+    }
+
+    pub(super) fn raw_entry(
+        &mut self,
+        hash: HashValue,
+        mut is_match: impl FnMut(&K) -> bool,
+    ) -> Result<RawTableEntry<'_, K, V>, &mut Self> {
+        let entries = &*self.entries;
+        let eq = move |&i: &usize| is_match(&entries[i].key);
         match self.indices.find(hash.get(), eq) {
             
             
-            Some(raw_bucket) => Entry::Occupied(OccupiedEntry {
+            Some(raw_bucket) => Ok(RawTableEntry {
                 map: self,
                 raw_bucket,
-                key,
             }),
-            None => Entry::Vacant(VacantEntry {
-                map: self,
-                hash,
-                key,
-            }),
+            None => Err(self),
         }
     }
 
@@ -74,118 +98,56 @@ impl<K, V> IndexMapCore<K, V> {
         
         unsafe { self.indices.iter().map(|bucket| bucket.as_mut()) }
     }
-
-    
-    fn find_index(&self, index: usize) -> RawBucket {
-        
-        
-        let hash = self.entries[index].hash.get();
-        self.indices
-            .find(hash, move |&i| i == index)
-            .expect("index not found")
-    }
-
-    pub(crate) fn swap_indices(&mut self, a: usize, b: usize) {
-        
-        
-        
-        unsafe {
-            let raw_bucket_a = self.find_index(a);
-            let raw_bucket_b = self.find_index(b);
-            raw_bucket_a.write(b);
-            raw_bucket_b.write(a);
-        }
-        self.entries.swap(a, b);
-    }
 }
 
 
 
 
-
-
-
-pub struct OccupiedEntry<'a, K, V> {
+pub(super) struct RawTableEntry<'a, K, V> {
     map: &'a mut IndexMapCore<K, V>,
     raw_bucket: RawBucket,
-    key: K,
 }
 
 
 
-unsafe impl<K: Sync, V: Sync> Sync for OccupiedEntry<'_, K, V> {}
+unsafe impl<K: Sync, V: Sync> Sync for RawTableEntry<'_, K, V> {}
 
-
-impl<'a, K, V> OccupiedEntry<'a, K, V> {
-    
-    
-    
-    
-    
-    pub fn key(&self) -> &K {
-        &self.map.entries[self.index()].key
-    }
-
-    
-    pub fn get(&self) -> &V {
-        &self.map.entries[self.index()].value
-    }
-
-    
-    
-    
-    
-    pub fn get_mut(&mut self) -> &mut V {
-        let index = self.index();
-        &mut self.map.entries[index].value
-    }
-
-    
-    pub(crate) fn replace_key(self) -> K {
-        let index = self.index();
-        let old_key = &mut self.map.entries[index].key;
-        replace(old_key, self.key)
-    }
-
+impl<'a, K, V> RawTableEntry<'a, K, V> {
     
     #[inline]
-    pub fn index(&self) -> usize {
+    pub(super) fn index(&self) -> usize {
         
-        unsafe { self.raw_bucket.read() }
+        unsafe { *self.raw_bucket.as_ref() }
     }
 
-    
-    
-    pub fn into_mut(self) -> &'a mut V {
+    #[inline]
+    pub(super) fn bucket(&self) -> &Bucket<K, V> {
+        &self.map.entries[self.index()]
+    }
+
+    #[inline]
+    pub(super) fn bucket_mut(&mut self) -> &mut Bucket<K, V> {
         let index = self.index();
-        &mut self.map.entries[index].value
+        &mut self.map.entries[index]
+    }
+
+    #[inline]
+    pub(super) fn into_bucket(self) -> &'a mut Bucket<K, V> {
+        let index = self.index();
+        &mut self.map.entries[index]
     }
 
     
-    
-    
-    
-    
-    
-    
-    pub fn swap_remove_entry(self) -> (K, V) {
+    pub(super) fn remove_index(self) -> (&'a mut IndexMapCore<K, V>, usize) {
         
         
-        let index = unsafe { self.map.indices.remove(self.raw_bucket) };
-        self.map.swap_remove_finish(index)
+        let (index, _slot) = unsafe { self.map.indices.remove(self.raw_bucket) };
+        (self.map, index)
     }
 
     
-    
-    
-    
-    
-    
-    
-    pub fn shift_remove_entry(self) -> (K, V) {
-        
-        
-        let index = unsafe { self.map.indices.remove(self.raw_bucket) };
-        self.map.shift_remove_finish(index)
+    pub(super) fn into_inner(self) -> (&'a mut IndexMapCore<K, V>, usize) {
+        let index = self.index();
+        (self.map, index)
     }
 }

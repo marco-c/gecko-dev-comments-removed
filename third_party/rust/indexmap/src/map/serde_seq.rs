@@ -18,8 +18,6 @@
 
 
 
-
-
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, Serializer};
 
@@ -27,9 +25,40 @@ use core::fmt::{self, Formatter};
 use core::hash::{BuildHasher, Hash};
 use core::marker::PhantomData;
 
+use crate::map::Slice as MapSlice;
+use crate::serde::cautious_capacity;
+use crate::set::Slice as SetSlice;
 use crate::IndexMap;
 
 
+
+
+
+impl<K, V> Serialize for MapSlice<K, V>
+where
+    K: Serialize,
+    V: Serialize,
+{
+    fn serialize<T>(&self, serializer: T) -> Result<T::Ok, T::Error>
+    where
+        T: Serializer,
+    {
+        serializer.collect_seq(self)
+    }
+}
+
+
+impl<T> Serialize for SetSlice<T>
+where
+    T: Serialize,
+{
+    fn serialize<Se>(&self, serializer: Se) -> Result<Se::Ok, Se::Error>
+    where
+        Se: Serializer,
+    {
+        serializer.collect_seq(self)
+    }
+}
 
 
 
@@ -47,9 +76,8 @@ use crate::IndexMap;
 
 pub fn serialize<K, V, S, T>(map: &IndexMap<K, V, S>, serializer: T) -> Result<T::Ok, T::Error>
 where
-    K: Serialize + Hash + Eq,
+    K: Serialize,
     V: Serialize,
-    S: BuildHasher,
     T: Serializer,
 {
     serializer.collect_seq(map)
@@ -74,7 +102,7 @@ where
     where
         A: SeqAccess<'de>,
     {
-        let capacity = seq.size_hint().unwrap_or(0);
+        let capacity = cautious_capacity::<K, V>(seq.size_hint());
         let mut map = IndexMap::with_capacity_and_hasher(capacity, S::default());
 
         while let Some((key, value)) = seq.next_element()? {
@@ -84,8 +112,6 @@ where
         Ok(map)
     }
 }
-
-
 
 
 

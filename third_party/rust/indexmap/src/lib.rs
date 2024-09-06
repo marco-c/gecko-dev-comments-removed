@@ -1,7 +1,6 @@
 
 #![deny(unsafe_code)]
 #![warn(rust_2018_idioms)]
-#![doc(html_root_url = "https://docs.rs/indexmap/1/")]
 #![no_std]
 
 
@@ -77,9 +76,36 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 extern crate alloc;
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 #[macro_use]
 extern crate std;
 
@@ -88,12 +114,10 @@ use alloc::vec::{self, Vec};
 mod arbitrary;
 #[macro_use]
 mod macros;
-mod equivalent;
-mod mutable_keys;
+#[cfg(feature = "borsh")]
+mod borsh;
 #[cfg(feature = "serde")]
 mod serde;
-#[cfg(feature = "serde")]
-pub mod serde_seq;
 mod util;
 
 pub mod map;
@@ -107,9 +131,9 @@ mod rayon;
 #[cfg(feature = "rustc-rayon")]
 mod rustc;
 
-pub use crate::equivalent::Equivalent;
 pub use crate::map::IndexMap;
 pub use crate::set::IndexSet;
+pub use equivalent::Equivalent;
 
 
 
@@ -192,3 +216,59 @@ trait Entries {
     where
         F: FnOnce(&mut [Self::Entry]);
 }
+
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct TryReserveError {
+    kind: TryReserveErrorKind,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+enum TryReserveErrorKind {
+    
+    Std(alloc::collections::TryReserveError),
+    CapacityOverflow,
+    AllocError { layout: alloc::alloc::Layout },
+}
+
+
+impl TryReserveError {
+    fn from_alloc(error: alloc::collections::TryReserveError) -> Self {
+        Self {
+            kind: TryReserveErrorKind::Std(error),
+        }
+    }
+
+    fn from_hashbrown(error: hashbrown::TryReserveError) -> Self {
+        Self {
+            kind: match error {
+                hashbrown::TryReserveError::CapacityOverflow => {
+                    TryReserveErrorKind::CapacityOverflow
+                }
+                hashbrown::TryReserveError::AllocError { layout } => {
+                    TryReserveErrorKind::AllocError { layout }
+                }
+            },
+        }
+    }
+}
+
+impl core::fmt::Display for TryReserveError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let reason = match &self.kind {
+            TryReserveErrorKind::Std(e) => return core::fmt::Display::fmt(e, f),
+            TryReserveErrorKind::CapacityOverflow => {
+                " because the computed capacity exceeded the collection's maximum"
+            }
+            TryReserveErrorKind::AllocError { .. } => {
+                " because the memory allocator returned an error"
+            }
+        };
+        f.write_str("memory allocation failed")?;
+        f.write_str(reason)
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for TryReserveError {}
