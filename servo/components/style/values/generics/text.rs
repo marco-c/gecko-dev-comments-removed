@@ -7,7 +7,8 @@
 use crate::parser::ParserContext;
 use crate::Zero;
 use cssparser::Parser;
-use style_traits::ParseError;
+use std::fmt::{self, Write};
+use style_traits::{CssWriter, ParseError, ToCss};
 
 
 #[derive(
@@ -18,22 +19,43 @@ use style_traits::ParseError;
     PartialEq,
     SpecifiedValueInfo,
     ToComputedValue,
-    ToCss,
     ToResolvedValue,
     ToShmem,
 )]
-pub enum InitialLetter<Number, Integer> {
+#[repr(C)]
+pub struct GenericInitialLetter<Number, Integer> {
     
-    Normal,
+    pub size: Number,
     
-    Specified(Number, Option<Integer>),
+    pub sink: Integer,
 }
 
-impl<N, I> InitialLetter<N, I> {
+pub use self::GenericInitialLetter as InitialLetter;
+impl<N: Zero, I: Zero> InitialLetter<N, I> {
     
     #[inline]
     pub fn normal() -> Self {
-        InitialLetter::Normal
+        InitialLetter {
+            size: N::zero(),
+            sink: I::zero(),
+        }
+    }
+}
+
+impl<N: ToCss + Zero, I: ToCss + Zero> ToCss for InitialLetter<N, I> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        if self.size.is_zero() {
+            return dest.write_str("normal");
+        }
+        self.size.to_css(dest)?;
+        if !self.sink.is_zero() {
+            dest.write_char(' ')?;
+            self.sink.to_css(dest)?;
+        }
+        Ok(())
     }
 }
 
