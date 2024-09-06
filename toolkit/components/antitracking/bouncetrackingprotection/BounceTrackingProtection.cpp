@@ -4,7 +4,6 @@
 
 #include "BounceTrackingProtection.h"
 
-#include "BounceTrackingAllowList.h"
 #include "BounceTrackingProtectionStorage.h"
 #include "BounceTrackingState.h"
 #include "BounceTrackingRecord.h"
@@ -14,6 +13,7 @@
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Services.h"
@@ -31,7 +31,6 @@
 #include "prtime.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "xpcpublic.h"
-#include "mozilla/glean/GleanMetrics.h"
 
 #define TEST_OBSERVER_MSG_RECORD_BOUNCES_FINISHED "test-record-bounces-finished"
 
@@ -508,7 +507,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
 
   
   
-  BounceTrackingAllowList bounceTrackingAllowList;
+  ContentBlockingAllowListCache contentBlockingAllowListCache;
 
   
   nsTArray<RefPtr<ClearDataMozPromise>> clearPromises;
@@ -528,7 +527,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
     }
 
     nsresult rv = PurgeBounceTrackersForStateGlobal(
-        stateGlobal, bounceTrackingAllowList, clearPromises);
+        stateGlobal, contentBlockingAllowListCache, clearPromises);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return PurgeBounceTrackersMozPromise::CreateAndReject(rv, __func__);
     }
@@ -569,7 +568,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
 
 nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     BounceTrackingStateGlobal* aStateGlobal,
-    BounceTrackingAllowList& aBounceTrackingAllowList,
+    ContentBlockingAllowListCache& aContentBlockingAllowList,
     nsTArray<RefPtr<ClearDataMozPromise>>& aClearPromises) {
   MOZ_ASSERT(aStateGlobal);
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
@@ -633,7 +632,7 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     
     
     bool isAllowListed = false;
-    rv = aBounceTrackingAllowList.CheckForBaseDomain(
+    rv = aContentBlockingAllowList.CheckForBaseDomain(
         host, aStateGlobal->OriginAttributesRef(), isAllowListed);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       continue;
@@ -670,7 +669,7 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     if (StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode()) {
       
       
-      cb->OnDataDeleted(0);
+      clearPromise->Resolve(host, __func__);
     } else {
       
       rv = clearDataService->DeleteDataFromBaseDomain(host, false,
@@ -805,6 +804,54 @@ nsresult BounceTrackingProtection::MaybeMigrateUserInteractionPermissions() {
   
   return mozilla::Preferences::SetBool(
       "privacy.bounceTrackingProtection.hasMigratedUserActivationData", true);
+}
+
+
+
+NS_IMPL_ISUPPORTS(BounceTrackingProtection::ClearDataCallback,
+                  nsIClearDataCallback);
+
+BounceTrackingProtection::ClearDataCallback::ClearDataCallback(
+    ClearDataMozPromise::Private* aPromise, const nsACString& aHost)
+    : mHost(aHost), mClearDurationTimer(0), mPromise(aPromise) {
+  MOZ_ASSERT(!aHost.IsEmpty(), "Host must not be empty");
+  if (!StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode()) {
+    
+    mClearDurationTimer =
+        glean::bounce_tracking_protection::purge_duration.Start();
+    MOZ_ASSERT(mClearDurationTimer);
+  }
+};
+
+BounceTrackingProtection::ClearDataCallback::~ClearDataCallback() {
+  mPromise->Reject(0, __func__);
+  if (mClearDurationTimer) {
+    glean::bounce_tracking_protection::purge_duration.Cancel(
+        std::move(mClearDurationTimer));
+  }
+}
+
+
+NS_IMETHODIMP BounceTrackingProtection::ClearDataCallback::OnDataDeleted(
+    uint32_t aFailedFlags) {
+  if (aFailedFlags) {
+    mPromise->Reject(aFailedFlags, __func__);
+  } else {
+    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
+            ("%s: Cleared %s", __FUNCTION__, mHost.get()));
+    mPromise->Resolve(std::move(mHost), __func__);
+  }
+  RecordClearDurationTelemetry();
+  return NS_OK;
+}
+
+void BounceTrackingProtection::ClearDataCallback::
+    RecordClearDurationTelemetry() {
+  if (mClearDurationTimer) {
+    glean::bounce_tracking_protection::purge_duration.StopAndAccumulate(
+        std::move(mClearDurationTimer));
+    mClearDurationTimer = 0;
+  }
 }
 
 }  

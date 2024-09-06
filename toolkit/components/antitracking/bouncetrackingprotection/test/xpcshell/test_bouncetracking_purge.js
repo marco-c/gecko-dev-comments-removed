@@ -31,7 +31,7 @@ function maybeFixupIpv6(host) {
 
 
 async function addStateForHost(host) {
-  info(`Populating cookies and indexedDB for host ${host}`);
+  info(`adding state for host ${host}`);
   SiteDataTestUtils.addToCookies({ host });
   await SiteDataTestUtils.addToIndexedDB(`https://${maybeFixupIpv6(host)}`);
 }
@@ -142,34 +142,12 @@ add_task(async function test_purge() {
       shouldPurge: true,
     },
     
-    
     "example2.net": {
       bounceTime: timestampOutsideGracePeriodFiveSeconds,
       userActivationTime: null,
-      allowListedPerm: "trackingprotection",
-      message:
-        "Should not purge after grace period if allowlisted via 'trackingprotection' permission.",
+      isAllowListed: true,
+      message: "Should not purge after grace period if allowlisted.",
       shouldPurge: false,
-    },
-    
-    "example3.net": {
-      bounceTime: timestampOutsideGracePeriodFiveSeconds,
-      userActivationTime: null,
-      allowListedPerm: "cookie",
-      permissionState: Services.perms.ALLOW_ACTION,
-      message:
-        "Should not purge after grace period if allowlisted via 'cookie' permission.",
-      shouldPurge: false,
-    },
-    
-    "example4.net": {
-      bounceTime: timestampOutsideGracePeriodFiveSeconds,
-      userActivationTime: null,
-      allowListedPerm: "cookie",
-      permissionState: Services.perms.DENY_ACTION,
-      message:
-        "Should get purged outside of grace period with a 'cookie' DENY permission.",
-      shouldPurge: true,
     },
     
     "1.2.3.4": {
@@ -233,33 +211,17 @@ add_task(async function test_purge() {
   let initPromises = Object.entries(TEST_TRACKERS).map(
     async ([
       siteHost,
-      {
-        message,
-        bounceTime,
-        userActivationTime,
-        allowListedPerm,
-        permissionState = Services.perms.ALLOW_ACTION,
-        shouldPurge,
-      },
+      { bounceTime, userActivationTime, isAllowListed, shouldPurge },
     ]) => {
-      info(`Initializing state for test ${siteHost}: ${message}`);
-
       
       await addStateForHost(siteHost);
 
       
-      if (allowListedPerm == "trackingprotection") {
+      if (isAllowListed) {
         PermissionTestUtils.add(
           `https://${siteHost}`,
           "trackingprotection",
-          permissionState
-        );
-        allowListedHosts.push(siteHost);
-      } else if (allowListedPerm == "cookie") {
-        PermissionTestUtils.add(
-          `https://${siteHost}`,
-          "cookie",
-          permissionState
+          Services.perms.ALLOW_ACTION
         );
         allowListedHosts.push(siteHost);
       }
