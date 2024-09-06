@@ -693,6 +693,16 @@ nsresult CompareNetwork::Initialize(nsIPrincipal* aPrincipal,
     return rv;
   }
 
+  
+  
+  
+  
+  if (!aPrincipal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    rv = loadInfo->SetIsInThirdPartyContext(true);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
+
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
   if (httpChannel) {
     

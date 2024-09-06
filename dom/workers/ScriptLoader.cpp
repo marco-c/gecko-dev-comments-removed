@@ -1025,6 +1025,18 @@ nsresult WorkerScriptLoader::LoadScript(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+
+    
+    
+    
+    
+    if (!principal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
+      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+      rv = loadInfo->SetIsInThirdPartyContext(true);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
   }
 
   
