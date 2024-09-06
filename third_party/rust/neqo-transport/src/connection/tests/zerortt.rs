@@ -14,7 +14,10 @@ use super::{
     super::Connection, connect, default_client, default_server, exchange_ticket, new_server,
     resumed_server, CountingConnectionIdGenerator,
 };
-use crate::{events::ConnectionEvent, ConnectionParameters, Error, StreamType, Version};
+use crate::{
+    events::ConnectionEvent, ConnectionParameters, Error, StreamType, Version,
+    MIN_INITIAL_PACKET_SIZE,
+};
 
 #[test]
 fn zero_rtt_negotiate() {
@@ -58,7 +61,7 @@ fn zero_rtt_send_recv() {
     let client_0rtt = client.process(None, now());
     assert!(client_0rtt.as_dgram_ref().is_some());
     
-    assert!(client_0rtt.as_dgram_ref().unwrap().len() < 1200);
+    assert!(client_0rtt.as_dgram_ref().unwrap().len() < MIN_INITIAL_PACKET_SIZE);
 
     let server_hs = server.process(client_hs.as_dgram_ref(), now());
     assert!(server_hs.as_dgram_ref().is_some()); 

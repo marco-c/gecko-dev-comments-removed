@@ -65,14 +65,15 @@ where
     }
 
     
-    pub fn update(&mut self, limit: u64) -> bool {
+    
+    pub fn update(&mut self, limit: u64) -> Option<usize> {
         debug_assert!(limit < u64::MAX);
         if limit > self.limit {
             self.limit = limit;
             self.blocked_frame = false;
-            true
+            Some(self.available())
         } else {
-            false
+            None
         }
     }
 

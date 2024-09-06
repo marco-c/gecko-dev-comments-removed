@@ -9,7 +9,7 @@ use std::ops::{AddAssign, Deref, DerefMut, Sub};
 use enum_map::EnumMap;
 use neqo_common::{qdebug, qinfo, qwarn, IpTosEcn};
 
-use crate::{packet::PacketNumber, tracking::SentPacket};
+use crate::{packet::PacketNumber, recovery::SentPacket};
 
 
 pub const ECN_TEST_COUNT: usize = 10;
@@ -159,7 +159,7 @@ impl EcnInfo {
         
         
         
-        let largest_acked = acked_packets.first().expect("must be there").pn;
+        let largest_acked = acked_packets.first().expect("must be there").pn();
         if largest_acked <= self.largest_acked {
             return;
         }
@@ -186,7 +186,7 @@ impl EcnInfo {
         
         let newly_acked_sent_with_ect0: u64 = acked_packets
             .iter()
-            .filter(|p| p.ecn_mark == IpTosEcn::Ect0)
+            .filter(|p| p.ecn_mark() == IpTosEcn::Ect0)
             .count()
             .try_into()
             .unwrap();

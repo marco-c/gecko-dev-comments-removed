@@ -89,6 +89,19 @@ impl StreamHandler {
     
     
     
+    
+    
+    pub fn available(&mut self) -> Res<usize> {
+        let stream_id = self.stream_id();
+        let n = self.conn.borrow_mut().stream_avail_send_space(stream_id)?;
+        Ok(n)
+    }
+
+    
+    
+    
+    
+    
     pub fn stream_close_send(&mut self) -> Res<()> {
         self.handler
             .borrow_mut()
