@@ -3,6 +3,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
+  TopSites: "resource:///modules/TopSites.sys.mjs",
   UrlbarProvider: "resource:///modules/UrlbarUtils.sys.mjs",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
   UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
@@ -104,9 +105,21 @@ async function updateTopSites(condition, searchShortcuts = false) {
     ],
   });
 
+  if (Services.prefs.getBoolPref("browser.topsites.component.enabled")) {
+    
+    
+    TopSites.uninit();
+    await TopSites.init();
+  }
+
   
-  await TestUtils.waitForCondition(() => {
-    let sites = AboutNewTab.getTopSites();
+  await TestUtils.waitForCondition(async () => {
+    let sites;
+    if (Services.prefs.getBoolPref("browser.topsites.component.enabled")) {
+      sites = await TopSites.getSites();
+    } else {
+      sites = AboutNewTab.getTopSites();
+    }
     return condition(sites);
   }, "Waiting for top sites to be updated");
 }
