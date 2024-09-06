@@ -730,7 +730,11 @@ function mainThreadFetch(
 
 
 
-function newChannelForURL(url, { policy, window, principal }) {
+function newChannelForURL(
+  url,
+  { policy, window, principal },
+  recursing = false
+) {
   const securityFlags =
     Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
 
@@ -743,20 +747,6 @@ function newChannelForURL(url, { policy, window, principal }) {
     
     uri = Services.io.newURI("file://" + url);
   }
-
-  
-  
-  
-  
-  
-  
-  const handler = Services.io.getProtocolHandler(uri.scheme);
-  if (handler instanceof Ci.nsIExternalProtocolHandler) {
-    if (!handler.externalAppExistsForScheme(uri.scheme)) {
-      uri = Services.io.newURI("file://" + url);
-    }
-  }
-
   const channelOptions = {
     contentPolicyType: policy,
     securityFlags,
@@ -788,7 +778,24 @@ function newChannelForURL(url, { policy, window, principal }) {
     channelOptions.loadingPrincipal = prin;
   }
 
-  return NetUtil.newChannel(channelOptions);
+  try {
+    return NetUtil.newChannel(channelOptions);
+  } catch (e) {
+    
+    if (recursing) {
+      throw e;
+    }
+
+    
+    
+    
+    
+    return newChannelForURL(
+      "file://" + url,
+      { policy, window, principal },
+       true
+    );
+  }
 }
 
 
