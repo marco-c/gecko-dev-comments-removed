@@ -549,16 +549,16 @@ CssComputedView.prototype = {
 
 
 
-  refreshPanel() {
+  async refreshPanel() {
     if (!this._viewedElement || !this.isPanelVisible()) {
-      return Promise.resolve();
+      return;
     }
 
     
     
     const viewedElement = this._viewedElement;
 
-    return Promise.all([
+    try {
       
       
       
@@ -567,134 +567,136 @@ CssComputedView.prototype = {
       
       
       
-      this._createPropertyViews(),
-      this.viewedElementPageStyle.getComputed(this._viewedElement, {
-        filter: this._sourceFilter,
-        onlyMatched: !this.includeBrowserStyles,
-        markMatched: true,
-      }),
-    ])
-      .then(([, computed]) => {
-        if (viewedElement !== this._viewedElement) {
-          return Promise.resolve();
+      const [computed] = await Promise.all([
+        this.viewedElementPageStyle.getComputed(this._viewedElement, {
+          filter: this._sourceFilter,
+          onlyMatched: !this.includeBrowserStyles,
+          markMatched: true,
+        }),
+        this._createPropertyViews(),
+      ]);
+
+      if (viewedElement !== this._viewedElement) {
+        return;
+      }
+
+      this._computed = computed;
+      this._matchedProperties = new Set();
+      const customProperties = new Set();
+
+      for (const name in computed) {
+        if (computed[name].matched) {
+          this._matchedProperties.add(name);
         }
-
-        this._computed = computed;
-        this._matchedProperties = new Set();
-        const customProperties = new Set();
-
-        for (const name in computed) {
-          if (computed[name].matched) {
-            this._matchedProperties.add(name);
-          }
-          if (name.startsWith("--")) {
-            customProperties.add(name);
-          }
+        if (name.startsWith("--")) {
+          customProperties.add(name);
         }
+      }
 
-        
-        let customPropertiesStartIndex;
-        for (let i = this.propertyViews.length - 1; i >= 0; i--) {
-          const propView = this.propertyViews[i];
-
-          
-          
-          
-          if (!propView.isCustomProperty) {
-            customPropertiesStartIndex = i + 1;
-            break;
-          }
-
-          
-          if (customProperties.has(propView.name)) {
-            customProperties.delete(propView.name);
-            continue;
-          }
-
-          
-          if (propView.element) {
-            propView.element.remove();
-          }
-
-          propView.destroy();
-          this.propertyViews.splice(i, 1);
-        }
+      
+      let customPropertiesStartIndex;
+      for (let i = this.propertyViews.length - 1; i >= 0; i--) {
+        const propView = this.propertyViews[i];
 
         
         
-        let insertIndex = customPropertiesStartIndex;
-        for (const customPropertyName of Array.from(customProperties).sort()) {
-          const propertyView = new PropertyView(
-            this,
-            customPropertyName,
-            
-            true
-          );
+        
+        if (!propView.isCustomProperty) {
+          customPropertiesStartIndex = i + 1;
+          break;
+        }
 
-          const len = this.propertyViews.length;
-          if (insertIndex !== len) {
-            for (let i = insertIndex; i <= len; i++) {
-              const existingPropView = this.propertyViews[i];
-              if (
-                !existingPropView ||
-                !existingPropView.isCustomProperty ||
-                customPropertyName < existingPropView.name
-              ) {
-                insertIndex = i;
-                break;
-              }
+        
+        if (customProperties.has(propView.name)) {
+          customProperties.delete(propView.name);
+          continue;
+        }
+
+        
+        if (propView.element) {
+          propView.element.remove();
+        }
+
+        propView.destroy();
+        this.propertyViews.splice(i, 1);
+      }
+
+      
+      
+      let insertIndex = customPropertiesStartIndex;
+      for (const customPropertyName of Array.from(customProperties).sort()) {
+        const propertyView = new PropertyView(
+          this,
+          customPropertyName,
+          
+          true
+        );
+
+        const len = this.propertyViews.length;
+        if (insertIndex !== len) {
+          for (let i = insertIndex; i <= len; i++) {
+            const existingPropView = this.propertyViews[i];
+            if (
+              !existingPropView ||
+              !existingPropView.isCustomProperty ||
+              customPropertyName < existingPropView.name
+            ) {
+              insertIndex = i;
+              break;
             }
           }
-          this.propertyViews.splice(insertIndex, 0, propertyView);
-
-          
-          
-          const previousSibling = this.element.childNodes[insertIndex - 1];
-          previousSibling.insertAdjacentElement(
-            "afterend",
-            propertyView.createListItemElement()
-          );
         }
-
-        if (this._refreshProcess) {
-          this._refreshProcess.cancel();
-        }
-
-        this.noResults.hidden = true;
+        this.propertyViews.splice(insertIndex, 0, propertyView);
 
         
-        this.numVisibleProperties = 0;
+        
+        const previousSibling = this.element.childNodes[insertIndex - 1];
+        previousSibling.insertAdjacentElement(
+          "afterend",
+          propertyView.createListItemElement()
+        );
+      }
 
-        return new Promise((resolve, reject) => {
-          this._refreshProcess = new UpdateProcess(
-            this.styleWindow,
-            this.propertyViews,
-            {
-              onItem: propView => {
-                propView.refresh();
-              },
-              onCancel: () => {
-                reject("_refreshProcess of computed view cancelled");
-              },
-              onDone: () => {
-                this._refreshProcess = null;
-                this.noResults.hidden = this.numVisibleProperties > 0;
+      if (this._refreshProcess) {
+        this._refreshProcess.cancel();
+      }
 
-                const searchBox = this.searchField.parentNode;
-                searchBox.classList.toggle(
-                  "devtools-searchbox-no-match",
-                  !!this.searchField.value.length && !this.numVisibleProperties
-                );
+      this.noResults.hidden = true;
 
-                this.inspector.emit("computed-view-refreshed");
-                resolve(undefined);
-              },
-            }
-          );
-          this._refreshProcess.schedule();
-        });
-      })
-      .catch(console.error);
+      
+      this.numVisibleProperties = 0;
+
+      await new Promise((resolve, reject) => {
+        this._refreshProcess = new UpdateProcess(
+          this.styleWindow,
+          this.propertyViews,
+          {
+            onItem: propView => {
+              propView.refresh();
+            },
+            onCancel: () => {
+              reject("_refreshProcess of computed view cancelled");
+            },
+            onDone: () => {
+              this._refreshProcess = null;
+              this.noResults.hidden = this.numVisibleProperties > 0;
+
+              const searchBox = this.searchField.parentNode;
+              searchBox.classList.toggle(
+                "devtools-searchbox-no-match",
+                !!this.searchField.value.length && !this.numVisibleProperties
+              );
+
+              this.inspector.emit("computed-view-refreshed");
+              resolve(undefined);
+            },
+          }
+        );
+        this._refreshProcess.schedule();
+      });
+    } catch (e) {
+      console.error(e);
+    }
   },
 
   
