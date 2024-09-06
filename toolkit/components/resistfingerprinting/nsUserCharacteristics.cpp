@@ -322,7 +322,7 @@ void PopulateFontPrefs() {
 
 
 
-const int kSubmissionSchema = 2;
+const int kSubmissionSchema = 3;
 
 const auto* const kLastVersionPref =
     "toolkit.telemetry.user_characteristics_ping.last_version_sent";
