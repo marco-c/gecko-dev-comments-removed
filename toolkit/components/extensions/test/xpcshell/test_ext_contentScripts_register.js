@@ -788,10 +788,24 @@ add_task(async function test_contentscripts_register_cookieStoreId() {
     const script = policy.contentScripts[contentScriptIndex];
 
     deepEqual(script.originAttributesPatterns, originAttributesPatternExpected);
+
+    info("Loading initial page to preload styles and scripts");
     let contentPage = await ExtensionTestUtils.loadContentPage(
-      `about:blank`,
+      `${BASE_URL}/file_sample_registered_styles.html`,
       contentPageOptions
     );
+    
+    
+    
+    
+    await extension.awaitMessage("registered-styles-results");
+
+    
+    
+    
+    
+
+    info("Loading page again, to verify CSS and JS");
     await contentPage.loadURL(`${BASE_URL}/file_sample_registered_styles.html`);
 
     let registeredStylesResults = await extension.awaitMessage(
