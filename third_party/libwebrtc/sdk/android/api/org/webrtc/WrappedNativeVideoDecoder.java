@@ -14,7 +14,9 @@ package org.webrtc;
 
 
 public abstract class WrappedNativeVideoDecoder implements VideoDecoder {
-  @Override public abstract long createNativeVideoDecoder();
+  
+  
+  
 
   @Override
   public final VideoCodecStatus initDecode(Settings settings, Callback decodeCallback) {
