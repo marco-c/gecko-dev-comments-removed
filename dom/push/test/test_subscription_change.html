@@ -1,12 +1,12 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+Bug 1205109: Make `pushsubscriptionchange` extendable.
 
+Any copyright is dedicated to the Public Domain.
+http://creativecommons.org/licenses/publicdomain/
 
-
-
-
-
-
+-->
 <head>
   <title>Test for Bug 1205109</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -28,7 +28,7 @@
     await setupPrefsAndMockSocket(new MockWebSocket());
     await setPushPermission(true);
 
-    var url = "worker.js?" + (Math.random());
+    var url = "worker.js?caller=test_subscription_change.html";
     registration = await navigator.serviceWorker.register(url, {scope: "."});
     await waitForActive(registration);
   });
