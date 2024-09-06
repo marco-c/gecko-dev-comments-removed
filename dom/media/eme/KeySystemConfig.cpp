@@ -223,10 +223,15 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
 }
 
 
-void KeySystemConfig::CreateKeySystemConfigs(
-    const nsTArray<KeySystemConfigRequest>& aRequests,
-    nsTArray<KeySystemConfig>& aOutConfigs) {
+RefPtr<KeySystemConfig::SupportedConfigsPromise>
+KeySystemConfig::CreateKeySystemConfigs(
+    const nsTArray<KeySystemConfigRequest>& aRequests) {
   
+  
+
+  nsTArray<KeySystemConfig> outConfigs;
+  nsTArray<KeySystemConfigRequest> asyncRequests;
+
   for (const auto& request : aRequests) {
     const nsAString& keySystem = request.mKeySystem;
     if (!Supports(keySystem)) {
@@ -234,31 +239,43 @@ void KeySystemConfig::CreateKeySystemConfigs(
     }
 
     if (IsClearkeyKeySystem(keySystem)) {
-      CreateClearKeyKeySystemConfigs(request, aOutConfigs);
+      CreateClearKeyKeySystemConfigs(request, outConfigs);
     } else if (IsWidevineKeySystem(keySystem)) {
-      CreateWivineL3KeySystemConfigs(request, aOutConfigs);
+      CreateWivineL3KeySystemConfigs(request, outConfigs);
     }
 #ifdef MOZ_WMF_CDM
-    if (IsPlayReadyKeySystemAndSupported(keySystem) ||
-        IsWidevineExperimentKeySystemAndSupported(keySystem)) {
-      RefPtr<WMFCDMImpl> cdm = MakeRefPtr<WMFCDMImpl>(keySystem);
-      cdm->GetCapabilities(request.mDecryption == DecryptionInfo::Hardware,
-                           aOutConfigs);
+    else if (IsPlayReadyKeySystemAndSupported(keySystem) ||
+             IsWidevineExperimentKeySystemAndSupported(keySystem)) {
+      asyncRequests.AppendElement(request);
     }
 #endif
   }
-}
 
-bool KeySystemConfig::IsSameKeySystem(const nsAString& aKeySystem) const {
 #ifdef MOZ_WMF_CDM
-  
-  
-  if (IsWidevineExperimentKeySystemAndSupported(mKeySystem)) {
-    return mKeySystem.Equals(aKeySystem) ||
-           aKeySystem.EqualsLiteral(kWidevineKeySystemName);
+  if (!asyncRequests.IsEmpty()) {
+    RefPtr<SupportedConfigsPromise::Private> promise =
+        new SupportedConfigsPromise::Private(__func__);
+    RefPtr<WMFCDMCapabilites> cdm = new WMFCDMCapabilites();
+    cdm->GetCapabilities(asyncRequests)
+        ->Then(GetMainThreadSerialEventTarget(), __func__,
+               [syncConfigs = std::move(outConfigs),
+                promise](SupportedConfigsPromise::ResolveOrRejectValue&&
+                             aResult) mutable {
+                 
+                 if (aResult.IsReject()) {
+                   promise->Resolve(std::move(syncConfigs), __func__);
+                   return;
+                 }
+                 
+                 auto& asyncConfigs = aResult.ResolveValue();
+                 asyncConfigs.AppendElements(std::move(syncConfigs));
+                 promise->Resolve(std::move(asyncConfigs), __func__);
+               });
+    return promise;
   }
 #endif
-  return mKeySystem.Equals(aKeySystem);
+  return SupportedConfigsPromise::CreateAndResolve(std::move(outConfigs),
+                                                   __func__);
 }
 
 
@@ -283,24 +300,30 @@ void KeySystemConfig::GetGMPKeySystemConfigs(dom::Promise* aPromise) {
   }
 
   
-  nsTArray<KeySystemConfig> keySystemConfigs;
-  KeySystemConfig::CreateKeySystemConfigs(requests, keySystemConfigs);
-
-  
-  FallibleTArray<dom::CDMInformation> cdmInfo;
-  for (const auto& config : keySystemConfigs) {
-    auto* info = cdmInfo.AppendElement(fallible);
-    if (!info) {
-      aPromise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
-      return;
-    }
-    info->mKeySystemName = config.mKeySystem;
-    info->mCapabilities = config.GetDebugInfo();
-    info->mClearlead = DoesKeySystemSupportClearLead(config.mKeySystem);
-    
-    info->mIsHDCP22Compatible = false;
-  }
-  aPromise->MaybeResolve(cdmInfo);
+  KeySystemConfig::CreateKeySystemConfigs(requests)->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [promise = RefPtr<dom::Promise>{aPromise}](
+          const SupportedConfigsPromise::ResolveOrRejectValue& aResult) {
+        if (aResult.IsResolve()) {
+          
+          FallibleTArray<dom::CDMInformation> cdmInfo;
+          for (const auto& config : aResult.ResolveValue()) {
+            auto* info = cdmInfo.AppendElement(fallible);
+            if (!info) {
+              promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
+              return;
+            }
+            info->mKeySystemName = config.mKeySystem;
+            info->mCapabilities = config.GetDebugInfo();
+            info->mClearlead = DoesKeySystemSupportClearLead(config.mKeySystem);
+            
+            info->mIsHDCP22Compatible = false;
+          }
+          promise->MaybeResolve(cdmInfo);
+        } else {
+          promise->MaybeReject(NS_ERROR_DOM_MEDIA_CDM_ERR);
+        }
+      });
 }
 
 nsString KeySystemConfig::GetDebugInfo() const {
