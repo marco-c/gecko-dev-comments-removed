@@ -44,11 +44,7 @@ class nsEffectiveTLDService final : public nsIEffectiveTLDService,
   nsresult GetBaseDomainInternal(nsCString& aHostname, int32_t aAdditionalParts,
                                  bool aOnlyKnownPublicSuffix,
                                  nsACString& aBaseDomain);
-  nsresult NormalizeHostname(nsCString& aHostname);
   ~nsEffectiveTLDService();
-
-  
-  nsCOMPtr<nsIIDNService> mIDNService;
 
   
   mozilla::Maybe<mozilla::Dafsa> mGraph MOZ_GUARDED_BY(mGraphLock);

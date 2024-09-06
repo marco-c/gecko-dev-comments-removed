@@ -25,7 +25,7 @@ const idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
 
 
 function getUnicodeHostname(hostname) {
-  return idnService.convertToDisplayIDN(hostname, {});
+  return idnService.convertToDisplayIDN(hostname);
 }
 
 

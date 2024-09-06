@@ -19,7 +19,6 @@
 #include "pk11pub.h"
 
 #include "nsNetCID.h"
-#include "nsIIDNService.h"
 #include "nsILoadContext.h"
 #include "nsEffectiveTLDService.h"
 #include "nsServiceManagerUtils.h"
@@ -2186,9 +2185,9 @@ bool PeerConnectionImpl::HostnameInPref(const char* aPref,
   };
 
   nsCString domainList;
-  nsresult nr = Preferences::GetCString(aPref, domainList);
+  nsresult rv = Preferences::GetCString(aPref, domainList);
 
-  if (NS_FAILED(nr)) {
+  if (NS_FAILED(rv)) {
     return false;
   }
 
@@ -2199,19 +2198,11 @@ bool PeerConnectionImpl::HostnameInPref(const char* aPref,
   }
 
   
-  nsresult rv;
-  nsCOMPtr<nsIIDNService> idnService =
-      do_GetService("@mozilla.org/network/idn-service;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  
   
   
   for (const nsACString& each : domainList.Split(',')) {
     nsCString domainPattern;
-    rv = idnService->ConvertUTF8toACE(each, domainPattern);
+    rv = NS_DomainToASCIIAllowAnyGlyphfulASCII(each, domainPattern);
     if (NS_SUCCEEDED(rv)) {
       if (HostInDomain(aHostName, domainPattern)) {
         return true;

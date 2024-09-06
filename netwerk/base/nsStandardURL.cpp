@@ -46,6 +46,46 @@ static mozilla::LazyLogModule gStandardURLLog("nsStandardURL");
 
 using namespace mozilla::ipc;
 
+inline bool IsMailNews() {
+#if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
+  
+  
+  
+  
+  
+  
+  
+  
+  return true;
+#else
+  return false;
+#endif
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline nsresult NS_DomainToDisplayAndASCII(const nsACString& aDomain,
+                                           bool aMailnews, nsACString& aDisplay,
+                                           nsACString& aASCII) {
+  return mozilla_net_domain_to_display_and_ascii_impl(&aDomain, aMailnews,
+                                                      &aDisplay, &aASCII);
+}
+
 namespace mozilla {
 namespace net {
 
@@ -59,28 +99,6 @@ StaticRefPtr<nsIIDNService> nsStandardURL::gIDN;
 static Atomic<bool, Relaxed> gInitialized{false};
 
 const char nsStandardURL::gHostLimitDigits[] = {'/', '\\', '?', '#', 0};
-
-
-
-
-
-constexpr bool TestForInvalidHostCharacters(char c) {
-  
-  
-  return (c > 0 && c < 32) ||  
-         c == 0x7F ||          
-         c == ' ' || c == '#' || c == '/' || c == ':' || c == '?' || c == '@' ||
-         c == '[' || c == '\\' || c == ']' || c == '*' || c == '<' ||
-         c == '^' ||
-#if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
-         
-         c == '>' || c == '|' || c == '"';
-#else
-         c == '>' || c == '|' || c == '"' || c == '%';
-#endif
-}
-constexpr ASCIIMaskArray sInvalidHostChars =
-    CreateASCIIMask(TestForInvalidHostCharacters);
 
 
 
@@ -624,75 +642,23 @@ nsresult nsStandardURL::NormalizeIPv4(const nsACString& host,
 
 nsIIDNService* nsStandardURL::GetIDNService() { return gIDN.get(); }
 
-nsresult nsStandardURL::NormalizeIDN(const nsCString& host, nsCString& result) {
-  result.Truncate();
+nsresult nsStandardURL::NormalizeIDN(const nsACString& aHost, bool aMailnews,
+                                     nsACString& aResult) {
   mDisplayHost.Truncate();
-  nsresult rv;
-
-  if (!gIDN) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-  
-  rv = gIDN->ConvertUTF8toACE(host, result);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  
-  if (!StringBeginsWith(result, "xn--"_ns) &&
-      result.Find(".xn--"_ns) == kNotFound) {
-    mCheckedIfHostA = true;
-    return NS_OK;
-  }
-
-  bool isAscii = true;
-  nsAutoCString displayHost;
-  rv = gIDN->ConvertToDisplayIDN(result, &isAscii, displayHost);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   mCheckedIfHostA = true;
-  if (!isAscii) {
+  nsCString displayHost;  
+                          
+  nsresult rv =
+      NS_DomainToDisplayAndASCII(aHost, aMailnews, displayHost, aResult);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (aResult.IsEmpty()) {
+    aResult.Assign(displayHost);
+  } else {
     mDisplayHost = displayHost;
   }
   return NS_OK;
-}
-
-bool nsStandardURL::ValidIPv6orHostname(const char* host, uint32_t length) {
-  if (!host || !*host) {
-    
-    return false;
-  }
-
-  if (length != strlen(host)) {
-    
-    return false;
-  }
-
-  bool openBracket = host[0] == '[';
-  bool closeBracket = host[length - 1] == ']';
-
-  if (openBracket && closeBracket) {
-    return net_IsValidIPv6Addr(Substring(host + 1, length - 2));
-  }
-
-  if (openBracket || closeBracket) {
-    
-    return false;
-  }
-
-  const char* end = host + length;
-  const char* iter = host;
-  for (; iter != end && *iter; ++iter) {
-    if (ASCIIMask::IsMasked(sInvalidHostChars, *iter)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 void nsStandardURL::CoalescePath(netCoalesceFlags coalesceFlag, char* path) {
@@ -902,48 +868,34 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   
   
   if (mHost.mLen > 0) {
-    nsAutoCString tempHost;
-    NS_UnescapeURL(spec + mHost.mPos, mHost.mLen, esc_AlwaysCopy | esc_Host,
-                   tempHost);
-    if (tempHost.Contains('\0')) {
-      return NS_ERROR_MALFORMED_URI;  
-    }
-    if (tempHost.Contains(' ')) {
-      return NS_ERROR_MALFORMED_URI;  
-    }
-    nsresult rv = NormalizeIDN(tempHost, encHost);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (!SegmentIs(spec, mScheme, "resource") &&
-        !SegmentIs(spec, mScheme, "chrome")) {
-      nsAutoCString ipString;
-      if (encHost.Length() > 0 && encHost.First() == '[' &&
-          encHost.Last() == ']' &&
-          ValidIPv6orHostname(encHost.get(), encHost.Length())) {
-        rv = (nsresult)rusturl_parse_ipv6addr(&encHost, &ipString);
+    nsDependentCSubstring tempHost(spec + mHost.mPos, mHost.mLen);
+    nsresult rv;
+    bool allowIp = !SegmentIs(spec, mScheme, "resource") &&
+                   !SegmentIs(spec, mScheme, "chrome");
+    if (tempHost.First() == '[' && allowIp) {
+      mCheckedIfHostA = true;
+      rv = (nsresult)rusturl_parse_ipv6addr(&tempHost, &encHost);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    } else {
+      rv = NormalizeIDN(tempHost, IsMailNews(), encHost);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+      if (EndsInANumber(encHost) && allowIp) {
+        nsAutoCString ipString;
+        rv = NormalizeIPv4(encHost, ipString);
         if (NS_FAILED(rv)) {
           return rv;
         }
         encHost = ipString;
-      } else {
-        if (EndsInANumber(encHost)) {
-          rv = NormalizeIPv4(encHost, ipString);
-          if (NS_FAILED(rv)) {
-            return rv;
-          }
-          encHost = ipString;
-        }
       }
     }
 
     
     useEncHost = true;
     approxLen += encHost.Length();
-
-    if (!ValidIPv6orHostname(encHost.BeginReading(), encHost.Length())) {
-      return NS_ERROR_MALFORMED_URI;
-    }
   } else {
     
     mDisplayHost.Truncate();
@@ -1017,7 +969,6 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
                            &diff);
     ShiftFromPath(diff);
 
-    net_ToLowerCase(buf + mHost.mPos, mHost.mLen);
     MOZ_ASSERT(mPort >= -1, "Invalid negative mPort");
     if (mPort != -1 && mPort != mDefaultPort) {
       buf[i++] = ':';
@@ -1539,20 +1490,16 @@ nsresult nsStandardURL::CheckIfHostIsAscii() {
 
   mCheckedIfHostA = true;
 
-  if (!gIDN) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
   nsAutoCString displayHost;
-  bool isAscii;
-  rv = gIDN->ConvertToDisplayIDN(Host(), &isAscii, displayHost);
+  
+  rv = NS_DomainToDisplayAllowAnyGlyphfulASCII(Host(), displayHost);
   if (NS_FAILED(rv)) {
     mDisplayHost.Truncate();
     mCheckedIfHostA = false;
     return rv;
   }
 
-  if (!isAscii) {
+  if (!mozilla::IsAscii(displayHost)) {
     mDisplayHost = displayHost;
   }
 
@@ -1775,7 +1722,7 @@ nsresult nsStandardURL::SetSpecWithEncoding(const nsACString& input,
   }
 
   
-  if (mURLType == URLTYPE_AUTHORITY && mHost.mLen == -1) {
+  if (mURLType == URLTYPE_AUTHORITY && mHost.mLen <= 0) {
     rv = NS_ERROR_MALFORMED_URI;
   }
 
@@ -2201,19 +2148,15 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
   nsAutoCString hostname(input);
   hostname.StripTaggedASCII(ASCIIMask::MaskCRLFTab());
 
+  LOG(("nsStandardURL::SetHost [host=%s]\n", hostname.get()));
+
   nsACString::const_iterator start, end;
   hostname.BeginReading(start);
   hostname.EndReading(end);
 
   FindHostLimit(start, end);
 
-  
-  nsAutoCString flat;
-  NS_UnescapeURL(hostname.BeginReading(), end - start,
-                 esc_AlwaysCopy | esc_Host, flat);
-  const char* host = flat.get();
-
-  LOG(("nsStandardURL::SetHost [host=%s]\n", host));
+  nsDependentCSubstring flat(start, end);
 
   if (mURLType == URLTYPE_NO_AUTHORITY) {
     if (flat.IsEmpty()) {
@@ -2228,17 +2171,7 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  if (strlen(host) < flat.Length()) {
-    return NS_ERROR_MALFORMED_URI;  
-  }
-
-  
-  
-  if (strchr(host, ' ')) {
-    return NS_ERROR_MALFORMED_URI;
-  }
-
-  if (mSpec.Length() + strlen(host) - Host().Length() >
+  if (mSpec.Length() + flat.Length() - Host().Length() >
       StaticPrefs::network_standard_url_max_length()) {
     return NS_ERROR_MALFORMED_URI;
   }
@@ -2248,37 +2181,34 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
 
   uint32_t len;
   nsAutoCString hostBuf;
-  nsresult rv = NormalizeIDN(flat, hostBuf);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (!SegmentIs(mScheme, "resource") && !SegmentIs(mScheme, "chrome")) {
-    nsAutoCString ipString;
-    if (hostBuf.Length() > 0 && hostBuf.First() == '[' &&
-        hostBuf.Last() == ']' &&
-        ValidIPv6orHostname(hostBuf.get(), hostBuf.Length())) {
-      rv = (nsresult)rusturl_parse_ipv6addr(&hostBuf, &ipString);
+  nsresult rv;
+  bool allowIp =
+      !SegmentIs(mScheme, "resource") && !SegmentIs(mScheme, "chrome");
+  if (!flat.IsEmpty() && flat.First() == '[' && allowIp) {
+    mCheckedIfHostA = true;
+    rv = rusturl_parse_ipv6addr(&flat, &hostBuf);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  } else {
+    rv = NormalizeIDN(flat, IsMailNews(), hostBuf);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    if (EndsInANumber(hostBuf) && allowIp) {
+      nsAutoCString ipString;
+      rv = NormalizeIPv4(hostBuf, ipString);
       if (NS_FAILED(rv)) {
         return rv;
       }
       hostBuf = ipString;
-    } else {
-      if (EndsInANumber(hostBuf)) {
-        rv = NormalizeIPv4(hostBuf, ipString);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
-        hostBuf = ipString;
-      }
     }
   }
 
   
-  host = hostBuf.get();
   len = hostBuf.Length();
 
-  if (!ValidIPv6orHostname(host, len)) {
+  if (!len) {
     return NS_ERROR_MALFORMED_URI;
   }
 
@@ -2299,7 +2229,7 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
     }
   }
 
-  int32_t shift = ReplaceSegment(mHost.mPos, mHost.mLen, host, len);
+  int32_t shift = ReplaceSegment(mHost.mPos, mHost.mLen, hostBuf.get(), len);
 
   if (shift) {
     mHost.mLen = len;
@@ -2307,8 +2237,6 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
     ShiftFromPath(shift);
   }
 
-  
-  net_ToLowerCase(mSpec.BeginWriting() + mHost.mPos, mHost.mLen);
   return NS_OK;
 }
 
