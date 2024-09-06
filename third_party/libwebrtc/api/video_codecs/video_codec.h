@@ -141,6 +141,9 @@ class RTC_EXPORT VideoCodec {
   bool GetFrameDropEnabled() const;
   void SetFrameDropEnabled(bool enabled);
 
+  bool IsSinglecast() const { return numberOfSimulcastStreams <= 1; }
+  bool IsSimulcast() const { return !IsSinglecast(); }
+
   
   VideoCodecType codecType;
 
@@ -193,6 +196,7 @@ class RTC_EXPORT VideoCodec {
 
   bool operator==(const VideoCodec& other) const = delete;
   bool operator!=(const VideoCodec& other) const = delete;
+  std::string ToString() const;
 
   
   
