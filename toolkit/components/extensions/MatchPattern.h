@@ -112,6 +112,8 @@ class URLInfo final {
   
   
   
+  
+  
   bool IsNonOpaqueURL() const;
 
  private:
