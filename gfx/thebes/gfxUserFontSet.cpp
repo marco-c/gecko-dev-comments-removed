@@ -1104,6 +1104,10 @@ void gfxUserFontSet::ForgetLocalFaces() {
 }
 
 void gfxUserFontSet::ForgetLocalFace(gfxUserFontFamily* aFontFamily) {
+  
+  AutoTArray<RefPtr<gfxUserFontEntry>, 8> entriesToCancel;
+
+  
   aFontFamily->ReadLock();
   const auto& fonts = aFontFamily->GetFontList();
   for (const auto& f : fonts) {
@@ -1118,19 +1122,24 @@ void gfxUserFontSet::ForgetLocalFace(gfxUserFontFamily* aFontFamily) {
     
     
     if (ufe->mSeenLocalSource) {
-      if (auto* loader = ufe->GetLoader()) {
-        
-        
-        loader->Cancel();
-        RemoveLoader(loader);
-      } else {
-        
-        
-        ufe->LoadCanceled();
-      }
+      entriesToCancel.AppendElement(ufe);
     }
   }
   aFontFamily->ReadUnlock();
+
+  
+  for (auto& ufe : entriesToCancel) {
+    if (auto* loader = ufe->GetLoader()) {
+      
+      
+      loader->Cancel();
+      RemoveLoader(loader);
+    } else {
+      
+      
+      ufe->LoadCanceled();
+    }
+  }
 }
 
 
