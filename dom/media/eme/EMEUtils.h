@@ -23,8 +23,7 @@ struct KeySystemConfig;
 
 namespace dom {
 class ArrayBufferViewOrArrayBuffer;
-class Document;
-}  
+}
 
 #ifndef EME_LOG
 LogModule* GetEMELog();
@@ -107,9 +106,6 @@ bool CheckIfHarewareDRMConfigExists(
     const nsTArray<dom::MediaKeySystemConfiguration>& aConfigs);
 
 bool DoesKeySystemSupportHardwareDecryption(const nsAString& aKeySystem);
-
-void DeprecationWarningLog(const dom::Document* aDocument,
-                           const char* aMsgName);
 
 }  
 

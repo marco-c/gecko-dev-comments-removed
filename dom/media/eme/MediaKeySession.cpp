@@ -250,56 +250,38 @@ already_AddRefed<Promise> MediaKeySession::GenerateRequest(
   
   
   
-  MediaKeySystemAccess::KeySystemSupportsInitDataType(mKeySystem, aInitDataType,
-                                                      mHardwareDecryption)
-      ->Then(GetMainThreadSerialEventTarget(), __func__,
-             [self = RefPtr<MediaKeySession>{this}, this,
-              initDataType = nsString{aInitDataType},
-              initData = std::move(data), promise](
-                 const GenericPromise::ResolveOrRejectValue& aResult) mutable {
-               if (aResult.IsReject()) {
-                 promise->MaybeRejectWithNotSupportedError(
-                     "Unsupported initDataType passed to "
-                     "MediaKeySession.generateRequest()");
-                 EME_LOG(
-                     "MediaKeySession[%p,'%s'] GenerateRequest() failed, "
-                     "unsupported "
-                     "initDataType",
-                     this, NS_ConvertUTF16toUTF8(mSessionId).get());
-                 return;
-               }
-               
-               CompleteGenerateRequest(initDataType, initData, promise);
-             });
-  return promise.forget();
-}
-
-void MediaKeySession::CompleteGenerateRequest(const nsString& aInitDataType,
-                                              nsTArray<uint8_t>& aData,
-                                              DetailedPromise* aPromise) {
-  
-  
-
-  
-
-  
-
-  
-
-  
-  
-  if (!ValidateInitData(aData, aInitDataType)) {
-    
-    
-    aPromise->MaybeRejectWithTypeError(
-        "initData sanitization failed in "
-        "MediaKeySession.generateRequest()");
+  if (!MediaKeySystemAccess::KeySystemSupportsInitDataType(
+          mKeySystem, aInitDataType, mHardwareDecryption)) {
+    promise->MaybeRejectWithNotSupportedError(
+        "Unsupported initDataType passed to MediaKeySession.generateRequest()");
     EME_LOG(
-        "MediaKeySession[%p,'%s'] GenerateRequest() initData "
-        "sanitization "
+        "MediaKeySession[%p,'%s'] GenerateRequest() failed, unsupported "
+        "initDataType",
+        this, NS_ConvertUTF16toUTF8(mSessionId).get());
+    return promise.forget();
+  }
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+  
+  if (!ValidateInitData(data, aInitDataType)) {
+    
+    
+    promise->MaybeRejectWithTypeError(
+        "initData sanitization failed in MediaKeySession.generateRequest()");
+    EME_LOG(
+        "MediaKeySession[%p,'%s'] GenerateRequest() initData sanitization "
         "failed",
         this, NS_ConvertUTF16toUTF8(mSessionId).get());
-    return;
+    return promise.forget();
   }
 
   
@@ -311,16 +293,19 @@ void MediaKeySession::CompleteGenerateRequest(const nsString& aInitDataType,
   
   
   
-  nsAutoCString hexInitData(ToHexString(aData));
-  PromiseId pid = mKeys->StorePromise(aPromise);
+  nsAutoCString hexInitData(ToHexString(data));
+  PromiseId pid = mKeys->StorePromise(promise);
   mKeys->ConnectPendingPromiseIdWithToken(pid, Token());
   mKeys->GetCDMProxy()->CreateSession(Token(), mSessionType, pid, aInitDataType,
-                                      aData);
+                                      data);
+
   EME_LOG(
       "MediaKeySession[%p,'%s'] GenerateRequest() sent, "
       "promiseId=%d initData='%s' initDataType='%s'",
       this, NS_ConvertUTF16toUTF8(mSessionId).get(), pid, hexInitData.get(),
       NS_ConvertUTF16toUTF8(aInitDataType).get());
+
+  return promise.forget();
 }
 
 already_AddRefed<Promise> MediaKeySession::Load(const nsAString& aSessionId,

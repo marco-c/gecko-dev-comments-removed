@@ -120,12 +120,6 @@ class MediaKeySession final : public DOMEventTargetHelper,
   already_AddRefed<DetailedPromise> MakePromise(ErrorResult& aRv,
                                                 const nsACString& aName);
 
-  
-  
-  void CompleteGenerateRequest(const nsString& aInitDataType,
-                               nsTArray<uint8_t>& aData,
-                               DetailedPromise* aPromise);
-
   RefPtr<DetailedPromise> mClosed;
 
   RefPtr<MediaKeyError> mMediaKeyError;
