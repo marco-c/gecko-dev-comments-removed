@@ -884,7 +884,9 @@ already_AddRefed<gfx::Path> SVGContentUtils::GetPath(
   RefPtr<PathBuilder> builder =
       drawTarget->CreatePathBuilder(FillRule::FILL_WINDING);
 
-  return pathData.BuildPath(builder, StyleStrokeLinecap::Butt, 1);
+  
+  
+  return pathData.BuildPath(builder, StyleStrokeLinecap::Butt, 1, 1.0f);
 }
 
 bool SVGContentUtils::ShapeTypeHasNoCorners(const nsIContent* aContent) {

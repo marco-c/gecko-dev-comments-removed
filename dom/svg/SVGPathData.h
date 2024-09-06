@@ -119,11 +119,10 @@ class SVGPathData {
   static uint32_t GetPathSegAtLength(Span<const StylePathCommand> aPath,
                                      float aDistance);
 
-  void GetMarkerPositioningData(nsTArray<SVGMark>* aMarks) const;
+  void GetMarkerPositioningData(float aZoom, nsTArray<SVGMark>* aMarks) const;
 
   static void GetMarkerPositioningData(Span<const StylePathCommand> aPath,
-                                       nsTArray<SVGMark>* aMarks);
-
+                                       float aZoom, nsTArray<SVGMark>* aMarks);
   
 
 
@@ -141,14 +140,14 @@ class SVGPathData {
 
 
 
-  already_AddRefed<Path> BuildPathForMeasuring() const;
+  already_AddRefed<Path> BuildPathForMeasuring(float aZoom) const;
 
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder,
                                    StyleStrokeLinecap aStrokeLineCap,
-                                   Float aStrokeWidth) const;
+                                   Float aStrokeWidth, float aZoom) const;
 
   static already_AddRefed<Path> BuildPathForMeasuring(
-      Span<const StylePathCommand> aPath);
+      Span<const StylePathCommand> aPath, float aZoom);
 
   
 
@@ -157,11 +156,13 @@ class SVGPathData {
 
 
 
-  static already_AddRefed<Path> BuildPath(
-      Span<const StylePathCommand> aPath, PathBuilder* aBuilder,
-      StyleStrokeLinecap aStrokeLineCap, Float aStrokeWidth,
-      const CSSSize& aBasis = {}, const gfx::Point& aOffset = gfx::Point(),
-      float aZoomFactor = 1.0);
+  static already_AddRefed<Path> BuildPath(Span<const StylePathCommand> aPath,
+                                          PathBuilder* aBuilder,
+                                          StyleStrokeLinecap aStrokeLineCap,
+                                          Float aStrokeWidth,
+                                          const CSSSize& aBasis = {},
+                                          const gfx::Point& aOffset = {},
+                                          float aZoomFactor = 1.0);
   static already_AddRefed<Path> BuildPath(
       Span<const StyleShapeCommand> aShape, PathBuilder* aBuilder,
       StyleStrokeLinecap aStrokeLineCap, Float aStrokeWidth,
