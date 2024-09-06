@@ -150,15 +150,11 @@ struct RTPHeaderExtension {
 
   
   
-  absl::optional<AudioLevel> audio_level() const;
+  absl::optional<AudioLevel> audio_level() const { return audio_level_; }
 
-  void set_audio_level(absl::optional<AudioLevel> audio_level);
-
-  
-  
-  bool hasAudioLevel;
-  bool voiceActivity;
-  uint8_t audioLevel;
+  void set_audio_level(absl::optional<AudioLevel> audio_level) {
+    audio_level_ = audio_level;
+  }
 
   
   
@@ -188,6 +184,9 @@ struct RTPHeaderExtension {
   absl::optional<ColorSpace> color_space;
 
   CsrcAudioLevelList csrcAudioLevels;
+
+ private:
+  absl::optional<AudioLevel> audio_level_;
 };
 
 struct RTC_EXPORT RTPHeader {
