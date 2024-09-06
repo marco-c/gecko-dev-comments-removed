@@ -135,6 +135,11 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   
   for (const nsACString& host : record->GetBounceHosts()) {
     
+    if (host.EqualsLiteral("null")) {
+      continue;
+    }
+
+    
     
     if (host == record->GetInitialHost()) {
       MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
