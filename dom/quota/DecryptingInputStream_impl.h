@@ -419,6 +419,13 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
   
   
   if (!readBytes) {
+    
+    
+    
+    
+    
+    
+    
     if (baseBlocksOffset == 0) {
       
       return aOffset == 0 ? NS_OK : NS_ERROR_ILLEGAL_VALUE;
@@ -434,6 +441,16 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
       
       return rv;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    readBytes = 0;
   }
 
   mPlainBytes = readBytes;
