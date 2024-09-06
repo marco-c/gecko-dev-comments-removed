@@ -293,7 +293,12 @@ nsUrlClassifierUtils::GetKeyForURI(nsIURI* uri, nsACString& _retval) {
     rv = innerURI->GetQuery(query);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    _retval.AppendPrintf("?%s", query.get());
+    
+    
+    rv = CanonicalizeQuery(query, temp);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    _retval.Append(temp);
   }
 
   return NS_OK;
@@ -913,6 +918,25 @@ nsresult nsUrlClassifierUtils::CanonicalizePath(const nsACString& path,
 
   SpecialEncode(decodedPath, true, _retval);
   
+
+  return NS_OK;
+}
+
+nsresult nsUrlClassifierUtils::CanonicalizeQuery(const nsACString& query,
+                                                 nsACString& _retval) {
+  _retval.Truncate();
+  _retval.Append('?');
+
+  
+  nsAutoCString unescaped;
+  if (!NS_UnescapeURL(PromiseFlatCString(query).get(),
+                      PromiseFlatCString(query).Length(), 0, unescaped)) {
+    unescaped.Assign(query);
+  }
+
+  
+  
+  SpecialEncode(unescaped, false, _retval);
 
   return NS_OK;
 }

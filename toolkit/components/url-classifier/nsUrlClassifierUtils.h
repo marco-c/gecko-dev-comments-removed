@@ -29,6 +29,8 @@ class nsUrlClassifierUtils final : public nsIUrlClassifierUtils,
                                 nsACString& _retval);
   nsresult CanonicalizePath(const nsACString& url, nsACString& _retval);
 
+  nsresult CanonicalizeQuery(const nsACString& query, nsACString& _retval);
+
   
   
   
