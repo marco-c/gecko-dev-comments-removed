@@ -14,9 +14,7 @@
 #include "mozilla/OriginAttributes.h"
 #include "mozIStorageConnection.h"
 #include "mozIStorageFunction.h"
-#include "mozilla/dom/IPCIdentityCredential.h"
 #include "nsIAsyncShutdown.h"
-#include "nsIFile.h"
 #include "nsIIdentityCredentialStorageService.h"
 #include "nsIObserver.h"
 #include "nsISupports.h"
@@ -85,8 +83,6 @@ class IdentityCredentialStorageService final
   
   
   nsresult LoadMemoryTableFromDisk();
-  nsresult LoadLightweightMemoryTableFromDisk();
-  nsresult LoadHeavyweightMemoryTableFromDisk();
 
   
   
@@ -116,14 +112,6 @@ class IdentityCredentialStorageService final
 
   static nsresult ClearData(mozIStorageConnection* aDatabaseConnection);
 
-  static nsresult UpsertLightweightData(
-      mozIStorageConnection* aDatabaseConnection,
-      const dom::IPCIdentityCredential& aData);
-
-  static nsresult DeleteLightweightData(
-      mozIStorageConnection* aDatabaseConnection,
-      const dom::IPCIdentityCredential& aData);
-
   static nsresult DeleteDataFromOriginAttributesPattern(
       mozIStorageConnection* aDatabaseConnection,
       OriginAttributesPattern const& aOriginAttributesPattern);
@@ -152,8 +140,8 @@ class IdentityCredentialStorageService final
   
   
   
-  RefPtr<nsIFile> mDatabaseFile;  
-                                  
+  nsCOMPtr<nsIFile> mDatabaseFile;  
+                                    
 
   
   
