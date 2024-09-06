@@ -103,11 +103,13 @@ impl CryptoHash {
             Some(digest) => digest,
             None => return Err(NS_ERROR_NOT_INITIALIZED),
         };
-        
-        let data = unsafe {
-            std::slice::from_raw_parts(data, len.try_into().map_err(|_| NS_ERROR_INVALID_ARG)?)
-        };
-        digest.update(data);
+        if len > 0 {
+            
+            let data = unsafe {
+                std::slice::from_raw_parts(data, len.try_into().map_err(|_| NS_ERROR_INVALID_ARG)?)
+            };
+            digest.update(data);
+        }
         Ok(())
     }
 
