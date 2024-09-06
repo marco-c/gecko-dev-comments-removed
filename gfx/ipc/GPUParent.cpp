@@ -121,11 +121,8 @@ static void ReportHardwareMediaCodecSupportIfNeeded() {
   sReported = true;
 
   
-  
-  
-  if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
-    WMFDecoderModule::Init(WMFDecoderModule::Config::ForceEnableHEVC);
-  }
+  WMFDecoderModule::Init(WMFDecoderModule::Config::ForceEnableHEVC);
+
   const auto support = PDMFactory::Supported(true );
   if (support.contains(
           mozilla::media::MediaCodecsSupport::H264HardwareDecode)) {
@@ -155,7 +152,7 @@ static void ReportHardwareMediaCodecSupportIfNeeded() {
         true);
   }
   if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
-    WMFDecoderModule::Init();
+    WMFDecoderModule::DisableForceEnableHEVC();
   }
 
 #endif
