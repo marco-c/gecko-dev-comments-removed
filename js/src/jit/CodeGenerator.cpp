@@ -6524,11 +6524,11 @@ void CodeGenerator::emitPushArguments(Register argcreg, Register scratch,
   masm.bind(&end);
 }
 
-void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
-                                      Register scratch) {
+void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply) {
   
   Register argcreg = ToRegister(apply->getArgc());
   Register copyreg = ToRegister(apply->getTempObject());
+  Register scratch = ToRegister(apply->getTempForArgCopy());
   uint32_t extraFormals = apply->numExtraFormals();
 
   
@@ -6540,12 +6540,13 @@ void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
   masm.pushValue(ToValue(apply, LApplyArgsGeneric::ThisIndex));
 }
 
-void CodeGenerator::emitPushArguments(LApplyArgsObj* apply, Register scratch) {
-  
-  MOZ_ASSERT(apply->getArgsObj() == apply->getArgc());
-
-  Register tmpArgc = ToRegister(apply->getTempObject());
+void CodeGenerator::emitPushArguments(LApplyArgsObj* apply) {
   Register argsObj = ToRegister(apply->getArgsObj());
+  Register tmpArgc = ToRegister(apply->getTempObject());
+  Register scratch = ToRegister(apply->getTempForArgCopy());
+
+  
+  MOZ_ASSERT(argsObj == ToRegister(apply->getArgc()));
 
   
   masm.loadArgumentsObjectLength(argsObj, tmpArgc);
@@ -6616,39 +6617,41 @@ void CodeGenerator::emitPushArrayAsArguments(Register tmpArgc,
   masm.bind(&epilogue);
 }
 
-void CodeGenerator::emitPushArguments(LApplyArrayGeneric* apply,
-                                      Register scratch) {
+void CodeGenerator::emitPushArguments(LApplyArrayGeneric* apply) {
+  Register elements = ToRegister(apply->getElements());
   Register tmpArgc = ToRegister(apply->getTempObject());
-  Register elementsAndArgc = ToRegister(apply->getElements());
+  Register scratch = ToRegister(apply->getTempForArgCopy());
+
+  
+  MOZ_ASSERT(elements == ToRegister(apply->getArgc()));
 
   
   
   
 
   
-  Address length(ToRegister(apply->getElements()),
-                 ObjectElements::offsetOfLength());
-  masm.load32(length, tmpArgc);
+  masm.load32(Address(elements, ObjectElements::offsetOfLength()), tmpArgc);
 
   
   emitAllocateSpaceForApply(tmpArgc, scratch);
 
   
   size_t elementsOffset = 0;
-  emitPushArrayAsArguments(tmpArgc, elementsAndArgc, scratch, elementsOffset);
+  emitPushArrayAsArguments(tmpArgc, elements, scratch, elementsOffset);
 
   
   masm.pushValue(ToValue(apply, LApplyArrayGeneric::ThisIndex));
 }
 
-void CodeGenerator::emitPushArguments(LConstructArgsGeneric* construct,
-                                      Register scratch) {
-  MOZ_ASSERT(scratch == ToRegister(construct->getNewTarget()));
-
+void CodeGenerator::emitPushArguments(LConstructArgsGeneric* construct) {
   
   Register argcreg = ToRegister(construct->getArgc());
   Register copyreg = ToRegister(construct->getTempObject());
+  Register scratch = ToRegister(construct->getTempForArgCopy());
   uint32_t extraFormals = construct->numExtraFormals();
+
+  
+  MOZ_ASSERT(scratch == ToRegister(construct->getNewTarget()));
 
   
   
@@ -6660,29 +6663,31 @@ void CodeGenerator::emitPushArguments(LConstructArgsGeneric* construct,
   masm.pushValue(ToValue(construct, LConstructArgsGeneric::ThisIndex));
 }
 
-void CodeGenerator::emitPushArguments(LConstructArrayGeneric* construct,
-                                      Register scratch) {
+void CodeGenerator::emitPushArguments(LConstructArrayGeneric* construct) {
+  Register elements = ToRegister(construct->getElements());
+  Register tmpArgc = ToRegister(construct->getTempObject());
+  Register scratch = ToRegister(construct->getTempForArgCopy());
+
+  
+  MOZ_ASSERT(elements == ToRegister(construct->getArgc()));
+
+  
   MOZ_ASSERT(scratch == ToRegister(construct->getNewTarget()));
 
-  Register tmpArgc = ToRegister(construct->getTempObject());
-  Register elementsAndArgc = ToRegister(construct->getElements());
-
   
   
   
 
   
-  Address length(ToRegister(construct->getElements()),
-                 ObjectElements::offsetOfLength());
-  masm.load32(length, tmpArgc);
+  masm.load32(Address(elements, ObjectElements::offsetOfLength()), tmpArgc);
 
+  
   
   emitAllocateSpaceForConstructAndPushNewTarget(tmpArgc, scratch);
 
   
-  
   size_t elementsOffset = 0;
-  emitPushArrayAsArguments(tmpArgc, elementsAndArgc, scratch, elementsOffset);
+  emitPushArrayAsArguments(tmpArgc, elements, scratch, elementsOffset);
 
   
   masm.pushValue(ToValue(construct, LConstructArrayGeneric::ThisIndex));
@@ -6712,7 +6717,7 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
   
   
   
-  emitPushArguments(apply, scratch);
+  emitPushArguments(apply);
 
   masm.checkStackAlignment();
 
