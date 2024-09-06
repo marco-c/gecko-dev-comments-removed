@@ -1440,6 +1440,10 @@ class ContentParent final : public PContentParent,
   void GetIPCTransferableData(nsIDragSession* aSession, BrowserParent* aParent,
                               nsTArray<IPCTransferableData>& aIPCTransferables);
 
+  RemoteWorkerServiceParent* GetRemoteWorkerServiceParent() const {
+    return mRemoteWorkerServiceActor;
+  }
+
  private:
   
   static already_AddRefed<ContentParent> GetUsedBrowserProcess(
