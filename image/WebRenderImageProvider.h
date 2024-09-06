@@ -50,7 +50,8 @@ class WebRenderImageProvider {
   
 
 
-  virtual void InvalidateRecording() {}
+
+  virtual void InvalidateSurface() {}
 
  protected:
   WebRenderImageProvider(const ImageResource* aImage);
