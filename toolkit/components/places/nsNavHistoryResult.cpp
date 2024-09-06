@@ -4,17 +4,13 @@
 
 
 
-#include <stdio.h>
 #include "nsNavHistory.h"
 #include "nsNavBookmarks.h"
 #include "nsFaviconService.h"
-#include "Helpers.h"
-#include "mozilla/DebugOnly.h"
 #include "nsDebug.h"
 #include "nsNetUtil.h"
 #include "nsString.h"
 #include "nsReadableUtils.h"
-#include "nsUnicharUtils.h"
 #include "prtime.h"
 #include "mozIStorageRow.h"
 #include "mozIStorageResultSet.h"
@@ -650,7 +646,7 @@ nsresult nsNavHistoryContainerResultNode::CloseContainer(
     
     if (this->IsQuery()) {
       this->GetAsQuery()->ClearChildren(true);
-    } else if (this->IsFolder()) {
+    } else if (this->IsFolderOrShortcut()) {
       this->GetAsFolder()->ClearChildren(true);
     }
   }
@@ -729,7 +725,7 @@ void nsNavHistoryContainerResultNode::SetAsParentOfNode(
     if (mOptions->ExcludeQueries()) {
       container->mOptions->SetExcludeQueries(true);
     }
-    if (aNode->IsFolder() && mOptions->AsyncEnabled()) {
+    if (aNode->IsFolderOrShortcut() && mOptions->AsyncEnabled()) {
       container->mOptions->SetAsyncEnabled(true);
     }
     if (!mOptions->ExpandQueries()) {
@@ -738,72 +734,6 @@ void nsNavHistoryContainerResultNode::SetAsParentOfNode(
     container->mResult = mResult;
     container->FillStats();
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-nsresult nsNavHistoryContainerResultNode::ReverseUpdateStats(
-    int32_t aAccessCountChange) {
-  if (mParent) {
-    nsNavHistoryResult* result = GetResult();
-    bool shouldNotify =
-        result && mParent->mParent && mParent->mParent->AreChildrenVisible();
-
-    uint32_t oldAccessCount = mParent->mAccessCount;
-    PRTime oldTime = mParent->mTime;
-
-    mParent->mAccessCount += aAccessCountChange;
-    bool timeChanged = false;
-    if (mTime > mParent->mTime) {
-      timeChanged = true;
-      mParent->mTime = mTime;
-    }
-
-    if (shouldNotify && !result->CanSkipHistoryDetailsNotifications()) {
-      NOTIFY_RESULT_OBSERVERS(
-          result, NodeHistoryDetailsChanged(TO_ICONTAINER(mParent), oldTime,
-                                            oldAccessCount));
-    }
-
-    
-    
-    uint16_t sortMode = mParent->GetSortType();
-    bool sortingByVisitCount =
-        sortMode == nsINavHistoryQueryOptions::SORT_BY_VISITCOUNT_ASCENDING ||
-        sortMode == nsINavHistoryQueryOptions::SORT_BY_VISITCOUNT_DESCENDING;
-    bool sortingByTime =
-        sortMode == nsINavHistoryQueryOptions::SORT_BY_DATE_ASCENDING ||
-        sortMode == nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING;
-
-    if ((sortingByVisitCount && aAccessCountChange != 0) ||
-        (sortingByTime && timeChanged)) {
-      int32_t ourIndex = mParent->FindChild(this);
-      NS_ASSERTION(ourIndex >= 0, "Could not find self in parent");
-      if (ourIndex >= 0) {
-        EnsureItemPosition(ourIndex);
-      }
-    }
-
-    nsresult rv = mParent->ReverseUpdateStats(aAccessCountChange);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  return NS_OK;
 }
 
 
@@ -1222,7 +1152,7 @@ nsNavHistoryResultNode* nsNavHistoryContainerResultNode::FindChildByGuid(
   for (int32_t i = 0; i < mChildren.Count(); ++i) {
     if (mChildren[i]->mBookmarkGuid == guid ||
         mChildren[i]->mPageGuid == guid ||
-        (mChildren[i]->IsFolder() &&
+        (mChildren[i]->IsFolderOrShortcut() &&
          mChildren[i]->GetAsFolder()->mTargetFolderGuid == guid)) {
       *nodeIndex = i;
       return mChildren[i];
@@ -1241,7 +1171,7 @@ nsNavHistoryResultNode* nsNavHistoryContainerResultNode::FindChildById(
     int64_t aItemId, int32_t* aNodeIndex) {
   for (int32_t i = 0; i < mChildren.Count(); ++i) {
     if (mChildren[i]->mItemId == aItemId ||
-        (mChildren[i]->IsFolder() &&
+        (mChildren[i]->IsFolderOrShortcut() &&
          mChildren[i]->GetAsFolder()->mTargetFolderItemId == aItemId)) {
       *aNodeIndex = i;
       return mChildren[i];
@@ -1279,9 +1209,6 @@ nsresult nsNavHistoryContainerResultNode::InsertChildAt(
         result, NodeHistoryDetailsChanged(TO_ICONTAINER(this), oldTime,
                                           oldAccessCount));
   }
-
-  nsresult rv = ReverseUpdateStats(static_cast<int32_t>(aNode->mAccessCount));
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
@@ -1379,7 +1306,6 @@ nsresult nsNavHistoryContainerResultNode::RemoveChildAt(int32_t aIndex) {
   
   
   
-  uint32_t oldAccessCount = mAccessCount;
   mAccessCount -= mChildren[aIndex]->mAccessCount;
 
   
@@ -1389,9 +1315,6 @@ nsresult nsNavHistoryContainerResultNode::RemoveChildAt(int32_t aIndex) {
     NOTIFY_RESULT_OBSERVERS(result, NodeRemoved(this, oldNode, aIndex));
   }
 
-  nsresult rv = ReverseUpdateStats(static_cast<int32_t>(mAccessCount) -
-                                   static_cast<int32_t>(oldAccessCount));
-  NS_ENSURE_SUCCESS(rv, rv);
   oldNode->OnRemoving();
   return NS_OK;
 }
@@ -1476,31 +1399,7 @@ bool nsNavHistoryContainerResultNode::UpdateURIs(
       continue;
     }
 
-    uint32_t oldAccessCount = node->mAccessCount;
-    PRTime oldTime = node->mTime;
-    uint32_t parentOldAccessCount = parent->mAccessCount;
-    PRTime parentOldTime = parent->mTime;
-
     aCallback(node, aClosure, result);
-
-    if (oldAccessCount != node->mAccessCount || oldTime != node->mTime) {
-      parent->mAccessCount += node->mAccessCount - oldAccessCount;
-      if (node->mTime > parent->mTime) {
-        parent->mTime = node->mTime;
-      }
-      if (parent->AreChildrenVisible() &&
-          !result->CanSkipHistoryDetailsNotifications()) {
-        NOTIFY_RESULT_OBSERVERS_RET(
-            result,
-            NodeHistoryDetailsChanged(TO_ICONTAINER(parent), parentOldTime,
-                                      parentOldAccessCount),
-            true);
-      }
-      DebugOnly<nsresult> rv =
-          parent->ReverseUpdateStats(static_cast<int32_t>(node->mAccessCount) -
-                                     static_cast<int32_t>(oldAccessCount));
-      MOZ_ASSERT(NS_SUCCEEDED(rv), "should be able to ReverseUpdateStats");
-    }
 
     if (aUpdateSort) {
       int32_t childIndex = parent->FindChild(node);
@@ -3403,14 +3302,10 @@ nsresult nsNavHistoryFolderResultNode::OnItemVisited(nsIURI* aURI,
   }
 
   
-  uint32_t oldAccessCount = mAccessCount;
   ++mAccessCount;
   if (aTime > mTime) {
     mTime = aTime;
   }
-  rv = ReverseUpdateStats(static_cast<int32_t>(mAccessCount) -
-                          static_cast<int32_t>(oldAccessCount));
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   for (int32_t i = 0; i < nodes.Count(); ++i) {
@@ -3829,7 +3724,7 @@ nsNavHistoryResult::SetSortingMode(uint16_t aSortingMode) {
     if (mRootNode->IsQuery()) {
       return mRootNode->GetAsQuery()->Refresh();
     }
-    if (mRootNode->IsFolder()) {
+    if (mRootNode->IsFolderOrShortcut()) {
       return mRootNode->GetAsFolder()->Refresh();
     }
   }
@@ -4141,7 +4036,7 @@ nsresult nsNavHistoryResult::OnVisit(nsIURI* aURI, int64_t aVisitId,
 
     
     
-    if (!mIsHistoryObserver && mRootNode->IsFolder()) {
+    if (!mIsHistoryObserver && mRootNode->IsFolderOrShortcut()) {
       nsAutoCString spec;
       nsresult rv = aURI->GetSpec(spec);
       NS_ENSURE_SUCCESS(rv, rv);

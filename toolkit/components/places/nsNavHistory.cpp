@@ -2541,7 +2541,7 @@ nsresult nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
       
       resultNode->mDateAdded = aRow->AsInt64(kGetInfoIndex_ItemDateAdded);
       resultNode->mLastModified = aRow->AsInt64(kGetInfoIndex_ItemLastModified);
-      if (resultNode->IsFolder()) {
+      if (resultNode->IsFolderOrShortcut()) {
         
         
         
