@@ -62,19 +62,6 @@ var gExperimentalPane = {
     return features.filter(f => f.isPublic);
   },
 
-  async _sortFeatures(features) {
-    
-    let titles = await document.l10n.formatMessages(
-      features.map(f => {
-        return { id: f.title };
-      })
-    );
-    titles = titles.map((title, index) => [title.attributes[0].value, index]);
-    titles.sort((a, b) => a[0].toLowerCase().localeCompare(b[0].toLowerCase()));
-    
-    return titles.map(([, index]) => features[index]);
-  },
-
   async init() {
     if (this.inited) {
       return;
@@ -101,8 +88,6 @@ var gExperimentalPane = {
         return;
       }
     }
-
-    features = await this._sortFeatures(features);
 
     setEventListener(
       "experimentalCategory-reset",
