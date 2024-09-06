@@ -611,26 +611,38 @@ nsIContent* ContentIteratorBase<NodeType>::GetDeepFirstChild(
   }
 
   nsIContent* node = aRoot;
-  nsIContent* child = node->GetFirstChild();
+  nsIContent* child = nullptr;
 
-  if (!child) {
+  if (ShadowRoot* shadowRoot =
+          IteratorHelpers::GetShadowRoot(node, aAllowCrossShadowBoundary)) {
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(aAllowCrossShadowBoundary);
+    child = shadowRoot->GetFirstChild();
+  } else {
+    child = node->GetFirstChild();
+  }
+
+  while (child) {
+    node = child;
     if (ShadowRoot* shadowRoot =
             IteratorHelpers::GetShadowRoot(node, aAllowCrossShadowBoundary)) {
       
       
+      
+      
+      
+      
+      
+      
       child = shadowRoot->GetFirstChild();
-    }
-  }
-
-  
-  while (child) {
-    node = child;
-    child = node->GetFirstChild();
-    if (!child) {
-      if (ShadowRoot* shadowRoot =
-              IteratorHelpers::GetShadowRoot(node, aAllowCrossShadowBoundary)) {
-        child = shadowRoot->GetFirstChild();
-      }
+    } else {
+      child = node->GetFirstChild();
     }
   }
 
