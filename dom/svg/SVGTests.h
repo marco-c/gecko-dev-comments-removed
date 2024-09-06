@@ -13,13 +13,15 @@
 
 class nsAttrValue;
 class nsAtom;
+class nsIContent;
 class nsStaticAtom;
 
 namespace mozilla {
 
 namespace dom {
 class DOMSVGStringList;
-}
+class SVGSwitchElement;
+}  
 
 #define MOZILLA_DOMSVGTESTS_IID                      \
   {                                                  \
@@ -44,24 +46,8 @@ class SVGTests : public nsISupports {
   
 
 
-
-
-
-
-
-
-
-
-
-  int32_t GetBestLanguagePreferenceRank(const nsAString& aAcceptLangs) const;
-
-  
-
-
-
-
-
-  bool PassesConditionalProcessingTestsIgnoringSystemLanguage() const;
+  static nsIContent* FindActiveSwitchChild(
+      const dom::SVGSwitchElement* aSwitch);
 
   
 
@@ -70,16 +56,6 @@ class SVGTests : public nsISupports {
 
 
   bool PassesConditionalProcessingTests() const;
-
-  
-
-
-
-
-
-
-
-  bool PassesConditionalProcessingTests(const nsAString& aAcceptLangs) const;
 
   
 
@@ -117,6 +93,13 @@ class SVGTests : public nsISupports {
   virtual ~SVGTests() = default;
 
  private:
+  
+
+
+
+
+  bool PassesRequiredExtensionsTests() const;
+
   enum { EXTENSIONS, LANGUAGE };
   SVGStringList mStringListAttributes[2];
   static nsStaticAtom* const sStringListNames[2];

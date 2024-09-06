@@ -50,9 +50,6 @@ class SVGSwitchElement final : public SVGSwitchElementBase {
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
  private:
-  void UpdateActiveChild() { mActiveChild = FindActiveChild(); }
-  nsIContent* FindActiveChild() const;
-
   
   nsCOMPtr<nsIContent> mActiveChild;
 };
