@@ -8,6 +8,7 @@
 #define DOM_SECURITY_CSPVIOLATION_H_
 
 #include "nsCOMPtr.h"
+#include "nsIContentSecurityPolicy.h"
 #include "nsIURI.h"
 #include "nsString.h"
 #include "mozilla/RefPtr.h"
@@ -19,6 +20,7 @@ class nsIURI;
 
 namespace mozilla::dom {
 class Element;
+
 
 
 struct CSPViolationData {
@@ -34,6 +36,7 @@ struct CSPViolationData {
 
   
   CSPViolationData(uint32_t aViolatedPolicyIndex, Resource&& aResource,
+                   const CSPDirective aEffectiveDirective,
                    const nsAString& aSourceFile, uint32_t aLineNumber,
                    uint32_t aColumnNumber, Element* aElement,
                    const nsAString& aSample);
@@ -44,6 +47,7 @@ struct CSPViolationData {
 
   const uint32_t mViolatedPolicyIndex;
   const Resource mResource;
+  const CSPDirective mEffectiveDirective;
   
   const nsString mSourceFile;
   const uint32_t mLineNumber;
