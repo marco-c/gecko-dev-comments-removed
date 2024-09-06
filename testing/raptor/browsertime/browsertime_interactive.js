@@ -4,6 +4,8 @@
 
 
 
+const { logTest, logTask } = require("./utils/profiling");
+
 async function get_command_function(cmd, commands) {
   
 
@@ -53,51 +55,56 @@ async function get_command_function(cmd, commands) {
   return [func, parent_mod];
 }
 
-module.exports = async function (context, commands) {
-  context.log.info("Starting an interactive browsertime test");
-  let page_cycles = context.options.browsertime.page_cycles;
-  let post_startup_delay = context.options.browsertime.post_startup_delay;
-  let input_cmds = context.options.browsertime.commands;
+module.exports = logTest(
+  "interactive browsertime test",
+  async function (context, commands) {
+    context.log.info("Starting an interactive browsertime test");
+    let page_cycles = context.options.browsertime.page_cycles;
+    let post_startup_delay = context.options.browsertime.post_startup_delay;
+    let input_cmds = context.options.browsertime.commands;
 
-  context.log.info(
-    "Waiting for %d ms (post_startup_delay)",
-    post_startup_delay
-  );
-  await commands.wait.byTime(post_startup_delay);
-
-  
-  let cmds = input_cmds.split(";;;");
-
-  for (let count = 0; count < page_cycles; count++) {
-    context.log.info("Navigating to about:blank w/nav, count: " + count);
-    await commands.navigate("about:blank");
-
-    let pages_visited = [];
-    for (let cmdstr of cmds) {
-      let [cmd, ...args] = cmdstr.split(":::");
-
-      if (cmd == "measure.start") {
-        if (args[0] != "") {
-          pages_visited.push(args[0]);
-        }
-      }
-
-      let [func, parent_mod] = await get_command_function(cmd, commands);
-
-      try {
-        await func.call(parent_mod, ...args);
-      } catch (e) {
-        context.log.info(
-          `Exception found while running \`commands.${cmd}(${args})\`: `
-        );
-        context.log.info(e.stack);
-      }
-    }
+    context.log.info(
+      "Waiting for %d ms (post_startup_delay)",
+      post_startup_delay
+    );
+    await commands.wait.byTime(post_startup_delay);
 
     
-    context.log.info("[] metrics: pages_visited: " + pages_visited);
-  }
+    let cmds = input_cmds.split(";;;");
 
-  context.log.info("Browsertime pageload ended.");
-  return true;
-};
+    for (let count = 0; count < page_cycles; count++) {
+      await logTask(context, "cycle " + count, async function () {
+        context.log.info("Navigating to about:blank w/nav, count: " + count);
+        await commands.navigate("about:blank");
+
+        let pages_visited = [];
+        for (let cmdstr of cmds) {
+          let [cmd, ...args] = cmdstr.split(":::");
+
+          if (cmd == "measure.start") {
+            if (args[0] != "") {
+              pages_visited.push(args[0]);
+            }
+          }
+
+          let [func, parent_mod] = await get_command_function(cmd, commands);
+
+          try {
+            await func.call(parent_mod, ...args);
+          } catch (e) {
+            context.log.info(
+              `Exception found while running \`commands.${cmd}(${args})\`: `
+            );
+            context.log.info(e.stack);
+          }
+        }
+
+        
+        context.log.info("[] metrics: pages_visited: " + pages_visited);
+      });
+    }
+
+    context.log.info("Browsertime pageload ended.");
+    return true;
+  }
+);
