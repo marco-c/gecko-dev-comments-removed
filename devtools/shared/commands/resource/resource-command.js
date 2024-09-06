@@ -682,13 +682,99 @@ class ResourceCommand {
   }
 
   async _onResourceAvailableArray({ targetFront, watcherFront }, array) {
+    let includesDocumentEventWillNavigate = false;
+    let includesDocumentEventDomLoading = false;
     for (const [resourceType, resources] of array) {
-      for (const resource of resources) {
+      const isAlreadyExistingResource =
+        this._processingExistingResources.has(resourceType);
+      const transformer = ResourceTransformers[resourceType];
+
+      for (let i = 0; i < resources.length; i++) {
+        let resource = resources[i];
         if (!("resourceType" in resource)) {
           resource.resourceType = resourceType;
         }
+
+        if (watcherFront) {
+          targetFront = await this._getTargetForWatcherResource(resource);
+          
+          
+          
+          
+          
+          
+          
+          if (targetFront) {
+            await targetFront.initialized;
+          }
+        }
+
+        
+        
+        if (!resource.targetFront) {
+          resource.targetFront = targetFront;
+        }
+
+        if (transformer) {
+          resource = transformer({
+            resource,
+            targetCommand: this.targetCommand,
+            targetFront,
+            watcherFront: this.watcherFront,
+          });
+          resources[i] = resource;
+        }
+
+        
+        
+        resource.isAlreadyExistingResource = isAlreadyExistingResource;
+
+        if (!resource.resourceId) {
+          resource.resourceId = `auto:${++gLastResourceId}`;
+        }
+
+        
+        let isWillNavigate = false;
+        if (resourceType == DOCUMENT_EVENT) {
+          isWillNavigate = resource.name === "will-navigate";
+          if (isWillNavigate && resource.targetFront.isTopLevel) {
+            includesDocumentEventWillNavigate = true;
+            this._onWillNavigate(resource.targetFront);
+          }
+
+          if (
+            resource.name === "dom-loading" &&
+            resource.targetFront.isTopLevel
+          ) {
+            includesDocumentEventDomLoading = true;
+          }
+        }
+
+        
+        
+        
+        if (!isWillNavigate) {
+          this.addResourceToCache(resource);
+        }
       }
-      await this._onResourceAvailable({ targetFront, watcherFront }, resources);
+
+      this._queueResourceEvent("available", resourceType, resources);
+    }
+
+    
+    
+    
+    
+    
+    if (
+      includesDocumentEventWillNavigate ||
+      (includesDocumentEventDomLoading &&
+        !this.targetCommand.hasTargetWatcherSupport("service_worker")) ||
+      this.throttlingDisabled
+    ) {
+      this._notifyWatchers();
+    } else {
+      this._throttledNotifyWatchers();
     }
   }
 
@@ -713,6 +799,9 @@ class ResourceCommand {
     await this._onResourceDestroyed(context, resources);
   }
 
+  
+  
+  
   
 
 
@@ -780,7 +869,6 @@ class ResourceCommand {
         includesDocumentEventWillNavigate = true;
         this._onWillNavigate(resource.targetFront);
       }
-
       if (
         resourceType == ResourceCommand.TYPES.DOCUMENT_EVENT &&
         resource.name == "dom-loading" &&
@@ -789,7 +877,7 @@ class ResourceCommand {
         includesDocumentEventDomLoading = true;
       }
 
-      this._queueResourceEvent("available", resourceType, resource);
+      this._queueResourceEvent("available", resourceType, [resource]);
 
       
       
@@ -903,11 +991,14 @@ class ResourceCommand {
           target[path[path.length - 1]] = value;
         }
       }
-      this._queueResourceEvent("updated", resourceType, {
-        resource: existingResource,
-        update,
-      });
+      this._queueResourceEvent("updated", resourceType, [
+        {
+          resource: existingResource,
+          update,
+        },
+      ]);
     }
+
     this._throttledNotifyWatchers();
   }
 
@@ -922,30 +1013,22 @@ class ResourceCommand {
       if (!resource.targetFront) {
         resource.targetFront = targetFront;
       }
-      this._queueResourceEvent("destroyed", resourceType, resource);
+      this._queueResourceEvent("destroyed", resourceType, [resource]);
     }
     this._throttledNotifyWatchers();
   }
 
-  _queueResourceEvent(callbackType, resourceType, update) {
+  _queueResourceEvent(callbackType, resourceType, updates) {
     for (const { resources, pendingEvents } of this._watchers) {
       
       if (!resources.includes(resourceType)) {
         continue;
       }
       
-      if (pendingEvents.length) {
-        const lastEvent = pendingEvents[pendingEvents.length - 1];
-        if (lastEvent.callbackType == callbackType) {
-          lastEvent.updates.push(update);
-          continue;
-        }
-      }
-      
       
       pendingEvents.push({
         callbackType,
-        updates: [update],
+        updates,
       });
     }
   }
@@ -1286,6 +1369,7 @@ class ResourceCommand {
   }
 }
 
+const DOCUMENT_EVENT = "document-event";
 ResourceCommand.TYPES = ResourceCommand.prototype.TYPES = {
   CONSOLE_MESSAGE: "console-message",
   CSS_CHANGE: "css-change",
@@ -1293,7 +1377,7 @@ ResourceCommand.TYPES = ResourceCommand.prototype.TYPES = {
   CSS_REGISTERED_PROPERTIES: "css-registered-properties",
   ERROR_MESSAGE: "error-message",
   PLATFORM_MESSAGE: "platform-message",
-  DOCUMENT_EVENT: "document-event",
+  DOCUMENT_EVENT,
   ROOT_NODE: "root-node",
   STYLESHEET: "stylesheet",
   NETWORK_EVENT: "network-event",
