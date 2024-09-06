@@ -3128,24 +3128,22 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
       if (endPosition.Container()->HasChildren()) {
         
         
-        nsINode* firstChild = endPosition.Container()->GetFirstChild();
+        nsIContent* const firstChild = endPosition.Container()->GetFirstChild();
         if (NS_WARN_IF(!firstChild)) {
           return NS_ERROR_FAILURE;
         }
-        endPosition = RawNodePositionBefore(firstChild, 0u);
+        endPosition = RawNodePosition::Before(*firstChild);
       } else {
         
-        nsIContent* parentContent = endPosition.Container()->GetParent();
+        if (NS_WARN_IF(!endPosition.Container()->IsContent())) {
+          return NS_ERROR_FAILURE;
+        }
+        nsIContent* const parentContent = endPosition.Container()->GetParent();
         if (NS_WARN_IF(!parentContent)) {
           return NS_ERROR_FAILURE;
         }
-        Maybe<uint32_t> indexInParent =
-            parentContent->ComputeIndexOf(endPosition.Container());
-        if (MOZ_UNLIKELY(NS_WARN_IF(indexInParent.isNothing()))) {
-          return NS_ERROR_FAILURE;
-        }
-        MOZ_ASSERT(*indexInParent != UINT32_MAX);
-        endPosition = RawNodePositionBefore(parentContent, *indexInParent + 1u);
+        endPosition =
+            RawNodePosition::After(*endPosition.Container()->AsContent());
       }
     }
 
