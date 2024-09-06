@@ -45,8 +45,9 @@
 #undef HWY_CAP_GE512
 
 
-#if HWY_TARGET == HWY_RVV && \
-    (HWY_COMPILER_GCC_ACTUAL < 1400 || HWY_COMPILER_CLANG)
+#if HWY_TARGET == HWY_RVV &&                                        \
+    ((HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1400) || \
+     (HWY_COMPILER_CLANG))
 #define HWY_HAVE_TUPLE 0
 #else
 #define HWY_HAVE_TUPLE 1
@@ -115,6 +116,8 @@
   ",vpclmulqdq,avx512vbmi,avx512vbmi2,vaes,avx512vnni,avx512bitalg," \
   "avx512vpopcntdq,gfni"
 
+#define HWY_TARGET_STR_AVX3_SPR HWY_TARGET_STR_AVX3_DL ",avx512fp16"
+
 #if defined(HWY_DISABLE_PPC8_CRYPTO)
 #define HWY_TARGET_STR_PPC8_CRYPTO ""
 #else
@@ -128,8 +131,20 @@
 #if HWY_COMPILER_CLANG
 #define HWY_TARGET_STR_PPC10 HWY_TARGET_STR_PPC9 ",power10-vector"
 #else
-#define HWY_TARGET_STR_PPC10 HWY_TARGET_STR_PPC9 ",cpu=power10"
+
+
+
+
+
+
+
+
+
+#define HWY_TARGET_STR_PPC10 HWY_TARGET_STR_PPC9 ",cpu=power10,htm"
 #endif
+
+#define HWY_TARGET_STR_Z14 "arch=z14"
+#define HWY_TARGET_STR_Z15 "arch=z15"
 
 
 
@@ -145,7 +160,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
+#define HWY_HAVE_FLOAT16 0
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
@@ -164,7 +179,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
+#define HWY_HAVE_FLOAT16 0
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
@@ -184,7 +199,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
+#define HWY_HAVE_FLOAT16 0
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
@@ -204,7 +219,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
+#define HWY_HAVE_FLOAT16 0
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 
@@ -222,7 +237,7 @@
 
 
 #elif HWY_TARGET == HWY_AVX3 || HWY_TARGET == HWY_AVX3_DL || \
-    HWY_TARGET == HWY_AVX3_ZEN4
+    HWY_TARGET == HWY_AVX3_ZEN4 || HWY_TARGET == HWY_AVX3_SPR
 
 #define HWY_ALIGN alignas(64)
 #define HWY_MAX_BYTES 64
@@ -230,7 +245,14 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
+#if HWY_TARGET == HWY_AVX3_SPR && HWY_COMPILER_GCC_ACTUAL && \
+    HWY_HAVE_SCALAR_F16_TYPE
+
+
 #define HWY_HAVE_FLOAT16 1
+#else
+#define HWY_HAVE_FLOAT16 0
+#endif
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 1
@@ -253,6 +275,11 @@
 
 #define HWY_TARGET_STR HWY_TARGET_STR_AVX3_DL
 
+#elif HWY_TARGET == HWY_AVX3_SPR
+
+#define HWY_NAMESPACE N_AVX3_SPR
+#define HWY_TARGET_STR HWY_TARGET_STR_AVX3_SPR
+
 #else
 #error "Logic error"
 #endif  
@@ -268,7 +295,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
+#define HWY_HAVE_FLOAT16 0
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 1
@@ -296,6 +323,37 @@
 
 
 
+#elif HWY_TARGET == HWY_Z14 || HWY_TARGET == HWY_Z15
+
+#define HWY_ALIGN alignas(16)
+#define HWY_MAX_BYTES 16
+#define HWY_LANES(T) (16 / sizeof(T))
+
+#define HWY_HAVE_SCALABLE 0
+#define HWY_HAVE_INTEGER64 1
+#define HWY_HAVE_FLOAT16 0
+#define HWY_HAVE_FLOAT64 1
+#define HWY_MEM_OPS_MIGHT_FAULT 1
+#define HWY_NATIVE_FMA 1
+#define HWY_CAP_GE256 0
+#define HWY_CAP_GE512 0
+
+#if HWY_TARGET == HWY_Z14
+
+#define HWY_NAMESPACE N_Z14
+#define HWY_TARGET_STR HWY_TARGET_STR_Z14
+
+#elif HWY_TARGET == HWY_Z15
+
+#define HWY_NAMESPACE N_Z15
+#define HWY_TARGET_STR HWY_TARGET_STR_Z15
+
+#else
+#error "Logic error"
+#endif  
+
+
+
 #elif HWY_TARGET == HWY_NEON || HWY_TARGET == HWY_NEON_WITHOUT_AES
 
 #define HWY_ALIGN alignas(16)
@@ -304,7 +362,11 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
+#if defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
 #define HWY_HAVE_FLOAT16 1
+#else
+#define HWY_HAVE_FLOAT16 0
+#endif
 
 #if HWY_ARCH_ARM_A64
 #define HWY_HAVE_FLOAT64 1
@@ -345,11 +407,7 @@
 #if HWY_TARGET == HWY_NEON_WITHOUT_AES
 
 #else
-#if HWY_COMPILER_GCC_ACTUAL
-#define HWY_TARGET_STR "arch=armv8-a+crypto"
-#else  
 #define HWY_TARGET_STR "+crypto"
-#endif  
 #endif  
 
 #endif  
@@ -398,11 +456,17 @@
 
 #if HWY_HAVE_RUNTIME_DISPATCH
 #if HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
+
+
+#if defined(__ARM_FEATURE_SVE2_AES) || (HWY_BASELINE_SVE2 == 0)
 #define HWY_TARGET_STR "+sve2-aes"
-#else
+#else  
+#define HWY_TARGET_STR "+sve2"
+#endif
+#else  
 #define HWY_TARGET_STR "+sve"
 #endif
-#else
+#else  
 
 #endif
 
@@ -416,8 +480,8 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
-#define HWY_HAVE_FLOAT64 0
+#define HWY_HAVE_FLOAT16 0
+#define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
 #define HWY_CAP_GE256 0
@@ -437,7 +501,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
+#define HWY_HAVE_FLOAT16 0
 #define HWY_HAVE_FLOAT64 0
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
@@ -471,7 +535,7 @@
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
-#if defined(__riscv_zvfh)
+#if HWY_RVV_HAVE_F16_VEC
 #define HWY_HAVE_FLOAT16 1
 #else
 #define HWY_HAVE_FLOAT16 0
@@ -492,7 +556,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
+#define HWY_HAVE_FLOAT16 0
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
@@ -513,7 +577,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#define HWY_HAVE_FLOAT16 1
+#define HWY_HAVE_FLOAT16 0
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 0
@@ -527,6 +591,14 @@
 #else
 #pragma message("HWY_TARGET does not match any known target")
 #endif  
+
+
+
+
+
+#if HWY_HAVE_FLOAT16 && !HWY_HAVE_SCALAR_F16_TYPE
+#error "Logic error: f16 vectors but no scalars"
+#endif
 
 
 #if HWY_IS_ASAN || HWY_IS_MSAN

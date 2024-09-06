@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef HIGHWAY_HWY_CONTRIB_SORT_ORDER_H_
+#define HIGHWAY_HWY_CONTRIB_SORT_ORDER_H_
+
+namespace hwy {
+
+struct SortAscending {
+  constexpr bool IsAscending() const { return true; }
+};
+struct SortDescending {
+  constexpr bool IsAscending() const { return false; }
+};
+
+}  
+
+#endif  
