@@ -290,7 +290,7 @@ function prettifyCSS(text, ruleCount) {
   
   let indent = "";
   let indentLevel = 0;
-  const tokens = getCSSLexer(text);
+  const lexer = getCSSLexer(text, true);
   
   const mappings = [];
   
@@ -307,15 +307,15 @@ function prettifyCSS(text, ruleCount) {
   
   const readUntilSignificantToken = () => {
     while (true) {
-      const token = tokens.nextToken();
-      if (!token || token.tokenType !== "whitespace") {
+      const token = lexer.nextToken();
+      if (!token || token.tokenType !== "WhiteSpace") {
         pushbackToken = token;
         return token;
       }
       
       
-      const nextToken = tokens.nextToken();
-      if (!nextToken || nextToken.tokenType !== "comment") {
+      const nextToken = lexer.nextToken();
+      if (!nextToken || nextToken.tokenType !== "Comment") {
         pushbackToken = nextToken;
         return token;
       }
@@ -355,15 +355,15 @@ function prettifyCSS(text, ruleCount) {
         token = pushbackToken;
         pushbackToken = undefined;
       } else {
-        token = tokens.nextToken();
+        token = lexer.nextToken();
       }
       if (!token) {
         endIndex = text.length;
         break;
       }
 
-      const line = tokens.lineNumber;
-      const column = tokens.columnNumber;
+      const line = lexer.lineNumber;
+      const column = lexer.columnNumber;
       mappings.push({
         original: {
           line,
@@ -377,17 +377,17 @@ function prettifyCSS(text, ruleCount) {
       
       columnOffset += token.endOffset - token.startOffset;
 
-      if (token.tokenType === "at") {
+      if (token.tokenType === "AtKeyword") {
         isInAtRuleDefinition = true;
       }
 
       
       
-      if (token.tokenType === "symbol" && token.text === "}") {
+      if (token.tokenType === "CloseCurlyBracket") {
         isInSelector = true;
         isCloseBrace = true;
         break;
-      } else if (token.tokenType === "symbol" && token.text === "{") {
+      } else if (token.tokenType === "CurlyBracketBlock") {
         if (isInAtRuleDefinition) {
           isInAtRuleDefinition = false;
         } else {
@@ -396,7 +396,7 @@ function prettifyCSS(text, ruleCount) {
         break;
       }
 
-      if (token.tokenType !== "whitespace") {
+      if (token.tokenType !== "WhiteSpace") {
         anyNonWS = true;
       }
 
@@ -405,20 +405,19 @@ function prettifyCSS(text, ruleCount) {
       }
       endIndex = token.endOffset;
 
-      if (token.tokenType === "symbol" && token.text === ";") {
+      if (token.tokenType === "Semicolon") {
         break;
       }
 
       if (
-        token.tokenType === "symbol" &&
-        token.text === "," &&
+        token.tokenType === "Comma" &&
         isInSelector &&
         !isInAtRuleDefinition
       ) {
         break;
       }
 
-      lastWasWS = token.tokenType === "whitespace";
+      lastWasWS = token.tokenType === "WhiteSpace";
     }
     return token;
   };
@@ -474,7 +473,7 @@ function prettifyCSS(text, ruleCount) {
       break;
     }
 
-    if (token.tokenType === "symbol" && token.text === "{") {
+    if (token.tokenType === "CurlyBracketBlock") {
       if (!lastWasWS) {
         result += " ";
         columnOffset++;
@@ -503,7 +502,7 @@ function prettifyCSS(text, ruleCount) {
       ruleCount !== null &&
       pushbackToken &&
       token &&
-      token.tokenType === "whitespace" &&
+      token.tokenType === "WhiteSpace" &&
       /\n/g.test(text.substring(token.startOffset, token.endOffset))
     ) {
       return { result: originalText, mappings: [] };
