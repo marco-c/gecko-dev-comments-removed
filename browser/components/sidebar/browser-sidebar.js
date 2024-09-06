@@ -211,6 +211,20 @@ var SidebarController = {
     return this._inited;
   },
 
+  get sidebarMain() {
+    if (!this._sidebarMain) {
+      this._sidebarMain = document.querySelector("sidebar-main");
+    }
+    return this._sidebarMain;
+  },
+
+  get toolbarButton() {
+    if (!this._toolbarButton) {
+      this._toolbarButton = document.getElementById("sidebar-button");
+    }
+    return this._toolbarButton;
+  },
+
   async init() {
     this._box = document.getElementById("sidebar-box");
     this._splitter = document.getElementById("sidebar-splitter");
@@ -242,8 +256,7 @@ var SidebarController = {
       await import("chrome://browser/content/sidebar/sidebar-main.mjs");
       document.getElementById("sidebar-main").hidden = !window.toolbar.visible;
       document.getElementById("sidebar-header").hidden = true;
-      this._sidebarMain = document.querySelector("sidebar-main");
-      mainResizeObserver.observe(this._sidebarMain);
+      mainResizeObserver.observe(this.sidebarMain);
 
       if (this.sidebarVerticalTabsEnabled) {
         this.toggleTabstrip();
@@ -479,6 +492,10 @@ var SidebarController = {
       this._box.setAttribute("sidebarcommand", commandID);
     }
 
+    if (this.sidebarRevampEnabled) {
+      this.sidebarMain.expanded = sourceController.sidebarMain.expanded;
+    }
+
     if (sourceController._box.hidden) {
       
       return true;
@@ -633,11 +650,16 @@ var SidebarController = {
     return this.show(commandID, triggerNode);
   },
 
+  handleToolbarButtonClick() {
+    
+    this.toggleExpanded();
+  },
+
   
 
 
   toggleExpanded() {
-    this._sidebarMain.expanded = !this._sidebarMain.expanded;
+    this.sidebarMain.expanded = !this.sidebarMain.expanded;
   },
 
   _loadSidebarExtension(commandID) {
@@ -946,6 +968,11 @@ var SidebarController = {
         this._box.dispatchEvent(
           new CustomEvent("sidebar-show", { detail: { viewId: commandID } })
         );
+        
+        
+        
+        this._previousExpandedState = this.sidebarMain.expanded;
+        this.sidebarMain.expanded = false;
       } else {
         this.hideSwitcherPanel();
       }
@@ -1019,6 +1046,7 @@ var SidebarController = {
     this.hideSwitcherPanel();
     if (this.sidebarRevampEnabled) {
       this._box.dispatchEvent(new CustomEvent("sidebar-hide"));
+      this.sidebarMain.expanded = this._previousExpandedState;
     }
     this.selectMenuItem("");
 
