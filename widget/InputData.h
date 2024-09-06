@@ -296,7 +296,9 @@ class MouseInput : public InputData {
   bool IsLeftButton() const;
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
-  WidgetMouseEvent ToWidgetEvent(nsIWidget* aWidget) const;
+  [[nodiscard]] bool IsPointerEventType() const;
+  template <typename WidgetMouseOrPointerEvent>
+  WidgetMouseOrPointerEvent ToWidgetEvent(nsIWidget* aWidget) const;
 
   
   

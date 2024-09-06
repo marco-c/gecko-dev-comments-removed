@@ -298,6 +298,8 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
           }
         }
 
+        
+        
         switch (aEvent->mMessage) {
           case eContextMenu:
             if (PopupAllowedForEvent("contextmenu")) {
@@ -344,6 +346,15 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
           
           
           if (PopupAllowedForEvent("auxclick")) {
+            abuse = PopupBlocker::openControlled;
+          }
+        }
+
+        
+        
+        
+        if (aEvent->mMessage == eContextMenu) {
+          if (PopupAllowedForEvent("contextmenu")) {
             abuse = PopupBlocker::openControlled;
           }
         }

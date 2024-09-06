@@ -487,7 +487,8 @@ void Event::SetEventType(const nsAString& aEventTypeArg) {
       
       
       if (aEventTypeArg.EqualsLiteral(u"click") ||
-          aEventTypeArg.EqualsLiteral(u"auxclick")) {
+          aEventTypeArg.EqualsLiteral(u"auxclick") ||
+          aEventTypeArg.EqualsLiteral(u"contextmenu")) {
         classID = ePointerEventClass;
       }
     }

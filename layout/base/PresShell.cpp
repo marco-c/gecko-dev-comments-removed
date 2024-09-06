@@ -7315,7 +7315,7 @@ nsIFrame* PresShell::EventHandler::GetFrameToHandleNonTouchEvent(
       nsLayoutUtils::GetEventCoordinatesRelativeTo(aGUIEvent, relativeTo);
 
   uint32_t flags = 0;
-  if (aGUIEvent->mClass == eMouseEventClass) {
+  if (aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent()) {
     WidgetMouseEvent* mouseEvent = aGUIEvent->AsMouseEvent();
     if (mouseEvent && mouseEvent->mIgnoreRootScrollFrame) {
       flags |= INPUT_IGNORE_ROOT_SCROLL_FRAME;
@@ -7453,7 +7453,7 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
   
   
   if (!mouseOrTouchEventTargetContent) {
-    MOZ_ASSERT(aGUIEvent->mClass == eMouseEventClass);
+    MOZ_ASSERT(aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent());
     return false;
   }
 
@@ -7520,7 +7520,7 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
   }
 
   
-  if (aGUIEvent->mClass != eMouseEventClass &&
+  if (!aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent() &&
       aGUIEvent->mClass != eTouchEventClass &&
       aGUIEvent->mClass != eKeyboardEventClass) {
     return false;
@@ -7627,8 +7627,7 @@ void PresShell::EventHandler::MaybeSynthesizeCompatMouseEventsForTouchEnd(
     if (!frameForPresShell) {
       break;
     }
-    WidgetMouseEvent event(true, message, widget, WidgetMouseEvent::eReal,
-                           WidgetMouseEvent::eNormal);
+    WidgetMouseEvent event(true, message, widget, WidgetMouseEvent::eReal);
     event.mRefPoint = aTouchEndEvent->mTouches[0]->mRefPoint;
     event.mButton = MouseButton::ePrimary;
     event.mButtons = message == eMouseDown ? MouseButtonsFlag::ePrimaryFlag
@@ -7734,7 +7733,7 @@ bool PresShell::EventHandler::GetRetargetEventDocument(
 
 #ifdef ANDROID
   if (aGUIEvent->mClass == eTouchEventClass ||
-      aGUIEvent->mClass == eMouseEventClass ||
+      aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent() ||
       aGUIEvent->mClass == eWheelEventClass) {
     RefPtr<Document> retargetEventDoc = mPresShell->GetPrimaryContentDocument();
     retargetEventDoc.forget(aRetargetEventDocument);
@@ -7869,7 +7868,7 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
   MOZ_ASSERT(aFrameToHandleEvent);
   MOZ_ASSERT(aGUIEvent);
 
-  if (aGUIEvent->mClass != eMouseEventClass) {
+  if (!aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent()) {
     return false;
   }
 
@@ -7887,15 +7886,23 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
 
   if (aGUIEvent->mMessage == eMouseDown) {
     ps->mNoDelayedMouseEvents = true;
-  } else if (!ps->mNoDelayedMouseEvents &&
-             (aGUIEvent->mMessage == eMouseUp ||
-              
-              
-              aGUIEvent->mMessage == eContextMenu ||
-              aGUIEvent->mMessage == eMouseExitFromWidget)) {
-    UniquePtr<DelayedMouseEvent> delayedMouseEvent =
-        MakeUnique<DelayedMouseEvent>(aGUIEvent->AsMouseEvent());
-    ps->mDelayedEvents.AppendElement(std::move(delayedMouseEvent));
+  } else if (!ps->mNoDelayedMouseEvents) {
+    if ((aGUIEvent->mMessage == eMouseUp ||
+         aGUIEvent->mMessage == eMouseExitFromWidget ||
+         (aGUIEvent->mMessage == eContextMenu &&
+          !StaticPrefs::
+              dom_w3c_pointer_events_dispatch_click_as_pointer_event()))) {
+      UniquePtr<DelayedMouseEvent> delayedMouseEvent =
+          MakeUnique<DelayedMouseEvent>(aGUIEvent->AsMouseEvent());
+      ps->mDelayedEvents.AppendElement(std::move(delayedMouseEvent));
+    }
+    
+    
+    else if (aGUIEvent->mMessage == eContextMenu) {
+      UniquePtr<DelayedPointerEvent> delayedPointerEvent =
+          MakeUnique<DelayedPointerEvent>(aGUIEvent->AsPointerEvent());
+      ps->mDelayedEvents.AppendElement(std::move(delayedPointerEvent));
+    }
   }
 
   
@@ -10191,6 +10198,16 @@ PresShell::DelayedMouseEvent::DelayedMouseEvent(WidgetMouseEvent* aEvent) {
                            aEvent->mReason, aEvent->mContextMenuTrigger);
   mouseEvent->AssignMouseEventData(*aEvent, false);
   mEvent = mouseEvent;
+}
+
+PresShell::DelayedPointerEvent::DelayedPointerEvent(
+    WidgetPointerEvent* aEvent) {
+  MOZ_DIAGNOSTIC_ASSERT(aEvent->IsTrusted());
+  MOZ_ASSERT(aEvent->mMessage == eContextMenu);
+  WidgetPointerEvent* pointerEvent = new WidgetPointerEvent(
+      true, aEvent->mMessage, aEvent->mWidget, aEvent->mContextMenuTrigger);
+  pointerEvent->AssignPointerEventData(*aEvent, false);
+  mEvent = pointerEvent;
 }
 
 PresShell::DelayedKeyEvent::DelayedKeyEvent(WidgetKeyboardEvent* aEvent) {
