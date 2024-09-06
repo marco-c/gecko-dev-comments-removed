@@ -236,30 +236,16 @@ class nsBlockFrame : public nsContainerFrame {
   bool MarkerIsEmpty() const;
 
   
-
-
   bool HasMarker() const { return HasOutsideMarker() || HasInsideMarker(); }
 
   
-
-
   bool HasInsideMarker() const {
-    return HasAnyStateBits(NS_BLOCK_FRAME_HAS_INSIDE_MARKER);
+    return HasAnyStateBits(NS_BLOCK_HAS_INSIDE_MARKER);
   }
 
   
-
-
   bool HasOutsideMarker() const {
-    return HasAnyStateBits(NS_BLOCK_FRAME_HAS_OUTSIDE_MARKER);
-  }
-
-  
-
-
-  nsIFrame* GetMarker() const {
-    nsIFrame* outside = GetOutsideMarker();
-    return outside ? outside : GetInsideMarker();
+    return HasAnyStateBits(NS_BLOCK_HAS_OUTSIDE_MARKER);
   }
 
   
@@ -978,18 +964,18 @@ class nsBlockFrame : public nsContainerFrame {
   void SetOverflowOutOfFlows(nsFrameList&& aList, nsFrameList* aPropValue);
 
   
+  nsIFrame* GetMarker() const {
+    nsIFrame* outside = GetOutsideMarker();
+    return outside ? outside : GetInsideMarker();
+  }
 
-
+  
   nsIFrame* GetInsideMarker() const;
 
   
-
-
   nsIFrame* GetOutsideMarker() const;
 
   
-
-
   nsFrameList* GetOutsideMarkerList() const;
 
   
