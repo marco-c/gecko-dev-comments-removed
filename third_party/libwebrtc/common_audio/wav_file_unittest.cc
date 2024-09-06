@@ -17,7 +17,6 @@
 #include <limits>
 
 #include "common_audio/wav_header.h"
-#include "rtc_base/helpers.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -37,7 +36,7 @@ static const float kSamples[] = {0.0, 10.0, 4e4, -1e9};
 
 TEST(WavWriterTest, MAYBE_CPP) {
   const std::string outfile =
-      test::OutputPath() + "wavtest1-" + rtc::CreateRandomUuid() + ".wav";
+      test::OutputPathWithRandomDirectory() + "wavtest1.wav";
   static const size_t kNumSamples = 3;
   {
     WavWriter w(outfile, 14099, 1);
@@ -114,7 +113,8 @@ TEST(WavWriterTest, LargeFile) {
          {WavFile::SampleFormat::kInt16, WavFile::SampleFormat::kFloat}) {
       for (WavFile::SampleFormat read_format :
            {WavFile::SampleFormat::kInt16, WavFile::SampleFormat::kFloat}) {
-        std::string outfile = test::OutputPath() + "wavtest3.wav";
+        std::string outfile =
+            test::OutputPathWithRandomDirectory() + "wavtest3.wav";
         float samples[kNumSamples];
         for (size_t i = 0; i < kNumSamples; i += kNumChannels) {
           
@@ -179,7 +179,8 @@ TEST(WavWriterTest, LargeFile) {
 
 
 TEST(WavReaderTest, MAYBE_CPPReset) {
-  const std::string outfile = test::OutputPath() + "wavtest4.wav";
+  const std::string outfile =
+      test::OutputPathWithRandomDirectory() + "wavtest4.wav";
   static const size_t kNumSamples = 3;
   {
     WavWriter w(outfile, 14099, 1);
