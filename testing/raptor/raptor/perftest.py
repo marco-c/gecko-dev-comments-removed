@@ -695,7 +695,11 @@ class PerftestAndroid(Perftest):
             device = ADBDeviceFactory(verbose=True)
 
             
-            binary = "com.android.chrome"
+            binary = (
+                "com.android.chrome"
+                if self.config["app"] == "chrome-m"
+                else "org.chromium.chrome"
+            )
             if self.config["app"] not in CHROME_ANDROID_APPS:
                 binary = self.config["binary"]
 
