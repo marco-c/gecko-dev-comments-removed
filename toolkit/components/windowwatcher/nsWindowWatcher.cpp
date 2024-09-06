@@ -884,6 +884,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     openWindowInfo->mParent = parentBC;
     openWindowInfo->mIsForPrinting = aPrintKind != PRINT_NONE;
     openWindowInfo->mIsForWindowDotPrint = aPrintKind == PRINT_WINDOW_DOT_PRINT;
+    openWindowInfo->mIsTopLevelCreatedByWebContent =
+        !nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal);
 
     
     
@@ -1076,6 +1078,12 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   if (!targetBC) {
     return rv;
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(
+      !windowIsNew || !targetBC->IsContent() ||
+          nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal) ||
+          targetBC->GetTopLevelCreatedByWebContent(),
+      "New BC not marked as created by web content, but it was");
 
   
   

@@ -337,10 +337,16 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   
   
   if (IsTopContent(parentBC, aOwner)) {
+    BrowsingContext::CreateDetachedOptions options;
+    if (aOpenWindowInfo) {
+      options.topLevelCreatedByWebContent =
+          aOpenWindowInfo->GetIsTopLevelCreatedByWebContent();
+    }
+
     
     return BrowsingContext::CreateDetached(
         nullptr, opener, aSpecificGroup, frameName,
-        BrowsingContext::Type::Content, false);
+        BrowsingContext::Type::Content, options);
   }
 
   MOZ_ASSERT(!aOpenWindowInfo,
@@ -348,9 +354,9 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
 
   MOZ_ASSERT(!aSpecificGroup,
              "Can't force BrowsingContextGroup for non-toplevel context");
-  return BrowsingContext::CreateDetached(parentInner, nullptr, nullptr,
-                                         frameName, parentBC->GetType(), false,
-                                         !aNetworkCreated);
+  return BrowsingContext::CreateDetached(
+      parentInner, nullptr, nullptr, frameName, parentBC->GetType(),
+      {.createdDynamically = !aNetworkCreated});
 }
 
 static bool InitialLoadIsRemote(Element* aOwner) {

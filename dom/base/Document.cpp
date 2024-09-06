@@ -18980,7 +18980,7 @@ bool Document::IsLikelyContentInaccessibleTopLevelAboutBlank() const {
   
   
   BrowsingContext* bc = GetBrowsingContext();
-  return bc && bc->IsTop() && !bc->HadOriginalOpener();
+  return bc && bc->IsTop() && !bc->GetTopLevelCreatedByWebContent();
 }
 
 bool Document::ShouldIncludeInTelemetry() const {
