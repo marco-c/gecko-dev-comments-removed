@@ -31,8 +31,7 @@ add_task(
 
     await SelectTranslationsTestUtils.changeSelectedFromLanguage(["en"], {
       openDropdownMenu: true,
-      onChangeLanguage:
-        SelectTranslationsTestUtils.assertPanelViewNoFromToSelected,
+      onChangeLanguage: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
 
     await cleanup();
@@ -46,24 +45,24 @@ add_task(
 
 add_task(
   async function test_select_translations_panel_select_same_to_language_via_popup() {
-    const { cleanup, runInPage } = await loadTestPage({
+    const { cleanup, runInPage, resolveDownloads } = await loadTestPage({
       page: SELECT_TEST_PAGE_URL,
       languagePairs: LANGUAGE_PAIRS,
       prefs: [["browser.translations.select.enable", true]],
     });
 
     await SelectTranslationsTestUtils.openPanel(runInPage, {
-      selectEnglishSection: true,
-      openAtEnglishSection: true,
-      expectedFromLanguage: "en",
-      expectedToLanguage: null,
-      onOpenPanel: SelectTranslationsTestUtils.assertPanelViewNoToLangSelected,
+      selectFrenchSentence: true,
+      openAtFrenchSentence: true,
+      expectedFromLanguage: "fr",
+      expectedToLanguage: "en",
+      downloadHandler: resolveDownloads,
+      onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
 
-    await SelectTranslationsTestUtils.changeSelectedToLanguage(["en"], {
+    await SelectTranslationsTestUtils.changeSelectedToLanguage(["fr"], {
       openDropdownMenu: true,
-      onChangeLanguage:
-        SelectTranslationsTestUtils.assertPanelViewNoFromLangSelected,
+      onChangeLanguage: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
 
     await cleanup();

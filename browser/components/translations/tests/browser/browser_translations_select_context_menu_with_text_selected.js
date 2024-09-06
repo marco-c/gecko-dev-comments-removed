@@ -65,9 +65,9 @@ add_task(
         selectEnglishSentence: true,
         openAtEnglishSentence: true,
         expectMenuItemVisible: true,
-        expectedTargetLanguage: null,
+        expectedTargetLanguage: "en",
       },
-      "The translate-selection context menu item should not display a target language " +
+      "The translate-selection context menu item should still display a target language " +
         "when the selected text is in the preferred language."
     );
 

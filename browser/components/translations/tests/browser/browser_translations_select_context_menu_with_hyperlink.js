@@ -63,10 +63,10 @@ add_task(
         selectSpanishSentence: false,
         openAtEnglishHyperlink: true,
         expectMenuItemVisible: true,
-        expectedTargetLanguage: null,
+        expectedTargetLanguage: "en",
       },
       "The translate-selection context menu item should be localized to translate the link text" +
-        "without a target language."
+        "to the target language."
     );
 
     await cleanup();

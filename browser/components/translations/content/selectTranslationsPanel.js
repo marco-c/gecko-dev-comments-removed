@@ -221,18 +221,13 @@ var SelectTranslationsPanel = new (class {
 
 
 
-
   async getLangPairPromise(textToTranslate) {
     const [fromLang, toLang] = await Promise.all([
       SelectTranslationsPanel.getTopSupportedDetectedLanguage(textToTranslate),
       TranslationsParent.getTopPreferredSupportedToLang(),
     ]);
 
-    return {
-      fromLang,
-      
-      toLang: fromLang === toLang ? undefined : toLang,
-    };
+    return { fromLang, toLang };
   }
 
   
@@ -423,18 +418,16 @@ var SelectTranslationsPanel = new (class {
 
 
   onChangeFromLanguage() {
-    const { fromMenuList, toMenuList } = this.elements;
+    const { fromMenuList } = this.elements;
     this.#maybeTranslateOnEvents(["blur", "keypress"], fromMenuList);
-    this.#maybeStealLanguageFrom(toMenuList);
   }
 
   
 
 
   onChangeToLanguage() {
-    const { toMenuList, fromMenuList } = this.elements;
+    const { toMenuList } = this.elements;
     this.#maybeTranslateOnEvents(["blur", "keypress"], toMenuList);
-    this.#maybeStealLanguageFrom(fromMenuList);
   }
 
   
@@ -447,21 +440,6 @@ var SelectTranslationsPanel = new (class {
     menuList.value = "";
     document.l10n.setAttributes(menuList, "translations-panel-choose-language");
     await document.l10n.translateElements([menuList]);
-  }
-
-  
-
-
-
-
-
-
-  async #maybeStealLanguageFrom(menuList) {
-    const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
-    if (fromLanguage === toLanguage) {
-      await this.#deselectLanguage(menuList);
-      this.#maybeFocusMenuList(menuList);
-    }
   }
 
   
@@ -704,14 +682,8 @@ var SelectTranslationsPanel = new (class {
 
     let nextPhase = "translatable";
 
-    if (
+    if (!fromLanguage || !toLanguage) {
       
-      !fromLanguage ||
-      
-      !toLanguage ||
-      
-      fromLanguage === toLanguage
-    ) {
       nextPhase = "idle";
     } else if (
       
@@ -882,6 +854,7 @@ var SelectTranslationsPanel = new (class {
     }
 
     this.#translator = await Translator.create(fromLanguage, toLanguage, {
+      allowSameLanguage: true,
       requestTranslationsPort: this.#requestTranslationsPort,
     });
     return this.#translator;
