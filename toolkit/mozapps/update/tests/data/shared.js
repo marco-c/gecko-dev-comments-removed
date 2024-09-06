@@ -196,10 +196,7 @@ function initUpdateServiceStub() {
 
 
 function reloadUpdateManagerData(skipFiles = false) {
-  let observeData = skipFiles ? "skip-files" : "";
-  gUpdateManager
-    .QueryInterface(Ci.nsIObserver)
-    .observe(null, "um-reload-update-data", observeData);
+  gUpdateManager.internal.reload(skipFiles);
 }
 
 const observer = {
