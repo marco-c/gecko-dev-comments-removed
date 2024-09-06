@@ -12,8 +12,8 @@
 using namespace mozilla;
 
 ViewRegion::~ViewRegion() {
-  for (size_t i = 0; i < mViews.Length(); i++) {
-    [mViews[i] removeFromSuperview];
+  for (NSView* view : mViews) {
+    [view removeFromSuperview];
   }
 }
 
@@ -33,34 +33,31 @@ bool ViewRegion::UpdateRegion(const LayoutDeviceIntRegion& aRegion,
   nsTArray<NSView*> viewsToRecycle = std::move(mViews);
   
 
-  size_t i = 0;
-  for (auto iter = aRegion.RectIter();
-       !iter.Done() || i < viewsToRecycle.Length(); i++) {
-    if (!iter.Done()) {
-      NSView* view = nil;
-      NSRect rect = aCoordinateConverter.DevPixelsToCocoaPoints(iter.Get());
-      if (i < viewsToRecycle.Length()) {
-        view = viewsToRecycle[i];
-      } else {
-        view = aViewCreationCallback();
-        [aContainerView addSubview:view];
-
-        
-        
-        [view release];
-      }
-      if (!NSEqualRects(rect, [view frame])) {
-        [view setFrame:rect];
-      }
-      [view setNeedsDisplay:YES];
-      mViews.AppendElement(view);
-      iter.Next();
+  size_t viewsRecycled = 0;
+  for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
+    NSRect rect = aCoordinateConverter.DevPixelsToCocoaPoints(iter.Get());
+    NSView* view = nil;
+    if (viewsRecycled < viewsToRecycle.Length()) {
+      view = viewsToRecycle[viewsRecycled++];
     } else {
+      view = aViewCreationCallback();
+      [aContainerView addSubview:view];
+
       
       
-      
-      [viewsToRecycle[i] removeFromSuperview];
+      [view release];
     }
+    if (!NSEqualRects(rect, view.frame)) {
+      view.frame = rect;
+    }
+    view.needsDisplay = YES;
+    mViews.AppendElement(view);
+  }
+  for (NSView* view : Span(viewsToRecycle).From(viewsRecycled)) {
+    
+    
+    
+    [view removeFromSuperview];
   }
 
   mRegion = aRegion;
