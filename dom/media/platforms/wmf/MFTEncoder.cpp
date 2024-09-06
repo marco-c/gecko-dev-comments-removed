@@ -689,6 +689,7 @@ HRESULT MFTEncoder::Drain(nsTArray<RefPtr<IMFSample>>& aOutput) {
       [[fallthrough]];  
     case DrainState::DRAINED:
       aOutput.SwapElements(mOutputs);
+      mDrainState = DrainState::DRAINABLE;
       return S_OK;
   }
 }
