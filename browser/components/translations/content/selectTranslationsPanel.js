@@ -393,7 +393,7 @@ var SelectTranslationsPanel = new (class {
       );
     }
 
-    this.#openPopup(event, screenX, screenY);
+    await this.#openPopup(event, screenX, screenY);
   }
 
   
@@ -403,7 +403,10 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  #openPopup(event, screenX, screenY) {
+  async #openPopup(event, screenX, screenY) {
+    await window.ensureCustomElements("moz-button-group");
+    await window.ensureCustomElements("moz-message-bar");
+
     this.console?.log("Showing SelectTranslationsPanel");
     const { panel } = this.elements;
     panel.openPopupAtScreen(screenX, screenY,  false, event);
