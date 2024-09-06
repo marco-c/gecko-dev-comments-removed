@@ -415,10 +415,6 @@ pref("gfx.downloadable_fonts.enabled", true);
 pref("gfx.downloadable_fonts.fallback_delay", 3000);
 pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
-
-
-pref("gfx.downloadable_fonts.disable_cache", false);
-
 #ifdef XP_WIN
   pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
