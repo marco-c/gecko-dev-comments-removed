@@ -9,6 +9,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/OriginAttributes.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/net/DNS.h"
 #include "nsContentUtils.h"
@@ -336,6 +337,10 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
 
   
   
+  bool isLoop = false;
+
+  
+  
   
   
   
@@ -346,7 +351,7 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
       entry->GetPrincipal(getter_AddRefs(redirectPrincipal));
       if (redirectPrincipal && redirectPrincipal->SchemeIs("https") &&
           uriAndPrincipalComparator(redirectPrincipal)) {
-        return true;
+        isLoop = true;
       }
     }
   } else {
@@ -359,18 +364,28 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
     }
   }
 
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
-  if (!triggeringPrincipal->SchemeIs("https")) {
-    return false;
+  if (!isLoop) {
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+        aLoadInfo->TriggeringPrincipal();
+    if (!triggeringPrincipal->SchemeIs("https")) {
+      return false;
+    }
+    isLoop = uriAndPrincipalComparator(triggeringPrincipal);
   }
 
-  return uriAndPrincipalComparator(triggeringPrincipal);
+  if (isLoop && enforceForHTTPSFirstMode &&
+      mozilla::StaticPrefs::
+          dom_security_https_first_add_exception_on_failiure()) {
+    AddHTTPSFirstExceptionForSession(aURI, aLoadInfo);
+  }
+
+  return isLoop;
 }
 
 
@@ -587,6 +602,11 @@ nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(
   nsHTTPSOnlyUtils::LogLocalizedString("HTTPSOnlyFailedDowngradeAgain", params,
                                        nsIScriptError::warningFlag, loadInfo,
                                        uri, true);
+
+  if (mozilla::StaticPrefs::
+          dom_security_https_first_add_exception_on_failiure()) {
+    AddHTTPSFirstExceptionForSession(uri, loadInfo);
+  }
 
   return newURI.forget();
 }
@@ -933,6 +953,41 @@ bool nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
   }
 
   return uriEquals;
+}
+
+
+nsresult nsHTTPSOnlyUtils::AddHTTPSFirstExceptionForSession(
+    nsCOMPtr<nsIURI> aURI, nsILoadInfo* const aLoadInfo) {
+  
+  
+  
+  nsresult rv =
+      NS_MutateURI(aURI).SetScheme("http"_ns).Finalize(getter_AddRefs(aURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mozilla::OriginAttributes oa = aLoadInfo->GetOriginAttributes();
+  oa.SetFirstPartyDomain(true, aURI);
+
+  nsCOMPtr<nsIPermissionManager> permMgr =
+      mozilla::components::PermissionManager::Service();
+  NS_ENSURE_TRUE(permMgr, nsresult::NS_ERROR_SERVICE_NOT_AVAILABLE);
+
+  nsCOMPtr<nsIPrincipal> principal =
+      mozilla::BasePrincipal::CreateContentPrincipal(aURI, oa);
+
+  nsCString host;
+  aURI->GetHost(host);
+  LogLocalizedString("HTTPSFirstAddingSessionException",
+                     {NS_ConvertUTF8toUTF16(host)}, nsIScriptError::warningFlag,
+                     aLoadInfo, aURI, true);
+
+  rv = permMgr->AddFromPrincipal(
+      principal, "https-only-load-insecure"_ns,
+      nsIHttpsOnlyModePermission::HTTPSFIRST_LOAD_INSECURE_ALLOW_SESSION,
+      nsIPermissionManager::EXPIRE_SESSION, 0);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
 }
 
 

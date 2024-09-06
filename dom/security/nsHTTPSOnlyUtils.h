@@ -173,6 +173,17 @@ class nsHTTPSOnlyUtils {
 
 
 
+  static nsresult AddHTTPSFirstExceptionForSession(
+      nsCOMPtr<nsIURI> aURI, nsILoadInfo* const aLoadInfo);
+
+  
+
+
+
+
+
+
+
 
 
   static uint32_t GetStatusForSubresourceLoad(uint32_t aHttpsOnlyStatus);
