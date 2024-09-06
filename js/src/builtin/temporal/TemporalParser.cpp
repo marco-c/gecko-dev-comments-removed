@@ -2176,9 +2176,13 @@ bool js::temporal::ParseTemporalDurationString(JSContext* cx,
       (seconds * factor) + (+0.0),      (milliseconds * factor) + (+0.0),
       (microseconds * factor) + (+0.0), (nanoseconds * factor) + (+0.0),
   };
+
+  
   if (!ThrowIfInvalidDuration(cx, *result)) {
     return false;
   }
+
+  
   return true;
 }
 
