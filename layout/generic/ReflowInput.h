@@ -912,12 +912,11 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  
-  
-  
-  void CalculateHypotheticalPosition(
-      nsPlaceholderFrame* aPlaceholderFrame, const ReflowInput* aCBReflowInput,
-      nsHypotheticalPosition& aHypotheticalPos) const;
+  void CalculateHypotheticalPosition(nsPresContext* aPresContext,
+                                     nsPlaceholderFrame* aPlaceholderFrame,
+                                     const ReflowInput* aCBReflowInput,
+                                     nsHypotheticalPosition& aHypotheticalPos,
+                                     mozilla::LayoutFrameType aFrameType) const;
 
   
   
@@ -931,8 +930,10 @@ struct ReflowInput : public SizeComputationInput {
   LogicalSize CalculateAbsoluteSizeWithResolvedAutoBlockSize(
       nscoord aAutoBSize, const LogicalSize& aTentativeComputedSize);
 
-  void InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
-                               const LogicalSize& aCBSize);
+  void InitAbsoluteConstraints(nsPresContext* aPresContext,
+                               const ReflowInput* aCBReflowInput,
+                               const mozilla::LogicalSize& aContainingBlockSize,
+                               mozilla::LayoutFrameType aFrameType);
 
   
   

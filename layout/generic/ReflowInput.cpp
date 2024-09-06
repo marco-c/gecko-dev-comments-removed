@@ -13,7 +13,6 @@
 #include "CounterStyleManager.h"
 #include "LayoutLogging.h"
 #include "mozilla/dom/HTMLInputElement.h"
-#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/WritingModes.h"
 #include "nsBlockFrame.h"
 #include "nsFlexContainerFrame.h"
@@ -1091,9 +1090,9 @@ nsIFrame* ReflowInput::GetHypotheticalBoxContainer(nsIFrame* aFrame,
 
 struct nsHypotheticalPosition {
   
-  nscoord mIStart = 0;
+  nscoord mIStart;
   
-  nscoord mBStart = 0;
+  nscoord mBStart;
   WritingMode mWritingMode;
 };
 
@@ -1215,9 +1214,16 @@ static bool BlockPolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
 
 
 
+
+
+
+
+
+
 void ReflowInput::CalculateHypotheticalPosition(
-    nsPlaceholderFrame* aPlaceholderFrame, const ReflowInput* aCBReflowInput,
-    nsHypotheticalPosition& aHypotheticalPos) const {
+    nsPresContext* aPresContext, nsPlaceholderFrame* aPlaceholderFrame,
+    const ReflowInput* aCBReflowInput, nsHypotheticalPosition& aHypotheticalPos,
+    LayoutFrameType aFrameType) const {
   NS_ASSERTION(mStyleDisplay->mOriginalDisplay != StyleDisplay::None,
                "mOriginalDisplay has not been properly initialized");
 
@@ -1354,9 +1360,9 @@ void ReflowInput::CalculateHypotheticalPosition(
             aPlaceholderFrame->SetLineIsEmptySoFar(true);
             allEmpty = true;
           } else {
-            auto* prev = aPlaceholderFrame->GetPrevSibling();
+            auto prev = aPlaceholderFrame->GetPrevSibling();
             if (prev && prev->IsPlaceholderFrame()) {
-              auto* ph = static_cast<nsPlaceholderFrame*>(prev);
+              auto ph = static_cast<nsPlaceholderFrame*>(prev);
               if (ph->GetLineIsEmptySoFar(&allEmpty)) {
                 aPlaceholderFrame->SetLineIsEmptySoFar(allEmpty);
               }
@@ -1416,24 +1422,8 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   
-  const nsIFrame* cbFrame = aCBReflowInput->mFrame;
-  nsPoint cbOffset = containingBlock->GetOffsetToIgnoringScrolling(cbFrame);
-  if (cbFrame->IsViewportFrame()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (ScrollContainerFrame* sf = cbFrame->GetScrollTargetFrame()) {
-      const nsMargin scrollbarSizes = sf->GetActualScrollbarSizes();
-      cbOffset.MoveBy(-scrollbarSizes.left, -scrollbarSizes.top);
-    }
-  }
+  nsPoint cbOffset =
+      containingBlock->GetOffsetToIgnoringScrolling(aCBReflowInput->mFrame);
 
   nsSize reflowSize = aCBReflowInput->ComputedSizeAsContainerIfConstrained();
   LogicalPoint logCBOffs(wm, cbOffset, reflowSize - containerSize);
@@ -1620,14 +1610,16 @@ LogicalSize ReflowInput::CalculateAbsoluteSizeWithResolvedAutoBlockSize(
   return resultSize;
 }
 
-void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
-                                          const LogicalSize& aCBSize) {
+void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
+                                          const ReflowInput* aCBReflowInput,
+                                          const LogicalSize& aCBSize,
+                                          LayoutFrameType aFrameType) {
   WritingMode wm = GetWritingMode();
   WritingMode cbwm = aCBReflowInput->GetWritingMode();
   NS_WARNING_ASSERTION(aCBSize.BSize(cbwm) != NS_UNCONSTRAINEDSIZE,
                        "containing block bsize must be constrained");
 
-  NS_ASSERTION(!mFrame->IsTableFrame(),
+  NS_ASSERTION(aFrameType != LayoutFrameType::Table,
                "InitAbsoluteConstraints should not be called on table frames");
   NS_ASSERTION(mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                "Why are we here?");
@@ -1681,8 +1673,9 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
       }
     } else {
       
-      CalculateHypotheticalPosition(placeholderFrame, aCBReflowInput,
-                                    hypotheticalPos);
+      CalculateHypotheticalPosition(aPresContext, placeholderFrame,
+                                    aCBReflowInput, hypotheticalPos,
+                                    aFrameType);
       if (aCBReflowInput->mFrame->IsGridContainerFrame()) {
         
         
@@ -1705,8 +1698,11 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   }
 
   
+  
+
+  
   LogicalSize cbSize = aCBSize;
-  LogicalMargin offsets(cbwm);
+  LogicalMargin offsets = ComputedLogicalOffsets(cbwm);
 
   if (iStartIsAuto) {
     offsets.IStart(cbwm) = 0;
@@ -2326,8 +2322,9 @@ void ReflowInput::InitConstraints(
                
                
                !mFrame->GetPrevInFlow()) {
-      InitAbsoluteConstraints(cbri,
-                              cbSize.ConvertTo(cbri->GetWritingMode(), wm));
+      InitAbsoluteConstraints(aPresContext, cbri,
+                              cbSize.ConvertTo(cbri->GetWritingMode(), wm),
+                              aFrameType);
     } else {
       AutoMaybeDisableFontInflation an(mFrame);
 
