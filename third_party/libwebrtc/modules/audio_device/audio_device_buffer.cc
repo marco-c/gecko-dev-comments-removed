@@ -78,6 +78,17 @@ AudioDeviceBuffer::~AudioDeviceBuffer() {
   RTC_DCHECK(!playing_);
   RTC_DCHECK(!recording_);
   RTC_LOG(LS_INFO) << "AudioDeviceBuffer::~dtor";
+
+  
+  
+  
+  
+  
+  
+  
+  
+  task_queue_.get_deleter()(task_queue_.get());
+  task_queue_.release();
 }
 
 int32_t AudioDeviceBuffer::RegisterAudioCallback(
@@ -102,7 +113,7 @@ void AudioDeviceBuffer::StartPlayout() {
   }
   RTC_DLOG(LS_INFO) << __FUNCTION__;
   
-  task_queue_.PostTask([this] { ResetPlayStats(); });
+  task_queue_->PostTask([this] { ResetPlayStats(); });
   
   
   if (!recording_) {
@@ -121,7 +132,7 @@ void AudioDeviceBuffer::StartRecording() {
   }
   RTC_DLOG(LS_INFO) << __FUNCTION__;
   
-  task_queue_.PostTask([this] { ResetRecStats(); });
+  task_queue_->PostTask([this] { ResetRecStats(); });
   
   
   if (!playing_) {
@@ -388,15 +399,15 @@ int32_t AudioDeviceBuffer::GetPlayoutData(void* audio_buffer) {
 }
 
 void AudioDeviceBuffer::StartPeriodicLogging() {
-  task_queue_.PostTask([this] { LogStats(AudioDeviceBuffer::LOG_START); });
+  task_queue_->PostTask([this] { LogStats(AudioDeviceBuffer::LOG_START); });
 }
 
 void AudioDeviceBuffer::StopPeriodicLogging() {
-  task_queue_.PostTask([this] { LogStats(AudioDeviceBuffer::LOG_STOP); });
+  task_queue_->PostTask([this] { LogStats(AudioDeviceBuffer::LOG_STOP); });
 }
 
 void AudioDeviceBuffer::LogStats(LogState state) {
-  RTC_DCHECK_RUN_ON(&task_queue_);
+  RTC_DCHECK_RUN_ON(task_queue_.get());
   int64_t now_time = rtc::TimeMillis();
 
   if (state == AudioDeviceBuffer::LOG_START) {
@@ -497,20 +508,20 @@ void AudioDeviceBuffer::LogStats(LogState state) {
   RTC_DCHECK_GT(time_to_wait_ms, 0) << "Invalid timer interval";
 
   
-  task_queue_.PostDelayedTask(
+  task_queue_->PostDelayedTask(
       [this] { AudioDeviceBuffer::LogStats(AudioDeviceBuffer::LOG_ACTIVE); },
       TimeDelta::Millis(time_to_wait_ms));
 }
 
 void AudioDeviceBuffer::ResetRecStats() {
-  RTC_DCHECK_RUN_ON(&task_queue_);
+  RTC_DCHECK_RUN_ON(task_queue_.get());
   last_stats_.ResetRecStats();
   MutexLock lock(&lock_);
   stats_.ResetRecStats();
 }
 
 void AudioDeviceBuffer::ResetPlayStats() {
-  RTC_DCHECK_RUN_ON(&task_queue_);
+  RTC_DCHECK_RUN_ON(task_queue_.get());
   last_stats_.ResetPlayStats();
   MutexLock lock(&lock_);
   stats_.ResetPlayStats();
