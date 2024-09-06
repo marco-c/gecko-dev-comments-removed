@@ -110,61 +110,65 @@ function assert_iframe_with_csp(t, url, csp, shouldBlock, urlId, blockedURI,
   if (csp != null)
     i.csp = csp;
 
-  var loaded = {};
-  var onLoadReceived = {};
-  window.addEventListener("message", function (e) {
-    if (e.source != i.contentWindow)
-        return;
-    if (e.data["loaded"])
-        loaded[e.data["id"]] = true;
-  });
-
   if (shouldBlock) {
     
-    window.onmessage = t.step_func(function(e) {
-      if (e.source != i.contentWindow)
-          return;
+    window.addEventListener("message", t.step_func(function(e) {
+      if (e.source != i.contentWindow) return;
       assert_unreached('No message should be sent from the frame.');
-    });
-    i.onload = t.step_func(function () {
-      
-      setTimeout(t.step_func_done(function () {
-        assert_equals(loaded[urlId], undefined);
-      }), 500);
+    }));
+    i.onload = t.step_wait_func_done(function() {
+      if (!i.contentWindow) return false;
+      try {
+        let x = i.contentWindow.location.href;
+        return false;
+      } catch (e) {
+        return true;
+      }
+    }, t.step_func(() => {
       assert_throws_dom("SecurityError", () => {
-        var x = i.contentWindow.location.href;
+        let x = i.contentWindow.location.href;
+      });
+    }), "The error frame should be cross-origin.", 5000, 500);
+  } else {
+    let successPromises = [];
+
+    let loadPromise = new Promise(resolve => {
+      i.onload = resolve;
+    });
+    successPromises.push(loadPromise);
+
+    let loadMsgPromise = new Promise(resolve => {
+      window.addEventListener("message", function (e) {
+        if (e.source != i.contentWindow) return;
+        if (e.data["loaded"] && e.data["id"] === urlId) resolve();
       });
     });
-  } else if (blockedURI) {
-    
-    window.addEventListener('message', t.step_func(e => {
-      if (e.source != i.contentWindow)
-        return;
-      if (!e.data.securitypolicyviolation)
-        return;
-      assert_equals(e.data["blockedURI"], blockedURI);
-      t.done();
-    }));
-  } else {
-    
-    
-    let img_loaded = !checkImageLoaded;
-    window.addEventListener('message', t.step_func(e => {
-      if (e.source != i.contentWindow)
-        return;
-      if (e.data === "img loaded")
-        img_loaded = true;
+    successPromises.push(loadMsgPromise);
 
-      if (loaded[urlId] && onLoadReceived[urlId] && img_loaded) {
-        t.done();
-      }
-    }));
-    i.onload = t.step_func(function () {
-      onLoadReceived[urlId] = true;
-      if (loaded[urlId] && onLoadReceived[urlId] && img_loaded) {
-        t.done();
-      }
-    });
+    if (blockedURI) {
+      let securityViolationPromise = new Promise(resolve => {
+        window.addEventListener('message', t.step_func(e => {
+          if (e.source != i.contentWindow) return;
+          if (!e.data.securitypolicyviolation) return;
+          assert_equals(e.data["blockedURI"], blockedURI);
+          resolve();
+        }));
+      });
+      successPromises.push(securityViolationPromise);
+    }
+
+    if (checkImageLoaded) {
+      let imageLoadedPromise = new Promise(resolve => {
+        window.addEventListener('message', e => {
+          if (e.source != i.contentWindow) return;
+          if (e.data === "img loaded") resolve();
+        });
+      });
+      successPromises.push(imageLoadedPromise);
+    }
+
+    
+    Promise.all(successPromises).then(t.step_func_done());
   }
   document.body.appendChild(i);
 }
