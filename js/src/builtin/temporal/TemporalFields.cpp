@@ -224,14 +224,23 @@ static bool TemporalFieldConvertValue(JSContext* cx, TemporalField field,
     case TemporalField::Second:
     case TemporalField::Millisecond:
     case TemporalField::Microsecond:
-    case TemporalField::Nanosecond:
-    case TemporalField::EraYear: {
+    case TemporalField::Nanosecond: {
       double num;
       if (!ToIntegerWithTruncation(cx, value, name, &num)) {
         return false;
       }
       value.setNumber(num);
       return true;
+    }
+
+    case TemporalField::EraYear: {
+      
+      
+      
+      
+      
+      
+      [[fallthrough]];
     }
 
     case TemporalField::Month:
@@ -504,7 +513,9 @@ bool js::temporal::PrepareTemporalFields(
           break;
         }
         case TemporalField::EraYear:
-          if (!ToIntegerWithTruncation(cx, value, cstr, &result.eraYear())) {
+          
+          if (!ToPositiveIntegerWithTruncation(cx, value, cstr,
+                                               &result.eraYear())) {
             return false;
           }
           break;
