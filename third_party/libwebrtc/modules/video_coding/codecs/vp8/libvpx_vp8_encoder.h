@@ -138,20 +138,6 @@ class LibvpxVp8Encoder : public VideoEncoder {
   std::vector<vpx_rational_t> downsampling_factors_;
   std::vector<Timestamp> last_encoder_output_time_;
 
-  
-  const struct VariableFramerateExperiment {
-    bool enabled = false;
-    
-    float framerate_limit = 5.0;
-    
-    int steady_state_qp = kVp8SteadyStateQpThreshold;
-    
-    
-    int steady_state_undershoot_percentage = 30;
-  } variable_framerate_experiment_;
-  static VariableFramerateExperiment ParseVariableFramerateConfig(
-      const FieldTrialsView& field_trials,
-      absl::string_view group_name);
   FramerateControllerDeprecated framerate_controller_;
   int num_steady_state_frames_ = 0;
 
