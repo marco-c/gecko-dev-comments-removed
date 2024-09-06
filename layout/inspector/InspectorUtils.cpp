@@ -1045,6 +1045,37 @@ void InspectorUtils::GetCSSRegisteredProperties(
 }
 
 
+void InspectorUtils::GetCSSRegisteredProperty(
+    GlobalObject& aGlobalObject, Document& aDocument, const nsACString& aName,
+    Nullable<InspectorCSSPropertyDefinition>& aResult) {
+  StylePropDef result{StyleAtom(NS_Atomize(aName))};
+
+  
+  ServoStyleSet& styleSet = aDocument.EnsureStyleSet();
+  styleSet.UpdateStylistIfNeeded();
+
+  if (!Servo_GetRegisteredCustomProperty(styleSet.RawData(), &aName, &result)) {
+    aResult.SetNull();
+    return;
+  }
+
+  InspectorCSSPropertyDefinition& propDef = aResult.SetValue();
+
+  
+  
+  propDef.mName.AssignLiteral("--");
+  propDef.mName.Append(nsAtomCString(result.name.AsAtom()));
+  propDef.mSyntax.Append(result.syntax);
+  propDef.mInherits = result.inherits;
+  if (result.has_initial_value) {
+    propDef.mInitialValue.Append(result.initial_value);
+  } else {
+    propDef.mInitialValue.SetIsVoid(true);
+  }
+  propDef.mFromJS = result.from_js;
+}
+
+
 bool InspectorUtils::ValueMatchesSyntax(GlobalObject&, Document& aDocument,
                                         const nsACString& aValue,
                                         const nsACString& aSyntax) {

@@ -275,6 +275,13 @@ class InspectorUtils {
   
 
 
+  static void GetCSSRegisteredProperty(
+      GlobalObject& aGlobal, Document& aDocument, const nsACString& aName,
+      Nullable<InspectorCSSPropertyDefinition>& aResult);
+
+  
+
+
   static bool ValueMatchesSyntax(GlobalObject&, Document& aDocument,
                                  const nsACString& aValue,
                                  const nsACString& aSyntax);
