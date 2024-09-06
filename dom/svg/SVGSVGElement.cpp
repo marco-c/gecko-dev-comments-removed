@@ -193,23 +193,30 @@ float SVGSVGElement::GetCurrentTimeAsFloat() {
 }
 
 void SVGSVGElement::SetCurrentTime(float seconds) {
-  if (mTimedDocumentRoot) {
+  if (!mTimedDocumentRoot) {
     
-    FlushAnimations();
-    double fMilliseconds = double(seconds) * PR_MSEC_PER_SEC;
-    
-    
-    SMILTime lMilliseconds = SVGUtils::ClampToInt64(NS_round(fMilliseconds));
-    mTimedDocumentRoot->SetCurrentTime(lMilliseconds);
-    AnimationNeedsResample();
-    
-    
-    
-    
-    
-    FlushAnimations();
+    return;
   }
   
+  if (RefPtr<Document> currentDoc = GetComposedDoc()) {
+    currentDoc->FlushPendingNotifications(FlushType::Style);
+  }
+  if (!mTimedDocumentRoot) {
+    return;
+  }
+  FlushAnimations();
+  double fMilliseconds = double(seconds) * PR_MSEC_PER_SEC;
+  
+  
+  SMILTime lMilliseconds = SVGUtils::ClampToInt64(NS_round(fMilliseconds));
+  mTimedDocumentRoot->SetCurrentTime(lMilliseconds);
+  AnimationNeedsResample();
+  
+  
+  
+  
+  
+  FlushAnimations();
 }
 
 void SVGSVGElement::DeselectAll() {
