@@ -91,6 +91,16 @@ void AudioFrame::CopyFrom(const AudioFrame& src) {
   if (this == &src)
     return;
 
+  if (muted_ && !src.muted()) {
+    
+    
+    
+    
+    
+    
+    memset(data_, 0, kMaxDataSizeBytes);
+  }
+
   timestamp_ = src.timestamp_;
   elapsed_time_ms_ = src.elapsed_time_ms_;
   ntp_time_ms_ = src.ntp_time_ms_;
@@ -104,11 +114,10 @@ void AudioFrame::CopyFrom(const AudioFrame& src) {
   channel_layout_ = src.channel_layout_;
   absolute_capture_timestamp_ms_ = src.absolute_capture_timestamp_ms();
 
-  const size_t length = samples_per_channel_ * num_channels_;
-  RTC_CHECK_LE(length, kMaxDataSizeSamples);
-  if (!src.muted()) {
-    memcpy(data_, src.data(), sizeof(int16_t) * length);
-    muted_ = false;
+  auto data = src.data_view();
+  RTC_CHECK_LE(data.size(), kMaxDataSizeSamples);
+  if (!muted_ && !data.empty()) {
+    memcpy(&data_[0], &data[0], sizeof(int16_t) * data.size());
   }
 }
 
@@ -161,7 +170,9 @@ rtc::ArrayView<int16_t> AudioFrame::mutable_data(size_t samples_per_channel,
   
   
   RTC_DCHECK((samples_per_channel == 0 && num_channels == 0) ||
-             samples_per_channel > kMaxConcurrentChannels);
+             num_channels <= samples_per_channel)
+      << "samples_per_channel=" << samples_per_channel
+      << "num_channels=" << num_channels;
 
   
   

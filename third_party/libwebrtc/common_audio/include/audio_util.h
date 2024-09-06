@@ -94,6 +94,7 @@ inline float FloatS16ToDbfs(float v) {
 
 
 
+
 template <typename T>
 void CopyAudioIfNeeded(const T* const* src,
                        int num_frames,
@@ -105,6 +106,7 @@ void CopyAudioIfNeeded(const T* const* src,
     }
   }
 }
+
 
 
 
@@ -128,6 +130,7 @@ void Deinterleave(const T* interleaved,
 
 
 
+
 template <typename T>
 void Interleave(const T* const* deinterleaved,
                 size_t samples_per_channel,
@@ -146,6 +149,7 @@ void Interleave(const T* const* deinterleaved,
 
 
 
+
 template <typename T>
 void UpmixMonoToInterleaved(const T* mono,
                             int num_frames,
@@ -158,6 +162,7 @@ void UpmixMonoToInterleaved(const T* mono,
     }
   }
 }
+
 
 template <typename T, typename Intermediate>
 void DownmixToMono(const T* const* input_channels,
@@ -172,6 +177,7 @@ void DownmixToMono(const T* const* input_channels,
     out[i] = value / num_channels;
   }
 }
+
 
 
 
@@ -197,11 +203,13 @@ void DownmixInterleavedToMonoImpl(const T* interleaved,
   }
 }
 
+
 template <typename T>
 void DownmixInterleavedToMono(const T* interleaved,
                               size_t num_frames,
                               int num_channels,
                               T* deinterleaved);
+
 
 template <>
 void DownmixInterleavedToMono<int16_t>(const int16_t* interleaved,
