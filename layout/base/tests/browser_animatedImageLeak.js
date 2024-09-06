@@ -46,21 +46,35 @@ async function pushPrefs1() {
   });
 }
 
-async function openWindowsAndMinimize(taskToPerformBeforeMinimize) {
+
+
+
+
+async function openWindows(maximize, taskToPerformBeforeSizeChange) {
   let wins = [null, null, null, null];
   for (let i = 0; i < wins.length; i++) {
     let win = await BrowserTestUtils.openNewBrowserWindow();
     await win.delayedStartupPromise;
-    await taskToPerformBeforeMinimize(win);
+    await taskToPerformBeforeSizeChange(win);
 
-    
-    if (i < wins.length - 1) {
-      let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
-        win,
-        "sizemodechange"
-      );
-      win.minimize();
-      await promiseSizeModeChange;
+    if (
+      (!maximize && i < wins.length - 1) ||
+      (maximize && i == wins.length - 1)
+    ) {
+      
+      
+      if (!maximize || (maximize && win.windowState != win.STATE_MAXIMIZED)) {
+        let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
+          win,
+          "sizemodechange"
+        );
+        if (maximize) {
+          win.maximize();
+        } else {
+          win.minimize();
+        }
+        await promiseSizeModeChange;
+      }
     }
 
     wins[i] = win;
@@ -96,10 +110,10 @@ async function popPrefs() {
 }
 
 add_task(async () => {
-  async function runTest(theTestPath) {
+  async function runTest(theTestPath, maximize) {
     await pushPrefs1();
 
-    let wins = await openWindowsAndMinimize(async function (win) {
+    let wins = await openWindows(maximize, async function (win) {
       let tab = await BrowserTestUtils.openNewForegroundTab(
         win.gBrowser,
         theTestPath
@@ -124,9 +138,14 @@ add_task(async () => {
   }
 
   
-  await runTest(fileURL("helper_animatedImageLeak.html"));
+  let contentURL = fileURL("helper_animatedImageLeak.html");
+  await runTest(contentURL,  true);
+  await runTest(contentURL,  false);
+
   
-  await runTest(getRootDirectory(gTestPath) + "helper_animatedImageLeak.html");
+  let chromeURL = getRootDirectory(gTestPath) + "helper_animatedImageLeak.html";
+  await runTest(chromeURL,  true);
+  await runTest(chromeURL,  false);
 });
 
 
@@ -188,39 +207,47 @@ async function sendMessage(ext, msg, data = undefined) {
 }
 
 add_task(async function sidebar_initial_install() {
-  await pushPrefs1();
+  async function runTest(maximize) {
+    await pushPrefs1();
 
-  ok(
-    document.getElementById("sidebar-box").hidden,
-    "sidebar box is not visible"
-  );
+    ok(
+      document.getElementById("sidebar-box").hidden,
+      "sidebar box is not visible"
+    );
 
-  let extension = ExtensionTestUtils.loadExtension(getExtData());
-  await extension.startup();
-  await extension.awaitMessage("sidebar");
-
-  
-  ok(!document.getElementById("sidebar-box").hidden, "sidebar box is visible");
-
-  
-  let wins = await openWindowsAndMinimize(async function (win) {
+    let extension = ExtensionTestUtils.loadExtension(getExtData());
+    await extension.startup();
     await extension.awaitMessage("sidebar");
-  });
 
-  await pushPrefs2();
+    
+    ok(
+      !document.getElementById("sidebar-box").hidden,
+      "sidebar box is visible"
+    );
 
-  await waitForEnoughFrames();
+    
+    let wins = await openWindows(maximize, async function (win) {
+      await extension.awaitMessage("sidebar");
+    });
 
-  await extension.unload();
-  
-  ok(
-    document.getElementById("sidebar-box").hidden,
-    "sidebar box is not visible"
-  );
+    await pushPrefs2();
 
-  await closeWindows(wins);
+    await waitForEnoughFrames();
 
-  await popPrefs();
+    await extension.unload();
+    
+    ok(
+      document.getElementById("sidebar-box").hidden,
+      "sidebar box is not visible"
+    );
 
-  ok(true, "got here without assserting");
+    await closeWindows(wins);
+
+    await popPrefs();
+
+    ok(true, "got here without assserting");
+  }
+
+  await runTest( true);
+  await runTest( false);
 });
