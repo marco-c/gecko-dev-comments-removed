@@ -3,10 +3,11 @@ import websockets
 
 import webdriver
 
+pytestmark = pytest.mark.asyncio
 
 
 
-@pytest.mark.asyncio
+
 @pytest.mark.capabilities({"webSocketUrl": True})
 async def test_websocket_url_connect(session):
     websocket_url = session.capabilities["webSocketUrl"]
@@ -15,14 +16,11 @@ async def test_websocket_url_connect(session):
 
 
 
-@pytest.mark.asyncio
-async def test_bidi_session_send(bidi_session):
+async def test_bidi_session(bidi_session):
     await bidi_session.session.status()
 
 
 
-
-@pytest.mark.asyncio
 @pytest.mark.capabilities({"acceptInsecureCerts": True})
 async def test_bidi_session_with_different_capability(bidi_session):
     await bidi_session.session.status()
@@ -31,7 +29,5 @@ async def test_bidi_session_with_different_capability(bidi_session):
 
 
 
-
-@pytest.mark.asyncio
-def test_classic_after_bidi_session(session):
+async def test_classic_after_bidi_session(session):
     assert not isinstance(session, webdriver.bidi.BidiSession)
