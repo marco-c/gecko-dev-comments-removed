@@ -377,13 +377,7 @@ fn set_input_processing_params(unit: AudioUnit, params: InputProcessingParams) -
     let aec = params.contains(InputProcessingParams::ECHO_CANCELLATION);
     let ns = params.contains(InputProcessingParams::NOISE_SUPPRESSION);
     let agc = params.contains(InputProcessingParams::AUTOMATIC_GAIN_CONTROL);
-
-    
-    
-    if aec != ns {
-        
-        return Err(Error::error());
-    }
+    assert_eq!(aec, ns);
 
     let mut old_agc: u32 = 0;
     let r = audio_unit_get_property(
@@ -419,6 +413,11 @@ fn set_input_processing_params(unit: AudioUnit, params: InputProcessingParams) -
             );
             return Err(Error::error());
         }
+        cubeb_log!(
+            "set_input_processing_params on unit {:p} - set agc: {}",
+            unit,
+            agc
+        );
     }
 
     let mut old_bypass: u32 = 0;
@@ -455,6 +454,11 @@ fn set_input_processing_params(unit: AudioUnit, params: InputProcessingParams) -
             );
             return Err(Error::error());
         }
+        cubeb_log!(
+            "set_input_processing_params on unit {:p} - set bypass: {}",
+            unit,
+            bypass
+        );
     }
 
     Ok(())
@@ -3015,6 +3019,7 @@ struct CoreStreamData<'ctx> {
     input_processing_params: InputProcessingParams,
     input_mute: bool,
     input_buffer_manager: Option<BufferManager>,
+    units_running: bool,
     
     default_input_listener: Option<device_property_listener>,
     default_output_listener: Option<device_property_listener>,
@@ -3064,6 +3069,7 @@ impl<'ctx> Default for CoreStreamData<'ctx> {
             input_processing_params: InputProcessingParams::NONE,
             input_mute: false,
             input_buffer_manager: None,
+            units_running: false,
             default_input_listener: None,
             default_output_listener: None,
             input_alive_listener: None,
@@ -3119,6 +3125,7 @@ impl<'ctx> CoreStreamData<'ctx> {
             input_processing_params: InputProcessingParams::NONE,
             input_mute: false,
             input_buffer_manager: None,
+            units_running: false,
             default_input_listener: None,
             default_output_listener: None,
             input_alive_listener: None,
@@ -3145,7 +3152,7 @@ impl<'ctx> CoreStreamData<'ctx> {
         stm.queue.debug_assert_is_current();
     }
 
-    fn start_audiounits(&self) -> Result<()> {
+    fn start_audiounits(&mut self) -> Result<()> {
         self.debug_assert_is_on_stream_queue();
         
         
@@ -3156,22 +3163,50 @@ impl<'ctx> CoreStreamData<'ctx> {
         }
         if self.using_voice_processing_unit() {
             
+
+            
+            
+            
+            if let Err(r) =
+                set_input_processing_params(self.input_unit, self.input_processing_params)
+            {
+                cubeb_log!(
+                    "({:p}) Failed to set params of voiceprocessing. Error: {}",
+                    self.stm_ptr,
+                    r
+                );
+                return Err(r);
+            }
             return Ok(());
         }
         if !self.output_unit.is_null() {
             start_audiounit(self.output_unit)?;
         }
+        self.units_running = true;
         Ok(())
     }
 
-    fn stop_audiounits(&self) {
+    fn stop_audiounits(&mut self) {
         self.debug_assert_is_on_stream_queue();
+        self.units_running = false;
         if !self.input_unit.is_null() {
             let r = stop_audiounit(self.input_unit);
             assert!(r.is_ok());
         }
         if self.using_voice_processing_unit() {
             
+
+            
+            let vpio_defaults = InputProcessingParams::ECHO_CANCELLATION
+                | InputProcessingParams::AUTOMATIC_GAIN_CONTROL
+                | InputProcessingParams::NOISE_SUPPRESSION;
+            if let Err(r) = set_input_processing_params(self.input_unit, vpio_defaults) {
+                cubeb_log!(
+                    "({:p}) Failed to reset params of voiceprocessing. Error: {}",
+                    self.stm_ptr,
+                    r
+                );
+            }
             return;
         }
         if !self.output_unit.is_null() {
@@ -4095,20 +4130,6 @@ impl<'ctx> CoreStreamData<'ctx> {
                 );
                 return Err(r);
             }
-
-            
-            
-            
-            if let Err(r) =
-                set_input_processing_params(self.input_unit, self.input_processing_params)
-            {
-                cubeb_log!(
-                    "({:p}) Failed to set params of voiceprocessing. Error: {}",
-                    self.stm_ptr,
-                    r
-                );
-                return Err(r);
-            }
         }
 
         if let Err(r) = self.install_system_changed_callback() {
@@ -4838,6 +4859,7 @@ impl<'ctx> StreamOps for AudioUnitStream<'ctx> {
         
         let result = self
             .queue
+            .clone()
             .run_sync(|| self.core_stream_data.start_audiounits())
             .unwrap();
 
@@ -4855,6 +4877,7 @@ impl<'ctx> StreamOps for AudioUnitStream<'ctx> {
         if !self.stopped.swap(true, Ordering::SeqCst) {
             
             self.queue
+                .clone()
                 .run_sync(|| self.core_stream_data.stop_audiounits());
 
             self.notify_state_changed(State::Stopped);
@@ -4999,23 +5022,46 @@ impl<'ctx> StreamOps for AudioUnitStream<'ctx> {
 
         
         
+        let aec = params.contains(InputProcessingParams::ECHO_CANCELLATION);
+        let ns = params.contains(InputProcessingParams::NOISE_SUPPRESSION);
+        if aec != ns {
+            
+            cubeb_log!(
+                "Cubeb stream ({:p}) couldn't set input processing params {:?}. AEC != NS.",
+                self as *const AudioUnitStream,
+                params
+            );
+            return Err(Error::error());
+        }
+
+        
+        
         if !self.core_stream_data.using_voice_processing_unit() {
             return Err(Error::error());
         }
 
         
         let mut result = Err(Error::error());
-        let set = &mut result;
+        let result_ = &mut result;
+        let mut deferred = false;
+        let deferred_ = &mut deferred;
         let stream = &self;
         self.queue.run_sync(move || {
-            *set = set_input_processing_params(stream.core_stream_data.input_unit, params);
+            if stream.core_stream_data.units_running {
+                *deferred_ = true;
+                *result_ = Ok(());
+            } else {
+                *deferred_ = false;
+                *result_ = set_input_processing_params(stream.core_stream_data.input_unit, params);
+            }
         });
 
         result?;
 
         cubeb_log!(
-            "Cubeb stream ({:p}) set input processing params to {:?}.",
+            "Cubeb stream ({:p}) {} input processing params {:?}.",
             self as *const AudioUnitStream,
+            if deferred { "deferred" } else { "set" },
             params
         );
         self.core_stream_data.input_processing_params = params;
