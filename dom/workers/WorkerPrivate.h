@@ -77,6 +77,7 @@ class JSExecutionManager;
 class MessagePort;
 class UniqueMessagePortId;
 class PerformanceStorage;
+class StrongWorkerRef;
 class TimeoutHandler;
 class WorkerControlRunnable;
 class WorkerCSPEventListener;
@@ -1556,10 +1557,13 @@ class WorkerPrivate final
     ~AutoPushEventLoopGlobal();
 
    private:
-    
-    
-    MOZ_NON_OWNING_REF WorkerPrivate* mWorkerPrivate;
     nsCOMPtr<nsIGlobalObject> mOldEventLoopGlobal;
+
+#ifdef DEBUG
+    
+    
+    nsCOMPtr<nsIGlobalObject> mNewEventLoopGlobal;
+#endif
   };
   friend class AutoPushEventLoopGlobal;
 
@@ -1661,41 +1665,21 @@ class WorkerPrivate final
 };
 
 class AutoSyncLoopHolder {
-  CheckedUnsafePtr<WorkerPrivate> mWorkerPrivate;
+  RefPtr<StrongWorkerRef> mWorkerRef;
   nsCOMPtr<nsISerialEventTarget> mTarget;
   uint32_t mIndex;
 
  public:
   
   
-  AutoSyncLoopHolder(WorkerPrivate* aWorkerPrivate, WorkerStatus aFailStatus)
-      : mWorkerPrivate(aWorkerPrivate),
-        mTarget(aWorkerPrivate->CreateNewSyncLoop(aFailStatus)),
-        mIndex(aWorkerPrivate->mSyncLoopStack.Length() - 1) {
-    aWorkerPrivate->AssertIsOnWorkerThread();
-  }
+  AutoSyncLoopHolder(WorkerPrivate* aWorkerPrivate, WorkerStatus aFailStatus,
+                     const char* const aName = "AutoSyncLoopHolder");
 
-  ~AutoSyncLoopHolder() {
-    if (mWorkerPrivate && mTarget) {
-      mWorkerPrivate->AssertIsOnWorkerThread();
-      mWorkerPrivate->StopSyncLoop(mTarget, NS_ERROR_FAILURE);
-      mWorkerPrivate->DestroySyncLoop(mIndex);
-    }
-  }
+  ~AutoSyncLoopHolder();
 
-  nsresult Run() {
-    CheckedUnsafePtr<WorkerPrivate> workerPrivate = mWorkerPrivate;
-    mWorkerPrivate = nullptr;
+  nsresult Run();
 
-    workerPrivate->AssertIsOnWorkerThread();
-
-    return workerPrivate->RunCurrentSyncLoop();
-  }
-
-  nsISerialEventTarget* GetSerialEventTarget() const {
-    
-    return mTarget;
-  }
+  nsISerialEventTarget* GetSerialEventTarget() const;
 };
 
 

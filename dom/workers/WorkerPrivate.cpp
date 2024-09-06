@@ -6373,18 +6373,91 @@ WorkerPrivate::EventTarget::IsOnCurrentThreadInfallible() {
 }
 
 WorkerPrivate::AutoPushEventLoopGlobal::AutoPushEventLoopGlobal(
-    WorkerPrivate* aWorkerPrivate, JSContext* aCx)
-    : mWorkerPrivate(aWorkerPrivate) {
-  auto data = mWorkerPrivate->mWorkerThreadAccessible.Access();
+    WorkerPrivate* aWorkerPrivate, JSContext* aCx) {
+  auto data = aWorkerPrivate->mWorkerThreadAccessible.Access();
   mOldEventLoopGlobal = std::move(data->mCurrentEventLoopGlobal);
   if (JSObject* global = JS::CurrentGlobalOrNull(aCx)) {
     data->mCurrentEventLoopGlobal = xpc::NativeGlobal(global);
   }
+#ifdef DEBUG
+  mNewEventLoopGlobal = data->mCurrentEventLoopGlobal;
+#endif
 }
 
 WorkerPrivate::AutoPushEventLoopGlobal::~AutoPushEventLoopGlobal() {
-  auto data = mWorkerPrivate->mWorkerThreadAccessible.Access();
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  
+  
+  MOZ_ASSERT(workerPrivate);
+  auto data = workerPrivate->mWorkerThreadAccessible.Access();
+#ifdef DEBUG
+  
+  MOZ_ASSERT(data->mCurrentEventLoopGlobal == mNewEventLoopGlobal);
+  mNewEventLoopGlobal = nullptr;
+#endif
   data->mCurrentEventLoopGlobal = std::move(mOldEventLoopGlobal);
+}
+
+
+
+
+AutoSyncLoopHolder::AutoSyncLoopHolder(WorkerPrivate* aWorkerPrivate,
+                                       WorkerStatus aFailStatus,
+                                       const char* const aName)
+    : mTarget(aWorkerPrivate->CreateNewSyncLoop(aFailStatus)),
+      mIndex(aWorkerPrivate->mSyncLoopStack.Length() - 1) {
+  aWorkerPrivate->AssertIsOnWorkerThread();
+  LOGV(
+      ("AutoSyncLoopHolder::AutoSyncLoopHolder [%p] creator: %s", this, aName));
+  if (aFailStatus < Canceling) {
+    mWorkerRef = StrongWorkerRef::Create(aWorkerPrivate, aName, [aName]() {
+      
+      
+      LOGV(
+          ("AutoSyncLoopHolder::AutoSyncLoopHolder Worker starts to shutdown "
+           "with a AutoSyncLoopHolder(%s).",
+           aName));
+    });
+  } else {
+    LOGV(
+        ("AutoSyncLoopHolder::AutoSyncLoopHolder [%p] Create "
+         "AutoSyncLoopHolder(%s) while Worker is shutting down",
+         this, aName));
+    mWorkerRef = StrongWorkerRef::CreateForcibly(aWorkerPrivate, aName);
+  }
+  
+}
+
+AutoSyncLoopHolder::~AutoSyncLoopHolder() {
+  if (mWorkerRef && mTarget) {
+    mWorkerRef->Private()->AssertIsOnWorkerThread();
+    mWorkerRef->Private()->StopSyncLoop(mTarget, NS_ERROR_FAILURE);
+    mWorkerRef->Private()->DestroySyncLoop(mIndex);
+  }
+}
+
+nsresult AutoSyncLoopHolder::Run() {
+  if (mWorkerRef) {
+    WorkerPrivate* workerPrivate = mWorkerRef->Private();
+    MOZ_ASSERT(workerPrivate);
+
+    workerPrivate->AssertIsOnWorkerThread();
+
+    nsresult rv = workerPrivate->RunCurrentSyncLoop();
+
+    
+    
+    
+    mWorkerRef = nullptr;
+
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsISerialEventTarget* AutoSyncLoopHolder::GetSerialEventTarget() const {
+  
+  return mTarget;
 }
 
 
