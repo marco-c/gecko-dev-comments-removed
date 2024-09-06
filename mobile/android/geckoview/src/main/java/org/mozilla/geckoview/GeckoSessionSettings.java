@@ -334,8 +334,8 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-  private static final Key<Boolean> IS_POPUP =
-      new Key<Boolean>("isPopup",  false,  null);
+  private static final Key<Boolean> IS_EXTENSION_POPUP =
+      new Key<Boolean>("isExtensionPopup",  false,  null);
 
   
   private static final Key<String> CONTEXT_ID =
@@ -375,7 +375,7 @@ public final class GeckoSessionSettings implements Parcelable {
     mBundle.putBoolean(SUSPEND_MEDIA_WHEN_INACTIVE.name, false);
     mBundle.putBoolean(ALLOW_JAVASCRIPT.name, true);
     mBundle.putBoolean(FULL_ACCESSIBILITY_TREE.name, false);
-    mBundle.putBoolean(IS_POPUP.name, false);
+    mBundle.putBoolean(IS_EXTENSION_POPUP.name, false);
     mBundle.putInt(USER_AGENT_MODE.name, USER_AGENT_MODE_MOBILE);
     mBundle.putString(USER_AGENT_OVERRIDE.name, null);
     mBundle.putInt(VIEWPORT_MODE.name, VIEWPORT_MODE_MOBILE);
@@ -430,8 +430,8 @@ public final class GeckoSessionSettings implements Parcelable {
     setBoolean(FULL_ACCESSIBILITY_TREE, value);
   }
 
-   void setIsPopup(final boolean value) {
-    setBoolean(IS_POPUP, value);
+   void setIsExtensionPopup(final boolean value) {
+    setBoolean(IS_EXTENSION_POPUP, value);
   }
 
   private void setBoolean(final Key<Boolean> key, final boolean value) {
@@ -498,8 +498,8 @@ public final class GeckoSessionSettings implements Parcelable {
     return getBoolean(FULL_ACCESSIBILITY_TREE);
   }
 
-   boolean getIsPopup() {
-    return getBoolean(IS_POPUP);
+   boolean getIsExtensionPopup() {
+    return getBoolean(IS_EXTENSION_POPUP);
   }
 
   private boolean getBoolean(final Key<Boolean> key) {
