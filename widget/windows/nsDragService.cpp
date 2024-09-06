@@ -285,6 +285,15 @@ nsresult nsDragSession::StartInvokingDragSession(nsIWidget* aWidget,
       dropResult = nsIDragService::DRAGDROP_ACTION_NONE;
 
     if (mDataTransfer) {
+      if (mozilla::StaticPrefs::widget_windows_allow_external_tab_drag()) {
+        
+        
+        
+        if (mDataTransfer->HasType(u"application/x-moz-tabbrowser-tab"_ns)) {
+          dropResult = nsIDragService::DRAGDROP_ACTION_NONE;
+        }
+      }
+
       if (res == DRAGDROP_S_DROP)  
         mDataTransfer->SetDropEffectInt(dropResult);
       else
