@@ -712,9 +712,9 @@ class Editor extends EventEmitter {
     } = this.#CodeMirror6;
 
     class LineContentWidget extends WidgetType {
-      constructor(createElementNode) {
+      constructor(line, createElementNode) {
         super();
-        this.toDOM = createElementNode;
+        this.toDOM = () => createElementNode(line);
       }
     }
 
@@ -737,7 +737,10 @@ class Editor extends EventEmitter {
               }
               if (marker.createLineElementNode) {
                 const nodeDecoration = Decoration.widget({
-                  widget: new LineContentWidget(marker.createLineElementNode),
+                  widget: new LineContentWidget(
+                    line.number,
+                    marker.createLineElementNode
+                  ),
                 });
                 builder.add(line.to, line.to, nodeDecoration);
               }
@@ -806,6 +809,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 
