@@ -58,6 +58,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
   
   bool mHasPendingPasswordEvent = false;
   
+
   bool mHasPendingPossibleUsernameEvent = false;
 
   

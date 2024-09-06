@@ -4415,7 +4415,7 @@ void HTMLInputElement::MaybeDispatchLoginManagerEvents(HTMLFormElement* aForm) {
   }
 
   nsString eventType;
-  Element* target = nullptr;
+  EventTarget* target = nullptr;
 
   if (mType == FormControlType::InputPassword) {
     
@@ -4426,10 +4426,11 @@ void HTMLInputElement::MaybeDispatchLoginManagerEvents(HTMLFormElement* aForm) {
     
     eventType = aForm ? u"DOMFormHasPassword"_ns : u"DOMInputPasswordAdded"_ns;
 
-    target = aForm ? static_cast<Element*>(aForm) : this;
-
     if (aForm) {
+      target = aForm;
       aForm->mHasPendingPasswordEvent = true;
+    } else {
+      target = this;
     }
 
   } else if (mType == FormControlType::InputEmail ||
@@ -4438,16 +4439,27 @@ void HTMLInputElement::MaybeDispatchLoginManagerEvents(HTMLFormElement* aForm) {
     
     
     
-    if (!aForm || aForm->mHasPendingPossibleUsernameEvent ||
-        !StaticPrefs::signon_usernameOnlyForm_enabled()) {
+    
+
+    if (!StaticPrefs::signon_usernameOnlyForm_enabled()) {
       return;
     }
 
-    eventType = u"DOMFormHasPossibleUsername"_ns;
-    target = aForm;
-
-    aForm->mHasPendingPossibleUsernameEvent = true;
-
+    if (aForm) {
+      if (aForm->mHasPendingPossibleUsernameEvent) {
+        return;
+      }
+      aForm->mHasPendingPossibleUsernameEvent = true;
+      target = aForm;
+    } else {
+      nsAutoString autocompleteValue;
+      GetAutocomplete(autocompleteValue);
+      if (!autocompleteValue.EqualsASCII("username")) {
+        return;
+      }
+      target = GetComposedDoc();
+    }
+    eventType = u"DOMPossibleUsernameInputAdded"_ns;
   } else {
     return;
   }
