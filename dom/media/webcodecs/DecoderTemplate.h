@@ -9,8 +9,6 @@
 
 #include <queue>
 
-#include "SimpleMap.h"
-#include "WebCodecsUtils.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/DecoderAgent.h"
 #include "mozilla/MozPromise.h"
@@ -20,6 +18,7 @@
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/media/MediaUtils.h"
 #include "nsStringFwd.h"
+#include "WebCodecsUtils.h"
 
 namespace mozilla {
 
@@ -77,8 +76,7 @@ class DecoderTemplate : public DOMEventTargetHelper {
     const ConfigTypeInternal& Config() { return *mConfig; }
     UniquePtr<ConfigTypeInternal> TakeConfig() { return std::move(mConfig); }
 
-    
-    const Id mId;
+    const Id mId;  
 
    private:
     ConfigureMessage(Id aId, UniquePtr<ConfigTypeInternal>&& aConfig);
@@ -90,18 +88,16 @@ class DecoderTemplate : public DOMEventTargetHelper {
       : public ControlMessage,
         public MessageRequestHolder<DecoderAgent::DecodePromise> {
    public:
-    using SeqId = size_t;
+    using Id = size_t;
     using ConfigId = typename Self::ConfigureMessage::Id;
-    DecodeMessage(SeqId aSeqId, ConfigId aConfigId,
+    DecodeMessage(Id aId, ConfigId aConfigId,
                   UniquePtr<InputTypeInternal>&& aData);
     ~DecodeMessage() = default;
     virtual void Cancel() override { Disconnect(); }
     virtual bool IsProcessing() override { return Exists(); };
     virtual DecodeMessage* AsDecodeMessage() override { return this; }
+    const Id mId;  
 
-    
-    
-    const SeqId mSeqId;
     UniquePtr<InputTypeInternal> mData;
   };
 
@@ -109,18 +105,17 @@ class DecoderTemplate : public DOMEventTargetHelper {
       : public ControlMessage,
         public MessageRequestHolder<DecoderAgent::DecodePromise> {
    public:
-    using SeqId = size_t;
+    using Id = size_t;
     using ConfigId = typename Self::ConfigureMessage::Id;
-    FlushMessage(SeqId aSeqId, ConfigId aConfigId);
+    FlushMessage(Id aId, ConfigId aConfigId, Promise* aPromise);
     ~FlushMessage() = default;
     virtual void Cancel() override { Disconnect(); }
     virtual bool IsProcessing() override { return Exists(); };
     virtual FlushMessage* AsFlushMessage() override { return this; }
+    already_AddRefed<Promise> TakePromise() { return mPromise.forget(); }
+    void RejectPromiseIfAny(const nsresult& aReason);
 
-    
-    
-    const SeqId mSeqId;
-    const int64_t mUniqueId;
+    const Id mId;  
 
    private:
     RefPtr<Promise> mPromise;
@@ -181,7 +176,7 @@ class DecoderTemplate : public DOMEventTargetHelper {
   nsresult FireEvent(nsAtom* aTypeWithOn, const nsAString& aEventType);
 
   void ProcessControlMessageQueue();
-  void CancelPendingControlMessagesAndFlushPromises(const nsresult& aResult);
+  void CancelPendingControlMessages(const nsresult& aResult);
 
   
   
@@ -213,11 +208,6 @@ class DecoderTemplate : public DOMEventTargetHelper {
   bool mMessageQueueBlocked;
   std::queue<UniquePtr<ControlMessage>> mControlMessageQueue;
   UniquePtr<ControlMessage> mProcessingMessage;
-
-  
-  
-  
-  SimpleMap<RefPtr<Promise>> mPendingFlushPromises;
 
   uint32_t mDecodeQueueSize;
   bool mDequeueEventScheduled;
