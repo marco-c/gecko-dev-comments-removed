@@ -67,13 +67,9 @@ async function createKilobyteSizedFile(path, sizeInKB) {
 
 
 
-async function maybeRemoveFile(path) {
-  if (await IOUtils.exists(path)) {
-    return;
-  }
-
+async function maybeRemovePath(path) {
   try {
-    await IOUtils.remove(path);
+    await IOUtils.remove(path, { ignoreAbsent: true, recursive: true });
   } catch (error) {
     
     
