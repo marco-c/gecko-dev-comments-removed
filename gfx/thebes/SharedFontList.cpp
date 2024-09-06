@@ -1256,6 +1256,7 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
       
       pfl->mAliasTable.Clear();
       pfl->mLocalNameTable.Clear();
+      mFaceNamesRead.Clear();
       return nullptr;
     }
 
@@ -1278,8 +1279,15 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
       return nullptr;
     }
     nsAutoCString base(Substring(aName, 0, index));
-    if (BinarySearchIf(families, 0, header.mFamilyCount,
+    auto familyCount = header.mFamilyCount;
+    if (BinarySearchIf(families, 0, familyCount,
                        FamilyNameComparator(this, base), &match)) {
+      
+      
+      mFaceNamesRead.EnsureLengthAtLeast(familyCount);
+      if (mFaceNamesRead[match]) {
+        return nullptr;
+      }
       
       
       
@@ -1290,6 +1298,7 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
       
       Family* baseFamily = &families[match];
       pfl->ReadFaceNamesForFamily(baseFamily, false);
+      mFaceNamesRead[match] = true;
       if (auto lookup = pfl->mAliasTable.Lookup(aName)) {
         if (lookup.Data()->mFaces.Length() != baseFamily->NumFaces()) {
           

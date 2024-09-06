@@ -372,6 +372,11 @@ class FontList {
 
 
   nsTArray<mozilla::UniquePtr<base::SharedMemory>> mReadOnlyShmems;
+
+#ifdef XP_WIN
+  
+  nsTArray<bool> mFaceNamesRead;
+#endif
 };
 
 }  
