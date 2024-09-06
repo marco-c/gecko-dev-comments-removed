@@ -497,6 +497,9 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   MOZ_ASSERT(!gcmarker->isWeakMarking());
 
   
+  MOZ_ASSERT(gc->nursery().isEmpty());
+
+  
   WaitForAllHelperThreads();
 
   gc->waitBackgroundAllocEnd();

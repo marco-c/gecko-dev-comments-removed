@@ -3765,6 +3765,14 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
         
         rt->mainContextFromOwnThread()->traceWrapperGCRooters(
             marker().tracer());
+
+        
+        
+        
+        if (isIncremental &&
+            hasZealMode(ZealMode::IncrementalMarkingValidator)) {
+          collectNurseryFromMajorGC(JS::GCReason::EVICT_NURSERY);
+        }
       }
 
       {
