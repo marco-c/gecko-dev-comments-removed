@@ -935,12 +935,11 @@ struct KeyConversionData {
 
 static const KeyConversionData gKeyConversions[] = {
 
-#define KEYCODE_ENTRY(aStr, aCode) \
-  { #aStr, sizeof(#aStr) - 1, NS_##aStr, aCode }
+#define KEYCODE_ENTRY(aStr, aCode) {#aStr, sizeof(#aStr) - 1, NS_##aStr, aCode}
 
 
 #define KEYCODE_ENTRY2(aStr, aNSName, aCode) \
-  { #aStr, sizeof(#aStr) - 1, NS_##aNSName, aCode }
+  {#aStr, sizeof(#aStr) - 1, NS_##aNSName, aCode}
 
     KEYCODE_ENTRY(VK_CANCEL, 0x001B),
     KEYCODE_ENTRY(VK_DELETE, NSDeleteFunctionKey),
@@ -1384,6 +1383,19 @@ nsresult nsCocoaUtils::GetScreenCapturePermissionState(
     CFStringRef windowName = reinterpret_cast<CFStringRef>(
         CFDictionaryGetValue(windowDict, kCGWindowName));
     if (!windowName) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (kCFCompareEqualTo ==
+        CFStringCompare(windowName, CFSTR("StatusIndicator"), 0)) {
       continue;
     }
 
