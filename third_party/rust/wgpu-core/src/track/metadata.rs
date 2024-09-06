@@ -1,7 +1,7 @@
 
 
 use bit_vec::BitVec;
-use std::{mem, sync::Arc};
+use std::mem;
 use wgt::strict_assert;
 
 
@@ -12,15 +12,15 @@ use wgt::strict_assert;
 
 
 #[derive(Debug)]
-pub(super) struct ResourceMetadata<T> {
+pub(super) struct ResourceMetadata<T: Clone> {
     
     owned: BitVec<usize>,
 
     
-    resources: Vec<Option<Arc<T>>>,
+    resources: Vec<Option<T>>,
 }
 
-impl<T> ResourceMetadata<T> {
+impl<T: Clone> ResourceMetadata<T> {
     pub(super) fn new() -> Self {
         Self {
             owned: BitVec::default(),
@@ -94,7 +94,7 @@ impl<T> ResourceMetadata<T> {
     
     
     #[inline(always)]
-    pub(super) unsafe fn insert(&mut self, index: usize, resource: Arc<T>) -> &Arc<T> {
+    pub(super) unsafe fn insert(&mut self, index: usize, resource: T) -> &T {
         self.owned.set(index, true);
         let resource_dst = unsafe { self.resources.get_unchecked_mut(index) };
         resource_dst.insert(resource)
@@ -107,7 +107,7 @@ impl<T> ResourceMetadata<T> {
     
     
     #[inline(always)]
-    pub(super) unsafe fn get_resource_unchecked(&self, index: usize) -> &Arc<T> {
+    pub(super) unsafe fn get_resource_unchecked(&self, index: usize) -> &T {
         unsafe {
             self.resources
                 .get_unchecked(index)
@@ -117,18 +117,7 @@ impl<T> ResourceMetadata<T> {
     }
 
     
-    
-    
-    
-    
-    
-    #[inline(always)]
-    pub(super) unsafe fn get_ref_count_unchecked(&self, index: usize) -> usize {
-        unsafe { Arc::strong_count(self.get_resource_unchecked(index)) }
-    }
-
-    
-    pub(super) fn owned_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
+    pub(super) fn owned_resources(&self) -> impl Iterator<Item = T> + '_ {
         if !self.owned.is_empty() {
             self.tracker_assert_in_bounds(self.owned.len() - 1)
         };
@@ -136,21 +125,6 @@ impl<T> ResourceMetadata<T> {
             let resource = unsafe { self.resources.get_unchecked(index) };
             resource.as_ref().unwrap().clone()
         })
-    }
-
-    
-    pub(super) fn drain_resources(&mut self) -> Vec<Arc<T>> {
-        if !self.owned.is_empty() {
-            self.tracker_assert_in_bounds(self.owned.len() - 1)
-        };
-        let mut resources = Vec::new();
-        iterate_bitvec_indices(&self.owned).for_each(|index| {
-            let resource = unsafe { self.resources.get_unchecked(index) };
-            resources.push(resource.as_ref().unwrap().clone());
-        });
-        self.owned.clear();
-        self.resources.clear();
-        resources
     }
 
     
@@ -174,20 +148,20 @@ impl<T> ResourceMetadata<T> {
 
 
 
-pub(super) enum ResourceMetadataProvider<'a, T> {
+pub(super) enum ResourceMetadataProvider<'a, T: Clone> {
     
-    Direct { resource: &'a Arc<T> },
+    Direct { resource: &'a T },
     
     Indirect { metadata: &'a ResourceMetadata<T> },
 }
-impl<T> ResourceMetadataProvider<'_, T> {
+impl<T: Clone> ResourceMetadataProvider<'_, T> {
     
     
     
     
     
     #[inline(always)]
-    pub(super) unsafe fn get(&self, index: usize) -> &Arc<T> {
+    pub(super) unsafe fn get(&self, index: usize) -> &T {
         match self {
             ResourceMetadataProvider::Direct { resource } => resource,
             ResourceMetadataProvider::Indirect { metadata } => {

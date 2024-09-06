@@ -9,11 +9,8 @@ use std::sync::Arc;
 use crate::{
     lock::{rank, Mutex},
     resource::Trackable,
-    resource_log,
     track::ResourceMetadata,
 };
-
-use super::{ResourceTracker, TrackerIndex};
 
 
 #[derive(Debug)]
@@ -44,12 +41,6 @@ impl<T: Trackable> StatelessBindGroupState<T> {
     }
 
     
-    pub fn drain_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
-        let mut resources = self.resources.lock();
-        resources.drain(..).collect::<Vec<_>>().into_iter()
-    }
-
-    
     pub fn add_single(&self, resource: &Arc<T>) {
         let mut resources = self.resources.lock();
         resources.push(resource.clone());
@@ -59,60 +50,7 @@ impl<T: Trackable> StatelessBindGroupState<T> {
 
 #[derive(Debug)]
 pub(crate) struct StatelessTracker<T: Trackable> {
-    metadata: ResourceMetadata<T>,
-}
-
-impl<T: Trackable> ResourceTracker for StatelessTracker<T> {
-    
-    
-    
-    
-    
-    
-    
-    fn remove_abandoned(&mut self, index: TrackerIndex) -> bool {
-        let index = index.as_usize();
-
-        if index >= self.metadata.size() {
-            return false;
-        }
-
-        self.tracker_assert_in_bounds(index);
-
-        unsafe {
-            if self.metadata.contains_unchecked(index) {
-                let existing_ref_count = self.metadata.get_ref_count_unchecked(index);
-                
-                
-                if existing_ref_count <= 2 {
-                    resource_log!(
-                        "StatelessTracker<{}>::remove_abandoned: removing {}",
-                        T::TYPE,
-                        self.metadata.get_resource_unchecked(index).error_ident()
-                    );
-
-                    self.metadata.remove(index);
-                    return true;
-                }
-
-                resource_log!(
-                    "StatelessTracker<{}>::remove_abandoned: not removing {}, ref count {}",
-                    T::TYPE,
-                    self.metadata.get_resource_unchecked(index).error_ident(),
-                    existing_ref_count
-                );
-
-                return false;
-            }
-        }
-
-        resource_log!(
-            "StatelessTracker<{}>::remove_abandoned: does not contain index {index:?}",
-            T::TYPE,
-        );
-
-        true
-    }
+    metadata: ResourceMetadata<Arc<T>>,
 }
 
 impl<T: Trackable> StatelessTracker<T> {
@@ -144,12 +82,6 @@ impl<T: Trackable> StatelessTracker<T> {
     
     pub fn used_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
         self.metadata.owned_resources()
-    }
-
-    
-    pub fn drain_resources(&mut self) -> impl Iterator<Item = Arc<T>> + '_ {
-        let resources = self.metadata.drain_resources();
-        resources.into_iter()
     }
 
     
