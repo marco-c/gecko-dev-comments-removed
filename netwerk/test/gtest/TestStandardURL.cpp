@@ -449,6 +449,12 @@ TEST(TestStandardURL, CoalescePath)
     ASSERT_EQ(nsCString(buf.get()), nsCString(expected));
   };
 
+#ifndef DEBUG
+  
+  testCoalescing("", "");
+#endif
+
+  testCoalescing("/", "/");
   testCoalescing("/.", "/");
   testCoalescing("/..", "/");
   testCoalescing("/foo/foo1/.", "/foo/foo1/");
