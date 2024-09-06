@@ -34,7 +34,7 @@ class GlobalTeardownObserver
   explicit GlobalTeardownObserver(nsIGlobalObject* aGlobalObject,
                                   bool aHasOrHasHadOwnerWindow = false);
 
-  nsGlobalWindowInner* GetOwnerWindow() const { return mOwnerWindow; }
+  nsGlobalWindowInner* GetOwnerWindow() const;
   nsIGlobalObject* GetOwnerGlobal() const { return mParentObject; }
   bool HasOrHasHadOwnerWindow() const { return mHasOrHasHadOwnerWindow; }
 
@@ -71,8 +71,6 @@ class GlobalTeardownObserver
   nsIGlobalObject* MOZ_NON_OWNING_REF mParentObject = nullptr;
   
   
-  
-  nsGlobalWindowInner* MOZ_NON_OWNING_REF mOwnerWindow = nullptr;
   bool mHasOrHasHadOwnerWindow = false;
 };
 
