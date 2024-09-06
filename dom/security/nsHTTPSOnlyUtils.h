@@ -77,7 +77,7 @@ class nsHTTPSOnlyUtils {
     EnforceForHTTPSRR,
   };
   static bool IsUpgradeDowngradeEndlessLoop(
-      nsIURI* aOldURI, nsIURI* aNewURI, nsILoadInfo* aLoadInfo,
+      nsIURI* aURI, nsILoadInfo* aLoadInfo,
       const mozilla::EnumSet<UpgradeDowngradeEndlessLoopOptions>& aOptions =
           {});
 
@@ -157,16 +157,13 @@ class nsHTTPSOnlyUtils {
 
 
 
-  static bool ShouldUpgradeConnection(nsILoadInfo* aLoadInfo);
-
-  
 
 
 
 
-
-
-  static bool IsHttpDowngrade(nsIURI* aFromURI, nsIURI* aToURI);
+  static bool IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
+                                           nsIURI* aOtherURI,
+                                           nsILoadInfo* aLoadInfo);
 
   
 

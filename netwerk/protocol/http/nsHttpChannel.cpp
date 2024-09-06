@@ -703,7 +703,23 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
     nsAutoCString uriHost;
     mURI->GetAsciiHost(uriHost);
 
-    return gHttpHandler->IsHostExcludedForHTTPSRR(uriHost);
+    if (gHttpHandler->IsHostExcludedForHTTPSRR(uriHost)) {
+      return true;
+    }
+
+    if (nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
+            mURI, mLoadInfo,
+            {nsHTTPSOnlyUtils::UpgradeDowngradeEndlessLoopOptions::
+                 EnforceForHTTPSRR})) {
+      
+      
+      
+      gHttpHandler->ExcludeHTTPSRRHost(uriHost);
+      LOG(("[%p] skip HTTPS upgrade for host [%s]", this, uriHost.get()));
+      return true;
+    }
+
+    return false;
   };
 
   if (shouldSkipUpgradeWithHTTPSRR()) {
@@ -5397,27 +5413,7 @@ nsresult nsHttpChannel::SetupReplacementChannel(nsIURI* newURI,
       newURI, newChannel, preserveMethod, redirectFlags);
   if (NS_FAILED(rv)) return rv;
 
-  nsAutoCString uriHost;
-  mURI->GetAsciiHost(uriHost);
-  
-  
-  
-  
-  
-  
-  if (!gHttpHandler->IsHostExcludedForHTTPSRR(uriHost) &&
-      nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
-          mURI, newURI, mLoadInfo,
-          {nsHTTPSOnlyUtils::UpgradeDowngradeEndlessLoopOptions::
-               EnforceForHTTPSRR})) {
-    
-    
-    
-    gHttpHandler->ExcludeHTTPSRRHost(uriHost);
-    LOG(("[%p] skip HTTPS upgrade for host [%s]", this, uriHost.get()));
-  }
-
-  rv = CheckRedirectLimit(newURI, redirectFlags);
+  rv = CheckRedirectLimit(redirectFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
