@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/XPathEvaluator.h"
 
@@ -27,7 +27,7 @@
 
 namespace mozilla::dom {
 
-
+// txIParseContext implementation
 class XPathEvaluatorParseContext : public txIParseContext {
  public:
   XPathEvaluatorParseContext(XPathNSResolver* aResolver, bool aIsCaseSensitive)
@@ -43,7 +43,7 @@ class XPathEvaluatorParseContext : public txIParseContext {
 
   nsresult getError() { return mLastError; }
 
-  nsresult resolveNamespacePrefix(nsAtom* aPrefix, int32_t& aID) override;
+  int32_t resolveNamespacePrefix(nsAtom* aPrefix) override;
   nsresult resolveFunctionCall(nsAtom* aName, int32_t aID,
                                FunctionCall** aFunction) override;
   bool caseInsensitiveNameTests() override;
@@ -106,7 +106,7 @@ bool XPathEvaluator::WrapObject(JSContext* aCx,
   return dom::XPathEvaluator_Binding::Wrap(aCx, this, aGivenProto, aReflector);
 }
 
-
+/* static */
 UniquePtr<XPathEvaluator> XPathEvaluator::Constructor(
     const GlobalObject& aGlobal) {
   return MakeUnique<XPathEvaluator>(nullptr);
@@ -124,17 +124,14 @@ already_AddRefed<XPathResult> XPathEvaluator::Evaluate(
   return expression->Evaluate(aCx, aContextNode, aType, aResult, rv);
 }
 
+/*
+ * Implementation of txIParseContext private to XPathEvaluator, based on a
+ * XPathNSResolver
+ */
 
-
-
-
-
-nsresult XPathEvaluatorParseContext::resolveNamespacePrefix(nsAtom* aPrefix,
-                                                            int32_t& aID) {
-  aID = kNameSpaceID_Unknown;
-
+int32_t XPathEvaluatorParseContext::resolveNamespacePrefix(nsAtom* aPrefix) {
   if (!mResolver && !mResolverNode) {
-    return NS_ERROR_DOM_NAMESPACE_ERR;
+    return kNameSpaceID_Unknown;
   }
 
   nsAutoString prefix;
@@ -147,7 +144,8 @@ nsresult XPathEvaluatorParseContext::resolveNamespacePrefix(nsAtom* aPrefix,
     ErrorResult rv;
     mResolver->LookupNamespaceURI(prefix, ns, rv);
     if (rv.Failed()) {
-      return rv.StealNSResult();
+      rv.SuppressException();
+      return kNameSpaceID_Unknown;
     }
   } else {
     if (aPrefix == nsGkAtoms::xml) {
@@ -158,17 +156,19 @@ nsresult XPathEvaluatorParseContext::resolveNamespacePrefix(nsAtom* aPrefix,
   }
 
   if (DOMStringIsNull(ns)) {
-    return NS_ERROR_DOM_NAMESPACE_ERR;
+    return kNameSpaceID_Unknown;
   }
 
   if (ns.IsEmpty()) {
-    aID = kNameSpaceID_None;
-
-    return NS_OK;
+    return kNameSpaceID_None;
   }
 
-  
-  return nsNameSpaceManager::GetInstance()->RegisterNameSpace(ns, aID);
+  // get the namespaceID for the URI
+  int32_t id;
+  return NS_SUCCEEDED(
+             nsNameSpaceManager::GetInstance()->RegisterNameSpace(ns, id))
+             ? id
+             : kNameSpaceID_Unknown;
 }
 
 nsresult XPathEvaluatorParseContext::resolveFunctionCall(nsAtom* aName,
@@ -183,4 +183,4 @@ bool XPathEvaluatorParseContext::caseInsensitiveNameTests() {
 
 void XPathEvaluatorParseContext::SetErrorOffset(uint32_t aOffset) {}
 
-}  
+}  // namespace mozilla::dom

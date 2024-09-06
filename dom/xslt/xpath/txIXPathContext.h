@@ -32,7 +32,7 @@ class txIParseContext {
   
 
 
-  virtual nsresult resolveNamespacePrefix(nsAtom* aPrefix, int32_t& aID) = 0;
+  virtual int32_t resolveNamespacePrefix(nsAtom* aPrefix) = 0;
 
   
 
