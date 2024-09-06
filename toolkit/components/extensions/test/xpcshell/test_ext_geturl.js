@@ -56,18 +56,18 @@ add_task(async function test_runtime_getURL() {
     checkURL("//example", `${origin}//example`);
 
     
-    checkURL(".", `${origin}/`);
+    checkURL(".", `${origin}/.`);
 
     
-    checkURL("././/example", `${origin}//example`);
+    checkURL("././/example", `${origin}/././/example`);
 
     
-    checkURL("../../example/..//test/", `${origin}//test/`);
+    checkURL("../../example/..//test/", `${origin}/../../example/..//test/`);
 
     
-    checkURL("../", `${origin}/`);
-    checkURL("..", `${origin}/`);
-    checkURL("/.././", `${origin}/`);
+    checkURL("../", `${origin}/../`);
+    checkURL("..", `${origin}/..`);
+    checkURL("/.././", `${origin}/.././`);
 
     
 
