@@ -5931,6 +5931,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void debugAssertCanonicalInt32(Register r);
 #endif
+
+#ifdef FUZZING_JS_FUZZILLI
+  void fuzzilliHashDouble(FloatRegister src, Register result, Register temp);
+
+  void fuzzilliStoreHash(Register value, Register temp1, Register temp2);
+#endif
 };
 
 
