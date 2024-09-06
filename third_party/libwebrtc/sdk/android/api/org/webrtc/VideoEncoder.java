@@ -322,9 +322,16 @@ public interface VideoEncoder {
 
 
 
+
   @CalledByNative
+  @Deprecated
   default long createNativeVideoEncoder() {
     return 0;
+  }
+
+  @CalledByNative
+  default long createNative(long webrtcEnvRef) {
+    return createNativeVideoEncoder();
   }
 
   
