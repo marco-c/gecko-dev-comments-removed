@@ -3769,8 +3769,15 @@ static bool CheckForUserMismatch() { return false; }
 void mozilla::startup::IncreaseDescriptorLimits() {
 #ifdef XP_UNIX
   
+#  ifdef XP_DARWIN
   
-  static const rlim_t kFDs = 4096;
+  
+  static constexpr rlim_t kFDs = 4096;
+#  else   
+  
+  
+  static constexpr rlim_t kFDs = 65536;
+#  endif  
   struct rlimit rlim;
 
   if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
