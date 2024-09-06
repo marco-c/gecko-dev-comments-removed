@@ -1,45 +1,11 @@
+
+
 use crate::prelude::*;
 use crate::vk;
-use crate::{Device, Entry, Instance};
-use std::ffi::CStr;
-use std::mem;
+use alloc::vec::Vec;
+use core::mem;
 
-
-#[derive(Clone)]
-pub struct FullScreenExclusive {
-    handle: vk::Device,
-    fp: vk::ExtFullScreenExclusiveFn,
-}
-
-impl FullScreenExclusive {
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
-        let fp = vk::ExtFullScreenExclusiveFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn new_from_instance(entry: &Entry, instance: &Instance, device: vk::Device) -> Self {
-        let fp = vk::ExtFullScreenExclusiveFn::load(|name| unsafe {
-            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
-        });
-        Self { handle: device, fp }
-    }
-
+impl crate::ext::full_screen_exclusive::Device {
     
     #[inline]
     pub unsafe fn acquire_full_screen_exclusive_mode(
@@ -47,27 +13,6 @@ impl FullScreenExclusive {
         swapchain: vk::SwapchainKHR,
     ) -> VkResult<()> {
         (self.fp.acquire_full_screen_exclusive_mode_ext)(self.handle, swapchain).result()
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn get_physical_device_surface_present_modes2(
-        &self,
-        physical_device: vk::PhysicalDevice,
-        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR,
-    ) -> VkResult<Vec<vk::PresentModeKHR>> {
-        read_into_uninitialized_vector(|count, data| {
-            (self.fp.get_physical_device_surface_present_modes2_ext)(
-                physical_device,
-                surface_info,
-                count,
-                data,
-            )
-        })
     }
 
     
@@ -83,29 +28,33 @@ impl FullScreenExclusive {
     #[inline]
     pub unsafe fn get_device_group_surface_present_modes2(
         &self,
-        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR,
+        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR<'_>,
     ) -> VkResult<vk::DeviceGroupPresentModeFlagsKHR> {
-        let mut present_modes = mem::zeroed();
+        let mut present_modes = mem::MaybeUninit::uninit();
         (self.fp.get_device_group_surface_present_modes2_ext)(
             self.handle,
             surface_info,
-            &mut present_modes,
+            present_modes.as_mut_ptr(),
         )
-        .result_with_success(present_modes)
+        .assume_init_on_success(present_modes)
     }
+}
 
+impl crate::ext::full_screen_exclusive::Instance {
+    
     #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::ExtFullScreenExclusiveFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtFullScreenExclusiveFn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn device(&self) -> vk::Device {
-        self.handle
+    pub unsafe fn get_physical_device_surface_present_modes2(
+        &self,
+        physical_device: vk::PhysicalDevice,
+        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR<'_>,
+    ) -> VkResult<Vec<vk::PresentModeKHR>> {
+        read_into_uninitialized_vector(|count, data| {
+            (self.fp.get_physical_device_surface_present_modes2_ext)(
+                physical_device,
+                surface_info,
+                count,
+                data,
+            )
+        })
     }
 }

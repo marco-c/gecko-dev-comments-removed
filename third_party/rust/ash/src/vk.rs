@@ -1,11 +1,11 @@
 #![allow(
     clippy::too_many_arguments,
     clippy::cognitive_complexity,
-    clippy::wrong_self_convention
+    clippy::wrong_self_convention,
+    unused_qualifications
 )]
 #[macro_use]
 mod macros;
-pub use macros::*;
 mod aliases;
 pub use aliases::*;
 mod bitflags;
@@ -21,7 +21,6 @@ pub use enums::*;
 mod extensions;
 pub use extensions::*;
 mod feature_extensions;
-pub use feature_extensions::*;
 mod features;
 pub use features::*;
 mod prelude;
@@ -33,8 +32,10 @@ mod platform_types;
 pub use platform_types::*;
 
 
-pub(crate) unsafe fn ptr_chain_iter<T>(ptr: &mut T) -> impl Iterator<Item = *mut BaseOutStructure> {
-    let ptr = <*mut T>::cast::<BaseOutStructure>(ptr);
+pub(crate) unsafe fn ptr_chain_iter<T: ?Sized>(
+    ptr: &mut T,
+) -> impl Iterator<Item = *mut BaseOutStructure<'_>> {
+    let ptr = <*mut T>::cast::<BaseOutStructure<'_>>(ptr);
     (0..).scan(ptr, |p_ptr, _| {
         if p_ptr.is_null() {
             return None;
@@ -45,8 +46,21 @@ pub(crate) unsafe fn ptr_chain_iter<T>(ptr: &mut T) -> impl Iterator<Item = *mut
         Some(old)
     })
 }
-pub trait Handle {
+pub trait Handle: Sized {
     const TYPE: ObjectType;
     fn as_raw(self) -> u64;
     fn from_raw(_: u64) -> Self;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn is_null(self) -> bool {
+        self.as_raw() == 0
+    }
 }

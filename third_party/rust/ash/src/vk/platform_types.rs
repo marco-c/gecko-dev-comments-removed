@@ -1,24 +1,29 @@
 #![allow(non_camel_case_types)]
 
-use std::os::raw::*;
+use core::ffi::*;
 pub type RROutput = c_ulong;
 pub type VisualID = c_uint;
-pub type Display = *const c_void;
+pub type Display = c_void;
 pub type Window = c_ulong;
 pub type xcb_connection_t = c_void;
 pub type xcb_window_t = u32;
 pub type xcb_visualid_t = u32;
 pub type MirConnection = *const c_void;
 pub type MirSurface = *const c_void;
-pub type HINSTANCE = *const c_void;
-pub type HWND = *const c_void;
+
+pub type HANDLE = isize;
+
+pub type HINSTANCE = HANDLE;
+
+pub type HWND = HANDLE;
+
+pub type HMONITOR = HANDLE;
 pub type wl_display = c_void;
 pub type wl_surface = c_void;
-pub type HANDLE = *mut c_void;
-pub type HMONITOR = HANDLE;
 pub type DWORD = c_ulong;
 pub type LPCWSTR = *const u16;
 pub type zx_handle_t = u32;
+pub type _screen_buffer = c_void;
 pub type _screen_context = c_void;
 pub type _screen_window = c_void;
 pub type SECURITY_ATTRIBUTES = c_void;

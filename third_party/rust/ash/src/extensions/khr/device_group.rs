@@ -1,47 +1,13 @@
+
+
 #[cfg(doc)]
-use super::Swapchain;
+use crate::khr;
 use crate::prelude::*;
 use crate::vk;
-use crate::{Device, Entry, Instance};
-use std::ffi::CStr;
-use std::mem;
+use alloc::vec::Vec;
+use core::mem;
 
-
-#[derive(Clone)]
-pub struct DeviceGroup {
-    handle: vk::Device,
-    fp: vk::KhrDeviceGroupFn,
-}
-
-impl DeviceGroup {
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
-        let fp = vk::KhrDeviceGroupFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn new_from_instance(entry: &Entry, instance: &Instance, device: vk::Device) -> Self {
-        let fp = vk::KhrDeviceGroupFn::load(|name| unsafe {
-            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
-        });
-        Self { handle: device, fp }
-    }
-
+impl crate::khr::device_group::Device {
     
     #[inline]
     pub unsafe fn get_device_group_peer_memory_features(
@@ -50,15 +16,15 @@ impl DeviceGroup {
         local_device_index: u32,
         remote_device_index: u32,
     ) -> vk::PeerMemoryFeatureFlags {
-        let mut peer_memory_features = mem::zeroed();
+        let mut peer_memory_features = mem::MaybeUninit::uninit();
         (self.fp.get_device_group_peer_memory_features_khr)(
             self.handle,
             heap_index,
             local_device_index,
             remote_device_index,
-            &mut peer_memory_features,
+            peer_memory_features.as_mut_ptr(),
         );
-        peer_memory_features
+        peer_memory_features.assume_init()
     }
 
     
@@ -97,7 +63,7 @@ impl DeviceGroup {
     #[inline]
     pub unsafe fn get_device_group_present_capabilities(
         &self,
-        device_group_present_capabilities: &mut vk::DeviceGroupPresentCapabilitiesKHR,
+        device_group_present_capabilities: &mut vk::DeviceGroupPresentCapabilitiesKHR<'_>,
     ) -> VkResult<()> {
         (self.fp.get_device_group_present_capabilities_khr)(
             self.handle,
@@ -119,15 +85,42 @@ impl DeviceGroup {
         &self,
         surface: vk::SurfaceKHR,
     ) -> VkResult<vk::DeviceGroupPresentModeFlagsKHR> {
-        let mut modes = mem::zeroed();
-        (self.fp.get_device_group_surface_present_modes_khr)(self.handle, surface, &mut modes)
-            .result_with_success(modes)
+        let mut modes = mem::MaybeUninit::uninit();
+        (self.fp.get_device_group_surface_present_modes_khr)(
+            self.handle,
+            surface,
+            modes.as_mut_ptr(),
+        )
+        .assume_init_on_success(modes)
     }
 
     
     
     
     
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn acquire_next_image2(
+        &self,
+        acquire_info: &vk::AcquireNextImageInfoKHR<'_>,
+    ) -> VkResult<(u32, bool)> {
+        let mut index = mem::MaybeUninit::uninit();
+        let err_code =
+            (self.fp.acquire_next_image2_khr)(self.handle, acquire_info, index.as_mut_ptr());
+        match err_code {
+            vk::Result::SUCCESS => Ok((index.assume_init(), false)),
+            vk::Result::SUBOPTIMAL_KHR => Ok((index.assume_init(), true)),
+            _ => Err(err_code),
+        }
+    }
+}
+
+impl crate::khr::device_group::Instance {
     
     
     
@@ -150,44 +143,5 @@ impl DeviceGroup {
                 data,
             )
         })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn acquire_next_image2(
-        &self,
-        acquire_info: &vk::AcquireNextImageInfoKHR,
-    ) -> VkResult<(u32, bool)> {
-        let mut index = 0;
-        let err_code = (self.fp.acquire_next_image2_khr)(self.handle, acquire_info, &mut index);
-        match err_code {
-            vk::Result::SUCCESS => Ok((index, false)),
-            vk::Result::SUBOPTIMAL_KHR => Ok((index, true)),
-            _ => Err(err_code),
-        }
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrDeviceGroupFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::KhrDeviceGroupFn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn device(&self) -> vk::Device {
-        self.handle
     }
 }

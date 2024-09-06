@@ -1,24 +1,10 @@
+
+
 use crate::prelude::*;
 use crate::vk;
-use crate::{Entry, Instance};
-use std::ffi::CStr;
-use std::mem;
+use core::mem;
 
-
-#[derive(Clone)]
-pub struct AcquireDrmDisplay {
-    fp: vk::ExtAcquireDrmDisplayFn,
-}
-
-impl AcquireDrmDisplay {
-    pub fn new(entry: &Entry, instance: &Instance) -> Self {
-        let handle = instance.handle();
-        let fp = vk::ExtAcquireDrmDisplayFn::load(|name| unsafe {
-            mem::transmute(entry.get_instance_proc_addr(handle, name.as_ptr()))
-        });
-        Self { fp }
-    }
-
+impl crate::ext::acquire_drm_display::Instance {
     
     #[inline]
     pub unsafe fn acquire_drm_display(
@@ -41,15 +27,5 @@ impl AcquireDrmDisplay {
         let mut display = mem::MaybeUninit::uninit();
         (self.fp.get_drm_display_ext)(physical_device, drm_fd, connector_id, display.as_mut_ptr())
             .assume_init_on_success(display)
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::ExtAcquireDrmDisplayFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtAcquireDrmDisplayFn {
-        &self.fp
     }
 }

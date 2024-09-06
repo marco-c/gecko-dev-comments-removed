@@ -1,45 +1,41 @@
+
+
 use crate::prelude::*;
 use crate::vk;
 use crate::RawPtr;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
-use std::ptr;
+use alloc::vec::Vec;
+use core::ptr;
 
-
-#[derive(Clone)]
-pub struct ShaderObject {
-    handle: vk::Device,
-    fp: vk::ExtShaderObjectFn,
-}
-
-impl ShaderObject {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
-        let fp = vk::ExtShaderObjectFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
+impl crate::ext::shader_object::Device {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub unsafe fn create_shaders(
         &self,
-        create_infos: &[vk::ShaderCreateInfoEXT],
-        allocator: Option<&vk::AllocationCallbacks>,
-    ) -> VkResult<Vec<vk::ShaderEXT>> {
+        create_infos: &[vk::ShaderCreateInfoEXT<'_>],
+        allocator: Option<&vk::AllocationCallbacks<'_>>,
+    ) -> Result<Vec<vk::ShaderEXT>, (Vec<vk::ShaderEXT>, vk::Result)> {
         let mut shaders = Vec::with_capacity(create_infos.len());
-        (self.fp.create_shaders_ext)(
+        let err_code = (self.fp.create_shaders_ext)(
             self.handle,
             create_infos.len() as u32,
             create_infos.as_ptr(),
             allocator.as_raw_ptr(),
             shaders.as_mut_ptr(),
-        )
-        .result()?;
+        );
         shaders.set_len(create_infos.len());
-        Ok(shaders)
+        match err_code {
+            vk::Result::SUCCESS => Ok(shaders),
+            _ => Err((shaders, err_code)),
+        }
     }
 
     
@@ -47,7 +43,7 @@ impl ShaderObject {
     pub unsafe fn destroy_shader(
         &self,
         shader: vk::ShaderEXT,
-        allocator: Option<&vk::AllocationCallbacks>,
+        allocator: Option<&vk::AllocationCallbacks<'_>>,
     ) {
         (self.fp.destroy_shader_ext)(self.handle, shader, allocator.as_raw_ptr())
     }
@@ -82,8 +78,8 @@ impl ShaderObject {
     pub unsafe fn cmd_set_vertex_input(
         &self,
         command_buffer: vk::CommandBuffer,
-        vertex_binding_descriptions: &[vk::VertexInputBindingDescription2EXT],
-        vertex_attribute_descriptions: &[vk::VertexInputAttributeDescription2EXT],
+        vertex_binding_descriptions: &[vk::VertexInputBindingDescription2EXT<'_>],
+        vertex_attribute_descriptions: &[vk::VertexInputAttributeDescription2EXT<'_>],
     ) {
         (self.fp.cmd_set_vertex_input_ext)(
             command_buffer,
@@ -375,7 +371,7 @@ impl ShaderObject {
             samples.as_raw().is_power_of_two(),
             "Only one SampleCount bit must be set"
         );
-        assert_eq!(samples.as_raw() as usize / 32, sample_mask.len());
+        assert_eq!((samples.as_raw() as usize + 31) / 32, sample_mask.len());
         (self.fp.cmd_set_sample_mask_ext)(command_buffer, samples, sample_mask.as_ptr())
     }
 
@@ -701,19 +697,5 @@ impl ShaderObject {
         coverage_reduction_mode: vk::CoverageReductionModeNV,
     ) {
         (self.fp.cmd_set_coverage_reduction_mode_nv)(command_buffer, coverage_reduction_mode)
-    }
-
-    pub const fn name() -> &'static CStr {
-        vk::ExtShaderObjectFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtShaderObjectFn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn device(&self) -> vk::Device {
-        self.handle
     }
 }

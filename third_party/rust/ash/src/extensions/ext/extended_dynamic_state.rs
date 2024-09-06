@@ -1,22 +1,9 @@
+
+
 use crate::vk;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
-use std::ptr;
+use core::ptr;
 
-#[derive(Clone)]
-pub struct ExtendedDynamicState {
-    fp: vk::ExtExtendedDynamicStateFn,
-}
-
-impl ExtendedDynamicState {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let fp = vk::ExtExtendedDynamicStateFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(device.handle(), name.as_ptr()))
-        });
-        Self { fp }
-    }
-
+impl crate::ext::extended_dynamic_state::Device {
     
     #[inline]
     pub unsafe fn cmd_set_cull_mode(
@@ -182,15 +169,5 @@ impl ExtendedDynamicState {
             depth_fail_op,
             compare_op,
         )
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::ExtExtendedDynamicStateFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtExtendedDynamicStateFn {
-        &self.fp
     }
 }

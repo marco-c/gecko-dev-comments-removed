@@ -268,10 +268,10 @@ where
     
     
     
-    pub fn lookup<Q: ?Sized>(&self, name: &Q) -> Option<&Var>
+    pub fn lookup<Q>(&self, name: &Q) -> Option<&Var>
     where
         Name: std::borrow::Borrow<Q>,
-        Q: std::hash::Hash + Eq,
+        Q: std::hash::Hash + Eq + ?Sized,
     {
         
         for scope in self.scopes[..self.cursor].iter().rev() {

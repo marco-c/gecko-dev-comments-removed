@@ -1,22 +1,8 @@
+
+
 use crate::vk;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
 
-
-#[derive(Clone)]
-pub struct ExtendedDynamicState2 {
-    fp: vk::ExtExtendedDynamicState2Fn,
-}
-
-impl ExtendedDynamicState2 {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let fp = vk::ExtExtendedDynamicState2Fn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(device.handle(), name.as_ptr()))
-        });
-        Self { fp }
-    }
-
+impl crate::ext::extended_dynamic_state2::Device {
     
     #[inline]
     pub unsafe fn cmd_set_patch_control_points(
@@ -71,15 +57,5 @@ impl ExtendedDynamicState2 {
             command_buffer,
             primitive_restart_enable.into(),
         )
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::ExtExtendedDynamicState2Fn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtExtendedDynamicState2Fn {
-        &self.fp
     }
 }

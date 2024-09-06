@@ -1,31 +1,15 @@
+
+
 use crate::prelude::*;
 use crate::vk;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
 
-
-#[derive(Clone)]
-pub struct PipelineProperties {
-    handle: vk::Device,
-    fp: vk::ExtPipelinePropertiesFn,
-}
-
-impl PipelineProperties {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
-        let fp = vk::ExtPipelinePropertiesFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
+impl crate::ext::pipeline_properties::Device {
     
     #[inline]
     pub unsafe fn get_pipeline_properties(
         &self,
-        pipeline_info: &vk::PipelineInfoEXT,
-        pipeline_properties: &mut impl vk::GetPipelinePropertiesEXTParamPipelineProperties,
+        pipeline_info: &vk::PipelineInfoEXT<'_>,
+        pipeline_properties: &mut impl crate::ext::pipeline_properties::GetPipelinePropertiesEXTParamPipelineProperties,
     ) -> VkResult<()> {
         (self.fp.get_pipeline_properties_ext)(
             self.handle,
@@ -33,20 +17,5 @@ impl PipelineProperties {
             <*mut _>::cast(pipeline_properties),
         )
         .result()
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::ExtPipelinePropertiesFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtPipelinePropertiesFn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn device(&self) -> vk::Device {
-        self.handle
     }
 }

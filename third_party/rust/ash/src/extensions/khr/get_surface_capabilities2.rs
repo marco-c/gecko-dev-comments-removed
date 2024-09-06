@@ -1,36 +1,25 @@
+
+
 use crate::prelude::*;
 use crate::vk;
-use crate::{Entry, Instance};
-use std::ffi::CStr;
-use std::mem;
+use core::mem;
+use core::ptr;
 
-#[derive(Clone)]
-pub struct GetSurfaceCapabilities2 {
-    fp: vk::KhrGetSurfaceCapabilities2Fn,
-}
-
-impl GetSurfaceCapabilities2 {
-    pub fn new(entry: &Entry, instance: &Instance) -> Self {
-        let fp = vk::KhrGetSurfaceCapabilities2Fn::load(|name| unsafe {
-            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
-        });
-        Self { fp }
-    }
-
+impl crate::khr::get_surface_capabilities2::Instance {
     
     #[inline]
     pub unsafe fn get_physical_device_surface_capabilities2(
         &self,
         physical_device: vk::PhysicalDevice,
-        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR,
-    ) -> VkResult<vk::SurfaceCapabilities2KHR> {
-        let mut surface_capabilities = Default::default();
+        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR<'_>,
+        surface_capabilities: &mut vk::SurfaceCapabilities2KHR<'_>,
+    ) -> VkResult<()> {
         (self.fp.get_physical_device_surface_capabilities2_khr)(
             physical_device,
             surface_info,
-            &mut surface_capabilities,
+            surface_capabilities,
         )
-        .result_with_success(surface_capabilities)
+        .result()
     }
 
     
@@ -38,16 +27,16 @@ impl GetSurfaceCapabilities2 {
     pub unsafe fn get_physical_device_surface_formats2_len(
         &self,
         physical_device: vk::PhysicalDevice,
-        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR,
+        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR<'_>,
     ) -> VkResult<usize> {
-        let mut count = 0;
+        let mut count = mem::MaybeUninit::uninit();
         let err_code = (self.fp.get_physical_device_surface_formats2_khr)(
             physical_device,
             surface_info,
-            &mut count,
-            std::ptr::null_mut(),
+            count.as_mut_ptr(),
+            ptr::null_mut(),
         );
-        err_code.result_with_success(count as usize)
+        err_code.assume_init_on_success(count).map(|c| c as usize)
     }
 
     
@@ -58,8 +47,8 @@ impl GetSurfaceCapabilities2 {
     pub unsafe fn get_physical_device_surface_formats2(
         &self,
         physical_device: vk::PhysicalDevice,
-        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR,
-        out: &mut [vk::SurfaceFormat2KHR],
+        surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR<'_>,
+        out: &mut [vk::SurfaceFormat2KHR<'_>],
     ) -> VkResult<()> {
         let mut count = out.len() as u32;
         let err_code = (self.fp.get_physical_device_surface_formats2_khr)(
@@ -70,15 +59,5 @@ impl GetSurfaceCapabilities2 {
         );
         assert_eq!(count as usize, out.len());
         err_code.result()
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrGetSurfaceCapabilities2Fn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::KhrGetSurfaceCapabilities2Fn {
-        &self.fp
     }
 }

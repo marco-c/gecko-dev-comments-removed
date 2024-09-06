@@ -1,29 +1,16 @@
+
+
 use crate::vk;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
+use core::mem;
+use core::ptr;
 
-#[derive(Clone)]
-pub struct Maintenance4 {
-    handle: vk::Device,
-    fp: vk::KhrMaintenance4Fn,
-}
-
-impl Maintenance4 {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
-        let fp = vk::KhrMaintenance4Fn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
+impl crate::khr::maintenance4::Device {
     
     #[inline]
     pub unsafe fn get_device_buffer_memory_requirements(
         &self,
-        memory_requirements: &vk::DeviceBufferMemoryRequirementsKHR,
-        out: &mut vk::MemoryRequirements2,
+        memory_requirements: &vk::DeviceBufferMemoryRequirementsKHR<'_>,
+        out: &mut vk::MemoryRequirements2<'_>,
     ) {
         (self.fp.get_device_buffer_memory_requirements_khr)(self.handle, memory_requirements, out)
     }
@@ -32,8 +19,8 @@ impl Maintenance4 {
     #[inline]
     pub unsafe fn get_device_image_memory_requirements(
         &self,
-        memory_requirements: &vk::DeviceImageMemoryRequirementsKHR,
-        out: &mut vk::MemoryRequirements2,
+        memory_requirements: &vk::DeviceImageMemoryRequirementsKHR<'_>,
+        out: &mut vk::MemoryRequirements2<'_>,
     ) {
         (self.fp.get_device_image_memory_requirements_khr)(self.handle, memory_requirements, out)
     }
@@ -42,16 +29,16 @@ impl Maintenance4 {
     #[inline]
     pub unsafe fn get_device_image_sparse_memory_requirements_len(
         &self,
-        memory_requirements: &vk::DeviceImageMemoryRequirementsKHR,
+        memory_requirements: &vk::DeviceImageMemoryRequirementsKHR<'_>,
     ) -> usize {
-        let mut count = 0;
+        let mut count = mem::MaybeUninit::uninit();
         (self.fp.get_device_image_sparse_memory_requirements_khr)(
             self.handle,
             memory_requirements,
-            &mut count,
-            std::ptr::null_mut(),
+            count.as_mut_ptr(),
+            ptr::null_mut(),
         );
-        count as usize
+        count.assume_init() as usize
     }
 
     
@@ -61,8 +48,8 @@ impl Maintenance4 {
     #[inline]
     pub unsafe fn get_device_image_sparse_memory_requirements(
         &self,
-        memory_requirements: &vk::DeviceImageMemoryRequirementsKHR,
-        out: &mut [vk::SparseImageMemoryRequirements2],
+        memory_requirements: &vk::DeviceImageMemoryRequirementsKHR<'_>,
+        out: &mut [vk::SparseImageMemoryRequirements2<'_>],
     ) {
         let mut count = out.len() as u32;
         (self.fp.get_device_image_sparse_memory_requirements_khr)(
@@ -72,20 +59,5 @@ impl Maintenance4 {
             out.as_mut_ptr(),
         );
         assert_eq!(count as usize, out.len());
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrMaintenance4Fn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::KhrMaintenance4Fn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn device(&self) -> vk::Device {
-        self.handle
     }
 }

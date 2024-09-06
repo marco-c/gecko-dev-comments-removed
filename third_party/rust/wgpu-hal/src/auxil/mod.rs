@@ -115,24 +115,3 @@ impl crate::TextureCopy {
         self.size = self.size.min(&max_src_size).min(&max_dst_size);
     }
 }
-
-
-
-
-
-
-
-
-
-#[allow(dead_code)]
-pub(crate) fn cstr_from_bytes_until_nul(bytes: &[std::os::raw::c_char]) -> Option<&std::ffi::CStr> {
-    if bytes.contains(&0) {
-        
-        
-        
-        
-        unsafe { Some(std::ffi::CStr::from_ptr(bytes.as_ptr())) }
-    } else {
-        None
-    }
-}

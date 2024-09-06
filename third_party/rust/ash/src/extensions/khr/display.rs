@@ -1,31 +1,18 @@
+
+
 use crate::prelude::*;
 use crate::vk;
 use crate::RawPtr;
-use crate::{Entry, Instance};
-use std::ffi::CStr;
-use std::mem;
+use alloc::vec::Vec;
+use core::mem;
 
-#[derive(Clone)]
-pub struct Display {
-    handle: vk::Instance,
-    fp: vk::KhrDisplayFn,
-}
-
-impl Display {
-    pub fn new(entry: &Entry, instance: &Instance) -> Self {
-        let handle = instance.handle();
-        let fp = vk::KhrDisplayFn::load(|name| unsafe {
-            mem::transmute(entry.get_instance_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
+impl crate::khr::display::Instance {
     
     #[inline]
     pub unsafe fn get_physical_device_display_properties(
         &self,
         physical_device: vk::PhysicalDevice,
-    ) -> VkResult<Vec<vk::DisplayPropertiesKHR>> {
+    ) -> VkResult<Vec<vk::DisplayPropertiesKHR<'_>>> {
         read_into_uninitialized_vector(|count, data| {
             (self.fp.get_physical_device_display_properties_khr)(physical_device, count, data)
         })
@@ -77,10 +64,10 @@ impl Display {
         &self,
         physical_device: vk::PhysicalDevice,
         display: vk::DisplayKHR,
-        create_info: &vk::DisplayModeCreateInfoKHR,
-        allocation_callbacks: Option<&vk::AllocationCallbacks>,
+        create_info: &vk::DisplayModeCreateInfoKHR<'_>,
+        allocation_callbacks: Option<&vk::AllocationCallbacks<'_>>,
     ) -> VkResult<vk::DisplayModeKHR> {
-        let mut display_mode = mem::MaybeUninit::zeroed();
+        let mut display_mode = mem::MaybeUninit::uninit();
         (self.fp.create_display_mode_khr)(
             physical_device,
             display,
@@ -99,7 +86,7 @@ impl Display {
         mode: vk::DisplayModeKHR,
         plane_index: u32,
     ) -> VkResult<vk::DisplayPlaneCapabilitiesKHR> {
-        let mut display_plane_capabilities = mem::MaybeUninit::zeroed();
+        let mut display_plane_capabilities = mem::MaybeUninit::uninit();
         (self.fp.get_display_plane_capabilities_khr)(
             physical_device,
             mode,
@@ -113,10 +100,10 @@ impl Display {
     #[inline]
     pub unsafe fn create_display_plane_surface(
         &self,
-        create_info: &vk::DisplaySurfaceCreateInfoKHR,
-        allocation_callbacks: Option<&vk::AllocationCallbacks>,
+        create_info: &vk::DisplaySurfaceCreateInfoKHR<'_>,
+        allocation_callbacks: Option<&vk::AllocationCallbacks<'_>>,
     ) -> VkResult<vk::SurfaceKHR> {
-        let mut surface = mem::MaybeUninit::zeroed();
+        let mut surface = mem::MaybeUninit::uninit();
         (self.fp.create_display_plane_surface_khr)(
             self.handle,
             create_info,
@@ -124,20 +111,5 @@ impl Display {
             surface.as_mut_ptr(),
         )
         .assume_init_on_success(surface)
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrDisplayFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::KhrDisplayFn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn instance(&self) -> vk::Instance {
-        self.handle
     }
 }

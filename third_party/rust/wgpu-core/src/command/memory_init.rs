@@ -172,6 +172,8 @@ impl<A: HalApi> BakedCommands<A> {
         device_tracker: &mut Tracker<A>,
         snatch_guard: &SnatchGuard<'_>,
     ) -> Result<(), DestroyedBufferError> {
+        profiling::scope!("initialize_buffer_memory");
+
         
         
         
@@ -276,6 +278,8 @@ impl<A: HalApi> BakedCommands<A> {
         device: &Device<A>,
         snatch_guard: &SnatchGuard<'_>,
     ) -> Result<(), DestroyedTextureError> {
+        profiling::scope!("initialize_texture_memory");
+
         let mut ranges: Vec<TextureInitRange> = Vec::new();
         for texture_use in self.texture_memory_actions.drain_init_actions() {
             let mut initialization_status = texture_use.texture.initialization_status.write();

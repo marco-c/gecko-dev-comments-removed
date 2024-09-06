@@ -32,7 +32,9 @@ pub const SHADER_STAGE_COUNT: usize = hal::MAX_CONCURRENT_SHADER_STAGES;
 
 pub(crate) const ZERO_BUFFER_SIZE: BufferAddress = 512 << 10;
 
-const CLEANUP_WAIT_MS: u32 = 5000;
+
+
+const CLEANUP_WAIT_MS: u32 = 60000;
 
 const IMPLICIT_BIND_GROUP_LAYOUT_ERROR_LABEL: &str = "Implicit BindGroupLayout in the Error State";
 const ENTRYPOINT_FAILURE_ERROR: &str = "The given EntryPoint is Invalid";

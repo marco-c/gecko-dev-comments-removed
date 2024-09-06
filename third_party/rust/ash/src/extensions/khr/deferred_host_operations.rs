@@ -1,38 +1,24 @@
+
+
 use crate::prelude::*;
 use crate::vk;
 use crate::RawPtr;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
+use core::mem;
 
-#[derive(Clone)]
-pub struct DeferredHostOperations {
-    handle: vk::Device,
-    fp: vk::KhrDeferredHostOperationsFn,
-}
-
-impl DeferredHostOperations {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
-        let fp = vk::KhrDeferredHostOperationsFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
+impl crate::khr::deferred_host_operations::Device {
     
     #[inline]
     pub unsafe fn create_deferred_operation(
         &self,
-        allocation_callbacks: Option<&vk::AllocationCallbacks>,
+        allocation_callbacks: Option<&vk::AllocationCallbacks<'_>>,
     ) -> VkResult<vk::DeferredOperationKHR> {
-        let mut operation = mem::zeroed();
+        let mut operation = mem::MaybeUninit::uninit();
         (self.fp.create_deferred_operation_khr)(
             self.handle,
             allocation_callbacks.as_raw_ptr(),
-            &mut operation,
+            operation.as_mut_ptr(),
         )
-        .result_with_success(operation)
+        .assume_init_on_success(operation)
     }
 
     
@@ -49,7 +35,7 @@ impl DeferredHostOperations {
     pub unsafe fn destroy_deferred_operation(
         &self,
         operation: vk::DeferredOperationKHR,
-        allocation_callbacks: Option<&vk::AllocationCallbacks>,
+        allocation_callbacks: Option<&vk::AllocationCallbacks<'_>>,
     ) {
         (self.fp.destroy_deferred_operation_khr)(
             self.handle,
@@ -74,20 +60,5 @@ impl DeferredHostOperations {
         operation: vk::DeferredOperationKHR,
     ) -> VkResult<()> {
         (self.fp.get_deferred_operation_result_khr)(self.handle, operation).result()
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrDeferredHostOperationsFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::KhrDeferredHostOperationsFn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn device(&self) -> vk::Device {
-        self.handle
     }
 }

@@ -1,22 +1,8 @@
+
+
 use crate::vk;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
 
-
-#[derive(Clone)]
-pub struct MeshShader {
-    fp: vk::ExtMeshShaderFn,
-}
-
-impl MeshShader {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let fp = vk::ExtMeshShaderFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(device.handle(), name.as_ptr()))
-        });
-        Self { fp }
-    }
-
+impl crate::ext::mesh_shader::Device {
     
     #[inline]
     pub unsafe fn cmd_draw_mesh_tasks(
@@ -31,7 +17,7 @@ impl MeshShader {
             group_count_x,
             group_count_y,
             group_count_z,
-        );
+        )
     }
 
     
@@ -52,7 +38,7 @@ impl MeshShader {
             offset,
             draw_count,
             stride,
-        );
+        )
     }
 
     
@@ -79,16 +65,6 @@ impl MeshShader {
             count_buffer_offset,
             max_draw_count,
             stride,
-        );
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::ExtMeshShaderFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtMeshShaderFn {
-        &self.fp
+        )
     }
 }

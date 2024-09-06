@@ -1,22 +1,8 @@
+
+
 use crate::vk;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
 
-
-#[derive(Clone)]
-pub struct ExtendedDynamicState3 {
-    fp: vk::ExtExtendedDynamicState3Fn,
-}
-
-impl ExtendedDynamicState3 {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let fp = vk::ExtExtendedDynamicState3Fn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(device.handle(), name.as_ptr()))
-        });
-        Self { fp }
-    }
-
+impl crate::ext::extended_dynamic_state3::Device {
     
     #[inline]
     pub unsafe fn cmd_set_tessellation_domain_origin(
@@ -69,7 +55,7 @@ impl ExtendedDynamicState3 {
             samples.as_raw().is_power_of_two(),
             "Only one SampleCount bit must be set"
         );
-        assert_eq!(samples.as_raw() as usize / 32, sample_mask.len());
+        assert_eq!((samples.as_raw() as usize + 31) / 32, sample_mask.len());
         (self.fp.cmd_set_sample_mask_ext)(command_buffer, samples, sample_mask.as_ptr())
     }
 
@@ -395,15 +381,5 @@ impl ExtendedDynamicState3 {
         coverage_reduction_mode: vk::CoverageReductionModeNV,
     ) {
         (self.fp.cmd_set_coverage_reduction_mode_nv)(command_buffer, coverage_reduction_mode)
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::ExtExtendedDynamicState3Fn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtExtendedDynamicState3Fn {
-        &self.fp
     }
 }

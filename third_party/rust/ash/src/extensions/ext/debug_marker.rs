@@ -1,29 +1,14 @@
+
+
 use crate::prelude::*;
 use crate::vk;
-use crate::{Device, Instance};
-use std::ffi::CStr;
-use std::mem;
 
-#[derive(Clone)]
-pub struct DebugMarker {
-    handle: vk::Device,
-    fp: vk::ExtDebugMarkerFn,
-}
-
-impl DebugMarker {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
-        let fp = vk::ExtDebugMarkerFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
+impl crate::ext::debug_marker::Device {
     
     #[inline]
     pub unsafe fn debug_marker_set_object_name(
         &self,
-        name_info: &vk::DebugMarkerObjectNameInfoEXT,
+        name_info: &vk::DebugMarkerObjectNameInfoEXT<'_>,
     ) -> VkResult<()> {
         (self.fp.debug_marker_set_object_name_ext)(self.handle, name_info).result()
     }
@@ -33,7 +18,7 @@ impl DebugMarker {
     pub unsafe fn cmd_debug_marker_begin(
         &self,
         command_buffer: vk::CommandBuffer,
-        marker_info: &vk::DebugMarkerMarkerInfoEXT,
+        marker_info: &vk::DebugMarkerMarkerInfoEXT<'_>,
     ) {
         (self.fp.cmd_debug_marker_begin_ext)(command_buffer, marker_info);
     }
@@ -49,23 +34,8 @@ impl DebugMarker {
     pub unsafe fn cmd_debug_marker_insert(
         &self,
         command_buffer: vk::CommandBuffer,
-        marker_info: &vk::DebugMarkerMarkerInfoEXT,
+        marker_info: &vk::DebugMarkerMarkerInfoEXT<'_>,
     ) {
         (self.fp.cmd_debug_marker_insert_ext)(command_buffer, marker_info);
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::ExtDebugMarkerFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::ExtDebugMarkerFn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn device(&self) -> vk::Device {
-        self.handle
     }
 }

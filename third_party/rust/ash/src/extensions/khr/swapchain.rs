@@ -1,63 +1,29 @@
+
+
 #[cfg(doc)]
-use super::DeviceGroup;
+use crate::khr;
 use crate::prelude::*;
 use crate::vk;
 use crate::RawPtr;
-use crate::{Device, Entry, Instance};
-use std::ffi::CStr;
-use std::mem;
+use alloc::vec::Vec;
+use core::mem;
 
-
-#[derive(Clone)]
-pub struct Swapchain {
-    handle: vk::Device,
-    fp: vk::KhrSwapchainFn,
-}
-
-impl Swapchain {
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
-        let fp = vk::KhrSwapchainFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
-        });
-        Self { handle, fp }
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn new_from_instance(entry: &Entry, instance: &Instance, device: vk::Device) -> Self {
-        let fp = vk::KhrSwapchainFn::load(|name| unsafe {
-            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
-        });
-        Self { handle: device, fp }
-    }
-
+impl crate::khr::swapchain::Device {
     
     #[inline]
     pub unsafe fn create_swapchain(
         &self,
-        create_info: &vk::SwapchainCreateInfoKHR,
-        allocation_callbacks: Option<&vk::AllocationCallbacks>,
+        create_info: &vk::SwapchainCreateInfoKHR<'_>,
+        allocation_callbacks: Option<&vk::AllocationCallbacks<'_>>,
     ) -> VkResult<vk::SwapchainKHR> {
-        let mut swapchain = mem::zeroed();
+        let mut swapchain = mem::MaybeUninit::uninit();
         (self.fp.create_swapchain_khr)(
             self.handle,
             create_info,
             allocation_callbacks.as_raw_ptr(),
-            &mut swapchain,
+            swapchain.as_mut_ptr(),
         )
-        .result_with_success(swapchain)
+        .assume_init_on_success(swapchain)
     }
 
     
@@ -65,7 +31,7 @@ impl Swapchain {
     pub unsafe fn destroy_swapchain(
         &self,
         swapchain: vk::SwapchainKHR,
-        allocation_callbacks: Option<&vk::AllocationCallbacks>,
+        allocation_callbacks: Option<&vk::AllocationCallbacks<'_>>,
     ) {
         (self.fp.destroy_swapchain_khr)(self.handle, swapchain, allocation_callbacks.as_raw_ptr());
     }
@@ -92,18 +58,18 @@ impl Swapchain {
         semaphore: vk::Semaphore,
         fence: vk::Fence,
     ) -> VkResult<(u32, bool)> {
-        let mut index = 0;
+        let mut index = mem::MaybeUninit::uninit();
         let err_code = (self.fp.acquire_next_image_khr)(
             self.handle,
             swapchain,
             timeout,
             semaphore,
             fence,
-            &mut index,
+            index.as_mut_ptr(),
         );
         match err_code {
-            vk::Result::SUCCESS => Ok((index, false)),
-            vk::Result::SUBOPTIMAL_KHR => Ok((index, true)),
+            vk::Result::SUCCESS => Ok((index.assume_init(), false)),
+            vk::Result::SUBOPTIMAL_KHR => Ok((index.assume_init(), true)),
             _ => Err(err_code),
         }
     }
@@ -115,7 +81,7 @@ impl Swapchain {
     pub unsafe fn queue_present(
         &self,
         queue: vk::Queue,
-        present_info: &vk::PresentInfoKHR,
+        present_info: &vk::PresentInfoKHR<'_>,
     ) -> VkResult<bool> {
         let err_code = (self.fp.queue_present_khr)(queue, present_info);
         match err_code {
@@ -137,7 +103,7 @@ impl Swapchain {
     #[inline]
     pub unsafe fn get_device_group_present_capabilities(
         &self,
-        device_group_present_capabilities: &mut vk::DeviceGroupPresentCapabilitiesKHR,
+        device_group_present_capabilities: &mut vk::DeviceGroupPresentCapabilitiesKHR<'_>,
     ) -> VkResult<()> {
         (self.fp.get_device_group_present_capabilities_khr)(
             self.handle,
@@ -160,15 +126,43 @@ impl Swapchain {
         &self,
         surface: vk::SurfaceKHR,
     ) -> VkResult<vk::DeviceGroupPresentModeFlagsKHR> {
-        let mut modes = mem::zeroed();
-        (self.fp.get_device_group_surface_present_modes_khr)(self.handle, surface, &mut modes)
-            .result_with_success(modes)
+        let mut modes = mem::MaybeUninit::uninit();
+        (self.fp.get_device_group_surface_present_modes_khr)(
+            self.handle,
+            surface,
+            modes.as_mut_ptr(),
+        )
+        .assume_init_on_success(modes)
     }
 
     
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn acquire_next_image2(
+        &self,
+        acquire_info: &vk::AcquireNextImageInfoKHR<'_>,
+    ) -> VkResult<(u32, bool)> {
+        let mut index = mem::MaybeUninit::uninit();
+        let err_code =
+            (self.fp.acquire_next_image2_khr)(self.handle, acquire_info, index.as_mut_ptr());
+        match err_code {
+            vk::Result::SUCCESS => Ok((index.assume_init(), false)),
+            vk::Result::SUBOPTIMAL_KHR => Ok((index.assume_init(), true)),
+            _ => Err(err_code),
+        }
+    }
+}
+
+impl crate::khr::swapchain::Instance {
     
     
     
@@ -192,45 +186,5 @@ impl Swapchain {
                 data,
             )
         })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn acquire_next_image2(
-        &self,
-        acquire_info: &vk::AcquireNextImageInfoKHR,
-    ) -> VkResult<(u32, bool)> {
-        let mut index = 0;
-        let err_code = (self.fp.acquire_next_image2_khr)(self.handle, acquire_info, &mut index);
-        match err_code {
-            vk::Result::SUCCESS => Ok((index, false)),
-            vk::Result::SUBOPTIMAL_KHR => Ok((index, true)),
-            _ => Err(err_code),
-        }
-    }
-
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrSwapchainFn::name()
-    }
-
-    #[inline]
-    pub fn fp(&self) -> &vk::KhrSwapchainFn {
-        &self.fp
-    }
-
-    #[inline]
-    pub fn device(&self) -> vk::Device {
-        self.handle
     }
 }
