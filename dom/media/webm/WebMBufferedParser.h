@@ -59,10 +59,7 @@ struct WebMBufferedParser {
 
   
   
-  void SetTimecodeScale(uint32_t aTimecodeScale) {
-    mTimecodeScale = aTimecodeScale;
-    mGotTimecodeScale = true;
-  }
+  void SetTimecodeScale(uint32_t aTimecodeScale);
 
   
   
