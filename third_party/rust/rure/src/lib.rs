@@ -1,3 +1,7 @@
+
+
+#![allow(warnings)]
+
 #[macro_use]
 mod macros;
 mod error;
