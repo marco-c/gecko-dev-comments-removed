@@ -1516,9 +1516,14 @@ Scanner.prototype = {
 
 
 
-function getCSSLexer(input, useInspectorCSSParser = false) {
+
+function getCSSLexer(
+  input,
+  useInspectorCSSParser = false,
+  trackEOFChars = false
+) {
   if (useInspectorCSSParser) {
-    return new InspectorCSSParserWrapper(input);
+    return new InspectorCSSParserWrapper(input, { trackEOFChars });
   }
   return new Scanner(input);
 }
@@ -1531,8 +1536,18 @@ exports.getCSSLexer = getCSSLexer;
 
 class InspectorCSSParserWrapper {
   #offset = 0;
-  constructor(input) {
+  #trackEOFChars;
+  #eofCharacters = eEOFCharacters_None;
+
+  
+
+
+
+
+
+  constructor(input, options = {}) {
     this.parser = new InspectorCSSParser(input);
+    this.#trackEOFChars = options.trackEOFChars;
   }
 
   get lineNumber() {
@@ -1549,6 +1564,49 @@ class InspectorCSSParserWrapper {
       return token;
     }
 
+    if (this.#trackEOFChars) {
+      const { tokenType, text } = token;
+      const lastChar = text[text.length - 1];
+      if (tokenType === "Comment" && lastChar !== `/`) {
+        if (lastChar === `*`) {
+          this.#eofCharacters = eEOFCharacters_Slash;
+        } else {
+          this.#eofCharacters = eEOFCharacters_Asterisk | eEOFCharacters_Slash;
+        }
+      } else if (tokenType === "QuotedString" || tokenType === "BadString") {
+        if (lastChar === "\\") {
+          this.#eofCharacters =
+            this.#eofCharacters | eEOFCharacters_DropBackslash;
+        }
+        if (text[0] !== lastChar) {
+          this.#eofCharacters =
+            this.#eofCharacters |
+            (text[0] === `"`
+              ? eEOFCharacters_DoubleQuote
+              : eEOFCharacters_SingleQuote);
+        }
+      } else {
+        if (lastChar === "\\") {
+          this.#eofCharacters = eEOFCharacters_ReplacementChar;
+        }
+
+        
+        
+        if (
+          (tokenType === "Function" && token.value === "url") ||
+          tokenType === "BadUrl" ||
+          (tokenType === "UnquotedUrl" && lastChar !== ")")
+        ) {
+          this.#eofCharacters = this.#eofCharacters | eEOFCharacters_CloseParen;
+        }
+
+        if (tokenType === "CloseParenthesis") {
+          this.#eofCharacters =
+            this.#eofCharacters & ~eEOFCharacters_CloseParen;
+        }
+      }
+    }
+
     
     
     
@@ -1557,5 +1615,78 @@ class InspectorCSSParserWrapper {
     this.#offset += token.text.length;
     token.endOffset = this.#offset;
     return token;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  performEOFFixup(inputString, preserveBackslash) {
+    let result = inputString;
+
+    let eofChars = this.#eofCharacters;
+    if (
+      preserveBackslash &&
+      (eofChars &
+        (eEOFCharacters_DropBackslash | eEOFCharacters_ReplacementChar)) !=
+        0
+    ) {
+      eofChars &= ~(
+        eEOFCharacters_DropBackslash | eEOFCharacters_ReplacementChar
+      );
+      result += "\\";
+    }
+
+    if (
+      (eofChars & eEOFCharacters_DropBackslash) != 0 &&
+      !!result.length &&
+      result.endsWith("\\")
+    ) {
+      result = result.slice(0, -1);
+    }
+
+    
+    let c = eofChars >> 1;
+
+    
+    
+    for (const p of kImpliedEOFCharacters) {
+      if (c & 1) {
+        result += String.fromCharCode(p);
+      }
+      c >>= 1;
+    }
+
+    return result;
   }
 }
