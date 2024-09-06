@@ -224,10 +224,10 @@ constexpr uint32_t CandidateTypeCount() {
   
   
   
-  IceCandidateType type = IceCandidateType::kLocal;
+  IceCandidateType type = IceCandidateType::kHost;
   switch (type) {
-    case IceCandidateType::kLocal:
-    case IceCandidateType::kStun:
+    case IceCandidateType::kHost:
+    case IceCandidateType::kSrflx:
     case IceCandidateType::kPrflx:
     case IceCandidateType::kRelay:
       break;
@@ -237,7 +237,7 @@ constexpr uint32_t CandidateTypeCount() {
 
 std::unique_ptr<RtcEventIceCandidatePairConfig>
 EventGenerator::NewIceCandidatePairConfig() {
-  static_assert(static_cast<int>(IceCandidateType::kLocal) == 0,
+  static_assert(static_cast<int>(IceCandidateType::kHost) == 0,
                 "Expect kLocal to be the first enum value, equal to 0");
   IceCandidateType local_candidate_type =
       static_cast<IceCandidateType>(prng_.Rand(CandidateTypeCount() - 1));
