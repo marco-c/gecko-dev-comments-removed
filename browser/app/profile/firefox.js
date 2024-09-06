@@ -1679,6 +1679,9 @@ pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.prop
 
 pref("prompts.defaultModalType", 3);
 
+
+pref("browser.topsites.component.enabled", false);
+
 pref("browser.topsites.useRemoteSetting", true);
 
 pref("browser.topsites.contile.enabled", true);
