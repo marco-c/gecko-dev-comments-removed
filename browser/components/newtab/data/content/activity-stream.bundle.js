@@ -8993,22 +8993,34 @@ class _WallpapersSection extends (external_React_default()).PureComponent {
     } = event.target;
     const prefs = this.props.Prefs.values;
     const colorMode = this.prefersDarkQuery?.matches ? "dark" : "light";
-    this.props.setPref(`newtabWallpapers.wallpaper-${colorMode}`, id);
+    if (prefs["newtabWallpapers.v2.enabled"]) {
+      
+      this.props.setPref(`newtabWallpapers.wallpaper-dark`, id);
+      this.props.setPref(`newtabWallpapers.wallpaper-light`, id);
+    } else {
+      this.props.setPref(`newtabWallpapers.wallpaper-${colorMode}`, id);
+      
+      if (prefs["newtabWallpapers.wallpaper-dark"] === "" && colorMode === "light") {
+        this.props.setPref("newtabWallpapers.wallpaper-dark", id.replace("light", "dark"));
+      }
+      if (prefs["newtabWallpapers.wallpaper-light"] === "" && colorMode === "dark") {
+        this.props.setPref(`newtabWallpapers.wallpaper-light`, id.replace("dark", "light"));
+      }
+    }
     this.handleUserEvent({
       selected_wallpaper: id,
       hadPreviousWallpaper: !!this.props.activeWallpaper
     });
-    
-    if (prefs["newtabWallpapers.wallpaper-dark"] === "" && colorMode === "light") {
-      this.props.setPref("newtabWallpapers.wallpaper-dark", id.replace("light", "dark"));
-    }
-    if (prefs["newtabWallpapers.wallpaper-light"] === "" && colorMode === "dark") {
-      this.props.setPref(`newtabWallpapers.wallpaper-light`, id.replace("dark", "light"));
-    }
   }
   handleReset() {
+    const prefs = this.props.Prefs.values;
     const colorMode = this.prefersDarkQuery?.matches ? "dark" : "light";
-    this.props.setPref(`newtabWallpapers.wallpaper-${colorMode}`, "");
+    if (prefs["newtabWallpapers.v2.enabled"]) {
+      this.props.setPref("newtabWallpapers.wallpaper-light", "");
+      this.props.setPref("newtabWallpapers.wallpaper-dark", "");
+    } else {
+      this.props.setPref(`newtabWallpapers.wallpaper-${colorMode}`, "");
+    }
     this.handleUserEvent({
       selected_wallpaper: "none",
       hadPreviousWallpaper: !!this.props.activeWallpaper
@@ -9029,8 +9041,13 @@ class _WallpapersSection extends (external_React_default()).PureComponent {
     const {
       activeWallpaper
     } = this.props;
+    const prefs = this.props.Prefs.values;
+    let fieldsetClassname = `wallpaper-list`;
+    if (prefs["newtabWallpapers.v2.enabled"]) {
+      fieldsetClassname += " ignore-color-mode";
+    }
     return external_React_default().createElement("div", null, external_React_default().createElement("fieldset", {
-      className: "wallpaper-list"
+      className: fieldsetClassname
     }, wallpaperList.map(({
       title,
       theme,
@@ -9836,10 +9853,11 @@ class _Weather extends (external_React_default()).PureComponent {
         link: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page",
         shouldSendImpressionStats: shouldSendImpressionStats
       }) : null))), external_React_default().createElement("span", {
-        "data-l10n-id": "newtab-weather-sponsored",
-        "data-l10n-args": "{\"provider\": \"AccuWeather\"}",
         className: "weatherSponsorText"
-      }));
+      }, external_React_default().createElement("span", {
+        "data-l10n-id": "newtab-weather-sponsored",
+        "data-l10n-args": "{\"provider\": \"AccuWeather\"}"
+      })));
     }
     return external_React_default().createElement("div", {
       ref: this.setErrorRef,
@@ -10101,11 +10119,18 @@ class BaseContent extends (external_React_default()).PureComponent {
       __webpack_require__.g.document?.body.style.setProperty(`--newtab-wallpaper-dark`, `url(${darkWallpaper?.wallpaperUrl || ""})`);
 
       
-      if (lightWallpaper) {
-        __webpack_require__.g.document?.body.classList.add("hasWallpaperLight");
+      const {
+        theme
+      } = this.state.colorMode === "light" ? lightWallpaper : darkWallpaper;
+
+      
+      if (theme === "light") {
+        __webpack_require__.g.document?.body.classList.add("lightWallpaper");
+        __webpack_require__.g.document?.body.classList.remove("darkWallpaper");
       }
-      if (darkWallpaper) {
-        __webpack_require__.g.document?.body.classList.add("hasWallpaperDark");
+      if (theme === "dark") {
+        __webpack_require__.g.document?.body.classList.add("darkWallpaper");
+        __webpack_require__.g.document?.body.classList.remove("lightWallpaper");
       }
     }
   }
