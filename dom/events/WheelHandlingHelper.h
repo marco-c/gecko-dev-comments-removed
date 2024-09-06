@@ -20,6 +20,7 @@ class nsITimer;
 namespace mozilla {
 
 class EventStateManager;
+class ScrollContainerFrame;
 
 
 
@@ -57,8 +58,8 @@ class WheelHandlingUtils {
 
 
 
-  static bool CanScrollOn(nsIScrollableFrame* aScrollFrame, double aDirectionX,
-                          double aDirectionY);
+  static bool CanScrollOn(ScrollContainerFrame* aScrollContainerFrame,
+                          double aDirectionX, double aDirectionY);
 
   
   

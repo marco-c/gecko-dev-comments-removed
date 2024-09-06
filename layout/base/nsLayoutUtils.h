@@ -82,6 +82,7 @@ class WritingMode;
 class DisplayItemClip;
 class EffectSet;
 struct ActiveScrolledRoot;
+class ScrollContainerFrame;
 enum class ScrollOrigin : uint8_t;
 enum class StyleImageOrientation : uint8_t;
 enum class StyleSystemFont : uint8_t;
@@ -231,7 +232,8 @@ class nsLayoutUtils {
   
 
 
-  static ViewID FindIDForScrollableFrame(nsIScrollableFrame* aScrollable);
+  static ViewID FindIDForScrollContainerFrame(
+      mozilla::ScrollContainerFrame* aScrollContainerFrame);
 
   
 
@@ -538,7 +540,7 @@ class nsLayoutUtils {
 
 
 
-  static nsIScrollableFrame* GetNearestScrollableFrameForDirection(
+  static mozilla::ScrollContainerFrame* GetNearestScrollableFrameForDirection(
       nsIFrame* aFrame, mozilla::layers::ScrollDirections aDirections);
 
   enum {

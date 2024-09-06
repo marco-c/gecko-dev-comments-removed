@@ -459,7 +459,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  nsIScrollableFrame* GetScrollableFrameToScrollForContent(
+  ScrollContainerFrame* GetScrollContainerFrameToScrollForContent(
       nsIContent* aContent, layers::ScrollDirections aDirections);
 
   
@@ -469,7 +469,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  nsIScrollableFrame* GetScrollableFrameToScroll(
+  ScrollContainerFrame* GetScrollContainerFrameToScroll(
       layers::ScrollDirections aDirections);
 
   

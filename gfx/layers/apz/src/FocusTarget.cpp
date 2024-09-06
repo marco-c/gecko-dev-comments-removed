@@ -190,18 +190,18 @@ FocusTarget::FocusTarget(PresShell* aRootPresShell,
 
   
   
-  nsIScrollableFrame* horizontal =
-      presShell->GetScrollableFrameToScrollForContent(
+  ScrollContainerFrame* horizontal =
+      presShell->GetScrollContainerFrameToScrollForContent(
           selectedContent.get(), HorizontalScrollDirection);
-  nsIScrollableFrame* vertical =
-      presShell->GetScrollableFrameToScrollForContent(selectedContent.get(),
-                                                      VerticalScrollDirection);
+  ScrollContainerFrame* vertical =
+      presShell->GetScrollContainerFrameToScrollForContent(
+          selectedContent.get(), VerticalScrollDirection);
 
   
   
   ScrollTargets target;
-  target.mHorizontal = nsLayoutUtils::FindIDForScrollableFrame(horizontal);
-  target.mVertical = nsLayoutUtils::FindIDForScrollableFrame(vertical);
+  target.mHorizontal = nsLayoutUtils::FindIDForScrollContainerFrame(horizontal);
+  target.mVertical = nsLayoutUtils::FindIDForScrollContainerFrame(vertical);
   mData = AsVariant(target);
 
   FT_LOG("Creating scroll target with seq=%" PRIu64 ", kl=%d, h=%" PRIu64
