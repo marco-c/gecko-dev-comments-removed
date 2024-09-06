@@ -6352,12 +6352,7 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
 
 template <typename T>
 void CodeGenerator::emitCallInvokeFunction(T* apply) {
-  Register objreg = ToRegister(apply->getTempObject());
-
-  
-  masm.moveStackPtrTo(objreg);
-
-  pushArg(objreg);                                     
+  pushArg(masm.getStackPointer());                     
   pushArg(ToRegister(apply->getArgc()));               
   pushArg(Imm32(apply->mir()->ignoresReturnValue()));  
   pushArg(Imm32(apply->mir()->isConstructing()));      
@@ -6826,12 +6821,7 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
 
 template <typename T>
 void CodeGenerator::emitCallInvokeNativeFunction(T* apply) {
-  Register argv = ToRegister(apply->getTempObject());
-
-  
-  masm.moveStackPtrTo(argv);
-
-  pushArg(argv);                                       
+  pushArg(masm.getStackPointer());                     
   pushArg(ToRegister(apply->getArgc()));               
   pushArg(Imm32(apply->mir()->ignoresReturnValue()));  
   pushArg(Imm32(apply->mir()->isConstructing()));      
