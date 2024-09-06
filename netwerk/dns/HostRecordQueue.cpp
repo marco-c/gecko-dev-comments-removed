@@ -166,6 +166,10 @@ void HostRecordQueue::MoveToAnotherPendingQ(nsHostRecord* aRec,
   }
 
   aRec->remove();
+  
+  
+  mPendingCount--;
+
   InsertRecord(aRec, aFlags, aProofOfLock);
 }
 
