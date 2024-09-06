@@ -579,8 +579,8 @@ void nsCSPContext::reportInlineViolation(
                        mSelfURI,            
                        aViolatedDirective,  
                        aViolatedDirectiveString,
-                       observerSubject,      
-                       aReportSample);       
+                       observerSubject,  
+                       aReportSample);   
 }
 
 NS_IMETHODIMP
@@ -769,10 +769,10 @@ nsCSPContext::LogViolationDetails(
         aTriggeringElement,
         aScriptSample};
 
-    AsyncReportViolation(
-        aCSPEventListener, std::move(cspViolationData), nullptr,
-        violatedDirectiveName, violatedDirectiveNameAndValue,
-        observerSubject, reportSample);
+    AsyncReportViolation(aCSPEventListener, std::move(cspViolationData),
+                         nullptr, violatedDirectiveName,
+                         violatedDirectiveNameAndValue, observerSubject,
+                         reportSample);
   }
   return NS_OK;
 }
