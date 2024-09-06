@@ -5,6 +5,7 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
@@ -409,6 +410,35 @@ impl TimingDistributionMetric {
         let metric = self.clone();
         crate::launch_with_glean(move |glean| {
             metric.accumulate_raw_samples_nanos_sync(glean, &samples)
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn accumulate_raw_duration(&self, duration: Duration) {
+        let duration_ns = duration.as_nanos().try_into().unwrap_or(u64::MAX);
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| {
+            metric.accumulate_raw_samples_nanos_sync(glean, &[duration_ns])
         })
     }
 

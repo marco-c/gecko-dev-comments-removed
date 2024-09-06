@@ -10,7 +10,7 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{Mutex, RwLock};
 
 use chrono::{DateTime, FixedOffset, Utc};
 
@@ -96,7 +96,7 @@ pub struct EventDatabase {
     
     event_stores: RwLock<HashMap<String, Vec<StoredEvent>>>,
     
-    file_lock: RwLock<()>,
+    file_lock: Mutex<()>,
 }
 
 impl EventDatabase {
@@ -113,7 +113,7 @@ impl EventDatabase {
         Ok(Self {
             path,
             event_stores: RwLock::new(HashMap::new()),
-            file_lock: RwLock::new(()),
+            file_lock: Mutex::new(()),
         })
     }
 
@@ -220,7 +220,7 @@ impl EventDatabase {
         
         
         let mut db = self.event_stores.write().unwrap(); 
-        let _lock = self.file_lock.write().unwrap(); 
+        let _lock = self.file_lock.lock().unwrap(); 
 
         for entry in fs::read_dir(&self.path)? {
             let entry = entry?;
@@ -326,7 +326,7 @@ impl EventDatabase {
     
     
     fn write_event_to_disk(&self, store_name: &str, event_json: &str) {
-        let _lock = self.file_lock.write().unwrap(); 
+        let _lock = self.file_lock.lock().unwrap(); 
         if let Err(err) = OpenOptions::new()
             .create(true)
             .append(true)
@@ -576,7 +576,7 @@ impl EventDatabase {
                 .unwrap() 
                 .remove(&store_name.to_string());
 
-            let _lock = self.file_lock.write().unwrap(); 
+            let _lock = self.file_lock.lock().unwrap(); 
             if let Err(err) = fs::remove_file(self.path.join(store_name)) {
                 match err.kind() {
                     std::io::ErrorKind::NotFound => {
@@ -596,7 +596,7 @@ impl EventDatabase {
         self.event_stores.write().unwrap().clear();
 
         
-        let _lock = self.file_lock.write().unwrap();
+        let _lock = self.file_lock.lock().unwrap();
         std::fs::remove_dir_all(&self.path)?;
         create_dir_all(&self.path)?;
 

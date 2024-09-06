@@ -6,6 +6,8 @@ use crate::metrics::DistributionData;
 use crate::metrics::TimerId;
 use crate::ErrorType;
 
+use std::time::Duration;
+
 
 
 
@@ -102,6 +104,29 @@ pub trait TimingDistribution {
     
     
     fn accumulate_raw_samples_nanos(&self, samples: Vec<u64>);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn accumulate_raw_duration(&self, duration: Duration);
 
     
     
