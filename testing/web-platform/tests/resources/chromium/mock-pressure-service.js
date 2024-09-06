@@ -65,26 +65,20 @@ class MockPressureService {
     if (this.pressureServiceReadingTimerId_ != null)
       this.stopPlatformCollector();
 
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    const windowsEpoch = Date.UTC(1601, 0, 1, 0, 0, 0, 0);
-    const unixEpoch = Date.UTC(1970, 0, 1, 0, 0, 0, 0);
-    
-    const epochDeltaInMs = unixEpoch - windowsEpoch;
-
     this.pressureServiceReadingTimerId_ = self.setInterval(() => {
       if (this.pressureUpdate_ === null || this.observers_.length === 0)
         return;
+
+      
+      
+      
+      
+      
+      
+      
       this.pressureUpdate_.timestamp = {
-        internalValue: BigInt((new Date().getTime() + epochDeltaInMs) * 1000)
+        internalValue:
+            Math.round((performance.timeOrigin * 10) + performance.now()) * 1000
       };
       for (let observer of this.observers_)
         observer.onPressureUpdated(this.pressureUpdate_);
