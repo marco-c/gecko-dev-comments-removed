@@ -88,13 +88,7 @@ add_task(async function test_expire_root() {
 
   
   let iconURI = NetUtil.newURI(pageURI.spec + "favicon-normal16.png");
-  PlacesUtils.favicons.replaceFaviconDataFromDataURL(
-    iconURI,
-    SMALLPNG_DATA_URI.spec,
-    0,
-    systemPrincipal
-  );
-  await setFaviconForPage(pageURI, iconURI);
+  await PlacesTestUtils.setFaviconForPage(pageURI, iconURI, SMALLPNG_DATA_URI);
   Assert.equal(
     await countEntries("moz_icons_to_pages"),
     1,
@@ -105,13 +99,11 @@ add_task(async function test_expire_root() {
 
   
   let rootIconURI = NetUtil.newURI(pageURI.spec + "favicon.ico");
-  PlacesUtils.favicons.replaceFaviconDataFromDataURL(
+  await PlacesTestUtils.setFaviconForPage(
+    pageURI,
     rootIconURI,
-    SMALLPNG_DATA_URI.spec,
-    0,
-    systemPrincipal
+    SMALLPNG_DATA_URI
   );
-  await setFaviconForPage(pageURI, rootIconURI);
 
   
   Assert.equal(
