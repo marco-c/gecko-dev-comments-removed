@@ -4283,10 +4283,10 @@ class Document : public nsINode,
     MOZ_CAN_RUN_SCRIPT nsresult
     GetCommandStateParams(nsCommandParams& aParams) const;
 
-   private:
     
     EditorBase* GetTargetEditor() const;
 
+   private:
     RefPtr<EditorBase> mActiveEditor;
     RefPtr<HTMLEditor> mHTMLEditor;
     RefPtr<EditorCommand> mEditorCommand;

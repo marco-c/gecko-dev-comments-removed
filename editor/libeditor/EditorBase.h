@@ -783,6 +783,13 @@ class EditorBase : public nsIEditor,
       int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
       nsIPrincipal* aPrincipal = nullptr);
 
+  
+
+
+  [[nodiscard]] bool IsDispatchingInputEvent() const {
+    return mEditActionData && mEditActionData->IsDispatchingInputEvent();
+  }
+
  protected:  
   class AutoEditActionDataSetter;
 
@@ -1295,6 +1302,19 @@ class EditorBase : public nsIEditor,
 
     void UpdateSelectionCache(Selection& aSelection);
 
+    bool IsDispatchingInputEvent() const {
+      return mDispatchingInputEvent ||
+             (mParentData && mParentData->IsDispatchingInputEvent());
+    }
+    void WillDispatchInputEvent() {
+      MOZ_ASSERT(!mDispatchingInputEvent);
+      mDispatchingInputEvent = true;
+    }
+    void DidDispatchInputEvent() {
+      MOZ_ASSERT(mDispatchingInputEvent);
+      mDispatchingInputEvent = false;
+    }
+
    private:
     bool IsBeforeInputEventEnabled() const;
 
@@ -1440,6 +1460,8 @@ class EditorBase : public nsIEditor,
     
     
     bool mHandled;
+    
+    bool mDispatchingInputEvent = false;
 
 #ifdef DEBUG
     mutable bool mHasCanHandleChecked = false;
