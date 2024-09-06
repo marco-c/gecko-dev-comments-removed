@@ -421,6 +421,12 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
 
 
+  static bool HasIndirectShadowTree(LayersId aId);
+
+  
+
+
+
   static bool CallWithIndirectShadowTree(
       LayersId aId, const std::function<void(LayerTreeState&)>& aFunc);
 
@@ -510,6 +516,12 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   void FlushPendingWrTransactionEventsWithWait();
 
  private:
+  
+
+
+
+  static LayerTreeState* GetIndirectShadowTreeInternal(LayersId aId);
+
   void Initialize();
 
   

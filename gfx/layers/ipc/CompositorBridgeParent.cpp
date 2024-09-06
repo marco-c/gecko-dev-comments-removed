@@ -1596,16 +1596,26 @@ CompositorBridgeParent::GetAsyncImagePipelineManager() const {
 }
 
  CompositorBridgeParent::LayerTreeState*
-CompositorBridgeParent::GetIndirectShadowTree(LayersId aId) {
-  
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-
+CompositorBridgeParent::GetIndirectShadowTreeInternal(LayersId aId) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
   LayerTreeMap::iterator cit = sIndirectLayerTrees.find(aId);
   if (sIndirectLayerTrees.end() == cit) {
     return nullptr;
   }
   return &cit->second;
+}
+
+
+bool CompositorBridgeParent::HasIndirectShadowTree(LayersId aId) {
+  return GetIndirectShadowTreeInternal(aId) != nullptr;
+}
+
+ CompositorBridgeParent::LayerTreeState*
+CompositorBridgeParent::GetIndirectShadowTree(LayersId aId) {
+  
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+
+  return GetIndirectShadowTreeInternal(aId);
 }
 
 
