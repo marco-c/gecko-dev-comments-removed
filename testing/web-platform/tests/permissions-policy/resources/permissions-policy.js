@@ -28,9 +28,33 @@ function assert_permissions_policy_supported() {
 
 
 
+
 function test_feature_availability(
-    feature_description, test, src, expect_feature_available, feature_name,
-    allow_attribute, is_promise_test = false) {
+    feature_descriptionOrObject, test, src, expect_feature_available, feature_name,
+    allowfullscreen, is_promise_test = false) {
+
+  if (feature_descriptionOrObject && feature_descriptionOrObject instanceof Object) {
+    const {
+      feature_description,
+      test,
+      src,
+      expect_feature_available,
+      feature_name,
+      allowfullscreen,
+      is_promise_test,
+    } = feature_descriptionOrObject;
+    return test_feature_availability(
+      feature_description,
+      test,
+      src,
+      expect_feature_available,
+      feature_name,
+      allowfullscreen,
+      is_promise_test
+    );
+  }
+
+  const feature_description = feature_descriptionOrObject;
   let frame = document.createElement('iframe');
   frame.src = src;
 
@@ -38,8 +62,8 @@ function test_feature_availability(
     frame.allow = frame.allow.concat(";" + feature_name);
   }
 
-  if (typeof allow_attribute !== 'undefined') {
-    frame.setAttribute(allow_attribute, true);
+  if (typeof allowfullscreen !== 'undefined') {
+    frame.setAttribute(allowfullscreen, true);
   }
 
   function expectFeatureAvailable(evt) {
