@@ -53,12 +53,12 @@ use crate::ffi::{rust_call, ForeignBytes, RustCallStatus};
 pub struct RustBuffer {
     
     
-    pub(crate) capacity: u64,
+    capacity: u64,
     
     
-    pub(crate) len: u64,
+    len: u64,
     
-    pub(crate) data: *mut u8,
+    data: *mut u8,
 }
 
 
@@ -103,12 +103,6 @@ impl RustBuffer {
     
     pub fn len(&self) -> usize {
         self.len
-            .try_into()
-            .expect("buffer length negative or overflowed")
-    }
-
-    pub fn capacity(&self) -> usize {
-        self.capacity
             .try_into()
             .expect("buffer length negative or overflowed")
     }
