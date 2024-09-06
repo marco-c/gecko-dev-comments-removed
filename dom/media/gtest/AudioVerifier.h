@@ -59,8 +59,8 @@ class AudioVerifier {
   
   
   Sample MaxMagnitudeDifference() {
-    return static_cast<Sample>(AudioGenerator<Sample>::Amplitude() *
-                               2 * sin(2 * M_PI * mFrequency / mRate));
+    return static_cast<Sample>(AudioGenerator<Sample>::Amplitude() * 2 *
+                               sin(2 * M_PI * mFrequency / mRate));
   }
 
   bool PreSilenceEnded() const {

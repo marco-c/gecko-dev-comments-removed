@@ -238,8 +238,7 @@ class SavedStacks {
     WeakHeapPtr<JSScript*> script;
     jsbytecode* pc;
 
-    void trace(JSTracer* trc) { 
-    }
+    void trace(JSTracer* trc) {  }
     bool traceWeak(JSTracer* trc) {
       return TraceWeakEdge(trc, &script, "traceWeak");
     }

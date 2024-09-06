@@ -107,9 +107,9 @@ class MediaControlKeySource {
   
   
   
-  virtual void SetEnableFullScreen(bool aIsEnabled){};
-  virtual void SetEnablePictureInPictureMode(bool aIsEnabled){};
-  virtual void SetPositionState(const Maybe<PositionState>& aState){};
+  virtual void SetEnableFullScreen(bool aIsEnabled) {};
+  virtual void SetEnablePictureInPictureMode(bool aIsEnabled) {};
+  virtual void SetPositionState(const Maybe<PositionState>& aState) {};
 
  protected:
   virtual ~MediaControlKeySource() = default;

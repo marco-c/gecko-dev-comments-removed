@@ -129,7 +129,7 @@ class nsHtml5String final {
   
 
 
-  explicit nsHtml5String(uintptr_t aBits) : mBits(aBits){};
+  explicit nsHtml5String(uintptr_t aBits) : mBits(aBits) {};
 
   
 

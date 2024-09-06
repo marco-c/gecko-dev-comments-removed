@@ -197,8 +197,8 @@ static void extractAttributeValue(const char* aSearchString,
           aResult.Assign(startOfAttribute);
         }
       }  
-    }    
-  }      
+    }  
+  }  
 }
 
 nsresult nsMozIconURI::SetSpecInternal(const nsACString& aSpec) {

@@ -1103,7 +1103,7 @@ nsresult nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd) {
                                       contentOffset + fragmentLength);
         }
       }  
-    }    
+    }  
     int32_t temp = runLength;
     runLength -= fragmentLength;
     fragmentLength -= temp;

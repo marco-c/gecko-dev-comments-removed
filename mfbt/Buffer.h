@@ -39,7 +39,7 @@ class Buffer final {
 
 
 
-  Buffer() : mData(nullptr), mLength(0){};
+  Buffer() : mData(nullptr), mLength(0) {};
 
   
 

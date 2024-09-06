@@ -31,7 +31,7 @@ class nsIIdleRunnable : public nsISupports {
 
 
 
-  virtual void SetDeadline(mozilla::TimeStamp aDeadline){};
+  virtual void SetDeadline(mozilla::TimeStamp aDeadline) {};
   virtual void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget) {
     MOZ_ASSERT_UNREACHABLE(
         "The nsIIdleRunnable instance does not support "
@@ -39,8 +39,8 @@ class nsIIdleRunnable : public nsISupports {
   };
 
  protected:
-  nsIIdleRunnable() {}
-  virtual ~nsIIdleRunnable() {}
+  nsIIdleRunnable() = default;
+  virtual ~nsIIdleRunnable() = default;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIIdleRunnable, NS_IIDLERUNNABLE_IID)

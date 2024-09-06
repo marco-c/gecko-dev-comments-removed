@@ -56,7 +56,7 @@ class MediaDevices final : public DOMEventTargetHelper {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
-  void GetSupportedConstraints(MediaTrackSupportedConstraints& aResult){};
+  void GetSupportedConstraints(MediaTrackSupportedConstraints& aResult) {};
 
   already_AddRefed<Promise> GetUserMedia(
       const MediaStreamConstraints& aConstraints, CallerType aCallerType,

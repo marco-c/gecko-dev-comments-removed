@@ -442,7 +442,7 @@ static nsresult MakeIconBuffer(HICON aIcon, ByteBuf* aOutBuffer) {
           }  
           delete colorInfo;
         }  
-      }    
+      }  
 
       DeleteDC(hDC);
       DeleteObject(iconInfo.hbmColor);

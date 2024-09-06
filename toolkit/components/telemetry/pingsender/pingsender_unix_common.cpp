@@ -90,19 +90,17 @@ CurlWrapper::~CurlWrapper() {
 bool CurlWrapper::Init() {
   const char* libcurlPaths[] = {
 #if defined(XP_MACOSX)
-    
-    "/usr/lib/libcurl.dylib",
-    "/usr/lib/libcurl.4.dylib",
-    "/usr/lib/libcurl.3.dylib",
+      
+      "/usr/lib/libcurl.dylib",
+      "/usr/lib/libcurl.4.dylib",
+      "/usr/lib/libcurl.3.dylib",
 #else  
-    "libcurl.so",
-    "libcurl.so.4",
-    
-    "libcurl-gnutls.so",
-    "libcurl-gnutls.so.4",
-    
-    "libcurl.so.3",
-    "libcurl-gnutls.so.3",  
+      "libcurl.so", "libcurl.so.4",
+      
+      "libcurl-gnutls.so", "libcurl-gnutls.so.4",
+      
+      "libcurl.so.3",
+      "libcurl-gnutls.so.3",  
 #endif
   };
 

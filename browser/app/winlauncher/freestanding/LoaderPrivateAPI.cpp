@@ -17,8 +17,9 @@ using GlobalInitializerFn = void(__cdecl*)(void);
 
 
 #pragma section(".freestd$a", read)
-__declspec(allocate(".freestd$a")) static const GlobalInitializerFn
-    FreeStdStart = reinterpret_cast<GlobalInitializerFn>(0);
+__declspec(allocate(
+    ".freestd$a")) static const GlobalInitializerFn FreeStdStart =
+    reinterpret_cast<GlobalInitializerFn>(0);
 
 #pragma section(".freestd$z", read)
 __declspec(allocate(".freestd$z")) static const GlobalInitializerFn FreeStdEnd =

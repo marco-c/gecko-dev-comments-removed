@@ -112,14 +112,14 @@ class SessionManagerWrapper final : public RefCounted, private cdm::Host_10 {
                            const cdm::KeyInformation* aKeysInfo,
                            uint32_t aKeysInfoCount) override;
   void OnExpirationChange(const char* aSessionId, uint32_t aSessionIdSize,
-                          cdm::Time aNewExpiryTime) override{
-      
-      
+                          cdm::Time aNewExpiryTime) override {
+    
+    
   };
   void OnSessionClosed(const char* aSessionId,
-                       uint32_t aSessionIdSize) override{
-      
-      
+                       uint32_t aSessionIdSize) override {
+    
+    
   };
   cdm::FileIO* CreateFileIO(cdm::FileIOClient* aClient) override {
     
@@ -129,7 +129,7 @@ class SessionManagerWrapper final : public RefCounted, private cdm::Host_10 {
                              const char* aChallenge,
                              uint32_t aChallengeSize) override {}
   void EnableOutputProtection(uint32_t aDesiredProtectionMask) override {}
-  void QueryOutputProtectionStatus() override{};
+  void QueryOutputProtectionStatus() override {};
   void OnDeferredInitializationDone(cdm::StreamType aStreamType,
                                     cdm::Status aDecoderStatus) override {}
   void RequestStorageId(uint32_t aVersion) override {}

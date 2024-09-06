@@ -89,9 +89,7 @@ class OpeningGeometrySink : public ID2D1SimplifiedGeometrySink {
     EnsureFigureEnded();
     return mSink->AddBeziers(aSegments, aCount);
   }
-  STDMETHOD(Close)() { 
-    return S_OK;
-  }
+  STDMETHOD(Close)() {  return S_OK; }
   STDMETHOD_(void, SetSegmentFlags)(D2D1_PATH_SEGMENT aFlags) {
     return mSink->SetSegmentFlags(aFlags);
   }

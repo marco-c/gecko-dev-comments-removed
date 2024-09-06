@@ -23,8 +23,8 @@ NS_IMPL_ISUPPORTS(BackstagePass, nsIXPCScriptable, nsIGlobalObject,
                   nsISupportsWeakReference)
 
 BackstagePass::BackstagePass()
-    : mPrincipal(nsContentUtils::GetSystemPrincipal()), mWrapper(nullptr) {}
-
+    : mPrincipal(nsContentUtils::GetSystemPrincipal()),
+      mWrapper(nullptr){}
 
 
 
@@ -42,7 +42,8 @@ BackstagePass::BackstagePass()
    XPC_SCRIPTABLE_DONT_REFLECT_INTERFACE_NAMES)
 #include "xpc_map_end.h" 
 
-JSObject* BackstagePass::GetGlobalJSObject() {
+          JSObject
+          * BackstagePass::GetGlobalJSObject() {
   if (mWrapper) {
     return mWrapper->GetFlatJSObject();
   }

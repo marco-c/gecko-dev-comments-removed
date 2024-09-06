@@ -258,7 +258,7 @@ enum Endianness {
 class Section {
  public:
   explicit Section(Endianness endianness = kUnsetEndian)
-      : endianness_(endianness){};
+      : endianness_(endianness) {};
 
   
   

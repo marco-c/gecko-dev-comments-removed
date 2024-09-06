@@ -3603,7 +3603,7 @@ bool TokenStreamSpecific<Unit, AnyCharsAccess>::getStringOrTemplateToken(
           unit = char16_t(val);
           break;
         }  
-      }    
+      }  
 
       if (!this->charBuffer.append(unit)) {
         return false;

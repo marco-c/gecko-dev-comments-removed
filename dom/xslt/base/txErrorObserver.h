@@ -16,7 +16,7 @@ class ErrorObserver {
   
 
 
-  virtual ~ErrorObserver(){};
+  virtual ~ErrorObserver() {};
 
   
 

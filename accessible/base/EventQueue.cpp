@@ -231,7 +231,7 @@ void EventQueue::CoalesceEvents() {
 
     default:
       break;  
-  }           
+  }  
 }
 
 void EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,

@@ -374,14 +374,14 @@ class ExpirationTrackerImpl {
 
 
 
-  virtual void NotifyHandlerEndLocked(const AutoLock&){};
+  virtual void NotifyHandlerEndLocked(const AutoLock&) {};
 
   
 
 
 
 
-  virtual void NotifyHandlerEnd(){};
+  virtual void NotifyHandlerEnd() {};
 
   virtual Mutex& GetMutex() = 0;
 

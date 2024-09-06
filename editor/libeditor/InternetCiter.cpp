@@ -287,7 +287,7 @@ void InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
         BreakLine(aOutString, outStringCol, citeLevel);
       }
     }  
-  }    
+  }  
 }
 
 }  

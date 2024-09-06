@@ -796,7 +796,7 @@ class KeyedScalar {
       : mScalarName(info.name()),
         mScalarKeyCount(info.key_count),
         mScalarKeyOffset(info.key_offset),
-        mMaximumNumberOfKeys(kMaximumNumberOfKeys){};
+        mMaximumNumberOfKeys(kMaximumNumberOfKeys) {};
   ~KeyedScalar() = default;
 
   

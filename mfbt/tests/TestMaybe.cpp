@@ -1026,13 +1026,11 @@ static bool TestComparisonOperators() {
 
 
 class MySuperClass {
-  virtual void VirtualMethod() { 
-  }
+  virtual void VirtualMethod() {  }
 };
 
 class MyDerivedClass : public MySuperClass {
-  void VirtualMethod() override { 
-  }
+  void VirtualMethod() override {  }
 };
 
 static bool TestVirtualFunction() {

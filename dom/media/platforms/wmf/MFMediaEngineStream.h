@@ -127,7 +127,7 @@ class MFMediaEngineStream
 
   
   
-  virtual void ShutdownCleanUpOnTaskQueue(){};
+  virtual void ShutdownCleanUpOnTaskQueue() {};
 
   
   

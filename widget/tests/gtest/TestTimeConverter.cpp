@@ -97,11 +97,12 @@ using TimeConverter = SystemTimeConverter<GTestTime, MockTimeStamp>;
 
 
 
-#define EXPECT_TS(ts, ms) \
-  EXPECT_EQ((ts)-MockTimeStamp::Baseline(), TimeDuration::FromMilliseconds(ms))
+#define EXPECT_TS(ts, ms)                     \
+  EXPECT_EQ((ts) - MockTimeStamp::Baseline(), \
+            TimeDuration::FromMilliseconds(ms))
 
 #define EXPECT_TS_FUZZY(ts, ms) \
-  EXPECT_DOUBLE_EQ(((ts)-MockTimeStamp::Baseline()).ToMilliseconds(), ms)
+  EXPECT_DOUBLE_EQ(((ts) - MockTimeStamp::Baseline()).ToMilliseconds(), ms)
 
 TEST(TimeConverter, SanityCheck)
 {

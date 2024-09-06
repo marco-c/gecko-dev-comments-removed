@@ -21,7 +21,7 @@ namespace mozilla {
 class CaptureTask::MediaTrackEventListener : public MediaTrackListener {
  public:
   explicit MediaTrackEventListener(CaptureTask* aCaptureTask)
-      : mCaptureTask(aCaptureTask){};
+      : mCaptureTask(aCaptureTask) {};
 
   
   void NotifyEnded(MediaTrackGraph* aGraph) override {

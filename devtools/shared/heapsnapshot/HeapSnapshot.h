@@ -173,7 +173,7 @@ class HeapSnapshot final : public nsISupports, public nsWrapperCache {
 
 class CoreDumpWriter {
  public:
-  virtual ~CoreDumpWriter(){};
+  virtual ~CoreDumpWriter() {};
 
   
   

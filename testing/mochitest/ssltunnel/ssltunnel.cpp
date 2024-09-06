@@ -919,10 +919,10 @@ void HandleConnection(void* data) {
               buffers[s2].compact();
             }
           }
-        }                 
+        }  
         LOG_END_BLOCK();  
-      }                   
-    }                     
+      }  
+    }  
   } else
     client_error = true;
 

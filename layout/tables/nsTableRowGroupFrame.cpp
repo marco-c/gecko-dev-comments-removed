@@ -740,8 +740,8 @@ void nsTableRowGroupFrame::CalculateRowBSizes(nsPresContext* aPresContext,
           }  
           cellFrame = cellFrame->GetNextCell();
         }  
-      }    
-    }      
+      }  
+    }  
   }
 
   

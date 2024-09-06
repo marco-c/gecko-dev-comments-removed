@@ -25,8 +25,7 @@ nsTraversal::nsTraversal(nsINode* aRoot, uint32_t aWhatToShow,
   NS_ASSERTION(aRoot, "invalid root in call to nsTraversal constructor");
 }
 
-nsTraversal::~nsTraversal() { 
-}
+nsTraversal::~nsTraversal() {  }
 
 
 

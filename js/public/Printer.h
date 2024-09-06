@@ -202,8 +202,7 @@ class JS_PUBLIC_API GenericPrinter {
   virtual size_t index() const { return 0; }
 
   
-  virtual void flush() { 
-  }
+  virtual void flush() {  }
 
   
   virtual void reportOutOfMemory();

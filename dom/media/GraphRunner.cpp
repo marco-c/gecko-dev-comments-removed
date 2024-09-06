@@ -112,7 +112,7 @@ void PromoteRenderingThreadAndroid() {
           ("GraphRunner promoted thread priority: %d",
            java::sdk::Process::GetThreadPriority(java::sdk::Process::MyTid())));
 }
-};      
+};  
 #endif  
 
 NS_IMETHODIMP GraphRunner::Run() {

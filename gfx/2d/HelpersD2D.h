@@ -958,12 +958,9 @@ class StreamingGeometrySink : public ID2D1SimplifiedGeometrySink {
                       ToPoint(aSegments[i].point3));
     }
   }
-  STDMETHOD(Close)() { 
-    return S_OK;
-  }
+  STDMETHOD(Close)() {  return S_OK; }
   STDMETHOD_(void, SetSegmentFlags)
-  (D2D1_PATH_SEGMENT aFlags) { 
-  }
+  (D2D1_PATH_SEGMENT aFlags) {  }
 
   STDMETHOD_(void, EndFigure)(D2D1_FIGURE_END aEnd) {
     AutoRestoreFP resetFloatingPoint;

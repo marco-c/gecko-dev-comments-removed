@@ -610,7 +610,7 @@ NS_EXPORT_(void) setupProfilingStuff(void) {
         timerMilliSec = 0; 
         realTime = 1;      
 
-#  define IS_POWER_OF_TWO(x) (((x) & ((x)-1)) == 0)
+#  define IS_POWER_OF_TWO(x) (((x) & ((x) - 1)) == 0)
 
         if (!IS_POWER_OF_TWO(rtcHz) || rtcHz < 2) {
           fprintf(stderr,

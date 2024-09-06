@@ -301,7 +301,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  virtual void AfterElementEnd(nsIContent* aContent, nsAString& aStr){};
+  virtual void AfterElementEnd(nsIContent* aContent, nsAString& aStr) {};
 
   
 

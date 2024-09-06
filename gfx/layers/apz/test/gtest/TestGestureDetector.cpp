@@ -133,8 +133,7 @@ TEST_F(APZCGestureDetectorTester, Pan_After_Pinch) {
 
   
   apzc->AdvanceAnimationsUntilEnd();
-  while (mcc->RunThroughDelayedTasks())
-    ;
+  while (mcc->RunThroughDelayedTasks());
   apzc->AssertStateIsReset();
 }
 #endif
@@ -225,8 +224,7 @@ TEST_F(APZCGestureDetectorTester, Pan_With_Tap) {
 
   
   apzc->AdvanceAnimationsUntilEnd();
-  while (mcc->RunThroughDelayedTasks())
-    ;
+  while (mcc->RunThroughDelayedTasks());
   apzc->AssertStateIsReset();
 }
 
@@ -286,14 +284,12 @@ class APZCFlingStopTester : public APZCGestureDetectorTester {
                 HandleTap(TapType::eSingleTap, _, 0, apzc->GetGuid(), _, _))
         .Times(tapCallsExpected);
     Tap(apzc, ScreenIntPoint(10, 10), 0);
-    while (mcc->RunThroughDelayedTasks())
-      ;
+    while (mcc->RunThroughDelayedTasks());
 
     
     
     Tap(apzc, ScreenIntPoint(100, 100), 0);
-    while (mcc->RunThroughDelayedTasks())
-      ;
+    while (mcc->RunThroughDelayedTasks());
 
     
     
@@ -847,8 +843,7 @@ TEST_F(APZCGestureDetectorTester, TapTimeoutInterruptedByWheel) {
       Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, -10), mcc->Time())
           .mInputBlockId;
   EXPECT_NE(result.mInputBlockId, wheelBlockId);
-  while (mcc->RunThroughDelayedTasks())
-    ;
+  while (mcc->RunThroughDelayedTasks());
 }
 
 TEST_F(APZCGestureDetectorTester, LongPressWithInputQueueDelay) {

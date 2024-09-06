@@ -184,7 +184,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void SetIsHttp2Websocket(bool) {}
   virtual bool IsHttp2Websocket() { return false; }
   virtual void SetTRRInfo(nsIRequest::TRRMode aMode,
-                          TRRSkippedReason aSkipReason){};
+                          TRRSkippedReason aSkipReason) {};
 
   
   

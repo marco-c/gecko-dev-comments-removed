@@ -245,8 +245,7 @@ static void InitResolution() {
   
   ULONGLONG sigDigs;
   for (sigDigs = 1; !(sigDigs == result || 10 * sigDigs > result);
-       sigDigs *= 10)
-    ;
+       sigDigs *= 10);
 
   sResolutionSigDigs = sigDigs;
 }

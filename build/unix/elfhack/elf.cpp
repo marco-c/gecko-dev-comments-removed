@@ -593,8 +593,7 @@ int ElfSection::getIndex() {
   ElfSection* reference;
   for (reference = previous;
        (reference != nullptr) && (reference->getType() == SHT_NULL);
-       reference = reference->getPrevious())
-    ;
+       reference = reference->getPrevious());
   if (reference == nullptr) return (index = 1);
   return (index = reference->getIndex() + 1);
 }
@@ -644,8 +643,7 @@ unsigned int ElfSegment::getFileSize() {
   
   std::list<ElfSection*>::reverse_iterator i;
   for (i = sections.rbegin();
-       (i != sections.rend()) && ((*i)->getType() == SHT_NOBITS); ++i)
-    ;
+       (i != sections.rend()) && ((*i)->getType() == SHT_NOBITS); ++i);
   
   if (i == sections.rend()) return 0;
 

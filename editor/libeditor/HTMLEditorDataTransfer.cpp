@@ -1236,7 +1236,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
               rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
               "CreateContentResult::SuggestCaretPointTo() failed, but ignored");
           break;  
-        }         
+        }  
       }
     }
     if (lastInsertedPoint.IsSet()) {

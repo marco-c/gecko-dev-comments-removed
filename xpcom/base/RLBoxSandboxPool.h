@@ -42,7 +42,7 @@ class RLBoxSandboxPool : public nsITimerCallback, public nsINamed {
   RLBoxSandboxPool(size_t aDelaySeconds = 10)
       : mPool(),
         mDelaySeconds(aDelaySeconds),
-        mMutex("RLBoxSandboxPool::mMutex"){};
+        mMutex("RLBoxSandboxPool::mMutex") {};
 
   void Push(UniquePtr<RLBoxSandboxDataBase> sbx);
   

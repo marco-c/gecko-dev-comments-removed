@@ -173,7 +173,7 @@ class MediaStreamTrackSource : public nsISupports {
   
 
 
-  virtual void GetSettings(dom::MediaTrackSettings& aResult){};
+  virtual void GetSettings(dom::MediaTrackSettings& aResult) {};
 
   
 
@@ -343,12 +343,12 @@ class MediaStreamTrackConsumer : public SupportsWeakPtr {
 
 
 
-  virtual void NotifyEnded(MediaStreamTrack* aTrack){};
+  virtual void NotifyEnded(MediaStreamTrack* aTrack) {};
 
   
 
 
-  virtual void NotifyEnabledChanged(MediaStreamTrack* aTrack, bool aEnabled){};
+  virtual void NotifyEnabledChanged(MediaStreamTrack* aTrack, bool aEnabled) {};
 };
 
 

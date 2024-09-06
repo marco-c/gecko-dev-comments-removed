@@ -111,7 +111,7 @@ class MediaSink {
   
   
   
-  virtual void Redraw(const VideoInfo& aInfo){};
+  virtual void Redraw(const VideoInfo& aInfo) {};
 
   
   

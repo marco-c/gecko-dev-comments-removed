@@ -68,33 +68,33 @@ class DOMMediaStream : public DOMEventTargetHelper,
 
 
 
-    virtual void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack){};
+    virtual void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack) {};
 
     
 
 
 
-    virtual void NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack){};
+    virtual void NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack) {};
 
     
 
 
-    virtual void NotifyActive(){};
+    virtual void NotifyActive() {};
 
     
 
 
-    virtual void NotifyInactive(){};
+    virtual void NotifyInactive() {};
 
     
 
 
-    virtual void NotifyAudible(){};
+    virtual void NotifyAudible() {};
 
     
 
 
-    virtual void NotifyInaudible(){};
+    virtual void NotifyInaudible() {};
 
    protected:
     virtual ~TrackListener() = default;

@@ -447,9 +447,7 @@ TEST(MozPromise, Chaining)
     }
     
     
-    p->Then(
-         queue, __func__, []() {}, []() {})
-        ->Track(holder);
+    p->Then(queue, __func__, []() {}, []() {})->Track(holder);
   });
 }
 

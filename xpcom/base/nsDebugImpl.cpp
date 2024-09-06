@@ -184,6 +184,7 @@ nsDebugImpl::GetIsDebuggerAttached(bool* aResult) {
     defined(__NetBSD__) || defined(__OpenBSD__)
   
   int mib[] = {
+      
     CTL_KERN,
     KERN_PROC,
     KERN_PROC_PID,
@@ -192,6 +193,7 @@ nsDebugImpl::GetIsDebuggerAttached(bool* aResult) {
     sizeof(KINFO_PROC),
     1,
 #  endif
+      
   };
   u_int mibSize = sizeof(mib) / sizeof(int);
 

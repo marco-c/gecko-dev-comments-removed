@@ -103,8 +103,8 @@ uint64_t XULMenuitemAccessible::NativeState() const {
                  (grandParentState & states::INVISIBLE) |
                  (grandParentState & states::OPAQUE1);
       }  
-    }    
-  }      
+    }  
+  }  
 
   return state;
 }

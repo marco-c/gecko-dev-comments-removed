@@ -891,7 +891,7 @@ static bool ExtractCharsetFromXmlDeclaration(const unsigned char* aBytes,
           }
         }
       }  
-    }    
+    }  
   }
   return !oCharset.IsEmpty();
 }

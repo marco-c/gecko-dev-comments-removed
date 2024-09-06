@@ -76,7 +76,7 @@ struct payload {
 };
 
 extern "C" __declspec(dllexport) __declspec(noinline) payload
-    rotatePayload(payload p) {
+rotatePayload(payload p) {
   UINT64 tmp = p.a;
   p.a = p.b;
   p.b = p.c;
@@ -88,7 +88,7 @@ extern "C" __declspec(dllexport) __declspec(noinline) payload
 
 
 extern "C" __declspec(dllexport) __declspec(noinline) payload
-    payloadNotHooked(payload p) {
+payloadNotHooked(payload p) {
   
   p.a ^= p.b;
   p.b ^= p.c;

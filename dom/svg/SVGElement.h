@@ -165,8 +165,7 @@ class SVGElement : public SVGElementBase
   
   
   virtual void SetAnimateMotionTransform(
-      const mozilla::gfx::Matrix* aMatrix) { 
-  }
+      const mozilla::gfx::Matrix* aMatrix) {  }
   virtual const mozilla::gfx::Matrix* GetAnimateMotionTransform() const {
     return nullptr;
   }

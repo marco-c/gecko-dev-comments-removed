@@ -162,9 +162,8 @@ auto WebrtcGlobalStatsHistory::Entry::Prune(const DOMHighResTimeStamp aBefore)
   
 }
 
-auto WebrtcGlobalStatsHistory::InitHistory(const nsAString& aPcId,
-                                           const bool aIsLongTermStatsDisabled)
-    -> void {
+auto WebrtcGlobalStatsHistory::InitHistory(
+    const nsAString& aPcId, const bool aIsLongTermStatsDisabled) -> void {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (WebrtcGlobalStatsHistory::Get().MaybeGet(aPcId)) {
     return;

@@ -279,10 +279,11 @@ class NativePtrPicker {
   
   
   template <typename I>
-  static auto Test(void*) -> std::enable_if_t<
-      std::conjunction_v<IsRefCounted<I>,
-                         std::negation<HasWeakNonIntrusiveDetach<I>>>,
-      ResultTypeT<NativePtrType::REFPTR>>;
+  static auto Test(void*)
+      -> std::enable_if_t<
+          std::conjunction_v<IsRefCounted<I>,
+                             std::negation<HasWeakNonIntrusiveDetach<I>>>,
+          ResultTypeT<NativePtrType::REFPTR>>;
 
   
   

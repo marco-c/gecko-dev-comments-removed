@@ -806,7 +806,7 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
     
 #define PREV_POINT(idx)        \
   ({                           \
-    int cur = (idx)-1;         \
+    int cur = (idx) - 1;       \
     cur >= 0 ? cur : nump - 1; \
   })
     
