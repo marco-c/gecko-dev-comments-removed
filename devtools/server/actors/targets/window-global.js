@@ -336,9 +336,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
     
     
-    if (!this.followWindowGlobalLifeCycle) {
-      this._progressListener = new DebuggerProgressListener(this);
-    }
+    this._progressListener = new DebuggerProgressListener(this);
 
     TargetActorRegistry.registerTargetActor(this);
 
@@ -366,23 +364,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
     
     this._originalWindow = this.window;
-
-    
-    
-    
-    
-    if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
-      this._innerWindowId =
-        this.devtoolsSpawnedBrowsingContextForWebExtension.currentWindowContext.innerWindowId;
-    } else {
-      
-      
-      
-      
-      
-      
-      this._innerWindowId = this.window.windowGlobalChild.innerWindowId;
-    }
 
     
     this.isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(this.window);
@@ -509,7 +490,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   }
 
   get innerWindowId() {
-    return this._innerWindowId;
+    return this.window?.windowGlobalChild.innerWindowId;
   }
 
   get browserId() {
@@ -559,7 +540,11 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   get originalDocShell() {
-    return this._originalWindow?.docShell || this.docShell;
+    if (!this._originalWindow) {
+      return this.docShell;
+    }
+
+    return this._originalWindow.docShell;
   }
 
   
@@ -667,6 +652,8 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       ? this.devtoolsSpawnedBrowsingContextForWebExtension
       : this.originalDocShell.browsingContext;
     const browsingContextID = originalBrowsingContext.id;
+    const innerWindowId =
+      originalBrowsingContext.currentWindowContext.innerWindowId;
     const parentInnerWindowId =
       originalBrowsingContext.parent?.currentWindowContext.innerWindowId;
     
@@ -683,7 +670,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       processID: Services.appinfo.processID,
       
       followWindowGlobalLifeCycle: this.followWindowGlobalLifeCycle,
-      innerWindowId: this.innerWindowId,
+      innerWindowId,
       parentInnerWindowId,
       topInnerWindowId: this.browsingContext.topWindowContext.innerWindowId,
       isTopLevelTarget: this.isTopLevelTarget,
@@ -877,13 +864,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   _watchDocshells() {
     
     
-    
-    if (this.followWindowGlobalLifeCycle) {
-      return;
-    }
-
-    
-    
     if (this.isDestroyed()) {
       return;
     }
@@ -901,10 +881,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   }
 
   _unwatchDocshells() {
-    if (this.followWindowGlobalLifeCycle) {
-      return;
-    }
-
     if (this._progressListener) {
       this._progressListener.destroy();
       this._progressListener = null;
@@ -1444,12 +1420,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   _restoreTargetConfiguration() {
-    
-    if (
-      this._restoreFocus &&
-      this.browsingContext?.isActive &&
-      !this.browsingContext?.isDiscarded
-    ) {
+    if (this._restoreFocus && this.browsingContext?.isActive) {
       try {
         this.window.focus();
       } catch (e) {

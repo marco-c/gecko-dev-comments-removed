@@ -4,79 +4,47 @@
 "use strict";
 
 
-requestLongerTimeout(2);
 
 
 
-
-
-const URL1 =
+const URL =
   "data:text/html;charset=utf8,test many toggles with other content process destructions";
 
-add_task(
-  async function manyTogglesWithContentProcessDestructionsInBackground() {
-    const tab = await addTab(URL1);
+add_task(async function () {
+  const tab = await addTab(URL);
 
-    const ProcessTools = Cc["@mozilla.org/processtools-service;1"].getService(
-      Ci.nsIProcessToolsService
-    );
+  const ProcessTools = Cc["@mozilla.org/processtools-service;1"].getService(
+    Ci.nsIProcessToolsService
+  );
 
-    const openedTabs = [];
-    const interval = setInterval(() => {
-      
-      const pid = ChromeUtils.getAllDOMProcesses().filter(
-        r => r.remoteType == "privilegedabout"
-      )[0]?.osPid;
-      if (!pid) {
-        return;
-      }
-      ProcessTools.kill(pid);
-      
-      openedTabs.push(BrowserTestUtils.addTab(gBrowser, "about:home"));
-    });
-
-    info(
-      "Open/close DevTools many times in a row while some processes get destroyed"
-    );
-    for (let i = 0; i < 5; i++) {
-      const toolbox = await gDevTools.showToolboxForTab(tab, {
-        toolId: "webconsole",
-      });
-      await toolbox.destroy();
+  const openedTabs = [];
+  const interval = setInterval(() => {
+    
+    const pid = ChromeUtils.getAllDOMProcesses().filter(
+      r => r.remoteType == "privilegedabout"
+    )[0]?.osPid;
+    if (!pid) {
+      return;
     }
-
-    clearInterval(interval);
-
-    info("Close all tabs that were used to spawn a new content process");
-    for (const tab of openedTabs) {
-      await removeTab(tab);
-    }
-
-    await removeTab(tab);
-  }
-);
-
-
-const URL2 = `data:text/html,<script>
-    setInterval(()=>{
-      document.body.innerHTML="";
-      let iframe=document.createElement("iframe");
-      iframe.src="data:text/html,foo";
-      document.body.appendChild(iframe);
-    },0);</script>`;
-
-add_task(async function manyTogglesWithDestroyingIframes() {
-  const tab = await addTab(URL2);
+    ProcessTools.kill(pid);
+    
+    openedTabs.push(BrowserTestUtils.addTab(gBrowser, "about:home"));
+  });
 
   info(
     "Open/close DevTools many times in a row while some processes get destroyed"
   );
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const toolbox = await gDevTools.showToolboxForTab(tab, {
       toolId: "webconsole",
     });
     await toolbox.destroy();
   }
 
-  await removeTab(tab);
+  clearInterval(interval);
+
+  info("Close all tabs that were used to spawn a new content process");
+  for (const tab of openedTabs) {
+    await removeTab(tab);
+  }
 });
