@@ -6768,13 +6768,10 @@ Maybe<nscoord> nsIFrame::ComputeISizeValueFromAspectRatio(
     WritingMode aWM, const LogicalSize& aCBSize,
     const LogicalSize& aContentEdgeToBoxSizing,
     const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) const {
-  
-  
-  const AspectRatio aspectRatio =
-      aSizeOverrides.mAspectRatio
-          ? *aSizeOverrides.mAspectRatio
-          : StylePosition()->mAspectRatio.ToLayoutRatio();
-  if (!SupportsAspectRatio() || !aspectRatio) {
+  const AspectRatio aspectRatio = aSizeOverrides.mAspectRatio
+                                      ? *aSizeOverrides.mAspectRatio
+                                      : GetAspectRatio();
+  if (!aspectRatio) {
     return Nothing();
   }
 

@@ -4957,14 +4957,11 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   
   
   
-  
-  
-  
-  
-  
-  const AspectRatio ar = stylePos->mAspectRatio.ToLayoutRatio();
-  if (isInlineAxis && ar && nsIFrame::ToExtremumLength(styleISize) &&
-      aFrame->SupportsAspectRatio() && !iSizeFromAspectRatio) {
+  const AspectRatio ar = aFrame->GetAspectRatio();
+  if (isInlineAxis && ar && !iSizeFromAspectRatio &&
+      (nsIFrame::IsIntrinsicKeyword(styleISize) ||
+       nsIFrame::IsIntrinsicKeyword(styleMinISize) ||
+       nsIFrame::IsIntrinsicKeyword(styleMaxISize))) {
     
     
     const StyleSize& styleBSize =
