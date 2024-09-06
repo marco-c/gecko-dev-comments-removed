@@ -3498,6 +3498,12 @@ class nsContentUtils {
   static SubresourceCacheValidationInfo GetSubresourceCacheValidationInfo(
       nsIRequest*, nsIURI*);
 
+  
+
+
+
+  static bool ShouldBypassSubResourceCache(Document* aDoc);
+
   static uint32_t SecondsFromPRTime(PRTime aTime) {
     return uint32_t(int64_t(aTime) / int64_t(PR_USEC_PER_SEC));
   }
