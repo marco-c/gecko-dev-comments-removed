@@ -6764,7 +6764,7 @@ nscoord nsIFrame::ShrinkISizeToFit(gfxContext* aRenderingContext,
   return result;
 }
 
-Maybe<nscoord> nsIFrame::ComputeInlineSizeFromAspectRatio(
+Maybe<nscoord> nsIFrame::ComputeISizeValueFromAspectRatio(
     WritingMode aWM, const LogicalSize& aCBSize,
     const LogicalSize& aContentEdgeToBoxSizing,
     const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) const {
@@ -6805,24 +6805,23 @@ nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
   
   
   
-  Maybe<nscoord> intrinsicSizeFromAspectRatio =
+  Maybe<nscoord> iSizeFromAspectRatio =
       aSize == ExtremumLength::MozAvailable
           ? Nothing()
-          : ComputeInlineSizeFromAspectRatio(aWM, aContainingBlockSize,
+          : ComputeISizeValueFromAspectRatio(aWM, aContainingBlockSize,
                                              aContentEdgeToBoxSizing,
                                              aSizeOverrides, aFlags);
   nscoord result;
   switch (aSize) {
     case ExtremumLength::MaxContent:
-      result = intrinsicSizeFromAspectRatio ? *intrinsicSizeFromAspectRatio
-                                            : GetPrefISize(aRenderingContext);
+      result = iSizeFromAspectRatio ? *iSizeFromAspectRatio
+                                    : GetPrefISize(aRenderingContext);
       NS_ASSERTION(result >= 0, "inline-size less than zero");
-      return {result, intrinsicSizeFromAspectRatio
-                          ? AspectRatioUsage::ToComputeISize
-                          : AspectRatioUsage::None};
+      return {result, iSizeFromAspectRatio ? AspectRatioUsage::ToComputeISize
+                                           : AspectRatioUsage::None};
     case ExtremumLength::MinContent:
-      result = intrinsicSizeFromAspectRatio ? *intrinsicSizeFromAspectRatio
-                                            : GetMinISize(aRenderingContext);
+      result = iSizeFromAspectRatio ? *iSizeFromAspectRatio
+                                    : GetMinISize(aRenderingContext);
       NS_ASSERTION(result >= 0, "inline-size less than zero");
       if (MOZ_UNLIKELY(
               aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize))) {
@@ -6831,17 +6830,16 @@ nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
             (aBoxSizingToMarginEdge + aContentEdgeToBoxSizing.ISize(aWM));
         result = std::min(available, result);
       }
-      return {result, intrinsicSizeFromAspectRatio
-                          ? AspectRatioUsage::ToComputeISize
-                          : AspectRatioUsage::None};
+      return {result, iSizeFromAspectRatio ? AspectRatioUsage::ToComputeISize
+                                           : AspectRatioUsage::None};
     case ExtremumLength::FitContentFunction:
     case ExtremumLength::FitContent: {
       nscoord pref = NS_UNCONSTRAINEDSIZE;
       nscoord min = 0;
-      if (intrinsicSizeFromAspectRatio) {
+      if (iSizeFromAspectRatio) {
         
         
-        pref = min = *intrinsicSizeFromAspectRatio;
+        pref = min = *iSizeFromAspectRatio;
       } else {
         pref = GetPrefISize(aRenderingContext);
         min = GetMinISize(aRenderingContext);
