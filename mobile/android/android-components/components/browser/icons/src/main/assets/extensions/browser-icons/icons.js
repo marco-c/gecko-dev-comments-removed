@@ -10,6 +10,8 @@
 
 
 
+
+
 function sizesToList(sizes) {
   if (sizes == null) {
     return [];
@@ -25,7 +27,7 @@ function sizesToList(sizes) {
 function collect_link_icons(icons, rel) {
   document
     .querySelectorAll('link[rel="' + rel + '"]')
-    .forEach(function (currentValue, currentIndex, listObj) {
+    .forEach(function (currentValue) {
       icons.push({
         type: rel,
         href: currentValue.href,
@@ -38,7 +40,7 @@ function collect_link_icons(icons, rel) {
 function collect_meta_property_icons(icons, property) {
   document
     .querySelectorAll('meta[property="' + property + '"]')
-    .forEach(function (currentValue, currentIndex, listObj) {
+    .forEach(function (currentValue) {
       icons.push({
         type: property,
         href: currentValue.content,
@@ -49,7 +51,7 @@ function collect_meta_property_icons(icons, property) {
 function collect_meta_name_icons(icons, name) {
   document
     .querySelectorAll('meta[name="' + name + '"]')
-    .forEach(function (currentValue, currentIndex, listObj) {
+    .forEach(function (currentValue) {
       icons.push({
         type: name,
         href: currentValue.content,

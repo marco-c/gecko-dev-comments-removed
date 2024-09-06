@@ -6,6 +6,9 @@
 
 
 
+
+
+
 const supportedProtocols = ["http:", "https:"];
 
 
@@ -46,7 +49,7 @@ function connectNativePort() {
   let port = browser.runtime.connectNative("mozacReaderview");
   port.onMessage.addListener(message => {
     switch (message.action) {
-      case "cachePage":
+      case "cachePage": {
         let serializedDoc = new XMLSerializer().serializeToString(document);
         browser.runtime.sendMessage({
           action: "addSerializedDoc",
@@ -54,6 +57,7 @@ function connectNativePort() {
           id: message.id,
         });
         break;
+      }
       case "checkReaderState":
         port.postMessage({
           type: "checkReaderState",
@@ -75,11 +79,11 @@ let port = connectNativePort();
 
 
 
-window.addEventListener("pageshow", event => {
+window.addEventListener("pageshow", _event => {
   port = port != null ? port : connectNativePort();
 });
 
-window.addEventListener("pagehide", event => {
+window.addEventListener("pagehide", _event => {
   port.disconnect();
   port = null;
 });

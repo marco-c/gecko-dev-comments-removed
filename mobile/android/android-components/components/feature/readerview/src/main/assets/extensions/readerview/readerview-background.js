@@ -5,6 +5,8 @@
 
 
 
+
+
 browser.runtime.onMessage.addListener(message => {
   switch (message.action) {
     case "addSerializedDoc":
@@ -18,5 +20,6 @@ browser.runtime.onMessage.addListener(message => {
       })();
     default:
       console.error(`Received unsupported action ${message.action}`);
+      return false;
   }
 });

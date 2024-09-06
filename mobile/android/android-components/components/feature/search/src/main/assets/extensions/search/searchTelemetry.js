@@ -8,6 +8,8 @@
 
 
 
+
+
 function sendCurrentState() {
   let message = {
     url: document.location.href,
@@ -53,6 +55,7 @@ const eventLogger = event => {
       }
       break;
     default:
+      
       console.log("Event:", event.type);
   }
 };

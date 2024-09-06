@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  globals: {
+    Bookmarks: false,
+    EnableEngines: false,
+    Passwords: false,
+    Phase: false,
+    Sync: false,
+  },
+};

@@ -3,6 +3,11 @@
 
 
 
+ 
+
+
+
+
 
 
 const preservedClasses = [
@@ -277,7 +282,7 @@ function fetchDocument(url) {
     xhr.open("GET", url, true);
     xhr.onerror = evt => reject(evt.error);
     xhr.responseType = "document";
-    xhr.onload = evt => {
+    xhr.onload = _evt => {
       if (xhr.status !== 200) {
         reject("Reader mode XHR failed with status: " + xhr.status);
         return;
@@ -299,6 +304,7 @@ function getPreparedDocument(id, url) {
       .sendMessage({ action: "getSerializedDoc", id })
       .then(serializedDoc => {
         if (serializedDoc) {
+          
           let doc = new JSDOMParser().parse(serializedDoc, url);
           resolve(doc);
         } else {
@@ -321,7 +327,7 @@ function connectNativePort() {
   let port = browser.runtime.connectNative("mozacReaderviewActive");
   port.onMessage.addListener(message => {
     switch (message.action) {
-      case "show":
+      case "show": {
         async function showAsync(options) {
           try {
             let doc;
@@ -339,6 +345,7 @@ function connectNativePort() {
             }
             readerView.show(doc, articleUrl, options);
           } catch (e) {
+            
             console.log(e);
             
             
@@ -348,8 +355,10 @@ function connectNativePort() {
         }
         showAsync(message.value);
         break;
+      }
       case "hide":
         window.location.href = articleUrl;
+        break;
       case "setColorScheme":
         readerView.setColorScheme(message.value.toLowerCase());
         break;

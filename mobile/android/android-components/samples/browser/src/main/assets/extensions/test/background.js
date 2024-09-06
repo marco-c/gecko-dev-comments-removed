@@ -6,6 +6,8 @@
 
 
 
+
+
 browser.tabs.onCreated.addListener(tab => {
   let counter = 0;
   let intervalId = setInterval(() => {
