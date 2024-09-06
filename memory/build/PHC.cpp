@@ -285,8 +285,10 @@ static size_t GetTid() {
 
 
 
+
 using Time = uint64_t;   
 using Delay = uint32_t;  
+static constexpr Delay DELAY_MAX = UINT32_MAX / 2;
 
 
 
@@ -330,6 +332,18 @@ static const size_t kAllPagesSize = kNumAllPages * kPageSize;
 
 
 static const size_t kAllPagesJemallocSize = kAllPagesSize - kPageSize;
+
+
+
+static const Delay kDelayDecrementAmount = 256;
+
+
+
+static const Delay kDelayBackoffAmount = 64;
+
+
+
+static const Delay kDelayResetWhenDisabled = 64 * 1024;
 
 
 #define DEFAULT_STATE mozilla::phc::OnlyFree
@@ -573,15 +587,20 @@ class PHC {
     if (!tlsIsDisabled.init()) {
       MOZ_CRASH();
     }
+    if (!tlsAllocDelay.init()) {
+      MOZ_CRASH();
+    }
+    if (!tlsLastDelay.init()) {
+      MOZ_CRASH();
+    }
 
     
     
     
     
     MutexAutoLock lock(mMutex);
-    SetAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
 
-    LOG("Initial sAllocDelay <- %zu\n", size_t(sAllocDelay));
+    ForceSetNewAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
   }
 
   uint64_t Random64(PHCLock) { return mRNG.next(); }
@@ -849,8 +868,7 @@ class PHC {
       
       ResetRNG(lock);
 
-      SetAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
-      LOG("New initial sAllocDelay <- %zu\n", size_t(sAllocDelay));
+      ForceSetNewAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
     }
 
     mPhcState = aState;
@@ -876,13 +894,6 @@ class PHC {
 
   void EnableOnCurrentThread() {
     MOZ_ASSERT(tlsIsDisabled.get());
-
-    MutexAutoLock lock(mMutex);
-    Delay avg_delay = GetAvgAllocDelay(lock);
-    Delay avg_first_delay = GetAvgFirstAllocDelay(lock);
-    if (AllocDelayHasWrapped(avg_delay, avg_first_delay)) {
-      SetAllocDelay(Rnd64ToDelay(avg_delay, Random64(lock)));
-    }
     tlsIsDisabled.set(false);
   }
 
@@ -890,19 +901,115 @@ class PHC {
 
   static Time Now() { return sNow; }
 
-  static void IncrementNow() { sNow++; }
+  static void AdvanceNow(uint32_t delay = 0) {
+    sNow += tlsLastDelay.get() - delay;
+    tlsLastDelay.set(delay);
+  }
 
   
-  static int32_t DecrementDelay() { return --sAllocDelay; }
+  
+  static bool DecrementDelay() {
+    const Delay alloc_delay = tlsAllocDelay.get();
 
-  static void SetAllocDelay(Delay aAllocDelay) { sAllocDelay = aAllocDelay; }
-
-  static bool AllocDelayHasWrapped(Delay aAvgAllocDelay,
-                                   Delay aAvgFirstAllocDelay) {
+    if (MOZ_LIKELY(alloc_delay > 0)) {
+      tlsAllocDelay.set(alloc_delay - 1);
+      return false;
+    }
     
     
-    return sAllocDelay > 2 * std::max(aAvgAllocDelay, aAvgFirstAllocDelay);
+    
+
+    AdvanceNow();
+
+    
+    
+    Delay new_delay = (sAllocDelay -= kDelayDecrementAmount);
+    Delay old_delay = new_delay + kDelayDecrementAmount;
+    if (MOZ_LIKELY(new_delay < DELAY_MAX)) {
+      
+      
+      tlsAllocDelay.set(kDelayDecrementAmount);
+      tlsLastDelay.set(kDelayDecrementAmount);
+      LOG("Update sAllocDelay <- %zu, tlsAllocDelay <- %zu\n",
+          size_t(new_delay), size_t(kDelayDecrementAmount));
+      return false;
+    }
+
+    if (old_delay < new_delay) {
+      
+      
+      LOG("Update sAllocDelay <- %zu, tlsAllocDelay <- %zu\n",
+          size_t(new_delay), size_t(old_delay));
+      if (old_delay == 0) {
+        
+        
+        return true;
+      }
+      tlsAllocDelay.set(old_delay);
+      tlsLastDelay.set(old_delay);
+      return false;
+    }
+
+    
+    
+    
+    LOG("Update sAllocDelay <- %zu, tlsAllocDelay <- %zu\n", size_t(new_delay),
+        size_t(alloc_delay));
+    return true;
   }
+
+  static void ResetLocalAllocDelay(Delay aDelay = 0) {
+    
+    
+    
+    
+    tlsAllocDelay.set(aDelay);
+    tlsLastDelay.set(aDelay);
+  }
+
+  static void ForceSetNewAllocDelay(Delay aNewAllocDelay) {
+    LOG("Setting sAllocDelay <- %zu\n", size_t(aNewAllocDelay));
+    sAllocDelay = aNewAllocDelay;
+    ResetLocalAllocDelay();
+  }
+
+  
+  
+  
+  static bool SetNewAllocDelay(Delay aNewAllocDelay) {
+    bool cas_retry;
+    do {
+      
+      
+      
+      
+      Delay read_delay = sAllocDelay;
+      if (read_delay < DELAY_MAX) {
+        
+        LOG("Observe delay %zu this thread lost the race\n",
+            size_t(read_delay));
+        ResetLocalAllocDelay();
+        return false;
+      } else {
+        LOG("Preparing for CAS, read sAllocDelay %zu\n", size_t(read_delay));
+      }
+
+      cas_retry = !sAllocDelay.compareExchange(read_delay, aNewAllocDelay);
+      if (cas_retry) {
+        LOG("Lost the CAS, sAllocDelay is now %zu\n", size_t(sAllocDelay));
+        cpu_pause();
+        
+      }
+    } while (cas_retry);
+    LOG("Won the CAS, set sAllocDelay = %zu\n", size_t(sAllocDelay));
+    ResetLocalAllocDelay();
+    return true;
+  }
+
+  static Delay LocalAllocDelay() { return tlsAllocDelay.get(); }
+  static Delay SharedAllocDelay() { return sAllocDelay; }
+
+  static Delay LastDelay() { return tlsLastDelay.get(); }
 
  private:
   template <int N>
@@ -1046,13 +1153,22 @@ class PHC {
 
   
   
-  
-  static Atomic<Time, Relaxed> sNow;
+  static Atomic<Time, ReleaseAcquire> sNow;
 
   
   
   
+  
+  
+  
+  
+  
+  
   static Atomic<Delay, ReleaseAcquire> sAllocDelay;
+  static PHC_THREAD_LOCAL(Delay) tlsAllocDelay;
+
+  
+  static PHC_THREAD_LOCAL(Delay) tlsLastDelay;
 
  public:
   Delay GetAvgAllocDelay(const MutexAutoLock&) { return mAvgAllocDelay; }
@@ -1072,8 +1188,10 @@ class PHC {
 };
 
 PHC_THREAD_LOCAL(bool) PHC::tlsIsDisabled;
-Atomic<Time, Relaxed> PHC::sNow;
+Atomic<Time, ReleaseAcquire> PHC::sNow;
+PHC_THREAD_LOCAL(Delay) PHC::tlsAllocDelay;
 Atomic<Delay, ReleaseAcquire> PHC::sAllocDelay;
+PHC_THREAD_LOCAL(Delay) PHC::tlsLastDelay;
 
 PHCRegion* PHC::sRegion;
 PHC* PHC::sPHC;
@@ -1158,50 +1276,31 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
     return nullptr;
   }
 
-  MOZ_ASSERT(PHC::sPHC);
-  if (!PHC::sPHC->ShouldMakeNewAllocations()) {
+  
+  
+  if (MOZ_LIKELY(!PHC::DecrementDelay())) {
     return nullptr;
   }
 
-  PHC::IncrementNow();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  int32_t newDelay = PHC::DecrementDelay();
-  if (newDelay != 0) {
+  MOZ_ASSERT(PHC::sPHC);
+  if (!PHC::sPHC->ShouldMakeNewAllocations()) {
+    
+    
+    
+    
+    
+    PHC::ForceSetNewAllocDelay(kDelayResetWhenDisabled);
     return nullptr;
   }
 
   if (PHC::IsDisabledOnCurrentThread()) {
+    
+    
+    
+    
+    
+    
+    PHC::ResetLocalAllocDelay(kDelayBackoffAmount);
     return nullptr;
   }
 
@@ -1218,8 +1317,12 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   MutexAutoLock lock(PHC::sPHC->mMutex);
 
   Time now = PHC::Now();
+
   Delay newAllocDelay = Rnd64ToDelay(PHC::sPHC->GetAvgAllocDelay(lock),
                                      PHC::sPHC->Random64(lock));
+  if (!PHC::sPHC->SetNewAllocDelay(newAllocDelay)) {
+    return nullptr;
+  }
 
   
   
@@ -1280,11 +1383,11 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 #endif
     LOG("PageAlloc(%zu, %zu) -> %p[%zu]/%p (%zu) (z%zu), sAllocDelay <- %zu, "
         "fullness %zu/%zu/%zu, hits %zu/%zu (%zu%%), lifetime %zu\n",
-        aReqSize, aAlignment, pagePtr, i, ptr, usableSize, size_t(aZero),
-        size_t(newAllocDelay), stats.mSlotsAllocated, stats.mSlotsFreed,
-        kNumAllocPages, PHC::sPHC->PageAllocHits(lock),
-        PHC::sPHC->PageAllocAttempts(lock), PHC::sPHC->PageAllocHitRate(lock),
-        lifetime);
+        aReqSize, aAlignment, pagePtr, i, ptr, usableSize,
+        size_t(newAllocDelay), size_t(PHC::SharedAllocDelay()),
+        stats.mSlotsAllocated, stats.mSlotsFreed, kNumAllocPages,
+        PHC::sPHC->PageAllocHits(lock), PHC::sPHC->PageAllocAttempts(lock),
+        PHC::sPHC->PageAllocHitRate(lock), lifetime);
     break;
   }
 
@@ -1300,9 +1403,6 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
         stats.mSlotsFreed, kNumAllocPages, PHC::sPHC->PageAllocHits(lock),
         PHC::sPHC->PageAllocAttempts(lock), PHC::sPHC->PageAllocHitRate(lock));
   }
-
-  
-  PHC::SetAllocDelay(newAllocDelay);
 
   return ptr;
 }
@@ -1426,6 +1526,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
   uintptr_t index = pk.AllocPageIndex();
 
   
+  PHC::AdvanceNow(PHC::LocalAllocDelay());
 
   
   Maybe<AutoDisableOnCurrentThread> disable;
@@ -1526,6 +1627,7 @@ MOZ_ALWAYS_INLINE static bool MaybePageFree(const Maybe<arena_id_t>& aArenaId,
   }
 
   
+  PHC::AdvanceNow(PHC::LocalAllocDelay());
   uintptr_t index = pk.AllocPageIndex();
 
   
