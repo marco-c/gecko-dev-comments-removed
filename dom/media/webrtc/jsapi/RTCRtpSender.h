@@ -206,6 +206,9 @@ class RTCRtpSender : public nsISupports,
   bool mHaveLoggedOtherFec = false;
   bool mHaveLoggedVideoPreferredCodec = false;
   bool mHaveLoggedAudioPreferredCodec = false;
+  
+  
+  Maybe<nsString> mLastTransactionId;
 
   RefPtr<dom::RTCDTMFSender> mDtmf;
 

@@ -599,8 +599,16 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   
   
   if (!mLastReturnedParameters.isSome()) {
-    nsCString error(
-        "Cannot call setParameters without first calling getParameters");
+    nsCString error;
+    if (mLastTransactionId.isSome() && paramsCopy.mTransactionId.WasPassed() &&
+        *mLastTransactionId == paramsCopy.mTransactionId.Value()) {
+      error =
+          "Event loop was relinquished between getParameters and setParameters "
+          "calls";
+    } else {
+      error = "Cannot call setParameters without first calling getParameters";
+    }
+
     if (mAllowOldSetParameters) {
       if (!mHaveWarnedBecauseNoGetParameters) {
         mHaveWarnedBecauseNoGetParameters = true;
@@ -725,7 +733,9 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
 #endif
     }
     WarnAboutBadSetParameters(error);
-  } else if (oldParams->mTransactionId != paramsCopy.mTransactionId) {
+  } else if (oldParams->mTransactionId.WasPassed() &&
+             oldParams->mTransactionId != paramsCopy.mTransactionId) {
+    
     
     
     
@@ -977,6 +987,9 @@ void RTCRtpSender::GetParameters(RTCRtpSendParameters& aParameters) {
 
   
   mLastReturnedParameters = Some(aParameters);
+
+  
+  mLastTransactionId = Some(aParameters.mTransactionId.Value());
 
   
   GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
