@@ -159,7 +159,7 @@ class Module : public JS::WasmModule {
   
   
 
-  void startTier2(const CompileArgs& args, const ShareableBytes& bytecode,
+  void startTier2(const ShareableBytes& bytecode,
                   JS::OptimizedEncodingListener* listener);
   bool finishTier2(const LinkData& sharedStubsLinkData,
                    const LinkData& linkData2, UniqueCodeBlock code2) const;
