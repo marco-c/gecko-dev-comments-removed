@@ -185,7 +185,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
 
   
   UniqueLinkData linkData_;
-  UniqueCodeTier codeTier_;
+  UniqueCodeBlock codeBlock_;
   MutableCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   
@@ -222,7 +222,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   bool finishOutstandingTask();
   bool finishCodegen();
   bool finishMetadataTier();
-  UniqueCodeTier finishCodeTier();
+  UniqueCodeBlock finishCodeBlock();
   bool finishCodeMetadata(const Bytes& bytecode);
 
   bool isAsmJS() const { return codeMeta_->isAsmJS(); }

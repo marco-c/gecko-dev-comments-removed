@@ -144,7 +144,7 @@ struct FreeCode {
 using UniqueCodeBytes = UniquePtr<uint8_t, FreeCode>;
 
 class Code;
-class CodeTier;
+class CodeBlock;
 class ModuleSegment;
 class LazyStubSegment;
 
@@ -222,13 +222,13 @@ class ModuleSegment : public CodeSegment {
   static UniqueModuleSegment create(Tier tier, const Bytes& unlinkedBytes,
                                     const LinkData& linkData);
 
-  bool initialize(const CodeTier& codeTier, const LinkData& linkData,
+  bool initialize(const CodeBlock& codeBlock, const LinkData& linkData,
                   const CodeMetadata& codeMeta,
                   const CodeMetadataForAsmJS* codeMetaForAsmJS);
 
   Tier tier() const { return tier_; }
 
-  const CodeTier& codeTier() const;
+  const CodeBlock& codeBlock() const;
 
   
 
@@ -328,7 +328,7 @@ class LazyStubTier {
 
   [[nodiscard]] bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
                                           const CodeMetadata& codeMeta,
-                                          const CodeTier& codeTier,
+                                          const CodeBlock& codeBlock,
                                           size_t* stubSegmentIndex);
 
  public:
@@ -338,7 +338,7 @@ class LazyStubTier {
   
   [[nodiscard]] bool createOneEntryStub(uint32_t funcExportIndex,
                                         const CodeMetadata& codeMeta,
-                                        const CodeTier& codeTier);
+                                        const CodeBlock& codeBlock);
 
   bool entryStubsEmpty() const { return stubSegments_.empty(); }
   bool hasEntryStub(uint32_t funcIndex) const;
@@ -352,7 +352,7 @@ class LazyStubTier {
   
   
   [[nodiscard]] bool createTier2(const CodeMetadata& codeMeta,
-                                 const CodeTier& codeTier,
+                                 const CodeBlock& codeBlock,
                                  Maybe<size_t>* stubSegmentIndex);
   void setJitEntries(const Maybe<size_t>& stubSegmentIndex, const Code& code);
 
@@ -363,10 +363,10 @@ class LazyStubTier {
 
 
 
-using UniqueCodeTier = UniquePtr<CodeTier>;
-using UniqueConstCodeTier = UniquePtr<const CodeTier>;
+using UniqueCodeBlock = UniquePtr<CodeBlock>;
+using UniqueConstCodeBlock = UniquePtr<const CodeBlock>;
 
-class CodeTier {
+class CodeBlock {
  public:
   
   const Code* code;
@@ -387,7 +387,7 @@ class CodeTier {
   
   uint32_t debugTrapOffset;
 
-  explicit CodeTier(Tier tier)
+  explicit CodeBlock(Tier tier)
       : code(nullptr), tier(tier), debugTrapOffset(0) {}
 
   bool initialized() const { return !!code && segment->initialized(); }
@@ -409,7 +409,7 @@ class CodeTier {
   void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code,
                      size_t* data) const;
 
-  WASM_DECLARE_FRIEND_SERIALIZE_ARGS(CodeTier, const wasm::LinkData& data);
+  WASM_DECLARE_FRIEND_SERIALIZE_ARGS(CodeBlock, const wasm::LinkData& data);
 };
 
 
@@ -539,10 +539,10 @@ class Code : public ShareableBase<Code> {
   
   
   
-  mutable UniqueConstCodeTier tier2_;
+  mutable UniqueConstCodeBlock tier2_;
   mutable Atomic<bool> hasTier2_;
 
-  UniqueCodeTier tier1_;
+  UniqueCodeBlock tier1_;
 
   ExclusiveData<CacheableCharsVector> profilingLabels_;
   JumpTables jumpTables_;
@@ -552,7 +552,7 @@ class Code : public ShareableBase<Code> {
 
  public:
   Code(const CodeMetadata& codeMeta,
-       const CodeMetadataForAsmJS* codeMetaForAsmJS, UniqueCodeTier tier1,
+       const CodeMetadataForAsmJS* codeMetaForAsmJS, UniqueCodeBlock tier1,
        JumpTables&& maybeJumpTables);
   bool initialized() const { return tier1_->initialized(); }
 
@@ -578,8 +578,8 @@ class Code : public ShareableBase<Code> {
   
   
   
-  bool setAndBorrowTier2(UniqueCodeTier tier2, const LinkData& linkData,
-                         const CodeTier** borrowedTier) const;
+  bool setAndBorrowTier2(UniqueCodeBlock tier2, const LinkData& linkData,
+                         const CodeBlock** borrowedTier) const;
   void commitTier2() const;
 
   bool hasTier2() const { return hasTier2_; }
@@ -590,14 +590,14 @@ class Code : public ShareableBase<Code> {
   Tier bestTier()
       const;  
 
-  const CodeTier& codeTier(Tier tier) const;
+  const CodeBlock& codeBlock(Tier tier) const;
   const CodeMetadata& codeMeta() const { return *codeMeta_; }
   const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
     return codeMetaForAsmJS_;
   }
 
   const ModuleSegment& segment(Tier iter) const {
-    return *codeTier(iter).segment.get();
+    return *codeBlock(iter).segment.get();
   }
 
   const RWExclusiveData<LazyStubTier>& lazyStubs() const { return lazyStubs_; }
