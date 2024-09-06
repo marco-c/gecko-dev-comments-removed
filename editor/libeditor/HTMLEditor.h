@@ -1339,9 +1339,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   using AttributeFilter = std::function<bool(
       HTMLEditor& aHTMLEditor, Element& aSrcElement, Element& aDestElement,
-      const dom::Attr& aAttr, nsString& aValue)>;
+      int32_t aNamespaceID, const nsAtom& aAttrName, nsString& aValue)>;
   static AttributeFilter CopyAllAttributes;
   static AttributeFilter CopyAllAttributesExceptId;
   static AttributeFilter CopyAllAttributesExceptDir;
