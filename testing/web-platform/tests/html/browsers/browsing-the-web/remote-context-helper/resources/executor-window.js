@@ -65,3 +65,16 @@ function executeScriptToNavigate(fnString, args) {
     eval(fnString).apply(null, args);
   });
 }
+
+
+
+function findOrCreateFrameset() {
+  const framesets = document.getElementsByTagName('frameset');
+  if (framesets.length > 0) {
+    return framesets[0];
+  }
+  const frameset = document.createElement('frameset');
+  frameset.cols = '100%';
+  document.body.append(frameset);
+  return frameset;
+}

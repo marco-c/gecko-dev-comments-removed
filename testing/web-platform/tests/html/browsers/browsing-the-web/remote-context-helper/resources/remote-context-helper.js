@@ -294,7 +294,8 @@
           el.setAttribute(attribute, attributes[attribute]);
         }
         el.src = url;
-        document.body.appendChild(el);
+        const parent = elementName == "frame" ? findOrCreateFrameset() : document.body;
+        parent.appendChild(el);
       }, [url, elementName, attributes]);
     };
   }
@@ -395,6 +396,21 @@
       });
     }
 
+    
+
+
+
+
+
+
+
+
+    addFrame(extraConfig, attributes = {}) {
+      return this.helper.createContext({
+        executorCreator: elementExecutorCreator(this, 'frame', attributes),
+        extraConfig,
+      });
+    }
     
 
 
