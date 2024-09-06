@@ -585,6 +585,11 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
     
     void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* sink,
                             const rtc::VideoSinkWants& wants) override {
+      RTC_LOG(LS_INFO) << "OnSinkWantsChanged fps:" << wants.max_framerate_fps
+                       << " max_pixel_count " << wants.max_pixel_count
+                       << " target_pixel_count"
+                       << wants.target_pixel_count.value_or(-1);
+      
       
       
       
@@ -595,22 +600,19 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
           last_wants_.max_framerate_fps != wants.max_framerate_fps;
       last_wants_ = wants;
       if (!did_adapt) {
+        if (test_phase_ == TestPhase::kInit) {
+          test_phase_ = TestPhase::kStart;
+        }
         return;
       }
       
       
       switch (test_phase_) {
         case TestPhase::kInit:
-          
-          if (wants.max_framerate_fps != std::numeric_limits<int>::max() &&
-              wants.max_pixel_count == std::numeric_limits<int>::max()) {
-            test_phase_ = TestPhase::kStart;
-          } else {
-            ADD_FAILURE() << "Got unexpected adaptation request, max res = "
-                          << wants.max_pixel_count << ", target res = "
-                          << wants.target_pixel_count.value_or(-1)
-                          << ", max fps = " << wants.max_framerate_fps;
-          }
+          ADD_FAILURE() << "Got unexpected adaptation request, max res = "
+                        << wants.max_pixel_count << ", target res = "
+                        << wants.target_pixel_count.value_or(-1)
+                        << ", max fps = " << wants.max_framerate_fps;
           break;
         case TestPhase::kStart:
           if (wants.max_pixel_count < std::numeric_limits<int>::max()) {
