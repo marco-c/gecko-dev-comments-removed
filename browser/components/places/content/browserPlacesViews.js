@@ -41,6 +41,10 @@ class PlacesViewBase {
   
   _rootElt = null;
 
+  get rootElement() {
+    return this._rootElt;
+  }
+
   
   
   _nativeView = false;
