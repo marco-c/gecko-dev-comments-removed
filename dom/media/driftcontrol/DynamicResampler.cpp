@@ -236,13 +236,9 @@ void DynamicResampler::WarmUpResampler(bool aSkipLatency) {
     }
   }
   if (aSkipLatency) {
-    int inputLatency = speex_resampler_get_input_latency(mResampler);
-    MOZ_ASSERT(inputLatency > 0);
-    uint32_t ratioNum, ratioDen;
-    speex_resampler_get_ratio(mResampler, &ratioNum, &ratioDen);
     
     
-    speex_resampler_set_skip_frac_num(mResampler, inputLatency * ratioDen);
+    speex_resampler_skip_zeros(mResampler);
   }
   mIsWarmingUp = false;
 }
