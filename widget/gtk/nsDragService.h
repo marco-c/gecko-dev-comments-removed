@@ -24,6 +24,42 @@ class SourceSurface;
 }
 }  
 
+class DragData final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(DragData)
+
+  DragData(void* aData, uint32_t aDataLen, bool aCopyData) {
+    UpdateData(aData, aDataLen, aCopyData);
+  }
+  DragData(const void* aData, uint32_t aDataLen) {
+    
+    
+    UpdateData(const_cast<void*>(aData), aDataLen,  true);
+  }
+  explicit DragData(gchar** aDragUris) : mDragUris(aDragUris) {}
+
+  bool HasURIs() const { return !!mDragUris.get(); }
+  gchar** GetURIs() const { return mDragUris.get(); }
+
+  void UpdateData(void* aData, uint32_t aDataLen, bool aCopyData = false);
+  void* GetData() const { return mDragData; }
+  uint32_t GetDataLen() const { return mDragDataLen; }
+  mozilla::Span<char> GetDataSpan() const {
+    return mozilla::Span((char*)mDragData, mDragDataLen);
+  }
+
+ private:
+  void ReleaseData();
+  ~DragData();
+
+  
+  
+  uint32_t mDragDataLen = 0;
+  void* mDragData = nullptr;
+
+  mozilla::GUniquePtr<gchar*> mDragUris;
+};
+
 
 
 
@@ -162,14 +198,14 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   
-  nsTHashMap<nsVoidPtrHashKey, nsTArray<uint8_t>> mCachedData;
+  
+  
   
   
   
   
   uintptr_t mCachedDragContext;
-
-  nsTHashMap<nsVoidPtrHashKey, mozilla::GUniquePtr<gchar*>> mCachedUris;
+  nsRefPtrHashtable<nsVoidPtrHashKey, DragData> mCachedDragData;
 
   guint mPendingTime;
 
@@ -198,11 +234,8 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   bool mCanDrop;
 
   
-  bool mTargetDragDataReceived;
-  
-  void* mTargetDragData;
-  uint32_t mTargetDragDataLen;
-  mozilla::GUniquePtr<gchar*> mTargetDragUris;
+  RefPtr<DragData> mDragData;
+
   
   bool IsTargetContextList(void);
   
