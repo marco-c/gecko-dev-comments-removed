@@ -10,6 +10,8 @@
 
 
 
+#![cfg_attr(mock, allow(unused))]
+
 pub use std::*;
 
 #[cfg_attr(not(mock), path = "mock_stub.rs")]

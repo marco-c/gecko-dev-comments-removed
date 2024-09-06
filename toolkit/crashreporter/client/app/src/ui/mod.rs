@@ -20,7 +20,7 @@ use ui_impl::UI;
 
 mod model;
 
-#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[cfg(all(not(test), any(target_os = "linux", target_os = "windows")))]
 mod icon {
     
     #[repr(align(4))]
@@ -69,6 +69,7 @@ cfg_if::cfg_if! {
 }
 
 
+#[cfg_attr(mock, allow(unused))]
 pub fn error_dialog<M: std::fmt::Display>(config: &Config, message: M) {
     let close = data::Event::default();
     

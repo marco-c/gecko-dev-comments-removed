@@ -32,8 +32,6 @@
 
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
-#![cfg_attr(mock, allow(unused))]
-
 use crate::std::sync::Arc;
 use anyhow::Context;
 use config::Config;

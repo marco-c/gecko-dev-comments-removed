@@ -12,6 +12,7 @@ use crate::std::{
 
 
 
+#[cfg_attr(mock, allow(unused))]
 pub fn init() -> LogTarget {
     let log_target_inner = LogTargetInner::default();
 
