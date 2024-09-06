@@ -14,6 +14,7 @@
 #include "nsThreadUtils.h"
 #include "nsProxyRelease.h"
 #include "imgLoader.h"
+#include "PlacesCompletionCallback.h"
 
 class nsIPrincipal;
 
@@ -187,6 +188,33 @@ class AsyncAssociateIconToPage final : public Runnable {
 
  private:
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
+  IconData mIcon;
+  PageData mPage;
+};
+
+
+
+
+
+class AsyncSetIconForPage final : public Runnable {
+ public:
+  NS_DECL_NSIRUNNABLE
+
+  
+
+
+
+
+
+
+
+
+
+  AsyncSetIconForPage(const IconData& aIcon, const PageData& aPage,
+                      PlacesCompletionCallback* aCallback);
+
+ private:
+  nsMainThreadPtrHandle<PlacesCompletionCallback> mCallback;
   IconData mIcon;
   PageData mPage;
 };
