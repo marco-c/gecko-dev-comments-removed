@@ -166,6 +166,7 @@
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "nsNativeAppSupportWin.h"
+#include "mozilla/browser/NimbusFeatures.h"
 
 #include "nsIGfxInfo.h"
 #include "nsUXThemeConstants.h"
@@ -988,11 +989,13 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   }
 
   if (aInitData->mIsPrivate) {
-    
-    
-    
-    
-    if (!StaticPrefs::browser_privatebrowsing_autostart()) {
+    if (NimbusFeatures::GetBool("majorRelease2022"_ns,
+                                "feltPrivacyWindowSeparation"_ns, true) &&
+        
+        
+        
+        
+        !StaticPrefs::browser_privatebrowsing_autostart()) {
       RefPtr<IPropertyStore> pPropStore;
       if (!FAILED(SHGetPropertyStoreForWindow(mWnd, IID_IPropertyStore,
                                               getter_AddRefs(pPropStore)))) {

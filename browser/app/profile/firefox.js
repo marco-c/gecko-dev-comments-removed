@@ -829,6 +829,10 @@ pref("browser.dataFeatureRecommendations.enabled", false);
 
 
 
+pref("browser.privateWindowSeparation.enabled", true);
+
+
+
 pref("browser.theme.dark-private-windows", true);
 
 
