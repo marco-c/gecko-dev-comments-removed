@@ -29,22 +29,7 @@ class TestCommandLineArguments(MarionetteTestCase):
         self.assertIsNone(debugger_address)
 
         
-        self.marionette.set_pref("remote.active-protocols", 2)
-        self.marionette.quit()
-
-        self.marionette.instance.app_args.append("-remote-debugging-port")
-        self.marionette.start_session()
-
-        debugger_address = self.marionette.session_capabilities.get(
-            "moz:debuggerAddress"
-        )
-
-        self.assertEqual(debugger_address, "127.0.0.1:9222")
-        result = requests.get(url="http://{}/json/version".format(debugger_address))
-        self.assertTrue(result.ok)
-
-        
-        self.marionette.clear_pref("remote.active-protocols")
+        self.marionette.set_pref("remote.active-protocols", 1)
         self.marionette.quit()
 
         self.marionette.instance.app_args.append("-remote-debugging-port")
@@ -57,6 +42,16 @@ class TestCommandLineArguments(MarionetteTestCase):
 
         
         self.marionette.quit(in_app=False, clean=True)
+
+        
+        self.marionette.start_session()
+        debugger_address = self.marionette.session_capabilities.get(
+            "moz:debuggerAddress"
+        )
+
+        self.assertEqual(debugger_address, "127.0.0.1:9222")
+        result = requests.get(url="http://{}/json/version".format(debugger_address))
+        self.assertTrue(result.ok)
 
     def test_websocket_url(self):
         
@@ -72,9 +67,9 @@ class TestCommandLineArguments(MarionetteTestCase):
         self.assertNotIn("webSocketUrl", self.marionette.session_capabilities)
 
         
-        self.marionette.clear_pref("remote.active-protocols")
-        self.marionette.quit()
-        self.marionette.instance.app_args.append("-remote-debugging-port")
+        self.marionette.quit(in_app=False, clean=True)
+
+        
         self.marionette.start_session({"webSocketUrl": True})
 
         session_id = self.marionette.session_id
@@ -83,9 +78,6 @@ class TestCommandLineArguments(MarionetteTestCase):
         self.assertEqual(
             websocket_url, "ws://127.0.0.1:9222/session/{}".format(session_id)
         )
-
-        
-        self.marionette.quit(in_app=False, clean=True)
 
     
     
