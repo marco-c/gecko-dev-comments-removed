@@ -212,66 +212,34 @@ impl DocumentHandle {
 
 #[repr(C)]
 pub struct WrVecU8 {
-    
-    
     data: *mut u8,
     length: usize,
     capacity: usize,
 }
 
 impl WrVecU8 {
-    fn into_vec(mut self) -> Vec<u8> {
-        
-        self.flush_into_vec()
+    fn into_vec(self) -> Vec<u8> {
+        unsafe { Vec::from_raw_parts(self.data, self.length, self.capacity) }
     }
 
     
     fn flush_into_vec(&mut self) -> Vec<u8> {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        self.convert_into_vec::<u8>()
+    }
+
+    
+    fn convert_into_vec<T>(&mut self) -> Vec<T> {
         let vec = unsafe {
-            Vec::from_raw_parts(self.data, self.length, self.capacity)
+            Vec::from_raw_parts(
+                self.data as *mut T,
+                self.length / mem::size_of::<T>(),
+                self.capacity / mem::size_of::<T>(),
+            )
         };
-        self.data = ptr::NonNull::dangling().as_ptr();
+        self.data = ptr::null_mut();
         self.length = 0;
         self.capacity = 0;
         vec
-    }
-
-    pub fn as_slice(&self) -> &[u8] {
-        unsafe { core::slice::from_raw_parts(self.data, self.length) }
     }
 
     fn from_vec(mut v: Vec<u8>) -> WrVecU8 {
@@ -2405,24 +2373,13 @@ pub extern "C" fn wr_resource_updates_add_font_instance(
     platform_options: *const FontInstancePlatformOptions,
     variations: &mut WrVecU8,
 ) {
-    
-    
-    
-    
-    let variations: Vec<FontVariation> =
-        variations.as_slice().chunks_exact(8).map(|c| {
-            assert_eq!(c.len(), 8);
-            let tag = u32::from_ne_bytes([c[0], c[1], c[2], c[3]]);
-            let value = f32::from_ne_bytes([c[4], c[5], c[6], c[7]]);
-            FontVariation { tag, value }
-        }).collect();
     txn.add_font_instance(
         key,
         font_key,
         glyph_size,
         unsafe { options.as_ref().cloned() },
         unsafe { platform_options.as_ref().cloned() },
-        variations,
+        variations.convert_into_vec::<FontVariation>(),
     );
 }
 

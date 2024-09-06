@@ -667,13 +667,6 @@ struct Vec<uint8_t> final {
   }
 
   void SetEmpty() {
-    
-    
-    
-
-    
-    
-    
     inner.data = (uint8_t*)1;
     inner.capacity = 0;
     inner.length = 0;
