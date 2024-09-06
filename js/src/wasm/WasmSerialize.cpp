@@ -1198,8 +1198,8 @@ CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
 
   
   MutableCode code =
-    js_new<Code>(CompileMode::Once, *codeMeta, nullptr,
-                 nullptr, nullptr);
+      js_new<Code>(CompileMode::Once, *codeMeta, nullptr,
+                   nullptr, nullptr);
   if (!code ||
       !code->initialize(std::move(funcImports), std::move(sharedStubs),
                         sharedStubsLinkData, std::move(optimizedCode))) {

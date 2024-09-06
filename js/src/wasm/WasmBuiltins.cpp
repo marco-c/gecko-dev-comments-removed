@@ -842,7 +842,8 @@ static void* RequestTierUp(JSContext* cx, JitActivation* activation) {
                                            codeRange->funcLineOrBytecode());
   
   if (!ok) {
-    wasm::Log(cx, "Failed to tier-up function=%d in instance=%p.", funcIndex, instance);
+    wasm::Log(cx, "Failed to tier-up function=%d in instance=%p.", funcIndex,
+              instance);
   }
 
   activation->finishWasmTrap();

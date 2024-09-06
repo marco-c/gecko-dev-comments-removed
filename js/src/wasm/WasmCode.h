@@ -823,8 +823,8 @@ class Code : public ShareableBase<Code> {
   
   Tiers completeTiers() const;
 
-  [[nodiscard]] const LazyFuncExport* lookupLazyFuncExport(const WriteGuard& guard,
-                                                           uint32_t funcIndex) const;
+  [[nodiscard]] const LazyFuncExport* lookupLazyFuncExport(
+      const WriteGuard& guard, uint32_t funcIndex) const;
   
   
   [[nodiscard]] void* lookupLazyInterpEntry(const WriteGuard& guard,

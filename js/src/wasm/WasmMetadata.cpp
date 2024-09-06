@@ -135,9 +135,9 @@ bool CodeMetadata::initInstanceLayout(CompileMode mode) {
 
   
   if (mode == CompileMode::LazyTiering) {
-    if (!allocateInstanceDataBytesN(
-            sizeof(FuncDefInstanceData), alignof(FuncDefInstanceData),
-            numFuncDefs(), &funcDefsOffsetStart)) {
+    if (!allocateInstanceDataBytesN(sizeof(FuncDefInstanceData),
+                                    alignof(FuncDefInstanceData), numFuncDefs(),
+                                    &funcDefsOffsetStart)) {
       return false;
     }
   }
