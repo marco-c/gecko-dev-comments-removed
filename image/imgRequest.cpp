@@ -579,9 +579,9 @@ void imgRequest::UpdateCacheEntrySize() {
 }
 
 void imgRequest::SetCacheValidation(imgCacheEntry* aCacheEntry,
-                                    nsIRequest* aRequest,
-                                    bool aForceTouch ) {
-  if (!aCacheEntry) {
+                                    nsIRequest* aRequest) {
+  
+  if (!aCacheEntry || aCacheEntry->GetExpiryTime() != 0) {
     return;
   }
 
@@ -605,7 +605,7 @@ void imgRequest::SetCacheValidation(imgCacheEntry* aCacheEntry,
     info.mExpirationTime.emplace(nsContentUtils::SecondsFromPRTime(PR_Now()) -
                                  1);
   }
-  aCacheEntry->AccumulateExpiryTime(*info.mExpirationTime, aForceTouch);
+  aCacheEntry->SetExpiryTime(*info.mExpirationTime);
   
   
   
@@ -690,7 +690,7 @@ imgRequest::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  SetCacheValidation(mCacheEntry, aRequest,  true);
+  SetCacheValidation(mCacheEntry, aRequest);
 
   
   
