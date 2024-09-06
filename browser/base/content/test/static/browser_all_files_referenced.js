@@ -287,6 +287,9 @@ var allowlist = [
 
   
   { file: "chrome://browser/content/backup/BackupManifest.1.schema.json" },
+
+  
+  { file: "resource://app/modules/TopSites.sys.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
