@@ -5,6 +5,9 @@
 
 
 #include "jit/JitHints-inl.h"
+
+#include "gc/Pretenuring.h"
+
 #include "vm/BytecodeLocation-inl.h"
 #include "vm/JSScript-inl.h"
 
@@ -70,8 +73,33 @@ bool JitHintsMap::recordIonCompilation(JSScript* script) {
     }
   }
 
-  hint->initThreshold(script->warmUpCountAtLastICStub());
+  uint32_t threshold = IonHintEagerThresholdValue(
+      script->warmUpCountAtLastICStub(),
+      script->jitScript()->hasPretenuredAllocSites());
+
+  hint->initThreshold(threshold);
   return true;
+}
+
+
+uint32_t JitHintsMap::IonHintEagerThresholdValue(uint32_t lastStubCounter,
+                                                 bool hasPretenuredAllocSites) {
+  
+  
+  uint32_t eagerThreshold = lastStubCounter;
+
+  
+  if (hasPretenuredAllocSites) {
+    eagerThreshold =
+        std::max(eagerThreshold, uint32_t(gc::NormalSiteAttentionThreshold));
+  }
+
+  
+  
+  eagerThreshold += 10;
+
+  
+  return std::min(eagerThreshold, JitOptions.normalIonWarmUpThreshold);
 }
 
 bool JitHintsMap::getIonThresholdHint(JSScript* script,
