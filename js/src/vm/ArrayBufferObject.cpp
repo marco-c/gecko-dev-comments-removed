@@ -1663,7 +1663,7 @@ ArrayBufferObject* ArrayBufferObject::wasmMovingGrowToPages(
     return nullptr;
   }
   MOZ_ASSERT(newPages <= wasm::MaxMemoryPages(t) &&
-             newPages.byteLength() <= ArrayBufferObject::ByteLengthLimit);
+             newPages.byteLength() < ArrayBufferObject::ByteLengthLimit);
 
   
   
