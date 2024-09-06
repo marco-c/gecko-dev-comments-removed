@@ -1226,13 +1226,18 @@ fn is_transitionable(prop: PropertyDeclarationId, behavior: computed::Transition
     }
 }
 
+
+
 #[no_mangle]
 pub extern "C" fn Servo_ComputedValues_ShouldTransition(
     old: &ComputedValues,
     new: &ComputedValues,
     prop: &structs::AnimatedPropertyID,
     behavior: computed::TransitionBehavior,
-    old_transition_value: Option<&AnimationValue>,
+    old_transition_end_value: Option<&AnimationValue>,
+    current_start_value: Option<&AnimationValue>,
+    current_end_value: Option<&AnimationValue>,
+    progress: Option<&f64>,
     start: &mut structs::RefPtr<AnimationValue>,
     end: &mut structs::RefPtr<AnimationValue>,
 ) -> ShouldTransitionResult {
@@ -1248,8 +1253,11 @@ pub extern "C" fn Servo_ComputedValues_ShouldTransition(
         return Default::default();
     };
 
-    if let Some(old_transition_value) = old_transition_value {
-        if *old_transition_value == new_value {
+    
+    
+    
+    if let Some(old_transition_end_value) = old_transition_end_value {
+        if *old_transition_end_value == new_value {
             return ShouldTransitionResult {
                 should_animate: false,
                 old_transition_value_matches: true,
@@ -1260,14 +1268,50 @@ pub extern "C" fn Servo_ComputedValues_ShouldTransition(
     let Some(old_value) = AnimationValue::from_computed_values(prop, old) else {
         return Default::default();
     };
-    if old_value == new_value ||
-        (matches!(behavior, computed::TransitionBehavior::Normal) &&
-            !old_value.interpolable_with(&new_value))
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let current_value = match (current_start_value, current_end_value, progress) {
+        (Some(from), Some(to), Some(p)) => {
+            
+            from.animate(to, Procedure::Interpolate { progress: *p }).ok()
+        },
+        _ => None,
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let current_or_old_value = current_value.unwrap_or(old_value);
+    if current_or_old_value == new_value ||
+        matches!(behavior, computed::TransitionBehavior::Normal if !current_or_old_value.interpolable_with(&new_value))
     {
         return Default::default();
     }
 
-    start.set_arc(Arc::new(old_value));
+    start.set_arc(Arc::new(current_or_old_value));
     end.set_arc(Arc::new(new_value));
 
     ShouldTransitionResult {

@@ -145,6 +145,13 @@ class CSSTransition final : public Animation {
   
   bool UpdateStartValueFromReplacedTransition();
 
+  
+  
+  
+  static Maybe<double> ComputeTransformedProgress(
+      const AnimationTimeline& aTimeline,
+      const CSSTransition::ReplacedTransitionProperties& aProperties);
+
  protected:
   virtual ~CSSTransition() {
     MOZ_ASSERT(!mOwningElement.IsSet(),

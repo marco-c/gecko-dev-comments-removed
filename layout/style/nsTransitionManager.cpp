@@ -201,10 +201,12 @@ static nsTArray<Keyframe> GetTransitionKeyframes(
   return keyframes;
 }
 
-static Maybe<CSSTransition::ReplacedTransitionProperties>
-GetReplacedTransitionProperties(const CSSTransition* aTransition,
-                                const DocumentTimeline* aTimelineToMatch) {
-  Maybe<CSSTransition::ReplacedTransitionProperties> result;
+using ReplacedTransitionProperties =
+    CSSTransition::ReplacedTransitionProperties;
+static Maybe<ReplacedTransitionProperties> GetReplacedTransitionProperties(
+    const CSSTransition* aTransition,
+    const DocumentTimeline* aTimelineToMatch) {
+  Maybe<ReplacedTransitionProperties> result;
 
   
   
@@ -239,7 +241,7 @@ GetReplacedTransitionProperties(const CSSTransition* aTransition,
   const AnimationPropertySegment& segment =
       keyframeEffect->Properties()[0].mSegments[0];
 
-  result.emplace(CSSTransition::ReplacedTransitionProperties(
+  result.emplace(ReplacedTransitionProperties(
       {aTransition->GetStartTime().Value(), aTransition->PlaybackRate(),
        keyframeEffect->SpecifiedTiming(), segment.mTimingFunction,
        segment.mFromValue, segment.mToValue}));
@@ -293,12 +295,58 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
     return nullptr;
   }();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<ReplacedTransitionProperties> replacedTransitionProperties;
+  Maybe<double> progress;
+  if (oldTransition) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const dom::DocumentTimeline* timeline = aElement->OwnerDoc()->Timeline();
+    replacedTransitionProperties =
+        GetReplacedTransitionProperties(oldTransition, timeline);
+    progress = replacedTransitionProperties.andThen(
+        [&](const ReplacedTransitionProperties& aProperties) {
+          const dom::AnimationTimeline* timeline = oldTransition->GetTimeline();
+          MOZ_ASSERT(timeline);
+          return CSSTransition::ComputeTransformedProgress(*timeline,
+                                                           aProperties);
+        });
+  }
+
   AnimationValue startValue, endValue;
   const StyleShouldTransitionResult result =
       Servo_ComputedValues_ShouldTransition(
           &aOldStyle, &aNewStyle, &property, aBehavior,
           oldTransition ? oldTransition->ToValue().mServo.get() : nullptr,
-          &startValue.mServo, &endValue.mServo);
+          replacedTransitionProperties
+              ? replacedTransitionProperties->mFromValue.mServo.get()
+              : nullptr,
+          
+          
+          
+          replacedTransitionProperties
+              ? replacedTransitionProperties->mToValue.mServo.get()
+              : nullptr,
+          progress.ptrOr(nullptr), &startValue.mServo, &endValue.mServo);
 
   
   
@@ -403,15 +451,6 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
   }
 #endif
   if (oldTransition) {
-    
-    
-    
-    
-    
-    
-    const dom::DocumentTimeline* timeline = aElement->OwnerDoc()->Timeline();
-    auto replacedTransitionProperties =
-        GetReplacedTransitionProperties(oldTransition, timeline);
     if (replacedTransitionProperties) {
       transition->SetReplacedTransition(
           std::move(replacedTransitionProperties.ref()));
