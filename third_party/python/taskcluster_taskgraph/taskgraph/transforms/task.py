@@ -196,7 +196,7 @@ TC_TREEHERDER_SCHEMA_URL = (
 
 
 UNKNOWN_GROUP_NAME = (
-    "Treeherder group {} (from {}) has no name; " "add it to taskcluster/config.yml"
+    "Treeherder group {} (from {}) has no name; " "add it to taskcluster/ci/config.yml"
 )
 
 V2_ROUTE_TEMPLATES = [
@@ -266,7 +266,7 @@ def index_builder(name):
 
 UNSUPPORTED_INDEX_PRODUCT_ERROR = """\
 The index product {product} is not in the list of configured products in
-`taskcluster/config.yml'.
+`taskcluster/ci/config.yml'.
 """
 
 
@@ -364,9 +364,6 @@ def build_docker_worker_payload(config, task, task_def):
         if "in-tree" in image:
             name = image["in-tree"]
             docker_image_task = "build-docker-image-" + image["in-tree"]
-            assert "docker-image" not in task.get(
-                "dependencies", ()
-            ), "docker-image key in dependencies object is reserved"
             task.setdefault("dependencies", {})["docker-image"] = docker_image_task
 
             image = {
@@ -523,8 +520,6 @@ def build_docker_worker_payload(config, task, task_def):
                     out_of_tree_image.encode("utf-8")
                 ).hexdigest()
                 suffix += name_hash[0:12]
-            else:
-                suffix += "-<docker-image>"
 
         else:
             suffix = cache_version
@@ -544,15 +539,13 @@ def build_docker_worker_payload(config, task, task_def):
                 suffix=suffix,
             )
             caches[name] = cache["mount-point"]
-            task_def["scopes"].append(
-                {"task-reference": "docker-worker:cache:%s" % name}
-            )
+            task_def["scopes"].append("docker-worker:cache:%s" % name)
 
         
         if run_task:
             payload["env"]["TASKCLUSTER_CACHES"] = ";".join(sorted(caches.values()))
 
-        payload["cache"] = {"task-reference": caches}
+        payload["cache"] = caches
 
     
     if run_task and worker.get("volumes"):
@@ -1082,11 +1075,7 @@ def build_task(config, tasks):
         extra["parent"] = os.environ.get("TASK_ID", "")
 
         if "expires-after" not in task:
-            task["expires-after"] = (
-                config.graph_config._config.get("task-expires-after", "28 days")
-                if config.params.is_try()
-                else "1 year"
-            )
+            task["expires-after"] = "28 days" if config.params.is_try() else "1 year"
 
         if "deadline-after" not in task:
             if "task-deadline-after" in config.graph_config:
@@ -1153,9 +1142,9 @@ def build_task(config, tasks):
                     config.params["project"] + th_project_suffix, branch_rev
                 )
             )
-            task_def["metadata"][
-                "description"
-            ] += f" ([Treeherder push]({th_push_link}))"
+            task_def["metadata"]["description"] += " ([Treeherder push]({}))".format(
+                th_push_link
+            )
 
         
         payload_builders[task["worker"]["implementation"]].builder(
@@ -1299,7 +1288,7 @@ def check_caches_are_volumes(task):
 
     Caches and volumes are the only filesystem locations whose content
     isn't defined by the Docker image itself. Some caches are optional
-    depending on the task environment. We want paths that are potentially
+    depending on the job environment. We want paths that are potentially
     caches to have as similar behavior regardless of whether a cache is
     used. To help enforce this, we require that all paths used as caches
     to be declared as Docker volumes. This check won't catch all offenders.
@@ -1354,9 +1343,7 @@ def check_run_task_caches(config, tasks):
         main_command = command[0] if isinstance(command[0], str) else ""
         run_task = main_command.endswith("run-task")
 
-        for cache in payload.get("cache", {}).get(
-            "task-reference", payload.get("cache", {})
-        ):
+        for cache in payload.get("cache", {}):
             if not cache.startswith(cache_prefix):
                 raise Exception(
                     "{} is using a cache ({}) which is not appropriate "
@@ -1377,7 +1364,7 @@ def check_run_task_caches(config, tasks):
                     "cache name"
                 )
 
-            if suffix not in cache:
+            if not cache.endswith(suffix):
                 raise Exception(
                     f"{task['label']} is using a cache ({cache}) reserved for run-task "
                     "but the cache name is not dependent on the contents "

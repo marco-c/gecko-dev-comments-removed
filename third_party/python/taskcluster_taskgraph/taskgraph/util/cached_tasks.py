@@ -7,9 +7,6 @@ import hashlib
 import time
 
 TARGET_CACHE_INDEX = "{cache_prefix}.cache.level-{level}.{type}.{name}.hash.{digest}"
-TARGET_PR_CACHE_INDEX = (
-    "{cache_prefix}.cache.head.{head_ref}.{type}.{name}.hash.{digest}"
-)
 EXTRA_CACHE_INDEXES = [
     "{cache_prefix}.cache.level-{level}.{type}.{name}.latest",
     "{cache_prefix}.cache.level-{level}.{type}.{name}.pushdate.{build_date_long}",
@@ -56,45 +53,31 @@ def add_optimization(
 
     
     
+    
+    
     index_routes = []
     min_level = int(config.params["level"])
+    if config.params["tasks_for"] == "github-pull-request":
+        min_level = max(min_level, 3)
     for level in reversed(range(min_level, 4)):
         subs["level"] = level
         index_routes.append(TARGET_CACHE_INDEX.format(**subs))
 
-    
-    
-    
-    if config.params["tasks_for"].startswith(
-        "github-pull-request"
-    ) and config.graph_config["taskgraph"].get("cache-pull-requests", True):
-        subs["head_ref"] = config.params["head_ref"]
-        if subs["head_ref"].startswith("refs/heads/"):
-            subs["head_ref"] = subs["head_ref"][11:]
-        index_routes.append(TARGET_PR_CACHE_INDEX.format(**subs))
-
-    taskdesc["optimization"] = {"index-search": index_routes}
+        taskdesc["optimization"] = {"index-search": index_routes}
 
     
     subs["level"] = config.params["level"]
+    taskdesc.setdefault("routes", []).append(
+        f"index.{TARGET_CACHE_INDEX.format(**subs)}"
+    )
 
-    if config.params["tasks_for"].startswith("github-pull-request"):
-        if config.graph_config["taskgraph"].get("cache-pull-requests", True):
-            taskdesc.setdefault("routes", []).append(
-                f"index.{TARGET_PR_CACHE_INDEX.format(**subs)}"
-            )
-    else:
-        taskdesc.setdefault("routes", []).append(
-            f"index.{TARGET_CACHE_INDEX.format(**subs)}"
-        )
-
-        
-        subs["build_date_long"] = time.strftime(
-            "%Y.%m.%d.%Y%m%d%H%M%S", time.gmtime(config.params["build_date"])
-        )
-        taskdesc["routes"].extend(
-            [f"index.{route.format(**subs)}" for route in EXTRA_CACHE_INDEXES]
-        )
+    
+    subs["build_date_long"] = time.strftime(
+        "%Y.%m.%d.%Y%m%d%H%M%S", time.gmtime(config.params["build_date"])
+    )
+    taskdesc["routes"].extend(
+        [f"index.{route.format(**subs)}" for route in EXTRA_CACHE_INDEXES]
+    )
 
     taskdesc["attributes"]["cached_task"] = {
         "type": cache_type,

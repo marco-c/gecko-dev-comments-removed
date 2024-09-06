@@ -2,11 +2,11 @@
 
 
 """
-Convert a run description into a task description.
+Convert a job description into a task description.
 
-Run descriptions are similar to task descriptions, but they specify how to run
-the task at a higher level, using a "run" field that can be interpreted by
-run-using handlers in `taskcluster/taskgraph/transforms/run`.
+Jobs descriptions are similar to task descriptions, but they specify how to run
+the job at a higher level, using a "run" field that can be interpreted by
+run-using handlers in `taskcluster/taskgraph/transforms/job`.
 """
 
 
@@ -38,7 +38,7 @@ fetches_schema = {
 }
 
 
-run_description_schema = Schema(
+job_description_schema = Schema(
     {
         
         
@@ -55,7 +55,6 @@ run_description_schema = Schema(
         Optional("soft-dependencies"): task_description_schema["soft-dependencies"],
         Optional("if-dependencies"): task_description_schema["if-dependencies"],
         Optional("requires"): task_description_schema["requires"],
-        Optional("deadline-after"): task_description_schema["deadline-after"],
         Optional("expires-after"): task_description_schema["expires-after"],
         Optional("routes"): task_description_schema["routes"],
         Optional("scopes"): task_description_schema["scopes"],
@@ -108,15 +107,15 @@ run_description_schema = Schema(
 )
 
 transforms = TransformSequence()
-transforms.add_validate(run_description_schema)
+transforms.add_validate(job_description_schema)
 
 
 @transforms.add
-def rewrite_when_to_optimization(config, tasks):
-    for task in tasks:
-        when = task.pop("when", {})
+def rewrite_when_to_optimization(config, jobs):
+    for job in jobs:
+        when = job.pop("when", {})
         if not when:
-            yield task
+            yield job
             continue
 
         files_changed = when.get("files-changed")
@@ -125,63 +124,63 @@ def rewrite_when_to_optimization(config, tasks):
         files_changed.append(f"{config.path}/**")
 
         
-        task["optimization"] = {"skip-unless-changed": files_changed}
+        job["optimization"] = {"skip-unless-changed": files_changed}
 
-        assert "when" not in task
-        yield task
+        assert "when" not in job
+        yield job
 
 
 @transforms.add
-def set_implementation(config, tasks):
-    for task in tasks:
-        impl, os = worker_type_implementation(config.graph_config, task["worker-type"])
+def set_implementation(config, jobs):
+    for job in jobs:
+        impl, os = worker_type_implementation(config.graph_config, job["worker-type"])
         if os:
-            task.setdefault("tags", {})["os"] = os
+            job.setdefault("tags", {})["os"] = os
         if impl:
-            task.setdefault("tags", {})["worker-implementation"] = impl
-        worker = task.setdefault("worker", {})
+            job.setdefault("tags", {})["worker-implementation"] = impl
+        worker = job.setdefault("worker", {})
         assert "implementation" not in worker
         worker["implementation"] = impl
         if os:
             worker["os"] = os
-        yield task
+        yield job
 
 
 @transforms.add
-def set_label(config, tasks):
-    for task in tasks:
-        if "label" not in task:
-            if "name" not in task:
-                raise Exception("task has neither a name nor a label")
-            task["label"] = "{}-{}".format(config.kind, task["name"])
-        if task.get("name"):
-            del task["name"]
-        yield task
+def set_label(config, jobs):
+    for job in jobs:
+        if "label" not in job:
+            if "name" not in job:
+                raise Exception("job has neither a name nor a label")
+            job["label"] = "{}-{}".format(config.kind, job["name"])
+        if job.get("name"):
+            del job["name"]
+        yield job
 
 
 @transforms.add
-def add_resource_monitor(config, tasks):
-    for task in tasks:
-        if task.get("attributes", {}).get("resource-monitor"):
+def add_resource_monitor(config, jobs):
+    for job in jobs:
+        if job.get("attributes", {}).get("resource-monitor"):
             worker_implementation, worker_os = worker_type_implementation(
-                config.graph_config, task["worker-type"]
+                config.graph_config, job["worker-type"]
             )
             
             worker_os = worker_os.split("-")[0]
-            if "win7" in task["worker-type"]:
+            if "win7" in job["worker-type"]:
                 arch = "32"
             else:
                 arch = "64"
-            task.setdefault("fetches", {})
-            task["fetches"].setdefault("toolchain", [])
-            task["fetches"]["toolchain"].append(f"{worker_os}{arch}-resource-monitor")
+            job.setdefault("fetches", {})
+            job["fetches"].setdefault("toolchain", [])
+            job["fetches"]["toolchain"].append(f"{worker_os}{arch}-resource-monitor")
 
             if worker_implementation == "docker-worker":
                 artifact_source = "/builds/worker/monitoring/resource-monitor.json"
             else:
                 artifact_source = "monitoring/resource-monitor.json"
-            task["worker"].setdefault("artifacts", [])
-            task["worker"]["artifacts"].append(
+            job["worker"].setdefault("artifacts", [])
+            job["worker"]["artifacts"].append(
                 {
                     "name": "public/monitoring/resource-monitor.json",
                     "type": "file",
@@ -189,10 +188,10 @@ def add_resource_monitor(config, tasks):
                 }
             )
             
-            task["worker"].setdefault("env", {})
-            task["worker"]["env"]["RESOURCE_MONITOR_OUTPUT"] = artifact_source
+            job["worker"].setdefault("env", {})
+            job["worker"]["env"]["RESOURCE_MONITOR_OUTPUT"] = artifact_source
 
-        yield task
+        yield job
 
 
 def get_attribute(dict, key, attributes, attribute_name):
@@ -204,16 +203,16 @@ def get_attribute(dict, key, attributes, attribute_name):
 
 
 @transforms.add
-def use_fetches(config, tasks):
+def use_fetches(config, jobs):
     artifact_names = {}
     aliases = {}
     extra_env = {}
 
     if config.kind in ("toolchain", "fetch"):
-        tasks = list(tasks)
-        for task in tasks:
-            run = task.get("run", {})
-            label = task["label"]
+        jobs = list(jobs)
+        for job in jobs:
+            run = job.get("run", {})
+            label = job["label"]
             get_attribute(artifact_names, label, run, "toolchain-artifact")
             value = run.get(f"{config.kind}-alias")
             if value:
@@ -233,20 +232,20 @@ def use_fetches(config, tasks):
                 aliases[f"{task.kind}-{value}"] = task.label
 
     artifact_prefixes = {}
-    for task in order_tasks(config, tasks):
-        artifact_prefixes[task["label"]] = get_artifact_prefix(task)
+    for job in order_tasks(config, jobs):
+        artifact_prefixes[job["label"]] = get_artifact_prefix(job)
 
-        fetches = task.pop("fetches", None)
+        fetches = job.pop("fetches", None)
         if not fetches:
-            yield task
+            yield job
             continue
 
-        task_fetches = []
-        name = task.get("name", task.get("label"))
-        dependencies = task.setdefault("dependencies", {})
-        worker = task.setdefault("worker", {})
+        job_fetches = []
+        name = job.get("name", job.get("label"))
+        dependencies = job.setdefault("dependencies", {})
+        worker = job.setdefault("worker", {})
         env = worker.setdefault("env", {})
-        prefix = get_artifact_prefix(task)
+        prefix = get_artifact_prefix(job)
         for kind in sorted(fetches):
             artifacts = fetches[kind]
             if kind in ("fetch", "toolchain"):
@@ -255,7 +254,9 @@ def use_fetches(config, tasks):
                     label = aliases.get(label, label)
                     if label not in artifact_names:
                         raise Exception(
-                            f"Missing fetch task for {config.kind}-{name}: {fetch_name}"
+                            "Missing fetch job for {kind}-{name}: {fetch}".format(
+                                kind=config.kind, name=name, fetch=fetch_name
+                            )
                         )
                     if label in extra_env:
                         env.update(extra_env[label])
@@ -263,7 +264,7 @@ def use_fetches(config, tasks):
                     path = artifact_names[label]
 
                     dependencies[label] = label
-                    task_fetches.append(
+                    job_fetches.append(
                         {
                             "artifact": path,
                             "task": f"<{label}>",
@@ -273,8 +274,8 @@ def use_fetches(config, tasks):
             else:
                 if kind not in dependencies:
                     raise Exception(
-                        f"{name} can't fetch {kind} artifacts because "
-                        f"it has no {kind} dependencies!"
+                        "{name} can't fetch {kind} artifacts because "
+                        "it has no {kind} dependencies!".format(name=name, kind=kind)
                     )
                 dep_label = dependencies[kind]
                 if dep_label in artifact_prefixes:
@@ -292,11 +293,9 @@ def use_fetches(config, tasks):
                                 name=name,
                                 kind=kind,
                                 label=dependencies[kind],
-                                tasks=(
-                                    "no tasks"
-                                    if len(dep_tasks) == 0
-                                    else "multiple tasks"
-                                ),
+                                tasks="no tasks"
+                                if len(dep_tasks) == 0
+                                else "multiple tasks",
                             )
                         )
 
@@ -329,43 +328,41 @@ def use_fetches(config, tasks):
                         fetch["dest"] = dest
                     if verify_hash:
                         fetch["verify-hash"] = verify_hash
-                    task_fetches.append(fetch)
+                    job_fetches.append(fetch)
 
-        task_artifact_prefixes = {
+        job_artifact_prefixes = {
             mozpath.dirname(fetch["artifact"])
-            for fetch in task_fetches
+            for fetch in job_fetches
             if not fetch["artifact"].startswith("public/")
         }
-        if task_artifact_prefixes:
+        if job_artifact_prefixes:
             
             
             worker["taskcluster-proxy"] = True
-            for prefix in sorted(task_artifact_prefixes):
+            for prefix in sorted(job_artifact_prefixes):
                 scope = f"queue:get-artifact:{prefix}/*"
-                if scope not in task.setdefault("scopes", []):
-                    task["scopes"].append(scope)
+                if scope not in job.setdefault("scopes", []):
+                    job["scopes"].append(scope)
 
-        env["MOZ_FETCHES"] = {
-            "task-reference": json.dumps(task_fetches, sort_keys=True)
-        }
+        env["MOZ_FETCHES"] = {"task-reference": json.dumps(job_fetches, sort_keys=True)}
 
         env.setdefault("MOZ_FETCHES_DIR", "fetches")
 
-        yield task
+        yield job
 
 
 @transforms.add
-def make_task_description(config, tasks):
+def make_task_description(config, jobs):
     """Given a build description, create a task description"""
     
     import_sibling_modules(exceptions=("common.py",))
 
-    for task in tasks:
+    for job in jobs:
         
-        if task["worker"]["implementation"] in ("docker-worker", "generic-worker"):
-            task["run"].setdefault("workdir", "/builds/worker")
+        if job["worker"]["implementation"] in ("docker-worker", "generic-worker"):
+            job["run"].setdefault("workdir", "/builds/worker")
 
-        taskdesc = copy.deepcopy(task)
+        taskdesc = copy.deepcopy(job)
 
         
         taskdesc.setdefault("attributes", {})
@@ -378,7 +375,7 @@ def make_task_description(config, tasks):
         
         
         configure_taskdesc_for_run(
-            config, task, taskdesc, task["worker"]["implementation"]
+            config, job, taskdesc, job["worker"]["implementation"]
         )
         del taskdesc["run"]
 
@@ -390,12 +387,12 @@ def make_task_description(config, tasks):
 registry = {}
 
 
-def run_task_using(worker_implementation, run_using, schema=None, defaults={}):
+def run_job_using(worker_implementation, run_using, schema=None, defaults={}):
     """Register the decorated function as able to set up a task description for
-    tasks with the given worker implementation and `run.using` property.  If
-    `schema` is given, the task's run field will be verified to match it.
+    jobs with the given worker implementation and `run.using` property.  If
+    `schema` is given, the job's run field will be verified to match it.
 
-    The decorated function should have the signature `using_foo(config, task, taskdesc)`
+    The decorated function should have the signature `using_foo(config, job, taskdesc)`
     and should modify the task description in-place.  The skeleton of
     the task description is already set up, but without a payload."""
 
@@ -403,7 +400,11 @@ def run_task_using(worker_implementation, run_using, schema=None, defaults={}):
         for_run_using = registry.setdefault(run_using, {})
         if worker_implementation in for_run_using:
             raise Exception(
-                f"run_task_using({run_using!r}, {worker_implementation!r}) already exists: {for_run_using[worker_implementation]!r}"
+                "run_job_using({!r}, {!r}) already exists: {!r}".format(
+                    run_using,
+                    worker_implementation,
+                    for_run_using[worker_implementation],
+                )
             )
         for_run_using[worker_implementation] = (func, schema, defaults)
         return func
@@ -411,40 +412,42 @@ def run_task_using(worker_implementation, run_using, schema=None, defaults={}):
     return wrap
 
 
-@run_task_using(
+@run_job_using(
     "always-optimized", "always-optimized", Schema({"using": "always-optimized"})
 )
-def always_optimized(config, task, taskdesc):
+def always_optimized(config, job, taskdesc):
     pass
 
 
-def configure_taskdesc_for_run(config, task, taskdesc, worker_implementation):
+def configure_taskdesc_for_run(config, job, taskdesc, worker_implementation):
     """
-    Run the appropriate function for this task against the given task
+    Run the appropriate function for this job against the given task
     description.
 
-    This will raise an appropriate error if no function exists, or if the task's
+    This will raise an appropriate error if no function exists, or if the job's
     run is not valid according to the schema.
     """
-    run_using = task["run"]["using"]
+    run_using = job["run"]["using"]
     if run_using not in registry:
         raise Exception(f"no functions for run.using {run_using!r}")
 
     if worker_implementation not in registry[run_using]:
         raise Exception(
-            f"no functions for run.using {run_using!r} on {worker_implementation!r}"
+            "no functions for run.using {!r} on {!r}".format(
+                run_using, worker_implementation
+            )
         )
 
     func, schema, defaults = registry[run_using][worker_implementation]
     for k, v in defaults.items():
-        task["run"].setdefault(k, v)
+        job["run"].setdefault(k, v)
 
     if schema:
         validate_schema(
             schema,
-            task["run"],
-            "In task.run using {!r}/{!r} for task {!r}:".format(
-                task["run"]["using"], worker_implementation, task["label"]
+            job["run"],
+            "In job.run using {!r}/{!r} for job {!r}:".format(
+                job["run"]["using"], worker_implementation, job["label"]
             ),
         )
-    func(config, task, taskdesc)
+    func(config, job, taskdesc)

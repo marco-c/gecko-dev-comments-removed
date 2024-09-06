@@ -3,7 +3,7 @@
 
 """
 Transform the upload-symbols task description template,
-taskcluster/kinds/upload-symbols/job-template.yml into an actual task description.
+taskcluster/ci/upload-symbols/job-template.yml into an actual task description.
 """
 
 

@@ -3,7 +3,7 @@
 
 """
 Transform the upload-generated-files task description template,
-taskcluster/kinds/upload-generated-sources/kind.yml, into an actual task description.
+taskcluster/ci/upload-generated-sources/kind.yml, into an actual task description.
 """
 
 from taskgraph.transforms.base import TransformSequence
