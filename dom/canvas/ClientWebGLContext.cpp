@@ -736,6 +736,21 @@ void ClientWebGLContext::GetCanvas(
   }
 }
 
+void ClientWebGLContext::SetDrawingBufferColorSpace(
+    const dom::PredefinedColorSpace val) {
+  mDrawingBufferColorSpace = val;
+
+  
+  
+  
+  
+  if (mNotLost) {
+    mNotLost->info.options.colorSpace = mDrawingBufferColorSpace;
+  }
+
+  Run<RPROC(SetDrawingBufferColorSpace)>(mDrawingBufferColorSpace);
+}
+
 void ClientWebGLContext::GetContextAttributes(
     dom::Nullable<dom::WebGLContextAttributes>& retval) {
   retval.SetNull();
@@ -1058,9 +1073,7 @@ ClientWebGLContext::SetContextOptions(JSContext* cx,
   if (attributes.mAntialias.WasPassed()) {
     newOpts.antialias = attributes.mAntialias.Value();
   }
-  newOpts.ignoreColorSpace = true;
   if (attributes.mColorSpace.WasPassed()) {
-    newOpts.ignoreColorSpace = false;
     newOpts.colorSpace = attributes.mColorSpace.Value();
   }
 

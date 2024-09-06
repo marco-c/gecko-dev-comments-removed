@@ -82,7 +82,7 @@ enum class CMSMode : int32_t {
   Off = 0,         
   All = 1,         
   TaggedOnly = 2,  
-  AllCount = 3
+  _ENUM_MAX = TaggedOnly
 };
 
 enum eGfxLog {
