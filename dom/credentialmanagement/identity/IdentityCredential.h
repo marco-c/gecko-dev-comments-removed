@@ -10,6 +10,7 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Credential.h"
 #include "mozilla/dom/IPCIdentityCredential.h"
+#include "mozilla/IdentityCredentialStorageService.h"
 #include "mozilla/MozPromise.h"
 
 namespace mozilla::dom {
@@ -20,6 +21,8 @@ namespace mozilla::dom {
 
 
 class IdentityCredential final : public Credential {
+  friend class mozilla::IdentityCredentialStorageService;
+
  public:
   
   
@@ -53,11 +56,17 @@ class IdentityCredential final : public Credential {
   typedef MozPromise<IdentityProviderClientMetadata, nsresult, true>
       GetMetadataPromise;
 
-  
-  explicit IdentityCredential(nsPIDOMWindowInner* aParent);
-
  protected:
   ~IdentityCredential() override;
+
+  
+  
+  
+  explicit IdentityCredential(nsPIDOMWindowInner* aParent);
+  
+  
+  explicit IdentityCredential(nsPIDOMWindowInner* aParent,
+                              const IPCIdentityCredential& aOther);
 
  public:
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -70,31 +79,18 @@ class IdentityCredential final : public Credential {
   void CopyValuesFrom(const IPCIdentityCredential& aOther);
 
   
-  IPCIdentityCredential MakeIPCIdentityCredential();
+  IPCIdentityCredential MakeIPCIdentityCredential() const;
+
+  static already_AddRefed<IdentityCredential> Constructor(
+      const GlobalObject& aGlobal, const IdentityCredentialInit& aInit,
+      ErrorResult& aRv);
 
   
   void GetToken(nsAString& aToken) const;
   void SetToken(const nsAString& aToken);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static already_AddRefed<Promise> LogoutRPs(
-      GlobalObject& aGlobal,
-      const Sequence<IdentityCredentialLogoutRPsRequest>& aLogoutRequests,
-      ErrorResult& aRv);
+  void GetOrigin(nsACString& aOrigin, ErrorResult& aError) const;
 
   
   
@@ -138,7 +134,8 @@ class IdentityCredential final : public Credential {
   
   
   
-  static RefPtr<GetIPCIdentityCredentialPromise> CreateCredential(
+  static RefPtr<GetIPCIdentityCredentialPromise>
+  CreateHeavyweightCredentialDuringDiscovery(
       nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
       const IdentityProviderConfig& aProvider,
       const IdentityProviderAPIConfig& aManifest);
@@ -307,6 +304,14 @@ class IdentityCredential final : public Credential {
 
  private:
   nsAutoString mToken;
+  nsCOMPtr<nsIPrincipal> mIdentityProvider;
+  Maybe<IdentityCredentialInit> mCreationOptions;
+
+  
+  
+  enum RequestType { INVALID, LIGHTWEIGHT, HEAVYWEIGHT };
+  static RequestType DetermineRequestType(
+      const IdentityCredentialRequestOptions& aOptions);
 };
 
 }  
