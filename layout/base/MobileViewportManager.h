@@ -180,11 +180,9 @@ class MobileViewportManager final : public nsIDOMEventListener,
   void UpdateResolutionForContentSizeChange(
       const mozilla::CSSSize& aContentSize);
 
-  void ApplyNewZoom(const mozilla::ScreenIntSize& aDisplaySize,
-                    const mozilla::CSSToScreenScale& aNewZoom);
+  void ApplyNewZoom(const mozilla::CSSToScreenScale& aNewZoom);
 
-  void UpdateVisualViewportSize(const mozilla::ScreenIntSize& aDisplaySize,
-                                const mozilla::CSSToScreenScale& aZoom);
+  void UpdateVisualViewportSize(const mozilla::CSSToScreenScale& aZoom);
 
   
 
@@ -207,6 +205,13 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
 
   mozilla::ScreenIntSize GetLayoutDisplaySize() const;
+
+  
+
+
+
+
+  mozilla::ScreenIntSize GetDisplaySizeForVisualViewport() const;
 
   mozilla::CSSToScreenScale GetZoom() const;
 
