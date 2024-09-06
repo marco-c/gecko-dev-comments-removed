@@ -385,7 +385,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return offsetof(JSContext, jitActivation);
   }
 
-#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
+#ifdef DEBUG
   static size_t offsetOfInUnsafeCallWithABI() {
     return offsetof(JSContext, inUnsafeCallWithABI);
   }
@@ -435,12 +435,9 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   js::ContextData<js::EnterDebuggeeNoExecute*> noExecuteDebuggerTop;
 
-#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
+#ifdef DEBUG
   js::ContextData<uint32_t> inUnsafeCallWithABI;
   js::ContextData<bool> hasAutoUnsafeCallWithABI;
-#endif
-
-#ifdef DEBUG
   js::ContextData<uint32_t> liveArraySortDataInstances;
 #endif
 
@@ -1088,11 +1085,8 @@ enum UnsafeABIStrictness {
 
 
 
-
-
-
 class MOZ_RAII AutoUnsafeCallWithABI {
-#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
+#ifdef DEBUG
   JSContext* cx_;
   bool nested_;
   bool checkForPendingException_;
@@ -1100,7 +1094,7 @@ class MOZ_RAII AutoUnsafeCallWithABI {
   JS::AutoCheckCannotGC nogc;
 
  public:
-#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
+#ifdef DEBUG
   explicit AutoUnsafeCallWithABI(
       UnsafeABIStrictness strictness = UnsafeABIStrictness::NoExceptions);
   ~AutoUnsafeCallWithABI();

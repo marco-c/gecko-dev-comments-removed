@@ -335,7 +335,7 @@ class Nursery {
 
   bool canCreateAllocSite() { return pretenuringNursery.canCreateAllocSite(); }
   void noteAllocSiteCreated() { pretenuringNursery.noteAllocSiteCreated(); }
-  bool reportPretenuring() const { return pretenuringReportFilter_.enabled; }
+  bool reportPretenuring() const { return reportPretenuring_; }
   void maybeStopPretenuring(gc::GCRuntime* gc) {
     pretenuringNursery.maybeStopPretenuring(gc);
   }
@@ -648,7 +648,8 @@ class Nursery {
 
   
   
-  gc::AllocSiteFilter pretenuringReportFilter_;
+  bool reportPretenuring_;
+  size_t reportPretenuringThreshold_;
 
   
   

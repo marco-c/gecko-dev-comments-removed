@@ -474,15 +474,6 @@ typedef enum JSGCParamKey {
 
   JSGC_MAX_MARKING_THREADS = 52,
 
-  
-
-
-
-
-
-
-  JSGC_GENERATE_MISSING_ALLOC_SITES = 53,
-
 } JSGCParamKey;
 
 
