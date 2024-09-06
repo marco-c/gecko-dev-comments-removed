@@ -2992,6 +2992,11 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
+  WhereToScroll mLastAnchorVerticalScrollViewPosition;
+
+  
+  
+  
   
   
   nsCOMPtr<nsIContent> mContentToScrollTo;
