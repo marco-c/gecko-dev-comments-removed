@@ -904,13 +904,6 @@ bool nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
 }
 
 
-uint32_t nsHTTPSOnlyUtils::GetStatusForSubresourceLoad(
-    uint32_t aHttpsOnlyStatus) {
-  return aHttpsOnlyStatus & ~nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST;
-}
-
-
-
 
 NS_IMPL_ISUPPORTS_INHERITED(TestHTTPAnswerRunnable, mozilla::Runnable,
                             nsIStreamListener, nsIInterfaceRequestor,
