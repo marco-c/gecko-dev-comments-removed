@@ -45,20 +45,19 @@ macro_rules! sym {
     };
 }
 
+#[allow(unused_macro_rules)] 
 macro_rules! quote_inner {
     
     ($ts:ident) => {};
 
     
     ($ts:ident :: $($tail:tt)*) => { sym!($ts ':' ':'); quote_inner!($ts $($tail)*); };
-    ($ts:ident .. $($tail:tt)*) => { sym!($ts '.' '.'); quote_inner!($ts $($tail)*); };
     ($ts:ident : $($tail:tt)*) => { sym!($ts ':'); quote_inner!($ts $($tail)*); };
     ($ts:ident = $($tail:tt)*) => { sym!($ts '='); quote_inner!($ts $($tail)*); };
     ($ts:ident ; $($tail:tt)*) => { sym!($ts ';'); quote_inner!($ts $($tail)*); };
     ($ts:ident , $($tail:tt)*) => { sym!($ts ','); quote_inner!($ts $($tail)*); };
     ($ts:ident . $($tail:tt)*) => { sym!($ts '.'); quote_inner!($ts $($tail)*); };
     ($ts:ident & $($tail:tt)*) => { sym!($ts '&'); quote_inner!($ts $($tail)*); };
-    ($ts:ident << $($tail:tt)*) => { sym!($ts '<' '<'); quote_inner!($ts $($tail)*); };
     ($ts:ident < $($tail:tt)*) => { sym!($ts '<'); quote_inner!($ts $($tail)*); };
     ($ts:ident >> $($tail:tt)*) => { sym!($ts '>' '>'); quote_inner!($ts $($tail)*); };
     ($ts:ident > $($tail:tt)*) => { sym!($ts '>'); quote_inner!($ts $($tail)*); };

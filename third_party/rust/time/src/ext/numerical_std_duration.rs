@@ -1,0 +1,192 @@
+use core::time::Duration as StdDuration;
+
+use num_conv::prelude::*;
+
+use crate::convert::*;
+
+
+mod sealed {
+    
+    pub trait Sealed {}
+    impl Sealed for u64 {}
+    impl Sealed for f64 {}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait NumericalStdDuration: sealed::Sealed {
+    
+    fn std_nanoseconds(self) -> StdDuration;
+    
+    fn std_microseconds(self) -> StdDuration;
+    
+    fn std_milliseconds(self) -> StdDuration;
+    
+    fn std_seconds(self) -> StdDuration;
+    
+    fn std_minutes(self) -> StdDuration;
+    
+    fn std_hours(self) -> StdDuration;
+    
+    fn std_days(self) -> StdDuration;
+    
+    fn std_weeks(self) -> StdDuration;
+}
+
+impl NumericalStdDuration for u64 {
+    fn std_nanoseconds(self) -> StdDuration {
+        StdDuration::from_nanos(self)
+    }
+
+    fn std_microseconds(self) -> StdDuration {
+        StdDuration::from_micros(self)
+    }
+
+    fn std_milliseconds(self) -> StdDuration {
+        StdDuration::from_millis(self)
+    }
+
+    fn std_seconds(self) -> StdDuration {
+        StdDuration::from_secs(self)
+    }
+
+    
+    
+    
+    fn std_minutes(self) -> StdDuration {
+        StdDuration::from_secs(
+            self.checked_mul(Second::per(Minute).extend())
+                .expect("overflow constructing `time::Duration`"),
+        )
+    }
+
+    
+    
+    
+    fn std_hours(self) -> StdDuration {
+        StdDuration::from_secs(
+            self.checked_mul(Second::per(Hour).extend())
+                .expect("overflow constructing `time::Duration`"),
+        )
+    }
+
+    
+    
+    
+    fn std_days(self) -> StdDuration {
+        StdDuration::from_secs(
+            self.checked_mul(Second::per(Day).extend())
+                .expect("overflow constructing `time::Duration`"),
+        )
+    }
+
+    
+    
+    
+    fn std_weeks(self) -> StdDuration {
+        StdDuration::from_secs(
+            self.checked_mul(Second::per(Week).extend())
+                .expect("overflow constructing `time::Duration`"),
+        )
+    }
+}
+
+impl NumericalStdDuration for f64 {
+    
+    
+    
+    fn std_nanoseconds(self) -> StdDuration {
+        assert!(self >= 0.);
+        StdDuration::from_nanos(self as _)
+    }
+
+    
+    
+    
+    fn std_microseconds(self) -> StdDuration {
+        assert!(self >= 0.);
+        StdDuration::from_nanos((self * Nanosecond::per(Microsecond) as Self) as _)
+    }
+
+    
+    
+    
+    fn std_milliseconds(self) -> StdDuration {
+        assert!(self >= 0.);
+        StdDuration::from_nanos((self * Nanosecond::per(Millisecond) as Self) as _)
+    }
+
+    
+    
+    
+    fn std_seconds(self) -> StdDuration {
+        assert!(self >= 0.);
+        StdDuration::from_nanos((self * Nanosecond::per(Second) as Self) as _)
+    }
+
+    
+    
+    
+    fn std_minutes(self) -> StdDuration {
+        assert!(self >= 0.);
+        StdDuration::from_nanos((self * Nanosecond::per(Minute) as Self) as _)
+    }
+
+    
+    
+    
+    fn std_hours(self) -> StdDuration {
+        assert!(self >= 0.);
+        StdDuration::from_nanos((self * Nanosecond::per(Hour) as Self) as _)
+    }
+
+    
+    
+    
+    fn std_days(self) -> StdDuration {
+        assert!(self >= 0.);
+        StdDuration::from_nanos((self * Nanosecond::per(Day) as Self) as _)
+    }
+
+    
+    
+    
+    fn std_weeks(self) -> StdDuration {
+        assert!(self >= 0.);
+        StdDuration::from_nanos((self * Nanosecond::per(Week) as Self) as _)
+    }
+}

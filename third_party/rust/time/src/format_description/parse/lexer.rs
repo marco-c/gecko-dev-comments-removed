@@ -7,7 +7,7 @@ use super::{unused, Error, Location, Spanned, SpannedValue};
 
 pub(super) struct Lexed<I: Iterator> {
     
-    iter: core::iter::Peekable<I>,
+    iter: iter::Peekable<I>,
 }
 
 impl<I: Iterator> Iterator for Lexed<I> {

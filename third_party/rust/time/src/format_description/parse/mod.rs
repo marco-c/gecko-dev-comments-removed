@@ -3,6 +3,8 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
+use crate::{error, format_description};
+
 
 macro_rules! version {
     ($range:expr) => {
@@ -40,8 +42,7 @@ impl<const N: usize> Version<N> {
 
 pub fn parse(
     s: &str,
-) -> Result<Vec<crate::format_description::FormatItem<'_>>, crate::error::InvalidFormatDescription>
-{
+) -> Result<Vec<format_description::BorrowedFormatItem<'_>>, error::InvalidFormatDescription> {
     parse_borrowed::<1>(s)
 }
 
@@ -52,8 +53,7 @@ pub fn parse(
 
 pub fn parse_borrowed<const VERSION: usize>(
     s: &str,
-) -> Result<Vec<crate::format_description::FormatItem<'_>>, crate::error::InvalidFormatDescription>
-{
+) -> Result<Vec<format_description::BorrowedFormatItem<'_>>, error::InvalidFormatDescription> {
     validate_version!(VERSION);
     let mut lexed = lexer::lex::<VERSION>(s.as_bytes());
     let ast = ast::parse::<_, VERSION>(&mut lexed);
@@ -75,14 +75,12 @@ pub fn parse_borrowed<const VERSION: usize>(
 
 pub fn parse_owned<const VERSION: usize>(
     s: &str,
-) -> Result<crate::format_description::OwnedFormatItem, crate::error::InvalidFormatDescription> {
+) -> Result<format_description::OwnedFormatItem, error::InvalidFormatDescription> {
     validate_version!(VERSION);
     let mut lexed = lexer::lex::<VERSION>(s.as_bytes());
     let ast = ast::parse::<_, VERSION>(&mut lexed);
     let format_items = format_item::parse(ast);
-    let items = format_items
-        .map(|res| res.map(Into::into))
-        .collect::<Result<Box<_>, _>>()?;
+    let items = format_items.collect::<Result<Box<_>, _>>()?;
     Ok(items.into())
 }
 
@@ -222,10 +220,10 @@ struct Error {
     
     _inner: Unused<ErrorInner>,
     
-    public: crate::error::InvalidFormatDescription,
+    public: error::InvalidFormatDescription,
 }
 
-impl From<Error> for crate::error::InvalidFormatDescription {
+impl From<Error> for error::InvalidFormatDescription {
     fn from(error: Error) -> Self {
         error.public
     }
@@ -239,7 +237,6 @@ impl From<Error> for crate::error::InvalidFormatDescription {
 struct Unused<T>(core::marker::PhantomData<T>);
 
 
-#[allow(clippy::missing_const_for_fn)] 
 fn unused<T>(_: T) -> Unused<T> {
     Unused(core::marker::PhantomData)
 }

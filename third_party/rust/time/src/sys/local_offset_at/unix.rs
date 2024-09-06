@@ -15,9 +15,6 @@ const OS_HAS_THREAD_SAFE_ENVIRONMENT: bool = match std::env::consts::OS.as_bytes
     
     
     | b"netbsd"
-    
-    
-    | b"macos"
     => true,
     _ => false,
 };

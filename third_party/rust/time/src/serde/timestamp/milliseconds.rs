@@ -7,6 +7,7 @@
 
 
 
+
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::OffsetDateTime;
@@ -16,12 +17,14 @@ pub fn serialize<S: Serializer>(
     datetime: &OffsetDateTime,
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
-    datetime.unix_timestamp().serialize(serializer)
+    let timestamp = datetime.unix_timestamp_nanos() / 1_000_000;
+    timestamp.serialize(serializer)
 }
 
 
 pub fn deserialize<'a, D: Deserializer<'a>>(deserializer: D) -> Result<OffsetDateTime, D::Error> {
-    OffsetDateTime::from_unix_timestamp(<_>::deserialize(deserializer)?)
+    let value: i128 = <_>::deserialize(deserializer)?;
+    OffsetDateTime::from_unix_timestamp_nanos(value * 1_000_000)
         .map_err(|err| de::Error::invalid_value(de::Unexpected::Signed(err.value), &err))
 }
 
@@ -44,7 +47,7 @@ pub mod option {
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
         option
-            .map(OffsetDateTime::unix_timestamp)
+            .map(|timestamp| timestamp.unix_timestamp_nanos() / 1_000_000)
             .serialize(serializer)
     }
 
@@ -53,7 +56,7 @@ pub mod option {
         deserializer: D,
     ) -> Result<Option<OffsetDateTime>, D::Error> {
         Option::deserialize(deserializer)?
-            .map(OffsetDateTime::from_unix_timestamp)
+            .map(|value: i128| OffsetDateTime::from_unix_timestamp_nanos(value * 1_000_000))
             .transpose()
             .map_err(|err| de::Error::invalid_value(de::Unexpected::Signed(err.value), &err))
     }

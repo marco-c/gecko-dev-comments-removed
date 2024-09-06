@@ -85,13 +85,13 @@ pub mod local_offset {
     
     
     pub unsafe fn set_soundness(soundness: Soundness) {
-        LOCAL_OFFSET_IS_SOUND.store(soundness == Soundness::Sound, Ordering::SeqCst);
+        LOCAL_OFFSET_IS_SOUND.store(soundness == Soundness::Sound, Ordering::Release);
     }
 
     
     
     pub fn get_soundness() -> Soundness {
-        match LOCAL_OFFSET_IS_SOUND.load(Ordering::SeqCst) {
+        match LOCAL_OFFSET_IS_SOUND.load(Ordering::Acquire) {
             false => Soundness::Unsound,
             true => Soundness::Sound,
         }

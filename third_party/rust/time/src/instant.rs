@@ -1,11 +1,14 @@
 
 
+#![allow(deprecated)]
+
 use core::borrow::Borrow;
 use core::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use core::ops::{Add, Sub};
 use core::time::Duration as StdDuration;
 use std::time::Instant as StdInstant;
 
+use crate::internal_macros::{impl_add_assign, impl_sub_assign};
 use crate::Duration;
 
 
@@ -25,11 +28,13 @@ use crate::Duration;
 
 
 
+#[deprecated(since = "0.3.35", note = "import `time::ext::InstantExt` instead")]
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Instant(pub StdInstant);
 
 impl Instant {
+    
     
     
     
@@ -51,11 +56,13 @@ impl Instant {
     
     
     
+    
     pub fn elapsed(self) -> Duration {
         Self::now() - self
     }
     
 
+    
     
     
     
@@ -88,6 +95,7 @@ impl Instant {
     
     
     
+    
     pub fn checked_sub(self, duration: Duration) -> Option<Self> {
         if duration.is_zero() {
             Some(self)
@@ -100,6 +108,7 @@ impl Instant {
     }
     
 
+    
     
     
     
@@ -128,6 +137,9 @@ impl From<Instant> for StdInstant {
 impl Sub for Instant {
     type Output = Duration;
 
+    
+    
+    
     fn sub(self, other: Self) -> Self::Output {
         match self.0.cmp(&other.0) {
             Ordering::Equal => Duration::ZERO,

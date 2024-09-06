@@ -38,4 +38,7 @@ pub enum Component {
     Ignore(modifier::Ignore),
     
     UnixTimestamp(modifier::UnixTimestamp),
+    
+    
+    End(modifier::End),
 }

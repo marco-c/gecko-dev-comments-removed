@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::error;
-use crate::format_description::{Component, FormatItem};
+use crate::format_description::{BorrowedFormatItem, Component};
 
 
 #[non_exhaustive]
@@ -46,18 +46,20 @@ impl fmt::Debug for OwnedFormatItem {
 }
 
 
-impl From<FormatItem<'_>> for OwnedFormatItem {
-    fn from(item: FormatItem<'_>) -> Self {
+impl From<BorrowedFormatItem<'_>> for OwnedFormatItem {
+    fn from(item: BorrowedFormatItem<'_>) -> Self {
         (&item).into()
     }
 }
 
-impl From<&FormatItem<'_>> for OwnedFormatItem {
-    fn from(item: &FormatItem<'_>) -> Self {
+impl From<&BorrowedFormatItem<'_>> for OwnedFormatItem {
+    fn from(item: &BorrowedFormatItem<'_>) -> Self {
         match item {
-            FormatItem::Literal(literal) => Self::Literal(literal.to_vec().into_boxed_slice()),
-            FormatItem::Component(component) => Self::Component(*component),
-            FormatItem::Compound(compound) => Self::Compound(
+            BorrowedFormatItem::Literal(literal) => {
+                Self::Literal(literal.to_vec().into_boxed_slice())
+            }
+            BorrowedFormatItem::Component(component) => Self::Component(*component),
+            BorrowedFormatItem::Compound(compound) => Self::Compound(
                 compound
                     .iter()
                     .cloned()
@@ -65,8 +67,8 @@ impl From<&FormatItem<'_>> for OwnedFormatItem {
                     .collect::<Vec<_>>()
                     .into_boxed_slice(),
             ),
-            FormatItem::Optional(item) => Self::Optional(Box::new((*item).into())),
-            FormatItem::First(items) => Self::First(
+            BorrowedFormatItem::Optional(item) => Self::Optional(Box::new((*item).into())),
+            BorrowedFormatItem::First(items) => Self::First(
                 items
                     .iter()
                     .cloned()
@@ -78,13 +80,13 @@ impl From<&FormatItem<'_>> for OwnedFormatItem {
     }
 }
 
-impl From<Vec<FormatItem<'_>>> for OwnedFormatItem {
-    fn from(items: Vec<FormatItem<'_>>) -> Self {
+impl From<Vec<BorrowedFormatItem<'_>>> for OwnedFormatItem {
+    fn from(items: Vec<BorrowedFormatItem<'_>>) -> Self {
         items.as_slice().into()
     }
 }
 
-impl<'a, T: AsRef<[FormatItem<'a>]> + ?Sized> From<&T> for OwnedFormatItem {
+impl<'a, T: AsRef<[BorrowedFormatItem<'a>]> + ?Sized> From<&T> for OwnedFormatItem {
     fn from(items: &T) -> Self {
         Self::Compound(
             items

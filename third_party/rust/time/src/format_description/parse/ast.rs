@@ -6,6 +6,7 @@ use alloc::vec::Vec;
 use core::iter;
 
 use super::{lexer, unused, Error, Location, Spanned, SpannedValue, Unused};
+use crate::internal_macros::bug;
 
 
 pub(super) enum Item<'a> {

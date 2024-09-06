@@ -1,16 +1,22 @@
 
 
-use core::mem::MaybeUninit;
 use core::num::{NonZeroU16, NonZeroU8};
 
-use crate::date_time::{maybe_offset_from_offset, offset_kind, DateTime, MaybeOffset};
+use deranged::{
+    OptionRangedI128, OptionRangedI32, OptionRangedI8, OptionRangedU16, OptionRangedU32,
+    OptionRangedU8, RangedI128, RangedI32, RangedI8, RangedU16, RangedU32, RangedU8,
+};
+use num_conv::prelude::*;
+
+use crate::convert::{Day, Hour, Minute, Nanosecond, Second};
+use crate::date::{MAX_YEAR, MIN_YEAR};
 use crate::error::TryFromParsed::InsufficientInformation;
-use crate::format_description::modifier::{WeekNumberRepr, YearRepr};
 #[cfg(feature = "alloc")]
 use crate::format_description::OwnedFormatItem;
-use crate::format_description::{Component, FormatItem};
+use crate::format_description::{modifier, BorrowedFormatItem, Component};
+use crate::internal_macros::{bug, const_try_opt};
 use crate::parsing::component::{
-    parse_day, parse_hour, parse_ignore, parse_minute, parse_month, parse_offset_hour,
+    parse_day, parse_end, parse_hour, parse_ignore, parse_minute, parse_month, parse_offset_hour,
     parse_offset_minute, parse_offset_second, parse_ordinal, parse_period, parse_second,
     parse_subsecond, parse_unix_timestamp, parse_week_number, parse_weekday, parse_year, Period,
 };
@@ -32,7 +38,7 @@ mod sealed {
     }
 }
 
-impl sealed::AnyFormatItem for FormatItem<'_> {
+impl sealed::AnyFormatItem for BorrowedFormatItem<'_> {
     fn parse_item<'a>(
         &self,
         parsed: &mut Parsed,
@@ -101,10 +107,6 @@ impl sealed::AnyFormatItem for OwnedFormatItem {
 
 
 
-type Flag = u32;
-
-
-
 
 
 
@@ -112,105 +114,102 @@ type Flag = u32;
 #[derive(Debug, Clone, Copy)]
 pub struct Parsed {
     
-    flags: Flag,
+    year: OptionRangedI32<{ MIN_YEAR }, { MAX_YEAR }>,
     
-    year: MaybeUninit<i32>,
+    year_last_two: OptionRangedU8<0, 99>,
     
-    year_last_two: MaybeUninit<u8>,
+    iso_year: OptionRangedI32<{ MIN_YEAR }, { MAX_YEAR }>,
     
-    iso_year: MaybeUninit<i32>,
-    
-    iso_year_last_two: MaybeUninit<u8>,
+    iso_year_last_two: OptionRangedU8<0, 99>,
     
     month: Option<Month>,
     
-    sunday_week_number: MaybeUninit<u8>,
+    sunday_week_number: OptionRangedU8<0, 53>,
     
-    monday_week_number: MaybeUninit<u8>,
+    monday_week_number: OptionRangedU8<0, 53>,
     
-    iso_week_number: Option<NonZeroU8>,
+    iso_week_number: OptionRangedU8<1, 53>,
     
     weekday: Option<Weekday>,
     
-    ordinal: Option<NonZeroU16>,
+    ordinal: OptionRangedU16<1, 366>,
     
-    day: Option<NonZeroU8>,
+    day: OptionRangedU8<1, 31>,
     
-    hour_24: MaybeUninit<u8>,
+    hour_24: OptionRangedU8<0, { Hour::per(Day) - 1 }>,
     
     
-    hour_12: Option<NonZeroU8>,
+    hour_12: OptionRangedU8<1, 12>,
     
     hour_12_is_pm: Option<bool>,
     
-    minute: MaybeUninit<u8>,
     
-    second: MaybeUninit<u8>,
+    minute: OptionRangedU8<0, { Minute::per(Hour) - 1 }>,
     
-    subsecond: MaybeUninit<u32>,
     
-    offset_hour: MaybeUninit<i8>,
+    second: OptionRangedU8<0, { Second::per(Minute) }>,
     
-    offset_minute: MaybeUninit<i8>,
+    subsecond: OptionRangedU32<0, { Nanosecond::per(Second) - 1 }>,
     
-    offset_second: MaybeUninit<i8>,
+    offset_hour: OptionRangedI8<-23, 23>,
     
-    unix_timestamp_nanos: MaybeUninit<i128>,
+    offset_minute:
+        OptionRangedI8<{ -((Minute::per(Hour) - 1) as i8) }, { (Minute::per(Hour) - 1) as _ }>,
+    
+    offset_second:
+        OptionRangedI8<{ -((Second::per(Minute) - 1) as i8) }, { (Second::per(Minute) - 1) as _ }>,
+    
+    unix_timestamp_nanos: OptionRangedI128<
+        {
+            OffsetDateTime::new_in_offset(Date::MIN, Time::MIDNIGHT, UtcOffset::UTC)
+                .unix_timestamp_nanos()
+        },
+        {
+            OffsetDateTime::new_in_offset(Date::MAX, Time::MAX, UtcOffset::UTC)
+                .unix_timestamp_nanos()
+        },
+    >,
+    
+    
+    offset_is_negative: Option<bool>,
+    
+    
+    pub(super) leap_second_allowed: bool,
 }
 
-#[allow(clippy::missing_docs_in_private_items)]
-impl Parsed {
-    const YEAR_FLAG: Flag = 1 << 0;
-    const YEAR_LAST_TWO_FLAG: Flag = 1 << 1;
-    const ISO_YEAR_FLAG: Flag = 1 << 2;
-    const ISO_YEAR_LAST_TWO_FLAG: Flag = 1 << 3;
-    const SUNDAY_WEEK_NUMBER_FLAG: Flag = 1 << 4;
-    const MONDAY_WEEK_NUMBER_FLAG: Flag = 1 << 5;
-    const HOUR_24_FLAG: Flag = 1 << 6;
-    const MINUTE_FLAG: Flag = 1 << 7;
-    const SECOND_FLAG: Flag = 1 << 8;
-    const SUBSECOND_FLAG: Flag = 1 << 9;
-    const OFFSET_HOUR_FLAG: Flag = 1 << 10;
-    const OFFSET_MINUTE_FLAG: Flag = 1 << 11;
-    const OFFSET_SECOND_FLAG: Flag = 1 << 12;
-    
-    
-    pub(super) const LEAP_SECOND_ALLOWED_FLAG: Flag = 1 << 13;
-    
-    
-    const OFFSET_IS_NEGATIVE_FLAG: Flag = 1 << 14;
-    
-    
-    const OFFSET_IS_NEGATIVE_FLAG_IS_INITIALIZED: Flag = 1 << 15;
-    const UNIX_TIMESTAMP_NANOS_FLAG: Flag = 1 << 16;
+impl Default for Parsed {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Parsed {
     
     pub const fn new() -> Self {
         Self {
-            flags: 0,
-            year: MaybeUninit::uninit(),
-            year_last_two: MaybeUninit::uninit(),
-            iso_year: MaybeUninit::uninit(),
-            iso_year_last_two: MaybeUninit::uninit(),
+            year: OptionRangedI32::None,
+            year_last_two: OptionRangedU8::None,
+            iso_year: OptionRangedI32::None,
+            iso_year_last_two: OptionRangedU8::None,
             month: None,
-            sunday_week_number: MaybeUninit::uninit(),
-            monday_week_number: MaybeUninit::uninit(),
-            iso_week_number: None,
+            sunday_week_number: OptionRangedU8::None,
+            monday_week_number: OptionRangedU8::None,
+            iso_week_number: OptionRangedU8::None,
             weekday: None,
-            ordinal: None,
-            day: None,
-            hour_24: MaybeUninit::uninit(),
-            hour_12: None,
+            ordinal: OptionRangedU16::None,
+            day: OptionRangedU8::None,
+            hour_24: OptionRangedU8::None,
+            hour_12: OptionRangedU8::None,
             hour_12_is_pm: None,
-            minute: MaybeUninit::uninit(),
-            second: MaybeUninit::uninit(),
-            subsecond: MaybeUninit::uninit(),
-            offset_hour: MaybeUninit::uninit(),
-            offset_minute: MaybeUninit::uninit(),
-            offset_second: MaybeUninit::uninit(),
-            unix_timestamp_nanos: MaybeUninit::uninit(),
+            minute: OptionRangedU8::None,
+            second: OptionRangedU8::None,
+            subsecond: OptionRangedU32::None,
+            offset_hour: OptionRangedI8::None,
+            offset_minute: OptionRangedI8::None,
+            offset_second: OptionRangedI8::None,
+            unix_timestamp_nanos: OptionRangedI128::None,
+            offset_is_negative: None,
+            leap_second_allowed: false,
         }
     }
 
@@ -283,11 +282,11 @@ impl Parsed {
                 let ParsedItem(remaining, value) =
                     parse_week_number(input, modifiers).ok_or(InvalidComponent("week number"))?;
                 match modifiers.repr {
-                    WeekNumberRepr::Iso => {
+                    modifier::WeekNumberRepr::Iso => {
                         NonZeroU8::new(value).and_then(|value| self.set_iso_week_number(value))
                     }
-                    WeekNumberRepr::Sunday => self.set_sunday_week_number(value),
-                    WeekNumberRepr::Monday => self.set_monday_week_number(value),
+                    modifier::WeekNumberRepr::Sunday => self.set_sunday_week_number(value),
+                    modifier::WeekNumberRepr::Monday => self.set_monday_week_number(value),
                 }
                 .ok_or(InvalidComponent("week number"))?;
                 Ok(remaining)
@@ -296,10 +295,14 @@ impl Parsed {
                 let ParsedItem(remaining, value) =
                     parse_year(input, modifiers).ok_or(InvalidComponent("year"))?;
                 match (modifiers.iso_week_based, modifiers.repr) {
-                    (false, YearRepr::Full) => self.set_year(value),
-                    (false, YearRepr::LastTwo) => self.set_year_last_two(value as _),
-                    (true, YearRepr::Full) => self.set_iso_year(value),
-                    (true, YearRepr::LastTwo) => self.set_iso_year_last_two(value as _),
+                    (false, modifier::YearRepr::Full) => self.set_year(value),
+                    (false, modifier::YearRepr::LastTwo) => {
+                        self.set_year_last_two(value.cast_unsigned().truncate())
+                    }
+                    (true, modifier::YearRepr::Full) => self.set_iso_year(value),
+                    (true, modifier::YearRepr::LastTwo) => {
+                        self.set_iso_year_last_two(value.cast_unsigned().truncate())
+                    }
                 }
                 .ok_or(InvalidComponent("year"))?;
                 Ok(remaining)
@@ -332,9 +335,9 @@ impl Parsed {
             Component::OffsetHour(modifiers) => parse_offset_hour(input, modifiers)
                 .and_then(|parsed| {
                     parsed.consume_value(|(value, is_negative)| {
-                        self.set_flag(Self::OFFSET_IS_NEGATIVE_FLAG_IS_INITIALIZED, true);
-                        self.set_flag(Self::OFFSET_IS_NEGATIVE_FLAG, is_negative);
-                        self.set_offset_hour(value)
+                        self.set_offset_hour(value)?;
+                        self.offset_is_negative = Some(is_negative);
+                        Some(())
                     })
                 })
                 .ok_or(InvalidComponent("offset hour")),
@@ -356,70 +359,103 @@ impl Parsed {
                     parsed.consume_value(|value| self.set_unix_timestamp_nanos(value))
                 })
                 .ok_or(InvalidComponent("unix_timestamp")),
+            Component::End(modifiers) => parse_end(input, modifiers)
+                .map(ParsedItem::<()>::into_inner)
+                .ok_or(error::ParseFromDescription::UnexpectedTrailingCharacters),
         }
     }
-
-    
-    const fn get_flag(&self, flag: Flag) -> bool {
-        self.flags & flag == flag
-    }
-
-    
-    pub(super) fn set_flag(&mut self, flag: Flag, value: bool) {
-        if value {
-            self.flags |= flag;
-        } else {
-            self.flags &= !flag;
-        }
-    }
-}
-
-
-macro_rules! getters {
-    ($($(@$flag:ident)? $name:ident: $ty:ty),+ $(,)?) => {$(
-        getters!(! $(@$flag)? $name: $ty);
-    )*};
-    (! $name:ident : $ty:ty) => {
-        /// Obtain the named component.
-        pub const fn $name(&self) -> Option<$ty> {
-            self.$name
-        }
-    };
-    (! @$flag:ident $name:ident : $ty:ty) => {
-        /// Obtain the named component.
-        pub const fn $name(&self) -> Option<$ty> {
-            if !self.get_flag(Self::$flag) {
-                None
-            } else {
-                // SAFETY: We just checked if the field is present.
-                Some(unsafe { self.$name.assume_init() })
-            }
-        }
-    };
 }
 
 
 impl Parsed {
-    getters! {
-        @YEAR_FLAG year: i32,
-        @YEAR_LAST_TWO_FLAG year_last_two: u8,
-        @ISO_YEAR_FLAG iso_year: i32,
-        @ISO_YEAR_LAST_TWO_FLAG iso_year_last_two: u8,
-        month: Month,
-        @SUNDAY_WEEK_NUMBER_FLAG sunday_week_number: u8,
-        @MONDAY_WEEK_NUMBER_FLAG monday_week_number: u8,
-        iso_week_number: NonZeroU8,
-        weekday: Weekday,
-        ordinal: NonZeroU16,
-        day: NonZeroU8,
-        @HOUR_24_FLAG hour_24: u8,
-        hour_12: NonZeroU8,
-        hour_12_is_pm: bool,
-        @MINUTE_FLAG minute: u8,
-        @SECOND_FLAG second: u8,
-        @SUBSECOND_FLAG subsecond: u32,
-        @OFFSET_HOUR_FLAG offset_hour: i8,
-        @UNIX_TIMESTAMP_NANOS_FLAG unix_timestamp_nanos: i128,
+    
+    pub const fn year(&self) -> Option<i32> {
+        self.year.get_primitive()
+    }
+
+    
+    pub const fn year_last_two(&self) -> Option<u8> {
+        self.year_last_two.get_primitive()
+    }
+
+    
+    pub const fn iso_year(&self) -> Option<i32> {
+        self.iso_year.get_primitive()
+    }
+
+    
+    pub const fn iso_year_last_two(&self) -> Option<u8> {
+        self.iso_year_last_two.get_primitive()
+    }
+
+    
+    pub const fn month(&self) -> Option<Month> {
+        self.month
+    }
+
+    
+    pub const fn sunday_week_number(&self) -> Option<u8> {
+        self.sunday_week_number.get_primitive()
+    }
+
+    
+    pub const fn monday_week_number(&self) -> Option<u8> {
+        self.monday_week_number.get_primitive()
+    }
+
+    
+    pub const fn iso_week_number(&self) -> Option<NonZeroU8> {
+        NonZeroU8::new(const_try_opt!(self.iso_week_number.get_primitive()))
+    }
+
+    
+    pub const fn weekday(&self) -> Option<Weekday> {
+        self.weekday
+    }
+
+    
+    pub const fn ordinal(&self) -> Option<NonZeroU16> {
+        NonZeroU16::new(const_try_opt!(self.ordinal.get_primitive()))
+    }
+
+    
+    pub const fn day(&self) -> Option<NonZeroU8> {
+        NonZeroU8::new(const_try_opt!(self.day.get_primitive()))
+    }
+
+    
+    pub const fn hour_24(&self) -> Option<u8> {
+        self.hour_24.get_primitive()
+    }
+
+    
+    pub const fn hour_12(&self) -> Option<NonZeroU8> {
+        NonZeroU8::new(const_try_opt!(self.hour_12.get_primitive()))
+    }
+
+    
+    pub const fn hour_12_is_pm(&self) -> Option<bool> {
+        self.hour_12_is_pm
+    }
+
+    
+    pub const fn minute(&self) -> Option<u8> {
+        self.minute.get_primitive()
+    }
+
+    
+    pub const fn second(&self) -> Option<u8> {
+        self.second.get_primitive()
+    }
+
+    
+    pub const fn subsecond(&self) -> Option<u32> {
+        self.subsecond.get_primitive()
+    }
+
+    
+    pub const fn offset_hour(&self) -> Option<i8> {
+        self.offset_hour.get_primitive()
     }
 
     
@@ -431,19 +467,10 @@ impl Parsed {
 
     
     pub const fn offset_minute_signed(&self) -> Option<i8> {
-        if !self.get_flag(Self::OFFSET_MINUTE_FLAG) {
-            None
-        } else {
-            
-            let value = unsafe { self.offset_minute.assume_init() };
-
-            if self.get_flag(Self::OFFSET_IS_NEGATIVE_FLAG_IS_INITIALIZED)
-                && (value.is_negative() != self.get_flag(Self::OFFSET_IS_NEGATIVE_FLAG))
-            {
-                Some(-value)
-            } else {
-                Some(value)
-            }
+        match (self.offset_minute.get_primitive(), self.offset_is_negative) {
+            (Some(offset_minute), Some(true)) => Some(-offset_minute),
+            (Some(offset_minute), _) => Some(offset_minute),
+            (None, _) => None,
         }
     }
 
@@ -456,45 +483,28 @@ impl Parsed {
 
     
     pub const fn offset_second_signed(&self) -> Option<i8> {
-        if !self.get_flag(Self::OFFSET_SECOND_FLAG) {
-            None
-        } else {
-            
-            let value = unsafe { self.offset_second.assume_init() };
-
-            if self.get_flag(Self::OFFSET_IS_NEGATIVE_FLAG_IS_INITIALIZED)
-                && (value.is_negative() != self.get_flag(Self::OFFSET_IS_NEGATIVE_FLAG))
-            {
-                Some(-value)
-            } else {
-                Some(value)
-            }
+        match (self.offset_second.get_primitive(), self.offset_is_negative) {
+            (Some(offset_second), Some(true)) => Some(-offset_second),
+            (Some(offset_second), _) => Some(offset_second),
+            (None, _) => None,
         }
+    }
+
+    
+    pub const fn unix_timestamp_nanos(&self) -> Option<i128> {
+        self.unix_timestamp_nanos.get_primitive()
     }
 }
 
 
-
-
 macro_rules! setters {
-    ($($(@$flag:ident)? $setter_name:ident $name:ident: $ty:ty),+ $(,)?) => {$(
-        setters!(! $(@$flag)? $setter_name $name: $ty);
+    ($($name:ident $setter:ident $builder:ident $type:ty;)*) => {$(
+        #[doc = concat!("Set the `", stringify!($setter), "` component.")]
+        pub fn $setter(&mut self, value: $type) -> Option<()> {
+            *self = self.$builder(value)?;
+            Some(())
+        }
     )*};
-    (! $setter_name:ident $name:ident : $ty:ty) => {
-        /// Set the named component.
-        pub fn $setter_name(&mut self, value: $ty) -> Option<()> {
-            self.$name = Some(value);
-            Some(())
-        }
-    };
-    (! @$flag:ident $setter_name:ident $name:ident : $ty:ty) => {
-        /// Set the named component.
-        pub fn $setter_name(&mut self, value: $ty) -> Option<()> {
-            self.$name = MaybeUninit::new(value);
-            self.set_flag(Self::$flag, true);
-            Some(())
-        }
-    };
 }
 
 
@@ -503,25 +513,27 @@ macro_rules! setters {
 
 impl Parsed {
     setters! {
-        @YEAR_FLAG set_year year: i32,
-        @YEAR_LAST_TWO_FLAG set_year_last_two year_last_two: u8,
-        @ISO_YEAR_FLAG set_iso_year iso_year: i32,
-        @ISO_YEAR_LAST_TWO_FLAG set_iso_year_last_two iso_year_last_two: u8,
-        set_month month: Month,
-        @SUNDAY_WEEK_NUMBER_FLAG set_sunday_week_number sunday_week_number: u8,
-        @MONDAY_WEEK_NUMBER_FLAG set_monday_week_number monday_week_number: u8,
-        set_iso_week_number iso_week_number: NonZeroU8,
-        set_weekday weekday: Weekday,
-        set_ordinal ordinal: NonZeroU16,
-        set_day day: NonZeroU8,
-        @HOUR_24_FLAG set_hour_24 hour_24: u8,
-        set_hour_12 hour_12: NonZeroU8,
-        set_hour_12_is_pm hour_12_is_pm: bool,
-        @MINUTE_FLAG set_minute minute: u8,
-        @SECOND_FLAG set_second second: u8,
-        @SUBSECOND_FLAG set_subsecond subsecond: u32,
-        @OFFSET_HOUR_FLAG set_offset_hour offset_hour: i8,
-        @UNIX_TIMESTAMP_NANOS_FLAG set_unix_timestamp_nanos unix_timestamp_nanos: i128,
+        year set_year with_year i32;
+        year_last_two set_year_last_two with_year_last_two u8;
+        iso_year set_iso_year with_iso_year i32;
+        iso_year_last_two set_iso_year_last_two with_iso_year_last_two u8;
+        month set_month with_month Month;
+        sunday_week_number set_sunday_week_number with_sunday_week_number u8;
+        monday_week_number set_monday_week_number with_monday_week_number u8;
+        iso_week_number set_iso_week_number with_iso_week_number NonZeroU8;
+        weekday set_weekday with_weekday Weekday;
+        ordinal set_ordinal with_ordinal NonZeroU16;
+        day set_day with_day NonZeroU8;
+        hour_24 set_hour_24 with_hour_24 u8;
+        hour_12 set_hour_12 with_hour_12 NonZeroU8;
+        hour_12_is_pm set_hour_12_is_pm with_hour_12_is_pm bool;
+        minute set_minute with_minute u8;
+        second set_second with_second u8;
+        subsecond set_subsecond with_subsecond u32;
+        offset_hour set_offset_hour with_offset_hour i8;
+        offset_minute set_offset_minute_signed with_offset_minute_signed i8;
+        offset_second set_offset_second_signed with_offset_second_signed i8;
+        unix_timestamp_nanos set_unix_timestamp_nanos with_unix_timestamp_nanos i128;
     }
 
     
@@ -531,18 +543,11 @@ impl Parsed {
         note = "use `parsed.set_offset_minute_signed()` instead"
     )]
     pub fn set_offset_minute(&mut self, value: u8) -> Option<()> {
-        if value > i8::MAX as u8 {
+        if value > i8::MAX.cast_unsigned() {
             None
         } else {
-            self.set_offset_minute_signed(value as _)
+            self.set_offset_minute_signed(value.cast_signed())
         }
-    }
-
-    
-    pub fn set_offset_minute_signed(&mut self, value: i8) -> Option<()> {
-        self.offset_minute = MaybeUninit::new(value);
-        self.set_flag(Self::OFFSET_MINUTE_FLAG, true);
-        Some(())
     }
 
     
@@ -552,43 +557,12 @@ impl Parsed {
         note = "use `parsed.set_offset_second_signed()` instead"
     )]
     pub fn set_offset_second(&mut self, value: u8) -> Option<()> {
-        if value > i8::MAX as u8 {
+        if value > i8::MAX.cast_unsigned() {
             None
         } else {
-            self.set_offset_second_signed(value as _)
+            self.set_offset_second_signed(value.cast_signed())
         }
     }
-
-    
-    pub fn set_offset_second_signed(&mut self, value: i8) -> Option<()> {
-        self.offset_second = MaybeUninit::new(value);
-        self.set_flag(Self::OFFSET_SECOND_FLAG, true);
-        Some(())
-    }
-}
-
-
-
-
-macro_rules! builders {
-    ($($(@$flag:ident)? $builder_name:ident $name:ident: $ty:ty),+ $(,)?) => {$(
-        builders!(! $(@$flag)? $builder_name $name: $ty);
-    )*};
-    (! $builder_name:ident $name:ident : $ty:ty) => {
-        /// Set the named component and return `self`.
-        pub const fn $builder_name(mut self, value: $ty) -> Option<Self> {
-            self.$name = Some(value);
-            Some(self)
-        }
-    };
-    (! @$flag:ident $builder_name:ident $name:ident : $ty:ty) => {
-        /// Set the named component and return `self`.
-        pub const fn $builder_name(mut self, value: $ty) -> Option<Self> {
-            self.$name = MaybeUninit::new(value);
-            self.flags |= Self::$flag;
-            Some(self)
-        }
-    };
 }
 
 
@@ -596,26 +570,112 @@ macro_rules! builders {
 
 
 impl Parsed {
-    builders! {
-        @YEAR_FLAG with_year year: i32,
-        @YEAR_LAST_TWO_FLAG with_year_last_two year_last_two: u8,
-        @ISO_YEAR_FLAG with_iso_year iso_year: i32,
-        @ISO_YEAR_LAST_TWO_FLAG with_iso_year_last_two iso_year_last_two: u8,
-        with_month month: Month,
-        @SUNDAY_WEEK_NUMBER_FLAG with_sunday_week_number sunday_week_number: u8,
-        @MONDAY_WEEK_NUMBER_FLAG with_monday_week_number monday_week_number: u8,
-        with_iso_week_number iso_week_number: NonZeroU8,
-        with_weekday weekday: Weekday,
-        with_ordinal ordinal: NonZeroU16,
-        with_day day: NonZeroU8,
-        @HOUR_24_FLAG with_hour_24 hour_24: u8,
-        with_hour_12 hour_12: NonZeroU8,
-        with_hour_12_is_pm hour_12_is_pm: bool,
-        @MINUTE_FLAG with_minute minute: u8,
-        @SECOND_FLAG with_second second: u8,
-        @SUBSECOND_FLAG with_subsecond subsecond: u32,
-        @OFFSET_HOUR_FLAG with_offset_hour offset_hour: i8,
-        @UNIX_TIMESTAMP_NANOS_FLAG with_unix_timestamp_nanos unix_timestamp_nanos: i128,
+    
+    pub const fn with_year(mut self, value: i32) -> Option<Self> {
+        self.year = OptionRangedI32::Some(const_try_opt!(RangedI32::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_year_last_two(mut self, value: u8) -> Option<Self> {
+        self.year_last_two = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_iso_year(mut self, value: i32) -> Option<Self> {
+        self.iso_year = OptionRangedI32::Some(const_try_opt!(RangedI32::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_iso_year_last_two(mut self, value: u8) -> Option<Self> {
+        self.iso_year_last_two = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_month(mut self, value: Month) -> Option<Self> {
+        self.month = Some(value);
+        Some(self)
+    }
+
+    
+    pub const fn with_sunday_week_number(mut self, value: u8) -> Option<Self> {
+        self.sunday_week_number = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_monday_week_number(mut self, value: u8) -> Option<Self> {
+        self.monday_week_number = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_iso_week_number(mut self, value: NonZeroU8) -> Option<Self> {
+        self.iso_week_number = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value.get())));
+        Some(self)
+    }
+
+    
+    pub const fn with_weekday(mut self, value: Weekday) -> Option<Self> {
+        self.weekday = Some(value);
+        Some(self)
+    }
+
+    
+    pub const fn with_ordinal(mut self, value: NonZeroU16) -> Option<Self> {
+        self.ordinal = OptionRangedU16::Some(const_try_opt!(RangedU16::new(value.get())));
+        Some(self)
+    }
+
+    
+    pub const fn with_day(mut self, value: NonZeroU8) -> Option<Self> {
+        self.day = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value.get())));
+        Some(self)
+    }
+
+    
+    pub const fn with_hour_24(mut self, value: u8) -> Option<Self> {
+        self.hour_24 = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_hour_12(mut self, value: NonZeroU8) -> Option<Self> {
+        self.hour_12 = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value.get())));
+        Some(self)
+    }
+
+    
+    pub const fn with_hour_12_is_pm(mut self, value: bool) -> Option<Self> {
+        self.hour_12_is_pm = Some(value);
+        Some(self)
+    }
+
+    
+    pub const fn with_minute(mut self, value: u8) -> Option<Self> {
+        self.minute = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_second(mut self, value: u8) -> Option<Self> {
+        self.second = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_subsecond(mut self, value: u32) -> Option<Self> {
+        self.subsecond = OptionRangedU32::Some(const_try_opt!(RangedU32::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_offset_hour(mut self, value: i8) -> Option<Self> {
+        self.offset_hour = OptionRangedI8::Some(const_try_opt!(RangedI8::new(value)));
+        Some(self)
     }
 
     
@@ -634,8 +694,7 @@ impl Parsed {
 
     
     pub const fn with_offset_minute_signed(mut self, value: i8) -> Option<Self> {
-        self.offset_minute = MaybeUninit::new(value);
-        self.flags |= Self::OFFSET_MINUTE_FLAG;
+        self.offset_minute = OptionRangedI8::Some(const_try_opt!(RangedI8::new(value)));
         Some(self)
     }
 
@@ -655,8 +714,13 @@ impl Parsed {
 
     
     pub const fn with_offset_second_signed(mut self, value: i8) -> Option<Self> {
-        self.offset_second = MaybeUninit::new(value);
-        self.flags |= Self::OFFSET_SECOND_FLAG;
+        self.offset_second = OptionRangedI8::Some(const_try_opt!(RangedI8::new(value)));
+        Some(self)
+    }
+
+    
+    pub const fn with_unix_timestamp_nanos(mut self, value: i128) -> Option<Self> {
+        self.unix_timestamp_nanos = OptionRangedI128::Some(const_try_opt!(RangedI128::new(value)));
         Some(self)
     }
 }
@@ -682,7 +746,8 @@ impl TryFrom<Parsed> for Date {
         
         
         const fn adjustment(year: i32) -> i16 {
-            match Date::__from_ordinal_date_unchecked(year, 1).weekday() {
+            
+            match unsafe { Date::__from_ordinal_date_unchecked(year, 1) }.weekday() {
                 Weekday::Monday => 7,
                 Weekday::Tuesday => 1,
                 Weekday::Wednesday => 2,
@@ -706,15 +771,17 @@ impl TryFrom<Parsed> for Date {
             )?),
             (year, sunday_week_number, weekday) => Ok(Self::from_ordinal_date(
                 year,
-                (sunday_week_number as i16 * 7 + weekday.number_days_from_sunday() as i16
+                (sunday_week_number.cast_signed().extend::<i16>() * 7
+                    + weekday.number_days_from_sunday().cast_signed().extend::<i16>()
                     - adjustment(year)
-                    + 1) as u16,
+                    + 1).cast_unsigned(),
             )?),
             (year, monday_week_number, weekday) => Ok(Self::from_ordinal_date(
                 year,
-                (monday_week_number as i16 * 7 + weekday.number_days_from_monday() as i16
+                (monday_week_number.cast_signed().extend::<i16>() * 7
+                    + weekday.number_days_from_monday().cast_signed().extend::<i16>()
                     - adjustment(year)
-                    + 1) as u16,
+                    + 1).cast_unsigned(),
             )?),
             _ => Err(InsufficientInformation),
         }
@@ -733,6 +800,7 @@ impl TryFrom<Parsed> for Time {
             (_, Some(hour), Some(true)) => hour.get() + 12,
             _ => return Err(InsufficientInformation),
         };
+
         if parsed.hour_24().is_none()
             && parsed.hour_12().is_some()
             && parsed.hour_12_is_pm().is_some()
@@ -742,10 +810,17 @@ impl TryFrom<Parsed> for Time {
         {
             return Ok(Self::from_hms_nano(hour, 0, 0, 0)?);
         }
-        let minute = parsed.minute().ok_or(InsufficientInformation)?;
-        let second = parsed.second().unwrap_or(0);
-        let subsecond = parsed.subsecond().unwrap_or(0);
-        Ok(Self::from_hms_nano(hour, minute, second, subsecond)?)
+
+        
+        match (parsed.minute(), parsed.second(), parsed.subsecond()) {
+            (None, None, None) => Ok(Self::from_hms_nano(hour, 0, 0, 0)?),
+            (Some(minute), None, None) => Ok(Self::from_hms_nano(hour, minute, 0, 0)?),
+            (Some(minute), Some(second), None) => Ok(Self::from_hms_nano(hour, minute, second, 0)?),
+            (Some(minute), Some(second), Some(subsecond)) => {
+                Ok(Self::from_hms_nano(hour, minute, second, subsecond)?)
+            }
+            _ => Err(InsufficientInformation),
+        }
     }
 }
 
@@ -772,57 +847,45 @@ impl TryFrom<Parsed> for UtcOffset {
 }
 
 impl TryFrom<Parsed> for PrimitiveDateTime {
-    type Error = <DateTime<offset_kind::None> as TryFrom<Parsed>>::Error;
+    type Error = error::TryFromParsed;
 
     fn try_from(parsed: Parsed) -> Result<Self, Self::Error> {
-        parsed.try_into().map(Self)
+        Ok(Self::new(parsed.try_into()?, parsed.try_into()?))
     }
 }
 
 impl TryFrom<Parsed> for OffsetDateTime {
-    type Error = <DateTime<offset_kind::Fixed> as TryFrom<Parsed>>::Error;
-
-    fn try_from(parsed: Parsed) -> Result<Self, Self::Error> {
-        parsed.try_into().map(Self)
-    }
-}
-
-impl<O: MaybeOffset> TryFrom<Parsed> for DateTime<O> {
     type Error = error::TryFromParsed;
 
-    #[allow(clippy::unwrap_in_result)] 
     fn try_from(mut parsed: Parsed) -> Result<Self, Self::Error> {
-        if O::HAS_LOGICAL_OFFSET {
-            if let Some(timestamp) = parsed.unix_timestamp_nanos() {
-                let DateTime { date, time, offset } =
-                    DateTime::<offset_kind::Fixed>::from_unix_timestamp_nanos(timestamp)?;
-                return Ok(Self {
-                    date,
-                    time,
-                    offset: maybe_offset_from_offset::<O>(offset),
-                });
+        if let Some(timestamp) = parsed.unix_timestamp_nanos() {
+            let mut value = Self::from_unix_timestamp_nanos(timestamp)?;
+            if let Some(subsecond) = parsed.subsecond() {
+                value = value.replace_nanosecond(subsecond)?;
             }
+            return Ok(value);
         }
 
         
         
         
-        let leap_second_input =
-            if parsed.get_flag(Parsed::LEAP_SECOND_ALLOWED_FLAG) && parsed.second() == Some(60) {
-                parsed.set_second(59).expect("59 is a valid second");
-                parsed
-                    .set_subsecond(999_999_999)
-                    .expect("999_999_999 is a valid subsecond");
-                true
-            } else {
-                false
-            };
-
-        let dt = Self {
-            date: Date::try_from(parsed)?,
-            time: Time::try_from(parsed)?,
-            offset: O::try_from_parsed(parsed)?,
+        let leap_second_input = if parsed.leap_second_allowed && parsed.second() == Some(60) {
+            if parsed.set_second(59).is_none() {
+                bug!("59 is a valid second");
+            }
+            if parsed.set_subsecond(999_999_999).is_none() {
+                bug!("999_999_999 is a valid subsecond");
+            }
+            true
+        } else {
+            false
         };
+
+        let dt = Self::new_in_offset(
+            Date::try_from(parsed)?,
+            Time::try_from(parsed)?,
+            UtcOffset::try_from(parsed)?,
+        );
 
         if leap_second_input && !dt.is_valid_leap_second_stand_in() {
             return Err(error::TryFromParsed::ComponentRange(

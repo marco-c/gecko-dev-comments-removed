@@ -280,6 +280,13 @@ pub struct UnixTimestamp {
 }
 
 
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct End;
+
+
 macro_rules! if_pub {
     (pub $(#[$attr:meta])*; $($x:tt)*) => {
         $(#[$attr])*
@@ -385,10 +392,10 @@ impl_const_default! {
     /// Creates a modifier that indicates the stringified value contains [one or more
     /// digits](SubsecondDigits::OneOrMore).
     @pub Subsecond => Self { digits: SubsecondDigits::OneOrMore };
-    /// Creates a modifier that indicates the value uses the `+` sign for all positive values
-    /// and is [padded with zeroes](Padding::Zero).
+    /// Creates a modifier that indicates the value only uses a sign for negative values and is
+    /// [padded with zeroes](Padding::Zero).
     @pub OffsetHour => Self {
-        sign_is_mandatory: true,
+        sign_is_mandatory: false,
         padding: Padding::Zero,
     };
     /// Creates a modifier that indicates the value is [padded with zeroes](Padding::Zero).
@@ -406,4 +413,6 @@ impl_const_default! {
         precision: UnixTimestampPrecision::Second,
         sign_is_mandatory: false,
     };
+    /// Creates a modifier used to represent the end of input.
+    @pub End => End;
 }
