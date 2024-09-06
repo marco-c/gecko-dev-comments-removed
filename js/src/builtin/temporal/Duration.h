@@ -99,6 +99,12 @@ bool IsValidDuration(const Duration& duration);
 
 
 
+bool IsValidDuration(const DateDuration& duration);
+
+
+
+
+
 bool IsValidDuration(const NormalizedDuration& duration);
 #endif
 
@@ -107,6 +113,12 @@ bool IsValidDuration(const NormalizedDuration& duration);
 
 
 bool ThrowIfInvalidDuration(JSContext* cx, const Duration& duration);
+
+
+
+
+
+bool ThrowIfInvalidDuration(JSContext* cx, const DateDuration& duration);
 
 
 
@@ -186,7 +198,7 @@ bool Add24HourDaysToNormalizedTimeDuration(JSContext* cx,
 
 inline NormalizedDuration CreateNormalizedDurationRecord(
     const DateDuration& date, const NormalizedTimeDuration& time) {
-  MOZ_ASSERT(IsValidDuration(date.toDuration()));
+  MOZ_ASSERT(IsValidDuration(date));
   MOZ_ASSERT(IsValidNormalizedTimeDuration(time));
 #ifdef DEBUG
   int64_t dateValues = date.years | date.months | date.weeks | date.days;

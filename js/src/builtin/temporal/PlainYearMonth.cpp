@@ -532,12 +532,13 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  auto duration = dateDuration.toDuration();
+  auto duration =
+      Duration{double(dateDuration.years), double(dateDuration.months)};
   if (operation == TemporalDifference::Since) {
     duration = duration.negate();
   }
 
-  auto* obj = CreateTemporalDuration(cx, {duration.years, duration.months});
+  auto* obj = CreateTemporalDuration(cx, duration);
   if (!obj) {
     return false;
   }
@@ -653,7 +654,7 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
     
 
     
-    Duration oneMonthDuration = {0, 1};
+    auto oneMonthDuration = DateDuration{0, 1};
 
     
     Rooted<Wrapped<PlainDateObject*>> nextMonth(

@@ -148,6 +148,30 @@ int32_t js::temporal::DurationSign(const Duration& duration) {
 
 
 
+
+static int32_t DurationSign(const DateDuration& duration) {
+  auto& [years, months, weeks, days] = duration;
+
+  
+  for (auto v : {years, months, weeks, days}) {
+    
+    if (v < 0) {
+      return -1;
+    }
+
+    
+    if (v > 0) {
+      return 1;
+    }
+  }
+
+  
+  return 0;
+}
+
+
+
+
 static NormalizedTimeDuration NormalizeNanoseconds(const Int96& nanoseconds) {
   
   auto [seconds, nanos] = nanoseconds / ToNanoseconds(TemporalUnit::Second);
@@ -493,11 +517,11 @@ bool js::temporal::Add24HourDaysToNormalizedTimeDuration(
 bool js::temporal::CombineDateAndNormalizedTimeDuration(
     JSContext* cx, const DateDuration& date, const NormalizedTimeDuration& time,
     NormalizedDuration* result) {
-  MOZ_ASSERT(IsValidDuration(date.toDuration()));
+  MOZ_ASSERT(IsValidDuration(date));
   MOZ_ASSERT(IsValidNormalizedTimeDuration(time));
 
   
-  int32_t dateSign = ::DurationSign(date.toDuration());
+  int32_t dateSign = ::DurationSign(date);
 
   
   int32_t timeSign = NormalizedTimeDurationSign(time);
@@ -594,11 +618,20 @@ bool js::temporal::IsValidDuration(const Duration& duration) {
 
 
 
+bool js::temporal::IsValidDuration(const DateDuration& duration) {
+  return IsValidDuration(duration.toDuration());
+}
+
+
+
+
+
 bool js::temporal::IsValidDuration(const NormalizedDuration& duration) {
-  auto date = duration.date.toDuration();
-  return IsValidDuration(date) &&
+  return IsValidDuration(duration.date) &&
          IsValidNormalizedTimeDuration(duration.time) &&
-         (DurationSign(date) * NormalizedTimeDurationSign(duration.time) >= 0);
+         (::DurationSign(duration.date) *
+              NormalizedTimeDurationSign(duration.time) >=
+          0);
 }
 #endif
 
@@ -714,12 +747,12 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
 
 
 
-static bool ThrowIfInvalidDuration(JSContext* cx,
-                                   const DateDuration& duration) {
+bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
+                                          const DateDuration& duration) {
   auto& [years, months, weeks, days] = duration;
 
   
-  int32_t sign = DurationSign(duration.toDuration());
+  int32_t sign = ::DurationSign(duration);
 
   auto throwIfInvalid = [&](int64_t v, const char* name) {
     
@@ -777,7 +810,7 @@ static bool ThrowIfInvalidDuration(JSContext* cx,
     return false;
   }
 
-  MOZ_ASSERT(IsValidDuration(duration.toDuration()));
+  MOZ_ASSERT(IsValidDuration(duration));
 
   
   return true;
@@ -1175,7 +1208,7 @@ int32_t js::temporal::DaysUntil(const PlainDate& earlier,
 
 static bool MoveRelativeDate(
     JSContext* cx, Handle<CalendarRecord> calendar,
-    Handle<Wrapped<PlainDateObject*>> relativeTo, const Duration& duration,
+    Handle<Wrapped<PlainDateObject*>> relativeTo, const DateDuration& duration,
     MutableHandle<Wrapped<PlainDateObject*>> relativeToResult,
     int32_t* daysResult) {
   auto* unwrappedRelativeTo = relativeTo.unwrap(cx);
@@ -1675,7 +1708,7 @@ static bool UnbalanceDateDurationRelative(
     JSContext* cx, const DateDuration& duration, TemporalUnit largestUnit,
     Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
     Handle<CalendarRecord> calendar, DateDuration* result) {
-  MOZ_ASSERT(IsValidDuration(duration.toDuration()));
+  MOZ_ASSERT(IsValidDuration(duration));
 
   auto [years, months, weeks, days] = duration;
 
@@ -1704,7 +1737,7 @@ static bool UnbalanceDateDurationRelative(
         CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
 
     
-    auto yearsDuration = Duration{double(years)};
+    auto yearsDuration = DateDuration{years};
 
     
     Rooted<Wrapped<PlainDateObject*>> later(
@@ -1740,7 +1773,7 @@ static bool UnbalanceDateDurationRelative(
         CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
     
-    auto yearsMonthsDuration = Duration{double(years), double(months)};
+    auto yearsMonthsDuration = DateDuration{years, months};
 
     
     auto later =
@@ -1778,8 +1811,7 @@ static bool UnbalanceDateDurationRelative(
       CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
   
-  auto yearsMonthsWeeksDuration =
-      Duration{double(years), double(months), double(weeks)};
+  auto yearsMonthsWeeksDuration = DateDuration{years, months, weeks};
 
   
   auto later =
@@ -1811,7 +1843,7 @@ static bool UnbalanceDateDurationRelative(JSContext* cx,
                                           const DateDuration& duration,
                                           TemporalUnit largestUnit,
                                           DateDuration* result) {
-  MOZ_ASSERT(IsValidDuration(duration.toDuration()));
+  MOZ_ASSERT(IsValidDuration(duration));
 
   
 
@@ -1839,7 +1871,7 @@ static bool BalanceDateDurationRelative(
     TemporalUnit smallestUnit,
     Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
     Handle<CalendarRecord> calendar, DateDuration* result) {
-  MOZ_ASSERT(IsValidDuration(duration.toDuration()));
+  MOZ_ASSERT(IsValidDuration(duration));
   MOZ_ASSERT(largestUnit <= smallestUnit);
 
   auto [years, months, weeks, days] = duration;
@@ -1880,7 +1912,8 @@ static bool BalanceDateDurationRelative(
 
   
 
-  auto untilAddedDate = [&](const Duration& duration, Duration* untilResult) {
+  auto untilAddedDate = [&](const DateDuration& duration,
+                            Duration* untilResult) {
     Rooted<Wrapped<PlainDateObject*>> later(
         cx, AddDate(cx, calendar, plainRelativeTo, duration));
     if (!later) {
@@ -1899,7 +1932,7 @@ static bool BalanceDateDurationRelative(
       MOZ_ASSERT(days == 0);
 
       
-      auto yearsMonthsDuration = Duration{double(years), double(months)};
+      auto yearsMonthsDuration = DateDuration{years, months};
 
       
       Duration untilResult;
@@ -1914,8 +1947,7 @@ static bool BalanceDateDurationRelative(
     }
 
     
-    auto yearsMonthsWeeksDaysDuration =
-        Duration{double(years), double(months), double(weeks), double(days)};
+    auto& yearsMonthsWeeksDaysDuration = duration;
 
     
     Duration untilResult;
@@ -1949,8 +1981,7 @@ static bool BalanceDateDurationRelative(
     }
 
     
-    auto monthsWeeksDaysDuration =
-        Duration{0, double(months), double(weeks), double(days)};
+    auto& monthsWeeksDaysDuration = duration;
 
     
     Duration untilResult;
@@ -1978,7 +2009,7 @@ static bool BalanceDateDurationRelative(
   MOZ_ASSERT(months == 0);
 
   
-  auto weeksDaysDuration = Duration{0, 0, double(weeks), double(days)};
+  auto& weeksDaysDuration = duration;
 
   
   Duration untilResult;
@@ -2096,10 +2127,10 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   
 
   
-  auto dateDuration1 = Duration{one.years, one.months, one.weeks, one.days};
+  auto dateDuration1 = one.toDateDuration();
 
   
-  auto dateDuration2 = Duration{two.years, two.months, two.weeks, two.days};
+  auto dateDuration2 = two.toDateDuration();
 
   
 
@@ -3456,7 +3487,7 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   auto [years, months, weeks, days] = duration.date;
 
   
-  Duration yearsDuration = {double(years)};
+  auto yearsDuration = DateDuration{years};
 
   
   auto yearsLater = AddDate(cx, calendar, dateRelativeTo, yearsDuration);
@@ -3469,7 +3500,7 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx, yearsLater);
 
   
-  Duration yearsMonthsWeeks = {double(years), double(months), double(weeks)};
+  auto yearsMonthsWeeks = DateDuration{years, months, weeks};
 
   
   PlainDate yearsMonthsWeeksLater;
@@ -3518,7 +3549,7 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   years += yearsPassed;
 
   
-  Duration yearsPassedDuration = {double(yearsPassed)};
+  auto yearsPassedDuration = DateDuration{yearsPassed};
 
   
   int32_t daysPassed;
@@ -3532,10 +3563,10 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   fractionalDays -= daysPassed;
 
   
-  double sign = fractionalDays.sign() < 0 ? -1 : 1;
+  int32_t sign = fractionalDays.sign() < 0 ? -1 : 1;
 
   
-  Duration oneYear = {sign};
+  auto oneYear = DateDuration{sign};
 
   
   Rooted<Wrapped<PlainDateObject*>> moveResultIgnored(cx);
@@ -3597,7 +3628,7 @@ static bool RoundDurationMonth(JSContext* cx,
   auto [years, months, weeks, days] = duration.date;
 
   
-  Duration yearsMonths = {double(years), double(months)};
+  auto yearsMonths = DateDuration{years, months};
 
   
   auto yearsMonthsLater = AddDate(cx, calendar, dateRelativeTo, yearsMonths);
@@ -3610,7 +3641,7 @@ static bool RoundDurationMonth(JSContext* cx,
   Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx, yearsMonthsLater);
 
   
-  Duration yearsMonthsWeeks = {double(years), double(months), double(weeks)};
+  auto yearsMonthsWeeks = DateDuration{years, months, weeks};
 
   
   PlainDate yearsMonthsWeeksLater;
@@ -3660,7 +3691,7 @@ static bool RoundDurationMonth(JSContext* cx,
   months += monthsPassed;
 
   
-  Duration monthsPassedDuration = {0, double(monthsPassed)};
+  auto monthsPassedDuration = DateDuration{0, monthsPassed};
 
   
   int32_t daysPassed;
@@ -3674,10 +3705,10 @@ static bool RoundDurationMonth(JSContext* cx,
   fractionalDays -= daysPassed;
 
   
-  double sign = fractionalDays.sign() < 0 ? -1 : 1;
+  int32_t sign = fractionalDays.sign() < 0 ? -1 : 1;
 
   
-  Duration oneMonth = {0, sign};
+  auto oneMonth = DateDuration{0, sign};
 
   
   Rooted<Wrapped<PlainDateObject*>> moveResultIgnored(cx);
@@ -3770,7 +3801,7 @@ static bool RoundDurationWeek(JSContext* cx, const NormalizedDuration& duration,
   weeks += weeksPassed;
 
   
-  Duration weeksPassedDuration = {0, 0, double(weeksPassed)};
+  auto weeksPassedDuration = DateDuration{0, 0, weeksPassed};
 
   
   Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx);
@@ -3785,10 +3816,10 @@ static bool RoundDurationWeek(JSContext* cx, const NormalizedDuration& duration,
   fractionalDays -= daysPassed;
 
   
-  double sign = fractionalDays.sign() < 0 ? -1 : 1;
+  int32_t sign = fractionalDays.sign() < 0 ? -1 : 1;
 
   
-  Duration oneWeek = {0, 0, sign};
+  auto oneWeek = DateDuration{0, 0, sign};
 
   
   Rooted<Wrapped<PlainDateObject*>> moveResultIgnored(cx);
@@ -3932,7 +3963,7 @@ static bool RoundDuration(JSContext* cx, const NormalizedDuration& duration,
   MOZ_ASSERT(IsValidNormalizedTimeDuration(time));
 
   
-  MOZ_ASSERT(IsValidDuration(duration.date.toDuration()));
+  MOZ_ASSERT(IsValidDuration(duration.date));
   *result = {{duration.date, time}, total};
   return true;
 }
