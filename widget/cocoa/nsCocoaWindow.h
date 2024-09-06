@@ -410,6 +410,10 @@ class nsCocoaWindow final : public nsBaseWidget {
 
   
   
+  RefPtr<mozilla::CancelableRunnable> mProcessTransitionsPending;
+
+  
+  
   
   
   

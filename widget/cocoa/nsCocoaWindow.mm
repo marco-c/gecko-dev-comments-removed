@@ -1547,6 +1547,11 @@ void nsCocoaWindow::ProcessTransitions() {
 
   mInProcessTransitions = true;
 
+  if (mProcessTransitionsPending) {
+    mProcessTransitionsPending->Cancel();
+    mProcessTransitionsPending = nullptr;
+  }
+
   
   
   
@@ -1726,6 +1731,10 @@ void nsCocoaWindow::CancelAllTransitions() {
   
   mTransitionCurrent.reset();
   mIsTransitionCurrentAdded = false;
+  if (mProcessTransitionsPending) {
+    mProcessTransitionsPending->Cancel();
+    mProcessTransitionsPending = nullptr;
+  }
   std::queue<TransitionType>().swap(mTransitionsPending);
 }
 
@@ -1751,9 +1760,11 @@ void nsCocoaWindow::FinishCurrentTransitionIfMatching(
     
     
     
-    if (!mTransitionsPending.empty()) {
-      NS_DispatchToCurrentThread(NewRunnableMethod(
-          "FinishCurrentTransition", this, &nsCocoaWindow::ProcessTransitions));
+    if (!mTransitionsPending.empty() && !mProcessTransitionsPending) {
+      mProcessTransitionsPending = NS_NewCancelableRunnableFunction(
+          "ProcessTransitionsPending",
+          [self = RefPtr{this}] { self->ProcessTransitions(); });
+      NS_DispatchToCurrentThread(mProcessTransitionsPending);
     }
   }
 }
