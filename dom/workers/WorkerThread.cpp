@@ -194,7 +194,7 @@ nsresult WorkerThread::DispatchPrimaryRunnable(
 
 nsresult WorkerThread::DispatchAnyThread(
     const WorkerThreadFriendKey& ,
-    already_AddRefed<WorkerRunnable> aWorkerRunnable) {
+    RefPtr<WorkerRunnable> aWorkerRunnable) {
   
 
 #ifdef DEBUG
@@ -213,9 +213,8 @@ nsresult WorkerThread::DispatchAnyThread(
   }
 #endif
 
-  nsCOMPtr<nsIRunnable> runnable(aWorkerRunnable);
-
-  nsresult rv = nsThread::Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
+  nsresult rv =
+      nsThread::Dispatch(aWorkerRunnable.forget(), NS_DISPATCH_NORMAL);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
