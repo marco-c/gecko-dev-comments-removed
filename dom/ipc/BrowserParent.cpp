@@ -3951,8 +3951,8 @@ void BrowserParent::MaybeInvokeDragSession(EventMessage aMessage) {
     return;
   }
 
+  RefPtr<nsIDragSession> session = dragService->GetCurrentSession(widget);
   if (dragService->MaybeAddBrowser(this)) {
-    RefPtr<nsIDragSession> session = dragService->GetCurrentSession(widget);
     if (session) {
       
       nsTArray<IPCTransferableData> ipcTransferables;
@@ -3970,15 +3970,12 @@ void BrowserParent::MaybeInvokeDragSession(EventMessage aMessage) {
     return;
   }
 
-  if (dragService->MustUpdateDataTransfer(aMessage)) {
-    RefPtr<nsIDragSession> session = dragService->GetCurrentSession(widget);
-    if (session) {
-      
-      nsTArray<IPCTransferableData> ipcTransferables;
-      GetIPCTransferableData(session, ipcTransferables);
-      mozilla::Unused << SendUpdateDragSession(
-          std::move(ipcTransferables), aMessage);
-    }
+  if (session && session->MustUpdateDataTransfer(aMessage)) {
+    
+    nsTArray<IPCTransferableData> ipcTransferables;
+    GetIPCTransferableData(session, ipcTransferables);
+    mozilla::Unused << SendUpdateDragSession(
+        std::move(ipcTransferables), aMessage);
   }
 }
 

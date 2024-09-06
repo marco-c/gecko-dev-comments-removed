@@ -69,6 +69,7 @@ class nsBaseDragSession : public nsIDragSession {
   }
 
  protected:
+  nsBaseDragSession();
   ~nsBaseDragSession();
 
   
@@ -78,6 +79,10 @@ class nsBaseDragSession : public nsIDragSession {
     mDragEventDispatchedToChildProcess = false;
     return retval;
   }
+
+  
+  
+  void TakeSessionBrowserListFromService();
 
   
 
@@ -109,6 +114,9 @@ class nsBaseDragSession : public nsIDragSession {
   
   
   nsCOMPtr<mozilla::dom::Element> mDragPopup;
+
+  
+  nsTArray<nsWeakPtr> mBrowsers;
 
   
   
@@ -165,6 +173,10 @@ class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
   using nsIDragService::GetCurrentSession;
 
   uint32_t GetSuppressLevel() { return mSuppressLevel; };
+
+  nsTArray<nsWeakPtr> TakeSessionBrowserList() {
+    return std::move(mBrowsers);
+  }
 
  protected:
   virtual ~nsBaseDragService();
@@ -251,9 +263,6 @@ class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
   RefPtr<mozilla::dom::RemoteDragStartData> mDragStartData;
 
   uint32_t mSuppressLevel;
-
-  
-  nsTArray<nsWeakPtr> mBrowsers;
 
   
   mozilla::Maybe<mozilla::CSSIntRegion> mRegion;

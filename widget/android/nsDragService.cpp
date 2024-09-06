@@ -187,7 +187,7 @@ nsDragSession::UpdateDragImage(nsINode* aImage, int32_t aImageX,
   return NS_OK;
 }
 
-bool nsDragService::MustUpdateDataTransfer(EventMessage aMessage) {
+bool nsDragSession::MustUpdateDataTransfer(EventMessage aMessage) {
   
   
   return aMessage == eDrop;
