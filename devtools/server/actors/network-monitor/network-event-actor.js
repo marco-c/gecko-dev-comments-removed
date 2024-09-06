@@ -59,7 +59,6 @@ const CONTENT_TYPE_REGEXP = /^content-type/i;
 
 
 
-
 class NetworkEventActor extends Actor {
   constructor(
     conn,
@@ -116,7 +115,6 @@ class NetworkEventActor extends Actor {
       cookies,
       headers,
       postData: {},
-      rawHeaders: networkEventOptions.rawHeaders,
     };
 
     this._resource = this._createResource(networkEventOptions, channel);
@@ -438,6 +436,22 @@ class NetworkEventActor extends Actor {
   
 
 
+
+  addCacheDetails({ fromCache, fromServiceWorker }) {
+    this._resource.fromCache = fromCache;
+    this._resource.fromServiceWorker = fromServiceWorker;
+    this._onEventUpdate("cacheDetails", { fromCache, fromServiceWorker });
+  }
+
+  addRawHeaders({ channel, rawHeaders }) {
+    this._request.rawHeaders = rawHeaders;
+
+    
+    
+    const { headers } =
+      lazy.NetworkUtils.fetchRequestHeadersAndCookies(channel);
+    this._request.headers = headers;
+  }
 
   
 
