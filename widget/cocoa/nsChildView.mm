@@ -4136,8 +4136,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     if (aMessage == eDragOver) {
       
       
-      nsCOMPtr<nsIDragService> dragService = mDragService;
-      dragService->FireDragEventAtSource(
+      dragSession->FireDragEventAtSource(
           eDrag, nsCocoaUtils::ModifiersForEvent([NSApp currentEvent]));
       dragSession->SetCanDrop(false);
     } else if (aMessage == eDrop) {
