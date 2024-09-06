@@ -2203,7 +2203,7 @@ nsIContent* HTMLEditUtils::GetContentToPreserveInlineStyles(
     return aPoint.template ContainerAs<nsIContent>();
   }
   for (auto point = aPoint.template To<EditorRawDOMPoint>(); point.IsSet();) {
-    WSScanResult nextVisibleThing =
+    const WSScanResult nextVisibleThing =
         WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
             &aEditingHost, point,
             BlockInlineCheck::UseComputedDisplayOutsideStyle);
@@ -2215,8 +2215,8 @@ nsIContent* HTMLEditUtils::GetContentToPreserveInlineStyles(
     
     if (nextVisibleThing.ReachedSpecialContent() &&
         nextVisibleThing.IsContentEditable() &&
-        nextVisibleThing.GetContent()->IsElement() &&
-        !nextVisibleThing.GetContent()->HasChildNodes() &&
+        nextVisibleThing.ContentIsElement() &&
+        !nextVisibleThing.ElementPtr()->HasChildNodes() &&
         HTMLEditUtils::IsContainerNode(*nextVisibleThing.ElementPtr())) {
       point.SetAfter(nextVisibleThing.ElementPtr());
       continue;
@@ -2260,13 +2260,12 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
   
   
   
-  WSScanResult forwardScanFromPointToInsertResult =
+  const WSScanResult forwardScanFromPointToInsertResult =
       wsScannerForPointToInsert.ScanNextVisibleNodeOrBlockBoundaryFrom(
           pointToInsert);
   
   
-  if (!forwardScanFromPointToInsertResult.GetContent() ||
-      !forwardScanFromPointToInsertResult.ReachedBRElement()) {
+  if (!forwardScanFromPointToInsertResult.ReachedBRElement()) {
     return pointToInsert;
   }
 
@@ -2274,7 +2273,7 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
   
   
   
-  WSScanResult backwardScanFromPointToInsertResult =
+  const WSScanResult backwardScanFromPointToInsertResult =
       wsScannerForPointToInsert.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
           pointToInsert);
   
@@ -2282,7 +2281,7 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
   
   
   
-  if (!backwardScanFromPointToInsertResult.GetContent() ||
+  if (backwardScanFromPointToInsertResult.Failed() ||
       backwardScanFromPointToInsertResult.ReachedBRElement() ||
       backwardScanFromPointToInsertResult.ReachedCurrentBlockBoundary()) {
     return pointToInsert;
@@ -2310,7 +2309,7 @@ EditorDOMPointType HTMLEditUtils::GetBetterCaretPositionToInsertText(
   if (aPoint.IsEndOfContainer()) {
     WSRunScanner scanner(&aEditingHost, aPoint,
                          BlockInlineCheck::UseComputedDisplayStyle);
-    WSScanResult previousThing =
+    const WSScanResult previousThing =
         scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(aPoint);
     if (previousThing.InVisibleOrCollapsibleCharacters()) {
       return EditorDOMPointType::AtEndOf(*previousThing.TextPtr());

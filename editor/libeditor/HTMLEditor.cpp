@@ -1150,7 +1150,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     if (Text* text = leafContent->GetAsText()) {
       
       
-      WSScanResult scanResultInTextNode =
+      const WSScanResult scanResultInTextNode =
           WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
               editingHost, EditorRawDOMPoint(text, 0),
               BlockInlineCheck::UseComputedDisplayStyle);

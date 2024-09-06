@@ -1723,17 +1723,21 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   MOZ_ASSERT(aPoint.IsSet());
   MOZ_ASSERT(aPoint.IsInComposedDoc());
 
+  if (MOZ_UNLIKELY(!aPoint.IsSet())) {
+    return WSScanResult::Error();
+  }
+
   
   
   
   
   if (MOZ_UNLIKELY(!aPoint.IsInComposedDoc())) {
-    return WSScanResult(aPoint.template ContainerAs<nsIContent>(),
+    return WSScanResult(*aPoint.template ContainerAs<nsIContent>(),
                         WSType::InUncomposedDoc, mBlockInlineCheck);
   }
 
   if (!TextFragmentDataAtStartRef().IsInitialized()) {
-    return WSScanResult(nullptr, WSType::UnexpectedError, mBlockInlineCheck);
+    return WSScanResult::Error();
   }
 
   
@@ -1746,7 +1750,7 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     
     
     if (aPoint.GetChild() && !aPoint.GetChild()->IsEditable()) {
-      return WSScanResult(aPoint.GetChild(), WSType::SpecialContent,
+      return WSScanResult(*aPoint.GetChild(), WSType::SpecialContent,
                           mBlockInlineCheck);
     }
     const auto atPreviousChar =
@@ -1762,14 +1766,25 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     }
   }
 
+  if (NS_WARN_IF(TextFragmentDataAtStartRef().StartRawReason() ==
+                 WSType::UnexpectedError)) {
+    return WSScanResult::Error();
+  }
+
   
   if (TextFragmentDataAtStartRef().GetStartReasonContent() !=
       TextFragmentDataAtStartRef().StartRef().GetContainer()) {
+    if (NS_WARN_IF(!TextFragmentDataAtStartRef().GetStartReasonContent())) {
+      return WSScanResult::Error();
+    }
     
     
-    return WSScanResult(TextFragmentDataAtStartRef().GetStartReasonContent(),
+    return WSScanResult(*TextFragmentDataAtStartRef().GetStartReasonContent(),
                         TextFragmentDataAtStartRef().StartRawReason(),
                         mBlockInlineCheck);
+  }
+  if (NS_WARN_IF(!TextFragmentDataAtStartRef().StartRef().IsSet())) {
+    return WSScanResult::Error();
   }
   return WSScanResult(TextFragmentDataAtStartRef().StartRef(),
                       TextFragmentDataAtStartRef().StartRawReason(),
@@ -1782,17 +1797,21 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   MOZ_ASSERT(aPoint.IsSet());
   MOZ_ASSERT(aPoint.IsInComposedDoc());
 
+  if (MOZ_UNLIKELY(!aPoint.IsSet())) {
+    return WSScanResult::Error();
+  }
+
   
   
   
   
   if (MOZ_UNLIKELY(!aPoint.IsInComposedDoc())) {
-    return WSScanResult(aPoint.template ContainerAs<nsIContent>(),
+    return WSScanResult(*aPoint.template ContainerAs<nsIContent>(),
                         WSType::InUncomposedDoc, mBlockInlineCheck);
   }
 
   if (!TextFragmentDataAtStartRef().IsInitialized()) {
-    return WSScanResult(nullptr, WSType::UnexpectedError, mBlockInlineCheck);
+    return WSScanResult::Error();
   }
 
   
@@ -1805,7 +1824,7 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
     
     
     if (aPoint.GetChild() && !aPoint.GetChild()->IsEditable()) {
-      return WSScanResult(aPoint.GetChild(), WSType::SpecialContent,
+      return WSScanResult(*aPoint.GetChild(), WSType::SpecialContent,
                           mBlockInlineCheck);
     }
     const auto atNextChar =
@@ -1821,14 +1840,25 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
     }
   }
 
+  if (NS_WARN_IF(TextFragmentDataAtStartRef().EndRawReason() ==
+                 WSType::UnexpectedError)) {
+    return WSScanResult::Error();
+  }
+
   
   if (TextFragmentDataAtStartRef().GetEndReasonContent() !=
       TextFragmentDataAtStartRef().EndRef().GetContainer()) {
+    if (NS_WARN_IF(!TextFragmentDataAtStartRef().GetEndReasonContent())) {
+      return WSScanResult::Error();
+    }
     
     
-    return WSScanResult(TextFragmentDataAtStartRef().GetEndReasonContent(),
+    return WSScanResult(*TextFragmentDataAtStartRef().GetEndReasonContent(),
                         TextFragmentDataAtStartRef().EndRawReason(),
                         mBlockInlineCheck);
+  }
+  if (NS_WARN_IF(!TextFragmentDataAtStartRef().EndRef().IsSet())) {
+    return WSScanResult::Error();
   }
   return WSScanResult(TextFragmentDataAtStartRef().EndRef(),
                       TextFragmentDataAtStartRef().EndRawReason(),
