@@ -35,8 +35,12 @@ JSJitFrameIter::JSJitFrameIter(const JitActivation* activation,
       resumePCinCurrentFrame_(nullptr),
       cachedSafepointIndex_(nullptr),
       activation_(activation) {
+  
+  
+  
+  
   MOZ_ASSERT(type_ == FrameType::JSJitToWasm || type_ == FrameType::Exit);
-  if (activation_->bailoutData()) {
+  if (type_ == FrameType::Exit && activation_->bailoutData()) {
     current_ = activation_->bailoutData()->fp();
     type_ = FrameType::Bailout;
   } else {
