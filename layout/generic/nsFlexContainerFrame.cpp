@@ -2021,7 +2021,7 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
   
   
   ReflowOutput childReflowOutput(aChildReflowInput);
-  nsReflowStatus childReflowStatus;
+  nsReflowStatus childStatus;
 
   const ReflowChildFlags flags = ReflowChildFlags::NoMoveFrame;
   const WritingMode outerWM = GetWritingMode();
@@ -2032,12 +2032,12 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
   
   ReflowChild(aItem.Frame(), PresContext(), childReflowOutput,
               aChildReflowInput, outerWM, dummyPosition, dummyContainerSize,
-              flags, childReflowStatus);
+              flags, childStatus);
   aItem.SetHadMeasuringReflow();
 
   
   
-  MOZ_ASSERT(childReflowStatus.IsComplete(),
+  MOZ_ASSERT(childStatus.IsComplete(),
              "We gave flex item unconstrained available block-size, so it "
              "should be complete");
 
@@ -5676,7 +5676,7 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
 
         const bool isAdjacentWithBStart =
             framePos.B(flexWM) == containerContentBoxOrigin.B(flexWM);
-        const nsReflowStatus childReflowStatus =
+        const nsReflowStatus childStatus =
             ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
                            isAdjacentWithBStart, availableSize, aContainerSize);
 
@@ -5708,9 +5708,9 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
               "because its block-size is larger than the available space");
           pushedItems.Insert(item.Frame());
           itemInPushedItems = true;
-        } else if (childReflowStatus.IsIncomplete()) {
+        } else if (childStatus.IsIncomplete()) {
           incompleteItems.Insert(item.Frame());
-        } else if (childReflowStatus.IsOverflowIncomplete()) {
+        } else if (childStatus.IsOverflowIncomplete()) {
           overflowIncompleteItems.Insert(item.Frame());
         }
       } else {
@@ -6238,11 +6238,11 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
   
   
   ReflowOutput childReflowOutput(childReflowInput);
-  nsReflowStatus childReflowStatus;
+  nsReflowStatus childStatus;
   WritingMode outerWM = aReflowInput.GetWritingMode();
   ReflowChild(aItem.Frame(), PresContext(), childReflowOutput, childReflowInput,
               outerWM, aFramePos, aContainerSize, ReflowChildFlags::Default,
-              childReflowStatus);
+              childStatus);
 
   
 
@@ -6262,7 +6262,7 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
     aItem.Frame()->SetProperty(CachedFlexItemData::Prop(), cached);
   }
 
-  return childReflowStatus;
+  return childStatus;
 }
 
 void nsFlexContainerFrame::ReflowPlaceholders(
@@ -6282,10 +6282,10 @@ void nsFlexContainerFrame::ReflowPlaceholders(
     
     
     ReflowOutput childReflowOutput(outerWM);
-    nsReflowStatus childReflowStatus;
+    nsReflowStatus childStatus;
     ReflowChild(placeholder, PresContext(), childReflowOutput, childReflowInput,
                 outerWM, aContentBoxOrigin, aContainerSize,
-                ReflowChildFlags::Default, childReflowStatus);
+                ReflowChildFlags::Default, childStatus);
 
     FinishReflowChild(placeholder, PresContext(), childReflowOutput,
                       &childReflowInput, outerWM, aContentBoxOrigin,
