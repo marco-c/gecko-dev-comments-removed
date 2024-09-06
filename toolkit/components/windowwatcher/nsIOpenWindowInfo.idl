@@ -74,4 +74,10 @@ interface nsIOpenWindowInfo : nsISupports {
   
   [notxpcom, nostdcall]
   nsIBrowsingContextReadyCallback browsingContextReadyCallback();
+
+  
+
+
+
+  void cancel();
 };
