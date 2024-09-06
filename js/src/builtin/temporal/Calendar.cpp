@@ -1081,17 +1081,8 @@ static bool BuiltinCalendarFields(JSContext* cx, Handle<Value> fields,
     if (!iterator.next(&nextValue, &done)) {
       return false;
     }
-
-    
     if (done) {
-      auto* array =
-          NewDenseCopiedArray(cx, fieldNames.length(), fieldNames.begin());
-      if (!array) {
-        return false;
-      }
-
-      result.setObject(*array);
-      return true;
+      break;
     }
 
     
@@ -1137,6 +1128,16 @@ static bool BuiltinCalendarFields(JSContext* cx, Handle<Value> fields,
     }
     seen += field;
   }
+
+  
+  auto* array =
+      NewDenseCopiedArray(cx, fieldNames.length(), fieldNames.begin());
+  if (!array) {
+    return false;
+  }
+
+  result.setObject(*array);
+  return true;
 }
 
 #ifdef DEBUG
@@ -4261,7 +4262,6 @@ static bool Calendar_dateUntil(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_year(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4288,12 +4288,10 @@ static bool Calendar_year(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_month(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
-  Handle<Value> temporalDateLike = args.get(0);
-
   
+  Handle<Value> temporalDateLike = args.get(0);
   if (temporalDateLike.isObject() &&
       temporalDateLike.toObject().canUnwrapAs<PlainMonthDayObject>()) {
     ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_SEARCH_STACK,
@@ -4325,7 +4323,6 @@ static bool Calendar_month(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_monthCode(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4352,7 +4349,6 @@ static bool Calendar_monthCode(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_day(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4379,7 +4375,6 @@ static bool Calendar_day(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_dayOfWeek(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4405,7 +4400,6 @@ static bool Calendar_dayOfWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_dayOfYear(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4431,7 +4425,6 @@ static bool Calendar_dayOfYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_weekOfYear(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4457,7 +4450,6 @@ static bool Calendar_weekOfYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_yearOfWeek(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4483,7 +4475,6 @@ static bool Calendar_yearOfWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_daysInWeek(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4509,7 +4500,6 @@ static bool Calendar_daysInWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_daysInMonth(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4536,7 +4526,6 @@ static bool Calendar_daysInMonth(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_daysInYear(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4563,7 +4552,6 @@ static bool Calendar_daysInYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_monthsInYear(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4590,7 +4578,6 @@ static bool Calendar_monthsInYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_inLeapYear(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
@@ -4617,7 +4604,6 @@ static bool Calendar_inLeapYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_fields(JSContext* cx, const CallArgs& args) {
-  
   MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
 
   
