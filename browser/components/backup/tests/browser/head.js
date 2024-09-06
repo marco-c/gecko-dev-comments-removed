@@ -12,3 +12,26 @@ const { MockFilePicker } = SpecialPowers;
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
+
+const MOCK_PASSWORD = "mckP@ss3x2 fake_password";
+
+
+
+
+
+
+
+
+
+
+function createMockPassInputEventPromise(inputEl, mockPassword) {
+  let promise = new Promise(resolve => {
+    inputEl.addEventListener("input", () => resolve(), {
+      once: true,
+    });
+  });
+  inputEl.focus();
+  inputEl.value = mockPassword;
+  inputEl.dispatchEvent(new Event("input"));
+  return promise;
+}
