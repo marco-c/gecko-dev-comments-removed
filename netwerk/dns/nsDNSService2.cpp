@@ -1441,11 +1441,12 @@ nsDNSService::ClearCache(bool aTrrToo) {
   return NS_OK;
 }
 
+
 NS_IMETHODIMP
 nsDNSService::ReloadParentalControlEnabled() {
   if (mTrrService) {
     mTrrService->mParentalControlEnabled =
-        TRRService::GetParentalControlEnabledInternal();
+        TRRService::ReloadParentalControlsEnabled();
   }
   return NS_OK;
 }
