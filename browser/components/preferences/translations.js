@@ -4,12 +4,63 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
-});
+
+
+
+const TRANSLATIONS_PERMISSION = "translations";
+
+
+
+
+const ALWAYS_TRANSLATE_LANGS_PREF =
+  "browser.translations.alwaysTranslateLanguages";
+
+
+
+
+const NEVER_TRANSLATE_LANGS_PREF =
+  "browser.translations.neverTranslateLanguages";
 
 let gTranslationsPane = {
-  init() {
+  
+
+
+
+  alwaysTranslateLanguages: [],
+
+  
+
+
+
+  neverTranslateLanguages: [],
+
+  
+
+
+
+  neverTranslateSites: [],
+
+  
+
+
+
+
+  downloadPhases: new Map(),
+
+  
+
+
+
+
+  supportedLanguages: {},
+
+  
+
+
+
+  supportedLanguageTagsNames: [],
+
+  async init() {
     document
       .getElementById("translations-settings-back-button")
       .addEventListener("click", function () {
@@ -18,14 +69,53 @@ let gTranslationsPane = {
 
     document
       .getElementById("translations-settings-always-translate-list")
-      .addEventListener("command", this.addAlwaysLanguage);
+      .addEventListener("command", this);
 
     document
       .getElementById("translations-settings-never-translate-list")
-      .addEventListener("command", this.addNeverLanguage);
+      .addEventListener("command", this);
 
+    
+    this.supportedLanguages = await TranslationsParent.getSupportedLanguages();
+    this.supportedLanguageTagsNames = TranslationsParent.getLanguageList(
+      this.supportedLanguages
+    );
+    this.alwaysTranslateLanguages =
+      TranslationsParent.getAlwaysTranslateLanguages();
+    this.neverTranslateLanguages =
+      TranslationsParent.getNeverTranslateLanguages();
+
+    this.neverTranslateSites = TranslationsParent.listNeverTranslateSites();
+
+    
+    Services.obs.addObserver(this, "perm-changed");
+    Services.obs.addObserver(
+      this,
+      "translations:always-translate-languages-changed"
+    );
+    Services.obs.addObserver(
+      this,
+      "translations:never-translate-languages-changed"
+    );
+    window.addEventListener("unload", () => this.removeObservers());
+
+    
     this.buildLanguageDropDowns();
+    this.populateLanguageList(ALWAYS_TRANSLATE_LANGS_PREF);
+    this.populateLanguageList(NEVER_TRANSLATE_LANGS_PREF);
+    this.populateSiteList();
+
+    await this.initDownloadInfo();
     this.buildDownloadLanguageList();
+
+    
+    
+    document.dispatchEvent(
+      new CustomEvent("translationsSettingsInit", {
+        bubbles: true,
+        cancelable: true,
+      })
+    );
   },
 
   
@@ -33,12 +123,12 @@ let gTranslationsPane = {
 
 
 
-  async buildLanguageDropDowns() {
-    const { fromLanguages } = await TranslationsParent.getSupportedLanguages();
-    let alwaysLangPopup = document.getElementById(
+  buildLanguageDropDowns() {
+    const { fromLanguages } = this.supportedLanguages;
+    const alwaysLangPopup = document.getElementById(
       "translations-settings-always-translate-popup"
     );
-    let neverLangPopup = document.getElementById(
+    const neverLangPopup = document.getElementById(
       "translations-settings-never-translate-popup"
     );
 
@@ -58,40 +148,185 @@ let gTranslationsPane = {
 
 
 
-  async buildDownloadLanguageList() {
-    const supportedLanguages = await TranslationsParent.getSupportedLanguages();
-    const languageList = TranslationsParent.getLanguageList(supportedLanguages);
 
-    let installList = document.querySelector(
-      ".translations-settings-language-list"
+  async initDownloadInfo() {
+    let downloadCount = 0;
+    let allDownloadSize = 0;
+
+    this.downloadPhases = new Map();
+    for (const language of this.supportedLanguageTagsNames) {
+      let downloadSize = await TranslationsParent.getLanguageSize(
+        language.langTag
+      );
+      allDownloadSize += downloadSize;
+      const hasAllFilesForLanguage =
+        await TranslationsParent.hasAllFilesForLanguage(language.langTag);
+      const downloadPhase = hasAllFilesForLanguage
+        ? "downloaded"
+        : "uninstalled";
+      this.downloadPhases.set(language.langTag, {
+        downloadPhase,
+        size: downloadSize,
+      });
+      downloadCount += downloadPhase === "downloaded" ? 1 : 0;
+    }
+    const allDownloadPhase =
+      downloadCount === this.supportedLanguageTagsNames.length
+        ? "downloaded"
+        : "uninstalled";
+    this.downloadPhases.set("all", {
+      downloadPhase: allDownloadPhase,
+      size: allDownloadSize,
+    });
+  },
+
+  
+
+
+
+  buildDownloadLanguageList() {
+    const installList = document.querySelector(
+      "#translations-settings-download-section .translations-settings-language-list"
     );
 
+    function createSizeElement(downloadSize) {
+      const languageSize = document.createElement("span");
+      languageSize.classList.add("translations-settings-download-size");
+      const [size, units] = DownloadUtils.convertByteUnits(downloadSize);
+
+      document.l10n.setAttributes(
+        languageSize,
+        "translations-settings-download-size",
+        {
+          size: size + " " + units,
+        }
+      );
+      return languageSize;
+    }
+
     
     
     
-    installList
-      .querySelector("moz-button")
-      .addEventListener("click", installLanguage);
+    const allLangElement = installList.children[0];
+    let allLangButton = allLangElement.querySelector("moz-button");
 
-    for (const language of languageList) {
-      const languageElement = document.createElement("div");
-      languageElement.classList.add("translations-settings-language");
+    allLangButton.addEventListener("click", this);
 
-      const languageLabel = document.createElement("label");
-      languageLabel.textContent = language.displayName;
-      languageLabel.setAttribute("value", language.langTag);
-      
-      languageLabel.id = "translations-settings-download-" + language.langTag;
+    for (const language of this.supportedLanguageTagsNames) {
+      const downloadSize = this.downloadPhases.get(language.langTag).size;
 
-      const installButton = document.createElement("moz-button");
-      installButton.classList.add("translations-settings-download-icon");
-      installButton.setAttribute("type", "ghost icon");
-      installButton.addEventListener("click", installLanguage);
-      installButton.setAttribute("aria-label", languageLabel.id);
+      const languageSize = createSizeElement(downloadSize);
 
-      languageElement.appendChild(installButton);
-      languageElement.appendChild(languageLabel);
+      const languageLabel = this.createLangLabel(
+        language.displayName,
+        language.langTag,
+        "translations-settings-download-" + language.langTag
+      );
+
+      const isDownloaded =
+        this.downloadPhases.get(language.langTag).downloadPhase ===
+        "downloaded";
+
+      const mozButton = isDownloaded
+        ? this.createIconButton(
+            [
+              "translations-settings-delete-icon",
+              "translations-settings-manage-downloaded-language-button",
+            ],
+            languageLabel.id
+          )
+        : this.createIconButton(
+            [
+              "translations-settings-download-icon",
+              "translations-settings-manage-downloaded-language-button",
+            ],
+            languageLabel.id
+          );
+
+      const languageElement = this.createLangElement([
+        mozButton,
+        languageLabel,
+        languageSize,
+      ]);
       installList.appendChild(languageElement);
+    }
+
+    
+    if (this.downloadPhases.get("all").downloadPhase === "downloaded") {
+      this.changeButtonState(
+        allLangButton,
+        "translations-settings-download-icon",
+        "translations-settings-delete-icon"
+      );
+    }
+
+    const allDownloadSize = this.downloadPhases.get("all").size;
+    const languageSize = createSizeElement(allDownloadSize);
+
+    allLangElement.appendChild(languageSize);
+  },
+
+  handleEvent(event) {
+    const eventNode = event.target;
+    const eventNodeParent = eventNode.parentNode;
+    const eventNodeClassList = eventNode.classList;
+    switch (event.type) {
+      case "command":
+        if (
+          eventNodeParent.id === "translations-settings-always-translate-popup"
+        ) {
+          this.addAlwaysLanguage(event);
+        } else if (
+          eventNodeParent.id === "translations-settings-never-translate-popup"
+        ) {
+          this.addNeverLanguage(event);
+        }
+        break;
+      case "click":
+        if (eventNodeClassList.contains("translations-settings-site-button")) {
+          this.deleteNeverTranslateSite(event);
+        } else if (
+          eventNodeClassList.contains(
+            "translations-settings-language-never-button"
+          )
+        ) {
+          this.deleteNeverTranslateLanguage(event);
+        } else if (
+          eventNodeClassList.contains(
+            "translations-settings-language-always-button"
+          )
+        ) {
+          this.deleteAlwaysTranslateLanguage(event);
+        } else if (
+          eventNodeClassList.contains(
+            "translations-settings-manage-downloaded-language-button"
+          )
+        ) {
+          if (
+            eventNodeClassList.contains("translations-settings-download-icon")
+          ) {
+            if (
+              eventNodeParent.querySelector("label").id ===
+              "translations-settings-download-all-languages"
+            ) {
+              this.handleInstallAll(event);
+            } else {
+              this.installLanguage(event);
+            }
+          } else if (
+            eventNodeClassList.contains("translations-settings-delete-icon")
+          ) {
+            if (
+              eventNodeParent.querySelector("label").id ===
+              "translations-settings-download-all-languages"
+            ) {
+              this.handleUninstallAll(event);
+            } else {
+              this.unInstallLanguage(event);
+            }
+          }
+        }
+        break;
     }
   },
 
@@ -99,23 +334,248 @@ let gTranslationsPane = {
 
 
 
-  addAlwaysLanguage(event) {
+
+  async addAlwaysLanguage(event) {
     
+    
+    
+    const menuList = document
+      .getElementById("translations-settings-always-translate-section")
+      .querySelector("menulist");
+
+    TranslationsParent.addLangTagToPref(
+      event.target.getAttribute("value"),
+      ALWAYS_TRANSLATE_LANGS_PREF
+    );
+    await document.l10n.translateElements([menuList]);
+  },
+
+  
+
+
+
+
+  async addNeverLanguage(event) {
+    
+    
+    
+    const menuList = document
+      .getElementById("translations-settings-never-translate-section")
+      .querySelector("menulist");
+
+    TranslationsParent.addLangTagToPref(
+      event.target.getAttribute("value"),
+      NEVER_TRANSLATE_LANGS_PREF
+    );
+    await document.l10n.translateElements([menuList]);
+  },
+
+  
 
 
 
 
 
 
+  setDifference(currentSet, newSet) {
+    const added = newSet.filter(lang => !currentSet.includes(lang));
+    const removed = currentSet.filter(lang => !newSet.includes(lang));
+    return { added, removed };
+  },
+
+  
+
+
+
+
+  populateLanguageList(pref) {
+    
+    
+    
+    
+    const { sectionId, curLangTags, otherPref } =
+      pref === NEVER_TRANSLATE_LANGS_PREF
+        ? {
+            sectionId: "translations-settings-never-translate-section",
+            curLangTags: Array.from(this.neverTranslateLanguages),
+            otherPref: ALWAYS_TRANSLATE_LANGS_PREF,
+          }
+        : {
+            sectionId: "translations-settings-always-translate-section",
+            curLangTags: Array.from(this.alwaysTranslateLanguages),
+            otherPref: NEVER_TRANSLATE_LANGS_PREF,
+          };
+
+    const updatedLangTags =
+      pref === NEVER_TRANSLATE_LANGS_PREF
+        ? Array.from(TranslationsParent.getNeverTranslateLanguages())
+        : Array.from(TranslationsParent.getAlwaysTranslateLanguages());
+
+    const { added, removed } = this.setDifference(curLangTags, updatedLangTags);
+
+    const translateSection = document.getElementById(sectionId);
+    const languageList = translateSection.querySelector(
+      ".translations-settings-language-list label"
+    );
+
+    for (const lang of removed) {
+      this.removeLanguage(lang, sectionId);
+    }
+
+    
+    
+    if (languageList) {
+      for (const lang of added) {
+        this.addLanguage(lang, sectionId);
+        
+        TranslationsParent.removeLangTagFromPref(lang, otherPref);
+      }
+    } else {
+      
+      
+      for (const lang of updatedLangTags) {
+        this.addLanguage(lang, sectionId);
+        
+        TranslationsParent.removeLangTagFromPref(lang, otherPref);
+      }
+    }
+    
+    if (pref === NEVER_TRANSLATE_LANGS_PREF) {
+      this.neverTranslateLanguages = updatedLangTags;
+    } else {
+      this.alwaysTranslateLanguages = updatedLangTags;
+    }
+  },
+
+  
+
+
+
+  addSite(site) {
+    const translateSection = document.getElementById(
+      "translations-settings-never-sites-section"
+    );
+    let languageList = translateSection.querySelector(
+      ".translations-settings-language-list"
+    );
+
+    
+    if (!languageList) {
+      languageList = this.addLanguageList(translateSection, languageList);
+    }
+
+    
+    const languageLabel = this.createLangLabel(
+      site,
+      site,
+      "translations-settings-" + site
+    );
+
+    const mozButton = this.createIconButton(
+      [
+        "translations-settings-delete-icon",
+        "translations-settings-site-button",
+      ],
+      languageLabel.id
+    );
+
+    const languageElement = this.createLangElement([mozButton, languageLabel]);
+    languageList.insertBefore(languageElement, languageList.firstChild);
+  },
+
+  
+
+
+
+  removeSite(site) {
+    const translateSection = document.getElementById(
+      "translations-settings-never-sites-section"
+    );
+    const languageList = translateSection.querySelector(
+      ".translations-settings-language-list"
+    );
+
+    const langSite = languageList.querySelector(`label[value="${site}"]`);
+
+    langSite.parentNode.remove();
+    if (!languageList.childElementCount) {
+      
+      
+      languageList.parentNode.remove();
+    }
+  },
+
+  
+
+
+
+  populateSiteList() {
+    const siteList = TranslationsParent.listNeverTranslateSites();
+    for (const site of siteList) {
+      this.addSite(site);
+    }
+    this.neverTranslateSites = siteList;
+  },
+
+  
 
 
 
 
 
-    addLanguage(
-      event,
-      "translations-settings-always-translate-section",
-      deleteAlwaysLanguage
+  observe(subject, topic, data) {
+    if (topic === "perm-changed") {
+      if (data === "cleared") {
+        const translateSection = document.getElementById(
+          "translations-settings-never-sites-section"
+        );
+        const languageList = translateSection.querySelector(
+          ".translations-settings-language-list"
+        );
+        this.neverTranslateSites = [];
+        if (languageList) {
+          languageList.parentNode.remove();
+        }
+      } else {
+        const perm = subject.QueryInterface(Ci.nsIPermission);
+        if (perm.type != TRANSLATIONS_PERMISSION) {
+          
+          return;
+        }
+        if (data === "added") {
+          if (perm.capability != Services.perms.DENY_ACTION) {
+            
+            
+            return;
+          }
+          this.neverTranslateSites =
+            TranslationsParent.listNeverTranslateSites();
+          this.addSite(perm.principal.origin);
+        } else if (data === "deleted") {
+          this.neverTranslateSites =
+            TranslationsParent.listNeverTranslateSites();
+          this.removeSite(perm.principal.origin);
+        }
+      }
+    } else if (topic === "translations:never-translate-languages-changed") {
+      this.populateLanguageList(NEVER_TRANSLATE_LANGS_PREF);
+    } else if (topic === "translations:always-translate-languages-changed") {
+      this.populateLanguageList(ALWAYS_TRANSLATE_LANGS_PREF);
+    }
+  },
+
+  
+
+
+  removeObservers() {
+    Services.obs.removeObserver(this, "perm-changed");
+    Services.obs.removeObserver(
+      this,
+      "translations:always-translate-languages-changed"
+    );
+    Services.obs.removeObserver(
+      this,
+      "translations:never-translate-languages-changed"
     );
   },
 
@@ -123,48 +583,107 @@ let gTranslationsPane = {
 
 
 
-  addNeverLanguage(event) {
-    
 
-
-
-
-
-
-
-
-
-
-
-    addLanguage(
-      event,
-      "translations-settings-never-translate-section",
-      deleteNeverLanguage
-    );
+  createLangElement(langChildren) {
+    const languageElement = document.createElement("div");
+    languageElement.classList.add("translations-settings-language");
+    for (const child of langChildren) {
+      languageElement.appendChild(child);
+    }
+    return languageElement;
   },
-};
-
-
-
-
-
-async function addLanguage(event, listClass, delHandler) {
-  const translatePrefix =
-    listClass === "translations-settings-never-translate-section"
-      ? "never"
-      : "always";
-  let translateSection = document.getElementById(listClass);
-  let languageList = translateSection.querySelector(
-    ".translations-settings-language-list"
-  );
 
   
-  if (!languageList) {
-    let languageCard = document.createElement("div");
+
+
+
+
+
+  createIconButton(classNames, ariaLabelId) {
+    const mozButton = document.createElement("moz-button");
+
+    for (const className of classNames) {
+      mozButton.classList.add(className);
+    }
+    mozButton.setAttribute("type", "ghost icon");
+    
+    
+    mozButton.setAttribute("aria-label", ariaLabelId);
+    mozButton.addEventListener("click", this);
+    return mozButton;
+  },
+
+  
+
+
+
+
+
+  addLanguage(langTag, sectionId) {
+    const translatePrefix =
+      sectionId === "translations-settings-never-translate-section"
+        ? "never"
+        : "always";
+    const translateSection = document.getElementById(sectionId);
+    let languageList = translateSection.querySelector(
+      ".translations-settings-language-list"
+    );
+
+    
+    if (!languageList) {
+      languageList = this.addLanguageList(translateSection, languageList);
+    }
+
+    const languageLabel = this.createLangLabel(
+      TranslationsParent.getLanguageDisplayName(langTag),
+      langTag,
+      "translations-settings-language-" + translatePrefix + "-" + langTag
+    );
+
+    const mozButton = this.createIconButton(
+      [
+        "translations-settings-delete-icon",
+        "translations-settings-language-" + translatePrefix + "-button",
+      ],
+      languageLabel.id
+    );
+
+    const languageElement = this.createLangElement([mozButton, languageLabel]);
+    
+    languageList.insertBefore(languageElement, languageList.firstChild);
+  },
+
+  
+
+
+
+
+
+
+
+  createLangLabel(textContent, value, id) {
+    const languageLabel = document.createElement("label");
+    languageLabel.textContent = textContent;
+    languageLabel.setAttribute("value", value);
+    languageLabel.id = id;
+    return languageLabel;
+  },
+
+  
+
+
+
+
+
+
+
+
+  addLanguageList(translateSection, languageList) {
+    const languageCard = document.createElement("div");
     languageCard.classList.add("translations-settings-languages-card");
     translateSection.appendChild(languageCard);
 
-    let languageHeader = document.createElement("h3");
+    const languageHeader = document.createElement("h3");
     languageCard.appendChild(languageHeader);
     languageHeader.setAttribute(
       "data-l10n-id",
@@ -175,111 +694,357 @@ async function addLanguage(event, listClass, delHandler) {
     languageList = document.createElement("div");
     languageList.classList.add("translations-settings-language-list");
     languageCard.appendChild(languageList);
-  }
-  const languageElement = document.createElement("div");
-  languageElement.classList.add("translations-settings-language");
-  
-  languageList.insertBefore(languageElement, languageList.firstChild);
-
-  const languageLabel = document.createElement("label");
-  languageLabel.textContent = event.target.getAttribute("label");
-  languageLabel.setAttribute("value", event.target.getAttribute("value"));
-  
-  
-  languageLabel.id =
-    "translations-settings-language-" +
-    translatePrefix +
-    "-" +
-    event.target.getAttribute("value");
-
-  const delButton = document.createElement("moz-button");
-  delButton.classList.add("translations-settings-delete-icon");
-  delButton.setAttribute("type", "ghost icon");
-  delButton.addEventListener("click", delHandler);
-  delButton.setAttribute("aria-label", languageLabel.id);
-
-  languageElement.appendChild(delButton);
-  languageElement.appendChild(languageLabel);
+    return languageList;
+  },
 
   
 
 
-  const menuList = translateSection.querySelector("menulist");
-  await document.l10n.translateElements([menuList]);
-}
 
 
 
+  removeLanguage(lang, sectionId) {
+    const translateSection = document.getElementById(sectionId);
+    const languageList = translateSection.querySelector(
+      ".translations-settings-language-list"
+    );
+    if (languageList) {
+      const langElem = languageList.querySelector(`label[value=${lang}]`);
+      if (langElem) {
+        langElem.parentNode.remove();
+        if (!languageList.childElementCount) {
+          
+          
+          languageList.parentNode.remove();
+        }
+      }
+    }
+  },
 
-
-function deleteAlwaysLanguage(event) {
   
 
 
 
 
+  deleteAlwaysTranslateLanguage(event) {
+    TranslationsParent.removeLangTagFromPref(
+      event.target.parentNode.querySelector("label").getAttribute("value"),
+      ALWAYS_TRANSLATE_LANGS_PREF
+    );
+  },
+
+  
 
 
 
 
+  deleteNeverTranslateLanguage(event) {
+    TranslationsParent.removeLangTagFromPref(
+      event.target.parentNode.querySelector("label").getAttribute("value"),
+      NEVER_TRANSLATE_LANGS_PREF
+    );
+  },
+
+  
 
 
-  removeLanguage(event);
-}
 
 
-
-
-
-function deleteNeverLanguage(event) {
+  deleteNeverTranslateSite(event) {
+    TranslationsParent.setNeverTranslateSiteByOrigin(
+      false,
+      event.target.parentNode.querySelector("label").getAttribute("value")
+    );
+  },
   
 
 
 
 
 
-
-
-
-
-
-  removeLanguage(event);
-}
-
-
-
-
-
-function removeLanguage(event) {
+  updateDownloadPhase(langTag, downloadPhase) {
+    this.downloadPhases.set(langTag, { downloadPhase });
+  },
   
 
 
 
-  let languageCard = event.target.parentNode.parentNode.parentNode;
-  event.target.parentNode.remove();
-  if (languageCard.children[1].childElementCount === 0) {
+
+  reloadDownloadPhases() {
+    
+    const installList = document.querySelector(
+      "#translations-settings-download-section .translations-settings-language-list"
+    );
+
+    while (installList.firstElementChild) {
+      installList.firstElementChild.remove();
+    }
+    this.buildDownloadLanguageList();
+  },
+
+  
+
+
+
+  async installLanguage(event) {
+    let eventButton = event.target;
+    this.changeButtonState(
+      eventButton,
+      "translations-settings-download-icon",
+      "translations-settings-loading-icon"
+    );
+
+    const langTag = eventButton.parentNode
+      .querySelector("label")
+      .getAttribute("value");
+
+    this.updateDownloadPhase(langTag, "loading");
+
     
     
-    languageCard.remove();
-  }
-}
+    
+    try {
+      await TranslationsParent.downloadLanguageFiles(langTag);
+    } catch (error) {
+      this.changeButtonState(
+        eventButton,
+        "translations-settings-loading-icon",
+        "translations-settings-download-icon"
+      );
+      this.updateDownloadPhase(langTag, "uninstalled");
+      console.error(error);
+      return;
+    }
+
+    this.changeButtonState(
+      eventButton,
+      "translations-settings-loading-icon",
+      "translations-settings-delete-icon"
+    );
+    this.updateDownloadPhase(langTag, "downloaded");
+
+    
+    const haveUninstalledItem = [...this.downloadPhases].some(
+      ([k, v]) => v.downloadPhase != "downloaded" && k != "all"
+    );
+    if (
+      !haveUninstalledItem &&
+      this.downloadPhases.get("all").downloadPhase !== "downloaded"
+    ) {
+      this.changeButtonState(
+        event.target.parentNode.parentNode.children[0].querySelector(
+          "moz-button"
+        ),
+        "translations-settings-download-icon",
+        "translations-settings-delete-icon"
+      );
+      this.updateDownloadPhase("all", "downloaded");
+    }
+  },
+
+  
+
+
+
+  async unInstallLanguage(event) {
+    let eventButton = event.target;
+    this.changeButtonState(
+      eventButton,
+      "translations-settings-delete-icon",
+      "translations-settings-loading-icon"
+    );
+
+    const langTag = eventButton.parentNode
+      .querySelector("label")
+      .getAttribute("value");
+    this.updateDownloadPhase(langTag, "loading");
+
+    
+    
+    
+    try {
+      await TranslationsParent.deleteLanguageFiles(langTag);
+    } catch (error) {
+      
+      this.changeButtonState(
+        eventButton,
+        "translations-settings-loading-icon",
+        "translations-settings-delete-icon"
+      );
+      this.updateDownloadPhase(langTag, "uninstalled");
+      console.error(error);
+      return;
+    }
+
+    this.changeButtonState(
+      eventButton,
+      "translations-settings-loading-icon",
+      "translations-settings-download-icon"
+    );
+    this.updateDownloadPhase(langTag, "uninstalled");
+
+    
+    if (this.downloadPhases.get("all").downloadPhase === "downloaded") {
+      this.changeButtonState(
+        event.target.parentNode.parentNode.children[0].querySelector(
+          "moz-button"
+        ),
+        "translations-settings-delete-icon",
+        "translations-settings-download-icon"
+      );
+      this.updateDownloadPhase("all", "uninstalled");
+    }
+  },
+
+  
+
+
+
+  async handleInstallAll(event) {
+    
+    this.disableDownloadButtons();
+    let eventButton = event.target;
+    this.changeButtonState(
+      eventButton,
+      "translations-settings-download-icon",
+      "translations-settings-loading-icon"
+    );
+    this.updateDownloadPhase("all", "loading");
+
+    
+    
+    
+    try {
+      await TranslationsParent.downloadAllFiles();
+      this.updateDownloadPhase("all", "downloaded");
+
+      this.changeButtonState(
+        eventButton,
+        "translations-settings-loading-icon",
+        "translations-settings-delete-icon"
+      );
+      this.updateAllLanguageDownloadButtons("downloaded");
+    } catch (error) {
+      await this.reloadDownloadPhases();
+      console.error(error);
+    }
+  },
+
+  
+
+
+
+  async handleUninstallAll(event) {
+    let eventButton = event.target;
+    this.disableDownloadButtons();
+    this.changeButtonState(
+      eventButton,
+      "translations-settings-delete-icon",
+      "translations-settings-loading-icon"
+    );
+    this.updateDownloadPhase("all", "loading");
+
+    
+    
+    
+    try {
+      await TranslationsParent.deleteAllLanguageFiles();
+      this.changeButtonState(
+        eventButton,
+        "translations-settings-loading-icon",
+        "translations-settings-download-icon"
+      );
+      this.updateDownloadPhase("all", "uninstalled");
+      this.updateAllLanguageDownloadButtons("uninstalled");
+    } catch (error) {
+      await this.reloadDownloadPhases();
+      console.error(error);
+    }
+  },
+
+  
 
 
 
 
-function installLanguage(event) {
-  event.target.classList.remove("translations-settings-download-icon");
-  event.target.classList.add("translations-settings-delete-icon");
-  event.target.removeEventListener("click", installLanguage);
-  event.target.addEventListener("click", unInstallLanguage);
-}
+
+  disableDownloadButtons() {
+    const installList = document.querySelector(
+      "#translations-settings-download-section .translations-settings-language-list"
+    );
+    
+    for (const langElem of installList.querySelectorAll(
+      ".translations-settings-language:not(:first-child)"
+    )) {
+      const langButton = langElem.querySelector("moz-button");
+      langButton.setAttribute("disabled", "true");
+    }
+  },
+
+  
 
 
 
 
-function unInstallLanguage(event) {
-  event.target.classList.remove("translations-settings-delete-icon");
-  event.target.classList.add("translations-settings-download-icon");
-  event.target.removeEventListener("click", unInstallLanguage);
-  event.target.addEventListener("click", installLanguage);
-}
+
+
+
+  updateAllLanguageDownloadButtons(allLanguageDownloadStatus) {
+    const installList = document.querySelector(
+      "#translations-settings-download-section .translations-settings-language-list"
+    );
+
+    
+    for (const langElem of installList.querySelectorAll(
+      ".translations-settings-language:not(:first-child)"
+    )) {
+      let langButton = langElem.querySelector("moz-button");
+      const langLabel = langElem.querySelector("label");
+      const downloadPhase = this.downloadPhases.get(
+        langLabel.getAttribute("value")
+      ).downloadPhase;
+
+      langButton.removeAttribute("disabled");
+
+      if (
+        downloadPhase !== "downloaded" &&
+        allLanguageDownloadStatus === "downloaded"
+      ) {
+        this.changeButtonState(
+          langButton,
+          downloadPhase === "loading"
+            ? "translations-settings-loading-icon"
+            : "translations-settings-download-icon",
+          "translations-settings-delete-icon"
+        );
+        this.updateDownloadPhase(langLabel.getAttribute("value"), "downloaded");
+      } else if (
+        downloadPhase === "downloaded" &&
+        allLanguageDownloadStatus === "uninstalled"
+      ) {
+        this.changeButtonState(
+          langButton,
+          "translations-settings-delete-icon",
+          "translations-settings-download-icon"
+        );
+        this.updateDownloadPhase(
+          langLabel.getAttribute("value"),
+          "uninstalled"
+        );
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  changeButtonState(langButton, prevCssClass, curCssClass) {
+    langButton.classList.remove(prevCssClass);
+    langButton.classList.add(curCssClass);
+  },
+};
