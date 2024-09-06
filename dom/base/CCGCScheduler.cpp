@@ -661,13 +661,8 @@ void CCGCScheduler::EnsureGCRunner(TimeDuration aDelay) {
   }
 
   TimeDuration minimumBudget = TimeDuration::FromMilliseconds(
-      
-      
-      
-      
-      
       std::max(nsRefreshDriver::HighRateMultiplier() *
-                   mActiveIntersliceGCBudget.ToMilliseconds() / 2,
+                   mActiveIntersliceGCBudget.ToMilliseconds(),
                1.0));
 
   
