@@ -199,3 +199,19 @@ function getRootElement(panel) {
 function getContextMenuElement(panel) {
   return panel.panelWindow.document.getElementById("sidebar-context");
 }
+
+
+
+
+
+
+
+async function assertRuleCount(editor, expected) {
+  
+  
+  const element = editor.summary.querySelector(".stylesheet-rule-count");
+  await waitFor(() => {
+    return parseInt(element.textContent, 10) === expected;
+  });
+  is(parseInt(element.textContent, 10), expected, "the rule count is correct");
+}
