@@ -277,6 +277,12 @@ TimeDuration BalanceTimeDuration(const NormalizedTimeDuration& duration,
 
 
 
+bool BalanceTimeDuration(JSContext* cx, const NormalizedTimeDuration& duration,
+                         TemporalUnit largestUnit, TimeDuration* result);
+
+
+
+
 
 bool BalanceDateDurationRelative(
     JSContext* cx, const DateDuration& duration, TemporalUnit largestUnit,

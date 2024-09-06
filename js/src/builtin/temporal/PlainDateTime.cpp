@@ -1056,7 +1056,10 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
     }
 
     
-    balancedTime = BalanceTimeDuration(withDays, settings.largestUnit);
+    if (!BalanceTimeDuration(cx, withDays, settings.largestUnit,
+                             &balancedTime)) {
+      return false;
+    }
 
     
     auto toBalance = DateDuration{
@@ -1079,7 +1082,10 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
     }
 
     
-    balancedTime = BalanceTimeDuration(withDays, settings.largestUnit);
+    if (!BalanceTimeDuration(cx, withDays, settings.largestUnit,
+                             &balancedTime)) {
+      return false;
+    }
 
     
     balancedDate = {

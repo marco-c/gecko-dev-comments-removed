@@ -1291,12 +1291,12 @@ static NormalizedTimeAndDays NormalizedTimeDurationToDays(
 static TimeDuration CreateTimeDurationRecord(int64_t days, int64_t hours,
                                              int64_t minutes, int64_t seconds,
                                              int64_t milliseconds,
-                                             double microseconds,
-                                             double nanoseconds) {
+                                             int64_t microseconds,
+                                             int64_t nanoseconds) {
   
   MOZ_ASSERT(IsValidDuration(
       {0, 0, 0, double(days), double(hours), double(minutes), double(seconds),
-       double(milliseconds), microseconds, nanoseconds}));
+       double(milliseconds), double(microseconds), double(nanoseconds)}));
 
   
   
@@ -1304,11 +1304,10 @@ static TimeDuration CreateTimeDurationRecord(int64_t days, int64_t hours,
   MOZ_ASSERT(IsSafeInteger(hours));
   MOZ_ASSERT(IsSafeInteger(minutes));
   MOZ_ASSERT(IsSafeInteger(seconds));
+  MOZ_ASSERT(IsSafeInteger(milliseconds));
+  MOZ_ASSERT(IsSafeInteger(microseconds));
+  MOZ_ASSERT(IsSafeInteger(nanoseconds));
 
-  
-  
-
-  
   
   return {
       days,
@@ -1316,8 +1315,25 @@ static TimeDuration CreateTimeDurationRecord(int64_t days, int64_t hours,
       minutes,
       seconds,
       milliseconds,
-      microseconds + (+0.0),
-      nanoseconds + (+0.0),
+      double(microseconds),
+      double(nanoseconds),
+  };
+}
+
+
+
+
+
+static TimeDuration CreateTimeDurationRecord(int64_t milliseconds,
+                                             const Int128& microseconds,
+                                             const Int128& nanoseconds) {
+  
+  MOZ_ASSERT(IsValidDuration({0, 0, 0, 0, 0, 0, 0, double(milliseconds),
+                              double(microseconds), double(nanoseconds)}));
+
+  
+  return {
+      0, 0, 0, 0, milliseconds, double(microseconds), double(nanoseconds),
   };
 }
 
@@ -1327,6 +1343,8 @@ static TimeDuration CreateTimeDurationRecord(int64_t days, int64_t hours,
 TimeDuration js::temporal::BalanceTimeDuration(
     const NormalizedTimeDuration& duration, TemporalUnit largestUnit) {
   MOZ_ASSERT(IsValidNormalizedTimeDuration(duration));
+  MOZ_ASSERT(largestUnit <= TemporalUnit::Second,
+             "fallible fractional seconds units");
 
   auto [seconds, nanoseconds] = duration;
 
@@ -1473,118 +1491,180 @@ TimeDuration js::temporal::BalanceTimeDuration(
       break;
     }
 
-      
-    case TemporalUnit::Millisecond: {
-      static_assert((NormalizedTimeDuration::max().seconds + 1) *
-                            ToMilliseconds(TemporalUnit::Second) <=
-                        INT64_MAX,
-                    "total number duration milliseconds fits into int64");
-
-      int64_t millis = seconds * ToMilliseconds(TemporalUnit::Second);
-
-      
-      seconds = 0;
-
-      
-      microseconds = nanoseconds / 1000;
-
-      
-      nanoseconds = nanoseconds % 1000;
-
-      
-      milliseconds = microseconds / 1000;
-
-      
-      microseconds = microseconds % 1000;
-
-      MOZ_ASSERT(std::abs(milliseconds) <= 999);
-      milliseconds += millis;
-
-      
-      constexpr auto limit =
-          (int64_t(1) << 53) * ToMilliseconds(TemporalUnit::Second);
-      constexpr auto max = int64_t(0x7cff'ffff'ffff'fdff);
-
-      static_assert(
-          int64_t(double(max)) < limit && int64_t(double(max + 1)) >= limit,
-          "max is the maximum allowed milliseconds value");
-
-      auto totalMillis =
-          (seconds * ToMilliseconds(TemporalUnit::Second)) + milliseconds;
-      if (totalMillis > max) {
-        
-        
-      }
-
-      break;
-    }
-
-      
-    case TemporalUnit::Microsecond: {
-      
-      int64_t microseconds = nanoseconds / 1000;
-
-      
-      nanoseconds = nanoseconds % 1000;
-
-      MOZ_ASSERT(std::abs(microseconds) <= 999'999);
-      double micros =
-          std::fma(double(seconds), ToMicroseconds(TemporalUnit::Second),
-                   double(microseconds));
-
-      
-      constexpr auto limit = Int128{int64_t(1) << 53} *
-                             Int128{ToMicroseconds(TemporalUnit::Second)};
-      constexpr auto max =
-          (Int128{0x1e8} << 64) + Int128{0x47ff'ffff'fff7'ffff};
-      static_assert(max < limit);
-
-      auto totalMicros =
-          (Int128{seconds} * Int128{ToMicroseconds(TemporalUnit::Second)}) +
-          Int128{microseconds};
-      if (totalMicros > max) {
-        
-        
-      }
-
-      
-      return CreateTimeDurationRecord(0, 0, 0, 0, 0, micros,
-                                      double(nanoseconds));
-    }
-
-      
-    case TemporalUnit::Nanosecond: {
-      MOZ_ASSERT(std::abs(nanoseconds) <= 999'999'999);
-      double nanos =
-          std::fma(double(seconds), ToNanoseconds(TemporalUnit::Second),
-                   double(nanoseconds));
-
-      
-      constexpr auto limit = Int128{int64_t(1) << 53} *
-                             Int128{ToNanoseconds(TemporalUnit::Second)};
-      constexpr auto max =
-          (Int128{0x77359} << 64) + Int128{0x3fff'ffff'dfff'ffff};
-      static_assert(max < limit);
-
-      auto totalNanos =
-          (Int128{seconds} * Int128{ToNanoseconds(TemporalUnit::Second)}) +
-          Int128{nanoseconds};
-      if (totalNanos > max) {
-        
-        
-      }
-
-      
-      return CreateTimeDurationRecord(0, 0, 0, 0, 0, 0, nanos);
-    }
-
+    case TemporalUnit::Millisecond:
+    case TemporalUnit::Microsecond:
+    case TemporalUnit::Nanosecond:
     case TemporalUnit::Auto:
       MOZ_CRASH("Unexpected temporal unit");
   }
 
   
   return CreateTimeDurationRecord(days, hours, minutes, seconds, milliseconds,
-                                  double(microseconds), double(nanoseconds));
+                                  microseconds, nanoseconds);
+}
+
+
+
+
+bool js::temporal::BalanceTimeDuration(JSContext* cx,
+                                       const NormalizedTimeDuration& duration,
+                                       TemporalUnit largestUnit,
+                                       TimeDuration* result) {
+  MOZ_ASSERT(IsValidNormalizedTimeDuration(duration));
+
+  auto [seconds, nanoseconds] = duration;
+
+  
+  
+  
+  
+  
+  
+  if (seconds < 0 && nanoseconds > 0) {
+    seconds += 1;
+    nanoseconds -= ToNanoseconds(TemporalUnit::Second);
+  }
+
+  
+  
+  
+  
+
+  
+  switch (largestUnit) {
+    
+    case TemporalUnit::Year:
+    case TemporalUnit::Month:
+    case TemporalUnit::Week:
+    case TemporalUnit::Day:
+    case TemporalUnit::Hour:
+    case TemporalUnit::Minute:
+    case TemporalUnit::Second:
+      *result = BalanceTimeDuration(duration, largestUnit);
+      return true;
+
+    
+    case TemporalUnit::Millisecond: {
+      
+      constexpr auto limit =
+          (int64_t(1) << 53) * ToMilliseconds(TemporalUnit::Second);
+
+      
+      
+      constexpr auto max = int64_t(0x7cff'ffff'ffff'fdff);
+
+      
+      static_assert(double(max) < double(limit));
+      static_assert(double(max + 1) >= double(limit));
+
+      static_assert((NormalizedTimeDuration::max().seconds + 1) *
+                            ToMilliseconds(TemporalUnit::Second) <=
+                        INT64_MAX,
+                    "total number duration milliseconds fits into int64");
+
+      
+      int64_t microseconds = nanoseconds / 1000;
+
+      
+      nanoseconds = nanoseconds % 1000;
+
+      
+      int64_t milliseconds = microseconds / 1000;
+      MOZ_ASSERT(std::abs(milliseconds) <= 999);
+
+      
+      microseconds = microseconds % 1000;
+
+      auto millis =
+          (seconds * ToMilliseconds(TemporalUnit::Second)) + milliseconds;
+      if (std::abs(millis) > max) {
+        JS_ReportErrorNumberASCII(
+            cx, GetErrorMessage, nullptr,
+            JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
+        return false;
+      }
+
+      
+      *result = CreateTimeDurationRecord(millis, Int128{microseconds},
+                                         Int128{nanoseconds});
+      return true;
+    }
+
+    
+    case TemporalUnit::Microsecond: {
+      
+      constexpr auto limit = Uint128{int64_t(1) << 53} *
+                             Uint128{ToMicroseconds(TemporalUnit::Second)};
+
+      
+      
+      constexpr auto max =
+          (Uint128{0x1e8} << 64) + Uint128{0x47ff'ffff'fff7'ffff};
+      static_assert(max < limit);
+
+      
+      MOZ_ASSERT(double(max) < double(limit));
+      MOZ_ASSERT(double(max + Uint128{1}) >= double(limit));
+
+      
+      int64_t microseconds = nanoseconds / 1000;
+      MOZ_ASSERT(std::abs(microseconds) <= 999'999);
+
+      
+      nanoseconds = nanoseconds % 1000;
+
+      auto micros =
+          (Int128{seconds} * Int128{ToMicroseconds(TemporalUnit::Second)}) +
+          Int128{microseconds};
+      if (micros.abs() > max) {
+        JS_ReportErrorNumberASCII(
+            cx, GetErrorMessage, nullptr,
+            JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
+        return false;
+      }
+
+      
+      *result = CreateTimeDurationRecord(0, micros, Int128{nanoseconds});
+      return true;
+    }
+
+    
+    case TemporalUnit::Nanosecond: {
+      
+      constexpr auto limit = Uint128{int64_t(1) << 53} *
+                             Uint128{ToNanoseconds(TemporalUnit::Second)};
+
+      
+      
+      constexpr auto max =
+          (Uint128{0x77359} << 64) + Uint128{0x3fff'ffff'dfff'ffff};
+      static_assert(max < limit);
+
+      
+      MOZ_ASSERT(double(max) < double(limit));
+      MOZ_ASSERT(double(max + Uint128{1}) >= double(limit));
+
+      MOZ_ASSERT(std::abs(nanoseconds) <= 999'999'999);
+
+      auto nanos =
+          (Int128{seconds} * Int128{ToNanoseconds(TemporalUnit::Second)}) +
+          Int128{nanoseconds};
+      if (nanos.abs() > max) {
+        JS_ReportErrorNumberASCII(
+            cx, GetErrorMessage, nullptr,
+            JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
+        return false;
+      }
+
+      
+      *result = CreateTimeDurationRecord(0, Int128{}, nanos);
+      return true;
+    }
+
+    case TemporalUnit::Auto:
+      break;
+  }
+  MOZ_CRASH("Unexpected temporal unit");
 }
 
 
@@ -1678,7 +1758,10 @@ static bool BalanceTimeDurationRelative(
   }
 
   
-  auto balanceResult = BalanceTimeDuration(normalized, largestUnit);
+  TimeDuration balanceResult;
+  if (!BalanceTimeDuration(cx, normalized, largestUnit, &balanceResult)) {
+    return false;
+  }
 
   
   *result = {
@@ -2098,7 +2181,10 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   }
 
   
-  auto balanced = temporal::BalanceTimeDuration(normalized, largestUnit);
+  TimeDuration balanced;
+  if (!temporal::BalanceTimeDuration(cx, normalized, largestUnit, &balanced)) {
+    return false;
+  }
 
   
   *result = balanced.toDuration();
@@ -2182,7 +2268,10 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   }
 
   
-  auto balanced = temporal::BalanceTimeDuration(normalized, largestUnit);
+  TimeDuration balanced;
+  if (!temporal::BalanceTimeDuration(cx, normalized, largestUnit, &balanced)) {
+    return false;
+  }
 
   
   *result = {
@@ -2255,7 +2344,10 @@ static bool AddDuration(
         endNs, zonedRelativeTo.instant());
 
     
-    auto balanced = BalanceTimeDuration(normalized, largestUnit);
+    TimeDuration balanced;
+    if (!BalanceTimeDuration(cx, normalized, largestUnit, &balanced)) {
+      return false;
+    }
 
     
     *result = balanced.toDuration();
@@ -5194,7 +5286,10 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     }
 
     
-    balanceResult = temporal::BalanceTimeDuration(withDays, largestUnit);
+    if (!temporal::BalanceTimeDuration(cx, withDays, largestUnit,
+                                       &balanceResult)) {
+      return false;
+    }
   }
 
   
