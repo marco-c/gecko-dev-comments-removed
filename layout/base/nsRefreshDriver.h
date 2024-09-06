@@ -103,6 +103,12 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
                           const char* aObserverDescription);
   bool RemoveRefreshObserver(nsARefreshObserver* aObserver,
                              mozilla::FlushType aFlushType);
+  
+
+
+
+  void AddTimerAdjustmentObserver(nsATimerAdjustmentObserver* aObserver);
+  void RemoveTimerAdjustmentObserver(nsATimerAdjustmentObserver* aObserver);
 
   void PostVisualViewportResizeEvent(VVPResizeEvent* aResizeEvent);
   void DispatchVisualViewportResizeEvents();
@@ -411,11 +417,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     mNeedToUpdateResizeObservers = true;
   }
 
-  void EnsureAnimationUpdate() {
-    EnsureTimerStarted();
-    mNeedToUpdateAnimations = true;
-  }
-
   void ScheduleMediaQueryListenerUpdate() {
     EnsureTimerStarted();
     mMightNeedMediaQueryListenerUpdate = true;
@@ -445,7 +446,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     eHasPendingMediaQueryListeners = 1 << 7,
     eNeedsToNotifyResizeObservers = 1 << 8,
     eRootNeedsMoreTicksForUserInput = 1 << 9,
-    eNeedsToUpdateAnimations = 1 << 10,
   };
 
   void AddForceNotifyContentfulPaintPresContext(nsPresContext* aPresContext);
@@ -487,7 +487,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   MOZ_CAN_RUN_SCRIPT
   void FlushAutoFocusDocuments();
   void RunFullscreenSteps();
-  void UpdateAnimationsAndSendEvents();
+  void DispatchAnimationEvents();
   MOZ_CAN_RUN_SCRIPT
   void RunFrameRequestCallbacks(mozilla::TimeStamp aNowTime);
   void UpdateIntersectionObservations(mozilla::TimeStamp aNowTime);
@@ -644,9 +644,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   bool mNeedToUpdateResizeObservers : 1;
 
   
-  bool mNeedToUpdateAnimations : 1;
-
-  
   
   bool mMightNeedMediaQueryListenerUpdate : 1;
 
@@ -676,6 +673,12 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   
   ObserverArray mObservers[3];
+  
+  
+  
+  
+  
+  nsTObserverArray<nsATimerAdjustmentObserver*> mTimerAdjustmentObservers;
   nsTArray<mozilla::layers::CompositionPayload> mCompositionPayloads;
   RequestTable mRequests;
   ImageStartTable mStartTable;

@@ -65,6 +65,17 @@ class nsARefreshObserver {
 
 
 
+
+class nsATimerAdjustmentObserver {
+ public:
+  virtual void NotifyTimerAdjusted(mozilla::TimeStamp aTime) = 0;
+};
+
+
+
+
+
+
 class nsAPostRefreshObserver {
  public:
   virtual void DidRefresh() = 0;
