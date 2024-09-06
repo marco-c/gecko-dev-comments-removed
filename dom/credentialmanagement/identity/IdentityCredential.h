@@ -10,7 +10,6 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Credential.h"
 #include "mozilla/dom/IPCIdentityCredential.h"
-#include "mozilla/IdentityCredentialStorageService.h"
 #include "mozilla/MozPromise.h"
 
 namespace mozilla::dom {
@@ -21,8 +20,6 @@ namespace mozilla::dom {
 
 
 class IdentityCredential final : public Credential {
-  friend class mozilla::IdentityCredentialStorageService;
-
  public:
   
   
@@ -31,12 +28,8 @@ class IdentityCredential final : public Credential {
   
   typedef MozPromise<RefPtr<IdentityCredential>, nsresult, true>
       GetIdentityCredentialPromise;
-  typedef MozPromise<nsTArray<RefPtr<IdentityCredential>>, nsresult, true>
-      GetIdentityCredentialsPromise;
   typedef MozPromise<IPCIdentityCredential, nsresult, true>
       GetIPCIdentityCredentialPromise;
-  typedef MozPromise<CopyableTArray<IPCIdentityCredential>, nsresult, true>
-      GetIPCIdentityCredentialsPromise;
   typedef MozPromise<IdentityProviderConfig, nsresult, true>
       GetIdentityProviderConfigPromise;
   typedef MozPromise<bool, nsresult, true> ValidationPromise;
@@ -60,17 +53,11 @@ class IdentityCredential final : public Credential {
   typedef MozPromise<IdentityProviderClientMetadata, nsresult, true>
       GetMetadataPromise;
 
- protected:
-  ~IdentityCredential() override;
-
-  
-  
   
   explicit IdentityCredential(nsPIDOMWindowInner* aParent);
-  
-  
-  explicit IdentityCredential(nsPIDOMWindowInner* aParent,
-                              const IPCIdentityCredential& aOther);
+
+ protected:
+  ~IdentityCredential() override;
 
  public:
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -83,43 +70,31 @@ class IdentityCredential final : public Credential {
   void CopyValuesFrom(const IPCIdentityCredential& aOther);
 
   
-  IPCIdentityCredential MakeIPCIdentityCredential() const;
-
-  static already_AddRefed<IdentityCredential> Constructor(
-      const GlobalObject& aGlobal, const IdentityCredentialInit& aInit,
-      ErrorResult& aRv);
+  IPCIdentityCredential MakeIPCIdentityCredential();
 
   
   void GetToken(nsAString& aToken) const;
   void SetToken(const nsAString& aToken);
 
   
-  void GetOrigin(nsACString& aOrigin, ErrorResult& aError) const;
-
-  static RefPtr<GetIdentityCredentialsPromise> CollectFromCredentialStore(
-      nsPIDOMWindowInner* aParent, const CredentialRequestOptions& aOptions,
-      bool aSameOriginWithAncestors);
-
-  static RefPtr<GenericPromise> AllowedToCollectCredential(
-      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions,
-      IPCIdentityCredential aCredential);
-
-  static RefPtr<GetIPCIdentityCredentialsPromise>
-  CollectFromCredentialStoreInMainProcess(
-      nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
-      const IdentityCredentialRequestOptions& aOptions);
-
-  static RefPtr<GenericPromise> Store(nsPIDOMWindowInner* aParent,
-                                      const IdentityCredential* aCredential,
-                                      bool aSameOriginWithAncestors);
-
-  static RefPtr<GenericPromise> StoreInMainProcess(
-      nsIPrincipal* aPrincipal, const IPCIdentityCredential& aCredential);
-
-  static RefPtr<GetIdentityCredentialPromise> Create(
-      nsPIDOMWindowInner* aParent, const CredentialCreationOptions& aOptions,
-      bool aSameOriginWithAncestors);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<Promise> LogoutRPs(
+      GlobalObject& aGlobal,
+      const Sequence<IdentityCredentialLogoutRPsRequest>& aLogoutRequests,
+      ErrorResult& aRv);
 
   
   
@@ -163,8 +138,7 @@ class IdentityCredential final : public Credential {
   
   
   
-  static RefPtr<GetIPCIdentityCredentialPromise>
-  CreateHeavyweightCredentialDuringDiscovery(
+  static RefPtr<GetIPCIdentityCredentialPromise> CreateCredential(
       nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
       const IdentityProviderConfig& aProvider,
       const IdentityProviderAPIConfig& aManifest);
@@ -332,15 +306,7 @@ class IdentityCredential final : public Credential {
   static void CloseUserInterface(BrowsingContext* aBrowsingContext);
 
  private:
-  nsAutoString mToken;  
-  nsCOMPtr<nsIPrincipal> mIdentityProvider;
-  Maybe<IdentityCredentialInit> mCreationOptions;
-
-  
-  
-  enum RequestType { INVALID, LIGHTWEIGHT, HEAVYWEIGHT };
-  static RequestType DetermineRequestType(
-      const IdentityCredentialRequestOptions& aOptions);
+  nsAutoString mToken;
 };
 
 }  
