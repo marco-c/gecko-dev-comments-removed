@@ -50,16 +50,9 @@ class RTC_EXPORT VideoDecoderFactory {
                                          bool reference_scaling) const;
 
   
-  
-  
-  virtual std::unique_ptr<VideoDecoder> Create(const Environment& env,
-                                               const SdpVideoFormat& format);
-
- private:
-  
-  
-  virtual std::unique_ptr<VideoDecoder> CreateVideoDecoder(
-      const SdpVideoFormat& format);
+  virtual std::unique_ptr<VideoDecoder> Create(
+      const Environment& env,
+      const SdpVideoFormat& format) = 0;
 };
 
 }  
