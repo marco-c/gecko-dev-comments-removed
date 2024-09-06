@@ -3,7 +3,6 @@
 
 
 import { getSelectedSource } from "./sources";
-import { getIsThreadCurrentlyTracing, getAllThreads } from "./threads";
 
 export function getSelectedPrimaryPaneTab(state) {
   return state.ui.selectedPrimaryPaneTab;
@@ -67,17 +66,6 @@ export function getInlinePreview(state) {
 
 export function getEditorWrapping(state) {
   return state.ui.editorWrappingEnabled;
-}
-
-export function getIsJavascriptTracingEnabled(state) {
-  
-  
-  return (
-    state.ui.javascriptTracingEnabled ||
-    getAllThreads(state).some(thread =>
-      getIsThreadCurrentlyTracing(state, thread.actor)
-    )
-  );
 }
 
 export function getJavascriptTracingLogMethod(state) {
