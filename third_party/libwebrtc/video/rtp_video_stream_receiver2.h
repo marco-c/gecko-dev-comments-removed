@@ -211,6 +211,9 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   absl::optional<uint32_t> LastReceivedFrameRtpTimestamp() const;
   absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
 
+  absl::optional<RtpRtcpInterface::SenderReportStats> GetSenderReportStats()
+      const;
+
   
   
   

@@ -118,9 +118,11 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     TimeDelta total_decode_time = TimeDelta::Zero();
     
     TimeDelta total_processing_delay = TimeDelta::Zero();
+
     
     TimeDelta total_assembly_time = TimeDelta::Zero();
     uint32_t frames_assembled_from_multiple_packets = 0;
+
     
     
     double total_inter_frame_delay = 0;
@@ -163,6 +165,14 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     
     absl::optional<webrtc::TimingFrameInfo> timing_frame_info;
+
+    
+    
+    absl::optional<int64_t> last_sender_report_timestamp_ms;
+    absl::optional<int64_t> last_sender_report_remote_timestamp_ms;
+    uint32_t sender_reports_packets_sent = 0;
+    uint64_t sender_reports_bytes_sent = 0;
+    uint64_t sender_reports_reports_count = 0;
   };
 
   struct Config {
