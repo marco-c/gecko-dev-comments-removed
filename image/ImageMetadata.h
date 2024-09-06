@@ -38,10 +38,6 @@ class ImageMetadata {
   FrameTimeout GetLoopLength() const { return *mLoopLength; }
   bool HasLoopLength() const { return mLoopLength.isSome(); }
 
-  void SetFrameCount(uint32_t aCount) { mFrameCount = Some(aCount); }
-  uint32_t GetFrameCount() const { return *mFrameCount; }
-  bool HasFrameCount() const { return mFrameCount.isSome(); }
-
   void SetFirstFrameTimeout(FrameTimeout aTimeout) {
     mFirstFrameTimeout = aTimeout;
   }
@@ -97,9 +93,6 @@ class ImageMetadata {
 
   
   Maybe<FrameTimeout> mLoopLength;
-
-  
-  Maybe<uint32_t> mFrameCount;
 
   
   FrameTimeout mFirstFrameTimeout = FrameTimeout::Forever();

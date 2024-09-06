@@ -291,9 +291,6 @@ LexerTransition<ICOState> nsICODecoder::FinishDirEntry() {
   
   
   PostSize(biggestEntry->mSize.width, biggestEntry->mSize.height);
-  if (WantsFrameCount()) {
-    PostFrameCount( 1);
-  }
   if (HasError()) {
     return Transition::TerminateFailure();
   }

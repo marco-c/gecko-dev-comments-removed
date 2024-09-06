@@ -702,9 +702,6 @@ bool RasterImage::SetMetadata(const ImageMetadata& aMetadata,
     StoreHasSize(true);
   }
 
-  MOZ_ASSERT_IF(mAnimationState && !aFromMetadataDecode,
-                mAnimationState->LoopCount() == aMetadata.GetLoopCount());
-
   if (LoadHasSize() && aMetadata.HasAnimation() && !mAnimationState) {
     
     mAnimationState.emplace(mAnimationMode);

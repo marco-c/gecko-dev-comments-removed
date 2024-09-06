@@ -79,10 +79,6 @@ LexerTransition<nsIconDecoder::State> nsIconDecoder::ReadHeader(
   
   PostSize(width, height);
 
-  if (WantsFrameCount()) {
-    PostFrameCount( 1);
-  }
-
   
   PostHasTransparency();
 

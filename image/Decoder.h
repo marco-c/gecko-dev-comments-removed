@@ -200,13 +200,6 @@ class Decoder {
   
 
 
-  bool WantsFrameCount() const {
-    return bool(mDecoderFlags & DecoderFlags::COUNT_FRAMES);
-  }
-
-  
-
-
 
 
 
@@ -307,7 +300,7 @@ class Decoder {
   
   bool GetDecodeDone() const {
     return mReachedTerminalState || mDecodeDone ||
-           (mMetadataDecode && HasSize() && !WantsFrameCount()) || HasError();
+           (mMetadataDecode && HasSize()) || HasError();
   }
 
   
@@ -514,10 +507,6 @@ class Decoder {
 
   
   
-  void PostFrameCount(uint32_t aFrameCount);
-
-  
-  
   
   
   
@@ -540,14 +529,13 @@ class Decoder {
 
   
   
-  void PostLoopCount(int32_t aLoopCount);
-
   
   
   
   
   
-  void PostDecodeDone();
+  
+  void PostDecodeDone(int32_t aLoopCount = 0);
 
   
 
