@@ -1494,6 +1494,11 @@ class nsContentUtils {
   
 
 
+  static bool IsAddonDoc(const Document* aDocument);
+
+  
+
+
   static bool IsChildOfSameType(Document* aDoc);
 
   
