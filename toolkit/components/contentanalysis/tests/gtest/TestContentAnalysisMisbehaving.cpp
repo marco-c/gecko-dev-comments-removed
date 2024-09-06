@@ -8,7 +8,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "content_analysis/sdk/analysis_client.h"
-#include "TestContentAnalysisAgent.h"
+#include "TestContentAnalysisUtils.h"
 #include <processenv.h>
 #include <synchapi.h>
 #include <windows.h>
@@ -70,10 +70,7 @@ TEST(ContentAnalysisMisbehaving, InvalidUtf8StringStartByteIsContinuationByte)
   
   ASSERT_STREQ("\x80\x41\x41\x41", response.request_token().c_str());
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving,
@@ -95,10 +92,7 @@ TEST(ContentAnalysisMisbehaving,
   
   ASSERT_STREQ("\x41\xf0\x90\x8d", response.request_token().c_str());
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, InvalidUtf8StringMultibyteSequenceTooShort)
@@ -119,10 +113,7 @@ TEST(ContentAnalysisMisbehaving, InvalidUtf8StringMultibyteSequenceTooShort)
   
   ASSERT_STREQ("\xf0\x90\x8d\x41", response.request_token().c_str());
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, InvalidUtf8StringDecodesToInvalidCodePoint)
@@ -143,10 +134,7 @@ TEST(ContentAnalysisMisbehaving, InvalidUtf8StringDecodesToInvalidCodePoint)
   
   ASSERT_STREQ("\xf7\xbf\xbf\xbf", response.request_token().c_str());
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, InvalidUtf8StringOverlongEncoding)
@@ -167,10 +155,7 @@ TEST(ContentAnalysisMisbehaving, InvalidUtf8StringOverlongEncoding)
   
   ASSERT_STREQ("\xf0\x82\x82\xac", response.request_token().c_str());
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, StringWithEmbeddedNull)
@@ -188,10 +173,7 @@ TEST(ContentAnalysisMisbehaving, StringWithEmbeddedNull)
   std::string expected("\x41\x00\x41");
   ASSERT_EQ(expected, response.request_token());
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, ZeroResults)
@@ -208,10 +190,7 @@ TEST(ContentAnalysisMisbehaving, ZeroResults)
   ASSERT_EQ(0, MozAgentInfo.client->Send(request, &response));
   ASSERT_EQ(0, response.results().size());
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, ResultWithInvalidStatus)
@@ -232,10 +211,7 @@ TEST(ContentAnalysisMisbehaving, ResultWithInvalidStatus)
   
   ASSERT_GE(static_cast<int>(response.results(0).status()), 0);
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageTruncatedInMiddleOfString)
@@ -252,10 +228,7 @@ TEST(ContentAnalysisMisbehaving, MessageTruncatedInMiddleOfString)
   
   ASSERT_EQ(-1, MozAgentInfo.client->Send(request, &response));
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageWithInvalidWireType)
@@ -271,10 +244,7 @@ TEST(ContentAnalysisMisbehaving, MessageWithInvalidWireType)
   
   ASSERT_EQ(-1, MozAgentInfo.client->Send(request, &response));
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageWithUnusedFieldNumber)
@@ -292,10 +262,7 @@ TEST(ContentAnalysisMisbehaving, MessageWithUnusedFieldNumber)
   
   ASSERT_STREQ("", response.request_token().c_str());
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageWithWrongStringWireType)
@@ -311,10 +278,7 @@ TEST(ContentAnalysisMisbehaving, MessageWithWrongStringWireType)
   
   ASSERT_EQ(-1, MozAgentInfo.client->Send(request, &response));
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageWithZeroTag)
@@ -330,10 +294,7 @@ TEST(ContentAnalysisMisbehaving, MessageWithZeroTag)
   
   ASSERT_EQ(-1, MozAgentInfo.client->Send(request, &response));
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageWithZeroFieldButNonzeroWireType)
@@ -350,10 +311,7 @@ TEST(ContentAnalysisMisbehaving, MessageWithZeroFieldButNonzeroWireType)
   
   ASSERT_EQ(-1, MozAgentInfo.client->Send(request, &response));
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageWithGroupEnd)
@@ -370,10 +328,7 @@ TEST(ContentAnalysisMisbehaving, MessageWithGroupEnd)
   
   ASSERT_EQ(-1, MozAgentInfo.client->Send(request, &response));
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageTruncatedInMiddleOfVarint)
@@ -390,10 +345,7 @@ TEST(ContentAnalysisMisbehaving, MessageTruncatedInMiddleOfVarint)
   
   ASSERT_EQ(-1, MozAgentInfo.client->Send(request, &response));
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
 
 TEST(ContentAnalysisMisbehaving, MessageTruncatedInMiddleOfTag)
@@ -409,8 +361,5 @@ TEST(ContentAnalysisMisbehaving, MessageTruncatedInMiddleOfTag)
   
   ASSERT_EQ(-1, MozAgentInfo.client->Send(request, &response));
 
-  BOOL terminateResult =
-      ::TerminateProcess(MozAgentInfo.processInfo.hProcess, 0);
-  ASSERT_NE(FALSE, terminateResult)
-      << "Failed to terminate content_analysis_sdk_agent process";
+  MozAgentInfo.TerminateProcess();
 }
