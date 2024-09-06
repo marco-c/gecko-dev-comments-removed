@@ -18,19 +18,22 @@
 
 namespace JS {
 
-class HelperThreadTask;
+
+
+
+enum class DispatchReason { NewTask, FinishedTask };
 
 
 
 
 
 
-using HelperThreadTaskCallback = void (*)(HelperThreadTask* task);
+using HelperThreadTaskCallback = void (*)(DispatchReason reason);
 extern JS_PUBLIC_API void SetHelperThreadTaskCallback(
     HelperThreadTaskCallback callback, size_t threadCount, size_t stackSize);
 
 
-extern JS_PUBLIC_API void RunHelperThreadTask(HelperThreadTask* task);
+extern JS_PUBLIC_API void RunHelperThreadTask();
 
 }  
 

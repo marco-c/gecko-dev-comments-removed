@@ -32,8 +32,8 @@
 #include "js/AllocPolicy.h"               
 #include "js/CompileOptions.h"            
 #include "js/experimental/JSStencil.h"    
-#include "js/HelperThreadAPI.h"           
-#include "js/MemoryMetrics.h"             
+#include "js/HelperThreadAPI.h"  
+#include "js/MemoryMetrics.h"  
 #include "js/ProfilingStack.h"  
 #include "js/RootingAPI.h"                
 #include "js/UniquePtr.h"                 
@@ -78,8 +78,6 @@ typedef Vector<Tier2GeneratorTask*, 0, SystemAllocPolicy>
     Tier2GeneratorTaskPtrVector;
 
 }  
-
-using HelperThreadTaskVector = Vector<HelperThreadTask*, 0, SystemAllocPolicy>;
 
 
 class GlobalHelperThreadState {
@@ -174,6 +172,8 @@ class GlobalHelperThreadState {
   
   GCParallelTaskList gcParallelWorklist_;
 
+  using HelperThreadTaskVector =
+      Vector<HelperThreadTask*, 0, SystemAllocPolicy>;
   
   
   HelperThreadTaskVector helperTasks_;
@@ -185,13 +185,7 @@ class GlobalHelperThreadState {
 
   
   
-  js::ConditionVariable consumerWakeup;
-
-#ifdef DEBUG
-  
-  
   size_t tasksPending_ = 0;
-#endif
 
   bool isInitialized_ = false;
 
@@ -253,7 +247,7 @@ class GlobalHelperThreadState {
   
   
   template <typename T>
-  static void remove(T& vector, size_t* index) {
+  void remove(T& vector, size_t* index) {
     
     if (*index != vector.length() - 1) {
       vector[*index] = std::move(vector.back());
@@ -327,7 +321,6 @@ class GlobalHelperThreadState {
     return compressionFinishedList_;
   }
 
- private:
   GCParallelTaskList& gcParallelWorklist() { return gcParallelWorklist_; }
 
   HelperThreadTaskVector& helperTasks(const AutoLockHelperThreadState&) {
@@ -372,8 +365,23 @@ class GlobalHelperThreadState {
   HelperThreadTask* maybeGetGCParallelTask(
       const AutoLockHelperThreadState& lock);
 
+  enum class ScheduleCompressionTask { GC, API };
+
+  
+  void startHandlingCompressionTasks(ScheduleCompressionTask schedule,
+                                     JSRuntime* maybeRuntime,
+                                     const AutoLockHelperThreadState& lock);
+
   jit::IonCompileTask* highestPriorityPendingIonCompile(
       const AutoLockHelperThreadState& lock, bool checkExecutionStatus);
+
+ public:
+  void trace(JSTracer* trc);
+
+  bool hasActiveThreads(const AutoLockHelperThreadState&);
+  bool canStartTasks(const AutoLockHelperThreadState& locked);
+  void waitForAllTasks();
+  void waitForAllTasksLocked(AutoLockHelperThreadState&);
 
   bool checkTaskThreadLimit(ThreadType threadType, size_t maxThreads,
                             bool isMaster,
@@ -384,43 +392,19 @@ class GlobalHelperThreadState {
                                 lock);
   }
 
-  bool hasActiveThreads(const AutoLockHelperThreadState&);
-  bool canStartTasks(const AutoLockHelperThreadState& locked);
-
- public:
-  
-  enum class ScheduleCompressionTask { GC, API };
-  void startHandlingCompressionTasks(ScheduleCompressionTask schedule,
-                                     JSRuntime* maybeRuntime,
-                                     const AutoLockHelperThreadState& lock);
-
-  void runPendingSourceCompressions(JSRuntime* runtime,
-                                    AutoLockHelperThreadState& lock);
-
-  void trace(JSTracer* trc);
-
-  void waitForAllTasks();
-  void waitForAllTasksLocked(AutoLockHelperThreadState&);
-
-#ifdef DEBUG
-  bool hasOffThreadIonCompile(Zone* zone, AutoLockHelperThreadState& lock);
-#endif
-
-  void cancelOffThreadIonCompile(const CompilationSelector& selector);
-  void cancelOffThreadWasmTier2Generator(AutoLockHelperThreadState& lock);
-
-  bool hasAnyDelazifyTask(JSRuntime* rt, AutoLockHelperThreadState& lock);
-  void cancelPendingDelazifyTask(JSRuntime* rt,
-                                 AutoLockHelperThreadState& lock);
-  void waitUntilCancelledDelazifyTasks(JSRuntime* rt,
-                                       AutoLockHelperThreadState& lock);
-  void waitUntilEmptyFreeDelazifyTaskVector(AutoLockHelperThreadState& lock);
-
-  void cancelOffThreadCompressions(JSRuntime* runtime,
-                                   AutoLockHelperThreadState& lock);
-
   void triggerFreeUnusedMemory();
 
+ private:
+  
+  
+  js::ConditionVariable consumerWakeup;
+
+  void dispatch(JS::DispatchReason reason,
+                const AutoLockHelperThreadState& locked);
+
+  void runTask(HelperThreadTask* task, AutoLockHelperThreadState& lock);
+
+ public:
   bool submitTask(wasm::UniqueTier2GeneratorTask task);
   bool submitTask(wasm::CompileTask* task, wasm::CompileMode mode);
   bool submitTask(UniquePtr<jit::IonFreeTask>&& task,
@@ -435,19 +419,15 @@ class GlobalHelperThreadState {
   bool submitTask(PromiseHelperTask* task);
   bool submitTask(GCParallelTask* task,
                   const AutoLockHelperThreadState& locked);
-
-  void runOneTask(HelperThreadTask* task, AutoLockHelperThreadState& lock);
-  void dispatch(const AutoLockHelperThreadState& locked);
-
- private:
-  HelperThreadTask* findHighestPriorityTask(
-      const AutoLockHelperThreadState& locked);
-
+  void runOneTask(AutoLockHelperThreadState& lock);
   void runTaskLocked(HelperThreadTask* task, AutoLockHelperThreadState& lock);
 
   using Selector = HelperThreadTask* (
       GlobalHelperThreadState::*)(const AutoLockHelperThreadState&);
   static const Selector selectors[];
+
+  HelperThreadTask* findHighestPriorityTask(
+      const AutoLockHelperThreadState& locked);
 };
 
 static inline bool IsHelperThreadStateInitialized() {
