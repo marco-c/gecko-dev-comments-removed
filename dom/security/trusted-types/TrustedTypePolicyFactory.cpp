@@ -26,7 +26,10 @@ bool TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
   
   
   
-  nsIContentSecurityPolicy* csp = mGlobalObject->GetAsInnerWindow()->GetCsp();
+  nsIContentSecurityPolicy* csp =
+      mGlobalObject->GetAsInnerWindow()
+          ? mGlobalObject->GetAsInnerWindow()->GetCsp()
+          : nullptr;
 
   if (csp) {
     uint32_t numPolicies = 0;
