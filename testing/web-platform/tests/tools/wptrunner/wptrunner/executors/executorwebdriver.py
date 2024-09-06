@@ -517,7 +517,7 @@ class WebDriverProtocol(Protocol):
             
             
             self.webdriver.send_session_command("GET", "window", timeout=2)
-        except (socket.timeout, error.UnknownErrorException, error.InvalidSessionIdException):
+        except (OSError, error.WebDriverException):
             return False
         return True
 
@@ -630,11 +630,7 @@ class WebDriverTestharnessExecutor(TestharnessExecutor):
             
             
             if not isinstance(result, list) or len(result) != 3:
-                try:
-                    is_alive = self.is_alive()
-                except error.WebDriverException:
-                    is_alive = False
-
+                is_alive = self.is_alive()
                 if not is_alive:
                     raise Exception("Browser crashed during script execution.")
 
