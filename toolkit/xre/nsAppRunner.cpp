@@ -2635,8 +2635,8 @@ static nsresult ProfileMissingDialog(nsINativeAppSupport* aNative) {
 #  ifdef MOZ_BACKGROUNDTASKS
   if (BackgroundTasks::IsBackgroundTaskMode()) {
     
-    Output(false,
-           "Could not determine any profile running in backgroundtask mode!\n");
+    printf_stderr(
+        "Could not determine any profile running in backgroundtask mode!\n");
     return NS_ERROR_ABORT;
   }
 #  endif  
