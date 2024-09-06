@@ -1187,15 +1187,9 @@ CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
   }
 
   
-  JumpTables jumpTables;
-  if (!jumpTables.initialize(CompileMode::Once, *codeBlock)) {
-    return Err(OutOfMemory());
-  }
-
-  
-  MutableCode code = js_new<Code>(*codeMeta, nullptr,
-                                  std::move(codeBlock), std::move(jumpTables));
-  if (!code || !code->initialize(linkData)) {
+  MutableCode code =
+      js_new<Code>(CompileMode::Once, *codeMeta, nullptr);
+  if (!code || !code->initialize(linkData, std::move(codeBlock))) {
     return Err(OutOfMemory());
   }
   *item = code;
