@@ -4304,8 +4304,6 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       
       
-      
-      
       if (oldTopLevelScopeOwner &&
           IsOpenPopoverWithInvoker(oldTopLevelScopeOwner) &&
           currentTopLevelScopeOwner != oldTopLevelScopeOwner) {
@@ -4329,21 +4327,12 @@ nsresult nsFocusManager::GetNextTabbableContent(
                 return rv;
               }
             }
-          } else if (invokerContent) {
-            nsIFrame* frame = invokerContent->GetPrimaryFrame();
-            if (frame && frame->IsFocusable()) {
-              invokerContent.forget(aResultContent);
-              return NS_OK;
-            }
-            nsIContent* contentToFocus = GetNextTabbableContentInScope(
-                currentTopLevelScopeOwner, invokerContent,
-                aOriginalStartContent, aForward, 0, aIgnoreTabIndex,
-                aForDocumentNavigation, aNavigateByKey, false ,
-                aReachedToEndForDocumentNavigation);
-            if (contentToFocus) {
-              NS_ADDREF(*aResultContent = contentToFocus);
-              return NS_OK;
-            }
+          } else if (invokerContent &&
+                     invokerContent->IsFocusableWithoutStyle()) {
+            
+            
+            invokerContent.forget(aResultContent);
+            return NS_OK;
           }
         }
       }
