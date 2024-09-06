@@ -938,8 +938,17 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
 
             
             
+
             self.run_command("pactl load-module module-null-sink")
-            self.run_command("pactl list modules short")
+            modules = self.get_output_from_command("pactl list modules short")
+            if not [l for l in modules.splitlines() if "module-x11" in l]:
+                
+                
+                self.return_code = 4
+                self.fatal(
+                    "Unable to start PulseAudio and load x11 modules",
+                    exit_code=self.return_code,
+                )
 
     def stage_files(self):
         for category in SUITE_CATEGORIES:
