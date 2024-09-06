@@ -3411,7 +3411,7 @@
 
 
  \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(AddDisposable, add_disposable, NULL, 1, 1, 1, JOF_BYTE)) \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(AddDisposable, add_disposable, NULL, 2, 1, 1, JOF_UINT8)) \
     
 
 
