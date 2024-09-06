@@ -24,7 +24,6 @@ extern "C" {}
 use super::model::{self, Application, Element, ElementStyle, TypedElement};
 use crate::data::Property;
 use font::Font;
-use once_cell::sync::Lazy;
 use quit_token::QuitToken;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -288,25 +287,6 @@ impl window::WindowClass for AppWindow {
 }
 
 impl CustomWindowClass for AppWindow {
-    fn icon() -> win::HICON {
-        static ICON: Lazy<win::HICON> = Lazy::new(|| unsafe {
-            
-            
-            win::CreateIconFromResource(
-                
-                
-                super::ICON_PNG_DATA.as_ptr(),
-                super::ICON_PNG_DATA.len() as u32,
-                true.into(),
-                
-                
-                0x00030000,
-            )
-        });
-
-        *ICON
-    }
-
     fn message(
         data: &RefCell<Self>,
         hwnd: HWND,

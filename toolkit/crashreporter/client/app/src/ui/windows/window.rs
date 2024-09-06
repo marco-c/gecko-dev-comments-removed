@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use windows_sys::Win32::{
     Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
     Graphics::Gdi::{self, HBRUSH},
-    UI::WindowsAndMessaging::{self as win, HCURSOR, HICON},
+    UI::WindowsAndMessaging::{self as win, HCURSOR},
 };
 
 
@@ -59,11 +59,6 @@ pub trait CustomWindowClass: WindowClass {
     }
 
     
-    fn icon() -> HICON {
-        0
-    }
-
-    
     fn register(module: HINSTANCE) -> anyhow::Result<()> {
         unsafe extern "system" fn wnd_proc<W: CustomWindowClass>(
             hwnd: HWND,
@@ -102,7 +97,6 @@ pub trait CustomWindowClass: WindowClass {
             hInstance: module,
             lpszClassName: class_name.pcwstr(),
             hbrBackground: Self::background(),
-            hIcon: Self::icon(),
             hCursor: Self::cursor(),
             cbWndExtra: std::mem::size_of::<isize>() as i32,
             ..unsafe { std::mem::zeroed() }
