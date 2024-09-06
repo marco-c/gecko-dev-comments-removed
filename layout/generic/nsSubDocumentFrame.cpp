@@ -14,6 +14,7 @@
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
@@ -38,7 +39,6 @@
 #include "nsFrameSetFrame.h"
 #include "nsNameSpaceManager.h"
 #include "nsDisplayList.h"
-#include "nsIScrollableFrame.h"
 #include "nsIObjectLoadingContent.h"
 #include "nsLayoutUtils.h"
 #include "nsContentUtils.h"
@@ -406,15 +406,13 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     visible = visible.ScaleToOtherAppUnitsRoundOut(parentAPD, subdocAPD);
     dirty = dirty.ScaleToOtherAppUnitsRoundOut(parentAPD, subdocAPD);
 
-    if (nsIScrollableFrame* rootScrollableFrame =
-            presShell->GetRootScrollFrameAsScrollable()) {
+    if (ScrollContainerFrame* sf = presShell->GetRootScrollContainerFrame()) {
       
       nsRect copyOfDirty = dirty;
       nsRect copyOfVisible = visible;
       
-      rootScrollableFrame->DecideScrollableLayer(aBuilder, &copyOfVisible,
-                                                 &copyOfDirty,
-                                                  true);
+      sf->DecideScrollableLayer(aBuilder, &copyOfVisible, &copyOfDirty,
+                                 true);
 
       ignoreViewportScrolling = presShell->IgnoringViewportScrolling();
     }
@@ -429,7 +427,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   DisplayListClipState::AutoSaveRestore clipState(aBuilder);
   clipState.ClipContainingBlockDescendantsToContentBox(aBuilder, this);
 
-  nsIScrollableFrame* sf = presShell->GetRootScrollFrameAsScrollable();
+  ScrollContainerFrame* sf = presShell->GetRootScrollContainerFrame();
   bool constructZoomItem = subdocRootFrame && parentAPD != subdocAPD;
   bool needsOwnLayer = constructZoomItem ||
                        presContext->IsRootContentDocumentCrossProcess() ||

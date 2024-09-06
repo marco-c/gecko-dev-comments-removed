@@ -687,14 +687,14 @@ static PartialPrerenderData GetPartialPrerenderData(
 
   const nsIFrame* clipFrame =
       nsLayoutUtils::GetNearestOverflowClipFrame(aFrame->GetParent());
-  const nsIScrollableFrame* scrollFrame = do_QueryFrame(clipFrame);
+  const ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(clipFrame);
 
   if (!clipFrame) {
     
     
-    scrollFrame = aFrame->PresShell()->GetRootScrollFrameAsScrollable();
-    if (scrollFrame) {
-      clipFrame = do_QueryFrame(scrollFrame);
+    scrollContainerFrame = aFrame->PresShell()->GetRootScrollContainerFrame();
+    if (scrollContainerFrame) {
+      clipFrame = scrollContainerFrame;
     } else {
       
       clipFrame = aFrame->PresShell()->GetRootFrame();
@@ -702,8 +702,8 @@ static PartialPrerenderData GetPartialPrerenderData(
   }
 
   
-  if (scrollFrame &&
-      !scrollFrame->GetScrollStyles().IsHiddenInBothDirections() &&
+  if (scrollContainerFrame &&
+      !scrollContainerFrame->GetScrollStyles().IsHiddenInBothDirections() &&
       nsLayoutUtils::AsyncPanZoomEnabled(aFrame)) {
     const bool isInPositionFixed =
         nsLayoutUtils::IsInPositionFixedSubtree(aFrame);
@@ -728,7 +728,7 @@ static PartialPrerenderData GetPartialPrerenderData(
   int32_t devPixelsToAppUnits = aFrame->PresContext()->AppUnitsPerDevPixel();
 
   auto [clipRect, transformInClip] = GetClipRectAndTransformForPartialPrerender(
-      aFrame, devPixelsToAppUnits, clipFrame, scrollFrame);
+      aFrame, devPixelsToAppUnits, clipFrame, scrollContainerFrame);
 
   return PartialPrerenderData{
       LayoutDeviceRect::FromAppUnits(partialPrerenderedRect,

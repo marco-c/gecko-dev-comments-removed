@@ -48,6 +48,7 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -86,7 +87,6 @@
 #include "nsJSEnvironment.h"
 #include "nsFocusManager.h"
 
-#include "nsIScrollableFrame.h"
 #include "nsStyleSheetService.h"
 #include "nsILoadContext.h"
 #include "mozilla/ThrottledEventQueue.h"
@@ -2959,13 +2959,14 @@ static const nsIFrame* GetTargetPageFrame(int32_t aTargetPageNum,
 
 
 
-static nscoord ScrollPositionForFrame(const nsIFrame* aFrame,
-                                      nsIScrollableFrame* aScrollable,
-                                      float aPreviewScale) {
+static nscoord ScrollPositionForFrame(
+    const nsIFrame* aFrame, ScrollContainerFrame* aScrollContainerFrame,
+    float aPreviewScale) {
   
   
   return nscoord(aPreviewScale * aFrame->GetRect().Center().y -
-                 float(aScrollable->GetScrollPortRect().height) / 2.0f);
+                 float(aScrollContainerFrame->GetScrollPortRect().height) /
+                     2.0f);
 }
 
 
@@ -2974,8 +2975,10 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
   if (!GetIsPrintPreview() || mPrintJob->GetIsCreatingPrintPreview())
     return NS_ERROR_FAILURE;
 
-  nsIScrollableFrame* sf = mPresShell->GetRootScrollFrameAsScrollable();
-  if (!sf) return NS_OK;
+  ScrollContainerFrame* sf = mPresShell->GetRootScrollContainerFrame();
+  if (!sf) {
+    return NS_OK;
+  }
 
   auto [seqFrame, sheetCount] = mPrintJob->GetSeqFrameAndCountSheets();
   Unused << sheetCount;
@@ -3048,7 +3051,7 @@ nsDocumentViewer::GetCurrentSheetFrameAndNumber() const {
     return {nullptr, 0};
   }
 
-  nsIScrollableFrame* sf = mPresShell->GetRootScrollFrameAsScrollable();
+  ScrollContainerFrame* sf = mPresShell->GetRootScrollContainerFrame();
   if (!sf) {
     
     return {seqFrame->PrincipalChildList().FirstChild(), 1};

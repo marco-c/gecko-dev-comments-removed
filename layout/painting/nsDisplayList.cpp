@@ -1077,7 +1077,7 @@ void nsDisplayListBuilder::EnterPresShell(const nsIFrame* aReferenceFrame,
   state->mFirstFrameMarkedForDisplay = mFramesMarkedForDisplay.Length();
   state->mFirstFrameWithOOFData = mFramesWithOOFData.Length();
 
-  nsIScrollableFrame* sf = state->mPresShell->GetRootScrollFrameAsScrollable();
+  ScrollContainerFrame* sf = state->mPresShell->GetRootScrollContainerFrame();
   if (sf && IsInSubdocument()) {
     
     
