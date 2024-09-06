@@ -42,9 +42,6 @@ class FieldTrial:
 
 ACTIVE_FIELD_TRIALS: FrozenSet[FieldTrial] = frozenset([
     
-    FieldTrial('WebRTC-Aec3DelayEstimatorDetectPreEcho',
-               'webrtc:14205',
-               date(2024, 4, 1)),
     FieldTrial('WebRTC-Audio-GainController2',
                'webrtc:7494',
                date(2024, 4, 1)),
