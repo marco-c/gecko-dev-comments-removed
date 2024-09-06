@@ -26,13 +26,6 @@ namespace webrtc {
 
 
 
-
-[[deprecated]] RTC_EXPORT std::unique_ptr<VideoEncoder>
-CreateVideoEncoderSoftwareFallbackWrapper(
-    std::unique_ptr<VideoEncoder> sw_fallback_encoder,
-    std::unique_ptr<VideoEncoder> hw_encoder,
-    bool prefer_temporal_support);
-
 RTC_EXPORT std::unique_ptr<VideoEncoder>
 CreateVideoEncoderSoftwareFallbackWrapper(
     const Environment& env,
