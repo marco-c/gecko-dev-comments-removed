@@ -353,7 +353,8 @@ static Maybe<nsRect> ComputeTheIntersection(
     
     
     
-    if (nsIScrollableFrame* scrollFrame = do_QueryFrame(containerFrame)) {
+    if (ScrollContainerFrame* scrollContainerFrame =
+            do_QueryFrame(containerFrame)) {
       if (containerFrame->GetParent() == aRoot && !aRoot->GetParent()) {
         
         
@@ -361,7 +362,7 @@ static Maybe<nsRect> ComputeTheIntersection(
         
         break;
       }
-      nsRect subFrameRect = scrollFrame->GetScrollPortRect();
+      nsRect subFrameRect = scrollContainerFrame->GetScrollPortRect();
 
       
       nsRect intersectionRectRelativeToContainer =
@@ -543,10 +544,11 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
   if (aRoot && aRoot->IsElement()) {
     if ((rootFrame = aRoot->AsElement()->GetPrimaryFrame())) {
       nsRect rootRectRelativeToRootFrame;
-      if (nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame)) {
+      if (ScrollContainerFrame* scrollContainerFrame =
+              do_QueryFrame(rootFrame)) {
         
         
-        rootRectRelativeToRootFrame = scrollFrame->GetScrollPortRect();
+        rootRectRelativeToRootFrame = scrollContainerFrame->GetScrollPortRect();
       } else {
         
         rootRectRelativeToRootFrame = rootFrame->GetRectRelativeToSelf();
