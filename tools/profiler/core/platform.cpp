@@ -268,16 +268,22 @@ ProfileChunkedBuffer& profiler_get_core_buffer() {
 
 static const char sAsyncSignalControlCharStart = 'g';
 
+static const char sAsyncSignalControlCharStop = 's';
+
 
 
 
 static mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed>
-    sAsyncStartProfilerWriteFd(-1);
+    sAsyncSignalControlWriteFd(-1);
 
 
 mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed> gStopAndDumpFromSignal(
     false);
 #endif
+
+
+
+void profiler_dump_and_stop();
 
 mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
@@ -555,7 +561,7 @@ class AsyncSignalControlThread {
 
     
     mFd = pipeFds[0];
-    sAsyncStartProfilerWriteFd = pipeFds[1];
+    sAsyncSignalControlWriteFd = pipeFds[1];
 
     
     
@@ -575,9 +581,9 @@ class AsyncSignalControlThread {
     
     
     
-    int asyncStartProfilerWriteFd = sAsyncStartProfilerWriteFd.exchange(-1);
+    int asyncSignalControlWriteFd = sAsyncSignalControlWriteFd.exchange(-1);
     
-    close(asyncStartProfilerWriteFd);
+    close(asyncSignalControlWriteFd);
     
     pthread_join(mThread, nullptr);
   };
@@ -632,6 +638,17 @@ class AsyncSignalControlThread {
         profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
                        PROFILER_DEFAULT_INTERVAL, features, filters,
                        MOZ_ARRAY_LENGTH(filters), 0);
+      } else if (msg[0] == sAsyncSignalControlCharStop) {
+        
+        
+        
+        
+        
+        
+        
+        if (profiler_is_active()) {
+          profiler_dump_and_stop();
+        }
       } else {
         LOG("AsyncSignalControlThread recieved unknown control signal: %c",
             msg[0]);
@@ -4285,10 +4302,6 @@ static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
 
 
 
-void profiler_dump_and_stop();
-
-
-
 void SamplerThread::Run() {
   NS_SetCurrentThreadName("SamplerThread");
 
@@ -4942,29 +4955,6 @@ void SamplerThread::Run() {
       scheduledSampleStart = beforeSleep + sampleInterval;
       SleepMicro(static_cast<uint32_t>(sampleInterval.ToMicroseconds()));
     }
-
-#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (gStopAndDumpFromSignal) {
-      
-      gStopAndDumpFromSignal = false;
-      
-      profiler_dump_and_stop();
-      
-      
-      
-      
-      return;
-    }
-#endif
   }
 
   
@@ -5474,17 +5464,6 @@ static const char* get_size_suffix(const char* str) {
 }
 
 #if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
-static void profiler_stop_signal_handler(int signal, siginfo_t* info,
-                                         void* context) {
-  
-  
-  
-  
-  
-  
-  gStopAndDumpFromSignal = true;
-}
-
 static void profiler_start_signal_handler(int signal, siginfo_t* info,
                                           void* context) {
   
@@ -5498,9 +5477,25 @@ static void profiler_start_signal_handler(int signal, siginfo_t* info,
   
   
   
-  if (sAsyncStartProfilerWriteFd != -1) {
+  if (sAsyncSignalControlWriteFd != -1) {
     char signalControlCharacter = sAsyncSignalControlCharStart;
-    Unused << write(sAsyncStartProfilerWriteFd, &signalControlCharacter,
+    Unused << write(sAsyncSignalControlWriteFd, &signalControlCharacter,
+                    sizeof(signalControlCharacter));
+  }
+}
+
+static void profiler_stop_signal_handler(int signal, siginfo_t* info,
+                                         void* context) {
+  
+  
+  
+  
+  
+  
+  
+  if (sAsyncSignalControlWriteFd != -1) {
+    char signalControlCharacter = sAsyncSignalControlCharStop;
+    Unused << write(sAsyncSignalControlWriteFd, &signalControlCharacter,
                     sizeof(signalControlCharacter));
   }
 }
