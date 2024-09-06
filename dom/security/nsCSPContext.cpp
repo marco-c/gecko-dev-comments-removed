@@ -741,16 +741,16 @@ nsCSPContext::LogViolationDetails(
       continue;
     }
 
-    nsAutoString violatedDirective;
-    nsAutoString violatedDirectiveString;
+    nsAutoString violatedDirectiveName;
+    nsAutoString violatedDirectiveNameAndValue;
     bool reportSample = false;
     mPolicies[p]->getViolatedDirectiveInformation(
-        SCRIPT_SRC_DIRECTIVE, violatedDirective, violatedDirectiveString,
-        &reportSample);
+        SCRIPT_SRC_DIRECTIVE, violatedDirectiveName,
+        violatedDirectiveNameAndValue, &reportSample);
 
     AsyncReportViolation(
         aTriggeringElement, aCSPEventListener, nullptr, blockedContentSource,
-        nullptr, violatedDirective, violatedDirectiveString,
+        nullptr, violatedDirectiveName, violatedDirectiveNameAndValue,
         CSPDirective::SCRIPT_SRC_DIRECTIVE , p,
         observerSubject, aSourceFile, reportSample, aScriptSample, aLineNum,
         aColumnNum);
@@ -1629,8 +1629,8 @@ class CSPReportSenderRunnable final : public Runnable {
 nsresult nsCSPContext::AsyncReportViolation(
     Element* aTriggeringElement, nsICSPEventListener* aCSPEventListener,
     nsIURI* aBlockedURI, BlockedContentSource aBlockedContentSource,
-    nsIURI* aOriginalURI, const nsAString& aViolatedDirective,
-    const nsAString& aViolatedDirectiveString,
+    nsIURI* aOriginalURI, const nsAString& aViolatedDirectiveName,
+    const nsAString& aViolatedDirectiveNameAndValue,
     const CSPDirective aEffectiveDirective, uint32_t aViolatedPolicyIndex,
     const nsAString& aObserverSubject, const nsAString& aSourceFile,
     bool aReportSample, const nsAString& aScriptSample, uint32_t aLineNum,
@@ -1641,9 +1641,10 @@ nsresult nsCSPContext::AsyncReportViolation(
   nsCOMPtr<nsIRunnable> task = new CSPReportSenderRunnable(
       aTriggeringElement, aCSPEventListener, aBlockedURI, aBlockedContentSource,
       aOriginalURI, aViolatedPolicyIndex,
-      mPolicies[aViolatedPolicyIndex]->getReportOnlyFlag(), aViolatedDirective,
-      aViolatedDirectiveString, aEffectiveDirective, aObserverSubject,
-      aSourceFile, aReportSample, aScriptSample, aLineNum, aColumnNum, this);
+      mPolicies[aViolatedPolicyIndex]->getReportOnlyFlag(),
+      aViolatedDirectiveName, aViolatedDirectiveNameAndValue,
+      aEffectiveDirective, aObserverSubject, aSourceFile, aReportSample,
+      aScriptSample, aLineNum, aColumnNum, this);
 
   if (XRE_IsContentProcess()) {
     if (mEventTarget) {
