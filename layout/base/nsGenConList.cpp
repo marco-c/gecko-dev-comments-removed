@@ -12,12 +12,13 @@
 #include "nsIFrame.h"
 
 void nsGenConNode::CheckFrameAssertions() {
-  NS_ASSERTION(
-      mContentIndex < int32_t(mPseudoFrame->StyleContent()->ContentCount()) ||
-          
-          
-          mContentIndex == 0,
-      "index out of range");
+  NS_ASSERTION(mContentIndex < int32_t(mPseudoFrame->StyleContent()
+                                           ->NonAltContentItems()
+                                           .Length()) ||
+                   
+                   
+                   mContentIndex == 0,
+               "index out of range");
   
   
 

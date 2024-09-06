@@ -204,6 +204,41 @@ fn is_decimal(counter_type: &CounterStyleType) -> bool {
 }
 
 
+#[derive(
+    Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+)]
+#[repr(C)]
+pub struct GenericContentItems<Image> {
+    
+    
+    pub items: thin_vec::ThinVec<GenericContentItem<Image>>,
+    
+    
+    pub alt_start: usize,
+}
+
+impl<Image> ToCss for GenericContentItems<Image>
+where
+    Image: ToCss,
+{
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        for (i, item) in self.items.iter().enumerate() {
+            if i == self.alt_start {
+                dest.write_str(" /")?;
+            }
+            if i != 0 {
+                dest.write_str(" ")?;
+            }
+            item.to_css(dest)?;
+        }
+        Ok(())
+    }
+}
+
+
 
 
 #[derive(
@@ -216,7 +251,7 @@ pub enum GenericContent<Image> {
     
     None,
     
-    Items(#[css(iterable)] crate::OwnedSlice<GenericContentItem<Image>>),
+    Items(GenericContentItems<Image>),
 }
 
 pub use self::GenericContent as Content;
