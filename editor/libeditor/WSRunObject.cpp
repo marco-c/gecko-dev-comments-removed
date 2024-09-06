@@ -1994,6 +1994,7 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
         const Element* aEditingHost, NoBreakingSpaceData* aNBSPData,
         BlockInlineCheck aBlockInlineCheck) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
+  MOZ_ASSERT(aEditableBlockParentOrTopmostEditableInlineElement.IsEditable());
 
   if (aPoint.IsInTextNode() && !aPoint.IsStartOfContainer()) {
     Maybe<BoundaryData> startInTextNode =
@@ -2017,8 +2018,6 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
           {LeafNodeType::LeafNodeOrNonEditableNode}, aBlockInlineCheck,
           aEditingHost);
   if (!previousLeafContentOrBlock) {
-    
-    
     
     
     return BoundaryData(aPoint,
@@ -2138,6 +2137,7 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     const Element* aEditingHost, NoBreakingSpaceData* aNBSPData,
     BlockInlineCheck aBlockInlineCheck) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
+  MOZ_ASSERT(aEditableBlockParentOrTopmostEditableInlineElement.IsEditable());
 
   if (aPoint.IsInTextNode() && !aPoint.IsEndOfContainer()) {
     Maybe<BoundaryData> endInTextNode =
@@ -2161,8 +2161,6 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
           {LeafNodeType::LeafNodeOrNonEditableNode}, aBlockInlineCheck,
           aEditingHost);
   if (!nextLeafContentOrBlock) {
-    
-    
     
     
     return BoundaryData(aPoint.template To<EditorDOMPoint>(),

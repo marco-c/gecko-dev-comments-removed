@@ -157,11 +157,11 @@ class MOZ_STACK_CLASS WSScanResult final {
     
     
     if (mReason == WSType::CurrentBlockBoundary) {
-      if (HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck) ||
-          
-          
-          
-          !mContent->IsEditable()) {
+      MOZ_ASSERT_IF(mReason == WSType::CurrentBlockBoundary,
+                    mContent->IsElement());
+      MOZ_ASSERT_IF(mReason == WSType::CurrentBlockBoundary,
+                    mContent->IsEditable());
+      if (HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck)) {
         return;
       }
       const DebugOnly<Element*> closestAncestorEditableBlockElement =
