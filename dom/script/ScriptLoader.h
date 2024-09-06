@@ -16,6 +16,7 @@
 #include "nsCOMPtr.h"
 #include "nsRefPtrHashtable.h"
 #include "nsIScriptElement.h"
+#include "SharedScriptCache.h"
 #include "nsCOMArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
@@ -151,7 +152,22 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  void DropDocumentReference() { mDocument = nullptr; }
+  void DropDocumentReference();
+
+  
+
+
+
+
+
+
+  void RegisterToCache();
+
+  
+
+
+
+  void DeregisterFromCache();
 
   
   nsIPrincipal* LoaderPrincipal() const;
@@ -778,6 +794,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   RefPtr<ModuleLoader> mModuleLoader;
   nsTArray<RefPtr<ModuleLoader>> mWebExtModuleLoaders;
   nsTArray<RefPtr<ModuleLoader>> mShadowRealmModuleLoaders;
+
+  RefPtr<SharedScriptCache> mCache;
 
   
  public:
