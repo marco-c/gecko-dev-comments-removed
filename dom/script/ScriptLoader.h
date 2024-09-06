@@ -154,6 +154,19 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   void DropDocumentReference() { mDocument = nullptr; }
 
   
+  nsIPrincipal* LoaderPrincipal() const;
+  nsIPrincipal* PartitionedPrincipal() const;
+
+  bool ShouldBypassCache() const;
+
+  template <typename T>
+  bool HasLoaded(const T& aKey) {
+    
+    
+    return false;
+  }
+
+  
 
 
 
