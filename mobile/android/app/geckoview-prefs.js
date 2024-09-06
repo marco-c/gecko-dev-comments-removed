@@ -378,12 +378,6 @@ pref("network.protocol-handler.warn-external.vnd.youtube", false);
 pref("network.tickle-wifi.enabled", true);
 
 
-pref("pdfjs.annotationEditorMode", -1);
-
-
-pref("pdfjs.enableFloatingToolbar", true);
-
-
 pref("pdfjs.handleOctetStream", true);
 
 

@@ -175,33 +175,6 @@ pref("browser.helperApps.deleteTempFileOnExit", false);
 pref("browser.triple_click_selects_paragraph", true);
 
 
-pref("pdfjs.annotationMode", 2);
-
-
-pref("pdfjs.annotationEditorMode", 0);
-
-
-pref("pdfjs.enableScripting", true);
-
-
-pref("pdfjs.enableXfa", true);
-
-
-pref("pdfjs.enableStampEditor", true);
-
-
-pref("pdfjs.enableHighlightEditor", true);
-#if defined(EARLY_BETA_OR_EARLIER)
-  pref("pdfjs.enableHighlightFloatingButton", true);
-#else
-  pref("pdfjs.enableHighlightFloatingButton", false);
-#endif
-
-#if defined(XP_WIN)
-pref("pdfjs.enableHWA", true);
-#endif
-
-
 pref("mathml.disabled",    false);
 
 
