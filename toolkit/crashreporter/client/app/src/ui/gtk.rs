@@ -37,7 +37,9 @@ impl UI {
         unsafe {
             let stream = gtk::g_memory_input_stream_new_from_data(
                 super::icon::PNG_DATA.as_ptr() as _,
-                super::icon::PNG_DATA.len() as i64,
+                
+                
+                super::icon::PNG_DATA.len().try_into().unwrap(),
                 None,
             );
             let icon_pixbuf =
