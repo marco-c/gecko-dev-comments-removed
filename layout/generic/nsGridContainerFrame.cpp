@@ -2118,10 +2118,7 @@ struct nsGridContainerFrame::Tracks {
     uint32_t mBaselineTrack;
     nscoord mBaseline;
     nscoord mSize;
-    
-    bool mIsOrthogonal;
     GridItemInfo* mGridItem;
-
     static bool IsBaselineTrackLessThan(const ItemBaselineData& a,
                                         const ItemBaselineData& b) {
       return a.mBaselineTrack < b.mBaselineTrack;
@@ -5921,7 +5918,6 @@ void nsGridContainerFrame::Tracks::CalculateItemBaselines(
   nscoord maxDescent = 0;
   uint32_t currentTrack = kAutoLine;  
   uint32_t trackStartIndex = 0;
-  bool trackHasParallelItems = false;
   for (uint32_t i = 0, len = aBaselineItems.Length(); true; ++i) {
     
     if (i != len) {
@@ -5929,29 +5925,15 @@ void nsGridContainerFrame::Tracks::CalculateItemBaselines(
       if (currentTrack == item.mBaselineTrack) {
         maxBaseline = std::max(maxBaseline, item.mBaseline);
         maxDescent = std::max(maxDescent, item.mSize - item.mBaseline);
-        trackHasParallelItems |= !item.mIsOrthogonal;
         continue;
       }
     }
     
     
-    if (trackHasParallelItems) {
-      
-      
-      for (uint32_t j = trackStartIndex; j < i; ++j) {
-        const ItemBaselineData& item = aBaselineItems[j];
-        item.mGridItem->mBaselineOffset[mAxis] = maxBaseline - item.mBaseline;
-        MOZ_ASSERT(item.mGridItem->mBaselineOffset[mAxis] >= 0);
-      }
-    } else {
-      for (uint32_t j = trackStartIndex; j < i; ++j) {
-        const ItemBaselineData& item = aBaselineItems[j];
-        item.mGridItem->mBaselineOffset[mAxis] = 0;
-        
-        
-        item.mGridItem->mState[mAxis] &=
-            ~(ItemState::eSelfBaseline | ItemState::eContentBaseline);
-      }
+    for (uint32_t j = trackStartIndex; j < i; ++j) {
+      const ItemBaselineData& item = aBaselineItems[j];
+      item.mGridItem->mBaselineOffset[mAxis] = maxBaseline - item.mBaseline;
+      MOZ_ASSERT(item.mGridItem->mBaselineOffset[mAxis] >= 0);
     }
     if (i != 0) {
       
@@ -5972,7 +5954,6 @@ void nsGridContainerFrame::Tracks::CalculateItemBaselines(
     
     const ItemBaselineData& item = aBaselineItems[i];
     currentTrack = item.mBaselineTrack;
-    trackHasParallelItems = !item.mIsOrthogonal;
     trackStartIndex = i;
     maxBaseline = item.mBaseline;
     maxDescent = item.mSize - item.mBaseline;
@@ -5987,7 +5968,6 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
     return;
   }
 
-  const bool isInlineAxis = mAxis == LogicalAxis::Inline;  
   nsTArray<ItemBaselineData> firstBaselineItems;
   nsTArray<ItemBaselineData> lastBaselineItems;
   const WritingMode containerWM = aState.mWM;
@@ -5998,6 +5978,7 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
   
   auto containerBlockStartSide =
       containerWM.PhysicalSide(MakeLogicalSide(mAxis, LogicalEdge::Start));
+
   for (GridItemInfo& gridItem : aGridItems) {
     if (gridItem.IsSubgrid(mAxis)) {
       
@@ -6010,29 +5991,35 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
     const auto childWM = child->GetWritingMode();
 
     const bool isOrthogonal = containerWM.IsOrthogonalTo(childWM);
+    const bool isInlineAxis = mAxis == LogicalAxis::Inline;  
+
+    
+    
+    
     const bool itemHasBaselineParallelToTrack = isInlineAxis == isOrthogonal;
+    if (itemHasBaselineParallelToTrack) {
+      
+      auto selfAlignment =
+          isOrthogonal
+              ? child->StylePosition()->UsedJustifySelf(containerStyle)._0
+              : child->StylePosition()->UsedAlignSelf(containerStyle)._0;
+      selfAlignment &= ~StyleAlignFlags::FLAG_BITS;
+      if (selfAlignment == StyleAlignFlags::BASELINE) {
+        state |= ItemState::eFirstBaseline | ItemState::eSelfBaseline;
+        const GridArea& area = gridItem.mArea;
+        baselineTrack = isInlineAxis ? area.mCols.mStart : area.mRows.mStart;
+      } else if (selfAlignment == StyleAlignFlags::LAST_BASELINE) {
+        state |= ItemState::eLastBaseline | ItemState::eSelfBaseline;
+        const GridArea& area = gridItem.mArea;
+        baselineTrack = (isInlineAxis ? area.mCols.mEnd : area.mRows.mEnd) - 1;
+      }
 
-    
-    auto selfAlignment =
-        isInlineAxis
-            ? child->StylePosition()->UsedJustifySelf(containerStyle)._0
-            : child->StylePosition()->UsedAlignSelf(containerStyle)._0;
-    selfAlignment &= ~StyleAlignFlags::FLAG_BITS;
-    if (selfAlignment == StyleAlignFlags::BASELINE) {
-      state |= ItemState::eFirstBaseline | ItemState::eSelfBaseline;
-      const GridArea& area = gridItem.mArea;
-      baselineTrack = isInlineAxis ? area.mCols.mStart : area.mRows.mStart;
-    } else if (selfAlignment == StyleAlignFlags::LAST_BASELINE) {
-      state |= ItemState::eLastBaseline | ItemState::eSelfBaseline;
-      const GridArea& area = gridItem.mArea;
-      baselineTrack = (isInlineAxis ? area.mCols.mEnd : area.mRows.mEnd) - 1;
-    }
-
-    
-    
-    
-    
-    if (!isInlineAxis) {
+      
+      
+      
+      
+      
+      
       
       auto alignContent = child->StylePosition()->mAlignContent.primary;
       alignContent &= ~StyleAlignFlags::FLAG_BITS;
@@ -6140,10 +6127,8 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
                              ? grid->GetBBaseline(baselineAlignment)
                              : grid->GetIBaseline(baselineAlignment));
       } else {
-        if (itemHasBaselineParallelToTrack) {
-          baseline = child->GetNaturalBaselineBOffset(
-              childWM, baselineAlignment, BaselineExportContext::Other);
-        }
+        baseline = child->GetNaturalBaselineBOffset(
+            childWM, baselineAlignment, BaselineExportContext::Other);
 
         if (!baseline) {
           
@@ -6196,9 +6181,8 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
             (baselineSharingGroup == BaselineSharingGroup::First)
                 ? firstBaselineItems
                 : lastBaselineItems;
-        baselineItems.AppendElement(
-            ItemBaselineData{baselineTrack, finalBaseline, alignSize,
-                             !itemHasBaselineParallelToTrack, &gridItem});
+        baselineItems.AppendElement(ItemBaselineData{
+            baselineTrack, finalBaseline, alignSize, &gridItem});
       } else {
         state &= ~ItemState::eAllBaselineBits;
       }
@@ -6341,9 +6325,8 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselinesInMasonryAxis(
                 baseline;
           }
           alignSize = frameSize;
-          aFirstBaselineItems.AppendElement(
-              ItemBaselineData({baselineTrack, baseline, alignSize,
-                                 false, &gridItem}));
+          aFirstBaselineItems.AppendElement(ItemBaselineData(
+              {baselineTrack, baseline, alignSize, &gridItem}));
         } else {
           state &= ~ItemState::eAllBaselineBits;
         }
@@ -6393,8 +6376,7 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselinesInMasonryAxis(
           auto alignSize =
               frameSize + (isInlineAxis ? m.IStartEnd(wm) : m.BStartEnd(wm));
           aLastBaselineItems.AppendElement(
-              ItemBaselineData({baselineTrack, descent, alignSize,
-                                 false, &gridItem}));
+              ItemBaselineData({baselineTrack, descent, alignSize, &gridItem}));
         } else {
           state &= ~ItemState::eAllBaselineBits;
         }
