@@ -106,6 +106,9 @@ css::Rule* ServoCSSRuleList::GetRule(uint32_t aIndex) {
       case StyleCssRuleType::Keyframe:
         MOZ_ASSERT_UNREACHABLE("keyframe rule cannot be here");
         return nullptr;
+      case StyleCssRuleType::StartingStyle:
+        
+        return nullptr;
       case StyleCssRuleType::Margin:
         
         return nullptr;
@@ -288,6 +291,9 @@ void ServoCSSRuleList::SetRawContents(RefPtr<StyleLockedCssRules> aNewRules,
       RULE_CASE_UNLOCKED(LayerStatement, LayerStatement)
       RULE_CASE_UNLOCKED(Container, Container)
       RULE_CASE_UNLOCKED(Scope, Scope)
+      case StyleCssRuleType::StartingStyle:
+        
+        break;
       case StyleCssRuleType::Keyframe:
         MOZ_ASSERT_UNREACHABLE("keyframe rule cannot be here");
         break;

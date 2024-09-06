@@ -1004,6 +1004,9 @@ void ServoStyleSet::RuleChangedInternal(StyleSheet& aSheet, css::Rule& aRule,
     CASE_FOR(LayerStatement, LayerStatement)
     CASE_FOR(Container, Container)
     CASE_FOR(Scope, Scope)
+    case StyleCssRuleType::StartingStyle:
+      
+      break;
     
     
     case StyleCssRuleType::Namespace:
