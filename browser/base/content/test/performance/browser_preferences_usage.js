@@ -70,13 +70,6 @@ function checkPrefGetters(stats, max, knownProblematicPrefs = {}) {
     }
   }
 
-  
-  
-  
-  if (knownProblematicPrefs["browser.startup.record"]) {
-    delete knownProblematicPrefs["browser.startup.record"];
-  }
-
   let unusedPrefs = Object.keys(knownProblematicPrefs);
   is(
     unusedPrefs.length,
@@ -104,17 +97,8 @@ add_task(async function startup() {
   let max = 40;
 
   let knownProblematicPrefs = {
-    "browser.startup.record": {
-      
-      min: 200,
-      max: 450,
-    },
     "network.loadinfo.skip_type_assertion": {
       
-    },
-    "chrome.override_package.global": {
-      min: 0,
-      max: 50,
     },
   };
 
@@ -135,9 +119,6 @@ add_task(async function open_10_tabs() {
   const max = 4 * DEFAULT_PROCESS_COUNT;
 
   let knownProblematicPrefs = {
-    "browser.startup.record": {
-      max: 20,
-    },
     "browser.tabs.remote.logSwitchTiming": {
       max: 35,
     },
