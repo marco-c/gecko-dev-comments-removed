@@ -83,6 +83,11 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   
   
   virtual FrameType Type() const { return FrameType::kEmptyFrame; }
+
+  
+  
+  
+  virtual absl::optional<uint8_t> AudioLevel() const = 0;
 };
 
 
