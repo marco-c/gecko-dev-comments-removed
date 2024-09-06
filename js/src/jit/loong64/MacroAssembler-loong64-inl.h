@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_loong64_MacroAssembler_loong64_inl_h
 #define jit_loong64_MacroAssembler_loong64_inl_h
@@ -12,7 +12,7 @@
 namespace js {
 namespace jit {
 
-//{{{ check_macroassembler_style
+
 
 void MacroAssembler::move64(Register64 src, Register64 dest) {
   movePtr(src.reg, dest.reg);
@@ -84,8 +84,8 @@ void MacroAssembler::move32ZeroExtendToPtr(Register src, Register dest) {
   as_bstrpick_d(dest, src, 31, 0);
 }
 
-// ===============================================================
-// Load instructions
+
+
 
 void MacroAssembler::load32SignExtendToPtr(const Address& src, Register dest) {
   load32(src, dest);
@@ -93,8 +93,8 @@ void MacroAssembler::load32SignExtendToPtr(const Address& src, Register dest) {
 
 void MacroAssembler::loadAbiReturnAddress(Register dest) { movePtr(ra, dest); }
 
-// ===============================================================
-// Logical instructions
+
+
 
 void MacroAssembler::not32(Register reg) { as_nor(reg, reg, zero); }
 
@@ -243,8 +243,8 @@ void MacroAssembler::xor32(const Address& src, Register dest) {
   xor32(scratch2, dest);
 }
 
-// ===============================================================
-// Swap instructions
+
+
 
 void MacroAssembler::byteSwap16SignExtend(Register reg) {
   as_revb_2h(reg, reg);
@@ -265,8 +265,8 @@ void MacroAssembler::byteSwap64(Register64 reg64) {
   as_revb_d(reg64.reg, reg64.reg);
 }
 
-// ===============================================================
-// Arithmetic functions
+
+
 
 void MacroAssembler::addPtr(Register src, Register dest) {
   as_add_d(dest, dest, src);
@@ -357,7 +357,7 @@ CodeOffset MacroAssembler::sub32FromStackPtrWithPatch(Register dest) {
 }
 
 void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
-  // TODO: by wangqing
+  
   Instruction* inst0 =
       (Instruction*)m_buffer.getInst(BufferOffset(offset.offset()));
 
@@ -605,8 +605,8 @@ void MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest,
   minMaxDouble(srcDest, other, handleNaN, true);
 }
 
-// ===============================================================
-// Shift functions
+
+
 
 void MacroAssembler::lshift32(Register src, Register dest) {
   as_sll_w(dest, dest, src);
@@ -694,8 +694,8 @@ void MacroAssembler::rshiftPtrArithmetic(Imm32 imm, Register dest) {
   as_srai_d(dest, dest, imm.value);
 }
 
-// ===============================================================
-// Rotation functions
+
+
 
 void MacroAssembler::rotateLeft(Register count, Register input, Register dest) {
   ScratchRegisterScope scratch(asMasm());
@@ -742,7 +742,7 @@ void MacroAssembler::rotateRight64(Imm32 count, Register64 src, Register64 dest,
   as_rotri_d(dest.reg, src.reg, count.value & 63);
 }
 
-// Bit counting functions
+
 
 void MacroAssembler::clz64(Register64 src, Register dest) {
   as_clz_d(dest, src.reg);
@@ -787,7 +787,7 @@ void MacroAssembler::ctz32(Register src, Register dest, bool knownNotZero) {
 }
 
 void MacroAssembler::popcnt32(Register input, Register output, Register tmp) {
-  // Equivalent to GCC output of mozilla::CountPopulation32()
+  
   as_or(output, input, zero);
   as_srai_w(tmp, input, 1);
   ma_and(tmp, tmp, Imm32(0x55555555));
@@ -806,8 +806,8 @@ void MacroAssembler::popcnt32(Register input, Register output, Register tmp) {
   as_srai_w(output, output, 24);
 }
 
-// ===============================================================
-// Condition functions
+
+
 
 void MacroAssembler::cmp8Set(Condition cond, Address lhs, Imm32 rhs,
                              Register dest) {
@@ -867,7 +867,7 @@ void MacroAssembler::cmp16Set(Condition cond, Address lhs, Imm32 rhs,
   }
 }
 
-// Also see below for specializations of cmpPtrSet.
+
 template <typename T1, typename T2>
 void MacroAssembler::cmp32Set(Condition cond, T1 lhs, T2 rhs, Register dest) {
   ma_cmp_set(dest, lhs, rhs, cond);
@@ -883,8 +883,8 @@ void MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest) {
   ma_cmp_set(dest, lhs, rhs, cond);
 }
 
-// ===============================================================
-// Branch functions
+
+
 
 void MacroAssembler::branch8(Condition cond, const Address& lhs, Imm32 rhs,
                              Label* label) {
@@ -1236,13 +1236,13 @@ void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
   ScratchRegisterScope scratch(asMasm());
   ScratchDoubleScope fpscratch(asMasm());
 
-  // Convert scalar to signed 64-bit fixed-point, rounding toward zero.
-  // In the case of overflow, the output is saturated.
-  // In the case of NaN and -0, the output is zero.
+  
+  
+  
   as_ftintrz_l_d(fpscratch, src);
   moveFromDouble(fpscratch, dest);
 
-  // Fail on overflow cases.
+  
   as_slli_w(scratch, dest, 0);
   ma_b(dest, scratch, fail, Assembler::NotEqual);
 }
@@ -1263,7 +1263,7 @@ void MacroAssembler::branchAdd32(Condition cond, T src, Register dest,
   }
 }
 
-// the type of 'T src' maybe a Register, maybe a Imm32,depends on who call it.
+
 template <typename T>
 void MacroAssembler::branchSub32(Condition cond, T src, Register dest,
                                  Label* overflow) {
@@ -1996,8 +1996,8 @@ void MacroAssembler::spectreBoundsCheckPtr(Register index,
   branchPtr(Assembler::BelowOrEqual, length, index, failure);
 }
 
-// ========================================================================
-// Memory access primitives.
+
+
 
 FaultingCodeOffset MacroAssembler::storeUncanonicalizedFloat32(
     FloatRegister src, const Address& addr) {
@@ -2015,6 +2015,15 @@ FaultingCodeOffset MacroAssembler::storeUncanonicalizedDouble(
 FaultingCodeOffset MacroAssembler::storeUncanonicalizedDouble(
     FloatRegister src, const BaseIndex& addr) {
   return ma_fst_d(src, addr);
+}
+
+FaultingCodeOffset MacroAssembler::storeUncanonicalizedFloat16(
+    FloatRegister src, const Address& dest, Register) {
+  MOZ_CRASH("Not supported for this target");
+}
+FaultingCodeOffset MacroAssembler::storeUncanonicalizedFloat16(
+    FloatRegister src, const BaseIndex& dest, Register) {
+  MOZ_CRASH("Not supported for this target");
 }
 
 void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
@@ -2023,16 +2032,16 @@ void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
   }
 }
 
-// ===============================================================
-// Clamping functions.
+
+
 
 void MacroAssembler::clampIntToUint8(Register reg) {
   ScratchRegisterScope scratch(*this);
-  // If reg is < 0, then we want to clamp to 0.
+  
   as_slti(scratch, reg, 0);
   as_masknez(reg, reg, scratch);
 
-  // If reg is >= 255, then we want to clamp to 255.
+  
   as_addi_d(reg, reg, -255);
   as_slt(scratch, reg, zero);
   as_maskeqz(reg, reg, scratch);
@@ -2043,11 +2052,11 @@ void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
                                       JSValueType type, Label* fail) {
   MOZ_ASSERT(type == JSVAL_TYPE_OBJECT || type == JSVAL_TYPE_STRING ||
              type == JSVAL_TYPE_SYMBOL || type == JSVAL_TYPE_BIGINT);
-  // dest := src XOR mask
-  // scratch := dest >> JSVAL_TAG_SHIFT
-  // fail if scratch != 0
-  //
-  // Note: src and dest can be the same register
+  
+  
+  
+  
+  
   ScratchRegisterScope scratch(asMasm());
   MOZ_ASSERT(src.valueReg() != scratch);
   mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
@@ -2068,11 +2077,11 @@ void MacroAssembler::fallibleUnboxPtr(const BaseIndex& src, Register dest,
   fallibleUnboxPtr(ValueOperand(dest), dest, type, fail);
 }
 
-//}}} check_macroassembler_style
-// ===============================================================
 
-// The specializations for cmpPtrSet are outside the braces because
-// check_macroassembler_style can't yet deal with specializations.
+
+
+
+
 
 template <>
 inline void MacroAssembler::cmpPtrSet(Assembler::Condition cond, Address lhs,
@@ -2123,13 +2132,13 @@ void MacroAssemblerLOONG64Compat::incrementInt32Value(const Address& addr) {
 }
 
 void MacroAssemblerLOONG64Compat::retn(Imm32 n) {
-  // pc <- [sp]; sp += n
+  
   loadPtr(Address(StackPointer, 0), ra);
   asMasm().addPtr(n, StackPointer);
   as_jirl(zero, ra, BOffImm16(0));
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_loong64_MacroAssembler_loong64_inl_h */
+#endif 

@@ -5126,11 +5126,6 @@ AttachDecision SetPropIRGenerator::tryAttachSetTypedArrayElement(
   auto* tarr = &obj->as<TypedArrayObject>();
   Scalar::Type elementType = tarr->type();
 
-  if (elementType == Scalar::Float16) {
-    
-    return AttachDecision::NoAction;
-  }
-
   
   if (!ValueCanConvertToNumeric(elementType, rhsVal_)) {
     return AttachDecision::NoAction;
