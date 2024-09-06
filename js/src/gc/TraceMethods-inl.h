@@ -111,6 +111,7 @@ void js::GCMarker::eagerlyMarkChildren(JSLinearString* linearStr) {
   gc::AssertShouldMarkInZone(this, linearStr);
   MOZ_ASSERT(linearStr->isMarkedAny());
   MOZ_ASSERT(linearStr->JSString::isLinear());
+
   
   while (linearStr->hasBase()) {
     linearStr = linearStr->base();
