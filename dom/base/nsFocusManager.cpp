@@ -404,25 +404,11 @@ nsresult nsFocusManager::SetFocusedWindowWithCallerType(
   NS_ENSURE_TRUE(windowToFocus, NS_ERROR_FAILURE);
 
   nsCOMPtr<Element> frameElement = windowToFocus->GetFrameElementInternal();
-  Maybe<uint64_t> existingActionId;
+  Maybe<uint64_t> actionIdFromSetFocusInner;
   if (frameElement) {
     
     
-    existingActionId = SetFocusInner(frameElement, 0, false, true);
-  } else if (auto* bc = windowToFocus->GetBrowsingContext();
-             bc && !bc->IsTop()) {
-    
-    
-    
-    
-    if (RefPtr<BrowsingContext> focusedBC = GetFocusedBrowsingContext()) {
-      
-      
-      if (!IsSameOrAncestor(focusedBC, bc)) {
-        existingActionId.emplace(sInstance->GenerateFocusActionId());
-        Blur(focusedBC, nullptr, true, true, false, existingActionId.value());
-      }
-    }
+    actionIdFromSetFocusInner = SetFocusInner(frameElement, 0, false, true);
   } else {
     
     
@@ -436,8 +422,8 @@ nsresult nsFocusManager::SetFocusedWindowWithCallerType(
   }
 
   nsCOMPtr<nsPIDOMWindowOuter> rootWindow = windowToFocus->GetPrivateRoot();
-  const uint64_t actionId = existingActionId.isSome()
-                                ? existingActionId.value()
+  const uint64_t actionId = actionIdFromSetFocusInner.isSome()
+                                ? actionIdFromSetFocusInner.value()
                                 : sInstance->GenerateFocusActionId();
   if (rootWindow) {
     RaiseWindow(rootWindow, aCallerType, actionId);
