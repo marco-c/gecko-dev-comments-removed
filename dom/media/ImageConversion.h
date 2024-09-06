@@ -47,6 +47,15 @@ nsresult ConvertToRGBA(layers::Image* aImage,
                        uint8_t* aDestBuffer, int aDestStride, int aWidth,
                        int aHeight);
 
+
+
+
+
+nsresult ConvertSRGBBufferToDisplayP3(uint8_t* aSrcBuffer,
+                                      const gfx::SurfaceFormat& aSrcFormat,
+                                      uint8_t* aDestBuffer, int aWidth,
+                                      int aHeight);
+
 }  
 
 #endif 
