@@ -36,7 +36,7 @@ add_setup(async () => {
   
   
   
-  Services.prefs.setBoolPref("extensions.background.idle.enabled", false);
+  Services.prefs.setBoolPref("extensions.background.idle.timeout", 300_000);
 
   
   
