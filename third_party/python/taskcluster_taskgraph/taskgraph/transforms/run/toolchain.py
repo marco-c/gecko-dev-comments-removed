@@ -2,14 +2,14 @@
 
 
 """
-Support for running toolchain-building jobs via dedicated scripts
+Support for running toolchain-building tasks via dedicated scripts
 """
 
 from voluptuous import ALLOW_EXTRA, Any, Optional, Required
 
 import taskgraph
-from taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
-from taskgraph.transforms.job.common import (
+from taskgraph.transforms.run import configure_taskdesc_for_run, run_task_using
+from taskgraph.transforms.run.common import (
     docker_worker_add_artifacts,
     generic_worker_add_artifacts,
     get_vcsdir_name,
@@ -40,8 +40,8 @@ toolchain_run_schema = Schema(
         Required("toolchain-artifact"): str,
         Optional(
             "toolchain-alias",
-            description="An alias that can be used instead of the real toolchain job name in "
-            "fetch stanzas for jobs.",
+            description="An alias that can be used instead of the real toolchain task name in "
+            "fetch stanzas for tasks.",
         ): Any(str, [str]),
         Optional(
             "toolchain-env",
@@ -82,10 +82,10 @@ def get_digest_data(config, run, taskdesc):
     return data
 
 
-def common_toolchain(config, job, taskdesc, is_docker):
-    run = job["run"]
+def common_toolchain(config, task, taskdesc, is_docker):
+    run = task["run"]
 
-    worker = taskdesc["worker"] = job["worker"]
+    worker = taskdesc["worker"] = task["worker"]
     worker["chain-of-trust"] = True
 
     srcdir = get_vcsdir_name(worker["os"])
@@ -99,9 +99,9 @@ def common_toolchain(config, job, taskdesc, is_docker):
     artifacts = worker.setdefault("artifacts", [])
     if not any(artifact.get("name") == "public/build" for artifact in artifacts):
         if is_docker:
-            docker_worker_add_artifacts(config, job, taskdesc)
+            docker_worker_add_artifacts(config, task, taskdesc)
         else:
-            generic_worker_add_artifacts(config, job, taskdesc)
+            generic_worker_add_artifacts(config, task, taskdesc)
 
     env = worker["env"]
     env.update(
@@ -147,7 +147,7 @@ def common_toolchain(config, job, taskdesc, is_docker):
 
     run["command"] = command
 
-    configure_taskdesc_for_run(config, job, taskdesc, worker["implementation"])
+    configure_taskdesc_for_run(config, task, taskdesc, worker["implementation"])
 
 
 toolchain_defaults = {
@@ -155,21 +155,21 @@ toolchain_defaults = {
 }
 
 
-@run_job_using(
+@run_task_using(
     "docker-worker",
     "toolchain-script",
     schema=toolchain_run_schema,
     defaults=toolchain_defaults,
 )
-def docker_worker_toolchain(config, job, taskdesc):
-    common_toolchain(config, job, taskdesc, is_docker=True)
+def docker_worker_toolchain(config, task, taskdesc):
+    common_toolchain(config, task, taskdesc, is_docker=True)
 
 
-@run_job_using(
+@run_task_using(
     "generic-worker",
     "toolchain-script",
     schema=toolchain_run_schema,
     defaults=toolchain_defaults,
 )
-def generic_worker_toolchain(config, job, taskdesc):
-    common_toolchain(config, job, taskdesc, is_docker=False)
+def generic_worker_toolchain(config, task, taskdesc):
+    common_toolchain(config, task, taskdesc, is_docker=False)
