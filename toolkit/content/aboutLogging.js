@@ -689,10 +689,16 @@ function startLogging() {
   if (gLoggingSettings.loggingOutputType === "profiler") {
     const pageContext = "aboutlogging";
     const supportedFeatures = Services.profiler.GetFeatures();
-    if (gLoggingSettings.loggingPreset != "custom") {
+    if (
+      gLoggingSettings.loggingPreset != "custom" ||
+      gLoggingSettings.profilerPreset
+    ) {
+      
+      
       
       
       const profilerPreset =
+        gLoggingSettings.profilerPreset ??
         gLoggingPresets[gLoggingSettings.loggingPreset].profilerPreset;
       ProfilerPopupBackground.changePreset(
         "aboutlogging",
