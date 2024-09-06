@@ -684,37 +684,6 @@ impl Parse for SingleFontFamily {
     }
 }
 
-#[cfg(feature = "servo")]
-impl SingleFontFamily {
-    
-    pub fn from_atom(input: Atom) -> SingleFontFamily {
-        match input {
-            atom!("serif") => return SingleFontFamily::Generic(GenericFontFamily::Serif),
-            atom!("sans-serif") => return SingleFontFamily::Generic(GenericFontFamily::SansSerif),
-            atom!("cursive") => return SingleFontFamily::Generic(GenericFontFamily::Cursive),
-            atom!("fantasy") => return SingleFontFamily::Generic(GenericFontFamily::Fantasy),
-            atom!("monospace") => return SingleFontFamily::Generic(GenericFontFamily::Monospace),
-            _ => {},
-        }
-
-        match_ignore_ascii_case! { &input,
-            "serif" => return SingleFontFamily::Generic(GenericFontFamily::Serif),
-            "sans-serif" => return SingleFontFamily::Generic(GenericFontFamily::SansSerif),
-            "cursive" => return SingleFontFamily::Generic(GenericFontFamily::Cursive),
-            "fantasy" => return SingleFontFamily::Generic(GenericFontFamily::Fantasy),
-            "monospace" => return SingleFontFamily::Generic(GenericFontFamily::Monospace),
-            _ => {}
-        }
-
-        
-        
-        SingleFontFamily::FamilyName(FamilyName {
-            name: input,
-            syntax: FontFamilyNameSyntax::Quoted,
-        })
-    }
-}
-
 
 #[derive(Clone, Debug, ToComputedValue, ToResolvedValue, ToShmem, PartialEq, Eq)]
 #[repr(C)]
