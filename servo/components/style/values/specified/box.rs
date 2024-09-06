@@ -1497,6 +1497,9 @@ pub enum Appearance {
     NumberInput,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    PasswordInput,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Progresschunk,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]

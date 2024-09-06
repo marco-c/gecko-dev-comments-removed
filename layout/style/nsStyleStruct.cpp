@@ -2237,6 +2237,7 @@ static bool AppearanceValueAffectsFrames(StyleAppearance aAppearance,
       
       
       return aDefaultAppearance == StyleAppearance::NumberInput ||
+             aDefaultAppearance == StyleAppearance::PasswordInput ||
              aDefaultAppearance == StyleAppearance::Searchfield;
     case StyleAppearance::Menulist:
       
