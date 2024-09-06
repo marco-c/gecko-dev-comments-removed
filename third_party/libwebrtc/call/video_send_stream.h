@@ -214,27 +214,12 @@ class VideoSendStream {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  virtual void StartPerRtpStream(std::vector<bool> active_layers) = 0;
-
-  
-  
-  
   virtual void Start() = 0;
 
   
   
   virtual void Stop() = 0;
 
-  
-  
-  
   
   
   

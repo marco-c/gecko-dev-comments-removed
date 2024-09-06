@@ -2013,6 +2013,7 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::SetRtpParameters(
       new_send_state = true;
     }
   }
+
   rtp_parameters_ = new_parameters;
   
   rtp_parameters_.codecs.clear();
@@ -2020,9 +2021,6 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::SetRtpParameters(
     
     ReconfigureEncoder(std::move(callback));
     callback = nullptr;
-  }
-  if (new_send_state) {
-    UpdateSendState();
   }
   if (new_degradation_preference) {
     if (source_ && stream_) {
@@ -2082,27 +2080,9 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::UpdateSendState() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (sending_) {
     RTC_DCHECK(stream_ != nullptr);
-    size_t num_layers = rtp_parameters_.encodings.size();
-    if (parameters_.encoder_config.number_of_streams == 1) {
-      
-      num_layers = 1;
-    }
-    std::vector<bool> active_layers(num_layers);
-    for (size_t i = 0; i < num_layers; ++i) {
-      active_layers[i] = IsLayerActive(rtp_parameters_.encodings[i]);
-    }
-    if (parameters_.encoder_config.number_of_streams == 1 &&
-        rtp_parameters_.encodings.size() > 1) {
-      
-      
-      
-      active_layers[0] =
-          absl::c_any_of(rtp_parameters_.encodings,
-                         [](const auto& encoding) { return encoding.active; });
-    }
     
     
-    stream_->StartPerRtpStream(active_layers);
+    stream_->Start();
   } else {
     if (stream_ != nullptr) {
       stream_->Stop();

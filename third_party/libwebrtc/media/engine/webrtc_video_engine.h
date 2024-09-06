@@ -403,7 +403,6 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
     void ReconfigureEncoder(webrtc::SetParametersCallback callback);
 
     
-    
     void UpdateSendState();
 
     webrtc::DegradationPreference GetDegradationPreference() const
