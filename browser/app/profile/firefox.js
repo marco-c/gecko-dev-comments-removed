@@ -1239,13 +1239,18 @@ pref("accessibility.typeaheadfind.flashBar", 1);
 
 
 pref("browser.preferences.search", true);
-#if defined(NIGHTLY_BUILD)
+
 pref("browser.preferences.experimental", true);
-#else
-pref("browser.preferences.experimental", false);
-#endif
-pref("browser.preferences.moreFromMozilla", true);
+
 pref("browser.preferences.experimental.hidden", false);
+
+pref("browser.preferences.moreFromMozilla", true);
+
+
+
+
+
+
 pref("browser.preferences.defaultPerformanceSettings.enabled", true);
 
 pref("browser.proton.toolbar.version", 0);
