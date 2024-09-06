@@ -811,7 +811,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
     return CurrentState().font;
   }
 
-  bool UseSoftwareRendering() const;
+  bool GetEffectiveWillReadFrequently() const;
 
   
   int32_t mWidth, mHeight;
@@ -857,8 +857,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   
   
   bool mWillReadFrequently = false;
-  
-  bool mForceSoftwareRendering = false;
   
   bool mHasShutdown = false;
   

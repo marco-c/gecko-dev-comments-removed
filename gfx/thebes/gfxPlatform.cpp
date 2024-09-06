@@ -1678,29 +1678,26 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForBackend(
 }
 
 already_AddRefed<DrawTarget> gfxPlatform::CreateOffscreenCanvasDrawTarget(
-    const IntSize& aSize, SurfaceFormat aFormat, bool aRequireSoftwareRender) {
+    const IntSize& aSize, SurfaceFormat aFormat) {
   NS_ASSERTION(mPreferredCanvasBackend != BackendType::NONE, "No backend.");
 
-  BackendType backend = mFallbackCanvasBackend;
   
   
   
   if (!gfxPlatform::UseRemoteCanvas() ||
       !gfxPlatform::IsBackendAccelerated(mPreferredCanvasBackend)) {
-    backend = mPreferredCanvasBackend;
-  }
-
-  if (aRequireSoftwareRender) {
-    backend = gfxPlatform::IsBackendAccelerated(mPreferredCanvasBackend)
-                  ? mFallbackCanvasBackend
-                  : mPreferredCanvasBackend;
+    RefPtr<DrawTarget> target =
+        CreateDrawTargetForBackend(mPreferredCanvasBackend, aSize, aFormat);
+    if (target || mFallbackCanvasBackend == BackendType::NONE) {
+      return target.forget();
+    }
   }
 
 #ifdef XP_WIN
   
-  return Factory::CreateDrawTarget(backend, aSize, aFormat);
+  return Factory::CreateDrawTarget(mFallbackCanvasBackend, aSize, aFormat);
 #else
-  return CreateDrawTargetForBackend(backend, aSize, aFormat);
+  return CreateDrawTargetForBackend(mFallbackCanvasBackend, aSize, aFormat);
 #endif
 }
 

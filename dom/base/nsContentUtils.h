@@ -2166,13 +2166,6 @@ class nsContentUtils {
   
 
 
-  static nsIPrincipal* GetFingerprintingProtectionPrincipal() {
-    return sFingerprintingProtectionPrincipal;
-  }
-
-  
-
-
 
 
 
@@ -3645,7 +3638,6 @@ class nsContentUtils {
   static nsIScriptSecurityManager* sSecurityManager;
   static nsIPrincipal* sSystemPrincipal;
   static nsIPrincipal* sNullSubjectPrincipal;
-  static nsIPrincipal* sFingerprintingProtectionPrincipal;
 
   static nsIConsoleService* sConsoleService;
 
