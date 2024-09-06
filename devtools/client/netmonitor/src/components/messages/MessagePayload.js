@@ -139,6 +139,15 @@ class MessagePayload extends Component {
       "responseHeaders"
     );
 
+    if (!responseHeaders.headers) {
+      
+      
+      return {
+        formattedData: null,
+        formattedDataTitle: "",
+      };
+    }
+
     const wsProtocol = getResponseHeader(
       { responseHeaders },
       "Sec-WebSocket-Protocol"
