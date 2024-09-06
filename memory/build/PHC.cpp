@@ -567,12 +567,9 @@ class PHC {
 
  public:
   
-  static Mutex sMutex MOZ_UNANNOTATED;
-
-  
   
   PHC() : mRNG(RandomSeed<1>(), RandomSeed<2>()) {
-    sMutex.Init();
+    mMutex.Init();
     if (!tlsIsDisabled.init()) {
       MOZ_CRASH();
     }
@@ -581,7 +578,7 @@ class PHC {
     
     
     
-    MutexAutoLock lock(sMutex);
+    MutexAutoLock lock(mMutex);
     SetAllocDelay(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
 
     LOG("Initial sAllocDelay <- %zu\n", size_t(sAllocDelay));
@@ -704,7 +701,7 @@ class PHC {
   }
 
   void EnsureValidAndInUse(PHCLock, void* aPtr, uintptr_t aIndex)
-      MOZ_REQUIRES(sMutex) {
+      MOZ_REQUIRES(mMutex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
 
     
@@ -718,7 +715,7 @@ class PHC {
       
       
       
-      sMutex.Unlock();
+      mMutex.Unlock();
       *static_cast<uint8_t*>(aPtr) = 0;
       MOZ_CRASH("unreachable");
     }
@@ -798,11 +795,13 @@ class PHC {
   }
 
 #ifndef XP_WIN
-  static void prefork() MOZ_NO_THREAD_SAFETY_ANALYSIS { sMutex.Lock(); }
-  static void postfork_parent() MOZ_NO_THREAD_SAFETY_ANALYSIS {
-    sMutex.Unlock();
+  static void prefork() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    PHC::sPHC->mMutex.Lock();
   }
-  static void postfork_child() { sMutex.Init(); }
+  static void postfork_parent() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    PHC::sPHC->mMutex.Unlock();
+  }
+  static void postfork_child() { PHC::sPHC->mMutex.Init(); }
 #endif
 
 #if PHC_LOGGING
@@ -846,7 +845,7 @@ class PHC {
   using PHCState = mozilla::phc::PHCState;
   void SetState(PHCState aState) {
     if (mPhcState != PHCState::Enabled && aState == PHCState::Enabled) {
-      MutexAutoLock lock(PHC::sMutex);
+      MutexAutoLock lock(mMutex);
       
       ResetRNG();
 
@@ -863,7 +862,7 @@ class PHC {
 
   void SetProbabilities(int64_t aAvgDelayFirst, int64_t aAvgDelayNormal,
                         int64_t aAvgDelayPageReuse) {
-    MutexAutoLock lock(PHC::sMutex);
+    MutexAutoLock lock(mMutex);
 
     mAvgFirstAllocDelay = CheckProbability(aAvgDelayFirst);
     mAvgAllocDelay = CheckProbability(aAvgDelayNormal);
@@ -878,7 +877,7 @@ class PHC {
   void EnableOnCurrentThread() {
     MOZ_ASSERT(tlsIsDisabled.get());
 
-    MutexAutoLock lock(sMutex);
+    MutexAutoLock lock(mMutex);
     Delay avg_delay = GetAvgAllocDelay(lock);
     Delay avg_first_delay = GetAvgFirstAllocDelay(lock);
     if (AllocDelayHasWrapped(avg_delay, avg_first_delay)) {
@@ -950,6 +949,11 @@ class PHC {
 #endif
   }
 
+ public:
+  
+  Mutex mMutex MOZ_UNANNOTATED;
+
+ private:
   
   
   
@@ -1067,7 +1071,6 @@ class PHC {
   static PHC* sPHC;
 };
 
-Mutex PHC::sMutex;
 PHC_THREAD_LOCAL(bool) PHC::tlsIsDisabled;
 Atomic<Time, Relaxed> PHC::sNow;
 Atomic<Delay, ReleaseAcquire> PHC::sAllocDelay;
@@ -1085,8 +1088,9 @@ PHCRegion::PHCRegion()
 
 
 
-static void PHCCrash(PHCLock, const char* aMessage) MOZ_REQUIRES(PHC::sMutex) {
-  PHC::sMutex.Unlock();
+static void PHCCrash(PHCLock, const char* aMessage)
+    MOZ_REQUIRES(PHC::sPHC->mMutex) {
+  PHC::sPHC->mMutex.Unlock();
   MOZ_CRASH_UNSAFE(aMessage);
 }
 
@@ -1211,7 +1215,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   StackTrace allocStack;
   allocStack.Fill();
 
-  MutexAutoLock lock(PHC::sMutex);
+  MutexAutoLock lock(PHC::sPHC->mMutex);
 
   Time now = PHC::Now();
   Delay newAllocDelay = Rnd64ToDelay(PHC::sPHC->GetAvgAllocDelay(lock),
@@ -1306,7 +1310,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 static void FreePage(PHCLock aLock, uintptr_t aIndex,
                      const Maybe<arena_id_t>& aArenaId,
                      const StackTrace& aFreeStack, Delay aReuseDelay)
-    MOZ_REQUIRES(PHC::sMutex) {
+    MOZ_REQUIRES(PHC::sPHC->mMutex) {
   void* pagePtr = PHC::sRegion->AllocPagePtr(aIndex);
 
 #ifdef XP_WIN
@@ -1435,7 +1439,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
     stack.Fill();
   }
 
-  MutexAutoLock lock(PHC::sMutex);
+  MutexAutoLock lock(PHC::sPHC->mMutex);
 
   
   PHC::sPHC->EnsureValidAndInUse(lock, aOldPtr, index);
@@ -1536,7 +1540,7 @@ MOZ_ALWAYS_INLINE static bool MaybePageFree(const Maybe<arena_id_t>& aArenaId,
     freeStack.Fill();
   }
 
-  MutexAutoLock lock(PHC::sMutex);
+  MutexAutoLock lock(PHC::sPHC->mMutex);
 
   
   PHC::sPHC->EnsureValidAndInUse(lock, aPtr, index);
@@ -1609,7 +1613,7 @@ inline size_t MozJemallocPHC::malloc_usable_size(usable_ptr_t aPtr) {
   
   uintptr_t index = pk.AllocPageIndex();
 
-  MutexAutoLock lock(PHC::sMutex);
+  MutexAutoLock lock(PHC::sPHC->mMutex);
 
   void* pageBaseAddr = PHC::sPHC->AllocPageBaseAddr(lock, index);
 
@@ -1644,7 +1648,7 @@ inline void MozJemallocPHC::jemalloc_stats_internal(
 
   size_t allocated = 0;
   {
-    MutexAutoLock lock(PHC::sMutex);
+    MutexAutoLock lock(PHC::sPHC->mMutex);
 
     
     for (size_t i = 0; i < kNumAllocPages; i++) {
@@ -1696,7 +1700,7 @@ inline void MozJemallocPHC::jemalloc_ptr_info(const void* aPtr,
   
   uintptr_t index = pk.AllocPageIndex();
 
-  MutexAutoLock lock(PHC::sMutex);
+  MutexAutoLock lock(PHC::sPHC->mMutex);
 
   PHC::sPHC->FillJemallocPtrInfo(lock, aPtr, index, aInfo);
 #if DEBUG
@@ -1772,13 +1776,13 @@ bool IsPHCAllocation(const void* aPtr, AddrInfo* aOut) {
   uintptr_t index = pk.AllocPageIndex();
 
   if (aOut) {
-    if (PHC::sMutex.TryLock()) {
+    if (PHC::sPHC->mMutex.TryLock()) {
       PHC::sPHC->FillAddrInfo(index, aPtr, isGuardPage, *aOut);
       LOG("IsPHCAllocation: %zu, %p, %zu, %zu, %zu\n", size_t(aOut->mKind),
           aOut->mBaseAddr, aOut->mUsableSize,
           aOut->mAllocStack.isSome() ? aOut->mAllocStack->mLength : 0,
           aOut->mFreeStack.isSome() ? aOut->mFreeStack->mLength : 0);
-      PHC::sMutex.Unlock();
+      PHC::sPHC->mMutex.Unlock();
     } else {
       LOG("IsPHCAllocation: PHC is locked\n");
       aOut->mPhcWasLocked = true;
@@ -1811,7 +1815,7 @@ void PHCMemoryUsage(MemoryUsage& aMemoryUsage) {
 
   aMemoryUsage.mMetadataBytes = metadata_size();
   if (PHC::sPHC) {
-    MutexAutoLock lock(PHC::sMutex);
+    MutexAutoLock lock(PHC::sPHC->mMutex);
     aMemoryUsage.mFragmentationBytes = PHC::sPHC->FragmentationBytes();
   } else {
     aMemoryUsage.mFragmentationBytes = 0;
@@ -1824,7 +1828,7 @@ void GetPHCStats(PHCStats& aStats) {
     return;
   }
 
-  MutexAutoLock lock(PHC::sMutex);
+  MutexAutoLock lock(PHC::sPHC->mMutex);
 
   aStats = PHC::sPHC->GetPageStats(lock);
 }
