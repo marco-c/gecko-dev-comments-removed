@@ -108,7 +108,6 @@ class nsAtom;
 class nsView;
 class nsFrameSelection;
 class nsIWidget;
-class nsIScrollableFrame;
 class nsISelectionController;
 class nsILineIterator;
 class gfxSkipChars;
@@ -132,15 +131,15 @@ enum class PeekOffsetOption : uint16_t;
 enum class PseudoStyleType : uint8_t;
 enum class TableSelectionMode : uint32_t;
 
+class EffectSet;
+class LazyLogModule;
 class nsDisplayItem;
 class nsDisplayList;
 class nsDisplayListBuilder;
 class nsDisplayListSet;
-
-class ServoRestyleState;
-class EffectSet;
-class LazyLogModule;
 class PresShell;
+class ScrollContainerFrame;
+class ServoRestyleState;
 class WidgetGUIEvent;
 class WidgetMouseEvent;
 
@@ -818,8 +817,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-  virtual nsIScrollableFrame* GetScrollTargetFrame() const { return nullptr; }
+  virtual mozilla::ScrollContainerFrame* GetScrollTargetFrame() const {
+    return nullptr;
+  }
 
   
 
