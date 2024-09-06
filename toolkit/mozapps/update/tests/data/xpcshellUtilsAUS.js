@@ -3156,12 +3156,15 @@ async function waitForHelperExit() {
 
 
 
+
+
+
 async function setupUpdaterTest(
   aMarFile,
   aPostUpdateAsync,
   aPostUpdateExeRelPathPrefix = "",
   aSetupActiveUpdate = true,
-  { requiresOmnijar = false } = {}
+  { requiresOmnijar = false, asyncExeArg = "post-update-async" } = {}
 ) {
   debugDump("start - updater test setup");
   
@@ -3310,7 +3313,9 @@ async function setupUpdaterTest(
   }
 
   if (aPostUpdateAsync !== null) {
-    createUpdaterINI(aPostUpdateAsync, aPostUpdateExeRelPathPrefix);
+    createUpdaterINI(aPostUpdateAsync, aPostUpdateExeRelPathPrefix, {
+      asyncExeArg,
+    });
   }
 
   await TestUtils.waitForCondition(() => {
@@ -3337,8 +3342,15 @@ async function setupUpdaterTest(
 
 
 
-function createUpdaterINI(aIsExeAsync, aExeRelPathPrefix) {
-  let exeArg = "ExeArg=post-update-async\n";
+
+
+
+function createUpdaterINI(
+  aIsExeAsync,
+  aExeRelPathPrefix,
+  { asyncExeArg = "post-update-async" } = {}
+) {
+  let exeArg = `ExeArg=${asyncExeArg}\n`;
   let exeAsync = "";
   if (aIsExeAsync !== undefined) {
     if (aIsExeAsync) {
@@ -4102,7 +4114,12 @@ function getPostUpdateFile(aSuffix) {
 
 
 
-async function checkPostUpdateAppLog() {
+
+
+
+async function checkPostUpdateAppLog({
+  expectedContents = "post-update\n",
+} = {}) {
   
   if (AppConstants.platform == "macosx" || AppConstants.platform == "win") {
     let file = getPostUpdateFile(".log");
@@ -4111,10 +4128,20 @@ async function checkPostUpdateAppLog() {
       "Waiting for file to exist, path: " + file.path
     );
 
-    let expectedContents = "post-update\n";
     await TestUtils.waitForCondition(
       () => readFile(file) == expectedContents,
-      "Waiting for expected file contents: " + expectedContents
+      
+      
+      "Waiting for expected file contents: " +
+        expectedContents +
+        ", first read: " +
+        readFile(file)
+    );
+
+    Assert.equal(
+      readFile(file),
+      expectedContents,
+      "the post update log contents" + MSG_SHOULD_EQUAL
     );
   }
 }

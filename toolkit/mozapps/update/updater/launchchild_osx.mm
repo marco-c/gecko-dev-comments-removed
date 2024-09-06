@@ -203,6 +203,13 @@ void LaunchMacPostProcess(const char* aAppBundle) {
   NSTask* task = [[NSTask alloc] init];
   [task setLaunchPath:exeFullPath];
   [task setArguments:[NSArray arrayWithObject:exeArg]];
+
+  
+  
+  
+  
+  [task setEnvironment:@{}];
+
   [task launch];
   if (!readResult) {
     NSString* exeAsync = [NSString stringWithUTF8String:optVal.get()];

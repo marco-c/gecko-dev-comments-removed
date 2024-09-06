@@ -2116,13 +2116,23 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
   si.lpDesktop = const_cast<LPWSTR>(L"");  
   PROCESS_INFORMATION pi = {0};
 
-  bool ok = CreateProcessW(exefullpath, cmdline,
-                           nullptr,  
-                           nullptr,  
-                           false,    
-                           0,        
-                           nullptr,  
-                           workingDirectory, &si, &pi);
+  
+  
+  
+  
+  
+  
+  
+  
+  const WCHAR* emptyEnvironment = L"\0";
+
+  bool ok =
+      CreateProcessW(exefullpath, cmdline,
+                     nullptr,  
+                     nullptr,  
+                     false,    
+                     0,        
+                     (LPVOID)emptyEnvironment, workingDirectory, &si, &pi);
   free(cmdline);
   if (ok) {
     LOG(("LaunchWinPostProcess - Waiting for process to complete"));
