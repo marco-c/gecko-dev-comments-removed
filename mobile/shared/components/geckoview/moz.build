@@ -4,7 +4,7 @@
 
 
 
-if CONFIG["MOZ_ANDROID_HISTORY"]:
+if CONFIG["MOZ_GECKOVIEW_HISTORY"]:
     EXPORTS += [
         "GeckoViewHistory.h",
     ]
