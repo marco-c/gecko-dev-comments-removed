@@ -4,9 +4,6 @@
 
 
 
-if CONFIG["MOZ_DEVTOOLS"] and CONFIG["MOZ_DEVTOOLS"] not in ("all", "server"):
-    error("Unsupported MOZ_DEVTOOLS value: %s" % (CONFIG["MOZ_DEVTOOLS"]))
-
 if CONFIG["MOZ_DEVTOOLS"] == "all":
     DIRS += [
         "client",
