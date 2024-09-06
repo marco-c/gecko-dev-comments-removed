@@ -333,7 +333,7 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
           lineWM.LogicalSideForLineRelativeDir(lineSide.value());
       if (StaticPrefs::layout_css_ruby_intercharacter_enabled() &&
           rtcWM.IsVerticalRL() &&
-          lineWM.GetInlineDir() == WritingMode::eInlineLTR) {
+          lineWM.GetInlineDir() == WritingMode::InlineDir::LTR) {
         
         
         

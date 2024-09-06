@@ -137,20 +137,20 @@ class WritingMode {
   
 
 
-  enum InlineDir {
-    eInlineLTR = 0x00,  
-    eInlineRTL = 0x02,  
-    eInlineTTB = 0x01,  
-    eInlineBTT = 0x03,  
+  enum class InlineDir : uint8_t {
+    LTR,  
+    RTL,  
+    TTB,  
+    BTT,  
   };
 
   
 
 
-  enum BlockDir {
-    eBlockTB = 0x00,  
-    eBlockRL = 0x01,  
-    eBlockLR = 0x05,  
+  enum class BlockDir : uint8_t {
+    TB,  
+    RL,  
+    LR,  
   };
 
   
@@ -165,14 +165,21 @@ class WritingMode {
 
 
   InlineDir GetInlineDir() const {
-    return InlineDir(mWritingMode._0 & eInlineMask);
+    if (IsVertical()) {
+      return IsInlineReversed() ? InlineDir::BTT : InlineDir::TTB;
+    }
+    return IsInlineReversed() ? InlineDir::RTL : InlineDir::LTR;
   }
 
   
 
 
   BlockDir GetBlockDir() const {
-    return BlockDir(mWritingMode._0 & eBlockMask);
+    if (IsVertical()) {
+      return mWritingMode & StyleWritingMode::VERTICAL_LR ? BlockDir::LR
+                                                          : BlockDir::RL;
+    }
+    return BlockDir::TB;
   }
 
   
@@ -219,12 +226,12 @@ class WritingMode {
   
 
 
-  bool IsVerticalLR() const { return eBlockLR == GetBlockDir(); }
+  bool IsVerticalLR() const { return GetBlockDir() == BlockDir::LR; }
 
   
 
 
-  bool IsVerticalRL() const { return eBlockRL == GetBlockDir(); }
+  bool IsVerticalRL() const { return GetBlockDir() == BlockDir::RL; }
 
   
 
@@ -607,12 +614,6 @@ class WritingMode {
   explicit WritingMode(uint8_t aValue) : mWritingMode{aValue} {}
 
   StyleWritingMode mWritingMode;
-
-  enum Masks {
-    
-    eInlineMask = 0x03,  
-    eBlockMask = 0x05,   
-  };
 };
 
 inline std::ostream& operator<<(std::ostream& aStream, const WritingMode& aWM) {

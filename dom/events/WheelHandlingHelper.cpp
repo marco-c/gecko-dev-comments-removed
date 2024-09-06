@@ -725,15 +725,10 @@ ESMAutoDirWheelDeltaAdjuster::ESMAutoDirWheelDeltaAdjuster(
   }
 
   WritingMode writingMode = honouredFrame->GetWritingMode();
-  WritingMode::BlockDir blockDir = writingMode.GetBlockDir();
-  WritingMode::InlineDir inlineDir = writingMode.GetInlineDir();
   
   
   
-  mIsHorizontalContentRightToLeft =
-      (blockDir == WritingMode::BlockDir::eBlockRL ||
-       (blockDir == WritingMode::BlockDir::eBlockTB &&
-        inlineDir == WritingMode::InlineDir::eInlineRTL));
+  mIsHorizontalContentRightToLeft = writingMode.IsPhysicalRTL();
 }
 
 void ESMAutoDirWheelDeltaAdjuster::OnAdjusted() {

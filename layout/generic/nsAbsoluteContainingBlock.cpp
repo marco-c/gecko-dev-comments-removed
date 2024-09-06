@@ -372,8 +372,8 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     
     
-    if ((wm.GetInlineDir() == WritingMode::eInlineRTL ||
-         wm.GetBlockDir() == WritingMode::eBlockRL) &&
+    if ((wm.GetInlineDir() == WritingMode::InlineDir::RTL ||
+         wm.GetBlockDir() == WritingMode::BlockDir::RL) &&
         !pos->mOffset.Get(eSideRight).IsAuto()) {
       return true;
     }
@@ -383,7 +383,7 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
       return true;
     }
     
-    if (wm.GetInlineDir() == WritingMode::eInlineBTT &&
+    if (wm.GetInlineDir() == WritingMode::InlineDir::BTT &&
         !pos->mOffset.Get(eSideBottom).IsAuto()) {
       return true;
     }
