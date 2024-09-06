@@ -366,6 +366,23 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     this._originalWindow = this.window;
 
     
+    
+    
+    
+    if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
+      this._innerWindowId =
+        this.devtoolsSpawnedBrowsingContextForWebExtension.currentWindowContext.innerWindowId;
+    } else {
+      
+      
+      
+      
+      
+      
+      this._innerWindowId = this.window.windowGlobalChild.innerWindowId;
+    }
+
+    
     this.isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(this.window);
 
     
@@ -490,7 +507,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   }
 
   get innerWindowId() {
-    return this.window?.windowGlobalChild.innerWindowId;
+    return this._innerWindowId;
   }
 
   get browserId() {
@@ -652,8 +669,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       ? this.devtoolsSpawnedBrowsingContextForWebExtension
       : this.originalDocShell.browsingContext;
     const browsingContextID = originalBrowsingContext.id;
-    const innerWindowId =
-      originalBrowsingContext.currentWindowContext.innerWindowId;
     const parentInnerWindowId =
       originalBrowsingContext.parent?.currentWindowContext.innerWindowId;
     
@@ -670,7 +685,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       processID: Services.appinfo.processID,
       
       followWindowGlobalLifeCycle: this.followWindowGlobalLifeCycle,
-      innerWindowId,
+      innerWindowId: this.innerWindowId,
       parentInnerWindowId,
       topInnerWindowId: this.browsingContext.topWindowContext.innerWindowId,
       isTopLevelTarget: this.isTopLevelTarget,
