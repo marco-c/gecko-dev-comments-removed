@@ -8,8 +8,8 @@
 #![allow(clippy::unseparated_literal_suffix, clippy::used_underscore_binding)] 
 
 mod aead;
-#[cfg(feature = "fuzzing")]
-mod aead_fuzzing;
+#[cfg(feature = "disable-encryption")]
+pub mod aead_null;
 pub mod agent;
 mod agentio;
 mod auth;
@@ -33,12 +33,12 @@ mod time;
 
 use std::{ffi::CString, path::PathBuf, ptr::null, sync::OnceLock};
 
-#[cfg(not(feature = "fuzzing"))]
+#[cfg(not(feature = "disable-encryption"))]
 pub use self::aead::RealAead as Aead;
-#[cfg(feature = "fuzzing")]
+#[cfg(feature = "disable-encryption")]
 pub use self::aead::RealAead;
-#[cfg(feature = "fuzzing")]
-pub use self::aead_fuzzing::FuzzingAead as Aead;
+#[cfg(feature = "disable-encryption")]
+pub use self::aead_null::AeadNull as Aead;
 pub use self::{
     agent::{
         Agent, AllowZeroRtt, Client, HandshakeState, Record, RecordList, ResumptionToken,
@@ -59,7 +59,8 @@ pub use self::{
     ssl::Opt,
 };
 
-const MINIMUM_NSS_VERSION: &str = "3.97";
+mod min_version;
+use min_version::MINIMUM_NSS_VERSION;
 
 #[allow(non_upper_case_globals, clippy::redundant_static_lifetimes)]
 #[allow(clippy::upper_case_acronyms)]
@@ -89,7 +90,7 @@ impl Drop for NssLoaded {
     }
 }
 
-static INITIALIZED: OnceLock<NssLoaded> = OnceLock::new();
+static INITIALIZED: OnceLock<Res<NssLoaded>> = OnceLock::new();
 
 fn already_initialized() -> bool {
     unsafe { nss::NSS_IsInitialized() != 0 }
@@ -110,21 +111,21 @@ fn version_check() {
 
 
 
-pub fn init() {
+pub fn init() -> Res<()> {
     
     time::init();
-    _ = INITIALIZED.get_or_init(|| {
+    let res = INITIALIZED.get_or_init(|| {
         version_check();
         if already_initialized() {
-            return NssLoaded::External;
+            return Ok(NssLoaded::External);
         }
 
-        secstatus_to_res(unsafe { nss::NSS_NoDB_Init(null()) }).expect("NSS_NoDB_Init failed");
-        secstatus_to_res(unsafe { nss::NSS_SetDomesticPolicy() })
-            .expect("NSS_SetDomesticPolicy failed");
+        secstatus_to_res(unsafe { nss::NSS_NoDB_Init(null()) })?;
+        secstatus_to_res(unsafe { nss::NSS_SetDomesticPolicy() })?;
 
-        NssLoaded::NoDb
+        Ok(NssLoaded::NoDb)
     });
+    res.as_ref().map(|_| ()).map_err(Clone::clone)
 }
 
 
@@ -132,11 +133,10 @@ pub fn init() {
 
 
 #[cfg(debug_assertions)]
-fn enable_ssl_trace() {
+fn enable_ssl_trace() -> Res<()> {
     let opt = ssl::Opt::Locking.as_int();
     let mut v: ::std::os::raw::c_int = 0;
     secstatus_to_res(unsafe { ssl::SSL_OptionGetDefault(opt, &mut v) })
-        .expect("SSL_OptionGetDefault failed");
 }
 
 
@@ -144,19 +144,21 @@ fn enable_ssl_trace() {
 
 
 
-pub fn init_db<P: Into<PathBuf>>(dir: P) {
+pub fn init_db<P: Into<PathBuf>>(dir: P) -> Res<()> {
     time::init();
-    _ = INITIALIZED.get_or_init(|| {
+    let res = INITIALIZED.get_or_init(|| {
         version_check();
         if already_initialized() {
-            return NssLoaded::External;
+            return Ok(NssLoaded::External);
         }
 
         let path = dir.into();
-        assert!(path.is_dir());
-        let pathstr = path.to_str().expect("path converts to string").to_string();
-        let dircstr = CString::new(pathstr).unwrap();
-        let empty = CString::new("").unwrap();
+        if !path.is_dir() {
+            return Err(Error::InternalError);
+        }
+        let pathstr = path.to_str().ok_or(Error::InternalError)?;
+        let dircstr = CString::new(pathstr)?;
+        let empty = CString::new("")?;
         secstatus_to_res(unsafe {
             nss::NSS_Initialize(
                 dircstr.as_ptr(),
@@ -165,21 +167,19 @@ pub fn init_db<P: Into<PathBuf>>(dir: P) {
                 nss::SECMOD_DB.as_ptr().cast(),
                 nss::NSS_INIT_READONLY,
             )
-        })
-        .expect("NSS_Initialize failed");
+        })?;
 
-        secstatus_to_res(unsafe { nss::NSS_SetDomesticPolicy() })
-            .expect("NSS_SetDomesticPolicy failed");
+        secstatus_to_res(unsafe { nss::NSS_SetDomesticPolicy() })?;
         secstatus_to_res(unsafe {
             ssl::SSL_ConfigServerSessionIDCache(1024, 0, 0, dircstr.as_ptr())
-        })
-        .expect("SSL_ConfigServerSessionIDCache failed");
+        })?;
 
         #[cfg(debug_assertions)]
-        enable_ssl_trace();
+        enable_ssl_trace()?;
 
-        NssLoaded::Db
+        Ok(NssLoaded::Db)
     });
+    res.as_ref().map(|_| ()).map_err(Clone::clone)
 }
 
 

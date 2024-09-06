@@ -262,7 +262,7 @@ mod test {
     
     fn overflow_interval() {
         init();
-        let interval = Interval::from(Duration::from_micros(u64::max_value()));
+        let interval = Interval::from(Duration::from_micros(u64::MAX));
         let res: Res<PRTime> = interval.try_into();
         assert!(res.is_err());
     }

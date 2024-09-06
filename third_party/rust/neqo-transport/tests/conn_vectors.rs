@@ -6,7 +6,7 @@
 
 
 
-#![cfg(not(feature = "fuzzing"))]
+#![cfg(not(feature = "disable-encryption"))]
 
 use std::{cell::RefCell, rc::Rc};
 
