@@ -428,6 +428,7 @@ trait PrivateMatchMethods: TElement {
         
         
         
+        
         let mut resolver = StyleResolverForElement::new(
             *self,
             context,
@@ -462,9 +463,11 @@ trait PrivateMatchMethods: TElement {
 
         
         
-        
-        
-        if old_values.is_some() {
+        if old_values.is_some()
+            && !new_styles
+                .primary_style()
+                .is_display_property_changed_from_none(old_values.map(|s| &**s))
+        {
             return None;
         }
 
