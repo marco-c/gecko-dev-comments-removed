@@ -157,81 +157,79 @@ static ScrollDirections GetOverflowChange(const nsRect& aCurScrolledRect,
 
 
 
-class nsHTMLScrollFrame::ScrollEvent : public Runnable {
+class ScrollContainerFrame::ScrollEvent : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
-  explicit ScrollEvent(nsHTMLScrollFrame* aHelper, bool aDelayed);
+  explicit ScrollEvent(ScrollContainerFrame* aHelper, bool aDelayed);
   void Revoke() { mHelper = nullptr; }
 
  private:
-  nsHTMLScrollFrame* mHelper;
+  ScrollContainerFrame* mHelper;
 };
 
-class nsHTMLScrollFrame::ScrollEndEvent : public Runnable {
+class ScrollContainerFrame::ScrollEndEvent : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
-  explicit ScrollEndEvent(nsHTMLScrollFrame* aHelper, bool aDelayed);
+  explicit ScrollEndEvent(ScrollContainerFrame* aHelper, bool aDelayed);
   void Revoke() { mHelper = nullptr; }
 
  private:
-  nsHTMLScrollFrame* mHelper;
+  ScrollContainerFrame* mHelper;
 };
 
-class nsHTMLScrollFrame::AsyncScrollPortEvent : public Runnable {
+class ScrollContainerFrame::AsyncScrollPortEvent : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
-  explicit AsyncScrollPortEvent(nsHTMLScrollFrame* helper)
-      : Runnable("nsHTMLScrollFrame::AsyncScrollPortEvent"), mHelper(helper) {}
+  explicit AsyncScrollPortEvent(ScrollContainerFrame* helper)
+      : Runnable("ScrollContainerFrame::AsyncScrollPortEvent"),
+        mHelper(helper) {}
   void Revoke() { mHelper = nullptr; }
 
  private:
-  nsHTMLScrollFrame* mHelper;
+  ScrollContainerFrame* mHelper;
 };
 
-class nsHTMLScrollFrame::ScrolledAreaEvent : public Runnable {
+class ScrollContainerFrame::ScrolledAreaEvent : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
-  explicit ScrolledAreaEvent(nsHTMLScrollFrame* helper)
-      : Runnable("nsHTMLScrollFrame::ScrolledAreaEvent"), mHelper(helper) {}
+  explicit ScrolledAreaEvent(ScrollContainerFrame* helper)
+      : Runnable("ScrollContainerFrame::ScrolledAreaEvent"), mHelper(helper) {}
   void Revoke() { mHelper = nullptr; }
 
  private:
-  nsHTMLScrollFrame* mHelper;
+  ScrollContainerFrame* mHelper;
 };
-
-
-
-
 
 class ScrollFrameActivityTracker final
-    : public nsExpirationTracker<nsHTMLScrollFrame, 4> {
+    : public nsExpirationTracker<ScrollContainerFrame, 4> {
  public:
   
   
   enum { TIMEOUT_MS = 1000 };
   explicit ScrollFrameActivityTracker(nsIEventTarget* aEventTarget)
-      : nsExpirationTracker<nsHTMLScrollFrame, 4>(
+      : nsExpirationTracker<ScrollContainerFrame, 4>(
             TIMEOUT_MS, "ScrollFrameActivityTracker", aEventTarget) {}
   ~ScrollFrameActivityTracker() { AgeAllGenerations(); }
 
-  virtual void NotifyExpired(nsHTMLScrollFrame* aObject) override {
+  virtual void NotifyExpired(ScrollContainerFrame* aObject) override {
     RemoveObject(aObject);
     aObject->MarkNotRecentlyScrolled();
   }
 };
 static StaticAutoPtr<ScrollFrameActivityTracker> gScrollFrameActivityTracker;
 
-nsHTMLScrollFrame* NS_NewHTMLScrollFrame(PresShell* aPresShell,
-                                         ComputedStyle* aStyle, bool aIsRoot) {
+ScrollContainerFrame* NS_NewScrollContainerFrame(mozilla::PresShell* aPresShell,
+                                                 ComputedStyle* aStyle,
+                                                 bool aIsRoot) {
   return new (aPresShell)
-      nsHTMLScrollFrame(aStyle, aPresShell->GetPresContext(), aIsRoot);
+      ScrollContainerFrame(aStyle, aPresShell->GetPresContext(), aIsRoot);
 }
 
-NS_IMPL_FRAMEARENA_HELPERS(nsHTMLScrollFrame)
+NS_IMPL_FRAMEARENA_HELPERS(ScrollContainerFrame)
 
-nsHTMLScrollFrame::nsHTMLScrollFrame(ComputedStyle* aStyle,
-                                     nsPresContext* aPresContext,
-                                     nsIFrame::ClassID aID, bool aIsRoot)
+ScrollContainerFrame::ScrollContainerFrame(ComputedStyle* aStyle,
+                                           nsPresContext* aPresContext,
+                                           nsIFrame::ClassID aID, bool aIsRoot)
     : nsContainerFrame(aStyle, aPresContext, aID),
       mHScrollbarBox(nullptr),
       mVScrollbarBox(nullptr),
@@ -302,21 +300,21 @@ nsHTMLScrollFrame::nsHTMLScrollFrame(ComputedStyle* aStyle,
   }
 }
 
-nsHTMLScrollFrame::~nsHTMLScrollFrame() = default;
+ScrollContainerFrame::~ScrollContainerFrame() = default;
 
-void nsHTMLScrollFrame::ScrollbarActivityStarted() const {
+void ScrollContainerFrame::ScrollbarActivityStarted() const {
   if (mScrollbarActivity) {
     mScrollbarActivity->ActivityStarted();
   }
 }
 
-void nsHTMLScrollFrame::ScrollbarActivityStopped() const {
+void ScrollContainerFrame::ScrollbarActivityStopped() const {
   if (mScrollbarActivity) {
     mScrollbarActivity->ActivityStopped();
   }
 }
 
-void nsHTMLScrollFrame::Destroy(DestroyContext& aContext) {
+void ScrollContainerFrame::Destroy(DestroyContext& aContext) {
   DestroyAbsoluteFrames(aContext);
   if (mIsRoot) {
     PresShell()->ResetVisualViewportOffset();
@@ -365,23 +363,23 @@ void nsHTMLScrollFrame::Destroy(DestroyContext& aContext) {
   nsContainerFrame::Destroy(aContext);
 }
 
-void nsHTMLScrollFrame::SetInitialChildList(ChildListID aListID,
-                                            nsFrameList&& aChildList) {
+void ScrollContainerFrame::SetInitialChildList(ChildListID aListID,
+                                               nsFrameList&& aChildList) {
   nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
   ReloadChildFrames();
 }
 
-void nsHTMLScrollFrame::AppendFrames(ChildListID aListID,
-                                     nsFrameList&& aFrameList) {
+void ScrollContainerFrame::AppendFrames(ChildListID aListID,
+                                        nsFrameList&& aFrameList) {
   NS_ASSERTION(aListID == FrameChildListID::Principal,
                "Only main list supported");
   mFrames.AppendFrames(nullptr, std::move(aFrameList));
   ReloadChildFrames();
 }
 
-void nsHTMLScrollFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
-                                     const nsLineList::iterator* aPrevFrameLine,
-                                     nsFrameList&& aFrameList) {
+void ScrollContainerFrame::InsertFrames(
+    ChildListID aListID, nsIFrame* aPrevFrame,
+    const nsLineList::iterator* aPrevFrameLine, nsFrameList&& aFrameList) {
   NS_ASSERTION(aListID == FrameChildListID::Principal,
                "Only main list supported");
   NS_ASSERTION(!aPrevFrame || aPrevFrame->GetParent() == this,
@@ -390,8 +388,9 @@ void nsHTMLScrollFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
   ReloadChildFrames();
 }
 
-void nsHTMLScrollFrame::RemoveFrame(DestroyContext& aContext,
-                                    ChildListID aListID, nsIFrame* aOldFrame) {
+void ScrollContainerFrame::RemoveFrame(DestroyContext& aContext,
+                                       ChildListID aListID,
+                                       nsIFrame* aOldFrame) {
   NS_ASSERTION(aListID == FrameChildListID::Principal,
                "Only main list supported");
   mFrames.DestroyFrame(aContext, aOldFrame);
@@ -474,7 +473,8 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   bool mOnlyNeedHScrollbarToScrollVVInsideLV = false;
   bool mOnlyNeedVScrollbarToScrollVVInsideLV = false;
 
-  ScrollReflowInput(nsHTMLScrollFrame* aFrame, const ReflowInput& aReflowInput);
+  ScrollReflowInput(ScrollContainerFrame* aFrame,
+                    const ReflowInput& aReflowInput);
 
   nscoord VScrollbarMinHeight() const { return mVScrollbarPrefSize.height; }
   nscoord VScrollbarPrefWidth() const { return mVScrollbarPrefSize.width; }
@@ -518,7 +518,7 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   nsMargin mScrollbarGutter;
 };
 
-ScrollReflowInput::ScrollReflowInput(nsHTMLScrollFrame* aFrame,
+ScrollReflowInput::ScrollReflowInput(ScrollContainerFrame* aFrame,
                                      const ReflowInput& aReflowInput)
     : mReflowInput(aReflowInput),
       mComputedBorder(aReflowInput.ComputedPhysicalBorderPadding() -
@@ -620,10 +620,10 @@ static nsSize ComputeInsideBorderSize(const ScrollReflowInput& aState,
 
 
 
-bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput& aState,
-                                  ReflowOutput* aKidMetrics,
-                                  bool aAssumeHScroll, bool aAssumeVScroll,
-                                  bool aForce) {
+bool ScrollContainerFrame::TryLayout(ScrollReflowInput& aState,
+                                     ReflowOutput* aKidMetrics,
+                                     bool aAssumeHScroll, bool aAssumeVScroll,
+                                     bool aForce) {
   if ((aState.mVScrollbar == ShowScrollbar::Never && aAssumeVScroll) ||
       (aState.mHScrollbar == ShowScrollbar::Never && aAssumeHScroll)) {
     NS_ASSERTION(!aForce, "Shouldn't be forcing a hidden scrollbar to show!");
@@ -828,7 +828,7 @@ bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput& aState,
   return true;
 }
 
-bool nsHTMLScrollFrame::ScrolledContentDependsOnBSize(
+bool ScrollContainerFrame::ScrolledContentDependsOnBSize(
     const ScrollReflowInput& aState) const {
   return mScrolledFrame->HasAnyStateBits(
              NS_FRAME_CONTAINS_RELATIVE_BSIZE |
@@ -838,10 +838,10 @@ bool nsHTMLScrollFrame::ScrolledContentDependsOnBSize(
          aState.mReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE;
 }
 
-void nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
-                                            bool aAssumeHScroll,
-                                            bool aAssumeVScroll,
-                                            ReflowOutput* aMetrics) {
+void ScrollContainerFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
+                                               bool aAssumeHScroll,
+                                               bool aAssumeVScroll,
+                                               ReflowOutput* aMetrics) {
   const WritingMode wm = GetWritingMode();
 
   
@@ -977,7 +977,8 @@ void nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
   aState.mReflowedContentsWithVScrollbar = aAssumeVScroll;
 }
 
-bool nsHTMLScrollFrame::GuessHScrollbarNeeded(const ScrollReflowInput& aState) {
+bool ScrollContainerFrame::GuessHScrollbarNeeded(
+    const ScrollReflowInput& aState) {
   if (aState.mHScrollbar != ShowScrollbar::Auto) {
     
     return aState.mHScrollbar == ShowScrollbar::Always;
@@ -989,7 +990,8 @@ bool nsHTMLScrollFrame::GuessHScrollbarNeeded(const ScrollReflowInput& aState) {
   return mHasHorizontalScrollbar && !mOnlyNeedHScrollbarToScrollVVInsideLV;
 }
 
-bool nsHTMLScrollFrame::GuessVScrollbarNeeded(const ScrollReflowInput& aState) {
+bool ScrollContainerFrame::GuessVScrollbarNeeded(
+    const ScrollReflowInput& aState) {
   if (aState.mVScrollbar != ShowScrollbar::Auto) {
     
     return aState.mVScrollbar == ShowScrollbar::Always;
@@ -1031,7 +1033,7 @@ bool nsHTMLScrollFrame::GuessVScrollbarNeeded(const ScrollReflowInput& aState) {
   return false;
 }
 
-bool nsHTMLScrollFrame::InInitialReflow() const {
+bool ScrollContainerFrame::InInitialReflow() const {
   
   
   
@@ -1041,8 +1043,8 @@ bool nsHTMLScrollFrame::InInitialReflow() const {
   return !mIsRoot && HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
 }
 
-void nsHTMLScrollFrame::ReflowContents(ScrollReflowInput& aState,
-                                       const ReflowOutput& aDesiredSize) {
+void ScrollContainerFrame::ReflowContents(ScrollReflowInput& aState,
+                                          const ReflowOutput& aDesiredSize) {
   const WritingMode desiredWm = aDesiredSize.GetWritingMode();
   ReflowOutput kidDesiredSize(desiredWm);
   ReflowScrolledFrame(aState, GuessHScrollbarNeeded(aState),
@@ -1132,8 +1134,8 @@ void nsHTMLScrollFrame::ReflowContents(ScrollReflowInput& aState,
             aState.mVScrollbar != ShowScrollbar::Never, true);
 }
 
-void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
-                                        const nsPoint& aScrollPosition) {
+void ScrollContainerFrame::PlaceScrollArea(ScrollReflowInput& aState,
+                                           const nsPoint& aScrollPosition) {
   
   mScrolledFrame->SetPosition(ScrollPort().TopLeft() - aScrollPosition);
 
@@ -1172,13 +1174,14 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
       scrolledArea, ReflowChildFlags::Default);
 }
 
-nscoord nsHTMLScrollFrame::IntrinsicScrollbarGutterSizeAtInlineEdges() const {
+nscoord ScrollContainerFrame::IntrinsicScrollbarGutterSizeAtInlineEdges()
+    const {
   const auto wm = GetWritingMode();
   const LogicalMargin gutter(wm, IntrinsicScrollbarGutterSize());
   return gutter.IStartEnd(wm);
 }
 
-nsMargin nsHTMLScrollFrame::IntrinsicScrollbarGutterSize() const {
+nsMargin ScrollContainerFrame::IntrinsicScrollbarGutterSize() const {
   if (PresContext()->UseOverlayScrollbars()) {
     
     return {};
@@ -1215,7 +1218,7 @@ nsMargin nsHTMLScrollFrame::IntrinsicScrollbarGutterSize() const {
   return gutter;
 }
 
-nsMargin nsHTMLScrollFrame::ComputeStableScrollbarGutter(
+nsMargin ScrollContainerFrame::ComputeStableScrollbarGutter(
     const StyleScrollbarWidth& aStyleScrollbarWidth,
     const StyleScrollbarGutter& aStyleScrollbarGutter) const {
   if (PresContext()->UseOverlayScrollbars()) {
@@ -1269,7 +1272,7 @@ static bool IsMarqueeScrollbox(const nsIFrame& aScrollFrame) {
 }
 
 
-nscoord nsHTMLScrollFrame::GetMinISize(gfxContext* aRenderingContext) {
+nscoord ScrollContainerFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result = [&] {
     if (const Maybe<nscoord> containISize = ContainIntrinsicISize()) {
       return *containISize;
@@ -1284,7 +1287,7 @@ nscoord nsHTMLScrollFrame::GetMinISize(gfxContext* aRenderingContext) {
 }
 
 
-nscoord nsHTMLScrollFrame::GetPrefISize(gfxContext* aRenderingContext) {
+nscoord ScrollContainerFrame::GetPrefISize(gfxContext* aRenderingContext) {
   const Maybe<nscoord> containISize = ContainIntrinsicISize();
   nscoord result = containISize
                        ? *containISize
@@ -1417,11 +1420,12 @@ static void GetScrollableOverflowForPerspective(
   }
 }
 
-BaselineSharingGroup nsHTMLScrollFrame::GetDefaultBaselineSharingGroup() const {
+BaselineSharingGroup ScrollContainerFrame::GetDefaultBaselineSharingGroup()
+    const {
   return mScrolledFrame->GetDefaultBaselineSharingGroup();
 }
 
-nscoord nsHTMLScrollFrame::SynthesizeFallbackBaseline(
+nscoord ScrollContainerFrame::SynthesizeFallbackBaseline(
     mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
   
   if (aWM.IsLineInverted()) {
@@ -1432,7 +1436,7 @@ nscoord nsHTMLScrollFrame::SynthesizeFallbackBaseline(
              : -GetLogicalUsedMargin(aWM).BEnd(aWM);
 }
 
-Maybe<nscoord> nsHTMLScrollFrame::GetNaturalBaselineBOffset(
+Maybe<nscoord> ScrollContainerFrame::GetNaturalBaselineBOffset(
     WritingMode aWM, BaselineSharingGroup aBaselineGroup,
     BaselineExportContext aExportContext) const {
   
@@ -1466,7 +1470,7 @@ Maybe<nscoord> nsHTMLScrollFrame::GetNaturalBaselineBOffset(
       });
 }
 
-void nsHTMLScrollFrame::AdjustForPerspective(nsRect& aScrollableOverflow) {
+void ScrollContainerFrame::AdjustForPerspective(nsRect& aScrollableOverflow) {
   
   
   
@@ -1479,12 +1483,12 @@ void nsHTMLScrollFrame::AdjustForPerspective(nsRect& aScrollableOverflow) {
                                       aScrollableOverflow);
 }
 
-void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
-                               ReflowOutput& aDesiredSize,
-                               const ReflowInput& aReflowInput,
-                               nsReflowStatus& aStatus) {
+void ScrollContainerFrame::Reflow(nsPresContext* aPresContext,
+                                  ReflowOutput& aDesiredSize,
+                                  const ReflowInput& aReflowInput,
+                                  nsReflowStatus& aStatus) {
   MarkInReflow();
-  DO_GLOBAL_REFLOW_COUNT("nsHTMLScrollFrame");
+  DO_GLOBAL_REFLOW_COUNT("ScrollContainerFrame");
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   HandleScrollbarStyleSwitching();
@@ -1562,10 +1566,10 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
       !oldScrolledAreaBounds.IsEqualEdges(newScrolledAreaBounds)) {
     if (!mSuppressScrollbarUpdate) {
       mSkippedScrollbarLayout = false;
-      nsHTMLScrollFrame::SetScrollbarVisibility(mHScrollbarBox,
-                                                state.mShowHScrollbar);
-      nsHTMLScrollFrame::SetScrollbarVisibility(mVScrollbarBox,
-                                                state.mShowVScrollbar);
+      ScrollContainerFrame::SetScrollbarVisibility(mHScrollbarBox,
+                                                   state.mShowHScrollbar);
+      ScrollContainerFrame::SetScrollbarVisibility(mVScrollbarBox,
+                                                   state.mShowVScrollbar);
       
       const nsRect insideBorderArea(
           nsPoint(state.mComputedBorder.left, state.mComputedBorder.top),
@@ -1639,8 +1643,8 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
   PostOverflowEvent();
 }
 
-void nsHTMLScrollFrame::DidReflow(nsPresContext* aPresContext,
-                                  const ReflowInput* aReflowInput) {
+void ScrollContainerFrame::DidReflow(nsPresContext* aPresContext,
+                                     const ReflowInput* aReflowInput) {
   nsContainerFrame::DidReflow(aPresContext, aReflowInput);
   if (NeedsResnap()) {
     PostPendingResnap();
@@ -1652,13 +1656,13 @@ void nsHTMLScrollFrame::DidReflow(nsPresContext* aPresContext,
 
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult nsHTMLScrollFrame::GetFrameName(nsAString& aResult) const {
-  return MakeFrameName(u"HTMLScroll"_ns, aResult);
+nsresult ScrollContainerFrame::GetFrameName(nsAString& aResult) const {
+  return MakeFrameName(u"ScrollContainer"_ns, aResult);
 }
 #endif
 
 #ifdef ACCESSIBILITY
-a11y::AccType nsHTMLScrollFrame::AccessibleType() {
+a11y::AccType ScrollContainerFrame::AccessibleType() {
   if (IsTableCaption()) {
     return GetRect().IsEmpty() ? a11y::eNoType : a11y::eHTMLCaptionType;
   }
@@ -1674,15 +1678,15 @@ a11y::AccType nsHTMLScrollFrame::AccessibleType() {
 }
 #endif
 
-NS_QUERYFRAME_HEAD(nsHTMLScrollFrame)
+NS_QUERYFRAME_HEAD(ScrollContainerFrame)
   NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
   NS_QUERYFRAME_ENTRY(nsIScrollableFrame)
   NS_QUERYFRAME_ENTRY(nsIStatefulFrame)
   NS_QUERYFRAME_ENTRY(nsIScrollbarMediator)
-  NS_QUERYFRAME_ENTRY(nsHTMLScrollFrame)
+  NS_QUERYFRAME_ENTRY(ScrollContainerFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
-nsMargin nsHTMLScrollFrame::GetDesiredScrollbarSizes() const {
+nsMargin ScrollContainerFrame::GetDesiredScrollbarSizes() const {
   nsPresContext* pc = PresContext();
   if (pc->UseOverlayScrollbars()) {
     return {};
@@ -1715,14 +1719,14 @@ nsMargin nsHTMLScrollFrame::GetDesiredScrollbarSizes() const {
   return result;
 }
 
-nscoord nsHTMLScrollFrame::GetNonOverlayScrollbarSize(
+nscoord ScrollContainerFrame::GetNonOverlayScrollbarSize(
     const nsPresContext* aPc, StyleScrollbarWidth aScrollbarWidth) {
   const auto size = aPc->Theme()->GetScrollbarSize(aPc, aScrollbarWidth,
                                                    nsITheme::Overlay::No);
   return aPc->DevPixelsToAppUnits(size);
 }
 
-void nsHTMLScrollFrame::HandleScrollbarStyleSwitching() {
+void ScrollContainerFrame::HandleScrollbarStyleSwitching() {
   
   if (mScrollbarActivity && !UsesOverlayScrollbars()) {
     mScrollbarActivity->Destroy();
@@ -1746,11 +1750,11 @@ static bool IsFocused(nsIContent* aContent) {
 }
 #endif
 
-void nsHTMLScrollFrame::SetScrollableByAPZ(bool aScrollable) {
+void ScrollContainerFrame::SetScrollableByAPZ(bool aScrollable) {
   mScrollableByAPZ = aScrollable;
 }
 
-void nsHTMLScrollFrame::SetZoomableByAPZ(bool aZoomable) {
+void ScrollContainerFrame::SetZoomableByAPZ(bool aZoomable) {
   if (!nsLayoutUtils::UsesAsyncScrolling(this)) {
     
     
@@ -1766,11 +1770,11 @@ void nsHTMLScrollFrame::SetZoomableByAPZ(bool aZoomable) {
   }
 }
 
-void nsHTMLScrollFrame::SetHasOutOfFlowContentInsideFilter() {
+void ScrollContainerFrame::SetHasOutOfFlowContentInsideFilter() {
   mHasOutOfFlowContentInsideFilter = true;
 }
 
-bool nsHTMLScrollFrame::WantAsyncScroll() const {
+bool ScrollContainerFrame::WantAsyncScroll() const {
   ScrollStyles styles = GetScrollStyles();
 
   
@@ -1831,23 +1835,23 @@ static nsRect GetOnePixelRangeAroundPoint(const nsPoint& aPoint,
   return allowedRange;
 }
 
-void nsHTMLScrollFrame::ScrollByPage(nsScrollbarFrame* aScrollbar,
-                                     int32_t aDirection,
-                                     ScrollSnapFlags aSnapFlags) {
+void ScrollContainerFrame::ScrollByPage(nsScrollbarFrame* aScrollbar,
+                                        int32_t aDirection,
+                                        ScrollSnapFlags aSnapFlags) {
   ScrollByUnit(aScrollbar, ScrollMode::Smooth, aDirection, ScrollUnit::PAGES,
                aSnapFlags);
 }
 
-void nsHTMLScrollFrame::ScrollByWhole(nsScrollbarFrame* aScrollbar,
-                                      int32_t aDirection,
-                                      ScrollSnapFlags aSnapFlags) {
+void ScrollContainerFrame::ScrollByWhole(nsScrollbarFrame* aScrollbar,
+                                         int32_t aDirection,
+                                         ScrollSnapFlags aSnapFlags) {
   ScrollByUnit(aScrollbar, ScrollMode::Instant, aDirection, ScrollUnit::WHOLE,
                aSnapFlags);
 }
 
-void nsHTMLScrollFrame::ScrollByLine(nsScrollbarFrame* aScrollbar,
-                                     int32_t aDirection,
-                                     ScrollSnapFlags aSnapFlags) {
+void ScrollContainerFrame::ScrollByLine(nsScrollbarFrame* aScrollbar,
+                                        int32_t aDirection,
+                                        ScrollSnapFlags aSnapFlags) {
   bool isHorizontal = aScrollbar->IsHorizontal();
   nsIntPoint delta;
   if (isHorizontal) {
@@ -1879,12 +1883,12 @@ void nsHTMLScrollFrame::ScrollByLine(nsScrollbarFrame* aScrollbar,
            ScrollOrigin::Other, nsIScrollableFrame::NOT_MOMENTUM, aSnapFlags);
 }
 
-void nsHTMLScrollFrame::RepeatButtonScroll(nsScrollbarFrame* aScrollbar) {
+void ScrollContainerFrame::RepeatButtonScroll(nsScrollbarFrame* aScrollbar) {
   aScrollbar->MoveToNewPosition(nsScrollbarFrame::ImplementsScrollByUnit::Yes);
 }
 
-void nsHTMLScrollFrame::ThumbMoved(nsScrollbarFrame* aScrollbar,
-                                   nscoord aOldPos, nscoord aNewPos) {
+void ScrollContainerFrame::ThumbMoved(nsScrollbarFrame* aScrollbar,
+                                      nscoord aOldPos, nscoord aNewPos) {
   MOZ_ASSERT(aScrollbar != nullptr);
   bool isHorizontal = aScrollbar->IsHorizontal();
   nsPoint current = GetScrollPosition();
@@ -1908,7 +1912,7 @@ void nsHTMLScrollFrame::ThumbMoved(nsScrollbarFrame* aScrollbar,
       ScrollOperationParams{ScrollMode::Instant, ScrollOrigin::Other});
 }
 
-void nsHTMLScrollFrame::ScrollbarReleased(nsScrollbarFrame* aScrollbar) {
+void ScrollContainerFrame::ScrollbarReleased(nsScrollbarFrame* aScrollbar) {
   
   
   mVelocityQueue.Reset();
@@ -1918,10 +1922,10 @@ void nsHTMLScrollFrame::ScrollbarReleased(nsScrollbarFrame* aScrollbar) {
   ScrollSnap(mDestination, ScrollMode::Smooth);
 }
 
-void nsHTMLScrollFrame::ScrollByUnit(nsScrollbarFrame* aScrollbar,
-                                     ScrollMode aMode, int32_t aDirection,
-                                     ScrollUnit aUnit,
-                                     ScrollSnapFlags aSnapFlags) {
+void ScrollContainerFrame::ScrollByUnit(nsScrollbarFrame* aScrollbar,
+                                        ScrollMode aMode, int32_t aDirection,
+                                        ScrollUnit aUnit,
+                                        ScrollSnapFlags aSnapFlags) {
   MOZ_ASSERT(aScrollbar != nullptr);
   bool isHorizontal = aScrollbar->IsHorizontal();
   nsIntPoint delta;
@@ -1938,7 +1942,7 @@ void nsHTMLScrollFrame::ScrollByUnit(nsScrollbarFrame* aScrollbar,
 
 
 
-class nsHTMLScrollFrame::AsyncSmoothMSDScroll final
+class ScrollContainerFrame::AsyncSmoothMSDScroll final
     : public nsARefreshObserver {
  public:
   AsyncSmoothMSDScroll(const nsPoint& aInitialPosition,
@@ -2027,14 +2031,14 @@ class nsHTMLScrollFrame::AsyncSmoothMSDScroll final
 
     
     
-    nsHTMLScrollFrame::AsyncSmoothMSDScrollCallback(mCallee, deltaTime);
+    ScrollContainerFrame::AsyncSmoothMSDScrollCallback(mCallee, deltaTime);
   }
 
   
 
 
 
-  void SetRefreshObserver(nsHTMLScrollFrame* aCallee) {
+  void SetRefreshObserver(ScrollContainerFrame* aCallee) {
     MOZ_ASSERT(aCallee,
                "AsyncSmoothMSDScroll::SetRefreshObserver needs "
                "a non-null aCallee in order to get a refresh driver");
@@ -2076,7 +2080,7 @@ class nsHTMLScrollFrame::AsyncSmoothMSDScroll final
         Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS, false);
   }
 
-  nsRefreshDriver* RefreshDriver(nsHTMLScrollFrame* aCallee) {
+  nsRefreshDriver* RefreshDriver(ScrollContainerFrame* aCallee) {
     return aCallee->PresContext()->RefreshDriver();
   }
 
@@ -2084,14 +2088,14 @@ class nsHTMLScrollFrame::AsyncSmoothMSDScroll final
   nsRect mRange;
   nsPoint mStartPosition;
   mozilla::TimeStamp mLastRefreshTime;
-  nsHTMLScrollFrame* mCallee;
+  ScrollContainerFrame* mCallee;
   nscoord mOneDevicePixelInAppUnits;
   UniquePtr<ScrollSnapTargetIds> mSnapTargetIds;
   ScrollTriggeredByScript mTriggeredByScript;
 };
 
 
-class nsHTMLScrollFrame::AsyncScroll final : public nsARefreshObserver {
+class ScrollContainerFrame::AsyncScroll final : public nsARefreshObserver {
  public:
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::TimeDuration TimeDuration;
@@ -2167,7 +2171,7 @@ class nsHTMLScrollFrame::AsyncScroll final : public nsARefreshObserver {
 
 
 
-  void SetRefreshObserver(nsHTMLScrollFrame* aCallee) {
+  void SetRefreshObserver(ScrollContainerFrame* aCallee) {
     MOZ_ASSERT(aCallee,
                "AsyncScroll::SetRefreshObserver needs "
                "a non-null aCallee in order to get a refresh driver");
@@ -2187,7 +2191,7 @@ class nsHTMLScrollFrame::AsyncScroll final : public nsARefreshObserver {
   virtual void WillRefresh(mozilla::TimeStamp aTime) override {
     
     
-    nsHTMLScrollFrame::AsyncScrollCallback(mCallee, aTime);
+    ScrollContainerFrame::AsyncScrollCallback(mCallee, aTime);
   }
 
   
@@ -2214,16 +2218,16 @@ class nsHTMLScrollFrame::AsyncScroll final : public nsARefreshObserver {
   }
 
  private:
-  nsHTMLScrollFrame* mCallee;
+  ScrollContainerFrame* mCallee;
   UniquePtr<ScrollSnapTargetIds> mSnapTargetIds;
   ScrollTriggeredByScript mTriggeredByScript;
 
-  nsRefreshDriver* RefreshDriver(nsHTMLScrollFrame* aCallee) {
+  nsRefreshDriver* RefreshDriver(ScrollContainerFrame* aCallee) {
     return aCallee->PresContext()->RefreshDriver();
   }
 };
 
-void nsHTMLScrollFrame::AsyncScroll::InitSmoothScroll(
+void ScrollContainerFrame::AsyncScroll::InitSmoothScroll(
     TimeStamp aTime, nsPoint aInitialPosition, nsPoint aDestination,
     ScrollOrigin aOrigin, const nsRect& aRange,
     const nsSize& aCurrentVelocity) {
@@ -2270,8 +2274,8 @@ void nsHTMLScrollFrame::AsyncScroll::InitSmoothScroll(
 
 
 
-void nsHTMLScrollFrame::AsyncSmoothMSDScrollCallback(
-    nsHTMLScrollFrame* aInstance, mozilla::TimeDuration aDeltaTime) {
+void ScrollContainerFrame::AsyncSmoothMSDScrollCallback(
+    ScrollContainerFrame* aInstance, mozilla::TimeDuration aDeltaTime) {
   NS_ASSERTION(aInstance != nullptr, "aInstance must not be null");
   NS_ASSERTION(aInstance->mAsyncSmoothMSDScroll,
                "Did not expect AsyncSmoothMSDScrollCallback without an active "
@@ -2300,8 +2304,8 @@ void nsHTMLScrollFrame::AsyncSmoothMSDScrollCallback(
 
 
 
-void nsHTMLScrollFrame::AsyncScrollCallback(nsHTMLScrollFrame* aInstance,
-                                            mozilla::TimeStamp aTime) {
+void ScrollContainerFrame::AsyncScrollCallback(ScrollContainerFrame* aInstance,
+                                               mozilla::TimeStamp aTime) {
   MOZ_ASSERT(aInstance != nullptr, "aInstance must not be null");
   MOZ_ASSERT(
       aInstance->mAsyncScroll,
@@ -2331,7 +2335,7 @@ void nsHTMLScrollFrame::AsyncScrollCallback(nsHTMLScrollFrame* aInstance,
                                  aInstance->mAsyncScroll->TakeSnapTargetIds());
 }
 
-void nsHTMLScrollFrame::SetTransformingByAPZ(bool aTransforming) {
+void ScrollContainerFrame::SetTransformingByAPZ(bool aTransforming) {
   if (mTransformingByAPZ && !aTransforming) {
     PostScrollEndEvent();
   }
@@ -2344,7 +2348,7 @@ void nsHTMLScrollFrame::SetTransformingByAPZ(bool aTransforming) {
   }
 }
 
-void nsHTMLScrollFrame::CompleteAsyncScroll(
+void ScrollContainerFrame::CompleteAsyncScroll(
     const nsPoint& aStartPosition, const nsRect& aRange,
     UniquePtr<ScrollSnapTargetIds> aSnapTargetIds, ScrollOrigin aOrigin) {
   SetLastSnapTargetIds(std::move(aSnapTargetIds));
@@ -2379,12 +2383,12 @@ void nsHTMLScrollFrame::CompleteAsyncScroll(
   }
 }
 
-bool nsHTMLScrollFrame::HasBgAttachmentLocal() const {
+bool ScrollContainerFrame::HasBgAttachmentLocal() const {
   const nsStyleBackground* bg = StyleBackground();
   return bg->HasLocalBackground();
 }
 
-void nsHTMLScrollFrame::ScrollToInternal(
+void ScrollContainerFrame::ScrollToInternal(
     nsPoint aScrollPosition, ScrollMode aMode, ScrollOrigin aOrigin,
     const nsRect* aRange, ScrollSnapFlags aSnapFlags,
     ScrollTriggeredByScript aTriggeredByScript) {
@@ -2396,8 +2400,8 @@ void nsHTMLScrollFrame::ScrollToInternal(
       ScrollOperationParams{aMode, aOrigin, aSnapFlags, aTriggeredByScript});
 }
 
-void nsHTMLScrollFrame::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
-                                          ScrollMode aMode) {
+void ScrollContainerFrame::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
+                                             ScrollMode aMode) {
   CSSIntPoint currentCSSPixels = GetRoundedScrollPositionCSSPixels();
   
   
@@ -2447,7 +2451,7 @@ void nsHTMLScrollFrame::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
   
 }
 
-void nsHTMLScrollFrame::ScrollToCSSPixelsForApz(
+void ScrollContainerFrame::ScrollToCSSPixelsForApz(
     const CSSPoint& aScrollPosition, ScrollSnapTargetIds&& aLastSnapTargetIds) {
   nsPoint pt = CSSPoint::ToAppUnits(aScrollPosition);
   nscoord halfRange = nsPresContext::CSSPixelsToAppUnits(1000);
@@ -2460,7 +2464,7 @@ void nsHTMLScrollFrame::ScrollToCSSPixelsForApz(
   
 }
 
-CSSIntPoint nsHTMLScrollFrame::GetRoundedScrollPositionCSSPixels() {
+CSSIntPoint ScrollContainerFrame::GetRoundedScrollPositionCSSPixels() {
   return CSSIntPoint::FromAppUnitsRounded(GetScrollPosition());
 }
 
@@ -2468,9 +2472,9 @@ CSSIntPoint nsHTMLScrollFrame::GetRoundedScrollPositionCSSPixels() {
 
 
 
-void nsHTMLScrollFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
-                                           const nsRect* aRange,
-                                           ScrollOperationParams&& aParams) {
+void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
+                                              const nsRect* aRange,
+                                              ScrollOperationParams&& aParams) {
   
   MOZ_ASSERT(aParams.mOrigin != ScrollOrigin::None);
 
@@ -2635,7 +2639,7 @@ static void AdjustViews(nsIFrame* aFrame) {
   }
 }
 
-void nsHTMLScrollFrame::MarkScrollbarsDirtyForReflow() const {
+void ScrollContainerFrame::MarkScrollbarsDirtyForReflow() const {
   auto* presShell = PresShell();
   if (mVScrollbarBox) {
     presShell->FrameNeedsReflow(mVScrollbarBox,
@@ -2649,7 +2653,7 @@ void nsHTMLScrollFrame::MarkScrollbarsDirtyForReflow() const {
   }
 }
 
-void nsHTMLScrollFrame::InvalidateScrollbars() const {
+void ScrollContainerFrame::InvalidateScrollbars() const {
   if (mHScrollbarBox) {
     mHScrollbarBox->InvalidateFrameSubtree();
   }
@@ -2658,7 +2662,7 @@ void nsHTMLScrollFrame::InvalidateScrollbars() const {
   }
 }
 
-bool nsHTMLScrollFrame::IsAlwaysActive() const {
+bool ScrollContainerFrame::IsAlwaysActive() const {
   if (nsDisplayItem::ForceActiveLayers()) {
     return true;
   }
@@ -2683,7 +2687,7 @@ bool nsHTMLScrollFrame::IsAlwaysActive() const {
 }
 
 static void RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure) {
-  nsHTMLScrollFrame* sf = static_cast<nsHTMLScrollFrame*>(aClosure);
+  ScrollContainerFrame* sf = static_cast<ScrollContainerFrame*>(aClosure);
 
   
   
@@ -2716,7 +2720,7 @@ static void RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure) {
 
   nsIContent* content = sf->GetContent();
 
-  if (nsHTMLScrollFrame::ShouldActivateAllScrollFrames()) {
+  if (ScrollContainerFrame::ShouldActivateAllScrollFrames()) {
     
     
     MOZ_ASSERT(!content->GetProperty(nsGkAtoms::MinimalDisplayPort));
@@ -2734,7 +2738,7 @@ static void RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure) {
   sf->SchedulePaint();
 }
 
-void nsHTMLScrollFrame::MarkEverScrolled() {
+void ScrollContainerFrame::MarkEverScrolled() {
   
   
   
@@ -2742,14 +2746,14 @@ void nsHTMLScrollFrame::MarkEverScrolled() {
   mHasBeenScrolled = true;
 }
 
-void nsHTMLScrollFrame::MarkNotRecentlyScrolled() {
+void ScrollContainerFrame::MarkNotRecentlyScrolled() {
   if (!mHasBeenScrolledRecently) return;
 
   mHasBeenScrolledRecently = false;
   SchedulePaint();
 }
 
-void nsHTMLScrollFrame::MarkRecentlyScrolled() {
+void ScrollContainerFrame::MarkRecentlyScrolled() {
   mHasBeenScrolledRecently = true;
   if (IsAlwaysActive()) {
     return;
@@ -2770,16 +2774,16 @@ void nsHTMLScrollFrame::MarkRecentlyScrolled() {
   ResetDisplayPortExpiryTimer();
 }
 
-void nsHTMLScrollFrame::ResetDisplayPortExpiryTimer() {
+void ScrollContainerFrame::ResetDisplayPortExpiryTimer() {
   if (mDisplayPortExpiryTimer) {
     mDisplayPortExpiryTimer->InitWithNamedFuncCallback(
         RemoveDisplayPortCallback, this,
         StaticPrefs::apz_displayport_expiry_ms(), nsITimer::TYPE_ONE_SHOT,
-        "nsHTMLScrollFrame::ResetDisplayPortExpiryTimer");
+        "ScrollContainerFrame::ResetDisplayPortExpiryTimer");
   }
 }
 
-bool nsHTMLScrollFrame::AllowDisplayPortExpiration() {
+bool ScrollContainerFrame::AllowDisplayPortExpiration() {
   if (IsAlwaysActive()) {
     return false;
   }
@@ -2801,7 +2805,7 @@ bool nsHTMLScrollFrame::AllowDisplayPortExpiration() {
   return true;
 }
 
-void nsHTMLScrollFrame::TriggerDisplayPortExpiration() {
+void ScrollContainerFrame::TriggerDisplayPortExpiration() {
   if (!AllowDisplayPortExpiration()) {
     return;
   }
@@ -2817,7 +2821,7 @@ void nsHTMLScrollFrame::TriggerDisplayPortExpiration() {
   ResetDisplayPortExpiryTimer();
 }
 
-void nsHTMLScrollFrame::ScrollVisual() {
+void ScrollContainerFrame::ScrollVisual() {
   MarkEverScrolled();
 
   AdjustViews(mScrolledFrame);
@@ -2917,9 +2921,9 @@ static nsPoint ClampAndAlignWithLayerPixels(const nsPoint& aPt,
 }
 
 
-void nsHTMLScrollFrame::ScrollActivityCallback(nsITimer* aTimer,
-                                               void* anInstance) {
-  nsHTMLScrollFrame* self = static_cast<nsHTMLScrollFrame*>(anInstance);
+void ScrollContainerFrame::ScrollActivityCallback(nsITimer* aTimer,
+                                                  void* anInstance) {
+  auto* self = static_cast<ScrollContainerFrame*>(anInstance);
 
   
   self->mScrollActivityTimer->Cancel();
@@ -2927,7 +2931,7 @@ void nsHTMLScrollFrame::ScrollActivityCallback(nsITimer* aTimer,
   self->PresShell()->SynthesizeMouseMove(true);
 }
 
-void nsHTMLScrollFrame::ScheduleSyntheticMouseMove() {
+void ScrollContainerFrame::ScheduleSyntheticMouseMove() {
   if (!mScrollActivityTimer) {
     mScrollActivityTimer = NS_NewTimer(GetMainThreadSerialEventTarget());
     if (!mScrollActivityTimer) {
@@ -2937,10 +2941,10 @@ void nsHTMLScrollFrame::ScheduleSyntheticMouseMove() {
 
   mScrollActivityTimer->InitWithNamedFuncCallback(
       ScrollActivityCallback, this, 100, nsITimer::TYPE_ONE_SHOT,
-      "nsHTMLScrollFrame::ScheduleSyntheticMouseMove");
+      "ScrollContainerFrame::ScheduleSyntheticMouseMove");
 }
 
-void nsHTMLScrollFrame::NotifyApproximateFrameVisibilityUpdate(
+void ScrollContainerFrame::NotifyApproximateFrameVisibilityUpdate(
     bool aIgnoreDisplayPort) {
   mLastUpdateFramesPos = GetScrollPosition();
   if (aIgnoreDisplayPort) {
@@ -2952,7 +2956,7 @@ void nsHTMLScrollFrame::NotifyApproximateFrameVisibilityUpdate(
   }
 }
 
-bool nsHTMLScrollFrame::GetDisplayPortAtLastApproximateFrameVisibilityUpdate(
+bool ScrollContainerFrame::GetDisplayPortAtLastApproximateFrameVisibilityUpdate(
     nsRect* aDisplayPort) {
   if (mHadDisplayPortAtLastFrameUpdate) {
     *aDisplayPort = mDisplayPortAtLastFrameUpdate;
@@ -2994,7 +2998,7 @@ MatrixScales GetPaintedLayerScaleForFrame(nsIFrame* aFrame,
   return transformToAncestorScale.ToUnknownScale();
 }
 
-void nsHTMLScrollFrame::ScrollToImpl(
+void ScrollContainerFrame::ScrollToImpl(
     nsPoint aPt, const nsRect& aRange, ScrollOrigin aOrigin,
     ScrollTriggeredByScript aTriggeredByScript) {
   
@@ -3459,10 +3463,10 @@ struct HoveredStateComparator {
   }
 };
 
-void nsHTMLScrollFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
-                                            const nsDisplayListSet& aLists,
-                                            bool aCreateLayer,
-                                            bool aPositioned) {
+void ScrollContainerFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
+                                               const nsDisplayListSet& aLists,
+                                               bool aCreateLayer,
+                                               bool aPositioned) {
   const bool overlayScrollbars = UsesOverlayScrollbars();
 
   AutoTArray<nsIFrame*, 3> scrollParts;
@@ -3592,7 +3596,8 @@ void nsHTMLScrollFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
   }
 }
 
-nsRect nsHTMLScrollFrame::ExpandRectToNearlyVisible(const nsRect& aRect) const {
+nsRect ScrollContainerFrame::ExpandRectToNearlyVisible(
+    const nsRect& aRect) const {
   
   
   nsRect scrollRange = GetLayoutScrollRange();
@@ -3719,7 +3724,7 @@ class MOZ_RAII AutoContainsBlendModeCapturer {
   }
 };
 
-void nsHTMLScrollFrame::MaybeCreateTopLayerAndWrapRootItems(
+void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
     nsDisplayListBuilder* aBuilder, nsDisplayListCollection& aSet,
     bool aCreateAsyncZoom,
     AutoContainsBlendModeCapturer* aAsyncZoomBlendCapture,
@@ -3836,8 +3841,8 @@ void nsHTMLScrollFrame::MaybeCreateTopLayerAndWrapRootItems(
   }
 }
 
-void nsHTMLScrollFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                                         const nsDisplayListSet& aLists) {
+void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                            const nsDisplayListSet& aLists) {
   SetAndNullOnExit<const nsIFrame> tmpBuilder(
       mReferenceFrameDuringPainting, aBuilder->GetCurrentReferenceFrame());
   if (aBuilder->IsForFrameVisibility()) {
@@ -4338,7 +4343,7 @@ void nsHTMLScrollFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   set.MoveTo(aLists);
 }
 
-nsRect nsHTMLScrollFrame::RestrictToRootDisplayPort(
+nsRect ScrollContainerFrame::RestrictToRootDisplayPort(
     const nsRect& aDisplayportBase) {
   
   
@@ -4475,13 +4480,13 @@ nsRect nsHTMLScrollFrame::RestrictToRootDisplayPort(
   return aDisplayportBase.Intersect(rootDisplayPort);
 }
 
- bool nsHTMLScrollFrame::ShouldActivateAllScrollFrames() {
+ bool ScrollContainerFrame::ShouldActivateAllScrollFrames() {
   return (StaticPrefs::apz_wr_activate_all_scroll_frames() ||
           (StaticPrefs::apz_wr_activate_all_scroll_frames_when_fission() &&
            FissionAutostart()));
 }
 
-bool nsHTMLScrollFrame::DecideScrollableLayer(
+bool ScrollContainerFrame::DecideScrollableLayer(
     nsDisplayListBuilder* aBuilder, nsRect* aVisibleRect, nsRect* aDirtyRect,
     bool aSetBase, bool* aDirtyRectHasBeenOverriden) {
   nsIContent* content = GetContent();
@@ -4609,7 +4614,7 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
   return mWillBuildScrollableLayer;
 }
 
-void nsHTMLScrollFrame::NotifyApzTransaction() {
+void ScrollContainerFrame::NotifyApzTransaction() {
   mAllowScrollOriginDowngrade = true;
   mApzScrollPos = GetScrollPosition();
   mApzAnimationRequested = IsLastScrollUpdateAnimating();
@@ -4621,7 +4626,7 @@ void nsHTMLScrollFrame::NotifyApzTransaction() {
   }
 }
 
-Maybe<ScrollMetadata> nsHTMLScrollFrame::ComputeScrollMetadata(
+Maybe<ScrollMetadata> ScrollContainerFrame::ComputeScrollMetadata(
     WebRenderLayerManager* aLayerManager, const nsIFrame* aItemFrame,
     const nsPoint& aOffsetToReferenceFrame) const {
   if (!mWillBuildScrollableLayer) {
@@ -4638,7 +4643,7 @@ Maybe<ScrollMetadata> nsHTMLScrollFrame::ComputeScrollMetadata(
       aLayerManager, mScrollParentID, mScrollPort.Size(), isRootContent));
 }
 
-bool nsHTMLScrollFrame::IsRectNearlyVisible(const nsRect& aRect) const {
+bool ScrollContainerFrame::IsRectNearlyVisible(const nsRect& aRect) const {
   
   nsRect displayPort;
   bool usingDisplayport = DisplayPortUtils::GetDisplayPort(
@@ -4659,7 +4664,7 @@ bool nsHTMLScrollFrame::IsRectNearlyVisible(const nsRect& aRect) const {
       ExpandRectToNearlyVisible(usingDisplayport ? displayPort : mScrollPort));
 }
 
-OverscrollBehaviorInfo nsHTMLScrollFrame::GetOverscrollBehaviorInfo() const {
+OverscrollBehaviorInfo ScrollContainerFrame::GetOverscrollBehaviorInfo() const {
   nsIFrame* frame = GetFrameForStyle();
   if (!frame) {
     return {};
@@ -4670,7 +4675,7 @@ OverscrollBehaviorInfo nsHTMLScrollFrame::GetOverscrollBehaviorInfo() const {
                                                     disp.mOverscrollBehaviorY);
 }
 
-ScrollStyles nsHTMLScrollFrame::GetScrollStyles() const {
+ScrollStyles ScrollContainerFrame::GetScrollStyles() const {
   nsPresContext* presContext = PresContext();
   if (!presContext->IsDynamic() &&
       !(mIsRoot && presContext->HasPaginatedScrolling())) {
@@ -4695,24 +4700,24 @@ ScrollStyles nsHTMLScrollFrame::GetScrollStyles() const {
   return result;
 }
 
-nsRect nsHTMLScrollFrame::GetLayoutScrollRange() const {
+nsRect ScrollContainerFrame::GetLayoutScrollRange() const {
   return GetScrollRange(mScrollPort.width, mScrollPort.height);
 }
 
-nsRect nsHTMLScrollFrame::GetScrollRange(nscoord aWidth,
-                                         nscoord aHeight) const {
+nsRect ScrollContainerFrame::GetScrollRange(nscoord aWidth,
+                                            nscoord aHeight) const {
   nsRect range = GetScrolledRect();
   range.width = std::max(range.width - aWidth, 0);
   range.height = std::max(range.height - aHeight, 0);
   return range;
 }
 
-nsRect nsHTMLScrollFrame::GetVisualScrollRange() const {
+nsRect ScrollContainerFrame::GetVisualScrollRange() const {
   nsSize visualViewportSize = GetVisualViewportSize();
   return GetScrollRange(visualViewportSize.width, visualViewportSize.height);
 }
 
-nsSize nsHTMLScrollFrame::GetVisualViewportSize() const {
+nsSize ScrollContainerFrame::GetVisualViewportSize() const {
   auto* presShell = PresShell();
   if (mIsRoot && presShell->IsVisualViewportSizeSet()) {
     return presShell->GetVisualViewportSize();
@@ -4720,7 +4725,7 @@ nsSize nsHTMLScrollFrame::GetVisualViewportSize() const {
   return mScrollPort.Size();
 }
 
-nsPoint nsHTMLScrollFrame::GetVisualViewportOffset() const {
+nsPoint ScrollContainerFrame::GetVisualViewportOffset() const {
   if (mIsRoot) {
     auto* presShell = PresShell();
     if (auto pendingUpdate = presShell->GetPendingVisualScrollUpdate()) {
@@ -4738,8 +4743,8 @@ nsPoint nsHTMLScrollFrame::GetVisualViewportOffset() const {
   return GetScrollPosition();
 }
 
-bool nsHTMLScrollFrame::SetVisualViewportOffset(const nsPoint& aOffset,
-                                                bool aRepaint) {
+bool ScrollContainerFrame::SetVisualViewportOffset(const nsPoint& aOffset,
+                                                   bool aRepaint) {
   MOZ_ASSERT(mIsRoot);
   AutoWeakFrame weakFrame(this);
   AutoScrollbarRepaintSuppression repaintSuppression(this, weakFrame,
@@ -4753,7 +4758,7 @@ bool nsHTMLScrollFrame::SetVisualViewportOffset(const nsPoint& aOffset,
   return retVal;
 }
 
-nsRect nsHTMLScrollFrame::GetVisualOptimalViewingRect() const {
+nsRect ScrollContainerFrame::GetVisualOptimalViewingRect() const {
   auto* presShell = PresShell();
   nsRect rect = mScrollPort;
   if (mIsRoot && presShell->IsVisualViewportSizeSet() &&
@@ -4806,11 +4811,10 @@ static void CalcRangeForScrollBy(int32_t aDelta, nscoord aPos,
                                   (aDelta > 0 ? aPosTolerance : aNegTolerance));
 }
 
-void nsHTMLScrollFrame::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
-                                 ScrollMode aMode, nsIntPoint* aOverflow,
-                                 ScrollOrigin aOrigin,
-                                 nsIScrollableFrame::ScrollMomentum aMomentum,
-                                 ScrollSnapFlags aSnapFlags) {
+void ScrollContainerFrame::ScrollBy(
+    nsIntPoint aDelta, ScrollUnit aUnit, ScrollMode aMode,
+    nsIntPoint* aOverflow, ScrollOrigin aOrigin,
+    nsIScrollableFrame::ScrollMomentum aMomentum, ScrollSnapFlags aSnapFlags) {
   
   
   
@@ -4998,9 +5002,8 @@ void nsHTMLScrollFrame::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
   }
 }
 
-void nsHTMLScrollFrame::ScrollByCSSPixelsInternal(const CSSIntPoint& aDelta,
-                                                  ScrollMode aMode,
-                                                  ScrollSnapFlags aSnapFlags) {
+void ScrollContainerFrame::ScrollByCSSPixelsInternal(
+    const CSSIntPoint& aDelta, ScrollMode aMode, ScrollSnapFlags aSnapFlags) {
   nsPoint current = GetScrollPosition();
   
   
@@ -5042,7 +5045,7 @@ void nsHTMLScrollFrame::ScrollByCSSPixelsInternal(const CSSIntPoint& aDelta,
   
 }
 
-void nsHTMLScrollFrame::ScrollSnap(ScrollMode aMode) {
+void ScrollContainerFrame::ScrollSnap(ScrollMode aMode) {
   float flingSensitivity =
       StaticPrefs::layout_css_scroll_snap_prediction_sensitivity();
   int maxVelocity =
@@ -5059,8 +5062,8 @@ void nsHTMLScrollFrame::ScrollSnap(ScrollMode aMode) {
   ScrollSnap(destinationPos, aMode);
 }
 
-void nsHTMLScrollFrame::ScrollSnap(const nsPoint& aDestination,
-                                   ScrollMode aMode) {
+void ScrollContainerFrame::ScrollSnap(const nsPoint& aDestination,
+                                      ScrollMode aMode) {
   nsRect scrollRange = GetLayoutScrollRange();
   nsPoint pos = GetScrollPosition();
   nsPoint destination = scrollRange.ClampPoint(aDestination);
@@ -5082,7 +5085,7 @@ void nsHTMLScrollFrame::ScrollSnap(const nsPoint& aDestination,
   }
 }
 
-nsSize nsHTMLScrollFrame::GetLineScrollAmount() const {
+nsSize ScrollContainerFrame::GetLineScrollAmount() const {
   RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
   NS_ASSERTION(fm, "FontMetrics is null, assuming fontHeight == 1 appunit");
@@ -5193,7 +5196,7 @@ static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
   return nsSize(aScrollPort.width, footerTop - headerBottom);
 }
 
-nsSize nsHTMLScrollFrame::GetPageScrollAmount() const {
+nsSize ScrollContainerFrame::GetPageScrollAmount() const {
   nsSize effectiveScrollPortSize;
 
   if (GetVisualViewportSize() != mScrollPort.Size()) {
@@ -5206,7 +5209,7 @@ nsSize nsHTMLScrollFrame::GetPageScrollAmount() const {
     
     
     effectiveScrollPortSize = GetScrollPortSizeExcludingHeadersAndFooters(
-        const_cast<nsHTMLScrollFrame*>(this),
+        const_cast<ScrollContainerFrame*>(this),
         mIsRoot ? PresShell()->GetRootFrame() : nullptr, mScrollPort);
   }
 
@@ -5233,7 +5236,7 @@ nsSize nsHTMLScrollFrame::GetPageScrollAmount() const {
 
 
 
-void nsHTMLScrollFrame::ScrollToRestoredPosition() {
+void ScrollContainerFrame::ScrollToRestoredPosition() {
   if (mRestorePos.y == -1 || mLastPos.x == -1 || mLastPos.y == -1) {
     return;
   }
@@ -5329,7 +5332,7 @@ void nsHTMLScrollFrame::ScrollToRestoredPosition() {
   }
 }
 
-auto nsHTMLScrollFrame::GetPageLoadingState() -> LoadingState {
+ScrollContainerFrame::LoadingState ScrollContainerFrame::GetPageLoadingState() {
   bool loadCompleted = false, stopped = false;
   nsCOMPtr<nsIDocShell> ds = GetContent()->GetComposedDoc()->GetDocShell();
   if (ds) {
@@ -5345,7 +5348,8 @@ auto nsHTMLScrollFrame::GetPageLoadingState() -> LoadingState {
              : LoadingState::Loading;
 }
 
-nsHTMLScrollFrame::OverflowState nsHTMLScrollFrame::GetOverflowState() const {
+ScrollContainerFrame::OverflowState ScrollContainerFrame::GetOverflowState()
+    const {
   nsSize scrollportSize = mScrollPort.Size();
   nsSize childSize = GetScrolledRect().Size();
 
@@ -5362,7 +5366,7 @@ nsHTMLScrollFrame::OverflowState nsHTMLScrollFrame::GetOverflowState() const {
   return result;
 }
 
-nsresult nsHTMLScrollFrame::FireScrollPortEvent() {
+nsresult ScrollContainerFrame::FireScrollPortEvent() {
   mAsyncScrollPortEvent.Forget();
 
   
@@ -5420,7 +5424,7 @@ nsresult nsHTMLScrollFrame::FireScrollPortEvent() {
   return EventDispatcher::Dispatch(content, presContext, &event);
 }
 
-void nsHTMLScrollFrame::PostScrollEndEvent(bool aDelayed) {
+void ScrollContainerFrame::PostScrollEndEvent(bool aDelayed) {
   if (mScrollEndEvent) {
     return;
   }
@@ -5429,7 +5433,7 @@ void nsHTMLScrollFrame::PostScrollEndEvent(bool aDelayed) {
   mScrollEndEvent = new ScrollEndEvent(this, aDelayed);
 }
 
-void nsHTMLScrollFrame::FireScrollEndEvent() {
+void ScrollContainerFrame::FireScrollEndEvent() {
   RefPtr<nsIContent> content = GetContent();
   MOZ_ASSERT(content);
 
@@ -5454,7 +5458,7 @@ void nsHTMLScrollFrame::FireScrollEndEvent() {
   EventDispatcher::Dispatch(target, presContext, &event, nullptr, &status);
 }
 
-void nsHTMLScrollFrame::ReloadChildFrames() {
+void ScrollContainerFrame::ReloadChildFrames() {
   mScrolledFrame = nullptr;
   mHScrollbarBox = nullptr;
   mVScrollbarBox = nullptr;
@@ -5495,7 +5499,7 @@ void nsHTMLScrollFrame::ReloadChildFrames() {
   }
 }
 
-already_AddRefed<Element> nsHTMLScrollFrame::MakeScrollbar(
+already_AddRefed<Element> ScrollContainerFrame::MakeScrollbar(
     NodeInfo* aNodeInfo, bool aVertical, AnonymousContentKey& aKey) {
   MOZ_ASSERT(aNodeInfo);
   MOZ_ASSERT(
@@ -5537,7 +5541,7 @@ already_AddRefed<Element> nsHTMLScrollFrame::MakeScrollbar(
   return e.forget();
 }
 
-bool nsHTMLScrollFrame::IsForTextControlWithNoScrollbars() const {
+bool ScrollContainerFrame::IsForTextControlWithNoScrollbars() const {
   
   
   
@@ -5550,7 +5554,7 @@ bool nsHTMLScrollFrame::IsForTextControlWithNoScrollbars() const {
   return input && input->IsHTMLElement(nsGkAtoms::input);
 }
 
-auto nsHTMLScrollFrame::GetCurrentAnonymousContent() const
+auto ScrollContainerFrame::GetCurrentAnonymousContent() const
     -> EnumSet<AnonymousContentType> {
   EnumSet<AnonymousContentType> result;
   if (mHScrollbarContent) {
@@ -5565,7 +5569,7 @@ auto nsHTMLScrollFrame::GetCurrentAnonymousContent() const
   return result;
 }
 
-auto nsHTMLScrollFrame::GetNeededAnonymousContent() const
+auto ScrollContainerFrame::GetNeededAnonymousContent() const
     -> EnumSet<AnonymousContentType> {
   nsPresContext* pc = PresContext();
 
@@ -5621,7 +5625,7 @@ auto nsHTMLScrollFrame::GetNeededAnonymousContent() const
   return result;
 }
 
-nsresult nsHTMLScrollFrame::CreateAnonymousContent(
+nsresult ScrollContainerFrame::CreateAnonymousContent(
     nsTArray<nsIAnonymousContentCreator::ContentInfo>& aElements) {
   typedef nsIAnonymousContentCreator::ContentInfo ContentInfo;
 
@@ -5726,7 +5730,7 @@ nsresult nsHTMLScrollFrame::CreateAnonymousContent(
   return NS_OK;
 }
 
-void nsHTMLScrollFrame::AppendAnonymousContentTo(
+void ScrollContainerFrame::AppendAnonymousContentTo(
     nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
   if (mHScrollbarContent) {
     aElements.AppendElement(mHScrollbarContent);
@@ -5745,7 +5749,8 @@ void nsHTMLScrollFrame::AppendAnonymousContentTo(
   }
 }
 
-void nsHTMLScrollFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
+void ScrollContainerFrame::DidSetComputedStyle(
+    ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
   if (aOldComputedStyle && !mIsRoot &&
       StyleDisplay()->mScrollSnapType !=
@@ -5754,7 +5759,7 @@ void nsHTMLScrollFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   }
 }
 
-void nsHTMLScrollFrame::RemoveObservers() {
+void ScrollContainerFrame::RemoveObservers() {
   if (mAsyncScroll) {
     mAsyncScroll->RemoveObserver();
     mAsyncScroll = nullptr;
@@ -5772,7 +5777,7 @@ void nsHTMLScrollFrame::RemoveObservers() {
 
 
 
-void nsHTMLScrollFrame::UpdateScrollbarPosition() {
+void ScrollContainerFrame::UpdateScrollbarPosition() {
   AutoWeakFrame weakFrame(this);
   mFrameIsUpdatingScrollbar = true;
 
@@ -5802,8 +5807,8 @@ void nsHTMLScrollFrame::UpdateScrollbarPosition() {
   mFrameIsUpdatingScrollbar = false;
 }
 
-void nsHTMLScrollFrame::CurPosAttributeChangedInternal(nsIContent* aContent,
-                                                       bool aDoScroll) {
+void ScrollContainerFrame::CurPosAttributeChangedInternal(nsIContent* aContent,
+                                                          bool aDoScroll) {
   NS_ASSERTION(aContent, "aContent must not be null");
   NS_ASSERTION((mHScrollbarBox && mHScrollbarBox->GetContent() == aContent) ||
                    (mVScrollbarBox && mVScrollbarBox->GetContent() == aContent),
@@ -5879,36 +5884,36 @@ void nsHTMLScrollFrame::CurPosAttributeChangedInternal(nsIContent* aContent,
 
 
 
-nsHTMLScrollFrame::ScrollEvent::ScrollEvent(nsHTMLScrollFrame* aHelper,
-                                            bool aDelayed)
-    : Runnable("nsHTMLScrollFrame::ScrollEvent"), mHelper(aHelper) {
+ScrollContainerFrame::ScrollEvent::ScrollEvent(ScrollContainerFrame* aHelper,
+                                               bool aDelayed)
+    : Runnable("ScrollContainerFrame::ScrollEvent"), mHelper(aHelper) {
   mHelper->PresContext()->RefreshDriver()->PostScrollEvent(this, aDelayed);
 }
 
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
-nsHTMLScrollFrame::ScrollEvent::Run() {
+ScrollContainerFrame::ScrollEvent::Run() {
   if (mHelper) {
     mHelper->FireScrollEvent();
   }
   return NS_OK;
 }
 
-nsHTMLScrollFrame::ScrollEndEvent::ScrollEndEvent(nsHTMLScrollFrame* aHelper,
-                                                  bool aDelayed)
-    : Runnable("nsHTMLScrollFrame::ScrollEndEvent"), mHelper(aHelper) {
+ScrollContainerFrame::ScrollEndEvent::ScrollEndEvent(
+    ScrollContainerFrame* aHelper, bool aDelayed)
+    : Runnable("ScrollContainerFrame::ScrollEndEvent"), mHelper(aHelper) {
   mHelper->PresContext()->RefreshDriver()->PostScrollEvent(this, aDelayed);
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
-nsHTMLScrollFrame::ScrollEndEvent::Run() {
+ScrollContainerFrame::ScrollEndEvent::Run() {
   if (mHelper) {
     mHelper->FireScrollEndEvent();
   }
   return NS_OK;
 }
 
-void nsHTMLScrollFrame::FireScrollEvent() {
+void ScrollContainerFrame::FireScrollEvent() {
   RefPtr<nsIContent> content = GetContent();
   RefPtr<nsPresContext> presContext = PresContext();
   AUTO_PROFILER_TRACING_MARKER_DOCSHELL("Paint", "FireScrollEvent", GRAPHICS,
@@ -5957,7 +5962,7 @@ void nsHTMLScrollFrame::FireScrollEvent() {
   }
 }
 
-void nsHTMLScrollFrame::PostScrollEvent(bool aDelayed) {
+void ScrollContainerFrame::PostScrollEvent(bool aDelayed) {
   if (mScrollEvent) {
     return;
   }
@@ -5968,11 +5973,11 @@ void nsHTMLScrollFrame::PostScrollEvent(bool aDelayed) {
 
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
-nsHTMLScrollFrame::AsyncScrollPortEvent::Run() {
+ScrollContainerFrame::AsyncScrollPortEvent::Run() {
   return mHelper ? mHelper->FireScrollPortEvent() : NS_OK;
 }
 
-void nsHTMLScrollFrame::PostOverflowEvent() {
+void ScrollContainerFrame::PostOverflowEvent() {
   if (mAsyncScrollPortEvent.IsPending()) {
     return;
   }
@@ -5998,7 +6003,7 @@ void nsHTMLScrollFrame::PostOverflowEvent() {
   rpc->AddWillPaintObserver(mAsyncScrollPortEvent.get());
 }
 
-nsIFrame* nsHTMLScrollFrame::GetFrameForStyle() const {
+nsIFrame* ScrollContainerFrame::GetFrameForStyle() const {
   nsIFrame* styleFrame = nullptr;
   if (mIsRoot) {
     if (const Element* rootElement =
@@ -6006,13 +6011,13 @@ nsIFrame* nsHTMLScrollFrame::GetFrameForStyle() const {
       styleFrame = rootElement->GetPrimaryFrame();
     }
   } else {
-    styleFrame = const_cast<nsHTMLScrollFrame*>(this);
+    styleFrame = const_cast<ScrollContainerFrame*>(this);
   }
 
   return styleFrame;
 }
 
-bool nsHTMLScrollFrame::NeedsScrollSnap() const {
+bool ScrollContainerFrame::NeedsScrollSnap() const {
   nsIFrame* scrollSnapFrame = GetFrameForStyle();
   if (!scrollSnapFrame) {
     return false;
@@ -6021,14 +6026,14 @@ bool nsHTMLScrollFrame::NeedsScrollSnap() const {
          StyleScrollSnapStrictness::None;
 }
 
-nsSize nsHTMLScrollFrame::GetSnapportSize() const {
+nsSize ScrollContainerFrame::GetSnapportSize() const {
   nsRect snapport = GetScrollPortRect();
   nsMargin scrollPadding = GetScrollPadding();
   snapport.Deflate(scrollPadding);
   return snapport.Size();
 }
 
-bool nsHTMLScrollFrame::IsScrollbarOnRight() const {
+bool ScrollContainerFrame::IsScrollbarOnRight() const {
   
   
   
@@ -6048,7 +6053,7 @@ bool nsHTMLScrollFrame::IsScrollbarOnRight() const {
   }
 }
 
-bool nsHTMLScrollFrame::IsScrollingActive() const {
+bool ScrollContainerFrame::IsScrollingActive() const {
   const nsStyleDisplay* disp = StyleDisplay();
   if (disp->mWillChange.bits & StyleWillChangeBits::SCROLL) {
     return true;
@@ -6060,11 +6065,9 @@ bool nsHTMLScrollFrame::IsScrollingActive() const {
          nsContentUtils::HasScrollgrab(content);
 }
 
-void nsHTMLScrollFrame::FinishReflowForScrollbar(Element* aElement,
-                                                 nscoord aMinXY, nscoord aMaxXY,
-                                                 nscoord aCurPosXY,
-                                                 nscoord aPageIncrement,
-                                                 nscoord aIncrement) {
+void ScrollContainerFrame::FinishReflowForScrollbar(
+    Element* aElement, nscoord aMinXY, nscoord aMaxXY, nscoord aCurPosXY,
+    nscoord aPageIncrement, nscoord aIncrement) {
   
   SetCoordAttribute(aElement, nsGkAtoms::curpos, aCurPosXY - aMinXY);
   SetScrollbarEnabled(aElement, aMaxXY - aMinXY);
@@ -6076,14 +6079,13 @@ void nsHTMLScrollFrame::FinishReflowForScrollbar(Element* aElement,
 class MOZ_RAII AutoMinimumScaleSizeChangeDetector final {
  public:
   explicit AutoMinimumScaleSizeChangeDetector(
-      nsHTMLScrollFrame* ansHTMLScrollFrame)
-      : mHelper(ansHTMLScrollFrame) {
+      ScrollContainerFrame* aScrollFrame)
+      : mHelper(aScrollFrame) {
     MOZ_ASSERT(mHelper);
     MOZ_ASSERT(mHelper->mIsRoot);
 
-    mPreviousMinimumScaleSize = ansHTMLScrollFrame->mMinimumScaleSize;
-    mPreviousIsUsingMinimumScaleSize =
-        ansHTMLScrollFrame->mIsUsingMinimumScaleSize;
+    mPreviousMinimumScaleSize = aScrollFrame->mMinimumScaleSize;
+    mPreviousIsUsingMinimumScaleSize = aScrollFrame->mIsUsingMinimumScaleSize;
   }
   ~AutoMinimumScaleSizeChangeDetector() {
     if (mPreviousMinimumScaleSize != mHelper->mMinimumScaleSize ||
@@ -6093,13 +6095,14 @@ class MOZ_RAII AutoMinimumScaleSizeChangeDetector final {
   }
 
  private:
-  nsHTMLScrollFrame* mHelper;
+  ScrollContainerFrame* mHelper;
 
   nsSize mPreviousMinimumScaleSize;
   bool mPreviousIsUsingMinimumScaleSize;
 };
 
-nsSize nsHTMLScrollFrame::TrueOuterSize(nsDisplayListBuilder* aBuilder) const {
+nsSize ScrollContainerFrame::TrueOuterSize(
+    nsDisplayListBuilder* aBuilder) const {
   if (!PresShell()->UsesMobileViewportSizing()) {
     return GetSize();
   }
@@ -6126,7 +6129,7 @@ nsSize nsHTMLScrollFrame::TrueOuterSize(nsDisplayListBuilder* aBuilder) const {
                                       PresContext()->AppUnitsPerDevPixel());
 }
 
-void nsHTMLScrollFrame::UpdateMinimumScaleSize(
+void ScrollContainerFrame::UpdateMinimumScaleSize(
     const nsRect& aScrollableOverflow, const nsSize& aICBSize) {
   MOZ_ASSERT(mIsRoot);
 
@@ -6195,7 +6198,7 @@ void nsHTMLScrollFrame::UpdateMinimumScaleSize(
   mIsUsingMinimumScaleSize = true;
 }
 
-bool nsHTMLScrollFrame::ReflowFinished() {
+bool ScrollContainerFrame::ReflowFinished() {
   mPostedReflowCallback = false;
 
   TryScheduleScrollAnimations();
@@ -6396,11 +6399,12 @@ bool nsHTMLScrollFrame::ReflowFinished() {
   return doScroll;
 }
 
-void nsHTMLScrollFrame::ReflowCallbackCanceled() {
+void ScrollContainerFrame::ReflowCallbackCanceled() {
   mPostedReflowCallback = false;
 }
 
-bool nsHTMLScrollFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
+bool ScrollContainerFrame::ComputeCustomOverflow(
+    OverflowAreas& aOverflowAreas) {
   ScrollStyles ss = GetScrollStyles();
 
   
@@ -6442,7 +6446,7 @@ bool nsHTMLScrollFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
   return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
-void nsHTMLScrollFrame::UpdateSticky() {
+void ScrollContainerFrame::UpdateSticky() {
   StickyScrollContainer* ssc =
       StickyScrollContainer::GetStickyScrollContainerForScrollFrame(this);
   if (ssc) {
@@ -6450,7 +6454,7 @@ void nsHTMLScrollFrame::UpdateSticky() {
   }
 }
 
-void nsHTMLScrollFrame::UpdatePrevScrolledRect() {
+void ScrollContainerFrame::UpdatePrevScrolledRect() {
   
   
   
@@ -6461,7 +6465,7 @@ void nsHTMLScrollFrame::UpdatePrevScrolledRect() {
   mPrevScrolledRect = currScrolledRect;
 }
 
-void nsHTMLScrollFrame::AdjustScrollbarRectForResizer(
+void ScrollContainerFrame::AdjustScrollbarRectForResizer(
     nsIFrame* aFrame, nsPresContext* aPresContext, nsRect& aRect,
     bool aHasResizer, ScrollDirection aDirection) {
   if ((aDirection == ScrollDirection::eVertical ? aRect.width : aRect.height) ==
@@ -6530,7 +6534,7 @@ static void AdjustOverlappingScrollbars(nsRect& aVRect, nsRect& aHRect) {
   }
 }
 
-void nsHTMLScrollFrame::LayoutScrollbarPartAtRect(
+void ScrollContainerFrame::LayoutScrollbarPartAtRect(
     const ScrollReflowInput& aState, ReflowInput& aKidReflowInput,
     const nsRect& aRect) {
   nsPresContext* pc = PresContext();
@@ -6557,9 +6561,9 @@ void nsHTMLScrollFrame::LayoutScrollbarPartAtRect(
                     containerSize, flags);
 }
 
-void nsHTMLScrollFrame::LayoutScrollbars(ScrollReflowInput& aState,
-                                         const nsRect& aInsideBorderArea,
-                                         const nsRect& aOldScrollPort) {
+void ScrollContainerFrame::LayoutScrollbars(ScrollReflowInput& aState,
+                                            const nsRect& aInsideBorderArea,
+                                            const nsRect& aOldScrollPort) {
   NS_ASSERTION(!mSuppressScrollbarUpdate, "This should have been suppressed");
 
   const bool scrollbarOnLeft = !IsScrollbarOnRight();
@@ -6742,8 +6746,8 @@ static bool ShellIsAlive(nsWeakPtr& aWeakPtr) {
 }
 #endif
 
-void nsHTMLScrollFrame::SetScrollbarEnabled(Element* aElement,
-                                            nscoord aMaxPos) {
+void ScrollContainerFrame::SetScrollbarEnabled(Element* aElement,
+                                               nscoord aMaxPos) {
   DebugOnly<nsWeakPtr> weakShell(do_GetWeakReference(PresShell()));
   if (aMaxPos) {
     aElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::disabled, true);
@@ -6753,8 +6757,8 @@ void nsHTMLScrollFrame::SetScrollbarEnabled(Element* aElement,
   MOZ_ASSERT(ShellIsAlive(weakShell), "pres shell was destroyed by scrolling");
 }
 
-void nsHTMLScrollFrame::SetCoordAttribute(Element* aElement, nsAtom* aAtom,
-                                          nscoord aSize) {
+void ScrollContainerFrame::SetCoordAttribute(Element* aElement, nsAtom* aAtom,
+                                             nscoord aSize) {
   DebugOnly<nsWeakPtr> weakShell(do_GetWeakReference(PresShell()));
   
   int32_t pixelSize = nsPresContext::AppUnitsToIntCSSPixels(aSize);
@@ -6804,10 +6808,10 @@ static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nscoord& aXRadius,
 
 
 
-bool nsHTMLScrollFrame::GetBorderRadii(const nsSize& aFrameSize,
-                                       const nsSize& aBorderArea,
-                                       Sides aSkipSides,
-                                       nscoord aRadii[8]) const {
+bool ScrollContainerFrame::GetBorderRadii(const nsSize& aFrameSize,
+                                          const nsSize& aBorderArea,
+                                          Sides aSkipSides,
+                                          nscoord aRadii[8]) const {
   if (!nsContainerFrame::GetBorderRadii(aFrameSize, aBorderArea, aSkipSides,
                                         aRadii)) {
     return false;
@@ -6852,7 +6856,7 @@ static nscoord SnapCoord(nscoord aCoord, double aRes,
                                  aRes);
 }
 
-nsRect nsHTMLScrollFrame::GetScrolledRect() const {
+nsRect ScrollContainerFrame::GetScrolledRect() const {
   nsRect result = GetUnsnappedScrolledRectInternal(
       mScrolledFrame->ScrollableOverflowRect(), mScrollPort.Size());
 
@@ -6879,9 +6883,10 @@ nsRect nsHTMLScrollFrame::GetScrolledRect() const {
   
   nsSize visualViewportSize = GetVisualViewportSize();
   const nsIFrame* referenceFrame =
-      mReferenceFrameDuringPainting ? mReferenceFrameDuringPainting
-                                    : nsLayoutUtils::GetReferenceFrame(
-                                          const_cast<nsHTMLScrollFrame*>(this));
+      mReferenceFrameDuringPainting
+          ? mReferenceFrameDuringPainting
+          : nsLayoutUtils::GetReferenceFrame(
+                const_cast<ScrollContainerFrame*>(this));
   nsPoint toReferenceFrame = GetOffsetToCrossDoc(referenceFrame);
   nsRect scrollPort(mScrollPort.TopLeft() + toReferenceFrame,
                     visualViewportSize);
@@ -6936,7 +6941,7 @@ nsRect nsHTMLScrollFrame::GetScrolledRect() const {
   return result;
 }
 
-StyleDirection nsHTMLScrollFrame::GetScrolledFrameDir() const {
+StyleDirection ScrollContainerFrame::GetScrolledFrameDir() const {
   
   
   if (mScrolledFrame->StyleTextReset()->mUnicodeBidi ==
@@ -6951,13 +6956,13 @@ StyleDirection nsHTMLScrollFrame::GetScrolledFrameDir() const {
   return IsBidiLTR() ? StyleDirection::Ltr : StyleDirection::Rtl;
 }
 
-nsRect nsHTMLScrollFrame::GetUnsnappedScrolledRectInternal(
+nsRect ScrollContainerFrame::GetUnsnappedScrolledRectInternal(
     const nsRect& aScrolledOverflowArea, const nsSize& aScrollPortSize) const {
   return nsLayoutUtils::GetScrolledRect(mScrolledFrame, aScrolledOverflowArea,
                                         aScrollPortSize, GetScrolledFrameDir());
 }
 
-nsMargin nsHTMLScrollFrame::GetActualScrollbarSizes(
+nsMargin ScrollContainerFrame::GetActualScrollbarSizes(
     nsIScrollableFrame::ScrollbarSizesOptions
         aOptions )
     const {
@@ -6991,8 +6996,8 @@ nsMargin nsHTMLScrollFrame::GetActualScrollbarSizes(
   return m;
 }
 
-void nsHTMLScrollFrame::SetScrollbarVisibility(nsIFrame* aScrollbar,
-                                               bool aVisible) {
+void ScrollContainerFrame::SetScrollbarVisibility(nsIFrame* aScrollbar,
+                                                  bool aVisible) {
   nsScrollbarFrame* scrollbar = do_QueryFrame(aScrollbar);
   if (scrollbar) {
     
@@ -7004,10 +7009,10 @@ void nsHTMLScrollFrame::SetScrollbarVisibility(nsIFrame* aScrollbar,
   }
 }
 
-nscoord nsHTMLScrollFrame::GetCoordAttribute(nsIFrame* aBox, nsAtom* aAtom,
-                                             nscoord aDefaultValue,
-                                             nscoord* aRangeStart,
-                                             nscoord* aRangeLength) {
+nscoord ScrollContainerFrame::GetCoordAttribute(nsIFrame* aBox, nsAtom* aAtom,
+                                                nscoord aDefaultValue,
+                                                nscoord* aRangeStart,
+                                                nscoord* aRangeLength) {
   if (aBox) {
     nsIContent* content = aBox->GetContent();
 
@@ -7035,7 +7040,7 @@ nscoord nsHTMLScrollFrame::GetCoordAttribute(nsIFrame* aBox, nsAtom* aAtom,
   return aDefaultValue;
 }
 
-bool nsHTMLScrollFrame::IsLastScrollUpdateAnimating() const {
+bool ScrollContainerFrame::IsLastScrollUpdateAnimating() const {
   if (!mScrollUpdates.IsEmpty()) {
     switch (mScrollUpdates.LastElement().GetMode()) {
       case ScrollMode::Smooth:
@@ -7049,7 +7054,8 @@ bool nsHTMLScrollFrame::IsLastScrollUpdateAnimating() const {
   return false;
 }
 
-bool nsHTMLScrollFrame::IsLastScrollUpdateTriggeredByScriptAnimating() const {
+bool ScrollContainerFrame::IsLastScrollUpdateTriggeredByScriptAnimating()
+    const {
   if (!mScrollUpdates.IsEmpty()) {
     const ScrollPositionUpdate& lastUpdate = mScrollUpdates.LastElement();
     if (lastUpdate.WasTriggeredByScript() &&
@@ -7062,7 +7068,7 @@ bool nsHTMLScrollFrame::IsLastScrollUpdateTriggeredByScriptAnimating() const {
 }
 
 using AnimationState = nsIScrollableFrame::AnimationState;
-EnumSet<AnimationState> nsHTMLScrollFrame::ScrollAnimationState() const {
+EnumSet<AnimationState> ScrollContainerFrame::ScrollAnimationState() const {
   EnumSet<AnimationState> retval;
   if (IsApzAnimationInProgress()) {
     retval += AnimationState::APZInProgress;
@@ -7101,7 +7107,7 @@ EnumSet<AnimationState> nsHTMLScrollFrame::ScrollAnimationState() const {
   return retval;
 }
 
-void nsHTMLScrollFrame::ResetScrollInfoIfNeeded(
+void ScrollContainerFrame::ResetScrollInfoIfNeeded(
     const MainThreadScrollGeneration& aGeneration,
     const APZScrollGeneration& aGenerationOnApz,
     APZScrollAnimationType aAPZScrollAnimationType,
@@ -7120,7 +7126,7 @@ void nsHTMLScrollFrame::ResetScrollInfoIfNeeded(
   mInScrollingGesture = aInScrollingGesture;
 }
 
-UniquePtr<PresState> nsHTMLScrollFrame::SaveState() {
+UniquePtr<PresState> ScrollContainerFrame::SaveState() {
   nsIScrollbarMediator* mediator = do_QueryFrame(GetScrolledFrame());
   if (mediator) {
     
@@ -7171,7 +7177,7 @@ UniquePtr<PresState> nsHTMLScrollFrame::SaveState() {
   return state;
 }
 
-NS_IMETHODIMP nsHTMLScrollFrame::RestoreState(PresState* aState) {
+NS_IMETHODIMP ScrollContainerFrame::RestoreState(PresState* aState) {
   mRestorePos = aState->scrollState();
   MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::None);
   mAllowScrollOriginDowngrade = aState->allowScrollOriginDowngrade();
@@ -7200,7 +7206,7 @@ NS_IMETHODIMP nsHTMLScrollFrame::RestoreState(PresState* aState) {
   return NS_OK;
 }
 
-void nsHTMLScrollFrame::PostScrolledAreaEvent() {
+void ScrollContainerFrame::PostScrolledAreaEvent() {
   if (mScrolledAreaEvent.IsPending()) {
     return;
   }
@@ -7213,14 +7219,14 @@ void nsHTMLScrollFrame::PostScrolledAreaEvent() {
 
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
-nsHTMLScrollFrame::ScrolledAreaEvent::Run() {
+ScrollContainerFrame::ScrolledAreaEvent::Run() {
   if (mHelper) {
     mHelper->FireScrolledAreaEvent();
   }
   return NS_OK;
 }
 
-void nsHTMLScrollFrame::FireScrolledAreaEvent() {
+void ScrollContainerFrame::FireScrolledAreaEvent() {
   mScrolledAreaEvent.Forget();
 
   InternalScrollAreaEvent event(true, eScrolledAreaChanged, nullptr);
@@ -7247,7 +7253,7 @@ ScrollDirections nsIScrollableFrame::GetAvailableScrollingDirections() const {
   return directions;
 }
 
-nsRect nsHTMLScrollFrame::GetScrollRangeForUserInputEvents() const {
+nsRect ScrollContainerFrame::GetScrollRangeForUserInputEvents() const {
   
   
   
@@ -7280,7 +7286,8 @@ nsRect nsHTMLScrollFrame::GetScrollRangeForUserInputEvents() const {
 }
 
 ScrollDirections
-nsHTMLScrollFrame::GetAvailableScrollingDirectionsForUserInputEvents() const {
+ScrollContainerFrame::GetAvailableScrollingDirectionsForUserInputEvents()
+    const {
   nsRect scrollRange = GetScrollRangeForUserInputEvents();
 
   
@@ -7310,7 +7317,8 @@ static void AppendScrollPositionsForSnap(
     const nsIFrame* aFrame, const nsIFrame* aScrolledFrame,
     const nsRect& aScrolledRect, const nsMargin& aScrollPadding,
     const nsRect& aScrollRange, WritingMode aWritingModeOnScroller,
-    ScrollSnapInfo& aSnapInfo, nsHTMLScrollFrame::SnapTargetSet* aSnapTargets) {
+    ScrollSnapInfo& aSnapInfo,
+    ScrollContainerFrame::SnapTargetSet* aSnapTargets) {
   ScrollSnapTargetId targetId = ScrollSnapUtils::GetTargetIdFor(aFrame);
 
   nsRect snapArea =
@@ -7461,7 +7469,7 @@ static void CollectScrollPositionsForSnap(
     nsIFrame* aFrame, nsIFrame* aScrolledFrame, const nsRect& aScrolledRect,
     const nsMargin& aScrollPadding, const nsRect& aScrollRange,
     WritingMode aWritingModeOnScroller, ScrollSnapInfo& aSnapInfo,
-    nsHTMLScrollFrame::SnapTargetSet* aSnapTargets) {
+    ScrollContainerFrame::SnapTargetSet* aSnapTargets) {
   
   
   nsIScrollableFrame* sf = do_QueryFrame(aFrame);
@@ -7526,7 +7534,7 @@ static nsMargin ResolveScrollPaddingStyle(
                                                  aScrollPortSize));
 }
 
-nsMargin nsHTMLScrollFrame::GetScrollPadding() const {
+nsMargin ScrollContainerFrame::GetScrollPadding() const {
   nsIFrame* styleFrame = GetFrameForStyle();
   if (!styleFrame) {
     return nsMargin();
@@ -7538,7 +7546,7 @@ nsMargin nsHTMLScrollFrame::GetScrollPadding() const {
                                    GetScrollPortRect().Size());
 }
 
-ScrollSnapInfo nsHTMLScrollFrame::ComputeScrollSnapInfo() {
+ScrollSnapInfo ScrollContainerFrame::ComputeScrollSnapInfo() {
   ScrollSnapInfo result;
 
   nsIFrame* scrollSnapFrame = GetFrameForStyle();
@@ -7562,12 +7570,12 @@ ScrollSnapInfo nsHTMLScrollFrame::ComputeScrollSnapInfo() {
   return result;
 }
 
-ScrollSnapInfo nsHTMLScrollFrame::GetScrollSnapInfo() {
+ScrollSnapInfo ScrollContainerFrame::GetScrollSnapInfo() {
   
   return ComputeScrollSnapInfo();
 }
 
-Maybe<SnapDestination> nsHTMLScrollFrame::GetSnapPointForDestination(
+Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForDestination(
     ScrollUnit aUnit, ScrollSnapFlags aFlags, const nsPoint& aStartPos,
     const nsPoint& aDestination) {
   
@@ -7581,7 +7589,7 @@ Maybe<SnapDestination> nsHTMLScrollFrame::GetSnapPointForDestination(
       aDestination);
 }
 
-Maybe<SnapDestination> nsHTMLScrollFrame::GetSnapPointForResnap() {
+Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForResnap() {
   
   
   mSnapTargets.Clear();
@@ -7592,7 +7600,7 @@ Maybe<SnapDestination> nsHTMLScrollFrame::GetSnapPointForResnap() {
       mLastSnapTargetIds, focusedContent);
 }
 
-bool nsHTMLScrollFrame::NeedsResnap() {
+bool ScrollContainerFrame::NeedsResnap() {
   nsIContent* focusedContent =
       GetContent()->GetComposedDoc()->GetUnretargetedFocusedContent();
   return ScrollSnapUtils::GetSnapPointForResnap(
@@ -7601,7 +7609,7 @@ bool nsHTMLScrollFrame::NeedsResnap() {
       .isSome();
 }
 
-void nsHTMLScrollFrame::SetLastSnapTargetIds(
+void ScrollContainerFrame::SetLastSnapTargetIds(
     UniquePtr<ScrollSnapTargetIds> aIds) {
   if (!aIds) {
     mLastSnapTargetIds = nullptr;
@@ -7628,7 +7636,7 @@ void nsHTMLScrollFrame::SetLastSnapTargetIds(
   mLastSnapTargetIds = std::move(aIds);
 }
 
-bool nsHTMLScrollFrame::IsLastSnappedTarget(const nsIFrame* aFrame) const {
+bool ScrollContainerFrame::IsLastSnappedTarget(const nsIFrame* aFrame) const {
   ScrollSnapTargetId id = ScrollSnapUtils::GetTargetIdFor(aFrame);
   MOZ_ASSERT(id != ScrollSnapTargetId::None,
              "This function is supposed to be called for contents");
@@ -7641,7 +7649,7 @@ bool nsHTMLScrollFrame::IsLastSnappedTarget(const nsIFrame* aFrame) const {
          mLastSnapTargetIds->mIdsOnY.Contains(id);
 }
 
-void nsHTMLScrollFrame::TryResnap() {
+void ScrollContainerFrame::TryResnap() {
   
   
   if (!ScrollAnimationState().isEmpty() ||
@@ -7663,7 +7671,7 @@ void nsHTMLScrollFrame::TryResnap() {
   }
 }
 
-void nsHTMLScrollFrame::PostPendingResnapIfNeeded(const nsIFrame* aFrame) {
+void ScrollContainerFrame::PostPendingResnapIfNeeded(const nsIFrame* aFrame) {
   if (!IsLastSnappedTarget(aFrame)) {
     return;
   }
@@ -7671,12 +7679,12 @@ void nsHTMLScrollFrame::PostPendingResnapIfNeeded(const nsIFrame* aFrame) {
   PostPendingResnap();
 }
 
-void nsHTMLScrollFrame::PostPendingResnap() {
+void ScrollContainerFrame::PostPendingResnap() {
   PresShell()->PostPendingScrollResnap(this);
 }
 
 nsIScrollableFrame::PhysicalScrollSnapAlign
-nsHTMLScrollFrame::GetScrollSnapAlignFor(const nsIFrame* aFrame) const {
+ScrollContainerFrame::GetScrollSnapAlignFor(const nsIFrame* aFrame) const {
   StyleScrollSnapAlignKeyword alignForY = StyleScrollSnapAlignKeyword::None;
   StyleScrollSnapAlignKeyword alignForX = StyleScrollSnapAlignKeyword::None;
 
@@ -7746,11 +7754,11 @@ nsHTMLScrollFrame::GetScrollSnapAlignFor(const nsIFrame* aFrame) const {
   return {alignForX, alignForY};
 }
 
-bool nsHTMLScrollFrame::UsesOverlayScrollbars() const {
+bool ScrollContainerFrame::UsesOverlayScrollbars() const {
   return PresContext()->UseOverlayScrollbars();
 }
 
-bool nsHTMLScrollFrame::DragScroll(WidgetEvent* aEvent) {
+bool ScrollContainerFrame::DragScroll(WidgetEvent* aEvent) {
   
   
   nscoord margin = 20 * PresContext()->AppUnitsPerDevPixel();
@@ -7832,7 +7840,7 @@ static void AsyncScrollbarDragInitiated(uint64_t aDragBlockId,
   }
 }
 
-void nsHTMLScrollFrame::AsyncScrollbarDragInitiated(
+void ScrollContainerFrame::AsyncScrollbarDragInitiated(
     uint64_t aDragBlockId, ScrollDirection aDirection) {
   switch (aDirection) {
     case ScrollDirection::eVertical:
@@ -7850,14 +7858,14 @@ static void AsyncScrollbarDragRejected(nsIFrame* aScrollbar) {
   }
 }
 
-void nsHTMLScrollFrame::AsyncScrollbarDragRejected() {
+void ScrollContainerFrame::AsyncScrollbarDragRejected() {
   
   
   ::AsyncScrollbarDragRejected(mHScrollbarBox);
   ::AsyncScrollbarDragRejected(mVScrollbarBox);
 }
 
-void nsHTMLScrollFrame::ApzSmoothScrollTo(
+void ScrollContainerFrame::ApzSmoothScrollTo(
     const nsPoint& aDestination, ScrollMode aMode, ScrollOrigin aOrigin,
     ScrollTriggeredByScript aTriggeredByScript,
     UniquePtr<ScrollSnapTargetIds> aSnapTargetIds) {
@@ -7912,7 +7920,7 @@ void nsHTMLScrollFrame::ApzSmoothScrollTo(
   SchedulePaint();
 }
 
-bool nsHTMLScrollFrame::CanApzScrollInTheseDirections(
+bool ScrollContainerFrame::CanApzScrollInTheseDirections(
     ScrollDirections aDirections) {
   ScrollStyles styles = GetScrollStyles();
   if (aDirections.contains(ScrollDirection::eHorizontal) &&
@@ -7924,7 +7932,7 @@ bool nsHTMLScrollFrame::CanApzScrollInTheseDirections(
   return true;
 }
 
-bool nsHTMLScrollFrame::SmoothScrollVisual(
+bool ScrollContainerFrame::SmoothScrollVisual(
     const nsPoint& aVisualViewportOffset,
     FrameMetrics::ScrollOffsetUpdateType aUpdateType) {
   bool canDoApzSmoothScroll =
@@ -7956,7 +7964,7 @@ bool nsHTMLScrollFrame::SmoothScrollVisual(
   return true;
 }
 
-bool nsHTMLScrollFrame::IsSmoothScroll(dom::ScrollBehavior aBehavior) const {
+bool ScrollContainerFrame::IsSmoothScroll(dom::ScrollBehavior aBehavior) const {
   if (aBehavior == dom::ScrollBehavior::Instant) {
     return false;
   }
@@ -7989,17 +7997,17 @@ bool nsHTMLScrollFrame::IsSmoothScroll(dom::ScrollBehavior aBehavior) const {
               StyleScrollBehavior::Smooth);
 }
 
-nsTArray<ScrollPositionUpdate> nsHTMLScrollFrame::GetScrollUpdates() const {
+nsTArray<ScrollPositionUpdate> ScrollContainerFrame::GetScrollUpdates() const {
   return mScrollUpdates.Clone();
 }
 
-void nsHTMLScrollFrame::AppendScrollUpdate(
+void ScrollContainerFrame::AppendScrollUpdate(
     const ScrollPositionUpdate& aUpdate) {
   mScrollGeneration = aUpdate.GetGeneration();
   mScrollUpdates.AppendElement(aUpdate);
 }
 
-void nsHTMLScrollFrame::ScheduleScrollAnimations() {
+void ScrollContainerFrame::ScheduleScrollAnimations() {
   nsIContent* content = GetContent();
   MOZ_ASSERT(content && content->IsElement(),
              "The nsIScrollableFrame should have the element.");

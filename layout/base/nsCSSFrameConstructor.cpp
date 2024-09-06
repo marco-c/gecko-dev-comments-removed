@@ -213,9 +213,6 @@ nsIFrame* NS_NewMenuPopupFrame(PresShell* aPresShell, ComputedStyle* aStyle);
 
 nsIFrame* NS_NewTreeBodyFrame(PresShell* aPresShell, ComputedStyle* aStyle);
 
-nsHTMLScrollFrame* NS_NewHTMLScrollFrame(PresShell* aPresShell,
-                                         ComputedStyle* aStyle, bool aIsRoot);
-
 nsIFrame* NS_NewSliderFrame(PresShell* aPresShell, ComputedStyle* aStyle);
 
 nsIFrame* NS_NewScrollbarFrame(PresShell* aPresShell, ComputedStyle* aStyle);
@@ -4179,7 +4176,8 @@ already_AddRefed<ComputedStyle> nsCSSFrameConstructor::BeginBuildingScrollFrame(
   nsContainerFrame* gfxScrollFrame = aNewFrame;
 
   if (!gfxScrollFrame) {
-    gfxScrollFrame = NS_NewHTMLScrollFrame(mPresShell, aContentStyle, aIsRoot);
+    gfxScrollFrame =
+        NS_NewScrollContainerFrame(mPresShell, aContentStyle, aIsRoot);
     InitAndRestoreFrame(aState, aContent, aParentFrame, gfxScrollFrame);
   }
 

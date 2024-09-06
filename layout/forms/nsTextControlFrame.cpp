@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/DebugOnly.h"
 
@@ -25,9 +25,9 @@
 #include "nsLayoutUtils.h"
 
 #include <algorithm>
-#include "nsRange.h"  
+#include "nsRange.h"  //for selection setting helper func
 #include "nsINode.h"
-#include "nsPIDOMWindow.h"  
+#include "nsPIDOMWindow.h"  //needed for notify selection changed to update the menus ect.
 #include "nsQueryObject.h"
 #include "nsILayoutHistoryState.h"
 
@@ -130,8 +130,8 @@ nsIScrollableFrame* nsTextControlFrame::GetScrollTargetFrame() const {
 void nsTextControlFrame::Destroy(DestroyContext& aContext) {
   RemoveProperty(TextControlInitializer());
 
-  
-  
+  // Unbind the text editor state object from the frame.  The editor will live
+  // on, but things like controllers will be released.
   RefPtr textControlElement = ControlElement();
   if (mMutationObserver) {
     textControlElement->UnbindFromFrame(this);
@@ -139,10 +139,10 @@ void nsTextControlFrame::Destroy(DestroyContext& aContext) {
     mMutationObserver = nullptr;
   }
 
-  
-  
-  
-  
+  // If there is a drag session, user may be dragging selection in removing
+  // text node in the text control.  If so, we should set source node to the
+  // text control because another text node may be recreated soon if the text
+  // control is just reframed.
   if (nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession()) {
     if (dragSession->IsDraggingTextInTextControl() && mRootNode &&
         mRootNode->GetFirstChild()) {
@@ -155,16 +155,16 @@ void nsTextControlFrame::Destroy(DestroyContext& aContext) {
       }
     }
   }
-  
-  
+  // Otherwise, EventStateManager may track gesture to start drag with native
+  // anonymous nodes in the text control element.
   else if (textControlElement->GetPresContext(Element::eForComposedDoc)) {
     textControlElement->GetPresContext(Element::eForComposedDoc)
         ->EventStateManager()
         ->TextControlRootWillBeRemoved(*textControlElement);
   }
 
-  
-  
+  // If we're a subclass like nsNumberControlFrame, then it owns the root of the
+  // anonymous subtree where mRootNode is.
   aContext.AddAnonymousContent(mRootNode.forget());
   aContext.AddAnonymousContent(mPlaceholderDiv.forget());
   aContext.AddAnonymousContent(mPreviewDiv.forget());
@@ -181,22 +181,22 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
       nsLayoutUtils::GetFontMetricsForFrame(this, inflation);
   const nscoord lineHeight = ReflowInput::CalcLineHeight(
       *Style(), PresContext(), GetContent(), NS_UNCONSTRAINEDSIZE, inflation);
-  
-  
+  // Use the larger of the font's "average" char width or the width of the
+  // zero glyph (if present) as the basis for resolving the size attribute.
   const nscoord charWidth =
       std::max(fontMet->ZeroOrAveCharWidth(), fontMet->AveCharWidth());
   const nscoord charMaxAdvance = fontMet->MaxAdvance();
 
-  
+  // Initialize based on the width in characters.
   const int32_t cols = GetCols();
   intrinsicSize.ISize(aWM) = cols * charWidth;
 
-  
-  
-  
-  
-  
-  
+  // If we do not have what appears to be a fixed-width font, add a "slop"
+  // amount based on the max advance of the font (clamped to twice charWidth,
+  // because some fonts have a few extremely-wide outliers that would result
+  // in excessive width here; e.g. the triple-emdash ligature in SFNS Text),
+  // minus 4px. This helps avoid input fields becoming unusably narrow with
+  // small size values.
   if (charMaxAdvance - charWidth > AppUnitsPerCSSPixel()) {
     nscoord internalPadding =
         std::max(0, std::min(charMaxAdvance, charWidth * 2) -
@@ -204,14 +204,14 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
     internalPadding = RoundToMultiple(internalPadding, AppUnitsPerCSSPixel());
     intrinsicSize.ISize(aWM) += internalPadding;
   } else {
-    
-    
+    // This is to account for the anonymous <br> having a 1 twip width
+    // in Full Standards mode, see BRFrame::Reflow and bug 228752.
     if (PresContext()->CompatibilityMode() == eCompatibility_FullStandards) {
       intrinsicSize.ISize(aWM) += 1;
     }
   }
 
-  
+  // Increment width with cols * letter-spacing.
   {
     const StyleLength& letterSpacing = StyleText()->mLetterSpacing;
     if (!letterSpacing.IsZero()) {
@@ -219,11 +219,11 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
     }
   }
 
-  
-  
+  // Set the height equal to total number of rows (times the height of each
+  // line, of course)
   intrinsicSize.BSize(aWM) = lineHeight * GetRows();
 
-  
+  // Add in the size of the scrollbars for textarea
   if (IsTextArea()) {
     nsIScrollableFrame* scrollableFrame = GetScrollTargetFrame();
     NS_ASSERTION(scrollableFrame, "Child must be scrollable");
@@ -238,17 +238,17 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
 }
 
 nsresult nsTextControlFrame::EnsureEditorInitialized() {
-  
+  // This method initializes our editor, if needed.
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // This code used to be called from CreateAnonymousContent(), but
+  // when the editor set the initial string, it would trigger a
+  // PresShell listener which called FlushPendingNotifications()
+  // during frame construction. This was causing other form controls
+  // to display wrong values.  Additionally, calling this every time
+  // a text frame control is instantiated means that we're effectively
+  // instantiating the editor for all text fields, even if they
+  // never get used.  So, now this method is being called lazily only
+  // when we actually need an editor.
 
   if (mEditorHasBeenInitialized) return NS_OK;
 
@@ -257,29 +257,29 @@ nsresult nsTextControlFrame::EnsureEditorInitialized() {
 
   AutoWeakFrame weakFrame(this);
 
-  
-  
-  
+  // Flush out content on our document.  Have to do this, because script
+  // blockers don't prevent the sink flushing out content and notifying in the
+  // process, which can destroy frames.
   doc->FlushPendingNotifications(FlushType::ContentAndNotify);
   NS_ENSURE_TRUE(weakFrame.IsAlive(), NS_ERROR_FAILURE);
 
-  
-  
+  // Make sure that editor init doesn't do things that would kill us off
+  // (especially off the script blockers it'll create for its DOM mutations).
   {
     RefPtr<TextControlElement> textControlElement = ControlElement();
 
-    
-    
+    // Hide selection changes during the initialization, as webpages should not
+    // be aware of these initializations
     AutoHideSelectionChanges hideSelectionChanges(
         textControlElement->GetConstFrameSelection());
 
     nsAutoScriptBlocker scriptBlocker;
 
-    
-    
+    // Time to mess with our security context... See comments in GetValue()
+    // for why this is needed.
     mozilla::dom::AutoNoJSAPI nojsapi;
 
-    
+    // Make sure that we try to focus the content even if the method fails
     class EnsureSetFocus {
      public:
       explicit EnsureSetFocus(nsTextControlFrame* aFrame) : mFrame(aFrame) {}
@@ -294,28 +294,28 @@ nsresult nsTextControlFrame::EnsureEditorInitialized() {
     EnsureSetFocus makeSureSetFocusHappens(this);
 
 #ifdef DEBUG
-    
-    
+    // Make sure we are not being called again until we're finished.
+    // If reentrancy happens, just pretend that we don't have an editor.
     const EditorInitializerEntryTracker tracker(*this);
     NS_ASSERTION(!tracker.EnteredMoreThanOnce(),
                  "EnsureEditorInitialized has been called while a previous "
                  "call was in progress");
 #endif
 
-    
+    // Create an editor for the frame, if one doesn't already exist
     nsresult rv = textControlElement->CreateEditor();
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ENSURE_STATE(weakFrame.IsAlive());
 
-    
-    
+    // Set mEditorHasBeenInitialized so that subsequent calls will use the
+    // editor.
     mEditorHasBeenInitialized = true;
 
     if (weakFrame.IsAlive()) {
       uint32_t position = 0;
 
-      
-      
+      // Set the selection to the end of the text field (bug 1287655),
+      // but only if the contents has changed (bug 1337392).
       if (textControlElement->ValueChanged()) {
         nsAutoString val;
         textControlElement->GetTextEditorValue(val);
@@ -336,7 +336,7 @@ already_AddRefed<Element> nsTextControlFrame::MakeAnonElement(
   RefPtr<Element> element = doc->CreateHTMLElement(aTag);
   element->SetPseudoElementType(aPseudoType);
   if (aPseudoType == PseudoStyleType::mozTextControlEditingRoot) {
-    
+    // Make our root node editable
     element->SetFlags(NODE_IS_EDITABLE);
   }
 
@@ -357,16 +357,16 @@ already_AddRefed<Element> nsTextControlFrame::MakeAnonDivWithTextNode(
     PseudoStyleType aPseudoType) const {
   RefPtr<Element> div = MakeAnonElement(aPseudoType);
 
-  
+  // Create the text node for the anonymous <div> element.
   nsNodeInfoManager* nim = div->OwnerDoc()->NodeInfoManager();
   RefPtr<nsTextNode> textNode = new (nim) nsTextNode(nim);
-  
-  
-  
+  // If the anonymous div element is not for the placeholder, we should
+  // mark the text node as "maybe modified frequently" for avoiding ASCII
+  // range checks at every input.
   if (aPseudoType != PseudoStyleType::placeholder) {
     textNode->MarkAsMaybeModifiedFrequently();
-    
-    
+    // Additionally, this is a password field, the text node needs to be
+    // marked as "maybe masked" unless it's in placeholder.
     if (IsPasswordTextControl()) {
       textNode->MarkAsMaybeMasked();
     }
@@ -391,11 +391,11 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
   mMutationObserver = new nsAnonDivObserver(*this);
   mRootNode->AddMutationObserver(mMutationObserver);
 
-  
-  
-  
-  
-  
+  // Bind the frame to its text control.
+  //
+  // This can realistically fail in paginated mode, where we may replicate
+  // fixed-positioned elements and the replicated frame will not get the chance
+  // to get an editor.
   nsresult rv = textControlElement->BindToFrame(this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     mRootNode->RemoveMutationObserver(mMutationObserver);
@@ -413,8 +413,8 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
     aElements.AppendElement(mPreviewDiv);
   }
 
-  
-  
+  // NOTE(emilio): We want the root node always after the placeholder so that
+  // background on the placeholder doesn't obscure the caret.
   aElements.AppendElement(mRootNode);
 
   if ((StaticPrefs::layout_forms_reveal_password_button_enabled() ||
@@ -438,28 +438,28 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
 }
 
 bool nsTextControlFrame::ShouldInitializeEagerly() const {
-  
+  // textareas are eagerly initialized.
   if (!IsSingleLineTextControl()) {
     return true;
   }
 
-  
-  
+  // Also, input elements which have a cached selection should get eager
+  // editor initialization.
   TextControlElement* textControlElement = ControlElement();
   if (textControlElement->HasCachedSelection()) {
     return true;
   }
 
-  
+  // So do input text controls with spellcheck=true
   if (auto* htmlElement = nsGenericHTMLElement::FromNode(mContent)) {
     if (htmlElement->Spellcheck()) {
       return true;
     }
   }
 
-  
-  
-  
+  // If text in the editor is being dragged, we need the editor to create
+  // new source node for the drag session (TextEditor creates the text node
+  // in the anonymous <div> element.
   if (nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession()) {
     if (dragSession->IsDraggingTextInTextControl()) {
       nsCOMPtr<nsINode> sourceNode;
@@ -489,7 +489,7 @@ void nsTextControlFrame::InitializeEagerlyIfNeeded() {
 void nsTextControlFrame::CreatePlaceholderIfNeeded() {
   MOZ_ASSERT(!mPlaceholderDiv);
 
-  
+  // Do we need a placeholder node?
   nsAutoString placeholder;
   if (!mContent->AsElement()->GetAttr(nsGkAtoms::placeholder, placeholder)) {
     return;
@@ -502,11 +502,11 @@ void nsTextControlFrame::CreatePlaceholderIfNeeded() {
 void nsTextControlFrame::PlaceholderChanged(const nsAttrValue* aOld,
                                             const nsAttrValue* aNew) {
   if (!aOld || !aNew) {
-    return;  
+    return;  // This should be handled by GetAttributeChangeHint.
   }
 
-  
-  
+  // If we've changed the attribute but we still haven't reframed, there's
+  // nothing to do either.
   if (!mPlaceholderDiv) {
     return;
   }
@@ -521,9 +521,9 @@ void nsTextControlFrame::UpdatePlaceholderText(nsString& aPlaceholder,
   MOZ_DIAGNOSTIC_ASSERT(mPlaceholderDiv);
   MOZ_DIAGNOSTIC_ASSERT(mPlaceholderDiv->GetFirstChild());
 
-  if (IsTextArea()) {  
+  if (IsTextArea()) {  // <textarea>s preserve newlines...
     nsContentUtils::PlatformToDOMLineBreaks(aPlaceholder);
-  } else {  
+  } else {  // ...<input>s don't
     nsContentUtils::RemoveNewlines(aPlaceholder);
   }
 
@@ -560,15 +560,15 @@ nscoord nsTextControlFrame::GetPrefISize(gfxContext* aRenderingContext) {
 }
 
 nscoord nsTextControlFrame::GetMinISize(gfxContext* aRenderingContext) {
-  
-  
+  // Our min inline size is just our preferred inline-size if we have auto
+  // inline size.
   return GetPrefISize(aRenderingContext);
 }
 
 Maybe<nscoord> nsTextControlFrame::ComputeBaseline(
     const nsIFrame* aFrame, const ReflowInput& aReflowInput,
     bool aForSingleLineControl) {
-  
+  // If we're layout-contained, we have no baseline.
   if (aReflowInput.mStyleDisplay->IsContainLayout()) {
     return Nothing();
   }
@@ -600,7 +600,7 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
   DO_GLOBAL_REFLOW_COUNT("nsTextControlFrame");
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
-  
+  // set values of reflow's out parameters
   WritingMode wm = aReflowInput.GetWritingMode();
   const auto contentBoxSize = aReflowInput.ComputedSizeWithBSizeFallback([&] {
     return CalcIntrinsicSize(aReflowInput.mRenderingContext, wm).BSize(wm);
@@ -610,7 +610,7 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
       contentBoxSize + aReflowInput.ComputedLogicalBorderPadding(wm).Size(wm));
 
   {
-    
+    // Calculate the baseline and store it in mFirstBaseline.
     auto baseline =
         ComputeBaseline(this, aReflowInput, IsSingleLineTextControl());
     mFirstBaseline = baseline.valueOr(NS_INTRINSIC_ISIZE_UNKNOWN);
@@ -619,7 +619,7 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
     }
   }
 
-  
+  // overflow handling
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
   nsIFrame* buttonBox = [&]() -> nsIFrame* {
@@ -630,15 +630,15 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
     return last;
   }();
 
-  
-  
+  // Reflow the button box first, so that we can use its size for the other
+  // frames.
   nscoord buttonBoxISize = 0;
   if (buttonBox) {
     ReflowTextControlChild(buttonBox, aPresContext, aReflowInput, aStatus,
                            aDesiredSize, contentBoxSize, buttonBoxISize);
   }
 
-  
+  // perform reflow on all kids
   nsIFrame* kid = mFrames.FirstChild();
   while (kid) {
     if (kid != buttonBox) {
@@ -650,10 +650,10 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
     kid = kid->GetNextSibling();
   }
 
-  
+  // take into account css properties that affect overflow handling
   FinishAndStoreOverflow(&aDesiredSize);
 
-  aStatus.Reset();  
+  aStatus.Reset();  // This type of frame can't be split.
 }
 
 void nsTextControlFrame::ReflowTextControlChild(
@@ -662,7 +662,7 @@ void nsTextControlFrame::ReflowTextControlChild(
     ReflowOutput& aParentDesiredSize, const LogicalSize& aParentContentBoxSize,
     nscoord& aButtonBoxISize) {
   const WritingMode outerWM = aReflowInput.GetWritingMode();
-  
+  // compute available size and frame offsets for child
   const WritingMode wm = aKid->GetWritingMode();
   const auto parentPadding = aReflowInput.ComputedLogicalPadding(wm);
   const LogicalSize contentBoxSize =
@@ -678,17 +678,17 @@ void nsTextControlFrame::ReflowTextControlChild(
   ReflowInput kidReflowInput(aPresContext, aReflowInput, aKid, availSize,
                              Nothing(), ReflowInput::InitFlag::CallerWillInit);
 
-  
-  
+  // Override padding with our computed padding in case we got it from theming
+  // or percentage, if we're not the button box.
   auto overridePadding = isButtonBox ? Nothing() : Some(parentPadding);
   if (!isButtonBox && aButtonBoxISize) {
-    
+    // Button box respects inline-end-padding, so we don't need to.
     overridePadding->IEnd(outerWM) = 0;
   }
 
-  
-  
-  
+  // We want to let our button box fill the frame in the block axis, up to the
+  // edge of the control's border. So, we use the control's padding-box as the
+  // containing block size for our button box.
   auto overrideCBSize = isButtonBox ? Some(paddingBoxSize) : Nothing();
   kidReflowInput.Init(aPresContext, overrideCBSize, Nothing(), overridePadding);
 
@@ -702,20 +702,20 @@ void nsTextControlFrame::ReflowTextControlChild(
 
     const auto& border = aReflowInput.ComputedLogicalBorder(wm);
 
-    
-    
-    
+    // Offset the frame by the size of the parent's border. Note that we don't
+    // have to account for the parent's padding here, because this child
+    // actually "inherits" that padding and manages it on behalf of the parent.
     position.B(wm) = border.BStart(wm);
     position.I(wm) = border.IStart(wm);
 
-    
-    
+    // Set computed width and computed height for the child (the button box is
+    // the only exception, which has an auto size).
     kidReflowInput.SetComputedISize(
         std::max(0, aReflowInput.ComputedISize() - aButtonBoxISize));
     kidReflowInput.SetComputedBSize(contentBoxSize.BSize(wm));
   }
 
-  
+  // reflow the child
   ReflowOutput desiredSize(aReflowInput);
   const nsSize containerSize = borderBoxSize.GetPhysicalSize(wm);
   ReflowChild(aKid, aPresContext, desiredSize, kidReflowInput, wm, position,
@@ -724,15 +724,15 @@ void nsTextControlFrame::ReflowTextControlChild(
   if (isButtonBox) {
     const auto& bp = aReflowInput.ComputedLogicalBorderPadding(outerWM);
     auto size = desiredSize.Size(outerWM);
-    
-    
+    // Center button in the block axis of our content box. We do this
+    // computation in terms of outerWM for simplicity.
     LogicalRect buttonRect(outerWM);
     buttonRect.BSize(outerWM) = size.BSize(outerWM);
     buttonRect.ISize(outerWM) = size.ISize(outerWM);
     buttonRect.BStart(outerWM) =
         bp.BStart(outerWM) +
         (aParentContentBoxSize.BSize(outerWM) - size.BSize(outerWM)) / 2;
-    
+    // Align to the inline-end of the content box.
     buttonRect.IStart(outerWM) =
         bp.IStart(outerWM) + aReflowInput.ComputedISize() - size.ISize(outerWM);
     buttonRect = buttonRect.ConvertTo(wm, outerWM, containerSize);
@@ -740,18 +740,18 @@ void nsTextControlFrame::ReflowTextControlChild(
     aButtonBoxISize = size.ISize(outerWM);
   }
 
-  
+  // place the child
   FinishReflowChild(aKid, aPresContext, desiredSize, &kidReflowInput, wm,
                     position, containerSize, ReflowChildFlags::Default);
 
-  
+  // consider the overflow
   aParentDesiredSize.mOverflowAreas.UnionWith(desiredSize.mOverflowAreas);
 }
 
-
+// IMPLEMENTING NS_IFORMCONTROLFRAME
 void nsTextControlFrame::SetFocus(bool aOn, bool aRepaint) {
-  
-  
+  // If 'dom.placeholeder.show_on_focus' preference is 'false', focusing or
+  // blurring the frame can have an impact on the placeholder visibility.
   if (!aOn) {
     return;
   }
@@ -773,12 +773,12 @@ void nsTextControlFrame::SetFocus(bool aOn, bool aRepaint) {
     return;
   }
 
-  
+  // Tell the caret to use our selection
   caret->SetSelection(ourSel);
 
-  
-  
-  
+  // mutual-exclusion: the selection is either controlled by the
+  // document or by the text input/area. Clear any selection in the
+  // document since the focus is now on our independent selection.
 
   RefPtr<Selection> docSel =
       presShell->GetSelection(nsISelectionController::SELECTION_NORMAL);
@@ -790,8 +790,8 @@ void nsTextControlFrame::SetFocus(bool aOn, bool aRepaint) {
     docSel->RemoveAllRanges(IgnoreErrors());
   }
 
-  
-  
+  // If the focus moved to a text control during text selection by pointer
+  // device, stop extending the selection.
   if (RefPtr<nsFrameSelection> frameSelection = presShell->FrameSelection()) {
     frameSelection->SetDragState(false);
   }
@@ -799,19 +799,19 @@ void nsTextControlFrame::SetFocus(bool aOn, bool aRepaint) {
 
 nsresult nsTextControlFrame::SetFormProperty(nsAtom* aName,
                                              const nsAString& aValue) {
-  if (!mIsProcessing) {  
+  if (!mIsProcessing) {  // some kind of lock.
     mIsProcessing = true;
     if (nsGkAtoms::select == aName) {
-      
-      
-      
-      
-      
-      
-      
+      // Select all the text.
+      //
+      // XXX: This is lame, we can't call editor's SelectAll method
+      //      because that triggers AutoCopies in unix builds.
+      //      Instead, we have to call our own homegrown version
+      //      of select all which merely builds a range that selects
+      //      all of the content and adds that to the selection.
 
       AutoWeakFrame weakThis = this;
-      SelectAllOrCollapseToEndOfText(true);  
+      SelectAllOrCollapseToEndOfText(true);  // NOTE: can destroy the world
       if (!weakThis.IsAlive()) {
         return NS_OK;
       }
@@ -832,7 +832,7 @@ already_AddRefed<TextEditor> nsTextControlFrame::GetTextEditor() {
 nsresult nsTextControlFrame::SetSelectionInternal(
     nsINode* aStartNode, uint32_t aStartOffset, nsINode* aEndNode,
     uint32_t aEndOffset, SelectionDirection aDirection) {
-  
+  // Get the selection, clear it and add the new range to it!
   nsISelectionController* selCon = GetSelectionController();
   NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
 
@@ -842,7 +842,7 @@ nsresult nsTextControlFrame::SetSelectionInternal(
 
   nsDirection direction;
   if (aDirection == SelectionDirection::None) {
-    
+    // Preserve the direction
     direction = selection->GetDirection();
   } else {
     direction =
@@ -866,7 +866,7 @@ void nsTextControlFrame::ScrollSelectionIntoViewAsync(
                       ? 0
                       : nsISelectionController::SCROLL_FIRST_ANCESTOR_ONLY;
 
-  
+  // Scroll the selection into view (see bug 231389).
   selCon->ScrollSelectionIntoView(
       nsISelectionController::SELECTION_NORMAL,
       nsISelectionController::SELECTION_FOCUS_REGION, flags);
@@ -903,7 +903,7 @@ nsresult nsTextControlFrame::SetSelectionEndPoints(
   nsCOMPtr<nsINode> startNode, endNode;
   uint32_t startOffset, endOffset;
 
-  
+  // Calculate the selection start point.
 
   nsresult rv =
       OffsetToDOMPoint(aSelStart, getter_AddRefs(startNode), &startOffset);
@@ -911,12 +911,12 @@ nsresult nsTextControlFrame::SetSelectionEndPoints(
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (aSelStart == aSelEnd) {
-    
+    // Collapsed selection, so start and end are the same!
     endNode = startNode;
     endOffset = startOffset;
   } else {
-    
-    
+    // Selection isn't collapsed so we have to calculate
+    // the end point too.
 
     rv = OffsetToDOMPoint(aSelEnd, getter_AddRefs(endNode), &endOffset);
 
@@ -935,8 +935,8 @@ nsTextControlFrame::SetSelectionRange(
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (aSelStart > aSelEnd) {
-    
-    
+    // Simulate what we'd see SetSelectionStart() was called, followed
+    // by a SetSelectionEnd().
 
     aSelStart = aSelEnd;
   }
@@ -984,9 +984,9 @@ nsresult nsTextControlFrame::OffsetToDOMPoint(uint32_t aOffset,
   return NS_OK;
 }
 
+/////END INTERFACE IMPLEMENTATIONS
 
-
-
+////NSIFRAME
 nsresult nsTextControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
                                               int32_t aModType) {
@@ -1035,10 +1035,10 @@ void nsTextControlFrame::ElementStateChanged(dom::ElementState aStates) {
   return nsContainerFrame::ElementStateChanged(aStates);
 }
 
+/// END NSIFRAME OVERLOADS
 
-
-
-
+// NOTE(emilio): This is needed because the root->primary frame map is not set
+// up by the time this is called.
 static nsIFrame* FindRootNodeFrame(const nsFrameList& aChildList,
                                    const nsIContent* aRoot) {
   for (nsIFrame* f : aChildList) {
@@ -1059,9 +1059,9 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
     return;
   }
 
-  
-  
-  
+  // Mark the scroll frame as being a reflow root. This will allow incremental
+  // reflows to be initiated at the scroll frame, rather than descending from
+  // the root frame of the frame hierarchy.
   if (nsIFrame* frame = FindRootNodeFrame(PrincipalChildList(), mRootNode)) {
     frame->AddStateBits(NS_FRAME_REFLOW_ROOT);
 
@@ -1070,8 +1070,8 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
     bool hasProperty;
     nsPoint contentScrollPos = TakeProperty(ContentScrollPos(), &hasProperty);
     if (hasProperty) {
-      
-      
+      // If we have a scroll pos stored to be passed to our anonymous
+      // div, do it here!
       nsIStatefulFrame* statefulFrame = do_QueryFrame(frame);
       NS_ASSERTION(statefulFrame,
                    "unexpected type of frame for the anonymous div");
@@ -1087,7 +1087,7 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
 nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
                                                 bool aBeforeEditorInit,
                                                 const nsAString* aValue) {
-  if (!IsSingleLineTextControl()) {  
+  if (!IsSingleLineTextControl()) {  // textareas don't use this
     return NS_OK;
   }
 
@@ -1098,7 +1098,7 @@ nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
   nsIContent* childContent = mRootNode->GetFirstChild();
   Text* textContent;
   if (!childContent) {
-    
+    // Set up a textnode with our value
     RefPtr<nsTextNode> textNode = new (mContent->NodeInfo()->NodeInfoManager())
         nsTextNode(mContent->NodeInfo()->NodeInfoManager());
     textNode->MarkAsMaybeModifiedFrequently();
@@ -1113,7 +1113,7 @@ nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
 
   NS_ENSURE_TRUE(textContent, NS_ERROR_UNEXPECTED);
 
-  
+  // Get the current value of the textfield from the content.
   nsAutoString value;
   if (aValue) {
     value = *aValue;
@@ -1145,15 +1145,15 @@ NS_IMETHODIMP
 nsTextControlFrame::RestoreState(PresState* aState) {
   NS_ENSURE_ARG_POINTER(aState);
 
-  
+  // Query the nsIStatefulFrame from the ScrollContainerFrame
   if (nsIStatefulFrame* scrollStateFrame =
           do_QueryFrame(GetScrollTargetFrame())) {
     return scrollStateFrame->RestoreState(aState);
   }
 
-  
-  
-  
+  // Most likely, we don't have our anonymous content constructed yet, which
+  // would cause us to end up here.  In this case, we'll just store the scroll
+  // pos ourselves, and forward it to the scroll frame later when it's created.
   SetProperty(ContentScrollPos(), aState->scrollState());
   return NS_OK;
 }
@@ -1168,9 +1168,9 @@ void nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
-  
-  
-  
+  // Redirect all lists to the Content list so that nothing can escape, ie
+  // opacity creating stacking contexts that then get sorted with stacking
+  // contexts external to us.
   nsDisplayList* content = aLists.Content();
   nsDisplayListSet set(content, content, content, content, content, content);
 
@@ -1185,26 +1185,26 @@ nsTextControlFrame::EditorInitializer::Run() {
     return NS_OK;
   }
 
-  
+  // Need to block script to avoid bug 669767.
   nsAutoScriptBlocker scriptBlocker;
 
   RefPtr<mozilla::PresShell> presShell = mFrame->PresShell();
   bool observes = presShell->ObservesNativeAnonMutationsForPrint();
   presShell->ObserveNativeAnonMutationsForPrint(true);
-  
+  // This can cause the frame to be destroyed (and call Revoke()).
   mFrame->EnsureEditorInitialized();
   presShell->ObserveNativeAnonMutationsForPrint(observes);
 
-  
-  
+  // The frame can *still* be destroyed even though we have a scriptblocker,
+  // bug 682684.
   if (!mFrame) {
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  
+  // If there is a drag session which is for dragging text in a text control
+  // and its source node is the text control element, we're being reframed.
+  // In this case we should restore the source node of the drag session to
+  // new text node because it's required for dispatching `dragend` event.
   if (nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession()) {
     if (dragSession->IsDraggingTextInTextControl()) {
       nsCOMPtr<nsINode> sourceNode;
@@ -1224,7 +1224,7 @@ nsTextControlFrame::EditorInitializer::Run() {
       }
     }
   }
-  
+  // Otherwise, EventStateManager may be tracking gesture to start a drag.
   else {
     TextControlElement* textControlElement = mFrame->ControlElement();
     if (nsPresContext* presContext =
@@ -1276,8 +1276,8 @@ Maybe<nscoord> nsTextControlFrame::GetNaturalBaselineBOffset(
     if (aBaselineGroup == BaselineSharingGroup::First) {
       return Some(std::clamp(mFirstBaseline, 0, BSize(aWM)));
     }
-    
-    
+    // This isn't great, but the content of the root NAC isn't guaranteed
+    // to be loaded, so the best we can do is the edge of the border-box.
     if (aWM.IsCentralBaseline()) {
       return Some(BSize(aWM) / 2);
     }
