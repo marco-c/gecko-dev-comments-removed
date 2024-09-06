@@ -20,7 +20,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/types/optional.h"
+#include "api/environment/environment.h"
 #include "api/fec_controller_override.h"
 #include "api/field_trials_view.h"
 #include "api/sequence_checker.h"
@@ -42,10 +44,17 @@ namespace webrtc {
 class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
  public:
   
-  SimulcastEncoderAdapter(VideoEncoderFactory* primarty_factory,
+  
+  
+  SimulcastEncoderAdapter(const Environment& env,
+                          absl::Nonnull<VideoEncoderFactory*> primary_factory,
+                          absl::Nullable<VideoEncoderFactory*> fallback_factory,
                           const SdpVideoFormat& format);
-  
-  
+
+  [[deprecated("bugs.webrtc.org/15860")]] SimulcastEncoderAdapter(
+      VideoEncoderFactory* primarty_factory,
+      const SdpVideoFormat& format);
+
   
   SimulcastEncoderAdapter(VideoEncoderFactory* primary_factory,
                           VideoEncoderFactory* fallback_factory,
@@ -144,6 +153,12 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
     bool is_paused_;
   };
 
+  SimulcastEncoderAdapter(absl::Nullable<const Environment*> env,
+                          absl::Nonnull<VideoEncoderFactory*> primary_factory,
+                          absl::Nullable<VideoEncoderFactory*> fallback_factory,
+                          const SdpVideoFormat& format,
+                          const FieldTrialsView& field_trials);
+
   bool Initialized() const;
 
   void DestroyStoredEncoders();
@@ -169,6 +184,9 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
 
   void OverrideFromFieldTrial(VideoEncoder::EncoderInfo* info) const;
 
+  
+  
+  const absl::optional<Environment> env_;
   std::atomic<int> inited_;
   VideoEncoderFactory* const primary_encoder_factory_;
   VideoEncoderFactory* const fallback_encoder_factory_;
