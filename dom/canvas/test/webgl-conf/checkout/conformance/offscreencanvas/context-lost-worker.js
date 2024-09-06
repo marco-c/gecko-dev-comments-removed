@@ -11,25 +11,23 @@ self.onmessage = function(e) {
 
     
     
-    if (!testValidContext())
-        self.postMessage("Test failed");
+    self.postMessage({fail: !testValidContext(), msg: "testValidContext()"});
 
-    extension = gl.getExtension("WEBGL_lose_context");
+    WEBGL_lose_context = gl.getExtension("WEBGL_lose_context");
+    self.postMessage({fail: !WEBGL_lose_context, msg: "WEBGL_lose_context"});
+
     
     OES_vertex_array_object = gl.getExtension("OES_vertex_array_object");
-    if (extension == null || OES_vertex_array_object == null)
-        self.postMessage("Test failed");
+    self.postMessage({fail: !OES_vertex_array_object, msg: "OES_vertex_array_object"});
 
     
     
     uniformLocation = gl.getUniformLocation(program, "tex");
-    extension.loseContext();
+    WEBGL_lose_context.loseContext();
 
     canvas.addEventListener("webglcontextlost", function() {
-        if (testLostContextWithoutRestore())
-            self.postMessage("Test passed");
-        else
-            self.postMessage("Test failed");
+        self.postMessage({fail: !testLostContextWithoutRestore(), msg: "testLostContextWithoutRestore()",
+            finishTest:true});
     }, false);
 }
 
