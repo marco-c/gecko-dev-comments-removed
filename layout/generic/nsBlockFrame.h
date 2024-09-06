@@ -979,8 +979,6 @@ class nsBlockFrame : public nsContainerFrame {
   nsFrameList* GetOutsideMarkerList() const;
 
   
-
-
   bool HasPushedFloats() const {
     return HasAnyStateBits(NS_BLOCK_HAS_PUSHED_FLOATS);
   }
@@ -989,11 +987,16 @@ class nsBlockFrame : public nsContainerFrame {
   
   
   nsFrameList* GetPushedFloats() const;
+
   
   
   nsFrameList* EnsurePushedFloats();
+
   
-  nsFrameList* RemovePushedFloats();
+  
+  
+  
+  [[nodiscard]] nsFrameList* StealPushedFloats();
 
 #ifdef DEBUG
   void VerifyLines(bool aFinalCheckOK);
