@@ -57,7 +57,7 @@ class ClipboardItem final : public nsWrapperCache {
     RefPtr<GetDataPromise> GetData();
 
     
-    void LoadDataFromSystemClipboard(nsIAsyncGetClipboardData* aDataGetter);
+    void LoadDataFromSystemClipboard(nsIClipboardDataSnapshot* aDataGetter);
     void LoadDataFromDataPromise(Promise& aDataPromise);
 
     

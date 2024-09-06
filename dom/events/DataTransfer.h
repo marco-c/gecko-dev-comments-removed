@@ -23,7 +23,7 @@
 #include "mozilla/dom/DataTransferItemList.h"
 #include "mozilla/dom/File.h"
 
-class nsIAsyncGetClipboardData;
+class nsIClipboardDataSnapshot;
 class nsINode;
 class nsITransferable;
 class nsILoadContext;
@@ -423,7 +423,7 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
 
   already_AddRefed<WindowContext> GetWindowContext() const;
 
-  nsIAsyncGetClipboardData* GetAsyncGetClipboardData() const;
+  nsIClipboardDataSnapshot* GetClipboardDataSnapshot() const;
 
  protected:
   
@@ -513,7 +513,7 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   
   
   
-  nsCOMPtr<nsIAsyncGetClipboardData> mAsyncGetClipboardData;
+  nsCOMPtr<nsIClipboardDataSnapshot> mClipboardDataSnapshot;
 
   
   RefPtr<DataTransferItemList> mItems;
