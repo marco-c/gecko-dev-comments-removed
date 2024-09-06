@@ -41,7 +41,7 @@ async function getManifestPermissions(extensionData) {
   ExtensionTestUtils.failOnSchemaWarnings(false);
   await extension.loadManifest();
   ExtensionTestUtils.failOnSchemaWarnings(true);
-  let result = extension.manifestPermissions;
+  let result = extension.getRequiredPermissions();
 
   if (extension.manifest.manifest_version >= 3) {
     

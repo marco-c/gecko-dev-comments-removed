@@ -3148,6 +3148,9 @@ pref("extensions.quarantinedDomains.enabled", true);
 pref("extensions.quarantinedDomains.list", "");
 
 
+pref("extensions.originControls.grantByDefault", true);
+
+
 
 
 pref("extensions.webextensions.protocol.remote", true);
