@@ -1441,7 +1441,7 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   
   
   #if defined(NIGHTLY_BUILD)
-    pref("security.sandbox.content.level", 8);
+    pref("security.sandbox.content.level", 7);
   #else
     pref("security.sandbox.content.level", 7);
   #endif
