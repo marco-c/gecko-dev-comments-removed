@@ -7,23 +7,17 @@
 #define __nsUserCharacteristics_h__
 
 #include "ErrorList.h"
-#include "mozilla/MouseEvents.h"
 
 class nsUserCharacteristics {
  public:
   static void MaybeSubmitPing();
 
   
-  
-  static void StealPointerEvent(const mozilla::WidgetPointerEvent& aEvent);
-
-  
 
 
 
 
 
-  static bool ShouldSubmit();
   static void PopulateDataAndEventuallySubmit(bool aUpdatePref = true,
                                               bool aTesting = false);
   static void SubmitPing();
