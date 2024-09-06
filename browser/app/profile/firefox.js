@@ -425,10 +425,10 @@ pref("browser.urlbar.suggest.recentsearches",       true);
 
 pref("browser.urlbar.scotchBonnet.enableOverride", false);
 
-#if defined(EARLY_BETA_OR_EARLIER)
-  
-  pref("browser.urlbar.trending.featureGate", true);
-#endif
+
+pref("browser.urlbar.trending.featureGate", true);
+pref("browser.urlbar.trending.requireSearchMode", false);
+pref("browser.urlbar.recentsearches.featureGate", true);
 
 
 pref("browser.urlbar.richSuggestions.featureGate", true);
