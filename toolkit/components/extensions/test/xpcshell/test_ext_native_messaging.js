@@ -11,7 +11,6 @@ const { TestUtils } = ChromeUtils.importESModule(
 const PREF_MAX_READ = "webextensions.native-messaging.max-input-message-bytes";
 const PREF_MAX_WRITE =
   "webextensions.native-messaging.max-output-message-bytes";
-const PREF_ASYNC_STACKS = "javascript.options.asyncstack_capture_debuggee_only";
 
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
@@ -391,13 +390,23 @@ async function testBrokenApp({
   
   
   
-  let deduplicatedMessages = messages.filter(
-    (msg, i) => i === messages.findIndex(m => m.message === msg.message)
-  );
+  if (AppConstants.platform === "macosx" || AppConstants.platform === "linux") {
+    const stackLine = "_tryPath@resource://gre/modules/NativeManifests.sys.mjs";
+    let msgAndStack = messages.find(m => m.message.includes(stackLine));
+    if (msgAndStack) {
+      let index = expectedConsoleMessages.findIndex(r => r.test(msgAndStack));
+      notEqual(index, -1, "Should find expected error in call from  _tryPath");
+      expectedConsoleMessages = [
+        
+        ...expectedConsoleMessages.slice(0, index + 1),
+        ...expectedConsoleMessages.slice(index),
+      ];
+    }
+  }
 
   
   AddonTestUtils.checkMessages(
-    deduplicatedMessages,
+    messages,
     {
       expected: expectedConsoleMessages.map(message => ({ message })),
       forbidUnexpected: true,
@@ -456,35 +465,27 @@ add_task(async function test_absolute_path_dotdot() {
   return simpleTest("dotdot.echo");
 });
 
-add_task(
-  
-  { pref_set: [[PREF_ASYNC_STACKS, true]] },
-  async function test_error_name_mismatch() {
-    await testBrokenApp({
-      appname: "renamed.echo",
-      expectedError: "No such native application renamed.echo",
-      expectedConsoleMessages: [
-        /Native manifest .+ has name property renamed_name_mismatch \(expected renamed\.echo\)/,
-        /No such native application renamed\.echo/,
-      ],
-    });
-  }
-);
+add_task(async function test_error_name_mismatch() {
+  await testBrokenApp({
+    appname: "renamed.echo",
+    expectedError: "No such native application renamed.echo",
+    expectedConsoleMessages: [
+      /Native manifest .+ has name property renamed_name_mismatch \(expected renamed\.echo\)/,
+      /No such native application renamed\.echo/,
+    ],
+  });
+});
 
-add_task(
-  
-  { pref_set: [[PREF_ASYNC_STACKS, true]] },
-  async function test_invalid_manifest_type_not_stdio() {
-    await testBrokenApp({
-      appname: "nonstdio.echo",
-      expectedError: "No such native application nonstdio.echo",
-      expectedConsoleMessages: [
-        /Native manifest .+ has type property pkcs11 \(expected stdio\)/,
-        /No such native application nonstdio\.echo/,
-      ],
-    });
-  }
-);
+add_task(async function test_invalid_manifest_type_not_stdio() {
+  await testBrokenApp({
+    appname: "nonstdio.echo",
+    expectedError: "No such native application nonstdio.echo",
+    expectedConsoleMessages: [
+      /Native manifest .+ has type property pkcs11 \(expected stdio\)/,
+      /No such native application nonstdio\.echo/,
+    ],
+  });
+});
 
 add_task(async function test_forward_slashes_in_path_works() {
   await simpleTest("forwardslash.echo");
@@ -739,21 +740,17 @@ add_task(async function test_ext_permission() {
 
 
 
-add_task(
-  
-  { pref_set: [[PREF_ASYNC_STACKS, true]] },
-  async function test_app_permission() {
-    await testBrokenApp({
-      extensionId: "@id-that-is-not-in-the-allowed_extensions-list",
-      appname: "echo",
-      expectedError: "No such native application echo",
-      expectedConsoleMessages: [
-        /This extension does not have permission to use native manifest .+echo\.json/,
-        /No such native application echo/,
-      ],
-    });
-  }
-);
+add_task(async function test_app_permission() {
+  await testBrokenApp({
+    extensionId: "@id-that-is-not-in-the-allowed_extensions-list",
+    appname: "echo",
+    expectedError: "No such native application echo",
+    expectedConsoleMessages: [
+      /This extension does not have permission to use native manifest .+echo\.json/,
+      /No such native application echo/,
+    ],
+  });
+});
 
 
 
