@@ -114,7 +114,6 @@ static const char kVideoTracks[][32] = {"videotrack0", "videotrack1"};
 
 static const char kRecvonly[] = "recvonly";
 static const char kSendrecv[] = "sendrecv";
-constexpr uint64_t kTiebreakerDefault = 44444;
 
 
 
@@ -711,7 +710,6 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
             std::make_unique<rtc::BasicPacketSocketFactory>(vss_.get()),
             &field_trials_));
     port_allocator_ = port_allocator.get();
-    port_allocator_->SetIceTiebreaker(kTiebreakerDefault);
 
     
     

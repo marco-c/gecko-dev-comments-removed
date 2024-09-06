@@ -1483,7 +1483,7 @@ void AllocationSequence::CreateUDPPorts() {
   }
 
   if (port) {
-    port->SetIceTiebreaker(session_->ice_tiebreaker());
+    port->SetIceTiebreaker(session_->allocator()->ice_tiebreaker());
     
     
     if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
@@ -1519,7 +1519,7 @@ void AllocationSequence::CreateTCPPorts() {
       session_->allocator()->allow_tcp_listen(),
       session_->allocator()->field_trials());
   if (port) {
-    port->SetIceTiebreaker(session_->ice_tiebreaker());
+    port->SetIceTiebreaker(session_->allocator()->ice_tiebreaker());
     session_->AddAllocatedPort(port.release(), this);
     
     
@@ -1549,7 +1549,7 @@ void AllocationSequence::CreateStunPorts() {
       session_->allocator()->stun_candidate_keepalive_interval(),
       session_->allocator()->field_trials());
   if (port) {
-    port->SetIceTiebreaker(session_->ice_tiebreaker());
+    port->SetIceTiebreaker(session_->allocator()->ice_tiebreaker());
     session_->AddAllocatedPort(port.release(), this);
     
     
@@ -1652,7 +1652,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config,
       }
     }
     RTC_DCHECK(port != NULL);
-    port->SetIceTiebreaker(session_->ice_tiebreaker());
+    port->SetIceTiebreaker(session_->allocator()->ice_tiebreaker());
     session_->AddAllocatedPort(port.release(), this);
   }
 }
