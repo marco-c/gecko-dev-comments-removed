@@ -3140,6 +3140,8 @@ pref("startup.homepage_override_url_nimbus", "");
 pref("startup.homepage_override_nimbus_maxVersion", "");
 pref("startup.homepage_override_nimbus_minVersion", "");
 
+pref("startup.homepage_override_nimbus_disable_wnp", false);
+
 
 pref("toolkit.contentRelevancy.enabled", false);
 
