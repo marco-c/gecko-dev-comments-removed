@@ -41,6 +41,9 @@ class FieldTrial:
 
 ACTIVE_FIELD_TRIALS: FrozenSet[FieldTrial] = frozenset([
     
+    FieldTrial('WebRTC-Aec3BufferingMaxAllowedExcessRenderBlocksOverride',
+               337900458,
+               date(2024, 9, 1)),
     FieldTrial('WebRTC-Audio-GainController2',
                42232605,
                date(2024, 4, 1)),
