@@ -95,7 +95,9 @@ class AcmReceiver {
   
   
   
-  int GetAudio(int desired_freq_hz, AudioFrame* audio_frame, bool* muted);
+  int GetAudio(int desired_freq_hz,
+               AudioFrame* audio_frame,
+               bool* muted = nullptr);
 
   
   void SetCodecs(const std::map<int, SdpAudioFormat>& codecs);
