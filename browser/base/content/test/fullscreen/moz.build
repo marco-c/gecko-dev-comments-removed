@@ -1,0 +1,9 @@
+
+
+
+
+
+
+TESTING_JS_MODULES += [
+    "DOMFullscreenTestUtils.sys.mjs",
+]
