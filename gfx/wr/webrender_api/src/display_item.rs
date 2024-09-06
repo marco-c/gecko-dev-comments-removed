@@ -323,6 +323,9 @@ pub struct StickyFrameDescriptor {
 
     
     pub key: SpatialTreeItemKey,
+
+    
+    pub transform: Option<PropertyBinding<LayoutTransform>>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
