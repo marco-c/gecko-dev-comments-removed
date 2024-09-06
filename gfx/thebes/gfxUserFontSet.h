@@ -545,8 +545,8 @@ class gfxUserFontSet {
   
   nsRefPtrHashtable<nsCStringHashKey, gfxUserFontFamily> mFontFamilies;
 
-  uint64_t mGeneration;         
-  uint64_t mRebuildGeneration;  
+  mozilla::Atomic<uint64_t> mGeneration;  
+  uint64_t mRebuildGeneration;            
 
   
   bool mLocalRulesUsed;
