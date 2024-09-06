@@ -4,8 +4,14 @@
 
 
 #include "CssAltContent.h"
+#include "mozilla/a11y/DocAccessible.h"
+#include "mozilla/a11y/DocManager.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
 
 namespace mozilla::a11y {
 
@@ -23,11 +29,24 @@ CssAltContent::CssAltContent(nsIContent* aContent) {
     if (parent && (parent->IsGeneratedContentContainerForBefore() ||
                    parent->IsGeneratedContentContainerForAfter() ||
                    parent->IsGeneratedContentContainerForMarker())) {
+      mPseudoElement = parent->AsElement();
       
       frame = parent->GetPrimaryFrame();
       if (!frame) {
         return;
       }
+      
+      mRealElement = parent->GetParentElement();
+      if (!mRealElement) {
+        return;
+      }
+    }
+  }
+  if (!mRealElement) {
+    if (aContent->IsElement()) {
+      mRealElement = aContent->AsElement();
+    } else {
+      return;
     }
   }
   mItems = frame->StyleContent()->AltContentItems();
@@ -38,8 +57,107 @@ void CssAltContent::AppendToString(nsAString& aOut) {
   for (const auto& item : mItems) {
     if (item.IsString()) {
       aOut.Append(NS_ConvertUTF8toUTF16(item.AsString().AsString()));
+    } else if (item.IsAttr()) {
+      
+      
+      MOZ_ASSERT(mRealElement);
+      const auto& attr = item.AsAttr();
+      RefPtr<nsAtom> name = attr.attribute.AsAtom();
+      int32_t nsId = kNameSpaceID_None;
+      RefPtr<nsAtom> ns = attr.namespace_url.AsAtom();
+      if (!ns->IsEmpty()) {
+        nsresult rv = nsNameSpaceManager::GetInstance()->RegisterNameSpace(
+            ns.forget(), nsId);
+        if (NS_FAILED(rv)) {
+          continue;
+        }
+      }
+      if (mRealElement->IsHTMLElement() &&
+          mRealElement->OwnerDoc()->IsHTMLDocument()) {
+        ToLowerCaseASCII(name);
+      }
+      nsAutoString val;
+      if (!mRealElement->GetAttr(nsId, name, val)) {
+        if (RefPtr<nsAtom> fallback = attr.fallback.AsAtom()) {
+          fallback->ToString(val);
+        }
+      }
+      aOut.Append(val);
     }
   }
+}
+
+
+bool CssAltContent::HandleAttributeChange(nsIContent* aContent,
+                                          int32_t aNameSpaceID,
+                                          nsAtom* aAttribute) {
+  
+  if (CssAltContent(aContent).HandleAttributeChange(aNameSpaceID, aAttribute)) {
+    return true;
+  }
+  
+  for (dom::Element* pseudo : {nsLayoutUtils::GetBeforePseudo(aContent),
+                               nsLayoutUtils::GetAfterPseudo(aContent),
+                               nsLayoutUtils::GetMarkerPseudo(aContent)}) {
+    
+    nsIContent* child = pseudo ? pseudo->GetFirstChild() : nullptr;
+    if (child &&
+        CssAltContent(child).HandleAttributeChange(aNameSpaceID, aAttribute)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool CssAltContent::HandleAttributeChange(int32_t aNameSpaceID,
+                                          nsAtom* aAttribute) {
+  for (const auto& item : mItems) {
+    if (!item.IsAttr()) {
+      continue;
+    }
+    MOZ_ASSERT(mRealElement);
+    const auto& attr = item.AsAttr();
+    RefPtr<nsAtom> name = attr.attribute.AsAtom();
+    if (mRealElement->IsHTMLElement() &&
+        mRealElement->OwnerDoc()->IsHTMLDocument()) {
+      ToLowerCaseASCII(name);
+    }
+    if (name != aAttribute) {
+      continue;
+    }
+    int32_t nsId = kNameSpaceID_None;
+    RefPtr<nsAtom> ns = attr.namespace_url.AsAtom();
+    if (!ns->IsEmpty()) {
+      nsresult rv = nsNameSpaceManager::GetInstance()->RegisterNameSpace(
+          ns.forget(), nsId);
+      if (NS_FAILED(rv)) {
+        continue;
+      }
+    }
+    if (nsId != aNameSpaceID) {
+      continue;
+    }
+    
+    DocAccessible* docAcc = GetExistingDocAccessible(mRealElement->OwnerDoc());
+    MOZ_ASSERT(docAcc);
+    if (mPseudoElement) {
+      
+      
+      
+      
+      
+      docAcc->RecreateAccessible(mPseudoElement);
+    } else {
+      
+      MOZ_ASSERT(mRealElement->GetPrimaryFrame());
+      MOZ_ASSERT(mRealElement->GetPrimaryFrame()->IsReplaced());
+      LocalAccessible* acc = docAcc->GetAccessible(mRealElement);
+      MOZ_ASSERT(acc);
+      docAcc->FireDelayedEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, acc);
+    }
+    return true;
+  }
+  return false;
 }
 
 }  

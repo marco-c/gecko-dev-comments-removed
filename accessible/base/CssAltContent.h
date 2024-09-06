@@ -28,7 +28,18 @@ class MOZ_STACK_CLASS CssAltContent {
 
   void AppendToString(nsAString& aOut);
 
+  
+
+
+
+  static bool HandleAttributeChange(nsIContent* aContent, int32_t aNameSpaceID,
+                                    nsAtom* aAttribute);
+
  private:
+  bool HandleAttributeChange(int32_t aNameSpaceID, nsAtom* aAttribute);
+
+  dom::Element* mRealElement = nullptr;
+  dom::Element* mPseudoElement = nullptr;
   mozilla::Span<const mozilla::StyleContentItem> mItems;
 };
 
