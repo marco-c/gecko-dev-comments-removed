@@ -990,7 +990,7 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   PreliminaryHandshakeDone(fd);
 
   NSSSocketControl* infoObject = (NSSSocketControl*)fd->higher->secret;
-  nsSSLIOLayerHelpers& ioLayerHelpers =
+  RefPtr<nsSSLIOLayerHelpers> ioLayerHelpers =
       infoObject->SharedState().IOLayerHelpers();
 
   SSLVersionRange versions(infoObject->GetTLSVersionRange());
@@ -1001,8 +1001,9 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
            static_cast<unsigned int>(versions.max)));
 
   
-  ioLayerHelpers.rememberTolerantAtVersion(infoObject->GetHostName(),
-                                           infoObject->GetPort(), versions.max);
+  ioLayerHelpers->rememberTolerantAtVersion(
+      infoObject->GetHostName(), AssertedCast<uint16_t>(infoObject->GetPort()),
+      versions.max);
 
   SSLChannelInfo channelInfo;
   SECStatus rv = SSL_GetChannelInfo(fd, &channelInfo, sizeof(channelInfo));
@@ -1103,8 +1104,8 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
     rv = SSL_VersionRangeGetDefault(ssl_variant_stream, &defVersion);
     if (rv == SECSuccess && versions.max >= defVersion.max) {
       
-      ioLayerHelpers.removeInsecureFallbackSite(infoObject->GetHostName(),
-                                                infoObject->GetPort());
+      ioLayerHelpers->removeInsecureFallbackSite(infoObject->GetHostName(),
+                                                 infoObject->GetPort());
     }
   }
 
