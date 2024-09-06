@@ -2614,7 +2614,8 @@ void DebugEnvironments::checkHashTablesAfterMovingGC() {
 
 
 
-  proxiedEnvs.checkAfterMovingGC();
+
+
   CheckTableAfterMovingGC(missingEnvs, [this](const auto& entry) {
     CheckGCThingAfterMovingGC(entry.key().scope(), zone());
     

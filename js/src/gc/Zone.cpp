@@ -857,6 +857,8 @@ void Zone::fixupScriptMapsAfterMovingGC(JSTracer* trc) {
 
 #ifdef JSGC_HASH_TABLE_CHECKS
 void Zone::checkScriptMapsAfterMovingGC() {
+  
+
   if (scriptCountsMap) {
     CheckTableAfterMovingGC(*scriptCountsMap, [this](const auto& entry) {
       BaseScript* script = entry.key();
