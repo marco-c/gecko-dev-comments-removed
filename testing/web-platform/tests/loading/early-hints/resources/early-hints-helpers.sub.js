@@ -20,13 +20,18 @@ const CROSS_ORIGIN_RESOURCES_URL = CROSS_ORIGIN + RESOURCES_PATH;
 
 
 
-function navigateToTestWithEarlyHints(test_url, preloads) {
+
+
+
+function navigateToTestWithEarlyHints(test_url, preloads, exclude_preloads_from_ok_response) {
     const params = new URLSearchParams();
     params.set("test_url", test_url);
+    params.set("exclude_preloads_from_ok_response",
+               (!!exclude_preloads_from_ok_response).toString());
     for (const preload of preloads) {
         params.append("preloads", JSON.stringify(preload));
     }
-    const url = "resources/early-hints-test-loader.h2.py?" + params.toString();
+    const url = RESOURCES_PATH +"/early-hints-test-loader.h2.py?" + params.toString();
     window.location.replace(new URL(url, window.location));
 }
 
