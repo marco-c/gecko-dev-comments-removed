@@ -47,6 +47,22 @@ already_AddRefed<RTCRtpScriptTransform> RTCRtpScriptTransform::Constructor(
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aWorker.IsEligibleForMessaging()) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
   auto newTransform = MakeRefPtr<RTCRtpScriptTransform>(ownerWindow);
   RefPtr<RTCTransformEventRunnable> runnable =
       new RTCTransformEventRunnable(aWorker, &newTransform->GetProxy());

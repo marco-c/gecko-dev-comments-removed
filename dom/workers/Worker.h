@@ -42,6 +42,31 @@ class Worker : public DOMEventTargetHelper, public SupportsWeakPtr {
     return Some(EventCallbackDebuggerNotificationType::Worker);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsEligibleForMessaging();
+
   void PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
                    const Sequence<JSObject*>& aTransferable, ErrorResult& aRv);
 
@@ -49,6 +74,8 @@ class Worker : public DOMEventTargetHelper, public SupportsWeakPtr {
                    const StructuredSerializeOptions& aOptions,
                    ErrorResult& aRv);
 
+  
+  
   void PostEventWithOptions(JSContext* aCx, JS::Handle<JS::Value> aOptions,
                             const Sequence<JSObject*>& aTransferable,
                             EventWithOptionsRunnable* aRunnable,
