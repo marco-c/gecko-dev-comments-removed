@@ -191,6 +191,8 @@ add_setup(async function () {
     set: [
       
       ["security.mixed_content.block_active_content", false],
+      
+      ["dom.security.https_first", false],
     ],
   });
 });
