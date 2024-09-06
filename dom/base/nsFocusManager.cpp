@@ -4007,6 +4007,20 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
           return elementInFrame;
         }
         if (!checkSubDocument) {
+          if (aReachedToEndForDocumentNavigation &&
+              StaticPrefs::dom_disable_tab_focus_to_root_element() &&
+              nsContentUtils::IsChromeDoc(iterContent->GetComposedDoc())) {
+            
+            
+            
+            
+            
+            if (!GetRootForChildDocument(iterContent)) {
+              
+              
+              return iterContent;
+            }
+          }
           continue;
         }
 
