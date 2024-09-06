@@ -1181,24 +1181,22 @@ SharedModule ModuleGenerator::finishModule(
     return nullptr;
   }
 
-  MutableCode code = js_new<Code>(mode(), *codeMeta_, codeMetaForAsmJS_);
+  
+  
+  bool keepBytecode = compilerEnv_->debugEnabled() ||
+                      compilerEnv_->mode() == CompileMode::LazyTiering;
+  MutableCode code = js_new<Code>(mode(), *codeMeta_, codeMetaForAsmJS_,
+                                  keepBytecode ? &bytecode : nullptr);
   if (!code || !code->initialize(std::move(funcImports_),
                                  std::move(sharedStubsCodeBlock_),
                                  *sharedStubsLinkData_, std::move(tier1Code))) {
     return nullptr;
   }
 
-  const ShareableBytes* debugBytecode = nullptr;
-  if (compilerEnv_->debugEnabled()) {
-    MOZ_ASSERT(mode() == CompileMode::Once);
-    MOZ_ASSERT(tier() == Tier::Debug);
-    debugBytecode = &bytecode;
-  }
-
   
   
 
-  MutableModule module = js_new<Module>(*moduleMeta, *code, debugBytecode);
+  MutableModule module = js_new<Module>(*moduleMeta, *code);
   if (!module) {
     return nullptr;
   }

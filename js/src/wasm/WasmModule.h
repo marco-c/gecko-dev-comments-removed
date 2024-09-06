@@ -87,10 +87,6 @@ class Module : public JS::WasmModule {
   const SharedCode code_;
 
   
-
-  const SharedBytes debugBytecode_;
-
-  
   
   
 
@@ -134,11 +130,9 @@ class Module : public JS::WasmModule {
 
  public:
   Module(const ModuleMetadata& moduleMeta, const Code& code,
-         const ShareableBytes* debugBytecode = nullptr,
          bool loggingDeserialized = false)
       : moduleMeta_(&moduleMeta),
         code_(&code),
-        debugBytecode_(debugBytecode),
         loggingDeserialized_(loggingDeserialized),
         testingTier2Active_(false) {
     initGCMallocBytesExcludingCode();
@@ -151,7 +145,7 @@ class Module : public JS::WasmModule {
   const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
     return code_->codeMetaForAsmJS();
   }
-  const Bytes& debugBytecode() const { return debugBytecode_->bytes; }
+  const Bytes& bytecode() const { return code().bytecode(); }
   uint32_t tier1CodeMemoryUsed() const { return code_->tier1CodeMemoryUsed(); }
 
   

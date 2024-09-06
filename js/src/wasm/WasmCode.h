@@ -798,6 +798,10 @@ class Code : public ShareableBase<Code> {
 
   
   
+  const SharedBytes bytecode_;
+
+  
+  
   bool hasTier2() const { return hasTier2_; }
   Tiers tiers() const;
   bool hasTier(Tier t) const;
@@ -828,7 +832,8 @@ class Code : public ShareableBase<Code> {
 
  public:
   Code(CompileMode mode, const CodeMetadata& codeMeta,
-       const CodeMetadataForAsmJS* codeMetaForAsmJS);
+       const CodeMetadataForAsmJS* codeMetaForAsmJS,
+       const ShareableBytes* maybeBytecode);
   bool initialized() const { return !!tier1_ && tier1_->initialized(); }
 
   [[nodiscard]] bool initialize(FuncImportVector&& funcImports,
@@ -853,6 +858,11 @@ class Code : public ShareableBase<Code> {
   uint32_t getFuncIndex(JSFunction* fun) const;
 
   uint8_t* trapCode() const { return trapCode_; }
+
+  const Bytes& bytecode() const {
+    MOZ_ASSERT(codeMeta().debugEnabled || mode_ == CompileMode::LazyTiering);
+    return bytecode_->bytes;
+  }
 
   const FuncImport& funcImport(uint32_t funcIndex) const {
     return funcImports_[funcIndex];
