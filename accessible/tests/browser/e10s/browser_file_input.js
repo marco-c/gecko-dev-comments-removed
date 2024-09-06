@@ -48,14 +48,7 @@ addAccessibleTask(
             { once: true }
           )
         );
-
-        
-        content.SpecialPowers.wrap(
-          content.document
-        ).notifyUserGestureActivation();
-
         input.click();
-
         return inputReceived;
       });
     }
