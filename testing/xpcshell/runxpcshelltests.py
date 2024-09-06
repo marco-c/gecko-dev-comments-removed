@@ -2034,6 +2034,11 @@ class XPCShellTests(object):
                 
                 sequential_tests = []
                 self.env["MOZ_CHAOSMODE"] = "0xfb"
+
+                
+                if self.env.get("MOZ_ANDROID_DATA_DIR", ""):
+                    self.env["MOZ_CHAOSMODE"] = "0x3b"
+
                 
                 kwargs["harness_timeout"] = self.harness_timeout * 2
                 for i in range(VERIFY_REPEAT):
