@@ -435,6 +435,7 @@ class Browsertime(Perftest):
         MULTI_OPTS = [
             "--firefox.android.intentArgument",
             "--firefox.args",
+            "--firefox.geckodriverArgs",
             "--firefox.preference",
             "--chrome.traceCategory",
         ]
@@ -568,7 +569,10 @@ class Browsertime(Perftest):
         
         for user_arg in self.browsertime_user_args:
             arg, val = user_arg.split("=", 1)
-            priority1_options.extend([f"--{arg}", val])
+            if val.startswith("-"):
+                priority1_options.extend([f"--{arg}={val}"])
+            else:
+                priority1_options.extend([f"--{arg}", val])
 
         
         
