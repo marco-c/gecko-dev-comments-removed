@@ -446,12 +446,15 @@ class WorkerSameThreadRunnable : public WorkerThreadRunnable {
 
 class WorkerMainThreadRunnable : public Runnable {
  protected:
-  WorkerPrivate* mWorkerPrivate;
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
   nsCOMPtr<nsISerialEventTarget> mSyncLoopTarget;
   const nsCString mTelemetryKey;
+  const char* mName;
 
-  explicit WorkerMainThreadRunnable(WorkerPrivate* aWorkerPrivate,
-                                    const nsACString& aTelemetryKey);
+  explicit WorkerMainThreadRunnable(
+      WorkerPrivate* aWorkerPrivate, const nsACString& aTelemetryKey,
+      const char* aName = "WorkerMainThreadRunnable");
+
   ~WorkerMainThreadRunnable();
 
   virtual bool MainThreadRun() = 0;
@@ -463,7 +466,8 @@ class WorkerMainThreadRunnable : public Runnable {
   
   
   
-  void Dispatch(WorkerStatus aFailStatus, ErrorResult& aRv);
+  void Dispatch(WorkerPrivate* aWorkerPrivate, WorkerStatus aFailStatus,
+                ErrorResult& aRv);
 
  private:
   NS_IMETHOD Run() override;

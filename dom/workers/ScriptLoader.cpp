@@ -295,25 +295,28 @@ class ChannelGetterRunnable final : public WorkerMainThreadRunnable {
 
   virtual bool MainThreadRun() override {
     AssertIsOnMainThread();
+    MOZ_ASSERT(mWorkerRef);
+
+    WorkerPrivate* workerPrivate = mWorkerRef->Private();
 
     
     
     
     
-    mLoadInfo.mLoadingPrincipal = mWorkerPrivate->GetPrincipal();
+    mLoadInfo.mLoadingPrincipal = workerPrivate->GetPrincipal();
     MOZ_DIAGNOSTIC_ASSERT(mLoadInfo.mLoadingPrincipal);
 
     mLoadInfo.mPrincipal = mLoadInfo.mLoadingPrincipal;
 
     
-    nsCOMPtr<nsIURI> baseURI = mWorkerPrivate->GetBaseURI();
+    nsCOMPtr<nsIURI> baseURI = workerPrivate->GetBaseURI();
     MOZ_ASSERT(baseURI);
 
     
-    nsCOMPtr<Document> parentDoc = mWorkerPrivate->GetDocument();
+    nsCOMPtr<Document> parentDoc = workerPrivate->GetDocument();
 
-    mLoadInfo.mLoadGroup = mWorkerPrivate->GetLoadGroup();
-    mLoadInfo.mCookieJarSettings = mWorkerPrivate->CookieJarSettings();
+    mLoadInfo.mLoadGroup = workerPrivate->GetLoadGroup();
+    mLoadInfo.mCookieJarSettings = workerPrivate->CookieJarSettings();
 
     
     nsCOMPtr<nsIURI> url;
@@ -328,7 +331,7 @@ class ChannelGetterRunnable final : public WorkerMainThreadRunnable {
         ReferrerInfo::CreateForFetch(mLoadInfo.mLoadingPrincipal, nullptr);
     mLoadInfo.mReferrerInfo =
         static_cast<ReferrerInfo*>(referrerInfo.get())
-            ->CloneWithNewPolicy(mWorkerPrivate->GetReferrerPolicy());
+            ->CloneWithNewPolicy(workerPrivate->GetReferrerPolicy());
 
     mResult = workerinternals::ChannelFromScriptURLMainThread(
         mLoadInfo.mLoadingPrincipal, parentDoc, mLoadInfo.mLoadGroup, url,
@@ -1849,7 +1852,7 @@ nsresult ChannelFromScriptURLWorkerThread(
       aParent, aScriptURL, aWorkerType, aCredentials, aLoadInfo);
 
   ErrorResult rv;
-  getter->Dispatch(Canceling, rv);
+  getter->Dispatch(aParent, Canceling, rv);
   if (rv.Failed()) {
     NS_ERROR("Failed to dispatch!");
     return rv.StealNSResult();
