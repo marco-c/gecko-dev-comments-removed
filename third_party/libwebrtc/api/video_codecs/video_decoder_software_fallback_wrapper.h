@@ -28,12 +28,6 @@ CreateVideoDecoderSoftwareFallbackWrapper(
     std::unique_ptr<VideoDecoder> sw_fallback_decoder,
     std::unique_ptr<VideoDecoder> hw_decoder);
 
-
-RTC_EXPORT std::unique_ptr<VideoDecoder>
-CreateVideoDecoderSoftwareFallbackWrapper(
-    std::unique_ptr<VideoDecoder> sw_fallback_decoder,
-    std::unique_ptr<VideoDecoder> hw_decoder);
-
 }  
 
 #endif  
