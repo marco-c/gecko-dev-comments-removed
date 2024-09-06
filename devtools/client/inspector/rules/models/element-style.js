@@ -407,9 +407,11 @@ class ElementStyle {
           
           if (
             isCssVariable(computedProp.name) &&
-            !computedProp.textProp.invisible
-          ) {
+            !computedProp.textProp.invisible &&
             
+            
+            !isPropInStartingStyle
+          ) {
             variables.set(computedProp.name, computedProp.value);
           }
         }
