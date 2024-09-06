@@ -272,8 +272,16 @@ bool RemoteDecoderManagerChild::Supports(
       
       
       if (MP4Decoder::IsHEVC(aParams.mConfig.mMimeType)) {
+#if defined(XP_WIN)
+        if (!StaticPrefs::media_wmf_hevc_enabled()) {
+          return false;
+        }
         return aLocation == RemoteDecodeIn::UtilityProcess_MFMediaEngineCDM ||
                aLocation == RemoteDecodeIn::GpuProcess;
+#else
+        
+        return false;
+#endif
       }
       return trackSupport.contains(TrackSupport::Video);
     }
