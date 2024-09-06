@@ -66,6 +66,7 @@ use selectors::parser::{
     AncestorHashes, Combinator, Component, Selector, SelectorIter, SelectorList,
 };
 use selectors::visitor::{SelectorListKind, SelectorVisitor};
+use selectors::OpaqueElement;
 use servo_arc::{Arc, ArcBorrow};
 use smallvec::SmallVec;
 use std::cmp::Ordering;
@@ -2341,6 +2342,27 @@ impl ContainerConditionReference {
 }
 
 
+#[derive(Clone, Copy, Debug)]
+pub struct ScopeRootCandidate {
+    
+    pub root: OpaqueElement,
+    
+    pub proximity: ScopeProximity,
+}
+
+
+
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, PartialOrd, Ord)]
+pub struct ScopeConditionId(u16);
+
+impl ScopeConditionId {
+    
+    pub const fn none() -> Self {
+        Self(0)
+    }
+}
+
+
 
 
 
@@ -2673,6 +2695,20 @@ impl CascadeData {
         }
     }
 
+    pub(crate) fn scope_condition_matches<E>(
+        &self,
+        _id: ScopeConditionId,
+        _stylist: &Stylist,
+        _element: E,
+        _context: &mut MatchingContext<E::Impl>,
+    ) -> Option<Vec<ScopeRootCandidate>>
+    where
+        E: TElement,
+    {
+        
+        None
+    }
+
     fn did_finish_rebuild(&mut self) {
         self.shrink_maps_if_needed();
         self.compute_layer_order();
@@ -2866,6 +2902,7 @@ impl CascadeData {
                             containing_rule_state.layer_id,
                             containing_rule_state.container_condition_id,
                             containing_rule_state.in_starting_style,
+                            ScopeConditionId::none(),
                         );
 
                         if collect_replaced_selectors {
@@ -3449,6 +3486,9 @@ pub struct Rule {
     pub is_starting_style: bool,
 
     
+    pub scope_condition_id: ScopeConditionId,
+
+    
     #[cfg_attr(
         feature = "gecko",
         ignore_malloc_size_of = "Secondary ref. Primary ref is in StyleRule under Stylesheet."
@@ -3497,6 +3537,7 @@ impl Rule {
         layer_id: LayerId,
         container_condition_id: ContainerConditionId,
         is_starting_style: bool,
+        scope_condition_id: ScopeConditionId,
     ) -> Self {
         Rule {
             selector,
@@ -3506,6 +3547,7 @@ impl Rule {
             layer_id,
             container_condition_id,
             is_starting_style,
+            scope_condition_id,
         }
     }
 }
