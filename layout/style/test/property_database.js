@@ -7942,7 +7942,19 @@ var gCSSProperties = {
     applies_to_placeholder: true,
     
     initial_values: ["start"],
-    other_values: ["center", "justify", "end", "match-parent"],
+    other_values: [
+      "center",
+      "justify",
+      "end",
+      "match-parent",
+      
+      "-moz-center",
+      "-webkit-center",
+      "-moz-left",
+      "-webkit-left",
+      "-moz-right",
+      "-webkit-right",
+    ],
     invalid_values: [
       "true",
       "true true",
