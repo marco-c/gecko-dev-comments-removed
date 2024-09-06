@@ -351,6 +351,14 @@ class StoragePrincipalHelper final {
 
   static bool PartitionKeyHasBaseDomain(const nsAString& aPartitionKey,
                                         const nsAString& aBaseDomain);
+
+  
+  
+  
+  
+  
+  static void UpdatePartitionKeyWithForeignAncestorBit(
+      nsAString& aKey, bool aForeignByAncestorContext);
 };
 
 }  
