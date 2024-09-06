@@ -688,16 +688,153 @@ test(() => {
   assert_array_equals(results, ['subscribe() callback']);
   ac.abort();
   results.push('abort() returned');
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   assert_array_equals(results, [
-      'subscribe() callback',
-      'outer abort handler', 'teardown 2', 'teardown 1',
-      'inner abort handler', 'abort() returned',
+      'subscribe() callback', 'inner abort handler', 'teardown 2', 'teardown 1',
+      'outer abort handler', 'abort() returned',
   ]);
   assert_false(activeDuringTeardown1, 'should not be active during teardown callback 1');
   assert_false(activeDuringTeardown2, 'should not be active during teardown callback 2');
   assert_true(abortedDuringTeardown1, 'should be aborted during teardown callback 1');
   assert_true(abortedDuringTeardown2, 'should be aborted during teardown callback 2');
 }, "Unsubscription lifecycle");
+
+
+
+
+
+
+
+
+
+
+
+test(() => {
+  const results = [];
+  const upstream = new Observable(subscriber => {
+    subscriber.signal.addEventListener('abort',
+        e => results.push('upstream abort handler'), {once: true});
+    subscriber.addTeardown(
+        () => results.push(`upstream teardown. reason: ${subscriber.signal.reason}`));
+  });
+  const middle = new Observable(subscriber => {
+    subscriber.signal.addEventListener('abort',
+        e => results.push('middle abort handler'), {once: true});
+    subscriber.addTeardown(
+        () => results.push(`middle teardown. reason: ${subscriber.signal.reason}`));
+    upstream.subscribe({}, {signal: subscriber.signal});
+  });
+  const downstream = new Observable(subscriber => {
+    subscriber.signal.addEventListener('abort',
+        e => results.push('downstream abort handler'), {once: true});
+    subscriber.addTeardown(
+        () => results.push(`downstream teardown. reason: ${subscriber.signal.reason}`));
+    middle.subscribe({}, {signal: subscriber.signal});
+  });
+
+  const ac = new AbortController();
+  downstream.subscribe({}, {signal: ac.signal});
+  ac.abort('Abort!');
+  assert_array_equals(results, [
+      'upstream abort handler',
+      'upstream teardown. reason: Abort!',
+      'middle abort handler',
+      'middle teardown. reason: Abort!',
+      'downstream abort handler',
+      'downstream teardown. reason: Abort!',
+  ]);
+}, "Teardowns are called in upstream->downstream order on " +
+   "consumer-initiated unsubscription");
+
+
+
+
+
+test(() => {
+  const results = [];
+  const upstream = new Observable(subscriber => {
+    subscriber.addTeardown(
+        () => results.push(`upstream teardown. reason: ${subscriber.signal.reason}`));
+  });
+  const middle = new Observable(subscriber => {
+    subscriber.addTeardown(
+        () => results.push(`middle teardown. reason: ${subscriber.signal.reason}`));
+    upstream.subscribe({}, {signal: subscriber.signal});
+  });
+  const downstream = new Observable(subscriber => {
+    subscriber.addTeardown(
+        () => results.push(`downstream teardown. reason: ${subscriber.signal.reason}`));
+    middle.subscribe({}, {signal: subscriber.signal});
+  });
+
+  downstream.subscribe({}, {signal: AbortSignal.abort('Initial abort')});
+  assert_array_equals(results, [
+      "downstream teardown. reason: Initial abort",
+      "middle teardown. reason: Initial abort",
+      "upstream teardown. reason: Initial abort",
+  ]);
+}, "Teardowns are called in downstream->upstream order on " +
+   "consumer-initiated unsubscription with pre-aborted Signal");
+
+
+test(() => {
+  const results = [];
+
+  const source = new Observable(subscriber => {
+    subscriber.addTeardown(() => results.push('source teardown'));
+    subscriber.signal.addEventListener('abort',
+        e => results.push('source abort event'));
+  });
+
+  const middle = new Observable(subscriber => {
+    subscriber.addTeardown(() => results.push('middle teardown'));
+    subscriber.signal.addEventListener('abort',
+        e => results.push('middle abort event'));
+
+    source.subscribe(() => {}, {signal: subscriber.signal});
+  });
+
+  let innerSubscriber = null;
+  const downstream = new Observable(subscriber => {
+    innerSubscriber = subscriber;
+    subscriber.addTeardown(() => results.push('downstream teardown'));
+    subscriber.signal.addEventListener('abort',
+        e => results.push('downstream abort event'));
+
+    middle.subscribe(() => {}, {signal: subscriber.signal});
+  });
+
+  downstream.subscribe();
+
+  
+  innerSubscriber.complete();
+
+  assert_array_equals(results, [
+    'source abort event',
+    'source teardown',
+    'middle abort event',
+    'middle teardown',
+    'downstream abort event',
+    'downstream teardown',
+  ]);
+}, "Producer-initiated unsubscription in a downstream Observable fires abort " +
+   "events before each teardown, in downstream->upstream order");
 
 test(t => {
   let innerSubscriber = null;
