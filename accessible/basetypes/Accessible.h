@@ -238,6 +238,21 @@ class Accessible {
   
 
 
+
+
+  const Accessible* GetClosestCommonInclusiveAncestor(
+      const Accessible* aAcc) const;
+
+  Accessible* GetClosestCommonInclusiveAncestor(Accessible* aAcc) {
+    const Accessible* common =
+        const_cast<const Accessible*>(this)->GetClosestCommonInclusiveAncestor(
+            aAcc);
+    return const_cast<Accessible*>(common);
+  }
+
+  
+
+
   enum class EWhichChildAtPoint { DirectChild, DeepestChild };
 
   virtual Accessible* ChildAtPoint(int32_t aX, int32_t aY,

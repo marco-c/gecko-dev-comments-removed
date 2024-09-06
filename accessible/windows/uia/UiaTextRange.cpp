@@ -30,6 +30,34 @@ static TextLeafPoint GetEndpoint(TextLeafRange& aRange,
   return aRange.End();
 }
 
+static void RemoveExcludedAccessiblesFromRange(TextLeafRange& aRange) {
+  MOZ_ASSERT(aRange);
+  TextLeafPoint start = aRange.Start();
+  TextLeafPoint end = aRange.End();
+  if (start == end) {
+    
+    return;
+  }
+  if (end.mOffset != 0) {
+    return;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  end = end.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
+  
+  
+  ++end.mOffset;
+  if (start <= end) {
+    aRange.SetEnd(end);
+  }
+}
+
 
 
 UiaTextRange::UiaTextRange(TextLeafRange& aRange) {
@@ -277,7 +305,22 @@ UiaTextRange::GetBoundingRectangles(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
 STDMETHODIMP
 UiaTextRange::GetEnclosingElement(
     __RPC__deref_out_opt IRawElementProviderSimple** aRetVal) {
-  return E_NOTIMPL;
+  if (!aRetVal) {
+    return E_INVALIDARG;
+  }
+  *aRetVal = nullptr;
+  TextLeafRange range = GetRange();
+  if (!range) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  RemoveExcludedAccessiblesFromRange(range);
+  if (Accessible* enclosing =
+          range.Start().mAcc->GetClosestCommonInclusiveAncestor(
+              range.End().mAcc)) {
+    RefPtr<IRawElementProviderSimple> uia = MsaaAccessible::GetFrom(enclosing);
+    uia.forget(aRetVal);
+  }
+  return S_OK;
 }
 
 STDMETHODIMP
