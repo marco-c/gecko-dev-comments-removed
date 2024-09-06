@@ -113,3 +113,16 @@ async function testPatternAbsent(id, patternName) {
   `);
   ok(!hasPattern, `${id} doesn't have ${patternName} pattern`);
 }
+
+
+
+
+async function testPythonRaises(expression, message) {
+  let failed = false;
+  try {
+    await runPython(expression);
+  } catch {
+    failed = true;
+  }
+  ok(failed, message);
+}
