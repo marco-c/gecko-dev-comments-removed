@@ -638,6 +638,12 @@ Tester.prototype = {
 
       
       
+      if (name == "ScrollFrameActivityTracker") {
+        continue;
+      }
+
+      
+      
       if (name == "nsHttpConnectionMgr") {
         continue;
       }
