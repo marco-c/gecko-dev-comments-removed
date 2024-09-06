@@ -206,6 +206,11 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   CustomSectionRangeVector customSectionRanges;
 
   
+  
+  
+  FuncDefRangeVector funcDefRanges;
+
+  
   bool parsedBranchHints;
 
   
@@ -252,6 +257,18 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   }
   const FuncType& getFuncType(uint32_t funcIndex) const {
     return getFuncTypeDef(funcIndex).funcType();
+  }
+  uint32_t funcBytecodeOffset(uint32_t funcIndex) const {
+    if (funcIndex < numFuncImports) {
+      return 0;
+    }
+    uint32_t funcDefIndex = funcIndex - numFuncImports;
+    return funcDefRanges[funcDefIndex].bytecodeOffset;
+  }
+  const FuncDefRange& funcDefRange(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= numFuncImports);
+    uint32_t funcDefIndex = funcIndex - numFuncImports;
+    return funcDefRanges[funcDefIndex];
   }
 
   size_t numTables() const { return tables.length(); }

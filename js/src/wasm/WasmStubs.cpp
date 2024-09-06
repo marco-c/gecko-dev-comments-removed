@@ -3002,8 +3002,7 @@ bool wasm::GenerateStubs(const CodeMetadata& codeMeta,
                                 &wrapperOffsets, &code->stackMaps)) {
       return false;
     }
-    if (!code->codeRanges.emplaceBack(funcIndex,  0,
-                                      wrapperOffsets,
+    if (!code->codeRanges.emplaceBack(funcIndex, wrapperOffsets,
                                        false)) {
       return false;
     }

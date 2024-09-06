@@ -61,10 +61,7 @@ bool CompileCompleteTier2(const Bytes& bytecode, const Module& module,
 
 
 
-bool CompilePartialTier2(const Bytes& bytecode, uint32_t funcIndex,
-                         uint32_t funcBytecodeOffset, const Code& code,
-                         UniqueChars* error, UniqueCharsVector* warnings,
-                         Atomic<bool>* cancelled);
+bool CompilePartialTier2(const Code& code, uint32_t funcIndex);
 
 
 

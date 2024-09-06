@@ -838,8 +838,7 @@ static void* RequestTierUp(JSContext* cx, JitActivation* activation) {
 
   
   
-  bool ok = codeBlock->code->requestTierUp(funcIndex,
-                                           codeRange->funcLineOrBytecode());
+  bool ok = codeBlock->code->requestTierUp(funcIndex);
   
   if (!ok) {
     wasm::Log(cx, "Failed to tier-up function=%d in instance=%p.", funcIndex,

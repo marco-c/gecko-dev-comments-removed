@@ -666,6 +666,12 @@ bool ModuleGenerator::compileFuncDef(uint32_t funcIndex,
   MOZ_ASSERT(!finishedFuncDefs_);
   MOZ_ASSERT(funcIndex < codeMeta_->numFuncs());
 
+  if (compilingTier1()) {
+    static_assert(MaxFunctionBytes < UINT32_MAX);
+    uint32_t bodyLength = (uint32_t)(end - begin);
+    funcDefRanges_.infallibleAppend(FuncDefRange(lineOrBytecode, bodyLength));
+  }
+
   uint32_t threshold;
   switch (tier()) {
     case Tier::Baseline:
@@ -911,6 +917,11 @@ bool ModuleGenerator::prepareTier1() {
   }
 
   
+  if (!funcDefRanges_.reserve(codeMeta_->numFuncDefs())) {
+    return false;
+  }
+
+  
   if (!funcImports_.resize(codeMeta_->numFuncImports)) {
     return false;
   }
@@ -1150,6 +1161,10 @@ SharedModule ModuleGenerator::finishModule(
   }
 
   MutableCodeMetadata codeMeta = moduleMeta->codeMeta;
+
+  
+  MOZ_ASSERT(funcDefRanges_.length() == codeMeta->numFuncDefs());
+  codeMeta->funcDefRanges = std::move(funcDefRanges_);
 
   
   if (codeMeta_->nameCustomSectionIndex) {
