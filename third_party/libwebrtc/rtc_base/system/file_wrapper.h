@@ -18,6 +18,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 
 
@@ -89,7 +90,7 @@ class FileWrapper final {
   
   
   
-  long FileSize();
+  absl::optional<size_t> FileSize();
 
   
   size_t Read(void* buf, size_t length);
