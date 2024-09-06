@@ -216,7 +216,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
       
       
       
-      if (wasInSlop &&
+      if (wasInSlop && aEvent.mType == MultiTouchInput::MULTITOUCH_MOVE &&
           (block->WasLongTapProcessed() || block->IsWaitingLongTapResult()) &&
           !block->IsTargetOriginallyConfirmed() && !block->ShouldDropEvents()) {
         INPQ_LOG(

@@ -558,11 +558,12 @@ class APZCLongPressTester : public APZCGestureDetectorTester {
   
   
   
-  void DoLongPressDiscardTouchBlockTest() {
+  void DoLongPressDiscardTouchBlockTest(bool aWithTouchMove) {
     
     
     SCOPED_GFX_PREF_INT("apz.content_response_timeout", 60);
     SCOPED_GFX_PREF_INT("ui.click_hold_context_menus.delay", 30);
+    SCOPED_GFX_PREF_FLOAT("apz.touch_start_tolerance", 0.06);
 
     MockFunction<void(std::string checkPointName)> check;
     {
@@ -572,10 +573,15 @@ class APZCLongPressTester : public APZCGestureDetectorTester {
                                   0, apzc->GetGuid(), _, _))
           .Times(1);
       EXPECT_CALL(check, Call("post long-tap dispatch"));
-      EXPECT_CALL(*mcc,
-                  HandleTap(TapType::eLongTapUp, LayoutDevicePoint(10, 20), 0,
-                            apzc->GetGuid(), _, _))
-          .Times(1);
+
+      
+      
+      if (!aWithTouchMove) {
+        EXPECT_CALL(*mcc,
+                    HandleTap(TapType::eLongTapUp, LayoutDevicePoint(10, 20), 0,
+                              apzc->GetGuid(), _, _))
+            .Times(1);
+      }
       EXPECT_CALL(*mcc, HandleTap(TapType::eLongTap, LayoutDevicePoint(10, 10),
                                   0, apzc->GetGuid(), _, _))
           .Times(1);
@@ -603,8 +609,10 @@ class APZCLongPressTester : public APZCGestureDetectorTester {
     EXPECT_TRUE(secondTouchBlock->ForLongTap());
     uint64_t secondTouchBlockId = secondTouchBlock->GetBlockId();
 
-    mcc->AdvanceByMillis(10);
-    TouchMove(apzc, ScreenIntPoint(10, 20), mcc->Time());
+    if (aWithTouchMove) {
+      mcc->AdvanceByMillis(10);
+      TouchMove(apzc, ScreenIntPoint(10, 20), mcc->Time());
+    }
 
     
     mcc->AdvanceByMillis(10);
@@ -634,14 +642,25 @@ TEST_F(APZCLongPressTester, LongPressPreventDefault) {
 }
 
 TEST_F(APZCLongPressTester, LongPressDiscardBlock) {
-  DoLongPressDiscardTouchBlockTest();
+  DoLongPressDiscardTouchBlockTest(true );
 }
 
 
 
 TEST_F(APZCLongPressTester, LongPressDiscardBlock2) {
   MakeApzcWaitForMainThread();
-  DoLongPressDiscardTouchBlockTest();
+  DoLongPressDiscardTouchBlockTest(true );
+}
+
+
+
+TEST_F(APZCLongPressTester, LongPressDiscardBlock3) {
+  DoLongPressDiscardTouchBlockTest(false );
+}
+
+TEST_F(APZCLongPressTester, LongPressDiscardBlock4) {
+  MakeApzcWaitForMainThread();
+  DoLongPressDiscardTouchBlockTest(false );
 }
 
 TEST_F(APZCGestureDetectorTester, DoubleTap) {
