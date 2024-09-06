@@ -12,6 +12,7 @@
 
 
 
+
 var TypedArrayPrototype = TypedArray.prototype;
 
 verifyProperty(TypedArray.prototype, "findLastIndex", {

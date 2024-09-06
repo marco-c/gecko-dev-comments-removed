@@ -20,6 +20,7 @@
 
 
 
+
 var indexOf = TypedArray.prototype.indexOf;
 
 assert.sameValue(typeof indexOf, 'function');

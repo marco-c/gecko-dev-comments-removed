@@ -19,6 +19,7 @@
 
 
 
+
 var obj = function () {};
 
 testWithTypedArrayConstructors(function(TA) {

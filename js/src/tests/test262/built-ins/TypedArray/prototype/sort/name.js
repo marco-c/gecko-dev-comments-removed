@@ -20,6 +20,7 @@
 
 
 
+
 verifyProperty(TypedArray.prototype.sort, "name", {
   value: "sort",
   writable: false,

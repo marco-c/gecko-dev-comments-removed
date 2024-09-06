@@ -20,6 +20,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag);
 
 verifyProperty(desc.get, "name", {

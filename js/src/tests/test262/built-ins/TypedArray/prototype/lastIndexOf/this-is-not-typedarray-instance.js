@@ -21,6 +21,7 @@
 
 
 
+
 var lastIndexOf = TypedArray.prototype.lastIndexOf;
 
 assert.throws(TypeError, function() {

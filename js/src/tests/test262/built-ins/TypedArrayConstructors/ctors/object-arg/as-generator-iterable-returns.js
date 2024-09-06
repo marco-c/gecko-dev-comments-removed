@@ -16,6 +16,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var obj = (function *() {
     yield 7; yield 42;

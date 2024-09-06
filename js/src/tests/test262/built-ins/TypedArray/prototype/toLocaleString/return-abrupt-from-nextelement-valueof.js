@@ -32,6 +32,7 @@
 
 
 
+
 var calls = 0;
 
 Number.prototype.toLocaleString = function() {

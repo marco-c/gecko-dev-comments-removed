@@ -32,6 +32,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var called = false;
   var result = new TA([42]).reduceRight(function() {

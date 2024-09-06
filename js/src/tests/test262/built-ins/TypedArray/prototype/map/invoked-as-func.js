@@ -21,6 +21,7 @@
 
 
 
+
 var map = TypedArray.prototype.map;
 
 assert.sameValue(typeof map, 'function');

@@ -18,6 +18,7 @@
 
 
 
+
 var fill = TypedArray.prototype.fill;
 
 assert.throws(TypeError, function() {

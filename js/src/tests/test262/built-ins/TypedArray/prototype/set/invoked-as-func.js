@@ -12,6 +12,7 @@
 
 
 
+
 var set = TypedArray.prototype.set;
 
 assert.sameValue(typeof set, 'function');

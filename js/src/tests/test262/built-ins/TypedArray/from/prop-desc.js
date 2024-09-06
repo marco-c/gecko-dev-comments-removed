@@ -12,6 +12,7 @@
 
 
 
+
 verifyNotEnumerable(TypedArray, 'from');
 verifyWritable(TypedArray, 'from');
 verifyConfigurable(TypedArray, 'from');

@@ -15,6 +15,7 @@
 
 
 
+
 var TypedArrayPrototype = TypedArray.prototype;
 
 assert.sameValue(TypedArrayPrototype[Symbol.toStringTag], undefined);

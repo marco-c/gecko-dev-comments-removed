@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(typeof TypedArray.prototype.toSorted, "function", "typeof");
 
 verifyProperty(TypedArray.prototype, "toSorted", {

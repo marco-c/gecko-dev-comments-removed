@@ -15,6 +15,7 @@
 
 
 
+
 var subarray = TypedArray.prototype.subarray;
 
 assert.sameValue(typeof subarray, 'function');

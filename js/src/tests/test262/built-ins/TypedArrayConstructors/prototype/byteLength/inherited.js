@@ -8,6 +8,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   assert.sameValue(TA.prototype.hasOwnProperty("byteLength"), false);
 });

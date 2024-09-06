@@ -20,6 +20,7 @@
 
 
 
+
 verifyProperty(TypedArray.prototype.toLocaleString, "name", {
   value: "toLocaleString",
   writable: false,

@@ -19,6 +19,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([1, 2, 4]);
   var result = sample.map(function(v) {

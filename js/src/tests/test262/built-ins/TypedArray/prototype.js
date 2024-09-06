@@ -13,6 +13,7 @@
 
 
 
+
 verifyNotEnumerable(TypedArray, 'prototype');
 verifyNotWritable(TypedArray, 'prototype');
 verifyNotConfigurable(TypedArray, 'prototype');

@@ -20,6 +20,7 @@
 
 
 
+
 var forEach = TypedArray.prototype.forEach;
 
 assert.sameValue(typeof forEach, 'function');

@@ -20,6 +20,7 @@
 
 
 
+
 var every = TypedArray.prototype.every;
 
 assert.sameValue(typeof every, 'function');

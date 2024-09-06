@@ -26,6 +26,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var other = TA === Float32Array ? Float64Array : Float32Array;
   var src = new other([42, 43]);

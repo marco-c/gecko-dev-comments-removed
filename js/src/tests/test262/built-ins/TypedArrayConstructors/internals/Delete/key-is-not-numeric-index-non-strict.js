@@ -23,6 +23,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   TypedArray.prototype.baz = "baz";
   let sample = new TA(1);

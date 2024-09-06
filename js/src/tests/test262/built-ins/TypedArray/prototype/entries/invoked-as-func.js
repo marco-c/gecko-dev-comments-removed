@@ -23,6 +23,7 @@
 
 
 
+
 var entries = TypedArray.prototype.entries;
 
 assert.sameValue(typeof entries, 'function');

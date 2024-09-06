@@ -24,6 +24,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TypedArray) {
   let values = [0, {
     valueOf() {

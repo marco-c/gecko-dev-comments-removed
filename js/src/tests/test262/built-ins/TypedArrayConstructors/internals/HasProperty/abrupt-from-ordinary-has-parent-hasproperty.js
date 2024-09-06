@@ -27,6 +27,7 @@
 
 
 
+
 var handler = {
   has: function() {
     throw new Test262Error();

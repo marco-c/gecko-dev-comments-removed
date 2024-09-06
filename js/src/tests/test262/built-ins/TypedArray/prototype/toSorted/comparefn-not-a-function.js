@@ -15,6 +15,7 @@
 
 
 
+
 var invalidComparators = [null, true, false, "", /a/g, 42, 42n, [], {}, Symbol()];
 
 testWithTypedArrayConstructors(TA => {

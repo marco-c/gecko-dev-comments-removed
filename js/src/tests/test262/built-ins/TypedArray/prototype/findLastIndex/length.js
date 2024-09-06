@@ -23,6 +23,7 @@
 
 
 
+
 assert.sameValue(TypedArray.prototype.findLastIndex.length, 1);
 
 verifyProperty(TypedArray.prototype.findLastIndex, "length", {

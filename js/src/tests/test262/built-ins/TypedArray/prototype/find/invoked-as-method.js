@@ -20,6 +20,7 @@
 
 
 
+
 var TypedArrayPrototype = TypedArray.prototype;
 
 assert.sameValue(typeof TypedArrayPrototype.find, 'function');

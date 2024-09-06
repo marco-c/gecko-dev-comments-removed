@@ -21,6 +21,7 @@
 
 
 
+
 var reverse = TypedArray.prototype.reverse;
 
 assert.throws(TypeError, function() {

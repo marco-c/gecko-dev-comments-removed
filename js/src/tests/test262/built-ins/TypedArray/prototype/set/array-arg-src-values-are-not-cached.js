@@ -22,6 +22,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA(5);
   var obj = {

@@ -20,6 +20,7 @@
 
 
 
+
 var findLastIndex = TypedArray.prototype.findLastIndex;
 
 assert.sameValue(typeof findLastIndex, 'function');

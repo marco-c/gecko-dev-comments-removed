@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(TypedArray.prototype[Symbol.iterator], TypedArray.prototype.values);
 
 verifyNotEnumerable(TypedArray.prototype, Symbol.iterator);

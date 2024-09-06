@@ -18,6 +18,7 @@
 
 
 
+
 verifyProperty(TypedArray, "name", {
   value: "TypedArray",
   writable: false,

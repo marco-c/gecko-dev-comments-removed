@@ -18,6 +18,7 @@
 
 
 
+
 var findLast = TypedArray.prototype.findLast;
 
 assert.sameValue(typeof findLast, 'function');

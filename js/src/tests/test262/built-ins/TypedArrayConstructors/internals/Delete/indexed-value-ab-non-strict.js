@@ -22,6 +22,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   let proto = TypedArray.prototype;
   let descriptorGetterThrows = {

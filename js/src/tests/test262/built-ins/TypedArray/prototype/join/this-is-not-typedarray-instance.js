@@ -21,6 +21,7 @@
 
 
 
+
 var join = TypedArray.prototype.join;
 
 assert.throws(TypeError, function() {

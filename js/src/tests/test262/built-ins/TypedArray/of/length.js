@@ -24,6 +24,7 @@
 
 
 
+
 verifyProperty(TypedArray.of, "length", {
   value: 0,
   writable: false,
