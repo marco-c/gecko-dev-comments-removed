@@ -14,6 +14,7 @@
 #include "nsPrintfCString.h"
 
 #ifdef XP_WIN
+#  include "PDMFactory.h"
 #  include "WMFDecoderModule.h"
 #endif
 #ifdef MOZ_WIDGET_ANDROID
@@ -84,7 +85,8 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
   }
 #if defined(XP_WIN)
   
-  if (WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::H264)) {
+  auto pdmFactory = MakeRefPtr<PDMFactory>();
+  if (!pdmFactory->SupportsMimeType("video/avc"_ns).isEmpty()) {
     config->mMP4.SetCanDecryptAndDecode(EME_CODEC_H264);
   } else {
     config->mMP4.SetCanDecrypt(EME_CODEC_H264);
@@ -193,7 +195,8 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
   
   
   
-  if (WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::AAC)) {
+  auto pdmFactory = MakeRefPtr<PDMFactory>();
+  if (!pdmFactory->SupportsMimeType("audio/mp4a-latm"_ns).isEmpty()) {
     config->mMP4.SetCanDecrypt(EME_CODEC_AAC);
   }
 #  else
