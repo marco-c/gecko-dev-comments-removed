@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BrowserChild.h"
 
@@ -112,6 +112,7 @@
 #include "nsRefreshDriver.h"
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
+#include "nsVariant.h"
 #include "nsViewManager.h"
 #include "nsWebBrowser.h"
 #include "nsWindowWatcher.h"
@@ -165,16 +166,16 @@ bool BrowserChild::UpdateFrame(const RepaintRequest& aRequest) {
 
   if (aRequest.IsRootContent()) {
     if (PresShell* presShell = GetTopLevelPresShell()) {
-      
-      
+      // Guard against stale updates (updates meant for a pres shell which
+      // has since been torn down and destroyed).
       if (aRequest.GetPresShellId() == presShell->GetPresShellId()) {
         APZCCallbackHelper::UpdateRootFrame(aRequest);
         return true;
       }
     }
   } else {
-    
-    
+    // aRequest.mIsRoot is false, so we are trying to update a subframe.
+    // This requires special handling.
     APZCCallbackHelper::UpdateSubFrame(aRequest);
     return true;
   }
@@ -185,8 +186,8 @@ class BrowserChild::DelayedDeleteRunnable final : public Runnable,
                                                   public nsIRunnablePriority {
   RefPtr<BrowserChild> mBrowserChild;
 
-  
-  
+  // In order to try that this runnable runs after everything that could
+  // possibly touch this tab, we send it through the event queue twice.
   bool mReadyToDelete = false;
 
  public:
@@ -216,13 +217,13 @@ class BrowserChild::DelayedDeleteRunnable final : public Runnable,
     MOZ_ASSERT(mBrowserChild);
 
     if (!mReadyToDelete) {
-      
+      // This time run this runnable at input priority.
       mReadyToDelete = true;
       MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(this));
       return NS_OK;
     }
 
-    
+    // Check in case ActorDestroy was called after RecvDestroy message.
     if (mBrowserChild->IPCOpen()) {
       Unused << PBrowserChild::Send__delete__(mBrowserChild);
     }
@@ -241,7 +242,7 @@ std::map<TabId, RefPtr<BrowserChild>>& NestedBrowserChildMap() {
   static std::map<TabId, RefPtr<BrowserChild>> sNestedBrowserChildMap;
   return sNestedBrowserChildMap;
 }
-}  
+}  // namespace
 
 already_AddRefed<BrowserChild> BrowserChild::FindBrowserChild(
     const TabId& aTabId) {
@@ -253,7 +254,7 @@ already_AddRefed<BrowserChild> BrowserChild::FindBrowserChild(
   return browserChild.forget();
 }
 
-
+/*static*/
 already_AddRefed<BrowserChild> BrowserChild::Create(
     ContentChild* aManager, const TabId& aTabId, const TabContext& aContext,
     BrowsingContext* aBrowsingContext, uint32_t aChromeFlags,
@@ -296,7 +297,7 @@ BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
       mCancelContentJSEpoch(0) {
   mozilla::HoldJSObjects(this);
 
-  
+  // preloaded BrowserChild should not be added to child map
   if (mUniqueId) {
     MOZ_ASSERT(NestedBrowserChildMap().find(mUniqueId) ==
                NestedBrowserChildMap().end());
@@ -313,16 +314,16 @@ BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
 }
 
 const CompositorOptions& BrowserChild::GetCompositorOptions() const {
-  
+  // If you're calling this before mCompositorOptions is set, well.. don't.
   MOZ_ASSERT(mCompositorOptions);
   return mCompositorOptions.ref();
 }
 
 bool BrowserChild::AsyncPanZoomEnabled() const {
-  
-  
-  
-  
+  // This might get called by the TouchEvent::PrefEnabled code before we have
+  // mCompositorOptions populated (bug 1370089). In that case we just assume
+  // APZ is enabled because we're in a content process (because BrowserChild)
+  // and APZ is probably going to be enabled here since e10s is enabled.
   return mCompositorOptions ? mCompositorOptions->UseAPZ() : true;
 }
 
@@ -389,9 +390,9 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
     return NS_ERROR_FAILURE;
   }
   mPuppetWidget->InfallibleCreate(nullptr,
-                                  nullptr,  
+                                  nullptr,  // no parents
                                   LayoutDeviceIntRect(0, 0, 0, 0),
-                                  nullptr);  
+                                  nullptr);  // HandleWidgetEvent
 
   mWebBrowser = nsWebBrowser::Create(this, mPuppetWidget, mBrowsingContext,
                                      aInitialWindowChild);
@@ -400,8 +401,8 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   mWebNav = do_QueryInterface(webBrowser);
   NS_ASSERTION(mWebNav, "nsWebBrowser doesn't implement nsIWebNavigation?");
 
-  
-  
+  // IPC uses a WebBrowser object for which DNS prefetching is turned off
+  // by default. But here we really want it, so enable it explicitly
   mWebBrowser->SetAllowDNSPrefetch(true);
 
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
@@ -427,30 +428,30 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
              !!(mChromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW));
   MOZ_ASSERT(loadContext->UseRemoteSubframes() ==
              !!(mChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW));
-#endif  
+#endif  // defined(DEBUG)
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Few lines before, baseWindow->Create() will end up creating a new
+  // window root in nsGlobalWindowOuter::SetDocShell.
+  // Then this chrome event handler, will be inherited to inner windows.
+  // We want to also set it to the docshell so that inner windows
+  // and any code that has access to the docshell
+  // can all listen to the same chrome event handler.
+  // XXX: ideally, we would set a chrome event handler earlier,
+  // and all windows, even the root one, will use the docshell one.
   nsCOMPtr<nsPIDOMWindowOuter> window = do_GetInterface(WebNavigation());
   NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
   nsCOMPtr<EventTarget> chromeHandler = window->GetChromeEventHandler();
   docShell->SetChromeEventHandler(chromeHandler);
 
-  
-  
+  // Window scrollbar flags only affect top level remote frames, not fission
+  // frames.
   if (mIsTopLevel) {
     nsContentUtils::SetScrollbarsVisibility(
         docShell, !!(mChromeFlags & nsIWebBrowserChrome::CHROME_SCROLLBARS));
   }
 
   nsWeakPtr weakPtrThis = do_GetWeakReference(
-      static_cast<nsIBrowserChild*>(this));  
+      static_cast<nsIBrowserChild*>(this));  // for capture by the lambda
   ContentReceivedInputBlockCallback callback(
       [weakPtrThis](uint64_t aInputBlockId, bool aPreventDefault) {
         if (nsCOMPtr<nsIBrowserChild> browserChild =
@@ -467,8 +468,8 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
     mSessionStoreChild = SessionStoreChild::GetOrCreate(mBrowsingContext);
   }
 
-  
-  
+  // We've all set up, make sure our visibility state is consistent. This is
+  // important for OOP iframes, which start off as hidden.
   UpdateVisibility();
 
   return NS_OK;
@@ -574,7 +575,7 @@ BrowserChild::IsWindowModal(bool* aRetVal) {
 
 NS_IMETHODIMP
 BrowserChild::SetLinkStatus(const nsAString& aStatusText) {
-  
+  // We can only send the status after the ipc machinery is set up
   if (IPCOpen()) {
     SendSetLinkStatus(aStatusText);
   }
@@ -583,15 +584,15 @@ BrowserChild::SetLinkStatus(const nsAString& aStatusText) {
 
 NS_IMETHODIMP
 BrowserChild::SetDimensions(DimensionRequest&& aRequest) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The parent is in charge of the dimension changes. If JS code wants to
+  // change the dimensions (moveTo, screenX, etc.) we send a message to the
+  // parent about the new requested dimension, the parent does the resize/move
+  // then send a message to the child to update itself. For APIs like screenX
+  // this function is called with only the changed values.  In a series of calls
+  // like window.screenX = 10; window.screenY = 10; for the second call, since
+  // screenX is not yet updated we might accidentally reset back screenX to it's
+  // old value. To avoid this, if a parameter did not change, we want the parent
+  // to handle the unchanged values.
 
   double scale = mPuppetWidget ? mPuppetWidget->GetDefaultScale().scale : 1.0;
   SendSetDimensions(aRequest, scale);
@@ -628,8 +629,8 @@ BrowserChild::Blur() { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
 BrowserChild::GetInterface(const nsIID& aIID, void** aSink) {
-  
-  
+  // XXXbz should we restrict the set of interfaces we hand out here?
+  // See bug 537429
   return QueryInterface(aIID, aSink);
 }
 
@@ -651,8 +652,8 @@ BrowserChild::ProvideWindow(nsIOpenWindowInfo* aOpenWindowInfo,
       parent->GetDOMWindow(), aChromeFlags, aModifiers, aCalledFromJS,
       aOpenWindowInfo->GetIsForPrinting());
 
-  
-  
+  // If it turns out we're opening in the current browser, just hand over the
+  // current browser's docshell.
   if (openLocation == nsIBrowserDOMWindow::OPEN_CURRENTWINDOW) {
     nsCOMPtr<nsIWebBrowser> browser = do_GetInterface(WebNavigation());
     *aWindowIsNew = false;
@@ -666,9 +667,9 @@ BrowserChild::ProvideWindow(nsIOpenWindowInfo* aOpenWindowInfo,
     return NS_OK;
   }
 
-  
-  
-  
+  // Note that ProvideWindowCommon may return NS_ERROR_ABORT if the
+  // open window call was canceled.  It's important that we pass this error
+  // code back to our caller.
   ContentChild* cc = ContentChild::GetSingleton();
   return cc->ProvideWindowCommon(
       WrapNotNull(this), aOpenWindowInfo, aChromeFlags, aCalledFromJS, aURI,
@@ -704,8 +705,8 @@ void BrowserChild::DestroyWindow() {
     mSessionStoreChild = nullptr;
   }
 
-  
-  
+  // In case we don't have chance to process all entries, clean all data in
+  // the queue.
   while (mToBeDispatchedMouseData.GetSize() > 0) {
     UniquePtr<CoalescedMouseData> data(
         static_cast<CoalescedMouseData*>(mToBeDispatchedMouseData.PopFront()));
@@ -745,13 +746,13 @@ void BrowserChild::ActorDestroy(ActorDestroyReason why) {
   DestroyWindow();
 
   if (mBrowserChildMessageManager) {
-    
-    
-    
+    // We should have a message manager if the global is alive, but it
+    // seems sometimes we don't.  Assert in aurora/nightly, but don't
+    // crash in release builds.
     MOZ_DIAGNOSTIC_ASSERT(mBrowserChildMessageManager->GetMessageManager());
     if (mBrowserChildMessageManager->GetMessageManager()) {
-      
-      
+      // The messageManager relays messages via the BrowserChild which
+      // no longer exists.
       mBrowserChildMessageManager->DisconnectMessageManager();
     }
   }
@@ -971,11 +972,11 @@ nsresult BrowserChild::UpdateRemotePrintSettings(
       if (NS_WARN_IF(!viewer)) {
         return BrowsingContext::WalkFlag::Skip;
       }
-      
-      
-      
-      
-      
+      // The CanRunScript analysis is not smart enough to see across
+      // the std::function PreOrderWalk uses, so we cheat a bit here, but it is
+      // fine because PreOrderWalk does deal with arbitrary script changing the
+      // BC tree, and our code above is simple enough and keeps strong refs to
+      // everything.
       ([&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         RefPtr<RemotePrintJobChild> printJob =
             static_cast<RemotePrintJobChild*>(
@@ -1011,9 +1012,9 @@ void BrowserChild::DoFakeShow(const ParentShowInfo& aParentShowInfo) {
 }
 
 void BrowserChild::ApplyParentShowInfo(const ParentShowInfo& aInfo) {
-  
-  
-  
+  // Even if we already set real show info, the dpi / rounding & scale may still
+  // be invalid (if BrowserParent wasn't able to get widget it would just send
+  // 0). So better to always set up-to-date values here.
   if (aInfo.dpi() > 0) {
     mPuppetWidget->UpdateBackingScaleCache(aInfo.dpi(), aInfo.widgetRounding(),
                                            aInfo.defaultScale());
@@ -1024,8 +1025,8 @@ void BrowserChild::ApplyParentShowInfo(const ParentShowInfo& aInfo) {
   }
 
   if (!aInfo.fakeShowInfo()) {
-    
-    
+    // Once we've got one ShowInfo from parent, no need to update the values
+    // anymore.
     mDidSetRealShowInfo = true;
   }
 
@@ -1088,19 +1089,19 @@ mozilla::ipc::IPCResult BrowserChild::RecvCompositorOptionsChanged(
     const CompositorOptions& aNewOptions) {
   MOZ_ASSERT(mCompositorOptions);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The only compositor option we currently support changing is APZ
+  // enablement. Even that is only partially supported for now:
+  //   * Going from APZ to non-APZ is fine - we just flip the stored flag.
+  //     Note that we keep the actors (mApzcTreeManager, and the APZChild
+  //     created in InitAPZState()) around (read on for why).
+  //   * Going from non-APZ to APZ is only supported if we were using
+  //     APZ initially (at InitRendering() time) and we are transitioning
+  //     back. In this case, we just reuse the actors which we kept around.
+  //     Fully supporting a non-APZ to APZ transition (i.e. even in cases
+  //     where we initialized as non-APZ) would require setting up the actors
+  //     here. (In that case, we would also have the options of destroying
+  //     the actors in the APZ --> non-APZ case, and always re-creating them
+  //     during a non-APZ --> APZ transition).
   mCompositorOptions->SetUseAPZ(aNewOptions.UseAPZ());
   return IPC_OK();
 }
@@ -1125,10 +1126,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvUpdateDimensions(
   ScreenIntSize screenSize = GetInnerSize();
   ScreenIntRect screenRect = GetOuterRect();
 
-  
-  
-  
-  
+  // Make sure to set the size on the document viewer first.  The
+  // MobileViewportManager needs the content viewer size to be updated before
+  // the reflow, otherwise it gets a stale size when it computes a new CSS
+  // viewport.
   nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(WebNavigation());
   baseWin->SetPositionAndSize(0, 0, screenSize.width, screenSize.height,
                               nsIBaseWindow::eRepaint);
@@ -1172,8 +1173,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvChildToParentMatrix(
     mContentTransformPromise = nullptr;
   }
 
-  
-  
+  // Trigger an intersection observation update since ancestor viewports
+  // changed.
   if (RefPtr<Document> toplevelDoc = GetTopLevelDocument()) {
     if (nsPresContext* pc = toplevelDoc->GetPresContext()) {
       pc->RefreshDriver()->EnsureIntersectionObservationsUpdateHappens();
@@ -1257,14 +1258,14 @@ void BrowserChild::HandleDoubleTap(const CSSPoint& aPoint,
     return;
   }
 
-  
-  
+  // Note: there is nothing to do with the modifiers here, as we are not
+  // synthesizing any sort of mouse event.
   RefPtr<Document> document = GetTopLevelDocument();
   ZoomTarget zoomTarget = CalculateRectToZoomTo(document, aPoint, aMetrics);
-  
-  
-  
-  
+  // The double-tap can be dispatched by any scroll frame (so |aGuid| could be
+  // the guid of any scroll frame), but the zoom-to-rect operation must be
+  // performed by the root content scroll frame, so query its identifiers
+  // for the SendZoomToRect() call rather than using the ones from |aGuid|.
   uint32_t presShellId;
   ViewID viewId;
   if (APZCCallbackHelper::GetOrCreateScrollIdentifiers(
@@ -1282,9 +1283,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvHandleTap(
     const LayoutDevicePoint& aPoint, const Modifiers& aModifiers,
     const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId,
     const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
-  
-  
-  
+  // IPDL doesn't hold a strong reference to protocols as they're not required
+  // to be refcounted. This function can run script, which may trigger a nested
+  // event loop, which may release this, so we hold a strong reference here.
   RefPtr<BrowserChild> kungFuDeathGrip(this);
   RefPtr<PresShell> presShell = GetTopLevelPresShell();
   if (!presShell || !presShell->GetPresContext() || !mAPZEventState) {
@@ -1294,10 +1295,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvHandleTap(
       presShell->GetPresContext()->CSSToDevPixelScale());
   CSSPoint point = aPoint / scale;
 
-  
-  
-  
-  
+  // Stash the guid in InputAPZContext so that when the visual-to-layout
+  // transform is applied to the event's coordinates, we use the right transform
+  // based on the scroll frame being targeted.
+  // The other values don't really matter.
   InputAPZContext context(aGuid, aInputBlockId, nsEventStatus_eSentinel);
 
   switch (aType) {
@@ -1340,9 +1341,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityHandleTap(
     const LayoutDevicePoint& aPoint, const Modifiers& aModifiers,
     const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId,
     const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
-  
-  
-  
+  // IPDL doesn't hold a strong reference to protocols as they're not required
+  // to be refcounted. This function can run script, which may trigger a nested
+  // event loop, which may release this, so we hold a strong reference here.
   RefPtr<BrowserChild> kungFuDeathGrip(this);
   return RecvHandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId,
                        aDoubleTapToZoomMetrics);
@@ -1360,8 +1361,8 @@ void BrowserChild::NotifyAPZStateChange(
       mozilla::services::GetObserverService();
   if (aChange ==
       layers::GeckoContentController::APZStateChange::eTransformEnd) {
-    
-    
+    // This is used by tests to determine when the APZ is done doing whatever
+    // it's doing. XXX generify this as needed when writing additional tests.
     observerService->NotifyObservers(nullptr, "APZ:TransformEnd", nullptr);
     observerService->NotifyObservers(nullptr, "PanZoom:StateChange",
                                      u"NOTHING");
@@ -1430,17 +1431,17 @@ void BrowserChild::ProcessPendingCoalescedTouchData() {
 
 void BrowserChild::ProcessPendingCoalescedMouseDataAndDispatchEvents() {
   if (!mCoalesceMouseMoveEvents || !mCoalescedMouseEventFlusher) {
-    
+    // We don't enable mouse coalescing or we are destroying BrowserChild.
     return;
   }
 
-  
-  
+  // We may reentry the event loop and push more data to
+  // mToBeDispatchedMouseData while dispatching an event.
 
-  
-  
-  
-  
+  // We may have some pending coalesced data while dispatch an event and reentry
+  // the event loop. In that case we don't have chance to consume the remainding
+  // pending data until we get new mouse events. Get some helps from
+  // mCoalescedMouseEventFlusher to trigger it.
   mCoalescedMouseEventFlusher->StartObserver();
 
   while (mToBeDispatchedMouseData.GetSize() > 0) {
@@ -1449,16 +1450,16 @@ void BrowserChild::ProcessPendingCoalescedMouseDataAndDispatchEvents() {
 
     UniquePtr<WidgetMouseEvent> event = data->TakeCoalescedEvent();
     if (event) {
-      
-      
-      
-      
+      // Dispatch the pending events. Using HandleRealMouseButtonEvent
+      // to bypass the coalesce handling in RecvRealMouseMoveEvent. Can't use
+      // RecvRealMouseButtonEvent because we may also put some mouse events
+      // other than mousemove.
       HandleRealMouseButtonEvent(*event, data->GetScrollableLayerGuid(),
                                  data->GetInputBlockId());
     }
   }
-  
-  
+  // mCoalescedMouseEventFlusher may be destroyed when reentrying the event
+  // loop.
   if (mCoalescedMouseEventFlusher) {
     mCoalescedMouseEventFlusher->RemoveObserver();
   }
@@ -1484,7 +1485,7 @@ Maybe<ScreenRect> BrowserChild::GetTopLevelViewportVisibleRectInBrowserCoords()
 void BrowserChild::FlushAllCoalescedMouseData() {
   MOZ_ASSERT(mCoalesceMouseMoveEvents);
 
-  
+  // Move all entries from mCoalescedMouseData to mToBeDispatchedMouseData.
   for (const auto& data : mCoalescedMouseData.Values()) {
     if (!data || data->IsEmpty()) {
       continue;
@@ -1510,23 +1511,23 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
       mCoalescedMouseEventFlusher->StartObserver();
       return IPC_OK();
     }
-    
-    
-    
+    // Can't coalesce current mousemove event. Put the coalesced mousemove data
+    // with the same pointer id to mToBeDispatchedMouseData, coalesce the
+    // current one, and process all pending data in mToBeDispatchedMouseData.
     UniquePtr<CoalescedMouseData> dispatchData =
         MakeUnique<CoalescedMouseData>();
 
     dispatchData->RetrieveDataFrom(*data);
     mToBeDispatchedMouseData.Push(dispatchData.release());
 
-    
+    // Put new data to replace the old one in the hash table.
     CoalescedMouseData* newData =
         mCoalescedMouseData
             .InsertOrUpdate(aEvent.pointerId, MakeUnique<CoalescedMouseData>())
             .get();
     newData->Coalesce(aEvent, aGuid, aInputBlockId);
 
-    
+    // Dispatch all pending mouse events.
     ProcessPendingCoalescedMouseDataAndDispatchEvents();
     mCoalescedMouseEventFlusher->StartObserver();
   } else if (!RecvRealMouseButtonEvent(aEvent, aGuid, aInputBlockId)) {
@@ -1574,13 +1575,13 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseButtonEvent(
     const uint64_t& aInputBlockId) {
   if (mCoalesceMouseMoveEvents && mCoalescedMouseEventFlusher &&
       aEvent.mMessage != eMouseMove) {
-    
-    
-    
-    
-    
-    
-    
+    // When receiving a mouse event other than mousemove, we have to dispatch
+    // all coalesced events before it. However, we can't dispatch all pending
+    // coalesced events directly because we may reentry the event loop while
+    // dispatching. To make sure we won't dispatch disorder events, we move all
+    // coalesced mousemove events and current event to a deque to dispatch them.
+    // When reentrying the event loop and dispatching more events, we put new
+    // events in the end of the nsQueue and dispatch events from the beginning.
     FlushAllCoalescedMouseData();
 
     UniquePtr<CoalescedMouseData> dispatchData =
@@ -1616,19 +1617,19 @@ void BrowserChild::HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
       pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
   localEvent.mWidget = mPuppetWidget;
 
-  
-  
-  
-  
-  
+  // We need one InputAPZContext here to propagate |aGuid| to places in
+  // SendSetTargetAPZCNotification() which apply the visual-to-layout transform,
+  // and another below to propagate the |postLayerization| flag (whose value
+  // we don't know until SendSetTargetAPZCNotification() returns) into
+  // the event dispatch code.
   InputAPZContext context1(aGuid, aInputBlockId, nsEventStatus_eSentinel);
 
-  
-  
-  
-  
-  
-  
+  // Mouse events like eMouseEnterIntoWidget, that are created in the parent
+  // process EventStateManager code, have an input block id which they get from
+  // the InputAPZContext in the parent process stack. However, they did not
+  // actually go through the APZ code and so their mHandledByAPZ flag is false.
+  // Since thos events didn't go through APZ, we don't need to send
+  // notifications for them.
   RefPtr<DisplayportSetListener> postLayerization;
   if (aInputBlockId && localEvent.mFlags.mHandledByAPZ) {
     nsCOMPtr<Document> document(GetTopLevelDocument());
@@ -1645,11 +1646,11 @@ void BrowserChild::HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
     mAPZEventState->ProcessMouseEvent(localEvent, aInputBlockId);
   }
 
-  
-  
-  
-  
-  
+  // Do this after the DispatchWidgetEventViaAPZ call above, so that if the
+  // mouse event triggered a post-refresh AsyncDragMetrics message to be sent
+  // to APZ (from scrollbar dragging in nsSliderFrame), then that will reach
+  // APZ before the SetTargetAPZC message. This ensures the drag input block
+  // gets the drag metrics before handling the input events.
   if (postLayerization) {
     postLayerization->Register();
   }
@@ -1709,10 +1710,10 @@ void BrowserChild::DispatchWheelEvent(const WidgetWheelEvent& aEvent,
 
   localEvent.mWidget = mPuppetWidget;
 
-  
-  
-  
-  
+  // Stash the guid in InputAPZContext so that when the visual-to-layout
+  // transform is applied to the event's coordinates, we use the right transform
+  // based on the scroll frame being targeted.
+  // The other values don't really matter.
   InputAPZContext context(aGuid, aInputBlockId, nsEventStatus_eSentinel);
 
   DispatchWidgetEventViaAPZ(localEvent);
@@ -1730,17 +1731,17 @@ mozilla::ipc::IPCResult BrowserChild::RecvMouseWheelEvent(
     const WidgetWheelEvent& aEvent, const ScrollableLayerGuid& aGuid,
     const uint64_t& aInputBlockId) {
   bool isNextWheelEvent = false;
-  
-  
-  
-  
+  // We only coalesce the current event when
+  // 1. It's eWheel (we don't coalesce eOperationStart and eWheelOperationEnd)
+  // 2. It has same attributes as the coalesced wheel event which is not yet
+  //    fired.
   if (aEvent.mMessage == eWheel) {
     GetIPCChannel()->PeekMessages(
         [&isNextWheelEvent](const IPC::Message& aMsg) -> bool {
           if (aMsg.type() == mozilla::dom::PBrowser::Msg_MouseWheelEvent__ID) {
             isNextWheelEvent = true;
           }
-          return false;  
+          return false;  // Stop peeking.
         });
 
     if (!mCoalescedWheelData.IsEmpty() &&
@@ -1751,7 +1752,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvMouseWheelEvent(
     mCoalescedWheelData.Coalesce(aEvent, aGuid, aInputBlockId);
 
     MOZ_ASSERT(!mCoalescedWheelData.IsEmpty());
-    
+    // If the next event isn't a wheel event, make sure we dispatch.
     if (!isNextWheelEvent) {
       DispatchCoalescedWheelEvent();
     }
@@ -1787,10 +1788,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchEvent(
   WidgetTouchEvent localEvent(aEvent);
   localEvent.mWidget = mPuppetWidget;
 
-  
-  
-  
-  
+  // Stash the guid in InputAPZContext so that when the visual-to-layout
+  // transform is applied to the event's coordinates, we use the right transform
+  // based on the scroll frame being targeted.
+  // The other values don't really matter.
   InputAPZContext context(aGuid, aInputBlockId, aApzResponse);
 
   nsTArray<TouchBehaviorFlags> allowedTouchBehaviors;
@@ -1811,12 +1812,12 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchEvent(
     }
   }
 
-  
+  // Dispatch event to content (potentially a long-running operation)
   nsEventStatus status = DispatchWidgetEventViaAPZ(localEvent);
 
   if (!AsyncPanZoomEnabled()) {
-    
-    
+    // We shouldn't have any e10s platforms that have touch events enabled
+    // without APZ.
     MOZ_ASSERT(false);
     return IPC_OK();
   }
@@ -1865,8 +1866,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchMoveEvent(
       if (sConsecutiveTouchMoveCount > 1) {
         mCoalescedTouchMoveEventFlusher->StartObserver();
       } else {
-        
-        
+        // Flush the pending coalesced touch in order to avoid the first
+        // touchmove be overridden by the second one.
         ProcessPendingCoalescedTouchData();
       }
       return IPC_OK();
@@ -1911,13 +1912,110 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealDragEvent(
     }
   } else if (aEvent.mMessage == eDragOver) {
     if (dragSession) {
-      
-      
+      // This will dispatch 'drag' event at the source if the
+      // drag transaction started in this process.
       dragSession->FireDragEventAtSource(eDrag, aEvent.mModifiers);
     }
   }
 
   DispatchWidgetEventViaAPZ(localEvent);
+  return IPC_OK();
+}
+
+static already_AddRefed<DataTransfer> ConvertToDataTransfer(
+    nsTArray<IPCTransferableData>&& aTransferables, EventMessage aMessage) {
+  // Check if we are receiving any file objects. If we are we will want
+  // to hide any of the other objects coming in from content.
+  bool hasFiles = false;
+  for (uint32_t i = 0; i < aTransferables.Length() && !hasFiles; ++i) {
+    auto& items = aTransferables[i].items();
+    for (uint32_t j = 0; j < items.Length() && !hasFiles; ++j) {
+      if (items[j].data().type() ==
+          IPCTransferableDataType::TIPCTransferableDataBlob) {
+        hasFiles = true;
+      }
+    }
+  }
+  // Add the entries from the IPC to the new DataTransfer
+  RefPtr<DataTransfer> dataTransfer =
+      new DataTransfer(nullptr, aMessage, false, -1);
+  for (uint32_t i = 0; i < aTransferables.Length(); ++i) {
+    auto& items = aTransferables[i].items();
+    for (uint32_t j = 0; j < items.Length(); ++j) {
+      const IPCTransferableDataItem& item = items[j];
+      RefPtr<nsVariantCC> variant = new nsVariantCC();
+      nsresult rv =
+          nsContentUtils::IPCTransferableDataItemToVariant(item, variant);
+      if (NS_FAILED(rv)) {
+        continue;
+      }
+
+      // We should hide this data from content if we have a file, and we
+      // aren't a file.
+      bool hidden =
+          hasFiles && item.data().type() !=
+                          IPCTransferableDataType::TIPCTransferableDataBlob;
+      dataTransfer->SetDataWithPrincipalFromOtherProcess(
+          NS_ConvertUTF8toUTF16(item.flavor()), variant, i,
+          nsContentUtils::GetSystemPrincipal(), hidden);
+    }
+  }
+  return dataTransfer.forget();
+}
+
+mozilla::ipc::IPCResult BrowserChild::RecvInvokeChildDragSession(
+    const MaybeDiscarded<WindowContext>& aSourceWindowContext,
+    const MaybeDiscarded<WindowContext>& aSourceTopWindowContext,
+    nsTArray<IPCTransferableData>&& aTransferables, const uint32_t& aAction) {
+  if (nsCOMPtr<nsIDragService> dragService =
+          do_GetService("@mozilla.org/widget/dragservice;1")) {
+    dragService->StartDragSession();
+    if (RefPtr<nsIDragSession> session = GetDragSession()) {
+      session->SetSourceWindowContext(aSourceWindowContext.GetMaybeDiscarded());
+      session->SetSourceTopWindowContext(
+          aSourceTopWindowContext.GetMaybeDiscarded());
+      session->SetDragAction(aAction);
+
+      RefPtr<DataTransfer> dataTransfer =
+          ConvertToDataTransfer(std::move(aTransferables), eDragStart);
+      session->SetDataTransfer(dataTransfer);
+    }
+  }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult BrowserChild::RecvUpdateDragSession(
+    nsTArray<IPCTransferableData>&& aTransferables,
+    EventMessage aEventMessage) {
+  if (RefPtr<nsIDragSession> session = GetDragSession()) {
+    nsCOMPtr<DataTransfer> dataTransfer =
+        ConvertToDataTransfer(std::move(aTransferables), aEventMessage);
+    session->SetDataTransfer(dataTransfer);
+  }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult BrowserChild::RecvEndDragSession(
+    const bool& aDoneDrag, const bool& aUserCancelled,
+    const LayoutDeviceIntPoint& aDragEndPoint, const uint32_t& aKeyModifiers,
+    const uint32_t& aDropEffect) {
+  nsCOMPtr<nsIDragService> dragService =
+      do_GetService("@mozilla.org/widget/dragservice;1");
+  if (dragService) {
+    RefPtr<nsIDragSession> dragSession = GetDragSession();
+    if (dragSession) {
+      if (aUserCancelled) {
+        dragSession->UserCancelled();
+      }
+
+      RefPtr<DataTransfer> dataTransfer = dragSession->GetDataTransfer();
+      if (dataTransfer) {
+        dataTransfer->SetDropEffectInt(aDropEffect);
+      }
+      dragSession->SetDragEndPoint(aDragEndPoint.x, aDragEndPoint.y);
+    }
+    dragService->EndDragSession(aDoneDrag, aKeyModifiers);
+  }
   return IPC_OK();
 }
 
@@ -1940,8 +2038,8 @@ void BrowserChild::RequestEditCommands(NativeKeyBindingsType aType,
       MOZ_ASSERT_UNREACHABLE("Invalid native key bindings type");
   }
 
-  
-  
+  // Don't send aEvent to the parent process directly because it'll be marked
+  // as posted to remote process.
   WidgetKeyboardEvent localEvent(aEvent);
   SendRequestNativeKeyBindings(static_cast<uint32_t>(aType), localEvent,
                                &aCommands);
@@ -1961,7 +2059,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvUpdateSHistory() {
   return IPC_OK();
 }
 
-
+// In case handling repeated keys takes much time, we skip firing new ones.
 bool BrowserChild::SkipRepeatedKeyEvent(const WidgetKeyboardEvent& aEvent) {
   if (mRepeatedKeyEventTime.IsNull() || !aEvent.CanSkipInRemoteProcess() ||
       (aEvent.mMessage != eKeyDown && aEvent.mMessage != eKeyPress)) {
@@ -1973,14 +2071,14 @@ bool BrowserChild::SkipRepeatedKeyEvent(const WidgetKeyboardEvent& aEvent) {
   if ((aEvent.mMessage == eKeyDown &&
        (mRepeatedKeyEventTime > aEvent.mTimeStamp)) ||
       (mSkipKeyPress && (aEvent.mMessage == eKeyPress))) {
-    
-    
+    // If we skip a keydown event, also the following keypress events should be
+    // skipped.
     mSkipKeyPress |= aEvent.mMessage == eKeyDown;
     return true;
   }
 
   if (aEvent.mMessage == eKeyDown) {
-    
+    // If keydown wasn't skipped, nor should the possible following keypress.
     mRepeatedKeyEventTime = TimeStamp();
     mSkipKeyPress = false;
   }
@@ -2000,12 +2098,12 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
   MOZ_ASSERT_IF(aEvent.mMessage == eKeyPress,
                 aEvent.AreAllEditCommandsInitialized());
 
-  
-  
-  
-  
-  
-  
+  // If content code called preventDefault() on a keydown event, then we don't
+  // want to process any following keypress events which is caused by the
+  // preceding keydown (i.e., default action of the preceding keydown).
+  // In other words, if the keypress is not a default action of the preceding
+  // keydown, we should not stop dispatching keypress event even if the
+  // immediate preceding keydown was consumed.
   const bool isPrecedingKeyDownEventConsumed =
       aEvent.mMessage == eKeyPress && mPreviousConsumedKeyDownCode.isSome() &&
       mPreviousConsumedKeyDownCode.value() == aEvent.mCodeNameIndex;
@@ -2017,42 +2115,42 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
   if (!SkipRepeatedKeyEvent(aEvent) && !isPrecedingKeyDownEventConsumed) {
     nsEventStatus status = DispatchWidgetEventViaAPZ(localEvent);
 
-    
-    
+    // Update the end time of the possible repeated event so that we can skip
+    // some incoming events in case event handling took long time.
     UpdateRepeatedKeyEventEndTime(localEvent);
 
     if (aEvent.mMessage == eKeyDown) {
-      
-      
-      
+      // If eKeyDown is consumed, we should stop dispatching the following
+      // eKeyPress events since the events are default action of eKeyDown.
+      // FIXME:  We should synthesize eKeyPress in this process (bug 1181501).
       if (status == nsEventStatus_eConsumeNoDefault) {
         MOZ_ASSERT_IF(!aEvent.mFlags.mIsSynthesizedForTests,
                       aEvent.mCodeNameIndex != CODE_NAME_INDEX_USE_STRING);
-        
-        
-        
-        
-        
-        
-        
+        // If mPreviousConsumedKeyDownCode is not Nothing, 2 or more keys may be
+        // pressed at same time and their eKeyDown are consumed.  However, we
+        // forget the previous eKeyDown event result here and that might cause
+        // dispatching eKeyPress events caused by the previous eKeyDown in
+        // theory.  However, this should not occur because eKeyPress should be
+        // fired before another eKeyDown, although it's depend on how the native
+        // keyboard event handler is implemented.
         mPreviousConsumedKeyDownCode = Some(aEvent.mCodeNameIndex);
       }
-      
-      
-      
+      // If eKeyDown is not consumed but we know preceding eKeyDown is consumed,
+      // we need to forget it since we should not stop dispatching following
+      // eKeyPress events which are default action of current eKeyDown.
       else if (mPreviousConsumedKeyDownCode.isSome() &&
                aEvent.mCodeNameIndex == mPreviousConsumedKeyDownCode.value()) {
         mPreviousConsumedKeyDownCode.reset();
       }
     }
-    
-    
-    
-    
-    
-    
-    
-    
+    // eKeyPress is a default action of eKeyDown.  Therefore, eKeyPress is fired
+    // between eKeyDown and eKeyUp.  So, received an eKeyUp for eKeyDown which
+    // was consumed means that following eKeyPress events should be dispatched.
+    // Therefore, we need to forget the fact that the preceding eKeyDown was
+    // consumed right now.
+    // NOTE: On Windows, eKeyPress may be fired without preceding eKeyDown if
+    // IME or utility app sends WM_CHAR message.  So, if we don't forget it,
+    // we'd consume unrelated eKeyPress events.
     else if (aEvent.mMessage == eKeyUp &&
              mPreviousConsumedKeyDownCode.isSome() &&
              aEvent.mCodeNameIndex == mPreviousConsumedKeyDownCode.value()) {
@@ -2063,13 +2161,13 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
       localEvent.PreventDefault();
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // If the event's default isn't prevented but the status is no default,
+    // That means that the event was consumed by EventStateManager or something
+    // which is not a usual event handler.  In such case, prevent its default
+    // as a default handler.  For example, when an eKeyPress event matches
+    // with a content accesskey, and it's executed, preventDefault() of the
+    // event won't be called but the status is set to "no default".  Then,
+    // the event shouldn't be handled by nsMenuBarListener in the main process.
     if (!localEvent.DefaultPrevented() &&
         status == nsEventStatus_eConsumeNoDefault) {
       localEvent.PreventDefault();
@@ -2077,27 +2175,27 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
 
     MOZ_DIAGNOSTIC_ASSERT(!localEvent.PropagationStopped());
   }
-  
-  
-  
-  
+  // The keyboard event which we ignore should not be handled in the main
+  // process for shortcut key handling.  For notifying if we skipped it, we can
+  // use "stop propagation" flag here because it must be cleared by
+  // `EventTargetChainItem` if we've dispatched it.
   else {
     localEvent.StopPropagation();
   }
 
-  
-  
+  // If we don't need to send a rely for the given keyboard event, we do nothing
+  // anymore here.
   if (!aEvent.WantReplyFromContentProcess()) {
     return IPC_OK();
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // This is an ugly hack, mNoRemoteProcessDispatch is set to true when the
+  // event's PreventDefault() or StopScrollProcessForwarding() is called.
+  // And then, it'll be checked by ParamTraits<mozilla::WidgetEvent>::Write()
+  // whether the event is being sent to remote process unexpectedly.
+  // However, unfortunately, it cannot check the destination.  Therefore,
+  // we need to clear the flag explicitly here because ParamTraits should
+  // keep checking the flag for avoiding regression.
   localEvent.mFlags.mNoRemoteProcessDispatch = false;
   SendReplyKeyEvent(localEvent, aUUID);
 
@@ -2140,7 +2238,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvNormalPrioritySelectionEvent(
 
 mozilla::ipc::IPCResult BrowserChild::RecvInsertText(
     const nsAString& aStringToInsert) {
-  
+  // Use normal event path to reach focused document.
   WidgetContentCommandEvent localEvent(true, eContentCommandInsertText,
                                        mPuppetWidget);
   localEvent.mString = Some(nsString(aStringToInsert));
@@ -2162,8 +2260,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvPasteTransferable(
   trans->Init(nullptr);
 
   rv = nsContentUtils::IPCTransferableToTransferable(
-      aTransferable, true , trans,
-      false );
+      aTransferable, true /* aAddDataFlavor */, trans,
+      false /* aFilterUnknownFlavors */);
   NS_ENSURE_SUCCESS(rv, IPC_OK());
 
   nsCOMPtr<nsIDocShell> ourDocShell = do_GetInterface(WebNavigation());
@@ -2195,9 +2293,9 @@ bool BrowserChild::DeallocPDocAccessibleChild(
 #endif
 
 RefPtr<VsyncMainChild> BrowserChild::GetVsyncChild() {
-  
-  
-  
+  // Initializing VsyncMainChild here turns on per-BrowserChild Vsync for a
+  // given platform. Note: this only makes sense if nsWindow returns a
+  // window-specific VsyncSource.
 #if defined(MOZ_WAYLAND)
   if (IsWaylandEnabled()) {
     if (auto* actor = static_cast<VsyncMainChild*>(
@@ -2217,14 +2315,14 @@ RefPtr<VsyncMainChild> BrowserChild::GetVsyncChild() {
 mozilla::ipc::IPCResult BrowserChild::RecvLoadRemoteScript(
     const nsAString& aURL, const bool& aRunInGlobalScope) {
   if (!InitBrowserChildMessageManager())
-    
-    
+    // This can happen if we're half-destroyed.  It's not a fatal
+    // error.
     return IPC_OK();
 
   JS::Rooted<JSObject*> mm(RootingCx(),
                            mBrowserChildMessageManager->GetOrCreateWrapper());
   if (!mm) {
-    
+    // This can happen if we're half-destroyed.  It's not a fatal error.
     return IPC_OK();
   }
 
@@ -2245,9 +2343,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvAsyncMessage(
   RefPtr<nsFrameMessageManager> mm =
       mBrowserChildMessageManager->GetMessageManager();
 
-  
-  
-  
+  // We should have a message manager if the global is alive, but it
+  // seems sometimes we don't.  Assert in aurora/nightly, but don't
+  // crash in release builds.
   MOZ_DIAGNOSTIC_ASSERT(mm);
   if (!mm) {
     return IPC_OK();
@@ -2285,8 +2383,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvSwappedWithOtherRemoteLoader(
   nsContentUtils::FirePageHideEventForFrameLoaderSwap(ourDocShell,
                                                       ourEventTarget, true);
 
-  
-  
+  // Owner content type may have changed, so store the possibly updated context
+  // and notify others.
   MaybeInvalidTabContext maybeContext(aContext);
   if (!maybeContext.IsValid()) {
     NS_ERROR(nsPrintfCString("Received an invalid TabContext from "
@@ -2300,7 +2398,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvSwappedWithOtherRemoteLoader(
     MOZ_CRASH("Update to TabContext after swap was denied.");
   }
 
-  
+  // Ignore previous value of mTriedBrowserInit since owner content has changed.
   mTriedBrowserInit = true;
 
   nsContentUtils::FirePageShowEventForFrameLoaderSwap(
@@ -2308,8 +2406,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvSwappedWithOtherRemoteLoader(
 
   docShell->SetInFrameSwap(false);
 
-  
-  
+  // This is needed to get visibility state right in cases when we swapped a
+  // visible tab (foreground in visible window) with a non-visible tab.
   if (RefPtr<Document> doc = docShell->GetDocument()) {
     doc->UpdateVisibilityState();
   }
@@ -2324,8 +2422,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvHandleAccessKey(
   if (pc) {
     if (!pc->EventStateManager()->HandleAccessKey(
             &(const_cast<WidgetKeyboardEvent&>(aEvent)), pc, aCharCodes)) {
-      
-      
+      // If no accesskey was found, inform the parent so that accesskeys on
+      // menus can be handled.
       WidgetKeyboardEvent localEvent(aEvent);
       localEvent.mWidget = mPuppetWidget;
       SendAccessKeyNotHandled(localEvent);
@@ -2339,11 +2437,11 @@ mozilla::ipc::IPCResult BrowserChild::RecvPrintPreview(
     const PrintData& aPrintData, const MaybeDiscardedBrowsingContext& aSourceBC,
     PrintPreviewResolver&& aCallback) {
 #ifdef NS_PRINTING
-  
-  
+  // If we didn't succeed in passing off ownership of aCallback, then something
+  // went wrong.
   auto sendCallbackError = MakeScopeExit([&] {
     if (aCallback) {
-      
+      // signal error
       aCallback(PrintPreviewResultInfo(0, 0, false, false, false, {}, {}, {}));
     }
   });
@@ -2387,8 +2485,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvPrintPreview(
   }
 
   sourceWindow->Print(printSettings,
-                       nullptr,
-                       nullptr, docShellToCloneInto,
+                      /* aRemotePrintJob = */ nullptr,
+                      /* aListener = */ nullptr, docShellToCloneInto,
                       nsGlobalWindowOuter::IsPreview::Yes,
                       nsGlobalWindowOuter::IsForWindowDotPrint::No,
                       std::move(aCallback), nullptr, IgnoreErrors());
@@ -2441,10 +2539,10 @@ mozilla::ipc::IPCResult BrowserChild::CommonPrint(
         aPrintData.remotePrintJob().AsChild());
     outerWindow->Print(
         printSettings, printJob,
-         nullptr,
-         nullptr, nsGlobalWindowOuter::IsPreview::No,
+        /* aListener = */ nullptr,
+        /* aWindowToCloneInto = */ nullptr, nsGlobalWindowOuter::IsPreview::No,
         nsGlobalWindowOuter::IsForWindowDotPrint::No,
-         nullptr, aCachedBrowsingContext, rv);
+        /* aPrintPreviewCallback = */ nullptr, aCachedBrowsingContext, rv);
     if (NS_WARN_IF(rv.Failed())) {
       return IPC_OK();
     }
@@ -2514,16 +2612,16 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
       nsContentPermissionUtils::GetContentPermissionRequestChildById(
           GetTabId());
 
-  
-  
+  // Need to close undeleted ContentPermissionRequestChilds before tab is
+  // closed.
   for (auto& permissionRequestChild : childArray) {
     auto* child = static_cast<RemotePermissionRequest*>(permissionRequestChild);
     child->Destroy();
   }
 
   if (mBrowserChildMessageManager) {
-    
-    
+    // Message handlers are called from the event loop, so it better be safe to
+    // run script.
     MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
     mBrowserChildMessageManager->DispatchTrustedEvent(u"unload"_ns);
   }
@@ -2533,11 +2631,11 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
 
   observerService->RemoveObserver(this, BEFORE_FIRST_PAINT);
 
-  
+  // XXX what other code in ~BrowserChild() should we be running here?
   DestroyWindow();
 
-  
-  
+  // Bounce through the event loop once to allow any delayed teardown runnables
+  // that were just generated to have a chance to run.
   nsCOMPtr<nsIRunnable> deleteRunnable = new DelayedDeleteRunnable(this);
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(deleteRunnable));
 
@@ -2546,11 +2644,11 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
 
 mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
   auto clearPaintWhileInterruptingJS = MakeScopeExit([&] {
-    
-    
-    
-    
-    
+    // We might force a paint, or we might already have painted and this is a
+    // no-op. In either case, once we exit this scope, we need to alert the
+    // ProcessHangMonitor that we've finished responding to what might have
+    // been a request to force paint. This is so that the BackgroundHangMonitor
+    // for force painting can be made to wait again.
     if (aEnabled) {
       ProcessHangMonitor::ClearPaintWhileInterruptingJS();
     }
@@ -2565,7 +2663,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
 
   UpdateVisibility();
 
-  
+  // If we just became visible, try to trigger a paint as soon as possible.
   const bool becameVisible = !wasVisible && IsVisible();
   if (!becameVisible) {
     return IPC_OK();
@@ -2576,10 +2674,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
     return IPC_OK();
   }
 
-  
-  
-  
-  
+  // We don't use BrowserChildBase::GetPresShell() here because that would
+  // create a content viewer if one doesn't exist yet. Creating a content
+  // viewer can cause JS to run, which we want to avoid.
+  // nsIDocShell::GetPresShell returns null if no content viewer exists yet.
   RefPtr<PresShell> presShell = docShell->GetPresShell();
   if (!presShell) {
     return IPC_OK();
@@ -2590,10 +2688,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
   }
 
   Telemetry::AutoTimer<Telemetry::TABCHILD_PAINT_TIME> timer;
-  
-  
-  
-  
+  // If we need to repaint, let's do that right away. No sense waiting until
+  // we get back to the event loop again. We suppress the display port so
+  // that we only paint what's visible. This ensures that the tab we're
+  // switching to paints as quickly as possible.
   presShell->SuppressDisplayport(true);
   if (nsContentUtils::IsSafeToRunScript()) {
     WebWidget()->PaintNowIfNeeded();
@@ -2617,7 +2715,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvNavigateByKey(
   RefPtr<Element> result;
   nsCOMPtr<nsPIDOMWindowOuter> window = do_GetInterface(WebNavigation());
 
-  
+  // Move to the first or last document.
   {
     uint32_t type =
         aForward
@@ -2636,7 +2734,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvNavigateByKey(
     fm->MoveFocus(window, nullptr, type, flags, getter_AddRefs(result));
   }
 
-  
+  // No valid root element was found, so move to the first focusable element.
   if (!result && aForward && !aForDocumentNavigation) {
     fm->MoveFocus(window, nullptr, nsIFocusManager::MOVEFOCUS_FIRST,
                   nsIFocusManager::FLAG_BYKEY, getter_AddRefs(result));
@@ -2684,8 +2782,8 @@ void BrowserChild::InitRenderingState(
   MOZ_ASSERT(aLayersId.IsValid());
   mTextureFactoryIdentifier = aTextureFactoryIdentifier;
 
-  
-  
+  // Pushing layers transactions directly to a separate
+  // compositor context.
   PCompositorBridgeChild* compositorChild = CompositorBridgeChild::Get();
   if (!compositorChild) {
     mLayersConnected = Some(false);
@@ -2706,9 +2804,9 @@ void BrowserChild::InitRenderingState(
     mLayersId = aLayersId;
   }
 
-  
-  
-  
+  // Depending on timing, we might paint too early and fall back to basic
+  // layers. CreateRemoteLayerManager will destroy us if we manage to get a
+  // remote layer manager though, so that's fine.
   MOZ_ASSERT(!mPuppetWidget->HasWindowRenderer() ||
              mPuppetWidget->GetWindowRenderer()->GetBackendType() ==
                  layers::LayersBackend::LAYERS_NONE);
@@ -2719,7 +2817,7 @@ void BrowserChild::InitRenderingState(
 
   if (success) {
     MOZ_ASSERT(mLayersConnected == Some(true));
-    
+    // Succeeded to create "remote" layer manager
     ImageBridgeChild::IdentifyCompositorTextureHost(mTextureFactoryIdentifier);
     gfx::VRManagerChild::IdentifyTextureHost(mTextureFactoryIdentifier);
     InitAPZState();
@@ -2754,8 +2852,8 @@ void BrowserChild::InitAPZState() {
   }
   auto* cbc = CompositorBridgeChild::Get();
 
-  
-  
+  // Initialize the ApzcTreeManager. This takes multiple casts because of ugly
+  // multiple inheritance.
   PAPZCTreeManagerChild* baseProtocol =
       cbc->SendPAPZCTreeManagerConstructor(mLayersId);
   if (!baseProtocol) {
@@ -2768,10 +2866,10 @@ void BrowserChild::InitAPZState() {
 
   mApzcTreeManager = RefPtr<IAPZCTreeManager>(derivedProtocol);
 
-  
-  
-  
-  
+  // Initialize the GeckoContentController for this tab. We don't hold a
+  // reference because we don't need it. The ContentProcessController will hold
+  // a reference to the tab, and will be destroyed by the compositor or ipdl
+  // during destruction.
   RefPtr<GeckoContentController> contentController =
       new ContentProcessController(this);
   APZChild* apzChild = new APZChild(contentController);
@@ -2782,8 +2880,8 @@ IPCResult BrowserChild::RecvUpdateEffects(const EffectsInfo& aEffects) {
   bool needInvalidate = false;
   if (mEffectsInfo.IsVisible() && aEffects.IsVisible() &&
       mEffectsInfo != aEffects) {
-    
-    
+    // If we are staying visible and either the visrect or scale changed we need
+    // to invalidate
     needInvalidate = true;
   }
 
@@ -2792,10 +2890,10 @@ IPCResult BrowserChild::RecvUpdateEffects(const EffectsInfo& aEffects) {
 
   if (needInvalidate) {
     if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
-      
-      
-      
-      
+      // We don't use BrowserChildBase::GetPresShell() here because that would
+      // create a content viewer if one doesn't exist yet. Creating a content
+      // viewer can cause JS to run, which we want to avoid.
+      // nsIDocShell::GetPresShell returns null if no content viewer exists yet.
       if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
         if (nsIFrame* root = presShell->GetRootFrame()) {
           root->InvalidateFrame();
@@ -2813,23 +2911,23 @@ bool BrowserChild::IsVisible() {
 
 void BrowserChild::UpdateVisibility() {
   const bool shouldBeVisible = [&] {
-    
-    
-    
+    // If we're known to be visibility: hidden / display: none, just return
+    // false here, we're pretty sure we don't want to be considered visible
+    // here.
     if (mBrowsingContext && mBrowsingContext->IsUnderHiddenEmbedderElement()) {
       return false;
     }
-    
-    
-    
-    
-    
-    
-    
+    // For OOP iframes, include viewport visibility. For top-level <browser>
+    // elements we don't use this, because the front-end relies on using
+    // `mRenderLayers` when invisible for tab warming purposes.
+    //
+    // An alternative, maybe more consistent approach would be to add an opt-in
+    // into this behavior for top-level tabs managed by the tab-switcher
+    // instead...
     if (!mIsTopLevel && !mEffectsInfo.IsVisible()) {
       return false;
     }
-    
+    // If we're explicitly told not to render layers, we're also invisible.
     if (!mRenderLayers) {
       return false;
     }
@@ -2864,11 +2962,11 @@ void BrowserChild::MakeHidden() {
     return;
   }
 
-  
-  
-  
-  
-  
+  // Due to the nested event loop in ContentChild::ProvideWindowCommon,
+  // it's possible to be told to become hidden before we're finished
+  // setting up a layer manager. We should skip clearing cached layers
+  // in that case, since doing so might accidentally put is into
+  // BasicLayers mode.
   if (mPuppetWidget) {
     if (mPuppetWidget->HasWindowRenderer()) {
       ClearCachedResources();
@@ -2888,15 +2986,15 @@ IPCResult BrowserChild::RecvPreserveLayers(bool aPreserve) {
 }
 
 void BrowserChild::PresShellActivenessMaybeChanged() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We don't use BrowserChildBase::GetPresShell() here because that would
+  // create a content viewer if one doesn't exist yet. Creating a content
+  // viewer can cause JS to run, which we want to avoid.
+  // nsIDocShell::GetPresShell returns null if no content viewer exists yet.
+  //
+  // When this method is called we don't want to go through the browsing context
+  // because we don't want to change the visibility state of the document, which
+  // has side effects like firing events to content, unblocking media playback,
+  // unthrottling timeouts... PresShell activeness has a lot less side effects.
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   if (!docShell) {
     return;
@@ -2928,7 +3026,7 @@ void BrowserChild::SendRequestFocus(bool aCanFocus, CallerType aCallerType) {
 
   BrowsingContext* focusedBC = fm->GetFocusedBrowsingContext();
   if (focusedBC == window->GetBrowsingContext()) {
-    
+    // BrowsingContext has the focus already, do not request again.
     return;
   }
 
@@ -2969,7 +3067,7 @@ nsresult BrowserChild::DoSendAsyncMessage(const nsAString& aMessage,
   return NS_OK;
 }
 
-
+/* static */
 nsTArray<RefPtr<BrowserChild>> BrowserChild::GetAll() {
   StaticMutexAutoLock lock(sBrowserChildrenMutex);
 
@@ -3032,10 +3130,10 @@ void BrowserChild::SchedulePaint() {
     return;
   }
 
-  
-  
-  
-  
+  // We don't use BrowserChildBase::GetPresShell() here because that would
+  // create a content viewer if one doesn't exist yet. Creating a content viewer
+  // can cause JS to run, which we want to avoid. nsIDocShell::GetPresShell
+  // returns null if no content viewer exists yet.
   if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
     if (nsIFrame* root = presShell->GetRootFrame()) {
       root->SchedulePaint();
@@ -3046,23 +3144,23 @@ void BrowserChild::SchedulePaint() {
 void BrowserChild::ReinitRendering() {
   MOZ_ASSERT(mLayersId.IsValid());
 
-  
-  
+  // In some cases, like when we create a windowless browser,
+  // RemoteLayerTreeOwner/BrowserChild is not connected to a compositor.
   if (mLayersConnectRequested.isNothing() ||
       mLayersConnectRequested == Some(false)) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Before we establish a new PLayerTransaction, we must connect our layer tree
+  // id, CompositorBridge, and the widget compositor all together again.
+  // Normally this happens in BrowserParent before BrowserChild is given
+  // rendering information.
+  //
+  // In this case, we will send a sync message to our BrowserParent, which in
+  // turn will send a sync message to the Compositor of the widget owning this
+  // tab. This guarantees the correct association is in place before our
+  // PLayerTransaction constructor message arrives on the cross-process
+  // compositor bridge.
   CompositorOptions options;
   SendEnsureLayersConnected(&options);
   mCompositorOptions = Some(options);
@@ -3097,10 +3195,10 @@ void BrowserChild::ReinitRenderingForDeviceReset() {
   RefPtr<WebRenderLayerManager> lm =
       mPuppetWidget->GetWindowRenderer()->AsWebRender();
   if (lm) {
-    lm->DoDestroy( true);
+    lm->DoDestroy(/* aIsSync */ true);
   }
 
-  
+  // Proceed with destroying and recreating the layer manager.
   ReinitRendering();
 }
 
@@ -3141,7 +3239,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvUIResolutionChanged(
   if (mHasValidInnerSize && oldScreenSize != screenSize) {
     ScreenIntRect screenRect = GetOuterRect();
 
-    
+    // See RecvUpdateDimensions for the order of these operations.
     nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(WebNavigation());
     baseWin->SetPositionAndSize(0, 0, screenSize.width, screenSize.height,
                                 nsIBaseWindow::eRepaint);
@@ -3169,8 +3267,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvSafeAreaInsetsChanged(
       do_GetService("@mozilla.org/gfx/screenmanager;1");
   ScreenIntMargin currentSafeAreaInsets;
   if (screenMgr) {
-    
-    
+    // aSafeAreaInsets is for current screen. But we have to calculate
+    // safe insets for content window.
     int32_t x, y, cx, cy;
     GetDimensions(DimensionKind::Outer, &x, &y, &cx, &cy);
     nsCOMPtr<nsIScreen> screen;
@@ -3192,9 +3290,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvSafeAreaInsetsChanged(
     }
   }
 
-  
-  
-  
+  // https://github.com/w3c/csswg-drafts/issues/4670
+  // Actually we don't set this value on sub document. This behaviour is
+  // same as Blink that safe area insets isn't set on sub document.
 
   return IPC_OK();
 }
@@ -3237,8 +3335,8 @@ ScreenIntSize BrowserChild::GetInnerSize() {
 
 Maybe<nsRect> BrowserChild::GetVisibleRect() const {
   if (mIsTopLevel) {
-    
-    
+    // We are conservative about visible rects for top-level browsers to avoid
+    // artifacts when resizing
     return Nothing();
   }
   return mEffectsInfo.mVisibleRect;
@@ -3251,7 +3349,7 @@ BrowserChild::GetTopLevelViewportVisibleRectInSelfCoords() const {
   }
 
   if (!mChildToParentConversionMatrix) {
-    
+    // We have no way to tell this remote document visible rect right now.
     return Nothing();
   }
 
@@ -3261,8 +3359,8 @@ BrowserChild::GetTopLevelViewportVisibleRectInSelfCoords() const {
     return Nothing();
   }
 
-  
-  
+  // Convert the remote document visible rect to the coordinate system of the
+  // iframe document.
   Maybe<LayoutDeviceRect> rect = UntransformBy(
       *inverse,
       ViewAs<LayoutDevicePixel>(
@@ -3285,26 +3383,26 @@ ScreenIntRect BrowserChild::GetOuterRect() {
 
 void BrowserChild::PaintWhileInterruptingJS() {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasWindowRenderer()) {
-    
-    
+    // Don't bother doing anything now. Better to wait until we receive the
+    // message on the PContent channel.
     return;
   }
 
   MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers( true);
+  RecvRenderLayers(/* aEnabled = */ true);
 }
 
 void BrowserChild::UnloadLayersWhileInterruptingJS() {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasWindowRenderer()) {
-    
-    
+    // Don't bother doing anything now. Better to wait until we receive the
+    // message on the PContent channel.
     return;
   }
 
   MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers( false);
+  RecvRenderLayers(/* aEnabled = */ false);
 }
 
 nsresult BrowserChild::CanCancelContentJS(
@@ -3314,13 +3412,13 @@ nsresult BrowserChild::CanCancelContentJS(
   *aCanCancel = false;
 
   if (aEpoch <= mCancelContentJSEpoch) {
-    
-    
+    // The next page loaded before we got here, so we shouldn't try to cancel
+    // the content JS.
     return NS_OK;
   }
 
-  
-  
+  // If we have session history in the parent we've already performed
+  // the checks following, so we can return early.
   if (mozilla::SessionHistoryInParent()) {
     *aCanCancel = true;
     return NS_OK;
@@ -3341,7 +3439,7 @@ nsresult BrowserChild::CanCancelContentJS(
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (current == -1) {
-    
+    // This tab has no history! Just return.
     return NS_OK;
   }
 
@@ -3352,8 +3450,8 @@ nsresult BrowserChild::CanCancelContentJS(
   nsCOMPtr<nsIURI> currentURI = entry->GetURI();
   if (!currentURI->SchemeIs("http") && !currentURI->SchemeIs("https") &&
       !currentURI->SchemeIs("file")) {
-    
-    
+    // Only cancel content JS for http(s) and file URIs. Other URIs are probably
+    // internal and we should just let them run to completion.
     return NS_OK;
   }
 
@@ -3367,28 +3465,28 @@ nsresult BrowserChild::CanCancelContentJS(
     }
 
     if (aNavigationURI->SchemeIs("javascript")) {
-      
-      
+      // "javascript:" URIs don't (necessarily) trigger navigation to a
+      // different page, so don't allow the current page's JS to terminate.
       return NS_OK;
     }
 
-    
-    
-    
+    // If navigating directly to a URL (e.g. via hitting Enter in the location
+    // bar), then we can cancel anytime the next URL is different from the
+    // current, *excluding* the ref ("#").
     bool equals;
     rv = currentURI->EqualsExceptRef(aNavigationURI, &equals);
     NS_ENSURE_SUCCESS(rv, rv);
     *aCanCancel = !equals;
     return NS_OK;
   }
-  
-  
+  // Note: aNavigationType may also be NAVIGATE_INDEX, in which case we don't
+  // need to do anything special.
 
   int32_t delta = aNavigationIndex > current ? 1 : -1;
   for (int32_t i = current + delta; i != aNavigationIndex + delta; i += delta) {
     nsCOMPtr<nsISHEntry> nextEntry;
-    
-    
+    // If `i` happens to be negative, this call will fail (which is what we
+    // would want to happen).
     rv = history->GetEntryAtIndex(i, getter_AddRefs(nextEntry));
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3396,8 +3494,8 @@ nsresult BrowserChild::CanCancelContentJS(
     nsCOMPtr<nsIURI> thisURI = entry->GetURI();
     nsCOMPtr<nsIURI> nextURI = nextEntry->GetURI();
 
-    
-    
+    // If we changed origin and the load wasn't in a subframe, we know it was
+    // a full document load, so we can cancel the content JS safely.
     if (!laterEntry->GetIsSubFrame()) {
       nsAutoCString thisHost;
       rv = thisURI->GetPrePath(thisHost);
@@ -3427,16 +3525,16 @@ NS_IMETHODIMP BrowserChild::OnStateChange(nsIWebProgress* aWebProgress,
     return NS_OK;
   }
 
-  
-  
-  
+  // We shouldn't need to notify the parent of redirect state changes, since
+  // with DocumentChannel that only happens when we switch to the real channel,
+  // and that's an implementation detail that we can hide.
   if (aStateFlags & nsIWebProgressListener::STATE_IS_REDIRECTED_DOCUMENT) {
     return NS_OK;
   }
 
-  
-  
-  
+  // Our OnStateChange call must have provided the nsIDocShell which the source
+  // comes from. We'll use this to locate the corresponding BrowsingContext in
+  // the parent process.
   nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aWebProgress);
   if (!docShell) {
     MOZ_ASSERT_UNREACHABLE("aWebProgress is null or not a nsIDocShell?");
@@ -3485,16 +3583,16 @@ NS_IMETHODIMP BrowserChild::OnProgressChange(nsIWebProgress* aWebProgress,
     return NS_OK;
   }
 
-  
-  
-  
+  // FIXME: We currently ignore ProgressChange events from out-of-process
+  // subframes both here and in BrowserParent. We may want to change this
+  // behaviour in the future.
   if (!GetBrowsingContext()->IsTopContent()) {
     return NS_OK;
   }
 
-  
-  
-  
+  // As we're being filtered by nsBrowserStatusFilter, we will be passed either
+  // nullptr or 0 for all arguments other than aCurTotalProgress and
+  // aMaxTotalProgress. Don't bother sending them.
   MOZ_ASSERT(!aWebProgress);
   MOZ_ASSERT(!aRequest);
   MOZ_ASSERT(aCurSelfProgress == 0);
@@ -3577,7 +3675,7 @@ NS_IMETHODIMP BrowserChild::OnLocationChange(nsIWebProgress* aWebProgress,
           NS_MutateURI(aLocation).SetUserPass(""_ns).Finalize(annotationURI);
 
       if (NS_FAILED(rv)) {
-        
+        // Ignore failures on about: URIs.
         annotationURI = aLocation;
       }
 
@@ -3602,16 +3700,16 @@ NS_IMETHODIMP BrowserChild::OnStatusChange(nsIWebProgress* aWebProgress,
     return NS_OK;
   }
 
-  
-  
-  
+  // FIXME: We currently ignore StatusChange from out-of-process subframes both
+  // here and in BrowserParent. We may want to change this behaviour in the
+  // future.
   if (!GetBrowsingContext()->IsTopContent()) {
     return NS_OK;
   }
 
-  
-  
-  
+  // As we're being filtered by nsBrowserStatusFilter, we will be passed either
+  // nullptr or NS_OK for all arguments other than aMessage. Don't bother
+  // sending them.
   MOZ_ASSERT(!aWebProgress);
   MOZ_ASSERT(!aRequest);
   MOZ_ASSERT(aStatus == NS_OK);
@@ -3624,17 +3722,17 @@ NS_IMETHODIMP BrowserChild::OnStatusChange(nsIWebProgress* aWebProgress,
 NS_IMETHODIMP BrowserChild::OnSecurityChange(nsIWebProgress* aWebProgress,
                                              nsIRequest* aRequest,
                                              uint32_t aState) {
-  
-  
-  
+  // Security changes are now handled entirely in the parent process
+  // so we don't need to worry about forwarding them (and we shouldn't
+  // be receiving any to forward).
   return NS_OK;
 }
 
 NS_IMETHODIMP BrowserChild::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
                                                    nsIRequest* aRequest,
                                                    uint32_t aEvent) {
-  
-  
+  // The OnContentBlockingEvent only happenes in the parent process. It should
+  // not be seen in the content process.
   MOZ_DIAGNOSTIC_ASSERT(
       false, "OnContentBlockingEvent should not be seen in content process.");
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -3646,9 +3744,9 @@ NS_IMETHODIMP BrowserChild::OnProgressChange64(nsIWebProgress* aWebProgress,
                                                int64_t aMaxSelfProgress,
                                                int64_t aCurTotalProgress,
                                                int64_t aMaxTotalProgress) {
-  
-  
-  
+  // All the events we receive are filtered through an nsBrowserStatusFilter,
+  // which accepts ProgressChange64 events, but truncates the progress values to
+  // uint32_t and calls OnProgressChange.
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -3719,24 +3817,24 @@ BrowserChild::DoesWindowSupportProtectedMedia() {
       NS_IsMainThread(),
       "Protected media support check should be done on main thread only.");
   if (mWindowSupportsProtectedMedia) {
-    
+    // If we've already checked and have a cached result, resolve with that.
     return IsWindowSupportingProtectedMediaPromise::CreateAndResolve(
         mWindowSupportsProtectedMedia.value(), __func__);
   }
   RefPtr<BrowserChild> self = this;
-  
-  
+  // We chain off the promise rather than passing it directly so we can cache
+  // the result and use that for future calls.
   return SendIsWindowSupportingProtectedMedia(ChromeOuterWindowID())
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self](bool isSupported) {
-            
-            
+            // If a result was cached while this check was inflight, ensure the
+            // results match.
             MOZ_ASSERT_IF(
                 self->mWindowSupportsProtectedMedia,
                 self->mWindowSupportsProtectedMedia.value() == isSupported);
-            
-            
+            // Cache the response as it will not change during the lifetime
+            // of this object.
             self->mWindowSupportsProtectedMedia = Some(isSupported);
             return IsWindowSupportingProtectedMediaPromise::CreateAndResolve(
                 self->mWindowSupportsProtectedMedia.value(), __func__);
@@ -3777,7 +3875,7 @@ BrowserChild::ContentTransformsReceived(JSContext* aCx,
   auto* globalObject = xpc::CurrentNativeGlobal(aCx);
   ErrorResult rv;
   if (mChildToParentConversionMatrix) {
-    
+    // Already received content transforms
     RefPtr<Promise> promise =
         Promise::CreateResolvedWithUndefined(globalObject, rv);
     promise.forget(aPromise);

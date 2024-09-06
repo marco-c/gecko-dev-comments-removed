@@ -2031,8 +2031,7 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
     }
     case eDragEventClass: {
       RefPtr<BrowserParent> browserParent = remote;
-      browserParent->Manager()->MaybeInvokeDragSession(browserParent,
-                                                       aEvent->mMessage);
+      browserParent->MaybeInvokeDragSession(aEvent->mMessage);
 
       RefPtr<nsIWidget> widget = browserParent->GetTopLevelWidget();
       nsCOMPtr<nsIDragSession> dragSession =
@@ -2436,7 +2435,7 @@ void EventStateManager::StopTrackingDragGesture(bool aClearInChildProcesses) {
           dragService->GetCurrentSession(mPresContext->GetRootWidget());
       if (!dragSession) {
         
-        dragService->RemoveAllChildProcesses();
+        dragService->RemoveAllBrowsers();
       }
     }
   }
@@ -4345,8 +4344,8 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         
         dragSession->SetOnlyChromeDrop(true);
       }
-      if (ContentChild* child = ContentChild::GetSingleton()) {
-        child->SendUpdateDropEffect(action, dropEffect);
+      if (auto* bc = BrowserChild::GetFrom(presContext->GetDocShell())) {
+        bc->SendUpdateDropEffect(action, dropEffect);
       }
       if (aEvent->HasBeenPostedToRemoteProcess()) {
         dragSession->SetCanDrop(true);
@@ -4392,18 +4391,18 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       ClearGlobalActiveContent(this);
       break;
     }
-    case eDragExit:
+    case eDragExit: {
       
       
       GenerateDragDropEnterExit(presContext, aEvent->AsDragEvent());
-      if (ContentChild* child = ContentChild::GetSingleton()) {
+      if (auto* bc = BrowserChild::GetFrom(presContext->GetDocShell())) {
         
         
-        child->SendUpdateDropEffect(nsIDragService::DRAGDROP_ACTION_NONE,
-                                    nsIDragService::DRAGDROP_ACTION_NONE);
+        bc->SendUpdateDropEffect(nsIDragService::DRAGDROP_ACTION_NONE,
+                                 nsIDragService::DRAGDROP_ACTION_NONE);
       }
       break;
-
+    }
     case eKeyUp:
       
       
