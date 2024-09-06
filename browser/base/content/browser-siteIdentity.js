@@ -727,7 +727,7 @@ var gIdentityHandler = {
       );
     }
     try {
-      return this._IDNService.convertToDisplayIDN(this._uri.host, {});
+      return this._IDNService.convertToDisplayIDN(this._uri.host);
     } catch (e) {
       
       

@@ -7,16 +7,11 @@
 #define nsIDNService_h__
 
 #include "nsIIDNService.h"
-#include "nsCOMPtr.h"
 
 #include "mozilla/RWLock.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 #include "mozilla/net/IDNBlocklistUtils.h"
-#include "mozilla/intl/IDNA.h"
-#include "mozilla/UniquePtr.h"
-
-#include "nsString.h"
-#include "nsStringFwd.h"
+#include "mozilla/Span.h"
 
 class nsIPrefBranch;
 
@@ -41,66 +36,6 @@ class nsIDNService final : public nsIIDNService {
   virtual ~nsIDNService();
 
  private:
-  enum stringPrepFlag {
-    eStringPrepForDNS,
-    eStringPrepForUI,
-    eStringPrepIgnoreErrors
-  };
-
-  
-
-
-
-
-
-
-
-  void normalizeFullStops(nsAString& s);
-
-  
-
-
-
-
-
-
-
-
-
-
-  nsresult stringPrepAndACE(const nsAString& in, nsACString& out,
-                            stringPrepFlag flag);
-
-  
-
-
-  nsresult stringPrep(const nsAString& in, nsAString& out, stringPrepFlag flag);
-
-  
-
-
-
-
-
-
-
-  nsresult decodeACE(const nsACString& in, nsACString& out, stringPrepFlag flag,
-                     const nsACString& tld);
-
-  
-
-
-
-
-
-
-  nsresult UTF8toACE(const nsACString& input, nsACString& ace,
-                     stringPrepFlag flag);
-  nsresult ACEtoUTF8(const nsACString& input, nsACString& _retval,
-                     stringPrepFlag flag);
-
-  nsresult Normalize(const nsACString& input, nsACString& output);
-
   void prefsChanged(const char* pref);
 
   static void PrefChanged(const char* aPref, void* aSelf) {
@@ -108,6 +43,7 @@ class nsIDNService final : public nsIIDNService {
     self->prefsChanged(aPref);
   }
 
+ public:
   
 
 
@@ -135,9 +71,10 @@ class nsIDNService final : public nsIIDNService {
 
 
 
-  bool isLabelSafe(const nsAString& label, const nsAString& tld)
-      MOZ_EXCLUDES(mLock);
+  bool IsLabelSafe(mozilla::Span<const char32_t> aLabel,
+                   mozilla::Span<const char32_t> aTLD) MOZ_EXCLUDES(mLock);
 
+ private:
   
 
 
@@ -168,20 +105,6 @@ class nsIDNService final : public nsIIDNService {
                           mozilla::net::ScriptCombo& savedScript);
 
   
-
-
-  nsresult IDNA2008ToUnicode(const nsACString& input, nsAString& output);
-
-  
-
-
-  nsresult IDNA2008StringPrep(const nsAString& input, nsAString& output,
-                              stringPrepFlag flag);
-
-  
-  mozilla::UniquePtr<mozilla::intl::IDNA> mIDNA;
-
-  
   
   mozilla::RWLock mLock{"nsIDNService"};
 
@@ -192,5 +115,10 @@ class nsIDNService final : public nsIIDNService {
   restrictionProfile mRestrictionProfile MOZ_GUARDED_BY(mLock){
       eASCIIOnlyProfile};
 };
+
+extern "C" MOZ_EXPORT bool mozilla_net_is_label_safe(const char32_t* aLabel,
+                                                     size_t aLabelLen,
+                                                     const char32_t* aTld,
+                                                     size_t aTldLen);
 
 #endif  

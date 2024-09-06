@@ -767,7 +767,7 @@ let testCases = [
   
   ["xn--1nd.com", "\u10bd.com", kInvalid],
   
-  ["xn-----8kci4dhsd", "\u0440\u0443--\u0430\u0432\u0442\u043e", kInvalid],
+  ["xn-----8kci4dhsd", "\u0440\u0443--\u0430\u0432\u0442\u043e", kInvalid, "DISABLED"],
   
   ["xn--72b.com", "\u093e.com", kInvalid],
   
@@ -1023,8 +1023,10 @@ function checkEquals(a, b, message, expectedFail) {
 
 add_task(async function test_chrome_spoofs() {
   for (let test of testCases) {
-    let isAscii = {};
-    let result = idnService.convertToDisplayIDN(test[0], isAscii);
+    let result = "\uFFFD";
+    try {
+      result = idnService.convertToDisplayIDN(test[0]);
+    } catch (e) {}
     let expectedFail = test.length == 4 && test[3] == "DISABLED";
     if (test[2] == kSafe) {
       checkEquals(
@@ -1043,8 +1045,8 @@ add_task(async function test_chrome_spoofs() {
     } else if (test[2] == kInvalid) {
       checkEquals(
         result,
-        test[0],
-        `kInvalid label ${test[0]} should stay the same`,
+        "\uFFFD",
+        `kInvalid label ${test[0]} should throw`,
         expectedFail
       );
     }

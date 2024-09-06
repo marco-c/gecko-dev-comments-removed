@@ -29,6 +29,8 @@
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "mozilla/net/idna_glue.h"
+#include "mozilla/net/MozURL_ffi.h"
 
 class nsIPrincipal;
 class nsIAsyncStreamCopier;
@@ -298,7 +300,6 @@ int32_t NS_GetDefaultPort(const char* scheme,
 
 
 
-nsresult NS_DomainToASCII(const nsACString& aHost, nsACString& aASCII);
 
 
 
@@ -307,7 +308,24 @@ nsresult NS_DomainToASCII(const nsACString& aHost, nsACString& aASCII);
 
 
 
-nsresult NS_DomainToDisplay(const nsACString& aHost, nsACString& aDisplay);
+
+
+
+
+
+inline nsresult NS_DomainToASCII(const nsACString& aDomain,
+                                 nsACString& aASCII) {
+  return mozilla_net_domain_to_ascii_impl(&aDomain, false, &aASCII);
+}
+
+
+
+
+
+inline nsresult NS_DomainToASCIIAllowAnyGlyphfulASCII(const nsACString& aDomain,
+                                                      nsACString& aASCII) {
+  return mozilla_net_domain_to_ascii_impl(&aDomain, true, &aASCII);
+}
 
 
 
@@ -315,7 +333,57 @@ nsresult NS_DomainToDisplay(const nsACString& aHost, nsACString& aDisplay);
 
 
 
-nsresult NS_DomainToUnicode(const nsACString& aHost, nsACString& aUnicode);
+
+
+
+
+
+
+
+
+
+
+
+inline nsresult NS_DomainToDisplay(const nsACString& aDomain,
+                                   nsACString& aDisplay) {
+  return mozilla_net_domain_to_display_impl(&aDomain, false, &aDisplay);
+}
+
+
+
+
+
+inline nsresult NS_DomainToDisplayAllowAnyGlyphfulASCII(
+    const nsACString& aDomain, nsACString& aDisplay) {
+  return mozilla_net_domain_to_display_impl(&aDomain, true, &aDisplay);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline nsresult NS_DomainToUnicode(const nsACString& aDomain,
+                                   nsACString& aUnicode) {
+  return mozilla_net_domain_to_unicode_impl(&aDomain, false, &aUnicode);
+}
+
+
+
+
+
+inline nsresult NS_DomainToUnicodeAllowAnyGlyphfulASCII(
+    const nsACString& aDomain, nsACString& aDisplay) {
+  return mozilla_net_domain_to_unicode_impl(&aDomain, true, &aDisplay);
+}
 
 
 

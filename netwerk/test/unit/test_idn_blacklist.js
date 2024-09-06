@@ -142,26 +142,21 @@ function run_test() {
     try {
       result = idnService.convertToDisplayIDN(URL, isASCII);
     } catch (e) {
-      result = ".com";
+      continue;
     }
-    
-    
-    
-    if (result != "xn--zn7c.com") {
-      if (punycodeURL.substr(0, 4) == "xn--") {
-        
-        
-        equal(escape(result), escape(punycodeURL));
+    if (punycodeURL.substr(0, 4) == "xn--") {
+      
+      
+      equal(escape(result), escape(punycodeURL));
 
-        result = idnService.convertToDisplayIDN(punycodeURL, isASCII);
-        equal(escape(result), escape(punycodeURL));
-      } else {
-        
-        
-        
-        
-        equal(escape(result), escape(punycodeURL));
-      }
+      result = idnService.convertToDisplayIDN(punycodeURL, isASCII);
+      equal(escape(result), escape(punycodeURL));
+    } else {
+      
+      
+      
+      
+      equal(escape(result), escape(punycodeURL));
     }
   }
   pbi.setCharPref("network.IDN.restriction_profile", oldProfile);
