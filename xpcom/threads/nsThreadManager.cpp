@@ -91,8 +91,12 @@ nsresult BackgroundEventTarget::Init() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  rv = pool->SetIdleThreadGraceTimeout(1000);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
   nsCOMPtr<nsIThreadPool> ioPool(new nsThreadPool());
-  NS_ENSURE_TRUE(pool, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(ioPool, NS_ERROR_FAILURE);
 
   
   
@@ -108,6 +112,10 @@ nsresult BackgroundEventTarget::Init() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  
+  
+  
+  
   rv = ioPool->SetThreadLimit(4);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -116,6 +124,10 @@ nsresult BackgroundEventTarget::Init() {
 
   
   rv = ioPool->SetIdleThreadMaximumTimeout(300000);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = ioPool->SetIdleThreadGraceTimeout(500);
   NS_ENSURE_SUCCESS(rv, rv);
 
   pool.swap(mPool);
