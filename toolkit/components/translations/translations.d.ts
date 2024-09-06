@@ -271,10 +271,27 @@ export interface SupportedLanguages {
 export type TranslationErrors = "engine-load-error";
 
 export type SelectTranslationsPanelState =
+  
   | { phase: "closed"; }
+
+  
   | { phase: "idle"; fromLanguage: string; toLanguage: string, sourceText: string, }
+
+  
+  
+  | { phase: "init-failure"; event: Event, screenX: number, screenY: number, sourceText: string, langPairPromise: Promise<{fromLang?: string, toLang?: string}> }
+
+  
   | { phase: "translation-failure"; fromLanguage: string; toLanguage: string, sourceText: string, }
+
+  
   | { phase: "translatable"; fromLanguage: string; toLanguage: string, sourceText: string, }
+
+  
   | { phase: "translating"; fromLanguage: string; toLanguage: string, sourceText: string, }
+
+  
   | { phase: "translated"; fromLanguage: string; toLanguage: string, sourceText: string, translatedText: string, }
+
+  
   | { phase: "unsupported"; detectedLanguage: string; toLanguage: string, sourceText: string }
