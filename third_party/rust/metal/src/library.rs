@@ -148,7 +148,7 @@ impl FunctionConstantRef {
     }
 }
 
-bitflags::bitflags! {
+bitflags! {
     /// Only available on (macos(11.0), ios(14.0))
     ///
     /// See <https://developer.apple.com/documentation/metal/mtlfunctionoptions/>
@@ -261,6 +261,8 @@ impl FunctionHandleRef {
         unsafe { msg_send![self, functionType] }
     }
 }
+
+
 
 
 

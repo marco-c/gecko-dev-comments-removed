@@ -228,37 +228,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/thiserror/1.0.63")]
+#![doc(html_root_url = "https://docs.rs/thiserror/1.0.61")]
 #![allow(
     clippy::module_name_repetitions,
     clippy::needless_lifetimes,

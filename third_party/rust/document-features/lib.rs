@@ -41,6 +41,8 @@
 
 
 
+
+
 #![doc = self_test!(
 
 
@@ -254,11 +256,11 @@ fn document_features_impl(args: &Args) -> Result<TokenStream, TokenStream> {
     let mut cargo_toml = std::fs::read_to_string(Path::new(&path).join("Cargo.toml"))
         .map_err(|e| error(&format!("Can't open Cargo.toml: {:?}", e)))?;
 
-    if !has_doc_comments(&cargo_toml) {
+    if !cargo_toml.contains("\n##") && !cargo_toml.contains("\n#!") {
         
         
         if let Ok(orig) = std::fs::read_to_string(Path::new(&path).join("Cargo.toml.orig")) {
-            if has_doc_comments(&orig) {
+            if orig.contains("##") || orig.contains("#!") {
                 cargo_toml = orig;
             }
         }
@@ -266,109 +268,6 @@ fn document_features_impl(args: &Args) -> Result<TokenStream, TokenStream> {
 
     let result = process_toml(&cargo_toml, args).map_err(|e| error(&e))?;
     Ok(std::iter::once(proc_macro::TokenTree::from(proc_macro::Literal::string(&result))).collect())
-}
-
-
-fn has_doc_comments(cargo_toml: &str) -> bool {
-    let mut lines = cargo_toml.lines().map(str::trim);
-    while let Some(line) = lines.next() {
-        if line.starts_with("## ") || line.starts_with("#! ") {
-            return true;
-        }
-        let before_coment = line.split_once('#').map_or(line, |(before, _)| before);
-        if line.starts_with("#") {
-            continue;
-        }
-        if let Some((_, mut quote)) = before_coment.split_once("\"\"\"") {
-            loop {
-                
-                if let Some((_, s)) = quote.split_once('\\') {
-                    quote = s.strip_prefix('\\').or_else(|| s.strip_prefix('"')).unwrap_or(s);
-                    continue;
-                }
-                
-                if let Some((_, out_quote)) = quote.split_once("\"\"\"") {
-                    let out_quote = out_quote.trim_start_matches('"');
-                    let out_quote =
-                        out_quote.split_once('#').map_or(out_quote, |(before, _)| before);
-                    if let Some((_, q)) = out_quote.split_once("\"\"\"") {
-                        quote = q;
-                        continue;
-                    }
-                    break;
-                };
-                match lines.next() {
-                    Some(l) => quote = l,
-                    None => return false,
-                }
-            }
-        }
-    }
-    false
-}
-
-#[test]
-fn test_has_doc_coment() {
-    assert!(has_doc_comments("foo\nbar\n## comment\nddd"));
-    assert!(!has_doc_comments("foo\nbar\n#comment\nddd"));
-    assert!(!has_doc_comments(
-        r#"
-[[package.metadata.release.pre-release-replacements]]
-exactly = 1 # not a doc comment
-file = "CHANGELOG.md"
-replace = """
-<!-- next-header -->
-## [Unreleased] - ReleaseDate
-"""
-search = "<!-- next-header -->"
-array = ["""foo""", """
-bar""", """eee
-## not a comment
-"""]
-    "#
-    ));
-    assert!(has_doc_comments(
-        r#"
-[[package.metadata.release.pre-release-replacements]]
-exactly = 1 # """
-file = "CHANGELOG.md"
-replace = """
-<!-- next-header -->
-## [Unreleased] - ReleaseDate
-"""
-search = "<!-- next-header -->"
-array = ["""foo""", """
-bar""", """eee
-## not a comment
-"""]
-## This is a comment
-feature = "45"
-        "#
-    ));
-
-    assert!(!has_doc_comments(
-        r#"
-[[package.metadata.release.pre-release-replacements]]
-value = """" string \"""
-## within the string
-\""""
-another_string = """"" # """
-## also within"""
-"#
-    ));
-
-    assert!(has_doc_comments(
-        r#"
-[[package.metadata.release.pre-release-replacements]]
-value = """" string \"""
-## within the string
-\""""
-another_string = """"" # """
-## also within"""
-## out of the string
-foo = bar
-        "#
-    ));
 }
 
 fn process_toml(cargo_toml: &str, args: &Args) -> Result<String, String> {
@@ -566,20 +465,14 @@ fn test_get_balanced() {
 #[doc(hidden)]
 
 pub fn self_test_helper(input: TokenStream) -> TokenStream {
-    let mut code = String::new();
-    for line in (&input).to_string().trim_matches(|c| c == '"' || c == '#').lines() {
-        
-        
-        if line.strip_prefix('#').map_or(false, |x| x.is_empty() || x.starts_with(' ')) {
-            code += "#";
-        }
-        code += line;
-        code += "\n";
-    }
-    process_toml(&code, &Args::default()).map_or_else(
-        |e| error(&e),
-        |r| std::iter::once(proc_macro::TokenTree::from(proc_macro::Literal::string(&r))).collect(),
-    )
+    process_toml((&input).to_string().trim_matches(|c| c == '"' || c == '#'), &Args::default())
+        .map_or_else(
+            |e| error(&e),
+            |r| {
+                std::iter::once(proc_macro::TokenTree::from(proc_macro::Literal::string(&r)))
+                    .collect()
+            },
+        )
 }
 
 #[cfg(feature = "self-test")]
@@ -613,8 +506,6 @@ macro_rules! self_test {
         )
     };
 }
-
-use self_test;
 
 
 
