@@ -32,11 +32,7 @@ class RtpVideoSenderInterface : public EncodedImageCallback,
                                 public FecControllerOverride {
  public:
   
-  
-  
-  virtual void SetActiveModules(const std::vector<bool>& active_modules) = 0;
-  
-  virtual void Stop() = 0;
+  virtual void SetSending(bool enabled) = 0;
   virtual bool IsActive() = 0;
 
   virtual void OnNetworkAvailability(bool network_available) = 0;

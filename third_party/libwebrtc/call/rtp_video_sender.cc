@@ -470,86 +470,42 @@ RtpVideoSender::RtpVideoSender(
 }
 
 RtpVideoSender::~RtpVideoSender() {
-  
-  
-  transport_checker_.Detach();
-
+  RTC_DCHECK_RUN_ON(&transport_checker_);
   SetActiveModulesLocked(
-      std::vector<bool>(rtp_streams_.size(), false));
-
-  RTC_DCHECK(!registered_for_feedback_);
+      false);
 }
 
-void RtpVideoSender::Stop() {
+void RtpVideoSender::SetSending(bool enabled) {
   RTC_DCHECK_RUN_ON(&transport_checker_);
   MutexLock lock(&mutex_);
-  if (!active_)
+  if (enabled == active_) {
     return;
-
-  const std::vector<bool> active_modules(rtp_streams_.size(), false);
-  SetActiveModulesLocked(active_modules);
+  }
+  SetActiveModulesLocked(enabled);
 }
 
-void RtpVideoSender::SetActiveModules(const std::vector<bool>& active_modules) {
+void RtpVideoSender::SetActiveModulesLocked(bool sending) {
   RTC_DCHECK_RUN_ON(&transport_checker_);
-  MutexLock lock(&mutex_);
-  return SetActiveModulesLocked(active_modules);
-}
-
-void RtpVideoSender::SetActiveModulesLocked(
-    const std::vector<bool>& active_modules) {
-  RTC_DCHECK_RUN_ON(&transport_checker_);
-  RTC_CHECK_EQ(rtp_streams_.size(), active_modules.size());
-  active_ = false;
-  for (size_t i = 0; i < active_modules.size(); ++i) {
-    if (active_modules[i]) {
-      active_ = true;
-    }
-
+  if (active_ == sending) {
+    return;
+  }
+  active_ = sending;
+  for (size_t i = 0; i < rtp_streams_.size(); ++i) {
     RtpRtcpInterface& rtp_module = *rtp_streams_[i].rtp_rtcp;
-    const bool was_active = rtp_module.Sending();
-    const bool should_be_active = active_modules[i];
-
     
-    rtp_module.SetSendingStatus(active_modules[i]);
-
-    if (was_active && !should_be_active) {
-      
-      
-      
-      transport_->packet_router()->RemoveSendRtpModule(&rtp_module);
-
-      
-      transport_->packet_sender()->RemovePacketsForSsrc(rtp_module.SSRC());
-      if (rtp_module.RtxSsrc().has_value()) {
-        transport_->packet_sender()->RemovePacketsForSsrc(
-            *rtp_module.RtxSsrc());
-      }
-      if (rtp_module.FlexfecSsrc().has_value()) {
-        transport_->packet_sender()->RemovePacketsForSsrc(
-            *rtp_module.FlexfecSsrc());
-      }
-    }
-
-    
-    rtp_module.SetSendingMediaStatus(active_modules[i]);
-
-    if (!was_active && should_be_active) {
-      
-      transport_->packet_router()->AddSendRtpModule(&rtp_module,
-                                                    true);
+    rtp_module.SetSendingStatus(sending);
+    rtp_module.SetSendingMediaStatus(sending);
+    if (sending) {
+      transport_->RegisterSendingRtpStream(rtp_module);
+    } else {
+      transport_->DeRegisterSendingRtpStream(rtp_module);
     }
   }
-  if (!active_) {
-    auto* feedback_provider = transport_->GetStreamFeedbackProvider();
-    if (registered_for_feedback_) {
-      feedback_provider->DeRegisterStreamFeedbackObserver(this);
-      registered_for_feedback_ = false;
-    }
-  } else if (!registered_for_feedback_) {
-    auto* feedback_provider = transport_->GetStreamFeedbackProvider();
+  auto* feedback_provider = transport_->GetStreamFeedbackProvider();
+  if (!sending) {
+    feedback_provider->DeRegisterStreamFeedbackObserver(this);
+  } else {
     feedback_provider->RegisterStreamFeedbackObserver(rtp_config_.ssrcs, this);
-    registered_for_feedback_ = true;
   }
 }
 

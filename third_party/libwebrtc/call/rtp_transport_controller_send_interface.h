@@ -47,6 +47,7 @@ class Transport;
 class PacketRouter;
 class RtpVideoSenderInterface;
 class RtpPacketSender;
+class RtpRtcpInterface;
 
 struct RtpSenderObservers {
   RtcpRttStats* rtcp_rtt_stats;
@@ -107,6 +108,12 @@ class RtpTransportControllerSendInterface {
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
   virtual void DestroyRtpVideoSender(
       RtpVideoSenderInterface* rtp_video_sender) = 0;
+
+  
+  
+  virtual void RegisterSendingRtpStream(RtpRtcpInterface& rtp_module) = 0;
+  
+  virtual void DeRegisterSendingRtpStream(RtpRtcpInterface& rtp_module) = 0;
 
   virtual NetworkStateEstimateObserver* network_state_estimate_observer() = 0;
   virtual TransportFeedbackObserver* transport_feedback_observer() = 0;

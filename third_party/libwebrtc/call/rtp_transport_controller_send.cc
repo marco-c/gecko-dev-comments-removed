@@ -159,6 +159,31 @@ void RtpTransportControllerSend::DestroyRtpVideoSender(
   video_rtp_senders_.erase(it);
 }
 
+void RtpTransportControllerSend::RegisterSendingRtpStream(
+    RtpRtcpInterface& rtp_module) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  
+  packet_router_.AddSendRtpModule(&rtp_module,
+                                  true);
+}
+
+void RtpTransportControllerSend::DeRegisterSendingRtpStream(
+    RtpRtcpInterface& rtp_module) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  
+  
+  
+  packet_router_.RemoveSendRtpModule(&rtp_module);
+  
+  pacer_.RemovePacketsForSsrc(rtp_module.SSRC());
+  if (rtp_module.RtxSsrc().has_value()) {
+    pacer_.RemovePacketsForSsrc(*rtp_module.RtxSsrc());
+  }
+  if (rtp_module.FlexfecSsrc().has_value()) {
+    pacer_.RemovePacketsForSsrc(*rtp_module.FlexfecSsrc());
+  }
+}
+
 void RtpTransportControllerSend::UpdateControlState() {
   absl::optional<TargetTransferRate> update = control_handler_->GetUpdate();
   if (!update)
