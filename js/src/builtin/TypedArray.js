@@ -103,6 +103,7 @@ function TypedArraySpeciesConstructor(obj) {
 
   
   if (IsConstructor(s)) {
+    ReportUsageCounter(s, SUBCLASS_TYPEDARRAY_TYPE_III)
     return s;
   }
 
