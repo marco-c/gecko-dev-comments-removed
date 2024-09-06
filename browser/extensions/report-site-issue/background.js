@@ -32,6 +32,9 @@ const getReporterConfig = (() => {
             port.onMessage.addListener(message => {
               if ("productName" in message) {
                 androidReporterConfig.productName = message.productName;
+                androidReporterConfig.extra_labels = [
+                  `browser-${message.productName}`,
+                ];
                 resolve(androidReporterConfig);
 
                 
