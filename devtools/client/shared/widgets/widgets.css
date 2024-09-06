@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* BreacrumbsWidget */
 
 .breadcrumbs-widget-item {
   direction: ltr;
@@ -12,12 +12,16 @@
   -moz-user-focus: normal;
 }
 
-
+/* VariablesView */
 
 .variables-view-container {
   overflow-x: hidden;
   overflow-y: auto;
   direction: ltr;
+
+  label {
+    margin: 0;
+  }
 }
 
 .variables-view-element-details:not([open]) {
@@ -73,6 +77,11 @@
   display: none;
 }
 
+/* Table Widget */
+
+.table-widget-body label {
+  margin: 0;
+}
 
 .table-widget-body > .devtools-side-splitter:last-child {
   display: none;
