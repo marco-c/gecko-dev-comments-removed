@@ -522,10 +522,7 @@ bool WebExtensionPolicy::QuarantinedDomainsEnabled(GlobalObject& aGlobal) {
 
 
 bool WebExtensionPolicy::IsRestrictedDoc(const DocInfo& aDoc) {
-  
-  
-  
-  if (aDoc.Principal() && !aDoc.Principal()->GetIsContentPrincipal()) {
+  if (aDoc.Principal() && aDoc.Principal()->IsSystemPrincipal()) {
     return true;
   }
 
@@ -809,8 +806,6 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
     }
   }
 
-  
-  
   if (!mMatchAboutBlank && aDoc.URL().InheritsPrincipal()) {
     return false;
   }
@@ -836,6 +831,12 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
       
       return true;
     }
+    
+    return false;
+  }
+
+  if (aDoc.Principal() && aDoc.Principal()->GetIsNullPrincipal() &&
+      !aDoc.URL().IsNonOpaqueURL()) {
     
     return false;
   }

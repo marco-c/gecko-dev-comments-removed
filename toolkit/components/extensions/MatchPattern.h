@@ -108,6 +108,11 @@ class URLInfo final {
   const nsCString& CSpec() const;
 
   bool InheritsPrincipal() const;
+  
+  
+  
+  
+  bool IsNonOpaqueURL() const;
 
  private:
   nsIURI* URINoRef() const;
@@ -125,6 +130,7 @@ class URLInfo final {
   mutable nsCString mCSpec;
 
   mutable Maybe<bool> mInheritsPrincipal;
+  mutable Maybe<bool> mIsNonOpaqueURL;
 };
 
 

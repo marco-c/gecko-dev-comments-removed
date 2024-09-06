@@ -52,6 +52,8 @@ class MOZ_STACK_CLASS DocInfo final {
 
   
   
+  
+  
   const URLInfo& PrincipalURL() const;
 
   bool IsTopLevel() const;
