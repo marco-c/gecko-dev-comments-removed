@@ -6,7 +6,11 @@
 
 const ResourceCommand = require("resource://devtools/shared/commands/resource/resource-command.js");
 
-module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
+module.exports = async function ({
+  targetCommand,
+  targetFront,
+  onAvailableArray,
+}) {
   
   
   
@@ -40,10 +44,7 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
   
   const { messages } = await webConsoleFront.getCachedMessages(["ConsoleAPI"]);
 
-  for (const message of messages) {
-    message.resourceType = ResourceCommand.TYPES.CONSOLE_MESSAGE;
-  }
-  onAvailable(messages);
+  onAvailableArray([[ResourceCommand.TYPES.CONSOLE_MESSAGE, messages]]);
 
   
   webConsoleFront.on("consoleAPICall", message => {
@@ -53,7 +54,6 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
       return;
     }
 
-    message.resourceType = ResourceCommand.TYPES.CONSOLE_MESSAGE;
-    onAvailable([message]);
+    onAvailableArray([[ResourceCommand.TYPES.CONSOLE_MESSAGE, [message]]]);
   });
 };

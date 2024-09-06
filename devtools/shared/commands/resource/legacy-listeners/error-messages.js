@@ -7,7 +7,11 @@
 const ResourceCommand = require("resource://devtools/shared/commands/resource/resource-command.js");
 const { MESSAGE_CATEGORY } = require("resource://devtools/shared/constants.js");
 
-module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
+module.exports = async function ({
+  targetCommand,
+  targetFront,
+  onAvailableArray,
+}) {
   
   
   
@@ -43,12 +47,9 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
     message => message.pageError.category !== MESSAGE_CATEGORY.CSS_PARSER
   );
 
-  messages.forEach(message => {
-    message.resourceType = ResourceCommand.TYPES.ERROR_MESSAGE;
-  });
   
   
-  onAvailable(messages);
+  onAvailableArray([[ResourceCommand.TYPES.ERROR_MESSAGE, messages]]);
 
   webConsoleFront.on("pageError", message => {
     
@@ -56,7 +57,6 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
       return;
     }
 
-    message.resourceType = ResourceCommand.TYPES.ERROR_MESSAGE;
-    onAvailable([message]);
+    onAvailableArray([[ResourceCommand.TYPES.ERROR_MESSAGE, [message]]]);
   });
 };

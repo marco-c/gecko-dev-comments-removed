@@ -23,7 +23,11 @@ const ResourceCommand = require("resource://devtools/shared/commands/resource/re
 
 
 
-module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
+module.exports = async function ({
+  targetCommand,
+  targetFront,
+  onAvailableArray,
+}) {
   const isBrowserToolbox =
     targetCommand.descriptorFront.isBrowserProcessDescriptor;
   const isNonTopLevelFrameTarget =
@@ -51,9 +55,7 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
       return;
     }
     sourcesActorIDCache.add(source.actor);
-    
-    source.resourceType = ResourceCommand.TYPES.SOURCE;
-    onAvailable([source]);
+    onAvailableArray([[ResourceCommand.TYPES.SOURCE, [source]]]);
   });
 
   
@@ -82,8 +84,6 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
   });
   for (const source of sources) {
     sourcesActorIDCache.add(source.actor);
-    
-    source.resourceType = ResourceCommand.TYPES.SOURCE;
   }
-  onAvailable(sources);
+  onAvailableArray([[ResourceCommand.TYPES.SOURCE, sources]]);
 };
