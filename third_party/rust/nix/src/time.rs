@@ -1,17 +1,11 @@
+
 use crate::sys::time::TimeSpec;
-#[cfg(any(
-    target_os = "freebsd",
-    target_os = "dragonfly",
-    target_os = "linux",
-    target_os = "android",
-    target_os = "emscripten",
-))]
+#[cfg(any(freebsdlike, linux_android, target_os = "emscripten"))]
 #[cfg(feature = "process")]
 use crate::unistd::Pid;
 use crate::{Errno, Result};
 use libc::{self, clockid_t};
 use std::mem::MaybeUninit;
-
 
 
 
@@ -28,14 +22,7 @@ impl ClockId {
     feature! {
     #![feature = "process"]
     /// Returns `ClockId` of a `pid` CPU-time clock
-    #[cfg(any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        target_os = "linux",
-        target_os = "android",
-        target_os = "emscripten",
-    ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(any(freebsdlike, linux_android, target_os = "emscripten"))]
     pub fn pid_cpu_clock_id(pid: Pid) -> Result<Self> {
         clock_getcpuclockid(pid)
     }
@@ -43,7 +30,6 @@ impl ClockId {
 
     
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn res(self) -> Result<TimeSpec> {
         clock_getres(self)
     }
@@ -55,12 +41,12 @@ impl ClockId {
 
     
     #[cfg(not(any(
-        target_os = "macos",
         target_os = "ios",
+        target_os = "tvos",
+        target_os = "watchos",
         target_os = "redox",
-        target_os = "hermit",
+        target_os = "hermit"
     )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn set_time(self, timespec: TimeSpec) -> Result<()> {
         clock_settime(self, timespec)
     }
@@ -70,135 +56,103 @@ impl ClockId {
         self.0
     }
 
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
+    
+    
     pub const CLOCK_BOOTTIME: ClockId = ClockId(libc::CLOCK_BOOTTIME);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    
+    
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_BOOTTIME_ALARM: ClockId =
         ClockId(libc::CLOCK_BOOTTIME_ALARM);
+    
     pub const CLOCK_MONOTONIC: ClockId = ClockId(libc::CLOCK_MONOTONIC);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_MONOTONIC_COARSE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_COARSE);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
     pub const CLOCK_MONOTONIC_FAST: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_FAST);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
     pub const CLOCK_MONOTONIC_PRECISE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_PRECISE);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    
+    
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_MONOTONIC_RAW: ClockId = ClockId(libc::CLOCK_MONOTONIC_RAW);
     #[cfg(any(
-        target_os = "android",
+        linux_android,
+        apple_targets,
+        freebsdlike,
         target_os = "emscripten",
         target_os = "fuchsia",
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "freebsd",
-        target_os = "dragonfly",
         target_os = "redox",
-        target_os = "linux"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    
     pub const CLOCK_PROCESS_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_PROCESS_CPUTIME_ID);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
     pub const CLOCK_PROF: ClockId = ClockId(libc::CLOCK_PROF);
+    
     pub const CLOCK_REALTIME: ClockId = ClockId(libc::CLOCK_REALTIME);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_REALTIME_ALARM: ClockId =
         ClockId(libc::CLOCK_REALTIME_ALARM);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_REALTIME_COARSE: ClockId =
         ClockId(libc::CLOCK_REALTIME_COARSE);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
     pub const CLOCK_REALTIME_FAST: ClockId = ClockId(libc::CLOCK_REALTIME_FAST);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
     pub const CLOCK_REALTIME_PRECISE: ClockId =
         ClockId(libc::CLOCK_REALTIME_PRECISE);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
+    
     pub const CLOCK_SECOND: ClockId = ClockId(libc::CLOCK_SECOND);
+    #[allow(missing_docs)] 
     #[cfg(any(
         target_os = "emscripten",
         target_os = "fuchsia",
         all(target_os = "linux", target_env = "musl")
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub const CLOCK_SGI_CYCLE: ClockId = ClockId(libc::CLOCK_SGI_CYCLE);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    
+    
+    
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_TAI: ClockId = ClockId(libc::CLOCK_TAI);
     #[cfg(any(
-        target_os = "android",
+        linux_android,
+        apple_targets,
+        freebsdlike,
         target_os = "emscripten",
         target_os = "fuchsia",
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        target_os = "linux"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    
     pub const CLOCK_THREAD_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_THREAD_CPUTIME_ID);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
+    
     pub const CLOCK_UPTIME: ClockId = ClockId(libc::CLOCK_UPTIME);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
     pub const CLOCK_UPTIME_FAST: ClockId = ClockId(libc::CLOCK_UPTIME_FAST);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
     pub const CLOCK_UPTIME_PRECISE: ClockId =
         ClockId(libc::CLOCK_UPTIME_PRECISE);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(freebsdlike)]
+    
     pub const CLOCK_VIRTUAL: ClockId = ClockId(libc::CLOCK_VIRTUAL);
 }
 
@@ -223,7 +177,6 @@ impl std::fmt::Display for ClockId {
 
 
 #[cfg(not(target_os = "redox"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn clock_getres(clock_id: ClockId) -> Result<TimeSpec> {
     let mut c_time: MaybeUninit<libc::timespec> = MaybeUninit::uninit();
     let ret =
@@ -247,12 +200,12 @@ pub fn clock_gettime(clock_id: ClockId) -> Result<TimeSpec> {
 
 
 #[cfg(not(any(
-    target_os = "macos",
     target_os = "ios",
+    target_os = "tvos",
+    target_os = "watchos",
     target_os = "redox",
-    target_os = "hermit",
+    target_os = "hermit"
 )))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn clock_settime(clock_id: ClockId, timespec: TimeSpec) -> Result<()> {
     let ret =
         unsafe { libc::clock_settime(clock_id.as_raw(), timespec.as_ref()) };
@@ -261,13 +214,7 @@ pub fn clock_settime(clock_id: ClockId, timespec: TimeSpec) -> Result<()> {
 
 
 
-#[cfg(any(
-    target_os = "freebsd",
-    target_os = "dragonfly",
-    target_os = "linux",
-    target_os = "android",
-    target_os = "emscripten",
-))]
+#[cfg(any(freebsdlike, linux_android, target_os = "emscripten"))]
 #[cfg(feature = "process")]
 #[cfg_attr(docsrs, doc(cfg(feature = "process")))]
 pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
@@ -278,6 +225,61 @@ pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
         let res = unsafe { clk_id.assume_init() };
         Ok(ClockId::from(res))
     } else {
-        Err(Errno::from_i32(ret))
+        Err(Errno::from_raw(ret))
+    }
+}
+
+#[cfg(any(
+    linux_android,
+    solarish,
+    freebsdlike,
+    target_os = "netbsd",
+    target_os = "hurd",
+    target_os = "aix"
+))]
+libc_bitflags! {
+    /// Flags that are used for arming the timer.
+    pub struct ClockNanosleepFlags: libc::c_int {
+        /// Indicates that a requested time value should be treated as absolute instead of
+        /// relative.
+        TIMER_ABSTIME;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(
+    linux_android,
+    solarish,
+    freebsdlike,
+    target_os = "netbsd",
+    target_os = "hurd",
+    target_os = "aix"
+))]
+pub fn clock_nanosleep(
+    clock_id: ClockId,
+    flags: ClockNanosleepFlags,
+    request: &TimeSpec,
+) -> Result<TimeSpec> {
+    let mut remain = TimeSpec::new(0, 0);
+    let ret = unsafe {
+        libc::clock_nanosleep(
+            clock_id.as_raw(),
+            flags.bits(),
+            request.as_ref() as *const _,
+            remain.as_mut() as *mut _,
+        )
+    };
+    if ret == 0 {
+        Ok(remain)
+    } else {
+        Err(Errno::from_raw(ret))
     }
 }

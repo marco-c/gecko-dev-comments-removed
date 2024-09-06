@@ -161,11 +161,6 @@ pub fn write_dso_debug_stream(
         assert!(head.is_empty(), "Data was not aligned");
         let dyn_struct = &body[0];
 
-        
-        
-        
-        
-        
         let debug_tag = goblin::elf::dynamic::DT_DEBUG;
         if dyn_struct.d_tag == debug_tag {
             r_debug = dyn_struct.d_val as usize;

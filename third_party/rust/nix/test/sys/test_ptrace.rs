@@ -6,11 +6,11 @@
 use memoffset::offset_of;
 use nix::errno::Errno;
 use nix::sys::ptrace;
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 use nix::sys::ptrace::Options;
 use nix::unistd::getpid;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 use std::mem;
 
 use crate::*;
@@ -28,7 +28,7 @@ fn test_ptrace() {
 
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 fn test_ptrace_setoptions() {
     require_capability!("test_ptrace_setoptions", CAP_SYS_PTRACE);
     let err = ptrace::setoptions(getpid(), Options::PTRACE_O_TRACESYSGOOD)
@@ -38,7 +38,7 @@ fn test_ptrace_setoptions() {
 
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 fn test_ptrace_getevent() {
     require_capability!("test_ptrace_getevent", CAP_SYS_PTRACE);
     let err = ptrace::getevent(getpid()).unwrap_err();
@@ -47,7 +47,7 @@ fn test_ptrace_getevent() {
 
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 fn test_ptrace_getsiginfo() {
     require_capability!("test_ptrace_getsiginfo", CAP_SYS_PTRACE);
     if let Err(Errno::EOPNOTSUPP) = ptrace::getsiginfo(getpid()) {
@@ -57,7 +57,7 @@ fn test_ptrace_getsiginfo() {
 
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 fn test_ptrace_setsiginfo() {
     require_capability!("test_ptrace_setsiginfo", CAP_SYS_PTRACE);
     let siginfo = unsafe { mem::zeroed() };

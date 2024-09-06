@@ -70,8 +70,10 @@ impl MinidumpWriter {
                         
                         
                         
-                        
-                        
+                        if code > u32::MAX.into() {
+                            
+                            log::warn!("exception code {code:#018x} exceeds the expected 32 bits");
+                        }
                         code as u32
                     };
 

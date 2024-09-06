@@ -1,267 +1,183 @@
-mod common;
+use std::fs::{self, File};
+use std::io::{Read, Write};
+use std::os::unix::fs::OpenOptionsExt;
+use std::os::unix::fs::PermissionsExt;
+use std::process::Command;
 
+use libc::{EACCES, EROFS};
 
+use nix::mount::{mount, umount, MsFlags};
+use nix::sys::stat::{self, Mode};
 
+use crate::*;
 
-
-
-#[cfg(target_os = "linux")]
-mod test_mount {
-    use std::fs::{self, File};
-    use std::io::{self, Read, Write};
-    use std::os::unix::fs::OpenOptionsExt;
-    use std::os::unix::fs::PermissionsExt;
-    use std::process::{self, Command};
-
-    use libc::{EACCES, EROFS};
-
-    use nix::errno::Errno;
-    use nix::mount::{mount, umount, MsFlags};
-    use nix::sched::{unshare, CloneFlags};
-    use nix::sys::stat::{self, Mode};
-    use nix::unistd::getuid;
-
-    static SCRIPT_CONTENTS: &[u8] = b"#!/bin/sh
+static SCRIPT_CONTENTS: &[u8] = b"#!/bin/sh
 exit 23";
 
-    const EXPECTED_STATUS: i32 = 23;
+const EXPECTED_STATUS: i32 = 23;
 
-    const NONE: Option<&'static [u8]> = None;
-    #[allow(clippy::bind_instead_of_map)] 
-    pub fn test_mount_tmpfs_without_flags_allows_rwx() {
-        let tempdir = tempfile::tempdir().unwrap();
+const NONE: Option<&'static [u8]> = None;
 
-        mount(
-            NONE,
-            tempdir.path(),
-            Some(b"tmpfs".as_ref()),
-            MsFlags::empty(),
-            NONE,
-        )
-        .unwrap_or_else(|e| panic!("mount failed: {e}"));
-
-        let test_path = tempdir.path().join("test");
-
-        
-        fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
-            .open(&test_path)
-            .or_else(|e| {
-                if Errno::from_i32(e.raw_os_error().unwrap())
-                    == Errno::EOVERFLOW
-                {
-                    
-                    
-                    
-                    
-                    
-                    
-                    let stderr = io::stderr();
-                    let mut handle = stderr.lock();
-                    writeln!(
-                        handle,
-                        "Buggy Linux kernel detected.  Skipping test."
-                    )
-                    .unwrap();
-                    process::exit(0);
-                } else {
-                    panic!("open failed: {e}");
-                }
-            })
-            .and_then(|mut f| f.write(SCRIPT_CONTENTS))
-            .unwrap_or_else(|e| panic!("write failed: {e}"));
-
-        
-        let mut buf = Vec::new();
-        File::open(&test_path)
-            .and_then(|mut f| f.read_to_end(&mut buf))
-            .unwrap_or_else(|e| panic!("read failed: {e}"));
-        assert_eq!(buf, SCRIPT_CONTENTS);
-
-        
-        assert_eq!(
-            EXPECTED_STATUS,
-            Command::new(&test_path)
-                .status()
-                .unwrap_or_else(|e| panic!("exec failed: {e}"))
-                .code()
-                .unwrap_or_else(|| panic!("child killed by signal"))
-        );
-
-        umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
-    }
-
-    pub fn test_mount_rdonly_disallows_write() {
-        let tempdir = tempfile::tempdir().unwrap();
-
-        mount(
-            NONE,
-            tempdir.path(),
-            Some(b"tmpfs".as_ref()),
-            MsFlags::MS_RDONLY,
-            NONE,
-        )
-        .unwrap_or_else(|e| panic!("mount failed: {e}"));
-
-        
-        assert_eq!(
-            EROFS,
-            File::create(tempdir.path().join("test"))
-                .unwrap_err()
-                .raw_os_error()
-                .unwrap()
-        );
-
-        umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
-    }
-
-    pub fn test_mount_noexec_disallows_exec() {
-        let tempdir = tempfile::tempdir().unwrap();
-
-        mount(
-            NONE,
-            tempdir.path(),
-            Some(b"tmpfs".as_ref()),
-            MsFlags::MS_NOEXEC,
-            NONE,
-        )
-        .unwrap_or_else(|e| panic!("mount failed: {e}"));
-
-        let test_path = tempdir.path().join("test");
-
-        fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
-            .open(&test_path)
-            .and_then(|mut f| f.write(SCRIPT_CONTENTS))
-            .unwrap_or_else(|e| panic!("write failed: {e}"));
-
-        
-        let mode = stat::Mode::from_bits_truncate(
-            fs::metadata(&test_path)
-                .map(|md| md.permissions().mode())
-                .unwrap_or_else(|e| panic!("metadata failed: {e}")),
-        );
-
-        assert!(
-            mode.contains(Mode::S_IXUSR | Mode::S_IXGRP | Mode::S_IXOTH),
-            "{:?} did not have execute permissions",
-            &test_path
-        );
-
-        
-        assert_eq!(
-            EACCES,
-            Command::new(&test_path)
-                .status()
-                .unwrap_err()
-                .raw_os_error()
-                .unwrap()
-        );
-
-        umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
-    }
-
-    pub fn test_mount_bind() {
-        let tempdir = tempfile::tempdir().unwrap();
-        let file_name = "test";
-
-        {
-            let mount_point = tempfile::tempdir().unwrap();
-
-            mount(
-                Some(tempdir.path()),
-                mount_point.path(),
-                NONE,
-                MsFlags::MS_BIND,
-                NONE,
-            )
-            .unwrap_or_else(|e| panic!("mount failed: {e}"));
-
-            fs::OpenOptions::new()
-                .create(true)
-                .write(true)
-                .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
-                .open(mount_point.path().join(file_name))
-                .and_then(|mut f| f.write(SCRIPT_CONTENTS))
-                .unwrap_or_else(|e| panic!("write failed: {e}"));
-
-            umount(mount_point.path())
-                .unwrap_or_else(|e| panic!("umount failed: {e}"));
-        }
-
-        
-        
-
-        let mut buf = Vec::new();
-        File::open(tempdir.path().join(file_name))
-            .and_then(|mut f| f.read_to_end(&mut buf))
-            .unwrap_or_else(|e| panic!("read failed: {e}"));
-        assert_eq!(buf, SCRIPT_CONTENTS);
-    }
-
-    pub fn setup_namespaces() {
-        
-        let uid = getuid();
-
-        unshare(CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWUSER).unwrap_or_else(|e| {
-            let stderr = io::stderr();
-            let mut handle = stderr.lock();
-            writeln!(handle,
-                     "unshare failed: {e}. Are unprivileged user namespaces available?").unwrap();
-            writeln!(handle, "mount is not being tested").unwrap();
-            
-            
-            process::exit(0);
-        });
-
-        
-        fs::OpenOptions::new()
-            .write(true)
-            .open("/proc/self/uid_map")
-            .and_then(|mut f| f.write(format!("1000 {uid} 1\n").as_bytes()))
-            .unwrap_or_else(|e| panic!("could not write uid map: {e}"));
-    }
-}
-
-
-
-
-#[cfg(target_os = "linux")]
-macro_rules! run_tests {
-    ( $($test_fn:ident),* ) => {{
-        println!();
-
-        $(
-            print!("test test_mount::{} ... ", stringify!($test_fn));
-            $test_fn();
-            println!("ok");
-        )*
-
-        println!();
-    }}
-}
-
-#[cfg(target_os = "linux")]
-fn main() {
-    use test_mount::{
-        setup_namespaces, test_mount_bind, test_mount_noexec_disallows_exec,
-        test_mount_rdonly_disallows_write,
-        test_mount_tmpfs_without_flags_allows_rwx,
-    };
-    skip_if_cirrus!("Fails for an unknown reason Cirrus CI.  Bug #1351");
-    setup_namespaces();
-
-    run_tests!(
-        test_mount_tmpfs_without_flags_allows_rwx,
-        test_mount_rdonly_disallows_write,
-        test_mount_noexec_disallows_exec,
-        test_mount_bind
+#[test]
+fn test_mount_tmpfs_without_flags_allows_rwx() {
+    require_capability!(
+        "test_mount_tmpfs_without_flags_allows_rwx",
+        CAP_SYS_ADMIN
     );
+    let tempdir = tempfile::tempdir().unwrap();
+
+    mount(
+        NONE,
+        tempdir.path(),
+        Some(b"tmpfs".as_ref()),
+        MsFlags::empty(),
+        NONE,
+    )
+    .unwrap_or_else(|e| panic!("mount failed: {e}"));
+
+    let test_path = tempdir.path().join("test");
+
+    
+    fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
+        .open(&test_path)
+        .and_then(|mut f| f.write(SCRIPT_CONTENTS))
+        .unwrap_or_else(|e| panic!("write failed: {e}"));
+
+    
+    let mut buf = Vec::new();
+    File::open(&test_path)
+        .and_then(|mut f| f.read_to_end(&mut buf))
+        .unwrap_or_else(|e| panic!("read failed: {e}"));
+    assert_eq!(buf, SCRIPT_CONTENTS);
+
+    
+    assert_eq!(
+        EXPECTED_STATUS,
+        Command::new(&test_path)
+            .status()
+            .unwrap_or_else(|e| panic!("exec failed: {e}"))
+            .code()
+            .unwrap_or_else(|| panic!("child killed by signal"))
+    );
+
+    umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
 }
 
-#[cfg(not(target_os = "linux"))]
-fn main() {}
+#[test]
+fn test_mount_rdonly_disallows_write() {
+    require_capability!("test_mount_rdonly_disallows_write", CAP_SYS_ADMIN);
+    let tempdir = tempfile::tempdir().unwrap();
+
+    mount(
+        NONE,
+        tempdir.path(),
+        Some(b"tmpfs".as_ref()),
+        MsFlags::MS_RDONLY,
+        NONE,
+    )
+    .unwrap_or_else(|e| panic!("mount failed: {e}"));
+
+    
+    assert_eq!(
+        EROFS,
+        File::create(tempdir.path().join("test"))
+            .unwrap_err()
+            .raw_os_error()
+            .unwrap()
+    );
+
+    umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
+}
+
+#[test]
+fn test_mount_noexec_disallows_exec() {
+    require_capability!("test_mount_noexec_disallows_exec", CAP_SYS_ADMIN);
+    let tempdir = tempfile::tempdir().unwrap();
+
+    mount(
+        NONE,
+        tempdir.path(),
+        Some(b"tmpfs".as_ref()),
+        MsFlags::MS_NOEXEC,
+        NONE,
+    )
+    .unwrap_or_else(|e| panic!("mount failed: {e}"));
+
+    let test_path = tempdir.path().join("test");
+
+    fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
+        .open(&test_path)
+        .and_then(|mut f| f.write(SCRIPT_CONTENTS))
+        .unwrap_or_else(|e| panic!("write failed: {e}"));
+
+    
+    let mode = stat::Mode::from_bits_truncate(
+        fs::metadata(&test_path)
+            .map(|md| md.permissions().mode())
+            .unwrap_or_else(|e| panic!("metadata failed: {e}")),
+    );
+
+    assert!(
+        mode.contains(Mode::S_IXUSR | Mode::S_IXGRP | Mode::S_IXOTH),
+        "{:?} did not have execute permissions",
+        &test_path
+    );
+
+    
+    assert_eq!(
+        EACCES,
+        Command::new(&test_path)
+            .status()
+            .unwrap_err()
+            .raw_os_error()
+            .unwrap()
+    );
+
+    umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
+}
+
+#[test]
+fn test_mount_bind() {
+    require_capability!("test_mount_bind", CAP_SYS_ADMIN);
+    let tempdir = tempfile::tempdir().unwrap();
+    let file_name = "test";
+
+    {
+        let mount_point = tempfile::tempdir().unwrap();
+
+        mount(
+            Some(tempdir.path()),
+            mount_point.path(),
+            NONE,
+            MsFlags::MS_BIND,
+            NONE,
+        )
+        .unwrap_or_else(|e| panic!("mount failed: {e}"));
+
+        fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
+            .open(mount_point.path().join(file_name))
+            .and_then(|mut f| f.write(SCRIPT_CONTENTS))
+            .unwrap_or_else(|e| panic!("write failed: {e}"));
+
+        umount(mount_point.path())
+            .unwrap_or_else(|e| panic!("umount failed: {e}"));
+    }
+
+    
+    
+
+    let mut buf = Vec::new();
+    File::open(tempdir.path().join(file_name))
+        .and_then(|mut f| f.read_to_end(&mut buf))
+        .unwrap_or_else(|e| panic!("read failed: {e}"));
+    assert_eq!(buf, SCRIPT_CONTENTS);
+}

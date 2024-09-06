@@ -4,7 +4,7 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::fs::OpenOptions;
 use std::io::IoSlice;
-use std::os::unix::io::{FromRawFd, OwnedFd};
+use std::os::unix::io::AsRawFd;
 use std::{cmp, iter};
 
 #[cfg(not(target_os = "redox"))]
@@ -45,21 +45,16 @@ fn test_writev() {
     let mut read_buf: Vec<u8> = iter::repeat(0u8).take(128 * 16).collect();
 
     
-    
-    let writer = unsafe { OwnedFd::from_raw_fd(writer) };
-
-    
     let write_res = writev(&writer, &iovecs);
     let written = write_res.expect("couldn't write");
     
     assert_eq!(to_write.len(), written);
-    let read_res = read(reader, &mut read_buf[..]);
+    let read_res = read(reader.as_raw_fd(), &mut read_buf[..]);
     let read = read_res.expect("couldn't read");
     
     assert_eq!(read, written);
     
     assert_eq!(&to_write, &read_buf);
-    close(reader).expect("closed reader");
 }
 
 #[test]
@@ -92,10 +87,6 @@ fn test_readv() {
     
     write(writer, &to_write).expect("write failed");
 
-    
-    
-    let reader = unsafe { OwnedFd::from_raw_fd(reader) };
-
     let read = readv(&reader, &mut iovecs[..]).expect("read failed");
     
     assert_eq!(to_write.len(), read);
@@ -108,7 +99,6 @@ fn test_readv() {
     assert_eq!(read_buf.len(), to_write.len());
     
     assert_eq!(&read_buf, &to_write);
-    close(writer).expect("couldn't close writer");
 }
 
 #[test]
@@ -150,7 +140,11 @@ fn test_pread() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "haiku",
+    target_os = "solaris"
+)))]
 fn test_pwritev() {
     use std::io::Read;
 
@@ -185,7 +179,11 @@ fn test_pwritev() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "haiku",
+    target_os = "solaris"
+)))]
 fn test_preadv() {
     use std::io::Write;
 
@@ -230,6 +228,7 @@ fn test_process_vm_readv() {
     use nix::sys::signal::*;
     use nix::sys::wait::*;
     use nix::unistd::ForkResult::*;
+    use std::os::unix::io::AsRawFd;
 
     require_capability!("test_process_vm_readv", CAP_SYS_PTRACE);
     let _m = crate::FORK_MTX.lock();
@@ -241,10 +240,10 @@ fn test_process_vm_readv() {
     let (r, w) = pipe().unwrap();
     match unsafe { fork() }.expect("Error: Fork Failed") {
         Parent { child } => {
-            close(w).unwrap();
+            drop(w);
             
-            read(r, &mut [0u8]).unwrap();
-            close(r).unwrap();
+            read(r.as_raw_fd(), &mut [0u8]).unwrap();
+            drop(r);
 
             let ptr = vector.as_ptr() as usize;
             let remote_iov = RemoteIoVec { base: ptr, len: 5 };
@@ -263,12 +262,11 @@ fn test_process_vm_readv() {
             assert_eq!(20u8, buf.iter().sum());
         }
         Child => {
-            let _ = close(r);
+            drop(r);
             for i in &mut vector {
                 *i += 1;
             }
             let _ = write(w, b"\0");
-            let _ = close(w);
             loop {
                 pause();
             }

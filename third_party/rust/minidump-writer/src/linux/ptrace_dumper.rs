@@ -15,10 +15,20 @@ use crate::{
 use goblin::elf;
 use nix::{
     errno::Errno,
-    sys::{ptrace, wait},
+    sys::{ptrace, signal, wait},
 };
-use procfs_core::process::MMPermissions;
-use std::{collections::HashMap, ffi::c_void, io::BufReader, path, result::Result};
+use procfs_core::{
+    process::{MMPermissions, ProcState, Stat},
+    FromRead, ProcError,
+};
+use std::{
+    collections::HashMap,
+    ffi::c_void,
+    io::BufReader,
+    path,
+    result::Result,
+    time::{Duration, Instant},
+};
 
 #[derive(Debug, Clone)]
 pub struct Thread {
@@ -45,7 +55,25 @@ impl Drop for PtraceDumper {
     fn drop(&mut self) {
         
         let _ = self.resume_threads();
+        
+        let _ = self.continue_process();
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+enum StopProcessError {
+    #[error("Failed to stop the process")]
+    Stop(#[from] Errno),
+    #[error("Failed to get the process state")]
+    State(#[from] ProcError),
+    #[error("Timeout waiting for process to stop")]
+    Timeout,
+}
+
+#[derive(Debug, thiserror::Error)]
+enum ContinueProcessError {
+    #[error("Failed to continue the process")]
+    Continue(#[from] Errno),
 }
 
 
@@ -67,7 +95,7 @@ fn ptrace_detach(child: Pid) -> Result<(), DumperError> {
 impl PtraceDumper {
     
     
-    pub fn new(pid: Pid) -> Result<Self, InitError> {
+    pub fn new(pid: Pid, stop_timeout: Duration) -> Result<Self, InitError> {
         let mut dumper = PtraceDumper {
             pid,
             threads_suspended: false,
@@ -76,12 +104,16 @@ impl PtraceDumper {
             mappings: Vec::new(),
             page_size: 0,
         };
-        dumper.init()?;
+        dumper.init(stop_timeout)?;
         Ok(dumper)
     }
 
     
-    pub fn init(&mut self) -> Result<(), InitError> {
+    pub fn init(&mut self, stop_timeout: Duration) -> Result<(), InitError> {
+        
+        if let Err(e) = self.stop_process(stop_timeout) {
+            log::warn!("failed to stop process {}: {e}", self.pid);
+        }
         self.read_auxv()?;
         self.enumerate_threads()?;
         self.enumerate_mappings()?;
@@ -205,6 +237,38 @@ impl PtraceDumper {
         }
         self.threads_suspended = false;
         result
+    }
+
+    
+    
+    
+    fn stop_process(&mut self, timeout: Duration) -> Result<(), StopProcessError> {
+        signal::kill(nix::unistd::Pid::from_raw(self.pid), Some(signal::SIGSTOP))?;
+
+        
+        
+        const POLL_INTERVAL: Duration = Duration::from_millis(1);
+        let proc_file = format!("/proc/{}/stat", self.pid);
+        let end = Instant::now() + timeout;
+
+        loop {
+            if let Ok(ProcState::Stopped) = Stat::from_file(&proc_file)?.state() {
+                return Ok(());
+            }
+
+            std::thread::sleep(POLL_INTERVAL);
+            if Instant::now() > end {
+                return Err(StopProcessError::Timeout);
+            }
+        }
+    }
+
+    
+    
+    
+    fn continue_process(&mut self) -> Result<(), ContinueProcessError> {
+        signal::kill(nix::unistd::Pid::from_raw(self.pid), Some(signal::SIGCONT))?;
+        Ok(())
     }
 
     
@@ -335,7 +399,8 @@ impl PtraceDumper {
 
         
         
-        let guard_page_max_addr = stack_pointer + (1024 * 1024);
+        
+        let guard_page_max_addr = stack_pointer.saturating_add(1024 * 1024);
 
         
         

@@ -1,7 +1,7 @@
 
 pub use self::os::*;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 mod os {
     use crate::sys::utsname::uname;
     use crate::Result;
@@ -98,11 +98,10 @@ mod os {
 }
 
 #[cfg(any(
-        target_os = "dragonfly",    
-        target_os = "freebsd",      
+        freebsdlike,                
+        netbsdlike,                 
+        target_os = "hurd",         
         target_os = "illumos",      
-        target_os = "netbsd",       
-        target_os = "openbsd",      
         target_os = "redox",        
 ))]
 mod os {
@@ -114,8 +113,7 @@ mod os {
 
 #[cfg(any(
     target_os = "aix",
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "fuchsia",
     target_os = "haiku",
     target_os = "solaris"

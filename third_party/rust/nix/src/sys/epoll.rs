@@ -1,4 +1,5 @@
 use crate::errno::Errno;
+pub use crate::poll_timeout::PollTimeout as EpollTimeout;
 use crate::Result;
 use libc::{self, c_int};
 use std::mem;
@@ -140,17 +141,17 @@ impl Epoll {
     
     
     
-    pub fn wait(
+    pub fn wait<T: Into<EpollTimeout>>(
         &self,
         events: &mut [EpollEvent],
-        timeout: isize,
+        timeout: T,
     ) -> Result<usize> {
         let res = unsafe {
             libc::epoll_wait(
                 self.0.as_raw_fd(),
-                events.as_mut_ptr() as *mut libc::epoll_event,
+                events.as_mut_ptr().cast(),
                 events.len() as c_int,
-                timeout as c_int,
+                timeout.into().into(),
             )
         };
 
@@ -240,7 +241,7 @@ pub fn epoll_wait(
     let res = unsafe {
         libc::epoll_wait(
             epfd,
-            events.as_mut_ptr() as *mut libc::epoll_event,
+            events.as_mut_ptr().cast(),
             events.len() as c_int,
             timeout_ms as c_int,
         )

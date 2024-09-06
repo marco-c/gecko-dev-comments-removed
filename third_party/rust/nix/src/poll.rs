@@ -2,6 +2,7 @@
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
 
 use crate::errno::Errno;
+pub use crate::poll_timeout::PollTimeout;
 use crate::Result;
 
 
@@ -36,10 +37,21 @@ impl<'fd> PollFd<'fd> {
     
     
     
-    pub fn new<Fd: AsFd>(fd: &'fd Fd, events: PollFlags) -> PollFd<'fd> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(fd: BorrowedFd<'fd>, events: PollFlags) -> PollFd<'fd> {
         PollFd {
             pollfd: libc::pollfd {
-                fd: fd.as_fd().as_raw_fd(),
+                fd: fd.as_raw_fd(),
                 events: events.bits(),
                 revents: PollFlags::empty().bits(),
             },
@@ -133,19 +145,15 @@ libc_bitflags! {
         POLLOUT;
         /// Equivalent to [`POLLIN`](constant.POLLIN.html)
         #[cfg(not(target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLRDNORM;
         #[cfg(not(target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Equivalent to [`POLLOUT`](constant.POLLOUT.html)
         POLLWRNORM;
         /// Priority band data can be read (generally unused on Linux).
         #[cfg(not(target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLRDBAND;
         /// Priority data may be written.
         #[cfg(not(target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLWRBAND;
         /// Error condition (only returned in
         /// [`PollFd::revents`](struct.PollFd.html#method.revents);
@@ -188,12 +196,15 @@ libc_bitflags! {
 
 
 
-pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
+pub fn poll<T: Into<PollTimeout>>(
+    fds: &mut [PollFd],
+    timeout: T,
+) -> Result<libc::c_int> {
     let res = unsafe {
         libc::poll(
-            fds.as_mut_ptr() as *mut libc::pollfd,
+            fds.as_mut_ptr().cast(),
             fds.len() as libc::nfds_t,
-            timeout,
+            i32::from(timeout.into()),
         )
     };
 
@@ -213,7 +224,7 @@ feature! {
 /// so in that case `ppoll` differs from `poll` only in the precision of the
 /// timeout argument.
 ///
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, freebsdlike))]
 pub fn ppoll(
     fds: &mut [PollFd],
     timeout: Option<crate::sys::time::TimeSpec>,
@@ -223,7 +234,7 @@ pub fn ppoll(
     let timeout = timeout.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let sigmask = sigmask.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let res = unsafe {
-        libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
+        libc::ppoll(fds.as_mut_ptr().cast(),
                     fds.len() as libc::nfds_t,
                     timeout,
                     sigmask)

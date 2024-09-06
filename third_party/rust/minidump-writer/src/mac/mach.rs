@@ -591,6 +591,7 @@ pub fn sysctl_by_name<T: Sized + Default>(name: &[u8]) -> T {
         ) != 0
         {
             
+            log::warn!("failed to get sysctl for {name:?}");
             T::default()
         } else {
             out
