@@ -250,11 +250,6 @@ bool BounceTrackingState::ShouldTrackPrincipal(nsIPrincipal* aPrincipal) {
     return false;
   }
 
-  
-  if (!aPrincipal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
-    return false;
-  }
-
   return true;
 }
 
