@@ -113,6 +113,7 @@ class MacosDevice(Layer):
             
             self.info(f"Using {path} for {option}")
             self.env.set_arg(option, str(path))
+            metadata.binary = str(path)
         return metadata
 
     def teardown(self):
