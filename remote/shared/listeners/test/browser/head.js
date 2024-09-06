@@ -4,6 +4,25 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+function addTab(browser, url, options) {
+  const tab = BrowserTestUtils.addTab(browser, url, options);
+  registerCleanupFunction(() => browser.removeTab(tab));
+  return tab;
+}
+
 async function clearConsole() {
   for (const tab of gBrowser.tabs) {
     await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
