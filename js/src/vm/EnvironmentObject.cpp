@@ -1585,7 +1585,7 @@ namespace {
 
 
 
-class DebugEnvironmentProxyHandler : public BaseProxyHandler {
+class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
   enum Action { SET, GET };
 
   enum AccessResult { ACCESS_UNALIASED, ACCESS_GENERIC, ACCESS_LOST };
@@ -2086,7 +2086,8 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
   static const char family;
   static const DebugEnvironmentProxyHandler singleton;
 
-  constexpr DebugEnvironmentProxyHandler() : BaseProxyHandler(&family) {}
+  constexpr DebugEnvironmentProxyHandler()
+      : NurseryAllocableProxyHandler(&family) {}
 
   static bool isFunctionEnvironmentWithThis(const JSObject& env) {
     

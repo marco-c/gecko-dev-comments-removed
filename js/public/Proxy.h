@@ -156,6 +156,10 @@ class JS_PUBLIC_API Wrapper;
 
 
 
+
+
+
+
 class JS_PUBLIC_API BaseProxyHandler {
   
 
@@ -376,6 +380,17 @@ class JS_PUBLIC_API BaseProxyHandler {
                            ElementAdder* adder) const;
 
   virtual bool isScripted() const { return false; }
+};
+
+class JS_PUBLIC_API NurseryAllocableProxyHandler : public BaseProxyHandler {
+  using BaseProxyHandler::BaseProxyHandler;
+
+  
+  void finalize(JS::GCContext* gcx, JSObject* proxy) const final {
+    BaseProxyHandler::finalize(gcx, proxy);
+  }
+  
+  bool canNurseryAllocate() const override { return true; }
 };
 
 extern JS_PUBLIC_DATA const JSClass ProxyClass;
