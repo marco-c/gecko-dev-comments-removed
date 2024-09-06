@@ -17,12 +17,7 @@ function promiseObserverNotification() {
         submitted = true;
 
         
-        
-        
-        Assert.equal(
-          "Hello World",
-          Glean.characteristics.timezone.testGetValue()
-        );
+        Assert.notEqual("", Glean.characteristics.canvasdata1.testGetValue());
       });
       GleanPings.userCharacteristics.submit();
 
