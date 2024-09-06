@@ -23,6 +23,7 @@
 #include "mozilla/dom/PContent.h"
 
 #include <fstream>
+#include <set>
 #include <sstream>
 #include <algorithm>
 
@@ -709,8 +710,9 @@ void IPCFuzzController::OnMessageError(
 
 bool IPCFuzzController::MakeTargetDecision(
     uint8_t portIndex, uint8_t portInstanceIndex, uint8_t actorIndex,
-    uint16_t typeOffset, PortName* name, int32_t* seqno, uint64_t* fseqno,
-    int32_t* actorId, uint32_t* type, bool* is_cons, bool update) {
+    uint8_t actorProtocolIndex, uint16_t typeOffset, PortName* name,
+    int32_t* seqno, uint64_t* fseqno, int32_t* actorId, uint32_t* type,
+    bool* is_cons, bool update) {
   if (useLastActor) {
     useLastActor--;
     *name = lastActorPortName;
@@ -814,16 +816,44 @@ bool IPCFuzzController::MakeTargetDecision(
     }
 
     actorIndex = allowedIndices[actorIndex % allowedIndices.size()];
-  } else if (protoFilterTargetExcludeToplevel) {
-    
-    if (actors.size() < 2) {
+  } else {
+    std::set<ProtocolId> seenProtocol;
+    std::vector<ProtocolId> availableProtocols;
+
+    if (protoFilterTargetExcludeToplevel && actors.size() < 2) {
       
       return false;
     }
-    actorIndex %= actors.size() - 1;
-    actorIndex++;
-  } else {
-    actorIndex %= actors.size();
+
+    for (auto actor : actors) {
+      if (protoFilterTargetExcludeToplevel && seenProtocol.empty()) {
+        
+        seenProtocol.insert(actor.second);
+        continue;
+      }
+
+      if (seenProtocol.find(actor.second) == seenProtocol.end()) {
+        seenProtocol.insert(actor.second);
+        availableProtocols.push_back(actor.second);
+      }
+    }
+
+    
+    
+    
+    
+    
+    ProtocolId wantedProtocolId =
+        availableProtocols[actorProtocolIndex % availableProtocols.size()];
+
+    std::vector<uint32_t> allowedIndices;
+    for (uint32_t i = 0; i < actors.size(); ++i) {
+      if (actors[i].second == wantedProtocolId) {
+        allowedIndices.push_back(i);
+      }
+    }
+
+    actorIndex = allowedIndices[actorIndex % allowedIndices.size()];
   }
 
   ActorIdPair ids = actors[actorIndex];
@@ -1125,6 +1155,7 @@ NS_IMETHODIMP IPCFuzzController::IPCFuzzLoop::Run() {
     uint8_t portIndex = controlData[0];
     uint8_t actorIndex = controlData[1];
     uint16_t typeOffset = *(uint16_t*)(&controlData[2]);
+    uint8_t actorProtocolIndex = controlData[4];
     uint8_t portInstanceIndex = controlData[5];
 
     UniquePtr<IPC::Message> msg(new IPC::Message(ipcMsgData, ipcMsgLen));
@@ -1143,9 +1174,9 @@ NS_IMETHODIMP IPCFuzzController::IPCFuzzLoop::Run() {
     }
 
     if (!IPCFuzzController::instance().MakeTargetDecision(
-            portIndex, portInstanceIndex, actorIndex, typeOffset,
-            &new_port_name, &new_seqno, &new_fseqno, &actorId, &msgType,
-            &isConstructor)) {
+            portIndex, portInstanceIndex, actorIndex, actorProtocolIndex,
+            typeOffset, &new_port_name, &new_seqno, &new_fseqno, &actorId,
+            &msgType, &isConstructor)) {
       MOZ_FUZZING_NYX_DEBUG("DEBUG: MakeTargetDecision returned false.\n");
       continue;
     }
