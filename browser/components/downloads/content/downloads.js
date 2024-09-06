@@ -327,7 +327,7 @@ var DownloadsPanel = {
     
     this.hidePanel();
 
-    BrowserDownloadsUI();
+    BrowserCommands.downloadsUI();
   },
 
   
