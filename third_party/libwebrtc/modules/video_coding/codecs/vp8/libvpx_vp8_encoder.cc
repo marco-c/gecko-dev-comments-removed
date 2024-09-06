@@ -747,13 +747,6 @@ int LibvpxVp8Encoder::GetCpuSpeed(int width, int height) {
   
   
   RTC_DCHECK_GT(number_of_cores_, 0);
-  if (experimental_cpu_speed_config_arm_
-          .GetValue(width * height, number_of_cores_)
-          .has_value()) {
-    return experimental_cpu_speed_config_arm_
-        .GetValue(width * height, number_of_cores_)
-        .value();
-  }
 
   if (number_of_cores_ <= 3)
     return -12;
