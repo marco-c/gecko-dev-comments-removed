@@ -6,7 +6,7 @@ import random
 import shutil
 import subprocess
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 
@@ -316,7 +316,7 @@ class OpenSSLEnvironment:
             
             
             
-            if end_date < datetime.utcnow() + time_buffer:
+            if end_date < datetime.now(timezone.utc) + time_buffer:
                 return False
 
         
