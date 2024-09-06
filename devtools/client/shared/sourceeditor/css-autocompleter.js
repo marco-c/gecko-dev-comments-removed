@@ -1101,7 +1101,7 @@ CSSCompleter.prototype = {
         }
 
         let prevToken = undefined;
-        const tokensIterator = cssTokenizer(lineText, true);
+        const tokensIterator = cssTokenizer(lineText);
         let found = false;
         const ech = line == caret.line ? caret.ch : 0;
         for (let token of tokensIterator) {
@@ -1165,7 +1165,7 @@ CSSCompleter.prototype = {
           lineText = lineText.substring(0, caret.ch);
         }
 
-        const tokens = Array.from(cssTokenizer(lineText, true));
+        const tokens = Array.from(cssTokenizer(lineText));
         let found = false;
         for (let i = tokens.length - 1; i >= 0; i--) {
           let token = tokens[i];
@@ -1246,7 +1246,7 @@ CSSCompleter.prototype = {
       };
     } else if (state == CSS_STATES.property) {
       
-      const tokens = cssTokenizer(sourceArray[line], true);
+      const tokens = cssTokenizer(sourceArray[line]);
       for (const token of tokens) {
         
         

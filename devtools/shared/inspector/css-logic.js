@@ -17,7 +17,7 @@ const MAX_DATA_URL_LENGTH = 40;
 
 loader.lazyRequireGetter(
   this,
-  "getCSSLexer",
+  "InspectorCSSParserWrapper",
   "resource://devtools/shared/css/lexer.js",
   true
 );
@@ -290,7 +290,7 @@ function prettifyCSS(text, ruleCount) {
   
   let indent = "";
   let indentLevel = 0;
-  const lexer = getCSSLexer(text, true);
+  const lexer = new InspectorCSSParserWrapper(text);
   
   const mappings = [];
   

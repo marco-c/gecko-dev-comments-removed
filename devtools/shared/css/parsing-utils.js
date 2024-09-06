@@ -11,7 +11,9 @@
 
 "use strict";
 
-const { getCSSLexer } = require("resource://devtools/shared/css/lexer.js");
+const {
+  InspectorCSSParserWrapper,
+} = require("resource://devtools/shared/css/lexer.js");
 
 loader.lazyRequireGetter(
   this,
@@ -38,19 +40,15 @@ const COMMENT_PARSING_HEURISTIC_BYPASS_CHAR =
 
 
 
-
-function* cssTokenizer(string, useInspectorCSSParser = false) {
-  const lexer = getCSSLexer(string, useInspectorCSSParser);
+function* cssTokenizer(string) {
+  const lexer = new InspectorCSSParserWrapper(string);
   while (true) {
     const token = lexer.nextToken();
     if (!token) {
       break;
     }
     
-    if (
-      token.tokenType !== "comment" ||
-      (useInspectorCSSParser && token.tokenType !== "Comment")
-    ) {
+    if (token.tokenType !== "Comment") {
       yield token;
     }
   }
@@ -76,7 +74,7 @@ function* cssTokenizer(string, useInspectorCSSParser = false) {
 
 
 function cssTokenizerWithLineColumn(string) {
-  const lexer = getCSSLexer(string, true);
+  const lexer = new InspectorCSSParserWrapper(string);
   const result = [];
   let prevToken = undefined;
   while (true) {
@@ -299,7 +297,9 @@ function parseDeclarationsInternal(
     throw new Error("empty input string");
   }
 
-  const lexer = getCSSLexer(inputString, true, true);
+  const lexer = new InspectorCSSParserWrapper(inputString, {
+    trackEOFChars: true,
+  });
 
   let declarations = [getEmptyDeclaration()];
   let lastProp = declarations[0];
@@ -642,11 +642,7 @@ function parsePseudoClassesAndAttributes(value) {
 
   
   
-  const tokensIterator = cssTokenizer(
-    value,
-    
-    true
-  );
+  const tokensIterator = cssTokenizer(value);
   const result = [];
   let current = "";
   let functionCount = 0;

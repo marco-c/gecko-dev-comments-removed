@@ -12,7 +12,9 @@
 
 "use strict";
 
-const { getCSSLexer } = require("resource://devtools/shared/css/lexer.js");
+const {
+  InspectorCSSParserWrapper,
+} = require("resource://devtools/shared/css/lexer.js");
 const {
   COMMENT_PARSING_HEURISTIC_BYPASS_CHAR,
   escapeCSSComment,
@@ -194,7 +196,7 @@ RuleRewriter.prototype = {
     
     
     text = text.replace(/;$/, "");
-    const lexer = getCSSLexer(text, true, true);
+    const lexer = new InspectorCSSParserWrapper(text, { trackEOFChars: true });
 
     let result = "";
     let previousOffset = 0;

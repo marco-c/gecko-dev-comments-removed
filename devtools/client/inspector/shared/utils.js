@@ -12,7 +12,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "getCSSLexer",
+  "InspectorCSSParserWrapper",
   "resource://devtools/shared/css/lexer.js",
   true
 );
@@ -51,7 +51,7 @@ function advanceValidate(keyCode, value, insertionPoint) {
   
   
   value = value.slice(0, insertionPoint) + ";" + value.slice(insertionPoint);
-  const lexer = getCSSLexer(value, true);
+  const lexer = new InspectorCSSParserWrapper(value);
   while (true) {
     const token = lexer.nextToken();
     if (token.endOffset > insertionPoint) {
