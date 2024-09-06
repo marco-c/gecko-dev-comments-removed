@@ -544,6 +544,12 @@ class StyleRuleActor extends Actor {
           type,
           conditionText: rawRule.conditionText,
         });
+      } else if (ruleClassName === "CSSScopeRule") {
+        ancestorData.push({
+          type,
+          start: rawRule.start,
+          end: rawRule.end,
+        });
       } else if (rawRule.selectorText) {
         
         
