@@ -90,7 +90,7 @@ impl<L, N, P, LP, C, Image, U, Integer, A, T, R, Transform>
 }
 
 
-#[derive(Animate, Clone, ToCss, ToComputedValue, Debug, MallocSizeOf, PartialEq)]
+#[derive(Animate, Clone, ToCss, ToComputedValue, ToResolvedValue, Debug, MallocSizeOf, PartialEq)]
 #[animation(no_bound(Image, Url))]
 pub enum GenericValueComponent<
     Length,
@@ -145,7 +145,7 @@ pub enum GenericValueComponent<
 }
 
 
-#[derive(Clone, ToComputedValue, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, ToComputedValue, ToResolvedValue, Debug, MallocSizeOf, PartialEq)]
 pub struct ComponentList<Component> {
     
     pub multiplier: Multiplier,
@@ -198,7 +198,7 @@ impl<Component: ToCss> ToCss for ComponentList<Component> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToComputedValue, ToResolvedValue)]
 pub struct Value<Component> {
     
     pub(crate) v: ValueInner<Component>,
@@ -233,7 +233,7 @@ impl<Component> Value<Component> {
 }
 
 
-#[derive(Animate, ToComputedValue, ToCss, Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Animate, ToComputedValue, ToResolvedValue, ToCss, Clone, Debug, MallocSizeOf, PartialEq)]
 pub enum ValueInner<Component> {
     
     
@@ -247,24 +247,6 @@ pub enum ValueInner<Component> {
 
 
 pub type SpecifiedValue = Value<SpecifiedValueComponent>;
-
-impl ToComputedValue for SpecifiedValue {
-    type ComputedValue = ComputedValue;
-
-    fn to_computed_value(&self, context: &computed::Context) -> Self::ComputedValue {
-        Self::ComputedValue {
-            v: self.v.to_computed_value(context),
-            url_data: self.url_data.clone(),
-        }
-    }
-
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        Self {
-            v: ToComputedValue::from_computed_value(&computed.v),
-            url_data: computed.url_data.clone(),
-        }
-    }
-}
 
 
 pub type ComputedValue = Value<ComputedValueComponent>;

@@ -302,7 +302,8 @@ impl ComputedCustomProperties {
         }
     }
 
-    fn get(
+    
+    pub fn get(
         &self,
         registration: &PropertyRegistrationData,
         name: &Name,
