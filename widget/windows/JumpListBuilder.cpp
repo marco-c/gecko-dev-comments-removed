@@ -616,7 +616,14 @@ void JumpListBuilder::DoPopulateJumpList(
         reinterpret_cast<const wchar_t*>(aCustomTitle.BeginReading()),
         pCustomArray);
 
-    if (FAILED(hr)) {
+    
+    
+    
+    
+    
+    
+    
+    if (FAILED(hr) && hr != E_ACCESSDENIED) {
       rv = NS_ERROR_UNEXPECTED;
       return;
     }
