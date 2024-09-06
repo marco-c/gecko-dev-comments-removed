@@ -62,8 +62,8 @@ var gViewSourceUtils = {
     }
     
     let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
-    if (browserWin && browserWin.BrowserViewSourceOfDocument) {
-      browserWin.BrowserViewSourceOfDocument(aArgs);
+    if (browserWin && browserWin.BrowserCommands.viewSourceOfDocument) {
+      browserWin.BrowserCommands.viewSourceOfDocument(aArgs);
       return;
     }
     
