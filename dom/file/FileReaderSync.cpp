@@ -313,8 +313,7 @@ namespace {
 
 class ReadReadyRunnable final : public WorkerSyncRunnable {
  public:
-  ReadReadyRunnable(WorkerPrivate* aWorkerPrivate,
-                    nsIEventTarget* aSyncLoopTarget)
+  explicit ReadReadyRunnable(nsIEventTarget* aSyncLoopTarget)
       : WorkerSyncRunnable(aSyncLoopTarget, "ReadReadyRunnable") {}
 
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
@@ -339,21 +338,18 @@ class ReadCallback final : public nsIInputStreamCallback {
   NS_DECL_THREADSAFE_ISUPPORTS
 
   ReadCallback(WorkerPrivate* aWorkerPrivate, nsIEventTarget* aEventTarget)
-      : mWorkerPrivate(aWorkerPrivate), mEventTarget(aEventTarget) {}
+      : mEventTarget(aEventTarget) {}
 
   NS_IMETHOD
   OnInputStreamReady(nsIAsyncInputStream* aStream) override {
     
-    RefPtr<ReadReadyRunnable> runnable =
-        new ReadReadyRunnable(mWorkerPrivate, mEventTarget);
+    RefPtr<ReadReadyRunnable> runnable = new ReadReadyRunnable(mEventTarget);
     return mEventTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
   }
 
  private:
   ~ReadCallback() = default;
 
-  
-  WorkerPrivate* mWorkerPrivate;
   nsCOMPtr<nsIEventTarget> mEventTarget;
 };
 
