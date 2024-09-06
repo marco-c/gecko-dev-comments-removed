@@ -728,13 +728,6 @@ pref("browser.helperApps.showOpenOptionForPdfJS", true);
 pref("browser.helperApps.showOpenOptionForViewableInternally", true);
 
 
-#ifdef NIGHTLY_BUILD
-pref("browser.search.newSearchConfig.enabled", true);
-#else
-pref("browser.search.newSearchConfig.enabled", false);
-#endif
-
-
 pref("browser.search.searchEnginesURL",      "https://addons.mozilla.org/%LOCALE%/firefox/search-engines/");
 
 
