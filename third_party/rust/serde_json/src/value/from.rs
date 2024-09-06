@@ -4,7 +4,6 @@ use crate::number::Number;
 use alloc::borrow::Cow;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::iter::FromIterator;
 
 macro_rules! from_integer {
     ($($ty:ident)*) => {
@@ -39,12 +38,14 @@ impl From<f32> for Value {
     
     
     
+    
     fn from(f: f32) -> Self {
-        From::from(f as f64)
+        Number::from_f32(f).map_or(Value::Null, Value::Number)
     }
 }
 
 impl From<f64> for Value {
+    
     
     
     
@@ -92,7 +93,7 @@ impl From<String> for Value {
     }
 }
 
-impl<'a> From<&'a str> for Value {
+impl From<&str> for Value {
     
     
     
@@ -182,7 +183,7 @@ impl<T: Into<Value>> From<Vec<T>> for Value {
     }
 }
 
-impl<'a, T: Clone + Into<Value>> From<&'a [T]> for Value {
+impl<T: Clone + Into<Value>> From<&[T]> for Value {
     
     
     
@@ -193,7 +194,7 @@ impl<'a, T: Clone + Into<Value>> From<&'a [T]> for Value {
     
     
     
-    fn from(f: &'a [T]) -> Self {
+    fn from(f: &[T]) -> Self {
         Value::Array(f.iter().cloned().map(Into::into).collect())
     }
 }

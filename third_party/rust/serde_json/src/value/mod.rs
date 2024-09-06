@@ -106,6 +106,7 @@ pub use crate::map::Map;
 pub use crate::number::Number;
 
 #[cfg(feature = "raw_value")]
+#[cfg_attr(docsrs, doc(cfg(feature = "raw_value")))]
 pub use crate::raw::{to_raw_value, RawValue};
 
 
@@ -182,11 +183,11 @@ impl Debug for Value {
             Value::Number(number) => Debug::fmt(number, formatter),
             Value::String(string) => write!(formatter, "String({:?})", string),
             Value::Array(vec) => {
-                formatter.write_str("Array ")?;
+                tri!(formatter.write_str("Array "));
                 Debug::fmt(vec, formatter)
             }
             Value::Object(map) => {
-                formatter.write_str("Object ")?;
+                tri!(formatter.write_str("Object "));
                 Debug::fmt(map, formatter)
             }
         }
@@ -511,6 +512,28 @@ impl Value {
         match *self {
             Value::Number(_) => true,
             _ => false,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_number(&self) -> Option<&Number> {
+        match self {
+            Value::Number(number) => Some(number),
+            _ => None,
         }
     }
 
@@ -880,7 +903,6 @@ mod from;
 mod index;
 mod partial_eq;
 mod ser;
-
 
 
 

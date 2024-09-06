@@ -299,8 +299,7 @@
 
 
 
-
-#![doc(html_root_url = "https://docs.rs/serde_json/1.0.93")]
+#![doc(html_root_url = "https://docs.rs/serde_json/1.0.116")]
 
 #![allow(
     clippy::collapsible_else_if,
@@ -315,18 +314,13 @@
     clippy::match_single_binding,
     clippy::needless_doctest_main,
     clippy::needless_late_init,
-    
-    clippy::ptr_arg,
     clippy::return_self_not_must_use,
     clippy::transmute_ptr_to_ptr,
-    clippy::unnecessary_wraps,
-    
-    clippy::unnested_or_patterns,
+    clippy::unconditional_recursion, 
+    clippy::unnecessary_wraps
 )]
 
 #![allow(
-    
-    clippy::iter_not_returning_iterator, 
     
     clippy::should_implement_trait,
     
@@ -338,6 +332,7 @@
     clippy::enum_glob_use,
     clippy::if_not_else,
     clippy::integer_division,
+    clippy::let_underscore_untyped,
     clippy::map_err_ignore,
     clippy::match_same_arms,
     clippy::similar_names,
@@ -361,14 +356,25 @@
     clippy::missing_errors_doc,
     clippy::must_use_candidate,
 )]
+
+#![deny(clippy::question_mark_used)]
 #![allow(non_upper_case_globals)]
 #![deny(missing_docs)]
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+
+#[cfg(not(any(feature = "std", feature = "alloc")))]
+compile_error! {
+    "serde_json requires that either `std` (default) or `alloc` feature is enabled"
+}
 
 extern crate alloc;
 
 #[cfg(feature = "std")]
+extern crate std;
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 #[doc(inline)]
 pub use crate::de::from_reader;
 #[doc(inline)]
@@ -378,6 +384,7 @@ pub use crate::error::{Error, Result};
 #[doc(inline)]
 pub use crate::ser::{to_string, to_string_pretty, to_vec, to_vec_pretty};
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 #[doc(inline)]
 pub use crate::ser::{to_writer, to_writer_pretty, Serializer};
 #[doc(inline)]
@@ -406,8 +413,6 @@ pub mod ser;
 #[cfg(not(feature = "std"))]
 mod ser;
 pub mod value;
-
-mod features_check;
 
 mod io;
 #[cfg(feature = "std")]

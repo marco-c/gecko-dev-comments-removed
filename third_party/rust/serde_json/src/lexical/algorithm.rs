@@ -51,7 +51,10 @@ where
         
         
         
-        let value = mantissa.checked_mul(power)?;
+        let value = match mantissa.checked_mul(power) {
+            None => return None,
+            Some(value) => value,
+        };
         if value >> mantissa_size != 0 {
             None
         } else {

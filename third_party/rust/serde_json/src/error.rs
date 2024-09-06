@@ -9,6 +9,8 @@ use core::str::FromStr;
 use serde::{de, ser};
 #[cfg(feature = "std")]
 use std::error;
+#[cfg(feature = "std")]
+use std::io::ErrorKind;
 
 
 
@@ -31,6 +33,7 @@ impl Error {
         self.err.line
     }
 
+    
     
     
     
@@ -61,12 +64,15 @@ impl Error {
             | ErrorCode::ExpectedObjectCommaOrEnd
             | ErrorCode::ExpectedSomeIdent
             | ErrorCode::ExpectedSomeValue
+            | ErrorCode::ExpectedDoubleQuote
             | ErrorCode::InvalidEscape
             | ErrorCode::InvalidNumber
             | ErrorCode::NumberOutOfRange
             | ErrorCode::InvalidUnicodeCodePoint
             | ErrorCode::ControlCharacterWhileParsingString
             | ErrorCode::KeyMustBeAString
+            | ErrorCode::ExpectedNumericKey
+            | ErrorCode::FloatKeyMustBeFinite
             | ErrorCode::LoneLeadingSurrogateInHexEscape
             | ErrorCode::TrailingComma
             | ErrorCode::TrailingCharacters
@@ -103,6 +109,55 @@ impl Error {
     
     pub fn is_eof(&self) -> bool {
         self.classify() == Category::Eof
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "std")]
+    pub fn io_error_kind(&self) -> Option<ErrorKind> {
+        if let ErrorCode::Io(io_error) = &self.err.code {
+            Some(io_error.kind())
+        } else {
+            None
+        }
     }
 }
 
@@ -165,8 +220,8 @@ impl From<Error> for io::Error {
         } else {
             match j.classify() {
                 Category::Io => unreachable!(),
-                Category::Syntax | Category::Data => io::Error::new(io::ErrorKind::InvalidData, j),
-                Category::Eof => io::Error::new(io::ErrorKind::UnexpectedEof, j),
+                Category::Syntax | Category::Data => io::Error::new(ErrorKind::InvalidData, j),
+                Category::Eof => io::Error::new(ErrorKind::UnexpectedEof, j),
             }
         }
     }
@@ -213,6 +268,9 @@ pub(crate) enum ErrorCode {
     ExpectedSomeValue,
 
     
+    ExpectedDoubleQuote,
+
+    
     InvalidEscape,
 
     
@@ -229,6 +287,12 @@ pub(crate) enum ErrorCode {
 
     
     KeyMustBeAString,
+
+    
+    ExpectedNumericKey,
+
+    
+    FloatKeyMustBeFinite,
 
     
     LoneLeadingSurrogateInHexEscape,
@@ -296,6 +360,7 @@ impl Display for ErrorCode {
             ErrorCode::ExpectedObjectCommaOrEnd => f.write_str("expected `,` or `}`"),
             ErrorCode::ExpectedSomeIdent => f.write_str("expected ident"),
             ErrorCode::ExpectedSomeValue => f.write_str("expected value"),
+            ErrorCode::ExpectedDoubleQuote => f.write_str("expected `\"`"),
             ErrorCode::InvalidEscape => f.write_str("invalid escape"),
             ErrorCode::InvalidNumber => f.write_str("invalid number"),
             ErrorCode::NumberOutOfRange => f.write_str("number out of range"),
@@ -304,6 +369,12 @@ impl Display for ErrorCode {
                 f.write_str("control character (\\u0000-\\u001F) found while parsing a string")
             }
             ErrorCode::KeyMustBeAString => f.write_str("key must be a string"),
+            ErrorCode::ExpectedNumericKey => {
+                f.write_str("invalid value: expected key to be a number in quotes")
+            }
+            ErrorCode::FloatKeyMustBeFinite => {
+                f.write_str("float key must be finite (got NaN or +/-inf)")
+            }
             ErrorCode::LoneLeadingSurrogateInHexEscape => {
                 f.write_str("lone leading surrogate in hex escape")
             }
@@ -319,7 +390,7 @@ impl serde::de::StdError for Error {
     #[cfg(feature = "std")]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match &self.err.code {
-            ErrorCode::Io(err) => Some(err),
+            ErrorCode::Io(err) => err.source(),
             _ => None,
         }
     }
@@ -367,11 +438,20 @@ impl de::Error for Error {
 
     #[cold]
     fn invalid_type(unexp: de::Unexpected, exp: &dyn de::Expected) -> Self {
-        if let de::Unexpected::Unit = unexp {
-            Error::custom(format_args!("invalid type: null, expected {}", exp))
-        } else {
-            Error::custom(format_args!("invalid type: {}, expected {}", unexp, exp))
-        }
+        Error::custom(format_args!(
+            "invalid type: {}, expected {}",
+            JsonUnexpected(unexp),
+            exp,
+        ))
+    }
+
+    #[cold]
+    fn invalid_value(unexp: de::Unexpected, exp: &dyn de::Expected) -> Self {
+        Error::custom(format_args!(
+            "invalid value: {}, expected {}",
+            JsonUnexpected(unexp),
+            exp,
+        ))
     }
 }
 
@@ -379,6 +459,22 @@ impl ser::Error for Error {
     #[cold]
     fn custom<T: Display>(msg: T) -> Error {
         make_error(msg.to_string())
+    }
+}
+
+struct JsonUnexpected<'a>(de::Unexpected<'a>);
+
+impl<'a> Display for JsonUnexpected<'a> {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self.0 {
+            de::Unexpected::Unit => formatter.write_str("null"),
+            de::Unexpected::Float(value) => write!(
+                formatter,
+                "floating point `{}`",
+                ryu::Buffer::new().format(value),
+            ),
+            unexp => Display::fmt(&unexp, formatter),
+        }
     }
 }
 

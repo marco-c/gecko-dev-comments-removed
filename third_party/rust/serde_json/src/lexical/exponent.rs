@@ -8,8 +8,8 @@
 
 #[inline]
 fn into_i32(value: usize) -> i32 {
-    if value > i32::max_value() as usize {
-        i32::max_value()
+    if value > i32::MAX as usize {
+        i32::MAX
     } else {
         value as i32
     }
