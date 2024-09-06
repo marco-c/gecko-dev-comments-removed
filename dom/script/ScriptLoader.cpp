@@ -2490,10 +2490,7 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIContent> scriptContent(
-      do_QueryInterface(aRequest->GetScriptLoadContext()->GetScriptElement()));
-  MOZ_ASSERT(scriptContent);
-  Document* ownerDoc = scriptContent->OwnerDoc();
+  Document* ownerDoc = aRequest->GetScriptLoadContext()->GetScriptOwnerDocument();
   if (ownerDoc != mDocument) {
     
     return NS_ERROR_FAILURE;
