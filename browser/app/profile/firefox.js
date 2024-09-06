@@ -1693,9 +1693,6 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 pref("browser.newtab.preload", true);
 
 
-pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
-
-
 pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "");
 
 pref("browser.newtabpage.activity-stream.newNewtabExperience.colors", "#0090ED,#FF4F5F,#2AC3A2,#FF7139,#A172FF,#FFA437,#FF2A8A");
