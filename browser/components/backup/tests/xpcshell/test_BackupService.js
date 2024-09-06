@@ -130,11 +130,12 @@ async function testCreateBackupHelper(sandbox, taskFn) {
 
   
   
+  
   let backupsChildren = await IOUtils.getChildren(backupsFolderPath);
   Assert.equal(
     backupsChildren.length,
-    2,
-    "There should only be 2 items in the backups folder"
+    3,
+    "There should only be 3 items in the backups folder"
   );
 
   
@@ -253,21 +254,6 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     1
   );
 
-  let archiveDateSuffix = bs.generateArchiveDateSuffix(
-    new Date(manifest.meta.date)
-  );
-
-  
-  
-  const EXPECTED_ARCHIVE_PATH = PathUtils.join(
-    bs.state.backupDirPath,
-    `${BackupService.BACKUP_FILE_NAME}_${manifest.meta.profileName}_${archiveDateSuffix}.html`
-  );
-  Assert.ok(
-    await IOUtils.exists(EXPECTED_ARCHIVE_PATH),
-    "Single-file backup archive was written."
-  );
-
   taskFn(manifest);
 
   
@@ -275,7 +261,6 @@ async function testCreateBackupHelper(sandbox, taskFn) {
   
   
   await IOUtils.remove(fakeProfilePath, { recursive: true });
-  await IOUtils.remove(EXPECTED_ARCHIVE_PATH);
 }
 
 

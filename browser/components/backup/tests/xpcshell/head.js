@@ -43,9 +43,6 @@ const FAKE_METADATA = {
 do_get_profile();
 
 
-Services.prefs.setStringPref("browser.backup.location", PathUtils.tempDir);
-
-
 
 
 class FakeBackupResource1 extends BackupResource {
