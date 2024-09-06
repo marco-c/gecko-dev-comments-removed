@@ -432,11 +432,12 @@ void AudioInputProcessing::SetPassThrough(MediaTrackGraph* aGraph,
 
   if (aPassThrough) {
     
+    
     ResetAudioProcessing(aGraph);
   } else {
     
+    
     MOZ_ASSERT(!mPacketizerInput);
-    EnsureAudioProcessing(aGraph, mRequestedInputChannelCount);
   }
 }
 
@@ -465,7 +466,6 @@ void AudioInputProcessing::Start(MediaTrackGraph* aGraph) {
   }
 
   MOZ_ASSERT(!mPacketizerInput);
-  EnsureAudioProcessing(aGraph, mRequestedInputChannelCount);
 }
 
 void AudioInputProcessing::Stop(MediaTrackGraph* aGraph) {
@@ -628,12 +628,10 @@ void AudioInputProcessing::Process(MediaTrackGraph* aGraph, GraphTime aFrom,
   }
 
   
-  MOZ_ASSERT(mPacketizerInput);
   
   
   
-  
-  EnsureAudioProcessing(aGraph, mRequestedInputChannelCount);
+  EnsurePacketizer(aGraph, mRequestedInputChannelCount);
 
   
   MOZ_ASSERT(static_cast<uint32_t>(mSegment.GetDuration()) +
@@ -993,8 +991,8 @@ TrackTime AudioInputProcessing::NumBufferedFrames(
   return mSegment.GetDuration();
 }
 
-void AudioInputProcessing::EnsureAudioProcessing(MediaTrackGraph* aGraph,
-                                                 uint32_t aChannels) {
+void AudioInputProcessing::EnsurePacketizer(MediaTrackGraph* aGraph,
+                                            uint32_t aChannels) {
   aGraph->AssertOnGraphThread();
   MOZ_ASSERT(aChannels > 0);
   MOZ_ASSERT(mEnabled);

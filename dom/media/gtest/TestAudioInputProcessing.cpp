@@ -113,12 +113,8 @@ TEST(TestAudioInputProcessing, Buffering)
   }
 
   
-  
   aip->Start(graph);
   {
-    
-    
-    
     
     
     
@@ -131,10 +127,12 @@ TEST(TestAudioInputProcessing, Buffering)
     aip->Process(graph, processedTime, nextTime, &input, &output);
     EXPECT_EQ(input.GetDuration(), nextTime - processedTime);
     EXPECT_EQ(output.GetDuration(), nextTime);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), 80);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
   }
 
   {
+    
+    
     
     
     
@@ -274,16 +272,15 @@ TEST(TestAudioInputProcessing, ProcessDataWithDifferentPrincipals)
   EXPECT_EQ(aip->PassThrough(graph), false);
   aip->Start(graph);
   {
-    EXPECT_EQ(aip->NumBufferedFrames(graph), 480);
     AudioSegment output;
     {
-      
-
       AudioSegment data;
       aip->Process(graph, 0, 4800, &input, &data);
       EXPECT_EQ(input.GetDuration(), 4800);
       EXPECT_EQ(data.GetDuration(), 4800);
 
+      
+      EXPECT_EQ(aip->NumBufferedFrames(graph), 480);
       AudioSegment dummy;
       dummy.AppendNullData(480);
       aip->Process(graph, 0, 480, &dummy, &data);
