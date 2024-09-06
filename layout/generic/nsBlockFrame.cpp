@@ -7376,10 +7376,23 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
     nsIFrame* prevContinuation = f->GetPrevContinuation();
     if (prevContinuation && prevContinuation->GetParent() == f->GetParent()) {
       floats->RemoveFrame(f);
-      aState.AppendPushedFloatChain(f);
       if (floats->IsEmpty()) {
         StealFloats()->Delete(PresShell());
         floats = nullptr;
+      }
+      aState.AppendPushedFloatChain(f);
+      if (!floats) {
+        
+        f = prev = nullptr;
+        break;
+      }
+      
+      
+      
+      
+      
+      floats = GetFloats();
+      if (!floats) {
         f = prev = nullptr;
         break;
       }
