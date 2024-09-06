@@ -114,8 +114,6 @@ unsafe impl Sync for CascadeDataCacheKey {}
 
 trait CascadeDataCacheEntry: Sized {
     
-    fn cascade_data(&self) -> &CascadeData;
-    
     
     fn rebuild<S>(
         device: &Device,
@@ -269,10 +267,6 @@ lazy_static! {
 }
 
 impl CascadeDataCacheEntry for UserAgentCascadeData {
-    fn cascade_data(&self) -> &CascadeData {
-        &self.cascade_data
-    }
-
     fn rebuild<S>(
         device: &Device,
         quirks_mode: QuirksMode,
@@ -3368,10 +3362,6 @@ impl CascadeData {
 }
 
 impl CascadeDataCacheEntry for CascadeData {
-    fn cascade_data(&self) -> &CascadeData {
-        self
-    }
-
     fn rebuild<S>(
         device: &Device,
         quirks_mode: QuirksMode,
