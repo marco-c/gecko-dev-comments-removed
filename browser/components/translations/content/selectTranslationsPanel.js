@@ -164,12 +164,20 @@ var SelectTranslationsPanel = new (class {
         fromMenuList: "select-translations-panel-from",
         fromMenuPopup: "select-translations-panel-from-menupopup",
         header: "select-translations-panel-header",
+        mainContent: "select-translations-panel-main-content",
         textArea: "select-translations-panel-text-area",
         toLabel: "select-translations-panel-to-label",
         toMenuList: "select-translations-panel-to",
         toMenuPopup: "select-translations-panel-to-menupopup",
+        translateButton: "select-translations-panel-translate-button",
         translateFullPageButton:
           "select-translations-panel-translate-full-page-button",
+        tryAnotherSourceMenuList:
+          "select-translations-panel-try-another-language",
+        unsupportedLanguageContent:
+          "select-translations-panel-unsupported-language-content",
+        unsupportedLanguageMessageBar:
+          "select-translations-panel-unsupported-language-message-bar",
       });
     }
 
@@ -290,10 +298,12 @@ var SelectTranslationsPanel = new (class {
 
   async #initializeLanguageMenuLists(langPairPromise) {
     const { fromLang, toLang } = await langPairPromise;
-    const { fromMenuList, toMenuList } = this.elements;
+    const { fromMenuList, toMenuList, tryAnotherSourceMenuList } =
+      this.elements;
     await Promise.all([
       this.#initializeLanguageMenuList(fromLang, fromMenuList),
       this.#initializeLanguageMenuList(toLang, toMenuList),
+      this.#initializeLanguageMenuList(null, tryAnotherSourceMenuList),
     ]);
   }
 
@@ -313,7 +323,7 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
-    this.#registerSourceText(sourceText);
+    this.#registerSourceText(sourceText, langPairPromise);
     await this.#ensureLangListsBuilt();
 
     await Promise.all([
@@ -321,7 +331,6 @@ var SelectTranslationsPanel = new (class {
       this.#initializeLanguageMenuLists(langPairPromise),
     ]);
 
-    this.#displayIdlePlaceholder();
     this.#maybeRequestTranslation();
     await this.#openPopup(event, screenX, screenY);
   }
@@ -335,6 +344,7 @@ var SelectTranslationsPanel = new (class {
 
   async #openPopup(event, screenX, screenY) {
     await window.ensureCustomElements("moz-button-group");
+    await window.ensureCustomElements("moz-message-bar");
 
     this.console?.log("Showing SelectTranslationsPanel");
     const { panel } = this.elements;
@@ -349,11 +359,27 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  #registerSourceText(sourceText) {
+
+  async #registerSourceText(sourceText, langPairPromise) {
     const { textArea } = this.elements;
-    this.#changeStateTo("idle", /* retainEntries */ false, {
-      sourceText,
-    });
+    const { fromLang, toLang } = await langPairPromise;
+    const isFromLangSupported = await TranslationsParent.isSupportedAsFromLang(
+      fromLang
+    );
+
+    if (isFromLangSupported) {
+      this.#changeStateTo("idle", /* retainEntries */ false, {
+        sourceText,
+        fromLanguage: fromLang,
+        toLanguage: toLang,
+      });
+    } else {
+      this.#changeStateTo("unsupported", /* retainEntries */ false, {
+        sourceText,
+        detectedLanguage: fromLang,
+        toLanguage: toLang,
+      });
+    }
 
     if (sourceText.length < SelectTranslationsPanel.textLengthThreshold) {
       textArea.style.height = SelectTranslationsPanel.shortTextHeight;
@@ -586,7 +612,8 @@ var SelectTranslationsPanel = new (class {
       case "closed":
       case "idle":
       case "translatable":
-      case "translated": {
+      case "translated":
+      case "unsupported": {
         textArea.classList.remove("translating");
         break;
       }
@@ -615,9 +642,11 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
-    const { fromLanguage, toLanguage } = this.#translationState;
+    const { fromLanguage, toLanguage, detectedLanguage } =
+      this.#translationState;
+    const sourceLanguage = fromLanguage ? fromLanguage : detectedLanguage;
     this.console?.debug(
-      `SelectTranslationsPanel (${fromLanguage ? fromLanguage : "??"}-${
+      `SelectTranslationsPanel (${sourceLanguage ? sourceLanguage : "??"}-${
         toLanguage ? toLanguage : "??"
       }) state change (${previousPhase} => ${phase})`
     );
@@ -682,13 +711,15 @@ var SelectTranslationsPanel = new (class {
 
     let nextPhase = "translatable";
 
-    if (!fromLanguage || !toLanguage) {
+    if (
       
-      nextPhase = "idle";
-    } else if (
+      !fromLanguage ||
       
-      previousFromLanguage === fromLanguage &&
-      previousToLanguage === toLanguage
+      !toLanguage ||
+      
+      (this.phase() !== "idle" &&
+        previousFromLanguage === fromLanguage &&
+        previousToLanguage === toLanguage)
     ) {
       nextPhase = previousPhase;
     }
@@ -727,6 +758,8 @@ var SelectTranslationsPanel = new (class {
 
 
   #displayIdlePlaceholder() {
+    this.#showMainContent();
+
     const { textArea } = SelectTranslationsPanel.elements;
     textArea.value = this.#idlePlaceholderText;
     this.#updateTextDirection();
@@ -738,6 +771,8 @@ var SelectTranslationsPanel = new (class {
 
 
   #displayTranslatingPlaceholder() {
+    this.#showMainContent();
+
     const { textArea } = SelectTranslationsPanel.elements;
     textArea.value = this.#translatingPlaceholderText;
     this.#updateTextDirection();
@@ -749,6 +784,8 @@ var SelectTranslationsPanel = new (class {
 
 
   #displayTranslatedText() {
+    this.#showMainContent();
+
     const { toLanguage } = this.#getSelectedLanguagePair();
     const { textArea } = SelectTranslationsPanel.elements;
     textArea.value = this.getTranslatedText();
@@ -760,9 +797,45 @@ var SelectTranslationsPanel = new (class {
   
 
 
+
+
+
+
+
+
+
+  #setPanelElementAttributes({
+    makeHidden = [],
+    makeVisible = [],
+    addDefault = [],
+    removeDefault = [],
+  }) {
+    for (const element of makeHidden) {
+      element.hidden = true;
+    }
+    for (const element of makeVisible) {
+      element.hidden = false;
+    }
+    for (const element of addDefault) {
+      element.setAttribute("default", "true");
+    }
+    for (const element of removeDefault) {
+      element.removeAttribute("default");
+    }
+  }
+
+  
+
+
   #updateConditionalUIEnabledState() {
     const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
-    const { copyButton, translateFullPageButton, textArea } = this.elements;
+    const {
+      copyButton,
+      translateFullPageButton,
+      translateButton,
+      textArea,
+      tryAnotherSourceMenuList,
+    } = this.elements;
 
     const invalidLangPairSelected = !fromLanguage || !toLanguage;
     const isTranslating = this.phase() === "translating";
@@ -770,6 +843,7 @@ var SelectTranslationsPanel = new (class {
     textArea.disabled = invalidLangPairSelected;
     translateFullPageButton.disabled = invalidLangPairSelected;
     copyButton.disabled = invalidLangPairSelected || isTranslating;
+    translateButton.disabled = !tryAnotherSourceMenuList.value;
   }
 
   
@@ -789,7 +863,82 @@ var SelectTranslationsPanel = new (class {
         this.#displayTranslatedText();
         break;
       }
+      case "unsupported": {
+        this.#displayUnsupportedLanguageMessage();
+      }
     }
+  }
+
+  
+
+
+  #showMainContent() {
+    const {
+      mainContent,
+      unsupportedLanguageContent,
+      doneButton,
+      translateButton,
+      translateFullPageButton,
+    } = this.elements;
+    this.#setPanelElementAttributes({
+      makeHidden: [unsupportedLanguageContent, translateButton],
+      makeVisible: [mainContent, doneButton, translateFullPageButton],
+      addDefault: [doneButton],
+      removeDefault: [translateButton],
+    });
+  }
+
+  
+
+
+  #showUnsupportedLanguageContent() {
+    const {
+      mainContent,
+      unsupportedLanguageContent,
+      doneButton,
+      translateButton,
+      translateFullPageButton,
+    } = this.elements;
+    this.#setPanelElementAttributes({
+      makeHidden: [mainContent, translateFullPageButton],
+      makeVisible: [unsupportedLanguageContent, doneButton, translateButton],
+      addDefault: [translateButton],
+      removeDefault: [doneButton],
+    });
+  }
+
+  
+
+
+
+  #displayUnsupportedLanguageMessage() {
+    const { detectedLanguage } = this.#translationState;
+    const { unsupportedLanguageMessageBar } = this.elements;
+    const displayNames = new Services.intl.DisplayNames(undefined, {
+      type: "language",
+    });
+    try {
+      const language = displayNames.of(detectedLanguage);
+      if (language) {
+        document.l10n.setAttributes(
+          unsupportedLanguageMessageBar,
+          "select-translations-panel-unsupported-language-message-known",
+          { language }
+        );
+      } else {
+        
+        throw new Error();
+      }
+    } catch {
+      
+      
+      document.l10n.setAttributes(
+        unsupportedLanguageMessageBar,
+        "select-translations-panel-unsupported-language-message-unknown"
+      );
+    }
+    this.#updateConditionalUIEnabledState();
+    this.#showUnsupportedLanguageContent();
   }
 
   
