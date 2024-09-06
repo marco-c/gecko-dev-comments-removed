@@ -685,6 +685,9 @@ this.downloads = class extends ExtensionAPIPersistent {
               throw new ExtensionError("filename must not be an absolute path");
             }
 
+            
+            filename = filename.replaceAll("%", "_");
+
             const pathComponents = PathUtils.splitRelative(filename, {
               allowEmpty: true,
               allowCurrentDir: true,
