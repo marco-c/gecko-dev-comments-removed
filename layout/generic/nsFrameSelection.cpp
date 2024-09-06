@@ -1442,11 +1442,6 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
   }
 
   
-  if (IsBatching()) {
-    return NS_OK;
-  }
-
-  
   return NotifySelectionListeners(SelectionType::eNormal);
 }
 
