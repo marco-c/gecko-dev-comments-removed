@@ -226,14 +226,14 @@ add_task(async function test_match_url_filters() {
     
     
     { shouldFail, filters: [{ hostEquals: "blank" }], url: "about:blank" },
-    { shouldFail, filters: [{ hostEquals: "blank" }], url: "about://blank" },
+    { shouldPass, filters: [{ hostEquals: "blank" }], url: "about://blank" },
     {
       shouldFail,
       filters: [{ hostEquals: "testDataURL" }],
       url: "data:,testDataURL",
     },
     { shouldPass, filters: [{ hostEquals: "" }], url: "about:blank" },
-    { shouldPass, filters: [{ hostEquals: "" }], url: "about://blank" },
+    { shouldFail, filters: [{ hostEquals: "" }], url: "about://blank" },
     { shouldPass, filters: [{ hostEquals: "" }], url: "data:,testDataURL" },
 
     
