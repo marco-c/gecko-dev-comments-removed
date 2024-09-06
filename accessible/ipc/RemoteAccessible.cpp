@@ -19,6 +19,7 @@
 #include "nsAccessibilityService.h"
 #include "mozilla/Unused.h"
 #include "nsAccUtils.h"
+#include "nsFocusManager.h"
 #include "nsTextEquivUtils.h"
 #include "Pivot.h"
 #include "Relation.h"
@@ -1874,7 +1875,47 @@ bool RemoteAccessible::HasPrimaryAction() const {
   return mCachedFields && mCachedFields->HasAttribute(CacheKey::PrimaryAction);
 }
 
-void RemoteAccessible::TakeFocus() const { Unused << mDoc->SendTakeFocus(mID); }
+void RemoteAccessible::TakeFocus() const {
+  Unused << mDoc->SendTakeFocus(mID);
+  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    auto* bp = static_cast<dom::BrowserParent*>(mDoc->Manager());
+    MOZ_ASSERT(bp);
+    dom::Element* owner = bp->GetOwnerElement();
+    if (fm->GetFocusedElement() == owner) {
+      
+      
+      return;
+    }
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  DocAccessibleParent* embeddedDoc = mDoc;
+  Accessible* embedder = mDoc->Parent();
+  while (embedder) {
+    MOZ_ASSERT(embedder->IsOuterDoc());
+    RemoteAccessible* embedderRemote = embedder->AsRemote();
+    if (!embedderRemote) {
+      
+      
+      embedder->TakeFocus();
+      break;
+    }
+    
+    if (embeddedDoc->IsTopLevelInContentProcess()) {
+      
+      
+      Unused << embedderRemote->mDoc->SendTakeFocus(embedderRemote->mID);
+    }
+    embeddedDoc = embedderRemote->mDoc;
+    embedder = embeddedDoc->Parent();
+  }
+}
 
 void RemoteAccessible::ScrollTo(uint32_t aHow) const {
   Unused << mDoc->SendScrollTo(mID, aHow);
