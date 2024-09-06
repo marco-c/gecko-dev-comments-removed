@@ -3164,11 +3164,6 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test fun goBackFromHistory() {
         
-        val geckoPrefs = sessionRule.getPrefs(
-            "fission.disableSessionHistoryInParent",
-        )
-        assumeThat(geckoPrefs[0] as Boolean, equalTo(true))
-        
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
         mainSession.loadTestPath(HELLO_HTML_PATH)

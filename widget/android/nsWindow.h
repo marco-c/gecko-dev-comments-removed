@@ -70,8 +70,6 @@ class nsWindow final : public nsBaseWidget {
       nsIPrincipal* aTriggeringPrincipal, bool aHasUserGesture,
       bool aIsTopLevel);
 
-  void OnUpdateSessionStore(mozilla::jni::Object::Param aBundle);
-
  private:
   
   

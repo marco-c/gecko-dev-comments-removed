@@ -251,11 +251,6 @@ class HistoryDelegateTest : BaseSessionTest() {
 
     @Test fun onHistoryStateChangeSavingState() {
         
-        val geckoPrefs = sessionRule.getPrefs(
-            "fission.disableSessionHistoryInParent",
-        )
-        assumeThat(geckoPrefs[0] as Boolean, equalTo(true))
-        
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
         
