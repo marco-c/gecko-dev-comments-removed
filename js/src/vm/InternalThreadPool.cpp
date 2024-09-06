@@ -187,7 +187,10 @@ void InternalThreadPool::DispatchTask(JS::DispatchReason reason) {
 }
 
 void InternalThreadPool::dispatchTask(JS::DispatchReason reason) {
-  gHelperThreadLock.assertOwnedByCurrentThread();
+  
+  
+  AutoLockHelperThreadState lock;
+
   queuedTasks++;
   if (reason == JS::DispatchReason::NewTask) {
     wakeup.notify_one();
@@ -279,7 +282,9 @@ void HelperThread::threadLoop(InternalThreadPool* pool) {
   while (!pool->terminating) {
     if (pool->queuedTasks != 0) {
       pool->queuedTasks--;
-      HelperThreadState().runOneTask(lock);
+
+      AutoUnlockHelperThreadState unlock(lock);
+      JS::RunHelperThreadTask();
       continue;
     }
 

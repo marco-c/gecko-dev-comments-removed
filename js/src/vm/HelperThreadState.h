@@ -81,8 +81,6 @@ typedef Vector<Tier2GeneratorTask*, 0, SystemAllocPolicy>
 
 
 class GlobalHelperThreadState {
-  friend class AutoLockHelperThreadState;
-
  public:
   
   
@@ -181,6 +179,7 @@ class GlobalHelperThreadState {
   
   
   JS::HelperThreadTaskCallback dispatchTaskCallback = nullptr;
+  friend class AutoHelperTaskQueue;
 
   
   
@@ -227,7 +226,7 @@ class GlobalHelperThreadState {
   void assertIsLockedByCurrentThread() const;
 #endif
 
-  void wait(AutoLockHelperThreadState& locked,
+  void wait(AutoLockHelperThreadState& lock,
             mozilla::TimeDuration timeout = mozilla::TimeDuration::Forever());
   void notifyAll(const AutoLockHelperThreadState&);
 

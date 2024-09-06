@@ -100,6 +100,12 @@ void js::GCParallelTask::joinWithLockHeld(AutoLockHelperThreadState& lock,
     return;
   }
 
+  if (lock.hasQueuedTasks()) {
+    
+    
+    AutoUnlockHelperThreadState unlock(lock);
+  }
+
   if (isNotYetRunning(lock) && deadline.isNothing()) {
     
     
