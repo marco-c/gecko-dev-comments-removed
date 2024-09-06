@@ -67,19 +67,15 @@ async function createKilobyteSizedFile(path, sizeInKB) {
 
 
 
-async function maybeRemoveFile(path) {
-  if (await IOUtils.exists(path)) {
-    return;
-  }
-
+async function maybeRemovePath(path) {
   try {
-    await IOUtils.remove(path);
+    await IOUtils.remove(path, { ignoreAbsent: true, recursive: true });
   } catch (error) {
     
     
-    if (error.name == "NS_ERROR_FILE_IS_LOCKED") {
-      return;
+    if (error.name != "NS_ERROR_FILE_IS_LOCKED") {
+      
+      console.error(error);
     }
-    throw error;
   }
 }
