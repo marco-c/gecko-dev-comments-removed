@@ -1,6 +1,9 @@
 
 
 
+
+
+
 onnotificationclick = function (e) {
   self.clients.matchAll().then(function (clients) {
     if (clients.length === 0) {
