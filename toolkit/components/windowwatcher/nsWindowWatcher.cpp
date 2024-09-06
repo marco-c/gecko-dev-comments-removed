@@ -1994,14 +1994,6 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
   
 
 
-
-  if (aFeatures.GetBoolWithDefault("alwayslowered", false) ||
-      aFeatures.GetBoolWithDefault("z-lock", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_LOWERED;
-  } else if (aFeatures.GetBoolWithDefault("alwaysraised", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_RAISED;
-  }
-
   if (aFeatures.GetBoolWithDefault("suppressanimation", false)) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_SUPPRESS_ANIMATION;
   }
