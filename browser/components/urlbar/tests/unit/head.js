@@ -260,8 +260,6 @@ async function addTestSuggestionsEngine(
     search_url: `http://localhost:${server.identity.primaryPort}/search`,
     suggest_url: `http://localhost:${server.identity.primaryPort}/suggest`,
     suggest_url_get_params: "?q={searchTerms}",
-    
-    search_form: `http://localhost:${server.identity.primaryPort}/search?q={searchTerms}`,
   });
   let engine = Services.search.getEngineByName(name);
   return engine;

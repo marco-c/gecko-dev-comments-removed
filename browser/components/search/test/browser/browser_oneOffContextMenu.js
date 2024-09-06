@@ -13,12 +13,23 @@ add_setup(async function () {
   });
   searchIcon = searchbar.querySelector(".searchbar-search-button");
 
+  
+  await SearchTestUtils.installSearchExtension(
+    {
+      name: "MozSearch",
+      keyword: "mozalias",
+    },
+    { setAsDefault: true }
+  );
+  
   await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
   });
 });
 
 add_task(async function telemetry() {
+  document.querySelector(".searchbar-textbox").value = "abc";
+
   let searchPopup = document.getElementById("PopupSearchAutoComplete");
   let oneOffInstance = searchPopup.oneOffButtons;
 
@@ -73,7 +84,7 @@ add_task(async function telemetry() {
   
   Assert.equal(
     tab.linkedBrowser.currentURI.spec,
-    "http://mochi.test:8888/browser/browser/components/search/test/browser/",
+    "http://mochi.test:8888/browser/browser/components/search/test/browser/?search&test=abc",
     "Expected search tab should have loaded"
   );
 

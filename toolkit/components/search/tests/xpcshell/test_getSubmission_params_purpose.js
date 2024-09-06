@@ -45,9 +45,6 @@ add_task(async function test_purpose() {
   engine = Services.search.getEngineByName("engine-rel-searchform-purpose");
 
   
-  Assert.ok(!engine.searchForm.includes("?&"));
-
-  
   check_submission("sb", "foo", "text/html", "system");
   check_submission("sb", "foo", "text/html", "searchbar");
 });
@@ -77,7 +74,4 @@ add_task(async function test_purpose() {
   check_submission("fflb", "foo", null, "keyword");
   check_submission("fflb", "foo", "text/html", "keyword");
   check_submission("", "foo", "text/html", "invalid");
-
-  
-  Assert.ok(!engine.searchForm.includes("?&"));
 });
