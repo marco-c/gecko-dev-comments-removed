@@ -10,11 +10,27 @@
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
 
+#include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsStringFwd.h"
 #include "nsWrapperCache.h"
 
+class nsINode;
+class nsRange;
 namespace mozilla::dom {
 class Document;
+class Text;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -27,6 +43,10 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
  public:
   explicit FragmentDirective(Document* aDocument);
+  FragmentDirective(Document* aDocument,
+                    nsTArray<TextDirective>&& aTextDirectives)
+      : mDocument(aDocument),
+        mUninvokedTextDirectives(std::move(aTextDirectives)) {}
 
  protected:
   ~FragmentDirective() = default;
@@ -37,8 +57,43 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
+  
+
+
+  void SetTextDirectives(nsTArray<TextDirective>&& aTextDirectives) {
+    mUninvokedTextDirectives = std::move(aTextDirectives);
+  }
+
+  
+
+
+  bool HasUninvokedDirectives() const {
+    return !mUninvokedTextDirectives.IsEmpty();
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsTArray<RefPtr<nsRange>> FindTextFragmentsInDocument();
+
  private:
+  RefPtr<nsRange> FindRangeForTextDirective(
+      const TextDirective& aTextDirective);
+  RefPtr<nsRange> FindStringInRange(nsRange* aSearchRange,
+                                    const nsAString& aQuery,
+                                    bool aWordStartBounded,
+                                    bool aWordEndBounded);
+
   RefPtr<Document> mDocument;
+  nsTArray<TextDirective> mUninvokedTextDirectives;
 };
 
 }  
