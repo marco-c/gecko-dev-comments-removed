@@ -431,6 +431,8 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   
   uint32_t maxInitializedGlobalsIndexPlus1_;
   FeatureUsage featureUsage_;
+  uint32_t lastBranchHintIndex_;
+  BranchHintVector* branchHintVector_;
 
 #ifdef DEBUG
   OpBytes op_;
@@ -548,6 +550,7 @@ class MOZ_STACK_CLASS OpIter : private Policy {
         env_(env),
         maxInitializedGlobalsIndexPlus1_(0),
         featureUsage_(FeatureUsage::None),
+        branchHintVector_(nullptr),
         op_(OpBytes(Op::Limit)),
         offsetOfLastReadOp_(0) {}
 #else
@@ -596,6 +599,32 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   
   bool currentBlockHasPolymorphicBase() const {
     return !controlStack_.empty() && controlStack_.back().polymorphicBase();
+  }
+
+  
+  
+  
+  
+  
+  BranchHint getBranchHint(uint32_t funcIndex, uint32_t branchOffset) {
+    if (!env_.branchHintingEnabled()) {
+      return BranchHint::Invalid;
+    }
+
+    
+    while (lastBranchHintIndex_ < branchHintVector_->length() &&
+           (*branchHintVector_)[lastBranchHintIndex_].branchOffset <
+               branchOffset) {
+      lastBranchHintIndex_++;
+    }
+
+    
+    if (lastBranchHintIndex_ >= branchHintVector_->length()) {
+      return BranchHint::Invalid;
+    }
+
+    
+    return (*branchHintVector_)[lastBranchHintIndex_].value;
   }
 
   
@@ -1270,6 +1299,12 @@ inline bool OpIter<Policy>::startFunction(uint32_t funcIndex,
   MOZ_ASSERT(maxInitializedGlobalsIndexPlus1_ == 0);
   BlockType type = BlockType::FuncResults(*env_.funcs[funcIndex].type);
 
+  
+  lastBranchHintIndex_ = 0;
+  if (env_.branchHintingEnabled()) {
+    branchHintVector_ = &env_.branchHints.getHintVector(funcIndex);
+  }
+
   size_t numArgs = env_.funcs[funcIndex].type->args().length();
   if (!unsetLocals_.init(locals, numArgs)) {
     return false;
@@ -1304,6 +1339,7 @@ inline bool OpIter<Policy>::startInitExpr(ValType expected) {
   MOZ_ASSERT(valueStack_.empty());
   MOZ_ASSERT(controlStack_.empty());
   MOZ_ASSERT(op_.b0 == uint16_t(Op::Limit));
+  lastBranchHintIndex_ = 0;
 
   
   

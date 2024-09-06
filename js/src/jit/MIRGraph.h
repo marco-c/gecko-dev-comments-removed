@@ -62,6 +62,9 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   bool alwaysBails_ = false;
 
   
+  wasm::BranchHint branchHint_ = wasm::BranchHint::Invalid;
+
+  
   void pushVariable(uint32_t slot) { push(slots_[slot]); }
 
   
@@ -374,6 +377,15 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   uint32_t nslots() const { return slots_.length(); }
   uint32_t id() const { return id_; }
   uint32_t numPredecessors() const { return predecessors_.length(); }
+
+  bool branchHintingUnlikely() const {
+    return branchHint_ == wasm::BranchHint::Unlikely;
+  }
+  bool branchHintingLikely() const {
+    return branchHint_ == wasm::BranchHint::Likely;
+  }
+
+  void setBranchHinting(wasm::BranchHint value) { branchHint_ = value; }
 
   uint32_t domIndex() const {
     MOZ_ASSERT(!isDead());

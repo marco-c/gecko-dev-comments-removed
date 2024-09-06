@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef jit_BranchHinting_h
+#define jit_BranchHinting_h
+
+
+
+namespace js::jit {
+
+class MIRGenerator;
+class MIRGraph;
+
+[[nodiscard]] bool BranchHinting(MIRGenerator* mir, MIRGraph& graph);
+
+}  
+
+#endif 

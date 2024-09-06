@@ -246,10 +246,27 @@ struct BranchHintCollection {
 
  public:
   
+  
+  static BranchHintVector invalidVector;
+
+  
   [[nodiscard]] bool addHintsForFunc(uint32_t functionIndex,
                                      BranchHintVector&& branchHints) {
     return branchHintsMap.put(functionIndex, std::move(branchHints));
   }
+
+  
+  
+  BranchHintVector& getHintVector(uint32_t funcIndex) const {
+    if (auto hintsVector = branchHintsMap.readonlyThreadsafeLookup(funcIndex)) {
+      return hintsVector->value();
+    }
+
+    
+    return invalidVector;
+  }
+
+  bool isEmpty() const { return branchHintsMap.empty(); }
 };
 
 enum class GlobalKind { Import, Constant, Variable };
