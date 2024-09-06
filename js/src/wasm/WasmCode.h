@@ -148,6 +148,10 @@ class CodeBlock;
 class ModuleSegment;
 class LazyStubSegment;
 
+using UniqueCodeBlock = UniquePtr<CodeBlock>;
+using UniqueConstCodeBlock = UniquePtr<const CodeBlock>;
+using UniqueCodeBlockVector = Vector<UniqueCodeBlock, 0, SystemAllocPolicy>;
+
 
 
 
@@ -333,12 +337,13 @@ using LazyFuncExportVector = Vector<LazyFuncExport, 0, SystemAllocPolicy>;
 
 class LazyStubTier {
   LazyStubSegmentVector stubSegments_;
+  UniqueCodeBlockVector codeBlocks_;
   LazyFuncExportVector exports_;
   size_t lastStubSegmentIndex_;
 
   [[nodiscard]] bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
                                           const CodeMetadata& codeMeta,
-                                          const CodeBlock& codeBlock,
+                                          const CodeBlock& tierCodeBlock,
                                           size_t* stubSegmentIndex);
 
  public:
@@ -348,7 +353,7 @@ class LazyStubTier {
   
   [[nodiscard]] bool createOneEntryStub(uint32_t funcExportIndex,
                                         const CodeMetadata& codeMeta,
-                                        const CodeBlock& codeBlock);
+                                        const CodeBlock& tierCodeBlock);
 
   bool entryStubsEmpty() const { return stubSegments_.empty(); }
   bool hasEntryStub(uint32_t funcIndex) const;
@@ -362,7 +367,7 @@ class LazyStubTier {
   
   
   [[nodiscard]] bool createTier2(const CodeMetadata& codeMeta,
-                                 const CodeBlock& codeBlock,
+                                 const CodeBlock& tierCodeBlock,
                                  Maybe<size_t>* stubSegmentIndex);
   void setJitEntries(const Maybe<size_t>& stubSegmentIndex, const Code& code);
 
@@ -373,8 +378,7 @@ class LazyStubTier {
 
 
 
-using UniqueCodeBlock = UniquePtr<CodeBlock>;
-using UniqueConstCodeBlock = UniquePtr<const CodeBlock>;
+enum class CodeBlockKind { BaselineTier, OptimizedTier, LazyStubs };
 
 class CodeBlock {
  public:
@@ -382,8 +386,8 @@ class CodeBlock {
   const Code* code;
 
   
+  const CodeBlockKind kind;
   SharedCodeSegment segment;
-  const Tier tier;
   Uint32Vector funcToCodeRange;
   CodeRangeVector codeRanges;
   CallSiteVector callSites;
@@ -397,14 +401,35 @@ class CodeBlock {
   
   uint32_t debugTrapOffset;
 
-  explicit CodeBlock(Tier tier)
-      : code(nullptr), tier(tier), debugTrapOffset(0) {}
+  static constexpr CodeBlockKind kindFromTier(Tier tier) {
+    if (tier == Tier::Optimized) {
+      return CodeBlockKind::OptimizedTier;
+    }
+    MOZ_ASSERT(tier == Tier::Baseline);
+    return CodeBlockKind::BaselineTier;
+  }
+
+  explicit CodeBlock(CodeBlockKind kind)
+      : code(nullptr), kind(kind), debugTrapOffset(0) {}
+  explicit CodeBlock(Tier tier) : CodeBlock(kindFromTier(tier)) {}
 
   bool initialized() const { return !!code && segment->initialized(); }
   bool initializeModule(const Code& code, const LinkData& linkData,
                         const CodeMetadata& codeMeta,
                         const CodeMetadataForAsmJS* codeMetaForAsmJS);
   bool initializeLazyStubs();
+
+  
+  Tier tier() const {
+    switch (kind) {
+      case CodeBlockKind::BaselineTier:
+        return Tier::Baseline;
+      case CodeBlockKind::OptimizedTier:
+        return Tier::Optimized;
+      default:
+        MOZ_CRASH();
+    }
+  }
 
   const ModuleSegment& moduleSegment() const { return *segment->asModule(); }
   const LazyStubSegment& lazyStubSegment() const {
