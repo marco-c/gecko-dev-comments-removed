@@ -143,7 +143,7 @@ module.exports = {
   },
 
   
-  plugins: ["fetch-options", "html", "json", "no-unsanitized"],
+  plugins: ["html", "json", "no-unsanitized"],
 
   
   
@@ -163,10 +163,6 @@ module.exports = {
 
     
     "dot-notation": "error",
-
-    
-    
-    "fetch-options/no-fetch-credentials": "off",
 
     
     "max-nested-callbacks": ["error", 10],
