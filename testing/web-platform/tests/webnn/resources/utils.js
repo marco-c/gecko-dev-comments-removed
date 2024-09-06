@@ -19,7 +19,10 @@ const kContextOptionsForVariant = {
   },
   gpu: {
     deviceType: 'gpu',
-  }
+  },
+  npu: {
+    deviceType: 'npu',
+  },
 };
 
 
