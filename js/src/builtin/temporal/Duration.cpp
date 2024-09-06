@@ -4914,10 +4914,10 @@ static bool Duration_nanoseconds(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_sign(JSContext* cx, const CallArgs& args) {
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
+
   
-  auto* duration = &args.thisv().toObject().as<DurationObject>();
-  int32_t sign = DurationSign(ToDuration(duration));
-  args.rval().setInt32(sign);
+  args.rval().setInt32(DurationSign(duration));
   return true;
 }
 
@@ -4934,12 +4934,10 @@ static bool Duration_sign(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_blank(JSContext* cx, const CallArgs& args) {
-  
-  auto* duration = &args.thisv().toObject().as<DurationObject>();
-  int32_t sign = DurationSign(ToDuration(duration));
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
 
   
-  args.rval().setBoolean(sign == 0);
+  args.rval().setBoolean(duration == Duration{});
   return true;
 }
 
@@ -4958,10 +4956,8 @@ static bool Duration_blank(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_with(JSContext* cx, const CallArgs& args) {
-  auto* durationObj = &args.thisv().toObject().as<DurationObject>();
-
   
-  auto duration = ToDuration(durationObj);
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
 
   
   Rooted<JSObject*> temporalDurationLike(
@@ -4996,8 +4992,7 @@ static bool Duration_with(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_negated(JSContext* cx, const CallArgs& args) {
-  auto* durationObj = &args.thisv().toObject().as<DurationObject>();
-  auto duration = ToDuration(durationObj);
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
 
   
   auto* result = CreateTemporalDuration(cx, duration.negate());
@@ -5022,8 +5017,7 @@ static bool Duration_negated(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_abs(JSContext* cx, const CallArgs& args) {
-  auto* durationObj = &args.thisv().toObject().as<DurationObject>();
-  auto duration = ToDuration(durationObj);
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
 
   
   auto* result = CreateTemporalDuration(cx, AbsoluteDuration(duration));
@@ -5082,8 +5076,7 @@ static bool Duration_subtract(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_round(JSContext* cx, const CallArgs& args) {
-  auto* durationObj = &args.thisv().toObject().as<DurationObject>();
-  auto duration = ToDuration(durationObj);
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
 
   
   auto existingLargestUnit = DefaultTemporalLargestUnit(duration);
@@ -5788,11 +5781,10 @@ static bool Duration_toString(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_toJSON(JSContext* cx, const CallArgs& args) {
-  auto* duration = &args.thisv().toObject().as<DurationObject>();
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
 
   
-  JSString* str =
-      TemporalDurationToString(cx, ToDuration(duration), Precision::Auto());
+  JSString* str = TemporalDurationToString(cx, duration, Precision::Auto());
   if (!str) {
     return false;
   }
@@ -5814,11 +5806,10 @@ static bool Duration_toJSON(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_toLocaleString(JSContext* cx, const CallArgs& args) {
-  auto* duration = &args.thisv().toObject().as<DurationObject>();
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
 
   
-  JSString* str =
-      TemporalDurationToString(cx, ToDuration(duration), Precision::Auto());
+  JSString* str = TemporalDurationToString(cx, duration, Precision::Auto());
   if (!str) {
     return false;
   }
