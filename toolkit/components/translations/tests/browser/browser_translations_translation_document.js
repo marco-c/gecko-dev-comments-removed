@@ -15,6 +15,7 @@ const { TranslationsDocument, LRUCache } = ChromeUtils.importESModule(
 
 
 
+
 async function createDoc(html, options) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -42,6 +43,7 @@ async function createDoc(html, options) {
       () => {
         throw new Error("Cannot request a new port");
       },
+      options?.mockedReportVisibleChange ?? (() => {}),
       performance.now(),
       () => performance.now(),
       new LRUCache()
@@ -81,12 +83,21 @@ async function createDoc(html, options) {
   return { htmlMatches, cleanup, translate, document };
 }
 
-add_task(async function test_translated_div_element() {
-  const { translate, htmlMatches, cleanup } = await createDoc( `
+add_task(async function test_translated_div_element_and_visible_change() {
+  let hasVisibleChangeOccurred = false;
+  const { translate, htmlMatches, cleanup } = await createDoc(
+     `
     <div>
       This is a simple translation.
     </div>
-  `);
+  `,
+    {
+      mockedTranslatorPort: createMockedTranslatorPort(),
+      mockedReportVisibleChange: () => {
+        hasVisibleChangeOccurred = true;
+      },
+    }
+  );
 
   translate();
 
@@ -99,6 +110,7 @@ add_task(async function test_translated_div_element() {
     `
   );
 
+  Assert.ok(hasVisibleChangeOccurred, "A visible change was reported.");
   cleanup();
 });
 
