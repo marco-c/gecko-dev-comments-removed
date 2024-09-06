@@ -1112,15 +1112,6 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
       onChange: this.onChangeFilters
     }), provider.id)))) : null));
   }
-  renderTableHead() {
-    return react__WEBPACK_IMPORTED_MODULE_1___default().createElement("thead", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tr", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
-      className: "nowrap"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
-      className: "nowrap"
-    }, "Provider"), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, "Source"), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
-      className: "nowrap"
-    }, "Last Updated")));
-  }
   renderProviders() {
     const providersConfig = this.state.providerPrefs;
     const providerInfo = this.state.providers;
@@ -1128,7 +1119,13 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     return react__WEBPACK_IMPORTED_MODULE_1___default().createElement("table", {
       className: "bordered-table",
       id: "providers-table"
-    }, this.renderTableHead(), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tbody", null, providersConfig.map((provider, i) => {
+    }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("thead", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tr", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
+      className: "fixed-width"
+    }), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
+      className: "no-wrap"
+    }, "Provider"), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, "Source"), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
+      className: "no-wrap"
+    }, "Last Updated"))), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tbody", null, providersConfig.map((provider, i) => {
       const isTestProvider = provider.id.includes("_local_testing");
       const info = providerInfo.find(p => p.id === provider.id) || {};
       const isUserEnabled = provider.id in userPrefInfo ? userPrefInfo[provider.id] : true;
@@ -1181,9 +1178,7 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
       })), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, provider.id), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
         className: `sourceLabel${isUserEnabled && isSystemEnabled ? "" : " isDisabled"}`
       }, label)), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
-        style: {
-          whiteSpace: "nowrap"
-        }
+        className: "no-wrap"
       }, info.lastUpdated ? relativeTime(info.lastUpdated) : ""));
     })));
   }
@@ -1191,10 +1186,12 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     return react__WEBPACK_IMPORTED_MODULE_1___default().createElement("table", {
       className: "bordered-table",
       id: "groups-table"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("thead", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tr", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
-      className: "nowrap"
+    }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("thead", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tr", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
+      className: "fixed-width"
+    }), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
+      className: "no-wrap"
     }, "Group"), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
-      className: "nowrap"
+      className: "no-wrap"
     }, "Impressions"), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, "Frequency caps"), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, "User preferences"))), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tbody", null, this.state.groups && this.state.groups.map(({
       id,
       enabled,
@@ -1232,14 +1229,16 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
       }
       return react__WEBPACK_IMPORTED_MODULE_1___default().createElement("tr", {
         key: id
-      }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("input", {
+      }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
+        className: "fixed-width"
+      }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("input", {
         type: "checkbox",
         checked: enabled,
         disabled: true
       })), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
-        className: "nowrap"
+        className: "no-wrap"
       }, id), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", {
-        className: "nowrap"
+        className: "no-wrap"
       }, this._getGroupImpressionsCount(id, frequency)), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, frequencyCaps.join(", "))), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("td", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
         className: "monospace small-text"
       }, userPreferences.join(", "))));
@@ -1442,7 +1441,7 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     }
     return react__WEBPACK_IMPORTED_MODULE_1___default().createElement("p", null, "No errors");
   }
-  getSection() {
+  renderSection() {
     const [section] = this.props.location.routes;
     switch (section) {
       case "targeting":
@@ -1481,22 +1480,27 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
         className: "asrouter-admin"
       }, "You must enable the ASRouter Admin page by setting", " ", react__WEBPACK_IMPORTED_MODULE_1___default().createElement("code", null, "browser.newtabpage.activity-stream.asrouter.devtoolsEnabled"), " ", "to ", react__WEBPACK_IMPORTED_MODULE_1___default().createElement("code", null, "true"), " and then reloading this page.");
     }
+    const [section] = this.props.location.routes;
     return react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
       className: "asrouter-admin"
     }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("aside", {
       className: "sidebar"
     }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("ul", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("a", {
       href: "#devtools",
-      className: "category"
+      className: "category",
+      "data-selected": section ? null : ""
     }, "General")), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("a", {
       href: "#devtools-targeting",
-      className: "category"
+      className: "category",
+      "data-selected": section === "targeting" ? "" : null
     }, "Targeting")), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("a", {
       href: "#devtools-impressions",
-      className: "category"
+      className: "category",
+      "data-selected": section === "impressions" ? "" : null
     }, "Impressions")), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("a", {
       href: "#devtools-errors",
-      className: "category"
+      className: "category",
+      "data-selected": section === "errors" ? "" : null
     }, "Errors")))), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("main", {
       className: "main-panel"
     }, react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h1", null, "ASRouter Admin"), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("p", {
@@ -1506,7 +1510,7 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     }), react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, "Need help using these tools? Check out our", " ", react__WEBPACK_IMPORTED_MODULE_1___default().createElement("a", {
       target: "blank",
       href: "https://firefox-source-docs.mozilla.org/browser/components/asrouter/docs/debugging-docs.html"
-    }, "documentation"))), this.getSection()));
+    }, "documentation"))), this.renderSection()));
   }
 }
 const ASRouterAdmin = props => react__WEBPACK_IMPORTED_MODULE_1___default().createElement(_SimpleHashRouter__WEBPACK_IMPORTED_MODULE_3__.SimpleHashRouter, null, react__WEBPACK_IMPORTED_MODULE_1___default().createElement(ASRouterAdminInner, props));
