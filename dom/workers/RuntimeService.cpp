@@ -598,7 +598,7 @@ void CTypesActivityCallback(JSContext* aCx, JS::CTypesActivityType aType) {
 
 
 
-class JSDispatchableRunnable final : public WorkerRunnable {
+class JSDispatchableRunnable final : public WorkerThreadRunnable {
   JS::Dispatchable* mDispatchable;
 
   ~JSDispatchableRunnable() { MOZ_ASSERT(!mDispatchable); }
@@ -619,8 +619,8 @@ class JSDispatchableRunnable final : public WorkerRunnable {
  public:
   JSDispatchableRunnable(WorkerPrivate* aWorkerPrivate,
                          JS::Dispatchable* aDispatchable)
-      : WorkerRunnable(aWorkerPrivate, "JSDispatchableRunnable",
-                       WorkerRunnable::WorkerThread),
+      : WorkerThreadRunnable(aWorkerPrivate, "JSDispatchableRunnable",
+                             WorkerRunnable::WorkerThread),
         mDispatchable(aDispatchable) {
     MOZ_ASSERT(mDispatchable);
   }

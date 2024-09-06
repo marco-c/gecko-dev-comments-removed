@@ -62,7 +62,8 @@ class ServiceWorkerOp : public RemoteWorkerChild::Op {
   bool IsTerminationOp() const;
 
   
-  virtual RefPtr<WorkerRunnable> GetRunnable(WorkerPrivate* aWorkerPrivate);
+  virtual RefPtr<WorkerThreadRunnable> GetRunnable(
+      WorkerPrivate* aWorkerPrivate);
 
   
   

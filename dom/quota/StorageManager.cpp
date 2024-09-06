@@ -119,13 +119,14 @@ class RequestResolver final : public nsIQuotaCallback {
 };
 
 
-class RequestResolver::FinishWorkerRunnable final : public WorkerRunnable {
+class RequestResolver::FinishWorkerRunnable final
+    : public WorkerThreadRunnable {
   RefPtr<RequestResolver> mResolver;
 
  public:
   explicit FinishWorkerRunnable(RequestResolver* aResolver)
-      : WorkerRunnable(aResolver->mProxy->GetWorkerPrivate(),
-                       "RequestResolver::FinishWorkerRunnable"),
+      : WorkerThreadRunnable(aResolver->mProxy->GetWorkerPrivate(),
+                             "RequestResolver::FinishWorkerRunnable"),
         mResolver(aResolver) {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(aResolver);
