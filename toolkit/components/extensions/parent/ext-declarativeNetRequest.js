@@ -92,17 +92,21 @@ this.declarativeNetRequest = class extends ExtensionAPI {
           });
         },
 
-        async getDynamicRules() {
+        async getDynamicRules(details) {
           await ExtensionDNR.ensureInitialized(extension);
-          return ExtensionDNR.getRuleManager(extension).getDynamicRules();
+          return ExtensionDNR.getRuleManager(extension).getDynamicRules(
+            details?.ruleIds
+          );
         },
 
-        getSessionRules() {
+        getSessionRules(details) {
           
           
           
           
-          return ExtensionDNR.getRuleManager(extension).getSessionRules();
+          return ExtensionDNR.getRuleManager(extension).getSessionRules(
+            details?.ruleIds
+          );
         },
 
         isRegexSupported(regexOptions) {
