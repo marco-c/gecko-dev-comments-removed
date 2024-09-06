@@ -55,6 +55,7 @@ class RTC_EXPORT VideoDecoderFactory {
   virtual std::unique_ptr<VideoDecoder> Create(const Environment& env,
                                                const SdpVideoFormat& format);
 
+ private:
   
   
   virtual std::unique_ptr<VideoDecoder> CreateVideoDecoder(
