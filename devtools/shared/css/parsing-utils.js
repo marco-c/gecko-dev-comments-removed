@@ -23,7 +23,6 @@ loader.lazyRequireGetter(
 const SELECTOR_ATTRIBUTE = (exports.SELECTOR_ATTRIBUTE = 1);
 const SELECTOR_ELEMENT = (exports.SELECTOR_ELEMENT = 2);
 const SELECTOR_PSEUDO_CLASS = (exports.SELECTOR_PSEUDO_CLASS = 3);
-const CSS_BLOCKS = { "(": ")", "[": "]" };
 
 
 
@@ -300,7 +299,7 @@ function parseDeclarationsInternal(
     throw new Error("empty input string");
   }
 
-  const lexer = getCSSLexer(inputString);
+  const lexer = getCSSLexer(inputString, true, true);
 
   let declarations = [getEmptyDeclaration()];
   let lastProp = declarations[0];
@@ -344,7 +343,7 @@ function parseDeclarationsInternal(
 
     
     
-    if (token.tokenType !== "whitespace" && token.tokenType !== "comment") {
+    if (token.tokenType !== "WhiteSpace" && token.tokenType !== "Comment") {
       if (lastProp.offsets[0] === undefined) {
         lastProp.offsets[0] = token.startOffset;
       }
@@ -365,9 +364,8 @@ function parseDeclarationsInternal(
     if (
       
       !isInNested &&
-      token.tokenType === "symbol" &&
       
-      token.text == "{" &&
+      token.tokenType === "CurlyBracketBlock" &&
       
       !currentBlocks.length
     ) {
@@ -377,13 +375,10 @@ function parseDeclarationsInternal(
 
       continue;
     } else if (isInNested) {
-      if (token.tokenType === "symbol") {
-        if (token.text == "{") {
-          nestingLevel++;
-        }
-        if (token.text == "}") {
-          nestingLevel--;
-        }
+      if (token.tokenType == "CurlyBracketBlock") {
+        nestingLevel++;
+      } else if (token.tokenType == "CloseCurlyBracket") {
+        nestingLevel--;
       }
 
       
@@ -396,21 +391,24 @@ function parseDeclarationsInternal(
       }
       continue;
     } else if (
-      token.tokenType === "symbol" &&
-      CSS_BLOCKS[currentBlocks.at(-1)] === token.text
+      token.tokenType === "CloseParenthesis" ||
+      token.tokenType === "CloseSquareBracket"
     ) {
       
       currentBlocks.pop();
       current += token.text;
-    } else if (token.tokenType === "symbol" && CSS_BLOCKS[token.text]) {
+    } else if (
+      token.tokenType === "ParenthesisBlock" ||
+      token.tokenType === "SquareBracketBlock"
+    ) {
       
       currentBlocks.push(token.text);
       current += token.text;
-    } else if (token.tokenType === "function") {
+    } else if (token.tokenType === "Function") {
       
       currentBlocks.push("(");
-      current += token.text + "(";
-    } else if (token.tokenType === "symbol" && token.text === ":") {
+      current += token.text;
+    } else if (token.tokenType === "Colon") {
       
       importantState = 0;
       importantWS = false;
@@ -436,11 +434,7 @@ function parseDeclarationsInternal(
         
         current += ":";
       }
-    } else if (
-      token.tokenType === "symbol" &&
-      token.text === ";" &&
-      !currentBlocks.length
-    ) {
+    } else if (token.tokenType === "Semicolon" && !currentBlocks.length) {
       lastProp.terminator = "";
       
       
@@ -460,7 +454,7 @@ function parseDeclarationsInternal(
       }
       lastProp.value = cssTrim(current);
       resetStateForNextDeclaration();
-    } else if (token.tokenType === "ident") {
+    } else if (token.tokenType === "Ident") {
       if (token.text === "important" && importantState === 1) {
         importantState = 2;
       } else {
@@ -475,17 +469,15 @@ function parseDeclarationsInternal(
           importantState = 0;
           importantWS = false;
         }
-        
-        
-        current += CSS.escape(token.text);
+        current += token.text;
       }
-    } else if (token.tokenType === "symbol" && token.text === "!") {
+    } else if (token.tokenType === "Delim" && token.text === "!") {
       importantState = 1;
-    } else if (token.tokenType === "whitespace") {
+    } else if (token.tokenType === "WhiteSpace") {
       if (current !== "") {
         current = current.trimEnd() + " ";
       }
-    } else if (token.tokenType === "comment") {
+    } else if (token.tokenType === "Comment") {
       if (parseComments && !lastProp.name && !lastProp.value) {
         const commentText = inputString.substring(
           token.startOffset + 2,

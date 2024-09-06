@@ -483,9 +483,7 @@ const TEST_DATA = [
       enabled: true,
     },
     expected: "something: \\\\;color: red;",
-    
-    
-    changed: { 0: "\uFFFD\\" },
+    changed: { 0: "\\\\" },
   },
 
   
