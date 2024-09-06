@@ -123,13 +123,13 @@ const openOAuthWindow = (details, redirectURI) => {
 };
 
 this.identity = class extends ExtensionAPI {
-  getAPI() {
+  getAPI(context) {
     return {
       identity: {
         launchWebAuthFlowInParent: function (details, redirectURI) {
           
           
-          return checkRedirected(details.url, redirectURI).catch(
+          let promise = checkRedirected(details.url, redirectURI).catch(
             requestError => {
               
               if (requestError !== 0) {
@@ -145,6 +145,13 @@ this.identity = class extends ExtensionAPI {
               return openOAuthWindow(details, redirectURI);
             }
           );
+          if (context.isBackgroundContext) {
+            context.extension.emit("background-script-idle-waituntil", {
+              promise,
+              reason: "launchWebAuthFlow",
+            });
+          }
+          return promise;
         },
       },
     };
