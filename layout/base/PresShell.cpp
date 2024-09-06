@@ -11848,9 +11848,8 @@ void PresShell::SyncWindowProperties(bool aSync) {
     windowWidget->SetTransparencyMode(mode);
 
     
-    if (auto scheme = pc->GetOverriddenOrEmbedderColorScheme()) {
-      windowWidget->SetColorScheme(scheme);
-    }
+    windowWidget->SetColorScheme(
+        Some(LookAndFeel::ColorSchemeForFrame(rootFrame)));
   }
 
   if (!weak.IsAlive()) {

@@ -3,7 +3,6 @@
 
 
 
-#include "AppearanceOverride.h"
 #include "mozilla/widget/ThemeChangeKind.h"
 #include "nsLookAndFeel.h"
 #include "nsCocoaFeatures.h"
