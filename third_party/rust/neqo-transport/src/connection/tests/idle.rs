@@ -415,9 +415,8 @@ fn keep_alive_initiator() {
     let stream = create_stream_idle(&mut server, &mut client);
     let mut now = now();
 
-    
     server.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut server, now, default_timeout() / 2);
+    assert_idle(&mut server, now, default_timeout());
 
     
     now += default_timeout() / 2;
@@ -432,7 +431,7 @@ fn keep_alive_initiator() {
     assert!(client.process(out.as_ref(), now).dgram().is_none());
 
     
-    assert_idle(&mut server, now, default_timeout() / 2);
+    assert_idle(&mut server, now, default_timeout());
     now += default_timeout() / 2;
     let pings_before2 = server.stats().frame_tx.ping;
     let ping = server.process_output(now).dgram();
@@ -449,9 +448,8 @@ fn keep_alive_lost() {
     let stream = create_stream_idle(&mut server, &mut client);
     let mut now = now();
 
-    
     server.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut server, now, default_timeout() / 2);
+    assert_idle(&mut server, now, default_timeout());
 
     
     now += default_timeout() / 2;
@@ -480,7 +478,7 @@ fn keep_alive_lost() {
     
     
     now += AT_LEAST_PTO;
-    assert_idle(&mut server, now, default_timeout() / 2 - AT_LEAST_PTO);
+    assert_idle(&mut server, now, default_timeout() - AT_LEAST_PTO);
 }
 
 
@@ -492,9 +490,8 @@ fn keep_alive_responder() {
     let stream = create_stream_idle(&mut server, &mut client);
     let mut now = now();
 
-    
     client.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut client, now, default_timeout() / 2);
+    assert_idle(&mut client, now, default_timeout());
 
     
     now += default_timeout() / 2;
@@ -513,7 +510,7 @@ fn keep_alive_unmark() {
     let stream = create_stream_idle(&mut client, &mut server);
 
     client.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     client.stream_keep_alive(stream, false).unwrap();
     assert_idle(&mut client, now(), default_timeout());
@@ -543,11 +540,11 @@ fn keep_alive_close() {
     let stream = create_stream_idle(&mut client, &mut server);
 
     client.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     client.stream_close_send(stream).unwrap();
     transfer_force_idle(&mut client, &mut server);
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     server.stream_close_send(stream).unwrap();
     transfer_force_idle(&mut server, &mut client);
@@ -564,11 +561,11 @@ fn keep_alive_reset() {
     let stream = create_stream_idle(&mut client, &mut server);
 
     client.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     client.stream_close_send(stream).unwrap();
     transfer_force_idle(&mut client, &mut server);
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     server.stream_reset_send(stream, 0).unwrap();
     transfer_force_idle(&mut server, &mut client);
@@ -590,7 +587,7 @@ fn keep_alive_stop_sending() {
     let stream = create_stream_idle(&mut client, &mut server);
 
     client.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     client.stream_close_send(stream).unwrap();
     client.stream_stop_sending(stream, 0).unwrap();
@@ -614,14 +611,14 @@ fn keep_alive_multiple_stop() {
     let stream = create_stream_idle(&mut client, &mut server);
 
     client.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     let other = client.stream_create(StreamType::BiDi).unwrap();
     client.stream_keep_alive(other, true).unwrap();
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     client.stream_keep_alive(stream, false).unwrap();
-    assert_idle(&mut client, now(), default_timeout() / 2);
+    assert_idle(&mut client, now(), default_timeout());
 
     client.stream_keep_alive(other, false).unwrap();
     assert_idle(&mut client, now(), default_timeout());
@@ -692,9 +689,8 @@ fn keep_alive_with_ack_eliciting_packet_lost() {
 
     
     let stream = client.stream_create(StreamType::BiDi).unwrap();
-    
     client.stream_keep_alive(stream, true).unwrap();
-    assert_idle(&mut client, now, IDLE_TIMEOUT / 2);
+    assert_idle(&mut client, now, IDLE_TIMEOUT);
 
     
     _ = client.stream_send(stream, DEFAULT_STREAM_DATA).unwrap();
@@ -710,11 +706,9 @@ fn keep_alive_with_ack_eliciting_packet_lost() {
     assert!(retransmit.is_some());
 
     
-    assert_eq!(
-        client.process_output(now).callback(),
-        IDLE_TIMEOUT / 2 - pto
-    );
+    assert_eq!(client.process_output(now).callback(), pto * 2);
 
+    
     
     now += IDLE_TIMEOUT / 2 - pto;
     let pings_before = client.stats().frame_tx.ping;
@@ -740,5 +734,27 @@ fn keep_alive_with_ack_eliciting_packet_lost() {
     now += IDLE_TIMEOUT / 2 - 2 * pto;
     let out = client.process_output(now);
     assert!(matches!(out, Output::None));
+    assert!(matches!(client.state(), State::Closed(_)));
+}
+
+#[test]
+fn keep_alive_with_unresponsive_server() {
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+
+    let mut now = now();
+    let client_stream = client.stream_create(StreamType::BiDi).unwrap();
+    client.stream_keep_alive(client_stream, true).unwrap();
+
+    for _ in 0..100 {
+        if client.stream_send(client_stream, &[0x0; 500]).is_err() {
+            break;
+        }
+        if let Output::Callback(t) = client.process_output(now) {
+            now += t;
+        }
+    }
+    
     assert!(matches!(client.state(), State::Closed(_)));
 }

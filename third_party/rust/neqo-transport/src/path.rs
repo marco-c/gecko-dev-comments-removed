@@ -706,8 +706,12 @@ impl Path {
 
     
     pub fn datagram<V: Into<Vec<u8>>>(&mut self, payload: V) -> Datagram {
+        
+        
+        
+        let tos = self.tos();
         self.ecn_info.on_packet_sent();
-        Datagram::new(self.local, self.remote, self.tos(), Some(self.ttl), payload)
+        Datagram::new(self.local, self.remote, tos, Some(self.ttl), payload)
     }
 
     
