@@ -13,7 +13,12 @@ user_pref("browser.cache.disk.smart_size.enabled", true);
 user_pref("extensions.webextensions.warnings-as-errors", false);
 
 user_pref("toolkit.telemetry.server", "");
+
+
+
 user_pref("telemetry.fog.test.localhost_port", -1);
+user_pref("telemetry.fog.test.activity_limit", -1);
+user_pref("telemetry.fog.test.inactivity_limit", -1);
 
 
 user_pref("app.update.disabledForTesting", true);

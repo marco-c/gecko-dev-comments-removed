@@ -161,6 +161,11 @@ int RunGTestFunc(int* argc, char** argv) {
   
   
   Preferences::SetInt("telemetry.fog.test.localhost_port", -1);
+  
+  
+  
+  Preferences::SetInt("telemetry.fog.test.activity_limit", -1);
+  Preferences::SetInt("telemetry.fog.test.inactivity_limit", -1);
   const nsCString empty;
   RefPtr<FOG>(FOG::GetSingleton())->InitializeFOG(empty, empty, false);
 

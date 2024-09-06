@@ -85,7 +85,12 @@ user_pref("testing.supports.moz-bool-pref", false);
 
 user_pref("toolkit.telemetry.enabled", false);
 user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy/");
+
+
+
 user_pref("telemetry.fog.test.localhost_port", -1);
+user_pref("telemetry.fog.test.activity_limit", -1);
+user_pref("telemetry.fog.test.inactivity_limit", -1);
 user_pref("ui.caretBlinkTime", -1);
 user_pref("ui.caretWidth", 1);
 user_pref("ui.prefersReducedMotion", 0);

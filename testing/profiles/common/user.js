@@ -81,7 +81,10 @@ user_pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
 user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 
 
+
 user_pref("telemetry.fog.test.localhost_port", -1);
+user_pref("telemetry.fog.test.activity_limit", -1);
+user_pref("telemetry.fog.test.inactivity_limit", -1);
 
 
 

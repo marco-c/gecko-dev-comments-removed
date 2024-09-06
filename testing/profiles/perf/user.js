@@ -79,7 +79,12 @@ user_pref("security.enable_java", false);
 user_pref("security.external_protocol_requires_permission", false);
 user_pref("security.fileuri.strict_origin_policy", false);
 user_pref("toolkit.telemetry.server", "https://127.0.0.1/telemetry-dummy/");
+
+
+
 user_pref("telemetry.fog.test.localhost_port", -1);
+user_pref("telemetry.fog.test.activity_limit", -1);
+user_pref("telemetry.fog.test.inactivity_limit", -1);
 
 
 
