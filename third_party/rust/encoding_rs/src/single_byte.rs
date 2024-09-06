@@ -53,9 +53,6 @@ impl SingleByteDecoder {
                     
                     
                     
-                    
-                    
-                    
                     let mapped =
                         unsafe { *(self.table.get_unchecked(non_ascii as usize - 0x80usize)) };
                     
@@ -154,12 +151,9 @@ impl SingleByteDecoder {
         } else {
             (DecoderResult::InputEmpty, src.len())
         };
-        
-        
         let mut converted = 0usize;
         'outermost: loop {
             match unsafe {
-                
                 ascii_to_basic_latin(
                     src.as_ptr().add(converted),
                     dst.as_mut_ptr().add(converted),
@@ -170,17 +164,8 @@ impl SingleByteDecoder {
                     return (pending, length, length);
                 }
                 Some((mut non_ascii, consumed)) => {
-                    
-                    
-                    
-                    
-                    
-                    
                     converted += consumed;
                     'middle: loop {
-                        
-                        
-                        
                         
                         
                         
@@ -201,7 +186,6 @@ impl SingleByteDecoder {
                             
                             *(dst.get_unchecked_mut(converted)) = mapped;
                         }
-                        
                         converted += 1;
                         
                         
@@ -214,10 +198,7 @@ impl SingleByteDecoder {
                         if converted == length {
                             return (pending, length, length);
                         }
-                        
-                        
                         let mut b = unsafe { *(src.get_unchecked(converted)) };
-                        
                         'innermost: loop {
                             if b > 127 {
                                 non_ascii = b;
@@ -227,20 +208,15 @@ impl SingleByteDecoder {
                             
                             
                             unsafe {
-                                
                                 *(dst.get_unchecked_mut(converted)) = u16::from(b);
                             }
-                            
-                            
                             converted += 1;
                             if b < 60 {
                                 
                                 if converted == length {
                                     return (pending, length, length);
                                 }
-                                
                                 b = unsafe { *(src.get_unchecked(converted)) };
-                                
                                 continue 'innermost;
                             }
                             
@@ -258,8 +234,6 @@ impl SingleByteDecoder {
         loop {
             if let Some((non_ascii, offset)) = validate_ascii(bytes) {
                 total += offset;
-                
-                
                 let mapped = unsafe { *(self.table.get_unchecked(non_ascii as usize - 0x80usize)) };
                 if mapped != u16::from(non_ascii) {
                     return total;
@@ -410,12 +384,9 @@ impl SingleByteEncoder {
         } else {
             (EncoderResult::InputEmpty, src.len())
         };
-        
-        
         let mut converted = 0usize;
         'outermost: loop {
             match unsafe {
-                
                 basic_latin_to_ascii(
                     src.as_ptr().add(converted),
                     dst.as_mut_ptr().add(converted),
@@ -426,23 +397,15 @@ impl SingleByteEncoder {
                     return (pending, length, length);
                 }
                 Some((mut non_ascii, consumed)) => {
-                    
-                    
-                    
-                    
-                    
-                    
                     converted += consumed;
                     'middle: loop {
                         
                         match self.encode_u16(non_ascii) {
                             Some(byte) => {
                                 unsafe {
-                                    
                                     *(dst.get_unchecked_mut(converted)) = byte;
                                 }
                                 converted += 1;
-                                
                             }
                             None => {
                                 
@@ -458,8 +421,6 @@ impl SingleByteEncoder {
                                             converted,
                                         );
                                     }
-                                    
-                                    
                                     let second =
                                         u32::from(unsafe { *src.get_unchecked(converted + 1) });
                                     if second & 0xFC00u32 != 0xDC00u32 {
@@ -471,18 +432,6 @@ impl SingleByteEncoder {
                                     }
                                     
                                     let astral: char = unsafe {
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
                                         ::core::char::from_u32_unchecked(
                                             (u32::from(non_ascii) << 10) + second
                                                 - (((0xD800u32 << 10) - 0x1_0000u32) + 0xDC00u32),
@@ -507,7 +456,6 @@ impl SingleByteEncoder {
                                     converted + 1, 
                                     converted,
                                 );
-                                
                             }
                         }
                         
@@ -521,12 +469,8 @@ impl SingleByteEncoder {
                         if converted == length {
                             return (pending, length, length);
                         }
-                        
-                        
                         let mut unit = unsafe { *(src.get_unchecked(converted)) };
                         'innermost: loop {
-                            
-                            
                             if unit > 127 {
                                 non_ascii = unit;
                                 continue 'middle;
@@ -535,25 +479,19 @@ impl SingleByteEncoder {
                             
                             
                             unsafe {
-                                
                                 *(dst.get_unchecked_mut(converted)) = unit as u8;
                             }
                             converted += 1;
-                            
                             if unit < 60 {
                                 
                                 if converted == length {
                                     return (pending, length, length);
                                 }
-                                
                                 unit = unsafe { *(src.get_unchecked(converted)) };
-                                
                                 continue 'innermost;
                             }
                             
                             continue 'outermost;
-                            
-                            
                         }
                     }
                 }
