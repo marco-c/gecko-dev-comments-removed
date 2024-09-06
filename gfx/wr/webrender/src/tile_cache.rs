@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, PrimitiveFlags, QualitySettings, RasterSpace, ClipId};
+use api::{ColorF, DebugFlags, PrimitiveFlags, QualitySettings, RasterSpace, ClipId};
 use api::units::*;
 use crate::clip::{ClipNodeKind, ClipLeafId, ClipNodeId, ClipTreeBuilder};
 use crate::frame_builder::FrameBuilderConfig;
@@ -119,6 +119,8 @@ pub struct TileCacheBuilder {
     prev_scroll_root_cache: (SpatialNodeIndex, SpatialNodeIndex),
     
     root_spatial_node_index: SpatialNodeIndex,
+    
+    debug_flags: DebugFlags,
 }
 
 
@@ -145,11 +147,13 @@ impl TileCacheBuilder {
     pub fn new(
         root_spatial_node_index: SpatialNodeIndex,
         background_color: Option<ColorF>,
+        debug_flags: DebugFlags,
     ) -> Self {
         TileCacheBuilder {
             primary_slices: vec![PrimarySlice::new(SliceFlags::empty(), None, background_color)],
             prev_scroll_root_cache: (SpatialNodeIndex::INVALID, SpatialNodeIndex::INVALID),
             root_spatial_node_index,
+            debug_flags,
         }
     }
 
@@ -471,6 +475,7 @@ impl TileCacheBuilder {
                         clip_tree_builder,
                     ) {
                         create_tile_cache(
+                            self.debug_flags,
                             primary_slice.slice_flags,
                             descriptor.scroll_root,
                             primary_slice.iframe_clip,
@@ -488,6 +493,7 @@ impl TileCacheBuilder {
                 SliceKind::Default { secondary_slices } => {
                     for descriptor in secondary_slices {
                         create_tile_cache(
+                            self.debug_flags,
                             primary_slice.slice_flags,
                             descriptor.scroll_root,
                             primary_slice.iframe_clip,
@@ -566,6 +572,7 @@ fn find_shared_clip_root(
 
 
 fn create_tile_cache(
+    debug_flags: DebugFlags,
     slice_flags: SliceFlags,
     scroll_root: SpatialNodeIndex,
     iframe_clip: Option<ClipId>,
@@ -611,6 +618,7 @@ fn create_tile_cache(
     
     
     tile_caches.insert(slice_id, TileCacheParams {
+        debug_flags,
         slice,
         slice_flags,
         spatial_node_index: scroll_root,
