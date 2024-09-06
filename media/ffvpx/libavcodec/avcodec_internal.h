@@ -25,22 +25,8 @@
 #ifndef AVCODEC_AVCODEC_INTERNAL_H
 #define AVCODEC_AVCODEC_INTERNAL_H
 
-#include "libavutil/frame.h"
-
-#include "packet.h"
-
 struct AVCodecContext;
-
-typedef struct SideDataMap {
-    enum AVPacketSideDataType packet;
-    enum AVFrameSideDataType frame;
-} SideDataMap;
-
-
-
-
-
-extern const SideDataMap ff_sd_global_map[];
+struct AVFrame;
 
 
 
@@ -69,7 +55,5 @@ void ff_encode_flush_buffers(struct AVCodecContext *avctx);
 
 struct AVCodecInternal *ff_decode_internal_alloc(void);
 struct AVCodecInternal *ff_encode_internal_alloc(void);
-
-void ff_codec_close(struct AVCodecContext *avctx);
 
 #endif 

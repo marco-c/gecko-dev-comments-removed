@@ -116,7 +116,7 @@
 
 
 
-void *av_malloc(size_t size) av_malloc_attrib av_alloc_size(1);
+void *av_malloc(size_t size) av_malloc_attrib av_alloc_size(1) __attribute__((visibility("default")));
 
 
 

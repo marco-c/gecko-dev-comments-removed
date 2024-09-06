@@ -331,6 +331,8 @@ typedef struct VP8Context {
     int (*decode_mb_row_no_filter)(AVCodecContext *avctx, void *tdata, int jobnr, int threadnr);
     void (*filter_mb_row)(AVCodecContext *avctx, void *tdata, int jobnr, int threadnr);
 
+    int vp7;
+
     
 
 

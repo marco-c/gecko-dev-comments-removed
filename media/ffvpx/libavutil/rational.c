@@ -114,7 +114,7 @@ AVRational av_d2q(double d, int max)
         return (AVRational) { d < 0 ? -1 : 1, 0 };
     frexp(d, &exponent);
     exponent = FFMAX(exponent-1, 0);
-    den = 1LL << (62 - exponent);
+    den = 1LL << (61 - exponent);
     
     
     av_reduce(&a.num, &a.den, floor(d * den + 0.5), den, max);
