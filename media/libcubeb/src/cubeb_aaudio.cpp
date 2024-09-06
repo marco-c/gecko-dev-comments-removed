@@ -24,6 +24,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <variant>
 #include <vector>
 
 using namespace std;
@@ -136,6 +137,128 @@ struct AAudioTimingInfo {
   uint32_t input_latency;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class position_interpolator {
+public:
+  
+  void stop(uint64_t timestamp)
+  {
+    assert(in_state<Play>() || in_state<Resume>());
+    
+    
+    
+    set_pause_timestamp(in_state<Play>() ? timestamp
+                                         : timestamp - get_pause_time());
+  }
+
+  
+  void start(uint64_t timestamp)
+  {
+    assert(in_state<None>() || in_state<Pause>());
+    if (in_state<Pause>()) {
+      
+      set_pause_time(timestamp - get_pause_timestamp());
+    } else {
+      set_state<Play>();
+    }
+  }
+
+  
+  uint64_t compute(uint64_t now, uint64_t last_callback_timestamp)
+  {
+    if (in_state<Play>()) {
+      if (callback_timestamp != last_callback_timestamp) {
+        callback_timestamp = last_callback_timestamp;
+      }
+      return now - last_callback_timestamp;
+    } else if (in_state<Resume>()) {
+      if (callback_timestamp == last_callback_timestamp) {
+        
+        
+        return now - last_callback_timestamp - get_pause_time();
+      }
+      
+      callback_timestamp = last_callback_timestamp;
+      set_state<Play>();
+      return now - last_callback_timestamp;
+    } else if (in_state<Pause>()) {
+      assert(callback_timestamp == last_callback_timestamp);
+      
+      return get_pause_timestamp() - callback_timestamp;
+    } else {
+      assert(in_state<None>());
+      return 0;
+    }
+  }
+
+private:
+  template <typename T> void set_state() { state.emplace<T>(); }
+
+  template <typename T> bool in_state()
+  {
+    return std::holds_alternative<T>(state);
+  }
+
+  void set_pause_time(uint64_t time) { state.emplace<Resume>(time); }
+
+  uint64_t get_pause_time()
+  {
+    assert(in_state<Resume>());
+    return std::get<Resume>(state).pause_time;
+  }
+
+  void set_pause_timestamp(uint64_t timestamp)
+  {
+    state.emplace<Pause>(timestamp);
+  }
+
+  uint64_t get_pause_timestamp()
+  {
+    assert(in_state<Pause>());
+    return std::get<Pause>(state).timestamp;
+  }
+
+  struct None {};
+  struct Play {};
+  struct Pause {
+    Pause() = delete;
+    explicit Pause(uint64_t timestamp) : timestamp(timestamp) {}
+    uint64_t timestamp; 
+  };
+  struct Resume {
+    Resume() = delete;
+    explicit Resume(uint64_t time) : pause_time(time) {}
+    uint64_t pause_time; 
+  };
+  std::variant<None, Play, Pause, Resume> state;
+  
+  uint64_t callback_timestamp{0};
+};
+
 struct cubeb_stream {
   
   cubeb * context{};
@@ -174,6 +297,7 @@ struct cubeb_stream {
   bool voice_input{};
   bool voice_output{};
   uint64_t previous_clock{};
+  position_interpolator interpolator;
 };
 
 struct cubeb {
@@ -360,9 +484,7 @@ update_state(cubeb_stream * stm)
     }
 
     
-    if (istate == AAUDIO_STREAM_STATE_PAUSING ||
-        istate == AAUDIO_STREAM_STATE_PAUSED ||
-        istate == AAUDIO_STREAM_STATE_FLUSHING ||
+    if (istate == AAUDIO_STREAM_STATE_FLUSHING ||
         istate == AAUDIO_STREAM_STATE_FLUSHED ||
         istate == AAUDIO_STREAM_STATE_UNKNOWN ||
         istate == AAUDIO_STREAM_STATE_DISCONNECTED) {
@@ -372,9 +494,7 @@ update_state(cubeb_stream * stm)
       return;
     }
 
-    if (ostate == AAUDIO_STREAM_STATE_PAUSING ||
-        ostate == AAUDIO_STREAM_STATE_PAUSED ||
-        ostate == AAUDIO_STREAM_STATE_FLUSHING ||
+    if (ostate == AAUDIO_STREAM_STATE_FLUSHING ||
         ostate == AAUDIO_STREAM_STATE_FLUSHED ||
         ostate == AAUDIO_STREAM_STATE_UNKNOWN ||
         ostate == AAUDIO_STREAM_STATE_DISCONNECTED) {
@@ -433,12 +553,12 @@ update_state(cubeb_stream * stm)
       }
       break;
     case stream_state::STOPPING:
-      assert(!istate || istate == AAUDIO_STREAM_STATE_STOPPING ||
-             istate == AAUDIO_STREAM_STATE_STOPPED);
-      assert(!ostate || ostate == AAUDIO_STREAM_STATE_STOPPING ||
-             ostate == AAUDIO_STREAM_STATE_STOPPED);
-      if ((!istate || istate == AAUDIO_STREAM_STATE_STOPPED) &&
-          (!ostate || ostate == AAUDIO_STREAM_STATE_STOPPED)) {
+      assert(!istate || istate == AAUDIO_STREAM_STATE_PAUSING ||
+             istate == AAUDIO_STREAM_STATE_PAUSED);
+      assert(!ostate || ostate == AAUDIO_STREAM_STATE_PAUSING ||
+             ostate == AAUDIO_STREAM_STATE_PAUSED);
+      if ((!istate || istate == AAUDIO_STREAM_STATE_PAUSED) &&
+          (!ostate || ostate == AAUDIO_STREAM_STATE_PAUSED)) {
         stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_STOPPED);
         new_state = stream_state::STOPPED;
       }
@@ -1054,6 +1174,7 @@ aaudio_stream_destroy_locked(cubeb_stream * stm, lock_guard<mutex> & lock)
   }
 
   stm->timing_info.invalidate();
+  stm->interpolator = {};
 
   if (stm->resampler) {
     cubeb_resampler_destroy(stm->resampler);
@@ -1294,10 +1415,14 @@ aaudio_stream_init(cubeb * ctx, cubeb_stream ** stream,
   if (output_stream_params) {
     stm->output_stream_params = std::make_unique<cubeb_stream_params>();
     *(stm->output_stream_params) = *output_stream_params;
+  } else {
+    stm->output_stream_params = nullptr;
   }
   if (input_stream_params) {
     stm->input_stream_params = std::make_unique<cubeb_stream_params>();
     *(stm->input_stream_params) = *input_stream_params;
+  } else {
+    stm->input_stream_params = nullptr;
   }
 
   LOG("cubeb stream prefs: voice_input: %s voice_output: %s",
@@ -1420,6 +1545,7 @@ aaudio_stream_start_locked(cubeb_stream * stm, lock_guard<mutex> & lock)
   }
 
   if (success) {
+    stm->interpolator.start(now_ns());
     stm->context->state.waiting.store(true);
     stm->context->state.cond.notify_one();
   }
@@ -1471,9 +1597,9 @@ aaudio_stream_stop_locked(cubeb_stream * stm, lock_guard<mutex> & lock)
   if (stm->ostream) {
     
     
-    res = WRAP(AAudioStream_requestStop)(stm->ostream);
+    res = WRAP(AAudioStream_requestPause)(stm->ostream);
     if (res != AAUDIO_OK) {
-      LOG("AAudioStream_requestStop (ostream): %s",
+      LOG("AAudioStream_requestPause (ostream): %s",
           WRAP(AAudio_convertResultToText)(res));
       stm->state.store(stream_state::ERROR);
       return CUBEB_ERROR;
@@ -1481,9 +1607,9 @@ aaudio_stream_stop_locked(cubeb_stream * stm, lock_guard<mutex> & lock)
   }
 
   if (stm->istream) {
-    res = WRAP(AAudioStream_requestStop)(stm->istream);
+    res = WRAP(AAudioStream_requestPause)(stm->istream);
     if (res != AAUDIO_OK) {
-      LOG("AAudioStream_requestStop (istream): %s",
+      LOG("AAudioStream_requestPause (istream): %s",
           WRAP(AAudio_convertResultToText)(res));
       stm->state.store(stream_state::ERROR);
       return CUBEB_ERROR;
@@ -1528,6 +1654,7 @@ aaudio_stream_stop_locked(cubeb_stream * stm, lock_guard<mutex> & lock)
   }
 
   if (success) {
+    stm->interpolator.stop(now_ns());
     stm->context->state.waiting.store(true);
     stm->context->state.cond.notify_one();
   }
@@ -1578,8 +1705,9 @@ aaudio_stream_get_position(cubeb_stream * stm, uint64_t * position)
   LOGV("AAudioTimingInfo idx:%lu tstamp:%lu latency:%u",
        info.output_frame_index, info.tstamp, info.output_latency);
   
-  uint64_t interpolation =
-      stm->sample_rate * (now_ns() - info.tstamp) / NS_PER_S;
+  uint64_t interpolation = stm->sample_rate *
+                           stm->interpolator.compute(now_ns(), info.tstamp) /
+                           NS_PER_S;
   *position = info.output_frame_index + interpolation - info.output_latency;
   if (*position < stm->previous_clock) {
     *position = stm->previous_clock;
