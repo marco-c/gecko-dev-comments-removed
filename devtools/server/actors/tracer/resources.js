@@ -26,6 +26,10 @@ ChromeUtils.defineESModuleGetters(
   { global: "contextual" }
 );
 
+const {
+  getActorIdForInternalSourceId,
+} = require("resource://devtools/server/actors/utils/dbg-source.js");
+
 const THROTTLING_DELAY = 250;
 
 class ResourcesTracingListener {
@@ -167,7 +171,9 @@ class ResourcesTracingListener {
     const frameIndex = this.#getFrameIndex(
       null,
       null,
-      caller.sourceId,
+      caller
+        ? getActorIdForInternalSourceId(this.targetActor, caller.sourceId)
+        : null,
       caller?.lineNumber,
       caller?.columnNumber,
       caller?.filename
@@ -218,7 +224,7 @@ class ResourcesTracingListener {
     const frameIndex = this.#getFrameIndex(
       frame.implementation,
       null,
-      script.source.id,
+      getActorIdForInternalSourceId(this.targetActor, script.source.id),
       lineNumber,
       column,
       url
@@ -330,10 +336,15 @@ class ResourcesTracingListener {
       }
     }
 
+    
+    
+    
+    this.sourcesManager.getOrCreateSourceActor(script.source);
+
     const frameIndex = this.#getFrameIndex(
       frame.implementation,
       formatedDisplayName,
-      script.source.id,
+      getActorIdForInternalSourceId(this.targetActor, script.source.id),
       lineNumber,
       column,
       url
@@ -416,7 +427,7 @@ class ResourcesTracingListener {
     const frameIndex = this.#getFrameIndex(
       frame.implementation,
       formatedDisplayName,
-      script.source.id,
+      getActorIdForInternalSourceId(this.targetActor, script.source.id),
       lineNumber,
       column,
       url
