@@ -15,7 +15,6 @@
 
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/synchronization/mutex.h"
 
 namespace rtc {
 
@@ -78,6 +77,7 @@ class FifoBuffer final : public StreamInterface {
 
  private:
   void PostEvent(int events, int err) {
+    RTC_DCHECK_RUN_ON(owner_);
     owner_->PostTask(
         webrtc::SafeTask(task_safety_.flag(), [this, events, err]() {
           RTC_DCHECK_RUN_ON(&callback_sequence_);
@@ -88,31 +88,29 @@ class FifoBuffer final : public StreamInterface {
   
   
   StreamResult ReadLocked(void* buffer, size_t bytes, size_t* bytes_read)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(callback_sequence_);
 
   
   
   StreamResult WriteLocked(const void* buffer,
                            size_t bytes,
                            size_t* bytes_written)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(callback_sequence_);
 
   webrtc::ScopedTaskSafety task_safety_;
 
   
-  StreamState state_ RTC_GUARDED_BY(mutex_);
+  StreamState state_ RTC_GUARDED_BY(callback_sequence_);
   
-  std::unique_ptr<char[]> buffer_ RTC_GUARDED_BY(mutex_);
+  std::unique_ptr<char[]> buffer_ RTC_GUARDED_BY(callback_sequence_);
   
   const size_t buffer_length_;
   
-  size_t data_length_ RTC_GUARDED_BY(mutex_);
+  size_t data_length_ RTC_GUARDED_BY(callback_sequence_);
   
-  size_t read_position_ RTC_GUARDED_BY(mutex_);
+  size_t read_position_ RTC_GUARDED_BY(callback_sequence_);
   
   Thread* const owner_;
-  
-  mutable webrtc::Mutex mutex_;
 };
 
 }  
