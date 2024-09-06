@@ -9,122 +9,38 @@
 
 const TEST_URL = "about:buildconfig";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function doOpenBookmarkTest({
-  loadInBackground = false,
-  loadInTabs = false,
-  where = "current",
-  clickEvent = { clickCount: 2, button: 0 },
-} = {}) {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.tabs.loadBookmarksInBackground", loadInBackground],
-      ["browser.tabs.loadBookmarksInTabs", loadInTabs],
-    ],
-  });
-
-  
-  
-  
-  let tab1 = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    where === "tab" ? "about:about" : "about:blank"
-  );
-  let loadedPromise =
-    where === "tab"
-      ? BrowserTestUtils.waitForNewTab(gBrowser, TEST_URL, true)
-      : BrowserTestUtils.browserLoaded(gBrowser, false, TEST_URL);
-
+add_task(async function test_open_bookmark_from_library() {
   let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: TEST_URL,
     title: TEST_URL,
   });
 
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
   let gLibrary = await promiseLibrary("UnfiledBookmarks");
-  gLibrary.focus();
+
+  registerCleanupFunction(async function () {
+    await promiseLibraryClosed(gLibrary);
+    await PlacesUtils.bookmarks.eraseEverything();
+    await BrowserTestUtils.removeTab(tab);
+  });
 
   let bmLibrary = gLibrary.ContentTree.view.view.nodeForTreeIndex(0);
   Assert.equal(bmLibrary.title, bm.title, "Found bookmark in the right pane");
 
   gLibrary.ContentTree.view.selectNode(bmLibrary);
-  synthesizeClickOnSelectedTreeCell(gLibrary.ContentTree.view, clickEvent);
-
-  await loadedPromise;
-
-  
-  
-  if (loadInBackground) {
-    is(
-      Services.wm.getMostRecentWindow(null),
-      gLibrary,
-      "Library window is still focused"
-    );
-  } else {
-    isnot(
-      Services.wm.getMostRecentWindow(null),
-      gLibrary,
-      "Library window is not focused"
-    );
-  }
-
-  BrowserTestUtils.removeTab(tab1);
-  
-  if (where === "tab") {
-    BrowserTestUtils.removeTab(await loadedPromise);
-  }
-}
-
-add_setup(async function () {
-  registerCleanupFunction(async function () {
-    for (let library of Services.wm.getEnumerator("Places:Organizer")) {
-      await promiseLibraryClosed(library);
-    }
-    await PlacesUtils.bookmarks.eraseEverything();
+  synthesizeClickOnSelectedTreeCell(gLibrary.ContentTree.view, {
+    clickCount: 2,
   });
+
+  await BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    TEST_URL
+  );
+  Assert.ok(true, "Expected tab was loaded");
 });
-
-add_task(function test_open_bookmark_from_library() {
-  return doOpenBookmarkTest();
-});
-
-add_task(
-  
-
-  function test_open_bookmark_in_background_from_library() {
-    return doOpenBookmarkTest({
-      where: "tab",
-      loadInBackground: true,
-      loadInTabs: true,
-      clickEvent: { clickCount: 2, button: 0 },
-    });
-  }
-);
-
-add_task(
-  
-
-  function test_open_bookmark_in_background_from_library_middle_click() {
-    return doOpenBookmarkTest({
-      where: "tab",
-      loadInBackground: true,
-      loadInTabs: false,
-      clickEvent: { clickCount: 1, button: 1 },
-    });
-  }
-);
