@@ -382,12 +382,18 @@ void ChromiumCDMProxy::NotifyOutputProtectionStatus(
   }
 
   uint32_t linkMask{};
-  uint32_t protectionMask{};  
+  uint32_t protectionMask{};
   if (aCheckStatus == OutputProtectionCheckStatus::CheckSuccessful &&
       aCaptureStatus == OutputProtectionCaptureStatus::CapturePossilbe) {
     
     
     linkMask |= cdm::OutputLinkTypes::kLinkTypeNetwork;
+  }
+  
+  
+  if (linkMask == cdm::OutputLinkTypes::kLinkTypeNone &&
+      StaticPrefs::media_widevine_hdcp_protection_mask()) {
+    protectionMask = cdm::OutputProtectionMethods::kProtectionHDCP;
   }
   mGMPThread->Dispatch(NewRunnableMethod<bool, uint32_t, uint32_t>(
       "gmp::ChromiumCDMParent::NotifyOutputProtectionStatus", cdm,
