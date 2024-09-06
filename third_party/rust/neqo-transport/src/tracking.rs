@@ -13,18 +13,21 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::{qdebug, qinfo, qtrace, qwarn};
+use enum_map::Enum;
+use neqo_common::{qdebug, qinfo, qtrace, qwarn, IpTosEcn};
 use neqo_crypto::{Epoch, TLS_EPOCH_HANDSHAKE, TLS_EPOCH_INITIAL};
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
+    ecn::EcnCount,
+    frame::{FRAME_TYPE_ACK, FRAME_TYPE_ACK_ECN},
     packet::{PacketBuilder, PacketNumber, PacketType},
     recovery::RecoveryToken,
     stats::FrameStats,
 };
 
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Eq, Enum)]
 pub enum PacketNumberSpace {
     Initial,
     Handshake,
@@ -134,6 +137,7 @@ impl std::fmt::Debug for PacketNumberSpaceSet {
 pub struct SentPacket {
     pub pt: PacketType,
     pub pn: PacketNumber,
+    pub ecn_mark: IpTosEcn,
     ack_eliciting: bool,
     pub time_sent: Instant,
     primary_path: bool,
@@ -150,6 +154,7 @@ impl SentPacket {
     pub fn new(
         pt: PacketType,
         pn: PacketNumber,
+        ecn_mark: IpTosEcn,
         time_sent: Instant,
         ack_eliciting: bool,
         tokens: Vec<RecoveryToken>,
@@ -158,6 +163,7 @@ impl SentPacket {
         Self {
             pt,
             pn,
+            ecn_mark,
             time_sent,
             ack_eliciting,
             primary_path: true,
@@ -377,6 +383,8 @@ pub struct RecvdPackets {
     
     
     ignore_order: bool,
+    
+    ecn_count: EcnCount,
 }
 
 impl RecvdPackets {
@@ -394,7 +402,13 @@ impl RecvdPackets {
             unacknowledged_count: 0,
             unacknowledged_tolerance: DEFAULT_ACK_PACKET_TOLERANCE,
             ignore_order: false,
+            ecn_count: EcnCount::default(),
         }
+    }
+
+    
+    pub fn ecn_marks(&mut self) -> &mut EcnCount {
+        &mut self.ecn_count
     }
 
     
@@ -547,6 +561,10 @@ impl RecvdPackets {
 
     
     
+    pub const USEFUL_ACK_LEN: usize = 1 + 8 + 8 + 1 + 8 + 3 * 8;
+
+    
+    
     
     
     
@@ -564,10 +582,6 @@ impl RecvdPackets {
         stats: &mut FrameStats,
     ) {
         
-        
-        const LONGEST_ACK_HEADER: usize = 1 + 8 + 8 + 1 + 8;
-
-        
         if !self.ack_now(now, rtt) {
             return;
         }
@@ -578,7 +592,10 @@ impl RecvdPackets {
         
         
         
-        let max_ranges = if let Some(avail) = builder.remaining().checked_sub(LONGEST_ACK_HEADER) {
+        let max_ranges = if let Some(avail) = builder
+            .remaining()
+            .checked_sub(RecvdPackets::USEFUL_ACK_LEN)
+        {
             
             min(1 + (avail / 16), MAX_ACKS_PER_FRAME)
         } else {
@@ -593,7 +610,11 @@ impl RecvdPackets {
             .cloned()
             .collect::<Vec<_>>();
 
-        builder.encode_varint(crate::frame::FRAME_TYPE_ACK);
+        builder.encode_varint(if self.ecn_count.is_some() {
+            FRAME_TYPE_ACK_ECN
+        } else {
+            FRAME_TYPE_ACK
+        });
         let mut iter = ranges.iter();
         let Some(first) = iter.next() else { return };
         builder.encode_varint(first.largest);
@@ -615,6 +636,12 @@ impl RecvdPackets {
             builder.encode_varint(last - r.largest - 2); 
             builder.encode_varint(r.len() - 1); 
             last = r.smallest;
+        }
+
+        if self.ecn_count.is_some() {
+            builder.encode_varint(self.ecn_count[IpTosEcn::Ect0]);
+            builder.encode_varint(self.ecn_count[IpTosEcn::Ect1]);
+            builder.encode_varint(self.ecn_count[IpTosEcn::Ce]);
         }
 
         
@@ -1134,7 +1161,9 @@ mod tests {
             .is_some());
 
         let mut builder = PacketBuilder::short(Encoder::new(), false, []);
-        builder.set_limit(32);
+        
+        
+        builder.set_limit(RecvdPackets::USEFUL_ACK_LEN + 8);
 
         let mut stats = FrameStats::default();
         tracker.write_frame(

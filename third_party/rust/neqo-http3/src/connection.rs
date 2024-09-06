@@ -17,7 +17,7 @@ use std::{
 use neqo_common::{qdebug, qerror, qinfo, qtrace, qwarn, Decoder, Header, MessageType, Role};
 use neqo_qpack::{decoder::QPackDecoder, encoder::QPackEncoder};
 use neqo_transport::{
-    streams::SendOrder, AppError, Connection, ConnectionError, DatagramTracking, State, StreamId,
+    streams::SendOrder, AppError, CloseReason, Connection, DatagramTracking, State, StreamId,
     StreamType, ZeroRttState,
 };
 
@@ -95,8 +95,8 @@ pub enum Http3State {
     ZeroRtt,
     Connected,
     GoingAway(StreamId),
-    Closing(ConnectionError),
-    Closed(ConnectionError),
+    Closing(CloseReason),
+    Closed(CloseReason),
 }
 
 impl Http3State {
@@ -767,7 +767,7 @@ impl Http3Connection {
     
     pub fn close(&mut self, error: AppError) {
         qdebug!([self], "Close connection error {:?}.", error);
-        self.state = Http3State::Closing(ConnectionError::Application(error));
+        self.state = Http3State::Closing(CloseReason::Application(error));
         if (!self.send_streams.is_empty() || !self.recv_streams.is_empty()) && (error == 0) {
             qwarn!("close(0) called when streams still active");
         }

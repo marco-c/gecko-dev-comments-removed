@@ -4,8 +4,6 @@
 
 
 
-#![cfg(feature = "disable-encryption")]
-
 use std::fmt;
 
 use crate::{
