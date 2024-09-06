@@ -5217,9 +5217,22 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     roundResult = adjustResult;
 
     
-    if (!BalanceTimeDurationRelative(
-            cx, roundResult, largestUnit, zonedRelativeTo, timeZone,
-            precalculatedPlainDateTime, &balanceResult)) {
+    Rooted<ZonedDateTime> intermediate(cx);
+    if (!MoveRelativeZonedDateTime(cx, zonedRelativeTo, calendar, timeZone,
+                                   DateDuration{
+                                       roundResult.date.years,
+                                       roundResult.date.months,
+                                       roundResult.date.weeks,
+                                       0,
+                                   },
+                                   precalculatedPlainDateTime, &intermediate)) {
+      return false;
+    }
+
+    
+    if (!BalanceTimeDurationRelative(cx, roundResult, largestUnit, intermediate,
+                                     timeZone, precalculatedPlainDateTime,
+                                     &balanceResult)) {
       return false;
     }
   } else {
