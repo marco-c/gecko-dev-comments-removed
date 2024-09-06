@@ -391,9 +391,6 @@ pref("privacy.trackingprotection.pbmode.enabled", false);
 
 pref("privacy.fingerprintingProtection.pbmode", true);
 
-pref("security.allow_eval_with_system_principal", false)
-pref("security.allow_eval_in_parent_process", false)
-
 
 pref("signon.firefoxRelay.feature", "not available");
 
