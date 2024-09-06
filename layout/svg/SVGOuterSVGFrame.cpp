@@ -126,9 +126,9 @@ NS_QUERYFRAME_TAIL_INHERITING(SVGDisplayContainerFrame)
 
 
 nscoord SVGOuterSVGFrame::GetMinISize(gfxContext* aRenderingContext) {
-  
-  
-  return 0;
+  auto size = GetIntrinsicSize();
+  const auto& iSize = GetWritingMode().IsVertical() ? size.height : size.width;
+  return iSize.valueOr(0);
 }
 
 

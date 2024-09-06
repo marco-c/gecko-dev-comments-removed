@@ -553,22 +553,7 @@ nsresult nsSubDocumentFrame::GetFrameName(nsAString& aResult) const {
 
 
 nscoord nsSubDocumentFrame::GetMinISize(gfxContext* aRenderingContext) {
-  nscoord result;
-
-  nsCOMPtr<nsIObjectLoadingContent> iolc = do_QueryInterface(mContent);
-  auto olc = static_cast<nsObjectLoadingContent*>(iolc.get());
-
-  if (olc && olc->GetSubdocumentIntrinsicSize()) {
-    
-    
-    
-    
-    result = 0;
-  } else {
-    result = GetIntrinsicISize();
-  }
-
-  return result;
+  return GetIntrinsicISize();
 }
 
 
