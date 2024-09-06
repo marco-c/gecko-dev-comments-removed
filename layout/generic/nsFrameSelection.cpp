@@ -354,20 +354,7 @@ nsFrameSelection::nsFrameSelection(PresShell* aPresShell, nsIContent* aLimiter,
     mDomSelections[i] = new Selection(kPresentSelectionTypes[i], this);
   }
 
-#ifdef XP_MACOSX
-  
-  bool enableAutoCopy = true;
-  AutoCopyListener::Init(nsIClipboard::kSelectionCache);
-#else   
-  
-  
-  bool enableAutoCopy = AutoCopyListener::IsPrefEnabled();
-  if (enableAutoCopy) {
-    AutoCopyListener::Init(nsIClipboard::kSelectionClipboard);
-  }
-#endif  
-
-  if (enableAutoCopy) {
+  if (AutoCopyListener::IsEnabled()) {
     int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
     if (mDomSelections[index]) {
       mDomSelections[index]->NotifyAutoCopy();
@@ -3037,8 +3024,6 @@ static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
 
 
 
-int16_t AutoCopyListener::sClipboardID = -1;
-
 
 
 
@@ -3076,7 +3061,7 @@ int16_t AutoCopyListener::sClipboardID = -1;
 void AutoCopyListener::OnSelectionChange(Document* aDocument,
                                          Selection& aSelection,
                                          int16_t aReason) {
-  MOZ_ASSERT(IsValidClipboardID(sClipboardID));
+  MOZ_ASSERT(IsEnabled());
 
   
   

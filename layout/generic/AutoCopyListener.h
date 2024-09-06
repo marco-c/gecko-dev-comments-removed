@@ -31,28 +31,22 @@ class AutoCopyListener final {
   
 
 
-
-  static void Init(int16_t aClipboardID) {
-    MOZ_ASSERT(IsValidClipboardID(aClipboardID));
-    static bool sInitialized = false;
-    if (!sInitialized && IsValidClipboardID(aClipboardID)) {
-      sClipboardID = aClipboardID;
-      sInitialized = true;
-    }
+  static bool IsEnabled() {
+#ifdef XP_MACOSX
+    return true;
+#else
+    return StaticPrefs::clipboard_autocopy();
+#endif
   }
-
-  
-
-
-  static bool IsPrefEnabled() { return StaticPrefs::clipboard_autocopy(); }
 
  private:
-  static bool IsValidClipboardID(int16_t aClipboardID) {
-    return aClipboardID >= nsIClipboard::kSelectionClipboard &&
-           aClipboardID <= nsIClipboard::kSelectionCache;
-  }
-
-  static int16_t sClipboardID;
+#ifdef XP_MACOSX
+  
+  static const int16_t sClipboardID = nsIClipboard::kSelectionCache;
+#else
+  
+  static const int16_t sClipboardID = nsIClipboard::kSelectionClipboard;
+#endif
 };
 
 }  
