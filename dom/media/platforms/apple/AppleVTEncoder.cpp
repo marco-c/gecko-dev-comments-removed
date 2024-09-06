@@ -562,7 +562,10 @@ AppleVTEncoder::ProcessReconfigure(
     const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges) {
   bool ok = false;
   for (const auto& confChange : aConfigurationChanges->mChanges) {
-    ok |= confChange.match(
+    
+    
+    
+    ok &= confChange.match(
         
         [&](const DimensionsChange& aChange) -> bool { return false; },
         [&](const DisplayDimensionsChange& aChange) -> bool { return false; },
