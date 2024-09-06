@@ -154,16 +154,6 @@ RenderedFrameId RenderCompositorEGL::EndFrame(
     }
     gl()->SetDamage(bufferInvalid);
   }
-
-#ifdef MOZ_WIDGET_GTK
-  
-  
-  
-  UniquePtr<MozContainerSurfaceLock> lock;
-  if (auto* gtkWidget = mWidget->AsGTK()) {
-    lock = gtkWidget->LockSurface();
-  }
-#endif
   gl()->SwapBuffers();
   return frameId;
 }

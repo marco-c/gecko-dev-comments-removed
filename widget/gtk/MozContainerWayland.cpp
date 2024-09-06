@@ -89,6 +89,23 @@ static void moz_container_wayland_set_opaque_region_locked(
 
 
 
+
+static struct wl_surface* moz_container_wayland_surface_lock(
+    MozContainer* container);
+static void moz_container_wayland_surface_unlock(MozContainer* container,
+                                                 struct wl_surface** surface);
+
+MozContainerSurfaceLock::MozContainerSurfaceLock(MozContainer* aContainer) {
+  mContainer = aContainer;
+  mSurface = moz_container_wayland_surface_lock(aContainer);
+}
+MozContainerSurfaceLock::~MozContainerSurfaceLock() {
+  moz_container_wayland_surface_unlock(mContainer, &mSurface);
+}
+struct wl_surface* MozContainerSurfaceLock::GetSurface() { return mSurface; }
+
+
+
 static void moz_container_wayland_invalidate(MozContainer* container) {
   LOGWAYLAND("moz_container_wayland_invalidate [%p]\n",
              (void*)moz_container_get_nsWindow(container));
