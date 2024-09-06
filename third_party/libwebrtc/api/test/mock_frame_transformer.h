@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_MOCK_FRAME_TRANSFORMER_H_
-#define TEST_MOCK_FRAME_TRANSFORMER_H_
+#ifndef API_TEST_MOCK_FRAME_TRANSFORMER_H_
+#define API_TEST_MOCK_FRAME_TRANSFORMER_H_
 
 #include <memory>
 #include <vector>
