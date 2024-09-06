@@ -4,7 +4,7 @@
 
 
 loadTestSubscript(
-  "../../../../base/content/test/tabs/helper_origin_attrs_testing.js"
+  "../../../tabbrowser/test/tabs/helper_origin_attrs_testing.js"
 );
 
 const PATH =
