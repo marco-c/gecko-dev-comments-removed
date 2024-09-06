@@ -8299,35 +8299,10 @@ void nsWindow::PickerClosed() {
 }
 
 bool nsWindow::WidgetTypeSupportsAcceleration() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return mTransparencyMode != TransparencyMode::Transparent &&
-         !(IsPopup() && DeviceManagerDx::Get()->IsWARP());
+  if (IsPopup() && DeviceManagerDx::Get()->IsWARP()) {
+    return false;
+  }
+  return true;
 }
 
 bool nsWindow::DispatchTouchEventFromWMPointer(
