@@ -19,6 +19,7 @@
 #include "nsComputedDOMStyle.h"
 #include "nsContentUtils.h"
 #include "nsDOMAttributeMap.h"
+#include "nsFind.h"
 #include "nsGkAtoms.h"
 #include "nsICSSDeclaration.h"
 #include "nsIFrame.h"
@@ -29,6 +30,10 @@
 
 namespace mozilla::dom {
 static LazyLogModule sFragmentDirectiveLog("FragmentDirective");
+
+#define DBG(msg, ...)                             \
+  MOZ_LOG(sFragmentDirectiveLog, LogLevel::Debug, \
+          ("%s(): " msg, __FUNCTION__, ##__VA_ARGS__))
 
 
 nsCString ToString(const TextDirective& aTextDirective) {
@@ -421,9 +426,7 @@ RangeBoundary MoveRangeBoundaryOneWord(const RangeBoundary& aRangeBoundary,
 
 RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
     const TextDirective& aTextDirective) {
-  MOZ_LOG(sFragmentDirectiveLog, LogLevel::Info,
-          ("FragmentDirective::%s(): Find range for text directive '%s'.",
-           __FUNCTION__, ToString(aTextDirective).Data()));
+  DBG("Find range for text directive '%s'.", ToString(aTextDirective).Data());
   
   
   ErrorResult rv;
@@ -445,8 +448,14 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
           FindStringInRange(searchRange, aTextDirective.prefix, true, false);
       
       if (!prefixMatch) {
+        DBG("Did not find prefix '%s'. The text directive does not exist "
+            "in the document.",
+            NS_ConvertUTF16toUTF8(aTextDirective.prefix).Data());
         return nullptr;
       }
+      DBG("Did find prefix '%s'.",
+          NS_ConvertUTF16toUTF8(aTextDirective.prefix).Data());
+
       
       
       const RangeBoundary boundaryPoint = MoveRangeBoundaryOneWord(
@@ -492,14 +501,21 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
                                          false, mustEndAtWordBoundary);
       
       if (!potentialMatch) {
+        DBG("Did not find start '%s'. The text directive does not exist "
+            "in the document.",
+            NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
         return nullptr;
       }
+      DBG("Did find start '%s'.",
+          NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
       
       
       
       
       
       if (potentialMatch->StartRef() != matchRange->StartRef()) {
+        DBG("The prefix is not directly followed by the start element. "
+            "Discarding this attempt.");
         continue;
       }
     }
@@ -516,6 +532,9 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
                                          true, mustEndAtWordBoundary);
       
       if (!potentialMatch) {
+        DBG("Did not find start '%s'. The text directive does not exist "
+            "in the document.",
+            NS_ConvertUTF16toUTF8(aTextDirective.start).Data());
         return nullptr;
       }
       
@@ -555,6 +574,9 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
                               mustEndAtWordBoundary);
         
         if (!endMatch) {
+          DBG("Did not find end '%s'. The text directive does not exist "
+              "in the document.",
+              NS_ConvertUTF16toUTF8(aTextDirective.end).Data());
           return nullptr;
         }
         
@@ -567,6 +589,7 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
 
       
       if (aTextDirective.suffix.IsEmpty()) {
+        DBG("Did find a match.");
         return potentialMatch;
       }
       
@@ -590,6 +613,9 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       
       
       if (!suffixMatch) {
+        DBG("Did not find suffix '%s'. The text directive does not exist "
+            "in the document.",
+            NS_ConvertUTF16toUTF8(aTextDirective.suffix).Data());
         return nullptr;
       }
       
@@ -597,6 +623,7 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       if (suffixMatch->GetStartContainer() ==
               suffixRange->GetStartContainer() &&
           suffixMatch->StartOffset() == suffixRange->StartOffset()) {
+        DBG("Did find a match.");
         return potentialMatch;
       }
       
@@ -623,10 +650,28 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       
       
       
-      MOZ_ASSERT(!aTextDirective.end.IsEmpty());
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aTextDirective.end.IsEmpty() && aTextDirective.suffix.IsEmpty()) {
+        DBG("rangeEndSearchRange was collapsed, no end or suffix "
+            "present. Returning a match");
+        return potentialMatch;
+      }
+      DBG("rangeEndSearchRange was collapsed, there is an end or "
+          "suffix. There can't be a match.");
+      return nullptr;
     }
   }
   
+  DBG("Did not find a match.");
   return nullptr;
 }
 
@@ -792,111 +837,29 @@ RefPtr<nsRange> FragmentDirective::FindStringInRange(nsRange* aSearchRange,
                                                      bool aWordStartBounded,
                                                      bool aWordEndBounded) {
   MOZ_ASSERT(aSearchRange);
-  RefPtr<nsRange> searchRange = aSearchRange->CloneRange();
-  
-  while (searchRange && !searchRange->Collapsed()) {
-    
-    RefPtr<nsINode> curNode = searchRange->GetStartContainer();
-
-    
-    if (NodeIsPartOfNonSearchableSubTree(*curNode)) {
-      
-      
-      
-      RefPtr<nsINode> next = curNode;
-      while ((next = next->GetNextNode())) {
-        if (!next->IsShadowIncludingInclusiveDescendantOf(curNode)) {
-          break;
-        }
-      }
-      if (!next) {
-        return nullptr;
-      }
-      
-      searchRange->SetStart(next, 0);
-      
-      continue;
-    }
-    
-    if (!NodeIsVisibleTextNode(*curNode)) {
-      
-      
-      RefPtr<nsINode> next = curNode;
-      while ((next = next->GetNextNode())) {
-        if (next->NodeType() != Node_Binding::DOCUMENT_TYPE_NODE) {
-          break;
-        }
-      }
-      if (!next) {
-        return nullptr;
-      }
-      
-      searchRange->SetStart(next, 0);
-      
-      continue;
-    }
-    
-    RefPtr<nsINode> blockAncestor = GetBlockAncestorForNode(curNode);
-
-    
-    nsTArray<RefPtr<Text>> textNodeList;
-    
-    
-    
-    while (curNode &&
-           curNode->IsShadowIncludingInclusiveDescendantOf(blockAncestor)) {
-      Maybe<int32_t> comp = nsContentUtils::ComparePoints(
-          curNode, 0, searchRange->GetEndContainer(), searchRange->EndOffset());
-      if (comp) {
-        if (*comp >= 0) {
-          break;
-        }
-      } else {
-        
-        return nullptr;
-      }
-      
-      if (NodeHasBlockLevelDisplay(*curNode)) {
-        break;
-      }
-      
-      if (NodeIsSearchInvisible(*curNode)) {
-        
-        
-        curNode = curNode->GetNextNode();
-        
-        continue;
-      }
-      
-      
-      if (NodeIsVisibleTextNode(*curNode)) {
-        textNodeList.AppendElement(curNode->AsText());
-      }
-      
-      
-      curNode = curNode->GetNextNode();
-    }
-    
-    
-    
-    if (RefPtr<nsRange> range =
-            FindRangeFromNodeList(searchRange, aQuery, textNodeList,
-                                  aWordStartBounded, aWordEndBounded)) {
-      return range;
-    }
-
-    
-    if (!curNode) {
-      break;
-    }
-
-    
-
-    
-    searchRange->SetStart(curNode, 0);
+  DBG("query='%s', wordStartBounded='%d', wordEndBounded='%d'.\n",
+      NS_ConvertUTF16toUTF8(aQuery).Data(), aWordStartBounded, aWordEndBounded);
+  RefPtr<nsFind> finder = new nsFind();
+  finder->SetWordStartBounded(aWordStartBounded);
+  finder->SetWordEndBounded(aWordEndBounded);
+  finder->SetCaseSensitive(false);
+  RefPtr<nsRange> searchRangeStart = nsRange::Create(
+      aSearchRange->StartRef(), aSearchRange->StartRef(), IgnoreErrors());
+  RefPtr<nsRange> searchRangeEnd = nsRange::Create(
+      aSearchRange->EndRef(), aSearchRange->EndRef(), IgnoreErrors());
+  RefPtr<nsRange> result;
+  Unused << finder->Find(aQuery, aSearchRange, searchRangeStart, searchRangeEnd,
+                         getter_AddRefs(result));
+  if (!result || result->Collapsed()) {
+    DBG("Did not find query '%s'", NS_ConvertUTF16toUTF8(aQuery).Data());
+  } else {
+    auto rangeToString = [](nsRange* range) -> nsCString {
+      nsString rangeString;
+      range->ToString(rangeString, IgnoreErrors());
+      return NS_ConvertUTF16toUTF8(rangeString);
+    };
+    DBG("find returned '%s'", rangeToString(result).Data());
   }
-
-  
-  return nullptr;
+  return result;
 }
 }  

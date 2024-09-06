@@ -9,14 +9,14 @@
 <script src="/resources/testdriver-vendor.js"></script>
 <script src="/common/utils.js"></script>
 <script src="stash.js"></script>
-
-
-
-
-
-
-
-
+<!--
+  This test suite performs scroll to text navigations to
+  scroll-to-text-fragment-target.html and then checks the results, which are
+  communicated back from the target page via the WPT Stash server (see stash.py).
+  This structure is necessary because scroll to text security restrictions
+  specifically restrict the navigator from being able to observe the result of
+  the navigation, e.g. the target page cannot have a window opener.
+-->
 <script>
 let test_cases = [
   // Test non-text fragment directives
@@ -45,6 +45,11 @@ let test_cases = [
     fragment: '#:~:text=test',
     expect_position: 'text',
     description:  'Exact text with no context should match text'
+  },
+  {
+    fragment: '#:~:text=TEST',
+    expect_position: 'text',
+    description:  'Case-insensitive search with no context should match text'
   },
   {
     fragment: '#:~:text=this is a-,test',
