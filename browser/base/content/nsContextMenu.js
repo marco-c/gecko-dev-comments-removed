@@ -2622,6 +2622,8 @@ class nsContextMenu {
       
       !(translationsEnabled && selectTranslationsEnabled) ||
       
+      !TranslationsParent.getIsTranslationsEngineSupported() ||
+      
       textToTranslate.length === 0 ||
       
       nsContextMenu.#isFullPageTranslationsActive();
