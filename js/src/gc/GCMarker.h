@@ -385,12 +385,6 @@ class GCMarker {
   
   void abortLinearWeakMarking();
 
-  
-  void severWeakDelegate(JSObject* key, JSObject* delegate);
-
-  
-  void restoreWeakDelegate(JSObject* key, JSObject* delegate);
-
 #ifdef DEBUG
   
   
