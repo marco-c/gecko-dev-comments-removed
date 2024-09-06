@@ -598,13 +598,50 @@ impl From<StyleRuleInclusion> for RuleInclusion {
 
 
 
+
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum ScopeMatchesShadowHost {
+    NotApplicable,
+    No,
+    Yes,
+}
+
+impl Default for ScopeMatchesShadowHost {
+    fn default() -> Self {
+        Self::NotApplicable
+    }
+}
+
+impl ScopeMatchesShadowHost {
+    fn nest_for_scope(&mut self, matches_shadow_host: bool) {
+        match *self {
+            Self::NotApplicable => {
+                
+                *self = if matches_shadow_host {
+                    Self::Yes
+                } else {
+                    Self::No
+                };
+            },
+            Self::Yes if !matches_shadow_host => {
+                
+                *self = Self::No;
+            },
+            _ => (),
+        }
+    }
+}
+
+
+
 struct ContainingRuleState {
     layer_name: LayerName,
     layer_id: LayerId,
     container_condition_id: ContainerConditionId,
     in_starting_style: bool,
     scope_condition_id: ScopeConditionId,
-    scope_matches_shadow_host: bool,
+    scope_matches_shadow_host: ScopeMatchesShadowHost,
     ancestor_selector_lists: SmallVec<[SelectorList<SelectorImpl>; 2]>,
 }
 
@@ -617,7 +654,7 @@ impl Default for ContainingRuleState {
             in_starting_style: false,
             ancestor_selector_lists: Default::default(),
             scope_condition_id: ScopeConditionId::none(),
-            scope_matches_shadow_host: true,
+            scope_matches_shadow_host: Default::default(),
         }
     }
 }
@@ -629,7 +666,7 @@ struct SavedContainingRuleState {
     container_condition_id: ContainerConditionId,
     in_starting_style: bool,
     scope_condition_id: ScopeConditionId,
-    scope_matches_shadow_host: bool,
+    scope_matches_shadow_host: ScopeMatchesShadowHost,
 }
 
 impl ContainingRuleState {
@@ -3204,7 +3241,8 @@ impl CascadeData {
                             } else if potentially_matches_featureless_host
                                 .intersects(FeaturelessHostMatches::FOR_SCOPE)
                             {
-                                containing_rule_state.scope_matches_shadow_host
+                                containing_rule_state.scope_matches_shadow_host ==
+                                    ScopeMatchesShadowHost::Yes
                             } else {
                                 false
                             };
@@ -3484,7 +3522,9 @@ impl CascadeData {
                         condition: Some(replaced),
                         implicit_scope_root,
                     });
-                    containing_rule_state.scope_matches_shadow_host &= matches_shadow_host;
+                    containing_rule_state
+                        .scope_matches_shadow_host
+                        .nest_for_scope(matches_shadow_host);
                     containing_rule_state.scope_condition_id = id;
                 },
                 
