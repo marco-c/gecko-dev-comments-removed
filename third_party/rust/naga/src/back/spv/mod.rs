@@ -70,6 +70,8 @@ pub enum Error {
     FeatureNotImplemented(&'static str),
     #[error("module is not validated properly: {0}")]
     Validation(&'static str),
+    #[error("overrides should not be present at this stage")]
+    Override,
 }
 
 #[derive(Default)]
@@ -528,6 +530,42 @@ struct FunctionArgument {
 }
 
 
+
+
+
+
+
+struct ExpressionConstnessTracker {
+    inner: bit_set::BitSet,
+}
+
+impl ExpressionConstnessTracker {
+    fn from_arena(arena: &crate::Arena<crate::Expression>) -> Self {
+        let mut inner = bit_set::BitSet::new();
+        for (handle, expr) in arena.iter() {
+            let insert = match *expr {
+                crate::Expression::Literal(_)
+                | crate::Expression::ZeroValue(_)
+                | crate::Expression::Constant(_) => true,
+                crate::Expression::Compose { ref components, .. } => {
+                    components.iter().all(|h| inner.contains(h.index()))
+                }
+                crate::Expression::Splat { value, .. } => inner.contains(value.index()),
+                _ => false,
+            };
+            if insert {
+                inner.insert(handle.index());
+            }
+        }
+        Self { inner }
+    }
+
+    fn is_const(&self, value: Handle<crate::Expression>) -> bool {
+        self.inner.contains(value.index())
+    }
+}
+
+
 struct BlockContext<'w> {
     
     writer: &'w mut Writer,
@@ -552,7 +590,7 @@ struct BlockContext<'w> {
     temp_list: Vec<Word>,
 
     
-    expression_constness: crate::proc::ExpressionConstnessTracker,
+    expression_constness: ExpressionConstnessTracker,
 }
 
 impl BlockContext<'_> {
@@ -725,7 +763,7 @@ impl<'a> Default for Options<'a> {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct PipelineOptions {

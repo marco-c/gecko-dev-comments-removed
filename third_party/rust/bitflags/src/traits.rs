@@ -11,6 +11,7 @@ use crate::{
 
 
 
+#[derive(Debug)]
 pub struct Flag<B> {
     name: &'static str,
     value: B,

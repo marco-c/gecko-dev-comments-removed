@@ -122,6 +122,7 @@ impl<T> Handle<T> {
     serde(transparent)
 )]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct Range<T> {
     inner: ops::Range<u32>,
     #[cfg_attr(any(feature = "serialize", feature = "deserialize"), serde(skip))]
@@ -140,6 +141,7 @@ impl<T> Range<T> {
 
 
 #[derive(Clone, Debug, thiserror::Error)]
+#[cfg_attr(test, derive(PartialEq))]
 #[error("Handle range {range:?} of {kind} is either not present, or inaccessible yet")]
 pub struct BadRangeError {
     
@@ -239,7 +241,7 @@ impl<T> Range<T> {
 
 
 
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Clone)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "serialize", serde(transparent))]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
@@ -295,6 +297,17 @@ impl<T> Arena<T> {
             .iter()
             .enumerate()
             .map(|(i, v)| unsafe { (Handle::from_usize_unchecked(i), v) })
+    }
+
+    
+    pub fn drain(&mut self) -> impl DoubleEndedIterator<Item = (Handle<T>, T, Span)> {
+        let arena = std::mem::take(self);
+        arena
+            .data
+            .into_iter()
+            .zip(arena.span_info)
+            .enumerate()
+            .map(|(i, (v, span))| unsafe { (Handle::from_usize_unchecked(i), v, span) })
     }
 
     
@@ -531,7 +544,7 @@ mod tests {
 
 
 
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Clone)]
 pub struct UniqueArena<T> {
     set: FastIndexSet<T>,
 

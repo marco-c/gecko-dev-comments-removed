@@ -413,6 +413,15 @@ pub struct TextureView {
     attachment: FramebufferAttachment,
 }
 
+impl TextureView {
+    
+    
+    
+    pub unsafe fn raw_handle(&self) -> vk::ImageView {
+        self.raw
+    }
+}
+
 #[derive(Debug)]
 pub struct Sampler {
     raw: vk::Sampler,
@@ -437,6 +446,7 @@ pub struct PipelineLayout {
 pub struct BindGroup {
     set: gpu_descriptor::DescriptorSet<vk::DescriptorSet>,
 }
+
 
 #[derive(Default)]
 struct Temp {
@@ -467,11 +477,31 @@ impl Temp {
 pub struct CommandEncoder {
     raw: vk::CommandPool,
     device: Arc<DeviceShared>,
+
+    
+    
+    
+    
+    
+    
     active: vk::CommandBuffer,
+
+    
     bind_point: vk::PipelineBindPoint,
+
+    
     temp: Temp,
+
+    
+    
+    
     free: Vec<vk::CommandBuffer>,
+
+    
+    
+    
     discarded: Vec<vk::CommandBuffer>,
+
     
     
     rpass_debug_marker_active: bool,
@@ -479,6 +509,15 @@ pub struct CommandEncoder {
     
     
     end_of_pass_timer_query: Option<(vk::QueryPool, u32)>,
+}
+
+impl CommandEncoder {
+    
+    
+    
+    pub unsafe fn raw_handle(&self) -> vk::CommandBuffer {
+        self.active
+    }
 }
 
 impl fmt::Debug for CommandEncoder {

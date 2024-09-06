@@ -237,14 +237,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #![allow(
     clippy::new_without_default,
     clippy::unneeded_field_pattern,
@@ -892,37 +884,33 @@ pub enum Literal {
     AbstractFloat(f64),
 }
 
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "clone", derive(Clone))]
+
+#[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub enum Override {
-    None,
-    ByName,
-    ByNameOrId(u32),
-}
-
-
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "clone", derive(Clone))]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub struct Constant {
+pub struct Override {
     pub name: Option<String>,
-    pub r#override: Override,
+    
+    pub id: Option<u16>,
     pub ty: Handle<Type>,
 
     
     
     
     
-    
-    
-    
-    
-    
+    pub init: Option<Handle<Expression>>,
+}
+
+
+#[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub struct Constant {
+    pub name: Option<String>,
+    pub ty: Handle<Type>,
+
     
     
     
@@ -1315,6 +1303,8 @@ pub enum Expression {
     Literal(Literal),
     
     Constant(Handle<Constant>),
+    
+    Override(Handle<Override>),
     
     ZeroValue(Handle<Type>),
     
@@ -1913,8 +1903,7 @@ pub struct FunctionResult {
 }
 
 
-#[derive(Debug, Default)]
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Debug, Default, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -1978,8 +1967,7 @@ pub struct Function {
 
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2003,8 +1991,7 @@ pub struct EntryPoint {
 
 
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2021,8 +2008,7 @@ pub enum PredeclaredType {
 }
 
 
-#[derive(Debug, Default)]
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Debug, Default, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2057,8 +2043,7 @@ pub struct SpecialTypes {
 
 
 
-#[derive(Debug, Default)]
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Debug, Default, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2070,6 +2055,8 @@ pub struct Module {
     
     pub constants: Arena<Constant>,
     
+    pub overrides: Arena<Override>,
+    
     pub global_variables: Arena<GlobalVariable>,
     
     
@@ -2078,7 +2065,7 @@ pub struct Module {
     
     
     
-    pub const_expressions: Arena<Expression>,
+    pub global_expressions: Arena<Expression>,
     
     
     

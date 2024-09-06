@@ -32,8 +32,11 @@ pub(crate) struct InvalidId;
 
 
 
+
+
+
 #[derive(Debug)]
-pub struct Storage<T>
+pub(crate) struct Storage<T>
 where
     T: Resource,
 {

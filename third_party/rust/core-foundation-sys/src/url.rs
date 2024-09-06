@@ -9,12 +9,14 @@
 
 use std::os::raw::c_void;
 
-use base::{CFOptionFlags, CFIndex, CFAllocatorRef, Boolean, CFTypeID, CFTypeRef, SInt32};
-use data::CFDataRef;
-use array::CFArrayRef;
-use dictionary::CFDictionaryRef;
-use string::{CFStringRef, CFStringEncoding};
-use error::CFErrorRef;
+use crate::array::CFArrayRef;
+use crate::base::{
+    Boolean, CFAllocatorRef, CFIndex, CFOptionFlags, CFRange, CFTypeID, CFTypeRef, SInt32,
+};
+use crate::data::CFDataRef;
+use crate::dictionary::CFDictionaryRef;
+use crate::error::CFErrorRef;
+use crate::string::{CFStringEncoding, CFStringRef};
 
 #[repr(C)]
 pub struct __CFURL(c_void);
@@ -28,95 +30,330 @@ pub type CFURLBookmarkFileCreationOptions = CFOptionFlags;
 pub type CFURLPathStyle = CFIndex;
 
 
-pub const kCFURLPOSIXPathStyle: CFURLPathStyle   = 0;
-pub const kCFURLHFSPathStyle: CFURLPathStyle     = 1;
+pub const kCFURLPOSIXPathStyle: CFURLPathStyle = 0;
+pub const kCFURLHFSPathStyle: CFURLPathStyle = 1;
 pub const kCFURLWindowsPathStyle: CFURLPathStyle = 2;
 
-pub static kCFURLBookmarkCreationPreferFileIDResolutionMask: CFURLBookmarkCreationOptions =
-    (1u32 << 8) as usize;
+
 pub static kCFURLBookmarkCreationMinimalBookmarkMask: CFURLBookmarkCreationOptions =
     (1u32 << 9) as usize;
 pub static kCFURLBookmarkCreationSuitableForBookmarkFile: CFURLBookmarkCreationOptions =
     (1u32 << 10) as usize;
+
+#[cfg(target_os = "macos")]
 pub static kCFURLBookmarkCreationWithSecurityScope: CFURLBookmarkCreationOptions =
     (1u32 << 11) as usize;
+
+#[cfg(target_os = "macos")]
 pub static kCFURLBookmarkCreationSecurityScopeAllowOnlyReadAccess: CFURLBookmarkCreationOptions =
     (1u32 << 12) as usize;
 
+pub static kCFURLBookmarkCreationWithoutImplicitSecurityScope: CFURLBookmarkCreationOptions =
+    (1u32 << 29) as usize;
+
+pub static kCFURLBookmarkCreationPreferFileIDResolutionMask: CFURLBookmarkCreationOptions =
+    (1u32 << 8) as usize; 
 
 
-extern {
+pub type CFURLComponentType = CFIndex;
+pub const kCFURLComponentScheme: CFIndex = 1;
+pub const kCFURLComponentNetLocation: CFIndex = 2;
+pub const kCFURLComponentPath: CFIndex = 3;
+pub const kCFURLComponentResourceSpecifier: CFIndex = 4;
+pub const kCFURLComponentUser: CFIndex = 5;
+pub const kCFURLComponentPassword: CFIndex = 6;
+pub const kCFURLComponentUserInfo: CFIndex = 7;
+pub const kCFURLComponentHost: CFIndex = 8;
+pub const kCFURLComponentPort: CFIndex = 9;
+pub const kCFURLComponentParameterString: CFIndex = 10;
+pub const kCFURLComponentQuery: CFIndex = 11;
+pub const kCFURLComponentFragment: CFIndex = 12;
+
+
+pub const kCFURLBookmarkResolutionWithoutUIMask: CFURLBookmarkResolutionOptions =
+    (1u32 << 8) as usize;
+pub const kCFURLBookmarkResolutionWithoutMountingMask: CFURLBookmarkResolutionOptions =
+    (1u32 << 9) as usize;
+#[cfg(target_os = "macos")]
+pub const kCFURLBookmarkResolutionWithSecurityScope: CFURLBookmarkResolutionOptions =
+    (1u32 << 10) as usize;
+
+pub const kCFBookmarkResolutionWithoutUIMask: CFURLBookmarkResolutionOptions = (1u32 << 8) as usize;
+pub const kCFBookmarkResolutionWithoutMountingMask: CFURLBookmarkResolutionOptions =
+    (1u32 << 9) as usize;
+
+extern "C" {
     
 
 
 
     
-    pub static kCFURLAttributeModificationDateKey: CFStringRef;
-    pub static kCFURLContentAccessDateKey: CFStringRef;
-    pub static kCFURLContentModificationDateKey: CFStringRef;
-    pub static kCFURLCreationDateKey: CFStringRef;
-    pub static kCFURLFileResourceIdentifierKey: CFStringRef;
-    pub static kCFURLFileSecurityKey: CFStringRef;
-    pub static kCFURLHasHiddenExtensionKey: CFStringRef;
-    pub static kCFURLIsDirectoryKey: CFStringRef;
-    pub static kCFURLIsExecutableKey: CFStringRef;
-    pub static kCFURLIsHiddenKey: CFStringRef;
-    pub static kCFURLIsPackageKey: CFStringRef;
-    pub static kCFURLIsReadableKey: CFStringRef;
+    pub static kCFURLNameKey: CFStringRef;
+    pub static kCFURLLocalizedNameKey: CFStringRef;
     pub static kCFURLIsRegularFileKey: CFStringRef;
+    pub static kCFURLIsDirectoryKey: CFStringRef;
     pub static kCFURLIsSymbolicLinkKey: CFStringRef;
+    pub static kCFURLIsVolumeKey: CFStringRef;
+    pub static kCFURLIsPackageKey: CFStringRef;
+    pub static kCFURLIsApplicationKey: CFStringRef;
+    
+
     pub static kCFURLIsSystemImmutableKey: CFStringRef;
     pub static kCFURLIsUserImmutableKey: CFStringRef;
-    pub static kCFURLIsVolumeKey: CFStringRef;
-    pub static kCFURLIsWritableKey: CFStringRef;
-    pub static kCFURLLabelNumberKey: CFStringRef;
+    pub static kCFURLIsHiddenKey: CFStringRef;
+    pub static kCFURLHasHiddenExtensionKey: CFStringRef;
+    pub static kCFURLCreationDateKey: CFStringRef;
+    pub static kCFURLContentAccessDateKey: CFStringRef;
+    pub static kCFURLContentModificationDateKey: CFStringRef;
+    pub static kCFURLAttributeModificationDateKey: CFStringRef;
+    
+    
+    
+    
+    
+    
+
     pub static kCFURLLinkCountKey: CFStringRef;
-    pub static kCFURLLocalizedLabelKey: CFStringRef;
-    pub static kCFURLLocalizedNameKey: CFStringRef;
-    pub static kCFURLLocalizedTypeDescriptionKey: CFStringRef;
-    pub static kCFURLNameKey: CFStringRef;
     pub static kCFURLParentDirectoryURLKey: CFStringRef;
-    pub static kCFURLPreferredIOBlockSizeKey: CFStringRef;
-    pub static kCFURLTypeIdentifierKey: CFStringRef;
-    pub static kCFURLVolumeIdentifierKey: CFStringRef;
     pub static kCFURLVolumeURLKey: CFStringRef;
 
-    #[cfg(feature="mac_os_10_8_features")]
+    pub static kCFURLTypeIdentifierKey: CFStringRef; 
+
+    pub static kCFURLLocalizedTypeDescriptionKey: CFStringRef;
+    pub static kCFURLLabelNumberKey: CFStringRef;
+    pub static kCFURLLabelColorKey: CFStringRef; 
+    pub static kCFURLLocalizedLabelKey: CFStringRef;
+    pub static kCFURLEffectiveIconKey: CFStringRef; 
+    pub static kCFURLCustomIconKey: CFStringRef; 
+
+    pub static kCFURLFileResourceIdentifierKey: CFStringRef;
+    pub static kCFURLVolumeIdentifierKey: CFStringRef;
+    pub static kCFURLPreferredIOBlockSizeKey: CFStringRef;
+    pub static kCFURLIsReadableKey: CFStringRef;
+    pub static kCFURLIsWritableKey: CFStringRef;
+    pub static kCFURLIsExecutableKey: CFStringRef;
+    pub static kCFURLFileSecurityKey: CFStringRef;
+
+    #[cfg(feature = "mac_os_10_8_features")]
     #[cfg_attr(feature = "mac_os_10_7_support", linkage = "extern_weak")]
     pub static kCFURLIsExcludedFromBackupKey: CFStringRef;
+    
+    #[cfg(feature = "mac_os_10_8_features")]
+    #[cfg_attr(feature = "mac_os_10_7_support", linkage = "extern_weak")]
+    pub static kCFURLPathKey: CFStringRef; 
+    pub static kCFURLCanonicalPathKey: CFStringRef; 
+
+    pub static kCFURLIsMountTriggerKey: CFStringRef;
+
+    
+    
+    
+    
+
     pub static kCFURLFileResourceTypeKey: CFStringRef;
 
     
+    pub static kCFURLFileResourceTypeNamedPipe: CFStringRef;
+    pub static kCFURLFileResourceTypeCharacterSpecial: CFStringRef;
+    pub static kCFURLFileResourceTypeDirectory: CFStringRef;
+    pub static kCFURLFileResourceTypeBlockSpecial: CFStringRef;
+    pub static kCFURLFileResourceTypeRegular: CFStringRef;
+    pub static kCFURLFileResourceTypeSymbolicLink: CFStringRef;
+    pub static kCFURLFileResourceTypeSocket: CFStringRef;
+    pub static kCFURLFileResourceTypeUnknown: CFStringRef;
+
+    
+    pub static kCFURLFileSizeKey: CFStringRef;
+    pub static kCFURLFileAllocatedSizeKey: CFStringRef;
+    pub static kCFURLTotalFileSizeKey: CFStringRef;
+    pub static kCFURLTotalFileAllocatedSizeKey: CFStringRef;
+    pub static kCFURLIsAliasFileKey: CFStringRef;
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    pub static kCFURLVolumeLocalizedFormatDescriptionKey: CFStringRef;
+    pub static kCFURLVolumeTotalCapacityKey: CFStringRef;
+    pub static kCFURLVolumeAvailableCapacityKey: CFStringRef;
+    
+    
+
+    pub static kCFURLVolumeResourceCountKey: CFStringRef;
+    pub static kCFURLVolumeSupportsPersistentIDsKey: CFStringRef;
+    pub static kCFURLVolumeSupportsSymbolicLinksKey: CFStringRef;
+    pub static kCFURLVolumeSupportsHardLinksKey: CFStringRef;
+    pub static kCFURLVolumeSupportsJournalingKey: CFStringRef;
+    pub static kCFURLVolumeIsJournalingKey: CFStringRef;
+    pub static kCFURLVolumeSupportsSparseFilesKey: CFStringRef;
+    pub static kCFURLVolumeSupportsZeroRunsKey: CFStringRef;
+    pub static kCFURLVolumeSupportsCaseSensitiveNamesKey: CFStringRef;
+    pub static kCFURLVolumeSupportsCasePreservedNamesKey: CFStringRef;
+    pub static kCFURLVolumeSupportsRootDirectoryDatesKey: CFStringRef;
+    pub static kCFURLVolumeSupportsVolumeSizesKey: CFStringRef;
+    pub static kCFURLVolumeSupportsRenamingKey: CFStringRef;
+    pub static kCFURLVolumeSupportsAdvisoryFileLockingKey: CFStringRef;
+    pub static kCFURLVolumeSupportsExtendedSecurityKey: CFStringRef;
+    pub static kCFURLVolumeIsBrowsableKey: CFStringRef;
+    pub static kCFURLVolumeMaximumFileSizeKey: CFStringRef;
+    pub static kCFURLVolumeIsEjectableKey: CFStringRef;
+    pub static kCFURLVolumeIsRemovableKey: CFStringRef;
+    pub static kCFURLVolumeIsInternalKey: CFStringRef;
+    pub static kCFURLVolumeIsAutomountedKey: CFStringRef;
+    pub static kCFURLVolumeIsLocalKey: CFStringRef;
+    pub static kCFURLVolumeIsReadOnlyKey: CFStringRef;
+    pub static kCFURLVolumeCreationDateKey: CFStringRef;
+    pub static kCFURLVolumeURLForRemountingKey: CFStringRef;
+    pub static kCFURLVolumeUUIDStringKey: CFStringRef;
+    pub static kCFURLVolumeNameKey: CFStringRef;
+    pub static kCFURLVolumeLocalizedNameKey: CFStringRef;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    pub static kCFURLIsUbiquitousItemKey: CFStringRef;
+    pub static kCFURLUbiquitousItemHasUnresolvedConflictsKey: CFStringRef;
+    pub static kCFURLUbiquitousItemIsDownloadedKey: CFStringRef; 
+    pub static kCFURLUbiquitousItemIsDownloadingKey: CFStringRef;
+    pub static kCFURLUbiquitousItemIsUploadedKey: CFStringRef;
+    pub static kCFURLUbiquitousItemIsUploadingKey: CFStringRef;
+    pub static kCFURLUbiquitousItemPercentDownloadedKey: CFStringRef; 
+    pub static kCFURLUbiquitousItemPercentUploadedKey: CFStringRef; 
+                                                                    
+                                                                    
+                                                                    
+                                                                    
+
+    
+    
+    
+    
+
+    
+    pub static kCFURLKeysOfUnsetValuesKey: CFStringRef;
+
+    
     pub fn CFURLCopyAbsoluteURL(anURL: CFURLRef) -> CFURLRef;
-    pub fn CFURLCreateAbsoluteURLWithBytes(allocator: CFAllocatorRef, relativeURLBytes: *const u8, length: CFIndex, encoding: CFStringEncoding, baseURL: CFURLRef, useCompatibilityMode: Boolean) -> CFURLRef;
-    pub fn CFURLCreateByResolvingBookmarkData(allocator: CFAllocatorRef, bookmark: CFDataRef, options: CFURLBookmarkResolutionOptions, relativeToURL: CFURLRef, resourcePropertiesToInclude: CFArrayRef, isStale: *mut Boolean, error: *mut CFErrorRef) -> CFURLRef;
+    pub fn CFURLCreateAbsoluteURLWithBytes(
+        allocator: CFAllocatorRef,
+        relativeURLBytes: *const u8,
+        length: CFIndex,
+        encoding: CFStringEncoding,
+        baseURL: CFURLRef,
+        useCompatibilityMode: Boolean,
+    ) -> CFURLRef;
+    pub fn CFURLCreateByResolvingBookmarkData(
+        allocator: CFAllocatorRef,
+        bookmark: CFDataRef,
+        options: CFURLBookmarkResolutionOptions,
+        relativeToURL: CFURLRef,
+        resourcePropertiesToInclude: CFArrayRef,
+        isStale: *mut Boolean,
+        error: *mut CFErrorRef,
+    ) -> CFURLRef;
+    pub fn CFURLCreateCopyAppendingPathComponent(
+        allocator: CFAllocatorRef,
+        url: CFURLRef,
+        pathComponent: CFStringRef,
+        isDirectory: Boolean,
+    ) -> CFURLRef;
+    pub fn CFURLCreateCopyAppendingPathExtension(
+        allocator: CFAllocatorRef,
+        url: CFURLRef,
+        extension: CFStringRef,
+    ) -> CFURLRef;
+    pub fn CFURLCreateCopyDeletingLastPathComponent(
+        allocator: CFAllocatorRef,
+        url: CFURLRef,
+    ) -> CFURLRef;
+    pub fn CFURLCreateCopyDeletingPathExtension(
+        allocator: CFAllocatorRef,
+        url: CFURLRef,
+    ) -> CFURLRef;
+    pub fn CFURLCreateFilePathURL(
+        allocator: CFAllocatorRef,
+        url: CFURLRef,
+        error: *mut CFErrorRef,
+    ) -> CFURLRef;
+    pub fn CFURLCreateFileReferenceURL(
+        allocator: CFAllocatorRef,
+        url: CFURLRef,
+        error: *mut CFErrorRef,
+    ) -> CFURLRef;
+    pub fn CFURLCreateFromFileSystemRepresentation(
+        allocator: CFAllocatorRef,
+        buffer: *const u8,
+        bufLen: CFIndex,
+        isDirectory: Boolean,
+    ) -> CFURLRef;
+    pub fn CFURLCreateFromFileSystemRepresentationRelativeToBase(
+        allocator: CFAllocatorRef,
+        buffer: *const u8,
+        bufLen: CFIndex,
+        isDirectory: Boolean,
+        baseURL: CFURLRef,
+    ) -> CFURLRef;
     
-    
-    
-    
-    pub fn CFURLCreateFilePathURL(allocator: CFAllocatorRef, url: CFURLRef, error: *mut CFErrorRef) -> CFURLRef;
-    
-    pub fn CFURLCreateFromFileSystemRepresentation(allocator: CFAllocatorRef, buffer: *const u8, bufLen: CFIndex, isDirectory: Boolean) -> CFURLRef;
-    
-    
-    pub fn CFURLCreateWithBytes(allocator: CFAllocatorRef, URLBytes: *const u8, length: CFIndex, encoding: CFStringEncoding, baseURL: CFURLRef) -> CFURLRef;
-    pub fn CFURLCreateWithFileSystemPath(allocator: CFAllocatorRef, filePath: CFStringRef, pathStyle: CFURLPathStyle, isDirectory: Boolean) -> CFURLRef;
-    pub fn CFURLCreateWithFileSystemPathRelativeToBase(allocator: CFAllocatorRef, filePath: CFStringRef, pathStyle: CFURLPathStyle, isDirectory: Boolean, baseURL: CFURLRef) -> CFURLRef;
-    
-    
+    pub fn CFURLCreateWithBytes(
+        allocator: CFAllocatorRef,
+        URLBytes: *const u8,
+        length: CFIndex,
+        encoding: CFStringEncoding,
+        baseURL: CFURLRef,
+    ) -> CFURLRef;
+    pub fn CFURLCreateWithFileSystemPath(
+        allocator: CFAllocatorRef,
+        filePath: CFStringRef,
+        pathStyle: CFURLPathStyle,
+        isDirectory: Boolean,
+    ) -> CFURLRef;
+    pub fn CFURLCreateWithFileSystemPathRelativeToBase(
+        allocator: CFAllocatorRef,
+        filePath: CFStringRef,
+        pathStyle: CFURLPathStyle,
+        isDirectory: Boolean,
+        baseURL: CFURLRef,
+    ) -> CFURLRef;
+    pub fn CFURLCreateWithString(
+        allocator: CFAllocatorRef,
+        URLString: CFStringRef,
+        baseURL: CFURLRef,
+    ) -> CFURLRef;
 
     
     pub fn CFURLCanBeDecomposed(anURL: CFURLRef) -> Boolean;
     pub fn CFURLCopyFileSystemPath(anURL: CFURLRef, pathStyle: CFURLPathStyle) -> CFStringRef;
-    pub fn CFURLCopyFragment(anURL: CFURLRef, charactersToLeaveEscaped: CFStringRef) -> CFStringRef;
+    pub fn CFURLCopyFragment(anURL: CFURLRef, charactersToLeaveEscaped: CFStringRef)
+        -> CFStringRef;
     pub fn CFURLCopyHostName(anURL: CFURLRef) -> CFStringRef;
     pub fn CFURLCopyLastPathComponent(anURL: CFURLRef) -> CFStringRef;
     pub fn CFURLCopyNetLocation(anURL: CFURLRef) -> CFStringRef;
-    pub fn CFURLCopyParameterString(anURL: CFURLRef, charactersToLeaveEscaped: CFStringRef) -> CFStringRef;
+    pub fn CFURLCopyParameterString(
+        anURL: CFURLRef,
+        charactersToLeaveEscaped: CFStringRef,
+    ) -> CFStringRef; 
     pub fn CFURLCopyPassword(anURL: CFURLRef) -> CFStringRef;
     pub fn CFURLCopyPath(anURL: CFURLRef) -> CFStringRef;
     pub fn CFURLCopyPathExtension(anURL: CFURLRef) -> CFStringRef;
-    pub fn CFURLCopyQueryString(anURL: CFURLRef, charactersToLeaveEscaped: CFStringRef) -> CFStringRef;
+    pub fn CFURLCopyQueryString(
+        anURL: CFURLRef,
+        charactersToLeaveEscaped: CFStringRef,
+    ) -> CFStringRef;
     pub fn CFURLCopyResourceSpecifier(anURL: CFURLRef) -> CFStringRef;
     pub fn CFURLCopyScheme(anURL: CFURLRef) -> CFStringRef;
     pub fn CFURLCopyStrictPath(anURL: CFURLRef, isAbsolute: *mut Boolean) -> CFStringRef;
@@ -125,45 +362,120 @@ extern {
     pub fn CFURLHasDirectoryPath(anURL: CFURLRef) -> Boolean;
 
     
+    pub fn CFURLCreateData(
+        allocator: CFAllocatorRef,
+        url: CFURLRef,
+        encoding: CFStringEncoding,
+        escapeWhitespace: Boolean,
+    ) -> CFDataRef;
+    pub fn CFURLCreateStringByAddingPercentEscapes(
+        allocator: CFAllocatorRef,
+        originalString: CFStringRef,
+        charactersToLeaveUnescaped: CFStringRef,
+        legalURLCharactersToBeEscaped: CFStringRef,
+        encoding: CFStringEncoding,
+    ) -> CFStringRef; 
+    pub fn CFURLCreateStringByReplacingPercentEscapes(
+        allocator: CFAllocatorRef,
+        originalString: CFStringRef,
+        charactersToLeaveEscaped: CFStringRef,
+    ) -> CFStringRef;
+    pub fn CFURLCreateStringByReplacingPercentEscapesUsingEncoding(
+        allocator: CFAllocatorRef,
+        origString: CFStringRef,
+        charsToLeaveEscaped: CFStringRef,
+        encoding: CFStringEncoding,
+    ) -> CFStringRef; 
+    pub fn CFURLGetFileSystemRepresentation(
+        anURL: CFURLRef,
+        resolveAgainstBase: Boolean,
+        buffer: *mut u8,
+        maxBufLen: CFIndex,
+    ) -> Boolean;
     
-    
-    
-    
-    
-    pub fn CFURLGetFileSystemRepresentation(anURL: CFURLRef, resolveAgainstBase: Boolean, buffer: *mut u8, maxBufLen: CFIndex) -> Boolean;
-
     
     pub fn CFURLGetString(anURL: CFURLRef) -> CFStringRef;
 
     
-    
+    pub fn CFURLGetBaseURL(anURL: CFURLRef) -> CFURLRef;
     pub fn CFURLGetBytes(anURL: CFURLRef, buffer: *mut u8, bufferLength: CFIndex) -> CFIndex;
-    
+    pub fn CFURLGetByteRangeForComponent(
+        url: CFURLRef,
+        component: CFURLComponentType,
+        rangeIncludingSeparators: *mut CFRange,
+    ) -> CFRange;
     pub fn CFURLGetTypeID() -> CFTypeID;
-    
+    pub fn CFURLResourceIsReachable(url: CFURLRef, error: *mut CFErrorRef) -> Boolean;
 
     
     pub fn CFURLClearResourcePropertyCache(url: CFURLRef);
+    pub fn CFURLClearResourcePropertyCacheForKey(url: CFURLRef, key: CFStringRef);
+    pub fn CFURLCopyResourcePropertiesForKeys(
+        url: CFURLRef,
+        keys: CFArrayRef,
+        error: *mut CFErrorRef,
+    ) -> CFDictionaryRef;
     
-    
-    
-    pub fn CFURLCreateResourcePropertiesForKeysFromBookmarkData(allocator: CFAllocatorRef, resourcePropertiesToReturn: CFArrayRef, bookmark: CFDataRef) -> CFDictionaryRef;
-    pub fn CFURLCreateResourcePropertyForKeyFromBookmarkData(allocator: CFAllocatorRef, resourcePropertyKey: CFStringRef, bookmark: CFDataRef) -> CFTypeRef;
-    
-    pub fn CFURLSetResourcePropertyForKey(url: CFURLRef, key: CFStringRef, value: CFTypeRef, error: *mut CFErrorRef) -> Boolean;
-    
+    pub fn CFURLCreateResourcePropertiesForKeysFromBookmarkData(
+        allocator: CFAllocatorRef,
+        resourcePropertiesToReturn: CFArrayRef,
+        bookmark: CFDataRef,
+    ) -> CFDictionaryRef;
+    pub fn CFURLCreateResourcePropertyForKeyFromBookmarkData(
+        allocator: CFAllocatorRef,
+        resourcePropertyKey: CFStringRef,
+        bookmark: CFDataRef,
+    ) -> CFTypeRef;
+    pub fn CFURLSetResourcePropertiesForKeys(
+        url: CFURLRef,
+        keyedPropertyValues: CFDictionaryRef,
+        error: *mut CFErrorRef,
+    ) -> Boolean;
+    pub fn CFURLSetResourcePropertyForKey(
+        url: CFURLRef,
+        key: CFStringRef,
+        value: CFTypeRef,
+        error: *mut CFErrorRef,
+    ) -> Boolean;
+    pub fn CFURLSetTemporaryResourcePropertyForKey(
+        url: CFURLRef,
+        key: CFStringRef,
+        propertyValue: CFTypeRef,
+    );
 
     
-    pub fn CFURLCreateBookmarkData(allocator: CFAllocatorRef, url: CFURLRef, options: CFURLBookmarkCreationOptions, resourcePropertiesToInclude: CFArrayRef, relativeToURL: CFURLRef, error: *mut CFErrorRef) -> CFDataRef;
-    pub fn CFURLCreateBookmarkDataFromAliasRecord(allocator: CFAllocatorRef, aliasRecordDataRef: CFDataRef) -> CFDataRef;
-    pub fn CFURLCreateBookmarkDataFromFile(allocator: CFAllocatorRef, fileURL: CFURLRef, errorRef: *mut CFErrorRef) -> CFDataRef;
-    pub fn CFURLWriteBookmarkDataToFile(bookmarkRef: CFDataRef, fileURL: CFURLRef, options: CFURLBookmarkFileCreationOptions, errorRef: *mut CFErrorRef) -> Boolean;
+    pub fn CFURLCreateBookmarkData(
+        allocator: CFAllocatorRef,
+        url: CFURLRef,
+        options: CFURLBookmarkCreationOptions,
+        resourcePropertiesToInclude: CFArrayRef,
+        relativeToURL: CFURLRef,
+        error: *mut CFErrorRef,
+    ) -> CFDataRef;
+
+    #[cfg(target_os = "macos")]
+    pub fn CFURLCreateBookmarkDataFromAliasRecord(
+        allocator: CFAllocatorRef,
+        aliasRecordDataRef: CFDataRef,
+    ) -> CFDataRef; 
+
+    pub fn CFURLCreateBookmarkDataFromFile(
+        allocator: CFAllocatorRef,
+        fileURL: CFURLRef,
+        errorRef: *mut CFErrorRef,
+    ) -> CFDataRef;
+    pub fn CFURLWriteBookmarkDataToFile(
+        bookmarkRef: CFDataRef,
+        fileURL: CFURLRef,
+        options: CFURLBookmarkFileCreationOptions,
+        errorRef: *mut CFErrorRef,
+    ) -> Boolean;
     pub fn CFURLStartAccessingSecurityScopedResource(url: CFURLRef) -> Boolean;
     pub fn CFURLStopAccessingSecurityScopedResource(url: CFURLRef);
 }
 
 #[test]
-#[cfg(feature="mac_os_10_8_features")]
+#[cfg(feature = "mac_os_10_8_features")]
 fn can_see_excluded_from_backup_key() {
     let _ = unsafe { kCFURLIsExcludedFromBackupKey };
 }

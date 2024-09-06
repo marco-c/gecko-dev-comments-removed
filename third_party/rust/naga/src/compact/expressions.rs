@@ -3,6 +3,7 @@ use crate::arena::{Arena, Handle};
 
 pub struct ExpressionTracer<'tracer> {
     pub constants: &'tracer Arena<crate::Constant>,
+    pub overrides: &'tracer Arena<crate::Override>,
 
     
     pub expressions: &'tracer Arena<crate::Expression>,
@@ -24,7 +25,7 @@ pub struct ExpressionTracer<'tracer> {
     
     
     
-    pub const_expressions_used: Option<&'tracer mut HandleSet<crate::Expression>>,
+    pub global_expressions_used: Option<&'tracer mut HandleSet<crate::Expression>>,
 }
 
 impl<'tracer> ExpressionTracer<'tracer> {
@@ -43,7 +44,7 @@ impl<'tracer> ExpressionTracer<'tracer> {
     pub fn trace_expressions(&mut self) {
         log::trace!(
             "entering trace_expression of {}",
-            if self.const_expressions_used.is_some() {
+            if self.global_expressions_used.is_some() {
                 "function expressions"
             } else {
                 "const expressions"
@@ -83,10 +84,15 @@ impl<'tracer> ExpressionTracer<'tracer> {
                     
                     
                     let init = self.constants[handle].init;
-                    match self.const_expressions_used {
+                    match self.global_expressions_used {
                         Some(ref mut used) => used.insert(init),
                         None => self.expressions_used.insert(init),
                     }
+                }
+                Ex::Override(_) => {
+                    
+                    
+                    
                 }
                 Ex::ZeroValue(ty) => self.types_used.insert(ty),
                 Ex::Compose { ty, ref components } => {
@@ -116,7 +122,7 @@ impl<'tracer> ExpressionTracer<'tracer> {
                     self.expressions_used
                         .insert_iter([image, sampler, coordinate]);
                     self.expressions_used.insert_iter(array_index);
-                    match self.const_expressions_used {
+                    match self.global_expressions_used {
                         Some(ref mut used) => used.insert_iter(offset),
                         None => self.expressions_used.insert_iter(offset),
                     }
@@ -220,6 +226,9 @@ impl ModuleMap {
             | Ex::RayQueryProceedResult => {}
 
             
+            Ex::Override(_) => {}
+
+            
             Ex::Constant(ref mut constant) => self.constants.adjust(constant),
             Ex::ZeroValue(ref mut ty) => self.types.adjust(ty),
             Ex::Compose {
@@ -267,7 +276,7 @@ impl ModuleMap {
                 adjust(coordinate);
                 operand_map.adjust_option(array_index);
                 if let Some(ref mut offset) = *offset {
-                    self.const_expressions.adjust(offset);
+                    self.global_expressions.adjust(offset);
                 }
                 self.adjust_sample_level(level, operand_map);
                 operand_map.adjust_option(depth_ref);

@@ -9,71 +9,98 @@
 
 use std::os::raw::c_void;
 
-use base::{CFAllocatorRef, CFIndex, CFTypeID, Boolean};
-use data::CFDataRef;
-use date::CFTimeInterval;
-use runloop::CFRunLoopSourceRef;
-use string::CFStringRef;
+use crate::base::{Boolean, CFAllocatorRef, CFIndex, CFTypeID, SInt32};
+use crate::data::CFDataRef;
+use crate::date::CFTimeInterval;
+use crate::runloop::CFRunLoopSourceRef;
+use crate::string::CFStringRef;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct CFMessagePortContext {
     pub version: CFIndex,
     pub info: *mut c_void,
-    pub retain: Option<unsafe extern fn(info: *const c_void) -> *const c_void>,
-    pub release: Option<unsafe extern fn(info: *const c_void)>,
-    pub copyDescription: Option<unsafe extern fn(info: *const c_void)
-        -> CFStringRef>,
+    pub retain: Option<unsafe extern "C" fn(info: *const c_void) -> *const c_void>,
+    pub release: Option<unsafe extern "C" fn(info: *const c_void)>,
+    pub copyDescription: Option<unsafe extern "C" fn(info: *const c_void) -> CFStringRef>,
 }
 
 pub type CFMessagePortCallBack = Option<
-    unsafe extern fn(local: CFMessagePortRef,
-                     msgid: i32,
-                     data: CFDataRef,
-                     info: *mut c_void) -> CFDataRef>;
+    unsafe extern "C" fn(
+        local: CFMessagePortRef,
+        msgid: i32,
+        data: CFDataRef,
+        info: *mut c_void,
+    ) -> CFDataRef,
+>;
 
-pub type CFMessagePortInvalidationCallBack = Option<
-    unsafe extern "C" fn(ms: CFMessagePortRef, info: *mut c_void)>;
+pub type CFMessagePortInvalidationCallBack =
+    Option<unsafe extern "C" fn(ms: CFMessagePortRef, info: *mut c_void)>;
+
+
+pub const kCFMessagePortSuccess: SInt32 = 0;
+pub const kCFMessagePortSendTimeout: SInt32 = -1;
+pub const kCFMessagePortReceiveTimeout: SInt32 = -2;
+pub const kCFMessagePortIsInvalid: SInt32 = -3;
+pub const kCFMessagePortTransportError: SInt32 = -4;
+pub const kCFMessagePortBecameInvalidError: SInt32 = -5;
 
 #[repr(C)]
 pub struct __CFMessagePort(c_void);
 pub type CFMessagePortRef = *mut __CFMessagePort;
 
-extern {
+extern "C" {
     
 
 
-    pub fn CFMessagePortGetTypeID() -> CFTypeID;
-    pub fn CFMessagePortCreateLocal(allocator: CFAllocatorRef,
-                                    name: CFStringRef,
-                                    callout: CFMessagePortCallBack,
-                                    context: *const CFMessagePortContext,
-                                    shouldFreeInfo: *mut Boolean)
-        -> CFMessagePortRef;
-    pub fn CFMessagePortCreateRemote(allocator: CFAllocatorRef,
-                                     name: CFStringRef) -> CFMessagePortRef;
-    pub fn CFMessagePortIsRemote(ms: CFMessagePortRef) -> Boolean;
-    pub fn CFMessagePortGetName(ms: CFMessagePortRef) -> CFStringRef;
-    pub fn CFMessagePortSetName(ms: CFMessagePortRef, newName: CFStringRef)
-        -> Boolean;
-    pub fn CFMessagePortGetContext(ms: CFMessagePortRef,
-                                   context: *mut CFMessagePortContext);
+
+    
+    pub fn CFMessagePortCreateLocal(
+        allocator: CFAllocatorRef,
+        name: CFStringRef,
+        callout: CFMessagePortCallBack,
+        context: *const CFMessagePortContext,
+        shouldFreeInfo: *mut Boolean,
+    ) -> CFMessagePortRef;
+    pub fn CFMessagePortCreateRemote(
+        allocator: CFAllocatorRef,
+        name: CFStringRef,
+    ) -> CFMessagePortRef;
+
+    
+    pub fn CFMessagePortCreateRunLoopSource(
+        allocator: CFAllocatorRef,
+        local: CFMessagePortRef,
+        order: CFIndex,
+    ) -> CFRunLoopSourceRef;
+    pub fn CFMessagePortSetInvalidationCallBack(
+        ms: CFMessagePortRef,
+        callout: CFMessagePortInvalidationCallBack,
+    );
+    pub fn CFMessagePortSetName(ms: CFMessagePortRef, newName: CFStringRef) -> Boolean;
+
+    
     pub fn CFMessagePortInvalidate(ms: CFMessagePortRef);
-    pub fn CFMessagePortIsValid(ms: CFMessagePortRef) -> Boolean;
-    pub fn CFMessagePortGetInvalidationCallBack(ms: CFMessagePortRef)
-        -> CFMessagePortInvalidationCallBack;
-    pub fn CFMessagePortSetInvalidationCallBack(ms: CFMessagePortRef,
-                                                callout: CFMessagePortInvalidationCallBack);
-    pub fn CFMessagePortSendRequest(remote: CFMessagePortRef, msgid: i32,
-                                    data: CFDataRef,
-                                    sendTimeout: CFTimeInterval,
-                                    rcvTimeout: CFTimeInterval,
-                                    replyMode: CFStringRef,
-                                    returnData: *mut CFDataRef) -> i32;
-    pub fn CFMessagePortCreateRunLoopSource(allocator: CFAllocatorRef,
-                                            local: CFMessagePortRef,
-                                            order: CFIndex)
-        -> CFRunLoopSourceRef;
+    pub fn CFMessagePortSendRequest(
+        remote: CFMessagePortRef,
+        msgid: i32,
+        data: CFDataRef,
+        sendTimeout: CFTimeInterval,
+        rcvTimeout: CFTimeInterval,
+        replyMode: CFStringRef,
+        returnData: *mut CFDataRef,
+    ) -> i32;
     
+
+    
+    pub fn CFMessagePortGetContext(ms: CFMessagePortRef, context: *mut CFMessagePortContext);
+    pub fn CFMessagePortGetInvalidationCallBack(
+        ms: CFMessagePortRef,
+    ) -> CFMessagePortInvalidationCallBack;
+    pub fn CFMessagePortGetName(ms: CFMessagePortRef) -> CFStringRef;
+    pub fn CFMessagePortIsRemote(ms: CFMessagePortRef) -> Boolean;
+    pub fn CFMessagePortIsValid(ms: CFMessagePortRef) -> Boolean;
+
+    
+    pub fn CFMessagePortGetTypeID() -> CFTypeID;
 }

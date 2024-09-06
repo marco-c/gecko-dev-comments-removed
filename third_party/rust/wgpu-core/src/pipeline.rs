@@ -233,6 +233,14 @@ pub struct ProgrammableStageDescriptor<'a> {
     
     
     pub entry_point: Option<Cow<'a, str>>,
+    
+    
+    
+    
+    
+    
+    
+    pub constants: Cow<'a, naga::back::PipelineConstants>,
 }
 
 

@@ -1,3 +1,4 @@
+mod allocator;
 mod bind;
 mod bundle;
 mod clear;
@@ -15,6 +16,7 @@ pub(crate) use self::clear::clear_texture;
 pub use self::{
     bundle::*, clear::ClearError, compute::*, draw::*, query::*, render::*, transfer::*,
 };
+pub(crate) use allocator::CommandAllocator;
 
 use self::memory_init::CommandBufferTextureMemoryActions;
 
@@ -38,22 +40,114 @@ use crate::device::trace::Command as TraceCommand;
 
 const PUSH_CONSTANT_CLEAR_ARRAY: &[u32] = &[0_u32; 64];
 
+
 #[derive(Debug)]
 pub(crate) enum CommandEncoderStatus {
+    
+    
+    
+    
+    
+    
+    
+    
     Recording,
+
+    
+    
+    
+    
+    
+    
+    
     Finished,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Error,
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub(crate) struct CommandEncoder<A: HalApi> {
+    
+    
+    
+    
+    
+    
     raw: A::CommandEncoder,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     list: Vec<A::CommandBuffer>,
+
+    
+    
+    
+    
     is_open: bool,
+
     label: Option<String>,
 }
 
 
 impl<A: HalApi> CommandEncoder<A> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     fn close_and_swap(&mut self) -> Result<(), DeviceError> {
         if self.is_open {
@@ -65,6 +159,16 @@ impl<A: HalApi> CommandEncoder<A> {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn close(&mut self) -> Result<(), DeviceError> {
         if self.is_open {
             self.is_open = false;
@@ -75,6 +179,9 @@ impl<A: HalApi> CommandEncoder<A> {
         Ok(())
     }
 
+    
+    
+    
     pub(crate) fn discard(&mut self) {
         if self.is_open {
             self.is_open = false;
@@ -82,7 +189,10 @@ impl<A: HalApi> CommandEncoder<A> {
         }
     }
 
-    fn open(&mut self) -> Result<&mut A::CommandEncoder, DeviceError> {
+    
+    
+    
+    pub(crate) fn open(&mut self) -> Result<&mut A::CommandEncoder, DeviceError> {
         if !self.is_open {
             self.is_open = true;
             let label = self.label.as_deref();
@@ -92,6 +202,10 @@ impl<A: HalApi> CommandEncoder<A> {
         Ok(&mut self.raw)
     }
 
+    
+    
+    
+    
     fn open_pass(&mut self, label: Option<&str>) -> Result<(), DeviceError> {
         self.is_open = true;
         unsafe { self.raw.begin_encoding(label)? };
@@ -100,7 +214,7 @@ impl<A: HalApi> CommandEncoder<A> {
     }
 }
 
-pub struct BakedCommands<A: HalApi> {
+pub(crate) struct BakedCommands<A: HalApi> {
     pub(crate) encoder: A::CommandEncoder,
     pub(crate) list: Vec<A::CommandBuffer>,
     pub(crate) trackers: Tracker<A>,
@@ -111,12 +225,27 @@ pub struct BakedCommands<A: HalApi> {
 pub(crate) struct DestroyedBufferError(pub id::BufferId);
 pub(crate) struct DestroyedTextureError(pub id::TextureId);
 
+
 pub struct CommandBufferMutable<A: HalApi> {
+    
+    
     pub(crate) encoder: CommandEncoder<A>,
+
+    
     status: CommandEncoderStatus,
+
+    
     pub(crate) trackers: Tracker<A>,
+
+    
+    
+    
+    
+    
+    
     buffer_memory_init_actions: Vec<BufferInitTrackerAction<A>>,
     texture_memory_actions: CommandBufferTextureMemoryActions<A>,
+
     pub(crate) pending_query_resets: QueryResetMap<A>,
     #[cfg(feature = "trace")]
     pub(crate) commands: Option<Vec<TraceCommand>>,
@@ -133,11 +262,36 @@ impl<A: HalApi> CommandBufferMutable<A> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct CommandBuffer<A: HalApi> {
     pub(crate) device: Arc<Device<A>>,
     limits: wgt::Limits,
     support_clear_texture: bool,
     pub(crate) info: ResourceInfo<CommandBuffer<A>>,
+
+    
+    
+    
+    
+    
+    
     pub(crate) data: Mutex<Option<CommandBufferMutable<A>>>,
 }
 
@@ -248,12 +402,18 @@ impl<A: HalApi> CommandBuffer<A> {
 }
 
 impl<A: HalApi> CommandBuffer<A> {
+    
+    
+    
+    
+    
+    
     fn get_encoder(
         hub: &Hub<A>,
         id: id::CommandEncoderId,
     ) -> Result<Arc<Self>, CommandEncoderError> {
         let storage = hub.command_buffers.read();
-        match storage.get(id.transmute()) {
+        match storage.get(id.into_command_buffer_id()) {
             Ok(cmd_buf) => match cmd_buf.data.lock().as_ref().unwrap().status {
                 CommandEncoderStatus::Recording => Ok(cmd_buf.clone()),
                 CommandEncoderStatus::Finished => Err(CommandEncoderError::NotRecording),
@@ -286,11 +446,9 @@ impl<A: HalApi> CommandBuffer<A> {
     }
 
     pub(crate) fn from_arc_into_baked(self: Arc<Self>) -> BakedCommands<A> {
-        if let Some(mut command_buffer) = Arc::into_inner(self) {
-            command_buffer.extract_baked_commands()
-        } else {
-            panic!("CommandBuffer cannot be destroyed because is still in use");
-        }
+        let mut command_buffer = Arc::into_inner(self)
+            .expect("CommandBuffer cannot be destroyed because is still in use");
+        command_buffer.extract_baked_commands()
     }
 }
 
@@ -418,7 +576,7 @@ impl Global {
 
         let hub = A::hub(self);
 
-        let error = match hub.command_buffers.get(encoder_id.transmute()) {
+        let error = match hub.command_buffers.get(encoder_id.into_command_buffer_id()) {
             Ok(cmd_buf) => {
                 let mut cmd_buf_data = cmd_buf.data.lock();
                 let cmd_buf_data = cmd_buf_data.as_mut().unwrap();
@@ -444,7 +602,7 @@ impl Global {
             Err(_) => Some(CommandEncoderError::Invalid),
         };
 
-        (encoder_id.transmute(), error)
+        (encoder_id.into_command_buffer_id(), error)
     }
 
     pub fn command_encoder_push_debug_group<A: HalApi>(
@@ -700,7 +858,7 @@ impl PrettyError for PassErrorScope {
         
         match *self {
             Self::Pass(id) => {
-                fmt.command_buffer_label(&id.transmute());
+                fmt.command_buffer_label(&id.into_command_buffer_id());
             }
             Self::SetBindGroup(id) => {
                 fmt.bind_group_label(&id);

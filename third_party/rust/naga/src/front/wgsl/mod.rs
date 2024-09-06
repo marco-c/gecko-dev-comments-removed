@@ -44,6 +44,17 @@ impl Frontend {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
 pub fn parse_str(source: &str) -> Result<crate::Module, ParseError> {
     Frontend::new().parse(source)
 }

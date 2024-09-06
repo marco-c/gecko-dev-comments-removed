@@ -4942,6 +4942,9 @@ pub enum VertexFormat {
     Float64x3 = 32,
     
     Float64x4 = 33,
+    
+    #[cfg_attr(feature = "serde", serde(rename = "unorm10-10-10-2"))]
+    Unorm10_10_10_2 = 34,
 }
 
 impl VertexFormat {
@@ -4960,7 +4963,8 @@ impl VertexFormat {
             | Self::Float16x2
             | Self::Float32
             | Self::Uint32
-            | Self::Sint32 => 4,
+            | Self::Sint32
+            | Self::Unorm10_10_10_2 => 4,
             Self::Uint16x4
             | Self::Sint16x4
             | Self::Unorm16x4

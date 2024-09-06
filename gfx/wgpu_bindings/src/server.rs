@@ -303,7 +303,7 @@ pub unsafe extern "C" fn wgpu_server_adapter_request_device(
     
     
     
-    let (_, _, error) = gfx_select!(self_id => global.adapter_request_device(self_id, &desc, trace_path, Some(new_id), Some(new_id.transmute())));
+    let (_, _, error) = gfx_select!(self_id => global.adapter_request_device(self_id, &desc, trace_path, Some(new_id), Some(new_id.into_queue_id())));
     if let Some(err) = error {
         error_buf.init(err);
     }

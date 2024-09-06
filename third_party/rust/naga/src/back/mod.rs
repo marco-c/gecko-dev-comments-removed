@@ -16,6 +16,14 @@ pub mod spv;
 #[cfg(feature = "wgsl-out")]
 pub mod wgsl;
 
+#[cfg(any(
+    feature = "hlsl-out",
+    feature = "msl-out",
+    feature = "spv-out",
+    feature = "glsl-out"
+))]
+pub mod pipeline_constants;
+
 
 pub const COMPONENTS: &[char] = &['x', 'y', 'z', 'w'];
 
@@ -25,6 +33,15 @@ pub const BAKE_PREFIX: &str = "_e";
 
 
 pub type NeedBakeExpressions = crate::FastHashSet<crate::Handle<crate::Expression>>;
+
+
+
+
+
+
+
+
+pub type PipelineConstants = std::collections::HashMap<String, f64>;
 
 
 #[derive(Clone, Copy)]

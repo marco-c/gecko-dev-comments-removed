@@ -23,7 +23,6 @@ use std::sync::Arc;
 use thiserror::Error;
 
 
-#[derive(Default)]
 pub(crate) struct ResourceMaps<A: HalApi> {
     pub buffers: FastHashMap<TrackerIndex, Arc<Buffer<A>>>,
     pub staging_buffers: FastHashMap<TrackerIndex, Arc<StagingBuffer<A>>>,
@@ -150,6 +149,16 @@ struct ActiveSubmission<A: HalApi> {
     
     mapped: Vec<Arc<Buffer<A>>>,
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     encoders: Vec<EncoderInFlight<A>>,
 
     
@@ -351,7 +360,7 @@ impl<A: HalApi> LifetimeTracker<A> {
     pub fn triage_submissions(
         &mut self,
         last_done: SubmissionIndex,
-        command_allocator: &mut super::CommandAllocator<A>,
+        command_allocator: &crate::command::CommandAllocator<A>,
     ) -> SmallVec<[SubmittedWorkDoneClosure; 1]> {
         profiling::scope!("triage_submissions");
 

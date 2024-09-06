@@ -77,8 +77,10 @@ where
     fmt::Result::Ok(())
 }
 
+#[cfg(feature = "serde")]
 pub(crate) struct AsDisplay<'a, B>(pub(crate) &'a B);
 
+#[cfg(feature = "serde")]
 impl<'a, B: Flags> fmt::Display for AsDisplay<'a, B>
 where
     B::Bits: WriteHex,
@@ -127,6 +129,89 @@ where
         else {
             B::from_name(flag).ok_or_else(|| ParseError::invalid_named_flag(flag))?
         };
+
+        parsed_flags.insert(parsed_flag);
+    }
+
+    Ok(parsed_flags)
+}
+
+
+
+
+pub fn to_writer_truncate<B: Flags>(flags: &B, writer: impl Write) -> Result<(), fmt::Error>
+where
+    B::Bits: WriteHex,
+{
+    to_writer(&B::from_bits_truncate(flags.bits()), writer)
+}
+
+
+
+
+
+
+
+pub fn from_str_truncate<B: Flags>(input: &str) -> Result<B, ParseError>
+where
+    B::Bits: ParseHex,
+{
+    Ok(B::from_bits_truncate(from_str::<B>(input)?.bits()))
+}
+
+
+
+
+pub fn to_writer_strict<B: Flags>(flags: &B, mut writer: impl Write) -> Result<(), fmt::Error> {
+    
+    
+
+    let mut first = true;
+    let mut iter = flags.iter_names();
+    for (name, _) in &mut iter {
+        if !first {
+            writer.write_str(" | ")?;
+        }
+
+        first = false;
+        writer.write_str(name)?;
+    }
+
+    fmt::Result::Ok(())
+}
+
+
+
+
+
+
+
+pub fn from_str_strict<B: Flags>(input: &str) -> Result<B, ParseError> {
+    
+    
+
+    let mut parsed_flags = B::empty();
+
+    
+    if input.trim().is_empty() {
+        return Ok(parsed_flags);
+    }
+
+    for flag in input.split('|') {
+        let flag = flag.trim();
+
+        
+        if flag.is_empty() {
+            return Err(ParseError::empty_flag());
+        }
+
+        
+        
+        if flag.starts_with("0x") {
+            return Err(ParseError::invalid_hex_flag("unsupported hex flag value"));
+        }
+
+        let parsed_flag = B::from_name(flag).ok_or_else(|| ParseError::invalid_named_flag(flag))?;
 
         parsed_flags.insert(parsed_flag);
     }

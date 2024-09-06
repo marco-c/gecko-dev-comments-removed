@@ -39,6 +39,8 @@
     unused_braces,
     
     clippy::pattern_type_mismatch,
+    
+    rustdoc::private_intra_doc_links
 )]
 #![warn(
     trivial_casts,

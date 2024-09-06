@@ -14,6 +14,111 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![allow(
     
@@ -198,6 +303,15 @@ pub trait Api: Clone + fmt::Debug + Sized {
 
     type Queue: Queue<A = Self>;
     type CommandEncoder: CommandEncoder<A = Self>;
+
+    
+    
+    
+    
+    
+    
+    
+    
     type CommandBuffer: WasmNotSendSync + fmt::Debug;
 
     type Buffer: fmt::Debug + WasmNotSendSync + 'static;
@@ -445,6 +559,16 @@ pub trait Queue: WasmNotSendSync {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn submit(
         &self,
         command_buffers: &[&<Self::A as Api>::CommandBuffer],
@@ -497,6 +621,18 @@ pub trait Queue: WasmNotSendSync {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
     type A: Api;
 
@@ -509,6 +645,9 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
     
     unsafe fn begin_encoding(&mut self, label: Label) -> Result<(), DeviceError>;
 
+    
+    
+    
     
     
     
@@ -1318,6 +1457,8 @@ pub struct ProgrammableStage<'a, A: Api> {
     
     
     pub entry_point: &'a str,
+    
+    pub constants: &'a naga::back::PipelineConstants,
 }
 
 
@@ -1326,6 +1467,7 @@ impl<A: Api> Clone for ProgrammableStage<'_, A> {
         Self {
             module: self.module,
             entry_point: self.entry_point,
+            constants: self.constants,
         }
     }
 }

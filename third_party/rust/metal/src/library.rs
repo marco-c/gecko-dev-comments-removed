@@ -7,11 +7,10 @@
 
 use super::*;
 
-use foreign_types::ForeignType;
-use objc::runtime::{Object, BOOL, NO, YES};
+use objc::runtime::{BOOL, NO, YES};
 
 use std::ffi::CStr;
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_char;
 use std::ptr;
 
 
@@ -361,6 +360,10 @@ pub enum MTLLanguageVersion {
     V2_3 = 0x20003,
     
     V2_4 = 0x20004,
+    
+    V3_0 = 0x30000,
+    
+    V3_1 = 0x30001,
 }
 
 

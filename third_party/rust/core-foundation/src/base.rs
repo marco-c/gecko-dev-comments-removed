@@ -17,8 +17,8 @@ use std::os::raw::c_void;
 
 pub use core_foundation_sys::base::*;
 
-use string::CFString;
-use ConcreteCFType;
+use crate::string::CFString;
+use crate::ConcreteCFType;
 
 pub trait CFIndexConvertible {
     
@@ -37,7 +37,7 @@ impl CFIndexConvertible for usize {
     }
 }
 
-declare_TCFType!{
+declare_TCFType! {
     /// Superclass of all Core Foundation objects.
     CFType, CFTypeRef
 }
@@ -111,13 +111,11 @@ impl CFType {
 }
 
 impl fmt::Debug for CFType {
-   
-   
-   
+    
+    
+    
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let desc = unsafe {
-            CFString::wrap_under_create_rule(CFCopyDescription(self.0))
-        };
+        let desc = unsafe { CFString::wrap_under_create_rule(CFCopyDescription(self.0)) };
         desc.fmt(f)
     }
 }
@@ -125,18 +123,14 @@ impl fmt::Debug for CFType {
 impl Clone for CFType {
     #[inline]
     fn clone(&self) -> CFType {
-        unsafe {
-            TCFType::wrap_under_get_rule(self.0)
-        }
+        unsafe { TCFType::wrap_under_get_rule(self.0) }
     }
 }
 
 impl PartialEq for CFType {
     #[inline]
     fn eq(&self, other: &CFType) -> bool {
-        unsafe {
-            CFEqual(self.as_CFTypeRef(), other.as_CFTypeRef()) != 0
-        }
+        unsafe { CFEqual(self.as_CFTypeRef(), other.as_CFTypeRef()) != 0 }
     }
 }
 
@@ -152,7 +146,6 @@ impl CFAllocator {
         }
     }
 }
-
 
 
 
@@ -178,9 +171,7 @@ pub trait TCFType {
     
     #[inline]
     fn as_CFType(&self) -> CFType {
-        unsafe {
-            TCFType::wrap_under_get_rule(self.as_CFTypeRef())
-        }
+        unsafe { TCFType::wrap_under_get_rule(self.as_CFTypeRef()) }
     }
 
     
@@ -206,24 +197,18 @@ pub trait TCFType {
     
     #[inline]
     fn retain_count(&self) -> CFIndex {
-        unsafe {
-            CFGetRetainCount(self.as_CFTypeRef())
-        }
+        unsafe { CFGetRetainCount(self.as_CFTypeRef()) }
     }
 
     
     #[inline]
     fn type_of(&self) -> CFTypeID {
-        unsafe {
-            CFGetTypeID(self.as_CFTypeRef())
-        }
+        unsafe { CFGetTypeID(self.as_CFTypeRef()) }
     }
 
     
     fn show(&self) {
-        unsafe {
-            CFShow(self.as_CFTypeRef())
-        }
+        unsafe { CFShow(self.as_CFTypeRef()) }
     }
 
     
@@ -320,7 +305,9 @@ impl<'a, T: PartialEq> PartialEq for ItemMutRef<'a, T> {
 
 
 pub unsafe trait FromMutVoid {
-    unsafe fn from_mut_void<'a>(x: *mut c_void) -> ItemMutRef<'a, Self> where Self: std::marker::Sized;
+    unsafe fn from_mut_void<'a>(x: *mut c_void) -> ItemMutRef<'a, Self>
+    where
+        Self: std::marker::Sized;
 }
 
 unsafe impl FromMutVoid for u32 {
@@ -337,13 +324,18 @@ unsafe impl FromMutVoid for *const c_void {
 
 unsafe impl<T: TCFType> FromMutVoid for T {
     unsafe fn from_mut_void<'a>(x: *mut c_void) -> ItemMutRef<'a, Self> {
-        ItemMutRef(ManuallyDrop::new(TCFType::wrap_under_create_rule(T::Ref::from_void_ptr(x))), PhantomData)
+        ItemMutRef(
+            ManuallyDrop::new(TCFType::wrap_under_create_rule(T::Ref::from_void_ptr(x))),
+            PhantomData,
+        )
     }
 }
 
 
 pub unsafe trait FromVoid {
-    unsafe fn from_void<'a>(x: *const c_void) -> ItemRef<'a, Self> where Self: std::marker::Sized;
+    unsafe fn from_void<'a>(x: *const c_void) -> ItemRef<'a, Self>
+    where
+        Self: std::marker::Sized;
 }
 
 unsafe impl FromVoid for u32 {
@@ -362,7 +354,10 @@ unsafe impl FromVoid for *const c_void {
 
 unsafe impl<T: TCFType> FromVoid for T {
     unsafe fn from_void<'a>(x: *const c_void) -> ItemRef<'a, Self> {
-        ItemRef(ManuallyDrop::new(TCFType::wrap_under_create_rule(T::Ref::from_void_ptr(x))), PhantomData)
+        ItemRef(
+            ManuallyDrop::new(TCFType::wrap_under_create_rule(T::Ref::from_void_ptr(x))),
+            PhantomData,
+        )
     }
 }
 
@@ -395,12 +390,11 @@ unsafe impl ToVoid<CFType> for CFTypeRef {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::boolean::CFBoolean;
     use std::mem;
-    use boolean::CFBoolean;
 
     #[test]
     fn cftype_instance_of() {
@@ -413,7 +407,7 @@ mod tests {
 
     #[test]
     fn as_cftype_retain_count() {
-        let string = CFString::from_static_string("bar");
+        let string = CFString::from_static_string("alongerstring");
         assert_eq!(string.retain_count(), 1);
         let cftype = string.as_CFType();
         assert_eq!(cftype.retain_count(), 2);
@@ -423,7 +417,7 @@ mod tests {
 
     #[test]
     fn into_cftype_retain_count() {
-        let string = CFString::from_static_string("bar");
+        let string = CFString::from_static_string("alongerstring");
         assert_eq!(string.retain_count(), 1);
         let cftype = string.into_CFType();
         assert_eq!(cftype.retain_count(), 1);
@@ -431,10 +425,10 @@ mod tests {
 
     #[test]
     fn as_cftype_and_downcast() {
-        let string = CFString::from_static_string("bar");
+        let string = CFString::from_static_string("alongerstring");
         let cftype = string.as_CFType();
         let string2 = cftype.downcast::<CFString>().unwrap();
-        assert_eq!(string2.to_string(), "bar");
+        assert_eq!(string2.to_string(), "alongerstring");
 
         assert_eq!(string.retain_count(), 3);
         assert_eq!(cftype.retain_count(), 3);
@@ -443,10 +437,10 @@ mod tests {
 
     #[test]
     fn into_cftype_and_downcast_into() {
-        let string = CFString::from_static_string("bar");
+        let string = CFString::from_static_string("alongerstring");
         let cftype = string.into_CFType();
         let string2 = cftype.downcast_into::<CFString>().unwrap();
-        assert_eq!(string2.to_string(), "bar");
+        assert_eq!(string2.to_string(), "alongerstring");
         assert_eq!(string2.retain_count(), 1);
     }
 }
