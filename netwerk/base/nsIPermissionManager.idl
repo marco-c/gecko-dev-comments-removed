@@ -119,6 +119,14 @@ interface nsIPermissionManager : nsISupports
   
 
 
+  void testAddFromPrincipalByTime(in nsIPrincipal principal, in ACString type,
+    in uint32_t permission,
+    in int64_t modificationTime
+  );
+
+  
+
+
 
 
 

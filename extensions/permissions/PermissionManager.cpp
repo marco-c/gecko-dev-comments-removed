@@ -1682,22 +1682,15 @@ NS_IMETHODIMP
 PermissionManager::AddFromPrincipalAndPersistInPrivateBrowsing(
     nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t aPermission) {
   ENSURE_NOT_CHILD_PROCESS;
-  NS_ENSURE_ARG_POINTER(aPrincipal);
-  
-  
-  if (aPrincipal->IsSystemPrincipal()) {
-    return NS_OK;
-  }
 
-  
-  
-  if (aPrincipal->GetIsNullPrincipal()) {
-    return NS_OK;
-  }
+  bool isValidPermissionPrincipal = false;
+  nsresult rv = ShouldHandlePrincipalForPermission(aPrincipal,
+                                                   isValidPermissionPrincipal);
 
-  
-  if (IsExpandedPrincipal(aPrincipal)) {
-    return NS_ERROR_INVALID_ARG;
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!isValidPermissionPrincipal) {
+    
+    return rv;
   }
 
   
@@ -1717,7 +1710,6 @@ PermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
                                     uint32_t aPermission, uint32_t aExpireType,
                                     int64_t aExpireTime) {
   ENSURE_NOT_CHILD_PROCESS;
-  NS_ENSURE_ARG_POINTER(aPrincipal);
   NS_ENSURE_TRUE(aExpireType == nsIPermissionManager::EXPIRE_NEVER ||
                      aExpireType == nsIPermissionManager::EXPIRE_TIME ||
                      aExpireType == nsIPermissionManager::EXPIRE_SESSION ||
@@ -1729,21 +1721,14 @@ PermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
     return NS_OK;
   }
 
-  
-  
-  if (aPrincipal->IsSystemPrincipal()) {
-    return NS_OK;
-  }
+  bool isValidPermissionPrincipal = false;
+  nsresult rv = ShouldHandlePrincipalForPermission(aPrincipal,
+                                                   isValidPermissionPrincipal);
 
-  
-  
-  if (aPrincipal->GetIsNullPrincipal()) {
-    return NS_OK;
-  }
-
-  
-  if (IsExpandedPrincipal(aPrincipal)) {
-    return NS_ERROR_INVALID_ARG;
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!isValidPermissionPrincipal) {
+    
+    return rv;
   }
 
   
@@ -1751,6 +1736,28 @@ PermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
 
   return AddInternal(aPrincipal, aType, aPermission, 0, aExpireType,
                      aExpireTime, modificationTime, eNotify, eWriteToDB);
+}
+
+NS_IMETHODIMP
+PermissionManager::TestAddFromPrincipalByTime(nsIPrincipal* aPrincipal,
+                                              const nsACString& aType,
+                                              uint32_t aPermission,
+                                              int64_t aModificationTime) {
+  ENSURE_NOT_CHILD_PROCESS;
+
+  bool isValidPermissionPrincipal = false;
+  nsresult rv = ShouldHandlePrincipalForPermission(aPrincipal,
+                                                   isValidPermissionPrincipal);
+
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!isValidPermissionPrincipal) {
+    
+    return rv;
+  }
+
+  return AddInternal(aPrincipal, aType, aPermission, 0,
+                     nsIPermissionManager::EXPIRE_NEVER, 0, aModificationTime,
+                     eNotify, eWriteToDB);
 }
 
 nsresult PermissionManager::AddInternal(
@@ -2545,6 +2552,34 @@ NS_IMETHODIMP PermissionManager::GetAllByTypes(
         return aTypes.Contains(mTypeArray[aPermEntry.mType]);
       },
       aResult);
+}
+
+nsresult PermissionManager::ShouldHandlePrincipalForPermission(
+    nsIPrincipal* aPrincipal, bool& aIsPermissionPrincipalValid) {
+  NS_ENSURE_ARG_POINTER(aPrincipal);
+  
+  
+  if (aPrincipal->IsSystemPrincipal()) {
+    aIsPermissionPrincipalValid = false;
+    return NS_OK;
+  }
+
+  
+  
+  if (aPrincipal->GetIsNullPrincipal()) {
+    aIsPermissionPrincipalValid = false;
+    return NS_OK;
+  }
+
+  
+  if (IsExpandedPrincipal(aPrincipal)) {
+    aIsPermissionPrincipalValid = false;
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  aIsPermissionPrincipalValid = true;
+  return NS_OK;
 }
 
 nsresult PermissionManager::GetAllForPrincipalHelper(

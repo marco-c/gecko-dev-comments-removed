@@ -404,6 +404,12 @@ class PermissionManager final : public nsIPermissionManager,
   
   
   
+  nsresult ShouldHandlePrincipalForPermission(
+      nsIPrincipal* aPrincipal, bool& aIsPermissionPrincipalValid);
+
+  
+  
+  
   
   
   PermissionHashKey* GetPermissionHashKey(nsIPrincipal* aPrincipal,
