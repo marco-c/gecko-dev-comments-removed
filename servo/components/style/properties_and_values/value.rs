@@ -90,7 +90,9 @@ impl<L, N, P, LP, C, Image, U, Integer, A, T, R, Transform>
 }
 
 
-#[derive(Animate, Clone, ToCss, ToComputedValue, ToResolvedValue, Debug, MallocSizeOf, PartialEq)]
+#[derive(
+    Animate, Clone, ToCss, ToComputedValue, ToResolvedValue, Debug, MallocSizeOf, PartialEq,
+)]
 #[animation(no_bound(Image, Url))]
 pub enum GenericValueComponent<
     Length,
@@ -233,7 +235,9 @@ impl<Component> Value<Component> {
 }
 
 
-#[derive(Animate, ToComputedValue, ToResolvedValue, ToCss, Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(
+    Animate, ToComputedValue, ToResolvedValue, ToCss, Clone, Debug, MallocSizeOf, PartialEq,
+)]
 pub enum ValueInner<Component> {
     
     

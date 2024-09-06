@@ -151,7 +151,9 @@ impl TransitionBehavior {
 }
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(
+    Copy, Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem,
+)]
 pub enum AnimationIterationCount {
     
     Number(NonNegativeNumber),
@@ -226,7 +228,19 @@ impl Parse for AnimationName {
 }
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum AnimationDirection {
@@ -248,7 +262,19 @@ impl AnimationDirection {
 }
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum AnimationPlayState {
@@ -268,7 +294,19 @@ impl AnimationPlayState {
 }
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum AnimationFillMode {
@@ -291,7 +329,19 @@ impl AnimationFillMode {
 }
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum AnimationComposition {

@@ -73,7 +73,6 @@ pub trait ElementSnapshot: Sized {
     where
         F: FnMut(&AtomIdent);
 
-
     
     fn has_custom_states(&self) -> bool;
 
@@ -226,9 +225,7 @@ where
             },
 
             
-            NonTSPseudoClass::CustomState(ref state) => {
-                return self.has_custom_state(&state.0)
-            },
+            NonTSPseudoClass::CustomState(ref state) => return self.has_custom_state(&state.0),
 
             _ => {},
         }

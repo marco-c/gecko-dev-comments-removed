@@ -189,7 +189,8 @@ impl Device {
 
     
     pub fn set_root_line_height(&self, size: f32) {
-        self.root_line_height.store(size.to_bits(), Ordering::Relaxed);
+        self.root_line_height
+            .store(size.to_bits(), Ordering::Relaxed);
     }
 
     
@@ -501,11 +502,11 @@ impl Device {
     pub fn forced_colors(&self) -> ForcedColors {
         if self.document().mIsBeingUsedAsImage() {
             
-            return ForcedColors::None
+            return ForcedColors::None;
         }
         let prefs = self.pref_sheet_prefs();
         if !prefs.mUseDocumentColors {
-            return ForcedColors::Active
+            return ForcedColors::Active;
         }
         
         

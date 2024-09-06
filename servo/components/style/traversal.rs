@@ -643,10 +643,8 @@ where
                 PseudoElementResolution::IfApplicable,
             );
 
-            resolver.cascade_styles_with_default_parents(
-                cascade_inputs,
-                data.may_have_starting_style(),
-            )
+            resolver
+                .cascade_styles_with_default_parents(cascade_inputs, data.may_have_starting_style())
         },
         CascadeOnly => {
             

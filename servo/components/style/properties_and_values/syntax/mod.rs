@@ -91,7 +91,10 @@ impl Descriptor {
             
             parser.parse()?;
         }
-        Ok(Self { components, specified })
+        Ok(Self {
+            components,
+            specified,
+        })
     }
 
     
