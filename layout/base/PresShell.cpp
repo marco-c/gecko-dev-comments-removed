@@ -11260,10 +11260,8 @@ void PresShell::SetIsActive(bool aIsActive) {
 #if defined(MOZ_WIDGET_ANDROID)
     if (!aIsActive && presContext &&
         presContext->IsRootContentDocumentCrossProcess()) {
-      if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
-        
-        presContext->UpdateDynamicToolbarOffset(0);
-      }
+      
+      presContext->UpdateDynamicToolbarOffset(0);
     }
 #endif
   }
