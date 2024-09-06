@@ -1,7 +1,7 @@
-
-
-
-
+// Copyright (c) the JPEG XL Project Authors. All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 #include "lib/jxl/dec_modular.h"
 
@@ -32,7 +32,7 @@ HWY_BEFORE_NAMESPACE();
 namespace jxl {
 namespace HWY_NAMESPACE {
 
-
+// These templates are not found via ADL.
 using hwy::HWY_NAMESPACE::Add;
 using hwy::HWY_NAMESPACE::Mul;
 using hwy::HWY_NAMESPACE::Rebind;
@@ -42,7 +42,7 @@ void MultiplySum(const size_t xsize,
                  const pixel_type* const JXL_RESTRICT row_in_Y,
                  const float factor, float* const JXL_RESTRICT row_out) {
   const HWY_FULL(float) df;
-  const Rebind<pixel_type, HWY_FULL(float)> di;  
+  const Rebind<pixel_type, HWY_FULL(float)> di;  // assumes pixel_type <= float
   const auto factor_v = Set(df, factor);
   for (size_t x = 0; x < xsize; x += Lanes(di)) {
     const auto in = Add(Load(di, row_in + x), Load(di, row_in_Y + x));
@@ -56,7 +56,7 @@ void RgbFromSingle(const size_t xsize,
                    const float factor, float* out_r, float* out_g,
                    float* out_b) {
   const HWY_FULL(float) df;
-  const Rebind<pixel_type, HWY_FULL(float)> di;  
+  const Rebind<pixel_type, HWY_FULL(float)> di;  // assumes pixel_type <= float
 
   const auto factor_v = Set(df, factor);
   for (size_t x = 0; x < xsize; x += Lanes(di)) {
@@ -72,7 +72,7 @@ void SingleFromSingle(const size_t xsize,
                       const pixel_type* const JXL_RESTRICT row_in,
                       const float factor, float* row_out) {
   const HWY_FULL(float) df;
-  const Rebind<pixel_type, HWY_FULL(float)> di;  
+  const Rebind<pixel_type, HWY_FULL(float)> di;  // assumes pixel_type <= float
 
   const auto factor_v = Set(df, factor);
   for (size_t x = 0; x < xsize; x += Lanes(di)) {
@@ -81,19 +81,19 @@ void SingleFromSingle(const size_t xsize,
     Store(out, df, row_out + x);
   }
 }
-
-}  
-}  
+// NOLINTNEXTLINE(google-readability-namespace-comments)
+}  // namespace HWY_NAMESPACE
+}  // namespace jxl
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
 namespace jxl {
-HWY_EXPORT(MultiplySum);       
-HWY_EXPORT(RgbFromSingle);     
-HWY_EXPORT(SingleFromSingle);  
+HWY_EXPORT(MultiplySum);       // Local function
+HWY_EXPORT(RgbFromSingle);     // Local function
+HWY_EXPORT(SingleFromSingle);  // Local function
 
-
-
+// Slow conversion using double precision multiplication, only
+// needed when the bit depth is too high for single precision
 void SingleFromSingleAccurate(const size_t xsize,
                               const pixel_type* const JXL_RESTRICT row_in,
                               const double factor, float* row_out) {
@@ -102,8 +102,8 @@ void SingleFromSingleAccurate(const size_t xsize,
   }
 }
 
-
-
+// convert custom [bits]-bit float (with [exp_bits] exponent bits) stored as int
+// back to binary32 float
 void int_to_float(const pixel_type* const JXL_RESTRICT row_in,
                   float* const JXL_RESTRICT row_out, const size_t xsize,
                   const int bits, const int exp_bits) {
@@ -129,20 +129,20 @@ void int_to_float(const pixel_type* const JXL_RESTRICT row_in,
     int exp = (f >> mant_bits);
     int mantissa = (f & ((1 << mant_bits) - 1));
     mantissa <<= mant_shift;
-    
+    // Try to normalize only if there is space for maneuver.
     if (exp == 0 && exp_bits < 8) {
-      
+      // subnormal number
       while ((mantissa & 0x800000) == 0) {
         mantissa <<= 1;
         exp--;
       }
       exp++;
-      
+      // remove leading 1 because it is implicit now
       mantissa &= 0x7fffff;
     }
     exp -= exp_bias;
-    
-    
+    // broke up the arbitrary float into its parts, now reassemble into
+    // binary32
     exp += 127;
     JXL_ASSERT(exp >= 0);
     f = (signbit ? 0x80000000 : 0);
@@ -155,21 +155,21 @@ void int_to_float(const pixel_type* const JXL_RESTRICT row_in,
 #if JXL_DEBUG_V_LEVEL >= 1
 std::string ModularStreamId::DebugString() const {
   std::ostringstream os;
-  os << (kind == GlobalData   ? "ModularGlobal"
-         : kind == VarDCTDC   ? "VarDCTDC"
-         : kind == ModularDC  ? "ModularDC"
-         : kind == ACMetadata ? "ACMeta"
-         : kind == QuantTable ? "QuantTable"
-         : kind == ModularAC  ? "ModularAC"
-                              : "");
-  if (kind == VarDCTDC || kind == ModularDC || kind == ACMetadata ||
-      kind == ModularAC) {
+  os << (kind == kGlobalData   ? "ModularGlobal"
+         : kind == kVarDCTDC   ? "VarDCTDC"
+         : kind == kModularDC  ? "ModularDC"
+         : kind == kACMetadata ? "ACMeta"
+         : kind == kQuantTable ? "QuantTable"
+         : kind == kModularAC  ? "ModularAC"
+                               : "");
+  if (kind == kVarDCTDC || kind == kModularDC || kind == kACMetadata ||
+      kind == kModularAC) {
     os << " group " << group_id;
   }
-  if (kind == ModularAC) {
+  if (kind == kModularAC) {
     os << " pass " << pass_id;
   }
-  if (kind == QuantTable) {
+  if (kind == kQuantTable) {
     os << " " << quant_table_id;
   }
   return os.str();
@@ -207,7 +207,7 @@ Status ModularFrameDecoder::DecodeGlobalInfo(BitReader* reader,
 
   bool fp = metadata.bit_depth.floating_point_sample;
 
-  
+  // bits_per_sample is just metadata for XYB images.
   if (metadata.bit_depth.bits_per_sample >= 32 && do_color &&
       frame_header.color_transform != ColorTransform::kXYB) {
     if (metadata.bit_depth.bits_per_sample == 32 && fp == false) {
@@ -258,14 +258,14 @@ Status ModularFrameDecoder::DecodeGlobalInfo(BitReader* reader,
   Status dec_status = ModularGenericDecompress(
       reader, gi, &global_header, ModularStreamId::Global().ID(frame_dim),
       &options,
-      false, &tree, &code, &context_map,
+      /*undo_transforms=*/false, &tree, &code, &context_map,
       allow_truncated_group);
   if (!allow_truncated_group) JXL_RETURN_IF_ERROR(dec_status);
   if (dec_status.IsFatalError()) {
     return JXL_FAILURE("Failed to decode global modular info");
   }
 
-  
+  // TODO(eustas): are we sure this can be done after partial decode?
   have_something = false;
   for (size_t c = 0; c < gi.channel.size(); c++) {
     Channel& gic = gi.channel[c];
@@ -273,12 +273,12 @@ Status ModularFrameDecoder::DecodeGlobalInfo(BitReader* reader,
         gic.h <= frame_dim.group_dim)
       have_something = true;
   }
-  
+  // move global transforms to groups if possible
   if (!have_something && all_same_shift) {
     if (gi.transform.size() == 1 && gi.transform[0].id == TransformId::kRCT) {
       global_transform = gi.transform;
       gi.transform.clear();
-      
+      // TODO(jon): also move no-delta-palette out (trickier though)
     }
   }
   full_image = std::move(gi);
@@ -292,7 +292,7 @@ void ModularFrameDecoder::MaybeDropFullImage() {
     use_full_image = false;
     JXL_DEBUG_V(6, "Dropping full image");
     for (auto& ch : full_image.channel) {
-      
+      // keep metadata on channels around, but dealloc their planes
       ch.plane = Plane<pixel_type>();
     }
   }
@@ -306,13 +306,13 @@ Status ModularFrameDecoder::DecodeGroup(
   JXL_DEBUG_V(6, "Decoding %s with rect %s and shift bracket %d..%d %s",
               stream.DebugString().c_str(), Description(rect).c_str(), minShift,
               maxShift, zerofill ? "using zerofill" : "");
-  JXL_DASSERT(stream.kind == ModularStreamId::Kind::ModularDC ||
-              stream.kind == ModularStreamId::Kind::ModularAC);
+  JXL_DASSERT(stream.kind == ModularStreamId::kModularDC ||
+              stream.kind == ModularStreamId::kModularAC);
   const size_t xsize = rect.xsize();
   const size_t ysize = rect.ysize();
   JXL_ASSIGN_OR_RETURN(Image gi, Image::Create(memory_manager_, xsize, ysize,
                                                full_image.bitdepth, 0));
-  
+  // start at the first bigger-than-groupsize non-metachannel
   size_t c = full_image.nb_meta_channels;
   for (; c < full_image.channel.size(); c++) {
     Channel& fc = full_image.channel[c];
@@ -342,14 +342,14 @@ Status ModularFrameDecoder::DecodeGroup(
     }
   }
   if (zerofill && use_full_image) return true;
-  
-  
+  // Return early if there's nothing to decode. Otherwise there might be
+  // problems later (in ModularImageToDecodedRect).
   if (gi.channel.empty()) {
     if (dec_state && should_run_pipeline) {
       const auto* metadata = frame_header.nonserialized_metadata;
       if (do_color || metadata->m.num_extra_channels > 0) {
-        
-        
+        // Signal to FrameDecoder that we do not have some of the required input
+        // for the render pipeline.
         *should_run_pipeline = false;
       }
     }
@@ -359,12 +359,12 @@ Status ModularFrameDecoder::DecodeGroup(
   ModularOptions options;
   if (!zerofill) {
     auto status = ModularGenericDecompress(
-        reader, gi, nullptr, stream.ID(frame_dim), &options,
-        true, &tree, &code, &context_map, allow_truncated);
+        reader, gi, /*header=*/nullptr, stream.ID(frame_dim), &options,
+        /*undo_transforms=*/true, &tree, &code, &context_map, allow_truncated);
     if (!allow_truncated) JXL_RETURN_IF_ERROR(status);
     if (status.IsFatalError()) return status;
   }
-  
+  // Undo global transforms that have been pushed to the group level
   if (!use_full_image) {
     JXL_ASSERT(render_pipeline_input);
     for (const auto& t : global_transform) {
@@ -385,9 +385,9 @@ Status ModularFrameDecoder::DecodeGroup(
            rect.xsize() >> fc.hshift, rect.ysize() >> fc.vshift, fc.w, fc.h);
     if (r.xsize() == 0 || r.ysize() == 0) continue;
     JXL_ASSERT(use_full_image);
-    CopyImageTo(Rect(0, 0, r.xsize(), r.ysize()),
-                gi.channel[gic].plane,
-                r, &fc.plane);
+    CopyImageTo(/*rect_from=*/Rect(0, 0, r.xsize(), r.ysize()),
+                /*from=*/gi.channel[gic].plane,
+                /*rect_to=*/r, /*to=*/&fc.plane);
     gic++;
   }
   return true;
@@ -399,12 +399,12 @@ Status ModularFrameDecoder::DecodeVarDCTDC(const FrameHeader& frame_header,
   JxlMemoryManager* memory_manager = dec_state->memory_manager();
   const Rect r = dec_state->shared->frame_dim.DCGroupRect(group_id);
   JXL_DEBUG_V(6, "Decoding VarDCT DC with rect %s", Description(r).c_str());
-  
-  
-  
-  
-  
-  
+  // TODO(eustas): investigate if we could reduce the impact of
+  //               EvalRationalPolynomial; generally speaking, the limit is
+  //               2**(128/(3*magic)), where 128 comes from IEEE 754 exponent,
+  //               3 comes from XybToRgb that cubes the values, and "magic" is
+  //               the sum of all other contributions. 2**18 is known to lead
+  //               to NaN on input found by fuzzing (see commit message).
   JXL_ASSIGN_OR_RETURN(Image image,
                        Image::Create(memory_manager, r.xsize(), r.ysize(),
                                      full_image.bitdepth, 3));
@@ -420,8 +420,8 @@ Status ModularFrameDecoder::DecodeVarDCTDC(const FrameHeader& frame_header,
     JXL_RETURN_IF_ERROR(ch.shrink());
   }
   if (!ModularGenericDecompress(
-          reader, image, nullptr, stream_id, &options,
-          true, &tree, &code, &context_map)) {
+          reader, image, /*header=*/nullptr, stream_id, &options,
+          /*undo_transforms=*/true, &tree, &code, &context_map)) {
     return JXL_FAILURE("Failed to decode VarDCT DC group (DC group id %d)",
                        static_cast<int>(group_id));
   }
@@ -443,7 +443,7 @@ Status ModularFrameDecoder::DecodeAcMetadata(const FrameHeader& frame_header,
   reader->Refill();
   size_t count = reader->ReadBits(CeilLog2Nonzero(upper_bound)) + 1;
   size_t stream_id = ModularStreamId::ACMetadata(group_id).ID(frame_dim);
-  
+  // YToX, YToB, ACS + QF, EPF
   JXL_ASSIGN_OR_RETURN(Image image,
                        Image::Create(memory_manager, r.xsize(), r.ysize(),
                                      full_image.bitdepth, 4));
@@ -459,8 +459,8 @@ Status ModularFrameDecoder::DecodeAcMetadata(const FrameHeader& frame_header,
                        Channel::Create(memory_manager, count, 2, 0, 0));
   ModularOptions options;
   if (!ModularGenericDecompress(
-          reader, image, nullptr, stream_id, &options,
-          true, &tree, &code, &context_map)) {
+          reader, image, /*header=*/nullptr, stream_id, &options,
+          /*undo_transforms=*/true, &tree, &code, &context_map)) {
     return JXL_FAILURE("Failed to decode AC metadata");
   }
   ConvertPlaneAndClamp(Rect(image.channel[0].plane), image.channel[0].plane, cr,
@@ -503,7 +503,7 @@ Status ModularFrameDecoder::DecodeAcMetadata(const FrameHeader& frame_header,
         return JXL_FAILURE(
             "AC strategy not compatible with chroma subsampling");
       }
-      
+      // Ensure that blocks do not overflow *AC* groups.
       size_t next_x_ac_block = (x / kGroupDimInBlocks + 1) * kGroupDimInBlocks;
       size_t next_y_ac_block = (y / kGroupDimInBlocks + 1) * kGroupDimInBlocks;
       size_t next_x_dct_block = x + acs.covered_blocks_x();
@@ -515,7 +515,7 @@ Status ModularFrameDecoder::DecodeAcMetadata(const FrameHeader& frame_header,
         return JXL_FAILURE("Invalid AC strategy, y overflow");
       }
       JXL_RETURN_IF_ERROR(
-          ac_strategy.SetNoBoundsCheck(x, y, AcStrategyType(row_in_1[num])));
+          ac_strategy.SetNoBoundsCheck(x, y, AcStrategy::Type(row_in_1[num])));
       row_qf[ix] = 1 + std::max<int32_t>(0, std::min(Quantizer::kQuantMax - 1,
                                                      row_in_2[num]));
       num++;
@@ -554,14 +554,14 @@ Status ModularFrameDecoder::ModularImageToDecodedRect(
       size_t c_in = c;
       if (frame_header.color_transform == ColorTransform::kXYB) {
         factor = dec_state->shared->matrices.DCQuants()[c];
-        
+        // XYB is encoded as YX(B-Y)
         if (c < 2) c_in = 1 - c;
       } else if (rgb_from_gray) {
         c_in = 0;
       }
       JXL_ASSERT(c_in < gi.channel.size());
       Channel& ch_in = gi.channel[c_in];
-      
+      // TODO(eustas): could we detect it on earlier stage?
       if (ch_in.w == 0 || ch_in.h == 0) {
         return JXL_FAILURE("Empty image");
       }
@@ -585,7 +585,7 @@ Status ModularFrameDecoder::ModularImageToDecodedRect(
         JXL_ASSERT(!fp);
         JXL_RETURN_IF_ERROR(RunOnPool(
             pool, 0, ysize_shifted, ThreadPool::NoInit,
-            [&](const uint32_t task, size_t ) {
+            [&](const uint32_t task, size_t /* thread */) {
               const size_t y = task;
               const pixel_type* const JXL_RESTRICT row_in =
                   mr.Row(&ch_in.plane, y);
@@ -601,7 +601,7 @@ Status ModularFrameDecoder::ModularImageToDecodedRect(
         int exp_bits = metadata->m.bit_depth.exponent_bits_per_sample;
         JXL_RETURN_IF_ERROR(RunOnPool(
             pool, 0, ysize_shifted, ThreadPool::NoInit,
-            [&](const uint32_t task, size_t ) {
+            [&](const uint32_t task, size_t /* thread */) {
               const size_t y = task;
               const pixel_type* const JXL_RESTRICT row_in =
                   mr.Row(&ch_in.plane, y);
@@ -619,7 +619,7 @@ Status ModularFrameDecoder::ModularImageToDecodedRect(
       } else {
         JXL_RETURN_IF_ERROR(RunOnPool(
             pool, 0, ysize_shifted, ThreadPool::NoInit,
-            [&](const uint32_t task, size_t ) {
+            [&](const uint32_t task, size_t /* thread */) {
               const size_t y = task;
               const pixel_type* const JXL_RESTRICT row_in =
                   mr.Row(&ch_in.plane, y);
@@ -717,10 +717,10 @@ Status ModularFrameDecoder::FinalizeDecoding(const FrameHeader& frame_header,
   JXL_DEBUG_V(3, "Finalizing decoding for modular image: %s",
               gi.DebugString().c_str());
 
-  
+  // Don't use threads if total image size is smaller than a group
   if (xsize * ysize < frame_dim.group_dim * frame_dim.group_dim) pool = nullptr;
 
-  
+  // Undo the global transforms
   gi.undo_transforms(global_header.wp_header, pool);
   JXL_DASSERT(global_transform.empty());
   if (gi.error) return JXL_FAILURE("Undoing transforms failed");
@@ -765,8 +765,8 @@ Status ModularFrameDecoder::DecodeQuantTable(
     ModularFrameDecoder* modular_frame_decoder) {
   JXL_RETURN_IF_ERROR(F16Coder::Read(br, &encoding->qraw.qtable_den));
   if (encoding->qraw.qtable_den < kAlmostZero) {
-    
-    
+    // qtable[] values are already checked for <= 0 so the denominator may not
+    // be negative.
     return JXL_FAILURE("Invalid qtable_den: value too small");
   }
   JXL_ASSIGN_OR_RETURN(
@@ -775,29 +775,25 @@ Status ModularFrameDecoder::DecodeQuantTable(
   ModularOptions options;
   if (modular_frame_decoder) {
     JXL_RETURN_IF_ERROR(ModularGenericDecompress(
-        br, image, nullptr,
+        br, image, /*header=*/nullptr,
         ModularStreamId::QuantTable(idx).ID(modular_frame_decoder->frame_dim),
-        &options, true, &modular_frame_decoder->tree,
+        &options, /*undo_transforms=*/true, &modular_frame_decoder->tree,
         &modular_frame_decoder->code, &modular_frame_decoder->context_map));
   } else {
-    JXL_RETURN_IF_ERROR(ModularGenericDecompress(br, image, nullptr,
+    JXL_RETURN_IF_ERROR(ModularGenericDecompress(br, image, /*header=*/nullptr,
                                                  0, &options,
-                                                 true));
+                                                 /*undo_transforms=*/true));
   }
   if (!encoding->qraw.qtable) {
-    encoding->qraw.qtable =
-        new std::vector<int>(required_size_x * required_size_y * 3);
-  } else {
-    JXL_CHECK(encoding->qraw.qtable->size() ==
-              required_size_x * required_size_y * 3);
+    encoding->qraw.qtable = new std::vector<int>();
   }
-  int* qtable = encoding->qraw.qtable->data();
+  encoding->qraw.qtable->resize(required_size_x * required_size_y * 3);
   for (size_t c = 0; c < 3; c++) {
     for (size_t y = 0; y < required_size_y; y++) {
       int32_t* JXL_RESTRICT row = image.channel[c].Row(y);
       for (size_t x = 0; x < required_size_x; x++) {
-        qtable[c * required_size_x * required_size_y + y * required_size_x +
-               x] = row[x];
+        (*encoding->qraw.qtable)[c * required_size_x * required_size_y +
+                                 y * required_size_x + x] = row[x];
         if (row[x] <= 0) {
           return JXL_FAILURE("Invalid raw quantization table");
         }
@@ -807,5 +803,5 @@ Status ModularFrameDecoder::DecodeQuantTable(
   return true;
 }
 
-}  
-#endif  
+}  // namespace jxl
+#endif  // HWY_ONCE

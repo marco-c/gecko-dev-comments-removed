@@ -49,7 +49,6 @@
 #include <stdint.h>
 
 #include "hwy/highway_export.h"
-#include "hwy/timer.h"
 
 
 
@@ -71,6 +70,25 @@
 
 namespace hwy {
 
+namespace platform {
+
+
+
+
+HWY_DLLEXPORT double InvariantTicksPerSecond();
+
+
+
+
+HWY_DLLEXPORT double Now();
+
+
+
+
+HWY_DLLEXPORT uint64_t TimerResolution();
+
+}  
+
 
 
 HWY_DLLEXPORT int Unpredictable1();
@@ -88,6 +106,11 @@ using Func = FuncOutput (*)(const void*, FuncInput);
 
 
 struct Params {
+  
+  
+  
+  static constexpr size_t kTimerSamples = 256;
+
   
   
   size_t precision_divisor = 1024;

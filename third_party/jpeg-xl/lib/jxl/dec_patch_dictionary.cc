@@ -1,7 +1,7 @@
-
-
-
-
+// Copyright (c) the JPEG XL Project Authors. All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 #include "lib/jxl/dec_patch_dictionary.h"
 
@@ -17,7 +17,7 @@
 #include "lib/jxl/base/printf_macros.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/blending.h"
-#include "lib/jxl/common.h"  
+#include "lib/jxl/common.h"  // kMaxNumReferenceFrames
 #include "lib/jxl/dec_ans.h"
 #include "lib/jxl/image.h"
 #include "lib/jxl/image_bundle.h"
@@ -45,8 +45,8 @@ Status PatchDictionary::Decode(JxlMemoryManager* memory_manager, BitReader* br,
   };
 
   size_t num_ref_patch = read_num(kNumRefPatchContext);
-  
-  
+  // Limit max memory usage of patches to about 66 bytes per pixel (assuming 8
+  // bytes per size_t)
   const size_t num_pixels = xsize * ysize;
   const size_t max_ref_patches = 1024 + num_pixels / 4;
   const size_t max_patches = max_ref_patches * 4;
@@ -133,7 +133,8 @@ Status PatchDictionary::Decode(JxlMemoryManager* memory_manager, BitReader* br,
       }
       for (size_t j = 0; j < blendings_stride_; j++) {
         uint32_t blend_mode = read_num(kPatchBlendModeContext);
-        if (blend_mode >= kNumPatchBlendModes) {
+        if (blend_mode >=
+            static_cast<uint32_t>(PatchBlendMode::kNumBlendModes)) {
           return JXL_FAILURE("Invalid patch blend mode: %u", blend_mode);
         }
         PatchBlending info;
@@ -188,7 +189,7 @@ struct PatchInterval {
   size_t idx;
   size_t y0, y1;
 };
-}  
+}  // namespace
 
 void PatchDictionary::ComputePatchTree() {
   patch_tree_.clear();
@@ -198,7 +199,7 @@ void PatchDictionary::ComputePatchTree() {
   if (positions_.empty()) {
     return;
   }
-  
+  // Create a y-interval for each patch.
   std::vector<PatchInterval> intervals(positions_.size());
   for (size_t i = 0; i < positions_.size(); ++i) {
     const auto& pos = positions_[i];
@@ -218,7 +219,7 @@ void PatchDictionary::ComputePatchTree() {
                 return i0.y1 < i1.y1;
               });
   };
-  
+  // Count the number of patches for each row.
   sort_by_y1(0, intervals.size());
   num_patches_.resize(intervals.back().y1);
   for (auto iv : intervals) {
@@ -233,14 +234,14 @@ void PatchDictionary::ComputePatchTree() {
     auto& node = patch_tree_[next];
     size_t start = node.start;
     size_t end = node.start + node.num;
-    
+    // Choose the y_center for this node to be the median of interval starts.
     sort_by_y0(start, end);
     size_t middle_idx = start + node.num / 2;
     node.y_center = intervals[middle_idx].y0;
-    
-    
-    
-    
+    // Divide the intervals in [start, end) into three groups:
+    //   * those completely to the right of y_center: [right_start, end)
+    //   * those overlapping y_center: [left_end, right_start)
+    //   * those completely to the left of y_center: [start, left_end)
     size_t right_start = middle_idx;
     while (right_start < end && intervals[right_start].y0 == node.y_center) {
       ++right_start;
@@ -250,7 +251,7 @@ void PatchDictionary::ComputePatchTree() {
     while (left_end > start && intervals[left_end - 1].y1 > node.y_center) {
       --left_end;
     }
-    
+    // Fill in sorted_patches_y0_ and sorted_patches_y1_ for the current node.
     node.num = right_start - left_end;
     node.start = sorted_patches_y0_.size();
     for (ssize_t i = static_cast<ssize_t>(right_start) - 1;
@@ -261,7 +262,7 @@ void PatchDictionary::ComputePatchTree() {
     for (size_t i = left_end; i < right_start; ++i) {
       sorted_patches_y0_.emplace_back(intervals[i].y0, intervals[i].idx);
     }
-    
+    // Create the left and right nodes (if not empty).
     node.left_child = node.right_child = -1;
     if (left_end > start) {
       PatchTreeNode left;
@@ -304,16 +305,16 @@ std::vector<size_t> PatchDictionary::GetPatchesForRow(size_t y) const {
         tree_idx = node.right_child;
       }
     }
-    
-    
-    
+    // Ensure that he relative order of patches that affect the same pixels is
+    // preserved. This is important for patches that have a blend mode
+    // different from kAdd.
     std::sort(result.begin(), result.end());
   }
   return result;
 }
 
-
-
+// Adds patches to a segment of `xsize` pixels, starting at `inout`, assumed
+// to be located at position (x0, y) in the frame.
 Status PatchDictionary::AddOneRow(
     float* const* inout, size_t y, size_t x0, size_t xsize,
     const std::vector<ExtraChannelInfo>& extra_channel_info) const {
@@ -353,4 +354,4 @@ Status PatchDictionary::AddOneRow(
   }
   return true;
 }
-}  
+}  // namespace jxl

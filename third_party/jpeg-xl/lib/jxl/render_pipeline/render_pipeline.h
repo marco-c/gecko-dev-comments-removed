@@ -68,7 +68,7 @@ class RenderPipeline {
 
     
     
-    Status AddStage(std::unique_ptr<RenderPipelineStage> stage);
+    void AddStage(std::unique_ptr<RenderPipelineStage> stage);
 
     
     

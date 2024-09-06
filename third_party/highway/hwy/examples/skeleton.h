@@ -29,10 +29,6 @@ namespace skeleton {
 HWY_DLLEXPORT void CallFloorLog2(const uint8_t* HWY_RESTRICT in, size_t count,
                                  uint8_t* HWY_RESTRICT out);
 
-
-HWY_DLLEXPORT void SavedCallFloorLog2(const uint8_t* HWY_RESTRICT in,
-                                      size_t count, uint8_t* HWY_RESTRICT out);
-
 }  
 
 #endif  
