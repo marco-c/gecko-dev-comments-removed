@@ -57,7 +57,7 @@ nsAttrValue::EnumTable SMILAnimationFunction::sCalcModeTable[] = {
 SMILAnimationFunction::SMILAnimationFunction()
     : mSampleTime(-1),
       mRepeatIteration(0),
-      mBeginTime(INT64_MIN),
+      mBeginTime(std::numeric_limits<SMILTime>::min()),
       mAnimationElement(nullptr),
       mErrorFlags(0),
       mIsActive(false),
@@ -170,7 +170,7 @@ void SMILAnimationFunction::SampleAt(SMILTime aSampleTime,
 }
 
 void SMILAnimationFunction::SampleLastValue(uint32_t aRepeatIteration) {
-  if (mHasChanged || !mLastValue || mRepeatIteration != aRepeatIteration) {
+  if (!mLastValue || mRepeatIteration != aRepeatIteration) {
     mHasChanged = true;
   }
 
@@ -231,7 +231,7 @@ void SMILAnimationFunction::ComposeResult(const SMILAttr& aSMILAttr,
 
   } else if (mLastValue) {
     
-    const SMILValue& last = values[values.Length() - 1];
+    const SMILValue& last = values.LastElement();
     result = last;
 
     
@@ -471,11 +471,9 @@ nsresult SMILAnimationFunction::InterpolateResult(const SMILValueArray& aValues,
 nsresult SMILAnimationFunction::AccumulateResult(const SMILValueArray& aValues,
                                                  SMILValue& aResult) {
   if (!IsToAnimation() && GetAccumulate() && mRepeatIteration) {
-    const SMILValue& lastValue = aValues[aValues.Length() - 1];
-
     
     
-    aResult.Add(lastValue, mRepeatIteration);
+    aResult.Add(aValues.LastElement(), mRepeatIteration);
   }
 
   return NS_OK;
@@ -833,7 +831,7 @@ void SMILAnimationFunction::CheckKeyTimes(uint32_t aNumValues) {
 
   
   if (calcMode != CALC_DISCRETE && numKeyTimes > 1 &&
-      mKeyTimes[numKeyTimes - 1] != 1.0) {
+      mKeyTimes.LastElement() != 1.0) {
     SetKeyTimesErrorFlag(true);
     return;
   }

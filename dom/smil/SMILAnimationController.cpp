@@ -425,7 +425,7 @@ void SMILAnimationController::DoMilestoneSamples() {
   
   
 
-  SMILTime sampleTime = INT64_MIN;
+  SMILTime sampleTime = std::numeric_limits<SMILTime>::min();
 
   while (true) {
     

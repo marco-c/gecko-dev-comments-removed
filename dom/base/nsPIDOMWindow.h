@@ -253,6 +253,18 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
+  bool HasSMILTimeEventListeners() { return mMayHaveSMILTimeEventListener; }
+
+  
+
+
+
+  void SetHasSMILTimeEventListeners() { mMayHaveSMILTimeEventListener = true; }
+
+  
+
+
+
 
 
   bool HasBeforeInputEventListenersForTelemetry() const {
@@ -702,6 +714,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   bool mMayHaveMouseEnterLeaveEventListener;
   bool mMayHavePointerEnterLeaveEventListener;
   bool mMayHaveTransitionEventListener;
+  bool mMayHaveSMILTimeEventListener;
   
   
   bool mMayHaveBeforeInputEventListenerForTelemetry;
