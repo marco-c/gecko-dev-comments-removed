@@ -265,6 +265,16 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   guint mTempFileTimerID;
   
   int mEventLoopDepth;
+
+  static GdkAtom sTextMimeAtom;
+  static GdkAtom sMozUrlTypeAtom;
+  static GdkAtom sMimeListTypeAtom;
+  static GdkAtom sTextUriListTypeAtom;
+  static GdkAtom sTextPlainUTF8TypeAtom;
+  static GdkAtom sXdndDirectSaveTypeAtom;
+  static GdkAtom sTabDropTypeAtom;
+  static GdkAtom sPortalFileAtom;
+  static GdkAtom sPortalFileTransferAtom;
 };
 
 #endif  
