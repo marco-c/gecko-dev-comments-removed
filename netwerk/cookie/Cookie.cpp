@@ -128,8 +128,7 @@ size_t Cookie::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
          mData.name().SizeOfExcludingThisIfUnshared(MallocSizeOf) +
          mData.value().SizeOfExcludingThisIfUnshared(MallocSizeOf) +
          mData.host().SizeOfExcludingThisIfUnshared(MallocSizeOf) +
-         mData.path().SizeOfExcludingThisIfUnshared(MallocSizeOf) +
-         mFilePathCache.SizeOfExcludingThisIfUnshared(MallocSizeOf);
+         mData.path().SizeOfExcludingThisIfUnshared(MallocSizeOf);
 }
 
 bool Cookie::IsStale() const {
@@ -223,36 +222,6 @@ const OriginAttributes& Cookie::OriginAttributesNative() {
 }
 
 const Cookie& Cookie::AsCookie() { return *this; }
-
-const nsCString& Cookie::GetFilePath() {
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-
-  if (Path().IsEmpty()) {
-    
-    return mFilePathCache;
-  }
-  if (!mFilePathCache.IsEmpty()) {
-    
-    return mFilePathCache;
-  }
-
-  nsIURLParser* parser = net_GetStdURLParser();
-  NS_ENSURE_TRUE(parser, mFilePathCache);
-
-  int32_t pathLen = Path().Length();
-  int32_t filepathLen = 0;
-  uint32_t filepathPos = 0;
-
-  nsresult rv = parser->ParsePath(PromiseFlatCString(Path()).get(), pathLen,
-                                  &filepathPos, &filepathLen, nullptr,
-                                  nullptr,            
-                                  nullptr, nullptr);  
-  NS_ENSURE_SUCCESS(rv, mFilePathCache);
-
-  mFilePathCache = Substring(Path(), filepathPos, filepathLen);
-
-  return mFilePathCache;
-}
 
 
 

@@ -227,7 +227,7 @@ bool CookieStorage::FindSecureCookie(const nsACString& aBaseDomain,
       
       
       
-      if (CookieCommons::PathMatches(cookie, aCookie->GetFilePath())) {
+      if (CookieCommons::PathMatches(cookie, aCookie->Path())) {
         return true;
       }
     }

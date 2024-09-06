@@ -46,7 +46,7 @@ bool CookieCommons::DomainMatches(Cookie* aCookie, const nsACString& aHost) {
 
 
 bool CookieCommons::PathMatches(Cookie* aCookie, const nsACString& aPath) {
-  nsCString cookiePath(aCookie->GetFilePath());
+  const nsCString& cookiePath(aCookie->Path());
 
   
   
