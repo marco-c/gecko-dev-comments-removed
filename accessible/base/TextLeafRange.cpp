@@ -998,37 +998,58 @@ TextLeafPoint TextLeafPoint::FindNextWordStartSameAcc(
 
 
 TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
-  HyperTextAccessibleBase* ht;
-  int32_t htOffset;
-  bool isEndOfLine;
   if (LocalAccessible* localAcc = aAcc->AsLocal()) {
     
     
     
-    ht = HyperTextFor(localAcc);
+    HyperTextAccessible* ht = HyperTextFor(localAcc);
     if (!ht) {
       return TextLeafPoint();
     }
-    htOffset = ht->CaretOffset();
+    int32_t htOffset = ht->CaretOffset();
     if (htOffset == -1) {
       return TextLeafPoint();
     }
-    
-    
-    
-    isEndOfLine = localAcc->AsHyperText()->IsCaretAtEndOfLine();
-  } else {
-    
-    
-    DocAccessibleParent* remoteDoc = aAcc->AsRemote()->Document();
-    std::tie(ht, htOffset) = remoteDoc->GetCaret();
-    if (!ht) {
-      return TextLeafPoint();
+    TextLeafPoint point = ht->ToTextLeafPoint(htOffset);
+    if (!point) {
+      
+      
+      
+      MOZ_ASSERT_UNREACHABLE(
+          "Got HyperText CaretOffset but ToTextLeafPoint failed");
+      return point;
     }
-    isEndOfLine = remoteDoc->IsCaretAtEndOfLine();
+    nsIFrame* frame = ht->GetFrame();
+    RefPtr<nsFrameSelection> sel = frame ? frame->GetFrameSelection() : nullptr;
+    if (sel && sel->GetHint() == CaretAssociationHint::Before) {
+      
+      
+      
+      
+      if (point.mOffset == 0) {
+        
+        
+        
+        point.mIsEndOfLineInsertionPoint =
+            IsLocalAccAtLineStart(point.mAcc->AsLocal()) &&
+            !point.IsParagraphStart();
+      } else {
+        
+        point.mIsEndOfLineInsertionPoint = true;
+      }
+    }
+    return point;
+  }
+
+  
+  
+  DocAccessibleParent* remoteDoc = aAcc->AsRemote()->Document();
+  auto [ht, htOffset] = remoteDoc->GetCaret();
+  if (!ht) {
+    return TextLeafPoint();
   }
   TextLeafPoint point = ht->ToTextLeafPoint(htOffset);
-  point.mIsEndOfLineInsertionPoint = isEndOfLine;
+  point.mIsEndOfLineInsertionPoint = remoteDoc->IsCaretAtEndOfLine();
   return point;
 }
 
