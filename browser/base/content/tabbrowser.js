@@ -1610,6 +1610,22 @@
 
     _dataURLRegEx: /^data:[^,]+;base64,/i,
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    _nonPrintingRegEx:
+      /^[\p{Z}\p{C}\p{M}\u{115f}\u{1160}\u{2800}\u{3164}\u{ffa0}]*$/u,
+
     setTabTitle(aTab) {
       var browser = this.getBrowserForTab(aTab);
       var title = browser.contentTitle;
@@ -1630,6 +1646,16 @@
       }
 
       let isURL = false;
+
+      
+      title = title.trim();
+
+      
+      
+      if (this._nonPrintingRegEx.test(title)) {
+        title = "";
+      }
+
       let isContentTitle = !!title;
       if (!title) {
         
