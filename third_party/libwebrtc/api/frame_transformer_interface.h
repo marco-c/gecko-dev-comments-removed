@@ -74,11 +74,7 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
 
   virtual rtc::ArrayView<const uint32_t> GetContributingSources() const = 0;
 
-  
-  
-  virtual const absl::optional<uint16_t> SequenceNumber() const {
-    return absl::nullopt;
-  }
+  virtual const absl::optional<uint16_t> SequenceNumber() const = 0;
 
   virtual absl::optional<uint64_t> AbsoluteCaptureTimestamp() const = 0;
 
