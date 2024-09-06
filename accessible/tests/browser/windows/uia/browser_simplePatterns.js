@@ -27,6 +27,7 @@ addUiaTask(
 <button id="button">button</button>
 <p id="p">p</p>
 <input id="checkbox" type="checkbox">
+<input id="radio" type="radio">
   `,
   async function testInvoke() {
     await definePyVar("doc", `getDocUia()`);
@@ -54,6 +55,8 @@ addUiaTask(
       
       
       await testPatternAbsent("checkbox", "Invoke");
+      
+      await testPatternAbsent("radio", "Invoke");
     }
   }
 );
