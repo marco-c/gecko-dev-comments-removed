@@ -228,6 +228,3 @@ user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
 user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
-
-user_pref("app.update.disabledForTesting", true);
-

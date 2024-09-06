@@ -94,5 +94,3 @@ user_pref("security.webauthn.enable_conditional_mediation", true);
 user_pref("network.captive-portal-service.enabled", false);
 
 user_pref("network.http.http2.websockets", true);
-
-user_pref("app.update.disabledForTesting", true);

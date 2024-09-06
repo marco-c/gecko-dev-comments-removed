@@ -7,5 +7,3 @@
 
 
 user_pref("extensions.webextensions.warnings-as-errors", false);
-
-user_pref("app.update.disabledForTesting", true);

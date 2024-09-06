@@ -55,7 +55,7 @@ async function testTransition(options) {
 
 async function run_test() {
   setupTestCommon(null);
-  await standardInit();
+  standardInit();
   
   
   

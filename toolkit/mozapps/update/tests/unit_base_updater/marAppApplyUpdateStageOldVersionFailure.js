@@ -32,13 +32,12 @@ async function run_test() {
   writeVersionFile("0.9");
   
   await runUpdateUsingApp(STATE_AFTER_STAGE);
-  reloadUpdateManagerData();
-  await testPostUpdateProcessing();
+  standardInit();
   checkPostUpdateRunningFile(false);
   setTestFilesAndDirsForFailure();
   checkFilesAfterUpdateFailure(getApplyDirFile);
   await waitForUpdateXMLFiles();
-  await checkUpdateManager(
+  checkUpdateManager(
     STATE_NONE,
     false,
     STATE_FAILED,

@@ -10,7 +10,7 @@ add_task(async function test_manual_app_update_policy() {
   
   
   is(
-    await gAUS.checkForBackgroundUpdates(),
+    gAUS.checkForBackgroundUpdates(),
     false,
     "gAUS.checkForBackgroundUpdates() should not proceed with update check"
   );

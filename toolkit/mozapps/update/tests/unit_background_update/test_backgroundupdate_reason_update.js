@@ -24,6 +24,11 @@ const { sinon } = ChromeUtils.importESModule(
 
 
 
+
+
+setupTestCommon(null);
+standardInit();
+
 function setup_enterprise_policy_testing() {
   
   let policies = Cc["@mozilla.org/enterprisepolicies;1"].getService(
@@ -44,12 +49,7 @@ async function setupPolicyEngineWithJson(json, customSchema) {
   return EnterprisePolicyTesting.setupPolicyEngineWithJson(json, customSchema);
 }
 
-add_setup(async function test_setup() {
-  
-  
-  setupTestCommon(null);
-  await standardInit();
-
+add_setup(function test_setup() {
   
   do_get_profile();
 

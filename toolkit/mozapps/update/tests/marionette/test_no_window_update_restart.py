@@ -137,58 +137,30 @@ class TestNoWindowUpdateRestart(MarionetteTestCase):
         )
         self.assertTrue(quit_flags_correct)
 
-        update_status = self.marionette.execute_async_script(
+        
+        
+        
+        update_status_path = self.marionette.execute_script(
             """
-            let [updateURLString, resolve] = arguments;
-            (async () => {
-                // Because post update processing happens during early startup and
-                // `app.update.disabledForTesting` is also set in early startup, it isn't
-                // especially well defined whether or not post update processing will have run at
-                // this point. Resolve this by forcing post update processing to run. This is as
-                // simple as turning off `app.update.disabledForTesting` and calling into
-                // UpdateManager, since the relevant methods ensure that initialization has run
-                // as long as update isn't disabled.
-
-                // Set the update URL to a local one first to ensure we don't hit the update server
-                // when we turn off `app.update.disabledForTesting`.
-                const mockAppInfo = Object.create(Services.appinfo, {
-                    updateURL: {
-                        configurable: true,
-                        enumerable: true,
-                        writable: false,
-                        value: updateURLString,
-                    },
-                });
-                Services.appinfo = mockAppInfo;
-
-                Services.prefs.setBoolPref("app.update.disabledForTesting", false);
-
-                const UM =
-                    Cc["@mozilla.org/updates/update-manager;1"].getService(Ci.nsIUpdateManager);
-                const history = await UM.getHistory();
-                if (!history.length) {
-                    return null;
-                }
-                return history[0].state;
-            })().then(resolve);
-        """,
-            script_args=(self.marionette.absolute_url("update.xml"),),
+            let statusFile = FileUtils.getDir("UpdRootD", ["updates", "0"]);
+            statusFile.append("update.status");
+            return statusFile.path;
+        """
         )
-
-        
-        
-        
-        
-        
-        
-        
-        self.assertIn(update_status, ["succeeded", "failed"])
+        with open(update_status_path, "r") as f:
+            
+            
+            
+            
+            
+            
+            self.assertIn(f.read().strip(), ["succeeded", "failed: 19"])
 
     def resetUpdate(self):
         self.marionette.execute_script(
             """
             let UM = Cc["@mozilla.org/updates/update-manager;1"].getService(Ci.nsIUpdateManager);
-            UM.internal.reload(true);
+            UM.QueryInterface(Ci.nsIObserver).observe(null, "um-reload-update-data", "skip-files");
 
             let { UpdateListener } = ChromeUtils.importESModule(
                 "resource://gre/modules/UpdateListener.sys.mjs"
@@ -267,7 +239,7 @@ class TestNoWindowUpdateRestart(MarionetteTestCase):
 
                 let aus = Cc["@mozilla.org/updates/update-service;1"]
                     .getService(Ci.nsIApplicationUpdateService);
-                await aus.checkForBackgroundUpdates();
+                aus.checkForBackgroundUpdates();
 
                 await updateDownloadedPromise;
 

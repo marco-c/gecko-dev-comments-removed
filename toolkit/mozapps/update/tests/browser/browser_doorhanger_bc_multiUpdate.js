@@ -54,7 +54,7 @@ add_task(async function doorhanger_bc_multiUpdate() {
 
       prepareToDownloadVersion(SECOND_UPDATE_VERSION);
       let updateSwapped = waitForEvent("update-swap");
-      await gAUS.checkForBackgroundUpdates();
+      gAUS.checkForBackgroundUpdates();
       await updateSwapped;
       
       

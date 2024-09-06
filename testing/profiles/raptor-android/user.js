@@ -14,6 +14,3 @@ user_pref("extensions.webextensions.warnings-as-errors", false);
 
 user_pref("toolkit.telemetry.server", "");
 user_pref("telemetry.fog.test.localhost_port", -1);
-
-
-user_pref("app.update.disabledForTesting", true);

@@ -18,7 +18,7 @@ async function run_test() {
   await setupUpdaterTest(FILE_COMPLETE_MAR, false);
   let path = getApplyDirFile("..", false).path;
   runUpdate(STATE_AFTER_RUNUPDATE, true, 1, true, null, null, path, null);
-  await testPostUpdateProcessing();
+  standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
   await waitForUpdateXMLFiles();
@@ -30,9 +30,9 @@ async function run_test() {
     
     
     
-    await checkUpdateManager(STATE_NONE, false, STATE_PENDING_SVC, 0, 1);
+    checkUpdateManager(STATE_NONE, false, STATE_PENDING_SVC, 0, 1);
   } else {
-    await checkUpdateManager(
+    checkUpdateManager(
       STATE_NONE,
       false,
       STATE_FAILED,

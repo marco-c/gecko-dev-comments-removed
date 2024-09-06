@@ -97,5 +97,3 @@ user_pref("startup.homepage_welcome_url.additional", "");
 user_pref("browser.tabs.remote.systemTriggeredAboutBlankAnywhere", true);
 
 user_pref("media.webspeech.synth.dont_notify_on_error", true);
-
-user_pref("app.update.disabledForTesting", true);
