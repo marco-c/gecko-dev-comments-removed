@@ -544,7 +544,6 @@ public class GeckoSession {
             "GeckoView:CookieBannerEvent:Handled",
             "GeckoView:SavePdf",
             "GeckoView:GetNimbusFeature",
-            "GeckoView:OnProductUrl",
           }) {
         @Override
         public void handleMessage(
@@ -633,8 +632,6 @@ public class GeckoSession {
                     callback.sendError("Failed to create response");
                   }
                 });
-          } else if ("GeckoView:OnProductUrl".equals(event)) {
-            delegate.onProductUrl(GeckoSession.this);
           }
         }
       };
@@ -4286,6 +4283,10 @@ public class GeckoSession {
 
 
 
+
+
+    @Deprecated
+    @DeprecationSchedule(id = "session-onProductUrl", version = 131)
     @UiThread
     default void onProductUrl(@NonNull final GeckoSession session) {}
 
