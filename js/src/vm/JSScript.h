@@ -1095,6 +1095,8 @@ class ScriptSource {
   
   bool xdrFinalizeEncoder(JSContext* cx, JS::TranscodeBuffer& buffer);
 
+  bool xdrFinalizeEncoder(JSContext* cx, JS::Stencil** stencilOut);
+
   
   void xdrAbortEncoder();
 };

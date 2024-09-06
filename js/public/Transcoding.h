@@ -19,7 +19,14 @@
 
 #include "js/TypeDecls.h"
 
+
+namespace js::frontend {
+struct CompilationStencil;
+}  
+
 namespace JS {
+
+using Stencil = js::frontend::CompilationStencil;
 
 class JS_PUBLIC_API ReadOnlyCompileOptions;
 
@@ -120,6 +127,14 @@ extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
 extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
                                                     Handle<JSObject*> module,
                                                     TranscodeBuffer& buffer);
+
+
+
+
+
+extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
+                                                    Handle<JSScript*> script,
+                                                    JS::Stencil** stencilOut);
 
 
 extern JS_PUBLIC_API void AbortIncrementalEncoding(Handle<JSScript*> script);
