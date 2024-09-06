@@ -155,7 +155,11 @@ static bool FindHandle(const ComparatorFnT& aComparator) {
   return false;
 }
 
-static void GetUiaClientPidsWin11(nsTArray<DWORD>& aPids) {
+class GetUiaClientPidsWin11 {
+ public:
+  static void Run(nsTArray<DWORD>& aPids);
+
+ private:
   struct HandleAndPid {
     explicit HandleAndPid(HANDLE aHandle) : mHandle(aHandle) {}
     HANDLE mHandle;
@@ -167,6 +171,33 @@ static void GetUiaClientPidsWin11(nsTArray<DWORD>& aPids) {
   
   using HandlesAndPids = AutoTArray<HandleAndPid, 128>;
 
+  struct ThreadData {
+    explicit ThreadData(HandlesAndPids& aHandlesAndPids)
+        : mHandlesAndPids(aHandlesAndPids) {}
+    HandlesAndPids& mHandlesAndPids;
+    
+    
+    
+    size_t mCurrentIndex = 0;
+  };
+
+  static DWORD WINAPI QueryThreadProc(LPVOID aParameter) {
+    
+    
+    
+    auto& data = *(ThreadData*)aParameter;
+    for (; data.mCurrentIndex < data.mHandlesAndPids.Length();
+         ++data.mCurrentIndex) {
+      auto& entry = data.mHandlesAndPids[data.mCurrentIndex];
+      
+      
+      ::GetNamedPipeServerProcessId(entry.mHandle, &entry.mPid);
+    }
+    return 0;
+  };
+};
+
+void GetUiaClientPidsWin11::Run(nsTArray<DWORD>& aPids) {
   
   HandlesAndPids handlesAndPids;
   const DWORD ourPid = ::GetCurrentProcessId();
@@ -185,35 +216,12 @@ static void GetUiaClientPidsWin11(nsTArray<DWORD>& aPids) {
   
   
   
-  struct ThreadData {
-    explicit ThreadData(HandlesAndPids& aHandlesAndPids)
-        : mHandlesAndPids(aHandlesAndPids) {}
-    HandlesAndPids& mHandlesAndPids;
-    
-    
-    
-    size_t mCurrentIndex = 0;
-  };
   ThreadData threadData(handlesAndPids);
-  auto queryThreadProc = [](LPVOID aParameter) -> DWORD {
-    
-    
-    
-    auto& data = *(ThreadData*)aParameter;
-    for (; data.mCurrentIndex < data.mHandlesAndPids.Length();
-         ++data.mCurrentIndex) {
-      auto& entry = data.mHandlesAndPids[data.mCurrentIndex];
-      
-      
-      ::GetNamedPipeServerProcessId(entry.mHandle, &entry.mPid);
-    }
-    return 0;
-  };
   while (threadData.mCurrentIndex < handlesAndPids.Length()) {
     
     
     
-    nsAutoHandle thread(::CreateThread(nullptr, 0, queryThreadProc,
+    nsAutoHandle thread(::CreateThread(nullptr, 0, QueryThreadProc,
                                        (LPVOID)&threadData, 0, nullptr));
     if (!thread) {
       return;
@@ -403,7 +411,7 @@ void Compatibility::GetUiaClientPids(nsTArray<DWORD>& aPids) {
   }
   Telemetry::AutoTimer<Telemetry::A11Y_UIA_DETECTION_TIMING_MS> timer;
   if (IsWin11OrLater()) {
-    GetUiaClientPidsWin11(aPids);
+    GetUiaClientPidsWin11::Run(aPids);
   } else {
     if (DWORD pid = GetUiaClientPidWin10()) {
       aPids.AppendElement(pid);
