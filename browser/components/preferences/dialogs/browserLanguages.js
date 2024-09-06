@@ -332,10 +332,8 @@ class SortedItemSelectList {
 
 
 
-
 async function getLocaleDisplayInfo(localeCodes) {
   let availableLocales = new Set(await LangPackMatcher.getAvailableLocales());
-  let packagedLocales = new Set(Services.locale.packagedLocales);
   let localeNames = Services.intl.getLocaleDisplayNames(
     undefined,
     localeCodes,
@@ -346,7 +344,7 @@ async function getLocaleDisplayInfo(localeCodes) {
       id: "locale-" + code,
       label: localeNames[i],
       value: code,
-      canRemove: !packagedLocales.has(code),
+      canRemove: code != Services.locale.defaultLocale,
       installed: availableLocales.has(code),
     };
   });

@@ -142,18 +142,23 @@ async function createDictionaryBrowseResults() {
   return dir;
 }
 
-function assertLocaleOrder(list, locales) {
+function assertLocaleOrder(list, locales, selectedLocale) {
   is(
     list.itemCount,
     locales.split(",").length,
-    "The right number of locales are selected"
+    "The right number of locales are in the list"
   );
   is(
     Array.from(list.children)
       .map(child => child.value)
       .join(","),
     locales,
-    "The selected locales are in order"
+    "The listed locales are in order"
+  );
+  is(
+    list.selectedItem.value,
+    selectedLocale,
+    "The selected item locale matches"
   );
 }
 
@@ -217,6 +222,11 @@ async function selectLocale(localeCode, available, selected, dialogDoc) {
 
   
   await added;
+}
+
+
+function selectAddedLocale(localeCode, selected) {
+  selected.selectedItem = selected.querySelector(`[value="${localeCode}"]`);
 }
 
 async function openDialog(doc, search = false) {
@@ -283,7 +293,7 @@ add_task(async function testDisabledBrowserLanguages() {
   
   is(pl.userDisabled, true, "pl is disabled");
   is(pl.version, "1.0", "pl is the old 1.0 version");
-  assertLocaleOrder(selected, "en-US,he");
+  assertLocaleOrder(selected, "en-US,he", "en-US");
 
   
   await BrowserTestUtils.waitForCondition(
@@ -313,7 +323,7 @@ add_task(async function testDisabledBrowserLanguages() {
 
   
   await selectLocale("pl", available, selected, dialogDoc);
-  assertLocaleOrder(selected, "pl,en-US,he");
+  assertLocaleOrder(selected, "pl,en-US,he", "pl");
 
   
   pl = await AddonManager.getAddonByID(langpackId("pl"));
@@ -371,12 +381,12 @@ add_task(async function testReorderingBrowserLanguages() {
   let firstDialogId = getDialogId(dialogDoc);
 
   
-  assertLocaleOrder(selected, "en-US,pl,he");
+  assertLocaleOrder(selected, "en-US,pl,he", "en-US");
 
   
-  selected.selectedItem = selected.querySelector("[value='pl']");
+  selectAddedLocale("pl", selected);
   dialogDoc.getElementById("down").doCommand();
-  assertLocaleOrder(selected, "en-US,he,pl");
+  assertLocaleOrder(selected, "en-US,he,pl", "pl");
 
   
   let dialogClosed = BrowserTestUtils.waitForEvent(dialog, "dialogclosing");
@@ -404,13 +414,13 @@ add_task(async function testReorderingBrowserLanguages() {
   selected = newDialog.selected;
 
   
-  assertLocaleOrder(selected, "en-US,he,pl");
+  assertLocaleOrder(selected, "en-US,he,pl", "en-US");
 
   
-  selected.selectedItem = selected.querySelector("[value='pl']");
+  selectAddedLocale("pl", selected);
   
   dialogDoc.getElementById("up").doCommand();
-  assertLocaleOrder(selected, "en-US,pl,he");
+  assertLocaleOrder(selected, "en-US,pl,he", "pl");
 
   
   dialogClosed = BrowserTestUtils.waitForEvent(dialog, "dialogclosing");
@@ -490,25 +500,42 @@ add_task(async function testAddAndRemoveSelectedLanguages() {
     }
   );
   
-  assertLocaleOrder(selected, "en-US");
+  assertLocaleOrder(selected, "en-US", "en-US");
   assertAvailableLocales(available, ["fr", "pl", "he"]);
+
+  let removeButton = dialogDoc.getElementById("remove");
+  
+  is(removeButton.disabled, true, "Remove en-US should be disabled");
 
   
   await selectLocale("pl", available, selected, dialogDoc);
   await selectLocale("fr", available, selected, dialogDoc);
 
-  assertLocaleOrder(selected, "fr,pl,en-US");
+  assertLocaleOrder(selected, "fr,pl,en-US", "fr");
   assertAvailableLocales(available, ["he"]);
 
   
-  dialogDoc.getElementById("remove").doCommand();
-  dialogDoc.getElementById("remove").doCommand();
-  assertLocaleOrder(selected, "en-US");
+  is(removeButton.disabled, false, "Remove fr should be not be disabled");
+
+  selectAddedLocale("en-US", selected);
+  
+  is(removeButton.disabled, true, "Remove en-us should still be disabled");
+
+  
+  selectAddedLocale("fr", selected);
+  is(removeButton.disabled, false, "Remove fr should be not be disabled");
+  removeButton.doCommand();
+  
+  assertLocaleOrder(selected, "pl,en-US", "pl");
+  is(removeButton.disabled, false, "Remove pl should be not be disabled");
+  removeButton.doCommand();
+  assertLocaleOrder(selected, "en-US", "en-US");
   assertAvailableLocales(available, ["fr", "pl", "he"]);
+  is(removeButton.disabled, true, "Remove en-us should be disabled at end");
 
   
   await selectLocale("he", available, selected, dialogDoc);
-  assertLocaleOrder(selected, "he,en-US");
+  assertLocaleOrder(selected, "he,en-US", "he");
   assertAvailableLocales(available, ["pl", "fr"]);
 
   
@@ -608,7 +635,7 @@ add_task(async function testInstallFromAMO() {
   }
 
   
-  assertLocaleOrder(selected, "en-US");
+  assertLocaleOrder(selected, "en-US", "en-US");
   assertAvailableLocales(available, ["fr", "he", "pl"]);
   is(
     Services.locale.availableLocales.join(","),
@@ -638,7 +665,7 @@ add_task(async function testInstallFromAMO() {
   );
 
   
-  assertLocaleOrder(selected, "pl,en-US");
+  assertLocaleOrder(selected, "pl,en-US", "pl");
   assertAvailableLocales(available, ["fr", "he"]);
   is(
     Services.locale.availableLocales.sort().join(","),
@@ -663,7 +690,7 @@ add_task(async function testInstallFromAMO() {
 
   
   dialogDoc.getElementById("down").doCommand();
-  assertLocaleOrder(selected, "en-US,pl");
+  assertLocaleOrder(selected, "en-US,pl", "pl");
 
   
   let dialogClosed = BrowserTestUtils.waitForEvent(dialog, "dialogclosing");
@@ -688,7 +715,7 @@ add_task(async function testInstallFromAMO() {
       () => available.itemCount > 1
     );
   }
-  assertLocaleOrder(selected, "en-US");
+  assertLocaleOrder(selected, "en-US", "en-US");
   assertAvailableLocales(available, ["fr", "he", "pl"]);
 
   
