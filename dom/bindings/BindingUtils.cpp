@@ -770,19 +770,31 @@ bool LegacyFactoryFunctionJSNative(JSContext* cx, unsigned argc,
       ->mNative(cx, argc, vp);
 }
 
-static JSObject* CreateLegacyFactoryFunction(JSContext* cx, jsid name,
-                                             const JSNativeHolder* nativeHolder,
-                                             unsigned ctorNargs) {
-  JSFunction* fun = js::NewFunctionByIdWithReserved(
-      cx, LegacyFactoryFunctionJSNative, ctorNargs, JSFUN_CONSTRUCTOR, name);
+
+
+static JSObject* CreateBuiltinFunctionForConstructor(
+    JSContext* aCx, JSNative aNative, size_t aNativeReservedSlot,
+    void* aNativeReserved, unsigned int aNargs, jsid aName,
+    JS::Handle<JSObject*> aProto) {
+  JSFunction* fun = js::NewFunctionByIdWithReservedAndProto(
+      aCx, aNative, aProto, aNargs, JSFUN_CONSTRUCTOR, aName);
   if (!fun) {
     return nullptr;
   }
 
-  JSObject* constructor = JS_GetFunctionObject(fun);
-  js::SetFunctionNativeReserved(
-      constructor, LEGACY_FACTORY_FUNCTION_NATIVE_HOLDER_RESERVED_SLOT,
-      JS::PrivateValue(const_cast<JSNativeHolder*>(nativeHolder)));
+  JS::Rooted<JSObject*> constructor(aCx, JS_GetFunctionObject(fun));
+  js::SetFunctionNativeReserved(constructor, aNativeReservedSlot,
+                                JS::PrivateValue(aNativeReserved));
+
+  
+  
+  
+  bool unused;
+  if (!JS_HasProperty(aCx, constructor, "length", &unused) ||
+      !JS_HasProperty(aCx, constructor, "name", &unused)) {
+    return nullptr;
+  }
+
   return constructor;
 }
 
@@ -936,29 +948,12 @@ static JSObject* CreateInterfaceObject(
 
   JS::Rooted<jsid> nameId(cx, JS::PropertyKey::NonIntAtom(name));
 
-  JS::Rooted<JSObject*> constructor(cx);
-  {
-    JSFunction* fun = js::NewFunctionByIdWithReservedAndProto(
-        cx, InterfaceObjectJSNative, interfaceProto, ctorNargs,
-        JSFUN_CONSTRUCTOR, nameId);
-    if (!fun) {
-      return nullptr;
-    }
-
-    constructor = JS_GetFunctionObject(fun);
-  }
-
-  js::SetFunctionNativeReserved(
-      constructor, INTERFACE_OBJECT_INFO_RESERVED_SLOT,
-      JS::PrivateValue(const_cast<DOMInterfaceInfo*>(interfaceInfo)));
-
-  
-  
-  
-  
-  bool unused;
-  if (!JS_HasProperty(cx, constructor, "length", &unused) ||
-      !JS_HasProperty(cx, constructor, "name", &unused)) {
+  JS::Rooted<JSObject*> constructor(
+      cx, CreateBuiltinFunctionForConstructor(
+              cx, InterfaceObjectJSNative, INTERFACE_OBJECT_INFO_RESERVED_SLOT,
+              const_cast<DOMInterfaceInfo*>(interfaceInfo), ctorNargs, nameId,
+              interfaceProto));
+  if (!constructor) {
     return nullptr;
   }
 
@@ -1001,7 +996,11 @@ static JSObject* CreateInterfaceObject(
     nameId = JS::PropertyKey::NonIntAtom(fname);
 
     JS::Rooted<JSObject*> legacyFactoryFunction(
-        cx, CreateLegacyFactoryFunction(cx, nameId, &lff.mHolder, lff.mNargs));
+        cx, CreateBuiltinFunctionForConstructor(
+                cx, LegacyFactoryFunctionJSNative,
+                LEGACY_FACTORY_FUNCTION_NATIVE_HOLDER_RESERVED_SLOT,
+                const_cast<JSNativeHolder*>(&lff.mHolder), lff.mNargs, nameId,
+                nullptr));
     if (!legacyFactoryFunction ||
         !JS_DefineProperty(cx, legacyFactoryFunction, "prototype", proto,
                            JSPROP_PERMANENT | JSPROP_READONLY) ||
