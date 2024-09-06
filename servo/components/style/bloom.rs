@@ -10,8 +10,11 @@
 use crate::dom::{SendElement, TElement};
 use crate::LocalName;
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
+use owning_ref::OwningHandle;
 use selectors::bloom::BloomFilter;
+use servo_arc::Arc;
 use smallvec::SmallVec;
+use std::mem::ManuallyDrop;
 
 thread_local! {
     /// Bloom filters are large allocations, so we store them in thread-local storage
@@ -21,12 +24,10 @@ thread_local! {
     /// We intentionally leak this from TLS because we don't have the guarantee
     /// of TLS destructors to run in worker threads.
     ///
-    /// Also, leaking it guarantees that we can borrow it indefinitely.
-    ///
     /// We could change this once https://github.com/rayon-rs/rayon/issues/688
-    /// is fixed, hopefully, which point we'd need to change the filter member below to be an
-    /// arc and carry an owning reference around or so.
-    static BLOOM_KEY: &'static AtomicRefCell<BloomFilter> = Box::leak(Default::default());
+    /// is fixed, hopefully.
+    static BLOOM_KEY: ManuallyDrop<Arc<AtomicRefCell<BloomFilter>>> =
+        ManuallyDrop::new(Arc::new_leaked(Default::default()));
 }
 
 
@@ -65,7 +66,7 @@ pub struct StyleBloom<E: TElement> {
     
     
     
-    filter: AtomicRefMut<'static, BloomFilter>,
+    filter: OwningHandle<Arc<AtomicRefCell<BloomFilter>>, AtomicRefMut<'static, BloomFilter>>,
 
     
     
@@ -151,7 +152,9 @@ impl<E: TElement> StyleBloom<E> {
     
     #[inline(never)]
     pub fn new() -> Self {
-        let filter = BLOOM_KEY.with(|b| b.borrow_mut());
+        let bloom_arc = BLOOM_KEY.with(|b| Arc::clone(&*b));
+        let filter =
+            OwningHandle::new_with_fn(bloom_arc, |x| unsafe { x.as_ref() }.unwrap().borrow_mut());
         debug_assert!(
             filter.is_zeroed(),
             "Forgot to zero the bloom filter last time"
