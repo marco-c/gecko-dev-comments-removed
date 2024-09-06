@@ -1374,6 +1374,8 @@ bool jit::TraceWeakCacheIRStub(JSTracer* trc, T* stub,
                                const CacheIRStubInfo* stubInfo) {
   using Type = StubField::Type;
 
+  
+  
   bool isDead = false;
 
   uint32_t field = 0;
