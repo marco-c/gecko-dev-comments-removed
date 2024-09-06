@@ -3008,7 +3008,7 @@ static bool DecodeBranchHintingSection(Decoder& d, ModuleEnvironment* env) {
   }
 
   
-  (void)ParseBranchHintingSection(d, env);
+  env->parsedBranchHints = ParseBranchHintingSection(d, env);
 
   d.finishCustomSection(BranchHintingSectionName, *range);
   return true;
