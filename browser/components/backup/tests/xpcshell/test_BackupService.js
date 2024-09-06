@@ -115,18 +115,34 @@ async function testCreateBackupHelper(sandbox, taskFn) {
   let stagingPath = PathUtils.join(backupsFolderPath, "staging");
 
   
-  let backups = await IOUtils.getChildren(backupsFolderPath);
+  
+  let backupsChildren = await IOUtils.getChildren(backupsFolderPath);
   Assert.equal(
-    backups.length,
-    1,
-    "There should only be 1 backup in the backups folder"
+    backupsChildren.length,
+    2,
+    "There should only be 2 items in the backups folder"
   );
 
-  let renamedFilename = await PathUtils.filename(backups[0]);
+  
+  
+  
+  
+  backupsChildren.sort();
+
+  let renamedFilename = await PathUtils.filename(backupsChildren[0]);
   let expectedFormatRegex = /^\d{4}(-\d{2}){2}T(\d{2}-){2}\d{2}Z$/;
   Assert.ok(
     renamedFilename.match(expectedFormatRegex),
     "Renamed staging folder should have format YYYY-MM-DDTHH-mm-ssZ"
+  );
+
+  
+  
+  let archiveFilename = await PathUtils.filename(backupsChildren[1]);
+  Assert.equal(
+    archiveFilename,
+    `${renamedFilename}.zip`,
+    "Compressed staging folder exists."
   );
 
   let stagingPathRenamed = PathUtils.join(backupsFolderPath, renamedFilename);
