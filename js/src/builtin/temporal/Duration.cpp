@@ -1862,14 +1862,14 @@ static bool UnbalanceDateDurationRelative(
     }
 
     
-    Duration untilResult;
+    DateDuration untilResult;
     if (!CalendarDateUntil(cx, calendar, plainRelativeTo, later,
                            TemporalUnit::Month, &untilResult)) {
       return false;
     }
 
     
-    int64_t yearsInMonths = int64_t(untilResult.months);
+    int64_t yearsInMonths = untilResult.months;
 
     
     return CreateDateDurationRecord(cx, 0, months + yearsInMonths, weeks, days,
@@ -2008,7 +2008,7 @@ static bool BalanceDateDurationRelative(
   
 
   auto untilAddedDate = [&](const DateDuration& duration,
-                            Duration* untilResult) {
+                            DateDuration* untilResult) {
     Rooted<Wrapped<PlainDateObject*>> later(
         cx, AddDate(cx, calendar, plainRelativeTo, duration));
     if (!later) {
@@ -2030,14 +2030,14 @@ static bool BalanceDateDurationRelative(
       auto yearsMonthsDuration = DateDuration{years, months};
 
       
-      Duration untilResult;
+      DateDuration untilResult;
       if (!untilAddedDate(yearsMonthsDuration, &untilResult)) {
         return false;
       }
 
       
-      *result = CreateDateDurationRecord(int64_t(untilResult.years),
-                                         int64_t(untilResult.months), weeks, 0);
+      *result = CreateDateDurationRecord(untilResult.years, untilResult.months,
+                                         weeks, 0);
       return true;
     }
 
@@ -2045,15 +2045,14 @@ static bool BalanceDateDurationRelative(
     const auto& yearsMonthsWeeksDaysDuration = duration;
 
     
-    Duration untilResult;
+    DateDuration untilResult;
     if (!untilAddedDate(yearsMonthsWeeksDaysDuration, &untilResult)) {
       return false;
     }
 
     
-    *result = CreateDateDurationRecord(
-        int64_t(untilResult.years), int64_t(untilResult.months),
-        int64_t(untilResult.weeks), int64_t(untilResult.days));
+    *result = CreateDateDurationRecord(untilResult.years, untilResult.months,
+                                       untilResult.weeks, untilResult.days);
     return true;
   }
 
@@ -2076,15 +2075,14 @@ static bool BalanceDateDurationRelative(
     const auto& monthsWeeksDaysDuration = duration;
 
     
-    Duration untilResult;
+    DateDuration untilResult;
     if (!untilAddedDate(monthsWeeksDaysDuration, &untilResult)) {
       return false;
     }
 
     
-    *result = CreateDateDurationRecord(0, int64_t(untilResult.months),
-                                       int64_t(untilResult.weeks),
-                                       int64_t(untilResult.days));
+    *result = CreateDateDurationRecord(0, untilResult.months, untilResult.weeks,
+                                       untilResult.days);
     return true;
   }
 
@@ -2101,14 +2099,13 @@ static bool BalanceDateDurationRelative(
   const auto& weeksDaysDuration = duration;
 
   
-  Duration untilResult;
+  DateDuration untilResult;
   if (!untilAddedDate(weeksDaysDuration, &untilResult)) {
     return false;
   }
 
   
-  *result = CreateDateDurationRecord(0, 0, int64_t(untilResult.weeks),
-                                     int64_t(untilResult.days));
+  *result = CreateDateDurationRecord(0, 0, untilResult.weeks, untilResult.days);
   return true;
 }
 

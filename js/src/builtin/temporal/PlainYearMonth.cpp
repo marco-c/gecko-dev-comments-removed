@@ -487,7 +487,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  Duration until;
+  DateDuration until;
   if (resolvedOptions) {
     
     if (!CalendarDateUntil(cx, calendarRec, thisDate, otherDate,
@@ -503,7 +503,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  auto dateDuration = DateDuration{int64_t(until.years), int64_t(until.months)};
+  auto dateDuration = DateDuration{until.years, until.months};
 
   
   if (settings.smallestUnit != TemporalUnit::Month ||
