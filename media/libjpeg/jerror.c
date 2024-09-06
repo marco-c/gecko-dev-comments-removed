@@ -46,7 +46,7 @@
 
 #define JMESSAGE(code, string)  string,
 
-const char * const jpeg_std_message_table[] = {
+static const char * const jpeg_std_message_table[] = {
 #include "jerror.h"
   NULL
 };
@@ -229,23 +229,17 @@ reset_error_mgr(j_common_ptr cinfo)
 GLOBAL(struct jpeg_error_mgr *)
 jpeg_std_error(struct jpeg_error_mgr *err)
 {
+  memset(err, 0, sizeof(struct jpeg_error_mgr));
+
   err->error_exit = error_exit;
   err->emit_message = emit_message;
   err->output_message = output_message;
   err->format_message = format_message;
   err->reset_error_mgr = reset_error_mgr;
 
-  err->trace_level = 0;         
-  err->num_warnings = 0;        
-  err->msg_code = 0;            
-
   
   err->jpeg_message_table = jpeg_std_message_table;
   err->last_jpeg_message = (int)JMSG_LASTMSGCODE - 1;
-
-  err->addon_message_table = NULL;
-  err->first_addon_message = 0; 
-  err->last_addon_message = 0;
 
   return err;
 }

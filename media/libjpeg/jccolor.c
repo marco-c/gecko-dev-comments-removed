@@ -17,15 +17,20 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jsimd.h"
+#include "jsamplecomp.h"
 
+
+#if BITS_IN_JSAMPLE != 16 || defined(C_LOSSLESS_SUPPORTED)
 
 
 
 typedef struct {
   struct jpeg_color_converter pub; 
 
+#if BITS_IN_JSAMPLE != 16
   
   JLONG *rgb_ycc_tab;           
+#endif
 } my_color_converter;
 
 typedef my_color_converter *my_cconvert_ptr;
@@ -62,7 +67,7 @@ typedef my_color_converter *my_cconvert_ptr;
 
 
 #define SCALEBITS       16      /* speediest right-shift on some machines */
-#define CBCR_OFFSET     ((JLONG)CENTERJSAMPLE << SCALEBITS)
+#define CBCR_OFFSET     ((JLONG)_CENTERJSAMPLE << SCALEBITS)
 #define ONE_HALF        ((JLONG)1 << (SCALEBITS - 1))
 #define FIX(x)          ((JLONG)((x) * (1L << SCALEBITS) + 0.5))
 
@@ -73,15 +78,15 @@ typedef my_color_converter *my_cconvert_ptr;
 
 
 #define R_Y_OFF         0                       /* offset to R => Y section */
-#define G_Y_OFF         (1 * (MAXJSAMPLE + 1))  /* offset to G => Y section */
-#define B_Y_OFF         (2 * (MAXJSAMPLE + 1))  /* etc. */
-#define R_CB_OFF        (3 * (MAXJSAMPLE + 1))
-#define G_CB_OFF        (4 * (MAXJSAMPLE + 1))
-#define B_CB_OFF        (5 * (MAXJSAMPLE + 1))
+#define G_Y_OFF         (1 * (_MAXJSAMPLE + 1)) /* offset to G => Y section */
+#define B_Y_OFF         (2 * (_MAXJSAMPLE + 1)) /* etc. */
+#define R_CB_OFF        (3 * (_MAXJSAMPLE + 1))
+#define G_CB_OFF        (4 * (_MAXJSAMPLE + 1))
+#define B_CB_OFF        (5 * (_MAXJSAMPLE + 1))
 #define R_CR_OFF        B_CB_OFF                /* B=>Cb, R=>Cr are the same */
-#define G_CR_OFF        (6 * (MAXJSAMPLE + 1))
-#define B_CR_OFF        (7 * (MAXJSAMPLE + 1))
-#define TABLE_SIZE      (8 * (MAXJSAMPLE + 1))
+#define G_CR_OFF        (6 * (_MAXJSAMPLE + 1))
+#define B_CR_OFF        (7 * (_MAXJSAMPLE + 1))
+#define TABLE_SIZE      (8 * (_MAXJSAMPLE + 1))
 
 
 
@@ -208,6 +213,7 @@ typedef my_color_converter *my_cconvert_ptr;
 METHODDEF(void)
 rgb_ycc_start(j_compress_ptr cinfo)
 {
+#if BITS_IN_JSAMPLE != 16
   my_cconvert_ptr cconvert = (my_cconvert_ptr)cinfo->cconvert;
   JLONG *rgb_ycc_tab;
   JLONG i;
@@ -217,7 +223,7 @@ rgb_ycc_start(j_compress_ptr cinfo)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 (TABLE_SIZE * sizeof(JLONG)));
 
-  for (i = 0; i <= MAXJSAMPLE; i++) {
+  for (i = 0; i <= _MAXJSAMPLE; i++) {
     rgb_ycc_tab[i + R_Y_OFF] = FIX(0.29900) * i;
     rgb_ycc_tab[i + G_Y_OFF] = FIX(0.58700) * i;
     rgb_ycc_tab[i + B_Y_OFF] = FIX(0.11400) * i   + ONE_HALF;
@@ -234,6 +240,9 @@ rgb_ycc_start(j_compress_ptr cinfo)
     rgb_ycc_tab[i + G_CR_OFF] = (-FIX(0.41869)) * i;
     rgb_ycc_tab[i + B_CR_OFF] = (-FIX(0.08131)) * i;
   }
+#else
+  ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+#endif
 }
 
 
@@ -242,8 +251,8 @@ rgb_ycc_start(j_compress_ptr cinfo)
 
 
 METHODDEF(void)
-rgb_ycc_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
-                JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
+rgb_ycc_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
+                _JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
 {
   switch (cinfo->in_color_space) {
   case JCS_EXT_RGB:
@@ -290,8 +299,8 @@ rgb_ycc_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
 
 
 METHODDEF(void)
-rgb_gray_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
-                 JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
+rgb_gray_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
+                 _JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
 {
   switch (cinfo->in_color_space) {
   case JCS_EXT_RGB:
@@ -335,8 +344,8 @@ rgb_gray_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
 
 
 METHODDEF(void)
-rgb_rgb_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
-                JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
+rgb_rgb_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
+                _JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
 {
   switch (cinfo->in_color_space) {
   case JCS_EXT_RGB:
@@ -384,14 +393,15 @@ rgb_rgb_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
 
 
 METHODDEF(void)
-cmyk_ycck_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
-                  JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
+cmyk_ycck_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
+                  _JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
 {
+#if BITS_IN_JSAMPLE != 16
   my_cconvert_ptr cconvert = (my_cconvert_ptr)cinfo->cconvert;
   register int r, g, b;
   register JLONG *ctab = cconvert->rgb_ycc_tab;
-  register JSAMPROW inptr;
-  register JSAMPROW outptr0, outptr1, outptr2, outptr3;
+  register _JSAMPROW inptr;
+  register _JSAMPROW outptr0, outptr1, outptr2, outptr3;
   register JDIMENSION col;
   JDIMENSION num_cols = cinfo->image_width;
 
@@ -403,9 +413,9 @@ cmyk_ycck_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
     outptr3 = output_buf[3][output_row];
     output_row++;
     for (col = 0; col < num_cols; col++) {
-      r = MAXJSAMPLE - RANGE_LIMIT(inptr[0]);
-      g = MAXJSAMPLE - RANGE_LIMIT(inptr[1]);
-      b = MAXJSAMPLE - RANGE_LIMIT(inptr[2]);
+      r = _MAXJSAMPLE - RANGE_LIMIT(inptr[0]);
+      g = _MAXJSAMPLE - RANGE_LIMIT(inptr[1]);
+      b = _MAXJSAMPLE - RANGE_LIMIT(inptr[2]);
       
       outptr3[col] = inptr[3];
       inptr += 4;
@@ -415,16 +425,19 @@ cmyk_ycck_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
 
 
       
-      outptr0[col] = (JSAMPLE)((ctab[r + R_Y_OFF] + ctab[g + G_Y_OFF] +
-                                ctab[b + B_Y_OFF]) >> SCALEBITS);
+      outptr0[col] = (_JSAMPLE)((ctab[r + R_Y_OFF] + ctab[g + G_Y_OFF] +
+                                 ctab[b + B_Y_OFF]) >> SCALEBITS);
       
-      outptr1[col] = (JSAMPLE)((ctab[r + R_CB_OFF] + ctab[g + G_CB_OFF] +
-                                ctab[b + B_CB_OFF]) >> SCALEBITS);
+      outptr1[col] = (_JSAMPLE)((ctab[r + R_CB_OFF] + ctab[g + G_CB_OFF] +
+                                 ctab[b + B_CB_OFF]) >> SCALEBITS);
       
-      outptr2[col] = (JSAMPLE)((ctab[r + R_CR_OFF] + ctab[g + G_CR_OFF] +
-                                ctab[b + B_CR_OFF]) >> SCALEBITS);
+      outptr2[col] = (_JSAMPLE)((ctab[r + R_CR_OFF] + ctab[g + G_CR_OFF] +
+                                 ctab[b + B_CR_OFF]) >> SCALEBITS);
     }
   }
+#else
+  ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+#endif
 }
 
 
@@ -435,11 +448,11 @@ cmyk_ycck_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
 
 
 METHODDEF(void)
-grayscale_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
-                  JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
+grayscale_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
+                  _JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW outptr;
+  register _JSAMPROW inptr;
+  register _JSAMPROW outptr;
   register JDIMENSION col;
   JDIMENSION num_cols = cinfo->image_width;
   int instride = cinfo->input_components;
@@ -463,11 +476,11 @@ grayscale_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
 
 
 METHODDEF(void)
-null_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
-             JDIMENSION output_row, int num_rows)
+null_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
+             _JSAMPIMAGE output_buf, JDIMENSION output_row, int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW outptr, outptr0, outptr1, outptr2, outptr3;
+  register _JSAMPROW inptr;
+  register _JSAMPROW outptr, outptr0, outptr1, outptr2, outptr3;
   register JDIMENSION col;
   register int ci;
   int nc = cinfo->num_components;
@@ -535,9 +548,12 @@ null_method(j_compress_ptr cinfo)
 
 
 GLOBAL(void)
-jinit_color_converter(j_compress_ptr cinfo)
+_jinit_color_converter(j_compress_ptr cinfo)
 {
   my_cconvert_ptr cconvert;
+
+  if (cinfo->data_precision != BITS_IN_JSAMPLE)
+    ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 
   cconvert = (my_cconvert_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
@@ -586,122 +602,115 @@ jinit_color_converter(j_compress_ptr cinfo)
   }
 
   
+
+
+
   switch (cinfo->jpeg_color_space) {
   case JCS_GRAYSCALE:
+    if (cinfo->master->lossless &&
+        cinfo->in_color_space != cinfo->jpeg_color_space)
+      ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     if (cinfo->num_components != 1)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (cinfo->in_color_space == JCS_GRAYSCALE)
-      cconvert->pub.color_convert = grayscale_convert;
-    else if (cinfo->in_color_space == JCS_RGB ||
-             cinfo->in_color_space == JCS_EXT_RGB ||
-             cinfo->in_color_space == JCS_EXT_RGBX ||
-             cinfo->in_color_space == JCS_EXT_BGR ||
-             cinfo->in_color_space == JCS_EXT_BGRX ||
-             cinfo->in_color_space == JCS_EXT_XBGR ||
-             cinfo->in_color_space == JCS_EXT_XRGB ||
-             cinfo->in_color_space == JCS_EXT_RGBA ||
-             cinfo->in_color_space == JCS_EXT_BGRA ||
-             cinfo->in_color_space == JCS_EXT_ABGR ||
-             cinfo->in_color_space == JCS_EXT_ARGB) {
+      cconvert->pub._color_convert = grayscale_convert;
+    else if (IsExtRGB(cinfo->in_color_space)) {
+#ifdef WITH_SIMD
       if (jsimd_can_rgb_gray())
-        cconvert->pub.color_convert = jsimd_rgb_gray_convert;
-      else {
+        cconvert->pub._color_convert = jsimd_rgb_gray_convert;
+      else
+#endif
+      {
         cconvert->pub.start_pass = rgb_ycc_start;
-        cconvert->pub.color_convert = rgb_gray_convert;
+        cconvert->pub._color_convert = rgb_gray_convert;
       }
     } else if (cinfo->in_color_space == JCS_YCbCr)
-      cconvert->pub.color_convert = grayscale_convert;
+      cconvert->pub._color_convert = grayscale_convert;
     else
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     break;
 
   case JCS_RGB:
+    if (cinfo->master->lossless && !IsExtRGB(cinfo->in_color_space))
+      ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     if (cinfo->num_components != 3)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (rgb_red[cinfo->in_color_space] == 0 &&
         rgb_green[cinfo->in_color_space] == 1 &&
         rgb_blue[cinfo->in_color_space] == 2 &&
         rgb_pixelsize[cinfo->in_color_space] == 3) {
-#if defined(__mips__)
+#if defined(WITH_SIMD) && defined(__mips__)
       if (jsimd_c_can_null_convert())
-        cconvert->pub.color_convert = jsimd_c_null_convert;
+        cconvert->pub._color_convert = jsimd_c_null_convert;
       else
 #endif
-        cconvert->pub.color_convert = null_convert;
-    } else if (cinfo->in_color_space == JCS_RGB ||
-               cinfo->in_color_space == JCS_EXT_RGB ||
-               cinfo->in_color_space == JCS_EXT_RGBX ||
-               cinfo->in_color_space == JCS_EXT_BGR ||
-               cinfo->in_color_space == JCS_EXT_BGRX ||
-               cinfo->in_color_space == JCS_EXT_XBGR ||
-               cinfo->in_color_space == JCS_EXT_XRGB ||
-               cinfo->in_color_space == JCS_EXT_RGBA ||
-               cinfo->in_color_space == JCS_EXT_BGRA ||
-               cinfo->in_color_space == JCS_EXT_ABGR ||
-               cinfo->in_color_space == JCS_EXT_ARGB)
-      cconvert->pub.color_convert = rgb_rgb_convert;
+        cconvert->pub._color_convert = null_convert;
+    } else if (IsExtRGB(cinfo->in_color_space))
+      cconvert->pub._color_convert = rgb_rgb_convert;
     else
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     break;
 
   case JCS_YCbCr:
+    if (cinfo->master->lossless &&
+        cinfo->in_color_space != cinfo->jpeg_color_space)
+      ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     if (cinfo->num_components != 3)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
-    if (cinfo->in_color_space == JCS_RGB ||
-        cinfo->in_color_space == JCS_EXT_RGB ||
-        cinfo->in_color_space == JCS_EXT_RGBX ||
-        cinfo->in_color_space == JCS_EXT_BGR ||
-        cinfo->in_color_space == JCS_EXT_BGRX ||
-        cinfo->in_color_space == JCS_EXT_XBGR ||
-        cinfo->in_color_space == JCS_EXT_XRGB ||
-        cinfo->in_color_space == JCS_EXT_RGBA ||
-        cinfo->in_color_space == JCS_EXT_BGRA ||
-        cinfo->in_color_space == JCS_EXT_ABGR ||
-        cinfo->in_color_space == JCS_EXT_ARGB) {
+    if (IsExtRGB(cinfo->in_color_space)) {
+#ifdef WITH_SIMD
       if (jsimd_can_rgb_ycc())
-        cconvert->pub.color_convert = jsimd_rgb_ycc_convert;
-      else {
-        cconvert->pub.start_pass = rgb_ycc_start;
-        cconvert->pub.color_convert = rgb_ycc_convert;
-      }
-    } else if (cinfo->in_color_space == JCS_YCbCr) {
-#if defined(__mips__)
-      if (jsimd_c_can_null_convert())
-        cconvert->pub.color_convert = jsimd_c_null_convert;
+        cconvert->pub._color_convert = jsimd_rgb_ycc_convert;
       else
 #endif
-        cconvert->pub.color_convert = null_convert;
+      {
+        cconvert->pub.start_pass = rgb_ycc_start;
+        cconvert->pub._color_convert = rgb_ycc_convert;
+      }
+    } else if (cinfo->in_color_space == JCS_YCbCr) {
+#if defined(WITH_SIMD) && defined(__mips__)
+      if (jsimd_c_can_null_convert())
+        cconvert->pub._color_convert = jsimd_c_null_convert;
+      else
+#endif
+        cconvert->pub._color_convert = null_convert;
     } else
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     break;
 
   case JCS_CMYK:
+    if (cinfo->master->lossless &&
+        cinfo->in_color_space != cinfo->jpeg_color_space)
+      ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     if (cinfo->num_components != 4)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (cinfo->in_color_space == JCS_CMYK) {
-#if defined(__mips__)
+#if defined(WITH_SIMD) && defined(__mips__)
       if (jsimd_c_can_null_convert())
-        cconvert->pub.color_convert = jsimd_c_null_convert;
+        cconvert->pub._color_convert = jsimd_c_null_convert;
       else
 #endif
-        cconvert->pub.color_convert = null_convert;
+        cconvert->pub._color_convert = null_convert;
     } else
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     break;
 
   case JCS_YCCK:
+    if (cinfo->master->lossless &&
+        cinfo->in_color_space != cinfo->jpeg_color_space)
+      ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     if (cinfo->num_components != 4)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (cinfo->in_color_space == JCS_CMYK) {
       cconvert->pub.start_pass = rgb_ycc_start;
-      cconvert->pub.color_convert = cmyk_ycck_convert;
+      cconvert->pub._color_convert = cmyk_ycck_convert;
     } else if (cinfo->in_color_space == JCS_YCCK) {
-#if defined(__mips__)
+#if defined(WITH_SIMD) && defined(__mips__)
       if (jsimd_c_can_null_convert())
-        cconvert->pub.color_convert = jsimd_c_null_convert;
+        cconvert->pub._color_convert = jsimd_c_null_convert;
       else
 #endif
-        cconvert->pub.color_convert = null_convert;
+        cconvert->pub._color_convert = null_convert;
     } else
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
     break;
@@ -710,12 +719,14 @@ jinit_color_converter(j_compress_ptr cinfo)
     if (cinfo->jpeg_color_space != cinfo->in_color_space ||
         cinfo->num_components != cinfo->input_components)
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
-#if defined(__mips__)
+#if defined(WITH_SIMD) && defined(__mips__)
     if (jsimd_c_can_null_convert())
-      cconvert->pub.color_convert = jsimd_c_null_convert;
+      cconvert->pub._color_convert = jsimd_c_null_convert;
     else
 #endif
-      cconvert->pub.color_convert = null_convert;
+      cconvert->pub._color_convert = null_convert;
     break;
   }
 }
+
+#endif 

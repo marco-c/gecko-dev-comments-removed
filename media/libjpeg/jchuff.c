@@ -23,46 +23,19 @@
 
 
 
+
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
+#ifdef WITH_SIMD
 #include "jsimd.h"
+#else
+#include "jchuff.h"             
+#endif
 #include <limits.h>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if (defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))) || \
-    defined(_M_ARM) || defined(_M_ARM64)
-#if !defined(__thumb__) || defined(__thumb2__)
-#define USE_CLZ_INTRINSIC
-#endif
-#endif
-
-#ifdef USE_CLZ_INTRINSIC
-#if defined(_MSC_VER) && !defined(__clang__)
-#define JPEG_NBITS_NONZERO(x)  (32 - _CountLeadingZeros(x))
-#else
-#define JPEG_NBITS_NONZERO(x)  (32 - __builtin_clz(x))
-#endif
-#define JPEG_NBITS(x)          (x ? JPEG_NBITS_NONZERO(x) : 0)
-#else
-#include "jpeg_nbits_table.h"
-#define JPEG_NBITS(x)          (jpeg_nbits_table[x])
-#define JPEG_NBITS_NONZERO(x)  JPEG_NBITS(x)
-#endif
+#include "jpeg_nbits.h"
 
 
 
@@ -101,7 +74,9 @@ typedef bit_buf_type simd_bit_buf_type;
 typedef struct {
   union {
     bit_buf_type c;
+#ifdef WITH_SIMD
     simd_bit_buf_type simd;
+#endif
   } put_buffer;                         
   int free_bits;                        
                                         
@@ -126,7 +101,9 @@ typedef struct {
   long *ac_count_ptrs[NUM_HUFF_TBLS];
 #endif
 
+#ifdef WITH_SIMD
   int simd;
+#endif
 } huff_entropy_encoder;
 
 typedef huff_entropy_encoder *huff_entropy_ptr;
@@ -140,7 +117,9 @@ typedef struct {
   size_t free_in_buffer;        
   savable_state cur;            
   j_compress_ptr cinfo;         
+#ifdef WITH_SIMD
   int simd;
+#endif
 } working_state;
 
 
@@ -179,7 +158,9 @@ start_pass_huff(j_compress_ptr cinfo, boolean gather_statistics)
     entropy->pub.finish_pass = finish_pass_huff;
   }
 
+#ifdef WITH_SIMD
   entropy->simd = jsimd_can_huff_encode_one_block();
+#endif
 
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     compptr = cinfo->cur_comp_info[ci];
@@ -219,6 +200,7 @@ start_pass_huff(j_compress_ptr cinfo, boolean gather_statistics)
   }
 
   
+#ifdef WITH_SIMD
   if (entropy->simd) {
     entropy->saved.put_buffer.simd = 0;
 #if defined(__aarch64__) && !defined(NEON_INTRINSICS)
@@ -226,7 +208,9 @@ start_pass_huff(j_compress_ptr cinfo, boolean gather_statistics)
 #else
     entropy->saved.free_bits = SIMD_BIT_BUF_SIZE;
 #endif
-  } else {
+  } else
+#endif
+  {
     entropy->saved.put_buffer.c = 0;
     entropy->saved.free_bits = BIT_BUF_SIZE;
   }
@@ -322,7 +306,7 @@ jpeg_make_c_derived_tbl(j_compress_ptr cinfo, boolean isDC, int tblno,
 
 
 
-  maxsymbol = isDC ? 15 : 255;
+  maxsymbol = isDC ? (cinfo->master->lossless ? 16 : 15) : 255;
 
   for (p = 0; p < lastp; p++) {
     i = htbl->huffval[p];
@@ -499,6 +483,7 @@ flush_bits(working_state *state)
   simd_bit_buf_type put_buffer;  int put_bits;
   int localbuf = 0;
 
+#ifdef WITH_SIMD
   if (state->simd) {
 #if defined(__aarch64__) && !defined(NEON_INTRINSICS)
     put_bits = state->cur.free_bits;
@@ -506,7 +491,9 @@ flush_bits(working_state *state)
     put_bits = SIMD_BIT_BUF_SIZE - state->cur.free_bits;
 #endif
     put_buffer = state->cur.put_buffer.simd;
-  } else {
+  } else
+#endif
+  {
     put_bits = BIT_BUF_SIZE - state->cur.free_bits;
     put_buffer = state->cur.put_buffer.c;
   }
@@ -524,6 +511,7 @@ flush_bits(working_state *state)
     EMIT_BYTE(temp)
   }
 
+#ifdef WITH_SIMD
   if (state->simd) {                    
     state->cur.put_buffer.simd = 0;
 #if defined(__aarch64__) && !defined(NEON_INTRINSICS)
@@ -531,7 +519,9 @@ flush_bits(working_state *state)
 #else
     state->cur.free_bits = SIMD_BIT_BUF_SIZE;
 #endif
-  } else {
+  } else
+#endif
+  {
     state->cur.put_buffer.c = 0;
     state->cur.free_bits = BIT_BUF_SIZE;
   }
@@ -540,6 +530,8 @@ flush_bits(working_state *state)
   return TRUE;
 }
 
+
+#ifdef WITH_SIMD
 
 
 
@@ -560,6 +552,8 @@ encode_one_block_simd(working_state *state, JCOEFPTR block, int last_dc_val,
   return TRUE;
 }
 
+#endif
+
 LOCAL(boolean)
 encode_one_block(working_state *state, JCOEFPTR block, int last_dc_val,
                  c_derived_tbl *dctbl, c_derived_tbl *actbl)
@@ -568,6 +562,7 @@ encode_one_block(working_state *state, JCOEFPTR block, int last_dc_val,
   bit_buf_type put_buffer;
   JOCTET _buffer[BUFSIZE], *buffer;
   int localbuf = 0;
+  int max_coef_bits = state->cinfo->data_precision + 2;
 
   free_bits = state->cur.free_bits;
   put_buffer = state->cur.put_buffer.c;
@@ -588,6 +583,11 @@ encode_one_block(working_state *state, JCOEFPTR block, int last_dc_val,
 
   
   nbits = JPEG_NBITS(nbits);
+  
+
+
+  if (nbits > max_coef_bits + 1)
+    ERREXIT(state->cinfo, JERR_BAD_DCT_COEF);
 
   
 
@@ -613,6 +613,9 @@ encode_one_block(working_state *state, JCOEFPTR block, int last_dc_val,
     temp += nbits; \
     nbits ^= temp; \
     nbits = JPEG_NBITS_NONZERO(nbits); \
+    /* Check for out-of-range coefficient values */ \
+    if (nbits > max_coef_bits) \
+      ERREXIT(state->cinfo, JERR_BAD_DCT_COEF); \
     /* if run length > 15, must emit special run-length-16 codes (0xF0) */ \
     while (r >= 16 * 16) { \
       r -= 16 * 16; \
@@ -694,7 +697,9 @@ encode_mcu_huff(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
   state.free_in_buffer = cinfo->dest->free_in_buffer;
   state.cur = entropy->saved;
   state.cinfo = cinfo;
+#ifdef WITH_SIMD
   state.simd = entropy->simd;
+#endif
 
   
   if (cinfo->restart_interval) {
@@ -704,6 +709,7 @@ encode_mcu_huff(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
   }
 
   
+#ifdef WITH_SIMD
   if (entropy->simd) {
     for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
       ci = cinfo->MCU_membership[blkn];
@@ -716,7 +722,9 @@ encode_mcu_huff(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
       
       state.cur.last_dc_val[ci] = MCU_data[blkn][0][0];
     }
-  } else {
+  } else
+#endif
+  {
     for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
       ci = cinfo->MCU_membership[blkn];
       compptr = cinfo->cur_comp_info[ci];
@@ -764,7 +772,9 @@ finish_pass_huff(j_compress_ptr cinfo)
   state.free_in_buffer = cinfo->dest->free_in_buffer;
   state.cur = entropy->saved;
   state.cinfo = cinfo;
+#ifdef WITH_SIMD
   state.simd = entropy->simd;
+#endif
 
   
   if (!flush_bits(&state))
@@ -800,6 +810,7 @@ htest_one_block(j_compress_ptr cinfo, JCOEFPTR block, int last_dc_val,
   register int temp;
   register int nbits;
   register int k, r;
+  int max_coef_bits = cinfo->data_precision + 2;
 
   
 
@@ -816,7 +827,7 @@ htest_one_block(j_compress_ptr cinfo, JCOEFPTR block, int last_dc_val,
   
 
 
-  if (nbits > MAX_COEF_BITS + 1)
+  if (nbits > max_coef_bits + 1)
     ERREXIT(cinfo, JERR_BAD_DCT_COEF);
 
   
@@ -845,7 +856,7 @@ htest_one_block(j_compress_ptr cinfo, JCOEFPTR block, int last_dc_val,
       while ((temp >>= 1))
         nbits++;
       
-      if (nbits > MAX_COEF_BITS)
+      if (nbits > max_coef_bits)
         ERREXIT(cinfo, JERR_BAD_DCT_COEF);
 
       
@@ -932,11 +943,15 @@ jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
 {
 #define MAX_CLEN  32            /* assumed maximum initial code length */
   UINT8 bits[MAX_CLEN + 1];     
+  int bit_pos[MAX_CLEN + 1];    
   int codesize[257];            
+  int nz_index[257];            
+
   int others[257];              
   int c1, c2;
   int p, i, j;
-  long v;
+  int num_nz_symbols;
+  long v, v2;
 
   
 
@@ -953,26 +968,39 @@ jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
 
   
 
+
+  num_nz_symbols = 0;
+  for (i = 0; i < 257; i++) {
+    if (freq[i]) {
+      nz_index[num_nz_symbols] = i;
+      freq[num_nz_symbols] = freq[i];
+      num_nz_symbols++;
+    }
+  }
+
+  
+
   for (;;) {
     
     
-    c1 = -1;
-    v = 1000000000L;
-    for (i = 0; i <= 256; i++) {
-      if (freq[i] && freq[i] <= v) {
-        v = freq[i];
-        c1 = i;
-      }
-    }
 
-    
-    
+
+
+    c1 = -1;
     c2 = -1;
     v = 1000000000L;
-    for (i = 0; i <= 256; i++) {
-      if (freq[i] && freq[i] <= v && i != c1) {
-        v = freq[i];
-        c2 = i;
+    v2 = 1000000000L;
+    for (i = 0; i < num_nz_symbols; i++) {
+      if (freq[i] <= v2) {
+        if (freq[i] <= v) {
+          c2 = c1;
+          v2 = v;
+          v = freq[i];
+          c1 = i;
+        } else {
+          v2 = freq[i];
+          c2 = i;
+        }
       }
     }
 
@@ -982,7 +1010,10 @@ jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
 
     
     freq[c1] += freq[c2];
-    freq[c2] = 0;
+    
+
+
+    freq[c2] = 1000000001L;
 
     
     codesize[c1]++;
@@ -1002,15 +1033,24 @@ jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
   }
 
   
-  for (i = 0; i <= 256; i++) {
-    if (codesize[i]) {
-      
-      
-      if (codesize[i] > MAX_CLEN)
-        ERREXIT(cinfo, JERR_HUFF_CLEN_OVERFLOW);
+  for (i = 0; i < num_nz_symbols; i++) {
+    
+    
+    if (codesize[i] > MAX_CLEN)
+      ERREXIT(cinfo, JERR_HUFF_CLEN_OVERFLOW);
 
-      bits[codesize[i]]++;
-    }
+    bits[codesize[i]]++;
+  }
+
+  
+
+
+
+
+  p = 0;
+  for (i = 1; i <= MAX_CLEN; i++) {
+    bit_pos[i] = p;
+    p += bits[i];
   }
 
   
@@ -1050,14 +1090,9 @@ jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
 
 
 
-  p = 0;
-  for (i = 1; i <= MAX_CLEN; i++) {
-    for (j = 0; j <= 255; j++) {
-      if (codesize[j] == i) {
-        htbl->huffval[p] = (UINT8)j;
-        p++;
-      }
-    }
+  for (i = 0; i < num_nz_symbols - 1; i++) {
+    htbl->huffval[bit_pos[codesize[i]]] = (UINT8)nz_index[i];
+    bit_pos[codesize[i]]++;
   }
 
   

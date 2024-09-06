@@ -14,6 +14,8 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -202,7 +204,6 @@ jpeg_set_defaults(j_compress_ptr cinfo)
   cinfo->scale_num = 1;         
   cinfo->scale_denom = 1;
 #endif
-  cinfo->data_precision = BITS_IN_JSAMPLE;
   
   jpeg_set_quality(cinfo, 75, TRUE);
   
@@ -232,7 +233,7 @@ jpeg_set_defaults(j_compress_ptr cinfo)
 
 
 
-  if (cinfo->data_precision > 8)
+  if (cinfo->data_precision == 12 && !cinfo->arith_code)
     cinfo->optimize_coding = TRUE;
 
   
@@ -296,7 +297,10 @@ jpeg_default_colorspace(j_compress_ptr cinfo)
   case JCS_EXT_BGRA:
   case JCS_EXT_ABGR:
   case JCS_EXT_ARGB:
-    jpeg_set_colorspace(cinfo, JCS_YCbCr);
+    if (cinfo->master->lossless)
+      jpeg_set_colorspace(cinfo, JCS_RGB);
+    else
+      jpeg_set_colorspace(cinfo, JCS_YCbCr);
     break;
   case JCS_YCbCr:
     jpeg_set_colorspace(cinfo, JCS_YCbCr);
@@ -475,6 +479,11 @@ jpeg_simple_progression(j_compress_ptr cinfo)
   if (cinfo->global_state != CSTATE_START)
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
 
+  if (cinfo->master->lossless) {
+    cinfo->master->lossless = FALSE;
+    jpeg_default_colorspace(cinfo);
+  }
+
   
   if (ncomps == 3 && cinfo->jpeg_color_space == JCS_YCbCr) {
     
@@ -536,6 +545,41 @@ jpeg_simple_progression(j_compress_ptr cinfo)
     scanptr = fill_dc_scans(scanptr, ncomps, 1, 0);
     scanptr = fill_scans(scanptr, ncomps, 1, 63, 1, 0);
   }
+}
+
+#endif 
+
+
+#ifdef C_LOSSLESS_SUPPORTED
+
+
+
+
+
+GLOBAL(void)
+jpeg_enable_lossless(j_compress_ptr cinfo, int predictor_selection_value,
+                     int point_transform)
+{
+  
+  if (cinfo->global_state != CSTATE_START)
+    ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+
+  cinfo->master->lossless = TRUE;
+  cinfo->Ss = predictor_selection_value;
+  cinfo->Se = 0;
+  cinfo->Ah = 0;
+  cinfo->Al = point_transform;
+
+  
+
+
+
+
+
+  if (cinfo->Ss < 1 || cinfo->Ss > 7 ||
+      cinfo->Al < 0 || cinfo->Al >= cinfo->data_precision)
+    ERREXIT4(cinfo, JERR_BAD_PROGRESSION,
+             cinfo->Ss, cinfo->Se, cinfo->Ah, cinfo->Al);
 }
 
 #endif 

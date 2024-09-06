@@ -12,10 +12,12 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
-#include "jpegcomp.h"
+#include "jpegapicomp.h"
 
 
 typedef enum {                  
@@ -497,25 +499,26 @@ write_file_header(j_compress_ptr cinfo)
 METHODDEF(void)
 write_frame_header(j_compress_ptr cinfo)
 {
-  int ci, prec;
+  int ci, prec = 0;
   boolean is_baseline;
   jpeg_component_info *compptr;
 
-  
+  if (!cinfo->master->lossless) {
+    
 
 
-  prec = 0;
-  for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
-       ci++, compptr++) {
-    prec += emit_dqt(cinfo, compptr->quant_tbl_no);
+    for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+         ci++, compptr++) {
+      prec += emit_dqt(cinfo, compptr->quant_tbl_no);
+    }
+    
   }
-  
 
   
 
 
   if (cinfo->arith_code || cinfo->progressive_mode ||
-      cinfo->data_precision != 8) {
+      cinfo->master->lossless || cinfo->data_precision != 8) {
     is_baseline = FALSE;
   } else {
     is_baseline = TRUE;
@@ -540,6 +543,8 @@ write_frame_header(j_compress_ptr cinfo)
   } else {
     if (cinfo->progressive_mode)
       emit_sof(cinfo, M_SOF2);  
+    else if (cinfo->master->lossless)
+      emit_sof(cinfo, M_SOF3);  
     else if (is_baseline)
       emit_sof(cinfo, M_SOF0);  
     else
@@ -574,10 +579,11 @@ write_scan_header(j_compress_ptr cinfo)
     for (i = 0; i < cinfo->comps_in_scan; i++) {
       compptr = cinfo->cur_comp_info[i];
       
-      if (cinfo->Ss == 0 && cinfo->Ah == 0)
+      if ((cinfo->Ss == 0 && cinfo->Ah == 0) || cinfo->master->lossless)
         emit_dht(cinfo, compptr->dc_tbl_no, FALSE);
       
-      if (cinfo->Se)
+
+      if (cinfo->Se && !cinfo->master->lossless)
         emit_dht(cinfo, compptr->ac_tbl_no, TRUE);
     }
   }

@@ -11,6 +11,7 @@
 
 #define JPEG_INTERNALS
 #include "jpeglib.h"
+#include "jsamplecomp.h"
 
 #ifdef UPSAMPLE_MERGING_SUPPORTED
 
@@ -21,8 +22,8 @@ typedef struct {
   struct jpeg_upsampler pub;    
 
   
-  void (*upmethod) (j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
-                    JDIMENSION in_row_group_ctr, JSAMPARRAY output_buf);
+  void (*upmethod) (j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
+                    JDIMENSION in_row_group_ctr, _JSAMPARRAY output_buf);
 
   
   int *Cr_r_tab;                
@@ -35,7 +36,7 @@ typedef struct {
 
 
 
-  JSAMPROW spare_row;
+  _JSAMPROW spare_row;
   boolean spare_full;           
 
   JDIMENSION out_row_width;     

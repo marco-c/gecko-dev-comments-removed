@@ -15,10 +15,13 @@
 
 
 
+
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
-#include "jpegcomp.h"
+#include "jpegapicomp.h"
 
 
 
@@ -46,6 +49,7 @@ initial_setup(j_decompress_ptr cinfo)
 {
   int ci;
   jpeg_component_info *compptr;
+  int data_unit = cinfo->master->lossless ? 1 : DCTSIZE;
 
   
   if ((long)cinfo->image_height > (long)JPEG_MAX_DIMENSION ||
@@ -53,7 +57,12 @@ initial_setup(j_decompress_ptr cinfo)
     ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, (unsigned int)JPEG_MAX_DIMENSION);
 
   
-  if (cinfo->data_precision != BITS_IN_JSAMPLE)
+#ifdef D_LOSSLESS_SUPPORTED
+  if (cinfo->data_precision != 8 && cinfo->data_precision != 12 &&
+      cinfo->data_precision != 16)
+#else
+  if (cinfo->data_precision != 8 && cinfo->data_precision != 12)
+#endif
     ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 
   
@@ -78,7 +87,7 @@ initial_setup(j_decompress_ptr cinfo)
   }
 
 #if JPEG_LIB_VERSION >= 80
-  cinfo->block_size = DCTSIZE;
+  cinfo->block_size = data_unit;
   cinfo->natural_order = jpeg_natural_order;
   cinfo->lim_Se = DCTSIZE2 - 1;
 #endif
@@ -88,26 +97,26 @@ initial_setup(j_decompress_ptr cinfo)
 
 
 #if JPEG_LIB_VERSION >= 70
-  cinfo->min_DCT_h_scaled_size = cinfo->min_DCT_v_scaled_size = DCTSIZE;
+  cinfo->min_DCT_h_scaled_size = cinfo->min_DCT_v_scaled_size = data_unit;
 #else
-  cinfo->min_DCT_scaled_size = DCTSIZE;
+  cinfo->min_DCT_scaled_size = data_unit;
 #endif
 
   
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
 #if JPEG_LIB_VERSION >= 70
-    compptr->DCT_h_scaled_size = compptr->DCT_v_scaled_size = DCTSIZE;
+    compptr->DCT_h_scaled_size = compptr->DCT_v_scaled_size = data_unit;
 #else
-    compptr->DCT_scaled_size = DCTSIZE;
+    compptr->DCT_scaled_size = data_unit;
 #endif
     
     compptr->width_in_blocks = (JDIMENSION)
       jdiv_round_up((long)cinfo->image_width * (long)compptr->h_samp_factor,
-                    (long)(cinfo->max_h_samp_factor * DCTSIZE));
+                    (long)(cinfo->max_h_samp_factor * data_unit));
     compptr->height_in_blocks = (JDIMENSION)
       jdiv_round_up((long)cinfo->image_height * (long)compptr->v_samp_factor,
-                    (long)(cinfo->max_v_samp_factor * DCTSIZE));
+                    (long)(cinfo->max_v_samp_factor * data_unit));
     
 
 
@@ -133,7 +142,7 @@ initial_setup(j_decompress_ptr cinfo)
   
   cinfo->total_iMCU_rows = (JDIMENSION)
     jdiv_round_up((long)cinfo->image_height,
-                  (long)(cinfo->max_v_samp_factor * DCTSIZE));
+                  (long)(cinfo->max_v_samp_factor * data_unit));
 
   
   if (cinfo->comps_in_scan < cinfo->num_components || cinfo->progressive_mode)
@@ -150,6 +159,7 @@ per_scan_setup(j_decompress_ptr cinfo)
 {
   int ci, mcublks, tmp;
   jpeg_component_info *compptr;
+  int data_unit = cinfo->master->lossless ? 1 : DCTSIZE;
 
   if (cinfo->comps_in_scan == 1) {
 
@@ -187,10 +197,10 @@ per_scan_setup(j_decompress_ptr cinfo)
     
     cinfo->MCUs_per_row = (JDIMENSION)
       jdiv_round_up((long)cinfo->image_width,
-                    (long)(cinfo->max_h_samp_factor * DCTSIZE));
+                    (long)(cinfo->max_h_samp_factor * data_unit));
     cinfo->MCU_rows_in_scan = (JDIMENSION)
       jdiv_round_up((long)cinfo->image_height,
-                    (long)(cinfo->max_v_samp_factor * DCTSIZE));
+                    (long)(cinfo->max_v_samp_factor * data_unit));
 
     cinfo->blocks_in_MCU = 0;
 
@@ -281,7 +291,8 @@ METHODDEF(void)
 start_input_pass(j_decompress_ptr cinfo)
 {
   per_scan_setup(cinfo);
-  latch_quant_tables(cinfo);
+  if (!cinfo->master->lossless)
+    latch_quant_tables(cinfo);
   (*cinfo->entropy->start_pass) (cinfo);
   (*cinfo->coef->start_input_pass) (cinfo);
   cinfo->inputctl->consume_input = cinfo->coef->consume_data;

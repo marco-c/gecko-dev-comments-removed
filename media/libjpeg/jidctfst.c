@@ -168,9 +168,9 @@
 
 
 GLOBAL(void)
-jpeg_idct_ifast(j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                JCOEFPTR coef_block, JSAMPARRAY output_buf,
-                JDIMENSION output_col)
+_jpeg_idct_ifast(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                 JCOEFPTR coef_block, _JSAMPARRAY output_buf,
+                 JDIMENSION output_col)
 {
   DCTELEM tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   DCTELEM tmp10, tmp11, tmp12, tmp13;
@@ -178,8 +178,8 @@ jpeg_idct_ifast(j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JCOEFPTR inptr;
   IFAST_MULT_TYPE *quantptr;
   int *wsptr;
-  JSAMPROW outptr;
-  JSAMPLE *range_limit = IDCT_range_limit(cinfo);
+  _JSAMPROW outptr;
+  _JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
   int workspace[DCTSIZE2];      
   SHIFT_TEMPS                   
@@ -296,7 +296,7 @@ jpeg_idct_ifast(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     if (wsptr[1] == 0 && wsptr[2] == 0 && wsptr[3] == 0 && wsptr[4] == 0 &&
         wsptr[5] == 0 && wsptr[6] == 0 && wsptr[7] == 0) {
       
-      JSAMPLE dcval =
+      _JSAMPLE dcval =
         range_limit[IDESCALE(wsptr[0], PASS1_BITS + 3) & RANGE_MASK];
 
       outptr[0] = dcval;

@@ -14,6 +14,8 @@
 
 
 
+
+
 #include <stdint.h>
 
 
@@ -42,31 +44,29 @@
 
 
 
-#if BITS_IN_JSAMPLE == 8
-
 
 
 typedef unsigned char JSAMPLE;
 #define GETJSAMPLE(value)  ((int)(value))
 
-#define MAXJSAMPLE      255
-#define CENTERJSAMPLE   128
-
-#endif 
-
-
-#if BITS_IN_JSAMPLE == 12
+#define MAXJSAMPLE       255
+#define CENTERJSAMPLE    128
 
 
 
 
-typedef short JSAMPLE;
-#define GETJSAMPLE(value)  ((int)(value))
+typedef short J12SAMPLE;
 
-#define MAXJSAMPLE      4095
-#define CENTERJSAMPLE   2048
+#define MAXJ12SAMPLE     4095
+#define CENTERJ12SAMPLE  2048
 
-#endif 
+
+
+
+typedef unsigned short J16SAMPLE;
+
+#define MAXJ16SAMPLE     65535
+#define CENTERJ16SAMPLE  32768
 
 
 
@@ -233,7 +233,9 @@ typedef int boolean;
 
 #define C_MULTISCAN_FILES_SUPPORTED
 #define C_PROGRESSIVE_SUPPORTED
+#define C_LOSSLESS_SUPPORTED
 #define ENTROPY_OPT_SUPPORTED
+
 
 
 
@@ -248,6 +250,7 @@ typedef int boolean;
 
 #define D_MULTISCAN_FILES_SUPPORTED
 #define D_PROGRESSIVE_SUPPORTED
+#define D_LOSSLESS_SUPPORTED
 #define SAVE_MARKERS_SUPPORTED
 #define BLOCK_SMOOTHING_SUPPORTED
 #define IDCT_SCALING_SUPPORTED

@@ -1,4 +1,32 @@
-static const unsigned char jpeg_nbits_table[65536] = {
+
+
+
+
+
+
+
+#include "jpeg_nbits.h"
+#include "jconfigint.h"
+
+
+#ifndef USE_CLZ_INTRINSIC
+
+#define INCLUDE_JPEG_NBITS_TABLE
+
+
+
+
+#if (defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || \
+     defined(_M_X64)) && defined(WITH_SIMD)
+#undef INCLUDE_JPEG_NBITS_TABLE
+#endif
+
+#endif
+
+
+#ifdef INCLUDE_JPEG_NBITS_TABLE
+
+const unsigned char HIDDEN jpeg_nbits_table[65536] = {
    0,  1,  2,  2,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  4,  4,
    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,
    6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,
@@ -4096,3 +4124,11 @@ static const unsigned char jpeg_nbits_table[65536] = {
   16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
   16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16
 };
+
+#else
+
+
+
+typedef int dummy_jpeg_nbits_table;
+
+#endif

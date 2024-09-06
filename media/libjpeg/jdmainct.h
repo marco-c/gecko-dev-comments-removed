@@ -7,10 +7,15 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jpeglib.h"
-#include "jpegcomp.h"
+#include "jpegapicomp.h"
+#include "jsamplecomp.h"
 
+
+#if BITS_IN_JSAMPLE != 16 || defined(D_LOSSLESS_SUPPORTED)
 
 
 
@@ -18,7 +23,7 @@ typedef struct {
   struct jpeg_d_main_controller pub; 
 
   
-  JSAMPARRAY buffer[MAX_COMPONENTS];
+  _JSAMPARRAY buffer[MAX_COMPONENTS];
 
   boolean buffer_full;          
   JDIMENSION rowgroup_ctr;      
@@ -26,7 +31,7 @@ typedef struct {
   
 
   
-  JSAMPIMAGE xbuffer[2];        
+  _JSAMPIMAGE xbuffer[2];       
 
   int whichptr;                 
   int context_state;            
@@ -53,7 +58,7 @@ set_wraparound_pointers(j_decompress_ptr cinfo)
   int ci, i, rgroup;
   int M = cinfo->_min_DCT_scaled_size;
   jpeg_component_info *compptr;
-  JSAMPARRAY xbuf0, xbuf1;
+  _JSAMPARRAY xbuf0, xbuf1;
 
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
@@ -69,3 +74,5 @@ set_wraparound_pointers(j_decompress_ptr cinfo)
     }
   }
 }
+
+#endif 

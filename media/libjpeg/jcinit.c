@@ -18,10 +18,12 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
-#include "jpegcomp.h"
+#include "jpegapicomp.h"
 
 
 
@@ -38,34 +40,101 @@ jinit_compress_master(j_compress_ptr cinfo)
 
   
   if (!cinfo->raw_data_in) {
-    jinit_color_converter(cinfo);
-    jinit_downsampler(cinfo);
-    jinit_c_prep_controller(cinfo, FALSE );
-  }
-  
-  jinit_forward_dct(cinfo);
-  
-  if (cinfo->arith_code) {
-#ifdef C_ARITH_CODING_SUPPORTED
-    jinit_arith_encoder(cinfo);
+    if (cinfo->data_precision == 16) {
+#ifdef C_LOSSLESS_SUPPORTED
+      j16init_color_converter(cinfo);
+      j16init_downsampler(cinfo);
+      j16init_c_prep_controller(cinfo,
+                                FALSE );
 #else
-    ERREXIT(cinfo, JERR_ARITH_NOTIMPL);
+      ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 #endif
-  } else {
-    if (cinfo->progressive_mode) {
-#ifdef C_PROGRESSIVE_SUPPORTED
-      jinit_phuff_encoder(cinfo);
-#else
-      ERREXIT(cinfo, JERR_NOT_COMPILED);
-#endif
-    } else
-      jinit_huff_encoder(cinfo);
+    } else if (cinfo->data_precision == 12) {
+      j12init_color_converter(cinfo);
+      j12init_downsampler(cinfo);
+      j12init_c_prep_controller(cinfo,
+                                FALSE );
+    } else {
+      jinit_color_converter(cinfo);
+      jinit_downsampler(cinfo);
+      jinit_c_prep_controller(cinfo, FALSE );
+    }
   }
 
-  
-  jinit_c_coef_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
-                                           cinfo->optimize_coding));
-  jinit_c_main_controller(cinfo, FALSE );
+  if (cinfo->master->lossless) {
+#ifdef C_LOSSLESS_SUPPORTED
+    
+    if (cinfo->data_precision == 16)
+      j16init_lossless_compressor(cinfo);
+    else if (cinfo->data_precision == 12)
+      j12init_lossless_compressor(cinfo);
+    else
+      jinit_lossless_compressor(cinfo);
+    
+    if (cinfo->arith_code) {
+      ERREXIT(cinfo, JERR_ARITH_NOTIMPL);
+    } else {
+      jinit_lhuff_encoder(cinfo);
+    }
+
+    
+    if (cinfo->data_precision == 16)
+      j16init_c_diff_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
+                                                 cinfo->optimize_coding));
+    else if (cinfo->data_precision == 12)
+      j12init_c_diff_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
+                                                 cinfo->optimize_coding));
+    else
+      jinit_c_diff_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
+                                               cinfo->optimize_coding));
+#else
+    ERREXIT(cinfo, JERR_NOT_COMPILED);
+#endif
+  } else {
+    if (cinfo->data_precision == 16)
+      ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+    
+    if (cinfo->data_precision == 12)
+      j12init_forward_dct(cinfo);
+    else
+      jinit_forward_dct(cinfo);
+    
+    if (cinfo->arith_code) {
+#ifdef C_ARITH_CODING_SUPPORTED
+      jinit_arith_encoder(cinfo);
+#else
+      ERREXIT(cinfo, JERR_ARITH_NOTIMPL);
+#endif
+    } else {
+      if (cinfo->progressive_mode) {
+#ifdef C_PROGRESSIVE_SUPPORTED
+        jinit_phuff_encoder(cinfo);
+#else
+        ERREXIT(cinfo, JERR_NOT_COMPILED);
+#endif
+      } else
+        jinit_huff_encoder(cinfo);
+    }
+
+    
+    if (cinfo->data_precision == 12)
+      j12init_c_coef_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
+                                                 cinfo->optimize_coding));
+    else
+      jinit_c_coef_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
+                                               cinfo->optimize_coding));
+  }
+
+  if (cinfo->data_precision == 16)
+#ifdef C_LOSSLESS_SUPPORTED
+    j16init_c_main_controller(cinfo, FALSE );
+#else
+    ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+  else if (cinfo->data_precision == 12)
+    j12init_c_main_controller(cinfo, FALSE );
+  else
+    jinit_c_main_controller(cinfo, FALSE );
 
   jinit_marker_writer(cinfo);
 

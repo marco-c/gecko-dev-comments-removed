@@ -19,6 +19,8 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -81,6 +83,8 @@ jpeg_CreateDecompress(j_decompress_ptr cinfo, int version, size_t structsize)
 
   
   jinit_input_controller(cinfo);
+
+  cinfo->data_precision = BITS_IN_JSAMPLE;
 
   
   cinfo->global_state = DSTATE_START;
@@ -156,13 +160,19 @@ default_decompress_parms(j_decompress_ptr cinfo)
       int cid1 = cinfo->comp_info[1].component_id;
       int cid2 = cinfo->comp_info[2].component_id;
 
-      if (cid0 == 1 && cid1 == 2 && cid2 == 3)
-        cinfo->jpeg_color_space = JCS_YCbCr; 
-      else if (cid0 == 82 && cid1 == 71 && cid2 == 66)
+      if (cid0 == 1 && cid1 == 2 && cid2 == 3) {
+        if (cinfo->master->lossless)
+          cinfo->jpeg_color_space = JCS_RGB; 
+        else
+          cinfo->jpeg_color_space = JCS_YCbCr; 
+      } else if (cid0 == 82 && cid1 == 71 && cid2 == 66)
         cinfo->jpeg_color_space = JCS_RGB; 
       else {
         TRACEMS3(cinfo, 1, JTRC_UNKNOWN_IDS, cid0, cid1, cid2);
-        cinfo->jpeg_color_space = JCS_YCbCr; 
+        if (cinfo->master->lossless)
+          cinfo->jpeg_color_space = JCS_RGB; 
+        else
+          cinfo->jpeg_color_space = JCS_YCbCr; 
       }
     }
     

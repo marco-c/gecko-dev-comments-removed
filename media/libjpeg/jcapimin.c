@@ -23,6 +23,7 @@
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
+#include "jcmaster.h"
 
 
 
@@ -90,8 +91,18 @@ jpeg_CreateCompress(j_compress_ptr cinfo, int version, size_t structsize)
 
   cinfo->input_gamma = 1.0;     
 
+  cinfo->data_precision = BITS_IN_JSAMPLE;
+
   
   cinfo->global_state = CSTATE_START;
+
+  
+
+
+  cinfo->master = (struct jpeg_comp_master *)
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_PERMANENT,
+                                  sizeof(my_comp_master));
+  memset(cinfo->master, 0, sizeof(my_comp_master));
 }
 
 
@@ -183,8 +194,20 @@ jpeg_finish_compress(j_compress_ptr cinfo)
       
 
 
-      if (!(*cinfo->coef->compress_data) (cinfo, (JSAMPIMAGE)NULL))
-        ERREXIT(cinfo, JERR_CANT_SUSPEND);
+      if (cinfo->data_precision == 16) {
+#ifdef C_LOSSLESS_SUPPORTED
+        if (!(*cinfo->coef->compress_data_16) (cinfo, (J16SAMPIMAGE)NULL))
+          ERREXIT(cinfo, JERR_CANT_SUSPEND);
+#else
+        ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+      } else if (cinfo->data_precision == 12) {
+        if (!(*cinfo->coef->compress_data_12) (cinfo, (J12SAMPIMAGE)NULL))
+          ERREXIT(cinfo, JERR_CANT_SUSPEND);
+      } else {
+        if (!(*cinfo->coef->compress_data) (cinfo, (JSAMPIMAGE)NULL))
+          ERREXIT(cinfo, JERR_CANT_SUSPEND);
+      }
     }
     (*cinfo->master->finish_pass) (cinfo);
   }

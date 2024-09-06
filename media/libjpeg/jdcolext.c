@@ -28,18 +28,19 @@
 
 INLINE
 LOCAL(void)
-ycc_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
-                         JDIMENSION input_row, JSAMPARRAY output_buf,
+ycc_rgb_convert_internal(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
+                         JDIMENSION input_row, _JSAMPARRAY output_buf,
                          int num_rows)
 {
+#if BITS_IN_JSAMPLE != 16
   my_cconvert_ptr cconvert = (my_cconvert_ptr)cinfo->cconvert;
   register int y, cb, cr;
-  register JSAMPROW outptr;
-  register JSAMPROW inptr0, inptr1, inptr2;
+  register _JSAMPROW outptr;
+  register _JSAMPROW inptr0, inptr1, inptr2;
   register JDIMENSION col;
   JDIMENSION num_cols = cinfo->output_width;
   
-  register JSAMPLE *range_limit = cinfo->sample_range_limit;
+  register _JSAMPLE *range_limit = (_JSAMPLE *)cinfo->sample_range_limit;
   register int *Crrtab = cconvert->Cr_r_tab;
   register int *Cbbtab = cconvert->Cb_b_tab;
   register JLONG *Crgtab = cconvert->Cr_g_tab;
@@ -65,11 +66,14 @@ ycc_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
       
       
 #ifdef RGB_ALPHA
-      outptr[RGB_ALPHA] = MAXJSAMPLE;
+      outptr[RGB_ALPHA] = _MAXJSAMPLE;
 #endif
       outptr += RGB_PIXELSIZE;
     }
   }
+#else
+  ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+#endif
 }
 
 
@@ -81,11 +85,11 @@ ycc_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 
 INLINE
 LOCAL(void)
-gray_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
-                          JDIMENSION input_row, JSAMPARRAY output_buf,
+gray_rgb_convert_internal(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
+                          JDIMENSION input_row, _JSAMPARRAY output_buf,
                           int num_rows)
 {
-  register JSAMPROW inptr, outptr;
+  register _JSAMPROW inptr, outptr;
   register JDIMENSION col;
   JDIMENSION num_cols = cinfo->output_width;
 
@@ -97,7 +101,7 @@ gray_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
       
       
 #ifdef RGB_ALPHA
-      outptr[RGB_ALPHA] = MAXJSAMPLE;
+      outptr[RGB_ALPHA] = _MAXJSAMPLE;
 #endif
       outptr += RGB_PIXELSIZE;
     }
@@ -111,12 +115,12 @@ gray_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 
 INLINE
 LOCAL(void)
-rgb_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
-                         JDIMENSION input_row, JSAMPARRAY output_buf,
+rgb_rgb_convert_internal(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
+                         JDIMENSION input_row, _JSAMPARRAY output_buf,
                          int num_rows)
 {
-  register JSAMPROW inptr0, inptr1, inptr2;
-  register JSAMPROW outptr;
+  register _JSAMPROW inptr0, inptr1, inptr2;
+  register _JSAMPROW outptr;
   register JDIMENSION col;
   JDIMENSION num_cols = cinfo->output_width;
 
@@ -133,7 +137,7 @@ rgb_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
       
       
 #ifdef RGB_ALPHA
-      outptr[RGB_ALPHA] = MAXJSAMPLE;
+      outptr[RGB_ALPHA] = _MAXJSAMPLE;
 #endif
       outptr += RGB_PIXELSIZE;
     }

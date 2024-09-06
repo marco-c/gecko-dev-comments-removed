@@ -15,6 +15,8 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -237,7 +239,8 @@ get_soi(j_decompress_ptr cinfo)
 
 
 LOCAL(boolean)
-get_sof(j_decompress_ptr cinfo, boolean is_prog, boolean is_arith)
+get_sof(j_decompress_ptr cinfo, boolean is_prog, boolean is_lossless,
+        boolean is_arith)
 
 {
   JLONG length;
@@ -246,6 +249,7 @@ get_sof(j_decompress_ptr cinfo, boolean is_prog, boolean is_arith)
   INPUT_VARS(cinfo);
 
   cinfo->progressive_mode = is_prog;
+  cinfo->master->lossless = is_lossless;
   cinfo->arith_code = is_arith;
 
   INPUT_2BYTES(cinfo, length, return FALSE);
@@ -990,32 +994,40 @@ read_markers(j_decompress_ptr cinfo)
 
     case M_SOF0:                
     case M_SOF1:                
-      if (!get_sof(cinfo, FALSE, FALSE))
+      if (!get_sof(cinfo, FALSE, FALSE, FALSE))
         return JPEG_SUSPENDED;
       break;
 
     case M_SOF2:                
-      if (!get_sof(cinfo, TRUE, FALSE))
+      if (!get_sof(cinfo, TRUE, FALSE, FALSE))
+        return JPEG_SUSPENDED;
+      break;
+
+    case M_SOF3:                
+      if (!get_sof(cinfo, FALSE, TRUE, FALSE))
         return JPEG_SUSPENDED;
       break;
 
     case M_SOF9:                
-      if (!get_sof(cinfo, FALSE, TRUE))
+      if (!get_sof(cinfo, FALSE, FALSE, TRUE))
         return JPEG_SUSPENDED;
       break;
 
     case M_SOF10:               
-      if (!get_sof(cinfo, TRUE, TRUE))
+      if (!get_sof(cinfo, TRUE, FALSE, TRUE))
+        return JPEG_SUSPENDED;
+      break;
+
+    case M_SOF11:               
+      if (!get_sof(cinfo, FALSE, TRUE, TRUE))
         return JPEG_SUSPENDED;
       break;
 
     
-    case M_SOF3:                
     case M_SOF5:                
     case M_SOF6:                
     case M_SOF7:                
     case M_JPG:                 
-    case M_SOF11:               
     case M_SOF13:               
     case M_SOF14:               
     case M_SOF15:               

@@ -99,24 +99,6 @@ EXTERN(size_t) jpeg_mem_available(j_common_ptr cinfo, size_t min_bytes_needed,
 #define TEMP_NAME_LENGTH   64   /* max length of a temporary file's name */
 
 
-#ifdef USE_MSDOS_MEMMGR         
-
-typedef unsigned short XMSH;    
-typedef unsigned short EMSH;    
-
-typedef union {
-  short file_handle;            
-  XMSH xms_handle;              
-  EMSH ems_handle;              
-} handle_union;
-
-#endif 
-
-#ifdef USE_MAC_MEMMGR           
-#include <Files.h>
-#endif 
-
-
 typedef struct backing_store_struct *backing_store_ptr;
 
 typedef struct backing_store_struct {
@@ -130,22 +112,9 @@ typedef struct backing_store_struct {
   void (*close_backing_store) (j_common_ptr cinfo, backing_store_ptr info);
 
   
-#ifdef USE_MSDOS_MEMMGR
-  
-  handle_union handle;          
-  char temp_name[TEMP_NAME_LENGTH]; 
-#else
-#ifdef USE_MAC_MEMMGR
-  
-  short temp_file;              
-  FSSpec tempSpec;              
-  char temp_name[TEMP_NAME_LENGTH]; 
-#else
   
   FILE *temp_file;              
   char temp_name[TEMP_NAME_LENGTH]; 
-#endif
-#endif
 } backing_store_info;
 
 

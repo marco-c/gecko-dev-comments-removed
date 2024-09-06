@@ -15,6 +15,9 @@
 
 
 
+
+
+
 #ifndef JPEGLIB_H
 #define JPEGLIB_H
 
@@ -43,6 +46,13 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
 #define DCTSIZE             8   /* The basic DCT block is 8x8 samples */
 #define DCTSIZE2            64  /* DCTSIZE squared; # of elements in a block */
 #define NUM_QUANT_TBLS      4   /* Quantization tables are numbered 0..3 */
@@ -57,9 +67,9 @@ extern "C" {
 
 
 
-#define C_MAX_BLOCKS_IN_MCU   10 /* compressor's limit on blocks per MCU */
+#define C_MAX_BLOCKS_IN_MCU   10 /* compressor's limit on data units/MCU */
 #ifndef D_MAX_BLOCKS_IN_MCU
-#define D_MAX_BLOCKS_IN_MCU   10 /* decompressor's limit on blocks per MCU */
+#define D_MAX_BLOCKS_IN_MCU   10 /* decompressor's limit on data units/MCU */
 #endif
 
 
@@ -69,6 +79,20 @@ extern "C" {
 typedef JSAMPLE *JSAMPROW;      
 typedef JSAMPROW *JSAMPARRAY;   
 typedef JSAMPARRAY *JSAMPIMAGE; 
+
+typedef J12SAMPLE *J12SAMPROW;      
+
+typedef J12SAMPROW *J12SAMPARRAY;   
+
+typedef J12SAMPARRAY *J12SAMPIMAGE; 
+
+
+typedef J16SAMPLE *J16SAMPROW;      
+
+typedef J16SAMPROW *J16SAMPARRAY;   
+
+typedef J16SAMPARRAY *J16SAMPIMAGE; 
+
 
 typedef JCOEF JBLOCK[DCTSIZE2]; 
 typedef JBLOCK *JBLOCKROW;      
@@ -139,9 +163,12 @@ typedef struct {
 
 
 
+
+
   JDIMENSION width_in_blocks;
   JDIMENSION height_in_blocks;
   
+
 
 
 
@@ -154,6 +181,8 @@ typedef struct {
   int DCT_scaled_size;
 #endif
   
+
+
 
 
 
@@ -193,7 +222,11 @@ typedef struct {
   int comps_in_scan;            
   int component_index[MAX_COMPS_IN_SCAN]; 
   int Ss, Se;                   
+
+
   int Ah, Al;                   
+
+
 } jpeg_scan_info;
 
 
@@ -239,6 +272,7 @@ typedef enum {
   JCS_EXT_ABGR,           
   JCS_EXT_ARGB,           
   JCS_RGB565              
+
 } J_COLOR_SPACE;
 
 
@@ -420,7 +454,9 @@ struct jpeg_compress_struct {
 #endif
 
   JDIMENSION total_iMCU_rows;   
+
   
+
 
 
 
@@ -443,6 +479,7 @@ struct jpeg_compress_struct {
   
 
   int Ss, Se, Ah, Al;           
+
 
 #if JPEG_LIB_VERSION >= 80
   int block_size;               
@@ -538,6 +575,11 @@ struct jpeg_decompress_struct {
 
   int actual_number_of_colors;  
   JSAMPARRAY colormap;          
+
+
+
+
+
 
   
 
@@ -655,7 +697,13 @@ struct jpeg_decompress_struct {
 
 
 
+
   JSAMPLE *sample_range_limit;  
+
+
+
+
+
 
   
 
@@ -675,6 +723,7 @@ struct jpeg_decompress_struct {
   
 
   int Ss, Se, Ah, Al;           
+
 
 #if JPEG_LIB_VERSION >= 80
   
@@ -835,6 +884,11 @@ struct jpeg_memory_mgr {
   void *(*alloc_small) (j_common_ptr cinfo, int pool_id, size_t sizeofobject);
   void *(*alloc_large) (j_common_ptr cinfo, int pool_id,
                         size_t sizeofobject);
+  
+
+
+
+
   JSAMPARRAY (*alloc_sarray) (j_common_ptr cinfo, int pool_id,
                               JDIMENSION samplesperrow, JDIMENSION numrows);
   JBLOCKARRAY (*alloc_barray) (j_common_ptr cinfo, int pool_id,
@@ -916,13 +970,11 @@ EXTERN(void) jpeg_destroy_decompress(j_decompress_ptr cinfo);
 EXTERN(void) jpeg_stdio_dest(j_compress_ptr cinfo, FILE *outfile);
 EXTERN(void) jpeg_stdio_src(j_decompress_ptr cinfo, FILE *infile);
 
-#if JPEG_LIB_VERSION >= 80 || defined(MEM_SRCDST_SUPPORTED)
 
 EXTERN(void) jpeg_mem_dest(j_compress_ptr cinfo, unsigned char **outbuffer,
                            unsigned long *outsize);
 EXTERN(void) jpeg_mem_src(j_decompress_ptr cinfo,
                           const unsigned char *inbuffer, unsigned long insize);
-#endif
 
 
 EXTERN(void) jpeg_set_defaults(j_compress_ptr cinfo);
@@ -942,6 +994,9 @@ EXTERN(void) jpeg_add_quant_table(j_compress_ptr cinfo, int which_tbl,
                                   const unsigned int *basic_table,
                                   int scale_factor, boolean force_baseline);
 EXTERN(int) jpeg_quality_scaling(int quality);
+EXTERN(void) jpeg_enable_lossless(j_compress_ptr cinfo,
+                                  int predictor_selection_value,
+                                  int point_transform);
 EXTERN(void) jpeg_simple_progression(j_compress_ptr cinfo);
 EXTERN(void) jpeg_suppress_tables(j_compress_ptr cinfo, boolean suppress);
 EXTERN(JQUANT_TBL *) jpeg_alloc_quant_table(j_common_ptr cinfo);
@@ -953,6 +1008,12 @@ EXTERN(void) jpeg_start_compress(j_compress_ptr cinfo,
 EXTERN(JDIMENSION) jpeg_write_scanlines(j_compress_ptr cinfo,
                                         JSAMPARRAY scanlines,
                                         JDIMENSION num_lines);
+EXTERN(JDIMENSION) jpeg12_write_scanlines(j_compress_ptr cinfo,
+                                          J12SAMPARRAY scanlines,
+                                          JDIMENSION num_lines);
+EXTERN(JDIMENSION) jpeg16_write_scanlines(j_compress_ptr cinfo,
+                                          J16SAMPARRAY scanlines,
+                                          JDIMENSION num_lines);
 EXTERN(void) jpeg_finish_compress(j_compress_ptr cinfo);
 
 #if JPEG_LIB_VERSION >= 70
@@ -963,6 +1024,9 @@ EXTERN(void) jpeg_calc_jpeg_dimensions(j_compress_ptr cinfo);
 
 EXTERN(JDIMENSION) jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
                                        JDIMENSION num_lines);
+EXTERN(JDIMENSION) jpeg12_write_raw_data(j_compress_ptr cinfo,
+                                         J12SAMPIMAGE data,
+                                         JDIMENSION num_lines);
 
 
 EXTERN(void) jpeg_write_marker(j_compress_ptr cinfo, int marker,
@@ -998,15 +1062,28 @@ EXTERN(boolean) jpeg_start_decompress(j_decompress_ptr cinfo);
 EXTERN(JDIMENSION) jpeg_read_scanlines(j_decompress_ptr cinfo,
                                        JSAMPARRAY scanlines,
                                        JDIMENSION max_lines);
+EXTERN(JDIMENSION) jpeg12_read_scanlines(j_decompress_ptr cinfo,
+                                         J12SAMPARRAY scanlines,
+                                         JDIMENSION max_lines);
+EXTERN(JDIMENSION) jpeg16_read_scanlines(j_decompress_ptr cinfo,
+                                         J16SAMPARRAY scanlines,
+                                         JDIMENSION max_lines);
 EXTERN(JDIMENSION) jpeg_skip_scanlines(j_decompress_ptr cinfo,
                                        JDIMENSION num_lines);
+EXTERN(JDIMENSION) jpeg12_skip_scanlines(j_decompress_ptr cinfo,
+                                         JDIMENSION num_lines);
 EXTERN(void) jpeg_crop_scanline(j_decompress_ptr cinfo, JDIMENSION *xoffset,
                                 JDIMENSION *width);
+EXTERN(void) jpeg12_crop_scanline(j_decompress_ptr cinfo, JDIMENSION *xoffset,
+                                  JDIMENSION *width);
 EXTERN(boolean) jpeg_finish_decompress(j_decompress_ptr cinfo);
 
 
 EXTERN(JDIMENSION) jpeg_read_raw_data(j_decompress_ptr cinfo, JSAMPIMAGE data,
                                       JDIMENSION max_lines);
+EXTERN(JDIMENSION) jpeg12_read_raw_data(j_decompress_ptr cinfo,
+                                        J12SAMPIMAGE data,
+                                        JDIMENSION max_lines);
 
 
 EXTERN(boolean) jpeg_has_multiple_scans(j_decompress_ptr cinfo);

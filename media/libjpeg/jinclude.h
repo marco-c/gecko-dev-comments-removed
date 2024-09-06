@@ -123,6 +123,8 @@ static INLINE int GETENV_S(char *buffer, size_t buffer_size, const char *name)
 
 #else
 
+#include <errno.h>
+
 
 
 

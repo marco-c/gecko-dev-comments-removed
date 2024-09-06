@@ -18,10 +18,16 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
+#ifdef WITH_SIMD
 #include "jsimd.h"
+#else
+#include "jchuff.h"             
+#endif
 #include <limits.h>
 
 #ifdef HAVE_INTRIN_H
@@ -38,40 +44,7 @@
 
 #ifdef C_PROGRESSIVE_SUPPORTED
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if (defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))) || \
-    defined(_M_ARM) || defined(_M_ARM64)
-#if !defined(__thumb__) || defined(__thumb2__)
-#define USE_CLZ_INTRINSIC
-#endif
-#endif
-
-#ifdef USE_CLZ_INTRINSIC
-#if defined(_MSC_VER) && !defined(__clang__)
-#define JPEG_NBITS_NONZERO(x)  (32 - _CountLeadingZeros(x))
-#else
-#define JPEG_NBITS_NONZERO(x)  (32 - __builtin_clz(x))
-#endif
-#define JPEG_NBITS(x)          (x ? JPEG_NBITS_NONZERO(x) : 0)
-#else
-#include "jpeg_nbits_table.h"
-#define JPEG_NBITS(x)          (jpeg_nbits_table[x])
-#define JPEG_NBITS_NONZERO(x)  JPEG_NBITS(x)
-#endif
+#include "jpeg_nbits.h"
 
 
 
@@ -223,18 +196,22 @@ start_pass_phuff(j_compress_ptr cinfo, boolean gather_statistics)
       entropy->pub.encode_mcu = encode_mcu_DC_first;
     else
       entropy->pub.encode_mcu = encode_mcu_AC_first;
+#ifdef WITH_SIMD
     if (jsimd_can_encode_mcu_AC_first_prepare())
       entropy->AC_first_prepare = jsimd_encode_mcu_AC_first_prepare;
     else
+#endif
       entropy->AC_first_prepare = encode_mcu_AC_first_prepare;
   } else {
     if (is_DC_band)
       entropy->pub.encode_mcu = encode_mcu_DC_refine;
     else {
       entropy->pub.encode_mcu = encode_mcu_AC_refine;
+#ifdef WITH_SIMD
       if (jsimd_can_encode_mcu_AC_refine_prepare())
         entropy->AC_refine_prepare = jsimd_encode_mcu_AC_refine_prepare;
       else
+#endif
         entropy->AC_refine_prepare = encode_mcu_AC_refine_prepare;
       
       if (entropy->bit_buffer == NULL)
@@ -489,6 +466,7 @@ encode_mcu_DC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
   JBLOCKROW block;
   jpeg_component_info *compptr;
   ISHIFT_TEMPS
+  int max_coef_bits = cinfo->data_precision + 2;
 
   entropy->next_output_byte = cinfo->dest->next_output_byte;
   entropy->free_in_buffer = cinfo->dest->free_in_buffer;
@@ -531,7 +509,7 @@ encode_mcu_DC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
     
 
 
-    if (nbits > MAX_COEF_BITS + 1)
+    if (nbits > max_coef_bits + 1)
       ERREXIT(cinfo, JERR_BAD_DCT_COEF);
 
     
@@ -642,7 +620,7 @@ label \
     /* Find the number of bits needed for the magnitude of the coefficient */ \
     nbits = JPEG_NBITS_NONZERO(temp);  /* there must be at least one 1 bit */ \
     /* Check for out-of-range coefficient values */ \
-    if (nbits > MAX_COEF_BITS) \
+    if (nbits > max_coef_bits) \
       ERREXIT(cinfo, JERR_BAD_DCT_COEF); \
     \
     /* Count/emit Huffman symbol for run length / number of bits */ \
@@ -670,6 +648,7 @@ encode_mcu_AC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
   const UJCOEF *cvalue;
   size_t zerobits;
   size_t bits[8 / SIZEOF_SIZE_T];
+  int max_coef_bits = cinfo->data_precision + 2;
 
   entropy->next_output_byte = cinfo->dest->next_output_byte;
   entropy->free_in_buffer = cinfo->dest->free_in_buffer;

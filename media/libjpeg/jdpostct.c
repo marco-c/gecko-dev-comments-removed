@@ -22,7 +22,10 @@
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
+#include "jsamplecomp.h"
 
+
+#if BITS_IN_JSAMPLE != 16 || defined(D_LOSSLESS_SUPPORTED)
 
 
 
@@ -35,7 +38,7 @@ typedef struct {
 
 
   jvirt_sarray_ptr whole_image; 
-  JSAMPARRAY buffer;            
+  _JSAMPARRAY buffer;           
   JDIMENSION strip_height;      
   
   JDIMENSION starting_row;      
@@ -46,26 +49,28 @@ typedef my_post_controller *my_post_ptr;
 
 
 
+#if BITS_IN_JSAMPLE != 16
 METHODDEF(void) post_process_1pass(j_decompress_ptr cinfo,
-                                   JSAMPIMAGE input_buf,
+                                   _JSAMPIMAGE input_buf,
                                    JDIMENSION *in_row_group_ctr,
                                    JDIMENSION in_row_groups_avail,
-                                   JSAMPARRAY output_buf,
+                                   _JSAMPARRAY output_buf,
                                    JDIMENSION *out_row_ctr,
                                    JDIMENSION out_rows_avail);
-#ifdef QUANT_2PASS_SUPPORTED
+#endif
+#if defined(QUANT_2PASS_SUPPORTED) && BITS_IN_JSAMPLE != 16
 METHODDEF(void) post_process_prepass(j_decompress_ptr cinfo,
-                                     JSAMPIMAGE input_buf,
+                                     _JSAMPIMAGE input_buf,
                                      JDIMENSION *in_row_group_ctr,
                                      JDIMENSION in_row_groups_avail,
-                                     JSAMPARRAY output_buf,
+                                     _JSAMPARRAY output_buf,
                                      JDIMENSION *out_row_ctr,
                                      JDIMENSION out_rows_avail);
 METHODDEF(void) post_process_2pass(j_decompress_ptr cinfo,
-                                   JSAMPIMAGE input_buf,
+                                   _JSAMPIMAGE input_buf,
                                    JDIMENSION *in_row_group_ctr,
                                    JDIMENSION in_row_groups_avail,
-                                   JSAMPARRAY output_buf,
+                                   _JSAMPARRAY output_buf,
                                    JDIMENSION *out_row_ctr,
                                    JDIMENSION out_rows_avail);
 #endif
@@ -82,37 +87,40 @@ start_pass_dpost(j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
 
   switch (pass_mode) {
   case JBUF_PASS_THRU:
+#if BITS_IN_JSAMPLE != 16
     if (cinfo->quantize_colors) {
       
-      post->pub.post_process_data = post_process_1pass;
+      post->pub._post_process_data = post_process_1pass;
       
 
 
 
       if (post->buffer == NULL) {
-        post->buffer = (*cinfo->mem->access_virt_sarray)
+        post->buffer = (_JSAMPARRAY)(*cinfo->mem->access_virt_sarray)
           ((j_common_ptr)cinfo, post->whole_image,
            (JDIMENSION)0, post->strip_height, TRUE);
       }
-    } else {
+    } else
+#endif
+    {
       
 
 
-      post->pub.post_process_data = cinfo->upsample->upsample;
+      post->pub._post_process_data = cinfo->upsample->_upsample;
     }
     break;
-#ifdef QUANT_2PASS_SUPPORTED
+#if defined(QUANT_2PASS_SUPPORTED) && BITS_IN_JSAMPLE != 16
   case JBUF_SAVE_AND_PASS:
     
     if (post->whole_image == NULL)
       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
-    post->pub.post_process_data = post_process_prepass;
+    post->pub._post_process_data = post_process_prepass;
     break;
   case JBUF_CRANK_DEST:
     
     if (post->whole_image == NULL)
       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
-    post->pub.post_process_data = post_process_2pass;
+    post->pub._post_process_data = post_process_2pass;
     break;
 #endif 
   default:
@@ -128,10 +136,12 @@ start_pass_dpost(j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
 
 
 
+#if BITS_IN_JSAMPLE != 16
+
 METHODDEF(void)
-post_process_1pass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
+post_process_1pass(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
                    JDIMENSION *in_row_group_ctr,
-                   JDIMENSION in_row_groups_avail, JSAMPARRAY output_buf,
+                   JDIMENSION in_row_groups_avail, _JSAMPARRAY output_buf,
                    JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail)
 {
   my_post_ptr post = (my_post_ptr)cinfo->post;
@@ -143,27 +153,29 @@ post_process_1pass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
   if (max_rows > post->strip_height)
     max_rows = post->strip_height;
   num_rows = 0;
-  (*cinfo->upsample->upsample) (cinfo, input_buf, in_row_group_ctr,
-                                in_row_groups_avail, post->buffer, &num_rows,
-                                max_rows);
+  (*cinfo->upsample->_upsample) (cinfo, input_buf, in_row_group_ctr,
+                                 in_row_groups_avail, post->buffer, &num_rows,
+                                 max_rows);
   
-  (*cinfo->cquantize->color_quantize) (cinfo, post->buffer,
-                                       output_buf + *out_row_ctr,
-                                       (int)num_rows);
+  (*cinfo->cquantize->_color_quantize) (cinfo, post->buffer,
+                                        output_buf + *out_row_ctr,
+                                        (int)num_rows);
   *out_row_ctr += num_rows;
 }
 
+#endif
 
-#ifdef QUANT_2PASS_SUPPORTED
+
+#if defined(QUANT_2PASS_SUPPORTED) && BITS_IN_JSAMPLE != 16
 
 
 
 
 
 METHODDEF(void)
-post_process_prepass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
+post_process_prepass(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
                      JDIMENSION *in_row_group_ctr,
-                     JDIMENSION in_row_groups_avail, JSAMPARRAY output_buf,
+                     JDIMENSION in_row_groups_avail, _JSAMPARRAY output_buf,
                      JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail)
 {
   my_post_ptr post = (my_post_ptr)cinfo->post;
@@ -171,23 +183,23 @@ post_process_prepass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 
   
   if (post->next_row == 0) {
-    post->buffer = (*cinfo->mem->access_virt_sarray)
+    post->buffer = (_JSAMPARRAY)(*cinfo->mem->access_virt_sarray)
         ((j_common_ptr)cinfo, post->whole_image,
          post->starting_row, post->strip_height, TRUE);
   }
 
   
   old_next_row = post->next_row;
-  (*cinfo->upsample->upsample) (cinfo, input_buf, in_row_group_ctr,
-                                in_row_groups_avail, post->buffer,
-                                &post->next_row, post->strip_height);
+  (*cinfo->upsample->_upsample) (cinfo, input_buf, in_row_group_ctr,
+                                 in_row_groups_avail, post->buffer,
+                                 &post->next_row, post->strip_height);
 
   
   
   if (post->next_row > old_next_row) {
     num_rows = post->next_row - old_next_row;
-    (*cinfo->cquantize->color_quantize) (cinfo, post->buffer + old_next_row,
-                                         (JSAMPARRAY)NULL, (int)num_rows);
+    (*cinfo->cquantize->_color_quantize) (cinfo, post->buffer + old_next_row,
+                                          (_JSAMPARRAY)NULL, (int)num_rows);
     *out_row_ctr += num_rows;
   }
 
@@ -204,9 +216,9 @@ post_process_prepass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 
 
 METHODDEF(void)
-post_process_2pass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
+post_process_2pass(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
                    JDIMENSION *in_row_group_ctr,
-                   JDIMENSION in_row_groups_avail, JSAMPARRAY output_buf,
+                   JDIMENSION in_row_groups_avail, _JSAMPARRAY output_buf,
                    JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail)
 {
   my_post_ptr post = (my_post_ptr)cinfo->post;
@@ -214,7 +226,7 @@ post_process_2pass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 
   
   if (post->next_row == 0) {
-    post->buffer = (*cinfo->mem->access_virt_sarray)
+    post->buffer = (_JSAMPARRAY)(*cinfo->mem->access_virt_sarray)
         ((j_common_ptr)cinfo, post->whole_image,
          post->starting_row, post->strip_height, FALSE);
   }
@@ -230,9 +242,9 @@ post_process_2pass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     num_rows = max_rows;
 
   
-  (*cinfo->cquantize->color_quantize) (cinfo, post->buffer + post->next_row,
-                                       output_buf + *out_row_ctr,
-                                       (int)num_rows);
+  (*cinfo->cquantize->_color_quantize) (cinfo, post->buffer + post->next_row,
+                                        output_buf + *out_row_ctr,
+                                        (int)num_rows);
   *out_row_ctr += num_rows;
 
   
@@ -251,9 +263,12 @@ post_process_2pass(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 
 
 GLOBAL(void)
-jinit_d_post_controller(j_decompress_ptr cinfo, boolean need_full_buffer)
+_jinit_d_post_controller(j_decompress_ptr cinfo, boolean need_full_buffer)
 {
   my_post_ptr post;
+
+  if (cinfo->data_precision != BITS_IN_JSAMPLE)
+    ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 
   post = (my_post_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
@@ -265,6 +280,7 @@ jinit_d_post_controller(j_decompress_ptr cinfo, boolean need_full_buffer)
 
   
   if (cinfo->quantize_colors) {
+#if BITS_IN_JSAMPLE != 16
     
 
 
@@ -285,10 +301,15 @@ jinit_d_post_controller(j_decompress_ptr cinfo, boolean need_full_buffer)
 #endif 
     } else {
       
-      post->buffer = (*cinfo->mem->alloc_sarray)
+      post->buffer = (_JSAMPARRAY)(*cinfo->mem->alloc_sarray)
         ((j_common_ptr)cinfo, JPOOL_IMAGE,
          cinfo->output_width * cinfo->out_color_components,
          post->strip_height);
     }
+#else
+    ERREXIT(cinfo, JERR_NOTIMPL);
+#endif
   }
 }
+
+#endif 

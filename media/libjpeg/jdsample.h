@@ -7,15 +7,18 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jpeglib.h"
+#include "jsamplecomp.h"
 
 
 
 typedef void (*upsample1_ptr) (j_decompress_ptr cinfo,
                                jpeg_component_info *compptr,
-                               JSAMPARRAY input_data,
-                               JSAMPARRAY *output_data_ptr);
+                               _JSAMPARRAY input_data,
+                               _JSAMPARRAY *output_data_ptr);
 
 
 
@@ -29,7 +32,7 @@ typedef struct {
 
 
 
-  JSAMPARRAY color_buf[MAX_COMPONENTS];
+  _JSAMPARRAY color_buf[MAX_COMPONENTS];
 
   
   upsample1_ptr methods[MAX_COMPONENTS];

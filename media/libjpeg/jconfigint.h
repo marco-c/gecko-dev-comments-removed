@@ -1,5 +1,8 @@
 
-#define BUILD  "20230208"
+#define BUILD  "20240508"
+
+
+#define HIDDEN __attribute__((visibility("hidden")))
 
 
 #include "mozilla/Attributes.h"
@@ -13,10 +16,10 @@
 #endif
 
 
-#define PACKAGE_NAME "libjpeg-turbo"
+#define PACKAGE_NAME  "libjpeg-turbo"
 
 
-#define VERSION  "2.1.5.1"
+#define VERSION  "3.0.3"
 
 
 #ifdef HAVE_64BIT_BUILD
@@ -51,4 +54,33 @@
 #endif
 #else
 #define FALLTHROUGH
+#endif
+
+
+
+
+
+
+
+
+
+#ifndef BITS_IN_JSAMPLE
+#define BITS_IN_JSAMPLE  8      /* use 8 or 12 */
+#endif
+
+#undef C_ARITH_CODING_SUPPORTED
+#undef D_ARITH_CODING_SUPPORTED
+#undef WITH_SIMD
+
+#if BITS_IN_JSAMPLE == 8
+
+
+
+
+
+
+
+
+#define WITH_SIMD 1
+
 #endif

@@ -4,10 +4,10 @@
 #define JPEG_LIB_VERSION  62
 
 
-#define LIBJPEG_TURBO_VERSION  2.1.5.1
+#define LIBJPEG_TURBO_VERSION  3.0.3
 
 
-#define LIBJPEG_TURBO_VERSION_NUMBER  2001005
+#define LIBJPEG_TURBO_VERSION_NUMBER  3000003
 
 
 
@@ -30,7 +30,9 @@
 
 
 
-#define BITS_IN_JSAMPLE  8      /* use 8 or 12 */
+#ifndef BITS_IN_JSAMPLE
+#define BITS_IN_JSAMPLE  8
+#endif
 
 
 

@@ -10,9 +10,12 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jpeglib.h"
 
+
+#if BITS_IN_JSAMPLE != 16 || defined(D_LOSSLESS_SUPPORTED)
 
 
 #ifndef D_PROGRESSIVE_SUPPORTED
@@ -81,3 +84,5 @@ start_iMCU_row(j_decompress_ptr cinfo)
   coef->MCU_ctr = 0;
   coef->MCU_vert_offset = 0;
 }
+
+#endif 

@@ -15,10 +15,15 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
+#include "jsamplecomp.h"
 
+
+#if BITS_IN_JSAMPLE == 8
 
 
 
@@ -58,6 +63,8 @@ jpeg_start_compress(j_compress_ptr cinfo, boolean write_all_tables)
   cinfo->global_state = (cinfo->raw_data_in ? CSTATE_RAW_OK : CSTATE_SCANNING);
 }
 
+#endif
+
 
 
 
@@ -75,10 +82,14 @@ jpeg_start_compress(j_compress_ptr cinfo, boolean write_all_tables)
 
 
 GLOBAL(JDIMENSION)
-jpeg_write_scanlines(j_compress_ptr cinfo, JSAMPARRAY scanlines,
-                     JDIMENSION num_lines)
+_jpeg_write_scanlines(j_compress_ptr cinfo, _JSAMPARRAY scanlines,
+                      JDIMENSION num_lines)
 {
+#if BITS_IN_JSAMPLE != 16 || defined(C_LOSSLESS_SUPPORTED)
   JDIMENSION row_ctr, rows_left;
+
+  if (cinfo->data_precision != BITS_IN_JSAMPLE)
+    ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 
   if (cinfo->global_state != CSTATE_SCANNING)
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
@@ -106,11 +117,17 @@ jpeg_write_scanlines(j_compress_ptr cinfo, JSAMPARRAY scanlines,
     num_lines = rows_left;
 
   row_ctr = 0;
-  (*cinfo->main->process_data) (cinfo, scanlines, &row_ctr, num_lines);
+  (*cinfo->main->_process_data) (cinfo, scanlines, &row_ctr, num_lines);
   cinfo->next_scanline += row_ctr;
   return row_ctr;
+#else
+  ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+  return 0;
+#endif
 }
 
+
+#if BITS_IN_JSAMPLE != 16
 
 
 
@@ -118,10 +135,16 @@ jpeg_write_scanlines(j_compress_ptr cinfo, JSAMPARRAY scanlines,
 
 
 GLOBAL(JDIMENSION)
-jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
-                    JDIMENSION num_lines)
+_jpeg_write_raw_data(j_compress_ptr cinfo, _JSAMPIMAGE data,
+                     JDIMENSION num_lines)
 {
   JDIMENSION lines_per_iMCU_row;
+
+  if (cinfo->data_precision != BITS_IN_JSAMPLE)
+    ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+
+  if (cinfo->master->lossless)
+    ERREXIT(cinfo, JERR_NOTIMPL);
 
   if (cinfo->global_state != CSTATE_RAW_OK)
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
@@ -151,7 +174,7 @@ jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
     ERREXIT(cinfo, JERR_BUFFER_SIZE);
 
   
-  if (!(*cinfo->coef->compress_data) (cinfo, data)) {
+  if (!(*cinfo->coef->_compress_data) (cinfo, data)) {
     
     return 0;
   }
@@ -160,3 +183,5 @@ jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
   cinfo->next_scanline += lines_per_iMCU_row;
   return lines_per_iMCU_row;
 }
+
+#endif 
