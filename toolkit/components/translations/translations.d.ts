@@ -279,7 +279,7 @@ export type SelectTranslationsPanelState =
 
   
   
-  | { phase: "init-failure"; event: Event, screenX: number, screenY: number, sourceText: string, langPairPromise: Promise<{fromLang?: string, toLang?: string}> }
+  | { phase: "init-failure"; event: Event, screenX: number, screenY: number, sourceText: string, isTextSelected: boolean, langPairPromise: Promise<{fromLang?: string, toLang?: string}> }
 
   
   | { phase: "translation-failure"; fromLanguage: string; toLanguage: string, sourceText: string, }

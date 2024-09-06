@@ -523,11 +523,13 @@ var SelectTranslationsPanel = new (class {
 
 
 
+
   async open(
     event,
     screenX,
     screenY,
     sourceText,
+    isTextSelected,
     langPairPromise,
     maintainFlow = false
   ) {
@@ -537,6 +539,7 @@ var SelectTranslationsPanel = new (class {
         screenX,
         screenY,
         sourceText,
+        isTextSelected,
         langPairPromise
       );
       return;
@@ -545,13 +548,16 @@ var SelectTranslationsPanel = new (class {
     const { fromLanguage, toLanguage } = await langPairPromise;
     const { docLangTag, topPreferredLanguage } = this.#getLanguageInfo();
 
-    TranslationsParent.telemetry().selectTranslationsPanel().onOpen({
-      maintainFlow,
-      docLangTag,
-      fromLanguage,
-      toLanguage,
-      topPreferredLanguage,
-    });
+    TranslationsParent.telemetry()
+      .selectTranslationsPanel()
+      .onOpen({
+        maintainFlow,
+        docLangTag,
+        fromLanguage,
+        toLanguage,
+        topPreferredLanguage,
+        textSource: isTextSelected ? "selection" : "hyperlink",
+      });
 
     try {
       this.#sourceTextWordCount = undefined;
@@ -572,6 +578,7 @@ var SelectTranslationsPanel = new (class {
         screenX,
         screenY,
         sourceText,
+        isTextSelected,
         langPairPromise
       );
     }
@@ -593,11 +600,26 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  async #forceReopen(event, screenX, screenY, sourceText, langPairPromise) {
+
+  async #forceReopen(
+    event,
+    screenX,
+    screenY,
+    sourceText,
+    isTextSelected,
+    langPairPromise
+  ) {
     this.console?.warn("The SelectTranslationsPanel was forced to reopen.");
     this.close();
     this.#changeStateToClosed();
-    await this.open(event, screenX, screenY, sourceText, langPairPromise);
+    await this.open(
+      event,
+      screenX,
+      screenY,
+      sourceText,
+      isTextSelected,
+      langPairPromise
+    );
   }
 
   
@@ -1283,8 +1305,14 @@ var SelectTranslationsPanel = new (class {
         
         
         const { panel } = this.elements;
-        const { event, screenX, screenY, sourceText, langPairPromise } =
-          this.#translationState;
+        const {
+          event,
+          screenX,
+          screenY,
+          sourceText,
+          isTextSelected,
+          langPairPromise,
+        } = this.#translationState;
 
         panel.addEventListener(
           "popuphidden",
@@ -1294,6 +1322,7 @@ var SelectTranslationsPanel = new (class {
               screenX,
               screenY,
               sourceText,
+              isTextSelected,
               langPairPromise,
                true
             ),
@@ -1560,11 +1589,19 @@ var SelectTranslationsPanel = new (class {
   
 
 
+
+
+
+
+
+
+
   #changeStateToInitFailure(
     event,
     screenX,
     screenY,
     sourceText,
+    isTextSelected,
     langPairPromise
   ) {
     this.#changeStateTo("init-failure", /* retainEntries */ true, {
@@ -1572,6 +1609,7 @@ var SelectTranslationsPanel = new (class {
       screenX,
       screenY,
       sourceText,
+      isTextSelected,
       langPairPromise,
     });
   }
