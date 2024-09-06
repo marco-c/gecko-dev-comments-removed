@@ -57,6 +57,10 @@ absl::optional<int> ParseSdpForVPxMaxFrameRate(const CodecParameterMap& params);
 
 absl::optional<int> ParseSdpForVPxMaxFrameSize(const CodecParameterMap& params);
 
+
+
+bool SupportsPerLayerPictureLossIndication(const CodecParameterMap& params);
+
 }  
 
 #endif  

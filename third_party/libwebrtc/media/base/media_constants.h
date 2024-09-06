@@ -64,6 +64,7 @@ extern const char kCodecParamUseInbandFec[];
 extern const char kCodecParamUseDtx[];
 extern const char kCodecParamMaxAverageBitrate[];
 extern const char kCodecParamMaxPlaybackRate[];
+extern const char kCodecParamPerLayerPictureLossIndication[];
 
 extern const char kParamValueTrue[];
 

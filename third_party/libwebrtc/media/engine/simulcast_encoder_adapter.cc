@@ -30,6 +30,7 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "api/video_codecs/video_encoder_software_fallback_wrapper.h"
 #include "media/base/media_constants.h"
+#include "media/base/sdp_video_format_utils.h"
 #include "media/base/video_common.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/include/video_error_codes_utils.h"
@@ -269,7 +270,8 @@ SimulcastEncoderAdapter::SimulcastEncoderAdapter(
           RateControlSettings::ParseFromKeyValueConfig(&field_trials)
               .Vp8BoostBaseLayerQuality()),
       prefer_temporal_support_on_base_layer_(field_trials.IsEnabled(
-          "WebRTC-Video-PreferTemporalSupportOnBaseLayer")) {
+          "WebRTC-Video-PreferTemporalSupportOnBaseLayer")),
+      per_layer_pli_(SupportsPerLayerPictureLossIndication(format.parameters)) {
   RTC_DCHECK(primary_factory);
 
   
@@ -358,9 +360,12 @@ int SimulcastEncoderAdapter::InitEncode(
   
   
   
+  
+  
+  
   bool separate_encoders_needed =
       !encoder_context->encoder().GetEncoderInfo().supports_simulcast ||
-      active_streams_count == 1;
+      active_streams_count == 1 || per_layer_pli_;
   RTC_LOG(LS_INFO) << "[SEA] InitEncode: total_streams_count: "
                    << total_streams_count_
                    << ", active_streams_count: " << active_streams_count
