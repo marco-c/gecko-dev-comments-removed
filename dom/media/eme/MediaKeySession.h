@@ -141,6 +141,9 @@ class MediaKeySession final : public DOMEventTargetHelper,
 
   
   bool mHardwareDecryption;
+
+  
+  const bool mIsPrivateBrowsing;
 };
 
 }  

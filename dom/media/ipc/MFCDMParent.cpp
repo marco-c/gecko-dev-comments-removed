@@ -774,6 +774,12 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
     return;
   }
 
+  
+  
+  if (aFlags.contains(CapabilitesFlag::IsPrivateBrowsing)) {
+    return;
+  }
+
   ComPtr<IMFContentDecryptionModuleFactory> factory = aFactory;
   if (!factory) {
     RETURN_VOID_IF_FAILED(GetOrCreateFactory(aKeySystem, factory));
@@ -1004,6 +1010,9 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
   }
   if (RequireClearLead(aRequest.keySystem())) {
     flags += CapabilitesFlag::NeedClearLeadCheck;
+  }
+  if (aRequest.isPrivateBrowsing()) {
+    flags += CapabilitesFlag::IsPrivateBrowsing;
   }
   GetCapabilities(aRequest.keySystem(), flags, mFactory.Get(), capabilities);
   aResolver(std::move(capabilities));
