@@ -1489,14 +1489,7 @@ CanvasTranslator::LookupSourceSurfaceFromSurfaceDescriptor(
     auto& usedSurf = mUsedDataSurfaceForSurfaceDescriptor;
     auto& usedDescriptor = mUsedSurfaceDescriptorForSurfaceDescriptor;
 
-    if (usedDescriptor.isSome() && usedDescriptor.ref() == sdrd) {
-      MOZ_ASSERT(usedSurf);
-      MOZ_ASSERT(texture->GetSize() == usedSurf->GetSize());
-
-      
-      
-      return do_AddRef(usedSurf);
-    }
+    
 
     usedSurf = textureHostD3D11->GetAsSurfaceWithDevice(mDevice);
     if (!usedSurf) {
