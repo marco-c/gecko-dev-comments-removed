@@ -85,10 +85,6 @@ struct Error {
 
   
   
-  
-  
-  
-  
   class Location {
     uint32_t value;
     constexpr explicit Location(uint32_t value) : value(value) {}
@@ -153,10 +149,12 @@ struct Error {
       return value < VALID_STRINGS_COUNT ? VALID_STRINGS[value]
                                          : "<bad filedialog::Error::Location?>";
     }
-    constexpr static Location FromString(std::string_view str) {
+    constexpr static Location FromString(StaticString str) {
+      std::string_view val(str.get());
       for (uint32_t i = 0; i < VALID_STRINGS_COUNT; ++i) {
-        if (str == VALID_STRINGS[i]) return Location{i};
+        if (val == VALID_STRINGS[i]) return Location{i};
       }
+      
       return npos();
     }
 
