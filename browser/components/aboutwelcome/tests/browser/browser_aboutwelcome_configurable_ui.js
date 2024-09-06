@@ -790,3 +790,27 @@ add_task(async function test_aboutwelcome_reverse_dismiss() {
   doExperimentCleanup();
   browser.closeBrowser();
 });
+
+
+
+
+add_task(async function test_aboutwelcome_fullscreen_property() {
+  let screens = [makeTestContent(`TEST_FULLSCREEN`, { fullscreen: true })];
+
+  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+    featureId: "aboutwelcome",
+    value: { enabled: true, screens },
+  });
+
+  let browser = await openAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "render screen with 'fullscreen' attribute",
+    
+    ["main.TEST_FULLSCREEN[fullscreen]"]
+  );
+
+  doExperimentCleanup();
+  browser.closeBrowser();
+});
