@@ -44,6 +44,14 @@ class GPUChild final : public ipc::CrashReporterHelper<GeckoProcessType_GPU>,
   void OnUnexpectedShutdown();
 
   
+  
+  void GeneratePairedMinidump();
+
+  
+  
+  void DeletePairedMinidump();
+
+  
   void OnVarChanged(const GfxVarUpdate& aVar) override;
 
   
@@ -100,6 +108,13 @@ class GPUChild final : public ipc::CrashReporterHelper<GeckoProcessType_GPU>,
   bool mGPUReady;
   bool mWaitForVarUpdate = false;
   bool mUnexpectedShutdown = false;
+  
+  
+  bool mCreatedPairedMinidumps = false;
+  
+  
+  
+  int mNumPairedMinidumpsCreated = 0;
 };
 
 }  

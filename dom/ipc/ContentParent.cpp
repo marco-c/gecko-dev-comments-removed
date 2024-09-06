@@ -4513,7 +4513,7 @@ void ContentParent::GeneratePairedMinidump(const char* aReason) {
         CrashReporter::Annotation::ipc_channel_error, reason);
 
     
-    if (mCrashReporter->GenerateMinidumpAndPair(this, "browser"_ns)) {
+    if (mCrashReporter->GenerateMinidumpAndPair(mSubprocess, "browser"_ns)) {
       mCrashReporter->FinalizeCrashReport();
       mCreatedPairedMinidumps = true;
     }
