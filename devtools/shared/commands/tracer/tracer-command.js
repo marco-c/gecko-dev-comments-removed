@@ -4,15 +4,23 @@
 
 "use strict";
 
-class TracerCommand {
+const EventEmitter = require("resource://devtools/shared/event-emitter.js");
+
+class TracerCommand extends EventEmitter {
   constructor({ commands }) {
+    super();
     this.#targetConfigurationCommand = commands.targetConfigurationCommand;
     this.#resourceCommand = commands.resourceCommand;
   }
 
+  
+  
+  isTracingEnabled = false;
+  
+  isTracingActive = false;
+
   #resourceCommand;
   #targetConfigurationCommand;
-  #isTracing = false;
 
   async initialize() {
     return this.#resourceCommand.watchResources(
@@ -20,6 +28,7 @@ class TracerCommand {
       { onAvailable: this.onResourcesAvailable }
     );
   }
+
   destroy() {
     this.#resourceCommand.unwatchResources(
       [this.#resourceCommand.TYPES.JSTRACER_STATE],
@@ -32,7 +41,9 @@ class TracerCommand {
       if (resource.resourceType != this.#resourceCommand.TYPES.JSTRACER_STATE) {
         continue;
       }
-      this.#isTracing = resource.enabled;
+      this.isTracingActive = resource.enabled;
+      
+      this.isTracingEnabled = resource.enabled;
 
       
       
@@ -40,6 +51,8 @@ class TracerCommand {
       if (resource.enabled) {
         resource.targetFront.getJsTracerCollectedFramesArray().length = 0;
       }
+
+      this.emit("toggle");
     }
   };
 
@@ -50,7 +63,7 @@ class TracerCommand {
 
 
 
-  #getTracingOptions() {
+  getTracingOptions() {
     return {
       logMethod: Services.prefs.getStringPref(
         "devtools.debugger.javascript-tracing-log-method",
@@ -79,10 +92,15 @@ class TracerCommand {
 
 
   async toggle() {
-    this.#isTracing = !this.#isTracing;
+    this.isTracingEnabled = !this.isTracingEnabled;
+
+    
+    await this.emitAsync("toggle");
 
     await this.#targetConfigurationCommand.updateConfiguration({
-      tracerOptions: this.#isTracing ? this.#getTracingOptions() : undefined,
+      tracerOptions: this.isTracingEnabled
+        ? this.getTracingOptions()
+        : undefined,
     });
   }
 }
