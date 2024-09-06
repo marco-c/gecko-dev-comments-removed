@@ -272,13 +272,10 @@ static void ConvertYCbCrToRGB(const layers::PlanarYCbCrData& aData,
                       aData.mColorRange);
 }
 
-void
-ConvertYCbCrToRGBInternal(const layers::PlanarYCbCrData& aData,
-                          const SurfaceFormat& aDestFormat,
-                          const IntSize& aDestSize,
-                          unsigned char* aDestBuffer,
-                          int32_t aStride)
-{
+void ConvertYCbCrToRGB(const layers::PlanarYCbCrData& aData,
+                       const SurfaceFormat& aDestFormat,
+                       const IntSize& aDestSize, unsigned char* aDestBuffer,
+                       int32_t aStride) {
   
   
   YUVType yuvtype = GetYUVType(aData);
@@ -293,14 +290,7 @@ ConvertYCbCrToRGBInternal(const layers::PlanarYCbCrData& aData,
   } else { 
     ConvertYCbCrToRGB(srcData, aDestFormat, aDestBuffer, aStride, yuvtype);
   }
-}
 
-void ConvertYCbCrToRGB(const layers::PlanarYCbCrData& aData,
-                       const SurfaceFormat& aDestFormat,
-                       const IntSize& aDestSize, unsigned char* aDestBuffer,
-                       int32_t aStride) {
-  ConvertYCbCrToRGBInternal(aData, aDestFormat, aDestSize, aDestBuffer,
-                            aStride);
 #if MOZ_BIG_ENDIAN()
   
   if (aDestFormat != SurfaceFormat::R5G6B5_UINT16) {
