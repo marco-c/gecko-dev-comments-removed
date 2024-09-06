@@ -61,7 +61,7 @@ struct BuiltInNetworkBehaviorConfig {
   
   int link_capacity_kbps = 0;
   
-  int loss_percent = 0;
+  double loss_percent = 0.;
   
   bool allow_reordering = false;
   
