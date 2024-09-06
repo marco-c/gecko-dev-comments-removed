@@ -1,9 +1,9 @@
-#!/usr/bin/env python
-# jsonxpt.py - Generate json XPT typelib files from IDL.
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
+
 
 """Generate a json XPT typelib for an IDL file"""
 
@@ -12,9 +12,9 @@ import json
 
 from xpidl import xpidl
 
-# A map of xpidl.py types to xpt enum variants
+
 TypeMap = {
-    # builtins
+    
     "boolean": "TD_BOOL",
     "void": "TD_VOID",
     "int8_t": "TD_INT8",
@@ -33,7 +33,7 @@ TypeMap = {
     "wchar": "TD_WCHAR",
     "wstring": "TD_PWSTRING",
     "char16_t": "TD_UINT16",
-    # special types
+    
     "nsid": "TD_NSID",
     "astring": "TD_ASTRING",
     "utf8string": "TD_UTF8STRING",
@@ -47,7 +47,7 @@ def flags(*flags):
     return [flag for flag, cond in flags if cond]
 
 
-def get_type(type, calltype, iid_is=None, size_is=None):
+def get_type(type, calltype, iid_is=None, size_is=None, needs_scriptable=None):
     while isinstance(type, xpidl.Typedef):
         type = type.realtype
 
@@ -59,23 +59,25 @@ def get_type(type, calltype, iid_is=None, size_is=None):
         return ret
 
     if isinstance(type, xpidl.Array):
-        # NB: For a Array<T> we pass down the iid_is to get the type of T.
-        #     This allows Arrays of InterfaceIs types to work.
+        
+        
         return {
             "tag": "TD_ARRAY",
-            "element": get_type(type.type, calltype, iid_is),
+            "element": get_type(type.type, calltype, iid_is, None, needs_scriptable),
         }
 
     if isinstance(type, xpidl.LegacyArray):
-        # NB: For a Legacy [array] T we pass down iid_is to get the type of T.
-        #     This allows [array] of InterfaceIs types to work.
+        
+        
         return {
             "tag": "TD_LEGACY_ARRAY",
             "size_is": size_is,
-            "element": get_type(type.type, calltype, iid_is),
+            "element": get_type(type.type, calltype, iid_is, None, needs_scriptable),
         }
 
     if isinstance(type, xpidl.Interface) or isinstance(type, xpidl.Forward):
+        if isinstance(needs_scriptable, set):
+            needs_scriptable.add(type.name)
         return {
             "tag": "TD_INTERFACE_TYPE",
             "name": type.name,
@@ -103,7 +105,7 @@ def get_type(type, calltype, iid_is=None, size_is=None):
             return {"tag": "TD_VOID"}
 
     if isinstance(type, xpidl.CEnum):
-        # As far as XPConnect is concerned, cenums are just unsigned integers.
+        
         return {"tag": "TD_UINT%d" % type.width}
 
     raise Exception("Unknown type!")
@@ -123,11 +125,11 @@ def mk_param(type, in_=0, out=0, optional=0):
 def mk_method(method, params, getter=0, setter=0, optargc=0, hasretval=0, symbol=0):
     return {
         "name": method.name,
-        # NOTE: We don't include any return value information here, as we'll
-        # never call the methods if they're marked notxpcom, and all xpcom
-        # methods return the same type (nsresult).
-        # XXX: If we ever use these files for other purposes than xptcodegen we
-        # may want to write that info.
+        
+        
+        
+        
+        
         "params": params,
         "flags": flags(
             ("getter", getter),
@@ -159,16 +161,19 @@ def build_interface(iface):
         iface.attributes.scriptable
     ), "Don't generate XPT info for non-scriptable interfaces"
 
-    # State used while building an interface
+    
     consts = []
     methods = []
+
+    
+    needs_scriptable = set()
 
     def build_const(c):
         consts.append(
             {
                 "name": c.name,
                 "type": get_type(c.basetype, ""),
-                "value": c.getValue(),  # All of our consts are numbers
+                "value": c.getValue(),  
             }
         )
 
@@ -182,7 +187,7 @@ def build_interface(iface):
                 }
             )
 
-    def build_method(m):
+    def build_method(m, needs_scriptable=None):
         params = []
         for p in m.params:
             params.append(
@@ -192,6 +197,7 @@ def build_interface(iface):
                         p.paramtype,
                         iid_is=attr_param_idx(p, m, "iid_is"),
                         size_is=attr_param_idx(p, m, "size_is"),
+                        needs_scriptable=needs_scriptable,
                     ),
                     in_=p.paramtype.count("in"),
                     out=p.paramtype.count("out"),
@@ -202,33 +208,36 @@ def build_interface(iface):
         hasretval = len(m.params) > 0 and m.params[-1].retval
         if not m.notxpcom and m.realtype.name != "void":
             hasretval = True
-            params.append(mk_param(get_type(m.realtype, "out"), out=1))
+            type = get_type(m.realtype, "out", needs_scriptable=needs_scriptable)
+            params.append(mk_param(type, out=1))
 
         methods.append(
             mk_method(m, params, optargc=m.optional_argc, hasretval=hasretval)
         )
 
-    def build_attr(a):
+    def build_attr(a, needs_scriptable=None):
         assert a.realtype.name != "void"
-        # Write the getter
+
+        
         getter_params = []
         if not a.notxpcom:
-            getter_params.append(mk_param(get_type(a.realtype, "out"), out=1))
+            type = get_type(a.realtype, "out", needs_scriptable=needs_scriptable)
+            getter_params.append(mk_param(type, out=1))
 
         methods.append(mk_method(a, getter_params, getter=1, hasretval=1))
 
-        # And maybe the setter
+        
         if not a.readonly:
-            param = mk_param(get_type(a.realtype, "in"), in_=1)
-            methods.append(mk_method(a, [param], setter=1))
+            type = get_type(a.realtype, "in", needs_scriptable=needs_scriptable)
+            methods.append(mk_method(a, [mk_param(type, in_=1)], setter=1))
 
     for member in iface.members:
         if isinstance(member, xpidl.ConstMember):
             build_const(member)
         elif isinstance(member, xpidl.Attribute):
-            build_attr(member)
+            build_attr(member, member.isScriptable() and needs_scriptable)
         elif isinstance(member, xpidl.Method):
-            build_method(member)
+            build_method(member, member.isScriptable() and needs_scriptable)
         elif isinstance(member, xpidl.CEnum):
             build_cenum(member)
         elif isinstance(member, xpidl.CDATA):
@@ -236,12 +245,24 @@ def build_interface(iface):
         else:
             raise Exception("Unexpected interface member: %s" % member)
 
+    for ref in set(needs_scriptable):
+        p = iface.idl.getName(xpidl.TypeId(ref), None)
+        if isinstance(p, xpidl.Interface):
+            needs_scriptable.remove(ref)
+            if not p.attributes.scriptable:
+                raise Exception(
+                    f"Scriptable member in {iface.name} references non-scriptable {ref}. "
+                    "The interface must be marked as [scriptable], "
+                    "or the referencing member with [noscript]."
+                )
+
     return {
         "name": iface.name,
         "uuid": iface.attributes.uuid,
         "methods": methods,
         "consts": consts,
         "parent": iface.base,
+        "needs_scriptable": sorted(needs_scriptable),
         "flags": flags(
             ("function", iface.attributes.function),
             ("builtinclass", iface.attributes.builtinclass),
@@ -250,9 +271,9 @@ def build_interface(iface):
     }
 
 
-# These functions are the public interface of this module. They are very simple
-# functions, but are exported so that if we need to do something more
-# complex in them in the future we can.
+
+
+
 
 
 def build_typelib(idl):

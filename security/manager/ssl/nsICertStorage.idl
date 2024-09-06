@@ -174,7 +174,7 @@ interface nsICertStorage : nsISupports {
 
 
 
-  [must_use]
+  [must_use, noscript]
   short getCRLiteRevocationState(in Array<octet> issuer,
                                  in Array<octet> issuerSPKI,
                                  in Array<octet> serialNumber,
@@ -203,7 +203,7 @@ interface nsICertStorage : nsISupports {
 
 
 
-  [must_use]
+  [must_use, noscript]
   boolean isCertRevokedByStash(in Array<octet> issuerSPKI, in Array<octet> serialNumber);
 
   

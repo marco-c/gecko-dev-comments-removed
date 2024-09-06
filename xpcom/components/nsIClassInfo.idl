@@ -28,7 +28,7 @@ interface nsIClassInfo : nsISupports
 
 
 
-    nsIXPCScriptable getScriptableHelper();
+    [noscript] nsIXPCScriptable getScriptableHelper();
 
     
 
