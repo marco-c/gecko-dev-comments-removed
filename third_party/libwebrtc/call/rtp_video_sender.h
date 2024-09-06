@@ -196,6 +196,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   
   
   int64_t shared_frame_id_ = 0;
+  const bool independent_frame_ids_;
   std::vector<RtpPayloadParams> params_ RTC_GUARDED_BY(mutex_);
 
   size_t transport_overhead_bytes_per_packet_ RTC_GUARDED_BY(mutex_);
