@@ -2015,31 +2015,6 @@ static bool ZonedDateTime_nanosecond(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static bool ZonedDateTime_epochSeconds(JSContext* cx, const CallArgs& args) {
-  auto* zonedDateTime = &args.thisv().toObject().as<ZonedDateTimeObject>();
-
-  
-  auto instant = ToInstant(zonedDateTime);
-
-  
-  args.rval().setNumber(instant.seconds);
-  return true;
-}
-
-
-
-
-static bool ZonedDateTime_epochSeconds(JSContext* cx, unsigned argc,
-                                       Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsZonedDateTime, ZonedDateTime_epochSeconds>(
-      cx, args);
-}
-
-
-
-
 static bool ZonedDateTime_epochMilliseconds(JSContext* cx,
                                             const CallArgs& args) {
   auto* zonedDateTime = &args.thisv().toObject().as<ZonedDateTimeObject>();
@@ -2060,39 +2035,6 @@ static bool ZonedDateTime_epochMilliseconds(JSContext* cx, unsigned argc,
   
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsZonedDateTime, ZonedDateTime_epochMilliseconds>(
-      cx, args);
-}
-
-
-
-
-static bool ZonedDateTime_epochMicroseconds(JSContext* cx,
-                                            const CallArgs& args) {
-  auto* zonedDateTime = &args.thisv().toObject().as<ZonedDateTimeObject>();
-
-  
-  auto instant = ToInstant(zonedDateTime);
-
-  
-  auto* microseconds =
-      BigInt::createFromInt64(cx, instant.floorToMicroseconds());
-  if (!microseconds) {
-    return false;
-  }
-
-  
-  args.rval().setBigInt(microseconds);
-  return true;
-}
-
-
-
-
-static bool ZonedDateTime_epochMicroseconds(JSContext* cx, unsigned argc,
-                                            Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsZonedDateTime, ZonedDateTime_epochMicroseconds>(
       cx, args);
 }
 
@@ -3940,9 +3882,7 @@ static const JSPropertySpec ZonedDateTime_prototype_properties[] = {
     JS_PSG("millisecond", ZonedDateTime_millisecond, 0),
     JS_PSG("microsecond", ZonedDateTime_microsecond, 0),
     JS_PSG("nanosecond", ZonedDateTime_nanosecond, 0),
-    JS_PSG("epochSeconds", ZonedDateTime_epochSeconds, 0),
     JS_PSG("epochMilliseconds", ZonedDateTime_epochMilliseconds, 0),
-    JS_PSG("epochMicroseconds", ZonedDateTime_epochMicroseconds, 0),
     JS_PSG("epochNanoseconds", ZonedDateTime_epochNanoseconds, 0),
     JS_PSG("dayOfWeek", ZonedDateTime_dayOfWeek, 0),
     JS_PSG("dayOfYear", ZonedDateTime_dayOfYear, 0),
