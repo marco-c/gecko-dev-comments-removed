@@ -1254,17 +1254,6 @@ void NegotiateRtpHeaderExtensions(const RtpHeaderExtensions& local_extensions,
                                   const RtpHeaderExtensions& offered_extensions,
                                   webrtc::RtpExtension::Filter filter,
                                   RtpHeaderExtensions* negotiated_extensions) {
-  
-  
-  
-  
-  
-  
-  const webrtc::RtpExtension* transport_sequence_number_v2_offer =
-      FindHeaderExtensionByUriDiscardUnsupported(
-          offered_extensions,
-          webrtc::RtpExtension::kTransportSequenceNumberV2Uri, filter);
-
   bool frame_descriptor_in_local = false;
   bool dependency_descriptor_in_local = false;
   bool abs_capture_time_in_local = false;
@@ -1276,27 +1265,14 @@ void NegotiateRtpHeaderExtensions(const RtpHeaderExtensions& local_extensions,
       dependency_descriptor_in_local = true;
     else if (ours.uri == webrtc::RtpExtension::kAbsoluteCaptureTimeUri)
       abs_capture_time_in_local = true;
+
     const webrtc::RtpExtension* theirs =
         FindHeaderExtensionByUriDiscardUnsupported(offered_extensions, ours.uri,
                                                    filter);
     if (theirs) {
-      if (transport_sequence_number_v2_offer &&
-          ours.uri == webrtc::RtpExtension::kTransportSequenceNumberUri) {
-        
-        
-        
-        
-        continue;
-      } else {
-        
-        negotiated_extensions->push_back(*theirs);
-      }
+      
+      negotiated_extensions->push_back(*theirs);
     }
-  }
-
-  if (transport_sequence_number_v2_offer) {
-    
-    negotiated_extensions->push_back(*transport_sequence_number_v2_offer);
   }
 
   

@@ -1733,27 +1733,69 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestOfferAnswerWithRtpExtensions) {
 
 
 
-
 TEST_F(MediaSessionDescriptionFactoryTest,
-       TestOfferAnswerWithTransportSequenceNumberInOffer) {
+       TestOfferAnswerWithTransportSequenceNumberV1LocalAndV1InOffer) {
   TestTransportSequenceNumberNegotiation(
       MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),   
       MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),   
       MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01));  
 }
 TEST_F(MediaSessionDescriptionFactoryTest,
-       TestOfferAnswerWithTransportSequenceNumber01And02InOffer) {
+       TestOfferAnswerWithTransportSequenceNumberV1LocalAndV1V2InOffer) {
   TestTransportSequenceNumberNegotiation(
       MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),       
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01And02),  
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01));  
+}
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumberV1LocalAndV2InOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),  
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02),  
+      {});                                                  
+}
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumberV2LocalAndV1InOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02),  
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),  
+      {});                                                  
+}
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumberV2LocalAndV1V2InOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02),       
       MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01And02),  
       MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02));  
 }
 TEST_F(MediaSessionDescriptionFactoryTest,
-       TestOfferAnswerWithTransportSequenceNumber02InOffer) {
+       TestOfferAnswerWithTransportSequenceNumberV2LocalAndV2InOffer) {
   TestTransportSequenceNumberNegotiation(
-      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),   
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02),   
       MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02),   
       MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02));  
+}
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumberV1V2LocalAndV1InOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01And02),  
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),       
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01));  
+}
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumberV1V2LocalAndV2InOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01And02),  
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02),       
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02));  
+}
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumberV1V2LocalAndV1V2InOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01And02),  
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01And02),  
+      MAKE_VECTOR(
+          kRtpExtensionTransportSequenceNumber01And02));  
 }
 
 TEST_F(MediaSessionDescriptionFactoryTest,
