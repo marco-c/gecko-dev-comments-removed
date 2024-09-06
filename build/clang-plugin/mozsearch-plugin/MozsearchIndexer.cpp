@@ -138,6 +138,14 @@ struct RAIITracer {
 
 class IndexConsumer;
 
+bool isPure(FunctionDecl* D) {
+#if CLANG_VERSION_MAJOR >= 18
+  return D->isPureVirtual();
+#else
+  return D->isPure();
+#endif
+}
+
 
 
 
@@ -1749,7 +1757,7 @@ public:
         D = D2->getTemplateInstantiationPattern();
       }
       
-      Kind = (D2->isThisDeclarationADefinition() || D2->isPure()) ? "def" : "decl";
+      Kind = (D2->isThisDeclarationADefinition() || isPure(D2)) ? "def" : "decl";
       PrettyKind = "function";
       PeekRange = getFunctionPeekRange(D2);
 
@@ -1881,7 +1889,7 @@ public:
       }
     }
     if (FunctionDecl *D2 = dyn_cast<FunctionDecl>(D)) {
-      if ((D2->isThisDeclarationADefinition() || D2->isPure()) &&
+      if ((D2->isThisDeclarationADefinition() || isPure(D2)) &&
           
           
           !D2->isTemplateInstantiation() &&
