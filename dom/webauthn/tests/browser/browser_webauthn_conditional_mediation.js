@@ -46,7 +46,9 @@ add_task(async function test_webauthn_modal_request_cancels_conditional_get() {
   ok(active, "conditional request should still be active");
 
   let promptPromise = promiseNotification("webauthn-prompt-register-direct");
-  let modalPromise = promiseWebAuthnMakeCredential(tab, "direct");
+  let modalPromise = promiseWebAuthnMakeCredential(tab, "direct")
+    .then(arrivingHereIsBad)
+    .catch(gExpectNotAllowedError);
 
   await condPromise;
 
