@@ -961,7 +961,32 @@ child:
 
 
 
-    async Print(MaybeDiscardedBrowsingContext aBC, PrintData aPrintData);
+
+
+
+
+    async Print(MaybeDiscardedBrowsingContext aBC, PrintData aPrintData, bool aReturnStaticClone) returns(MaybeDiscardedBrowsingContext staticCloneBrowsingContext);
+
+    
+
+
+
+
+
+
+
+
+    async PrintClonedPage(MaybeDiscardedBrowsingContext aBC, PrintData aPrintData, MaybeDiscardedBrowsingContext aStaticCloneBrowsingContext);
+
+    
+
+
+
+
+
+
+
+    async DestroyPrintClone(MaybeDiscardedBrowsingContext aStaticCloneBrowsingContext);
 
     
 

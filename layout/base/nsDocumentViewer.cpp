@@ -449,6 +449,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
 #ifdef NS_PRINTING
   unsigned mClosingWhilePrinting : 1;
+  unsigned mCloseWindowAfterPrint : 1;
 
 #  if NS_PRINT_PREVIEW
   RefPtr<nsPrintJob> mPrintJob;
@@ -520,6 +521,7 @@ nsDocumentViewer::nsDocumentViewer()
       mInPermitUnloadPrompt(false),
 #ifdef NS_PRINTING
       mClosingWhilePrinting(false),
+      mCloseWindowAfterPrint(false),
 #endif  
       mReloadEncodingSource(kCharsetUninitialized),
       mReloadEncoding(nullptr),
@@ -3140,6 +3142,20 @@ nsDocumentViewer::GetDoingPrintPreview(bool* aDoingPrintPreview) {
 }
 
 NS_IMETHODIMP
+nsDocumentViewer::GetCloseWindowAfterPrint(bool* aCloseWindowAfterPrint) {
+  NS_ENSURE_ARG_POINTER(aCloseWindowAfterPrint);
+
+  *aCloseWindowAfterPrint = mCloseWindowAfterPrint;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocumentViewer::SetCloseWindowAfterPrint(bool aCloseWindowAfterPrint) {
+  mCloseWindowAfterPrint = aCloseWindowAfterPrint;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsDocumentViewer::ExitPrintPreview() {
   NS_ENSURE_TRUE(mPrintJob, NS_ERROR_FAILURE);
 
@@ -3309,7 +3325,9 @@ void nsDocumentViewer::OnDonePrinting() {
     
     
     
-    if (!printJob->CreatedForPrintPreview()) {
+    
+    bool closeWindowAfterPrint = GetCloseWindowAfterPrint();
+    if (closeWindowAfterPrint) {
       if (mContainer) {
         if (nsCOMPtr<nsPIDOMWindowOuter> win = mContainer->GetWindow()) {
           win->Close();

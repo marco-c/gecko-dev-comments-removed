@@ -3752,7 +3752,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowInner::PrintPreview(
         nullptr, aListener, aDocShellToCloneInto,
        nsGlobalWindowOuter::IsPreview::Yes,
        nsGlobalWindowOuter::IsForWindowDotPrint::No,
-        nullptr, aError),
+        nullptr, nullptr, aError),
       aError, nullptr);
 }
 
