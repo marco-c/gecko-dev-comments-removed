@@ -1045,10 +1045,16 @@ void AudioInputProcessing::EnsureAudioProcessing(AudioProcessingTrack* aTrack) {
   
   
   
-  bool haveAECAndDrift =
-      mSettings.mAecOn &&
-      (graph->OutputForAECMightDrift() ||
-       aTrack->GetDeviceInputTrackGraphThread()->AsNonNativeInputTrack());
+  bool haveAECAndDrift = mSettings.mAecOn;
+  if (haveAECAndDrift) {
+    if (mSettings.mExpectDrift < 0) {
+      haveAECAndDrift =
+          graph->OutputForAECMightDrift() ||
+          aTrack->GetDeviceInputTrackGraphThread()->AsNonNativeInputTrack();
+    } else {
+      haveAECAndDrift = mSettings.mExpectDrift > 0;
+    }
+  }
   if (!mAudioProcessing || haveAECAndDrift != mHadAECAndDrift) {
     TRACE("AudioProcessing creation");
     LOG("Track %p AudioInputProcessing %p creating AudioProcessing. "
