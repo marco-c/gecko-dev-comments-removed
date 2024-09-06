@@ -1736,6 +1736,8 @@ pref("browser.newtabpage.activity-stream.weather.display", "simple");
   pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "");
 #endif
 
+pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "en-US,en-GB,en-CA");
+
 
 #ifdef NIGHTLY_BUILD
   pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
