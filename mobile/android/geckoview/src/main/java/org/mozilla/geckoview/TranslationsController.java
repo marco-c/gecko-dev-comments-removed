@@ -1096,29 +1096,6 @@ public class TranslationsController {
 
 
 
-      @Deprecated
-      @DeprecationSchedule(version = 130, id = "translation-state-deprecated-constructor")
-      public TranslationState(
-          final @Nullable TranslationPair requestedTranslationPair,
-          final @Nullable String error,
-          final @Nullable DetectedLanguages detectedLanguages,
-          final @NonNull Boolean isEngineReady) {
-        this.requestedTranslationPair = requestedTranslationPair;
-        this.error = error;
-        this.detectedLanguages = detectedLanguages;
-        this.isEngineReady = isEngineReady;
-        this.hasVisibleChange = false;
-      }
-
-      
-
-
-
-
-
-
-
-
       public TranslationState(
           final @Nullable TranslationPair requestedTranslationPair,
           final @Nullable String error,
