@@ -887,7 +887,6 @@ var SidebarController = {
     }
     if (this.initialized && this.currentID === commandID) {
       
-      updateAttributes(this._switcherTarget, sidebar);
       this.title = label;
       if (this.isOpen && needsRefresh) {
         this.show(commandID);
