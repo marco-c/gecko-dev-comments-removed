@@ -522,6 +522,78 @@ async function createAndMockRemoteSettings({
   };
 }
 
+
+
+
+
+
+
+
+
+class MockedA11yUtils {
+  
+
+
+
+
+  static announceCalls = [];
+
+  
+
+
+
+
+
+
+  static mockForWindow(window) {
+    const realA11yUtils = window.A11yUtils;
+    window.A11yUtils = MockedA11yUtils;
+
+    return () => {
+      
+      MockedA11yUtils.announceCalls = [];
+      window.A11yUtils = realA11yUtils;
+    };
+  }
+
+  
+
+
+
+
+  static announce({ id, raw }) {
+    MockedA11yUtils.announceCalls.push({ id, raw });
+  }
+
+  
+
+
+
+
+
+
+  static assertMostRecentAnnounceCall({ expectedCallNumber, expectedArgs }) {
+    is(
+      MockedA11yUtils.announceCalls.length,
+      expectedCallNumber,
+      "The most recent A11yUtils announce should match the expected call number."
+    );
+    const { id, raw } = MockedA11yUtils.announceCalls.at(-1);
+    const { id: expectedId, raw: expectedRaw } = expectedArgs;
+
+    is(
+      id,
+      expectedId,
+      "A11yUtils announce arg id should match the expected arg id."
+    );
+    is(
+      raw,
+      expectedRaw,
+      "A11yUtils announce arg raw should match the expected arg raw."
+    );
+  }
+}
+
 async function loadTestPage({
   languagePairs,
   autoDownloadFromRemoteSettings = false,
@@ -538,6 +610,8 @@ async function loadTestPage({
 
   let remoteClients = null;
   let removeMocks = () => {};
+
+  const restoreA11yUtils = MockedA11yUtils.mockForWindow(win);
 
   if (isFirstTimeSetup) {
     
@@ -638,6 +712,7 @@ async function loadTestPage({
       await loadBlankPage();
       await EngineProcess.destroyTranslationsEngine();
       await removeMocks();
+      restoreA11yUtils();
       Services.fog.testResetFOG();
       TranslationsParent.testAutomaticPopup = false;
       TranslationsParent.resetHostsOffered();
