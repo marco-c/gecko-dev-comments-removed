@@ -237,6 +237,13 @@ class nsAccUtils {
 
 
 
+  static void GetLiveRegionSetting(Accessible* aAcc, nsAString& aLive);
+
+  
+
+
+
+
 
   static Accessible* DocumentFor(Accessible* aAcc);
 
