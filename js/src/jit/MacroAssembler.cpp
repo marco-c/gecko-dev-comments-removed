@@ -678,8 +678,8 @@ void MacroAssembler::updateAllocSite(Register temp, Register result,
   add32(Imm32(1), Address(site, gc::AllocSite::offsetOfNurseryAllocCount()));
 
   branch32(Assembler::NotEqual,
-           Address(site, gc::AllocSite::offsetOfNurseryAllocCount()), Imm32(1),
-           &done);
+           Address(site, gc::AllocSite::offsetOfNurseryAllocCount()),
+           Imm32(js::gc::NormalSiteAttentionThreshold), &done);
 
   loadPtr(AbsoluteAddress(zone->addressOfNurseryAllocatedSites()), temp);
   storePtr(temp, Address(site, gc::AllocSite::offsetOfNextNurseryAllocated()));
@@ -7120,7 +7120,8 @@ void MacroAssembler::wasmBumpPointerAllocate(Register instance, Register result,
       Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite()),
       temp1);
   load32(Address(temp1, gc::AllocSite::offsetOfNurseryAllocCount()), temp2);
-  branch32(Assembler::Equal, temp2, Imm32(0), fail);
+  branch32(Assembler::Equal, temp2,
+           Imm32(js::gc::NormalSiteAttentionThreshold - 1), fail);
 
   
   loadPtr(Address(instance, wasm::Instance::offsetOfAddressOfNurseryPosition()),
@@ -7166,7 +7167,8 @@ void MacroAssembler::wasmBumpPointerAllocateDynamic(
   load32(Address(typeDefData, wasm::TypeDefInstanceData::offsetOfAllocSite() +
                                   gc::AllocSite::offsetOfNurseryAllocCount()),
          temp1);
-  branch32(Assembler::Equal, temp1, Imm32(0), fail);
+  branch32(Assembler::Equal, temp1,
+           Imm32(js::gc::NormalSiteAttentionThreshold - 1), fail);
 
   
   loadPtr(Address(instance, wasm::Instance::offsetOfAddressOfNurseryPosition()),

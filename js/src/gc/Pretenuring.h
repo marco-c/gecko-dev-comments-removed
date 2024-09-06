@@ -40,6 +40,13 @@ class PretenuringNursery;
 
 static constexpr size_t NurseryTraceKinds = 3;
 
+
+
+
+
+static constexpr size_t NormalSiteAttentionThreshold = 200;
+static constexpr size_t UnknownSiteAttentionThreshold = 30000;
+
 enum class CatchAllAllocSite { Unknown, Optimized };
 
 
@@ -77,6 +84,7 @@ class AllocSite {
 
   
   
+  
   AllocSite* nextNurseryAllocated = nullptr;
 
   
@@ -89,8 +97,10 @@ class AllocSite {
   uint32_t kind_ : 2;
 
   
+  
   uint32_t nurseryAllocCount = 0;
 
+  
   
   uint32_t nurseryPromotedCount : 24;
 
@@ -134,6 +144,12 @@ class AllocSite {
     MOZ_ASSERT(pcOffset <= MaxValidPCOffset);
     MOZ_ASSERT(pcOffset_ == pcOffset);
     setScript(script);
+  }
+
+  ~AllocSite() {
+    MOZ_ASSERT(!isInAllocatedList());
+    MOZ_ASSERT(nurseryAllocCount < NormalSiteAttentionThreshold);
+    MOZ_ASSERT(nurseryPromotedCount < NormalSiteAttentionThreshold);
   }
 
   void initUnknownSite(JS::Zone* zone, JS::TraceKind traceKind) {
