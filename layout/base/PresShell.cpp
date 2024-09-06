@@ -1255,12 +1255,6 @@ void PresShell::Destroy() {
   
   CancelPaintSuppressionTimer();
 
-  
-  if (mReflowContinueTimer) {
-    mReflowContinueTimer->Cancel();
-    mReflowContinueTimer = nullptr;
-  }
-
   mSynthMouseMoveEvent.Revoke();
 
   mUpdateApproximateFrameVisibilityEvent.Revoke();
@@ -9719,6 +9713,8 @@ void PresShell::DidDoReflow(bool aInterruptible) {
     
     
     
+    
+    
     EnsureLayoutFlush();
   }
 }
@@ -9735,25 +9731,6 @@ DOMHighResTimeStamp PresShell::GetPerformanceNowUnclamped() {
   }
 
   return now;
-}
-
-bool PresShell::ScheduleReflowOffTimer() {
-  MOZ_ASSERT(!mObservingStyleFlushes, "Shouldn't get here");
-  ASSERT_REFLOW_SCHEDULED_STATE();
-  if (mReflowContinueTimer) {
-    return true;
-  }
-  nsresult rv = NS_NewTimerWithFuncCallback(
-      getter_AddRefs(mReflowContinueTimer),
-      [](nsITimer* aTimer, void* aPresShell) {
-        RefPtr<PresShell> self = static_cast<PresShell*>(aPresShell);
-        MOZ_ASSERT(aTimer == self->mReflowContinueTimer, "Unexpected timer");
-        self->mReflowContinueTimer = nullptr;
-        self->EnsureLayoutFlush();
-      },
-      this, 30, nsITimer::TYPE_ONE_SHOT, "ReflowContinueCallback",
-      GetMainThreadSerialEventTarget());
-  return NS_SUCCEEDED(rv);
 }
 
 bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
@@ -9790,11 +9767,6 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   mReflowCause = nullptr;
 
   FlushPendingScrollAnchorSelections();
-
-  if (mReflowContinueTimer) {
-    mReflowContinueTimer->Cancel();
-    mReflowContinueTimer = nullptr;
-  }
 
   const bool isRoot = target == mFrameConstructor->GetRootFrame();
 

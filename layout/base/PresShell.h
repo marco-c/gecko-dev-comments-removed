@@ -1235,9 +1235,7 @@ class PresShell final : public nsStubDocumentObserver,
     mIsNeverPainting = aNeverPainting;
   }
 
-  bool MightHavePendingFontLoads() const {
-    return ObservingStyleFlushes() || mReflowContinueTimer;
-  }
+  bool MightHavePendingFontLoads() const { return ObservingStyleFlushes(); }
 
   void SyncWindowProperties(bool aSync);
   struct WindowSizeConstraints {
@@ -2958,12 +2956,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   DOMHighResTimeStamp mLastReflowStart{0.0};
-
-  
-  
-  
-  
-  nsCOMPtr<nsITimer> mReflowContinueTimer;
 
 #ifdef DEBUG
   
