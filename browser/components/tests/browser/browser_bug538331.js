@@ -120,10 +120,11 @@ add_task(async function test_bug538331() {
       if (testCase.openURL) {
         actionsXML += ' openURL="' + testCase.openURL + '"';
       }
-      writeUpdatesToXMLFile(XML_PREFIX + actionsXML + XML_SUFFIX);
+      writeFile(XML_PREFIX + actionsXML + XML_SUFFIX, getActiveUpdateFile());
     } else {
-      writeUpdatesToXMLFile(XML_EMPTY);
+      writeFile(XML_EMPTY, getActiveUpdateFile());
     }
+    writeSuccessUpdateStatusFile();
 
     reloadUpdateManagerData(false);
 
@@ -206,22 +207,35 @@ function reloadUpdateManagerData(skipFiles = false) {
 
 
 
-function writeUpdatesToXMLFile(aText) {
+
+function writeFile(aText, aFile) {
   const PERMS_FILE = 0o644;
 
   const MODE_WRONLY = 0x02;
   const MODE_CREATE = 0x08;
   const MODE_TRUNCATE = 0x20;
 
-  let activeUpdateFile = getActiveUpdateFile();
-  if (!activeUpdateFile.exists()) {
-    activeUpdateFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
+  if (!aFile.exists()) {
+    aFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
   }
   let fos = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(
     Ci.nsIFileOutputStream
   );
   let flags = MODE_WRONLY | MODE_CREATE | MODE_TRUNCATE;
-  fos.init(activeUpdateFile, flags, PERMS_FILE, 0);
+  fos.init(aFile, flags, PERMS_FILE, 0);
   fos.write(aText, aText.length);
   fos.close();
+}
+
+
+
+
+
+
+function writeSuccessUpdateStatusFile() {
+  const statusFile = Services.dirsvc.get("UpdRootD", Ci.nsIFile);
+  statusFile.append("updates");
+  statusFile.append("0");
+  statusFile.append("update.status");
+  writeFile("succeeded", statusFile);
 }

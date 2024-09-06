@@ -2286,6 +2286,11 @@ function checkSymlink() {
 
 
 async function setupActiveUpdate() {
+  
+  
+  
+  await gAUS.init();
+
   let pendingState = gIsServiceTest ? STATE_PENDING_SVC : STATE_PENDING;
   let patchProps = { state: pendingState };
   let patches = getLocalPatchString(patchProps);
@@ -3164,6 +3169,11 @@ async function setupUpdaterTest(
   { requiresOmnijar = false } = {}
 ) {
   debugDump("start - updater test setup");
+  
+  
+  
+  await gAUS.init();
+
   let updatesPatchDir = getUpdateDirFile(DIR_PATCH);
   if (!updatesPatchDir.exists()) {
     updatesPatchDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
