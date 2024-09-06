@@ -2179,7 +2179,7 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForAnswer(
   std::unique_ptr<TransportDescription> transport = CreateTransportAnswer(
       media_description_options.mid, offer_description,
       media_description_options.transport_options, current_description,
-      bundle_transport == nullptr, ice_credentials);
+      !offer_content->rejected && bundle_transport == nullptr, ice_credentials);
   if (!transport) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INTERNAL_ERROR,
@@ -2272,7 +2272,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForAnswer(
   std::unique_ptr<TransportDescription> data_transport = CreateTransportAnswer(
       media_description_options.mid, offer_description,
       media_description_options.transport_options, current_description,
-      bundle_transport != nullptr, ice_credentials);
+      !offer_content->rejected && bundle_transport == nullptr, ice_credentials);
   if (!data_transport) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INTERNAL_ERROR,
@@ -2344,10 +2344,11 @@ RTCError MediaSessionDescriptionFactory::AddUnsupportedContentForAnswer(
     SessionDescription* answer,
     IceCredentialsIterator* ice_credentials) const {
   std::unique_ptr<TransportDescription> unsupported_transport =
-      CreateTransportAnswer(media_description_options.mid, offer_description,
-                            media_description_options.transport_options,
-                            current_description, bundle_transport != nullptr,
-                            ice_credentials);
+      CreateTransportAnswer(
+          media_description_options.mid, offer_description,
+          media_description_options.transport_options, current_description,
+          !offer_content->rejected && bundle_transport == nullptr,
+          ice_credentials);
   if (!unsupported_transport) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INTERNAL_ERROR,
