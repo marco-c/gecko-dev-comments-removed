@@ -111,18 +111,84 @@ async function waitForProgressNotification(
   return win.PopupNotifications.panel;
 }
 
+function testInstallDialogIncognitoCheckbox(
+  installDialog,
+  {
+    toggleIncognito = false,
+    incognitoChecked = false,
+    incognitoHidden = ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX,
+  } = {}
+) {
+  
+  
+  const privateBrowsingCheckbox = installDialog.querySelector(
+    ".webext-perm-privatebrowsing checkbox"
+  );
+  is(
+    !privateBrowsingCheckbox,
+    incognitoHidden,
+    incognitoHidden
+      ? "Expect private browsing checkbox to NOT be found in the first dialog"
+      : "Expect private browsing checkbox to be found in the first install dialog"
+  );
+
+  if (!incognitoHidden) {
+    if (privateBrowsingCheckbox) {
+      ok(
+        BrowserTestUtils.isVisible(privateBrowsingCheckbox),
+        "private browsing checkbox should be visible"
+      );
+    }
+    
+    
+    
+    ok(
+      BrowserTestUtils.isVisible(
+        installDialog.querySelector("#addon-webext-perm-info")
+      ),
+      "SUMO link expected to be visible"
+    );
+  } else {
+    if (incognitoChecked) {
+      throw new Error(
+        "incognitoChecked can't be set to true when incognitoHidden is set to true"
+      );
+    }
+    if (toggleIncognito) {
+      throw new Error(
+        "toggleIncognito can't be set to true when incognitoHidden is set to true"
+      );
+    }
+    return;
+  }
+
+  is(
+    privateBrowsingCheckbox.checked,
+    incognitoChecked,
+    incognitoChecked
+      ? "Expect private browsing checkbox to be checked"
+      : "Expect private browsing checkbox to NOT be checked"
+  );
+
+  if (toggleIncognito === true) {
+    privateBrowsingCheckbox.checked = !privateBrowsingCheckbox.checked;
+  }
+}
+
 function acceptAppMenuNotificationWhenShown(
   id,
   extensionId,
   {
     dismiss = false,
-    checkIncognito = false,
+    toggleIncognito = false,
     incognitoChecked = false,
-    incognitoHidden = false,
+    
+    incognitoHidden = !ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX,
     global = window,
   } = {}
 ) {
   const { AppMenuNotifications, PanelUI, document } = global;
+  const { POSTINSTALL_PRIVATEBROWSING_CHECKBOX } = ExtensionsUI;
   return new Promise(resolve => {
     let permissionChangePromise = null;
     function appMenuPopupHidden() {
@@ -137,6 +203,55 @@ function acceptAppMenuNotificationWhenShown(
       PanelUI.panel.removeEventListener("popupshown", appMenuPopupShown);
       PanelUI.menuButton.click();
     }
+    function checkPostInstallIncognitoCheckbox() {
+      let checkbox = document.getElementById("addon-incognito-checkbox");
+
+      if (!POSTINSTALL_PRIVATEBROWSING_CHECKBOX) {
+        is(checkbox.hidden, true, "post install checkbox should be hidden");
+        
+        
+        Assert.equal(
+          incognitoHidden,
+          true,
+          "acceptAppMenuNotificationWhenShown incognitoHidden should be true"
+        );
+        Assert.equal(
+          incognitoChecked,
+          false,
+          "acceptAppMenuNotificationWhenShown incognitoChecked should be false"
+        );
+        Assert.equal(
+          toggleIncognito,
+          false,
+          "acceptAppMenuNotificationWhenShown toggleIncognito should be false"
+        );
+        return;
+      }
+
+      is(checkbox.hidden, incognitoHidden, "checkbox visibility is correct");
+      is(checkbox.checked, incognitoChecked, "checkbox is marked as expected");
+
+      
+      
+      
+      if (toggleIncognito) {
+        permissionChangePromise = new Promise(resolve => {
+          const listener = (type, change) => {
+            if (extensionId == change.extensionId) {
+              
+              let { permissions } = incognitoChecked
+                ? change.removed
+                : change.added;
+              ok(permissions.includes("internal:privateBrowsingAllowed"));
+              resolve();
+            }
+          };
+          Management.once("change-permissions", listener);
+        });
+
+        checkbox.checked = !checkbox.checked;
+      }
+    }
     function popupshown() {
       let notification = AppMenuNotifications.activeNotification;
       if (!notification) {
@@ -148,30 +263,7 @@ function acceptAppMenuNotificationWhenShown(
 
       PanelUI.notificationPanel.removeEventListener("popupshown", popupshown);
 
-      let checkbox = document.getElementById("addon-incognito-checkbox");
-      is(checkbox.hidden, incognitoHidden, "checkbox visibility is correct");
-      is(checkbox.checked, incognitoChecked, "checkbox is marked as expected");
-
-      
-      
-      
-      if (incognitoChecked != checkIncognito) {
-        permissionChangePromise = new Promise(resolve => {
-          const listener = (type, change) => {
-            if (extensionId == change.extensionId) {
-              
-              let { permissions } = checkIncognito
-                ? change.added
-                : change.removed;
-              ok(permissions.includes("internal:privateBrowsingAllowed"));
-              resolve();
-            }
-          };
-          Management.once("change-permissions", listener);
-        });
-      }
-
-      checkbox.checked = checkIncognito;
+      checkPostInstallIncognitoCheckbox();
 
       if (dismiss) {
         
@@ -282,6 +374,18 @@ function waitForNotificationClose(win = window) {
 
 async function waitForInstallDialog(id = "addon-webext-permissions") {
   let panel = await waitForNotification(id);
+  
+  
+  
+  
+  if (panel.state === "showing") {
+    await TestUtils.waitForCondition(
+      () => panel.state === "open",
+      `Wait for ${id} panel state to become open`
+    );
+    is(panel.state, "open", "Panel.state should be open");
+  }
+
   return panel.childNodes[0];
 }
 
@@ -423,7 +527,8 @@ var TESTS = [
 
     notificationPromise = acceptAppMenuNotificationWhenShown(
       "addon-installed",
-      "amosigned-xpi@tests.mozilla.org"
+      "amosigned-xpi@tests.mozilla.org",
+      { incognitoHidden: !ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX }
     );
 
     installDialog.button.click();
@@ -570,7 +675,13 @@ var TESTS = [
         { incognitoHidden: true }
       );
 
-      (await installDialogPromise).button.click();
+      const installDialog = await installDialogPromise;
+
+      testInstallDialogIncognitoCheckbox(installDialog, {
+        incognitoHidden: true,
+      });
+
+      installDialog.button.click();
       await notificationPromise;
 
       let installs = await AddonManager.getAllInstalls();
@@ -694,9 +805,12 @@ var TESTS = [
     let notificationPromise = acceptAppMenuNotificationWhenShown(
       "addon-installed",
       "amosigned-xpi@tests.mozilla.org",
-      { dismiss: true }
+      ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX
+        ? { dismiss: true, incognitoHidden: false, incognitoChecked: false }
+        : { dismiss: true, incognitoHidden: true }
     );
     acceptInstallDialog(installDialog);
+
     await notificationPromise;
 
     let installs = await AddonManager.getAllInstalls();
@@ -877,10 +991,26 @@ var TESTS = [
     await progressPromise;
     let installDialog = await dialogPromise;
 
+    testInstallDialogIncognitoCheckbox(
+      installDialog,
+      ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX
+        ? { incognitoHidden: true }
+        : {
+            incognitoHidden: false,
+            incognitoChecked: false,
+            toggleIncognito: true,
+          }
+    );
+
     let notificationPromise = acceptAppMenuNotificationWhenShown(
       "addon-installed",
       "amosigned-xpi@tests.mozilla.org",
-      { checkIncognito: true }
+      {
+        
+        
+        toggleIncognito: ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX,
+        incognitoHidden: !ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX,
+      }
     );
     installDialog.button.click();
     await notificationPromise;
@@ -1124,10 +1254,25 @@ var TESTS = [
     await progressPromise;
     let installDialog = await dialogPromise;
 
+    testInstallDialogIncognitoCheckbox(
+      installDialog,
+      ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX
+        ? { incognitoHidden: true }
+        : {
+            incognitoHidden: false,
+            incognitoChecked: true,
+            toggleIncognito: true,
+          }
+    );
+
     let notificationPromise = acceptAppMenuNotificationWhenShown(
       "addon-installed",
       "amosigned-xpi@tests.mozilla.org",
-      { incognitoChecked: true }
+      
+      
+      ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX
+        ? { incognitoChecked: true, toggleIncognito: true }
+        : { incognitoHidden: true }
     );
     installDialog.button.click();
     await notificationPromise;
@@ -1138,12 +1283,15 @@ var TESTS = [
     let addon = await AddonManager.getAddonByID(
       "amosigned-xpi@tests.mozilla.org"
     );
-    
-    
-    
-    await AddonTestUtils.promiseWebExtensionStartup(
-      "amosigned-xpi@tests.mozilla.org"
-    );
+
+    if (ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX) {
+      
+      
+      
+      await AddonTestUtils.promiseWebExtensionStartup(
+        "amosigned-xpi@tests.mozilla.org"
+      );
+    }
 
     
     let policy = WebExtensionPolicy.getByID(addon.id);
@@ -1177,7 +1325,23 @@ var TESTS = [
               "PanelUpdated",
               eventListener
             );
-            resolve();
+            
+            
+            
+            
+            if (win.PopupNotifications.panel.state === "showing") {
+              TestUtils.waitForCondition(
+                () => win.PopupNotifications.panel.state === "open",
+                "Wait for addon-webext-permissions panel state to become open"
+              ).then(resolve);
+            } else {
+              is(
+                win.PopupNotifications.panel.state,
+                "open",
+                "Expect addon-webext-permissions panel state to be open"
+              );
+              resolve();
+            }
           }
         }
       );
@@ -1198,10 +1362,23 @@ var TESTS = [
     let panel = win.PopupNotifications.panel;
     let installDialog = panel.childNodes[0];
 
+    testInstallDialogIncognitoCheckbox(
+      installDialog,
+      ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX
+        ? { incognitoHidden: true }
+        : {
+            incognitoHidden: false,
+            incognitoChecked: true,
+            toggleIncognito: true,
+          }
+    );
+
     let notificationPromise = acceptAppMenuNotificationWhenShown(
       "addon-installed",
       "amosigned-xpi@tests.mozilla.org",
-      { incognitoChecked: true, global: win }
+      ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX
+        ? { incognitoChecked: true, toggleIncognito: true, global: win }
+        : { incognitoHidden: true, global: win }
     );
     acceptInstallDialog(installDialog);
     await notificationPromise;
@@ -1212,12 +1389,14 @@ var TESTS = [
     let addon = await AddonManager.getAddonByID(
       "amosigned-xpi@tests.mozilla.org"
     );
-    
-    
-    
-    await AddonTestUtils.promiseWebExtensionStartup(
-      "amosigned-xpi@tests.mozilla.org"
-    );
+    if (ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX) {
+      
+      
+      
+      await AddonTestUtils.promiseWebExtensionStartup(
+        "amosigned-xpi@tests.mozilla.org"
+      );
+    }
 
     
     let policy = WebExtensionPolicy.getByID(addon.id);
@@ -1322,7 +1501,7 @@ var XPInstallObserver = {
   },
 };
 
-add_task(async function () {
+add_setup(async function () {
   requestLongerTimeout(4);
 
   await SpecialPowers.pushPrefEnv({
@@ -1356,7 +1535,9 @@ add_task(async function () {
     Services.obs.removeObserver(XPInstallObserver, "addon-install-blocked");
     Services.obs.removeObserver(XPInstallObserver, "addon-install-failed");
   });
+});
 
+const runTestCases = async () => {
   for (let i = 0; i < TESTS.length; ++i) {
     if (gTestStart) {
       info("Test part took " + (Date.now() - gTestStart) + "ms");
@@ -1371,4 +1552,36 @@ add_task(async function () {
     gTestStart = Date.now();
     await TESTS[i]();
   }
+};
+
+
+
+add_task(async function testWithPostInstallIncognitoToggleFalse() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.ui.postInstallPrivateBrowsingCheckbox", false]],
+  });
+  
+  is(
+    ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX,
+    false,
+    "Expect POSTINSTALL_PRIVATEBROWSING_CHECKBOX to be disabled"
+  );
+  await runTestCases();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function testWithPostInstallIncognitoToggleTrue() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.ui.postInstallPrivateBrowsingCheckbox", true]],
+  });
+  
+  is(
+    ExtensionsUI.POSTINSTALL_PRIVATEBROWSING_CHECKBOX,
+    true,
+    "Expect POSTINSTALL_PRIVATEBROWSING_CHECKBOX to be enabled"
+  );
+  await runTestCases();
+  await SpecialPowers.popPrefEnv();
 });
