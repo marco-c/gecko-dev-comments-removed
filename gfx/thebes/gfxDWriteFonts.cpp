@@ -276,12 +276,14 @@ void gfxDWriteFont::UpdateClearTypeVars() {
     gfxVars::SetSystemTextRenderingMode(renderingMode);
   }
 
+#if 0
   
   
   
   
   cairo_dwrite_set_cleartype_params(gamma, enhancedContrast, clearTypeLevel,
                                     pixelGeometry, renderingModePref);
+#endif
 }
 
 gfxFont* gfxDWriteFont::CopyWithAntialiasOption(
