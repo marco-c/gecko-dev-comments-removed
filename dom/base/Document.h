@@ -246,7 +246,6 @@ class FeaturePolicy;
 class FontFaceSet;
 class FragmentDirective;
 class FrameRequestCallback;
-class ImageTracker;
 class HighlightRegistry;
 class HTMLAllCollection;
 class HTMLBodyElement;
@@ -255,6 +254,8 @@ class HTMLMetaElement;
 class HTMLDialogElement;
 class HTMLSharedElement;
 class HTMLImageElement;
+class ImageTracker;
+enum class InteractiveWidget : uint8_t;
 struct LifecycleCallbackArgs;
 class Link;
 class Location;
@@ -3938,6 +3939,10 @@ class Document : public nsINode,
  public:
   const OriginTrials& Trials() const { return mTrials; }
 
+  dom::InteractiveWidget InteractiveWidget() const {
+    return mInteractiveWidgetMode;
+  }
+
  private:
   void DoCacheAllKnownLangPrefs();
   void RecomputeLanguageFromCharset();
@@ -5165,6 +5170,9 @@ class Document : public nsINode,
   
   
   ViewportFitType mViewportFit;
+
+  
+  dom::InteractiveWidget mInteractiveWidgetMode;
 
   
   
