@@ -138,7 +138,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
   
   
   
-  virtual mozilla::dom::Document* DocToUpdate() = 0;
+  virtual mozilla::dom::Document* DocToUpdate() { return nullptr; }
 
   
   
