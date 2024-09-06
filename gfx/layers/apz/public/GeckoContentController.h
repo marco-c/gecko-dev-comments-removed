@@ -157,12 +157,20 @@ class GeckoContentController {
   virtual void NotifyScaleGestureComplete(const ScrollableLayerGuid& aGuid,
                                           float aScale) = 0;
 
+  
+
+
+
+
+
+
   virtual void UpdateOverscrollVelocity(const ScrollableLayerGuid& aGuid,
                                         float aX, float aY,
                                         bool aIsRootContent) {}
   virtual void UpdateOverscrollOffset(const ScrollableLayerGuid& aGuid,
                                       float aX, float aY, bool aIsRootContent) {
   }
+  virtual void HideDynamicToolbar(const ScrollableLayerGuid& aGuid) {}
 
   GeckoContentController() = default;
 

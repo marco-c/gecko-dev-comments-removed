@@ -389,6 +389,31 @@ class DynamicToolbarTest : BaseSessionTest() {
         })
     }
 
+    @WithDisplay(height = 600, width = 600)
+    @Test
+    fun hideDynamicToolbarToRevealFocusedInput() {
+        
+        
+        
+        
+        val dynamicToolbarMaxHeight = 300
+        sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
+
+        
+        mainSession.setActive(true)
+
+        mainSession.loadTestPath(HIDE_DYNAMIC_TOOLBAR_HTML_PATH)
+        mainSession.waitForPageStop()
+        mainSession.evaluateJS("document.getElementById('input1').focus();")
+        mainSession.zoomToFocusedInput()
+
+        mainSession.waitUntilCalled(object : ContentDelegate {
+            @AssertCalled(count = 1)
+            override fun onHideDynamicToolbar(session: GeckoSession) {
+            }
+        })
+    }
+
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun showDynamicToolbarOnOverflowHidden() {

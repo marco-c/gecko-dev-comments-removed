@@ -5,6 +5,7 @@
 
 
 #include "mozilla/layers/APZChild.h"
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/GeckoContentController.h"
 
 #include "mozilla/dom/BrowserChild.h"
@@ -58,6 +59,14 @@ mozilla::ipc::IPCResult APZChild::RecvUpdateOverscrollOffset(
     const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
     const bool& aIsRootContent) {
   mController->UpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult APZChild::RecvHideDynamicToolbar() {
+  
+  
+  
+  mController->HideDynamicToolbar(ScrollableLayerGuid{});
   return IPC_OK();
 }
 

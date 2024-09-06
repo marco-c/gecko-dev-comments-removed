@@ -2766,6 +2766,11 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
+  public void zoomToFocusedInput(final GeckoSession session) {
+    webExtensionApiCall(session, "ZoomToFocusedInput", null);
+  }
+
+  
   public void promiseAllPaintsDone(final GeckoSession session) {
     webExtensionApiCall(session, "PromiseAllPaintsDone", null);
   }

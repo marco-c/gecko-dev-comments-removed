@@ -2797,6 +2797,13 @@ AsyncPanZoomController::GetDisplacementsForPanGesture(
   return {logicalPanDisplacement, physicalPanDisplacement};
 }
 
+CSSCoord AsyncPanZoomController::ToCSSPixels(ParentLayerCoord value) const {
+  if (this->Metrics().GetZoom() == CSSToParentLayerScale(0)) {
+    return CSSCoord{0};
+  }
+  return (value / this->Metrics().GetZoom());
+}
+
 nsEventStatus AsyncPanZoomController::OnPan(
     const PanGestureInput& aEvent, FingersOnTouchpad aFingersOnTouchpad) {
   APZC_LOG_DETAIL("got a pan-pan in state %s\n", this,
@@ -6097,8 +6104,34 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
 
   SetState(ANIMATING_ZOOM);
 
+  bool hideDynamicToolbar{false};
+
   {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
+
+    
+    
+    
+    
+    if (aFlags & ZOOM_TO_FOCUSED_INPUT) {
+      
+      
+      const CSSCoord lvh = ToCSSPixels(Metrics().GetCompositionBounds().height);
+      const CSSCoord svh = ToCSSPixels(
+          Metrics().GetCompositionSizeWithoutDynamicToolbar().height);
+      const CSSCoord scrollableRectHeight =
+          Metrics().GetScrollableRect().height;
+
+      if (scrollableRectHeight > svh && scrollableRectHeight < lvh) {
+        const CSSCoord targetDistanceFromBottom =
+            (Metrics().GetScrollableRect().YMost() -
+             aZoomTarget.targetRect.YMost());
+        const CSSCoord dynamicToolbarHeight = (lvh - svh);
+        if (targetDistanceFromBottom < dynamicToolbarHeight) {
+          hideDynamicToolbar = true;
+        }
+      }
+    }
 
     MOZ_ASSERT(Metrics().IsRootContent());
 
@@ -6310,6 +6343,11 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
         endZoomToMetrics.GetVisualScrollOffset(), endZoomToMetrics.GetZoom())));
 
     RequestContentRepaint(RepaintUpdateType::eUserAction);
+  }
+
+  if (hideDynamicToolbar) {
+    RefPtr<GeckoContentController> controller = GetGeckoContentController();
+    controller->HideDynamicToolbar(GetGuid());
   }
 }
 
