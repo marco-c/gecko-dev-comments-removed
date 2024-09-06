@@ -108,11 +108,6 @@ class nsFormFillController final : public nsIFormFillController,
   nsCOMPtr<nsIAutoCompletePopup> mFocusedPopup;
 
   
-  nsInterfaceHashtable<nsRefPtrHashKey<mozilla::dom::Document>,
-                       nsIAutoCompletePopup>
-      mPopups;
-
-  
   
   nsCOMPtr<nsIAutoCompleteObserver> mLastListener;
 
