@@ -3,6 +3,10 @@
 
 "use strict";
 
+add_setup(async function setup() {
+  registerCleanupFunction(PlacesUtils.history.clear);
+});
+
 
 
 
@@ -79,93 +83,93 @@ add_task(async function invalidURL() {
 
 add_task(async function selectAndFocus() {
   
-  
-  const webpageTabURL =
-    UrlbarTestUtils.getTrimmedProtocolWithSlashes() == "https://"
-      ? "http://example.com"
-      : "https://example.com";
-  const webpageTab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    url: webpageTabURL,
-  });
+  for (let protocol of ["http://", "https://"]) {
+    const webpageTabURL = protocol + "example.com";
+    const webpageTab = await BrowserTestUtils.openNewForegroundTab({
+      gBrowser,
+      url: webpageTabURL,
+    });
 
-  
-  const userTypedTabText = "test";
-  const userTypedTab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-  });
-  await UrlbarTestUtils.inputIntoURLBar(window, userTypedTabText);
+    
+    const userTypedTabText = "test";
+    const userTypedTab = await BrowserTestUtils.openNewForegroundTab({
+      gBrowser,
+    });
+    await UrlbarTestUtils.inputIntoURLBar(window, userTypedTabText);
 
-  
-  const emptyTab = await BrowserTestUtils.openNewForegroundTab({ gBrowser });
+    
+    const emptyTab = await BrowserTestUtils.openNewForegroundTab({ gBrowser });
 
-  registerCleanupFunction(async () => {
-    await PlacesUtils.history.clear();
-    BrowserTestUtils.removeTab(webpageTab);
-    BrowserTestUtils.removeTab(userTypedTab);
-    BrowserTestUtils.removeTab(emptyTab);
-  });
+    async function cleanup() {
+      await PlacesUtils.history.clear();
+      BrowserTestUtils.removeTab(webpageTab);
+      BrowserTestUtils.removeTab(userTypedTab);
+      BrowserTestUtils.removeTab(emptyTab);
+    }
 
-  await doSelectAndFocusTest({
-    targetTab: webpageTab,
-    targetSelectionStart: 0,
-    targetSelectionEnd: 0,
-    anotherTab: userTypedTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: webpageTab,
-    targetSelectionStart: 2,
-    targetSelectionEnd: 5,
-    anotherTab: userTypedTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: webpageTab,
-    targetSelectionStart: webpageTabURL.length,
-    targetSelectionEnd: webpageTabURL.length,
-    anotherTab: userTypedTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: webpageTab,
-    targetSelectionStart: 0,
-    targetSelectionEnd: 0,
-    anotherTab: emptyTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: userTypedTab,
-    targetSelectionStart: 0,
-    targetSelectionEnd: 0,
-    anotherTab: webpageTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: userTypedTab,
-    targetSelectionStart: 0,
-    targetSelectionEnd: 0,
-    anotherTab: emptyTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: userTypedTab,
-    targetSelectionStart: 1,
-    targetSelectionEnd: 2,
-    anotherTab: emptyTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: userTypedTab,
-    targetSelectionStart: userTypedTabText.length,
-    targetSelectionEnd: userTypedTabText.length,
-    anotherTab: emptyTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: emptyTab,
-    targetSelectionStart: 0,
-    targetSelectionEnd: 0,
-    anotherTab: webpageTab,
-  });
-  await doSelectAndFocusTest({
-    targetTab: emptyTab,
-    targetSelectionStart: 0,
-    targetSelectionEnd: 0,
-    anotherTab: userTypedTab,
-  });
+    await doSelectAndFocusTest({
+      targetTab: webpageTab,
+      targetSelectionStart: 0,
+      targetSelectionEnd: 0,
+      anotherTab: userTypedTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: webpageTab,
+      targetSelectionStart: 2,
+      targetSelectionEnd: 5,
+      anotherTab: userTypedTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: webpageTab,
+      targetSelectionStart: webpageTabURL.length,
+      targetSelectionEnd: webpageTabURL.length,
+      anotherTab: userTypedTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: webpageTab,
+      targetSelectionStart: 0,
+      targetSelectionEnd: 0,
+      anotherTab: emptyTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: userTypedTab,
+      targetSelectionStart: 0,
+      targetSelectionEnd: 0,
+      anotherTab: webpageTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: userTypedTab,
+      targetSelectionStart: 0,
+      targetSelectionEnd: 0,
+      anotherTab: emptyTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: userTypedTab,
+      targetSelectionStart: 1,
+      targetSelectionEnd: 2,
+      anotherTab: emptyTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: userTypedTab,
+      targetSelectionStart: userTypedTabText.length,
+      targetSelectionEnd: userTypedTabText.length,
+      anotherTab: emptyTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: emptyTab,
+      targetSelectionStart: 0,
+      targetSelectionEnd: 0,
+      anotherTab: webpageTab,
+    });
+    await doSelectAndFocusTest({
+      targetTab: emptyTab,
+      targetSelectionStart: 0,
+      targetSelectionEnd: 0,
+      anotherTab: userTypedTab,
+    });
+
+    await cleanup();
+  }
 });
 
 async function doSelectAndFocusTest({
@@ -197,6 +201,13 @@ async function doSelectAndFocusTest({
       targetSelectionStart,
       targetSelectionEnd
     );
+    const targetSelectedText = getSelectedText();
+    if (gURLBar.selectionStart != gURLBar.selectionEnd) {
+      Assert.ok(
+        targetSelectedText,
+        `Some text is selected: "${targetSelectedText}"`
+      );
+    }
     const targetValue = gURLBar.value;
 
     
@@ -210,8 +221,9 @@ async function doSelectAndFocusTest({
     Assert.equal(gURLBar.value, targetValue);
     Assert.equal(gURLBar.focused, targetFocus);
     if (gURLBar.focused) {
-      Assert.equal(gURLBar.selectionStart, targetSelectionStart);
-      Assert.equal(gURLBar.selectionEnd, targetSelectionEnd);
+      
+      
+      Assert.equal(targetSelectedText, getSelectedText());
     } else {
       Assert.equal(gURLBar.selectionStart, gURLBar.value.length);
       Assert.equal(gURLBar.selectionEnd, gURLBar.value.length);
@@ -221,10 +233,19 @@ async function doSelectAndFocusTest({
 
 function setURLBarFocus(focus) {
   if (focus) {
-    gURLBar.focus();
+    
+    EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   } else {
     gURLBar.blur();
   }
+}
+
+function getSelectedText() {
+  return gURLBar.inputField.editor.selection.toStringWithFormat(
+    "text/plain",
+    Ci.nsIDocumentEncoder.OutputPreformatted | Ci.nsIDocumentEncoder.OutputRaw,
+    0
+  );
 }
 
 async function switchTab(tab) {
