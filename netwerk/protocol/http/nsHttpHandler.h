@@ -395,6 +395,11 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   }
 
   
+  void OnAfterExamineResponse(nsIHttpChannel* chan) {
+    NotifyObservers(chan, NS_HTTP_ON_AFTER_EXAMINE_RESPONSE_TOPIC);
+  }
+
+  
   void OnExamineMergedResponse(nsIHttpChannel* chan) {
     NotifyObservers(chan, NS_HTTP_ON_EXAMINE_MERGED_RESPONSE_TOPIC);
   }
