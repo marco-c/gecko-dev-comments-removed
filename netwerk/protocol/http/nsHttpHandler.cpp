@@ -878,12 +878,29 @@ void nsHttpHandler::InitUserAgentComponents() {
       do_GetService("@mozilla.org/system-info;1");
   MOZ_ASSERT(infoService, "Could not find a system info service");
   nsresult rv;
+
   
   nsAutoString androidVersion;
   rv = infoService->GetPropertyAsAString(u"release_version"_ns, androidVersion);
-  if (NS_SUCCEEDED(rv)) {
-    mPlatform += " ";
+  MOZ_ASSERT_IF(
+      NS_SUCCEEDED(rv),
+      
+      (androidVersion.Length() == 1 && std::isdigit(androidVersion[0])) ||
+          
+          (androidVersion.Length() >= 2 && std::isdigit(androidVersion[0]) &&
+           (androidVersion[1] == u'.' || std::isdigit(androidVersion[1]))));
+
+  
+  
+  
+  
+  
+  mPlatform += " ";
+  if (NS_SUCCEEDED(rv) && androidVersion.Length() >= 2 &&
+      std::isdigit(androidVersion[0]) && std::isdigit(androidVersion[1])) {
     mPlatform += NS_LossyConvertUTF16toASCII(androidVersion);
+  } else {
+    mPlatform.AppendLiteral("10");
   }
 
   

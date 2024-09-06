@@ -1327,7 +1327,13 @@ public class GeckoSession {
 
   @AnyThread
   public static @NonNull String getDefaultUserAgent() {
-    return BuildConfig.USER_AGENT_GECKOVIEW_MOBILE;
+    
+    
+    
+    
+    return Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+        ? BuildConfig.USER_AGENT_GECKOVIEW_MOBILE_ANDROID_10
+        : BuildConfig.USER_AGENT_GECKOVIEW_MOBILE;
   }
 
   
