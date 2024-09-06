@@ -38,13 +38,13 @@ function runTest(config, qualifier)
             
             return mediaKeySession.closed;
         }).then(function (result) {
-            assert_equals(result, undefined);
+            assert_equals(result, "closed-by-application");
             
             
             
             return mediaKeySession.closed;
         }).then(function (result) {
-            assert_equals(result, undefined);
+            assert_equals(result, "closed-by-application");
         }).catch(function(error) {
             assert_unreached('Error: ' + error.name);
         });
