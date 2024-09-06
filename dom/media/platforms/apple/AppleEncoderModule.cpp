@@ -8,6 +8,7 @@
 
 #include "AppleVTEncoder.h"
 #include "VideoUtils.h"
+#include "nsCocoaFeatures.h"
 
 namespace mozilla {
 
@@ -28,7 +29,9 @@ bool AppleEncoderModule::Supports(const EncoderConfig& aConfig) const {
     return false;
   }
   
-  if (aConfig.mScalabilityMode == ScalabilityMode::L1T3) {
+  if (aConfig.mScalabilityMode == ScalabilityMode::L1T3 ||
+      (aConfig.mScalabilityMode != ScalabilityMode::None &&
+       !nsCocoaFeatures::IsAtLeastVersion(11, 3, 0))) {
     return false;
   }
   return aConfig.mCodec == CodecType::H264;
