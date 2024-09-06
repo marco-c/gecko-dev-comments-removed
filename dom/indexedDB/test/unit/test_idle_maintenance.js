@@ -22,13 +22,6 @@ function* testSteps() {
     Ci.nsIPermissionManager.ALLOW_ACTION
   );
 
-  
-  
-
-  info("Activating real idle service");
-
-  do_get_idle();
-
   info("Creating databases");
 
   
@@ -126,10 +119,13 @@ function* testSteps() {
   });
   yield undefined;
 
-  info("Sending fake 'idle-daily' notification to QuotaManager");
+  info("Starting idle maintenance");
 
-  let observer = Services.qms.QueryInterface(Ci.nsIObserver);
-  observer.observe(null, "idle-daily", "");
+  const indexedDatabaseManager = Cc[
+    "@mozilla.org/dom/indexeddb/manager;1"
+  ].getService(Ci.nsIIndexedDatabaseManager);
+
+  const maintenancePromise = indexedDatabaseManager.doMaintenance();
 
   info("Opening database while maintenance is performed");
 
@@ -138,14 +134,9 @@ function* testSteps() {
   req.onsuccess = grabEventAndContinueHandler;
   yield undefined;
 
-  info("Waiting for maintenance to start");
+  info("Waiting for maintenance to finish");
 
-  
-  
-  
-  
-  
-  setTimeout(continueToNextStep, 10000);
+  maintenancePromise.then(continueToNextStep);
   yield undefined;
 
   info("Getting usage after maintenance");
