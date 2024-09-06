@@ -23,11 +23,27 @@ this.declarativeNetRequest = class extends ExtensionAPI {
         get MAX_NUMBER_OF_ENABLED_STATIC_RULESETS() {
           return ExtensionDNRLimits.MAX_NUMBER_OF_ENABLED_STATIC_RULESETS;
         },
-        get MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES() {
-          return ExtensionDNRLimits.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES;
+        get MAX_NUMBER_OF_DYNAMIC_RULES() {
+          return ExtensionDNRLimits.MAX_NUMBER_OF_DYNAMIC_RULES;
+        },
+        get MAX_NUMBER_OF_SESSION_RULES() {
+          return ExtensionDNRLimits.MAX_NUMBER_OF_SESSION_RULES;
         },
         get MAX_NUMBER_OF_REGEX_RULES() {
           return ExtensionDNRLimits.MAX_NUMBER_OF_REGEX_RULES;
+        },
+        
+        
+        
+        
+        
+        
+        
+        get MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES() {
+          return Math.min(
+            ExtensionDNRLimits.MAX_NUMBER_OF_DYNAMIC_RULES,
+            ExtensionDNRLimits.MAX_NUMBER_OF_SESSION_RULES
+          );
         },
       },
     };
