@@ -64,6 +64,7 @@ registerCleanupFunction(() => {
 
 async function setupScriptInjectionDetector(contentPage) {
   await contentPage.spawn([], () => {
+    info(`setupScriptInjectionDetector: pid=${Services.appinfo.processID}`);
     const { ExtensionProcessScript } = ChromeUtils.importESModule(
       "resource://gre/modules/ExtensionProcessScript.sys.mjs"
     );
@@ -74,11 +75,25 @@ async function setupScriptInjectionDetector(contentPage) {
     }
     const pendingInjections = [];
 
+    let callCounter = 0;
+
     
     
     const { loadContentScript } = ExtensionProcessScript;
     ExtensionProcessScript.loadContentScript = (contentScript, window) => {
+      
+      
+      const logPrefix = `loadContentScript #${++callCounter} pid=${
+        Services.appinfo.processID
+      }`;
+      dump(
+        `${logPrefix} START runAt=${contentScript.runAt} readyState=${window.document?.readyState} origin=${window.origin} URL=${window.document?.URL} frameHTML=${window.frameElement?.outerHTML} isInitialDocument=${window.document?.isInitialDocument}\n`
+      );
+
       let promise = loadContentScript(contentScript, window);
+      
+      
+      
       if (window.parent !== window) {
         let url = window.document?.URL ?? "(no document???)";
         let runAt = contentScript.runAt;
@@ -87,11 +102,17 @@ async function setupScriptInjectionDetector(contentPage) {
         promise.then(
           () => {
             injectionDescription.returnStatus = "resolved";
+            dump(`${logPrefix} IFRAME RESOLVED\n`);
           },
-          () => {
+          e => {
             injectionDescription.returnStatus = "rejected";
+            dump(`${logPrefix} IFRAME REJECTED with: ${e}\n`);
           }
         );
+      } else {
+        promise.finally(() => {
+          dump(`${logPrefix} TOP SETTLED\n`);
+        });
       }
       return promise;
     };
@@ -104,6 +125,7 @@ async function setupScriptInjectionDetector(contentPage) {
 
 async function getPendingScriptInjections(contentPage) {
   return contentPage.spawn([], () => {
+    info(`getPendingScriptInjections: pid=${Services.appinfo.processID}`);
     const { ExtensionProcessScript } = ChromeUtils.importESModule(
       "resource://gre/modules/ExtensionProcessScript.sys.mjs"
     );
@@ -241,22 +263,36 @@ add_task(async function test_frame_unload_before_execute() {
   let contentPage = await ExtensionTestUtils.loadContentPage(URL_INITIAL);
   await setupScriptInjectionDetector(contentPage);
   await contentPage.spawn([], () => {
+    info(`Adding frame: pid=${Services.appinfo.processID}`);
     const { document } = this.content.wrappedJSObject;
     let f = document.createElement("iframe");
     f.id = "neverloading_frame";
     f.src = "/neverloading.html";
     document.body.append(f);
+
+    
+    
+    
+    void f.contentWindow;
   });
 
   const extension = loadTestExtensionWithContentScripts();
   const seenScripts = [];
-  extension.onMessage("got_frame", (runAt, url) => {
-    seenScripts.push({ runAt, url });
+  const donePromise = new Promise(resolve => {
+    extension.onMessage("got_frame", (runAt, url) => {
+      seenScripts.push({ runAt, url });
+      if (runAt === "document_idle") {
+        resolve();
+      }
+    });
   });
   await extension.startup();
   await extension.awaitMessage("contentscript_in_top");
-  info("Detected content script attempt in top doc, going to remove the frame");
+  info("Detected content script attempt in top doc, waiting for frame");
+  await donePromise;
+  info("Detected content script execution in frame, going to remove the frame");
   await contentPage.spawn([], async () => {
+    info(`Removing frame: pid=${Services.appinfo.processID}`);
     const { TestUtils } = ChromeUtils.importESModule(
       "resource://testing-common/TestUtils.sys.mjs"
     );
@@ -280,16 +316,18 @@ add_task(async function test_frame_unload_before_execute() {
       
       
       { runAt: "document_start", url: "about:blank" },
+      { runAt: "document_end", url: "about:blank" },
+      { runAt: "document_idle", url: "about:blank" },
     ],
     "Accounted for all content script executions"
   );
   Assert.deepEqual(
     await getPendingScriptInjections(contentPage),
     [
+      
       { returnStatus: "resolved", runAt: "document_start", url: "about:blank" },
-      { returnStatus: "pending", runAt: "document_end", url: "about:blank" },
-      
-      
+      { returnStatus: "resolved", runAt: "document_end", url: "about:blank" },
+      { returnStatus: "resolved", runAt: "document_idle", url: "about:blank" },
       
       
       
@@ -297,8 +335,7 @@ add_task(async function test_frame_unload_before_execute() {
       
       
     ],
-    "TODO: There should not be any pending content script injections"
-    
+    "There should not be any pending content script injections"
   );
   await contentPage.close();
   await extension.unload();
