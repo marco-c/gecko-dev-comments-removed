@@ -52,8 +52,11 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
       BounceTrackingStateGlobal* aStateGlobal = nullptr);
 
  private:
-  BounceTrackingProtection();
+  BounceTrackingProtection() = default;
   ~BounceTrackingProtection() = default;
+
+  
+  [[nodiscard]] nsresult Init();
 
   
   
