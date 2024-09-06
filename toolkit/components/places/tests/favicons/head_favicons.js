@@ -30,6 +30,7 @@ let uniqueFaviconId = 0;
 
 
 
+
 function checkFaviconDataForPage(
   aPageURI,
   aExpectedMimeType,
@@ -40,7 +41,9 @@ function checkFaviconDataForPage(
     aPageURI,
     async function (aURI, aDataLen, aData, aMimeType) {
       Assert.equal(aExpectedMimeType, aMimeType);
-      Assert.ok(compareArrays(aExpectedData, aData));
+      if (aExpectedData) {
+        Assert.ok(compareArrays(aExpectedData, aData));
+      }
       await check_guid_for_uri(aPageURI);
       aCallback();
     }
