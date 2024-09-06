@@ -10,6 +10,12 @@
 #include "mozilla/Types.h"
 #include <stdio.h>
 
+#ifdef _WIN32
+typedef void* platform_handle_t;
+#else
+typedef int platform_handle_t;
+#endif
+
 MOZ_BEGIN_EXTERN_C
 
 
@@ -18,7 +24,7 @@ MOZ_BEGIN_EXTERN_C
 
 
 
-void MozillaRegisterDebugHandle(intptr_t aHandle);
+void MozillaRegisterDebugHandle(platform_handle_t aHandle);
 
 
 void MozillaRegisterDebugFD(int aFd);
@@ -27,7 +33,7 @@ void MozillaRegisterDebugFD(int aFd);
 void MozillaRegisterDebugFILE(FILE* aFile);
 
 
-void MozillaUnRegisterDebugHandle(intptr_t aHandle);
+void MozillaUnRegisterDebugHandle(platform_handle_t aHandle);
 
 
 void MozillaUnRegisterDebugFD(int aFd);
@@ -45,7 +51,7 @@ namespace mozilla {
 
 
 
-bool IsDebugFile(intptr_t aFileID);
+bool IsDebugFile(platform_handle_t aFileID);
 
 
 
@@ -79,7 +85,7 @@ void ClearPoisonIOInterposer();
 
 #  ifdef __cplusplus
 namespace mozilla {
-inline bool IsDebugFile(intptr_t aFileID) { return true; }
+inline bool IsDebugFile(platform_handle_t aFileID) { return true; }
 inline void InitPoisonIOInterposer() {}
 inline void ClearPoisonIOInterposer() {}
 #    ifdef XP_MACOSX

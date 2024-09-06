@@ -458,7 +458,7 @@ class Distribution {
     mTotalRequests++;
   }
 
-  void printDist(intptr_t std_err) {
+  void printDist(platform_handle_t std_err) {
     MOZ_ASSERT(mMaxSize);
 
     
@@ -533,7 +533,7 @@ class SMapsReader : private FdReader {
     return Some(SMapsReader(FdReader(fd, true)));
   }
 
-  Maybe<MemoryMap> readMap(intptr_t aStdErr) {
+  Maybe<MemoryMap> readMap(platform_handle_t aStdErr) {
     
     
     
@@ -615,7 +615,7 @@ class Replay {
   Replay() {
 #ifdef _WIN32
     
-    mStdErr = reinterpret_cast<intptr_t>(GetStdHandle(STD_ERROR_HANDLE));
+    mStdErr = GetStdHandle(STD_ERROR_HANDLE);
 #else
     mStdErr = fileno(stderr);
 #endif
@@ -1044,7 +1044,7 @@ class Replay {
     }
   }
 
-  intptr_t mStdErr;
+  platform_handle_t mStdErr;
   size_t mOps = 0;
 
   

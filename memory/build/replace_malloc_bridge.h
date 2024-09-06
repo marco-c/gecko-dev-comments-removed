@@ -48,6 +48,12 @@ struct ReplaceMallocBridge;
 
 #include "mozilla/Types.h"
 
+#ifdef _WIN32
+typedef void* platform_handle_t;
+#else
+typedef int platform_handle_t;
+#endif
+
 MOZ_BEGIN_EXTERN_C
 
 #ifndef REPLACE_MALLOC_IMPL
@@ -124,9 +130,9 @@ class AddrInfo;
 
 
 struct DebugFdRegistry {
-  virtual void RegisterHandle(intptr_t aFd);
+  virtual void RegisterHandle(platform_handle_t aFd);
 
-  virtual void UnRegisterHandle(intptr_t aFd);
+  virtual void UnRegisterHandle(platform_handle_t aFd);
 };
 }  
 
