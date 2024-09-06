@@ -558,6 +558,21 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+
+
+
+
+
+
+
+  [infallible] attribute boolean isSameDocumentNavigation;
+
+  
+
+
+
   [infallible] attribute boolean allowDeprecatedSystemRequests;
 
   

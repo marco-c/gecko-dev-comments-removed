@@ -879,6 +879,9 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
       loadInfoArgs.skipContentSniffing(), loadInfoArgs.httpsOnlyStatus(),
       loadInfoArgs.hstsStatus(), loadInfoArgs.hasValidUserGestureActivation(),
       loadInfoArgs.textDirectiveUserActivation(),
+      
+      
+       false,
       loadInfoArgs.allowDeprecatedSystemRequests(),
       loadInfoArgs.isInDevToolsContext(), loadInfoArgs.parserCreatedScript(),
       loadInfoArgs.storagePermission(), overriddenFingerprintingSettings,
