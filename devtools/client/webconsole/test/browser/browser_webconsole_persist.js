@@ -126,6 +126,8 @@ add_task(async function () {
 
   info("Go back to the first page");
   gBrowser.selectedBrowser.goBack();
+
+  
   
   await waitFor(
     () =>
@@ -136,6 +138,31 @@ add_task(async function () {
       }).length === 1
   );
   ok("First page message re-appeared");
+
+  
+  
+  
+  
+  let isLoadMessageDisplayed = findMessagePartsByType(hud, {
+    text: "first document load",
+    typeSelector: ".console-api",
+    partSelector: ".message-body",
+  }).length;
+
+  
+  
+  
+  
+  
+  if (isLoadMessageDisplayed) {
+    await waitForRepeatedMessageByType(
+      hud,
+      "first document show",
+      ".console-api",
+      2
+    );
+  }
+
   is(
     gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.innerWindowId,
     firstPageInnerWindowId,
@@ -162,6 +189,20 @@ add_task(async function () {
       }).length === 1
   );
   ok("Second page message appeared");
+
+  isLoadMessageDisplayed = findMessagePartsByType(hud, {
+    text: "second document load",
+    typeSelector: ".console-api",
+    partSelector: ".message-body",
+  }).length;
+  if (isLoadMessageDisplayed) {
+    await waitForRepeatedMessageByType(
+      hud,
+      "second document show",
+      ".console-api",
+      2
+    );
+  }
   is(
     gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.innerWindowId,
     secondPageInnerWindowId,
