@@ -115,7 +115,7 @@ DeclarationBlock* nsDOMCSSAttributeDeclaration::GetOrCreateCSSDeclaration(
   }
 
   
-  RefPtr<DeclarationBlock> decl = new DeclarationBlock();
+  auto decl = MakeRefPtr<DeclarationBlock>();
   
   
   decl->SetDirty();
