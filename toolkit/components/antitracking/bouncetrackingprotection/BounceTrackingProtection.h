@@ -22,6 +22,10 @@ class BounceTrackingProtectionStorage;
 class ClearDataCallback;
 class OriginAttributes;
 
+namespace dom {
+class WindowContext;
+}
+
 using ClearDataMozPromise = MozPromise<nsCString, uint32_t, true>;
 
 extern LazyLogModule gBounceTrackingProtectionLog;
@@ -46,8 +50,17 @@ class BounceTrackingProtection final : public nsIObserver,
   
   
   
+  
   [[nodiscard]] static nsresult RecordUserActivation(
       nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime = Nothing());
+
+  
+  
+  
+  
+  
+  [[nodiscard]] static nsresult RecordUserActivation(
+      dom::WindowContext* aWindowContext);
 
   
   
