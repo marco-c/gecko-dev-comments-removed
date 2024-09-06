@@ -261,6 +261,9 @@ add_task(function test_lexer_eofchar() {
     
     
     ["'\\", "\\'", ""],
+    
+    [`"`, `""`],
+    [`'`, `''`],
   ];
 
   const test = (cssText, expectedAppend, argText) => {
