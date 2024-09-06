@@ -1021,6 +1021,10 @@ add_task(
     );
 
     Services.obs.notifyObservers(null, "sessionstore-windows-restored");
+    
+    
+    
+    await Services.search.promiseInitialized;
 
     environmentData = TelemetryEnvironment.currentEnvironment;
     TelemetryEnvironmentTesting.checkEnvironmentData(environmentData);
