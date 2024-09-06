@@ -156,6 +156,7 @@ pub type BlobToDeviceTranslation = Translation2D<i32, LayoutPixel, DevicePixel>;
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[repr(C)]
 pub struct TexelRect {
     pub uv0: DevicePoint,
     pub uv1: DevicePoint,
