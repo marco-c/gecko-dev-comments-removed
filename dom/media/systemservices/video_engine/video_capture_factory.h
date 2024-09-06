@@ -17,10 +17,6 @@ namespace mozilla::camera {
 enum class CaptureDeviceType;
 }
 
-namespace webrtc {
-class DesktopCaptureImpl;
-}
-
 namespace mozilla {
 
 
@@ -36,14 +32,7 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
   std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> CreateDeviceInfo(
       int32_t aId, mozilla::camera::CaptureDeviceType aType);
 
-  struct CreateVideoCaptureResult {
-    rtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
-    
-    
-    webrtc::DesktopCaptureImpl* mDesktopImpl = nullptr;
-  };
-
-  CreateVideoCaptureResult CreateVideoCapture(
+  rtc::scoped_refptr<webrtc::VideoCaptureModule> CreateVideoCapture(
       int32_t aModuleId, const char* aUniqueId,
       mozilla::camera::CaptureDeviceType aType);
 

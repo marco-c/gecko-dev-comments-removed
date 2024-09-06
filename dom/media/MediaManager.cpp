@@ -510,8 +510,6 @@ class DeviceListener : public SupportsWeakPtr {
   
   
   UniquePtr<DeviceState> mDeviceState;
-
-  MediaEventListener mCaptureEndedListener;
 };
 
 
@@ -4160,12 +4158,6 @@ void DeviceListener::Activate(RefPtr<LocalMediaDevice> aDevice,
       (aDevice->GetMediaSource() == MediaSourceEnum::Camera &&
        Preferences::GetBool(
            "media.getusermedia.camera.off_while_disabled.enabled", true));
-
-  if (MediaEventSource<void>* event = aDevice->Source()->CaptureEndedEvent()) {
-    mCaptureEndedListener = event->Connect(AbstractThread::MainThread(), this,
-                                           &DeviceListener::Stop);
-  }
-
   mDeviceState = MakeUnique<DeviceState>(
       std::move(aDevice), std::move(aTrackSource), offWhileDisabled);
   mDeviceState->mDeviceMuted = aStartMuted;
@@ -4283,8 +4275,6 @@ void DeviceListener::Stop() {
 
     mWindowListener->ChromeAffectingStateChanged();
   }
-
-  mCaptureEndedListener.DisconnectIfExists();
 
   
   RefPtr<GetUserMediaWindowListener> windowListener = mWindowListener;
