@@ -411,27 +411,35 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   MOZ_CAN_RUN_SCRIPT
   void SetDynamicToolbarMaxHeight(mozilla::ScreenIntCoord aHeight);
 
-  mozilla::ScreenIntCoord GetDynamicToolbarMaxHeight() const {
-    MOZ_ASSERT(IsRootContentDocumentCrossProcess());
-    return mDynamicToolbarMaxHeight;
-  }
-
   
 
 
-  bool HasDynamicToolbar() const {
-    MOZ_ASSERT(IsRootContentDocumentCrossProcess());
-    return mDynamicToolbarMaxHeight > 0;
-  }
+  bool HasDynamicToolbar() const { return GetDynamicToolbarMaxHeight() > 0; }
 
   
 
 
   void UpdateDynamicToolbarOffset(mozilla::ScreenIntCoord aOffset);
+
+  mozilla::ScreenIntCoord GetDynamicToolbarMaxHeight() const {
+    MOZ_ASSERT_IF(mDynamicToolbarMaxHeight > 0,
+                  IsRootContentDocumentCrossProcess());
+    return mDynamicToolbarMaxHeight;
+  }
+
+  nscoord GetDynamicToolbarMaxHeightInAppUnits() const;
+
   mozilla::ScreenIntCoord GetDynamicToolbarHeight() const {
-    MOZ_ASSERT(IsRootContentDocumentCrossProcess());
+    MOZ_ASSERT_IF(mDynamicToolbarHeight > 0,
+                  IsRootContentDocumentCrossProcess());
     return mDynamicToolbarHeight;
   }
+
+  
+
+
+
+  nscoord GetBimodalDynamicToolbarHeightInAppUnits() const;
 
   
 

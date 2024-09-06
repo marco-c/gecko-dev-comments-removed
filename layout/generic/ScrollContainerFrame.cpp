@@ -3820,18 +3820,15 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   const bool isRootContent =
       mIsRoot && PresContext()->IsRootContentDocumentCrossProcess();
 
-  nsRect effectiveScrollPort = mScrollPort;
-  if (isRootContent && PresContext()->HasDynamicToolbar()) {
-    
-    
-    
-    
-    
-    
-    
-    effectiveScrollPort.SizeTo(nsLayoutUtils::ExpandHeightForDynamicToolbar(
-        PresContext(), effectiveScrollPort.Size()));
-  }
+  
+  
+  
+  
+  
+  
+  
+  const nsRect effectiveScrollPort =
+      GetScrollPortRectAccountingForMaxDynamicToolbar();
 
   
   

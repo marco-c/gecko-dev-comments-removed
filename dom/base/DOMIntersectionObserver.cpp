@@ -373,7 +373,8 @@ static Maybe<nsRect> ComputeTheIntersection(
         
         break;
       }
-      nsRect subFrameRect = scrollContainerFrame->GetScrollPortRect();
+      nsRect subFrameRect =
+          scrollContainerFrame->GetScrollPortRectAccountingForDynamicToolbar();
 
       
       nsRect intersectionRectRelativeToContainer =
@@ -518,7 +519,8 @@ static Maybe<OopIframeMetrics> GetOopIframeMetrics(
   nsRect inProcessRootRect;
   if (ScrollContainerFrame* rootScrollContainerFrame =
           rootPresShell->GetRootScrollContainerFrame()) {
-    inProcessRootRect = rootScrollContainerFrame->GetScrollPortRect();
+    inProcessRootRect = rootScrollContainerFrame
+                            ->GetScrollPortRectAccountingForDynamicToolbar();
   }
 
   Maybe<LayoutDeviceRect> remoteDocumentVisibleRect =
@@ -559,7 +561,9 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
               do_QueryFrame(rootFrame)) {
         
         
-        rootRectRelativeToRootFrame = scrollContainerFrame->GetScrollPortRect();
+        rootRectRelativeToRootFrame =
+            scrollContainerFrame
+                ->GetScrollPortRectAccountingForDynamicToolbar();
       } else {
         
         rootRectRelativeToRootFrame = rootFrame->GetRectRelativeToSelf();
@@ -593,7 +597,8 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
         
         if (ScrollContainerFrame* rootScrollContainerFrame =
                 presShell->GetRootScrollContainerFrame()) {
-          rootRect = rootScrollContainerFrame->GetScrollPortRect();
+          rootRect = rootScrollContainerFrame
+                         ->GetScrollPortRectAccountingForDynamicToolbar();
         } else if (rootFrame) {
           rootRect = rootFrame->GetRectRelativeToSelf();
         }
