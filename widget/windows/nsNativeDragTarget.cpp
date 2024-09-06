@@ -166,8 +166,8 @@ void nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
   GetGeckoDragAction(grfKeyState, pdwEffect, &geckoAction);
 
   
-  nsCOMPtr<nsIDragSession> currSession;
-  mDragService->GetCurrentSession(getter_AddRefs(currSession));
+  RefPtr<nsDragSession> currSession =
+      static_cast<nsDragSession*>(mDragService->GetCurrentSession(mWidget));
   if (!currSession) {
     return;
   }
@@ -298,8 +298,8 @@ nsNativeDragTarget::DragOver(DWORD grfKeyState, POINTL ptl, LPDWORD pdwEffect) {
   
   mEffectsAllowed = (*pdwEffect) | (mEffectsAllowed & DROPEFFECT_LINK);
 
-  nsCOMPtr<nsIDragSession> currentDragSession;
-  mDragService->GetCurrentSession(getter_AddRefs(currentDragSession));
+  nsCOMPtr<nsIDragSession> currentDragSession =
+      mDragService->GetCurrentSession(mWidget);
   if (!currentDragSession) {
     return S_OK;  
   }
@@ -349,8 +349,8 @@ nsNativeDragTarget::DragLeave() {
   
   DispatchDragDropEvent(eDragExit, gDragLastPoint);
 
-  nsCOMPtr<nsIDragSession> currentDragSession;
-  mDragService->GetCurrentSession(getter_AddRefs(currentDragSession));
+  nsCOMPtr<nsIDragSession> currentDragSession =
+      mDragService->GetCurrentSession(mWidget);
 
   if (currentDragSession) {
     nsCOMPtr<nsINode> sourceNode;
@@ -426,8 +426,8 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
   
   ProcessDrag(eDrop, grfKeyState, aPT, pdwEffect);
 
-  nsCOMPtr<nsIDragSession> currentDragSession;
-  serv->GetCurrentSession(getter_AddRefs(currentDragSession));
+  nsCOMPtr<nsIDragSession> currentDragSession =
+      serv->GetCurrentSession(mWidget);
   if (!currentDragSession) {
     return S_OK;  
   }
