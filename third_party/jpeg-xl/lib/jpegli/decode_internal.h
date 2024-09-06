@@ -6,15 +6,14 @@
 #ifndef LIB_JPEGLI_DECODE_INTERNAL_H_
 #define LIB_JPEGLI_DECODE_INTERNAL_H_
 
+#include <stdint.h>
 #include <sys/types.h>
 
-#include <cstdint>
 #include <vector>
 
 #include "lib/jpegli/common.h"
 #include "lib/jpegli/common_internal.h"
 #include "lib/jpegli/huffman.h"
-#include "lib/jpegli/types.h"
 
 namespace jpegli {
 
@@ -46,12 +45,11 @@ struct jpeg_decomp_master {
   size_t input_buffer_pos_;
   
   size_t codestream_bits_ahead_;
+  bool streaming_mode_;
 
   
   jvirt_barray_ptr* coef_arrays;
   JBLOCKARRAY coeff_rows[jpegli::kMaxComponents];
-
-  bool streaming_mode_;
 
   
   
@@ -59,13 +57,7 @@ struct jpeg_decomp_master {
   bool found_soi_;
   bool found_dri_;
   bool found_sof_;
-  bool found_sos_;
   bool found_eoi_;
-
-  
-  
-  bool is_multiscan_;
-
   size_t icc_index_;
   size_t icc_total_;
   std::vector<uint8_t> icc_profile_;
@@ -74,6 +66,9 @@ struct jpeg_decomp_master {
   uint8_t markers_to_save_[32];
   jpeg_marker_parser_method app_marker_parsers[16];
   jpeg_marker_parser_method com_marker_parser;
+  
+  
+  bool is_multiscan_;
 
   
   size_t iMCU_cols_;
@@ -101,11 +96,9 @@ struct jpeg_decomp_master {
   
   int output_passes_done_;
   JpegliDataType output_data_type_ = JPEGLI_TYPE_UINT8;
-  size_t xoffset_;
   bool swap_endianness_ = false;
+  size_t xoffset_;
   bool need_context_rows_;
-  bool regenerate_inverse_colormap_;
-  bool apply_smoothing;
 
   int min_scaled_dct_size;
   int scaled_dct_size[jpegli::kMaxComponents];
@@ -134,6 +127,7 @@ struct jpeg_decomp_master {
   uint8_t* pixels_;
   JSAMPARRAY scanlines_;
   std::vector<std::vector<uint8_t>> candidate_lists_;
+  bool regenerate_inverse_colormap_;
   float* dither_[jpegli::kMaxComponents];
   float* error_row_[2 * jpegli::kMaxComponents];
   size_t dither_size_;
@@ -151,6 +145,7 @@ struct jpeg_decomp_master {
   
   int (*coef_bits_latch)[SAVED_COEFS];
   int (*prev_coef_bits_latch)[SAVED_COEFS];
+  bool apply_smoothing;
 };
 
 #endif  

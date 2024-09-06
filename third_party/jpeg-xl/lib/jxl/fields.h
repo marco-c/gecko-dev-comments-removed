@@ -8,11 +8,14 @@
 
 
 
+#include <cmath>  
+#include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
+#include "lib/jxl/base/bits.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_bit_reader.h"
@@ -21,7 +24,6 @@
 namespace jxl {
 
 struct AuxOut;
-enum class LayerType : uint8_t;
 struct BitWriter;
 
 
@@ -183,8 +185,8 @@ Status Read(BitReader* reader, Fields* JXL_RESTRICT fields);
 
 bool CanRead(BitReader* reader, Fields* JXL_RESTRICT fields);
 
-Status Write(const Fields& fields, BitWriter* JXL_RESTRICT writer,
-             LayerType layer, AuxOut* aux_out);
+Status Write(const Fields& fields, BitWriter* JXL_RESTRICT writer, size_t layer,
+             AuxOut* aux_out);
 }  
 
 

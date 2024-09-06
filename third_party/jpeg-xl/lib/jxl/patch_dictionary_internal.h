@@ -6,6 +6,9 @@
 #ifndef LIB_JXL_PATCH_DICTIONARY_INTERNAL_H_
 #define LIB_JXL_PATCH_DICTIONARY_INTERNAL_H_
 
+#include "lib/jxl/dec_patch_dictionary.h"
+#include "lib/jxl/passes_state.h"  
+
 namespace jxl {
 
 

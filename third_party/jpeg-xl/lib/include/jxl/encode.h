@@ -25,7 +25,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
 #endif
 
@@ -387,11 +387,6 @@ typedef enum {
 
 
   JXL_ENC_FRAME_SETTING_USE_FULL_IMAGE_HEURISTICS = 38,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_DISABLE_PERCEPTUAL_HEURISTICS = 39,
 
   
 
@@ -1593,7 +1588,7 @@ JXL_EXPORT void JxlEncoderSetDebugImageCallback(
 JXL_EXPORT void JxlEncoderCollectStats(JxlEncoderFrameSettings* frame_settings,
                                        JxlEncoderStats* stats);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif
 

@@ -12,8 +12,6 @@
 
 #include <hwy/highway.h>
 
-#include "lib/jxl/base/data_parallel.h"
-#include "lib/jxl/base/rect.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/image_ops.h"
 
@@ -123,8 +121,7 @@ class Neighbors {
 inline const int32_t* MirrorLanes(const size_t mod) {
   const HWY_CAPPED(float, 16) d;
   constexpr size_t kN = MaxLanes(d);
-  
-  
+
   
   
   

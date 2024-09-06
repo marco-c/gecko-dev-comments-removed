@@ -7,7 +7,6 @@
 #define LIB_JXL_ENC_FRAME_H_
 
 #include <jxl/cms_interface.h>
-#include <jxl/memory_manager.h>
 #include <jxl/types.h>
 
 #include <cstddef>
@@ -92,16 +91,14 @@ Status ParamsPostInit(CompressParams* p);
 
 
 
-Status EncodeFrame(JxlMemoryManager* memory_manager,
-                   const CompressParams& cparams_orig,
+Status EncodeFrame(const CompressParams& cparams_orig,
                    const FrameInfo& frame_info, const CodecMetadata* metadata,
                    JxlEncoderChunkedFrameAdapter& frame_data,
                    const JxlCmsInterface& cms, ThreadPool* pool,
                    JxlEncoderOutputProcessorWrapper* output_processor,
                    AuxOut* aux_out);
 
-Status EncodeFrame(JxlMemoryManager* memory_manager,
-                   const CompressParams& cparams_orig,
+Status EncodeFrame(const CompressParams& cparams_orig,
                    const FrameInfo& frame_info, const CodecMetadata* metadata,
                    const ImageBundle& ib, const JxlCmsInterface& cms,
                    ThreadPool* pool, BitWriter* writer, AuxOut* aux_out);

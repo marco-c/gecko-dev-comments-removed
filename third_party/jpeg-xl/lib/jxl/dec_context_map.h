@@ -6,23 +6,23 @@
 #ifndef LIB_JXL_DEC_CONTEXT_MAP_H_
 #define LIB_JXL_DEC_CONTEXT_MAP_H_
 
-#include <jxl/memory_manager.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include <cstddef>
-#include <cstdint>
 #include <vector>
 
-#include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_bit_reader.h"
 
 namespace jxl {
 
 
+constexpr size_t kMaxClusters = 256;
 
 
 
-Status DecodeContextMap(JxlMemoryManager* memory_manager,
-                        std::vector<uint8_t>* context_map, size_t* num_htrees,
+
+
+Status DecodeContextMap(std::vector<uint8_t>* context_map, size_t* num_htrees,
                         BitReader* input);
 
 }  

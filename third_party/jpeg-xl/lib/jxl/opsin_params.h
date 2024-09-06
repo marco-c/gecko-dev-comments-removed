@@ -9,15 +9,14 @@
 
 
 #include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/base/matrix_ops.h"
 
 namespace jxl {
 
 
 
-const Matrix3x3& GetOpsinAbsorbanceInverseMatrix();
+const float* GetOpsinAbsorbanceInverseMatrix();
 
-void InitSIMDInverseMatrix(const Matrix3x3& inverse,
+void InitSIMDInverseMatrix(const float* JXL_RESTRICT inverse,
                            float* JXL_RESTRICT simd_inverse,
                            float intensity_target);
 

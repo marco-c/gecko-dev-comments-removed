@@ -15,7 +15,7 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
 #endif
 
@@ -63,7 +63,7 @@ typedef struct JxlMemoryManagerStruct {
   
 } JxlMemoryManager;
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif
 

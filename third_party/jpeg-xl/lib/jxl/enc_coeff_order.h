@@ -6,22 +6,23 @@
 #ifndef LIB_JXL_ENC_COEFF_ORDER_H_
 #define LIB_JXL_ENC_COEFF_ORDER_H_
 
-#include <cstddef>
-#include <cstdint>
+#include <stddef.h>
+#include <stdint.h>
 
+#include "lib/jxl/ac_strategy.h"
 #include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/base/rect.h"
+#include "lib/jxl/base/status.h"
+#include "lib/jxl/coeff_order.h"
 #include "lib/jxl/coeff_order_fwd.h"
-#include "lib/jxl/common.h"
 #include "lib/jxl/dct_util.h"
+#include "lib/jxl/dec_bit_reader.h"
 #include "lib/jxl/enc_bit_writer.h"
+#include "lib/jxl/enc_params.h"
 #include "lib/jxl/frame_dimensions.h"
 
 namespace jxl {
 
 struct AuxOut;
-class AcStrategyImage;
-enum class LayerType : uint8_t;
 
 
 
@@ -40,14 +41,14 @@ void ComputeCoeffOrder(SpeedTier speed, const ACImage& acs,
 
 void EncodeCoeffOrders(uint16_t used_orders,
                        const coeff_order_t* JXL_RESTRICT order,
-                       BitWriter* writer, LayerType layer,
+                       BitWriter* writer, size_t layer,
                        AuxOut* JXL_RESTRICT aux_out);
 
 
 
 
 void EncodePermutation(const coeff_order_t* JXL_RESTRICT order, size_t skip,
-                       size_t size, BitWriter* writer, LayerType layer,
+                       size_t size, BitWriter* writer, int layer,
                        AuxOut* aux_out);
 
 }  

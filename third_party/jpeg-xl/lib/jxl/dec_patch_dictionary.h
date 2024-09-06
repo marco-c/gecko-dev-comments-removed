@@ -8,29 +8,16 @@
 
 
 
-#include <jxl/memory_manager.h>
+#include <stddef.h>
+#include <string.h>
 #include <sys/types.h>
 
-#include <array>
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
-#include <memory>
-#include <utility>
 #include <vector>
 
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_bit_reader.h"
-#include "lib/jxl/image_bundle.h"
-#include "lib/jxl/image_metadata.h"
 
 namespace jxl {
-
-struct ReferceFrame {
-  std::unique_ptr<ImageBundle> frame;
-  
-  bool ib_is_in_xyb = false;
-};
 
 enum class PatchBlendMode : uint8_t {
   
@@ -65,10 +52,8 @@ enum class PatchBlendMode : uint8_t {
   
   kAlphaWeightedAddAbove = 6,
   kAlphaWeightedAddBelow = 7,
+  kNumBlendModes,
 };
-
-constexpr uint8_t kNumPatchBlendModes =
-    static_cast<uint8_t>(PatchBlendMode::kAlphaWeightedAddBelow) + 1;
 
 inline bool UsesAlpha(PatchBlendMode mode) {
   return mode == PatchBlendMode::kBlendAbove ||
@@ -104,17 +89,15 @@ class PatchDictionaryEncoder;
 
 class PatchDictionary {
  public:
-  explicit PatchDictionary(JxlMemoryManager* memory_manager)
-      : memory_manager_(memory_manager) {}
+  PatchDictionary() = default;
 
-  void SetShared(const std::array<ReferceFrame, 4>* reference_frames) {
-    reference_frames_ = reference_frames;
+  void SetPassesSharedState(const PassesSharedState* shared) {
+    shared_ = shared;
   }
 
   bool HasAny() const { return !positions_.empty(); }
 
-  Status Decode(JxlMemoryManager* memory_manager, BitReader* br, size_t xsize,
-                size_t ysize, size_t num_extra_channels,
+  Status Decode(BitReader* br, size_t xsize, size_t ysize,
                 bool* uses_extra_channels);
 
   void Clear() {
@@ -124,9 +107,8 @@ class PatchDictionary {
 
   
   
-  Status AddOneRow(
-      float* const* inout, size_t y, size_t x0, size_t xsize,
-      const std::vector<ExtraChannelInfo>& extra_channel_info) const;
+  Status AddOneRow(float* const* inout, size_t y, size_t x0,
+                   size_t xsize) const;
 
   
   
@@ -137,12 +119,10 @@ class PatchDictionary {
  private:
   friend class PatchDictionaryEncoder;
 
-  JxlMemoryManager* memory_manager_;
-  const std::array<ReferceFrame, 4>* reference_frames_;
+  const PassesSharedState* shared_;
   std::vector<PatchPosition> positions_;
   std::vector<PatchReferencePosition> ref_positions_;
   std::vector<PatchBlending> blendings_;
-  size_t blendings_stride_;
 
   
   struct PatchTreeNode {

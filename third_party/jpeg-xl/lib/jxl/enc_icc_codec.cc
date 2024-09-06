@@ -5,13 +5,14 @@
 
 #include "lib/jxl/enc_icc_codec.h"
 
-#include <jxl/memory_manager.h>
+#include <stdint.h>
 
-#include <cstdint>
 #include <limits>
 #include <map>
+#include <string>
 #include <vector>
 
+#include "lib/jxl/base/byte_order.h"
 #include "lib/jxl/color_encoding_internal.h"
 #include "lib/jxl/enc_ans.h"
 #include "lib/jxl/enc_aux_out.h"
@@ -32,10 +33,9 @@ namespace {
 
 
 
-void Unshuffle(JxlMemoryManager* memory_manager, uint8_t* data, size_t size,
-               size_t width) {
+void Unshuffle(uint8_t* data, size_t size, size_t width) {
   size_t height = (size + width - 1) / width;  
-  PaddedBytes result(memory_manager, size);
+  PaddedBytes result(size);
   
   size_t s = 0;
   size_t j = 0;
@@ -57,7 +57,6 @@ Status PredictAndShuffle(size_t stride, size_t width, int order, size_t num,
                          const uint8_t* data, size_t size, size_t* pos,
                          PaddedBytes* result) {
   JXL_RETURN_IF_ERROR(CheckOutOfBounds(*pos, num, size));
-  JxlMemoryManager* memory_manager = result->memory_manager();
   
   if (!*pos || ((*pos - 1u) >> 2u) < stride) {
     return JXL_FAILURE("Invalid stride");
@@ -70,7 +69,7 @@ Status PredictAndShuffle(size_t stride, size_t width, int order, size_t num,
     result->push_back(data[*pos + i] - predicted);
   }
   *pos += num;
-  if (width > 1) Unshuffle(memory_manager, result->data() + start, num, width);
+  if (width > 1) Unshuffle(result->data() + start, num, width);
   return true;
 }
 
@@ -106,9 +105,8 @@ constexpr size_t kSizeLimit = std::numeric_limits<uint32_t>::max() >> 2;
 
 
 Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
-  JxlMemoryManager* memory_manager = result->memory_manager();
-  PaddedBytes commands{memory_manager};
-  PaddedBytes data{memory_manager};
+  PaddedBytes commands;
+  PaddedBytes data;
 
   static_assert(sizeof(size_t) >= 4, "size_t is too short");
   
@@ -120,7 +118,7 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
   EncodeVarInt(size, result);
 
   
-  PaddedBytes header{memory_manager};
+  PaddedBytes header;
   header.append(ICCInitialHeaderPrediction());
   EncodeUint32(0, size, &header);
   for (size_t i = 0; i < kICCHeaderSize && i < size; i++) {
@@ -129,8 +127,8 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
   }
   if (size <= kICCHeaderSize) {
     EncodeVarInt(0, result);  
-    for (uint8_t b : data) {
-      result->push_back(b);
+    for (size_t i = 0; i < data.size(); i++) {
+      result->push_back(data[i]);
     }
     return true;
   }
@@ -258,8 +256,8 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
   
   while (pos <= size) {
     size_t last1 = pos;
-    PaddedBytes commands_add{memory_manager};
-    PaddedBytes data_add{memory_manager};
+    PaddedBytes commands_add;
+    PaddedBytes data_add;
 
     
     
@@ -287,7 +285,7 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
           data_add.push_back(icc[pos]);
           pos++;
         }
-        Unshuffle(memory_manager, data_add.data() + start, num, 2);
+        Unshuffle(data_add.data() + start, num, 2);
       }
 
       if (tag == kCurvTag && tag_sane() && pos + tagsize <= size &&
@@ -405,11 +403,11 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
           data.push_back(icc[last0++]);
         }
       }
-      for (uint8_t b : commands_add) {
-        commands.push_back(b);
+      for (size_t i = 0; i < commands_add.size(); i++) {
+        commands.push_back(commands_add[i]);
       }
-      for (uint8_t b : data_add) {
-        data.push_back(b);
+      for (size_t i = 0; i < data_add.size(); i++) {
+        data.push_back(data_add[i]);
       }
       last0 = pos;
     }
@@ -419,21 +417,20 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
   }
 
   EncodeVarInt(commands.size(), result);
-  for (uint8_t b : commands) {
-    result->push_back(b);
+  for (size_t i = 0; i < commands.size(); i++) {
+    result->push_back(commands[i]);
   }
-  for (uint8_t b : data) {
-    result->push_back(b);
+  for (size_t i = 0; i < data.size(); i++) {
+    result->push_back(data[i]);
   }
 
   return true;
 }
 
-Status WriteICC(const Span<const uint8_t> icc, BitWriter* JXL_RESTRICT writer,
-                LayerType layer, AuxOut* JXL_RESTRICT aux_out) {
+Status WriteICC(const IccBytes& icc, BitWriter* JXL_RESTRICT writer,
+                size_t layer, AuxOut* JXL_RESTRICT aux_out) {
   if (icc.empty()) return JXL_FAILURE("ICC must be non-empty");
-  JxlMemoryManager* memory_manager = writer->memory_manager();
-  PaddedBytes enc{memory_manager};
+  PaddedBytes enc;
   JXL_RETURN_IF_ERROR(PredictICC(icc.data(), icc.size(), &enc));
   std::vector<std::vector<Token>> tokens(1);
   BitWriter::Allotment allotment(writer, 128);
@@ -451,8 +448,8 @@ Status WriteICC(const Span<const uint8_t> icc, BitWriter* JXL_RESTRICT writer,
   EntropyEncodingData code;
   std::vector<uint8_t> context_map;
   params.force_huffman = true;
-  BuildAndEncodeHistograms(memory_manager, params, kNumICCContexts, tokens,
-                           &code, &context_map, writer, layer, aux_out);
+  BuildAndEncodeHistograms(params, kNumICCContexts, tokens, &code, &context_map,
+                           writer, layer, aux_out);
   WriteTokens(tokens[0], code, context_map, 0, writer, layer, aux_out);
   return true;
 }

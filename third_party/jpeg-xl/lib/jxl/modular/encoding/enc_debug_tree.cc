@@ -5,7 +5,8 @@
 
 #include "lib/jxl/modular/encoding/enc_debug_tree.h"
 
-#include <cinttypes>  
+#include <cinttypes>
+#include <cstdint>
 #include <cstdlib>
 
 #include "lib/jxl/base/os_macros.h"

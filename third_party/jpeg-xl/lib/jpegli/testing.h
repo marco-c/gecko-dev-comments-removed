@@ -8,6 +8,14 @@
 
 
 
+
+
+#pragma push_macro("PRIdS")
+#pragma push_macro("PRIuS")
+#include "gmock/gmock.h"
+#pragma pop_macro("PRIuS")
+#pragma pop_macro("PRIdS")
+
 #include "gtest/gtest.h"
 
 
@@ -20,12 +28,8 @@
 
 
 
-#define EXPECT_SLIGHTLY_BELOW(A, E)       \
-  {                                       \
-    double _actual = (A);                 \
-    double _expected = (E);               \
-    EXPECT_LE(_actual, _expected);        \
-    EXPECT_GE(_actual, 0.75 * _expected); \
-  }
+MATCHER_P(IsSlightlyBelow, max, "") {
+  return max * 0.75 <= arg && arg <= max * 1.0;
+}
 
 #endif  

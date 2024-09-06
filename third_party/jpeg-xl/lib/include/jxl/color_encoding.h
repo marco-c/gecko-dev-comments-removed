@@ -14,7 +14,9 @@
 #ifndef JXL_COLOR_ENCODING_H_
 #define JXL_COLOR_ENCODING_H_
 
-#ifdef __cplusplus
+#include <stdint.h>
+
+#if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
 #endif
 
@@ -152,7 +154,7 @@ typedef struct {
   JxlRenderingIntent rendering_intent;
 } JxlColorEncoding;
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif
 

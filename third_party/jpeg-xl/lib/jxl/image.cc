@@ -5,19 +5,17 @@
 
 #include "lib/jxl/image.h"
 
-#include <jxl/memory_manager.h>
-
 #include <algorithm>  
 #include <cstddef>
 #include <cstdint>
 
 #include "lib/jxl/base/status.h"
-#include "lib/jxl/memory_manager_internal.h"
+#include "lib/jxl/cache_aligned.h"
+#include "lib/jxl/simd_util.h"
 
 #if defined(MEMORY_SANITIZER)
 #include "lib/jxl/base/common.h"
-#include "lib/jxl/base/sanitizers.h"
-#include "lib/jxl/simd_util.h"
+#include "lib/jxl/sanitizers.h"
 #endif
 
 namespace jxl {
@@ -68,6 +66,7 @@ PlaneBase::PlaneBase(const size_t xsize, const size_t ysize,
       orig_xsize_(static_cast<uint32_t>(xsize)),
       orig_ysize_(static_cast<uint32_t>(ysize)),
       bytes_per_row_(BytesPerRow(xsize_, sizeof_t)),
+      bytes_(nullptr),
       sizeof_t_(sizeof_t) {
   
   JXL_CHECK(xsize == xsize_);
@@ -76,8 +75,8 @@ PlaneBase::PlaneBase(const size_t xsize, const size_t ysize,
   JXL_ASSERT(sizeof_t == 1 || sizeof_t == 2 || sizeof_t == 4 || sizeof_t == 8);
 }
 
-Status PlaneBase::Allocate(JxlMemoryManager* memory_manager) {
-  JXL_CHECK(bytes_.address<void>() == nullptr);
+Status PlaneBase::Allocate() {
+  JXL_CHECK(!bytes_.get());
 
   
   
@@ -85,9 +84,11 @@ Status PlaneBase::Allocate(JxlMemoryManager* memory_manager) {
     return true;
   }
 
-  JXL_ASSIGN_OR_RETURN(
-      bytes_, AlignedMemory::Create(memory_manager, bytes_per_row_ * ysize_));
-
+  bytes_ = AllocateArray(bytes_per_row_ * ysize_);
+  if (!bytes_.get()) {
+    
+    return JXL_FAILURE("Failed to allocate memory for image surface");
+  }
   InitializePadding(*this, sizeof_t_);
 
   return true;
