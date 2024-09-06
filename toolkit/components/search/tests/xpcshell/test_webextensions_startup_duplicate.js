@@ -25,11 +25,7 @@ add_setup(async function () {
 
 add_task(async function test_install_duplicate_engine_startup() {
   let name = "Plain";
-  let id = "plain@tests.mozilla.org";
-  consoleAllowList.push(
-    `#createAndAddAddonEngine failed for ${id}`,
-    `An engine called ${name} already exists`
-  );
+  consoleAllowList.push("#createAndAddAddonEngine failed for");
   
   
   let extensionInfo = {
