@@ -472,11 +472,22 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: ["table-layout"],
+        invalidProperties: [
+          "border-collapse",
+          "border-spacing",
+          "table-layout",
+        ],
         when: () =>
           !this.checkComputedStyle("display", ["table", "inline-table"]),
         fixId: "inactive-css-not-table-fix",
         msgId: "inactive-css-not-table",
+      },
+      
+      {
+        invalidProperties: ["border-spacing"],
+        when: () => this.checkComputedStyle("border-collapse", ["collapse"]),
+        fixId: "inactive-css-collapsed-table-borders-fix",
+        msgId: "inactive-css-collapsed-table-borders",
       },
       
       {
