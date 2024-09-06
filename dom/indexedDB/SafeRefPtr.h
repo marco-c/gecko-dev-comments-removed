@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_saferefptr_h__
 #define mozilla_saferefptr_h__
@@ -41,9 +41,9 @@ class SafeRefCountedBase {
   void* operator new[](size_t) = delete;
 };
 
-
-
-
+// SafeRefCounted is similar to RefCounted, but they differ in their initial
+// refcount (here 1), and the visibility of operator new (here private). The
+// rest is mostly a copy of RefCounted.
 template <typename T, RefCountAtomicity Atomicity>
 class SafeRefCounted : public SafeRefCountedBase {
  protected:
@@ -53,9 +53,9 @@ class SafeRefCounted : public SafeRefCountedBase {
 #endif
 
  public:
-  
+  // Compatibility with nsRefPtr.
   MozRefCountType AddRef() const {
-    
+    // Note: this method must be thread safe for AtomicRefCounted.
     MOZ_ASSERT(int32_t(mRefCnt) >= 0);
     const MozRefCountType cnt = ++mRefCnt;
     detail::RefCountLogger::logAddRef(static_cast<const T*>(this), cnt);
@@ -63,18 +63,18 @@ class SafeRefCounted : public SafeRefCountedBase {
   }
 
   MozRefCountType Release() const {
-    
+    // Note: this method must be thread safe for AtomicRefCounted.
     MOZ_ASSERT(int32_t(mRefCnt) > 0);
     detail::RefCountLogger::ReleaseLogger logger(static_cast<const T*>(this));
     const MozRefCountType cnt = --mRefCnt;
-    
-    
+    // Note: it's not safe to touch |this| after decrementing the refcount,
+    // except for below.
     logger.logRelease(cnt);
     if (0 == cnt) {
-      
-      
-      
-      
+      // Because we have atomically decremented the refcount above, only
+      // one thread can get a 0 count here, so as long as we can assume that
+      // everything else in the system is accessing this object through
+      // RefPtrs, it's safe to access |this| here.
 #ifdef DEBUG
       mRefCnt = detail::DEAD;
 #endif
@@ -83,7 +83,7 @@ class SafeRefCounted : public SafeRefCountedBase {
     return cnt;
   }
 
-  
+  // Compatibility with wtf::RefPtr.
   void ref() { AddRef(); }
   void deref() { Release(); }
   MozRefCountType refCount() const { return mRefCnt; }
@@ -99,7 +99,7 @@ class SafeRefCounted : public SafeRefCountedBase {
   mutable RC<MozRefCountType, Atomicity> mRefCnt =
       RC<MozRefCountType, Atomicity>{1};
 };
-}  
+}  // namespace detail
 
 template <typename T>
 class SafeRefCounted
@@ -123,8 +123,8 @@ class AtomicSafeRefCounted
 
 struct AcquireStrongRefFromRawPtr {};
 
-
-
+// XXX for Apple, clang::trivial_abi is probably also supported, but we need to
+// find out the correct version number
 #if defined(__clang__) && !defined(__apple_build_version__) && \
     __clang_major__ >= 7
 #  define MOZ_TRIVIAL_ABI [[clang::trivial_abi]]
@@ -132,17 +132,17 @@ struct AcquireStrongRefFromRawPtr {};
 #  define MOZ_TRIVIAL_ABI
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
+// A restricted variant of mozilla::RefPtr<T>, which prohibits some unsafe or
+// unperformant misuses, in particular:
+// * It is not implicitly convertible from a raw pointer. Unsafe acquisitions
+//   from a raw pointer must be made using the verbose
+//   AcquireStrongRefFromRawPtr. To create a new object on the heap, use
+//   MakeSafeRefPtr.
+// * It does not implicitly decay to a raw pointer. unsafeGetRawPtr() must be
+// called
+//   explicitly.
+// * It is not copyable, but must be explicitly copied using clonePtr().
+// * Temporaries cannot be dereferenced using operator* or operator->.
 template <typename T>
 class MOZ_IS_REFPTR MOZ_TRIVIAL_ABI SafeRefPtr {
   template <typename U>
@@ -153,9 +153,9 @@ class MOZ_IS_REFPTR MOZ_TRIVIAL_ABI SafeRefPtr {
 
   T* MOZ_OWNING_REF mRawPtr = nullptr;
 
-  
-  
-  
+  // BEGIN Some things copied from RefPtr.
+  // We cannot simply use a RefPtr member because we want to be trivial_abi,
+  // which RefPtr is not.
   void assign_with_AddRef(T* aRawPtr) {
     if (aRawPtr) {
       ConstRemovingRefPtrTraits<T>::AddRef(aRawPtr);
@@ -185,7 +185,7 @@ class MOZ_IS_REFPTR MOZ_TRIVIAL_ABI SafeRefPtr {
       mozilla::RefPtrTraits<U>::Release(const_cast<U*>(aPtr));
     }
   };
-  
+  // END Some things copied from RefPtr.
 
   SafeRefPtr(T* aRawPtr, mozilla::detail::InitialConstructionTag);
 
@@ -200,8 +200,8 @@ class MOZ_IS_REFPTR MOZ_TRIVIAL_ABI SafeRefPtr {
 
   explicit SafeRefPtr(RefPtr<T>&& aRefPtr) : mRawPtr(aRefPtr.forget().take()) {}
 
-  
-  
+  // To prevent implicit conversion of raw pointer to RefPtr and then
+  // calling the previous overload.
   SafeRefPtr(T* const aRawPtr) = delete;
 
   SafeRefPtr(T* const aRawPtr, const AcquireStrongRefFromRawPtr&) {
@@ -210,11 +210,11 @@ class MOZ_IS_REFPTR MOZ_TRIVIAL_ABI SafeRefPtr {
 
   MOZ_IMPLICIT SafeRefPtr(std::nullptr_t) {}
 
-  
+  // Prevent implicit copying, use clonePtr() instead.
   SafeRefPtr(const SafeRefPtr&) = delete;
   SafeRefPtr& operator=(const SafeRefPtr&) = delete;
 
-  
+  // Allow moving.
   SafeRefPtr(SafeRefPtr&& aOther) noexcept : mRawPtr(aOther.mRawPtr) {
     aOther.mRawPtr = nullptr;
   }
@@ -297,8 +297,8 @@ template <typename T>
 class CheckedUnsafePtr;
 
 template <typename T>
-SafeRefPtr(const CheckedUnsafePtr<T>&, const AcquireStrongRefFromRawPtr&)
-    -> SafeRefPtr<T>;
+SafeRefPtr(const CheckedUnsafePtr<T>&,
+           const AcquireStrongRefFromRawPtr&) -> SafeRefPtr<T>;
 
 template <typename T>
 SafeRefPtr<T>::SafeRefPtr(T* aRawPtr, detail::InitialConstructionTag)
@@ -395,7 +395,7 @@ namespace detail {
 
 template <typename T, RefCountAtomicity Atomicity>
 SafeRefPtr<T> SafeRefCounted<T, Atomicity>::SafeRefPtrFromThis() {
-  
+  // this actually is safe
   return {static_cast<T*>(this), AcquireStrongRefFromRawPtr{}};
 }
 
@@ -416,18 +416,18 @@ struct CopyablePtr<SafeRefPtr<T>> {
   CopyablePtr& operator=(CopyablePtr&&) = default;
 };
 
-}  
+}  // namespace detail
 
 namespace dom {
-
+/// XXX Move this to BindingUtils.h later on
 template <class T, class S>
 inline RefPtr<T> StrongOrRawPtr(SafeRefPtr<S>&& aPtr) {
   return AsRefPtr(std::move(aPtr));
 }
 
-}  
+}  // namespace dom
 
-}  
+}  // namespace mozilla
 
 template <class T>
 class nsTObserverArray<mozilla::SafeRefPtr<T>>
@@ -436,10 +436,10 @@ class nsTObserverArray<mozilla::SafeRefPtr<T>>
   using base_type = nsAutoTObserverArray<mozilla::SafeRefPtr<T>, 0>;
   using size_type = nsTObserverArray_base::size_type;
 
-  
+  // Initialization methods
   nsTObserverArray() = default;
 
-  
+  // Initialize this array and pre-allocate some number of elements.
   explicit nsTObserverArray(size_type aCapacity) {
     base_type::mArray.SetCapacity(aCapacity);
   }
@@ -452,9 +452,9 @@ class nsTObserverArray<mozilla::SafeRefPtr<T>>
   }
 };
 
-
-
-
+// Use MOZ_INLINE_DECL_SAFEREFCOUNTING_INHERITED in a 'Class' derived from a
+// 'Super' class which derives from (Atomic)SafeRefCounted, and from some other
+// class using NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING.
 #if defined(NS_BUILD_REFCNT_LOGGING)
 #  define MOZ_INLINE_DECL_SAFEREFCOUNTING_INHERITED(Class, Super)         \
     template <typename T, ::mozilla::detail::RefCountAtomicity Atomicity> \
@@ -465,7 +465,7 @@ class nsTObserverArray<mozilla::SafeRefPtr<T>>
     NS_IMETHOD_(MozExternalRefCountType) Release() override {             \
       NS_IMPL_RELEASE_INHERITED_GUTS(Class, Super);                       \
     }
-#else  
+#else  // NS_BUILD_REFCNT_LOGGING
 #  define MOZ_INLINE_DECL_SAFEREFCOUNTING_INHERITED(Class, Super)         \
     template <typename T, ::mozilla::detail::RefCountAtomicity Atomicity> \
     friend class ::mozilla::detail::SafeRefCounted;                       \
