@@ -5392,8 +5392,7 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
 
   
   
-  if (!StaticPrefs::dom_document_exec_command_nested_calls_allowed() &&
-      !markRunningExecCommand.IsSafeToRun()) {
+  if (!markRunningExecCommand.IsSafeToRun()) {
     return false;
   }
 
