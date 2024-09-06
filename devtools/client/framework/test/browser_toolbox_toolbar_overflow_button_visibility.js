@@ -38,6 +38,12 @@ add_task(async function () {
     "Test the count of shown devtools tab after making all buttons to be visible"
   );
   await resizeWindow(toolbox, 800);
+
+  
+  await waitFor(() => {
+    return !!toolbox.doc.querySelector(".devtools-tab");
+  });
+
   
   setToolboxButtonsVisibility(checkButtons, false);
   
