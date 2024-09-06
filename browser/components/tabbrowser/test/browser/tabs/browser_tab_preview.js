@@ -501,11 +501,33 @@ add_task(async function panelSuppressionOnPanelTests() {
   EventUtils.synthesizeMouseAtCenter(tab, { type: "mouseover" }, window);
 
   await BrowserTestUtils.waitForCondition(() => {
-    return previewComponent.activate.called;
+    return previewComponent.activate.calledOnce;
   });
   Assert.equal(previewComponent._panel.state, "closed", "");
 
+  
+  const tabs = window.document.getElementById("tabbrowser-tabs");
+  EventUtils.synthesizeMouse(
+    tabs,
+    0,
+    tabs.outerHeight + 1,
+    {
+      type: "mouseout",
+    },
+    window
+  );
+
+  const popupHidingEvent = BrowserTestUtils.waitForEvent(
+    appMenuPopup,
+    "popuphiding"
+  );
   appMenuPopup.hidePopup();
+  await popupHidingEvent;
+
+  
+  await openPreview(tab);
+  Assert.equal(previewComponent._panel.state, "open", "");
+
   BrowserTestUtils.removeTab(tab);
   sinon.restore();
 
