@@ -214,6 +214,15 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                     "help": "Repeat tests (used for confirm-failures) X times.",
                 },
             ],
+            [
+                ["--timeout-multiplier"],
+                {
+                    "action": "store",
+                    "dest": "timeout_multiplier",
+                    "type": float,
+                    "help": "Sets the timeout multiplier (0.25 for `--backlog` tests by default)",
+                },
+            ],
         ]
         + copy.deepcopy(testing_config_options)
         + copy.deepcopy(code_coverage_config_options)
@@ -431,7 +440,9 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             cmd.append("--skip-implementation-status=%s" % implementation_status)
 
         
-        if c["backlog"]:
+        if c["timeout_multiplier"]:
+            cmd.append("--timeout-multiplier=%s" % c["timeout_multiplier"])
+        elif c["backlog"]:
             cmd.append("--timeout-multiplier=0.25")
 
         test_paths = set()
