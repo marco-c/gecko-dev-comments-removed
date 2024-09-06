@@ -62,18 +62,19 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   
-  nsresult OnDocumentStartRequest(nsIChannel* aChannel);
+  [[nodiscard]] nsresult OnDocumentStartRequest(nsIChannel* aChannel);
 
   
   
   
   
-  nsresult OnStartNavigation(nsIPrincipal* aTriggeringPrincipal,
-                             const bool aHasValidUserGestureActivation);
+  [[nodiscard]] nsresult OnStartNavigation(
+      nsIPrincipal* aTriggeringPrincipal,
+      const bool aHasValidUserGestureActivation);
 
   
   
-  nsresult OnCookieWrite(const nsACString& aSiteHost);
+  [[nodiscard]] nsresult OnCookieWrite(const nsACString& aSiteHost);
 
   
   
@@ -88,8 +89,8 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   
-  static nsresult HasBounceTrackingStateForSite(const nsACString& aSiteHost,
-                                                bool& aResult);
+  [[nodiscard]] static nsresult HasBounceTrackingStateForSite(
+      const nsACString& aSiteHost, bool& aResult);
 
   
   
@@ -104,7 +105,7 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   
-  nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
+  [[nodiscard]] nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
 
  private:
   explicit BounceTrackingState();
@@ -139,19 +140,20 @@ class BounceTrackingState : public nsIWebProgressListener,
       dom::BrowsingContextWebProgress* aWebProgress);
 
   
-  nsresult Init(dom::BrowsingContextWebProgress* aWebProgress);
+  [[nodiscard]] nsresult Init(dom::BrowsingContextWebProgress* aWebProgress);
 
   
   
-  nsresult OnResponseReceived(const nsTArray<nsCString>& aSiteList);
+  [[nodiscard]] nsresult OnResponseReceived(
+      const nsTArray<nsCString>& aSiteList);
 
   
   
-  nsresult OnDocumentLoaded(nsIPrincipal* aDocumentPrincipal);
+  [[nodiscard]] nsresult OnDocumentLoaded(nsIPrincipal* aDocumentPrincipal);
 
   
   
-  nsresult OnServiceWorkerActivation();
+  [[nodiscard]] nsresult OnServiceWorkerActivation();
 };
 
 }  
