@@ -2599,27 +2599,9 @@ class nsContextMenu {
 
 
   #getTextToTranslate() {
-    if (this.isTextSelected) {
-      
-      return this.selectionInfo.fullText.trim();
-    }
-
-    const linkText = this.linkTextStr.trim();
-    if (!linkText) {
-      
-      return "";
-    }
-
-    try {
-      
-      new URL(linkText);
-      return "";
-    } catch {
-      
-    }
-
-    
-    return linkText;
+    return this.isTextSelected
+      ? this.selectionInfo.fullText.trim()
+      : this.linkTextStr.trim();
   }
 
   
