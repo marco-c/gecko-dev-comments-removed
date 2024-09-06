@@ -2216,6 +2216,9 @@ public:
   
   
   void visitHeuristicResult(SourceLocation Loc, const NamedDecl *ND) {
+    if (const UsingShadowDecl *USD = dyn_cast<UsingShadowDecl>(ND)) {
+      ND = USD->getTargetDecl();
+    }
     if (const TemplateDecl *TD = dyn_cast<TemplateDecl>(ND)) {
       ND = TD->getTemplatedDecl();
     }
