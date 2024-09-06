@@ -143,7 +143,7 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
   
   
   
-  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
   bool isUnpartitioned = storageOriginAttributes.mPartitionKey.IsEmpty();
   if (isCHIPS && isUnpartitioned) {
     

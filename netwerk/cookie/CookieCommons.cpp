@@ -431,8 +431,7 @@ already_AddRefed<Cookie> CookieCommons::CreateCookieFromDocument(
   
   
   bool needPartitioned =
-      StaticPrefs::network_cookie_cookieBehavior_optInPartitioning() &&
-      cookieData.isPartitioned();
+      StaticPrefs::network_cookie_CHIPS_enabled() && cookieData.isPartitioned();
   nsCOMPtr<nsIPrincipal> cookiePrincipal =
       needPartitioned ? aDocument->PartitionedPrincipal()
                       : aDocument->EffectiveCookiePrincipal();
@@ -496,9 +495,13 @@ bool CookieCommons::ShouldIncludeCrossSiteCookieForDocument(
 
   
   
+  
+  
+  
   if (aDocument->CookieJarSettings()->GetPartitionForeign() &&
       StaticPrefs::network_cookie_cookieBehavior_optInPartitioning() &&
-      !aCookie->IsPartitioned() && !aDocument->UsingStorageAccess()) {
+      !(aCookie->IsPartitioned() && aCookie->RawIsPartitioned()) &&
+      !aDocument->UsingStorageAccess()) {
     return false;
   }
 

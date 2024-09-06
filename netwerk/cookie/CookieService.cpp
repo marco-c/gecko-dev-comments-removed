@@ -395,7 +395,7 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
   
   
   
-  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
   bool isUnpartitioned =
       cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty();
   if (isCHIPS && isUnpartitioned) {
@@ -547,7 +547,7 @@ CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIChannel* aChannel,
   
   
   
-  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
   bool isUnpartitioned = storageOriginAttributes.mPartitionKey.IsEmpty();
   if (isCHIPS && isUnpartitioned) {
     
@@ -759,7 +759,7 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   OriginAttributes partitionedPrincipalOriginAttributes;
   bool isPartitionedPrincipal =
       !storagePrincipalOriginAttributes.mPartitionKey.IsEmpty();
-  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
   
   if (isCHIPS && !isPartitionedPrincipal) {
     StoragePrincipalHelper::GetOriginAttributes(
@@ -1155,6 +1155,16 @@ void CookieService::GetCookiesForURI(
 
       
       if (cookie->Expiry() <= currentTime) {
+        continue;
+      }
+
+      
+      
+      
+      if (aIsForeign && cookieJarSettings->GetPartitionForeign() &&
+          StaticPrefs::network_cookie_cookieBehavior_optInPartitioning() &&
+          !(cookie->IsPartitioned() && cookie->RawIsPartitioned()) &&
+          !aStorageAccessPermissionGranted) {
         continue;
       }
 
@@ -1811,7 +1821,7 @@ bool CookieService::ParseAttributes(nsIConsoleReportCollector* aCRC,
         AutoTArray<nsString, 1>{NS_ConvertUTF8toUTF16(aCookieData.name())});
 
     
-    if (StaticPrefs::network_cookie_cookieBehavior_optInPartitioning()) {
+    if (StaticPrefs::network_cookie_CHIPS_enabled()) {
       return newCookie;
     }
   }

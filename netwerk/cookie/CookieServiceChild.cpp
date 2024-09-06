@@ -114,7 +114,7 @@ RefPtr<GenericPromise> CookieServiceChild::TrackCookieLoad(
   
   
   
-  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
   bool isUnpartitioned = storageOriginAttributes.mPartitionKey.IsEmpty();
   if (isCHIPS && isUnpartitioned) {
     
@@ -366,7 +366,7 @@ CookieServiceChild::GetCookieStringFromDocument(dom::Document* aDocument,
   
   
   
-  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
   bool isUnpartitioned =
       cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty();
   if (isCHIPS && isUnpartitioned) {
@@ -520,9 +520,8 @@ CookieServiceChild::SetCookieStringFromDocument(
 
     
     
-    bool needPartitioned =
-        StaticPrefs::network_cookie_cookieBehavior_optInPartitioning() &&
-        cookie->RawIsPartitioned();
+    bool needPartitioned = StaticPrefs::network_cookie_CHIPS_enabled() &&
+                           cookie->RawIsPartitioned();
     nsCOMPtr<nsIPrincipal> principal =
         needPartitioned ? aDocument->PartitionedPrincipal()
                         : aDocument->EffectiveCookiePrincipal();
@@ -655,7 +654,7 @@ CookieServiceChild::SetCookieStringFromHttp(nsIURI* aHostURI,
   OriginAttributes partitionedPrincipalOriginAttributes;
   bool isPartitionedPrincipal =
       !storagePrincipalOriginAttributes.mPartitionKey.IsEmpty();
-  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
   
   if (isCHIPS && !isPartitionedPrincipal) {
     StoragePrincipalHelper::GetOriginAttributes(
