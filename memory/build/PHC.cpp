@@ -1291,25 +1291,31 @@ static inline bool maybe_init() {
 
 
 
-
-static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
-                            size_t aAlignment, bool aZero) {
-  MOZ_ASSERT(IsPowerOfTwo(aAlignment));
-
-  if (!maybe_init()) {
-    return nullptr;
+static MOZ_ALWAYS_INLINE bool ShouldPageAllocHot(size_t aReqSize) {
+  if (MOZ_UNLIKELY(!maybe_init())) {
+    return false;
   }
 
-  if (aReqSize > kPageSize) {
-    return nullptr;
+  if (MOZ_UNLIKELY(aReqSize > kPageSize)) {
+    return false;
   }
 
   
   
   if (MOZ_LIKELY(!PHC::DecrementDelay())) {
-    return nullptr;
+    return false;
   }
 
+  return true;
+}
+
+
+
+
+
+static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
+                            size_t aAlignment, bool aZero) {
+  MOZ_ASSERT(IsPowerOfTwo(aAlignment));
   MOZ_ASSERT(PHC::sPHC);
   if (!PHC::sPHC->ShouldMakeNewAllocations()) {
     
@@ -1462,8 +1468,10 @@ static void FreePage(PHCLock aLock, uintptr_t aIndex,
 
 MOZ_ALWAYS_INLINE static void* PageMalloc(const Maybe<arena_id_t>& aArenaId,
                                           size_t aReqSize) {
-  void* ptr = MaybePageAlloc(aArenaId, aReqSize,  1,
-                              false);
+  void* ptr = ShouldPageAllocHot(aReqSize)
+                  ? MaybePageAlloc(aArenaId, aReqSize,  1,
+                                    false)
+                  : nullptr;
   return ptr ? ptr
              : (aArenaId.isSome()
                     ? MozJemalloc::moz_arena_malloc(*aArenaId, aReqSize)
@@ -1488,8 +1496,11 @@ MOZ_ALWAYS_INLINE static void* PageCalloc(const Maybe<arena_id_t>& aArenaId,
     return nullptr;
   }
 
-  void* ptr = MaybePageAlloc(aArenaId, checkedSize.value(),  1,
-                              true);
+  void* ptr =
+      ShouldPageAllocHot(checkedSize.value())
+          ? MaybePageAlloc(aArenaId, checkedSize.value(),  1,
+                            true)
+          : nullptr;
   return ptr ? ptr
              : (aArenaId.isSome()
                     ? MozJemalloc::moz_arena_calloc(*aArenaId, aNum, aReqSize)
@@ -1709,7 +1720,7 @@ MOZ_ALWAYS_INLINE static void* PageMemalign(const Maybe<arena_id_t>& aArenaId,
   
   
   void* ptr = nullptr;
-  if (aAlignment <= kPageSize) {
+  if (ShouldPageAllocHot(aReqSize) && aAlignment <= kPageSize) {
     ptr = MaybePageAlloc(aArenaId, aReqSize, aAlignment,  false);
   }
   return ptr ? ptr
