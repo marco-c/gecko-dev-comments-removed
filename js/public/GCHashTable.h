@@ -25,6 +25,13 @@ struct DefaultMapEntryGCPolicy {
     return GCPolicy<Key>::traceWeak(trc, key) &&
            GCPolicy<Value>::traceWeak(trc, value);
   }
+  static bool needsSweep(JSTracer* trc, const Key* key, const Value* value) {
+    
+    
+    
+    return GCPolicy<Key>::needsSweep(trc, key) ||
+           GCPolicy<Value>::needsSweep(trc, value);
+  }
 };
 
 

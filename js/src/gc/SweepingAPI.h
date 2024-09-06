@@ -160,15 +160,9 @@ class WeakCache<
  private:
   using Entry = typename Map::Entry;
 
-  static bool entryNeedsSweep(JSTracer* barrierTracer, const Entry& prior) {
-    Key key(prior.key());
-    Value value(prior.value());
-    bool needsSweep = !MapEntryGCPolicy::traceWeak(barrierTracer, &key, &value);
-    MOZ_ASSERT_IF(!needsSweep,
-                  prior.key() == key);  
-    MOZ_ASSERT_IF(!needsSweep,
-                  prior.value() == value);  
-    return needsSweep;
+  static bool entryNeedsSweep(JSTracer* barrierTracer, const Entry& entry) {
+    return MapEntryGCPolicy::needsSweep(barrierTracer, &entry.key(),
+                                        &entry.value());
   }
 
  public:
