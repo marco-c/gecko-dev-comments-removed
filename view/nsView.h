@@ -99,9 +99,6 @@ enum class ViewVisibility : uint8_t { Hide = 0, Show = 1 };
 
 
 
-#define NS_VIEW_FLAG_AUTO_ZINDEX 0x0004
-
-
 #define NS_VIEW_FLAG_FLOATING 0x0008
 
 
@@ -405,22 +402,6 @@ class nsView final : public nsIWidgetListener {
 
 
   void SetPosition(nscoord aX, nscoord aY);
-
-  
-
-
-
-
-
-
-
-
-  void SetZIndex(bool aAuto, int32_t aZIndex);
-  bool GetZIndexIsAuto() const {
-    return (mVFlags & NS_VIEW_FLAG_AUTO_ZINDEX) != 0;
-  }
-  int32_t GetZIndex() const { return mZIndex; }
-
   void SetParent(nsView* aParent) { mParent = aParent; }
   void SetNextSibling(nsView* aSibling) {
     NS_ASSERTION(aSibling != this, "Can't be our own sibling!");
@@ -541,7 +522,6 @@ class nsView final : public nsIWidgetListener {
   nsView* mFirstChild;
   nsIFrame* mFrame;
   mozilla::UniquePtr<nsRegion> mDirtyRegion;
-  int32_t mZIndex;
   ViewVisibility mVis;
   
   nscoord mPosX, mPosY;

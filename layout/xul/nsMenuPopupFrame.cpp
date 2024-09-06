@@ -2332,8 +2332,6 @@ void nsMenuPopupFrame::CreatePopupView() {
 
   
   nsView* view = viewManager->CreateView(GetRect(), parentView, visibility);
-  auto zIndex = ZIndex();
-  viewManager->SetViewZIndex(view, zIndex.isNothing(), zIndex.valueOr(0));
   
   viewManager->InsertChild(parentView, view, nullptr, true);
 

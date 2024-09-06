@@ -203,20 +203,6 @@ class nsViewManager final {
 
 
 
-
-
-
-
-
-  void SetViewZIndex(nsView* aView, bool aAutoZIndex, int32_t aZindex);
-
-  
-
-
-
-
-
-
   void SetViewFloating(nsView* aView, bool aFloatingView);
 
   
