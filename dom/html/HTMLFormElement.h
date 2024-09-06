@@ -483,6 +483,11 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
   
   
+  void GetSubmissionTarget(nsGenericHTMLElement* aSubmitter,
+                           nsAString& aTarget);
+
+  
+  
   
   int32_t GetFormNumberForStateKey();
 

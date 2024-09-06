@@ -828,18 +828,8 @@ nsresult HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
   }
 
   
-  
-  
-  
-  
-  
-  
-  
   nsAutoString target;
-  if (!(aSubmitter && aSubmitter->GetAttr(nsGkAtoms::formtarget, target)) &&
-      !aForm->GetAttr(nsGkAtoms::target, target)) {
-    aForm->GetBaseTarget(target);
-  }
+  aForm->GetSubmissionTarget(aSubmitter, target);
 
   
   int32_t enctype = NS_FORM_ENCTYPE_URLENCODED;

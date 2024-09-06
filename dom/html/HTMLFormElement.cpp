@@ -1671,6 +1671,22 @@ nsresult HTMLFormElement::GetActionURL(nsIURI** aActionURL,
   return rv;
 }
 
+void HTMLFormElement::GetSubmissionTarget(nsGenericHTMLElement* aSubmitter,
+                                          nsAString& aTarget) {
+  
+  
+  
+  
+  
+  
+  
+  if (!(aSubmitter && aSubmitter->GetAttr(nsGkAtoms::formtarget, aTarget)) &&
+      !GetAttr(nsGkAtoms::target, aTarget)) {
+    GetBaseTarget(aTarget);
+  }
+  SanitizeLinkOrFormTarget(aTarget);
+}
+
 nsGenericHTMLFormElement* HTMLFormElement::GetDefaultSubmitElement() const {
   MOZ_ASSERT(mDefaultSubmitElement == mFirstSubmitInElements ||
                  mDefaultSubmitElement == mFirstSubmitNotInElements,

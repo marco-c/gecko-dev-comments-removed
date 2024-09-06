@@ -1050,9 +1050,8 @@ bool nsImageFrame::ShouldCreateImageFrameForContentProperty(
 
 
 
-auto nsImageFrame::ImageFrameTypeFor(const Element& aElement,
-                                     const ComputedStyle& aStyle)
-    -> ImageFrameType {
+auto nsImageFrame::ImageFrameTypeFor(
+    const Element& aElement, const ComputedStyle& aStyle) -> ImageFrameType {
   if (ShouldCreateImageFrameForContentProperty(aElement, aStyle)) {
     
     return ImageFrameType::ForContentProperty;
@@ -2617,7 +2616,7 @@ bool nsImageFrame::GetAnchorHREFTargetAndNode(nsIURI** aHref, nsString& aTarget,
     }
 
     if (auto* anchor = HTMLAnchorElement::FromNode(content)) {
-      anchor->GetTarget(aTarget);
+      anchor->GetLinkTarget(aTarget);
     }
     NS_ADDREF(*aNode = content);
     return *aHref != nullptr;

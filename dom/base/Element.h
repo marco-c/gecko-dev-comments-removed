@@ -2123,6 +2123,12 @@ class Element : public FragmentOrElement {
   virtual already_AddRefed<nsIURI> GetHrefURI() const { return nullptr; }
 
   
+  
+  
+  
+  static void SanitizeLinkOrFormTarget(nsAString& aTarget);
+
+  
 
 
 
@@ -2132,7 +2138,13 @@ class Element : public FragmentOrElement {
 
 
 
-  virtual void GetLinkTarget(nsAString& aTarget);
+
+
+
+
+  void GetLinkTarget(nsAString& aTarget);
+
+  virtual void GetLinkTargetImpl(nsAString& aTarget);
 
   virtual bool Translate() const;
 
