@@ -331,7 +331,7 @@ static Maybe<nsRect> ComputeTheIntersection(
       DOMIntersectionObserver::IsForProximityToViewport::Yes) {
     const auto& disp = *target->StyleDisplay();
     auto clipAxes = target->ShouldApplyOverflowClipping(&disp);
-    if (!clipAxes.isEmpty()) {
+    if (clipAxes != PhysicalAxes::None) {
       inflowRect = OverflowAreas::GetOverflowClipRect(
           inflowRect, inflowRect, clipAxes,
           target->OverflowClipMargin(clipAxes));
@@ -385,7 +385,7 @@ static Maybe<nsRect> ComputeTheIntersection(
       const auto& disp = *containerFrame->StyleDisplay();
       auto clipAxes = containerFrame->ShouldApplyOverflowClipping(&disp);
       
-      if (!clipAxes.isEmpty()) {
+      if (clipAxes != PhysicalAxes::None) {
         
         const nsRect intersectionRectRelativeToContainer =
             nsLayoutUtils::TransformFrameRectToAncestor(
@@ -672,7 +672,7 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   if (aIsForProximityToViewport == IsForProximityToViewport::Yes) {
     const auto& disp = *targetFrame->StyleDisplay();
     auto clipAxes = targetFrame->ShouldApplyOverflowClipping(&disp);
-    if (!clipAxes.isEmpty()) {
+    if (clipAxes != PhysicalAxes::None) {
       targetRect = OverflowAreas::GetOverflowClipRect(
           targetRect, targetRect, clipAxes,
           targetFrame->OverflowClipMargin(clipAxes));
