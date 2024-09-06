@@ -175,7 +175,6 @@ struct LoadInfoArgs
   uint32_t                    httpsOnlyStatus;
   bool                        hstsStatus;
   bool                        hasValidUserGestureActivation;
-  bool                        textDirectiveUserActivation;
   bool                        allowDeprecatedSystemRequests;
   bool                        isInDevToolsContext;
   bool                        parserCreatedScript;
@@ -231,11 +230,6 @@ struct ParentLoadInfoForwarderArgs
   
   
   bool hasValidUserGestureActivation;
-
-  
-  
-  
-  bool textDirectiveUserActivation;
 
   
   

@@ -13178,13 +13178,18 @@ void Document::ScrollToRef() {
   
   
   
+  
+
+  
+  
+  
   const RefPtr fragmentDirective = FragmentDirective();
   const nsTArray<RefPtr<nsRange>> textDirectives =
       fragmentDirective->FindTextFragmentsInDocument();
   
   
-  const RefPtr<nsRange> textDirectiveToScroll =
-      !textDirectives.IsEmpty() ? textDirectives[0] : nullptr;
+  RefPtr<nsRange> firstRange =
+      !textDirectives.IsEmpty() ? textDirectives.ElementAt(0) : nullptr;
   
   
   
@@ -13202,7 +13207,7 @@ void Document::ScrollToRef() {
   }
   
   
-  if (!textDirectiveToScroll && mScrollToRef.IsEmpty()) {
+  if (textDirectives.IsEmpty() && mScrollToRef.IsEmpty()) {
     return;
   }
   
@@ -13210,14 +13215,8 @@ void Document::ScrollToRef() {
   NS_ConvertUTF8toUTF16 ref(mScrollToRef);
   
   
-
-  const bool scrollToTextDirective =
-      textDirectiveToScroll
-          ? fragmentDirective->IsTextDirectiveAllowedToBeScrolledTo()
-          : mChangeScrollPosWhenScrollingToRef;
-
-  auto rv =
-      presShell->GoToAnchor(ref, textDirectiveToScroll, scrollToTextDirective);
+  auto rv = presShell->GoToAnchor(ref, firstRange,
+                                  mChangeScrollPosWhenScrollingToRef);
 
   
   
@@ -16961,20 +16960,6 @@ void Document::NotifyUserGestureActivation(
 bool Document::HasBeenUserGestureActivated() {
   RefPtr<WindowContext> wc = GetWindowContext();
   return wc && wc->HasBeenUserGestureActivated();
-}
-
-bool Document::ConsumeTextDirectiveUserActivation() {
-  if (!mChannel) {
-    return false;
-  }
-  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
-  if (!loadInfo) {
-    return false;
-  }
-  const bool textDirectiveUserActivation =
-      loadInfo->GetTextDirectiveUserActivation();
-  loadInfo->SetTextDirectiveUserActivation(false);
-  return textDirectiveUserActivation;
 }
 
 DOMHighResTimeStamp Document::LastUserGestureTimeStamp() {
