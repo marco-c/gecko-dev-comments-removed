@@ -191,7 +191,7 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
 
 class RTC_EXPORT NetworkManagerBase : public NetworkManager {
  public:
-  NetworkManagerBase(const webrtc::FieldTrialsView* field_trials = nullptr);
+  NetworkManagerBase();
 
   std::vector<const Network*> GetNetworks() const override;
   std::vector<const Network*> GetAnyAddressNetworks() override;
@@ -237,15 +237,8 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
                                          int prefix_length,
                                          AdapterType type) const;
 
-  const webrtc::FieldTrialsView* field_trials() const {
-    return field_trials_.get();
-  }
-
  private:
   friend class NetworkTest;
-  webrtc::AlwaysValidPointer<const webrtc::FieldTrialsView,
-                             webrtc::FieldTrialBasedConfig>
-      field_trials_;
   EnumerationPermission enumeration_permission_;
 
   std::vector<Network*> networks_;
@@ -262,10 +255,6 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
   
   
   uint16_t next_available_network_id_ = 1;
-
-  
-  
-  bool signal_network_preference_change_ = false;
 };
 
 
