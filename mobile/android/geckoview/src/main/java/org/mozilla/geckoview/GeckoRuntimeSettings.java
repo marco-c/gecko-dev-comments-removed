@@ -634,6 +634,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("privacy.globalprivacycontrol.pbmode.enabled", true);
    final Pref<Boolean> mGlobalPrivacyControlFunctionalityEnabled =
       new Pref<Boolean>("privacy.globalprivacycontrol.functionality.enabled", true);
+   final Pref<Boolean> mFingerprintingProtection =
+      new Pref<Boolean>("privacy.fingerprintingProtection", false);
+   final Pref<Boolean> mFingerprintingProtectionPrivateMode =
+      new Pref<Boolean>("privacy.fingerprintingProtection.pbmode", true);
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -771,6 +775,47 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mGlobalPrivacyControlEnabledPrivateMode.commit(true);
     mGlobalPrivacyControlFunctionalityEnabled.commit(true);
     return this;
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setFingerprintingProtection(final boolean enabled) {
+    mFingerprintingProtection.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setFingerprintingProtectionPrivateBrowsing(
+      final boolean enabled) {
+    mFingerprintingProtectionPrivateMode.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getFingerprintingProtection() {
+    return mFingerprintingProtection.get();
+  }
+
+  
+
+
+
+
+  public boolean getFingerprintingProtectionPrivateBrowsing() {
+    return mFingerprintingProtectionPrivateMode.get();
   }
 
   
