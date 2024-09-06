@@ -1048,6 +1048,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
       
       
       bool atHyphenationBreak = !atNaturalBreak && haveHyphenation &&
+                                (!aLineBreakBefore || i > aStart) &&
                                 IsOptionalHyphenBreak(hyphenBuffer[i - aStart]);
       bool atAutoHyphenWithManualHyphenInSameWord =
           atHyphenationBreak &&
