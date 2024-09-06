@@ -76,13 +76,16 @@ bool IsOwnedByGroupAdmin(const char* aAppBundle);
 bool IsRecursivelyWritable(const char* aPath);
 void LaunchChild(int argc, const char** argv);
 void LaunchMacPostProcess(const char* aAppBundle);
-bool ObtainUpdaterArguments(int* argc, char*** argv);
-bool ServeElevatedUpdate(int argc, const char** argv);
+bool ObtainUpdaterArguments(int* aArgc, char*** aArgv,
+                            MARChannelStringTable* aMARStrings);
+bool ServeElevatedUpdate(int aArgc, const char** aArgv,
+                         const char* aMARChannelID);
 void SetGroupOwnershipAndPermissions(const char* aAppBundle);
 bool PerformInstallationFromDMG(int argc, char** argv);
 struct UpdateServerThreadArgs {
   int argc;
   const NS_tchar** argv;
+  const char* marChannelID;
 };
 #endif
 
@@ -188,15 +191,6 @@ class AutoFile {
   }
 };
 
-struct MARChannelStringTable {
-  MARChannelStringTable() {
-    MARChannelID = mozilla::MakeUnique<char[]>(1);
-    MARChannelID[0] = '\0';
-  }
-
-  mozilla::UniquePtr<char[]> MARChannelID;
-};
-
 
 
 #ifdef XP_MACOSX
@@ -292,6 +286,10 @@ static bool sUsingService = false;
 
 
 static bool gIsElevated = false;
+
+
+
+static MARChannelStringTable gMARStrings;
 
 
 
@@ -2699,21 +2697,24 @@ static int ReadMARChannelIDsFromBuffer(char* aChannels,
 
 
 
-
-
-
-static int GetAcceptableChannelIDs(MARChannelStringTable* aMARStrings) {
+static int PopulategMARStrings() {
   int rv = UPDATE_SETTINGS_FILE_CHANNEL;
 #  ifdef XP_MACOSX
-  if (auto marChannels = UpdateSettingsUtil::GetAcceptedMARChannelsValue()) {
-    rv = ReadMARChannelIDsFromBuffer(marChannels->data(), aMARStrings);
+  if (gIsElevated) {
+    
+    
+    
+    rv = OK;
+  } else if (auto marChannels =
+                 UpdateSettingsUtil::GetAcceptedMARChannelsValue()) {
+    rv = ReadMARChannelIDsFromBuffer(marChannels->data(), &gMARStrings);
   }
 #  else
   NS_tchar updateSettingsPath[MAXPATHLEN];
   NS_tsnprintf(updateSettingsPath,
                sizeof(updateSettingsPath) / sizeof(updateSettingsPath[0]),
                NS_T("%s/update-settings.ini"), gInstallDirPath);
-  rv = ReadMARChannelIDsFromPath(updateSettingsPath, aMARStrings);
+  rv = ReadMARChannelIDsFromPath(updateSettingsPath, &gMARStrings);
 #  endif
   return rv == OK ? OK : UPDATE_SETTINGS_FILE_CHANNEL;
 }
@@ -2742,11 +2743,10 @@ static void UpdateThreadFunc(void* param) {
     }
 
     if (rv == OK) {
-      MARChannelStringTable MARStrings;
-      rv = GetAcceptableChannelIDs(&MARStrings);
+      rv = PopulategMARStrings();
       if (rv == OK) {
         rv = gArchiveReader.VerifyProductInformation(
-            MARStrings.MARChannelID.get(), MOZ_APP_VERSION);
+            gMARStrings.MARChannelID.get(), MOZ_APP_VERSION);
       }
     }
 #endif
@@ -2851,7 +2851,8 @@ static void UpdateThreadFunc(void* param) {
 #ifdef XP_MACOSX
 static void ServeElevatedUpdateThreadFunc(void* param) {
   UpdateServerThreadArgs* threadArgs = (UpdateServerThreadArgs*)param;
-  gSucceeded = ServeElevatedUpdate(threadArgs->argc, threadArgs->argv);
+  gSucceeded = ServeElevatedUpdate(threadArgs->argc, threadArgs->argv,
+                                   threadArgs->marChannelID);
   if (!gSucceeded) {
     WriteStatusFile(ELEVATION_CANCELED);
   }
@@ -2989,10 +2990,9 @@ int NS_main(int argc, NS_tchar** argv) {
 
   if (argc == 2 && NS_tstrcmp(argv[1], NS_T("--channels-allowed")) == 0) {
 #ifdef MOZ_VERIFY_MAR_SIGNATURE
-    MARChannelStringTable MARStrings;
-    int rv = GetAcceptableChannelIDs(&MARStrings);
+    int rv = PopulategMARStrings();
     if (rv == OK) {
-      printf("Channels Allowed: %s\n", MARStrings.MARChannelID.get());
+      printf("Channels Allowed: %s\n", gMARStrings.MARChannelID.get());
       return 0;
     }
     printf("Error: %d\n", rv);
@@ -3025,7 +3025,7 @@ int NS_main(int argc, NS_tchar** argv) {
       strstr(argv[0], "/Library/PrivilegedHelperTools/org.mozilla.updater") !=
       0;
   if (isElevated) {
-    if (!ObtainUpdaterArguments(&argc, &argv)) {
+    if (!ObtainUpdaterArguments(&argc, &argv, &gMARStrings)) {
       
       
       return 1;
@@ -3336,6 +3336,7 @@ int NS_main(int argc, NS_tchar** argv) {
       UpdateServerThreadArgs threadArgs;
       threadArgs.argc = argc;
       threadArgs.argv = const_cast<const NS_tchar**>(argv);
+      threadArgs.marChannelID = gMARStrings.MARChannelID.get();
 
       Thread t1;
       if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
