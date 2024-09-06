@@ -416,7 +416,7 @@ void FetchChild::Shutdown() {
   mIsShutdown.Flip();
 
   
-  if (!mWorkerRef || !mIsKeepAliveRequest) {
+  if (!mWorkerRef) {
     return;
   }
   mPromise = nullptr;
@@ -424,7 +424,23 @@ void FetchChild::Shutdown() {
   Unfollow();
   mSignalImpl = nullptr;
   mCSPEventListener = nullptr;
-  Unused << SendAbortFetchOp();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mIsKeepAliveRequest) {
+    Unused << SendAbortFetchOp();
+  }
+
   mWorkerRef = nullptr;
   mIsKeepAliveRequest = false;
 }
