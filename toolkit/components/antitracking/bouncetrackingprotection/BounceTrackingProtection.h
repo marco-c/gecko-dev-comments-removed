@@ -75,6 +75,11 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
 
   
   
+  static void ReportPurgedTrackersToAntiTrackingDB(
+      const nsTArray<nsCString>& aPurgedSiteHosts);
+
+  
+  
   [[nodiscard]] nsresult PurgeBounceTrackersForStateGlobal(
       BounceTrackingStateGlobal* aStateGlobal,
       BounceTrackingAllowList& aBounceTrackingAllowList,
