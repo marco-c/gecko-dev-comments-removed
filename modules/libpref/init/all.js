@@ -521,19 +521,6 @@ pref("ui.textHighlightForeground", "#ffffff");
 
 
 
-pref("ui.-moz-autofill-background", "rgba(255, 249, 145, .5)");
-
-
-
-
-
-
-
-
-
-
-
-
 pref("accessibility.force_disabled", 0);
 
 pref("focusmanager.testmode", false);
