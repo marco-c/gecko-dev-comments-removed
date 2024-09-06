@@ -164,7 +164,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
         d.setNull();
         return true;
       }
-      return XPCStringConvert::ReadableToJSVal(cx, *p, d);
+      return NonVoidStringToJsval(cx, *p, d);
     }
 
     case nsXPTType::T_CHAR_STR: {
@@ -247,7 +247,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
       
       
       if (mozilla::IsAscii(*utf8String)) {
-        return XPCStringConvert::Latin1ToJSVal(cx, *utf8String, d);
+        return NonVoidLatin1StringToJsval(cx, *utf8String, d);
       }
 
       
@@ -297,7 +297,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
       }
 
       
-      return XPCStringConvert::Latin1ToJSVal(cx, *cString, d);
+      return NonVoidLatin1StringToJsval(cx, *cString, d);
     }
 
     case nsXPTType::T_INTERFACE:
