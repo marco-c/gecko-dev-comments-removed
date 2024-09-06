@@ -202,7 +202,14 @@ function createFrame(url) {
 
 
 
-async function create_prerendered_page(t, opt = {}, init_opt = {}, rule_extras = {}) {
+
+
+
+
+
+
+
+async function create_prerendered_page(t, params = {}, opt = {}, rule_extras = {}) {
   const baseUrl = '/speculation-rules/prerender/resources/exec.py';
   const init_uuid = token();
   const prerender_uuid = token();
@@ -213,44 +220,68 @@ async function create_prerendered_page(t, opt = {}, init_opt = {}, rule_extras =
 
   const init_params = new URLSearchParams();
   init_params.set('uuid', init_uuid);
-  for (const p in init_opt)
-    init_params.set(p, init_opt[p]);
+  if ('initiator' in params) {
+    for (const [key, value] of params.initiator.entries()) {
+      init_params.set(key, value);
+    }
+  }
   window.open(`${baseUrl}?${init_params.toString()}&init`, '_blank', 'noopener');
 
-  const params = new URLSearchParams();
-  params.set('uuid', prerender_uuid);
-  params.set('discard_uuid', discard_uuid);
-  for (const p in opt)
-    params.set(p, opt[p]);
-  const url = `${baseUrl}?${params.toString()}`;
+  
+  const prerendering_params = new URLSearchParams();
+  prerendering_params.set('uuid', prerender_uuid);
+  prerendering_params.set('discard_uuid', discard_uuid);
+  if ('prerendering' in params) {
+    for (const [key, value] of params.prerendering.entries()) {
+      prerendering_params.set(key, value);
+    }
+  }
+  const prerendering_url = `${baseUrl}?${prerendering_params.toString()}`;
 
-  if (init_opt.prefetch) {
-    await init_remote.execute_script((url, rule_extras) => {
+  
+  
+  
+  const activating_url = (() => {
+    if ('activating' in params) {
+      const activating_params = new URLSearchParams();
+      activating_params.set('uuid', prerender_uuid);
+      activating_params.set('discard_uuid', discard_uuid);
+      for (const [key, value] of params.activating.entries()) {
+        activating_params.set(key, value);
+      }
+      return `${baseUrl}?${activating_params.toString()}`;
+    } else {
+      return prerendering_url;
+    }
+  })();
+
+  if (opt.prefetch) {
+    await init_remote.execute_script((prerendering_url, rule_extras) => {
         const a = document.createElement('a');
-        a.href = url;
+        a.href = prerendering_url;
         a.innerText = 'Activate (prefetch)';
         document.body.appendChild(a);
         const rules = document.createElement('script');
         rules.type = "speculationrules";
         rules.text = JSON.stringify(
-            {prefetch: [{source: 'list', urls: [url], ...rule_extras}]});
+            {prefetch: [{source: 'list', urls: [prerendering_url], ...rule_extras}]});
         document.head.appendChild(rules);
-    }, [url, rule_extras]);
+    }, [prerendering_url, rule_extras]);
 
     
     await new Promise(resolve => t.step_timeout(resolve, 3000));
   }
 
-  await init_remote.execute_script((url, rule_extras) => {
+  await init_remote.execute_script((prerendering_url, rule_extras) => {
       const a = document.createElement('a');
-      a.href = url;
+      a.href = prerendering_url;
       a.innerText = 'Activate';
       document.body.appendChild(a);
       const rules = document.createElement('script');
       rules.type = "speculationrules";
-      rules.text = JSON.stringify({prerender: [{source: 'list', urls: [url], ...rule_extras}]});
+      rules.text = JSON.stringify({prerender: [{source: 'list', urls: [prerendering_url], ...rule_extras}]});
       document.head.appendChild(rules);
-  }, [url, rule_extras]);
+  }, [prerendering_url, rule_extras]);
 
   await Promise.any([
     prerender_remote.execute_script(() => {
@@ -278,9 +309,9 @@ async function create_prerendered_page(t, opt = {}, init_opt = {}, rule_extras =
 
     const discarded = discard_remote.execute_script(() => Promise.resolve('discarded'));
 
-    init_remote.execute_script(url => {
-        location.href = url;
-    }, [url]);
+    init_remote.execute_script(activating_url => {
+        location.href = activating_url;
+    }, [activating_url]);
     return Promise.any([prerendering, discarded]);
   }
 
@@ -292,7 +323,7 @@ async function create_prerendered_page(t, opt = {}, init_opt = {}, rule_extras =
 
   
   async function getNetworkRequestCount() {
-    return await (await fetch(url + '&get-fetch-count')).text();
+    return await (await fetch(prerendering_url + '&get-fetch-count')).text();
   }
 
   return {
