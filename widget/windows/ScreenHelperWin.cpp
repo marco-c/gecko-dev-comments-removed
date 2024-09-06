@@ -79,7 +79,6 @@ static void GetDisplayInfo(const char16ptr_t aName,
 
 struct CollectMonitorsParam {
   nsTArray<RefPtr<Screen>> screens;
-  nsTArray<DXGI_OUTPUT_DESC1> outputs;
 };
 
 BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
@@ -132,36 +131,8 @@ BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
   GetDisplayInfo(info.szDevice, orientation, angle, isPseudoDisplay,
                  refreshRate);
 
-  
-  
-  
-  bool isHDR = false;
-  for (auto& output : cmParam->outputs) {
-    if (output.Monitor == aMon) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      isHDR = (output.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
-      break;
-    }
-  }
+  auto* manager = gfx::DeviceManagerDx::Get();
+  bool isHDR = manager ? manager->MonitorHDREnabled(aMon) : false;
 
   MOZ_LOG(sScreenLog, LogLevel::Debug,
           ("New screen [%s (%s) %d %u %f %f %f %d %d %d]",
@@ -181,14 +152,16 @@ BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
   return TRUE;
 }
 
+
 void ScreenHelperWin::RefreshScreens() {
   MOZ_LOG(sScreenLog, LogLevel::Debug, ("Refreshing screens"));
 
-  CollectMonitorsParam cmParam;
-  if (auto* dx = gfx::DeviceManagerDx::Get()) {
-    
-    cmParam.outputs = dx->EnumerateOutputs();
+  auto* manager = gfx::DeviceManagerDx::Get();
+  if (XRE_IsParentProcess() && manager) {
+    manager->UpdateMonitorInfo();
   }
+
+  CollectMonitorsParam cmParam;
   BOOL result = ::EnumDisplayMonitors(
       nullptr, nullptr, (MONITORENUMPROC)CollectMonitors, (LPARAM)&cmParam);
   if (!result) {
