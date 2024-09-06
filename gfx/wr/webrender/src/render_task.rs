@@ -774,12 +774,14 @@ impl RenderTaskKind {
                     0.0,
                 ]
             }
-            RenderTaskKind::VerticalBlur(ref task) |
-            RenderTaskKind::HorizontalBlur(ref task) => {
+            RenderTaskKind::VerticalBlur(_) |
+            RenderTaskKind::HorizontalBlur(_) => {
+                
+                
                 [
-                    task.blur_std_deviation,
-                    task.blur_region.width as f32,
-                    task.blur_region.height as f32,
+                    0.0,
+                    0.0,
+                    0.0,
                     0.0,
                 ]
             }
