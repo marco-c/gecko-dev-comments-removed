@@ -1,4 +1,5 @@
-use crate::{encode_section, ConstExpr, Encode, RefType, Section, SectionId};
+use crate::{encode_section, ConstExpr, Encode, RefType, Section, SectionId, ValType};
+
 
 
 
@@ -81,9 +82,22 @@ pub struct TableType {
     
     pub element_type: RefType,
     
-    pub minimum: u32,
+    pub table64: bool,
     
-    pub maximum: Option<u32>,
+    pub minimum: u64,
+    
+    pub maximum: Option<u64>,
+}
+
+impl TableType {
+    
+    pub fn index_type(&self) -> ValType {
+        if self.table64 {
+            ValType::I64
+        } else {
+            ValType::I32
+        }
+    }
 }
 
 impl Encode for TableType {
@@ -91,6 +105,9 @@ impl Encode for TableType {
         let mut flags = 0;
         if self.maximum.is_some() {
             flags |= 0b001;
+        }
+        if self.table64 {
+            flags |= 0b100;
         }
 
         self.element_type.encode(sink);
@@ -111,6 +128,7 @@ impl TryFrom<wasmparser::TableType> for TableType {
             element_type: table_ty.element_type.try_into()?,
             minimum: table_ty.initial,
             maximum: table_ty.maximum,
+            table64: table_ty.table64,
         })
     }
 }

@@ -82,6 +82,7 @@ use std::usize;
 
 
 
+#[cfg(feature = "wasm-module")]
 pub(crate) const MAX_PARENS_DEPTH: usize = 100;
 
 
@@ -424,8 +425,9 @@ impl ParseBuffer<'_> {
                 
                 
                 TokenKind::LParen => {
-                    if let Some(annotation) = self.lexer.annotation(pos) {
-                        match self.known_annotations.borrow().get(annotation) {
+                    if let Some(annotation) = self.lexer.annotation(pos)? {
+                        let text = annotation.annotation(self.lexer.input())?;
+                        match self.known_annotations.borrow().get(&text[..]) {
                             Some(0) | None => {
                                 self.skip_annotation(&mut pos)?;
                                 continue;
@@ -483,6 +485,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    #[cfg(feature = "wasm-module")]
     pub(crate) fn has_meaningful_tokens(self) -> bool {
         self.buf.lexer.iter(0).any(|t| match t {
             Ok(token) => !matches!(
@@ -759,6 +762,7 @@ impl<'a> Parser<'a> {
     }
 
     
+    #[cfg(feature = "wasm-module")]
     pub(crate) fn depth_check(&self) -> Result<()> {
         if self.parens_depth() > MAX_PARENS_DEPTH {
             Err(self.error("item nesting too deep"))
@@ -1151,7 +1155,14 @@ impl<'a> Cursor<'a> {
             _ => return Ok(None),
         }
         self.advance_past(&token);
-        Ok(Some((token.id(self.parser.buf.lexer.input()), self)))
+        let id = match token.id(self.parser.buf.lexer.input())? {
+            Cow::Borrowed(id) => id,
+            
+            
+            
+            Cow::Owned(s) => std::str::from_utf8(self.parser.buf.push_str(s.into_bytes())).unwrap(),
+        };
+        Ok(Some((id, self)))
     }
 
     
@@ -1174,6 +1185,35 @@ impl<'a> Cursor<'a> {
         }
         self.advance_past(&token);
         Ok(Some((token.keyword(self.parser.buf.lexer.input()), self)))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn annotation(mut self) -> Result<Option<(&'a str, Self)>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        match token.kind {
+            TokenKind::Annotation => {}
+            _ => return Ok(None),
+        }
+        self.advance_past(&token);
+        let annotation = match token.annotation(self.parser.buf.lexer.input())? {
+            Cow::Borrowed(id) => id,
+            
+            
+            
+            Cow::Owned(s) => std::str::from_utf8(self.parser.buf.push_str(s.into_bytes())).unwrap(),
+        };
+        Ok(Some((annotation, self)))
     }
 
     

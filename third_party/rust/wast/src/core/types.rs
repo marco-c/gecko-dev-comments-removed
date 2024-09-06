@@ -425,41 +425,40 @@ impl<'a> Parse<'a> for GlobalType<'a> {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Limits {
     
-    pub min: u32,
-    
-    pub max: Option<u32>,
-}
-
-impl<'a> Parse<'a> for Limits {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let min = parser.parse()?;
-        let max = if parser.peek::<u32>()? {
-            Some(parser.parse()?)
-        } else {
-            None
-        };
-        Ok(Limits { min, max })
-    }
-}
-
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Limits64 {
+    pub is64: bool,
     
     pub min: u64,
     
     pub max: Option<u64>,
 }
 
-impl<'a> Parse<'a> for Limits64 {
+impl<'a> Parse<'a> for Limits {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let min = parser.parse()?;
+        let is64 = if parser.peek::<kw::i32>()? {
+            parser.parse::<kw::i32>()?;
+            false
+        } else if parser.peek::<kw::i64>()? {
+            parser.parse::<kw::i64>()?;
+            true
+        } else {
+            false
+        };
+
+        let parse = || {
+            if is64 {
+                parser.parse::<u64>()
+            } else {
+                parser.parse::<u32>().map(|x| x.into())
+            }
+        };
+
+        let min = parse()?;
         let max = if parser.peek::<u64>()? {
-            Some(parser.parse()?)
+            Some(parse()?)
         } else {
             None
         };
-        Ok(Limits64 { min, max })
+        Ok(Limits { is64, min, max })
     }
 }
 
@@ -483,25 +482,13 @@ impl<'a> Parse<'a> for TableType<'a> {
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum MemoryType {
+pub struct MemoryType {
     
-    B32 {
-        
-        limits: Limits,
-        
-        shared: bool,
-        
-        page_size_log2: Option<u32>,
-    },
+    pub limits: Limits,
     
-    B64 {
-        
-        limits: Limits64,
-        
-        shared: bool,
-        
-        page_size_log2: Option<u32>,
-    },
+    pub shared: bool,
+    
+    pub page_size_log2: Option<u32>,
 }
 
 fn page_size(parser: Parser<'_>) -> Result<Option<u32>> {
@@ -526,27 +513,14 @@ fn page_size(parser: Parser<'_>) -> Result<Option<u32>> {
 
 impl<'a> Parse<'a> for MemoryType {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        if parser.peek::<kw::i64>()? {
-            parser.parse::<kw::i64>()?;
-            let limits = parser.parse()?;
-            let shared = parser.parse::<Option<kw::shared>>()?.is_some();
-            let page_size = page_size(parser)?;
-            Ok(MemoryType::B64 {
-                limits,
-                shared,
-                page_size_log2: page_size,
-            })
-        } else {
-            parser.parse::<Option<kw::i32>>()?;
-            let limits = parser.parse()?;
-            let shared = parser.parse::<Option<kw::shared>>()?.is_some();
-            let page_size = page_size(parser)?;
-            Ok(MemoryType::B32 {
-                limits,
-                shared,
-                page_size_log2: page_size,
-            })
-        }
+        let limits = parser.parse()?;
+        let shared = parser.parse::<Option<kw::shared>>()?.is_some();
+        let page_size = page_size(parser)?;
+        Ok(MemoryType {
+            limits,
+            shared,
+            page_size_log2: page_size,
+        })
     }
 }
 

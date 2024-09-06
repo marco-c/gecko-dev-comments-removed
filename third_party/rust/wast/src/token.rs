@@ -2,9 +2,9 @@
 
 
 
-use crate::lexer::{Float, Lexer, TokenKind};
+use crate::annotation;
+use crate::lexer::Float;
 use crate::parser::{Cursor, Parse, Parser, Peek, Result};
-use crate::{annotation, Error};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str;
@@ -62,19 +62,11 @@ impl<'a> Id<'a> {
     
     
     
-    pub fn new(name: &'a str, span: Span) -> Result<Id<'a>> {
-        let mut _pos: usize = 0;
-        let tok = Lexer::new(name).parse(&mut _pos)?;
-        match tok {
-            Some(tok) if tok.kind == TokenKind::Id => Ok(Id {
-                name: tok.id(name),
-                gen: 0,
-                span,
-            }),
-            _ => Err(Error::parse(span, name, "expected an identifier".into())),
-        }
+    pub fn new(name: &'a str, span: Span) -> Id<'a> {
+        Id { name, gen: 0, span }
     }
 
+    #[cfg(feature = "wasm-module")]
     pub(crate) fn gensym(span: Span, gen: u32) -> Id<'a> {
         Id {
             name: "gensym",
@@ -95,6 +87,7 @@ impl<'a> Id<'a> {
         self.span
     }
 
+    #[cfg(feature = "wasm-module")]
     pub(crate) fn is_gensym(&self) -> bool {
         self.gen != 0
     }
@@ -180,6 +173,7 @@ impl Index<'_> {
         }
     }
 
+    #[cfg(feature = "wasm-module")]
     pub(crate) fn is_resolved(&self) -> bool {
         matches!(self, Index::Num(..))
     }
