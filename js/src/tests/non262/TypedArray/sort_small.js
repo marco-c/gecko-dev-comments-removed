@@ -11,6 +11,10 @@ const testCases = {
     
     
     
+    [Float16Array.name]: [
+        [-2147483647, -2147483646.99, -0, 0, 2147483646.99, NaN],
+        [1/undefined, NaN, Number.NaN]
+    ],
     [Float32Array.name]: [
         [-2147483647, -2147483646.99, -0, 0, 2147483646.99, NaN],
         [1/undefined, NaN, Number.NaN]
