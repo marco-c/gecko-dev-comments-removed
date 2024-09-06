@@ -31,7 +31,13 @@ async function testInteractWithSite(origin, expectRecorded) {
         expectRecorded ? "" : "not "
       }be recorded.`
     );
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
     await BrowserTestUtils.synthesizeMouseAtPoint(50, 50, {}, browser);
+    AccessibilityUtils.resetEnv();
   });
   if (expectRecorded) {
     Assert.deepEqual(
