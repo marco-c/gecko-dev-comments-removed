@@ -307,6 +307,7 @@ function validateOptionsAxes(operationName) {
     }, `[${subOperationName}] TypeError is expected if any of options.axes elements is not an unsigned long interger`);
 
     
+    
     promise_test(async t => {
       for (let dataType of allWebNNOperandDataTypes) {
         for (let dimensions of allWebNNDimensionsArray) {
@@ -314,16 +315,16 @@ function validateOptionsAxes(operationName) {
           if (rank >= 1) {
             const input =
                 builder.input(`input${++inputIndex}`, {dataType, dimensions});
-            assert_throws_dom(
-                'DataError',
+            assert_throws_js(
+                TypeError,
                 () => builder[subOperationName](input, {axes: [rank]}));
-            assert_throws_dom(
-                'DataError',
+            assert_throws_js(
+                TypeError,
                 () => builder[subOperationName](input, {axes: [rank + 1]}));
           }
         }
       }
-    }, `[${subOperationName}] DataError is expected if any of options.axes elements is greater or equal to the size of input`);
+    }, `[${subOperationName}] TypeError is expected if any of options.axes elements is greater or equal to the size of input`);
 
     
     promise_test(async t => {
@@ -336,13 +337,13 @@ function validateOptionsAxes(operationName) {
             const axesArrayContainSameValues =
                 getAxesArrayContainSameValues(dimensions);
             for (let axes of axesArrayContainSameValues) {
-              assert_throws_dom(
-                  'DataError', () => builder[subOperationName](input, {axes}));
+              assert_throws_js(
+                  TypeError, () => builder[subOperationName](input, {axes}));
             }
           }
         }
       }
-    }, `[${subOperationName}] DataError is expected if two or more values are same in the axes sequence`);
+    }, `[${subOperationName}] TypeError is expected if two or more values are same in the axes sequence`);
   }
 }
 
