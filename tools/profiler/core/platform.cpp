@@ -41,6 +41,7 @@
 #include "ProfilerCPUFreq.h"
 #include "ProfilerIOInterposeObserver.h"
 #include "ProfilerParent.h"
+#include "ProfilerNativeStack.h"
 #include "ProfilerRustBindings.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
@@ -2027,18 +2028,6 @@ class Registers {
 #endif
 };
 
-
-
-static const size_t MAX_NATIVE_FRAMES = 1024;
-
-struct NativeStack {
-  void* mPCs[MAX_NATIVE_FRAMES];
-  void* mSPs[MAX_NATIVE_FRAMES];
-  size_t mCount;  
-
-  NativeStack() : mPCs(), mSPs(), mCount(0) {}
-};
-
 Atomic<bool> WALKING_JS_STACK(false);
 
 struct AutoWalkJSStack {
@@ -2881,7 +2870,7 @@ static inline void DoSharedSample(
       aJsFrames ? ExtractJsFrames(aIsSynchronous, aThreadData, aRegs, collector,
                                   aJsFrames, stackWalkControlIfSupported)
                 : 0;
-  NativeStack nativeStack;
+  NativeStack nativeStack{.mCount = 0};
 #if defined(HAVE_NATIVE_UNWIND)
   if (captureNative) {
     DoNativeBacktrace(aThreadData, aRegs, nativeStack,
@@ -7657,7 +7646,7 @@ static void profiler_suspend_and_sample_thread(
   }
 
   
-  NativeStack nativeStack;
+  NativeStack nativeStack{.mCount = 0};
 
   auto collectStack = [&](const Registers& aRegs, const TimeStamp& aNow) {
     
