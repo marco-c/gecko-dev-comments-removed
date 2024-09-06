@@ -6,6 +6,7 @@
 
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/EmitterScope.h"
+#include "frontend/TryEmitter.h"
 #include "vm/DisposeJumpKind.h"
 
 using namespace js;
@@ -14,9 +15,9 @@ using namespace js::frontend;
 UsingEmitter::UsingEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
 bool UsingEmitter::prepareForDisposableScopeBody() {
-  depthAtDisposables_ = bce_->bytecodeSection().stackDepth();
-  disposableStart_ = bce_->bytecodeSection().offset();
-  return bce_->emit1(JSOp::TryUsing);
+  tryEmitter_.emplace(bce_, TryEmitter::Kind::TryFinally,
+                      TryEmitter::ControlKind::NonSyntactic);
+  return tryEmitter_->emitTry();
 }
 
 bool UsingEmitter::prepareForAssignment(UsingHint hint) {
@@ -48,15 +49,55 @@ bool UsingEmitter::emitNonLocalJump(EmitterScope* present) {
 
 bool UsingEmitter::emitEnd() {
   MOZ_ASSERT(bce_->innermostEmitterScopeNoCheck()->hasDisposables());
-  MOZ_ASSERT(disposableStart_.valid());
+  MOZ_ASSERT(tryEmitter_.isSome());
 
-  if (!bce_->addTryNote(TryNoteKind::Using, depthAtDisposables_,
-                        disposableStart_, bce_->bytecodeSection().offset())) {
+  
+  
+  
+  if (!bce_->emit2(JSOp::DisposeDisposables,
+                   uint8_t(DisposeJumpKind::JumpOnError))) {
+    return false;
+  }
+
+#ifdef DEBUG
+  
+  
+  
+  MOZ_ASSERT(!tryEmitter_->hasControlInfo());
+#endif
+
+  if (!tryEmitter_->emitFinally()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(2)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(2)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::ThrowWithStackWithoutJump)) {
+    
     return false;
   }
 
   if (!bce_->emit2(JSOp::DisposeDisposables,
                    uint8_t(DisposeJumpKind::JumpOnError))) {
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  if (!tryEmitter_->emitEnd()) {
+    
     return false;
   }
 

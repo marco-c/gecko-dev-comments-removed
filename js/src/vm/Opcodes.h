@@ -2650,6 +2650,20 @@
 
 
 
+ \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(ThrowWithStackWithoutJump, throw_with_stack_without_jump, NULL, 1, 2, 0, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2691,17 +2705,6 @@
 
  \
     MACRO(TryDestructuring, try_destructuring, NULL, 1, 0, 0, JOF_BYTE) \
-    
-
-
-
-
-
-
-
-
- \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(TryUsing, try_using, NULL, 1, 0, 0, JOF_BYTE)) \
     
 
 

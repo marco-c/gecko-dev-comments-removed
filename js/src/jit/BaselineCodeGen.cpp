@@ -4886,9 +4886,12 @@ bool BaselineCodeGen<Handler>::emit_DisposeDisposables() {
   
   MOZ_CRASH("DisposeDisposables has not been implemented for baseline");
 }
+
 template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_TryUsing() {
-  return true;
+bool BaselineCodeGen<Handler>::emit_ThrowWithStackWithoutJump() {
+  
+  
+  MOZ_CRASH("ThrowWithStackWithoutJump has not been implemented for baseline");
 }
 #endif
 
