@@ -195,18 +195,18 @@ add_task(async function test_omnibox_result() {
       omnibox: {
         keyword: "omniboxtest",
       },
+    },
 
-      background() {
-        
-        browser.omnibox.setDefaultSuggestion({
-          description: "doit",
-        });
-        
-        browser.omnibox.onInputEntered.addListener(() => {});
-        browser.omnibox.onInputChanged.addListener((text, suggest) => {
-          suggest([]);
-        });
-      },
+    background() {
+      
+      browser.omnibox.setDefaultSuggestion({
+        description: "doit",
+      });
+      
+      browser.omnibox.onInputEntered.addListener(() => {});
+      browser.omnibox.onInputChanged.addListener((text, suggest) => {
+        suggest([]);
+      });
     },
   });
 
@@ -223,7 +223,7 @@ add_task(async function test_omnibox_result() {
 
     assertElementsDisplayed(details, {
       separator: true,
-      title: "Generated extension",
+      title: "doit",
       type: UrlbarUtils.RESULT_TYPE.OMNIBOX,
     });
   });

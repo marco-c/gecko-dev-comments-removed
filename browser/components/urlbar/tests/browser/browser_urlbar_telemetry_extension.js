@@ -110,18 +110,17 @@ add_task(async function test_extension() {
       omnibox: {
         keyword: "omniboxtest",
       },
-
-      background() {
-        
-        browser.omnibox.setDefaultSuggestion({
-          description: "doit",
-        });
-        
-        browser.omnibox.onInputEntered.addListener(() => {});
-        browser.omnibox.onInputChanged.addListener((text, suggest) => {
-          suggest([]);
-        });
-      },
+    },
+    background() {
+      
+      browser.omnibox.setDefaultSuggestion({
+        description: "doit",
+      });
+      
+      browser.omnibox.onInputEntered.addListener(() => {});
+      browser.omnibox.onInputChanged.addListener((text, suggest) => {
+        suggest([]);
+      });
     },
   });
 
