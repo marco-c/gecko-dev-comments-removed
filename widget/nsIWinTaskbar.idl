@@ -15,7 +15,6 @@ interface nsITaskbarWindowPreview;
 interface nsITaskbarPreviewController;
 interface nsITaskbarProgress;
 interface nsITaskbarOverlayIconController;
-interface nsILegacyJumpListBuilder;
 interface mozIDOMWindow;
 
 
@@ -119,19 +118,6 @@ interface nsIWinTaskbar : nsISupports
   
 
 
-
-  
-
-
-
-
-
-
-
-
-
-
-  nsILegacyJumpListBuilder createLegacyJumpListBuilder(in boolean aPrivateBrowsing);
 
   
 
