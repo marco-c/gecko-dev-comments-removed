@@ -40,6 +40,8 @@ namespace jit {
 
 class BailoutFrameInfo;
 
+enum class IsLeavingFrame { No, Yes };
+
 
 class JitActivation : public Activation {
   
@@ -93,8 +95,6 @@ class JitActivation : public Activation {
   
   
   mozilla::Maybe<wasm::TrapData> wasmTrapData_;
-
-  void clearRematerializedFrames();
 
 #ifdef CHECK_OSIPOINT_REGISTERS
  protected:
@@ -156,8 +156,7 @@ class JitActivation : public Activation {
   
   RematerializedFrame* getRematerializedFrame(
       JSContext* cx, const JSJitFrameIter& iter, size_t inlineDepth = 0,
-      MaybeReadFallback::FallbackConsequence consequence =
-          MaybeReadFallback::Fallback_Invalidate);
+      IsLeavingFrame leaving = IsLeavingFrame::No);
 
   
   

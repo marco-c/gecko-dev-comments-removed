@@ -13,6 +13,7 @@
 #include <utility>   
 
 #include "debugger/DebugAPI.h"        
+#include "jit/Invalidation.h"         
 #include "jit/JSJitFrameIter.h"       
 #include "jit/RematerializedFrame.h"  
 #include "js/AllocPolicy.h"           
@@ -58,7 +59,9 @@ js::jit::JitActivation::~JitActivation() {
   
   MOZ_ASSERT(!isWasmTrapping());
 
-  clearRematerializedFrames();
+  
+  
+  MOZ_ASSERT_IF(rematerializedFrames_, rematerializedFrames_->empty());
 }
 
 void js::jit::JitActivation::setBailoutData(
@@ -82,20 +85,9 @@ void js::jit::JitActivation::removeRematerializedFrame(uint8_t* top) {
   }
 }
 
-void js::jit::JitActivation::clearRematerializedFrames() {
-  if (!rematerializedFrames_) {
-    return;
-  }
-
-  for (RematerializedFrameTable::Enum e(*rematerializedFrames_); !e.empty();
-       e.popFront()) {
-    e.removeFront();
-  }
-}
-
 js::jit::RematerializedFrame* js::jit::JitActivation::getRematerializedFrame(
     JSContext* cx, const JSJitFrameIter& iter, size_t inlineDepth,
-    MaybeReadFallback::FallbackConsequence consequence) {
+    IsLeavingFrame leaving) {
   MOZ_ASSERT(iter.activation() == this);
   MOZ_ASSERT(iter.isIonScripted());
 
@@ -117,12 +109,28 @@ js::jit::RematerializedFrame* js::jit::JitActivation::getRematerializedFrame(
     
     
     InlineFrameIterator inlineIter(cx, &iter);
+
+    
+    
+    MaybeReadFallback::FallbackConsequence consequence =
+        MaybeReadFallback::Fallback_Invalidate;
+    if (leaving == IsLeavingFrame::Yes) {
+      consequence = MaybeReadFallback::Fallback_DoNothing;
+    }
     MaybeReadFallback recover(cx, this, &iter, consequence);
 
     
     
     
     AutoRealmUnchecked ar(cx, iter.script()->realm());
+
+    
+    
+    
+    
+    if (leaving == IsLeavingFrame::No && !iter.checkInvalidation()) {
+      jit::Invalidate(cx, iter.script());
+    }
 
     if (!RematerializedFrame::RematerializeInlineFrames(cx, top, inlineIter,
                                                         recover, frames)) {
