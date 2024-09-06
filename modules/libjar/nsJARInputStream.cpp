@@ -305,8 +305,7 @@ nsresult nsJARInputStream::ContinueInflate(char* aBuffer, uint32_t aCount,
 
       
       
-      if (mozilla::StaticPrefs::network_jar_require_size_match() &&
-          mZs.total_out != mOutSize) {
+      if (mZs.total_out != mOutSize) {
         return NS_ERROR_FILE_CORRUPTED;
       }
     }
