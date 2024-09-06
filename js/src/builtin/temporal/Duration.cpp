@@ -555,6 +555,21 @@ bool js::temporal::IsValidDuration(const Duration& duration) {
   }
 
   
+  if (std::abs(years) >= double(int64_t(1) << 32)) {
+    return false;
+  }
+
+  
+  if (std::abs(months) >= double(int64_t(1) << 32)) {
+    return false;
+  }
+
+  
+  if (std::abs(weeks) >= double(int64_t(1) << 32)) {
+    return false;
+  }
+
+  
   if (!NormalizeSeconds(duration)) {
     return false;
   }
@@ -614,6 +629,14 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
     return true;
   };
 
+  auto throwIfTooLarge = [&](double v, const char* name) {
+    if (std::abs(v) >= double(int64_t(1) << 32)) {
+      report(v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
+      return false;
+    }
+    return true;
+  };
+
   
   if (!throwIfInvalid(years, "years")) {
     return false;
@@ -643,6 +666,21 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
     return false;
   }
   if (!throwIfInvalid(nanoseconds, "nanoseconds")) {
+    return false;
+  }
+
+  
+  if (!throwIfTooLarge(years, "years")) {
+    return false;
+  }
+
+  
+  if (!throwIfTooLarge(months, "months")) {
+    return false;
+  }
+
+  
+  if (!throwIfTooLarge(weeks, "weeks")) {
     return false;
   }
 
@@ -696,6 +734,14 @@ static bool ThrowIfInvalidDuration(JSContext* cx,
     return true;
   };
 
+  auto throwIfTooLarge = [&](double v, const char* name) {
+    if (std::abs(v) >= double(int64_t(1) << 32)) {
+      report(v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
+      return false;
+    }
+    return true;
+  };
+
   
   if (!throwIfInvalid(years, "years")) {
     return false;
@@ -707,6 +753,21 @@ static bool ThrowIfInvalidDuration(JSContext* cx,
     return false;
   }
   if (!throwIfInvalid(days, "days")) {
+    return false;
+  }
+
+  
+  if (!throwIfTooLarge(years, "years")) {
+    return false;
+  }
+
+  
+  if (!throwIfTooLarge(months, "months")) {
+    return false;
+  }
+
+  
+  if (!throwIfTooLarge(weeks, "weeks")) {
     return false;
   }
 
