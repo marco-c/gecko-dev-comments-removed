@@ -1088,27 +1088,18 @@ var BrowserAddonUI = {
     return { remove: result === 0, report: checkboxState.value };
   },
 
-  async reportAddon(addonId, reportEntryPoint) {
+  async reportAddon(addonId, _reportEntryPoint) {
     let addon = addonId && (await AddonManager.getAddonByID(addonId));
     if (!addon) {
       return;
     }
 
-    
-    
-    if (lazy.AbuseReporter.amoFormEnabled) {
-      const amoUrl = lazy.AbuseReporter.getAMOFormURL({ addonId });
-      window.openTrustedLinkIn(amoUrl, "tab", {
-        
-        
-        forceForeground: true,
-      });
-      return;
-    }
-
-    const win = await this.openAddonsMgr("addons://list/extension");
-
-    win.openAbuseReport({ addonId, reportEntryPoint });
+    const amoUrl = lazy.AbuseReporter.getAMOFormURL({ addonId });
+    window.openTrustedLinkIn(amoUrl, "tab", {
+      
+      
+      forceForeground: true,
+    });
   },
 
   async removeAddon(addonId) {

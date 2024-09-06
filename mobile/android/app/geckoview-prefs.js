@@ -209,9 +209,6 @@ pref("dom.serviceWorkers.disable_open_click_delay", 5000);
 pref("dom.webshare.enabled", true);
 
 
-pref("extensions.abuseReport.amWebAPI.enabled", false);
-
-
 
 pref("extensions.autoDisableScopes", 15);
 

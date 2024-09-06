@@ -1883,11 +1883,6 @@ pref("services.common.uptake.sampleRate", 1);
 
 pref("extensions.abuseReport.enabled", false);
 
-pref("extensions.abuseReport.amWebAPI.enabled", false);
-pref("extensions.abuseReport.url", "https://services.addons.mozilla.org/api/v4/abuse/report/addon/");
-pref("extensions.abuseReport.amoDetailsURL", "https://services.addons.mozilla.org/api/v4/addons/addon/");
-
-pref("extensions.abuseReport.amoFormEnabled", false);
 pref("extensions.abuseReport.amoFormURL", "https://addons.mozilla.org/%LOCALE%/%APP%/feedback/addon/%addonID%/");
 
 
