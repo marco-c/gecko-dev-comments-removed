@@ -203,15 +203,20 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetDownloadDirectory(
 
   bool usePrefDir = !StaticPrefs::browser_download_start_downloads_in_tmp_dir();
 
-  nsCOMPtr<nsIFile> dir;
   nsresult rv;
   if (usePrefDir) {
     
     switch (Preferences::GetInt(NS_PREF_DOWNLOAD_FOLDERLIST, -1)) {
-      case NS_FOLDER_VALUE_DESKTOP:
-        (void)NS_GetSpecialDirectory(NS_OS_DESKTOP_DIR, getter_AddRefs(dir));
-        break;
+      case NS_FOLDER_VALUE_DESKTOP: {
+        nsCOMPtr<nsIFile> dir;
+        if (NS_SUCCEEDED(NS_GetSpecialDirectory(NS_OS_DESKTOP_DIR,
+                                                getter_AddRefs(dir)))) {
+          return dir;
+        }
+      } break;
+
       case NS_FOLDER_VALUE_CUSTOM: {
+        nsCOMPtr<nsIFile> dir;
         Preferences::GetComplex(NS_PREF_DOWNLOAD_DIR, NS_GET_IID(nsIFile),
                                 getter_AddRefs(dir));
         if (!dir) break;
@@ -223,64 +228,70 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetDownloadDirectory(
 
         
         nsresult rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0755);
-        
-        
-        if (rv != NS_ERROR_FILE_ALREADY_EXISTS && NS_FAILED(rv)) {
-          dir = nullptr;
+        if (rv == NS_ERROR_FILE_ALREADY_EXISTS || NS_SUCCEEDED(rv)) {
+          return dir;
         }
       } break;
+
       case NS_FOLDER_VALUE_DOWNLOADS:
         
         break;
     }
-    if (!dir) {
-      rv = NS_GetSpecialDirectory(NS_OS_DEFAULT_DOWNLOAD_DIR,
-                                  getter_AddRefs(dir));
-      if (NS_FAILED(rv)) {
-        
-        
-        if (sFallbackDownloadDir) {
-          MOZ_TRY(sFallbackDownloadDir->Clone(getter_AddRefs(dir)));
-        } else {
-          MOZ_TRY(NS_GetSpecialDirectory(NS_OS_HOME_DIR, getter_AddRefs(dir)));
 
-          nsCOMPtr<nsIStringBundleService> bundleService =
-              do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
-          MOZ_TRY(rv);
+    
 
-          nsAutoString downloadLocalized;
-          nsCOMPtr<nsIStringBundle> downloadBundle;
-          rv = bundleService->CreateBundle(
-              "chrome://mozapps/locale/downloads/downloads.properties",
-              getter_AddRefs(downloadBundle));
-          if (NS_SUCCEEDED(rv)) {
-            rv = downloadBundle->GetStringFromName("downloadsFolder",
-                                                   downloadLocalized);
-          }
-          if (NS_FAILED(rv)) {
-            downloadLocalized.AssignLiteral("Downloads");
-          }
-          MOZ_TRY(dir->Append(downloadLocalized));
+    nsCOMPtr<nsIFile> dir;
+    rv =
+        NS_GetSpecialDirectory(NS_OS_DEFAULT_DOWNLOAD_DIR, getter_AddRefs(dir));
+    if (NS_FAILED(rv)) {
+      
+      
+      if (sFallbackDownloadDir) {
+        MOZ_TRY(sFallbackDownloadDir->Clone(getter_AddRefs(dir)));
+      } else {
+        MOZ_TRY(NS_GetSpecialDirectory(NS_OS_HOME_DIR, getter_AddRefs(dir)));
 
-          
-          nsCOMPtr<nsIFile> copy;
-          dir->Clone(getter_AddRefs(copy));
-          sFallbackDownloadDir = copy.forget();
-          ClearOnShutdown(&sFallbackDownloadDir);
+        nsCOMPtr<nsIStringBundleService> bundleService =
+            do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
+        MOZ_TRY(rv);
+
+        nsAutoString downloadLocalized;
+        nsCOMPtr<nsIStringBundle> downloadBundle;
+        rv = bundleService->CreateBundle(
+            "chrome://mozapps/locale/downloads/downloads.properties",
+            getter_AddRefs(downloadBundle));
+        if (NS_SUCCEEDED(rv)) {
+          rv = downloadBundle->GetStringFromName("downloadsFolder",
+                                                 downloadLocalized);
         }
-        if (aSkipChecks) {
-          return dir;
+        if (NS_FAILED(rv)) {
+          downloadLocalized.AssignLiteral("Downloads");
         }
+        MOZ_TRY(dir->Append(downloadLocalized));
 
         
-        rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0755);
-        if (rv == NS_ERROR_FILE_ALREADY_EXISTS || NS_SUCCEEDED(rv)) {
-          return dir;
-        }
-        return Err(rv);
+        nsCOMPtr<nsIFile> copy;
+        dir->Clone(getter_AddRefs(copy));
+        sFallbackDownloadDir = copy.forget();
+        ClearOnShutdown(&sFallbackDownloadDir);
       }
+      if (aSkipChecks) {
+        return dir;
+      }
+
+      
+      rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0755);
+      if (rv == NS_ERROR_FILE_ALREADY_EXISTS || NS_SUCCEEDED(rv)) {
+        return dir;
+      }
+      return Err(rv);
     }
+
+    return dir;
+    
   } else {
+    
+    nsCOMPtr<nsIFile> dir;
     MOZ_TRY(NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dir)));
 
 #if !defined(XP_MACOSX) && defined(XP_UNIX)
@@ -349,10 +360,9 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetDownloadDirectory(
     }
 
 #endif
+    NS_ASSERTION(dir, "Somehow we didn't get a download directory!");
+    return dir;
   }
-
-  NS_ASSERTION(dir, "Somehow we didn't get a download directory!");
-  return dir;
 }
 
 
