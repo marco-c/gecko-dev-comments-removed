@@ -32,7 +32,7 @@ async function run_test() {
   writeVersionFile("0.9");
   
   await runUpdateUsingApp(STATE_AFTER_STAGE);
-  await standardInit();
+  await testPostUpdateProcessing();
   checkPostUpdateRunningFile(false);
   setTestFilesAndDirsForFailure();
   checkFilesAfterUpdateFailure(getApplyDirFile);
