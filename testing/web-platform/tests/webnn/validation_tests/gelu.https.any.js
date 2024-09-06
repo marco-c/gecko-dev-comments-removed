@@ -1,0 +1,10 @@
+
+
+
+
+'use strict';
+
+validateInputFromAnotherBuilder('gelu');
+
+validateUnaryOperation(
+    'gelu', floatingPointTypes,  true);
