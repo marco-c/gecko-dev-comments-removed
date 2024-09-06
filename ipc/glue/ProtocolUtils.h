@@ -126,6 +126,10 @@ enum class LinkStatus : uint8_t {
 
   
   
+  
+  
+  
+  
   Doomed,
 
   
@@ -172,11 +176,7 @@ class IProtocol : public HasResultCodes {
   const IToplevelProtocol* ToplevelProtocol() const { return mToplevel; }
 
   
-  
-  int32_t Register(IProtocol* aRouted);
-  int32_t RegisterID(IProtocol* aRouted, int32_t aId);
   IProtocol* Lookup(int32_t aId);
-  void Unregister(int32_t aId);
 
   Shmem::SharedMemory* CreateSharedMemory(size_t aSize, bool aUnsafe,
                                           int32_t* aId);
@@ -204,6 +204,9 @@ class IProtocol : public HasResultCodes {
 
   Side GetSide() const { return mSide; }
   bool CanSend() const { return mLinkStatus == LinkStatus::Connected; }
+
+  
+  
   bool CanRecv() const {
     return mLinkStatus == LinkStatus::Connected ||
            mLinkStatus == LinkStatus::Doomed;
@@ -249,8 +252,8 @@ class IProtocol : public HasResultCodes {
   
   
   
-  void SetManagerAndRegister(IRefCountedProtocol* aManager);
-  void SetManagerAndRegister(IRefCountedProtocol* aManager, int32_t aId);
+  bool SetManagerAndRegister(IRefCountedProtocol* aManager,
+                             int32_t aId = kNullActorId);
 
   
   bool ChannelSend(UniquePtr<IPC::Message> aMsg);
@@ -270,28 +273,31 @@ class IProtocol : public HasResultCodes {
     }
   }
 
-  
-  
-  
-  virtual void AllManagedActors(
-      nsTArray<RefPtr<ActorLifecycleProxy>>& aActors) const = 0;
-
   virtual uint32_t AllManagedActorsCount() const = 0;
 
   
-  void ActorConnected();
+  already_AddRefed<ActorLifecycleProxy> ActorConnected();
+
+  
+  void ActorDisconnected(ActorDestroyReason aWhy);
 
   
   
+  void SetDoomed() {
+    MOZ_ASSERT(mLinkStatus == LinkStatus::Connected ||
+                   mLinkStatus == LinkStatus::Doomed,
+               "Invalid link status for SetDoomed");
+    mLinkStatus = LinkStatus::Doomed;
+  }
+  virtual void DoomSubtree() = 0;
+
   
   
-  virtual void ActorDoom() {}
-  void DoomSubtree();
+  virtual IProtocol* PeekManagedActor() = 0;
 
   
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) {}
-  void DestroySubtree(ActorDestroyReason aWhy);
 
   
   
@@ -429,10 +435,9 @@ class IToplevelProtocol : public IRefCountedProtocol {
 
  public:
   
-  
-  int32_t Register(IProtocol* aRouted);
-  int32_t RegisterID(IProtocol* aRouted, int32_t aId);
   IProtocol* Lookup(int32_t aId);
+
+  int32_t RegisterID(IProtocol* aRouted, int32_t aId);
   void Unregister(int32_t aId);
 
   Shmem::SharedMemory* CreateSharedMemory(size_t aSize, bool aUnsafe,
@@ -446,8 +451,6 @@ class IToplevelProtocol : public IRefCountedProtocol {
 
   void SetOtherProcessId(base::ProcessId aOtherPid);
 
-  virtual void OnChannelClose() = 0;
-  virtual void OnChannelError() = 0;
   virtual void ProcessingError(Result aError, const char* aMsgName) {}
 
   bool Open(ScopedPort aPort, const nsID& aMessageChannelId,
@@ -513,7 +516,26 @@ class IToplevelProtocol : public IRefCountedProtocol {
 
   virtual void OnChannelReceivedMessage(const Message& aMsg) {}
 
-  void OnIPCChannelOpened() { ActorConnected(); }
+  
+  void OnIPCChannelOpened() {
+    
+    
+    Unused << ActorConnected();
+  }
+  void OnChannelClose() {
+    
+    
+    RefPtr<ActorLifecycleProxy> proxy = dont_AddRef(GetLifecycleProxy());
+    ActorDisconnected(NormalShutdown);
+    DeallocShmems();
+  }
+  void OnChannelError() {
+    
+    
+    RefPtr<ActorLifecycleProxy> proxy = dont_AddRef(GetLifecycleProxy());
+    ActorDisconnected(AbnormalShutdown);
+    DeallocShmems();
+  }
 
   base::ProcessId OtherPidMaybeInvalid() const { return mOtherPid; }
 
@@ -528,7 +550,7 @@ class IToplevelProtocol : public IRefCountedProtocol {
   
   
   int32_t mLastLocalId;
-  IDMap<IProtocol*> mActorMap;
+  IDMap<RefPtr<ActorLifecycleProxy>> mActorMap;
   IDMap<RefPtr<Shmem::SharedMemory>> mShmemMap;
 
   MessageChannel mChannel;
@@ -753,6 +775,8 @@ class ManagedContainer {
       mArray.InsertElementAt(index, aElement);
     }
   }
+
+  Protocol* Peek() { return mArray.IsEmpty() ? nullptr : mArray.LastElement(); }
 
   void Clear() { mArray.Clear(); }
 

@@ -474,10 +474,6 @@ def errfnSentinel(rvalue=ExprLiteral.FALSE):
     return inner
 
 
-def _destroyMethod():
-    return ExprVar("ActorDestroy")
-
-
 def errfnUnreachable(msg):
     return [_logicError(msg)]
 
@@ -3944,56 +3940,7 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
             self.cls.addstmts([meth, refmeth, Whitespace.NL])
 
         
-        arrvar = ExprVar("arr__")
-        managedmeth = MethodDefn(
-            MethodDecl(
-                "AllManagedActors",
-                params=[
-                    Decl(
-                        _cxxArrayType(_refptr(_cxxLifecycleProxyType()), ref=True),
-                        arrvar.name,
-                    )
-                ],
-                methodspec=MethodSpec.OVERRIDE,
-                const=True,
-            )
-        )
-
-        
-        managedmeth.addcode(
-            """
-            uint32_t total = 0;
-            """
-        )
-        for managed in ptype.manages:
-            managedmeth.addcode(
-                """
-                total += ${container}.Count();
-                """,
-                container=p.managedVar(managed, self.side),
-            )
-        managedmeth.addcode(
-            """
-            arr__.SetCapacity(total);
-
-            """
-        )
-
-        for managed in ptype.manages:
-            managedmeth.addcode(
-                """
-                for (auto* key : ${container}) {
-                    arr__.AppendElement(key->GetLifecycleProxy());
-                }
-
-                """,
-                container=p.managedVar(managed, self.side),
-            )
-
-        self.cls.addstmts([managedmeth, Whitespace.NL])
-
-        
-        managedmeth = MethodDefn(
+        managedcount = MethodDefn(
             MethodDecl(
                 "AllManagedActorsCount",
                 ret=Type.UINT32,
@@ -4003,26 +3950,26 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         )
 
         
-        managedmeth.addcode(
+        managedcount.addcode(
             """
             uint32_t total = 0;
             """
         )
         for managed in ptype.manages:
-            managedmeth.addcode(
+            managedcount.addcode(
                 """
                 total += ${container}.Count();
                 """,
                 container=p.managedVar(managed, self.side),
             )
-        managedmeth.addcode(
+        managedcount.addcode(
             """
             return total;
 
             """
         )
 
-        self.cls.addstmts([managedmeth, Whitespace.NL])
+        self.cls.addstmts([managedcount, Whitespace.NL])
 
         
         for managed in ptype.manages:
@@ -4188,66 +4135,50 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
             ]
         )
 
-        clearsubtreevar = ExprVar("ClearSubtree")
-
-        if ptype.isToplevel():
-            
-            onclose = MethodDefn(
-                MethodDecl("OnChannelClose", methodspec=MethodSpec.OVERRIDE)
-            )
-            onclose.addcode(
-                """
-                DestroySubtree(NormalShutdown);
-                ClearSubtree();
-                DeallocShmems();
-                if (GetLifecycleProxy()) {
-                    GetLifecycleProxy()->Release();
-                }
-                """
-            )
-            self.cls.addstmts([onclose, Whitespace.NL])
-
-            
-            onerror = MethodDefn(
-                MethodDecl("OnChannelError", methodspec=MethodSpec.OVERRIDE)
-            )
-            onerror.addcode(
-                """
-                DestroySubtree(AbnormalShutdown);
-                ClearSubtree();
-                DeallocShmems();
-                if (GetLifecycleProxy()) {
-                    GetLifecycleProxy()->Release();
-                }
-                """
-            )
-            self.cls.addstmts([onerror, Whitespace.NL])
-
         
-        self.cls.addstmt(Label.PRIVATE)
+        doomsubtree = MethodDefn(
+            MethodDecl("DoomSubtree", methodspec=MethodSpec.OVERRIDE)
+        )
 
-        
-        clearsubtree = MethodDefn(MethodDecl(clearsubtreevar.name))
         for managed in ptype.manages:
-            clearsubtree.addcode(
+            doomsubtree.addcode(
                 """
                 for (auto* key : ${container}) {
-                    key->ClearSubtree();
+                    key->DoomSubtree();
                 }
-                for (auto* key : ${container}) {
-                    // Recursively releasing ${container} kids.
-                    auto* proxy = key->GetLifecycleProxy();
-                    NS_IF_RELEASE(proxy);
-                }
-                ${container}.Clear();
-
                 """,
                 container=p.managedVar(managed, self.side),
             )
 
+        doomsubtree.addcode("SetDoomed();\n")
+
+        self.cls.addstmts([doomsubtree, Whitespace.NL])
+
         
+        peekmanagedactor = MethodDefn(
+            MethodDecl(
+                "PeekManagedActor",
+                methodspec=MethodSpec.OVERRIDE,
+                ret=Type("IProtocol", ptr=True),
+            )
+        )
+
+        for managed in ptype.manages:
+            peekmanagedactor.addcode(
+                """
+                if (IProtocol* actor = ${container}.Peek()) {
+                    return actor;
+                }
+                """,
+                container=p.managedVar(managed, self.side),
+            )
+
+        peekmanagedactor.addcode("return nullptr;\n")
+
+        self.cls.addstmts([peekmanagedactor, Whitespace.NL])
+
         
-        self.cls.addstmts([clearsubtree, Whitespace.NL])
+        self.cls.addstmt(Label.PRIVATE)
 
         if not ptype.isToplevel():
             self.cls.addstmts(
@@ -4382,16 +4313,9 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
                 )
                 case = ExprCode(
                     """
-                    {
-                        ${manageecxxtype} actor = static_cast<${manageecxxtype}>(aListener);
+                    MOZ_ALWAYS_TRUE(${container}.EnsureRemoved(static_cast<${manageecxxtype}>(aListener)));
+                    return;
 
-                        const bool removed = ${container}.EnsureRemoved(actor);
-                        MOZ_RELEASE_ASSERT(removed, "actor not managed by this!");
-
-                        auto* proxy = actor->GetLifecycleProxy();
-                        NS_IF_RELEASE(proxy);
-                        return;
-                    }
                     """,
                     manageecxxtype=manageecxxtype,
                     container=p.managedVar(manageeipdltype, self.side),
@@ -4708,14 +4632,18 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         return [
             StmtCode(
                 """
-            if (!${actor}) {
-                NS_WARNING("Cannot bind null ${actorname} actor");
-                return ${errfn};
-            }
+                if (!${actor}) {
+                    NS_WARNING("Cannot bind null ${actorname} actor");
+                    return ${errfn};
+                }
 
-            ${actor}->SetManagerAndRegister($,{setManagerArgs});
-            ${container}.Insert(${actor});
-            """,
+                if (${actor}->SetManagerAndRegister($,{setManagerArgs})) {
+                    ${container}.Insert(${actor});
+                } else {
+                    NS_WARNING("Failed to bind ${actorname} actor");
+                    return ${errfn};
+                }
+                """,
                 actor=actordecl.var(),
                 actorname=actorproto.name() + self.side.capitalize(),
                 errfn=errfn,
@@ -4766,22 +4694,13 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         return method, (lbl, case)
 
     def destroyActor(self, md, actorexpr, why=_DestroyReason.Deletion):
-        if md and md.decl.type.isCtor():
-            destroyedType = md.decl.type.constructedType()
-        else:
-            destroyedType = self.protocol.decl.type
-
         return [
             StmtCode(
                 """
-                IProtocol* mgr = ${actor}->Manager();
-                ${actor}->DestroySubtree(${why});
-                ${actor}->ClearSubtree();
-                mgr->RemoveManagee(${protoId}, ${actor});
+                ${actor}->ActorDisconnected(${why});
                 """,
                 actor=actorexpr,
                 why=why,
-                protoId=_protocolId(destroyedType),
             )
         ]
 
