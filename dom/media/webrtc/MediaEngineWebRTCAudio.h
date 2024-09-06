@@ -92,7 +92,6 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
   MediaEngineSourceState mState;
 
   
-  
   MediaEnginePrefs mCurrentPrefs;
 
   
@@ -101,10 +100,6 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 
   
   RefPtr<AudioInputProcessing> mInputProcessing;
-
-  
-  
-  webrtc::AudioProcessing::Config mAudioProcessingConfig;
 };
 
 
@@ -150,8 +145,9 @@ class AudioInputProcessing : public AudioDataListener {
   
   
   
-  void ApplyConfig(MediaTrackGraph* aGraph,
-                   const webrtc::AudioProcessing::Config& aConfig);
+  void ApplySettings(MediaTrackGraph* aGraph,
+                     CubebUtils::AudioDeviceID aDeviceID,
+                     const MediaEnginePrefs& aSettings);
 
   void End();
 
@@ -166,6 +162,8 @@ class AudioInputProcessing : public AudioDataListener {
 
  private:
   ~AudioInputProcessing() = default;
+  webrtc::AudioProcessing::Config ConfigForPrefs(
+      const MediaEnginePrefs& aPrefs);
   void EnsureAudioProcessing(MediaTrackGraph* aGraph, uint32_t aChannels);
   void ResetAudioProcessing(MediaTrackGraph* aGraph);
   PrincipalHandle GetCheckedPrincipal(const AudioSegment& aSegment);
