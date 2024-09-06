@@ -67,7 +67,7 @@ add_task(async function interval() {
 
   
   
-  let intervalSecs = 1;
+  let intervalSecs = 3;
   UrlbarPrefs.set("quicksuggest.rustIngestIntervalSeconds", intervalSecs);
   UrlbarPrefs.set("quicksuggest.rustEnabled", false);
   UrlbarPrefs.set("quicksuggest.rustEnabled", true);
@@ -99,7 +99,7 @@ add_task(async function interval() {
     );
 
     
-    info("Waiting for ingest to start at index " + i);
+    info(`Waiting ${intervalSecs}s for ingest to start at index ${i}`);
     ({ ingestPromise } = await waitForIngestStart(ingestPromise));
     info("Waiting for ingest to finish at index " + i);
     await ingestPromise;
@@ -118,7 +118,7 @@ add_task(async function interval() {
   
   
 
-  let waitSecs = 3 * intervalSecs;
+  let waitSecs = 2 * intervalSecs;
   
   let wait = () => new Promise(r => setTimeout(r, 1000 * waitSecs));
 
