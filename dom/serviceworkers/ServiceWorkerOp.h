@@ -20,17 +20,14 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
-#include "mozilla/dom/RemoteWorkerOp.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
 #include "mozilla/dom/WorkerRunnable.h"
 
 namespace mozilla::dom {
 
-using remoteworker::RemoteWorkerState;
-
 class FetchEventOpProxyChild;
 
-class ServiceWorkerOp : public RemoteWorkerOp {
+class ServiceWorkerOp : public RemoteWorkerChild::Op {
  public:
   
   static already_AddRefed<ServiceWorkerOp> Create(
@@ -50,12 +47,10 @@ class ServiceWorkerOp : public RemoteWorkerOp {
   ServiceWorkerOp& operator=(ServiceWorkerOp&&) = default;
 
   
-  bool MaybeStart(RemoteWorkerChild* aOwner, RemoteWorkerState& aState) final;
+  bool MaybeStart(RemoteWorkerChild* aOwner,
+                  RemoteWorkerChild::State& aState) final;
 
   void StartOnMainThread(RefPtr<RemoteWorkerChild>& aOwner) final;
-
-  void Start(RemoteWorkerNonLifeCycleOpControllerChild* aOwner,
-             RemoteWorkerState& aState) final;
 
   void Cancel() final;
 
