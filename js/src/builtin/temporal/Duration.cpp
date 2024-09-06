@@ -4614,7 +4614,7 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
   if (zonedRelativeTo &&
       (calendarUnitsPresent || one.days != 0 || two.days != 0)) {
     
-    auto instant = zonedRelativeTo.instant();
+    const auto& instant = zonedRelativeTo.instant();
 
     
     PlainDateTime dateTime;
@@ -5288,7 +5288,7 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   PlainDateTime relativeToDateTime;
   if (zonedRelativeTo && plainDateTimeOrRelativeToWillBeUsed) {
     
-    auto instant = zonedRelativeTo.instant();
+    const auto& instant = zonedRelativeTo.instant();
 
     
     if (!GetPlainDateTimeFor(cx, timeZone, instant, &relativeToDateTime)) {
@@ -5488,7 +5488,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   PlainDateTime relativeToDateTime;
   if (zonedRelativeTo && plainDateTimeOrRelativeToWillBeUsed) {
     
-    auto instant = zonedRelativeTo.instant();
+    const auto& instant = zonedRelativeTo.instant();
 
     
     if (!GetPlainDateTimeFor(cx, timeZone, instant, &relativeToDateTime)) {
