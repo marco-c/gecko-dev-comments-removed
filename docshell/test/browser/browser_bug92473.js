@@ -34,7 +34,7 @@ function afterOpen() {
 
   
   testContent(wrongText).then(() => {
-    BrowserForceEncodingDetection();
+    BrowserCommands.forceEncodingDetection();
   });
 }
 

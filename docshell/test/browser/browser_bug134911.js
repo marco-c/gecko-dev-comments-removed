@@ -29,7 +29,7 @@ function afterOpen() {
     content.document.getElementById("testinput").value = TEXT.enteredText2;
   }).then(() => {
     
-    BrowserForceEncodingDetection();
+    BrowserCommands.forceEncodingDetection();
   });
 }
 
