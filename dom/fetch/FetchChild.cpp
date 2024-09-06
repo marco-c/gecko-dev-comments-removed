@@ -38,12 +38,8 @@ mozilla::ipc::IPCResult FetchChild::Recv__delete__(const nsresult&& aResult) {
   }
   
   
-  if (mWorkerRef) {
-    MOZ_ASSERT(mWorkerRef->Private());
-    mWorkerRef->Private()->AssertIsOnWorkerThread();
-  } else {
-    MOZ_ASSERT(mIsKeepAliveRequest);
-  }
+  MOZ_ASSERT(mWorkerRef->Private());
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
 
   if (mPromise->State() == Promise::PromiseState::Pending) {
     if (NS_FAILED(aResult)) {
@@ -69,11 +65,8 @@ mozilla::ipc::IPCResult FetchChild::RecvOnResponseAvailableInternal(
   }
   
   
-  if (mWorkerRef) {
-    MOZ_ASSERT(mWorkerRef->Private());
-    mWorkerRef->Private()->AssertIsOnWorkerThread();
-  }
-
+  MOZ_ASSERT(mWorkerRef->Private());
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
   SafeRefPtr<InternalResponse> internalResponse =
       InternalResponse::FromIPC(aResponse);
   IgnoredErrorResult result;
@@ -89,8 +82,7 @@ mozilla::ipc::IPCResult FetchChild::RecvOnResponseAvailableInternal(
       mFetchObserver->SetState(FetchState::Complete);
     }
     nsCOMPtr<nsIGlobalObject> global;
-    
-    global = mPromise->GetGlobalObject();
+    global = mWorkerRef->Private()->GlobalScope();
     RefPtr<Response> response =
         new Response(global, internalResponse.clonePtr(), mSignalImpl);
     mPromise->MaybeResolve(response);
@@ -116,10 +108,8 @@ mozilla::ipc::IPCResult FetchChild::RecvOnResponseEnd(ResponseEndArgs&& aArgs) {
   }
   
   
-  if (mWorkerRef) {
-    MOZ_ASSERT(mWorkerRef->Private());
-    mWorkerRef->Private()->AssertIsOnWorkerThread();
-  }
+  MOZ_ASSERT(mWorkerRef->Private());
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
 
   if (aArgs.endReason() == FetchDriverObserver::eAborted) {
     FETCH_LOG(
@@ -141,10 +131,8 @@ mozilla::ipc::IPCResult FetchChild::RecvOnDataAvailable() {
   }
   
   
-  if (mWorkerRef) {
-    MOZ_ASSERT(mWorkerRef->Private());
-    mWorkerRef->Private()->AssertIsOnWorkerThread();
-  }
+  MOZ_ASSERT(mWorkerRef->Private());
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
 
   if (mFetchObserver && mFetchObserver->State() == FetchState::Requesting) {
     mFetchObserver->SetState(FetchState::Responding);
@@ -158,36 +146,11 @@ mozilla::ipc::IPCResult FetchChild::RecvOnFlushConsoleReport(
   if (mIsShutdown) {
     return IPC_OK();
   }
+  
+  
+  MOZ_ASSERT(mWorkerRef->Private());
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
   MOZ_ASSERT(mReporter);
-
-  if (NS_IsMainThread()) {
-    MOZ_ASSERT(mIsKeepAliveRequest);
-    
-    for (const auto& report : aReports) {
-      mReporter->AddConsoleReport(
-          report.errorFlags(), report.category(),
-          static_cast<nsContentUtils::PropertiesFile>(report.propertiesFile()),
-          report.sourceFileURI(), report.lineNumber(), report.columnNumber(),
-          report.messageName(), report.stringParams());
-    }
-
-    MOZ_ASSERT(mPromise);
-    nsCOMPtr<nsPIDOMWindowInner> window =
-        do_QueryInterface(mPromise->GetGlobalObject());
-    if (window) {
-      Document* doc = window->GetExtantDoc();
-      mReporter->FlushConsoleReports(doc);
-    } else {
-      mReporter->FlushReportsToConsole(0);
-    }
-    return IPC_OK();
-  }
-  
-  
-  if (mWorkerRef) {
-    MOZ_ASSERT(mWorkerRef->Private());
-    mWorkerRef->Private()->AssertIsOnWorkerThread();
-  }
 
   RefPtr<ThreadSafeWorkerRef> workerRef = mWorkerRef;
   nsCOMPtr<nsIConsoleReportCollector> reporter = mReporter;
@@ -223,9 +186,10 @@ mozilla::ipc::IPCResult FetchChild::RecvOnFlushConsoleReport(
   return IPC_OK();
 }
 
-RefPtr<FetchChild> FetchChild::CreateForWorker(
-    WorkerPrivate* aWorkerPrivate, RefPtr<Promise> aPromise,
-    RefPtr<AbortSignalImpl> aSignalImpl, RefPtr<FetchObserver> aObserver) {
+RefPtr<FetchChild> FetchChild::Create(WorkerPrivate* aWorkerPrivate,
+                                      RefPtr<Promise> aPromise,
+                                      RefPtr<AbortSignalImpl> aSignalImpl,
+                                      RefPtr<FetchObserver> aObserver) {
   MOZ_DIAGNOSTIC_ASSERT(aWorkerPrivate);
   aWorkerPrivate->AssertIsOnWorkerThread();
 
@@ -245,15 +209,6 @@ RefPtr<FetchChild> FetchChild::CreateForWorker(
   if (NS_WARN_IF(!actor->mWorkerRef)) {
     return nullptr;
   }
-  return actor;
-}
-
-RefPtr<FetchChild> FetchChild::CreateForMainThread(
-    RefPtr<Promise> aPromise, RefPtr<AbortSignalImpl> aSignalImpl,
-    RefPtr<FetchObserver> aObserver) {
-  RefPtr<FetchChild> actor = MakeRefPtr<FetchChild>(
-      std::move(aPromise), std::move(aSignalImpl), std::move(aObserver));
-  actor->mIsKeepAliveRequest = true;
   return actor;
 }
 
@@ -306,28 +261,15 @@ mozilla::ipc::IPCResult FetchChild::RecvOnReportPerformanceTiming(
   }
   
   
-  if (mWorkerRef) {
-    MOZ_ASSERT(mWorkerRef->Private());
-    mWorkerRef->Private()->AssertIsOnWorkerThread();
+  MOZ_ASSERT(mWorkerRef->Private());
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
 
-    RefPtr<PerformanceStorage> performanceStorage =
-        mWorkerRef->Private()->GetPerformanceStorage();
-    if (performanceStorage) {
-      performanceStorage->AddEntry(
-          aTiming.entryName(), aTiming.initiatorType(),
-          MakeUnique<PerformanceTimingData>(aTiming.timingData()));
-    }
-  } else if (mIsKeepAliveRequest) {
-    MOZ_ASSERT(mPromise->GetGlobalObject());
-    auto* innerWindow = mPromise->GetGlobalObject()->GetAsInnerWindow();
-    if (innerWindow) {
-      mozilla::dom::Performance* performance = innerWindow->GetPerformance();
-      if (performance) {
-        performance->AsPerformanceStorage()->AddEntry(
-            aTiming.entryName(), aTiming.initiatorType(),
-            MakeUnique<PerformanceTimingData>(aTiming.timingData()));
-      }
-    }
+  RefPtr<PerformanceStorage> performanceStorage =
+      mWorkerRef->Private()->GetPerformanceStorage();
+  if (performanceStorage) {
+    performanceStorage->AddEntry(
+        aTiming.entryName(), aTiming.initiatorType(),
+        MakeUnique<PerformanceTimingData>(aTiming.timingData()));
   }
   return IPC_OK();
 }
@@ -341,32 +283,27 @@ mozilla::ipc::IPCResult FetchChild::RecvOnNotifyNetworkMonitorAlternateStack(
   }
   
   
-  if (mWorkerRef) {
-    MOZ_ASSERT(mWorkerRef->Private());
-    mWorkerRef->Private()->AssertIsOnWorkerThread();
+  MOZ_ASSERT(mWorkerRef->Private());
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
 
-    if (!mOriginStack) {
-      return IPC_OK();
-    }
-
-    if (!mWorkerChannelInfo) {
-      mWorkerChannelInfo = MakeRefPtr<WorkerChannelInfo>(
-          aChannelID, mWorkerRef->Private()->AssociatedBrowsingContextID());
-    }
-
-    
-    
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-        __func__, [channel = mWorkerChannelInfo,
-                   stack = std::move(mOriginStack)]() mutable {
-          NotifyNetworkMonitorAlternateStack(channel, std::move(stack));
-        });
-
-    MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
+  if (!mOriginStack) {
+    return IPC_OK();
   }
+
+  if (!mWorkerChannelInfo) {
+    mWorkerChannelInfo = MakeRefPtr<WorkerChannelInfo>(
+        aChannelID, mWorkerRef->Private()->AssociatedBrowsingContextID());
+  }
+
   
   
-  
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      __func__, [channel = mWorkerChannelInfo,
+                 stack = std::move(mOriginStack)]() mutable {
+        NotifyNetworkMonitorAlternateStack(channel, std::move(stack));
+      });
+
+  MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
 
   return IPC_OK();
 }
@@ -391,7 +328,7 @@ void FetchChild::RunAbortAlgorithm() {
   if (mIsShutdown) {
     return;
   }
-  if (mWorkerRef || mIsKeepAliveRequest) {
+  if (mWorkerRef) {
     Unused << SendAbortFetchOp();
   }
 }
@@ -424,25 +361,8 @@ void FetchChild::Shutdown() {
   Unfollow();
   mSignalImpl = nullptr;
   mCSPEventListener = nullptr;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mIsKeepAliveRequest) {
-    Unused << SendAbortFetchOp();
-  }
-
+  Unused << SendAbortFetchOp();
   mWorkerRef = nullptr;
-  mIsKeepAliveRequest = false;
 }
 
 void FetchChild::ActorDestroy(ActorDestroyReason aReason) {
@@ -452,7 +372,6 @@ void FetchChild::ActorDestroy(ActorDestroyReason aReason) {
   mSignalImpl = nullptr;
   mCSPEventListener = nullptr;
   mWorkerRef = nullptr;
-  mIsKeepAliveRequest = false;
 }
 
 }  
