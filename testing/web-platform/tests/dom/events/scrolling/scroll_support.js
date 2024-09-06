@@ -220,7 +220,7 @@ function touchScrollInTarget(pixels_to_scroll, target, direction, pause_time_in_
 
 
 function touchFlingInTarget(pixels_to_scroll, target, direction) {
-  touchScrollInTarget(pixels_to_scroll, target, direction, 0 );
+  return touchScrollInTarget(pixels_to_scroll, target, direction, 0 );
 }
 
 function mouseActionsInTarget(target, origin, delta, pause_time_in_ms = 100) {
