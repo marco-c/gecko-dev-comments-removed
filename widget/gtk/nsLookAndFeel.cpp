@@ -904,8 +904,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
     }
     case IntID::MenusCanOverlapOSBar:
-      
-      aResult = 1;
+      aResult = 0;
       break;
     case IntID::SkipNavigatingDisabledMenuItem:
       aResult = 1;
