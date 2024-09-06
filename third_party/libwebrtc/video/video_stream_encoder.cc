@@ -1784,13 +1784,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
   
   
   
-
-  
-  
-  
-  
   uint32_t framerate_fps = GetInputFramerateFps();
-  frame_cadence_adapter_->UpdateFrameRate();
 
   int64_t now_ms = env_.clock().TimeInMilliseconds();
   if (pending_encoder_reconfiguration_) {

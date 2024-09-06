@@ -101,10 +101,6 @@ class FrameCadenceAdapterInterface
 
   
   
-  virtual void UpdateFrameRate() = 0;
-
-  
-  
   
   virtual void UpdateLayerQualityConvergence(size_t spatial_index,
                                              bool converged) = 0;
