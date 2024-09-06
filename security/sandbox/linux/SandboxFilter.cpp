@@ -77,7 +77,11 @@ using namespace sandbox::bpf_dsl;
 
 
 
-#define O_LARGEFILE_REAL 00100000
+#if !defined(O_LARGEFILE) || O_LARGEFILE == 0
+#  define O_LARGEFILE_REAL 00100000
+#else
+#  define O_LARGEFILE_REAL O_LARGEFILE
+#endif
 
 
 #define FMODE_NONOTIFY 0x4000000
