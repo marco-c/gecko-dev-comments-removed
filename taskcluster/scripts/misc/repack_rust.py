@@ -412,11 +412,6 @@ def build_src(install_dir, host, targets, patches):
     
     
     
-    
-    
-    
-    
-    
     base_config = textwrap.dedent(
         """
         [build]
@@ -434,9 +429,6 @@ def build_src(install_dir, host, targets, patches):
         [install]
         prefix = "{prefix}"
         sysconfdir = "etc"
-
-        [dist]
-        missing-tools = true
 
         [llvm]
         download-ci-llvm = false
