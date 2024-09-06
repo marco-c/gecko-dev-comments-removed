@@ -79,6 +79,7 @@ LIB_TO_LICENSES_DICT = {
     'kotlin_stdlib': ['third_party/kotlin_stdlib/LICENSE'],
     'jni_zero': ['third_party/jni_zero/LICENSE'],
     'protobuf-javascript': ['third_party/protobuf-javascript/LICENSE'],
+    'perfetto': ['third_party/perfetto/LICENSE'],
     
     
     'android_deps': [],
