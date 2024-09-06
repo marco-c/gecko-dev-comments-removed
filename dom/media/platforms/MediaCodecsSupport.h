@@ -183,7 +183,7 @@ class MCSInfo final {
   
   
   static MediaCodecsSupport GetMediaCodecsSupportEnum(
-      const MediaCodec& aCodec, const DecodeSupportSet& aSupport);
+      const MediaCodec& aCodec, const DecodeSupport& aSupport);
 
   
   static bool SupportsSoftwareDecode(
