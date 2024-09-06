@@ -339,11 +339,7 @@ class WalkerActor extends Actor {
     return {
       actor: this.actorID,
       root: this.rootNode.form(),
-      traits: {
-        
-        
-        hasGetIdrefNode: true,
-      },
+      traits: {},
     };
   }
 
