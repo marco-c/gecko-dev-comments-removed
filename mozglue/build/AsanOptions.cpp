@@ -64,8 +64,6 @@
 
 
 
-
-
 extern "C" MOZ_ASAN_IGNORE const char* __asan_default_options() {
   return "allow_user_segv_handler=1:alloc_dealloc_mismatch=0:detect_leaks=0"
 #  ifdef MOZ_ASAN_REPORTER
@@ -78,7 +76,6 @@ extern "C" MOZ_ASAN_IGNORE const char* __asan_default_options() {
          ":malloc_fill_byte=228:free_fill_byte=229"
          ":handle_sigill=1"
          ":allocator_may_return_null=1"
-         ":detect_stack_use_after_return=0"
          ":intercept_tls_get_addr=0";
 }
 
