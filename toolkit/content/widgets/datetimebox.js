@@ -12,17 +12,29 @@
 
 
 this.DateTimeBoxWidget = class {
-  constructor(shadowRoot) {
+  constructor(shadowRoot, prefs) {
     this.shadowRoot = shadowRoot;
     this.element = shadowRoot.host;
     this.document = this.element.ownerDocument;
     this.window = this.document.defaultView;
     
+    let locales;
+    if (prefs["privacy.resistFingerprinting"]) {
+      locales = [...this.window.getWebExposedLocales()];
+      
+      
+      if (!locales.includes("en-US")) {
+        locales.push("en-US");
+      }
+    }
+    
     
     
     this.l10n = new this.window.DOMLocalization(
       ["toolkit/global/datetimebox.ftl"],
-       true
+       true,
+      undefined,
+      locales
     );
   }
 
