@@ -554,75 +554,6 @@ bool js::temporal::PrepareTemporalFields(
 
 PlainObject* js::temporal::PrepareTemporalFields(
     JSContext* cx, Handle<JSObject*> fields,
-    Handle<TemporalFieldNames> fieldNames) {
-  
-
-  
-  Rooted<PlainObject*> result(cx, NewPlainObjectWithProto(cx, nullptr));
-  if (!result) {
-    return nullptr;
-  }
-
-  
-
-  
-  MOZ_ASSERT(IsSorted(fieldNames));
-
-  
-  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
-             fieldNames.end());
-
-  
-  Rooted<Value> value(cx);
-  for (size_t i = 0; i < fieldNames.length(); i++) {
-    Handle<PropertyKey> property = fieldNames[i];
-
-    
-    MOZ_ASSERT(property != NameToId(cx->names().constructor));
-    MOZ_ASSERT(property != NameToId(cx->names().proto_));
-
-    
-    if (!GetProperty(cx, fields, fields, property, &value)) {
-      return nullptr;
-    }
-
-    
-    if (auto fieldName = ToTemporalField(cx, property)) {
-      if (!value.isUndefined()) {
-        
-
-        
-        if (!TemporalFieldConvertValue(cx, *fieldName, &value)) {
-          return nullptr;
-        }
-      } else {
-        
-
-        
-        value = TemporalFieldDefaultValue(*fieldName);
-      }
-    }
-
-    
-    if (!DefineDataProperty(cx, result, property, value)) {
-      return nullptr;
-    }
-
-    
-  }
-
-  
-
-  
-  return result;
-}
-
-
-
-
-
-PlainObject* js::temporal::PrepareTemporalFields(
-    JSContext* cx, Handle<JSObject*> fields,
     Handle<TemporalFieldNames> fieldNames,
     mozilla::EnumSet<TemporalField> requiredFields) {
   
@@ -795,12 +726,8 @@ static bool PrepareCalendarFieldsAndFieldNames(
   }
 
   
-  PlainObject* flds;
-  if (requiredFieldNames.size() == 0) {
-    flds = PrepareTemporalFields(cx, fields, fieldNames);
-  } else {
-    flds = PrepareTemporalFields(cx, fields, fieldNames, requiredFieldNames);
-  }
+  auto* flds =
+      PrepareTemporalFields(cx, fields, fieldNames, requiredFieldNames);
   if (!flds) {
     return false;
   }
