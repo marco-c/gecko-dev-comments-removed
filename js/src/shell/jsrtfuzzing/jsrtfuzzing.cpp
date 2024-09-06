@@ -132,6 +132,14 @@ int js::shell::FuzzJSRuntimeFuzz(const uint8_t* buf, size_t size) {
     return 1;
   }
 
+  if (gCx->isThrowingOutOfMemory()) {
+    
+    
+    
+    gCx->recoverFromOutOfMemory();
+    return 1;
+  }
+
   
   CrashOnPendingException();
 
