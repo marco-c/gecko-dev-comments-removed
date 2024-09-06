@@ -339,6 +339,8 @@ class nsHostResolver : public nsISupports, public AHostResolver {
 
 
   void GetDNSCacheEntries(nsTArray<mozilla::net::DNSCacheEntries>*);
+
+  static bool IsNativeHTTPSEnabled();
 };
 
 #endif  

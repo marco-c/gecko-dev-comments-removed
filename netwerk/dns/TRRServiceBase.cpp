@@ -163,8 +163,9 @@ void TRRServiceBase::OnTRRModeChange() {
   }
 
   static bool readHosts = false;
+  
   if ((mMode == nsIDNSService::MODE_TRRFIRST ||
-       mMode == nsIDNSService::MODE_TRRONLY) &&
+       mMode == nsIDNSService::MODE_TRRONLY || mNativeHTTPSQueryEnabled) &&
       !readHosts) {
     readHosts = true;
     ReadEtcHostsFile();
