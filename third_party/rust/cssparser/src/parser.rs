@@ -53,7 +53,7 @@ impl ParserState {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ParseUntilErrorBehavior {
     
     Consume,
@@ -116,18 +116,30 @@ impl<'i, T> From<BasicParseError<'i>> for ParseError<'i, T> {
 impl SourceLocation {
     
     #[inline]
-    pub fn new_basic_unexpected_token_error<'i>(self, token: Token<'i>) -> BasicParseError<'i> {
+    pub fn new_basic_unexpected_token_error(self, token: Token<'_>) -> BasicParseError<'_> {
+        self.new_basic_error(BasicParseErrorKind::UnexpectedToken(token))
+    }
+
+    
+    #[inline]
+    pub fn new_basic_error(self, kind: BasicParseErrorKind<'_>) -> BasicParseError<'_> {
         BasicParseError {
-            kind: BasicParseErrorKind::UnexpectedToken(token),
+            kind,
             location: self,
         }
     }
 
     
     #[inline]
-    pub fn new_unexpected_token_error<'i, E>(self, token: Token<'i>) -> ParseError<'i, E> {
+    pub fn new_unexpected_token_error<E>(self, token: Token<'_>) -> ParseError<'_, E> {
+        self.new_error(BasicParseErrorKind::UnexpectedToken(token))
+    }
+
+    
+    #[inline]
+    pub fn new_error<E>(self, kind: BasicParseErrorKind<'_>) -> ParseError<'_, E> {
         ParseError {
-            kind: ParseErrorKind::Basic(BasicParseErrorKind::UnexpectedToken(token)),
+            kind: ParseErrorKind::Basic(kind),
             location: self,
         }
     }
@@ -450,19 +462,13 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     #[inline]
     pub fn new_basic_error(&self, kind: BasicParseErrorKind<'i>) -> BasicParseError<'i> {
-        BasicParseError {
-            kind,
-            location: self.current_source_location(),
-        }
+        self.current_source_location().new_basic_error(kind)
     }
 
     
     #[inline]
     pub fn new_error<E>(&self, kind: BasicParseErrorKind<'i>) -> ParseError<'i, E> {
-        ParseError {
-            kind: ParseErrorKind::Basic(kind),
-            location: self.current_source_location(),
-        }
+        self.current_source_location().new_error(kind)
     }
 
     
@@ -606,6 +612,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     
     
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Result<&Token<'i>, BasicParseError<'i>> {
         self.skip_whitespace();
         self.next_including_whitespace_and_comments()
@@ -652,9 +659,8 @@ impl<'i: 't, 't> Parser<'i, 't> {
         let token = if using_cached_token {
             let cached_token = self.input.cached_token.as_ref().unwrap();
             self.input.tokenizer.reset(&cached_token.end_state);
-            match cached_token.token {
-                Token::Function(ref name) => self.input.tokenizer.see_function(name),
-                _ => {}
+            if let Token::Function(ref name) = cached_token.token {
+                self.input.tokenizer.see_function(name)
             }
             &cached_token.token
         } else {
@@ -748,7 +754,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
             match self.parse_until_before(Delimiter::Comma, &mut parse_one) {
                 Ok(v) => values.push(v),
                 Err(e) if !ignore_errors => return Err(e),
-                Err(_) => {},
+                Err(_) => {}
             }
             match self.next() {
                 Err(_) => return Ok(values),
@@ -835,7 +841,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     #[inline]
     pub fn expect_ident_cloned(&mut self) -> Result<CowRcStr<'i>, BasicParseError<'i>> {
-        self.expect_ident().map(|s| s.clone())
+        self.expect_ident().cloned()
     }
 
     
@@ -860,7 +866,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     #[inline]
     pub fn expect_string_cloned(&mut self) -> Result<CowRcStr<'i>, BasicParseError<'i>> {
-        self.expect_string().map(|s| s.clone())
+        self.expect_string().cloned()
     }
 
     
@@ -879,7 +885,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
             Token::UnquotedUrl(ref value) => Ok(value.clone()),
             Token::Function(ref name) if name.eq_ignore_ascii_case("url") => {
                 self.parse_nested_block(|input| {
-                    input.expect_string().map_err(Into::into).map(|s| s.clone())
+                    input.expect_string().map_err(Into::into).cloned()
                 })
                 .map_err(ParseError::<()>::basic)
             }
@@ -894,7 +900,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
             Token::QuotedString(ref value) => Ok(value.clone()),
             Token::Function(ref name) if name.eq_ignore_ascii_case("url") => {
                 self.parse_nested_block(|input| {
-                    input.expect_string().map_err(Into::into).map(|s| s.clone())
+                    input.expect_string().map_err(Into::into).cloned()
                 })
                 .map_err(ParseError::<()>::basic)
             }
