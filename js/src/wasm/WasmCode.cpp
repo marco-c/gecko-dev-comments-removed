@@ -422,19 +422,21 @@ bool Code::createManyLazyEntryStubs(const WriteGuard& guard,
 
   size_t codeLength = CodeSegment::AlignBytesNeeded(masm.bytesNeeded());
 
-  if (guard->segments.length() == 0 ||
-      !guard->segments[guard->segments.length() - 1]->hasSpace(codeLength)) {
+  if (guard->lazySegments.length() == 0 ||
+      !guard->lazySegments[guard->lazySegments.length() - 1]->hasSpace(
+          codeLength)) {
     SharedCodeSegment newSegment = CodeSegment::createEmpty(codeLength);
     if (!newSegment) {
       return false;
     }
-    if (!guard->segments.emplaceBack(std::move(newSegment))) {
+    if (!guard->lazySegments.emplaceBack(std::move(newSegment))) {
       return false;
     }
   }
 
-  MOZ_ASSERT(guard->segments.length() > 0);
-  CodeSegment* segment = guard->segments[guard->segments.length() - 1].get();
+  MOZ_ASSERT(guard->lazySegments.length() > 0);
+  CodeSegment* segment =
+      guard->lazySegments[guard->lazySegments.length() - 1].get();
 
   uint8_t* codePtr = nullptr;
   segment->claimSpace(codeLength, &codePtr);
@@ -626,14 +628,20 @@ bool Code::finishCompleteTier2(const LinkData& linkData,
   MOZ_RELEASE_ASSERT(bestTier() == Tier::Baseline &&
                      tier2Code->tier() == Tier::Optimized);
   
-  if (!tier2Code->initialize(*this)) {
-    return false;
-  }
-
-  
   
   {
     auto guard = data_.writeLock();
+
+    
+    
+    
+    CodeBlock* tier2CodePointer = tier2Code.get();
+
+    
+    if (!tier2Code->initialize(*this) ||
+        !guard->blocks.append(std::move(tier2Code))) {
+      return false;
+    }
 
     
     
@@ -642,7 +650,7 @@ bool Code::finishCompleteTier2(const LinkData& linkData,
     
     
     Maybe<size_t> stub2Index;
-    if (!createTier2LazyEntryStubs(guard, *tier2Code.get(), &stub2Index)) {
+    if (!createTier2LazyEntryStubs(guard, *tier2CodePointer, &stub2Index)) {
       return false;
     }
 
@@ -655,7 +663,7 @@ bool Code::finishCompleteTier2(const LinkData& linkData,
     jit::FlushExecutionContextForAllThreads();
 
     
-    tier2_ = std::move(tier2Code);
+    tier2_ = tier2CodePointer;
     hasTier2_ = true;
     MOZ_ASSERT(hasTier2());
 
@@ -841,25 +849,45 @@ bool JumpTables::initialize(CompileMode mode, const CodeBlock& tier1) {
   return true;
 }
 
-Code::Code(const CodeMetadata& codeMeta,
-           const CodeMetadataForAsmJS* codeMetaForAsmJS, UniqueCodeBlock tier1,
-           JumpTables&& maybeJumpTables)
-    : data_(mutexid::WasmCodeProtected),
+Code::Code(CompileMode mode, const CodeMetadata& codeMeta,
+           const CodeMetadataForAsmJS* codeMetaForAsmJS)
+    : mode_(mode),
+      data_(mutexid::WasmCodeProtected),
       codeMeta_(&codeMeta),
       codeMetaForAsmJS_(codeMetaForAsmJS),
-      tier1_(std::move(tier1)),
+      tier1_(nullptr),
+      tier2_(nullptr),
       profilingLabels_(mutexid::WasmCodeProfilingLabels,
                        CacheableCharsVector()),
-      jumpTables_(std::move(maybeJumpTables)),
       trapCode_(nullptr) {}
 
-bool Code::initialize(const LinkData& linkData) {
+bool Code::initialize(const LinkData& linkData, UniqueCodeBlock tierCodeBlock) {
   MOZ_ASSERT(!initialized());
 
-  if (!tier1_->initialize(*this)) {
+  auto guard = data_.writeLock();
+
+  
+  
+  CodeBlock* tierCodeBlockPointer = tierCodeBlock.get();
+
+  tier1_ = tierCodeBlock.get();
+  trapCode_ = tier1_->segment->base() + linkData.trapOffset;
+  if (!jumpTables_.initialize(mode_, *tier1_) ||
+      !guard->blocks.append(std::move(tierCodeBlock))) {
+    
+    tier1_ = nullptr;
+    MOZ_ASSERT(!initialized());
     return false;
   }
-  trapCode_ = tier1_->segment->base() + linkData.trapOffset;
+
+  
+  
+  if (!tierCodeBlockPointer->initialize(*this)) {
+    
+    tier1_ = nullptr;
+    MOZ_ASSERT(!initialized());
+    return false;
+  }
 
   MOZ_ASSERT(initialized());
   return true;
@@ -1157,7 +1185,7 @@ void Code::addSizeOfMiscIfNotSeen(
                           : 0) +
       profilingLabels_.lock()->sizeOfExcludingThis(mallocSizeOf) +
       jumpTables_.sizeOfMiscExcludingThis();
-  for (const SharedCodeSegment& stub : guard->segments) {
+  for (const SharedCodeSegment& stub : guard->lazySegments) {
     stub->addSizeOfMisc(mallocSizeOf, code, data);
   }
 

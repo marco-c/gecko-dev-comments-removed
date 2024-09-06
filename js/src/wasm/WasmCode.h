@@ -225,7 +225,7 @@ class CodeSegment : public ShareableBase<CodeSegment> {
 };
 
 using SharedCodeSegment = RefPtr<CodeSegment>;
-using CodeSegmentVector = Vector<SharedCodeSegment, 0, SystemAllocPolicy>;
+using SharedCodeSegmentVector = Vector<SharedCodeSegment, 0, SystemAllocPolicy>;
 
 extern UniqueCodeBytes AllocateCodeBytes(
     mozilla::Maybe<jit::AutoMarkJitCodeWritableForThread>& writable,
@@ -451,12 +451,15 @@ using MetadataAnalysisHashMap =
 
 class Code : public ShareableBase<Code> {
   struct ProtectedData {
-    CodeSegmentVector segments;
     UniqueCodeBlockVector blocks;
+    SharedCodeSegmentVector lazySegments;
     LazyFuncExportVector lazyExports;
   };
   using ReadGuard = RWExclusiveData<ProtectedData>::ReadGuard;
   using WriteGuard = RWExclusiveData<ProtectedData>::WriteGuard;
+
+  
+  const CompileMode mode_;
 
   
   
@@ -470,7 +473,7 @@ class Code : public ShareableBase<Code> {
   
   SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
 
-  UniqueCodeBlock tier1_;
+  const CodeBlock* tier1_;
   
   
   
@@ -488,7 +491,7 @@ class Code : public ShareableBase<Code> {
   
   
   
-  mutable UniqueConstCodeBlock tier2_;
+  mutable const CodeBlock* tier2_;
   mutable Atomic<bool> hasTier2_;
 
   ExclusiveData<CacheableCharsVector> profilingLabels_;
@@ -518,18 +521,18 @@ class Code : public ShareableBase<Code> {
       Maybe<size_t>* outStubBlockIndex) const;
 
  public:
-  Code(const CodeMetadata& codeMeta,
-       const CodeMetadataForAsmJS* codeMetaForAsmJS, UniqueCodeBlock tier1,
-       JumpTables&& maybeJumpTables);
-  bool initialized() const { return tier1_->initialized(); }
+  Code(CompileMode mode, const CodeMetadata& codeMeta,
+       const CodeMetadataForAsmJS* codeMetaForAsmJS);
+  bool initialized() const { return !!tier1_ && tier1_->initialized(); }
 
-  bool initialize(const LinkData& linkData);
+  [[nodiscard]] bool initialize(const LinkData& linkData,
+                                UniqueCodeBlock tierCodeBlock);
+  [[nodiscard]] bool finishCompleteTier2(const LinkData& linkData,
+                                         UniqueCodeBlock tier2Code) const;
 
   [[nodiscard]] bool getOrCreateInterpEntry(uint32_t funcIndex,
                                             const FuncExport** funcExport,
                                             void** interpEntry) const;
-  [[nodiscard]] bool finishCompleteTier2(const LinkData& linkData,
-                                         UniqueCodeBlock tierCodeBlock) const;
 
   void** tieringJumpTable() const { return jumpTables_.tiering(); }
 
