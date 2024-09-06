@@ -38,8 +38,7 @@ class CrashReporterHost {
 
   
   
-  RefPtr<nsIFile> TakeCrashedChildMinidump(base::ProcessId aPid,
-                                           uint32_t* aOutSequence);
+  RefPtr<nsIFile> TakeCrashedChildMinidump(base::ProcessId aPid);
 
   
   
