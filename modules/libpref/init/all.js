@@ -4134,8 +4134,6 @@ pref("extensions.formautofill.addresses.capture.enabled", true);
   
   pref("extensions.formautofill.addresses.experiments.enabled", false);
 #endif
-
-pref("extensions.formautofill.addresses.capture.requiredFields", "street-address,postal-code,address-level1,address-level2");
 pref("extensions.formautofill.addresses.ignoreAutocompleteOff", true);
 
 pref("extensions.formautofill.addresses.supportedCountries", "US,CA");
