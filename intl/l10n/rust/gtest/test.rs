@@ -3,7 +3,6 @@
 
 
 use l10nregistry_ffi::load::{load_async, load_sync};
-use moz_task;
 use std::borrow::Borrow;
 
 
