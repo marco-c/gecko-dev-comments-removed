@@ -93,9 +93,10 @@ int MaxTouchPoints() {
 }  
 };  
 
-using PopulatePromise =
+using PopulatePromiseBase =
     MozPromise<void_t, std::pair<nsCString, Variant<nsresult, nsCString>>,
-               true>::Private;
+               true>;
+using PopulatePromise = PopulatePromiseBase::Private;
 
 
 
@@ -111,7 +112,7 @@ RefPtr<PopulatePromise> ContentPageStuff() {
     MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Error,
             ("Could not create Content Page"));
     populatePromise->Reject(
-        std::pair(__func__, "CONT_PAGE_CREATION"_ns.AsString()), __func__);
+        std::pair(__func__, "CREATION_FAILED"_ns.AsString()), __func__);
     return populatePromise;
   }
   MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Debug,
@@ -136,8 +137,8 @@ RefPtr<PopulatePromise> ContentPageStuff() {
   } else {
     MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Error,
             ("Did not get a Promise back from ContentPageStuff"));
-    populatePromise->Reject(
-        std::pair(__func__, "CONT_PAGE_PROMISE"_ns.AsString()), __func__);
+    populatePromise->Reject(std::pair(__func__, "NO_PROMISE"_ns.AsString()),
+                            __func__);
   }
 
   return populatePromise;
@@ -261,8 +262,9 @@ void PopulateScreenProperties() {
   nsSizeMode sizeMode = mainWidget ? mainWidget->SizeMode() : nsSizeMode_Normal;
   glean::characteristics::size_mode.Set(sizeMode);
 
-  mozilla::glean::characteristics::screen_orientation.Set(
+  glean::characteristics::screen_orientation.Set(
       (int)screen->GetOrientationType());
+  glean::characteristics::target_frame_rate.Set(gfxPlatform::TargetFrameRate());
 }
 
 void PopulateMissingFonts() {
@@ -732,12 +734,59 @@ void PopulateErrors(
   glean::characteristics::errors.Set(errors);
 }
 
+void PopulateProcessorCount() {
+  int32_t processorCount = 0;
+#if defined(XP_MACOSX)
+  if (nsMacUtilsImpl::IsTCSMAvailable()) {
+    
+    
+    processorCount = nsMacUtilsImpl::GetPhysicalCPUCount();
+  }
+#endif
+  if (processorCount == 0) {
+    processorCount = PR_GetNumberOfProcessors();
+  }
+  glean::characteristics::processor_count.Set(processorCount);
+}
+
+void PopulateMisc(bool worksInGtest) {
+  if (worksInGtest) {
+    glean::characteristics::max_touch_points.Set(testing::MaxTouchPoints());
+  } else {
+    
+    nsAutoCString locale;
+    intl::OSPreferences::GetInstance()->GetSystemLocale(locale);
+    glean::characteristics::system_locale.Set(locale);
+  }
+}
+
+RefPtr<PopulatePromise> PopulateTimeZone() {
+  RefPtr<PopulatePromise> populatePromise = new PopulatePromise(__func__);
+
+  AutoTArray<char16_t, 128> tzBuffer;
+  auto result = intl::TimeZone::GetDefaultTimeZone(tzBuffer);
+  if (result.isOk()) {
+    NS_ConvertUTF16toUTF8 timeZone(
+        nsDependentString(tzBuffer.Elements(), tzBuffer.Length()));
+    glean::characteristics::timezone.Set(timeZone);
+    populatePromise->Resolve(void_t(), __func__);
+  } else {
+    populatePromise->Reject(std::pair(__func__, "NO_RESULT"_ns.AsString()),
+                            __func__);
+  }
+
+  return populatePromise;
+}
+
 
 
 
 
 
 const int kSubmissionSchema = 3;
+
+const auto* const kUUIDPref =
+    "toolkit.telemetry.user_characteristics_ping.uuid";
 
 const auto* const kLastVersionPref =
     "toolkit.telemetry.user_characteristics_ping.last_version_sent";
@@ -747,6 +796,40 @@ const auto* const kOptOutPref =
     "toolkit.telemetry.user_characteristics_ping.opt-out";
 const auto* const kSendOncePref =
     "toolkit.telemetry.user_characteristics_ping.send-once";
+
+
+nsresult PopulateEssentials() {
+  glean::characteristics::submission_schema.Set(kSubmissionSchema);
+
+  nsAutoCString uuidString;
+  nsresult rv = Preferences::GetCString(kUUIDPref, uuidString);
+  if (NS_FAILED(rv) || uuidString.Length() == 0) {
+    nsCOMPtr<nsIUUIDGenerator> uuidgen =
+        do_GetService("@mozilla.org/uuid-generator;1", &rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    nsIDToCString id(nsID::GenerateUUID());
+    uuidString = id.get();
+    Preferences::SetCString(kUUIDPref, uuidString);
+  }
+
+  glean::characteristics::client_identifier.Set(uuidString);
+  return NS_OK;
+}
+
+void AfterPingSentSteps(bool aUpdatePref) {
+  if (aUpdatePref) {
+    MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Debug,
+            ("Updating preference"));
+    auto current_version = Preferences::GetInt(kCurrentVersionPref, 0);
+    Preferences::SetInt(kLastVersionPref, current_version);
+    if (Preferences::GetBool(kSendOncePref, false)) {
+      Preferences::SetBool(kSendOncePref, false);
+    }
+  }
+}
 
 
 
@@ -826,9 +909,6 @@ void nsUserCharacteristics::MaybeSubmitPing() {
   }
 }
 
-const auto* const kUUIDPref =
-    "toolkit.telemetry.user_characteristics_ping.uuid";
-
 
 void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
     bool aUpdatePref , bool aTesting 
@@ -845,37 +925,24 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
   obs->NotifyObservers(nullptr, "user-characteristics-populating-data",
                        nullptr);
 
-  glean::characteristics::submission_schema.Set(kSubmissionSchema);
-
-  nsAutoCString uuidString;
-  nsresult rv = Preferences::GetCString(kUUIDPref, uuidString);
-  if (NS_FAILED(rv) || uuidString.Length() == 0) {
-    nsCOMPtr<nsIUUIDGenerator> uuidgen =
-        do_GetService("@mozilla.org/uuid-generator;1", &rv);
-    if (NS_FAILED(rv)) {
-      return;
-    }
-
-    nsIDToCString id(nsID::GenerateUUID());
-    uuidString = id.get();
-    Preferences::SetCString(kUUIDPref, uuidString);
+  if (NS_FAILED(PopulateEssentials())) {
+    
+    AfterPingSentSteps(false);
+    return;
   }
-
-  glean::characteristics::client_identifier.Set(uuidString);
-
-  glean::characteristics::max_touch_points.Set(testing::MaxTouchPoints());
 
   
 
-  nsTArray<RefPtr<MozPromise<
-      void_t, std::pair<nsCString, Variant<nsresult, nsCString>>, true>>>
-      promises;
+  nsTArray<RefPtr<PopulatePromiseBase>> promises;
   if (!aTesting) {
     
     
 
     
 
+    promises.AppendElement(PopulateMediaDevices());
+    promises.AppendElement(PopulateAudioDeviceProperties());
+    promises.AppendElement(PopulateTimeZone());
     PopulateMissingFonts();
     PopulateCSSProperties();
     PopulateScreenProperties();
@@ -883,44 +950,14 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
     PopulateFontPrefs();
     PopulateScaling();
     PopulateKeyboardLayout();
-
-    promises.AppendElement(PopulateMediaDevices());
-    promises.AppendElement(PopulateAudioDeviceProperties());
     PopulateLanguages();
     PopulateTextAntiAliasing();
-
-    glean::characteristics::target_frame_rate.Set(
-        gfxPlatform::TargetFrameRate());
-
-    int32_t processorCount = 0;
-#if defined(XP_MACOSX)
-    if (nsMacUtilsImpl::IsTCSMAvailable()) {
-      
-      
-      processorCount = nsMacUtilsImpl::GetPhysicalCPUCount();
-    }
-#endif
-    if (processorCount == 0) {
-      processorCount = PR_GetNumberOfProcessors();
-    }
-    glean::characteristics::processor_count.Set(processorCount);
-
-    AutoTArray<char16_t, 128> tzBuffer;
-    auto result = intl::TimeZone::GetDefaultTimeZone(tzBuffer);
-    if (result.isOk()) {
-      NS_ConvertUTF16toUTF8 timeZone(
-          nsDependentString(tzBuffer.Elements(), tzBuffer.Length()));
-      glean::characteristics::timezone.Set(timeZone);
-    } else {
-      glean::characteristics::timezone.Set("<error>"_ns);
-    }
-
-    nsAutoCString locale;
-    intl::OSPreferences::GetInstance()->GetSystemLocale(locale);
-    glean::characteristics::system_locale.Set(locale);
+    PopulateProcessorCount();
+    PopulateMisc(false);
   }
 
   promises.AppendElement(ContentPageStuff());
+  PopulateMisc(true);
 
   
 
@@ -932,16 +969,7 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
       nsUserCharacteristics::SubmitPing();
     }
 
-    if (aUpdatePref) {
-      MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Debug,
-              ("Updating preference"));
-      auto current_version =
-          mozilla::Preferences::GetInt(kCurrentVersionPref, 0);
-      mozilla::Preferences::SetInt(kLastVersionPref, current_version);
-      if (Preferences::GetBool(kSendOncePref, false)) {
-        Preferences::SetBool(kSendOncePref, false);
-      }
-    }
+    AfterPingSentSteps(aUpdatePref);
   };
 
   PopulatePromise::AllSettled(GetCurrentSerialEventTarget(), promises)
