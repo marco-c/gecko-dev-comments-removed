@@ -5211,15 +5211,19 @@ nsSize nsHTMLScrollFrame::GetPageScrollAmount() const {
   }
 
   nsSize lineScrollAmount = GetLineScrollAmount();
+  const int32_t maxOverlapPercent = std::clamp(
+      StaticPrefs::toolkit_scrollbox_pagescroll_maxOverlapPercent(), 0, 80);
+  const int32_t maxOverlapLines =
+      std::max(StaticPrefs::toolkit_scrollbox_pagescroll_maxOverlapLines(), 0);
 
   
-  
-  return nsSize(effectiveScrollPortSize.width -
-                    std::min(effectiveScrollPortSize.width / 10,
-                             2 * lineScrollAmount.width),
-                effectiveScrollPortSize.height -
-                    std::min(effectiveScrollPortSize.height / 10,
-                             2 * lineScrollAmount.height));
+  return nsSize(
+      effectiveScrollPortSize.width -
+          std::min(effectiveScrollPortSize.width * maxOverlapPercent / 100,
+                   maxOverlapLines * lineScrollAmount.width),
+      effectiveScrollPortSize.height -
+          std::min(effectiveScrollPortSize.height * maxOverlapPercent / 100,
+                   maxOverlapLines * lineScrollAmount.height));
 }
 
 
