@@ -482,6 +482,24 @@ class IMEContentObserver final : public nsStubMutationObserver,
       return mContainerNode && !mContent;
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] nsresult ComputeAndCacheFlatTextLengthBeforeEndOfContent(
+        const nsIContent& aContent, const dom::Element* aRootElement);
+
     void CacheFlatTextLengthBeforeEndOfContent(const nsIContent& aContent,
                                                uint32_t aFlatTextLength) {
       mContainerNode = aContent.GetParentNode();
@@ -490,6 +508,23 @@ class IMEContentObserver final : public nsStubMutationObserver,
       MOZ_ASSERT(IsCachingToEndOfContent());
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] nsresult ComputeAndCacheFlatTextLengthBeforeFirstContent(
+        const nsINode& aContainer, const dom::Element* aRootElement);
+
     void CacheFlatTextLengthBeforeFirstContent(const nsINode& aContainer,
                                                uint32_t aFlatTextLength) {
       mContainerNode = const_cast<nsINode*>(&aContainer);
@@ -497,6 +532,21 @@ class IMEContentObserver final : public nsStubMutationObserver,
       mFlatTextLength = aFlatTextLength;
       MOZ_ASSERT(IsCachingToStartOfContainer());
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] static Result<uint32_t, nsresult>
+    ComputeTextLengthOfRemovingContent(const nsIContent& aRemovingContent,
+                                       const dom::Element* aRootElement);
 
     [[nodiscard]] bool CachesTextLengthBeforeContent(
         const nsIContent& aContent) const {
