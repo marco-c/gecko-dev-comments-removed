@@ -20,6 +20,13 @@ bool FFmpegEncoderModule<V>::Supports(const EncoderConfig& aConfig) const {
   if (!CanLikelyEncode(aConfig)) {
     return false;
   }
+  
+  
+  if ((aConfig.mScalabilityMode != ScalabilityMode::None)) {
+    if (aConfig.mCodec != CodecType::VP8 && aConfig.mCodec != CodecType::VP9) {
+      return false;
+    }
+  }
   return SupportsCodec(aConfig.mCodec) != AV_CODEC_ID_NONE;
 }
 

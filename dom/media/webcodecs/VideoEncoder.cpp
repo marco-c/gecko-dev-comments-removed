@@ -343,25 +343,16 @@ static bool CanEncode(const RefPtr<VideoEncoderConfigInternal>& aConfig) {
   if (!IsSupportedVideoCodec(parsedCodecString)) {
     return false;
   }
-
-  
   if (aConfig->mScalabilityMode.isSome()) {
     
-    
-    bool supported = IsOnLinux() && (IsVP8CodecString(parsedCodecString) ||
-                                     IsVP9CodecString(parsedCodecString))
-                         ? aConfig->mScalabilityMode->EqualsLiteral("L1T2") ||
-                               aConfig->mScalabilityMode->EqualsLiteral("L1T3")
-                         : false;
-
-    if (!supported) {
+    if (!aConfig->mScalabilityMode->EqualsLiteral("L1T2") &&
+        !aConfig->mScalabilityMode->EqualsLiteral("L1T3")) {
       LOGE("Scalability mode %s not supported for codec: %s",
            NS_ConvertUTF16toUTF8(aConfig->mScalabilityMode.value()).get(),
            NS_ConvertUTF16toUTF8(parsedCodecString).get());
       return false;
     }
   }
-
   return EncoderSupport::Supports(aConfig);
 }
 
