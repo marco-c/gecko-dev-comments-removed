@@ -7,6 +7,9 @@ AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
 
 
+const gFallbackHistory = [];
+
+
 async function getColorFromAppliedTheme() {
   const { LightweightThemeConsumer } = ChromeUtils.importESModule(
     "resource://gre/modules/LightweightThemeConsumer.sys.mjs"
@@ -62,8 +65,31 @@ function loadStaticThemeExtension(manifest) {
   return extension;
 }
 
+add_setup(function setup_intercept_fallbackThemeData() {
+  const { LightweightThemeManager } = ChromeUtils.importESModule(
+    "resource://gre/modules/LightweightThemeManager.sys.mjs"
+  );
+  const fallbackThemeDataPropertyDescriptor = Object.getOwnPropertyDescriptor(
+    LightweightThemeManager,
+    "fallbackThemeData"
+  );
+  Object.defineProperty(LightweightThemeManager, "fallbackThemeData", {
+    enumerable: true,
+    configurable: true,
+    set: function (value) {
+      gFallbackHistory.push(structuredClone(value));
+      console.trace(`Set fallbackThemeData: ${value?.theme?.id}`);
+      fallbackThemeDataPropertyDescriptor.set.call(this, value);
+    },
+    get: fallbackThemeDataPropertyDescriptor.get,
+  });
+});
+
 add_setup(async () => {
   await ExtensionTestUtils.startAddonManager();
+  
+  
+  Assert.deepEqual(gFallbackHistory, [], "Fallback history is empty");
 });
 
 add_task(async function test_static_theme_startupData() {
@@ -96,9 +122,25 @@ add_task(async function test_static_theme_startupData() {
     "startupData should not have been changed when a browser window was opened"
   );
 
+  Assert.deepEqual(
+    gFallbackHistory,
+    [startupDataCopy.lwtData],
+    "Fallback set when theme has loaded"
+  );
+  gFallbackHistory.length = 0;
+
   let readyPromise = AddonTestUtils.promiseWebExtensionStartup("@my-theme");
   info("Simulating browser restart");
-  await AddonTestUtils.promiseRestartManager();
+  await AddonTestUtils.promiseShutdownManager();
+
+  Assert.deepEqual(
+    gFallbackHistory,
+    [],
+    "Should not have bothered with resetting the fallback upon app shutdown"
+  );
+  gFallbackHistory.length = 0;
+
+  await AddonTestUtils.promiseStartupManager();
   info("Waiting for theme to have started again");
   await readyPromise;
 
@@ -112,8 +154,23 @@ add_task(async function test_static_theme_startupData() {
     "startupData should be identical when the theme loads again"
   );
   ok(startupData.lwtData, "startupData.lwtData should be set");
+  
+  
+  
+  Assert.deepEqual(
+    gFallbackHistory,
+    [startupData.lwtData, startupData.lwtData],
+    "Should have set startupData.lwtData as fallback at startup (2x)"
+  );
+  gFallbackHistory.length = 0;
 
   await extension.unload();
+  Assert.deepEqual(
+    gFallbackHistory,
+    [null],
+    "Should have cleared fallback when static theme unloaded (theme uninstall)"
+  );
+  gFallbackHistory.length = 0;
 });
 
 
@@ -158,4 +215,49 @@ add_task(async function test_dynamic_theme_startupData() {
   });
 
   await extension.unload();
+});
+
+
+
+
+add_task(async function test_obsolete_theme_in_extension_startupData() {
+  
+  let theme = loadStaticThemeExtension({
+    browser_specific_settings: { gecko: { id: "@theme-ext" } },
+    theme: { colors: { frame: "rgb(1, 33, 7)" } },
+  });
+  await theme.startup();
+  let startupDataFromStaticTheme = structuredClone(theme.extension.startupData);
+  await theme.unload();
+
+  
+  
+  gFallbackHistory.length = 0;
+
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      browser_specific_settings: { gecko: { id: "@theme-ext" } },
+      permissions: ["theme"],
+    },
+    useAddonManager: "permanent",
+  });
+  await extension.startup();
+
+  
+  
+  Assert.deepEqual(extension.extension.startupData, {}, "startupData is empty");
+  extension.extension.startupData = startupDataFromStaticTheme;
+  extension.extension.saveStartupData();
+
+  let readyPromise = AddonTestUtils.promiseWebExtensionStartup("@theme-ext");
+  await AddonTestUtils.promiseShutdownManager();
+  await AddonTestUtils.promiseStartupManager();
+  await readyPromise;
+  await extension.unload();
+
+  Assert.deepEqual(
+    gFallbackHistory,
+    [],
+    "startupData.lwtData should be ignored for extensions that are not themes"
+  );
 });
