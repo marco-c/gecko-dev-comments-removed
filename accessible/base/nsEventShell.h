@@ -47,20 +47,6 @@ class nsEventShell {
                               : mozilla::a11y::eNoUserInput));
     FireEvent(stateChangeEvent);
   }
-
-  
-
-
-
-
-
-
-  static void GetEventAttributes(nsINode* aNode,
-                                 mozilla::a11y::AccAttributes* aAttributes);
-
- private:
-  static mozilla::StaticRefPtr<nsINode> sEventTargetNode;
-  static bool sEventFromUserInput;
 };
 
 #endif

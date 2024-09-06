@@ -1182,8 +1182,6 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
   
   if (!HasOwnContent()) return attributes.forget();
 
-  nsEventShell::GetEventAttributes(GetNode(), attributes);
-
   
   
   
