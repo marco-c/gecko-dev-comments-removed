@@ -430,6 +430,7 @@ class MediaFormatReader final
     Maybe<TimeStamp> mWaitingForDataStartTime;
     bool mWaitingForKey;
     bool mReceivedNewData;
+    UniquePtr<PerformanceRecorderMulti<PlaybackStage>> mDecodePerfRecorder;
 
     
     MozPromiseRequestHolder<MediaTrackDemuxer::SeekPromise> mSeekRequest;
@@ -473,6 +474,9 @@ class MediaFormatReader final
       MOZ_RELEASE_ASSERT(mDrainState == DrainState::None);
       mDrainState = DrainState::DrainRequested;
     }
+
+    void StartRecordDecodingPerf(const TrackType aTrack,
+                                 const MediaRawData* aSample);
 
     
     uint32_t mNumOfConsecutiveDecodingError;
