@@ -281,7 +281,7 @@ bool TestJSWeakMapWithGrayUnmarking(MarkKeyOrDelegate markKey,
     
     
     JS::PrepareForFullGC(cx);
-    js::SliceBudget budget(TimeBudget(1000000));
+    JS::SliceBudget budget(TimeBudget(1000000));
     JS::StartIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::DEBUG_GC,
                            budget);
     MOZ_ASSERT(cx->runtime()->gc.state() == gc::State::Sweep);
@@ -411,7 +411,7 @@ bool TestInternalWeakMapWithGrayUnmarking(CellColor keyMarkColor,
     
     
     JS::PrepareForFullGC(cx);
-    js::SliceBudget budget(TimeBudget(1000000));
+    JS::SliceBudget budget(TimeBudget(1000000));
     JS::StartIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::DEBUG_GC,
                            budget);
     MOZ_ASSERT(cx->runtime()->gc.state() == gc::State::Sweep);
@@ -503,7 +503,7 @@ bool TestCCWs() {
 
   JSRuntime* rt = cx->runtime();
   JS::PrepareForFullGC(cx);
-  js::SliceBudget budget(js::WorkBudget(1));
+  JS::SliceBudget budget(JS::WorkBudget(1));
   rt->gc.startDebugGC(JS::GCOptions::Normal, budget);
   while (rt->gc.state() == gc::State::Prepare) {
     rt->gc.debugGCSlice(budget);
@@ -531,7 +531,7 @@ bool TestCCWs() {
 
   
   JS::PrepareZoneForGC(cx, wrapper->zone());
-  budget = js::SliceBudget(js::WorkBudget(1));
+  budget = JS::SliceBudget(JS::WorkBudget(1));
   rt->gc.startDebugGC(JS::GCOptions::Normal, budget);
   while (rt->gc.state() == gc::State::Prepare) {
     rt->gc.debugGCSlice(budget);

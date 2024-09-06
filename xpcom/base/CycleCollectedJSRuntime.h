@@ -272,7 +272,7 @@ class CycleCollectedJSRuntime {
 
   
   
-  static bool TraceGrayJS(JSTracer* aTracer, js::SliceBudget& budget,
+  static bool TraceGrayJS(JSTracer* aTracer, JS::SliceBudget& budget,
                           void* aData);
 
   static void GCCallback(JSContext* aContext, JSGCStatus aStatus,
@@ -296,9 +296,9 @@ class CycleCollectedJSRuntime {
 #endif
 
   bool TraceNativeGrayRoots(JSTracer* aTracer, JSHolderMap::WhichHolders aWhich,
-                            js::SliceBudget& aBudget);
+                            JS::SliceBudget& aBudget);
   bool TraceJSHolders(JSTracer* aTracer, JSHolderMap::Iter& aIter,
-                      js::SliceBudget& aBudget);
+                      JS::SliceBudget& aBudget);
 
  public:
   enum DeferredFinalizeType {

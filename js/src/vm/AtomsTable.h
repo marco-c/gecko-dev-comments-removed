@@ -119,7 +119,7 @@ class AtomSet : public JS::GCHashSet<WeakHeapPtr<JSAtom*>, AtomHasher,
 
  public:
   AtomSet() = default;
-  explicit AtomSet(size_t length) : Base(length){};
+  explicit AtomSet(size_t length) : Base(length) {};
 };
 
 
@@ -184,7 +184,7 @@ class AtomsTable {
   bool startIncrementalSweep(mozilla::Maybe<SweepIterator>& atomsToSweepOut);
 
   
-  bool sweepIncrementally(SweepIterator& atomsToSweep, SliceBudget& budget);
+  bool sweepIncrementally(SweepIterator& atomsToSweep, JS::SliceBudget& budget);
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
