@@ -12,6 +12,9 @@ const { RecipeRunner } = ChromeUtils.importESModule(
 
 
 add_task(async () => {
+  
+  Services.prefs.setBoolPref("app.normandy.enabled", true);
+
   updateAppInfo({
     appBuildID: "new-build-id",
     lastAppBuildID: "old-build-id",
