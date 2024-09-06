@@ -1216,19 +1216,57 @@ void nsDragService::TargetDataReceived(GtkWidget* aWidget,
   GdkAtom target = gtk_selection_data_get_target(aSelectionData);
   GUniquePtr<gchar> name(gdk_atom_name(target));
   nsDependentCString flavor(name.get());
-
   if (gtk_targets_include_uri(&target, 1)) {
-    GUniquePtr<gchar*> uris(gtk_selection_data_get_uris(aSelectionData));
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (flavor.Equals(gPortalFile) || flavor.Equals(gPortalFileTransfer)) {
+      const guchar* data = gtk_selection_data_get_data(aSelectionData);
+      if (!data || data[0] == '\0') {
+        LOGDRAGSERVICE("  Empty data!\n");
+        return;
+      }
+      nsCOMPtr<nsIURI> sourceURI;
+      nsresult rv =
+          NS_NewURI(getter_AddRefs(sourceURI), (const gchar*)data, nullptr);
+      if (NS_FAILED(rv)) {
+        
+        
+        
+        GUniquePtr<gchar*> uris(gtk_selection_data_get_uris(aSelectionData));
+        uris.swap(mTargetDragUris);
+      } else {
+        LOGDRAGSERVICE(
+            "  got valid uri for MIME %s - this is bug in GTK - expected "
+            "numeric value for portal, got %s\n",
+            flavor.get(), data);
+        return;
+      }
+
+    } else {
+      GUniquePtr<gchar*> uris(gtk_selection_data_get_uris(aSelectionData));
+      uris.swap(mTargetDragUris);
+    }
 #ifdef MOZ_LOGGING
     if (MOZ_LOG_TEST(gWidgetDragLog, mozilla::LogLevel::Debug)) {
-      gchar** uri = uris.get();
+      gchar** uri = mTargetDragUris.get();
       while (uri && *uri) {
         LOGDRAGSERVICE("  got uri %s, MIME %s", *uri, flavor.get());
         uri++;
       }
     }
+
 #endif
-    uris.swap(mTargetDragUris);
+
     if (mTargetDragUris) {
       mCachedUris.InsertOrUpdate(
           flavor, GUniquePtr<gchar*>(g_strdupv(mTargetDragUris.get())));
