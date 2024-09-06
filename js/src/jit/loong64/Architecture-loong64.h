@@ -162,32 +162,32 @@ class Registers {
   static const SetType NoneMask = 0x0;
 
   static const SetType ArgRegMask =
-      (1 << Registers::a0) | (1 << Registers::a1) | (1 << Registers::a2) |
-      (1 << Registers::a3) | (1 << Registers::a4) | (1 << Registers::a5) |
-      (1 << Registers::a6) | (1 << Registers::a7);
+      (1U << Registers::a0) | (1U << Registers::a1) | (1U << Registers::a2) |
+      (1U << Registers::a3) | (1U << Registers::a4) | (1U << Registers::a5) |
+      (1U << Registers::a6) | (1U << Registers::a7);
 
   static const SetType VolatileMask =
-      (1 << Registers::a0) | (1 << Registers::a1) | (1 << Registers::a2) |
-      (1 << Registers::a3) | (1 << Registers::a4) | (1 << Registers::a5) |
-      (1 << Registers::a6) | (1 << Registers::a7) | (1 << Registers::t0) |
-      (1 << Registers::t1) | (1 << Registers::t2) | (1 << Registers::t3) |
-      (1 << Registers::t4) | (1 << Registers::t5) | (1 << Registers::t6);
+      (1U << Registers::a0) | (1U << Registers::a1) | (1U << Registers::a2) |
+      (1U << Registers::a3) | (1U << Registers::a4) | (1U << Registers::a5) |
+      (1U << Registers::a6) | (1U << Registers::a7) | (1U << Registers::t0) |
+      (1U << Registers::t1) | (1U << Registers::t2) | (1U << Registers::t3) |
+      (1U << Registers::t4) | (1U << Registers::t5) | (1U << Registers::t6);
 
   
   
   static const SetType NonVolatileMask =
-      (1 << Registers::ra) | (1 << Registers::fp) | (1 << Registers::s0) |
-      (1 << Registers::s1) | (1 << Registers::s2) | (1 << Registers::s3) |
-      (1 << Registers::s4) | (1 << Registers::s5) | (1 << Registers::s6) |
-      (1 << Registers::s7) | (1 << Registers::s8);
+      (1U << Registers::ra) | (1U << Registers::fp) | (1U << Registers::s0) |
+      (1U << Registers::s1) | (1u << Registers::s2) | (1U << Registers::s3) |
+      (1U << Registers::s4) | (1U << Registers::s5) | (1U << Registers::s6) |
+      (1U << Registers::s7) | (1U << Registers::s8);
 
   static const SetType NonAllocatableMask =
-      (1 << Registers::zero) |  
-      (1 << Registers::t7) |    
-      (1 << Registers::t8) |    
-      (1 << Registers::rx) |    
-      (1 << Registers::ra) | (1 << Registers::tp) | (1 << Registers::sp) |
-      (1 << Registers::fp);
+      (1U << Registers::zero) |  
+      (1U << Registers::t7) |    
+      (1U << Registers::t8) |    
+      (1U << Registers::rx) |    
+      (1U << Registers::ra) | (1U << Registers::tp) | (1U << Registers::sp) |
+      (1U << Registers::fp);
 
   static const SetType WrapperMask = VolatileMask;
 
@@ -262,7 +262,8 @@ class FloatRegisters {
     if (code >= Total) {
       return "invalid";
     }
-    return Names[code];
+    
+    return Names[code % TotalPhys];
   }
 
   static Code FromName(const char* name);
@@ -291,10 +292,10 @@ class FloatRegisters {
 
   
   static const SetType NonVolatileMask =
-      SetType((1 << FloatRegisters::f24) | (1 << FloatRegisters::f25) |
-              (1 << FloatRegisters::f26) | (1 << FloatRegisters::f27) |
-              (1 << FloatRegisters::f28) | (1 << FloatRegisters::f29) |
-              (1 << FloatRegisters::f30) | (1 << FloatRegisters::f31)) *
+      SetType((1U << FloatRegisters::f24) | (1U << FloatRegisters::f25) |
+              (1U << FloatRegisters::f26) | (1U << FloatRegisters::f27) |
+              (1U << FloatRegisters::f28) | (1U << FloatRegisters::f29) |
+              (1U << FloatRegisters::f30) | (1U << FloatRegisters::f31)) *
       Spread;
 
   static const SetType VolatileMask = AllMask & ~NonVolatileMask;
