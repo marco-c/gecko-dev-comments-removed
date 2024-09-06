@@ -5,6 +5,7 @@ import argparse
 import os
 import re
 import subprocess
+import sys
 
 
 
@@ -26,6 +27,10 @@ def build_commit_list(revset, env):
         text=True,
         env=env,
     )
+    
+    
+    if len(res.stdout) == 0:
+        return []
     return [line.strip() for line in res.stdout.strip().split("\n")]
 
 
@@ -134,6 +139,10 @@ if __name__ == "__main__":
 
     for revset in args.revsets:
         commits.extend(build_commit_list(revset, env))
+
+    if len(commits) == 0:
+        print(f"No commits modifying {LIBWEBRTC_DIR} found in provided revsets")
+        sys.exit(1)
 
     with open("mailbox.patch", "w") as ofile:
         for sha1 in commits:
