@@ -19,6 +19,10 @@ struct ParamTraits;
 
 }  
 
+namespace JS {
+class ArrayBufferOrView;
+}  
+
 namespace mozilla::dom::indexedDB {
 
 class Key {
@@ -226,6 +230,9 @@ class Key {
 
   Result<Ok, nsresult> EncodeNumber(double aFloat, uint8_t aType);
 
+  Result<Ok, nsresult> EncodeBinary(
+      const JS::ArrayBufferOrView& aArrayBufferOrView, uint8_t aTypeOffset);
+
   
   
   static nsresult DecodeJSVal(const EncodedDataType*& aPos,
@@ -238,9 +245,8 @@ class Key {
   static double DecodeNumber(const EncodedDataType*& aPos,
                              const EncodedDataType* aEnd);
 
-  static JSObject* GetArrayBufferObjectFromDataRange(
-      const EncodedDataType*& aPos, const EncodedDataType* aEnd,
-      JSContext* aCx);
+  static JSObject* DecodeBinary(const EncodedDataType*& aPos,
+                                const EncodedDataType* aEnd, JSContext* aCx);
 
   
   
