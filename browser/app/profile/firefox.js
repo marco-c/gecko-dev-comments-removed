@@ -635,18 +635,14 @@ pref("browser.urlbar.suggest.addons", true);
 pref("browser.urlbar.suggest.mdn", true);
 
 
-pref("browser.urlbar.yelp.featureGate", false);
+pref("browser.urlbar.yelp.featureGate", true);
 
 
 
-pref("browser.urlbar.yelp.minKeywordLength", 0);
+pref("browser.urlbar.yelp.minKeywordLength", 4);
 
 
 pref("browser.urlbar.yelp.priority", false);
-
-
-
-pref("browser.urlbar.yelp.suggestedIndex", 0);
 
 
 
