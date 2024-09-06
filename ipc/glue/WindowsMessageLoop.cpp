@@ -19,7 +19,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/mscom/Utils.h"
-#include "mozilla/PaintTracker.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WindowsProcessMitigations.h"
@@ -618,7 +617,6 @@ void InitUIThread() {
 }  
 }  
 
-
 MessageChannel::SyncStackFrame::SyncStackFrame(MessageChannel* channel)
     : mSpinNestedEvents(false),
       mListenerNotified(false),
@@ -687,65 +685,6 @@ void MessageChannel::ProcessNativeEventsInInterruptCall() {
   }
 
   mTopFrame->mSpinNestedEvents = true;
-}
-
-
-
-
-
-
-
-void MessageChannel::SpinInternalEventLoop() {
-  if (mozilla::PaintTracker::IsPainting()) {
-    MOZ_CRASH("Don't spin an event loop while painting.");
-  }
-
-  NS_ASSERTION(mTopFrame && mTopFrame->mSpinNestedEvents,
-               "Spinning incorrectly");
-
-  
-  
-
-  
-  
-
-  do {
-    MSG msg = {0};
-
-    
-    {
-      MonitorAutoLock lock(*mMonitor);
-      if (!Connected()) {
-        return;
-      }
-    }
-
-    
-    if (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
-      
-      
-      if (msg.message == WM_QUIT) {
-        NS_ERROR("WM_QUIT received in SpinInternalEventLoop!");
-      } else {
-        TranslateMessage(&msg);
-        ::DispatchMessageW(&msg);
-        return;
-      }
-    }
-
-    
-    
-    
-    
-
-    
-    DWORD result =
-        MsgWaitForMultipleObjects(1, &mEvent, FALSE, INFINITE, QS_ALLINPUT);
-    if (result == WAIT_OBJECT_0) {
-      
-      return;
-    }
-  } while (true);
 }
 
 static HHOOK gWindowHook;
