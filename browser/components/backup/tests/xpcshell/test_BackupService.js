@@ -295,7 +295,7 @@ add_task(async function test_createBackup_signed_in() {
 
 
 
-add_task(async function test_recoverFromBackup() {
+add_task(async function test_recoverFromSnapshotFolder() {
   let sandbox = sinon.createSandbox();
   let fakeEntryMap = new Map();
   let backupResourceClasses = [
@@ -332,11 +332,11 @@ add_task(async function test_recoverFromBackup() {
 
   let oldProfilePath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
-    "recoverFromBackupTest"
+    "recoverFromSnapshotFolderTest"
   );
   let newProfileRootPath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
-    "recoverFromBackupTest-newProfileRoot"
+    "recoverFromSnapshotFolderTest-newProfileRoot"
   );
 
   let { stagingPath } = await bs.createBackup({ profilePath: oldProfilePath });
@@ -349,7 +349,7 @@ add_task(async function test_recoverFromBackup() {
     testTelemetryStateObject
   );
 
-  let profile = await bs.recoverFromBackup(
+  let profile = await bs.recoverFromSnapshotFolder(
     stagingPath,
     false ,
     newProfileRootPath
