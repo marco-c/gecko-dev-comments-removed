@@ -2992,10 +2992,33 @@ bool js::ReportUsageCounter(JSContext* cx, HandleObject constructor,
           MOZ_CRASH("Unexpected Subclassing Type");
       }
     }
+    case SUBCLASSING_TYPEDARRAY: {
+      
+      
+      
+      
+      
+      
+      
+      if (constructor && IsTypedArrayConstructor(constructor)) {
+        fprintf(stderr, "Skipping known typed array constructor\n");
+        return true;
+      }
+      switch (type) {
+        case SUBCLASSING_TYPE_II:
+          cx->runtime()->setUseCounter(
+              cx->global(), JSUseCounter::SUBCLASSING_TYPEDARRAY_TYPE_II);
+          return true;
+        default:
+          MOZ_CRASH("Unhandled subclassing type");
+      }
+    }
     default:
       MOZ_CRASH("Unexpected builtin");
   };
 }
+
+
 
 
 
