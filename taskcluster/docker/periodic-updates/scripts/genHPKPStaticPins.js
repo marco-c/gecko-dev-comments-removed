@@ -8,7 +8,6 @@
 
 
 
-
 "use strict";
 
 if (arguments.length != 2) {

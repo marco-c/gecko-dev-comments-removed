@@ -8,7 +8,6 @@
 
 
 
-
 const nsX509CertDB = "@mozilla.org/security/x509certdb;1";
 const CertDb = Cc[nsX509CertDB].getService(Ci.nsIX509CertDB);
 
