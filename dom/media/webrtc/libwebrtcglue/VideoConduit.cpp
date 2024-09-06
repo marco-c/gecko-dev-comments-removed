@@ -751,7 +751,19 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         mEncoderConfig.bitrate_priority = 1.0;
 
         
-        mEncoderConfig.number_of_streams = streamCount;
+        
+        
+        mEncoderConfig.simulcast_layers.clear();
+        for (size_t idx = 0; idx < streamCount; ++idx) {
+          webrtc::VideoStream video_stream;
+          auto& encoding = codecConfig->mEncodings[idx];
+          video_stream.active = encoding.active;
+          mEncoderConfig.simulcast_layers.push_back(video_stream);
+        }
+
+        
+        mEncoderConfig.number_of_streams =
+            mEncoderConfig.simulcast_layers.size();
 
         
         mSendStreamConfig.suspend_below_min_bitrate = false;
