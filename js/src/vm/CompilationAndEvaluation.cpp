@@ -184,10 +184,6 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
     return true;
   }
 
-  
-  
-  bool result = true;
-
   using frontend::FullParseHandler;
   using frontend::ParseGoal;
   using frontend::Parser;
@@ -208,6 +204,9 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
     return false;
   }
 
+  
+  fc.clearAutoReport();
+
   Parser<FullParseHandler, char16_t> parser(&fc, options, chars.get(), length,
                                              true,
                                             compilationState,
@@ -217,13 +216,13 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
     
     
     if (parser.isUnexpectedEOF()) {
-      result = false;
+      return false;
     }
-
-    cx->clearPendingException();
   }
 
-  return result;
+  
+  
+  return true;
 }
 
 class FunctionCompiler {
