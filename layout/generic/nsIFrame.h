@@ -544,26 +544,23 @@ enum class LayoutFrameClassFlags : uint16_t {
   Replaced = 1 << 6,
   
   
-  ReplacedContainsBlock = 1 << 7,
+  
+  ReplacedSizing = 1 << 7,
   
   
+  LineParticipant = 1 << 8,
   
-  ReplacedSizing = 1 << 8,
+  TablePart = 1 << 9,
+  CanContainOverflowContainers = 1 << 10,
   
-  
-  LineParticipant = 1 << 9,
-  
-  TablePart = 1 << 10,
-  CanContainOverflowContainers = 1 << 11,
-  
-  SupportsCSSTransforms = 1 << 12,
+  SupportsCSSTransforms = 1 << 11,
   
   
-  SupportsContainLayoutAndPaint = 1 << 13,
+  SupportsContainLayoutAndPaint = 1 << 12,
   
-  SupportsAspectRatio = 1 << 14,
+  SupportsAspectRatio = 1 << 13,
   
-  BlockFormattingContext = 1 << 15,
+  BlockFormattingContext = 1 << 14,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LayoutFrameClassFlags)
@@ -3410,7 +3407,6 @@ class nsIFrame : public nsQueryFrame {
   CLASS_FLAG_METHOD(IsBidiInlineContainer, BidiInlineContainer);
   CLASS_FLAG_METHOD(IsLineParticipant, LineParticipant);
   CLASS_FLAG_METHOD(IsReplaced, Replaced);
-  CLASS_FLAG_METHOD(IsReplacedWithBlock, ReplacedContainsBlock);
   CLASS_FLAG_METHOD(HasReplacedSizing, ReplacedSizing);
   CLASS_FLAG_METHOD(IsTablePart, TablePart);
   CLASS_FLAG_METHOD0(CanContainOverflowContainers)
