@@ -110,8 +110,11 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
 
 
+
+
   static bool ParseAndRemoveFragmentDirectiveFromFragmentString(
-      nsCString& aFragment, nsTArray<TextDirective>* aTextDirectives = nullptr);
+      nsCString& aFragment, nsTArray<TextDirective>* aTextDirectives = nullptr,
+      nsIURI* aURI = nullptr);
 
  private:
   RefPtr<nsRange> FindRangeForTextDirective(
