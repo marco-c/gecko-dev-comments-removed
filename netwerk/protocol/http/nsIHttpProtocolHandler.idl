@@ -188,13 +188,6 @@ interface nsIHttpProtocolHandler : nsIProxiedProtocolHandler
 
 
 
-#define NS_HTTP_ON_AFTER_EXAMINE_RESPONSE_TOPIC "http-on-after-examine-response"
-
-
-
-
-
-
 #define NS_HTTP_ON_EXAMINE_MERGED_RESPONSE_TOPIC "http-on-examine-merged-response"
 
 
