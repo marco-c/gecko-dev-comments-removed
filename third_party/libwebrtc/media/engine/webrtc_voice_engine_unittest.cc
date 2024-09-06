@@ -1560,8 +1560,8 @@ TEST_P(WebRtcVoiceEngineTestFake, OnPacketReceivedIdentifiesExtensions) {
   webrtc::RtpHeaderExtensionMap extension_map(parameters.extensions);
   webrtc::RtpPacketReceived reference_packet(&extension_map);
   constexpr uint8_t kAudioLevel = 123;
-  reference_packet.SetExtension<webrtc::AudioLevel>(true,
-                                                    kAudioLevel);
+  reference_packet.SetExtension<webrtc::AudioLevelExtension>(
+      true, kAudioLevel);
   
   webrtc::RtpPacketReceived received_packet;
   ASSERT_TRUE(received_packet.Parse(reference_packet.Buffer()));
@@ -1571,8 +1571,9 @@ TEST_P(WebRtcVoiceEngineTestFake, OnPacketReceivedIdentifiesExtensions) {
 
   bool voice_activity;
   uint8_t audio_level;
-  EXPECT_TRUE(call_.last_received_rtp_packet().GetExtension<webrtc::AudioLevel>(
-      &voice_activity, &audio_level));
+  EXPECT_TRUE(call_.last_received_rtp_packet()
+                  .GetExtension<webrtc::AudioLevelExtension>(&voice_activity,
+                                                             &audio_level));
   EXPECT_EQ(audio_level, kAudioLevel);
 }
 

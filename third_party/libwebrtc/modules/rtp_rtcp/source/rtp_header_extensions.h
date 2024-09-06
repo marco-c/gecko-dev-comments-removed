@@ -28,6 +28,13 @@
 #include "api/video/video_timing.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
+
+
+
+
+
+
+
 namespace webrtc {
 
 class AbsoluteSendTime {
@@ -75,7 +82,7 @@ class AbsoluteCaptureTimeExtension {
                     const AbsoluteCaptureTime& extension);
 };
 
-class AudioLevel {
+class AudioLevelExtension {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionAudioLevel;
   static constexpr uint8_t kValueSizeBytes = 1;
@@ -93,6 +100,9 @@ class AudioLevel {
                     bool voice_activity,
                     uint8_t audio_level);
 };
+
+
+using AudioLevel [[deprecated]] = AudioLevelExtension;
 
 #if !defined(WEBRTC_MOZILLA_BUILD)
 class CsrcAudioLevel {

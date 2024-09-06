@@ -160,9 +160,9 @@ bool AbsoluteCaptureTimeExtension::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-bool AudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
-                       bool* voice_activity,
-                       uint8_t* audio_level) {
+bool AudioLevelExtension::Parse(rtc::ArrayView<const uint8_t> data,
+                                bool* voice_activity,
+                                uint8_t* audio_level) {
   
   if (data.size() != 1)
     return false;
@@ -171,9 +171,9 @@ bool AudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
   return true;
 }
 
-bool AudioLevel::Write(rtc::ArrayView<uint8_t> data,
-                       bool voice_activity,
-                       uint8_t audio_level) {
+bool AudioLevelExtension::Write(rtc::ArrayView<uint8_t> data,
+                                bool voice_activity,
+                                uint8_t audio_level) {
   
   RTC_DCHECK_EQ(data.size(), 1);
   RTC_CHECK_LE(audio_level, 0x7f);
