@@ -13,6 +13,7 @@ namespace mozilla {
 
 namespace gfx {
 class SourceSurface;
+enum class SurfaceFormat : int8_t;
 }  
 
 namespace layers {
@@ -36,6 +37,15 @@ nsresult ConvertToI420(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
 
 nsresult ConvertToNV12(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
                        uint8_t* aDestUV, int aDestStrideUV);
+
+
+
+
+
+nsresult ConvertToRGBA(layers::Image* aImage,
+                       const gfx::SurfaceFormat& aDestFormat,
+                       uint8_t* aDestBuffer, int aDestStride, int aWidth,
+                       int aHeight);
 
 }  
 
