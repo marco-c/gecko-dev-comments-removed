@@ -181,7 +181,58 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
 
   bool IsAsyncScript() const { return mScriptMode == ScriptMode::eAsync; }
 
+ private:
   nsIScriptElement* GetScriptElement() const;
+
+ public:
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  inline nsIScriptElement* GetScriptElementForLoadingNode() const {
+    return GetScriptElement();
+  }
+
+  
+  
+  
+  inline nsIScriptElement* GetScriptElementForTrace() const {
+    return GetScriptElement();
+  }
+
+  
+  inline nsIScriptElement* GetScriptElementForExecuteEvents() const {
+    return GetScriptElement();
+  }
+
+  
+  inline nsIScriptElement* GetScriptElementForCurrentParserInsertedScript()
+      const {
+    return GetScriptElement();
+  }
+
+  
+  inline nsIScriptElement* GetScriptElementForObserver() const {
+    return GetScriptElement();
+  }
+
+  
+  inline nsIScriptElement* GetScriptElementForUrlClassifier() const {
+    return GetScriptElement();
+  }
+
+  
+  
+  inline nsIScriptElement* GetScriptElementForCurrentScript() const {
+    return GetScriptElement();
+  }
 
   bool HasScriptElement() const;
 
