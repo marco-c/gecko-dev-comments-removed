@@ -12,70 +12,70 @@ function* testSteps() {
     {
       url: "http://localhost:81",
       dbName: "dbC",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:82",
       dbName: "dbD",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:83",
       dbName: "dbE",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:84",
       dbName: "dbF",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:85",
       dbName: "dbG",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:86",
       dbName: "dbH",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:87",
       dbName: "dbI",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:88",
       dbName: "dbJ",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:89",
       dbName: "dbK",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
 
     
     {
       url: "http://localhost:90",
       dbName: "dbL",
-      dbOptions: { version: 1, storage: "default" },
+      dbVersion: 1,
     },
   ];
 
@@ -90,10 +90,10 @@ function* testSteps() {
       request = indexedDB.openForPrincipal(
         principal,
         params.dbName,
-        params.dbOptions
+        params.dbVersion
       );
     } else {
-      request = indexedDB.open(params.dbName, params.dbOptions);
+      request = indexedDB.open(params.dbName, params.dbVersion);
     }
     return request;
   }
