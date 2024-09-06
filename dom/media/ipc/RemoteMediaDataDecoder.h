@@ -53,14 +53,16 @@ class RemoteMediaDataDecoder final
   
   
   RefPtr<RemoteDecoderChild> mChild;
+
+  mutable Mutex mMutex{"RemoteMediaDataDecoder"};
+
   
-  
-  nsCString mDescription = "RemoteMediaDataDecoder"_ns;
-  nsCString mProcessName = "unknown"_ns;
-  nsCString mCodecName = "unknown"_ns;
-  bool mIsHardwareAccelerated = false;
-  nsCString mHardwareAcceleratedReason;
-  ConversionRequired mConversion = ConversionRequired::kNeedNone;
+  nsCString mDescription MOZ_GUARDED_BY(mMutex);
+  nsCString mProcessName MOZ_GUARDED_BY(mMutex);
+  nsCString mCodecName MOZ_GUARDED_BY(mMutex);
+  bool mIsHardwareAccelerated MOZ_GUARDED_BY(mMutex);
+  nsCString mHardwareAcceleratedReason MOZ_GUARDED_BY(mMutex);
+  ConversionRequired mConversion MOZ_GUARDED_BY(mMutex);
 };
 
 }  
