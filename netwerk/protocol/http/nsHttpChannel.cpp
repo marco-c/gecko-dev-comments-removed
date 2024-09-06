@@ -794,9 +794,12 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
   }
 
   if (aShouldUpgrade && !mURI->SchemeIs("https")) {
-    mozilla::glean::networking::https_upgrade_with_https_rr
-        .Get(aUpgradeWithHTTPSRR ? "https_rr"_ns : "others"_ns)
-        .Add(1);
+    
+    
+    
+    if (aUpgradeWithHTTPSRR) {
+      mLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::HTTPS_RR);
+    }
     return AsyncCall(&nsHttpChannel::HandleAsyncRedirectChannelToHttps);
   }
 
@@ -7908,6 +7911,71 @@ nsresult nsHttpChannel::LogConsoleError(const char* aTag) {
   return NS_OK;
 }
 
+static void RecordHTTPSUpgradeTelemetry(nsILoadInfo* aLoadInfo) {
+  
+  if (aLoadInfo->GetExternalContentPolicyType() !=
+      ExtContentPolicy::TYPE_DOCUMENT) {
+    return;
+  }
+
+  nsILoadInfo::HTTPSUpgradeTelemetryType httpsTelemetry =
+      nsILoadInfo::NO_UPGRADE;
+  aLoadInfo->GetHttpsUpgradeTelemetry(&httpsTelemetry);
+  switch (httpsTelemetry) {
+    case nsILoadInfo::NO_UPGRADE:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("no_upgrade"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::ALREADY_HTTPS:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("already_https"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::HSTS:
+      mozilla::glean::networking::http_to_https_upgrade_reason.Get("hsts"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::HTTPS_ONLY_UPGRADE:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("https_only_upgrade"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::HTTPS_ONLY_UPGRADE_DOWNGRADE:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("https_only_upgrade_downgrade"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::HTTPS_FIRST_UPGRADE:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("https_first_upgrade"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::HTTPS_FIRST_UPGRADE_DOWNGRADE:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("https_first_upgrade_downgrade"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::HTTPS_FIRST_SCHEMELESS_UPGRADE:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("https_first_schemeless_upgrade"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::HTTPS_FIRST_SCHEMELESS_UPGRADE_DOWNGRADE:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("https_first_schemeless_upgrade_downgrade"_ns)
+          .Add(1);
+      break;
+    case nsILoadInfo::HTTPS_RR:
+      mozilla::glean::networking::http_to_https_upgrade_reason
+          .Get("https_rr"_ns)
+          .Add(1);
+      break;
+    default:
+      MOZ_ASSERT(false, "what telemetry flag is set to end up here?");
+  }
+}
+
 NS_IMETHODIMP
 nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
   AUTO_PROFILER_LABEL("nsHttpChannel::OnStopRequest", NETWORK);
@@ -8049,6 +8117,8 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
 
     mTransferSize = mTransaction->GetTransferSize();
     mRequestSize = mTransaction->GetRequestSize();
+
+    RecordHTTPSUpgradeTelemetry(mLoadInfo);
 
     
     
