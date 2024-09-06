@@ -917,28 +917,10 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  
-  if (generator->isSuspendedStart() || generator->isCompleted()) {
-    
-    generator->setAwaitingReturn();
-
-    
-    if (!AsyncGeneratorAwaitReturn(cx, generator, completionValue)) {
+  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn()) {
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
       return false;
     }
-  } else if (generator->isSuspendedYield()) {
-    
-
-    
-    if (!AsyncGeneratorUnwrapYieldResumptionAndResume(
-            cx, generator, CompletionKind::Return, completionValue)) {
-      return false;
-    }
-  } else {
-    
-    
-    MOZ_ASSERT(generator->isExecuting() || generator->isAwaitingReturn() ||
-               generator->isAwaitingYieldReturn());
   }
 
   
