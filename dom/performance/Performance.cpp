@@ -33,7 +33,6 @@
 #include "mozilla/dom/PerformanceObserverBinding.h"
 #include "mozilla/dom/PerformanceNavigationTiming.h"
 #include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/Perfetto.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/WorkerPrivate.h"
@@ -764,25 +763,6 @@ already_AddRefed<PerformanceMeasure> Performance::Measure(
   } else {
     detail.setNull();
   }
-
-#ifdef MOZ_PERFETTO
-  
-  
-  
-  
-  
-  if (TRACE_EVENT_CATEGORY_ENABLED("usertiming")) {
-    NS_ConvertUTF16toUTF8 str(aName);
-    perfetto::DynamicCategory category{str.get()};
-    TimeStamp startTimeStamp =
-        CreationTimeStamp() + TimeDuration::FromMilliseconds(startTime);
-    TimeStamp endTimeStamp =
-        CreationTimeStamp() + TimeDuration::FromMilliseconds(endTime);
-    PERFETTO_TRACE_EVENT_BEGIN(category, perfetto::DynamicString{str.get()},
-                               startTimeStamp);
-    PERFETTO_TRACE_EVENT_END(category, endTimeStamp);
-  }
-#endif
 
   RefPtr<PerformanceMeasure> performanceMeasure = new PerformanceMeasure(
       GetParentObject(), aName, startTime, endTime, detail);
