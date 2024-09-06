@@ -310,35 +310,28 @@ void FixedLengthTypedArrayObject::setInlineElements() {
 
 uint32_t js::ClampDoubleToUint8(const double x) {
   
-  if (!(x >= 0)) {
+  if (!(x > 0)) {
     return 0;
   }
 
-  if (x > 255) {
+  if (x >= 255) {
     return 255;
   }
 
-  double toTruncate = x + 0.5;
-  uint8_t y = uint8_t(toTruncate);
+  
+  uint8_t y = uint8_t(x);
 
   
+  double r = x - double(y);
 
-
-
-
-  if (y == toTruncate) {
-    
-
-
-
-
-
-
-
-    return y & ~1;
+  
+  
+  if (r == 0.5) {
+    return y + (y & 1);
   }
 
-  return y;
+  
+  return y + (r > 0.5);
 }
 
 static void ReportOutOfBounds(JSContext* cx, TypedArrayObject* typedArray) {

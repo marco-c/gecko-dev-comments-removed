@@ -35,31 +35,48 @@ void MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output) {
 
   bind(&positive);
 
-  
-  loadConstantDouble(0.5, scratch);
-  addDouble(scratch, input);
-
-  Label outOfRange;
-
-  
-  
-  
-  vcvttsd2si(input, output);
-  branch32(Assembler::Above, output, Imm32(255), &outOfRange);
-  {
+  if (HasRoundInstruction(RoundingMode::NearestTiesToEven)) {
     
-    convertInt32ToDouble(output, scratch);
-    branchDouble(DoubleNotEqual, input, scratch, &done);
+    nearbyIntDouble(RoundingMode::NearestTiesToEven, input, input);
 
     
     
-    and32(Imm32(~1), output);
-    jump(&done);
+    
+    vcvttsd2si(input, output);
+    branch32(Assembler::BelowOrEqual, output, Imm32(255), &done);
+    move32(Imm32(255), output);
+  } else {
+    Label outOfRange;
+
+    
+    
+    
+    vcvttsd2si(input, output);
+    branch32(Assembler::AboveOrEqual, output, Imm32(255), &outOfRange);
+    {
+      
+      convertInt32ToDouble(output, scratch);
+      subDouble(scratch, input);
+
+      loadConstantDouble(0.5, scratch);
+
+      Label roundUp;
+      vucomisd(scratch, input);
+      j(Above, &roundUp);
+      j(NotEqual, &done);
+
+      
+      branchTest32(Zero, output, Imm32(1), &done);
+
+      bind(&roundUp);
+      add32(Imm32(1), output);
+      jump(&done);
+    }
+
+    
+    bind(&outOfRange);
+    move32(Imm32(255), output);
   }
-
-  
-  bind(&outOfRange);
-  { move32(Imm32(255), output); }
 
   bind(&done);
 }

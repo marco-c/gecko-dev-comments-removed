@@ -2139,69 +2139,44 @@ void MacroAssemblerARMCompat::storePtr(Register src, AbsoluteAddress dest) {
 
 
 void MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output) {
-  if (HasVFPv3()) {
-    Label notSplit;
-    {
-      ScratchDoubleScope scratchDouble(*this);
-      MOZ_ASSERT(input != scratchDouble);
-      loadConstantDouble(0.5, scratchDouble);
+  ScratchDoubleScope scratchDouble(*this);
+  MOZ_ASSERT(input != scratchDouble);
 
-      ma_vadd(input, scratchDouble, scratchDouble);
-      
-      
-      as_vcvtFixed(scratchDouble, false, 24, true);
-    }
+  Label done;
 
-    
-    {
-      ScratchFloat32Scope scratchFloat(*this);
-      as_vxfer(output, InvalidReg, scratchFloat.uintOverlay(), FloatToCore);
-    }
+  
+  compareDouble(input, NoVFPRegister);
+  ma_mov(Imm32(0), output, VFP_Unordered);
+  ma_b(&done, VFP_Unordered);
 
-    ScratchRegisterScope scratch(*this);
+  
+  as_vcvt(VFPRegister(scratchDouble).uintOverlay(), VFPRegister(input));
 
-    
-    
-    
-    ma_tst(output, Imm32(0x00ffffff), scratch);
-    
-    ma_lsr(Imm32(24), output, output);
-    
-    
-    ma_b(&notSplit, NonZero);
-    as_vxfer(scratch, InvalidReg, input, FloatToCore);
-    as_cmp(scratch, Imm8(0));
-    
-    
-    as_bic(output, output, Imm8(1), LeaveCC, Zero);
-    bind(&notSplit);
-  } else {
-    ScratchDoubleScope scratchDouble(*this);
-    MOZ_ASSERT(input != scratchDouble);
-    loadConstantDouble(0.5, scratchDouble);
+  
+  as_vxfer(output, InvalidReg, scratchDouble, FloatToCore);
 
-    Label outOfRange;
-    ma_vcmpz(input);
-    
-    ma_vadd(input, scratchDouble, input);
-    
-    as_vcvt(VFPRegister(scratchDouble).uintOverlay(), VFPRegister(input));
-    
-    as_vxfer(output, InvalidReg, scratchDouble, FloatToCore);
-    as_vmrs(pc);
-    ma_mov(Imm32(0), output, Overflow);  
-    ma_b(&outOfRange, Overflow);         
-    as_cmp(output, Imm8(0xff));
-    ma_mov(Imm32(0xff), output, Above);
-    ma_b(&outOfRange, Above);
-    
-    as_vcvt(scratchDouble, VFPRegister(scratchDouble).uintOverlay());
-    
-    as_vcmp(scratchDouble, input);
-    as_vmrs(pc);
-    as_bic(output, output, Imm8(1), LeaveCC, Zero);
-    bind(&outOfRange);
-  }
+  
+  as_cmp(output, Imm8(0xff));
+  ma_mov(Imm32(0xff), output, Above);
+  ma_b(&done, AboveOrEqual);
+
+  
+  as_vcvt(scratchDouble, VFPRegister(scratchDouble).uintOverlay());
+  ma_vsub(input, scratchDouble, input);
+
+  loadConstantDouble(0.5, scratchDouble);
+
+  
+  compareDouble(input, scratchDouble);
+
+  
+  as_add(output, output, Imm8(1), LeaveCC, VFP_GreaterThan);
+
+  
+  as_add(output, output, Imm8(1), LeaveCC, VFP_Equal);
+  as_bic(output, output, Imm8(1), LeaveCC, VFP_Equal);
+
+  bind(&done);
 }
 
 void MacroAssemblerARMCompat::cmp32(Register lhs, Imm32 rhs) {
