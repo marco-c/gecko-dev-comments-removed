@@ -20,7 +20,7 @@ bootstrap_schema = Schema(
         
         Required("pre-commands"): [str],
         
-        Optional("job-from"): str,
+        Optional("task-from"): str,
     }
 )
 

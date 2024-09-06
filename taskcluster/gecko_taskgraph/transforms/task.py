@@ -71,7 +71,7 @@ task_description_schema = Schema(
         
         Optional("attributes"): {str: object},
         
-        Optional("job-from"): str,
+        Optional("task-from"): str,
         
         
         
@@ -2006,7 +2006,7 @@ def build_task(config, tasks):
             if groupSymbol != "?":
                 treeherder["groupSymbol"] = groupSymbol
                 if groupSymbol not in group_names:
-                    path = os.path.join(config.path, task.get("job-from", ""))
+                    path = os.path.join(config.path, task.get("task-from", ""))
                     raise Exception(UNKNOWN_GROUP_NAME.format(groupSymbol, path))
                 treeherder["groupName"] = group_names[groupSymbol]
             treeherder["symbol"] = symbol

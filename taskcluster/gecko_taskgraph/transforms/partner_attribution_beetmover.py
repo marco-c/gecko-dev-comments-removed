@@ -27,7 +27,7 @@ from gecko_taskgraph.util.scriptworker import (
 beetmover_description_schema = Schema(
     {
         
-        Optional("job-from"): str,
+        Optional("task-from"): str,
         Optional("name"): str,
         
         Optional("attributes"): task_description_schema["attributes"],

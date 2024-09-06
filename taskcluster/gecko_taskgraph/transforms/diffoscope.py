@@ -27,7 +27,7 @@ diff_description_schema = Schema(
         
         Required("symbol"): str,
         
-        Optional("job-from"): str,
+        Optional("task-from"): str,
         
         Required("original"): index_or_string,
         Required("new"): index_or_string,

@@ -75,7 +75,7 @@ test_description_schema = Schema(
         
         Optional("attributes"): {str: object},
         
-        Optional("job-from"): str,
+        Optional("task-from"): str,
         
         
         
@@ -485,7 +485,7 @@ def make_job_description(config, tasks):
         jobdesc["description"] = task["description"]
         jobdesc["attributes"] = attributes
         jobdesc["dependencies"] = {"build": build_label}
-        jobdesc["job-from"] = task["job-from"]
+        jobdesc["task-from"] = task["task-from"]
 
         if task.get("fetches"):
             jobdesc["fetches"] = task["fetches"]

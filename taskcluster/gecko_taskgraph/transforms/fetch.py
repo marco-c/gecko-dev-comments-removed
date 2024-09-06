@@ -30,7 +30,7 @@ FETCH_SCHEMA = Schema(
         Required("name"): str,
         
         
-        Optional("job-from"): str,
+        Optional("task-from"): str,
         
         Required("description"): str,
         Optional(
