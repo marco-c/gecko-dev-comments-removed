@@ -26,26 +26,29 @@ using namespace js;
 using namespace js::jit;
 
 JSJitFrameIter::JSJitFrameIter(const JitActivation* activation)
-    : JSJitFrameIter(activation, FrameType::Exit, activation->jsExitFP()) {}
-
-JSJitFrameIter::JSJitFrameIter(const JitActivation* activation,
-                               FrameType frameType, uint8_t* fp)
-    : current_(fp),
-      type_(frameType),
-      resumePCinCurrentFrame_(nullptr),
-      cachedSafepointIndex_(nullptr),
+    : current_(activation->jsExitFP()),
+      type_(FrameType::Exit),
       activation_(activation) {
   
   
-  
-  
-  MOZ_ASSERT(type_ == FrameType::JSJitToWasm || type_ == FrameType::Exit);
-  if (type_ == FrameType::Exit && activation_->bailoutData()) {
+  if (activation_->bailoutData()) {
     current_ = activation_->bailoutData()->fp();
     type_ = FrameType::Bailout;
-  } else {
-    MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
   }
+  MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
+}
+
+JSJitFrameIter::JSJitFrameIter(const JitActivation* activation,
+                               FrameType frameType, uint8_t* fp)
+    : current_(fp), type_(frameType), activation_(activation) {
+  
+  
+  
+  
+  
+  MOZ_ASSERT(fp > activation->jsOrWasmExitFP());
+  MOZ_ASSERT(type_ == FrameType::JSJitToWasm || type_ == FrameType::Exit);
+  MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
 }
 
 bool JSJitFrameIter::checkInvalidation() const {
