@@ -72,8 +72,8 @@ class HighlightLines extends Component {
     }
 
     if (features.codemirrorNext) {
-      
       if (editor) {
+        editor.scrollTo(range.start, 0);
         editor.setLineContentMarker({
           id: "multi-highlight-line-marker",
           lineClassName: "highlight-lines",
