@@ -1125,6 +1125,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     }
     case ePointerUp:
       LightDismissOpenPopovers(aEvent, aTargetContent);
+      GenerateMouseEnterExit(mouseEvent);
       break;
     case ePointerGotCapture:
       GenerateMouseEnterExit(mouseEvent);
@@ -3990,15 +3991,18 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       PointerEventHandler::ImplicitlyReleasePointerCapture(pointerEvent);
       PointerEventHandler::UpdateActivePointerState(pointerEvent);
 
-      if (pointerEvent->mMessage == ePointerCancel ||
-          pointerEvent->mInputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
-        
-        
-        
-        
+      if (
+          
+          
+          pointerEvent->mMessage == ePointerCancel ||
+          
+          
+          
+          !pointerEvent->InputSourceSupportsHover()) {
         GenerateMouseEnterExit(pointerEvent);
         mPointersEnterLeaveHelper.Remove(pointerEvent->pointerId);
       }
+
       break;
     }
     case eMouseUp: {
@@ -5422,25 +5426,79 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
       if (targetElement) {
         NotifyMouseOver(aMouseEvent, targetElement);
       }
-    } break;
+      break;
+    }
     case ePointerUp: {
-      
-      nsCOMPtr<nsIContent> targetElement = GetEventTargetContent(aMouseEvent);
-      if (!targetElement) {
+      if (!StaticPrefs::
+              dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed()) {
         
         
         
-        targetElement = mDocument->GetRootElement();
-      }
-      if (targetElement) {
-        RefPtr<OverOutElementsWrapper> helper =
-            GetWrapperByEventID(aMouseEvent);
-        if (helper) {
-          helper->OverrideOverEventTarget(targetElement);
+        
+        
+        
+        if (!aMouseEvent->mFlags.mDispatchedAtLeastOnce) {
+          break;
         }
-        NotifyMouseOut(aMouseEvent, nullptr);
+        MOZ_ASSERT(!aMouseEvent->InputSourceSupportsHover());
+        
+        
+        nsCOMPtr<nsIContent> targetElement = GetEventTargetContent(aMouseEvent);
+        if (!targetElement) {
+          
+          
+          
+          targetElement = mDocument->GetRootElement();
+        }
+        if (targetElement) {
+          
+          
+          
+          
+          
+          RefPtr<OverOutElementsWrapper> helper =
+              GetWrapperByEventID(aMouseEvent);
+          if (helper) {
+            helper->OverrideOverEventTarget(targetElement);
+          }
+          NotifyMouseOut(aMouseEvent, nullptr);
+        }
+        break;
       }
-    } break;
+
+      if (aMouseEvent->mFlags.mDispatchedAtLeastOnce) {
+        
+        
+        
+        
+        if (!aMouseEvent->InputSourceSupportsHover()) {
+          NotifyMouseOut(aMouseEvent, nullptr);
+        }
+        break;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aMouseEvent->InputSourceSupportsHover() ||
+          !PointerEventHandler::GetPointerCapturingElement(
+              aMouseEvent->pointerId)) {
+        nsCOMPtr<nsIContent> targetElement = GetEventTargetContent(aMouseEvent);
+        if (!targetElement) {
+          targetElement = mDocument->GetRootElement();
+        }
+        if (targetElement) {
+          NotifyMouseOver(aMouseEvent, targetElement);
+        }
+        break;
+      }
+      break;
+    }
     case ePointerLeave:
     case ePointerCancel:
     case eMouseExitFromWidget: {
@@ -5465,7 +5523,8 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
       sLastRefPoint = kInvalidRefPoint;
 
       NotifyMouseOut(aMouseEvent, nullptr);
-    } break;
+      break;
+    }
     default:
       break;
   }
