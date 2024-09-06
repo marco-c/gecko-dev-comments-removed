@@ -68,7 +68,6 @@ class nsIFrame;
 class nsILayoutHistoryState;
 class nsINode;
 class nsIReflowCallback;
-class nsIScrollableFrame;
 class nsITimer;
 class nsPageSequenceFrame;
 class nsPIDOMWindowOuter;
@@ -485,7 +484,7 @@ class PresShell final : public nsStubDocumentObserver,
   void PostPendingScrollAnchorAdjustment(
       layout::ScrollAnchorContainer* aContainer);
 
-  void PostPendingScrollResnap(nsIScrollableFrame* aScrollableFrame);
+  void PostPendingScrollResnap(ScrollContainerFrame* aScrollContainerFrame);
   void FlushPendingScrollResnap();
 
   void CancelAllPendingReflows();
@@ -3014,9 +3013,9 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   nsTHashSet<nsIFrame*> mFramesToDirty;
-  nsTHashSet<nsIScrollableFrame*> mPendingScrollAnchorSelection;
-  nsTHashSet<nsIScrollableFrame*> mPendingScrollAnchorAdjustment;
-  nsTHashSet<nsIScrollableFrame*> mPendingScrollResnap;
+  nsTHashSet<ScrollContainerFrame*> mPendingScrollAnchorSelection;
+  nsTHashSet<ScrollContainerFrame*> mPendingScrollAnchorAdjustment;
+  nsTHashSet<ScrollContainerFrame*> mPendingScrollResnap;
 
   nsTHashSet<nsIContent*> mHiddenContentInForcedLayout;
 

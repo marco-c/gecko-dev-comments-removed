@@ -13,7 +13,6 @@
 
 class nsFrameList;
 class nsIFrame;
-class nsIScrollableFrame;
 
 namespace mozilla {
 class ScrollContainerFrame;
@@ -52,9 +51,10 @@ class ScrollAnchorContainer final {
 
 
 
-  nsIScrollableFrame* ScrollableFrame() const;
+  ScrollContainerFrame* ScrollContainer() const;
 
   
+
 
 
 

@@ -973,7 +973,7 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
 
     
     nsRect displayPort;
-    nsIScrollableFrame* sf = do_QueryFrame(currentFrame);
+    ScrollContainerFrame* sf = do_QueryFrame(currentFrame);
     nsIContent* content = sf ? currentFrame->GetContent() : nullptr;
 
     if (content && DisplayPortUtils::GetDisplayPort(content, &displayPort)) {
