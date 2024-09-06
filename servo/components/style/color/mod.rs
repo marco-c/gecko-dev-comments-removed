@@ -21,6 +21,7 @@ use cssparser::color::PredefinedColorSpace;
 
 
 #[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct ColorComponents(pub f32, pub f32, pub f32);
 
@@ -65,6 +66,7 @@ impl std::ops::Div for ColorComponents {
     ToResolvedValue,
     ToShmem,
 )]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
 pub enum ColorSpace {
     
@@ -190,6 +192,7 @@ bitflags! {
 
 
 #[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct AbsoluteColor {
     

@@ -78,6 +78,7 @@ impl Parse for SourceList {
 
 
 #[derive(Clone, Copy, Debug, Eq, Parse, PartialEq, ToCss, ToShmem)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum FontFaceSourceFormatKeyword {
@@ -97,6 +98,7 @@ pub enum FontFaceSourceFormatKeyword {
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToShmem)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct FontFaceSourceTechFlags(u16);
 bitflags! {
@@ -224,6 +226,7 @@ pub enum FontFaceSourceListComponent {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum FontFaceSourceFormat {

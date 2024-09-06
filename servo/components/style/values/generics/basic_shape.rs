@@ -402,7 +402,6 @@ pub enum GenericPathOrShapeFunction<Angle, LengthPercentage> {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Animate,
     Clone,
