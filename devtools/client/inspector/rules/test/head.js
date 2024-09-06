@@ -250,6 +250,8 @@ var openCubicBezierAndChangeCoords = async function (
 
 
 
+
+
 var addProperty = async function (
   view,
   ruleIndex,
@@ -344,9 +346,13 @@ var addProperty = async function (
   view.debounce.flush();
   await onPreview;
 
-  const onValueAdded = view.once("ruleview-changed");
+  if (commitValueWith === null) {
+    return textProp;
+  }
+
+  const onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.synthesizeKey(commitValueWith, {}, view.styleWindow);
-  await onValueAdded;
+  await onRuleViewChanged;
 
   info(
     "Waiting for DOM mutations in case the property was added to the element style"

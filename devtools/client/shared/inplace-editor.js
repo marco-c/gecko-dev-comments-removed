@@ -1369,11 +1369,12 @@ class InplaceEditor extends EventEmitter {
       
       if (this.popup && this.popup.isOpen) {
         this.#hideAutocompletePopup();
+      } else {
+        this.cancelled = true;
+        this.#apply();
+        this.#clear();
       }
       prevent = true;
-      this.cancelled = true;
-      this.#apply();
-      this.#clear();
       event.stopPropagation();
     } else if (isKeyIn(key, "SPACE")) {
       
