@@ -181,6 +181,13 @@ static bool EnsureDNSService() {
 
 bool HTMLDNSPrefetch::IsAllowed(Document* aDocument) {
   
+  
+  nsCOMPtr<nsIPrincipal> principal = aDocument->NodePrincipal();
+  if (principal->IsSystemPrincipal()) {
+    return false;
+  }
+
+  
   return aDocument->IsDNSPrefetchAllowed() && aDocument->GetWindow();
 }
 
