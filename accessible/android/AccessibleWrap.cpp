@@ -403,12 +403,20 @@ int32_t AccessibleWrap::GetInputType(const nsString& aInputTypeAttr) {
 }
 
 void AccessibleWrap::GetTextEquiv(nsString& aText) {
-  if (nsTextEquivUtils::HasNameRule(this, eNameFromSubtreeIfReqRule)) {
+  
+  if (Name(aText) != eNameFromSubtree) {
     
     
-    nsTextEquivUtils::GetTextEquivFromSubtree(this, aText);
-  } else {
-    Name(aText);
+    if (aText.IsEmpty()) {
+      nsTextEquivUtils::GetTextEquivFromSubtree(this, aText);
+    } else {
+      nsAutoString subtree;
+      nsTextEquivUtils::GetTextEquivFromSubtree(this, subtree);
+      if (!subtree.IsEmpty()) {
+        aText.Append(' ');
+        aText.Append(subtree);
+      }
+    }
   }
 }
 
