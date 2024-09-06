@@ -20,9 +20,6 @@ use percent_encoding::percent_decode;
 const GECKO: AsciiDenyList = AsciiDenyList::new(true, "%#/:<>?@[\\]^|*\"");
 
 
-const MAILNEWS: AsciiDenyList = AsciiDenyList::new(true, "#/:<>?@[\\]^|*\"");
-
-
 const GLYPHLESS: AsciiDenyList = AsciiDenyList::new(true, "");
 
 extern "C" {
@@ -87,7 +84,6 @@ pub unsafe extern "C" fn mozilla_net_domain_to_display_impl(
 #[no_mangle]
 pub unsafe extern "C" fn mozilla_net_domain_to_display_and_ascii_impl(
     src: *const nsACString,
-    mailnews: bool,
     dst: *mut nsACString,
     ascii_dst: *mut nsACString,
 ) -> nsresult {
@@ -113,7 +109,7 @@ pub unsafe extern "C" fn mozilla_net_domain_to_display_and_ascii_impl(
         let unpercent: Cow<'_, [u8]> = percent_decode(src).into();
         match Uts46::new().process(
             &unpercent,
-            if mailnews { MAILNEWS } else { GECKO },
+            GECKO,
             Hyphens::Allow,
             ErrorPolicy::FailFast,
             |label, tld, _| unsafe {
