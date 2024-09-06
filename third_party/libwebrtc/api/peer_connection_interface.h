@@ -1003,8 +1003,6 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  
-  
   virtual void RestartIce() = 0;
 
   
@@ -1075,9 +1073,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual bool ShouldFireNegotiationNeededEvent(uint32_t event_id) {
-    return true;
-  }
+  virtual bool ShouldFireNegotiationNeededEvent(uint32_t event_id) = 0;
 
   virtual PeerConnectionInterface::RTCConfiguration GetConfiguration() = 0;
 
@@ -1139,7 +1135,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   virtual void ReconfigureBandwidthEstimation(
-      const BandwidthEstimationSettings& settings) {}
+      const BandwidthEstimationSettings& settings) = 0;
 
   
   
@@ -1147,12 +1143,12 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual void SetAudioPlayout(bool playout) {}
+  virtual void SetAudioPlayout(bool playout) = 0;
 
   
   
   
-  virtual void SetAudioRecording(bool recording) {}
+  virtual void SetAudioRecording(bool recording) = 0;
 
   
   
@@ -1184,19 +1180,16 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
 
   
   
-  virtual absl::optional<bool> can_trickle_ice_candidates() {
-    
-    return absl::nullopt;
-  }
+  virtual absl::optional<bool> can_trickle_ice_candidates() = 0;
 
   
   
   
   
   
-  
-  virtual void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) {}
+  virtual void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) = 0;
 
+  
   
   
   
@@ -1226,8 +1219,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  
-  virtual rtc::Thread* signaling_thread() const { return nullptr; }
+  virtual rtc::Thread* signaling_thread() const = 0;
 
  protected:
   
