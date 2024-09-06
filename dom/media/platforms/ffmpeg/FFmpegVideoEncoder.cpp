@@ -22,6 +22,7 @@
 #include "ImageConversion.h"
 #include "libyuv.h"
 #include "FFmpegRuntimeLinker.h"
+#include <algorithm>
 
 
 
@@ -317,6 +318,25 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
   
   mCodecContext->width = static_cast<int>(mConfig.mSize.width);
   mCodecContext->height = static_cast<int>(mConfig.mSize.height);
+  if (mConfig.mUsage == Usage::Realtime) {
+    mCodecContext->thread_count = 1;
+  } else {
+    int64_t pixels = mCodecContext->width * mCodecContext->height;
+    int threads = 1;
+    
+    
+    if (pixels >= 3840 * 2160) {
+      threads = 16;
+    } else if (pixels >= 1920 * 1080) {
+      threads = 8;
+    } else if (pixels >= 1280 * 720) {
+      threads = 4;
+    } else if (pixels >= 640 * 480) {
+      threads = 2;
+    }
+    mCodecContext->thread_count =
+        std::clamp<int>(threads, 1, GetNumberOfProcessors() - 1);
+  }
   
   
   mCodecContext->time_base =
