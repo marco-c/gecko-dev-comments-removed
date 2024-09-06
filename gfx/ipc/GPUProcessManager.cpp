@@ -715,7 +715,7 @@ bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
   
   if (IsProcessStable(TimeStamp::Now())) {
     if (mProcess) {
-      mProcess->KillProcess();
+      mProcess->KillProcess( false);
     } else {
       SimulateDeviceReset();
     }
@@ -1121,12 +1121,12 @@ void GPUProcessManager::CleanShutdown() {
   mVsyncIOThread = nullptr;
 }
 
-void GPUProcessManager::KillProcess() {
+void GPUProcessManager::KillProcess(bool aGenerateMinidump) {
   if (!mProcess) {
     return;
   }
 
-  mProcess->KillProcess();
+  mProcess->KillProcess(aGenerateMinidump);
 }
 
 void GPUProcessManager::CrashProcess() {

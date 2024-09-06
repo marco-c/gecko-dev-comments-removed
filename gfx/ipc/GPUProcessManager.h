@@ -185,7 +185,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   bool NotifyGpuObservers(const char* aTopic);
 
   
-  void KillProcess();
+  
+  void KillProcess(bool aGenerateMinidump = false);
 
   
   void CrashProcess();

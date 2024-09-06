@@ -111,6 +111,33 @@ bool GPUChild::EnsureGPUReady() {
 
 void GPUChild::OnUnexpectedShutdown() { mUnexpectedShutdown = true; }
 
+void GPUChild::GeneratePairedMinidump() {
+  
+  
+  if (mCrashReporter && mNumPairedMinidumpsCreated < 2) {
+    nsAutoCString additionalDumps("browser");
+    mCrashReporter->AddAnnotationNSCString(
+        CrashReporter::Annotation::additional_minidumps, additionalDumps);
+
+    nsAutoCString reason("GPUProcessKill");
+    mCrashReporter->AddAnnotationNSCString(
+        CrashReporter::Annotation::ipc_channel_error, reason);
+
+    if (mCrashReporter->GenerateMinidumpAndPair(mHost, "browser"_ns)) {
+      mCrashReporter->FinalizeCrashReport();
+      mCreatedPairedMinidumps = true;
+      mNumPairedMinidumpsCreated++;
+    }
+  }
+}
+
+void GPUChild::DeletePairedMinidump() {
+  if (mCrashReporter && mCreatedPairedMinidumps) {
+    mCrashReporter->DeleteCrashReport();
+    mCreatedPairedMinidumps = false;
+  }
+}
+
 mozilla::ipc::IPCResult GPUChild::RecvInitComplete(const GPUDeviceData& aData) {
   
   if (mGPUReady) {
@@ -292,13 +319,17 @@ mozilla::ipc::IPCResult GPUChild::RecvAddMemoryReport(
 
 void GPUChild::ActorDestroy(ActorDestroyReason aWhy) {
   if (aWhy == AbnormalShutdown || mUnexpectedShutdown) {
-    nsAutoString dumpId;
-    GenerateCrashReport(OtherPid(), &dumpId);
-
     Telemetry::Accumulate(
         Telemetry::SUBPROCESS_ABNORMAL_ABORT,
         nsDependentCString(XRE_GeckoProcessTypeToString(GeckoProcessType_GPU)),
         1);
+
+    nsAutoString dumpId;
+    if (!mCreatedPairedMinidumps) {
+      GenerateCrashReport(OtherPid(), &dumpId);
+    } else if (mCrashReporter) {
+      dumpId = mCrashReporter->MinidumpID();
+    }
 
     
     
