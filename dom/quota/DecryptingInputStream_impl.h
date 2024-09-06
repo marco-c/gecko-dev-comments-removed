@@ -313,13 +313,31 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
+  int64_t baseCurrent;
+  nsresult rv = (*mBaseSeekableStream)->Tell(&baseCurrent);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return Err(rv);
+  }
+
   
   
   int64_t current;
-  nsresult rv = Tell(&current);
+  rv = Tell(&current);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+
+  
+  auto autoRestorePreviousState =
+      MakeScopeExit([baseSeekableStream = *mBaseSeekableStream,
+                     savedBaseCurrent = baseCurrent,
+                     savedPlainBytes = mPlainBytes, savedNextByte = mNextByte,
+                     &plainBytes = mPlainBytes, &nextByte = mNextByte] {
+        nsresult rv = baseSeekableStream->Seek(NS_SEEK_SET, savedBaseCurrent);
+        Unused << NS_WARN_IF(NS_FAILED(rv));
+        plainBytes = savedPlainBytes;
+        nextByte = savedNextByte;
+      });
 
   
   auto decryptedStreamSizeOrErr = [this]() -> Result<int64_t, nsresult> {
@@ -412,7 +430,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
   uint32_t readBytes;
   rv = ParseNextChunk(&readBytes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    
     return rv;
   }
 
@@ -433,7 +450,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
 
     rv = ParseNextChunk(&readBytes);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      
       return rv;
     }
 
@@ -450,6 +466,8 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
 
   mPlainBytes = readBytes;
   mNextByte = nextByteOffset;
+
+  autoRestorePreviousState.release();
 
   return NS_OK;
 }

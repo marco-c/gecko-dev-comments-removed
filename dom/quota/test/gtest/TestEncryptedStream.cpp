@@ -763,33 +763,6 @@ class ParametrizedSeekCryptTest
       }();
       nsresult rv = inStream->Seek(std::get<0>(seekOp), offset);
       EXPECT_EQ(std::get<2>(seekOp), rv);
-      
-      if (std::get<0>(seekOp) == nsISeekableStream::NS_SEEK_END &&
-          std::get<1>(seekOp) == SeekOffset::PlusOne &&
-          testParams.mDataSize != 0) {
-        
-        
-        
-        return;
-      }
-      
-      if (std::get<0>(seekOp) == nsISeekableStream::NS_SEEK_CUR &&
-          std::get<1>(seekOp) == SeekOffset::MinusOne &&
-          testParams.mDataSize != 0) {
-        
-        
-        
-        return;
-      }
-      
-      if (std::get<0>(seekOp) == nsISeekableStream::NS_SEEK_END &&
-          std::get<1>(seekOp) == SeekOffset::MinusDataSizeAndOne &&
-          testParams.mDataSize != 0) {
-        
-        
-        
-        return;
-      }
       if (NS_SUCCEEDED(rv)) {
         switch (std::get<0>(seekOp)) {
           case nsISeekableStream::NS_SEEK_SET:
