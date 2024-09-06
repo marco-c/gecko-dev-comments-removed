@@ -772,7 +772,12 @@ bool SVGGeometryFrame::CreateWebRenderCommands(
     
     
     
-    float elemOpacity = StyleEffects()->mOpacity;
+
+    float elemOpacity = 1.0f;
+    if (SVGUtils::CanOptimizeOpacity(this)) {
+      elemOpacity = StyleEffects()->mOpacity;
+    }
+
     float fillOpacity = SVGUtils::GetOpacity(style->mFillOpacity, contextPaint);
     float opacity = elemOpacity * fillOpacity;
 
