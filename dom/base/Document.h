@@ -3630,6 +3630,10 @@ class Document : public nsINode,
   bool ForceLoadAtTop() const { return mForceLoadAtTop; }
 
   
+  bool FireMutationEvents() const { return mFireMutationEvents; }
+  void SetFireMutationEvents(bool aFire) { mFireMutationEvents = aFire; }
+
+  
   
   
   
@@ -4900,6 +4904,8 @@ class Document : public nsINode,
   bool mSuspendDOMNotifications : 1;
 
   bool mForceLoadAtTop : 1;
+
+  bool mFireMutationEvents : 1;
 
   
   

@@ -5220,6 +5220,9 @@ bool nsContentUtils::HasNonEmptyAttr(const nsIContent* aContent,
 bool nsContentUtils::WantMutationEvents(nsINode* aNode, uint32_t aType,
                                         nsINode* aTargetForSubtreeModified) {
   Document* doc = aNode->OwnerDoc();
+  if (!doc->FireMutationEvents()) {
+    return false;
+  }
 
   
   nsPIDOMWindowInner* window = doc->GetInnerWindow();

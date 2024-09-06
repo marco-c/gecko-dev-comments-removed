@@ -1400,6 +1400,7 @@ Document::Document(const char* aContentType)
       mAllowDeclarativeShadowRoots(false),
       mSuspendDOMNotifications(false),
       mForceLoadAtTop(false),
+      mFireMutationEvents(true),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -9839,6 +9840,9 @@ Document* Document::Open(const Optional<nsAString>& ,
 
   
   
+
+  
+  
   
   
   if (shell && IsCurrentActiveDocument() &&
@@ -9892,7 +9896,11 @@ Document* Document::Open(const Optional<nsAString>& ,
   }
 
   
+  
   {
+    bool oldFlag = FireMutationEvents();
+    SetFireMutationEvents(false);
+
     
     
     
@@ -9900,6 +9908,7 @@ Document* Document::Open(const Optional<nsAString>& ,
     
     IgnoreOpensDuringUnload ignoreOpenGuard(this);
     DisconnectNodeTree();
+    SetFireMutationEvents(oldFlag);
   }
 
   
@@ -10003,8 +10012,6 @@ Document* Document::Open(const Optional<nsAString>& ,
   
   SetReadyStateInternal(Document::READYSTATE_LOADING,
                          false);
-
-  
 
   
   return this;
