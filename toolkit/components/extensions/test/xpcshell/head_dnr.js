@@ -46,6 +46,10 @@ const getSchemaNormalizedRule = (extensionTestWrapper, value) => {
     },
     preprocessors: {},
     manifestVersion: extension.manifestVersion,
+    
+    
+    
+    ignoreUnrecognizedProperties: false,
   };
 
   return Schemas.normalize(
