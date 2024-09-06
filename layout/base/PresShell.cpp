@@ -3093,11 +3093,16 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
   
   
   
+  
+  
+  
+  
+  
+  
   Element* textFragmentTargetElement = [&aFirstTextDirective]() -> Element* {
-    nsINode* node =
-        aFirstTextDirective
-            ? aFirstTextDirective->GetClosestCommonInclusiveAncestor()
-            : nullptr;
+    nsINode* node = aFirstTextDirective
+                        ? aFirstTextDirective->GetStartContainer()
+                        : nullptr;
     while (node && !node->IsElement()) {
       node = node->GetParent();
     }
