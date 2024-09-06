@@ -3542,7 +3542,6 @@ XMLHttpRequestMainThread::AsyncOnChannelRedirect(
   
   
   bool stripAuth =
-      StaticPrefs::network_fetch_redirect_stripAuthHeader() &&
       NS_ShouldRemoveAuthHeaderOnRedirect(aOldChannel, aNewChannel, aFlags);
 
   OnRedirectVerifyCallback(NS_OK, stripAuth);
