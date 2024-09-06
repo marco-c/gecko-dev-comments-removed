@@ -4099,3 +4099,15 @@ pref("extensions.webcompat.useScriptingAPI", true);
 pref("privacy.fingerprintingProtection.WebCompatService.logLevel", "Error");
 
 pref("privacy.query_stripping.strip_on_share.enableTestMode", false);
+
+
+pref("places.history.floodingPrevention.enabled", false);
+
+
+pref("places.history.floodingPrevention.restrictionCount", 3);
+
+
+pref("places.history.floodingPrevention.restrictionExpireSeconds", 5);
+
+
+pref("places.history.floodingPrevention.maxSecondsFromLastUserInteraction", 3);
