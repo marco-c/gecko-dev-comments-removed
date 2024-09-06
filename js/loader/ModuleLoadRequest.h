@@ -87,13 +87,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     return mRootModule;
   }
 
-  bool IsModuleMarkedForBytecodeEncoding() const {
-    return mIsMarkedForBytecodeEncoding;
-  }
-  void MarkModuleForBytecodeEncoding() {
-    MOZ_ASSERT(!IsModuleMarkedForBytecodeEncoding());
-    mIsMarkedForBytecodeEncoding = true;
-  }
+  void MarkModuleForBytecodeEncoding() { MarkForBytecodeEncoding(); }
 
   
 
@@ -136,11 +130,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   
   const bool mIsDynamicImport;
-
-  
-  
-  
-  bool mIsMarkedForBytecodeEncoding = false;
 
   
   

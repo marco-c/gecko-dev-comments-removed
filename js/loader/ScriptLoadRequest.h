@@ -182,9 +182,33 @@ class ScriptLoadRequest : public nsISupports,
 
   void SetPendingFetchingError();
 
-  void MarkForBytecodeEncoding(JSScript* aScript);
+  bool PassedConditionForBytecodeEncoding() const {
+    return mBytecodeEncodingPlan == BytecodeEncodingPlan::PassedCondition ||
+           mBytecodeEncodingPlan == BytecodeEncodingPlan::MarkedForEncode;
+  }
 
-  bool IsMarkedForBytecodeEncoding() const;
+  void MarkSkippedBytecodeEncoding() {
+    MOZ_ASSERT(mBytecodeEncodingPlan == BytecodeEncodingPlan::Uninitialized);
+    mBytecodeEncodingPlan = BytecodeEncodingPlan::Skipped;
+  }
+
+  void MarkPassedConditionForBytecodeEncoding() {
+    MOZ_ASSERT(mBytecodeEncodingPlan == BytecodeEncodingPlan::Uninitialized);
+    mBytecodeEncodingPlan = BytecodeEncodingPlan::PassedCondition;
+  }
+
+  bool IsMarkedForBytecodeEncoding() const {
+    return mBytecodeEncodingPlan == BytecodeEncodingPlan::MarkedForEncode;
+  }
+
+ protected:
+  void MarkForBytecodeEncoding() {
+    MOZ_ASSERT(mBytecodeEncodingPlan == BytecodeEncodingPlan::PassedCondition);
+    mBytecodeEncodingPlan = BytecodeEncodingPlan::MarkedForEncode;
+  }
+
+ public:
+  void MarkScriptForBytecodeEncoding(JSScript* aScript);
 
   mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
 
@@ -218,6 +242,23 @@ class ScriptLoadRequest : public nsISupports,
   State mState;           
   bool mFetchSourceOnly;  
 
+  enum class BytecodeEncodingPlan : uint8_t {
+    
+    Uninitialized,
+
+    
+    Skipped,
+
+    
+    PassedCondition,
+
+    
+    
+    MarkedForEncode,
+  };
+  BytecodeEncodingPlan mBytecodeEncodingPlan =
+      BytecodeEncodingPlan::Uninitialized;
+
   
   
   enum mozilla::dom::ReferrerPolicy mReferrerPolicy;
@@ -246,7 +287,6 @@ class ScriptLoadRequest : public nsISupports,
   
   RefPtr<LoadedScript> mLoadedScript;
 
-  
   
   
   
