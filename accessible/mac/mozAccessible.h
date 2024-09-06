@@ -245,6 +245,9 @@ enum CheckedState {
 
 - (id)moxFocusableAncestor;
 
+
+- (NSString*)moxLanguage;
+
 #ifndef RELEASE_OR_BETA
 
 - (NSString*)moxMozDebugDescription;

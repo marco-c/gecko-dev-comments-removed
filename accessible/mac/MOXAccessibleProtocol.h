@@ -339,6 +339,9 @@
 - (NSString* _Nullable)moxPlaceholderValue;
 
 
+- (NSString* _Nullable)moxLanguage;
+
+
 - (NSString* _Nullable)moxMozDebugDescription;
 
 #pragma mark - AttributeSetters

@@ -85,3 +85,21 @@ addAccessibleTask(
   },
   { chrome: true, iframe: true, remoteIframe: true }
 );
+
+
+addAccessibleTask(
+  `<p id="ar">العربية</p>
+   <p id="es" lang="es">Español</p>`,
+  async (browser, accDoc) => {
+    const es = getNativeInterface(accDoc, "es");
+    const ar = getNativeInterface(accDoc, "ar");
+    const firstChild = a => a.getAttributeValue("AXChildren")[0];
+
+    is(es.getAttributeValue("AXLanguage"), "es");
+    is(firstChild(es).getAttributeValue("AXLanguage"), "es");
+
+    is(ar.getAttributeValue("AXLanguage"), "ar");
+    is(firstChild(ar).getAttributeValue("AXLanguage"), "ar");
+  },
+  { chrome: true, contentDocBodyAttrs: { lang: "ar" } }
+);
