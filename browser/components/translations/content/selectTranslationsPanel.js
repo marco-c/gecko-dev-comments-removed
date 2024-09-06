@@ -308,7 +308,9 @@ var SelectTranslationsPanel = new (class {
 
     
     
-    const { docLangTag, isDocLangTagSupported } = this.#languageInfo;
+    const { docLangTag, isDocLangTagSupported } = this.#getLanguageInfo(
+       true
+    );
     if (isDocLangTagSupported) {
       return docLangTag;
     }
@@ -325,12 +327,19 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  #maybeCacheLanguageInfo() {
+
+
+  #getLanguageInfo(forceFetch = false) {
+    if (!forceFetch && this.#languageInfo.docLangTag !== undefined) {
+      return this.#languageInfo;
+    }
+
     this.#languageInfo = {
       docLangTag: undefined,
       isDocLangTagSupported: undefined,
       topPreferredLanguage: undefined,
     };
+
     try {
       const actor = TranslationsParent.getTranslationsActor(
         gBrowser.selectedBrowser
@@ -527,8 +536,8 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
-    const { docLangTag, topPreferredLanguage } = this.#maybeCacheLanguageInfo();
     const { fromLanguage, toLanguage } = await langPairPromise;
+    const { docLangTag, topPreferredLanguage } = this.#getLanguageInfo();
 
     TranslationsParent.telemetry().selectTranslationsPanel().onOpen({
       maintainFlow,
@@ -1943,7 +1952,7 @@ var SelectTranslationsPanel = new (class {
     const { detectedLanguage } = this.#translationState;
 
     if (this.#mostRecentUIPhase !== "unsupported") {
-      const { docLangTag } = this.#languageInfo;
+      const { docLangTag } = this.#getLanguageInfo();
       TranslationsParent.telemetry()
         .selectTranslationsPanel()
         .onUnsupportedLanguageMessage({ docLangTag, detectedLanguage });
@@ -2055,7 +2064,7 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
-    const { docLangTag, topPreferredLanguage } = this.#languageInfo;
+    const { docLangTag, topPreferredLanguage } = this.#getLanguageInfo();
     const sourceText = this.getSourceText();
     const translationId = ++this.#translationId;
 
