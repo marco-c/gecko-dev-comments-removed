@@ -26,13 +26,13 @@ using namespace js::gc;
 
 
 
-static constexpr size_t NormalSiteAttentionThreshold = 500;
+static constexpr size_t NormalSiteAttentionThreshold = 200;
 static constexpr size_t UnknownSiteAttentionThreshold = 30000;
 
 
 
 
-static constexpr size_t MaxAllocSitesPerMinorGC = 500;
+static constexpr size_t MaxAllocSitesPerMinorGC = 600;
 
 
 
