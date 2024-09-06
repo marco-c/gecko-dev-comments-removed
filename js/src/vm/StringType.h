@@ -218,31 +218,50 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   
   template <typename CharT>
   class OwnedChars {
+   public:
+    enum class Kind {
+      
+      Uninitialized,
+
+      
+      Nursery,
+
+      
+      
+      
+      Malloc,
+    };
+
+   private:
     mozilla::Span<CharT> chars_;
-    bool needsFree_;
-    bool isMalloced_;
+    Kind kind_ = Kind::Uninitialized;
 
    public:
-    
-    
-    
-    
-    
-    
-    
-    OwnedChars(CharT* chars, size_t length, bool isMalloced, bool needsFree);
-    OwnedChars(js::UniquePtr<CharT[], JS::FreePolicy>&& chars, size_t length,
-               bool isMalloced);
+    OwnedChars() = default;
+    OwnedChars(CharT* chars, size_t length, Kind kind);
+    OwnedChars(js::UniquePtr<CharT[], JS::FreePolicy>&& chars, size_t length);
     OwnedChars(OwnedChars&&);
     OwnedChars(const OwnedChars&) = delete;
     ~OwnedChars() { reset(); }
 
-    explicit operator bool() const { return !chars_.empty(); }
-    mozilla::Span<CharT> span() const { return chars_; }
-    CharT* data() const { return chars_.data(); }
-    size_t length() const { return chars_.Length(); }
+    explicit operator bool() const {
+      MOZ_ASSERT_IF(kind_ != Kind::Uninitialized, !chars_.empty());
+      return kind_ != Kind::Uninitialized;
+    }
+    mozilla::Span<CharT> span() const {
+      MOZ_ASSERT(kind_ != Kind::Uninitialized);
+      return chars_;
+    }
+    CharT* data() const {
+      MOZ_ASSERT(kind_ != Kind::Uninitialized);
+      return chars_.data();
+    }
+    size_t length() const {
+      MOZ_ASSERT(kind_ != Kind::Uninitialized);
+      return chars_.Length();
+    }
     size_t size() const { return length() * sizeof(CharT); }
-    bool isMalloced() const { return isMalloced_; }
+    bool isMalloced() const { return kind_ == Kind::Malloc; }
 
     
     inline CharT* release();

@@ -165,57 +165,48 @@ static MOZ_ALWAYS_INLINE JSLinearString* TryEmptyOrStaticString(
 } 
 
 template <typename CharT>
-JSString::OwnedChars<CharT>::OwnedChars(CharT* chars, size_t length,
-                                        bool isMalloced, bool needsFree)
-    : needsFree_(chars && needsFree), isMalloced_(chars && isMalloced) {
-  
-  
-  
-  
-  MOZ_ASSERT_IF(length == 0,
-                chars == nullptr);  
-  MOZ_ASSERT_IF(needsFree_, isMalloced_);
-  if (chars) {
-    MOZ_ASSERT(isMalloced_ == !js::TlsContext.get()->nursery().isInside(chars));
-  } else {
-    MOZ_ASSERT(!isMalloced_);
-    MOZ_ASSERT(!needsFree_);
-  }
-
-  chars_ = mozilla::Span<CharT>(chars, chars ? length : 0);
+JSString::OwnedChars<CharT>::OwnedChars(CharT* chars, size_t length, Kind kind)
+    : chars_(chars, length), kind_(kind) {
+  MOZ_ASSERT(kind != Kind::Uninitialized);
+  MOZ_ASSERT(length > 0);
+  MOZ_ASSERT(chars);
+#ifdef DEBUG
+  bool inNursery = js::TlsContext.get()->nursery().isInside(chars);
+  MOZ_ASSERT((kind == Kind::Nursery) == inNursery);
+#endif
 }
 
 template <typename CharT>
 JSString::OwnedChars<CharT>::OwnedChars(JSString::OwnedChars<CharT>&& other)
-    : OwnedChars(other.chars_.Length() ? other.chars_.data() : nullptr,
-                 other.chars_.Length(), other.isMalloced_, other.needsFree_) {
-  
-  
-  
-  
-
-  
-  
+    : chars_(other.chars_), kind_(other.kind_) {
   other.release();
 }
 
 template <typename CharT>
 CharT* JSString::OwnedChars<CharT>::release() {
-  needsFree_ = false;
-  return chars_.data();
+  CharT* chars = chars_.data();
+  chars_ = {};
+  kind_ = Kind::Uninitialized;
+  return chars;
 }
 
 template <typename CharT>
 void JSString::OwnedChars<CharT>::reset() {
-  if (needsFree_) {
-    js_free(chars_.data());
-    needsFree_ = false;
+  switch (kind_) {
+    case Kind::Uninitialized:
+    case Kind::Nursery:
+      break;
+    case Kind::Malloc:
+      js_free(chars_.data());
+      break;
   }
+  chars_ = {};
+  kind_ = Kind::Uninitialized;
 }
 
 template <typename CharT>
 void JSString::OwnedChars<CharT>::ensureNonNursery() {
-  if (isMalloced() || !data()) {
+  if (kind_ != Kind::Nursery) {
     return;
   }
 
@@ -228,14 +219,13 @@ void JSString::OwnedChars<CharT>::ensureNonNursery() {
   }
   mozilla::PodCopy(ptr, oldPtr, length);
   chars_ = mozilla::Span<CharT>(ptr, length);
-  isMalloced_ = needsFree_ = true;
+  kind_ = Kind::Malloc;
 }
 
 template <typename CharT>
 JSString::OwnedChars<CharT>::OwnedChars(
-    js::UniquePtr<CharT[], JS::FreePolicy>&& chars, size_t length,
-    bool isMalloced)
-    : OwnedChars(chars.release(), length, isMalloced, true) {}
+    js::UniquePtr<CharT[], JS::FreePolicy>&& chars, size_t length)
+    : OwnedChars(chars.release(), length, Kind::Malloc) {}
 
 MOZ_ALWAYS_INLINE bool JSString::validateLength(JSContext* maybecx,
                                                 size_t length) {
