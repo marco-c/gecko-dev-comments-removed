@@ -179,11 +179,6 @@ impl HitTestingScene {
         }
     }
 
-    pub fn reset(&mut self) {
-        self.clip_nodes.clear();
-        self.items.clear();
-    }
-
     
     pub fn get_stats(&self) -> HitTestingSceneStats {
         HitTestingSceneStats {
