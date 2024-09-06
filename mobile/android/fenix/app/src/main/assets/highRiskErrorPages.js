@@ -6,37 +6,39 @@
 
 
 function parseQuery(queryString) {
-    if (queryString[0] === '?') {
-        queryString = queryString.substr(1);
-    }
-    const query = Object.fromEntries(new URLSearchParams(queryString).entries());
-    injectValues(query);
-};
+  if (queryString[0] === "?") {
+    queryString = queryString.substr(1);
+  }
+  const query = Object.fromEntries(new URLSearchParams(queryString).entries());
+  injectValues(query);
+}
 
 
 
 
 function injectValues(queryMap) {
-    
-    document.title = queryMap.title;
-    document.getElementById('errorTitleText').innerHTML = queryMap.title;
-    document.getElementById('errorShortDesc').innerHTML = queryMap.description;
+  
+  document.title = queryMap.title;
+  document.getElementById("errorTitleText").innerHTML = queryMap.title;
+  document.getElementById("errorShortDesc").innerHTML = queryMap.description;
 
-    
-    const errorImage = document.getElementById('errorImage');
-    if (!queryMap.image) {
-        errorImage.remove();
-    } else  {
-        errorImage.src = "resource://android/assets/" + queryMap.image;
-    }
+  
+  const errorImage = document.getElementById("errorImage");
+  if (!queryMap.image) {
+    errorImage.remove();
+  } else {
+    errorImage.src = "resource://android/assets/" + queryMap.image;
+  }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    if (window.history.length == 1) {
-        document.getElementById('backButton').style.display = 'none';
-    } else {
-        document.getElementById('backButton').addEventListener('click', () => window.history.back() );
-    }
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.history.length == 1) {
+    document.getElementById("backButton").style.display = "none";
+  } else {
+    document
+      .getElementById("backButton")
+      .addEventListener("click", () => window.history.back());
+  }
 });
 
 parseQuery(document.documentURI);

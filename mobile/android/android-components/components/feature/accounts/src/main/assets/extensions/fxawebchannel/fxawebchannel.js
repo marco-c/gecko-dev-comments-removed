@@ -10,16 +10,18 @@ let port = browser.runtime.connectNative("mozacWebchannel");
 
 
 
-port.onMessage.addListener((event) => {
-  window.dispatchEvent(new CustomEvent('WebChannelMessageToContent', {
-    detail: JSON.stringify(event)
-  }));
+port.onMessage.addListener(event => {
+  window.dispatchEvent(
+    new CustomEvent("WebChannelMessageToContent", {
+      detail: JSON.stringify(event),
+    })
+  );
 });
 
 
 
 
-window.addEventListener('WebChannelMessageToChrome', function (e) {
+window.addEventListener("WebChannelMessageToChrome", function (e) {
   const detail = JSON.parse(e.detail);
   port.postMessage(detail);
 });

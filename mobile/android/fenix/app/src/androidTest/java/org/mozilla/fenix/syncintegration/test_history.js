@@ -8,26 +8,18 @@
 
 EnableEngines(["history"]);
 
-var phases = { "phase1": "profile1" };
-
+var phases = { phase1: "profile1" };
 
 
 var historyCreated = [
-    { uri: "http://www.example.com/",
-      visits: [
-        { type: 1 ,
-          date: 0
-        },
-        { type: 2,
-          date: -1
-      	}
-      ]
-    }
+  {
+    uri: "http://www.example.com/",
+    visits: [
+      { type: 1, date: 0 },
+      { type: 2, date: -1 },
+    ],
+  },
 ];
 
 
-Phase("phase1", [
-  [Sync],
-  [History.add, historyCreated],
-  [Sync]
-]);
+Phase("phase1", [[Sync], [History.add, historyCreated], [Sync]]);

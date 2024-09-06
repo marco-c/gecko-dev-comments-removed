@@ -15,11 +15,10 @@ const preservedClasses = [
   "visuallyhidden",
   "wp-caption",
   "wp-caption-text",
-  "wp-smiley"
+  "wp-smiley",
 ];
 
 class ReaderView {
-
   static get MIN_FONT_SIZE() {
     return 1;
   }
@@ -37,18 +36,24 @@ class ReaderView {
 
 
 
-  show(doc, url, options = {fontSize: 4, fontType: "sans-serif", colorScheme: "light"}) {
-    let result = new Readability(doc, {classesToPreserve: preservedClasses}).parse();
+  show(
+    doc,
+    url,
+    options = { fontSize: 4, fontType: "sans-serif", colorScheme: "light" }
+  ) {
+    let result = new Readability(doc, {
+      classesToPreserve: preservedClasses,
+    }).parse();
     result.language = doc.documentElement.lang;
     document.title = result.title;
 
     let article = Object.assign(
       result,
-      {url: new URL(url)},
-      {readingTime: this.getReadingTime(result.length, result.language)},
-      {byline: this.getByline(result)},
-      {dir: this.getTextDirection(result)},
-      {title: this.getTitle(result)}
+      { url: new URL(url) },
+      { readingTime: this.getReadingTime(result.length, result.language) },
+      { byline: this.getByline(result) },
+      { dir: this.getTextDirection(result) },
+      { title: this.getTitle(result) }
     );
 
     document.body.outerHTML = this.createHtmlBody(article);
@@ -57,7 +62,7 @@ class ReaderView {
     this.setFontType(options.fontType);
     this.setColorScheme(options.colorScheme);
     if (options.scrollY) {
-      window.scrollTo({top: options.scrollY, left: 0, behavior: "instant"});
+      window.scrollTo({ top: options.scrollY, left: 0, behavior: "instant" });
     }
   }
 
@@ -68,7 +73,10 @@ class ReaderView {
 
 
   changeFontSize(changeAmount) {
-    var size = Math.max(ReaderView.MIN_FONT_SIZE, Math.min(ReaderView.MAX_FONT_SIZE, this.fontSize + changeAmount));
+    var size = Math.max(
+      ReaderView.MIN_FONT_SIZE,
+      Math.min(ReaderView.MAX_FONT_SIZE, this.fontSize + changeAmount)
+    );
     this.setFontSize(size);
   }
 
@@ -79,7 +87,7 @@ class ReaderView {
 
 
   setFontSize(fontSize) {
-    let size = (10 + 2 * fontSize) + "px";
+    let size = 10 + 2 * fontSize + "px";
     let readerView = document.getElementById("mozac-readerview-container");
     readerView.style.setProperty("font-size", size);
     this.fontSize = fontSize;
@@ -108,8 +116,8 @@ class ReaderView {
 
 
   setColorScheme(colorScheme) {
-    if(!['light', 'sepia', 'dark'].includes(colorScheme)) {
-      console.error(`Invalid color scheme specified: ${colorScheme}`)
+    if (!["light", "sepia", "dark"].includes(colorScheme)) {
+      console.error(`Invalid color scheme specified: ${colorScheme}`);
       return;
     }
 
@@ -152,7 +160,7 @@ class ReaderView {
           </div>
         </div>
       </body>
-    `
+    `;
   }
 
   
@@ -162,17 +170,21 @@ class ReaderView {
 
 
   getReadingTime(length, lang = "en") {
-    const [readingSpeed, readingSpeedLang] = this.getReadingSpeedForLanguage(lang);
+    const [readingSpeed, readingSpeedLang] =
+      this.getReadingSpeedForLanguage(lang);
     const charactersPerMinuteLow = readingSpeed.cpm - readingSpeed.variance;
     const charactersPerMinuteHigh = readingSpeed.cpm + readingSpeed.variance;
     const readingTimeMinsSlow = Math.ceil(length / charactersPerMinuteLow);
-    const readingTimeMinsFast  = Math.ceil(length / charactersPerMinuteHigh);
+    const readingTimeMinsFast = Math.ceil(length / charactersPerMinuteHigh);
 
     
     
     
     try {
-      var parts = new Intl.RelativeTimeFormat(readingSpeedLang).formatToParts(readingTimeMinsSlow, 'minute');
+      var parts = new Intl.RelativeTimeFormat(readingSpeedLang).formatToParts(
+        readingTimeMinsSlow,
+        "minute"
+      );
       if (parts.length == 3) {
         
         var readingTime = parts[1].value; 
@@ -183,8 +195,7 @@ class ReaderView {
         }
         return readingTimeString;
       }
-    }
-    catch(error) {
+    } catch (error) {
       console.error(`Failed to format reading time: ${error}`);
     }
 
@@ -202,60 +213,62 @@ class ReaderView {
 
   getReadingSpeedForLanguage(lang) {
     const readingSpeed = new Map([
-      [ "en", {cpm: 987,  variance: 118 } ],
-      [ "ar", {cpm: 612,  variance: 88 } ],
-      [ "de", {cpm: 920,  variance: 86 } ],
-      [ "es", {cpm: 1025, variance: 127 } ],
-      [ "fi", {cpm: 1078, variance: 121 } ],
-      [ "fr", {cpm: 998,  variance: 126 } ],
-      [ "he", {cpm: 833,  variance: 130 } ],
-      [ "it", {cpm: 950,  variance: 140 } ],
-      [ "jw", {cpm: 357,  variance: 56 } ],
-      [ "nl", {cpm: 978,  variance: 143 } ],
-      [ "pl", {cpm: 916,  variance: 126 } ],
-      [ "pt", {cpm: 913,  variance: 145 } ],
-      [ "ru", {cpm: 986,  variance: 175 } ],
-      [ "sk", {cpm: 885,  variance: 145 } ],
-      [ "sv", {cpm: 917,  variance: 156 } ],
-      [ "tr", {cpm: 1054, variance: 156 } ],
-      [ "zh", {cpm: 255,  variance: 29 } ],
+      ["en", { cpm: 987, variance: 118 }],
+      ["ar", { cpm: 612, variance: 88 }],
+      ["de", { cpm: 920, variance: 86 }],
+      ["es", { cpm: 1025, variance: 127 }],
+      ["fi", { cpm: 1078, variance: 121 }],
+      ["fr", { cpm: 998, variance: 126 }],
+      ["he", { cpm: 833, variance: 130 }],
+      ["it", { cpm: 950, variance: 140 }],
+      ["jw", { cpm: 357, variance: 56 }],
+      ["nl", { cpm: 978, variance: 143 }],
+      ["pl", { cpm: 916, variance: 126 }],
+      ["pt", { cpm: 913, variance: 145 }],
+      ["ru", { cpm: 986, variance: 175 }],
+      ["sk", { cpm: 885, variance: 145 }],
+      ["sv", { cpm: 917, variance: 156 }],
+      ["tr", { cpm: 1054, variance: 156 }],
+      ["zh", { cpm: 255, variance: 29 }],
     ]);
 
-    return readingSpeed.has(lang) ? [readingSpeed.get(lang), lang] : [readingSpeed.get("en"), "en"];
-   }
+    return readingSpeed.has(lang)
+      ? [readingSpeed.get(lang), lang]
+      : [readingSpeed.get("en"), "en"];
+  }
 
-   getByline(article) {
-     return article.byline || "";
-   }
+  getByline(article) {
+    return article.byline || "";
+  }
 
-   
+  
 
 
 
-   getTextDirection(article) {
-     if (article.dir) {
-       return article.dir;
-     }
+  getTextDirection(article) {
+    if (article.dir) {
+      return article.dir;
+    }
 
-     if (["ar", "fa", "he", "ug", "ur"].includes(article.language)) {
-       return "rtl";
-     }
+    if (["ar", "fa", "he", "ug", "ur"].includes(article.language)) {
+      return "rtl";
+    }
 
-     return "ltr";
-   }
+    return "ltr";
+  }
 
-   getTitle(article) {
-     return article.title || "";
-   }
+  getTitle(article) {
+    return article.title || "";
+  }
 
-   escapeHTML(text) {
-     return text
-       .replace(/\&/g, "&amp;")
-       .replace(/\</g, "&lt;")
-       .replace(/\>/g, "&gt;")
-       .replace(/\"/g, "&quot;")
-       .replace(/\'/g, "&#039;");
-   }
+  escapeHTML(text) {
+    return text
+      .replace(/\&/g, "&amp;")
+      .replace(/\</g, "&lt;")
+      .replace(/\>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/\'/g, "&#039;");
+  }
 }
 
 function fetchDocument(url) {
@@ -282,16 +295,16 @@ function fetchDocument(url) {
 
 function getPreparedDocument(id, url) {
   return new Promise((resolve, reject) => {
-
-    browser.runtime.sendMessage({action: "getSerializedDoc", id: id}).then((serializedDoc) => {
+    browser.runtime
+      .sendMessage({ action: "getSerializedDoc", id: id })
+      .then(serializedDoc => {
         if (serializedDoc) {
           let doc = new JSDOMParser().parse(serializedDoc, url);
           resolve(doc);
         } else {
           reject();
         }
-      }
-    );
+      });
   });
 }
 
@@ -306,23 +319,26 @@ function connectNativePort() {
   let baseUrl = browser.runtime.getURL("/");
 
   let port = browser.runtime.connectNative("mozacReaderviewActive");
-  port.onMessage.addListener((message) => {
+  port.onMessage.addListener(message => {
     switch (message.action) {
-      case 'show':
+      case "show":
         async function showAsync(options) {
           try {
             let doc;
             if (typeof Promise.any === "function") {
-              doc = await Promise.any([fetchDocument(articleUrl), getPreparedDocument(id, articleUrl)]);
+              doc = await Promise.any([
+                fetchDocument(articleUrl),
+                getPreparedDocument(id, articleUrl),
+              ]);
             } else {
               try {
                 doc = await getPreparedDocument(id, articleUrl);
-              } catch(e) {
+              } catch (e) {
                 doc = await fetchDocument(articleUrl);
               }
             }
             readerView.show(doc, articleUrl, options);
-          } catch(e) {
+          } catch (e) {
             console.log(e);
             
             
@@ -332,19 +348,23 @@ function connectNativePort() {
         }
         showAsync(message.value);
         break;
-      case 'hide':
+      case "hide":
         window.location.href = articleUrl;
-      case 'setColorScheme':
+      case "setColorScheme":
         readerView.setColorScheme(message.value.toLowerCase());
         break;
-      case 'changeFontSize':
+      case "changeFontSize":
         readerView.changeFontSize(message.value);
         break;
-      case 'setFontType':
+      case "setFontType":
         readerView.setFontType(message.value.toLowerCase());
         break;
-      case 'checkReaderState':
-        port.postMessage({baseUrl: baseUrl, activeUrl: articleUrl, readerable: true});
+      case "checkReaderState":
+        port.postMessage({
+          baseUrl: baseUrl,
+          activeUrl: articleUrl,
+          readerable: true,
+        });
         break;
       default:
         console.error(`Received invalid action ${message.action}`);

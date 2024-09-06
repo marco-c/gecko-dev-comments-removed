@@ -6,52 +6,56 @@
 
 
 function parseQuery(queryString) {
-    if (queryString[0] === '?') {
-        queryString = queryString.substr(1);
-    }
-    const query = Object.fromEntries(new URLSearchParams(queryString).entries());
-    injectValues(query);
-    updateShowSSL(query);
-    updateShowHSTS(query);
-};
+  if (queryString[0] === "?") {
+    queryString = queryString.substr(1);
+  }
+  const query = Object.fromEntries(new URLSearchParams(queryString).entries());
+  injectValues(query);
+  updateShowSSL(query);
+  updateShowHSTS(query);
+}
 
 
 
 
 function injectValues(queryMap) {
-    const tryAgainButton = document.getElementById('errorTryAgain');
-    const continueHttpButton = document.getElementById("continueHttp");
-    const backFromHttpButton = document.getElementById('backFromHttp');
+  const tryAgainButton = document.getElementById("errorTryAgain");
+  const continueHttpButton = document.getElementById("continueHttp");
+  const backFromHttpButton = document.getElementById("backFromHttp");
 
+  
+  document.title = queryMap.title;
+  tryAgainButton.innerHTML = queryMap.button;
+  continueHttpButton.innerHTML = queryMap.continueHttpButton;
+  backFromHttpButton.innerHTML = queryMap.badCertGoBack;
+  document.getElementById("errorTitleText").innerHTML = queryMap.title;
+  document.getElementById("errorShortDesc").innerHTML = queryMap.description;
+  document.getElementById("advancedButton").innerHTML =
+    queryMap.badCertAdvanced;
+  document.getElementById("badCertTechnicalInfo").innerHTML =
+    queryMap.badCertTechInfo;
+  document.getElementById("advancedPanelBackButton").innerHTML =
+    queryMap.badCertGoBack;
+  document.getElementById("advancedPanelAcceptButton").innerHTML =
+    queryMap.badCertAcceptTemporary;
+
+  
+  const errorImage = document.getElementById("errorImage");
+  if (!queryMap.image) {
+    errorImage.remove();
+  } else {
+    errorImage.src = "resource://android/assets/" + queryMap.image;
+  }
+
+  if (queryMap.showContinueHttp === "true") {
     
-    document.title = queryMap.title;
-    tryAgainButton.innerHTML = queryMap.button;
-    continueHttpButton.innerHTML = queryMap.continueHttpButton;
-    backFromHttpButton.innerHTML = queryMap.badCertGoBack;
-    document.getElementById('errorTitleText').innerHTML = queryMap.title;
-    document.getElementById('errorShortDesc').innerHTML = queryMap.description;
-    document.getElementById('advancedButton').innerHTML = queryMap.badCertAdvanced;
-    document.getElementById('badCertTechnicalInfo').innerHTML = queryMap.badCertTechInfo;
-    document.getElementById('advancedPanelBackButton').innerHTML = queryMap.badCertGoBack;
-    document.getElementById('advancedPanelAcceptButton').innerHTML = queryMap.badCertAcceptTemporary;
-
-   
-    const errorImage = document.getElementById('errorImage');
-    if (!queryMap.image) {
-        errorImage.remove();
-    } else  {
-        errorImage.src = "resource://android/assets/" + queryMap.image;
-    }
-
-    if (queryMap.showContinueHttp === "true") {
-       
-       
-       tryAgainButton.style.display = 'none';
-    } else {
-        continueHttpButton.style.display = 'none';
-        backFromHttpButton.style.display = 'none';
-    }
-};
+    
+    tryAgainButton.style.display = "none";
+  } else {
+    continueHttpButton.style.display = "none";
+    backFromHttpButton.style.display = "none";
+  }
+}
 
 let advancedVisible = false;
 
@@ -59,88 +63,98 @@ let advancedVisible = false;
 
 
 function updateShowSSL(queryMap) {
-    
-    const showSSL = queryMap.showSSL;
-    if (typeof document.addCertException === 'undefined') {
-        document.getElementById('advancedButton').style.display='none';
+  
+  const showSSL = queryMap.showSSL;
+  if (typeof document.addCertException === "undefined") {
+    document.getElementById("advancedButton").style.display = "none";
+  } else {
+    if (showSSL === "true") {
+      document.getElementById("advancedButton").style.display = "block";
     } else {
-        if (showSSL === 'true') {
-            document.getElementById('advancedButton').style.display='block';
-        } else {
-            document.getElementById('advancedButton').style.display='none';
-        }
+      document.getElementById("advancedButton").style.display = "none";
     }
-};
+  }
+}
 
 
 
 
 function updateShowHSTS(queryMap) {
-    const showHSTS = queryMap.showHSTS;
-    if (showHSTS === 'true') {
-        document.getElementById('advancedButton').style.display='block';
-        document.getElementById('advancedPanelAcceptButton').style.display='none';
-    }
-};
+  const showHSTS = queryMap.showHSTS;
+  if (showHSTS === "true") {
+    document.getElementById("advancedButton").style.display = "block";
+    document.getElementById("advancedPanelAcceptButton").style.display = "none";
+  }
+}
 
 
 
 
 function toggleAdvancedAndScroll() {
-    const advancedPanel = document.getElementById('badCertAdvancedPanel');
-    if (advancedVisible) {
-        advancedPanel.style.display='none';
-    } else {
-        advancedPanel.style.display='block';
-    }
-    advancedVisible = !advancedVisible;
+  const advancedPanel = document.getElementById("badCertAdvancedPanel");
+  if (advancedVisible) {
+    advancedPanel.style.display = "none";
+  } else {
+    advancedPanel.style.display = "block";
+  }
+  advancedVisible = !advancedVisible;
 
-    const horizontalLine = document.getElementById("horizontalLine");
-    const advancedPanelAcceptButton = document.getElementById(
-        "advancedPanelAcceptButton"
-    );
-    const badCertAdvancedPanel = document.getElementById(
-        "badCertAdvancedPanel"
-    );
+  const horizontalLine = document.getElementById("horizontalLine");
+  const advancedPanelAcceptButton = document.getElementById(
+    "advancedPanelAcceptButton"
+  );
+  const badCertAdvancedPanel = document.getElementById("badCertAdvancedPanel");
 
-    
-    if (badCertAdvancedPanel.style.display === "block") {
-        horizontalLine.hidden = false;
-        advancedPanelAcceptButton.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-            inline: "nearest",
-       });
-    } else {
-        horizontalLine.hidden = true;
-    }
-};
+  
+  if (badCertAdvancedPanel.style.display === "block") {
+    horizontalLine.hidden = false;
+    advancedPanelAcceptButton.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  } else {
+    horizontalLine.hidden = true;
+  }
+}
 
 
 
 
 async function acceptAndContinue(temporary) {
-    try {
-        await document.addCertException(temporary);
-        location.reload();
-    } catch (error) {
-        console.error("Unexpected error: " + error);
-    }
-};
+  try {
+    await document.addCertException(temporary);
+    location.reload();
+  } catch (error) {
+    console.error("Unexpected error: " + error);
+  }
+}
 
-document.addEventListener('DOMContentLoaded', function () {
-    if (window.history.length == 1) {
-        document.getElementById('advancedPanelBackButton').style.display = 'none';
-        document.getElementById('backFromHttp').style.display = 'none';
-    } else {
-        document.getElementById('advancedPanelBackButton').addEventListener('click', () => window.history.back());
-        document.getElementById('backFromHttp').addEventListener('click', () => window.history.back());
-    }
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.history.length == 1) {
+    document.getElementById("advancedPanelBackButton").style.display = "none";
+    document.getElementById("backFromHttp").style.display = "none";
+  } else {
+    document
+      .getElementById("advancedPanelBackButton")
+      .addEventListener("click", () => window.history.back());
+    document
+      .getElementById("backFromHttp")
+      .addEventListener("click", () => window.history.back());
+  }
 
-    document.getElementById('errorTryAgain').addEventListener('click', () => window.location.reload());
-    document.getElementById('advancedButton').addEventListener('click', toggleAdvancedAndScroll);
-    document.getElementById('advancedPanelAcceptButton').addEventListener('click', () => acceptAndContinue(true));
-    document.getElementById('continueHttp').addEventListener('click', () => document.reloadWithHttpsOnlyException());
+  document
+    .getElementById("errorTryAgain")
+    .addEventListener("click", () => window.location.reload());
+  document
+    .getElementById("advancedButton")
+    .addEventListener("click", toggleAdvancedAndScroll);
+  document
+    .getElementById("advancedPanelAcceptButton")
+    .addEventListener("click", () => acceptAndContinue(true));
+  document
+    .getElementById("continueHttp")
+    .addEventListener("click", () => document.reloadWithHttpsOnlyException());
 });
 
 parseQuery(document.documentURI);
