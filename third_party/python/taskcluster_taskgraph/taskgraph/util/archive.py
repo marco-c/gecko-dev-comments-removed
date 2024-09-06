@@ -80,14 +80,14 @@ def create_tar_from_files(fp, files):
             ti.type = tarfile.REGTYPE
 
             if not ti.isreg():
-                raise ValueError("not a regular file: %s" % f)
+                raise ValueError(f"not a regular file: {f}")
 
             
             
             
             
             if ti.mode & (stat.S_ISUID | stat.S_ISGID):
-                raise ValueError("cannot add file with setuid or setgid set: " "%s" % f)
+                raise ValueError(f"cannot add file with setuid or setgid set: {f}")
 
             
             ti.uid = 0
