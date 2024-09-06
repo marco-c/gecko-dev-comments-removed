@@ -816,19 +816,20 @@ impl SpecifiedValueInfo for Color {
         
         
         f(&[
+            "currentColor",
+            "transparent",
             "rgb",
             "rgba",
             "hsl",
             "hsla",
             "hwb",
-            "currentColor",
-            "transparent",
-            "color-mix",
             "color",
             "lab",
             "lch",
             "oklab",
             "oklch",
+            "color-mix",
+            "light-dark",
         ]);
     }
 }
