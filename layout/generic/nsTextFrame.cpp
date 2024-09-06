@@ -62,6 +62,7 @@
 #include "nsUnicodeProperties.h"
 #include "nsStyleUtil.h"
 #include "nsRubyFrame.h"
+#include "PresShellInlines.h"
 #include "TextDrawTarget.h"
 
 #include "nsTextFragment.h"
@@ -8759,11 +8760,90 @@ bool nsTextFrame::IsCurrentFontInflation(float aInflation) const {
   return fabsf(aInflation - GetFontSizeInflation()) < 1e-6;
 }
 
+void nsTextFrame::MaybeSplitFramesForFirstLetter() {
+  if (GetParent()->IsFloating() && GetContentLength() > 0) {
+    
+    return;
+  }
+  if (GetPrevContinuation()) {
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  nsTextFrame* f = GetParent()->IsFloating() ? GetNextInFlow() : this;
+  gfxSkipCharsIterator iter = f->EnsureTextRun(nsTextFrame::eInflated);
+  const gfxTextRun* textRun = f->GetTextRun(nsTextFrame::eInflated);
+
+  const nsTextFragment* frag = TextFragment();
+  const int32_t length = GetInFlowContentLength();
+  const int32_t offset = GetContentOffset();
+  int32_t firstLetterLength = length;
+  NewlineProperty* cachedNewlineOffset = nullptr;
+  int32_t newLineOffset = -1;  
+  
+  int32_t contentNewLineOffset =
+      GetContentNewLineOffset(offset, cachedNewlineOffset);
+  if (contentNewLineOffset < offset + length) {
+    
+    
+    
+    newLineOffset = contentNewLineOffset;
+    if (newLineOffset >= 0) {
+      firstLetterLength = newLineOffset - offset;
+    }
+  }
+
+  if (contentNewLineOffset >= 0 && contentNewLineOffset < offset) {
+    
+    
+    
+    
+    
+    firstLetterLength = 0;
+  } else {
+    
+    
+    const nsStyleFont* styleFont = StyleFont();
+    const nsAtom* lang =
+        styleFont->mExplicitLanguage ? styleFont->mLanguage.get() : nullptr;
+    FindFirstLetterRange(frag, lang, textRun, offset, iter, &firstLetterLength);
+    if (newLineOffset >= 0) {
+      
+      firstLetterLength = std::min(firstLetterLength, length - 1);
+    }
+  }
+  if (firstLetterLength) {
+    AddStateBits(TEXT_FIRST_LETTER);
+  }
+
+  
+  
+  
+  SetFirstLetterLength(firstLetterLength);
+}
+
+static bool IsUnreflowedLetterFrame(nsIFrame* aFrame) {
+  return aFrame->IsLetterFrame() &&
+         aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
+}
+
 
 
 
 void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
                                     nsIFrame::InlineMinISizeData* aData) {
+  
+  
+  
+  if (IsUnreflowedLetterFrame(GetParent())) {
+    MaybeSplitFramesForFirstLetter();
+  }
+
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   TextRunType trtype = (inflation == 1.0f) ? eNotInflated : eInflated;
 
@@ -8805,6 +8885,10 @@ void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
 void nsTextFrame::AddInlinePrefISizeForFlow(
     gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData,
     TextRunType aTextRunType) {
+  if (IsUnreflowedLetterFrame(GetParent())) {
+    MaybeSplitFramesForFirstLetter();
+  }
+
   uint32_t flowEndInTextRun;
   gfxSkipCharsIterator iter =
       EnsureTextRun(aTextRunType, aRenderingContext->GetDrawTarget(),
@@ -9243,6 +9327,35 @@ void nsTextFrame::SetLength(int32_t aLength, nsLineLayout* aLineLayout,
 #endif
 }
 
+void nsTextFrame::SetFirstLetterLength(int32_t aLength) {
+  if (aLength == GetContentLength()) {
+    return;
+  }
+
+  mContentLengthHint = aLength;
+  nsTextFrame* next = static_cast<nsTextFrame*>(GetNextInFlow());
+  if (aLength > GetContentLength()) {
+    
+    
+    
+    if (!next) {
+      MOZ_ASSERT_UNREACHABLE("Expected a next-in-flow; first-letter broken?");
+      return;
+    }
+  } else {
+    
+    
+    
+    MOZ_ASSERT(GetParent()->IsLetterFrame());
+    auto* letterFrame = static_cast<nsFirstLetterFrame*>(GetParent());
+    next = letterFrame->CreateContinuationForFramesAfter(this);
+  }
+
+  next->mContentOffset = GetContentOffset() + aLength;
+
+  ClearTextRuns();
+}
+
 bool nsTextFrame::IsFloatingFirstLetterChild() const {
   nsIFrame* frame = GetParent();
   return frame && frame->IsFloating() && frame->IsLetterFrame();
@@ -9254,11 +9367,33 @@ bool nsTextFrame::IsInitialLetterChild() const {
          frame->IsLetterFrame();
 }
 
-struct NewlineProperty {
+struct nsTextFrame::NewlineProperty {
   int32_t mStartOffset;
   
   int32_t mNewlineOffset;
 };
+
+int32_t nsTextFrame::GetContentNewLineOffset(
+    int32_t aOffset, NewlineProperty*& aCachedNewlineOffset) {
+  int32_t contentNewLineOffset = -1;  
+  if (StyleText()->NewlineIsSignificant(this)) {
+    
+    aCachedNewlineOffset = mContent->HasFlag(NS_HAS_NEWLINE_PROPERTY)
+                               ? static_cast<NewlineProperty*>(
+                                     mContent->GetProperty(nsGkAtoms::newline))
+                               : nullptr;
+    if (aCachedNewlineOffset && aCachedNewlineOffset->mStartOffset <= aOffset &&
+        (aCachedNewlineOffset->mNewlineOffset == -1 ||
+         aCachedNewlineOffset->mNewlineOffset >= aOffset)) {
+      contentNewLineOffset = aCachedNewlineOffset->mNewlineOffset;
+    } else {
+      contentNewLineOffset = FindChar(
+          TextFragment(), aOffset, GetContent()->TextLength() - aOffset, '\n');
+    }
+  }
+
+  return contentNewLineOffset;
+}
 
 void nsTextFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                          const ReflowInput& aReflowInput,
@@ -9379,35 +9514,21 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   int32_t offset = GetContentOffset();
 
   
-  int32_t newLineOffset = -1;  
-  int32_t contentNewLineOffset = -1;
-  
   NewlineProperty* cachedNewlineOffset = nullptr;
-  if (textStyle->NewlineIsSignificant(this)) {
-    cachedNewlineOffset = mContent->HasFlag(NS_HAS_NEWLINE_PROPERTY)
-                              ? static_cast<NewlineProperty*>(
-                                    mContent->GetProperty(nsGkAtoms::newline))
-                              : nullptr;
-    if (cachedNewlineOffset && cachedNewlineOffset->mStartOffset <= offset &&
-        (cachedNewlineOffset->mNewlineOffset == -1 ||
-         cachedNewlineOffset->mNewlineOffset >= offset)) {
-      contentNewLineOffset = cachedNewlineOffset->mNewlineOffset;
-    } else {
-      contentNewLineOffset =
-          FindChar(frag, offset, GetContent()->TextLength() - offset, '\n');
-    }
-    if (contentNewLineOffset < offset + length) {
-      
-
-
-
-
-      newLineOffset = contentNewLineOffset;
-    }
-    if (newLineOffset >= 0) {
-      length = newLineOffset + 1 - offset;
-    }
+  int32_t newLineOffset = -1;  
+  
+  int32_t contentNewLineOffset =
+      GetContentNewLineOffset(offset, cachedNewlineOffset);
+  if (contentNewLineOffset < offset + length) {
+    
+    
+    
+    newLineOffset = contentNewLineOffset;
   }
+  if (newLineOffset >= 0) {
+    length = newLineOffset + 1 - offset;
+  }
+
   if ((atStartOfLine && !textStyle->WhiteSpaceIsSignificant()) ||
       HasAnyStateBits(TEXT_IS_IN_TOKEN_MATHML)) {
     
