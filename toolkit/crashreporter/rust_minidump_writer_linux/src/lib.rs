@@ -3,7 +3,6 @@
 
 extern crate minidump_writer;
 
-use anyhow;
 use libc::pid_t;
 use minidump_writer::crash_context::CrashContext;
 use minidump_writer::minidump_writer::MinidumpWriter;
