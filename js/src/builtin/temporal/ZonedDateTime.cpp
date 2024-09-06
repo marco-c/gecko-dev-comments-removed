@@ -778,8 +778,8 @@ static bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
   
   PlainDate addedDate;
   if (maybeOptions) {
-    if (!CalendarDateAdd(cx, calendar, datePart, dateDuration, maybeOptions,
-                         &addedDate)) {
+    if (!temporal::CalendarDateAdd(cx, calendar, datePart, dateDuration,
+                                   maybeOptions, &addedDate)) {
       return false;
     }
   } else {
