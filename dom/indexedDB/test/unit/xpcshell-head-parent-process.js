@@ -56,7 +56,11 @@ if (!this.runTest) {
     if (testSteps.constructor.name === "AsyncFunction") {
       
       
-      registerCleanupFunction(resetTesting);
+      registerCleanupFunction(function () {
+        if (SpecialPowers.isMainProcess()) {
+          resetTesting();
+        }
+      });
 
       add_task(testSteps);
 
