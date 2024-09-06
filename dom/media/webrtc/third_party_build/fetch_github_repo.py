@@ -67,11 +67,15 @@ def fetch_repo(github_path, clone_protocol, force_fetch, tar_path):
             "git remote add upstream https://webrtc.googlesource.com/src", github_path
         )
         run_git("git fetch upstream", github_path)
-        run_git("git merge upstream/master", github_path)
     else:
         print(
             "Upstream remote (https://webrtc.googlesource.com/src) already configured"
         )
+
+    
+    run_git("git checkout master", github_path)
+    
+    run_git("git merge upstream/master", github_path)
 
     
     stdout_lines = run_git(
@@ -86,6 +90,9 @@ def fetch_repo(github_path, clone_protocol, force_fetch, tar_path):
         run_git("git fetch upstream", github_path)
     else:
         print("Upstream remote branch-heads already configured")
+
+    
+    run_git("git show branch-heads/5059", github_path)
 
     
     
