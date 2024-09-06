@@ -610,7 +610,6 @@ BasePrincipal::SubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther,
 
 NS_IMETHODIMP
 BasePrincipal::CheckMayLoad(nsIURI* aURI, bool aAllowIfInheritsPrincipal) {
-  AssertIsOnMainThread();
   return CheckMayLoadHelper(aURI, aAllowIfInheritsPrincipal, false, 0);
 }
 
@@ -627,12 +626,11 @@ nsresult BasePrincipal::CheckMayLoadHelper(nsIURI* aURI,
                                            bool aAllowIfInheritsPrincipal,
                                            bool aReport,
                                            uint64_t aInnerWindowID) {
-  AssertIsOnMainThread();  
-                           
   NS_ENSURE_ARG_POINTER(aURI);
   MOZ_ASSERT(
       aReport || aInnerWindowID == 0,
       "Why do we have an inner window id if we're not supposed to report?");
+  MOZ_ASSERT(!aReport || NS_IsMainThread(), "Must be on main thread to report");
 
   
   
@@ -654,15 +652,6 @@ nsresult BasePrincipal::CheckMayLoadHelper(nsIURI* aURI,
   }
 
   
-  
-  bool fetchableByAnyone;
-  rv = NS_URIChainHasFlags(aURI, nsIProtocolHandler::URI_FETCHABLE_BY_ANYONE,
-                           &fetchableByAnyone);
-  if (NS_SUCCEEDED(rv) && fetchableByAnyone) {
-    return NS_OK;
-  }
-
-  
   nsCOMPtr<nsIURI> prinURI;
   rv = GetURI(getter_AddRefs(prinURI));
   if (!(NS_SUCCEEDED(rv) && prinURI)) {
@@ -671,20 +660,24 @@ nsresult BasePrincipal::CheckMayLoadHelper(nsIURI* aURI,
 
   
   
-  bool maybeWebAccessible = false;
-  NS_URIChainHasFlags(aURI, nsIProtocolHandler::WEBEXT_URI_WEB_ACCESSIBLE,
-                      &maybeWebAccessible);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (maybeWebAccessible) {
-    bool isWebAccessible = false;
-    rv = ExtensionPolicyService::GetSingleton().SourceMayLoadExtensionURI(
-        prinURI, aURI, &isWebAccessible);
-    if (NS_SUCCEEDED(rv) && isWebAccessible) {
+  
+  
+  
+  
+  
+  
+  extensions::URLInfo urlInfo(aURI);
+  if (RefPtr<extensions::WebExtensionPolicyCore> urlPolicyCore =
+          ExtensionPolicyService::GetCoreByURL(urlInfo)) {
+    extensions::URLInfo prinUrlInfo(prinURI);
+    if (urlPolicyCore->SourceMayAccessPath(prinUrlInfo, urlInfo.FilePath())) {
       return NS_OK;
     }
   }
 
   if (aReport) {
+    
+    
     nsScriptSecurityManager::ReportError("CheckSameOriginError", prinURI, aURI,
                                          mOriginAttributes.IsPrivateBrowsing(),
                                          aInnerWindowID);

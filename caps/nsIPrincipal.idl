@@ -188,6 +188,7 @@ interface nsIPrincipal : nsISupports
 
 
 
+
     void checkMayLoad(in nsIURI uri,
                       in boolean allowIfInheritsPrincipal);
 

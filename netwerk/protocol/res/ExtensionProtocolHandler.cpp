@@ -422,7 +422,12 @@ nsresult ExtensionProtocolHandler::GetFlagsForURI(nsIURI* aURI,
     
     if (policy->IsWebAccessiblePath(url.FilePath())) {
       if (policy->ManifestVersion() < 3) {
-        flags |= URI_LOADABLE_BY_ANYONE | URI_FETCHABLE_BY_ANYONE;
+        
+        
+        
+        
+        
+        flags |= URI_LOADABLE_BY_ANYONE;
       } else {
         flags |= WEBEXT_URI_WEB_ACCESSIBLE;
       }
