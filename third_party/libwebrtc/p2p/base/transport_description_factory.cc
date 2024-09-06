@@ -23,7 +23,7 @@ namespace cricket {
 
 TransportDescriptionFactory::TransportDescriptionFactory(
     const webrtc::FieldTrialsView& field_trials)
-    : secure_(SEC_DISABLED), field_trials_(field_trials) {}
+    : field_trials_(field_trials) {}
 
 TransportDescriptionFactory::~TransportDescriptionFactory() = default;
 
@@ -48,12 +48,14 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateOffer(
   }
 
   
-  if (secure_ == SEC_ENABLED || secure_ == SEC_REQUIRED) {
-    
-    
-    if (!SetSecurityInfo(desc.get(), CONNECTIONROLE_ACTPASS)) {
-      return NULL;
-    }
+  
+  if (insecure_ && !certificate_) {
+    return desc;
+  }
+  
+  
+  if (!SetSecurityInfo(desc.get(), CONNECTIONROLE_ACTPASS)) {
+    return NULL;
   }
 
   return desc;
@@ -87,43 +89,49 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
   if (options.enable_ice_renomination) {
     desc->AddOption(ICE_OPTION_RENOMINATION);
   }
-
   
-  if (offer && offer->identity_fingerprint.get()) {
-    
-    if (secure_ == SEC_ENABLED || secure_ == SEC_REQUIRED) {
-      ConnectionRole role = CONNECTIONROLE_NONE;
+  
+  
+  if ((!certificate_ || !offer->identity_fingerprint.get()) && insecure()) {
+    return desc;
+  }
+  if (!offer->identity_fingerprint.get()) {
+    if (require_transport_attributes) {
       
-      if (offer->connection_role == CONNECTIONROLE_ACTPASS) {
-        role = (options.prefer_passive_role) ? CONNECTIONROLE_PASSIVE
-                                             : CONNECTIONROLE_ACTIVE;
-      } else if (offer->connection_role == CONNECTIONROLE_ACTIVE) {
-        role = CONNECTIONROLE_PASSIVE;
-      } else if (offer->connection_role == CONNECTIONROLE_PASSIVE) {
-        role = CONNECTIONROLE_ACTIVE;
-      } else if (offer->connection_role == CONNECTIONROLE_NONE) {
-        
-        RTC_LOG(LS_WARNING) << "Remote offer connection role is NONE, which is "
-                               "a protocol violation";
-        role = (options.prefer_passive_role) ? CONNECTIONROLE_PASSIVE
-                                             : CONNECTIONROLE_ACTIVE;
-      } else {
-        RTC_LOG(LS_ERROR) << "Remote offer connection role is " << role
-                          << " which is a protocol violation";
-        RTC_DCHECK_NOTREACHED();
-      }
-
-      if (!SetSecurityInfo(desc.get(), role)) {
-        return NULL;
-      }
+      RTC_LOG(LS_WARNING) << "Failed to create TransportDescription answer "
+                             "because of incompatible security settings";
+      return NULL;
     }
-  } else if (require_transport_attributes && secure_ == SEC_REQUIRED) {
     
-    RTC_LOG(LS_WARNING) << "Failed to create TransportDescription answer "
-                           "because of incompatible security settings";
+    return desc;
+  }
+  
+  
+  RTC_CHECK(certificate_);
+  ConnectionRole role = CONNECTIONROLE_NONE;
+  
+  if (offer->connection_role == CONNECTIONROLE_ACTPASS) {
+    role = (options.prefer_passive_role) ? CONNECTIONROLE_PASSIVE
+                                         : CONNECTIONROLE_ACTIVE;
+  } else if (offer->connection_role == CONNECTIONROLE_ACTIVE) {
+    role = CONNECTIONROLE_PASSIVE;
+  } else if (offer->connection_role == CONNECTIONROLE_PASSIVE) {
+    role = CONNECTIONROLE_ACTIVE;
+  } else if (offer->connection_role == CONNECTIONROLE_NONE) {
+    
+    RTC_LOG(LS_WARNING) << "Remote offer connection role is NONE, which is "
+                           "a protocol violation";
+    role = (options.prefer_passive_role) ? CONNECTIONROLE_PASSIVE
+                                         : CONNECTIONROLE_ACTIVE;
+  } else {
+    RTC_LOG(LS_ERROR) << "Remote offer connection role is " << role
+                      << " which is a protocol violation";
+    RTC_DCHECK_NOTREACHED();
     return NULL;
   }
-
+  if (!SetSecurityInfo(desc.get(), role)) {
+    return NULL;
+  }
   return desc;
 }
 

@@ -99,7 +99,7 @@ const char kSdpWithoutIceUfragPwd[] =
     "Called with SDP without ice-ufrag and ice-pwd.";
 const char kSdpWithoutDtlsFingerprint[] =
     "Called with SDP without DTLS fingerprint.";
-const char kSdpWithoutSdesCrypto[] = "Called with SDP without SDES crypto.";
+const char kSdpWithoutCrypto[] = "Called with SDP without crypto setup.";
 
 const char kSessionError[] = "Session error code: ";
 const char kSessionErrorDesc[] = "Session error description: ";
@@ -310,10 +310,7 @@ RTCError VerifyCrypto(const SessionDescription* desc,
                              kSdpWithoutDtlsFingerprint);
       }
     } else {
-      if (media->cryptos().empty()) {
-        LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                             kSdpWithoutSdesCrypto);
-      }
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, kSdpWithoutCrypto);
     }
   }
   return RTCError::OK();
@@ -1393,7 +1390,9 @@ void SdpOfferAnswerHandler::Initialize(
           pc_->trials());
 
   if (pc_->options()->disable_encryption) {
-    webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
+    RTC_LOG(LS_INFO)
+        << "Disabling encryption. This should only be done in tests.";
+    webrtc_session_desc_factory_->SetInsecureForTesting();
   }
 
   webrtc_session_desc_factory_->set_enable_encrypted_rtp_header_extensions(
@@ -3551,8 +3550,7 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
 
   
   std::string crypto_error;
-  if (webrtc_session_desc_factory_->SdesPolicy() == cricket::SEC_REQUIRED ||
-      pc_->dtls_enabled()) {
+  if (pc_->dtls_enabled()) {
     RTCError crypto_error = VerifyCrypto(
         sdesc->description(), pc_->dtls_enabled(), bundle_groups_by_mid);
     if (!crypto_error.ok()) {

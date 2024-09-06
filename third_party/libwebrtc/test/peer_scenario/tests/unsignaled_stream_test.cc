@@ -98,7 +98,6 @@ TEST_P(UnsignaledStreamTest, ReplacesUnsignaledStreamOnCompletedSignaling) {
   PeerScenarioClient::Config config = PeerScenarioClient::Config();
   
   
-  config.disable_encryption = true;
   auto* caller = s.CreateClient(config);
   auto* callee = s.CreateClient(config);
 

@@ -43,14 +43,11 @@ class TransportDescriptionFactory {
       const webrtc::FieldTrialsView& field_trials);
   ~TransportDescriptionFactory();
 
-  SecurePolicy secure() const { return secure_; }
   
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate() const {
     return certificate_;
   }
 
-  
-  void set_secure(SecurePolicy s) { secure_ = s; }
   
   void set_certificate(rtc::scoped_refptr<rtc::RTCCertificate> certificate) {
     certificate_ = std::move(certificate);
@@ -76,12 +73,18 @@ class TransportDescriptionFactory {
       IceCredentialsIterator* ice_credentials) const;
 
   const webrtc::FieldTrialsView& trials() const { return field_trials_; }
+  
+  
+  
+  
+  
+  bool insecure() const { return insecure_; }
+  void SetInsecureForTesting() { insecure_ = true; }
 
  private:
   bool SetSecurityInfo(TransportDescription* description,
                        ConnectionRole role) const;
-
-  SecurePolicy secure_;
+  bool insecure_ = false;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   const webrtc::FieldTrialsView& field_trials_;
 };
