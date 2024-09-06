@@ -636,11 +636,8 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
   
 
   
-  Instant ns;
-  if (!RoundTemporalInstant(cx, zonedDateTime.instant(), increment, unit,
-                            roundingMode, &ns)) {
-    return nullptr;
-  }
+  auto ns = RoundTemporalInstant(zonedDateTime.instant(), increment, unit,
+                                 roundingMode);
 
   
   auto timeZone = zonedDateTime.timeZone();

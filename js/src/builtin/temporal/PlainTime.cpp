@@ -7,7 +7,6 @@
 #include "builtin/temporal/PlainTime.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
 
@@ -46,7 +45,6 @@
 #include "js/PropertySpec.h"
 #include "js/RootingAPI.h"
 #include "js/Value.h"
-#include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSAtomState.h"
@@ -744,59 +742,6 @@ bool js::temporal::ToTemporalTimeRecord(JSContext* cx,
   return ::ToTemporalTimeRecord(cx, temporalTimeLike, result);
 }
 
-
-
-
-static int64_t RoundNumberToIncrement(int64_t x, TemporalUnit unit,
-                                      Increment increment,
-                                      TemporalRoundingMode roundingMode) {
-  MOZ_ASSERT(x >= 0);
-  MOZ_ASSERT(x < ToNanoseconds(TemporalUnit::Day));
-
-  MOZ_ASSERT(unit >= TemporalUnit::Day);
-  MOZ_ASSERT_IF(unit == TemporalUnit::Day, increment == Increment{1});
-  MOZ_ASSERT_IF(unit > TemporalUnit::Day,
-                increment <= MaximumTemporalDurationRoundingIncrement(unit));
-
-  int64_t divisor = ToNanoseconds(unit) * increment.value();
-  MOZ_ASSERT(divisor > 0);
-  MOZ_ASSERT(divisor <= ToNanoseconds(TemporalUnit::Day));
-
-  
-  if (divisor == 1) {
-    MOZ_ASSERT(increment == Increment{1});
-    return x;
-  }
-
-  
-  int64_t rounded = Divide(x, divisor, roundingMode);
-
-  
-  mozilla::CheckedInt64 result = rounded;
-  result *= increment.value();
-
-  MOZ_ASSERT(result.isValid(), "can't overflow when inputs are all in range");
-
-  return result.value();
-}
-
-
-
-
-static int64_t RoundNumberToIncrement(int64_t x, int64_t divisor,
-                                      Increment increment,
-                                      TemporalRoundingMode roundingMode) {
-  MOZ_ASSERT(x >= 0);
-  MOZ_ASSERT(x < ToNanoseconds(TemporalUnit::Day));
-  MOZ_ASSERT(divisor > 0);
-  MOZ_ASSERT(increment == Increment{1}, "Rounding increment for 'day' is 1");
-
-  
-
-  
-  return Divide(x, divisor, roundingMode);
-}
-
 static int64_t TimeToNanos(const PlainTime& time) {
   
   MOZ_ASSERT(IsValidTime(time));
@@ -887,11 +832,15 @@ RoundedTime js::temporal::RoundTime(const PlainTime& time, Increment increment,
   }
 
   
-  int64_t r = ::RoundNumberToIncrement(TimeToNanos(quantity), unit, increment,
-                                       roundingMode);
-  MOZ_ASSERT(r == int64_t(int32_t(r)),
-             "no overflow possible due to limited range of arguments");
-  *result = r;
+  int64_t nanos = TimeToNanos(quantity);
+  MOZ_ASSERT(0 <= nanos && nanos < ToNanoseconds(TemporalUnit::Day));
+
+  auto r = RoundNumberToIncrement(nanos, ToNanoseconds(unit), increment,
+                                  roundingMode);
+  MOZ_ASSERT(r == Int128{int32_t(r)},
+             "can't overflow when inputs are all in range");
+
+  *result = int32_t(r);
 
   
   if (unit == TemporalUnit::Day) {
@@ -924,28 +873,27 @@ RoundedTime js::temporal::RoundTime(const PlainTime& time, Increment increment,
 
   
   int64_t quantity = TimeToNanos(time);
-  MOZ_ASSERT(quantity < ToNanoseconds(TemporalUnit::Day));
+  MOZ_ASSERT(0 <= quantity && quantity < ToNanoseconds(TemporalUnit::Day));
 
   
 
   
-  int64_t divisor;
-  if (auto checkedDiv = dayLengthNs.toNanoseconds(); checkedDiv.isValid()) {
-    divisor = checkedDiv.value();
-  } else {
-    
-    
-    
-    
-    divisor = ToNanoseconds(TemporalUnit::Day);
-  }
+  
+  
+  
+  
+  
+  int64_t divisor = int64_t(std::min(dayLengthNs.toTotalNanoseconds(),
+                                     Int128{ToNanoseconds(TemporalUnit::Day)}));
   MOZ_ASSERT(divisor > 0);
+  MOZ_ASSERT(increment == Increment{1}, "Rounding increment for 'day' is 1");
 
-  int64_t result =
-      ::RoundNumberToIncrement(quantity, divisor, increment, roundingMode);
+  auto result =
+      RoundNumberToIncrement(quantity, divisor, increment, roundingMode);
+  MOZ_ASSERT(result == Int128{int64_t(result)});
 
   
-  return {result, {0, 0, 0, 0, 0, 0}};
+  return {int64_t(result), {0, 0, 0, 0, 0, 0}};
 }
 
 
