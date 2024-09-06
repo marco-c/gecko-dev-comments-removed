@@ -95,7 +95,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.198")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.201")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -118,6 +118,7 @@
     
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
     clippy::cast_sign_loss,
     
     clippy::cast_lossless,
