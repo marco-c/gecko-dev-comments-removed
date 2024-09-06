@@ -49,18 +49,27 @@ class MOZ_STACK_CLASS ColorStopInterpolator {
         mStops(aStops) {}
 
   void CreateStops() {
-    for (uint32_t i = 0; i < mStops.Length() - 1; i++) {
+    
+    for (uint32_t i = 0; i < mStops.Length(); i++) {
+      auto nextindex = i + 1 < mStops.Length() ? i + 1 : i;
       const auto& start = mStops[i];
-      const auto& end = mStops[i + 1];
+      const auto& end = mStops[nextindex];
+      float startPosition = start.mPosition;
+      float endPosition = end.mPosition;
+      
+      
+      if (i == mStops.Length() - 1) {
+        endPosition = 1.0f;
+      }
       uint32_t extraStops =
-          (uint32_t)(floor(end.mPosition * kFullRangeExtraStops) -
-                     floor(start.mPosition * kFullRangeExtraStops));
+          (uint32_t)(floor(endPosition * kFullRangeExtraStops) -
+                     floor(startPosition * kFullRangeExtraStops));
       extraStops = clamped(extraStops, 1U, kFullRangeExtraStops);
       float step = 1.0f / (float)extraStops;
       for (uint32_t extraStop = 0; extraStop <= extraStops; extraStop++) {
         auto progress = (float)extraStop * step;
         auto position =
-            start.mPosition + progress * (end.mPosition - start.mPosition);
+            startPosition + progress * (endPosition - startPosition);
         StyleAbsoluteColor color =
             Servo_InterpolateColor(mStyleColorInterpolationMethod, &end.mColor,
                                    &start.mColor, progress);

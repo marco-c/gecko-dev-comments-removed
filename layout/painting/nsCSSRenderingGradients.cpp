@@ -1257,9 +1257,17 @@ void nsCSSGradientRenderer::BuildWebRenderParameters(
   
   StyleColorInterpolationMethod styleColorInterpolationMethod =
       mGradient->ColorInterpolationMethod();
-  if (mStops.Length() >= 2 &&
-      (styleColorInterpolationMethod.space != StyleColorSpace::Srgb ||
-       gfxPlatform::GetCMSMode() == CMSMode::All)) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (styleColorInterpolationMethod.space != StyleColorSpace::Srgb ||
+      gfxPlatform::GetCMSMode() == CMSMode::All) {
     WrColorStopInterpolator interpolator(mStops, styleColorInterpolationMethod,
                                          aOpacity, aStops);
     interpolator.CreateStops();
