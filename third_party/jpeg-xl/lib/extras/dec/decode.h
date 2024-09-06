@@ -38,6 +38,8 @@ enum class Codec : uint32_t {
 
 bool CanDecode(Codec codec);
 
+std::string ListOfDecodeCodecs();
+
 
 
 Codec CodecFromPath(const std::string& path,

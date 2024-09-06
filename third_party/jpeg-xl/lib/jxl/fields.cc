@@ -6,7 +6,7 @@
 #include "lib/jxl/fields.h"
 
 #include <algorithm>
-#include <cinttypes>
+#include <cinttypes>  
 #include <cmath>
 #include <cstddef>
 #include <hwy/base.h>

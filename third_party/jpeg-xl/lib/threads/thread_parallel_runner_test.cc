@@ -3,7 +3,10 @@
 
 
 
+#include <algorithm>
 #include <atomic>
+#include <cstdint>
+#include <vector>
 
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/test_utils.h"

@@ -3,8 +3,18 @@
 
 
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include "lib/jpegli/decode.h"
 #include "lib/jpegli/encode.h"
+#include "lib/jpegli/test_params.h"
 #include "lib/jpegli/test_utils.h"
 #include "lib/jpegli/testing.h"
 

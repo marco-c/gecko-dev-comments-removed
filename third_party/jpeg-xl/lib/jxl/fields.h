@@ -8,14 +8,11 @@
 
 
 
-#include <cmath>  
-#include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
-#include "lib/jxl/base/bits.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_bit_reader.h"

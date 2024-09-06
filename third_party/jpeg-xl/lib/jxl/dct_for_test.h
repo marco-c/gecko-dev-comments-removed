@@ -8,9 +8,8 @@
 
 
 
-#include <string.h>  
-
 #include <cmath>
+#include <cstring>  
 #include <vector>
 
 #include "lib/jxl/base/common.h"

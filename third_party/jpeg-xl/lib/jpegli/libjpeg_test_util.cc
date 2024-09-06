@@ -5,12 +5,7 @@
 
 #include "lib/jpegli/libjpeg_test_util.h"
 
-
-#include <stdio.h>
-#include <jpeglib.h>
-#include <setjmp.h>
-
-
+#include "lib/jxl/base/include_jpeglib.h"  
 #include "lib/jxl/sanitizers.h"
 
 namespace jpegli {

@@ -8,8 +8,7 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
 
 #include "lib/jxl/ac_strategy.h"
 #include "lib/jxl/base/compiler_specific.h"

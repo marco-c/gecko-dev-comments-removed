@@ -3,9 +3,12 @@
 
 
 
-#include <array>
+#include <cstddef>
+#include <vector>
 
 #include "benchmark/benchmark.h"
+#include "lib/jxl/base/rect.h"
+#include "lib/jxl/chroma_from_luma.h"
 #include "lib/jxl/image_ops.h"
 #include "lib/jxl/splines.h"
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef LIB_JXL_MATRIX_OPS_H_
-#define LIB_JXL_MATRIX_OPS_H_
+#ifndef LIB_JXL_BASE_MATRIX_OPS_H_
+#define LIB_JXL_BASE_MATRIX_OPS_H_
 
 
 

@@ -8,7 +8,6 @@
 
 
 
-#include <stdint.h>
 #include <sys/types.h>
 
 #include "lib/jxl/base/sanitizer_definitions.h"
@@ -97,6 +96,11 @@
 #define JXL_UNLIKELY(expr) __builtin_expect(!!(expr), 0)
 #endif
 
+#if JXL_COMPILER_MSVC
+#include <stdint.h>
+using ssize_t = intptr_t;
+#endif
+
 
 
 
@@ -148,10 +152,6 @@
   __attribute__((__format__(__printf__, idx_fmt, idx_arg)))
 #else
 #define JXL_FORMAT(idx_fmt, idx_arg)
-#endif
-
-#if JXL_COMPILER_MSVC
-using ssize_t = intptr_t;
 #endif
 
 #endif  

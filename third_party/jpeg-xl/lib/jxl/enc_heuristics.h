@@ -9,9 +9,9 @@
 
 
 #include <jxl/cms_interface.h>
-#include <stddef.h>
 
 #include "lib/jxl/base/data_parallel.h"
+#include "lib/jxl/base/rect.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/frame_header.h"
 #include "lib/jxl/image.h"

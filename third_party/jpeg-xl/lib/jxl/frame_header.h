@@ -9,18 +9,20 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <string>
+#include <vector>
 
+#include "lib/jxl/base/common.h"
 #include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/base/override.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/coeff_order_fwd.h"
 #include "lib/jxl/common.h"  
 #include "lib/jxl/dec_bit_reader.h"
+#include "lib/jxl/field_encodings.h"
 #include "lib/jxl/fields.h"
 #include "lib/jxl/frame_dimensions.h"
 #include "lib/jxl/image_metadata.h"
