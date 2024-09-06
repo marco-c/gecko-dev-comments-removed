@@ -568,6 +568,8 @@ class TrackBuffersManager final
   
   
   Maybe<EventTargetCapability<TaskQueue>> mTaskQueueCapability;
+
+  Maybe<media::TimeUnit> mFrameEndTimeBeforeRecreateDemuxer;
 };
 
 }  

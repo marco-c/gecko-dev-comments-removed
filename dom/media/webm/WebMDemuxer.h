@@ -94,7 +94,9 @@ class WebMDemuxer : public MediaDataDemuxer,
   explicit WebMDemuxer(MediaResource* aResource);
   
   
-  WebMDemuxer(MediaResource* aResource, bool aIsMediaSource);
+  WebMDemuxer(
+      MediaResource* aResource, bool aIsMediaSource,
+      Maybe<media::TimeUnit> aFrameEndTimeBeforeRecreateDemuxer = Nothing());
 
   RefPtr<InitPromise> Init() override;
 
@@ -222,6 +224,8 @@ class WebMDemuxer : public MediaDataDemuxer,
   
   Maybe<int64_t> mLastAudioFrameTime;
   Maybe<int64_t> mLastVideoFrameTime;
+
+  Maybe<media::TimeUnit> mVideoFrameEndTimeBeforeReset;
 
   
   int mAudioCodec;
