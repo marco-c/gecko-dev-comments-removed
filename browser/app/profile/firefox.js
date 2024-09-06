@@ -1028,6 +1028,8 @@ pref("browser.bookmarks.openInTabClosesMenu", true);
 
 pref("browser.bookmarks.defaultLocation", "toolbar");
 
+pref("browser.tabs.allow_transparent_browser", false);
+
 
 pref("dom.disable_open_during_load",              true);
 
