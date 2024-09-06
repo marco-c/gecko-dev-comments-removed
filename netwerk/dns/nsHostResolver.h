@@ -148,6 +148,11 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   
 
 
+  already_AddRefed<nsHostRecord> InitMockHTTPSRecord(const nsHostKey& key);
+
+  
+
+
 
 
 
