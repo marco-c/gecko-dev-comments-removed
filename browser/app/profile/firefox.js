@@ -1899,6 +1899,7 @@ pref("pdfjs.handleOctetStream", true);
 
 pref("sidebar.position_start", true);
 pref("sidebar.revamp", false);
+pref("sidebar.main.tools", "history,syncedtabs");
 
 pref("browser.ml.chat.enabled", false);
 pref("browser.ml.chat.prompt.prefix", 'I’m on page "%currentTabTitle%" with "%selection|12000%" selected. ');
