@@ -382,6 +382,13 @@ var SelectTranslationsPanel = new (class {
 
   async open(event, screenX, screenY, sourceText, langPairPromise) {
     if (this.#isOpen()) {
+      await this.#forceReopen(
+        event,
+        screenX,
+        screenY,
+        sourceText,
+        langPairPromise
+      );
       return;
     }
 
@@ -406,6 +413,27 @@ var SelectTranslationsPanel = new (class {
     }
 
     this.#openPopup(event, screenX, screenY);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async #forceReopen(event, screenX, screenY, sourceText, langPairPromise) {
+    this.console?.warn("The SelectTranslationsPanel was forced to reopen.");
+    this.close();
+    this.#changeStateToClosed();
+    await this.open(event, screenX, screenY, sourceText, langPairPromise);
   }
 
   
