@@ -757,6 +757,11 @@ pref("browser.search.serpEventTelemetryCategorization.enabled", false);
 
 
 
+
+pref("browser.search.serpMetricsRecordedCounter", 0);
+
+
+
 pref("browser.search.widget.removeAfterDaysUnused", 120);
 
 
