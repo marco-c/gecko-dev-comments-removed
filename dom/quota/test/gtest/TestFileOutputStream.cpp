@@ -59,7 +59,7 @@ TEST_F(TestFileOutputStream, extendFileStreamWithSetEOF) {
 
       {
         ASSERT_NS_SUCCEEDED(
-            quotaManager->EnsureTemporaryStorageIsInitialized());
+            quotaManager->EnsureTemporaryStorageIsInitializedInternal());
 
         auto res = quotaManager->EnsureTemporaryOriginIsInitialized(
             quota::PERSISTENCE_TYPE_DEFAULT, originMetadata);
@@ -218,7 +218,7 @@ TEST_F(TestFileOutputStream, extendFileStreamWithSetEOF) {
 
     PerformOnIOThread(std::move(ioTask));
 
-    directoryLock = nullptr;
+    DropDirectoryLock(directoryLock);
   };
 
   PerformOnBackgroundThread(std::move(backgroundTask));
