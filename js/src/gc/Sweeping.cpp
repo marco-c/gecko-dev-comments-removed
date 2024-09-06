@@ -737,7 +737,7 @@ void GCRuntime::groupZonesForSweeping(JS::GCReason reason) {
   }
 
   
-  if (useZeal && zealModeControlsYieldPoint()) {
+  if (useZeal && hasIncrementalTwoSliceZealMode()) {
     finder.useOneComponent();
   }
 

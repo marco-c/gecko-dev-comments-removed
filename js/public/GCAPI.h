@@ -483,11 +483,6 @@ typedef enum JSGCParamKey {
 
   JSGC_GENERATE_MISSING_ALLOC_SITES = 53,
 
-  
-
-
-  JSGC_SLICE_NUMBER = 54,
-
 } JSGCParamKey;
 
 
