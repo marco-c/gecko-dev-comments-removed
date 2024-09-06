@@ -222,13 +222,6 @@ class nsView final : public nsIWidgetListener {
 
 
 
-
-  nsPoint ConvertFromParentCoords(nsPoint aPt) const;
-
-  
-
-
-
   ViewVisibility GetVisibility() const { return mVis; }
 
   
@@ -524,9 +517,6 @@ class nsView final : public nsIWidgetListener {
   
   
   void DropMouseGrabbing();
-
-  
-  nsRect GetBoundsInParentUnits() const;
 
   bool HasNonEmptyDirtyRegion() {
     return mDirtyRegion && !mDirtyRegion->IsEmpty();
