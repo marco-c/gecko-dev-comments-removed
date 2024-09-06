@@ -39,19 +39,15 @@ const COMMENT_PARSING_HEURISTIC_BYPASS_CHAR =
 
 
 
-
-function* cssTokenizer(string, useInspectorCSSParser = false) {
-  const lexer = getCSSLexer(string, useInspectorCSSParser);
+function* cssTokenizer(string) {
+  const lexer = getCSSLexer(string);
   while (true) {
     const token = lexer.nextToken();
     if (!token) {
       break;
     }
     
-    if (
-      token.tokenType !== "comment" ||
-      (useInspectorCSSParser && token.tokenType !== "Comment")
-    ) {
+    if (token.tokenType !== "comment") {
       yield token;
     }
   }
@@ -648,21 +644,15 @@ function parsePseudoClassesAndAttributes(value) {
     throw new Error("empty input string");
   }
 
-  
-  
-  const tokensIterator = cssTokenizer(
-    value,
-    
-    true
-  );
+  const tokens = cssTokenizer(value);
   const result = [];
   let current = "";
   let functionCount = 0;
   let hasAttribute = false;
   let hasColon = false;
 
-  for (const token of tokensIterator) {
-    if (token.tokenType === "Ident") {
+  for (const token of tokens) {
+    if (token.tokenType === "ident") {
       current += value.substring(token.startOffset, token.endOffset);
 
       if (hasColon && !functionCount) {
@@ -673,7 +663,7 @@ function parsePseudoClassesAndAttributes(value) {
         current = "";
         hasColon = false;
       }
-    } else if (token.tokenType === "Colon") {
+    } else if (token.tokenType === "symbol" && token.text === ":") {
       if (!hasColon) {
         if (current) {
           result.push({ value: current, type: SELECTOR_ELEMENT });
@@ -684,10 +674,10 @@ function parsePseudoClassesAndAttributes(value) {
       }
 
       current += token.text;
-    } else if (token.tokenType === "Function") {
+    } else if (token.tokenType === "function") {
       current += value.substring(token.startOffset, token.endOffset);
       functionCount++;
-    } else if (token.tokenType === "CloseParenthesis") {
+    } else if (token.tokenType === "symbol" && token.text === ")") {
       current += token.text;
 
       if (hasColon && functionCount == 1) {
@@ -701,7 +691,7 @@ function parsePseudoClassesAndAttributes(value) {
       } else {
         functionCount--;
       }
-    } else if (token.tokenType === "SquareBracketBlock") {
+    } else if (token.tokenType === "symbol" && token.text === "[") {
       if (!hasAttribute && !functionCount) {
         if (current) {
           result.push({ value: current, type: SELECTOR_ELEMENT });
@@ -712,7 +702,7 @@ function parsePseudoClassesAndAttributes(value) {
       }
 
       current += token.text;
-    } else if (token.tokenType === "CloseSquareBracket") {
+    } else if (token.tokenType === "symbol" && token.text === "]") {
       current += token.text;
 
       if (hasAttribute && !functionCount) {

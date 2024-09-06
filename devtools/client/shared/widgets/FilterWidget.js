@@ -814,7 +814,7 @@ CSSFilterEditorWidget.prototype = {
       return;
     }
 
-    for (let { name, value } of tokenizeFilterValue(cssValue)) {
+    for (let { name, value, quote } of tokenizeFilterValue(cssValue)) {
       
       
       if (name !== "url") {
@@ -823,7 +823,7 @@ CSSFilterEditorWidget.prototype = {
         }
       }
 
-      this.add(name, value, true);
+      this.add(name, value, quote, true);
     }
 
     this.emit("updated", this.getCssValue());
@@ -845,7 +845,10 @@ CSSFilterEditorWidget.prototype = {
 
 
 
-  add(name, value, noEvent) {
+
+
+
+  add(name, value, quote, noEvent) {
     const def = this._definition(name);
     if (!def) {
       return false;
@@ -864,6 +867,11 @@ CSSFilterEditorWidget.prototype = {
         value = "";
       } else {
         value = def.range[0] + unitLabel;
+      }
+
+      if (name === "url") {
+        
+        quote = '"';
       }
     }
 
@@ -886,7 +894,7 @@ CSSFilterEditorWidget.prototype = {
       }
     }
 
-    const index = this.filters.push({ value, unit, name }) - 1;
+    const index = this.filters.push({ value, unit, name, quote }) - 1;
     if (!noEvent) {
       this.emit("updated", this.getCssValue());
     }
@@ -909,11 +917,21 @@ CSSFilterEditorWidget.prototype = {
     }
 
     
-    if (filter.name === "url") {
-      return filter.value;
+    if (filter.name !== "url") {
+      return filter.value + filter.unit;
     }
 
-    return filter.value + filter.unit;
+    
+    if (filter.quote === "'") {
+      return "'" + filter.value.replace(/\'/g, "\\'") + "'";
+    } else if (filter.quote === '"') {
+      return '"' + filter.value.replace(/\"/g, '\\"') + '"';
+    }
+
+    
+    
+    
+    return filter.value.replace(/[\\ \t()"']/g, "\\$&");
   },
 
   removeAt(index) {
@@ -1030,37 +1048,30 @@ function tokenizeFilterValue(css) {
   let state = "initial";
   let name;
   let contents;
-  for (const token of cssTokenizer(css, true)) {
+  for (const token of cssTokenizer(css)) {
     switch (state) {
       case "initial":
-        if (token.tokenType === "Function") {
-          name = token.value;
+        if (token.tokenType === "function") {
+          name = token.text;
           contents = "";
           state = "function";
           depth = 1;
-        } else if (
-          token.tokenType === "UnquotedUrl" ||
-          token.tokenType === "BadUrl"
-        ) {
-          const url = token.text
-            .substring(
-              
-              4,
-              
-              token.tokenType == "UnquotedUrl"
-                ? token.text.length - 1
-                : undefined
-            )
-            .trim();
+        } else if (token.tokenType === "url" || token.tokenType === "bad_url") {
+          
+          const originalText = css.substring(
+            token.startOffset,
+            token.endOffset
+          );
+          const [, quote] = /^url\([ \t\r\n\f]*(["']?)/i.exec(originalText);
 
-          filters.push({ name: "url", value: url });
+          filters.push({ name: "url", value: token.text.trim(), quote });
           
           
         }
         break;
 
       case "function":
-        if (token.tokenType === "CloseParenthesis") {
+        if (token.tokenType === "symbol" && token.text === ")") {
           --depth;
           if (depth === 0) {
             filters.push({ name, value: contents.trim() });
@@ -1070,8 +1081,8 @@ function tokenizeFilterValue(css) {
         }
         contents += css.substring(token.startOffset, token.endOffset);
         if (
-          token.tokenType === "Function" ||
-          token.tokenType === "Parenthesis"
+          token.tokenType === "function" ||
+          (token.tokenType === "symbol" && token.text === "(")
         ) {
           ++depth;
         }
