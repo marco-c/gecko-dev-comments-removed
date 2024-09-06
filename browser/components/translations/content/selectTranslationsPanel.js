@@ -234,15 +234,11 @@ var SelectTranslationsPanel = new (class {
       );
 
       const panel = wrapper.content.firstElementChild;
-      const settingsButton = document.getElementById(
-        "translations-panel-settings"
-      );
       wrapper.replaceWith(wrapper.content);
 
       
       this.#lazyElements = {
         panel,
-        settingsButton,
       };
 
       TranslationsPanelShared.defineLazyElements(document, this.#lazyElements, {
@@ -494,6 +490,12 @@ var SelectTranslationsPanel = new (class {
     const { panel, fromMenuList, toMenuList, tryAnotherSourceMenuList } =
       this.elements;
 
+    
+    
+    
+    if (AppConstants.platform === "macosx") {
+      panel.addEventListener("keypress", this);
+    }
     panel.addEventListener("popupshown", this);
     panel.addEventListener("popuphidden", this);
 
@@ -818,6 +820,56 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  #handleEnterKeyPressed(target) {
+    const {
+      cancelButton,
+      copyButton,
+      doneButtonPrimary,
+      doneButtonSecondary,
+      settingsButton,
+      translateButton,
+      translateFullPageButton,
+      tryAgainButton,
+    } = this.elements;
+
+    switch (target.id) {
+      case cancelButton.id: {
+        this.onClickCancelButton();
+        break;
+      }
+      case copyButton.id: {
+        this.onClickCopyButton();
+        break;
+      }
+      case doneButtonPrimary.id:
+      case doneButtonSecondary.id: {
+        this.onClickDoneButton();
+        break;
+      }
+      case settingsButton.id: {
+        this.#openSettingsPopup();
+        break;
+      }
+      case translateButton.id: {
+        this.onClickTranslateButton();
+        break;
+      }
+      case translateFullPageButton.id: {
+        this.onClickTranslateFullPageButton();
+        break;
+      }
+      case tryAgainButton.id: {
+        this.onClickTryAgainButton();
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
 
 
 
@@ -1080,6 +1132,12 @@ var SelectTranslationsPanel = new (class {
     switch (event.type) {
       case "command": {
         this.#handleCommandEvent(target);
+        break;
+      }
+      case "keypress": {
+        if (event.key === "Enter") {
+          this.#handleEnterKeyPressed(target);
+        }
         break;
       }
       case "popupshown": {
