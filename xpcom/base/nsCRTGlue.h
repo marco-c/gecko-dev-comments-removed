@@ -132,11 +132,11 @@ void NS_MakeRandomString(char* aBuf, int32_t aBufLen);
 #if defined(ANDROID)
 
 
-#  define OS_FILE_ILLEGAL_CHARACTERS "/:*?\"<>|;,+=[]"
+#  define OS_FILE_ILLEGAL_CHARACTERS "/:*%?\"<>|;,+=[]"
 #else
 
 
-#  define OS_FILE_ILLEGAL_CHARACTERS "/:*?\"<>|"
+#  define OS_FILE_ILLEGAL_CHARACTERS "/:*%?\"<>|"
 #endif
 
 
