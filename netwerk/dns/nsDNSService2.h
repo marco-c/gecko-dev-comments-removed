@@ -17,6 +17,7 @@
 #include "nsString.h"
 #include "nsTHashSet.h"
 #include "nsHashKeys.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Attributes.h"
 #include "TRRService.h"
@@ -118,6 +119,8 @@ class nsDNSService final : public mozilla::net::DNSServiceBase,
   
   nsCString mIPv4OnlyDomains;
   nsCString mForceResolve;
+  nsCString mMockHTTPSRRDomain;
+  mozilla::Atomic<bool, mozilla::Relaxed> mHasMockHTTPSRRDomainSet{false};
   bool mBlockDotOnion = false;
   bool mNotifyResolution = false;
   bool mOfflineLocalhost = false;

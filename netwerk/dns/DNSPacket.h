@@ -53,6 +53,8 @@ class DNSPacket {
                            uint64_t aOffset, const uint32_t aCount);
 
   
+  static nsresult EncodeHost(nsCString& aBody, const nsACString& aHost);
+  
   virtual nsresult EncodeRequest(nsCString& aBody, const nsACString& aHost,
                                  uint16_t aType, bool aDisableECS);
 
