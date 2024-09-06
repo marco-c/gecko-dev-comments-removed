@@ -629,30 +629,41 @@ add_task(async function test_fog_complex_object_works() {
   Assert.deepEqual(stack, result);
 });
 
-add_task(function test_fog_ride_along_pings() {
-  Assert.equal(null, Glean.testOnly.badCode.testGetValue("test-ping"));
-  Assert.equal(null, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
-
-  Glean.testOnly.badCode.add(37);
-  Assert.equal(37, Glean.testOnly.badCode.testGetValue("test-ping"));
-  Assert.equal(37, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
-
-  let testPingSubmitted = false;
-
-  GleanPings.testPing.testBeforeNextSubmit(() => {
-    testPingSubmitted = true;
-  });
+add_task(
   
   
-  
-  
+  {
+    skip_if: () =>
+      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
+  },
+  function test_fog_ride_along_pings() {
+    Assert.equal(null, Glean.testOnly.badCode.testGetValue("test-ping"));
+    Assert.equal(null, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
 
-  
-  GleanPings.testPing.submit();
+    Glean.testOnly.badCode.add(37);
+    Assert.equal(37, Glean.testOnly.badCode.testGetValue("test-ping"));
+    Assert.equal(37, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
 
-  Assert.ok(testPingSubmitted, "Test ping was submitted, callback was called.");
+    let testPingSubmitted = false;
 
-  
-  Assert.equal(null, Glean.testOnly.badCode.testGetValue("test-ping"));
-  Assert.equal(null, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
-});
+    GleanPings.testPing.testBeforeNextSubmit(() => {
+      testPingSubmitted = true;
+    });
+    
+    
+    
+    
+
+    
+    GleanPings.testPing.submit();
+
+    Assert.ok(
+      testPingSubmitted,
+      "Test ping was submitted, callback was called."
+    );
+
+    
+    Assert.equal(null, Glean.testOnly.badCode.testGetValue("test-ping"));
+    Assert.equal(null, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
+  }
+);
