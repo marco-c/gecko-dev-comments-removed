@@ -222,8 +222,8 @@ nsresult UrlClassifierCommon::SetBlockedContent(nsIChannel* channel,
   
   
   
-  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil;
-  thirdPartyUtil = mozilla::components::ThirdPartyUtil::Service();
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+      components::ThirdPartyUtil::Service();
   if (NS_WARN_IF(!thirdPartyUtil)) {
     return NS_OK;
   }
@@ -366,8 +366,8 @@ nsresult UrlClassifierCommon::CreatePairwiseEntityListURI(nsIChannel* aChannel,
     return NS_OK;
   }
 
-  nsCOMPtr<nsIScriptSecurityManager> securityManager;
-  securityManager = mozilla::components::ScriptSecurityManager::Service(&rv);
+  nsCOMPtr<nsIScriptSecurityManager> securityManager =
+      do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
   nsCOMPtr<nsIPrincipal> chanPrincipal;
   rv = securityManager->GetChannelURIPrincipal(aChannel,

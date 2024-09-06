@@ -3,9 +3,7 @@
 
 
 
-#include "Predictor.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Components.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/HoldDropJSObjects.h"
@@ -62,8 +60,8 @@ static nsresult ResolveHost(const nsACString& host,
                             nsIDNSListener* listener) {
   nsresult rv;
 
-  nsCOMPtr<nsIDNSService> dns;
-  dns = mozilla::components::DNS::Service(&rv);
+  nsCOMPtr<nsIDNSService> dns =
+      do_GetService("@mozilla.org/network/dns-service;1", &rv);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -247,7 +245,8 @@ nsUDPSocket::nsUDPSocket() {
   
   if (!gSocketTransportService) {
     
-    mozilla::components::SocketTransport::Service();
+    nsCOMPtr<nsISocketTransportService> sts =
+        do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID);
   }
 
   mSts = gSocketTransportService;
