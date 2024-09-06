@@ -357,7 +357,8 @@ Result<Ok, mozilla::ipc::LaunchError> SandboxBroker::LaunchApp(
         "last_warning=%d",
         result, last_error, last_warning);
 
-    return Err(mozilla::ipc::LaunchError("SB::LA::SpawnTarget", last_error));
+    return Err(mozilla::ipc::LaunchError::FromWin32Error("SB::LA::SpawnTarget",
+                                                         last_error));
   } else if (sandbox::SBOX_ALL_OK != last_warning) {
     
     LOG_W("Warning on SpawnTarget with last_error=%lu, last_warning=%d",

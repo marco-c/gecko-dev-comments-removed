@@ -7,32 +7,62 @@
 #ifndef mozilla_ipc_LaunchError_h
 #define mozilla_ipc_LaunchError_h
 
-#include "prerror.h"
+#include "mozilla/StaticString.h"
+#include "nsError.h"  
 
 #if defined(XP_WIN)
 #  include <windows.h>
 #  include <winerror.h>
-using OsError = HRESULT;
-#else
-using OsError = int;
 #endif
 
 namespace mozilla::ipc {
 
 class LaunchError {
  public:
-  explicit LaunchError(const char* aFunction, OsError aError = 0);
-#if defined(XP_WIN)
-  explicit LaunchError(const char* aFunction, PRErrorCode aError);
-  explicit LaunchError(const char* aFunction, DWORD aError);
-#endif  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using ErrorType = long;
 
-  const char* FunctionName() const;
-  OsError ErrorCode() const;
+  
+  
+  
+  
+  
+  
+  explicit LaunchError(StaticString aFunction, ErrorType aError = 0)
+      : mFunction(aFunction), mError(aError) {}
+
+#ifdef WIN32
+  
+  
+  
+  
+  
+  
+  
+  static LaunchError FromWin32Error(StaticString aFunction, DWORD aError) {
+    return LaunchError(aFunction, HRESULT_FROM_WIN32(aError));
+  }
+#endif
+
+  
+  LaunchError(StaticString aFunction, nsresult aError)
+      : mFunction(aFunction), mError((ErrorType)aError) {}
+
+  StaticString FunctionName() const { return mFunction; }
+  ErrorType ErrorCode() const { return mError; }
 
  private:
-  const char* mFunction;
-  OsError mError;
+  StaticString mFunction;
+  ErrorType mError;
 };
 
 }  

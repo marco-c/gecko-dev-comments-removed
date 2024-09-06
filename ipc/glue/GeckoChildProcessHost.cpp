@@ -831,9 +831,9 @@ bool GeckoChildProcessHost::AsyncLaunch(std::vector<std::string> aExtraOpts) {
 #if defined(XP_WIN)
                     "%s,0x%lx,%s",
 #else
-                    "%s,%d,%s",
+                    "%s,%ld,%s",
 #endif
-                    aError.FunctionName(), aError.ErrorCode(),
+                    aError.FunctionName().get(), aError.ErrorCode(),
                     XRE_GeckoProcessTypeToString(mProcessType));
                 
                 
