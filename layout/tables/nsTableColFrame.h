@@ -86,10 +86,10 @@ class nsTableColFrame final : public nsSplittableFrame {
   
   int32_t Count() const;
 
-  BCPixelSize GetIStartBorderWidth() const { return mIStartBorderWidth; }
-  BCPixelSize GetIEndBorderWidth() const { return mIEndBorderWidth; }
-  void SetIStartBorderWidth(BCPixelSize aWidth) { mIStartBorderWidth = aWidth; }
-  void SetIEndBorderWidth(BCPixelSize aWidth) { mIEndBorderWidth = aWidth; }
+  nscoord GetIStartBorderWidth() const { return mIStartBorderWidth; }
+  nscoord GetIEndBorderWidth() const { return mIEndBorderWidth; }
+  void SetIStartBorderWidth(nscoord aWidth) { mIStartBorderWidth = aWidth; }
+  void SetIEndBorderWidth(nscoord aWidth) { mIEndBorderWidth = aWidth; }
 
 #ifdef DEBUG
   void Dump(int32_t aIndent);
@@ -273,8 +273,8 @@ class nsTableColFrame final : public nsSplittableFrame {
   uint32_t mColIndex;
 
   
-  BCPixelSize mIStartBorderWidth;
-  BCPixelSize mIEndBorderWidth;
+  nscoord mIStartBorderWidth;
+  nscoord mIEndBorderWidth;
 
   bool mHasSpecifiedCoord;
 };

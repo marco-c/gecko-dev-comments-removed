@@ -274,10 +274,10 @@ class nsBCTableCellFrame final : public nsTableCellFrame {
       mozilla::WritingMode aWM) const override;
 
   
-  BCPixelSize GetBorderWidth(mozilla::LogicalSide aSide) const;
+  nscoord GetBorderWidth(mozilla::LogicalSide aSide) const;
 
   
-  void SetBorderWidth(mozilla::LogicalSide aSide, BCPixelSize aPixelValue);
+  void SetBorderWidth(mozilla::LogicalSide aSide, nscoord aValue);
 
   nsMargin GetBorderOverflow() override;
 
@@ -288,10 +288,10 @@ class nsBCTableCellFrame final : public nsTableCellFrame {
  private:
   
   
-  BCPixelSize mBStartBorder;
-  BCPixelSize mIEndBorder;
-  BCPixelSize mBEndBorder;
-  BCPixelSize mIStartBorder;
+  nscoord mBStartBorder;
+  nscoord mIEndBorder;
+  nscoord mBEndBorder;
+  nscoord mIStartBorder;
 };
 
 
