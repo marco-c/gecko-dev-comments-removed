@@ -5,7 +5,12 @@ const NS_OSX_PICTURE_DOCUMENTS_DIR = "Pct";
 
 
 
-const kPythonPath = "/usr/bin/python";
+
+let kPythonPath = "/usr/bin/python";
+if (AppConstants.isPlatformAndVersionAtLeast("macosx", 23.0)) {
+  kPythonPath = "/usr/local/bin/python3";
+}
+
 const kDesktopCheckerScriptPath =
   "browser/browser/components/shell/test/mac_desktop_image.py";
 const kDefaultBackgroundImage_10_14 =
@@ -19,6 +24,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 function getPythonExecutableFile() {
   let python = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  info(`Using python at location ${kPythonPath}`);
   python.initWithPath(kPythonPath);
   return python;
 }
