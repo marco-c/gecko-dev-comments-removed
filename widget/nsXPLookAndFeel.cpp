@@ -1550,9 +1550,4 @@ void LookAndFeel::SetData(widget::FullLookAndFeel&& aTables) {
   nsLookAndFeel::GetInstance()->SetDataImpl(std::move(aTables));
 }
 
-
-nsresult LookAndFeel::GetKeyboardLayout(nsACString& aLayout) {
-  return nsLookAndFeel::GetInstance()->GetKeyboardLayoutImpl(aLayout);
-}
-
 }  
