@@ -322,6 +322,7 @@ async function create_prerendered_page(t, params = {}, opt = {}, rule_extras = {
   }
 
   
+  
   async function getNetworkRequestCount() {
     return await (await fetch(prerendering_url + '&get-fetch-count')).text();
   }
