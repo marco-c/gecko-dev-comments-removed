@@ -151,7 +151,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   
   mozilla::StyleMathStyle mMathStyle;
 
-
   
   bool mExplicitLanguage = false;
 
