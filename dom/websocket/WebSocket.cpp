@@ -1613,6 +1613,19 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  for (uint32_t index = 0; index < aProtocolArray.Length(); ++index) {
+    if (!WebSocket::IsValidProtocolString(aProtocolArray[index])) {
+      return NS_ERROR_DOM_SYNTAX_ERR;
+    }
+
+    if (!mRequestedProtocolList.IsEmpty()) {
+      mRequestedProtocolList.AppendLiteral(", ");
+    }
+
+    AppendUTF16toUTF8(aProtocolArray[index], mRequestedProtocolList);
+  }
+
+  
   
   RefPtr<WebSocketImplProxy> proxy;
   if (mIsMainThread) {
@@ -1793,19 +1806,6 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
         return NS_ERROR_DOM_SECURITY_ERR;
       }
     }
-  }
-
-  
-  for (uint32_t index = 0; index < aProtocolArray.Length(); ++index) {
-    if (!WebSocket::IsValidProtocolString(aProtocolArray[index])) {
-      return NS_ERROR_DOM_SYNTAX_ERR;
-    }
-
-    if (!mRequestedProtocolList.IsEmpty()) {
-      mRequestedProtocolList.AppendLiteral(", ");
-    }
-
-    AppendUTF16toUTF8(aProtocolArray[index], mRequestedProtocolList);
   }
 
   if (mIsMainThread) {
