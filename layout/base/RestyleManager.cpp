@@ -3246,6 +3246,12 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     
     nsTArray<RefPtr<Element>> anchorsToSuppress;
 
+    
+    
+    
+    ReentrantChangeList newChanges;
+    mReentrantChanges = &newChanges;
+
     {
       DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
       while (Element* root = iter.GetNextStyleRoot()) {
@@ -3271,33 +3277,25 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     doc->ClearServoRestyleRoot();
     ClearSnapshots();
 
-    
-    
-    
-    
-    
-    {
-      ReentrantChangeList newChanges;
-      mReentrantChanges = &newChanges;
-      while (!currentChanges.IsEmpty()) {
-        ProcessRestyledFrames(currentChanges);
-        MOZ_ASSERT(currentChanges.IsEmpty());
-        for (ReentrantChange& change : newChanges) {
-          if (!(change.mHint & nsChangeHint_ReconstructFrame) &&
-              !change.mContent->GetPrimaryFrame()) {
-            
-            
-            
-            
-            continue;
-          }
-          currentChanges.AppendChange(change.mContent->GetPrimaryFrame(),
-                                      change.mContent, change.mHint);
+    while (!currentChanges.IsEmpty()) {
+      ProcessRestyledFrames(currentChanges);
+      MOZ_ASSERT(currentChanges.IsEmpty());
+      for (ReentrantChange& change : newChanges) {
+        if (!(change.mHint & nsChangeHint_ReconstructFrame) &&
+            !change.mContent->GetPrimaryFrame()) {
+          
+          
+          
+          
+          continue;
         }
-        newChanges.Clear();
+        currentChanges.AppendChange(change.mContent->GetPrimaryFrame(),
+                                    change.mContent, change.mHint);
       }
-      mReentrantChanges = nullptr;
+      newChanges.Clear();
     }
+
+    mReentrantChanges = nullptr;
 
     
     
