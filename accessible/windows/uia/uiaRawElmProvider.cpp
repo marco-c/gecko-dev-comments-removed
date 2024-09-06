@@ -1023,3 +1023,22 @@ RefPtr<Interface> uiaRawElmProvider::GetPatternFromDerived() {
   auto* derived = static_cast<Derived*>(msaa);
   return derived;
 }
+
+SAFEARRAY* a11y::AccessibleArrayToUiaArray(const nsTArray<Accessible*>& aAccs) {
+  if (aAccs.IsEmpty()) {
+    
+    
+    
+    return nullptr;
+  }
+  SAFEARRAY* uias = SafeArrayCreateVector(VT_UNKNOWN, 0, aAccs.Length());
+  LONG indices[1] = {0};
+  for (Accessible* acc : aAccs) {
+    
+    
+    IRawElementProviderSimple* uia = MsaaAccessible::GetFrom(acc);
+    SafeArrayPutElement(uias, indices, uia);
+    ++indices[0];
+  }
+  return uias;
+}

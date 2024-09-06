@@ -126,3 +126,15 @@ async function testPythonRaises(expression, message) {
   }
   ok(failed, message);
 }
+
+
+
+
+
+async function isUiaElementArray(pyExpr, ids, message) {
+  const result = await runPython(`
+    uias = (${pyExpr})
+    return [uias.GetElement(i).CurrentAutomationId for i in range(uias.Length)]
+  `);
+  SimpleTest.isDeeply(result, ids, message);
+}
