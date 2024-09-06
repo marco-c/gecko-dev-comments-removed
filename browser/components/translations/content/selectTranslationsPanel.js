@@ -113,6 +113,13 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  #eventListenersInitialized = false;
+
+  
+
+
+
+
   #translationState = { phase: "closed" };
 
   
@@ -313,6 +320,30 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  #initializeEventListeners() {
+    if (this.#eventListenersInitialized) {
+      
+      return;
+    }
+
+    const { panel, fromMenuList, toMenuList, tryAnotherSourceMenuList } =
+      this.elements;
+
+    panel.addEventListener("popupshown", this);
+    panel.addEventListener("popuphidden", this);
+
+    panel.addEventListener("command", this);
+    fromMenuList.addEventListener("command", this);
+    toMenuList.addEventListener("command", this);
+    tryAnotherSourceMenuList.addEventListener("command", this);
+
+    this.#eventListenersInitialized = true;
+  }
+
+  
+
+
+
 
 
 
@@ -325,12 +356,13 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
-    this.#registerSourceText(sourceText, langPairPromise);
+    this.#initializeEventListeners();
     await this.#ensureLangListsBuilt();
 
     await Promise.all([
       this.#cachePlaceholderText(),
       this.#initializeLanguageMenuLists(langPairPromise),
+      this.#registerSourceText(sourceText, langPairPromise),
     ]);
 
     this.#maybeRequestTranslation();
@@ -407,10 +439,53 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  #handleCommandEvent(target) {
+    const {
+      doneButton,
+      fromMenuList,
+      fromMenuPopup,
+      toMenuList,
+      toMenuPopup,
+      translateButton,
+      tryAnotherSourceMenuList,
+      tryAnotherSourceMenuPopup,
+    } = this.elements;
+    switch (target.id) {
+      case doneButton.id: {
+        this.close();
+        break;
+      }
+      case fromMenuList.id:
+      case fromMenuPopup.id: {
+        this.onChangeFromLanguage();
+        break;
+      }
+      case toMenuList.id:
+      case toMenuPopup.id: {
+        this.onChangeToLanguage();
+        break;
+      }
+      case translateButton.id: {
+        this.onClickTranslateButton();
+        break;
+      }
+      case tryAnotherSourceMenuList.id:
+      case tryAnotherSourceMenuPopup.id: {
+        this.onChangeTryAnotherSourceLanguage();
+        break;
+      }
+    }
+  }
 
-  handlePanelPopupShownEvent(event) {
+  
+
+
+
+
+
+  #handlePopupShownEvent(target) {
     const { panel, fromMenuPopup, toMenuPopup } = this.elements;
-    switch (event.target.id) {
+    switch (target.id) {
       case panel.id: {
         this.#updatePanelUIFromState();
         break;
@@ -432,11 +507,41 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  handlePanelPopupHiddenEvent(event) {
+  #handlePopupHiddenEvent(target) {
     const { panel } = this.elements;
-    switch (event.target.id) {
+    switch (target.id) {
       case panel.id: {
         this.#changeStateToClosed();
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+  handleEvent(event) {
+    let target = event.target;
+
+    
+    
+    while (!target.id && target.parentElement) {
+      target = target.parentElement;
+    }
+
+    switch (event.type) {
+      case "command": {
+        this.#handleCommandEvent(target);
+        break;
+      }
+      case "popupshown": {
+        this.#handlePopupShownEvent(target);
+        break;
+      }
+      case "popuphidden": {
+        this.#handlePopupHiddenEvent(target);
         break;
       }
     }
