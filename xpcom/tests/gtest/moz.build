@@ -68,6 +68,7 @@ UNIFIED_SOURCES += [
     "TestThreadManager.cpp",
     "TestThreadPool.cpp",
     "TestThreadPoolListener.cpp",
+    "TestThreadUtils.cpp",
     "TestThrottledEventQueue.cpp",
     "TestTimeStamp.cpp",
     "TestTokenizer.cpp",
@@ -82,17 +83,11 @@ if CONFIG["OS_TARGET"] != "Android":
     ]
 
 
-if not (CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] == "aarch64"):
-    UNIFIED_SOURCES += ["TestThreadUtils.cpp"]
-
-
 if CONFIG["OS_TARGET"] != "Darwin":
     UNIFIED_SOURCES += ["TestExpirationTracker.cpp"]
 
 
-if CONFIG["OS_TARGET"] != "Android" and not (
-    CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] == "aarch64"
-):
+if CONFIG["OS_TARGET"] != "Android":
     UNIFIED_SOURCES += ["TestTimers.cpp"]
 
 
