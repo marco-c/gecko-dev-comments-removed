@@ -249,6 +249,40 @@ async function test_frame_matching(meta) {
 
     {
       
+      
+      matches: ["http://example.com/data/*"],
+      contentScript: {
+        allFrames: true,
+        matchOriginAsFallback: true,
+      },
+      topLevel: true,
+      iframe: true,
+      
+      
+      dataURL: false,
+      javascriptVoid: true,
+      javascriptTrue: true,
+      aboutBlank: true,
+      srcdoc: true,
+    },
+
+    {
+      matches: ["http://example.com/*"],
+      contentScript: {
+        allFrames: true,
+        matchOriginAsFallback: true,
+      },
+      topLevel: true,
+      iframe: true,
+      dataURL: true,
+      javascriptVoid: true,
+      javascriptTrue: true,
+      aboutBlank: true,
+      srcdoc: true,
+    },
+
+    {
+      
       matches: ["http://foo.com/data/*"],
       contentScript: {
         allFrames: true,

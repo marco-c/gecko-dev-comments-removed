@@ -711,7 +711,8 @@ MozDocumentMatcher::MozDocumentMatcher(GlobalObject& aGlobal,
       mAllFrames(aInit.mAllFrames),
       mCheckPermissions(aInit.mCheckPermissions),
       mFrameID(aInit.mFrameID),
-      mMatchAboutBlank(aInit.mMatchAboutBlank) {
+      mMatchAboutBlank(aInit.mMatchAboutBlank || aInit.mMatchOriginAsFallback),
+      mMatchOriginAsFallback(aInit.mMatchOriginAsFallback) {
   MatchPatternOptions options;
   options.mRestrictSchemes = mRestricted;
 
@@ -832,12 +833,11 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
       return true;
     }
     
-    return false;
+    
   }
 
-  if (aDoc.Principal() && aDoc.Principal()->GetIsNullPrincipal() &&
-      !aDoc.URL().IsNonOpaqueURL()) {
-    
+  if (!mMatchOriginAsFallback && aDoc.Principal() &&
+      aDoc.Principal()->GetIsNullPrincipal() && !aDoc.URL().IsNonOpaqueURL()) {
     return false;
   }
 
@@ -1120,11 +1120,7 @@ nsIPrincipal* DocInfo::Principal() const {
 }
 
 const URLInfo& DocInfo::PrincipalURL() const {
-  if (!(Principal() && Principal()->GetIsContentPrincipal())) {
-    
-    
-    
-    
+  if (!Principal()) {
     
     
     
@@ -1147,10 +1143,23 @@ const URLInfo& DocInfo::PrincipalURL() const {
 
   if (mPrincipalURL.isNothing()) {
     nsIPrincipal* prin = Principal();
-    auto* basePrin = BasePrincipal::Cast(prin);
-    nsCOMPtr<nsIURI> uri;
-    if (NS_SUCCEEDED(basePrin->GetURI(getter_AddRefs(uri)))) {
-      MOZ_DIAGNOSTIC_ASSERT(uri);
+    nsCOMPtr<nsIPrincipal> precursor;
+    if (prin->GetIsContentPrincipal()) {
+      
+      nsCOMPtr<nsIURI> uri;
+      BasePrincipal::Cast(prin)->GetURI(getter_AddRefs(uri));
+      mPrincipalURL.emplace(uri);
+    } else if (prin->GetIsNullPrincipal() && !URL().IsNonOpaqueURL() &&
+               (precursor = prin->GetPrecursorPrincipal()) &&
+               precursor->GetIsContentPrincipal()) {
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIURI> uri;
+      BasePrincipal::Cast(precursor)->GetURI(getter_AddRefs(uri));
       mPrincipalURL.emplace(uri);
     } else {
       mPrincipalURL.emplace(URL());
