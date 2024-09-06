@@ -6552,14 +6552,6 @@ void MacroAssembler::branchWasmRefIsSubtypeExn(Register ref,
   }
 
   
-  
-  if (destType.isNoExn()) {
-    jump(failLabel);
-    bind(&fallthrough);
-    return;
-  }
-
-  
   jump(successLabel);
   bind(&fallthrough);
 }

@@ -372,10 +372,6 @@ using RootedValVectorN = Rooted<ValVectorN<N>>;
                                            MutableHandleAnyRef vp);
 
 
-[[nodiscard]] extern bool CheckNullExnRefValue(JSContext* cx, HandleValue v,
-                                               MutableHandleAnyRef vp);
-
-
 [[nodiscard]] extern bool CheckNullExternRefValue(JSContext* cx, HandleValue v,
                                                   MutableHandleAnyRef vp);
 

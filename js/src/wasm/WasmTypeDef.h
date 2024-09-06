@@ -1355,7 +1355,6 @@ inline RefTypeHierarchy RefType::hierarchy() const {
     case RefType::NoExtern:
       return RefTypeHierarchy::Extern;
     case RefType::Exn:
-    case RefType::NoExn:
       return RefTypeHierarchy::Exn;
     case RefType::Any:
     case RefType::None:
@@ -1474,11 +1473,6 @@ inline bool RefType::isSubTypeOf(RefType subType, RefType superType) {
 
   
   if (subType.isNone() && superType.hierarchy() == RefTypeHierarchy::Any) {
-    return true;
-  }
-
-  
-  if (subType.isNoExn() && superType.hierarchy() == RefTypeHierarchy::Exn) {
     return true;
   }
 
