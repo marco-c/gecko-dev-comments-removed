@@ -3545,9 +3545,7 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
 
     
     
-    MOZ_ASSERT(aRequest->GetScriptLoadContext()
-                   ->GetScriptElement()
-                   ->GetParserCreated());
+    MOZ_ASSERT(aRequest->GetScriptLoadContext()->GetParserCreated());
     nsCOMPtr<nsIScriptElement> oldParserInsertedScript =
         mCurrentParserInsertedScript;
     mCurrentParserInsertedScript =
