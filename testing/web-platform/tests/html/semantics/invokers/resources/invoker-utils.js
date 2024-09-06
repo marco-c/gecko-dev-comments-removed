@@ -14,3 +14,14 @@ async function clickOn(element) {
       .send();
   await waitForRender();
 }
+async function hoverOver(element) {
+  await waitForRender();
+  let rect = element.getBoundingClientRect();
+  let actions = new test_driver.Actions();
+  
+  
+  await actions
+      .pointerMove(Math.round(rect.x + rect.width / 2), Math.round(rect.y + rect.height / 2), {})
+      .send();
+  await waitForRender();
+}
