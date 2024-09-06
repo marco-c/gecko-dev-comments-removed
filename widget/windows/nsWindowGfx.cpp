@@ -186,6 +186,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
       mTransparencyMode == TransparencyMode::Transparent;
 
   HDC hDC = nullptr;
+  LayoutDeviceIntRegion region;
   if (usingMemoryDC) {
     
     
@@ -196,11 +197,14 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
     
     
     hDC = mBasicLayersSurface->GetTransparentDC();
+    RECT paintRect;
+    ::GetClientRect(mWnd, &paintRect);
+    region = LayoutDeviceIntRegion{WinUtils::ToIntRect(paintRect)};
   } else {
     hDC = ::BeginPaint(mWnd, &ps);
+    region = GetRegionToPaint(ps, hDC);
   }
 
-  const LayoutDeviceIntRegion region = GetRegionToPaint(ps, hDC);
   RefPtr<nsWindow> strongThis(this);
   if (nsIWidgetListener* listener = GetPaintListener()) {
     listener->WillPaintWindow(this);
@@ -256,7 +260,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
         RefPtr<gfxASurface> targetSurface;
 
         
-        if (TransparencyMode::Transparent == mTransparencyMode) {
+        if (mTransparencyMode == TransparencyMode::Transparent) {
           
           
           MutexAutoLock lock(mBasicLayersSurface->GetTransparentSurfaceLock());
@@ -265,7 +269,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
 
         RefPtr<gfxWindowsSurface> targetSurfaceWin;
         if (!targetSurface) {
-          uint32_t flags = (mTransparencyMode == TransparencyMode::Opaque)
+          uint32_t flags = mTransparencyMode == TransparencyMode::Opaque
                                ? 0
                                : gfxWindowsSurface::FLAG_IS_TRANSPARENT;
           targetSurfaceWin = new gfxWindowsSurface(hDC, flags);
@@ -294,8 +298,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
           case TransparencyMode::Transparent:
             
             
-            dt->ClearRect(
-                Rect(0.f, 0.f, dt->GetSize().width, dt->GetSize().height));
+            dt->ClearRect(Rect(Point(0, 0), Size(dt->GetSize())));
             break;
           default:
             
@@ -311,7 +314,7 @@ bool nsWindow::OnPaint(uint32_t aNestingLevel) {
           result = listener->PaintWindow(this, region);
         }
 
-        if (TransparencyMode::Transparent == mTransparencyMode) {
+        if (mTransparencyMode == TransparencyMode::Transparent) {
           
           
           
