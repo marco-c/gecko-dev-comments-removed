@@ -89,7 +89,7 @@ bool Decoder::startSection(SectionId id, ModuleMetadata* moduleMeta,
   
   const uint8_t* const initialCur = cur_;
   const size_t initialCustomSectionsLength =
-      moduleMeta->customSections.length();
+      moduleMeta->customSectionRanges.length();
 
   
   
@@ -139,7 +139,7 @@ bool Decoder::startSection(SectionId id, ModuleMetadata* moduleMeta,
 
 rewind:
   cur_ = initialCur;
-  moduleMeta->customSections.shrinkTo(initialCustomSectionsLength);
+  moduleMeta->customSectionRanges.shrinkTo(initialCustomSectionsLength);
   return true;
 
 fail:
@@ -165,7 +165,7 @@ bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
   
   const uint8_t* const initialCur = cur_;
   const size_t initialCustomSectionsLength =
-      moduleMeta->customSections.length();
+      moduleMeta->customSectionRanges.length();
 
   while (true) {
     
@@ -182,33 +182,34 @@ bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
       goto fail;
     }
 
-    CustomSectionEnv sec;
-    if (!readVarU32(&sec.nameLength) || sec.nameLength > bytesRemain()) {
+    CustomSectionRange secRange;
+    if (!readVarU32(&secRange.nameLength) ||
+        secRange.nameLength > bytesRemain()) {
       goto fail;
     }
 
-    sec.nameOffset = currentOffset();
-    sec.payloadOffset = sec.nameOffset + sec.nameLength;
+    secRange.nameOffset = currentOffset();
+    secRange.payloadOffset = secRange.nameOffset + secRange.nameLength;
 
     uint32_t payloadEnd = (*range)->start + (*range)->size;
-    if (sec.payloadOffset > payloadEnd) {
+    if (secRange.payloadOffset > payloadEnd) {
       goto fail;
     }
 
-    sec.payloadLength = payloadEnd - sec.payloadOffset;
+    secRange.payloadLength = payloadEnd - secRange.payloadOffset;
 
     
     
     
     
-    if (!moduleMeta->customSections.append(sec)) {
+    if (!moduleMeta->customSectionRanges.append(secRange)) {
       return false;
     }
 
     
-    if (!expected || (expectedLength == sec.nameLength &&
-                      !memcmp(cur_, expected, sec.nameLength))) {
-      cur_ += sec.nameLength;
+    if (!expected || (expectedLength == secRange.nameLength &&
+                      !memcmp(cur_, expected, secRange.nameLength))) {
+      cur_ += secRange.nameLength;
       return true;
     }
 
@@ -220,7 +221,7 @@ bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
 
 rewind:
   cur_ = initialCur;
-  moduleMeta->customSections.shrinkTo(initialCustomSectionsLength);
+  moduleMeta->customSectionRanges.shrinkTo(initialCustomSectionsLength);
   return true;
 
 fail:

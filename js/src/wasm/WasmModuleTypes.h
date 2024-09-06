@@ -493,17 +493,22 @@ using InstanceElemSegmentVector =
 
 
 
+
+
+
+
+
 constexpr uint32_t InvalidMemoryIndex = UINT32_MAX;
 static_assert(InvalidMemoryIndex > MaxMemories, "Invariant");
 
-struct DataSegmentEnv {
+struct DataSegmentRange {
   uint32_t memoryIndex;
   Maybe<InitExpr> offsetIfActive;
   uint32_t bytecodeOffset;
   uint32_t length;
 };
 
-using DataSegmentEnvVector = Vector<DataSegmentEnv, 0, SystemAllocPolicy>;
+using DataSegmentRangeVector = Vector<DataSegmentRange, 0, SystemAllocPolicy>;
 
 struct DataSegment : AtomicRefCounted<DataSegment> {
   uint32_t memoryIndex;
@@ -517,7 +522,7 @@ struct DataSegment : AtomicRefCounted<DataSegment> {
   const InitExpr& offset() const { return *offsetIfActive; }
 
   [[nodiscard]] bool init(const ShareableBytes& bytecode,
-                          const DataSegmentEnv& src) {
+                          const DataSegmentRange& src) {
     memoryIndex = src.memoryIndex;
     if (src.offsetIfActive) {
       offsetIfActive.emplace();
@@ -539,14 +544,16 @@ using DataSegmentVector = Vector<SharedDataSegment, 0, SystemAllocPolicy>;
 
 
 
-struct CustomSectionEnv {
+
+struct CustomSectionRange {
   uint32_t nameOffset;
   uint32_t nameLength;
   uint32_t payloadOffset;
   uint32_t payloadLength;
 };
 
-using CustomSectionEnvVector = Vector<CustomSectionEnv, 0, SystemAllocPolicy>;
+using CustomSectionRangeVector =
+    Vector<CustomSectionRange, 0, SystemAllocPolicy>;
 
 struct CustomSection {
   Bytes name;
