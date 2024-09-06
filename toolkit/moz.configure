@@ -2780,20 +2780,6 @@ with only_when(compile_environment & wasm_sandboxing.hunspell):
 
 
 
-
-@depends(milestone)
-def new_notification_store(milestone):
-    if milestone.is_nightly:
-        return True
-
-
-set_config("MOZ_NEW_NOTIFICATION_STORE", True, when=new_notification_store)
-set_define("MOZ_NEW_NOTIFICATION_STORE", True, when=new_notification_store)
-
-
-
-
-
 option(
     "--enable-disk-remnant-avoidance",
     help="Prevent persistence of auxiliary files on application close",
