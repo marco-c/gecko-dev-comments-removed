@@ -8,15 +8,11 @@ const { getFxAccountsSingleton } = ChromeUtils.importESModule(
 );
 const fxAccounts = getFxAccountsSingleton();
 
-const { ON_NEW_DEVICE_ID, PREF_ACCOUNT_ROOT } = ChromeUtils.importESModule(
-  "resource://gre/modules/FxAccountsCommon.sys.mjs"
+const { CLIENT_IS_THUNDERBIRD, ON_NEW_DEVICE_ID, PREF_ACCOUNT_ROOT } =
+  ChromeUtils.importESModule("resource://gre/modules/FxAccountsCommon.sys.mjs");
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
 );
-
-function promiseObserved(topic) {
-  return new Promise(res => {
-    Services.obs.addObserver(res, topic);
-  });
-}
 
 _("Misc tests for FxAccounts.device");
 
@@ -90,9 +86,16 @@ add_task(async function test_reset() {
     .callsFake(async () => {
       return { id: "foo" };
     });
+  const notifyPromise = TestUtils.topicObserved(ON_NEW_DEVICE_ID);
   await fxAccounts._internal.setSignedInUser(credentials);
-  
-  await promiseObserved(ON_NEW_DEVICE_ID);
+  await notifyPromise;
+  if (!CLIENT_IS_THUNDERBIRD) {
+    
+    
+    
+    
+    await TestUtils.topicObserved(ON_NEW_DEVICE_ID);
+  }
   ok(!Services.prefs.prefHasUserValue(testPref));
   
   const namePref = PREF_ACCOUNT_ROOT + "device.name";
