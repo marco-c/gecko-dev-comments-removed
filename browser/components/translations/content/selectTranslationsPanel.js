@@ -597,6 +597,7 @@ var SelectTranslationsPanel = new (class {
     switch (target.id) {
       case panel.id: {
         this.#changeStateToClosed();
+        this.#removeActiveTranslationListeners();
         break;
       }
     }
@@ -1580,7 +1581,7 @@ var SelectTranslationsPanel = new (class {
           case "popuphidden": {
             callback = () => {
               this.#maybeRequestTranslation();
-              this.#removeTranslationListeners(target);
+              this.#removeActiveTranslationListeners();
             };
             break;
           }
@@ -1588,8 +1589,8 @@ var SelectTranslationsPanel = new (class {
             callback = event => {
               if (event.key === "Enter") {
                 this.#maybeRequestTranslation();
+                this.#removeActiveTranslationListeners();
               }
-              this.#removeTranslationListeners(target);
             };
             break;
           }
@@ -1608,12 +1609,29 @@ var SelectTranslationsPanel = new (class {
   
 
 
+  #removeActiveTranslationListeners() {
+    const { fromMenuList, fromMenuPopup, toMenuList, toMenuPopup } =
+      SelectTranslationsPanel.elements;
+    this.#removeTranslationListenersFrom(fromMenuList);
+    this.#removeTranslationListenersFrom(fromMenuPopup);
+    this.#removeTranslationListenersFrom(toMenuList);
+    this.#removeTranslationListenersFrom(toMenuPopup);
+  }
+
+  
 
 
-  #removeTranslationListeners(target) {
+
+
+  #removeTranslationListenersFrom(target) {
+    if (!target.translationListenerCallbacks) {
+      return;
+    }
+
     for (const { eventType, callback } of target.translationListenerCallbacks) {
       target.removeEventListener(eventType, callback);
     }
+
     target.translationListenerCallbacks = [];
   }
 })();
