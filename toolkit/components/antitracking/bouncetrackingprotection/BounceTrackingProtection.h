@@ -6,10 +6,10 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/glean/GleanMetrics.h"
 #include "nsIBounceTrackingProtection.h"
 #include "nsIClearDataService.h"
 #include "mozilla/Maybe.h"
+#include "ClearDataCallback.h"
 
 class nsIPrincipal;
 class nsITimer;
@@ -71,9 +71,6 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   RefPtr<PurgeBounceTrackersMozPromise> PurgeBounceTrackers();
 
   
-  using ClearDataMozPromise = MozPromise<nsCString, uint32_t, true>;
-
-  
   
   [[nodiscard]] nsresult PurgeBounceTrackersForStateGlobal(
       BounceTrackingStateGlobal* aStateGlobal,
@@ -83,26 +80,6 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   
   
   bool mPurgeInProgress = false;
-
-  
-  class ClearDataCallback final : public nsIClearDataCallback {
-   public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSICLEARDATACALLBACK
-
-    explicit ClearDataCallback(ClearDataMozPromise::Private* aPromise,
-                               const nsACString& aHost);
-
-   private:
-    virtual ~ClearDataCallback();
-
-    nsCString mHost;
-
-    void RecordClearDurationTelemetry();
-
-    glean::TimerId mClearDurationTimer;
-    RefPtr<ClearDataMozPromise::Private> mPromise;
-  };
 
   
   
