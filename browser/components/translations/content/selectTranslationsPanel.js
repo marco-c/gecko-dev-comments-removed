@@ -230,6 +230,19 @@ var SelectTranslationsPanel = new (class {
 
 
   async getLangPairPromise(textToTranslate) {
+    if (
+      TranslationsParent.isInAutomation() &&
+      !TranslationsParent.isTranslationsEngineMocked()
+    ) {
+      
+      
+      
+      
+      
+      
+      return { toLang: "en" };
+    }
+
     const [fromLang, toLang] = await Promise.all([
       SelectTranslationsPanel.getTopSupportedDetectedLanguage(textToTranslate),
       TranslationsParent.getTopPreferredSupportedToLang(),
