@@ -4,6 +4,11 @@
 
 
 function findCommonPrefixLength(strs) {
+  if (strs.every(str => str.includes("/pdfs/"))) {
+    
+    return strs[0].lastIndexOf("/") + 1;
+  }
+
   if (strs.length < 2) {
     
     
