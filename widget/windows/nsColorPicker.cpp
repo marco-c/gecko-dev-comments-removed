@@ -6,6 +6,7 @@
 
 #include "nsColorPicker.h"
 
+#include <algorithm>
 #include <shlwapi.h>
 
 #include "mozilla/ArrayUtils.h"
@@ -87,6 +88,15 @@ AsyncColorChooser::Run() {
              "Color pickers can only be opened from main thread currently");
 
   
+  static COLORREF sCustomColors[16];
+  static bool sInitialized = false;
+  if (!sInitialized) {
+    
+    std::fill(std::begin(sCustomColors), std::end(sCustomColors), 0x00FFFFFF);
+    sInitialized = true;
+  }
+
+  
   
   if (!gColorChooser) {
     mozilla::AutoRestore<AsyncColorChooser*> restoreColorChooser(gColorChooser);
@@ -94,13 +104,11 @@ AsyncColorChooser::Run() {
 
     ScopedRtlShimWindow shim(mParentWidget.get());
 
-    COLORREF customColors[16];
-    for (size_t i = 0; i < mozilla::ArrayLength(customColors); i++) {
-      if (i < mDefaultColors.Length()) {
-        customColors[i] = ColorStringToRGB(mDefaultColors[i]);
-      } else {
-        customColors[i] = 0x00FFFFFF;
-      }
+    
+    for (size_t i = 0; i < std::min(mozilla::ArrayLength(sCustomColors),
+                                    mDefaultColors.Length());
+         i++) {
+      sCustomColors[i] = ColorStringToRGB(mDefaultColors[i]);
     }
 
     CHOOSECOLOR options;
@@ -108,7 +116,7 @@ AsyncColorChooser::Run() {
     options.hwndOwner = shim.get();
     options.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ENABLEHOOK;
     options.rgbResult = mInitialColor;
-    options.lpCustColors = customColors;
+    options.lpCustColors = sCustomColors;
     options.lpfnHook = HookProc;
 
     mColor = ChooseColor(&options) ? options.rgbResult : mInitialColor;
