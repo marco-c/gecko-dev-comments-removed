@@ -629,7 +629,7 @@ where
     }
 
     
-    pub fn resolve_starting_style(&mut self) -> ResolvedStyle {
+    pub fn resolve_starting_style(&mut self) -> PrimaryStyle {
         
         
         
@@ -665,7 +665,6 @@ where
             layout_parent_values,
             IncludeStartingStyle::Yes,
         )
-        .style
     }
 
     

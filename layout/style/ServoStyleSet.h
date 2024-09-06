@@ -257,6 +257,10 @@ class ServoStyleSet {
       dom::Element* aParentElement, nsCSSAnonBoxPseudoStaticAtom* aPseudoTag,
       ComputedStyle* aParentStyle, const AtomArray& aInputWord);
 
+  
+  
+  already_AddRefed<ComputedStyle> ResolveStartingStyle(dom::Element& aElement);
+
   size_t SheetCount(Origin) const;
   StyleSheet* SheetAt(Origin, size_t aIndex) const;
 
