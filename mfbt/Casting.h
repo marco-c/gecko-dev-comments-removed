@@ -107,8 +107,6 @@ T2S(char16_t, PRIu16);
 T2S(char32_t, PRIu32);  
 #if defined(XP_DARWIN) || defined(XP_WIN)
 T2S(long, "ld");
-#endif
-#if defined(XP_DARWIN)
 T2S(unsigned long, "lu");
 #endif
 T2S(float, "f");
