@@ -169,7 +169,7 @@ class EncoderTemplate : public DOMEventTargetHelper {
   
  protected:
   virtual RefPtr<OutputType> EncodedDataToOutputType(
-      nsIGlobalObject* aGlobalObject, RefPtr<MediaRawData>& aData) = 0;
+      nsIGlobalObject* aGlobalObject, const RefPtr<MediaRawData>& aData) = 0;
   virtual OutputConfigType EncoderConfigToDecoderConfig(
       nsIGlobalObject* aGlobalObject, const RefPtr<MediaRawData>& aData,
       const ConfigTypeInternal& aOutputConfig) const = 0;
