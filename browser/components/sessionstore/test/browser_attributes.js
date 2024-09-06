@@ -38,26 +38,47 @@ add_task(async function test() {
   ok(tab.hasAttribute("muted"), "tab.muted exists");
 
   
-  ss.persistTabAttribute("image");
-  ss.persistTabAttribute("muted");
   let { attributes } = JSON.parse(ss.getTabState(tab));
   ok(!("image" in attributes), "'image' attribute not saved");
   ok(!("muted" in attributes), "'muted' attribute not saved");
-  ok(!("custom" in attributes), "'custom' attribute not saved");
+  ok(!("customizemode" in attributes), "'customizemode' attribute not saved");
 
   
-  tab.setAttribute("custom", "foobar");
-  ss.persistTabAttribute("custom");
+  {
+    let customizationReady = BrowserTestUtils.waitForEvent(
+      gNavToolbox,
+      "customizationready"
+    );
+    gCustomizeMode.enter();
+    await customizationReady;
+  }
 
-  ({ attributes } = JSON.parse(ss.getTabState(tab)));
-  is(attributes.custom, "foobar", "'custom' attribute is correct");
+  let customizeIcon = gBrowser.getIcon(gBrowser.selectedTab);
+  ({ attributes } = JSON.parse(ss.getTabState(gBrowser.selectedTab)));
+  ok(!("image" in attributes), "'image' attribute not saved");
+  is(attributes.customizemode, "true", "'customizemode' attribute is correct");
+
+  {
+    let afterCustomization = BrowserTestUtils.waitForEvent(
+      gNavToolbox,
+      "aftercustomization"
+    );
+    gCustomizeMode.exit();
+    await afterCustomization;
+  }
 
   
   let state = {
-    entries: [{ url: "about:mozilla", triggeringPrincipal_base64 }],
-    attributes: { custom: "foobaz" },
-    image: gBrowser.getIcon(tab),
+    entries: [],
+    attributes: { customizemode: "true", nonpersisted: "true" },
   };
+
+  
+  
+  
+  
+  let principal = Services.scriptSecurityManager.createNullPrincipal({});
+  tab.linkedBrowser.createAboutBlankDocumentViewer(principal, principal);
 
   
   let promise = promiseTabRestoring(tab);
@@ -65,18 +86,20 @@ add_task(async function test() {
   await promise;
 
   ok(tab.hasAttribute("pending"), "tab is pending");
-  is(gBrowser.getIcon(tab), state.image, "tab has correct icon");
+  ok(tab.hasAttribute("customizemode"), "tab is in customizemode");
+  ok(!tab.hasAttribute("nonpersisted"), "tab has no nonpersisted attribute");
+  is(gBrowser.getIcon(tab), customizeIcon, "tab has correct icon");
   ok(!state.attributes.image, "'image' attribute not saved");
 
   
   gBrowser.selectedTab = tab;
-  await promiseTabRestored(tab);
 
   
   ({ attributes } = JSON.parse(ss.getTabState(tab)));
   ok(!("image" in attributes), "'image' attribute not saved");
   ok(!("pending" in attributes), "'pending' attribute not saved");
-  is(attributes.custom, "foobaz", "'custom' attribute is correct");
+  ok(!("nonpersisted" in attributes), "'nonpersisted' attribute not saved");
+  is(attributes.customizemode, "true", "'customizemode' attribute is correct");
 
   
   gBrowser.removeTab(tab);
