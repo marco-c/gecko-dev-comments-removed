@@ -94,7 +94,14 @@ class L10nReadyHandler final : public PromiseNativeHandler {
 
 
 
-    mPromise->MaybeResolveWithUndefined();
+
+
+
+    if (xpc::IsInAutomation()) {
+      mPromise->MaybeRejectWithClone(aCx, aValue);
+    } else {
+      mPromise->MaybeResolveWithUndefined();
+    }
   }
 
  private:
