@@ -70,6 +70,22 @@ class WebRenderThreadPool {
   wr::WrThreadPool* mThreadPool;
 };
 
+
+
+class MaybeWebRenderGlyphRasterThread {
+ public:
+  explicit MaybeWebRenderGlyphRasterThread(bool aEnabled);
+
+  ~MaybeWebRenderGlyphRasterThread();
+
+  bool IsEnabled() const { return mThread != nullptr; }
+
+  const wr::WrGlyphRasterThread* Raw() { return mThread; }
+
+ protected:
+  wr::WrGlyphRasterThread* mThread;
+};
+
 class WebRenderProgramCache final {
  public:
   explicit WebRenderProgramCache(wr::WrThreadPool* aThreadPool);
@@ -252,6 +268,12 @@ class RenderThread final {
 
   
   
+  MaybeWebRenderGlyphRasterThread& GlyphRasterThread() {
+    return mGlyphRasterThread;
+  }
+
+  
+  
   
   WebRenderProgramCache* GetProgramCache() {
     MOZ_ASSERT(IsInRenderThread());
@@ -429,6 +451,7 @@ class RenderThread final {
 
   WebRenderThreadPool mThreadPool;
   WebRenderThreadPool mThreadPoolLP;
+  MaybeWebRenderGlyphRasterThread mGlyphRasterThread;
 
   UniquePtr<WebRenderProgramCache> mProgramCache;
   UniquePtr<WebRenderShaders> mShaders;
