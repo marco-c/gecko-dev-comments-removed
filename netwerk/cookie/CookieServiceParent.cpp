@@ -143,29 +143,22 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
   
   
   
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
-      CookieCommons::GetCookieJarSettings(aChannel);
-  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
-                 cookieJarSettings->GetPartitionForeign();
-  bool isUnpartitioned =
-      !result.contains(ThirdPartyAnalysis::IsForeign) ||
-      result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted);
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
+  bool isUnpartitioned = storageOriginAttributes.mPartitionKey.IsEmpty();
   if (isCHIPS && isUnpartitioned) {
     
     
-    MOZ_ASSERT(storageOriginAttributes.mPartitionKey.IsEmpty());
+    MOZ_ASSERT(
+        !result.contains(ThirdPartyAnalysis::IsForeign) ||
+        result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted));
     
     OriginAttributes partitionedOriginAttributes;
     StoragePrincipalHelper::GetOriginAttributes(
         aChannel, partitionedOriginAttributes,
         StoragePrincipalHelper::ePartitionedPrincipal);
+    originAttributesList.AppendElement(partitionedOriginAttributes);
     
-    
-    
-    
-    if (!partitionedOriginAttributes.mPartitionKey.IsEmpty()) {
-      originAttributesList.AppendElement(partitionedOriginAttributes);
-    }
+    MOZ_ASSERT(!partitionedOriginAttributes.mPartitionKey.IsEmpty());
   }
 
   for (auto& originAttributes : originAttributesList) {
