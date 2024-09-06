@@ -149,7 +149,7 @@ enum class Marker : uint32_t {
   Metadata,
   ModuleMetadata,
   CodeMetadata,
-  CodeTier,
+  CodeBlock,
   ModuleSegment,
 };
 
@@ -1117,14 +1117,15 @@ CoderResult CodeCodeMetadata(Coder<mode>& coder,
 
 
 
-CoderResult CodeCodeTier(Coder<MODE_DECODE>& coder, wasm::UniqueCodeTier* item,
-                         const wasm::LinkData& linkData) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeTier, 248);
-  *item = js::MakeUnique<CodeTier>(Tier::Serialized);
+CoderResult CodeCodeBlock(Coder<MODE_DECODE>& coder,
+                          wasm::UniqueCodeBlock* item,
+                          const wasm::LinkData& linkData) {
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeBlock, 248);
+  *item = js::MakeUnique<CodeBlock>(Tier::Serialized);
   if (!*item) {
     return Err(OutOfMemory());
   }
-  MOZ_TRY(Magic(coder, Marker::CodeTier));
+  MOZ_TRY(Magic(coder, Marker::CodeBlock));
   MOZ_TRY(CodeModuleSegment(coder, &(*item)->segment, linkData));
   MOZ_TRY(CodePodVector(coder, &(*item)->funcToCodeRange));
   MOZ_TRY(CodePodVector(coder, &(*item)->codeRanges));
@@ -1139,12 +1140,12 @@ CoderResult CodeCodeTier(Coder<MODE_DECODE>& coder, wasm::UniqueCodeTier* item,
 }
 
 template <CoderMode mode>
-CoderResult CodeCodeTier(Coder<mode>& coder,
-                         CoderArg<mode, wasm::CodeTier> item,
-                         const wasm::LinkData& linkData) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeTier, 248);
+CoderResult CodeCodeBlock(Coder<mode>& coder,
+                          CoderArg<mode, wasm::CodeBlock> item,
+                          const wasm::LinkData& linkData) {
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::CodeBlock, 248);
   STATIC_ASSERT_ENCODING_OR_SIZING;
-  MOZ_TRY(Magic(coder, Marker::CodeTier));
+  MOZ_TRY(Magic(coder, Marker::CodeBlock));
   MOZ_TRY(CodeModuleSegment(coder, &item->segment, linkData));
   MOZ_TRY(CodePodVector(coder, &item->funcToCodeRange));
   MOZ_TRY(CodePodVector(coder, &item->codeRanges));
@@ -1163,10 +1164,10 @@ CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
                            const wasm::CustomSectionVector& customSections) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 200);
   MutableCodeMetadata codeMeta;
-  UniqueCodeTier codeTier;
+  UniqueCodeBlock codeBlock;
   MOZ_TRY((CodeRefPtr<MODE_DECODE, CodeMetadata, &CodeCodeMetadata>(
       coder, &codeMeta)));
-  MOZ_TRY(CodeCodeTier(coder, &codeTier, linkData));
+  MOZ_TRY(CodeCodeBlock(coder, &codeBlock, linkData));
 
   
   if (codeMeta->nameCustomSectionIndex) {
@@ -1179,14 +1180,14 @@ CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
 
   
   JumpTables jumpTables;
-  if (!jumpTables.init(CompileMode::Once, *codeTier->segment,
-                       codeTier->codeRanges)) {
+  if (!jumpTables.init(CompileMode::Once, *codeBlock->segment,
+                       codeBlock->codeRanges)) {
     return Err(OutOfMemory());
   }
 
   
   MutableCode code = js_new<Code>(*codeMeta, nullptr,
-                                  std::move(codeTier), std::move(jumpTables));
+                                  std::move(codeBlock), std::move(jumpTables));
   if (!code || !code->initialize(linkData)) {
     return Err(OutOfMemory());
   }
@@ -1202,7 +1203,8 @@ CoderResult CodeSharedCode(Coder<mode>& coder,
   STATIC_ASSERT_ENCODING_OR_SIZING;
   MOZ_TRY((CodeRefPtr<mode, const CodeMetadata, &CodeCodeMetadata>(
       coder, &(*item)->codeMeta_)));
-  MOZ_TRY(CodeCodeTier(coder, &(*item)->codeTier(Tier::Serialized), linkData));
+  MOZ_TRY(
+      CodeCodeBlock(coder, &(*item)->codeBlock(Tier::Serialized), linkData));
   return Ok();
 }
 
