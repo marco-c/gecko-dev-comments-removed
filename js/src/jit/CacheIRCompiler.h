@@ -799,6 +799,13 @@ class MOZ_RAII CacheIRCompiler {
                                        FloatRegisterSet::Volatile());
   }
 
+  
+  
+  LiveRegisterSet liveVolatileRegs() const {
+    
+    return {GeneralRegisterSet::Volatile(), liveVolatileFloatRegs()};
+  }
+
   bool objectGuardNeedsSpectreMitigations(ObjOperandId objId) const {
     
     
