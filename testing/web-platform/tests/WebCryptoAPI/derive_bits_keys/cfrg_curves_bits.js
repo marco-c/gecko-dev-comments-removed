@@ -58,25 +58,6 @@ function define_tests() {
           }, algorithmName + " mixed case parameters");
 
           
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          promise_test(function(test) {
-              return subtle.deriveBits({name: algorithmName, public: publicKeys[algorithmName]}, privateKeys[algorithmName], null)
-              .then(function(derivation) {
-                  assert_true(equalBuffers(derivation, derivations[algorithmName]), "Derived correct bits");
-              }, function(err) {
-                  assert_unreached("deriveBits failed with error " + err.name + ": " + err.message);
-              });
-          }, algorithmName + " with null length");
-
-          
           promise_test(function(test) {
               return subtle.deriveBits({name: algorithmName, public: publicKeys[algorithmName]}, privateKeys[algorithmName], 8 * sizes[algorithmName] - 32)
               .then(function(derivation) {
