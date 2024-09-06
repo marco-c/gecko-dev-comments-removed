@@ -22,7 +22,6 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 DefaultTemporalLayers::PendingFrame::PendingFrame() = default;
@@ -149,54 +148,25 @@ DefaultTemporalLayers::GetDependencyInfo(size_t num_layers) {
               {"SR", {kReferenceAndUpdate, kNone, kNone}},
               {"-D", {kReference, kReference, kNone, kFreezeEntropy}}};
     case 3:
-      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return {{"SSS", {kReferenceAndUpdate, kNone, kNone}},
-                {"--S", {kReference, kNone, kUpdate}},
-                {"-DR", {kReference, kUpdate, kNone}},
-                {"--D", {kReference, kReference, kReference, kFreezeEntropy}}};
-      } else {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return {{"SSS", {kReferenceAndUpdate, kNone, kNone}},
-                {"--D", {kReference, kNone, kNone, kFreezeEntropy}},
-                {"-SS", {kReference, kUpdate, kNone}},
-                {"--D", {kReference, kReference, kNone, kFreezeEntropy}},
-                {"SRR", {kReferenceAndUpdate, kNone, kNone}},
-                {"--D", {kReference, kReference, kNone, kFreezeEntropy}},
-                {"-DS", {kReference, kReferenceAndUpdate, kNone}},
-                {"--D", {kReference, kReference, kNone, kFreezeEntropy}}};
-      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return {{"SSS", {kReferenceAndUpdate, kNone, kNone}},
+              {"--D", {kReference, kNone, kNone, kFreezeEntropy}},
+              {"-SS", {kReference, kUpdate, kNone}},
+              {"--D", {kReference, kReference, kNone, kFreezeEntropy}},
+              {"SRR", {kReferenceAndUpdate, kNone, kNone}},
+              {"--D", {kReference, kReference, kNone, kFreezeEntropy}},
+              {"-DS", {kReference, kReferenceAndUpdate, kNone}},
+              {"--D", {kReference, kReference, kNone, kFreezeEntropy}}};
     case 4:
       
       
@@ -646,23 +616,14 @@ FrameDependencyStructure DefaultTemporalLayers::GetTemplateStructure(
       return template_structure;
     }
     case 3: {
-      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
-        template_structure.templates.resize(5);
-        template_structure.templates[0].T(0).Dtis("SSS");
-        template_structure.templates[1].T(0).Dtis("SSS").FrameDiffs({4});
-        template_structure.templates[2].T(1).Dtis("-DR").FrameDiffs({2});
-        template_structure.templates[3].T(2).Dtis("--S").FrameDiffs({1});
-        template_structure.templates[4].T(2).Dtis("--D").FrameDiffs({2, 1});
-      } else {
-        template_structure.templates.resize(7);
-        template_structure.templates[0].T(0).Dtis("SSS");
-        template_structure.templates[1].T(0).Dtis("SSS").FrameDiffs({4});
-        template_structure.templates[2].T(0).Dtis("SRR").FrameDiffs({4});
-        template_structure.templates[3].T(1).Dtis("-SS").FrameDiffs({2});
-        template_structure.templates[4].T(1).Dtis("-DS").FrameDiffs({4, 2});
-        template_structure.templates[5].T(2).Dtis("--D").FrameDiffs({1});
-        template_structure.templates[6].T(2).Dtis("--D").FrameDiffs({3, 1});
-      }
+      template_structure.templates.resize(7);
+      template_structure.templates[0].T(0).Dtis("SSS");
+      template_structure.templates[1].T(0).Dtis("SSS").FrameDiffs({4});
+      template_structure.templates[2].T(0).Dtis("SRR").FrameDiffs({4});
+      template_structure.templates[3].T(1).Dtis("-SS").FrameDiffs({2});
+      template_structure.templates[4].T(1).Dtis("-DS").FrameDiffs({4, 2});
+      template_structure.templates[5].T(2).Dtis("--D").FrameDiffs({1});
+      template_structure.templates[6].T(2).Dtis("--D").FrameDiffs({3, 1});
       return template_structure;
     }
     case 4: {
@@ -694,11 +655,7 @@ std::vector<std::set<uint8_t>> GetTemporalDependencies(
     case 2:
       return {{2}, {0}, {0}, {1, 2}};
     case 3:
-      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
-        return {{0}, {0}, {0}, {0, 1, 2}};
-      } else {
-        return {{4}, {0}, {0}, {0, 2}, {0}, {2, 4}, {2, 4}, {4, 6}};
-      }
+      return {{4}, {0}, {0}, {0, 2}, {0}, {2, 4}, {2, 4}, {4, 6}};
     case 4:
       return {{8},    {0},         {0},         {0, 2},
               {0},    {0, 2, 4},   {0, 2, 4},   {0, 4, 6},
