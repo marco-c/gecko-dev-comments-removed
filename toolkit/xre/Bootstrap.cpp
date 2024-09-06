@@ -8,6 +8,10 @@
 
 #include "AutoSQLiteLifetime.h"
 
+#if defined(XP_WIN) && defined(_M_X64) && defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
+#  include <windows.h>
+#endif  
+
 #ifdef MOZ_WIDGET_ANDROID
 #  ifdef MOZ_PROFILE_GENERATE
 extern "C" int __llvm_profile_dump(void);
@@ -104,6 +108,27 @@ class BootstrapImpl final : public Bootstrap {
   }
 #endif
 };
+
+#if defined(XP_WIN) && defined(_M_X64) && defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
+extern "C" uint32_t _tls_index;
+
+extern "C" NS_EXPORT bool XRE_CheckBlockScopeStaticVarInit(
+    uint32_t* aTlsIndex) {
+  
+  if (aTlsIndex) {
+    *aTlsIndex = _tls_index;
+  }
+
+  
+  
+  
+  static bool sItWorks = []() -> bool {
+    bool const volatile value = true;
+    return value;
+  }();
+  return sItWorks;
+}
+#endif  
 
 extern "C" NS_EXPORT void NS_FROZENCALL
 XRE_GetBootstrap(Bootstrap::UniquePtr& b) {
