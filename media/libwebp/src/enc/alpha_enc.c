@@ -20,6 +20,7 @@
 #include "src/utils/filters_utils.h"
 #include "src/utils/quant_levels_utils.h"
 #include "src/utils/utils.h"
+#include "src/webp/encode.h"
 #include "src/webp/format_constants.h"
 
 
@@ -55,7 +56,7 @@ static int EncodeLossless(const uint8_t* const data, int width, int height,
   WebPConfig config;
   WebPPicture picture;
 
-  WebPPictureInit(&picture);
+  if (!WebPPictureInit(&picture)) return 0;
   picture.width = width;
   picture.height = height;
   picture.use_argb = 1;
@@ -66,7 +67,7 @@ static int EncodeLossless(const uint8_t* const data, int width, int height,
   WebPDispatchAlphaToGreen(data, width, picture.width, picture.height,
                            picture.argb, picture.argb_stride);
 
-  WebPConfigInit(&config);
+  if (!WebPConfigInit(&config)) return 0;
   config.lossless = 1;
   
   
@@ -83,11 +84,7 @@ static int EncodeLossless(const uint8_t* const data, int width, int height,
       (use_quality_100 && effort_level == 6) ? 100 : 8.f * effort_level;
   assert(config.quality >= 0 && config.quality <= 100.f);
 
-  
-  
-  
-  
-  ok = VP8LEncodeStream(&config, &picture, bw, 0);
+  ok = VP8LEncodeStream(&config, &picture, bw);
   WebPPictureFree(&picture);
   ok = ok && !bw->error_;
   if (!ok) {

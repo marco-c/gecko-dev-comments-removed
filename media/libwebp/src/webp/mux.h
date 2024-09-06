@@ -16,12 +16,13 @@
 #define WEBP_WEBP_MUX_H_
 
 #include "./mux_types.h"
+#include "./types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define WEBP_MUX_ABI_VERSION 0x0108        // MAJOR(8b) + MINOR(8b)
+#define WEBP_MUX_ABI_VERSION 0x0109        // MAJOR(8b) + MINOR(8b)
 
 
 
@@ -70,7 +71,7 @@ typedef struct WebPMuxAnimParams WebPMuxAnimParams;
 typedef struct WebPAnimEncoderOptions WebPAnimEncoderOptions;
 
 
-typedef enum WebPMuxError {
+typedef enum WEBP_NODISCARD WebPMuxError {
   WEBP_MUX_OK                 =  1,
   WEBP_MUX_NOT_FOUND          =  0,
   WEBP_MUX_INVALID_ARGUMENT   = -1,
@@ -104,13 +105,13 @@ WEBP_EXTERN int WebPGetMuxVersion(void);
 
 
 
-WEBP_EXTERN WebPMux* WebPNewInternal(int);
+WEBP_NODISCARD WEBP_EXTERN WebPMux* WebPNewInternal(int);
 
 
 
 
 
-static WEBP_INLINE WebPMux* WebPMuxNew(void) {
+WEBP_NODISCARD static WEBP_INLINE WebPMux* WebPMuxNew(void) {
   return WebPNewInternal(WEBP_MUX_ABI_VERSION);
 }
 
@@ -123,7 +124,8 @@ WEBP_EXTERN void WebPMuxDelete(WebPMux* mux);
 
 
 
-WEBP_EXTERN WebPMux* WebPMuxCreateInternal(const WebPData*, int, int);
+WEBP_NODISCARD WEBP_EXTERN WebPMux* WebPMuxCreateInternal(const WebPData*, int,
+                                                          int);
 
 
 
@@ -133,10 +135,14 @@ WEBP_EXTERN WebPMux* WebPMuxCreateInternal(const WebPData*, int, int);
 
 
 
-static WEBP_INLINE WebPMux* WebPMuxCreate(const WebPData* bitstream,
-                                          int copy_data) {
+
+
+WEBP_NODISCARD static WEBP_INLINE WebPMux* WebPMuxCreate(
+    const WebPData* bitstream, int copy_data) {
   return WebPMuxCreateInternal(bitstream, copy_data, WEBP_MUX_ABI_VERSION);
 }
+
+
 
 
 
@@ -222,8 +228,12 @@ struct WebPMuxFrameInfo {
 
 
 
+
+
 WEBP_EXTERN WebPMuxError WebPMuxSetImage(
     WebPMux* mux, const WebPData* bitstream, int copy_data);
+
+
 
 
 
@@ -449,7 +459,7 @@ WEBP_EXTERN int WebPAnimEncoderOptionsInitInternal(
 
 
 
-static WEBP_INLINE int WebPAnimEncoderOptionsInit(
+WEBP_NODISCARD static WEBP_INLINE int WebPAnimEncoderOptionsInit(
     WebPAnimEncoderOptions* enc_options) {
   return WebPAnimEncoderOptionsInitInternal(enc_options, WEBP_MUX_ABI_VERSION);
 }
@@ -490,7 +500,7 @@ static WEBP_INLINE WebPAnimEncoder* WebPAnimEncoderNew(
 
 
 
-WEBP_EXTERN int WebPAnimEncoderAdd(
+WEBP_NODISCARD WEBP_EXTERN int WebPAnimEncoderAdd(
     WebPAnimEncoder* enc, struct WebPPicture* frame, int timestamp_ms,
     const struct WebPConfig* config);
 
@@ -503,8 +513,8 @@ WEBP_EXTERN int WebPAnimEncoderAdd(
 
 
 
-WEBP_EXTERN int WebPAnimEncoderAssemble(WebPAnimEncoder* enc,
-                                        WebPData* webp_data);
+WEBP_NODISCARD WEBP_EXTERN int WebPAnimEncoderAssemble(WebPAnimEncoder* enc,
+                                                       WebPData* webp_data);
 
 
 
@@ -520,6 +530,57 @@ WEBP_EXTERN const char* WebPAnimEncoderGetError(WebPAnimEncoder* enc);
 
 
 WEBP_EXTERN void WebPAnimEncoderDelete(WebPAnimEncoder* enc);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+WEBP_EXTERN WebPMuxError WebPAnimEncoderSetChunk(
+    WebPAnimEncoder* enc, const char fourcc[4], const WebPData* chunk_data,
+    int copy_data);
+
+
+
+
+
+
+
+
+
+
+
+
+WEBP_EXTERN WebPMuxError WebPAnimEncoderGetChunk(
+    const WebPAnimEncoder* enc, const char fourcc[4], WebPData* chunk_data);
+
+
+
+
+
+
+
+
+
+
+WEBP_EXTERN WebPMuxError WebPAnimEncoderDeleteChunk(
+    WebPAnimEncoder* enc, const char fourcc[4]);
 
 
 

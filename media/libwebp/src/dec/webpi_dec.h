@@ -20,6 +20,7 @@ extern "C" {
 
 #include "src/utils/rescaler_utils.h"
 #include "src/dec/vp8_dec.h"
+#include "src/webp/decode.h"
 
 
 
@@ -87,8 +88,9 @@ void WebPInitCustomIo(WebPDecParams* const params, VP8Io* const io);
 
 
 
-int WebPIoInitFromOptions(const WebPDecoderOptions* const options,
-                          VP8Io* const io, WEBP_CSP_MODE src_colorspace);
+WEBP_NODISCARD int WebPIoInitFromOptions(
+    const WebPDecoderOptions* const options, VP8Io* const io,
+    WEBP_CSP_MODE src_colorspace);
 
 
 

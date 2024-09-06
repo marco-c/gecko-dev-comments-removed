@@ -22,22 +22,37 @@ extern "C" {
 #else
 
 
-#if defined(__GNUC__) && __GNUC__ >= 4
-#define SHARPYUV_EXTERN extern __attribute__((visibility("default")))
-#else
-#if defined(_MSC_VER) && defined(WEBP_DLL)
+#if defined(_WIN32) && defined(WEBP_DLL)
 #define SHARPYUV_EXTERN __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#define SHARPYUV_EXTERN extern __attribute__((visibility("default")))
 #else
 #define SHARPYUV_EXTERN extern
 #endif 
+#endif 
+#endif 
+
+#ifndef SHARPYUV_INLINE
+#ifdef WEBP_INLINE
+#define SHARPYUV_INLINE WEBP_INLINE
+#else
+#ifndef _MSC_VER
+#if defined(__cplusplus) || !defined(__STRICT_ANSI__) || \
+    (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
+#define SHARPYUV_INLINE inline
+#else
+#define SHARPYUV_INLINE
+#endif
+#else
+#define SHARPYUV_INLINE __forceinline
 #endif 
 #endif 
 #endif 
 
 
 #define SHARPYUV_VERSION_MAJOR 0
-#define SHARPYUV_VERSION_MINOR 2
-#define SHARPYUV_VERSION_PATCH 1
+#define SHARPYUV_VERSION_MINOR 4
+#define SHARPYUV_VERSION_PATCH 0
 
 
 #define SHARPYUV_MAKE_VERSION(MAJOR, MINOR, PATCH) \
@@ -60,6 +75,35 @@ typedef struct {
   int rgb_to_u[4];
   int rgb_to_v[4];
 } SharpYuvConversionMatrix;
+
+typedef struct SharpYuvOptions SharpYuvOptions;
+
+
+
+typedef enum SharpYuvTransferFunctionType {
+  
+  kSharpYuvTransferFunctionBt709 = 1,
+  
+  
+  kSharpYuvTransferFunctionBt470M = 4,
+  kSharpYuvTransferFunctionBt470Bg = 5,
+  kSharpYuvTransferFunctionBt601 = 6,
+  kSharpYuvTransferFunctionSmpte240 = 7,
+  kSharpYuvTransferFunctionLinear = 8,
+  kSharpYuvTransferFunctionLog100 = 9,
+  kSharpYuvTransferFunctionLog100_Sqrt10 = 10,
+  kSharpYuvTransferFunctionIec61966 = 11,
+  kSharpYuvTransferFunctionBt1361 = 12,
+  kSharpYuvTransferFunctionSrgb = 13,
+  kSharpYuvTransferFunctionBt2020_10Bit = 14,
+  kSharpYuvTransferFunctionBt2020_12Bit = 15,
+  kSharpYuvTransferFunctionSmpte2084 = 16,  
+  kSharpYuvTransferFunctionSmpte428 = 17,
+  kSharpYuvTransferFunctionHlg = 18,
+  kSharpYuvTransferFunctionNum
+} SharpYuvTransferFunctionType;
+
+
 
 
 
@@ -92,6 +136,31 @@ SHARPYUV_EXTERN int SharpYuvConvert(const void* r_ptr, const void* g_ptr,
                                     int u_stride, void* v_ptr, int v_stride,
                                     int yuv_bit_depth, int width, int height,
                                     const SharpYuvConversionMatrix* yuv_matrix);
+
+struct SharpYuvOptions {
+  
+  
+  const SharpYuvConversionMatrix* yuv_matrix;
+  SharpYuvTransferFunctionType transfer_type;
+};
+
+
+SHARPYUV_EXTERN int SharpYuvOptionsInitInternal(const SharpYuvConversionMatrix*,
+                                                SharpYuvOptions*, int);
+
+
+
+
+static SHARPYUV_INLINE int SharpYuvOptionsInit(
+    const SharpYuvConversionMatrix* yuv_matrix, SharpYuvOptions* options) {
+  return SharpYuvOptionsInitInternal(yuv_matrix, options, SHARPYUV_VERSION);
+}
+
+SHARPYUV_EXTERN int SharpYuvConvertWithOptions(
+    const void* r_ptr, const void* g_ptr, const void* b_ptr, int rgb_step,
+    int rgb_stride, int rgb_bit_depth, void* y_ptr, int y_stride, void* u_ptr,
+    int u_stride, void* v_ptr, int v_stride, int yuv_bit_depth, int width,
+    int height, const SharpYuvOptions* options);
 
 
 

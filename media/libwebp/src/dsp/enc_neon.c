@@ -27,8 +27,9 @@
 
 
 
-static const int16_t kC1 = 20091;
-static const int16_t kC2 = 17734;  
+static const int16_t kC1 = WEBP_TRANSFORM_AC3_C1;
+static const int16_t kC2 =
+    WEBP_TRANSFORM_AC3_C2 / 2;  
 
 
 

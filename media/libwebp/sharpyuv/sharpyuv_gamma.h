@@ -12,6 +12,7 @@
 #ifndef WEBP_SHARPYUV_SHARPYUV_GAMMA_H_
 #define WEBP_SHARPYUV_SHARPYUV_GAMMA_H_
 
+#include "sharpyuv/sharpyuv.h"
 #include "src/webp/types.h"
 
 #ifdef __cplusplus
@@ -23,10 +24,12 @@ extern "C" {
 void SharpYuvInitGammaTables(void);
 
 
-uint32_t SharpYuvGammaToLinear(uint16_t v, int bit_depth);
+uint32_t SharpYuvGammaToLinear(uint16_t v, int bit_depth,
+                               SharpYuvTransferFunctionType transfer_type);
 
 
-uint16_t SharpYuvLinearToGamma(uint32_t value, int bit_depth);
+uint16_t SharpYuvLinearToGamma(uint32_t value, int bit_depth,
+                               SharpYuvTransferFunctionType transfer_type);
 
 #ifdef __cplusplus
 }  

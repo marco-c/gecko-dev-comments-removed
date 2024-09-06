@@ -36,17 +36,38 @@ typedef long long int int64_t;
 #define WEBP_INLINE __forceinline
 #endif  
 
+#ifndef WEBP_NODISCARD
+#if defined(WEBP_ENABLE_NODISCARD) && WEBP_ENABLE_NODISCARD
+#if (defined(__cplusplus) && __cplusplus >= 201700L) || \
+    (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L)
+#define WEBP_NODISCARD [[nodiscard]]
+#else
+
+#if defined(__clang__) && defined(__has_attribute)
+#if __has_attribute(warn_unused_result)
+#define WEBP_NODISCARD __attribute__((warn_unused_result))
+#else
+#define WEBP_NODISCARD
+#endif  
+#else
+#define WEBP_NODISCARD
+#endif  
+#endif  
+
+#else
+#define WEBP_NODISCARD
+#endif  
+#endif  
+
 #ifndef WEBP_EXTERN
 
 
-# if defined(__GNUC__) && __GNUC__ >= 4
+# if defined(_WIN32) && defined(WEBP_DLL)
+#  define WEBP_EXTERN __declspec(dllexport)
+# elif defined(__GNUC__) && __GNUC__ >= 4
 #  define WEBP_EXTERN extern __attribute__ ((visibility ("default")))
 # else
-#  if defined(_MSC_VER) && defined(WEBP_DLL)
-#   define WEBP_EXTERN __declspec(dllexport)
-#  else
-#   define WEBP_EXTERN extern
-#  endif
+#  define WEBP_EXTERN extern
 # endif  
 #endif  
 
@@ -60,7 +81,7 @@ extern "C" {
 
 
 
-WEBP_EXTERN void* WebPMalloc(size_t size);
+WEBP_NODISCARD WEBP_EXTERN void* WebPMalloc(size_t size);
 
 
 WEBP_EXTERN void WebPFree(void* ptr);

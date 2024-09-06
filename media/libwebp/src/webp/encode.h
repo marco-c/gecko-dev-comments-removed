@@ -164,13 +164,14 @@ typedef enum WebPPreset {
 } WebPPreset;
 
 
-WEBP_EXTERN int WebPConfigInitInternal(WebPConfig*, WebPPreset, float, int);
+WEBP_NODISCARD WEBP_EXTERN int WebPConfigInitInternal(WebPConfig*, WebPPreset,
+                                                      float, int);
 
 
 
 
 
-static WEBP_INLINE int WebPConfigInit(WebPConfig* config) {
+WEBP_NODISCARD static WEBP_INLINE int WebPConfigInit(WebPConfig* config) {
   return WebPConfigInitInternal(config, WEBP_PRESET_DEFAULT, 75.f,
                                 WEBP_ENCODER_ABI_VERSION);
 }
@@ -179,8 +180,9 @@ static WEBP_INLINE int WebPConfigInit(WebPConfig* config) {
 
 
 
-static WEBP_INLINE int WebPConfigPreset(WebPConfig* config,
-                                        WebPPreset preset, float quality) {
+WEBP_NODISCARD static WEBP_INLINE int WebPConfigPreset(WebPConfig* config,
+                                                       WebPPreset preset,
+                                                       float quality) {
   return WebPConfigInitInternal(config, preset, quality,
                                 WEBP_ENCODER_ABI_VERSION);
 }
@@ -191,11 +193,12 @@ static WEBP_INLINE int WebPConfigPreset(WebPConfig* config,
 
 
 
-WEBP_EXTERN int WebPConfigLosslessPreset(WebPConfig* config, int level);
+WEBP_NODISCARD WEBP_EXTERN int WebPConfigLosslessPreset(WebPConfig* config,
+                                                        int level);
 
 
 
-WEBP_EXTERN int WebPValidateConfig(const WebPConfig* config);
+WEBP_NODISCARD WEBP_EXTERN int WebPValidateConfig(const WebPConfig* config);
 
 
 
@@ -255,8 +258,8 @@ WEBP_EXTERN void WebPMemoryWriterClear(WebPMemoryWriter* writer);
 
 
 
-WEBP_EXTERN int WebPMemoryWrite(const uint8_t* data, size_t data_size,
-                                const WebPPicture* picture);
+WEBP_NODISCARD WEBP_EXTERN int WebPMemoryWrite(
+    const uint8_t* data, size_t data_size, const WebPPicture* picture);
 
 
 
@@ -364,13 +367,13 @@ struct WebPPicture {
 };
 
 
-WEBP_EXTERN int WebPPictureInitInternal(WebPPicture*, int);
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureInitInternal(WebPPicture*, int);
 
 
 
 
 
-static WEBP_INLINE int WebPPictureInit(WebPPicture* picture) {
+WEBP_NODISCARD static WEBP_INLINE int WebPPictureInit(WebPPicture* picture) {
   return WebPPictureInitInternal(picture, WEBP_ENCODER_ABI_VERSION);
 }
 
@@ -381,7 +384,7 @@ static WEBP_INLINE int WebPPictureInit(WebPPicture* picture) {
 
 
 
-WEBP_EXTERN int WebPPictureAlloc(WebPPicture* picture);
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureAlloc(WebPPicture* picture);
 
 
 
@@ -394,7 +397,8 @@ WEBP_EXTERN void WebPPictureFree(WebPPicture* picture);
 
 
 
-WEBP_EXTERN int WebPPictureCopy(const WebPPicture* src, WebPPicture* dst);
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureCopy(const WebPPicture* src,
+                                               WebPPicture* dst);
 
 
 
@@ -403,19 +407,18 @@ WEBP_EXTERN int WebPPictureCopy(const WebPPicture* src, WebPPicture* dst);
 
 
 
-WEBP_EXTERN int WebPPlaneDistortion(const uint8_t* src, size_t src_stride,
-                                    const uint8_t* ref, size_t ref_stride,
-                                    int width, int height,
-                                    size_t x_step,
-                                    int type,   
-                                    float* distortion, float* result);
+WEBP_NODISCARD WEBP_EXTERN int WebPPlaneDistortion(
+    const uint8_t* src, size_t src_stride,
+    const uint8_t* ref, size_t ref_stride, int width, int height, size_t x_step,
+    int type,  
+    float* distortion, float* result);
 
 
 
 
 
 
-WEBP_EXTERN int WebPPictureDistortion(
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureDistortion(
     const WebPPicture* src, const WebPPicture* ref,
     int metric_type,           
     float result[5]);
@@ -428,8 +431,8 @@ WEBP_EXTERN int WebPPictureDistortion(
 
 
 
-WEBP_EXTERN int WebPPictureCrop(WebPPicture* picture,
-                                int left, int top, int width, int height);
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureCrop(
+    WebPPicture* picture, int left, int top, int width, int height);
 
 
 
@@ -442,9 +445,9 @@ WEBP_EXTERN int WebPPictureCrop(WebPPicture* picture,
 
 
 
-WEBP_EXTERN int WebPPictureView(const WebPPicture* src,
-                                int left, int top, int width, int height,
-                                WebPPicture* dst);
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureView(
+    const WebPPicture* src, int left, int top, int width, int height,
+    WebPPicture* dst);
 
 
 
@@ -455,29 +458,30 @@ WEBP_EXTERN int WebPPictureIsView(const WebPPicture* picture);
 
 
 
-WEBP_EXTERN int WebPPictureRescale(WebPPicture* picture, int width, int height);
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureRescale(WebPPicture* picture,
+                                                  int width, int height);
 
 
 
 
 
-WEBP_EXTERN int WebPPictureImportRGB(
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureImportRGB(
     WebPPicture* picture, const uint8_t* rgb, int rgb_stride);
 
-WEBP_EXTERN int WebPPictureImportRGBA(
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureImportRGBA(
     WebPPicture* picture, const uint8_t* rgba, int rgba_stride);
 
 
 
-WEBP_EXTERN int WebPPictureImportRGBX(
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureImportRGBX(
     WebPPicture* picture, const uint8_t* rgbx, int rgbx_stride);
 
 
-WEBP_EXTERN int WebPPictureImportBGR(
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureImportBGR(
     WebPPicture* picture, const uint8_t* bgr, int bgr_stride);
-WEBP_EXTERN int WebPPictureImportBGRA(
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureImportBGRA(
     WebPPicture* picture, const uint8_t* bgra, int bgra_stride);
-WEBP_EXTERN int WebPPictureImportBGRX(
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureImportBGRX(
     WebPPicture* picture, const uint8_t* bgrx, int bgrx_stride);
 
 
@@ -486,14 +490,14 @@ WEBP_EXTERN int WebPPictureImportBGRX(
 
 
 
-WEBP_EXTERN int WebPPictureARGBToYUVA(WebPPicture* picture,
-                                      WebPEncCSP );
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureARGBToYUVA(
+    WebPPicture* picture, WebPEncCSP );
 
 
 
 
 
-WEBP_EXTERN int WebPPictureARGBToYUVADithered(
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureARGBToYUVADithered(
     WebPPicture* picture, WebPEncCSP colorspace, float dithering);
 
 
@@ -501,17 +505,17 @@ WEBP_EXTERN int WebPPictureARGBToYUVADithered(
 
 
 
-WEBP_EXTERN int WebPPictureSharpARGBToYUVA(WebPPicture* picture);
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureSharpARGBToYUVA(WebPPicture* picture);
 
-WEBP_EXTERN int WebPPictureSmartARGBToYUVA(WebPPicture* picture);
-
-
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureSmartARGBToYUVA(WebPPicture* picture);
 
 
 
 
 
-WEBP_EXTERN int WebPPictureYUVAToARGB(WebPPicture* picture);
+
+
+WEBP_NODISCARD WEBP_EXTERN int WebPPictureYUVAToARGB(WebPPicture* picture);
 
 
 
@@ -541,7 +545,8 @@ WEBP_EXTERN void WebPBlendAlpha(WebPPicture* picture, uint32_t background_rgb);
 
 
 
-WEBP_EXTERN int WebPEncode(const WebPConfig* config, WebPPicture* picture);
+WEBP_NODISCARD WEBP_EXTERN int WebPEncode(const WebPConfig* config,
+                                          WebPPicture* picture);
 
 
 

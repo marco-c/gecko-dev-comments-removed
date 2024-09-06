@@ -48,49 +48,33 @@ WEBP_EXTERN int WebPGetDecoderVersion(void);
 
 
 
-WEBP_EXTERN int WebPGetInfo(const uint8_t* data, size_t data_size,
-                            int* width, int* height);
+WEBP_NODISCARD WEBP_EXTERN int WebPGetInfo(
+    const uint8_t* data, size_t data_size, int* width, int* height);
 
 
 
 
 
 
-WEBP_EXTERN uint8_t* WebPDecodeRGBA(const uint8_t* data, size_t data_size,
-                                    int* width, int* height);
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeRGBA(
+    const uint8_t* data, size_t data_size, int* width, int* height);
 
 
-WEBP_EXTERN uint8_t* WebPDecodeARGB(const uint8_t* data, size_t data_size,
-                                    int* width, int* height);
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeARGB(
+    const uint8_t* data, size_t data_size, int* width, int* height);
 
 
-WEBP_EXTERN uint8_t* WebPDecodeBGRA(const uint8_t* data, size_t data_size,
-                                    int* width, int* height);
-
-
-
-WEBP_EXTERN uint8_t* WebPDecodeRGB(const uint8_t* data, size_t data_size,
-                                   int* width, int* height);
-
-
-WEBP_EXTERN uint8_t* WebPDecodeBGR(const uint8_t* data, size_t data_size,
-                                   int* width, int* height);
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeBGRA(
+    const uint8_t* data, size_t data_size, int* width, int* height);
 
 
 
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeRGB(
+    const uint8_t* data, size_t data_size, int* width, int* height);
 
 
-
-
-
-
-
-
-
-WEBP_EXTERN uint8_t* WebPDecodeYUV(const uint8_t* data, size_t data_size,
-                                   int* width, int* height,
-                                   uint8_t** u, uint8_t** v,
-                                   int* stride, int* uv_stride);
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeBGR(
+    const uint8_t* data, size_t data_size, int* width, int* height);
 
 
 
@@ -100,33 +84,47 @@ WEBP_EXTERN uint8_t* WebPDecodeYUV(const uint8_t* data, size_t data_size,
 
 
 
-WEBP_EXTERN uint8_t* WebPDecodeRGBAInto(
+
+
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeYUV(
+    const uint8_t* data, size_t data_size, int* width, int* height,
+    uint8_t** u, uint8_t** v, int* stride, int* uv_stride);
+
+
+
+
+
+
+
+
+
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeRGBAInto(
     const uint8_t* data, size_t data_size,
     uint8_t* output_buffer, size_t output_buffer_size, int output_stride);
-WEBP_EXTERN uint8_t* WebPDecodeARGBInto(
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeARGBInto(
     const uint8_t* data, size_t data_size,
     uint8_t* output_buffer, size_t output_buffer_size, int output_stride);
-WEBP_EXTERN uint8_t* WebPDecodeBGRAInto(
-    const uint8_t* data, size_t data_size,
-    uint8_t* output_buffer, size_t output_buffer_size, int output_stride);
-
-
-
-WEBP_EXTERN uint8_t* WebPDecodeRGBInto(
-    const uint8_t* data, size_t data_size,
-    uint8_t* output_buffer, size_t output_buffer_size, int output_stride);
-WEBP_EXTERN uint8_t* WebPDecodeBGRInto(
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeBGRAInto(
     const uint8_t* data, size_t data_size,
     uint8_t* output_buffer, size_t output_buffer_size, int output_stride);
 
 
 
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeRGBInto(
+    const uint8_t* data, size_t data_size,
+    uint8_t* output_buffer, size_t output_buffer_size, int output_stride);
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeBGRInto(
+    const uint8_t* data, size_t data_size,
+    uint8_t* output_buffer, size_t output_buffer_size, int output_stride);
 
 
 
 
 
-WEBP_EXTERN uint8_t* WebPDecodeYUVInto(
+
+
+
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPDecodeYUVInto(
     const uint8_t* data, size_t data_size,
     uint8_t* luma, size_t luma_size, int luma_stride,
     uint8_t* u, size_t u_size, int u_stride,
@@ -217,11 +215,11 @@ struct WebPDecBuffer {
 };
 
 
-WEBP_EXTERN int WebPInitDecBufferInternal(WebPDecBuffer*, int);
+WEBP_NODISCARD WEBP_EXTERN int WebPInitDecBufferInternal(WebPDecBuffer*, int);
 
 
 
-static WEBP_INLINE int WebPInitDecBuffer(WebPDecBuffer* buffer) {
+WEBP_NODISCARD static WEBP_INLINE int WebPInitDecBuffer(WebPDecBuffer* buffer) {
   return WebPInitDecBufferInternal(buffer, WEBP_DECODER_ABI_VERSION);
 }
 
@@ -232,7 +230,7 @@ WEBP_EXTERN void WebPFreeDecBuffer(WebPDecBuffer* buffer);
 
 
 
-typedef enum VP8StatusCode {
+typedef enum WEBP_NODISCARD VP8StatusCode {
   VP8_STATUS_OK = 0,
   VP8_STATUS_OUT_OF_MEMORY,
   VP8_STATUS_INVALID_PARAM,
@@ -281,7 +279,9 @@ typedef enum VP8StatusCode {
 
 
 
-WEBP_EXTERN WebPIDecoder* WebPINewDecoder(WebPDecBuffer* output_buffer);
+
+WEBP_NODISCARD WEBP_EXTERN WebPIDecoder* WebPINewDecoder(
+    WebPDecBuffer* output_buffer);
 
 
 
@@ -293,7 +293,7 @@ WEBP_EXTERN WebPIDecoder* WebPINewDecoder(WebPDecBuffer* output_buffer);
 
 
 
-WEBP_EXTERN WebPIDecoder* WebPINewRGB(
+WEBP_NODISCARD WEBP_EXTERN WebPIDecoder* WebPINewRGB(
     WEBP_CSP_MODE csp,
     uint8_t* output_buffer, size_t output_buffer_size, int output_stride);
 
@@ -308,7 +308,7 @@ WEBP_EXTERN WebPIDecoder* WebPINewRGB(
 
 
 
-WEBP_EXTERN WebPIDecoder* WebPINewYUVA(
+WEBP_NODISCARD WEBP_EXTERN WebPIDecoder* WebPINewYUVA(
     uint8_t* luma, size_t luma_size, int luma_stride,
     uint8_t* u, size_t u_size, int u_stride,
     uint8_t* v, size_t v_size, int v_stride,
@@ -316,7 +316,7 @@ WEBP_EXTERN WebPIDecoder* WebPINewYUVA(
 
 
 
-WEBP_EXTERN WebPIDecoder* WebPINewYUV(
+WEBP_NODISCARD WEBP_EXTERN WebPIDecoder* WebPINewYUV(
     uint8_t* luma, size_t luma_size, int luma_stride,
     uint8_t* u, size_t u_size, int u_stride,
     uint8_t* v, size_t v_size, int v_stride);
@@ -346,21 +346,21 @@ WEBP_EXTERN VP8StatusCode WebPIUpdate(
 
 
 
-WEBP_EXTERN uint8_t* WebPIDecGetRGB(
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPIDecGetRGB(
     const WebPIDecoder* idec, int* last_y,
     int* width, int* height, int* stride);
 
 
 
 
-WEBP_EXTERN uint8_t* WebPIDecGetYUVA(
+WEBP_NODISCARD WEBP_EXTERN uint8_t* WebPIDecGetYUVA(
     const WebPIDecoder* idec, int* last_y,
     uint8_t** u, uint8_t** v, uint8_t** a,
     int* width, int* height, int* stride, int* uv_stride, int* a_stride);
 
 
 
-static WEBP_INLINE uint8_t* WebPIDecGetYUV(
+WEBP_NODISCARD static WEBP_INLINE uint8_t* WebPIDecGetYUV(
     const WebPIDecoder* idec, int* last_y, uint8_t** u, uint8_t** v,
     int* width, int* height, int* stride, int* uv_stride) {
   return WebPIDecGetYUVA(idec, last_y, u, v, NULL, width, height,
@@ -373,7 +373,7 @@ static WEBP_INLINE uint8_t* WebPIDecGetYUV(
 
 
 
-WEBP_EXTERN const WebPDecBuffer* WebPIDecodedArea(
+WEBP_NODISCARD WEBP_EXTERN const WebPDecBuffer* WebPIDecodedArea(
     const WebPIDecoder* idec, int* left, int* top, int* width, int* height);
 
 
@@ -468,12 +468,14 @@ struct WebPDecoderConfig {
 };
 
 
-WEBP_EXTERN int WebPInitDecoderConfigInternal(WebPDecoderConfig*, int);
+WEBP_NODISCARD WEBP_EXTERN int WebPInitDecoderConfigInternal(WebPDecoderConfig*,
+                                                             int);
 
 
 
 
-static WEBP_INLINE int WebPInitDecoderConfig(WebPDecoderConfig* config) {
+WEBP_NODISCARD static WEBP_INLINE int WebPInitDecoderConfig(
+    WebPDecoderConfig* config) {
   return WebPInitDecoderConfigInternal(config, WEBP_DECODER_ABI_VERSION);
 }
 
@@ -488,8 +490,8 @@ static WEBP_INLINE int WebPInitDecoderConfig(WebPDecoderConfig* config) {
 
 
 
-WEBP_EXTERN WebPIDecoder* WebPIDecode(const uint8_t* data, size_t data_size,
-                                      WebPDecoderConfig* config);
+WEBP_NODISCARD WEBP_EXTERN WebPIDecoder* WebPIDecode(
+    const uint8_t* data, size_t data_size, WebPDecoderConfig* config);
 
 
 

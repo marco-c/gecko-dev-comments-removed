@@ -89,10 +89,8 @@ int VP8LEncodeImage(const WebPConfig* const config,
 
 
 
-
 int VP8LEncodeStream(const WebPConfig* const config,
-                     const WebPPicture* const picture, VP8LBitWriter* const bw,
-                     int use_cache);
+                     const WebPPicture* const picture, VP8LBitWriter* const bw);
 
 #if (WEBP_NEAR_LOSSLESS == 1)
 

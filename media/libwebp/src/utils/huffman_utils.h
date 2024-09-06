@@ -63,7 +63,8 @@ typedef struct HuffmanTables {
 
 
 
-int VP8LHuffmanTablesAllocate(int size, HuffmanTables* huffman_tables);
+WEBP_NODISCARD int VP8LHuffmanTablesAllocate(int size,
+                                             HuffmanTables* huffman_tables);
 void VP8LHuffmanTablesDeallocate(HuffmanTables* const huffman_tables);
 
 #define HUFFMAN_PACKED_BITS 6
@@ -91,7 +92,7 @@ struct HTreeGroup {
 };
 
 
-HTreeGroup* VP8LHtreeGroupsNew(int num_htree_groups);
+WEBP_NODISCARD HTreeGroup* VP8LHtreeGroupsNew(int num_htree_groups);
 
 
 void VP8LHtreeGroupsFree(HTreeGroup* const htree_groups);
@@ -101,8 +102,10 @@ void VP8LHtreeGroupsFree(HTreeGroup* const htree_groups);
 
 
 
-int VP8LBuildHuffmanTable(HuffmanTables* const root_table, int root_bits,
-                          const int code_lengths[], int code_lengths_size);
+WEBP_NODISCARD int VP8LBuildHuffmanTable(HuffmanTables* const root_table,
+                                         int root_bits,
+                                         const int code_lengths[],
+                                         int code_lengths_size);
 
 #ifdef __cplusplus
 }    

@@ -21,6 +21,7 @@
 #include "src/utils/random_utils.h"
 #include "src/utils/thread_utils.h"
 #include "src/dsp/dsp.h"
+#include "src/webp/types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,8 +32,8 @@ extern "C" {
 
 
 #define DEC_MAJ_VERSION 1
-#define DEC_MIN_VERSION 3
-#define DEC_REV_VERSION 2
+#define DEC_MIN_VERSION 4
+#define DEC_REV_VERSION 0
 
 
 
@@ -186,6 +187,7 @@ struct VP8Decoder {
 
   
   VP8BitReader br_;
+  int incremental_;  
 
   
   VP8FrameHeader   frm_hdr_;
@@ -281,7 +283,7 @@ int VP8ParseIntraModeRow(VP8BitReader* const br, VP8Decoder* const dec);
 void VP8ParseQuant(VP8Decoder* const dec);
 
 
-int VP8InitFrame(VP8Decoder* const dec, VP8Io* const io);
+WEBP_NODISCARD int VP8InitFrame(VP8Decoder* const dec, VP8Io* const io);
 
 
 
@@ -289,7 +291,7 @@ int VP8InitFrame(VP8Decoder* const dec, VP8Io* const io);
 VP8StatusCode VP8EnterCritical(VP8Decoder* const dec, VP8Io* const io);
 
 
-int VP8ExitCritical(VP8Decoder* const dec, VP8Io* const io);
+WEBP_NODISCARD int VP8ExitCritical(VP8Decoder* const dec, VP8Io* const io);
 
 
 int VP8GetThreadMethod(const WebPDecoderOptions* const options,
@@ -299,11 +301,12 @@ int VP8GetThreadMethod(const WebPDecoderOptions* const options,
 void VP8InitDithering(const WebPDecoderOptions* const options,
                       VP8Decoder* const dec);
 
-int VP8ProcessRow(VP8Decoder* const dec, VP8Io* const io);
+WEBP_NODISCARD int VP8ProcessRow(VP8Decoder* const dec, VP8Io* const io);
 
 void VP8InitScanline(VP8Decoder* const dec);
 
-int VP8DecodeMB(VP8Decoder* const dec, VP8BitReader* const token_br);
+WEBP_NODISCARD int VP8DecodeMB(VP8Decoder* const dec,
+                               VP8BitReader* const token_br);
 
 
 const uint8_t* VP8DecompressAlphaRows(VP8Decoder* const dec,

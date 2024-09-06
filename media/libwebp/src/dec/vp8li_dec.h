@@ -20,6 +20,7 @@
 #include "src/utils/bit_reader_utils.h"
 #include "src/utils/color_cache_utils.h"
 #include "src/utils/huffman_utils.h"
+#include "src/webp/types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,25 +100,26 @@ struct ALPHDecoder;
 
 
 
-int VP8LDecodeAlphaHeader(struct ALPHDecoder* const alph_dec,
-                          const uint8_t* const data, size_t data_size);
+WEBP_NODISCARD int VP8LDecodeAlphaHeader(struct ALPHDecoder* const alph_dec,
+                                         const uint8_t* const data,
+                                         size_t data_size);
 
 
 
 
 
-int VP8LDecodeAlphaImageStream(struct ALPHDecoder* const alph_dec,
-                               int last_row);
+WEBP_NODISCARD int VP8LDecodeAlphaImageStream(
+    struct ALPHDecoder* const alph_dec, int last_row);
 
 
-VP8LDecoder* VP8LNew(void);
+WEBP_NODISCARD VP8LDecoder* VP8LNew(void);
 
 
-int VP8LDecodeHeader(VP8LDecoder* const dec, VP8Io* const io);
+WEBP_NODISCARD int VP8LDecodeHeader(VP8LDecoder* const dec, VP8Io* const io);
 
 
 
-int VP8LDecodeImage(VP8LDecoder* const dec);
+WEBP_NODISCARD int VP8LDecodeImage(VP8LDecoder* const dec);
 
 
 
@@ -125,6 +127,18 @@ void VP8LClear(VP8LDecoder* const dec);
 
 
 void VP8LDelete(VP8LDecoder* const dec);
+
+
+
+
+
+
+
+
+WEBP_NODISCARD int ReadHuffmanCodesHelper(
+    int color_cache_bits, int num_htree_groups, int num_htree_groups_max,
+    const int* const mapping, VP8LDecoder* const dec,
+    HuffmanTables* const huffman_tables, HTreeGroup** const htree_groups);
 
 
 

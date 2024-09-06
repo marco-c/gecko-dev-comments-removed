@@ -50,6 +50,7 @@
 
 #include "./decode.h"     
 #include "./mux_types.h"
+#include "./types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,13 +86,13 @@ typedef enum WebPDemuxState {
 } WebPDemuxState;
 
 
-WEBP_EXTERN WebPDemuxer* WebPDemuxInternal(
+WEBP_NODISCARD WEBP_EXTERN WebPDemuxer* WebPDemuxInternal(
     const WebPData*, int, WebPDemuxState*, int);
 
 
 
 
-static WEBP_INLINE WebPDemuxer* WebPDemux(const WebPData* data) {
+WEBP_NODISCARD static WEBP_INLINE WebPDemuxer* WebPDemux(const WebPData* data) {
   return WebPDemuxInternal(data, 0, NULL, WEBP_DEMUX_ABI_VERSION);
 }
 
@@ -103,7 +104,7 @@ static WEBP_INLINE WebPDemuxer* WebPDemux(const WebPData* data) {
 
 
 
-static WEBP_INLINE WebPDemuxer* WebPDemuxPartial(
+WEBP_NODISCARD static WEBP_INLINE WebPDemuxer* WebPDemuxPartial(
     const WebPData* data, WebPDemuxState* state) {
   return WebPDemuxInternal(data, 1, state, WEBP_DEMUX_ABI_VERSION);
 }
@@ -164,14 +165,14 @@ struct WebPIterator {
 
 
 
-WEBP_EXTERN int WebPDemuxGetFrame(
+WEBP_NODISCARD WEBP_EXTERN int WebPDemuxGetFrame(
     const WebPDemuxer* dmux, int frame_number, WebPIterator* iter);
 
 
 
 
-WEBP_EXTERN int WebPDemuxNextFrame(WebPIterator* iter);
-WEBP_EXTERN int WebPDemuxPrevFrame(WebPIterator* iter);
+WEBP_NODISCARD WEBP_EXTERN int WebPDemuxNextFrame(WebPIterator* iter);
+WEBP_NODISCARD WEBP_EXTERN int WebPDemuxPrevFrame(WebPIterator* iter);
 
 
 
@@ -202,15 +203,16 @@ struct WebPChunkIterator {
 
 
 
-WEBP_EXTERN int WebPDemuxGetChunk(const WebPDemuxer* dmux,
-                                  const char fourcc[4], int chunk_number,
-                                  WebPChunkIterator* iter);
+WEBP_NODISCARD WEBP_EXTERN int WebPDemuxGetChunk(const WebPDemuxer* dmux,
+                                                 const char fourcc[4],
+                                                 int chunk_number,
+                                                 WebPChunkIterator* iter);
 
 
 
 
-WEBP_EXTERN int WebPDemuxNextChunk(WebPChunkIterator* iter);
-WEBP_EXTERN int WebPDemuxPrevChunk(WebPChunkIterator* iter);
+WEBP_NODISCARD WEBP_EXTERN int WebPDemuxNextChunk(WebPChunkIterator* iter);
+WEBP_NODISCARD WEBP_EXTERN int WebPDemuxPrevChunk(WebPChunkIterator* iter);
 
 
 
@@ -257,21 +259,21 @@ struct WebPAnimDecoderOptions {
 };
 
 
-WEBP_EXTERN int WebPAnimDecoderOptionsInitInternal(
+WEBP_NODISCARD WEBP_EXTERN int WebPAnimDecoderOptionsInitInternal(
     WebPAnimDecoderOptions*, int);
 
 
 
 
 
-static WEBP_INLINE int WebPAnimDecoderOptionsInit(
+WEBP_NODISCARD static WEBP_INLINE int WebPAnimDecoderOptionsInit(
     WebPAnimDecoderOptions* dec_options) {
   return WebPAnimDecoderOptionsInitInternal(dec_options,
                                             WEBP_DEMUX_ABI_VERSION);
 }
 
 
-WEBP_EXTERN WebPAnimDecoder* WebPAnimDecoderNewInternal(
+WEBP_NODISCARD WEBP_EXTERN WebPAnimDecoder* WebPAnimDecoderNewInternal(
     const WebPData*, const WebPAnimDecoderOptions*, int);
 
 
@@ -284,7 +286,7 @@ WEBP_EXTERN WebPAnimDecoder* WebPAnimDecoderNewInternal(
 
 
 
-static WEBP_INLINE WebPAnimDecoder* WebPAnimDecoderNew(
+WEBP_NODISCARD static WEBP_INLINE WebPAnimDecoder* WebPAnimDecoderNew(
     const WebPData* webp_data, const WebPAnimDecoderOptions* dec_options) {
   return WebPAnimDecoderNewInternal(webp_data, dec_options,
                                     WEBP_DEMUX_ABI_VERSION);
@@ -306,8 +308,8 @@ struct WebPAnimInfo {
 
 
 
-WEBP_EXTERN int WebPAnimDecoderGetInfo(const WebPAnimDecoder* dec,
-                                       WebPAnimInfo* info);
+WEBP_NODISCARD WEBP_EXTERN int WebPAnimDecoderGetInfo(
+    const WebPAnimDecoder* dec, WebPAnimInfo* info);
 
 
 
@@ -321,8 +323,9 @@ WEBP_EXTERN int WebPAnimDecoderGetInfo(const WebPAnimDecoder* dec,
 
 
 
-WEBP_EXTERN int WebPAnimDecoderGetNext(WebPAnimDecoder* dec,
-                                       uint8_t** buf, int* timestamp);
+WEBP_NODISCARD WEBP_EXTERN int WebPAnimDecoderGetNext(WebPAnimDecoder* dec,
+                                                      uint8_t** buf,
+                                                      int* timestamp);
 
 
 
@@ -330,7 +333,8 @@ WEBP_EXTERN int WebPAnimDecoderGetNext(WebPAnimDecoder* dec,
 
 
 
-WEBP_EXTERN int WebPAnimDecoderHasMoreFrames(const WebPAnimDecoder* dec);
+WEBP_NODISCARD WEBP_EXTERN int WebPAnimDecoderHasMoreFrames(
+    const WebPAnimDecoder* dec);
 
 
 
@@ -348,7 +352,7 @@ WEBP_EXTERN void WebPAnimDecoderReset(WebPAnimDecoder* dec);
 
 
 
-WEBP_EXTERN const WebPDemuxer* WebPAnimDecoderGetDemuxer(
+WEBP_NODISCARD WEBP_EXTERN const WebPDemuxer* WebPAnimDecoderGetDemuxer(
     const WebPAnimDecoder* dec);
 
 

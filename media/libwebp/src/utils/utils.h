@@ -20,9 +20,7 @@
 #endif
 
 #include <assert.h>
-#include <limits.h>
 
-#include "src/dsp/dsp.h"
 #include "src/webp/types.h"
 
 #ifdef __cplusplus
@@ -187,6 +185,7 @@ WEBP_EXTERN void WebPCopyPlane(const uint8_t* src, int src_stride,
 
 WEBP_EXTERN void WebPCopyPixels(const struct WebPPicture* const src,
                                 struct WebPPicture* const dst);
+
 
 
 

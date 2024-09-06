@@ -15,6 +15,7 @@
 #define WEBP_DEC_VP8_DEC_H_
 
 #include "src/webp/decode.h"
+#include "src/webp/types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -108,16 +109,14 @@ struct VP8Io {
 };
 
 
-int VP8InitIoInternal(VP8Io* const, int);
+WEBP_NODISCARD int VP8InitIoInternal(VP8Io* const, int);
 
 
 
 
-int WebPISetIOHooks(WebPIDecoder* const idec,
-                    VP8IoPutHook put,
-                    VP8IoSetupHook setup,
-                    VP8IoTeardownHook teardown,
-                    void* user_data);
+WEBP_NODISCARD int WebPISetIOHooks(WebPIDecoder* const idec, VP8IoPutHook put,
+                                   VP8IoSetupHook setup,
+                                   VP8IoTeardownHook teardown, void* user_data);
 
 
 typedef struct VP8Decoder VP8Decoder;
@@ -128,17 +127,17 @@ VP8Decoder* VP8New(void);
 
 
 
-static WEBP_INLINE int VP8InitIo(VP8Io* const io) {
+WEBP_NODISCARD static WEBP_INLINE int VP8InitIo(VP8Io* const io) {
   return VP8InitIoInternal(io, WEBP_DECODER_ABI_VERSION);
 }
 
 
 
-int VP8GetHeaders(VP8Decoder* const dec, VP8Io* const io);
+WEBP_NODISCARD int VP8GetHeaders(VP8Decoder* const dec, VP8Io* const io);
 
 
 
-int VP8Decode(VP8Decoder* const dec, VP8Io* const io);
+WEBP_NODISCARD int VP8Decode(VP8Decoder* const dec, VP8Io* const io);
 
 
 VP8StatusCode VP8Status(VP8Decoder* const dec);

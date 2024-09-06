@@ -87,6 +87,8 @@ void VP8Delete(VP8Decoder* const dec) {
 int VP8SetError(VP8Decoder* const dec,
                 VP8StatusCode error, const char* const msg) {
   
+  assert(dec->incremental_ || error != VP8_STATUS_SUSPENDED);
+  
   if (dec->status_ == VP8_STATUS_OK) {
     dec->status_ = error;
     dec->error_msg_ = msg;
@@ -225,8 +227,10 @@ static VP8StatusCode ParsePartitions(VP8Decoder* const dec,
     sz += 3;
   }
   VP8InitBitReader(dec->parts_ + last_part, part_start, size_left);
-  return (part_start < buf_end) ? VP8_STATUS_OK :
-           VP8_STATUS_SUSPENDED;   
+  if (part_start < buf_end) return VP8_STATUS_OK;
+  return dec->incremental_
+             ? VP8_STATUS_SUSPENDED  
+             : VP8_STATUS_NOT_ENOUGH_DATA;
 }
 
 
