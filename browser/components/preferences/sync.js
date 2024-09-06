@@ -449,17 +449,7 @@ var gSyncPane = {
 
 
   async reSignIn(entrypoint) {
-    
-    
-    
-    
-    if (!(await FxAccounts.canConnectAccount())) {
-      return;
-    }
-
-    const url =
-      (await FxAccounts.config.promiseForceSigninURI(entrypoint)) ||
-      (await FxAccounts.config.promiseConnectAccountURI(entrypoint));
+    const url = await FxAccounts.config.promiseConnectAccountURI(entrypoint);
     this.replaceTabWithUrl(url);
   },
 
