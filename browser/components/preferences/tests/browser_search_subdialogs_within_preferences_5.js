@@ -5,13 +5,6 @@
 requestLongerTimeout(2);
 
 
-add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.preferences.search", true]],
-  });
-});
-
-
 
 
 add_task(async function () {
