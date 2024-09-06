@@ -5301,6 +5301,31 @@ static void profiler_stop_signal_handler(int signal, siginfo_t* info,
   
   gStopAndDumpFromSignal = true;
 }
+
+static void profiler_start_signal_handler(int signal, siginfo_t* info,
+                                          void* context) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction("Profiler start callback", [] {
+        uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk |
+                            ProfilerFeature::CPUUtilization;
+        
+        
+        const char* filters[] = {"*"};
+        profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
+                       PROFILER_DEFAULT_INTERVAL, features, filters,
+                       MOZ_ARRAY_LENGTH(filters), 0);
+      }));
+}
+
 #endif
 
 
@@ -5375,6 +5400,15 @@ void profiler_dump_and_stop() {
 
 void profiler_init_signal_handlers() {
 #if !defined(XP_WIN) && !defined(MOZ_CODE_COVERAGE)
+  
+  struct sigaction prof_start_sa {};
+  memset(&prof_start_sa, 0, sizeof(struct sigaction));
+  prof_start_sa.sa_sigaction = profiler_start_signal_handler;
+  prof_start_sa.sa_flags = SA_RESTART | SA_SIGINFO;
+  sigemptyset(&prof_start_sa.sa_mask);
+  DebugOnly<int> rstart = sigaction(SIGUSR1, &prof_start_sa, nullptr);
+  MOZ_ASSERT(rstart == 0, "Failed to install Profiler SIGUSR1 handler");
+
   
   struct sigaction prof_stop_sa {};
   memset(&prof_stop_sa, 0, sizeof(struct sigaction));
