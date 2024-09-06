@@ -2,8 +2,8 @@
 
 
 
-use crate::{valid, Handle, UniqueArena};
-use bit_set::BitSet;
+use crate::arena::{Handle, HandleSet, UniqueArena};
+use crate::valid;
 
 
 
@@ -241,10 +241,10 @@ pub fn find_checked_indexes(
     function: &crate::Function,
     info: &valid::FunctionInfo,
     policies: BoundsCheckPolicies,
-) -> BitSet {
+) -> HandleSet<crate::Expression> {
     use crate::Expression as Ex;
 
-    let mut guarded_indices = BitSet::new();
+    let mut guarded_indices = HandleSet::for_arena(&function.expressions);
 
     
     if policies.contains(BoundsCheckPolicy::ReadZeroSkipWrite) {
@@ -264,7 +264,7 @@ pub fn find_checked_indexes(
                         )
                         .is_some()
                     {
-                        guarded_indices.insert(index.index());
+                        guarded_indices.insert(index);
                     }
                 }
                 Ex::ImageLoad {
@@ -275,15 +275,15 @@ pub fn find_checked_indexes(
                     ..
                 } => {
                     if policies.image_load == BoundsCheckPolicy::ReadZeroSkipWrite {
-                        guarded_indices.insert(coordinate.index());
+                        guarded_indices.insert(coordinate);
                         if let Some(array_index) = array_index {
-                            guarded_indices.insert(array_index.index());
+                            guarded_indices.insert(array_index);
                         }
                         if let Some(sample) = sample {
-                            guarded_indices.insert(sample.index());
+                            guarded_indices.insert(sample);
                         }
                         if let Some(level) = level {
-                            guarded_indices.insert(level.index());
+                            guarded_indices.insert(level);
                         }
                     }
                 }

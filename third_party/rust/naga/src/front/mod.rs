@@ -5,6 +5,8 @@
 mod interpolator;
 mod type_gen;
 
+#[cfg(feature = "spv-in")]
+pub mod atomic_upgrade;
 #[cfg(feature = "glsl-in")]
 pub mod glsl;
 #[cfg(feature = "spv-in")]
@@ -13,7 +15,7 @@ pub mod spv;
 pub mod wgsl;
 
 use crate::{
-    arena::{Arena, Handle, UniqueArena},
+    arena::{Arena, Handle, HandleVec, UniqueArena},
     proc::{ResolveContext, ResolveError, TypeResolution},
     FastHashMap,
 };
@@ -50,13 +52,13 @@ use std::ops;
 
 #[derive(Debug, Default)]
 pub struct Typifier {
-    resolutions: Vec<TypeResolution>,
+    resolutions: HandleVec<crate::Expression, TypeResolution>,
 }
 
 impl Typifier {
     pub const fn new() -> Self {
         Typifier {
-            resolutions: Vec::new(),
+            resolutions: HandleVec::new(),
         }
     }
 
@@ -69,7 +71,7 @@ impl Typifier {
         expr_handle: Handle<crate::Expression>,
         types: &'a UniqueArena<crate::Type>,
     ) -> &'a crate::TypeInner {
-        self.resolutions[expr_handle.index()].inner_with(types)
+        self.resolutions[expr_handle].inner_with(types)
     }
 
     
@@ -109,9 +111,9 @@ impl Typifier {
         if self.resolutions.len() <= expr_handle.index() {
             for (eh, expr) in expressions.iter().skip(self.resolutions.len()) {
                 
-                let resolution = ctx.resolve(expr, |h| Ok(&self.resolutions[h.index()]))?;
+                let resolution = ctx.resolve(expr, |h| Ok(&self.resolutions[h]))?;
                 log::debug!("Resolving {:?} = {:?} : {:?}", eh, expr, resolution);
-                self.resolutions.push(resolution);
+                self.resolutions.insert(eh, resolution);
             }
         }
         Ok(())
@@ -135,8 +137,8 @@ impl Typifier {
         } else {
             let expr = &expressions[expr_handle];
             
-            let resolution = ctx.resolve(expr, |h| Ok(&self.resolutions[h.index()]))?;
-            self.resolutions[expr_handle.index()] = resolution;
+            let resolution = ctx.resolve(expr, |h| Ok(&self.resolutions[h]))?;
+            self.resolutions[expr_handle] = resolution;
             Ok(())
         }
     }
@@ -145,7 +147,7 @@ impl Typifier {
 impl ops::Index<Handle<crate::Expression>> for Typifier {
     type Output = TypeResolution;
     fn index(&self, handle: Handle<crate::Expression>) -> &Self::Output {
-        &self.resolutions[handle.index()]
+        &self.resolutions[handle]
     }
 }
 

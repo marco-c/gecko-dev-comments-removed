@@ -251,6 +251,14 @@ pub const RESERVED_KEYWORDS: &[&str] = &[
     "using",
     "sampler3DRect",
     
+    "image1DArrayShadow",
+    "image1DShadow",
+    "image2DArrayShadow",
+    "image2DShadow",
+    
+    "packed",
+    "row_major",
+    
     
     
     

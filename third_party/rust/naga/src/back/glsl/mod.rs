@@ -46,7 +46,7 @@
 pub use features::Features;
 
 use crate::{
-    back,
+    back::{self, Baked},
     proc::{self, NameKey},
     valid, Handle, ShaderStage, TypeInner,
 };
@@ -1982,7 +1982,7 @@ impl<'a, W: Write> Writer<'a, W> {
                         
                         Some(self.namer.call(name))
                     } else if self.need_bake_expressions.contains(&handle) {
-                        Some(format!("{}{}", back::BAKE_PREFIX, handle.index()))
+                        Some(Baked(handle).to_string())
                     } else {
                         None
                     };
@@ -2310,7 +2310,7 @@ impl<'a, W: Write> Writer<'a, W> {
                 
                 self.write_barrier(crate::Barrier::WORK_GROUP, level)?;
 
-                let result_name = format!("{}{}", back::BAKE_PREFIX, result.index());
+                let result_name = Baked(result).to_string();
                 write!(self.out, "{level}")?;
                 
                 self.write_named_expr(pointer, result_name, result, ctx)?;
@@ -2335,7 +2335,7 @@ impl<'a, W: Write> Writer<'a, W> {
             } => {
                 write!(self.out, "{level}")?;
                 if let Some(expr) = result {
-                    let name = format!("{}{}", back::BAKE_PREFIX, expr.index());
+                    let name = Baked(expr).to_string();
                     let result = self.module.functions[function].result.as_ref().unwrap();
                     self.write_type(result.ty)?;
                     write!(self.out, " {name}")?;
@@ -2369,7 +2369,7 @@ impl<'a, W: Write> Writer<'a, W> {
             } => {
                 write!(self.out, "{level}")?;
                 if let Some(result) = result {
-                    let res_name = format!("{}{}", back::BAKE_PREFIX, result.index());
+                    let res_name = Baked(result).to_string();
                     let res_ty = ctx.resolve_type(result, &self.module.types);
                     self.write_value_type(res_ty)?;
                     write!(self.out, " {res_name} = ")?;
@@ -2399,7 +2399,7 @@ impl<'a, W: Write> Writer<'a, W> {
             Statement::RayQuery { .. } => unreachable!(),
             Statement::SubgroupBallot { result, predicate } => {
                 write!(self.out, "{level}")?;
-                let res_name = format!("{}{}", back::BAKE_PREFIX, result.index());
+                let res_name = Baked(result).to_string();
                 let res_ty = ctx.info[result].ty.inner_with(&self.module.types);
                 self.write_value_type(res_ty)?;
                 write!(self.out, " {res_name} = ")?;
@@ -2419,7 +2419,7 @@ impl<'a, W: Write> Writer<'a, W> {
                 result,
             } => {
                 write!(self.out, "{level}")?;
-                let res_name = format!("{}{}", back::BAKE_PREFIX, result.index());
+                let res_name = Baked(result).to_string();
                 let res_ty = ctx.info[result].ty.inner_with(&self.module.types);
                 self.write_value_type(res_ty)?;
                 write!(self.out, " {res_name} = ")?;
@@ -2476,7 +2476,7 @@ impl<'a, W: Write> Writer<'a, W> {
                 result,
             } => {
                 write!(self.out, "{level}")?;
-                let res_name = format!("{}{}", back::BAKE_PREFIX, result.index());
+                let res_name = Baked(result).to_string();
                 let res_ty = ctx.info[result].ty.inner_with(&self.module.types);
                 self.write_value_type(res_ty)?;
                 write!(self.out, " {res_name} = ")?;
@@ -3865,9 +3865,8 @@ impl<'a, W: Write> Writer<'a, W> {
         
         write!(
             self.out,
-            "int {}{}{} = clamp(",
-            back::BAKE_PREFIX,
-            expr.index(),
+            "int {}{} = clamp(",
+            Baked(expr),
             CLAMPED_LOD_SUFFIX
         )?;
         
@@ -4205,13 +4204,7 @@ impl<'a, W: Write> Writer<'a, W> {
             
             
             if class.is_mipmapped() {
-                write!(
-                    self.out,
-                    ", {}{}{}",
-                    back::BAKE_PREFIX,
-                    handle.index(),
-                    CLAMPED_LOD_SUFFIX
-                )?;
+                write!(self.out, ", {}{}", Baked(handle), CLAMPED_LOD_SUFFIX)?;
             }
             
             write!(self.out, ")")?;
@@ -4229,13 +4222,7 @@ impl<'a, W: Write> Writer<'a, W> {
             
             
             if level.is_some() {
-                write!(
-                    self.out,
-                    ", {}{}{}",
-                    back::BAKE_PREFIX,
-                    handle.index(),
-                    CLAMPED_LOD_SUFFIX
-                )?;
+                write!(self.out, ", {}{}", Baked(handle), CLAMPED_LOD_SUFFIX)?;
             }
 
             

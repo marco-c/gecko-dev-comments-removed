@@ -6,15 +6,13 @@ use crate::{
     device::Device,
     hal_api::HalApi,
     init_tracker::*,
-    resource::{Resource, Texture},
+    resource::{DestroyedResourceError, Resource, Texture},
     snatch::SnatchGuard,
     track::{TextureTracker, Tracker},
     FastHashMap,
 };
 
-use super::{
-    clear::clear_texture, BakedCommands, ClearError, DestroyedBufferError, DestroyedTextureError,
-};
+use super::{clear::clear_texture, BakedCommands, ClearError};
 
 
 
@@ -85,7 +83,7 @@ impl<A: HalApi> CommandBufferTextureMemoryActions<A> {
         
         let init_actions = &mut self.init_actions;
         self.discards.retain(|discarded_surface| {
-            if discarded_surface.texture.as_info().id() == action.texture.as_info().id()
+            if discarded_surface.texture.is_equal(&action.texture)
                 && action.range.layer_range.contains(&discarded_surface.layer)
                 && action
                     .range
@@ -171,7 +169,7 @@ impl<A: HalApi> BakedCommands<A> {
         &mut self,
         device_tracker: &mut Tracker<A>,
         snatch_guard: &SnatchGuard<'_>,
-    ) -> Result<(), DestroyedBufferError> {
+    ) -> Result<(), DestroyedResourceError> {
         profiling::scope!("initialize_buffer_memory");
 
         
@@ -193,7 +191,9 @@ impl<A: HalApi> BakedCommands<A> {
             match buffer_use.kind {
                 MemoryInitKind::ImplicitlyInitialized => {}
                 MemoryInitKind::NeedsInitializedMemory => {
-                    match uninitialized_ranges_per_buffer.entry(buffer_use.buffer.as_info().id()) {
+                    match uninitialized_ranges_per_buffer
+                        .entry(buffer_use.buffer.as_info().tracker_index())
+                    {
                         Entry::Vacant(e) => {
                             e.insert((
                                 buffer_use.buffer.clone(),
@@ -208,7 +208,7 @@ impl<A: HalApi> BakedCommands<A> {
             }
         }
 
-        for (buffer_id, (buffer, mut ranges)) in uninitialized_ranges_per_buffer {
+        for (buffer, mut ranges) in uninitialized_ranges_per_buffer.into_values() {
             
             ranges.sort_by_key(|r| r.start);
             for i in (1..ranges.len()).rev() {
@@ -227,14 +227,9 @@ impl<A: HalApi> BakedCommands<A> {
             
             let transition = device_tracker
                 .buffers
-                .set_single(&buffer, hal::BufferUses::COPY_DST)
-                .unwrap()
-                .1;
+                .set_single(&buffer, hal::BufferUses::COPY_DST);
 
-            let raw_buf = buffer
-                .raw
-                .get(snatch_guard)
-                .ok_or(DestroyedBufferError(buffer_id))?;
+            let raw_buf = buffer.try_raw(snatch_guard)?;
 
             unsafe {
                 self.encoder.transition_buffers(
@@ -277,7 +272,7 @@ impl<A: HalApi> BakedCommands<A> {
         device_tracker: &mut Tracker<A>,
         device: &Device<A>,
         snatch_guard: &SnatchGuard<'_>,
-    ) -> Result<(), DestroyedTextureError> {
+    ) -> Result<(), DestroyedResourceError> {
         profiling::scope!("initialize_texture_memory");
 
         let mut ranges: Vec<TextureInitRange> = Vec::new();
@@ -324,8 +319,8 @@ impl<A: HalApi> BakedCommands<A> {
                 
                 
                 
-                if let Err(ClearError::InvalidTexture(id)) = clear_result {
-                    return Err(DestroyedTextureError(id));
+                if let Err(ClearError::DestroyedResource(e)) = clear_result {
+                    return Err(e);
                 }
 
                 

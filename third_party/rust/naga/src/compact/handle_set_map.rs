@@ -1,70 +1,9 @@
-use crate::arena::{Arena, Handle, Range, UniqueArena};
+use crate::arena::{Arena, Handle, HandleSet, Range};
 
-type Index = std::num::NonZeroU32;
-
-
-pub struct HandleSet<T> {
-    
-    len: usize,
-
-    
-    
-    members: bit_set::BitSet,
-
-    
-    as_keys: std::marker::PhantomData<T>,
-}
-
-impl<T> HandleSet<T> {
-    pub fn for_arena(arena: &impl ArenaType<T>) -> Self {
-        let len = arena.len();
-        Self {
-            len,
-            members: bit_set::BitSet::with_capacity(len),
-            as_keys: std::marker::PhantomData,
-        }
-    }
-
-    
-    pub fn insert(&mut self, handle: Handle<T>) {
-        
-        
-        self.members.insert(handle.index());
-    }
-
-    
-    pub fn insert_iter(&mut self, iter: impl IntoIterator<Item = Handle<T>>) {
-        for handle in iter {
-            self.insert(handle);
-        }
-    }
-
-    pub fn contains(&self, handle: Handle<T>) -> bool {
-        
-        
-        self.members.contains(handle.index())
-    }
-}
-
-pub trait ArenaType<T> {
-    fn len(&self) -> usize;
-}
-
-impl<T> ArenaType<T> for Arena<T> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-}
-
-impl<T: std::hash::Hash + Eq> ArenaType<T> for UniqueArena<T> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-}
+type Index = crate::non_max_u32::NonMaxU32;
 
 
 pub struct HandleMap<T> {
-    
     
     
     
@@ -78,11 +17,12 @@ pub struct HandleMap<T> {
 
 impl<T: 'static> HandleMap<T> {
     pub fn from_set(set: HandleSet<T>) -> Self {
-        let mut next_index = Index::new(1).unwrap();
+        let mut next_index = Index::new(0).unwrap();
         Self {
-            new_index: (0..set.len)
-                .map(|zero_based_index| {
-                    if set.members.contains(zero_based_index) {
+            new_index: set
+                .all_possible()
+                .map(|handle| {
+                    if set.contains(handle) {
                         
                         
                         let this = next_index;
@@ -111,11 +51,9 @@ impl<T: 'static> HandleMap<T> {
         log::trace!(
             "adjusting {} handle [{}] -> [{:?}]",
             std::any::type_name::<T>(),
-            old.index() + 1,
+            old.index(),
             self.new_index[old.index()]
         );
-        
-        
         self.new_index[old.index()].map(Handle::new)
     }
 
@@ -145,26 +83,24 @@ impl<T: 'static> HandleMap<T> {
     
     
     pub fn adjust_range(&self, range: &mut Range<T>, compacted_arena: &Arena<T>) {
-        let mut index_range = range.zero_based_index_range();
+        let mut index_range = range.index_range();
         let compacted;
-        
-        
-        
-        if let Some(first1) = index_range.find_map(|i| self.new_index[i as usize]) {
+        if let Some(first) = index_range.find_map(|i| self.new_index[i as usize]) {
             
             
             
-            if let Some(last1) = index_range.rev().find_map(|i| self.new_index[i as usize]) {
+            if let Some(last) = index_range.rev().find_map(|i| self.new_index[i as usize]) {
                 
-                compacted = first1.get() - 1..last1.get();
+                
+                compacted = first.get()..last.get() + 1;
             } else {
                 
                 
-                compacted = first1.get() - 1..first1.get();
+                compacted = first.get()..first.get() + 1;
             }
         } else {
             compacted = 0..0;
         };
-        *range = Range::from_zero_based_index_range(compacted, compacted_arena);
+        *range = Range::from_index_range(compacted, compacted_arena);
     }
 }

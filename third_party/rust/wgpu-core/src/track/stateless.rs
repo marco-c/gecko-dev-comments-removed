@@ -7,23 +7,18 @@
 use std::sync::Arc;
 
 use crate::{
-    id::Id,
     lock::{rank, Mutex},
     resource::Resource,
     resource_log,
-    storage::Storage,
     track::ResourceMetadata,
 };
 
 use super::{ResourceTracker, TrackerIndex};
 
 
-type Pair<T> = (Id<<T as Resource>::Marker>, Arc<T>);
-
-
 #[derive(Debug)]
 pub(crate) struct StatelessBindGroupState<T: Resource> {
-    resources: Mutex<Vec<Pair<T>>>,
+    resources: Mutex<Vec<Arc<T>>>,
 }
 
 impl<T: Resource> StatelessBindGroupState<T> {
@@ -39,37 +34,25 @@ impl<T: Resource> StatelessBindGroupState<T> {
     
     pub(crate) fn optimize(&self) {
         let mut resources = self.resources.lock();
-        resources.sort_unstable_by_key(|&(id, _)| id.unzip().0);
+        resources.sort_unstable_by_key(|resource| resource.as_info().tracker_index());
     }
 
     
     pub fn used_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
         let resources = self.resources.lock();
-        resources
-            .iter()
-            .map(|(_, resource)| resource.clone())
-            .collect::<Vec<_>>()
-            .into_iter()
+        resources.iter().cloned().collect::<Vec<_>>().into_iter()
     }
 
     
     pub fn drain_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
         let mut resources = self.resources.lock();
-        resources
-            .drain(..)
-            .map(|(_, r)| r)
-            .collect::<Vec<_>>()
-            .into_iter()
+        resources.drain(..).collect::<Vec<_>>().into_iter()
     }
 
     
-    pub fn add_single<'a>(&self, storage: &'a Storage<T>, id: Id<T::Marker>) -> Option<&'a T> {
-        let resource = storage.get(id).ok()?;
-
+    pub fn add_single(&self, resource: &Arc<T>) {
         let mut resources = self.resources.lock();
-        resources.push((id, resource.clone()));
-
-        Some(resource)
+        resources.push(resource.clone());
     }
 }
 
@@ -94,8 +77,6 @@ impl<T: Resource> ResourceTracker for StatelessTracker<T> {
             return false;
         }
 
-        resource_log!("StatelessTracker::remove_abandoned {index:?}");
-
         self.tracker_assert_in_bounds(index);
 
         unsafe {
@@ -104,13 +85,32 @@ impl<T: Resource> ResourceTracker for StatelessTracker<T> {
                 
                 
                 if existing_ref_count <= 2 {
+                    resource_log!(
+                        "StatelessTracker<{}>::remove_abandoned: removing {}",
+                        T::TYPE,
+                        self.metadata.get_resource_unchecked(index).error_ident()
+                    );
+
                     self.metadata.remove(index);
                     return true;
                 }
 
+                resource_log!(
+                    "StatelessTracker<{}>::remove_abandoned: not removing {}, ref count {}",
+                    T::TYPE,
+                    self.metadata.get_resource_unchecked(index).error_ident(),
+                    existing_ref_count
+                );
+
                 return false;
             }
         }
+
+        resource_log!(
+            "StatelessTracker<{}>::remove_abandoned: does not contain index {index:?}",
+            T::TYPE,
+        );
+
         true
     }
 }
@@ -175,13 +175,7 @@ impl<T: Resource> StatelessTracker<T> {
     
     
     
-    pub fn add_single<'a>(
-        &mut self,
-        storage: &'a Storage<T>,
-        id: Id<T::Marker>,
-    ) -> Option<&'a Arc<T>> {
-        let resource = storage.get(id).ok()?;
-
+    pub fn add_single(&mut self, resource: &Arc<T>) {
         let index = resource.as_info().tracker_index().as_usize();
 
         self.allow_index(index);
@@ -191,8 +185,6 @@ impl<T: Resource> StatelessTracker<T> {
         unsafe {
             self.metadata.insert(index, resource.clone());
         }
-
-        Some(resource)
     }
 
     

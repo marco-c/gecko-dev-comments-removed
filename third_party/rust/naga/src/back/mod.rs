@@ -29,10 +29,24 @@ pub const COMPONENTS: &[char] = &['x', 'y', 'z', 'w'];
 
 pub const INDENT: &str = "    ";
 
-pub const BAKE_PREFIX: &str = "_e";
-
 
 pub type NeedBakeExpressions = crate::FastHashSet<crate::Handle<crate::Expression>>;
+
+
+
+
+
+
+
+
+
+struct Baked(crate::Handle<crate::Expression>);
+
+impl std::fmt::Display for Baked {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.write_prefixed(f, "_e")
+    }
+}
 
 
 

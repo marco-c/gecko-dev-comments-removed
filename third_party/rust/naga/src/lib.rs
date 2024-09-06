@@ -218,25 +218,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![allow(
     clippy::new_without_default,
     clippy::unneeded_field_pattern,
@@ -277,6 +258,7 @@ pub mod compact;
 pub mod error;
 pub mod front;
 pub mod keywords;
+mod non_max_u32;
 pub mod proc;
 mod span;
 pub mod valid;

@@ -1,4 +1,4 @@
-use crate::arena::Handle;
+use crate::arena::{Handle, HandleVec};
 use std::{fmt::Display, num::NonZeroU32, ops};
 
 
@@ -108,17 +108,15 @@ impl TypeLayout {
 
 
 #[derive(Debug, Default)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct Layouter {
     
-    layouts: Vec<TypeLayout>,
+    layouts: HandleVec<crate::Type, TypeLayout>,
 }
 
 impl ops::Index<Handle<crate::Type>> for Layouter {
     type Output = TypeLayout;
     fn index(&self, handle: Handle<crate::Type>) -> &TypeLayout {
-        &self.layouts[handle.index()]
+        &self.layouts[handle]
     }
 }
 
@@ -243,7 +241,7 @@ impl Layouter {
                 },
             };
             debug_assert!(size <= layout.size);
-            self.layouts.push(layout);
+            self.layouts.insert(ty_handle, layout);
         }
 
         Ok(())

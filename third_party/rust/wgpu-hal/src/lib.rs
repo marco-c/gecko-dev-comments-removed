@@ -228,16 +228,14 @@
     
     clippy::missing_safety_doc,
     
-    clippy::needless_borrowed_reference,
+    clippy::pattern_type_mismatch,
 )]
 #![warn(
     trivial_casts,
     trivial_numeric_casts,
     unsafe_op_in_unsafe_fn,
     unused_extern_crates,
-    unused_qualifications,
-    
-    clippy::pattern_type_mismatch,
+    unused_qualifications
 )]
 
 
@@ -884,6 +882,8 @@ pub trait Device: WasmNotSendSync {
         &self,
         acceleration_structure: <Self::A as Api>::AccelerationStructure,
     );
+
+    fn get_internal_counters(&self) -> wgt::HalCounters;
 }
 
 pub trait Queue: WasmNotSendSync {
