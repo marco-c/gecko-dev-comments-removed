@@ -81,6 +81,9 @@ class BounceTrackingState : public nsIWebProgressListener,
       dom::CanonicalBrowsingContext* aBrowsingContext);
 
   
+  static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
+
+  
   
   
   
