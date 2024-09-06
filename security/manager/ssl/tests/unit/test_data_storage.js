@@ -15,6 +15,9 @@ let dataStorage = dataStorageManager.get(
 
 add_task(function test_data_storage() {
   
+  Assert.equal(dataStorage.getAll().length, 0);
+
+  
   dataStorage.put("test", "value", Ci.nsIDataStorage.Persistent);
   Assert.equal(dataStorage.get("test", Ci.nsIDataStorage.Persistent), "value");
 
@@ -94,9 +97,13 @@ add_task(function test_data_storage() {
       "getting a removed value should throw"
     );
   }
+
+  
+  Assert.equal(dataStorage.getAll().length, 0);
+
   
   for (let i = 0; i < 2048; i++) {
-    let padded = i.toString().padStart(5, "1");
+    let padded = i.toString().padStart(5, "*");
     dataStorage.put(
       `key${padded}`,
       `value${padded}`,
@@ -110,10 +117,40 @@ add_task(function test_data_storage() {
   }
   
   for (let i = 0; i < 2048; i++) {
-    let padded = i.toString().padStart(5, "1");
+    let padded = i.toString().padStart(5, "*");
     let val = dataStorage.get(`key${padded}`, Ci.nsIDataStorage.Persistent);
     Assert.equal(val, `value${padded}`);
     val = dataStorage.get(`key${padded}`, Ci.nsIDataStorage.Private);
     Assert.equal(val, `value${padded}`);
+  }
+
+  
+  let entries = dataStorage.getAll();
+  Assert.equal(entries.length, 4096);
+  let persistentEntries = entries.filter(
+    entry => entry.type == Ci.nsIDataStorage.Persistent
+  );
+  Assert.equal(persistentEntries.length, 2048);
+  let privateEntries = entries.filter(
+    entry => entry.type == Ci.nsIDataStorage.Private
+  );
+  Assert.equal(privateEntries.length, 2048);
+  let compareEntries = (a, b) => {
+    if (a.key < b.key) {
+      return -1;
+    }
+    if (a.key == b.key) {
+      return 0;
+    }
+    return 1;
+  };
+  persistentEntries.sort(compareEntries);
+  privateEntries.sort(compareEntries);
+  for (let i = 0; i < 2048; i++) {
+    let padded = i.toString().padStart(5, "*");
+    Assert.equal(persistentEntries[i].key, `key${padded}`);
+    Assert.equal(persistentEntries[i].value, `value${padded}`);
+    Assert.equal(privateEntries[i].key, `key${padded}`);
+    Assert.equal(privateEntries[i].value, `value${padded}`);
   }
 });
