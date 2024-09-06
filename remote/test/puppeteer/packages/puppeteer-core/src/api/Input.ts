@@ -344,6 +344,7 @@ export type MouseButton = (typeof MouseButton)[keyof typeof MouseButton];
 
 
 
+
 export abstract class Mouse {
   
 

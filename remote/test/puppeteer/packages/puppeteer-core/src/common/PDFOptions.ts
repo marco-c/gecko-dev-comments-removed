@@ -161,13 +161,9 @@ export interface PDFOptions {
 
 
 
+
   tagged?: boolean;
   
-
-
-
-
-
 
 
 
@@ -178,7 +174,18 @@ export interface PDFOptions {
 
 
 
+
+
+
   timeout?: number;
+  
+
+
+
+
+
+
+  waitForFonts?: boolean;
 }
 
 

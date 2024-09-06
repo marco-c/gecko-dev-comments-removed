@@ -30,7 +30,11 @@ import type {
   MouseClickOptions,
 } from './Input.js';
 import {JSHandle} from './JSHandle.js';
-import type {ScreenshotOptions, WaitForSelectorOptions} from './Page.js';
+import type {
+  QueryOptions,
+  ScreenshotOptions,
+  WaitForSelectorOptions,
+} from './Page.js';
 
 
 
@@ -349,6 +353,20 @@ export abstract class ElementHandle<
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   @throwIfDisposed()
   @ElementHandle.bindIsolatedHandle
   async $<Selector extends string>(
@@ -369,9 +387,49 @@ export abstract class ElementHandle<
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   @throwIfDisposed()
-  @ElementHandle.bindIsolatedHandle
   async $$<Selector extends string>(
+    selector: Selector,
+    options?: QueryOptions
+  ): Promise<Array<ElementHandle<NodeFor<Selector>>>> {
+    if (options?.isolate === false) {
+      return await this.#$$impl(selector);
+    }
+    return await this.#$$(selector);
+  }
+
+  
+
+
+
+
+  @ElementHandle.bindIsolatedHandle
+  async #$$<Selector extends string>(
+    selector: Selector
+  ): Promise<Array<ElementHandle<NodeFor<Selector>>>> {
+    return await this.#$$impl(selector);
+  }
+
+  
+
+
+
+
+  async #$$impl<Selector extends string>(
     selector: Selector
   ): Promise<Array<ElementHandle<NodeFor<Selector>>>> {
     const {updatedSelector, QueryHandler} =
@@ -382,6 +440,20 @@ export abstract class ElementHandle<
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -430,6 +502,20 @@ export abstract class ElementHandle<
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -534,13 +620,12 @@ export abstract class ElementHandle<
     selector: Selector,
     options: WaitForSelectorOptions = {}
   ): Promise<ElementHandle<NodeFor<Selector>> | null> {
-    const {updatedSelector, QueryHandler} =
+    const {updatedSelector, QueryHandler, polling} =
       getQueryHandlerAndSelector(selector);
-    return (await QueryHandler.waitFor(
-      this,
-      updatedSelector,
-      options
-    )) as ElementHandle<NodeFor<Selector>> | null;
+    return (await QueryHandler.waitFor(this, updatedSelector, {
+      polling,
+      ...options,
+    })) as ElementHandle<NodeFor<Selector>> | null;
   }
 
   async #checkVisibility(visibility: boolean): Promise<boolean> {
@@ -559,6 +644,15 @@ export abstract class ElementHandle<
 
 
 
+
+
+
+
+
+
+
+
+
   @throwIfDisposed()
   @ElementHandle.bindIsolatedHandle
   async isVisible(): Promise<boolean> {
@@ -566,6 +660,14 @@ export abstract class ElementHandle<
   }
 
   
+
+
+
+
+
+
+
+
 
 
 

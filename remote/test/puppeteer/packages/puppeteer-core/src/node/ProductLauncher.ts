@@ -181,9 +181,6 @@ export abstract class ProductLauncher {
             cdpConnection,
             browserCloseCallback,
             {
-              timeout,
-              protocolTimeout,
-              slowMo,
               defaultViewport,
               ignoreHTTPSErrors,
             }
@@ -209,7 +206,7 @@ export abstract class ProductLauncher {
       throw error;
     }
 
-    if (waitForInitialPage && protocol !== 'webDriverBiDi') {
+    if (waitForInitialPage) {
       await this.waitForPageTarget(browser, timeout);
     }
 
@@ -340,14 +337,10 @@ export abstract class ProductLauncher {
     connection: Connection,
     closeCallback: BrowserCloseCallback,
     opts: {
-      timeout: number;
-      protocolTimeout: number | undefined;
-      slowMo: number;
       defaultViewport: Viewport | null;
       ignoreHTTPSErrors?: boolean;
     }
   ): Promise<Browser> {
-    
     const BiDi = await import( '../bidi/bidi.js');
     const bidiConnection = await BiDi.connectBidiOverCdp(connection, {
       acceptInsecureCerts: opts.ignoreHTTPSErrors ?? false,
@@ -388,7 +381,6 @@ export abstract class ProductLauncher {
       opts.slowMo,
       opts.protocolTimeout
     );
-    
     return await BiDi.BidiBrowser.create({
       connection: bidiConnection,
       closeCallback,

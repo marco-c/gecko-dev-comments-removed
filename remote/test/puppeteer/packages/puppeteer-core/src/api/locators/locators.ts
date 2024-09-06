@@ -16,7 +16,6 @@ import {
   first,
   firstValueFrom,
   from,
-  fromEvent,
   identity,
   ignoreElements,
   map,
@@ -33,7 +32,7 @@ import {
 import type {EventType} from '../../common/EventEmitter.js';
 import {EventEmitter} from '../../common/EventEmitter.js';
 import type {Awaitable, HandleFor, NodeFor} from '../../common/types.js';
-import {debugError, timeout} from '../../common/util.js';
+import {debugError, fromAbortSignal, timeout} from '../../common/util.js';
 import type {
   BoundingBox,
   ClickOptions,
@@ -45,46 +44,20 @@ import type {Page} from '../Page.js';
 
 
 
+
+
+
+
+
 export type VisibilityOption = 'hidden' | 'visible' | null;
 
 
 
-export interface LocatorOptions {
-  
-
-
-
-  visibility: VisibilityOption;
-  
-
-
-
-
-
-
-  timeout: number;
-  
-
-
-
-  ensureElementIsInTheViewport: boolean;
-  
-
-
-
-
-  waitForEnabled: boolean;
-  
-
-
-
-
-  waitForStableBoundingBox: boolean;
-}
-
-
 
 export interface ActionOptions {
+  
+
+
   signal?: AbortSignal;
 }
 
@@ -116,6 +89,8 @@ export enum LocatorEvent {
 export interface LocatorEvents extends Record<EventType, unknown> {
   [LocatorEvent.Action]: undefined;
 }
+
+
 
 
 
@@ -177,16 +152,7 @@ export abstract class Locator<T> extends EventEmitter<LocatorEvents> {
     ): OperatorFunction<T, T> => {
       const candidates = [];
       if (signal) {
-        candidates.push(
-          fromEvent(signal, 'abort').pipe(
-            map(() => {
-              if (signal.reason instanceof Error) {
-                signal.reason.cause = cause;
-              }
-              throw signal.reason;
-            })
-          )
-        );
+        candidates.push(fromAbortSignal(signal, cause));
       }
       candidates.push(timeout(this._timeout, cause));
       return pipe(
@@ -201,11 +167,23 @@ export abstract class Locator<T> extends EventEmitter<LocatorEvents> {
     return this._timeout;
   }
 
+  
+
+
+
+
+
+
+
   setTimeout(timeout: number): Locator<T> {
     const locator = this._clone();
     locator._timeout = timeout;
     return locator;
   }
+
+  
+
+
 
   setVisibility<NodeType extends Node>(
     this: Locator<NodeType>,
@@ -216,6 +194,13 @@ export abstract class Locator<T> extends EventEmitter<LocatorEvents> {
     return locator;
   }
 
+  
+
+
+
+
+
+
   setWaitForEnabled<NodeType extends Node>(
     this: Locator<NodeType>,
     value: boolean
@@ -225,6 +210,13 @@ export abstract class Locator<T> extends EventEmitter<LocatorEvents> {
     return locator;
   }
 
+  
+
+
+
+
+
+
   setEnsureElementIsInTheViewport<ElementType extends Element>(
     this: Locator<ElementType>,
     value: boolean
@@ -233,6 +225,13 @@ export abstract class Locator<T> extends EventEmitter<LocatorEvents> {
     locator.#ensureElementIsInTheViewport = value;
     return locator;
   }
+
+  
+
+
+
+
+
 
   setWaitForStableBoundingBox<ElementType extends Element>(
     this: Locator<ElementType>,
@@ -697,6 +696,9 @@ export abstract class Locator<T> extends EventEmitter<LocatorEvents> {
     return new MappedLocator(this._clone(), mapper);
   }
 
+  
+
+
   click<ElementType extends Element>(
     this: Locator<ElementType>,
     options?: Readonly<LocatorClickOptions>
@@ -718,12 +720,18 @@ export abstract class Locator<T> extends EventEmitter<LocatorEvents> {
     return firstValueFrom(this.#fill(value, options));
   }
 
+  
+
+
   hover<ElementType extends Element>(
     this: Locator<ElementType>,
     options?: Readonly<ActionOptions>
   ): Promise<void> {
     return firstValueFrom(this.#hover(options));
   }
+
+  
+
 
   scroll<ElementType extends Element>(
     this: Locator<ElementType>,

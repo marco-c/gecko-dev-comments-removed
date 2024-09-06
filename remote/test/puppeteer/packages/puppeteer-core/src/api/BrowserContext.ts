@@ -18,6 +18,7 @@ import {
   timeout,
 } from '../common/util.js';
 import {asyncDisposeSymbol, disposeSymbol} from '../util/disposable.js';
+import {Mutex} from '../util/Mutex.js';
 
 import type {Browser, Permission, WaitForTargetOptions} from './Browser.js';
 import type {Page} from './Page.js';
@@ -103,6 +104,37 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
 
 
   abstract targets(): Target[];
+
+  
+
+
+  #pageScreenshotMutex?: Mutex;
+  #screenshotOperationsCount = 0;
+
+  
+
+
+  startScreenshot(): Promise<InstanceType<typeof Mutex.Guard>> {
+    const mutex = this.#pageScreenshotMutex || new Mutex();
+    this.#pageScreenshotMutex = mutex;
+    this.#screenshotOperationsCount++;
+    return mutex.acquire(() => {
+      this.#screenshotOperationsCount--;
+      if (this.#screenshotOperationsCount === 0) {
+        
+        this.#pageScreenshotMutex = undefined;
+      }
+    });
+  }
+
+  
+
+
+  waitForScreenshotOperations():
+    | Promise<InstanceType<typeof Mutex.Guard>>
+    | undefined {
+    return this.#pageScreenshotMutex?.acquire();
+  }
 
   
 

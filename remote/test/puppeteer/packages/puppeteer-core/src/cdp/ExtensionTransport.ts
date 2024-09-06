@@ -178,5 +178,6 @@ export class ExtensionTransport implements ConnectionTransport {
 
   close(): void {
     chrome.debugger.onEvent.removeListener(this.#debuggerEventHandler);
+    void chrome.debugger.detach({tabId: this.#tabId});
   }
 }

@@ -119,6 +119,9 @@ export class Coverage {
   #jsCoverage: JSCoverage;
   #cssCoverage: CSSCoverage;
 
+  
+
+
   constructor(client: CDPSession) {
     this.#jsCoverage = new JSCoverage(client);
     this.#cssCoverage = new CSSCoverage(client);
@@ -195,6 +198,9 @@ export class JSCoverage {
   #resetOnNavigation = false;
   #reportAnonymousScripts = false;
   #includeRawScriptCoverage = false;
+
+  
+
 
   constructor(client: CDPSession) {
     this.#client = client;

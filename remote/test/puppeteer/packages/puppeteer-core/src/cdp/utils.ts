@@ -169,15 +169,16 @@ export function valueFromRemoteObject(
 
 
 
-export function addPageBinding(type: string, name: string): void {
+export function addPageBinding(
+  type: string,
+  name: string,
+  prefix: string
+): void {
   
   
-  const callCdp = globalThis[name];
-
   
   
-  
-  if (callCdp[Symbol.toStringTag] === 'PuppeteerBinding') {
+  if (globalThis[name]) {
     return;
   }
 
@@ -194,7 +195,9 @@ export function addPageBinding(type: string, name: string): void {
       callPuppeteer.lastSeq = seq;
       callPuppeteer.args.set(seq, args);
 
-      callCdp(
+      
+      
+      globalThis[prefix + name](
         JSON.stringify({
           type,
           name,
@@ -220,13 +223,16 @@ export function addPageBinding(type: string, name: string): void {
       });
     },
   });
-  
-  globalThis[name][Symbol.toStringTag] = 'PuppeteerBinding';
 }
 
 
 
 
+export const CDP_BINDING_PREFIX = 'puppeteer_';
+
+
+
+
 export function pageBindingInitString(type: string, name: string): string {
-  return evaluationString(addPageBinding, type, name);
+  return evaluationString(addPageBinding, type, name, CDP_BINDING_PREFIX);
 }

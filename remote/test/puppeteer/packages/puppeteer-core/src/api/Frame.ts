@@ -10,9 +10,11 @@ import type {ClickOptions, ElementHandle} from '../api/ElementHandle.js';
 import type {HTTPResponse} from '../api/HTTPResponse.js';
 import type {
   Page,
+  QueryOptions,
   WaitForSelectorOptions,
   WaitTimeoutOptions,
 } from '../api/Page.js';
+import type {Accessibility} from '../cdp/Accessibility.js';
 import type {DeviceRequestPrompt} from '../cdp/DeviceRequestPrompt.js';
 import type {PuppeteerLifeCycleEvent} from '../cdp/LifecycleWatcher.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
@@ -298,9 +300,16 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
 
 
 
+
+
+
+
   abstract isOOPFrame(): boolean;
 
   
+
+
+
 
 
 
@@ -373,6 +382,11 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
   
 
 
+  abstract get accessibility(): Accessibility;
+
+  
+
+
   abstract mainRealm(): Realm;
 
   
@@ -387,13 +401,9 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
 
   #document(): Promise<ElementHandle<Document>> {
     if (!this.#_document) {
-      this.#_document = this.isolatedRealm()
-        .evaluateHandle(() => {
-          return document;
-        })
-        .then(handle => {
-          return this.mainRealm().transferHandle(handle);
-        });
+      this.#_document = this.mainRealm().evaluateHandle(() => {
+        return document;
+      });
     }
     return this.#_document;
   }
@@ -478,15 +488,23 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   locator<Selector extends string>(
     selector: Selector
   ): Locator<NodeFor<Selector>>;
 
   
-
-
-
-
 
 
 
@@ -512,6 +530,21 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   @throwIfDetached
   async $<Selector extends string>(
     selector: Selector
@@ -528,16 +561,46 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   @throwIfDetached
   async $$<Selector extends string>(
-    selector: Selector
+    selector: Selector,
+    options?: QueryOptions
   ): Promise<Array<ElementHandle<NodeFor<Selector>>>> {
     
     const document = await this.#document();
-    return await document.$$(selector);
+    return await document.$$(selector, options);
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -577,6 +640,20 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -655,13 +732,12 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
     selector: Selector,
     options: WaitForSelectorOptions = {}
   ): Promise<ElementHandle<NodeFor<Selector>> | null> {
-    const {updatedSelector, QueryHandler} =
+    const {updatedSelector, QueryHandler, polling} =
       getQueryHandlerAndSelector(selector);
-    return (await QueryHandler.waitFor(
-      this,
-      updatedSelector,
-      options
-    )) as ElementHandle<NodeFor<Selector>> | null;
+    return (await QueryHandler.waitFor(this, updatedSelector, {
+      polling,
+      ...options,
+    })) as ElementHandle<NodeFor<Selector>> | null;
   }
 
   

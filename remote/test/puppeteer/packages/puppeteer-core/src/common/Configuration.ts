@@ -36,10 +36,6 @@ export interface Configuration {
 
 
 
-
-
-
-
   browserRevision?: string;
   
 

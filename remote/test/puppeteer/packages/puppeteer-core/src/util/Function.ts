@@ -31,7 +31,16 @@ export function stringifyFunction(fn: (...args: never) => unknown): string {
   let value = fn.toString();
   try {
     new Function(`(${value})`);
-  } catch {
+  } catch (err) {
+    if (
+      (err as Error).message.includes(
+        `Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive`
+      )
+    ) {
+      
+      
+      return value;
+    }
     
     
     let prefix = 'function ';

@@ -20,6 +20,8 @@ export class NodeWebSocketTransport implements ConnectionTransport {
       const ws = new NodeWebSocket(url, [], {
         followRedirects: true,
         perMessageDeflate: false,
+        
+        allowSynchronousEvents: false,
         maxPayload: 256 * 1024 * 1024, 
         headers: {
           'User-Agent': `Puppeteer ${packageVersion}`,
@@ -41,18 +43,14 @@ export class NodeWebSocketTransport implements ConnectionTransport {
   constructor(ws: NodeWebSocket) {
     this.#ws = ws;
     this.#ws.addEventListener('message', event => {
-      setImmediate(() => {
-        if (this.onmessage) {
-          this.onmessage.call(null, event.data);
-        }
-      });
+      if (this.onmessage) {
+        this.onmessage.call(null, event.data);
+      }
     });
     this.#ws.addEventListener('close', () => {
-      setImmediate(() => {
-        if (this.onclose) {
-          this.onclose.call(null);
-        }
-      });
+      if (this.onclose) {
+        this.onclose.call(null);
+      }
     });
     
     this.#ws.addEventListener('error', () => {});
