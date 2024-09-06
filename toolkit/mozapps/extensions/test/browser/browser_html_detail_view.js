@@ -1260,7 +1260,7 @@ add_task(async function testGoBackButtonIsDisabledWhenHistoryIsEmpty() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, null);
   
-  let win = await BrowserOpenAddonsMgr(viewID);
+  let win = await BrowserAddonUI.openAddonsMgr(viewID);
   await assertBackButtonIsDisabled(win);
 
   BrowserTestUtils.removeTab(tab);
@@ -1288,7 +1288,7 @@ add_task(async function testGoBackButtonIsDisabledWhenHistoryIsEmptyInNewTab() {
     true
   );
   
-  let win = await BrowserOpenAddonsMgr(viewID);
+  let win = await BrowserAddonUI.openAddonsMgr(viewID);
   let addonsTab = await addonsTabLoaded;
   await assertBackButtonIsDisabled(win);
 
@@ -1309,7 +1309,7 @@ add_task(async function testGoBackButtonIsDisabledAfterBrowserBackButton() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, null);
   
-  let win = await BrowserOpenAddonsMgr(viewID);
+  let win = await BrowserAddonUI.openAddonsMgr(viewID);
   await assertBackButtonIsDisabled(win);
 
   

@@ -1107,7 +1107,7 @@ var BrowserAddonUI = {
       return;
     }
 
-    const win = await BrowserOpenAddonsMgr("addons://list/extension");
+    const win = await this.openAddonsMgr("addons://list/extension");
 
     win.openAbuseReport({ addonId, reportEntryPoint });
   },
@@ -1137,7 +1137,85 @@ var BrowserAddonUI = {
       return;
     }
 
-    BrowserOpenAddonsMgr("addons://detail/" + encodeURIComponent(addon.id));
+    this.openAddonsMgr("addons://detail/" + encodeURIComponent(addon.id));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  openAddonsMgr(aView, { selectTabByViewId = false } = {}) {
+    return new Promise(resolve => {
+      let emWindow;
+      let browserWindow;
+
+      const receivePong = function (aSubject) {
+        const browserWin = aSubject.browsingContext.topChromeWindow;
+        if (!emWindow || browserWin == window ) {
+          if (
+            selectTabByViewId &&
+            aSubject.gViewController.currentViewId !== aView
+          ) {
+            return;
+          }
+
+          emWindow = aSubject;
+          browserWindow = browserWin;
+        }
+      };
+      Services.obs.addObserver(receivePong, "EM-pong");
+      Services.obs.notifyObservers(null, "EM-ping");
+      Services.obs.removeObserver(receivePong, "EM-pong");
+
+      if (emWindow) {
+        if (aView && !selectTabByViewId) {
+          emWindow.loadView(aView);
+        }
+        let tab = browserWindow.gBrowser.getTabForBrowser(
+          emWindow.docShell.chromeEventHandler
+        );
+        browserWindow.gBrowser.selectedTab = tab;
+        emWindow.focus();
+        resolve(emWindow);
+        return;
+      }
+
+      if (selectTabByViewId) {
+        const target = isBlankPageURL(gBrowser.currentURI.spec)
+          ? "current"
+          : "tab";
+        openTrustedLinkIn("about:addons", target);
+      } else {
+        
+        
+        switchToTabHavingURI("about:addons", true);
+      }
+
+      Services.obs.addObserver(function observer(aSubject, aTopic) {
+        Services.obs.removeObserver(observer, aTopic);
+        if (aView) {
+          aSubject.loadView(aView);
+        }
+        aSubject.focus();
+        resolve(aSubject);
+      }, "EM-loaded");
+    });
   },
 };
 
@@ -1551,7 +1629,7 @@ var gUnifiedExtensions = {
           } else {
             viewID = "addons://list/extension";
           }
-          await BrowserOpenAddonsMgr(viewID);
+          await BrowserAddonUI.openAddonsMgr(viewID);
           return;
         }
       }

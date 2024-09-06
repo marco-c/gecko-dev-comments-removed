@@ -1110,7 +1110,7 @@ var Control = {
           
           let parentWin =
             window.docShell.browsingContext.embedderElement.ownerGlobal;
-          parentWin.BrowserOpenAddonsMgr();
+          parentWin.BrowserAddonUI.openAddonsMgr();
           return;
         }
         

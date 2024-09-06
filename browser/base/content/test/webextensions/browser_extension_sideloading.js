@@ -224,7 +224,7 @@ add_task(async function test_sideloading() {
   
   await gCUITestUtils.hideMainMenu();
 
-  win = await BrowserOpenAddonsMgr(VIEW);
+  win = await BrowserAddonUI.openAddonsMgr(VIEW);
   await waitAboutAddonsViewLoaded(win.document);
 
   
@@ -293,7 +293,7 @@ add_task(async function test_sideloading() {
   
   await gCUITestUtils.hideMainMenu();
 
-  win = await BrowserOpenAddonsMgr(
+  win = await BrowserAddonUI.openAddonsMgr(
     `addons://detail/${encodeURIComponent(ID3)}`
   );
 
