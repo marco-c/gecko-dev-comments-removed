@@ -12,73 +12,7 @@ const PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
   Ci.nsIPrintSettingsService
 );
 
-let mockCA = {
-  isActive: true,
-  mightBeActive: true,
-  errorValue: undefined,
-
-  setupForTest(shouldAllowRequest) {
-    this.shouldAllowRequest = shouldAllowRequest;
-    this.errorValue = undefined;
-    this.calls = [];
-  },
-
-  setupForTestWithError(errorValue) {
-    this.errorValue = errorValue;
-    this.calls = [];
-  },
-
-  clearCalls() {
-    this.calls = [];
-  },
-
-  getAction() {
-    if (this.shouldAllowRequest === undefined) {
-      this.shouldAllowRequest = true;
-    }
-    return this.shouldAllowRequest
-      ? Ci.nsIContentAnalysisResponse.eAllow
-      : Ci.nsIContentAnalysisResponse.eBlock;
-  },
-
-  
-  async analyzeContentRequest(request, _autoAcknowledge) {
-    info(
-      "Mock ContentAnalysis service: analyzeContentRequest, this.shouldAllowRequest=" +
-        this.shouldAllowRequest +
-        ", this.errorValue=" +
-        this.errorValue
-    );
-    this.calls.push(request);
-    if (this.errorValue) {
-      throw this.errorValue;
-    }
-    
-    await new Promise(res => setTimeout(res, 0));
-    return makeContentAnalysisResponse(this.getAction(), request.requestToken);
-  },
-
-  analyzeContentRequestCallback(request, autoAcknowledge, callback) {
-    info(
-      "Mock ContentAnalysis service: analyzeContentRequestCallback, this.shouldAllowRequest=" +
-        this.shouldAllowRequest +
-        ", this.errorValue=" +
-        this.errorValue
-    );
-    this.calls.push(request);
-    if (this.errorValue) {
-      throw this.errorValue;
-    }
-    let response = makeContentAnalysisResponse(
-      this.getAction(),
-      request.requestToken
-    );
-    
-    setTimeout(() => {
-      callback.contentResult(response);
-    }, 0);
-  },
-};
+let mockCA = makeMockContentAnalysis();
 
 add_setup(async function test_setup() {
   mockCA = mockContentAnalysisService(mockCA);
