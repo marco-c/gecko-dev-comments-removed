@@ -36,18 +36,6 @@ class AudioFrameOperations {
   
   
   
-  ABSL_DEPRECATED("bugs.webrtc.org/8649")
-  static int MonoToStereo(AudioFrame* frame);
-
-  
-  
-  
-  ABSL_DEPRECATED("bugs.webrtc.org/8649")
-  static int StereoToMono(AudioFrame* frame);
-
-  
-  
-  
   static void QuadToStereo(const int16_t* src_audio,
                            size_t samples_per_channel,
                            int16_t* dst_audio);
