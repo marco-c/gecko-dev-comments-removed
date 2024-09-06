@@ -583,7 +583,6 @@ EventStateManager::EventStateManager()
       mGestureDownPoint(0, 0),
       mGestureModifiers(0),
       mGestureDownButtons(0),
-      mGestureDownButton(0),
       mPresContext(nullptr),
       mShouldAlwaysUseLineDeltas(false),
       mShouldAlwaysUseLineDeltasInitialized(false),
@@ -2275,13 +2274,6 @@ void EventStateManager::FireContextClick() {
       FillInEventFromGestureDown(&event);
 
       
-      
-      LastMouseDownInfo& mouseDownInfo = GetLastMouseDownInfo(event.mButton);
-      mouseDownInfo.mLastMouseDownContent = nullptr;
-      mouseDownInfo.mClickCount = 0;
-      mouseDownInfo.mLastMouseDownInputControlType = Nothing();
-
-      
       if (mCurrentTarget) {
         RefPtr<nsFrameSelection> frameSel = mCurrentTarget->GetFrameSelection();
 
@@ -2295,15 +2287,10 @@ void EventStateManager::FireContextClick() {
       AutoHandlingUserInputStatePusher userInpStatePusher(true, &event);
 
       
+      RefPtr<nsIContent> gestureDownContent = mGestureDownContent;
       RefPtr<nsPresContext> presContext = mPresContext;
-
-      
-      
-      
-      
-      if (RefPtr<PresShell> presShell = presContext->GetPresShell()) {
-        presShell->HandleEvent(mCurrentTarget, &event, false, &status);
-      }
+      EventDispatcher::Dispatch(gestureDownContent, presContext, &event,
+                                nullptr, &status);
 
       
       
@@ -2313,7 +2300,9 @@ void EventStateManager::FireContextClick() {
   }
 
   
-  StopTrackingDragGesture(true);
+  if (status == nsEventStatus_eConsumeNoDefault) {
+    StopTrackingDragGesture(true);
+  }
 
   KillClickHoldTimer();
 
@@ -2353,7 +2342,6 @@ void EventStateManager::BeginTrackingDragGesture(nsPresContext* aPresContext,
   }
   mGestureModifiers = inDownEvent->mModifiers;
   mGestureDownButtons = inDownEvent->mButtons;
-  mGestureDownButton = inDownEvent->mButton;
 
   if (inDownEvent->mMessage != eMouseTouchDrag &&
       StaticPrefs::ui_click_hold_context_menus()) {
@@ -2427,9 +2415,6 @@ void EventStateManager::FillInEventFromGestureDown(WidgetMouseEvent* aEvent) {
       mGestureDownPoint - aEvent->mWidget->WidgetToScreenOffset();
   aEvent->mModifiers = mGestureModifiers;
   aEvent->mButtons = mGestureDownButtons;
-  if (aEvent->mMessage == eContextMenu) {
-    aEvent->mButton = mGestureDownButton;
-  }
 }
 
 void EventStateManager::MaybeFirePointerCancel(WidgetInputEvent* aEvent) {
@@ -3808,6 +3793,8 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       
       
       if (mouseEvent->mClickEventPrevented) {
+        RefPtr<EventStateManager> esm =
+            ESMFromContentOrThis(aOverrideClickTarget);
         switch (mouseEvent->mButton) {
           case MouseButton::ePrimary:
           case MouseButton::eSecondary:
