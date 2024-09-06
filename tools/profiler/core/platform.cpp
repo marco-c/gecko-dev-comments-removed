@@ -945,7 +945,7 @@ class CorePS {
   PS_GET_AND_SET(const nsACString&, ProcessName)
   PS_GET_AND_SET(const nsACString&, ETLDplus1)
 #if !defined(XP_WIN)
-  PS_GET_AND_SET(const Maybe<nsCOMPtr<nsIFile>>&, AsyncSignalDumpDirectory)
+  PS_GET_AND_SET(const Maybe<nsCOMPtr<nsIFile>>&, DownloadDirectory)
 #endif
 
   static void SetBandwidthCounter(ProfilerBandwidthCounter* aBandwidthCounter) {
@@ -1011,7 +1011,7 @@ class CorePS {
 
   
 #if !defined(XP_WIN)
-  Maybe<nsCOMPtr<nsIFile>> mAsyncSignalDumpDirectory;
+  Maybe<nsCOMPtr<nsIFile>> mDownloadDirectory;
 #endif
 };
 
@@ -5657,7 +5657,7 @@ Maybe<nsAutoCString> profiler_find_dump_path() {
     
     PSAutoLock lock;
     Maybe<nsCOMPtr<nsIFile>> downloadDir = Nothing();
-    downloadDir = CorePS::AsyncSignalDumpDirectory(lock);
+    downloadDir = CorePS::DownloadDirectory(lock);
 
     
     
@@ -6926,12 +6926,12 @@ bool profiler_is_paused() {
 }
 
 
-void profiler_lookup_async_signal_dump_directory() {
+void profiler_lookup_download_directory() {
 
 
 
 #if !defined(XP_WIN)
-  LOG("profiler_lookup_async_signal_dump_directory");
+  LOG("profiler_lookup_download_directory");
 
   MOZ_ASSERT(
       NS_IsMainThread(),
@@ -6942,45 +6942,16 @@ void profiler_lookup_async_signal_dump_directory() {
 
   
   PSAutoLock lock;
-  nsresult rv;
 
-  
-  
-  LOG("Checking if MOZ_UPLOAD_DIR exists");
-  const char* mozUploadDir = getenv("MOZ_UPLOAD_DIR");
-  if (mozUploadDir && mozUploadDir[0] != '\0') {
-    LOG("Found MOZ_UPLOAD_DIR at: %s", mozUploadDir);
-    
-    
-    nsCOMPtr<nsIFile> mozUploadDirFile =
-        do_CreateInstance("@mozilla.org/file/local;1", &rv);
-
-    if (NS_FAILED(rv)) {
-      LOG("Failed to create nsIFile for MOZ_UPLOAD_DIR: %s, Error: %s",
-          mozUploadDir, GetStaticErrorName(rv));
-    } else {
-      rv = mozUploadDirFile->InitWithNativePath(
-          nsDependentCString(mozUploadDir));
-      if (NS_FAILED(rv)) {
-        LOG("Failed to assign a filepath while creating MOZ_UPLOAD_DIR file "
-            "%s, Error %s ",
-            mozUploadDir, GetStaticErrorName(rv));
-      } else {
-        CorePS::SetAsyncSignalDumpDirectory(lock, Some(mozUploadDirFile));
-      }
-    }
+  nsCOMPtr<nsIFile> tDownloadDir;
+  nsresult rv = NS_GetSpecialDirectory(NS_OS_DEFAULT_DOWNLOAD_DIR,
+                                       getter_AddRefs(tDownloadDir));
+  if (NS_FAILED(rv)) {
+    LOG("Failed to find download directory. Profiler signal handling will not "
+        "be able to save to disk. Error: %s",
+        GetStaticErrorName(rv));
   } else {
-    LOG("Defaulting to the user's Download directory for profile dumps")
-    nsCOMPtr<nsIFile> tDownloadDir;
-    rv = NS_GetSpecialDirectory(NS_OS_DEFAULT_DOWNLOAD_DIR,
-                                getter_AddRefs(tDownloadDir));
-    if (NS_FAILED(rv)) {
-      LOG("Failed to find download directory. Profiler signal handling will "
-          "not be able to save to disk. Error: %s",
-          GetStaticErrorName(rv));
-    } else {
-      CorePS::SetAsyncSignalDumpDirectory(lock, Some(tDownloadDir));
-    }
+    CorePS::SetDownloadDirectory(lock, Some(tDownloadDir));
   }
 #endif
 }
