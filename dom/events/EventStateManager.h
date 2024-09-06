@@ -67,18 +67,17 @@ class OverOutElementsWrapper final : public nsISupports {
 
   void ContentRemoved(nsIContent& aContent);
   void WillDispatchOverAndEnterEvent(nsIContent* aOverEventTarget) {
-    mDeepestEnterEventTarget = aOverEventTarget;
+    StoreOverEventTargetAndDeepestEnterEventTarget(aOverEventTarget);
     
     
     mDispatchingOverEventTarget = aOverEventTarget;
-    mDeepestEnterEventTargetIsOverEventTarget = true;
   }
   void DidDispatchOverAndEnterEvent(
       nsIContent* aOriginalOverTargetInComposedDoc);
   [[nodiscard]] bool IsDispatchingOverEventOn(
       nsIContent* aOverEventTarget) const {
     MOZ_ASSERT(aOverEventTarget);
-    return mDeepestEnterEventTargetIsOverEventTarget &&
+    return LastOverEventTargetIsOutEventTarget() &&
            mDeepestEnterEventTarget == aOverEventTarget;
   }
   void WillDispatchOutAndOrLeaveEvent() {
@@ -88,17 +87,15 @@ class OverOutElementsWrapper final : public nsISupports {
     mDispatchingOutOrDeepestLeaveEventTarget = mDeepestEnterEventTarget;
   }
   void DidDispatchOutAndOrLeaveEvent() {
-    mLastOverFrame = nullptr;
-    mDeepestEnterEventTarget = mDispatchingOutOrDeepestLeaveEventTarget =
-        nullptr;
+    StoreOverEventTargetAndDeepestEnterEventTarget(nullptr);
+    mDispatchingOutOrDeepestLeaveEventTarget = nullptr;
   }
   [[nodiscard]] bool IsDispatchingOutEventOnLastOverEventTarget() const {
     return mDispatchingOutOrDeepestLeaveEventTarget &&
            mDispatchingOutOrDeepestLeaveEventTarget == mDeepestEnterEventTarget;
   }
   void OverrideOverEventTarget(nsIContent* aOverEventTarget) {
-    mDeepestEnterEventTarget = aOverEventTarget;
-    mDeepestEnterEventTargetIsOverEventTarget = true;
+    StoreOverEventTargetAndDeepestEnterEventTarget(aOverEventTarget);
   }
 
   [[nodiscard]] nsIContent* GetDeepestLeaveEventTarget() const {
@@ -112,7 +109,7 @@ class OverOutElementsWrapper final : public nsISupports {
     
     
     
-    return mDeepestEnterEventTargetIsOverEventTarget
+    return LastOverEventTargetIsOutEventTarget()
                ? mDeepestEnterEventTarget.get()
                : nullptr;
   }
@@ -121,6 +118,18 @@ class OverOutElementsWrapper final : public nsISupports {
   WeakFrame mLastOverFrame;
 
  private:
+  
+
+
+
+  [[nodiscard]] bool LastOverEventTargetIsOutEventTarget() const {
+    return mDeepestEnterEventTargetIsOverEventTarget;
+  }
+
+  void StoreOverEventTargetAndDeepestEnterEventTarget(
+      nsIContent* aOverEventTargetAndDeepestEnterEventTarget);
+  void UpdateDeepestEnterEventTarget(nsIContent* aDeepestEnterEventTarget);
+
   
   
   
