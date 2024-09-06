@@ -2666,11 +2666,6 @@ ArraySortResult js::ArraySortFromJit(JSContext* cx,
     return ArraySortResult::Done;
   }
 
-  
-  
-  uintptr_t descriptor = MakeFrameDescriptorForJitCall(
-      jit::FrameType::TrampolineNative, ArraySortData::ComparatorActualArgs);
-  data->initDescriptor(descriptor);
   return ArraySortData::sortWithComparator(data);
 }
 
