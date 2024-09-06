@@ -997,7 +997,7 @@ var SelectTranslationsPanel = new (class {
     
     
     
-    const BOTTOM_EDGE_PIXEL_BUFFER = 20;
+    const BOTTOM_EDGE_PIXEL_BUFFER = Math.abs(panelBottom - panelTop) / 5;
 
     if (panelBottomToBottomEdge < BOTTOM_EDGE_PIXEL_BUFFER) {
       this.console?.debug(
