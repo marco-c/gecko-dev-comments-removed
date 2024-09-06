@@ -37,7 +37,10 @@ static bool sInAriaRelationTraversal = false;
 
 
 
-static nsTHashSet<const Accessible*> sReferencedAccs;
+static nsTHashSet<const Accessible*>& GetReferencedAccs() {
+  static nsTHashSet<const Accessible*> sReferencedAccs;
+  return sReferencedAccs;
+}
 
 
 
@@ -46,15 +49,15 @@ nsresult nsTextEquivUtils::GetNameFromSubtree(
     const LocalAccessible* aAccessible, nsAString& aName) {
   aName.Truncate();
 
-  if (sReferencedAccs.Contains(aAccessible)) {
+  if (GetReferencedAccs().Contains(aAccessible)) {
     return NS_OK;
   }
 
   
-  if (sReferencedAccs.IsEmpty()) {
+  if (GetReferencedAccs().IsEmpty()) {
     sInitiatorAcc = aAccessible;
   }
-  sReferencedAccs.Insert(aAccessible);
+  GetReferencedAccs().Insert(aAccessible);
 
   if (GetRoleRule(aAccessible->Role()) == eNameFromSubtreeRule) {
     
@@ -70,7 +73,7 @@ nsresult nsTextEquivUtils::GetNameFromSubtree(
   
   
   if (aAccessible == sInitiatorAcc) {
-    sReferencedAccs.Clear();
+    GetReferencedAccs().Clear();
     sInitiatorAcc = nullptr;
   }
 
@@ -86,7 +89,7 @@ nsresult nsTextEquivUtils::GetTextEquivFromIDRefs(
   const bool isAriaTraversal = aIDRefsAttr == nsGkAtoms::aria_labelledby ||
                                aIDRefsAttr == nsGkAtoms::aria_describedby;
   if ((sInAriaRelationTraversal && isAriaTraversal) ||
-      sReferencedAccs.Contains(aAccessible)) {
+      GetReferencedAccs().Contains(aAccessible)) {
     return NS_OK;
   }
 
@@ -126,21 +129,21 @@ nsresult nsTextEquivUtils::AppendTextEquivFromContent(
   
   LocalAccessible* accessible =
       aInitiatorAcc->Document()->GetAccessible(aContent);
-  if (sReferencedAccs.Contains(aInitiatorAcc) ||
-      sReferencedAccs.Contains(accessible)) {
+  if (GetReferencedAccs().Contains(aInitiatorAcc) ||
+      GetReferencedAccs().Contains(accessible)) {
     return NS_OK;
   }
 
   
-  if (sReferencedAccs.IsEmpty()) {
+  if (GetReferencedAccs().IsEmpty()) {
     sInitiatorAcc = aInitiatorAcc;
   }
-  sReferencedAccs.Insert(aInitiatorAcc);
+  GetReferencedAccs().Insert(aInitiatorAcc);
 
   nsresult rv = NS_ERROR_FAILURE;
   if (accessible) {
     rv = AppendFromAccessible(accessible, aString);
-    sReferencedAccs.Insert(accessible);
+    GetReferencedAccs().Insert(accessible);
   } else {
     
     
@@ -151,7 +154,7 @@ nsresult nsTextEquivUtils::AppendTextEquivFromContent(
   
   
   if (aInitiatorAcc == sInitiatorAcc) {
-    sReferencedAccs.Clear();
+    GetReferencedAccs().Clear();
     sInitiatorAcc = nullptr;
   }
   return rv;
@@ -212,7 +215,7 @@ nsresult nsTextEquivUtils::AppendFromAccessibleChildren(
   for (uint32_t childIdx = 0; childIdx < childCount; childIdx++) {
     Accessible* child = aAccessible->ChildAt(childIdx);
     
-    if (sReferencedAccs.Contains(child)) {
+    if (GetReferencedAccs().Contains(child)) {
       continue;
     }
     rv = AppendFromAccessible(child, aString);
