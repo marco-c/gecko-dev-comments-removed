@@ -23,7 +23,6 @@
 #include "mozilla/KeyframeUtils.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
-#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_gfx.h"
@@ -37,6 +36,7 @@
 #include "nsDOMMutationObserver.h"  
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
+#include "nsIScrollableFrame.h"
 #include "nsPresContextInlines.h"
 #include "nsRefreshDriver.h"
 #include "js/PropertyAndElement.h"  
@@ -1523,16 +1523,16 @@ bool KeyframeEffect::CanThrottleOverflowChangesInScrollable(
 
   
   
-  ScrollContainerFrame* scrollContainerFrame =
-      nsLayoutUtils::GetNearestScrollContainerFrame(&aFrame);
-  if (!scrollContainerFrame) {
+  nsIScrollableFrame* scrollable =
+      nsLayoutUtils::GetNearestScrollableFrame(&aFrame);
+  if (!scrollable) {
     return true;
   }
 
-  ScrollStyles ss = scrollContainerFrame->GetScrollStyles();
+  ScrollStyles ss = scrollable->GetScrollStyles();
   if (ss.mVertical == StyleOverflow::Hidden &&
       ss.mHorizontal == StyleOverflow::Hidden &&
-      scrollContainerFrame->GetLogicalScrollPosition() == nsPoint(0, 0)) {
+      scrollable->GetLogicalScrollPosition() == nsPoint(0, 0)) {
     return true;
   }
 

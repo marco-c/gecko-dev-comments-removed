@@ -8,11 +8,11 @@
 #include "nsCSSPropertyID.h"
 #include "nsIFrame.h"
 #include "nsContainerFrame.h"
+#include "nsIScrollableFrame.h"
 #include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/ServoBindings.h"
@@ -353,8 +353,7 @@ static Maybe<nsRect> ComputeTheIntersection(
     
     
     
-    if (ScrollContainerFrame* scrollContainerFrame =
-            do_QueryFrame(containerFrame)) {
+    if (nsIScrollableFrame* scrollFrame = do_QueryFrame(containerFrame)) {
       if (containerFrame->GetParent() == aRoot && !aRoot->GetParent()) {
         
         
@@ -362,7 +361,7 @@ static Maybe<nsRect> ComputeTheIntersection(
         
         break;
       }
-      nsRect subFrameRect = scrollContainerFrame->GetScrollPortRect();
+      nsRect subFrameRect = scrollFrame->GetScrollPortRect();
 
       
       nsRect intersectionRectRelativeToContainer =
@@ -429,9 +428,9 @@ static Maybe<nsRect> ComputeTheIntersection(
   
   nsRect rect = intersectionRect.value();
   if (aTarget->PresContext() != aRoot->PresContext()) {
-    if (nsIFrame* rootScrollContainerFrame =
-            aTarget->PresShell()->GetRootScrollContainerFrame()) {
-      nsLayoutUtils::TransformRect(aRoot, rootScrollContainerFrame, rect);
+    if (nsIFrame* rootScrollFrame =
+            aTarget->PresShell()->GetRootScrollFrame()) {
+      nsLayoutUtils::TransformRect(aRoot, rootScrollFrame, rect);
     }
   }
 
@@ -505,9 +504,9 @@ static Maybe<OopIframeMetrics> GetOopIframeMetrics(
   }
 
   nsRect inProcessRootRect;
-  if (ScrollContainerFrame* rootScrollContainerFrame =
-          rootPresShell->GetRootScrollContainerFrame()) {
-    inProcessRootRect = rootScrollContainerFrame->GetScrollPortRect();
+  if (nsIScrollableFrame* scrollFrame =
+          rootPresShell->GetRootScrollFrameAsScrollable()) {
+    inProcessRootRect = scrollFrame->GetScrollPortRect();
   }
 
   Maybe<LayoutDeviceRect> remoteDocumentVisibleRect =
@@ -544,11 +543,10 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
   if (aRoot && aRoot->IsElement()) {
     if ((rootFrame = aRoot->AsElement()->GetPrimaryFrame())) {
       nsRect rootRectRelativeToRootFrame;
-      if (ScrollContainerFrame* scrollContainerFrame =
-              do_QueryFrame(rootFrame)) {
+      if (nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame)) {
         
         
-        rootRectRelativeToRootFrame = scrollContainerFrame->GetScrollPortRect();
+        rootRectRelativeToRootFrame = scrollFrame->GetScrollPortRect();
       } else {
         
         rootRectRelativeToRootFrame = rootFrame->GetRectRelativeToSelf();
@@ -580,9 +578,9 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
         rootFrame = presShell->GetRootFrame();
         
         
-        if (ScrollContainerFrame* rootScrollContainerFrame =
-                presShell->GetRootScrollContainerFrame()) {
-          rootRect = rootScrollContainerFrame->GetScrollPortRect();
+        if (nsIScrollableFrame* scrollFrame =
+                presShell->GetRootScrollFrameAsScrollable()) {
+          rootRect = scrollFrame->GetScrollPortRect();
         } else if (rootFrame) {
           rootRect = rootFrame->GetRectRelativeToSelf();
         }

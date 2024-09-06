@@ -217,6 +217,7 @@ enum class TableSelectionMode : uint32_t {
 };
 
 }  
+class nsIScrollableFrame;
 
 class nsFrameSelection final {
  public:

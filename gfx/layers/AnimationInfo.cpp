@@ -15,7 +15,6 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/MotionPathUtils.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/ScrollContainerFrame.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
@@ -653,28 +652,27 @@ static SideBits GetOverflowedSides(const nsRect& aOverflow,
 static std::pair<ParentLayerRect, gfx::Matrix4x4>
 GetClipRectAndTransformForPartialPrerender(
     const nsIFrame* aFrame, int32_t aDevPixelsToAppUnits,
-    const nsIFrame* aClipFrame,
-    const ScrollContainerFrame* aScrollContainerFrame) {
+    const nsIFrame* aClipFrame, const nsIScrollableFrame* aScrollFrame) {
   MOZ_ASSERT(aClipFrame);
 
   gfx::Matrix4x4 transformInClip =
       nsLayoutUtils::GetTransformToAncestor(RelativeTo{aFrame->GetParent()},
                                             RelativeTo{aClipFrame})
           .GetMatrix();
-  if (aScrollContainerFrame) {
+  if (aScrollFrame) {
     transformInClip.PostTranslate(
-        LayoutDevicePoint::FromAppUnits(
-            aScrollContainerFrame->GetScrollPosition(), aDevPixelsToAppUnits)
+        LayoutDevicePoint::FromAppUnits(aScrollFrame->GetScrollPosition(),
+                                        aDevPixelsToAppUnits)
             .ToUnknownPoint());
   }
 
   
   
   return std::make_pair(
-      LayoutDeviceRect::FromAppUnits(
-          aScrollContainerFrame ? aScrollContainerFrame->GetScrollPortRect()
-                                : aClipFrame->GetRectRelativeToSelf(),
-          aDevPixelsToAppUnits) *
+      LayoutDeviceRect::FromAppUnits(aScrollFrame
+                                         ? aScrollFrame->GetScrollPortRect()
+                                         : aClipFrame->GetRectRelativeToSelf(),
+                                     aDevPixelsToAppUnits) *
           LayoutDeviceToLayerScale2D() * LayerToParentLayerScale(),
       transformInClip);
 }
@@ -688,14 +686,14 @@ static PartialPrerenderData GetPartialPrerenderData(
 
   const nsIFrame* clipFrame =
       nsLayoutUtils::GetNearestOverflowClipFrame(aFrame->GetParent());
-  const ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(clipFrame);
+  const nsIScrollableFrame* scrollFrame = do_QueryFrame(clipFrame);
 
   if (!clipFrame) {
     
     
-    scrollContainerFrame = aFrame->PresShell()->GetRootScrollContainerFrame();
-    if (scrollContainerFrame) {
-      clipFrame = scrollContainerFrame;
+    scrollFrame = aFrame->PresShell()->GetRootScrollFrameAsScrollable();
+    if (scrollFrame) {
+      clipFrame = do_QueryFrame(scrollFrame);
     } else {
       
       clipFrame = aFrame->PresShell()->GetRootFrame();
@@ -703,31 +701,32 @@ static PartialPrerenderData GetPartialPrerenderData(
   }
 
   
-  if (scrollContainerFrame &&
-      !scrollContainerFrame->GetScrollStyles().IsHiddenInBothDirections() &&
+  if (scrollFrame &&
+      !scrollFrame->GetScrollStyles().IsHiddenInBothDirections() &&
       nsLayoutUtils::AsyncPanZoomEnabled(aFrame)) {
     const bool isInPositionFixed =
         nsLayoutUtils::IsInPositionFixedSubtree(aFrame);
     const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
+    const nsIFrame* asrScrollableFrame =
+        asr ? do_QueryFrame(asr->mScrollableFrame) : nullptr;
     if (!isInPositionFixed && asr &&
-        aFrame->PresContext() == asr->mScrollContainerFrame->PresContext()) {
+        aFrame->PresContext() == asrScrollableFrame->PresContext()) {
       scrollId = asr->GetViewId();
-      MOZ_ASSERT(clipFrame == asr->mScrollContainerFrame);
+      MOZ_ASSERT(clipFrame == asrScrollableFrame);
     } else {
       
       
       
       scrollId =
           nsLayoutUtils::ScrollIdForRootScrollFrame(aFrame->PresContext());
-      MOZ_ASSERT(clipFrame ==
-                 aFrame->PresShell()->GetRootScrollContainerFrame());
+      MOZ_ASSERT(clipFrame == aFrame->PresShell()->GetRootScrollFrame());
     }
   }
 
   int32_t devPixelsToAppUnits = aFrame->PresContext()->AppUnitsPerDevPixel();
 
   auto [clipRect, transformInClip] = GetClipRectAndTransformForPartialPrerender(
-      aFrame, devPixelsToAppUnits, clipFrame, scrollContainerFrame);
+      aFrame, devPixelsToAppUnits, clipFrame, scrollFrame);
 
   return PartialPrerenderData{
       LayoutDeviceRect::FromAppUnits(partialPrerenderedRect,

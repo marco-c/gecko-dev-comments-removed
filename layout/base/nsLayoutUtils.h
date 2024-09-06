@@ -49,6 +49,7 @@ class nsIContent;
 class nsIPrincipal;
 class nsIWidget;
 class nsAtom;
+class nsIScrollableFrame;
 class nsRegion;
 enum nsChangeHint : uint32_t;
 class nsFontMetrics;
@@ -81,7 +82,6 @@ class WritingMode;
 class DisplayItemClip;
 class EffectSet;
 struct ActiveScrolledRoot;
-class ScrollContainerFrame;
 enum class ScrollOrigin : uint8_t;
 enum class StyleImageOrientation : uint8_t;
 enum class StyleSystemFont : uint8_t;
@@ -215,25 +215,23 @@ class nsLayoutUtils {
   
 
 
-  static mozilla::ScrollContainerFrame* FindScrollContainerFrameFor(
-      nsIContent* aContent);
+  static nsIScrollableFrame* FindScrollableFrameFor(nsIContent* aContent);
 
   
 
 
-  static mozilla::ScrollContainerFrame* FindScrollContainerFrameFor(ViewID aId);
+  static nsIScrollableFrame* FindScrollableFrameFor(ViewID aId);
 
   
 
 
 
-  static nsIFrame* GetScrollContainerFrameFromContent(nsIContent* aContent);
+  static nsIFrame* GetScrollFrameFromContent(nsIContent* aContent);
 
   
 
 
-  static ViewID FindIDForScrollContainerFrame(
-      mozilla::ScrollContainerFrame* aScrollContainerFrame);
+  static ViewID FindIDForScrollableFrame(nsIScrollableFrame* aScrollable);
 
   
 
@@ -525,8 +523,7 @@ class nsLayoutUtils {
   
 
 
-
-  static mozilla::ScrollContainerFrame* GetScrollContainerFrameFor(
+  static nsIScrollableFrame* GetScrollableFrameFor(
       const nsIFrame* aScrolledFrame);
 
   
@@ -541,7 +538,7 @@ class nsLayoutUtils {
 
 
 
-  static mozilla::ScrollContainerFrame* GetNearestScrollableFrameForDirection(
+  static nsIScrollableFrame* GetNearestScrollableFrameForDirection(
       nsIFrame* aFrame, mozilla::layers::ScrollDirections aDirections);
 
   enum {
@@ -592,8 +589,8 @@ class nsLayoutUtils {
 
 
 
-  static mozilla::ScrollContainerFrame* GetNearestScrollContainerFrame(
-      nsIFrame* aFrame, uint32_t aFlags = 0);
+  static nsIScrollableFrame* GetNearestScrollableFrame(nsIFrame* aFrame,
+                                                       uint32_t aFlags = 0);
 
   
 
@@ -786,12 +783,12 @@ class nsLayoutUtils {
     float mVisibleThreshold;
 
     FrameForPointOptions(Bits aBits, float aVisibleThreshold)
-        : mBits(aBits), mVisibleThreshold(aVisibleThreshold) {};
+        : mBits(aBits), mVisibleThreshold(aVisibleThreshold){};
 
     MOZ_IMPLICIT FrameForPointOptions(Bits aBits)
         : FrameForPointOptions(aBits, 1.0f) {}
 
-    FrameForPointOptions() : FrameForPointOptions(Bits()) {};
+    FrameForPointOptions() : FrameForPointOptions(Bits()){};
   };
 
   
@@ -2665,8 +2662,7 @@ class nsLayoutUtils {
 
 
   static nsRect CalculateScrollableRectForFrame(
-      const mozilla::ScrollContainerFrame* aScrollContainerFrame,
-      const nsIFrame* aRootFrame);
+      const nsIScrollableFrame* aScrollableFrame, const nsIFrame* aRootFrame);
 
   
 
@@ -2755,10 +2751,9 @@ class nsLayoutUtils {
 
 
   static FrameMetrics CalculateBasicFrameMetrics(
-      mozilla::ScrollContainerFrame* aScrollContainerFrame);
+      nsIScrollableFrame* aScrollFrame);
 
-  static mozilla::ScrollContainerFrame* GetAsyncScrollableAncestorFrame(
-      nsIFrame* aTarget);
+  static nsIScrollableFrame* GetAsyncScrollableAncestorFrame(nsIFrame* aTarget);
 
   static void SetBSizeFromFontMetrics(
       const nsIFrame* aFrame, mozilla::ReflowOutput& aMetrics,
@@ -2848,16 +2843,14 @@ class nsLayoutUtils {
 
 
   static CSSRect GetBoundingContentRect(
-      const nsIContent* aContent,
-      const mozilla::ScrollContainerFrame* aRootScrollContainerFrame,
+      const nsIContent* aContent, const nsIScrollableFrame* aRootScrollFrame,
       mozilla::Maybe<CSSRect>* aOutNearestScrollClip = nullptr);
 
   
 
 
   static CSSRect GetBoundingFrameRect(
-      nsIFrame* aFrame,
-      const mozilla::ScrollContainerFrame* aRootScrollContainerFrame,
+      nsIFrame* aFrame, const nsIScrollableFrame* aRootScrollFrame,
       mozilla::Maybe<CSSRect>* aOutNearestScrollClip = nullptr);
 
   

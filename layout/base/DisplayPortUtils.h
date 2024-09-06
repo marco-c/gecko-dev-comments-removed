@@ -22,7 +22,6 @@ namespace mozilla {
 
 class nsDisplayListBuilder;
 class PresShell;
-class ScrollContainerFrame;
 
 
 enum class DisplayportRelativeTo { ScrollPort, ScrollFrame };
@@ -82,9 +81,8 @@ struct DisplayPortMargins {
   
   
   
-  static DisplayPortMargins ForScrollContainerFrame(
-      ScrollContainerFrame* aScrollContainerFrame,
-      const ScreenMargin& aMargins);
+  static DisplayPortMargins ForScrollFrame(nsIScrollableFrame* aScrollFrame,
+                                           const ScreenMargin& aMargins);
 
   
   static DisplayPortMargins ForContent(nsIContent* aContent,
@@ -102,17 +100,15 @@ struct DisplayPortMargins {
   
   
   ScreenMargin GetRelativeToLayoutViewport(
-      ContentGeometryType aGeometryType,
-      ScrollContainerFrame* aScrollContainerFrame,
+      ContentGeometryType aGeometryType, nsIScrollableFrame* aScrollableFrame,
       const CSSToScreenScale2D& aDisplayportScale) const;
 
   friend std::ostream& operator<<(std::ostream& aOs,
                                   const DisplayPortMargins& aMargins);
 
  private:
-  CSSPoint ComputeAsyncTranslation(
-      ContentGeometryType aGeometryType,
-      ScrollContainerFrame* aScrollContainerFrame) const;
+  CSSPoint ComputeAsyncTranslation(ContentGeometryType aGeometryType,
+                                   nsIScrollableFrame* aScrollableFrame) const;
 };
 
 struct DisplayPortMarginsPropertyData {
@@ -262,7 +258,7 @@ class DisplayPortUtils {
 
 
   static bool CalculateAndSetDisplayPortMargins(
-      ScrollContainerFrame* aScrollContainerFrame, RepaintMode aRepaintMode);
+      nsIScrollableFrame* aScrollFrame, RepaintMode aRepaintMode);
 
   
 
@@ -276,8 +272,8 @@ class DisplayPortUtils {
 
 
   static bool MaybeCreateDisplayPort(
-      nsDisplayListBuilder* aBuilder,
-      ScrollContainerFrame* aScrollContainerFrame, RepaintMode aRepaintMode);
+      nsDisplayListBuilder* aBuilder, nsIFrame* aScrollFrame,
+      nsIScrollableFrame* aScrollFrameAsScrollable, RepaintMode aRepaintMode);
 
   
 

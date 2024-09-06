@@ -57,6 +57,7 @@ class nsIContent;
 class nsICSSDeclaration;
 class nsIDocShellTreeOwner;
 class nsIDOMWindowUtils;
+class nsIScrollableFrame;
 class nsIControllers;
 class nsIPrintSettings;
 class nsIScriptContext;
@@ -82,7 +83,6 @@ class AbstractThread;
 class DOMEventTargetHelper;
 class ErrorResult;
 class ThrottledEventQueue;
-class ScrollContainerFrame;
 namespace dom {
 class BarProp;
 struct ChannelPixelLayout;
@@ -414,8 +414,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   
   
-  
-  mozilla::ScrollContainerFrame* GetScrollContainerFrame();
+  nsIScrollableFrame* GetScrollFrame();
 
   
   void UnblockScriptedClosing();

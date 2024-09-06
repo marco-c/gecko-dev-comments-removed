@@ -19,7 +19,6 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_bidi.h"
@@ -39,6 +38,7 @@
 #include "nsTArray.h"
 #include "nsTableWrapperFrame.h"
 #include "nsTableCellFrame.h"
+#include "nsIScrollableFrame.h"
 #include "nsCCUncollectableMarker.h"
 #include "nsTextFragment.h"
 #include <algorithm>
@@ -1650,7 +1650,7 @@ nsIFrame* nsFrameSelection::GetFrameToPageSelect() const {
       return nullptr;
     }
   } else {
-    rootFrameToSelect = mPresShell->GetRootScrollContainerFrame();
+    rootFrameToSelect = mPresShell->GetRootScrollFrame();
     if (NS_WARN_IF(!rootFrameToSelect)) {
       return nullptr;
     }
@@ -1662,16 +1662,16 @@ nsIFrame* nsFrameSelection::GetFrameToPageSelect() const {
     
     for (nsIFrame* frame = contentToSelect->GetPrimaryFrame();
          frame && frame != rootFrameToSelect; frame = frame->GetParent()) {
-      ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(frame);
-      if (!scrollContainerFrame) {
+      nsIScrollableFrame* scrollableFrame = do_QueryFrame(frame);
+      if (!scrollableFrame) {
         continue;
       }
-      ScrollStyles scrollStyles = scrollContainerFrame->GetScrollStyles();
+      ScrollStyles scrollStyles = scrollableFrame->GetScrollStyles();
       if (scrollStyles.mVertical == StyleOverflow::Hidden) {
         continue;
       }
       layers::ScrollDirections directions =
-          scrollContainerFrame->GetAvailableScrollingDirections();
+          scrollableFrame->GetAvailableScrollingDirections();
       if (directions.contains(layers::ScrollDirection::eVertical)) {
         
         return frame;
@@ -1694,12 +1694,11 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
   
 
   
-  
-  ScrollContainerFrame* scrollContainerFrame = aFrame->GetScrollTargetFrame();
+  nsIScrollableFrame* scrollableFrame = aFrame->GetScrollTargetFrame();
   
   
   nsIFrame* scrolledFrame =
-      scrollContainerFrame ? scrollContainerFrame->GetScrolledFrame() : aFrame;
+      scrollableFrame ? scrollableFrame->GetScrolledFrame() : aFrame;
   if (!scrolledFrame) {
     return NS_OK;
   }
@@ -1728,7 +1727,7 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
     }
   }
 
-  if (scrollContainerFrame) {
+  if (scrollableFrame) {
     
     
     
@@ -1737,9 +1736,9 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
     
     
     if (aForward) {
-      caretPos.y += scrollContainerFrame->GetPageScrollAmount().height;
+      caretPos.y += scrollableFrame->GetPageScrollAmount().height;
     } else {
-      caretPos.y -= scrollContainerFrame->GetPageScrollAmount().height;
+      caretPos.y -= scrollableFrame->GetPageScrollAmount().height;
     }
   } else {
     
@@ -1789,7 +1788,7 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
       aSelectionIntoView == SelectionIntoView::IfChanged && !selectionChanged);
 
   
-  if (scrollContainerFrame) {
+  if (scrollableFrame) {
     
     
     
@@ -1801,8 +1800,8 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
                                     scrolledFrame != frameToClick
                                 ? ScrollMode::Instant
                                 : ScrollMode::Smooth;
-    scrollContainerFrame->ScrollBy(nsIntPoint(0, aForward ? 1 : -1),
-                                   ScrollUnit::PAGES, scrollMode);
+    scrollableFrame->ScrollBy(nsIntPoint(0, aForward ? 1 : -1),
+                              ScrollUnit::PAGES, scrollMode);
   }
 
   

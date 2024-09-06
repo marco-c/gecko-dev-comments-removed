@@ -10,10 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "ImgDrawResult.h"
 #include "nsContainerFrame.h"
-
-namespace mozilla {
-class ScrollContainerFrame;
-}  
+#include "nsIScrollableFrame.h"
 
 class nsFieldSetFrame final : public nsContainerFrame {
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
@@ -65,7 +62,7 @@ class nsFieldSetFrame final : public nsContainerFrame {
                    nsIFrame* aOldFrame) override;
 #endif
 
-  mozilla::ScrollContainerFrame* GetScrollTargetFrame() const override;
+  nsIScrollableFrame* GetScrollTargetFrame() const override;
 
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;

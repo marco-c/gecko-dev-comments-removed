@@ -176,8 +176,7 @@ class nsCoreUtils {
 
 
 
-  static void ScrollFrameToPoint(nsIFrame* aScrollContainerFrame,
-                                 nsIFrame* aFrame,
+  static void ScrollFrameToPoint(nsIFrame* aScrollableFrame, nsIFrame* aFrame,
                                  const mozilla::LayoutDeviceIntPoint& aPoint);
 
   

@@ -68,6 +68,7 @@ class nsIFrame;
 class nsILayoutHistoryState;
 class nsINode;
 class nsIReflowCallback;
+class nsIScrollableFrame;
 class nsITimer;
 class nsPageSequenceFrame;
 class nsPIDOMWindowOuter;
@@ -96,7 +97,6 @@ class nsDisplayList;
 class nsDisplayListBuilder;
 class OverflowChangedTracker;
 class ProfileChunkedBuffer;
-class ScrollContainerFrame;
 class StyleSheet;
 
 #ifdef ACCESSIBILITY
@@ -433,7 +433,12 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  ScrollContainerFrame* GetRootScrollContainerFrame() const;
+  nsIFrame* GetRootScrollFrame() const;
+
+  
+
+
+  nsIScrollableFrame* GetRootScrollFrameAsScrollable() const;
 
   
 
@@ -453,7 +458,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  ScrollContainerFrame* GetScrollContainerFrameToScrollForContent(
+  nsIScrollableFrame* GetScrollableFrameToScrollForContent(
       nsIContent* aContent, layers::ScrollDirections aDirections);
 
   
@@ -463,7 +468,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  ScrollContainerFrame* GetScrollContainerFrameToScroll(
+  nsIScrollableFrame* GetScrollableFrameToScroll(
       layers::ScrollDirections aDirections);
 
   
@@ -484,7 +489,7 @@ class PresShell final : public nsStubDocumentObserver,
   void PostPendingScrollAnchorAdjustment(
       layout::ScrollAnchorContainer* aContainer);
 
-  void PostPendingScrollResnap(ScrollContainerFrame* aScrollContainerFrame);
+  void PostPendingScrollResnap(nsIScrollableFrame* aScrollableFrame);
   void FlushPendingScrollResnap();
 
   void CancelAllPendingReflows();
@@ -3013,9 +3018,9 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   nsTHashSet<nsIFrame*> mFramesToDirty;
-  nsTHashSet<ScrollContainerFrame*> mPendingScrollAnchorSelection;
-  nsTHashSet<ScrollContainerFrame*> mPendingScrollAnchorAdjustment;
-  nsTHashSet<ScrollContainerFrame*> mPendingScrollResnap;
+  nsTHashSet<nsIScrollableFrame*> mPendingScrollAnchorSelection;
+  nsTHashSet<nsIScrollableFrame*> mPendingScrollAnchorAdjustment;
+  nsTHashSet<nsIScrollableFrame*> mPendingScrollResnap;
 
   nsTHashSet<nsIContent*> mHiddenContentInForcedLayout;
 

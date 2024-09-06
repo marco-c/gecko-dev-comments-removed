@@ -22,6 +22,7 @@
 #include "nsHTMLParts.h"
 #include "nsCSSRendering.h"
 #include "nsScrollbarButtonFrame.h"
+#include "nsIScrollableFrame.h"
 #include "nsIScrollbarMediator.h"
 #include "nsISupportsImpl.h"
 #include "nsScrollbarFrame.h"
@@ -37,7 +38,6 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/SVGIntegrationUtils.h"
@@ -388,9 +388,9 @@ void nsSliderFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   if (!aBuilder->IsForEventDelivery()) {
     nsScrollbarFrame* scrollbar = Scrollbar();
-    if (ScrollContainerFrame* scrollContainerFrame =
+    if (nsIScrollableFrame* scrollFrame =
             do_QueryFrame(scrollbar->GetParent())) {
-      if (scrollContainerFrame->IsRootScrollFrameOfDocument()) {
+      if (scrollFrame->IsRootScrollFrameOfDocument()) {
         nsGlobalWindowInner* window = nsGlobalWindowInner::Cast(
             PresContext()->Document()->GetInnerWindow());
         if (window &&
@@ -408,10 +408,10 @@ static bool UsesCustomScrollbarMediator(nsIFrame* scrollbarBox) {
   if (nsScrollbarFrame* scrollbarFrame = do_QueryFrame(scrollbarBox)) {
     if (nsIScrollbarMediator* mediator =
             scrollbarFrame->GetScrollbarMediator()) {
-      ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(mediator);
+      nsIScrollableFrame* scrollFrame = do_QueryFrame(mediator);
       
       
-      if (!scrollContainerFrame) {
+      if (!scrollFrame) {
         return true;
       }
     }
@@ -456,9 +456,9 @@ void nsSliderFrame::BuildDisplayListForThumb(nsDisplayListBuilder* aBuilder,
     bool isAsyncDraggable = !UsesCustomScrollbarMediator(scrollbarBox);
 
     nsPoint scrollPortOrigin;
-    if (ScrollContainerFrame* scrollContainerFrame =
+    if (nsIScrollableFrame* scrollFrame =
             do_QueryFrame(scrollbarBox->GetParent())) {
-      scrollPortOrigin = scrollContainerFrame->GetScrollPortRect().TopLeft();
+      scrollPortOrigin = scrollFrame->GetScrollPortRect().TopLeft();
     } else {
       isAsyncDraggable = false;
     }
@@ -1057,7 +1057,7 @@ static bool ScrollFrameWillBuildScrollInfoLayer(nsIFrame* aScrollFrame) {
   return false;
 }
 
-ScrollContainerFrame* nsSliderFrame::GetScrollContainerFrame() {
+nsIScrollableFrame* nsSliderFrame::GetScrollFrame() {
   return do_QueryFrame(Scrollbar()->GetParent());
 }
 
@@ -1466,7 +1466,7 @@ void nsSliderFrame::PageScroll(bool aClickAndHold) {
   }
   nsScrollbarFrame* sb = Scrollbar();
 
-  ScrollContainerFrame* sf = GetScrollContainerFrame();
+  nsIScrollableFrame* sf = GetScrollFrame();
   const ScrollSnapFlags scrollSnapFlags =
       ScrollSnapFlags::IntendedDirection | ScrollSnapFlags::IntendedEndPosition;
 

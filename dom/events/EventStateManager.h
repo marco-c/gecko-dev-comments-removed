@@ -31,6 +31,7 @@ class nsIDocShellTreeItem;
 class nsIFrame;
 class imgIContainer;
 class nsIDocumentViewer;
+class nsIScrollableFrame;
 class nsITimer;
 class nsIWidget;
 class nsPresContext;
@@ -43,7 +44,6 @@ class EditorBase;
 class EnterLeaveDispatcher;
 class IMEContentObserver;
 class ScrollbarsForWheel;
-class ScrollContainerFrame;
 class TextControlElement;
 class WheelTransaction;
 
@@ -999,26 +999,26 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   
   
-  ScrollContainerFrame* ComputeScrollTargetAndMayAdjustWheelEvent(
+  nsIFrame* ComputeScrollTargetAndMayAdjustWheelEvent(
       nsIFrame* aTargetFrame, WidgetWheelEvent* aEvent,
       ComputeScrollTargetOptions aOptions);
 
-  ScrollContainerFrame* ComputeScrollTargetAndMayAdjustWheelEvent(
+  nsIFrame* ComputeScrollTargetAndMayAdjustWheelEvent(
       nsIFrame* aTargetFrame, double aDirectionX, double aDirectionY,
       WidgetWheelEvent* aEvent, ComputeScrollTargetOptions aOptions);
 
-  ScrollContainerFrame* ComputeScrollTarget(
-      nsIFrame* aTargetFrame, WidgetWheelEvent* aEvent,
-      ComputeScrollTargetOptions aOptions) {
+  nsIFrame* ComputeScrollTarget(nsIFrame* aTargetFrame,
+                                WidgetWheelEvent* aEvent,
+                                ComputeScrollTargetOptions aOptions) {
     MOZ_ASSERT(!(aOptions & MAY_BE_ADJUSTED_BY_AUTO_DIR),
                "aEvent may be modified by auto-dir");
     return ComputeScrollTargetAndMayAdjustWheelEvent(aTargetFrame, aEvent,
                                                      aOptions);
   }
 
-  ScrollContainerFrame* ComputeScrollTarget(
-      nsIFrame* aTargetFrame, double aDirectionX, double aDirectionY,
-      WidgetWheelEvent* aEvent, ComputeScrollTargetOptions aOptions) {
+  nsIFrame* ComputeScrollTarget(nsIFrame* aTargetFrame, double aDirectionX,
+                                double aDirectionY, WidgetWheelEvent* aEvent,
+                                ComputeScrollTargetOptions aOptions) {
     MOZ_ASSERT(!(aOptions & MAY_BE_ADJUSTED_BY_AUTO_DIR),
                "aEvent may be modified by auto-dir");
     return ComputeScrollTargetAndMayAdjustWheelEvent(
@@ -1038,14 +1038,13 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-
   nsSize GetScrollAmount(nsPresContext* aPresContext, WidgetWheelEvent* aEvent,
-                         ScrollContainerFrame* aScrollContainerFrame);
+                         nsIScrollableFrame* aScrollableFrame);
 
   
 
 
-  void DoScrollText(ScrollContainerFrame* aScrollContainerFrame,
+  void DoScrollText(nsIScrollableFrame* aScrollableFrame,
                     WidgetWheelEvent* aEvent);
 
   void DoScrollHistory(int32_t direction);

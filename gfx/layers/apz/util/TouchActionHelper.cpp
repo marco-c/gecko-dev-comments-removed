@@ -8,10 +8,10 @@
 
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/TouchEvents.h"
 #include "nsContainerFrame.h"
 #include "nsIFrameInlines.h"
+#include "nsIScrollableFrame.h"
 #include "nsLayoutUtils.h"
 
 namespace mozilla::layers {
@@ -90,8 +90,9 @@ TouchBehaviorFlags TouchActionHelper::GetAllowedTouchBehaviorForFrame(
     return behavior;
   }
 
-  nsIFrame* nearestScrollContainerFrame =
-      nsLayoutUtils::GetNearestScrollContainerFrame(aFrame, 0);
+  nsIScrollableFrame* nearestScrollableParent =
+      nsLayoutUtils::GetNearestScrollableFrame(aFrame, 0);
+  nsIFrame* nearestScrollableFrame = do_QueryFrame(nearestScrollableParent);
 
   
   
@@ -117,7 +118,7 @@ TouchBehaviorFlags TouchActionHelper::GetAllowedTouchBehaviorForFrame(
        frame = frame->GetInFlowParent()) {
     UpdateAllowedBehavior(frame->UsedTouchAction(), considerPanning, behavior);
 
-    if (frame == nearestScrollContainerFrame) {
+    if (frame == nearestScrollableFrame) {
       
       
       considerPanning = false;

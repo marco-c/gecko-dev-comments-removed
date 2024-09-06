@@ -58,6 +58,7 @@ class nsIContent;
 class nsICSSDeclaration;
 class nsIDocShellTreeOwner;
 class nsIDOMWindowUtils;
+class nsIScrollableFrame;
 class nsIControllers;
 class nsIScriptContext;
 class nsIScriptTimeoutHandler;
@@ -84,7 +85,6 @@ class PromiseDocumentFlushedResolver;
 
 namespace mozilla {
 class AbstractThread;
-class ScrollContainerFrame;
 class ErrorResult;
 
 namespace glean {
@@ -433,8 +433,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   
-  
-  mozilla::ScrollContainerFrame* GetScrollContainerFrame();
+  nsIScrollableFrame* GetScrollFrame();
 
   nsresult Observe(nsISupports* aSubject, const char* aTopic,
                    const char16_t* aData);
