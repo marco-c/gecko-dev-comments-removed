@@ -135,28 +135,6 @@ pub struct PageSelector {
     pub pseudos: PagePseudoClasses,
 }
 
-
-
-
-
-
-
-
-
-
-
-#[inline]
-fn selector_specificity(g: usize, h: usize, f: bool) -> u32 {
-    let h = h.min(0xFFFF) as u32;
-    let g = (g.min(0x7FFF) as u32) << 16;
-    let f = if f {
-        0x80000000
-    } else {
-        0
-    };
-    h + g + f
-}
-
 impl PageSelector {
     
     
@@ -207,7 +185,14 @@ impl PageSelector {
                 PagePseudoClass::Left | PagePseudoClass::Right => h += 1,
             }
         }
-        Some(selector_specificity(g, h, !self.name.0.is_empty()))
+        let h = h.min(0xFFFF) as u32;
+        let g = (g.min(0x7FFF) as u32) << 16;
+        let f = if self.name.0.is_empty() {
+            0
+        } else {
+            0x80000000
+        };
+        Some(h + g + f)
     }
 }
 
@@ -234,17 +219,13 @@ impl Parse for PageSelector {
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        let name = input.try_parse(parse_page_name);
+        let name = input
+            .try_parse(parse_page_name)
+            .unwrap_or(AtomIdent::new(atom!("")));
         let mut pseudos = PagePseudoClasses::default();
         while let Ok(pc) = input.try_parse(PagePseudoClass::parse) {
             pseudos.push(pc);
         }
-        
-        let name = match name {
-            Ok(name) => name,
-            Err(..) if !pseudos.is_empty() => AtomIdent::new(atom!("")),
-            Err(err) => return Err(err),
-        };
         Ok(PageSelector { name, pseudos })
     }
 }
@@ -325,11 +306,6 @@ impl PageRule {
     
     
     pub fn match_specificity(&self, flags: PagePseudoClassFlags) -> Option<u32> {
-        if self.selectors.is_empty() {
-            
-            
-            return Some(selector_specificity(0, 0, true));
-        }
         let mut specificity = None;
         for s in self.selectors.0.iter().map(|s| s.match_specificity(flags)) {
             specificity = s.max(specificity);
