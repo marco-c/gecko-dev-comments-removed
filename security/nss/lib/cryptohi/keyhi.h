@@ -12,7 +12,7 @@
 #include "secdert.h"
 #include "keythi.h"
 #include "certt.h"
-
+#include "secerr.h"
 
 SEC_BEGIN_PROTOS
 
@@ -270,6 +270,10 @@ extern int SECKEY_ECParamsToBasePointOrderLen(const SECItem *params);
 
 
 SECOidTag SECKEY_GetECCOid(const SECKEYECParams *params);
+
+
+SECStatus SECKEY_EnforceKeySize(KeyType keyType, unsigned keyLength,
+                                SECErrorCodes error);
 
 SEC_END_PROTOS
 

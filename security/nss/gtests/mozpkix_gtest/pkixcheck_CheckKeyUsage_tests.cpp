@@ -282,3 +282,19 @@ TEST_F(pkixcheck_CheckKeyUsage, unusedBitNotZero)
   ASSERT_BAD(CheckKeyUsage(EndEntityOrCA::MustBeCA, &twoValueBytes,
                            KeyUsage::digitalSignature));
 }
+
+TEST_F(pkixcheck_CheckKeyUsage, trailingData)
+{
+  static uint8_t keyUsageWithTrailingDataData[] = {
+    0x03, 0x02, 7, 0x80,
+    
+    0xab, 0xba
+  };
+  static const Input keyUsageWithTrailingDataBytes(keyUsageWithTrailingDataData);
+  ASSERT_BAD(CheckKeyUsage(EndEntityOrCA::MustBeEndEntity,
+                           &keyUsageWithTrailingDataBytes,
+                           KeyUsage::digitalSignature));
+  ASSERT_BAD(CheckKeyUsage(EndEntityOrCA::MustBeCA,
+                           &keyUsageWithTrailingDataBytes,
+                           KeyUsage::digitalSignature));
+}

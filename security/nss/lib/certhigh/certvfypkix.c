@@ -39,7 +39,7 @@ pkix_pl_lifecycle_ObjectTableUpdate(int *objCountTable);
 PRInt32 parallelFnInvocationCount;
 #endif 
 
-static PRBool usePKIXValidationEngine = PR_FALSE;
+static PRBool usePKIXValidationEngine = PR_TRUE;
 #endif 
 
 

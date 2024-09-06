@@ -218,6 +218,7 @@ public:
         const ByteString* certs = nullptr,
         OCSPResponseExtension* singleExtensions = nullptr,
         OCSPResponseExtension* responseExtensions = nullptr,
+        const ByteString* trailingResponseData = nullptr,
         DigestAlgorithm certIDHashAlgorithm = DigestAlgorithm::sha1,
         ByteString certIDHashAlgorithmEncoded = ByteString())
   {
@@ -236,6 +237,7 @@ public:
     context.certs = certs;
     context.singleExtensions = singleExtensions;
     context.responseExtensions = responseExtensions;
+    context.trailingResponseData = trailingResponseData;
 
     context.certStatus = static_cast<uint8_t>(certStatus);
     context.thisUpdate = thisUpdate;
@@ -430,17 +432,17 @@ TEST_F(pkixocsp_VerifyEncodedResponse_successful, check_validThrough)
   }
 }
 
+
+
+static const uint8_t tlv_id_ocsp_singleExtensionSctList[] = {
+  0x06, 0x0a, 0x2b, 0x06, 0x01, 0x04, 0x01, 0xd6, 0x79, 0x02, 0x04, 0x05
+};
+static const uint8_t dummySctList[] = {
+  0x01, 0x02, 0x03, 0x04, 0x05
+};
+
 TEST_F(pkixocsp_VerifyEncodedResponse_successful, ct_extension)
 {
-  
-  
-  static const uint8_t tlv_id_ocsp_singleExtensionSctList[] = {
-    0x06, 0x0a, 0x2b, 0x06, 0x01, 0x04, 0x01, 0xd6, 0x79, 0x02, 0x04, 0x05
-  };
-  static const uint8_t dummySctList[] = {
-    0x01, 0x02, 0x03, 0x04, 0x05
-  };
-
   OCSPResponseExtension ctExtension;
   ctExtension.id = BytesToByteString(tlv_id_ocsp_singleExtensionSctList);
   
@@ -468,6 +470,35 @@ TEST_F(pkixocsp_VerifyEncodedResponse_successful, ct_extension)
   ASSERT_FALSE(expired);
   ASSERT_EQ(BytesToByteString(dummySctList),
             trustDomain.signedCertificateTimestamps);
+}
+
+TEST_F(pkixocsp_VerifyEncodedResponse_successful, trailingResponseData)
+{
+  OCSPResponseExtension ctExtension;
+  ctExtension.id = BytesToByteString(tlv_id_ocsp_singleExtensionSctList);
+  
+  
+  
+  ctExtension.value = TLV(der::OCTET_STRING, BytesToByteString(dummySctList));
+  ByteString trailingResponseData(3, 0x20);
+  ByteString responseString(
+               CreateEncodedOCSPSuccessfulResponse(
+                         OCSPResponseContext::good, *endEntityCertID, byKey,
+                         *rootKeyPair, oneDayBeforeNow,
+                         oneDayBeforeNow, &oneDayAfterNow,
+                         sha256WithRSAEncryption(),
+                          nullptr,
+                         &ctExtension,
+                          nullptr,
+                         &trailingResponseData));
+  Input response;
+  ASSERT_EQ(Success,
+            response.Init(responseString.data(), responseString.length()));
+  bool expired;
+  ASSERT_EQ(Result::ERROR_OCSP_MALFORMED_RESPONSE,
+            VerifyEncodedOCSPResponse(trustDomain, *endEntityCertID,
+                                      Now(), END_ENTITY_MAX_LIFETIME_IN_DAYS,
+                                      response, expired));
 }
 
 struct CertIDHashAlgorithm
@@ -516,6 +547,7 @@ TEST_P(pkixocsp_VerifyEncodedResponse_CertIDHashAlgorithm, CertIDHashAlgorithm)
                          *rootKeyPair, oneDayBeforeNow,
                          oneDayBeforeNow, &oneDayAfterNow,
                          sha256WithRSAEncryption(),
+                         nullptr,
                          nullptr,
                          nullptr,
                          nullptr,

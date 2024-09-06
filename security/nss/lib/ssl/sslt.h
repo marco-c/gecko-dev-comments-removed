@@ -599,7 +599,11 @@ typedef struct SSLCertificateCompressionAlgorithmStr {
     SSLCertificateCompressionAlgorithmID id;
     const char* name;
     SECStatus (*encode)(const SECItem* input, SECItem* output);
-    SECStatus (*decode)(const SECItem* input, SECItem* output, size_t expectedLenDecodedCertificate);
+    
+
+
+
+    SECStatus (*decode)(const SECItem* input, unsigned char* output, size_t outputLen, size_t* usedLen);
 } SSLCertificateCompressionAlgorithm;
 
 #endif 

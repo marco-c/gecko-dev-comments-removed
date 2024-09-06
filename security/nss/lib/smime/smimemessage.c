@@ -131,7 +131,7 @@ NSS_SMIMEMessage_CreateSigned(CERTCertificate *scert,
 {
     NSSCMSMessage *cmsg;
     NSSCMSSignedData *sigd;
-    NSSCMSSignerInfo *signerinfo;
+    NSSCMSSignerInfo *signerinfo = NULL;
 
     
     
@@ -160,6 +160,8 @@ NSS_SMIMEMessage_CreateSigned(CERTCertificate *scert,
     
     if (NSS_CMSSignedData_AddSignerInfo(sigd, signerinfo) != SECSuccess)
         goto loser;
+    
+    signerinfo = NULL;
 
     
     
@@ -178,6 +180,8 @@ NSS_SMIMEMessage_CreateSigned(CERTCertificate *scert,
 loser:
     if (cmsg)
         NSS_CMSMessage_Destroy(cmsg);
+    if (signerinfo)
+        NSS_CMSSignerInfo_Destroy(signerinfo);
     return NULL;
 }
 #endif

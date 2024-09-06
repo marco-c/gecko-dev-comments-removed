@@ -17,6 +17,7 @@
 #include "secerr.h"
 #include "secder.h"
 #include "prerr.h"
+#include "sechash.h"
 
 
 
@@ -154,7 +155,7 @@ NSS_CMSUtil_DecryptSymKey_RSA_OAEP(SECKEYPrivateKey *privkey, SECItem *parameter
     CK_RSA_PKCS_OAEP_PARAMS oaep_params;
     RSA_OAEP_CMS_params encoded_params;
     SECAlgorithmID mgf1hashAlg;
-    SECOidTag mgfAlgtag, mgf1hashAlgtag, pSourcetag;
+    SECOidTag mgfAlgtag, pSourcetag;
     SECItem encoding_params, params;
     PK11SymKey *bulkkey = NULL;
     SECStatus rv;
@@ -179,6 +180,7 @@ NSS_CMSUtil_DecryptSymKey_RSA_OAEP(SECKEYPrivateKey *privkey, SECItem *parameter
     oaep_params.ulSourceDataLen = 0;
 
     if (parameters->len == 2) {
+        
         
         
         if ((parameters->data[0] != 0x30) || (parameters->data[1] != 0)) {
@@ -206,38 +208,9 @@ NSS_CMSUtil_DecryptSymKey_RSA_OAEP(SECKEYPrivateKey *privkey, SECItem *parameter
             if (rv != SECSuccess) {
                 goto loser;
             }
-            mgf1hashAlgtag = SECOID_GetAlgorithmTag(&mgf1hashAlg);
-            switch (mgf1hashAlgtag) {
-                case SEC_OID_SHA1:
-                    oaep_params.mgf = CKG_MGF1_SHA1;
-                    break;
-                case SEC_OID_SHA224:
-                    oaep_params.mgf = CKG_MGF1_SHA224;
-                    break;
-                case SEC_OID_SHA256:
-                    oaep_params.mgf = CKG_MGF1_SHA256;
-                    break;
-                case SEC_OID_SHA384:
-                    oaep_params.mgf = CKG_MGF1_SHA384;
-                    break;
-                case SEC_OID_SHA512:
-                    oaep_params.mgf = CKG_MGF1_SHA512;
-                    break;
-                case SEC_OID_SHA3_224:
-                    oaep_params.mgf = CKG_MGF1_SHA3_224;
-                    break;
-                case SEC_OID_SHA3_256:
-                    oaep_params.mgf = CKG_MGF1_SHA3_256;
-                    break;
-                case SEC_OID_SHA3_384:
-                    oaep_params.mgf = CKG_MGF1_SHA3_384;
-                    break;
-                case SEC_OID_SHA3_512:
-                    oaep_params.mgf = CKG_MGF1_SHA3_512;
-                    break;
-                default:
-                    goto loser;
-                    break;
+            oaep_params.mgf = SEC_GetMgfTypeByOidTag(SECOID_GetAlgorithmTag(&mgf1hashAlg));
+            if (!oaep_params.mgf) {
+                goto loser;
             }
         }
         if (encoded_params.pSourceFunc != NULL) {

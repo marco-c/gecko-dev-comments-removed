@@ -1601,7 +1601,7 @@ freebl_fips_EC_PowerUpSelfTest()
         NULL,
         ec_params_named,                                                     
                                                                              
-        { 256, ec_field_GFp,                                                 
+        { 256, ec_field_plain,                                               
           { { siBuffer, (unsigned char *)p256_prime, sizeof(p256_prime) } }, 
           0,
           0,

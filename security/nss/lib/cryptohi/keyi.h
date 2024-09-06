@@ -15,8 +15,24 @@ KeyType seckey_GetKeyType(SECOidTag pubKeyOid);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 SECStatus sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
-                           const SECItem *param, SECOidTag *encalg, SECOidTag *hashalg);
+                           const SECItem *param, SECOidTag *encalg,
+                           SECOidTag *hashalg, CK_MECHANISM_TYPE *mech,
+                           SECItem *mechparams);
 
 
 SECOidTag sec_GetEncAlgFromSigAlg(SECOidTag sigAlg);
@@ -35,11 +51,9 @@ SECStatus sec_DecodeRSAPSSParams(PLArenaPool *arena,
 
 SECStatus sec_DecodeRSAPSSParamsToMechanism(PLArenaPool *arena,
                                             const SECItem *params,
-                                            CK_RSA_PKCS_PSS_PARAMS *mech);
+                                            CK_RSA_PKCS_PSS_PARAMS *mech,
+                                            SECOidTag *hashAlg);
 
-
-SECStatus seckey_EnforceKeySize(KeyType keyType, unsigned keyLength,
-                                SECErrorCodes error);
 SEC_END_PROTOS
 
 #endif 

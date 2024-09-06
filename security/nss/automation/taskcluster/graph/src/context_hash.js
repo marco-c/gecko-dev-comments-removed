@@ -16,6 +16,10 @@ function sha256(data) {
 
 
 function collectFilesInDirectory(dir) {
+  if (fs.lstatSync(dir).isFile()) {
+    return [dir];
+  }
+
   return flatmap(fs.readdirSync(dir), entry => {
     let entry_path = path.join(dir, entry);
 
@@ -41,7 +45,7 @@ function collectFileHashes(context_path) {
 
 export default function (context_path) {
   
-  let hashes = collectFileHashes("automation/taskcluster/image_builder");
+  let hashes = collectFileHashes("automation/taskcluster/graph/src/image_builder.js");
 
   
   hashes = hashes.concat(collectFileHashes(context_path));

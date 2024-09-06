@@ -7,6 +7,7 @@
 #include "secport.h"
 #include "secpkcs5.h"
 #include "secerr.h"
+#include "sechash.h"
 
 #define PKCS12_NULL 0x0000
 
@@ -34,7 +35,7 @@ static pkcs12SuiteMap pkcs12SuiteMaps[] = {
 
 
 static PRBool
-sec_PKCS12Allowed(SECOidTag alg)
+sec_PKCS12Allowed(SECOidTag alg, PRUint32 needed)
 {
     PRUint32 policy;
     SECStatus rv;
@@ -43,22 +44,59 @@ sec_PKCS12Allowed(SECOidTag alg)
     if (rv != SECSuccess) {
         return PR_FALSE;
     }
-    if (policy & NSS_USE_ALG_IN_PKCS12) {
+    if ((policy & needed) == needed) {
         return PR_TRUE;
     }
     return PR_FALSE;
 }
 
 PRBool
-SEC_PKCS12DecryptionAllowed(SECAlgorithmID *algid)
+SEC_PKCS12CipherAllowed(SECOidTag pbeAlg, SECOidTag hmacAlg)
 {
-    SECOidTag algId;
+    SECOidTag cipherAlg = SEC_PKCS5GetCryptoFromAlgTag(pbeAlg);
+    SECOidTag hashAlg = SEC_PKCS5GetHashFromAlgTag(pbeAlg);
+    if (cipherAlg == SEC_OID_UNKNOWN) {
+        
 
-    algId = SEC_PKCS5GetCryptoAlgorithm(algid);
-    if (algId == SEC_OID_UNKNOWN) {
+
+
+        cipherAlg = pbeAlg;
+        hashAlg = HASH_GetHashOidTagByHMACOidTag(hmacAlg);
+    }
+    if ((cipherAlg == SEC_OID_UNKNOWN) || (hashAlg == SEC_OID_UNKNOWN)) {
         return PR_FALSE;
     }
-    return sec_PKCS12Allowed(algId);
+    if (!sec_PKCS12Allowed(cipherAlg, NSS_USE_ALG_IN_PKCS12)) {
+        return PR_FALSE;
+    }
+    return sec_PKCS12Allowed(hashAlg, NSS_USE_ALG_IN_PKCS12);
+}
+
+PRBool
+SEC_PKCS12DecryptionAllowed(SECAlgorithmID *algid)
+{
+    SECOidTag algtag;
+
+    algtag = SEC_PKCS5GetCryptoAlgorithm(algid);
+    if (algtag == SEC_OID_UNKNOWN) {
+        return PR_FALSE;
+    }
+
+    if (!sec_PKCS12Allowed(algtag, NSS_USE_ALG_IN_PKCS12_DECRYPT)) {
+        return PR_FALSE;
+    }
+
+    algtag = SEC_PKCS5GetHashAlgorithm(algid);
+    if (algtag == SEC_OID_UNKNOWN) {
+        return PR_FALSE;
+    }
+    return sec_PKCS12Allowed(algtag, NSS_USE_ALG_IN_PKCS12_DECRYPT);
+}
+
+PRBool
+SEC_PKCS12IntegrityHashAllowed(SECOidTag hashAlg, PRBool verify)
+{
+    return sec_PKCS12Allowed(hashAlg, verify ? NSS_USE_ALG_IN_PKCS12_DECRYPT : NSS_USE_ALG_IN_PKCS12);
 }
 
 
@@ -70,7 +108,7 @@ SEC_PKCS12IsEncryptionAllowed(void)
     for (i = 0; pkcs12SuiteMaps[i].algTag != SEC_OID_UNKNOWN; i++) {
         
 
-        if (sec_PKCS12Allowed(pkcs12SuiteMaps[i].algTag)) {
+        if (sec_PKCS12Allowed(pkcs12SuiteMaps[i].algTag, NSS_USE_ALG_IN_PKCS12)) {
             return PR_TRUE;
         }
     }

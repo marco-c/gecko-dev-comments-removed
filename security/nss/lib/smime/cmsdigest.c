@@ -15,6 +15,7 @@
 #include "pk11func.h"
 #include "prtime.h"
 #include "secerr.h"
+#include "smime.h"
 
 
 #ifdef CMS_FIND_LEAK_MULTIPLE
@@ -79,6 +80,9 @@ NSS_CMSDigestContext_StartMultiple(SECAlgorithmID **digestalgs)
         const SECHashObject *digobj;
         void *digcx;
 
+        if (!NSS_SMIMEUtil_SigningAllowed(digestalgs[i])) {
+            goto loser;
+        }
         digobj = NSS_CMSUtil_GetHashObjByAlgID(digestalgs[i]);
         
 
@@ -105,6 +109,15 @@ NSS_CMSDigestContext_StartMultiple(SECAlgorithmID **digestalgs)
 
 loser:
     
+    for (i = 0; i < digcnt; i++) {
+        digestPair *pair = &cmsdigcx->digPairs[i];
+        if (pair->digobj) {
+            (*pair->digobj->destroy)(pair->digcx, PR_TRUE);
+#ifdef CMS_FIND_LEAK_MULTIPLE
+            --global_num_digests;
+#endif
+        }
+    }
     if (pool) {
         PORT_FreeArena(pool, PR_FALSE);
     }

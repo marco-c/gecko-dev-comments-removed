@@ -707,7 +707,7 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
        "DES-EDE", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION),
     OD(isoSHAWithRSASignature, SEC_OID_ISO_SHA_WITH_RSA_SIGNATURE,
        "ISO SHA with RSA Signature",
-       CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION),
+       CKM_SHA1_RSA_PKCS, INVALID_CERT_EXTENSION),
     OD(pkcs1RSAEncryption, SEC_OID_PKCS1_RSA_ENCRYPTION,
        "PKCS #1 RSA Encryption", CKM_RSA_PKCS, INVALID_CERT_EXTENSION),
 
@@ -1591,19 +1591,19 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
        INVALID_CERT_EXTENSION),
     OD(ansix962SignaturewithSHA224Digest,
        SEC_OID_ANSIX962_ECDSA_SHA224_SIGNATURE,
-       "X9.62 ECDSA signature with SHA224", CKM_INVALID_MECHANISM,
+       "X9.62 ECDSA signature with SHA224", CKM_ECDSA_SHA224,
        INVALID_CERT_EXTENSION),
     OD(ansix962SignaturewithSHA256Digest,
        SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE,
-       "X9.62 ECDSA signature with SHA256", CKM_INVALID_MECHANISM,
+       "X9.62 ECDSA signature with SHA256", CKM_ECDSA_SHA256,
        INVALID_CERT_EXTENSION),
     OD(ansix962SignaturewithSHA384Digest,
        SEC_OID_ANSIX962_ECDSA_SHA384_SIGNATURE,
-       "X9.62 ECDSA signature with SHA384", CKM_INVALID_MECHANISM,
+       "X9.62 ECDSA signature with SHA384", CKM_ECDSA_SHA384,
        INVALID_CERT_EXTENSION),
     OD(ansix962SignaturewithSHA512Digest,
        SEC_OID_ANSIX962_ECDSA_SHA512_SIGNATURE,
-       "X9.62 ECDSA signature with SHA512", CKM_INVALID_MECHANISM,
+       "X9.62 ECDSA signature with SHA512", CKM_ECDSA_SHA512,
        INVALID_CERT_EXTENSION),
 
     
@@ -1639,7 +1639,7 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
 
     
     OD(pkcs5Pbkdf2, SEC_OID_PKCS5_PBKDF2,
-       "PKCS #5 Password Based Key Dervive Function v2 ",
+       "PKCS #5 Password Based Key Derive Function v2 ",
        CKM_PKCS5_PBKD2, INVALID_CERT_EXTENSION),
     OD(pkcs5Pbes2, SEC_OID_PKCS5_PBES2,
        "PKCS #5 Password Based Encryption v2 ",
@@ -1668,7 +1668,7 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
 
     OD(isoSHA1WithRSASignature, SEC_OID_ISO_SHA1_WITH_RSA_SIGNATURE,
        "ISO SHA-1 with RSA Signature",
-       CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION),
+       CKM_SHA1_RSA_PKCS, INVALID_CERT_EXTENSION),
 
     
     OD(seed_CBC, SEC_OID_SEED_CBC,
@@ -1716,11 +1716,11 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
     OD(nistDSASignaturewithSHA224Digest,
        SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA224_DIGEST,
        "DSA with SHA-224 Signature",
-       CKM_INVALID_MECHANISM , INVALID_CERT_EXTENSION),
+       CKM_DSA_SHA224, INVALID_CERT_EXTENSION),
     OD(nistDSASignaturewithSHA256Digest,
        SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA256_DIGEST,
        "DSA with SHA-256 Signature",
-       CKM_INVALID_MECHANISM , INVALID_CERT_EXTENSION),
+       CKM_DSA_SHA256, INVALID_CERT_EXTENSION),
     OD(msExtendedKeyUsageTrustListSigning,
        SEC_OID_MS_EXT_KEY_USAGE_CTL_SIGNING,
        "Microsoft Trust List Signing",
@@ -1887,6 +1887,9 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
     OD(dhSinglePasscofactorDHsha512kdfscheme, SEC_OID_DHSINGLEPASS_COFACTORDH_SHA512KDF_SCHEME,
        "Eliptic Curve Diffie-Hellman Single Pass Cofactor with SHA512 KDF", CKM_ECDH1_COFACTOR_DERIVE,
        INVALID_CERT_EXTENSION),
+    ODE(SEC_OID_RC2_64_CBC, "RC2-64-CBC", CKM_RC2_CBC, INVALID_CERT_EXTENSION),
+    ODE(SEC_OID_RC2_128_CBC, "RC2-128-CBC", CKM_RC2_CBC, INVALID_CERT_EXTENSION),
+    ODE(SEC_OID_ECDH_KEA, "ECDH", CKM_ECDH1_DERIVE, INVALID_CERT_EXTENSION),
 };
 
 
@@ -2015,6 +2018,7 @@ secoid_FindDynamicByTag(SECOidTag tagnum)
 SECOidTag
 SECOID_AddEntry(const SECOidData *src)
 {
+    dynXOid *ddst;
     SECOidData *dst;
     dynXOid **table;
     SECOidTag ret = SEC_OID_UNKNOWN;
@@ -2076,10 +2080,11 @@ SECOID_AddEntry(const SECOidData *src)
     }
 
     
-    dst = (SECOidData *)PORT_ArenaZNew(dynOidPool, dynXOid);
-    if (!dst) {
+    ddst = PORT_ArenaZNew(dynOidPool, dynXOid);
+    if (!ddst) {
         goto done;
     }
+    dst = &ddst->data;
     rv = SECITEM_CopyItem(dynOidPool, &dst->oid, &src->oid);
     if (rv != SECSuccess) {
         goto done;
@@ -2091,10 +2096,12 @@ SECOID_AddEntry(const SECOidData *src)
     dst->offset = (SECOidTag)(used + SEC_OID_TOTAL);
     dst->mechanism = src->mechanism;
     dst->supportedExtension = src->supportedExtension;
+    
+    ddst->priv.notPolicyFlags = NSS_USE_ALG_IN_SMIME;
 
     rv = secoid_HashDynamicOiddata(dst);
     if (rv == SECSuccess) {
-        table[used++] = (dynXOid *)dst;
+        table[used++] = ddst;
         dynOidEntriesUsed = used;
         ret = dst->offset;
     }
@@ -2113,7 +2120,8 @@ secoid_HashNumber(const void *key)
     return (PLHashNumber)((char *)key - (char *)NULL);
 }
 
-#define DEF_FLAGS (NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_SSL_KX | NSS_USE_ALG_IN_SSL_KX)
+#define DEF_FLAGS (NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_SSL_KX | \
+                   NSS_USE_ALG_IN_SMIME | NSS_USE_ALG_IN_PKCS12)
 static void
 handleHashAlgSupport(char *envVal)
 {
@@ -2165,14 +2173,14 @@ SECOID_Init(void)
 
     if (!PR_GetEnvSecure("NSS_ALLOW_WEAK_SIGNATURE_ALG")) {
         
-        xOids[SEC_OID_MD2].notPolicyFlags = ~0;
-        xOids[SEC_OID_MD4].notPolicyFlags = ~0;
-        xOids[SEC_OID_MD5].notPolicyFlags = ~0;
+        xOids[SEC_OID_MD2].notPolicyFlags = ~NSS_USE_ALG_IN_PKCS12_DECRYPT;
+        xOids[SEC_OID_MD4].notPolicyFlags = ~NSS_USE_ALG_IN_PKCS12_DECRYPT;
+        xOids[SEC_OID_MD5].notPolicyFlags = ~NSS_USE_ALG_IN_PKCS12_DECRYPT;
         xOids[SEC_OID_PKCS1_MD2_WITH_RSA_ENCRYPTION].notPolicyFlags = ~0;
         xOids[SEC_OID_PKCS1_MD4_WITH_RSA_ENCRYPTION].notPolicyFlags = ~0;
         xOids[SEC_OID_PKCS1_MD5_WITH_RSA_ENCRYPTION].notPolicyFlags = ~0;
-        xOids[SEC_OID_PKCS5_PBE_WITH_MD2_AND_DES_CBC].notPolicyFlags = ~0;
-        xOids[SEC_OID_PKCS5_PBE_WITH_MD5_AND_DES_CBC].notPolicyFlags = ~0;
+        xOids[SEC_OID_PKCS5_PBE_WITH_MD2_AND_DES_CBC].notPolicyFlags = ~NSS_USE_ALG_IN_PKCS12_DECRYPT;
+        xOids[SEC_OID_PKCS5_PBE_WITH_MD5_AND_DES_CBC].notPolicyFlags = ~NSS_USE_ALG_IN_PKCS12_DECRYPT;
     }
 
     
@@ -2222,6 +2230,10 @@ SECOID_Init(void)
     }
 
     PORT_Assert(i == SEC_OID_TOTAL);
+    
+
+
+    (void)NSS_SetAlgorithmPolicyAll(0, NSS_USE_ALG_IN_SMIME);
 
     return (SECSuccess);
 }
@@ -2314,6 +2326,24 @@ SECOID_FindOIDTagDescription(SECOidTag tagnum)
 
 
 
+SECOidTag
+SECOID_GetTotalTags(void)
+{
+    SECOidTag total;
+
+    
+
+    NSSRWLock_LockRead(dynOidLock);
+    total = SEC_OID_TOTAL + dynOidEntriesUsed;
+    NSSRWLock_UnlockRead(dynOidLock);
+    return total;
+}
+
+
+
+
+
+
 
 static privXOid *
 secoid_FindXOidByTag(SECOidTag tagnum)
@@ -2372,6 +2402,76 @@ NSS_SetAlgorithmPolicy(SECOidTag tag, PRUint32 setBits, PRUint32 clearBits)
     policyFlags = (policyFlags & ~clearBits) | setBits;
     pxo->notPolicyFlags = ~policyFlags;
     return SECSuccess;
+}
+
+
+SECStatus
+NSS_SetAlgorithmPolicyAll(PRUint32 setBits, PRUint32 clearBits)
+{
+    SECOidTag tag;
+    
+    SECOidTag lastTag = SECOID_GetTotalTags();
+
+    for (tag = SEC_OID_UNKNOWN; tag < lastTag; tag++) {
+        SECStatus rv = NSS_SetAlgorithmPolicy(tag, setBits, clearBits);
+        
+
+
+
+
+        if (rv != SECSuccess) {
+            return rv;
+        }
+    }
+    return SECSuccess;
+}
+
+
+SECStatus
+NSS_GetAlgorithmPolicyAll(PRUint32 maskBits, PRUint32 valueBits,
+                          SECOidTag **outTags, int *outTagCount)
+{
+    SECOidTag *tags;
+    SECOidTag tag;
+    
+    SECOidTag lastTag = SECOID_GetTotalTags();
+    int tagCount, tableSize;
+
+    tags = *outTags = NULL;
+    tableSize = tagCount = *outTagCount = 0;
+
+    for (tag = SEC_OID_UNKNOWN; tag < lastTag; tag++) {
+        PRUint32 policy;
+        SECStatus rv = NSS_GetAlgorithmPolicy(tag, &policy);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+        if ((policy & maskBits) == valueBits) {
+            
+            if (tagCount >= tableSize) {
+                int newTableSize = tableSize + 16;
+                SECOidTag *newTags;
+                newTags = (SECOidTag *)PORT_Realloc(tags,
+                                                    newTableSize *
+                                                        sizeof(SECOidTag));
+                if (newTags == NULL) {
+                    goto loser;
+                }
+                tags = newTags;
+                tableSize = newTableSize;
+            }
+            tags[tagCount++] = tag;
+        }
+    }
+    *outTags = tags;
+    *outTagCount = tagCount;
+    return SECSuccess;
+loser:
+    if (tags) {
+        PORT_Free(tags);
+    }
+    
+    return SECFailure;
 }
 
 

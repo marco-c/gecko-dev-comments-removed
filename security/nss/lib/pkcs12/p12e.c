@@ -373,8 +373,7 @@ SEC_PKCS12CreatePasswordPrivSafe(SEC_PKCS12ExportContext *p12ctxt,
                                                       sizeof(SEC_PKCS12SafeInfo));
     if (!safeInfo) {
         PORT_SetError(SEC_ERROR_NO_MEMORY);
-        PORT_ArenaRelease(p12ctxt->arena, mark);
-        return NULL;
+        goto loser;
     }
 
     safeInfo->itemCount = 0;
@@ -386,8 +385,19 @@ SEC_PKCS12CreatePasswordPrivSafe(SEC_PKCS12ExportContext *p12ctxt,
 
 
         if (p12ctxt->integrityEnabled && p12ctxt->pwdIntegrity) {
-            prfAlg = HASH_GetHMACOidTagByHashOidTag(
-                p12ctxt->integrityInfo.pwdInfo.algorithm);
+            SECOidTag integrityAlg = p12ctxt->integrityInfo.pwdInfo.algorithm;
+            prfAlg = integrityAlg;
+            
+            if (HASH_GetHashOidTagByHMACOidTag(integrityAlg) == SEC_OID_UNKNOWN) {
+                
+                prfAlg = HASH_GetHMACOidTagByHashOidTag(integrityAlg);
+                
+
+            }
+        }
+        if (!SEC_PKCS12CipherAllowed(privAlg, prfAlg)) {
+            PORT_SetError(SEC_ERROR_BAD_EXPORT_ALGORITHM);
+            goto loser;
         }
         safeInfo->cinfo = SEC_PKCS7CreateEncryptedDataWithPBEV2(SEC_OID_PKCS5_PBES2,
                                                                 privAlg,
@@ -396,6 +406,10 @@ SEC_PKCS12CreatePasswordPrivSafe(SEC_PKCS12ExportContext *p12ctxt,
                                                                 p12ctxt->pwfn,
                                                                 p12ctxt->pwfnarg);
     } else {
+        if (!SEC_PKCS12CipherAllowed(privAlg, SEC_OID_UNKNOWN)) {
+            PORT_SetError(SEC_ERROR_BAD_EXPORT_ALGORITHM);
+            goto loser;
+        }
         safeInfo->cinfo = SEC_PKCS7CreateEncryptedData(privAlg, 0, p12ctxt->pwfn,
                                                        p12ctxt->pwfnarg);
     }
@@ -1233,8 +1247,20 @@ SEC_PKCS12AddKeyForCert(SEC_PKCS12ExportContext *p12ctxt, SEC_PKCS12SafeInfo *sa
 
 
         if (p12ctxt->integrityEnabled && p12ctxt->pwdIntegrity) {
-            prfAlg = HASH_GetHMACOidTagByHashOidTag(
-                p12ctxt->integrityInfo.pwdInfo.algorithm);
+            SECOidTag integrityAlg = p12ctxt->integrityInfo.pwdInfo.algorithm;
+            prfAlg = integrityAlg;
+            
+            if (HASH_GetHashOidTagByHMACOidTag(integrityAlg) == SEC_OID_UNKNOWN) {
+                
+                prfAlg = HASH_GetHMACOidTagByHashOidTag(integrityAlg);
+                
+
+            }
+        }
+
+        if (!SEC_PKCS12CipherAllowed(algorithm, prfAlg)) {
+            PORT_SetError(SEC_ERROR_BAD_EXPORT_ALGORITHM);
+            goto loser;
         }
 
         
@@ -1512,7 +1538,7 @@ sec_pkcs12_encoder_start_context(SEC_PKCS12ExportContext *p12exp)
     SECItem ignore = { 0 };
     void *mark;
     SECItem *salt = NULL;
-    SECItem *params = NULL;
+    SECItem pwd = { siBuffer, NULL, 0 };
 
     if (!p12exp || !p12exp->safeInfos) {
         return NULL;
@@ -1577,10 +1603,11 @@ sec_pkcs12_encoder_start_context(SEC_PKCS12ExportContext *p12exp)
 
         
         if (p12exp->integrityEnabled) {
-            SECItem pwd = { siBuffer, NULL, 0 };
             PK11SymKey *symKey;
-            CK_MECHANISM_TYPE integrityMechType;
             CK_MECHANISM_TYPE hmacMechType;
+            SECOidTag hmacAlgTag;
+            SECOidTag hashAlgTag;
+
             salt = sec_pkcs12_generate_salt();
 
             
@@ -1605,36 +1632,67 @@ sec_pkcs12_encoder_start_context(SEC_PKCS12ExportContext *p12exp)
                                                     PR_TRUE, PR_TRUE)) {
                 goto loser;
             }
-            
-
-
-
-
-            params = PK11_CreatePBEParams(salt, &pwd,
-                                          NSS_PBE_DEFAULT_ITERATION_COUNT);
-            SECITEM_ZfreeItem(salt, PR_TRUE);
-            salt = NULL;
-            SECITEM_ZfreeItem(&pwd, PR_FALSE);
 
             
-            integrityMechType = sec_pkcs12_algtag_to_keygen_mech(
-                p12exp->integrityInfo.pwdInfo.algorithm);
-            if (integrityMechType == CKM_INVALID_MECHANISM) {
+            hmacAlgTag = p12exp->integrityInfo.pwdInfo.algorithm;
+            hashAlgTag = HASH_GetHashOidTagByHMACOidTag(hmacAlgTag);
+            if (hashAlgTag != SEC_OID_UNKNOWN) {
+                
+
+                SECAlgorithmID *algID;
+                int keyLength;
+
+                keyLength = HASH_ResultLenByOidTag(hashAlgTag);
+                if (keyLength == 0) {
+                    PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+                    return NULL;
+                }
+                
+                algID = PK11_CreatePBEV2AlgorithmID(SEC_OID_PKCS5_PBMAC1,
+                                                    hmacAlgTag,
+                                                    hmacAlgTag, keyLength,
+                                                    NSS_PBE_DEFAULT_ITERATION_COUNT,
+                                                    &p12enc->mac.macSalt);
+                if (algID == NULL) {
+                    goto loser;
+                }
+                rv = SECOID_CopyAlgorithmID(p12enc->arena,
+                                            &p12enc->mac.safeMac.digestAlgorithm,
+                                            algID);
+                SECOID_DestroyAlgorithmID(algID, PR_TRUE);
+                if (rv != SECSuccess) {
+                    PORT_SetError(SEC_ERROR_NO_MEMORY);
+                    goto loser;
+                }
+            } else if (HASH_GetHashTypeByOidTag(hmacAlgTag) != HASH_AlgNULL) {
+                
+                
+
+
+                rv = SECOID_SetAlgorithmID(p12enc->arena,
+                                           &p12enc->mac.safeMac.digestAlgorithm,
+                                           hmacAlgTag, NULL);
+                if (rv != SECSuccess) {
+                    goto loser;
+                }
+            } else {
+                PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
                 goto loser;
             }
 
             
-            symKey = PK11_KeyGen(NULL, integrityMechType, params, 20, NULL);
-            PK11_DestroyPBEParams(params);
+            SECITEM_ZfreeItem(salt, PR_TRUE);
+            salt = NULL;
+            symKey = sec_pkcs12_integrity_key(p12exp->slot, &p12enc->mac,
+                                              &pwd, &hmacMechType, PR_FALSE,
+                                              p12exp->wincx);
+            SECITEM_ZfreeItem(&pwd, PR_FALSE);
+
             if (!symKey) {
                 goto loser;
             }
 
             
-            
-            hmacMechType = sec_pkcs12_algtag_to_mech(
-                p12exp->integrityInfo.pwdInfo.algorithm);
-
             p12enc->hmacCx = PK11_CreateContextBySymKey(hmacMechType,
                                                         CKA_SIGN, symKey, &ignore);
 
@@ -1659,13 +1717,14 @@ sec_pkcs12_encoder_start_context(SEC_PKCS12ExportContext *p12exp)
 
 loser:
     sec_pkcs12_encoder_destroy_context(p12enc);
-    if (p12exp->arena != NULL)
+    if (p12exp->arena != NULL) {
         PORT_ArenaRelease(p12exp->arena, mark);
+    }
     if (salt) {
         SECITEM_ZfreeItem(salt, PR_TRUE);
     }
-    if (params) {
-        PK11_DestroyPBEParams(params);
+    if (pwd.data) {
+        SECITEM_ZfreeItem(&pwd, PR_FALSE);
     }
 
     return NULL;
@@ -1880,17 +1939,9 @@ sec_Pkcs12FinishMac(sec_PKCS12EncoderContext *p12ecx)
     }
 
     
-    di = SGN_CreateDigestInfo(p12ecx->p12exp->integrityInfo.pwdInfo.algorithm,
-                              hmacData, hmacLen);
-    if (!di) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        rv = SECFailure;
-        goto loser;
-    }
-
-    rv = SGN_CopyDigestInfo(p12ecx->arena, &p12ecx->mac.safeMac, di);
+    rv = SECITEM_MakeItem(p12ecx->arena, &p12ecx->mac.safeMac.digest,
+                          hmacData, hmacLen);
     if (rv != SECSuccess) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
         goto loser;
     }
 

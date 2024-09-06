@@ -4,6 +4,7 @@
 
 
 
+#include <limits.h>
 #include "prprf.h"
 #include "cert.h"
 #include "certi.h"
@@ -600,6 +601,8 @@ typedef enum {
 
 
 
+
+
 static int
 cert_RFC1485_GetRequiredLen(const char* src, int srclen, EQMode* pEQMode)
 {
@@ -608,6 +611,10 @@ cert_RFC1485_GetRequiredLen(const char* src, int srclen, EQMode* pEQMode)
     PRBool needsQuoting = PR_FALSE;
     char lastC = 0;
 
+    
+    if (srclen > 16384) {
+        return -1;
+    }
     
     for (i = 0; i < srclen; i++) {
         char c = src[i];
@@ -637,6 +644,7 @@ cert_RFC1485_GetRequiredLen(const char* src, int srclen, EQMode* pEQMode)
         reqLen += 2;
     if (pEQMode && mode == minimalEscapeAndQuote && !needsQuoting)
         *pEQMode = minimalEscape;
+    
     return reqLen;
 }
 
@@ -648,12 +656,14 @@ escapeAndQuote(char* dst, int dstlen, char* src, int srclen, EQMode* pEQMode)
     int i, reqLen = 0;
     EQMode mode = pEQMode ? *pEQMode : minimalEscape;
 
+    reqLen = cert_RFC1485_GetRequiredLen(src, srclen, &mode);
     
-    reqLen = cert_RFC1485_GetRequiredLen(src, srclen, &mode) + 1;
-    if (reqLen > dstlen) {
+    
+    if (reqLen < 0 || reqLen+1 > dstlen) {
         PORT_SetError(SEC_ERROR_OUTPUT_LEN);
         return SECFailure;
     }
+    reqLen += 1;
 
     if (mode == minimalEscapeAndQuote)
         *dst++ = C_DOUBLE_QUOTE;
@@ -981,8 +991,22 @@ AppendAVA(stringBuf* bufp, CERTAVA* ava, CertStrictnessLevel strict)
     }
 
     nameLen = strlen(tagName);
-    valueLen =
-        (useHex ? avaValue->len : cert_RFC1485_GetRequiredLen((char*)avaValue->data, avaValue->len, &mode));
+
+    if (useHex) {
+        valueLen = avaValue->len;
+    } else {
+        int reqLen = cert_RFC1485_GetRequiredLen((char*)avaValue->data, avaValue->len, &mode);
+        if (reqLen < 0) {
+            SECITEM_FreeItem(avaValue, PR_TRUE);
+            return SECFailure;
+        }
+        valueLen = reqLen;
+    }
+    if (UINT_MAX - nameLen < 2 ||
+        valueLen > UINT_MAX - nameLen - 2) {
+        SECITEM_FreeItem(avaValue, PR_TRUE);
+        return SECFailure;
+    }
     len = nameLen + valueLen + 2; 
 
     maxName = nameLen;
@@ -1198,20 +1222,23 @@ avaToString(PLArenaPool* arena, CERTAVA* ava)
     if (!avaValue) {
         return buf;
     }
-    valueLen =
-        cert_RFC1485_GetRequiredLen((char*)avaValue->data, avaValue->len, NULL) + 1;
-    if (arena) {
-        buf = (char*)PORT_ArenaZAlloc(arena, valueLen);
-    } else {
-        buf = (char*)PORT_ZAlloc(valueLen);
-    }
-    if (buf) {
-        SECStatus rv =
-            escapeAndQuote(buf, valueLen, (char*)avaValue->data, avaValue->len, NULL);
-        if (rv != SECSuccess) {
-            if (!arena)
-                PORT_Free(buf);
-            buf = NULL;
+    int reqLen = cert_RFC1485_GetRequiredLen((char*)avaValue->data, avaValue->len, NULL);
+    
+    if (reqLen >= 0) {
+        valueLen = reqLen + 1;
+        if (arena) {
+            buf = (char*)PORT_ArenaZAlloc(arena, valueLen);
+        } else {
+            buf = (char*)PORT_ZAlloc(valueLen);
+        }
+        if (buf) {
+            SECStatus rv =
+                escapeAndQuote(buf, valueLen, (char*)avaValue->data, avaValue->len, NULL);
+            if (rv != SECSuccess) {
+                if (!arena)
+                    PORT_Free(buf);
+                buf = NULL;
+            }
         }
     }
     SECITEM_FreeItem(avaValue, PR_TRUE);

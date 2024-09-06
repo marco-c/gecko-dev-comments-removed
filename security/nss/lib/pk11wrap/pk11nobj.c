@@ -553,14 +553,42 @@ SEC_DeletePermCRL(CERTSignedCrl *crl)
 
 
 
+
+static CK_OBJECT_HANDLE
+pk11_FindSMimeObjectByTemplate(PK11SlotInfo *slot,
+                               CK_ATTRIBUTE *theTemplate, size_t tsize)
+{
+    CK_OBJECT_HANDLE smimeh = CK_INVALID_HANDLE;
+    CK_ATTRIBUTE *last;
+
+    PORT_Assert(tsize != 0);
+
+    smimeh = pk11_FindObjectByTemplate(slot, theTemplate, (int)tsize);
+    if (smimeh != CK_INVALID_HANDLE) {
+        return smimeh;
+    }
+    last = &theTemplate[tsize - 1];
+    if ((last->type == CKA_NSS_EMAIL) && (last->ulValueLen != 0)) {
+        CK_ULONG save_len = last->ulValueLen;
+        last->ulValueLen--;
+        smimeh = pk11_FindObjectByTemplate(slot, theTemplate, (int)tsize);
+        last->ulValueLen = save_len; 
+        return smimeh;
+    }
+    return CK_INVALID_HANDLE;
+}
+
+
+
+
 SECItem *
 PK11_FindSMimeProfile(PK11SlotInfo **slot, char *emailAddr,
                       SECItem *name, SECItem **profileTime)
 {
     CK_OBJECT_CLASS smimeClass = CKO_NSS_SMIME;
     CK_ATTRIBUTE theTemplate[] = {
-        { CKA_SUBJECT, NULL, 0 },
         { CKA_CLASS, NULL, 0 },
+        { CKA_SUBJECT, NULL, 0 },
         { CKA_NSS_EMAIL, NULL, 0 },
     };
     CK_ATTRIBUTE smimeData[] = {
@@ -579,15 +607,15 @@ PK11_FindSMimeProfile(PK11SlotInfo **slot, char *emailAddr,
         return NULL;
     }
 
-    PK11_SETATTRS(attrs, CKA_SUBJECT, name->data, name->len);
-    attrs++;
     PK11_SETATTRS(attrs, CKA_CLASS, &smimeClass, sizeof(smimeClass));
     attrs++;
-    PK11_SETATTRS(attrs, CKA_NSS_EMAIL, emailAddr, strlen(emailAddr));
+    PK11_SETATTRS(attrs, CKA_SUBJECT, name->data, name->len);
+    attrs++;
+    PK11_SETATTRS(attrs, CKA_NSS_EMAIL, emailAddr, strlen(emailAddr) + 1);
     attrs++;
 
     if (*slot) {
-        smimeh = pk11_FindObjectByTemplate(*slot, theTemplate, tsize);
+        smimeh = pk11_FindSMimeObjectByTemplate(*slot, theTemplate, tsize);
     } else {
         PK11SlotList *list = PK11_GetAllTokens(CKM_INVALID_MECHANISM,
                                                PR_FALSE, PR_TRUE, NULL);
@@ -598,7 +626,7 @@ PK11_FindSMimeProfile(PK11SlotInfo **slot, char *emailAddr,
         }
         
         for (le = list->head; le; le = le->next) {
-            smimeh = pk11_FindObjectByTemplate(le->slot, theTemplate, tsize);
+            smimeh = pk11_FindSMimeObjectByTemplate(le->slot, theTemplate, tsize);
             if (smimeh != CK_INVALID_HANDLE) {
                 *slot = PK11_ReferenceSlot(le->slot);
                 break;

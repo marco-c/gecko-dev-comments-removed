@@ -156,6 +156,10 @@ typedef int __BLAPI_DEPRECATED __attribute__((deprecated));
 
 
 
+#define MAX_SIGNATURE_LEN ((RSA_MAX_MODULUS_BITS + 7) / 8)
+
+
+
 
 
 

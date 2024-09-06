@@ -35,6 +35,16 @@ SECItem *
 SEC_PKCS5GetIV(SECAlgorithmID *algid, SECItem *pwitem, PRBool faulty3DES);
 
 SECOidTag SEC_PKCS5GetCryptoAlgorithm(SECAlgorithmID *algid);
+SECOidTag SEC_PKCS5GetHashAlgorithm(SECAlgorithmID *algid);
+
+
+
+
+
+
+SECOidTag SEC_PKCS5GetCryptoFromAlgTag(SECOidTag algTag);
+SECOidTag SEC_PKCS5GetHashFromAlgTag(SECOidTag algTag);
+
 PRBool SEC_PKCS5IsAlgorithmPBEAlg(SECAlgorithmID *algid);
 PRBool SEC_PKCS5IsAlgorithmPBEAlgTag(SECOidTag algTag);
 SECOidTag SEC_PKCS5GetPBEAlgorithm(SECOidTag algTag, int keyLen);

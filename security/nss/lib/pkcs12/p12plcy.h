@@ -10,7 +10,20 @@
 SEC_BEGIN_PROTOS
 
 
+
+
+
+
+extern PRBool SEC_PKCS12CipherAllowed(SECOidTag pbeAlg, SECOidTag hmacAlg);
+
+
+
+
 extern PRBool SEC_PKCS12DecryptionAllowed(SECAlgorithmID *algid);
+
+
+
+extern PRBool SEC_PKCS12IntegrityHashAllowed(SECOidTag hashAlg, PRBool verify);
 
 
 extern PRBool SEC_PKCS12IsEncryptionAllowed(void);

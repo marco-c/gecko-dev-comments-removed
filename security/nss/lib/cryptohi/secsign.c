@@ -20,10 +20,14 @@
 struct SGNContextStr {
     SECOidTag signalg;
     SECOidTag hashalg;
+    CK_MECHANISM_TYPE mech;
     void *hashcx;
+    
     const SECHashObject *hashobj;
+    
+    PK11Context *signcx;
     SECKEYPrivateKey *key;
-    SECItem *params;
+    SECItem mechparams;
 };
 
 static SGNContext *
@@ -31,6 +35,8 @@ sgn_NewContext(SECOidTag alg, SECItem *params, SECKEYPrivateKey *key)
 {
     SGNContext *cx;
     SECOidTag hashalg, signalg;
+    CK_MECHANISM_TYPE mech;
+    SECItem mechparams;
     KeyType keyType;
     PRUint32 policyFlags;
     PRInt32 optFlags;
@@ -44,7 +50,8 @@ sgn_NewContext(SECOidTag alg, SECItem *params, SECKEYPrivateKey *key)
 
 
     
-    rv = sec_DecodeSigAlg(NULL, alg, params, &signalg, &hashalg);
+    rv = sec_DecodeSigAlg(NULL, alg, params, &signalg, &hashalg, &mech,
+                          &mechparams);
     if (rv != SECSuccess) {
         PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
         return NULL;
@@ -56,15 +63,15 @@ sgn_NewContext(SECOidTag alg, SECItem *params, SECKEYPrivateKey *key)
         !((key->keyType == dsaKey) && (keyType == fortezzaKey)) &&
         !((key->keyType == rsaKey) && (keyType == rsaPssKey))) {
         PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-        return NULL;
+        goto loser;
     }
     if (NSS_OptionGet(NSS_KEY_SIZE_POLICY_FLAGS, &optFlags) != SECFailure) {
         if (optFlags & NSS_KEY_SIZE_POLICY_SIGN_FLAG) {
-            rv = seckey_EnforceKeySize(key->keyType,
+            rv = SECKEY_EnforceKeySize(key->keyType,
                                        SECKEY_PrivateKeyStrengthInBits(key),
                                        SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
             if (rv != SECSuccess) {
-                return NULL;
+                goto loser;
             }
         }
     }
@@ -72,23 +79,28 @@ sgn_NewContext(SECOidTag alg, SECItem *params, SECKEYPrivateKey *key)
     if ((NSS_GetAlgorithmPolicy(hashalg, &policyFlags) == SECFailure) ||
         !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
         PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
-        return NULL;
+        goto loser;
     }
     
     if ((NSS_GetAlgorithmPolicy(signalg, &policyFlags) == SECFailure) ||
         !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
         PORT_SetError(SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
-        return NULL;
+        goto loser;
     }
 
     cx = (SGNContext *)PORT_ZAlloc(sizeof(SGNContext));
-    if (cx) {
-        cx->hashalg = hashalg;
-        cx->signalg = signalg;
-        cx->key = key;
-        cx->params = params;
+    if (!cx) {
+        goto loser;
     }
+    cx->hashalg = hashalg;
+    cx->signalg = signalg;
+    cx->mech = mech;
+    cx->key = key;
+    cx->mechparams = mechparams;
     return cx;
+loser:
+    SECITEM_FreeItem(&mechparams, PR_FALSE);
+    return NULL;
 }
 
 SGNContext *
@@ -112,18 +124,54 @@ SGN_DestroyContext(SGNContext *cx, PRBool freeit)
             (*cx->hashobj->destroy)(cx->hashcx, PR_TRUE);
             cx->hashcx = NULL;
         }
+        if (cx->signcx != NULL) {
+            PK11_DestroyContext(cx->signcx, PR_TRUE);
+            cx->signcx = NULL;
+        }
+        SECITEM_FreeItem(&cx->mechparams, PR_FALSE);
         if (freeit) {
             PORT_ZFree(cx, sizeof(SGNContext));
         }
     }
 }
 
+static PK11Context *
+sgn_CreateCombinedContext(SGNContext *cx)
+{
+    
+
+    if (cx->mech == CKM_INVALID_MECHANISM) {
+        PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+        return NULL;
+    }
+    
+
+    if (!PK11_DoesMechanismFlag(cx->key->pkcs11Slot, cx->mech, CKF_SIGN)) {
+        PORT_SetError(SEC_ERROR_NO_TOKEN);
+        return NULL;
+    }
+    return PK11_CreateContextByPrivKey(cx->mech, CKA_SIGN, cx->key,
+                                       &cx->mechparams);
+}
+
 SECStatus
 SGN_Begin(SGNContext *cx)
 {
+    PK11Context *signcx = NULL;
+
     if (cx->hashcx != NULL) {
         (*cx->hashobj->destroy)(cx->hashcx, PR_TRUE);
         cx->hashcx = NULL;
+    }
+    if (cx->signcx != NULL) {
+        (void)PK11_DestroyContext(cx->signcx, PR_TRUE);
+        cx->signcx = NULL;
+    }
+    
+    signcx = sgn_CreateCombinedContext(cx);
+    if (signcx != NULL) {
+        cx->signcx = signcx;
+        return SECSuccess;
     }
 
     cx->hashobj = HASH_GetHashObjectByOidTag(cx->hashalg);
@@ -142,8 +190,11 @@ SECStatus
 SGN_Update(SGNContext *cx, const unsigned char *input, unsigned int inputLen)
 {
     if (cx->hashcx == NULL) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
+        if (cx->signcx == NULL) {
+            PORT_SetError(SEC_ERROR_INVALID_ARGS);
+            return SECFailure;
+        }
+        return PK11_DigestOp(cx->signcx, input, inputLen);
     }
     (*cx->hashobj->update)(cx->hashcx, input, inputLen);
     return SECSuccess;
@@ -175,12 +226,54 @@ static DERTemplate SGNDigestInfoTemplate[] = {
     { 0 }
 };
 
+static SECStatus
+sgn_allocateSignatureItem(SECKEYPrivateKey *privKey, SECItem *sigitem)
+{
+    int signatureLen;
+    signatureLen = PK11_SignatureLen(privKey);
+    if (signatureLen <= 0) {
+        PORT_SetError(SEC_ERROR_INVALID_KEY);
+        return SECFailure;
+    }
+    sigitem->len = signatureLen;
+    sigitem->data = (unsigned char *)PORT_Alloc(signatureLen);
+
+    if (sigitem->data == NULL) {
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        return SECFailure;
+    }
+    return SECSuccess;
+}
+
+
+
+
+static SECStatus
+sgn_PKCS11ToX509Sig(SGNContext *cx, SECItem *sigitem)
+{
+    SECStatus rv;
+    SECItem result = { siBuffer, NULL, 0 };
+
+    if ((cx->signalg == SEC_OID_ANSIX9_DSA_SIGNATURE) ||
+        (cx->signalg == SEC_OID_ANSIX962_EC_PUBLIC_KEY)) {
+        
+        rv = DSAU_EncodeDerSigWithLen(&result, sigitem, sigitem->len);
+        
+
+        SECITEM_FreeItem(sigitem, PR_FALSE);
+        if (rv != SECSuccess) {
+            return rv;
+        }
+        *sigitem = result;
+    }
+    return SECSuccess;
+}
+
 SECStatus
 SGN_End(SGNContext *cx, SECItem *result)
 {
     unsigned char digest[HASH_LENGTH_MAX];
     unsigned part1;
-    int signatureLen;
     SECStatus rv;
     SECItem digder, sigitem;
     PLArenaPool *arena = 0;
@@ -191,11 +284,27 @@ SGN_End(SGNContext *cx, SECItem *result)
     digder.data = 0;
     sigitem.data = 0;
 
-    
     if (cx->hashcx == NULL) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
+        if (cx->signcx == NULL) {
+            PORT_SetError(SEC_ERROR_INVALID_ARGS);
+            return SECFailure;
+        }
+        
+
+        rv = sgn_allocateSignatureItem(privKey, result);
+        if (rv != SECSuccess) {
+            return rv;
+        }
+        rv = PK11_DigestFinal(cx->signcx, result->data, &result->len,
+                              result->len);
+        if (rv != SECSuccess) {
+            SECITEM_ZfreeItem(result, PR_FALSE);
+            result->data = NULL;
+            return rv;
+        }
+        return sgn_PKCS11ToX509Sig(cx, result);
     }
+    
     (*cx->hashobj->end)(cx->hashcx, digest, &part1, sizeof(digest));
 
     if (privKey->keyType == rsaKey &&
@@ -229,43 +338,13 @@ SGN_End(SGNContext *cx, SECItem *result)
 
 
 
-    signatureLen = PK11_SignatureLen(privKey);
-    if (signatureLen <= 0) {
-        PORT_SetError(SEC_ERROR_INVALID_KEY);
-        rv = SECFailure;
-        goto loser;
-    }
-    sigitem.len = signatureLen;
-    sigitem.data = (unsigned char *)PORT_Alloc(signatureLen);
-
-    if (sigitem.data == NULL) {
-        rv = SECFailure;
-        goto loser;
+    rv = sgn_allocateSignatureItem(privKey, &sigitem);
+    if (rv != SECSuccess) {
+        return rv;
     }
 
     if (cx->signalg == SEC_OID_PKCS1_RSA_PSS_SIGNATURE) {
-        CK_RSA_PKCS_PSS_PARAMS mech;
-        SECItem mechItem = { siBuffer, (unsigned char *)&mech, sizeof(mech) };
-
-        PORT_Memset(&mech, 0, sizeof(mech));
-
-        if (cx->params && cx->params->data) {
-            arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
-            if (!arena) {
-                rv = SECFailure;
-                goto loser;
-            }
-
-            rv = sec_DecodeRSAPSSParamsToMechanism(arena, cx->params, &mech);
-            if (rv != SECSuccess) {
-                goto loser;
-            }
-        } else {
-            mech.hashAlg = CKM_SHA_1;
-            mech.mgf = CKG_MGF1_SHA1;
-            mech.sLen = digder.len;
-        }
-        rv = PK11_SignWithMechanism(privKey, CKM_RSA_PKCS_PSS, &mechItem,
+        rv = PK11_SignWithMechanism(privKey, CKM_RSA_PKCS_PSS, &cx->mechparams,
                                     &sigitem, &digder);
         if (rv != SECSuccess) {
             goto loser;
@@ -276,18 +355,12 @@ SGN_End(SGNContext *cx, SECItem *result)
             goto loser;
         }
     }
-
-    if ((cx->signalg == SEC_OID_ANSIX9_DSA_SIGNATURE) ||
-        (cx->signalg == SEC_OID_ANSIX962_EC_PUBLIC_KEY)) {
-        
-        rv = DSAU_EncodeDerSigWithLen(result, &sigitem, sigitem.len);
-        if (rv != SECSuccess)
-            goto loser;
-        SECITEM_FreeItem(&sigitem, PR_FALSE);
-    } else {
-        result->len = sigitem.len;
-        result->data = sigitem.data;
+    rv = sgn_PKCS11ToX509Sig(cx, &sigitem);
+    *result = sigitem;
+    if (rv != SECSuccess) {
+        goto loser;
     }
+    return SECSuccess;
 
 loser:
     if (rv != SECSuccess) {
@@ -298,6 +371,42 @@ loser:
         PORT_FreeArena(arena, PR_FALSE);
     }
     return rv;
+}
+
+static SECStatus
+sgn_SingleShot(SGNContext *cx, const unsigned char *input,
+               unsigned int inputLen, SECItem *result)
+{
+    SECStatus rv;
+
+    result->data = 0;
+    
+
+    if ((cx->mech != CKM_INVALID_MECHANISM) &&
+        PK11_DoesMechanismFlag(cx->key->pkcs11Slot, cx->mech, CKF_SIGN)) {
+        SECItem data = { siBuffer, (unsigned char *)input, inputLen };
+        rv = sgn_allocateSignatureItem(cx->key, result);
+        if (rv != SECSuccess) {
+            return rv;
+        }
+        rv = PK11_SignWithMechanism(cx->key, cx->mech, &cx->mechparams,
+                                    result, &data);
+        if (rv != SECSuccess) {
+            SECITEM_ZfreeItem(result, PR_FALSE);
+            return rv;
+        }
+        return sgn_PKCS11ToX509Sig(cx, result);
+    }
+    
+    rv = SGN_Begin(cx);
+    if (rv != SECSuccess)
+        return rv;
+
+    rv = SGN_Update(cx, input, inputLen);
+    if (rv != SECSuccess)
+        return rv;
+
+    return SGN_End(cx, result);
 }
 
 
@@ -314,15 +423,9 @@ sec_SignData(SECItem *res, const unsigned char *buf, int len,
     if (sgn == NULL)
         return SECFailure;
 
-    rv = SGN_Begin(sgn);
+    rv = sgn_SingleShot(sgn, buf, len, res);
     if (rv != SECSuccess)
         goto loser;
-
-    rv = SGN_Update(sgn, buf, len);
-    if (rv != SECSuccess)
-        goto loser;
-
-    rv = SGN_End(sgn, res);
 
 loser:
     SGN_DestroyContext(sgn, PR_TRUE);
@@ -483,7 +586,7 @@ SGN_Digest(SECKEYPrivateKey *privKey,
 
     if (NSS_OptionGet(NSS_KEY_SIZE_POLICY_FLAGS, &optFlags) != SECFailure) {
         if (optFlags & NSS_KEY_SIZE_POLICY_SIGN_FLAG) {
-            rv = seckey_EnforceKeySize(privKey->keyType,
+            rv = SECKEY_EnforceKeySize(privKey->keyType,
                                        SECKEY_PrivateKeyStrengthInBits(privKey),
                                        SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
             if (rv != SECSuccess) {

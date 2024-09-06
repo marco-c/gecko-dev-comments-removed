@@ -12,25 +12,18 @@
 #include "ciferfam.h" 
 #include "secasn1.h"
 #include "secitem.h"
+#include "sechash.h"
 #include "cert.h"
 #include "keyhi.h"
 #include "secerr.h"
 #include "cms.h"
 #include "nss.h"
+#include "prerror.h"
+#include "prinit.h"
 
 SEC_ASN1_MKSUB(CERT_IssuerAndSNTemplate)
 SEC_ASN1_MKSUB(SEC_OctetStringTemplate)
 SEC_ASN1_CHOOSER_DECLARE(CERT_IssuerAndSNTemplate)
-
-
-static unsigned char asn1_int40[] = { SEC_ASN1_INTEGER, 0x01, 0x28 };
-static unsigned char asn1_int64[] = { SEC_ASN1_INTEGER, 0x01, 0x40 };
-static unsigned char asn1_int128[] = { SEC_ASN1_INTEGER, 0x02, 0x00, 0x80 };
-
-
-static SECItem param_int40 = { siBuffer, asn1_int40, sizeof(asn1_int40) };
-static SECItem param_int64 = { siBuffer, asn1_int64, sizeof(asn1_int64) };
-static SECItem param_int128 = { siBuffer, asn1_int128, sizeof(asn1_int128) };
 
 
 
@@ -98,41 +91,539 @@ static const SEC_ASN1Template smime_encryptionkeypref_template[] = {
 };
 
 
+
+static const SECOidTag implemented_key_encipherment[] = {
+    SEC_OID_PKCS1_RSA_ENCRYPTION,
+    SEC_OID_DHSINGLEPASS_STDDH_SHA1KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_STDDH_SHA224KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_STDDH_SHA256KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_STDDH_SHA384KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_STDDH_SHA512KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_COFACTORDH_SHA1KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_COFACTORDH_SHA224KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_COFACTORDH_SHA256KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_COFACTORDH_SHA384KDF_SCHEME,
+    SEC_OID_DHSINGLEPASS_COFACTORDH_SHA512KDF_SCHEME,
+};
+static const int implemented_key_encipherment_len =
+    PR_ARRAY_SIZE(implemented_key_encipherment);
+
+
 typedef struct {
     unsigned long cipher;
-    SECOidTag algtag;
-    SECItem *parms;
-    PRBool enabled; 
-    PRBool allowed; 
-} smime_cipher_map_entry;
+    SECOidTag policytag;
+} smime_legacy_map_entry;
 
 
-static smime_cipher_map_entry smime_cipher_map[] = {
+
+static const smime_legacy_map_entry smime_legacy_map[] = {
     
     
-    { SMIME_RC2_CBC_40, SEC_OID_RC2_CBC, &param_int40, PR_TRUE, PR_TRUE },
-    { SMIME_DES_CBC_56, SEC_OID_DES_CBC, NULL, PR_TRUE, PR_TRUE },
-    { SMIME_RC2_CBC_64, SEC_OID_RC2_CBC, &param_int64, PR_TRUE, PR_TRUE },
-    { SMIME_RC2_CBC_128, SEC_OID_RC2_CBC, &param_int128, PR_TRUE, PR_TRUE },
-    { SMIME_DES_EDE3_168, SEC_OID_DES_EDE3_CBC, NULL, PR_TRUE, PR_TRUE },
-    { SMIME_AES_CBC_128, SEC_OID_AES_128_CBC, NULL, PR_TRUE, PR_TRUE },
-    { SMIME_AES_CBC_256, SEC_OID_AES_256_CBC, NULL, PR_TRUE, PR_TRUE }
+    { SMIME_RC2_CBC_40, SEC_OID_RC2_40_CBC },
+    { SMIME_DES_CBC_56, SEC_OID_DES_CBC },
+    { SMIME_RC2_CBC_64, SEC_OID_RC2_64_CBC },
+    { SMIME_RC2_CBC_128, SEC_OID_RC2_128_CBC },
+    { SMIME_DES_EDE3_168, SEC_OID_DES_EDE3_CBC },
+    { SMIME_AES_CBC_128, SEC_OID_AES_128_CBC },
+    { SMIME_AES_CBC_256, SEC_OID_AES_256_CBC },
 };
-static const int smime_cipher_map_count = sizeof(smime_cipher_map) / sizeof(smime_cipher_map_entry);
+static const int smime_legacy_map_count = PR_ARRAY_SIZE(smime_legacy_map);
+
+static int
+smime_legacy_pref(SECOidTag algtag)
+{
+    int i;
+
+    for (i = 0; i < smime_legacy_map_count; i++) {
+        if (smime_legacy_map[i].policytag == algtag)
+            return i;
+    }
+    return -1;
+}
+
+
+
+
+static SECOidTag
+smime_legacy_to_policy(unsigned long which)
+{
+    int i;
+
+    for (i = 0; i < smime_legacy_map_count; i++) {
+        if (smime_legacy_map[i].cipher == which)
+            return smime_legacy_map[i].policytag;
+    }
+    return SEC_OID_UNKNOWN;
+}
+
+
+
+
+SECOidTag
+smime_legacy_to_oid(unsigned long which)
+{
+    unsigned long mask;
+
+    
+
+
+
+
+    mask = which & CIPHER_FAMILYID_MASK;
+    if (mask == CIPHER_FAMILYID_SMIME) {
+        return smime_legacy_to_policy(which);
+    }
+    return (SECOidTag)which;
+}
+
+
+
+
+
+static SECOidTag
+smime_get_policy_tag_from_key_length(SECOidTag algtag, unsigned long keybits)
+{
+    if (algtag == SEC_OID_RC2_CBC) {
+        switch (keybits) {
+            case 40:
+                return SEC_OID_RC2_40_CBC;
+            case 64:
+                return SEC_OID_RC2_64_CBC;
+            case 128:
+                return SEC_OID_RC2_128_CBC;
+            default:
+                break;
+        }
+        return SEC_OID_UNKNOWN;
+    }
+    return algtag;
+}
+
+PRBool
+smime_allowed_by_policy(SECOidTag algtag, PRUint32 neededPolicy)
+{
+    PRUint32 policyFlags;
+
+    
+
+    if ((neededPolicy & (NSS_USE_ALG_IN_SMIME_KX | NSS_USE_ALG_IN_SMIME_KX_LEGACY)) != 0) {
+        CK_MECHANISM_TYPE mechType = PK11_AlgtagToMechanism(algtag);
+        switch (mechType) {
+            case CKM_ECDH1_DERIVE:
+            case CKM_ECDH1_COFACTOR_DERIVE:
+                algtag = SEC_OID_ECDH_KEA;
+                break;
+        }
+    }
+
+    if ((NSS_GetAlgorithmPolicy(algtag, &policyFlags) == SECFailure) ||
+        ((policyFlags & neededPolicy) != neededPolicy)) {
+        PORT_SetError(SEC_ERROR_BAD_EXPORT_ALGORITHM);
+        return PR_FALSE;
+    }
+    return PR_TRUE;
+}
+
+
+
 
 
 
 
 static int
-smime_mapi_by_cipher(unsigned long cipher)
+smime_keysize_by_cipher(SECOidTag algtag)
+{
+    int keysize;
+
+    switch (algtag) {
+        case SEC_OID_RC2_40_CBC:
+            keysize = 40;
+            break;
+        case SEC_OID_RC2_64_CBC:
+            keysize = 64;
+            break;
+        case SEC_OID_RC2_128_CBC:
+        case SEC_OID_AES_128_CBC:
+        case SEC_OID_CAMELLIA_128_CBC:
+            keysize = 128;
+            break;
+        case SEC_OID_AES_192_CBC:
+        case SEC_OID_CAMELLIA_192_CBC:
+            keysize = 192;
+            break;
+        case SEC_OID_AES_256_CBC:
+        case SEC_OID_CAMELLIA_256_CBC:
+            keysize = 256;
+            break;
+        default:
+            keysize = 0;
+            break;
+    }
+
+    return keysize;
+}
+
+static int
+smime_max_keysize_by_cipher(SECOidTag algtag)
+{
+    int keysize = smime_keysize_by_cipher(algtag);
+
+    if (keysize == 0) {
+        CK_MECHANISM_TYPE mech = PK11_AlgtagToMechanism(algtag);
+        return PK11_GetMaxKeyLength(mech) * PR_BITS_PER_BYTE;
+    }
+    return keysize;
+}
+
+SECOidTag
+smime_get_alg_from_policy(SECOidTag policy)
+{
+    switch (policy) {
+        case SEC_OID_RC2_40_CBC:
+        case SEC_OID_RC2_64_CBC:
+        case SEC_OID_RC2_128_CBC:
+            return SEC_OID_RC2_CBC;
+        default:
+            break;
+    }
+    return policy;
+}
+
+typedef struct SMIMEListStr {
+    SECOidTag *tags;
+    size_t space_len;
+    size_t array_len;
+} SMIMEList;
+
+static SMIMEList *smime_algorithm_list = NULL;
+static PZLock *algorithm_list_lock = NULL;
+static PRCallOnceType smime_init_arg = { 0 };
+
+
+size_t
+smime_list_length(const SMIMEList *list)
+{
+    if ((list == NULL) || (list->tags == NULL)) {
+        return 0;
+    }
+    return list->array_len;
+}
+
+
+
+size_t
+smime_list_index_find(const SMIMEList *list, SECOidTag algtag)
 {
     int i;
-
-    for (i = 0; i < smime_cipher_map_count; i++) {
-        if (smime_cipher_map[i].cipher == cipher)
-            return i; 
+    if ((list == NULL) || (list->tags == NULL)) {
+        return 0;
     }
-    return -1; 
+    for (i = 0; i < list->array_len; i++) {
+        if (algtag == list->tags[i]) {
+            return i;
+        }
+    }
+    return list->array_len;
+}
+
+#define SMIME_CHUNK_COUNT 10
+
+static SECStatus
+smime_list_grow(SMIMEList **list)
+{
+    
+    if (*list == NULL) {
+        *list = PORT_ZNew(SMIMEList);
+        if (*list == NULL) {
+            return SECFailure;
+        }
+    }
+    
+    if ((*list)->tags == NULL) {
+        (*list)->tags = PORT_ZNewArray(SECOidTag, SMIME_CHUNK_COUNT);
+        if ((*list)->tags == NULL) {
+            return SECFailure;
+        }
+        (*list)->space_len = SMIME_CHUNK_COUNT;
+    }
+    
+    if ((*list)->array_len == (*list)->space_len) {
+        SECOidTag *new_space;
+        size_t new_len = (*list)->space_len + SMIME_CHUNK_COUNT;
+        new_space = (SECOidTag *)PORT_Realloc((*list)->tags,
+                                              new_len * sizeof(SECOidTag));
+        if (new_space) {
+            return SECFailure;
+        }
+        (*list)->tags = new_space;
+        (*list)->space_len = new_len;
+    }
+    return SECSuccess;
+}
+
+
+
+static SECStatus
+smime_list_add(SMIMEList **list, SECOidTag algtag)
+{
+    SECStatus rv;
+    size_t array_len = smime_list_length(*list);
+    size_t c_index = smime_list_index_find(*list, algtag);
+
+    if (array_len != c_index) {
+        
+        return SECSuccess;
+    }
+
+    
+    rv = smime_list_grow(list);
+    if (rv != SECSuccess) {
+        return rv;
+    }
+    (*list)->tags[(*list)->array_len++] = algtag;
+    return SECSuccess;
+}
+
+static SECStatus
+smime_list_remove(SMIMEList *list, SECOidTag algtag)
+{
+    size_t c_index, i;
+    size_t cipher_count = smime_list_length(list);
+
+    if (cipher_count == 0) {
+        return SECSuccess;
+    }
+    c_index = smime_list_index_find(list, algtag);
+    if (c_index == cipher_count) {
+        
+        return SECSuccess;
+    }
+    for (i = c_index; i < cipher_count - 1; i++) {
+        list->tags[i] = list->tags[i + 1];
+    }
+    list->array_len--;
+    list->tags[i] = 0;
+    return SECSuccess;
+}
+
+static SECOidTag
+smime_list_fetch_by_index(const SMIMEList *list, size_t c_index)
+{
+    size_t cipher_count = smime_list_length(list);
+
+    if (c_index >= cipher_count) {
+        return SEC_OID_UNKNOWN;
+    }
+    
+
+    return list->tags[c_index];
+}
+
+static void
+smime_free_list(SMIMEList **list)
+{
+    if (*list) {
+        if ((*list)->tags) {
+            PORT_Free((*list)->tags);
+        }
+        PORT_Free(*list);
+    }
+    *list = NULL;
+}
+
+static void
+smime_lock_algorithm_list(void)
+{
+    PORT_Assert(algorithm_list_lock);
+    if (algorithm_list_lock) {
+        PZ_Lock(algorithm_list_lock);
+    }
+    return;
+}
+
+static void
+smime_unlock_algorithm_list(void)
+{
+    PORT_Assert(algorithm_list_lock);
+    if (algorithm_list_lock) {
+        PZ_Unlock(algorithm_list_lock);
+    }
+    return;
+}
+
+static SECStatus
+smime_shutdown(void *appData, void *nssData)
+{
+    if (algorithm_list_lock) {
+        PZ_DestroyLock(algorithm_list_lock);
+        algorithm_list_lock = NULL;
+    }
+    smime_free_list(&smime_algorithm_list);
+    memset(&smime_init_arg, 0, sizeof(smime_init_arg));
+    return SECSuccess;
+}
+
+static PRStatus
+smime_init_once(void *arg)
+{
+    SECOidTag *tags = NULL;
+    SECStatus rv;
+    int tagCount;
+    int i;
+    int *error = (int *)arg;
+    int *lengths = NULL;
+    int *legacy_prefs = NULL;
+
+    rv = NSS_RegisterShutdown(smime_shutdown, NULL);
+    if (rv != SECSuccess) {
+        *error = PORT_GetError();
+        return PR_FAILURE;
+    }
+    algorithm_list_lock = PZ_NewLock(nssILockCache);
+    if (algorithm_list_lock == NULL) {
+        *error = PORT_GetError();
+        return PR_FAILURE;
+    }
+
+    
+
+
+
+
+    rv = NSS_GetAlgorithmPolicyAll(NSS_USE_ALG_IN_SMIME_LEGACY,
+                                   NSS_USE_ALG_IN_SMIME_LEGACY,
+                                   &tags, &tagCount);
+    if (tags) {
+        PORT_Free(tags);
+        tags = NULL;
+    }
+    if ((rv != SECSuccess) || (tagCount == 0)) {
+        
+
+
+        for (i = smime_legacy_map_count - 1; i >= 0; i--) {
+            SECOidTag policytag = smime_legacy_map[i].policytag;
+            
+
+            NSS_SetAlgorithmPolicy(policytag, NSS_USE_ALG_IN_SMIME, 0);
+            
+
+
+
+            smime_list_add(&smime_algorithm_list, policytag);
+        }
+        return PR_SUCCESS;
+    }
+    
+
+
+    rv = NSS_GetAlgorithmPolicyAll(NSS_USE_DEFAULT_NOT_VALID |
+                                       NSS_USE_DEFAULT_SMIME_ENABLE,
+                                   NSS_USE_DEFAULT_SMIME_ENABLE,
+                                   &tags, &tagCount);
+    
+    if ((rv != SECSuccess) || (tagCount == 0)) {
+        if (tags) {
+            PORT_Free(tags);
+            tags = NULL;
+        }
+        for (i = smime_legacy_map_count - 1; i >= 0; i--) {
+            SECOidTag policytag = smime_legacy_map[i].policytag;
+            
+
+
+
+            smime_list_add(&smime_algorithm_list, policytag);
+        }
+        return PR_SUCCESS;
+    }
+
+    
+    lengths = PORT_ZNewArray(int, tagCount);
+    if (lengths == NULL) {
+        *error = PORT_GetError();
+        goto loser;
+    }
+    legacy_prefs = PORT_ZNewArray(int, tagCount);
+    if (lengths == NULL) {
+        *error = PORT_GetError();
+        goto loser;
+    }
+    
+    for (i = 0; i < tagCount; i++) {
+        int len = smime_max_keysize_by_cipher(tags[i]);
+        int lpref = smime_legacy_pref(tags[i]);
+        SECOidTag current = tags[i];
+        PRBool shift = PR_FALSE;
+        int j;
+        
+
+
+
+
+        for (j = 0; j < i; j++) {
+            int tlen = lengths[j];
+            int tpref = legacy_prefs[j];
+            SECOidTag ttag = tags[j];
+            
+
+
+
+            if (shift || (len > tlen) || ((len == tlen) && (lpref > tpref))) {
+                tags[j] = current;
+                lengths[j] = len;
+                legacy_prefs[j] = lpref;
+                current = ttag;
+                len = tlen;
+                lpref = tpref;
+                shift = PR_TRUE;
+            }
+        }
+        tags[i] = current;
+        lengths[i] = len;
+        legacy_prefs[i] = lpref;
+    }
+
+    
+    for (i = 0; i < tagCount; i++) {
+        smime_list_add(&smime_algorithm_list, tags[i]);
+    }
+    PORT_Free(lengths);
+    PORT_Free(legacy_prefs);
+    PORT_Free(tags);
+    return PR_SUCCESS;
+loser:
+    if (lengths)
+        PORT_Free(lengths);
+    if (legacy_prefs)
+        PORT_Free(legacy_prefs);
+    if (tags)
+        PORT_Free(tags);
+    return PR_FAILURE;
+}
+
+static SECStatus
+smime_init(void)
+{
+    static PRBool smime_policy_initted = PR_FALSE;
+    static int error = 0;
+    PRStatus nrv;
+
+    
+    if (!NSS_IsInitialized()) {
+        PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
+        return SECFailure;
+    }
+    if (smime_policy_initted) {
+        return SECSuccess;
+    }
+    nrv = PR_CallOnceWithArg(&smime_init_arg, smime_init_once, &error);
+    if (nrv == PR_SUCCESS) {
+        smime_policy_initted = PR_TRUE;
+        return SECSuccess;
+    }
+    PORT_SetError(error);
+    return SECFailure;
 }
 
 
@@ -141,31 +632,27 @@ smime_mapi_by_cipher(unsigned long cipher)
 SECStatus
 NSS_SMIMEUtil_EnableCipher(unsigned long which, PRBool on)
 {
-    unsigned long mask;
-    int mapi;
+    SECOidTag algtag;
 
-    mask = which & CIPHER_FAMILYID_MASK;
-
-    PORT_Assert(mask == CIPHER_FAMILYID_SMIME);
-    if (mask != CIPHER_FAMILYID_SMIME)
-        
+    SECStatus rv = smime_init();
+    if (rv != SECSuccess) {
         return SECFailure;
+    }
 
-    mapi = smime_mapi_by_cipher(which);
-    if (mapi < 0)
-        
-        return SECFailure;
-
-    
-    if (!smime_cipher_map[mapi].allowed && on) {
+    algtag = smime_legacy_to_oid(which);
+    if (!smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME)) {
         PORT_SetError(SEC_ERROR_BAD_EXPORT_ALGORITHM);
         return SECFailure;
     }
 
-    if (smime_cipher_map[mapi].enabled != on)
-        smime_cipher_map[mapi].enabled = on;
-
-    return SECSuccess;
+    smime_lock_algorithm_list();
+    if (on) {
+        rv = smime_list_add(&smime_algorithm_list, algtag);
+    } else {
+        rv = smime_list_remove(smime_algorithm_list, algtag);
+    }
+    smime_unlock_algorithm_list();
+    return rv;
 }
 
 
@@ -174,99 +661,131 @@ NSS_SMIMEUtil_EnableCipher(unsigned long which, PRBool on)
 SECStatus
 NSS_SMIMEUtil_AllowCipher(unsigned long which, PRBool on)
 {
-    unsigned long mask;
-    int mapi;
+    SECOidTag algtag = smime_legacy_to_oid(which);
+    PRUint32 set = on ? NSS_USE_ALG_IN_SMIME : 0;
+    PRUint32 clear = on ? 0 : NSS_USE_ALG_IN_SMIME;
+    
 
-    mask = which & CIPHER_FAMILYID_MASK;
-
-    PORT_Assert(mask == CIPHER_FAMILYID_SMIME);
-    if (mask != CIPHER_FAMILYID_SMIME)
-        
+    SECStatus rv = smime_init();
+    if (rv != SECSuccess) {
         return SECFailure;
-
-    mapi = smime_mapi_by_cipher(which);
-    if (mapi < 0)
-        
-        return SECFailure;
-
-    if (smime_cipher_map[mapi].allowed != on)
-        smime_cipher_map[mapi].allowed = on;
-
-    return SECSuccess;
-}
-
-
-
-
-
-
-
-static SECStatus
-nss_smime_get_cipher_for_alg_and_key(SECAlgorithmID *algid, PK11SymKey *key,
-                                     unsigned long *cipher)
-{
-    SECOidTag algtag;
-    unsigned int keylen_bits;
-    unsigned long c;
-
-    algtag = SECOID_GetAlgorithmTag(algid);
-    switch (algtag) {
-        case SEC_OID_RC2_CBC:
-            keylen_bits = PK11_GetKeyStrength(key, algid);
-            switch (keylen_bits) {
-                case 40:
-                    c = SMIME_RC2_CBC_40;
-                    break;
-                case 64:
-                    c = SMIME_RC2_CBC_64;
-                    break;
-                case 128:
-                    c = SMIME_RC2_CBC_128;
-                    break;
-                default:
-                    return SECFailure;
-            }
-            break;
-        case SEC_OID_DES_CBC:
-            c = SMIME_DES_CBC_56;
-            break;
-        case SEC_OID_DES_EDE3_CBC:
-            c = SMIME_DES_EDE3_168;
-            break;
-        case SEC_OID_AES_128_CBC:
-            c = SMIME_AES_CBC_128;
-            break;
-        case SEC_OID_AES_256_CBC:
-            c = SMIME_AES_CBC_256;
-            break;
-        default:
-            PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-            return SECFailure;
     }
-    *cipher = c;
-    return SECSuccess;
-}
 
-static PRBool
-nss_smime_cipher_allowed(unsigned long which)
-{
-    int mapi;
-
-    mapi = smime_mapi_by_cipher(which);
-    if (mapi < 0)
-        return PR_FALSE;
-    return smime_cipher_map[mapi].allowed;
+    return NSS_SetAlgorithmPolicy(algtag, set, clear);
 }
 
 PRBool
 NSS_SMIMEUtil_DecryptionAllowed(SECAlgorithmID *algid, PK11SymKey *key)
 {
-    unsigned long which;
+    SECOidTag algtag;
+    
 
-    if (nss_smime_get_cipher_for_alg_and_key(algid, key, &which) != SECSuccess)
-        return PR_FALSE;
+    SECStatus rv = smime_init();
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
 
-    return nss_smime_cipher_allowed(which);
+    algtag = smime_get_policy_tag_from_key_length(SECOID_GetAlgorithmTag(algid),
+                                                  PK11_GetKeyStrength(key, algid));
+    return smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME_LEGACY);
+}
+
+PRBool
+NSS_SMIMEUtil_EncryptionAllowed(SECAlgorithmID *algid, PK11SymKey *key)
+{
+    SECOidTag algtag;
+    
+
+    SECStatus rv = smime_init();
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
+    algtag = smime_get_policy_tag_from_key_length(SECOID_GetAlgorithmTag(algid),
+                                                  PK11_GetKeyStrength(key, algid));
+    return smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME);
+}
+
+PRBool
+NSS_SMIMEUtil_SigningAllowed(SECAlgorithmID *algid)
+{
+    SECOidTag algtag;
+    
+
+
+    algtag = SECOID_GetAlgorithmTag(algid);
+    return smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME_SIGNATURE);
+}
+
+static PRBool
+nss_smime_enforce_key_size(void)
+{
+    PRInt32 optFlags;
+
+    if (NSS_OptionGet(NSS_KEY_SIZE_POLICY_FLAGS, &optFlags) != SECFailure) {
+        if (optFlags & NSS_KEY_SIZE_POLICY_SMIME_FLAG) {
+            return PR_TRUE;
+        }
+    }
+    return PR_FALSE;
+}
+
+PRBool
+NSS_SMIMEUtil_KeyEncodingAllowed(SECAlgorithmID *algid, CERTCertificate *cert,
+                                 SECKEYPublicKey *key)
+{
+    SECOidTag algtag;
+    
+
+
+    
+    if (nss_smime_enforce_key_size()) {
+        SECStatus rv;
+        PRBool freeKey = PR_FALSE;
+
+        if (!key) {
+            
+
+            if (!cert) {
+                PORT_SetError(SEC_ERROR_INVALID_ARGS);
+                return PR_FALSE;
+            }
+            key = CERT_ExtractPublicKey(cert);
+            freeKey = PR_TRUE;
+        }
+        rv = SECKEY_EnforceKeySize(key->keyType,
+                                   SECKEY_PublicKeyStrengthInBits(key),
+                                   SEC_ERROR_BAD_EXPORT_ALGORITHM);
+        if (freeKey) {
+            SECKEY_DestroyPublicKey(key);
+        }
+        if (rv != SECSuccess) {
+            return PR_FALSE;
+        }
+    }
+    algtag = SECOID_GetAlgorithmTag(algid);
+    return smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME_KX);
+}
+
+PRBool
+NSS_SMIMEUtil_KeyDecodingAllowed(SECAlgorithmID *algid, SECKEYPrivateKey *key)
+{
+    SECOidTag algtag;
+    
+
+
+    
+    if (nss_smime_enforce_key_size()) {
+        SECStatus rv;
+        rv = SECKEY_EnforceKeySize(key->keyType,
+                                   SECKEY_PrivateKeyStrengthInBits(key),
+                                   SEC_ERROR_BAD_EXPORT_ALGORITHM);
+        if (rv != SECSuccess) {
+            return PR_FALSE;
+        }
+    }
+    algtag = SECOID_GetAlgorithmTag(algid);
+    return smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME_KX_LEGACY);
 }
 
 
@@ -290,51 +809,80 @@ NSS_SMIMEUtil_DecryptionAllowed(SECAlgorithmID *algid, PK11SymKey *key)
 PRBool
 NSS_SMIMEUtil_EncryptionPossible(void)
 {
-    int i;
-
-    for (i = 0; i < smime_cipher_map_count; i++) {
-        if (smime_cipher_map[i].allowed)
-            return PR_TRUE;
+    SECStatus rv = smime_init();
+    size_t len;
+    if (rv != SECSuccess) {
+        return SECFailure;
     }
-    return PR_FALSE;
+    smime_lock_algorithm_list();
+    len = smime_list_length(smime_algorithm_list);
+    smime_unlock_algorithm_list();
+    return len != 0 ? PR_TRUE : PR_FALSE;
 }
 
-static int
+PRBool
+NSS_SMIMEUtil_EncryptionEnabled(int which)
+{
+    SECOidTag algtag;
+    size_t c_index, len;
+
+    SECStatus rv = smime_init();
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
+    algtag = smime_legacy_to_oid(which);
+
+    smime_lock_algorithm_list();
+    len = smime_list_length(smime_algorithm_list);
+    c_index = smime_list_index_find(smime_algorithm_list, algtag);
+    smime_unlock_algorithm_list();
+
+    if (len >= c_index) {
+        return PR_FALSE;
+    }
+
+    return smime_allowed_by_policy(algtag, NSS_USE_ALG_IN_SMIME);
+}
+
+static SECOidTag
 nss_SMIME_FindCipherForSMIMECap(NSSSMIMECapability *cap)
 {
-    int i;
     SECOidTag capIDTag;
 
     
     capIDTag = SECOID_FindOIDTag(&(cap->capabilityID));
 
     
-    for (i = 0; i < smime_cipher_map_count; i++) {
-        if (smime_cipher_map[i].algtag != capIDTag)
-            continue;
-        
 
+    if (capIDTag == SEC_OID_RC2_CBC) {
+        SECStatus rv;
+        unsigned long key_bits;
+        SECItem keyItem = { siBuffer, NULL, 0 };
 
-
-
-        if (!smime_cipher_map[i].parms) {
-            if (!cap->parameters.data || !cap->parameters.len)
-                break; 
-            if (cap->parameters.len == 2 &&
-                cap->parameters.data[0] == SEC_ASN1_NULL &&
-                cap->parameters.data[1] == 0)
-                break; 
-        } else if (cap->parameters.data != NULL &&
-                   cap->parameters.len == smime_cipher_map[i].parms->len &&
-                   PORT_Memcmp(cap->parameters.data, smime_cipher_map[i].parms->data,
-                               cap->parameters.len) == 0) {
-            break; 
+        rv = SEC_ASN1DecodeItem(NULL, &keyItem,
+                                SEC_ASN1_GET(SEC_IntegerTemplate), &cap->parameters);
+        if (rv != SECSuccess) {
+            return SEC_OID_UNKNOWN;
         }
+        rv = SEC_ASN1DecodeInteger(&keyItem, &key_bits);
+        SECITEM_FreeItem(&keyItem, PR_FALSE);
+        if (rv != SECSuccess) {
+            return SEC_OID_UNKNOWN;
+        }
+        return smime_get_policy_tag_from_key_length(capIDTag, key_bits);
     }
 
-    if (i == smime_cipher_map_count)
-        return 0;                      
-    return smime_cipher_map[i].cipher; 
+    
+    if (!cap->parameters.data || !cap->parameters.len) {
+        return capIDTag;
+    }
+    if (cap->parameters.len == 2 &&
+        cap->parameters.data[0] == SEC_ASN1_NULL &&
+        cap->parameters.data[1] == 0) {
+        return capIDTag;
+    }
+    return SEC_OID_UNKNOWN;
 }
 
 
@@ -342,37 +890,61 @@ nss_SMIME_FindCipherForSMIMECap(NSSSMIMECapability *cap)
 
 
 
-
-static long
-smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
+static SECOidTag
+smime_choose_cipher(CERTCertificate **rcerts)
 {
-    PLArenaPool *poolp;
-    long cipher;
-    long chosen_cipher;
+    PLArenaPool *poolp = NULL;
+    SECOidTag chosen_cipher = SEC_OID_UNKNOWN;
+    size_t cipher_count;
+    SECOidTag cipher;
     int *cipher_abilities;
     int *cipher_votes;
-    int weak_mapi;
-    int strong_mapi;
-    int aes128_mapi;
-    int aes256_mapi;
-    int rcount, mapi, max, i;
+    size_t weak_index;
+    size_t strong_index;
+    size_t aes128_index;
+    size_t aes256_index;
+    size_t c_index;
+    int rcount, max;
 
-    chosen_cipher = SMIME_RC2_CBC_40; 
-    weak_mapi = smime_mapi_by_cipher(chosen_cipher);
-    aes128_mapi = smime_mapi_by_cipher(SMIME_AES_CBC_128);
-    aes256_mapi = smime_mapi_by_cipher(SMIME_AES_CBC_256);
+    smime_lock_algorithm_list();
+    cipher_count = smime_list_length(smime_algorithm_list);
+    if (cipher_count == 0) {
+        goto done;
+    }
+
+    chosen_cipher = SEC_OID_RC2_40_CBC; 
+    weak_index = smime_list_index_find(smime_algorithm_list, chosen_cipher);
+    strong_index = smime_list_index_find(smime_algorithm_list, SEC_OID_DES_EDE3_CBC);
+    aes128_index = smime_list_index_find(smime_algorithm_list, SEC_OID_AES_128_CBC);
+    aes256_index = smime_list_index_find(smime_algorithm_list, SEC_OID_AES_256_CBC);
+    
+    if (weak_index == cipher_count) {
+        chosen_cipher = SEC_OID_DES_EDE3_CBC;
+        if (strong_index == cipher_count) {
+            chosen_cipher = SEC_OID_AES_128_CBC;
+            if (aes128_index == cipher_count) {
+                chosen_cipher = SEC_OID_AES_256_CBC;
+                if (aes256_index == cipher_count) {
+                    
+
+
+                    chosen_cipher = SEC_OID_UNKNOWN;
+                }
+            }
+        }
+    }
 
     poolp = PORT_NewArena(1024); 
     if (poolp == NULL)
         goto done;
 
-    cipher_abilities = (int *)PORT_ArenaZAlloc(poolp, smime_cipher_map_count * sizeof(int));
-    cipher_votes = (int *)PORT_ArenaZAlloc(poolp, smime_cipher_map_count * sizeof(int));
-    if (cipher_votes == NULL || cipher_abilities == NULL)
+    cipher_abilities = PORT_ArenaZNewArray(poolp, int, cipher_count + 1);
+    cipher_votes = PORT_ArenaZNewArray(poolp, int, cipher_count + 1);
+    if (cipher_votes == NULL || cipher_abilities == NULL) {
         goto done;
+    }
 
     
-    strong_mapi = smime_mapi_by_cipher(SMIME_DES_EDE3_168);
 
     
     for (rcount = 0; rcerts[rcount] != NULL; rcount++) {
@@ -383,7 +955,7 @@ smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
         
 
 
-        pref = smime_cipher_map_count;
+        pref = cipher_count;
 
         
         profile = CERT_FindSMimeProfile(rcerts[rcount]);
@@ -395,14 +967,15 @@ smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
             if (SEC_QuickDERDecodeItem(poolp, &caps,
                                        NSSSMIMECapabilitiesTemplate, profile) == SECSuccess &&
                 caps != NULL) {
+                int i;
                 
                 for (i = 0; caps[i] != NULL; i++) {
                     cipher = nss_SMIME_FindCipherForSMIMECap(caps[i]);
-                    mapi = smime_mapi_by_cipher(cipher);
-                    if (mapi >= 0) {
+                    c_index = smime_list_index_find(smime_algorithm_list, cipher);
+                    if (c_index < cipher_count) {
                         
-                        cipher_abilities[mapi]++;
-                        cipher_votes[mapi] += pref;
+                        cipher_abilities[c_index]++;
+                        cipher_votes[c_index] += pref;
                         --pref;
                     }
                 }
@@ -444,17 +1017,19 @@ smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
 
 
                 
-                chosen_cipher = SMIME_DES_EDE3_168;
+                if (chosen_cipher == SEC_OID_RC2_40_CBC) {
+                    chosen_cipher = SEC_OID_AES_128_CBC;
+                }
                 if (pklen_bits > 256) {
-                    cipher_abilities[aes256_mapi]++;
-                    cipher_votes[aes256_mapi] += pref;
+                    cipher_abilities[aes256_index]++;
+                    cipher_votes[aes256_index] += pref;
                     pref--;
                 }
-                cipher_abilities[aes128_mapi]++;
-                cipher_votes[aes128_mapi] += pref;
+                cipher_abilities[aes128_index]++;
+                cipher_votes[aes128_index] += pref;
                 pref--;
-                cipher_abilities[strong_mapi]++;
-                cipher_votes[strong_mapi] += pref;
+                cipher_abilities[strong_index]++;
+                cipher_votes[strong_index] += pref;
                 pref--;
             } else {
                 if (pklen_bits > 3072) {
@@ -463,8 +1038,8 @@ smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
 
 
 
-                    cipher_abilities[aes256_mapi]++;
-                    cipher_votes[aes256_mapi] += pref;
+                    cipher_abilities[aes256_index]++;
+                    cipher_votes[aes256_index] += pref;
                     pref--;
                 }
                 if (pklen_bits > 1023) {
@@ -472,20 +1047,20 @@ smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
 
 
 
-                    cipher_abilities[aes128_mapi]++;
-                    cipher_votes[aes128_mapi] += pref;
+                    cipher_abilities[aes128_index]++;
+                    cipher_votes[aes128_index] += pref;
                     pref--;
                 }
                 if (pklen_bits > 512) {
                     
-                    cipher_abilities[strong_mapi]++;
-                    cipher_votes[strong_mapi] += pref;
+                    cipher_abilities[strong_index]++;
+                    cipher_votes[strong_index] += pref;
                     pref--;
                 }
 
                 
-                cipher_abilities[weak_mapi]++;
-                cipher_votes[weak_mapi] += pref;
+                cipher_abilities[weak_index]++;
+                cipher_votes[weak_index] += pref;
             }
         }
         if (profile != NULL)
@@ -494,68 +1069,31 @@ smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
 
     
     max = 0;
-    for (mapi = 0; mapi < smime_cipher_map_count; mapi++) {
+    for (c_index = 0; c_index < cipher_count; c_index++) {
         
-        if (cipher_abilities[mapi] != rcount)
+        if (cipher_abilities[c_index] != rcount)
             continue;
+        cipher = smime_list_fetch_by_index(smime_algorithm_list, c_index);
         
-        if (!smime_cipher_map[mapi].enabled || !smime_cipher_map[mapi].allowed)
+        if (!smime_allowed_by_policy(cipher, NSS_USE_ALG_IN_SMIME)) {
             continue;
+        }
         
-        if (cipher_votes[mapi] >= max) {
+        if (cipher_votes[c_index] >= max) {
             
             
-            chosen_cipher = smime_cipher_map[mapi].cipher;
-            max = cipher_votes[mapi];
+            chosen_cipher = cipher;
+            max = cipher_votes[c_index];
         }
     }
     
 
 done:
+    smime_unlock_algorithm_list();
     if (poolp != NULL)
         PORT_FreeArena(poolp, PR_FALSE);
 
     return chosen_cipher;
-}
-
-
-
-
-
-
-static int
-smime_keysize_by_cipher(unsigned long which)
-{
-    int keysize;
-
-    switch (which) {
-        case SMIME_RC2_CBC_40:
-            keysize = 40;
-            break;
-        case SMIME_RC2_CBC_64:
-            keysize = 64;
-            break;
-        case SMIME_RC2_CBC_128:
-        case SMIME_AES_CBC_128:
-            keysize = 128;
-            break;
-        case SMIME_AES_CBC_256:
-            keysize = 256;
-            break;
-        case SMIME_DES_CBC_56:
-        case SMIME_DES_EDE3_168:
-            
-
-
-
-            keysize = 0;
-            break;
-        default:
-            keysize = -1;
-            break;
-    }
-
-    return keysize;
 }
 
 
@@ -568,18 +1106,68 @@ SECStatus
 NSS_SMIMEUtil_FindBulkAlgForRecipients(CERTCertificate **rcerts,
                                        SECOidTag *bulkalgtag, int *keysize)
 {
-    unsigned long cipher;
-    int mapi;
+    SECOidTag cipher;
 
-    cipher = smime_choose_cipher(NULL, rcerts);
-    mapi = smime_mapi_by_cipher(cipher);
+    SECStatus rv = smime_init();
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
 
-    *bulkalgtag = smime_cipher_map[mapi].algtag;
-    *keysize = smime_keysize_by_cipher(smime_cipher_map[mapi].cipher);
+    cipher = smime_choose_cipher(rcerts);
+    if (cipher == SEC_OID_UNKNOWN) {
+        PORT_SetError(SEC_ERROR_BAD_EXPORT_ALGORITHM);
+        return SECFailure;
+    }
+
+    *bulkalgtag = smime_get_alg_from_policy(cipher);
+    *keysize = smime_keysize_by_cipher(cipher);
 
     return SECSuccess;
 }
 
+
+
+
+static NSSSMIMECapability *
+smime_create_capability(SECOidTag cipher)
+{
+    NSSSMIMECapability *cap = NULL;
+    SECOidData *oiddata = NULL;
+    SECItem *dummy = NULL;
+
+    oiddata = SECOID_FindOIDByTag(smime_get_alg_from_policy(cipher));
+    if (oiddata == NULL) {
+        return NULL;
+    }
+
+    cap = PORT_ZNew(NSSSMIMECapability);
+    if (cap == NULL) {
+        return NULL;
+    }
+
+    cap->capabilityID.data = oiddata->oid.data;
+    cap->capabilityID.len = oiddata->oid.len;
+    if (cipher == SEC_OID_RC2_CBC) {
+        SECItem keyItem = { siBuffer, NULL, 0 };
+        unsigned long keybits = smime_get_alg_from_policy(cipher);
+        dummy = SEC_ASN1EncodeInteger(NULL, &keyItem, keybits);
+        if (dummy == NULL) {
+            PORT_Free(cap);
+            return NULL;
+        }
+        dummy = SEC_ASN1EncodeItem(NULL, &cap->parameters,
+                                   &keyItem, SEC_ASN1_GET(SEC_IntegerTemplate));
+        SECITEM_FreeItem(&keyItem, PR_FALSE);
+        if (dummy == NULL) {
+            PORT_Free(cap);
+            return NULL;
+        }
+    } else {
+        cap->parameters.data = NULL;
+        cap->parameters.len = 0;
+    }
+    return cap;
+}
 
 
 
@@ -595,18 +1183,43 @@ NSS_SMIMEUtil_FindBulkAlgForRecipients(CERTCertificate **rcerts,
 SECStatus
 NSS_SMIMEUtil_CreateSMIMECapabilities(PLArenaPool *poolp, SECItem *dest)
 {
-    NSSSMIMECapability *cap;
-    NSSSMIMECapability **smime_capabilities;
-    smime_cipher_map_entry *map;
-    SECOidData *oiddata;
-    SECItem *dummy;
+    NSSSMIMECapability *cap = NULL;
+    NSSSMIMECapability **smime_capabilities = NULL;
+    SECItem *dummy = NULL;
     int i, capIndex;
+    int cap_count;
+    int cipher_count;
+    int hash_count;
+
+    SECStatus rv = smime_init();
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+    
+    for (i = HASH_AlgNULL + 1;; i++) {
+        if (HASH_GetHashOidTagByHashType(i) == SEC_OID_UNKNOWN) {
+            break;
+        }
+    }
+    hash_count = i - 1;
+
+    smime_lock_algorithm_list();
+    
+    cipher_count = smime_list_length(smime_algorithm_list);
+    if (cipher_count == 0) {
+        smime_unlock_algorithm_list();
+        PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+        return SECFailure;
+    }
+
+    cap_count = cipher_count + hash_count + implemented_key_encipherment_len;
 
     
-    
-    smime_capabilities = (NSSSMIMECapability **)PORT_ZAlloc((smime_cipher_map_count + 1) * sizeof(NSSSMIMECapability *));
-    if (smime_capabilities == NULL)
+    smime_capabilities = PORT_ZNewArray(NSSSMIMECapability *, cap_count + 1);
+    if (smime_capabilities == NULL) {
+        smime_unlock_algorithm_list();
         return SECFailure;
+    }
 
     capIndex = 0;
 
@@ -614,39 +1227,71 @@ NSS_SMIMEUtil_CreateSMIMECapabilities(PLArenaPool *poolp, SECItem *dest)
 
 
 
-    for (i = smime_cipher_map_count - 1; i >= 0; i--) {
-        
-        map = &(smime_cipher_map[i]);
-        if (!map->enabled)
-            continue;
+    for (i = 0; i < cipher_count; i++) {
+        SECOidTag cipher = smime_list_fetch_by_index(smime_algorithm_list, i);
 
         
-        cap = (NSSSMIMECapability *)PORT_ZAlloc(sizeof(NSSSMIMECapability));
+        if (!smime_allowed_by_policy(cipher, NSS_USE_ALG_IN_SMIME)) {
+            continue;
+        }
+        cipher = smime_get_alg_from_policy(cipher);
+
+        cap = smime_create_capability(cipher);
         if (cap == NULL)
             break;
         smime_capabilities[capIndex++] = cap;
+    }
+    
 
-        oiddata = SECOID_FindOIDByTag(map->algtag);
-        if (oiddata == NULL)
+
+
+
+
+
+    smime_unlock_algorithm_list();
+    for (i = HASH_AlgNULL + 1; i < hash_count + 1; i++) {
+        SECOidTag hash_alg = HASH_GetHashOidTagByHashType(i);
+
+        if (!smime_allowed_by_policy(hash_alg,
+                                     NSS_USE_ALG_IN_SMIME_SIGNATURE | NSS_USE_ALG_IN_SIGNATURE)) {
+            continue;
+        }
+        cap = smime_create_capability(hash_alg);
+        
+        if (cap == NULL)
             break;
-
-        cap->capabilityID.data = oiddata->oid.data;
-        cap->capabilityID.len = oiddata->oid.len;
-        cap->parameters.data = map->parms ? map->parms->data : NULL;
-        cap->parameters.len = map->parms ? map->parms->len : 0;
-        cap->cipher = smime_cipher_map[i].cipher;
+        smime_capabilities[capIndex++] = cap;
     }
 
     
-    
+
+
+
+
+    for (i = 0; i < implemented_key_encipherment_len; i++) {
+        SECOidTag kea_alg = implemented_key_encipherment[i];
+
+        if (!smime_allowed_by_policy(kea_alg, NSS_USE_ALG_IN_SMIME_KX)) {
+            continue;
+        }
+        cap = smime_create_capability(kea_alg);
+        
+        if (cap == NULL)
+            break;
+        smime_capabilities[capIndex++] = cap;
+    }
 
     smime_capabilities[capIndex] = NULL; 
     dummy = SEC_ASN1EncodeItem(poolp, dest, &smime_capabilities, NSSSMIMECapabilitiesTemplate);
 
     
 
-    for (i = 0; smime_capabilities[i] != NULL; i++)
+    for (i = 0; smime_capabilities[i] != NULL; i++) {
+        if (smime_capabilities[i]->parameters.data) {
+            PORT_Free(smime_capabilities[i]->parameters.data);
+        }
         PORT_Free(smime_capabilities[i]);
+    }
     PORT_Free(smime_capabilities);
 
     return (dummy == NULL) ? SECFailure : SECSuccess;

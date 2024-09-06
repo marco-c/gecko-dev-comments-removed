@@ -17,6 +17,7 @@
 #include "nss.h"
 #include "smime.h"
 #include "pk11func.h"
+#include "sechash.h"
 
 #if defined(XP_UNIX)
 #include <unistd.h>
@@ -327,6 +328,15 @@ decode(FILE *out, SECItem *input, const struct decodeOptionsStr *decodeOptions)
                         fprintf(stderr, "signer %d status = %s\n", j, svs);
                         goto loser;
                     }
+                    
+
+                    if (decodeOptions->keepCerts) {
+                        rv = NSS_SMIMESignerInfo_SaveSMIMEProfile(si);
+                        if (rv != SECSuccess) {
+                            SECU_PrintError(progName, "SMIME profile import failed");
+                            goto loser;
+                        }
+                    }
                 }
             } break;
             case SEC_OID_PKCS7_ENVELOPED_DATA: {
@@ -393,7 +403,7 @@ signed_data(struct signOptionsStr *signOptions)
     NSSCMSMessage *cmsg = NULL;
     NSSCMSContentInfo *cinfo;
     NSSCMSSignedData *sigd;
-    NSSCMSSignerInfo *signerinfo;
+    NSSCMSSignerInfo *signerinfo = NULL;
     CERTCertificate *cert = NULL, *ekpcert = NULL;
 
     if (cms_verbose) {
@@ -589,6 +599,7 @@ signed_data(struct signOptionsStr *signOptions)
         fprintf(stderr, "ERROR: cannot add CMS signerInfo object.\n");
         goto loser;
     }
+    signerinfo = NULL; 
     if (cms_verbose) {
         fprintf(stderr, "created signed-data message\n");
     }
@@ -605,6 +616,9 @@ loser:
     }
     if (cert) {
         CERT_DestroyCertificate(cert);
+    }
+    if (signerinfo) {
+        NSS_CMSSignerInfo_Destroy(signerinfo);
     }
     NSS_CMSMessage_Destroy(cmsg);
     return NULL;
@@ -1042,6 +1056,59 @@ doBatchDecode(FILE *outFile, PRFileDesc *batchFile,
     return exitStatus;
 }
 
+
+
+
+
+
+
+typedef struct LegacyHashNameStr {
+    char *name;
+    SECOidTag tag;
+} LegacyHashName;
+
+LegacyHashName legacyHashNamesTable[] = {
+    { "SHA1", SEC_OID_SHA1 },
+    { "SHA224", SEC_OID_SHA224 },
+    { "SHA256", SEC_OID_SHA256 },
+    { "SHA384", SEC_OID_SHA384 },
+    { "SHA512", SEC_OID_SHA512 },
+};
+size_t legacyHashNamesTableSize = PR_ARRAY_SIZE(legacyHashNamesTable);
+
+SECOidTag
+CMSU_FindTagFromString(const char *cipherString)
+{
+    SECOidTag tag;
+    SECOidData *oid;
+    size_t slen;
+
+    
+
+    for (tag = 1; (oid = SECOID_FindOIDByTag(tag)) != NULL; tag++) {
+        
+        if (oid->mechanism == CKM_INVALID_MECHANISM) {
+            continue;
+        }
+        if (PORT_Strcasecmp(oid->desc, cipherString) != 0) {
+            continue;
+        }
+        return tag;
+    }
+    slen = PORT_Strlen(cipherString);
+    if ((slen > 3) && (PORT_Strncasecmp(cipherString, "SHA", 3) == 0) &&
+        (cipherString[3] != '-')) {
+        int i;
+        for (i = 0; i < legacyHashNamesTableSize; i++) {
+            if (PORT_Strcasecmp(legacyHashNamesTable[i].name, cipherString) == 0) {
+                return legacyHashNamesTable[i].tag;
+            }
+        }
+        
+    }
+    return SEC_OID_UNKNOWN;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -1074,6 +1141,8 @@ main(int argc, char **argv)
     ev = PR_GetEnvSecure("NSS_STRICT_SHUTDOWN");
     PORT_Assert(ev);
 #endif
+
+    SECOID_Init();
 
     progName = strrchr(argv[0], '/');
     if (!progName)
@@ -1141,25 +1210,26 @@ main(int argc, char **argv)
                     exit(1);
                 }
                 decodeOptions.suppressContent = PR_TRUE;
-                if (!strcmp(optstate->value, "MD2"))
-                    signOptions.hashAlgTag = SEC_OID_MD2;
-                else if (!strcmp(optstate->value, "MD4"))
-                    signOptions.hashAlgTag = SEC_OID_MD4;
-                else if (!strcmp(optstate->value, "MD5"))
-                    signOptions.hashAlgTag = SEC_OID_MD5;
-                else if (!strcmp(optstate->value, "SHA1"))
-                    signOptions.hashAlgTag = SEC_OID_SHA1;
-                else if (!strcmp(optstate->value, "SHA256"))
-                    signOptions.hashAlgTag = SEC_OID_SHA256;
-                else if (!strcmp(optstate->value, "SHA384"))
-                    signOptions.hashAlgTag = SEC_OID_SHA384;
-                else if (!strcmp(optstate->value, "SHA512"))
-                    signOptions.hashAlgTag = SEC_OID_SHA512;
-                else {
+                
+
+                signOptions.hashAlgTag = CMSU_FindTagFromString(optstate->value);
+                if (HASH_GetHashTypeByOidTag(signOptions.hashAlgTag) == HASH_AlgNULL) {
+                    char *comma = "";
+                    int i;
+                    
+
                     fprintf(stderr,
-                            "%s: -H requires one of MD2,MD4,MD5,SHA1,SHA256,SHA384,SHA512\n",
-                            progName);
-                    exit(1);
+                            "%s: -H requires one of ", progName);
+                    for (i = HASH_AlgNULL + 1; PR_TRUE; i++) {
+                        SECOidTag hashTag = HASH_GetHashOidTagByHashType(i);
+                        if (hashTag == SEC_OID_UNKNOWN) {
+                            fprintf(stderr, "\n");
+                            exit(1);
+                        }
+                        fprintf(stderr, "%s%s", comma, SECOID_FindOIDTagDescription(hashTag));
+                        comma = ",";
+                    }
+                    
                 }
                 break;
             case 'N':

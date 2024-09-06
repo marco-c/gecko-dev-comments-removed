@@ -241,6 +241,7 @@ int PK11_GetIVLength(CK_MECHANISM_TYPE type);
 SECItem *PK11_ParamFromIV(CK_MECHANISM_TYPE type, SECItem *iv);
 unsigned char *PK11_IVFromParam(CK_MECHANISM_TYPE type, SECItem *param, int *len);
 SECItem *PK11_BlockData(SECItem *data, unsigned long size);
+int PK11_GetMaxKeyLength(CK_MECHANISM_TYPE type);
 
 
 SECItem *PK11_ParamFromAlgid(SECAlgorithmID *algid);
@@ -1022,6 +1023,24 @@ SECStatus PK11_WriteRawAttribute(PK11ObjectType type, void *object,
 
 CK_OBJECT_HANDLE PK11_GetObjectHandle(PK11ObjectType objType, void *objSpec,
                                       PK11SlotInfo **slotp);
+
+
+
+
+
+
+
+
+
+
+
+
+
+SECStatus PK11_ReadDistrustAfterAttribute(PK11SlotInfo *slot,
+                                          CK_OBJECT_HANDLE object,
+                                          CK_ATTRIBUTE_TYPE type,
+                                           PRBool *distrusted,
+                                           PRTime *time);
 
 
 
