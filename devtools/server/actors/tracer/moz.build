@@ -5,7 +5,7 @@
 
 
 DevToolsModules(
+    "console.js",
     "profiler.js",
-    "resources.js",
     "stdout.js",
 )

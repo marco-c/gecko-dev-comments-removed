@@ -4,23 +4,15 @@
 
 "use strict";
 
-const EventEmitter = require("resource://devtools/shared/event-emitter.js");
-
-class TracerCommand extends EventEmitter {
+class TracerCommand {
   constructor({ commands }) {
-    super();
     this.#targetConfigurationCommand = commands.targetConfigurationCommand;
     this.#resourceCommand = commands.resourceCommand;
   }
 
-  
-  
-  isTracingEnabled = false;
-  
-  isTracingActive = false;
-
   #resourceCommand;
   #targetConfigurationCommand;
+  #isTracing = false;
 
   async initialize() {
     return this.#resourceCommand.watchResources(
@@ -28,7 +20,6 @@ class TracerCommand extends EventEmitter {
       { onAvailable: this.onResourcesAvailable }
     );
   }
-
   destroy() {
     this.#resourceCommand.unwatchResources(
       [this.#resourceCommand.TYPES.JSTRACER_STATE],
@@ -41,9 +32,7 @@ class TracerCommand extends EventEmitter {
       if (resource.resourceType != this.#resourceCommand.TYPES.JSTRACER_STATE) {
         continue;
       }
-      this.isTracingActive = resource.enabled;
-      
-      this.isTracingEnabled = resource.enabled;
+      this.#isTracing = resource.enabled;
 
       
       
@@ -51,8 +40,6 @@ class TracerCommand extends EventEmitter {
       if (resource.enabled) {
         resource.targetFront.getJsTracerCollectedFramesArray().length = 0;
       }
-
-      this.emit("toggle");
     }
   };
 
@@ -63,7 +50,7 @@ class TracerCommand extends EventEmitter {
 
 
 
-  getTracingOptions() {
+  #getTracingOptions() {
     return {
       logMethod: Services.prefs.getStringPref(
         "devtools.debugger.javascript-tracing-log-method",
@@ -92,15 +79,10 @@ class TracerCommand extends EventEmitter {
 
 
   async toggle() {
-    this.isTracingEnabled = !this.isTracingEnabled;
-
-    
-    await this.emitAsync("toggle");
+    this.#isTracing = !this.#isTracing;
 
     await this.#targetConfigurationCommand.updateConfiguration({
-      tracerOptions: this.isTracingEnabled
-        ? this.getTracingOptions()
-        : undefined,
+      tracerOptions: this.#isTracing ? this.#getTracingOptions() : undefined,
     });
   }
 }

@@ -2387,11 +2387,3 @@ async function unregisterServiceWorker(workerUrl) {
   });
   ok(unregisterSuccess, "Service worker successfully unregistered");
 }
-
-
-
-
-function toggleJsTracer(toolbox) {
-  const toolbarButton = toolbox.doc.getElementById("command-button-jstracer");
-  toolbarButton.click();
-}

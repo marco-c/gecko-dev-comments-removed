@@ -78,12 +78,6 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/commands/target/actions/targets.js",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "TRACER_LOG_METHODS",
-  "resource://devtools/shared/specs/tracer.js",
-  true
-);
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -703,22 +697,6 @@ Toolbox.prototype = {
 
 
 
-  async onTracerToggled() {
-    const { tracerCommand } = this.commands;
-    if (!tracerCommand.isTracingEnabled) {
-      return;
-    }
-    const { logMethod } = this.commands.tracerCommand.getTracingOptions();
-    if (logMethod == TRACER_LOG_METHODS.CONSOLE) {
-      await this.openSplitConsole({ focusConsoleInput: false });
-    }
-  },
-
-  
-
-
-
-
   async _onTracingStateChanged(resource) {
     const { profile } = resource;
     if (!profile) {
@@ -979,8 +957,6 @@ Toolbox.prototype = {
       ) {
         watchedResources.push(this.resourceCommand.TYPES.JSTRACER_STATE);
         tracerInitialization = this.commands.tracerCommand.initialize();
-        this.onTracerToggled = this.onTracerToggled.bind(this);
-        this.commands.tracerCommand.on("toggle", this.onTracerToggled);
       }
 
       if (!this.isBrowserToolbox) {
@@ -1646,17 +1622,9 @@ Toolbox.prototype = {
       
       isInStartContainer: !!isInStartContainer,
       experimentalURL,
-      getContextMenu() {
-        if (options.getContextMenu) {
-          return options.getContextMenu(toolbox);
-        }
-        return null;
-      },
     };
     if (typeof setup == "function") {
-      
-      
-      const onChange = async () => {
+      const onChange = () => {
         button.emit("updatechecked");
       };
       setup(this, onChange);
@@ -4205,16 +4173,6 @@ Toolbox.prototype = {
 
     if (!this.isBrowserToolbox) {
       watchedResources.push(this.resourceCommand.TYPES.NETWORK_EVENT);
-    }
-
-    if (
-      Services.prefs.getBoolPref(
-        "devtools.debugger.features.javascript-tracing",
-        false
-      )
-    ) {
-      watchedResources.push(this.resourceCommand.TYPES.JSTRACER_STATE);
-      this.commands.tracerCommand.off("toggle", this.onTracerToggled);
     }
 
     this.resourceCommand.unwatchResources(watchedResources, {
