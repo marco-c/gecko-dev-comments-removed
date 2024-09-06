@@ -338,6 +338,7 @@ impl SceneSpatialTree {
     ) -> SpatialNodeIndex {
         let mut real_scroll_root = self.root_reference_frame_index;
         let mut outermost_scroll_root = self.root_reference_frame_index;
+        let mut current_scroll_root_is_sticky = false;
         let mut node_index = spatial_node_index;
 
         while node_index != self.root_reference_frame_index {
@@ -354,10 +355,19 @@ impl SceneSpatialTree {
                             
                             real_scroll_root = self.root_reference_frame_index;
                             outermost_scroll_root = self.root_reference_frame_index;
+                            current_scroll_root_is_sticky = false;
                         }
                     }
                 }
-                SpatialNodeType::StickyFrame(..) => {}
+                SpatialNodeType::StickyFrame(..) => {
+                    
+                    
+                    outermost_scroll_root = node_index;
+                    real_scroll_root = node_index;
+                    
+                    
+                    current_scroll_root_is_sticky = true;
+                }
                 SpatialNodeType::ScrollFrame(ref info) => {
                     match info.frame_kind {
                         ScrollFrameKind::PipelineRoot { is_root_pipeline } => {
@@ -374,21 +384,26 @@ impl SceneSpatialTree {
                             
                             
                             
-                            
-                            if info.scrollable_size.width > MIN_SCROLLABLE_AMOUNT ||
-                               info.scrollable_size.height > MIN_SCROLLABLE_AMOUNT {
+                            if !current_scroll_root_is_sticky {
                                 
                                 
                                 
                                 
-                                
-                                
-                                
-                                if info.viewport_rect.width() > MIN_SCROLL_ROOT_SIZE &&
-                                   info.viewport_rect.height() > MIN_SCROLL_ROOT_SIZE {
+                                if info.scrollable_size.width > MIN_SCROLLABLE_AMOUNT ||
+                                   info.scrollable_size.height > MIN_SCROLLABLE_AMOUNT {
                                     
                                     
-                                    real_scroll_root = node_index;
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    if info.viewport_rect.width() > MIN_SCROLL_ROOT_SIZE &&
+                                       info.viewport_rect.height() > MIN_SCROLL_ROOT_SIZE {
+                                        
+                                        
+                                        real_scroll_root = node_index;
+                                    }
                                 }
                             }
                         }
@@ -2006,6 +2021,58 @@ fn test_find_scroll_root_2d_scale() {
     );
 
     assert_eq!(st.find_scroll_root(sub_scroll), sub_scroll);
+}
+
+
+
+#[test]
+fn test_find_scroll_root_sticky() {
+    let mut st = SceneSpatialTree::new();
+    let pid = PipelineInstanceId::new(0);
+
+    let root = st.add_reference_frame(
+        st.root_reference_frame_index(),
+        TransformStyle::Flat,
+        PropertyBinding::Value(LayoutTransform::identity()),
+        ReferenceFrameKind::Transform {
+            is_2d_scale_translation: true,
+            should_snap: true,
+            paired_with_perspective: false,
+        },
+        LayoutVector2D::new(0.0, 0.0),
+        PipelineId::dummy(),
+        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 0), PipelineId::dummy(), pid),
+    );
+
+    let scroll = st.add_scroll_frame(
+        root,
+        ExternalScrollId(1, PipelineId::dummy()),
+        PipelineId::dummy(),
+        &LayoutRect::from_size(LayoutSize::new(400.0, 400.0)),
+        &LayoutSize::new(400.0, 800.0),
+        ScrollFrameKind::Explicit,
+        LayoutVector2D::new(0.0, 0.0),
+        APZScrollGeneration::default(),
+        HasScrollLinkedEffect::No,
+        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 1), PipelineId::dummy(), pid),
+    );
+
+    let sticky = st.add_sticky_frame(
+        scroll,
+        StickyFrameInfo {
+            frame_rect: LayoutRect::from_size(LayoutSize::new(400.0, 100.0)),
+            margins: euclid::SideOffsets2D::new(Some(0.0), None, None, None),
+            vertical_offset_bounds: api::StickyOffsetBounds::new(0.0, 0.0),
+            horizontal_offset_bounds: api::StickyOffsetBounds::new(0.0, 0.0),
+            previously_applied_offset: LayoutVector2D::zero(),
+            current_offset: LayoutVector2D::zero(),
+        },
+        PipelineId::dummy(),
+        SpatialTreeItemKey::new(0, 2),
+        pid,
+    );
+
+    assert_eq!(st.find_scroll_root(sticky), sticky);
 }
 
 #[test]
