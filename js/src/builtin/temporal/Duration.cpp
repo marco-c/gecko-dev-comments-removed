@@ -112,12 +112,6 @@ static constexpr bool IsSafeInteger(int64_t x) {
   return MinSafeInteger < x && x < MaxSafeInteger;
 }
 
-static constexpr bool IsSafeInteger(const Int128& x) {
-  constexpr Int128 MaxSafeInteger = Int128{int64_t(1) << 53};
-  constexpr Int128 MinSafeInteger = -MaxSafeInteger;
-  return MinSafeInteger < x && x < MaxSafeInteger;
-}
-
 
 
 
@@ -3050,64 +3044,6 @@ static bool CreateCalendarMethodsRecordFromRelativeTo(
   return true;
 }
 
-struct RoundedNumber final {
-  Int128 rounded;
-  double total;
-};
-
-
-
-
-static RoundedNumber TruncateNumber(int64_t numerator, int64_t denominator) {
-  
-  
-
-  
-  int64_t quot = numerator / denominator;
-  int64_t rem = numerator % denominator;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  double total;
-  if (::IsSafeInteger(numerator) && ::IsSafeInteger(denominator)) {
-    total = double(numerator) / double(denominator);
-  } else {
-    total = double(quot) + double(rem) / double(denominator);
-  }
-  return {Int128{quot}, total};
-}
-
-
-
-
-static RoundedNumber TruncateNumber(const Int128& numerator,
-                                    const Int128& denominator) {
-  MOZ_ASSERT(denominator > Int128{});
-  MOZ_ASSERT(numerator > Int128{INT64_MAX} || denominator > Int128{INT64_MAX},
-             "small values use the int64 overload");
-
-  
-  auto [quot, rem] = numerator.divrem(denominator);
-
-  double total = double(quot) + double(rem) / double(denominator);
-  return {quot, total};
-}
-
 struct RoundedDuration final {
   NormalizedDuration duration;
   double total = 0;
@@ -3143,35 +3079,9 @@ static double TotalNormalizedTimeDuration(
   MOZ_ASSERT(IsValidNormalizedTimeDuration(duration));
   MOZ_ASSERT(unit > TemporalUnit::Day);
 
-  
-
   auto numerator = duration.toNanoseconds();
-  auto denominator = ToNanoseconds(unit);
-  MOZ_ASSERT(::IsSafeInteger(denominator));
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (::IsSafeInteger(numerator)) {
-    return double(numerator) / double(denominator);
-  }
-
-  auto [q, r] = numerator.divrem(Int128{denominator});
-  return double(q) + double(r) / double(denominator);
+  auto denominator = Int128{ToNanoseconds(unit)};
+  return FractionToDouble(numerator, denominator);
 }
 
 
@@ -3269,6 +3179,11 @@ struct Fraction final {
       : numerator(numerator), denominator(denominator) {
     MOZ_ASSERT(denominator > 0);
   }
+};
+
+struct RoundedNumber final {
+  Int128 rounded;
+  double total = 0;
 };
 
 static RoundedNumber RoundNumberToIncrement(
@@ -3369,7 +3284,9 @@ static RoundedNumber RoundNumberToIncrement(
     int64_t totalDays = fractionalDays.days + denominator * numerator;
 
     if (computeRemainder == ComputeRemainder::Yes) {
-      return TruncateNumber(totalDays, denominator);
+      constexpr auto rounded = Int128{0};
+      double total = FractionToDouble(totalDays, denominator);
+      return {rounded, total};
     }
 
     auto rounded =
@@ -3399,7 +3316,10 @@ static RoundedNumber RoundNumberToIncrement(
     }
 
     if (computeRemainder == ComputeRemainder::Yes) {
-      return TruncateNumber(totalNanoseconds.value(), denominator.value());
+      constexpr auto rounded = Int128{0};
+      double total =
+          FractionToDouble(totalNanoseconds.value(), denominator.value());
+      return {rounded, total};
     }
 
     auto rounded = RoundNumberToIncrement(
@@ -3462,7 +3382,9 @@ static RoundedNumber RoundNumberToIncrement(
   MOZ_ASSERT(totalNanoseconds.abs() <= Uint128{1} << 115);
 
   if (computeRemainder == ComputeRemainder::Yes) {
-    return TruncateNumber(totalNanoseconds, denominator);
+    constexpr auto rounded = Int128{0};
+    double total = FractionToDouble(totalNanoseconds, denominator);
+    return {rounded, total};
   }
 
   auto rounded = RoundNumberToIncrement(totalNanoseconds, denominator,

@@ -186,6 +186,16 @@ Int128 RoundNumberToIncrement(const Int128& numerator,
 Int128 RoundNumberToIncrement(const Int128& x, const Int128& increment,
                               TemporalRoundingMode roundingMode);
 
+
+
+
+double FractionToDouble(int64_t numerator, int64_t denominator);
+
+
+
+
+double FractionToDouble(const Int128& numerator, const Int128& denominator);
+
 enum class CalendarOption { Auto, Always, Never, Critical };
 
 
