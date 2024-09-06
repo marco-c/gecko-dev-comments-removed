@@ -291,7 +291,16 @@ add_task(async function test_install_valid_sha256() {
 
 add_task(async function test_install_valid_privileged() {
   let file = do_get_file(DATA + ADDONS.privileged);
-  await test_install_working(file, AddonManager.SIGNEDSTATE_PRIVILEGED);
+  try {
+    
+    
+    
+    
+    ExtensionTestUtils.failOnSchemaWarnings(false);
+    await test_install_working(file, AddonManager.SIGNEDSTATE_PRIVILEGED);
+  } finally {
+    ExtensionTestUtils.failOnSchemaWarnings(true);
+  }
 });
 
 

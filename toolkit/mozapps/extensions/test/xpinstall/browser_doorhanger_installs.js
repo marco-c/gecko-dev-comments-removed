@@ -697,27 +697,37 @@ var TESTS = [
 
     let installDialogPromise = waitForInstallDialog();
 
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      TESTROOT + "installtrigger.html?" + triggers
-    );
+    try {
+      
+      
+      
+      
+      ExtensionTestUtils.failOnSchemaWarnings(false);
+      let tab = await BrowserTestUtils.openNewForegroundTab(
+        gBrowser,
+        TESTROOT + "installtrigger.html?" + triggers
+      );
 
-    let notificationPromise = acceptAppMenuNotificationWhenShown(
-      "addon-installed",
-      "test@tests.mozilla.org",
-      { incognitoHidden: true }
-    );
+      let notificationPromise = acceptAppMenuNotificationWhenShown(
+        "addon-installed",
+        "test@tests.mozilla.org",
+        { incognitoHidden: true }
+      );
 
-    (await installDialogPromise).button.click();
-    await notificationPromise;
+      (await installDialogPromise).button.click();
+      await notificationPromise;
 
-    let installs = await AddonManager.getAllInstalls();
-    is(installs.length, 0, "Should be no pending installs");
+      let installs = await AddonManager.getAllInstalls();
+      is(installs.length, 0, "Should be no pending installs");
 
-    let addon = await AddonManager.getAddonByID("test@tests.mozilla.org");
-    await addon.uninstall();
+      let addon = await AddonManager.getAddonByID("test@tests.mozilla.org");
+      await addon.uninstall();
 
-    await BrowserTestUtils.removeTab(tab);
+      await BrowserTestUtils.removeTab(tab);
+    } finally {
+      ExtensionTestUtils.failOnSchemaWarnings(true);
+    }
+
     await SpecialPowers.popPrefEnv();
     AddonManager.checkUpdateSecurity = true;
   },
