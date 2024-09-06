@@ -1104,6 +1104,16 @@ public:
     auto cxxDecl = dyn_cast<CXXRecordDecl>(decl);
 
     if (cxxDecl) {
+      if (Layout.hasOwnVFPtr()) {
+        
+        
+        
+        
+        
+        const QualType ptrType = C.getUIntPtrType();
+        J.attribute("ownVFPtrBytes", C.getTypeSizeInChars(ptrType).getQuantity());
+      }
+
       J.attributeBegin("supers");
       J.arrayBegin();
       for (const CXXBaseSpecifier &Base : cxxDecl->bases()) {
