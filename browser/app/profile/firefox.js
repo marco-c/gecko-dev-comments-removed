@@ -2956,6 +2956,9 @@ pref("devtools.debugger.hide-ignored-sources", false);
 pref("devtools.popup.disable_autohide", false);
 
 
+pref("devtools.high-contrast-mode-support", false);
+
+
 pref("first-startup.timeout", 30000);
 
 
