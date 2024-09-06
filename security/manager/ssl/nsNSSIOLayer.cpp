@@ -1556,6 +1556,8 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   
   
   
+  unsigned int additional_shares =
+      StaticPrefs::security_tls_client_hello_send_p256_keyshare();
   if (StaticPrefs::security_tls_enable_kyber() &&
       range.max >= SSL_LIBRARY_VERSION_TLS_1_3 &&
       !(infoObject->GetProviderFlags() &
@@ -1568,11 +1570,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
                                            mozilla::ArrayLength(namedGroups))) {
       return NS_ERROR_FAILURE;
     }
-    
-    
-    if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 2)) {
-      return NS_ERROR_FAILURE;
-    }
+    additional_shares += 1;
     infoObject->WillSendXyberShare();
   } else {
     const SSLNamedGroup namedGroups[] = {
@@ -1583,11 +1581,13 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
                                            mozilla::ArrayLength(namedGroups))) {
       return NS_ERROR_FAILURE;
     }
-    
-    
-    if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 1)) {
-      return NS_ERROR_FAILURE;
-    }
+  }
+
+  
+  
+  
+  if (SECSuccess != SSL_SendAdditionalKeyShares(fd, additional_shares)) {
+    return NS_ERROR_FAILURE;
   }
 
   

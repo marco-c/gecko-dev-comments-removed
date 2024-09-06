@@ -195,6 +195,12 @@ impl NeqoHttp3Conn {
             return Err(NS_ERROR_INVALID_ARG);
         };
 
+        let mut additional_shares =
+            if static_prefs::pref!("security.tls.client_hello.send_p256_keyshare") {
+                1
+            } else {
+                0
+            };
         if static_prefs::pref!("security.tls.enable_kyber")
             && static_prefs::pref!("network.http.http3.enable_kyber")
             && (provider_flags & nsISocketProvider::IS_RETRY) == 0
@@ -208,10 +214,12 @@ impl NeqoHttp3Conn {
                 neqo_crypto::TLS_GRP_EC_SECP384R1,
                 neqo_crypto::TLS_GRP_EC_SECP521R1,
             ]);
-            
-            
-            let _ = conn.send_additional_key_shares(2);
+            additional_shares += 1;
         }
+        
+        
+        
+        let _ = conn.send_additional_key_shares(additional_shares);
 
         let mut conn = Http3Client::new_with_conn(conn, http3_settings);
 
