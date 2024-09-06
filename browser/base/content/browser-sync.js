@@ -1342,12 +1342,12 @@ var gSync = {
     }
     
     if (sourceElement.id == "fxa-toolbar-menu-button") {
-      return "fxa_toolbar_button";
+      return "fxa_avatar_menu";
     }
     
     const fxaMenu = document.getElementById("PanelUI-fxa-menu");
     if (fxaMenu && fxaMenu.contains(sourceElement)) {
-      return "fxa_toolbar_button";
+      return "fxa_avatar_menu";
     }
     return "fxa_discoverability_native";
   },
@@ -1365,10 +1365,7 @@ var gSync = {
 
   async openFxAEmailFirstPageFromFxaMenu(sourceElement, extraParams = {}) {
     this.emitFxaToolbarTelemetry("login", sourceElement);
-    this.openFxAEmailFirstPage(
-      this._getEntryPointForElement(sourceElement),
-      extraParams
-    );
+    this.openFxAEmailFirstPage("fxa_toolbar_button", extraParams);
   },
 
   async openFxAManagePage(entryPoint) {
