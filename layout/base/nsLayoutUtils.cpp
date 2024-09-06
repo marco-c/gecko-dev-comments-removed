@@ -5160,27 +5160,6 @@ nscoord nsLayoutUtils::MinSizeContributionForAxis(
 }
 
 
-nscoord nsLayoutUtils::ComputeBSizeDependentValue(
-    nscoord aContainingBlockBSize, const LengthPercentageOrAuto& aCoord) {
-  
-  
-  
-  
-  
-  
-  
-  NS_ASSERTION(
-      NS_UNCONSTRAINEDSIZE != aContainingBlockBSize || !aCoord.HasPercent(),
-      "unexpected containing block block-size");
-
-  if (aCoord.IsAuto()) {
-    return 0;
-  }
-
-  return aCoord.AsLengthPercentage().Resolve(aContainingBlockBSize);
-}
-
-
 void nsLayoutUtils::MarkDescendantsDirty(nsIFrame* aSubtreeRoot) {
   AutoTArray<nsIFrame*, 4> subtrees;
   subtrees.AppendElement(aSubtreeRoot);
