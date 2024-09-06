@@ -16,6 +16,11 @@ const { ClientID } = ChromeUtils.importESModule(
   "resource://gre/modules/ClientID.sys.mjs"
 );
 
+const LAST_BACKUP_TIMESTAMP_PREF_NAME =
+  "browser.backup.scheduled.last-backup-timestamp";
+const LAST_BACKUP_FILE_NAME_PREF_NAME =
+  "browser.backup.scheduled.last-backup-file";
+
 
 let currentProfile;
 
@@ -283,12 +288,101 @@ async function testCreateBackupHelper(sandbox, taskFn) {
       "initiated recovery"
   );
 
-  taskFn(manifest);
+  taskFn(bs, manifest);
 
   await maybeRemovePath(backupFilePath);
   await maybeRemovePath(fakeProfilePath);
   await maybeRemovePath(recoveredProfilePath);
   await maybeRemovePath(EXPECTED_ARCHIVE_PATH);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function testDeleteLastBackupHelper(taskFn) {
+  let sandbox = sinon.createSandbox();
+
+  
+  
+  Services.prefs.clearUserPref(LAST_BACKUP_TIMESTAMP_PREF_NAME);
+  Services.prefs.clearUserPref(LAST_BACKUP_FILE_NAME_PREF_NAME);
+
+  await testCreateBackupHelper(sandbox, async (bs, _manifest) => {
+    Assert.ok(
+      bs.state.lastBackupDate,
+      "Should have a last backup date recorded."
+    );
+    Assert.ok(
+      bs.state.lastBackupFileName,
+      "Should have a last backup file name recorded."
+    );
+    Assert.ok(
+      Services.prefs.prefHasUserValue(LAST_BACKUP_TIMESTAMP_PREF_NAME),
+      "Last backup date was cached in preferences."
+    );
+    Assert.ok(
+      Services.prefs.prefHasUserValue(LAST_BACKUP_FILE_NAME_PREF_NAME),
+      "Last backup file name was cached in preferences."
+    );
+    const LAST_BACKUP_FILE_PATH = PathUtils.join(
+      bs.state.backupDirPath,
+      bs.state.lastBackupFileName
+    );
+    Assert.ok(
+      await IOUtils.exists(LAST_BACKUP_FILE_PATH),
+      "The backup file was created and is still on the disk."
+    );
+
+    if (taskFn) {
+      await taskFn(LAST_BACKUP_FILE_PATH);
+    }
+
+    await bs.deleteLastBackup();
+
+    Assert.equal(
+      bs.state.lastBackupDate,
+      null,
+      "Should have cleared the last backup date"
+    );
+    Assert.equal(
+      bs.state.lastBackupFileName,
+      "",
+      "Should have cleared the last backup file name"
+    );
+    Assert.ok(
+      !Services.prefs.prefHasUserValue(LAST_BACKUP_TIMESTAMP_PREF_NAME),
+      "Last backup date was cleared in preferences."
+    );
+    Assert.ok(
+      !Services.prefs.prefHasUserValue(LAST_BACKUP_FILE_NAME_PREF_NAME),
+      "Last backup file name was cleared in preferences."
+    );
+    Assert.ok(
+      !(await IOUtils.exists(LAST_BACKUP_FILE_PATH)),
+      "The backup file was deleted."
+    );
+  });
+
+  sandbox.restore();
 }
 
 
@@ -302,7 +396,7 @@ add_task(async function test_createBackup_signed_out() {
   sandbox
     .stub(UIState, "get")
     .returns({ status: UIState.STATUS_NOT_CONFIGURED });
-  await testCreateBackupHelper(sandbox, manifest => {
+  await testCreateBackupHelper(sandbox, (_bs, manifest) => {
     Assert.equal(
       manifest.meta.accountID,
       undefined,
@@ -335,7 +429,7 @@ add_task(async function test_createBackup_signed_in() {
     email: TEST_EMAIL,
   });
 
-  await testCreateBackupHelper(sandbox, manifest => {
+  await testCreateBackupHelper(sandbox, (_bs, manifest) => {
     Assert.equal(
       manifest.meta.accountID,
       TEST_UID,
@@ -452,4 +546,26 @@ add_task(async function test_getBackupFileInfo() {
   );
 
   sandbox.restore();
+});
+
+
+
+
+
+
+add_task(async function test_deleteLastBackup_file_exists() {
+  await testDeleteLastBackupHelper();
+});
+
+
+
+
+
+
+add_task(async function test__deleteLastBackup_file_does_not_exist() {
+  
+  
+  await testDeleteLastBackupHelper(async lastBackupFilePath => {
+    await IOUtils.remove(lastBackupFilePath);
+  });
 });
