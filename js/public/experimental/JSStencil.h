@@ -212,4 +212,18 @@ extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
 
 }  
 
+
+
+
+
+namespace JS {
+
+
+
+
+
+extern JS_PUBLIC_API Stencil* DuplicateStencil(JSContext* cx, Stencil* stencil);
+
+}  
+
 #endif  
