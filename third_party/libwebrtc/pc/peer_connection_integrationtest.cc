@@ -275,26 +275,6 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithDtls) {
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
-#if defined(WEBRTC_FUCHSIA)
-
-TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithSdes) {
-  PeerConnectionInterface::RTCConfiguration sdes_config;
-  sdes_config.enable_dtls_srtp.emplace(false);
-  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(sdes_config, sdes_config));
-  ConnectFakeSignaling();
-
-  
-  
-  caller()->AddAudioVideoTracks();
-  callee()->AddAudioVideoTracks();
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  MediaExpectations media_expectations;
-  media_expectations.ExpectBidirectionalAudioAndVideo();
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-#endif
-
 
 
 

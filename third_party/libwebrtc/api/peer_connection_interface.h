@@ -451,15 +451,6 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     absl::optional<int> screencast_min_bitrate;
 
-#if defined(WEBRTC_FUCHSIA)
-    
-    
-    
-    
-    
-    absl::optional<bool> enable_dtls_srtp;
-#endif
-
     
     
     
