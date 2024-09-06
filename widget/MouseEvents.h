@@ -165,7 +165,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
 
 
   bool IsLeftClickEvent() const {
-    return mMessage == eMouseClick && mButton == MouseButton::ePrimary;
+    return mMessage == ePointerClick && mButton == MouseButton::ePrimary;
   }
 
   

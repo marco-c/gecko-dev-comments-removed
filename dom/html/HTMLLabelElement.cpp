@@ -104,7 +104,7 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       }
       break;
 
-    case eMouseClick:
+    case ePointerClick:
       if (mouseEvent->IsLeftClickEvent()) {
         LayoutDeviceIntPoint* mouseDownPoint =
             static_cast<LayoutDeviceIntPoint*>(

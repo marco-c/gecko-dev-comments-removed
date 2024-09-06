@@ -274,7 +274,7 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
                 abuse = PopupBlocker::openControlled;
               }
               break;
-            case eMouseClick:
+            case ePointerClick:
               
 
 
@@ -291,7 +291,7 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
             default:
               break;
           }
-        } else if (aEvent->mMessage == eMouseAuxClick) {
+        } else if (aEvent->mMessage == ePointerAuxClick) {
           
           
           

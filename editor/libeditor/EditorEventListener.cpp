@@ -440,7 +440,7 @@ NS_IMETHODIMP EditorEventListener::HandleEvent(Event* aEvent) {
       return rv;
     }
     
-    case eMouseClick: {
+    case ePointerClick: {
       WidgetMouseEvent* widgetMouseEvent = internalEvent->AsMouseEvent();
       
       if (widgetMouseEvent->mButton != MouseButton::ePrimary) {
@@ -449,7 +449,7 @@ NS_IMETHODIMP EditorEventListener::HandleEvent(Event* aEvent) {
       [[fallthrough]];
     }
     
-    case eMouseAuxClick: {
+    case ePointerAuxClick: {
       WidgetMouseEvent* widgetMouseEvent = internalEvent->AsMouseEvent();
       if (NS_WARN_IF(!widgetMouseEvent)) {
         return NS_OK;

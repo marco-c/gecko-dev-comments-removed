@@ -94,10 +94,10 @@ bool UserActivation::IsUserInteractionEvent(const WidgetEvent* aEvent) {
       return aEvent->AsKeyboardEvent()->CanTreatAsUserInput();
     
     
-    case eMouseClick:
     case eMouseDown:
     case eMouseUp:
     
+    case ePointerClick:
     case ePointerDown:
     case ePointerUp:
     

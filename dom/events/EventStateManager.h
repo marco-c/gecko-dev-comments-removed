@@ -1402,8 +1402,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 #define NS_EVENT_NEEDS_FRAME(event)          \
-  ((event)->mMessage != eMouseClick &&       \
+  ((event)->mMessage != ePointerClick &&     \
    (event)->mMessage != eMouseDoubleClick && \
-   (event)->mMessage != eMouseAuxClick)
+   (event)->mMessage != ePointerAuxClick)
 
 #endif  

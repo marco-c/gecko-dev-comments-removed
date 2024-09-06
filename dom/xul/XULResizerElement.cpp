@@ -236,7 +236,7 @@ void XULResizerElement::PostHandleEventInternal(
       }
     } break;
 
-    case eMouseClick: {
+    case ePointerClick: {
       auto* mouseEvent = event.AsMouseEvent();
       if (mouseEvent->IsLeftClickEvent()) {
         
