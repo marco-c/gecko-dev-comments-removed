@@ -91,7 +91,7 @@ interface nsIScriptError : nsIConsoleMessage
     
     readonly attribute boolean isPromiseRejection;
 
-    [noscript] void initIsPromiseRejection(in bool isPromiseRejection);
+    [noscript] void initIsPromiseRejection(in boolean isPromiseRejection);
 
     
     
@@ -135,8 +135,8 @@ interface nsIScriptError : nsIConsoleMessage
               in uint32_t columnNumber,
               in uint32_t flags,
               in ACString category,
-              [optional] in bool fromPrivateWindow,
-              [optional] in bool fromChromeContext);
+              [optional] in boolean fromPrivateWindow,
+              [optional] in boolean fromChromeContext);
 
     
 
@@ -158,7 +158,7 @@ interface nsIScriptError : nsIConsoleMessage
                           in uint32_t flags,
                           in ACString category,
                           in unsigned long long innerWindowID,
-                          [optional] in bool fromChromeContext);
+                          [optional] in boolean fromChromeContext);
 
     
 
@@ -172,7 +172,7 @@ interface nsIScriptError : nsIConsoleMessage
                                  in uint32_t flags,
                                  in ACString category,
                                  in unsigned long long innerWindowID,
-                                 [optional] in bool fromChromeContext);
+                                 [optional] in boolean fromChromeContext);
 
     
 
@@ -184,7 +184,7 @@ interface nsIScriptError : nsIConsoleMessage
                            in uint32_t flags,
                            in ACString category,
                            in unsigned long long innerWindowID,
-                           [optional] in bool fromChromeContext);
+                           [optional] in boolean fromChromeContext);
 
     
     void initSourceId(in uint32_t sourceId);

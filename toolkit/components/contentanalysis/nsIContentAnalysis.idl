@@ -201,14 +201,14 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-  readonly attribute bool mightBeActive;
+  readonly attribute boolean mightBeActive;
 
   
 
 
 
 
-  attribute bool isSetByEnterprisePolicy;
+  attribute boolean isSetByEnterprisePolicy;
 
   
 
@@ -229,7 +229,7 @@ interface nsIContentAnalysis : nsISupports
 
 
   [implicit_jscontext]
-  Promise analyzeContentRequest(in nsIContentAnalysisRequest aCar, in bool aAutoAcknowledge);
+  Promise analyzeContentRequest(in nsIContentAnalysisRequest aCar, in boolean aAutoAcknowledge);
 
   
 
@@ -245,7 +245,7 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-  void analyzeContentRequestCallback(in nsIContentAnalysisRequest aCar, in bool aAutoAcknowledge, in nsIContentAnalysisCallback callback);
+  void analyzeContentRequestCallback(in nsIContentAnalysisRequest aCar, in boolean aAutoAcknowledge, in nsIContentAnalysisCallback callback);
 
   
 
@@ -261,7 +261,7 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-  void respondToWarnDialog(in ACString aRequestToken, in bool aAllowContent);
+  void respondToWarnDialog(in ACString aRequestToken, in boolean aAllowContent);
 
   
 

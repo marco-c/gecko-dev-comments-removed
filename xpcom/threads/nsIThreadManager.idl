@@ -23,7 +23,7 @@ interface nsINestedEventLoopCondition : nsISupports
   
 
 
-  bool isDone();
+  boolean isDone();
 };
 
 

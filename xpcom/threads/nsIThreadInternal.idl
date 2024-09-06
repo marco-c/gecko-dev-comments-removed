@@ -106,5 +106,5 @@ interface nsIThreadObserver : nsISupports
 
 
   void afterProcessNextEvent(in nsIThreadInternal thread,
-                             in bool eventWasProcessed);
+                             in boolean eventWasProcessed);
 };

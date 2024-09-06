@@ -59,7 +59,7 @@ interface nsIApplicationReputationService : nsISupports {
 
 
 
-  bool isBinary(in AUTF8String aFilename);
+  boolean isBinary(in AUTF8String aFilename);
 
   
 
@@ -70,7 +70,7 @@ interface nsIApplicationReputationService : nsISupports {
 
 
 
-  bool isExecutable(in AUTF8String aFilename);
+  boolean isExecutable(in AUTF8String aFilename);
 };
 
 
@@ -141,7 +141,7 @@ interface nsIApplicationReputationCallback : nsISupports {
 
 
 
-  void onComplete(in bool aShouldBlock,
+  void onComplete(in boolean aShouldBlock,
                   in nsresult aStatus,
                   in unsigned long aVerdict);
 };

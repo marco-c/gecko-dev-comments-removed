@@ -43,7 +43,7 @@ interface nsIDirectTaskDispatcher : nsISupports
   
 
 
-  [noscript] bool haveDirectTasks();
+  [noscript] boolean haveDirectTasks();
 
   %{C++
   

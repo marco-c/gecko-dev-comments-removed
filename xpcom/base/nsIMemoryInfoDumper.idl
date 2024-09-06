@@ -36,7 +36,7 @@ interface nsIDumpGCAndCCLogsCallback : nsISupports
 
   void onDump(in nsIFile aGCLog,
               in nsIFile aCCLog,
-              in bool aIsParent);
+              in boolean aIsParent);
 
   
 
@@ -153,8 +153,8 @@ interface nsIMemoryInfoDumper : nsISupports
 
 
   void dumpGCAndCCLogsToFile(in AString aIdentifier,
-                             in bool aDumpAllTraces,
-                             in bool aDumpChildProcesses,
+                             in boolean aDumpAllTraces,
+                             in boolean aDumpChildProcesses,
                              in nsIDumpGCAndCCLogsCallback aCallback);
 
   
@@ -162,6 +162,6 @@ interface nsIMemoryInfoDumper : nsISupports
 
 
 
-  void dumpGCAndCCLogsToSink(in bool aDumpAllTraces,
+  void dumpGCAndCCLogsToSink(in boolean aDumpAllTraces,
                              in nsICycleCollectorLogSink aSink);
 };

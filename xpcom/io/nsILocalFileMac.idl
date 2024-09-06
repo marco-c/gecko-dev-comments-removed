@@ -176,7 +176,7 @@ interface nsILocalFileMac : nsIFile
 
 
 
-    bool hasXAttr(in ACString aAttrName);
+    boolean hasXAttr(in ACString aAttrName);
 
     
 

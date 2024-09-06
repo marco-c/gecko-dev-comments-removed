@@ -103,7 +103,7 @@ interface nsIDataStorage : nsISupports {
   
   
   
-  bool isReady();
+  boolean isReady();
 
   
   

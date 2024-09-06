@@ -97,7 +97,7 @@ interface nsIInterceptedChannel : nsISupports
                                   in nsIInterceptedBodyCallback callback,
                                   in nsICacheInfoChannel channel,
                                   in ACString finalURLSpec,
-                                  in bool responseRedirected);
+                                  in boolean responseRedirected);
 
     
 
@@ -155,7 +155,7 @@ interface nsIInterceptedChannel : nsISupports
 
 
     [noscript]
-    bool GetIsReset();
+    boolean GetIsReset();
 
 %{C++
     already_AddRefed<nsIConsoleReportCollector>
@@ -239,7 +239,7 @@ interface nsINetworkInterceptController : nsISupports
 
 
 
-    bool shouldPrepareForIntercept(in nsIURI aURI, in nsIChannel aChannel);
+    boolean shouldPrepareForIntercept(in nsIURI aURI, in nsIChannel aChannel);
 
     
 

@@ -40,9 +40,9 @@ interface nsIWebAuthnRegisterArgs : nsISupports {
     
     
     
-    [must_use] readonly attribute bool credProps;
-    [must_use] readonly attribute bool hmacCreateSecret;
-    [must_use] readonly attribute bool minPinLength;
+    [must_use] readonly attribute boolean credProps;
+    [must_use] readonly attribute boolean hmacCreateSecret;
+    [must_use] readonly attribute boolean minPinLength;
 
     
     readonly attribute AString residentKey;
@@ -83,7 +83,7 @@ interface nsIWebAuthnSignArgs : nsISupports {
     
     
     
-    [must_use] readonly attribute bool hmacCreateSecret;
+    [must_use] readonly attribute boolean hmacCreateSecret;
     [must_use] readonly attribute AString appId;
 
     
@@ -94,5 +94,5 @@ interface nsIWebAuthnSignArgs : nsISupports {
     
     readonly attribute unsigned long timeoutMS;
 
-    readonly attribute bool conditionallyMediated;
+    readonly attribute boolean conditionallyMediated;
 };

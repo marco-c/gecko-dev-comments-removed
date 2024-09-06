@@ -105,7 +105,7 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
-    [noscript, must_use] readonly attribute bool isAuthChannel;
+    [noscript, must_use] readonly attribute boolean isAuthChannel;
 
     
 
@@ -458,7 +458,7 @@ interface nsIHttpChannelInternal : nsISupports
         in nsILoadInfo_CrossOriginOpenerPolicy aInitiatorPolicy);
 
     [noscript]
-    bool hasCrossOriginOpenerPolicyMismatch();
+    boolean hasCrossOriginOpenerPolicyMismatch();
 
     [noscript]
     nsILoadInfo_CrossOriginEmbedderPolicy getResponseEmbedderPolicy(in boolean aIsOriginTrialCoepCredentiallessEnabled);

@@ -34,7 +34,7 @@ interface nsINSSComponent : nsISupports {
 
 
 
-  [noscript] bool isCertTestBuiltInRoot(in Array<octet> cert);
+  [noscript] boolean isCertTestBuiltInRoot(in Array<octet> cert);
 
   
 

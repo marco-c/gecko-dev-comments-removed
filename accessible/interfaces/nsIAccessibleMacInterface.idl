@@ -67,7 +67,7 @@ interface nsIAccessibleMacInterface : nsISupports
 
 
 
-  bool isAttributeSettable(in AString attributeName);
+  boolean isAttributeSettable(in AString attributeName);
 
   
 

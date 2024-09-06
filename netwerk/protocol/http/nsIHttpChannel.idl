@@ -204,7 +204,7 @@ interface nsIHttpChannel : nsIIdentChannel
 
 
 
-    [must_use] bool ShouldStripRequestBodyHeader(in ACString aMethod);
+    [must_use] boolean ShouldStripRequestBodyHeader(in ACString aMethod);
 
     
 

@@ -203,7 +203,7 @@ interface nsIPrintSettings : nsISupports
 
 
 
-  [noscript, notxpcom, nostdcall] bool HasOrthogonalPagesPerSheet();
+  [noscript, notxpcom, nostdcall] boolean HasOrthogonalPagesPerSheet();
 
   
 
@@ -220,7 +220,7 @@ interface nsIPrintSettings : nsISupports
 
 
 
-  bool equivalentTo(in nsIPrintSettings aPrintSettings);
+  boolean equivalentTo(in nsIPrintSettings aPrintSettings);
 
   
 

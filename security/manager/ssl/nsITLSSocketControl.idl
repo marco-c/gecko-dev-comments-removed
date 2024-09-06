@@ -46,7 +46,7 @@ interface nsITLSSocketControl : nsISupports {
     
 
 
-    readonly attribute bool earlyDataAccepted;
+    readonly attribute boolean earlyDataAccepted;
 
     
 

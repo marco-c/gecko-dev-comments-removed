@@ -359,7 +359,7 @@ interface nsIChannel : nsIRequest
 
 
 
-    readonly attribute bool isDocument;
+    readonly attribute boolean isDocument;
 
 %{ C++
   inline bool IsDocument()

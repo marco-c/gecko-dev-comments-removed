@@ -27,7 +27,7 @@ interface mozIGeckoMediaPluginChromeService : nsISupports
 
 
   void removeAndDeletePluginDirectory(in AString directory,
-                                      [optional] in bool defer);
+                                      [optional] in boolean defer);
 
   
 
@@ -48,7 +48,7 @@ interface mozIGeckoMediaPluginChromeService : nsISupports
 
 
 
-  bool isPersistentStorageAllowed(in ACString nodeId);
+  boolean isPersistentStorageAllowed(in ACString nodeId);
 
   
 

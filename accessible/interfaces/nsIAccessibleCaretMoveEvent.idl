@@ -19,12 +19,12 @@ interface nsIAccessibleCaretMoveEvent: nsIAccessibleEvent
   
 
 
-  readonly attribute bool isSelectionCollapsed;
+  readonly attribute boolean isSelectionCollapsed;
 
   
 
 
-  readonly attribute bool isAtEndOfLine;
+  readonly attribute boolean isAtEndOfLine;
 
   
 

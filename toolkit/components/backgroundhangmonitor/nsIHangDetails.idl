@@ -24,7 +24,7 @@ interface nsIHangDetails : nsISupports
 
 
 
-  readonly attribute bool wasPersisted;
+  readonly attribute boolean wasPersisted;
 
   
 

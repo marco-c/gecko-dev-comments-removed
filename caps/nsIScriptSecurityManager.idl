@@ -157,7 +157,7 @@ interface nsIScriptSecurityManager : nsISupports
 
 
 
-    bool inFileURIAllowlist(in nsIURI aUri);
+    boolean inFileURIAllowlist(in nsIURI aUri);
 
     
 
@@ -331,7 +331,7 @@ interface nsIScriptSecurityManager : nsISupports
 
 
 
-    bool policyAllowsScript(in nsIURI aDomain);
+    boolean policyAllowsScript(in nsIURI aDomain);
 };
 
 %{C++

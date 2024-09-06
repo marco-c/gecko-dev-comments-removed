@@ -106,7 +106,7 @@ interface nsIFile : nsISupports
 
 
     [must_use] void create(in unsigned long type, in unsigned long permissions,
-                           [optional,default(false)] in bool skipAncestors);
+                           [optional,default(false)] in boolean skipAncestors);
 
     
 

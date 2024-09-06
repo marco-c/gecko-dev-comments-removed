@@ -52,7 +52,7 @@ interface nsIAppShellService : nsISupports
 
 
 
-  nsIWindowlessBrowser createWindowlessBrowser([optional] in bool aIsChrome,
+  nsIWindowlessBrowser createWindowlessBrowser([optional] in boolean aIsChrome,
                                                [optional] in uint32_t aChromeMask);
 
   [noscript]
@@ -123,6 +123,6 @@ interface nsIAppShellService : nsISupports
 
 
 
-  bool startEventLoopLagTracking();
+  boolean startEventLoopLagTracking();
   void stopEventLoopLagTracking();
 };
