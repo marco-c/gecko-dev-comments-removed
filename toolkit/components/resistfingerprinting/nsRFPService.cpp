@@ -90,6 +90,7 @@
 #include "nscore.h"
 #include "prenv.h"
 #include "prtime.h"
+#include "siphash.h"
 #include "xpcpublic.h"
 
 #include "js/Date.h"
@@ -1528,19 +1529,44 @@ nsresult nsRFPService::GenerateCanvasKeyFromImageData(
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  HMAC hmac;
+  if (StaticPrefs::
+          privacy_resistFingerprinting_randomization_canvas_use_siphash()) {
+    struct sipkey key = {{0, 0}};
 
-  rv = hmac.Begin(SEC_OID_SHA256, Span(randomKey));
-  NS_ENSURE_SUCCESS(rv, rv);
+    
+    
+    sip_tokey(&key, randomKey.Elements());
+    uint64_t digest = siphash24(aImageData, aSize, &key);
 
-  rv = hmac.Update(aImageData, aSize);
-  NS_ENSURE_SUCCESS(rv, rv);
+    aCanvasKey.SetLength(32);
+    aCanvasKey.ClearAndRetainStorage();
 
-  rv = hmac.End(aCanvasKey);
-  NS_ENSURE_SUCCESS(rv, rv);
+    
+    
+    non_crypto::XorShift128PlusRNG rng(digest, ~digest);
+
+    for (size_t i = 0; i < 4; ++i) {
+      uint64_t val = rng.next();
+      for (size_t j = 0; j < 8; ++j) {
+        uint8_t data = static_cast<uint8_t>((val >> (j * 8)) & 0xFF);
+        aCanvasKey.InsertElementAt((i * 8) + j, data);
+      }
+    }
+  } else {
+    
+    
+    
+    HMAC hmac;
+
+    rv = hmac.Begin(SEC_OID_SHA256, Span(randomKey));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = hmac.Update(aImageData, aSize);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = hmac.End(aCanvasKey);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   return NS_OK;
 }
