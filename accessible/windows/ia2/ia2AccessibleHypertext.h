@@ -16,6 +16,7 @@
 #include "AccessibleHypertext2.h"
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"
+#include "UiaText.h"
 
 namespace mozilla {
 namespace a11y {
@@ -25,8 +26,13 @@ class ia2AccessibleHypertext : public ia2AccessibleText,
                                public IAccessibleHypertext2,
                                public ia2AccessibleEditableText,
                                public ia2AccessibleTextSelectionContainer,
+                               public UiaText,
                                public MsaaAccessible {
  public:
+  
+  
+  using MsaaAccessible::Acc;
+
   
   DECL_IUNKNOWN_INHERITED
   IMPL_IUNKNOWN_REFCOUNTING_INHERITED(MsaaAccessible)
