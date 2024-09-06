@@ -1061,7 +1061,7 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
 
     
     
-    if (bc->IsTop() && !bc->GetTopLevelCreatedByWebContent() && wgp) {
+    if (bc->IsTop() && !bc->HadOriginalOpener() && wgp) {
       RefPtr<nsIURI> uri = wgp->GetDocumentURI();
       foundAccessibleFrame =
           uri && uri->GetSpecOrDefault().EqualsLiteral("about:blank");

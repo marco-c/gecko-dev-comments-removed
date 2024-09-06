@@ -1079,13 +1079,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   
   
-  if (windowIsNew && targetBC->IsContent() &&
-      !nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal)) {
-    (void)targetBC->SetTopLevelCreatedByWebContent(true);
-  }
-
-  
-  
   if (activeDocsSandboxFlags && parentBC) {
     MOZ_ALWAYS_SUCCEEDS(targetBC->SetOnePermittedSandboxedNavigator(parentBC));
   }

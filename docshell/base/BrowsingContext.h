@@ -135,10 +135,6 @@ struct EmbedderColorSchemes {
   FIELD(EmbedderInnerWindowId, uint64_t)                                      \
   FIELD(CurrentInnerWindowId, uint64_t)                                       \
   FIELD(HadOriginalOpener, bool)                                              \
-  /* Was this window created by a webpage through window.open or an anchor    \
-   * link? In general, windows created this way may be manipulated (e.g.      \
-   * closed, resized or moved) by content JS. */                              \
-  FIELD(TopLevelCreatedByWebContent, bool)                                    \
   FIELD(IsPopupSpam, bool)                                                    \
   /* Hold the audio muted state and should be used on top level browsing      \
    * contexts only */                                                         \
@@ -336,13 +332,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   static already_AddRefed<BrowsingContext> CreateIndependent(Type aType);
 
   
-  struct CreateDetachedOptions {
-    bool isPopupRequested = false;
-    bool createdDynamically = false;
-    bool topLevelCreatedByWebContent = false;
-  };
-
-  
   
   
   
@@ -351,7 +340,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   static already_AddRefed<BrowsingContext> CreateDetached(
       nsGlobalWindowInner* aParent, BrowsingContext* aOpener,
       BrowsingContextGroup* aSpecificGroup, const nsAString& aName, Type aType,
-      CreateDetachedOptions aOptions);
+      bool aIsPopupRequested, bool aCreatedDynamically = false);
 
   void EnsureAttached();
 
