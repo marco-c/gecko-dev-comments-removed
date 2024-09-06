@@ -26,6 +26,7 @@ module.exports = {
     
     `${projectRoot}/toolkit/themes/shared/design-system/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
   ],
+  staticDirs: [`${projectRoot}/toolkit/themes/shared/design-system/docs/`],
   addons: [
     "@storybook/addon-links",
     {
