@@ -5006,6 +5006,8 @@ class Maintenance final : public Runnable {
   MozPromiseHolder<BoolPromise> mPromiseHolder;
   PRTime mStartTime;
   RefPtr<UniversalDirectoryLock> mPendingDirectoryLock;
+  
+  
   RefPtr<UniversalDirectoryLock> mDirectoryLock;
   nsTArray<nsCOMPtr<nsIRunnable>> mCompleteCallbacks;
   nsTArray<DirectoryInfo> mDirectoryInfos;
@@ -5158,6 +5160,8 @@ class DatabaseMaintenance final : public Runnable {
   enum class MaintenanceAction { Nothing = 0, IncrementalVacuum, FullVacuum };
 
   RefPtr<Maintenance> mMaintenance;
+  
+  
   RefPtr<DirectoryLock> mDirectoryLock;
   const OriginMetadata mOriginMetadata;
   const nsString mDatabasePath;
@@ -12846,9 +12850,6 @@ void Maintenance::Abort() {
     aDatabaseMaintenance.GetData()->Abort();
   }
 
-  
-  SafeDropDirectoryLock(mDirectoryLock);
-
   mAborted = true;
 }
 
@@ -13512,12 +13513,6 @@ nsresult DatabaseMaintenance::Abort() {
       QM_TRY(MOZ_TO_RESULT(connection->Interrupt()));
     }
   }
-
-  
-  
-  
-  
-  
 
   return NS_OK;
 }
