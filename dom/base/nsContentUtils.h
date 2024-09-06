@@ -190,7 +190,6 @@ class NodeInfo;
 class OwningFileOrUSVStringOrFormData;
 class Selection;
 enum class ShadowRootMode : uint8_t;
-class ShadowRoot;
 struct StructuredSerializeOptions;
 class WorkerPrivate;
 enum class ElementCallbackType;
@@ -232,8 +231,6 @@ enum EventNameType {
 };
 
 enum class TreeKind : uint8_t { DOM, Flat };
-
-enum class SerializeShadowRoots : uint8_t { Yes, No };
 
 struct EventNameMapping {
   
@@ -3111,13 +3108,8 @@ class nsContentUtils {
   
 
 
-  template <SerializeShadowRoots ShouldSerializeShadowRoots =
-                SerializeShadowRoots::No>
-  static bool SerializeNodeToMarkup(
-      nsINode* aRoot, bool aDescendantsOnly, nsAString& aOut,
-      bool aSerializableShadowRoots,
-      const mozilla::dom::Sequence<
-          mozilla::OwningNonNull<mozilla::dom::ShadowRoot>>& aShadowRoots);
+  static bool SerializeNodeToMarkup(nsINode* aRoot, bool aDescendentsOnly,
+                                    nsAString& aOut);
 
   
 
@@ -3551,7 +3543,7 @@ class nsContentUtils {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsIContent* AttachDeclarativeShadowRoot(
       nsIContent* aHost, mozilla::dom::ShadowRootMode aMode, bool aIsClonable,
-      bool aIsSerializable, bool aDelegatesFocus);
+      bool aDelegatesFocus);
 
  private:
   static bool InitializeEventTable();
