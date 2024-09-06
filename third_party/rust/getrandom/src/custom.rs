@@ -1,4 +1,12 @@
 
+
+
+
+
+
+
+
+
 use crate::{util::uninit_slice_fill_zero, Error};
 use core::{mem::MaybeUninit, num::NonZeroU32};
 
@@ -65,6 +73,7 @@ use core::{mem::MaybeUninit, num::NonZeroU32};
 
 
 #[macro_export]
+#[cfg_attr(docsrs, doc(cfg(feature = "custom")))]
 macro_rules! register_custom_getrandom {
     ($path:path) => {
         // TODO(MSRV 1.37): change to unnamed block

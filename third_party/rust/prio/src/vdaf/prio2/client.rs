@@ -4,14 +4,10 @@
 
 
 use crate::{
-    codec::CodecError,
-    field::FftFriendlyFieldElement,
+    field::{FftFriendlyFieldElement, FieldError},
     polynomial::{poly_fft, PolyAuxMemory},
     prng::{Prng, PrngError},
-    vdaf::{
-        xof::{Seed, SeedStreamAes128},
-        VdafError,
-    },
+    vdaf::{xof::SeedStreamAes128, VdafError},
 };
 
 use std::convert::TryFrom;
@@ -37,8 +33,8 @@ pub enum SerializeError {
     #[error("serialized input has wrong length")]
     UnpackInputSizeMismatch,
     
-    #[error(transparent)]
-    Codec(#[from] CodecError),
+    #[error("finite field operation error")]
+    Field(#[from] FieldError),
 }
 
 #[derive(Debug)]
@@ -67,7 +63,7 @@ impl<F: FftFriendlyFieldElement> ClientMemory<F> {
         }
 
         Ok(Self {
-            prng: Prng::from_prio2_seed(Seed::<32>::generate()?.as_ref()),
+            prng: Prng::new()?,
             points_f: vec![F::zero(); n],
             points_g: vec![F::zero(); n],
             evals_f: vec![F::zero(); 2 * n],
