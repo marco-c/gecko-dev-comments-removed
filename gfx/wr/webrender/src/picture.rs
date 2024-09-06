@@ -5038,6 +5038,23 @@ impl PicturePrimitive {
 
                 for (sub_slice_index, sub_slice) in tile_cache.sub_slices.iter_mut().enumerate() {
                     for tile in sub_slice.tiles.values_mut() {
+                        
+                        tile.local_dirty_rect = tile.local_dirty_rect
+                            .intersection(&tile.current_descriptor.local_valid_rect)
+                            .unwrap_or_else(PictureRect::zero);
+
+                        let scissor_rect = frame_state.composite_state.get_surface_rect(
+                            &tile.local_dirty_rect,
+                            &tile.local_tile_rect,
+                            tile_cache.transform_index,
+                        ).to_i32();
+
+                        let valid_rect = frame_state.composite_state.get_surface_rect(
+                            &tile.current_descriptor.local_valid_rect,
+                            &tile.local_tile_rect,
+                            tile_cache.transform_index,
+                        ).to_i32();
+
                         if tile.is_visible {
                             
                             let world_draw_rect = world_clip_rect.intersection(&tile.world_valid_rect);
@@ -5078,6 +5095,17 @@ impl PicturePrimitive {
                                 None => {
                                     tile.is_visible = false;
                                 }
+                            }
+
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            if !tile.is_valid && (scissor_rect.is_empty() || valid_rect.is_empty()) {
+                                tile.is_visible = false;
                             }
                         }
 
@@ -5170,11 +5198,6 @@ impl PicturePrimitive {
                                 }
                             }
                         }
-
-                        
-                        tile.local_dirty_rect = tile.local_dirty_rect
-                            .intersection(&tile.current_descriptor.local_valid_rect)
-                            .unwrap_or_else(|| { tile.is_valid = true; PictureRect::zero() });
 
                         surface_local_dirty_rect = surface_local_dirty_rect.union(&tile.local_dirty_rect);
 
@@ -5283,18 +5306,6 @@ impl PicturePrimitive {
                                     frame_state.resource_cache,
                                     tile_cache.current_tile_size,
                                 );
-
-                                let scissor_rect = frame_state.composite_state.get_surface_rect(
-                                    &tile.local_dirty_rect,
-                                    &tile.local_tile_rect,
-                                    tile_cache.transform_index,
-                                ).to_i32();
-
-                                let valid_rect = frame_state.composite_state.get_surface_rect(
-                                    &tile.current_descriptor.local_valid_rect,
-                                    &tile.local_tile_rect,
-                                    tile_cache.transform_index,
-                                ).to_i32();
 
                                 let composite_task_size = tile_cache.current_tile_size;
 
