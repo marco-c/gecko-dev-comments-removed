@@ -15,7 +15,9 @@
 #include "ImageContainer.h"
 #include "libavutil/error.h"
 #include "libavutil/pixfmt.h"
+#include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
+#include "mozilla/dom/VideoFrameBinding.h"
 #include "nsPrintfCString.h"
 #include "ImageConversion.h"
 #include "libyuv.h"
@@ -302,6 +304,21 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
 
   
   mCodecContext->pix_fmt = ffmpeg::FFMPEG_PIX_FMT_YUV420P;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mCodecContext->width = static_cast<int>(mConfig.mSize.width);
   mCodecContext->height = static_cast<int>(mConfig.mSize.height);
   mCodecContext->gop_size = static_cast<int>(mConfig.mKeyframeInterval);
