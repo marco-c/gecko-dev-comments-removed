@@ -45,6 +45,16 @@ class SimpleMap {
   SimpleMap() : mLock("SimpleMap"){};
 
   
+  bool Contains(const K& aKey) {
+    struct Comparator {
+      bool Equals(const ElementType& aElement, const K& aKey) const {
+        return aElement.first == aKey;
+      }
+    };
+    Policy guard(mLock);
+    return mMap.Contains(aKey, Comparator());
+  }
+  
   void Insert(const K& aKey, const V& aValue) {
     Policy guard(mLock);
     mMap.AppendElement(std::make_pair(aKey, aValue));
