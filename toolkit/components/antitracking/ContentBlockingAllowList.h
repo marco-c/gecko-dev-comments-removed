@@ -31,7 +31,7 @@ class OriginAttributes;
 
 
 
-class ContentBlockingAllowListCache final {
+class ContentBlockingAllowListCache {
  public:
   
 
@@ -58,6 +58,33 @@ class ContentBlockingAllowListCache final {
   nsresult CheckForBaseDomain(const nsACString& aBaseDomain,
                               const OriginAttributes& aOriginAttributes,
                               bool& aIsAllowListed);
+
+ protected:
+  
+  
+
+  
+
+
+
+
+
+  virtual nsTArray<nsCString> GetAllowListPermissionTypes();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult IsAllowListPermission(nsIPermission* aPermission,
+                                         bool* aResult);
 
  private:
   bool mIsInitialized = false;
