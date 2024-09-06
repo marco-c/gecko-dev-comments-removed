@@ -238,11 +238,18 @@ impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
     
     
     pub fn push_render_task(&mut self, task_id: RenderTaskId) {
-        self.deferred.push(DeferredBlock {
-            task_id,
-            index: self.buffer.len(),
-        });
-        self.buffer.push(T::default());
+        match task_id {
+            RenderTaskId::INVALID => {
+                self.buffer.push(T::default());
+            }
+            task_id => {
+                self.deferred.push(DeferredBlock {
+                    task_id,
+                    index: self.buffer.len(),
+                });
+                self.buffer.push(T::default());
+            }
+        }
     }
 
     
