@@ -5534,6 +5534,13 @@ const INITIAL_STATE = {
   Wallpapers: {
     wallpaperList: [],
   },
+  Weather: {
+    
+    initialized: false,
+    
+    data: {},
+    lastUpdated: null,
+  },
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
