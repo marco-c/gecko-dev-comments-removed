@@ -136,6 +136,17 @@ interface nsIFile : nsISupports
 
 
 
+    [implicit_jscontext]
+    Promise hostPath();
+
+    
+
+
+
+
+
+
+
 
 
 
