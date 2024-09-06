@@ -5,6 +5,7 @@
 
 #include "nsISupports.idl"
 #include "nsILoadInfo.idl"
+#include "nsIReplacedHttpResponse.idl"
 #include "nsIRequest.idl"
 #include "nsITRRSkipReason.idl"
 
@@ -425,7 +426,7 @@ interface nsIHttpChannelInternal : nsISupports
     [noscript, infallible]
     attribute unsigned long lastRedirectFlags;
 
-      
+    
     [noscript] attribute TimeStamp navigationStartTimeStamp;
 
     
@@ -498,7 +499,7 @@ interface nsIHttpChannelInternal : nsISupports
 
     [must_use] readonly attribute boolean isProxyUsed;
 
-     
+    
 
 
     [must_use] void setWebTransportSessionEventListener(
@@ -518,4 +519,14 @@ interface nsIHttpChannelInternal : nsISupports
 
 
     [must_use] attribute boolean isUserAgentHeaderModified;
+
+    
+
+
+
+
+
+
+    [must_use] void setResponseOverride(
+        in nsIReplacedHttpResponse aReplacedHttpResponse);
 };

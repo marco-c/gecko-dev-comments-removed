@@ -89,6 +89,7 @@
 #include "nsIStreamConverterService.h"
 #include "nsISiteSecurityService.h"
 #include "nsString.h"
+#include "nsStringStream.h"
 #include "mozilla/dom/PerformanceStorage.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/Telemetry.h"
@@ -880,8 +881,122 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
   return CallOrWaitForResume([](auto* self) { return self->Connect(); });
 }
 
+class MOZ_STACK_CLASS AddResponseHeadersToResponseHead final
+    : public nsIHttpHeaderVisitor {
+ public:
+  explicit AddResponseHeadersToResponseHead(nsHttpResponseHead* aResponseHead)
+      : mResponseHead(aResponseHead) {}
+
+  NS_IMETHOD VisitHeader(const nsACString& aHeader,
+                         const nsACString& aValue) override {
+    nsAutoCString headerLine = aHeader + ": "_ns + aValue;
+    DebugOnly<nsresult> rv = mResponseHead->ParseHeaderLine(headerLine);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    return NS_OK;
+  }
+
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
+
+  
+  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override {
+    return ++mRefCnt;
+  }
+
+  NS_IMETHOD_(MozExternalRefCountType) Release(void) override {
+    return --mRefCnt;
+  }
+
+  virtual ~AddResponseHeadersToResponseHead() {
+    MOZ_DIAGNOSTIC_ASSERT(mRefCnt == 0);
+  }
+
+ private:
+  nsHttpResponseHead* mResponseHead;
+
+  nsrefcnt mRefCnt = 0;
+};
+
+NS_IMPL_QUERY_INTERFACE(AddResponseHeadersToResponseHead, nsIHttpHeaderVisitor)
+
+nsresult nsHttpChannel::HandleOverrideResponse() {
+  
+  mResponseHead = MakeUnique<nsHttpResponseHead>();
+
+  
+  uint32_t statusCode;
+  nsresult rv = mOverrideResponse->GetResponseStatus(&statusCode);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString statusText;
+  rv = mOverrideResponse->GetResponseStatusText(statusText);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsPrintfCString line("HTTP/1.1 %u %s", statusCode, statusText.get());
+  rv = mResponseHead->ParseStatusLine(line);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  AddResponseHeadersToResponseHead visitor(mResponseHead.get());
+  rv = mOverrideResponse->VisitResponseHeaders(&visitor);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (WillRedirect(*mResponseHead)) {
+    
+    
+    LOG(("Skipping read of overridden response redirect entity\n"));
+    return AsyncCall(&nsHttpChannel::HandleAsyncRedirect);
+  }
+
+  
+  if (nsAutoCString cookie;
+      NS_SUCCEEDED(mResponseHead->GetHeader(nsHttp::Set_Cookie, cookie))) {
+    SetCookie(cookie);
+    nsCOMPtr<nsIParentChannel> parentChannel;
+    NS_QueryNotificationCallbacks(this, parentChannel);
+    if (RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel)) {
+      httpParent->SetCookie(std::move(cookie));
+    }
+  }
+
+  rv = ProcessSecurityHeaders();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("ProcessSecurityHeaders failed, continuing load.");
+  }
+
+  if ((statusCode < 500) && (statusCode != 421)) {
+    ProcessAltService();
+  }
+
+  nsAutoCString body;
+  rv = mOverrideResponse->GetResponseBody(body);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIInputStream> stringStream;
+  rv = NS_NewCStringInputStream(getter_AddRefs(stringStream), body);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = nsInputStreamPump::Create(getter_AddRefs(mCachePump), stringStream, 0, 0,
+                                 true);
+  if (NS_FAILED(rv)) {
+    stringStream->Close();
+    return rv;
+  }
+
+  rv = mCachePump->AsyncRead(this);
+  if (NS_FAILED(rv)) return rv;
+
+  return NS_OK;
+}
+
 nsresult nsHttpChannel::Connect() {
   LOG(("nsHttpChannel::Connect [this=%p]\n", this));
+
+  
+  
+  if (mOverrideResponse) {
+    return HandleOverrideResponse();
+  }
 
   
   if (LoadResuming() && (mLoadFlags & LOAD_ONLY_FROM_CACHE)) {
@@ -10731,6 +10846,13 @@ nsHttpChannel::EarlyHint(const nsACString& aLinkHeader,
     LOG(("nsHttpChannel::EarlyHint propagated.\n"));
     mEarlyHintObserver->EarlyHint(aLinkHeader, aReferrerPolicy, aCspHeader);
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsHttpChannel::SetResponseOverride(
+    nsIReplacedHttpResponse* aReplacedHttpResponse) {
+  mOverrideResponse = new nsMainThreadPtrHolder<nsIReplacedHttpResponse>(
+      "nsIReplacedHttpResponse", aReplacedHttpResponse);
   return NS_OK;
 }
 
