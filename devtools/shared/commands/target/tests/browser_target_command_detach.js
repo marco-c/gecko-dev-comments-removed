@@ -32,7 +32,7 @@ add_task(async function () {
 
   
   
-  await targetCommand.targetFront.destroy();
+  await targetCommand.stopListening();
 
   info(
     "Now create a second commands after destroy, to see if we can spawn a new, functional target"
