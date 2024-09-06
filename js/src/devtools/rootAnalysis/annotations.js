@@ -12,7 +12,9 @@ var ignoreIndirectCalls = {
     "aMallocSizeOf" : true,
     "__conv" : true,
     "__convf" : true,
-    "callback_newtable" : true,
+    "callback_newtable": true,
+    "gLogAddRefFunc": true,
+    "gLogReleaseFunc": true,
 };
 
 
