@@ -310,6 +310,11 @@ interface nsIClearDataService : nsISupports
   
 
 
+  const uint32_t CLEAR_STORAGE_PERMISSIONS = 1 << 29;
+
+  
+
+
   const uint32_t CLEAR_ALL = 0xFFFFFFFF;
 
   
