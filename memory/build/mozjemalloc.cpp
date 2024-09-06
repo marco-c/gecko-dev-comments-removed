@@ -438,7 +438,13 @@ struct arena_chunk_t {
 
 
 
-static const size_t kCacheLineSize = 64;
+static const size_t kCacheLineSize =
+#if defined(XP_DARWIN) && defined(__aarch64__)
+    128
+#else
+    64
+#endif
+    ;
 
 
 
@@ -1518,7 +1524,12 @@ MALLOC_RUNTIME_VAR PoisonType opt_poison = ALL;
 MALLOC_RUNTIME_VAR PoisonType opt_poison = SOME;
 #endif
 
-MALLOC_RUNTIME_VAR size_t opt_poison_size = kCacheLineSize * 4;
+
+MALLOC_RUNTIME_VAR size_t opt_poison_size = 256;
+#ifndef MALLOC_RUNTIME_CONFIG
+static_assert(opt_poison_size >= kCacheLineSize);
+static_assert((opt_poison_size % kCacheLineSize) == 0);
+#endif
 
 static bool opt_randomize_small = true;
 
