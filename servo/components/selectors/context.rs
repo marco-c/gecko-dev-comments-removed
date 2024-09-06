@@ -79,10 +79,18 @@ pub enum NeedsSelectorFlags {
 }
 
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum MatchingForInvalidation {
     No,
     Yes,
+    YesForComparison,
+}
+
+impl MatchingForInvalidation {
+    
+    pub fn is_for_invalidation(&self) -> bool {
+        matches!(*self, Self::Yes | Self::YesForComparison)
+    }
 }
 
 
@@ -314,7 +322,31 @@ where
     
     #[inline]
     pub fn matching_for_invalidation(&self) -> bool {
-        self.matching_for_invalidation == MatchingForInvalidation::Yes
+        self.matching_for_invalidation.is_for_invalidation()
+    }
+
+    
+    #[inline]
+    pub fn matching_for_invalidation_comparison(&self) -> Option<bool> {
+        match self.matching_for_invalidation {
+            MatchingForInvalidation::No => None,
+            MatchingForInvalidation::Yes => Some(false),
+            MatchingForInvalidation::YesForComparison => Some(true),
+        }
+    }
+
+    
+    #[inline]
+    pub fn for_invalidation_comparison<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut Self) -> R,
+    {
+        debug_assert!(self.matching_for_invalidation(), "Not matching for invalidation?");
+        let prev = self.matching_for_invalidation;
+        self.matching_for_invalidation = MatchingForInvalidation::YesForComparison;
+        let result = f(self);
+        self.matching_for_invalidation = prev;
+        result
     }
 
     
