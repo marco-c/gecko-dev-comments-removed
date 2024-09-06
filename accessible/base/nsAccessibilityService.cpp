@@ -9,6 +9,7 @@
 #include "ApplicationAccessibleWrap.h"
 #include "ARIAGridAccessible.h"
 #include "ARIAMap.h"
+#include "CssAltContent.h"
 #include "DocAccessible-inl.h"
 #include "DocAccessibleChild.h"
 #include "FocusManager.h"
@@ -243,10 +244,12 @@ bool nsAccessibilityService::ShouldCreateImgAccessible(
 
   
   
+  
   if (!aElement->IsHTMLElement(nsGkAtoms::img) &&
       ((!aElement->IsHTMLElement(nsGkAtoms::embed) &&
         !aElement->IsHTMLElement(nsGkAtoms::object)) ||
-       frame->AccessibleType() != AccType::eImageType)) {
+       frame->AccessibleType() != AccType::eImageType) &&
+      !CssAltContent(aElement)) {
     return false;
   }
 
