@@ -310,12 +310,14 @@ const char* WasmFrameIter::filename() const {
 
 const char16_t* WasmFrameIter::displayURL() const {
   MOZ_ASSERT(!done());
-  return code_->metadata().displayURL();
+  return code_->metadata() ? code_->metadata()->displayURL()  
+                           : nullptr;                         
 }
 
 bool WasmFrameIter::mutedErrors() const {
   MOZ_ASSERT(!done());
-  return code_->metadata().mutedErrors();
+  return code_->metadata() ? code_->metadata()->mutedErrors()  
+                           : false;                            
 }
 
 JSAtom* WasmFrameIter::functionDisplayAtom() const {

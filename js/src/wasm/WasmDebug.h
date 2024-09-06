@@ -21,6 +21,7 @@
 
 #include "js/ColumnNumber.h"  
 #include "js/HashTable.h"
+#include "wasm/AsmJS.h"  
 #include "wasm/WasmCode.h"
 #include "wasm/WasmCodegenTypes.h"
 #include "wasm/WasmConstants.h"
@@ -163,7 +164,7 @@ class DebugState {
   
 
   const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
-  const Metadata& metadata() const { return code_->metadata(); }
+  const Metadata* metadata() const { return code_->metadata(); }
   const CodeMetadata& codeMeta() const { return code_->codeMeta(); }
   const CodeRangeVector& codeRanges(Tier t) const {
     return metadata(t).codeRanges;
