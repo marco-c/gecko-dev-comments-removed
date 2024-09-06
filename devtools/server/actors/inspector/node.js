@@ -424,10 +424,7 @@ class NodeActor extends Actor {
 
 
   get _hasEventListeners() {
-    
-    
-    const dbg = this.getParent().targetActor.makeDebugger();
-    return this._eventCollector.hasEventListeners(this.rawNode, dbg);
+    return this._eventCollector.hasEventListeners(this.rawNode);
   }
 
   writeAttrs() {
