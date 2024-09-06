@@ -28,7 +28,7 @@ namespace wasm {
 
 class Code;
 class CodeRange;
-class CodeSegment;
+class CodeBlock;
 class TagType;
 
 extern const TagType* sWrappedJSValueTagType;
@@ -38,8 +38,8 @@ static constexpr uint32_t WrappedJSValueTagType_ValueOffset = 0;
 
 
 
-const CodeSegment* LookupCodeSegment(const void* pc,
-                                     const CodeRange** codeRange = nullptr);
+const CodeBlock* LookupCodeBlock(const void* pc,
+                                 const CodeRange** codeRange = nullptr);
 
 const Code* LookupCode(const void* pc, const CodeRange** codeRange = nullptr);
 
@@ -55,9 +55,9 @@ extern mozilla::Atomic<bool> CodeExists;
 
 
 
-bool RegisterCodeSegment(const CodeSegment* cs);
+bool RegisterCodeBlock(const CodeBlock* cs);
 
-void UnregisterCodeSegment(const CodeSegment* cs);
+void UnregisterCodeBlock(const CodeBlock* cs);
 
 
 

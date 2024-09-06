@@ -303,7 +303,7 @@ bool NeedsBuiltinThunk(SymbolicAddress sym);
 
 
 bool LookupBuiltinThunk(void* pc, const CodeRange** codeRange,
-                        uint8_t** codeBase);
+                        const uint8_t** codeBase);
 
 
 
