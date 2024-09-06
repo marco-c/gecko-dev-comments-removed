@@ -131,6 +131,21 @@ bool AudioFrame::muted() const {
   return muted_;
 }
 
+void AudioFrame::SetLayoutAndNumChannels(ChannelLayout layout,
+                                         size_t num_channels) {
+  channel_layout_ = layout;
+  num_channels_ = num_channels;
+#if RTC_DCHECK_IS_ON
+  
+  
+  auto expected_num_channels = ChannelLayoutToChannelCount(layout);
+  if (expected_num_channels) {  
+    RTC_DCHECK_EQ(expected_num_channels, num_channels_);
+  }
+#endif
+  RTC_CHECK_LE(samples_per_channel_ * num_channels_, kMaxDataSizeSamples);
+}
+
 
 const int16_t* AudioFrame::empty_data() {
   static int16_t* null_data = new int16_t[kMaxDataSizeSamples]();

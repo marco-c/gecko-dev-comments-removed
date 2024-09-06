@@ -42,10 +42,10 @@ class ChannelMixingMatrix {
   std::vector<std::vector<float>>* matrix_;
 
   
-  ChannelLayout input_layout_;
-  int input_channels_;
-  ChannelLayout output_layout_;
-  int output_channels_;
+  const ChannelLayout input_layout_;
+  const int input_channels_;
+  const ChannelLayout output_layout_;
+  const int output_channels_;
 
   
   

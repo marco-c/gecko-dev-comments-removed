@@ -103,7 +103,11 @@ class AudioFrame {
   size_t max_16bit_samples() const { return kMaxDataSizeSamples; }
   size_t samples_per_channel() const { return samples_per_channel_; }
   size_t num_channels() const { return num_channels_; }
+
   ChannelLayout channel_layout() const { return channel_layout_; }
+  
+  void SetLayoutAndNumChannels(ChannelLayout layout, size_t num_channels);
+
   int sample_rate_hz() const { return sample_rate_hz_; }
 
   void set_absolute_capture_timestamp_ms(
@@ -126,7 +130,6 @@ class AudioFrame {
   size_t samples_per_channel_ = 0;
   int sample_rate_hz_ = 0;
   size_t num_channels_ = 0;
-  ChannelLayout channel_layout_ = CHANNEL_LAYOUT_NONE;
   SpeechType speech_type_ = kUndefined;
   VADActivity vad_activity_ = kVadUnknown;
   
@@ -160,6 +163,7 @@ class AudioFrame {
 
   int16_t data_[kMaxDataSizeSamples];
   bool muted_ = true;
+  ChannelLayout channel_layout_ = CHANNEL_LAYOUT_NONE;
 
   
   
