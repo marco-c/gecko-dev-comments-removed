@@ -53,6 +53,8 @@ function Reflect_apply(target, thisArgument, argumentsList) {
   return callFunction(std_Function_apply, target, thisArgument, argumentsList);
 }
 
+SetIsInlinableLargeFunction(Reflect_apply);
+
 
 
 function Reflect_construct(target, argumentsList ) {
