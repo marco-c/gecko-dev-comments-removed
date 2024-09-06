@@ -46,11 +46,19 @@ const getAutoTheme = (exports.getAutoTheme = () => {
 
 
 const getTheme = (exports.getTheme = () => {
-  const theme = Services.prefs.getCharPref(THEME_PREF);
+  const theme = getThemePrefValue();
   if (theme == "auto") {
     return getAutoTheme();
   }
   return theme;
+});
+
+
+
+
+
+const getThemePrefValue = (exports.getThemePrefValue = () => {
+  return Services.prefs.getCharPref(THEME_PREF, "");
 });
 
 

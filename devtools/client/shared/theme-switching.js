@@ -18,6 +18,7 @@
   const {
     getTheme,
     getAutoTheme,
+    getThemePrefValue,
     addThemeObserver,
     removeThemeObserver,
   } = require("resource://devtools/client/shared/theme.js");
@@ -57,6 +58,10 @@
 
 
   function switchTheme(newTheme) {
+    
+    
+    handleForcedColorsActiveAttribute();
+
     if (newTheme === gOldTheme) {
       return;
     }
@@ -119,6 +124,32 @@
   function handleThemeChange() {
     switchTheme(getTheme());
   }
+
+  const FORCED_COLORS_ACTIVE_ATTRIBUTE = "forced-colors-active";
+  const FORCE_COLORS_ACTIVE_MEDIA_QUERY_STRING = "(forced-colors: active)";
+  
+
+
+
+  function handleForcedColorsActiveAttribute() {
+    const themePrefValue = getThemePrefValue();
+    const forcedColorsActive =
+      Services.prefs.getBoolPref(
+        "devtools.high-contrast-mode-support",
+        false
+      ) &&
+      themePrefValue == "auto" &&
+      window.matchMedia(FORCE_COLORS_ACTIVE_MEDIA_QUERY_STRING).matches;
+    if (forcedColorsActive) {
+      documentElement.setAttribute(FORCED_COLORS_ACTIVE_ATTRIBUTE, "");
+    } else {
+      documentElement.removeAttribute(FORCED_COLORS_ACTIVE_ATTRIBUTE);
+    }
+  }
+
+  
+  const mql = window.matchMedia(FORCE_COLORS_ACTIVE_MEDIA_QUERY_STRING);
+  mql.addEventListener("change", handleForcedColorsActiveAttribute);
 
   
   
