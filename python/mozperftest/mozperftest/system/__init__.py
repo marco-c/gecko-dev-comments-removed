@@ -44,4 +44,16 @@ def pick_system(env, flavor, mach_cmd):
         return Layers(env, mach_cmd, mobile_layers)
     if flavor == "webpagetest":
         return Layers(env, mach_cmd, (Profile,))
+    if flavor == "custom-script":
+        layers = [
+            PingServer,  
+            Profile,
+            ProxyRunner,
+            BinarySetup,  
+            AndroidDevice,
+            MacosDevice,
+            AndroidStartUp,
+            VersionProducer,
+        ]
+        return Layers(env, mach_cmd, layers)
     raise NotImplementedError(flavor)
