@@ -4,4 +4,7 @@
 
 
 
+with Files("**"):
+    BUG_COMPONENT = ("Core", "JavaScript Engine")
+
 MOCHITEST_CHROME_MANIFESTS += ["chrome.toml"]
