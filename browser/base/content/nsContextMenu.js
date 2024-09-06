@@ -2498,27 +2498,12 @@ class nsContextMenu {
 
 
 
-  static #getTranslationsActor() {
-    const actor =
-      gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
-        "Translations"
-      );
-
-    if (!actor) {
-      throw new Error("Unable to get the TranslationsParent");
-    }
-    return actor;
-  }
-
-  
-
-
-
-
   static #isFullPageTranslationsActive() {
     try {
       const { requestedTranslationPair } =
-        this.#getTranslationsActor().languageState;
+        TranslationsParent.getTranslationsActor(
+          gBrowser.selectedBrowser
+        ).languageState;
       return requestedTranslationPair !== null;
     } catch {
       
