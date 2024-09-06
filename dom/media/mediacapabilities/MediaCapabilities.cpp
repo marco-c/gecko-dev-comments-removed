@@ -16,6 +16,7 @@
 #include "DecoderTraits.h"
 #include "MediaInfo.h"
 #include "MediaRecorder.h"
+#include "MP4Decoder.h"
 #include "PDMFactory.h"
 #include "VPXDecoder.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -420,6 +421,22 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
           }));
       continue;
     }
+
+
+#ifdef MOZ_WMF
+    if (MP4Decoder::IsHEVC(config->mMimeType) &&
+        StaticPrefs::media_wmf_hevc_enabled() != 1) {
+      MediaCapabilitiesDecodingInfo info;
+      info.mSupported = false;
+      info.mSmooth = false;
+      info.mPowerEfficient = false;
+      LOG("Pref is disabled : %s -> %s",
+          MediaDecodingConfigurationToStr(aConfiguration).get(),
+          MediaCapabilitiesInfoToStr(info).get());
+      aPromise->MaybeResolve(std::move(info));
+      return;
+    }
+#endif
 
     
     
