@@ -232,13 +232,13 @@ if __name__ == "__main__":
 
     
     if args.abort:
+        run_hg("hg revert --all")
+        run_hg("hg purge {}".format(args.target_path))
         
         
         
         
         if not (resume_state == "resume2" or resume_state == "resume3"):
-            run_hg("hg revert --all")
-            run_hg("hg purge {}".format(args.target_path))
             
             stdout_lines = run_hg("hg log --template {desc|firstline}\n -r .")
             
