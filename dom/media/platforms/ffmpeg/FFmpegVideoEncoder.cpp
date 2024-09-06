@@ -317,7 +317,6 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
   
   mCodecContext->width = static_cast<int>(mConfig.mSize.width);
   mCodecContext->height = static_cast<int>(mConfig.mSize.height);
-  mCodecContext->gop_size = static_cast<int>(mConfig.mKeyframeInterval);
   
   
   mCodecContext->time_base =
@@ -331,7 +330,12 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
 #if LIBAVCODEC_VERSION_MAJOR >= 60
   mCodecContext->flags |= AV_CODEC_FLAG_FRAME_DURATION;
 #endif
-  mCodecContext->gop_size = static_cast<int>(mConfig.mKeyframeInterval);
+
+  
+  mCodecContext->gop_size = mConfig.mKeyframeInterval
+                                ? static_cast<int>(mConfig.mKeyframeInterval)
+                                : 10000;
+  mCodecContext->keyint_min = 0;
 
   if (mConfig.mUsage == Usage::Realtime) {
     mLib->av_opt_set(mCodecContext->priv_data, "deadline", "realtime", 0);
