@@ -2051,6 +2051,18 @@
       
       b.permanentKey = new (Cu.getGlobalForObject(Services).Object)();
 
+      
+      
+      if (!Services.appinfo.sessionHistoryInParent) {
+        b.prepareToChangeRemoteness = () =>
+          SessionStore.prepareToChangeRemoteness(b);
+        b.afterChangeRemoteness = switchId => {
+          let tab = this.getTabForBrowser(b);
+          SessionStore.finishTabRemotenessChange(tab, switchId);
+          return true;
+        };
+      }
+
       const defaultBrowserAttributes = {
         contextmenu: "contentAreaContextMenu",
         message: "true",

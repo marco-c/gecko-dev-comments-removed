@@ -297,8 +297,11 @@ add_task(async function test_slow_subframe_load() {
 
 add_task(async function test_wireframes() {
   
-  if (!Services.appinfo.fissionAutostart) {
-    ok(true, "Skipping test_wireframes when Fission is not enabled.");
+  if (
+    !Services.appinfo.fissionAutostart ||
+    !Services.appinfo.sessionHistoryInParent
+  ) {
+    ok(true, "Skipping test_wireframes when Fission or SHIP is not enabled.");
     return;
   }
 

@@ -92,7 +92,15 @@ add_task(async function save_worthy_tabs_remote_final() {
   ok(browser.isRemoteBrowser, "browser is still remote");
 
   
-  await promiseRemoveTabAndSessionState(tab);
+  let promise = promiseRemoveTabAndSessionState(tab);
+
+  
+  if (!Services.appinfo.sessionHistoryInParent) {
+    
+    ok(!isValueInClosedData(r), "closed tab not saved");
+  }
+
+  await promise;
 
   
   ok(isValueInClosedData(r), "closed tab saved");
@@ -109,7 +117,15 @@ add_task(async function save_worthy_tabs_nonremote_final() {
   ok(!browser.isRemoteBrowser, "browser is not remote anymore");
 
   
-  await promiseRemoveTabAndSessionState(tab);
+  let promise = promiseRemoveTabAndSessionState(tab);
+
+  
+  if (!Services.appinfo.sessionHistoryInParent) {
+    
+    ok(!isValueInClosedData(r), "closed tab not saved");
+  }
+
+  await promise;
 
   
   ok(isValueInClosedData(r), "closed tab saved");
@@ -135,7 +151,15 @@ add_task(async function dont_save_empty_tabs_final() {
   await entryReplaced;
 
   
-  await promiseRemoveTabAndSessionState(tab);
+  let promise = promiseRemoveTabAndSessionState(tab);
+
+  
+  if (!Services.appinfo.sessionHistoryInParent) {
+    
+    ok(isValueInClosedData(r), "closed tab saved");
+  }
+
+  await promise;
 
   
   ok(!isValueInClosedData(r), "closed tab not saved");
