@@ -779,10 +779,14 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
     case FrameType::WasmToJSJit:
       
       
+      
       resumePCinCurrentFrame_ = nullptr;
-      fp_ = GetPreviousRawFrame<uint8_t*>(frame);
+      fp_ = nullptr;
       type_ = FrameType::WasmToJSJit;
-      MOZ_ASSERT(!done());
+      MOZ_ASSERT(!wasmCallerFP_);
+      wasmCallerFP_ = GetPreviousRawFrame<uint8_t*>(frame);
+      MOZ_ASSERT(wasmCallerFP_);
+      MOZ_ASSERT(done());
       return;
 
     case FrameType::CppToJSJit:
@@ -791,6 +795,8 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
       resumePCinCurrentFrame_ = nullptr;
       fp_ = nullptr;
       type_ = FrameType::CppToJSJit;
+      MOZ_ASSERT(!wasmCallerFP_);
+      MOZ_ASSERT(done());
       return;
 
     case FrameType::BaselineInterpreterEntry:
