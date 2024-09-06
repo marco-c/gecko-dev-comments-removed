@@ -1861,6 +1861,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.di
 pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.enabled", false);
 
 
+pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.enabled", false);
+
+
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
 
 
