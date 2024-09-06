@@ -555,6 +555,7 @@ class TestQueueBuilder:
             groups.sort(key=lambda group: (
                 
                 
+                group.subsuite,
                 group.test_type,
                 
                 
