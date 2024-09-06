@@ -107,62 +107,58 @@ using namespace layers;
 static GPUParent* sGPUParent;
 
 static void ReportHardwareMediaCodecSupportIfNeeded() {
+  MOZ_ASSERT(!NS_IsMainThread(), "Should not block main thread");
   
   static bool sReported = false;
   if (sReported) {
     return;
   }
 #if defined(XP_WIN)
-  NS_GetCurrentThread()->Dispatch(NS_NewRunnableFunction(
-      "GPUParent:ReportHardwareMediaCodecSupportIfNeeded", []() {
-        
-        if (!gfx::gfxVars::IsInitialized() ||
-            !gfx::gfxVars::CanUseHardwareVideoDecoding()) {
-          return;
-        }
-        sReported = true;
+  
+  if (!gfx::gfxVars::IsInitialized() ||
+      !gfx::gfxVars::CanUseHardwareVideoDecoding()) {
+    return;
+  }
+  sReported = true;
 
-        
-        
-        
-        if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
-          WMFDecoderModule::Init(WMFDecoderModule::Config::ForceEnableHEVC);
-        }
-        const auto support = PDMFactory::Supported(true );
-        if (support.contains(
-                mozilla::media::MediaCodecsSupport::H264HardwareDecode)) {
-          Telemetry::ScalarSet(
-              Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT,
-              u"h264"_ns, true);
-        }
-        if (support.contains(
-                mozilla::media::MediaCodecsSupport::VP8HardwareDecode)) {
-          Telemetry::ScalarSet(
-              Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT,
-              u"vp8"_ns, true);
-        }
-        if (support.contains(
-                mozilla::media::MediaCodecsSupport::VP9HardwareDecode)) {
-          Telemetry::ScalarSet(
-              Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT,
-              u"vp9"_ns, true);
-        }
-        if (support.contains(
-                mozilla::media::MediaCodecsSupport::AV1HardwareDecode)) {
-          Telemetry::ScalarSet(
-              Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT,
-              u"av1"_ns, true);
-        }
-        if (support.contains(
-                mozilla::media::MediaCodecsSupport::HEVCHardwareDecode)) {
-          Telemetry::ScalarSet(
-              Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT,
-              u"hevc"_ns, true);
-        }
-        if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
-          WMFDecoderModule::Init();
-        }
-      }));
+  
+  
+  
+  if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
+    WMFDecoderModule::Init(WMFDecoderModule::Config::ForceEnableHEVC);
+  }
+  const auto support = PDMFactory::Supported(true );
+  if (support.contains(
+          mozilla::media::MediaCodecsSupport::H264HardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"h264"_ns,
+        true);
+  }
+  if (support.contains(mozilla::media::MediaCodecsSupport::VP8HardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"vp8"_ns,
+        true);
+  }
+  if (support.contains(mozilla::media::MediaCodecsSupport::VP9HardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"vp9"_ns,
+        true);
+  }
+  if (support.contains(mozilla::media::MediaCodecsSupport::AV1HardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"av1"_ns,
+        true);
+  }
+  if (support.contains(
+          mozilla::media::MediaCodecsSupport::HEVCHardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"hevc"_ns,
+        true);
+  }
+  if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
+    WMFDecoderModule::Init();
+  }
+
 #endif
   
   
@@ -459,16 +455,19 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   
   
   
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThreadQueue(
-      NS_NewRunnableFunction(
-          "GPUParent::Supported",
-          []() {
-            auto supported = PDMFactory::Supported();
-            Unused << GPUParent::GetSingleton()->SendUpdateMediaCodecsSupported(
-                supported);
-            ReportHardwareMediaCodecSupportIfNeeded();
-          }),
-      2000 , EventQueuePriority::Idle));
+
+  nsCOMPtr<nsIRunnable> task =
+      NS_NewRunnableFunction("GPUParent::Supported", []() {
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "GPUParent::UpdateMediaCodecsSupported",
+            [supported = PDMFactory::Supported()]() {
+              Unused << GPUParent::GetSingleton()
+                            ->SendUpdateMediaCodecsSupported(supported);
+            }));
+        ReportHardwareMediaCodecSupportIfNeeded();
+      });
+  MOZ_ALWAYS_SUCCEEDS(
+      NS_DispatchBackgroundTask(task, nsIEventTarget::DISPATCH_NORMAL));
 
   Telemetry::AccumulateTimeDelta(Telemetry::GPU_PROCESS_INITIALIZATION_TIME_MS,
                                  mLaunchTime);
@@ -555,10 +554,20 @@ mozilla::ipc::IPCResult GPUParent::RecvUpdateVar(const GfxVarUpdate& aUpdate) {
         if (couldUseHWDecoder != gfx::gfxVars::CanUseHardwareVideoDecoding()) {
           
           
-          WMFDecoderModule::Init();
-          Unused << GPUParent::GetSingleton()->SendUpdateMediaCodecsSupported(
-              PDMFactory::Supported(true ));
-          ReportHardwareMediaCodecSupportIfNeeded();
+          nsCOMPtr<nsIRunnable> task =
+              NS_NewRunnableFunction("GPUParent::RecvUpdateVar", []() {
+                WMFDecoderModule::Init();
+                NS_DispatchToMainThread(NS_NewRunnableFunction(
+                    "GPUParent::UpdateMediaCodecsSupported",
+                    [supported =
+                         PDMFactory::Supported(true )]() {
+                      Unused << GPUParent::GetSingleton()
+                                    ->SendUpdateMediaCodecsSupported(supported);
+                    }));
+                ReportHardwareMediaCodecSupportIfNeeded();
+              });
+          MOZ_ALWAYS_SUCCEEDS(
+              NS_DispatchBackgroundTask(task, nsIEventTarget::DISPATCH_NORMAL));
         }
       });
 #endif

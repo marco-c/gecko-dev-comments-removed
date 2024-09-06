@@ -64,21 +64,28 @@ AndroidDecoderModule::AndroidDecoderModule(CDMProxy* aProxy) {
   mProxy = static_cast<MediaDrmCDMProxy*>(aProxy);
 }
 
-StaticAutoPtr<nsTArray<nsCString>> AndroidDecoderModule::sSupportedSwMimeTypes;
-StaticAutoPtr<nsTArray<nsCString>> AndroidDecoderModule::sSupportedHwMimeTypes;
-StaticAutoPtr<MediaCodecsSupported> AndroidDecoderModule::sSupportedCodecs;
+ bool AndroidDecoderModule::AreSupportedMimeTypesReady() {
+  StaticMutexAutoLock lock(sMutex);
+  return sSupportedSwMimeTypes && sSupportedHwMimeTypes;
+}
+
+ bool AndroidDecoderModule::IsSupportedCodecsReady() {
+  StaticMutexAutoLock lock(sMutex);
+  return sSupportedCodecs;
+}
 
 
 media::MediaCodecsSupported AndroidDecoderModule::GetSupportedCodecs() {
-  if (!sSupportedSwMimeTypes || !sSupportedHwMimeTypes || !sSupportedCodecs) {
+  if (!AreSupportedMimeTypesReady() || !IsSupportedCodecsReady()) {
     SetSupportedMimeTypes();
   }
+  StaticMutexAutoLock lock(sMutex);
   return *sSupportedCodecs;
 }
 
 DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
     const nsACString& aMimeType) {
-  if (!sSupportedSwMimeTypes) {
+  if (!AreSupportedMimeTypesReady()) {
     SetSupportedMimeTypes();
   }
 
@@ -135,13 +142,16 @@ DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
 
   
   
-  if (sSupportedHwMimeTypes &&
-      sSupportedHwMimeTypes->Contains(TranslateMimeType(aMimeType))) {
-    return DecodeSupport::HardwareDecode;
-  }
-  if (sSupportedSwMimeTypes &&
-      sSupportedSwMimeTypes->Contains(TranslateMimeType(aMimeType))) {
-    return DecodeSupport::SoftwareDecode;
+  {
+    StaticMutexAutoLock lock(sMutex);
+    if (sSupportedHwMimeTypes &&
+        sSupportedHwMimeTypes->Contains(TranslateMimeType(aMimeType))) {
+      return DecodeSupport::HardwareDecode;
+    }
+    if (sSupportedSwMimeTypes &&
+        sSupportedSwMimeTypes->Contains(TranslateMimeType(aMimeType))) {
+      return DecodeSupport::SoftwareDecode;
+    }
   }
   return media::DecodeSupportSet{};
 }
@@ -179,21 +189,43 @@ void AndroidDecoderModule::SetSupportedMimeTypes() {
 
 void AndroidDecoderModule::SetSupportedMimeTypes(
     nsTArray<nsCString>&& aSupportedTypes) {
+  StaticMutexAutoLock lock(sMutex);
   
   if (sSupportedSwMimeTypes && sSupportedHwMimeTypes && sSupportedCodecs) {
     return;
   }
   if (!sSupportedSwMimeTypes) {
     sSupportedSwMimeTypes = new nsTArray<nsCString>;
-    ClearOnShutdown(&sSupportedSwMimeTypes);
+    if (NS_IsMainThread()) {
+      ClearOnShutdown(&sSupportedSwMimeTypes);
+    } else {
+      Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
+        StaticMutexAutoLock lock(sMutex);
+        ClearOnShutdown(&sSupportedSwMimeTypes);
+      }));
+    }
   }
   if (!sSupportedHwMimeTypes) {
     sSupportedHwMimeTypes = new nsTArray<nsCString>;
-    ClearOnShutdown(&sSupportedHwMimeTypes);
+    if (NS_IsMainThread()) {
+      ClearOnShutdown(&sSupportedHwMimeTypes);
+    } else {
+      Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
+        StaticMutexAutoLock lock(sMutex);
+        ClearOnShutdown(&sSupportedHwMimeTypes);
+      }));
+    }
   }
   if (!sSupportedCodecs) {
     sSupportedCodecs = new MediaCodecsSupported();
-    ClearOnShutdown(&sSupportedCodecs);
+    if (NS_IsMainThread()) {
+      ClearOnShutdown(&sSupportedCodecs);
+    } else {
+      Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
+        StaticMutexAutoLock lock(sMutex);
+        ClearOnShutdown(&sSupportedCodecs);
+      }));
+    }
   }
 
   DecodeSupportSet support;
