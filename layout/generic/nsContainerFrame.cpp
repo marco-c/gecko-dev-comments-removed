@@ -956,9 +956,6 @@ void nsContainerFrame::PositionChildViews(nsIFrame* aFrame) {
   
   
   for (const auto& [list, listID] : aFrame->ChildLists()) {
-    if (listID == FrameChildListID::Popup) {
-      continue;
-    }
     for (nsIFrame* childFrame : list) {
       
       
