@@ -245,128 +245,6 @@ void RunWatchdog(void* arg) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Atomic<nsCString*> gWriteData(nullptr);
-PRMonitor* gWriteReady = nullptr;
-
-void RunWriter(void* arg) {
-  AUTO_PROFILER_REGISTER_THREAD("Shutdown Statistics Writer");
-  NS_SetCurrentThreadName("Shutdown Statistics Writer");
-
-  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(arg);
-  
-  
-
-  
-
-  nsCString destinationPath;
-  destinationPath.Adopt(static_cast<char*>(arg));
-  nsAutoCString tmpFilePath;
-  tmpFilePath.Append(destinationPath);
-  tmpFilePath.AppendLiteral(".tmp");
-
-  
-  Unused << PR_Delete(tmpFilePath.get());
-  Unused << PR_Delete(destinationPath.get());
-
-  while (true) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    UniquePtr<nsCString> data(gWriteData.exchange(nullptr));
-    if (!data) {
-      
-      
-      PR_EnterMonitor(gWriteReady);
-      PR_Wait(gWriteReady, PR_INTERVAL_NO_TIMEOUT);
-      PR_ExitMonitor(gWriteReady);
-      continue;
-    }
-
-    MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(data.get());
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    UniquePtr<PRFileDesc, PR_CloseDelete> tmpFileDesc(PR_Open(
-        tmpFilePath.get(), PR_WRONLY | PR_TRUNCATE | PR_CREATE_FILE, 00600));
-
-    
-    
-    MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(tmpFileDesc.get());
-
-    if (tmpFileDesc == nullptr) {
-      break;
-    }
-    if (PR_Write(tmpFileDesc.get(), data->get(), data->Length()) == -1) {
-      break;
-    }
-    tmpFileDesc.reset();
-
-    
-    
-    
-    
-    
-    
-    
-    Unused << PR_Delete(destinationPath.get());
-    if (PR_Rename(tmpFilePath.get(), destinationPath.get()) != PR_SUCCESS) {
-      break;
-    }
-  }
-}
-
 }  
 
 NS_IMPL_ISUPPORTS(nsTerminator, nsIObserver, nsITerminatorTest)
@@ -379,12 +257,6 @@ void nsTerminator::Start() {
   MOZ_ASSERT(!mInitialized);
 
   StartWatchdog();
-#if !defined(NS_FREE_PERMANENT_DATA)
-  
-  
-  
-  StartWriter();
-#endif  
   mInitialized = true;
 }
 
@@ -473,41 +345,6 @@ void nsTerminator::StartWatchdog() {
 
 
 
-void nsTerminator::StartWriter() {
-  if (!Telemetry::CanRecordExtended()) {
-    return;
-  }
-  nsCOMPtr<nsIFile> profLD;
-  nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR,
-                                       getter_AddRefs(profLD));
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  rv = profLD->Append(u"ShutdownDuration.json"_ns);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  nsAutoString path;
-  rv = profLD->GetPath(path);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  gWriteReady = PR_NewMonitor();
-  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(
-      gWriteReady);  
-  PRThread* writerThread = CreateSystemThread(RunWriter, ToNewUTF8String(path));
-
-  if (!writerThread) {
-    return;
-  }
-}
-
-
-
-
 const char* GetReadableNameForPhase(mozilla::ShutdownPhase aPhase) {
   const char* readableName = mozilla::AppShutdown::GetObserverKey(aPhase);
   if (!readableName) {
@@ -531,12 +368,6 @@ void nsTerminator::AdvancePhase(mozilla::ShutdownPhase aPhase) {
   }
 
   UpdateHeartbeat(step);
-#if !defined(NS_FREE_PERMANENT_DATA)
-  
-  
-  
-  UpdateTelemetry();
-#endif  
   UpdateCrashReport(GetReadableNameForPhase(aPhase));
 }
 
@@ -553,55 +384,6 @@ void nsTerminator::UpdateHeartbeat(int32_t aStep) {
 
     mCurrentStep = aStep;
   }
-}
-
-void nsTerminator::UpdateTelemetry() {
-  if (!Telemetry::CanRecordExtended() || !gWriteReady) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-
-  
-  UniquePtr<nsCString> telemetryData(new nsCString());
-  telemetryData->AppendLiteral("{");
-  size_t fields = 0;
-  for (auto& shutdownStep : sShutdownSteps) {
-    if (shutdownStep.mTicks < 0) {
-      
-      continue;
-    }
-    if (fields++ > 0) {
-      telemetryData->AppendLiteral(", ");
-    }
-    telemetryData->AppendLiteral(R"(")");
-    telemetryData->Append(GetReadableNameForPhase(shutdownStep.mPhase));
-    telemetryData->AppendLiteral(R"(": )");
-    telemetryData->AppendInt(shutdownStep.mTicks);
-  }
-  telemetryData->AppendLiteral("}");
-
-  if (fields == 0) {
-    
-    return;
-  }
-
-  
-  
-  
-  delete gWriteData.exchange(
-      telemetryData.release());  
-
-  
-  PR_EnterMonitor(gWriteReady);
-  PR_Notify(gWriteReady);
-  PR_ExitMonitor(gWriteReady);
 }
 
 void nsTerminator::UpdateCrashReport(const char* aTopic) {
