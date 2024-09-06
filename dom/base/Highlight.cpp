@@ -101,24 +101,36 @@ already_AddRefed<Selection> Highlight::CreateHighlightSelection(
 }
 
 void Highlight::Add(AbstractRange& aRange, ErrorResult& aRv) {
+  
+  
+  
+  
+  
+  
+  if (Highlight_Binding::SetlikeHelpers::Has(this, aRange, aRv) ||
+      aRv.Failed()) {
+    return;
+  }
   Highlight_Binding::SetlikeHelpers::Add(this, aRange, aRv);
   if (aRv.Failed()) {
     return;
   }
-  if (!mRanges.Contains(&aRange)) {
-    mRanges.AppendElement(&aRange);
-    AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__,
-                                               mHighlightRegistries.Count());
-    for (const RefPtr<HighlightRegistry>& registry :
-         mHighlightRegistries.Keys()) {
-      auto frameSelection = registry->GetFrameSelection();
-      selectionBatcher.AddFrameSelection(frameSelection);
-      
-      
-      MOZ_KnownLive(registry)->MaybeAddRangeToHighlightSelection(aRange, *this);
-      if (aRv.Failed()) {
-        return;
-      }
+
+  MOZ_ASSERT(!mRanges.Contains(&aRange),
+             "setlike and DOM mirror are not in sync");
+
+  mRanges.AppendElement(&aRange);
+  AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__,
+                                             mHighlightRegistries.Count());
+  for (const RefPtr<HighlightRegistry>& registry :
+       mHighlightRegistries.Keys()) {
+    auto frameSelection = registry->GetFrameSelection();
+    selectionBatcher.AddFrameSelection(frameSelection);
+    
+    
+    MOZ_KnownLive(registry)->MaybeAddRangeToHighlightSelection(aRange, *this);
+    if (aRv.Failed()) {
+      return;
     }
   }
 }

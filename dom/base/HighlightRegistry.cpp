@@ -133,18 +133,28 @@ void HighlightRegistry::AddHighlightSelectionsToFrameSelection() {
 
 void HighlightRegistry::Set(const nsAString& aKey, Highlight& aValue,
                             ErrorResult& aRv) {
+  
+  
+  const bool highlightAlreadyPresent =
+      HighlightRegistry_Binding::MaplikeHelpers::Has(this, aKey, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
   HighlightRegistry_Binding::MaplikeHelpers::Set(this, aKey, aValue, aRv);
   if (aRv.Failed()) {
     return;
   }
   RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
   RefPtr<nsAtom> highlightNameAtom = NS_AtomizeMainThread(aKey);
-  auto foundIter =
-      std::find_if(mHighlightsOrdered.begin(), mHighlightsOrdered.end(),
-                   [&highlightNameAtom](auto const& aElm) {
-                     return aElm.first() == highlightNameAtom;
-                   });
-  if (foundIter != mHighlightsOrdered.end()) {
+  if (highlightAlreadyPresent) {
+    
+    auto foundIter =
+        std::find_if(mHighlightsOrdered.begin(), mHighlightsOrdered.end(),
+                     [&highlightNameAtom](auto const& aElm) {
+                       return aElm.first() == highlightNameAtom;
+                     });
+    MOZ_ASSERT(foundIter != mHighlightsOrdered.end(),
+               "webIDL maplike and DOM mirror are not in sync");
     foundIter->second()->RemoveFromHighlightRegistry(*this, *highlightNameAtom);
     if (frameSelection) {
       frameSelection->RemoveHighlightSelection(highlightNameAtom);
