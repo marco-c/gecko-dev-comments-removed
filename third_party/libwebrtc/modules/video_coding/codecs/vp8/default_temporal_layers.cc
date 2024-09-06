@@ -141,29 +141,13 @@ DefaultTemporalLayers::GetDependencyInfo(size_t num_layers) {
       
       
       
-      if (!field_trial::IsDisabled("WebRTC-UseShortVP8TL2Pattern")) {
-        
-        
-        
-        
-        return {{"SS", {kReferenceAndUpdate, kNone, kNone}},
-                {"-S", {kReference, kUpdate, kNone}},
-                {"SR", {kReferenceAndUpdate, kNone, kNone}},
-                {"-D", {kReference, kReference, kNone, kFreezeEntropy}}};
-      } else {
-        
-        
-        
-        
-        return {{"SS", {kReferenceAndUpdate, kNone, kNone}},
-                {"-S", {kReference, kUpdate, kNone}},
-                {"SR", {kReferenceAndUpdate, kNone, kNone}},
-                {"-R", {kReference, kReferenceAndUpdate, kNone}},
-                {"SR", {kReferenceAndUpdate, kNone, kNone}},
-                {"-R", {kReference, kReferenceAndUpdate, kNone}},
-                {"SR", {kReferenceAndUpdate, kNone, kNone}},
-                {"-D", {kReference, kReference, kNone, kFreezeEntropy}}};
-      }
+      
+      
+      
+      return {{"SS", {kReferenceAndUpdate, kNone, kNone}},
+              {"-S", {kReference, kUpdate, kNone}},
+              {"SR", {kReferenceAndUpdate, kNone, kNone}},
+              {"-D", {kReference, kReference, kNone, kFreezeEntropy}}};
     case 3:
       if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
         
@@ -708,11 +692,7 @@ std::vector<std::set<uint8_t>> GetTemporalDependencies(
     case 1:
       return {{0}};
     case 2:
-      if (!field_trial::IsDisabled("WebRTC-UseShortVP8TL2Pattern")) {
-        return {{2}, {0}, {0}, {1, 2}};
-      } else {
-        return {{6}, {0}, {0}, {1, 2}, {2}, {3, 4}, {4}, {5, 6}};
-      }
+      return {{2}, {0}, {0}, {1, 2}};
     case 3:
       if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
         return {{0}, {0}, {0}, {0, 1, 2}};
