@@ -799,13 +799,13 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
   int32_t dateSign = CompareISODate(two.date, one.date);
 
   
-  auto adjustedDate = one.date;
+  auto adjustedDate = two.date;
 
   
   if (timeSign == -dateSign) {
     
     adjustedDate = BalanceISODate(adjustedDate.year, adjustedDate.month,
-                                  adjustedDate.day - timeSign);
+                                  adjustedDate.day + timeSign);
 
     
     if (!Add24HourDaysToNormalizedTimeDuration(cx, timeDuration, -timeSign,
@@ -818,10 +818,10 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
   MOZ_ASSERT(ISODateTimeWithinLimits(adjustedDate));
 
   
-  const auto& date1 = adjustedDate;
+  const auto& date1 = one.date;
 
   
-  const auto& date2 = two.date;
+  const auto& date2 = adjustedDate;
 
   
   auto dateLargestUnit = std::min(TemporalUnit::Day, largestUnit);
