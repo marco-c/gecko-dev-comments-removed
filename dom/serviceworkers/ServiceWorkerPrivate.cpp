@@ -322,6 +322,14 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
   MOZ_ALWAYS_SUCCEEDS(internalChannel->GetRedirectMode(&redirectMode));
   RequestRedirect requestRedirect = static_cast<RequestRedirect>(redirectMode);
 
+  
+  
+  
+  
+  
+  
+  RequestPriority requestPriority = RequestPriority::Auto;
+
   RequestCredentials requestCredentials =
       InternalRequest::MapChannelToRequestCredentials(underlyingChannel);
 
@@ -411,9 +419,9 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
       method, {spec}, ipcHeadersGuard, ipcHeaders, Nothing(), -1,
       alternativeDataType, contentPolicyType, internalPriority, referrer,
       referrerPolicy, environmentReferrerPolicy, requestMode,
-      requestCredentials, cacheMode, requestRedirect, integrity, fragment,
-      principalInfo, interceptionPrincipalInfo, contentPolicyType,
-      redirectChain, isThirdPartyChannel, embedderPolicy);
+      requestCredentials, cacheMode, requestRedirect, requestPriority,
+      integrity, fragment, principalInfo, interceptionPrincipalInfo,
+      contentPolicyType, redirectChain, isThirdPartyChannel, embedderPolicy);
 }
 
 nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,
