@@ -21,6 +21,7 @@
 #include "nsIRequest.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsIThreadRetargetableRequest.h"
+#include "nsIChannel.h"
 
 
 #undef assert
@@ -143,17 +144,35 @@ nsHTTPCompressConv::MaybeRetarget(nsIRequest* request) {
   nsCOMPtr<nsISerialEventTarget> target;
   rv = req->GetDeliveryTarget(getter_AddRefs(target));
   if (NS_FAILED(rv) || !target || target->IsOnCurrentThread()) {
-    
-    
-    nsCOMPtr<nsISerialEventTarget> backgroundThread;
-    rv = NS_CreateBackgroundTaskQueue("nsHTTPCompressConv",
-                                      getter_AddRefs(backgroundThread));
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = req->RetargetDeliveryTo(backgroundThread);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (NS_SUCCEEDED(rv)) {
-      mDispatchToMainThread = true;
+    nsCOMPtr<nsIChannel> channel(do_QueryInterface(request));
+    int64_t length = -1;
+    if (channel) {
+      channel->GetContentLength(&length);
+      
     }
+    if (length <= 0 ||
+        length >=
+            StaticPrefs::network_decompression_off_mainthread_min_size()) {
+      LOG(("MaybeRetarget: Retargeting to background thread: Length %ld",
+           length));
+      
+      
+      
+      
+      nsCOMPtr<nsISerialEventTarget> backgroundThread;
+      rv = NS_CreateBackgroundTaskQueue("nsHTTPCompressConv",
+                                        getter_AddRefs(backgroundThread));
+      NS_ENSURE_SUCCESS(rv, rv);
+      rv = req->RetargetDeliveryTo(backgroundThread);
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_SUCCEEDED(rv)) {
+        mDispatchToMainThread = true;
+      }
+    } else {
+      LOG(("MaybeRetarget: Not retargeting: Length %ld", length));
+    }
+  } else {
+    LOG(("MaybeRetarget: Don't need to retarget"));
   }
 
   return NS_OK;
