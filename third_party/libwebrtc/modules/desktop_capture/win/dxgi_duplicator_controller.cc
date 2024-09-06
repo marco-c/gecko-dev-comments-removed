@@ -500,6 +500,13 @@ bool DxgiDuplicatorController::EnsureFrameCaptured(Context* context,
     
     webrtc::SleepMs(ms_per_frame);
   }
+  
+  
+  
+  if (shared_frame != target) {
+    context->Reset();
+    Setup(context);
+  }
   return true;
 }
 
