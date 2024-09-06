@@ -324,13 +324,11 @@ class CCGCScheduler {
   void UnblockCC() { mCCBlockStart = TimeStamp(); }
 
   
-  uint32_t NoteForgetSkippableComplete(TimeStamp aNow,
-                                       uint32_t aSuspectedBeforeForgetSkippable,
-                                       uint32_t aSuspectedCCObjects) {
+  void NoteForgetSkippableComplete(TimeStamp aNow,
+                                   uint32_t aSuspectedCCObjects) {
     mLastForgetSkippableEndTime = aNow;
     mPreviousSuspectedCount = aSuspectedCCObjects;
     mCleanupsSinceLastGC++;
-    return aSuspectedBeforeForgetSkippable - aSuspectedCCObjects;
   }
 
   
