@@ -11,6 +11,7 @@ import io
 import json
 import logging
 import os
+import sys
 from multiprocessing import Pool
 
 import mozpack.path as mozpath
@@ -23,6 +24,10 @@ from mozbuild.util import FileAvoidWrite
 
 
 
+
+DEFAULT_PROCESS_COUNT = 4 if sys.platform == "win32" else os.cpu_count()
+
+
 class WebIDLPool:
     """
     Distribute generation load across several processes, avoiding redundant state
@@ -32,6 +37,9 @@ class WebIDLPool:
     GeneratorState = None
 
     def __init__(self, GeneratorState, *, processes=None):
+        if processes is None:
+            processes = DEFAULT_PROCESS_COUNT
+
         
         if processes == 1:
             WebIDLPool._init(GeneratorState)
@@ -42,7 +50,11 @@ class WebIDLPool:
 
             self.pool = SeqPool()
         else:
-            self.pool = Pool(initializer=WebIDLPool._init, initargs=(GeneratorState,))
+            self.pool = Pool(
+                initializer=WebIDLPool._init,
+                initargs=(GeneratorState,),
+                processes=processes,
+            )
 
     def run(self, filenames):
         return self.pool.map(WebIDLPool._run, filenames)
