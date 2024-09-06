@@ -1726,12 +1726,6 @@ toolbar#nav-bar {
                 subsuite(options.subsuite),
             ]
 
-            
-            if options.conditionedProfile:
-                if not options.test_tags:
-                    options.test_tags = []
-                options.test_tags.append("condprof")
-
             if options.test_tags:
                 filters.append(tags(options.test_tags))
 
