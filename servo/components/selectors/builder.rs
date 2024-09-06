@@ -17,16 +17,18 @@
 
 
 
-use crate::parser::{Combinator, Component, RelativeSelector, Selector, SelectorImpl};
+
+
+
+
+
+
+use crate::parser::{Combinator, Component, RelativeSelector, Selector, SelectorImpl, ParseRelative};
 use crate::sink::Push;
 use servo_arc::{Arc, ThinArc};
 use smallvec::SmallVec;
 use std::cmp;
-use std::iter;
-use std::ptr;
 use std::slice;
-
-
 
 
 
@@ -41,24 +43,8 @@ pub struct SelectorBuilder<Impl: SelectorImpl> {
     
     
     
-    
-    
-    simple_selectors: SmallVec<[Component<Impl>; 32]>,
-    
-    combinators: SmallVec<[(Combinator, usize); 16]>,
-    
-    current_len: usize,
-}
-
-impl<Impl: SelectorImpl> Default for SelectorBuilder<Impl> {
-    #[inline(always)]
-    fn default() -> Self {
-        SelectorBuilder {
-            simple_selectors: SmallVec::new(),
-            combinators: SmallVec::new(),
-            current_len: 0,
-        }
-    }
+    components: SmallVec<[Component<Impl>; 32]>,
+    last_compound_start: Option<usize>,
 }
 
 impl<Impl: SelectorImpl> Push<Component<Impl>> for SelectorBuilder<Impl> {
@@ -71,31 +57,36 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
     
     #[inline(always)]
     pub fn push_simple_selector(&mut self, ss: Component<Impl>) {
-        assert!(!ss.is_combinator());
-        self.simple_selectors.push(ss);
-        self.current_len += 1;
+        debug_assert!(!ss.is_combinator());
+        self.components.push(ss);
     }
 
     
     
     #[inline(always)]
     pub fn push_combinator(&mut self, c: Combinator) {
-        self.combinators.push((c, self.current_len));
-        self.current_len = 0;
+        self.reverse_last_compound();
+        self.components.push(Component::Combinator(c));
+        self.last_compound_start = Some(self.components.len());
+    }
+
+    fn reverse_last_compound(&mut self) {
+        let start = self.last_compound_start.unwrap_or(0);
+        self.components[start..].reverse();
     }
 
     
     #[inline(always)]
     pub fn has_combinators(&self) -> bool {
-        !self.combinators.is_empty()
+        self.last_compound_start.is_some()
     }
 
     
     #[inline(always)]
-    pub fn build(&mut self) -> ThinArc<SpecificityAndFlags, Component<Impl>> {
+    pub fn build(&mut self, parse_relative: ParseRelative) -> ThinArc<SpecificityAndFlags, Component<Impl>> {
         
-        let sf = specificity_and_flags(self.simple_selectors.iter());
-        self.build_with_specificity_and_flags(sf)
+        let sf = specificity_and_flags(self.components.iter());
+        self.build_with_specificity_and_flags(sf, parse_relative)
     }
 
     
@@ -103,67 +94,76 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
     #[inline(always)]
     pub(crate) fn build_with_specificity_and_flags(
         &mut self,
-        spec: SpecificityAndFlags,
+        mut spec: SpecificityAndFlags,
+        parse_relative: ParseRelative,
     ) -> ThinArc<SpecificityAndFlags, Component<Impl>> {
-        
-        
-        
-        let raw_simple_selectors = unsafe {
-            let simple_selectors_len = self.simple_selectors.len();
-            self.simple_selectors.set_len(0);
-            std::slice::from_raw_parts(self.simple_selectors.as_ptr(), simple_selectors_len)
-        };
-        let (rest, current) = split_from_end(raw_simple_selectors, self.current_len);
-        let iter = SelectorBuilderIter {
-            current_simple_selectors: current.iter(),
-            rest_of_simple_selectors: rest,
-            combinators: self.combinators.drain(..).rev(),
+        let implicit_parent = parse_relative.needs_implicit_parent_selector() &&
+            !spec.flags.contains(SelectorFlags::HAS_PARENT);
+
+        let parent_selector_and_combinator;
+        let implicit_parent = if implicit_parent {
+            spec.flags.insert(SelectorFlags::HAS_PARENT);
+            parent_selector_and_combinator = [
+                Component::Combinator(Combinator::Descendant),
+                Component::ParentSelector,
+            ];
+            &parent_selector_and_combinator[..]
+        } else {
+            &[]
         };
 
-        Arc::from_header_and_iter(spec, iter)
+        
+        
+        if self.last_compound_start.is_none() {
+            return Arc::from_header_and_iter(spec, ExactChain(self.components.drain(..), implicit_parent.iter().cloned()));
+        }
+
+        self.reverse_last_compound();
+        Arc::from_header_and_iter(spec, ExactChain(self.components.drain(..).rev(), implicit_parent.iter().cloned()))
     }
 }
 
-struct SelectorBuilderIter<'a, Impl: SelectorImpl> {
-    current_simple_selectors: slice::Iter<'a, Component<Impl>>,
-    rest_of_simple_selectors: &'a [Component<Impl>],
-    combinators: iter::Rev<smallvec::Drain<'a, [(Combinator, usize); 16]>>,
+
+impl<Impl: SelectorImpl> Default for SelectorBuilder<Impl> {
+    #[inline(always)]
+    fn default() -> Self {
+        SelectorBuilder {
+            components: SmallVec::new(),
+            last_compound_start: None,
+        }
+    }
 }
 
-impl<'a, Impl: SelectorImpl> ExactSizeIterator for SelectorBuilderIter<'a, Impl> {
+
+
+struct ExactChain<A, B>(A, B);
+
+impl<A, B, Item> ExactSizeIterator for ExactChain<A, B>
+where
+    A: ExactSizeIterator<Item = Item>,
+    B: ExactSizeIterator<Item = Item>,
+{
     fn len(&self) -> usize {
-        self.current_simple_selectors.len() +
-            self.rest_of_simple_selectors.len() +
-            self.combinators.len()
+        self.0.len() + self.1.len()
     }
 }
 
-impl<'a, Impl: SelectorImpl> Iterator for SelectorBuilderIter<'a, Impl> {
-    type Item = Component<Impl>;
+impl<A, B, Item> Iterator for ExactChain<A, B>
+where
+    A: ExactSizeIterator<Item = Item>,
+    B: ExactSizeIterator<Item = Item>,
+{
+    type Item = Item;
+
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(simple_selector_ref) = self.current_simple_selectors.next() {
-            
-            
-            
-            unsafe { Some(ptr::read(simple_selector_ref)) }
-        } else {
-            self.combinators.next().map(|(combinator, len)| {
-                let (rest, current) = split_from_end(self.rest_of_simple_selectors, len);
-                self.rest_of_simple_selectors = rest;
-                self.current_simple_selectors = current.iter();
-                Component::Combinator(combinator)
-            })
-        }
+        self.0.next().or_else(|| self.1.next())
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
+        let len = self.len();
+        (len, Some(len))
     }
-}
-
-fn split_from_end<T>(s: &[T], at: usize) -> (&[T], &[T]) {
-    s.split_at(s.len() - at)
 }
 
 

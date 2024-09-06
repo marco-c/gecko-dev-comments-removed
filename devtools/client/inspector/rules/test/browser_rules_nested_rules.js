@@ -93,7 +93,7 @@ add_task(async function () {
   checkRuleViewContent(view, [
     { selector: "element", ancestorRulesData: null, declarations: [] },
     {
-      selector: `.foo`,
+      selector: `& .foo`,
       
       ancestorRulesData: [
         `body {`,
@@ -108,7 +108,7 @@ add_task(async function () {
   checkRuleViewContent(view, [
     { selector: "element", ancestorRulesData: null, declarations: [] },
     {
-      selector: `#bar`,
+      selector: `& #bar`,
       
       ancestorRulesData: [
         `body {`,
@@ -138,7 +138,7 @@ add_task(async function () {
   checkRuleViewContent(view, [
     { selector: "element", ancestorRulesData: null, declarations: [] },
     {
-      selector: `[href]`,
+      selector: `& [href]`,
       ancestorRulesData: [
         `body {`,
         `  @media screen {`,
