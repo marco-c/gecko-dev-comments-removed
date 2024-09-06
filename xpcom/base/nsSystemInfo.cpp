@@ -16,6 +16,7 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Try.h"
+#include "mozilla/Vector.h"
 #include "jsapi.h"
 #include "js/PropertyAndElement.h"  
 #include "mozilla/dom/Promise.h"
@@ -1139,9 +1140,6 @@ nsresult CollectProcessInfo(ProcessInfo& info) {
 
     
     (void)Tokenizer(keyValuePairs["stepping"_ns]).ReadInteger(&cpuStepping);
-
-    
-    (void)Tokenizer(keyValuePairs["cpu cores"_ns]).ReadInteger(&physicalCPUs);
 #  endif
   }
 
@@ -1175,6 +1173,106 @@ nsresult CollectProcessInfo(ProcessInfo& info) {
   }
 
   info.cpuCount = PR_GetNumberOfProcessors();
+  int max_cpu_bits = [&] {
+    
+    
+    
+    
+    
+    
+    
+    std::ifstream input("/sys/devices/system/cpu/possible");
+    std::string line;
+    if (getline(input, line)) {
+      int num;
+      Tokenizer p(line.c_str());
+      
+      
+      if (p.ReadInteger(&num) && num == 0 && p.CheckChar('-') &&
+          p.ReadInteger(&num) && p.CheckEOF()) {
+        return num + 1;
+      }
+    }
+    
+    
+    return info.cpuCount;
+  }();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr int mask_bits = sizeof(uint32_t) * 8;
+
+  Vector<uint32_t> cpumasks;
+  physicalCPUs = [&] {
+    int cores = 0;
+    if (!cpumasks.appendN(0, (max_cpu_bits + mask_bits - 1) / mask_bits)) {
+      return -1;
+    }
+    for (int32_t cpu = 0; cpu < info.cpuCount; ++cpu) {
+      nsPrintfCString core_cpus(
+          "/sys/devices/system/cpu/cpu%d/topology/core_cpus", cpu);
+      std::ifstream input(core_cpus.Data());
+      
+      
+      
+      
+      if (input.fail()) {
+        core_cpus.Truncate(core_cpus.Length() - sizeof("core_cpus") + 1);
+        core_cpus.AppendLiteral("thread_siblings");
+        input.open(core_cpus.Data());
+      }
+      std::string line;
+      if (!getline(input, line)) {
+        return -1;
+      }
+      Tokenizer p(line.c_str());
+      bool unknown_core = false;
+      
+      
+      
+      for (auto& mask : cpumasks) {
+        uint32_t m;
+        if (NS_WARN_IF(!p.ReadHexadecimal(&m,  false))) {
+          return -1;
+        }
+        if (!p.CheckEOF() && !p.CheckChar(',')) {
+          return -1;
+        }
+        
+        
+        
+        
+        
+        
+        if ((mask & m) != m) {
+          unknown_core = true;
+        }
+        mask |= m;
+      }
+      if (unknown_core) {
+        cores++;
+      }
+    }
+    return cores;
+  }();
+
 #else
   info.cpuCount = PR_GetNumberOfProcessors();
 #endif
