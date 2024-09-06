@@ -728,9 +728,15 @@ class Editor extends EventEmitter {
     const lineContentMarkers = this.#lineContentMarkers;
 
     class LineContentWidget extends WidgetType {
-      constructor(line, createElementNode) {
+      constructor(line, markerId, createElementNode) {
         super();
+        this.line = line;
+        this.markerId = markerId;
         this.toDOM = () => createElementNode(line);
+      }
+
+      eq(widget) {
+        return widget.line == this.line && widget.markerId == this.markerId;
       }
     }
 
@@ -787,11 +793,14 @@ class Editor extends EventEmitter {
           
           
           const nodeDecoration = Decoration.widget({
-            widget: new LineContentWidget(line, marker.createLineElementNode),
+            widget: new LineContentWidget(
+              line,
+              marker.id,
+              marker.createLineElementNode
+            ),
             
             side: 1,
-            
-            block: false,
+            block: !!marker.renderAsBlock,
           });
           nodeDecoration.markerType = marker.id;
           newMarkerDecorations.push(nodeDecoration.range(lo.to));
@@ -826,7 +835,7 @@ class Editor extends EventEmitter {
       });
     }
 
-    
+
 
 
 
@@ -868,8 +877,8 @@ class Editor extends EventEmitter {
       });
     }
 
-    
-    
+    // The effects used to create the transaction when markers are
+    // either added and removed.
     const addEffect = StateEffect.define();
     const removeEffect = StateEffect.define();
 
@@ -1064,6 +1073,8 @@ class Editor extends EventEmitter {
 
 
 
+
+
   setLineContentMarker(marker) {
     const cm = editors.get(this);
     
@@ -1075,7 +1086,7 @@ class Editor extends EventEmitter {
     });
   }
 
-  
+
 
 
 
@@ -1087,7 +1098,7 @@ class Editor extends EventEmitter {
     });
   }
 
-  
+
 
 
 
@@ -1105,9 +1116,20 @@ class Editor extends EventEmitter {
     const cachedPositionContentMarkers = this.#posContentMarkers;
 
     class NodeWidget extends WidgetType {
-      constructor(line, column, createElementNode, domNode) {
+      constructor(line, column, markerId, createElementNode) {
         super();
-        this.toDOM = () => createElementNode(line, column, domNode);
+        this.line = line;
+        this.column = column;
+        this.markerId = markerId;
+        this.toDOM = () => createElementNode(line, column);
+      }
+
+      eq(widget) {
+        return (
+          this.line == widget.line &&
+          this.column == widget.column &&
+          this.markerId == widget.markerId
+        );
       }
     }
 
@@ -1169,6 +1191,7 @@ class Editor extends EventEmitter {
               widget: new NodeWidget(
                 position.line,
                 position.column,
+                marker.id,
                 marker.createPositionElementNode
               ),
               
@@ -1233,7 +1256,7 @@ class Editor extends EventEmitter {
       });
     }
 
-    
+
 
 
 
@@ -1341,7 +1364,7 @@ class Editor extends EventEmitter {
     });
   }
 
-  
+
 
 
 
@@ -1354,7 +1377,7 @@ class Editor extends EventEmitter {
     });
   }
 
-  
+
 
 
 
@@ -1671,12 +1694,12 @@ class Editor extends EventEmitter {
     };
   }
 
-  
-
-
-
-
-
+  /**
+   * Gets the position information for the current selection
+   * @returns {Object} cursor      - The location information for the  current selection
+   *                   cursor.from - An object with the starting line / column of the selection
+   *                   cursor.to   - An object with the end line / column of the selection
+   */
   getSelectionCursor() {
     const cm = editors.get(this);
     if (this.config.cm6) {

@@ -129,6 +129,7 @@ export class ConditionalPanel extends PureComponent {
     editor.setLineContentMarker({
       id: markerTypes.CONDITIONAL_BP_MARKER,
       lines: [line],
+      renderAsBlock: true,
       createLineElementNode: () => {
         
         
@@ -270,7 +271,10 @@ export class ConditionalPanel extends PureComponent {
     const defaultValue = this.getDefaultValue();
 
     const panel = document.createElement("div");
-    ReactDOM.render(
+    
+    
+    const reactElPanel = div(
+      { className: "conditional-breakpoint-panel-container" },
       div(
         {
           className: classnames("conditional-breakpoint-panel", {
@@ -289,9 +293,10 @@ export class ConditionalPanel extends PureComponent {
           defaultValue,
           ref: input => this.createEditor(input, editor),
         })
-      ),
-      panel
+      )
     );
+
+    ReactDOM.render(reactElPanel, panel);
     return panel;
   }
 
