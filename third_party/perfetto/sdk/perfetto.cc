@@ -265,7 +265,7 @@ class Hasher {
 
   
   
-  template <typename T, typename = std::enable_if<T::kHashable>>
+  template <typename T, typename = std::enable_if_t<T::kHashable>>
   void Update(const T& t) {
     Update(t.data(), t.size());
   }
@@ -563,7 +563,7 @@ struct std::hash<::perfetto::base::StringView> {
 
 
 
-#include <sys/types.h>
+#include <sys/types.h>  
 #include <cstdint>
 
 
@@ -13185,7 +13185,8 @@ ObservableEvents_CloneTriggerHit& ObservableEvents_CloneTriggerHit::operator=(Ob
 
 bool ObservableEvents_CloneTriggerHit::operator==(const ObservableEvents_CloneTriggerHit& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
-   && ::protozero::internal::gen_helpers::EqualsField(tracing_session_id_, other.tracing_session_id_);
+   && ::protozero::internal::gen_helpers::EqualsField(tracing_session_id_, other.tracing_session_id_)
+   && ::protozero::internal::gen_helpers::EqualsField(trigger_name_, other.trigger_name_);
 }
 
 bool ObservableEvents_CloneTriggerHit::ParseFromArray(const void* raw, size_t size) {
@@ -13200,6 +13201,9 @@ bool ObservableEvents_CloneTriggerHit::ParseFromArray(const void* raw, size_t si
     switch (field.id()) {
       case 1 :
         field.get(&tracing_session_id_);
+        break;
+      case 2 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &trigger_name_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -13225,6 +13229,11 @@ void ObservableEvents_CloneTriggerHit::Serialize(::protozero::Message* msg) cons
   
   if (_has_field_[1]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(1, tracing_session_id_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeString(2, trigger_name_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -15871,6 +15880,105 @@ void PackagesListConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : package_name_filter_) {
     ::protozero::internal::gen_helpers::SerializeString(1, it, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+PixelModemConfig::PixelModemConfig() = default;
+PixelModemConfig::~PixelModemConfig() = default;
+PixelModemConfig::PixelModemConfig(const PixelModemConfig&) = default;
+PixelModemConfig& PixelModemConfig::operator=(const PixelModemConfig&) = default;
+PixelModemConfig::PixelModemConfig(PixelModemConfig&&) noexcept = default;
+PixelModemConfig& PixelModemConfig::operator=(PixelModemConfig&&) = default;
+
+bool PixelModemConfig::operator==(const PixelModemConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(event_group_, other.event_group_)
+   && ::protozero::internal::gen_helpers::EqualsField(pigweed_hash_allow_list_, other.pigweed_hash_allow_list_)
+   && ::protozero::internal::gen_helpers::EqualsField(pigweed_hash_deny_list_, other.pigweed_hash_deny_list_);
+}
+
+bool PixelModemConfig::ParseFromArray(const void* raw, size_t size) {
+  pigweed_hash_allow_list_.clear();
+  pigweed_hash_deny_list_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&event_group_);
+        break;
+      case 2 :
+        pigweed_hash_allow_list_.emplace_back();
+        field.get(&pigweed_hash_allow_list_.back());
+        break;
+      case 3 :
+        pigweed_hash_deny_list_.emplace_back();
+        field.get(&pigweed_hash_deny_list_.back());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string PixelModemConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> PixelModemConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void PixelModemConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, event_group_, msg);
+  }
+
+  
+  for (auto& it : pigweed_hash_allow_list_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, it, msg);
+  }
+
+  
+  for (auto& it : pigweed_hash_deny_list_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, it, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -19246,6 +19354,7 @@ void ChromeConfig::Serialize(::protozero::Message* msg) const {
 
 
 
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -20005,6 +20114,7 @@ bool DataSourceConfig::operator==(const DataSourceConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(etw_config_, other.etw_config_)
    && ::protozero::internal::gen_helpers::EqualsField(protolog_config_, other.protolog_config_)
    && ::protozero::internal::gen_helpers::EqualsField(android_input_event_config_, other.android_input_event_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(pixel_modem_config_, other.pixel_modem_config_)
    && ::protozero::internal::gen_helpers::EqualsField(legacy_config_, other.legacy_config_)
    && ::protozero::internal::gen_helpers::EqualsField(for_testing_, other.for_testing_);
 }
@@ -20126,6 +20236,9 @@ bool DataSourceConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 128 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &android_input_event_config_);
+        break;
+      case 129 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &pixel_modem_config_);
         break;
       case 1000 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &legacy_config_);
@@ -20335,6 +20448,11 @@ void DataSourceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[129]) {
+    msg->AppendString(129, pixel_modem_config_);
+  }
+
+  
   if (_has_field_[1000]) {
     ::protozero::internal::gen_helpers::SerializeString(1000, legacy_config_, msg);
   }
@@ -20530,6 +20648,7 @@ void InterceptorConfig::Serialize(::protozero::Message* msg) const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
 
 
 
@@ -21159,6 +21278,7 @@ void TestConfig_DummyFields::Serialize(::protozero::Message* msg) const {
 
 
 
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -21205,7 +21325,8 @@ bool TraceConfig::operator==(const TraceConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(trace_uuid_lsb_, other.trace_uuid_lsb_)
    && ::protozero::internal::gen_helpers::EqualsField(trace_filter_, other.trace_filter_)
    && ::protozero::internal::gen_helpers::EqualsField(android_report_config_, other.android_report_config_)
-   && ::protozero::internal::gen_helpers::EqualsField(cmd_trace_start_delay_, other.cmd_trace_start_delay_);
+   && ::protozero::internal::gen_helpers::EqualsField(cmd_trace_start_delay_, other.cmd_trace_start_delay_)
+   && ::protozero::internal::gen_helpers::EqualsField(session_semaphores_, other.session_semaphores_);
 }
 
 int TraceConfig::buffers_size() const { return static_cast<int>(buffers_.size()); }
@@ -21217,11 +21338,15 @@ TraceConfig_DataSource* TraceConfig::add_data_sources() { data_sources_.emplace_
 int TraceConfig::producers_size() const { return static_cast<int>(producers_.size()); }
 void TraceConfig::clear_producers() { producers_.clear(); }
 TraceConfig_ProducerConfig* TraceConfig::add_producers() { producers_.emplace_back(); return &producers_.back(); }
+int TraceConfig::session_semaphores_size() const { return static_cast<int>(session_semaphores_.size()); }
+void TraceConfig::clear_session_semaphores() { session_semaphores_.clear(); }
+TraceConfig_SessionSemaphore* TraceConfig::add_session_semaphores() { session_semaphores_.emplace_back(); return &session_semaphores_.back(); }
 bool TraceConfig::ParseFromArray(const void* raw, size_t size) {
   buffers_.clear();
   data_sources_.clear();
   producers_.clear();
   activate_triggers_.clear();
+  session_semaphores_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -21336,6 +21461,10 @@ bool TraceConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 35 :
         (*cmd_trace_start_delay_).ParseFromArray(field.data(), field.size());
+        break;
+      case 39 :
+        session_semaphores_.emplace_back();
+        session_semaphores_.back().ParseFromArray(field.data(), field.size());
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -21526,6 +21655,75 @@ void TraceConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[35]) {
     (*cmd_trace_start_delay_).Serialize(msg->BeginNestedMessage<::protozero::Message>(35));
+  }
+
+  
+  for (auto& it : session_semaphores_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(39));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+TraceConfig_SessionSemaphore::TraceConfig_SessionSemaphore() = default;
+TraceConfig_SessionSemaphore::~TraceConfig_SessionSemaphore() = default;
+TraceConfig_SessionSemaphore::TraceConfig_SessionSemaphore(const TraceConfig_SessionSemaphore&) = default;
+TraceConfig_SessionSemaphore& TraceConfig_SessionSemaphore::operator=(const TraceConfig_SessionSemaphore&) = default;
+TraceConfig_SessionSemaphore::TraceConfig_SessionSemaphore(TraceConfig_SessionSemaphore&&) noexcept = default;
+TraceConfig_SessionSemaphore& TraceConfig_SessionSemaphore::operator=(TraceConfig_SessionSemaphore&&) = default;
+
+bool TraceConfig_SessionSemaphore::operator==(const TraceConfig_SessionSemaphore& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_)
+   && ::protozero::internal::gen_helpers::EqualsField(max_other_session_count_, other.max_other_session_count_);
+}
+
+bool TraceConfig_SessionSemaphore::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &name_);
+        break;
+      case 2 :
+        field.get(&max_other_session_count_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string TraceConfig_SessionSemaphore::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> TraceConfig_SessionSemaphore::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void TraceConfig_SessionSemaphore::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, name_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, max_other_session_count_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -22709,6 +22907,14 @@ void TraceConfig_BufferConfig::Serialize(::protozero::Message* msg) const {
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+
+
+
+
+
+
+
+
 
 
 
@@ -27507,6 +27713,7 @@ bool TrackDescriptor::operator==(const TrackDescriptor& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(uuid_, other.uuid_)
    && ::protozero::internal::gen_helpers::EqualsField(parent_uuid_, other.parent_uuid_)
    && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_)
+   && ::protozero::internal::gen_helpers::EqualsField(static_name_, other.static_name_)
    && ::protozero::internal::gen_helpers::EqualsField(process_, other.process_)
    && ::protozero::internal::gen_helpers::EqualsField(chrome_process_, other.chrome_process_)
    && ::protozero::internal::gen_helpers::EqualsField(thread_, other.thread_)
@@ -27533,6 +27740,9 @@ bool TrackDescriptor::ParseFromArray(const void* raw, size_t size) {
         break;
       case 2 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &name_);
+        break;
+      case 10 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &static_name_);
         break;
       case 3 :
         (*process_).ParseFromArray(field.data(), field.size());
@@ -27586,6 +27796,11 @@ void TrackDescriptor::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[2]) {
     ::protozero::internal::gen_helpers::SerializeString(2, name_, msg);
+  }
+
+  
+  if (_has_field_[10]) {
+    ::protozero::internal::gen_helpers::SerializeString(10, static_name_, msg);
   }
 
   
@@ -28814,6 +29029,18 @@ void TrackEvent_LegacyEvent::Serialize(::protozero::Message* msg) const {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 namespace perfetto {
 
 
@@ -28936,6 +29163,12 @@ ClockSnapshotVector CaptureClockSnapshots() {
       ClockReading(protos::pbzero::BUILTIN_CLOCK_MONOTONIC, wall_time_ns));
 #endif
 
+#if PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_X86_64)
+  
+  snapshot_data.push_back(
+      ClockReading(protos::pbzero::BUILTIN_CLOCK_TSC, base::Rdtsc()));
+#endif  
+
   return snapshot_data;
 }
 
@@ -28963,6 +29196,7 @@ ClockSnapshotVector CaptureClockSnapshots() {
 
 #include <stdint.h>
 
+#include <cstddef>
 #include <type_traits>
 #include <vector>
 
@@ -37744,7 +37978,10 @@ void TracingMuxerImpl::UpdateDataSourceOnAllBackends(RegisteredDataSource& rds,
       rds.descriptor.set_no_flush(rds.no_flush);
     }
     rds.descriptor.set_will_notify_on_start(true);
-    rds.descriptor.set_will_notify_on_stop(true);
+    if (!rds.descriptor.has_will_notify_on_stop()) {
+      rds.descriptor.set_will_notify_on_stop(true);
+    }
+
     rds.descriptor.set_handles_incremental_state_clear(true);
     rds.descriptor.set_id(rds.static_state->id);
     if (is_registered) {
@@ -39812,6 +40049,13 @@ void Track::Serialize(protos::pbzero::TrackDescriptor* desc) const {
   desc->AppendRawProtoBytes(bytes.data(), bytes.size());
 }
 
+
+Track Track::ThreadScoped(const void* ptr, Track parent) {
+  if (parent.uuid == 0)
+    return Track::FromPointer(ptr, ThreadTrack::Current());
+  return Track::FromPointer(ptr, parent);
+}
+
 protos::gen::TrackDescriptor ProcessTrack::Serialize() const {
   auto desc = Track::Serialize();
   auto pd = desc.mutable_process();
@@ -39874,8 +40118,13 @@ void ThreadTrack::Serialize(protos::pbzero::TrackDescriptor* desc) const {
 
 protos::gen::TrackDescriptor CounterTrack::Serialize() const {
   auto desc = Track::Serialize();
-  desc.set_name(name_);
   auto* counter = desc.mutable_counter();
+  if (static_name_) {
+    desc.set_static_name(static_name_.value);
+  } else {
+    desc.set_name(dynamic_name_.value);
+  }
+
   if (category_)
     counter->add_categories(category_);
   if (unit_ != perfetto::protos::pbzero::CounterDescriptor::UNIT_UNSPECIFIED)
@@ -39973,18 +40222,6 @@ void TrackRegistry::UpdateTrack(Track track,
                                 const std::string& serialized_desc) {
   std::lock_guard<std::mutex> lock(mutex_);
   tracks_[track.uuid] = std::move(serialized_desc);
-}
-
-void TrackRegistry::UpdateTrackImpl(
-    Track track,
-    std::function<void(protos::pbzero::TrackDescriptor*)> fill_function) {
-  constexpr size_t kInitialSliceSize = 32;
-  constexpr size_t kMaximumSliceSize = 4096;
-  protozero::HeapBuffered<protos::pbzero::TrackDescriptor> new_descriptor(
-      kInitialSliceSize, kMaximumSliceSize);
-  fill_function(new_descriptor.get());
-  auto serialized_desc = new_descriptor.SerializeAsString();
-  UpdateTrack(track, serialized_desc);
 }
 
 void TrackRegistry::EraseTrack(Track track) {
@@ -40394,7 +40631,11 @@ void TrackEventStateTracker::UpdateIncrementalState(
       track.index = static_cast<uint32_t>(session_state->tracks.size() + 1);
     track.uuid = track_descriptor.uuid();
 
-    track.name = track_descriptor.name().ToStdString();
+    if (track_descriptor.has_name()) {
+      track.name = track_descriptor.name().ToStdString();
+    } else if (track_descriptor.has_static_name()) {
+      track.name = track_descriptor.static_name().ToStdString();
+    }
     track.pid = 0;
     track.tid = 0;
     if (track_descriptor.has_process()) {
@@ -40516,6 +40757,8 @@ enum class PerfettoStatsdAtom {
   
   kTraceBegin = 1,
   kBackgroundTraceBegin = 2,
+  kCloneTraceBegin = 55,
+  kCloneTriggerTraceBegin = 56,
   kOnConnect = 3,
 
   
@@ -40559,6 +40802,7 @@ enum class PerfettoStatsdAtom {
   kTracedEnableTracingOobTargetBuffer = 48,
   kTracedEnableTracingInvalidTriggerMode = 52,
   kTracedEnableTracingInvalidBrFilename = 54,
+  kTracedEnableTracingFailedSessionSemaphoreCheck = 57,
 
   
   kOnTracingDisabled = 4,
@@ -40640,6 +40884,7 @@ enum PerfettoTriggerAtom {
 #define SRC_ANDROID_STATS_STATSD_LOGGING_HELPER_H_
 
 #include <stdint.h>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -40687,7 +40932,9 @@ void MaybeLogTriggerEvents(PerfettoTriggerAtom atom,
 
 
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 
 
@@ -40698,8 +40945,7 @@ void MaybeLogTriggerEvents(PerfettoTriggerAtom atom,
 
 #endif
 
-namespace perfetto {
-namespace android_stats {
+namespace perfetto::android_stats {
 
 
 
@@ -40746,7 +40992,6 @@ void MaybeLogTriggerEvents(PerfettoTriggerAtom,
                            const std::vector<std::string>&) {}
 #endif
 
-}  
 }  
 
 
@@ -40803,8 +41048,8 @@ const char* GetVersionCode();
 #ifndef GEN_PERFETTO_VERSION_GEN_H_
 #define GEN_PERFETTO_VERSION_GEN_H_
 
-#define PERFETTO_VERSION_STRING() "v44.0-94bdc3da5"
-#define PERFETTO_VERSION_SCM_REVISION() "94bdc3da58ad5343e7db3c40fba76309103e342a"
+#define PERFETTO_VERSION_STRING() "v46.0-7114ea53e"
+#define PERFETTO_VERSION_SCM_REVISION() "7114ea53e3297191d34072cd64cf8a7be7076bb6"
 
 #endif  
 
@@ -42744,11 +42989,15 @@ bool PacketStreamValidator::Validate(const Slices& slices) {
 
 
 #include <algorithm>
-#include <functional>
 #include <limits>
 
 namespace perfetto {
 namespace base {
+
+
+
+
+
 
 
 
@@ -45335,6 +45584,7 @@ class CircularQueue {
 
 
 
+
 namespace protozero {
 class MessageFilter;
 }
@@ -45498,7 +45748,7 @@ class TracingServiceImpl : public TracingService {
     ~ConsumerEndpointImpl() override;
 
     void NotifyOnTracingDisabled(const std::string& error);
-    void NotifyCloneSnapshotTrigger();
+    void NotifyCloneSnapshotTrigger(const std::string& trigger_name);
 
     
     void EnableTracing(const TraceConfig&, base::ScopedFile) override;
@@ -45638,10 +45888,10 @@ class TracingServiceImpl : public TracingService {
              ConsumerEndpoint::FlushCallback,
              FlushFlags);
   void FlushAndDisableTracing(TracingSessionID);
-  void FlushAndCloneSession(ConsumerEndpointImpl*,
-                            TracingSessionID,
-                            bool skip_filter,
-                            bool for_bugreport);
+  base::Status FlushAndCloneSession(ConsumerEndpointImpl*,
+                                    TracingSessionID,
+                                    bool skip_filter,
+                                    bool for_bugreport);
 
   
   
@@ -46031,6 +46281,8 @@ class TracingServiceImpl : public TracingService {
   TracingServiceImpl(const TracingServiceImpl&) = delete;
   TracingServiceImpl& operator=(const TracingServiceImpl&) = delete;
 
+  bool IsInitiatorPrivileged(const TracingSession&);
+
   DataSourceInstance* SetupDataSource(const TraceConfig::DataSource&,
                                       const TraceConfig::ProducerConfig&,
                                       const RegisteredDataSource&,
@@ -46263,6 +46515,7 @@ class TracingServiceImpl : public TracingService {
 #include <limits>
 #include <optional>
 #include <regex>
+#include <string>
 #include <unordered_set>
 
 
@@ -46734,8 +46987,6 @@ void TracingServiceImpl::DisconnectConsumer(ConsumerEndpointImpl* consumer) {
   PERFETTO_DLOG("Consumer %p disconnected", reinterpret_cast<void*>(consumer));
   PERFETTO_DCHECK(consumers_.count(consumer));
 
-  
-  
   if (consumer->tracing_session_id_)
     FreeBuffers(consumer->tracing_session_id_);  
   consumers_.erase(consumer);
@@ -47013,6 +47264,57 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
         
         PERFETTO_LOG(fmt, name.c_str());
         return base::ErrStatus(fmt, name.c_str());
+      }
+    }
+  }
+
+  if (!cfg.session_semaphores().empty()) {
+    struct SemaphoreSessionsState {
+      uint64_t smallest_max_other_session_count =
+          std::numeric_limits<uint64_t>::max();
+      uint64_t session_count = 0;
+    };
+    
+    
+    std::unordered_map<std::string, SemaphoreSessionsState>
+        sem_to_sessions_state;
+    for (const auto& id_and_session : tracing_sessions_) {
+      const auto& session = id_and_session.second;
+      if (session.state == TracingSession::CLONED_READ_ONLY ||
+          session.state == TracingSession::DISABLED) {
+        
+        continue;
+      }
+      for (const auto& sem : session.config.session_semaphores()) {
+        auto& sessions_state = sem_to_sessions_state[sem.name()];
+        sessions_state.smallest_max_other_session_count =
+            std::min(sessions_state.smallest_max_other_session_count,
+                     sem.max_other_session_count());
+        sessions_state.session_count++;
+      }
+    }
+
+    
+    
+    for (const auto& semaphore : cfg.session_semaphores()) {
+      auto it = sem_to_sessions_state.find(semaphore.name());
+      if (it == sem_to_sessions_state.end()) {
+        continue;
+      }
+      uint64_t max_other_session_count =
+          std::min(semaphore.max_other_session_count(),
+                   it->second.smallest_max_other_session_count);
+      if (it->second.session_count > max_other_session_count) {
+        MaybeLogUploadEvent(
+            cfg, uuid,
+            PerfettoStatsdAtom::
+                kTracedEnableTracingFailedSessionSemaphoreCheck);
+        return PERFETTO_SVC_ERR(
+            "Semaphore \"%s\" exceeds maximum allowed other session count "
+            "(%" PRIu64 " > min(%" PRIu64 ", %" PRIu64 "))",
+            semaphore.name().c_str(), it->second.session_count,
+            semaphore.max_other_session_count(),
+            it->second.smallest_max_other_session_count);
       }
     }
   }
@@ -47928,13 +48230,14 @@ void TracingServiceImpl::ActivateTriggers(
               tracing_session.config, tracing_session.trace_uuid,
               PerfettoStatsdAtom::kTracedTriggerCloneSnapshot, iter->name());
           task_runner_->PostDelayedTask(
-              [weak_this, tsid] {
+              [weak_this, tsid, trigger_name = iter->name()] {
                 if (!weak_this)
                   return;
                 auto* tsess = weak_this->GetTracingSession(tsid);
                 if (!tsess || !tsess->consumer_maybe_null)
                   return;
-                tsess->consumer_maybe_null->NotifyCloneSnapshotTrigger();
+                tsess->consumer_maybe_null->NotifyCloneSnapshotTrigger(
+                    trigger_name);
               },
               iter->stop_delay_ms());
           break;
@@ -48119,7 +48422,7 @@ void TracingServiceImpl::NotifyFlushDoneForProducer(
         it++;
       }
     }  
-  }    
+  }  
 }
 
 void TracingServiceImpl::OnFlushTimeout(TracingSessionID tsid,
@@ -48666,7 +48969,7 @@ std::vector<TracePacket> TracingServiceImpl::ReadBuffers(
       did_hit_threshold = packets_bytes >= threshold;
       packets.emplace_back(std::move(packet));
     }  
-  }    
+  }  
 
   *has_more = did_hit_threshold;
 
@@ -48881,9 +49184,22 @@ void TracingServiceImpl::FreeBuffers(TracingSessionID tsid) {
   bool is_long_trace =
       (tracing_session->config.write_into_file() &&
        tracing_session->config.file_write_period_ms() < kMillisPerDay);
+  auto pending_clones = std::move(tracing_session->pending_clones);
   tracing_sessions_.erase(tsid);
   tracing_session = nullptr;
   UpdateMemoryGuardrail();
+
+  for (const auto& id_to_clone_op : pending_clones) {
+    const PendingClone& clone_op = id_to_clone_op.second;
+    if (clone_op.weak_consumer) {
+      task_runner_->PostTask([weak_consumer = clone_op.weak_consumer] {
+        if (weak_consumer) {
+          weak_consumer->consumer_->OnSessionCloned(
+              {false, "Original session ended", {}});
+        }
+      });
+    }
+  }
 
   PERFETTO_LOG("Tracing session %" PRIu64 " ended, total sessions:%zu", tsid,
                tracing_sessions_.size());
@@ -49063,6 +49379,37 @@ void TracingServiceImpl::UnregisterDataSource(ProducerID producer_id,
       name.c_str(), producer_id);
 }
 
+bool TracingServiceImpl::IsInitiatorPrivileged(
+    const TracingSession& tracing_session) {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  if (tracing_session.consumer_uid == 1066  &&
+      tracing_session.config.statsd_metadata().triggering_config_uid() !=
+          2000 
+      && tracing_session.config.statsd_metadata().triggering_config_uid() !=
+             0 ) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return true;
+  }
+  if (tracing_session.consumer_uid == 1000 ) {
+    
+    
+    
+    
+    return true;
+  }
+#else
+  base::ignore_result(tracing_session);
+#endif
+  return false;
+}
+
 TracingServiceImpl::DataSourceInstance* TracingServiceImpl::SetupDataSource(
     const TraceConfig::DataSource& cfg_data_source,
     const TraceConfig::ProducerConfig& producer_config,
@@ -49139,19 +49486,7 @@ TracingServiceImpl::DataSourceInstance* TracingServiceImpl::SetupDataSource(
   ds_config.set_stop_timeout_ms(tracing_session->data_source_stop_timeout_ms());
   ds_config.set_enable_extra_guardrails(
       tracing_session->config.enable_extra_guardrails());
-  if (tracing_session->consumer_uid == 1066  &&
-      tracing_session->config.statsd_metadata().triggering_config_uid() !=
-          2000 
-      && tracing_session->config.statsd_metadata().triggering_config_uid() !=
-             0 ) {
-    
-    
-    
-    
-    
-    
-    
-    
+  if (IsInitiatorPrivileged(*tracing_session)) {
     ds_config.set_session_initiator(
         DataSourceConfig::SESSION_INITIATOR_TRUSTED_SYSTEM);
   } else {
@@ -49435,9 +49770,9 @@ void TracingServiceImpl::UpdateMemoryGuardrail() {
   
   for (const auto& id_to_ts : tracing_sessions_) {
     const TracingSession& ts = id_to_ts.second;
-    for (const auto& id_to_pending_clone : ts.pending_clones) {
-      const PendingClone& pending_clone = id_to_pending_clone.second;
-      for (const std::unique_ptr<TraceBuffer>& buf : pending_clone.buffers) {
+    for (const auto& id_to_clone_op : ts.pending_clones) {
+      const PendingClone& clone_op = id_to_clone_op.second;
+      for (const std::unique_ptr<TraceBuffer>& buf : clone_op.buffers) {
         if (buf) {
           total_buffer_bytes += buf->size();
         }
@@ -49710,8 +50045,8 @@ TraceStats TracingServiceImpl::GetTraceStats(TracingSession* tracing_session) {
           wri_stats->add_chunk_payload_histogram_sum(hist.GetBucketSum(i));
         }
       }  
-    }    
-  }      
+    }  
+  }  
 
   return trace_stats;
 }
@@ -49775,6 +50110,13 @@ void TracingServiceImpl::EmitSystemInfo(std::vector<TracePacket>* packets) {
     info->set_android_sdk_version(*sdk_value);
   } else {
     PERFETTO_ELOG("Unable to read ro.build.version.sdk");
+  }
+
+  std::string soc_model_value = base::GetAndroidProp("ro.soc.model");
+  if (!soc_model_value.empty()) {
+    info->set_android_soc_model(soc_model_value);
+  } else {
+    PERFETTO_ELOG("Unable to read ro.soc.model");
   }
 #endif  
   packet->set_trusted_uid(static_cast<int32_t>(uid_));
@@ -49927,10 +50269,11 @@ size_t TracingServiceImpl::PurgeExpiredAndCountTriggerInWindow(
   return trigger_count;
 }
 
-void TracingServiceImpl::FlushAndCloneSession(ConsumerEndpointImpl* consumer,
-                                              TracingSessionID tsid,
-                                              bool skip_trace_filter,
-                                              bool for_bugreport) {
+base::Status TracingServiceImpl::FlushAndCloneSession(
+    ConsumerEndpointImpl* consumer,
+    TracingSessionID tsid,
+    bool skip_trace_filter,
+    bool for_bugreport) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   auto clone_target = FlushFlags::CloneTarget::kUnknown;
 
@@ -49943,9 +50286,8 @@ void TracingServiceImpl::FlushAndCloneSession(ConsumerEndpointImpl* consumer,
     PERFETTO_LOG("Looking for sessions for bugreport");
     TracingSession* session = FindTracingSessionWithMaxBugreportScore();
     if (!session) {
-      consumer->consumer_->OnSessionCloned(
-          {false, "No tracing sessions eligible for bugreport found", {}});
-      return;
+      return base::ErrStatus(
+          "No tracing sessions eligible for bugreport found");
     }
     tsid = session->id;
     clone_target = FlushFlags::CloneTarget::kBugreport;
@@ -49957,9 +50299,14 @@ void TracingServiceImpl::FlushAndCloneSession(ConsumerEndpointImpl* consumer,
 
   TracingSession* session = GetTracingSession(tsid);
   if (!session) {
-    consumer->consumer_->OnSessionCloned(
-        {false, "Tracing session not found", {}});
-    return;
+    return base::ErrStatus("Tracing session not found");
+  }
+
+  
+  
+  
+  if (!session->IsCloneAllowed(consumer->uid_)) {
+    return PERFETTO_SVC_ERR("Not allowed to clone a session from another UID");
   }
 
   
@@ -49991,9 +50338,8 @@ void TracingServiceImpl::FlushAndCloneSession(ConsumerEndpointImpl* consumer,
       
       
       buf = std::move(old_buf);
-      consumer->consumer_->OnSessionCloned(
-          {false, "Buffer allocation failed while attempting to clone", {}});
-      return;
+      return base::ErrStatus(
+          "Buffer allocation failed while attempting to clone");
     }
   }
 
@@ -50039,6 +50385,8 @@ void TracingServiceImpl::FlushAndCloneSession(ConsumerEndpointImpl* consumer,
         FlushFlags(FlushFlags::Initiator::kTraced,
                    FlushFlags::Reason::kTraceClone, clone_target));
   }
+
+  return base::OkStatus();
 }
 
 std::map<ProducerID, std::vector<DataSourceInstanceID>>
@@ -50174,13 +50522,6 @@ base::Status TracingServiceImpl::FinishCloneSession(
   if (consumer->tracing_session_id_) {
     return PERFETTO_SVC_ERR(
         "The consumer is already attached to another tracing session");
-  }
-
-  
-  
-  
-  if (!src->IsCloneAllowed(consumer->uid_)) {
-    return PERFETTO_SVC_ERR("Not allowed to clone a session from another UID");
   }
 
   std::vector<BufferID> buf_ids =
@@ -50485,13 +50826,15 @@ void TracingServiceImpl::ConsumerEndpointImpl::OnAllDataSourcesStarted() {
   observable_events->set_all_data_sources_started(true);
 }
 
-void TracingServiceImpl::ConsumerEndpointImpl::NotifyCloneSnapshotTrigger() {
+void TracingServiceImpl::ConsumerEndpointImpl::NotifyCloneSnapshotTrigger(
+    const std::string& trigger_name) {
   if (!(observable_events_mask_ & ObservableEvents::TYPE_CLONE_TRIGGER_HIT)) {
     return;
   }
   auto* observable_events = AddObservableEvents();
   auto* clone_trig = observable_events->mutable_clone_trigger_hit();
   clone_trig->set_tracing_session_id(static_cast<int64_t>(tracing_session_id_));
+  clone_trig->set_trigger_name(trigger_name);
 }
 
 ObservableEvents*
@@ -50621,8 +50964,12 @@ void TracingServiceImpl::ConsumerEndpointImpl::CloneSession(
     CloneSessionArgs args) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   
-  service_->FlushAndCloneSession(this, tsid, args.skip_trace_filter,
-                                 args.for_bugreport);
+  base::Status result = service_->FlushAndCloneSession(
+      this, tsid, args.skip_trace_filter, args.for_bugreport);
+
+  if (!result.ok()) {
+    consumer_->OnSessionCloned({false, result.message(), {}});
+  }
 }
 
 
@@ -51089,6 +51436,7 @@ TracingService* InProcessTracingBackend::GetOrCreateService(
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
 
 
 
@@ -52854,6 +53202,7 @@ void EnableTracingRequest::Serialize(::protozero::Message* msg) const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
 
 
 
@@ -55447,7 +55796,7 @@ namespace base {
 
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-int CloseSocket(SocketHandle);   
+int CloseSocket(SocketHandle);  
 using ScopedSocketHandle =
     ScopedResource<SocketHandle, CloseSocket, static_cast<SocketHandle>(-1)>;
 #else
