@@ -2409,14 +2409,14 @@ toolbar#nav-bar {
 
         
         tests_dir = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-        sandbox_allowlist_paths = [tests_dir] + options.sandboxReadWhitelist
+        sandbox_whitelist_paths = [tests_dir] + options.sandboxReadWhitelist
         if platform.system() == "Linux" or platform.system() in (
             "Windows",
             "Microsoft",
         ):
             
-            sandbox_allowlist_paths = [
-                os.path.join(p, "") for p in sandbox_allowlist_paths
+            sandbox_whitelist_paths = [
+                os.path.join(p, "") for p in sandbox_whitelist_paths
             ]
 
         if options.conditionedProfile:
@@ -2439,7 +2439,7 @@ toolbar#nav-bar {
             addons=extensions,
             locations=self.locations,
             proxy=self.proxy(options),
-            allowlistpaths=sandbox_allowlist_paths,
+            whitelistpaths=sandbox_whitelist_paths,
         )
 
         
