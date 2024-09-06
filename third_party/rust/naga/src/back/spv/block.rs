@@ -2423,9 +2423,15 @@ impl<'w> BlockContext<'w> {
                     result,
                 } => {
                     let id = self.gen_id();
-                    let result_type_id = self.get_expression_type_id(&self.fun_info[result].ty);
+                    
+                    
+                    
+                    let result_type_id =
+                        self.get_expression_type_id(&self.fun_info[result.unwrap_or(value)].ty);
 
-                    self.cached[result] = id;
+                    if let Some(result) = result {
+                        self.cached[result] = id;
+                    }
 
                     let pointer_id =
                         match self.write_expression_pointer(pointer, &mut block, None)? {

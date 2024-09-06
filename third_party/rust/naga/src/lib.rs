@@ -1092,6 +1092,9 @@ pub enum BinaryOperator {
 
 
 
+
+
+
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
@@ -1233,6 +1236,9 @@ pub enum MathFunction {
 }
 
 
+
+
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
@@ -1247,6 +1253,9 @@ pub enum SampleLevel {
         y: Handle<Expression>,
     },
 }
+
+
+
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -1282,6 +1291,12 @@ pub enum SwizzleComponent {
     Z = 2,
     W = 3,
 }
+
+
+
+
+
+
 
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
@@ -1335,14 +1350,23 @@ bitflags::bitflags! {
     #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
     pub struct Barrier: u32 {
-        /// Barrier affects all `AddressSpace::Storage` accesses.
+        /// Barrier affects all [`AddressSpace::Storage`] accesses.
         const STORAGE = 1 << 0;
-        /// Barrier affects all `AddressSpace::WorkGroup` accesses.
+        /// Barrier affects all [`AddressSpace::WorkGroup`] accesses.
         const WORK_GROUP = 1 << 1;
         /// Barrier synchronizes execution across all invocations within a subgroup that exectue this instruction.
         const SUB_GROUP = 1 << 2;
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1612,8 +1636,29 @@ pub enum Expression {
     },
     
     CallResult(Handle<Function>),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     AtomicResult { ty: Handle<Type>, comparison: bool },
+
     
     
     
@@ -1722,6 +1767,9 @@ pub enum RayQueryFunction {
 
     Terminate,
 }
+
+
+
 
 
 
@@ -1890,15 +1938,66 @@ pub enum Statement {
     
     Atomic {
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         pointer: Handle<Expression>,
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         fun: AtomicFunction,
+
+        
+        
+        
+        
         
         value: Handle<Expression>,
+
         
         
         
-        result: Handle<Expression>,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        result: Option<Handle<Expression>>,
     },
     
     
@@ -2011,6 +2110,16 @@ pub struct Function {
     pub result: Option<FunctionResult>,
     
     pub local_variables: Arena<LocalVariable>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2153,6 +2262,10 @@ pub struct Module {
     pub overrides: Arena<Override>,
     
     pub global_variables: Arena<GlobalVariable>,
+    
+    
+    
+    
     
     
     
