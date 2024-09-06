@@ -110,6 +110,12 @@
         "privacy.exposeContentTitleInWindow.pbm",
         true
       );
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_showTabCardPreview",
+        "browser.tabs.cardPreview.enabled",
+        true
+      );
 
       if (AppConstants.MOZ_CRASHREPORTER) {
         ChromeUtils.defineESModuleGetters(this, {
@@ -5957,6 +5963,13 @@
         tooltip.label = "";
         document.l10n.setAttributes(tooltip, l10nId, l10nArgs);
       } else {
+        
+        
+        
+        if (this._showTabCardPreview) {
+          event.preventDefault();
+          return;
+        }
         tooltip.label = this.getTabTooltip(tab, true);
       }
     },
