@@ -37,6 +37,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/TouchEvents.h"
 #include "nsPIDOMWindow.h"
 #include "nsIAppWindow.h"
 #include "nsIDocShellTreeOwner.h"
@@ -816,6 +817,18 @@ RefPtr<PopulatePromise> PopulatePointerInfo() {
         glean::characteristics::pointer_tiltx.Set(event.tiltX);
         glean::characteristics::pointer_tilty.Set(event.tiltY);
         glean::characteristics::pointer_twist.Set(event.twist);
+
+        if (event.mFromTouchEvent) {
+          
+          
+          
+          auto* touchEvent = event.AsTouchEvent();
+          if (touchEvent->mTouches.Length()) {
+            auto touch = touchEvent->mTouches[0];
+            glean::characteristics::touch_rotation_angle.Set(
+                nsCString(std::to_string(touch->mRotationAngle)));
+          }
+        }
 
         if (!populatePromise->IsResolved()) {
           populatePromise->Resolve(void_t(), __func__);
