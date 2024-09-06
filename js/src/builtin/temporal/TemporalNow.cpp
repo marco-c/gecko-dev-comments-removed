@@ -177,20 +177,6 @@ static bool SystemInstant(JSContext* cx, Instant* result) {
 
 
 
-static InstantObject* SystemInstant(JSContext* cx) {
-  
-  Instant instant;
-  if (!SystemUTCEpochNanoseconds(cx, &instant)) {
-    return nullptr;
-  }
-
-  
-  return CreateTemporalInstant(cx, instant);
-}
-
-
-
-
 
 static bool ToTemporalTimeZoneOrSystemTimeZone(
     JSContext* cx, Handle<Value> temporalTimeZoneLike,
@@ -212,8 +198,21 @@ static bool ToTemporalTimeZoneOrSystemTimeZone(
 
 
 
-static bool SystemDateTime(JSContext* cx, Handle<TimeZoneValue> timeZone,
+
+
+
+
+
+static bool SystemDateTime(JSContext* cx, Handle<Value> timeZoneLike,
                            PlainDateTime* dateTime) {
+  
+  Rooted<TimeZoneValue> timeZone(cx);
+  if (!ToTemporalTimeZoneOrSystemTimeZone(cx, timeZoneLike, &timeZone)) {
+    return false;
+  }
+
+  
+
   
   Instant instant;
   if (!SystemInstant(cx, &instant)) {
@@ -247,43 +246,12 @@ static bool Temporal_Now_instant(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  auto* result = SystemInstant(cx);
-  if (!result) {
+  Instant instant;
+  if (!SystemInstant(cx, &instant)) {
     return false;
   }
 
-  args.rval().setObject(*result);
-  return true;
-}
-
-
-
-
-static bool Temporal_Now_plainDateTime(JSContext* cx, unsigned argc,
-                                       Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-
-  
-  Rooted<TimeZoneValue> timeZone(cx);
-  if (!ToTemporalTimeZoneOrSystemTimeZone(cx, args.get(1), &timeZone)) {
-    return false;
-  }
-
-  
-  Rooted<CalendarValue> calendar(cx);
-  if (!ToTemporalCalendar(cx, args.get(0), &calendar)) {
-    return false;
-  }
-
-  
-  PlainDateTime dateTime;
-  if (!SystemDateTime(cx, timeZone, &dateTime)) {
-    return false;
-  }
-
-  auto* result = CreateTemporalDateTime(cx, dateTime, calendar);
+  auto* result = CreateTemporalInstant(cx, instant);
   if (!result) {
     return false;
   }
@@ -300,60 +268,13 @@ static bool Temporal_Now_plainDateTimeISO(JSContext* cx, unsigned argc,
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-
-  
-  Rooted<TimeZoneValue> timeZone(cx);
-  if (!ToTemporalTimeZoneOrSystemTimeZone(cx, args.get(0), &timeZone)) {
-    return false;
-  }
-
-  
-  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
-
-  
   PlainDateTime dateTime;
-  if (!SystemDateTime(cx, timeZone, &dateTime)) {
+  if (!SystemDateTime(cx, args.get(0), &dateTime)) {
     return false;
   }
 
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   auto* result = CreateTemporalDateTime(cx, dateTime, calendar);
-  if (!result) {
-    return false;
-  }
-
-  args.rval().setObject(*result);
-  return true;
-}
-
-
-
-
-static bool Temporal_Now_zonedDateTime(JSContext* cx, unsigned argc,
-                                       Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-
-  
-  Rooted<TimeZoneValue> timeZone(cx);
-  if (!ToTemporalTimeZoneOrSystemTimeZone(cx, args.get(1), &timeZone)) {
-    return false;
-  }
-
-  
-  Rooted<CalendarValue> calendar(cx);
-  if (!ToTemporalCalendar(cx, args.get(0), &calendar)) {
-    return false;
-  }
-
-  
-  Instant instant;
-  if (!SystemUTCEpochNanoseconds(cx, &instant)) {
-    return false;
-  }
-
-  
-  auto* result = CreateTemporalZonedDateTime(cx, instant, timeZone, calendar);
   if (!result) {
     return false;
   }
@@ -399,63 +320,17 @@ static bool Temporal_Now_zonedDateTimeISO(JSContext* cx, unsigned argc,
 
 
 
-static bool Temporal_Now_plainDate(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-
-  
-  Rooted<TimeZoneValue> timeZone(cx);
-  if (!ToTemporalTimeZoneOrSystemTimeZone(cx, args.get(1), &timeZone)) {
-    return false;
-  }
-
-  
-  Rooted<CalendarValue> calendar(cx);
-  if (!ToTemporalCalendar(cx, args.get(0), &calendar)) {
-    return false;
-  }
-
-  
-  PlainDateTime dateTime;
-  if (!SystemDateTime(cx, timeZone, &dateTime)) {
-    return false;
-  }
-
-  
-  auto* result = CreateTemporalDate(cx, dateTime.date, calendar);
-  if (!result) {
-    return false;
-  }
-
-  args.rval().setObject(*result);
-  return true;
-}
-
-
-
-
 static bool Temporal_Now_plainDateISO(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-
-  
-  Rooted<TimeZoneValue> timeZone(cx);
-  if (!ToTemporalTimeZoneOrSystemTimeZone(cx, args.get(0), &timeZone)) {
+  PlainDateTime dateTime;
+  if (!SystemDateTime(cx, args.get(0), &dateTime)) {
     return false;
   }
 
   
   Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
-
-  
-  PlainDateTime dateTime;
-  if (!SystemDateTime(cx, timeZone, &dateTime)) {
-    return false;
-  }
-
-  
   auto* result = CreateTemporalDate(cx, dateTime.date, calendar);
   if (!result) {
     return false;
@@ -472,18 +347,8 @@ static bool Temporal_Now_plainTimeISO(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-
-  
-  Rooted<TimeZoneValue> timeZone(cx);
-  if (!ToTemporalTimeZoneOrSystemTimeZone(cx, args.get(0), &timeZone)) {
-    return false;
-  }
-
-  
-
-  
   PlainDateTime dateTime;
-  if (!SystemDateTime(cx, timeZone, &dateTime)) {
+  if (!SystemDateTime(cx, args.get(0), &dateTime)) {
     return false;
   }
 
@@ -507,11 +372,8 @@ const JSClass TemporalNowObject::class_ = {
 static const JSFunctionSpec TemporalNow_methods[] = {
     JS_FN("timeZoneId", Temporal_Now_timeZoneId, 0, 0),
     JS_FN("instant", Temporal_Now_instant, 0, 0),
-    JS_FN("plainDateTime", Temporal_Now_plainDateTime, 1, 0),
     JS_FN("plainDateTimeISO", Temporal_Now_plainDateTimeISO, 0, 0),
-    JS_FN("zonedDateTime", Temporal_Now_zonedDateTime, 1, 0),
     JS_FN("zonedDateTimeISO", Temporal_Now_zonedDateTimeISO, 0, 0),
-    JS_FN("plainDate", Temporal_Now_plainDate, 1, 0),
     JS_FN("plainDateISO", Temporal_Now_plainDateISO, 0, 0),
     JS_FN("plainTimeISO", Temporal_Now_plainTimeISO, 0, 0),
     JS_FS_END,
