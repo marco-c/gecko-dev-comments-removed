@@ -439,6 +439,12 @@ AttachDecision GetPropIRGenerator::tryAttachStub() {
       TRY_ATTACH(tryAttachArgumentsObjectCallee(obj, objId, id));
       TRY_ATTACH(tryAttachProxy(obj, objId, id, receiverId));
 
+      if (!isSuper() && mode_ == ICState::Mode::Megamorphic &&
+          JSOp(*pc_) != JSOp::GetBoundName) {
+        attachMegamorphicNativeSlotPermissive(objId, id);
+        return AttachDecision::Attach;
+      }
+
       trackAttached(IRGenerator::NotAttached);
       return AttachDecision::NoAction;
     }
@@ -1109,6 +1115,29 @@ void GetPropIRGenerator::attachMegamorphicNativeSlot(ObjOperandId objId,
   trackAttached("GetProp.MegamorphicNativeSlot");
 }
 
+void GetPropIRGenerator::attachMegamorphicNativeSlotPermissive(
+    ObjOperandId objId, jsid id) {
+  MOZ_ASSERT(mode_ == ICState::Mode::Megamorphic);
+
+  
+  
+  MOZ_ASSERT(JSOp(*pc_) != JSOp::GetBoundName);
+  
+  
+  MOZ_ASSERT(!isSuper());
+
+  if (cacheKind_ == CacheKind::GetProp) {
+    writer.megamorphicLoadSlotPermissiveResult(objId, id);
+  } else {
+    MOZ_ASSERT(cacheKind_ == CacheKind::GetElem);
+    writer.megamorphicLoadSlotByValuePermissiveResult(objId,
+                                                      getElemKeyValueId());
+  }
+  writer.returnFromIC();
+
+  trackAttached("GetProp.MegamorphicNativeSlotPermissive");
+}
+
 AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
                                                    ObjOperandId objId,
                                                    HandleId id,
@@ -1147,6 +1176,14 @@ AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
     case NativeGetPropKind::NativeGetter: {
       auto* nobj = &obj->as<NativeObject>();
       MOZ_ASSERT(!IsWindow(nobj));
+
+      
+      
+      
+      
+      if (!isSuper() && mode_ == ICState::Mode::Megamorphic) {
+        return AttachDecision::NoAction;
+      }
 
       maybeEmitIdGuard(id);
 

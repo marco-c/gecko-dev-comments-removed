@@ -2758,16 +2758,15 @@ void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
   Label isMissing, dynamicSlot, protoLoopHead, protoLoopTail;
 
   
-  load8ZeroExtend(Address(entry, MegamorphicCache::Entry::offsetOfNumHops()),
-                  scratch2);
-  
-  branch32(Assembler::Equal, scratch2,
-           Imm32(MegamorphicCache::Entry::NumHopsForMissingOwnProperty),
-           cacheMiss);
+  load8ZeroExtend(
+      Address(entry, MegamorphicCache::Entry::offsetOfHopsAndKind()), scratch2);
   
   branch32(Assembler::Equal, scratch2,
            Imm32(MegamorphicCache::Entry::NumHopsForMissingProperty),
            &isMissing);
+  
+  branchTest32(Assembler::NonZero, scratch2,
+               Imm32(MegamorphicCache::Entry::NonDataPropertyFlag), cacheMiss);
 
   
   
@@ -2984,19 +2983,18 @@ void MacroAssembler::emitMegamorphicCacheLookupExists(
 
   
   load8ZeroExtend(
-      Address(outEntryPtr, MegamorphicCache::Entry::offsetOfNumHops()),
+      Address(outEntryPtr, MegamorphicCache::Entry::offsetOfHopsAndKind()),
       scratch1);
 
   branch32(Assembler::Equal, scratch1,
            Imm32(MegamorphicCache::Entry::NumHopsForMissingProperty),
            &cacheHitFalse);
+  branchTest32(Assembler::NonZero, scratch1,
+               Imm32(MegamorphicCache::Entry::NonDataPropertyFlag),
+               &cacheMissWithEntry);
 
   if (hasOwn) {
     branch32(Assembler::NotEqual, scratch1, Imm32(0), &cacheHitFalse);
-  } else {
-    branch32(Assembler::Equal, scratch1,
-             Imm32(MegamorphicCache::Entry::NumHopsForMissingOwnProperty),
-             &cacheMissWithEntry);
   }
 
   move32(Imm32(1), output);
