@@ -469,8 +469,7 @@ RefPtr<nsRange> FragmentDirective::FindRangeForTextDirective(
       
       
       
-      if (potentialMatch->GetStartContainer() !=
-          matchRange->GetStartContainer()) {
+      if (potentialMatch->StartRef() != matchRange->StartRef()) {
         continue;
       }
     }
