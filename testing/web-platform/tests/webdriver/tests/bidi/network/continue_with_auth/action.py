@@ -17,13 +17,24 @@ async def test_cancel(
     setup_blocked_request, subscribe_events, wait_for_event, bidi_session, wait_for_future_safe
 ):
     request = await setup_blocked_request("authRequired")
+
+    
     await subscribe_events(events=[RESPONSE_COMPLETED_EVENT])
+
+    
+    events = []
+
+    async def on_event(method, data):
+        events.append(data)
+
+    remove_listener = bidi_session.add_event_listener(
+        RESPONSE_COMPLETED_EVENT, on_event
+    )
 
     on_response_completed = wait_for_event(RESPONSE_COMPLETED_EVENT)
     await bidi_session.network.continue_with_auth(request=request, action="cancel")
-    await on_response_completed
-
     response_event = await wait_for_future_safe(on_response_completed)
+
     assert_response_event(
         response_event,
         expected_response={
@@ -31,6 +42,13 @@ async def test_cancel(
             "statusText": "Unauthorized",
         },
     )
+
+    
+    wait = AsyncPoll(bidi_session, timeout=0.5)
+    with pytest.raises(TimeoutException):
+        await wait.until(lambda _: len(events) > 1)
+
+    remove_listener()
 
 
 async def test_default(
@@ -63,7 +81,7 @@ async def test_default(
 
 
 async def test_provideCredentials(
-    setup_blocked_request, subscribe_events, bidi_session
+    setup_blocked_request, subscribe_events, wait_for_event, bidi_session, wait_for_future_safe
 ):
     
     username = "test_provideCredentials"
@@ -84,17 +102,25 @@ async def test_provideCredentials(
     )
 
     credentials = AuthCredentials(username=username, password=password)
+
+    on_response_completed = wait_for_event(RESPONSE_COMPLETED_EVENT)
     await bidi_session.network.continue_with_auth(
         request=request, action="provideCredentials", credentials=credentials
     )
+    response_event = await wait_for_future_safe(on_response_completed)
+
+    assert_response_event(
+        response_event,
+        expected_response={
+            "status": 200,
+            "statusText": "OK",
+        },
+    )
 
     
-    
-    
-
-    
-    wait = AsyncPoll(bidi_session, message="Didn't receive response completed events")
-    await wait.until(lambda _: len(events) > 0 and events[-1]["response"]["status"] == 200)
+    wait = AsyncPoll(bidi_session, timeout=0.5)
+    with pytest.raises(TimeoutException):
+        await wait.until(lambda _: len(events) > 1)
 
     remove_listener()
 
@@ -132,16 +158,24 @@ async def test_provideCredentials_wrong_credentials(
 
     
     correct_credentials = AuthCredentials(username=username, password=password)
+
+    on_response_completed = wait_for_event(RESPONSE_COMPLETED_EVENT)
     await bidi_session.network.continue_with_auth(
         request=request, action="provideCredentials", credentials=correct_credentials
     )
+    response_event = await wait_for_future_safe(on_response_completed)
+
+    assert_response_event(
+        response_event,
+        expected_response={
+            "status": 200,
+            "statusText": "OK",
+        },
+    )
 
     
-    
-    
-
-    
-    wait = AsyncPoll(bidi_session, message="Didn't receive response completed events")
-    await wait.until(lambda _: len(events) > 0 and events[-1]["response"]["status"] == 200)
+    wait = AsyncPoll(bidi_session, timeout=0.5)
+    with pytest.raises(TimeoutException):
+        await wait.until(lambda _: len(events) > 1)
 
     remove_listener()
