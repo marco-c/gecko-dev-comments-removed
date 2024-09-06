@@ -120,8 +120,13 @@ async function testBorderShorthandAndInheritance(inspector, view) {
   const setVarXParent = setVarMParent.parentNode.nextElementSibling;
 
   
-  const setVarRParent = setVarXParent.nextElementSibling;
+  const colorParent =
+    setVarXParent.nextElementSibling.querySelector(".ruleview-color");
+  
+  const setVarRParent = colorParent.firstElementChild;
+  
   const setVarGParent = setVarRParent.nextElementSibling;
+  
   const setVarBParent = setVarGParent.nextElementSibling;
 
   const setVarM = getVarFromParent(setVarMParent);
