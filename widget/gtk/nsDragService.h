@@ -24,42 +24,6 @@ class SourceSurface;
 }
 }  
 
-class DragData final {
- public:
-  NS_INLINE_DECL_REFCOUNTING(DragData)
-
-  DragData(void* aData, uint32_t aDataLen, bool aCopyData) {
-    UpdateData(aData, aDataLen, aCopyData);
-  }
-  DragData(const void* aData, uint32_t aDataLen) {
-    
-    
-    UpdateData(const_cast<void*>(aData), aDataLen,  true);
-  }
-  explicit DragData(gchar** aDragUris) : mDragUris(aDragUris) {}
-
-  bool HasURIs() const { return !!mDragUris.get(); }
-  gchar** GetURIs() const { return mDragUris.get(); }
-
-  void UpdateData(void* aData, uint32_t aDataLen, bool aCopyData = false);
-  void* GetData() const { return mDragData; }
-  uint32_t GetDataLen() const { return mDragDataLen; }
-  mozilla::Span<char> GetDataSpan() const {
-    return mozilla::Span((char*)mDragData, mDragDataLen);
-  }
-
- private:
-  void ReleaseData();
-  ~DragData();
-
-  
-  
-  uint32_t mDragDataLen = 0;
-  void* mDragData = nullptr;
-
-  mozilla::GUniquePtr<gchar*> mDragUris;
-};
-
 
 
 
@@ -198,14 +162,14 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   
-  
-  
+  nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mCachedData;
   
   
   
   
   uintptr_t mCachedDragContext;
-  nsRefPtrHashtable<nsVoidPtrHashKey, DragData> mCachedDragData;
+
+  nsTHashMap<nsCStringHashKey, mozilla::GUniquePtr<gchar*>> mCachedUris;
 
   guint mPendingTime;
 
@@ -234,15 +198,17 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   bool mCanDrop;
 
   
-  RefPtr<DragData> mDragData;
-
+  bool mTargetDragDataReceived;
+  
+  void* mTargetDragData;
+  uint32_t mTargetDragDataLen;
+  mozilla::GUniquePtr<gchar*> mTargetDragUris;
   
   bool IsTargetContextList(void);
   
   
-  void GetDragData(GdkAtom aRequestedFlavor,
-                   const nsTArray<GdkAtom>& aAvailableDragFlavors,
-                   bool aResetDragData = true);
+  void GetTargetDragData(GdkAtom aFlavor, nsTArray<nsCString>& aDropFlavors,
+                         bool aResetTargetData = true);
   
   void TargetResetData(void);
   
@@ -281,7 +247,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 #ifdef MOZ_LOGGING
   const char* GetDragServiceTaskName(nsDragService::DragTask aTask);
 #endif
-  void GetAvailableDragFlavors(nsTArray<GdkAtom>& aAvailableFlavors);
+  void GetDragFlavors(nsTArray<nsCString>& aFlavors);
   gboolean DispatchDropEvent();
   static uint32_t GetCurrentModifiers();
 
@@ -298,17 +264,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   guint mTempFileTimerID;
   
   int mEventLoopDepth;
-
- public:
-  static GdkAtom sTextMimeAtom;
-  static GdkAtom sMozUrlTypeAtom;
-  static GdkAtom sMimeListTypeAtom;
-  static GdkAtom sTextUriListTypeAtom;
-  static GdkAtom sTextPlainUTF8TypeAtom;
-  static GdkAtom sXdndDirectSaveTypeAtom;
-  static GdkAtom sTabDropTypeAtom;
-  static GdkAtom sPortalFileAtom;
-  static GdkAtom sPortalFileTransferAtom;
 };
 
 #endif  
