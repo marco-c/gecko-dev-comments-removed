@@ -21,19 +21,21 @@ macro_rules! margin_rule_types {
         /// [`@margin`][margin] rule names.
         ///
         /// https://drafts.csswg.org/css-page-3/#margin-at-rules
-        #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
+        #[derive(Clone, Copy, Eq, MallocSizeOf, PartialEq, ToShmem)]
         #[repr(u8)]
         pub enum MarginRuleType {
             $($(#[$($meta)+])* $id,)+
         }
 
+        /// All [`@margin`][margin] rule names, with a preceding '@'.
+        ///
+        /// This array lets us have just one single memory region used for
+        /// to_str, name, and the Debug implementation.
+        const MARGIN_RULE_AT_NAMES:&[&'static str] = &[
+            $( concat!('@', $val), )+
+        ];
+
         impl MarginRuleType {
-            #[inline]
-            fn to_str(&self) -> &'static str {
-                match *self {
-                    $(MarginRuleType::$id => concat!('@', $val),)+
-                }
-            }
             /// Matches the rule type for this name. This does not expect a
             /// leading '@'.
             pub fn match_name(name: &str) -> Option<Self> {
@@ -113,6 +115,27 @@ margin_rule_types! {
     RightBottom => "right-bottom",
 }
 
+impl MarginRuleType {
+    #[inline]
+    fn to_str(&self) -> &'static str {
+        &MARGIN_RULE_AT_NAMES[*self as usize]
+    }
+    #[inline]
+    fn name(&self) -> &'static str {
+        
+        
+        &MARGIN_RULE_AT_NAMES[*self as usize][1..]
+    }
+}
+
+
+
+impl fmt::Debug for MarginRuleType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str(self.name())
+    }
+}
+
 
 
 
@@ -133,6 +156,11 @@ impl MarginRule {
         
         self.block.unconditional_shallow_size_of(ops) +
             self.block.read_with(guard).size_of(ops)
+    }
+    
+    #[inline]
+    pub fn name(&self) -> &'static str {
+        self.rule_type.name()
     }
 }
 
