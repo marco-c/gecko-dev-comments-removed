@@ -391,9 +391,10 @@ RefPtr<IDBOpenDBRequest> IDBFactory::Open(JSContext* aCx,
                        false, aCallerType, aRv);
 }
 
-RefPtr<IDBOpenDBRequest> IDBFactory::DeleteDatabase(
-    JSContext* aCx, const nsAString& aName, const IDBOpenDBOptions& aOptions,
-    CallerType aCallerType, ErrorResult& aRv) {
+RefPtr<IDBOpenDBRequest> IDBFactory::DeleteDatabase(JSContext* aCx,
+                                                    const nsAString& aName,
+                                                    CallerType aCallerType,
+                                                    ErrorResult& aRv) {
   return OpenInternal(aCx,
                        nullptr, aName, Optional<uint64_t>(),
                        true, aCallerType, aRv);

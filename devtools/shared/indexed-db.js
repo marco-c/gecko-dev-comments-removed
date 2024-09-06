@@ -35,9 +35,6 @@ module.exports = Object.freeze({
     return indexedDB.openForPrincipal(principal, name, options);
   },
 
-  
-
-
   deleteDatabase(name) {
     return indexedDB.deleteForPrincipal(principal, name);
   },

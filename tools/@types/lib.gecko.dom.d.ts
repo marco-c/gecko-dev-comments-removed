@@ -17902,7 +17902,7 @@ interface IDBFactory {
     
     cmp(first: any, second: any): number;
     
-    deleteDatabase(name: string, options?: IDBOpenDBOptions): IDBOpenDBRequest;
+    deleteDatabase(name: string): IDBOpenDBRequest;
     deleteForPrincipal(principal: Principal, name: string, options?: IDBOpenDBOptions): IDBOpenDBRequest;
     
     open(name: string, version?: number): IDBOpenDBRequest;
