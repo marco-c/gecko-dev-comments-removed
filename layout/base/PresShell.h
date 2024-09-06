@@ -97,6 +97,7 @@ class nsDisplayList;
 class nsDisplayListBuilder;
 class OverflowChangedTracker;
 class ProfileChunkedBuffer;
+class ScrollContainerFrame;
 class StyleSheet;
 
 #ifdef ACCESSIBILITY
@@ -433,7 +434,7 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  nsIFrame* GetRootScrollFrame() const;
+  ScrollContainerFrame* GetRootScrollContainerFrame() const;
 
   
 
