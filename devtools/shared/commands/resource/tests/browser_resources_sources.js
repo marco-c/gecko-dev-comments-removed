@@ -153,11 +153,6 @@ async function getExpectedResources(ignoreUnresurrectedSources = false) {
         source: "/* eslint-disable */\nfunction scriptSource() {}\n",
       },
     },
-  ];
-
-  
-  
-  const unresurrectedSources = [
     {
       description: "DOM Timer",
       sourceForm: {
@@ -178,6 +173,11 @@ async function getExpectedResources(ignoreUnresurrectedSources = false) {
         source: new Array(39).join("\n") + `console.log("timeout")`,
       },
     },
+  ];
+
+  
+  
+  const unresurrectedSources = [
     {
       description: "javascript URL",
       sourceForm: {
@@ -289,6 +289,13 @@ add_task(async function testGarbagedCollectedSources() {
   const tab = await addTab(TEST_URL);
 
   info("Force some GC to free some sources");
+  
+  
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    Cu.forceGC();
+    Cu.forceCC();
+  });
+  await wait(500);
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     Cu.forceGC();
     Cu.forceCC();
