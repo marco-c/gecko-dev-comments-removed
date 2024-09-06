@@ -10,11 +10,7 @@
 
 
 
-#ifdef NIGHTLY_BUILD
-#  define USE_RUST_UNICODE_BIDI 1
-#else
-#  define USE_RUST_UNICODE_BIDI 0
-#endif
+#define USE_RUST_UNICODE_BIDI 1
 
 #if USE_RUST_UNICODE_BIDI
 #  include "mozilla/intl/unicode_bidi_ffi_generated.h"
