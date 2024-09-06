@@ -1,6 +1,7 @@
 
 
 
+
 const { assertStackTrace, startProfiling, endProfiling, assertEqPreciseStacks } = WasmHelpers;
 
 enableGeckoProfiling();

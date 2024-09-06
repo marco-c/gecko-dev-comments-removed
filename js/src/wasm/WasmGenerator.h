@@ -192,6 +192,9 @@ class MOZ_STACK_CLASS ModuleGenerator {
   CompilerEnvironment* const compilerEnv_;
 
   
+  SharedCode partialTieringCode_;
+
+  
   FuncImportVector funcImports_;
   UniqueLinkData sharedStubsLinkData_;
   UniqueCodeBlock sharedStubsCodeBlock_;
@@ -250,7 +253,10 @@ class MOZ_STACK_CLASS ModuleGenerator {
   [[nodiscard]] bool startCompleteTier();
   
   
-  UniqueCodeBlock finishCompleteTier(UniqueLinkData* linkData);
+  [[nodiscard]] bool startPartialTier(uint32_t funcIndex);
+  
+  
+  UniqueCodeBlock finishTier(UniqueLinkData* linkData);
 
   bool finishCodeMetadata(const Bytes& bytecode);
 
@@ -267,7 +273,10 @@ class MOZ_STACK_CLASS ModuleGenerator {
                   const Atomic<bool>* cancelled, UniqueChars* error,
                   UniqueCharsVector* warnings);
   ~ModuleGenerator();
-  [[nodiscard]] bool init(CodeMetadataForAsmJS* codeMetaForAsmJS);
+  [[nodiscard]] bool initializeCompleteTier(
+      CodeMetadataForAsmJS* codeMetaForAsmJS = nullptr);
+  [[nodiscard]] bool initializePartialTier(const Code& code,
+                                           uint32_t maybeFuncIndex);
 
   
   
@@ -292,6 +301,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
                             MutableModuleMetadata moduleMeta,
                             JS::OptimizedEncodingListener* maybeTier2Listener);
   [[nodiscard]] bool finishTier2(const Module& module);
+  [[nodiscard]] bool finishPartialTier2(const Code& code);
 };
 
 }  

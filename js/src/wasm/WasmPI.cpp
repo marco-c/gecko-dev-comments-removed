@@ -990,7 +990,7 @@ class SuspendingFunctionModuleFactory {
 
     ModuleGenerator mg(*compileArgs, codeMeta, &compilerEnv,
                        compilerEnv.initialState(), nullptr, nullptr, nullptr);
-    if (!mg.init(nullptr)) {
+    if (!mg.initializeCompleteTier()) {
       return nullptr;
     }
     
@@ -1491,7 +1491,7 @@ class PromisingFunctionModuleFactory {
 
     ModuleGenerator mg(*compileArgs, codeMeta, &compilerEnv,
                        compilerEnv.initialState(), nullptr, nullptr, nullptr);
-    if (!mg.init(nullptr)) {
+    if (!mg.initializeCompleteTier()) {
       return nullptr;
     }
     

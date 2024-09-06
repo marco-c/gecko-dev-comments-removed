@@ -1,3 +1,6 @@
+
+
+
 load(libdir + "wasm-binary.js");
 
 const Module = WebAssembly.Module;

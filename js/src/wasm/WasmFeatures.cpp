@@ -304,6 +304,11 @@ bool wasm::CodeCachingAvailable(JSContext* cx) {
 #else
 
   
+  if (ExperimentalCompilePipelineAvailable(cx)) {
+    return false;
+  }
+
+  
   
   
   

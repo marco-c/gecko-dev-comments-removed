@@ -202,7 +202,7 @@ enum class Trap {
 
   
   
-  CheckHotness,
+  RequestTierUp,
 
   
   
@@ -1231,7 +1231,10 @@ enum class CompileState {
   EagerTier2,
   
   
-  LazyTier1
+  LazyTier1,
+  
+  
+  LazyTier2,
 };
 
 

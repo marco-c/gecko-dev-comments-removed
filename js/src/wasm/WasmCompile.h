@@ -29,6 +29,8 @@ class OptimizedEncodingListener;
 namespace js {
 namespace wasm {
 
+class Code;
+
 
 
 
@@ -53,9 +55,16 @@ SharedModule CompileBuffer(const CompileArgs& args,
 
 
 
-bool CompileTier2(const CompileArgs& args, const Bytes& bytecode,
-                  const Module& module, UniqueChars* error,
-                  UniqueCharsVector* warnings, Atomic<bool>* cancelled);
+bool CompileCompleteTier2(const CompileArgs& args, const Bytes& bytecode,
+                          const Module& module, UniqueChars* error,
+                          UniqueCharsVector* warnings, Atomic<bool>* cancelled);
+
+
+
+bool CompilePartialTier2(const CompileArgs& args, const Bytes& bytecode,
+                         uint32_t funcIndex, uint32_t funcBytecodeOffset,
+                         const Code& code, UniqueChars* error,
+                         UniqueCharsVector* warnings, Atomic<bool>* cancelled);
 
 
 
