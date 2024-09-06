@@ -672,19 +672,29 @@ struct TryNote {
   static const uint32_t BEGIN_NONE = UINT32_MAX;
 
   
+  static const uint32_t IS_DELEGATE = UINT32_MAX;
+
+  
   uint32_t begin_;
   
   uint32_t end_;
   
-  uint32_t entryPoint_;
   
-  uint32_t framePushed_;
+  uint32_t entryPointOrIsDelegate_;
+  
+  
+  
+  uint32_t framePushedOrDelegateOffset_;
 
-  WASM_CHECK_CACHEABLE_POD(begin_, end_, entryPoint_, framePushed_);
+  WASM_CHECK_CACHEABLE_POD(begin_, end_, entryPointOrIsDelegate_,
+                           framePushedOrDelegateOffset_);
 
  public:
   explicit TryNote()
-      : begin_(BEGIN_NONE), end_(0), entryPoint_(0), framePushed_(0) {}
+      : begin_(BEGIN_NONE),
+        end_(0),
+        entryPointOrIsDelegate_(0),
+        framePushedOrDelegateOffset_(0) {}
 
   
   bool hasTryBody() const { return begin_ != BEGIN_NONE; }
@@ -701,10 +711,26 @@ struct TryNote {
   }
 
   
-  uint32_t landingPadEntryPoint() const { return entryPoint_; }
+  
+  bool isDelegate() const { return entryPointOrIsDelegate_ == IS_DELEGATE; }
 
   
-  uint32_t landingPadFramePushed() const { return framePushed_; }
+  uint32_t delegateOffset() const {
+    MOZ_ASSERT(isDelegate());
+    return framePushedOrDelegateOffset_;
+  }
+
+  
+  uint32_t landingPadEntryPoint() const {
+    MOZ_ASSERT(!isDelegate());
+    return entryPointOrIsDelegate_;
+  }
+
+  
+  uint32_t landingPadFramePushed() const {
+    MOZ_ASSERT(!isDelegate());
+    return framePushedOrDelegateOffset_;
+  }
 
   
   void setTryBodyBegin(uint32_t begin) {
@@ -723,16 +749,28 @@ struct TryNote {
   }
 
   
+  
+  void setDelegate(uint32_t delegateOffset) {
+    entryPointOrIsDelegate_ = IS_DELEGATE;
+    framePushedOrDelegateOffset_ = delegateOffset;
+  }
+
+  
   void setLandingPad(uint32_t entryPoint, uint32_t framePushed) {
-    entryPoint_ = entryPoint;
-    framePushed_ = framePushed;
+    MOZ_ASSERT(!isDelegate());
+    entryPointOrIsDelegate_ = entryPoint;
+    framePushedOrDelegateOffset_ = framePushed;
   }
 
   
   void offsetBy(uint32_t offset) {
     begin_ += offset;
     end_ += offset;
-    entryPoint_ += offset;
+    if (isDelegate()) {
+      framePushedOrDelegateOffset_ += offset;
+    } else {
+      entryPointOrIsDelegate_ += offset;
+    }
   }
 
   bool operator<(const TryNote& other) const {

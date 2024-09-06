@@ -1402,9 +1402,6 @@ struct BaseCompiler final {
   
   void emitCatchSetup(LabelKind kind, Control& tryCatch,
                       const ResultType& resultType);
-  
-  
-  [[nodiscard]] bool emitBodyDelegateThrowPad();
 
   [[nodiscard]] bool emitTry();
   [[nodiscard]] bool emitTryTable();

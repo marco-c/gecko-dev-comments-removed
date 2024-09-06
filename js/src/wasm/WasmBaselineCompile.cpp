@@ -3780,12 +3780,6 @@ bool BaseCompiler::emitEnd() {
         return false;
       }
       doReturn(ContinuationKind::Fallthrough);
-      
-      
-      
-      if (!emitBodyDelegateThrowPad()) {
-        return false;
-      }
       iter_.popEnd();
       MOZ_ASSERT(iter_.controlStackEmpty());
       return iter_.endFunction(iter_.end());
@@ -4107,9 +4101,6 @@ bool BaseCompiler::emitTryTable() {
   
   Label skipLandingPad;
   masm.jump(&skipLandingPad);
-
-  
-  masm.bind(&controlItem().otherLabel);
 
   StackHeight prePadHeight = fr.stackHeight();
   uint32_t padOffset = masm.currentOffset();
@@ -4496,30 +4487,6 @@ bool BaseCompiler::emitCatchAll() {
   return pushBlockResults(exnResult);
 }
 
-bool BaseCompiler::emitBodyDelegateThrowPad() {
-  Control& block = controlItem();
-
-  
-  if (block.otherLabel.used()) {
-    StackHeight savedHeight = fr.stackHeight();
-    fr.setStackHeight(block.stackHeight);
-    masm.bind(&block.otherLabel);
-
-    
-    
-    RegRef exn;
-    RegRef tag;
-    consumePendingException(RegPtr(InstanceReg), &exn, &tag);
-    freeRef(tag);
-    if (!throwFrom(exn)) {
-      return false;
-    }
-    fr.setStackHeight(savedHeight);
-  }
-
-  return true;
-}
-
 bool BaseCompiler::emitDelegate() {
   uint32_t relativeDepth;
   ResultType resultType;
@@ -4529,46 +4496,16 @@ bool BaseCompiler::emitDelegate() {
     return false;
   }
 
-  Control& tryDelegate = controlItem();
-
-  
-  if (deadCode_) {
-    fr.resetStackHeight(tryDelegate.stackHeight, resultType);
-    popValueStackTo(tryDelegate.stackSize);
-  } else {
-    MOZ_ASSERT(stk_.length() == tryDelegate.stackSize + resultType.length());
-    popBlockResults(resultType, tryDelegate.stackHeight,
-                    ContinuationKind::Jump);
-    freeResultRegisters(resultType);
-    masm.jump(&tryDelegate.label);
-    MOZ_ASSERT(!tryDelegate.deadOnArrival);
+  if (!endBlock(resultType)) {
+    return false;
   }
 
-  deadCode_ = tryDelegate.deadOnArrival;
-
-  if (deadCode_) {
+  if (controlItem().deadOnArrival) {
     return true;
   }
 
   
-  
-  masm.bind(&tryDelegate.otherLabel);
-
-  StackHeight savedHeight = fr.stackHeight();
-  fr.setStackHeight(tryDelegate.stackHeight);
-
-  
   finishTryNote(controlItem().tryNoteIndex);
-
-  
-  TryNoteVector& tryNotes = masm.tryNotes();
-  TryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
-  tryNote.setLandingPad(masm.currentOffset(), masm.framePushed());
-
-  
-  
-  
-  fr.storeInstancePtr(InstanceReg);
 
   
   
@@ -4579,22 +4516,24 @@ bool BaseCompiler::emitDelegate() {
     relativeDepth++;
   }
   Control& target = controlItem(relativeDepth);
+  TryNoteVector& tryNotes = masm.tryNotes();
+  TryNote& delegateTryNote = tryNotes[controlItem().tryNoteIndex];
 
-  popBlockResults(ResultType::Empty(), target.stackHeight,
-                  ContinuationKind::Jump);
-  masm.jump(&target.otherLabel);
-
-  fr.setStackHeight(savedHeight);
-
-  
-  if (tryDelegate.label.used()) {
-    masm.bind(&tryDelegate.label);
+  if (&target == &lastBlock) {
+    
+    
+    
+    
+    delegateTryNote.setDelegate(0);
+  } else {
+    
+    
+    
+    const TryNote& targetTryNote = tryNotes[target.tryNoteIndex];
+    delegateTryNote.setDelegate(targetTryNote.tryBodyBegin() + 1);
   }
 
-  captureResultRegisters(resultType);
-  bceSafe_ = tryDelegate.bceSafeOnExit;
-
-  return pushBlockResults(resultType);
+  return true;
 }
 
 bool BaseCompiler::endTryCatch(ResultType type) {
@@ -4634,7 +4573,6 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   
   
   
-  masm.bind(&tryCatch.otherLabel);
 
   
   
