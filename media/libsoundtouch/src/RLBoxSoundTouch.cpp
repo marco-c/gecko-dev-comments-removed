@@ -10,24 +10,36 @@ using namespace rlbox;
 using namespace mozilla;
 using namespace soundtouch;
 
-RLBoxSoundTouch::RLBoxSoundTouch() {
+RLBoxSoundTouch::RLBoxSoundTouch() {}
+
+bool RLBoxSoundTouch::Init() {
 #ifdef MOZ_WASM_SANDBOXING_SOUNDTOUCH
-  mSandbox.create_sandbox(true );
+  const bool success = mSandbox.create_sandbox(false );
 #else
+  const bool success = true;
   mSandbox.create_sandbox();
 #endif
+
+  if (!success){
+    return false;
+  }
+
   mTimeStretcher = mSandbox.invoke_sandbox_function(createSoundTouchObj);
 
   
   mSampleBuffer = mSandbox.malloc_in_sandbox<AudioDataValue>(mSampleBufferSize);
   MOZ_RELEASE_ASSERT(mSampleBuffer);
+  mCreated = true;
+  return true;
 }
 
 RLBoxSoundTouch::~RLBoxSoundTouch() {
-  mSandbox.free_in_sandbox(mSampleBuffer);
-  mSandbox.invoke_sandbox_function(destroySoundTouchObj, mTimeStretcher);
-  mTimeStretcher = nullptr;
-  mSandbox.destroy_sandbox();
+  if (mCreated) {
+    mSandbox.free_in_sandbox(mSampleBuffer);
+    mSandbox.invoke_sandbox_function(destroySoundTouchObj, mTimeStretcher);
+    mTimeStretcher = nullptr;
+    mSandbox.destroy_sandbox();
+  }
 }
 
 void RLBoxSoundTouch::setSampleRate(uint aRate) {
