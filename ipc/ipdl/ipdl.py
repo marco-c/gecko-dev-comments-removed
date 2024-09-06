@@ -1,6 +1,7 @@
 
 
 
+import json
 import optparse
 import os
 import sys
@@ -10,6 +11,7 @@ from multiprocessing import Manager
 
 import ipdl
 from ipdl.ast import SYNC
+from ipdl.exporter import JSONExporter
 
 
 class WorkerPool:
@@ -27,6 +29,7 @@ class WorkerPool:
         allprotocols,
         allmessageprognames,
         allsyncmessages,
+        alljsonobjs,
         *,
         processes=None
     ):
@@ -47,6 +50,7 @@ class WorkerPool:
                 allprotocols,
                 allmessageprognames,
                 allsyncmessages,
+                alljsonobjs,
             ),
             processes=processes,
         )
@@ -70,6 +74,7 @@ class WorkerPool:
             allprotocols,
             allmessageprognames,
             allsyncmessages,
+            alljsonobjs,
         ) = WorkerPool.per_process_context
         ast = asts[index]
         ipdl.gencxx(files[index], ast, headersdir, cppdir, segmentCapacityDict)
@@ -77,6 +82,8 @@ class WorkerPool:
         if ast.protocol:
             allmessages[ast.protocol.name] = ipdl.genmsgenum(ast)
             allprotocols.append(ast.protocol.name)
+
+            alljsonobjs.append(JSONExporter.protocolToObject(ast.protocol))
 
             
             for md in ast.protocol.messageDecls:
@@ -216,6 +223,7 @@ def main():
     allsyncmessages = manager.list()
     allmessageprognames = manager.list()
     allprotocols = manager.list()
+    alljsonobjs = manager.list()
 
     for msgName in msgMetadataConfig.sections():
         if msgMetadataConfig.has_option(msgName, "segment_capacity"):
@@ -271,8 +279,18 @@ def main():
         allprotocols,
         allmessageprognames,
         allsyncmessages,
+        alljsonobjs,
     )
     pool.run()
+
+    if cppdir is not None:
+        
+        alljsonobjs = list(alljsonobjs)
+        alljsonobjs.sort(key=lambda p: p["name"])
+        ipdl.writeifmodified(
+            json.dumps({"protocols": alljsonobjs}, indent=2),
+            os.path.join(cppdir, "protocols.json"),
+        )
 
     allprotocols.sort()
     allsyncmessages.sort()
