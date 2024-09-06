@@ -24,7 +24,6 @@ NIMBUS_FALLBACK_PREFS = (
 
 
 ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
-    "abouthomecache",
     "aboutwelcome",
     "gleanInternalSdk",
     "majorRelease2022",
