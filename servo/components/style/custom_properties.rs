@@ -274,6 +274,11 @@ impl ComputedCustomProperties {
         name: &Name,
         value: ComputedRegisteredValue,
     ) {
+        
+        
+        
+        
+        debug_assert!(!registration.syntax.is_universal() || value.as_universal().is_some());
         self.map_mut(registration).insert(name, value)
     }
 
@@ -1925,13 +1930,13 @@ fn do_substitute_chunk<'a>(
             computed_context,
             references,
         )?;
+        let substitution = substitution.into_universal();
 
         
         if reference.start == start && reference.end == end && registration.syntax.is_universal() {
-            return Ok(substitution);
+            return Ok(Substitution::Universal(substitution));
         }
 
-        let substitution = substitution.into_universal();
         substituted.push(
             &substitution.css,
             substitution.first_token_type,
