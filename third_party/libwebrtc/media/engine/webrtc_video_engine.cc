@@ -3117,15 +3117,12 @@ bool WebRtcVideoReceiveChannel::MaybeCreateDefaultReceiveStream(
     absl::optional<uint32_t> current_default_ssrc = GetUnsignaledSsrc();
     if (current_default_ssrc) {
       FindReceiveStream(*current_default_ssrc)->UpdateRtxSsrc(packet.Ssrc());
-    } else {
-      
-      
-      
-      
-      ReCreateDefaultReceiveStream(14795, packet.Ssrc());
+      return true;
     }
-    return true;
-  } else {
+    
+    
+    return false;
+  }
     
     
     
@@ -3142,7 +3139,7 @@ bool WebRtcVideoReceiveChannel::MaybeCreateDefaultReceiveStream(
         return false;
       }
     }
-  }
+
   
   ReCreateDefaultReceiveStream(packet.Ssrc(), absl::nullopt);
   last_unsignalled_ssrc_creation_time_ms_ = rtc::TimeMillis();
