@@ -154,8 +154,17 @@ def _line(raw, skip_indent, lineno, context):
 
         for idx, value in enumerate(values):
             
+            
+            multiline_list = list_chr == "," and not inline
+
+            
             if idx > 0 and list_chr == ",":
-                children.append(VerbatimNode(", "))
+                children.append(VerbatimNode(",\n" if multiline_list else ", "))
+
+            
+            
+            if multiline_list:
+                children.append(VerbatimNode("", indent=True))
 
             
             
