@@ -509,7 +509,9 @@ class WebDriverProtocol(Protocol):
             self.logger.debug(message)
         self.webdriver = None
 
-    def is_alive(self):
+    def is_alive(self) -> bool:
+        if not self.webdriver:
+            return False
         try:
             
             
