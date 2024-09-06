@@ -189,6 +189,8 @@ bool CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp);
 
 
 
+
+
 class JSString : public js::gc::CellWithLengthAndFlags {
  protected:
   using Base = js::gc::CellWithLengthAndFlags;
@@ -275,6 +277,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
         } u2;
         union {
           JSLinearString* base; 
+          JSAtom* atom;         
           JSString* right;      
           size_t capacity;      
           const JSExternalStringCallbacks*
@@ -356,6 +359,8 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
 
 
+
+
   
   static_assert(js::gc::CellFlagBitsReservedForGC <= 3,
                 "JSString::flags must reserve enough bits for Cell");
@@ -364,6 +369,8 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   static const uint32_t LINEAR_BIT = js::Bit(4);
   static const uint32_t DEPENDENT_BIT = js::Bit(5);
   static const uint32_t INLINE_CHARS_BIT = js::Bit(6);
+  
+  static const uint32_t ATOM_REF_BIT = js::Bit(9);
 
   static const uint32_t LINEAR_IS_EXTENSIBLE_BIT = js::Bit(7);
   static const uint32_t INLINE_IS_FAT_BIT = js::Bit(7);
@@ -383,8 +390,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   static const uint32_t INIT_ROPE_FLAGS = 0;
   static const uint32_t INIT_LINEAR_FLAGS = LINEAR_BIT;
   static const uint32_t INIT_DEPENDENT_FLAGS = LINEAR_BIT | DEPENDENT_BIT;
+  static const uint32_t INIT_ATOM_REF_FLAGS =
+      INIT_DEPENDENT_FLAGS | ATOM_REF_BIT;
 
-  static const uint32_t TYPE_FLAGS_MASK = js::BitMask(9) - js::BitMask(3);
+  static const uint32_t TYPE_FLAGS_MASK = js::BitMask(10) - js::BitMask(3);
   static_assert((TYPE_FLAGS_MASK & js::gc::HeaderWord::RESERVED_MASK) == 0,
                 "GC reserved bits must not be used for Strings");
 
@@ -392,17 +401,18 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   
   
   
-  
-  
-  
-  
-  
-  static const uint32_t LATIN1_CHARS_BIT = js::Bit(9);
+  static const uint32_t ATOM_IS_INDEX_BIT = js::Bit(9);
 
   
   
   
-  static const uint32_t ATOM_IS_INDEX_BIT = js::Bit(10);
+  
+  
+  
+  
+  
+  
+  static const uint32_t LATIN1_CHARS_BIT = js::Bit(10);
 
   static const uint32_t INDEX_VALUE_BIT = js::Bit(11);
   static const uint32_t INDEX_VALUE_SHIFT = 16;
@@ -423,6 +433,11 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   static const uint32_t FLATTEN_FINISH_NODE = js::Bit(15);
   static const uint32_t FLATTEN_MASK =
       FLATTEN_VISIT_RIGHT | FLATTEN_FINISH_NODE;
+
+  
+  
+  
+  static const uint32_t DEPENDED_ON_BIT = FLATTEN_VISIT_RIGHT;
 
   static const uint32_t PINNED_ATOM_BIT = js::Bit(15);
   static const uint32_t PERMANENT_ATOM_MASK =
@@ -543,6 +558,20 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     return flags() >> INDEX_VALUE_SHIFT;
   }
 
+  
+
+
+  bool isDependedOn() const {
+    bool result = flags() & DEPENDED_ON_BIT;
+    MOZ_ASSERT_IF(result, !isRope());
+    return result;
+  }
+
+  void setDependedOn() {
+    MOZ_ASSERT(!isRope());
+    setFlagBit(DEPENDED_ON_BIT);
+  }
+
   inline size_t allocSize() const;
 
   
@@ -571,6 +600,11 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   MOZ_ALWAYS_INLINE
   bool isDependent() const { return flags() & DEPENDENT_BIT; }
+
+  MOZ_ALWAYS_INLINE
+  bool isAtomRef() const {
+    return (flags() & ATOM_REF_BIT) && !(flags() & ATOM_BIT);
+  }
 
   MOZ_ALWAYS_INLINE
   JSDependentString& asDependent() const {
@@ -668,6 +702,8 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   inline JSLinearString* base() const;
 
+  inline JSAtom* atom() const;
+
   
   
   
@@ -677,6 +713,8 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   
   inline void setBase(JSLinearString* newBase);
+
+  bool tryReplaceWithAtomRef(JSAtom* atom);
 
   void traceBase(JSTracer* trc);
 
@@ -1180,6 +1218,20 @@ class JSDependentString : public JSLinearString {
 };
 
 static_assert(sizeof(JSDependentString) == sizeof(JSString),
+              "string subclasses must be binary-compatible with JSString");
+
+class JSAtomRefString : public JSDependentString {
+  friend class JSString;
+  friend class js::gc::CellAllocator;
+  friend class js::jit::MacroAssembler;
+
+ public:
+  inline static size_t offsetOfAtom() {
+    return offsetof(JSAtomRefString, d.s.u3.atom);
+  }
+};
+
+static_assert(sizeof(JSAtomRefString) == sizeof(JSString),
               "string subclasses must be binary-compatible with JSString");
 
 class JSExtensibleString : public JSLinearString {
@@ -2030,8 +2082,16 @@ MOZ_ALWAYS_INLINE JSLinearString* JSString::ensureLinear(JSContext* cx) {
 
 inline JSLinearString* JSString::base() const {
   MOZ_ASSERT(hasBase());
-  MOZ_ASSERT(!d.s.u3.base->isInline());
+  MOZ_ASSERT_IF(!isAtomRef(), !d.s.u3.base->isInline());
+  if (isAtomRef()) {
+    return static_cast<JSLinearString*>(d.s.u3.atom);
+  }
   return d.s.u3.base;
+}
+
+inline JSAtom* JSString::atom() const {
+  MOZ_ASSERT(isAtomRef());
+  return d.s.u3.atom;
 }
 
 inline JSLinearString* JSString::nurseryBaseOrRelocOverlay() const {
@@ -2184,7 +2244,9 @@ MOZ_ALWAYS_INLINE bool JSAtom::lengthFitsInline<char16_t>(size_t length) {
 template <>
 MOZ_ALWAYS_INLINE void JSString::setNonInlineChars(const char16_t* chars) {
   
-  checkStringCharsArena(chars);
+  if (!(isAtomRef() && atom()->isInline())) {
+    checkStringCharsArena(chars);
+  }
   d.s.u2.nonInlineCharsTwoByte = chars;
 }
 
@@ -2192,7 +2254,9 @@ template <>
 MOZ_ALWAYS_INLINE void JSString::setNonInlineChars(
     const JS::Latin1Char* chars) {
   
-  checkStringCharsArena(chars);
+  if (!(isAtomRef() && atom()->isInline())) {
+    checkStringCharsArena(chars);
+  }
   d.s.u2.nonInlineCharsLatin1 = chars;
 }
 

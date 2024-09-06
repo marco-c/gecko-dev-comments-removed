@@ -359,7 +359,7 @@ const char* RepresentationToString(const JSString* s) {
 template <typename KnownF, typename UnknownF>
 void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
                        UnknownF unknown) {
-  for (uint32_t i = js::Bit(3); i < js::Bit(16); i = i << 1) {
+  for (uint32_t i = js::Bit(3); i < js::Bit(17); i = i << 1) {
     if (!(flags & i)) {
       continue;
     }
@@ -406,7 +406,11 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
         known("LATIN1_CHARS_BIT");
         break;
       case JSString::ATOM_IS_INDEX_BIT:
-        known("ATOM_IS_INDEX_BIT");
+        if (str->isAtom()) {
+          known("ATOM_IS_INDEX_BIT");
+        } else {
+          known("ATOM_REF_BIT");
+        }
         break;
       case JSString::INDEX_VALUE_BIT:
         known("INDEX_VALUE_BIT");
@@ -418,7 +422,7 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
         if (str->isRope()) {
           known("FLATTEN_VISIT_RIGHT");
         } else {
-          known("NON_DEDUP_BIT");
+          known("DEPENDED_ON_BIT");
         }
         break;
       case JSString::FLATTEN_FINISH_NODE:
@@ -429,7 +433,7 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
         } else if (str->isAtom()) {
           known("PINNED_ATOM_BIT");
         } else {
-          unknown(i);
+          known("NON_DEDUP_BIT");
         }
         break;
       default:
@@ -936,6 +940,7 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
   const size_t wholeLength = root->length();
   size_t wholeCapacity;
   CharT* wholeChars;
+  bool setRootDependedOn = false;
 
   AutoCheckCannotGC nogc;
 
@@ -1041,6 +1046,7 @@ finish_node: {
                          StringFlagsForCharType<CharT>(INIT_DEPENDENT_FLAGS));
   str->d.s.u3.base =
       reinterpret_cast<JSLinearString*>(root); 
+  setRootDependedOn = true;
 
   
   
@@ -1093,6 +1099,11 @@ finish_root:
       root->storeBuffer()->putWholeCell(&left);
       root->setNonDeduplicatable();
     }
+    setRootDependedOn = true;
+  }
+
+  if (setRootDependedOn) {
+    root->setDependedOn();
   }
 
   return &root->asLinear();
@@ -2498,6 +2509,45 @@ bool JSString::fillWithRepresentatives(JSContext* cx,
   MOZ_ASSERT(index == StringTypes * CharTypes * HeapType);
 #endif
 
+  return true;
+}
+
+bool JSString::tryReplaceWithAtomRef(JSAtom* atom) {
+  MOZ_ASSERT(!isAtomRef());
+
+  if (isDependedOn() || isInline() || isExternal()) {
+    return false;
+  }
+
+  AutoCheckCannotGC nogc;
+  if (hasOutOfLineChars()) {
+    void* buffer = asLinear().nonInlineCharsRaw();
+    
+    
+    
+    
+    
+    
+    
+    if (isTenured()) {
+      RemoveCellMemory(this, allocSize(), MemoryUse::StringContents);
+      js_free(buffer);
+    }
+  }
+
+  uint32_t flags = INIT_ATOM_REF_FLAGS;
+  d.s.u3.atom = atom;
+  if (atom->hasLatin1Chars()) {
+    flags |= LATIN1_CHARS_BIT;
+    setLengthAndFlags(length(), flags);
+    setNonInlineChars(atom->chars<Latin1Char>(nogc));
+  } else {
+    setLengthAndFlags(length(), flags);
+    setNonInlineChars(atom->chars<char16_t>(nogc));
+  }
+  
+  
+  MOZ_ASSERT(atom->isTenured());
   return true;
 }
 
