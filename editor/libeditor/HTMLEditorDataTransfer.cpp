@@ -509,8 +509,9 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
         wsRunScannerAtStartReason.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
             pointToPutCaret);
     if (backwardScanFromPointToCaretResult.InVisibleOrCollapsibleCharacters()) {
+      
       pointToPutCaret =
-          backwardScanFromPointToCaretResult.Point<EditorDOMPoint>();
+          backwardScanFromPointToCaretResult.Point_Deprecated<EditorDOMPoint>();
     } else if (backwardScanFromPointToCaretResult.ReachedSpecialContent()) {
       
       

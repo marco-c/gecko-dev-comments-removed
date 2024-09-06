@@ -1157,8 +1157,9 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       if ((scanResultInTextNode.InVisibleOrCollapsibleCharacters() ||
            scanResultInTextNode.ReachedPreformattedLineBreak()) &&
           scanResultInTextNode.TextPtr() == text) {
+        
         nsresult rv = CollapseSelectionTo(
-            scanResultInTextNode.Point<EditorRawDOMPoint>());
+            scanResultInTextNode.Point_Deprecated<EditorRawDOMPoint>());
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                              "EditorBase::CollapseSelectionTo() failed");
         return rv;

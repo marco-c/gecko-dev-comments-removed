@@ -222,7 +222,9 @@ class MOZ_STACK_CLASS WSScanResult final {
 
 
 
-  MOZ_NEVER_INLINE_DEBUG uint32_t Offset() const {
+
+
+  MOZ_NEVER_INLINE_DEBUG uint32_t Offset_Deprecated() const {
     NS_ASSERTION(mOffset.isSome(), "Retrieved non-meaningful offset");
     return mOffset.valueOr(0);
   }
@@ -233,7 +235,7 @@ class MOZ_STACK_CLASS WSScanResult final {
 
 
   template <typename EditorDOMPointType>
-  EditorDOMPointType Point() const {
+  EditorDOMPointType Point_Deprecated() const {
     NS_ASSERTION(mOffset.isSome(), "Retrieved non-meaningful point");
     return EditorDOMPointType(mContent, mOffset.valueOr(0));
   }
