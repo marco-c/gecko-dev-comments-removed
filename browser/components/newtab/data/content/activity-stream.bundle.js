@@ -233,7 +233,6 @@ for (const type of [
   "UPDATE_PINNED_SEARCH_SHORTCUTS",
   "UPDATE_SEARCH_SHORTCUTS",
   "UPDATE_SECTION_PREFS",
-  "WALLPAPERS_CATEGORY_SET",
   "WALLPAPERS_FEATURE_HIGHLIGHT_COUNTER_INCREMENT",
   "WALLPAPERS_FEATURE_HIGHLIGHT_SEEN",
   "WALLPAPERS_SET",
@@ -5651,7 +5650,6 @@ const INITIAL_STATE = {
   Wallpapers: {
     wallpaperList: [],
     highlightSeenCounter: 0,
-    categories: [],
   },
   Weather: {
     initialized: false,
@@ -6423,8 +6421,6 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
         ...prevState,
         highlightSeenCounter: action.data,
       };
-    case actionTypes.WALLPAPERS_CATEGORY_SET:
-      return { ...prevState, categories: action.data };
     default:
       return prevState;
   }
@@ -9139,143 +9135,6 @@ const WallpapersSection = (0,external_ReactRedux_namespaceObject.connect)(state 
 
 
 
-class _WallpaperCategories extends (external_React_default()).PureComponent {
-  constructor(props) {
-    super(props);
-    this.handleChange = this.handleChange.bind(this);
-    this.handleReset = this.handleReset.bind(this);
-    this.handleCategory = this.handleCategory.bind(this);
-    this.handleBack = this.handleBack.bind(this);
-    this.prefersHighContrastQuery = null;
-    this.prefersDarkQuery = null;
-    this.state = {
-      activeCategory: null
-    };
-  }
-  componentDidMount() {
-    this.prefersDarkQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
-  }
-  handleChange(event) {
-    const {
-      id
-    } = event.target;
-    const prefs = this.props.Prefs.values;
-    const colorMode = this.prefersDarkQuery?.matches ? "dark" : "light";
-    this.props.setPref(`newtabWallpapers.wallpaper-${colorMode}`, id);
-    this.handleUserEvent({
-      selected_wallpaper: id,
-      hadPreviousWallpaper: !!this.props.activeWallpaper
-    });
-    
-    if (prefs["newtabWallpapers.wallpaper-dark"] === "" && colorMode === "light") {
-      this.props.setPref("newtabWallpapers.wallpaper-dark", id.replace("light", "dark"));
-    }
-    if (prefs["newtabWallpapers.wallpaper-light"] === "" && colorMode === "dark") {
-      this.props.setPref(`newtabWallpapers.wallpaper-light`, id.replace("dark", "light"));
-    }
-  }
-  handleReset() {
-    const colorMode = this.prefersDarkQuery?.matches ? "dark" : "light";
-    this.props.setPref(`newtabWallpapers.wallpaper-${colorMode}`, "");
-    this.handleUserEvent({
-      selected_wallpaper: "none",
-      hadPreviousWallpaper: !!this.props.activeWallpaper
-    });
-  }
-  handleCategory = event => {
-    this.setState({
-      activeCategory: event.target.id
-    });
-  };
-  handleBack() {
-    this.setState({
-      activeCategory: null
-    });
-  }
-
-  
-  handleUserEvent(data) {
-    this.props.dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.WALLPAPER_CLICK,
-      data
-    }));
-  }
-  render() {
-    const {
-      wallpaperList,
-      categories
-    } = this.props.Wallpapers;
-    const {
-      activeWallpaper
-    } = this.props;
-    const {
-      activeCategory
-    } = this.state;
-    const filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory);
-    return external_React_default().createElement("div", null, external_React_default().createElement("h2", {
-      "data-l10n-id": "newtab-wallpaper-title"
-    }, "Wallpapers"), external_React_default().createElement("button", {
-      className: "wallpapers-reset",
-      onClick: this.handleReset,
-      "data-l10n-id": "newtab-wallpaper-reset"
-    }), external_React_default().createElement("fieldset", {
-      className: "category-list"
-    }, categories.map(category => {
-      const firstWallpaper = wallpaperList.find(wallpaper => wallpaper.category === category);
-      const title = firstWallpaper ? firstWallpaper.title : "";
-      return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("input", {
-        key: category,
-        id: category,
-        onClick: this.handleCategory,
-        className: `wallpaper-input ${title}`
-      }), external_React_default().createElement("label", null, category));
-    })), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
-      in: !!activeCategory,
-      timeout: 300,
-      classNames: "wallpaper-list",
-      unmountOnExit: true
-    }, external_React_default().createElement("section", {
-      className: "category wallpaper-list"
-    }, external_React_default().createElement("button", {
-      onClick: this.handleBack
-    }, "back arrow"), external_React_default().createElement("h2", null, activeCategory), external_React_default().createElement("fieldset", null, filteredWallpapers.map(({
-      title,
-      theme,
-      fluent_id
-    }) => {
-      return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("input", {
-        onChange: this.handleChange,
-        type: "radio",
-        name: `wallpaper-${title}`,
-        id: title,
-        value: title,
-        checked: title === activeWallpaper,
-        "aria-checked": title === activeWallpaper,
-        className: `wallpaper-input theme-${theme} ${title}`
-      }), external_React_default().createElement("label", {
-        htmlFor: title,
-        className: "sr-only",
-        "data-l10n-id": fluent_id
-      }, fluent_id));
-    })))));
-  }
-}
-const WallpaperCategories = (0,external_ReactRedux_namespaceObject.connect)(state => {
-  return {
-    Wallpapers: state.Wallpapers,
-    Prefs: state.Prefs
-  };
-})(_WallpaperCategories);
-;
-
-
-
-
-
-
-
-
-
 class ContentSection extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -9357,7 +9216,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       openPreferences,
       spocMessageVariant,
       wallpapersEnabled,
-      wallpapersV2Enabled,
       activeWallpaper,
       setPref
     } = this.props;
@@ -9375,12 +9233,9 @@ class ContentSection extends (external_React_default()).PureComponent {
       className: "home-section"
     }, wallpapersEnabled && external_React_default().createElement("div", {
       className: "wallpapers-section"
-    }, external_React_default().createElement(WallpapersSection, {
-      setPref: setPref,
-      activeWallpaper: activeWallpaper
-    })), wallpapersV2Enabled && external_React_default().createElement("div", {
-      className: "wallpapers-section"
-    }, external_React_default().createElement(WallpaperCategories, {
+    }, external_React_default().createElement("h2", {
+      "data-l10n-id": "newtab-wallpaper-title"
+    }), external_React_default().createElement(WallpapersSection, {
       setPref: setPref,
       activeWallpaper: activeWallpaper
     })), external_React_default().createElement("div", {
@@ -9594,7 +9449,6 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       setPref: this.props.setPref,
       enabledSections: this.props.enabledSections,
       wallpapersEnabled: this.props.wallpapersEnabled,
-      wallpapersV2Enabled: this.props.wallpapersV2Enabled,
       activeWallpaper: this.props.activeWallpaper,
       pocketRegion: this.props.pocketRegion,
       mayHaveSponsoredTopSites: this.props.mayHaveSponsoredTopSites,
@@ -10594,7 +10448,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     const prefs = props.Prefs.values;
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper-${this.state.colorMode}`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
     const weatherEnabled = prefs.showWeather;
     const {
       pocketConfig
@@ -10625,7 +10478,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveSponsoredTopSites
     } = prefs;
     const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["logowordmark.alwaysVisible"] && "visible-logo"].filter(v => v).join(" ");
-    if (wallpapersEnabled || wallpapersV2Enabled) {
+    if (wallpapersEnabled) {
       this.updateWallpaper();
     }
     return external_React_default().createElement("div", null, external_React_default().createElement("menu", {
@@ -10637,7 +10490,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       setPref: this.setPref,
       enabledSections: enabledSections,
       wallpapersEnabled: wallpapersEnabled,
-      wallpapersV2Enabled: wallpapersV2Enabled,
       activeWallpaper: activeWallpaper,
       pocketRegion: pocketRegion,
       mayHaveSponsoredTopSites: mayHaveSponsoredTopSites,
