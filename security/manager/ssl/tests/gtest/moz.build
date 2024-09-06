@@ -5,6 +5,7 @@
 
 
 SOURCES += [
+    "CertificateCompressionTest.cpp",
     "CoseTest.cpp",
     "DeserializeCertTest.cpp",
     "HMACTest.cpp",
