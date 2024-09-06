@@ -8,7 +8,6 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCrypto;
 import android.media.MediaFormat;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -135,18 +134,7 @@ import org.mozilla.gecko.util.HardwareCodecCapabilityUtils;
   }
 
    LollipopAsyncCodec(final String name) throws IOException {
-    
-    
-    
-    
-    
-    
-    long token = Binder.clearCallingIdentity();
-    try {
-      mCodec = MediaCodec.createByCodecName(name);
-    } finally {
-      Binder.restoreCallingIdentity(token);
-    }
+    mCodec = MediaCodec.createByCodecName(name);
   }
 
   @Override
