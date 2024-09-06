@@ -12,6 +12,7 @@
 #include "CubebInputStream.h"
 #include "CubebUtils.h"
 #include "TimeUnits.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/ProfilerUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SPSCQueue.h"
@@ -60,6 +61,11 @@ class AudioInputSource : public CubebInputStream::Listener {
   void Start();
   
   void Stop();
+  
+  using SetRequestedProcessingParamsPromise =
+      MozPromise<cubeb_input_processing_params, int, true>;
+  RefPtr<SetRequestedProcessingParamsPromise> SetRequestedProcessingParams(
+      cubeb_input_processing_params aParams);
   
   
   
@@ -119,6 +125,11 @@ class AudioInputSource : public CubebInputStream::Listener {
 
   
   UniquePtr<CubebInputStream> mStream;
+
+  
+  
+  cubeb_input_processing_params mConfiguredProcessingParams =
+      CUBEB_INPUT_PROCESSING_PARAM_NONE;
 
   struct Empty {};
 
