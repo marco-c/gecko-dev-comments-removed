@@ -37,8 +37,8 @@ bool jit::BranchHinting(MIRGenerator* mir, MIRGraph& graph) {
     
     
     
-    
-    if (block->branchHintingUnlikely() && block->loopDepth() == 0) {
+    if (block->branchHintingUnlikely() && block->loopDepth() == 0 &&
+        block->hasLastIns() && block->lastIns()->is<js::jit::MWasmReturn>()) {
       if (!toBeMoved.append(block)) {
         return false;
       }
@@ -47,7 +47,7 @@ bool jit::BranchHinting(MIRGenerator* mir, MIRGraph& graph) {
 
   for (MBasicBlock* block : toBeMoved) {
 #ifdef JS_JITSPEW
-    JitSpew(JitSpew_BranchHint, "Pushing block%u to the end", block->id());
+    JitSpew(JitSpew_BranchHint, "Moving block%u to the end", block->id());
 #endif
     graph.moveBlockToEnd(block);
   }
