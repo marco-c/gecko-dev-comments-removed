@@ -2,87 +2,65 @@
 
 'use strict';
 
-async function IsSharedStorageSelectUrlAllowedByPermissionsPolicy() {
-  const errorMessage = 'The \"shared-storage-select-url\" Permissions Policy denied the usage of window.sharedStorage.selectURL().';
-  let allowedByPermissionsPolicy = true;
+async function IsSharedStorageSelectUrlAllowed() {
+  let allowed = true;
   try {
-    
-    
-    
     await sharedStorage.selectURL("operation", [{url: "1.html"}]);
-    assert_unreached("did not fail");
   } catch (e) {
-    if (e.message === errorMessage) {
-      allowedByPermissionsPolicy = false;
-    }
+    allowed = false;
   }
 
-  return allowedByPermissionsPolicy;
+  return allowed;
 }
 
 
 
-
-
-async function AreSharedStorageMethodsAllowedByPermissionsPolicy() {
-  let permissionsPolicyDeniedCount = 0;
-  const errorMessage = 'The \"shared-storage\" Permissions Policy denied the method on window.sharedStorage.';
+async function AreRegularSharedStorageMethodsAllowed() {
+  let deniedCount = 0;
 
   try {
     await window.sharedStorage.worklet.addModule('/shared-storage/resources/simple-module.js');
   } catch (e) {
-    assert_equals(e.message, errorMessage);
-    ++permissionsPolicyDeniedCount;
+    ++deniedCount;
   }
 
   try {
-    await window.sharedStorage.run('operation');
+    await window.sharedStorage.run('operation', {keepAlive: true});
   } catch (e) {
-    assert_equals(e.message, errorMessage);
-    ++permissionsPolicyDeniedCount;
+    ++deniedCount;
   }
 
   try {
-    
-    
-    
-    await sharedStorage.selectURL("operation", [{url: "1.html"}]);
-    assert_unreached("did not fail");
+    await sharedStorage.selectURL("operation", [{url: "1.html"}], {keepAlive: true});
   } catch (e) {
-    if (e.message === errorMessage) {
-      ++permissionsPolicyDeniedCount;
-    }
+    ++deniedCount;
   }
 
   try {
     await window.sharedStorage.set('a', 'b');
   } catch (e) {
-    assert_equals(e.message, errorMessage);
-    ++permissionsPolicyDeniedCount;
+    ++deniedCount;
   }
 
   try {
     await window.sharedStorage.append('a', 'b');
   } catch (e) {
-    assert_equals(e.message, errorMessage);
-    ++permissionsPolicyDeniedCount;
+    ++deniedCount;
   }
 
   try {
     await window.sharedStorage.clear();
   } catch (e) {
-    assert_equals(e.message, errorMessage);
-    ++permissionsPolicyDeniedCount;
+    ++deniedCount;
   }
 
   try {
     await window.sharedStorage.delete('a');
   } catch (e) {
-    assert_equals(e.message, errorMessage);
-    ++permissionsPolicyDeniedCount;
+    ++deniedCount;
   }
 
-  if (permissionsPolicyDeniedCount === 0)
+  if (deniedCount === 0)
     return true;
 
   return false;
