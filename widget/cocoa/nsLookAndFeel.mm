@@ -69,7 +69,7 @@ void nsLookAndFeel::RefreshImpl() {
 
 static nscolor GetColorFromNSColor(NSColor* aColor) {
   NSColor* deviceColor =
-      [aColor colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]];
+      [aColor colorUsingColorSpace:NSColorSpace.deviceRGBColorSpace];
   return NS_RGBA((unsigned int)(deviceColor.redComponent * 255.0),
                  (unsigned int)(deviceColor.greenComponent * 255.0),
                  (unsigned int)(deviceColor.blueComponent * 255.0),
@@ -156,7 +156,11 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       break;
     case ColorID::MozMenuhover:
     case ColorID::Selecteditem:
-      color = GetColorFromNSColor(NSColor.selectedContentBackgroundColor);
+      
+      
+      color = NS_ComposeColors(
+          GetColorFromNSColor(NSColor.selectedContentBackgroundColor),
+          NS_RGBA(255, 255, 255, 51));
       break;
     case ColorID::Accentcolortext:
     case ColorID::MozMenuhovertext:
