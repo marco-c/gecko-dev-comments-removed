@@ -79,7 +79,6 @@ typedef enum _cairo_svg_version {
 
 
 
-
 typedef enum _cairo_svg_unit {
     CAIRO_SVG_UNIT_USER = 0,
     CAIRO_SVG_UNIT_EM,

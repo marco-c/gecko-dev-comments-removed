@@ -35,15 +35,6 @@
 
 
 
-#define WIN32_LEAN_AND_MEAN
-
-#if !defined(WINVER) || (WINVER < 0x0500)
-# define WINVER 0x0500
-#endif
-#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0500)
-# define _WIN32_WINNT 0x0500
-#endif
-
 #include "cairoint.h"
 
 #include "cairo-default-context-private.h"
@@ -167,8 +158,15 @@ _cairo_win32_printing_surface_init_language_pack (cairo_win32_printing_surface_t
 
     module = GetModuleHandleW (L"GDI32.DLL");
     if (module) {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
 	gdi_init_lang_pack = (gdi_init_lang_pack_func_t)
 	    GetProcAddress (module, "GdiInitializeLanguagePack");
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 	if (gdi_init_lang_pack)
 	    gdi_init_lang_pack (0);
     }
@@ -656,6 +654,7 @@ _cairo_win32_printing_surface_paint_recording_pattern (cairo_win32_printing_surf
 
 	    SaveDC (surface->win32.dc); 
 	    status = _cairo_recording_surface_replay_region (&recording_surface->base,
+							     pattern->region_array_id,
 							     is_subsurface ? &recording_extents : NULL,
 							     &surface->win32.base,
 							     CAIRO_RECORDING_REGION_NATIVE);
@@ -1521,7 +1520,7 @@ _cairo_win32_printing_surface_stroke (void			*abstract_surface,
     cairo_matrix_multiply (&mat, stroke_ctm, &surface->ctm);
     _cairo_matrix_factor_out_scale (&mat, &scale);
 
-    pen_style = PS_GEOMETRIC;
+    pen_style = style->is_hairline ? PS_COSMETIC : PS_GEOMETRIC;
     dash_array = NULL;
     if (style->num_dashes) {
 	pen_style |= PS_USERSTYLE;
@@ -1547,10 +1546,12 @@ _cairo_win32_printing_surface_stroke (void			*abstract_surface,
     brush.lbStyle = BS_SOLID;
     brush.lbColor = color;
     brush.lbHatch = 0;
-    pen_style |= _cairo_win32_line_cap (style->line_cap);
-    pen_style |= _cairo_win32_line_join (style->line_join);
+    if (!style->is_hairline) {
+	pen_style |= _cairo_win32_line_cap (style->line_cap);
+	pen_style |= _cairo_win32_line_join (style->line_join);
+    }
     pen = ExtCreatePen(pen_style,
-		       scale * style->line_width,
+		       style->is_hairline ? 1 : scale * style->line_width,
 		       &brush,
 		       style->num_dashes,
 		       dash_array);
@@ -1871,6 +1872,7 @@ _cairo_win32_printing_surface_show_glyphs (void                 *abstract_surfac
 	    status = _cairo_scaled_glyph_lookup (scaled_font,
 						 glyphs[i].index,
 						 CAIRO_SCALED_GLYPH_INFO_PATH,
+						 NULL, 
 						 &scaled_glyph);
 	    if (status)
                 break;
@@ -1942,6 +1944,7 @@ _cairo_win32_printing_surface_show_glyphs (void                 *abstract_surfac
 	status = _cairo_scaled_glyph_lookup (scaled_font,
 					     glyphs[i].index,
 					     CAIRO_SCALED_GLYPH_INFO_PATH,
+					     NULL, 
 					     &scaled_glyph);
 	if (status)
 	    break;
@@ -2136,6 +2139,9 @@ _cairo_win32_printing_surface_supports_fine_grained_fallbacks (void *abstract_su
 {
     return TRUE;
 }
+
+
+
 
 
 

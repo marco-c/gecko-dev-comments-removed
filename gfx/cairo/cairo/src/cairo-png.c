@@ -407,6 +407,14 @@ write_png (cairo_surface_t	*surface,
 
     png_write_info (png, info);
 
+#ifndef WORDS_BIGENDIAN
+    
+
+
+
+    png_set_swap (png);
+#endif
+
     if (png_color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
 	if (clone->format != CAIRO_FORMAT_RGBA128F)
 	    png_set_write_user_transform_fn (png, unpremultiply_data);
@@ -561,7 +569,6 @@ cairo_surface_write_to_png_stream (cairo_surface_t	*surface,
 
     return write_png (surface, stream_write_func, &png_closure);
 }
-slim_hidden_def (cairo_surface_write_to_png_stream);
 
 static inline int
 multiply_alpha (int alpha, int color)
@@ -701,6 +708,14 @@ read_png (struct png_read_closure_t *png_closure)
 #endif
 
     png_read_info (png, info);
+
+#ifndef WORDS_BIGENDIAN
+    
+
+
+
+    png_set_swap (png);
+#endif
 
     png_get_IHDR (png, info,
                   &png_width, &png_height, &depth,

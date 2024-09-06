@@ -85,6 +85,7 @@ _cairo_cache_entry_is_non_zero (const void *entry)
 
 
 
+
 cairo_status_t
 _cairo_cache_init (cairo_cache_t		*cache,
 		   cairo_cache_keys_equal_func_t keys_equal,
@@ -315,18 +316,18 @@ _cairo_cache_foreach (cairo_cache_t		      *cache,
 			       closure);
 }
 
-unsigned long
+uintptr_t
 _cairo_hash_string (const char *c)
 {
     
-    unsigned long hash = _CAIRO_HASH_INIT_VALUE;
+    uintptr_t hash = _CAIRO_HASH_INIT_VALUE;
     while (c && *c)
 	hash = ((hash << 5) + hash) + *c++;
     return hash;
 }
 
-unsigned long
-_cairo_hash_bytes (unsigned long hash,
+uintptr_t
+_cairo_hash_bytes (uintptr_t hash,
 		   const void *ptr,
 		   unsigned int length)
 {
@@ -335,4 +336,11 @@ _cairo_hash_bytes (unsigned long hash,
     while (length--)
 	hash = ((hash << 5) + hash) + *bytes++;
     return hash;
+}
+
+uintptr_t
+_cairo_hash_uintptr (uintptr_t hash,
+                     uintptr_t u)
+{
+    return _cairo_hash_bytes (hash, &u, sizeof(u));
 }

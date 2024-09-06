@@ -37,15 +37,6 @@
 
 
 
-#define WIN32_LEAN_AND_MEAN
-
-#if !defined(WINVER) || (WINVER < 0x0500)
-# define WINVER 0x0500
-#endif
-#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0500)
-# define _WIN32_WINNT 0x0500
-#endif
-
 #include "cairoint.h"
 
 #include "cairo-clip-private.h"
@@ -129,6 +120,8 @@ _create_dc_and_bitmap (cairo_win32_display_surface_t *surface,
     case CAIRO_FORMAT_INVALID:
     case CAIRO_FORMAT_RGB16_565:
     case CAIRO_FORMAT_RGB30:
+    case CAIRO_FORMAT_RGB96F:
+    case CAIRO_FORMAT_RGBA128F:
 	return _cairo_error (CAIRO_STATUS_INVALID_FORMAT);
     case CAIRO_FORMAT_ARGB32:
     case CAIRO_FORMAT_RGB24:
@@ -164,6 +157,8 @@ _create_dc_and_bitmap (cairo_win32_display_surface_t *surface,
     case CAIRO_FORMAT_INVALID:
     case CAIRO_FORMAT_RGB16_565:
     case CAIRO_FORMAT_RGB30:
+    case CAIRO_FORMAT_RGB96F:
+    case CAIRO_FORMAT_RGBA128F:
 	ASSERT_NOT_REACHED;
     
 
@@ -242,6 +237,8 @@ _create_dc_and_bitmap (cairo_win32_display_surface_t *surface,
 	case CAIRO_FORMAT_INVALID:
 	case CAIRO_FORMAT_RGB16_565:
 	case CAIRO_FORMAT_RGB30:
+	case CAIRO_FORMAT_RGB96F:
+	case CAIRO_FORMAT_RGBA128F:
 	    ASSERT_NOT_REACHED;
 	case CAIRO_FORMAT_ARGB32:
 	case CAIRO_FORMAT_RGB24:
@@ -981,11 +978,18 @@ cairo_win32_surface_create_with_format (HDC hdc, cairo_format_t format)
     cairo_device_t *device;
 
     switch (format) {
-    default:
-	return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_INVALID_FORMAT));
-    case CAIRO_FORMAT_ARGB32:
-    case CAIRO_FORMAT_RGB24:
-	break;
+	case CAIRO_FORMAT_INVALID:
+	case CAIRO_FORMAT_A8:
+	case CAIRO_FORMAT_A1:
+	case CAIRO_FORMAT_RGB16_565:
+	case CAIRO_FORMAT_RGB30:
+	case CAIRO_FORMAT_RGB96F:
+	case CAIRO_FORMAT_RGBA128F:
+	default:
+	    return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_INVALID_FORMAT));
+	case CAIRO_FORMAT_ARGB32:
+	case CAIRO_FORMAT_RGB24:
+	    break;
     }
 
     surface = _cairo_malloc (sizeof (*surface));
@@ -1096,14 +1100,19 @@ cairo_win32_surface_create_with_ddb (HDC hdc,
     HBITMAP saved_dc_bitmap;
 
     switch (format) {
-    default:
 
-    case CAIRO_FORMAT_A8:
-    case CAIRO_FORMAT_A1:
-	return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_INVALID_FORMAT));
-    case CAIRO_FORMAT_ARGB32:
-    case CAIRO_FORMAT_RGB24:
-	break;
+	case CAIRO_FORMAT_INVALID:
+	case CAIRO_FORMAT_A8:
+	case CAIRO_FORMAT_A1:
+	case CAIRO_FORMAT_RGB16_565:
+	case CAIRO_FORMAT_RGB30:
+	case CAIRO_FORMAT_RGB96F:
+	case CAIRO_FORMAT_RGBA128F:
+	default:
+	    return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_INVALID_FORMAT));
+	case CAIRO_FORMAT_ARGB32:
+	case CAIRO_FORMAT_RGB24:
+	    break;
     }
 
     if (!hdc) {

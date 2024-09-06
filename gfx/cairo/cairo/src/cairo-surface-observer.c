@@ -54,6 +54,24 @@
 #include "cairo-script-private.h"
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const cairo_surface_backend_t _cairo_surface_observer_backend;
 
 
@@ -1429,6 +1447,18 @@ _cairo_surface_observer_add_callback (cairo_list_t *head,
     return CAIRO_STATUS_SUCCESS;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 cairo_status_t
 cairo_surface_observer_add_paint_callback (cairo_surface_t *abstract_surface,
 					    cairo_surface_observer_callback_t func,
@@ -1446,6 +1476,18 @@ cairo_surface_observer_add_paint_callback (cairo_surface_t *abstract_surface,
     return _cairo_surface_observer_add_callback (&surface->paint_callbacks,
 						 func, data);
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 cairo_status_t
 cairo_surface_observer_add_mask_callback (cairo_surface_t *abstract_surface,
@@ -1465,6 +1507,18 @@ cairo_surface_observer_add_mask_callback (cairo_surface_t *abstract_surface,
 						 func, data);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 cairo_status_t
 cairo_surface_observer_add_fill_callback (cairo_surface_t *abstract_surface,
 					  cairo_surface_observer_callback_t func,
@@ -1482,6 +1536,18 @@ cairo_surface_observer_add_fill_callback (cairo_surface_t *abstract_surface,
     return _cairo_surface_observer_add_callback (&surface->fill_callbacks,
 						 func, data);
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 cairo_status_t
 cairo_surface_observer_add_stroke_callback (cairo_surface_t *abstract_surface,
@@ -1501,6 +1567,18 @@ cairo_surface_observer_add_stroke_callback (cairo_surface_t *abstract_surface,
 						 func, data);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 cairo_status_t
 cairo_surface_observer_add_glyphs_callback (cairo_surface_t *abstract_surface,
 					    cairo_surface_observer_callback_t func,
@@ -1519,6 +1597,18 @@ cairo_surface_observer_add_glyphs_callback (cairo_surface_t *abstract_surface,
 						 func, data);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 cairo_status_t
 cairo_surface_observer_add_flush_callback (cairo_surface_t *abstract_surface,
 					   cairo_surface_observer_callback_t func,
@@ -1536,6 +1626,18 @@ cairo_surface_observer_add_flush_callback (cairo_surface_t *abstract_surface,
     return _cairo_surface_observer_add_callback (&surface->flush_callbacks,
 						 func, data);
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 cairo_status_t
 cairo_surface_observer_add_finish_callback (cairo_surface_t *abstract_surface,
@@ -1957,6 +2059,18 @@ _cairo_observation_print (cairo_output_stream_t *stream,
     cairo_device_destroy (script);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 cairo_status_t
 cairo_surface_observer_print (cairo_surface_t *abstract_surface,
 			      cairo_write_func_t write_func,
@@ -1978,6 +2092,16 @@ cairo_surface_observer_print (cairo_surface_t *abstract_surface,
     return _cairo_output_stream_destroy (stream);
 }
 
+
+
+
+
+
+
+
+
+
+
 double
 cairo_surface_observer_elapsed (cairo_surface_t *abstract_surface)
 {
@@ -1992,6 +2116,18 @@ cairo_surface_observer_elapsed (cairo_surface_t *abstract_surface)
     surface = (cairo_surface_observer_t *) abstract_surface;
     return _cairo_time_to_ns (_cairo_observation_total_elapsed (&surface->log));
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 cairo_status_t
 cairo_device_observer_print (cairo_device_t *abstract_device,
@@ -2014,6 +2150,16 @@ cairo_device_observer_print (cairo_device_t *abstract_device,
     return _cairo_output_stream_destroy (stream);
 }
 
+
+
+
+
+
+
+
+
+
+
 double
 cairo_device_observer_elapsed (cairo_device_t *abstract_device)
 {
@@ -2028,6 +2174,16 @@ cairo_device_observer_elapsed (cairo_device_t *abstract_device)
     device = (cairo_device_observer_t *) abstract_device;
     return _cairo_time_to_ns (_cairo_observation_total_elapsed (&device->log));
 }
+
+
+
+
+
+
+
+
+
+
 
 double
 cairo_device_observer_paint_elapsed (cairo_device_t *abstract_device)
@@ -2044,6 +2200,16 @@ cairo_device_observer_paint_elapsed (cairo_device_t *abstract_device)
     return _cairo_time_to_ns (device->log.paint.elapsed);
 }
 
+
+
+
+
+
+
+
+
+
+
 double
 cairo_device_observer_mask_elapsed (cairo_device_t *abstract_device)
 {
@@ -2058,6 +2224,16 @@ cairo_device_observer_mask_elapsed (cairo_device_t *abstract_device)
     device = (cairo_device_observer_t *) abstract_device;
     return _cairo_time_to_ns (device->log.mask.elapsed);
 }
+
+
+
+
+
+
+
+
+
+
 
 double
 cairo_device_observer_fill_elapsed (cairo_device_t *abstract_device)
@@ -2074,6 +2250,16 @@ cairo_device_observer_fill_elapsed (cairo_device_t *abstract_device)
     return _cairo_time_to_ns (device->log.fill.elapsed);
 }
 
+
+
+
+
+
+
+
+
+
+
 double
 cairo_device_observer_stroke_elapsed (cairo_device_t *abstract_device)
 {
@@ -2088,6 +2274,16 @@ cairo_device_observer_stroke_elapsed (cairo_device_t *abstract_device)
     device = (cairo_device_observer_t *) abstract_device;
     return _cairo_time_to_ns (device->log.stroke.elapsed);
 }
+
+
+
+
+
+
+
+
+
+
 
 double
 cairo_device_observer_glyphs_elapsed (cairo_device_t *abstract_device)

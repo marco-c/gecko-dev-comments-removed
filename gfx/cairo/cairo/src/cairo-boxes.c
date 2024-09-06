@@ -346,6 +346,7 @@ _cairo_boxes_clear (cairo_boxes_t *boxes)
 
 
 
+
 cairo_box_t *
 _cairo_boxes_to_array (const cairo_boxes_t *boxes,
 		       int *num_boxes)

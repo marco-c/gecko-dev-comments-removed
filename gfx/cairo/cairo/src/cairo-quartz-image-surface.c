@@ -49,11 +49,14 @@
 #define SURFACE_ERROR_INVALID_SIZE (_cairo_surface_create_in_error(_cairo_error(CAIRO_STATUS_INVALID_SIZE)))
 #define SURFACE_ERROR_INVALID_FORMAT (_cairo_surface_create_in_error(_cairo_error(CAIRO_STATUS_INVALID_FORMAT)))
 
-static void
-DataProviderReleaseCallback (void *image_info, const void *data, size_t size)
-{
-    free (image_info);
-}
+
+
+
+
+
+
+
+
 
 static cairo_surface_t *
 _cairo_quartz_image_surface_create_similar (void *asurface,
@@ -87,8 +90,9 @@ _cairo_quartz_image_surface_finish (void *asurface)
 {
     cairo_quartz_image_surface_t *surface = (cairo_quartz_image_surface_t *) asurface;
 
-    CGImageRelease (surface->image);
-    cairo_surface_destroy ( (cairo_surface_t*) surface->imageSurface);
+    CGContextRelease (surface->cgContext);
+    if (surface->imageSurface)
+	cairo_surface_destroy ( (cairo_surface_t*) surface->imageSurface);
     return CAIRO_STATUS_SUCCESS;
 }
 
@@ -132,47 +136,6 @@ _cairo_quartz_image_surface_get_extents (void *asurface,
     extents->width  = surface->width;
     extents->height = surface->height;
     return TRUE;
-}
-
-
-
-
-
-static cairo_status_t
-_cairo_quartz_image_surface_flush (void *asurface,
-				   unsigned flags)
-{
-    cairo_quartz_image_surface_t *surface = (cairo_quartz_image_surface_t *) asurface;
-    CGImageRef oldImage = surface->image;
-    CGImageRef newImage = NULL;
-    void *image_data;
-    const unsigned int size = surface->imageSurface->height * surface->imageSurface->stride;
-    if (flags)
-	return CAIRO_STATUS_SUCCESS;
-
-    
-
-    image_data = _cairo_malloc_ab ( surface->imageSurface->height,
-				    surface->imageSurface->stride);
-    if (unlikely (!image_data))
-	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
-
-    memcpy (image_data, surface->imageSurface->data,
-	    surface->imageSurface->height * surface->imageSurface->stride);
-    newImage = CairoQuartzCreateCGImage (surface->imageSurface->format,
-					 surface->imageSurface->width,
-					 surface->imageSurface->height,
-					 surface->imageSurface->stride,
-					 image_data,
-					 TRUE,
-					 NULL,
-					 DataProviderReleaseCallback,
-					 image_data);
-
-    surface->image = newImage;
-    CGImageRelease (oldImage);
-
-    return CAIRO_STATUS_SUCCESS;
 }
 
 static cairo_int_status_t
@@ -275,7 +238,7 @@ static const cairo_surface_backend_t cairo_quartz_image_surface_backend = {
     _cairo_quartz_image_surface_get_extents,
     NULL, 
 
-    _cairo_quartz_image_surface_flush,
+    NULL, 
     NULL, 
 
     _cairo_quartz_image_surface_paint,
@@ -298,20 +261,15 @@ static const cairo_surface_backend_t cairo_quartz_image_surface_backend = {
 
 
 
-
-
-
 cairo_surface_t *
 cairo_quartz_image_surface_create (cairo_surface_t *surface)
 {
     cairo_quartz_image_surface_t *qisurf;
-
-    CGImageRef image;
-
     cairo_image_surface_t *image_surface;
     int width, height, stride;
     cairo_format_t format;
-    void *image_data;
+    CGBitmapInfo bitinfo = kCGBitmapByteOrder32Host;
+    CGColorSpaceRef colorspace;
 
     if (surface->status)
 	return surface;
@@ -338,54 +296,100 @@ cairo_quartz_image_surface_create (cairo_surface_t *surface)
     if (qisurf == NULL)
 	return SURFACE_ERROR_NO_MEMORY;
 
-    memset (qisurf, 0, sizeof(cairo_quartz_image_surface_t));
-
-    image_data = _cairo_malloc_ab (height, stride);
-    if (unlikely (!image_data)) {
-	free(qisurf);
-	return SURFACE_ERROR_NO_MEMORY;
-    }
-
-    memcpy (image_data, image_surface->data, height * stride);
-    image = CairoQuartzCreateCGImage (format,
-				      width, height,
-				      stride,
-				      image_data,
-				      TRUE,
-				      NULL,
-				      DataProviderReleaseCallback,
-				      image_data);
-
-    if (!image) {
-	free (qisurf);
-	return SURFACE_ERROR_NO_MEMORY;
-    }
-
     _cairo_surface_init (&qisurf->base,
 			 &cairo_quartz_image_surface_backend,
 			 NULL, 
 			 _cairo_content_from_format (format),
 			 FALSE); 
 
+    if (_cairo_surface_is_quartz (surface) || _cairo_surface_is_quartz_image (surface)) {
+	CGContextRef context = cairo_quartz_surface_get_cg_context(surface);
+	colorspace = _cairo_quartz_create_color_space (context);
+    }
+    else {
+	colorspace = CGDisplayCopyColorSpace (CGMainDisplayID ());
+    }
+
+    bitinfo |= format == CAIRO_FORMAT_ARGB32 ? kCGImageAlphaPremultipliedFirst : kCGImageAlphaNoneSkipFirst;
+
     qisurf->width = width;
     qisurf->height = height;
 
-    qisurf->image = image;
+    qisurf->cgContext = CGBitmapContextCreate (image_surface->data, width, height, 8, image_surface->stride,
+					       colorspace, bitinfo);
     qisurf->imageSurface = (cairo_image_surface_t*) cairo_surface_reference(surface);
 
+    CGColorSpaceRelease (colorspace);
     return &qisurf->base;
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 cairo_surface_t *
-cairo_quartz_image_surface_get_image (cairo_surface_t *asurface)
+cairo_quartz_image_surface_get_image (cairo_surface_t *surface)
 {
-    cairo_quartz_image_surface_t *surface = (cairo_quartz_image_surface_t*) asurface;
+    cairo_quartz_image_surface_t *qsurface = (cairo_quartz_image_surface_t*) surface;
 
     
-    if (! _cairo_surface_is_quartz (asurface)) {
+    if (! _cairo_surface_is_quartz (surface)) {
         return SURFACE_ERROR_TYPE_MISMATCH;
     }
 
-    return (cairo_surface_t*) surface->imageSurface;
+    return (cairo_surface_t*) qsurface->imageSurface;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CGContextRef
+_cairo_quartz_image_surface_get_cg_context (cairo_surface_t *surface)
+{
+    if (surface && _cairo_surface_is_quartz_image (surface)) {
+	cairo_quartz_surface_t *quartz = (cairo_quartz_surface_t *) surface;
+	return quartz->cgContext;
+    } else
+	return NULL;
+}
+
+
+
+
+
+
+
+
+
+cairo_bool_t
+_cairo_surface_is_quartz_image (const cairo_surface_t *surface) {
+    return surface->backend == &cairo_quartz_image_surface_backend;
+}
+
+cairo_bool_t
+_cairo_quartz_image_surface_is_zero (const cairo_quartz_image_surface_t *surface) {
+    return surface->width == 0 || surface->height == 0;
 }

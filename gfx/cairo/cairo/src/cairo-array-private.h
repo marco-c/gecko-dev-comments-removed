@@ -35,6 +35,7 @@
 
 
 
+
 #ifndef CAIRO_ARRAY_PRIVATE_H
 #define CAIRO_ARRAY_PRIVATE_H
 
@@ -87,6 +88,12 @@ _cairo_array_size (const cairo_array_t *array);
 
 cairo_private void
 _cairo_array_sort (const cairo_array_t *array, int (*compar)(const void *, const void *));
+
+cairo_private cairo_bool_t
+_cairo_array_pop_element (cairo_array_t *array, void *dst);
+
+cairo_private void *
+_cairo_array_last_element (cairo_array_t *array);
 
 CAIRO_END_DECLS
 

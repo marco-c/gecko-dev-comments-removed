@@ -33,6 +33,7 @@
 
 
 
+
 #define _DEFAULT_SOURCE
 #include "cairoint.h"
 
@@ -354,6 +355,7 @@ cairo_type1_font_create_charstring (cairo_type1_font_t      *font,
 					 glyph_index,
 					 CAIRO_SCALED_GLYPH_INFO_METRICS|
 					 CAIRO_SCALED_GLYPH_INFO_PATH,
+					 NULL, 
 					 &scaled_glyph);
 
     
@@ -363,6 +365,7 @@ cairo_type1_font_create_charstring (cairo_type1_font_t      *font,
 	status = _cairo_scaled_glyph_lookup (font->type1_scaled_font,
 					     glyph_index,
 					     CAIRO_SCALED_GLYPH_INFO_METRICS,
+                                             NULL, 
 					     &scaled_glyph);
     }
     if (unlikely (status))

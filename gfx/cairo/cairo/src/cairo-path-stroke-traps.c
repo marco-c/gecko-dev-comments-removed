@@ -109,10 +109,22 @@ stroker_init (struct stroker		*stroker,
 
 
 
-    stroker->spline_cusp_tolerance = 1 - tolerance / stroker->half_line_width;
-    stroker->spline_cusp_tolerance *= stroker->spline_cusp_tolerance;
-    stroker->spline_cusp_tolerance *= 2;
-    stroker->spline_cusp_tolerance -= 1;
+
+
+
+
+
+    double scaled_hlw = hypot(stroker->half_line_width * ctm->xx,
+			      stroker->half_line_width * ctm->yx);
+
+    if (scaled_hlw <= tolerance) {
+	stroker->spline_cusp_tolerance = -1.0;
+    } else {
+	stroker->spline_cusp_tolerance = 1 - tolerance / scaled_hlw;
+	stroker->spline_cusp_tolerance *= stroker->spline_cusp_tolerance;
+	stroker->spline_cusp_tolerance *= 2;
+	stroker->spline_cusp_tolerance -= 1;
+    }
 
     stroker->ctm_determinant = _cairo_matrix_compute_determinant (stroker->ctm);
     stroker->ctm_det_positive = stroker->ctm_determinant >= 0.0;
@@ -931,6 +943,14 @@ line_to_dashed (void *closure, const cairo_point_t *point)
 }
 
 static cairo_status_t
+add_point (void *closure,
+	   const cairo_point_t *point,
+	   const cairo_slope_t *tangent)
+{
+    return line_to_dashed (closure, point);
+};
+
+static cairo_status_t
 spline_to (void *closure,
 	   const cairo_point_t *point,
 	   const cairo_slope_t *tangent)
@@ -1042,7 +1062,7 @@ curve_to_dashed (void *closure,
     cairo_spline_add_point_func_t func;
     cairo_status_t status;
 
-    func = (cairo_spline_add_point_func_t)line_to_dashed;
+    func = add_point;
 
     if (stroker->has_bounds &&
 	! _cairo_spline_intersects (&stroker->current_face.point, b, c, d,

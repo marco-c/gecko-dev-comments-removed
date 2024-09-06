@@ -37,15 +37,6 @@
 
 
 
-#define WIN32_LEAN_AND_MEAN
-
-#if !defined(WINVER) || (WINVER < 0x0500)
-# define WINVER 0x0500
-#endif
-#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0500)
-# define _WIN32_WINNT 0x0500
-#endif
-
 #include "cairoint.h"
 #include "cairo-win32-private.h"
 

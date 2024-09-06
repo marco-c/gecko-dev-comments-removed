@@ -371,8 +371,9 @@ static const cairo_t _cairo_nil[] = {
     DEFINE_NIL_CONTEXT (CAIRO_STATUS_PNG_ERROR),
     DEFINE_NIL_CONTEXT (CAIRO_STATUS_FREETYPE_ERROR),
     DEFINE_NIL_CONTEXT (CAIRO_STATUS_WIN32_GDI_ERROR),
-    DEFINE_NIL_CONTEXT (CAIRO_STATUS_TAG_ERROR)
-
+    DEFINE_NIL_CONTEXT (CAIRO_STATUS_TAG_ERROR),
+    DEFINE_NIL_CONTEXT (CAIRO_STATUS_DWRITE_ERROR),
+    DEFINE_NIL_CONTEXT (CAIRO_STATUS_SVG_FONT_ERROR)
 };
 COMPILE_TIME_ASSERT (ARRAY_LENGTH (_cairo_nil) == CAIRO_STATUS_LAST_STATUS - 1);
 
@@ -457,7 +458,6 @@ cairo_create (cairo_surface_t *target)
     return target->backend->create_context (target);
 
 }
-slim_hidden_def (cairo_create);
 
 void
 _cairo_init (cairo_t *cr,
@@ -527,7 +527,6 @@ cairo_destroy (cairo_t *cr)
 
     cr->backend->destroy (cr);
 }
-slim_hidden_def (cairo_destroy);
 
 
 
@@ -631,7 +630,6 @@ cairo_save (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_save);
 
 
 
@@ -655,7 +653,6 @@ cairo_restore (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_restore);
 
 
 
@@ -738,7 +735,6 @@ cairo_push_group_with_content (cairo_t *cr, cairo_content_t content)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_push_group_with_content);
 
 
 
@@ -775,7 +771,6 @@ cairo_pop_group (cairo_t *cr)
 
     return group_pattern;
 }
-slim_hidden_def(cairo_pop_group);
 
 
 
@@ -839,7 +834,6 @@ cairo_set_operator (cairo_t *cr, cairo_operator_t op)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_operator);
 
 
 #if 0
@@ -900,7 +894,8 @@ cairo_set_source_rgb (cairo_t *cr, double red, double green, double blue)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_source_rgb);
+
+
 
 
 
@@ -983,7 +978,6 @@ cairo_set_source_surface (cairo_t	  *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_source_surface);
 
 
 
@@ -1028,7 +1022,6 @@ cairo_set_source (cairo_t *cr, cairo_pattern_t *source)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_source);
 
 
 
@@ -1081,7 +1074,6 @@ cairo_set_tolerance (cairo_t *cr, double tolerance)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_tolerance);
 
 
 
@@ -1166,7 +1158,6 @@ cairo_set_fill_rule (cairo_t *cr, cairo_fill_rule_t fill_rule)
 
 
 
-
 void
 cairo_set_line_width (cairo_t *cr, double width)
 {
@@ -1182,8 +1173,46 @@ cairo_set_line_width (cairo_t *cr, double width)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_line_width);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+cairo_set_hairline (cairo_t *cr, cairo_bool_t set_hairline)
+{
+    cairo_status_t status;
+
+    if (unlikely (cr->status))
+	return;
+
+    status = cr->backend->set_hairline (cr, set_hairline);
+    if (unlikely (status))
+	_cairo_set_error (cr, status);
+}
 
 
 
@@ -1214,8 +1243,6 @@ cairo_set_line_cap (cairo_t *cr, cairo_line_cap_t line_cap)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_line_cap);
-
 
 
 
@@ -1246,7 +1273,6 @@ cairo_set_line_join (cairo_t *cr, cairo_line_join_t line_join)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_line_join);
 
 
 
@@ -1376,7 +1402,6 @@ cairo_get_dash (cairo_t *cr,
 
 
 
-
 void
 cairo_set_miter_limit (cairo_t *cr, double limit)
 {
@@ -1416,7 +1441,6 @@ cairo_translate (cairo_t *cr, double tx, double ty)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_translate);
 
 
 
@@ -1443,7 +1467,6 @@ cairo_scale (cairo_t *cr, double sx, double sy)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_scale);
 
 
 
@@ -1496,7 +1519,6 @@ cairo_transform (cairo_t	      *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_transform);
 
 
 
@@ -1521,7 +1543,6 @@ cairo_set_matrix (cairo_t	       *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_matrix);
 
 
 
@@ -1567,7 +1588,6 @@ cairo_user_to_device (cairo_t *cr, double *x, double *y)
 
     cr->backend->user_to_device (cr, x, y);
 }
-slim_hidden_def (cairo_user_to_device);
 
 
 
@@ -1590,7 +1610,6 @@ cairo_user_to_device_distance (cairo_t *cr, double *dx, double *dy)
 
     cr->backend->user_to_device_distance (cr, dx, dy);
 }
-slim_hidden_def (cairo_user_to_device_distance);
 
 
 
@@ -1612,7 +1631,6 @@ cairo_device_to_user (cairo_t *cr, double *x, double *y)
 
     cr->backend->device_to_user (cr, x, y);
 }
-slim_hidden_def (cairo_device_to_user);
 
 
 
@@ -1657,7 +1675,6 @@ cairo_new_path (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_new_path);
 
 
 
@@ -1713,8 +1730,6 @@ cairo_move_to (cairo_t *cr, double x, double y)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_move_to);
-
 
 
 
@@ -1743,7 +1758,6 @@ cairo_line_to (cairo_t *cr, double x, double y)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_line_to);
 
 
 
@@ -1784,7 +1798,6 @@ cairo_curve_to (cairo_t *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_curve_to);
 
 
 
@@ -2003,7 +2016,6 @@ cairo_rel_line_to (cairo_t *cr, double dx, double dy)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_rel_line_to);
 
 
 
@@ -2146,7 +2158,6 @@ cairo_close_path (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_close_path);
 
 
 
@@ -2220,7 +2231,6 @@ cairo_paint (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_paint);
 
 
 
@@ -2283,7 +2293,6 @@ cairo_mask (cairo_t         *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_mask);
 
 
 
@@ -2367,7 +2376,6 @@ cairo_stroke (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_stroke);
 
 
 
@@ -2396,7 +2404,6 @@ cairo_stroke_preserve (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_stroke_preserve);
 
 
 
@@ -2448,7 +2455,6 @@ cairo_fill_preserve (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_fill_preserve);
 
 
 
@@ -2750,7 +2756,6 @@ cairo_clip_preserve (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_clip_preserve);
 
 
 
@@ -2878,6 +2883,22 @@ cairo_copy_clip_rectangle_list (cairo_t *cr)
 
     return cr->backend->clip_copy_rectangle_list (cr);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3164,7 +3185,6 @@ cairo_set_font_size (cairo_t *cr, double size)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_font_size);
 
 
 
@@ -3194,7 +3214,6 @@ cairo_set_font_matrix (cairo_t		    *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_font_matrix);
 
 
 
@@ -3249,7 +3268,6 @@ cairo_set_font_options (cairo_t                    *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_font_options);
 
 
 
@@ -3302,7 +3320,7 @@ cairo_set_scaled_font (cairo_t                   *cr,
     if (unlikely (cr->status))
 	return;
 
-    if ((scaled_font == NULL)) {
+    if (scaled_font == NULL) {
 	_cairo_set_error (cr, _cairo_error (CAIRO_STATUS_NULL_POINTER));
 	return;
     }
@@ -3346,7 +3364,6 @@ cairo_get_scaled_font (cairo_t *cr)
 
     return cr->backend->get_scaled_font (cr);
 }
-slim_hidden_def (cairo_get_scaled_font);
 
 
 
@@ -3922,7 +3939,6 @@ cairo_get_tolerance (cairo_t *cr)
 
     return cr->backend->get_tolerance (cr);
 }
-slim_hidden_def (cairo_get_tolerance);
 
 
 
@@ -4013,7 +4029,6 @@ cairo_get_current_point (cairo_t *cr, double *x_ret, double *y_ret)
     if (y_ret)
 	*y_ret = y;
 }
-slim_hidden_def(cairo_get_current_point);
 
 
 
@@ -4055,7 +4070,25 @@ cairo_get_line_width (cairo_t *cr)
 
     return cr->backend->get_line_width (cr);
 }
-slim_hidden_def (cairo_get_line_width);
+
+
+
+
+
+
+
+
+
+
+
+cairo_bool_t
+cairo_get_hairline (cairo_t *cr)
+{
+    if (unlikely (cr->status))
+        return FALSE;
+
+    return cr->backend->get_hairline (cr);
+}
 
 
 
@@ -4133,7 +4166,6 @@ cairo_get_matrix (cairo_t *cr, cairo_matrix_t *matrix)
 
     cr->backend->get_matrix (cr, matrix);
 }
-slim_hidden_def (cairo_get_matrix);
 
 
 
@@ -4161,7 +4193,6 @@ cairo_get_target (cairo_t *cr)
 
     return cr->backend->get_original_target (cr);
 }
-slim_hidden_def (cairo_get_target);
 
 
 
@@ -4338,4 +4369,3 @@ cairo_status (cairo_t *cr)
 {
     return cr->status;
 }
-slim_hidden_def (cairo_status);

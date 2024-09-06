@@ -107,12 +107,13 @@ struct _cairo_scaled_font {
     cairo_font_extents_t fs_extents; 
 
     
-    cairo_mutex_t mutex;
+    cairo_recursive_mutex_t mutex;
 
     cairo_hash_table_t *glyphs;
     cairo_list_t glyph_pages;
     cairo_bool_t cache_frozen;
     cairo_bool_t global_cache_frozen;
+    cairo_array_t recording_surfaces_to_free; 
 
     cairo_list_t dev_privates;
 
@@ -146,6 +147,19 @@ struct _cairo_scaled_glyph {
     const void		   *dev_private_key;
     void		   *dev_private;
     cairo_list_t            dev_privates;
+
+    cairo_color_t           foreground_color;   
+
+    
+    unsigned                recording_uses_foreground_color : 1;
+
+    
+    unsigned                recording_uses_foreground_marker : 1;
+
+    
+    unsigned                color_glyph_set : 1;
+
+    unsigned                color_glyph : 1;
 };
 
 struct _cairo_scaled_glyph_private {

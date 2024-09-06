@@ -142,17 +142,6 @@ slope_compare_sgn (double dx1, double dy1, double dx2, double dy2)
     return 0;
 }
 
-static inline int
-range_step (int i, int step, int max)
-{
-    i += step;
-    if (i < 0)
-	i = max - 1;
-    if (i >= max)
-	i = 0;
-    return i;
-}
-
 
 
 
@@ -399,16 +388,16 @@ outer_close (struct stroker *stroker,
 
     switch (stroker->style.line_join) {
     case CAIRO_LINE_JOIN_ROUND:
-	
 	if ((in->dev_slope.x * out->dev_slope.x +
 	     in->dev_slope.y * out->dev_slope.y) < stroker->spline_cusp_tolerance)
 	{
+	    
 	    add_fan (stroker,
 		     &in->dev_vector, &out->dev_vector, &in->point,
 		     clockwise, outer);
-	    break;
-	}
-	
+	} 
+	break;
+
     case CAIRO_LINE_JOIN_MITER:
     default: {
 	
@@ -587,10 +576,14 @@ outer_join (struct stroker *stroker,
 
     switch (stroker->style.line_join) {
     case CAIRO_LINE_JOIN_ROUND:
-	
-	add_fan (stroker,
-		 &in->dev_vector, &out->dev_vector, &in->point,
-		 clockwise, outer);
+	if ((in->dev_slope.x * out->dev_slope.x +
+	     in->dev_slope.y * out->dev_slope.y) < stroker->spline_cusp_tolerance)
+	{
+	    
+	    add_fan (stroker,
+		     &in->dev_vector, &out->dev_vector, &in->point,
+		     clockwise, outer);
+	} 
 	break;
 
     case CAIRO_LINE_JOIN_MITER:
@@ -1291,6 +1284,7 @@ _cairo_path_fixed_stroke_to_polygon (const cairo_path_fixed_t	*path,
     stroker.ctm_inverse = ctm_inverse;
     stroker.tolerance = tolerance;
     stroker.half_line_width = style->line_width / 2.;
+
     
 
 
@@ -1298,10 +1292,64 @@ _cairo_path_fixed_stroke_to_polygon (const cairo_path_fixed_t	*path,
 
 
 
-    stroker.spline_cusp_tolerance = 1 - tolerance / stroker.half_line_width;
-    stroker.spline_cusp_tolerance *= stroker.spline_cusp_tolerance;
-    stroker.spline_cusp_tolerance *= 2;
-    stroker.spline_cusp_tolerance -= 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    double scaled_hlw = hypot(stroker.half_line_width * ctm->xx,
+			      stroker.half_line_width * ctm->yx);
+
+    if (scaled_hlw <= tolerance) {
+	stroker.spline_cusp_tolerance = -1.0;
+    } else {
+	stroker.spline_cusp_tolerance = 1 - tolerance / scaled_hlw;
+	stroker.spline_cusp_tolerance *= stroker.spline_cusp_tolerance;
+	stroker.spline_cusp_tolerance *= 2;
+	stroker.spline_cusp_tolerance -= 1;
+    }
+
     stroker.ctm_det_positive =
 	_cairo_matrix_compute_determinant (ctm) >= 0.0;
 

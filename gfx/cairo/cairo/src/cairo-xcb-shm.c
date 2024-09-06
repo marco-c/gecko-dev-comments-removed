@@ -36,6 +36,15 @@
 
 #include "cairoint.h"
 
+
+
+
+
+
+
+
+
+
 #if CAIRO_HAS_XCB_SHM_FUNCTIONS
 
 #include "cairo-xcb-private.h"
