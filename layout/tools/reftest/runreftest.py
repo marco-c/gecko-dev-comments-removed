@@ -469,13 +469,8 @@ class RefTest(object):
         prefs["gfx.bundled-fonts.activate"] = 1
         
         prefs["widget.disable-dark-scrollbar"] = True
-        prefs["reftest.isCoverageBuild"] = mozinfo.info.get("ccov", False)
-
-        
-        prefs["sandbox.apple_silicon"] = mozinfo.info.get("apple_silicon", False)
 
         prefs["sandbox.mozinfo"] = json.dumps(mozinfo.info)
-        prefs["sandbox.os_version"] = mozinfo.info.get("os_version", "")
 
         
         if tests:
