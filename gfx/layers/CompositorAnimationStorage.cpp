@@ -206,7 +206,7 @@ static ParentLayerRect GetClipRectForPartialPrerender(
 void CompositorAnimationStorage::StoreAnimatedValue(
     nsCSSPropertyID aProperty, uint64_t aId,
     const std::unique_ptr<AnimationStorageData>& aAnimationStorageData,
-    const AutoTArray<RefPtr<StyleAnimationValue>, 1>& aAnimationValues,
+    SampledAnimationArray&& aAnimationValues,
     const MutexAutoLock& aProofOfMapLock, const RefPtr<APZSampler>& aApzSampler,
     AnimatedValue* aAnimatedValueEntry,
     JankedAnimationMap& aJankedAnimationMap) {
@@ -311,7 +311,7 @@ bool CompositorAnimationStorage::SampleAnimations(
       const nsCSSPropertyID lastPropertyAnimationGroupProperty =
           animationStorageData->mAnimation.LastElement().mProperty;
       isAnimating = true;
-      AutoTArray<RefPtr<StyleAnimationValue>, 1> animationValues;
+      SampledAnimationArray animationValues;
       AnimatedValue* previousValue = GetAnimatedValue(iter.first);
       AnimationHelper::SampleResult sampleResult =
           AnimationHelper::SampleAnimationForEachNode(
@@ -364,7 +364,7 @@ bool CompositorAnimationStorage::SampleAnimations(
           
           
           StoreAnimatedValue(lastPropertyAnimationGroupProperty, iter.first,
-                             animationStorageData, animationValues,
+                             animationStorageData, std::move(animationValues),
                              aProofOfMapLock, apzSampler, previousValue,
                              janked);
         }
@@ -373,8 +373,8 @@ bool CompositorAnimationStorage::SampleAnimations(
 
       
       StoreAnimatedValue(lastPropertyAnimationGroupProperty, iter.first,
-                         animationStorageData, animationValues, aProofOfMapLock,
-                         apzSampler, previousValue, janked);
+                         animationStorageData, std::move(animationValues),
+                         aProofOfMapLock, apzSampler, previousValue, janked);
     }
   };
 

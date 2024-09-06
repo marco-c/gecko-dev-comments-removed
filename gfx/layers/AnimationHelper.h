@@ -23,7 +23,8 @@ class APZSampler;
 class CompositorAnimationStorage;
 struct AnimatedValue;
 
-typedef nsTArray<layers::Animation> AnimationArray;
+using AnimationArray = nsTArray<layers::Animation>;
+using SampledAnimationArray = AutoTArray<RefPtr<StyleAnimationValue>, 1>;
 
 
 
@@ -100,7 +101,7 @@ class AnimationHelper {
       const MutexAutoLock& aProofOfMapLock, TimeStamp aPreviousFrameTime,
       TimeStamp aCurrentFrameTime, const AnimatedValue* aPreviousValue,
       nsTArray<PropertyAnimationGroup>& aPropertyAnimationGroups,
-      nsTArray<RefPtr<StyleAnimationValue>>& aAnimationValues);
+      SampledAnimationArray& aAnimationValues );
 
   
 
@@ -161,8 +162,8 @@ class AnimationHelper {
 
 
   static gfx::Matrix4x4 ServoAnimationValueToMatrix4x4(
-      const nsTArray<RefPtr<StyleAnimationValue>>& aValue,
-      const TransformData& aTransformData, gfx::Path* aCachedMotionPath);
+      const SampledAnimationArray& aValue, const TransformData& aTransformData,
+      gfx::Path* aCachedMotionPath);
 
   
 
