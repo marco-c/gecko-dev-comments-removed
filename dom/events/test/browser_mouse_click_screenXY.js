@@ -43,7 +43,14 @@ add_task(async function testClickScreenXY() {
       
       await executeSoonRemote(browser);
 
+      
+      
+      
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
       EventUtils.synthesizeMouseAtCenter(browser, {});
+      AccessibilityUtils.resetEnv();
 
       let parent = await parentPromise;
       let content = await contentPromise;
