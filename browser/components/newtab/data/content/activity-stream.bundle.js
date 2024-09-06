@@ -11031,11 +11031,16 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveSponsoredTopSites
     } = prefs;
     const hasThumbsUpDownLayout = prefs["discoverystream.thumbsUpDown.searchTopsitesCompact"];
-    const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", !prefs.showSearch && "no-search", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["logowordmark.alwaysVisible"] && "visible-logo", hasThumbsUpDownLayout && "thumbs-ui-compact"].filter(v => v).join(" ");
+    const featureClassName = [weatherEnabled && mayHaveWeather && "has-weather",
+    
+    prefs.showSearch ? "has-search" : "no-search"].filter(v => v).join(" ");
+    const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["logowordmark.alwaysVisible"] && "visible-logo", hasThumbsUpDownLayout && "thumbs-ui-compact"].filter(v => v).join(" ");
     if (wallpapersEnabled || wallpapersV2Enabled) {
       this.updateWallpaper();
     }
-    return external_React_default().createElement("div", null, external_React_default().createElement("menu", {
+    return external_React_default().createElement("div", {
+      className: featureClassName
+    }, external_React_default().createElement("menu", {
       className: "personalizeButtonWrapper"
     }, external_React_default().createElement(CustomizeMenu, {
       onClose: this.closeCustomizationMenu,
@@ -11056,6 +11061,8 @@ class BaseContent extends (external_React_default()).PureComponent {
       position: "inset-block-end inset-inline-start",
       dispatch: this.props.dispatch
     })), external_React_default().createElement("div", {
+      className: "weatherWrapper"
+    }, weatherEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, null))), external_React_default().createElement("div", {
       className: outerClassName,
       onClick: this.closeCustomizationMenu
     }, external_React_default().createElement("main", null, prefs.showSearch && external_React_default().createElement("div", {
@@ -11071,7 +11078,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       locale: props.App.locale,
       mayHaveSponsoredStories: mayHaveSponsoredStories,
       firstVisibleTimestamp: this.state.firstVisibleTimestamp
-    })) : external_React_default().createElement(Sections_Sections, null)), external_React_default().createElement(ConfirmDialog, null), wallpapersEnabled && this.renderWallpaperAttribution()), external_React_default().createElement("aside", null, weatherEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, null)), this.props.Notifications?.showNotifications && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Notifications_Notifications, {
+    })) : external_React_default().createElement(Sections_Sections, null)), external_React_default().createElement(ConfirmDialog, null), wallpapersEnabled && this.renderWallpaperAttribution()), external_React_default().createElement("aside", null, this.props.Notifications?.showNotifications && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Notifications_Notifications, {
       dispatch: this.props.dispatch
     })))));
   }
