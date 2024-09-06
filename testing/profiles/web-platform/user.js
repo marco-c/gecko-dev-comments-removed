@@ -96,3 +96,6 @@ user_pref("network.captive-portal-service.enabled", false);
 user_pref("network.http.http2.websockets", true);
 
 user_pref("app.update.disabledForTesting", true);
+
+
+user_pref("marionette.setpermission.enabled", true);
