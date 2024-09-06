@@ -210,6 +210,15 @@ static void _relrhack_init(void) {
   }
 }
 
+#  ifdef ANDROID
+
+
+
+
+__attribute__((visibility("hidden"))) void (*__relrhack_init)(void) =
+    _relrhack_init;
+#  endif
+
 
 #  ifndef ANDROID
 extern __attribute__((visibility("hidden"))) void _init(int argc, char** argv,
@@ -217,6 +226,13 @@ extern __attribute__((visibility("hidden"))) void _init(int argc, char** argv,
 #  endif
 
 void _relrhack_wrap_init(int argc, char** argv, char** env) {
+#  ifdef ANDROID
+  
+  
+  if (__relrhack_init == _relrhack_init) {
+    return;
+  }
+#  endif
   _relrhack_init();
 #  ifndef ANDROID
   _init(argc, argv, env);
