@@ -76,6 +76,17 @@ interface nsIExternalHelperAppService : nsISupports
   boolean applyDecodingForExtension(in AUTF8String aExtension,
                                     in ACString aEncodingType);
 
+  
+
+
+
+
+
+
+
+
+
+  nsIFile getPreferredDownloadsDirectory();
 };
 
 
