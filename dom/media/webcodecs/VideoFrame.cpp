@@ -2005,6 +2005,20 @@ void VideoFrame::CloseIfNeeded() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 VideoFrame::Format::Format(const VideoPixelFormat& aFormat)
     : mFormat(aFormat) {}
 
