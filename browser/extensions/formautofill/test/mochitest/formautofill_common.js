@@ -313,7 +313,7 @@ function checkMenuEntriesComment(expectedValues, extraRows = 1) {
       is(
         actualValue[key],
         value,
-        ` Checking menu entry #${i}, ${key} should be ${value}`
+        ` Checking menu entry #${i}, ${key} should be the same`
       );
     }
   }
@@ -380,6 +380,39 @@ async function canTestOSKeyStoreLogin() {
   );
   return canTest;
 }
+
+
+
+
+
+async function waitForOSKeyStoreLoginTestSetupComplete() {
+  await SimpleTest.promiseWaitForCondition(async () => {
+    return await SpecialPowers.spawnChrome([], () => {
+      const { OSKeyStoreTestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/OSKeyStoreTestUtils.sys.mjs"
+      );
+
+      return Services.prefs.getStringPref(
+        OSKeyStoreTestUtils.TEST_ONLY_REAUTH,
+        ""
+      );
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function waitForOSKeyStoreLogin(login = false) {
   
