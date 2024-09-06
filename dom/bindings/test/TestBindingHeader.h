@@ -1152,6 +1152,11 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassUnionAllowSharedArrayBuffer(
       const StringOrMaybeSharedArrayBuffer& foo);
 
+  void GetReflectedHTMLAttributeReturningFrozenArray(
+      bool*, Nullable<nsTArray<RefPtr<Element>>>&) const;
+  void SetReflectedHTMLAttributeReturningFrozenArray(
+      const Nullable<Sequence<OwningNonNull<Element>>>&);
+
  private:
   
   
