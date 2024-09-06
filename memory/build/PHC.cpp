@@ -1469,7 +1469,10 @@ static void FreePage(PHCLock aLock, uintptr_t aIndex,
 MOZ_ALWAYS_INLINE static void* PageMalloc(const Maybe<arena_id_t>& aArenaId,
                                           size_t aReqSize) {
   void* ptr = ShouldPageAllocHot(aReqSize)
-                  ? MaybePageAlloc(aArenaId, aReqSize,  1,
+                  
+                  
+                  ? MaybePageAlloc(aArenaId.isSome() ? aArenaId : Nothing(),
+                                   aReqSize,  1,
                                     false)
                   : nullptr;
   return ptr ? ptr
@@ -1496,11 +1499,13 @@ MOZ_ALWAYS_INLINE static void* PageCalloc(const Maybe<arena_id_t>& aArenaId,
     return nullptr;
   }
 
-  void* ptr =
-      ShouldPageAllocHot(checkedSize.value())
-          ? MaybePageAlloc(aArenaId, checkedSize.value(),  1,
-                            true)
-          : nullptr;
+  void* ptr = ShouldPageAllocHot(checkedSize.value())
+                  
+                  
+                  ? MaybePageAlloc(aArenaId.isSome() ? aArenaId : Nothing(),
+                                   checkedSize.value(),  1,
+                                    true)
+                  : nullptr;
   return ptr ? ptr
              : (aArenaId.isSome()
                     ? MozJemalloc::moz_arena_calloc(*aArenaId, aNum, aReqSize)
@@ -1700,7 +1705,9 @@ MOZ_ALWAYS_INLINE static bool FastIsPHCPtr(void* aPtr) {
 MOZ_ALWAYS_INLINE static void PageFree(const Maybe<arena_id_t>& aArenaId,
                                        void* aPtr) {
   if (MOZ_UNLIKELY(FastIsPHCPtr(aPtr))) {
-    DoPageFree(aArenaId, aPtr);
+    
+    
+    DoPageFree(aArenaId.isSome() ? aArenaId : Nothing(), aPtr);
     return;
   }
 
@@ -1720,7 +1727,10 @@ MOZ_ALWAYS_INLINE static void* PageMemalign(const Maybe<arena_id_t>& aArenaId,
   
   void* ptr = nullptr;
   if (ShouldPageAllocHot(aReqSize) && aAlignment <= kPageSize) {
-    ptr = MaybePageAlloc(aArenaId, aReqSize, aAlignment,  false);
+    
+    
+    ptr = MaybePageAlloc(aArenaId.isSome() ? aArenaId : Nothing(), aReqSize,
+                         aAlignment,  false);
   }
   return ptr ? ptr
              : (aArenaId.isSome()
