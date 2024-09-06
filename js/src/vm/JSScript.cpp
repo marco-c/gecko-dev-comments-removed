@@ -1786,13 +1786,20 @@ void ScriptSource::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
 }
 
 bool ScriptSource::startIncrementalEncoding(
-    JSContext* cx,
-    UniquePtr<frontend::ExtensibleCompilationStencil>&& initial) {
+    JSContext* cx, UniquePtr<frontend::ExtensibleCompilationStencil>&& initial,
+    bool& alreadyStarted) {
   
   
   if (initial->asmJS) {
+    alreadyStarted = false;
     return true;
   }
+
+  if (xdrEncoder_.hasEncoder()) {
+    alreadyStarted = true;
+    return true;
+  }
+  alreadyStarted = false;
 
   
   initial->source = nullptr;
