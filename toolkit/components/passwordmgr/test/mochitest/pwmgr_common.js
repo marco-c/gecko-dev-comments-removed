@@ -26,11 +26,6 @@ const LOGIN_FIELD_UTILS = LoginTestUtils.loginField;
 const TESTS_DIR = "/tests/toolkit/components/passwordmgr/test/";
 
 
-let authPromptModalType = SpecialPowers.Services.prefs.getIntPref(
-  "prompts.modalType.httpAuth"
-);
-
-
 
 
 

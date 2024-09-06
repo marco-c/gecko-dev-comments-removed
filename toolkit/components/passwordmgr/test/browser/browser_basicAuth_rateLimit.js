@@ -5,12 +5,10 @@
 
 
 
-let promptModalType = Services.prefs.getIntPref("prompts.modalType.httpAuth");
-
 function promiseAuthWindowShown() {
   return PromptTestUtils.handleNextPrompt(
     window,
-    { modalType: promptModalType, promptType: "promptUserAndPass" },
+    { modalType: Ci.nsIPrompt.MODAL_TYPE_TAB, promptType: "promptUserAndPass" },
     { buttonNumClick: 1 }
   );
 }

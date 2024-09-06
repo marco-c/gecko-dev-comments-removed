@@ -2,14 +2,12 @@
 
 
 
-let modalType = Services.prefs.getIntPref("prompts.modalType.httpAuth");
-
-add_task(async function test() {
+add_task(async function test_auth_switchtab() {
   let tab = BrowserTestUtils.addTab(gBrowser);
   isnot(tab, gBrowser.selectedTab, "New tab shouldn't be selected");
 
   let authPromptShown = PromptTestUtils.waitForPrompt(tab.linkedBrowser, {
-    modalType,
+    modalType: Ci.nsIPrompt.MODAL_TYPE_TAB,
     promptType: "promptUserAndPass",
   });
 

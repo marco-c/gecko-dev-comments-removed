@@ -3698,10 +3698,6 @@ pref("browser.ml.logLevel", "Error");
 
 pref("prompts.authentication_dialog_abuse_limit", 2);
 
-
-
-pref("prompts.modalType.httpAuth", 2);
-
 pref("dom.payments.request.supportedRegions", "US,CA");
 
 #ifdef MOZ_ASAN_REPORTER
