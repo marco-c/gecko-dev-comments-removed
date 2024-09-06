@@ -46,7 +46,6 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/BounceTrackingProtection.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/ContentBlockingNotifier.h"
@@ -17128,17 +17127,6 @@ class UserInteractionTimer final : public Runnable,
     
     mBlockerName.AppendPrintf("UserInteractionTimer %d for document %p",
                               ++userInteractionTimerId, aDocument);
-
-    
-    
-    
-    if (aDocument->IsTopLevelContentDocument()) {
-      mShouldRecordContentBlockingUserInteraction = true;
-    } else {
-      bool hasSA;
-      nsresult rv = aDocument->HasStorageAccessSync(hasSA);
-      mShouldRecordContentBlockingUserInteraction = NS_SUCCEEDED(rv) && hasSA;
-    }
   }
 
   
@@ -17212,11 +17200,7 @@ class UserInteractionTimer final : public Runnable,
     
     nsCOMPtr<Document> document(mDocument);
     if (document) {
-      if (mShouldRecordContentBlockingUserInteraction) {
-        ContentBlockingUserInteraction::Observe(mPrincipal);
-      }
-      Unused << BounceTrackingProtection::RecordUserActivation(
-          mDocument->GetWindowContext());
+      ContentBlockingUserInteraction::Observe(mPrincipal);
       document->ResetUserInteractionTimer();
     }
   }
@@ -17243,7 +17227,6 @@ class UserInteractionTimer final : public Runnable,
 
   nsCOMPtr<nsIPrincipal> mPrincipal;
   WeakPtr<Document> mDocument;
-  bool mShouldRecordContentBlockingUserInteraction = false;
 
   nsCOMPtr<nsITimer> mTimer;
 
@@ -17256,21 +17239,18 @@ NS_IMPL_ISUPPORTS_INHERITED(UserInteractionTimer, Runnable, nsITimerCallback,
 }  
 
 void Document::MaybeStoreUserInteractionAsPermission() {
+  
+  
+  if (!IsTopLevelContentDocument()) {
+    bool hasSA;
+    nsresult rv = HasStorageAccessSync(hasSA);
+    if (NS_FAILED(rv) || !hasSA) {
+      return;
+    }
+  }
+
   if (!mUserHasInteracted) {
     
-    Unused << BounceTrackingProtection::RecordUserActivation(
-        GetWindowContext());
-
-    
-    
-    
-    if (!IsTopLevelContentDocument()) {
-      bool hasSA;
-      nsresult rv = HasStorageAccessSync(hasSA);
-      if (NS_FAILED(rv) || !hasSA) {
-        return;
-      }
-    }
     ContentBlockingUserInteraction::Observe(NodePrincipal());
     return;
   }
