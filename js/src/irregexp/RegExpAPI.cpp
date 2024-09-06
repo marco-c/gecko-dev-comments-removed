@@ -640,9 +640,24 @@ enum class AssembleResult {
   return AssembleResult::Success;
 }
 
-struct RegExpCaptureIndexLess {
-  bool operator()(const RegExpCapture* lhs, const RegExpCapture* rhs) const {
-    return lhs->index() < rhs->index();
+struct RegExpNamedCapture {
+  const ZoneVector<char16_t>* name;
+  js::Vector<uint32_t> indices;
+
+  RegExpNamedCapture(JSContext* cx, const ZoneVector<char16_t>* name)
+      : name(name), indices(cx) {}
+};
+
+struct RegExpNamedCaptureIndexLess {
+  bool operator()(const RegExpNamedCapture& lhs,
+                  const RegExpNamedCapture& rhs) const {
+    
+    
+    
+    MOZ_ASSERT(!lhs.indices.empty());
+    MOZ_ASSERT(!rhs.indices.empty());
+    MOZ_ASSERT(lhs.indices[0] != rhs.indices[0]);
+    return lhs.indices[0] < rhs.indices[0];
   }
 };
 
@@ -657,8 +672,37 @@ bool InitializeNamedCaptures(JSContext* cx, HandleRegExpShared re,
 
   
   
-  std::sort(namedCaptures->begin(), namedCaptures->end(),
-            RegExpCaptureIndexLess{});
+  
+  
+  js::Vector<RegExpNamedCapture> groups(cx);
+  if (!groups.reserve(numNamedCaptures)) {
+    js::ReportOutOfMemory(cx);
+    return false;
+  }
+  const ZoneVector<char16_t>* prevName = nullptr;
+  uint32_t numDistinctNamedCaptures = 0;
+  for (uint32_t i = 0; i < numNamedCaptures; i++) {
+    RegExpCapture* capture = (*namedCaptures)[i];
+    const ZoneVector<char16_t>* name = capture->name();
+    if (!prevName || *name != *prevName) {
+      if (!groups.emplaceBack(RegExpNamedCapture(cx, name))) {
+        js::ReportOutOfMemory(cx);
+        return false;
+      }
+      numDistinctNamedCaptures++;
+      prevName = name;
+    }
+    
+    MOZ_ASSERT_IF(!groups.back().indices.empty(),
+                  groups.back().indices.back() < (uint32_t)capture->index());
+    if (!groups.back().indices.emplaceBack(capture->index())) {
+      js::ReportOutOfMemory(cx);
+      return false;
+    }
+  }
+
+  
+  std::sort(groups.begin(), groups.end(), RegExpNamedCaptureIndexLess{});
 
   
   Rooted<js::PlainObject*> templateObject(
@@ -678,12 +722,27 @@ bool InitializeNamedCaptures(JSContext* cx, HandleRegExpShared re,
 
   
   
+  bool hasDuplicateNames = numNamedCaptures != numDistinctNamedCaptures;
+  UniquePtr<uint32_t[], JS::FreePolicy> sliceIndices;
+  if (hasDuplicateNames) {
+    arraySize = numDistinctNamedCaptures * sizeof(uint32_t);
+    sliceIndices.reset(static_cast<uint32_t*>(js_malloc(arraySize)));
+    if (!sliceIndices) {
+      js::ReportOutOfMemory(cx);
+      return false;
+    }
+  }
+
+  
   RootedId id(cx);
   RootedValue dummyString(cx, StringValue(cx->runtime()->emptyString));
-  for (uint32_t i = 0; i < numNamedCaptures; i++) {
-    RegExpCapture* capture = (*namedCaptures)[i];
-    JSAtom* name =
-        js::AtomizeChars(cx, capture->name()->data(), capture->name()->size());
+  size_t insertIndex = 0;
+
+  for (size_t i = 0; i < numDistinctNamedCaptures; ++i) {
+    RegExpNamedCapture& group = groups[i];
+    
+    
+    JSAtom* name = js::AtomizeChars(cx, group.name->data(), group.name->size());
     if (!name) {
       return false;
     }
@@ -692,11 +751,24 @@ bool InitializeNamedCaptures(JSContext* cx, HandleRegExpShared re,
                                   JSPROP_ENUMERATE)) {
       return false;
     }
-    captureIndices[i] = capture->index();
+    
+    
+    
+    
+    
+    
+    if (hasDuplicateNames) {
+      sliceIndices[i] = insertIndex;
+    }
+
+    for (uint32_t captureIndex : groups[i].indices) {
+      captureIndices[insertIndex++] = captureIndex;
+    }
   }
 
   RegExpShared::InitializeNamedCaptures(
-      cx, re, numNamedCaptures, templateObject, captureIndices.release());
+      cx, re, numNamedCaptures, numDistinctNamedCaptures, templateObject,
+      captureIndices.release(), sliceIndices.release());
   return true;
 }
 

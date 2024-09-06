@@ -122,8 +122,22 @@ class RegExpShared
   uint32_t maxRegisters_ = 0;
   uint32_t ticks_ = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   uint32_t numNamedCaptures_ = {};
+  uint32_t numDistinctNamedCaptures_ = {};
   uint32_t* namedCaptureIndices_ = {};
+  uint32_t* namedCaptureSliceIndices_ = {};
   GCPtr<PlainObject*> groupsTemplate_ = {};
 
   static int CompilationIndex(bool latin1) { return latin1 ? 0 : 1; }
@@ -177,8 +191,10 @@ class RegExpShared
 
   static void InitializeNamedCaptures(JSContext* cx, HandleRegExpShared re,
                                       uint32_t numNamedCaptures,
+                                      uint32_t numDistinctNamedCaptures,
                                       Handle<PlainObject*> templateObject,
-                                      uint32_t* captureIndices);
+                                      uint32_t* captureIndices,
+                                      uint32_t* captureSliceIndices);
   PlainObject* getGroupsTemplate() { return groupsTemplate_; }
 
   void tierUpTick();
@@ -202,10 +218,33 @@ class RegExpShared
   }
 
   uint32_t numNamedCaptures() const { return numNamedCaptures_; }
+  uint32_t numDistinctNamedCaptures() const {
+    return numDistinctNamedCaptures_;
+  }
   int32_t getNamedCaptureIndex(uint32_t idx) const {
     MOZ_ASSERT(idx < numNamedCaptures());
     MOZ_ASSERT(namedCaptureIndices_);
+    MOZ_ASSERT(!namedCaptureSliceIndices_);
     return namedCaptureIndices_[idx];
+  }
+
+  mozilla::Span<uint32_t> getNamedCaptureIndices(uint32_t idx) const {
+    MOZ_ASSERT(idx < numDistinctNamedCaptures());
+    MOZ_ASSERT(namedCaptureIndices_);
+    MOZ_ASSERT(namedCaptureSliceIndices_);
+    
+    uint32_t* start = &namedCaptureIndices_[namedCaptureSliceIndices_[idx]];
+    size_t length = 0;
+    if (idx + 1 < numDistinctNamedCaptures()) {
+      
+      
+      length =
+          namedCaptureSliceIndices_[idx + 1] - namedCaptureSliceIndices_[idx];
+    } else {
+      
+      length = numNamedCaptures() - namedCaptureSliceIndices_[idx];
+    }
+    return mozilla::Span<uint32_t>(start, length);
   }
 
   JSAtom* patternAtom() const { return patternAtom_; }
