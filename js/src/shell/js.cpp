@@ -12404,6 +12404,10 @@ bool InitOptionParser(OptionParser& op) {
   op.setArgTerminatesOptions("script", true);
   op.setArgCapturesRest("scriptArgs");
 
+  
+  
+  op.setIgnoresUnknownOptions("fuzzing-safe", true);
+
   return true;
 }
 
