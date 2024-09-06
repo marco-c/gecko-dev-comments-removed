@@ -69,7 +69,21 @@ int opus_select_arch(void);
 
 
 
-#  if !defined(_MSC_VER) && !OPUS_GNUC_PREREQ(11,3) && !(defined(__clang__) && (__clang_major__ >= 8))
+
+
+
+
+
+
+
+
+#  if defined(__clang__)
+#   if __has_warning("-Wextra-semi-stmt") || \
+ __has_builtin(__builtin_rotateleft32)
+#    define OPUS_CLANG_8 (1)
+#   endif
+#  endif
+#  if !defined(_MSC_VER) && !OPUS_GNUC_PREREQ(11,3) && !defined(OPUS_CLANG_8)
 #   include <string.h>
 #   include <emmintrin.h>
 
