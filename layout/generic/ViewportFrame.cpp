@@ -66,7 +66,7 @@ void ViewportFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   
   
-  if (!kid->IsScrollFrame()) {
+  if (!kid->IsScrollContainerFrame()) {
     bool isOpaque = false;
     if (auto* list = BuildDisplayListForTopLayer(aBuilder, &isOpaque)) {
       if (isOpaque) {

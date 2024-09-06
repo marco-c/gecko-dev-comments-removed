@@ -1128,7 +1128,7 @@ static nsIFrame* ContainingBlockForFrame(nsIFrame* aFrame) {
   
   
   
-  if (aFrame->IsScrollFrame()) {
+  if (aFrame->IsScrollContainerFrame()) {
     return insertionFrame;
   }
   
