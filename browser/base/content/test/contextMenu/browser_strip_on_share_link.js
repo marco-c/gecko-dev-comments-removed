@@ -98,6 +98,18 @@ add_task(async function testQueryParamIsNotStrippedForWrongSiteSpecific() {
 });
 
 
+add_task(async function testMagneticLinks() {
+  let originalUrl = "magnet:?xt=urn:btih:somesha1hash";
+  let shortenedUrl = "magnet:?xt=urn:btih:somesha1hash";
+  await testStripOnShare({
+    selectWholeUrl: true,
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: true,
+  });
+});
+
+
 
 
 
