@@ -10,6 +10,7 @@
 use crate::parser::{Parse, ParserContext};
 use crate::selector_map::PrecomputedHashMap;
 use crate::str::HTML_SPACE_CHARACTERS;
+use crate::values::DashedIdent;
 use crate::values::computed::LengthPercentage as ComputedLengthPercentage;
 use crate::values::computed::{Context, Percentage, ToComputedValue};
 use crate::values::generics::position::AspectRatio as GenericAspectRatio;
@@ -22,10 +23,12 @@ use crate::{Atom, Zero};
 use cssparser::Parser;
 use selectors::parser::SelectorParseErrorKind;
 use servo_arc::Arc;
+use smallvec::{smallvec, SmallVec};
 use std::collections::hash_map::Entry;
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::arc_slice::ArcSlice;
 
 
 pub type Position = GenericPosition<HorizontalPosition, VerticalPosition>;
@@ -334,6 +337,73 @@ impl<S: Side> PositionComponent<S> {
     
     pub fn initial_specified_value() -> Self {
         PositionComponent::Side(S::start(), None)
+    }
+}
+
+
+#[repr(transparent)]
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+pub struct AnchorName(#[css(iterable, if_empty = "none")] #[ignore_malloc_size_of = "Arc"] pub crate::ArcSlice<DashedIdent>);
+
+impl AnchorName {
+    
+    pub fn none() -> Self {
+        Self(Default::default())
+    }
+
+    
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl Parse for AnchorName {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let location = input.current_source_location();
+        let first = input.expect_ident()?;
+        if first.eq_ignore_ascii_case("none") {
+            return Ok(Self::none());
+        }
+        
+        
+        let mut idents: SmallVec<[DashedIdent; 4]> = smallvec![DashedIdent::from_ident(
+            location,
+            first,
+        )?];
+        while input.try_parse(|input| input.expect_comma()).is_ok() {
+            idents.push(DashedIdent::parse(context, input)?);
+        }
+        Ok(AnchorName(ArcSlice::from_iter(idents.drain(..))))
+    }
+}
+
+impl ToCss for AnchorName {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        let mut iter = self.0.iter();
+        match iter.next() {
+            None => return dest.write_str("none"),
+            Some(f) => f.to_css(dest)?,
+        }
+        for name in iter {
+            dest.write_str(", ")?;
+            name.to_css(dest)?;
+        }
+        Ok(())
     }
 }
 
