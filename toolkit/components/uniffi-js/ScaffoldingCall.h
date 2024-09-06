@@ -52,7 +52,7 @@ class ScaffoldingCallHandler {
   
   static already_AddRefed<dom::Promise> CallAsync(
       ScaffoldingFunc aScaffoldingFunc, const dom::GlobalObject& aGlobal,
-      const dom::Sequence<dom::ScaffoldingType>& aArgs,
+      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
       const nsLiteralCString& aFuncName, ErrorResult& aError) {
     auto convertResult = ConvertJsArgs(aArgs);
     if (convertResult.isErr()) {
@@ -116,7 +116,7 @@ class ScaffoldingCallHandler {
   
   static void CallSync(
       ScaffoldingFunc aScaffoldingFunc, const dom::GlobalObject& aGlobal,
-      const dom::Sequence<dom::ScaffoldingType>& aArgs,
+      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
       dom::RootedDictionary<dom::UniFFIScaffoldingCallResult>& aReturnValue,
       const nsLiteralCString& aFuncName, ErrorResult& aError) {
     auto convertResult = ConvertJsArgs(aArgs);
@@ -146,7 +146,7 @@ class ScaffoldingCallHandler {
   
   
   static Result<IntermediateArgs, nsCString> ConvertJsArgs(
-      const dom::Sequence<dom::ScaffoldingType>& aArgs) {
+      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs) {
     IntermediateArgs convertedArgs;
     if (aArgs.Length() != std::tuple_size_v<IntermediateArgs>) {
       return mozilla::Err("Wrong argument count"_ns);
@@ -158,7 +158,7 @@ class ScaffoldingCallHandler {
   
   template <size_t I = 0>
   static Result<mozilla::Ok, nsCString> PrepareArgsHelper(
-      const dom::Sequence<dom::ScaffoldingType>& aArgs,
+      const dom::Sequence<dom::UniFFIScaffoldingValue>& aArgs,
       IntermediateArgs& aConvertedArgs) {
     if constexpr (I >= sizeof...(ArgConverters)) {
       
