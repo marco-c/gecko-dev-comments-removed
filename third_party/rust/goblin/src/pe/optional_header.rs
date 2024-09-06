@@ -1,5 +1,3 @@
-
-
 use crate::container;
 use crate::error;
 
@@ -9,123 +7,50 @@ use scroll::{ctx, Endian, LE};
 use scroll::{Pread, Pwrite, SizeWith};
 
 
-
-
-
-
-
 #[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone, Default, Pread, Pwrite, SizeWith)]
 pub struct StandardFields32 {
-    
     pub magic: u16,
-    
     pub major_linker_version: u8,
-    
     pub minor_linker_version: u8,
-    
     pub size_of_code: u32,
-    
     pub size_of_initialized_data: u32,
-    
     pub size_of_uninitialized_data: u32,
-    
     pub address_of_entry_point: u32,
-    
     pub base_of_code: u32,
     
     pub base_of_data: u32,
 }
 
-
 pub const SIZEOF_STANDARD_FIELDS_32: usize = 28;
-
-
-
-
-
 
 
 #[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone, Default, Pread, Pwrite, SizeWith)]
 pub struct StandardFields64 {
-    
     pub magic: u16,
-    
     pub major_linker_version: u8,
-    
     pub minor_linker_version: u8,
-    
     pub size_of_code: u32,
-    
     pub size_of_initialized_data: u32,
-    
     pub size_of_uninitialized_data: u32,
-    
     pub address_of_entry_point: u32,
-    
     pub base_of_code: u32,
 }
-
 
 pub const SIZEOF_STANDARD_FIELDS_64: usize = 24;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Debug, PartialEq, Copy, Clone, Default)]
 pub struct StandardFields {
-    
-    
-    
-    
-    
-    #[doc(alias = "Magic")]
     pub magic: u16,
-    
-    #[doc(alias = "MajorLinkerVersion")]
     pub major_linker_version: u8,
-    
-    #[doc(alias = "MinorLinkerVersion")]
     pub minor_linker_version: u8,
-    
-    #[doc(alias = "SizeOfCode")]
     pub size_of_code: u64,
-    
-    #[doc(alias = "SizeOfInitializedData")]
     pub size_of_initialized_data: u64,
-    
-    #[doc(alias = "SizeOfUninitializedData")]
     pub size_of_uninitialized_data: u64,
-    
-    
-    
-    
-    
-    
     pub address_of_entry_point: u64,
-    
     pub base_of_code: u64,
-    
-    
-    
-    
     
     pub base_of_data: u32,
 }
@@ -199,208 +124,62 @@ pub const MAGIC_32: u16 = 0x10b;
 pub const MAGIC_64: u16 = 0x20b;
 
 
-
-
-
-
-
 #[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone, Default, Pread, Pwrite, SizeWith)]
 pub struct WindowsFields32 {
-    
     pub image_base: u32,
-    
     pub section_alignment: u32,
-    
     pub file_alignment: u32,
-    
     pub major_operating_system_version: u16,
-    
     pub minor_operating_system_version: u16,
-    
     pub major_image_version: u16,
-    
     pub minor_image_version: u16,
-    
     pub major_subsystem_version: u16,
-    
     pub minor_subsystem_version: u16,
-    
     pub win32_version_value: u32,
-    
     pub size_of_image: u32,
-    
     pub size_of_headers: u32,
-    
     pub check_sum: u32,
-    
     pub subsystem: u16,
-    
     pub dll_characteristics: u16,
-    
     pub size_of_stack_reserve: u32,
-    
     pub size_of_stack_commit: u32,
-    
     pub size_of_heap_reserve: u32,
-    
     pub size_of_heap_commit: u32,
-    
     pub loader_flags: u32,
-    
     pub number_of_rva_and_sizes: u32,
 }
-
 
 pub const SIZEOF_WINDOWS_FIELDS_32: usize = 68;
 
 pub const OFFSET_WINDOWS_FIELDS_32_CHECKSUM: usize = 36;
 
 
-
-
-
-
-
-
-
-
 #[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone, Default, Pread, Pwrite, SizeWith)]
 pub struct WindowsFields64 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[doc(alias = "ImageBase")]
     pub image_base: u64,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[doc(alias = "SectionAlignment")]
     pub section_alignment: u32,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[doc(alias = "FileAlignment")]
     pub file_alignment: u32,
-    
-    #[doc(alias = "MajorOperatingSystemVersion")]
     pub major_operating_system_version: u16,
-    
-    #[doc(alias = "MinorOperatingSystemVersion")]
     pub minor_operating_system_version: u16,
-    
-    #[doc(alias = "MajorImageVersion")]
     pub major_image_version: u16,
-    
-    #[doc(alias = "MinorImageVersion")]
     pub minor_image_version: u16,
-    
-    #[doc(alias = "MajorSubsystemVersion")]
     pub major_subsystem_version: u16,
-    
-    #[doc(alias = "MinorSubsystemVersion")]
     pub minor_subsystem_version: u16,
-    
-    #[doc(alias = "Win32VersionValue")]
     pub win32_version_value: u32,
-    
-    
-    
-    #[doc(alias = "SizeOfImage")]
     pub size_of_image: u32,
-    
-    
-    #[doc(alias = "SizeOfHeaders")]
     pub size_of_headers: u32,
-    
-    
-    
-    
-    
-    
-    #[doc(alias = "CheckSum")]
     pub check_sum: u32,
-    
-    
-    
-    #[doc(alias = "Subsystem")]
     pub subsystem: u16,
-    
-    
-    
-    
-    #[doc(alias = "DllCharacteristics")]
     pub dll_characteristics: u16,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[doc(alias = "SizeOfStackReserve")]
     pub size_of_stack_reserve: u64,
-    
-    #[doc(alias = "SizeOfStackCommit")]
     pub size_of_stack_commit: u64,
-    
-    
-    #[doc(alias = "SizeOfHeapReserve")]
     pub size_of_heap_reserve: u64,
-    
-    #[doc(alias = "SizeOfHeapCommit")]
     pub size_of_heap_commit: u64,
-    
-    #[doc(alias = "LoaderFlags")]
     pub loader_flags: u32,
-    
-    #[doc(alias = "NumberOfRvaAndSizes")]
     pub number_of_rva_and_sizes: u32,
 }
-
 
 pub const SIZEOF_WINDOWS_FIELDS_64: usize = 88;
 
@@ -518,57 +297,16 @@ impl TryFrom<WindowsFields64> for WindowsFields32 {
 
 
 
-
-
-
-
-
-
-
-
-
 pub type WindowsFields = WindowsFields64;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Debug, PartialEq, Copy, Clone)]
-#[doc(alias = "IMAGE_OPTIONAL_HEADER32")]
-#[doc(alias = "IMAGE_OPTIONAL_HEADER64")]
 pub struct OptionalHeader {
-    
     pub standard_fields: StandardFields,
-    
     pub windows_fields: WindowsFields,
-    
     pub data_directories: data_directories::DataDirectories,
 }
 
-
-pub const IMAGE_NT_OPTIONAL_HDR32_MAGIC: u16 = 0x10b;
-
-pub const IMAGE_NT_OPTIONAL_HDR64_MAGIC: u16 = 0x20b;
-
-
-
-pub const IMAGE_ROM_OPTIONAL_HDR_MAGIC: u16 = 0x107;
-
 impl OptionalHeader {
-    
     pub fn container(&self) -> error::Result<container::Container> {
         match self.standard_fields.magic {
             MAGIC_32 => Ok(container::Container::Little),

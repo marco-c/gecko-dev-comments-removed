@@ -18,6 +18,7 @@ static PADDING: [u8; 7] = [0; 7];
 
 impl PE<'_> {
     
+    
     pub fn authenticode_ranges(&self) -> ExcludedSectionsIter<'_> {
         ExcludedSectionsIter {
             pe: self,
