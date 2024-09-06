@@ -1,29 +1,24 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* eslint-disable mozilla/balanced-listeners */ // Not relevant since the document gets unloaded.
 
-
-
-
- 
-
-"use strict";
-
-const { FormAutofill } = ChromeUtils.importESModule(
-  "resource://autofill/FormAutofill.sys.mjs"
-);
-const { FormAutofillUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
-);
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
+});
 
 class EditAutofillForm {
   constructor(elements) {
     this._elements = elements;
   }
 
-  
-
-
-
-
+  /**
+   * Fill the form with a record object.
+   *
+   * @param  {object} [record = {}]
+   */
   loadRecord(record = {}) {
     for (let field of this._elements.form.elements) {
       let value = record[field.id];
@@ -34,13 +29,13 @@ class EditAutofillForm {
       } else if (field.localName == "select") {
         this.setDefaultSelectedOptionByValue(field, value);
       } else {
-        
-        
+        // Use .defaultValue instead of .value to avoid setting the `dirty` flag
+        // which triggers form validation UI.
         field.defaultValue = value;
       }
     }
     if (!record.guid) {
-      
+      // Reset the dirty value flag and validity state.
       this._elements.form.reset();
     } else {
       for (let field of this._elements.form.elements) {
@@ -56,16 +51,16 @@ class EditAutofillForm {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Get a record from the form suitable for a save/update in storage.
+   *
+   * @returns {object}
+   */
   buildFormObject() {
     let initialObject = {};
     if (this.hasMailingAddressFields) {
-      
-      
+      // Start with an empty string for each mailing-address field so that any
+      // fields hidden for the current country are blanked in the return value.
       initialObject = {
         "street-address": "",
         "address-level3": "",
@@ -83,11 +78,11 @@ class EditAutofillForm {
     }, initialObject);
   }
 
-  
-
-
-
-
+  /**
+   * Handle events
+   *
+   * @param  {DOMEvent} event
+   */
   handleEvent(event) {
     switch (event.type) {
       case "change": {
@@ -101,32 +96,32 @@ class EditAutofillForm {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Handle change events
+   *
+   * @param  {DOMEvent} event
+   */
   handleChange(event) {
     this.updatePopulatedState(event.target);
   }
 
-  
-
-
+  /**
+   * Handle input events
+   */
   handleInput(_e) {}
 
-  
-
-
+  /**
+   * Attach event listener
+   */
   attachEventListeners() {
     this._elements.form.addEventListener("input", this);
   }
 
-  
-
-
-
-
+  /**
+   * Set the field-populated attribute if the field has a value.
+   *
+   * @param {DOMElement} field The field that will be checked for a value.
+   */
   updatePopulatedState(field) {
     let span = field.parentNode.querySelector(".label-text");
     if (!span) {
@@ -135,20 +130,20 @@ class EditAutofillForm {
     span.toggleAttribute("field-populated", !!field.value.trim());
   }
 
-  
-
-
-
-
+  /**
+   * Run custom validity routines specific to the field and type of form.
+   *
+   * @param {DOMElement} _field The field that will be validated.
+   */
   updateCustomValidity(_field) {}
 }
 
-class EditCreditCard extends EditAutofillForm {
-  
-
-
-
-
+export class EditCreditCard extends EditAutofillForm {
+  /**
+   * @param {HTMLElement[]} elements
+   * @param {object} record with a decrypted cc-number
+   * @param {object} addresses in an object with guid keys for the billing address picker.
+   */
   constructor(elements, record, addresses) {
     super(elements);
 
@@ -170,14 +165,14 @@ class EditCreditCard extends EditAutofillForm {
   }
 
   loadRecord(record, addresses, preserveFieldValues) {
-    
+    // _record must be updated before generateYears and generateBillingAddressOptions are called.
     this._record = record;
     this._addresses = addresses;
     this.generateBillingAddressOptions(preserveFieldValues);
     if (!preserveFieldValues) {
-      
+      // Re-generating the months will reset the selected option.
       this.generateMonths();
-      
+      // Re-generating the years will reset the selected option.
       this.generateYears();
       super.loadRecord(record);
     }
@@ -186,13 +181,13 @@ class EditCreditCard extends EditAutofillForm {
   generateMonths() {
     const count = 12;
 
-    
+    // Clear the list
     this._elements.month.textContent = "";
 
-    
+    // Empty month option
     this._elements.month.appendChild(new Option());
 
-    
+    // Populate month list. Format: "month number - month name"
     let dateFormat = new Intl.DateTimeFormat(navigator.language, {
       month: "long",
     }).format;
@@ -201,7 +196,7 @@ class EditCreditCard extends EditAutofillForm {
       let monthName = dateFormat(new Date(1970, i));
       let option = new Option();
       option.value = monthNumber;
-      
+      // XXX: Bug 1446164 - Localize this string.
       option.textContent = `${monthNumber.padStart(2, "0")} - ${monthName}`;
       this._elements.month.appendChild(option);
     }
@@ -212,10 +207,10 @@ class EditCreditCard extends EditAutofillForm {
     const currentYear = new Date().getFullYear();
     const ccExpYear = this._record && this._record["cc-exp-year"];
 
-    
+    // Clear the list
     this._elements.year.textContent = "";
 
-    
+    // Provide an empty year option
     this._elements.year.appendChild(new Option());
 
     if (ccExpYear && ccExpYear < currentYear) {
@@ -250,7 +245,7 @@ class EditCreditCard extends EditAutofillForm {
       hasAddresses = true;
       let selected = guid == billingAddressGUID;
       let option = new Option(
-        FormAutofillUtils.getAddressLabel(address),
+        lazy.FormAutofillUtils.getAddressLabel(address),
         guid,
         selected,
         selected
@@ -267,10 +262,10 @@ class EditCreditCard extends EditAutofillForm {
   }
 
   handleInput(event) {
-    
+    // Clear the error message if cc-number is valid
     if (
       event.target == this._elements.ccNumber &&
-      FormAutofillUtils.isCCNumber(this._elements.ccNumber.value)
+      lazy.FormAutofillUtils.isCCNumber(this._elements.ccNumber.value)
     ) {
       this._elements.ccNumber.setCustomValidity("");
     }
@@ -280,10 +275,10 @@ class EditCreditCard extends EditAutofillForm {
   updateCustomValidity(field) {
     super.updateCustomValidity(field);
 
-    
+    // Mark the cc-number field as invalid if the number is empty or invalid.
     if (
       field == this._elements.ccNumber &&
-      !FormAutofillUtils.isCCNumber(field.value)
+      !lazy.FormAutofillUtils.isCCNumber(field.value)
     ) {
       let invalidCardNumberString =
         this._elements.invalidCardNumberStringElement.textContent;

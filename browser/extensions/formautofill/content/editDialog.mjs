@@ -1,22 +1,23 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* eslint-disable mozilla/balanced-listeners */ // Not relevant since the document gets unloaded.
 
+import {
+  getCurrentFormData,
+  canSubmitForm,
+} from "chrome://formautofill/content/addressFormLayout.mjs";
 
-
-
- 
-
-
-
-"use strict";
-
-ChromeUtils.defineESModuleGetters(this, {
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
   AutofillTelemetry: "resource://gre/modules/shared/AutofillTelemetry.sys.mjs",
   formAutofillStorage: "resource://autofill/FormAutofillStorage.sys.mjs",
 });
 
 class AutofillEditDialog {
   constructor(subStorageName, elements, record) {
-    this._storageInitPromise = formAutofillStorage.initialize();
+    this._storageInitPromise = lazy.formAutofillStorage.initialize();
     this._subStorageName = subStorageName;
     this._elements = elements;
     this._record = record;
@@ -27,28 +28,28 @@ class AutofillEditDialog {
   async init() {
     this.updateSaveButtonState();
     this.attachEventListeners();
-    
-    
-    
+    // For testing only: signal to tests that the dialog is ready for testing.
+    // This is likely no longer needed since retrieving from storage is fully
+    // handled in manageDialog.js now.
     window.dispatchEvent(new CustomEvent("FormReadyForTests"));
   }
 
-  
-
-
-
-
+  /**
+   * Get storage and ensure it has been initialized.
+   *
+   * @returns {object}
+   */
   async getStorage() {
     await this._storageInitPromise;
-    return formAutofillStorage[this._subStorageName];
+    return lazy.formAutofillStorage[this._subStorageName];
   }
 
-  
-
-
-
-
-
+  /**
+   * Asks FormAutofillParent to save or update an record.
+   *
+   * @param  {object} record
+   * @param  {string} guid [optional]
+   */
   async saveRecord(record, guid) {
     let storage = await this.getStorage();
     if (guid) {
@@ -58,11 +59,11 @@ class AutofillEditDialog {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Handle events
+   *
+   * @param  {DOMEvent} event
+   */
   handleEvent(event) {
     switch (event.type) {
       case "load": {
@@ -93,11 +94,11 @@ class AutofillEditDialog {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Handle click events
+   *
+   * @param  {DOMEvent} event
+   */
   handleClick(event) {
     if (event.target == this._elements.cancel) {
       window.close();
@@ -107,18 +108,18 @@ class AutofillEditDialog {
     }
   }
 
-  
-
-
+  /**
+   * Handle input events
+   */
   handleInput(_e) {
     this.updateSaveButtonState();
   }
 
-  
-
-
-
-
+  /**
+   * Handle key press events
+   *
+   * @param  {DOMEvent} event
+   */
   handleKeyPress(event) {
     if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
       window.close();
@@ -126,8 +127,8 @@ class AutofillEditDialog {
   }
 
   updateSaveButtonState() {
-    
-    
+    // Toggle disabled attribute on the save button based on
+    // whether the form is filled or empty.
     if (!Object.keys(this._elements.fieldContainer.buildFormObject()).length) {
       this._elements.save.setAttribute("disabled", true);
     } else {
@@ -135,9 +136,9 @@ class AutofillEditDialog {
     }
   }
 
-  
-
-
+  /**
+   * Attach event listener
+   */
   attachEventListeners() {
     window.addEventListener("keypress", this);
     window.addEventListener("contextmenu", this);
@@ -146,22 +147,25 @@ class AutofillEditDialog {
     document.addEventListener("input", this);
   }
 
-  
+  // An interface to be inherited.
   localizeDocument() {}
 
   recordFormSubmit() {
     let method = this._record?.guid ? "edit" : "add";
-    AutofillTelemetry.recordManageEvent(this.telemetryType, method);
+    lazy.AutofillTelemetry.recordManageEvent(this.telemetryType, method);
   }
 }
 
-class EditAddressDialog extends AutofillEditDialog {
-  telemetryType = AutofillTelemetry.ADDRESS;
+export class EditAddressDialog extends AutofillEditDialog {
+  telemetryType = lazy.AutofillTelemetry.ADDRESS;
 
   constructor(elements, record) {
     super("addresses", elements, record);
     if (record) {
-      AutofillTelemetry.recordManageEvent(this.telemetryType, "show_entry");
+      lazy.AutofillTelemetry.recordManageEvent(
+        this.telemetryType,
+        "show_entry"
+      );
     }
   }
 
@@ -175,8 +179,8 @@ class EditAddressDialog extends AutofillEditDialog {
   }
 
   updateSaveButtonState() {
-    
-    
+    // Toggle disabled attribute on the save button based on
+    // whether the form is filled or empty.
     if (!canSubmitForm()) {
       this._elements.save.setAttribute("disabled", true);
     } else {
@@ -195,8 +199,8 @@ class EditAddressDialog extends AutofillEditDialog {
   }
 }
 
-class EditCreditCardDialog extends AutofillEditDialog {
-  telemetryType = AutofillTelemetry.CREDIT_CARD;
+export class EditCreditCardDialog extends AutofillEditDialog {
+  telemetryType = lazy.AutofillTelemetry.CREDIT_CARD;
 
   constructor(elements, record) {
     elements.fieldContainer._elements.billingAddress.disabled = true;
@@ -206,7 +210,10 @@ class EditCreditCardDialog extends AutofillEditDialog {
       this._onCCNumberFieldBlur.bind(this)
     );
     if (record) {
-      AutofillTelemetry.recordManageEvent(this.telemetryType, "show_entry");
+      lazy.AutofillTelemetry.recordManageEvent(
+        this.telemetryType,
+        "show_entry"
+      );
     }
   }
 
