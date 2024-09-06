@@ -91,8 +91,7 @@ async def test_scroll_iframe(
     async def wait_for_events(_):
         return len(await get_events(bidi_session, top_context["context"])) > 0
 
-    wait = AsyncPoll(bidi_session, timeout=0.5)
-    await wait.until(wait_for_events)
+    await AsyncPoll(bidi_session, timeout=0.5, interval=0.01, message='No wheel events emitted').until(wait_for_events)
     events = await get_events(bidi_session, top_context["context"])
 
     assert len(events) == 1
