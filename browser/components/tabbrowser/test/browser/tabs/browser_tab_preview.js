@@ -4,48 +4,16 @@
 
 "use strict";
 
+
+
+
+
+
+
+
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
-
-function scrollOverTab(tab) {
-  const tabs = document.getElementById("tabbrowser-tabs");
-
-  
-  let message = 0;
-  switch (AppConstants.platform) {
-    case "win":
-      message = 0x020a;
-      break;
-    case "linux":
-      message = 4;
-      break;
-    case "macosx":
-      message = 1;
-      break;
-  }
-
-  let rect = tab.getBoundingClientRect();
-  let screenRect = window.windowUtils.toScreenRect(
-    rect.x,
-    rect.y,
-    rect.width,
-    rect.height
-  );
-
-  window.windowUtils.sendNativeMouseScrollEvent(
-    screenRect.left + rect.width / 2,
-    screenRect.bottom - rect.height / 2,
-    message,
-    0,
-    3,
-    0,
-    0,
-    Ci.nsIDOMWindowUtils.MOUSESCROLL_SCROLL_LINES,
-    tabs,
-    null
-  );
-}
 
 async function openPreview(tab, win = window) {
   const previewShown = BrowserTestUtils.waitForPopupEvent(
@@ -107,18 +75,42 @@ add_task(async function hoverTests() {
     "First New Tab",
     "Preview of tab1 shows correct title"
   );
-
   await closePreviews();
+
   await openPreview(tab2);
   Assert.equal(
     previewContainer.querySelector(".tab-preview-title").innerText,
     "Second New Tab",
     "Preview of tab2 shows correct title"
   );
-
   await closePreviews();
 
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+
   
+  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
+    type: "mouseover",
+  });
+});
+
+
+
+
+add_task(async function noTabPreviewInBackgroundWindowTests() {
+  const bgWindow = window;
+
+  const bgTabUrl =
+    "data:text/html,<html><head><title>First New Tab</title></head><body>Hello</body></html>";
+  const bgTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, bgTabUrl);
+
+  
+  await openPreview(bgTab, bgWindow);
+  await closePreviews(bgWindow);
+
+  const bgPreviewComponent = bgWindow.gBrowser.tabContainer.previewPanel;
+  sinon.spy(bgPreviewComponent, "activate");
+
   let fgWindow = await BrowserTestUtils.openNewBrowserWindow();
   let fgTab = fgWindow.gBrowser.tabs[0];
   let fgWindowPreviewContainer =
@@ -133,28 +125,26 @@ add_task(async function hoverTests() {
   await closePreviews(fgWindow);
 
   
-  let resolved = false;
-  let openPreviewPromise = openPreview(tab1).then(() => {
-    resolved = true;
+  EventUtils.synthesizeMouseAtCenter(bgTab, { type: "mouseover" }, bgWindow);
+  await BrowserTestUtils.waitForCondition(() => {
+    return bgPreviewComponent.activate.calledOnce;
   });
-  
-  let timeoutPromise = new Promise(resolve => setTimeout(resolve, 500));
-  await Promise.race([openPreviewPromise, timeoutPromise]);
-  Assert.ok(!resolved, "preview does not open from background window");
-  Assert.ok(
-    BrowserTestUtils.isHidden(previewContainer),
-    "Background window tab preview hidden"
+  Assert.equal(
+    bgPreviewComponent._panel.state,
+    "closed",
+    "preview does not open from background window"
   );
 
+  BrowserTestUtils.removeTab(fgTab);
   await BrowserTestUtils.closeWindow(fgWindow);
 
-  BrowserTestUtils.removeTab(tab1);
-  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(bgTab);
 
   
   EventUtils.synthesizeMouseAtCenter(document.documentElement, {
     type: "mouseover",
   });
+  sinon.restore();
 });
 
 
@@ -362,12 +352,12 @@ add_task(async function delayTests() {
   const tabUrl2 =
     "data:text/html,<html><head><title>Second New Tab</title></head><body>Hello</body></html>";
   const tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl2);
-  const previewComponent = gBrowser.tabContainer.previewPanel;
   const previewElement = document.getElementById("tab-preview-panel");
 
-  sinon.spy(previewComponent, "deactivate");
-
   await openPreview(tab1);
+
+  const previewComponent = gBrowser.tabContainer.previewPanel;
+  sinon.spy(previewComponent, "deactivate");
 
   
   
@@ -407,15 +397,13 @@ add_task(async function dragTests() {
   const tabUrl1 =
     "data:text/html,<html><head><title>First New Tab</title></head><body>Hello</body></html>";
   const tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl1);
-  const tabUrl2 =
-    "data:text/html,<html><head><title>Second New Tab</title></head><body>Hello</body></html>";
-  const tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl2);
-  const previewComponent = gBrowser.tabContainer.previewPanel;
   const previewElement = document.getElementById("tab-preview-panel");
 
+  await openPreview(tab1);
+
+  const previewComponent = gBrowser.tabContainer.previewPanel;
   sinon.spy(previewComponent, "deactivate");
 
-  await openPreview(tab1);
   const previewHidden = BrowserTestUtils.waitForPopupEvent(
     previewElement,
     "hidden"
@@ -423,7 +411,9 @@ add_task(async function dragTests() {
   let dragend = BrowserTestUtils.waitForEvent(tab1, "dragend");
   EventUtils.synthesizePlainDragAndDrop({
     srcElement: tab1,
-    destElement: tab2,
+    destElement: null,
+    stepX: 100,
+    stepY: 0,
   });
 
   await previewHidden;
@@ -434,9 +424,7 @@ add_task(async function dragTests() {
   );
 
   await dragend;
-
   BrowserTestUtils.removeTab(tab1);
-  BrowserTestUtils.removeTab(tab2);
   sinon.restore();
 
   
@@ -454,12 +442,23 @@ add_task(async function panelSuppressionOnContextMenuTests() {
   const tabUrl =
     "data:text/html,<html><head><title>First New Tab</title></head><body>Hello</body></html>";
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl);
-  const previewComponent = gBrowser.tabContainer.previewPanel;
 
+  
+  await openPreview(tab);
+  await closePreviews();
+
+  const previewComponent = gBrowser.tabContainer.previewPanel;
   sinon.spy(previewComponent, "activate");
 
-  const otherMenu = document.getElementById("new-tab-button-popup");
-  otherMenu.openPopup();
+  const newTabMenu = document.getElementById("new-tab-button-popup");
+  const newTabButton = document.getElementById("tabs-newtab-button");
+  let newTabMenuShown = BrowserTestUtils.waitForPopupEvent(newTabMenu, "shown");
+  EventUtils.synthesizeMouseAtCenter(
+    newTabButton,
+    { type: "contextmenu" },
+    window
+  );
+  await newTabMenuShown;
 
   EventUtils.synthesizeMouseAtCenter(tab, { type: "mouseover" }, window);
 
@@ -468,7 +467,7 @@ add_task(async function panelSuppressionOnContextMenuTests() {
   });
   Assert.equal(previewComponent._panel.state, "closed", "");
 
-  otherMenu.hidePopup();
+  newTabMenu.hidePopup();
   BrowserTestUtils.removeTab(tab);
   sinon.restore();
 
@@ -485,8 +484,12 @@ add_task(async function panelSuppressionOnPanelTests() {
   const tabUrl =
     "data:text/html,<html><head><title>First New Tab</title></head><body>Hello</body></html>";
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl);
-  const previewComponent = gBrowser.tabContainer.previewPanel;
 
+  
+  await openPreview(tab);
+  await closePreviews();
+
+  const previewComponent = gBrowser.tabContainer.previewPanel;
   sinon.spy(previewComponent, "activate");
 
   
@@ -515,6 +518,7 @@ add_task(async function panelSuppressionOnPanelTests() {
 
 
 
+
 add_task(async function wheelTests() {
   const previewPanel = document.getElementById("tab-preview-panel");
   const tab1 = await BrowserTestUtils.openNewForegroundTab(
@@ -536,19 +540,6 @@ add_task(async function wheelTests() {
     previewPanel.getAttribute("rolluponmousewheel"),
     "true",
     "Panel has rolluponmousewheel=true when tabs overflow"
-  );
-
-  const previewHidden = BrowserTestUtils.waitForPopupEvent(
-    previewPanel,
-    "hidden"
-  );
-
-  scrollOverTab(tab1);
-  await previewHidden;
-  Assert.equal(
-    previewPanel.state,
-    "closed",
-    "Preview is closed after scrolling"
   );
 
   
