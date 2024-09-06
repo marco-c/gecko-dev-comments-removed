@@ -35,7 +35,10 @@ void DynamicResampler::SetSampleFormat(AudioSampleFormat aFormat) {
     b.SetSampleFormat(mSampleFormat);
   }
 
-  EnsureInputBufferDuration(CalculateInputBufferDuration());
+  
+  
+  
+  EnsureInputBufferDuration(media::TimeUnit::FromSeconds(0.05));
 }
 
 void DynamicResampler::EnsurePreBuffer(media::TimeUnit aDuration) {

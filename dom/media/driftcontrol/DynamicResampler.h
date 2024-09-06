@@ -38,8 +38,6 @@ const uint32_t STEREO = 2;
 
 
 
-
-
 class DynamicResampler final {
  public:
   
@@ -227,11 +225,6 @@ class DynamicResampler final {
 
   void WarmUpResampler(bool aSkipLatency);
 
-  media::TimeUnit CalculateInputBufferDuration() const {
-    
-    return std::max(mPreBufferDuration * 2, media::TimeUnit::FromSeconds(0.1));
-  }
-
   bool EnsureInputBufferDuration(media::TimeUnit aDuration) {
     uint32_t sampleSize = 0;
     if (mSampleFormat == AUDIO_FORMAT_FLOAT32) {
@@ -266,8 +259,12 @@ class DynamicResampler final {
       
       
       
-      duration = aDuration.ToBase<media::TimeUnit::CeilingPolicy>(10);
+      duration = aDuration + media::TimeUnit::FromSeconds(0.05);
     }
+
+    
+    
+    duration = std::max(duration, mPreBufferDuration * 2);
 
     duration = std::min(cap, duration);
     const uint32_t newSizeInFrames =

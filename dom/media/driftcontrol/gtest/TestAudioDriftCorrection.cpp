@@ -263,7 +263,7 @@ TEST(TestAudioDriftCorrection, LargerTransmitterBlockSizeThanDesiredBuffering)
   
   
   
-  EXPECT_EQ(ad.BufferSize(), 9600U);
+  EXPECT_EQ(ad.BufferSize(), transmitterBlockSize * 11 / 10 * 2);
 }
 
 TEST(TestAudioDriftCorrection, LargerReceiverBlockSizeThanDesiredBuffering)
@@ -500,7 +500,11 @@ TEST(TestAudioDriftCorrection, DriftStepResponseUnderrunHighLatencyInput)
     }
   }
 
-  EXPECT_EQ(ad.BufferSize(), 110400U);
+  
+  
+  
+  
+  EXPECT_EQ(ad.BufferSize(), inputInterval1 * 11 / 10 * 2 * 2);
   EXPECT_EQ(ad.NumUnderruns(), 1u);
 }
 
@@ -543,6 +547,9 @@ TEST(TestAudioDriftCorrection, DriftStepResponseOverrun)
     ad.RequestFrames(inSegment, interval / 100);
   }
 
-  EXPECT_EQ(ad.BufferSize(), 105600U);
+  
+  
+  
+  EXPECT_EQ(ad.BufferSize(), inputInterval * 11 / 10 * 2);
   EXPECT_EQ(ad.NumUnderruns(), 1u);
 }
