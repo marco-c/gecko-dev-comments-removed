@@ -2203,7 +2203,7 @@ void nsRefreshDriver::DispatchResizeEvents() {
   observers.AppendElements(mResizeEventFlushObservers);
   for (RefPtr<PresShell>& presShell : Reversed(observers)) {
     if (!mPresContext || !mPresContext->GetPresShell()) {
-      return StopTimer();
+      break;
     }
     
     
@@ -2665,6 +2665,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   
   DispatchResizeEvents();
   DispatchVisualViewportResizeEvents();
+
+  if (!mPresContext || !mPresContext->GetPresShell()) {
+    return StopTimer();
+  }
 
   
   
