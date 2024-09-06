@@ -276,24 +276,6 @@ bool CopyingStructuredCloneWriteCallback(JSContext* aCx,
                                                               aObj);
 }
 
-nsresult ensureCorrectDataCloneError(JSContext* aCx) {
-  
-  
-  
-  if (JS_IsExceptionPending(aCx)) {
-    JS::Rooted<JS::Value> exn(aCx);
-    if (JS_GetPendingException(aCx, &exn)) {
-      JS::Rooted<JSObject*> obj(aCx, &exn.toObject());
-      JSErrorReport* err = JS_ErrorFromException(aCx, obj);
-      if (err->errorNumber == JSMSG_SC_NOT_CLONABLE ||
-          err->errorNumber == JSMSG_SC_NOT_CLONABLE_WITH_COOP_COEP) {
-        JS_ClearPendingException(aCx);
-      }
-    }
-  }
-  return NS_ERROR_DOM_DATA_CLONE_ERR;
-}
-
 nsresult GetAddInfoCallback(JSContext* aCx, void* aClosure) {
   static const JSStructuredCloneCallbacks kStructuredCloneCallbacks = {
       nullptr ,          StructuredCloneWriteCallback ,
@@ -312,7 +294,7 @@ nsresult GetAddInfoCallback(JSContext* aCx, void* aClosure) {
   if (!data->mCloneWriteInfo.mCloneBuffer.write(aCx, data->mValue,
                                                 &kStructuredCloneCallbacks,
                                                 &data->mCloneWriteInfo)) {
-    return ensureCorrectDataCloneError(aCx);
+    return NS_ERROR_DOM_DATA_CLONE_ERR;
   }
 
   return NS_OK;
@@ -622,7 +604,7 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
     }
   } else if (!isAutoIncrement) {
     if (!aValueWrapper.Clone(aCx)) {
-      aRv.Throw(ensureCorrectDataCloneError(aCx));
+      aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
       return;
     }
 
@@ -642,7 +624,7 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
   
 
   if (mSpec->indexes().Length() && !aValueWrapper.Clone(aCx)) {
-    aRv.Throw(ensureCorrectDataCloneError(aCx));
+    aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
     return;
   }
 
@@ -682,7 +664,7 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
 
   if (isAutoIncrement && HasValidKeyPath()) {
     if (!aValueWrapper.Clone(aCx)) {
-      aRv.Throw(ensureCorrectDataCloneError(aCx));
+      aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
       return;
     }
 
