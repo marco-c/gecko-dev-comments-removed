@@ -109,7 +109,7 @@ class SVGClipPathFrame final : public SVGContainerFrame {
   
   
   
-  bool IsTrivial(ISVGDisplayableFrame** aSingleChild = nullptr);
+  bool IsTrivial(nsIFrame** aSingleChild = nullptr);
 
   
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,

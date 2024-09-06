@@ -3380,6 +3380,9 @@ class nsIFrame : public nsQueryFrame {
   }
 
   
+  ClassID GetClassID() const { return mClass; }
+
+  
 
 
 
@@ -5110,7 +5113,7 @@ class nsIFrame : public nsQueryFrame {
   mozilla::WritingMode mWritingMode;
 
   
-  ClassID mClass;  
+  const ClassID mClass;  
 
   bool mMayHaveRoundedCorners : 1;
 
