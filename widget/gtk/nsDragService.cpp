@@ -1243,31 +1243,37 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
     *_retval = true;
     return NS_OK;
   }
-  if (requestedFlavor == sTextUriListTypeAtom &&
-      (IsDragFlavorAvailable(sURLMimeAtom) ||
-       IsDragFlavorAvailable(sFileMimeAtom))) {
+
+  
+  if ((requestedFlavor == sURLMimeAtom || requestedFlavor == sFileMimeAtom) &&
+      IsDragFlavorAvailable(sTextUriListTypeAtom)) {
+    LOGDRAGSERVICE("  %s supported with conversion from %s", aDataFlavor,
+                   gTextUriListType);
     *_retval = true;
+    return NS_OK;
   }
+
   
-  if (requestedFlavor == sMozUrlTypeAtom &&
-      IsDragFlavorAvailable(sURLMimeAtom)) {
+  if (requestedFlavor == sURLMimeAtom &&
+      IsDragFlavorAvailable(sMozUrlTypeAtom)) {
+    LOGDRAGSERVICE("  %s supported with conversion from %s", aDataFlavor,
+                   gMozUrlType);
     *_retval = true;
+    return NS_OK;
   }
+
   
   
-  
-  if ((requestedFlavor == sPortalFileAtom ||
-       requestedFlavor == sPortalFileTransferAtom) &&
-      (IsDragFlavorAvailable(sURLMimeAtom) ||
-       IsDragFlavorAvailable(sFileMimeAtom))) {
+  if ((requestedFlavor == sURLMimeAtom || requestedFlavor == sFileMimeAtom) &&
+      (IsDragFlavorAvailable(sPortalFileAtom) ||
+       IsDragFlavorAvailable(sPortalFileTransferAtom))) {
+    LOGDRAGSERVICE("  %s supported with conversion from %s/%s", aDataFlavor,
+                   gPortalFile, gPortalFileTransfer);
     *_retval = true;
+    return NS_OK;
   }
-  if (*_retval) {
-    LOGDRAGSERVICE("  %s supported with conversion", aDataFlavor);
-  }
-  if (!*_retval) {
-    LOGDRAGSERVICE("  %s is not supported", aDataFlavor);
-  }
+
+  LOGDRAGSERVICE("  %s is not supported", aDataFlavor);
   return NS_OK;
 }
 
