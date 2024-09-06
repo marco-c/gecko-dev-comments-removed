@@ -135,11 +135,6 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   
   for (const nsACString& host : record->GetBounceHosts()) {
     
-    if (host.EqualsLiteral("null")) {
-      continue;
-    }
-
-    
     
     if (host == record->GetInitialHost()) {
       MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
@@ -227,11 +222,9 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
 nsresult BounceTrackingProtection::RecordUserActivation(
     nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  NS_ENSURE_ARG_POINTER(aPrincipal);
 
-  if (!BounceTrackingState::ShouldTrackPrincipal(aPrincipal)) {
-    return NS_OK;
-  }
+  NS_ENSURE_ARG_POINTER(aPrincipal);
+  NS_ENSURE_TRUE(aPrincipal->GetIsContentPrincipal(), NS_ERROR_FAILURE);
 
   nsAutoCString siteHost;
   nsresult rv = aPrincipal->GetBaseDomain(siteHost);
@@ -592,17 +585,11 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
             ("%s: Purge state for host: %s", __FUNCTION__,
              PromiseFlatCString(host).get()));
 
-    if (StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode()) {
-      
-      
-      clearPromise->Resolve(host, __func__);
-    } else {
-      
-      rv = clearDataService->DeleteDataFromBaseDomain(host, false,
-                                                      TRACKER_PURGE_FLAGS, cb);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        clearPromise->Reject(0, __func__);
-      }
+    
+    rv = clearDataService->DeleteDataFromBaseDomain(host, false,
+                                                    TRACKER_PURGE_FLAGS, cb);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      clearPromise->Reject(0, __func__);
     }
 
     aClearPromises.AppendElement(clearPromise);

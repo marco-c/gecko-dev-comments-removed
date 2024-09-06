@@ -3,17 +3,6 @@
 
 "use strict";
 
-const { SiteDataTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/SiteDataTestUtils.sys.mjs"
-);
-
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "bounceTrackingProtection",
-  "@mozilla.org/bounce-tracking-protection;1",
-  "nsIBounceTrackingProtection"
-);
-
 const SITE_A = "example.com";
 const ORIGIN_A = `https://${SITE_A}`;
 
@@ -35,6 +24,13 @@ const ORIGIN_TRACKER_B = `http://${SITE_TRACKER_B}`;
 const OBSERVER_MSG_RECORD_BOUNCES_FINISHED = "test-record-bounces-finished";
 
 const ROOT_DIR = getRootDirectory(gTestPath);
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "bounceTrackingProtection",
+  "@mozilla.org/bounce-tracking-protection;1",
+  "nsIBounceTrackingProtection"
+);
 
 
 
@@ -61,20 +57,11 @@ function getBaseUrl(origin) {
 
 
 
-
-
-
-
-
-
 function getBounceURL({
   bounceType,
   bounceOrigin = ORIGIN_TRACKER,
   targetURL = new URL(getBaseUrl(ORIGIN_B) + "file_start.html"),
   setState = null,
-  setStateSameSiteFrame = false,
-  setStateInWebWorker = false,
-  setStateInNestedWebWorker = false,
   statusCode = 302,
   redirectDelayMS = 50,
 }) {
@@ -91,25 +78,6 @@ function getBounceURL({
   searchParams.set("target", targetURL.href);
   if (setState) {
     searchParams.set("setState", setState);
-  }
-  if (setStateSameSiteFrame) {
-    searchParams.set("setStateSameSiteFrame", setStateSameSiteFrame);
-  }
-  if (setStateInWebWorker) {
-    if (setState != "indexedDB") {
-      throw new Error(
-        "setStateInWebWorker only supports setState == 'indexedDB'"
-      );
-    }
-    searchParams.set("setStateInWebWorker", setStateInWebWorker);
-  }
-  if (setStateInNestedWebWorker) {
-    if (setState != "indexedDB") {
-      throw new Error(
-        "setStateInNestedWebWorker only supports setState == 'indexedDB'"
-      );
-    }
-    searchParams.set("setStateInNestedWebWorker", setStateInNestedWebWorker);
   }
 
   if (bounceType == "server") {
@@ -129,53 +97,20 @@ function getBounceURL({
 
 
 
+async function navigateLinkClick(browser, targetURL) {
+  await SpecialPowers.spawn(browser, [targetURL.href], targetURL => {
+    let link = content.document.createElement("a");
 
+    link.href = targetURL;
+    link.textContent = targetURL;
+    
+    
+    link.style.display = "block";
 
+    content.document.body.appendChild(link);
+  });
 
-
-async function navigateLinkClick(
-  browser,
-  targetURL,
-  { spawnWindow = null } = {}
-) {
-  if (spawnWindow && !["newTab", "popup"].includes(spawnWindow)) {
-    throw new Error(`Invalid option '${spawnWindow}' for spawnWindow`);
-  }
-
-  await SpecialPowers.spawn(
-    browser,
-    [targetURL.href, spawnWindow],
-    async (targetURL, spawnWindow) => {
-      let link = content.document.createElement("a");
-
-      
-      if (spawnWindow) {
-        link.href = "#";
-        link.addEventListener("click", event => {
-          event.preventDefault();
-          if (spawnWindow == "newTab") {
-            
-            content.window.open(targetURL, "bounce");
-          } else {
-            
-            content.window.open(targetURL, "bounce", "height=200,width=200");
-          }
-        });
-      } else {
-        
-        link.href = targetURL;
-      }
-
-      link.textContent = targetURL;
-      
-      
-      link.style.display = "block";
-
-      content.document.body.appendChild(link);
-
-      await EventUtils.synthesizeMouse(link, 1, 1, {}, content);
-    }
-  );
+  await BrowserTestUtils.synthesizeMouseAtCenter("a[href]", {}, browser);
 }
 
 
@@ -217,27 +152,14 @@ async function waitForRecordBounces(browser) {
 
 
 
-
-
-
-
-
-
-
-
-
 async function runTestBounce(options = {}) {
   let {
     bounceType,
     setState = null,
-    setStateSameSiteFrame = false,
-    setStateInWebWorker = false,
-    setStateInNestedWebWorker = false,
     expectCandidate = true,
     expectPurge = true,
     originAttributes = {},
     postBounceCallback = () => {},
-    skipSiteDataCleanup = false,
   } = options;
   info(`runTestBounce ${JSON.stringify(options)}`);
 
@@ -286,14 +208,7 @@ async function runTestBounce(options = {}) {
   
   await navigateLinkClick(
     browser,
-    getBounceURL({
-      bounceType,
-      targetURL,
-      setState,
-      setStateSameSiteFrame,
-      setStateInWebWorker,
-      setStateInNestedWebWorker,
-    })
+    getBounceURL({ bounceType, targetURL, setState })
   );
 
   
@@ -357,7 +272,4 @@ async function runTestBounce(options = {}) {
     );
   }
   bounceTrackingProtection.clearAll();
-  if (!skipSiteDataCleanup) {
-    await SiteDataTestUtils.clear();
-  }
 }

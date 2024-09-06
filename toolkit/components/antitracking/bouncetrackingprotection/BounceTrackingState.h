@@ -45,7 +45,7 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   static already_AddRefed<BounceTrackingState> GetOrCreate(
-      dom::BrowsingContextWebProgress* aWebProgress, nsresult& aRv);
+      dom::BrowsingContextWebProgress* aWebProgress);
 
   
   
@@ -81,9 +81,6 @@ class BounceTrackingState : public nsIWebProgressListener,
       dom::CanonicalBrowsingContext* aBrowsingContext);
 
   
-  static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
-
-  
   
   
   
@@ -102,15 +99,9 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   nsCString Describe();
 
-  
-  
-  nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
-
  private:
   explicit BounceTrackingState();
   virtual ~BounceTrackingState();
-
-  bool mIsInitialized{false};
 
   uint64_t mBrowserId{};
 
@@ -148,6 +139,12 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   nsresult OnDocumentLoaded(nsIPrincipal* aDocumentPrincipal);
+
+  
+
+  
+  
+  nsresult OnStorageAccess();
 
   
   
