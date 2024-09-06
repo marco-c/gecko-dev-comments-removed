@@ -2,8 +2,8 @@
 
 
 
-from mozbuild.util import ReadOnlyDict
 from taskgraph.task import Task
+from taskgraph.util.readonlydict import ReadOnlyDict
 
 immutable_types = {int, float, bool, str, type(None), ReadOnlyDict}
 
