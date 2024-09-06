@@ -119,6 +119,17 @@ class TracerActor extends Actor {
       return;
     }
 
+    
+    
+    
+    
+    if (
+      this.targetActor.window &&
+      !this.targetActor.window.windowGlobalChild?.isProcessRoot
+    ) {
+      return;
+    }
+
     this.logMethod = options.logMethod || LOG_METHODS.STDOUT;
 
     if (this.logMethod == LOG_METHODS.PROFILER) {
