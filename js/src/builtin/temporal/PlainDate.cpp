@@ -1139,6 +1139,33 @@ bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
 
 
 bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
+                           const PlainDate& date, const DateDuration& duration,
+                           PlainDate* result) {
+  
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
+  
+
+  
+  if (HasYearsMonthsOrWeeks(duration)) {
+    return temporal::CalendarDateAdd(cx, calendar, date, duration, result);
+  }
+
+  
+  auto overflow = TemporalOverflow::Constrain;
+
+  
+  auto normalized = NormalizedDuration{duration};
+
+  
+  return ::AddDate(cx, date, normalized, overflow, result);
+}
+
+
+
+
+bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
                            Handle<Wrapped<PlainDateObject*>> date,
                            const DateDuration& duration, PlainDate* result) {
   
@@ -1660,28 +1687,35 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   }
 
   
+
+  
   bool roundingGranularityIsNoop = settings.smallestUnit == TemporalUnit::Day &&
                                    settings.roundingIncrement == Increment{1};
 
   
   if (!roundingGranularityIsNoop) {
     
-    NormalizedDuration roundResult;
-    if (!temporal::RoundDuration(cx, {difference, {}},
-                                 settings.roundingIncrement,
-                                 settings.smallestUnit, settings.roundingMode,
-                                 temporalDate, calendar, &roundResult)) {
-      return false;
-    }
+    auto duration = NormalizedDuration{difference, {}};
 
     
-    DateDuration balanceResult;
-    if (!temporal::BalanceDateDurationRelative(
-            cx, roundResult.date, settings.largestUnit, settings.smallestUnit,
-            temporalDate, calendar, &balanceResult)) {
+    auto otherDateTime = PlainDateTime{otherDate, {}};
+    auto destEpochNs = GetUTCEpochNanoseconds(otherDateTime);
+
+    
+    auto dateTime = PlainDateTime{ToPlainDate(temporalDate), {}};
+
+    
+    Rooted<TimeZoneRecord> timeZone(cx, TimeZoneRecord{});
+    RoundedRelativeDuration relative;
+    if (!RoundRelativeDuration(
+            cx, duration, destEpochNs, dateTime, calendar, timeZone,
+            settings.largestUnit, settings.roundingIncrement,
+            settings.smallestUnit, settings.roundingMode, &relative)) {
       return false;
     }
-    difference = balanceResult;
+    MOZ_ASSERT(IsValidDuration(relative.duration));
+
+    difference = relative.duration.toDateDuration();
   }
 
   

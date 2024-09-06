@@ -191,6 +191,14 @@ int64_t RoundNumberToIncrement(int64_t x, int64_t increment,
 
 
 
+inline int64_t RoundNumberToIncrement(int64_t x, Increment increment,
+                                      TemporalRoundingMode roundingMode) {
+  return RoundNumberToIncrement(x, int64_t(increment.value()), roundingMode);
+}
+
+
+
+
 Int128 RoundNumberToIncrement(const Int128& x, const Int128& increment,
                               TemporalRoundingMode roundingMode);
 

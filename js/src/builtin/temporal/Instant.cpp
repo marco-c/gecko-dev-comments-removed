@@ -595,7 +595,7 @@ NormalizedTimeDuration js::temporal::DifferenceInstant(
   MOZ_ASSERT(IsValidInstantSpan(diff.to<InstantSpan>()));
 
   
-  return RoundDuration(diff, roundingIncrement, smallestUnit, roundingMode);
+  return RoundTimeDuration(diff, roundingIncrement, smallestUnit, roundingMode);
 }
 
 

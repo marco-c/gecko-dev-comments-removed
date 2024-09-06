@@ -781,9 +781,6 @@ RoundedTime js::temporal::RoundTime(const PlainTime& time, Increment increment,
   auto [hour, minute, second, millisecond, microsecond, nanosecond] = time;
 
   
-  
-
-  
   PlainTime quantity;
   int32_t* result;
   switch (unit) {
@@ -950,8 +947,8 @@ static bool DifferenceTemporalPlainTime(JSContext* cx,
   if (settings.smallestUnit != TemporalUnit::Nanosecond ||
       settings.roundingIncrement != Increment{1}) {
     
-    diff = RoundDuration(diff, settings.roundingIncrement,
-                         settings.smallestUnit, settings.roundingMode);
+    diff = RoundTimeDuration(diff, settings.roundingIncrement,
+                             settings.smallestUnit, settings.roundingMode);
   }
 
   

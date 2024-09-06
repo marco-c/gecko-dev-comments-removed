@@ -924,12 +924,6 @@ static bool DifferencePlainDateTimeWithRounding(
   MOZ_ASSERT(ISODateTimeWithinLimits(two));
 
   
-  
-  
-
-  
-
-  
   if (one == two) {
     
     *result = {};
@@ -974,57 +968,24 @@ static bool DifferencePlainDateTimeWithRounding(
   }
 
   
-  
-  
-  Rooted<PlainDateObject*> relativeTo(
-      cx, CreateTemporalDate(cx, one.date, calendar.receiver()));
-  if (!relativeTo) {
-    return false;
-  }
+  const auto& dateTime = one;
 
   
-  NormalizedDuration roundResult;
-  if (!temporal::RoundDuration(cx, diff, settings.roundingIncrement,
-                               settings.smallestUnit, settings.roundingMode,
-                               relativeTo, calendar, &roundResult)) {
-    return false;
-  }
+  auto destEpochNs = GetUTCEpochNanoseconds(two);
 
   
-  NormalizedTimeDuration withDays;
-  if (!Add24HourDaysToNormalizedTimeDuration(
-          cx, roundResult.time, roundResult.date.days, &withDays)) {
+  Rooted<TimeZoneRecord> timeZone(cx, TimeZoneRecord{});
+  RoundedRelativeDuration relative;
+  if (!RoundRelativeDuration(cx, diff, destEpochNs, dateTime, calendar,
+                             timeZone, settings.largestUnit,
+                             settings.roundingIncrement, settings.smallestUnit,
+                             settings.roundingMode, &relative)) {
     return false;
   }
+  MOZ_ASSERT(IsValidDuration(relative.duration));
 
-  
-  TimeDuration balancedTime;
-  if (!BalanceTimeDuration(cx, withDays, settings.largestUnit, &balancedTime)) {
-    return false;
-  }
-
-  
-  auto toBalance = DateDuration{
-      roundResult.date.years,
-      roundResult.date.months,
-      roundResult.date.weeks,
-      balancedTime.days,
-  };
-  DateDuration balancedDate;
-  if (!temporal::BalanceDateDurationRelative(
-          cx, toBalance, settings.largestUnit, settings.smallestUnit,
-          relativeTo, calendar, &balancedDate)) {
-    return false;
-  }
-
-  *result = {
-      double(balancedDate.years),   double(balancedDate.months),
-      double(balancedDate.weeks),   double(balancedDate.days),
-      double(balancedTime.hours),   double(balancedTime.minutes),
-      double(balancedTime.seconds), double(balancedTime.milliseconds),
-      balancedTime.microseconds,    balancedTime.nanoseconds,
-  };
-  return ThrowIfInvalidDuration(cx, *result);
+  *result = relative.duration;
+  return true;
 }
 
 
@@ -1038,6 +999,67 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
     Duration* result) {
   return ::DifferencePlainDateTimeWithRounding(cx, one, two, calendar, settings,
                                                nullptr, result);
+}
+
+
+
+
+
+
+bool js::temporal::DifferencePlainDateTimeWithRounding(
+    JSContext* cx, const PlainDateTime& one, const PlainDateTime& two,
+    Handle<CalendarRecord> calendar, TemporalUnit unit, double* result) {
+  
+  MOZ_ASSERT(ISODateTimeWithinLimits(one));
+  MOZ_ASSERT(ISODateTimeWithinLimits(two));
+
+  
+  if (one == two) {
+    
+    *result = 0;
+    return true;
+  }
+
+  
+  NormalizedDuration diff;
+  if (!DifferenceISODateTime(cx, one, two, calendar, unit, &diff)) {
+    return false;
+  }
+
+  
+  if (unit == TemporalUnit::Nanosecond) {
+    
+    NormalizedTimeDuration withDays;
+    if (!Add24HourDaysToNormalizedTimeDuration(cx, diff.time, diff.date.days,
+                                               &withDays)) {
+      return false;
+    }
+
+    
+
+    
+    *result = double(withDays.toNanoseconds());
+    return true;
+  }
+
+  
+  const auto& dateTime = one;
+
+  
+  auto destEpochNs = GetUTCEpochNanoseconds(two);
+
+  
+  Rooted<TimeZoneRecord> timeZone(cx, TimeZoneRecord{});
+  RoundedRelativeDuration relative;
+  if (!RoundRelativeDuration(cx, diff, destEpochNs, dateTime, calendar,
+                             timeZone, unit, Increment{1}, unit,
+                             TemporalRoundingMode::Trunc, &relative)) {
+    return false;
+  }
+  MOZ_ASSERT(!std::isnan(relative.total));
+
+  *result = relative.total;
+  return true;
 }
 
 
