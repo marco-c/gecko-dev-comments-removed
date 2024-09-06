@@ -8,7 +8,6 @@
 
 #include <jxl/cms_interface.h>
 
-#include "lib/jxl/ac_strategy.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/rect.h"
 #include "lib/jxl/base/status.h"
@@ -25,6 +24,7 @@
 namespace jxl {
 
 struct AuxOut;
+class AcStrategyImage;
 
 
 

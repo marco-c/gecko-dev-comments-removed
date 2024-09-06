@@ -196,79 +196,87 @@ Status GatherTreeData(const Image &image, pixel_type chan, size_t group_id,
 }
 
 Tree PredefinedTree(ModularOptions::TreeKind tree_kind, size_t total_pixels) {
-  if (tree_kind == ModularOptions::TreeKind::kJpegTranscodeACMeta ||
-      tree_kind == ModularOptions::TreeKind::kTrivialTreeNoPredictor) {
-    
-    return {PropertyDecisionNode::Leaf(Predictor::Zero)};
-  }
-  if (tree_kind == ModularOptions::TreeKind::kFalconACMeta) {
-    
-    return {PropertyDecisionNode::Leaf(Predictor::Left)};
-  }
-  if (tree_kind == ModularOptions::TreeKind::kACMeta) {
-    
-    if (total_pixels < 1024) {
+  switch (tree_kind) {
+    case ModularOptions::TreeKind::kJpegTranscodeACMeta:
+      
+      return {PropertyDecisionNode::Leaf(Predictor::Zero)};
+    case ModularOptions::TreeKind::kTrivialTreeNoPredictor:
+      
+      return {PropertyDecisionNode::Leaf(Predictor::Zero)};
+    case ModularOptions::TreeKind::kFalconACMeta:
+      
+      
       return {PropertyDecisionNode::Leaf(Predictor::Left)};
+    case ModularOptions::TreeKind::kACMeta: {
+      
+      if (total_pixels < 1024) {
+        return {PropertyDecisionNode::Leaf(Predictor::Left)};
+      }
+      Tree tree;
+      
+      tree.push_back(PropertyDecisionNode::Split(0, 1, 1));
+      
+      tree.push_back(PropertyDecisionNode::Split(0, 2, 3));
+      
+      tree.push_back(PropertyDecisionNode::Split(0, 0, 5));
+      
+      tree.push_back(PropertyDecisionNode::Split(6, 3, 21));
+      
+      tree.push_back(PropertyDecisionNode::Split(2, 0, 7));
+      
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Gradient));
+      
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Gradient));
+      
+      tree.push_back(PropertyDecisionNode::Split(7, 5, 9));
+      
+      
+      tree.push_back(PropertyDecisionNode::Split(7, 5, 15));
+      
+      tree.push_back(PropertyDecisionNode::Split(7, 11, 11));
+      tree.push_back(PropertyDecisionNode::Split(7, 3, 13));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Left));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Left));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Left));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Left));
+      
+      tree.push_back(PropertyDecisionNode::Split(7, 11, 17));
+      tree.push_back(PropertyDecisionNode::Split(7, 3, 19));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
+      
+      tree.push_back(PropertyDecisionNode::Split(7, 3, 23));
+      tree.push_back(PropertyDecisionNode::Split(7, 3, 25));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
+      tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
+      return tree;
     }
-    Tree tree;
-    
-    tree.push_back(PropertyDecisionNode::Split(0, 1, 1));
-    
-    tree.push_back(PropertyDecisionNode::Split(0, 2, 3));
-    
-    tree.push_back(PropertyDecisionNode::Split(0, 0, 5));
-    
-    tree.push_back(PropertyDecisionNode::Split(6, 3, 21));
-    
-    tree.push_back(PropertyDecisionNode::Split(2, 0, 7));
-    
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Gradient));
-    
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Gradient));
-    
-    tree.push_back(PropertyDecisionNode::Split(7, 5, 9));
-    
-    
-    tree.push_back(PropertyDecisionNode::Split(7, 5, 15));
-    
-    tree.push_back(PropertyDecisionNode::Split(7, 11, 11));
-    tree.push_back(PropertyDecisionNode::Split(7, 3, 13));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Left));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Left));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Left));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Left));
-    
-    tree.push_back(PropertyDecisionNode::Split(7, 11, 17));
-    tree.push_back(PropertyDecisionNode::Split(7, 3, 19));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
-    
-    tree.push_back(PropertyDecisionNode::Split(7, 3, 23));
-    tree.push_back(PropertyDecisionNode::Split(7, 3, 25));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
-    tree.push_back(PropertyDecisionNode::Leaf(Predictor::Zero));
-    return tree;
+    case ModularOptions::TreeKind::kWPFixedDC: {
+      std::vector<int32_t> cutoffs = {
+          -500, -392, -255, -191, -127, -95, -63, -47, -31, -23, -15,
+          -11,  -7,   -4,   -3,   -1,   0,   1,   3,   5,   7,   11,
+          15,   23,   31,   47,   63,   95,  127, 191, 255, 392, 500};
+      return MakeFixedTree(kWPProp, cutoffs, Predictor::Weighted, total_pixels);
+    }
+    case ModularOptions::TreeKind::kGradientFixedDC: {
+      std::vector<int32_t> cutoffs = {
+          -500, -392, -255, -191, -127, -95, -63, -47, -31, -23, -15,
+          -11,  -7,   -4,   -3,   -1,   0,   1,   3,   5,   7,   11,
+          15,   23,   31,   47,   63,   95,  127, 191, 255, 392, 500};
+      return MakeFixedTree(kGradientProp, cutoffs, Predictor::Gradient,
+                           total_pixels);
+    }
+    case ModularOptions::TreeKind::kLearn: {
+      JXL_DEBUG_ABORT("internal: kLearn is not predefined tree");
+      return {};
+    }
   }
-  if (tree_kind == ModularOptions::TreeKind::kWPFixedDC) {
-    std::vector<int32_t> cutoffs = {
-        -500, -392, -255, -191, -127, -95, -63, -47, -31, -23, -15,
-        -11,  -7,   -4,   -3,   -1,   0,   1,   3,   5,   7,   11,
-        15,   23,   31,   47,   63,   95,  127, 191, 255, 392, 500};
-    return MakeFixedTree(kWPProp, cutoffs, Predictor::Weighted, total_pixels);
-  }
-  if (tree_kind == ModularOptions::TreeKind::kGradientFixedDC) {
-    std::vector<int32_t> cutoffs = {
-        -500, -392, -255, -191, -127, -95, -63, -47, -31, -23, -15,
-        -11,  -7,   -4,   -3,   -1,   0,   1,   3,   5,   7,   11,
-        15,   23,   31,   47,   63,   95,  127, 191, 255, 392, 500};
-    return MakeFixedTree(kGradientProp, cutoffs, Predictor::Gradient,
-                         total_pixels);
-  }
-  JXL_UNREACHABLE("Unreachable");
+  JXL_DEBUG_ABORT("internal: unexpected TreeKind: %d",
+                  static_cast<int>(tree_kind));
   return {};
 }
 
@@ -529,7 +537,7 @@ Status EncodeModularChannelMAANS(const Image &image, pixel_type chan,
 }
 
 Status ModularEncode(const Image &image, const ModularOptions &options,
-                     BitWriter *writer, AuxOut *aux_out, size_t layer,
+                     BitWriter *writer, AuxOut *aux_out, LayerType layer,
                      size_t group_id, TreeSamples *tree_samples,
                      size_t *total_pixels, const Tree *tree,
                      GroupHeader *header, std::vector<Token> *tokens,
@@ -644,9 +652,9 @@ Status ModularEncode(const Image &image, const ModularOptions &options,
     
     BuildAndEncodeHistograms(memory_manager, options.histogram_params,
                              kNumTreeContexts, tree_tokens, &code, &context_map,
-                             writer, kLayerModularTree, aux_out);
-    WriteTokens(tree_tokens[0], code, context_map, 0, writer, kLayerModularTree,
-                aux_out);
+                             writer, LayerType::ModularTree, aux_out);
+    WriteTokens(tree_tokens[0], code, context_map, 0, writer,
+                LayerType::ModularTree, aux_out);
   }
 
   size_t image_width = 0;
@@ -703,11 +711,11 @@ Status ModularEncode(const Image &image, const ModularOptions &options,
 }
 
 Status ModularGenericCompress(Image &image, const ModularOptions &opts,
-                              BitWriter *writer, AuxOut *aux_out, size_t layer,
-                              size_t group_id, TreeSamples *tree_samples,
-                              size_t *total_pixels, const Tree *tree,
-                              GroupHeader *header, std::vector<Token> *tokens,
-                              size_t *width) {
+                              BitWriter *writer, AuxOut *aux_out,
+                              LayerType layer, size_t group_id,
+                              TreeSamples *tree_samples, size_t *total_pixels,
+                              const Tree *tree, GroupHeader *header,
+                              std::vector<Token> *tokens, size_t *width) {
   if (image.w == 0 || image.h == 0) return true;
   ModularOptions options = opts;  
 

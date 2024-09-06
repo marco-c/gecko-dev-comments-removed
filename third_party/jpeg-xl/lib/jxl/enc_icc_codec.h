@@ -8,22 +8,23 @@
 
 
 
-#include <cstddef>
 #include <cstdint>
 #include <vector>
 
 #include "lib/jxl/base/compiler_specific.h"
+#include "lib/jxl/base/span.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/enc_bit_writer.h"
 
 namespace jxl {
 
 struct AuxOut;
+enum class LayerType : uint8_t;
 class PaddedBytes;
 
 
-Status WriteICC(const std::vector<uint8_t>& icc, BitWriter* JXL_RESTRICT writer,
-                size_t layer, AuxOut* JXL_RESTRICT aux_out);
+Status WriteICC(Span<const uint8_t> icc, BitWriter* JXL_RESTRICT writer,
+                LayerType layer, AuxOut* JXL_RESTRICT aux_out);
 
 }  
 
