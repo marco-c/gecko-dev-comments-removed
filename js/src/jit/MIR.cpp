@@ -4176,6 +4176,37 @@ MDefinition* MToFloat16::foldsTo(TempAllocator& alloc) {
     }
   }
 
+  auto isFloat16 = [](auto* def) -> MDefinition* {
+    
+    
+    if (def->isToDouble()) {
+      def = def->toToDouble()->input();
+    } else if (def->isToFloat32()) {
+      def = def->toToFloat32()->input();
+    }
+
+    
+    if (def->isToFloat16()) {
+      return def;
+    }
+
+    
+    if (def->isLoadUnboxedScalar() &&
+        def->toLoadUnboxedScalar()->storageType() == Scalar::Float16) {
+      return def;
+    }
+    if (def->isLoadDataViewElement() &&
+        def->toLoadDataViewElement()->storageType() == Scalar::Float16) {
+      return def;
+    }
+    return nullptr;
+  };
+
+  
+  if (auto* f16 = isFloat16(in)) {
+    return f16;
+  }
+
   
   
   if (in->isToDouble()) {
