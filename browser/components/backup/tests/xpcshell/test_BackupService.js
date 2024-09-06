@@ -119,12 +119,11 @@ async function testCreateBackupHelper(sandbox, taskFn) {
 
   
   
-  
   let backupsChildren = await IOUtils.getChildren(backupsFolderPath);
   Assert.equal(
     backupsChildren.length,
-    3,
-    "There should only be 3 items in the backups folder"
+    2,
+    "There should only be 2 items in the backups folder"
   );
 
   
