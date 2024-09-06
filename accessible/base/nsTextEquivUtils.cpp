@@ -27,13 +27,35 @@ static const Accessible* sInitiatorAcc = nullptr;
 
 
 
+
+
+
+static bool sInAriaRelationTraversal = false;
+
+
+
+
+
+
+static nsTHashSet<const Accessible*> sReferencedAccs;
+
+
+
+
 nsresult nsTextEquivUtils::GetNameFromSubtree(
     const LocalAccessible* aAccessible, nsAString& aName) {
   aName.Truncate();
 
-  if (sInitiatorAcc) return NS_OK;
+  if (sReferencedAccs.Contains(aAccessible)) {
+    return NS_OK;
+  }
 
-  sInitiatorAcc = aAccessible;
+  
+  if (sReferencedAccs.IsEmpty()) {
+    sInitiatorAcc = aAccessible;
+  }
+  sReferencedAccs.Insert(aAccessible);
+
   if (GetRoleRule(aAccessible->Role()) == eNameFromSubtreeRule) {
     
     if (aAccessible->IsContent()) {
@@ -44,7 +66,13 @@ nsresult nsTextEquivUtils::GetNameFromSubtree(
     }
   }
 
-  sInitiatorAcc = nullptr;
+  
+  
+  
+  if (aAccessible == sInitiatorAcc) {
+    sReferencedAccs.Clear();
+    sInitiatorAcc = nullptr;
+  }
 
   return NS_OK;
 }
@@ -52,6 +80,16 @@ nsresult nsTextEquivUtils::GetNameFromSubtree(
 nsresult nsTextEquivUtils::GetTextEquivFromIDRefs(
     const LocalAccessible* aAccessible, nsAtom* aIDRefsAttr,
     nsAString& aTextEquiv) {
+  
+  
+  
+  const bool isAriaTraversal = aIDRefsAttr == nsGkAtoms::aria_labelledby ||
+                               aIDRefsAttr == nsGkAtoms::aria_describedby;
+  if ((sInAriaRelationTraversal && isAriaTraversal) ||
+      sReferencedAccs.Contains(aAccessible)) {
+    return NS_OK;
+  }
+
   aTextEquiv.Truncate();
 
   nsIContent* content = aAccessible->GetContent();
@@ -62,7 +100,18 @@ nsresult nsTextEquivUtils::GetTextEquivFromIDRefs(
   while ((refContent = iter.NextElem())) {
     if (!aTextEquiv.IsEmpty()) aTextEquiv += ' ';
 
-    if (refContent->IsHTMLElement(nsGkAtoms::slot)) printf("jtd idref slot\n");
+    
+    if (isAriaTraversal) {
+      sInAriaRelationTraversal = true;
+    }
+
+    
+    
+    auto onExit = MakeScopeExit([isAriaTraversal]() {
+      if (isAriaTraversal) {
+        sInAriaRelationTraversal = false;
+      }
+    });
     nsresult rv =
         AppendTextEquivFromContent(aAccessible, refContent, &aTextEquiv);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -75,21 +124,36 @@ nsresult nsTextEquivUtils::AppendTextEquivFromContent(
     const LocalAccessible* aInitiatorAcc, nsIContent* aContent,
     nsAString* aString) {
   
-  if (sInitiatorAcc) return NS_OK;
+  LocalAccessible* accessible =
+      aInitiatorAcc->Document()->GetAccessible(aContent);
+  if (sReferencedAccs.Contains(aInitiatorAcc) ||
+      sReferencedAccs.Contains(accessible)) {
+    return NS_OK;
+  }
 
-  sInitiatorAcc = aInitiatorAcc;
+  
+  if (sReferencedAccs.IsEmpty()) {
+    sInitiatorAcc = aInitiatorAcc;
+  }
+  sReferencedAccs.Insert(aInitiatorAcc);
 
   nsresult rv = NS_ERROR_FAILURE;
-  if (LocalAccessible* accessible =
-          aInitiatorAcc->Document()->GetAccessible(aContent)) {
+  if (accessible) {
     rv = AppendFromAccessible(accessible, aString);
+    sReferencedAccs.Insert(accessible);
   } else {
     
     
     rv = AppendFromDOMNode(aContent, aString);
   }
 
-  sInitiatorAcc = nullptr;
+  
+  
+  
+  if (aInitiatorAcc == sInitiatorAcc) {
+    sReferencedAccs.Clear();
+    sInitiatorAcc = nullptr;
+  }
   return rv;
 }
 
@@ -147,6 +211,10 @@ nsresult nsTextEquivUtils::AppendFromAccessibleChildren(
   uint32_t childCount = aAccessible->ChildCount();
   for (uint32_t childIdx = 0; childIdx < childCount; childIdx++) {
     Accessible* child = aAccessible->ChildAt(childIdx);
+    
+    if (sReferencedAccs.Contains(child)) {
+      continue;
+    }
     rv = AppendFromAccessible(child, aString);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -238,45 +306,26 @@ nsresult nsTextEquivUtils::AppendFromValue(Accessible* aAccessible,
   
   
 
-  nsAutoString text;
-  if (aAccessible != sInitiatorAcc) {
-    
-    
-    if (aAccessible->IsListControl()) {
-      Accessible* selected = aAccessible->GetSelectedItem(0);
-      if (selected) {
-        nsresult rv = AppendFromAccessible(selected, &text);
-        NS_ENSURE_SUCCESS(rv, rv);
-        return AppendString(aString, text) ? NS_OK
-                                           : NS_OK_NO_NAME_CLAUSE_HANDLED;
-      }
-      return NS_ERROR_FAILURE;
-    }
-
-    aAccessible->Value(text);
-
-    return AppendString(aString, text) ? NS_OK : NS_OK_NO_NAME_CLAUSE_HANDLED;
+  if (aAccessible == sInitiatorAcc) {
+    return NS_OK_NO_NAME_CLAUSE_HANDLED;
   }
 
   
-  if (aAccessible->IsDoc()) return NS_ERROR_UNEXPECTED;
-
-  for (Accessible* next = aAccessible->NextSibling(); next;
-       next = next->NextSibling()) {
-    if (!IsWhitespaceLeaf(next)) {
-      for (Accessible* prev = aAccessible->PrevSibling(); prev;
-           prev = prev->PrevSibling()) {
-        if (!IsWhitespaceLeaf(prev)) {
-          aAccessible->Value(text);
-
-          return AppendString(aString, text) ? NS_OK
-                                             : NS_OK_NO_NAME_CLAUSE_HANDLED;
-        }
-      }
+  
+  nsAutoString text;
+  if (aAccessible->IsListControl()) {
+    Accessible* selected = aAccessible->GetSelectedItem(0);
+    if (selected) {
+      nsresult rv = AppendFromAccessible(selected, &text);
+      NS_ENSURE_SUCCESS(rv, rv);
+      return AppendString(aString, text) ? NS_OK : NS_OK_NO_NAME_CLAUSE_HANDLED;
     }
+    return NS_ERROR_FAILURE;
   }
 
-  return NS_OK_NO_NAME_CLAUSE_HANDLED;
+  aAccessible->Value(text);
+
+  return AppendString(aString, text) ? NS_OK : NS_OK_NO_NAME_CLAUSE_HANDLED;
 }
 
 nsresult nsTextEquivUtils::AppendFromDOMNode(nsIContent* aContent,
