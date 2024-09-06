@@ -1683,10 +1683,19 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+
+  enum class InsertTextTo {
+    ExistingTextNodeIfAvailable,
+    ExistingTextNodeIfAvailableAndNotStart,
+    AlwaysCreateNewTextNode
+  };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<InsertTextResult, nsresult>
   InsertTextWithTransaction(Document& aDocument,
                             const nsAString& aStringToInsert,
-                            const EditorDOMPoint& aPointToInsert);
+                            const EditorDOMPoint& aPointToInsert,
+                            InsertTextTo aInsertTextTo);
 
   
 
