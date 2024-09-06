@@ -398,39 +398,35 @@ void MediaEngineWebRTCMicrophoneSource::GetSettings(
 }
 
 AudioInputProcessing::AudioInputProcessing(uint32_t aMaxChannelCount)
-    : mAudioProcessing(AudioProcessingBuilder().Create().release()),
-      mRequestedInputChannelCount(aMaxChannelCount),
-      mSkipProcessing(false),
-      mInputDownmixBuffer(MAX_SAMPLING_FREQ * MAX_CHANNELS / 100),
+    : mInputDownmixBuffer(MAX_SAMPLING_FREQ * MAX_CHANNELS / 100),
       mEnabled(false),
       mEnded(false),
-      mPacketCount(0) {}
+      mPacketCount(0) {
+  mSettings.mChannels = static_cast<int32_t>(std::min<uint32_t>(
+      std::numeric_limits<int32_t>::max(), aMaxChannelCount));
+}
 
 void AudioInputProcessing::Disconnect(MediaTrackGraph* aGraph) {
   
   aGraph->AssertOnGraphThread();
 }
 
-bool AudioInputProcessing::PassThrough(MediaTrackGraph* aGraph) const {
+bool AudioInputProcessing::IsPassThrough(MediaTrackGraph* aGraph) const {
   aGraph->AssertOnGraphThread();
-  return mSkipProcessing;
+  
+  
+  return !(mSettings.mAecOn || mSettings.mAgcOn || mSettings.mNoiseOn);
 }
 
-void AudioInputProcessing::SetPassThrough(MediaTrackGraph* aGraph,
-                                          bool aPassThrough) {
+void AudioInputProcessing::PassThroughChanged(MediaTrackGraph* aGraph) {
   aGraph->AssertOnGraphThread();
-
-  if (aPassThrough == mSkipProcessing) {
-    return;
-  }
-  mSkipProcessing = aPassThrough;
 
   if (!mEnabled) {
     MOZ_ASSERT(!mPacketizerInput);
     return;
   }
 
-  if (aPassThrough) {
+  if (IsPassThrough(aGraph)) {
     
     
     ResetAudioProcessing(aGraph);
@@ -442,14 +438,11 @@ void AudioInputProcessing::SetPassThrough(MediaTrackGraph* aGraph,
 }
 
 uint32_t AudioInputProcessing::GetRequestedInputChannelCount() {
-  return mRequestedInputChannelCount;
+  return mSettings.mChannels;
 }
 
-void AudioInputProcessing::SetRequestedInputChannelCount(
-    MediaTrackGraph* aGraph, CubebUtils::AudioDeviceID aDeviceId,
-    uint32_t aRequestedInputChannelCount) {
-  mRequestedInputChannelCount = aRequestedInputChannelCount;
-
+void AudioInputProcessing::RequestedInputChannelCountChanged(
+    MediaTrackGraph* aGraph, CubebUtils::AudioDeviceID aDeviceId) {
   aGraph->ReevaluateInputDevice(aDeviceId);
 }
 
@@ -460,10 +453,6 @@ void AudioInputProcessing::Start(MediaTrackGraph* aGraph) {
     return;
   }
   mEnabled = true;
-
-  if (mSkipProcessing) {
-    return;
-  }
 
   MOZ_ASSERT(!mPacketizerInput);
 }
@@ -477,7 +466,7 @@ void AudioInputProcessing::Stop(MediaTrackGraph* aGraph) {
 
   mEnabled = false;
 
-  if (mSkipProcessing) {
+  if (IsPassThrough(aGraph)) {
     return;
   }
 
@@ -618,7 +607,7 @@ void AudioInputProcessing::Process(MediaTrackGraph* aGraph, GraphTime aFrom,
   MOZ_ASSERT(aInput->GetDuration() == need,
              "Wrong data length from input port source");
 
-  if (PassThrough(aGraph)) {
+  if (IsPassThrough(aGraph)) {
     LOG_FRAME(
         "(Graph %p, Driver %p) AudioInputProcessing %p Forwarding %" PRId64
         " frames of input data to output directly (PassThrough)",
@@ -631,7 +620,7 @@ void AudioInputProcessing::Process(MediaTrackGraph* aGraph, GraphTime aFrom,
   
   
   
-  EnsurePacketizer(aGraph, mRequestedInputChannelCount);
+  EnsurePacketizer(aGraph);
 
   
   MOZ_ASSERT(static_cast<uint32_t>(mSegment.GetDuration()) +
@@ -673,7 +662,7 @@ void AudioInputProcessing::ProcessOutputData(MediaTrackGraph* aGraph,
   MOZ_ASSERT(aChunk.ChannelCount() > 0);
   aGraph->AssertOnGraphThread();
 
-  if (!mEnabled || PassThrough(aGraph)) {
+  if (!mEnabled || IsPassThrough(aGraph)) {
     return;
   }
 
@@ -715,6 +704,7 @@ void AudioInputProcessing::ProcessOutputData(MediaTrackGraph* aGraph,
 
     if (mOutputBufferFrameCount == framesPerPacket) {
       
+      EnsureAudioProcessing(aGraph);
       for (uint32_t channel = 0; channel < channelCount; channel++) {
         channelPtrs[channel] = &mOutputBuffer[channel * framesPerPacket];
       }
@@ -733,7 +723,7 @@ void AudioInputProcessing::ProcessOutputData(MediaTrackGraph* aGraph,
 
 void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraph* aGraph,
                                                const AudioSegment& aSegment) {
-  MOZ_ASSERT(!PassThrough(aGraph),
+  MOZ_ASSERT(!IsPassThrough(aGraph),
              "This should be bypassed when in PassThrough mode.");
   MOZ_ASSERT(mEnabled);
   MOZ_ASSERT(mPacketizerInput);
@@ -841,6 +831,7 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraph* aGraph,
     StreamConfig inputConfig(aGraph->GraphRate(), channelCountInput);
     StreamConfig outputConfig = inputConfig;
 
+    EnsureAudioProcessing(aGraph);
     
     mAudioProcessing->set_stream_delay_ms(0);
 
@@ -959,7 +950,9 @@ void AudioInputProcessing::DeviceChanged(MediaTrackGraph* aGraph) {
   aGraph->AssertOnGraphThread();
 
   
-  mAudioProcessing->Initialize();
+  if (mAudioProcessing) {
+    mAudioProcessing->Initialize();
+  }
   LOG_FRAME(
       "(Graph %p, Driver %p) AudioInputProcessing %p Reinitializing audio "
       "processing",
@@ -971,13 +964,22 @@ void AudioInputProcessing::ApplySettings(MediaTrackGraph* aGraph,
                                          const MediaEnginePrefs& aSettings) {
   TRACE("AudioInputProcessing::ApplySettings");
   aGraph->AssertOnGraphThread();
-  mAudioProcessing->ApplyConfig(ConfigForPrefs(aSettings));
-  SetRequestedInputChannelCount(aGraph, aDeviceID, aSettings.mChannels);
+
   
-  
-  bool passThrough =
-      !(aSettings.mAecOn || aSettings.mAgcOn || aSettings.mNoiseOn);
-  SetPassThrough(aGraph, passThrough);
+  uint32_t oldChannelCount = GetRequestedInputChannelCount();
+  bool wasPassThrough = IsPassThrough(aGraph);
+
+  mSettings = aSettings;
+  if (mAudioProcessing) {
+    mAudioProcessing->ApplyConfig(ConfigForPrefs(aSettings));
+  }
+
+  if (oldChannelCount != GetRequestedInputChannelCount()) {
+    RequestedInputChannelCountChanged(aGraph, aDeviceID);
+  }
+  if (wasPassThrough != IsPassThrough(aGraph)) {
+    PassThroughChanged(aGraph);
+  }
 }
 
 void AudioInputProcessing::End() {
@@ -991,14 +993,14 @@ TrackTime AudioInputProcessing::NumBufferedFrames(
   return mSegment.GetDuration();
 }
 
-void AudioInputProcessing::EnsurePacketizer(MediaTrackGraph* aGraph,
-                                            uint32_t aChannels) {
+void AudioInputProcessing::EnsurePacketizer(MediaTrackGraph* aGraph) {
   aGraph->AssertOnGraphThread();
-  MOZ_ASSERT(aChannels > 0);
   MOZ_ASSERT(mEnabled);
-  MOZ_ASSERT(!mSkipProcessing);
+  MOZ_ASSERT(!IsPassThrough(aGraph));
 
-  if (mPacketizerInput && mPacketizerInput->mChannels == aChannels) {
+  uint32_t channelCount = GetRequestedInputChannelCount();
+  MOZ_ASSERT(channelCount > 0);
+  if (mPacketizerInput && mPacketizerInput->mChannels == channelCount) {
     return;
   }
 
@@ -1016,7 +1018,7 @@ void AudioInputProcessing::EnsurePacketizer(MediaTrackGraph* aGraph,
     mChunksInPacketizer.clear();
   }
 
-  mPacketizerInput.emplace(GetPacketSize(aGraph->GraphRate()), aChannels);
+  mPacketizerInput.emplace(GetPacketSize(aGraph->GraphRate()), channelCount);
 
   if (needPreBuffering) {
     LOG_FRAME(
@@ -1031,9 +1033,21 @@ void AudioInputProcessing::EnsurePacketizer(MediaTrackGraph* aGraph,
   }
 }
 
+void AudioInputProcessing::EnsureAudioProcessing(MediaTrackGraph* aGraph) {
+  aGraph->AssertOnGraphThread();
+
+  if (!mAudioProcessing) {
+    TRACE("AudioProcessing creation");
+    mAudioProcessing.reset(AudioProcessingBuilder()
+                               .SetConfig(ConfigForPrefs(mSettings))
+                               .Create()
+                               .release());
+  }
+}
+
 void AudioInputProcessing::ResetAudioProcessing(MediaTrackGraph* aGraph) {
   aGraph->AssertOnGraphThread();
-  MOZ_ASSERT(mSkipProcessing || !mEnabled);
+  MOZ_ASSERT(IsPassThrough(aGraph) || !mEnabled);
   MOZ_ASSERT(mPacketizerInput);
 
   LOG_FRAME(
@@ -1043,7 +1057,9 @@ void AudioInputProcessing::ResetAudioProcessing(MediaTrackGraph* aGraph) {
 
   
   
-  mAudioProcessing->Initialize();
+  if (mAudioProcessing) {
+    mAudioProcessing->Initialize();
+  }
 
   MOZ_ASSERT(static_cast<uint32_t>(mSegment.GetDuration()) +
                  mPacketizerInput->FramesAvailable() ==
