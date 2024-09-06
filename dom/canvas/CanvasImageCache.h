@@ -14,7 +14,7 @@
 namespace mozilla {
 namespace dom {
 class Element;
-class CanvasRenderingContext2D;
+class HTMLCanvasElement;
 }  
 namespace gfx {
 class DrawTarget;
@@ -36,16 +36,11 @@ class CanvasImageCache {
 
 
   static void NotifyDrawImage(dom::Element* aImage,
-                              dom::CanvasRenderingContext2D* aContext,
+                              dom::HTMLCanvasElement* aCanvas,
                               gfx::DrawTarget* aTarget, SourceSurface* aSource,
                               const gfx::IntSize& aSize,
                               const gfx::IntSize& aIntrinsicSize,
                               const Maybe<gfx::IntRect>& aCropRect);
-
-  
-
-
-  static void NotifyCanvasDestroyed(dom::CanvasRenderingContext2D* aContext);
 
   
 
@@ -59,7 +54,7 @@ class CanvasImageCache {
 
 
   static SourceSurface* LookupCanvas(dom::Element* aImage,
-                                     dom::CanvasRenderingContext2D* aContext,
+                                     dom::HTMLCanvasElement* aCanvas,
                                      gfx::DrawTarget* aTarget,
                                      gfx::IntSize* aSizeOut,
                                      gfx::IntSize* aIntrinsicSizeOut,
