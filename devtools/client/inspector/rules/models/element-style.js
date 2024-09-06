@@ -299,6 +299,7 @@ class ElementStyle {
 
 
 
+  
   updateDeclarations(pseudo = "") {
     
     const textProps = this._getDeclarations(pseudo);
@@ -330,9 +331,13 @@ class ElementStyle {
     
     
     const taken = new Map();
+    const takenInStartingStyle = new Map();
     for (const textProp of textProps) {
       for (const computedProp of textProp.computed) {
         const earlier = taken.get(computedProp.name);
+        const earlierInStartingStyle = takenInStartingStyle.get(
+          computedProp.name
+        );
 
         
         
@@ -344,36 +349,56 @@ class ElementStyle {
           continue;
         }
 
-        let overridden;
-        if (
-          earlier &&
-          computedProp.priority === "important" &&
-          (earlier.priority !== "important" ||
-            
-            
-            (computedProp.textProp.rule?.isInLayer() &&
-              computedProp.textProp.rule.isInDifferentLayer(
-                earlier.textProp.rule
-              ))) &&
-          
-          computedProp.textProp.rule.inherited ==
-            earlier.textProp.rule.inherited
-        ) {
+        const isPropInStartingStyle =
+          computedProp.textProp.rule?.isInStartingStyle();
+
+        const hasHigherPriority = this._hasHigherPriorityThanEarlierProp(
+          computedProp,
+          earlier
+        );
+        const startingStyleHasHigherPriority =
+          this._hasHigherPriorityThanEarlierProp(
+            computedProp,
+            earlierInStartingStyle
+          );
+
+        
+        
+        if (hasHigherPriority && !isPropInStartingStyle) {
           
           
           earlier._overriddenDirty = !earlier._overriddenDirty;
           earlier.overridden = true;
-          overridden = false;
-        } else {
-          overridden = !!earlier;
         }
+
+        
+        
+        if (startingStyleHasHigherPriority) {
+          earlierInStartingStyle._overriddenDirty =
+            !earlierInStartingStyle._overriddenDirty;
+          earlierInStartingStyle.overridden = true;
+        }
+
+        
+        
+        
+        
+        const overridden =
+          (!!earlier && !hasHigherPriority) ||
+          (isPropInStartingStyle &&
+            !!earlierInStartingStyle &&
+            !startingStyleHasHigherPriority);
 
         computedProp._overriddenDirty =
           !!computedProp.overridden !== overridden;
         computedProp.overridden = overridden;
 
         if (!computedProp.overridden && computedProp.textProp.enabled) {
-          taken.set(computedProp.name, computedProp);
+          if (isPropInStartingStyle) {
+            takenInStartingStyle.set(computedProp.name, computedProp);
+          } else {
+            taken.set(computedProp.name, computedProp);
+          }
 
           
           
@@ -384,6 +409,7 @@ class ElementStyle {
             isCssVariable(computedProp.name) &&
             !computedProp.textProp.invisible
           ) {
+            
             variables.set(computedProp.name, computedProp.value);
           }
         }
@@ -422,6 +448,32 @@ class ElementStyle {
         textProp.editor.updatePropertyState();
       }
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+  _hasHigherPriorityThanEarlierProp(computedProp, earlierProp) {
+    return (
+      earlierProp &&
+      computedProp.priority === "important" &&
+      (earlierProp.priority !== "important" ||
+        
+        
+        (computedProp.textProp.rule?.isInLayer() &&
+          computedProp.textProp.rule.isInDifferentLayer(
+            earlierProp.textProp.rule
+          ))) &&
+      
+      computedProp.textProp.rule.inherited ==
+        earlierProp.textProp.rule.inherited
+    );
   }
 
   

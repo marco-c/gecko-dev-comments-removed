@@ -883,6 +883,15 @@ class Rule {
   
 
 
+  isInStartingStyle() {
+    return this.domRule.ancestorData.some(
+      ({ type }) => type === "starting-style"
+    );
+  }
+
+  
+
+
 
 
   hasAnyVisibleProperties() {
