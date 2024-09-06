@@ -1413,6 +1413,8 @@ class Editor extends EventEmitter {
 
 
 
+
+
   setLineGutterMarkers(markers) {
     const cm = editors.get(this);
 
@@ -1443,12 +1445,23 @@ class Editor extends EventEmitter {
     
     
     class LineGutterMarker extends GutterMarker {
-      constructor(className, lineNumber, createElementNode) {
+      constructor(className, lineNumber, createElementNode, conditionResult) {
         super();
         this.elementClass = className || null;
+        this.lineNumber = lineNumber;
+        this.createElementNode = createElementNode;
+        this.conditionResult = conditionResult;
+
         this.toDOM = createElementNode
-          ? () => createElementNode(lineNumber)
+          ? () => createElementNode(lineNumber, conditionResult)
           : null;
+      }
+
+      eq(marker) {
+        return (
+          marker.lineNumber == this.lineNumber &&
+          marker.conditionResult == this.conditionResult
+        );
       }
     }
 
@@ -1468,14 +1481,16 @@ class Editor extends EventEmitter {
         if (typeof condition !== "function") {
           throw new Error("The `condition` is not a valid function");
         }
-        if (condition(line.number)) {
+        const conditionResult = condition(line.number);
+        if (conditionResult !== false) {
           builder.add(
             line.from,
             line.to,
             new LineGutterMarker(
               lineClassName,
               line.number,
-              createLineElementNode
+              createLineElementNode,
+              conditionResult
             )
           );
         }
