@@ -22,12 +22,30 @@ class IndexSearch(OptimizationStrategy):
 
     fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
 
-    def should_replace_task(self, task, params, deadline, index_paths):
+    def should_replace_task(self, task, params, deadline, arg):
         "Look for a task with one of the given index paths"
+        batched = False
+        
+        label_to_taskid = {}
+        taskid_to_status = {}
+
+        if isinstance(arg, tuple) and len(arg) == 3:
+            
+            
+            index_paths, label_to_taskid, taskid_to_status = arg
+            batched = True
+        else:
+            index_paths = arg
+
         for index_path in index_paths:
             try:
-                task_id = find_task_id(index_path)
-                status = status_task(task_id)
+                if batched:
+                    task_id = label_to_taskid[index_path]
+                    status = taskid_to_status[task_id]
+                else:
+                    
+                    task_id = find_task_id(index_path)
+                    status = status_task(task_id)
                 
                 
                 if not status or status.get("state") in ("exception", "failed"):
