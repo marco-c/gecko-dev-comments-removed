@@ -1332,19 +1332,20 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
   
   static nsLiteralCString sAllowedAboutPagesWithNoCSP[] = {
-    
-    "about:blank"_ns,
-    
-    "about:srcdoc"_ns,
-    
-    "about:sync-log"_ns,
-    
-    "about:logo"_ns,
-    
-    
-    "about:sync"_ns,
+      
+      "about:blank"_ns,
+      
+      "about:srcdoc"_ns,
+      
+      "about:sync-log"_ns,
+      
+      "about:logo"_ns,
+      
+      
+      
+      "about:sync"_ns,
 #  if defined(ANDROID)
-    "about:config"_ns,
+      "about:config"_ns,
 #  endif
   };
 
