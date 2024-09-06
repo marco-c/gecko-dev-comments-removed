@@ -270,6 +270,21 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
           "The main thread is shutted down");
       return;
     }
+
+    
+    
+    
+    const auto& keySystemConfig =
+        aConfiguration.mKeySystemConfiguration.Value();
+    if ((keySystemConfig.mVideo.WasPassed() &&
+         !aConfiguration.mVideo.WasPassed()) ||
+        (keySystemConfig.mAudio.WasPassed() &&
+         !aConfiguration.mAudio.WasPassed())) {
+      aPromise->MaybeRejectWithTypeError(
+          "The type of decoding config doesn't match the type of key system "
+          "config");
+      return;
+    }
     CheckEncryptedDecodingSupport(aConfiguration)
         ->Then(mainThread, __func__,
                [promise = RefPtr<Promise>{aPromise},
