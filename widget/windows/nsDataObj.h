@@ -166,8 +166,9 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
  private:
   nsTArray<nsCString> mDataFlavors;
 
-  
-  RefPtr<nsITransferable> mTransferable;
+  nsITransferable* mTransferable;  
+                                   
+                                   
 
  protected:
   CEnumFormatEtc* m_enumFE;  
