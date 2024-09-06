@@ -3,7 +3,7 @@
 
 """
 Transform the reprocess-symbols task description template,
-taskcluster/ci/reprocess-symbols/job-template.yml into an actual task description.
+taskcluster/kinds/reprocess-symbols/job-template.yml into an actual task description.
 """
 
 

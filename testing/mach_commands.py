@@ -1080,7 +1080,7 @@ def test_info_failures(
     
     import yaml
 
-    url = "https://hg.mozilla.org/mozilla-central/raw-file/tip/taskcluster/ci/test/variants.yml"
+    url = "https://hg.mozilla.org/mozilla-central/raw-file/tip/taskcluster/kinds/test/variants.yml"
     r = requests.get(url, headers={"User-agent": "mach-test-info/1.0"})
     variants = yaml.safe_load(r.text)
 

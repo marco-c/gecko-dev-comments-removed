@@ -271,14 +271,19 @@ def replace_tasks(
     dependencies_of = target_task_graph.graph.links_dict()
 
     for label in target_task_graph.graph.visit_postorder():
+        logger.debug(f"replace_tasks: {label}")
         
         if label in do_not_optimize:
+            logger.debug(f"replace_tasks: {label} is in do_not_optimize")
             continue
 
         
         if any(
             l not in replaced and l not in removed_tasks for l in dependencies_of[label]
         ):
+            logger.debug(
+                f"replace_tasks: {label} depends on an unreplaced or unremoved task"
+            )
             continue
 
         
@@ -287,6 +292,7 @@ def replace_tasks(
             label_to_taskid[label] = repl
             replaced.add(label)
             opt_counts["existing_tasks"] += 1
+            logger.debug(f"replace_tasks: {label} replaced from existing_tasks")
             continue
 
         
@@ -304,14 +310,20 @@ def replace_tasks(
         repl = opt.should_replace_task(task, params, deadline, arg)
         if repl:
             if repl is True:
+                logger.debug(f"replace_tasks: {label} removed by optimization strategy")
                 
                 
                 removed_tasks.add(label)
             else:
+                logger.debug(
+                    f"replace_tasks: {label} replaced by optimization strategy"
+                )
                 label_to_taskid[label] = repl
                 replaced.add(label)
             opt_counts[opt_by] += 1
             continue
+        else:
+            logger.debug(f"replace_tasks: {label} kept by optimization strategy")
 
     _log_optimization("replaced", opt_counts)
     return replaced
