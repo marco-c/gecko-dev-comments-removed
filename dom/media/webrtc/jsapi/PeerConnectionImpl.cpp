@@ -714,8 +714,12 @@ class ConfigureCodec {
 
         if (videoCodec.mName == "H264") {
           
-          videoCodec.mProfileLevelId &= 0xFFFF00;
-          videoCodec.mProfileLevelId |= mH264Level;
+          if (JsepVideoCodecDescription::GetSubprofile(
+                  videoCodec.mProfileLevelId) ==
+              JsepVideoCodecDescription::kH264ConstrainedBaseline) {
+            videoCodec.mProfileLevelId &= 0xFFFF00;
+            videoCodec.mProfileLevelId |= mH264Level;
+          }
 
           videoCodec.mConstraints.maxBr = mH264MaxBr;
 
@@ -2246,6 +2250,8 @@ void PeerConnectionImpl::SendWarningToConsole(const nsCString& aWarning) {
 void PeerConnectionImpl::GetDefaultVideoCodecs(
     std::vector<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
     bool aUseRtx) {
+  const bool disableBaseline = Preferences::GetBool(
+      "media.navigator.video.disable_h264_baseline", false);
   
   
   aSupportedCodecs.emplace_back(
@@ -2256,6 +2262,15 @@ void PeerConnectionImpl::GetDefaultVideoCodecs(
       JsepVideoCodecDescription::CreateDefaultH264_1(aUseRtx));
   aSupportedCodecs.emplace_back(
       JsepVideoCodecDescription::CreateDefaultH264_0(aUseRtx));
+
+  
+  if (!disableBaseline) {
+    aSupportedCodecs.emplace_back(
+        JsepVideoCodecDescription::CreateDefaultH264Baseline_1(aUseRtx));
+    aSupportedCodecs.emplace_back(
+        JsepVideoCodecDescription::CreateDefaultH264Baseline_0(aUseRtx));
+  }
+
   aSupportedCodecs.emplace_back(
       JsepVideoCodecDescription::CreateDefaultUlpFec());
   aSupportedCodecs.emplace_back(
