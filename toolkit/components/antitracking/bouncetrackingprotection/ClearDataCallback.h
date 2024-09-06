@@ -26,13 +26,15 @@ class ClearDataCallback final : public nsIClearDataCallback,
   NS_DECL_NSIURLCLASSIFIERFEATURECALLBACK
 
   explicit ClearDataCallback(ClearDataMozPromise::Private* aPromise,
-                             const nsACString& aHost);
+                             const nsACString& aHost, PRTime aBounceTime);
 
  private:
   virtual ~ClearDataCallback();
 
   
   nsCString mHost;
+  
+  PRTime mBounceTime;
   
   RefPtr<ClearDataMozPromise::Private> mPromise;
 
@@ -49,6 +51,9 @@ class ClearDataCallback final : public nsIClearDataCallback,
   
   
   static nsTArray<RefPtr<nsIUrlClassifierFeature>> sUrlClassifierFeatures;
+
+  
+  void RecordPurgeEventTelemetry(bool aSuccess);
 };
 
 }  
