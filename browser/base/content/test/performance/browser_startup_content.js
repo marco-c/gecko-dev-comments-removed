@@ -57,12 +57,6 @@ const known_scripts = {
   ]),
 };
 
-if (!Services.appinfo.sessionHistoryInParent) {
-  known_scripts.modules.add(
-    "resource:///modules/sessionstore/ContentSessionStore.sys.mjs"
-  );
-}
-
 
 
 const intermittently_loaded_scripts = {
