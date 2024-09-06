@@ -3,9 +3,76 @@
 
 use crate::fallback;
 use crate::imp;
-use crate::marker::Marker;
+use crate::marker::{ProcMacroAutoTraits, MARKER};
 use crate::Span;
 use core::fmt::{self, Debug};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(span_locations)]
+#[cfg_attr(docsrs, doc(cfg(feature = "span-locations")))]
+pub fn invalidate_current_thread_spans() {
+    crate::imp::invalidate_current_thread_spans();
+}
 
 
 
@@ -14,7 +81,7 @@ use core::fmt::{self, Debug};
 #[derive(Copy, Clone)]
 pub struct DelimSpan {
     inner: DelimSpanEnum,
-    _marker: Marker,
+    _marker: ProcMacroAutoTraits,
 }
 
 #[derive(Copy, Clone)]
@@ -45,7 +112,7 @@ impl DelimSpan {
 
         DelimSpan {
             inner,
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 

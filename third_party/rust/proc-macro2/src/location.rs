@@ -3,7 +3,7 @@ use core::cmp::Ordering;
 
 
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "span-locations")))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct LineColumn {
     

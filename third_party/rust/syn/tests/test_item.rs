@@ -10,7 +10,7 @@ use syn::{Item, ItemTrait};
 #[test]
 fn test_macro_variable_attr() {
     
-    let tokens = TokenStream::from_iter(vec![
+    let tokens = TokenStream::from_iter([
         TokenTree::Group(Group::new(Delimiter::None, quote! { #[test] })),
         TokenTree::Ident(Ident::new("fn", Span::call_site())),
         TokenTree::Ident(Ident::new("f", Span::call_site())),
@@ -121,7 +121,7 @@ fn test_negative_impl() {
 #[test]
 fn test_macro_variable_impl() {
     
-    let tokens = TokenStream::from_iter(vec![
+    let tokens = TokenStream::from_iter([
         TokenTree::Ident(Ident::new("impl", Span::call_site())),
         TokenTree::Group(Group::new(Delimiter::None, quote!(Trait))),
         TokenTree::Ident(Ident::new("for", Span::call_site())),
