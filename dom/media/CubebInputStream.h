@@ -52,6 +52,9 @@ class CubebInputStream final {
   int Stop();
 
   
+  int SetProcessingParams(cubeb_input_processing_params aParams);
+
+  
   int Latency(uint32_t* aLatencyFrames);
 
  private:
