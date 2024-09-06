@@ -141,17 +141,16 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   mozilla::Length mFontSizeOffset;
   mozilla::StyleFontSizeKeyword mFontSizeKeyword;
   mozilla::StyleFontPalette mFontPalette;
-
   
   int8_t mMathDepth;
   mozilla::StyleLineHeight mLineHeight;
+  
+  mozilla::StylePercentage mMinFontSizeRatio{1.0f};
   
   mozilla::StyleMathVariant mMathVariant;
   
   mozilla::StyleMathStyle mMathStyle;
 
-  
-  uint8_t mMinFontSizeRatio = 100;  
 
   
   bool mExplicitLanguage = false;
