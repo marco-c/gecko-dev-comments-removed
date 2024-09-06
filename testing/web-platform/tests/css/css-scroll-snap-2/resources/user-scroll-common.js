@@ -69,3 +69,32 @@ async function test_no_snapchanged(t, scroller, delta) {
 async function test_no_snapchanging(t, scroller, delta) {
   await test_no_snap_event(t, scroller, delta, "snapchanging");
 }
+
+
+
+
+
+
+async function test_user_scroll_onsnapchanging(test, scroller, event_target,
+                                                snap_target) {
+  await snap_test_setup(test, scroller, "snapchanging");
+
+  
+  
+  const scroller_middle = Math.round(scroller.clientWidth / 2);
+  const start_pos = { x: scroller_middle, y: snap_target.offsetTop };
+  const end_pos = { x: scroller_middle, y: 0 };
+  const expected_snap_targets = { block: snap_target, inline: null };
+
+  
+  const snapchanging_promise = waitForOnSnapchanging(event_target);
+  await snap_event_touch_scroll_helper(start_pos, end_pos);
+  const snapchanging_event = await snapchanging_promise;
+
+  
+  
+  assertSnapEvent(snapchanging_event, expected_snap_targets);
+  assert_equals(scroller.scrollLeft, 0, "scrollLeft is zero");
+  assert_equals(scroller.scrollTop, snap_target.offsetTop,
+    "snapped to snap_target");
+}
