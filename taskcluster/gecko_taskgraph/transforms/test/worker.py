@@ -143,7 +143,9 @@ def set_worker_type(config, tasks):
                     "virtualization"
                 ] == "virtual-with-gpu" and test_platform.startswith("windows1"):
                     
-                    task["mozharness"]["extra-options"].append("--requires-gpu")
+                    if not test_platform.startswith("windows11-64-2009-hw-ref"):
+                        
+                        task["mozharness"]["extra-options"].append("--requires-gpu")
 
             
             task["worker-type"] = win_worker_type_platform[task["virtualization"]]
