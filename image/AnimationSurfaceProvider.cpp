@@ -245,8 +245,7 @@ void AnimationSurfaceProvider::Run() {
       
       
       
-      if (!mDecoder || !continueDecoding ||
-          DecodePool::Singleton()->IsShuttingDown()) {
+      if (!mDecoder || !continueDecoding || DecodePool::IsShuttingDown()) {
         return;
       }
 
@@ -282,8 +281,7 @@ void AnimationSurfaceProvider::Run() {
     
     
     MOZ_ASSERT(result == LexerResult(Yield::OUTPUT_AVAILABLE));
-    if (!checkForNewFrameAtYieldResult ||
-        DecodePool::Singleton()->IsShuttingDown()) {
+    if (!checkForNewFrameAtYieldResult || DecodePool::IsShuttingDown()) {
       return;
     }
   }

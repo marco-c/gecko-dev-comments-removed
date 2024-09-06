@@ -56,7 +56,7 @@ class DecodePool final : public nsIObserver {
 
   
   
-  bool IsShuttingDown() const;
+  static bool IsShuttingDown();
 
   
   void AsyncRun(IDecodingTask* aTask);
