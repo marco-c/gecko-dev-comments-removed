@@ -141,10 +141,10 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void UnregisterNormalOriginOp(NormalOriginOperationBase& aNormalOriginOp);
 
-  bool IsOriginInitialized(const nsACString& aOrigin) const {
+  bool IsPersistentOriginInitializedInternal(const nsACString& aOrigin) const {
     AssertIsOnIOThread();
 
-    return mInitializedOrigins.Contains(aOrigin);
+    return mInitializedOriginsInternal.Contains(aOrigin);
   }
 
   bool IsTemporaryStorageInitializedInternal() const {
@@ -362,15 +362,17 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
-  EnsurePersistentOriginIsInitialized(const OriginMetadata& aOriginMetadata);
+  EnsurePersistentOriginIsInitializedInternal(
+      const OriginMetadata& aOriginMetadata);
 
-  bool IsTemporaryOriginInitialized(
+  bool IsTemporaryOriginInitializedInternal(
       const OriginMetadata& aOriginMetadata) const;
 
   
   
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
-  EnsureTemporaryOriginIsInitialized(const OriginMetadata& aOriginMetadata);
+  EnsureTemporaryOriginIsInitializedInternal(
+      const OriginMetadata& aOriginMetadata);
 
   RefPtr<BoolPromise> InitializePersistentClient(
       const PrincipalInfo& aPrincipalInfo, Client::Type aClientType);
@@ -770,7 +772,7 @@ class QuotaManager final : public BackgroundThreadObject {
 
   
   
-  nsTArray<nsCString> mInitializedOrigins;
+  nsTArray<nsCString> mInitializedOriginsInternal;
 
   
   

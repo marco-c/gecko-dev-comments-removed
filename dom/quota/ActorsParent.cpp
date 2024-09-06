@@ -2794,6 +2794,7 @@ nsresult QuotaManager::LoadQuota() {
           
           
           
+          
 
           if (accessed) {
             QM_TRY_INSPECT(const auto& directory,
@@ -2809,6 +2810,7 @@ nsresult QuotaManager::LoadQuota() {
 
             QM_TRY(OkIf(isDirectory), Err(NS_ERROR_FILE_DESTINATION_NOT_DIR));
 
+            
             
             
             
@@ -5315,7 +5317,7 @@ RefPtr<UniversalDirectoryLock> QuotaManager::CreateDirectoryLockInternal(
 }
 
 Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
-QuotaManager::EnsurePersistentOriginIsInitialized(
+QuotaManager::EnsurePersistentOriginIsInitializedInternal(
     const OriginMetadata& aOriginMetadata) {
   AssertIsOnIOThread();
   MOZ_ASSERT(aOriginMetadata.mPersistenceType == PERSISTENCE_TYPE_PERSISTENT);
@@ -5330,7 +5332,7 @@ QuotaManager::EnsurePersistentOriginIsInitialized(
 
     QM_TRY_UNWRAP(auto directory, GetOriginDirectory(aOriginMetadata));
 
-    if (mInitializedOrigins.Contains(aOriginMetadata.mOrigin)) {
+    if (mInitializedOriginsInternal.Contains(aOriginMetadata.mOrigin)) {
       MOZ_ASSERT(firstInitializationAttempt.Recorded());
       return std::pair(std::move(directory), false);
     }
@@ -5365,7 +5367,7 @@ QuotaManager::EnsurePersistentOriginIsInitialized(
                                           aOriginMetadata, timestamp,
                                            true, directory)));
 
-    mInitializedOrigins.AppendElement(aOriginMetadata.mOrigin);
+    mInitializedOriginsInternal.AppendElement(aOriginMetadata.mOrigin);
 
     return std::pair(std::move(directory), created);
   };
@@ -5376,7 +5378,7 @@ QuotaManager::EnsurePersistentOriginIsInitialized(
       innerFunc);
 }
 
-bool QuotaManager::IsTemporaryOriginInitialized(
+bool QuotaManager::IsTemporaryOriginInitializedInternal(
     const OriginMetadata& aOriginMetadata) const {
   AssertIsOnIOThread();
   MOZ_ASSERT(aOriginMetadata.mPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
@@ -5390,7 +5392,7 @@ bool QuotaManager::IsTemporaryOriginInitialized(
 }
 
 Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
-QuotaManager::EnsureTemporaryOriginIsInitialized(
+QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
     const OriginMetadata& aOriginMetadata) {
   AssertIsOnIOThread();
   MOZ_ASSERT(aOriginMetadata.mPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
@@ -5453,7 +5455,8 @@ QuotaManager::EnsurePersistentClientIsInitialized(
   MOZ_ASSERT(aClientMetadata.mPersistenceType == PERSISTENCE_TYPE_PERSISTENT);
   MOZ_ASSERT(Client::IsValidType(aClientMetadata.mClientType));
   MOZ_DIAGNOSTIC_ASSERT(IsStorageInitializedInternal());
-  MOZ_DIAGNOSTIC_ASSERT(IsOriginInitialized(aClientMetadata.mOrigin));
+  MOZ_DIAGNOSTIC_ASSERT(
+      IsPersistentOriginInitializedInternal(aClientMetadata.mOrigin));
 
   QM_TRY_UNWRAP(auto directory, GetOriginDirectory(aClientMetadata));
 
@@ -5489,7 +5492,7 @@ QuotaManager::EnsureTemporaryClientIsInitialized(
   MOZ_ASSERT(Client::IsValidType(aClientMetadata.mClientType));
   MOZ_DIAGNOSTIC_ASSERT(IsStorageInitializedInternal());
   MOZ_DIAGNOSTIC_ASSERT(IsTemporaryStorageInitializedInternal());
-  MOZ_DIAGNOSTIC_ASSERT(IsTemporaryOriginInitialized(aClientMetadata));
+  MOZ_DIAGNOSTIC_ASSERT(IsTemporaryOriginInitializedInternal(aClientMetadata));
 
   QM_TRY_UNWRAP(auto directory, GetOriginDirectory(aClientMetadata));
 
@@ -5729,7 +5732,7 @@ void QuotaManager::ShutdownStorageInternal() {
 
   if (mStorageConnection) {
     mInitializationInfo.ResetOriginInitializationInfos();
-    mInitializedOrigins.Clear();
+    mInitializedOriginsInternal.Clear();
 
     if (mTemporaryStorageInitializedInternal) {
       if (mCacheUsable) {
@@ -5802,7 +5805,7 @@ void QuotaManager::OriginClearCompleted(
 
   if (aClientType.IsNull()) {
     if (aPersistenceType == PERSISTENCE_TYPE_PERSISTENT) {
-      mInitializedOrigins.RemoveElement(aOrigin);
+      mInitializedOriginsInternal.RemoveElement(aOrigin);
     }
 
     for (Client::Type type : AllClientTypes()) {
@@ -5818,7 +5821,7 @@ void QuotaManager::RepositoryClearCompleted(PersistenceType aPersistenceType) {
   AssertIsOnIOThread();
 
   if (aPersistenceType == PERSISTENCE_TYPE_PERSISTENT) {
-    mInitializedOrigins.Clear();
+    mInitializedOriginsInternal.Clear();
   }
 
   for (Client::Type type : AllClientTypes()) {

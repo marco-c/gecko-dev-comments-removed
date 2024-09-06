@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "QuotaUsageRequestBase.h"
 
@@ -34,14 +34,15 @@ Result<UsageInfo, nsresult> QuotaUsageRequestBase::GetUsageForOrigin(
     return UsageInfo();
   }
 
-  
-  
+  // If the directory exists then enumerate all the files inside, adding up
+  // the sizes to get the final usage statistic.
   bool initialized;
 
   if (aPersistenceType == PERSISTENCE_TYPE_PERSISTENT) {
-    initialized = aQuotaManager.IsOriginInitialized(aOriginMetadata.mOrigin);
+    initialized = aQuotaManager.IsPersistentOriginInitializedInternal(
+        aOriginMetadata.mOrigin);
   } else {
-    initialized = aQuotaManager.IsTemporaryStorageInitialized();
+    initialized = aQuotaManager.IsTemporaryStorageInitializedInternal();
   }
 
   return GetUsageForOriginEntries(aQuotaManager, aPersistenceType,
@@ -70,9 +71,9 @@ Result<UsageInfo, nsresult> QuotaUsageRequestBase::GetUsageForOriginEntries(
             const bool ok =
                 Client::TypeFromText(leafName, clientType, fallible);
             if (!ok) {
-              
-              
-              
+              // Unknown directories during getting usage for an origin (even
+              // for an uninitialized origin) are now allowed. Just warn if we
+              // find them.
               UNKNOWN_FILE_WARNING(leafName);
               break;
             }
@@ -90,13 +91,13 @@ Result<UsageInfo, nsresult> QuotaUsageRequestBase::GetUsageForOriginEntries(
           }
 
           case nsIFileKind::ExistsAsFile:
-            
-            
-            
-            
+            // We are maintaining existing behavior for unknown files here (just
+            // continuing).
+            // This can possibly be used by developers to add temporary backups
+            // into origin directories without losing get usage functionality.
             if (IsTempMetadata(leafName)) {
               if (!aInitialized) {
-                QM_TRY(MOZ_TO_RESULT(file->Remove( false)));
+                QM_TRY(MOZ_TO_RESULT(file->Remove(/* recursive */ false)));
               }
 
               break;
@@ -107,13 +108,13 @@ Result<UsageInfo, nsresult> QuotaUsageRequestBase::GetUsageForOriginEntries(
               break;
             }
 
-            
-            
+            // Unknown files during getting usage for an origin (even for an
+            // uninitialized origin) are now allowed. Just warn if we find them.
             UNKNOWN_FILE_WARNING(leafName);
             break;
 
           case nsIFileKind::DoesNotExist:
-            
+            // Ignore files that got removed externally while iterating.
             break;
         }
 
@@ -162,4 +163,4 @@ mozilla::ipc::IPCResult QuotaUsageRequestBase::RecvCancel() {
   return IPC_OK();
 }
 
-}  
+}  // namespace mozilla::dom::quota
