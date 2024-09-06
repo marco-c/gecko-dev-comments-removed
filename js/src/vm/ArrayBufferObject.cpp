@@ -2579,8 +2579,15 @@ size_t ArrayBufferObject::objectMoved(JSObject* obj, JSObject* old) {
   auto& dst = obj->as<ArrayBufferType>();
   const auto& src = old->as<ArrayBufferType>();
 
-  MOZ_ASSERT(
-      !obj->runtimeFromMainThread()->gc.nursery().isInside(src.dataPointer()));
+#ifdef DEBUG
+  
+  
+  
+  if (src.byteLength() != 0 || (uintptr_t(src.dataPointer()) & gc::ChunkMask)) {
+    Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
+    MOZ_ASSERT(!nursery.isInside(src.dataPointer()));
+  }
+#endif
 
   
   if (src.hasInlineData()) {
