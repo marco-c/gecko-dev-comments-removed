@@ -2604,11 +2604,13 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
   
   nsresult rv;
   nsCOMPtr<Document> responsibleDocument = GetDocumentIfCurrent();
+  auto contentPolicyType =
+      mFlagSynchronous ? nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST_SYNC
+                       : nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST_ASYNC;
   if (responsibleDocument &&
       responsibleDocument->NodePrincipal() == mPrincipal) {
     rv = NS_NewChannel(getter_AddRefs(mChannel), mRequestURL,
-                       responsibleDocument, secFlags,
-                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                       responsibleDocument, secFlags, contentPolicyType,
                        nullptr,  
                        loadGroup,
                        nullptr,  
@@ -2616,8 +2618,7 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
   } else if (mClientInfo.isSome()) {
     rv = NS_NewChannel(getter_AddRefs(mChannel), mRequestURL, mPrincipal,
                        mClientInfo.ref(), mController, secFlags,
-                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
-                       mCookieJarSettings,
+                       contentPolicyType, mCookieJarSettings,
                        mPerformanceStorage,  
                        loadGroup,
                        nullptr,  
@@ -2625,8 +2626,7 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
   } else {
     
     rv = NS_NewChannel(getter_AddRefs(mChannel), mRequestURL, mPrincipal,
-                       secFlags, nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
-                       mCookieJarSettings,
+                       secFlags, contentPolicyType, mCookieJarSettings,
                        mPerformanceStorage,  
                        loadGroup,
                        nullptr,  

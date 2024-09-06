@@ -114,8 +114,8 @@ class ChannelEventQueue final {
         mSuspended(false),
         mForcedCount(0),
         mFlushing(false),
-        mHasCheckedForXMLHttpRequest(false),
-        mForXMLHttpRequest(false),
+        mHasCheckedForAsyncXMLHttpRequest(false),
+        mForAsyncXMLHttpRequest(false),
         mOwner(owner),
         mMutex("ChannelEventQueue::mMutex"),
         mRunningMutex("ChannelEventQueue::mRunningMutex") {}
@@ -186,8 +186,9 @@ class ChannelEventQueue final {
 
   
   
-  bool mHasCheckedForXMLHttpRequest;
-  bool mForXMLHttpRequest;
+  
+  bool mHasCheckedForAsyncXMLHttpRequest;
+  bool mForAsyncXMLHttpRequest;
 
   
   nsISupports* mOwner MOZ_GUARDED_BY(mMutex);

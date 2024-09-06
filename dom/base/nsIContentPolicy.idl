@@ -236,7 +236,7 @@ interface nsIContentPolicy : nsISupports
 
 
 
-    TYPE_INTERNAL_XMLHTTPREQUEST = 33,
+    TYPE_INTERNAL_XMLHTTPREQUEST_ASYNC = 33,
 
     
 
@@ -439,8 +439,15 @@ interface nsIContentPolicy : nsISupports
 
 
 
+    TYPE_INTERNAL_XMLHTTPREQUEST_SYNC = 60,
 
-    TYPE_END = 60,
+    
+
+
+
+
+
+    TYPE_END = 61,
 
 
     

@@ -171,7 +171,7 @@ static int FuzzingRunNetworkHttp(const uint8_t* data, size_t size) {
           nsContentUtils::GetSystemPrincipal(),  
           nsContentUtils::GetSystemPrincipal(),  
           nullptr,                               
-          secFlags, nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+          secFlags, nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST_ASYNC,
           Maybe<mozilla::dom::ClientInfo>(),
           Maybe<mozilla::dom::ServiceWorkerDescriptor>(), sandboxFlags);
 
@@ -186,7 +186,7 @@ static int FuzzingRunNetworkHttp(const uint8_t* data, size_t size) {
     } else {
       rv = NS_NewChannel(getter_AddRefs(channel), url,
                          nsContentUtils::GetSystemPrincipal(), secFlags,
-                         nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                         nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST_ASYNC,
                          nullptr,    
                          nullptr,    
                          nullptr,    

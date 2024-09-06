@@ -185,7 +185,7 @@ bool ChannelEventQueue::MaybeSuspendIfEventsAreSuppressed() {
 
   
   
-  if (mHasCheckedForXMLHttpRequest && !mForXMLHttpRequest) {
+  if (mHasCheckedForAsyncXMLHttpRequest && !mForAsyncXMLHttpRequest) {
     return false;
   }
 
@@ -197,24 +197,23 @@ bool ChannelEventQueue::MaybeSuspendIfEventsAreSuppressed() {
 
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
   
-  if (!mHasCheckedForXMLHttpRequest) {
+  
+  
+  if (!mHasCheckedForAsyncXMLHttpRequest) {
     nsContentPolicyType contentType = loadInfo->InternalContentPolicyType();
-    mForXMLHttpRequest =
-        (contentType == nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST);
-    mHasCheckedForXMLHttpRequest = true;
+    mForAsyncXMLHttpRequest =
+        contentType == nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST_ASYNC;
+    mHasCheckedForAsyncXMLHttpRequest = true;
 
-    if (!mForXMLHttpRequest) {
+    if (!mForAsyncXMLHttpRequest) {
       return false;
     }
   }
 
   
-  
-  
   RefPtr<dom::Document> document;
   loadInfo->GetLoadingDocument(getter_AddRefs(document));
-  if (document && document->EventHandlingSuppressed() &&
-      !document->IsInSyncOperation()) {
+  if (document && document->EventHandlingSuppressed()) {
     document->AddSuspendedChannelEventQueue(this);
     SuspendInternal();
     return true;
