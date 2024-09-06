@@ -134,7 +134,9 @@ function pickElement(inspector, selector, x, y) {
 
 
 
-async function hoverElement(inspector, selector, x, y) {
+
+
+async function hoverElement(inspector, selector, x, y, eventOptions = {}) {
   const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
   info(`Waiting for element "${selector}" to be hovered`);
   const onHovered = inspector.toolbox.nodePicker.once("picker-node-hovered");
@@ -159,7 +161,7 @@ async function hoverElement(inspector, selector, x, y) {
   if (isNaN(x) || isNaN(y)) {
     BrowserTestUtils.synthesizeMouseAtCenter(
       selector,
-      { type: "mousemove" },
+      { ...eventOptions, type: "mousemove" },
       browsingContext
     );
   } else {
@@ -167,7 +169,7 @@ async function hoverElement(inspector, selector, x, y) {
       selector,
       x,
       y,
-      { type: "mousemove" },
+      { ...eventOptions, type: "mousemove" },
       browsingContext
     );
   }

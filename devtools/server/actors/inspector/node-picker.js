@@ -79,42 +79,52 @@ class NodePicker {
 
 
   _findNodeAtMouseEventPosition(event) {
-    const winUtils = this._targetActor.window.windowUtils;
+    const win = this._targetActor.window;
+    const winUtils = win.windowUtils;
     const rectSize = 1;
-    const elements = winUtils.nodesFromRect(
+    const elements = Array.from(
+      winUtils.nodesFromRect(
+        
+        event.clientX,
+        
+        event.clientY,
+        
+        rectSize,
+        
+        rectSize,
+        
+        rectSize,
+        
+        rectSize,
+        
+        true,
+        
+        false,
+        
+        true,
+        
+        1
+      )
+    ).filter(element => {
       
-      event.clientX,
-      
-      event.clientY,
-      
-      rectSize,
-      
-      rectSize,
-      
-      rectSize,
-      
-      rectSize,
-      
-      true,
-      
-      false,
-      
-      true,
-      
-      1
-    );
+      return !win.Text.isInstance(element);
+    });
 
-    
-    
-    
-    if (
-      elements.length > 1 &&
-      ChromeUtils.getClassName(elements[0]) == "HTMLHtmlElement"
-    ) {
-      return elements[1];
+    if (!elements.length) {
+      return null;
     }
 
-    return elements[0];
+    if (elements.length === 1) {
+      return elements[0];
+    }
+
+    
+    
+    
+    
+    return elements.find(
+      element => !elements.some(e => element !== e && element.contains(e))
+    );
   }
 
   
