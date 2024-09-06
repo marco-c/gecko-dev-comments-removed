@@ -92,15 +92,10 @@ class nsCSPContext : public nsIContentSecurityPolicy {
 
 
 
-
-
-
-
   nsresult GatherSecurityPolicyViolationEventData(
       nsIURI* aOriginalURI, const nsAString& aEffectiveDirective,
       const mozilla::dom::CSPViolationData& aCSPViolationData,
       const nsAString& aSourceFile, const nsAString& aScriptSample,
-      uint32_t aLineNum, uint32_t aColumnNum,
       mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit);
 
   nsresult SendReports(
@@ -121,7 +116,7 @@ class nsCSPContext : public nsIContentSecurityPolicy {
       const nsAString& aViolatedDirectiveNameAndValue,
       const CSPDirective aEffectiveDirective, const nsAString& aObserverSubject,
       const nsAString& aSourceFile, bool aReportSample,
-      const nsAString& aScriptSample, uint32_t aLineNum, uint32_t aColumnNum);
+      const nsAString& aScriptSample);
 
   
   
