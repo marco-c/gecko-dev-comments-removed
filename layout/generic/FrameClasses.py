@@ -15,6 +15,7 @@ LEAF = {"Leaf"}
 MATHML = {"MathML"}
 SVG = {"SVG"}
 BFC = {"BlockFormattingContext"}
+LINE_PARTICIPANT = {"LineParticipant"}
 
 BLOCK = COMMON | {"CanContainOverflowContainers"}
 
@@ -31,10 +32,10 @@ SVG_CONTENT = (COMMON - {"SupportsContainLayoutAndPaint"}) | SVG
 SVG_CONTAINER = SVG_CONTENT | {"SVGContainer"}
 
 
-INLINE = {"BidiInlineContainer", "LineParticipant"}
-RUBY_CONTENT = {"LineParticipant"}
+INLINE = LINE_PARTICIPANT | {"BidiInlineContainer"}
+RUBY_CONTENT = LINE_PARTICIPANT
 
-TEXT = COMMON | {"Replaced", "LineParticipant"} | LEAF
+TEXT = COMMON | LINE_PARTICIPANT | {"Replaced"} | LEAF
 
 
 
@@ -46,7 +47,7 @@ TEXT = COMMON | {"Replaced", "LineParticipant"} | LEAF
 
 
 FRAME_CLASSES = [
-    Frame("BRFrame", "Br", REPLACED | LEAF | {"LineParticipant"}),
+    Frame("BRFrame", "Br", REPLACED | LINE_PARTICIPANT | LEAF),
     Frame("nsBCTableCellFrame", "TableCell", TABLE_CELL),
     Frame("nsBackdropFrame", "Backdrop", COMMON | LEAF),
     Frame("nsBlockFrame", "Block", BLOCK),
@@ -64,7 +65,7 @@ FRAME_CLASSES = [
     Frame("nsFileControlFrame", "FileControl", REPLACED_WITH_BLOCK | LEAF | BFC),
     Frame("FileControlLabelFrame", "Block", BLOCK | LEAF),
     Frame("nsFirstLetterFrame", "Letter", INLINE),
-    Frame("nsFloatingFirstLetterFrame", "Letter", INLINE - {"LineParticipant"}),
+    Frame("nsFloatingFirstLetterFrame", "Letter", INLINE - LINE_PARTICIPANT),
     Frame("nsFirstLineFrame", "Line", INLINE),
     Frame("nsFlexContainerFrame", "FlexContainer", BLOCK),
     Frame("nsIFrame", "None", COMMON),
