@@ -1993,6 +1993,12 @@ class AsyncPanZoomController {
       const MultiTouchInput& aOriginalEvent, ScreenCoord aPanThreshold,
       float aVectorLength, ExternalPoint& aExtPoint);
 
+  
+  
+  
+  CSSPoint MaybeFillOutOverscrollGutter(
+      const RecursiveMutexAutoLock& aProofOfLock);
+
   friend std::ostream& operator<<(
       std::ostream& aOut, const AsyncPanZoomController::PanZoomState& aState);
 };

@@ -5809,6 +5809,29 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     }
   }
 
+  
+  
+  
+  
+  
+  
+  if (needToReclampScroll && IsInInvalidOverscroll()) {
+    if (!cumulativeRelativeDelta) {
+      
+      
+      CSSPoint scrollPositionChange = MaybeFillOutOverscrollGutter(lock);
+      if (scrollPositionChange != CSSPoint()) {
+        cumulativeRelativeDelta = Some(scrollPositionChange);
+      }
+    }
+    if (mState == OVERSCROLL_ANIMATION) {
+      CancelAnimation();
+      didCancelAnimation = true;
+    } else if (IsOverscrolled()) {
+      ClearOverscroll();
+    }
+  }
+
   if (scrollOffsetUpdated) {
     for (auto& sampledState : mSampledState) {
       if (!didCancelAnimation && cumulativeRelativeDelta.isSome()) {
@@ -5845,27 +5868,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
         cumulativeRelativeDelta && *cumulativeRelativeDelta != CSSPoint() &&
         !didCancelAnimation) {
       SendTransformBeginAndEnd();
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (needToReclampScroll) {
-    if (IsInInvalidOverscroll()) {
-      if (mState == OVERSCROLL_ANIMATION) {
-        CancelAnimation();
-      } else if (IsOverscrolled()) {
-        ClearOverscroll();
-      }
     }
   }
 
@@ -6792,6 +6794,20 @@ void AsyncPanZoomController::SetZoomAnimationId(
 Maybe<uint64_t> AsyncPanZoomController::GetZoomAnimationId() const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   return mZoomAnimationId;
+}
+
+CSSPoint AsyncPanZoomController::MaybeFillOutOverscrollGutter(
+    const RecursiveMutexAutoLock& aProofOfLock) {
+  const auto zoom = Metrics().GetZoom();
+  CSSPoint delta = GetOverscrollAmount() / zoom;
+  CSSPoint origin = Metrics().GetVisualScrollOffset();
+  CSSRect scrollRange = Metrics().CalculateScrollRange();
+  if (!scrollRange.ContainsInclusively(origin + delta)) {
+    return CSSPoint();
+  }
+  SetVisualScrollOffset(origin + delta);
+  Metrics().RecalculateLayoutViewportOffset();
+  return Metrics().GetVisualScrollOffset() - origin;
 }
 
 std::ostream& operator<<(std::ostream& aOut,
