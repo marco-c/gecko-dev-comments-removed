@@ -12,6 +12,8 @@
 
 
 
+
+
 "use strict;"
 
 
@@ -87,6 +89,14 @@ const EXPECT_NO_WINNER = auctionResult => {
 };
 
 
+const EXPECT_WINNER =
+    auctionResult => {
+      assert_true(
+          auctionResult instanceof FencedFrameConfig,
+          'Auction did not return expected FencedFrameConfig');
+    }
+
+
 const EXPECT_EXCEPTION = exceptionType => auctionResult => {
   assert_not_equals(auctionResult, null, "got null instead of expected error");
   assert_true(auctionResult instanceof Error, "did not get expected error: " + auctionResult);
@@ -127,6 +137,50 @@ makeTest({
   name: 'trustedScoringSignalsURL is invalid',
   expect: EXPECT_EXCEPTION(TypeError),
   auctionConfigOverrides: { trustedScoringSignalsURL: "https://foo:99999999999" },
+});
+
+makeTest({
+  name: 'valid trustedScoringSignalsURL',
+  expect: EXPECT_WINNER,
+  auctionConfigOverrides:
+      {trustedScoringSignalsURL: window.location.origin + '/resource.json'}
+});
+
+makeTest({
+  name: 'trustedScoringSignalsURL should not have a fragment',
+  expect: EXPECT_EXCEPTION(TypeError),
+  auctionConfigOverrides:
+      {trustedScoringSignalsURL: window.location.origin + '/resource.json#foo'}
+});
+
+makeTest({
+  name: 'trustedScoringSignalsURL with an empty fragment is not OK',
+  expect: EXPECT_EXCEPTION(TypeError),
+  auctionConfigOverrides:
+      {trustedScoringSignalsURL: window.location.origin + '/resource.json#'}
+});
+
+makeTest({
+  name: 'trustedScoringSignalsURL should not have a query',
+  expect: EXPECT_EXCEPTION(TypeError),
+  auctionConfigOverrides:
+      {trustedScoringSignalsURL: window.location.origin + '/resource.json?foo'}
+});
+
+makeTest({
+  name: 'trustedScoringSignalsURL with an empty query is not OK',
+  expect: EXPECT_EXCEPTION(TypeError),
+  auctionConfigOverrides:
+      {trustedScoringSignalsURL: window.location.origin + '/resource.json?'}
+});
+
+makeTest({
+  name: 'trustedScoringSignalsURL should not have embedded credentials',
+  expect: EXPECT_EXCEPTION(TypeError),
+  auctionConfigOverrides: {
+    trustedScoringSignalsURL: (window.location.origin + '/resource.json')
+                                  .replace('https://', 'https://user:pass@')
+  }
 });
 
 makeTest({
