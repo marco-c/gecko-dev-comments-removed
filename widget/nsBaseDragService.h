@@ -58,6 +58,8 @@ class nsBaseDragSession : public nsIDragSession {
  public:
   NS_DECL_NSIDRAGSESSION
 
+  int32_t TakeChildProcessDragAction();
+
   void SetDragEndPoint(nsIntPoint aEndDragPoint) {
     mEndDragPoint =
         mozilla::LayoutDeviceIntPoint::FromUnknownPoint(aEndDragPoint);
@@ -67,7 +69,25 @@ class nsBaseDragSession : public nsIDragSession {
   }
 
  protected:
-  ~nsBaseDragSession() = default;
+  ~nsBaseDragSession();
+
+  
+  
+  bool TakeDragEventDispatchedToChildProcess() {
+    bool retval = mDragEventDispatchedToChildProcess;
+    mDragEventDispatchedToChildProcess = false;
+    return retval;
+  }
+
+  
+
+
+  void DiscardInternalTransferData();
+
+  
+
+
+  void OpenDragPopup();
 
   RefPtr<mozilla::dom::WindowContext> mSourceWindowContext;
   RefPtr<mozilla::dom::WindowContext> mSourceTopWindowContext;
@@ -89,6 +109,10 @@ class nsBaseDragSession : public nsIDragSession {
   
   
   nsCOMPtr<mozilla::dom::Element> mDragPopup;
+
+  
+  
+  mozilla::CSSIntPoint mScreenPosition;
 
   
   mozilla::LayoutDeviceIntPoint mEndDragPoint;
@@ -134,8 +158,6 @@ class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
   NS_DECL_NSIDRAGSERVICE
 
   uint16_t GetInputSource() { return mInputSource; }
-
-  int32_t TakeChildProcessDragAction();
 
   using nsIDragService::GetCurrentSession;
 
@@ -191,24 +213,6 @@ class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
                             mozilla::LayoutDeviceIntRect* aScreenDragRect,
                             RefPtr<SourceSurface>* aSurface);
 
-  
-
-
-  void OpenDragPopup();
-
-  
-
-
-  void DiscardInternalTransferData();
-
-  
-  
-  bool TakeDragEventDispatchedToChildProcess() {
-    bool retval = mDragEventDispatchedToChildProcess;
-    mDragEventDispatchedToChildProcess = false;
-    return retval;
-  }
-
   virtual bool IsMockService() { return false; }
 
   
@@ -222,10 +226,6 @@ class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
 
   
   RefPtr<mozilla::dom::RemoteDragStartData> mDragStartData;
-
-  
-  
-  mozilla::CSSIntPoint mScreenPosition;
 
   uint32_t mSuppressLevel;
 

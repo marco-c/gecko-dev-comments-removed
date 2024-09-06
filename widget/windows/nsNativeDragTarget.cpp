@@ -181,10 +181,9 @@ void nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
   
   
   
-  nsDragService* dragService = static_cast<nsDragService*>(mDragService.get());
   currSession->GetDragAction(&geckoAction);
 
-  int32_t childDragAction = dragService->TakeChildProcessDragAction();
+  int32_t childDragAction = currSession->TakeChildProcessDragAction();
   if (childDragAction != nsIDragService::DRAGDROP_ACTION_UNINITIALIZED) {
     geckoAction = childDragAction;
   }

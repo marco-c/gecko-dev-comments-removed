@@ -74,6 +74,8 @@ nsBaseDragService::~nsBaseDragService() = default;
 
 NS_IMPL_ISUPPORTS(nsBaseDragService, nsIDragService, nsIDragSession)
 
+nsBaseDragSession::~nsBaseDragSession() = default;
+
 
 NS_IMETHODIMP
 nsBaseDragSession::SetCanDrop(bool aCanDrop) {
@@ -556,7 +558,7 @@ NS_IMETHODIMP nsBaseDragService::StartDragSessionForTests(
   return NS_OK;
 }
 
-void nsBaseDragService::OpenDragPopup() {
+void nsBaseDragSession::OpenDragPopup() {
   if (mDragPopup) {
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
     if (pm) {
@@ -566,13 +568,14 @@ void nsBaseDragService::OpenDragPopup() {
   }
 }
 
-int32_t nsBaseDragService::TakeChildProcessDragAction() {
+int32_t nsBaseDragSession::TakeChildProcessDragAction() {
   
   
   
-  int32_t retval = DRAGDROP_ACTION_UNINITIALIZED;
+  int32_t retval = nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
   if (TakeDragEventDispatchedToChildProcess() &&
-      mDragActionFromChildProcess != DRAGDROP_ACTION_UNINITIALIZED) {
+      mDragActionFromChildProcess !=
+          nsIDragService::DRAGDROP_ACTION_UNINITIALIZED) {
     retval = mDragActionFromChildProcess;
   }
 
@@ -650,7 +653,7 @@ nsBaseDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
   return NS_OK;
 }
 
-void nsBaseDragService::DiscardInternalTransferData() {
+void nsBaseDragSession::DiscardInternalTransferData() {
   if (mDataTransfer && mSourceNode) {
     MOZ_ASSERT(mDataTransfer);
 

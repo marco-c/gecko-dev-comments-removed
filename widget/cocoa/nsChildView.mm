@@ -4195,8 +4195,8 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
         
         
         
-        nsDragService* dragService = static_cast<nsDragService*>(mDragService);
-        int32_t childDragAction = dragService->TakeChildProcessDragAction();
+        nsDragSession* ds = static_cast<nsDragSession*>(dragSession.get());
+        int32_t childDragAction = ds->TakeChildProcessDragAction();
         if (childDragAction != nsIDragService::DRAGDROP_ACTION_UNINITIALIZED) {
           dragAction = childDragAction;
         }
