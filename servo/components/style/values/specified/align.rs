@@ -71,8 +71,14 @@ bitflags! {
 impl AlignFlags {
     
     #[inline]
-    fn value(&self) -> Self {
+    pub fn value(&self) -> Self {
         *self & !AlignFlags::FLAG_BITS
+    }
+
+    
+    #[inline]
+    pub fn flags(&self) -> Self {
+        *self & AlignFlags::FLAG_BITS
     }
 }
 
