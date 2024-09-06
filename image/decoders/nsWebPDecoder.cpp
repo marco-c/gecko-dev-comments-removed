@@ -392,6 +392,12 @@ LexerResult nsWebPDecoder::ReadHeader(WebPDemuxer* aDemuxer, bool aIsComplete) {
   if (flags & WebPFeatureFlags::ANIMATION_FLAG) {
     
     
+    if (WantsFrameCount() && !aIsComplete) {
+      return LexerResult(Yield::NEED_MORE_DATA);
+    }
+
+    
+    
     WebPIterator iter;
     if (!WebPDemuxGetFrame(aDemuxer, 1, &iter)) {
       return aIsComplete ? LexerResult(TerminalState::FAILURE)
@@ -422,6 +428,11 @@ LexerResult nsWebPDecoder::ReadHeader(WebPDemuxer* aDemuxer, bool aIsComplete) {
   }
 
   PostSize(width, height);
+
+  if (WantsFrameCount()) {
+    uint32_t frameCount = WebPDemuxGetI(aDemuxer, WEBP_FF_FRAME_COUNT);
+    PostFrameCount(frameCount);
+  }
 
   bool alpha = flags & WebPFeatureFlags::ALPHA_FLAG;
   if (alpha) {

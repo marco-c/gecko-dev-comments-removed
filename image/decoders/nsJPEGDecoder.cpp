@@ -275,6 +275,9 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
       EXIFData exif = ReadExifData();
       PostSize(mInfo.image_width, mInfo.image_height, exif.orientation,
                exif.resolution);
+      if (WantsFrameCount()) {
+        PostFrameCount( 1);
+      }
       if (HasError()) {
         
         mState = JPEG_ERROR;

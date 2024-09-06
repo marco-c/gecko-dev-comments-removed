@@ -113,14 +113,19 @@ nsresult nsGIFDecoder2::FinishInternal() {
   PostLoopCount(mGIFStruct.loop_count);
 
   
-  if (!IsMetadataDecode()) {
-    if (mCurrentFrameIndex == mGIFStruct.images_decoded) {
-      EndImageFrame();
-    }
-    PostDecodeDone();
-    mGIFOpen = false;
+  if (mCurrentFrameIndex == mGIFStruct.images_decoded) {
+    EndImageFrame();
   }
 
+  if (WantsFrameCount()) {
+    PostFrameCount(mGIFStruct.images_decoded);
+  }
+
+  if (!IsMetadataDecode()) {
+    PostDecodeDone();
+  }
+
+  mGIFOpen = false;
   return NS_OK;
 }
 
@@ -194,6 +199,14 @@ nsresult nsGIFDecoder2::BeginImageFrame(const OrientedIntRect& aFrameRect,
                                         uint16_t aDepth, bool aIsInterlaced) {
   MOZ_ASSERT(HasSize());
 
+  
+  
+  
+  if (WantsFrameCount()) {
+    mCurrentFrameIndex = mGIFStruct.images_decoded;
+    return NS_OK;
+  }
+
   bool hasTransparency = CheckForTransparency(aFrameRect);
 
   
@@ -241,6 +254,16 @@ nsresult nsGIFDecoder2::BeginImageFrame(const OrientedIntRect& aFrameRect,
 
 
 void nsGIFDecoder2::EndImageFrame() {
+  if (WantsFrameCount()) {
+    mGIFStruct.pixels_remaining = 0;
+    mGIFStruct.images_decoded++;
+    mCurrentFrameIndex = -1;
+
+    
+    PostFrameCount(mGIFStruct.images_decoded);
+    return;
+  }
+
   Opacity opacity = Opacity::SOME_TRANSPARENCY;
 
   if (mGIFStruct.images_decoded == 0) {
@@ -430,7 +453,9 @@ std::tuple<int32_t, Maybe<WriteState>> nsGIFDecoder2::YieldPixels(
 
 
 void nsGIFDecoder2::ConvertColormap(uint32_t* aColormap, uint32_t aColors) {
-  if (!aColors) {
+  
+  
+  if (!aColors || WantsFrameCount()) {
     return;
   }
 
@@ -771,6 +796,10 @@ LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::ReadImageDescriptor(
 
   MOZ_ASSERT(Size() == OutputSize(), "Downscaling an animated image?");
 
+  if (WantsFrameCount()) {
+    return FinishImageDescriptor(aData);
+  }
+
   
   return Transition::ToAfterYield(State::FINISH_IMAGE_DESCRIPTOR);
 }
@@ -806,7 +835,7 @@ LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::FinishImageDescriptor(
     }
 
     
-    if (IsMetadataDecode()) {
+    if (IsMetadataDecode() && !WantsFrameCount()) {
       CheckForTransparency(frameRect);
       FinishInternal();
       return Transition::TerminateSuccess();
@@ -921,9 +950,13 @@ LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::FinishImageDescriptor(
 
 LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::ReadLocalColorTable(
     const char* aData, size_t aLength) {
-  uint8_t* dest = reinterpret_cast<uint8_t*>(mColormap) + mColorTablePos;
-  memcpy(dest, aData, aLength);
-  mColorTablePos += aLength;
+  
+  
+  if (!WantsFrameCount()) {
+    uint8_t* dest = reinterpret_cast<uint8_t*>(mColormap) + mColorTablePos;
+    memcpy(dest, aData, aLength);
+    mColorTablePos += aLength;
+  }
   return Transition::ContinueUnbuffered(State::LOCAL_COLOR_TABLE);
 }
 
@@ -1005,6 +1038,12 @@ LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::ReadImageDataSubBlock(
 
 LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::ReadLZWData(
     const char* aData, size_t aLength) {
+  
+  
+  if (WantsFrameCount()) {
+    return Transition::ContinueUnbuffered(State::LZW_DATA);
+  }
+
   const uint8_t* data = reinterpret_cast<const uint8_t*>(aData);
   size_t length = aLength;
 

@@ -152,6 +152,9 @@ nsresult Decoder::Init() {
   MOZ_ASSERT_IF(mImage, IsMetadataDecode());
 
   
+  MOZ_ASSERT_IF(WantsFrameCount(), IsMetadataDecode());
+
+  
   nsresult rv = InitInternal();
 
   mInitialized = true;
@@ -465,6 +468,10 @@ void Decoder::PostIsAnimated(FrameTimeout aFirstFrameTimeout) {
   mProgress |= FLAG_IS_ANIMATED;
   mImageMetadata.SetHasAnimation();
   mImageMetadata.SetFirstFrameTimeout(aFirstFrameTimeout);
+}
+
+void Decoder::PostFrameCount(uint32_t aFrameCount) {
+  mImageMetadata.SetFrameCount(aFrameCount);
 }
 
 void Decoder::PostFrameStop(Opacity aFrameOpacity) {
