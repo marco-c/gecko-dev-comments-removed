@@ -4,6 +4,7 @@
 
 
 
+#include "EncoderConfig.h"
 #if !defined(MFTEncoder_h_)
 #  define MFTEncoder_h_
 
@@ -28,7 +29,7 @@ class MFTEncoder final {
   HRESULT Create(const GUID& aSubtype);
   HRESULT Destroy();
   HRESULT SetMediaTypes(IMFMediaType* aInputType, IMFMediaType* aOutputType);
-  HRESULT SetModes(UINT32 aBitsPerSec);
+  HRESULT SetModes(const EncoderConfig& aConfig);
   HRESULT SetBitrate(UINT32 aBitsPerSec);
 
   HRESULT CreateInputSample(RefPtr<IMFSample>* aSample, size_t aSize);
