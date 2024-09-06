@@ -248,13 +248,6 @@ inline void AssignFromStringBuffer(mozilla::StringBuffer* buffer, size_t len,
 
 class XPCStringConvert {
  public:
-  static bool ReadableToJSVal(JSContext* cx, const nsAString& readable,
-                              JS::MutableHandle<JS::Value> vp);
-  static bool Latin1ToJSVal(JSContext* cx, const nsACString& latin1,
-                            JS::MutableHandle<JS::Value> vp);
-  static bool UTF8ToJSVal(JSContext* cx, const nsACString& utf8,
-                          JS::MutableHandle<JS::Value> vp);
-
   
   static MOZ_ALWAYS_INLINE bool UCStringBufferToJSVal(
       JSContext* cx, mozilla::StringBuffer* buf, uint32_t length,

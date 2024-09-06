@@ -20,10 +20,7 @@ bool ToJSValue(JSContext* aCx, const nsAString& aArgument,
                JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
-
-  
-  
-  return XPCStringConvert::ReadableToJSVal(aCx, aArgument, aValue);
+  return xpc::NonVoidStringToJsval(aCx, aArgument, aValue);
 }
 
 bool ToJSValue(JSContext* aCx, const nsACString& aArgument,
