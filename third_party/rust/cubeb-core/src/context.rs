@@ -95,7 +95,7 @@ impl ContextRef {
     
     
     
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments))]
+    #[allow(clippy::too_many_arguments)]
     pub unsafe fn stream_init(
         &self,
         stream_name: Option<&CStr>,
