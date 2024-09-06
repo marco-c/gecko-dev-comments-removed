@@ -585,6 +585,7 @@ nsCaret::NotifySelectionChanged(Document*, Selection* aDomSel, int16_t aReason,
   
   if (IsVisible()) {
     UpdateCaretPositionFromSelectionIfNeeded();
+    ResetBlinking();
   }
 
   return NS_OK;
