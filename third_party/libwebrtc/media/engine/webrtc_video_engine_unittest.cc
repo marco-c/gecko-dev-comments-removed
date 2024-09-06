@@ -1421,7 +1421,7 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
 
   
   
-  EXPECT_CALL(*decoder_factory, CreateVideoDecoder(format)).Times(0);
+  EXPECT_CALL(*decoder_factory, Create).Times(0);
 
   
   webrtc::GlobalSimulatedTimeController time_controller(
