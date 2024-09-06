@@ -644,16 +644,16 @@ gfxMatrix SVGPatternFrame::ConstructCTM(const SVGAnimatedViewBox& aViewBox,
     
     
     
-    viewportWidth =
-        GetLengthValue(SVGPatternElement::ATTR_WIDTH)->GetAnimValue(ctx);
-    viewportHeight =
-        GetLengthValue(SVGPatternElement::ATTR_HEIGHT)->GetAnimValue(ctx);
+    viewportWidth = GetLengthValue(SVGPatternElement::ATTR_WIDTH)
+                        ->GetAnimValueWithZoom(ctx);
+    viewportHeight = GetLengthValue(SVGPatternElement::ATTR_HEIGHT)
+                         ->GetAnimValueWithZoom(ctx);
   } else {
     
-    viewportWidth =
-        GetLengthValue(SVGPatternElement::ATTR_WIDTH)->GetAnimValue(aTarget);
-    viewportHeight =
-        GetLengthValue(SVGPatternElement::ATTR_HEIGHT)->GetAnimValue(aTarget);
+    viewportWidth = GetLengthValue(SVGPatternElement::ATTR_WIDTH)
+                        ->GetAnimValueWithZoom(aTarget);
+    viewportHeight = GetLengthValue(SVGPatternElement::ATTR_HEIGHT)
+                         ->GetAnimValueWithZoom(aTarget);
   }
 
   if (viewportWidth <= 0.0f || viewportHeight <= 0.0f) {
