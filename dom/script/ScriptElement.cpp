@@ -157,10 +157,25 @@ bool ScriptElement::MaybeProcessScript() {
   nsAutoString type;
   bool hasType = GetScriptType(type);
   if (!type.IsEmpty()) {
-    NS_ENSURE_TRUE(nsContentUtils::IsJavascriptMIMEType(type) ||
-                       type.LowerCaseEqualsASCII("module") ||
-                       type.LowerCaseEqualsASCII("importmap"),
-                   false);
+    if (!nsContentUtils::IsJavascriptMIMEType(type) &&
+        !type.LowerCaseEqualsASCII("module") &&
+        !type.LowerCaseEqualsASCII("importmap")) {
+#ifdef DEBUG
+      
+      
+      
+      
+      
+      if (!type.LowerCaseEqualsASCII("x-shader/x-vertex") &&
+          !type.LowerCaseEqualsASCII("x-shader/x-fragment") &&
+          !type.LowerCaseEqualsASCII("text/something-not-javascript")) {
+        NS_WARNING(nsPrintfCString("Unknown script type '%s'",
+                                   NS_ConvertUTF16toUTF8(type).get())
+                       .get());
+      }
+#endif  
+      return false;
+    }
   } else if (!hasType) {
     
     
