@@ -494,7 +494,7 @@ enum class IntConversionBehavior {
   ClampToUint8,
 };
 
-enum class IntConversionInputKind { NumbersOnly, NumbersOrBoolsOnly, Any };
+enum class IntConversionInputKind { NumbersOnly, Any };
 
 
 
