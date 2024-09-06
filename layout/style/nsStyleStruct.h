@@ -748,6 +748,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   
   
   mozilla::StylePositionAnchor mPositionAnchor;
+  mozilla::StylePositionVisibility mPositionVisibility;
 
   mozilla::StyleFlexBasis mFlexBasis;
   StyleImplicitGridTracks mGridAutoColumns;
