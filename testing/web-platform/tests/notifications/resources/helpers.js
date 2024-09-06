@@ -33,3 +33,13 @@ async function trySettingPermission(perm) {
     throw new Error(`Should have the permission ${perm} to continue`);
   }
 }
+
+
+async function untilActivate() {
+  if (registration.active) {
+    return;
+  }
+  return new Promise(resolve => {
+    addEventListener("activate", resolve, { once: true });
+  });
+}
