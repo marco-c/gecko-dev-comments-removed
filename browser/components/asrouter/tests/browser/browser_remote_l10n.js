@@ -30,10 +30,22 @@ add_setup(async () => {
 
   
   
-  RemoteL10n.reloadL10n();
   if (l10nRegistryInstance.hasSource("cfr")) {
     l10nRegistryInstance.removeSources(["cfr"]);
   }
+  RemoteL10n.reloadL10n();
+
+  registerCleanupFunction(async function () {
+    try {
+      await IOUtils.remove(dirPath, { recursive: true });
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (l10nRegistryInstance.hasSource("cfr")) {
+      l10nRegistryInstance.removeSources(["cfr"]);
+    }
+  });
 });
 
 add_task(async function test_TODO() {
