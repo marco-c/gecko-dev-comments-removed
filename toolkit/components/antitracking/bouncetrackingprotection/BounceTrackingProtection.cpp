@@ -587,11 +587,17 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
             ("%s: Purge state for host: %s", __FUNCTION__,
              PromiseFlatCString(host).get()));
 
-    
-    rv = clearDataService->DeleteDataFromBaseDomain(host, false,
-                                                    TRACKER_PURGE_FLAGS, cb);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      clearPromise->Reject(0, __func__);
+    if (StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode()) {
+      
+      
+      clearPromise->Resolve(host, __func__);
+    } else {
+      
+      rv = clearDataService->DeleteDataFromBaseDomain(host, false,
+                                                      TRACKER_PURGE_FLAGS, cb);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        clearPromise->Reject(0, __func__);
+      }
     }
 
     aClearPromises.AppendElement(clearPromise);
