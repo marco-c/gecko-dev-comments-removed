@@ -1,12 +1,4 @@
 
-
-
-
-
-
-
-
-
 use crate::Error;
 use core::{ffi::c_void, mem::MaybeUninit};
 

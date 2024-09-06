@@ -4,7 +4,7 @@ use num_bigint::{BigInt, BigUint};
 use num_rational::Ratio;
 use num_traits::FromPrimitive;
 use prio::dp::distributions::DiscreteGaussian;
-use prio::vdaf::xof::SeedStreamSha3;
+use prio::vdaf::xof::SeedStreamTurboShake128;
 use rand::distributions::Distribution;
 use rand::SeedableRng;
 use serde::Deserialize;
@@ -29,20 +29,15 @@ pub struct DiscreteGaussTestVector {
 #[test]
 fn discrete_gauss_reference() {
     let test_vectors: Vec<DiscreteGaussTestVector> = vec![
-        serde_json::from_str(include_str!(concat!("test_vectors/discrete_gauss_3.json"))).unwrap(),
-        serde_json::from_str(include_str!(concat!("test_vectors/discrete_gauss_9.json"))).unwrap(),
-        serde_json::from_str(include_str!(concat!(
-            "test_vectors/discrete_gauss_100.json"
-        )))
-        .unwrap(),
-        serde_json::from_str(include_str!(concat!(
-            "test_vectors/discrete_gauss_41293847.json"
-        )))
-        .unwrap(),
-        serde_json::from_str(include_str!(concat!(
+        serde_json::from_str(include_str!("test_vectors/discrete_gauss_3.json")).unwrap(),
+        serde_json::from_str(include_str!("test_vectors/discrete_gauss_9.json")).unwrap(),
+        serde_json::from_str(include_str!("test_vectors/discrete_gauss_100.json")).unwrap(),
+        serde_json::from_str(include_str!("test_vectors/discrete_gauss_41293847.json")).unwrap(),
+        serde_json::from_str(include_str!(
             "test_vectors/discrete_gauss_9999999999999999999999.json"
-        )))
+        ))
         .unwrap(),
+        serde_json::from_str(include_str!("test_vectors/discrete_gauss_2.342.json")).unwrap(),
     ];
 
     for test_vector in test_vectors {
@@ -53,7 +48,7 @@ fn discrete_gauss_reference() {
         .unwrap();
 
         
-        let mut rng = SeedStreamSha3::from_seed(test_vector.seed);
+        let mut rng = SeedStreamTurboShake128::from_seed(test_vector.seed);
         let samples: Vec<BigInt> = (0..test_vector.samples.len())
             .map(|_| sampler.sample(&mut rng))
             .collect();
