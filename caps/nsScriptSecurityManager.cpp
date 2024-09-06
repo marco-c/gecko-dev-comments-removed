@@ -972,7 +972,6 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
   if (NS_FAILED(rv)) return rv;
 
   
-  
   rv = DenyAccessIfURIHasFlags(aTargetURI,
                                nsIProtocolHandler::URI_DANGEROUS_TO_LOAD);
   if (NS_FAILED(rv)) {
@@ -986,29 +985,16 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
 
   
   
-  if (aFromPrivateWindow) {
-    rv = DenyAccessIfURIHasFlags(
-        aTargetURI, nsIProtocolHandler::URI_DISALLOW_IN_PRIVATE_CONTEXT);
-    if (NS_FAILED(rv)) {
-      if (reportErrors) {
-        ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow,
-                    aInnerWindowID);
-      }
-      return rv;
-    }
-  }
-
-  
-  
-  bool maybeWebAccessible = false;
-  NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::WEBEXT_URI_WEB_ACCESSIBLE,
-                      &maybeWebAccessible);
+  bool targetURIIsWebExtensionResource = false;
+  rv = NS_URIChainHasFlags(aTargetURI,
+                           nsIProtocolHandler::URI_IS_WEBEXTENSION_RESOURCE,
+                           &targetURIIsWebExtensionResource);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (maybeWebAccessible) {
-    bool isWebAccessible = false;
+  if (targetURIIsWebExtensionResource) {
+    bool isAccessible = false;
     rv = ExtensionPolicyService::GetSingleton().SourceMayLoadExtensionURI(
-        aSourceURI, aTargetURI, &isWebAccessible);
-    if (NS_SUCCEEDED(rv) && isWebAccessible) {
+        aSourceURI, aTargetURI, aFromPrivateWindow, &isAccessible);
+    if (NS_SUCCEEDED(rv) && isAccessible) {
       return NS_OK;
     }
     if (reportErrors) {

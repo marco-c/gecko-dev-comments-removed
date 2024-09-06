@@ -660,18 +660,18 @@ nsresult BasePrincipal::CheckMayLoadHelper(nsIURI* aURI,
 
   
   
-  
-  
-  
-  
-  
-  
-  extensions::URLInfo urlInfo(aURI);
-  if (RefPtr<extensions::WebExtensionPolicyCore> urlPolicyCore =
-          ExtensionPolicyService::GetCoreByURL(urlInfo)) {
-    extensions::URLInfo prinUrlInfo(prinURI);
-    if (urlPolicyCore->SourceMayAccessPath(prinUrlInfo, urlInfo.FilePath())) {
-      return NS_OK;
+  bool isWebExtensionResource;
+  rv = NS_URIChainHasFlags(aURI,
+                           nsIProtocolHandler::URI_IS_WEBEXTENSION_RESOURCE,
+                           &isWebExtensionResource);
+  if (NS_SUCCEEDED(rv) && isWebExtensionResource) {
+    extensions::URLInfo urlInfo(aURI);
+    if (RefPtr<extensions::WebExtensionPolicyCore> urlPolicyCore =
+            ExtensionPolicyService::GetCoreByURL(urlInfo)) {
+      extensions::URLInfo prinUrlInfo(prinURI);
+      if (urlPolicyCore->SourceMayAccessPath(prinUrlInfo, urlInfo.FilePath())) {
+        return NS_OK;
+      }
     }
   }
 

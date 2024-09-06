@@ -379,7 +379,6 @@ void ExtensionStreamGetter::OnFD(const FileDescriptor& aFD) {
 
 NS_IMPL_QUERY_INTERFACE(ExtensionProtocolHandler,
                         nsISubstitutingProtocolHandler, nsIProtocolHandler,
-                        nsIProtocolHandlerWithDynamicFlags,
                         nsISupportsWeakReference)
 NS_IMPL_ADDREF_INHERITED(ExtensionProtocolHandler, SubstitutingProtocolHandler)
 NS_IMPL_RELEASE_INHERITED(ExtensionProtocolHandler, SubstitutingProtocolHandler)
@@ -407,51 +406,6 @@ ExtensionProtocolHandler::ExtensionProtocolHandler()
 
 static inline ExtensionPolicyService& EPS() {
   return ExtensionPolicyService::GetSingleton();
-}
-
-nsresult ExtensionProtocolHandler::GetFlagsForURI(nsIURI* aURI,
-                                                  uint32_t* aFlags) {
-  uint32_t flags =
-      URI_STD | URI_IS_LOCAL_RESOURCE | URI_IS_POTENTIALLY_TRUSTWORTHY;
-
-  URLInfo url(aURI);
-  if (auto* policy = EPS().GetByURL(url)) {
-    
-    
-    
-    
-    if (policy->IsWebAccessiblePath(url.FilePath())) {
-      if (policy->ManifestVersion() < 3) {
-        
-        
-        
-        
-        
-        flags |= URI_LOADABLE_BY_ANYONE;
-      } else {
-        flags |= WEBEXT_URI_WEB_ACCESSIBLE;
-      }
-    } else if (policy->Type() == nsGkAtoms::theme) {
-      
-      
-      
-      flags |= WEBEXT_URI_WEB_ACCESSIBLE;
-    } else {
-      flags |= URI_DANGEROUS_TO_LOAD;
-    }
-
-    
-    if (!policy->PrivateBrowsingAllowed()) {
-      flags |= URI_DISALLOW_IN_PRIVATE_CONTEXT;
-    }
-  } else {
-    
-    
-    flags |= URI_DANGEROUS_TO_LOAD;
-  }
-
-  *aFlags = flags;
-  return NS_OK;
 }
 
 bool ExtensionProtocolHandler::ResolveSpecialCases(const nsACString& aHost,
