@@ -3689,6 +3689,12 @@ pref("browser.ml.enable", false);
 
 pref("browser.ml.logLevel", "Error");
 
+pref("browser.ml.modelHubRootUrl", "https://model-hub.mozilla.org/");
+
+pref("browser.ml.modelHubUrlTemplate", "{model}/{revision}");
+
+pref("browser.ml.modelCacheTimeout", 120000);
+
 
 
 

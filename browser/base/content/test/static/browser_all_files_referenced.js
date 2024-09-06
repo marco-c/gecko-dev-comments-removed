@@ -277,12 +277,6 @@ var allowlist = [
   { file: "chrome://browser/content/screenshots/copied-notification.svg" },
 
   
-  { file: "chrome://global/content/ml/SummarizerModel.sys.mjs" },
-
-  
-  { file: "chrome://global/content/ml/ModelHub.sys.mjs" },
-
-  
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
 
   
@@ -301,6 +295,10 @@ if (AppConstants.NIGHTLY_BUILD) {
       
       
       { file: "chrome://browser/content/backup/debug.html" },
+
+      
+      { file: "chrome://global/content/ml/transformers.js" },
+      { file: "chrome://global/content/ml/ort.js" },
     ]
   );
 }

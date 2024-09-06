@@ -11,16 +11,14 @@ const FAKE_HUB =
   "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data";
 
 const FAKE_MODEL_ARGS = {
-  organization: "acme",
-  modelName: "bert",
-  modelVersion: "main",
+  model: "acme/bert",
+  revision: "main",
   file: "config.json",
 };
 
 const FAKE_ONNX_MODEL_ARGS = {
-  organization: "acme",
-  modelName: "bert",
-  modelVersion: "main",
+  model: "acme/bert",
+  revision: "main",
   file: "onnx/config.json",
 };
 
@@ -34,6 +32,9 @@ const badHubs = [
   "ftp://localhost/myhub", 
   "https://model-hub.mozilla.org.hack", 
 ];
+
+
+
 
 add_task(async function test_bad_hubs() {
   for (const badHub of badHubs) {
@@ -60,59 +61,56 @@ add_task(async function test_allowed_hub() {
 const badInputs = [
   [
     {
-      organization: "ac me",
-      modelName: "bert",
-      modelVersion: "main",
+      model: "ac me/bert",
+      revision: "main",
       file: "config.json",
     },
     "Org can only contain letters, numbers, and hyphens",
   ],
   [
     {
-      organization: "1111",
-      modelName: "bert",
-      modelVersion: "main",
+      model: "1111/bert",
+      revision: "main",
       file: "config.json",
     },
     "Org cannot contain only numbers",
   ],
   [
     {
-      organization: "-acme",
-      modelName: "bert",
-      modelVersion: "main",
+      model: "-acme/bert",
+      revision: "main",
       file: "config.json",
     },
     "Org start or end with a hyphen, or use consecutive hyphens",
   ],
   [
     {
-      organization: "a-c-m-e",
-      modelName: "#bert",
-      modelVersion: "main",
+      model: "a-c-m-e/#bert",
+      revision: "main",
       file: "config.json",
     },
     "Models can only contain letters, numbers, and hyphens, underscord, periods",
   ],
   [
     {
-      organization: "a-c-m-e",
-      modelName: "b$ert",
-      modelVersion: "main",
+      model: "a-c-m-e/b$ert",
+      revision: "main",
       file: "config.json",
     },
     "Models cannot contain spaces or control characters",
   ],
   [
     {
-      organization: "a-c-m-e",
-      modelName: "b$ert",
-      modelVersion: "main",
+      model: "a-c-m-e/b$ert",
+      revision: "main",
       file: ".filename",
     },
     "File",
   ],
 ];
+
+
+
 
 add_task(async function test_bad_inputs() {
   const hub = new ModelHub({ rootUrl: FAKE_HUB });
@@ -129,6 +127,9 @@ add_task(async function test_bad_inputs() {
   }
 });
 
+
+
+
 add_task(async function test_getting_file() {
   const hub = new ModelHub({ rootUrl: FAKE_HUB });
 
@@ -143,6 +144,9 @@ add_task(async function test_getting_file() {
 
   Assert.equal(jsonData.hidden_size, 768);
 });
+
+
+
 
 add_task(async function test_getting_file_in_subdir() {
   const hub = new ModelHub({ rootUrl: FAKE_HUB });
@@ -161,10 +165,13 @@ add_task(async function test_getting_file_in_subdir() {
   Assert.equal(jsonData.hidden_size, 768);
 });
 
+
+
+
 add_task(async function test_getting_file_custom_path() {
   const hub = new ModelHub({
     rootUrl: FAKE_HUB,
-    urlTemplate: "${organization}/${modelName}/resolve/${modelVersion}/${file}",
+    urlTemplate: "{model}/resolve/{revision}",
   });
 
   let res = await hub.getModelFileAsArrayBuffer(FAKE_MODEL_ARGS);
@@ -172,15 +179,20 @@ add_task(async function test_getting_file_custom_path() {
   Assert.equal(res[1]["Content-Type"], "application/json");
 });
 
+
+
+
 add_task(async function test_getting_file_custom_path_rogue() {
-  const urlTemplate =
-    "${organization}/${modelName}/resolve/${modelVersion}/${file}?some_id=bedqwdw";
+  const urlTemplate = "{model}/resolve/{revision}/?some_id=bedqwdw";
   Assert.throws(
     () => new ModelHub({ rootUrl: FAKE_HUB, urlTemplate }),
     /Invalid URL template/,
     `Should throw with ${urlTemplate}`
   );
 });
+
+
+
 
 add_task(async function test_getting_file_as_response() {
   const hub = new ModelHub({ rootUrl: FAKE_HUB });
@@ -191,6 +203,10 @@ add_task(async function test_getting_file_as_response() {
   let jsonData = await response.json();
   Assert.equal(jsonData.hidden_size, 768);
 });
+
+
+
+
 
 add_task(async function test_getting_file_from_cache() {
   const hub = new ModelHub({ rootUrl: FAKE_HUB });
@@ -211,6 +227,75 @@ add_task(async function test_getting_file_from_cache() {
   hub.cache._testGetData.restore();
 
   Assert.deepEqual(array, array2);
+});
+
+
+
+
+add_task(async function testWellFormedFullUrl() {
+  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const url = `${FAKE_HUB}/org1/model1/v1/file/path`;
+  const result = hub.parseUrl(url);
+
+  Assert.equal(
+    result.model,
+    "org1/model1",
+    "Model should be parsed correctly."
+  );
+  Assert.equal(result.revision, "v1", "Revision should be parsed correctly.");
+  Assert.equal(
+    result.file,
+    "file/path",
+    "File path should be parsed correctly."
+  );
+});
+
+
+
+
+add_task(async function testWellFormedRelativeUrl() {
+  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+
+  const url = "/org1/model1/v1/file/path";
+  const result = hub.parseUrl(url);
+
+  Assert.equal(
+    result.model,
+    "org1/model1",
+    "Model should be parsed correctly."
+  );
+  Assert.equal(result.revision, "v1", "Revision should be parsed correctly.");
+  Assert.equal(
+    result.file,
+    "file/path",
+    "File path should be parsed correctly."
+  );
+});
+
+
+
+
+add_task(async function testInvalidDomain() {
+  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const url = "https://example.com/org1/model1/v1/file/path";
+  Assert.throws(
+    () => hub.parseUrl(url),
+    new RegExp(`Error: Invalid domain for model URL: ${url}`),
+    `Should throw with ${url}`
+  );
+});
+
+
+
+
+add_task(async function testTooFewParts() {
+  const hub = new ModelHub({ rootUrl: FAKE_HUB });
+  const url = "/org1/model1";
+  Assert.throws(
+    () => hub.parseUrl(url),
+    new RegExp(`Error: Invalid model URL: ${url}`),
+    `Should throw with ${url}`
+  );
 });
 
 
@@ -253,13 +338,12 @@ add_task(async function test_Init() {
 add_task(async function test_PutAndGet() {
   const cache = await initializeCache();
   const testData = new ArrayBuffer(8); 
-  await cache.put("org", "model", "v1", "file.txt", testData, {
+  await cache.put("org/model", "v1", "file.txt", testData, {
     ETag: "ETAG123",
   });
 
   const [retrievedData, headers] = await cache.getFile(
-    "org",
-    "model",
+    "org/model",
     "v1",
     "file.txt"
   );
@@ -289,14 +373,9 @@ add_task(async function test_GetHeaders() {
     extra: "extra",
   };
 
-  await cache.put("org", "model", "v1", "file.txt", testData, headers);
+  await cache.put("org/model", "v1", "file.txt", testData, headers);
 
-  const storedHeaders = await cache.getHeaders(
-    "org",
-    "model",
-    "v1",
-    "file.txt"
-  );
+  const storedHeaders = await cache.getHeaders("org/model", "v1", "file.txt");
 
   
   
@@ -318,22 +397,8 @@ add_task(async function test_GetHeaders() {
 
 add_task(async function test_ListModels() {
   const cache = await initializeCache();
-  await cache.put(
-    "org1",
-    "modelA",
-    "v1",
-    "file1.txt",
-    new ArrayBuffer(8),
-    null
-  );
-  await cache.put(
-    "org2",
-    "modelB",
-    "v1",
-    "file2.txt",
-    new ArrayBuffer(8),
-    null
-  );
+  await cache.put("org1/modelA", "v1", "file1.txt", new ArrayBuffer(8), null);
+  await cache.put("org2/modelB", "v1", "file2.txt", new ArrayBuffer(8), null);
 
   const models = await cache.listModels();
   Assert.ok(
@@ -348,10 +413,10 @@ add_task(async function test_ListModels() {
 
 add_task(async function test_DeleteModel() {
   const cache = await initializeCache();
-  await cache.put("org", "model", "v1", "file.txt", new ArrayBuffer(8), null);
-  await cache.deleteModel("org", "model", "v1");
+  await cache.put("org/model", "v1", "file.txt", new ArrayBuffer(8), null);
+  await cache.deleteModel("org/model", "v1");
 
-  const dataAfterDelete = await cache.getFile("org", "model", "v1", "file.txt");
+  const dataAfterDelete = await cache.getFile("org/model", "v1", "file.txt");
   Assert.equal(
     dataAfterDelete,
     null,
