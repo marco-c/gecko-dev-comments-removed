@@ -65,7 +65,7 @@ use malloc_size_of::{MallocShallowSizeOf, MallocSizeOfOps, MallocUnconditionalSh
 use selectors::attr::{CaseSensitivity, NamespaceConstraint};
 use selectors::bloom::BloomFilter;
 use selectors::matching::{
-    matches_selector, MatchingContext, MatchingMode, NeedsSelectorFlags, SelectorCaches,
+    matches_selector, selector_may_match, MatchingContext, MatchingMode, NeedsSelectorFlags, SelectorCaches
 };
 use selectors::matching::{MatchingForInvalidation, VisitedHandlingMode};
 use selectors::parser::{
@@ -2910,8 +2910,17 @@ impl CascadeData {
         }
 
         let (root_target, matches_shadow_host) = if let Some(start) = bounds.start.as_ref() {
+            if let Some(filter) = context.bloom_filter {
+                
+                
+                
+                
+                if !start.hashes.iter().any(|entry| selector_may_match(entry, filter)) {
+                    return vec![];
+                }
+            }
             (
-                ScopeTarget::Selector(&start.selectors, &start.hashes),
+                ScopeTarget::Selector(&start.selectors),
                 start.selectors.slice().iter().any(|s| {
                     !s.matches_featureless_host_selector_or_pseudo_element()
                         .is_empty()
@@ -2975,9 +2984,16 @@ impl CascadeData {
             
             for scope_root in potential_scope_roots {
                 if end.selectors.slice().iter().zip(end.hashes.iter()).all(|(selector, hashes)| {
+                    
+                    if let Some(filter) = context.bloom_filter {
+                        if !selector_may_match(hashes, filter) {
+                            
+                            return true;
+                        }
+                    }
+
                     !element_is_outside_of_scope(
                         selector,
-                        hashes,
                         element,
                         scope_root.root,
                         context,

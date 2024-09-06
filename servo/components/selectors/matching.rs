@@ -132,8 +132,10 @@ where
     false
 }
 
+
+
 #[inline(always)]
-fn may_match(hashes: &AncestorHashes, bf: &BloomFilter) -> bool {
+pub fn selector_may_match(hashes: &AncestorHashes, bf: &BloomFilter) -> bool {
     
     
     
@@ -281,7 +283,7 @@ where
     
     if let Some(hashes) = hashes {
         if let Some(filter) = context.bloom_filter {
-            if !may_match(hashes, filter) {
+            if !selector_may_match(hashes, filter) {
                 return KleeneValue::False;
             }
         }
