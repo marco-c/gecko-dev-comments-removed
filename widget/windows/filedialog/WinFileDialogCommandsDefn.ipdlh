@@ -51,7 +51,7 @@ struct RemoteError {
   
   
   
-  nsCString where;
+  uint32_t where;
   
   
   uint32_t why;
