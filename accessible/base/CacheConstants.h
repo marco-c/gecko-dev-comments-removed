@@ -174,6 +174,9 @@ class CacheKey {
   
   static constexpr nsStaticAtom* IsClipped = nsGkAtoms::clip_rule;
   
+  
+  static constexpr nsStaticAtom* Language = nsGkAtoms::language;
+  
   static constexpr nsStaticAtom* MimeType = nsGkAtoms::headerContentType;
   
   static constexpr nsStaticAtom* MaxValue = nsGkAtoms::max;
