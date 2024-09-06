@@ -755,14 +755,14 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
       NS_ASSERTION(kidFrame->GetWritingMode() == wm,
                    "expected consistent writing-mode within table");
       LogicalSize cellDesiredSize = kidFrame->GetDesiredSize();
-      if ((availCellISize != kidFrame->GetPriorAvailISize()) ||
-          (cellDesiredSize.ISize(wm) > kidFrame->GetPriorAvailISize()) ||
+      if (availCellISize != kidFrame->GetPriorAvailISize() ||
+          cellDesiredSize.ISize(wm) > kidFrame->GetPriorAvailISize() ||
           HasAnyStateBits(NS_FRAME_IS_DIRTY) || isPaginated ||
           kidFrame->IsSubtreeDirty() ||
           
           
           kidFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE) ||
-          HasPctBSize()) {
+          kidFrame->BCBordersChanged() || HasPctBSize()) {
         
         
         LogicalSize kidAvailSize(wm, availCellISize,
