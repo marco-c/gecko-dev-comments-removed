@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1128787
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1128787</title>
@@ -26,8 +26,7 @@
       SimpleTest.executeSoon(function () {
         document.designMode = "off";
 
-        // XXX Should be fixed.
-        todo_is(utils.IMEStatus, utils.IME_STATUS_DISABLED, "IME should be disabled");
+        is(utils.IMEStatus, utils.IME_STATUS_DISABLED, "IME should be disabled");
 
         SimpleTest.finish();
       });
