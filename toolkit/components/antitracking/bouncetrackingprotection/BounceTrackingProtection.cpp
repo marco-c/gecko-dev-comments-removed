@@ -670,7 +670,7 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     if (StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode()) {
       
       
-      clearPromise->Resolve(host, __func__);
+      cb->OnDataDeleted(0);
     } else {
       
       rv = clearDataService->DeleteDataFromBaseDomain(host, false,
