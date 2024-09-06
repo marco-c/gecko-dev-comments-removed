@@ -391,12 +391,18 @@ impl SelectorMap<Rule> {
                     stylist,
                     include_starting_style
                 );
-            } else if let Some(scopes) = cascade_data.scope_condition_matches(
-                rule.scope_condition_id,
-                stylist,
-                element,
-                matching_context,
-            ) {
+            } else {
+                
+                
+                
+                
+                let scopes = cascade_data.scope_condition_matches(
+                    rule.scope_condition_id,
+                    stylist,
+                    element,
+                    matching_context,
+                );
+
                 
                 
                 for candidate in scopes {
