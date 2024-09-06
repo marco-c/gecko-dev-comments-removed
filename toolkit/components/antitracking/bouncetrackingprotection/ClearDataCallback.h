@@ -49,10 +49,6 @@ class ClearDataCallback final : public nsIClearDataCallback,
   void RecordURLClassifierTelemetry();
 
   
-  
-  static nsTArray<RefPtr<nsIUrlClassifierFeature>> sUrlClassifierFeatures;
-
-  
   void RecordPurgeEventTelemetry(bool aSuccess);
 };
 
