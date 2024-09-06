@@ -988,6 +988,8 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
   CopyUTF8toUTF16(mReferrer, aViolationEventInit.mReferrer);
 
   
+  
+  
   if (aBlockedURI) {
     nsAutoCString reportBlockedURI;
     StripURIForReporting(mSelfURI, aOriginalURI ? aOriginalURI : aBlockedURI,
