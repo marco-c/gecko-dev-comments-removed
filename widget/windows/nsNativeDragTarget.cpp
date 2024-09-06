@@ -249,7 +249,9 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
 
   
   
-  mDragService->StartDragSession(mWidget);
+  RefPtr<nsDragSession> session =
+      static_cast<nsDragSession*>(mDragService->StartDragSession(mWidget));
+  MOZ_ASSERT(session);
 
   void* tempOutData = nullptr;
   uint32_t tempDataLen = 0;
@@ -265,8 +267,6 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
   }
 
   
-  RefPtr<nsDragSession> session =
-      static_cast<nsDragSession*>(mDragService->GetCurrentSession(mWidget));
   session->SetIDataObject(pIDataSource);
 
   

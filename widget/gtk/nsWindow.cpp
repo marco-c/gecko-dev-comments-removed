@@ -8718,9 +8718,8 @@ gboolean WindowDragMotionHandler(GtkWidget* aWidget,
   if (!dragSession) {
     
     nsIWidget* widget = window;
-    static_cast<nsDragSession*>(dragService->StartDragSession(widget));
     dragSession =
-      static_cast<nsDragSession*>(dragService->GetCurrentSession(window));
+        static_cast<nsDragSession*>(dragService->StartDragSession(widget));
   }
   NS_ENSURE_TRUE(dragSession, FALSE);
 
