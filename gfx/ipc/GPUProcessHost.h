@@ -105,8 +105,7 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void SetListener(Listener* aListener);
 
   
-  
-  void KillProcess(bool aGenerateMinidump);
+  void KillProcess();
 
   
   void CrashProcess();
@@ -129,7 +128,7 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void OnChannelClosed();
 
   
-  void KillHard(bool aGenerateMinidump);
+  void KillHard(const char* aReason);
 
   void DestroyProcess();
 
