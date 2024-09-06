@@ -1,48 +1,7 @@
 
-
-
-
-
-
-
-
-
-use crate::{
-    util::LazyBool,
-    util_libc::{last_os_error, sys_fill_exact},
-    {use_file, Error},
-};
+use crate::{util_libc, Error};
 use core::mem::MaybeUninit;
 
 pub fn getrandom_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
-    
-    static HAS_GETRANDOM: LazyBool = LazyBool::new();
-    if HAS_GETRANDOM.unsync_init(is_getrandom_available) {
-        sys_fill_exact(dest, |buf| unsafe {
-            getrandom(buf.as_mut_ptr() as *mut libc::c_void, buf.len(), 0)
-        })
-    } else {
-        use_file::getrandom_inner(dest)
-    }
-}
-
-fn is_getrandom_available() -> bool {
-    let res = unsafe { getrandom(core::ptr::null_mut(), 0, libc::GRND_NONBLOCK) };
-    if res < 0 {
-        match last_os_error().raw_os_error() {
-            Some(libc::ENOSYS) => false, 
-            Some(libc::EPERM) => false,  
-            _ => true,
-        }
-    } else {
-        true
-    }
-}
-
-unsafe fn getrandom(
-    buf: *mut libc::c_void,
-    buflen: libc::size_t,
-    flags: libc::c_uint,
-) -> libc::ssize_t {
-    libc::syscall(libc::SYS_getrandom, buf, buflen, flags) as libc::ssize_t
+    util_libc::sys_fill_exact(dest, util_libc::getrandom_syscall)
 }

@@ -15,6 +15,7 @@ use std::fmt::Debug;
 
 
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum PingPongError {
     
     #[error("vdaf.prepare_init: {0}")]
@@ -29,11 +30,11 @@ pub enum PingPongError {
     VdafPrepareNext(VdafError),
 
     
-    #[error("decode prep share {0}")]
+    #[error("encode/decode prep share {0}")]
     CodecPrepShare(CodecError),
 
     
-    #[error("decode prep message {0}")]
+    #[error("encode/decode prep message {0}")]
     CodecPrepMessage(CodecError),
 
     
@@ -108,27 +109,28 @@ impl Debug for PingPongMessage {
 }
 
 impl Encode for PingPongMessage {
-    fn encode(&self, bytes: &mut Vec<u8>) {
+    fn encode(&self, bytes: &mut Vec<u8>) -> Result<(), CodecError> {
         
         
         match self {
             Self::Initialize { prep_share } => {
-                0u8.encode(bytes);
-                encode_u32_items(bytes, &(), prep_share);
+                0u8.encode(bytes)?;
+                encode_u32_items(bytes, &(), prep_share)?;
             }
             Self::Continue {
                 prep_msg,
                 prep_share,
             } => {
-                1u8.encode(bytes);
-                encode_u32_items(bytes, &(), prep_msg);
-                encode_u32_items(bytes, &(), prep_share);
+                1u8.encode(bytes)?;
+                encode_u32_items(bytes, &(), prep_msg)?;
+                encode_u32_items(bytes, &(), prep_share)?;
             }
             Self::Finish { prep_msg } => {
-                2u8.encode(bytes);
-                encode_u32_items(bytes, &(), prep_msg);
+                2u8.encode(bytes)?;
+                encode_u32_items(bytes, &(), prep_msg)?;
             }
         }
+        Ok(())
     }
 
     fn encoded_len(&self) -> Option<usize> {
@@ -212,26 +214,31 @@ impl<
         ),
         PingPongError,
     > {
-        let prep_msg = self.current_prepare_message.get_encoded();
+        let prep_msg = self
+            .current_prepare_message
+            .get_encoded()
+            .map_err(PingPongError::CodecPrepMessage)?;
 
         vdaf.prepare_next(
             self.previous_prepare_state.clone(),
             self.current_prepare_message.clone(),
         )
-        .map(|transition| match transition {
-            PrepareTransition::Continue(prep_state, prep_share) => (
+        .map_err(PingPongError::VdafPrepareNext)
+        .and_then(|transition| match transition {
+            PrepareTransition::Continue(prep_state, prep_share) => Ok((
                 PingPongState::Continued(prep_state),
                 PingPongMessage::Continue {
                     prep_msg,
-                    prep_share: prep_share.get_encoded(),
+                    prep_share: prep_share
+                        .get_encoded()
+                        .map_err(PingPongError::CodecPrepShare)?,
                 },
-            ),
-            PrepareTransition::Finish(output_share) => (
+            )),
+            PrepareTransition::Finish(output_share) => Ok((
                 PingPongState::Finished(output_share),
                 PingPongMessage::Finish { prep_msg },
-            ),
+            )),
         })
-        .map_err(PingPongError::VdafPrepareNext)
     }
 }
 
@@ -253,9 +260,9 @@ where
     A: Aggregator<VERIFY_KEY_SIZE, NONCE_SIZE>,
     A::PrepareState: Encode,
 {
-    fn encode(&self, bytes: &mut Vec<u8>) {
-        self.previous_prepare_state.encode(bytes);
-        self.current_prepare_message.encode(bytes);
+    fn encode(&self, bytes: &mut Vec<u8>) -> Result<(), CodecError> {
+        self.previous_prepare_state.encode(bytes)?;
+        self.current_prepare_message.encode(bytes)
     }
 
     fn encoded_len(&self) -> Option<usize> {
@@ -378,6 +385,8 @@ pub trait PingPongTopology<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize
     
     
     
+    
+    
     fn helper_initialized(
         &self,
         verify_key: &[u8; VERIFY_KEY_SIZE],
@@ -416,14 +425,6 @@ pub trait PingPongTopology<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     fn leader_continued(
         &self,
         leader_state: Self::State,
@@ -431,14 +432,6 @@ pub trait PingPongTopology<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize
         inbound: &PingPongMessage,
     ) -> Result<Self::ContinuedValue, PingPongError>;
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -513,15 +506,17 @@ where
             public_share,
             input_share,
         )
-        .map(|(prep_state, prep_share)| {
-            (
+        .map_err(PingPongError::VdafPrepareInit)
+        .and_then(|(prep_state, prep_share)| {
+            Ok((
                 PingPongState::Continued(prep_state),
                 PingPongMessage::Initialize {
-                    prep_share: prep_share.get_encoded(),
+                    prep_share: prep_share
+                        .get_encoded()
+                        .map_err(PingPongError::CodecPrepShare)?,
                 },
-            )
+            ))
         })
-        .map_err(PingPongError::VdafPrepareInit)
     }
 
     fn helper_initialized(
@@ -652,18 +647,14 @@ where
             (PrepareTransition::Finish(output_share), None) => {
                 Ok(PingPongContinuedValue::FinishedNoMessage { output_share })
             }
-            (PrepareTransition::Continue(_, _), None) => {
-                return Err(PingPongError::PeerMessageMismatch {
-                    found: inbound.variant(),
-                    expected: "continue",
-                })
-            }
-            (PrepareTransition::Finish(_), Some(_)) => {
-                return Err(PingPongError::PeerMessageMismatch {
-                    found: inbound.variant(),
-                    expected: "finish",
-                })
-            }
+            (PrepareTransition::Continue(_, _), None) => Err(PingPongError::PeerMessageMismatch {
+                found: inbound.variant(),
+                expected: "continue",
+            }),
+            (PrepareTransition::Finish(_), Some(_)) => Err(PingPongError::PeerMessageMismatch {
+                found: inbound.variant(),
+                expected: "finish",
+            }),
         }
     }
 }
@@ -914,7 +905,7 @@ mod tests {
 
         for (message, expected_hex) in messages {
             let mut encoded_val = Vec::new();
-            message.encode(&mut encoded_val);
+            message.encode(&mut encoded_val).unwrap();
             let got_hex = hex::encode(&encoded_val);
             assert_eq!(
                 &got_hex, expected_hex,
@@ -942,7 +933,7 @@ mod tests {
             current_prepare_message: (),
         };
 
-        let encoded = transition.get_encoded();
+        let encoded = transition.get_encoded().unwrap();
         let hex_encoded = hex::encode(&encoded);
 
         assert_eq!(

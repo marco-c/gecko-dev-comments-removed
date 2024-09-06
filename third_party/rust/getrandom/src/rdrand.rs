@@ -1,14 +1,5 @@
 
-
-
-
-
-
-
-use crate::{
-    util::{slice_as_uninit, LazyBool},
-    Error,
-};
+use crate::{lazy::LazyBool, util::slice_as_uninit, Error};
 use core::mem::{size_of, MaybeUninit};
 
 cfg_if! {
