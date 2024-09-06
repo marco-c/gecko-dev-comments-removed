@@ -1252,8 +1252,15 @@ static bool phc_init() {
 }
 
 static inline bool maybe_init() {
-  static bool sInitSuccess = []() { return phc_init(); }();
-  return sInitSuccess;
+  
+  
+  if (MOZ_UNLIKELY(!PHC::sPHC)) {
+    
+    static bool sInitSuccess = []() { return phc_init(); }();
+    return sInitSuccess;
+  }
+
+  return true;
 }
 
 
