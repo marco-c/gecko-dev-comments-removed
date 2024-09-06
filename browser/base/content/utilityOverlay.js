@@ -113,6 +113,11 @@ function getRootEvent(aEvent) {
   return BrowserUtils.getRootEvent(aEvent);
 }
 
+
+function whereToOpenLink(e, ignoreButton, ignoreAlt) {
+  return BrowserUtils.whereToOpenLink(e, ignoreButton, ignoreAlt);
+}
+
 function openTrustedLinkIn(url, where, params) {
   URILoadingHelper.openTrustedLinkIn(window, url, where, params);
 }
