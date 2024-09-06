@@ -107,6 +107,17 @@ class BidiEmbeddingLevel {
 
  private:
   uint8_t mValue = 0;
+
+  
+
+
+
+
+
+
+
+  static constexpr uint8_t kDefaultLTR = 0xfe;
+  static constexpr uint8_t kDefaultRTL = 0xff;
 };
 
 }  
