@@ -101,8 +101,8 @@ add_task(async function elevation_dialog() {
 
 
 
-function waitForElevationDialog() {
-  return new Promise(resolve => {
+async function waitForElevationDialog() {
+  let elevationDialogLoadedPromise = new Promise(resolve => {
     var listener = {
       onOpenWindow: aXULWindow => {
         debugDump("Update Elevation dialog shown...");
@@ -127,16 +127,18 @@ function waitForElevationDialog() {
     };
 
     Services.wm.addListener(listener);
-    
-    
-    
-    let patchProps = { state: STATE_PENDING_ELEVATE };
-    let patches = getLocalPatchString(patchProps);
-    let updateProps = { checkInterval: "1" };
-    let updates = getLocalUpdateString(updateProps, patches);
-    writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
-    writeStatusFile(STATE_PENDING_ELEVATE);
-    reloadUpdateManagerData();
-    testPostUpdateProcessing();
   });
+  
+  
+  
+  let patchProps = { state: STATE_PENDING_ELEVATE };
+  let patches = getLocalPatchString(patchProps);
+  let updateProps = { checkInterval: "1" };
+  let updates = getLocalUpdateString(updateProps, patches);
+  writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
+  writeStatusFile(STATE_PENDING_ELEVATE);
+  reloadUpdateManagerData();
+  await testPostUpdateProcessing();
+
+  return elevationDialogLoadedPromise;
 }
