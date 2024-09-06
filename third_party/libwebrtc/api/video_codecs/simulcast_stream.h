@@ -23,8 +23,6 @@ struct SimulcastStream {
   
   unsigned char GetNumberOfTemporalLayers() const;
   absl::optional<ScalabilityMode> GetScalabilityMode() const;
-  
-  absl::optional<ScalabilityMode> GetScalabilityMode2() const;
   void SetNumberOfTemporalLayers(unsigned char n);
 
   int width = 0;
