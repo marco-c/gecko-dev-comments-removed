@@ -53,7 +53,6 @@ const {
 
 
 
-
 const CSS_STATES = {
   null: "null",
   property: "property", 
@@ -214,30 +213,26 @@ CSSCompleter.prototype = {
           
           
           
-          if (token.tokenType === "symbol") {
-            switch (token.text) {
-              case ":":
-                scopeStack.push(":");
-                if (tokens[cursor - 2].tokenType != "whitespace") {
-                  propertyName = tokens[cursor - 2].text;
-                } else {
-                  propertyName = tokens[cursor - 3].text;
-                }
-                _state = CSS_STATES.value;
-                break;
+          if (token.tokenType === "Colon") {
+            scopeStack.push(":");
+            if (tokens[cursor - 2].tokenType != "WhiteSpace") {
+              propertyName = tokens[cursor - 2].text;
+            } else {
+              propertyName = tokens[cursor - 3].text;
+            }
+            _state = CSS_STATES.value;
+          }
 
-              case "}":
-                if (/[{f]/.test(peek(scopeStack))) {
-                  const popped = scopeStack.pop();
-                  if (popped == "f") {
-                    _state = CSS_STATES.frame;
-                  } else {
-                    selector = "";
-                    selectors = [];
-                    _state = CSS_STATES.null;
-                  }
-                }
-                break;
+          if (token.tokenType === "CloseCurlyBracket") {
+            if (/[{f]/.test(peek(scopeStack))) {
+              const popped = scopeStack.pop();
+              if (popped == "f") {
+                _state = CSS_STATES.frame;
+              } else {
+                selector = "";
+                selectors = [];
+                _state = CSS_STATES.null;
+              }
             }
           }
           break;
@@ -245,31 +240,27 @@ CSSCompleter.prototype = {
         case CSS_STATES.value:
           
           
-          if (token.tokenType === "symbol") {
-            switch (token.text) {
-              case ";":
-                if (/[:]/.test(peek(scopeStack))) {
-                  scopeStack.pop();
-                  _state = CSS_STATES.property;
-                }
-                break;
+          if (token.tokenType === "Semicolon") {
+            if (/[:]/.test(peek(scopeStack))) {
+              scopeStack.pop();
+              _state = CSS_STATES.property;
+            }
+          }
 
-              case "}":
-                if (peek(scopeStack) == ":") {
-                  scopeStack.pop();
-                }
+          if (token.tokenType === "CloseCurlyBracket") {
+            if (peek(scopeStack) == ":") {
+              scopeStack.pop();
+            }
 
-                if (/[{f]/.test(peek(scopeStack))) {
-                  const popped = scopeStack.pop();
-                  if (popped == "f") {
-                    _state = CSS_STATES.frame;
-                  } else {
-                    selector = "";
-                    selectors = [];
-                    _state = CSS_STATES.null;
-                  }
-                }
-                break;
+            if (/[{f]/.test(peek(scopeStack))) {
+              const popped = scopeStack.pop();
+              if (popped == "f") {
+                _state = CSS_STATES.frame;
+              } else {
+                selector = "";
+                selectors = [];
+                _state = CSS_STATES.null;
+              }
             }
           }
           break;
@@ -277,7 +268,7 @@ CSSCompleter.prototype = {
         case CSS_STATES.selector:
           
           
-          if (token.tokenType === "symbol" && token.text == "{") {
+          if (token.tokenType === "CurlyBracketBlock") {
             scopeStack.push("{");
             _state = CSS_STATES.property;
             selectors.push(selector);
@@ -290,74 +281,87 @@ CSSCompleter.prototype = {
             case SELECTOR_STATES.class:
             case SELECTOR_STATES.tag:
               switch (token.tokenType) {
-                case "hash":
-                case "id":
+                case "Hash":
+                case "IDHash":
                   selectorState = SELECTOR_STATES.id;
-                  selector += "#" + token.text;
+                  selector += token.text;
                   break;
 
-                case "symbol":
+                case "Delim":
                   if (token.text == ".") {
                     selectorState = SELECTOR_STATES.class;
                     selector += ".";
                     if (
                       cursor <= tokIndex &&
-                      tokens[cursor].tokenType == "ident"
+                      tokens[cursor].tokenType == "Ident"
                     ) {
                       token = tokens[cursor++];
                       selector += token.text;
                     }
                   } else if (token.text == "#") {
+                    
                     selectorState = SELECTOR_STATES.id;
                     selector += "#";
-                  } else if (/[>~+]/.test(token.text)) {
+                  } else if (
+                    token.text == "+" ||
+                    token.text == "~" ||
+                    token.text == ">"
+                  ) {
                     selectorState = SELECTOR_STATES.null;
                     selector += token.text;
-                  } else if (token.text == ",") {
-                    selectorState = SELECTOR_STATES.null;
-                    selectors.push(selector);
-                    selector = "";
-                  } else if (token.text == ":") {
-                    selectorState = SELECTOR_STATES.pseudo;
-                    selector += ":";
-                    if (cursor > tokIndex) {
-                      break;
-                    }
-
-                    token = tokens[cursor++];
-                    switch (token.tokenType) {
-                      case "function":
-                        if (token.text == "not") {
-                          selectorBeforeNot = selector;
-                          selector = "";
-                          scopeStack.push("(");
-                        } else {
-                          selector += token.text + "(";
-                        }
-                        selectorState = SELECTOR_STATES.null;
-                        break;
-
-                      case "ident":
-                        selector += token.text;
-                        break;
-                    }
-                  } else if (token.text == "[") {
-                    selectorState = SELECTOR_STATES.attribute;
-                    scopeStack.push("[");
-                    selector += "[";
-                  } else if (token.text == ")") {
-                    if (peek(scopeStack) == "(") {
-                      scopeStack.pop();
-                      selector = selectorBeforeNot + "not(" + selector + ")";
-                      selectorBeforeNot = null;
-                    } else {
-                      selector += ")";
-                    }
-                    selectorState = SELECTOR_STATES.null;
                   }
                   break;
 
-                case "whitespace":
+                case "Comma":
+                  selectorState = SELECTOR_STATES.null;
+                  selectors.push(selector);
+                  selector = "";
+                  break;
+
+                case "Colon":
+                  selectorState = SELECTOR_STATES.pseudo;
+                  selector += ":";
+                  if (cursor > tokIndex) {
+                    break;
+                  }
+
+                  token = tokens[cursor++];
+                  switch (token.tokenType) {
+                    case "Function":
+                      if (token.value == "not") {
+                        selectorBeforeNot = selector;
+                        selector = "";
+                        scopeStack.push("(");
+                      } else {
+                        selector += token.text;
+                      }
+                      selectorState = SELECTOR_STATES.null;
+                      break;
+
+                    case "Ident":
+                      selector += token.text;
+                      break;
+                  }
+                  break;
+
+                case "SquareBracketBlock":
+                  selectorState = SELECTOR_STATES.attribute;
+                  scopeStack.push("[");
+                  selector += "[";
+                  break;
+
+                case "CloseParenthesis":
+                  if (peek(scopeStack) == "(") {
+                    scopeStack.pop();
+                    selector = selectorBeforeNot + "not(" + selector + ")";
+                    selectorBeforeNot = null;
+                  } else {
+                    selector += ")";
+                  }
+                  selectorState = SELECTOR_STATES.null;
+                  break;
+
+                case "WhiteSpace":
                   selectorState = SELECTOR_STATES.null;
                   selector && (selector += " ");
                   break;
@@ -369,81 +373,94 @@ CSSCompleter.prototype = {
               
               
               switch (token.tokenType) {
-                case "hash":
-                case "id":
+                case "Hash":
+                case "IDHash":
                   selectorState = SELECTOR_STATES.id;
-                  selector += "#" + token.text;
+                  selector += token.text;
                   break;
 
-                case "ident":
+                case "Ident":
                   selectorState = SELECTOR_STATES.tag;
                   selector += token.text;
                   break;
 
-                case "symbol":
+                case "Delim":
                   if (token.text == ".") {
                     selectorState = SELECTOR_STATES.class;
                     selector += ".";
                     if (
                       cursor <= tokIndex &&
-                      tokens[cursor].tokenType == "ident"
+                      tokens[cursor].tokenType == "Ident"
                     ) {
                       token = tokens[cursor++];
                       selector += token.text;
                     }
                   } else if (token.text == "#") {
+                    
                     selectorState = SELECTOR_STATES.id;
                     selector += "#";
                   } else if (token.text == "*") {
                     selectorState = SELECTOR_STATES.tag;
                     selector += "*";
-                  } else if (/[>~+]/.test(token.text)) {
+                  } else if (
+                    token.text == "+" ||
+                    token.text == "~" ||
+                    token.text == ">"
+                  ) {
                     selector += token.text;
-                  } else if (token.text == ",") {
-                    selectorState = SELECTOR_STATES.null;
-                    selectors.push(selector);
-                    selector = "";
-                  } else if (token.text == ":") {
-                    selectorState = SELECTOR_STATES.pseudo;
-                    selector += ":";
-                    if (cursor > tokIndex) {
-                      break;
-                    }
-
-                    token = tokens[cursor++];
-                    switch (token.tokenType) {
-                      case "function":
-                        if (token.text == "not") {
-                          selectorBeforeNot = selector;
-                          selector = "";
-                          scopeStack.push("(");
-                        } else {
-                          selector += token.text + "(";
-                        }
-                        selectorState = SELECTOR_STATES.null;
-                        break;
-
-                      case "ident":
-                        selector += token.text;
-                        break;
-                    }
-                  } else if (token.text == "[") {
-                    selectorState = SELECTOR_STATES.attribute;
-                    scopeStack.push("[");
-                    selector += "[";
-                  } else if (token.text == ")") {
-                    if (peek(scopeStack) == "(") {
-                      scopeStack.pop();
-                      selector = selectorBeforeNot + "not(" + selector + ")";
-                      selectorBeforeNot = null;
-                    } else {
-                      selector += ")";
-                    }
-                    selectorState = SELECTOR_STATES.null;
                   }
                   break;
 
-                case "whitespace":
+                case "Comma":
+                  selectorState = SELECTOR_STATES.null;
+                  selectors.push(selector);
+                  selector = "";
+                  break;
+
+                case "Colon":
+                  selectorState = SELECTOR_STATES.pseudo;
+                  selector += ":";
+                  if (cursor > tokIndex) {
+                    break;
+                  }
+
+                  token = tokens[cursor++];
+                  switch (token.tokenType) {
+                    case "Function":
+                      if (token.value == "not") {
+                        selectorBeforeNot = selector;
+                        selector = "";
+                        scopeStack.push("(");
+                      } else {
+                        selector += token.text;
+                      }
+                      selectorState = SELECTOR_STATES.null;
+                      break;
+
+                    case "Ident":
+                      selector += token.text;
+                      break;
+                  }
+                  break;
+
+                case "SquareBracketBlock":
+                  selectorState = SELECTOR_STATES.attribute;
+                  scopeStack.push("[");
+                  selector += "[";
+                  break;
+
+                case "CloseParenthesis":
+                  if (peek(scopeStack) == "(") {
+                    scopeStack.pop();
+                    selector = selectorBeforeNot + "not(" + selector + ")";
+                    selectorBeforeNot = null;
+                  } else {
+                    selector += ")";
+                  }
+                  selectorState = SELECTOR_STATES.null;
+                  break;
+
+                case "WhiteSpace":
                   selector && (selector += " ");
                   break;
               }
@@ -451,46 +468,55 @@ CSSCompleter.prototype = {
 
             case SELECTOR_STATES.pseudo:
               switch (token.tokenType) {
-                case "symbol":
-                  if (/[>~+]/.test(token.text)) {
+                case "Delim":
+                  if (
+                    token.text == "+" ||
+                    token.text == "~" ||
+                    token.text == ">"
+                  ) {
                     selectorState = SELECTOR_STATES.null;
                     selector += token.text;
-                  } else if (token.text == ",") {
-                    selectorState = SELECTOR_STATES.null;
-                    selectors.push(selector);
-                    selector = "";
-                  } else if (token.text == ":") {
-                    selectorState = SELECTOR_STATES.pseudo;
-                    selector += ":";
-                    if (cursor > tokIndex) {
-                      break;
-                    }
-
-                    token = tokens[cursor++];
-                    switch (token.tokenType) {
-                      case "function":
-                        if (token.text == "not") {
-                          selectorBeforeNot = selector;
-                          selector = "";
-                          scopeStack.push("(");
-                        } else {
-                          selector += token.text + "(";
-                        }
-                        selectorState = SELECTOR_STATES.null;
-                        break;
-
-                      case "ident":
-                        selector += token.text;
-                        break;
-                    }
-                  } else if (token.text == "[") {
-                    selectorState = SELECTOR_STATES.attribute;
-                    scopeStack.push("[");
-                    selector += "[";
                   }
                   break;
 
-                case "whitespace":
+                case "Comma":
+                  selectorState = SELECTOR_STATES.null;
+                  selectors.push(selector);
+                  selector = "";
+                  break;
+
+                case "Colon":
+                  selectorState = SELECTOR_STATES.pseudo;
+                  selector += ":";
+                  if (cursor > tokIndex) {
+                    break;
+                  }
+
+                  token = tokens[cursor++];
+                  switch (token.tokenType) {
+                    case "Function":
+                      if (token.value == "not") {
+                        selectorBeforeNot = selector;
+                        selector = "";
+                        scopeStack.push("(");
+                      } else {
+                        selector += token.text;
+                      }
+                      selectorState = SELECTOR_STATES.null;
+                      break;
+
+                    case "Ident":
+                      selector += token.text;
+                      break;
+                  }
+                  break;
+                case "SquareBracketBlock":
+                  selectorState = SELECTOR_STATES.attribute;
+                  scopeStack.push("[");
+                  selector += "[";
+                  break;
+
+                case "WhiteSpace":
                   selectorState = SELECTOR_STATES.null;
                   selector && (selector += " ");
                   break;
@@ -499,29 +525,40 @@ CSSCompleter.prototype = {
 
             case SELECTOR_STATES.attribute:
               switch (token.tokenType) {
-                case "symbol":
-                  if (/[~|^$*]/.test(token.text)) {
-                    selector += token.text;
-                    token = tokens[cursor++];
-                  } else if (token.text == "=") {
+                case "IncludeMatch":
+                case "DashMatch":
+                case "PrefixMatch":
+                case "IncludeSuffixMatchMatch":
+                case "SubstringMatch":
+                  selector += token.text;
+                  token = tokens[cursor++];
+                  break;
+
+                case "Delim":
+                  if (token.text == "=") {
                     selectorState = SELECTOR_STATES.value;
                     selector += token.text;
-                  } else if (token.text == "]") {
-                    if (peek(scopeStack) == "[") {
-                      scopeStack.pop();
-                    }
-
-                    selectorState = SELECTOR_STATES.null;
-                    selector += "]";
                   }
                   break;
 
-                case "ident":
-                case "string":
+                case "CloseSquareBracket":
+                  if (peek(scopeStack) == "[") {
+                    scopeStack.pop();
+                  }
+
+                  selectorState = SELECTOR_STATES.null;
+                  selector += "]";
+                  break;
+
+                case "Ident":
                   selector += token.text;
                   break;
 
-                case "whitespace":
+                case "QuotedString":
+                  selector += token.value;
+                  break;
+
+                case "WhiteSpace":
                   selector && (selector += " ");
                   break;
               }
@@ -529,23 +566,24 @@ CSSCompleter.prototype = {
 
             case SELECTOR_STATES.value:
               switch (token.tokenType) {
-                case "string":
-                case "ident":
+                case "Ident":
                   selector += token.text;
                   break;
 
-                case "symbol":
-                  if (token.text == "]") {
-                    if (peek(scopeStack) == "[") {
-                      scopeStack.pop();
-                    }
-
-                    selectorState = SELECTOR_STATES.null;
-                    selector += "]";
-                  }
+                case "QuotedString":
+                  selector += token.value;
                   break;
 
-                case "whitespace":
+                case "CloseSquareBracket":
+                  if (peek(scopeStack) == "[") {
+                    scopeStack.pop();
+                  }
+
+                  selectorState = SELECTOR_STATES.null;
+                  selector += "]";
+                  break;
+
+                case "WhiteSpace":
                   selector && (selector += " ");
                   break;
               }
@@ -557,29 +595,30 @@ CSSCompleter.prototype = {
           
           
           switch (token.tokenType) {
-            case "hash":
-            case "id":
+            case "Hash":
+            case "IDHash":
               selectorState = SELECTOR_STATES.id;
-              selector = "#" + token.text;
+              selector = token.text;
               _state = CSS_STATES.selector;
               break;
 
-            case "ident":
+            case "Ident":
               selectorState = SELECTOR_STATES.tag;
               selector = token.text;
               _state = CSS_STATES.selector;
               break;
 
-            case "symbol":
+            case "Delim":
               if (token.text == ".") {
                 selectorState = SELECTOR_STATES.class;
                 selector = ".";
                 _state = CSS_STATES.selector;
-                if (cursor <= tokIndex && tokens[cursor].tokenType == "ident") {
+                if (cursor <= tokIndex && tokens[cursor].tokenType == "Ident") {
                   token = tokens[cursor++];
                   selector += token.text;
                 }
               } else if (token.text == "#") {
+                
                 selectorState = SELECTOR_STATES.id;
                 selector = "#";
                 _state = CSS_STATES.selector;
@@ -587,45 +626,52 @@ CSSCompleter.prototype = {
                 selectorState = SELECTOR_STATES.tag;
                 selector = "*";
                 _state = CSS_STATES.selector;
-              } else if (token.text == ":") {
-                _state = CSS_STATES.selector;
-                selectorState = SELECTOR_STATES.pseudo;
-                selector += ":";
-                if (cursor > tokIndex) {
-                  break;
-                }
-
-                token = tokens[cursor++];
-                switch (token.tokenType) {
-                  case "function":
-                    if (token.text == "not") {
-                      selectorBeforeNot = selector;
-                      selector = "";
-                      scopeStack.push("(");
-                    } else {
-                      selector += token.text + "(";
-                    }
-                    selectorState = SELECTOR_STATES.null;
-                    break;
-
-                  case "ident":
-                    selector += token.text;
-                    break;
-                }
-              } else if (token.text == "[") {
-                _state = CSS_STATES.selector;
-                selectorState = SELECTOR_STATES.attribute;
-                scopeStack.push("[");
-                selector += "[";
-              } else if (token.text == "}") {
-                if (peek(scopeStack) == "@m") {
-                  scopeStack.pop();
-                }
               }
               break;
 
-            case "at":
-              _state = token.text.startsWith("m")
+            case "Colon":
+              _state = CSS_STATES.selector;
+              selectorState = SELECTOR_STATES.pseudo;
+              selector += ":";
+              if (cursor > tokIndex) {
+                break;
+              }
+
+              token = tokens[cursor++];
+              switch (token.tokenType) {
+                case "Function":
+                  if (token.value == "not") {
+                    selectorBeforeNot = selector;
+                    selector = "";
+                    scopeStack.push("(");
+                  } else {
+                    selector += token.text;
+                  }
+                  selectorState = SELECTOR_STATES.null;
+                  break;
+
+                case "Ident":
+                  selector += token.text;
+                  break;
+              }
+              break;
+
+            case "CloseSquareBracket":
+              _state = CSS_STATES.selector;
+              selectorState = SELECTOR_STATES.attribute;
+              scopeStack.push("[");
+              selector += "[";
+              break;
+
+            case "CurlyBracketBlock":
+              if (peek(scopeStack) == "@m") {
+                scopeStack.pop();
+              }
+              break;
+
+            case "AtKeyword":
+              
+              _state = token.value.startsWith("m")
                 ? CSS_STATES.media
                 : CSS_STATES.keyframes;
               break;
@@ -635,7 +681,7 @@ CSSCompleter.prototype = {
         case CSS_STATES.media:
           
           
-          if (token.tokenType == "symbol" && token.text == "{") {
+          if (token.tokenType == "CurlyBracketBlock") {
             scopeStack.push("@m");
             _state = CSS_STATES.null;
           }
@@ -644,7 +690,7 @@ CSSCompleter.prototype = {
         case CSS_STATES.keyframes:
           
           
-          if (token.tokenType == "symbol" && token.text == "{") {
+          if (token.tokenType == "CurlyBracketBlock") {
             scopeStack.push("@k");
             _state = CSS_STATES.frame;
           }
@@ -654,17 +700,15 @@ CSSCompleter.prototype = {
           
           
           
-          if (token.tokenType == "symbol") {
-            if (token.text == "{") {
-              scopeStack.push("f");
-              _state = CSS_STATES.property;
-            } else if (token.text == "}") {
-              if (peek(scopeStack) == "@k") {
-                scopeStack.pop();
-              }
-
-              _state = CSS_STATES.null;
+          if (token.tokenType == "CurlyBracketBlock") {
+            scopeStack.push("f");
+            _state = CSS_STATES.property;
+          } else if (token.tokenType == "CloseCurlyBracket") {
+            if (peek(scopeStack) == "@k") {
+              scopeStack.pop();
             }
+
+            _state = CSS_STATES.null;
           }
           break;
       }
@@ -688,6 +732,8 @@ CSSCompleter.prototype = {
         this.nullStates.push([tokenLine, tokenCh, [...scopeStack]]);
       }
     }
+    
+
     this.state = _state;
     this.propertyName = _state == CSS_STATES.value ? propertyName : null;
     this.selectorState = _state == CSS_STATES.selector ? selectorState : null;
@@ -701,10 +747,18 @@ CSSCompleter.prototype = {
     }
     this.selectors = selectors;
 
-    if (token && token.tokenType != "whitespace") {
+    if (token && token.tokenType != "WhiteSpace") {
       let text;
-      if (token.tokenType == "dimension" || !token.text) {
+      if (token.tokenType == "Dimension" || !token.text) {
         text = source.substring(token.startOffset, token.endOffset);
+      } else if (
+        token.tokenType === "IDHash" ||
+        token.tokenType === "Hash" ||
+        token.tokenType === "AtKeyword" ||
+        token.tokenType === "Function" ||
+        token.tokenType === "QuotedString"
+      ) {
+        text = token.value;
       } else {
         text = token.text;
       }
@@ -1047,10 +1101,10 @@ CSSCompleter.prototype = {
         }
 
         let prevToken = undefined;
-        const tokens = cssTokenizer(lineText);
+        const tokensIterator = cssTokenizer(lineText, true);
         let found = false;
         const ech = line == caret.line ? caret.ch : 0;
-        for (let token of tokens) {
+        for (let token of tokensIterator) {
           
           if (lineText.trim() == "") {
             limitedSource += lineText;
@@ -1062,7 +1116,7 @@ CSSCompleter.prototype = {
           }
 
           
-          if (token.tokenType == "whitespace") {
+          if (token.tokenType == "WhiteSpace") {
             prevToken = token;
             continue;
           }
@@ -1072,7 +1126,7 @@ CSSCompleter.prototype = {
             ch: token.endOffset + ech,
           });
           if (check(forwState)) {
-            if (prevToken && prevToken.tokenType == "whitespace") {
+            if (prevToken && prevToken.tokenType == "WhiteSpace") {
               token = prevToken;
             }
             location = {
@@ -1111,7 +1165,7 @@ CSSCompleter.prototype = {
           lineText = lineText.substring(0, caret.ch);
         }
 
-        const tokens = Array.from(cssTokenizer(lineText));
+        const tokens = Array.from(cssTokenizer(lineText, true));
         let found = false;
         for (let i = tokens.length - 1; i >= 0; i--) {
           let token = tokens[i];
@@ -1124,7 +1178,7 @@ CSSCompleter.prototype = {
           }
 
           
-          if (token.tokenType == "whitespace") {
+          if (token.tokenType == "WhiteSpace") {
             continue;
           }
 
@@ -1133,7 +1187,7 @@ CSSCompleter.prototype = {
             ch: token.startOffset,
           });
           if (check(backState)) {
-            if (tokens[i + 1] && tokens[i + 1].tokenType == "whitespace") {
+            if (tokens[i + 1] && tokens[i + 1].tokenType == "WhiteSpace") {
               token = tokens[i + 1];
             }
             location = {
@@ -1192,7 +1246,7 @@ CSSCompleter.prototype = {
       };
     } else if (state == CSS_STATES.property) {
       
-      const tokens = cssTokenizer(sourceArray[line]);
+      const tokens = cssTokenizer(sourceArray[line], true);
       for (const token of tokens) {
         
         

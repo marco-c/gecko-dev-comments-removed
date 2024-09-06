@@ -77,7 +77,7 @@ function* cssTokenizer(string, useInspectorCSSParser = false) {
 
 
 function cssTokenizerWithLineColumn(string) {
-  const lexer = getCSSLexer(string);
+  const lexer = getCSSLexer(string, true);
   const result = [];
   let prevToken = undefined;
   while (true) {
@@ -96,7 +96,7 @@ function cssTokenizerWithLineColumn(string) {
       break;
     }
 
-    if (token.tokenType === "comment") {
+    if (token.tokenType === "Comment") {
       
       prevToken = undefined;
     } else {
