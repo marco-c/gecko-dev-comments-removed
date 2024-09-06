@@ -6240,7 +6240,8 @@ nsIFrame::IntrinsicSizeOffsetData nsIFrame::IntrinsicBSizeOffsets(
 
 
 IntrinsicSize nsIFrame::GetIntrinsicSize() {
-  return IntrinsicSize();  
+  
+  return IntrinsicSize();
 }
 
 AspectRatio nsIFrame::GetAspectRatio() const {

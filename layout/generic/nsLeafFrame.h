@@ -30,7 +30,6 @@ class nsLeafFrame : public nsIFrame {
   
 
 
-
   virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
   virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
@@ -57,22 +56,6 @@ class nsLeafFrame : public nsIFrame {
       : nsIFrame(aStyle, aPresContext, aID) {}
 
   virtual ~nsLeafFrame();
-
-  
-
-
-
-
-  virtual nscoord GetIntrinsicISize() = 0;
-
-  
-
-
-
-
-
-
-  virtual nscoord GetIntrinsicBSize();
 
   
 
