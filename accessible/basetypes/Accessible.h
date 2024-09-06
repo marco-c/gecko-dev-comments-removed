@@ -443,6 +443,11 @@ class Accessible {
   virtual void DOMNodeID(nsString& aID) const = 0;
 
   
+
+
+  virtual void DOMNodeClass(nsString& aClass) const = 0;
+
+  
   
 
   
