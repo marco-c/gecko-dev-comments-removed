@@ -5041,13 +5041,7 @@ impl PicturePrimitive {
                         
                         tile.local_dirty_rect = tile.local_dirty_rect
                             .intersection(&tile.current_descriptor.local_valid_rect)
-                            .unwrap_or_else(PictureRect::zero);
-
-                        let scissor_rect = frame_state.composite_state.get_surface_rect(
-                            &tile.local_dirty_rect,
-                            &tile.local_tile_rect,
-                            tile_cache.transform_index,
-                        ).to_i32();
+                            .unwrap_or_else(|| { tile.is_valid = true; PictureRect::zero() });
 
                         let valid_rect = frame_state.composite_state.get_surface_rect(
                             &tile.current_descriptor.local_valid_rect,
@@ -5104,8 +5098,15 @@ impl PicturePrimitive {
                             
                             
                             
-                            if !tile.is_valid && (scissor_rect.is_empty() || valid_rect.is_empty()) {
-                                tile.is_visible = false;
+                            if !tile.is_valid {
+                                let scissor_rect = frame_state.composite_state.get_surface_rect(
+                                    &tile.local_dirty_rect,
+                                    &tile.local_tile_rect,
+                                    tile_cache.transform_index,
+                                ).to_i32();
+                                if scissor_rect.is_empty() || valid_rect.is_empty() {
+                                    tile.is_visible = false;
+                                }
                             }
                         }
 
@@ -5306,6 +5307,14 @@ impl PicturePrimitive {
                                     frame_state.resource_cache,
                                     tile_cache.current_tile_size,
                                 );
+
+                                
+                                
+                                let scissor_rect = frame_state.composite_state.get_surface_rect(
+                                    &tile.local_dirty_rect,
+                                    &tile.local_tile_rect,
+                                    tile_cache.transform_index,
+                                ).to_i32();
 
                                 let composite_task_size = tile_cache.current_tile_size;
 
