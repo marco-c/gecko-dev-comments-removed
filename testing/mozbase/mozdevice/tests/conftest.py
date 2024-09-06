@@ -1,10 +1,10 @@
 import sys
+from io import StringIO
 from random import randint, seed
 from unittest.mock import patch
 
 import mozdevice
 import pytest
-from six import StringIO
 
 
 seed(1488590)
