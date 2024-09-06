@@ -1637,7 +1637,11 @@ pub struct TileCacheParams {
     
     
     
-    pub overlay_surface_count: usize,
+    pub image_surface_count: usize,
+    
+    
+    
+    pub yuv_image_surface_count: usize,
 }
 
 
@@ -1852,6 +1856,11 @@ pub struct TileCacheInstance {
     pub underlays: Vec<ExternalSurfaceDescriptor>,
     
     pub overlay_region: PictureRect,
+    
+    pub yuv_images_count: usize,
+    
+    
+    pub yuv_images_remaining: usize,
 }
 
 enum SurfacePromotionResult {
@@ -1863,7 +1872,7 @@ impl TileCacheInstance {
     pub fn new(params: TileCacheParams) -> Self {
         
         
-        let sub_slice_count = params.overlay_surface_count.min(MAX_COMPOSITOR_SURFACES) + 1;
+        let sub_slice_count = (params.image_surface_count + params.yuv_image_surface_count).min(MAX_COMPOSITOR_SURFACES) + 1;
 
         let mut sub_slices = Vec::with_capacity(sub_slice_count);
         for _ in 0 .. sub_slice_count {
@@ -1916,6 +1925,8 @@ impl TileCacheInstance {
             backdrop_surface: None,
             underlays: Vec::new(),
             overlay_region: PictureRect::zero(),
+            yuv_images_count: params.yuv_image_surface_count,
+            yuv_images_remaining: 0,
         }
     }
 
@@ -1956,7 +1967,7 @@ impl TileCacheInstance {
 
         
         
-        let required_sub_slice_count = params.overlay_surface_count.min(MAX_COMPOSITOR_SURFACES) + 1;
+        let required_sub_slice_count = (params.image_surface_count + params.yuv_image_surface_count).min(MAX_COMPOSITOR_SURFACES) + 1;
 
         if self.sub_slices.len() != required_sub_slice_count {
             self.tile_rect = TileRect::zero();
@@ -1997,6 +2008,9 @@ impl TileCacheInstance {
         
         
         self.frames_until_size_eval = 0;
+
+        
+        self.yuv_images_count = params.yuv_image_surface_count;
     }
 
     
@@ -2060,6 +2074,7 @@ impl TileCacheInstance {
         self.deferred_dirty_tests.clear();
         self.underlays.clear();
         self.overlay_region = PictureRect::zero();
+        self.yuv_images_remaining = self.yuv_images_count;
 
         for sub_slice in &mut self.sub_slices {
             sub_slice.reset();
@@ -3151,18 +3166,23 @@ impl TileCacheInstance {
                 }
 
                 let mut promote_to_surface = false;
-                match self.can_promote_to_surface(image_key.common.flags,
-                                                  prim_clip_chain,
-                                                  prim_spatial_node_index,
-                                                  is_root_tile_cache,
-                                                  sub_slice_index,
-                                                  CompositorSurfaceKind::Overlay,
-                                                  pic_coverage_rect,
-                                                  frame_context) {
-                    SurfacePromotionResult::Failed => {
-                    }
-                    SurfacePromotionResult::Success => {
-                        promote_to_surface = true;
+                
+                
+                
+                if self.yuv_images_remaining == 0 {
+                    match self.can_promote_to_surface(image_key.common.flags,
+                                                      prim_clip_chain,
+                                                      prim_spatial_node_index,
+                                                      is_root_tile_cache,
+                                                      sub_slice_index,
+                                                      CompositorSurfaceKind::Overlay,
+                                                      pic_coverage_rect,
+                                                      frame_context) {
+                        SurfacePromotionResult::Failed => {
+                        }
+                        SurfacePromotionResult::Success => {
+                            promote_to_surface = true;
+                        }
                     }
                 }
 
@@ -3210,6 +3230,15 @@ impl TileCacheInstance {
             }
             PrimitiveInstanceKind::YuvImage { data_handle, ref mut compositor_surface_kind, .. } => {
                 let prim_data = &data_stores.yuv_image[data_handle];
+
+                
+                
+                
+                
+                
+                if is_root_tile_cache && prim_data.common.flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
+                    self.yuv_images_remaining -= 1;
+                }
 
                 let clip_on_top = prim_clip_chain.needs_mask;
                 let prefer_underlay = clip_on_top || !cfg!(target_os = "macos");
@@ -3407,8 +3436,8 @@ impl TileCacheInstance {
         
         
         
-        let visible_local_rect = self.local_rect.intersection(&self.screen_rect_in_pic_space).unwrap_or_default();
-        if pic_coverage_rect.intersects(&visible_local_rect) {
+        let visible_local_clip_rect = self.local_clip_rect.intersection(&self.screen_rect_in_pic_space).unwrap_or_default();
+        if pic_coverage_rect.intersects(&visible_local_clip_rect) {
             self.found_prims_after_backdrop = true;
         }
 
@@ -3498,7 +3527,7 @@ impl TileCacheInstance {
                 }
 
                 if let Some(kind) = backdrop_candidate.kind {
-                    if backdrop_candidate.opaque_rect.contains_box(&visible_local_rect) {
+                    if backdrop_candidate.opaque_rect.contains_box(&visible_local_clip_rect) {
                         self.found_prims_after_backdrop = false;
                         self.backdrop.kind = Some(kind);
                         self.backdrop.backdrop_rect = backdrop_candidate.opaque_rect;
@@ -4740,7 +4769,10 @@ pub struct PrimitiveList {
     pub child_pictures: Vec<PictureIndex>,
     
     
-    pub overlay_surface_count: usize,
+    pub image_surface_count: usize,
+    
+    
+    pub yuv_image_surface_count: usize,
     pub needs_scissor_rect: bool,
 }
 
@@ -4753,7 +4785,8 @@ impl PrimitiveList {
         PrimitiveList {
             clusters: Vec::new(),
             child_pictures: Vec::new(),
-            overlay_surface_count: 0,
+            image_surface_count: 0,
+            yuv_image_surface_count: 0,
             needs_scissor_rect: false,
         }
     }
@@ -4761,7 +4794,8 @@ impl PrimitiveList {
     pub fn merge(&mut self, other: PrimitiveList) {
         self.clusters.extend(other.clusters);
         self.child_pictures.extend(other.child_pictures);
-        self.overlay_surface_count += other.overlay_surface_count;
+        self.image_surface_count += other.image_surface_count;
+        self.yuv_image_surface_count += other.yuv_image_surface_count;
         self.needs_scissor_rect |= other.needs_scissor_rect;
     }
 
@@ -4794,7 +4828,7 @@ impl PrimitiveList {
                 
                 
                 if prim_flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
-                    self.overlay_surface_count += 1;
+                    self.yuv_image_surface_count += 1;
                 }
             }
             PrimitiveInstanceKind::Image { .. } => {
@@ -4804,7 +4838,7 @@ impl PrimitiveList {
                 
                 
                 if prim_flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
-                    self.overlay_surface_count += 1;
+                    self.image_surface_count += 1;
                 }
             }
             _ => {}
