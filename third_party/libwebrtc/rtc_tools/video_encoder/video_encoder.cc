@@ -466,8 +466,7 @@ int main(int argc, char* argv[]) {
   } else if (!ivf_input_file.empty()) {
     
     frame_buffer_generator =
-        webrtc::test::CreateFromIvfFileFrameGenerator(ivf_input_file);
-    RTC_CHECK(frame_buffer_generator);
+        webrtc::test::CreateFromIvfFileFrameGenerator(env, ivf_input_file);
 
     
     webrtc::test::FrameGeneratorInterface::Resolution resolution =
