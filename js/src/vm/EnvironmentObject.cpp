@@ -2615,15 +2615,15 @@ void DebugEnvironments::checkHashTablesAfterMovingGC() {
 
 
   proxiedEnvs.checkAfterMovingGC();
-  CheckTableAfterMovingGC(missingEnvs, [](const auto& entry) {
-    CheckGCThingAfterMovingGC(entry.key().scope());
+  CheckTableAfterMovingGC(missingEnvs, [this](const auto& entry) {
+    CheckGCThingAfterMovingGC(entry.key().scope(), zone());
     
-    CheckGCThingAfterMovingGC(entry.value().unbarrieredGet());
+    CheckGCThingAfterMovingGC(entry.value().unbarrieredGet(), zone());
     return entry.key();
   });
-  CheckTableAfterMovingGC(liveEnvs, [](const auto& entry) {
-    CheckGCThingAfterMovingGC(entry.key());
-    CheckGCThingAfterMovingGC(entry.value().scope_.get());
+  CheckTableAfterMovingGC(liveEnvs, [this](const auto& entry) {
+    CheckGCThingAfterMovingGC(entry.key(), zone());
+    CheckGCThingAfterMovingGC(entry.value().scope_.get(), zone());
     return entry.key().unbarrieredGet();
   });
 }
