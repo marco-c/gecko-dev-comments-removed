@@ -264,10 +264,19 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
 #endif
   LOG(("Native HTTPS records supported=%d", bool(sNativeHTTPSSupported)));
 
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIThreadPool> threadPool = new nsThreadPool();
   MOZ_ALWAYS_SUCCEEDS(threadPool->SetThreadLimit(MaxResolverThreads()));
-  MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadLimit(MaxResolverThreads()));
+  MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadLimit(
+      std::max(MaxResolverThreads() / 4, (uint32_t)1)));
   MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadMaximumTimeout(poolTimeoutMs));
+  MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadGraceTimeout(100));
   MOZ_ALWAYS_SUCCEEDS(
       threadPool->SetThreadStackSize(nsIThreadManager::kThreadPoolStackSize));
   MOZ_ALWAYS_SUCCEEDS(threadPool->SetName("DNS Resolver"_ns));
