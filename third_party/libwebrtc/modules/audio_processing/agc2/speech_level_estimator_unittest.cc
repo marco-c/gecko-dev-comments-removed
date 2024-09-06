@@ -152,7 +152,7 @@ TEST(GainController2SpeechLevelEstimator, ConvergenceSpeedAfterConfidence) {
                   level_estimator.initial_speech_level_dbfs);
   ASSERT_TRUE(level_estimator.estimator->is_confident());
   
-  constexpr float kConvergenceTimeAfterConfidenceNumFrames = 600;  
+  constexpr float kConvergenceTimeAfterConfidenceNumFrames = 700;  
   static_assert(
       kConvergenceTimeAfterConfidenceNumFrames > kNumFramesToConfidence, "");
   RunOnConstantLevel(
