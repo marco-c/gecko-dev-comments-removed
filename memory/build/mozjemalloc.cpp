@@ -1402,11 +1402,10 @@ class ArenaCollection {
   }
 
   
-  void PostForkFixMainThread() {
-    if (mMainThreadId.isSome()) {
-      
-      mMainThreadId = Some(GetThreadId());
-    }
+  void ResetMainThread() {
+    
+    
+    mMainThreadId = Nothing();
   }
 
   void SetMainThread() {
@@ -5217,7 +5216,7 @@ void _malloc_postfork_parent(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
 FORK_HOOK
 void _malloc_postfork_child(void) {
   
-  gArenas.PostForkFixMainThread();
+  gArenas.ResetMainThread();
 
   
   huge_mtx.Init();
