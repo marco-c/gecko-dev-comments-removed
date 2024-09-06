@@ -4,6 +4,7 @@
 
 
 
+
 const otherGlobal = typeof newGlobal === "function" ? newGlobal() : undefined;
 const typedArrayLengths = [0, 1, 1024];
 

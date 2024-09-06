@@ -1,3 +1,4 @@
+
 const otherGlobal = newGlobal();
 
 

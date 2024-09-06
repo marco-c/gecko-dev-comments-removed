@@ -1,4 +1,5 @@
 
+
 if (typeof detachArrayBuffer === "function") {
     for (let constructor of typedArrayConstructors) {
         const elementSize = constructor.BYTES_PER_ELEMENT;

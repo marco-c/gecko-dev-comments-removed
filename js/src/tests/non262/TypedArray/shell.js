@@ -2,7 +2,7 @@
     "use strict";
 
     const {
-        Float32Array, Float64Array, Object, Reflect, SharedArrayBuffer, WeakMap,
+        Float16Array, Float32Array, Float64Array, Object, Reflect, SharedArrayBuffer, WeakMap,
         assertEq
     } = global;
     const {
@@ -69,7 +69,7 @@
         Uint32Array,
         Float32Array,
         Float64Array,
-    ]);
+    ].concat(Float16Array ?? []));
 
     
 
@@ -103,7 +103,7 @@
     function isFloatConstructor(constructor) {
         if (isSharedConstructor(constructor))
             constructor = Reflect_apply(WeakMap_prototype_get, sharedConstructors, [constructor]);
-        return constructor == Float32Array || constructor == Float64Array;
+        return constructor == Float32Array || constructor == Float64Array || (Float16Array && constructor == Float16Array);
     }
 
     global.typedArrayConstructors = typedArrayConstructors;

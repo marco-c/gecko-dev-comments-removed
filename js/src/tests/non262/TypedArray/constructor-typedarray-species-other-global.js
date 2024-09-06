@@ -3,6 +3,7 @@
 
 
 
+
 const thisGlobal = this;
 const otherGlobal = newGlobal();
 
