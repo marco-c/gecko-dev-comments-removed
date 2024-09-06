@@ -162,7 +162,7 @@ int RunGTestFunc(int* argc, char** argv) {
   
   Preferences::SetInt("telemetry.fog.test.localhost_port", -1);
   const nsCString empty;
-  RefPtr<FOG>(FOG::GetSingleton())->InitializeFOG(empty, empty);
+  RefPtr<FOG>(FOG::GetSingleton())->InitializeFOG(empty, empty, false);
 
   return RUN_ALL_TESTS();
 }

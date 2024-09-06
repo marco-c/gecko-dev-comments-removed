@@ -18,7 +18,9 @@ interface nsIFOG : nsISupports
 
 
 
-  void initializeFOG([optional] in AUTF8String aDataPathOverride, [optional] in AUTF8String aAppIdOverride);
+
+
+  void initializeFOG([optional] in AUTF8String aDataPathOverride, [optional] in AUTF8String aAppIdOverride, [optional] in boolean aDisableInternalPings);
 
   
 
