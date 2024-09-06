@@ -26,8 +26,30 @@ class nsDragSession : public nsBaseDragService {
   NS_IMETHOD UpdateDragImage(nsINode* aImage, int32_t aImageX,
                              int32_t aImageY) override;
 
+  NS_IMETHOD DragMoved(int32_t aX, int32_t aY) override;
+
+  NSDraggingSession* GetNSDraggingSession() { return mNSDraggingSession; }
+
  protected:
+  
+  
+  NSImage* ConstructDragImage(
+      nsINode* aDOMNode, const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      NSPoint* aImagePoint);
+
+  
+  
+  
+  NSImage* ConstructDragImage(
+      nsINode* aDOMNode, const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      mozilla::CSSIntPoint aPoint, mozilla::LayoutDeviceIntRect* aDragRect);
+
   nsCOMPtr<nsIArray> mDataItems;  
+
+  
+  ChildView* mNativeDragView = nil;
+  
+  NSDraggingSession* mNSDraggingSession = nil;
 
   bool mDragImageChanged = false;
 };
@@ -49,26 +71,10 @@ class nsDragService final : public nsDragSession {
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD EndDragSession(bool aDoneDrag,
                                                uint32_t aKeyModifiers) override;
 
-  void DragMovedWithView(NSDraggingSession* aSession, NSPoint aPoint);
-
  protected:
   virtual ~nsDragService();
 
  private:
-  
-  
-  NSImage* ConstructDragImage(
-      nsINode* aDOMNode, const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-      NSPoint* aImagePoint);
-
-  
-  
-  
-  NSImage* ConstructDragImage(
-      nsINode* aDOMNode, const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-      mozilla::CSSIntPoint aPoint, mozilla::LayoutDeviceIntRect* aDragRect);
-
-  ChildView* mNativeDragView;
   NSEvent* mNativeDragEvent;
 };
 
