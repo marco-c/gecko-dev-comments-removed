@@ -430,19 +430,24 @@ var gMainPane = {
         "command",
         gMainPane.onWindowsLaunchOnLoginChange
       );
-      NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
-        once: true,
-      });
+      
+      
       
       
       
       if (
-        NimbusFeatures.windowsLaunchOnLogin.getVariable("enabled") &&
         Cc["@mozilla.org/toolkit/profile-service;1"].getService(
           Ci.nsIToolkitProfileService
-        ).startWithLastProfile
+        ).startWithLastProfile &&
+        !Services.sysinfo.getProperty("hasWinPackageId", false)
       ) {
-        document.getElementById("windowsLaunchOnLoginBox").hidden = false;
+        NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
+          once: true,
+        });
+
+        if (NimbusFeatures.windowsLaunchOnLogin.getVariable("enabled")) {
+          document.getElementById("windowsLaunchOnLoginBox").hidden = false;
+        }
       }
     }
     gMainPane.updateBrowserStartupUI =
