@@ -10,6 +10,7 @@
 #  include "PlatformDecoderModule.h"
 #  include "WMF.h"
 #  include "WMFUtils.h"
+#  include "mozilla/Atomics.h"
 
 namespace mozilla {
 
@@ -55,11 +56,13 @@ class WMFDecoderModule : public PlatformDecoderModule {
                                   RefPtr<MFTDecoder>& aDecoder);
   static bool CanCreateMFTDecoder(const WMFStreamType& aType);
 
+  static void DisableForceEnableHEVC();
+
  private:
   
   
   
-  static inline bool sForceEnableHEVC = false;
+  static inline Atomic<bool> sForceEnableHEVC{false};
 
   static bool IsHEVCSupported();
 
