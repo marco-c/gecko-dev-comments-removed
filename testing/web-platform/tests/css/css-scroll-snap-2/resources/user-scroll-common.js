@@ -62,8 +62,8 @@ async function test_no_snap_event(test, scroller, delta, event_type) {
   assert_equals(scroller.scrollLeft, 0, "scroller snaps back to the left");
 }
 
-async function test_no_snapchanged(t, scroller, delta) {
-  await test_no_snap_event(t, scroller, delta, "snapchanged");
+async function test_no_scrollsnapchange(t, scroller, delta) {
+  await test_no_snap_event(t, scroller, delta, "scrollsnapchange");
 }
 
 async function test_no_snapchanging(t, scroller, delta) {
