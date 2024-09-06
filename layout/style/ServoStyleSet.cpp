@@ -43,7 +43,6 @@
 #include "mozilla/dom/CSSPropertyRule.h"
 #include "mozilla/dom/CSSScopeRule.h"
 #include "mozilla/dom/CSSSupportsRule.h"
-#include "mozilla/dom/CSSStartingStyleRule.h"
 #include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -1005,7 +1004,6 @@ void ServoStyleSet::RuleChangedInternal(StyleSheet& aSheet, css::Rule& aRule,
     CASE_FOR(LayerStatement, LayerStatement)
     CASE_FOR(Container, Container)
     CASE_FOR(Scope, Scope)
-    CASE_FOR(StartingStyle, StartingStyle)
     
     
     case StyleCssRuleType::Namespace:
