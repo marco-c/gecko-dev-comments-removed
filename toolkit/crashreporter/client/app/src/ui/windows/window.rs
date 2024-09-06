@@ -84,6 +84,15 @@ pub trait CustomWindowClass: WindowClass {
                     0,
                     win::SWP_NOMOVE | win::SWP_NOSIZE | win::SWP_NOZORDER | win::SWP_FRAMECHANGED,
                 ));
+
+                
+                
+                let icon = W::icon();
+                if icon != 0 {
+                    
+                    win::SendMessageW(hwnd, win::WM_SETICON, win::ICON_SMALL as _, icon);
+                    win::SendMessageW(hwnd, win::WM_SETICON, win::ICON_BIG as _, icon);
+                }
             }
 
             let result = unsafe { W::get(hwnd).as_ref() }
