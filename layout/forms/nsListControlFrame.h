@@ -225,9 +225,7 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   
 
 
-  bool GetMultiple() const {
-    return mContent->AsElement()->HasAttr(nsGkAtoms::multiple);
-  }
+  bool GetMultiple() const;
 
   mozilla::dom::HTMLSelectElement& Select() const;
 
