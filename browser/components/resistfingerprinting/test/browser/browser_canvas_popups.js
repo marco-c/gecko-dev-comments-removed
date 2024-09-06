@@ -15,9 +15,6 @@
 
 
 
-
-
-
 "use strict";
 
 
@@ -128,7 +125,7 @@ const noRandom = [0, 0];
 
 
 
-const uri = `https://${FRAMER_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_canvas_iframer.html?mode=iframe`;
+const uri = `https://${FRAMER_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_canvas_iframer.html?mode=popup`;
 
 expectedResults = structuredClone(noRandom);
 add_task(
@@ -184,16 +181,8 @@ expectedResults = structuredClone(noRandom);
 add_task(testA.bind(null, uri, testCanvasRandomization, expectedResults));
 
 
-expectedResults = structuredClone(noRandom);
-add_task(testB.bind(null, uri, testCanvasRandomization, expectedResults));
-
-
 expectedResults = structuredClone(rfpFullyRandomized);
 add_task(testC.bind(null, uri, testCanvasRandomization, expectedResults));
-
-
-expectedResults = structuredClone(rfpFullyRandomized);
-add_task(testD.bind(null, uri, testCanvasRandomization, expectedResults));
 
 
 expectedResults = structuredClone(rfpFullyRandomized);
@@ -201,12 +190,4 @@ add_task(testE.bind(null, uri, testCanvasRandomization, expectedResults));
 
 
 expectedResults = structuredClone(rfpFullyRandomized);
-add_task(testF.bind(null, uri, testCanvasRandomization, expectedResults));
-
-
-expectedResults = structuredClone(rfpFullyRandomized);
 add_task(testG.bind(null, uri, testCanvasRandomization, expectedResults));
-
-
-expectedResults = structuredClone(rfpFullyRandomized);
-add_task(testH.bind(null, uri, testCanvasRandomization, expectedResults));
