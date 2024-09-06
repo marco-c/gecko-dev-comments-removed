@@ -28,15 +28,6 @@ class AudioFrameOperations {
   
   
   
-  
-  
-  
-  
-  static void Add(const AudioFrame& frame_to_add, AudioFrame* result_frame);
-
-  
-  
-  
   static void QuadToStereo(rtc::ArrayView<const int16_t> src_audio,
                            size_t samples_per_channel,
                            rtc::ArrayView<int16_t> dst_audio);
@@ -82,11 +73,6 @@ class AudioFrameOperations {
 
   
   static void Mute(AudioFrame* frame);
-
-  
-  static void ApplyHalfGain(AudioFrame* frame);
-
-  static int Scale(float left, float right, AudioFrame* frame);
 
   static int ScaleWithSat(float scale, AudioFrame* frame);
 };
