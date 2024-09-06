@@ -531,6 +531,14 @@ var gMainPane = {
       document.getElementById("dataMigrationGroup").remove();
     }
 
+    if (
+      Services.prefs.getBoolPref("browser.backup.preferences.ui.enabled", false)
+    ) {
+      let backupGroup = document.getElementById("dataBackupGroup");
+      backupGroup.hidden = false;
+      backupGroup.removeAttribute("data-hidden-from-search");
+    }
+
     
     
     if (
