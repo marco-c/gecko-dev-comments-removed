@@ -1455,7 +1455,7 @@
       let oldBrowser = oldTab.linkedBrowser;
       let newBrowser = newTab.linkedBrowser;
 
-      oldBrowser._urlbarFocused = gURLBar && gURLBar.focused;
+      gURLBar.getBrowserState(oldBrowser).urlbarFocused = gURLBar.focused;
 
       if (this._asyncTabSwitching) {
         newBrowser._userTypedValueAtBeforeTabSwitch = newBrowser.userTypedValue;
@@ -1481,7 +1481,9 @@
         
         
         let keepFocusOnUrlBar =
-          newBrowser && newBrowser._urlbarFocused && gURLBar && gURLBar.focused;
+          newBrowser &&
+          gURLBar.getBrowserState(newBrowser).urlbarFocused &&
+          gURLBar.focused;
         if (!keepFocusOnUrlBar) {
           
           
@@ -1505,7 +1507,7 @@
       
       
       
-      if (newBrowser._urlbarFocused && gURLBar) {
+      if (gURLBar.getBrowserState(newBrowser).urlbarFocused) {
         let selectURL = () => {
           if (this._asyncTabSwitching) {
             
@@ -2769,7 +2771,7 @@
         }));
 
         if (focusUrlBar) {
-          b._urlbarFocused = true;
+          gURLBar.getBrowserState(b).urlbarFocused = true;
         }
 
         
