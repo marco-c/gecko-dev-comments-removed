@@ -156,6 +156,57 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod result;
 pub use result::*;
 
@@ -169,6 +220,9 @@ pub mod vulkan;
 
 #[cfg(all(windows, feature = "d3d12"))]
 pub mod d3d12;
+
+#[cfg(all(any(target_os = "macos", target_os = "ios"), feature = "metal"))]
+pub mod metal;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MemoryLocation {
