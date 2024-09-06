@@ -1049,7 +1049,8 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
                                           nsDirection aDirection,
                                           BoundaryFlags aFlags) const {
   if (IsCaret()) {
-    if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR) {
+    if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR ||
+        aBoundaryType == nsIAccessibleText::BOUNDARY_CLUSTER) {
       if (IsCaretAtEndOfLine()) {
         
         return ActualizeCaret( false);
