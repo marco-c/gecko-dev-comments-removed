@@ -47,6 +47,9 @@ def enable_blessed():
     if os.environ.get("NO_ANSI"):
         return False
 
+    if not os.environ.get("MOZILLABUILD"):
+        return False
+
     
     
     
