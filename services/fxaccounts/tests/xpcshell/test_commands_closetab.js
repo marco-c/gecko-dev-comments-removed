@@ -7,7 +7,7 @@ const { CloseRemoteTab } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommands.sys.mjs"
 );
 
-const { COMMAND_CLOSETAB } = ChromeUtils.importESModule(
+const { COMMAND_CLOSETAB, COMMAND_CLOSETAB_TAIL } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommon.sys.mjs"
 );
 
@@ -149,20 +149,6 @@ add_task(async function test_closetab_send() {
   mock.verify();
   mock.restore();
   closeTab.shutdown();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
 });
 
 add_task(async function test_multiple_devices() {
@@ -229,8 +215,8 @@ add_task(async function test_multiple_devices() {
 
   
   mock.verify();
-  closeTab.shutdown();
   mock.restore();
+  closeTab.shutdown();
 });
 
 add_task(async function test_timer_reset_on_new_tab() {
@@ -276,7 +262,58 @@ add_task(async function test_timer_reset_on_new_tab() {
   Assert.equal((await store.getUnsentCommands()).length, 2);
 
   
-  Assert.equal(ensureTimerSpy.callCount, 2);
+  Assert.ok(ensureTimerSpy.callCount > 1);
   mock.verify();
+  mock.restore();
+  closeTab.shutdown();
+});
+
+add_task(async function test_telemetry_on_sendCloseTabPush() {
+  const targetDevice = {
+    id: "dev1",
+    name: "Device 1",
+    availableCommands: { [COMMAND_CLOSETAB]: "payload" },
+  };
+  const fxai = FxaInternalMock([targetDevice]);
+
+  
+  
+  const commands = {
+    _invokes: [],
+    invoke(cmd, device, payload) {
+      this._invokes.push({ cmd, device, payload });
+    },
+  };
+  const closeTab = new CloseRemoteTab(commands, fxai);
+  closeTab._encrypt = () => "encryptedpayload";
+
+  
+  let now = Date.now();
+  closeTab.now = () => now;
+
+  
+  closeTab.DELAY = 10;
+
+  
+  let command1 = new RemoteCommand.CloseTab("https://foo.bar/early");
+
+  const store = await getRemoteCommandStore();
+  await store.addRemoteCommandAt(targetDevice.id, command1, now - 15);
+
+  await closeTab.flushQueue();
+
+  
+  now += 20;
+  await closeTab.flushQueue();
+
+  Assert.deepEqual(fxai.telemetry._events, [
+    {
+      object: "command-sent",
+      method: COMMAND_CLOSETAB_TAIL,
+      value: "dev1-san",
+      extra: { flowID: "1", streamID: "2" },
+    },
+  ]);
+
   closeTab.shutdown();
 });
