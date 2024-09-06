@@ -284,6 +284,7 @@ public class GeckoSession {
   private float mViewportLeft;
   private float mViewportTop;
   private float mViewportZoom = 1.0f;
+  private int mKeyboardHeight = 0; 
 
   
   
@@ -7894,6 +7895,16 @@ public class GeckoSession {
     if (mAttachedCompositor) {
       mCompositor.onSafeAreaInsetsChanged(top, right, bottom, left);
     }
+  }
+
+   void onKeyboardHeight(final int height) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mKeyboardHeight == height) {
+      return;
+    }
+
+    mKeyboardHeight = height;
   }
 
    void setPointerIcon(
