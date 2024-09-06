@@ -21,6 +21,7 @@
 #include "nsHashPropertyBag.h"
 #include "nsIClearDataService.h"
 #include "nsIObserverService.h"
+#include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsISupports.h"
 #include "nsServiceManagerUtils.h"
@@ -76,6 +77,12 @@ BounceTrackingProtection::BounceTrackingProtection() {
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Error,
             ("storage init failed"));
     return;
+  }
+
+  rv = MaybeMigrateUserInteractionPermissions();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Error,
+            ("user activation permission migration failed"));
   }
 
   
@@ -225,7 +232,7 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
 }
 
 nsresult BounceTrackingProtection::RecordUserActivation(
-    nsIPrincipal* aPrincipal) {
+    nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime) {
   MOZ_ASSERT(XRE_IsParentProcess());
   NS_ENSURE_ARG_POINTER(aPrincipal);
 
@@ -244,7 +251,12 @@ nsresult BounceTrackingProtection::RecordUserActivation(
       mStorage->GetOrCreateStateGlobal(aPrincipal);
   MOZ_ASSERT(globalState);
 
-  return globalState->RecordUserActivation(siteHost, PR_Now());
+  
+  if (aActivationTime.isNothing()) {
+    aActivationTime = Some(PR_Now());
+  }
+
+  return globalState->RecordUserActivation(siteHost, aActivationTime.extract());
 }
 
 NS_IMETHODIMP
@@ -653,6 +665,82 @@ nsresult BounceTrackingProtection::ClearExpiredUserInteractions(
   }
 
   return NS_OK;
+}
+
+nsresult BounceTrackingProtection::MaybeMigrateUserInteractionPermissions() {
+  
+  if (StaticPrefs::
+          privacy_bounceTrackingProtection_hasMigratedUserActivationData()) {
+    return NS_OK;
+  }
+
+  MOZ_LOG(
+      gBounceTrackingProtectionLog, LogLevel::Info,
+      ("%s: Importing user activation data from permissions", __FUNCTION__));
+
+  
+  
+  
+
+  nsresult rv = NS_OK;
+  nsCOMPtr<nsIPermissionManager> permManager =
+      do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(permManager, NS_ERROR_FAILURE);
+
+  
+  
+  int64_t nowMS = PR_Now() / PR_USEC_PER_MSEC;
+  int64_t activationLifetimeMS =
+      static_cast<int64_t>(
+          StaticPrefs::
+              privacy_bounceTrackingProtection_bounceTrackingActivationLifetimeSec()) *
+      PR_MSEC_PER_SEC;
+  int64_t since = nowMS - activationLifetimeMS;
+
+  
+  nsTArray<RefPtr<nsIPermission>> userActivationPermissions;
+  rv = permManager->GetAllByTypeSince("storageAccessAPI"_ns, since,
+                                      userActivationPermissions);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
+          ("%s: Found %zu (non-expired) user activation permissions",
+           __FUNCTION__, userActivationPermissions.Length()));
+
+  for (const auto& perm : userActivationPermissions) {
+    nsCOMPtr<nsIPrincipal> permPrincipal;
+
+    rv = perm->GetPrincipal(getter_AddRefs(permPrincipal));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+    MOZ_ASSERT(permPrincipal);
+
+    
+    
+    int64_t modificationTimeMS;
+    rv = perm->GetModificationTime(&modificationTimeMS);
+    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_ASSERT(modificationTimeMS >= since && modificationTimeMS <= nowMS,
+               "Unexpected permission modification time");
+
+    
+    
+    
+    
+    
+    
+    rv = RecordUserActivation(permPrincipal,
+                              Some(modificationTimeMS * PR_USEC_PER_MSEC));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+  }
+
+  
+  return mozilla::Preferences::SetBool(
+      "privacy.bounceTrackingProtection.hasMigratedUserActivationData", true);
 }
 
 

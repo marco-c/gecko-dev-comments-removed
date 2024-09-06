@@ -38,7 +38,10 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
       BounceTrackingState* aBounceTrackingState);
 
   
-  [[nodiscard]] nsresult RecordUserActivation(nsIPrincipal* aPrincipal);
+  
+  
+  [[nodiscard]] nsresult RecordUserActivation(
+      nsIPrincipal* aPrincipal, Maybe<PRTime> aActivationTime = Nothing());
 
   
   
@@ -91,6 +94,11 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
     nsCString mHost;
     RefPtr<ClearDataMozPromise::Private> mPromise;
   };
+
+  
+  
+  
+  [[nodiscard]] nsresult MaybeMigrateUserInteractionPermissions();
 };
 
 }  
