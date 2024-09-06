@@ -105,7 +105,11 @@ async function test_idletimeout_on_streamfilter({
   ).catch(err => {
     
     
-    if (/The operation was aborted/.test(err.message)) {
+    if (
+      /Content-Length header of network response exceeds response Body/.test(
+        err.message
+      )
+    ) {
       info(`Test webRequest fetching "${testURL}" aborted`);
     } else {
       ok(

@@ -678,6 +678,8 @@ void BodyConsumer::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength,
       localPromise->MaybeRejectWithTypeError<MSG_DOM_DECODING_FAILED>();
     } else if (aStatus == NS_ERROR_DOM_WRONG_TYPE_ERR) {
       localPromise->MaybeRejectWithTypeError<MSG_FETCH_BODY_WRONG_TYPE>();
+    } else if (aStatus == NS_ERROR_NET_PARTIAL_TRANSFER) {
+      localPromise->MaybeRejectWithTypeError<MSG_FETCH_PARTIAL>();
     } else {
       localPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
     }
