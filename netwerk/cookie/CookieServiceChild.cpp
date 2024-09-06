@@ -375,10 +375,13 @@ CookieServiceChild::GetCookieStringFromDocument(dom::Document* aDocument,
   
   
   
+  
   bool isCHIPS = aDocument->CookieJarSettings()->GetPartitionForeign() &&
                  StaticPrefs::network_cookie_CHIPS_enabled();
-  bool isUnpartitioned = !thirdParty || aDocument->UsingStorageAccess();
-  if (isCHIPS && isUnpartitioned) {
+  bool documentHasStorageAccess = false;
+  nsresult rv = aDocument->HasStorageAccessSync(documentHasStorageAccess);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (isCHIPS && documentHasStorageAccess) {
     
     MOZ_ASSERT(cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
     
@@ -398,7 +401,7 @@ CookieServiceChild::GetCookieStringFromDocument(dom::Document* aDocument,
     }
 
     nsAutoCString baseDomain;
-    nsresult rv = CookieCommons::GetBaseDomain(principal, baseDomain);
+    rv = CookieCommons::GetBaseDomain(principal, baseDomain);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return NS_OK;
     }

@@ -410,10 +410,13 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
   
   
   
+  
   bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
                  aDocument->CookieJarSettings()->GetPartitionForeign();
-  bool isUnpartitioned = !thirdParty || aDocument->UsingStorageAccess();
-  if (isCHIPS && isUnpartitioned) {
+  bool documentHasStorageAccess = false;
+  rv = aDocument->HasStorageAccessSync(documentHasStorageAccess);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (isCHIPS && documentHasStorageAccess) {
     
     MOZ_ASSERT(cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
     
