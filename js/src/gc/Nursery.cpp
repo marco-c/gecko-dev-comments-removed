@@ -1613,7 +1613,6 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
     
     
     
-    
     startProfile(ProfileKey::TraceWholeCells);
     sb.traceWholeCells(mover);
     endProfile(ProfileKey::TraceWholeCells);

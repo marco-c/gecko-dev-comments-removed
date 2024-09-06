@@ -380,9 +380,13 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
         static_assert(JSString::LINEAR_IS_EXTENSIBLE_BIT ==
                       JSString::INLINE_IS_FAT_BIT);
         if (str->isLinear()) {
-          known("EXTENSIBLE");
-        } else if (str->isInline()) {
-          known("FAT");
+          if (str->isInline()) {
+            known("FAT");
+          } else if (!str->isAtom()) {
+            known("EXTENSIBLE");
+          } else {
+            unknown(i);
+          }
         } else {
           unknown(i);
         }
@@ -924,6 +928,14 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
 
 
 
+
+
+
+
+
+
+
+
   const size_t wholeLength = root->length();
   size_t wholeCapacity;
   CharT* wholeChars;
@@ -1078,7 +1090,11 @@ finish_root:
     left.d.s.u3.base = &root->asLinear();
     if (left.isTenured() && !root->isTenured()) {
       
+      
+      
+      
       root->storeBuffer()->putWholeCell(&left);
+      root->setNonDeduplicatable();
     }
   }
 
@@ -1464,15 +1480,17 @@ uint32_t JSAtom::getIndexSlow() const {
                           : AtomCharsToIndex(twoByteChars(nogc), len);
 }
 
-static void MarkStringAndBasesNonDeduplicatable(JSLinearString* s) {
-  while (true) {
-    if (!s->isTenured()) {
-      s->setNonDeduplicatable();
-    }
-    if (!s->hasBase()) {
-      break;
-    }
+
+
+
+
+
+void PreventRootBaseDeduplication(JSLinearString* s) {
+  while (s->hasBase()) {
     s = s->base();
+  }
+  if (!s->isTenured()) {
+    s->setNonDeduplicatable();
   }
 }
 
@@ -1501,7 +1519,7 @@ bool AutoStableStringChars::init(JSContext* cx, JSString* s) {
     twoByteChars_ = linearString->rawTwoByteChars();
   }
 
-  MarkStringAndBasesNonDeduplicatable(linearString);
+  PreventRootBaseDeduplication(linearString);
 
   s_ = linearString;
   return true;
@@ -1527,7 +1545,7 @@ bool AutoStableStringChars::initTwoByte(JSContext* cx, JSString* s) {
   state_ = TwoByte;
   twoByteChars_ = linearString->rawTwoByteChars();
 
-  MarkStringAndBasesNonDeduplicatable(linearString);
+  PreventRootBaseDeduplication(linearString);
 
   s_ = linearString;
   return true;

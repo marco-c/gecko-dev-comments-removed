@@ -545,6 +545,19 @@ inline js::PropertyName* JSLinearString::toPropertyName(JSContext* cx) {
   return atom->asPropertyName();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool JSLinearString::hasMovableChars() const {
   const JSLinearString* topBase = this;
   while (topBase->hasBase()) {

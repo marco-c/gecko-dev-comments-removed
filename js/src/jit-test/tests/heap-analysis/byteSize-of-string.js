@@ -84,8 +84,12 @@ function tByteSize(str) {
 
 
 
+
+
 const m32 = (getBuildConfiguration("pointer-byte-size") == 4);
 const TA = m32 ? 24 : 32; 
+const FA = m32 ? 32 : 32; 
+const NA = m32 ? 24 : 32; 
 const TN = m32 ? 16 : 24; 
 const FN = m32 ? 32 : 32; 
 const XN = m32 ? 16 : 24; 
@@ -130,6 +134,23 @@ assertEq(nByteSize("123456789.123456789.12345"),                      s(Nursery(
 assertEq(nByteSize("123456789.123456789.123456789.1"),                s(Nursery(XN)+32,Nursery(XN)+32));
 assertEq(nByteSize("123456789.123456789.123456789.12"),               s(Nursery(XN)+32,Nursery(XN)+32));
 assertEq(nByteSize("123456789.123456789.123456789.123"),              s(Nursery(XN)+64,Nursery(XN)+64));
+
+function Atom(s) { return Object.keys({ [s]: true })[0]; }
+assertEq(byteSize(Atom("1234567")),                                   s(TA, TA));
+assertEq(byteSize(Atom("12345678")),                                  s(TA, FA));
+assertEq(byteSize(Atom("123456789.12")),                              s(TA, FA));
+assertEq(byteSize(Atom("123456789.123")),                             s(FA, FA));
+assertEq(byteSize(Atom("123456789.12345")),                           s(FA, FA));
+assertEq(byteSize(Atom("123456789.123456")),                          s(FA, FA));
+assertEq(byteSize(Atom("123456789.1234567")),                         s(FA, FA));
+assertEq(byteSize(Atom("123456789.123456789.")),                      s(FA, FA));
+assertEq(byteSize(Atom("123456789.123456789.1")),                     s(NA+32, NA+32));
+assertEq(byteSize(Atom("123456789.123456789.123")),                   s(NA+32, NA+32));
+assertEq(byteSize(Atom("123456789.123456789.1234")),                  s(NA+32, NA+32));
+assertEq(byteSize(Atom("123456789.123456789.12345")),                 s(NA+32, NA+32));
+assertEq(byteSize(Atom("123456789.123456789.123456789.1")),           s(NA+32, NA+32));
+assertEq(byteSize(Atom("123456789.123456789.123456789.12")),          s(NA+32, NA+32));
+assertEq(byteSize(Atom("123456789.123456789.123456789.123")),         s(NA+48, NA+48));
 
 
 
@@ -184,7 +205,8 @@ assertEq(byteSize(rope8),                                               s(Nurser
 minorgc();
 assertEq(byteSize(rope8),                                               s(RN, RN));
 var matches8 = rope8.match(/(de cuyo nombre no quiero acordarme)/);
-assertEq(byteSize(rope8),                                               s(XN + 65536, XN + 65536));
+assertEq(byteSize(rope8),                                               s(XN + 64 * 1024, XN + 64 * 1024));
+var ext8 = rope8; 
 
 
 
@@ -192,12 +214,34 @@ assertEq(byteSize(rope8),                                               s(XN + 6
 
 
 
-rope8a = rope8 + fragment8;
+var rope8a = ext8 + fragment8;
 assertEq(byteSize(rope8a),                                              s(Nursery(RN), Nursery(RN)));
 rope8a.match(/x/, function() { assertEq(true, false); });
 assertEq(byteSize(rope8a),                                              s(Nursery(XN) + 65536, Nursery(XN) + 65536));
+assertEq(byteSize(ext8),                                                s(DN, DN));
+
+
+assertEq(byteSize(ext8.substr(1000, 2000)),                             s(Nursery(DN), Nursery(DN)));
+assertEq(byteSize(matches8[0]),                                         s(Nursery(DN), Nursery(DN)));
+assertEq(byteSize(matches8[1]),                                         s(Nursery(DN), Nursery(DN)));
+
+
+ext8 = copyString(ext8);
+rope8a = ext8 + fragment8;
+minorgc();
+assertEq(byteSize(rope8a),                                              s(RN, RN));
+rope8a.match(/x/, function() { assertEq(true, false); });
+assertEq(byteSize(rope8a),                                              s(XN + 65536, XN + 65536));
 assertEq(byteSize(rope8),                                               s(RN, RN));
 
+
+function tenure(s) {
+  minorgc();
+  return s;
+}
+assertEq(byteSize(tenure(rope8.substr(1000, 2000))),                    s(DN, DN));
+assertEq(byteSize(matches8[0]),                                         s(DN, DN));
+assertEq(byteSize(matches8[1]),                                         s(DN, DN));
 
 
 
@@ -208,13 +252,11 @@ for (var i = 0; i < 10; i++)
   rope16 = rope16 + rope16;
 assertEq(byteSize(rope16),                                              s(Nursery(RN), Nursery(RN)));
 let matches16 = rope16.match(/(Ἑλικωνιάδων ἀρχώμεθ᾽)/);
-assertEq(byteSize(rope16),                                              s(Nursery(RN) + 131072, Nursery(RN) + 131072));
+assertEq(byteSize(rope16),                                              s(Nursery(XN) + 128 * 1024, Nursery(XN) + 128 * 1024));
+var ext16 = rope16;
 
 
-assertEq(byteSize(rope8.substr(1000, 2000)),                            s(Nursery(DN), Nursery(DN)));
-assertEq(byteSize(rope16.substr(1000, 2000)),                           s(Nursery(DN), Nursery(DN)));
-assertEq(byteSize(matches8[0]),                                         s(Nursery(DN), Nursery(DN)));
-assertEq(byteSize(matches8[1]),                                         s(Nursery(DN), Nursery(DN)));
+assertEq(byteSize(ext16.substr(1000, 2000)),                            s(Nursery(DN), Nursery(DN)));
 assertEq(byteSize(matches16[0]),                                        s(Nursery(DN), Nursery(DN)));
 assertEq(byteSize(matches16[1]),                                        s(Nursery(DN), Nursery(DN)));
 
@@ -224,11 +266,21 @@ assertEq(byteSize(matches16[1]),                                        s(Nurser
 
 
 
-rope16a = rope16 + fragment16;
+rope16a = ext16 + fragment16;
 assertEq(byteSize(rope16a),                                             s(Nursery(RN), Nursery(RN)));
 rope16a.match(/x/, function() { assertEq(true, false); });
-assertEq(byteSize(rope16a),                                             s(Nursery(XN) + 131072, Nursery(XN) + 131072));
-assertEq(byteSize(rope16),                                              s(Nursery(XN), Nursery(XN)));
+assertEq(byteSize(rope16a),                                             s(Nursery(XN) + 128 * 1024, Nursery(XN) + 128 * 1024));
+assertEq(byteSize(ext16),                                               s(Nursery(DN), Nursery(DN)));
+
+
+
+ext16 = copyString(ext16);
+rope16a = ext16 + fragment16;
+minorgc();
+assertEq(byteSize(rope16a),                                             s(RN, RN));
+rope16a.match(/x/, function() { assertEq(true, false); });
+assertEq(byteSize(rope16a),                                             s(XN + 128 * 1024, XN + 128 * 1024));
+assertEq(byteSize(ext16),                                               s(RN, RN));
 
 
 

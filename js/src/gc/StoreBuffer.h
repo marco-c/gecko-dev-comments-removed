@@ -536,7 +536,13 @@ class StoreBuffer {
 
  public:
 #ifdef DEBUG
-  bool markingNondeduplicatable;
+  
+  
+  
+  
+  
+  
+  bool markingStringWholeCells;
 #endif
 
   explicit StoreBuffer(JSRuntime* rt);
