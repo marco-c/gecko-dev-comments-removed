@@ -909,7 +909,7 @@
 
 
  \
-    MACRO(InitProp, init_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_IC) \
+    MACRO(InitProp, init_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPINIT|JOF_IC) \
     
 
 
@@ -925,144 +925,7 @@
 
 
  \
-    MACRO(InitHiddenProp, init_hidden_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(InitLockedProp, init_locked_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(InitElem, init_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
-    MACRO(InitHiddenElem, init_hidden_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
-    MACRO(InitLockedElem, init_locked_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(InitPropGetter, init_prop_getter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT) \
-    MACRO(InitHiddenPropGetter, init_hidden_prop_getter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(InitElemGetter, init_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
-    MACRO(InitHiddenElemGetter, init_hidden_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(InitPropSetter, init_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT) \
-    MACRO(InitHiddenPropSetter, init_hidden_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(InitElemSetter, init_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
-    MACRO(InitHiddenElemSetter, init_hidden_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(GetProp, get_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(GetElem, get_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_IC) \
+    MACRO(InitHiddenProp, init_hidden_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPINIT|JOF_IC) \
     
 
 
@@ -1079,42 +942,7 @@
 
 
  \
-    MACRO(SetProp, set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC) \
-    
-
-
-
-
-
-
-
-
- \
-    MACRO(StrictSetProp, strict_set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(SetElem, set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC) \
-    
-
-
-
-
-
-
-
-
- \
-    MACRO(StrictSetElem, strict_set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
+    MACRO(InitLockedProp, init_locked_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPINIT|JOF_IC) \
     
 
 
@@ -1130,8 +958,180 @@
 
 
 
+
+
+
+
+
  \
-    MACRO(DelProp, del_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSLOPPY) \
+    MACRO(InitElem, init_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPINIT|JOF_IC) \
+    MACRO(InitHiddenElem, init_hidden_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPINIT|JOF_IC) \
+    MACRO(InitLockedElem, init_locked_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPINIT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitPropGetter, init_prop_getter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPINIT) \
+    MACRO(InitHiddenPropGetter, init_hidden_prop_getter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitElemGetter, init_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPINIT) \
+    MACRO(InitHiddenElemGetter, init_hidden_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitPropSetter, init_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPINIT) \
+    MACRO(InitHiddenPropSetter, init_hidden_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitElemSetter, init_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPINIT) \
+    MACRO(InitHiddenElemSetter, init_hidden_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetProp, get_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetElem, get_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetProp, set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(StrictSetProp, strict_set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetElem, set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(StrictSetElem, strict_set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DelProp, del_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_CHECKSLOPPY) \
     
 
 
@@ -1141,7 +1141,7 @@
 
 
  \
-    MACRO(StrictDelProp, strict_del_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSTRICT) \
+    MACRO(StrictDelProp, strict_del_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_CHECKSTRICT) \
     
 
 
@@ -1157,7 +1157,7 @@
 
 
  \
-    MACRO(DelElem, del_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSLOPPY) \
+    MACRO(DelElem, del_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_CHECKSLOPPY) \
     
 
 
@@ -1167,7 +1167,7 @@
 
 
  \
-    MACRO(StrictDelElem, strict_del_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSTRICT) \
+    MACRO(StrictDelElem, strict_del_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_CHECKSTRICT) \
     
 
 
@@ -1245,7 +1245,7 @@
 
 
  \
-    MACRO(GetPropSuper, get_prop_super, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_IC) \
+    MACRO(GetPropSuper, get_prop_super, NULL, 5, 2, 1, JOF_ATOM|JOF_IC) \
     
 
 
@@ -1263,7 +1263,7 @@
 
 
  \
-    MACRO(GetElemSuper, get_elem_super, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_IC) \
+    MACRO(GetElemSuper, get_elem_super, NULL, 1, 3, 1, JOF_BYTE|JOF_IC) \
     
 
 
@@ -1280,7 +1280,7 @@
 
 
  \
-    MACRO(SetPropSuper, set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSLOPPY) \
+    MACRO(SetPropSuper, set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROPSET|JOF_CHECKSLOPPY) \
     
 
 
@@ -1289,7 +1289,7 @@
 
 
  \
-    MACRO(StrictSetPropSuper, strict_set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSTRICT) \
+    MACRO(StrictSetPropSuper, strict_set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROPSET|JOF_CHECKSTRICT) \
     
 
 
@@ -1306,7 +1306,7 @@
 
 
  \
-    MACRO(SetElemSuper, set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSLOPPY) \
+    MACRO(SetElemSuper, set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_PROPSET|JOF_CHECKSLOPPY) \
     
 
 
@@ -1315,7 +1315,7 @@
 
 
  \
-    MACRO(StrictSetElemSuper, strict_set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSTRICT) \
+    MACRO(StrictSetElemSuper, strict_set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_PROPSET|JOF_CHECKSTRICT) \
     
 
 
@@ -1521,7 +1521,7 @@
 
 
  \
-    MACRO(InitElemArray, init_elem_array, NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT) \
+    MACRO(InitElemArray, init_elem_array, NULL, 5, 2, 1, JOF_UINT32|JOF_PROPINIT) \
     
 
 
@@ -1553,7 +1553,7 @@
 
 
  \
-    MACRO(InitElemInc, init_elem_inc, NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
+    MACRO(InitElemInc, init_elem_inc, NULL, 1, 3, 2, JOF_BYTE|JOF_PROPINIT|JOF_IC) \
     
 
 
@@ -2650,7 +2650,7 @@
 
 
  \
-    MACRO(ThrowSetConst, throw_set_const, NULL, 5, 0, 0, JOF_ATOM|JOF_NAME) \
+    MACRO(ThrowSetConst, throw_set_const, NULL, 5, 0, 0, JOF_ATOM) \
     
 
 
@@ -2751,7 +2751,7 @@
 
 
  \
-    MACRO(InitLexical, init_lexical, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME) \
+    MACRO(InitLexical, init_lexical, NULL, 4, 1, 1, JOF_LOCAL) \
     
 
 
@@ -2766,25 +2766,7 @@
 
 
  \
-    MACRO(InitGLexical, init_g_lexical, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_PROPINIT|JOF_GNAME|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(InitAliasedLexical, init_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPINIT) \
+    MACRO(InitGLexical, init_g_lexical, NULL, 5, 1, 1, JOF_ATOM|JOF_PROPINIT|JOF_GNAME|JOF_IC) \
     
 
 
@@ -2800,8 +2782,26 @@
 
 
 
+
  \
-    MACRO(CheckLexical, check_lexical, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME) \
+    MACRO(InitAliasedLexical, init_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckLexical, check_lexical, NULL, 4, 1, 1, JOF_LOCAL) \
     
 
 
@@ -2816,7 +2816,7 @@
 
 
  \
-    MACRO(CheckAliasedLexical, check_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME) \
+    MACRO(CheckAliasedLexical, check_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD) \
     
 
 
@@ -2843,7 +2843,7 @@
 
 
  \
-    MACRO(BindGName, bind_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_GNAME|JOF_IC) \
+    MACRO(BindGName, bind_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_GNAME|JOF_IC) \
     
 
 
@@ -2854,29 +2854,7 @@
 
 
  \
-    MACRO(BindName, bind_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC|JOF_USES_ENV) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC|JOF_USES_ENV) \
+    MACRO(BindName, bind_name, NULL, 5, 0, 1, JOF_ATOM|JOF_IC|JOF_USES_ENV) \
     
 
 
@@ -2897,31 +2875,8 @@
 
 
 
-
-
  \
-    MACRO(GetGName, get_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_GNAME|JOF_IC) \
-    
-
-
-
-
-
-
-
- \
-    MACRO(GetArg, get_arg, NULL, 3, 0, 1, JOF_QARG|JOF_NAME) \
-    
-
-
-
-
-
-
-
-
- \
-    MACRO(GetFrameArg, get_frame_arg, NULL, 3, 0, 1, JOF_QARG|JOF_NAME) \
+    MACRO(GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_IC|JOF_USES_ENV) \
     
 
 
@@ -2932,8 +2887,53 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
  \
-    MACRO(GetLocal, get_local, NULL, 4, 0, 1, JOF_LOCAL|JOF_NAME) \
+    MACRO(GetGName, get_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_GNAME|JOF_IC) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(GetArg, get_arg, NULL, 3, 0, 1, JOF_QARG) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetFrameArg, get_frame_arg, NULL, 3, 0, 1, JOF_QARG) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetLocal, get_local, NULL, 4, 0, 1, JOF_LOCAL) \
     
 
 
@@ -2983,7 +2983,7 @@
 
 
  \
-    MACRO(GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME|JOF_USES_ENV) \
+    MACRO(GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_USES_ENV) \
     
 
 
@@ -2993,7 +2993,7 @@
 
 
  \
-    MACRO(GetAliasedDebugVar, get_aliased_debug_var, NULL, 5, 0, 1, JOF_DEBUGCOORD|JOF_NAME) \
+    MACRO(GetAliasedDebugVar, get_aliased_debug_var, NULL, 5, 0, 1, JOF_DEBUGCOORD) \
     
 
 
@@ -3002,32 +3002,7 @@
 
 
  \
-    MACRO(GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(GetBoundName, get_bound_name, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_IC) \
+    MACRO(GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM) \
     
 
 
@@ -3039,8 +3014,33 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
  \
-    MACRO(GetIntrinsic, get_intrinsic, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC) \
+    MACRO(GetBoundName, get_bound_name, NULL, 5, 1, 1, JOF_ATOM|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetIntrinsic, get_intrinsic, NULL, 5, 0, 1, JOF_ATOM|JOF_IC) \
     
 
 
@@ -3100,7 +3100,7 @@
 
 
  \
-    MACRO(SetName, set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC|JOF_USES_ENV) \
+    MACRO(SetName, set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC|JOF_USES_ENV) \
     
 
 
@@ -3115,7 +3115,7 @@
 
 
  \
-    MACRO(StrictSetName, strict_set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC|JOF_USES_ENV) \
+    MACRO(StrictSetName, strict_set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC|JOF_USES_ENV) \
     
 
 
@@ -3125,7 +3125,7 @@
 
 
  \
-    MACRO(SetGName, set_g_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_GNAME|JOF_CHECKSLOPPY|JOF_IC) \
+    MACRO(SetGName, set_g_name, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPSET|JOF_GNAME|JOF_CHECKSLOPPY|JOF_IC) \
     
 
 
@@ -3135,7 +3135,7 @@
 
 
  \
-    MACRO(StrictSetGName, strict_set_g_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_GNAME|JOF_CHECKSTRICT|JOF_IC) \
+    MACRO(StrictSetGName, strict_set_g_name, NULL, 5, 2, 1, JOF_ATOM|JOF_PROPSET|JOF_GNAME|JOF_CHECKSTRICT|JOF_IC) \
     
 
 
@@ -3145,7 +3145,7 @@
 
 
  \
-    MACRO(SetArg, set_arg, NULL, 3, 1, 1, JOF_QARG|JOF_NAME) \
+    MACRO(SetArg, set_arg, NULL, 3, 1, 1, JOF_QARG) \
     
 
 
@@ -3154,22 +3154,7 @@
 
 
  \
-    MACRO(SetLocal, set_local, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(SetAliasedVar, set_aliased_var, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPSET|JOF_USES_ENV) \
+    MACRO(SetLocal, set_local, NULL, 4, 1, 1, JOF_LOCAL) \
     
 
 
@@ -3182,8 +3167,23 @@
 
 
 
+
  \
-    MACRO(SetIntrinsic, set_intrinsic, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME) \
+    MACRO(SetAliasedVar, set_aliased_var, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_PROPSET|JOF_USES_ENV) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetIntrinsic, set_intrinsic, NULL, 5, 1, 1, JOF_ATOM) \
     
 
 
@@ -3429,7 +3429,7 @@
 
 
  \
-    MACRO(DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY|JOF_USES_ENV) \
+    MACRO(DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_CHECKSLOPPY|JOF_USES_ENV) \
     
 
 

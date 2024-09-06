@@ -41,10 +41,6 @@ static inline uint32_t JOF_TYPE(uint32_t fmt) { return fmt & JOF_TYPEMASK; }
 
 
 
-static inline uint32_t JOF_MODE(uint32_t fmt) { return fmt & JOF_MODEMASK; }
-
-
-
 
 
 static MOZ_ALWAYS_INLINE uint8_t GET_UINT8(jsbytecode* pc) {
@@ -462,8 +458,6 @@ inline bool IsCheckStrictOp(JSOp op) {
   return CodeSpec(op).format & JOF_CHECKSTRICT;
 }
 
-inline bool IsNameOp(JSOp op) { return CodeSpec(op).format & JOF_NAME; }
-
 #ifdef DEBUG
 inline bool IsCheckSloppyOp(JSOp op) {
   return CodeSpec(op).format & JOF_CHECKSLOPPY;
@@ -509,10 +503,6 @@ inline bool IsSetElemOp(JSOp op) {
 }
 
 inline bool IsSetElemPC(const jsbytecode* pc) { return IsSetElemOp(JSOp(*pc)); }
-
-inline bool IsElemPC(const jsbytecode* pc) {
-  return CodeSpec(JSOp(*pc)).format & JOF_ELEM;
-}
 
 inline bool IsInvokeOp(JSOp op) { return CodeSpec(op).format & JOF_INVOKE; }
 

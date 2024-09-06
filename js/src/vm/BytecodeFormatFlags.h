@@ -41,10 +41,7 @@ enum {
   JOF_STRING = 26,      
   JOF_TYPEMASK = 0xFF,  
 
-  JOF_NAME = 1 << 8,        
-  JOF_PROP = 2 << 8,        
-  JOF_ELEM = 3 << 8,        
-  JOF_MODEMASK = 0xFF << 8, 
+  
 
   JOF_PROPSET = 1 << 16,     
   JOF_PROPINIT = 1 << 17,    
