@@ -872,6 +872,21 @@ class IDLInterfaceOrInterfaceMixinOrNamespace(IDLObjectWithScope, IDLExposureMix
         assert self.isInterfaceMixin()
         return "interface mixin"
 
+    def addExtendedAttributes(self, attrs):
+        for attr in attrs:
+            self.handleExtendedAttribute(attr)
+            attrlist = attr.listValue()
+            self._extendedAttrDict[attr.identifier()] = (
+                attrlist if len(attrlist) else True
+            )
+
+    def handleExtendedAttribute(self, attr):
+        raise WebIDLError(
+            "Unknown extended attribute %s on %s"
+            % (attr.identifier(), self.typeName()),
+            [attr.location],
+        )
+
     def getExtendedAttribute(self, name):
         return self._extendedAttrDict.get(name, None)
 
@@ -1007,35 +1022,27 @@ class IDLInterfaceMixin(IDLInterfaceOrInterfaceMixinOrNamespace):
                         [member.location, self.location],
                     )
 
-    def addExtendedAttributes(self, attrs):
-        for attr in attrs:
-            identifier = attr.identifier()
-
-            if identifier == "SecureContext":
-                if not attr.noArguments():
-                    raise WebIDLError(
-                        "[%s] must take no arguments" % identifier, [attr.location]
-                    )
-                
-                for member in self.members:
-                    if member.getExtendedAttribute("SecureContext"):
-                        raise WebIDLError(
-                            "[SecureContext] specified on both "
-                            "an interface mixin member and on"
-                            "the interface mixin itself",
-                            [member.location, attr.location],
-                        )
-                    member.addExtendedAttributes([attr])
-            elif identifier == "Exposed":
-                convertExposedAttrToGlobalNameSet(attr, self._exposureGlobalNames)
-            else:
+    def handleExtendedAttribute(self, attr):
+        identifier = attr.identifier()
+        if identifier == "SecureContext":
+            if not attr.noArguments():
                 raise WebIDLError(
-                    "Unknown extended attribute %s on interface" % identifier,
-                    [attr.location],
+                    "[%s] must take no arguments" % identifier, [attr.location]
                 )
-
-            attrlist = attr.listValue()
-            self._extendedAttrDict[identifier] = attrlist if len(attrlist) else True
+            
+            for member in self.members:
+                if member.getExtendedAttribute("SecureContext"):
+                    raise WebIDLError(
+                        "[SecureContext] specified on both "
+                        "an interface mixin member and on"
+                        "the interface mixin itself",
+                        [member.location, attr.location],
+                    )
+                member.addExtendedAttributes([attr])
+        elif identifier == "Exposed":
+            convertExposedAttrToGlobalNameSet(attr, self._exposureGlobalNames)
+        else:
+            IDLInterfaceOrInterfaceMixinOrNamespace.handleExtendedAttribute(self, attr)
 
     def _getDependentObjects(self):
         return set(self.members)
@@ -1972,173 +1979,163 @@ class IDLInterface(IDLInterfaceOrNamespace):
             return self.classNameOverride
         return IDLInterfaceOrNamespace.getClassName(self)
 
-    def addExtendedAttributes(self, attrs):
-        for attr in attrs:
-            identifier = attr.identifier()
-
-            
-            if identifier == "TreatNonCallableAsNull":
+    def handleExtendedAttribute(self, attr):
+        identifier = attr.identifier()
+        
+        if identifier == "TreatNonCallableAsNull":
+            raise WebIDLError(
+                "TreatNonCallableAsNull cannot be specified on interfaces",
+                [attr.location, self.location],
+            )
+        if identifier == "LegacyTreatNonObjectAsNull":
+            raise WebIDLError(
+                "LegacyTreatNonObjectAsNull cannot be specified on interfaces",
+                [attr.location, self.location],
+            )
+        elif identifier == "LegacyNoInterfaceObject":
+            if not attr.noArguments():
                 raise WebIDLError(
-                    "TreatNonCallableAsNull cannot be specified on interfaces",
-                    [attr.location, self.location],
-                )
-            if identifier == "LegacyTreatNonObjectAsNull":
-                raise WebIDLError(
-                    "LegacyTreatNonObjectAsNull cannot be specified on interfaces",
-                    [attr.location, self.location],
-                )
-            elif identifier == "LegacyNoInterfaceObject":
-                if not attr.noArguments():
-                    raise WebIDLError(
-                        "[LegacyNoInterfaceObject] must take no arguments",
-                        [attr.location],
-                    )
-
-                self._noInterfaceObject = True
-            elif identifier == "LegacyFactoryFunction":
-                if not attr.hasValue():
-                    raise WebIDLError(
-                        (
-                            "LegacyFactoryFunction must either take an "
-                            "identifier or take a named argument list"
-                        ),
-                        [attr.location],
-                    )
-
-                args = attr.args() if attr.hasArgs() else []
-
-                method = IDLConstructor(attr.location, args, attr.value())
-                method.reallyInit(self)
-
-                
-                
-                method.addExtendedAttributes(
-                    [IDLExtendedAttribute(self.location, ("Throws",))]
-                )
-
-                
-                
-                
-                
-                method.resolve(self.parentScope)
-
-                
-                
-                
-                
-                
-                
-                
-                
-                newMethod = self.parentScope.lookupIdentifier(method.identifier)
-                if newMethod == method:
-                    self.legacyFactoryFunctions.append(method)
-                elif newMethod not in self.legacyFactoryFunctions:
-                    raise WebIDLError(
-                        "LegacyFactoryFunction conflicts with a "
-                        "LegacyFactoryFunction of a different interface",
-                        [method.location, newMethod.location],
-                    )
-            elif identifier == "ExceptionClass":
-                if not attr.noArguments():
-                    raise WebIDLError(
-                        "[ExceptionClass] must take no arguments", [attr.location]
-                    )
-                if self.parent:
-                    raise WebIDLError(
-                        "[ExceptionClass] must not be specified on "
-                        "an interface with inherited interfaces",
-                        [attr.location, self.location],
-                    )
-            elif identifier == "Global":
-                if attr.hasValue():
-                    self.globalNames = [attr.value()]
-                elif attr.hasArgs():
-                    self.globalNames = attr.args()
-                else:
-                    raise WebIDLError(
-                        "[Global] must either take an identifier or take an identifier list",
-                        [attr.location, self.location],
-                    )
-                self.parentScope.addIfaceGlobalNames(
-                    self.identifier.name, self.globalNames
-                )
-                self._isOnGlobalProtoChain = True
-            elif identifier == "LegacyWindowAlias":
-                if attr.hasValue():
-                    self.legacyWindowAliases = [attr.value()]
-                elif attr.hasArgs():
-                    self.legacyWindowAliases = attr.args()
-                else:
-                    raise WebIDLError(
-                        "[%s] must either take an identifier "
-                        "or take an identifier list" % identifier,
-                        [attr.location],
-                    )
-                for alias in self.legacyWindowAliases:
-                    unresolved = IDLUnresolvedIdentifier(attr.location, alias)
-                    IDLObjectWithIdentifier(attr.location, self.parentScope, unresolved)
-            elif identifier == "SecureContext":
-                if not attr.noArguments():
-                    raise WebIDLError(
-                        "[%s] must take no arguments" % identifier, [attr.location]
-                    )
-                
-                for member in self.members:
-                    if member.getExtendedAttribute("SecureContext"):
-                        raise WebIDLError(
-                            "[SecureContext] specified on both "
-                            "an interface member and on the "
-                            "interface itself",
-                            [member.location, attr.location],
-                        )
-                    member.addExtendedAttributes([attr])
-            elif (
-                identifier == "NeedResolve"
-                or identifier == "LegacyOverrideBuiltIns"
-                or identifier == "ChromeOnly"
-                or identifier == "LegacyUnforgeable"
-                or identifier == "LegacyEventInit"
-                or identifier == "ProbablyShortLivingWrapper"
-                or identifier == "LegacyUnenumerableNamedProperties"
-                or identifier == "RunConstructorInCallerCompartment"
-                or identifier == "WantsEventListenerHooks"
-                or identifier == "Serializable"
-            ):
-                
-                if not attr.noArguments():
-                    raise WebIDLError(
-                        "[%s] must take no arguments" % identifier, [attr.location]
-                    )
-            elif identifier == "Exposed":
-                convertExposedAttrToGlobalNameSet(attr, self._exposureGlobalNames)
-            elif (
-                identifier == "Pref"
-                or identifier == "JSImplementation"
-                or identifier == "HeaderFile"
-                or identifier == "Func"
-                or identifier == "Trial"
-                or identifier == "Deprecated"
-            ):
-                
-                if not attr.hasValue():
-                    raise WebIDLError(
-                        "[%s] must have a value" % identifier, [attr.location]
-                    )
-            elif identifier == "InstrumentedProps":
-                
-                if not attr.hasArgs():
-                    raise WebIDLError(
-                        "[%s] must have arguments" % identifier, [attr.location]
-                    )
-            else:
-                raise WebIDLError(
-                    "Unknown extended attribute %s on interface" % identifier,
+                    "[LegacyNoInterfaceObject] must take no arguments",
                     [attr.location],
                 )
 
-            attrlist = attr.listValue()
-            self._extendedAttrDict[identifier] = attrlist if len(attrlist) else True
+            self._noInterfaceObject = True
+        elif identifier == "LegacyFactoryFunction":
+            if not attr.hasValue():
+                raise WebIDLError(
+                    (
+                        "LegacyFactoryFunction must either take an "
+                        "identifier or take a named argument list"
+                    ),
+                    [attr.location],
+                )
+
+            args = attr.args() if attr.hasArgs() else []
+
+            method = IDLConstructor(attr.location, args, attr.value())
+            method.reallyInit(self)
+
+            
+            
+            method.addExtendedAttributes(
+                [IDLExtendedAttribute(self.location, ("Throws",))]
+            )
+
+            
+            
+            
+            
+            method.resolve(self.parentScope)
+
+            
+            
+            
+            
+            
+            
+            
+            
+            newMethod = self.parentScope.lookupIdentifier(method.identifier)
+            if newMethod == method:
+                self.legacyFactoryFunctions.append(method)
+            elif newMethod not in self.legacyFactoryFunctions:
+                raise WebIDLError(
+                    "LegacyFactoryFunction conflicts with a "
+                    "LegacyFactoryFunction of a different interface",
+                    [method.location, newMethod.location],
+                )
+        elif identifier == "ExceptionClass":
+            if not attr.noArguments():
+                raise WebIDLError(
+                    "[ExceptionClass] must take no arguments", [attr.location]
+                )
+            if self.parent:
+                raise WebIDLError(
+                    "[ExceptionClass] must not be specified on "
+                    "an interface with inherited interfaces",
+                    [attr.location, self.location],
+                )
+        elif identifier == "Global":
+            if attr.hasValue():
+                self.globalNames = [attr.value()]
+            elif attr.hasArgs():
+                self.globalNames = attr.args()
+            else:
+                raise WebIDLError(
+                    "[Global] must either take an identifier or take an identifier list",
+                    [attr.location, self.location],
+                )
+            self.parentScope.addIfaceGlobalNames(self.identifier.name, self.globalNames)
+            self._isOnGlobalProtoChain = True
+        elif identifier == "LegacyWindowAlias":
+            if attr.hasValue():
+                self.legacyWindowAliases = [attr.value()]
+            elif attr.hasArgs():
+                self.legacyWindowAliases = attr.args()
+            else:
+                raise WebIDLError(
+                    "[%s] must either take an identifier "
+                    "or take an identifier list" % identifier,
+                    [attr.location],
+                )
+            for alias in self.legacyWindowAliases:
+                unresolved = IDLUnresolvedIdentifier(attr.location, alias)
+                IDLObjectWithIdentifier(attr.location, self.parentScope, unresolved)
+        elif identifier == "SecureContext":
+            if not attr.noArguments():
+                raise WebIDLError(
+                    "[%s] must take no arguments" % identifier, [attr.location]
+                )
+            
+            for member in self.members:
+                if member.getExtendedAttribute("SecureContext"):
+                    raise WebIDLError(
+                        "[SecureContext] specified on both "
+                        "an interface member and on the "
+                        "interface itself",
+                        [member.location, attr.location],
+                    )
+                member.addExtendedAttributes([attr])
+        elif (
+            identifier == "NeedResolve"
+            or identifier == "LegacyOverrideBuiltIns"
+            or identifier == "ChromeOnly"
+            or identifier == "LegacyUnforgeable"
+            or identifier == "LegacyEventInit"
+            or identifier == "ProbablyShortLivingWrapper"
+            or identifier == "LegacyUnenumerableNamedProperties"
+            or identifier == "RunConstructorInCallerCompartment"
+            or identifier == "WantsEventListenerHooks"
+            or identifier == "Serializable"
+        ):
+            
+            if not attr.noArguments():
+                raise WebIDLError(
+                    "[%s] must take no arguments" % identifier, [attr.location]
+                )
+        elif identifier == "Exposed":
+            convertExposedAttrToGlobalNameSet(attr, self._exposureGlobalNames)
+        elif (
+            identifier == "Pref"
+            or identifier == "JSImplementation"
+            or identifier == "HeaderFile"
+            or identifier == "Func"
+            or identifier == "Trial"
+            or identifier == "Deprecated"
+        ):
+            
+            if not attr.hasValue():
+                raise WebIDLError(
+                    "[%s] must have a value" % identifier, [attr.location]
+                )
+        elif identifier == "InstrumentedProps":
+            
+            if not attr.hasArgs():
+                raise WebIDLError(
+                    "[%s] must have arguments" % identifier, [attr.location]
+                )
+        else:
+            IDLInterfaceOrNamespace.handleExtendedAttribute(self, attr)
 
     def validate(self):
         IDLInterfaceOrNamespace.validate(self)
@@ -2180,47 +2177,39 @@ class IDLNamespace(IDLInterfaceOrNamespace):
     def isNamespace(self):
         return True
 
-    def addExtendedAttributes(self, attrs):
+    def handleExtendedAttribute(self, attr):
         
         
         
         
-        for attr in attrs:
-            identifier = attr.identifier()
-
-            if identifier == "Exposed":
-                convertExposedAttrToGlobalNameSet(attr, self._exposureGlobalNames)
-            elif identifier == "ClassString":
-                
-                
-                if not attr.hasValue():
-                    raise WebIDLError(
-                        "[%s] must have a value" % identifier, [attr.location]
-                    )
-            elif identifier == "ProtoObjectHack" or identifier == "ChromeOnly":
-                if not attr.noArguments():
-                    raise WebIDLError(
-                        "[%s] must not have arguments" % identifier, [attr.location]
-                    )
-            elif (
-                identifier == "Pref"
-                or identifier == "HeaderFile"
-                or identifier == "Func"
-                or identifier == "Trial"
-            ):
-                
-                if not attr.hasValue():
-                    raise WebIDLError(
-                        "[%s] must have a value" % identifier, [attr.location]
-                    )
-            else:
+        identifier = attr.identifier()
+        if identifier == "Exposed":
+            convertExposedAttrToGlobalNameSet(attr, self._exposureGlobalNames)
+        elif identifier == "ClassString":
+            
+            
+            if not attr.hasValue():
                 raise WebIDLError(
-                    "Unknown extended attribute %s on namespace" % identifier,
-                    [attr.location],
+                    "[%s] must have a value" % identifier, [attr.location]
                 )
-
-            attrlist = attr.listValue()
-            self._extendedAttrDict[identifier] = attrlist if len(attrlist) else True
+        elif identifier == "ProtoObjectHack" or identifier == "ChromeOnly":
+            if not attr.noArguments():
+                raise WebIDLError(
+                    "[%s] must not have arguments" % identifier, [attr.location]
+                )
+        elif (
+            identifier == "Pref"
+            or identifier == "HeaderFile"
+            or identifier == "Func"
+            or identifier == "Trial"
+        ):
+            
+            if not attr.hasValue():
+                raise WebIDLError(
+                    "[%s] must have a value" % identifier, [attr.location]
+                )
+        else:
+            IDLInterfaceOrNamespace.handleExtendedAttribute(self, attr)
 
     def isSerializable(self):
         return False
