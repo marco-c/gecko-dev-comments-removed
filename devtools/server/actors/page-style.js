@@ -751,7 +751,9 @@ class PageStyleActor extends Actor {
     const domRules = InspectorUtils.getCSSStyleRules(
       node,
       pseudo,
-      CssLogic.hasVisitedState(node)
+      CssLogic.hasVisitedState(node),
+      
+      !inherited
     );
 
     if (!domRules) {
