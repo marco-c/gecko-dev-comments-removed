@@ -7,6 +7,7 @@
 #ifndef MEDIA_BASE_YUV_CONVERT_H_
 #define MEDIA_BASE_YUV_CONVERT_H_
 
+#include "ErrorList.h"
 #include "chromium_types.h"
 #include "mozilla/gfx/Types.h"
 
@@ -44,84 +45,91 @@ enum ScaleFilter {
   FILTER_BILINEAR = 3     
 };
 
+nsresult ToNSResult(int aLibyuvResult);
+
 enum RGB32Type {
   ARGB = 0,
   ABGR = 1
 };
 
 
-void ConvertYCbCrToRGB32(const uint8_t* yplane,
+nsresult
+ConvertYCbCrToRGB32(const uint8_t* yplane,
+                    const uint8_t* uplane,
+                    const uint8_t* vplane,
+                    uint8_t* rgbframe,
+                    int pic_x,
+                    int pic_y,
+                    int pic_width,
+                    int pic_height,
+                    int ystride,
+                    int uvstride,
+                    int rgbstride,
+                    YUVType yuv_type,
+                    YUVColorSpace yuv_color_space,
+                    ColorRange color_range,
+                    RGB32Type rgb32_type);
+
+nsresult
+ConvertYCbCrToRGB32_deprecated(const uint8_t* yplane,
+                               const uint8_t* uplane,
+                               const uint8_t* vplane,
+                               uint8_t* rgbframe,
+                               int pic_x,
+                               int pic_y,
+                               int pic_width,
+                               int pic_height,
+                               int ystride,
+                               int uvstride,
+                               int rgbstride,
+                               YUVType yuv_type,
+                              RGB32Type rgb32_type);
+
+
+
+nsresult
+ScaleYCbCrToRGB32(const uint8_t* yplane,
+                  const uint8_t* uplane,
+                  const uint8_t* vplane,
+                  uint8_t* rgbframe,
+                  int source_width,
+                  int source_height,
+                  int width,
+                  int height,
+                  int ystride,
+                  int uvstride,
+                  int rgbstride,
+                  YUVType yuv_type,
+                  YUVColorSpace yuv_color_space,
+                  ScaleFilter filter);
+
+nsresult
+ScaleYCbCrToRGB32_deprecated(const uint8_t* yplane,
+                             const uint8_t* uplane,
+                             const uint8_t* vplane,
+                             uint8_t* rgbframe,
+                             int source_width,
+                             int source_height,
+                             int width,
+                             int height,
+                             int ystride,
+                             int uvstride,
+                             int rgbstride,
+                             YUVType yuv_type,
+                             Rotate view_rotate,
+                             ScaleFilter filter);
+
+nsresult
+ConvertI420AlphaToARGB32(const uint8_t* yplane,
                          const uint8_t* uplane,
                          const uint8_t* vplane,
-                         uint8_t* rgbframe,
-                         int pic_x,
-                         int pic_y,
+                         const uint8_t* aplane,
+                         uint8_t* argbframe,
                          int pic_width,
                          int pic_height,
-                         int ystride,
+                         int yastride,
                          int uvstride,
-                         int rgbstride,
-                         YUVType yuv_type,
-                         YUVColorSpace yuv_color_space,
-                         ColorRange color_range,
-                         RGB32Type rgb32_type);
-
-void ConvertYCbCrToRGB32_deprecated(const uint8_t* yplane,
-                                    const uint8_t* uplane,
-                                    const uint8_t* vplane,
-                                    uint8_t* rgbframe,
-                                    int pic_x,
-                                    int pic_y,
-                                    int pic_width,
-                                    int pic_height,
-                                    int ystride,
-                                    int uvstride,
-                                    int rgbstride,
-                                    YUVType yuv_type,
-                                    RGB32Type rgb32_type);
-
-
-
-void ScaleYCbCrToRGB32(const uint8_t* yplane,
-                       const uint8_t* uplane,
-                       const uint8_t* vplane,
-                       uint8_t* rgbframe,
-                       int source_width,
-                       int source_height,
-                       int width,
-                       int height,
-                       int ystride,
-                       int uvstride,
-                       int rgbstride,
-                       YUVType yuv_type,
-                       YUVColorSpace yuv_color_space,
-                       ScaleFilter filter);
-
-void ScaleYCbCrToRGB32_deprecated(const uint8_t* yplane,
-                                  const uint8_t* uplane,
-                                  const uint8_t* vplane,
-                                  uint8_t* rgbframe,
-                                  int source_width,
-                                  int source_height,
-                                  int width,
-                                  int height,
-                                  int ystride,
-                                  int uvstride,
-                                  int rgbstride,
-                                  YUVType yuv_type,
-                                  Rotate view_rotate,
-                                  ScaleFilter filter);
-
-void ConvertI420AlphaToARGB32(const uint8_t* yplane,
-                              const uint8_t* uplane,
-                              const uint8_t* vplane,
-                              const uint8_t* aplane,
-                              uint8_t* argbframe,
-                              int pic_width,
-                              int pic_height,
-                              int yastride,
-                              int uvstride,
-                              int argbstride);
+                         int argbstride);
 
 } 
 } 
