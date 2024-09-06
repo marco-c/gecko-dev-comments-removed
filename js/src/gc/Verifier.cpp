@@ -486,8 +486,6 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
 
 
-
-
   JSRuntime* runtime = gc->rt;
   GCMarker* gcmarker = &gc->marker();
 
@@ -717,41 +715,50 @@ void js::gc::MarkingValidator::validate() {
 
 
 
-        if (bitmap->isMarkedAny(cell)) {
-          if (!incBitmap->isMarkedAny(cell)) {
-            ok = false;
-            const char* color =
-                CellColorName(TenuredCell::getColor(bitmap, cell));
-            fprintf(stderr,
-                    "%p: cell not marked, but would be marked %s by "
-                    "non-incremental marking\n",
-                    cell, color);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        CellColor incColor = TenuredCell::getColor(incBitmap, cell);
+        CellColor nonIncColor = TenuredCell::getColor(bitmap, cell);
+        if (incColor < nonIncColor) {
+          ok = false;
+          fprintf(stderr,
+                  "%p: cell was marked %s, but would be marked %s by "
+                  "non-incremental marking\n",
+                  cell, CellColorName(incColor), CellColorName(nonIncColor));
 #  ifdef DEBUG
-            cell->dump();
-            fprintf(stderr, "\n");
+          cell->dump();
+          fprintf(stderr, "\n");
 #  endif
-          }
-        }
-
-        
-
-
-
-
-        if (!bitmap->isMarkedGray(cell)) {
-          if (incBitmap->isMarkedGray(cell)) {
-            ok = false;
-            const char* color =
-                CellColorName(TenuredCell::getColor(bitmap, cell));
-            fprintf(stderr,
-                    "%p: cell marked gray, but would be marked %s by "
-                    "non-incremental marking\n",
-                    cell, color);
-#  ifdef DEBUG
-            cell->dump();
-            fprintf(stderr, "\n");
-#  endif
-          }
         }
 
         thing += Arena::thingSize(kind);
