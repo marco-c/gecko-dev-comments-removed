@@ -8,6 +8,7 @@
 
 #include "gfxContext.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "nsCSSValue.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
@@ -145,15 +146,17 @@ void nsMathMLmoFrame::ProcessTextData() {
   mFlags |= allFlags & NS_MATHML_OPERATOR_ACCENT;
   mFlags |= allFlags & NS_MATHML_OPERATOR_MOVABLELIMITS;
 
-  
-  
-  if (1 == length) {
-    if ((ch == '+') || (ch == '=') || (ch == '*') ||
-        (ch == 0x2212) ||  
-        (ch == 0x2264) ||  
-        (ch == 0x2265) ||  
-        (ch == 0x00D7)) {  
-      mFlags |= NS_MATHML_OPERATOR_CENTERED;
+  if (!StaticPrefs::mathml_centered_operators_disabled()) {
+    
+    
+    if (1 == length) {
+      if ((ch == '+') || (ch == '=') || (ch == '*') ||
+          (ch == 0x2212) ||  
+          (ch == 0x2264) ||  
+          (ch == 0x2265) ||  
+          (ch == 0x00D7)) {  
+        mFlags |= NS_MATHML_OPERATOR_CENTERED;
+      }
     }
   }
 
