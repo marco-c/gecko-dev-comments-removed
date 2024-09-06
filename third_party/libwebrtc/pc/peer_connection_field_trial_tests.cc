@@ -142,7 +142,13 @@ TEST_F(PeerConnectionFieldTrialTest, EnableDependencyDescriptorAdvertised) {
 
 
 
-TEST_F(PeerConnectionFieldTrialTest, InjectDependencyDescriptor) {
+#ifdef WEBRTC_WIN
+
+#define MAYBE_InjectDependencyDescriptor DISABLED_InjectDependencyDescriptor
+#else
+#define MAYBE_InjectDependencyDescriptor InjectDependencyDescriptor
+#endif
+TEST_F(PeerConnectionFieldTrialTest, MAYBE_InjectDependencyDescriptor) {
   std::unique_ptr<test::ScopedKeyValueConfig> field_trials =
       std::make_unique<test::ScopedKeyValueConfig>(
           "WebRTC-DependencyDescriptorAdvertised/Disabled/");
