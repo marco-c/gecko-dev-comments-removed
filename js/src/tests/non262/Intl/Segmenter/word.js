@@ -97,14 +97,6 @@ function assertIsSegmentDataObject(obj) {
   
   let expectedWordLike = !/^(\p{gc=P}|\p{gc=Zs})+$/u.test(obj.segment);
 
-  
-  
-  let isThai = /^\p{sc=Thai}+$/u.test(obj.segment);
-  let isLastSegment = obj.index + obj.segment.length === obj.input.length;
-  if (isThai && isLastSegment) {
-    expectedWordLike = false;
-  }
-
   assertEq(obj.isWordLike, expectedWordLike, obj.segment);
 }
 
