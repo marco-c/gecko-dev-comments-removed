@@ -1936,10 +1936,6 @@ pref("identity.fxaccounts.commands.missed.fetch_interval", 86400);
 
 
 
-pref("identity.fxaccounts.commands.remoteTabManagement.enabled", false);
-
-
-
 
 
 
