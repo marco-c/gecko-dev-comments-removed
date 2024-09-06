@@ -386,6 +386,22 @@ async function canTestOSKeyStoreLogin() {
 
 
 async function waitForOSKeyStoreLoginTestSetupComplete() {
+  if (
+    !(await SpecialPowers.spawnChrome([], () => {
+      
+      
+      const { FormAutofillUtils } = ChromeUtils.importESModule(
+        "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
+      );
+
+      return FormAutofillUtils.getOSAuthEnabled(
+        FormAutofillUtils.AUTOFILL_CREDITCARDS_REAUTH_PREF
+      );
+    }))
+  ) {
+    return;
+  }
+
   await SimpleTest.promiseWaitForCondition(async () => {
     return await SpecialPowers.spawnChrome([], () => {
       const { OSKeyStoreTestUtils } = ChromeUtils.importESModule(
@@ -416,20 +432,23 @@ async function waitForOSKeyStoreLoginTestSetupComplete() {
 
 async function waitForOSKeyStoreLogin(login = false) {
   
-  let isOSAuthEnabled = await SpecialPowers.spawnChrome([], () => {
-    
-    
-    const { FormAutofillUtils } = ChromeUtils.importESModule(
-      "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
-    );
+  if (
+    !(await SpecialPowers.spawnChrome([], () => {
+      
+      
+      const { FormAutofillUtils } = ChromeUtils.importESModule(
+        "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
+      );
 
-    return FormAutofillUtils.getOSAuthEnabled(
-      FormAutofillUtils.AUTOFILL_CREDITCARDS_REAUTH_PREF
-    );
-  });
-  if (isOSAuthEnabled) {
-    await invokeAsyncChromeTask("FormAutofillTest:OSKeyStoreLogin", { login });
+      return FormAutofillUtils.getOSAuthEnabled(
+        FormAutofillUtils.AUTOFILL_CREDITCARDS_REAUTH_PREF
+      );
+    }))
+  ) {
+    return;
   }
+
+  await invokeAsyncChromeTask("FormAutofillTest:OSKeyStoreLogin", { login });
 }
 
 function patchRecordCCNumber(record) {
