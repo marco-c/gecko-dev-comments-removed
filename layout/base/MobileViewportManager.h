@@ -15,7 +15,6 @@
 #include "nsIDOMEventListener.h"
 #include "nsIObserver.h"
 #include "Units.h"
-#include "UnitTransforms.h"
 
 class nsViewportInfo;
 
@@ -97,10 +96,8 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   void SetInitialViewport();
 
-  mozilla::LayoutDeviceIntSize DisplaySize() const {
-    return mozilla::ViewAs<mozilla::LayoutDevicePixel>(
-        GetLayoutDisplaySize(),
-        mozilla::PixelCastJustification::LayoutDeviceIsScreenForBounds);
+  const mozilla::LayoutDeviceIntSize& DisplaySize() const {
+    return mDisplaySize;
   };
 
   
@@ -139,16 +136,14 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   mozilla::ParentLayerSize GetCompositionSizeWithoutDynamicToolbar() const;
 
-  void UpdateKeyboardHeight(mozilla::ScreenIntCoord aKeyboardHeight);
-
   static mozilla::LazyLogModule gLog;
+
+ private:
+  ~MobileViewportManager();
 
   
 
   void RefreshViewportSize(bool aForceAdjustResolution);
-
- private:
-  ~MobileViewportManager();
 
   
   void RefreshVisualViewportSize();
@@ -180,9 +175,11 @@ class MobileViewportManager final : public nsIDOMEventListener,
   void UpdateResolutionForContentSizeChange(
       const mozilla::CSSSize& aContentSize);
 
-  void ApplyNewZoom(const mozilla::CSSToScreenScale& aNewZoom);
+  void ApplyNewZoom(const mozilla::ScreenIntSize& aDisplaySize,
+                    const mozilla::CSSToScreenScale& aNewZoom);
 
-  void UpdateVisualViewportSize(const mozilla::CSSToScreenScale& aZoom);
+  void UpdateVisualViewportSize(const mozilla::ScreenIntSize& aDisplaySize,
+                                const mozilla::CSSToScreenScale& aZoom);
 
   
 
@@ -200,23 +197,12 @@ class MobileViewportManager final : public nsIDOMEventListener,
   mozilla::ScreenIntSize GetCompositionSize(
       const mozilla::ScreenIntSize& aDisplaySize) const;
 
-  
-
-
-
-  mozilla::ScreenIntSize GetLayoutDisplaySize() const;
-
-  
-
-
-
-
-  mozilla::ScreenIntSize GetDisplaySizeForVisualViewport() const;
-
   mozilla::CSSToScreenScale GetZoom() const;
 
   RefPtr<mozilla::MVMContext> mContext;
   ManagerType mManagerType;
+  bool mIsFirstPaint;
+  bool mPainted;
   mozilla::LayoutDeviceIntSize mDisplaySize;
   mozilla::CSSSize mMobileViewportSize;
   mozilla::Maybe<float> mRestoreResolution;
@@ -229,17 +215,6 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
 
   nsSize mVisualViewportSizeUpdatedByDynamicToolbar;
-
-  
-
-
-  mozilla::ScreenIntCoord mKeyboardHeight;
-
-  bool mIsFirstPaint;
-  bool mPainted;
-  
-  
-  bool mInvalidViewport;
 };
 
 #endif

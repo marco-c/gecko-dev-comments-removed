@@ -1965,12 +1965,6 @@ nsDocumentViewer::SetBoundsWithFlags(const nsIntRect& aBounds,
         nsIFrame* f = rootView->GetFrame();
         if (f) {
           f->InvalidateFrame();
-
-          
-          
-          
-          
-          mPresShell->RefreshViewportSize();
         }
       }
     }

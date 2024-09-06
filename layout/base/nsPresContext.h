@@ -401,7 +401,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
 
-  void SetVisibleArea(const nsRect& aRect);
+  void SetVisibleArea(const nsRect& r);
 
   nsSize GetSizeForViewportUnits() const { return mSizeForViewportUnits; }
 
@@ -432,10 +432,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
     MOZ_ASSERT(IsRootContentDocumentCrossProcess());
     return mDynamicToolbarHeight;
   }
-
-  void UpdateKeyboardHeight(mozilla::ScreenIntCoord aHeight);
-
-  mozilla::ScreenIntCoord GetKeyboardHeight() const { return mKeyboardHeight; }
 
   
 
@@ -1223,8 +1219,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   mozilla::ScreenIntCoord mDynamicToolbarMaxHeight;
   mozilla::ScreenIntCoord mDynamicToolbarHeight;
-  
-  mozilla::ScreenIntCoord mKeyboardHeight;
   
   mozilla::ScreenIntMargin mSafeAreaInsets;
   nsSize mPageSize;

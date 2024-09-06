@@ -96,7 +96,6 @@
 #include "mozilla/layers/APZThreadUtils.h"
 #include "MobileViewportManager.h"
 #include "mozilla/dom/ImageTracker.h"
-#include "mozilla/dom/InteractiveWidget.h"
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocAccessible.h"
 #endif
@@ -247,7 +246,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mCurAppUnitsPerDevPixel(0),
       mDynamicToolbarMaxHeight(0),
       mDynamicToolbarHeight(0),
-      mKeyboardHeight(0),
       mPageSize(-1, -1),
       mPageScale(0.0),
       mPPScale(1.0f),
@@ -718,15 +716,13 @@ nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
   mEventManager->SetPresContext(this);
 
 #if defined(MOZ_WIDGET_ANDROID)
-  if (IsRootContentDocumentCrossProcess()) {
-    if (BrowserChild* browserChild = BrowserChild::GetFrom(GetDocShell())) {
-      mKeyboardHeight = browserChild->GetKeyboardHeight();
-
-      if (MOZ_LIKELY(!Preferences::HasUserValue(
-              "layout.dynamic-toolbar-max-height"))) {
-        mDynamicToolbarMaxHeight = browserChild->GetDynamicToolbarMaxHeight();
-        mDynamicToolbarHeight = mDynamicToolbarMaxHeight;
-      }
+  if (IsRootContentDocumentCrossProcess() &&
+      MOZ_LIKELY(
+          !Preferences::HasUserValue("layout.dynamic-toolbar-max-height"))) {
+    if (BrowserChild* browserChild =
+            BrowserChild::GetFrom(mDocument->GetDocShell())) {
+      mDynamicToolbarMaxHeight = browserChild->GetDynamicToolbarMaxHeight();
+      mDynamicToolbarHeight = mDynamicToolbarMaxHeight;
     }
   }
 #endif
@@ -2963,9 +2959,9 @@ gfx::PaletteCache& nsPresContext::FontPaletteCache() {
   return *mFontPaletteCache.get();
 }
 
-void nsPresContext::SetVisibleArea(const nsRect& aRect) {
-  if (!aRect.IsEqualEdges(mVisibleArea)) {
-    mVisibleArea = aRect;
+void nsPresContext::SetVisibleArea(const nsRect& r) {
+  if (!r.IsEqualEdges(mVisibleArea)) {
+    mVisibleArea = r;
     mSizeForViewportUnits = mVisibleArea.Size();
     if (IsRootContentDocumentCrossProcess()) {
       AdjustSizeForViewportUnits();
@@ -3038,27 +3034,13 @@ void nsPresContext::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
     return;
   }
 
-  dom::InteractiveWidget interactiveWidget = mDocument->InteractiveWidget();
-  if (interactiveWidget == InteractiveWidget::OverlaysContent &&
-      mKeyboardHeight > 0) {
-    
-    
-    
-    
-    return;
-  }
-
-  if (interactiveWidget == InteractiveWidget::ResizesContent ||
-      mKeyboardHeight == 0) {
-    
-    
-    
-    
-    
-    if (mDynamicToolbarHeight == 0 || aOffset == -mDynamicToolbarMaxHeight) {
-      mPresShell->MarkFixedFramesForReflow(IntrinsicDirty::None);
-      mPresShell->AddResizeEventFlushObserverIfNeeded();
-    }
+  
+  
+  
+  
+  if (mDynamicToolbarHeight == 0 || aOffset == -mDynamicToolbarMaxHeight) {
+    mPresShell->MarkFixedFramesForReflow(IntrinsicDirty::None);
+    mPresShell->AddResizeEventFlushObserverIfNeeded();
   }
 
   mDynamicToolbarHeight = mDynamicToolbarMaxHeight + aOffset;
@@ -3070,20 +3052,6 @@ void nsPresContext::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
 
   mPresShell->StyleSet()->InvalidateForViewportUnits(
       ServoStyleSet::OnlyDynamic::Yes);
-}
-
-void nsPresContext::UpdateKeyboardHeight(ScreenIntCoord aHeight) {
-  MOZ_ASSERT(IsRootContentDocumentCrossProcess());
-  mKeyboardHeight = aHeight;
-
-  if (!mPresShell) {
-    return;
-  }
-
-  if (RefPtr<MobileViewportManager> mvm =
-          mPresShell->GetMobileViewportManager()) {
-    mvm->UpdateKeyboardHeight(aHeight);
-  }
 }
 
 DynamicToolbarState nsPresContext::GetDynamicToolbarState() const {
