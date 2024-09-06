@@ -669,7 +669,9 @@ class CorePS {
 
   PS_GET_AND_SET(const nsACString&, ProcessName)
   PS_GET_AND_SET(const nsACString&, ETLDplus1)
+#if !defined(XP_WIN)
   PS_GET_AND_SET(const Maybe<nsCOMPtr<nsIFile>>&, DownloadDirectory)
+#endif
 
   static void SetBandwidthCounter(ProfilerBandwidthCounter* aBandwidthCounter) {
     MOZ_ASSERT(sInstance);
@@ -720,7 +722,9 @@ class CorePS {
   JsFrameBuffer mJsFrames;
 
   
+#if !defined(XP_WIN)
   Maybe<nsCOMPtr<nsIFile>> mDownloadDirectory;
+#endif
 };
 
 CorePS* CorePS::sInstance = nullptr;
@@ -5307,6 +5311,11 @@ static void profiler_stop_signal_handler(int signal, siginfo_t* info,
 
 
 Maybe<nsAutoCString> profiler_find_dump_path() {
+
+
+#if defined(XP_WIN)
+  return Nothing();
+#else
   Maybe<nsCOMPtr<nsIFile>> directory = Nothing();
   nsAutoCString path;
 
@@ -5341,12 +5350,8 @@ Maybe<nsAutoCString> profiler_find_dump_path() {
       return Nothing();
     }
 
-
-#if defined(XP_WIN)
-    rv = directory.value()->GetNativeTarget(path);
-#else
+    
     rv = directory.value()->GetNativePath(path);
-#endif
     if (NS_FAILED(rv)) {
       LOG("Failed to get native path for temp path");
       return Nothing();
@@ -5356,6 +5361,7 @@ Maybe<nsAutoCString> profiler_find_dump_path() {
   }
 
   return Nothing();
+#endif
 }
 
 void profiler_dump_and_stop() {
@@ -6459,6 +6465,10 @@ bool profiler_is_paused() {
 
 
 void profiler_lookup_download_directory() {
+
+
+
+#if !defined(XP_WIN)
   LOG("profiler_lookup_download_directory");
 
   MOZ_ASSERT(
@@ -6481,6 +6491,7 @@ void profiler_lookup_download_directory() {
   } else {
     CorePS::SetDownloadDirectory(lock, Some(tDownloadDir));
   }
+#endif
 }
 
 RefPtr<GenericPromise> profiler_pause() {
