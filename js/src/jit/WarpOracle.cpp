@@ -510,6 +510,11 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
         break;
       }
 
+      case JSOp::String:
+        if (!loc.atomizeString(cx_, script_)) {
+          return abort(AbortReason::Alloc);
+        }
+        break;
       case JSOp::GetName:
       case JSOp::GetGName:
       case JSOp::GetProp:
@@ -613,7 +618,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::Int32:
       case JSOp::Double:
       case JSOp::BigInt:
-      case JSOp::String:
       case JSOp::Symbol:
       case JSOp::Pop:
       case JSOp::PopN:
@@ -1210,6 +1214,10 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
   
   
   
+  
+  
+  
+  
 
   uint32_t field = 0;
   size_t offset = 0;
@@ -1270,11 +1278,17 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
         break;
       }
       case StubField::Type::String: {
-#ifdef DEBUG
-        JSString* str =
-            stubInfo->getStubField<StubField::Type::String>(stub, offset);
+        uintptr_t oldWord = stubInfo->getStubRawWord(stub, offset);
+        JSString* str = reinterpret_cast<JSString*>(oldWord);
         MOZ_ASSERT(!IsInsideNursery(str));
-#endif
+        JSAtom* atom = AtomizeString(cx_, str);
+        if (!atom) {
+          return false;
+        }
+        if (atom != str) {
+          uintptr_t newWord = reinterpret_cast<uintptr_t>(atom);
+          stubInfo->replaceStubRawWord(stubDataCopy, offset, oldWord, newWord);
+        }
         break;
       }
       case StubField::Type::Id: {
@@ -1287,10 +1301,19 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
         break;
       }
       case StubField::Type::Value: {
-#ifdef DEBUG
-        Value v = stubInfo->getStubField<StubField::Type::Value>(stub, offset);
+        Value v =
+            stubInfo->getStubField<StubField::Type::Value>(stub, offset).get();
         MOZ_ASSERT_IF(v.isGCThing(), !IsInsideNursery(v.toGCThing()));
-#endif
+        if (v.isString()) {
+          Value newVal;
+          JSAtom* atom = AtomizeString(cx_, v.toString());
+          if (!atom) {
+            return false;
+          }
+          newVal.setString(atom);
+          stubInfo->replaceStubRawValueBits(stubDataCopy, offset, v.asRawBits(),
+                                            newVal.asRawBits());
+        }
         break;
       }
       case StubField::Type::AllocSite: {
