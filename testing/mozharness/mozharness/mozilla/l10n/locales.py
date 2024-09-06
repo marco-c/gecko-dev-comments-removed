@@ -4,8 +4,7 @@
 
 
 
-"""Localization.
-"""
+"""Localization."""
 
 import os
 import pprint
@@ -22,7 +21,6 @@ class LocalesMixin(object):
         """
         self.abs_dirs = None
         self.locales = None
-        self.gecko_locale_revisions = None
         self.l10n_revisions = {}
 
     def query_locales(self):
@@ -146,11 +144,6 @@ class LocalesMixin(object):
             parent_dir = self.query_abs_dirs()["abs_l10n_dir"]
         self.mkdir_p(parent_dir)
         
-        
-        if c.get("l10n_repos"):
-            repos = c.get("l10n_repos")
-            self.vcs_checkout_repos(repos, tag_override=c.get("tag_override"))
-        
         locales = self.query_locales()
         locale_repos = []
         for locale in locales:
@@ -160,12 +153,10 @@ class LocalesMixin(object):
             locale_repos.append(
                 {"repo": "%s/%s" % (hg_l10n_base, locale), "branch": tag, "vcs": vcs}
             )
-        revs = self.vcs_checkout_repos(
+        self.vcs_checkout_repos(
             repo_list=locale_repos,
             parent_dir=parent_dir,
-            tag_override=c.get("tag_override"),
         )
-        self.gecko_locale_revisions = revs
 
 
 
