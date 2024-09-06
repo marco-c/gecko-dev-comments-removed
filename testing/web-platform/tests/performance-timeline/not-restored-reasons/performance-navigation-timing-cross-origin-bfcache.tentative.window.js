@@ -53,8 +53,7 @@ promise_test(async t => {
         'url': null,
         'src': rc1_child_url,
         'id': 'test-id',
-        
-        'name': '',
+        'name': null,
         'reasons': null,
         'children': null
       }]);

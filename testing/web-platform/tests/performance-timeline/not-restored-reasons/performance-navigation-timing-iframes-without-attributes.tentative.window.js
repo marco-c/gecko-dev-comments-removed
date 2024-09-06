@@ -1,0 +1,103 @@
+
+
+
+
+
+
+
+
+
+
+'use strict';
+
+
+
+promise_test(async t => {
+  const rcHelper = new RemoteContextHelper();
+  
+  const rc1 = await rcHelper.addWindow(
+       null,  {features: 'noopener'});
+  const rc1_url = await rc1.executeScript(() => {
+    return location.href;
+  });
+  
+  const rc1_child = await rc1.addIframe(
+       {
+        origin: 'HTTP_REMOTE_ORIGIN',
+        scripts: [],
+        headers: [],
+      },
+       {id: '', name: ''},
+  );
+  const rc2_child = await rc1.addIframe(
+     {
+      origin: 'HTTP_REMOTE_ORIGIN',
+      scripts: [],
+      headers: [],
+    },
+     {},
+  );
+  const rc3_child = await rc1.addIframe(
+     {},
+     {},
+  );
+  const rc4_child = await rc1.addIframe(
+     {},
+     {id: '', name: ''},
+  );
+  
+  await useWebSocket(rc1);
+  const rc1_child_url = await rc1_child.executeScript(() => {
+    return location.href;
+  });
+  const rc2_child_url = await rc2_child.executeScript(() => {
+    return location.href;
+  });
+  const rc3_child_url = await rc3_child.executeScript(() => {
+    return location.href;
+  });
+  const rc4_child_url = await rc4_child.executeScript(() => {
+    return location.href;
+  });
+  
+  await assertBFCacheEligibility(rc1,  false);
+  await assertNotRestoredReasonsEquals(
+      rc1,
+       rc1_url,
+       null,
+       null,
+       null,
+      [{'reason': 'websocket'}],
+      [{
+        'url': null,
+        'src': rc1_child_url,
+        
+        'id': '',
+        'name': '',
+        'reasons': null,
+        'children': null
+      }, {
+        'url': null,
+        'src': rc2_child_url,
+        
+        'id': null,
+        'name': null,
+        'reasons': null,
+        'children': null
+      },{
+        'url': rc3_child_url,
+        'src': rc3_child_url,
+        
+        'id': null,
+        'name': null,
+        'reasons': [],
+        'children': []
+      }, {
+        'url': rc4_child_url,
+        'src': rc4_child_url,
+        'id': '',
+        'name': '',
+        'reasons': [],
+        'children': []
+      }]);
+});
