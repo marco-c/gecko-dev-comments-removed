@@ -360,7 +360,14 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
                                 : 10000;
   mCodecContext->keyint_min = 0;
 
-  if (mConfig.mUsage == Usage::Realtime) {
+  
+  
+  if (mConfig.mUsage == Usage::Realtime || SvcEnabled()) {
+    if (mConfig.mUsage != Usage::Realtime) {
+      FFMPEGV_LOG(
+          "SVC enabled but low latency encoding mode not enabled, forcing low "
+          "latency mode");
+    }
     mLib->av_opt_set(mCodecContext->priv_data, "deadline", "realtime", 0);
     
     
