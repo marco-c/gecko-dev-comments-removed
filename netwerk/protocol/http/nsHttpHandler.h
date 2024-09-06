@@ -503,9 +503,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
                                    uint64_t aExtraSizeData,
                                    const nsACString& aExtraStringData);
 
-  static bool GetParentalControlsEnabled() { return sParentalControlsEnabled; }
-  static void UpdateParentalControlsEnabled(bool waitForCompletion);
-
  private:
   nsHttpHandler();
 
@@ -657,7 +654,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   bool mSafeHintEnabled{false};
-  static Atomic<bool, Relaxed> sParentalControlsEnabled;
+  bool mParentalControlEnabled{false};
 
   
   Atomic<bool, Relaxed> mHandlerActive{false};
