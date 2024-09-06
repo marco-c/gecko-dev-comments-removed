@@ -24,6 +24,18 @@
 #define RTC_TRACE_EVENTS_ENABLED 1
 #endif
 
+#define RTC_NOOP() \
+  do {             \
+  } while (0)
+
+
+#define TRACE_EVENT_BEGIN(category, name, ...) RTC_NOOP();
+#define TRACE_EVENT_END(category, ...) RTC_NOOP();
+#define TRACE_EVENT(category, name, ...) RTC_NOOP();
+#define TRACE_EVENT_INSTANT(category, name, ...) RTC_NOOP();
+#define TRACE_EVENT_CATEGORY_ENABLED(category) RTC_NOOP();
+#define TRACE_COUNTER(category, track, ...) RTC_NOOP();
+
 
 #define TRACE_VALUE_TYPE_BOOL (static_cast<unsigned char>(1))
 #define TRACE_VALUE_TYPE_UINT (static_cast<unsigned char>(2))
@@ -736,10 +748,6 @@ class TraceEndOnScopeClose {
 
 
 
-
-#define RTC_NOOP() \
-  do {             \
-  } while (0)
 
 #define TRACE_DISABLED_BY_DEFAULT(name) "disabled-by-default-" name
 
