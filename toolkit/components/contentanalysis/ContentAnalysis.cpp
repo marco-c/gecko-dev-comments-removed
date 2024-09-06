@@ -62,8 +62,6 @@ LazyLogModule gContentAnalysisLog("contentanalysis");
 
 namespace {
 
-const char* kIsDLPEnabledPref = "browser.contentanalysis.enabled";
-const char* kIsPerUserPref = "browser.contentanalysis.is_per_user";
 const char* kPipePathNamePref = "browser.contentanalysis.pipe_path_name";
 const char* kClientSignature = "browser.contentanalysis.client_signature";
 const char* kAllowUrlPref = "browser.contentanalysis.allow_url_regex_list";
@@ -990,14 +988,15 @@ ContentAnalysis::~ContentAnalysis() {
 NS_IMETHODIMP
 ContentAnalysis::GetIsActive(bool* aIsActive) {
   *aIsActive = false;
+  if (!StaticPrefs::browser_contentanalysis_enabled()) {
+    LOGD("Local DLP Content Analysis is not active");
+    return NS_OK;
+  }
+  
   
   MOZ_ASSERT(NS_IsMainThread());
   
   MOZ_ASSERT(XRE_IsParentProcess());
-  if (!Preferences::GetBool(kIsDLPEnabledPref)) {
-    LOGD("Local DLP Content Analysis is not active");
-    return NS_OK;
-  }
   if (!gAllowContentAnalysisArgPresent && !mSetByEnterprise) {
     LOGE(
         "The content analysis pref is enabled but not by an enterprise "
@@ -1009,7 +1008,6 @@ ContentAnalysis::GetIsActive(bool* aIsActive) {
   *aIsActive = true;
   LOGD("Local DLP Content Analysis is active");
   
-  
   if (!mClientCreationAttempted) {
     mClientCreationAttempted = true;
     LOGD("Dispatching background task to create Content Analysis client");
@@ -1020,7 +1018,7 @@ ContentAnalysis::GetIsActive(bool* aIsActive) {
       mCaClientPromise->Reject(rv, __func__);
       return rv;
     }
-    bool isPerUser = Preferences::GetBool(kIsPerUserPref);
+    bool isPerUser = StaticPrefs::browser_contentanalysis_is_per_user();
     nsString clientSignature;
     
     Preferences::GetString(kClientSignature, clientSignature);
@@ -1043,7 +1041,7 @@ NS_IMETHODIMP
 ContentAnalysis::GetMightBeActive(bool* aMightBeActive) {
   
   
-  static bool sIsEnabled = Preferences::GetBool(kIsDLPEnabledPref);
+  static bool sIsEnabled = StaticPrefs::browser_contentanalysis_enabled();
   
   
   *aMightBeActive = sIsEnabled;
