@@ -275,9 +275,9 @@ TEST(TestAudioDriftCorrection, LargerReceiverBlockSizeThanDesiredBuffering)
       MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
   AudioDriftCorrection ad(sampleRate, sampleRate, testPrincipal);
 
+  AudioSegment inSegment;
   for (uint32_t i = 0; i < (sampleRate / 1000) * 500;
        i += transmitterBlockSize) {
-    AudioSegment inSegment;
     AudioChunk chunk =
         CreateAudioChunk<float>(transmitterBlockSize, 1, AUDIO_FORMAT_FLOAT32);
     inSegment.AppendAndConsumeChunk(std::move(chunk));
@@ -285,6 +285,7 @@ TEST(TestAudioDriftCorrection, LargerReceiverBlockSizeThanDesiredBuffering)
     if (i % receiverBlockSize == 0) {
       AudioSegment outSegment = ad.RequestFrames(inSegment, receiverBlockSize);
       EXPECT_EQ(outSegment.GetDuration(), receiverBlockSize);
+      inSegment.Clear();
     }
 
     if (i >= receiverBlockSize) {
@@ -294,11 +295,12 @@ TEST(TestAudioDriftCorrection, LargerReceiverBlockSizeThanDesiredBuffering)
 
   
   EXPECT_EQ(ad.NumCorrectionChanges(), 0U);
+  EXPECT_EQ(ad.NumUnderruns(), 0U);
   
   
   
   
-  EXPECT_EQ(ad.BufferSize(), 19200U);
+  EXPECT_EQ(ad.BufferSize(), 9600U);
 }
 
 TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
