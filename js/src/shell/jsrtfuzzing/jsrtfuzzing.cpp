@@ -11,8 +11,10 @@
 
 #include <stdio.h>  
 
-#include "FuzzerDefs.h"
-#include "FuzzingInterface.h"
+#ifdef LIBFUZZER
+#  include "FuzzerDefs.h"
+#endif
+
 #include "jsapi.h"  
 
 #include "js/CompilationAndEvaluation.h"  
