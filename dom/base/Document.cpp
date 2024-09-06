@@ -173,6 +173,7 @@
 #include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/FragmentDirective.h"
+#include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/HighlightRegistry.h"
 #include "mozilla/dom/HTMLAllCollection.h"
@@ -4067,6 +4068,21 @@ void Document::StopDocumentLoad() {
 void Document::SetDocumentURI(nsIURI* aURI) {
   nsCOMPtr<nsIURI> oldBase = GetDocBaseURI();
   mDocumentURI = aURI;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<TextDirective> textDirectives;
+  FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
+      mDocumentURI, &textDirectives);
+  FragmentDirective()->SetTextDirectives(std::move(textDirectives));
+
   nsIURI* newBase = GetDocBaseURI();
 
   mChromeRulesEnabled = URLExtraData::ChromeRulesEnabled(aURI);
@@ -13081,25 +13097,29 @@ void Document::SetScrollToRef(nsIURI* aDocumentURI) {
 
 
 void Document::ScrollToRef() {
-  if (mScrolledToRefAlready) {
-    RefPtr<PresShell> presShell = GetPresShell();
-    if (presShell) {
-      presShell->ScrollToAnchor();
-    }
-    return;
-  }
-
-  
-  
-  if (mScrollToRef.IsEmpty()) {
-    return;
-  }
-
   RefPtr<PresShell> presShell = GetPresShell();
   if (!presShell) {
     return;
   }
+  if (mScrolledToRefAlready) {
+    presShell->ScrollToAnchor();
+    return;
+  }
 
+  
+  
+  
+  
+  
+  
+  const bool didScrollToTextFragment =
+      presShell->HighlightAndGoToTextFragment(true);
+
+  
+  
+  if (didScrollToTextFragment || mScrollToRef.IsEmpty()) {
+    return;
+  }
   
   
   NS_ConvertUTF8toUTF16 ref(mScrollToRef);

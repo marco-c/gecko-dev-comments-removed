@@ -16,6 +16,7 @@
 #include "nsWrapperCache.h"
 
 class nsINode;
+class nsIURI;
 class nsRange;
 namespace mozilla::dom {
 class Document;
@@ -83,6 +84,15 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
 
   nsTArray<RefPtr<nsRange>> FindTextFragmentsInDocument();
+
+  
+
+
+
+
+  static void ParseAndRemoveFragmentDirectiveFromFragment(
+      nsCOMPtr<nsIURI>& aURI,
+      nsTArray<TextDirective>* aTextDirectives = nullptr);
 
  private:
   RefPtr<nsRange> FindRangeForTextDirective(
