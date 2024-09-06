@@ -9,6 +9,7 @@
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/IMEContentObserver.h"
 #include "mozilla/IMEStateManager.h"
+#include "mozilla/TextComposition.h"
 #include "mozilla/TextInputListener.h"
 
 #include "nsCOMPtr.h"
@@ -2640,7 +2641,9 @@ bool TextControlState::SetValue(const nsAString& aValue,
   
   if (aOptions.contains(ValueSetterOption::BySetUserInputAPI) ||
       aOptions.contains(ValueSetterOption::ByContentAPI)) {
-    if (EditorHasComposition()) {
+    RefPtr<TextComposition> compositionInEditor =
+        mTextEditor ? mTextEditor->GetComposition() : nullptr;
+    if (compositionInEditor && compositionInEditor->IsComposing()) {
       
       if (handlingSetValue.IsHandling(TextControlAction::CommitComposition)) {
         
@@ -2684,8 +2687,22 @@ bool TextControlState::SetValue(const nsAString& aValue,
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         Maybe<AutoInputEventSuppresser> preventInputEventsDuringCommit;
-        if (mTextEditor->IsDispatchingInputEvent()) {
+        if (mTextEditor->IsDispatchingInputEvent() ||
+            compositionInEditor->EditorHasHandledLatestChange()) {
           preventInputEventsDuringCommit.emplace(mTextEditor);
         }
         OwningNonNull<TextEditor> textEditor(*mTextEditor);

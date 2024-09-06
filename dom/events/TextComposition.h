@@ -14,6 +14,7 @@
 #include "nsThreadUtils.h"
 #include "nsPresContext.h"
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RangeBoundary.h"
@@ -191,7 +192,18 @@ class TextComposition final {
 
 
 
-  bool IsEditorHandlingEvent() const { return mIsEditorHandlingEvent; }
+  [[nodiscard]] bool EditorHasHandledLatestChange() const {
+    return EditorIsHandlingLatestChange() ||
+           (mLastRanges == mRanges && mLastData == mString);
+  }
+
+  
+
+
+
+  [[nodiscard]] bool EditorIsHandlingLatestChange() const {
+    return mEditorIsHandlingEvent;
+  }
 
   
 
@@ -311,6 +323,8 @@ class TextComposition final {
   RefPtr<TextRangeArray> mRanges;
   
   
+  
+  
   RefPtr<TextRangeArray> mLastRanges;
 
   
@@ -360,7 +374,7 @@ class TextComposition final {
 
   
   
-  bool mIsEditorHandlingEvent;
+  bool mEditorIsHandlingEvent = false;
 
   
   
@@ -564,7 +578,7 @@ class TextComposition final {
     CompositionEventDispatcher()
         : Runnable("TextComposition::CompositionEventDispatcher"),
           mEventMessage(eVoidEvent),
-          mIsSynthesizedEvent(false){};
+          mIsSynthesizedEvent(false) {};
   };
 
   
