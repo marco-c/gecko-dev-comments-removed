@@ -40,7 +40,7 @@ async function run_test() {
     true, 
     false 
   );
-  checkUpdateManager(
+  await checkUpdateManager(
     STATE_PENDING, 
     true, 
     STATE_PENDING, 
