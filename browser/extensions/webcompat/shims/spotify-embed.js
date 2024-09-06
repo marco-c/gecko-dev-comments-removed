@@ -86,6 +86,8 @@ function previewPlayButtonListener(event) {
 
 
 async function startFullPlayback() {
+  await document.requestStorageAccess();
+
   
   await waitForDOMContentLoaded();
 
