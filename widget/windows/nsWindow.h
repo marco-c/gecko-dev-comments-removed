@@ -112,7 +112,7 @@ struct WindowStyles {
     return WindowStyles{.style = ~style, .ex = ~ex};
   }
 
-  constexpr operator bool() const { return style || ex; }
+  explicit constexpr operator bool() const { return style || ex; }
 
   
   
