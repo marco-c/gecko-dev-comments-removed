@@ -1,0 +1,12 @@
+function addNoVarySearchHeaderUsingPipe(searchParams, headerValue) {
+  
+  
+  
+  
+  
+  
+  
+  searchParams.append(
+      'pipe',
+      `header(No-Vary-Search,${headerValue.replaceAll(/[,)]/g, '\\$&')})`);
+}
