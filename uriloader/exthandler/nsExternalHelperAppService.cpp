@@ -191,6 +191,18 @@ static nsresult UnescapeFragment(const nsACString& aFragment, nsIURI* aURI,
 
 
 
+static nsresult EnsureDirectoryExists(nsIFile* aDir) {
+  nsresult const rv = aDir->Create(nsIFile::DIRECTORY_TYPE, 0755);
+  if (rv == NS_ERROR_FILE_ALREADY_EXISTS || NS_SUCCEEDED(rv)) {
+    return NS_OK;
+  }
+  return rv;
+};
+
+
+
+
+
 
 
 
@@ -222,15 +234,11 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetDownloadDirectory(
         if (!dir) break;
 
         
-        if (aSkipChecks) {
-          return dir;
+        if (!aSkipChecks && NS_FAILED(EnsureDirectoryExists(dir))) {
+          break;
         }
 
-        
-        nsresult rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0755);
-        if (rv == NS_ERROR_FILE_ALREADY_EXISTS || NS_SUCCEEDED(rv)) {
-          return dir;
-        }
+        return dir;
       } break;
 
       case NS_FOLDER_VALUE_DOWNLOADS:
@@ -275,16 +283,14 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetDownloadDirectory(
         sFallbackDownloadDir = copy.forget();
         ClearOnShutdown(&sFallbackDownloadDir);
       }
-      if (aSkipChecks) {
-        return dir;
-      }
 
       
-      rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0755);
-      if (rv == NS_ERROR_FILE_ALREADY_EXISTS || NS_SUCCEEDED(rv)) {
-        return dir;
+      if (!aSkipChecks) {
+        if (nsresult rv = EnsureDirectoryExists(dir); NS_FAILED(rv)) {
+          return Err(rv);
+        }
       }
-      return Err(rv);
+      return dir;
     }
 
     return dir;
