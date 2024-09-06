@@ -99,6 +99,14 @@ function makeTask(description, Describe, action) {
       return;
     }
 
+    
+    
+    let notificationAppeared = BrowserTestUtils.waitForNotificationBar(
+      gBrowser,
+      undefined,
+      "file-picker-crashed"
+    );
+
     const { process, file } = openFileDialog();
     const pid = await process;
     const untilDead = untilChildProcessDead(pid);
@@ -112,6 +120,10 @@ function makeTask(description, Describe, action) {
     const _after = Date.now();
     const delta = _after - _before;
     info(`file callback resolved after ${description} after ${delta}ms`);
+
+    let notification = await notificationAppeared;
+    ok(notification, "file-picker notification should appear");
+    notification.close();
 
     
     
