@@ -192,6 +192,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
+  uint32_t funcDefsOffsetStart;
+  
+  
   uint32_t funcImportsOffsetStart;
   
   
@@ -377,7 +380,12 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
-  [[nodiscard]] bool initInstanceLayout();
+  [[nodiscard]] bool initInstanceLayout(CompileMode mode);
+
+  uint32_t offsetOfFuncDefInstanceData(uint32_t funcIndex) const {
+    MOZ_ASSERT(funcIndex >= numFuncImports && funcIndex < numFuncs());
+    return funcDefsOffsetStart + (funcIndex - numFuncImports) * sizeof(FuncDefInstanceData);
+  }
 
   uint32_t offsetOfFuncImportInstanceData(uint32_t funcIndex) const {
     MOZ_ASSERT(funcIndex < numFuncImports);

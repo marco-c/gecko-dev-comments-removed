@@ -104,6 +104,14 @@ static_assert(Instance::offsetOfLastCommonJitField() < 128);
 
 
 
+FuncDefInstanceData* Instance::funcDefInstanceData(uint32_t funcIndex) const {
+  MOZ_ASSERT(funcIndex >= codeMeta().numFuncImports);
+  uint32_t funcDefIndex = funcIndex - codeMeta().numFuncImports;
+  FuncDefInstanceData* instanceData =
+      (FuncDefInstanceData*)(data() + codeMeta().funcDefsOffsetStart);
+  return &instanceData[funcDefIndex];
+}
+
 TypeDefInstanceData* Instance::typeDefInstanceData(uint32_t typeIndex) const {
   TypeDefInstanceData* instanceData =
       (TypeDefInstanceData*)(data() + codeMeta().typeDefsOffsetStart);
@@ -2306,6 +2314,14 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 #endif
 
   
+  if (code().mode() == CompileMode::LazyTiering) {
+    for (uint32_t funcIndex = codeMeta().numFuncImports;
+         funcIndex < codeMeta().numFuncs(); funcIndex++) {
+      funcDefInstanceData(funcIndex)->hotnessCounter = 1;
+    }
+  }
+
+  
   const SharedTypeContext& types = codeMeta().types;
   Zone* zone = realm()->zone();
   for (uint32_t typeIndex = 0; typeIndex < types->length(); typeIndex++) {
@@ -2661,6 +2677,10 @@ void Instance::resetTemporaryStackLimit(JSContext* cx) {
   if (!isInterrupted()) {
     stackLimit_ = cx->stackLimitForJitCode(JS::StackForUntrustedScript);
   }
+}
+
+void Instance::resetHotnessCounter(uint32_t funcIndex) {
+  funcDefInstanceData(funcIndex)->hotnessCounter = INT32_MAX;
 }
 
 bool Instance::debugFilter(uint32_t funcIndex) const {

@@ -175,7 +175,7 @@ bool ModuleGenerator::init(CodeMetadataForAsmJS* codeMetaForAsmJS) {
   
   
   MOZ_ASSERT(codeMeta_->instanceDataLength == 0);
-  if (!codeMeta_->initInstanceLayout()) {
+  if (!codeMeta_->initInstanceLayout(mode())) {
     return false;
   }
 

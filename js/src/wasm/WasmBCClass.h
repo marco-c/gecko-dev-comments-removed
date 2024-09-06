@@ -1037,6 +1037,11 @@ struct BaseCompiler final {
   
 
   
+  
+  
+  [[nodiscard]] bool addHotnessCheck();
+
+  
   [[nodiscard]] bool addInterruptCheck();
 
   

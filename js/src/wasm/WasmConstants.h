@@ -202,6 +202,10 @@ enum class Trap {
 
   
   
+  CheckHotness,
+
+  
+  
   CheckInterrupt,
 
   
