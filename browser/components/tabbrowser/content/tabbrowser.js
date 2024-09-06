@@ -2814,9 +2814,7 @@
           
           
           if (openerBrowser && !openWindowInfo) {
-            b.browsingContext.setCrossGroupOpener(
-              openerBrowser.browsingContext
-            );
+            b.browsingContext.crossGroupOpener = openerBrowser.browsingContext;
           }
         }
       } catch (e) {
