@@ -2699,7 +2699,8 @@ void nsWindow::OnDragEvent(int32_t aAction, int64_t aTime, float aX, float aY,
   EventMessage message = convertDragEventActionToGeckoEvent(aAction);
 
   if (message == eDragEnter) {
-    dragService->StartDragSession();
+    nsIWidget* widget = this;
+    dragService->StartDragSession(widget);
     
     auto dropData =
         mozilla::java::GeckoDragAndDrop::DropData::Ref::From(aDropData);

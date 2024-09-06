@@ -243,7 +243,7 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
 
   
   
-  mDragService->StartDragSession();
+  mDragService->StartDragSession(mWidget);
 
   void* tempOutData = nullptr;
   uint32_t tempDataLen = 0;

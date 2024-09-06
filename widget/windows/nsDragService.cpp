@@ -141,8 +141,8 @@ bool nsDragSession::CreateDragImage(nsINode* aDOMNode,
 
 
 nsresult nsDragService::InvokeDragSessionImpl(
-    nsIArray* anArrayTransferables, const Maybe<CSSIntRegion>& aRegion,
-    uint32_t aActionType) {
+    nsIWidget* aWidget, nsIArray* anArrayTransferables,
+    const Maybe<CSSIntRegion>& aRegion, uint32_t aActionType) {
   
   nsIURI* uri = nullptr;
 
@@ -207,7 +207,7 @@ nsresult nsDragService::InvokeDragSessionImpl(
   }
 
   
-  return StartInvokingDragSession(itemToDrag, aActionType);
+  return StartInvokingDragSession(aWidget, itemToDrag, aActionType);
 }
 
 static HWND GetSourceWindow(dom::Document* aSourceDocument) {
@@ -229,7 +229,8 @@ static HWND GetSourceWindow(dom::Document* aSourceDocument) {
 }
 
 
-nsresult nsDragService::StartInvokingDragSession(IDataObject* aDataObj,
+nsresult nsDragService::StartInvokingDragSession(nsIWidget* aWidget,
+                                                 IDataObject* aDataObj,
                                                  uint32_t aActionType) {
   
   
@@ -255,7 +256,7 @@ nsresult nsDragService::StartInvokingDragSession(IDataObject* aDataObj,
   mSentLocalDropEvent = false;
 
   
-  StartDragSession();
+  StartDragSession(aWidget);
   OpenDragPopup();
 
   RefPtr<IDataObjectAsyncCapability> pAsyncOp;

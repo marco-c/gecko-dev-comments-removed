@@ -20,7 +20,7 @@ NS_IMPL_ISUPPORTS(MockDragServiceController, nsIMockDragServiceController)
 class MockDragService : public nsBaseDragService {
  public:
   MOZ_CAN_RUN_SCRIPT nsresult
-  InvokeDragSessionImpl(nsIArray* aTransferableArray,
+  InvokeDragSessionImpl(nsIWidget* aWidget, nsIArray* aTransferableArray,
                         const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
                         uint32_t aActionType) override {
     
@@ -32,7 +32,7 @@ class MockDragService : public nsBaseDragService {
     
     
     mDragAction = DRAGDROP_ACTION_MOVE;
-    StartDragSession();
+    StartDragSession(aWidget);
     return NS_OK;
   }
 
@@ -139,7 +139,7 @@ MockDragServiceController::SendEvent(
     
     
     
-    ds->StartDragSession();
+    ds->StartDragSession(widget);
   }
 
   nsCOMPtr<nsIDragSession> currentDragSession = ds->GetCurrentSession(widget);

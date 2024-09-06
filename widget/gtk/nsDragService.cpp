@@ -751,8 +751,8 @@ nsDragService::InvokeDragSession(
 
 
 nsresult nsDragService::InvokeDragSessionImpl(
-    nsIArray* aArrayTransferables, const Maybe<CSSIntRegion>& aRegion,
-    uint32_t aActionType) {
+    nsIWidget* aWidget, nsIArray* aArrayTransferables,
+    const Maybe<CSSIntRegion>& aRegion, uint32_t aActionType) {
   
   if (!aArrayTransferables) return NS_ERROR_INVALID_ARG;
   
@@ -829,7 +829,7 @@ nsresult nsDragService::InvokeDragSessionImpl(
 
   nsresult rv;
   if (context) {
-    StartDragSession();
+    StartDragSession(aWidget);
 
     
     sGrabWidget = gtk_window_group_get_current_grab(window_group);
@@ -903,10 +903,10 @@ bool nsDragService::SetAlphaPixmap(SourceSurface* aSurface,
 }
 
 NS_IMETHODIMP
-nsDragService::StartDragSession() {
+nsDragService::StartDragSession(nsISupports* aWidgetProvider) {
   LOGDRAGSERVICE("nsDragService::StartDragSession");
   mTempFileUrls.Clear();
-  return nsBaseDragService::StartDragSession();
+  return nsBaseDragService::StartDragSession(aWidgetProvider);
 }
 
 bool nsDragService::RemoveTempFiles() {
@@ -2706,7 +2706,8 @@ gboolean nsDragService::RunScheduledTask() {
   }
 
   
-  StartDragSession();
+  nsIWidget* targetWidget = mTargetWindow;
+  StartDragSession(targetWidget);
 
   
   
