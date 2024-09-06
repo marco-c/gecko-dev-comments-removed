@@ -216,7 +216,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
       
       
       
-      if (wasInSlop && aEvent.mType == MultiTouchInput::MULTITOUCH_MOVE &&
+      if (wasInSlop &&
           (block->WasLongTapProcessed() || block->IsWaitingLongTapResult()) &&
           !block->IsTargetOriginallyConfirmed() && !block->ShouldDropEvents()) {
         INPQ_LOG(
@@ -637,12 +637,6 @@ uint64_t InputQueue::InjectNewTouchBlock(AsyncPanZoomController* aTarget) {
 TouchBlockState* InputQueue::StartNewTouchBlock(
     const RefPtr<AsyncPanZoomController>& aTarget,
     TargetConfirmationFlags aFlags) {
-  if (mPrevActiveTouchBlock && mActiveTouchBlock &&
-      mActiveTouchBlock->ForLongTap()) {
-    mPrevActiveTouchBlock->SetWaitingLongTapResult(false);
-    mPrevActiveTouchBlock = nullptr;
-  }
-
   TouchBlockState* newBlock =
       new TouchBlockState(aTarget, aFlags, mTouchCounter);
 
@@ -670,7 +664,7 @@ TouchBlockState* InputQueue::StartNewTouchBlockForLongTap(
   
   
   
-  currentBlock->SetWaitingLongTapResult(true);
+  currentBlock->SetWaitingLongTapResult();
 
   
   
