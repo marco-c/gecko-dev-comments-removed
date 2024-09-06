@@ -522,18 +522,15 @@ nsFormFillController::GetSearchCount(uint32_t* aSearchCount) {
 
 NS_IMETHODIMP
 nsFormFillController::GetSearchAt(uint32_t index, nsACString& _retval) {
-  if (mAutofillInputs.Get(mFocusedInput)) {
-    MOZ_LOG(sLogger, LogLevel::Debug, ("GetSearchAt: autofill-profiles field"));
-    nsCOMPtr<nsIAutoCompleteSearch> profileSearch = do_GetService(
-        "@mozilla.org/autocomplete/search;1?name=autofill-profiles");
-    if (profileSearch) {
-      _retval.AssignLiteral("autofill-profiles");
-      return NS_OK;
-    }
-  }
+  MOZ_LOG(sLogger, LogLevel::Debug,
+          ("GetSearchAt: form-fill-controller field"));
 
-  MOZ_LOG(sLogger, LogLevel::Debug, ("GetSearchAt: form-history field"));
-  _retval.AssignLiteral("form-history");
+  
+  
+  
+  
+  
+  _retval.AssignLiteral("form-fill-controller");
   return NS_OK;
 }
 
@@ -669,51 +666,55 @@ nsFormFillController::StartSearch(const nsAString& aSearchString,
                                   nsIAutoCompleteObserver* aListener) {
   MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch for %p", mFocusedInput));
 
-  nsresult rv;
+  if (mFocusedInput && mFocusedPopup) {
+    if (mAutofillInputs.Get(mFocusedInput)) {
+      MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch: formautofill field"));
 
-  
-  
-  
-  
-  if (mFocusedInput && (mPwmgrInputs.Get(mFocusedInput) ||
-                        mFocusedInput->HasBeenTypePassword())) {
-    MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch: login field"));
+      mLastListener = aListener;
+      return mFocusedPopup->StartSearch(aSearchString, mFocusedInput, this);
+      
+      
+      
+      
+    } else if (mPwmgrInputs.Get(mFocusedInput) ||
+               mFocusedInput->HasBeenTypePassword()) {
+      MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch: login field"));
 
-    
-    
-    
-    if (!mLoginManagerAC) {
-      mLoginManagerAC =
-          do_GetService("@mozilla.org/login-manager/autocompletesearch;1");
+      
+      
+      
+      if (!mLoginManagerAC) {
+        mLoginManagerAC =
+            do_GetService("@mozilla.org/login-manager/autocompletesearch;1");
+      }
+
+      if (NS_WARN_IF(!mLoginManagerAC)) {
+        return NS_ERROR_FAILURE;
+      }
+
+      
+      
+      mLastListener = aListener;
+      return mLoginManagerAC->StartSearch(aSearchString, aPreviousResult,
+                                          mFocusedInput, this);
     }
-
-    if (NS_WARN_IF(!mLoginManagerAC)) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
-    mLastListener = aListener;
-    rv = mLoginManagerAC->StartSearch(aSearchString, aPreviousResult,
-                                      mFocusedInput, this);
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch: non-login field"));
-    mLastListener = aListener;
-
-    bool addDataList = IsTextControl(mFocusedInput);
-    if (addDataList) {
-      MaybeObserveDataListMutations();
-    }
-
-    auto* formHistoryAutoComplete = GetFormHistoryAutoComplete();
-    NS_ENSURE_TRUE(formHistoryAutoComplete, NS_ERROR_FAILURE);
-
-    formHistoryAutoComplete->AutoCompleteSearchAsync(
-        aSearchParam, aSearchString, mFocusedInput, aPreviousResult,
-        addDataList, this);
-    mLastFormHistoryAutoComplete = formHistoryAutoComplete;
   }
+
+  MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch: non-login field"));
+  mLastListener = aListener;
+
+  bool addDataList = IsTextControl(mFocusedInput);
+  if (addDataList) {
+    MaybeObserveDataListMutations();
+  }
+
+  auto* formHistoryAutoComplete = GetFormHistoryAutoComplete();
+  NS_ENSURE_TRUE(formHistoryAutoComplete, NS_ERROR_FAILURE);
+
+  formHistoryAutoComplete->AutoCompleteSearchAsync(
+      aSearchParam, aSearchString, mFocusedInput, aPreviousResult, addDataList,
+      this);
+  mLastFormHistoryAutoComplete = formHistoryAutoComplete;
 
   return NS_OK;
 }
@@ -765,6 +766,10 @@ nsFormFillController::StopSearch() {
   if (mLastFormHistoryAutoComplete) {
     mLastFormHistoryAutoComplete->StopAutoCompleteSearch();
     mLastFormHistoryAutoComplete = nullptr;
+  }
+
+  if (mFocusedPopup) {
+    mFocusedPopup->StopSearch();
   }
 
   if (mLoginManagerAC) {
