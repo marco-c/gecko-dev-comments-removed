@@ -26,6 +26,7 @@
 
 namespace webrtc {
 enum class IceCandidateType : int { kHost, kSrflx, kPrflx, kRelay };
+RTC_EXPORT absl::string_view IceCandidateTypeToString(IceCandidateType);
 }  
 
 namespace cricket {
@@ -42,12 +43,20 @@ RTC_EXPORT extern const absl::string_view RELAY_PORT_TYPE;
 static constexpr size_t kMaxTurnServers = 32;
 
 
-
-
 class RTC_EXPORT Candidate {
  public:
   Candidate();
-  
+  Candidate(int component,
+            absl::string_view protocol,
+            const rtc::SocketAddress& address,
+            uint32_t priority,
+            absl::string_view username,
+            absl::string_view password,
+            webrtc::IceCandidateType type,
+            uint32_t generation,
+            absl::string_view foundation,
+            uint16_t network_id = 0,
+            uint16_t network_cost = 0);
   
   Candidate(int component,
             absl::string_view protocol,
@@ -103,7 +112,7 @@ class RTC_EXPORT Candidate {
   const std::string& password() const { return password_; }
   void set_password(absl::string_view password) { Assign(password_, password); }
 
-  const std::string& type() const { return type_; }
+  webrtc::IceCandidateType type() const { return type_; }
 
   
   
@@ -113,9 +122,10 @@ class RTC_EXPORT Candidate {
   
   
   
-  void set_type(absl::string_view type ABSL_ATTRIBUTE_LIFETIME_BOUND) {
-    Assign(type_, type);
-  }
+  void set_type(webrtc::IceCandidateType type) { type_ = type; }
+
+  
+  void set_type(absl::string_view type ABSL_ATTRIBUTE_LIFETIME_BOUND);
 
   
   
@@ -271,7 +281,7 @@ class RTC_EXPORT Candidate {
   uint32_t priority_;
   std::string username_;
   std::string password_;
-  std::string type_;
+  webrtc::IceCandidateType type_ = webrtc::IceCandidateType::kHost;
   std::string network_name_;
   rtc::AdapterType network_type_;
   rtc::AdapterType underlying_type_for_vpn_;

@@ -73,6 +73,7 @@ using ::testing::SetArgPointee;
 using ::testing::SizeIs;
 using ::testing::Values;
 using ::testing::WithParamInterface;
+using ::webrtc::IceCandidateType;
 using ::webrtc::PendingTaskSafetyFlag;
 using ::webrtc::SafeTask;
 
@@ -321,9 +322,9 @@ class P2PTransportChannelTestBase : public ::testing::Test,
   };
 
   struct Result {
-    Result(absl::string_view controlling_type,
+    Result(IceCandidateType controlling_type,
            absl::string_view controlling_protocol,
-           absl::string_view controlled_type,
+           IceCandidateType controlled_type,
            absl::string_view controlled_protocol,
            int wait)
         : controlling_type(controlling_type),
@@ -333,10 +334,10 @@ class P2PTransportChannelTestBase : public ::testing::Test,
           connect_wait(wait) {}
 
     
-    std::string controlling_type;
+    IceCandidateType controlling_type;
     std::string controlling_protocol;
     
-    std::string controlled_type;
+    IceCandidateType controlled_type;
     std::string controlled_protocol;
     
     int connect_wait;
@@ -1025,87 +1026,87 @@ class P2PTransportChannelTestBase : public ::testing::Test,
 
 
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kLocalUdpToLocalUdp("local",
+    P2PTransportChannelTestBase::kLocalUdpToLocalUdp(IceCandidateType::kHost,
                                                      "udp",
-                                                     "local",
+                                                     IceCandidateType::kHost,
                                                      "udp",
                                                      1000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kLocalUdpToStunUdp("local",
+    P2PTransportChannelTestBase::kLocalUdpToStunUdp(IceCandidateType::kHost,
                                                     "udp",
-                                                    "stun",
+                                                    IceCandidateType::kSrflx,
                                                     "udp",
                                                     1000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kLocalUdpToPrflxUdp("local",
+    P2PTransportChannelTestBase::kLocalUdpToPrflxUdp(IceCandidateType::kHost,
                                                      "udp",
-                                                     "prflx",
-                                                     "udp",
-                                                     1000);
-const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kPrflxUdpToLocalUdp("prflx",
-                                                     "udp",
-                                                     "local",
+                                                     IceCandidateType::kPrflx,
                                                      "udp",
                                                      1000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kStunUdpToLocalUdp("stun",
+    P2PTransportChannelTestBase::kPrflxUdpToLocalUdp(IceCandidateType::kPrflx,
+                                                     "udp",
+                                                     IceCandidateType::kHost,
+                                                     "udp",
+                                                     1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kStunUdpToLocalUdp(IceCandidateType::kSrflx,
                                                     "udp",
-                                                    "local",
+                                                    IceCandidateType::kHost,
                                                     "udp",
                                                     1000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kStunUdpToStunUdp("stun",
+    P2PTransportChannelTestBase::kStunUdpToStunUdp(IceCandidateType::kSrflx,
                                                    "udp",
-                                                   "stun",
+                                                   IceCandidateType::kSrflx,
                                                    "udp",
                                                    1000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kStunUdpToPrflxUdp("stun",
+    P2PTransportChannelTestBase::kStunUdpToPrflxUdp(IceCandidateType::kSrflx,
                                                     "udp",
-                                                    "prflx",
-                                                    "udp",
-                                                    1000);
-const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kPrflxUdpToStunUdp("prflx",
-                                                    "udp",
-                                                    "stun",
+                                                    IceCandidateType::kPrflx,
                                                     "udp",
                                                     1000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kLocalUdpToRelayUdp("local",
+    P2PTransportChannelTestBase::kPrflxUdpToStunUdp(IceCandidateType::kPrflx,
+                                                    "udp",
+                                                    IceCandidateType::kSrflx,
+                                                    "udp",
+                                                    1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kLocalUdpToRelayUdp(IceCandidateType::kHost,
                                                      "udp",
-                                                     "relay",
+                                                     IceCandidateType::kRelay,
                                                      "udp",
                                                      2000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kPrflxUdpToRelayUdp("prflx",
+    P2PTransportChannelTestBase::kPrflxUdpToRelayUdp(IceCandidateType::kPrflx,
                                                      "udp",
-                                                     "relay",
-                                                     "udp",
-                                                     2000);
-const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kRelayUdpToPrflxUdp("relay",
-                                                     "udp",
-                                                     "prflx",
+                                                     IceCandidateType::kRelay,
                                                      "udp",
                                                      2000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kLocalTcpToLocalTcp("local",
+    P2PTransportChannelTestBase::kRelayUdpToPrflxUdp(IceCandidateType::kRelay,
+                                                     "udp",
+                                                     IceCandidateType::kPrflx,
+                                                     "udp",
+                                                     2000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kLocalTcpToLocalTcp(IceCandidateType::kHost,
                                                      "tcp",
-                                                     "local",
+                                                     IceCandidateType::kHost,
                                                      "tcp",
                                                      3000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kLocalTcpToPrflxTcp("local",
+    P2PTransportChannelTestBase::kLocalTcpToPrflxTcp(IceCandidateType::kHost,
                                                      "tcp",
-                                                     "prflx",
+                                                     IceCandidateType::kPrflx,
                                                      "tcp",
                                                      3000);
 const P2PTransportChannelTestBase::Result
-    P2PTransportChannelTestBase::kPrflxTcpToLocalTcp("prflx",
+    P2PTransportChannelTestBase::kPrflxTcpToLocalTcp(IceCandidateType::kPrflx,
                                                      "tcp",
-                                                     "local",
+                                                     IceCandidateType::kHost,
                                                      "tcp",
                                                      3000);
 
@@ -2393,8 +2394,8 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
 
 TEST_F(P2PTransportChannelSameNatTest, TestConesBehindSameCone) {
   ConfigureEndpoints(NAT_FULL_CONE, NAT_FULL_CONE, NAT_FULL_CONE);
-  Test(
-      P2PTransportChannelTestBase::Result("prflx", "udp", "stun", "udp", 1000));
+  Test(P2PTransportChannelTestBase::Result(
+      IceCandidateType::kPrflx, "udp", IceCandidateType::kSrflx, "udp", 1000));
 }
 
 
@@ -4959,8 +4960,8 @@ class P2PTransportChannelMostLikelyToWorkFirstTest
   
   
   void VerifyNextPingableConnection(
-      absl::string_view local_candidate_type,
-      absl::string_view remote_candidate_type,
+      IceCandidateType local_candidate_type,
+      IceCandidateType remote_candidate_type,
       absl::string_view relay_protocol_type = UDP_PROTOCOL_NAME) {
     Connection* conn = FindNextPingableConnectionAndPingIt(channel_.get());
     ASSERT_TRUE(conn != nullptr);
@@ -5053,22 +5054,27 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   EXPECT_TRUE_WAIT(ch.connections().size() == 2, kDefaultTimeout);
 
   
-  VerifyNextPingableConnection(LOCAL_PORT_TYPE, LOCAL_PORT_TYPE);
-  VerifyNextPingableConnection(RELAY_PORT_TYPE, LOCAL_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kHost,
+                               IceCandidateType::kHost);
+  VerifyNextPingableConnection(IceCandidateType::kRelay,
+                               IceCandidateType::kHost);
 
   
   ch.AddRemoteCandidate(CreateUdpCandidate(RELAY_PORT_TYPE, "2.2.2.2", 2, 2));
   EXPECT_TRUE_WAIT(ch.connections().size() == 4, kDefaultTimeout);
 
   
-  VerifyNextPingableConnection(RELAY_PORT_TYPE, RELAY_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kRelay,
+                               IceCandidateType::kRelay);
 
   
-  VerifyNextPingableConnection(LOCAL_PORT_TYPE, RELAY_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kHost,
+                               IceCandidateType::kRelay);
 
   
   
-  VerifyNextPingableConnection(RELAY_PORT_TYPE, RELAY_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kRelay,
+                               IceCandidateType::kRelay);
 }
 
 
@@ -5084,24 +5090,29 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   EXPECT_TRUE_WAIT(ch.connections().size() == 2, kDefaultTimeout);
 
   
-  VerifyNextPingableConnection(RELAY_PORT_TYPE, RELAY_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kRelay,
+                               IceCandidateType::kRelay);
 
   
-  VerifyNextPingableConnection(LOCAL_PORT_TYPE, RELAY_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kHost,
+                               IceCandidateType::kRelay);
 
   
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
   EXPECT_TRUE_WAIT(ch.connections().size() == 4, kDefaultTimeout);
 
   
-  VerifyNextPingableConnection(LOCAL_PORT_TYPE, LOCAL_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kHost,
+                               IceCandidateType::kHost);
 
   
-  VerifyNextPingableConnection(RELAY_PORT_TYPE, LOCAL_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kRelay,
+                               IceCandidateType::kHost);
 
   
   
-  VerifyNextPingableConnection(RELAY_PORT_TYPE, RELAY_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kRelay,
+                               IceCandidateType::kRelay);
 }
 
 
@@ -5146,14 +5157,16 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest, TestTcpTurn) {
   EXPECT_TRUE_WAIT(ch.connections().size() == 3, kDefaultTimeout);
 
   
-  VerifyNextPingableConnection(RELAY_PORT_TYPE, RELAY_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kRelay,
+                               IceCandidateType::kRelay);
 
   
-  VerifyNextPingableConnection(RELAY_PORT_TYPE, RELAY_PORT_TYPE,
-                               TCP_PROTOCOL_NAME);
+  VerifyNextPingableConnection(IceCandidateType::kRelay,
+                               IceCandidateType::kRelay, TCP_PROTOCOL_NAME);
 
   
-  VerifyNextPingableConnection(LOCAL_PORT_TYPE, RELAY_PORT_TYPE);
+  VerifyNextPingableConnection(IceCandidateType::kHost,
+                               IceCandidateType::kRelay);
 }
 
 
