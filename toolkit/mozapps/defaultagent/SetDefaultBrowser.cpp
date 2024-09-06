@@ -181,42 +181,74 @@ static bool SetUserChoiceRegistry(const wchar_t* aExt, const wchar_t* aProgID,
   
   
   
-  ls = ::RegDeleteKeyW(assocKey.get(), L"UserChoice");
+  
+  
+  
+  nsAutoString tempName =
+      u""_ns MOZ_APP_DISPLAYNAME u"-"_ns +
+      NS_ConvertASCIItoUTF16(nsID::GenerateUUID().ToString().get());
+  ls = ::RegRenameKey(assocKey.get(), nullptr, tempName.get());
   if (ls != ERROR_SUCCESS) {
     LOG_ERROR(HRESULT_FROM_WIN32(ls));
     return false;
   }
 
-  HKEY rawUserChoiceKey;
-  ls = ::RegCreateKeyExW(assocKey.get(), L"UserChoice", 0, nullptr,
-                         0 , KEY_READ | KEY_WRITE,
-                         0 , &rawUserChoiceKey,
-                         nullptr);
+  auto subkeysUpdated = [&] {
+    
+    
+    
+    
+    if (aExt && aExt[0] == '.') {
+      ls = ::RegDeleteKeyW(assocKey.get(), L"UserChoice");
+      if (ls != ERROR_SUCCESS) {
+        LOG_ERROR(HRESULT_FROM_WIN32(ls));
+        return false;
+      }
+    }
+
+    HKEY rawUserChoiceKey;
+    ls = ::RegCreateKeyExW(assocKey.get(), L"UserChoice", 0, nullptr,
+                           0 , KEY_READ | KEY_WRITE,
+                           0 , &rawUserChoiceKey,
+                           nullptr);
+    if (ls != ERROR_SUCCESS) {
+      LOG_ERROR(HRESULT_FROM_WIN32(ls));
+      return false;
+    }
+    nsAutoRegKey userChoiceKey(rawUserChoiceKey);
+
+    DWORD progIdByteCount = (::lstrlenW(aProgID) + 1) * sizeof(wchar_t);
+    ls = ::RegSetValueExW(userChoiceKey.get(), L"ProgID", 0, REG_SZ,
+                          reinterpret_cast<const unsigned char*>(aProgID),
+                          progIdByteCount);
+    if (ls != ERROR_SUCCESS) {
+      LOG_ERROR(HRESULT_FROM_WIN32(ls));
+      return false;
+    }
+
+    DWORD hashByteCount = (::lstrlenW(aHash.get()) + 1) * sizeof(wchar_t);
+    ls = ::RegSetValueExW(userChoiceKey.get(), L"Hash", 0, REG_SZ,
+                          reinterpret_cast<const unsigned char*>(aHash.get()),
+                          hashByteCount);
+    if (ls != ERROR_SUCCESS) {
+      LOG_ERROR(HRESULT_FROM_WIN32(ls));
+      return false;
+    }
+
+    return true;
+  }();
+
+  
+  
+  
+  
+  ls = ::RegRenameKey(assocKey.get(), nullptr, aExt);
   if (ls != ERROR_SUCCESS) {
     LOG_ERROR(HRESULT_FROM_WIN32(ls));
     return false;
   }
-  nsAutoRegKey userChoiceKey(rawUserChoiceKey);
 
-  DWORD progIdByteCount = (::lstrlenW(aProgID) + 1) * sizeof(wchar_t);
-  ls = ::RegSetValueExW(userChoiceKey.get(), L"ProgID", 0, REG_SZ,
-                        reinterpret_cast<const unsigned char*>(aProgID),
-                        progIdByteCount);
-  if (ls != ERROR_SUCCESS) {
-    LOG_ERROR(HRESULT_FROM_WIN32(ls));
-    return false;
-  }
-
-  DWORD hashByteCount = (::lstrlenW(aHash.get()) + 1) * sizeof(wchar_t);
-  ls = ::RegSetValueExW(userChoiceKey.get(), L"Hash", 0, REG_SZ,
-                        reinterpret_cast<const unsigned char*>(aHash.get()),
-                        hashByteCount);
-  if (ls != ERROR_SUCCESS) {
-    LOG_ERROR(HRESULT_FROM_WIN32(ls));
-    return false;
-  }
-
-  return true;
+  return subkeysUpdated;
 }
 
 struct LaunchExeErr {};
