@@ -126,7 +126,7 @@ Tart.prototype = {
 
   clickNewTab() {
     this._endDetection = this.tabDetector;
-    this._win.BrowserOpenTab();
+    this._win.BrowserCommands.openTab();
     
     
     

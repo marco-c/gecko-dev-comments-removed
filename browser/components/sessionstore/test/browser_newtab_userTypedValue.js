@@ -16,7 +16,7 @@ add_task(async function () {
   );
 
   
-  win.BrowserOpenTab();
+  win.BrowserCommands.openTab();
   let tab = await tabOpenedAndSwitchedTo;
   is(win.gURLBar.value, "", "URL bar should be empty");
   is(tab.linkedBrowser.userTypedValue, null, "userTypedValue should be null");

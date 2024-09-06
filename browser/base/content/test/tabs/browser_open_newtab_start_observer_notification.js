@@ -12,7 +12,7 @@ add_task(async function test_browser_open_newtab_start_observer_notification() {
   
   
   
-  BrowserOpenTab();
+  BrowserCommands.openTab();
   const newTabCreatedPromise = await observerFiredPromise;
   const browser = await newTabCreatedPromise;
   const tab = gBrowser.selectedTab;

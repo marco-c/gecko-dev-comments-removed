@@ -32,7 +32,7 @@ add_task(async function test_add_and_remove_toolbar_button() {
   });
   
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  win.BrowserOpenTab();
+  win.BrowserCommands.openTab();
   ok(win, "browser exists");
   
   await AWToolbarButton.maybeAddSetupButton();

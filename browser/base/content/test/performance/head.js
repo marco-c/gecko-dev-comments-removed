@@ -124,9 +124,6 @@ async function recordReflows(testPromise, win = window) {
 
 
 
-
-
-
 function reportUnexpectedReflows(reflows, expectedReflows = []) {
   let knownReflows = expectedReflows.map(r => {
     return {

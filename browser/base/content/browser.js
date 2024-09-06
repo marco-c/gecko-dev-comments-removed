@@ -2647,7 +2647,7 @@ function HandleAppCommandEvent(evt) {
       BrowserCommands.home();
       break;
     case "New":
-      BrowserOpenTab();
+      BrowserCommands.openTab();
       break;
     case "Close":
       BrowserCloseTabOrWindow();
@@ -2726,62 +2726,6 @@ function openLocation(event) {
     "_blank",
     "chrome,all,dialog=no",
     BROWSER_NEW_TAB_URL
-  );
-}
-
-function BrowserOpenTab({ event, url } = {}) {
-  let werePassedURL = !!url;
-  url ??= BROWSER_NEW_TAB_URL;
-  let searchClipboard = gMiddleClickNewTabUsesPasteboard && event?.button == 1;
-
-  let relatedToCurrent = false;
-  let where = "tab";
-
-  if (event) {
-    where = whereToOpenLink(event, false, true);
-
-    switch (where) {
-      case "tab":
-      case "tabshifted":
-        
-        
-        relatedToCurrent = true;
-        break;
-      case "current":
-        where = "tab";
-        break;
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Services.obs.notifyObservers(
-    {
-      wrappedJSObject: new Promise(resolve => {
-        let options = {
-          relatedToCurrent,
-          resolveOnNewTabCreated: resolve,
-        };
-        if (!werePassedURL && searchClipboard) {
-          let clipboard = readFromClipboard();
-          clipboard = UrlbarUtils.stripUnsafeProtocolOnPaste(clipboard).trim();
-          if (clipboard) {
-            url = clipboard;
-            options.allowThirdPartyFixup = true;
-          }
-        }
-        openTrustedLinkIn(url, where, options);
-      }),
-    },
-    "browser-open-newtab-start"
   );
 }
 
@@ -5814,7 +5758,7 @@ nsBrowserAccess.prototype = {
     }
 
     if (aIsExternal && (!aURI || aURI.spec == "about:blank")) {
-      win.BrowserOpenTab(); 
+      win.BrowserCommands.openTab(); 
       win.focus();
       return win.gBrowser.selectedBrowser;
     }

@@ -4358,7 +4358,7 @@
       } 
 
       if (event.button == 1) {
-        BrowserOpenTab({ event });
+        BrowserCommands.openTab({ event });
         
         
         

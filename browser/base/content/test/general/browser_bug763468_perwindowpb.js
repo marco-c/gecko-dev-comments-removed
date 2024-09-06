@@ -44,7 +44,7 @@ add_task(async function testPBNewTab() {
 
 async function openNewTab(aWindow, aExpectedURL) {
   
-  aWindow.BrowserOpenTab();
+  aWindow.BrowserCommands.openTab();
   let browser = aWindow.gBrowser.selectedBrowser;
 
   
