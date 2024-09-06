@@ -1862,12 +1862,9 @@ nsresult nsGlobalWindowInner::EnsureClientSource() {
 
     bool ignoreLoadInfo = false;
 
-    
-    
     if (uri->SchemeIs("about")) {
-      nsCString spec = uri->GetSpecOrDefault();
-      ignoreLoadInfo = spec.EqualsLiteral("about:blank") ||
-                       spec.EqualsLiteral("about:srcdoc");
+      ignoreLoadInfo =
+          NS_IsAboutBlankAllowQueryAndFragment(uri) || NS_IsAboutSrcdoc(uri);
     } else {
       
       ignoreLoadInfo = uri->SchemeIs("data") || uri->SchemeIs("blob");

@@ -339,12 +339,8 @@ nsresult nsHTMLDocument::StartDocumentLoad(
     
     nsCOMPtr<nsIURI> uri;
     aChannel->GetOriginalURI(getter_AddRefs(uri));
-    
-    
-    if (uri && uri->SchemeIs("about")) {
-      if (uri->GetSpecOrDefault().EqualsLiteral("about:blank")) {
-        loadAsHtml5 = false;
-      }
+    if (NS_IsAboutBlankAllowQueryAndFragment(uri)) {
+      loadAsHtml5 = false;
     }
   }
 

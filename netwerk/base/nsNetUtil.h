@@ -952,6 +952,12 @@ bool NS_IsAboutBlank(nsIURI* uri);
 
 
 
+
+bool NS_IsAboutBlankAllowQueryAndFragment(nsIURI* uri);
+
+
+
+
 bool NS_IsAboutSrcdoc(nsIURI* uri);
 
 nsresult NS_GenerateHostPort(const nsCString& host, int32_t port,
