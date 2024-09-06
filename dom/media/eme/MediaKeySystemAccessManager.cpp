@@ -368,8 +368,6 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
   
   
 
-  DecoderDoctorDiagnostics diagnostics;
-
   
   
   
@@ -383,7 +381,7 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
     
     aRequest->RejectPromiseWithNotSupportedError(
         "Key system is unsupported"_ns);
-    diagnostics.StoreMediaKeySystemAccess(
+    aRequest->mDiagnostics.StoreMediaKeySystemAccess(
         mWindow->GetExtantDoc(), aRequest->mKeySystem, false, __func__);
     return;
   }
@@ -399,7 +397,7 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
                                             MediaKeySystemStatus::Api_disabled);
     }
     aRequest->RejectPromiseWithNotSupportedError("EME has been preffed off"_ns);
-    diagnostics.StoreMediaKeySystemAccess(
+    aRequest->mDiagnostics.StoreMediaKeySystemAccess(
         mWindow->GetExtantDoc(), aRequest->mKeySystem, false, __func__);
     return;
   }
@@ -439,7 +437,7 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
       
       aRequest->RejectPromiseWithNotSupportedError(
           "Timed out while waiting for a CDM update"_ns);
-      diagnostics.StoreMediaKeySystemAccess(
+      aRequest->mDiagnostics.StoreMediaKeySystemAccess(
           mWindow->GetExtantDoc(), aRequest->mKeySystem, false, __func__);
       return;
     }
@@ -463,8 +461,8 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
       
       EME_LOG("Failed to await %s for installation",
               NS_ConvertUTF16toUTF8(keySystem).get());
-      diagnostics.StoreMediaKeySystemAccess(mWindow->GetExtantDoc(), keySystem,
-                                            false, __func__);
+      aRequest->mDiagnostics.StoreMediaKeySystemAccess(
+          mWindow->GetExtantDoc(), keySystem, false, __func__);
     }
     return;
   }
@@ -500,8 +498,7 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
   
   MediaKeySystemConfiguration config;
   if (MediaKeySystemAccess::GetSupportedConfig(
-          aRequest->mKeySystem, aRequest->mConfigs, config, &diagnostics,
-          isPrivateBrowsing, mWindow->GetExtantDoc())) {
+          aRequest.get(), config, isPrivateBrowsing, mWindow->GetExtantDoc())) {
     aRequest->mSupportedConfig = Some(config);
     
     CheckDoesAppAllowProtectedMedia(std::move(aRequest));
@@ -513,8 +510,8 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
   
   aRequest->RejectPromiseWithNotSupportedError(
       "Key system configuration is not supported"_ns);
-  diagnostics.StoreMediaKeySystemAccess(mWindow->GetExtantDoc(),
-                                        aRequest->mKeySystem, false, __func__);
+  aRequest->mDiagnostics.StoreMediaKeySystemAccess(
+      mWindow->GetExtantDoc(), aRequest->mKeySystem, false, __func__);
 }
 
 void MediaKeySystemAccessManager::ProvideAccess(
