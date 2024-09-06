@@ -1301,7 +1301,10 @@ inline uintptr_t TypeDef::forMatch(const TypeDef* typeDef,
 
   
   if (typeDef && &typeDef->recGroup() == recGroup) {
-    return uintptr_t(recGroup->indexOf(typeDef)) | 0x1;
+    
+    
+    static_assert(MaxTypes <= 0x7FFFFFFF);
+    return (uintptr_t(recGroup->indexOf(typeDef)) << 1) | 0x1;
   }
 
   
