@@ -210,8 +210,12 @@ def parse_crash_log(log_path):
             
             
             
+            
+            
+            
+            
             match = re.search(
-                r"\n([\w\.]+[:\s\w\.\'\"]+)\s*(at\s.*\n)", contents, re.MULTILINE
+                r"\n([\w\.]+[:\s\w\.,!?#^\'\"]+)\s*(at\s.*\n)", contents, re.MULTILINE
             )
             if match and len(match.groups()) == 2:
                 top_frame = match.group(1).rstrip() + " " + match.group(2)
