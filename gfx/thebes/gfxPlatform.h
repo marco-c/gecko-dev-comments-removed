@@ -265,7 +265,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
       bool aFallback = false);
 
   already_AddRefed<DrawTarget> CreateOffscreenCanvasDrawTarget(
-      const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat);
+      const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat,
+      bool aRequireSoftwareRender = false);
 
   already_AddRefed<DrawTarget> CreateSimilarSoftwareDrawTarget(
       DrawTarget* aDT, const IntSize& aSize,
@@ -343,7 +344,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  virtual void ReadSystemFontList(mozilla::dom::SystemFontList*){};
+  virtual void ReadSystemFontList(mozilla::dom::SystemFontList*) {};
 
   
 
@@ -779,7 +780,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   virtual void OnMemoryPressure(
       mozilla::layers::MemoryPressureReason aWhy) override;
 
-  virtual void EnsureDevicesInitialized(){};
+  virtual void EnsureDevicesInitialized() {};
   virtual bool DevicesInitialized() { return true; };
 
   virtual bool IsWaylandDisplay() { return false; }
