@@ -202,7 +202,19 @@ var SelectTranslationsPanel = new (class {
 
 
 
+
+
   #isFullPageTranslationsRestrictedForPage = true;
+
+  
+
+
+
+
+
+
+
+  #activeFullPageTranslationsTargetLanguage = undefined;
 
   
 
@@ -334,6 +346,13 @@ var SelectTranslationsPanel = new (class {
       return this.#languageInfo;
     }
 
+    this.#isFullPageTranslationsRestrictedForPage =
+      TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser);
+    this.#activeFullPageTranslationsTargetLanguage = this
+      .#isFullPageTranslationsRestrictedForPage
+      ? undefined
+      : this.#maybeGetActiveFullPageTranslationsTargetLanguage();
+
     this.#languageInfo = {
       docLangTag: undefined,
       isDocLangTagSupported: undefined,
@@ -350,7 +369,11 @@ var SelectTranslationsPanel = new (class {
       const preferredLanguages = TranslationsParent.getPreferredLanguages();
       const topPreferredLanguage = preferredLanguages?.[0];
       this.#languageInfo = {
-        docLangTag,
+        docLangTag:
+          
+          
+          
+          this.#activeFullPageTranslationsTargetLanguage ?? docLangTag,
         isDocLangTagSupported,
         topPreferredLanguage,
       };
@@ -561,8 +584,6 @@ var SelectTranslationsPanel = new (class {
 
     try {
       this.#sourceTextWordCount = undefined;
-      this.#isFullPageTranslationsRestrictedForPage =
-        TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser);
       this.#initializeEventListeners();
       await this.#ensureLangListsBuilt();
       await Promise.all([
@@ -584,6 +605,26 @@ var SelectTranslationsPanel = new (class {
     }
 
     this.#openPopup(event, screenX, screenY);
+  }
+
+  
+
+
+
+
+
+
+  #maybeGetActiveFullPageTranslationsTargetLanguage() {
+    try {
+      const { requestedTranslationPair } =
+        TranslationsParent.getTranslationsActor(
+          gBrowser.selectedBrowser
+        ).languageState;
+      return requestedTranslationPair?.toLanguage;
+    } catch {
+      this.console.warn("Failed to retrieve the TranslationsParent actor.");
+    }
+    return undefined;
   }
 
   
@@ -1773,6 +1814,20 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  #shouldHideTranslateFullPageButton() {
+    return (
+      
+      this.#isFullPageTranslationsRestrictedForPage ||
+      
+      this.#activeFullPageTranslationsTargetLanguage
+    );
+  }
+
+  
+
+
+
+
 
 
 
@@ -1874,7 +1929,7 @@ var SelectTranslationsPanel = new (class {
     translateFullPageButton.disabled =
       invalidLangPairSelected ||
       fromLanguage === toLanguage ||
-      this.#isFullPageTranslationsRestrictedForPage;
+      this.#shouldHideTranslateFullPageButton();
   }
 
   
@@ -1917,7 +1972,7 @@ var SelectTranslationsPanel = new (class {
         translationFailureMessageBar,
         tryAgainButton,
         unsupportedLanguageContent,
-        ...(this.#isFullPageTranslationsRestrictedForPage
+        ...(this.#shouldHideTranslateFullPageButton()
           ? [translateFullPageButton]
           : []),
       ],
@@ -1926,7 +1981,7 @@ var SelectTranslationsPanel = new (class {
         copyButton,
         doneButtonPrimary,
         textArea,
-        ...(this.#isFullPageTranslationsRestrictedForPage
+        ...(this.#shouldHideTranslateFullPageButton()
           ? []
           : [translateFullPageButton]),
       ],
