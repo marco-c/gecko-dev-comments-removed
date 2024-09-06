@@ -4,9 +4,11 @@
 
 
 
+#include "mozIThirdPartyUtil.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/net/CookieJarSettings.h"
@@ -539,10 +541,9 @@ void CookieJarSettings::SetPartitionKey(nsIURI* aURI,
 void CookieJarSettings::UpdatePartitionKeyForDocumentLoadedByChannel(
     nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  bool thirdParty = AntiTrackingUtils::IsThirdPartyChannel(aChannel);
   bool foreignByAncestorContext =
-      false;  
-              
-              
+      thirdParty && !loadInfo->GetIsThirdPartyContextToTopWindow();
   StoragePrincipalHelper::UpdatePartitionKeyWithForeignAncestorBit(
       mPartitionKey, foreignByAncestorContext);
 }

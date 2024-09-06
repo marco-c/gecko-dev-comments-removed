@@ -87,9 +87,8 @@ bool ChooseOriginAttributes(nsIChannel* aChannel, OriginAttributes& aAttrs,
     return false;
   }
   bool foreignByAncestorContext =
-      false;  
-              
-              
+      AntiTrackingUtils::IsThirdPartyChannel(aChannel) &&
+      !loadInfo->GetIsThirdPartyContextToTopWindow();
   aAttrs.SetPartitionKey(principalURI, foreignByAncestorContext);
   return true;
 }
@@ -316,7 +315,7 @@ nsresult StoragePrincipalHelper::GetPrincipal(nsIChannel* aChannel,
       
       if (cjs->GetCookieBehavior() ==
               nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
-          loadInfo->GetIsThirdPartyContextToTopWindow()) {
+          AntiTrackingUtils::IsThirdPartyChannel(aChannel)) {
         outPrincipal = partitionedPrincipal;
       }
       break;
@@ -482,7 +481,7 @@ bool StoragePrincipalHelper::GetOriginAttributes(
       
       if (cjs->GetCookieBehavior() ==
               nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
-          loadInfo->GetIsThirdPartyContextToTopWindow()) {
+          AntiTrackingUtils::IsThirdPartyChannel(aChannel)) {
         ChooseOriginAttributes(aChannel, aAttributes, true);
       }
       break;
