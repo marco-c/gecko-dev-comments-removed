@@ -97,6 +97,8 @@ class InputBlockState : public RefCounted<InputBlockState> {
   virtual void UpdateTargetApzc(
       const RefPtr<AsyncPanZoomController>& aTargetApzc);
 
+  const AsyncPanZoomController* TargetApzc() const { return mTargetApzc.get(); }
+
  private:
   
   
@@ -269,6 +271,11 @@ class WheelBlockState : public CancelableBlockState {
 
   ScrollDirections GetAllowedScrollDirections() const {
     return mAllowedScrollDirections;
+  }
+
+  LayersId GetLayersId() const {
+    return (InTransaction() && TargetApzc()) ? TargetApzc()->GetLayersId()
+                                             : LayersId{0};
   }
 
  protected:
