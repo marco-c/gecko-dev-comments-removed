@@ -2639,8 +2639,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     mNonClientOffset.left = 0;
     mNonClientOffset.right = 0;
 
-    mozilla::Maybe<UINT> maybeEdge = GetHiddenTaskbarEdge();
-    if (maybeEdge) {
+    if (mozilla::Maybe<UINT> maybeEdge = GetHiddenTaskbarEdge()) {
       auto edge = maybeEdge.value();
       if (ABE_LEFT == edge) {
         mNonClientOffset.left -= kHiddenTaskbarSize;
@@ -2649,19 +2648,13 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
       } else if (ABE_BOTTOM == edge || ABE_TOP == edge) {
         mNonClientOffset.bottom -= kHiddenTaskbarSize;
       }
-
-      
-      
-      
-      
-      UINT clearEdge = (edge == ABE_TOP) ? ABE_BOTTOM : edge;
-      mClearNCEdge = Some(clearEdge);
     }
   } else {
     mNonClientOffset = NormalWindowNonClientOffset();
   }
 
   UpdateOpaqueRegionInternal();
+  mNeedsNCAreaClear = true;
 
   if (aReflowWindow) {
     
@@ -2717,7 +2710,7 @@ void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
   UpdateNonClientMargins();
 }
 
-void nsWindow::InvalidateNonClientRegion() {
+HRGN nsWindow::ComputeNonClientHRGN() {
   
   
   
@@ -2747,7 +2740,11 @@ void nsWindow::InvalidateNonClientRegion() {
   HRGN clientRgn = CreateRectRgnIndirect(&rect);
   CombineRgn(winRgn, winRgn, clientRgn, RGN_DIFF);
   DeleteObject(clientRgn);
+  return winRgn;
+}
 
+void nsWindow::InvalidateNonClientRegion() {
+  HRGN winRgn = ComputeNonClientHRGN();
   
   RedrawWindow(mWnd, nullptr, winRgn, RDW_FRAME | RDW_INVALIDATE);
   DeleteObject(winRgn);
@@ -5044,12 +5041,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       auto GeckoClientToWinScreenRect =
           [&origin](LayoutDeviceIntRect aRect) -> RECT {
         aRect.MoveBy(origin);
-        return {
-            .left = aRect.x,
-            .top = aRect.y,
-            .right = aRect.XMost(),
-            .bottom = aRect.YMost(),
-        };
+        return WinUtils::ToWinRect(aRect);
       };
       auto SetButton = [&](size_t aIndex, WindowButtonType aType) {
         info->rgrect[aIndex] =
