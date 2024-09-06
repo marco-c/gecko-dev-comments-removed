@@ -6493,7 +6493,12 @@ bool HTMLInputElement::IsHTMLFocusable(IsFocusableFlags aFlags,
   nsAutoString name;
   GetAttr(nsGkAtoms::name, name);
 
-  if (container->GetCurrentRadioButton(name) ||
+  
+  
+  
+  HTMLInputElement* selectedRadio = container->GetCurrentRadioButton(name);
+  if ((selectedRadio && !selectedRadio->Disabled() &&
+       selectedRadio->GetPrimaryFrame()) ||
       container->GetFirstRadioButton(name) != this) {
     *aTabIndex = -1;
   }
