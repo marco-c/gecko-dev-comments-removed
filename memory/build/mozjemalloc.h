@@ -144,6 +144,17 @@ constexpr uint8_t kAllocPoison = 0xe5;
 
 constexpr uint8_t kAllocJunk = 0xe4;
 
+
+
+
+constexpr size_t kCacheLineSize =
+#  if defined(XP_DARWIN) && defined(__aarch64__)
+    128
+#  else
+    64
+#  endif
+    ;
+
 #endif  
 
 

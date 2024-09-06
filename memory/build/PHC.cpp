@@ -899,10 +899,16 @@ class PHC {
 
   static bool IsDisabledOnCurrentThread() { return tlsIsDisabled.get(); }
 
-  static Time Now() { return sNow; }
+  static Time Now() {
+    if (!sPHC) {
+      return 0;
+    }
 
-  static void AdvanceNow(uint32_t delay = 0) {
-    sNow += tlsLastDelay.get() - delay;
+    return sPHC->mNow;
+  }
+
+  void AdvanceNow(uint32_t delay = 0) {
+    mNow += tlsLastDelay.get() - delay;
     tlsLastDelay.set(delay);
   }
 
@@ -919,7 +925,10 @@ class PHC {
     
     
 
-    AdvanceNow();
+    
+    
+    MOZ_ASSERT(sPHC);
+    sPHC->AdvanceNow();
 
     
     
@@ -1056,28 +1065,17 @@ class PHC {
 #endif
   }
 
+  
+  
+  
  public:
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  alignas(kCacheLineSize) Mutex mMutex MOZ_UNANNOTATED;
 
  private:
   
   
-  
-  
-  
-  non_crypto::XorShift128PlusRNG mRNG;
-
-  AllocPageInfo mAllocPages[kNumAllocPages];
-#if PHC_LOGGING
-  Time mFreeTime[kNumAllocPages];
-
-  
-  
-  
-  size_t mPageAllocHits = 0;
-  size_t mPageAllocMisses = 0;
-#endif
+  Atomic<Time, ReleaseAcquire> mNow;
 
   
   
@@ -1087,7 +1085,25 @@ class PHC {
   
   
   
-  Delay mAvgFirstAllocDelay = 64 * 1024;
+  
+  
+  non_crypto::XorShift128PlusRNG mRNG;
+
+#if PHC_LOGGING
+  
+  
+  
+  size_t mPageAllocHits = 0;
+  size_t mPageAllocMisses = 0;
+#endif
+
+  
+  
+
+  
+  
+  
+  alignas(kCacheLineSize) Delay mAvgFirstAllocDelay = 64 * 1024;
 
   
   
@@ -1153,10 +1169,6 @@ class PHC {
 
   
   
-  static Atomic<Time, ReleaseAcquire> sNow;
-
-  
-  
   
   
   
@@ -1169,6 +1181,11 @@ class PHC {
 
   
   static PHC_THREAD_LOCAL(Delay) tlsLastDelay;
+
+  AllocPageInfo mAllocPages[kNumAllocPages];
+#if PHC_LOGGING
+  Time mFreeTime[kNumAllocPages];
+#endif
 
  public:
   Delay GetAvgAllocDelay(const MutexAutoLock&) { return mAvgAllocDelay; }
@@ -1187,14 +1204,18 @@ class PHC {
   static PHC* sPHC;
 };
 
+
+
+
+
+
+alignas(kCacheLineSize) PHCRegion* PHC::sRegion;
+PHC* PHC::sPHC;
+
 PHC_THREAD_LOCAL(bool) PHC::tlsIsDisabled;
-Atomic<Time, ReleaseAcquire> PHC::sNow;
 PHC_THREAD_LOCAL(Delay) PHC::tlsAllocDelay;
 Atomic<Delay, ReleaseAcquire> PHC::sAllocDelay;
 PHC_THREAD_LOCAL(Delay) PHC::tlsLastDelay;
-
-PHCRegion* PHC::sRegion;
-PHC* PHC::sPHC;
 
 
 PHCRegion::PHCRegion()
@@ -1533,7 +1554,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
   uintptr_t index = pk.AllocPageIndex();
 
   
-  PHC::AdvanceNow(PHC::LocalAllocDelay());
+  PHC::sPHC->AdvanceNow(PHC::LocalAllocDelay());
 
   
   Maybe<AutoDisableOnCurrentThread> disable;
@@ -1634,7 +1655,7 @@ MOZ_ALWAYS_INLINE static bool MaybePageFree(const Maybe<arena_id_t>& aArenaId,
   }
 
   
-  PHC::AdvanceNow(PHC::LocalAllocDelay());
+  PHC::sPHC->AdvanceNow(PHC::LocalAllocDelay());
   uintptr_t index = pk.AllocPageIndex();
 
   

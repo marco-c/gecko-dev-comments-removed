@@ -435,17 +435,6 @@ struct arena_chunk_t {
 
 
 
-static const size_t kCacheLineSize =
-#if defined(XP_DARWIN) && defined(__aarch64__)
-    128
-#else
-    64
-#endif
-    ;
-
-
-
-
 
 
 
