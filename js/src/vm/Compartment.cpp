@@ -52,14 +52,9 @@ Compartment::Compartment(Zone* zone, bool invisibleToDebugger)
 
 void Compartment::checkObjectWrappersAfterMovingGC() {
   for (ObjectWrapperEnum e(this); !e.empty(); e.popFront()) {
-    
-    
-    
     auto key = e.front().key();
     CheckGCThingAfterMovingGC(key.get());
-
-    auto ptr = crossCompartmentObjectWrappers.lookup(key);
-    MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &e.front());
+    CheckTableEntryAfterMovingGC(crossCompartmentObjectWrappers, e, key);
   }
 }
 
