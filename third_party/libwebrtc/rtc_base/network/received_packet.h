@@ -26,12 +26,21 @@ namespace rtc {
 
 class RTC_EXPORT ReceivedPacket {
  public:
+  enum DecryptionInfo {
+    kNotDecrypted,   
+                     
+    kDtlsDecrypted,  
+    kSrtpEncrypted   
+  };
+
   
   
-  ReceivedPacket(
-      rtc::ArrayView<const uint8_t> payload,
-      const SocketAddress& source_address,
-      absl::optional<webrtc::Timestamp> arrival_time = absl::nullopt);
+  ReceivedPacket(rtc::ArrayView<const uint8_t> payload,
+                 const SocketAddress& source_address,
+                 absl::optional<webrtc::Timestamp> arrival_time = absl::nullopt,
+                 DecryptionInfo decryption = kNotDecrypted);
+
+  ReceivedPacket CopyAndSet(DecryptionInfo decryption_info) const;
 
   
   const SocketAddress& source_address() const { return source_address_; }
@@ -42,6 +51,8 @@ class RTC_EXPORT ReceivedPacket {
   absl::optional<webrtc::Timestamp> arrival_time() const {
     return arrival_time_;
   }
+
+  const DecryptionInfo& decryption_info() const { return decryption_info_; }
 
   static ReceivedPacket CreateFromLegacy(
       const char* data,
@@ -62,6 +73,7 @@ class RTC_EXPORT ReceivedPacket {
   rtc::ArrayView<const uint8_t> payload_;
   absl::optional<webrtc::Timestamp> arrival_time_;
   const SocketAddress& source_address_;
+  DecryptionInfo decryption_info_;
 };
 
 }  
