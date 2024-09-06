@@ -234,17 +234,47 @@ void DeviceManagerDx::PostUpdateMonitorInfo() {
   holder->GetCompositorThread()->DelayedDispatch(runnable.forget(), kDelayMS);
 }
 
+static bool ColorSpaceIsHDR(const DXGI_OUTPUT_DESC1& aDesc) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isHDR = (aDesc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+
+  return isHDR;
+}
+
 void DeviceManagerDx::UpdateMonitorInfo() {
   bool systemHdrEnabled = false;
+  std::set<HMONITOR> hdrMonitors;
 
   for (const auto& desc : GetOutputDescs()) {
-    if (desc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
+    if (ColorSpaceIsHDR(desc)) {
       systemHdrEnabled = true;
+      hdrMonitors.emplace(desc.Monitor);
     }
   }
+
   {
     MutexAutoLock lock(mDeviceLock);
     mSystemHdrEnabled = Some(systemHdrEnabled);
+    mHdrMonitors.swap(hdrMonitors);
     mUpdateMonitorInfoRunnable = nullptr;
   }
 }
@@ -327,6 +357,42 @@ bool DeviceManagerDx::SystemHDREnabled() {
 
   MutexAutoLock lock(mDeviceLock);
   return mSystemHdrEnabled.ref();
+}
+
+bool DeviceManagerDx::WindowHDREnabled(HWND aWindow) {
+  MOZ_ASSERT(aWindow);
+
+  HMONITOR monitor = ::MonitorFromWindow(aWindow, MONITOR_DEFAULTTONEAREST);
+  return MonitorHDREnabled(monitor);
+}
+
+bool DeviceManagerDx::MonitorHDREnabled(HMONITOR aMonitor) {
+  if (!aMonitor) {
+    return false;
+  }
+
+  bool needInit = false;
+
+  {
+    MutexAutoLock lock(mDeviceLock);
+    if (mSystemHdrEnabled.isNothing()) {
+      needInit = true;
+    }
+  }
+
+  if (needInit) {
+    UpdateMonitorInfo();
+  }
+
+  MutexAutoLock lock(mDeviceLock);
+  MOZ_ASSERT(mSystemHdrEnabled.isSome());
+
+  auto it = mHdrMonitors.find(aMonitor);
+  if (it == mHdrMonitors.end()) {
+    return false;
+  }
+
+  return true;
 }
 
 void DeviceManagerDx::CheckHardwareStretchingSupport(HwStretchingSupport& aRv) {
