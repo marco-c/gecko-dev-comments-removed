@@ -55,6 +55,8 @@ class AudioInputSource : public CubebInputStream::Listener {
   
   
   
+  void Init();
+  
   void Start();
   
   void Stop();
