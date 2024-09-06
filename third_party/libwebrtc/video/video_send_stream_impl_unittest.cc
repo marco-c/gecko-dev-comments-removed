@@ -22,6 +22,8 @@
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/call/bitrate_allocation.h"
+#include "api/environment/environment.h"
+#include "api/environment/environment_factory.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtp_parameters.h"
 #include "api/task_queue/task_queue_base.h"
@@ -193,14 +195,14 @@ class VideoSendStreamImplTest : public ::testing::Test {
     video_stream_encoder_ = video_stream_encoder.get();
 
     auto ret = std::make_unique<VideoSendStreamImpl>(
-        time_controller_.GetClock(),
-        1, time_controller_.GetTaskQueueFactory(),
+        CreateEnvironment(&field_trials_, time_controller_.GetClock(),
+                          time_controller_.GetTaskQueueFactory()),
+        1,
         nullptr, &transport_controller_,
         nullptr, &bitrate_allocator_, &send_delay_stats_,
-        nullptr, config_.Copy(), std::move(encoder_config),
-        suspended_ssrcs, suspended_payload_states,
-        nullptr, field_trials_,
-        std::move(video_stream_encoder));
+        config_.Copy(), std::move(encoder_config), suspended_ssrcs,
+        suspended_payload_states,
+        nullptr, std::move(video_stream_encoder));
 
     
     
