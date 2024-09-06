@@ -33,6 +33,16 @@ enum class RenderBlockingStatusType : uint8_t;
     return allowed ? mTimingData->name() : 0;                               \
   }
 
+#define IMPL_RESOURCE_TIMING_CORS_PROTECTED_SIZE_PROP(name)           \
+  uint64_t name(nsIPrincipal& aSubjectPrincipal) const {              \
+    bool allowed = BodyInfoAccessAllowedForCaller(aSubjectPrincipal); \
+    if (!allowed && mTimingData->RedirectCountReal()) {               \
+      ReportRedirectForCaller(aSubjectPrincipal, true);               \
+      return 0;                                                       \
+    }                                                                 \
+    return allowed ? mTimingData->name() : 0;                         \
+  }
+
 
 class PerformanceResourceTiming : public PerformanceEntry {
  public:
@@ -134,11 +144,38 @@ class PerformanceResourceTiming : public PerformanceEntry {
     return this;
   }
 
-  IMPL_RESOURCE_TIMING_TAO_PROTECTED_SIZE_PROP(TransferSize)
+  IMPL_RESOURCE_TIMING_CORS_PROTECTED_SIZE_PROP(EncodedBodySize);
+  IMPL_RESOURCE_TIMING_CORS_PROTECTED_SIZE_PROP(DecodedBodySize);
 
-  IMPL_RESOURCE_TIMING_TAO_PROTECTED_SIZE_PROP(EncodedBodySize)
+  uint64_t TransferSize(nsIPrincipal& aSubjectPrincipal) const {
+    const bool allowed =
+        !mTimingData->RedirectCountReal()
+            ? TimingAllowedForCaller(aSubjectPrincipal)
+            : ReportRedirectForCaller(aSubjectPrincipal, false);
+    if (!allowed) {
+      return 0;
+    }
+    
+    if (!mTimingData->TransferSize()) {
+      return 0;
+    }
+    auto encodedBodySize = EncodedBodySize(aSubjectPrincipal);
+    
+    
+    
+    
+    return encodedBodySize + 300;
+  }
 
-  IMPL_RESOURCE_TIMING_TAO_PROTECTED_SIZE_PROP(DecodedBodySize)
+  void GetContentType(nsAString& aContentType,
+                      nsIPrincipal& aSubjectPrincipal) const {
+    if (BodyInfoAccessAllowedForCaller(aSubjectPrincipal) ==
+        nsITimedChannel::BodyInfoAccess::ALLOW_ALL) {
+      aContentType = mTimingData->ContentType();
+    } else if (mTimingData->RedirectCountReal()) {
+      ReportRedirectForCaller(aSubjectPrincipal, true);
+    }
+  }
 
   void GetServerTiming(nsTArray<RefPtr<PerformanceServerTiming>>& aRetval,
                        nsIPrincipal& aSubjectPrincipal);
@@ -151,6 +188,10 @@ class PerformanceResourceTiming : public PerformanceEntry {
 
   size_t SizeOfExcludingThis(
       mozilla::MallocSizeOf aMallocSizeOf) const override;
+
+  
+  nsITimedChannel::BodyInfoAccess BodyInfoAccessAllowedForCaller(
+      nsIPrincipal& aCaller) const;
 
   
   

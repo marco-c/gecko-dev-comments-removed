@@ -239,9 +239,11 @@ PerformanceTimingData::PerformanceTimingData(
       mRenderBlockingStatus(aIPCData.renderBlocking()
                                 ? RenderBlockingStatusType::Blocking
                                 : RenderBlockingStatusType::Non_blocking),
+      mContentType(aIPCData.contentType()),
       mAllRedirectsSameOrigin(aIPCData.allRedirectsSameOrigin()),
       mAllRedirectsPassTAO(aIPCData.allRedirectsPassTAO()),
       mSecureConnection(aIPCData.secureConnection()),
+      mBodyInfoAccessAllowed(aIPCData.bodyInfoAccessAllowed()),
       mTimingAllowed(aIPCData.timingAllowed()),
       mInitialized(aIPCData.initialized()) {
   for (const auto& serverTimingData : aIPCData.serverTiming()) {
@@ -273,8 +275,9 @@ IPCPerformanceTimingData PerformanceTimingData::ToIPC() {
       mCacheReadStart, mResponseEnd, mCacheReadEnd, mWorkerStart,
       mWorkerRequestStart, mWorkerResponseEnd, mZeroTime, mFetchStart,
       mEncodedBodySize, mTransferSize, mDecodedBodySize, mRedirectCount,
-      renderBlocking, mAllRedirectsSameOrigin, mAllRedirectsPassTAO,
-      mSecureConnection, mTimingAllowed, mInitialized);
+      renderBlocking, mContentType, mAllRedirectsSameOrigin,
+      mAllRedirectsPassTAO, mSecureConnection, mBodyInfoAccessAllowed,
+      mTimingAllowed, mInitialized);
 }
 
 void PerformanceTimingData::SetPropertiesFromHttpChannel(
@@ -292,7 +295,13 @@ void PerformanceTimingData::SetPropertiesFromHttpChannel(
     mDecodedBodySize = mEncodedBodySize;
   }
 
-  mTimingAllowed = CheckAllowedOrigin(aHttpChannel, aChannel);
+  nsAutoCString contentType;
+  Unused << aHttpChannel->GetContentType(contentType);
+  CopyUTF8toUTF16(contentType, mContentType);
+
+  mBodyInfoAccessAllowed =
+      CheckBodyInfoAccessAllowedForOrigin(aHttpChannel, aChannel);
+  mTimingAllowed = CheckTimingAllowedForOrigin(aHttpChannel, aChannel);
   aChannel->GetAllRedirectsPassTimingAllowCheck(&mAllRedirectsPassTAO);
 
   aChannel->GetNativeServerTiming(mServerTiming);
@@ -328,10 +337,10 @@ DOMTimeMilliSec PerformanceTiming::FetchStart() {
   return static_cast<int64_t>(mTimingData->FetchStartHighRes(mPerformance));
 }
 
-bool PerformanceTimingData::CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
-                                               nsITimedChannel* aChannel) {
+nsIPrincipal* PerformanceTimingData::GetLoadingPrincipalForResourceChannel(
+    nsIHttpChannel* aResourceChannel) const {
   if (!IsInitialized()) {
-    return false;
+    return nullptr;
   }
 
   
@@ -340,15 +349,36 @@ bool PerformanceTimingData::CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
   
   if (loadInfo->GetExternalContentPolicyType() ==
       ExtContentPolicy::TYPE_DOCUMENT) {
-    return true;
+    return nullptr;
   }
 
-  nsCOMPtr<nsIPrincipal> principal = loadInfo->GetLoadingPrincipal();
+  return loadInfo->GetLoadingPrincipal();
+}
 
+nsITimedChannel::BodyInfoAccess
+PerformanceTimingData::CheckBodyInfoAccessAllowedForOrigin(
+    nsIHttpChannel* aResourceChannel, nsITimedChannel* aChannel) {
   
   
   
-  return aChannel->TimingAllowCheck(principal);
+  MOZ_ASSERT(aChannel);
+  nsCOMPtr<nsIPrincipal> principal =
+      GetLoadingPrincipalForResourceChannel(aResourceChannel);
+  if (!principal) {
+    return nsITimedChannel::BodyInfoAccess::DISALLOWED;
+  }
+  return aChannel->BodyInfoAccessAllowedCheck(principal);
+}
+
+bool PerformanceTimingData::CheckTimingAllowedForOrigin(
+    nsIHttpChannel* aResourceChannel, nsITimedChannel* aChannel) {
+  
+  
+  
+  MOZ_ASSERT(aChannel);
+  nsCOMPtr<nsIPrincipal> principal =
+      GetLoadingPrincipalForResourceChannel(aResourceChannel);
+  return principal && aChannel->TimingAllowCheck(principal);
 }
 
 uint8_t PerformanceTimingData::GetRedirectCount() const {
