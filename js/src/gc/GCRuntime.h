@@ -431,9 +431,6 @@ class GCRuntime {
 
   void setAlwaysPreserveCode() { alwaysPreserveCode = true; }
 
-  bool isIncrementalGCAllowed() const { return incrementalAllowed; }
-  void disallowIncrementalGC() { incrementalAllowed = false; }
-
   void setIncrementalGCEnabled(bool enabled);
 
   bool isIncrementalGCEnabled() const { return incrementalGCEnabled; }
@@ -1293,12 +1290,6 @@ class GCRuntime {
 
 
   MainThreadData<int64_t> defaultTimeBudgetMS_;
-
-  
-
-
-
-  MainThreadData<bool> incrementalAllowed;
 
   
 
