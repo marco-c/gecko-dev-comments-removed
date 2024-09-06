@@ -893,7 +893,7 @@ bool SCInput::readArray(T* p, size_t nelems) {
     
     
     std::uninitialized_fill_n(p, nelems, 0);
-    return false;
+    return reportTruncated();
   }
 
   swapFromLittleEndianInPlace(p, nelems);
