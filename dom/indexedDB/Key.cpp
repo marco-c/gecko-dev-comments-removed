@@ -105,15 +105,14 @@ IDBResult<Ok, IDBSpecialValue::Invalid> ConvertArrayValueToKey(
 }
 
 bool IsDetachedBuffer(JSContext* aCx, JS::Handle<JSObject*> aJsBufferSource) {
-  JS::Rooted<JSObject*> jsBufferSource(aCx, aJsBufferSource);
-  if (JS_IsArrayBufferViewObject(jsBufferSource)) {
+  if (JS_IsArrayBufferViewObject(aJsBufferSource)) {
     bool unused = false;
     JS::Rooted<JSObject*> viewedArrayBuffer(
-        aCx, JS_GetArrayBufferViewBuffer(aCx, jsBufferSource, &unused));
+        aCx, JS_GetArrayBufferViewBuffer(aCx, aJsBufferSource, &unused));
     return JS::IsDetachedArrayBufferObject(viewedArrayBuffer);
   }
 
-  return JS::IsDetachedArrayBufferObject(jsBufferSource);
+  return JS::IsDetachedArrayBufferObject(aJsBufferSource);
 }
 
 
@@ -123,10 +122,9 @@ GetByteSpanFromJSBufferSource(JSContext* aCx,
                               JS::Handle<JSObject*> aJsBufferSource) {
   
   
-  JS::Rooted<JSObject*> jsBufferSource(aCx, aJsBufferSource);
 
   
-  JS::Rooted<JSObject*>& jsArrayBuffer = jsBufferSource;
+  JS::Handle<JSObject*>& jsArrayBuffer = aJsBufferSource;
 
   
   size_t offset = 0u;
@@ -138,7 +136,7 @@ GetByteSpanFromJSBufferSource(JSContext* aCx,
   uint8_t* bytes = nullptr;  
 
   
-  if (JS_IsArrayBufferViewObject(jsBufferSource)) {
+  if (JS_IsArrayBufferViewObject(aJsBufferSource)) {
     
     
     
@@ -156,8 +154,8 @@ GetByteSpanFromJSBufferSource(JSContext* aCx,
     
   } else {
     
-    MOZ_RELEASE_ASSERT(JS::IsArrayBufferObject(jsBufferSource) ||
-                       JS::IsSharedArrayBufferObject(jsBufferSource));
+    MOZ_RELEASE_ASSERT(JS::IsArrayBufferObject(aJsBufferSource) ||
+                       JS::IsSharedArrayBufferObject(aJsBufferSource));
 
     
 
@@ -172,7 +170,7 @@ GetByteSpanFromJSBufferSource(JSContext* aCx,
 
   
   
-  if (IsDetachedBuffer(aCx, jsArrayBuffer)) {
+  if (IsDetachedBuffer(aCx, aJsBufferSource)) {
     
     
     
