@@ -1708,19 +1708,19 @@ class OutputParser {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Wrap some existing nodes in a filter editor.
+   *
+   * @param {String} filters
+   *        The full text of the "filter" property.
+   * @param {object} options
+   *        The options object passed to parseCssProperty().
+   * @param {object} nodes
+   *        Nodes created by #toDOM().
+   *
+   * @returns {object}
+   *        A new node that supplies a filter swatch and that wraps |nodes|.
+   */
   #wrapFilter(filters, options, nodes) {
     const container = this.#createNode("span", {
       "data-filters": filters,
@@ -1850,25 +1850,25 @@ class OutputParser {
     }
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Append a font family to the output.
+   *
+   * @param  {String} fontFamily
+   *         Font family to append
+   * @param  {Object} options
+   *         Options object. For valid options and default values see
+   *         #mergeOptions().
+   */
   #appendFontFamily(fontFamily, options) {
     let spanContents = fontFamily;
     let quoteChar = null;
     let trailingWhitespace = false;
 
-    
-    
-    
-    
-    
+    // Before appending the actual font-family span, we need to trim
+    // down the actual contents by removing any whitespace before and
+    // after, and any quotation characters in the passed string.  Any
+    // such characters are preserved in the actual output, but just
+    // not inside the span element.
 
     if (spanContents[0] === " ") {
       this.#appendTextNode(" ");
@@ -1906,18 +1906,18 @@ class OutputParser {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Create a node.
+   *
+   * @param  {String} tagName
+   *         Tag type e.g. "div"
+   * @param  {Object} attributes
+   *         e.g. {class: "someClass", style: "cursor:pointer"};
+   * @param  {String} [value]
+   *         If a value is included it will be appended as a text node inside
+   *         the tag. This is useful e.g. for span tags.
+   * @return {Node} Newly created Node.
+   */
   #createNode(tagName, attributes, value = "") {
     const node = this.#doc.createElementNS(HTML_NS, tagName);
     const attrs = Object.getOwnPropertyNames(attributes);
@@ -1936,17 +1936,17 @@ class OutputParser {
     return node;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Append a node to the output.
+   *
+   * @param  {String} tagName
+   *         Tag type e.g. "div"
+   * @param  {Object} attributes
+   *         e.g. {class: "someClass", style: "cursor:pointer"};
+   * @param  {String} [value]
+   *         If a value is included it will be appended as a text node inside
+   *         the tag. This is useful e.g. for span tags.
+   */
   #appendNode(tagName, attributes, value = "") {
     const node = this.#createNode(tagName, attributes, value);
     if (value.length > TRUNCATE_LENGTH_THRESHOLD) {
@@ -1956,18 +1956,18 @@ class OutputParser {
     this.#parsed.push(node);
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Append a text node to the output. If the previously output item was a text
+   * node then we append the text to that node.
+   *
+   * @param  {String} text
+   *         Text to append
+   */
   #appendTextNode(text) {
     const lastItem = this.#parsed[this.#parsed.length - 1];
     if (text.length > TRUNCATE_LENGTH_THRESHOLD) {
-      
-      
+      // If the text is too long, force creating a node, which will add the
+      // necessary classname to truncate the property correctly.
       this.#appendNode("span", {}, text);
     } else if (typeof lastItem === "string") {
       this.#parsed[this.#parsed.length - 1] = lastItem + text;
@@ -1976,12 +1976,12 @@ class OutputParser {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Take all output and append it into a single DocumentFragment.
+   *
+   * @return {DocumentFragment}
+   *         Document Fragment
+   */
   #toDOM() {
     const frag = this.#doc.createDocumentFragment();
 
@@ -1997,48 +1997,41 @@ class OutputParser {
     return frag;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Merges options objects. Default values are set here.
+   *
+   * @param  {Object} overrides
+   *         The option values to override e.g. #mergeOptions({colors: false})
+   * @param {Boolean} overrides.useDefaultColorUnit: Convert colors to the default type
+   *                                                 selected in the options panel.
+   * @param {String} overrides.angleClass: The class to use for the angle value that follows
+   *                                       the swatch.
+   * @param {String} overrides.angleSwatchClass: The class to use for angle swatches.
+   * @param {String} overrides.bezierClass: The class to use for the bezier value that
+   *        follows the swatch.
+   * @param {String} overrides.bezierSwatchClass: The class to use for bezier swatches.
+   * @param {String} overrides.colorClass: The class to use for the color value that
+   *        follows the swatch.
+   * @param {String} overrides.colorSwatchClass: The class to use for color swatches.
+   * @param {Boolean} overrides.filterSwatch: A special case for parsing a "filter" property,
+   *        causing the parser to skip the call to #wrapFilter. Used only for previewing
+   *        with the filter swatch.
+   * @param {String} overrides.flexClass: The class to use for the flex icon.
+   * @param {String} overrides.gridClass: The class to use for the grid icon.
+   * @param {String} overrides.shapeClass: The class to use for the shape value that
+   *         follows the swatch.
+   * @param {String} overrides.shapeSwatchClass: The class to use for the shape swatch.
+   * @param {String} overrides.urlClass: The class to be used for url() links.
+   * @param {String} overrides.fontFamilyClass: The class to be used for font families.
+   * @param {String} overrides.unmatchedVariableClass: The class to use for a component of
+   *        a `var(…)` that is not in use.
+   * @param {Boolean} overrides.supportsColor: Does the CSS property support colors?
+   * @param {String} overrides.baseURI: A string used to resolve relative links.
+   * @param {Function} overrides.getVariableValue: A function taking a single argument,
+   *        the name of a variable. This should return the variable's value,
+   *        if it is in use; or null.
+   * @return {Object} Overridden options object
+   */
   #mergeOptions(overrides) {
     const defaults = {
       useDefaultColorUnit: true,
