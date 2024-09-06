@@ -44,7 +44,7 @@ struct nsFont final {
   
   
   
-  uint32_t languageOverride = 0;
+  mozilla::StyleFontLanguageOverride languageOverride{0};
 
   
   
@@ -58,11 +58,14 @@ struct nsFont final {
   mozilla::StyleFontVariantAlternates variantAlternates;
 
   
-  uint16_t variantLigatures = NS_FONT_VARIANT_LIGATURES_NORMAL;
-  uint16_t variantEastAsian = NS_FONT_VARIANT_EAST_ASIAN_NORMAL;
+  mozilla::StyleFontVariantLigatures variantLigatures =
+      mozilla::StyleFontVariantLigatures::NORMAL;
+  mozilla::StyleFontVariantEastAsian variantEastAsian =
+      mozilla::StyleFontVariantEastAsian::NORMAL;
 
   uint8_t variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
-  uint8_t variantNumeric = NS_FONT_VARIANT_NUMERIC_NORMAL;
+  mozilla::StyleFontVariantNumeric variantNumeric =
+      mozilla::StyleFontVariantNumeric::NORMAL;
   uint8_t variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
   uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
   StyleFontVariantEmoji variantEmoji = StyleFontVariantEmoji::Normal;

@@ -100,7 +100,8 @@ struct gfxFontStyle {
                gfxFloat aSize, const FontSizeAdjust& aSizeAdjust,
                bool aSystemFont, bool aPrinterFont, bool aWeightSynthesis,
                bool aStyleSynthesis, bool aSmallCapsSynthesis,
-               bool aPositionSynthesis, uint32_t aLanguageOverride);
+               bool aPositionSynthesis,
+               mozilla::StyleFontLanguageOverride aLanguageOverride);
   
   
   
@@ -146,7 +147,7 @@ struct gfxFontStyle {
   
   
   
-  uint32_t languageOverride;
+  mozilla::StyleFontLanguageOverride languageOverride;
 
   
 

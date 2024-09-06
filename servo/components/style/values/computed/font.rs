@@ -985,22 +985,6 @@ impl ToCss for FontLanguageOverride {
     }
 }
 
-
-
-#[cfg(feature = "gecko")]
-impl From<u32> for FontLanguageOverride {
-    fn from(v: u32) -> Self {
-        unsafe { Self::from_u32(v) }
-    }
-}
-
-#[cfg(feature = "gecko")]
-impl From<FontLanguageOverride> for u32 {
-    fn from(v: FontLanguageOverride) -> u32 {
-        v.0
-    }
-}
-
 impl ToComputedValue for specified::MozScriptMinSize {
     type ComputedValue = MozScriptMinSize;
 
