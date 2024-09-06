@@ -863,49 +863,6 @@ RoundedTime js::temporal::RoundTime(const PlainTime& time, Increment increment,
 
 
 
-
-RoundedTime js::temporal::RoundTime(const PlainTime& time, Increment increment,
-                                    TemporalUnit unit,
-                                    TemporalRoundingMode roundingMode,
-                                    const InstantSpan& dayLengthNs) {
-  MOZ_ASSERT(IsValidTime(time));
-  MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
-  MOZ_ASSERT(dayLengthNs > (InstantSpan{}));
-
-  if (unit != TemporalUnit::Day) {
-    return RoundTime(time, increment, unit, roundingMode);
-  }
-
-  
-
-  
-  int64_t quantity = TimeToNanos(time);
-  MOZ_ASSERT(0 <= quantity && quantity < ToNanoseconds(TemporalUnit::Day));
-
-  
-
-  
-  
-  
-  
-  
-  
-  int64_t divisor = int64_t(std::min(dayLengthNs.toNanoseconds(),
-                                     Int128{ToNanoseconds(TemporalUnit::Day)}));
-  MOZ_ASSERT(divisor > 0);
-  MOZ_ASSERT(increment == Increment{1}, "Rounding increment for 'day' is 1");
-
-  auto result =
-      RoundNumberToIncrement(quantity, divisor, increment, roundingMode);
-  MOZ_ASSERT(result == Int128{int64_t(result)});
-
-  
-  return {int64_t(result), {0, 0, 0, 0, 0, 0}};
-}
-
-
-
-
 AddedTime js::temporal::AddTime(const PlainTime& time,
                                 const NormalizedTimeDuration& duration) {
   MOZ_ASSERT(IsValidTime(time));

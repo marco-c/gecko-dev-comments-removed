@@ -179,14 +179,6 @@ struct RoundedTime final {
 RoundedTime RoundTime(const PlainTime& time, Increment increment,
                       TemporalUnit unit, TemporalRoundingMode roundingMode);
 
-
-
-
-
-RoundedTime RoundTime(const PlainTime& time, Increment increment,
-                      TemporalUnit unit, TemporalRoundingMode roundingMode,
-                      const InstantSpan& dayLengthNs);
-
 } 
 
 #endif 
