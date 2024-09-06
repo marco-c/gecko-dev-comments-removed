@@ -96,6 +96,9 @@ var DownloadsPanel = {
     this._initialized = true;
 
     window.addEventListener("unload", this.onWindowUnload);
+    document
+      .getElementById("downloadPanelCommands")
+      .addEventListener("command", this);
 
     
     
@@ -135,6 +138,9 @@ var DownloadsPanel = {
     }
 
     window.removeEventListener("unload", this.onWindowUnload);
+    document
+      .getElementById("downloadPanelCommands")
+      .removeEventListener("command", this);
 
     
     this.hidePanel();
@@ -226,6 +232,11 @@ var DownloadsPanel = {
 
   handleEvent(aEvent) {
     switch (aEvent.type) {
+      case "command":
+        
+        
+        goDoCommand(aEvent.target.id);
+        break;
       case "mousemove":
         if (
           !DownloadsView.contextMenuOpen &&
