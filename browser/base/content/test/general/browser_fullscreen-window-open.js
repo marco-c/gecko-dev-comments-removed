@@ -26,14 +26,14 @@ async function test() {
   await promiseTabLoadEvent(newBrowser.selectedTab, gHttpTestRoot + TEST_FILE);
 
   
-  newWin.BrowserFullScreen();
+  newWin.BrowserCommands.fullScreen();
 
   runNextTest();
 }
 
 registerCleanupFunction(async function () {
   
-  newWin.BrowserFullScreen();
+  newWin.BrowserCommands.fullScreen();
 
   await BrowserTestUtils.closeWindow(newWin);
 

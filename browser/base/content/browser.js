@@ -3005,10 +3005,6 @@ function getDefaultHomePage() {
   return url;
 }
 
-function BrowserFullScreen() {
-  window.fullScreen = !window.fullScreen || BrowserHandler.kiosk;
-}
-
 
 
 function getPEMString(cert) {
