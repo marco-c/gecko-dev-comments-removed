@@ -133,6 +133,10 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
   ExportVector exports;
 
   
+  
+  ModuleElemSegmentVector elemSegments;
+
+  
   DataSegmentRangeVector dataSegmentRanges;
 
   explicit ModuleMetadata() = default;
@@ -209,11 +213,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   SharedBytes namePayload;
-  
-  
-  
-  Maybe<Name> moduleName;  
-  NameVector funcNames;    
+  Maybe<Name> moduleName;
+  NameVector funcNames;
 
   
   
@@ -232,7 +233,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
-  ModuleElemSegmentVector elemSegments;
+  RefTypeVector elemSegmentTypes;
 
   
   

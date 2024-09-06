@@ -1047,7 +1047,7 @@ bool ModuleGenerator::finishCodeMetadata(const Bytes& bytecode) {
 
 
 SharedModule ModuleGenerator::finishModule(
-    const ShareableBytes& bytecode, SharedModuleMetadata moduleMeta,
+    const ShareableBytes& bytecode, MutableModuleMetadata moduleMeta,
     JS::OptimizedEncodingListener* maybeTier2Listener) {
   MOZ_ASSERT(mode() == CompileMode::Once || mode() == CompileMode::Tier1);
 
@@ -1133,7 +1133,7 @@ SharedModule ModuleGenerator::finishModule(
 
   MutableModule module =
       js_new<Module>(*moduleMeta, *code, std::move(dataSegments),
-                     std::move(codeMeta_->elemSegments),
+                     std::move(moduleMeta->elemSegments),
                      std::move(customSections), debugBytecode);
   if (!module) {
     return nullptr;
