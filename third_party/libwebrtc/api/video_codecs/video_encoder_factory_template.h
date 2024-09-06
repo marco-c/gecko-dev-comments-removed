@@ -53,20 +53,6 @@ class VideoEncoderFactoryTemplate : public VideoEncoderFactory {
     return GetSupportedFormatsInternal<Ts...>();
   }
 
-  std::unique_ptr<VideoEncoder> CreateVideoEncoder(
-      const SdpVideoFormat& format) override {
-    
-    
-    
-    
-    
-    
-    
-    absl::optional<SdpVideoFormat> matched =
-        FuzzyMatchSdpVideoFormat(GetSupportedFormats(), format);
-    return CreateVideoEncoderInternal<Ts...>(matched.value_or(format));
-  }
-
   std::unique_ptr<VideoEncoder> Create(const Environment& env,
                                        const SdpVideoFormat& format) override {
     
@@ -128,40 +114,10 @@ class VideoEncoderFactoryTemplate : public VideoEncoderFactory {
   }
 
   template <typename V, typename... Vs>
-  std::unique_ptr<VideoEncoder> CreateVideoEncoderInternal(
-      const SdpVideoFormat& format) {
-    if (IsFormatInList(format, V::SupportedFormats())) {
-      if constexpr (std::is_invocable_r_v<std::unique_ptr<VideoEncoder>,
-                                          decltype(V::CreateEncoder),
-                                          const Environment&,
-                                          const SdpVideoFormat&>) {
-        
-        
-        RTC_CHECK_NOTREACHED();
-      } else {
-        return V::CreateEncoder(format);
-      }
-    }
-
-    if constexpr (sizeof...(Vs) > 0) {
-      return CreateVideoEncoderInternal<Vs...>(format);
-    }
-
-    return nullptr;
-  }
-
-  template <typename V, typename... Vs>
   std::unique_ptr<VideoEncoder> CreateInternal(const Environment& env,
                                                const SdpVideoFormat& format) {
     if (IsFormatInList(format, V::SupportedFormats())) {
-      if constexpr (std::is_invocable_r_v<std::unique_ptr<VideoEncoder>,
-                                          decltype(V::CreateEncoder),
-                                          const Environment&,
-                                          const SdpVideoFormat&>) {
-        return V::CreateEncoder(env, format);
-      } else {
-        return V::CreateEncoder(format);
-      }
+      return V::CreateEncoder(env, format);
     }
 
     if constexpr (sizeof...(Vs) > 0) {
