@@ -47,6 +47,14 @@ async function recordReflows(testPromise, win = window) {
       reflows.push(new Error().stack);
 
       
+      
+      
+      ChromeUtils.addProfilerMarker(
+        "dirtyFrame",
+        { category: "Test" },
+        "Intentionally dirtying the frame to help ensure that synchrounous " +
+          "reflows will be detected."
+      );
       dirtyFrame(win);
     },
 
