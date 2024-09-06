@@ -190,12 +190,11 @@ appUpdater.prototype = {
 
 
 
-
   selectPanel(aChildID) {
     let panel = document.getElementById(aChildID);
-    let icons = document.getElementById("icons");
-    if (icons) {
-      icons.className = aChildID;
+    let icon = document.getElementById("updateIcon");
+    if (icon) {
+      icon.className = aChildID;
     }
 
     
