@@ -30,6 +30,9 @@
 #include "vm/SymbolType.h"
 #include "wasm/WasmJS.h"
 
+#include "gc/Marking-inl.h"
+#include "vm/StringType-inl.h"
+
 inline void js::BaseScript::traceChildren(JSTracer* trc) {
   TraceNullableEdge(trc, &function_, "function");
   TraceEdge(trc, &sourceObject_, "sourceObject");
@@ -74,6 +77,20 @@ inline void JSString::traceChildren(JSTracer* trc) {
     traceBase(trc);
   } else if (isRope()) {
     asRope().traceChildren(trc);
+  }
+}
+inline void JSString::traceBaseFromStoreBuffer(JSTracer* trc) {
+  MOZ_ASSERT(!d.s.u3.base->isTenured());
+
+  
+  
+  JSLinearString* root = asDependent().rootBaseDuringMinorGC();
+  d.s.u3.base = root;
+  if (!root->isTenured()) {
+    js::TraceManuallyBarrieredEdge(trc, &root, "base");
+    
+    
+    
   }
 }
 template <uint32_t opts>
