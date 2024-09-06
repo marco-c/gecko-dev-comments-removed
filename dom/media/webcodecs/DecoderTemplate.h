@@ -214,7 +214,7 @@ class DecoderTemplate : public DOMEventTargetHelper {
   
   
   
-  SimpleMap<RefPtr<Promise>> mPendingFlushPromises;
+  SimpleMap<int64_t, RefPtr<Promise>> mPendingFlushPromises;
 
   uint32_t mDecodeQueueSize;
   bool mDequeueEventScheduled;

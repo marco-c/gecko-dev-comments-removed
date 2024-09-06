@@ -574,7 +574,7 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
   bool mIsHardwareAccelerated = false;
   
   
-  SimpleMap<InputInfo> mInputInfos;
+  SimpleMap<int64_t, InputInfo, ThreadSafePolicy> mInputInfos;
   
   Maybe<TimeUnit> mSeekTarget;
   Maybe<TimeUnit> mLatestOutputTime;

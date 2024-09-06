@@ -235,7 +235,7 @@ class EncoderTemplate : public DOMEventTargetHelper {
   
   
   
-  SimpleMap<RefPtr<Promise>> mPendingFlushPromises;
+  SimpleMap<int64_t, RefPtr<Promise>> mPendingFlushPromises;
 
   uint32_t mEncodeQueueSize;
   bool mDequeueEventScheduled;

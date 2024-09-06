@@ -12,25 +12,50 @@
 
 namespace mozilla {
 
-template <typename T>
-class SimpleMap {
- public:
-  typedef std::pair<int64_t, T> Element;
+struct ThreadSafePolicy {
+  struct PolicyLock {
+    explicit PolicyLock(const char* aName) : mMutex(aName) {}
+    Mutex mMutex MOZ_UNANNOTATED;
+  };
+  PolicyLock& mPolicyLock;
+  explicit ThreadSafePolicy(PolicyLock& aPolicyLock)
+      : mPolicyLock(aPolicyLock) {
+    mPolicyLock.mMutex.Lock();
+  }
+  ~ThreadSafePolicy() { mPolicyLock.mMutex.Unlock(); }
+};
 
-  SimpleMap() : mMutex("SimpleMap") {}
+struct NoOpPolicy {
+  struct PolicyLock {
+    explicit PolicyLock(const char*) {}
+  };
+  explicit NoOpPolicy(PolicyLock&) {}
+  ~NoOpPolicy() = default;
+};
+
+
+
+
+template <typename K, typename V, typename Policy = NoOpPolicy>
+class SimpleMap {
+  using ElementType = std::pair<K, V>;
+  using MapType = AutoTArray<ElementType, 16>;
+
+ public:
+  SimpleMap() : mLock("SimpleMap"){};
 
   
-  void Insert(int64_t aKey, const T& aValue) {
-    MutexAutoLock lock(mMutex);
+  void Insert(const K& aKey, const V& aValue) {
+    Policy guard(mLock);
     mMap.AppendElement(std::make_pair(aKey, aValue));
   }
   
   
   
-  bool Find(int64_t aKey, T& aValue) {
-    MutexAutoLock lock(mMutex);
+  bool Find(const K& aKey, V& aValue) {
+    Policy guard(mLock);
     for (uint32_t i = 0; i < mMap.Length(); i++) {
-      Element& element = mMap[i];
+      ElementType& element = mMap[i];
       if (element.first == aKey) {
         aValue = element.second;
         mMap.RemoveElementAt(i);
@@ -41,21 +66,21 @@ class SimpleMap {
   }
   
   void Clear() {
-    MutexAutoLock lock(mMutex);
+    Policy guard(mLock);
     mMap.Clear();
   }
   
   template <typename F>
   void ForEach(F&& aCallback) {
-    MutexAutoLock lock(mMutex);
+    Policy guard(mLock);
     for (const auto& element : mMap) {
       aCallback(element.first, element.second);
     }
   }
 
  private:
-  Mutex mMutex MOZ_UNANNOTATED;  
-  AutoTArray<Element, 16> mMap;
+  typename Policy::PolicyLock mLock;
+  MapType mMap;
 };
 
 }  
