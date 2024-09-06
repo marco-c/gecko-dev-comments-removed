@@ -69,6 +69,20 @@ class Tiers {
   Tier* end() { return t_ + n_; }
 };
 
+struct BuiltinModuleIds {
+  BuiltinModuleIds() = default;
+
+  bool selfTest = false;
+  bool intGemm = false;
+  bool jsString = false;
+  bool jsStringConstants = false;
+  SharedChars jsStringConstantsNamespace;
+
+  bool hasNone() const {
+    return !selfTest && !intGemm && !jsString && !jsStringConstants;
+  }
+};
+
 
 
 
@@ -97,6 +111,7 @@ struct FeatureOptions {
   
   
   bool jsStringConstants;
+  SharedChars jsStringConstantsNamespace;
 
 #ifdef ENABLE_WASM_GC
   
@@ -127,6 +142,7 @@ struct FeatureArgs {
   FeatureArgs(const FeatureArgs&) = default;
   FeatureArgs& operator=(const FeatureArgs&) = default;
   FeatureArgs(FeatureArgs&&) = default;
+  FeatureArgs& operator=(FeatureArgs&&) = default;
 
   static FeatureArgs build(JSContext* cx, const FeatureOptions& options);
   static FeatureArgs allEnabled() {
@@ -139,10 +155,7 @@ struct FeatureArgs {
     return args;
   }
 
-#define WASM_FEATURE(NAME, LOWER_NAME, ...) \
-  bool LOWER_NAME;                          \
-  WASM_CHECK_CACHEABLE_POD(LOWER_NAME);
-  
+#define WASM_FEATURE(NAME, LOWER_NAME, ...) bool LOWER_NAME;
   JS_FOR_WASM_FEATURES(WASM_FEATURE)
 #undef WASM_FEATURE
 
@@ -153,11 +166,7 @@ struct FeatureArgs {
   bool isBuiltinModule;
   
   BuiltinModuleIds builtinModules;
-
-  WASM_CHECK_CACHEABLE_POD(sharedMemory, simd, isBuiltinModule, builtinModules);
 };
-
-WASM_DECLARE_CACHEABLE_POD(FeatureArgs);
 
 
 
