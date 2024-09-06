@@ -104,9 +104,6 @@ class WebGL2Context final : public WebGLContext {
   
   
 
-  const GLuint64 kMaxClientWaitSyncTimeoutNS =
-      1000 * 1000 * 1000;  
-
   RefPtr<WebGLSync> FenceSync(GLenum condition, GLbitfield flags);
   GLenum ClientWaitSync(WebGLSync& sync, GLbitfield flags, GLuint64 timeout);
 
