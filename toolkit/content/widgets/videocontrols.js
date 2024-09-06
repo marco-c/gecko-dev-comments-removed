@@ -417,10 +417,9 @@ this.VideoControlsImplWidget = class {
           }
 
           
-          if (!this.isAudioOnly && !this.video.mozHasAudio) {
-            this.muteButton.setAttribute("noAudio", "true");
-            this.muteButton.disabled = true;
-          }
+          let noAudio = !this.isAudioOnly && !this.video.mozHasAudio;
+          this.muteButton.toggleAttribute("noAudio", noAudio);
+          this.muteButton.disabled = noAudio;
         }
 
         
@@ -755,7 +754,7 @@ this.VideoControlsImplWidget = class {
               );
             }
             break;
-          case "loadedmetadata":
+          case "loadedmetadata": {
             
             
             if (
@@ -771,13 +770,13 @@ this.VideoControlsImplWidget = class {
               Math.round(this.video.currentTime * 1000),
               Math.round(this.video.duration * 1000)
             );
-            if (!this.isAudioOnly && !this.video.mozHasAudio) {
-              this.muteButton.setAttribute("noAudio", "true");
-              this.muteButton.disabled = true;
-            }
+            let noAudio = !this.isAudioOnly && !this.video.mozHasAudio;
+            this.muteButton.toggleAttribute("noAudio", noAudio);
+            this.muteButton.disabled = noAudio;
             this.adjustControlSize();
             this.updatePictureInPictureToggleDisplay();
             break;
+          }
           case "durationchange":
             this.updatePictureInPictureToggleDisplay();
             break;
