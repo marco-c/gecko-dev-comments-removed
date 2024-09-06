@@ -1489,20 +1489,6 @@ class ChromeAndroid(ChromeAndroidBase):
         return "com.android.chrome"
 
 
-
-
-
-class AndroidWeblayer(ChromeAndroidBase):
-    """Weblayer-specific interface for Android."""
-
-    product = "android_weblayer"
-    
-    requirements = "requirements_chromium.txt"
-
-    def find_binary(self, venv_path=None, channel=None):
-        return "org.chromium.weblayer.shell"
-
-
 class AndroidWebview(ChromeAndroidBase):
     """Webview-specific interface for Android.
 
