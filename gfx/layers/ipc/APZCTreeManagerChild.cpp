@@ -31,6 +31,9 @@ void APZCTreeManagerChild::SetCompositorSession(
   
   MOZ_ASSERT(!mCompositorSession ^ !aSession);
   mCompositorSession = aSession;
+  if (mInputBridge) {
+    mInputBridge->SetCompositorSession(aSession);
+  }
 }
 
 void APZCTreeManagerChild::SetInputBridge(APZInputBridgeChild* aInputBridge) {
@@ -141,45 +144,6 @@ void APZCTreeManagerChild::ReleaseIPDLReference() {
 
 void APZCTreeManagerChild::ActorDestroy(ActorDestroyReason aWhy) {
   mIPCOpen = false;
-}
-
-mozilla::ipc::IPCResult APZCTreeManagerChild::RecvHandleTap(
-    const TapType& aType, const LayoutDevicePoint& aPoint,
-    const Modifiers& aModifiers, const ScrollableLayerGuid& aGuid,
-    const uint64_t& aInputBlockId,
-    const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  if (mCompositorSession &&
-      mCompositorSession->RootLayerTreeId() == aGuid.mLayersId &&
-      mCompositorSession->GetContentController()) {
-    RefPtr<GeckoContentController> controller =
-        mCompositorSession->GetContentController();
-    controller->HandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId,
-                          aDoubleTapToZoomMetrics);
-    return IPC_OK();
-  }
-  dom::BrowserParent* tab =
-      dom::BrowserParent::GetBrowserParentFromLayersId(aGuid.mLayersId);
-  if (tab) {
-#ifdef MOZ_WIDGET_ANDROID
-    
-    
-    
-    
-    
-    mozilla::jni::DispatchToGeckoPriorityQueue(
-        NewRunnableMethod<TapType, LayoutDevicePoint, Modifiers,
-                          ScrollableLayerGuid, uint64_t,
-                          Maybe<DoubleTapToZoomMetrics>>(
-            "dom::BrowserParent::SendHandleTap", tab,
-            &dom::BrowserParent::SendHandleTap, aType, aPoint, aModifiers,
-            aGuid, aInputBlockId, aDoubleTapToZoomMetrics));
-#else
-    tab->SendHandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId,
-                       aDoubleTapToZoomMetrics);
-#endif
-  }
-  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult APZCTreeManagerChild::RecvNotifyPinchGesture(

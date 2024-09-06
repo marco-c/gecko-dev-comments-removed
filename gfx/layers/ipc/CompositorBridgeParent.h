@@ -24,6 +24,7 @@
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/PCompositorBridgeParent.h"
+#include "mozilla/layers/APZInputBridgeParent.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {
@@ -394,6 +395,10 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
     ~LayerTreeState();
     RefPtr<GeckoContentController> mController;
     APZCTreeManagerParent* mApzcTreeManagerParent;
+    
+    
+    
+    APZInputBridgeParent* mApzInputBridgeParent;
     RefPtr<CompositorBridgeParent> mParent;
     RefPtr<WebRenderBridgeParent> mWrBridge;
     
@@ -440,6 +445,13 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
+
+  static APZInputBridgeParent* GetApzInputBridgeParentForRoot(
+      LayersId aContentLayersId);
+
+  
+
+
   static void PostInsertVsyncProfilerMarker(mozilla::TimeStamp aVsyncTimestamp);
 
   widget::CompositorWidget* GetWidget() { return mWidget; }
@@ -453,6 +465,9 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   void AllocateAPZCTreeManagerParent(
       const StaticMonitorAutoLock& aProofOfLayerTreeStateLock,
       const LayersId& aLayersId, LayerTreeState& aLayerTreeStateToUpdate);
+
+  static void SetAPZInputBridgeParent(const LayersId& aLayersId,
+                                      APZInputBridgeParent* aInputBridgeParent);
 
   PAPZParent* AllocPAPZParent(const LayersId& aLayersId) override;
   bool DeallocPAPZParent(PAPZParent* aActor) override;
