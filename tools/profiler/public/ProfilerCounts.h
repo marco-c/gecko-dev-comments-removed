@@ -20,6 +20,7 @@
 
 #  include "mozilla/Assertions.h"
 #  include "mozilla/Atomics.h"
+#  include "mozilla/DataMutex.h"
 
 class BaseProfilerCount;
 void profiler_add_sampled_counter(BaseProfilerCount* aCounter);
@@ -188,13 +189,33 @@ class ProfilerCounterTotal final : public BaseProfilerCount {
  public:
   ProfilerCounterTotal(const char* aLabel, const char* aCategory,
                        const char* aDescription)
-      : BaseProfilerCount(aLabel, &mCounter, &mNumber, aCategory,
-                          aDescription) {
+      : BaseProfilerCount(aLabel, &mCounter, &mNumber, aCategory, aDescription),
+        mRegistered(false, "ProfilerCounterTotal::mRegistered") {
     
+    Register();
+  }
+
+  virtual ~ProfilerCounterTotal() { Unregister(); }
+
+  void Register() {
+    auto registered = mRegistered.Lock();
+    if (*registered) {
+      return;
+    }
+
+    *registered = true;
     profiler_add_sampled_counter(this);
   }
 
-  virtual ~ProfilerCounterTotal() { profiler_remove_sampled_counter(this); }
+  void Unregister() {
+    auto registered = mRegistered.Lock();
+    if (!*registered) {
+      return;
+    }
+
+    *registered = false;
+    profiler_remove_sampled_counter(this);
+  }
 
   BaseProfilerCount& operator++() {
     Add(1);
@@ -208,6 +229,9 @@ class ProfilerCounterTotal final : public BaseProfilerCount {
 
   ProfilerAtomicSigned mCounter;
   ProfilerAtomicUnsigned mNumber;
+  
+  
+  mozilla::DataMutexBase<bool, mozilla::OffTheBooksMutex> mRegistered;
 };
 
 
