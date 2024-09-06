@@ -537,26 +537,12 @@ nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(
 
   
   
-  nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal(
-      do_QueryInterface(channel));
-  if (!httpChannelInternal) {
-    return nullptr;
-  }
-  bool proxyUsed = false;
-  nsresult rv = httpChannelInternal->GetIsProxyUsed(&proxyUsed);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-  if (!(proxyUsed && status == nsresult::NS_ERROR_UNKNOWN_HOST)
-      
-      
-      
-      
-      
-      && HttpsUpgradeUnrelatedErrorCode(status)) {
+  if (HttpsUpgradeUnrelatedErrorCode(status)) {
     return nullptr;
   }
 
   nsCOMPtr<nsIURI> uri;
-  rv = channel->GetURI(getter_AddRefs(uri));
+  nsresult rv = channel->GetURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   nsAutoCString spec;
