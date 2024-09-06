@@ -16,7 +16,8 @@ class TDiagnostics;
 
 
 
-bool ValidateTypeSizeLimitations(TIntermNode *root,
+bool ValidateTypeSizeLimitations(const ShBuiltInResources&,
+                                 TIntermNode *root,
                                  TSymbolTable *symbolTable,
                                  TDiagnostics *diagnostics);
 

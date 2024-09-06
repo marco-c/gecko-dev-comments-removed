@@ -342,6 +342,14 @@ void InitBuiltInResources(ShBuiltInResources *resources)
     resources->SubPixelBits = 8;
 
     resources->MaxSamples = 4;
+
+    
+    
+    
+    
+    
+    resources->MaxVariableSizeInBytes        = static_cast<size_t>(2) * 1024 * 1024 * 1024;
+    resources->MaxPrivateVariableSizeInBytes = static_cast<size_t>(1) * 1024 * 1024;
 }
 
 
