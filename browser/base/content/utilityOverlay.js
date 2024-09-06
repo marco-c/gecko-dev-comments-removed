@@ -108,11 +108,6 @@ function openUILink(
   );
 }
 
-
-function getRootEvent(aEvent) {
-  return BrowserUtils.getRootEvent(aEvent);
-}
-
 function openTrustedLinkIn(url, where, params) {
   URILoadingHelper.openTrustedLinkIn(window, url, where, params);
 }
