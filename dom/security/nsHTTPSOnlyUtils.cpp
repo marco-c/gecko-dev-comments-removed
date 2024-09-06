@@ -764,6 +764,21 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
     httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
   }
   loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+
+  
+  
+  
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+    nsILoadInfo::HTTPSUpgradeTelemetryType httpsTelemetry =
+        nsILoadInfo::NOT_INITIALIZED;
+    loadInfo->GetHttpsUpgradeTelemetry(&httpsTelemetry);
+    if (httpsTelemetry != nsILoadInfo::HTTPS_ONLY_UPGRADE_DOWNGRADE &&
+        httpsTelemetry != nsILoadInfo::HTTPS_FIRST_UPGRADE_DOWNGRADE &&
+        httpsTelemetry !=
+            nsILoadInfo::HTTPS_FIRST_SCHEMELESS_UPGRADE_DOWNGRADE) {
+      loadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::UPGRADE_EXCEPTION);
+    }
+  }
 }
 
 

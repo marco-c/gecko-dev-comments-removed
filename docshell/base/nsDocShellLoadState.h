@@ -633,7 +633,7 @@ class nsDocShellLoadState final {
 
   
   nsILoadInfo::HTTPSUpgradeTelemetryType mHttpsUpgradeTelemetry =
-      nsILoadInfo::NO_UPGRADE;
+      nsILoadInfo::NOT_INITIALIZED;
 };
 
 #endif 

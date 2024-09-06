@@ -6,7 +6,7 @@
 
 
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
 ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   const { UrlbarTestUtils: module } = ChromeUtils.importESModule(
@@ -53,6 +53,7 @@ async function setPrefsAndResetFog(
 
 function verifyGleanValues(
   aDescription,
+  aNotInitialized,
   aNoUpgrade,
   aAlreadyHTTPS,
   aHSTS,
@@ -62,10 +63,17 @@ function verifyGleanValues(
   aHttpsFirstUpgradeDowngrade,
   aHttpsFirstSchemelessUpgrade,
   aHttpsFirstSchemelessUpgradeDowngrade,
-  aHttpsRR
+  aHttpsRR,
+  aWebExtensionUpgrade,
+  aUpgradeException
 ) {
   info(aDescription);
   let glean = Glean.networking.httpToHttpsUpgradeReason;
+  is(
+    glean.not_initialized.testGetValue(),
+    aNotInitialized,
+    "verify not_initialized"
+  );
   is(glean.no_upgrade.testGetValue(), aNoUpgrade, "verify no_upgrade");
   is(glean.already_https.testGetValue(), aAlreadyHTTPS, "verify already_https");
   is(glean.hsts.testGetValue(), aHSTS, "verify hsts");
@@ -100,6 +108,16 @@ function verifyGleanValues(
     "verify https_first_schemeless_upgrade_downgrade"
   );
   is(glean.https_rr.testGetValue(), aHttpsRR, "verify https_rr");
+  is(
+    glean.web_extension_upgrade.testGetValue(),
+    aWebExtensionUpgrade,
+    "verify web_extension_upgrade"
+  );
+  is(
+    glean.upgrade_exception.testGetValue(),
+    aUpgradeException,
+    "verify upgrade_exception"
+  );
 }
 
 async function runUpgradeTest(aURI, aDesc, aAssertURLStartsWith) {
@@ -174,6 +192,9 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
+    null ,
+    null ,
     null 
   );
 });
@@ -194,7 +215,10 @@ add_task(async function () {
   );
   verifyGleanValues(
     "(1) no upgrade test",
+    null ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
@@ -225,7 +249,10 @@ add_task(async function () {
   verifyGleanValues(
     "(2) already https test",
     null ,
+    null ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
@@ -255,7 +282,10 @@ add_task(async function () {
   verifyGleanValues(
     "(2b) already https test all prefs true",
     null ,
+    null ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
@@ -292,7 +322,10 @@ add_task(async function () {
     "(3) hsts",
     null ,
     null ,
+    null ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
@@ -337,7 +370,10 @@ add_task(async function () {
     "(3b) hsts with all prefs true",
     null ,
     null ,
+    null ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
@@ -375,7 +411,10 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
@@ -467,8 +506,11 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     1 ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
@@ -499,7 +541,10 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
@@ -527,8 +572,11 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     1 ,
     1 ,
+    null ,
+    null ,
     null ,
     null ,
     null 
@@ -559,7 +607,10 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     1 ,
+    null ,
+    null ,
     null ,
     null 
   );
@@ -587,8 +638,11 @@ add_task(async function () {
     null ,
     null ,
     null ,
+    null ,
     1 ,
     1 ,
+    null ,
+    null ,
     null 
   );
 });
@@ -616,6 +670,83 @@ add_task(async function () {
 
   verifyGleanValues(
     "(7) https-rr upgrade",
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    1 ,
+    null ,
+    null 
+  );
+});
+
+add_task(async function () {
+  info("(8) upgrade/downgrade/reload");
+  
+  
+
+  await setPrefsAndResetFog(
+    false ,
+    true ,
+    false 
+  );
+
+  await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
+    
+    const upgradeDowngradeLoaded = BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      null,
+      true
+    );
+    BrowserTestUtils.startLoadingURIString(
+      browser,
+      NO_HTTPS_SUPPORT_SITE + "?test8"
+    );
+    await upgradeDowngradeLoaded;
+
+    await SpecialPowers.spawn(browser, [], async function () {
+      ok(
+        content.document.location.href.startsWith("http://"),
+        "(8) upgrade/downgrade/reload"
+      );
+    });
+
+    
+    Services.fog.testResetFOG();
+
+    const reloadLoaded = BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      null,
+      true
+    );
+
+    await SpecialPowers.spawn(browser, [], async function () {
+      content.location.reload();
+    });
+
+    await reloadLoaded;
+
+    await SpecialPowers.spawn(browser, [], async function () {
+      ok(
+        content.document.location.href.startsWith("http://"),
+        "(8) upgrade/downgrade/reload"
+      );
+    });
+  });
+
+  verifyGleanValues(
+    "(8) upgrade/downgrade/reload",
+    null ,
+    null ,
+    null ,
     null ,
     null ,
     null ,
