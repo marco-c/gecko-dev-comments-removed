@@ -46,21 +46,21 @@ Texture::Texture(Device* const aParent, RawId aId,
 }
 
 void Texture::Cleanup() {
-  if (!mParent) {
+  if (!mValid) {
+    return;
+  }
+  mValid = false;
+
+  auto bridge = mParent->GetBridge();
+  if (!bridge) {
     return;
   }
 
-  auto bridge = mParent->GetBridge();
-  if (bridge && bridge->IsOpen()) {
+  if (bridge->CanSend()) {
     bridge->SendTextureDrop(mId);
   }
 
-  
-  
-  
-  
-  
-  mParent = nullptr;
+  wgpu_client_free_texture_id(bridge->GetClient(), mId);
 }
 
 Texture::~Texture() { Cleanup(); }

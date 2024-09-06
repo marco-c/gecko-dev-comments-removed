@@ -26,28 +26,38 @@ class ChildOf {
   nsIGlobalObject* GetParentObject() const;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ObjectBase : public nsWrapperCache {
  protected:
   virtual ~ObjectBase() = default;
 
   
-  
-  
-  
-  
-  
-  
-  
   bool mValid = true;
 
  public:
-  
-  
-  
-  
-  
-  bool IsValid() const { return mValid; }
-
   void GetLabel(nsAString& aValue) const;
   void SetLabel(const nsAString& aLabel);
 
