@@ -8,15 +8,14 @@ const TEST_URLS = [
   `data:text/html,
     <div name="div" id="div" style="width: 100px; height: 100px; background: red;">
     <iframe id="iframe" allowfullscreen="yes"
-     src="http://mochi.test:8888/browser/dom/base/test/fullscreen/file_fullscreen-iframe-middle.html"></iframe>
+     src="https://example.com/browser/dom/base/test/fullscreen/file_fullscreen-iframe-middle.html"></iframe>
     </div>`,
   
   
+  `https://example.org/browser/dom/base/test/fullscreen/file_fullscreen-iframe-top.html`,
   
-  `http://example.org/browser/dom/base/test/fullscreen/file_fullscreen-iframe-top.html`,
   
-  
-  `http://mochi.test:8888/browser/dom/base/test/fullscreen/file_fullscreen-iframe-top.html`,
+  `https://example.com/browser/dom/base/test/fullscreen/file_fullscreen-iframe-top.html`,
 ];
 
 function waitRemoteFullscreenExitEvents(aBrowsingContexts) {
