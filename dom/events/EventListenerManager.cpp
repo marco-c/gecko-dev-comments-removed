@@ -1299,7 +1299,6 @@ bool EventListenerManager::HandleEventSingleListener(
     if (dom::ChromeUtils::IsDevToolsOpened()) {
       dbgGuard.emplace(aCurrentTarget, aDOMEvent);
     }
-    nsAutoMicroTask mt;
 
     
     if (listenerHolder.HasWebIDLCallback()) {
