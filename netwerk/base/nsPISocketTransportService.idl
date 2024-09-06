@@ -45,15 +45,3 @@ interface nsPISocketTransportService : nsIRoutedSocketTransportService
 
   readonly attribute long keepaliveProbeCount;
 };
-
-%{C++
-
-
-
-
-
-
-#define NS_IO_ACTIVITY "io-activity"
-
-
-%}
