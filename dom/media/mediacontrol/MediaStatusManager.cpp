@@ -380,6 +380,29 @@ void MediaStatusManager::UpdatePositionState(
   mPositionStateChangedEvent.Notify(aState);
 }
 
+void MediaStatusManager::UpdateGuessedPositionState(
+    uint64_t aBrowsingContextId, const nsID& aMediaId,
+    const Maybe<PositionState>& aGuessedState) {
+  mPlaybackStatusDelegate.UpdateGuessedPositionState(aBrowsingContextId,
+                                                     aMediaId, aGuessedState);
+
+  
+  
+  if (mActiveMediaSessionContextId &&
+      *mActiveMediaSessionContextId != aBrowsingContextId) {
+    return;
+  }
+
+  
+  
+  if (mMediaSessionInfoMap.Contains(aBrowsingContextId) &&
+      !mActiveMediaSessionContextId) {
+    return;
+  }
+
+  mPositionStateChangedEvent.Notify(GetCurrentPositionState());
+}
+
 void MediaStatusManager::NotifySupportedKeysChangedIfNeeded(
     uint64_t aBrowsingContextId) {
   
@@ -431,11 +454,13 @@ MediaMetadataBase MediaStatusManager::GetCurrentMediaMetadata() const {
 Maybe<PositionState> MediaStatusManager::GetCurrentPositionState() const {
   if (mActiveMediaSessionContextId) {
     auto info = mMediaSessionInfoMap.Lookup(*mActiveMediaSessionContextId);
-    if (info) {
+    if (info && info->mPositionState) {
       return info->mPositionState;
     }
   }
-  return Nothing();
+
+  return mPlaybackStatusDelegate.GuessedMediaPositionState(
+      mActiveMediaSessionContextId);
 }
 
 void MediaStatusManager::FillMissingTitleAndArtworkIfNeeded(

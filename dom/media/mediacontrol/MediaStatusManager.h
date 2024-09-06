@@ -120,6 +120,12 @@ class IMediaInfoUpdater {
   
   virtual void UpdatePositionState(uint64_t aBrowsingContextId,
                                    const Maybe<PositionState>& aState) = 0;
+
+  
+  
+  virtual void UpdateGuessedPositionState(
+      uint64_t aBrowsingContextId, const nsID& aMediaId,
+      const Maybe<PositionState>& aGuessedState) = 0;
 };
 
 
@@ -165,11 +171,18 @@ class MediaStatusManager : public IMediaInfoUpdater {
                      MediaSessionAction aAction) override;
   void UpdatePositionState(uint64_t aBrowsingContextId,
                            const Maybe<PositionState>& aState) override;
+  void UpdateGuessedPositionState(
+      uint64_t aBrowsingContextId, const nsID& aMediaId,
+      const Maybe<PositionState>& aGuessedState) override;
 
   
   
   
   MediaMetadataBase GetCurrentMediaMetadata() const;
+
+  
+  
+  Maybe<PositionState> GetCurrentPositionState() const;
 
   bool IsMediaAudible() const;
   bool IsMediaPlaying() const;
@@ -246,10 +259,6 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   
   MediaSessionPlaybackState GetCurrentDeclaredPlaybackState() const;
-
-  
-  
-  Maybe<PositionState> GetCurrentPositionState() const;
 
   
   

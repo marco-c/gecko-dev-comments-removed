@@ -4,13 +4,11 @@ const IFRAME_URL =
   "https://example.com/browser/dom/media/mediacontrol/tests/browser/file_iframe_media.html";
 
 const testVideoId = "video";
+const videoDuration = 5.589333;
 
 add_task(async function setupTestingPref() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["media.mediacontrol.testingevents.enabled", true],
-      ["dom.media.mediasession.enabled", true],
-    ],
+    set: [["media.mediacontrol.testingevents.enabled", true]],
   });
 });
 
@@ -21,9 +19,15 @@ add_task(async function setupTestingPref() {
 add_task(async function testSetPositionState() {
   info(`open media page`);
   const tab = await createLoadedTabWrapper(PAGE_URL);
+  logPositionStateChangeEvents(tab);
+
+  info(`apply initial position state`);
+  await applyPositionState(tab, { duration: 10 });
 
   info(`start media`);
+  const initialPositionState = isNextPositionState(tab, { duration: 10 });
   await playMedia(tab, testVideoId);
+  await initialPositionState;
 
   info(`set duration only`);
   await setPositionState(tab, {
@@ -50,9 +54,15 @@ add_task(async function testSetPositionState() {
 add_task(async function testSetPositionStateFromInactiveMediaSession() {
   info(`open media page`);
   const tab = await createLoadedTabWrapper(PAGE_URL);
+  logPositionStateChangeEvents(tab);
+
+  info(`apply initial position state`);
+  await applyPositionState(tab, { duration: 10 });
 
   info(`start media`);
+  const initialPositionState = isNextPositionState(tab, { duration: 10 });
   await playMedia(tab, testVideoId);
+  await initialPositionState;
 
   info(
     `add an event listener to measure how many times the position state changes`
@@ -87,46 +97,191 @@ add_task(async function testSetPositionStateFromInactiveMediaSession() {
 
 
 
-async function setPositionState(tab, positionState) {
-  const controller = tab.linkedBrowser.browsingContext.mediaController;
-  const positionStateChanged = new Promise(r => {
-    controller.addEventListener(
-      "positionstatechange",
-      event => {
-        const { duration, playbackRate, position } = positionState;
-        
-        is(
-          event.duration,
-          duration,
-          `expected duration ${event.duration} is equal to ${duration}`
-        );
 
-        
-        if (playbackRate) {
-          is(
-            event.playbackRate,
-            playbackRate,
-            `expected playbackRate ${event.playbackRate} is equal to ${playbackRate}`
-          );
-        } else {
-          is(event.playbackRate, 1.0, `expected default playbackRate is 1.0`);
-        }
 
-        
-        if (position) {
-          is(
-            event.position,
-            position,
-            `expected position ${event.position} is equal to ${position}`
-          );
-        } else {
-          is(event.position, 0.0, `expected default position is 0.0`);
-        }
-        r();
-      },
-      { once: true }
-    );
+async function testGuessedPositionState(withMetadata) {
+  info(`open media page`);
+  const tab = await createLoadedTabWrapper(PAGE_URL);
+  logPositionStateChangeEvents(tab);
+
+  if (withMetadata) {
+    info(`set media metadata`);
+    await setMediaMetadata(tab, { title: "A Video" });
+  }
+
+  info(`start media`);
+  await emitsPositionState(() => playMedia(tab, testVideoId), tab, {
+    duration: videoDuration,
+    position: 0,
+    playbackRate: 1.0,
   });
+
+  info(`set playback rate to 2x`);
+  await emitsPositionState(() => setPlaybackRate(tab, testVideoId, 2.0), tab, {
+    duration: videoDuration,
+    position: null, 
+    playbackRate: 2.0,
+  });
+
+  info(`seek to 1s`);
+  await emitsPositionState(() => setCurrentTime(tab, testVideoId, 1.0), tab, {
+    duration: videoDuration,
+    position: 1.0,
+    playbackRate: 2.0,
+  });
+
+  let positionChangedNum = 0;
+  const controller = tab.linkedBrowser.browsingContext.mediaController;
+  controller.onpositionstatechange = () => positionChangedNum++;
+
+  info(`pause media`);
+  
+  await pauseMedia(tab, testVideoId);
+
+  info(`seek to 2s`);
+  await emitsPositionState(() => setCurrentTime(tab, testVideoId, 2.0), tab, {
+    duration: videoDuration,
+    position: 2.0,
+    playbackRate: 2.0,
+  });
+
+  info(`start media`);
+  await emitsPositionState(() => playMedia(tab, testVideoId), tab, {
+    duration: videoDuration,
+    position: 2.0,
+    playbackRate: 2.0,
+  });
+
+  is(
+    positionChangedNum,
+    2,
+    `We should only receive two of position changes, because pausing is effectless`
+  );
+
+  info(`remove tab`);
+  await tab.close();
+}
+
+add_task(async function testGuessedPositionStateWithMetadata() {
+  testGuessedPositionState(true);
+});
+
+add_task(async function testGuessedPositionStateWithoutMetadata() {
+  testGuessedPositionState(false);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function isNextPositionState(tab, positionState) {
+  const got = await nextPositionState(tab);
+  isPositionState(got, positionState);
+}
+
+
+
+
+
+
+
+function nextPositionState(tab) {
+  const controller = tab.linkedBrowser.browsingContext.mediaController;
+  return new Promise(r => {
+    controller.addEventListener("positionstatechange", r, { once: true });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+function isPositionState(got, expected) {
+  const { duration, playbackRate, position } = expected;
+  
+  isFuzzyEq(got.duration, duration, "duration");
+
+  
+  if (typeof playbackRate === "number") {
+    isFuzzyEq(got.playbackRate, playbackRate, "playbackRate");
+  } else if (playbackRate !== null) {
+    is(got.playbackRate, 1.0, `expected default playbackRate is 1.0`);
+  }
+
+  
+  if (typeof position === "number") {
+    isFuzzyEq(got.position, position, "position");
+  } else if (position !== null) {
+    is(got.position, 0.0, `expected default position is 0.0`);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+function isFuzzyEq(got, expected, role) {
+  expected = expected.toFixed(1);
+  got = got.toFixed(1);
+  is(got, expected, `expected ${role} ${got} to equal ${expected}`);
+}
+
+
+
+
+
+
+
+
+
+
+
+async function emitsPositionState(cb, tab, positionState) {
+  const positionStateChanged = isNextPositionState(tab, positionState);
+  await cb();
+  await positionStateChanged;
+}
+
+
+
+
+async function setPositionState(tab, positionState) {
+  await emitsPositionState(
+    () => applyPositionState(tab, positionState),
+    tab,
+    positionState
+  );
+}
+
+async function applyPositionState(tab, positionState) {
   await SpecialPowers.spawn(
     tab.linkedBrowser,
     [positionState],
@@ -134,7 +289,12 @@ async function setPositionState(tab, positionState) {
       content.navigator.mediaSession.setPositionState(positionState);
     }
   );
-  await positionStateChanged;
+}
+
+async function setMediaMetadata(tab, metadata) {
+  await SpecialPowers.spawn(tab.linkedBrowser, [metadata], data => {
+    content.navigator.mediaSession.metadata = new content.MediaMetadata(data);
+  });
 }
 
 async function setPositionStateOnInactiveMediaSession(tab) {

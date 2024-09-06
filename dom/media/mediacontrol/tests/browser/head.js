@@ -204,6 +204,58 @@ function checkOrWaitUntilMediaStartedPlaying(tab, elementId) {
 
 
 
+
+
+function setPlaybackRate(tab, elementId, rate) {
+  return SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [elementId, rate],
+    (Id, rate) => {
+      const video = content.document.getElementById(Id);
+      if (!video) {
+        ok(false, `can't get the media element!`);
+      }
+      video.playbackRate = rate;
+    }
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function setCurrentTime(tab, elementId, currentTime) {
+  return SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [elementId, currentTime],
+    (Id, currentTime) => {
+      const video = content.document.getElementById(Id);
+      if (!video) {
+        ok(false, `can't get the media element!`);
+      }
+      video.currentTime = currentTime;
+    }
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
 function checkOrWaitUntilMediaStoppedPlaying(tab, elementId) {
   return SpecialPowers.spawn(tab.linkedBrowser, [elementId], Id => {
     return new Promise(resolve => {
@@ -393,10 +445,39 @@ function waitUntilMediaControllerAmountChanged() {
 
 
 
+
+
+
+
+function waitUntilPositionStateChanged() {
+  return BrowserUtils.promiseObserved("media-position-state-changed");
+}
+
+
+
+
+
 async function checkOrWaitUntilControllerBecomeActive(tab) {
   const controller = tab.linkedBrowser.browsingContext.mediaController;
   if (controller.isActive) {
     return;
   }
   await new Promise(r => (controller.onactivated = r));
+}
+
+
+
+
+function logPositionStateChangeEvents(tab) {
+  tab.linkedBrowser.browsingContext.mediaController.addEventListener(
+    "positionstatechange",
+    event =>
+      info(
+        `got position state: ${JSON.stringify({
+          duration: event.duration,
+          playbackRate: event.playbackRate,
+          position: event.position,
+        })}`
+      )
+  );
 }
