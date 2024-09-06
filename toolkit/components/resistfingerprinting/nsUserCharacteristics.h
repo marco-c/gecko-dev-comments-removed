@@ -13,8 +13,14 @@ class nsUserCharacteristics {
   static void MaybeSubmitPing();
 
   
-  static nsresult PopulateData(bool aTesting = false);
-  static nsresult SubmitPing();
+
+
+
+
+
+  static void PopulateDataAndEventuallySubmit(bool aUpdatePref = true,
+                                              bool aTesting = false);
+  static void SubmitPing();
 };
 
 namespace testing {
