@@ -69,17 +69,17 @@ TEST(TestDriftController, Basic)
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedLow);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47980u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47952u);
 
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedHigh);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47991u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47983u);
 
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedHigh);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 48030u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 48031u);
 }
 
 TEST(TestDriftController, BasicResampler)
@@ -107,19 +107,19 @@ TEST(TestDriftController, BasicResampler)
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedLow);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47980u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47952u);
 
   
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedHigh);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47991u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47983u);
 
   
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedHigh);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 48030u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 48031u);
 }
 
 TEST(TestDriftController, BufferedInput)
@@ -152,17 +152,17 @@ TEST(TestDriftController, BufferedInput)
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedLow);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47978u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47959u);
 
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, buffered);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47976u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47954u);
 
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedHigh);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47978u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47961u);
 }
 
 TEST(TestDriftController, BufferedInputWithResampling)
@@ -197,17 +197,17 @@ TEST(TestDriftController, BufferedInputWithResampling)
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedLow);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47978u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47959u);
 
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, buffered);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47976u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47954u);
 
   for (uint32_t i = 0; i < stepsPerSec; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, stepDuration, bufferedHigh);
   }
-  EXPECT_EQ(c.GetCorrectedSourceRate(), 47978u);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), 47961u);
 }
 
 TEST(TestDriftController, SmallError)
@@ -276,8 +276,9 @@ TEST(TestDriftController, VerySmallBufferedFrames)
   uint32_t previousCorrected = nominalRate;
   
   
-  
-  for (uint32_t i = 0; i < 10020; ++i) {
+  for (uint32_t i = 0; i < 10200; ++i) {
+    
+    
     AdvanceByOutputDuration(&currentBuffered, &c, hundredMillis, bufferedLow);
     uint32_t correctedRate = c.GetCorrectedSourceRate();
     EXPECT_LE(correctedRate, previousCorrected) << "for i=" << i;
@@ -285,8 +286,68 @@ TEST(TestDriftController, VerySmallBufferedFrames)
     previousCorrected = correctedRate;
   }
   EXPECT_EQ(previousCorrected, 1u);
-  for (uint32_t i = 10020; i < 10030; ++i) {
+  for (uint32_t i = 10200; i < 10210; ++i) {
     AdvanceByOutputDuration(&currentBuffered, &c, hundredMillis, bufferedLow);
-    EXPECT_EQ(c.GetCorrectedSourceRate(), 1u) << "for i=" << i;
+    EXPECT_LT(c.GetCorrectedSourceRate(), 50u) << "for i=" << i;
+    
+    
+    
+    
+    
+    
+  }
+}
+
+TEST(TestDriftController, LargeStepResponse)
+{
+  
+  
+  
+  
+  
+  
+  uint32_t nominalTargetRate = 48000;
+  uint32_t nominalSourceRate = 48000 * 7 / 8;
+  uint32_t actualSourceRate = 48000;
+
+  TimeUnit desiredBuffered(actualSourceRate * 10, nominalSourceRate);
+  DriftController c(nominalSourceRate, nominalTargetRate, desiredBuffered);
+  EXPECT_EQ(c.GetCorrectedSourceRate(), nominalSourceRate);
+
+  uint32_t stepsPerSec = 20;
+  
+  
+  TimeUnit buffered = desiredBuffered.ToBase(nominalSourceRate * stepsPerSec);
+  media::TimeUnit inputStepDuration(actualSourceRate,
+                                    stepsPerSec * nominalSourceRate);
+  media::TimeUnit outputStepDuration(nominalTargetRate,
+                                     stepsPerSec * nominalTargetRate);
+
+  
+  
+  
+  uint32_t iterationCount = 7 * stepsPerSec * 1000 *
+                            (actualSourceRate - nominalSourceRate) /
+                            nominalSourceRate;
+  EXPECT_GT(outputStepDuration * (iterationCount - 1),
+            TimeUnit::FromSeconds(820));
+  for (uint32_t i = 0; i < iterationCount; ++i) {
+    uint32_t correctedRate = c.GetCorrectedSourceRate();
+    buffered += TimeUnit(CheckedInt64(actualSourceRate) - correctedRate,
+                         stepsPerSec * nominalSourceRate);
+    
+    c.UpdateClock(inputStepDuration, outputStepDuration,
+                  buffered.ToTicksAtRate(nominalSourceRate), 0);
+    if (outputStepDuration * i > TimeUnit::FromSeconds(820) &&
+        
+        i % stepsPerSec == 0) {
+      EXPECT_NEAR(c.GetCorrectedSourceRate(), actualSourceRate, 5)
+          << "for i=" << i;
+      EXPECT_NEAR(buffered.ToTicksAtRate(nominalSourceRate),
+                  desiredBuffered.ToTicksAtRate(nominalSourceRate),
+                  
+                  nominalSourceRate * 11 / 10000)
+          << "for i=" << i;
+    }
   }
 }

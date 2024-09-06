@@ -27,21 +27,21 @@ extern LazyLogModule gMediaTrackGraphLog;
       ("id,t,buffering,avgbuffered,desired,buffersize,inlatency,outlatency," \
        "inframesavg,outframesavg,inrate,outrate,driftestimate,"              \
        "hysteresisthreshold,corrected,hysteresiscorrected,configured,"       \
-       "p,i,d,kpp,kii,kdd,control"))
+       "p,d,kpp,kdd,control"))
 #define LOG_PLOT_VALUES(id, t, buffering, avgbuffered, desired, buffersize,    \
                         inlatency, outlatency, inframesavg, outframesavg,      \
                         inrate, outrate, driftestimate, hysteresisthreshold,   \
-                        corrected, hysteresiscorrected, configured, p, i, d,   \
-                        kpp, kii, kdd, control)                                \
+                        corrected, hysteresiscorrected, configured, p, d, kpp, \
+                        kdd, control)                                          \
   MOZ_LOG(gDriftControllerGraphsLog, LogLevel::Verbose,                        \
           ("DriftController %u,%.3f,%u,%.5f,%" PRId64 ",%u,%" PRId64 ","       \
            "%" PRId64 ",%.5f,%.5f,%u,%u,"                                      \
            "%.9f,%" PRId64 ",%.5f,%.5f,"                                       \
-           "%ld,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f",                           \
+           "%ld,%.5f,%.5f,%.5f,%.5f,%.5f",                                     \
            id, t, buffering, avgbuffered, desired, buffersize, inlatency,      \
            outlatency, inframesavg, outframesavg, inrate, outrate,             \
            driftestimate, hysteresisthreshold, corrected, hysteresiscorrected, \
-           configured, p, i, d, kpp, kii, kdd, control))
+           configured, p, d, kpp, kdd, control))
 
 static uint8_t GenerateId() {
   static std::atomic<uint8_t> id{0};
@@ -75,7 +75,6 @@ void DriftController::SetDesiredBuffering(media::TimeUnit aDesiredBuffering) {
 
 void DriftController::ResetAfterUnderrun() {
   mIsHandlingUnderrun = true;
-  mIntegral = 0.0;
   mPreviousError = 0.0;
   
   mTargetClock = mAdjustmentInterval;
@@ -189,7 +188,6 @@ void DriftController::UpdateClock(media::TimeUnit aSourceDuration,
 void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
                                           uint32_t aBufferSize) {
   static constexpr float kProportionalGain = 0.07;
-  static constexpr float kIntegralGain = 0.006;
   static constexpr float kDerivativeGain = 0.12;
 
   
@@ -197,8 +195,8 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
 
   
   
-  const float integralCap = cap / kIntegralGain;
-
+  float steadyStateRate =
+      static_cast<float>(mDriftEstimate) * static_cast<float>(mSourceRate);
   
   
   uint32_t desiredBufferedFrames = mDesiredBuffering.ToTicksAtRate(mSourceRate);
@@ -210,17 +208,12 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
   
   
   float targetClockSec = static_cast<float>(mTargetClock.ToSeconds());
-  
-  float integralStep =
-      std::clamp(avgError * targetClockSec, -integralCap, integralCap);
-  mIntegral += integralStep;
   float derivative = (avgError - mPreviousError) / targetClockSec;
-  float controlSignal = kProportionalGain * proportional +
-                        kIntegralGain * mIntegral +
-                        kDerivativeGain * derivative;
+  float controlSignal =
+      kProportionalGain * proportional + kDerivativeGain * derivative;
   float correctedRate =
-      std::clamp(static_cast<float>(mSourceRate) + controlSignal,
-                 mCorrectedSourceRate - cap, mCorrectedSourceRate + cap);
+      std::clamp(steadyStateRate + controlSignal, mCorrectedSourceRate - cap,
+                 mCorrectedSourceRate + cap);
 
   
   
@@ -257,16 +250,12 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
     if (abserror > hysteresisThreshold) {
       
       mDurationWithinHysteresis = media::TimeUnit::Zero();
-      mIntegralCenterForCap = Nothing();
       mLastHysteresisBoundaryCorrection = Some(error);
       return correctedRate;
     }
 
     
     mDurationWithinHysteresis += mTargetClock;
-    if (!mIntegralCenterForCap) {
-      mIntegralCenterForCap = Some(mIntegral);
-    }
 
     
     
@@ -284,18 +273,6 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
     return mCorrectedSourceRate;
   }();
 
-  if (mDurationWithinHysteresis > mIntegralCapTimeLimit) {
-    
-    
-    
-    
-    
-    
-    
-    mIntegral = std::clamp(mIntegral, *mIntegralCenterForCap - integralCap,
-                           *mIntegralCenterForCap + integralCap);
-  }
-
   LOG_CONTROLLER(
       LogLevel::Verbose, this,
       "Recalculating Correction: Nominal: %uHz->%uHz, Corrected: "
@@ -307,17 +284,17 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
       media::TimeUnit(hysteresisThreshold, mSourceRate).ToSeconds() * 1000.0,
       media::TimeUnit(aBufferedFrames, mSourceRate).ToSeconds() * 1000.0,
       mDesiredBuffering.ToSeconds() * 1000.0);
-  LOG_PLOT_VALUES(
-      mPlotId, mTotalTargetClock.ToSeconds(), aBufferedFrames,
-      mAvgBufferedFramesEst, mDesiredBuffering.ToTicksAtRate(mSourceRate),
-      aBufferSize, mMeasuredSourceLatency.mean().ToTicksAtRate(mSourceRate),
-      mMeasuredTargetLatency.mean().ToTicksAtRate(mTargetRate),
-      mInputDurationAvg * mSourceRate, mOutputDurationAvg * mTargetRate,
-      mSourceRate, mTargetRate, mDriftEstimate, hysteresisThreshold,
-      correctedRate, hysteresisCorrectedRate,
-      std::lround(hysteresisCorrectedRate), proportional, mIntegral, derivative,
-      kProportionalGain * proportional, kIntegralGain * mIntegral,
-      kDerivativeGain * derivative, controlSignal);
+  LOG_PLOT_VALUES(mPlotId, mTotalTargetClock.ToSeconds(), aBufferedFrames,
+                  mAvgBufferedFramesEst,
+                  mDesiredBuffering.ToTicksAtRate(mSourceRate), aBufferSize,
+                  mMeasuredSourceLatency.mean().ToTicksAtRate(mSourceRate),
+                  mMeasuredTargetLatency.mean().ToTicksAtRate(mTargetRate),
+                  mInputDurationAvg * mSourceRate,
+                  mOutputDurationAvg * mTargetRate, mSourceRate, mTargetRate,
+                  mDriftEstimate, hysteresisThreshold, correctedRate,
+                  hysteresisCorrectedRate, std::lround(hysteresisCorrectedRate),
+                  proportional, derivative, kProportionalGain * proportional,
+                  kDerivativeGain * derivative, controlSignal);
 
   if (std::lround(mCorrectedSourceRate) !=
       std::lround(hysteresisCorrectedRate)) {
