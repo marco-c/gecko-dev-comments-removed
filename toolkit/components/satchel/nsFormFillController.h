@@ -19,6 +19,7 @@
 #include "nsTHashMap.h"
 #include "nsInterfaceHashtable.h"
 #include "nsIDocShell.h"
+#include "nsILoginAutoCompleteSearch.h"
 #include "nsIMutationObserver.h"
 #include "nsIObserver.h"
 #include "nsCycleCollectionParticipant.h"
@@ -97,9 +98,13 @@ class nsFormFillController final : public nsIFormFillController,
 
   bool IsTextControl(nsINode* aNode);
 
+  MOZ_CAN_RUN_SCRIPT NS_IMETHODIMP isLoginManagerField(
+      mozilla::dom::HTMLInputElement* aInput, bool* isLoginManagerField);
+
   
 
   nsCOMPtr<nsIAutoCompleteController> mController;
+  nsCOMPtr<nsILoginAutoCompleteSearch> mLoginManagerAC;
   mozilla::dom::HTMLInputElement* mFocusedInput;
 
   
@@ -117,9 +122,11 @@ class nsFormFillController final : public nsIFormFillController,
   nsCOMPtr<nsIAutoCompleteObserver> mLastListener;
 
   
+  nsCOMPtr<nsIFormHistoryAutoComplete> mLastFormHistoryAutoComplete;
   nsString mLastSearchString;
 
-  nsTHashMap<nsPtrHashKey<const nsINode>, bool> mAutoCompleteInputs;
+  nsTHashMap<nsPtrHashKey<const nsINode>, bool> mPwmgrInputs;
+  nsTHashMap<nsPtrHashKey<const nsINode>, bool> mAutofillInputs;
 
   uint16_t mFocusAfterRightClickThreshold;
   uint32_t mTimeout;
