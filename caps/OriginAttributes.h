@@ -81,6 +81,11 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
            mFirstPartyDomain == aOther.mFirstPartyDomain;
   }
 
+  [[nodiscard]] inline bool IsPrivateBrowsing() const {
+    return mPrivateBrowsingId !=
+           nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID;
+  }
+
   
   
   
