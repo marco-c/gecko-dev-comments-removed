@@ -1158,7 +1158,7 @@ void ContentSubtreeIterator::Next() {
     
     
     ShadowRoot* root = ShadowDOMSelectionHelpers::GetShadowRoot(
-        Element::FromNode(nextNode), IterAllowCrossShadowBoundary());
+        nextNode, IterAllowCrossShadowBoundary());
     if (!root) {
       nextNode = nextNode->GetFirstChild();
     } else {
