@@ -2532,7 +2532,7 @@ pref("identity.fxaccounts.toolbar.defaultVisible", true);
 
 
 
-pref("identity.fxaccounts.toolbar.pxiToolbarEnabled", false);
+pref("identity.fxaccounts.toolbar.pxiToolbarEnabled", true);
 pref("identity.fxaccounts.toolbar.pxiToolbarEnabled.monitorEnabled", true);
 pref("identity.fxaccounts.toolbar.pxiToolbarEnabled.relayEnabled", true);
 pref("identity.fxaccounts.toolbar.pxiToolbarEnabled.vpnEnabled", true);
