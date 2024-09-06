@@ -22,7 +22,6 @@
 
 namespace mozilla::uniffi {
 
-class ScaffoldingConverterTagDefault {};
 
 
 
@@ -36,8 +35,7 @@ class ScaffoldingConverterTagDefault {};
 
 
 
-
-template <typename T, typename Tag = ScaffoldingConverterTagDefault>
+template <typename T>
 class ScaffoldingConverter {
  public:
   using RustType = T;
