@@ -446,10 +446,12 @@ class StyleSheetsManager extends EventEmitter {
     InspectorUtils.parseStyleSheet(styleSheet, text);
     modifiedStyleSheets.set(styleSheet, text);
 
-    const { atRules, ruleCount } =
-      this.getStyleSheetRuleCountAndAtRules(styleSheet);
-
+    
+    
+    let atRules, ruleCount;
     if (kind !== UPDATE_PRESERVING_RULES) {
+      ({ atRules, ruleCount } =
+        this.getStyleSheetRuleCountAndAtRules(styleSheet));
       this.#notifyPropertyChanged(resourceId, "ruleCount", ruleCount);
     }
 
@@ -465,13 +467,15 @@ class StyleSheetsManager extends EventEmitter {
       });
     }
 
-    this.#onStyleSheetUpdated({
-      resourceId,
-      updateKind: "at-rules-changed",
-      updates: {
-        resourceUpdates: { atRules },
-      },
-    });
+    if (kind !== UPDATE_PRESERVING_RULES) {
+      this.#onStyleSheetUpdated({
+        resourceId,
+        updateKind: "at-rules-changed",
+        updates: {
+          resourceUpdates: { atRules },
+        },
+      });
+    }
   }
 
   
@@ -993,8 +997,8 @@ class StyleSheetsManager extends EventEmitter {
     
     
     if (
-      href === "resource://content-accessible/accessiblecaret.css" ||
-      (href === "resource://devtools-highlighter-styles/highlighters.css" &&
+      href === "resource:
+      (href === "resource:
         this.#targetActor.sessionContext.type !== "all")
     ) {
       return false;
