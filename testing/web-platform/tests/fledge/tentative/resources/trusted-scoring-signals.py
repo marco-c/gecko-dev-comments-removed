@@ -1,5 +1,4 @@
 import json
-from urllib.parse import unquote_plus, urlparse
 
 from fledge.tentative.resources import fledge_http_server_util
 
@@ -11,44 +10,10 @@ from fledge.tentative.resources import fledge_http_server_util
 
 
 def main(request, response):
-    hostname = None
-    renderUrls = None
-    adComponentRenderURLs = None
-    
-    
-    
-    
-    urlLists = []
-
-    
-    
-    for param in request.url_parts.query.split("&"):
-        pair = param.split("=", 1)
-        if len(pair) != 2:
-            return fail(response, "Bad query parameter: " + param)
-        
-        if "%20" in pair[1]:
-            return fail(response, "Query parameter should escape using '+': " + param)
-
-        
-        if pair[0] == "hostname" and hostname == None and len(pair[1]) > 0:
-            hostname = pair[1]
-            continue
-        if pair[0] == "renderUrls" and renderUrls == None:
-            renderUrls = list(map(unquote_plus, pair[1].split(",")))
-            urlLists.append({"type":"renderURLs", "urls":renderUrls})
-            continue
-        if pair[0] == "adComponentRenderUrls" and adComponentRenderURLs == None:
-            adComponentRenderURLs = list(map(unquote_plus, pair[1].split(",")))
-            urlLists.append({"type":"adComponentRenderURLs", "urls":adComponentRenderURLs})
-            continue
-        return fail(response, "Unexpected query parameter: " + param)
-
-    
-    if not hostname:
-        return fail(response, "hostname missing")
-    if not renderUrls:
-        return fail(response, "renderUrls missing")
+    try:
+        params = fledge_http_server_util.decode_trusted_scoring_signals_params(request)
+    except ValueError as ve:
+        return fail(response, str(ve))
 
     response.status = (200, b"OK")
 
@@ -63,70 +28,64 @@ def main(request, response):
     adAuctionAllowed = "true"
     dataVersion = None
     cors = False
-    for urlList in urlLists:
+    for urlList in params.urlLists:
         for renderUrl in urlList["urls"]:
             value = "default value"
             addValue = True
 
-            signalsParams = None
-            for param in urlparse(renderUrl).query.split("&"):
-                pair = param.split("=", 1)
-                if len(pair) != 2:
-                    continue
-                if pair[0] == "signalsParams":
-                    if signalsParams != None:
-                        return fail(response, "renderUrl has multiple signalsParams: " + renderUrl)
-                    signalsParams = pair[1]
-            if signalsParams != None:
-                signalsParams = unquote_plus(signalsParams)
-                for signalsParam in signalsParams.split(","):
-                    if signalsParam == "close-connection":
-                        
-                        
-                        
-                        response.writer.write("")
-                        response.close_connection = True
-                        return
-                    elif signalsParam.startswith("replace-body:"):
-                        
-                        
-                        body = signalsParam.split(':', 1)[1]
-                    elif signalsParam.startswith("data-version:"):
-                        dataVersion = signalsParam.split(':', 1)[1]
-                    elif signalsParam == "http-error":
-                        response.status = (404, b"Not found")
-                    elif signalsParam == "no-content-type":
-                        contentType = None
-                    elif signalsParam == "wrong-content-type":
-                        contentType = 'text/plain'
-                    elif signalsParam == "bad-ad-auction-allowed":
-                        adAuctionAllowed = "sometimes"
-                    elif signalsParam == "ad-auction-not-allowed":
-                        adAuctionAllowed = "false"
-                    elif signalsParam == "no-ad-auction-allow":
-                        adAuctionAllowed = None
-                    elif signalsParam == "wrong-url":
-                        renderUrl = "https://wrong-url.test/"
-                    elif signalsParam == "no-value":
-                        addValue = False
-                    elif signalsParam == "null-value":
-                        value = None
-                    elif signalsParam == "num-value":
-                        value = 1
-                    elif signalsParam == "string-value":
-                        value = "1"
-                    elif signalsParam == "array-value":
-                        value = [1, "foo", None]
-                    elif signalsParam == "object-value":
-                        value = {"a":"b", "c":["d"]}
-                    elif signalsParam == "hostname":
-                        value = request.GET.first(b"hostname", b"not-found").decode("ASCII")
-                    elif signalsParam == "headers":
-                        value = fledge_http_server_util.headers_to_ascii(request.headers)
-                    elif signalsParam == "url":
-                        value = request.url
-                    elif signalsParam == "cors":
-                        cors = True
+            try:
+                signalsParams = fledge_http_server_util.decode_render_url_signals_params(renderUrl)
+            except ValueError as ve:
+                return fail(response, str(ve))
+
+            for signalsParam in signalsParams:
+                if signalsParam == "close-connection":
+                    
+                    
+                    
+                    response.writer.write("")
+                    response.close_connection = True
+                    return
+                elif signalsParam.startswith("replace-body:"):
+                    
+                    
+                    body = signalsParam.split(':', 1)[1]
+                elif signalsParam.startswith("data-version:"):
+                    dataVersion = signalsParam.split(':', 1)[1]
+                elif signalsParam == "http-error":
+                    response.status = (404, b"Not found")
+                elif signalsParam == "no-content-type":
+                    contentType = None
+                elif signalsParam == "wrong-content-type":
+                    contentType = 'text/plain'
+                elif signalsParam == "bad-ad-auction-allowed":
+                    adAuctionAllowed = "sometimes"
+                elif signalsParam == "ad-auction-not-allowed":
+                    adAuctionAllowed = "false"
+                elif signalsParam == "no-ad-auction-allow":
+                    adAuctionAllowed = None
+                elif signalsParam == "wrong-url":
+                    renderUrl = "https://wrong-url.test/"
+                elif signalsParam == "no-value":
+                    addValue = False
+                elif signalsParam == "null-value":
+                    value = None
+                elif signalsParam == "num-value":
+                    value = 1
+                elif signalsParam == "string-value":
+                    value = "1"
+                elif signalsParam == "array-value":
+                    value = [1, "foo", None]
+                elif signalsParam == "object-value":
+                    value = {"a":"b", "c":["d"]}
+                elif signalsParam == "hostname":
+                    value = params.hostname
+                elif signalsParam == "headers":
+                    value = fledge_http_server_util.headers_to_ascii(request.headers)
+                elif signalsParam == "url":
+                    value = request.url
+                elif signalsParam == "cors":
+                    cors = True
             if addValue:
                 if urlList["type"] not in responseBody:
                     responseBody[urlList["type"]] = {}

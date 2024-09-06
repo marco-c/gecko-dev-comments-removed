@@ -14,6 +14,7 @@
 
 
 
+
 "use strict";
 
 
@@ -35,14 +36,11 @@ async function runTrustedScoringSignalsTest(test, uuid, renderURL, scoreAdCheck,
           createDecisionScriptURL(uuid, {
                   scoreAd: `if (!(${scoreAdCheck})) throw "error";`,
                   ...decisionScriptParamOverrides})};
-  await joinGroupAndRunBasicFledgeTestExpectingWinner(
-      test,
-      {
-        uuid: uuid,
-        interestGroupOverrides: {ads: [{ renderURL: renderURL }],
-                                 ...additionalInterestGroupOverrides},
-        auctionConfigOverrides: auctionConfigOverrides
-      });
+  await joinInterestGroup(test, uuid,
+                          {ads: [{ renderURL: renderURL }],
+                           ...additionalInterestGroupOverrides});
+  return await runBasicFledgeTestExpectingWinner(
+      test, uuid, auctionConfigOverrides);
 }
 
 
@@ -344,6 +342,35 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
+  const sellerReportURL = createSellerReportURL(uuid);
+  const renderURL = createRenderURL(uuid, null,
+      `string-value,data-version:3,uuid:${uuid},dispatch:track_get`);
+  
+  
+  const crossOriginRequestTrackerURL = OTHER_ORIGIN1 + BASE_PATH +
+    'resources/request-tracker.py';
+
+  let combinedTrustedSignalsURL = new URL(crossOriginRequestTrackerURL);
+  combinedTrustedSignalsURL.search =
+      `hostname=${window.location.hostname}&renderUrls=${encodeURIComponent(renderURL)}`
+
+  let result = await runTrustedScoringSignalsTest(
+      test, uuid, renderURL,
+      `trustedScoringSignals === null &&
+       !('dataVersion' in browserSignals) &&
+       crossOriginTrustedScoringSignals === null &&
+       !('crossOriginDataVersion' in browserSignals)`,
+        {},
+      crossOriginRequestTrackerURL,
+      {permitCrossOriginTrustedSignals: `"${OTHER_ORIGIN1}"`,
+       reportResult: `sendReportTo("${sellerReportURL}")`});
+  createAndNavigateFencedFrame(test, result);
+  await waitForObservedRequests(
+      uuid, [combinedTrustedSignalsURL.href, createBidderReportURL(uuid), sellerReportURL]);
+}, 'Cross-origin trusted scoring signals w/o CORS authorization sends request.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
   const renderURL = createRenderURL(uuid, null,
       'string-value,data-version:3, cors');
   await runTrustedScoringSignalsTest(
@@ -371,6 +398,31 @@ subsetTest(promise_test, async test => {
       {permitCrossOriginTrustedSignals:
           `"${OTHER_ORIGIN2}", "${window.location.origin}"`});
 }, 'Cross-origin trusted scoring signals with wrong script allow header.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  const sellerReportURL = createSellerReportURL(uuid);
+  const renderURL = createRenderURL(uuid, null,
+      `string-value,data-version:3,uuid:${uuid},dispatch:track_get`);
+  
+  
+  const crossOriginRequestTrackerURL = OTHER_ORIGIN1 + BASE_PATH +
+    'resources/request-tracker.py';
+  let result = await runTrustedScoringSignalsTest(
+      test, uuid, renderURL,
+      `trustedScoringSignals === null &&
+       !('dataVersion' in browserSignals) &&
+       crossOriginTrustedScoringSignals === null &&
+       !('crossOriginDataVersion' in browserSignals)`,
+        {},
+      crossOriginRequestTrackerURL,
+      {permitCrossOriginTrustedSignals:
+          `"${OTHER_ORIGIN2}", "${window.location.origin}"`,
+       reportResult: `sendReportTo("${sellerReportURL}")`});
+  createAndNavigateFencedFrame(test, result);
+  await waitForObservedRequests(uuid,
+                                [createBidderReportURL(uuid), sellerReportURL]);
+}, 'Cross-origin trusted scoring signals with wrong script allow header not fetched.');
 
 
 
