@@ -50,6 +50,7 @@
 #include "wasm/WasmJS.h"              
 #include "wasm/WasmTypeDecls.h"       
 
+#include "gc/Marking-inl.h"       
 #include "vm/BytecodeUtil-inl.h"  
 #include "vm/JSAtomUtils-inl.h"   
 #include "vm/JSObject-inl.h"  
@@ -94,7 +95,7 @@ void DebuggerScript::trace(JSTracer* trc) {
       TraceManuallyBarrieredCrossCompartmentEdge(
           trc, this, &wasm, "Debugger.Script wasm referent");
       if (wasm != cell->as<JSObject>()) {
-        MOZ_ASSERT(wasm->is<WasmInstanceObject>());
+        MOZ_ASSERT(gc::MaybeForwardedObjectIs<WasmInstanceObject>(wasm));
         setReservedSlotGCThingAsPrivateUnbarriered(SCRIPT_SLOT, wasm);
       }
     }
