@@ -7442,16 +7442,6 @@ void nsWindow::SetWindowTranslucencyInner(TransparencyMode aMode) {
         "Setting SetWindowTranslucencyInner on a parent this is not us!");
   }
 
-  if (aMode == TransparencyMode::Transparent) {
-    
-    
-    HideWindowChrome(true);
-  } else if (mHideChrome &&
-             mTransparencyMode == TransparencyMode::Transparent) {
-    
-    HideWindowChrome(false);
-  }
-
   LONG_PTR style = ::GetWindowLongPtrW(hWnd, GWL_STYLE),
            exStyle = ::GetWindowLongPtr(hWnd, GWL_EXSTYLE);
 
