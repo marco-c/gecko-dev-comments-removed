@@ -312,7 +312,7 @@ already_AddRefed<FormData> FormData::Constructor(
   if (aFormElement.WasPassed()) {
     
     if (aSubmitter) {
-      nsCOMPtr<nsIFormControl> fc = do_QueryObject(aSubmitter);
+      const nsIFormControl* fc = nsIFormControl::FromNode(aSubmitter);
 
       
       if (!fc || !fc->IsSubmitControl()) {

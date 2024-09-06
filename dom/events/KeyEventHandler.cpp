@@ -300,8 +300,7 @@ nsresult KeyEventHandler::DispatchXBLCommand(dom::EventTarget* aTarget,
 
     
     for (nsIContent* c = focusedContent; c; c = c->GetParent()) {
-      nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(c);
-      if (formControl) {
+      if (nsIFormControl::FromNode(c)) {
         return NS_OK;
       }
     }

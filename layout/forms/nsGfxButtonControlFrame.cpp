@@ -74,7 +74,7 @@ NS_QUERYFRAME_TAIL_INHERITING(nsHTMLButtonControlFrame)
 
 
 nsresult nsGfxButtonControlFrame::GetDefaultLabel(nsAString& aString) const {
-  nsCOMPtr<nsIFormControl> form = do_QueryInterface(mContent);
+  const auto* form = nsIFormControl::FromNodeOrNull(mContent);
   NS_ENSURE_TRUE(form, NS_ERROR_UNEXPECTED);
 
   auto type = form->ControlType();

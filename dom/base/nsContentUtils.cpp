@@ -3478,8 +3478,7 @@ void nsContentUtils::GenerateStateKey(nsIContent* aContent, Document* aDocument,
     
     
     
-    nsCOMPtr<nsIFormControl> control(do_QueryInterface(aContent));
-    if (control) {
+    if (const auto* control = nsIFormControl::FromNode(aContent)) {
       
       
       int32_t controlNumber =

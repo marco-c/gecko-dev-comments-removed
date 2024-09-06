@@ -447,7 +447,7 @@ bool nsGenericHTMLElement::Spellcheck() {
   }
 
   
-  nsCOMPtr<nsIFormControl> formControl = do_QueryObject(this);
+  const nsIFormControl* formControl = GetAsFormControl();
   if (!formControl) {
     return false;  
   }

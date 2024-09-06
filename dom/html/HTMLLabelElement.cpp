@@ -36,13 +36,8 @@ JSObject* HTMLLabelElement::WrapNode(JSContext* aCx,
 NS_IMPL_ELEMENT_CLONE(HTMLLabelElement)
 
 HTMLFormElement* HTMLLabelElement::GetForm() const {
-  nsGenericHTMLElement* control = GetControl();
-  if (!control) {
-    return nullptr;
-  }
-
   
-  nsCOMPtr<nsIFormControl> formControl = do_QueryObject(control);
+  const auto* formControl = nsIFormControl::FromNodeOrNull(GetControl());
   if (!formControl) {
     return nullptr;
   }

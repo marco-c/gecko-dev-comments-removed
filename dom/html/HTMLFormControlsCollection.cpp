@@ -22,7 +22,7 @@ namespace mozilla::dom {
 
 
 bool HTMLFormControlsCollection::ShouldBeInElements(
-    nsIFormControl* aFormControl) {
+    const nsIFormControl* aFormControl) {
   
   
   
@@ -87,14 +87,14 @@ void HTMLFormControlsCollection::DropFormReference() {
 void HTMLFormControlsCollection::Clear() {
   
   for (nsGenericHTMLFormElement* element : Reversed(mElements.AsList())) {
-    nsCOMPtr<nsIFormControl> formControl = do_QueryObject(element);
+    nsCOMPtr<nsIFormControl> formControl = nsIFormControl::FromNode(element);
     MOZ_ASSERT(formControl);
     formControl->ClearForm(false, false);
   }
   mElements.Clear();
 
   for (nsGenericHTMLFormElement* element : Reversed(mNotInElements.AsList())) {
-    nsCOMPtr<nsIFormControl> formControl = do_QueryObject(element);
+    nsCOMPtr<nsIFormControl> formControl = nsIFormControl::FromNode(element);
     MOZ_ASSERT(formControl);
     formControl->ClearForm(false, false);
   }
@@ -140,7 +140,7 @@ nsISupports* HTMLFormControlsCollection::NamedItemInternal(
 
 nsresult HTMLFormControlsCollection::AddElementToTable(
     nsGenericHTMLFormElement* aChild, const nsAString& aName) {
-  nsCOMPtr<nsIFormControl> formControl = do_QueryObject(aChild);
+  const auto* formControl = nsIFormControl::FromNode(aChild);
   MOZ_ASSERT(formControl);
   if (!ShouldBeInElements(formControl)) {
     return NS_OK;
@@ -160,7 +160,7 @@ nsresult HTMLFormControlsCollection::IndexOfContent(nsIContent* aContent,
 
 nsresult HTMLFormControlsCollection::RemoveElementFromTable(
     nsGenericHTMLFormElement* aChild, const nsAString& aName) {
-  nsCOMPtr<nsIFormControl> formControl = do_QueryObject(aChild);
+  const auto* formControl = nsIFormControl::FromNode(aChild);
   MOZ_ASSERT(formControl);
   if (!ShouldBeInElements(formControl)) {
     return NS_OK;

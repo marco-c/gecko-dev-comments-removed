@@ -114,8 +114,8 @@ nsresult nsColorControlFrame::AttributeChanged(int32_t aNameSpaceID,
   
   
   
-  nsCOMPtr<nsIFormControl> fctrl = do_QueryInterface(GetContent());
-  if (fctrl->ControlType() == FormControlType::InputColor &&
+  if (nsIFormControl::FromNode(GetContent())->ControlType() ==
+          FormControlType::InputColor &&
       aNameSpaceID == kNameSpaceID_None && nsGkAtoms::value == aAttribute) {
     UpdateColor();
   }
