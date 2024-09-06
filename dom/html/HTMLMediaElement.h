@@ -1455,7 +1455,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  UniquePtr<MediaStreamWindowCapturer> mStreamWindowCapturer;
+  RefPtr<MediaStreamWindowCapturer> mStreamWindowCapturer;
 
   
   
@@ -1770,7 +1770,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   RefPtr<VideoTrackList> mVideoTrackList;
 
-  UniquePtr<MediaStreamTrackListener> mMediaStreamTrackListener;
+  RefPtr<MediaStreamTrackListener> mMediaStreamTrackListener;
 
   
   

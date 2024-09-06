@@ -52,7 +52,6 @@ LogModule* GetSpeechRecognitionLog();
 
 class SpeechRecognition final : public DOMEventTargetHelper,
                                 public nsIObserver,
-                                public DOMMediaStream::TrackListener,
                                 public SupportsWeakPtr {
  public:
   explicit SpeechRecognition(nsPIDOMWindowInner* aOwnerWindow);
@@ -133,7 +132,24 @@ class SpeechRecognition final : public DOMEventTargetHelper,
     EVENT_COUNT
   };
 
-  void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack) override;
+  void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
+
+  class TrackListener final : public DOMMediaStream::TrackListener {
+   public:
+    NS_DECL_ISUPPORTS_INHERITED
+    NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TrackListener,
+                                             DOMMediaStream::TrackListener)
+    explicit TrackListener(SpeechRecognition* aSpeechRecognition)
+        : mSpeechRecognition(aSpeechRecognition) {}
+    void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack) override {
+      mSpeechRecognition->NotifyTrackAdded(aTrack);
+    }
+
+   private:
+    virtual ~TrackListener() = default;
+    RefPtr<SpeechRecognition> mSpeechRecognition;
+  };
+
   
   
   void DispatchError(EventType aErrorType,
@@ -265,6 +281,8 @@ class SpeechRecognition final : public DOMEventTargetHelper,
   
   
   uint32_t mMaxAlternatives;
+
+  RefPtr<TrackListener> mListener;
 
   void ProcessTestEventRequest(nsISupports* aSubject,
                                const nsAString& aEventName);
