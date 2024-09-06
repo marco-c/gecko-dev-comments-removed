@@ -52,7 +52,7 @@ module.exports = {
         browser: false,
         "mozilla/sysmjs": true,
       },
-      files: ["**/*.sys.mjs", "**/*.jsm"],
+      files: ["**/*.sys.mjs"],
       rules: {
         "mozilla/lazy-getter-object-name": "error",
         "mozilla/reject-eager-module-in-lazy-getter": "error",
@@ -69,7 +69,7 @@ module.exports = {
       },
     },
     {
-      files: ["**/*.mjs", "**/*.jsx", "**/*.jsm", "**/?(*.)worker.?(m)js"],
+      files: ["**/*.mjs", "**/*.jsx", "**/?(*.)worker.?(m)js"],
       rules: {
         
         
@@ -101,12 +101,6 @@ module.exports = {
         
         
         strict: "error",
-      },
-    },
-    {
-      files: ["**/*.jsm"],
-      rules: {
-        "mozilla/mark-exported-symbols-as-used": "error",
       },
     },
     {
