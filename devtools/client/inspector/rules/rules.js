@@ -535,7 +535,7 @@ CssRuleView.prototype = {
         {
           const query = ".js-toggle-flexbox-highlighter";
           for (const node of this.styleDocument.querySelectorAll(query)) {
-            node.classList.toggle("active", eventName == "highlighter-shown");
+            node.setAttribute("aria-pressed", eventName == "highlighter-shown");
           }
         }
         break;
@@ -550,7 +550,10 @@ CssRuleView.prototype = {
             
             
             if (data.nodeFront === this.inspector.selection.nodeFront) {
-              node.classList.toggle("active", eventName == "highlighter-shown");
+              node.setAttribute(
+                "aria-pressed",
+                eventName == "highlighter-shown"
+              );
             }
 
             
