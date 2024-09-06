@@ -14,6 +14,7 @@
 
 #include <shlwapi.h>
 
+#include "updatecommon.h"
 #include "updatehelper.h"
 #include "updateutils_win.h"
 
@@ -267,12 +268,14 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
   
   SC_HANDLE manager = OpenSCManager(nullptr, nullptr, SC_MANAGER_ALL_ACCESS);
   if (!manager) {
+    LOG(("StartServiceUpdate: Failed to open SCM"));
     return FALSE;
   }
 
   
   SC_HANDLE svc = OpenServiceW(manager, SVC_NAME, SERVICE_ALL_ACCESS);
   if (!svc) {
+    LOG(("StartServiceUpdate: Unable to open service"));
     CloseServiceHandle(manager);
     return FALSE;
   }
@@ -284,10 +287,13 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
 
   
   DWORD bytesNeeded;
-  if (!QueryServiceConfigW(svc, nullptr, 0, &bytesNeeded) &&
-      GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-    CloseServiceHandle(svc);
-    return FALSE;
+  if (!QueryServiceConfigW(svc, nullptr, 0, &bytesNeeded)) {
+    DWORD lastError = GetLastError();
+    if (lastError != ERROR_INSUFFICIENT_BUFFER) {
+      LOG(("StartServiceUpdate: Failed to query MMS: %lu", lastError));
+      CloseServiceHandle(svc);
+      return FALSE;
+    }
   }
 
   
@@ -297,6 +303,7 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
           svc,
           reinterpret_cast<QUERY_SERVICE_CONFIGW*>(serviceConfigBuffer.get()),
           bytesNeeded, &bytesNeeded)) {
+    LOG(("StartServiceUpdate: Failed to read MMS: %lu", GetLastError()));
     CloseServiceHandle(svc);
     return FALSE;
   }
@@ -312,10 +319,12 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
   WCHAR tmpService[MAX_PATH + 1] = {L'\0'};
   if (!PathGetSiblingFilePath(tmpService, serviceConfig.lpBinaryPathName,
                               L"maintenanceservice_tmp.exe")) {
+    LOG(("StartServiceUpdate: Failed to get temp bin path"));
     return FALSE;
   }
 
   if (wcslen(installDir) > MAX_PATH) {
+    LOG(("StartServiceUpdate: Install dir path too long"));
     return FALSE;
   }
 
@@ -327,6 +336,7 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
   
   
   if (!CopyFileW(newMaintServicePath, tmpService, FALSE)) {
+    LOG(("StartServiceUpdate: Failed to copy temp MMS"));
     return FALSE;
   }
 
@@ -334,6 +344,7 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
   
   
   if (!DoesBinaryMatchAllowedCertificates(installDir, tmpService)) {
+    LOG(("StartServiceUpdate: Binary doesn't match certs"));
     DeleteFileW(tmpService);
     return FALSE;
   }
@@ -351,8 +362,11 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
       CreateProcessW(tmpService, cmdLine, nullptr, nullptr, FALSE, 0, nullptr,
                      installDir, &si, &pi);
   if (svcUpdateProcessStarted) {
+    LOG(("StartServiceUpdate: Launched MMS update successfully"));
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+  } else {
+    LOG(("StartServiceUpdate: MMS update failed: %lu", GetLastError()));
   }
   return svcUpdateProcessStarted;
 }

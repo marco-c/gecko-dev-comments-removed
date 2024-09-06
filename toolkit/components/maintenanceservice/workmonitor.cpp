@@ -447,7 +447,10 @@ BOOL ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR* argv) {
       if (!IsUpdateBeingStaged(argc, argv)) {
         
         
+        LOG(("Starting service update"));
         StartServiceUpdate(installDir);
+      } else {
+        LOG(("Skipping update of the service because we are staging"));
       }
     } else {
       result = FALSE;
