@@ -29,6 +29,12 @@ class NodeDelegate {
   
   
   virtual void PortStatusChanged(const PortRef& port_ref) = 0;
+
+  
+  
+  
+  
+  virtual void ObserveRemoteNode(const NodeName& node) = 0;
 };
 
 }  

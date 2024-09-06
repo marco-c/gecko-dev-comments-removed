@@ -122,6 +122,11 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
   void DropPeer(NodeName aNodeName);
 
   
+  
+  
+  void ContactRemotePeer(const NodeName& aNode, UniquePtr<Event> aEvent);
+
+  
   void OnEventMessage(const NodeName& aFromNode,
                       UniquePtr<IPC::Message> aMessage) override;
   void OnBroadcast(const NodeName& aFromNode,
@@ -138,6 +143,7 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
   void ForwardEvent(const NodeName& aNode, UniquePtr<Event> aEvent) override;
   void BroadcastEvent(UniquePtr<Event> aEvent) override;
   void PortStatusChanged(const PortRef& aPortRef) override;
+  void ObserveRemoteNode(const NodeName& aNode) override;
 
   const NodeName mName;
   const UniquePtr<Node> mNode;
