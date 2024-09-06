@@ -327,8 +327,29 @@ nsresult DNSPacket::OnDataAvailable(nsIRequest* aRequest,
 
 const uint8_t kDNS_CLASS_IN = 1;
 
+nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
+                                  uint16_t aType, bool aDisableECS) {
+  aBody.Truncate();
+  
+  aBody += '\0';
+  aBody += '\0';  
+  aBody += 0x01;  
+  aBody += '\0';  
+  aBody += '\0';
+  aBody += 1;  
+  aBody += '\0';
+  aBody += '\0';  
+  aBody += '\0';
+  aBody += '\0';  
 
-nsresult DNSPacket::EncodeHost(nsCString& aBody, const nsACString& aHost) {
+  char additionalRecords =
+      (aDisableECS || StaticPrefs::network_trr_padding()) ? 1 : 0;
+  aBody += '\0';               
+  aBody += additionalRecords;  
+
+  
+
+  
   
   
   
@@ -362,37 +383,6 @@ nsresult DNSPacket::EncodeHost(nsCString& aBody, const nsACString& aHost) {
     offset += labelLength + 1;  
   } while (true);
 
-  return NS_OK;
-}
-
-nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
-                                  uint16_t aType, bool aDisableECS) {
-  aBody.Truncate();
-  
-  aBody += '\0';
-  aBody += '\0';  
-  aBody += 0x01;  
-  aBody += '\0';  
-  aBody += '\0';
-  aBody += 1;  
-  aBody += '\0';
-  aBody += '\0';  
-  aBody += '\0';
-  aBody += '\0';  
-
-  char additionalRecords =
-      (aDisableECS || StaticPrefs::network_trr_padding()) ? 1 : 0;
-  aBody += '\0';               
-  aBody += additionalRecords;  
-
-  
-
-  nsresult rv = EncodeHost(aBody, aHost);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
   aBody += static_cast<uint8_t>(aType >> 8);  
   aBody += static_cast<uint8_t>(aType);
   aBody += '\0';           

@@ -643,14 +643,6 @@ nsresult nsHttpChannel::OnBeforeConnect() {
 
 
 static bool canUseHTTPSRRonNetwork(bool* aTRREnabled = nullptr) {
-  
-  if (StaticPrefs::network_dns_force_use_https_rr()) {
-    if (aTRREnabled) {
-      *aTRREnabled = true;
-    }
-    return true;
-  }
-
   if (nsCOMPtr<nsIDNSService> dns = mozilla::components::DNS::Service()) {
     nsIDNSService::ResolverMode mode;
     
@@ -6461,9 +6453,7 @@ uint16_t nsHttpChannel::GetProxyDNSStrategy() {
   
   
 
-  
-  
-  if (!mProxyInfo || StaticPrefs::network_dns_force_use_https_rr()) {
+  if (!mProxyInfo) {
     return DNS_PREFETCH_ORIGIN;
   }
 
