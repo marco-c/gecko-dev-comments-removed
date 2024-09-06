@@ -181,6 +181,12 @@ struct GraphInterface : public nsISupports {
                                uint32_t aAlreadyBuffered) = 0;
   
 
+  virtual void NotifySetRequestedInputProcessingParamsResult(
+      AudioCallbackDriver* aDriver,
+      cubeb_input_processing_params aRequestedParams,
+      Result<cubeb_input_processing_params, int>&& aResult) = 0;
+  
+
 
   virtual void DeviceChanged() = 0;
   
@@ -547,12 +553,12 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
       AudioCallbackDriver, mCubebOperationThread, override);
 
   
-  AudioCallbackDriver(GraphInterface* aGraphInterface,
-                      GraphDriver* aPreviousDriver, uint32_t aSampleRate,
-                      uint32_t aOutputChannelCount, uint32_t aInputChannelCount,
-                      CubebUtils::AudioDeviceID aOutputDeviceID,
-                      CubebUtils::AudioDeviceID aInputDeviceID,
-                      AudioInputType aAudioInputType);
+  AudioCallbackDriver(
+      GraphInterface* aGraphInterface, GraphDriver* aPreviousDriver,
+      uint32_t aSampleRate, uint32_t aOutputChannelCount,
+      uint32_t aInputChannelCount, CubebUtils::AudioDeviceID aOutputDeviceID,
+      CubebUtils::AudioDeviceID aInputDeviceID, AudioInputType aAudioInputType,
+      cubeb_input_processing_params aRequestedInputProcessingParams);
 
   void Start() override;
   MOZ_CAN_RUN_SCRIPT void Shutdown() override;
@@ -604,6 +610,14 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
     return AudioInputType::Unknown;
   }
 
+  
+
+
+  cubeb_input_processing_params RequestedInputProcessingParams() const;
+
+  
+  void SetRequestedInputProcessingParams(cubeb_input_processing_params aParams);
+
   std::thread::id ThreadId() const { return mAudioThreadIdInCb.load(); }
 
   
@@ -652,6 +666,9 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   void Init(const nsCString& aStreamName);
   void SetCubebStreamName(const nsCString& aStreamName);
   void Stop();
+  
+
+  void SetInputProcessingParams(cubeb_input_processing_params aParams);
   
 
 
@@ -721,6 +738,13 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   const RefPtr<TaskQueue> mCubebOperationThread;
   cubeb_device_pref mInputDevicePreference;
+  
+
+  cubeb_input_processing_params mConfiguredInputProcessingParams =
+      CUBEB_INPUT_PROCESSING_PARAM_NONE;
+  
+
+  cubeb_input_processing_params mRequestedInputProcessingParams;
   
   std::atomic<ProfilerThreadId> mAudioThreadId;
   

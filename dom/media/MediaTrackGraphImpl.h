@@ -511,6 +511,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
                        uint32_t aAlreadyBuffered) override;
   
 
+  void NotifySetRequestedInputProcessingParamsResult(
+      AudioCallbackDriver* aDriver,
+      cubeb_input_processing_params aRequestedParams,
+      Result<cubeb_input_processing_params, int>&& aResult) override;
+  
+
 
   void DeviceChanged() override;
   
@@ -585,6 +591,13 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   uint32_t AudioInputChannelCount(CubebUtils::AudioDeviceID aID);
 
   AudioInputType AudioInputDevicePreference(CubebUtils::AudioDeviceID aID);
+
+  
+
+
+
+  cubeb_input_processing_params RequestedAudioInputProcessingParams(
+      CubebUtils::AudioDeviceID aID);
 
   double MediaTimeToSeconds(GraphTime aTime) const {
     NS_ASSERTION(aTime > -TRACK_TIME_MAX && aTime <= TRACK_TIME_MAX,
