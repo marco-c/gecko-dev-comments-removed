@@ -338,13 +338,7 @@ async function getOutputDirectory() {
     return _outputDirectory;
   }
 
-  try {
-    
-    _outputDirectory = Services.dirsvc.get("Scrnshts", Ci.nsIFile).path;
-  } catch (e) {
-    _outputDirectory = await lazy.Downloads.getPreferredDownloadsDirectory();
-  }
-
+  _outputDirectory = await lazy.Downloads.getPreferredDownloadsDirectory();
   return _outputDirectory;
 }
 
