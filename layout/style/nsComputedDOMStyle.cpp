@@ -2011,17 +2011,14 @@ nscoord nsComputedDOMStyle::GetUsedAbsoluteOffset(mozilla::Side aSide) {
     
     
     
-    
-    nsIFrame* scrollingChild = container->PrincipalChildList().FirstChild();
-    ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(scrollingChild);
-    if (scrollContainerFrame) {
+    if (ScrollContainerFrame* scrollContainerFrame =
+            container->GetScrollTargetFrame()) {
       scrollbarSizes = scrollContainerFrame->GetActualScrollbarSizes();
     }
 
     
     
-    const ViewportFrame* viewportFrame = do_QueryFrame(container);
-    MOZ_ASSERT(viewportFrame);
+    auto* viewportFrame = static_cast<ViewportFrame*>(container);
     containerRect.SizeTo(
         viewportFrame->AdjustViewportSizeForFixedPosition(containerRect));
   } else if (container->IsGridContainerFrame() &&
