@@ -556,9 +556,6 @@ enum class StyleColorInterpolation : uint8_t {
 };
 
 
-enum class StyleVectorEffect : uint8_t { None = 0, NonScalingStroke = 1 };
-
-
 enum class StyleBackfaceVisibility : uint8_t { Hidden = 0, Visible = 1 };
 
 
