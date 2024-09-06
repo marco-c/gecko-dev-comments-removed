@@ -824,13 +824,11 @@ public class GeckoSessionTestRule implements TestRule {
       return null;
     }
 
-    
-    
     @Override
     public void onLocationChange(
         @NonNull GeckoSession session,
         @Nullable String url,
-        @NonNull List<ContentPermission> perms,
+        @NonNull final List<ContentPermission> perms,
         @NonNull Boolean hasUserGesture) {}
 
     @Override
