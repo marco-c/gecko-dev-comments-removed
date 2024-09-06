@@ -17,10 +17,11 @@ add_task(condition, async () => {
   let hash = xreDirProvider.getInstallHash();
 
   let saltedPath = `saltSALT.${vendor}BackgroundTask-${hash}-not_ephemeral_profile`;
+  let profileName = `${vendor}BackgroundTask-${hash}-not_ephemeral_profile`;
 
   
   BACKGROUNDTASKS_PROFILE_DATA.backgroundTasksProfiles.splice(0, 0, {
-    name: `${vendor}BackgroundTask-${hash}-not_ephemeral_profile`,
+    name: profileName,
     path: saltedPath,
   });
 
@@ -38,19 +39,34 @@ add_task(condition, async () => {
   bts.overrideBackgroundTaskNameForTesting("not_ephemeral_profile");
 
   let { didCreate, rootDir } = selectStartupProfile();
+
   checkStartupReason("backgroundtask-not-ephemeral");
 
-  Assert.equal(didCreate, false, "Re-used existing non-ephemeral profile");
+  
+  Assert.equal(
+    didCreate,
+    true,
+    "Re-used existing non-ephemeral profile, but should create a new directory for it"
+  );
+
+  Assert.equal(
+    rootDir.exists(),
+    true,
+    "rootDir has a directory in the file system"
+  );
 
   let profileData = readProfilesIni();
 
   
   
   Assert.equal(profileData.backgroundTasksProfiles.length, 2);
-  Assert.deepEqual(profileData, BACKGROUNDTASKS_PROFILE_DATA);
 
+  
+  let createdProfile = profileData.backgroundTasksProfiles.find(
+    searchProfile => searchProfile.name == profileName
+  );
   Assert.ok(
-    rootDir.path.endsWith(saltedPath),
+    rootDir.path.endsWith(createdProfile.path),
     `rootDir "${rootDir.path}" ends with salted path "${saltedPath}"`
   );
 
