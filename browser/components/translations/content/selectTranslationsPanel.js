@@ -572,7 +572,7 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  #phase() {
+  phase() {
     return this.#translationState.phase;
   }
 
@@ -580,14 +580,14 @@ var SelectTranslationsPanel = new (class {
 
 
   #isOpen() {
-    return this.#phase() !== "closed";
+    return this.phase() !== "closed";
   }
 
   
 
 
   #isClosed() {
-    return this.#phase() === "closed";
+    return this.phase() === "closed";
   }
 
   
@@ -617,7 +617,7 @@ var SelectTranslationsPanel = new (class {
       }
     }
 
-    const previousPhase = this.#phase();
+    const previousPhase = this.phase();
     if (data && retainEntries) {
       
       this.#translationState = { ...this.#translationState, phase, ...data };
@@ -632,7 +632,7 @@ var SelectTranslationsPanel = new (class {
       this.#translationState = { phase };
     }
 
-    if (previousPhase === this.#phase()) {
+    if (previousPhase === this.phase()) {
       
       return;
     }
@@ -645,6 +645,11 @@ var SelectTranslationsPanel = new (class {
     );
 
     this.#updatePanelUIFromState();
+    document.dispatchEvent(
+      new CustomEvent("SelectTranslationsPanelStateChanged", {
+        detail: { phase },
+      })
+    );
   }
 
   
@@ -660,7 +665,7 @@ var SelectTranslationsPanel = new (class {
 
 
   #changeStateToTranslating() {
-    const phase = this.#phase();
+    const phase = this.phase();
     if (phase !== "translatable") {
       throw new Error(`Invalid state change (${phase} => translating)`);
     }
@@ -673,7 +678,7 @@ var SelectTranslationsPanel = new (class {
 
 
   #changeStateToTranslated(translatedText) {
-    const phase = this.#phase();
+    const phase = this.phase();
     if (phase !== "translating") {
       throw new Error(`Invalid state change (${phase} => translated)`);
     }
@@ -788,7 +793,7 @@ var SelectTranslationsPanel = new (class {
     const { copyButton, translateFullPageButton, textArea } = this.elements;
 
     const invalidLangPairSelected = !fromLanguage || !toLanguage;
-    const isTranslating = this.#phase() === "translating";
+    const isTranslating = this.phase() === "translating";
 
     textArea.disabled = invalidLangPairSelected;
     translateFullPageButton.disabled = invalidLangPairSelected;
@@ -799,7 +804,7 @@ var SelectTranslationsPanel = new (class {
 
 
   #updatePanelUIFromState() {
-    switch (this.#phase()) {
+    switch (this.phase()) {
       case "idle": {
         this.#displayIdlePlaceholder();
         break;
