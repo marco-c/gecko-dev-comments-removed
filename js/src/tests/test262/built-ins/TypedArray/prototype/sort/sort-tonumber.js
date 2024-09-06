@@ -16,7 +16,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var ta = new TA(4);
   var ab = ta.buffer;

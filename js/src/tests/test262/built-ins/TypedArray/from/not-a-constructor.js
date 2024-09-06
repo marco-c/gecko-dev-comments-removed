@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(isConstructor(TypedArray.from), false, 'isConstructor(TypedArray.from) must return false');
 
 assert.throws(TypeError, () => {

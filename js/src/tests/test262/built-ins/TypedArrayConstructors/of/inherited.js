@@ -13,7 +13,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   assert.sameValue(
     TA.of, TypedArray.of,

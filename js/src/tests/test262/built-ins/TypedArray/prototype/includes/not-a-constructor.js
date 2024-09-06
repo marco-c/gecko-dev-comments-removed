@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(
   isConstructor(TypedArray.prototype.includes),
   false,

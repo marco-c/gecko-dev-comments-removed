@@ -27,7 +27,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var ta1 = new TA([1, 2, 3, 4, 5]);
   ta1.set("678", 1);

@@ -1,4 +1,3 @@
-
 if (typeof detachArrayBuffer === "function") {
     const originalNumberToLocaleString = Number.prototype.toLocaleString;
 

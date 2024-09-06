@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.fill, "name", {
   value: "fill",
   writable: false,

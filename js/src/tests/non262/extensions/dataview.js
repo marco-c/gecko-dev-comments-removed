@@ -1638,16 +1638,6 @@ function test(sharedMem) {
     dv.setInt8(dv.byteLength - 10, 99);
     assertEq(dv.getInt8(dv.byteLength - 10), 99);
 
-    
-    dv = new DataView(new ArrayBuffer(4));
-    if (DataView.prototype.getFloat16) {
-        dv.setInt16(0, 18688);
-        assertEq(dv.getFloat16(0), 10);
-        dv.setFloat16(1, 10);
-        assertEq(dv.getFloat16(1), 10);
-        assertEq(dv.getInt16(1), 18688);
-    }
-
     reportCompare(0, 0, 'done.');
 }
 

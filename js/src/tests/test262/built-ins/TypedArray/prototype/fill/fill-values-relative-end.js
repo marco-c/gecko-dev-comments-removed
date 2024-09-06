@@ -30,7 +30,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   assert(
     compareArray(new TA([0, 0, 0]).fill(8, 0, 1), [8, 0, 0]),

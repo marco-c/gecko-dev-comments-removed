@@ -62,7 +62,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new Int8Array(1);
   var toPrimitive = 0;

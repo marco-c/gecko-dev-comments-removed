@@ -21,7 +21,6 @@
 
 
 
-
 var toLocaleString = TypedArray.prototype.toLocaleString;
 
 assert.throws(TypeError, function() {

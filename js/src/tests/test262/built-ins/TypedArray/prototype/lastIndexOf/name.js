@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.lastIndexOf, "name", {
   value: "lastIndexOf",
   writable: false,

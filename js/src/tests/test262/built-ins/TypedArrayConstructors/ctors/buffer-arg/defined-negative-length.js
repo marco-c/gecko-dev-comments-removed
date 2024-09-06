@@ -15,7 +15,6 @@
 
 
 
-
 var buffer = new ArrayBuffer(16);
 
 testWithTypedArrayConstructors(function(TA) {

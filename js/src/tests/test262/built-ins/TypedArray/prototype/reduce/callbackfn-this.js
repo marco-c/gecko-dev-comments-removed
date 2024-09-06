@@ -26,7 +26,6 @@
 
 
 
-
 var expected = (function() { return this; })();
 
 testWithTypedArrayConstructors(function(TA) {

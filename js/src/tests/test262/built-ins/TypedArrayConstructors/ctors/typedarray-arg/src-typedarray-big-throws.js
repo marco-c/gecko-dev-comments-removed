@@ -21,7 +21,6 @@
 
 
 
-
 var bigTypedArray;
 
 testWithBigIntTypedArrayConstructors(function(BTA) {

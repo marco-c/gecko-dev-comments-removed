@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.findIndex, "name", {
   value: "findIndex",
   writable: false,

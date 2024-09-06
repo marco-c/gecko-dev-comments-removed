@@ -20,7 +20,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA(2);
   var src = new TA(1);

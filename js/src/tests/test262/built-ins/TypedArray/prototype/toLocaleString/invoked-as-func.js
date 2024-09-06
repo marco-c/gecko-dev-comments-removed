@@ -22,7 +22,6 @@
 
 
 
-
 var toLocaleString = TypedArray.prototype.toLocaleString;
 
 assert.sameValue(typeof toLocaleString, 'function');

@@ -20,7 +20,6 @@
 
 
 
-
 var TypedArrayPrototype = TypedArray.prototype;
 
 assert.sameValue(typeof TypedArrayPrototype.some, 'function');

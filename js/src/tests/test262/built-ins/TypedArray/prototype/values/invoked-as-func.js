@@ -21,7 +21,6 @@
 
 
 
-
 var values = TypedArray.prototype.values;
 
 assert.sameValue(typeof values, 'function');

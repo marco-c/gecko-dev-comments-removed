@@ -20,7 +20,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var ta1 = new TA();
   assert.sameValue(ta1.indexOf(), -1);

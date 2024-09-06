@@ -25,7 +25,6 @@
 
 
 
-
 testTypedArrayConversions(byteConversionValues, function(TA, value, expected, initial) {
   if (TA === Float64Array) {
     return;

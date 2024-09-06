@@ -20,7 +20,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, "buffer");
 
 verifyProperty(desc.get, "name", {

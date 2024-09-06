@@ -12,7 +12,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([40, 41, 42, 43]);
   var result = sample.subarray(1);

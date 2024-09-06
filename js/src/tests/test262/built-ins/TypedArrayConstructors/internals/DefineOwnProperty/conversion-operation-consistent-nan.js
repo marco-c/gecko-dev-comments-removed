@@ -68,7 +68,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(FA) {
   var precision = floatTypedArrayConstructorPrecision(FA);
   var samples = new FA(1);

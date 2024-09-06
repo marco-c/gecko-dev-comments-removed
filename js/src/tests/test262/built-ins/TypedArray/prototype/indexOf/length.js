@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.indexOf, "length", {
   value: 1,
   writable: false,

@@ -18,7 +18,6 @@
 
 
 
-
 let obj = {
   toString() {
     throw new Test262Error();

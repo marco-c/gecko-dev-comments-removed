@@ -18,7 +18,6 @@
 
 
 
-
 var map = TypedArray.prototype.map;
 var callbackfn = function() {};
 

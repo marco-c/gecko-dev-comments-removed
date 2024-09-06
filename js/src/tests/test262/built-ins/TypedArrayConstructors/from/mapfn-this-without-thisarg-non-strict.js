@@ -20,7 +20,6 @@
 
 
 
-
 var source = [42, 43];
 var global = this;
 

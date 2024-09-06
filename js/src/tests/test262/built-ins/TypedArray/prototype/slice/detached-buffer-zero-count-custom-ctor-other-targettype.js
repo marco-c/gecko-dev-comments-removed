@@ -17,7 +17,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   let counter = 0;
   let sample, result, Other, other;

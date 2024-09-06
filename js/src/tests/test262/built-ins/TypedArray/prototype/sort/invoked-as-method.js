@@ -26,7 +26,6 @@
 
 
 
-
 var TypedArrayPrototype = TypedArray.prototype;
 
 assert.sameValue(typeof TypedArrayPrototype.sort, 'function');

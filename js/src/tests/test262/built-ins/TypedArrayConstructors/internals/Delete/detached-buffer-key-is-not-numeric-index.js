@@ -20,7 +20,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   let sample = new TA(1);
   let key = "key";

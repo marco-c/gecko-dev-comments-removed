@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.every, "name", {
   value: "every",
   writable: false,

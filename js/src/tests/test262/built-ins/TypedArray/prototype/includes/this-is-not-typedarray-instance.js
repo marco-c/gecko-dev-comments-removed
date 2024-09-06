@@ -21,7 +21,6 @@
 
 
 
-
 var includes = TypedArray.prototype.includes;
 
 assert.throws(TypeError, function() {

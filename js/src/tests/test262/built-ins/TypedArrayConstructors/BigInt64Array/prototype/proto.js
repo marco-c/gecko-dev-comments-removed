@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Object.getPrototypeOf(BigInt64Array.prototype),
                  TypedArray.prototype);
 

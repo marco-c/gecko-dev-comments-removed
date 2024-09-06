@@ -18,7 +18,6 @@
 
 
 
-
 TypedArray.prototype[1] = "test262";
 
 testWithTypedArrayConstructors(function(TA) {

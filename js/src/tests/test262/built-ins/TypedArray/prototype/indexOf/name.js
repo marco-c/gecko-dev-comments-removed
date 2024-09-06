@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.indexOf, "name", {
   value: "indexOf",
   writable: false,

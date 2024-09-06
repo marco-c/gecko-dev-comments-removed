@@ -19,7 +19,6 @@
 
 
 
-
 var callbackfn = function() {
   throw new Test262Error();
 };

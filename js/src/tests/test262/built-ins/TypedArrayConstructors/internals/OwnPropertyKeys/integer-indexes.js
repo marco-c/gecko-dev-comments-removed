@@ -17,7 +17,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample1 = new TA([42, 42, 42]);
   var result1 = Reflect.ownKeys(sample1);

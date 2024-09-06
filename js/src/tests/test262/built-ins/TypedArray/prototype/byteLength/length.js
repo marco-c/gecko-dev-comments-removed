@@ -23,7 +23,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(TypedArray.prototype, "byteLength");
 
 verifyProperty(desc.get, "length", {

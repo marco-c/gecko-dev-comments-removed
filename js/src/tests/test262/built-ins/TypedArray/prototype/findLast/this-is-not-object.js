@@ -16,7 +16,6 @@
 
 
 
-
 var findLast = TypedArray.prototype.findLast;
 var predicate = function() {};
 

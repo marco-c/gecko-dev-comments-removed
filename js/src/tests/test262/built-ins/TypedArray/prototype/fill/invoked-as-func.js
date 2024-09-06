@@ -20,7 +20,6 @@
 
 
 
-
 var fill = TypedArray.prototype.fill;
 
 assert.sameValue(typeof fill, 'function');

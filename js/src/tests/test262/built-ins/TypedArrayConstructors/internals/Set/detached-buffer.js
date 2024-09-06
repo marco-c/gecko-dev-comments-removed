@@ -26,7 +26,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   let sample = new TA([42]);
   $DETACHBUFFER(sample.buffer);

@@ -21,7 +21,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var ta;
   var array = [];

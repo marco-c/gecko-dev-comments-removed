@@ -1,4 +1,3 @@
-
 var BUGNUMBER = 1021835;
 var summary = "Returning non-object from @@iterator should throw";
 

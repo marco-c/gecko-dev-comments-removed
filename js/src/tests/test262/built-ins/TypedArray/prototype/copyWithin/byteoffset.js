@@ -17,7 +17,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var ta = new TA([0, 1, 2, 3]);
   assert.compareArray(

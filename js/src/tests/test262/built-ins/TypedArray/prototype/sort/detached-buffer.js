@@ -18,7 +18,6 @@
 
 
 
-
 var comparefn = function() {
   throw new Test262Error();
 };

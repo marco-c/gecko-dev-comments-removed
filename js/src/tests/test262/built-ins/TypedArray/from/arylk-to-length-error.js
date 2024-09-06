@@ -13,7 +13,6 @@
 
 
 
-
 var arrayLike = { length: {} };
 
 arrayLike.length = {

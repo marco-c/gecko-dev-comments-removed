@@ -14,7 +14,6 @@
 
 
 
-
 var from = TypedArray.from;
 
 assert.throws(TypeError, function() {

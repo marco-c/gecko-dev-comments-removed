@@ -18,7 +18,6 @@
 
 
 
-
 var some = TypedArray.prototype.some;
 var callbackfn = function() {};
 

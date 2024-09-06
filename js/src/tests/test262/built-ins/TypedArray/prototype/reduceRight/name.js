@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(TypedArray.prototype.reduceRight, "name", {
   value: "reduceRight",
   writable: false,

@@ -21,7 +21,6 @@
 
 
 
-
 var filter = TypedArray.prototype.filter;
 
 assert.sameValue(typeof filter, 'function');

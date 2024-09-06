@@ -27,7 +27,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([39, 3, 9]);
   var called = 0;

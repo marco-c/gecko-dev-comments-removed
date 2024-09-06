@@ -15,7 +15,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(ctor) {
   class TA extends ctor {}
 

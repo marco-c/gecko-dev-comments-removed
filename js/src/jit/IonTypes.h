@@ -734,9 +734,6 @@ static inline MIRType ScalarTypeToMIRType(Scalar::Type type) {
       return MIRType::Int32;
     case Scalar::Int64:
       return MIRType::Int64;
-    case Scalar::Float16:
-      
-      MOZ_CRASH("NYI");
     case Scalar::Float32:
       return MIRType::Float32;
     case Scalar::Float64:

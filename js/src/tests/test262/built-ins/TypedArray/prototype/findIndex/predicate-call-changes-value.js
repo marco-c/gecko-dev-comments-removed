@@ -25,7 +25,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var arr = [10, 20, 30];
   var sample;

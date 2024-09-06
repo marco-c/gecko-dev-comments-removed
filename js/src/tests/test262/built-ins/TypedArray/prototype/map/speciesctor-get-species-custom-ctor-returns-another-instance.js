@@ -36,7 +36,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([40]);
   var otherTA = TA === Int8Array ? Int16Array : Int8Array;
