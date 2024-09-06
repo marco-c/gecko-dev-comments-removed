@@ -1423,6 +1423,12 @@ nsresult nsClipboard::SaveStorageOrStream(IDataObject* aDataObject, UINT aIndex,
   }
 
   if (stm.tymed == TYMED_ISTORAGE) {
+    
+    
+    if (stm.pstg == nullptr) {
+      return NS_ERROR_FAILURE;
+    }
+
     RefPtr<IStorage> file;
     hres = StgCreateStorageEx(
         aFileName.Data(), STGM_CREATE | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
@@ -1442,6 +1448,11 @@ nsresult nsClipboard::SaveStorageOrStream(IDataObject* aDataObject, UINT aIndex,
   }
 
   MOZ_ASSERT(stm.tymed == TYMED_ISTREAM);
+  
+  
+  if (stm.pstm == nullptr) {
+    return NS_ERROR_FAILURE;
+  }
 
   HANDLE handle = CreateFile(aFileName.Data(), GENERIC_WRITE, FILE_SHARE_READ,
                              NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
