@@ -2030,9 +2030,6 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     @Test
     fun contentCrashIgnored() {
         
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
-        
         assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
 
         mainSession.loadUri(CONTENT_CRASH_URL)
