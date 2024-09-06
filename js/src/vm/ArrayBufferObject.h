@@ -202,10 +202,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static const uint8_t RESERVED_SLOTS = 4;
 
-  
-  
-  
-  static constexpr size_t ARRAY_BUFFER_ALIGNMENT = 8;
+  static const size_t ARRAY_BUFFER_ALIGNMENT = 8;
 
   static_assert(FLAGS_SLOT == JS_ARRAYBUFFER_FLAGS_SLOT,
                 "self-hosted code with burned-in constants must get the "
@@ -309,7 +306,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     void* freeUserData_;
 
     friend class ArrayBufferObject;
-    friend class ResizableArrayBufferObject;
 
     BufferContents(uint8_t* data, BufferKind kind,
                    JS::BufferContentsFreeFunc freeFunc = nullptr,
@@ -324,43 +320,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
       
       
     }
-
-#ifdef DEBUG
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool isAligned(size_t byteLength) const {
-      
-      if (byteLength == 0) {
-        return true;
-      }
-
-      
-      
-      if (sizeof(void*) < ArrayBufferObject::ARRAY_BUFFER_ALIGNMENT) {
-        if (byteLength <= sizeof(void*)) {
-          return true;
-        }
-      }
-
-      
-      
-      
-      static_assert(alignof(std::max_align_t) %
-                        ArrayBufferObject::ARRAY_BUFFER_ALIGNMENT ==
-                    0);
-
-      
-      auto ptr = reinterpret_cast<uintptr_t>(data());
-      return ptr % ArrayBufferObject::ARRAY_BUFFER_ALIGNMENT == 0;
-    }
-#endif
 
    public:
     static BufferContents createInlineData(void* data) {
@@ -631,7 +590,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   }
 
   void initialize(size_t byteLength, BufferContents contents) {
-    MOZ_ASSERT(contents.isAligned(byteLength));
     setByteLength(byteLength);
     setFlags(0);
     setFirstView(nullptr);
@@ -712,7 +670,6 @@ class ResizableArrayBufferObject : public ArrayBufferObject {
 
   void initialize(size_t byteLength, size_t maxByteLength,
                   BufferContents contents) {
-    MOZ_ASSERT(contents.isAligned(byteLength));
     setByteLength(byteLength);
     setMaxByteLength(maxByteLength);
     setFlags(RESIZABLE);
