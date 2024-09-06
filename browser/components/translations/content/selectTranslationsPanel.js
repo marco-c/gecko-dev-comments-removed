@@ -86,6 +86,20 @@ var SelectTranslationsPanel = new (class {
 
 
 
+
+
+
+
+
+
+
+  #alignmentPosition = "";
+
+  
+
+
+
+
   get longTextHeight() {
     return this.#longTextHeight;
   }
@@ -488,7 +502,37 @@ var SelectTranslationsPanel = new (class {
   #openPopup(event, screenX, screenY) {
     this.console?.log("Showing SelectTranslationsPanel");
     const { panel } = this.elements;
-    panel.openPopupAtScreen(screenX, screenY,  false, event);
+    this.#cacheAlignmentPositionOnOpen();
+    panel.openPopupAtScreenRect(
+      "after_start",
+      screenX,
+      screenY,
+       0,
+       0,
+       false,
+       false,
+      event
+    );
+  }
+
+  
+
+
+
+
+
+
+  #cacheAlignmentPositionOnOpen() {
+    const { panel } = this.elements;
+    this.#alignmentPosition = "";
+    panel.addEventListener(
+      "popuppositioned",
+      popupPositionedEvent => {
+        
+        this.#alignmentPosition = popupPositionedEvent.alignmentPosition;
+      },
+      { once: true }
+    );
   }
 
   
@@ -521,6 +565,7 @@ var SelectTranslationsPanel = new (class {
       });
     }
 
+    textArea.style.resize = "none";
     if (sourceText.length < SelectTranslationsPanel.textLengthThreshold) {
       textArea.style.height = SelectTranslationsPanel.shortTextHeight;
     } else {
@@ -646,6 +691,83 @@ var SelectTranslationsPanel = new (class {
         break;
       }
     }
+  }
+
+  
+
+
+  #maybeEnableTextAreaResizer() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    switch (this.#alignmentPosition) {
+      case "after_start":
+      case "after_end": {
+        
+        break;
+      }
+      case "before_start":
+      case "before_end": {
+        
+        
+        this.console?.debug(
+          `Disabling text-area resizer due to panel alignment position: "${
+            this.#alignmentPosition
+          }"`
+        );
+        return;
+      }
+      default: {
+        this.console?.debug(
+          `Disabling text-area resizer due to unexpected panel alignment position: "${
+            this.#alignmentPosition
+          }"`
+        );
+        return;
+      }
+    }
+
+    const { textArea } = this.elements;
+    textArea.style.resize = "vertical";
   }
 
   
@@ -1301,6 +1423,7 @@ var SelectTranslationsPanel = new (class {
     this.#updateTextDirection(toLanguage);
     this.#updateConditionalUIEnabledState();
     this.#indicateTranslatedTextArea({ overflow: "auto" });
+    this.#maybeEnableTextAreaResizer();
   }
 
   
