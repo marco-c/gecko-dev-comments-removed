@@ -737,6 +737,8 @@ class MarkerSchema {
     
     FilePath,
     
+    SanitizedString,
+    
     
     
     
