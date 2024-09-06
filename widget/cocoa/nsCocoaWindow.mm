@@ -157,6 +157,13 @@ void nsCocoaWindow::DestroyNativeWindow() {
   
   EndOurNativeTransition();
 
+  
+  
+  
+  
+  
+  Show(false);
+
   [mWindow releaseJSObjects];
   
   
