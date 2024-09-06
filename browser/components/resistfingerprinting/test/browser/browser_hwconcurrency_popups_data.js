@@ -77,5 +77,10 @@ add_task(testE.bind(null, uri, testHWConcurrency, expectedResults));
 
 expectedResults = structuredClone(allNotSpoofed);
 add_task(
-  simpleRFPPBMFPPTest.bind(null, uri, testHWConcurrency, expectedResults)
+  RFPPBMFPP_NormalMode_NoProtectionsTest.bind(
+    null,
+    uri,
+    testHWConcurrency,
+    expectedResults
+  )
 );
