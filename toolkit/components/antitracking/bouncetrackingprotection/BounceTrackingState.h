@@ -45,7 +45,7 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   static already_AddRefed<BounceTrackingState> GetOrCreate(
-      dom::BrowsingContextWebProgress* aWebProgress);
+      dom::BrowsingContextWebProgress* aWebProgress, nsresult& aRv);
 
   
   
@@ -99,6 +99,10 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   nsCString Describe();
 
+  
+  
+  nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
+
  private:
   explicit BounceTrackingState();
   virtual ~BounceTrackingState();
@@ -139,12 +143,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   nsresult OnDocumentLoaded(nsIPrincipal* aDocumentPrincipal);
-
-  
-
-  
-  
-  nsresult OnStorageAccess();
 
   
   
