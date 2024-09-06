@@ -155,9 +155,6 @@ impl HitTestingSceneStats {
     }
 }
 
-#[derive(MallocSizeOf, Debug, Copy, Clone)]
-pub struct ClipNodeIndex(u32);
-
 
 
 

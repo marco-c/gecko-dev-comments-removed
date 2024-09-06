@@ -408,9 +408,6 @@ struct Resources {
 
 pub type GlyphDimensionsCache = FastHashMap<(FontInstanceKey, GlyphIndex), Option<GlyphDimensions>>;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct BlobImageRasterizerEpoch(usize);
-
 
 struct RenderTarget {
     size: DeviceIntSize,
