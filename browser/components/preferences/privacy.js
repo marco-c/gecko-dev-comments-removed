@@ -826,6 +826,22 @@ var gPrivacyPane = {
       Services.prefs.clearUserPref("doh-rollout.disable-heuristics");
     }
 
+    
+    
+    
+    
+    if (
+      value == Ci.nsIDNSService.MODE_TRRFIRST ||
+      value == Ci.nsIDNSService.MODE_TRRONLY
+    ) {
+      if (!Services.prefs.getStringPref("network.trr.uri")) {
+        Services.prefs.setStringPref(
+          "network.trr.uri",
+          DoHConfigController.currentConfig.fallbackProviderURI
+        );
+      }
+    }
+
     gPrivacyPane.updateDoHStatus();
   },
 
