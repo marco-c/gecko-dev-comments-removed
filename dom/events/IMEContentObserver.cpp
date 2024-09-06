@@ -1010,8 +1010,9 @@ void IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
   
   
   
-  uint32_t offset = 0;
-  if (!mEndOfAddedTextCache.CachesTextLengthBeforeContent(*aFirstContent)) {
+  Maybe<uint32_t> offset = mEndOfAddedTextCache.GetFlatTextOffsetOnInsertion(
+      *aFirstContent, *aLastContent, mRootElement);
+  if (offset.isNothing()) {
     Result<uint32_t, nsresult> textLengthBeforeFirstContentOrError =
         FlatTextCache::ComputeTextLengthBeforeContent(*aFirstContent,
                                                       mRootElement);
@@ -1023,9 +1024,7 @@ void IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
                ToString(RefPtr<nsINode>(aFirstContent)).c_str()));
       return;
     }
-    offset = textLengthBeforeFirstContentOrError.unwrap();
-  } else {
-    offset = mEndOfAddedTextCache.mFlatTextLength;
+    offset = Some(textLengthBeforeFirstContentOrError.unwrap());
   }
   Result<uint32_t, nsresult> addingLengthOrError =
       FlatTextCache::ComputeTextLengthStartOfContentToEndOfContent(
@@ -1045,14 +1044,14 @@ void IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
   
   
   mEndOfAddedTextCache.CacheFlatTextLengthBeforeEndOfContent(
-      __FUNCTION__, *aLastContent, offset + addingLengthOrError.inspect(),
+      __FUNCTION__, *aLastContent, *offset + addingLengthOrError.inspect(),
       mRootElement);
 
   if (!addingLengthOrError.inspect()) {
     return;
   }
 
-  TextChangeData data(offset, offset, offset + addingLengthOrError.inspect(),
+  TextChangeData data(*offset, *offset, *offset + addingLengthOrError.inspect(),
                       IsEditorHandlingEventForComposition(),
                       IsEditorComposing());
   MaybeNotifyIMEOfTextChange(data);
@@ -1084,43 +1083,56 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
   nsINode* containerNode = aChild->GetParentNode();
   MOZ_ASSERT(containerNode);
 
-  if (mStartOfRemovingTextRangeCache.CachesTextLengthBeforeContent(
-          *aChild, aPreviousSibling)) {
-    
-  } else if (aPreviousSibling) {
-    
-    
+  Maybe<uint32_t> offset =
+      mStartOfRemovingTextRangeCache.GetFlatTextLengthBeforeContent(
+          *aChild, aPreviousSibling, mRootElement);
+  if (offset.isSome()) {
     
     
     
-    if (NS_WARN_IF(NS_FAILED(
-            mStartOfRemovingTextRangeCache
-                .ComputeAndCacheFlatTextLengthBeforeEndOfContent(
-                    __FUNCTION__, *aPreviousSibling, mRootElement)))) {
-      return;
+    if (aPreviousSibling) {
+      mStartOfRemovingTextRangeCache.CacheFlatTextLengthBeforeEndOfContent(
+          __FUNCTION__, *aPreviousSibling, *offset, mRootElement);
+    } else {
+      mStartOfRemovingTextRangeCache.CacheFlatTextLengthBeforeFirstContent(
+          __FUNCTION__, *containerNode, *offset, mRootElement);
     }
   } else {
-    
-    
-    
-    if (NS_WARN_IF(
-            NS_FAILED(mStartOfRemovingTextRangeCache
-                          .ComputeAndCacheFlatTextLengthBeforeFirstContent(
-                              __FUNCTION__, *containerNode, mRootElement)))) {
-      return;
+    if (aPreviousSibling) {
+      
+      
+      
+      
+      
+      if (NS_WARN_IF(NS_FAILED(
+              mStartOfRemovingTextRangeCache
+                  .ComputeAndCacheFlatTextLengthBeforeEndOfContent(
+                      __FUNCTION__, *aPreviousSibling, mRootElement)))) {
+        return;
+      }
+    } else {
+      
+      
+      
+      if (NS_WARN_IF(
+              NS_FAILED(mStartOfRemovingTextRangeCache
+                            .ComputeAndCacheFlatTextLengthBeforeFirstContent(
+                                __FUNCTION__, *containerNode, mRootElement)))) {
+        return;
+      }
     }
+    offset = Some(mStartOfRemovingTextRangeCache.GetFlatTextLength());
   }
-  const uint32_t offset = mStartOfRemovingTextRangeCache.mFlatTextLength;
 
   
   const Result<uint32_t, nsresult> textLengthOrError =
-      FlatTextCache::ComputeTextLengthOfRemovingContent(*aChild, mRootElement);
+      FlatTextCache::ComputeTextLengthOfContent(*aChild, mRootElement);
   if (NS_WARN_IF(textLengthOrError.isErr())) {
     mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
     return;
   }
 
-  TextChangeData data(offset, offset + textLengthOrError.inspect(), offset,
+  TextChangeData data(*offset, *offset + textLengthOrError.inspect(), *offset,
                       IsEditorHandlingEventForComposition(),
                       IsEditorComposing());
   MaybeNotifyIMEOfTextChange(data);
@@ -2323,15 +2335,42 @@ void IMEContentObserver::FlatTextCache::CacheFlatTextLengthBeforeFirstContent(
   AssertValidCache(aRootElement);
 }
 
-
-Result<uint32_t, nsresult>
-IMEContentObserver::FlatTextCache::ComputeTextLengthOfRemovingContent(
-    const nsIContent& aRemovingContent, const dom::Element* aRootElement) {
-  MOZ_ASSERT(aRemovingContent.IsBeingRemoved());
+Maybe<uint32_t>
+IMEContentObserver::FlatTextCache::GetFlatTextLengthBeforeContent(
+    const nsIContent& aContent, const nsIContent* aPreviousSibling,
+    const dom::Element* aRootElement) const {
   MOZ_ASSERT(aRootElement);
 
-  if (const Text* removingTextNode = Text::FromNode(aRemovingContent)) {
-    return ContentEventHandler::GetNativeTextLength(*removingTextNode);
+  
+  
+  
+  
+  MOZ_ASSERT(aContent.IsBeingRemoved());
+
+  if (!mContainerNode) {
+    return Nothing();
+  }
+
+  if (IsCachingToStartOfContainer()) {
+    MOZ_ASSERT(!mContent);
+    
+    
+    
+    
+    
+    if (!aPreviousSibling && mContainerNode == aContent.GetParentNode()) {
+      return Some(mFlatTextLength);
+    }
+    return Nothing();
+  }
+
+  MOZ_ASSERT(IsCachingToEndOfContent());
+  MOZ_ASSERT(mContent);
+
+  
+  
+  if (mContent == aPreviousSibling) {
+    return Some(mFlatTextLength);
   }
 
   
@@ -2340,18 +2379,111 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthOfRemovingContent(
   
   
   
-  
-  
-  
-  uint32_t textLength = 0;
-  nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
-      RawNodePosition::Before(aRemovingContent),
-      RawNodePosition::AtEndOf(aRemovingContent), aRootElement, &textLength,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE, true);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
+  if (mContent == &aContent) {
+    const Result<uint32_t, nsresult> textLength =
+        FlatTextCache::ComputeTextLengthOfContent(aContent, aRootElement);
+    if (NS_WARN_IF(textLength.isErr()) ||
+        NS_WARN_IF(mFlatTextLength < textLength.inspect())) {
+      return Nothing();
+    }
+    return Some(mFlatTextLength - textLength.inspect());
   }
-  return textLength;
+  return Nothing();
+}
+
+Maybe<uint32_t> IMEContentObserver::FlatTextCache::GetFlatTextOffsetOnInsertion(
+    const nsIContent& aFirstContent, const nsIContent& aLastContent,
+    const dom::Element* aRootElement) const {
+  MOZ_ASSERT(aRootElement);
+  MOZ_ASSERT(aFirstContent.GetParentNode() == aLastContent.GetParentNode());
+  MOZ_ASSERT(!aFirstContent.IsBeingRemoved());
+  MOZ_ASSERT(!aLastContent.IsBeingRemoved());
+
+  if (!mContainerNode || mContainerNode != aFirstContent.GetParentNode()) {
+    return Nothing();
+  }
+
+  if (IsCachingToStartOfContainer()) {
+    MOZ_ASSERT(!mContent);
+    
+    
+    if (mContainerNode->GetFirstChild() == &aFirstContent) {
+      return Some(mFlatTextLength);
+    }
+    return Nothing();
+  }
+
+  MOZ_ASSERT(IsCachingToEndOfContent());
+  MOZ_ASSERT(mContent);
+  MOZ_ASSERT(mContent != &aFirstContent);
+  MOZ_ASSERT(mContent != &aLastContent);
+
+  
+  
+  
+  
+  if (mContent == aFirstContent.GetPreviousSibling()) {
+    return Some(mFlatTextLength);
+  }
+  
+  
+  
+  
+  
+  
+  if (mContent == aLastContent.GetNextSibling() ||
+      aLastContent.ComputeIndexInParentNode().valueOr(UINT32_MAX) <
+          mContent->ComputeIndexInParentNode().valueOr(0u)) {
+    Result<uint32_t, nsresult> previouslyInsertedTextLengthOrError =
+        FlatTextCache::ComputeTextLengthStartOfContentToEndOfContent(
+            *aLastContent.GetNextSibling(), *mContent, aRootElement);
+    if (NS_WARN_IF(previouslyInsertedTextLengthOrError.isErr()) ||
+        NS_WARN_IF(mFlatTextLength <
+                   previouslyInsertedTextLengthOrError.inspect())) {
+      return Nothing();
+    }
+    
+    
+    
+    
+    return Some(mFlatTextLength - previouslyInsertedTextLengthOrError.unwrap());
+  }
+  return Nothing();
+}
+
+
+Result<uint32_t, nsresult>
+IMEContentObserver::FlatTextCache::ComputeTextLengthOfContent(
+    const nsIContent& aContent, const dom::Element* aRootElement) {
+  MOZ_ASSERT(aRootElement);
+
+  if (const Text* textNode = Text::FromNode(&aContent)) {
+    return ContentEventHandler::GetNativeTextLength(*textNode);
+  }
+
+  if (aContent.IsBeingRemoved()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    uint32_t textLength = 0;
+    nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
+        RawNodePosition::Before(aContent), RawNodePosition::AtEndOf(aContent),
+        aRootElement, &textLength, LineBreakType::LINE_BREAK_TYPE_NATIVE, true);
+    if (NS_FAILED(rv)) {
+      return Err(rv);
+    }
+    return textLength;
+  }
+
+  return ComputeTextLengthStartOfContentToEndOfContent(aContent, aContent,
+                                                       aRootElement);
 }
 
 

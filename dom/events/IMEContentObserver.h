@@ -540,9 +540,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-    [[nodiscard]] static Result<uint32_t, nsresult>
-    ComputeTextLengthOfRemovingContent(const nsIContent& aRemovingContent,
-                                       const dom::Element* aRootElement);
+    [[nodiscard]] static Result<uint32_t, nsresult> ComputeTextLengthOfContent(
+        const nsIContent& aContent, const dom::Element* aRootElement);
 
     
 
@@ -609,27 +608,26 @@ class IMEContentObserver final : public nsStubMutationObserver,
         const nsIContent& aStartContent, const nsIContent& aEndContent,
         const dom::Element* aRootElement);
 
-    [[nodiscard]] bool CachesTextLengthBeforeContent(
-        const nsIContent& aContent) const {
-      MOZ_ASSERT(!aContent.IsBeingRemoved());
-      return CachesTextLengthBeforeContent(aContent,
-                                           aContent.GetPreviousSibling());
-    }
-    [[nodiscard]] bool CachesTextLengthBeforeContent(
-        const nsIContent& aContent, const nsIContent* aPreviousSibling) const {
-      MOZ_ASSERT_IF(!aContent.IsBeingRemoved(),
-                    aContent.GetPreviousSibling() == aPreviousSibling);
-      if (!mContainerNode || mContainerNode != aContent.GetParentNode()) {
-        return false;
-      }
-      if (IsCachingToStartOfContainer()) {
-        MOZ_ASSERT(!mContent);
-        return !aPreviousSibling;
-      }
-      MOZ_ASSERT(mContent);
-      return mContainerNode == aContent.GetParentNode() &&
-             mContent == aPreviousSibling;
-    }
+    [[nodiscard]] uint32_t GetFlatTextLength() const { return mFlatTextLength; }
+
+    
+
+
+
+
+
+    [[nodiscard]] Maybe<uint32_t> GetFlatTextLengthBeforeContent(
+        const nsIContent& aContent, const nsIContent* aPreviousSibling,
+        const dom::Element* aRootElement) const;
+
+    
+
+
+
+
+    [[nodiscard]] Maybe<uint32_t> GetFlatTextOffsetOnInsertion(
+        const nsIContent& aFirstContent, const nsIContent& aLastContent,
+        const dom::Element* aRootElement) const;
 
     
 
@@ -646,13 +644,14 @@ class IMEContentObserver final : public nsStubMutationObserver,
     
     
     nsCOMPtr<nsIContent> mContent;
+
+   private:
     
     
     
     uint32_t mFlatTextLength = 0;
     MOZ_DEFINE_DBG(FlatTextCache, mContainerNode, mContent, mFlatTextLength);
 
-   private:
     const char* mInstanceName;
   };
 
