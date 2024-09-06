@@ -1372,6 +1372,17 @@ bool CookieService::CanSetCookie(
   }
 
   
+  if (aCookieData.name().IsEmpty() && aCookieData.value().IsEmpty()) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
+                      "cookie name and value are empty");
+
+    CookieLogging::LogMessageToConsole(
+        aCRC, aHostURI, nsIScriptError::warningFlag, CONSOLE_REJECTION_CATEGORY,
+        "CookieRejectedEmptyNameAndValue"_ns, nsTArray<nsString>());
+    return newCookie;
+  }
+
+  
   if (!CookieCommons::CheckNameAndValueSize(aCookieData)) {
     COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
                       "cookie too big (> 4kb)");
