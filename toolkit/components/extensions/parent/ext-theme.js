@@ -113,13 +113,15 @@ class Theme {
         this.lwtData.experiment = this.experiment;
       }
 
-      this.extension.startupData = {
-        lwtData: this.lwtData,
-        lwtStyles: this.lwtStyles,
-        lwtDarkStyles: this.lwtDarkStyles,
-        experiment: this.experiment,
-      };
-      this.extension.saveStartupData();
+      if (this.extension.type === "theme") {
+        this.extension.startupData = {
+          lwtData: this.lwtData,
+          lwtStyles: this.lwtStyles,
+          lwtDarkStyles: this.lwtDarkStyles,
+          experiment: this.experiment,
+        };
+        this.extension.saveStartupData();
+      }
     }
 
     if (this.windowId) {
@@ -440,6 +442,8 @@ this.theme = class extends ExtensionAPIPersistent {
     let { extension } = this;
     let { manifest } = extension;
 
+    
+    
     defaultTheme = new Theme({
       extension,
       details: manifest.theme,
