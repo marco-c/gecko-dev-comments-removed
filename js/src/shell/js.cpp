@@ -9756,16 +9756,6 @@ JS_FN_HELP("createUserArrayBuffer", CreateUserArrayBuffer, 1, 0,
 "            or only when there are no other JavaScript frames on the stack\n"
 "            below it (false). If omitted, this is treated as 'true'."),
 
-#ifdef JS_HAS_INTL_API
-    JS_FN_HELP("addIntlExtras", AddIntlExtras, 1, 0,
-"addIntlExtras(obj)",
-"Adds various not-yet-standardized Intl functions as properties on the\n"
-"provided object (this should generally be Intl itself).  The added\n"
-"functions and their behavior are experimental: don't depend upon them\n"
-"unless you're willing to update your code if these experimental APIs change\n"
-"underneath you."),
-#endif 
-
 #ifndef __wasi__
     JS_FN_HELP("wasmCompileInSeparateProcess", WasmCompileInSeparateProcess, 1, 0,
 "wasmCompileInSeparateProcess(buffer)",
@@ -9916,6 +9906,20 @@ TestAssertRecoveredOnBailout,
 "debugGetQueuedJobs()",
 "  Returns an array of queued jobs."),
 #endif
+
+#ifdef JS_HAS_INTL_API
+  
+  
+  
+  
+    JS_FN_HELP("addIntlExtras", AddIntlExtras, 1, 0,
+"addIntlExtras(obj)",
+"Adds various not-yet-standardized Intl functions as properties on the\n"
+"provided object (this should generally be Intl itself).  The added\n"
+"functions and their behavior are experimental: don't depend upon them\n"
+"unless you're willing to update your code if these experimental APIs change\n"
+"underneath you."),
+#endif 
 
     JS_FS_HELP_END
 };
