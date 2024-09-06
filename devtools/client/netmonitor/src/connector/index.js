@@ -144,14 +144,27 @@ class Connector {
     this._harMetadataCollector.destroy();
   }
 
-  clear() {
+  
+
+
+
+
+
+
+
+
+  clear({ isExplicitClear }) {
     
     this.dataProvider.clear();
 
     this._harMetadataCollector.clear();
 
-    this.commands.resourceCommand.clearResources(Connector.NETWORK_RESOURCES);
-    this.emitForTests("clear-network-resources");
+    if (isExplicitClear) {
+      
+      
+      this.commands.resourceCommand.clearResources(Connector.NETWORK_RESOURCES);
+      this.emitForTests("clear-network-resources");
+    }
 
     
     this.toolbox.disableAllConsoleNetworkLogs();
@@ -265,7 +278,7 @@ class Connector {
     if (this.actions) {
       if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLE_PERSISTENT_LOG_PREF)) {
         this.actions.batchReset();
-        this.actions.clearRequests();
+        this.actions.clearRequests({ isExplicitClear: false });
       } else {
         
         this.actions.clearTimingMarkers();
