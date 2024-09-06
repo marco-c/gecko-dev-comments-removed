@@ -139,6 +139,10 @@ def use_artifact(config, jobs):
             and job.get("index", {}).get("job-name") in ARTIFACT_JOBS
             
             and job["worker"]["env"].get("MOZ_AUTOMATION_PACKAGE_TESTS") == "1"
+            
+            and not (
+                "android" in job["name"] and job["attributes"].get("shippable", False)
+            )
         ):
             job["treeherder"]["symbol"] = add_suffix(job["treeherder"]["symbol"], "a")
             job["worker"]["env"]["USE_ARTIFACT"] = "1"
