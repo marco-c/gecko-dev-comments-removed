@@ -2,8 +2,6 @@
 
 
 
-import { features } from "../prefs";
-
 function _isInvalidTarget(target) {
   if (!target || !target.innerText) {
     return true;
@@ -24,17 +22,11 @@ function _isInvalidTarget(target) {
   
   
   const INVALID_TARGET_CLASSES = [
-    
     "cm-atom",
     "cm-number",
     "cm-operator",
     "cm-string",
     "cm-tag",
-    
-    "tok-string",
-    "tok-punctuation",
-    "tok-number",
-    "tok-operator",
     
     "editor-mount",
   ];
@@ -48,12 +40,7 @@ function _isInvalidTarget(target) {
   
   
   
-  
-  if (
-    (target.classList.contains("cm-keyword") ||
-      target.classList.contains("tok-keyword")) &&
-    tokenText !== "this"
-  ) {
+  if (target.classList.contains("cm-keyword") && tokenText !== "this") {
     return true;
   }
 
@@ -61,16 +48,11 @@ function _isInvalidTarget(target) {
   if (
     
     target.closest(".CodeMirror-widget") ||
-    target.closest(".inline-preview") ||
     
     target.matches(".CodeMirror-line, .CodeMirror-gutter-elt") ||
     
-    (!target.closest(".CodeMirror-line") &&
-      
-      !target.closest(".cm-line")) ||
-    target.getBoundingClientRect().top == 0 ||
-    
-    target.classList.contains("cm-line")
+    !target.closest(".CodeMirror-line") ||
+    target.getBoundingClientRect().top == 0
   ) {
     return true;
   }
@@ -83,16 +65,8 @@ function _isInvalidTarget(target) {
   return false;
 }
 
-function _dispatch(codeMirrorOrSourceEditor, eventName, data) {
-  if (features.codemirrorNext) {
-    codeMirrorOrSourceEditor.emit(eventName, data);
-  } else {
-    codeMirrorOrSourceEditor.constructor.signal(
-      codeMirrorOrSourceEditor,
-      eventName,
-      data
-    );
-  }
+function _dispatch(codeMirror, eventName, data) {
+  codeMirror.constructor.signal(codeMirror, eventName, data);
 }
 
 function _invalidLeaveTarget(target) {
@@ -108,7 +82,7 @@ function _invalidLeaveTarget(target) {
 
 
 
-export function onMouseOver(codeMirrorOrEditor) {
+export function onMouseOver(codeMirror) {
   let prevTokenPos = null;
 
   function onMouseLeave(event) {
@@ -118,7 +92,7 @@ export function onMouseOver(codeMirrorOrEditor) {
     }
 
     prevTokenPos = null;
-    _dispatch(codeMirrorOrEditor, "tokenleave", event);
+    _dispatch(codeMirror, "tokenleave", event);
   }
 
   function addMouseLeave(target) {
@@ -128,19 +102,14 @@ export function onMouseOver(codeMirrorOrEditor) {
     });
   }
 
-  return (enterEvent, cm, cursorLine, cursorColumn, eventLine, eventColumn) => {
+  return enterEvent => {
     const { target } = enterEvent;
 
     if (_isInvalidTarget(target)) {
       return;
     }
-    let tokenPos;
-    if (features.codemirrorNext) {
-      
-      tokenPos = { line: eventLine, column: eventColumn };
-    } else {
-      tokenPos = getTokenLocation(codeMirrorOrEditor, target);
-    }
+
+    const tokenPos = getTokenLocation(codeMirror, target);
 
     if (
       prevTokenPos?.line !== tokenPos?.line ||
@@ -148,7 +117,7 @@ export function onMouseOver(codeMirrorOrEditor) {
     ) {
       addMouseLeave(target);
 
-      _dispatch(codeMirrorOrEditor, "tokenenter", {
+      _dispatch(codeMirror, "tokenenter", {
         event: enterEvent,
         target,
         tokenPos,
