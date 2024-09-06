@@ -4142,7 +4142,7 @@ static bool TypedArrayRadixSort(JSContext* cx, TypedArrayObject* typedArray,
     return TypedArrayStdSort<T, Ops>(cx, typedArray, length);
   }
 
-  if constexpr (sizeof(T) == 2) {
+  if constexpr (sizeof(T) == 2 && !std::is_same_v<T, float16>) {
     
     
     constexpr size_t CountingSortMaxCutoff = 65536;
@@ -4205,13 +4205,7 @@ template <typename T, typename Ops>
 static constexpr typename std::enable_if_t<sizeof(T) == 2 || sizeof(T) == 4,
                                            TypedArraySortFn>
 TypedArraySort() {
-  if constexpr (std::is_same_v<T, float16>) {
-    
-    
-    return TypedArrayStdSort<T, Ops>;
-  } else {
-    return TypedArrayRadixSort<T, Ops>;
-  }
+  return TypedArrayRadixSort<T, Ops>;
 }
 
 template <typename T, typename Ops>
