@@ -8,7 +8,7 @@ async function testSteps() {
   
   
   
-  const cosmologicalConstant = 20000;
+  const cosmologicalConstant = 31768;
 
   
   
