@@ -326,13 +326,6 @@ class ImageContainer final : public SupportsThreadSafeWeakPtr<ImageContainer> {
 
   explicit ImageContainer(ImageContainer::Mode flag = SYNCHRONOUS);
 
-  
-
-
-
-
-  explicit ImageContainer(const CompositableHandle& aHandle);
-
   ~ImageContainer();
 
   typedef ContainerFrameID FrameID;
