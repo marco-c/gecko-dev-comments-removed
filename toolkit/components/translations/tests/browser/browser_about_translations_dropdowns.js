@@ -4,109 +4,114 @@
 "use strict";
 
 add_task(async function test_about_translations_dropdowns() {
-  let languagePairs = [
+  const languagePairs = [
     { fromLang: "en", toLang: "es" },
     { fromLang: "es", toLang: "en" },
     
     { fromLang: "is", toLang: "en" },
   ];
-  await openAboutTranslations({
+
+  const { runInPage, cleanup } = await openAboutTranslations({
     languagePairs,
     dataForContent: languagePairs,
-    runInPage: async ({ selectors }) => {
-      const { document } = content;
+    autoDownloadFromRemoteSettings: true,
+  });
 
-      await ContentTaskUtils.waitForCondition(
-        () => {
-          return document.body.hasAttribute("ready");
-        },
-        "Waiting for the document to be ready.",
-        100,
-        200
+  await runInPage(async ({ selectors }) => {
+    const { document } = content;
+
+    await ContentTaskUtils.waitForCondition(
+      () => {
+        return document.body.hasAttribute("ready");
+      },
+      "Waiting for the document to be ready.",
+      100,
+      200
+    );
+
+    
+
+
+
+
+
+
+
+
+
+    function assertOptions({
+      message,
+      select,
+      availableOptions,
+      selectedValue,
+    }) {
+      const options = [...select.options];
+      info(message);
+      Assert.deepEqual(
+        options.filter(option => !option.hidden).map(option => option.value),
+        availableOptions,
+        "The available options match."
       );
 
-      
+      is(selectedValue, select.value, "The selected value matches.");
+    }
 
+    
+    const fromSelect = document.querySelector(selectors.fromLanguageSelect);
+    
+    const toSelect = document.querySelector(selectors.toLanguageSelect);
 
+    assertOptions({
+      message: 'From languages have "detect" already selected.',
+      select: fromSelect,
+      availableOptions: ["detect", "en", "is", "es"],
+      selectedValue: "detect",
+    });
 
+    assertOptions({
+      message:
+        'The "to" options do not have "detect" in the list, and nothing is selected.',
+      select: toSelect,
+      availableOptions: ["", "en", "es"],
+      selectedValue: "",
+    });
 
+    info('Switch the "to" language to "es".');
+    toSelect.value = "es";
+    toSelect.dispatchEvent(new Event("input"));
 
+    assertOptions({
+      message: 'The "from" languages no longer suggest "es".',
+      select: fromSelect,
+      availableOptions: ["detect", "en", "is"],
+      selectedValue: "detect",
+    });
 
+    assertOptions({
+      message: 'The "to" options remain the same, but "es" is selected.',
+      select: toSelect,
+      availableOptions: ["", "en", "es"],
+      selectedValue: "es",
+    });
 
+    info('Switch the "from" language to English.');
+    fromSelect.value = "en";
+    fromSelect.dispatchEvent(new Event("input"));
 
+    assertOptions({
+      message: 'The "to" languages no longer suggest "en".',
+      select: toSelect,
+      availableOptions: ["", "es"],
+      selectedValue: "es",
+    });
 
-      function assertOptions({
-        message,
-        select,
-        availableOptions,
-        selectedValue,
-      }) {
-        const options = [...select.options];
-        info(message);
-        Assert.deepEqual(
-          options.filter(option => !option.hidden).map(option => option.value),
-          availableOptions,
-          "The available options match."
-        );
-
-        is(selectedValue, select.value, "The selected value matches.");
-      }
-
-      
-      const fromSelect = document.querySelector(selectors.fromLanguageSelect);
-      
-      const toSelect = document.querySelector(selectors.toLanguageSelect);
-
-      assertOptions({
-        message: 'From languages have "detect" already selected.',
-        select: fromSelect,
-        availableOptions: ["detect", "en", "is", "es"],
-        selectedValue: "detect",
-      });
-
-      assertOptions({
-        message:
-          'The "to" options do not have "detect" in the list, and nothing is selected.',
-        select: toSelect,
-        availableOptions: ["", "en", "es"],
-        selectedValue: "",
-      });
-
-      info('Switch the "to" language to "es".');
-      toSelect.value = "es";
-      toSelect.dispatchEvent(new Event("input"));
-
-      assertOptions({
-        message: 'The "from" languages no longer suggest "es".',
-        select: fromSelect,
-        availableOptions: ["detect", "en", "is"],
-        selectedValue: "detect",
-      });
-
-      assertOptions({
-        message: 'The "to" options remain the same, but "es" is selected.',
-        select: toSelect,
-        availableOptions: ["", "en", "es"],
-        selectedValue: "es",
-      });
-
-      info('Switch the "from" language to English.');
-      fromSelect.value = "en";
-      fromSelect.dispatchEvent(new Event("input"));
-
-      assertOptions({
-        message: 'The "to" languages no longer suggest "en".',
-        select: toSelect,
-        availableOptions: ["", "es"],
-        selectedValue: "es",
-      });
-
-      assertOptions({
-        message: 'The "from" options remain the same, but "en" is selected.',
-        select: fromSelect,
-        availableOptions: ["detect", "en", "is"],
-        selectedValue: "en",
-      });
-    },
+    assertOptions({
+      message: 'The "from" options remain the same, but "en" is selected.',
+      select: fromSelect,
+      availableOptions: ["detect", "en", "is"],
+      selectedValue: "en",
+    });
   });
+
+  await cleanup();
 });

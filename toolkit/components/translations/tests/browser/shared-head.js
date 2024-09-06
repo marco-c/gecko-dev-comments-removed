@@ -80,12 +80,24 @@ const NEVER_TRANSLATE_LANGS_PREF =
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 async function openAboutTranslations({
   dataForContent,
   disabled,
-  runInPage,
   languagePairs = LANGUAGE_PAIRS,
   prefs,
+  autoDownloadFromRemoteSettings = false,
 }) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -107,6 +119,7 @@ async function openAboutTranslations({
     translationResult: "#translation-to",
     translationResultBlank: "#translation-to-blank",
     translationInfo: "#translation-info",
+    translationResultsPlaceholder: "#translation-results-placeholder",
     noSupportMessage: "[data-l10n-id='about-translations-no-support']",
   };
 
@@ -119,9 +132,7 @@ async function openAboutTranslations({
 
   const { removeMocks, remoteClients } = await createAndMockRemoteSettings({
     languagePairs,
-    
-    
-    autoDownloadFromRemoteSettings: true,
+    autoDownloadFromRemoteSettings,
   });
 
   
@@ -131,24 +142,46 @@ async function openAboutTranslations({
   );
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
-  await remoteClients.translationsWasm.resolvePendingDownloads(1);
-  await remoteClients.translationModels.resolvePendingDownloads(
-    languagePairs.length * FILES_PER_LANGUAGE_PAIR
-  );
+  
 
-  await ContentTask.spawn(
-    tab.linkedBrowser,
-    { dataForContent, selectors },
-    runInPage
-  );
 
-  await loadBlankPage();
-  BrowserTestUtils.removeTab(tab);
+  const resolveDownloads = async count => {
+    await remoteClients.translationsWasm.resolvePendingDownloads(1);
+    await remoteClients.translationModels.resolvePendingDownloads(
+      FILES_PER_LANGUAGE_PAIR * count
+    );
+  };
 
-  await removeMocks();
-  await EngineProcess.destroyTranslationsEngine();
+  
 
-  await SpecialPowers.popPrefEnv();
+
+  const rejectDownloads = async count => {
+    await remoteClients.translationsWasm.rejectPendingDownloads(1);
+    await remoteClients.translationModels.rejectPendingDownloads(
+      FILES_PER_LANGUAGE_PAIR * count
+    );
+  };
+
+  return {
+    runInPage(callback) {
+      return ContentTask.spawn(
+        tab.linkedBrowser,
+        { dataForContent, selectors }, 
+        callback
+      );
+    },
+    async cleanup() {
+      await loadBlankPage();
+      BrowserTestUtils.removeTab(tab);
+
+      await removeMocks();
+      await EngineProcess.destroyTranslationsEngine();
+
+      await SpecialPowers.popPrefEnv();
+    },
+    resolveDownloads,
+    rejectDownloads,
+  };
 }
 
 
