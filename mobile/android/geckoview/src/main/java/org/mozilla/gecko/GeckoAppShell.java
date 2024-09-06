@@ -192,7 +192,7 @@ public class GeckoAppShell {
 
 
 
-  private static final int GOOGLE_SEARCH_RAM_THRESHOLD_MEGABYTES = 1024;
+  private static final int ADDITIONAL_SEARCH_HEADER_RAM_THRESHOLD_MEGABYTES = 1024;
 
   private static int sDensityDpi;
   private static Float sDensity;
@@ -874,7 +874,7 @@ public class GeckoAppShell {
   @WrapForJNI(calledFrom = "gecko")
   private static synchronized boolean isDeviceRamThresholdOkay() {
     final Context applicationContext = getApplicationContext();
-    return getTotalRam(applicationContext) > GOOGLE_SEARCH_RAM_THRESHOLD_MEGABYTES;
+    return getTotalRam(applicationContext) > ADDITIONAL_SEARCH_HEADER_RAM_THRESHOLD_MEGABYTES;
   }
 
   private static boolean isHighMemoryDevice(final Context context) {
