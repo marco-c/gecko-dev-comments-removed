@@ -5,8 +5,7 @@ function testNonCanonicalNan()
 
     
     var ui8arr = new Uint8Array(buf);
-    for (var i = 0; i < ui8arr.length; ++i)
-        ui8arr[i] = 0xff;
+    ui8arr.fill(0xff);
 
     var dblarr = new Float64Array(buf);
     assertEq(dblarr.length, bytes / 8);
@@ -19,14 +18,6 @@ function testNonCanonicalNan()
         assertEq(asnum, NaN);
     }
 
-    
-    for (var i = 0; i < ui8arr.length; i += 4) {
-        ui8arr[i+0] = 0xffff;
-        ui8arr[i+1] = 0xffff;
-        ui8arr[i+2] = 0xffff;
-        ui8arr[i+3] = 0xffff;
-    }
-
     var fltarr = new Float32Array(buf);
     assertEq(fltarr.length, bytes / 4);
 
@@ -34,6 +25,17 @@ function testNonCanonicalNan()
     for (var i = 0; i < fltarr.length; ++i) {
         var asstr = fltarr[i] + "";
         var asnum = fltarr[i] + 0.0;
+        assertEq(asstr, "NaN");
+        assertEq(asnum, NaN);
+    }
+
+    var flt16arr = new Float16Array(buf);
+    assertEq(flt16arr.length, bytes / 2);
+
+    
+    for (var i = 0; i < flt16arr.length; ++i) {
+        var asstr = flt16arr[i] + "";
+        var asnum = flt16arr[i] + 0.0;
         assertEq(asstr, "NaN");
         assertEq(asnum, NaN);
     }
