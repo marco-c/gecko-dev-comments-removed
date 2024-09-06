@@ -1752,12 +1752,8 @@ JSObject* GetSuspendingPromiseResult(Instance* instance,
 
     
     
-    auto bestTier = instance->code().bestTier();
-    const wasm::FuncExport& funcExport =
-        instance->code(bestTier).lookupFuncExport(
-            SuspendingFunctionModuleFactory::ExportedFnIndex);
-    const wasm::FuncType& sig =
-        instance->codeMeta().getFuncExportType(funcExport);
+    const wasm::FuncType& sig = instance->code().getFuncExportType(
+        SuspendingFunctionModuleFactory::ExportedFnIndex);
 
     if (fields.length() == 1) {
       RootedVal val(cx);

@@ -56,6 +56,10 @@ static Atomic<ThreadSafeCodeBlockMap*> sThreadSafeCodeBlockMap(nullptr);
 bool wasm::RegisterCodeBlock(const CodeBlock* cs) {
   MOZ_ASSERT(cs->code->initialized());
 
+  if (cs->length() == 0) {
+    return true;
+  }
+
   
   ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
@@ -67,6 +71,10 @@ bool wasm::RegisterCodeBlock(const CodeBlock* cs) {
 }
 
 void wasm::UnregisterCodeBlock(const CodeBlock* cs) {
+  if (cs->length() == 0) {
+    return;
+  }
+
   
   ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
