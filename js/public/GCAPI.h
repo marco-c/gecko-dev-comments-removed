@@ -444,12 +444,6 @@ typedef enum JSGCParamKey {
 
 
 
-
-
-
-
-
-
   JSGC_MARKING_THREAD_COUNT = 49,
 
   
@@ -467,6 +461,18 @@ typedef enum JSGCParamKey {
 
 
   JSGC_SEMISPACE_NURSERY_ENABLED = 51,
+
+  
+
+
+
+
+
+
+
+
+
+  JSGC_MAX_MARKING_THREADS = 52,
 
 } JSGCParamKey;
 

@@ -545,6 +545,9 @@ static const double HelperThreadRatio = 0.5;
 
 static const size_t MaxHelperThreads = 8;
 
+
+static const size_t MaxMarkingThreads = 2;
+
 }  
 
 
