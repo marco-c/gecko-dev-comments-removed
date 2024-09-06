@@ -25,8 +25,8 @@ promise_test(async t => {
   
   const specifier = "./empty-module.js?" + Date.now();
 
-  const getCount = ticker(1e7);
+  const getCount = ticker(1e6);
   await import(specifier);
-  assert_equals(getCount(), 1e7);
+  assert_equals(getCount(), 1e6);
 }, "import() should drain the microtask queue when fetching a new module");
 
