@@ -192,9 +192,13 @@ def create_maven_archive(topobjdir):
     gradle_folder = os.path.join(topobjdir, "gradle")
     maven_folder = os.path.join(gradle_folder, "maven")
 
-    with tarfile.open(
-        os.path.join(gradle_folder, "target.maven.tar.xz"), "w|xz"
-    ) as tar:
+    
+    
+    
+    
+    
+    
+    with tarfile.open(os.path.join(gradle_folder, "target.maven.tar.xz"), "w") as tar:
         for abs_path in get_maven_archive_paths(maven_folder):
             tar.add(
                 abs_path,
