@@ -272,9 +272,8 @@ class InspectorUtils {
   
 
 
-  static void GetRuleBodyTextOffsets(
-      GlobalObject&, const nsACString& aInitialText,
-      Nullable<InspectorGetRuleBodyTextResult>& aResult);
+  static void GetRuleBodyText(GlobalObject&, const nsACString& aInitialText,
+                              nsACString& aBodyText);
 
   
 
