@@ -4104,29 +4104,6 @@ void MacroAssemblerCompat::branchStackPtrRhs(Condition cond,
   B(label, Assembler::InvertCondition(cond));
 }
 
-
-
-
-void MacroAssemblerCompat::ensureDouble(const ValueOperand& source,
-                                        FloatRegister dest, Label* failure) {
-  Label isDouble, done;
-
-  {
-    ScratchTagScope tag(asMasm(), source);
-    splitTagForTest(source, tag);
-    asMasm().branchTestDouble(Assembler::Equal, tag, &isDouble);
-    asMasm().branchTestInt32(Assembler::NotEqual, tag, failure);
-  }
-
-  convertInt32ToDouble(source.valueReg(), dest);
-  jump(&done);
-
-  bind(&isDouble);
-  unboxDouble(source, dest);
-
-  bind(&done);
-}
-
 void MacroAssemblerCompat::unboxValue(const ValueOperand& src, AnyRegister dest,
                                       JSValueType type) {
   if (dest.isFloat()) {

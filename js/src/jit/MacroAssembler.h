@@ -5460,7 +5460,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void clampDoubleToUint8(FloatRegister input, Register output) PER_ARCH;
 
-  using MacroAssemblerSpecific::ensureDouble;
+  
+  
+  
+  inline void ensureDouble(const ValueOperand& source, FloatRegister dest,
+                           Label* failure);
 
   template <typename S>
   void ensureDouble(const S& source, FloatRegister dest, Label* failure) {
