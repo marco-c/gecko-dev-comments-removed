@@ -819,6 +819,8 @@ class Selection final : public nsSupportsWeakReference,
   MOZ_CAN_RUN_SCRIPT void NotifySelectionListeners(bool aCalledByJS);
   MOZ_CAN_RUN_SCRIPT void NotifySelectionListeners();
 
+  bool ChangesDuringBatching() const { return mChangesDuringBatching; }
+
   friend struct AutoUserInitiated;
   struct MOZ_RAII AutoUserInitiated {
     explicit AutoUserInitiated(Selection& aSelectionRef)
@@ -1090,6 +1092,16 @@ class Selection final : public nsSupportsWeakReference,
 
 
   bool mNotifyAutoCopy;
+
+  
+
+
+
+
+
+
+
+  bool mChangesDuringBatching = false;
 };
 
 

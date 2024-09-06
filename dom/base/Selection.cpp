@@ -3735,9 +3735,15 @@ void Selection::NotifySelectionListeners() {
   
   
   if (mFrameSelection->IsBatching()) {
-    mFrameSelection->SetChangesDuringBatchingFlag();
+    mChangesDuringBatching = true;
     return;
   }
+  
+  
+  
+  
+  
+  mChangesDuringBatching = false;
 
   
   
@@ -3773,22 +3779,22 @@ void Selection::NotifySelectionListeners() {
   if (calledByJSRestorer.SavedValue()) {
     reason |= nsISelectionListener::JS_REASON;
   }
+  if (mSelectionType == SelectionType::eNormal) {
+    if (mNotifyAutoCopy) {
+      AutoCopyListener::OnSelectionChange(doc, *this, reason);
+    }
 
-  if (mNotifyAutoCopy) {
-    AutoCopyListener::OnSelectionChange(doc, *this, reason);
+    if (mAccessibleCaretEventHub) {
+      RefPtr<AccessibleCaretEventHub> hub(mAccessibleCaretEventHub);
+      hub->OnSelectionChange(doc, this, reason);
+    }
+
+    if (mSelectionChangeEventDispatcher) {
+      RefPtr<SelectionChangeEventDispatcher> dispatcher(
+          mSelectionChangeEventDispatcher);
+      dispatcher->OnSelectionChange(doc, this, reason);
+    }
   }
-
-  if (mAccessibleCaretEventHub) {
-    RefPtr<AccessibleCaretEventHub> hub(mAccessibleCaretEventHub);
-    hub->OnSelectionChange(doc, this, reason);
-  }
-
-  if (mSelectionChangeEventDispatcher) {
-    RefPtr<SelectionChangeEventDispatcher> dispatcher(
-        mSelectionChangeEventDispatcher);
-    dispatcher->OnSelectionChange(doc, this, reason);
-  }
-
   for (const auto& listener : selectionListeners) {
     
     
