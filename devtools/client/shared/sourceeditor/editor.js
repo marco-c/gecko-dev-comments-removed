@@ -174,7 +174,7 @@ class Editor extends EventEmitter {
   #lineGutterMarkers = new Map();
   #lineContentMarkers = new Map();
   #posContentMarkers = new Map();
-  #lineContentEventHandlers = {};
+  #editorDOMEventHandlers = {};
 
   #updateListener = null;
 
@@ -636,6 +636,7 @@ class Editor extends EventEmitter {
     const lineContentMarkerCompartment = new Compartment();
     const positionContentMarkersCompartment = new Compartment();
     const searchHighlightCompartment = new Compartment();
+    const domEventHandlersCompartment = new Compartment();
 
     this.#compartments = {
       tabSizeCompartment,
@@ -646,6 +647,7 @@ class Editor extends EventEmitter {
       lineContentMarkerCompartment,
       positionContentMarkersCompartment,
       searchHighlightCompartment,
+      domEventHandlersCompartment,
     };
 
     const indentStr = (this.config.indentWithTabs ? "\t" : " ").repeat(
@@ -687,10 +689,9 @@ class Editor extends EventEmitter {
           this.#updateListener(v);
         }
       }),
+      domEventHandlersCompartment.of(EditorView.domEventHandlers({})),
       lineNumberMarkersCompartment.of([]),
-      lineContentMarkerCompartment.of(
-        this.#lineContentMarkersExtension({ lineMarkers: [] })
-      ),
+      lineContentMarkerCompartment.of(this.#lineContentMarkersExtension([])),
       positionContentMarkersCompartment.of(
         this.#positionContentMarkersExtension([])
       ),
@@ -718,9 +719,7 @@ class Editor extends EventEmitter {
 
 
 
-
-
-  #lineContentMarkersExtension({ lineMarkers, domEventHandlers }) {
+  #lineContentMarkersExtension(lineMarkers) {
     const {
       codemirrorView: { Decoration, ViewPlugin, WidgetType },
       codemirrorState: { RangeSetBuilder, RangeSet },
@@ -781,44 +780,101 @@ class Editor extends EventEmitter {
           }
         }
       },
-      {
-        decorations: v => v.decorations,
-        eventHandlers: domEventHandlers || this.#lineContentEventHandlers,
-      }
+      { decorations: v => v.decorations }
     );
 
     return [lineContentMarkersView];
+  }
+
+  #createEventHandlers() {
+    const eventHandlers = {};
+    for (const eventName in this.#editorDOMEventHandlers) {
+      const handlers = this.#editorDOMEventHandlers[eventName];
+      eventHandlers[eventName] = (event, editor) => {
+        for (const handler of handlers) {
+          
+          
+          
+          event.target.ownerGlobal.setTimeout(() => {
+            const view = editor.viewState;
+            const head = view.state.selection.main.head;
+            const cursor = view.state.doc.lineAt(head);
+            const column = head - cursor.from;
+            handler(event, view, cursor.number, column);
+          }, 0);
+        }
+      };
+    }
+    return eventHandlers;
   }
 
   
 
 
 
-  setContentEventListeners(domEventHandlers) {
+  addEditorDOMEventListeners(domEventHandlers) {
     const cm = editors.get(this);
-
-    for (const eventName in domEventHandlers) {
-      const handler = domEventHandlers[eventName];
-      domEventHandlers[eventName] = (event, editor) => {
-        
-        
-        
-        event.target.ownerGlobal.setTimeout(() => {
-          const view = editor.viewState;
-          const head = view.state.selection.main.head;
-          const cursor = view.state.doc.lineAt(head);
-          const column = head - cursor.from;
-          handler(event, view, cursor.number, column);
-        }, 0);
-      };
-    }
+    const {
+      codemirrorView: { EditorView },
+    } = this.#CodeMirror6;
 
     
-    this.#lineContentEventHandlers = domEventHandlers;
+    for (const eventName in domEventHandlers) {
+      if (!this.#editorDOMEventHandlers[eventName]) {
+        this.#editorDOMEventHandlers[eventName] = [];
+      }
+      this.#editorDOMEventHandlers[eventName].push(domEventHandlers[eventName]);
+    }
 
     cm.dispatch({
-      effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
-        this.#lineContentMarkersExtension({ domEventHandlers })
+      effects: this.#compartments.domEventHandlersCompartment.reconfigure(
+        EditorView.domEventHandlers(this.#createEventHandlers())
+      ),
+    });
+  }
+
+  
+
+
+
+  removeEditorDOMEventListeners(domEventHandlers) {
+    const cm = editors.get(this);
+    const {
+      codemirrorView: { EditorView },
+    } = this.#CodeMirror6;
+
+    for (const eventName in domEventHandlers) {
+      const domEventHandler = domEventHandlers[eventName];
+      const cachedEventHandlers = this.#editorDOMEventHandlers[eventName];
+      if (!domEventHandler || !cachedEventHandlers) {
+        continue;
+      }
+      const index = cachedEventHandlers.findIndex(
+        handler => handler == domEventHandler
+      );
+      this.#editorDOMEventHandlers[eventName].splice(index, 1);
+    }
+
+    cm.dispatch({
+      effects: this.#compartments.domEventHandlersCompartment.reconfigure(
+        EditorView.domEventHandlers(this.#createEventHandlers())
+      ),
+    });
+  }
+
+  
+
+
+  #clearEditorDOMEventListeners() {
+    const cm = editors.get(this);
+    const {
+      codemirrorView: { EditorView },
+    } = this.#CodeMirror6;
+
+    this.#editorDOMEventHandlers = {};
+    cm.dispatch({
+      effects: this.#compartments.domEventHandlersCompartment.reconfigure(
+        EditorView.domEventHandlers({})
       ),
     });
   }
@@ -840,9 +896,9 @@ class Editor extends EventEmitter {
 
     cm.dispatch({
       effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
-        this.#lineContentMarkersExtension({
-          lineMarkers: Array.from(this.#lineContentMarkers.values()),
-        })
+        this.#lineContentMarkersExtension(
+          Array.from(this.#lineContentMarkers.values())
+        )
       ),
     });
   }
@@ -857,9 +913,9 @@ class Editor extends EventEmitter {
 
     cm.dispatch({
       effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
-        this.#lineContentMarkersExtension({
-          lineMarkers: Array.from(this.#lineContentMarkers.values()),
-        })
+        this.#lineContentMarkersExtension(
+          Array.from(this.#lineContentMarkers.values())
+        )
       ),
     });
   }
@@ -2508,6 +2564,9 @@ class Editor extends EventEmitter {
   }
 
   destroy() {
+    if (this.config.cm6 && this.#CodeMirror6) {
+      this.#clearEditorDOMEventListeners();
+    }
     this.container = null;
     this.config = null;
     this.version = null;
@@ -2515,7 +2574,6 @@ class Editor extends EventEmitter {
     this.#updateListener = null;
     this.#lineGutterMarkers.clear();
     this.#lineContentMarkers.clear();
-    this.#lineContentEventHandlers = {};
 
     if (this.#prefObserver) {
       this.#prefObserver.off(KEYMAP_PREF, this.setKeyMap);
