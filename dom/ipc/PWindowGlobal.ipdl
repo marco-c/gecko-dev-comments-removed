@@ -96,6 +96,11 @@ child:
 
   async RestoreTabContent(nullable SessionStoreRestoreData aData) returns (bool success);
 
+  
+  
+  
+  async NotifyStoredIdentityCredential(IPCIdentityCredential aIdentityCredential);
+
 both:
   async RawMessage(JSActorMessageMeta aMetadata, ClonedMessageData? aData,
                    ClonedMessageData? aStack);
@@ -213,6 +218,14 @@ parent:
   async CollectIdentityCredentialFromCredentialStore(IdentityCredentialRequestOptions aOptions)
       returns (IPCIdentityCredential[] identityCredential);
   async StoreIdentityCredential(IPCIdentityCredential aCredential)
+      returns (nsresult rv);
+
+  
+  
+  
+  
+  
+  async NotifyPendingIdentityCredentialDiscovery(IdentityCredentialRequestOptions aOptions)
       returns (nsresult rv);
 
   async GetStorageAccessPermission() returns(uint32_t permission_action);
