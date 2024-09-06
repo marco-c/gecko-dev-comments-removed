@@ -17,4 +17,4 @@ kElementwiseLogicalBinaryOperators.forEach((operatorName) => {
 });
 
 
-validateInputFromOtherBuilder('not');
+validateInputFromAnotherBuilder('not');
