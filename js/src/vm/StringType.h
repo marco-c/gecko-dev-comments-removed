@@ -694,7 +694,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   
   MOZ_ALWAYS_INLINE
-  bool isDeduplicatable() {
+  bool isDeduplicatable() const {
     MOZ_ASSERT(isLinear());
     MOZ_ASSERT(!isAtom());
     return !(flags() & NON_DEDUP_BIT);
@@ -1899,7 +1899,7 @@ extern bool EqualChars(const JSLinearString* str1, const JSLinearString* str2);
 
 
 extern int32_t CompareChars(const char16_t* s1, size_t len1,
-                            JSLinearString* s2);
+                            const JSLinearString* s2);
 
 
 
@@ -1917,28 +1917,30 @@ extern int32_t CompareStrings(const JSLinearString* str1,
 
 
 
-extern bool StringIsAscii(JSLinearString* str);
+extern bool StringIsAscii(const JSLinearString* str);
 
 
 
 
-extern bool StringEqualsAscii(JSLinearString* str, const char* asciiBytes);
+extern bool StringEqualsAscii(const JSLinearString* str,
+                              const char* asciiBytes);
 
 
 
 
 
-extern bool StringEqualsAscii(JSLinearString* str, const char* asciiBytes,
+extern bool StringEqualsAscii(const JSLinearString* str, const char* asciiBytes,
                               size_t length);
 
 template <size_t N>
-bool StringEqualsLiteral(JSLinearString* str, const char (&asciiBytes)[N]) {
+bool StringEqualsLiteral(const JSLinearString* str,
+                         const char (&asciiBytes)[N]) {
   MOZ_ASSERT(asciiBytes[N - 1] == '\0');
   return StringEqualsAscii(str, asciiBytes, N - 1);
 }
 
-extern int StringFindPattern(JSLinearString* text, JSLinearString* pat,
-                             size_t start);
+extern int StringFindPattern(const JSLinearString* text,
+                             const JSLinearString* pat, size_t start);
 
 
 
@@ -1946,8 +1948,8 @@ extern int StringFindPattern(JSLinearString* text, JSLinearString* pat,
 
 
 
-extern bool HasSubstringAt(JSLinearString* text, JSLinearString* pat,
-                           size_t start);
+extern bool HasSubstringAt(const JSLinearString* text,
+                           const JSLinearString* pat, size_t start);
 
 
 
@@ -1957,7 +1959,7 @@ extern bool HasSubstringAt(JSLinearString* text, JSLinearString* pat,
 JSString* SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt,
                           int32_t lengthInt);
 
-inline js::HashNumber HashStringChars(JSLinearString* str) {
+inline js::HashNumber HashStringChars(const JSLinearString* str) {
   JS::AutoCheckCannotGC nogc;
   size_t len = str->length();
   return str->hasLatin1Chars()

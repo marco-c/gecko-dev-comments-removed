@@ -22,7 +22,7 @@ namespace js {
 
 
 
-bool IsIdentifier(JSLinearString* str);
+bool IsIdentifier(const JSLinearString* str);
 
 
 
@@ -44,7 +44,7 @@ bool IsIdentifierASCII(char c1, char c2);
 
 
 
-bool IsIdentifierNameOrPrivateName(JSLinearString* str);
+bool IsIdentifierNameOrPrivateName(const JSLinearString* str);
 
 
 

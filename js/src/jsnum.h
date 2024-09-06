@@ -226,7 +226,7 @@ double CharsToNumber(const CharT* chars, size_t length);
                                              double* result);
 
 
-extern double LinearStringToNumber(JSLinearString* str);
+extern double LinearStringToNumber(const JSLinearString* str);
 
 
 extern bool NumberParseInt(JSContext* cx, JS::HandleString str, int32_t radix,

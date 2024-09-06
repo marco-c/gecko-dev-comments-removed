@@ -239,7 +239,7 @@ static MOZ_ALWAYS_INLINE bool GetLengthPropertyInlined(JSContext* cx,
 
 
 
-JS_PUBLIC_API bool js::StringIsArrayIndex(JSLinearString* str,
+JS_PUBLIC_API bool js::StringIsArrayIndex(const JSLinearString* str,
                                           uint32_t* indexp) {
   if (!str->isIndex(indexp)) {
     return false;

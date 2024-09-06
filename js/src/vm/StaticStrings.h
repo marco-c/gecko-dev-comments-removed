@@ -106,7 +106,7 @@ class StaticStrings {
 
   
   inline JSLinearString* getUnitStringForElement(JSContext* cx,
-                                                 JSLinearString* str,
+                                                 const JSLinearString* str,
                                                  size_t index);
 
   template <typename CharT>
