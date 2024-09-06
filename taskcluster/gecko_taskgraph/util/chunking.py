@@ -268,11 +268,14 @@ class DefaultLoader(BaseManifestLoader):
         
         tests = self.get_tests(suite)
 
-        
         if "web-platform-tests" in suite:
             manifests = set()
             subsuite = [x for x in WPT_SUBSUITES.keys() if mozinfo[x]]
             for t in tests:
+                if json.loads(mozinfo["tag"]) and not any(
+                    x in t.get("tags", []) for x in json.loads(mozinfo["tag"])
+                ):
+                    continue
                 if subsuite:
                     
                     if any(x in t["manifest"] for x in WPT_SUBSUITES[subsuite[0]]):
