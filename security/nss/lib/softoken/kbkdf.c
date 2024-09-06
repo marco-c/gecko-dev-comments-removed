@@ -819,7 +819,7 @@ kbkdf_CounterRaw(const CK_SP800_108_KDF_PARAMS *params, sftk_MACCtx *ctx, unsign
         }
 
         
-        ret = sftk_MAC_Finish(ctx, ret_buffer + buffer_offset, NULL, block_size);
+        ret = sftk_MAC_End(ctx, ret_buffer + buffer_offset, NULL, block_size);
         if (ret != CKR_OK) {
             return ret;
         }
@@ -936,7 +936,7 @@ kbkdf_FeedbackRaw(const CK_SP800_108_KDF_PARAMS *params, const unsigned char *in
 
 
 
-        ret = sftk_MAC_Finish(ctx, chaining_value, NULL, chaining_length);
+        ret = sftk_MAC_End(ctx, chaining_value, NULL, chaining_length);
         if (ret != CKR_OK) {
             goto finish;
         }
@@ -1065,7 +1065,7 @@ kbkdf_PipelineRaw(const CK_SP800_108_KDF_PARAMS *params, sftk_MACCtx *ctx, unsig
 
         
 
-        ret = sftk_MAC_Finish(ctx, chaining_value, NULL, chaining_length);
+        ret = sftk_MAC_End(ctx, chaining_value, NULL, chaining_length);
         if (ret != CKR_OK) {
             goto finish;
         }
@@ -1089,7 +1089,7 @@ kbkdf_PipelineRaw(const CK_SP800_108_KDF_PARAMS *params, sftk_MACCtx *ctx, unsig
         
 
 
-        ret = sftk_MAC_Finish(ctx, ret_buffer + buffer_offset, NULL, block_size);
+        ret = sftk_MAC_End(ctx, ret_buffer + buffer_offset, NULL, block_size);
         if (ret != CKR_OK) {
             goto finish;
         }
@@ -1227,7 +1227,7 @@ finish:
     PORT_ZFree(output_buffer, buffer_length);
 
     
-    sftk_MAC_Destroy(&ctx, PR_FALSE);
+    sftk_MAC_DestroyContext(&ctx, PR_FALSE);
     return ret;
 }
 

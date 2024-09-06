@@ -776,7 +776,6 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
     }
     cx->key = SECKEY_CopyPublicKey(key);
     cx->pkcs1RSADigestInfo = NULL;
-    rv = SECSuccess;
     if (mech != CKM_INVALID_MECHANISM) {
         rv = vfy_ImportPublicKey(cx);
         
@@ -787,7 +786,6 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
         }
     }
     if (sig) {
-        rv = SECFailure;
         
 
         if ((mech == CKM_INVALID_MECHANISM || prehash) && (type == rsaKey)) {

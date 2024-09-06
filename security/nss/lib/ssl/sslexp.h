@@ -1086,6 +1086,19 @@ typedef struct SSLMaskingContextStr {
                          (fd, t))
 
 
+
+
+
+
+
+
+
+#define SSL_PeerCertificateChainDER(fd, out)                       \
+    SSL_EXPERIMENTAL_API("SSL_PeerCertificateChainDER",            \
+                         (PRFileDesc * _fd, SECItemArray * *_out), \
+                         (fd, out))
+
+
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_SetupAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_InitAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API

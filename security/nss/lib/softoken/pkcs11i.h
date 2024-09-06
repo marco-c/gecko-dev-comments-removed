@@ -118,14 +118,14 @@ typedef struct SFTKItemTemplateStr SFTKItemTemplate;
 
 typedef void (*SFTKDestroy)(void *, PRBool);
 typedef void (*SFTKBegin)(void *);
-typedef SECStatus (*SFTKCipher)(void *, void *, unsigned int *, unsigned int,
-                                void *, unsigned int);
+typedef SECStatus (*SFTKCipher)(void *, unsigned char *, unsigned int *, unsigned int,
+                                const unsigned char *, unsigned int);
 typedef SECStatus (*SFTKAEADCipher)(void *, void *, unsigned int *,
                                     unsigned int, void *, unsigned int,
                                     void *, unsigned int, void *, unsigned int);
-typedef SECStatus (*SFTKVerify)(void *, void *, unsigned int, void *, unsigned int);
-typedef void (*SFTKHash)(void *, const void *, unsigned int);
-typedef void (*SFTKEnd)(void *, void *, unsigned int *, unsigned int);
+typedef SECStatus (*SFTKVerify)(void *, const unsigned char *, unsigned int, const unsigned char *, unsigned int);
+typedef void (*SFTKHash)(void *, const unsigned char *, unsigned int);
+typedef void (*SFTKEnd)(void *, unsigned char *, unsigned int *, unsigned int);
 typedef void (*SFTKFree)(void *);
 
 
@@ -908,10 +908,10 @@ sftk_MACConstantTimeCtx *sftk_HMACConstantTime_New(
     CK_MECHANISM_PTR mech, SFTKObject *key);
 sftk_MACConstantTimeCtx *sftk_SSLv3MACConstantTime_New(
     CK_MECHANISM_PTR mech, SFTKObject *key);
-void sftk_HMACConstantTime_Update(void *pctx, const void *data, unsigned int len);
-void sftk_SSLv3MACConstantTime_Update(void *pctx, const void *data, unsigned int len);
+void sftk_HMACConstantTime_Update(void *pctx, const unsigned char *data, unsigned int len);
+void sftk_SSLv3MACConstantTime_Update(void *pctx, const unsigned char *data, unsigned int len);
 void sftk_MACConstantTime_EndHash(
-    void *pctx, void *out, unsigned int *outLength, unsigned int maxLength);
+    void *pctx, unsigned char *out, unsigned int *outLength, unsigned int maxLength);
 void sftk_MACConstantTime_DestroyContext(void *pctx, PRBool);
 
 
@@ -935,9 +935,9 @@ CK_RV sftk_MAC_Create(CK_MECHANISM_TYPE mech, SFTKObject *key, sftk_MACCtx **ret
 CK_RV sftk_MAC_Init(sftk_MACCtx *ctx, CK_MECHANISM_TYPE mech, SFTKObject *key);
 CK_RV sftk_MAC_InitRaw(sftk_MACCtx *ctx, CK_MECHANISM_TYPE mech, const unsigned char *key, unsigned int key_len, PRBool isFIPS);
 CK_RV sftk_MAC_Update(sftk_MACCtx *ctx, const CK_BYTE *data, unsigned int data_len);
-CK_RV sftk_MAC_Finish(sftk_MACCtx *ctx, CK_BYTE_PTR result, unsigned int *result_len, unsigned int max_result_len);
+CK_RV sftk_MAC_End(sftk_MACCtx *ctx, CK_BYTE_PTR result, unsigned int *result_len, unsigned int max_result_len);
 CK_RV sftk_MAC_Reset(sftk_MACCtx *ctx);
-void sftk_MAC_Destroy(sftk_MACCtx *ctx, PRBool free_it);
+void sftk_MAC_DestroyContext(sftk_MACCtx *ctx, PRBool free_it);
 
 
 unsigned int sftk_CKRVToMask(CK_RV rv);

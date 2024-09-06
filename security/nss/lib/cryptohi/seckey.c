@@ -669,6 +669,7 @@ seckey_ExtractPublicKey(const CERTSubjectPublicKeyInfo *spki)
                 if (rv == SECSuccess)
                     return pubk;
                 break;
+            case SEC_OID_X25519:
             case SEC_OID_ED25519_PUBLIC_KEY:
                 
                 if (newOs.len == 0) {
@@ -682,18 +683,31 @@ seckey_ExtractPublicKey(const CERTSubjectPublicKeyInfo *spki)
                     break;
                 }
 
-                pubk->keyType = edKey;
+                
+
+
+                if (tag == SEC_OID_X25519) {
+                    pubk->keyType = ecMontKey;
+                } else if (tag == SEC_OID_ED25519_PUBLIC_KEY) {
+                    pubk->keyType = edKey;
+                } else {
+                    PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+                    break;
+                }
+
                 pubk->u.ec.size = 0;
 
-                SECOidData *oidEd25519 = SECOID_FindOIDByTag(SEC_OID_ED25519_PUBLIC_KEY);
+                SECOidData *oid25519 = SECOID_FindOIDByTag(tag);
+                if (!oid25519) {
+                    break;
+                }
 
-                if (!SECITEM_AllocItem(arena, &pubk->u.ec.DEREncodedParams, oidEd25519->oid.len + 2)) {
-                    rv = SECFailure;
+                if (!SECITEM_AllocItem(arena, &pubk->u.ec.DEREncodedParams, oid25519->oid.len + 2)) {
                     break;
                 }
                 pubk->u.ec.DEREncodedParams.data[0] = SEC_ASN1_OBJECT_ID;
-                pubk->u.ec.DEREncodedParams.data[1] = oidEd25519->oid.len;
-                PORT_Memcpy(pubk->u.ec.DEREncodedParams.data + 2, oidEd25519->oid.data, oidEd25519->oid.len);
+                pubk->u.ec.DEREncodedParams.data[1] = oid25519->oid.len;
+                PORT_Memcpy(pubk->u.ec.DEREncodedParams.data + 2, oid25519->oid.data, oid25519->oid.len);
 
                 rv = SECITEM_CopyItem(arena, &pubk->u.ec.publicValue, &newOs);
                 if (rv != SECSuccess) {
@@ -873,6 +887,7 @@ SECKEY_ECParamsToKeySize(const SECItem *encodedParams)
         case SEC_OID_SECG_EC_SECT571R1:
             return 571;
 
+        case SEC_OID_X25519:
         case SEC_OID_CURVE25519:
         case SEC_OID_ED25519_PUBLIC_KEY:
             return 255;
@@ -1024,6 +1039,7 @@ SECKEY_ECParamsToBasePointOrderLen(const SECItem *encodedParams)
         case SEC_OID_SECG_EC_SECT571R1:
             return 570;
 
+        case SEC_OID_X25519:
         case SEC_OID_CURVE25519:
         case SEC_OID_ED25519_PUBLIC_KEY:
             return 255;
@@ -1098,6 +1114,7 @@ SECKEY_PublicKeyStrengthInBits(const SECKEYPublicKey *pubk)
             break;
         case ecKey:
         case edKey:
+        case ecMontKey:
             bitSize = SECKEY_ECParamsToKeySize(&pubk->u.ec.DEREncodedParams);
             break;
         default:
@@ -1180,6 +1197,7 @@ SECKEY_SignatureLen(const SECKEYPublicKey *pubk)
             return pubk->u.dsa.params.subPrime.len * 2;
         case ecKey:
         case edKey:
+        case ecMontKey:
             
             size = SECKEY_ECParamsToBasePointOrderLen(
                 &pubk->u.ec.DEREncodedParams);
@@ -1307,6 +1325,7 @@ SECKEY_CopyPublicKey(const SECKEYPublicKey *pubk)
             break;
         case ecKey:
         case edKey:
+        case ecMontKey:
             copyk->u.ec.size = pubk->u.ec.size;
             rv = seckey_HasCurveOID(pubk);
             if (rv != SECSuccess) {
@@ -1537,6 +1556,7 @@ SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privk)
             pubk->u.ec.encoding = ECPoint_Undefined;
             return pubk;
         case edKey:
+        case ecMontKey:
             rv = PK11_ReadAttribute(privk->pkcs11Slot, privk->pkcs11ID,
                                     CKA_EC_PARAMS, arena, &pubk->u.ec.DEREncodedParams);
             if (rv != SECSuccess) {
@@ -1674,6 +1694,7 @@ seckey_CreateSubjectPublicKeyInfo_helper(SECKEYPublicKey *pubk)
                 }
                 break;
             case edKey:
+            case ecMontKey:
                 tag = SECKEY_GetECCOid(&pubk->u.ec.DEREncodedParams);
                 rv = SECOID_SetAlgorithmID(arena, &spki->algorithm,
                                            tag,

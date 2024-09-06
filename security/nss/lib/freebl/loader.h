@@ -925,6 +925,9 @@ struct FREEBLVectorStr {
     SECStatus (*p_ED_DerivePublicKey)(const SECItem *privateKey, SECItem *publicKey);
     
 
+    SECStatus (*p_X25519_DerivePublicKey)(SECItem *privateKey, SECItem *publicKey);
+    
+
     
 
 };

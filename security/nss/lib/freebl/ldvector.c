@@ -443,6 +443,9 @@ static const struct FREEBLVectorStr vector = {
     ED_VerifyMessage,
     ED_DerivePublicKey,
     
+
+    X25519_DerivePublicKey,
+    
 };
 
 const FREEBLVector*

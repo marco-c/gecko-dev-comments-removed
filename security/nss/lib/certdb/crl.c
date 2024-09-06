@@ -2824,7 +2824,10 @@ cert_CacheCRLByGeneralName(CERTCertDBHandle* dbhandle, SECItem* crl,
         }
     } else {
         
-        if (!oldEntry) {
+        if (!newEntry) {
+            
+            rv = SECFailure;
+        } else if (!oldEntry) {
             
             if (NULL == PL_HashTableAdd(namedCRLCache.entries,
                                         (void*)newEntry->canonicalizedName,

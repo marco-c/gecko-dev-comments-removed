@@ -936,6 +936,9 @@ tls13_CopyChPreamble(sslSocket *ss, sslReader *reader, const SECItem *explicitSi
 
     
     rv = sslRead_ReadVariable(reader, 1, &tmpReadBuf);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
     if (explicitSid) {
         
         if (tmpReadBuf.len > 0) {
@@ -2172,6 +2175,9 @@ tls13_MaybeGreaseEch(sslSocket *ss, const sslBuffer *preamble, sslBuffer *buf)
         goto loser; 
     }
     rv = tls13_PadChInner(&encodedCh, ss->ssl3.hs.greaseEchSize, strlen(ss->url));
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
 
     payloadLen = encodedCh.len;
     payloadLen += TLS13_ECH_AEAD_TAG_LEN; 
