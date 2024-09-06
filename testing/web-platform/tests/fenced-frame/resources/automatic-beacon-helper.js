@@ -89,15 +89,26 @@ async function setupAutomaticBeacon(
 
 
 
+
 async function verifyBeaconData(
-    event_type, event_data, expected_success = true, t) {
+    event_type, event_data, expected_referrer = null, expected_success = true,
+    t) {
   if (expected_success) {
-    const beacon_initiator_origin = await nextBeacon(event_type, event_data);
-    assert_equals(beacon_initiator_origin, get_host_info().HTTPS_ORIGIN);
+    const data = await nextBeacon(event_type, event_data);
+    const [beacon_initiator_origin, beacon_referrer] =
+        data.split(",");
+    assert_equals(beacon_initiator_origin, get_host_info().HTTPS_ORIGIN,
+        "The initiator origin should be set as expected.");
+    
+    assert_equals(beacon_referrer,
+        (expected_referrer ? expected_referrer :
+        get_host_info().HTTPS_ORIGIN) + "/",
+        "The beacon referrer should be set as expected.");
   } else {
     const timeout = new Promise(r => t.step_timeout(r, 1000));
     const result =
         await Promise.race([nextBeacon(event_type, event_data), timeout]);
-    assert_true(typeof result === 'undefined');
+    assert_true(typeof result === 'undefined',
+        "The beacon should not have sent.");
   }
 }

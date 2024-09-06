@@ -283,13 +283,13 @@ function attachContext(object_constructor, html, headers, origin) {
 async function attachOpaqueContext(
     generator_api, resolve_to_config, ad_with_size, requested_size,
     register_beacon, object_constructor, html, headers, origin,
-    num_components) {
+    component_origin, num_components) {
   const [uuid, url] = generateRemoteContextURL(headers, origin);
 
   let components_list = [];
   for (let i = 0; i < num_components; i++) {
     let [component_uuid, component_url] =
-        generateRemoteContextURL(headers, origin);
+        generateRemoteContextURL(headers, component_origin);
     
     
     html += '<input type=\'hidden\' id=\'component_uuid_' + i + '\' value=\'' +
@@ -309,13 +309,14 @@ async function attachOpaqueContext(
 
 function attachPotentiallyOpaqueContext(
     generator_api, resolve_to_config, ad_with_size, requested_size,
-    register_beacon, frame_constructor, html, headers, origin, num_components) {
+    register_beacon, frame_constructor, html, headers, origin,
+    component_origin, num_components) {
   generator_api = generator_api.toLowerCase();
   if (generator_api == 'fledge' || generator_api == 'sharedstorage') {
     return attachOpaqueContext(
         generator_api, resolve_to_config, ad_with_size, requested_size,
         register_beacon, frame_constructor, html, headers, origin,
-        num_components);
+        component_origin, num_components);
   } else {
     return attachContext(frame_constructor, html, headers, origin);
   }
@@ -324,7 +325,7 @@ function attachPotentiallyOpaqueContext(
 function attachFrameContext(
     element_name, generator_api, resolve_to_config, ad_with_size,
     requested_size, register_beacon, html, headers, attributes, origin,
-    num_components) {
+    component_origin, num_components) {
   frame_constructor = (id) => {
     frame = document.createElement(element_name);
     attributes.forEach(attribute => {
@@ -344,7 +345,7 @@ function attachFrameContext(
   return attachPotentiallyOpaqueContext(
       generator_api, resolve_to_config, ad_with_size, requested_size,
       register_beacon, frame_constructor, html, headers, origin,
-      num_components);
+      component_origin, num_components);
 }
 
 
@@ -420,12 +421,13 @@ function attachFencedFrameContext({
   headers = [],
   attributes = [],
   origin = '',
+  component_origin = '',
   num_components = 0
 } = {}) {
   return attachFrameContext(
       'fencedframe', generator_api, resolve_to_config, ad_with_size,
       requested_size, register_beacon, html, headers, attributes, origin,
-      num_components);
+      component_origin, num_components);
 }
 
 
@@ -437,12 +439,13 @@ function attachIFrameContext({
   headers = [],
   attributes = [],
   origin = '',
+  component_origin = '',
   num_components = 0
 } = {}) {
   return attachFrameContext(
       'iframe', generator_api, resolve_to_config = false, ad_with_size = false,
       requested_size = null, register_beacon, html, headers, attributes, origin,
-      num_components);
+      component_origin, num_components);
 }
 
 
