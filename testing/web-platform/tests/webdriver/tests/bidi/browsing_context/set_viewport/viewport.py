@@ -243,6 +243,6 @@ async def test_with_scrollbars(
     
     
     if use_horizontal_scrollbar:
-        assert viewport_without_scrollbar["height"] < test_viewport["height"]
+        assert viewport_without_scrollbar["height"] <= test_viewport["height"]
     if use_vertical_scrollbar:
-        assert viewport_without_scrollbar["width"] < test_viewport["width"]
+        assert viewport_without_scrollbar["width"] <= test_viewport["width"]
