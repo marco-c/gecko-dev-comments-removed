@@ -61,6 +61,8 @@ function getBaseUrl(origin) {
 
 
 
+
+
 function getBounceURL({
   bounceType,
   bounceOrigin = ORIGIN_TRACKER,
@@ -68,6 +70,7 @@ function getBounceURL({
   setState = null,
   setStateSameSiteFrame = false,
   setStateInWebWorker = false,
+  setStateInNestedWebWorker = false,
   statusCode = 302,
   redirectDelayMS = 50,
 }) {
@@ -95,6 +98,14 @@ function getBounceURL({
       );
     }
     searchParams.set("setStateInWebWorker", setStateInWebWorker);
+  }
+  if (setStateInNestedWebWorker) {
+    if (setState != "indexedDB") {
+      throw new Error(
+        "setStateInNestedWebWorker only supports setState == 'indexedDB'"
+      );
+    }
+    searchParams.set("setStateInNestedWebWorker", setStateInNestedWebWorker);
   }
 
   if (bounceType == "server") {
@@ -173,12 +184,15 @@ async function waitForRecordBounces(browser) {
 
 
 
+
+
 async function runTestBounce(options = {}) {
   let {
     bounceType,
     setState = null,
     setStateSameSiteFrame = false,
     setStateInWebWorker = false,
+    setStateInNestedWebWorker = false,
     expectCandidate = true,
     expectPurge = true,
     originAttributes = {},
@@ -237,6 +251,7 @@ async function runTestBounce(options = {}) {
       setState,
       setStateSameSiteFrame,
       setStateInWebWorker,
+      setStateInNestedWebWorker,
     })
   );
 
