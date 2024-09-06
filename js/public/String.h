@@ -122,8 +122,22 @@ extern JS_PUBLIC_API JSString* NewStringFromLatin1Buffer(
 
 
 
+
+
+extern JS_PUBLIC_API JSString* NewStringFromKnownLiveLatin1Buffer(
+    JSContext* cx, mozilla::StringBuffer* buffer, size_t length);
+
+
+
+
 extern JS_PUBLIC_API JSString* NewStringFromTwoByteBuffer(
     JSContext* cx, RefPtr<mozilla::StringBuffer> buffer, size_t length);
+
+
+
+
+extern JS_PUBLIC_API JSString* NewStringFromKnownLiveTwoByteBuffer(
+    JSContext* cx, mozilla::StringBuffer* buffer, size_t length);
 
 
 
@@ -136,6 +150,14 @@ extern JS_PUBLIC_API JSString* NewStringFromTwoByteBuffer(
 
 extern JS_PUBLIC_API JSString* NewStringFromUTF8Buffer(
     JSContext* cx, RefPtr<mozilla::StringBuffer> buffer, size_t length);
+
+
+
+
+
+
+extern JS_PUBLIC_API JSString* NewStringFromKnownLiveUTF8Buffer(
+    JSContext* cx, mozilla::StringBuffer* buffer, size_t length);
 
 }  
 

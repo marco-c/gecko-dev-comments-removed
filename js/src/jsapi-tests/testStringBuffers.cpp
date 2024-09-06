@@ -42,8 +42,8 @@ BEGIN_TEST(testStringBuffersLatin1) {
 
   cx->zone()->externalStringCache().purge();
 
-  JS::Rooted<JSString*> str3(cx,
-                             JS::NewStringFromLatin1Buffer(cx, buffer, len));
+  JS::Rooted<JSString*> str3(
+      cx, JS::NewStringFromKnownLiveLatin1Buffer(cx, buffer, len));
   CHECK(str3);
 
   
@@ -95,8 +95,8 @@ BEGIN_TEST(testStringBuffersTwoByte) {
 
   cx->zone()->externalStringCache().purge();
 
-  JS::Rooted<JSString*> str3(cx,
-                             JS::NewStringFromTwoByteBuffer(cx, buffer, len));
+  JS::Rooted<JSString*> str3(
+      cx, JS::NewStringFromKnownLiveTwoByteBuffer(cx, buffer, len));
   CHECK(str3);
 
   
@@ -126,6 +126,9 @@ BEGIN_TEST(testStringBuffersUTF8) {
         mozilla::StringBuffer::Create(chars, len);
     CHECK(buffer);
 
+    
+    js::gc::AutoSuppressGC suppress(cx);
+
     JS::Rooted<JSString*> str1(cx,
                                JS::NewStringFromUTF8Buffer(cx, buffer, len));
     CHECK(str1);
@@ -135,6 +138,13 @@ BEGIN_TEST(testStringBuffersUTF8) {
     CHECK(!JS::IsTwoByteStringWithStringBuffer(str1, &buf));
     CHECK(JS::IsLatin1StringWithStringBuffer(str1, &buf));
     CHECK_EQUAL(buf, buffer);
+
+    JS::Rooted<JSString*> str2(
+        cx, JS::NewStringFromKnownLiveUTF8Buffer(cx, buf, len));
+    CHECK(str2);
+
+    
+    CHECK_EQUAL(str1, str2);
 
 #ifdef DEBUG
     CHECK_EQUAL(buffer->RefCount(), 2u);  
@@ -159,6 +169,10 @@ BEGIN_TEST(testStringBuffersUTF8) {
     mozilla::StringBuffer* buf;
     CHECK(!JS::IsLatin1StringWithStringBuffer(str1, &buf));
     CHECK(!JS::IsTwoByteStringWithStringBuffer(str1, &buf));
+
+    JS::Rooted<JSString*> str2(
+        cx, JS::NewStringFromKnownLiveUTF8Buffer(cx, buffer, len));
+    CHECK(str2);
 
 #ifdef DEBUG
     CHECK_EQUAL(buffer->RefCount(), 1u);  
