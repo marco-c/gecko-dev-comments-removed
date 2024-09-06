@@ -226,8 +226,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   
-  nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mCachedData;
-  
   
   
   
@@ -267,24 +265,11 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   int mWaitingForDragDataRequests = 0;
 
   
-  bool mTargetDragDataReceived;
-  
-  void* mTargetDragData;
-  uint32_t mTargetDragDataLen;
-  mozilla::GUniquePtr<gchar*> mTargetDragUris;
-  
   bool IsTargetContextList(void);
   bool IsDragFlavorAvailable(GdkAtom aRequestedFlavor);
   
   
   RefPtr<DragData> GetDragData(GdkAtom aRequestedFlavor);
-  void GetTargetDragData(GdkAtom aFlavor, nsTArray<nsCString>& aDropFlavors,
-                         bool aResetTargetData = true);
-  
-  void TargetResetData(void);
-  
-  
-  void EnsureCachedDataValidForContext(GdkDragContext* aDragContext);
 
   
 
@@ -318,7 +303,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 #ifdef MOZ_LOGGING
   const char* GetDragServiceTaskName(nsDragService::DragTask aTask);
 #endif
-  void GetDragFlavors(nsTArray<nsCString>& aFlavors);
   gboolean DispatchDropEvent();
   static uint32_t GetCurrentModifiers();
 
