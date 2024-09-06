@@ -349,7 +349,6 @@ StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
   
   if (nsDeviceContext* dx = GetDeviceContextFor(aDocument)) {
     if (dx->GetScreenIsHDR()) {
-      
       return StyleDynamicRange::High;
     }
   }
