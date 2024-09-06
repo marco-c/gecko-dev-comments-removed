@@ -1,3 +1,5 @@
-onnotificationclick = event => {
+
+
+onnotificationclick = () => {
   clients.openWindow("empty.html");
 };
