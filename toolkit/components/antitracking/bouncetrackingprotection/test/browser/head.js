@@ -57,11 +57,14 @@ function getBaseUrl(origin) {
 
 
 
+
+
 function getBounceURL({
   bounceType,
   bounceOrigin = ORIGIN_TRACKER,
   targetURL = new URL(getBaseUrl(ORIGIN_B) + "file_start.html"),
   setState = null,
+  setStateSameSiteFrame = false,
   statusCode = 302,
   redirectDelayMS = 50,
 }) {
@@ -78,6 +81,9 @@ function getBounceURL({
   searchParams.set("target", targetURL.href);
   if (setState) {
     searchParams.set("setState", setState);
+  }
+  if (setStateSameSiteFrame) {
+    searchParams.set("setStateSameSiteFrame", setStateSameSiteFrame);
   }
 
   if (bounceType == "server") {
@@ -152,10 +158,13 @@ async function waitForRecordBounces(browser) {
 
 
 
+
+
 async function runTestBounce(options = {}) {
   let {
     bounceType,
     setState = null,
+    setStateSameSiteFrame = false,
     expectCandidate = true,
     expectPurge = true,
     originAttributes = {},
@@ -208,7 +217,7 @@ async function runTestBounce(options = {}) {
   
   await navigateLinkClick(
     browser,
-    getBounceURL({ bounceType, targetURL, setState })
+    getBounceURL({ bounceType, targetURL, setState, setStateSameSiteFrame })
   );
 
   
