@@ -9712,53 +9712,6 @@ already_AddRefed<nsFontMetrics> nsLayoutUtils::GetMetricsFor(
   return aPresContext->GetMetricsFor(font, params);
 }
 
-static void GetSpoofedSystemFontForRFP(LookAndFeel::FontID aFontID,
-                                       gfxFontStyle& aStyle, nsAString& aName) {
-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_UIKIT)
-  aName = u"-apple-system"_ns;
-  
-  switch (aFontID) {
-    case LookAndFeel::FontID::Caption:
-    case LookAndFeel::FontID::Menu:
-      aStyle.size = 13;
-      break;
-    case LookAndFeel::FontID::SmallCaption:
-      aStyle.weight = gfxFontStyle::FontWeight::BOLD;
-      
-    case LookAndFeel::FontID::MessageBox:
-    case LookAndFeel::FontID::StatusBar:
-      aStyle.size = 11;
-      break;
-    default:
-      aStyle.size = 12;
-      break;
-  }
-#elif defined(XP_WIN)
-  
-  
-  
-  
-  aName = u"sans-serif"_ns;
-  aStyle.size = 12;
-#elif defined(MOZ_WIDGET_ANDROID)
-  
-  aName = u"Roboto"_ns;
-  aStyle.size = 12;
-#elif defined(MOZ_WIDGET_GTK)
-  
-  
-  
-  
-  
-  
-  
-  aName = u"sans-serif"_ns;
-  aStyle.size = 15;
-#else
-#  error "Unknown platform"
-#endif
-}
-
 
 void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
                                       LookAndFeel::FontID aFontID,
@@ -9766,10 +9719,7 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
                                       const Document* aDocument) {
   gfxFontStyle fontStyle;
   nsAutoString systemFontName;
-  if (aDocument->ShouldResistFingerprinting(
-          RFPTarget::FontVisibilityRestrictGenerics)) {
-    GetSpoofedSystemFontForRFP(aFontID, fontStyle, systemFontName);
-  } else if (!LookAndFeel::GetFont(aFontID, systemFontName, fontStyle)) {
+  if (!LookAndFeel::GetFont(aFontID, systemFontName, fontStyle)) {
     return;
   }
   systemFontName.Trim("\"'");
