@@ -2008,6 +2008,10 @@ void Document::RecordPageLoadEventTelemetry(
   aEventTelemetryData.loadType = mozilla::Some(loadTypeStr);
 
   
+  
+  aEventTelemetryData.usingWebdriver = mozilla::Some(Navigator::Webdriver());
+
+  
   if (ContentChild* cc = ContentChild::GetSingleton()) {
     cc->SendRecordPageLoadEvent(aEventTelemetryData);
   }
