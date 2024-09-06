@@ -612,8 +612,11 @@ void Accessible::ApplyImplicitState(uint64_t& aState) const {
   
   
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-  if (roleMapEntry && !(aState & states::SELECTED) &&
-      ARIASelected().valueOr(true)) {
+  if (roleMapEntry &&
+      (roleMapEntry->Is(nsGkAtoms::option) ||
+       roleMapEntry->Is(nsGkAtoms::tab) ||
+       roleMapEntry->Is(nsGkAtoms::treeitem)) &&
+      !(aState & states::SELECTED) && ARIASelected().valueOr(true)) {
     
     
     if (roleMapEntry->role == roles::PAGETAB) {
