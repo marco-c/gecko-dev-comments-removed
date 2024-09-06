@@ -455,11 +455,13 @@ public class GeckoDisplay {
 
 
 
+
     @UiThread
     public @NonNull GeckoResult<Bitmap> capture() {
       ThreadUtils.assertOnUiThread();
       if (!mSession.isCompositorReady()) {
-        throw new IllegalStateException("Compositor must be ready before pixels can be captured");
+        return GeckoResult.fromException(
+            new IllegalStateException("Compositor must be ready before pixels can be captured"));
       }
 
       final GeckoResult<Bitmap> result = new GeckoResult<>();
