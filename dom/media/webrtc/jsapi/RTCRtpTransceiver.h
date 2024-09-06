@@ -171,6 +171,20 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
       const JsepTrackNegotiatedDetails& aDetails,
       std::vector<VideoCodecConfig>* aConfigs);
 
+  static void ToDomRtpCodec(const JsepCodecDescription& aCodec,
+                            RTCRtpCodec* aDomCodec);
+
+  static void ToDomRtpCodecParameters(
+      const JsepCodecDescription& aCodec,
+      RTCRtpCodecParameters* aDomCodecParameters);
+
+  static void ToDomRtpCodecRtx(const JsepVideoCodecDescription& aCodec,
+                               RTCRtpCodec* aDomCodec);
+
+  static void ToDomRtpCodecParametersRtx(
+      const JsepVideoCodecDescription& aCodec,
+      RTCRtpCodecParameters* aDomCodecParameters);
+
   
 
   void ChainToDomPromiseWithCodecStats(nsTArray<RefPtr<RTCStatsPromise>> aStats,

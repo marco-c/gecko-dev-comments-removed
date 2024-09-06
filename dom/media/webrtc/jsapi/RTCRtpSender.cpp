@@ -158,6 +158,8 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
     MaybeGetJsepRids();
   }
 
+  mParameters.mCodecs.Construct();
+
   if (mDtmf) {
     mWatchManager.Watch(mTransmitting, &RTCRtpSender::UpdateDtmfSender);
   }
@@ -760,7 +762,15 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
     paramsCopy.mEncodings = oldParams->mEncodings;
   }
 
-  
+  if (!(oldParams->mCodecs == paramsCopy.mCodecs)) {
+    nsCString error("RTCRtpParameters.codecs is a read-only parameter");
+    if (!mAllowOldSetParameters) {
+      p->MaybeRejectWithInvalidModificationError(error);
+      return p.forget();
+    }
+    WarnAboutBadSetParameters(error);
+  }
+
   
   
   
@@ -822,7 +832,7 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
         
         mLastReturnedParameters = Nothing();
         
-        mParameters = paramsCopy;
+        mParameters.mEncodings = paramsCopy.mEncodings;
         UpdateRestorableEncodings(mParameters.mEncodings);
         
         
@@ -955,16 +965,15 @@ void RTCRtpSender::GetParameters(RTCRtpSendParameters& aParameters) {
 
   
   
-
-  
-  
   
   
   aParameters.mRtcp.Construct();
   aParameters.mRtcp.Value().mCname.Construct();
   aParameters.mRtcp.Value().mReducedSize.Construct(false);
   aParameters.mHeaderExtensions.Construct();
-  aParameters.mCodecs.Construct();
+  if (mParameters.mCodecs.WasPassed()) {
+    aParameters.mCodecs.Construct(mParameters.mCodecs.Value());
+  }
 
   
   mLastReturnedParameters = Some(aParameters);
@@ -1371,6 +1380,35 @@ void RTCRtpSender::MaybeUpdateConduit() {
   }
 }
 
+void RTCRtpSender::UpdateParametersCodecs() {
+  mParameters.mCodecs.Reset();
+  mParameters.mCodecs.Construct();
+
+  if (GetJsepTransceiver().mSendTrack.GetNegotiatedDetails()) {
+    const JsepTrackNegotiatedDetails details(
+        *GetJsepTransceiver().mSendTrack.GetNegotiatedDetails());
+    if (details.GetEncodingCount()) {
+      for (const auto& jsepCodec : details.GetEncoding(0).GetCodecs()) {
+        RTCRtpCodecParameters codec;
+        RTCRtpTransceiver::ToDomRtpCodecParameters(*jsepCodec, &codec);
+        Unused << mParameters.mCodecs.Value().AppendElement(codec, fallible);
+        if (jsepCodec->Type() == SdpMediaSection::kVideo) {
+          const JsepVideoCodecDescription& videoJsepCodec =
+              static_cast<JsepVideoCodecDescription&>(*jsepCodec);
+          
+          
+          
+          if (videoJsepCodec.mRtxEnabled) {
+            RTCRtpCodecParameters rtx;
+            RTCRtpTransceiver::ToDomRtpCodecParametersRtx(videoJsepCodec, &rtx);
+            Unused << mParameters.mCodecs.Value().AppendElement(rtx, fallible);
+          }
+        }
+      }
+    }
+  }
+}
+
 void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
   if (!mSimulcastEnvelopeSet) {
     
@@ -1396,6 +1434,7 @@ void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
       MOZ_ASSERT(mParameters.mEncodings.Length());
     }
   }
+  UpdateParametersCodecs();
 
   MaybeUpdateConduit();
 }
