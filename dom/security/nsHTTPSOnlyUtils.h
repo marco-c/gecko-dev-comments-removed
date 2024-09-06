@@ -176,6 +176,31 @@ class nsHTTPSOnlyUtils {
 
   static uint32_t GetStatusForSubresourceLoad(uint32_t aHttpsOnlyStatus);
 
+  
+
+
+
+
+
+
+  static void UpdateLoadStateAfterHTTPSFirstDowngrade(
+      mozilla::net::DocumentLoadListener* aDocumentLoadListener,
+      nsDocShellLoadState* aLoadState);
+
+  
+
+
+
+
+
+
+
+
+
+  static void SubmitHTTPSFirstTelemetry(
+      nsCOMPtr<nsILoadInfo> const& aLoadInfo,
+      RefPtr<HTTPSFirstDowngradeData> const& aHttpsFirstDowngradeData);
+
  private:
   
 
@@ -255,6 +280,19 @@ class TestHTTPAnswerRunnable final : public mozilla::Runnable,
   
   RefPtr<mozilla::net::DocumentLoadListener> mDocumentLoadListener;
   RefPtr<nsITimer> mTimer;
+};
+
+
+
+
+
+
+struct HTTPSFirstDowngradeData
+    : public mozilla::RefCounted<HTTPSFirstDowngradeData> {
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(HTTPSFirstDowngradeData)
+  mozilla::TimeDuration downgradeTime;
+  bool isOnTimer = false;
+  bool isSchemeless = false;
 };
 
 #endif 

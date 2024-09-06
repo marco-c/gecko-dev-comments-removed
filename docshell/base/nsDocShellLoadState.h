@@ -24,6 +24,7 @@ class nsIURI;
 class nsIDocShell;
 class nsIChannel;
 class nsIReferrerInfo;
+struct HTTPSFirstDowngradeData;
 namespace mozilla {
 class OriginAttributes;
 template <typename, class>
@@ -147,6 +148,11 @@ class nsDocShellLoadState final {
   bool IsExemptFromHTTPSFirstMode() const;
 
   void SetIsExemptFromHTTPSFirstMode(bool aIsExemptFromHTTPSFirstMode);
+
+  RefPtr<HTTPSFirstDowngradeData> GetHttpsFirstDowngradeData() const;
+
+  void SetHttpsFirstDowngradeData(
+      RefPtr<HTTPSFirstDowngradeData> const& aHttpsFirstTelemetryData);
 
   bool OriginalFrameSrc() const;
 
@@ -483,6 +489,10 @@ class nsDocShellLoadState final {
   
   
   bool mIsExemptFromHTTPSFirstMode;
+
+  
+  
+  RefPtr<HTTPSFirstDowngradeData> mHttpsFirstDowngradeData;
 
   
   

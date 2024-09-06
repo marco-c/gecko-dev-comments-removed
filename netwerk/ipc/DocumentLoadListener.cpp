@@ -646,6 +646,7 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   
   mIsDownload = !aLoadState->FileName().IsVoid();
   mIsLoadingJSURI = net::SchemeIsJavascript(aLoadState->URI());
+  mHTTPSFirstDowngradeData = aLoadState->GetHttpsFirstDowngradeData().forget();
 
   
   if (aLoadState->OriginalFrameSrc() || !mIsDocumentLoad) {
@@ -2428,9 +2429,7 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
   loadState->SetWasSchemelessInput(wasSchemelessInput);
 
   if (isHTTPSFirstFixup) {
-    
-    
-    loadState->SetIsExemptFromHTTPSFirstMode(true);
+    nsHTTPSOnlyUtils::UpdateLoadStateAfterHTTPSFirstDowngrade(this, loadState);
   }
 
   
@@ -2570,6 +2569,17 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   if (MaybeHandleLoadErrorWithURIFixup(status)) {
     return NS_OK;
+  }
+
+  
+  
+  if (NS_SUCCEEDED(status) && httpChannel) {
+    uint32_t responseStatus = 0;
+    if (NS_SUCCEEDED(httpChannel->GetResponseStatus(&responseStatus)) &&
+        responseStatus < 400) {
+      nsHTTPSOnlyUtils::SubmitHTTPSFirstTelemetry(
+          mChannel->LoadInfo(), mHTTPSFirstDowngradeData.forget());
+    }
   }
 
   mStreamListenerFunctions.AppendElement(StreamListenerFunction{
