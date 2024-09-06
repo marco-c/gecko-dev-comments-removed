@@ -751,9 +751,9 @@ DCSurface* DCExternalSurfaceWrapper::EnsureSurfaceForExternalImage(
     auto cprofileOut = mDCLayerTree->OutputColorProfile();
     bool pretendSrgb = true;
     if (pretendSrgb) {
-      cprofileOut = color::ColorProfileDesc::From(color::ColorspaceDesc{
-          .chrom = color::Chromaticities::Srgb(),
-          .tf = color::PiecewiseGammaDesc::Srgb(),
+      cprofileOut = color::ColorProfileDesc::From({
+          color::Chromaticities::Srgb(),
+          color::PiecewiseGammaDesc::Srgb(),
       });
     }
     const auto conversion = color::ColorProfileConversionDesc::From({
@@ -2072,10 +2072,7 @@ void DCLayerTree::DestroyEGLSurface() {
 
 
 
-}  
-namespace gfx {
-
-color::ColorProfileDesc QueryOutputColorProfile() {
+color::ColorProfileDesc DCLayerTree::QueryOutputColorProfile() {
   
   
   
@@ -2128,9 +2125,6 @@ color::ColorProfileDesc QueryOutputColorProfile() {
 
   return ret;
 }
-
-}  
-namespace wr {
 
 inline D2D1_MATRIX_5X4_F to_D2D1_MATRIX_5X4_F(const color::mat4& m) {
   return D2D1_MATRIX_5X4_F{{{
