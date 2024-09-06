@@ -697,7 +697,9 @@ child:
 
     async DynamicToolbarMaxHeightChanged(ScreenIntCoord height);
 
-    async DynamicToolbarOffsetChanged(ScreenIntCoord height);
+    async DynamicToolbarOffsetChanged(ScreenIntCoord offset);
+
+    async KeyboardHeightChanged(ScreenIntCoord height);
 
     
 
