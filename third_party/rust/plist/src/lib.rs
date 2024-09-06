@@ -72,6 +72,8 @@
 
 
 
+#![allow(warnings)] 
+
 pub mod dictionary;
 
 #[cfg(feature = "enable_unstable_features_that_may_break_with_minor_version_bumps")]
