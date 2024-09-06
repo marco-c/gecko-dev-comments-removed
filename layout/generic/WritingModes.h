@@ -164,11 +164,6 @@ class WritingMode {
   
 
 
-  enum { eUnknownWritingMode = 0xff };
-
-  
-
-
   InlineDir GetInlineDir() const {
     return InlineDir(mWritingMode._0 & eInlineMask);
   }
@@ -596,8 +591,13 @@ class WritingMode {
   
 
 
+  static constexpr uint8_t kUnknownWritingMode = 0xff;
+
+  
+
+
   static inline WritingMode Unknown() {
-    return WritingMode(eUnknownWritingMode);
+    return WritingMode(kUnknownWritingMode);
   }
 
   
