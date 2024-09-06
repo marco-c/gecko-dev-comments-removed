@@ -45,7 +45,7 @@ function test(aEntries, aData, aResults) {
 
   
   
-  pm.removePermissionsWithAttributes(aData);
+  pm.removePermissionsWithAttributes(aData, [], []);
 
   var length = aEntries.length;
   for (let i = 0; i < length; ++i) {
