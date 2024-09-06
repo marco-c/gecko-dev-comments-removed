@@ -34,10 +34,10 @@
 #define ctypes_typedefs_h
 
 
-#ifdef HAVE_SSIZE_T
-#  define CTYPES_SSIZE_T ssize_t
-#else
+#ifdef _WIN32
 #  define CTYPES_SSIZE_T intptr_t
+#else
+#  define CTYPES_SSIZE_T ssize_t
 #endif
 
 
