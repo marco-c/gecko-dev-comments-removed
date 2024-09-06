@@ -1,0 +1,25 @@
+
+
+
+
+
+importScripts("/resources/testharness.js");
+importScripts("/html/canvas/resources/canvas-tests.js");
+
+var t = async_test("Getting/setting width/height IDL attributes");
+var t_pass = t.done.bind(t);
+var t_fail = t.step_func(function(reason) {
+    throw reason;
+});
+t.step(function() {
+
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
+
+  assert_throws_js(TypeError, function() { canvas.width = 200 - Math.pow(2, 32); });
+  assert_throws_js(TypeError, function() { canvas.height = 200 - Math.pow(2, 32); });
+  assert_throws_js(TypeError, function() { canvas.width = '400x'; });
+  assert_throws_js(TypeError, function() { canvas.height = 'foo'; });
+  t.done();
+});
+done();
