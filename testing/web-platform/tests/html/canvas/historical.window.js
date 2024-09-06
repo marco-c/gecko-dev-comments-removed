@@ -1,0 +1,5 @@
+
+
+test(() => {
+  assert_equals(CanvasRenderingContext2D.prototype.scrollPathIntoView, undefined);
+}, "CanvasRenderingContext2D.scrollPathIntoView method is removed");
