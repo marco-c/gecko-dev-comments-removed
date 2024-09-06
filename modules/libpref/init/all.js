@@ -1125,7 +1125,7 @@ pref("network.http.response.timeout", 300);
 
 
 #ifdef ANDROID
-  pref("network.http.max-connections", 40);
+  pref("network.http.max-connections", 128);
 #else
   pref("network.http.max-connections", 900);
 #endif
