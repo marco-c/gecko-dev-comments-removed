@@ -15,6 +15,7 @@
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/JSProcessActorParent.h"
 #include "mozilla/dom/ProcessActor.h"
+#include "mozilla/dom/UniqueContentParentKeepAlive.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/gfx/gfxVarReceiver.h"
 #include "mozilla/gfx/GPUProcessListener.h"
@@ -128,10 +129,11 @@ class ContentParent final : public PContentParent,
   friend class mozilla::PreallocatedProcessManagerImpl;
   friend class PContentParent;
   friend class mozilla::dom::RemoteWorkerManager;
+  friend struct mozilla::dom::ContentParentKeepAliveDeleter;
 
  public:
   using LaunchPromise =
-      mozilla::MozPromise<RefPtr<ContentParent>, nsresult, false>;
+      mozilla::MozPromise<UniqueContentParentKeepAlive, nsresult, true>;
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_CONTENTPARENT_IID)
 
@@ -144,7 +146,7 @@ class ContentParent final : public PContentParent,
   
 
 
-  static already_AddRefed<ContentParent> MakePreallocProcess();
+  static UniqueContentParentKeepAlive MakePreallocProcess();
 
   
 
@@ -171,13 +173,42 @@ class ContentParent final : public PContentParent,
 
 
 
+
   static already_AddRefed<ContentParent> MinTabSelect(
       const nsTArray<ContentParent*>& aContentParents,
-      int32_t maxContentParents);
+      int32_t maxContentParents, uint64_t aBrowserId);
 
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static UniqueContentParentKeepAlive GetNewOrUsedLaunchingBrowserProcess(
+      const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
+      hal::ProcessPriority aPriority =
+          hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
+      bool aPreferUsed = false, uint64_t aBrowserId = 0);
+
+  
 
 
 
@@ -185,12 +216,17 @@ class ContentParent final : public PContentParent,
       const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-      bool aPreferUsed = false);
-  static already_AddRefed<ContentParent> GetNewOrUsedBrowserProcess(
+      bool aPreferUsed = false, uint64_t aBrowserId = 0);
+
+  
+
+
+
+  static UniqueContentParentKeepAlive GetNewOrUsedBrowserProcess(
       const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-      bool aPreferUsed = false);
+      bool aPreferUsed = false, uint64_t aBrowserId = 0);
 
   
 
@@ -200,17 +236,15 @@ class ContentParent final : public PContentParent,
 
 
 
-
-
-  static already_AddRefed<ContentParent> GetNewOrUsedLaunchingBrowserProcess(
-      const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
-      hal::ProcessPriority aPriority =
-          hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-      bool aPreferUsed = false);
-
   RefPtr<ContentParent::LaunchPromise> WaitForLaunchAsync(
       hal::ProcessPriority aPriority =
-          hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND);
+          hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
+      uint64_t aBrowserId = 0);
+
+  
+
+
+
   bool WaitForLaunchSync(hal::ProcessPriority aPriority =
                              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND);
 
@@ -330,34 +364,44 @@ class ContentParent final : public PContentParent,
   virtual nsresult DoSendAsyncMessage(const nsAString& aMessage,
                                       StructuredCloneData& aData) override;
 
-  RecursiveMutex& ThreadsafeHandleMutex();
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] UniqueContentParentKeepAlive TryAddKeepAlive(
+      uint64_t aBrowserId);
 
   
-  void NotifyTabWillDestroy();
+
+
+
+  [[nodiscard]] UniqueContentParentKeepAlive AddKeepAlive(uint64_t aBrowserId);
 
   
-  void NotifyTabDestroying();
 
-  
-  void NotifyTabDestroyed(const TabId& aTabId, bool aNotifiedDestroying);
 
-  
-  
-  void AddKeepAlive();
-  void RemoveKeepAlive();
+
+
+
+
+
+
+
+
+
+  bool MaybeBeginShutDown(bool aIgnoreKeepAlivePref = false);
 
   TestShellParent* CreateTestShell();
 
   bool DestroyTestShell(TestShellParent* aTestShell);
 
   TestShellParent* GetTestShellSingleton();
-
-  
-  void RegisterRemoteWorkerActor();
-
-  
-  
-  void UnregisterRemoveWorkerActor();
 
   void ReportChildAlreadyBlocked();
 
@@ -715,19 +759,6 @@ class ContentParent final : public PContentParent,
   
   
   
-  bool LaunchSubprocessSync(hal::ProcessPriority aInitialPriority);
-
-  
-  
-  
-  
-  
-  RefPtr<LaunchPromise> LaunchSubprocessAsync(
-      hal::ProcessPriority aInitialPriority);
-
-  
-  
-  
   bool BeginSubprocessLaunch(ProcessPriority aPriority);
   void LaunchSubprocessReject();
   bool LaunchSubprocessResolve(bool aIsSync, ProcessPriority aPriority);
@@ -757,17 +788,6 @@ class ContentParent final : public PContentParent,
   
 
 
-  bool HasActiveWorker();
-
-  
-
-
-
-  bool ShouldKeepProcessAlive();
-
-  
-
-
 
   void MarkAsDead();
 
@@ -777,22 +797,6 @@ class ContentParent final : public PContentParent,
 
 
   void SignalImpendingShutdownToContentJS();
-
-  bool CheckTabDestroyWillKeepAlive(uint32_t aExpectedBrowserCount);
-
-  
-
-
-
-
-
-
-
-
-
-
-  void MaybeBeginShutDown(uint32_t aExpectedBrowserCount = 0,
-                          bool aSendShutDown = true);
 
   
 
@@ -1415,13 +1419,16 @@ class ContentParent final : public PContentParent,
 
  private:
   
-  static already_AddRefed<ContentParent> GetUsedBrowserProcess(
+  static UniqueContentParentKeepAlive GetUsedBrowserProcess(
       const nsACString& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-      uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority);
+      uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority,
+      uint64_t aBrowserId);
 
   void AddToPool(nsTArray<ContentParent*>&);
   void RemoveFromPool(nsTArray<ContentParent*>&);
   void AssertNotInPool();
+
+  void RemoveKeepAlive(uint64_t aBrowserId);
 
   void AssertAlive();
 
@@ -1466,13 +1473,6 @@ class ContentParent final : public PContentParent,
   
   
   
-  int32_t mNumDestroyingTabs;
-
-  uint32_t mNumKeepaliveCalls;
-
-  
-  
-  
   
   
   enum class LifecycleState : uint8_t {
@@ -1512,7 +1512,6 @@ class ContentParent final : public PContentParent,
   uint8_t mGMPCreated : 1;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  bool mNotifiedImpendingShutdownOnTabWillDestroy = false;
   bool mBlockShutdownCalled;
 #endif
 
@@ -1623,15 +1622,10 @@ class ThreadsafeContentParentHandle final {
   
   
   
-  bool MaybeRegisterRemoteWorkerActor(
-      MoveOnlyFunction<bool(uint32_t, bool)> aCallback) MOZ_EXCLUDES(mMutex);
-
   
-  void RegisterRemoteWorkerActor() MOZ_EXCLUDES(mMutex) {
-    MaybeRegisterRemoteWorkerActor([](uint32_t, bool) { return true; });
-  }
-
-  RecursiveMutex& Mutex() { return mMutex; }
+  
+  [[nodiscard]] UniqueThreadsafeContentParentKeepAlive TryAddKeepAlive(
+      uint64_t aBrowserId = 0) MOZ_EXCLUDES(mMutex);
 
  private:
   ThreadsafeContentParentHandle(ContentParent* aActor, ContentParentId aChildID,
@@ -1644,7 +1638,17 @@ class ThreadsafeContentParentHandle final {
   const ContentParentId mChildID;
 
   nsCString mRemoteType MOZ_GUARDED_BY(mMutex);
-  uint32_t mRemoteWorkerActorCount MOZ_GUARDED_BY(mMutex) = 0;
+
+  
+  
+  
+  
+  
+  
+  nsTHashMap<uint64_t, uint32_t> mKeepAlivesPerBrowserId MOZ_GUARDED_BY(mMutex);
+
+  
+  
   bool mShutdownStarted MOZ_GUARDED_BY(mMutex) = false;
 
   

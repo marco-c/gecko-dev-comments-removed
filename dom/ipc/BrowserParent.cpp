@@ -29,6 +29,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/indexedDB/ActorsParent.h"
 #include "mozilla/dom/PaymentRequestParent.h"
+#include "mozilla/dom/PContentPermissionRequestParent.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/RemoteDragStartData.h"
@@ -64,6 +65,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
+#include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsFocusManager.h"
@@ -327,6 +329,10 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
   
   
   SetManager(aManager);
+
+  
+  mContentParentKeepAlive =
+      aManager->TryAddKeepAlive(aBrowsingContext->BrowserId());
 
   RequestingAccessKeyEventData::OnBrowserParentCreated();
 
@@ -736,25 +742,28 @@ void BrowserParent::Destroy() {
   }
 #endif
 
-  {
-    
-    
-    
-    RecursiveMutexAutoLock lock(Manager()->ThreadsafeHandleMutex());
+  
+  
+  
+  (void)SendDestroy();
+  mIsDestroyed = true;
 
-    
-    
-    
-    Manager()->NotifyTabWillDestroy();
-
-    
-    
-    
-    (void)SendDestroy();
-    mIsDestroyed = true;
-
-    Manager()->NotifyTabDestroying();
-  }
+#if !defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mContentParentKeepAlive = nullptr;
+#endif
 
   
   
@@ -788,7 +797,20 @@ mozilla::ipc::IPCResult BrowserParent::RecvEnsureLayersConnected(
 }
 
 void BrowserParent::ActorDestroy(ActorDestroyReason why) {
-  Manager()->NotifyTabDestroyed(mTabId, mMarkedDestroying);
+  
+  
+  
+  nsTArray<PContentPermissionRequestParent*> parentArray =
+      nsContentPermissionUtils::GetContentPermissionRequestParentById(mTabId);
+  for (auto& permissionRequestParent : parentArray) {
+    Unused << PContentPermissionRequestParent::Send__delete__(
+        permissionRequestParent);
+  }
+
+  
+  
+  mContentParentKeepAlive = nullptr;
+  Manager()->MaybeBeginShutDown();
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   if (cpm) {
