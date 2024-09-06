@@ -38,6 +38,15 @@ class SignalingRoute {
   
   
   
+  
+  
+  
+  void NegotiateSdp(
+      std::function<void(SessionDescriptionInterface* offer)> munge_offer,
+      std::function<void(SessionDescriptionInterface* offer)> modify_offer,
+      std::function<void()> callee_remote_description_set,
+      std::function<void(const SessionDescriptionInterface& answer)>
+          exchange_finished);
   void NegotiateSdp(
       std::function<void(SessionDescriptionInterface* offer)> munge_offer,
       std::function<void(SessionDescriptionInterface* offer)> modify_offer,
@@ -45,6 +54,10 @@ class SignalingRoute {
           exchange_finished);
   void NegotiateSdp(
       std::function<void(SessionDescriptionInterface* offer)> modify_offer,
+      std::function<void(const SessionDescriptionInterface& answer)>
+          exchange_finished);
+  void NegotiateSdp(
+      std::function<void()> remote_description_set,
       std::function<void(const SessionDescriptionInterface& answer)>
           exchange_finished);
   void NegotiateSdp(
