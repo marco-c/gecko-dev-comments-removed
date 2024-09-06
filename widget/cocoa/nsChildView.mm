@@ -1712,17 +1712,14 @@ void nsChildView::UpdateThemeGeometries(
     return;
   }
 
-  
   ToolbarWindow* win = (ToolbarWindow*)[mView window];
 
   
   LayoutDeviceIntRect windowButtonRect =
       FindFirstRectOfType(aThemeGeometries, eThemeGeometryTypeWindowButtons);
-  if (!windowButtonRect.IsEmpty()) {
-    [win placeWindowButtons:[mView convertRect:DevPixelsToCocoaPoints(
-                                                   windowButtonRect)
-                                        toView:nil]];
-  }
+  [win placeWindowButtons:[mView convertRect:DevPixelsToCocoaPoints(
+                                                 windowButtonRect)
+                                      toView:nil]];
 }
 
 static Maybe<VibrancyType> ThemeGeometryTypeToVibrancyType(
