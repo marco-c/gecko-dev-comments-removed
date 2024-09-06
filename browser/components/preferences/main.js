@@ -3606,73 +3606,46 @@ var gMainPane = {
         ]);
       }
     }
-
-    if (file) {
-      let displayName = file.path;
-
+    if (firefoxLocalizedName) {
+      let folderDisplayName, leafName;
       
       
-      if (AppConstants.platform == "linux") {
-        try {
-          displayName = await file.hostPath();
-        } catch (error) {
-          
-        }
-
-        if (displayName) {
-          if (displayName == downloadsDir.path) {
-            firefoxLocalizedName = await document.l10n.formatValues([
-              { id: "downloads-folder-name" },
-            ]);
-          } else if (displayName == desktopDir.path) {
-            firefoxLocalizedName = await document.l10n.formatValues([
-              { id: "desktop-folder-name" },
-            ]);
-          }
-        }
+      try {
+        folderDisplayName = file.displayName;
+      } catch (ex) {
+        
+      }
+      try {
+        leafName = file.leafName;
+      } catch (ex) {
+        
       }
 
+      
+      
+      if (folderDisplayName && folderDisplayName != leafName) {
+        return { file, folderDisplayName };
+      }
+
+      
       if (firefoxLocalizedName) {
-        let folderDisplayName, leafName;
         
         
-        try {
-          folderDisplayName = file.displayName;
-        } catch (ex) {
-          
-        }
-        try {
-          leafName = file.leafName;
-        } catch (ex) {
-          
-        }
-
         
-        
-        if (folderDisplayName && folderDisplayName != leafName) {
-          return { file, folderDisplayName };
-        }
-
-        
-        if (firefoxLocalizedName) {
-          
-          
-          
-          if (
-            AppConstants.platform == "macosx" ||
-            leafName == firefoxLocalizedName
-          ) {
-            return { file, folderDisplayName: firefoxLocalizedName };
-          }
+        if (
+          AppConstants.platform == "macosx" ||
+          leafName == firefoxLocalizedName
+        ) {
+          return { file, folderDisplayName: firefoxLocalizedName };
         }
       }
-
-      
-      
-      
-      return { file, folderDisplayName: `\u2066${displayName}\u2069` };
     }
-
+    
+    
+    if (file) {
+      
+      return { file, folderDisplayName: `\u2066${file.path}\u2069` };
+    }
     
     
     file = desktopDir;
