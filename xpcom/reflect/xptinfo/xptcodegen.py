@@ -9,6 +9,7 @@ import json
 from collections import OrderedDict
 
 import buildconfig
+from mozbuild.util import memoize
 from perfecthash import PerfectHash
 
 
@@ -135,6 +136,7 @@ def split_iid(iid):
     return tuple(split_at_idxs(iid, (8, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2)))
 
 
+@memoize
 def iid_bytes(iid):  
     bs = bytearray()
     for num in split_iid(iid):
