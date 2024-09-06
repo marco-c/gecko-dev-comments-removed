@@ -37,8 +37,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
  public:
   nsMathMLContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                          ClassID aID)
-      : nsContainerFrame(aStyle, aPresContext, aID),
-        mIntrinsicWidth(NS_INTRINSIC_ISIZE_UNKNOWN) {}
+      : nsContainerFrame(aStyle, aPresContext, aID) {}
 
   NS_DECL_QUERYFRAME_TARGET(nsMathMLContainerFrame)
   NS_DECL_QUERYFRAME
@@ -342,9 +341,9 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
 
 
-  void UpdateIntrinsicWidth(gfxContext* aRenderingContext);
+  void UpdateIntrinsicISize(gfxContext* aRenderingContext);
 
-  nscoord mIntrinsicWidth;
+  nscoord mIntrinsicISize = NS_INTRINSIC_ISIZE_UNKNOWN;
 
   nscoord mBlockStartAscent = 0;
 

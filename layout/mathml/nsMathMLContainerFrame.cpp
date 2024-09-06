@@ -829,33 +829,33 @@ static nscoord AddInterFrameSpacingToSize(ReflowOutput& aDesiredSize,
 
 
 void nsMathMLContainerFrame::MarkIntrinsicISizesDirty() {
-  mIntrinsicWidth = NS_INTRINSIC_ISIZE_UNKNOWN;
+  mIntrinsicISize = NS_INTRINSIC_ISIZE_UNKNOWN;
   nsContainerFrame::MarkIntrinsicISizesDirty();
 }
 
-void nsMathMLContainerFrame::UpdateIntrinsicWidth(
+void nsMathMLContainerFrame::UpdateIntrinsicISize(
     gfxContext* aRenderingContext) {
-  if (mIntrinsicWidth == NS_INTRINSIC_ISIZE_UNKNOWN) {
+  if (mIntrinsicISize == NS_INTRINSIC_ISIZE_UNKNOWN) {
     ReflowOutput desiredSize(GetWritingMode());
     GetIntrinsicISizeMetrics(aRenderingContext, desiredSize);
 
     
     
     AddInterFrameSpacingToSize(desiredSize, this);
-    mIntrinsicWidth = desiredSize.ISize(GetWritingMode());
+    mIntrinsicISize = desiredSize.ISize(GetWritingMode());
   }
 }
 
 
 nscoord nsMathMLContainerFrame::GetMinISize(gfxContext* aRenderingContext) {
-  UpdateIntrinsicWidth(aRenderingContext);
-  return mIntrinsicWidth;
+  UpdateIntrinsicISize(aRenderingContext);
+  return mIntrinsicISize;
 }
 
 
 nscoord nsMathMLContainerFrame::GetPrefISize(gfxContext* aRenderingContext) {
-  UpdateIntrinsicWidth(aRenderingContext);
-  return mIntrinsicWidth;
+  UpdateIntrinsicISize(aRenderingContext);
+  return mIntrinsicISize;
 }
 
 
