@@ -2454,15 +2454,20 @@ static gboolean invisibleSourceDragFailed(GtkWidget* aWidget,
   
   
   
-  if (widget::GdkIsWaylandDisplay() && aResult == GTK_DRAG_RESULT_ERROR &&
-      dragService->IsDragFlavorAvailable(nsDragService::sTabDropTypeAtom)) {
-    aResult = GTK_DRAG_RESULT_NO_TARGET;
-    LOGDRAGSERVICESTATIC("invisibleSourceDragFailed(%p): Wayland tab drop",
-                         aContext);
-  } else {
-    LOGDRAGSERVICESTATIC("invisibleSourceDragFailed(%p) %s", aContext,
-                         kGtkDragResults[aResult]);
+  if (widget::GdkIsWaylandDisplay() && aResult == GTK_DRAG_RESULT_ERROR) {
+    for (GList* tmp = gdk_drag_context_list_targets(aContext); tmp;
+         tmp = tmp->next) {
+      if (nsDragService::sTabDropTypeAtom == GDK_POINTER_TO_ATOM(tmp->data)) {
+        aResult = GTK_DRAG_RESULT_NO_TARGET;
+        LOGDRAGSERVICESTATIC("invisibleSourceDragFailed(%p): Wayland tab drop",
+                             aContext);
+        break;
+      }
+    }
   }
+
+  LOGDRAGSERVICESTATIC("invisibleSourceDragFailed(%p) %s", aContext,
+                       kGtkDragResults[aResult]);
   
   
   

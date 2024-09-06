@@ -177,8 +177,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   void SetDragIcon(GdkDragContext* aContext);
 
-  bool IsDragFlavorAvailable(GdkAtom aRequestedFlavor);
-
   class AutoEventLoop {
     RefPtr<nsDragService> mService;
 
@@ -268,6 +266,8 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   bool IsTargetContextList(void);
+  bool IsDragFlavorAvailable(GdkAtom aRequestedFlavor);
+
   
   
   RefPtr<DragData> GetDragData(GdkAtom aRequestedFlavor);
