@@ -69,15 +69,12 @@ bool IsValidEpochNanoseconds(const JS::BigInt* epochNanoseconds);
 
 bool IsValidEpochInstant(const Instant& instant);
 
+#ifdef DEBUG
 
 
 
 bool IsValidInstantSpan(const InstantSpan& span);
-
-
-
-
-bool IsValidInstantSpan(const JS::BigInt* nanoseconds);
+#endif
 
 
 
@@ -88,18 +85,14 @@ Instant ToInstant(const JS::BigInt* epochNanoseconds);
 
 
 
-
-InstantSpan ToInstantSpan(const JS::BigInt* nanoseconds);
-
-
-
-
 JS::BigInt* ToEpochNanoseconds(JSContext* cx, const Instant& instant);
 
 
 
 
-JS::BigInt* ToEpochNanoseconds(JSContext* cx, const InstantSpan& instant);
+
+JS::BigInt* ToNanoseconds(JSContext* cx,
+                          const NormalizedTimeDuration& duration);
 
 
 
@@ -141,18 +134,22 @@ bool RoundTemporalInstant(JSContext* cx, const Instant& ns, Increment increment,
 
 
 
-
-bool AddInstant(JSContext* cx, const Instant& instant, const Duration& duration,
-                Instant* result);
-
+Instant AddNormalizedTimeDurationToEpochNanoseconds(
+    const NormalizedTimeDuration& d, const Instant& epochNs);
 
 
 
 
-bool DifferenceInstant(JSContext* cx, const Instant& ns1, const Instant& ns2,
-                       Increment roundingIncrement, TemporalUnit smallestUnit,
-                       TemporalUnit largestUnit,
-                       TemporalRoundingMode roundingMode, Duration* result);
+bool AddInstant(JSContext* cx, const Instant& instant,
+                const NormalizedTimeDuration& duration, Instant* result);
+
+
+
+
+NormalizedTimeDuration DifferenceInstant(const Instant& ns1, const Instant& ns2,
+                                         Increment roundingIncrement,
+                                         TemporalUnit smallestUnit,
+                                         TemporalRoundingMode roundingMode);
 
 } 
 

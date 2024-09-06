@@ -484,7 +484,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  Duration result;
+  Duration until;
   if (resolvedOptions) {
     
     Rooted<Value> largestUnitValue(
@@ -496,43 +496,43 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
 
     
     if (!CalendarDateUntil(cx, calendarRec, thisDate, otherDate,
-                           resolvedOptions, &result)) {
+                           resolvedOptions, &until)) {
       return false;
     }
   } else {
     
     if (!CalendarDateUntil(cx, calendarRec, thisDate, otherDate,
-                           settings.largestUnit, &result)) {
+                           settings.largestUnit, &until)) {
       return false;
     }
   }
 
   
-  Duration duration = {result.years, result.months};
+  auto dateDuration = DateDuration{until.years, until.months};
 
   
   if (settings.smallestUnit != TemporalUnit::Month ||
       settings.roundingIncrement != Increment{1}) {
     
-    Duration roundResult;
-    if (!RoundDuration(cx, duration, settings.roundingIncrement,
+    NormalizedDuration roundResult;
+    if (!RoundDuration(cx, {dateDuration, {}}, settings.roundingIncrement,
                        settings.smallestUnit, settings.roundingMode, thisDate,
                        calendarRec, &roundResult)) {
       return false;
     }
 
     
-    auto toBalance = Duration{roundResult.years, roundResult.months};
-    DateDuration balanceResult;
+    auto toBalance =
+        DateDuration{roundResult.date.years, roundResult.date.months};
     if (!temporal::BalanceDateDurationRelative(
             cx, toBalance, settings.largestUnit, settings.smallestUnit,
-            thisDate, calendarRec, &balanceResult)) {
+            thisDate, calendarRec, &dateDuration)) {
       return false;
     }
-    duration = balanceResult.toDuration();
   }
 
   
+  auto duration = dateDuration.toDuration();
   if (operation == TemporalDifference::Since) {
     duration = duration.negate();
   }
@@ -569,14 +569,21 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   }
 
   
-  TimeDuration balanceResult;
-  if (!BalanceTimeDuration(cx, duration, TemporalUnit::Day, &balanceResult)) {
-    return false;
-  }
+  auto timeDuration = NormalizeTimeDuration(duration);
 
   
-  int32_t sign = DurationSign(
-      {duration.years, duration.months, duration.weeks, balanceResult.days});
+  auto balancedTime = BalanceTimeDuration(timeDuration, TemporalUnit::Day);
+
+  
+  Duration durationToAdd = {
+      duration.years,
+      duration.months,
+      duration.weeks,
+      duration.days + balancedTime.days,
+  };
+
+  
+  int32_t sign = DurationSign(durationToAdd);
 
   
   Rooted<CalendarValue> calendarValue(cx, yearMonth->calendar());
@@ -697,8 +704,6 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   }
 
   
-  Duration durationToAdd = {duration.years, duration.months, duration.weeks,
-                            balanceResult.days};
 
   
   

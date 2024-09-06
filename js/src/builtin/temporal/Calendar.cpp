@@ -3076,14 +3076,18 @@ static bool BuiltinCalendarAdd(JSContext* cx, const PlainDate& date,
   }
 
   
-  TimeDuration balanceResult;
-  if (!BalanceTimeDuration(cx, duration, TemporalUnit::Day, &balanceResult)) {
-    return false;
-  }
+  auto timeDuration = NormalizeTimeDuration(duration);
 
   
-  Duration addDuration = {duration.years, duration.months, duration.weeks,
-                          balanceResult.days};
+  auto balanceResult = BalanceTimeDuration(timeDuration, TemporalUnit::Day);
+
+  
+  auto addDuration = DateDuration{
+      duration.years,
+      duration.months,
+      duration.weeks,
+      duration.days + balanceResult.days,
+  };
   return AddISODate(cx, date, addDuration, overflow, result);
 }
 

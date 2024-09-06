@@ -811,7 +811,7 @@ PlainDate js::temporal::BalanceISODate(int32_t year, int32_t month,
 
 
 bool js::temporal::AddISODate(JSContext* cx, const PlainDate& date,
-                              const Duration& duration,
+                              const DateDuration& duration,
                               TemporalOverflow overflow, PlainDate* result) {
   MOZ_ASSERT(IsValidISODate(date));
   MOZ_ASSERT(ISODateTimeWithinLimits(date));
@@ -820,7 +820,7 @@ bool js::temporal::AddISODate(JSContext* cx, const PlainDate& date,
   
   
   
-  MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT(IsValidDuration(duration.toDuration()));
 
   
   MOZ_ASSERT(IsInteger(duration.years));
@@ -952,10 +952,14 @@ static bool HasYearsMonthsOrWeeks(const Duration& duration) {
   return duration.years != 0 || duration.months != 0 || duration.weeks != 0;
 }
 
+
+
+
 static bool AddDate(JSContext* cx, const PlainDate& date,
                     const Duration& duration, Handle<JSObject*> maybeOptions,
                     PlainDate* result) {
   MOZ_ASSERT(!HasYearsMonthsOrWeeks(duration));
+  MOZ_ASSERT(IsValidDuration(duration));
 
   
 
@@ -968,13 +972,14 @@ static bool AddDate(JSContext* cx, const PlainDate& date,
   }
 
   
-  TimeDuration daysDuration;
-  if (!BalanceTimeDuration(cx, duration, TemporalUnit::Day, &daysDuration)) {
-    return false;
-  }
+  auto timeDuration = NormalizeTimeDuration(duration);
 
   
-  return AddISODate(cx, date, {0, 0, 0, daysDuration.days}, overflow, result);
+  double days =
+      duration.days + BalanceTimeDuration(timeDuration, TemporalUnit::Day).days;
+
+  
+  return AddISODate(cx, date, {0, 0, 0, days}, overflow, result);
 }
 
 static bool AddDate(JSContext* cx, Handle<Wrapped<PlainDateObject*>> date,
@@ -987,6 +992,9 @@ static bool AddDate(JSContext* cx, Handle<Wrapped<PlainDateObject*>> date,
   return ::AddDate(cx, ToPlainDate(unwrappedDate), duration, maybeOptions,
                    result);
 }
+
+
+
 
 static PlainDateObject* AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
                                 Handle<Wrapped<PlainDateObject*>> date,
@@ -1280,7 +1288,7 @@ int32_t js::temporal::CompareISODate(const PlainDate& one,
 static DateDuration CreateDateDurationRecord(int32_t years, int32_t months,
                                              int32_t weeks, int32_t days) {
   MOZ_ASSERT(IsValidDuration(
-      {double(years), double(months), double(weeks), double(days)}));
+      Duration{double(years), double(months), double(weeks), double(days)}));
   return {double(years), double(months), double(weeks), double(days)};
 }
 
@@ -1577,7 +1585,7 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   }
 
   
-  Duration duration;
+  DateDuration difference;
   if (resolvedOptions) {
     
     Rooted<Value> largestUnitValue(
@@ -1588,20 +1596,20 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
     }
 
     
-    Duration result;
+    Duration duration;
     if (!DifferenceDate(cx, calendar, temporalDate, other, resolvedOptions,
-                        &result)) {
+                        &duration)) {
       return false;
     }
-    duration = result.date();
+    difference = duration.toDateDuration();
   } else {
     
-    Duration result;
+    Duration duration;
     if (!DifferenceDate(cx, calendar, temporalDate, other, settings.largestUnit,
-                        &result)) {
+                        &duration)) {
       return false;
     }
-    duration = result.date();
+    difference = duration.toDateDuration();
   }
 
   
@@ -1611,8 +1619,8 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   
   if (!roundingGranularityIsNoop) {
     
-    Duration roundResult;
-    if (!temporal::RoundDuration(cx, duration.date(),
+    NormalizedDuration roundResult;
+    if (!temporal::RoundDuration(cx, {difference, {}},
                                  settings.roundingIncrement,
                                  settings.smallestUnit, settings.roundingMode,
                                  temporalDate, calendar, &roundResult)) {
@@ -1622,19 +1630,21 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
     
     DateDuration balanceResult;
     if (!temporal::BalanceDateDurationRelative(
-            cx, roundResult.date(), settings.largestUnit, settings.smallestUnit,
+            cx, roundResult.date, settings.largestUnit, settings.smallestUnit,
             temporalDate, calendar, &balanceResult)) {
       return false;
     }
-    duration = balanceResult.toDuration();
+    difference = balanceResult;
   }
 
   
+  auto duration = difference.toDuration();
   if (operation == TemporalDifference::Since) {
     duration = duration.negate();
   }
+  MOZ_ASSERT(IsValidDuration(duration));
 
-  auto* obj = CreateTemporalDuration(cx, duration.date());
+  auto* obj = CreateTemporalDuration(cx, duration);
   if (!obj) {
     return false;
   }

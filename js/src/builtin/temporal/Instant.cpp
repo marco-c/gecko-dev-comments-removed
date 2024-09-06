@@ -164,36 +164,10 @@ bool js::temporal::IsValidEpochInstant(const Instant& instant) {
   return Instant::min() <= instant && instant <= Instant::max();
 }
 
-static constexpr auto NanosecondsMaxInstantSpan() {
-  static_assert(BigInt::DigitBits == 64 || BigInt::DigitBits == 32);
-
-  
-  
-  
-  if constexpr (BigInt::DigitBits == 64) {
-    return std::array{
-        BigInt::Digit(0x3a8),
-        BigInt::Digit(0xc02c'5ea2'de00'0000),
-    };
-  } else {
-    return std::array{
-        BigInt::Digit(0x3a8),
-        BigInt::Digit(0xc02c'5ea2),
-        BigInt::Digit(0xde00'0000),
-    };
-  }
-}
+#ifdef DEBUG
 
 
 
-
-
-
-
-bool js::temporal::IsValidInstantSpan(const BigInt* nanoseconds) {
-  static constexpr auto spanLimit = NanosecondsMaxInstantSpan();
-  return AbsoluteValueIsLessOrEqual<spanLimit>(nanoseconds);
-}
 
 bool js::temporal::IsValidInstantSpan(const InstantSpan& span) {
   MOZ_ASSERT(0 <= span.nanoseconds && span.nanoseconds <= 999'999'999);
@@ -201,6 +175,7 @@ bool js::temporal::IsValidInstantSpan(const InstantSpan& span) {
   
   return InstantSpan::min() <= span && span <= InstantSpan::max();
 }
+#endif
 
 
 
@@ -258,14 +233,6 @@ Instant js::temporal::ToInstant(const BigInt* epochNanoseconds) {
   return {seconds, nanos};
 }
 
-InstantSpan js::temporal::ToInstantSpan(const BigInt* nanoseconds) {
-  MOZ_ASSERT(IsValidInstantSpan(nanoseconds));
-
-  auto [seconds, nanos] =
-      ToInt96(nanoseconds) / ToNanoseconds(TemporalUnit::Second);
-  return {seconds, nanos};
-}
-
 static BigInt* CreateBigInt(JSContext* cx,
                             const std::array<uint32_t, 3>& digits,
                             bool negative) {
@@ -300,9 +267,7 @@ static BigInt* CreateBigInt(JSContext* cx,
   }
 }
 
-static BigInt* ToEpochBigInt(JSContext* cx, const InstantSpan& instant) {
-  MOZ_ASSERT(IsValidInstantSpan(instant));
-
+static auto ToBigIntDigits(uint64_t seconds, uint32_t nanoseconds) {
   
   
   auto digitMul = [](uint32_t a, uint32_t b, uint32_t* high) {
@@ -320,20 +285,6 @@ static BigInt* ToEpochBigInt(JSContext* cx, const InstantSpan& instant) {
   };
 
   constexpr uint32_t secToNanos = ToNanoseconds(TemporalUnit::Second);
-
-  uint64_t seconds = std::abs(instant.seconds);
-  uint32_t nanoseconds = instant.nanoseconds;
-
-  
-  
-  
-  
-  
-  
-  if (instant.seconds < 0 && nanoseconds != 0) {
-    nanoseconds = secToNanos - nanoseconds;
-    seconds -= 1;
-  }
 
   
   
@@ -362,93 +313,40 @@ static BigInt* ToEpochBigInt(JSContext* cx, const InstantSpan& instant) {
     MOZ_ASSERT(newCarry == 0);
   }
 
-  return CreateBigInt(cx, accumulator, instant.seconds < 0);
+  return accumulator;
+}
+
+template <typename T>
+static BigInt* ToBigInt(JSContext* cx,
+                        const SecondsAndNanoseconds<T>& secondsAndNanoseconds) {
+  uint64_t seconds = std::abs(secondsAndNanoseconds.seconds);
+  uint32_t nanoseconds = secondsAndNanoseconds.nanoseconds;
+
+  
+  
+  
+  
+  
+  
+  if (secondsAndNanoseconds.seconds < 0 && nanoseconds != 0) {
+    nanoseconds = ToNanoseconds(TemporalUnit::Second) - nanoseconds;
+    seconds -= 1;
+  }
+
+  auto digits = ToBigIntDigits(seconds, nanoseconds);
+  return CreateBigInt(cx, digits, secondsAndNanoseconds.seconds < 0);
 }
 
 BigInt* js::temporal::ToEpochNanoseconds(JSContext* cx,
                                          const Instant& instant) {
   MOZ_ASSERT(IsValidEpochInstant(instant));
-  return ::ToEpochBigInt(cx, InstantSpan{instant.seconds, instant.nanoseconds});
+  return ::ToBigInt(cx, instant);
 }
 
-BigInt* js::temporal::ToEpochNanoseconds(JSContext* cx,
-                                         const InstantSpan& instant) {
-  MOZ_ASSERT(IsValidInstantSpan(instant));
-  return ::ToEpochBigInt(cx, instant);
-}
-
-
-
-
-
-static mozilla::Maybe<InstantSpan> NanosecondsToInstantSpan(
-    double nanoseconds) {
-  MOZ_ASSERT(IsInteger(nanoseconds));
-
-  if (auto int96 = Int96::fromInteger(nanoseconds)) {
-    constexpr auto maximum = Int96{InstantSpan::max().toSeconds()} *
-                             ToNanoseconds(TemporalUnit::Second);
-
-    
-    if (int96->abs() <= maximum) {
-      
-      auto [seconds, nanos] = *int96 / ToNanoseconds(TemporalUnit::Second);
-
-      auto result = InstantSpan{seconds, nanos};
-      MOZ_ASSERT(IsValidInstantSpan(result));
-      return mozilla::Some(result);
-    }
-  }
-  return mozilla::Nothing();
-}
-
-
-
-
-
-static mozilla::Maybe<InstantSpan> MicrosecondsToInstantSpan(
-    double microseconds) {
-  MOZ_ASSERT(IsInteger(microseconds));
-
-  constexpr int64_t spanLimit = InstantSpan::max().toSeconds();
-  constexpr int64_t secToMicros = ToNanoseconds(TemporalUnit::Second) /
-                                  ToNanoseconds(TemporalUnit::Microsecond);
-  constexpr int32_t microToNanos = ToNanoseconds(TemporalUnit::Microsecond);
-
-  
-  if (microseconds == 0) {
-    return mozilla::Some(InstantSpan{});
-  }
-
-  
-  if (std::abs(microseconds) > double(spanLimit) * double(secToMicros)) {
-    return mozilla::Nothing();
-  }
-
-  
-  
-  static_assert(double(spanLimit) * double(secToMicros) <= double(UINT64_MAX));
-
-  
-  uint64_t absMicros = uint64_t(std::abs(microseconds));
-
-  
-  int64_t seconds = absMicros / uint64_t(secToMicros);
-  int32_t remainder = absMicros % uint64_t(secToMicros);
-
-  
-  
-  if (microseconds < 0) {
-    seconds *= -1;
-    if (remainder != 0) {
-      seconds -= 1;
-      remainder = secToMicros - remainder;
-    }
-  }
-
-  InstantSpan result = {seconds, remainder * microToNanos};
-  MOZ_ASSERT(IsValidInstantSpan(result));
-  return mozilla::Some(result);
+BigInt* js::temporal::ToNanoseconds(JSContext* cx,
+                                    const NormalizedTimeDuration& duration) {
+  MOZ_ASSERT(IsValidNormalizedTimeDuration(duration));
+  return ::ToBigInt(cx, duration);
 }
 
 
@@ -661,162 +559,64 @@ bool js::temporal::ToTemporalInstant(JSContext* cx, Handle<Value> item,
 
 
 
+Instant js::temporal::AddNormalizedTimeDurationToEpochNanoseconds(
+    const NormalizedTimeDuration& d, const Instant& epochNs) {
+  MOZ_ASSERT(IsValidNormalizedTimeDuration(d));
+  MOZ_ASSERT(IsValidEpochInstant(epochNs));
 
-bool js::temporal::AddInstant(JSContext* cx, const Instant& instant,
-                              const Duration& duration, Instant* result) {
-  MOZ_ASSERT(IsValidEpochInstant(instant));
-  MOZ_ASSERT(IsValidDuration(duration));
-  MOZ_ASSERT(duration.years == 0);
-  MOZ_ASSERT(duration.months == 0);
-  MOZ_ASSERT(duration.weeks == 0);
-  MOZ_ASSERT(duration.days == 0);
-
-  do {
-    auto nanoseconds = NanosecondsToInstantSpan(duration.nanoseconds);
-    if (!nanoseconds) {
-      break;
-    }
-    MOZ_ASSERT(IsValidInstantSpan(*nanoseconds));
-
-    auto microseconds = MicrosecondsToInstantSpan(duration.microseconds);
-    if (!microseconds) {
-      break;
-    }
-    MOZ_ASSERT(IsValidInstantSpan(*microseconds));
-
-    
-    
-
-    int64_t milliseconds;
-    if (!mozilla::NumberEqualsInt64(duration.milliseconds, &milliseconds)) {
-      break;
-    }
-
-    int64_t seconds;
-    if (!mozilla::NumberEqualsInt64(duration.seconds, &seconds)) {
-      break;
-    }
-
-    int64_t minutes;
-    if (!mozilla::NumberEqualsInt64(duration.minutes, &minutes)) {
-      break;
-    }
-
-    int64_t hours;
-    if (!mozilla::NumberEqualsInt64(duration.hours, &hours)) {
-      break;
-    }
-
-    
-    mozilla::CheckedInt64 millis = hours;
-    millis *= 60;
-    millis += minutes;
-    millis *= 60;
-    millis += seconds;
-    millis *= 1000;
-    millis += milliseconds;
-    if (!millis.isValid()) {
-      break;
-    }
-
-    auto milli = InstantSpan::fromMilliseconds(millis.value());
-    if (!IsValidInstantSpan(milli)) {
-      break;
-    }
-
-    
-    auto span = milli + *microseconds + *nanoseconds;
-    if (!IsValidInstantSpan(span)) {
-      break;
-    }
-
-    *result = instant + span;
-    if (IsValidEpochInstant(*result)) {
-      return true;
-    }
-  } while (false);
-
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_TEMPORAL_INSTANT_INVALID);
-  return false;
+  
+  return epochNs + InstantSpan{d.seconds, d.nanoseconds};
 }
 
 
 
 
 
-bool js::temporal::DifferenceInstant(JSContext* cx, const Instant& ns1,
-                                     const Instant& ns2,
-                                     Increment roundingIncrement,
-                                     TemporalUnit smallestUnit,
-                                     TemporalUnit largestUnit,
-                                     TemporalRoundingMode roundingMode,
-                                     Duration* result) {
+bool js::temporal::AddInstant(JSContext* cx, const Instant& instant,
+                              const NormalizedTimeDuration& duration,
+                              Instant* result) {
+  MOZ_ASSERT(IsValidEpochInstant(instant));
+  MOZ_ASSERT(IsValidNormalizedTimeDuration(duration));
+
+  
+  auto r = AddNormalizedTimeDurationToEpochNanoseconds(duration, instant);
+
+  
+  if (!IsValidEpochInstant(r)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_INSTANT_INVALID);
+    return false;
+  }
+
+  
+  *result = r;
+  return true;
+}
+
+
+
+
+NormalizedTimeDuration js::temporal::DifferenceInstant(
+    const Instant& ns1, const Instant& ns2, Increment roundingIncrement,
+    TemporalUnit smallestUnit, TemporalRoundingMode roundingMode) {
   MOZ_ASSERT(IsValidEpochInstant(ns1));
   MOZ_ASSERT(IsValidEpochInstant(ns2));
-  MOZ_ASSERT(largestUnit > TemporalUnit::Day);
-  MOZ_ASSERT(largestUnit <= smallestUnit);
+  MOZ_ASSERT(smallestUnit > TemporalUnit::Day);
   MOZ_ASSERT(roundingIncrement <=
              MaximumTemporalDurationRoundingIncrement(smallestUnit));
 
   
-  auto diff = ns2 - ns1;
-  MOZ_ASSERT(IsValidInstantSpan(diff));
-
-  
-  auto [seconds, nanoseconds] = diff;
-  if (seconds < 0 && nanoseconds != 0) {
-    seconds += 1;
-    nanoseconds -= ToNanoseconds(TemporalUnit::Second);
-  }
-
-  
-  Duration duration = {
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      double(seconds),
-      double((nanoseconds / 1000'000) % 1000),
-      double((nanoseconds / 1000) % 1000),
-      double(nanoseconds % 1000),
-  };
-  MOZ_ASSERT(IsValidDuration(duration));
+  auto diff = NormalizedTimeDurationFromEpochNanosecondsDifference(ns2, ns1);
+  MOZ_ASSERT(IsValidInstantSpan({diff.seconds, diff.nanoseconds}));
 
   
   if (smallestUnit == TemporalUnit::Nanosecond &&
       roundingIncrement == Increment{1}) {
-    TimeDuration balanced;
-    if (!BalanceTimeDuration(cx, duration, largestUnit, &balanced)) {
-      return false;
-    }
-    MOZ_ASSERT(balanced.days == 0);
-
-    *result = balanced.toDuration().time();
-    return true;
+    return diff;
   }
 
   
-  Duration roundResult;
-  if (!temporal::RoundDuration(cx, duration, roundingIncrement, smallestUnit,
-                               roundingMode, &roundResult)) {
-    return false;
-  }
-
-  
-  MOZ_ASSERT(roundResult.days == 0);
-
-  
-  TimeDuration balanced;
-  if (!BalanceTimeDuration(cx, roundResult, largestUnit, &balanced)) {
-    return false;
-  }
-  MOZ_ASSERT(balanced.days == 0);
-
-  *result = balanced.toDuration().time();
-  return true;
+  return RoundDuration(diff, roundingIncrement, smallestUnit, roundingMode);
 }
 
 
@@ -903,19 +703,20 @@ static bool DifferenceTemporalInstant(JSContext* cx,
   }
 
   
-  Duration difference;
-  if (!DifferenceInstant(cx, instant, other, settings.roundingIncrement,
-                         settings.smallestUnit, settings.largestUnit,
-                         settings.roundingMode, &difference)) {
-    return false;
-  }
+  auto difference =
+      DifferenceInstant(instant, other, settings.roundingIncrement,
+                        settings.smallestUnit, settings.roundingMode);
 
   
+  auto balanced = BalanceTimeDuration(difference, settings.largestUnit);
+
+  
+  auto duration = balanced.toDuration();
   if (operation == TemporalDifference::Since) {
-    difference = difference.negate();
+    duration = duration.negate();
   }
 
-  auto* obj = CreateTemporalDuration(cx, difference);
+  auto* obj = CreateTemporalDuration(cx, duration);
   if (!obj) {
     return false;
   }
@@ -959,9 +760,11 @@ static bool AddDurationToOrSubtractDurationFromInstant(
   if (operation == InstantDuration::Subtract) {
     duration = duration.negate();
   }
+  auto timeDuration = NormalizeTimeDuration(duration);
 
+  
   Instant ns;
-  if (!AddInstant(cx, epochNanoseconds, duration, &ns)) {
+  if (!AddInstant(cx, epochNanoseconds, timeDuration, &ns)) {
     return false;
   }
 
