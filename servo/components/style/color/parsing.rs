@@ -35,6 +35,37 @@ pub fn rcs_enabled() -> bool {
 }
 
 
+#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, PartialOrd, ToCss, ToShmem)]
+pub enum ChannelKeyword {
+    
+    Alpha,
+    
+    A,
+    
+    B,
+    
+    C,
+    
+    G,
+    
+    H,
+    
+    L,
+    
+    R,
+    
+    S,
+    
+    W,
+    
+    X,
+    
+    Y,
+    
+    Z,
+}
+
+
 
 
 
