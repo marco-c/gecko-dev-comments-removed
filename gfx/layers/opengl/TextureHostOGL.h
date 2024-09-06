@@ -317,7 +317,8 @@ class GLTextureHost : public TextureHost {
 
   gfx::SurfaceFormat GetFormat() const override;
 
-  already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override {
+  already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
+      gfx::DataSourceSurface* aSurface) override {
     return nullptr;  
   }
 
@@ -396,7 +397,8 @@ class SurfaceTextureHost : public TextureHost {
 
   gfx::SurfaceFormat GetFormat() const override;
 
-  already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override {
+  already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
+      gfx::DataSourceSurface* aSurface) override {
     return nullptr;  
   }
 
@@ -509,7 +511,8 @@ class AndroidHardwareBufferTextureHost : public TextureHost {
 
   void NotifyNotUsed() override;
 
-  already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override {
+  already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
+      gfx::DataSourceSurface* aSurface) override {
     return nullptr;  
   }
 
@@ -615,7 +618,8 @@ class EGLImageTextureHost final : public TextureHost {
 
   gfx::SurfaceFormat GetFormat() const override;
 
-  already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override {
+  already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
+      gfx::DataSourceSurface* aSurface) override {
     return nullptr;  
   }
 
