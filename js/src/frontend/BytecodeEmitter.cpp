@@ -72,6 +72,7 @@
 #include "vm/Scope.h"               
 #include "vm/SharedStencil.h"       
 #include "vm/ThrowMsgKind.h"        
+#include "vm/TypeofEqOperand.h"     
 
 using namespace js;
 using namespace js::frontend;
@@ -11504,8 +11505,11 @@ bool BytecodeEmitter::tryEmitTypeofEq(ListNode* node, bool* emitted) {
   
   
   
+  
   MOZ_ASSERT(node->isKind(ParseNodeKind::StrictEqExpr) ||
-             node->isKind(ParseNodeKind::EqExpr));
+             node->isKind(ParseNodeKind::EqExpr) ||
+             node->isKind(ParseNodeKind::StrictNeExpr) ||
+             node->isKind(ParseNodeKind::NeExpr));
 
   if (node->count() != 2) {
     *emitted = false;
@@ -11518,6 +11522,14 @@ bool BytecodeEmitter::tryEmitTypeofEq(ListNode* node, bool* emitted) {
 
   UnaryNode* typeofNode;
   NameNode* typenameNode;
+  JSOp op;
+
+  if (node->isKind(ParseNodeKind::StrictEqExpr) ||
+      node->isKind(ParseNodeKind::EqExpr)) {
+    op = JSOp::Eq;
+  } else {
+    op = JSOp::Ne;
+  }
 
   
   
@@ -11574,7 +11586,7 @@ bool BytecodeEmitter::tryEmitTypeofEq(ListNode* node, bool* emitted) {
     return false;
   }
 
-  if (!emit2(JSOp::TypeofEq, uint8_t(type))) {
+  if (!emit2(JSOp::TypeofEq, TypeofEqOperand(type, op).rawValue())) {
     
     return false;
   }
@@ -12479,7 +12491,9 @@ bool BytecodeEmitter::emitTree(
       break;
 
     case ParseNodeKind::StrictEqExpr:
-    case ParseNodeKind::EqExpr: {
+    case ParseNodeKind::EqExpr:
+    case ParseNodeKind::StrictNeExpr:
+    case ParseNodeKind::NeExpr: {
       bool emitted;
       if (!tryEmitTypeofEq(&pn->as<ListNode>(), &emitted)) {
         return false;
@@ -12495,8 +12509,6 @@ bool BytecodeEmitter::emitTree(
     case ParseNodeKind::BitOrExpr:
     case ParseNodeKind::BitXorExpr:
     case ParseNodeKind::BitAndExpr:
-    case ParseNodeKind::StrictNeExpr:
-    case ParseNodeKind::NeExpr:
     case ParseNodeKind::LtExpr:
     case ParseNodeKind::LeExpr:
     case ParseNodeKind::GtExpr:
