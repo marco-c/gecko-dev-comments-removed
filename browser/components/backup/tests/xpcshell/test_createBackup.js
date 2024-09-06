@@ -87,21 +87,43 @@ add_task(async function test_createBackup() {
 
   
   
-  let stagingPath = PathUtils.join(fakeProfilePath, "backups", "staging");
-  Assert.ok(await IOUtils.exists(stagingPath), "Staging folder exists");
+  let backupsFolderPath = PathUtils.join(fakeProfilePath, "backups");
+  let stagingPath = PathUtils.join(backupsFolderPath, "staging");
+
+  
+  let backups = await IOUtils.getChildren(backupsFolderPath);
+  Assert.equal(
+    backups.length,
+    1,
+    "There should only be 1 backup in the backups folder"
+  );
+
+  let renamedFilename = await PathUtils.filename(backups[0]);
+  let expectedFormatRegex = /^\d{4}(-\d{2}){2}T(\d{2}-){2}\d{2}Z$/;
+  Assert.ok(
+    renamedFilename.match(expectedFormatRegex),
+    "Renamed staging folder should have format YYYY-MM-DDTHH-mm-ssZ"
+  );
+
+  let stagingPathRenamed = PathUtils.join(backupsFolderPath, renamedFilename);
 
   for (let backupResourceClass of [
     FakeBackupResource1,
     FakeBackupResource2,
     FakeBackupResource3,
   ]) {
-    let expectedResourceFolder = PathUtils.join(
+    let expectedResourceFolderBeforeRename = PathUtils.join(
       stagingPath,
       backupResourceClass.key
     );
+    let expectedResourceFolderAfterRename = PathUtils.join(
+      stagingPathRenamed,
+      backupResourceClass.key
+    );
+
     Assert.ok(
-      await IOUtils.exists(expectedResourceFolder),
-      `BackupResource staging folder exists for ${backupResourceClass.key}`
+      await IOUtils.exists(expectedResourceFolderAfterRename),
+      `BackupResource folder exists for ${backupResourceClass.key} after rename`
     );
     Assert.ok(
       backupResourceClass.prototype.backup.calledOnce,
@@ -109,14 +131,14 @@ add_task(async function test_createBackup() {
     );
     Assert.ok(
       backupResourceClass.prototype.backup.calledWith(
-        expectedResourceFolder,
+        expectedResourceFolderBeforeRename,
         fakeProfilePath
       ),
-      `Backup was passed the right paths for ${backupResourceClass.key}`
+      `Backup was called in the staging folder for ${backupResourceClass.key} before rename`
     );
   }
 
-  let manifestPath = PathUtils.join(stagingPath, "backup-manifest.json");
+  let manifestPath = PathUtils.join(stagingPathRenamed, "backup-manifest.json");
   Assert.ok(await IOUtils.exists(manifestPath), "Manifest file exists");
   let manifest = await IOUtils.readJSON(manifestPath);
 
