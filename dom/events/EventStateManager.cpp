@@ -358,6 +358,53 @@ void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
   mDeepestEnterEventTargetIsOverEventTarget = false;
 }
 
+void OverOutElementsWrapper::DidDispatchOverAndEnterEvent(
+    nsIContent* aOriginalOverTargetInComposedDoc) {
+  mDispatchingOverEventTarget = nullptr;
+
+  
+  
+  
+  
+  
+  
+  if (mType == OverOutElementsWrapper::BoundaryEventType::Pointer) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!aOriginalOverTargetInComposedDoc) {
+    return;
+  }
+  MOZ_ASSERT_IF(mDeepestEnterEventTarget,
+                mDeepestEnterEventTarget->GetComposedDoc() ==
+                    aOriginalOverTargetInComposedDoc->GetComposedDoc());
+  
+  
+  
+  
+  if ((!StaticPrefs::
+           dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed() &&
+       !mDeepestEnterEventTarget) ||
+      (!mDeepestEnterEventTargetIsOverEventTarget && mDeepestEnterEventTarget &&
+       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+           aOriginalOverTargetInComposedDoc, mDeepestEnterEventTarget))) {
+    mDeepestEnterEventTarget = aOriginalOverTargetInComposedDoc;
+    mDeepestEnterEventTargetIsOverEventTarget = true;
+    LogModule* const logModule = mType == BoundaryEventType::Mouse
+                                     ? sMouseBoundaryLog
+                                     : sPointerBoundaryLog;
+    MOZ_LOG(logModule, LogLevel::Info,
+            ("The \"over\" event target (%p) is restored",
+             mDeepestEnterEventTarget.get()));
+  }
+}
+
 
 
 
@@ -5060,8 +5107,11 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
   enterDispatcher.Dispatch();
 
   MOZ_LOG(logModule, LogLevel::Info,
-          ("Dispatched \"over\" and \"enter\" events"));
-  wrapper->DidDispatchOverAndEnterEvent();
+          ("Dispatched \"over\" and \"enter\" events (the original \"over\" "
+           "event target was in the document %p, and now in %p)",
+           aContent->GetComposedDoc(), mDocument.get()));
+  wrapper->DidDispatchOverAndEnterEvent(
+      aContent->GetComposedDoc() == mDocument ? aContent : nullptr);
 }
 
 
