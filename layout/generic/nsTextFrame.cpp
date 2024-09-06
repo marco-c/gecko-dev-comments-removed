@@ -8759,11 +8759,93 @@ bool nsTextFrame::IsCurrentFontInflation(float aInflation) const {
   return fabsf(aInflation - GetFontSizeInflation()) < 1e-6;
 }
 
+void nsTextFrame::MaybeSplitFramesForFirstLetter() {
+  if (GetParent()->IsFloating() && GetContentLength() > 0) {
+    
+    return;
+  }
+  if (GetPrevContinuation()) {
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  nsTextFrame* f = GetParent()->IsFloating() ? GetNextInFlow() : this;
+  gfxSkipCharsIterator iter = f->EnsureTextRun(nsTextFrame::eInflated);
+  gfxTextRun* textRun = f->GetTextRun(nsTextFrame::eInflated);
+
+  const nsTextFragment* frag = TextFragment();
+  int32_t length = GetInFlowContentLength();
+  int32_t offset = GetContentOffset();
+  int32_t firstLetterLength = length;
+  NewlineProperty* cachedNewlineOffset = nullptr;
+  int32_t newLineOffset = -1;  
+  
+  int32_t contentNewLineOffset =
+      GetContentNewLineOffset(offset, cachedNewlineOffset);
+  if (contentNewLineOffset < offset + length) {
+    
+    
+    
+    newLineOffset = contentNewLineOffset;
+    if (newLineOffset >= 0) {
+      firstLetterLength = newLineOffset - offset;
+    }
+  }
+
+  if (contentNewLineOffset >= 0 && contentNewLineOffset < offset) {
+    
+    
+    
+    
+    
+    firstLetterLength = 0;
+  } else {
+    
+    
+    const nsStyleFont* styleFont = StyleFont();
+    const nsAtom* lang =
+        styleFont->mExplicitLanguage ? styleFont->mLanguage.get() : nullptr;
+    FindFirstLetterRange(frag, lang, textRun, offset, iter, &firstLetterLength);
+    if (newLineOffset >= 0) {
+      
+      firstLetterLength = std::min(firstLetterLength, length - 1);
+    }
+  }
+  length = firstLetterLength;
+  if (length) {
+    AddStateBits(TEXT_FIRST_LETTER);
+  }
+  
+  
+  
+  SetLength(offset + length - GetContentOffset(), nullptr,
+            ALLOW_FRAME_CREATION_AND_DESTRUCTION);
+  
+  ClearTextRuns();
+}
+
+static bool IsUnreflowedLetterFrame(nsIFrame* aFrame) {
+  return aFrame->IsLetterFrame() &&
+         aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
+}
+
 
 
 
 void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
                                     nsIFrame::InlineMinISizeData* aData) {
+  
+  
+  
+  if (IsUnreflowedLetterFrame(GetParent())) {
+    MaybeSplitFramesForFirstLetter();
+  }
+
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   TextRunType trtype = (inflation == 1.0f) ? eNotInflated : eInflated;
 
@@ -8805,6 +8887,10 @@ void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
 void nsTextFrame::AddInlinePrefISizeForFlow(
     gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData,
     TextRunType aTextRunType) {
+  if (IsUnreflowedLetterFrame(GetParent())) {
+    MaybeSplitFramesForFirstLetter();
+  }
+
   uint32_t flowEndInTextRun;
   gfxSkipCharsIterator iter =
       EnsureTextRun(aTextRunType, aRenderingContext->GetDrawTarget(),
