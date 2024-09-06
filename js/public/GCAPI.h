@@ -510,7 +510,7 @@ typedef bool (*JSGrayRootsTracer)(JSTracer* trc, js::SliceBudget& budget,
 
 typedef enum JSGCStatus { JSGC_BEGIN, JSGC_END } JSGCStatus;
 
-typedef void (*JSObjectsTenuredCallback)(JSContext* cx, void* data);
+typedef void (*JSObjectsTenuredCallback)(JS::GCContext* gcx, void* data);
 
 typedef enum JSFinalizeStatus {
   
@@ -1375,18 +1375,11 @@ extern JS_PUBLIC_API JSObject* NewMemoryInfoObject(JSContext* cx);
 
 
 
-JS_PUBLIC_API bool IsDeadNurseryObject(JSObject* obj);
 
 
 
 
-
-
-
-
-
-extern JS_PUBLIC_API void FinalizeDeadNurseryObject(JSContext* cx,
-                                                    JSObject* obj);
+extern JS_PUBLIC_API JS::GCContext* GetGCContext(JSContext* cx);
 
 } 
 } 

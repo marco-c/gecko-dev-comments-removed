@@ -650,6 +650,14 @@ MOZ_ALWAYS_INLINE bool IsInsideNursery(const TenuredCell* cell) {
 
 
 
+MOZ_ALWAYS_INLINE bool InCollectedNurseryRegion(const Cell* cell) {
+  MOZ_ASSERT(cell);
+  return detail::GetCellChunkBase(cell)->getKind() ==
+         ChunkKind::NurseryFromSpace;
+}
+
+
+
 MOZ_ALWAYS_INLINE bool IsInsideNursery(const JSObject* obj) {
   return IsInsideNursery(reinterpret_cast<const Cell*>(obj));
 }
@@ -658,6 +666,9 @@ MOZ_ALWAYS_INLINE bool IsInsideNursery(const JSString* str) {
 }
 MOZ_ALWAYS_INLINE bool IsInsideNursery(const JS::BigInt* bi) {
   return IsInsideNursery(reinterpret_cast<const Cell*>(bi));
+}
+MOZ_ALWAYS_INLINE bool InCollectedNurseryRegion(const JSObject* obj) {
+  return InCollectedNurseryRegion(reinterpret_cast<const Cell*>(obj));
 }
 
 MOZ_ALWAYS_INLINE bool IsCellPointerValid(const void* ptr) {
