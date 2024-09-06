@@ -621,12 +621,10 @@ fn do_match_relative_selectors<E: Element>(
     
     
     if rightmost == SubjectOrPseudoElement::Yes {
-        context.considered_relative_selector.considered_anchor();
         if context.needs_selector_flags() {
             element.apply_selector_flags(ElementSelectorFlags::ANCHORS_RELATIVE_SELECTOR);
         }
     } else {
-        context.considered_relative_selector.considered();
         if context.needs_selector_flags() {
             element
                 .apply_selector_flags(ElementSelectorFlags::ANCHORS_RELATIVE_SELECTOR_NON_SUBJECT);

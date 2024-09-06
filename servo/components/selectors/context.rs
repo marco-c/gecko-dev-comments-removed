@@ -130,40 +130,6 @@ impl QuirksMode {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum RelativeSelectorMatchingState {
-    
-    None,
-    
-    
-    
-    
-    Considered,
-    
-    
-    ConsideredAnchor,
-}
-
-impl RelativeSelectorMatchingState {
-    
-    
-    pub fn considered_anchor(&mut self) {
-        *self = Self::ConsideredAnchor;
-    }
-
-    
-    
-    pub fn considered(&mut self) {
-        
-        if *self == Self::ConsideredAnchor {
-            *self = Self::ConsideredAnchor;
-        } else {
-            *self = Self::Considered;
-        }
-    }
-}
-
-
 #[derive(Default)]
 pub struct SelectorCaches {
     
@@ -225,7 +191,6 @@ where
 
     
     current_relative_selector_anchor: Option<OpaqueElement>,
-    pub considered_relative_selector: RelativeSelectorMatchingState,
 
     quirks_mode: QuirksMode,
     needs_selector_flags: NeedsSelectorFlags,
@@ -293,7 +258,6 @@ where
             pseudo_element_matching_fn: None,
             extra_data: Default::default(),
             current_relative_selector_anchor: None,
-            considered_relative_selector: RelativeSelectorMatchingState::None,
             selector_caches,
             _impl: ::std::marker::PhantomData,
         }
