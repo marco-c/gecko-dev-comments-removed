@@ -14,6 +14,10 @@ module.exports = {
   
   stories: [
     
+    
+    
+    "../**/README.storybook.stories.md",
+    
     "../**/README.*.stories.md",
     
     `${projectRoot}/toolkit/content/widgets/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
