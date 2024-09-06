@@ -10267,7 +10267,7 @@ function WallpaperFeatureHighlight({
       "data-l10n-id": "newtab-wallpaper-feature-highlight-button"
     })),
     icon: external_React_default().createElement("div", {
-      className: "paintbrush-icon"
+      className: "customize-icon"
     }),
     toggle: external_React_default().createElement("div", {
       className: "icon icon-help"
@@ -10560,7 +10560,8 @@ class BaseContent extends (external_React_default()).PureComponent {
 
     
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    if (!wallpapersEnabled) {
+    const wallpapersV2Enabled = prefs["newtabWallpapers.v2.enabled"];
+    if (!wallpapersEnabled || !wallpapersV2Enabled) {
       return false;
     }
 
