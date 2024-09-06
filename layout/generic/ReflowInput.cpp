@@ -1090,9 +1090,9 @@ nsIFrame* ReflowInput::GetHypotheticalBoxContainer(nsIFrame* aFrame,
 
 struct nsHypotheticalPosition {
   
-  nscoord mIStart;
+  nscoord mIStart = 0;
   
-  nscoord mBStart;
+  nscoord mBStart = 0;
   WritingMode mWritingMode;
 };
 
@@ -1214,16 +1214,9 @@ static bool BlockPolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
 
 
 
-
-
-
-
-
-
 void ReflowInput::CalculateHypotheticalPosition(
-    nsPresContext* aPresContext, nsPlaceholderFrame* aPlaceholderFrame,
-    const ReflowInput* aCBReflowInput, nsHypotheticalPosition& aHypotheticalPos,
-    LayoutFrameType aFrameType) const {
+    nsPlaceholderFrame* aPlaceholderFrame, const ReflowInput* aCBReflowInput,
+    nsHypotheticalPosition& aHypotheticalPos) const {
   NS_ASSERTION(mStyleDisplay->mOriginalDisplay != StyleDisplay::None,
                "mOriginalDisplay has not been properly initialized");
 
@@ -1360,9 +1353,9 @@ void ReflowInput::CalculateHypotheticalPosition(
             aPlaceholderFrame->SetLineIsEmptySoFar(true);
             allEmpty = true;
           } else {
-            auto prev = aPlaceholderFrame->GetPrevSibling();
+            auto* prev = aPlaceholderFrame->GetPrevSibling();
             if (prev && prev->IsPlaceholderFrame()) {
-              auto ph = static_cast<nsPlaceholderFrame*>(prev);
+              auto* ph = static_cast<nsPlaceholderFrame*>(prev);
               if (ph->GetLineIsEmptySoFar(&allEmpty)) {
                 aPlaceholderFrame->SetLineIsEmptySoFar(allEmpty);
               }
@@ -1610,16 +1603,14 @@ LogicalSize ReflowInput::CalculateAbsoluteSizeWithResolvedAutoBlockSize(
   return resultSize;
 }
 
-void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
-                                          const ReflowInput* aCBReflowInput,
-                                          const LogicalSize& aCBSize,
-                                          LayoutFrameType aFrameType) {
+void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
+                                          const LogicalSize& aCBSize) {
   WritingMode wm = GetWritingMode();
   WritingMode cbwm = aCBReflowInput->GetWritingMode();
   NS_WARNING_ASSERTION(aCBSize.BSize(cbwm) != NS_UNCONSTRAINEDSIZE,
                        "containing block bsize must be constrained");
 
-  NS_ASSERTION(aFrameType != LayoutFrameType::Table,
+  NS_ASSERTION(!mFrame->IsTableFrame(),
                "InitAbsoluteConstraints should not be called on table frames");
   NS_ASSERTION(mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                "Why are we here?");
@@ -1673,9 +1664,8 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
       }
     } else {
       
-      CalculateHypotheticalPosition(aPresContext, placeholderFrame,
-                                    aCBReflowInput, hypotheticalPos,
-                                    aFrameType);
+      CalculateHypotheticalPosition(placeholderFrame, aCBReflowInput,
+                                    hypotheticalPos);
       if (aCBReflowInput->mFrame->IsGridContainerFrame()) {
         
         
@@ -1698,11 +1688,8 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
   }
 
   
-  
-
-  
   LogicalSize cbSize = aCBSize;
-  LogicalMargin offsets = ComputedLogicalOffsets(cbwm);
+  LogicalMargin offsets(cbwm);
 
   if (iStartIsAuto) {
     offsets.IStart(cbwm) = 0;
@@ -2322,9 +2309,8 @@ void ReflowInput::InitConstraints(
                
                
                !mFrame->GetPrevInFlow()) {
-      InitAbsoluteConstraints(aPresContext, cbri,
-                              cbSize.ConvertTo(cbri->GetWritingMode(), wm),
-                              aFrameType);
+      InitAbsoluteConstraints(cbri,
+                              cbSize.ConvertTo(cbri->GetWritingMode(), wm));
     } else {
       AutoMaybeDisableFontInflation an(mFrame);
 
