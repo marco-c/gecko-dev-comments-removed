@@ -948,10 +948,16 @@ class MOZ_RAII NewObjectIRGenerator : public IRGenerator {
   AttachDecision tryAttachPlainObject();
 };
 
+
+inline bool BytecodeCallOpCanHaveInlinableNative(JSOp op) {
+  return op == JSOp::Call || op == JSOp::CallContent || op == JSOp::New ||
+         op == JSOp::NewContent || op == JSOp::CallIgnoresRv ||
+         op == JSOp::SpreadCall;
+}
+
 inline bool BytecodeOpCanHaveAllocSite(JSOp op) {
-  return op == JSOp::Call || op == JSOp::CallIgnoresRv || op == JSOp::New ||
-         op == JSOp::NewArray || op == JSOp::NewObject || op == JSOp::NewInit ||
-         op == JSOp::NewContent;
+  return BytecodeCallOpCanHaveInlinableNative(op) || op == JSOp::NewArray ||
+         op == JSOp::NewObject || op == JSOp::NewInit;
 }
 
 class MOZ_RAII CloseIterIRGenerator : public IRGenerator {
