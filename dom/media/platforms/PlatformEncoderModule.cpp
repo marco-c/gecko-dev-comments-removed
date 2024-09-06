@@ -5,7 +5,6 @@
 
 
 #include "PlatformEncoderModule.h"
-#include "H264.h"
 #include "nsPrintfCString.h"
 #include "mozilla/ToString.h"
 
@@ -170,16 +169,7 @@ bool CanLikelyEncode(const EncoderConfig& aConfig) {
       LOGD("Invalid profile of %x for h264", specific.mProfile);
       return false;
     }
-    
-    
-    if ((specific.mLevel >= H264_LEVEL::H264_LEVEL_6) &&
-        (width > 2 * 4096 || height > 2 * 4096)) {
-      LOGD("Invalid size of %dx%d for h264", width, height);
-      return false;
-    }
-    
-    if (specific.mLevel < H264_LEVEL::H264_LEVEL_6 &&
-        (width > 4096 || height > 4096)) {
+    if (width > 4096 || height > 4096) {
       LOGD("Invalid size of %dx%d for h264", width, height);
       return false;
     }

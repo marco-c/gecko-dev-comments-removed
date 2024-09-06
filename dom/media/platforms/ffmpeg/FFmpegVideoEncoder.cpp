@@ -9,21 +9,17 @@
 #include <aom/aomcx.h>
 
 #include "BufferReader.h"
-#include "EncoderConfig.h"
 #include "FFmpegLog.h"
 #include "FFmpegUtils.h"
 #include "H264.h"
 #include "ImageContainer.h"
 #include "libavutil/error.h"
 #include "libavutil/pixfmt.h"
-#include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
-#include "mozilla/dom/VideoFrameBinding.h"
 #include "nsPrintfCString.h"
 #include "ImageConversion.h"
 #include "libyuv.h"
 #include "FFmpegRuntimeLinker.h"
-#include <algorithm>
 
 
 
@@ -137,6 +133,16 @@ static Maybe<H264Setting> GetH264Profile(const H264_PROFILE& aProfile) {
 
 static Maybe<H264Setting> GetH264Level(const H264_LEVEL& aLevel) {
   int val = static_cast<int>(aLevel);
+  
+  
+  if (val < 10 || val > 52) {
+    return Nothing();
+  }
+  if ((val % 10) > 2) {
+    if (val != 13) {
+      return Nothing();
+    }
+  }
   nsPrintfCString str("%d", val);
   str.Insert('.', 1);
   return Some(H264Setting{val, str});
@@ -158,9 +164,13 @@ struct SVCLayerSettings {
   Maybe<CodecAppendix> mCodecAppendix;
 };
 
-static SVCLayerSettings GetSVCLayerSettings(CodecType aCodec,
-                                            const ScalabilityMode& aMode,
-                                            uint32_t aBitPerSec) {
+static Maybe<SVCLayerSettings> GetSVCLayerSettings(CodecType aCodec,
+                                                   const ScalabilityMode& aMode,
+                                                   uint32_t aBitPerSec) {
+  if (aMode == ScalabilityMode::None) {
+    return Nothing();
+  }
+
   
   
 
@@ -242,28 +252,17 @@ static SVCLayerSettings GetSVCLayerSettings(CodecType aCodec,
 
   MOZ_ASSERT(layers == bitrates.Length(),
              "Bitrate must be assigned to each layer");
-  return SVCLayerSettings{1,
-                          layers,
-                          periodicity,
-                          std::move(layerIds),
-                          std::move(rateDecimators),
-                          std::move(bitrates),
-                          appendix};
+  return Some(SVCLayerSettings{1, layers, periodicity, std::move(layerIds),
+                               std::move(rateDecimators), std::move(bitrates),
+                               appendix});
 }
 
-void FFmpegVideoEncoder<LIBAV_VER>::SVCInfo::UpdateTemporalLayerId() {
+uint8_t FFmpegVideoEncoder<LIBAV_VER>::SVCInfo::UpdateTemporalLayerId() {
   MOZ_ASSERT(!mTemporalLayerIds.IsEmpty());
-  mCurrentIndex = (mCurrentIndex + 1) % mTemporalLayerIds.Length();
-}
 
-uint8_t FFmpegVideoEncoder<LIBAV_VER>::SVCInfo::CurrentTemporalLayerId() {
-  MOZ_ASSERT(!mTemporalLayerIds.IsEmpty());
-  return mTemporalLayerIds[mCurrentIndex];
-}
-
-void FFmpegVideoEncoder<LIBAV_VER>::SVCInfo::ResetTemporalLayerId() {
-  MOZ_ASSERT(!mTemporalLayerIds.IsEmpty());
-  mCurrentIndex = 0;
+  size_t currentIndex = mNextIndex % mTemporalLayerIds.Length();
+  mNextIndex += 1;
+  return static_cast<uint8_t>(mTemporalLayerIds[currentIndex]);
 }
 
 FFmpegVideoEncoder<LIBAV_VER>::FFmpegVideoEncoder(
@@ -285,10 +284,6 @@ nsCString FFmpegVideoEncoder<LIBAV_VER>::GetDescriptionName() const {
 #endif
 }
 
-bool FFmpegVideoEncoder<LIBAV_VER>::SvcEnabled() const {
-  return mConfig.mScalabilityMode != ScalabilityMode::None;
-}
-
 nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
 
@@ -303,45 +298,9 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
 
   
   mCodecContext->pix_fmt = ffmpeg::FFMPEG_PIX_FMT_YUV420P;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   mCodecContext->width = static_cast<int>(mConfig.mSize.width);
   mCodecContext->height = static_cast<int>(mConfig.mSize.height);
-  
-  mCodecContext->qmin = 10;
-  mCodecContext->qmax = 56;
-  if (mConfig.mUsage == Usage::Realtime) {
-    mCodecContext->thread_count = 1;
-  } else {
-    int64_t pixels = mCodecContext->width * mCodecContext->height;
-    int threads = 1;
-    
-    
-    if (pixels >= 3840 * 2160) {
-      threads = 16;
-    } else if (pixels >= 1920 * 1080) {
-      threads = 8;
-    } else if (pixels >= 1280 * 720) {
-      threads = 4;
-    } else if (pixels >= 640 * 480) {
-      threads = 2;
-    }
-    mCodecContext->thread_count =
-        std::clamp<int>(threads, 1, GetNumberOfProcessors() - 1);
-  }
+  mCodecContext->gop_size = static_cast<int>(mConfig.mKeyframeInterval);
   
   
   mCodecContext->time_base =
@@ -355,79 +314,33 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
 #if LIBAVCODEC_VERSION_MAJOR >= 60
   mCodecContext->flags |= AV_CODEC_FLAG_FRAME_DURATION;
 #endif
+  mCodecContext->gop_size = static_cast<int>(mConfig.mKeyframeInterval);
 
-  
-  mCodecContext->gop_size = mConfig.mKeyframeInterval
-                                ? static_cast<int>(mConfig.mKeyframeInterval)
-                                : 10000;
-  mCodecContext->keyint_min = 0;
-
-  
-  
-  if (mConfig.mUsage == Usage::Realtime || SvcEnabled()) {
-    if (mConfig.mUsage != Usage::Realtime) {
-      FFMPEGV_LOG(
-          "SVC enabled but low latency encoding mode not enabled, forcing low "
-          "latency mode");
-    }
+  if (mConfig.mUsage == Usage::Realtime) {
     mLib->av_opt_set(mCodecContext->priv_data, "deadline", "realtime", 0);
     
     
     mLib->av_opt_set(mCodecContext->priv_data, "lag-in-frames", "0", 0);
-
-    if (mConfig.mCodec == CodecType::VP8 || mConfig.mCodec == CodecType::VP9) {
-      mLib->av_opt_set(mCodecContext->priv_data, "error-resilient", "1", 0);
-    }
-    if (mConfig.mCodec == CodecType::AV1) {
-      mLib->av_opt_set(mCodecContext->priv_data, "error-resilience", "1", 0);
-      
-      mLib->av_opt_set(mCodecContext->priv_data, "usage", "1", 0);
-      
-      mLib->av_opt_set(mCodecContext->priv_data, "rc_undershoot_percent", "50",
-                       0);
-      mLib->av_opt_set(mCodecContext->priv_data, "rc_overshoot_percent", "50",
-                       0);
-      
-      
-      mLib->av_opt_set(mCodecContext->priv_data, "row_mt", "1", 0);
-      
-      mLib->av_opt_set(mCodecContext->priv_data, "aq-mode", "3", 0);
-      
-      
-      mLib->av_opt_set(mCodecContext->priv_data, "cpu-used", "9", 0);
-      
-      mLib->av_opt_set(mCodecContext->priv_data, "enable-global-motion", "0",
-                       0);
-      mLib->av_opt_set(mCodecContext->priv_data, "enable-cfl-intra", "0", 0);
-      
-      
-      mLib->av_opt_set(mCodecContext->priv_data, "tile-columns", "0", 0);
-      mLib->av_opt_set(mCodecContext->priv_data, "tile-rows", "0", 0);
-    }
   }
 
-  if (SvcEnabled()) {
-    if (Maybe<SVCSettings> settings = GetSVCSettings()) {
-      if (mCodecName == "libaom-av1") {
-        if (mConfig.mBitrateMode != BitrateMode::Constant) {
-          return NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR;
-        }
+  if (Maybe<SVCSettings> settings = GetSVCSettings()) {
+    if (mCodecName == "libaom-av1") {
+      if (mConfig.mBitrateMode != BitrateMode::Constant) {
+        return NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR;
       }
-
-      SVCSettings s = settings.extract();
-      FFMPEGV_LOG("SVC options string: %s=%s", s.mSettingKeyValue.first.get(),
-                  s.mSettingKeyValue.second.get());
-      mLib->av_opt_set(mCodecContext->priv_data, s.mSettingKeyValue.first.get(),
-                       s.mSettingKeyValue.second.get(), 0);
-
-      
-      
-      mSVCInfo.reset();
-      mSVCInfo.emplace(std::move(s.mTemporalLayerIds));
-
-      
-      
     }
+
+    SVCSettings s = settings.extract();
+    mLib->av_opt_set(mCodecContext->priv_data, s.mSettingKeyValue.first.get(),
+                     s.mSettingKeyValue.second.get(), 0);
+
+    
+    
+    mSVCInfo.reset();
+    mSVCInfo.emplace(std::move(s.mTemporalLayerIds));
+
+    
+    
   }
 
   nsAutoCString h264Log;
@@ -466,6 +379,11 @@ nsresult FFmpegVideoEncoder<LIBAV_VER>::InitSpecific() {
     }
   }
 
+  
+  
+  
+  
+  
   
   
   
@@ -570,8 +488,6 @@ Result<MediaDataEncoder::EncodedData, nsresult> FFmpegVideoEncoder<
   mFrame->format = ffmpeg::FFMPEG_PIX_FMT_YUV420P;
   mFrame->width = static_cast<int>(sample->mImage->GetSize().width);
   mFrame->height = static_cast<int>(sample->mImage->GetSize().height);
-  mFrame->pict_type =
-      sample->mKeyframe ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_NONE;
 
   
   if (int ret = mLib->av_frame_get_buffer(mFrame, 0); ret < 0) {
@@ -616,38 +532,14 @@ Result<MediaDataEncoder::EncodedData, nsresult> FFmpegVideoEncoder<
   mFrame->time_base =
       AVRational{.num = 1, .den = static_cast<int>(USECS_PER_S)};
 #  endif
-  
-  if (mConfig.mCodec == CodecType::AV1) {
-    mFrame->pts = mFakePts;
-    mPtsMap.Insert(mFakePts, aSample->mTime.ToMicroseconds());
-    mFakePts += aSample->mDuration.ToMicroseconds();
-    mCurrentFramePts = aSample->mTime.ToMicroseconds();
-  } else {
-    mFrame->pts = aSample->mTime.ToMicroseconds();
-  }
+  mFrame->pts = aSample->mTime.ToMicroseconds();
 #  if LIBAVCODEC_VERSION_MAJOR >= 60
   mFrame->duration = aSample->mDuration.ToMicroseconds();
-
 #  else
   
   mDurationMap.Insert(mFrame->pts, aSample->mDuration.ToMicroseconds());
 #  endif
   Duration(mFrame) = aSample->mDuration.ToMicroseconds();
-
-  AVDictionary* dict = nullptr;
-  
-  
-  
-  if (SvcEnabled() && mConfig.mCodec != CodecType::VP8 &&
-      mConfig.mCodec != CodecType::VP9) {
-    if (aSample->mKeyframe) {
-      FFMPEGV_LOG("Key frame requested, reseting temporal layer id");
-      mSVCInfo->ResetTemporalLayerId();
-    }
-    nsPrintfCString str("%d", mSVCInfo->CurrentTemporalLayerId());
-    mLib->av_dict_set(&dict, "temporal_id", str.get(), 0);
-    mFrame->metadata = dict;
-  }
 
   
   return FFmpegDataEncoder<LIBAV_VER>::EncodeWithModernAPIs();
@@ -661,20 +553,11 @@ RefPtr<MediaRawData> FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(
 
   RefPtr<MediaRawData> data = ToMediaRawDataCommon(aPacket);
 
-  if (mConfig.mCodec == CodecType::AV1) {
-    auto found = mPtsMap.Take(aPacket->pts);
-    data->mTime = media::TimeUnit::FromMicroseconds(found.value());
-  }
-
+  
+  
   if (mSVCInfo) {
-    if (data->mKeyframe) {
-      FFMPEGV_LOG(
-          "Encoded packet is key frame, reseting temporal layer id sequence");
-      mSVCInfo->ResetTemporalLayerId();
-    }
-    uint8_t temporalLayerId = mSVCInfo->CurrentTemporalLayerId();
+    uint8_t temporalLayerId = mSVCInfo->UpdateTemporalLayerId();
     data->mTemporalLayerId.emplace(temporalLayerId);
-    mSVCInfo->UpdateTemporalLayerId();
   }
 
   return data;
@@ -768,7 +651,6 @@ void FFmpegVideoEncoder<LIBAV_VER>::ForceEnablingFFmpegDebugLogs() {
 Maybe<FFmpegVideoEncoder<LIBAV_VER>::SVCSettings>
 FFmpegVideoEncoder<LIBAV_VER>::GetSVCSettings() {
   MOZ_ASSERT(!mCodecName.IsEmpty());
-  MOZ_ASSERT(SvcEnabled());
 
   CodecType codecType = CodecType::Unknown;
   if (mCodecName == "libvpx") {
@@ -785,8 +667,12 @@ FFmpegVideoEncoder<LIBAV_VER>::GetSVCSettings() {
     return Nothing();
   }
 
-  SVCLayerSettings svc = GetSVCLayerSettings(
+  Maybe<SVCLayerSettings> svc = GetSVCLayerSettings(
       codecType, mConfig.mScalabilityMode, mConfig.mBitrate);
+  if (!svc) {
+    FFMPEGV_LOG("No SVC settings obtained. Skip");
+    return Nothing();
+  }
 
   nsAutoCString name;
   nsAutoCString parameters;
@@ -799,53 +685,57 @@ FFmpegVideoEncoder<LIBAV_VER>::GetSVCSettings() {
       if (mConfig.mCodecSpecific->is<VP8Specific>()) {
         MOZ_ASSERT(
             mConfig.mCodecSpecific->as<VP8Specific>().mNumTemporalLayers ==
-            svc.mNumberTemporalLayers);
+            svc->mNumberTemporalLayers);
       } else if (mConfig.mCodecSpecific->is<VP9Specific>()) {
         MOZ_ASSERT(
             mConfig.mCodecSpecific->as<VP9Specific>().mNumTemporalLayers ==
-            svc.mNumberTemporalLayers);
+            svc->mNumberTemporalLayers);
       }
     }
 
     
     name = "ts-parameters"_ns;
-    parameters.Append("ts_target_bitrate=");
-    for (size_t i = 0; i < svc.mTargetBitrates.Length(); ++i) {
+    parameters.AppendPrintf(
+        "ts_layering_mode=%u",
+        svc->mCodecAppendix->as<VPXSVCAppendix>().mLayeringMode);
+    parameters.Append(":ts_target_bitrate=");
+    for (size_t i = 0; i < svc->mTargetBitrates.Length(); ++i) {
       if (i > 0) {
         parameters.Append(",");
       }
-      parameters.AppendPrintf("%d", svc.mTargetBitrates[i]);
+      parameters.AppendPrintf("%d", svc->mTargetBitrates[i]);
     }
-    parameters.AppendPrintf(
-        ":ts_layering_mode=%u",
-        svc.mCodecAppendix->as<VPXSVCAppendix>().mLayeringMode);
+
+    
+    
+    
   }
 
   if (codecType == CodecType::AV1) {
     
     name = "svc-parameters"_ns;
     parameters.AppendPrintf("number_spatial_layers=%zu",
-                            svc.mNumberSpatialLayers);
+                            svc->mNumberSpatialLayers);
     parameters.AppendPrintf(":number_temporal_layers=%zu",
-                            svc.mNumberTemporalLayers);
+                            svc->mNumberTemporalLayers);
     parameters.Append(":framerate_factor=");
-    for (size_t i = 0; i < svc.mRateDecimators.Length(); ++i) {
+    for (size_t i = 0; i < svc->mRateDecimators.Length(); ++i) {
       if (i > 0) {
         parameters.Append(",");
       }
-      parameters.AppendPrintf("%d", svc.mRateDecimators[i]);
+      parameters.AppendPrintf("%d", svc->mRateDecimators[i]);
     }
     parameters.Append(":layer_target_bitrate=");
-    for (size_t i = 0; i < svc.mTargetBitrates.Length(); ++i) {
+    for (size_t i = 0; i < svc->mTargetBitrates.Length(); ++i) {
       if (i > 0) {
         parameters.Append(",");
       }
-      parameters.AppendPrintf("%d", svc.mTargetBitrates[i]);
+      parameters.AppendPrintf("%d", svc->mTargetBitrates[i]);
     }
   }
 
   return Some(
-      SVCSettings{std::move(svc.mLayerIds),
+      SVCSettings{std::move(svc->mLayerIds),
                   std::make_pair(std::move(name), std::move(parameters))});
 }
 
