@@ -210,8 +210,6 @@ class NetworkEventActor extends Actor {
       
       
       chromeContext: lazy.NetworkUtils.isChannelFromSystemPrincipal(channel),
-      fromCache: networkEventOptions.fromCache,
-      fromServiceWorker: networkEventOptions.fromServiceWorker,
       innerWindowId: this._innerWindowId,
       isNavigationRequest: this._isNavigationRequest,
       isFileRequest: channel instanceof Ci.nsIFileChannel,
