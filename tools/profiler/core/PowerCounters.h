@@ -19,10 +19,39 @@ class ProcessPower;
 #if defined(GP_PLAT_amd64_darwin)
 class RAPL;
 #endif
+#if defined(GP_PLAT_arm64_android)
+
+
+
+
+
+
+struct RailDescriptor {
+  
+  uint32_t index;
+  
+  char rail_name[64];
+  
+  char subsys_name[64];
+  
+  uint32_t sampling_rate;
+};
+
+struct RailEnergyData {
+  
+  uint32_t index;
+  
+  uint64_t timestamp;
+  
+  uint64_t energy;
+};
+bool GetRailEnergyData(RailEnergyData*, size_t* size_of_arr);
+#endif
 
 class PowerCounters {
  public:
-#if defined(_MSC_VER) || defined(GP_OS_darwin) || defined(GP_PLAT_amd64_linux)
+#if defined(_MSC_VER) || defined(GP_OS_darwin) || \
+    defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_arm64_android)
   explicit PowerCounters();
   ~PowerCounters();
   void Sample();
@@ -46,6 +75,12 @@ class PowerCounters {
 #endif
 #if defined(GP_PLAT_amd64_darwin)
   RAPL* mRapl;
+#endif
+#if defined(GP_PLAT_arm64_android)
+  void* mLibperfettoModule = nullptr;
+  decltype(&GetRailEnergyData) mGetRailEnergyData = nullptr;
+  mozilla::Vector<RailDescriptor> mRailDescriptors;
+  mozilla::Vector<RailEnergyData> mRailEnergyData;
 #endif
 };
 
