@@ -61,7 +61,7 @@ public final class HardwareCodecCapabilityUtils {
     COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m
   };
   private static final int COLOR_FORMAT_NOT_SUPPORTED = -1;
-  private static final String[] adaptivePlaybackBlacklist = {
+  private static final String[] adaptivePlaybackBlocklist = {
     "GT-I9300", 
     "SCH-I535", 
     "SGH-T999", 
@@ -178,7 +178,7 @@ public final class HardwareCodecCapabilityUtils {
 
   public static boolean checkSupportsAdaptivePlayback(
       final MediaCodec aCodec, final String aMimeType) {
-    if (isAdaptivePlaybackBlacklisted(aMimeType)) {
+    if (isAdaptivePlaybackBlocklisted(aMimeType)) {
       return false;
     }
 
@@ -196,7 +196,7 @@ public final class HardwareCodecCapabilityUtils {
 
   
   
-  private static boolean isAdaptivePlaybackBlacklisted(final String aMimeType) {
+  private static boolean isAdaptivePlaybackBlocklisted(final String aMimeType) {
     Log.d(LOGTAG, "The device ModelID is " + Build.MODEL);
     if (!aMimeType.equals("video/avc") && !aMimeType.equals("video/avc1")) {
       return false;
@@ -206,7 +206,7 @@ public final class HardwareCodecCapabilityUtils {
       return false;
     }
 
-    for (final String model : adaptivePlaybackBlacklist) {
+    for (final String model : adaptivePlaybackBlocklist) {
       if (Build.MODEL.startsWith(model)) {
         return true;
       }
