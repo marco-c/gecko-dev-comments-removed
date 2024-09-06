@@ -32,6 +32,7 @@ async function run_test() {
   writeVersionFile("0.9");
   
   await runUpdateUsingApp(STATE_AFTER_STAGE);
+  reloadUpdateManagerData();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(false);
   setTestFilesAndDirsForFailure();

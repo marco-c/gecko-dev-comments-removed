@@ -287,18 +287,6 @@ const startupPhases = {
   
   "before first paint": [
     {
-      
-      path: "OldUpdRootD:",
-      condition: WIN,
-      stat: 1,
-    },
-    {
-      
-      path: "UpdRootD:updates/0/update.status",
-      condition: WIN,
-      stat: 1,
-    },
-    {
       path: "XREAppFeat:formautofill@mozilla.org.xpi",
       condition: !WIN,
       stat: 1,
