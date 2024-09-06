@@ -1098,10 +1098,15 @@ nsIPrincipal* DocInfo::Principal() const {
         return doc->NodePrincipal();
       }
       nsIPrincipal* operator()(LoadInfo aLoadInfo) {
+        
+        
         if (!(mThis.URL().InheritsPrincipal() ||
               aLoadInfo->GetForceInheritPrincipal())) {
+          
           return nullptr;
         }
+        
+        
         if (auto principal = aLoadInfo->PrincipalToInherit()) {
           return principal;
         }
@@ -1115,6 +1120,27 @@ nsIPrincipal* DocInfo::Principal() const {
 
 const URLInfo& DocInfo::PrincipalURL() const {
   if (!(Principal() && Principal()->GetIsContentPrincipal())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     return URL();
   }
 
