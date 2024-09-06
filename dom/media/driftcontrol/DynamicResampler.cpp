@@ -164,6 +164,7 @@ void DynamicResampler::UpdateResampler(uint32_t aInRate, uint32_t aChannels) {
     MOZ_ASSERT(mResampler);
     mChannels = aChannels;
     mInRate = aInRate;
+    mResamplerIsBypassed &= aInRate == mOutRate;
     
     
     if ((mChannels == STEREO || mChannels == 1) &&
@@ -203,7 +204,8 @@ void DynamicResampler::UpdateResampler(uint32_t aInRate, uint32_t aChannels) {
 
   if (mInRate != aInRate) {
     
-    if (mOutRate == mInRate) {
+    if (mResamplerIsBypassed) {
+      mResamplerIsBypassed = false;
       WarmUpResampler(true);
     }
 
