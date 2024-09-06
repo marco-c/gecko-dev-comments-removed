@@ -33,10 +33,14 @@ namespace cricket {
 
 
 
-RTC_EXPORT extern const absl::string_view LOCAL_PORT_TYPE;
-RTC_EXPORT extern const absl::string_view STUN_PORT_TYPE;
-RTC_EXPORT extern const absl::string_view PRFLX_PORT_TYPE;
-RTC_EXPORT extern const absl::string_view RELAY_PORT_TYPE;
+[[deprecated("Use IceCandidateType")]] static constexpr char LOCAL_PORT_TYPE[] =
+    "local";
+[[deprecated("Use IceCandidateType")]] static constexpr char STUN_PORT_TYPE[] =
+    "stun";
+[[deprecated("Use IceCandidateType")]] static constexpr char PRFLX_PORT_TYPE[] =
+    "prflx";
+[[deprecated("Use IceCandidateType")]] static constexpr char RELAY_PORT_TYPE[] =
+    "relay";
 
 
 
