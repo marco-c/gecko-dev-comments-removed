@@ -2783,16 +2783,25 @@ AbstractRange* Selection::GetAbstractRangeAt(uint32_t aIndex) const {
   return mStyledRanges.mRanges.SafeElementAt(aIndex, empty).mRange;
 }
 
+
 void Selection::GetDirection(nsAString& aDirection) const {
   if (mStyledRanges.mRanges.IsEmpty() ||
       (mFrameSelection && (mFrameSelection->IsDoubleClickSelection() ||
                            mFrameSelection->IsTripleClickSelection()))) {
     
     aDirection.AssignLiteral("none");
-  } else if (mDirection == nsDirection::eDirPrevious) {
-    aDirection.AssignLiteral("backward");
-  } else {
+  } else if (mDirection == nsDirection::eDirNext) {
+    
+    
+    
+    if (AreNormalAndCrossShadowBoundaryRangesCollapsed()) {
+      aDirection.AssignLiteral("none");
+      return;
+    }
     aDirection.AssignLiteral("forward");
+  } else {
+    MOZ_ASSERT(!AreNormalAndCrossShadowBoundaryRangesCollapsed());
+    aDirection.AssignLiteral("backward");
   }
 }
 
