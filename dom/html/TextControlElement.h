@@ -77,9 +77,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
   virtual Maybe<int32_t> GetCols() = 0;
-  int32_t GetColsOrDefault() {
-    return GetCols().valueOr(DEFAULT_COLS);
-  }
+  int32_t GetColsOrDefault() { return GetCols().valueOr(DEFAULT_COLS); }
 
   
 
