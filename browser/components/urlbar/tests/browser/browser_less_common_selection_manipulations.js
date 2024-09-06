@@ -17,6 +17,9 @@
 
 
 
+
+
+
 const tests = [
   {
     description: "Test HOME starting from full selection",
@@ -97,7 +100,7 @@ const tests = [
       this._expectedSelectedText = gURLBar.value.substring(0, 5);
       await selectWithMouseDrag(
         getTextWidth(gURLBar.value[0]) / 2 - 1,
-        getTextWidth(gURLBar.value.substring(0, 5))
+        getTextWidth(gURLBar.value.substring(0, 5)) + 1
       );
     },
     get selection() {
@@ -151,8 +154,8 @@ const tests = [
     async openPanel() {
       this._expectedSelectedText = gURLBar.value.substring(5, 10);
       await selectWithMouseDrag(
-        getTextWidth(gURLBar.value.substring(0, 5)),
-        getTextWidth(gURLBar.value.substring(0, 10))
+        getTextWidth(gURLBar.value.substring(0, 5)) + 1,
+        getTextWidth(gURLBar.value.substring(0, 10)) + 1
       );
     },
     get selection() {

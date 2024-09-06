@@ -163,7 +163,7 @@ async function search({
   
   
   
-  gURLBar._setValue(searchString, { allowTrim: false });
+  gURLBar._setValue(searchString);
   gURLBar.inputField.setSelectionRange(
     searchString.length,
     searchString.length
