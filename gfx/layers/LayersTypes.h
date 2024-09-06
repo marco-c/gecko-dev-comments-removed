@@ -394,6 +394,43 @@ struct RemoteTextureOwnerId {
   };
 };
 
+struct SurfaceDescriptorRemoteDecoderId {
+  uint64_t mId = 0;
+
+  auto MutTiedFields() { return std::tie(mId); }
+
+  static SurfaceDescriptorRemoteDecoderId GetNext();
+
+  bool IsValid() const { return mId != 0; }
+
+  
+  explicit operator uint64_t() const { return mId; }
+
+  
+  
+  bool operator<(const SurfaceDescriptorRemoteDecoderId& aOther) const {
+    return mId < aOther.mId;
+  }
+
+  bool operator==(const SurfaceDescriptorRemoteDecoderId& aOther) const {
+    return mId == aOther.mId;
+  }
+
+  bool operator!=(const SurfaceDescriptorRemoteDecoderId& aOther) const {
+    return !(*this == aOther);
+  }
+
+  
+  
+  
+  
+  struct HashFn {
+    std::size_t operator()(const SurfaceDescriptorRemoteDecoderId aKey) const {
+      return std::hash<uint64_t>{}(aKey.mId);
+    }
+  };
+};
+
 typedef uint32_t RemoteTextureTxnType;
 typedef uint64_t RemoteTextureTxnId;
 
