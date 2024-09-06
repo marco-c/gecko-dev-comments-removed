@@ -302,31 +302,13 @@ static auto ToBigIntDigits(uint64_t seconds, uint32_t nanoseconds) {
   return accumulator;
 }
 
-template <typename T>
-static BigInt* ToBigInt(JSContext* cx,
-                        const SecondsAndNanoseconds<T>& secondsAndNanoseconds) {
-  uint64_t seconds = std::abs(secondsAndNanoseconds.seconds);
-  uint32_t nanoseconds = secondsAndNanoseconds.nanoseconds;
-
-  
-  
-  
-  
-  
-  
-  if (secondsAndNanoseconds.seconds < 0 && nanoseconds != 0) {
-    nanoseconds = ToNanoseconds(TemporalUnit::Second) - nanoseconds;
-    seconds -= 1;
-  }
-
-  auto digits = ToBigIntDigits(seconds, nanoseconds);
-  return CreateBigInt(cx, digits, secondsAndNanoseconds.seconds < 0);
-}
-
 BigInt* js::temporal::ToEpochNanoseconds(JSContext* cx,
                                          const Instant& instant) {
   MOZ_ASSERT(IsValidEpochInstant(instant));
-  return ::ToBigInt(cx, instant);
+
+  auto [seconds, nanoseconds] = instant.abs();
+  auto digits = ToBigIntDigits(uint64_t(seconds), uint32_t(nanoseconds));
+  return CreateBigInt(cx, digits, instant.seconds < 0);
 }
 
 

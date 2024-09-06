@@ -10,8 +10,10 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 
+#include <cmath>
 #include <stdint.h>
 #include <type_traits>
+#include <utility>
 
 #include "builtin/temporal/Int128.h"
 #include "builtin/temporal/TemporalUnit.h"
@@ -129,16 +131,19 @@ struct SecondsAndNanoseconds {
   
 
 
-  constexpr Derived abs() const {
+
+
+
+
+
+
+
+  constexpr std::pair<int64_t, int32_t> denormalize() const {
     int64_t sec = seconds;
     int32_t nanos = nanoseconds;
-    if (sec < 0) {
-      if (nanos > 0) {
-        sec += 1;
-        nanos -= 1'000'000'000;
-      }
-      sec = -sec;
-      nanos = -nanos;
+    if (sec < 0 && nanos > 0) {
+      sec += 1;
+      nanos -= 1'000'000'000;
     }
     return {sec, nanos};
   }
@@ -146,12 +151,16 @@ struct SecondsAndNanoseconds {
   
 
 
+  constexpr Derived abs() const {
+    auto [sec, nanos] = denormalize();
+    return {std::abs(sec), std::abs(nanos)};
+  }
+
+  
+
+
   constexpr int64_t toSeconds() const {
-    int64_t sec = seconds;
-    int32_t nanos = nanoseconds;
-    if (sec < 0 && nanos > 0) {
-      sec += 1;
-    }
+    auto [sec, nanos] = denormalize();
     return sec;
   }
 
@@ -159,12 +168,7 @@ struct SecondsAndNanoseconds {
 
 
   constexpr int64_t toMilliseconds() const {
-    int64_t sec = seconds;
-    int32_t nanos = nanoseconds;
-    if (sec < 0 && nanos > 0) {
-      sec += 1;
-      nanos -= 1'000'000'000;
-    }
+    auto [sec, nanos] = denormalize();
     return (sec * 1'000) + (nanos / 1'000'000);
   }
 
@@ -172,12 +176,7 @@ struct SecondsAndNanoseconds {
 
 
   constexpr int64_t toMicroseconds() const {
-    int64_t sec = seconds;
-    int32_t nanos = nanoseconds;
-    if (sec < 0 && nanos > 0) {
-      sec += 1;
-      nanos -= 1'000'000'000;
-    }
+    auto [sec, nanos] = denormalize();
     return (sec * 1'000'000) + (nanos / 1'000);
   }
 
