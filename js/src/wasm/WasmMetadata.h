@@ -12,7 +12,102 @@
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmProcess.h"
 
-namespace js::wasm {
+namespace js {
+namespace wasm {
+
+
+
+
+
+
+
+
+class FuncExport {
+  uint32_t typeIndex_;
+  uint32_t funcIndex_;
+  uint32_t eagerInterpEntryOffset_;  
+  bool hasEagerStubs_;
+
+  WASM_CHECK_CACHEABLE_POD(typeIndex_, funcIndex_, eagerInterpEntryOffset_,
+                           hasEagerStubs_);
+
+ public:
+  FuncExport() = default;
+  explicit FuncExport(uint32_t typeIndex, uint32_t funcIndex,
+                      bool hasEagerStubs) {
+    typeIndex_ = typeIndex;
+    funcIndex_ = funcIndex;
+    eagerInterpEntryOffset_ = UINT32_MAX;
+    hasEagerStubs_ = hasEagerStubs;
+  }
+  void initEagerInterpEntryOffset(uint32_t entryOffset) {
+    MOZ_ASSERT(eagerInterpEntryOffset_ == UINT32_MAX);
+    MOZ_ASSERT(hasEagerStubs());
+    eagerInterpEntryOffset_ = entryOffset;
+  }
+
+  bool hasEagerStubs() const { return hasEagerStubs_; }
+  uint32_t typeIndex() const { return typeIndex_; }
+  uint32_t funcIndex() const { return funcIndex_; }
+  uint32_t eagerInterpEntryOffset() const {
+    MOZ_ASSERT(eagerInterpEntryOffset_ != UINT32_MAX);
+    MOZ_ASSERT(hasEagerStubs());
+    return eagerInterpEntryOffset_;
+  }
+};
+
+WASM_DECLARE_CACHEABLE_POD(FuncExport);
+
+using FuncExportVector = Vector<FuncExport, 0, SystemAllocPolicy>;
+
+
+
+
+
+
+
+class FuncImport {
+ private:
+  uint32_t typeIndex_;
+  uint32_t instanceOffset_;
+  uint32_t interpExitCodeOffset_;  
+  uint32_t jitExitCodeOffset_;     
+
+  WASM_CHECK_CACHEABLE_POD(typeIndex_, instanceOffset_, interpExitCodeOffset_,
+                           jitExitCodeOffset_);
+
+ public:
+  FuncImport()
+      : typeIndex_(0),
+        instanceOffset_(0),
+        interpExitCodeOffset_(0),
+        jitExitCodeOffset_(0) {}
+
+  FuncImport(uint32_t typeIndex, uint32_t instanceOffset) {
+    typeIndex_ = typeIndex;
+    instanceOffset_ = instanceOffset;
+    interpExitCodeOffset_ = 0;
+    jitExitCodeOffset_ = 0;
+  }
+
+  void initInterpExitOffset(uint32_t off) {
+    MOZ_ASSERT(!interpExitCodeOffset_);
+    interpExitCodeOffset_ = off;
+  }
+  void initJitExitOffset(uint32_t off) {
+    MOZ_ASSERT(!jitExitCodeOffset_);
+    jitExitCodeOffset_ = off;
+  }
+
+  uint32_t typeIndex() const { return typeIndex_; }
+  uint32_t instanceOffset() const { return instanceOffset_; }
+  uint32_t interpExitCodeOffset() const { return interpExitCodeOffset_; }
+  uint32_t jitExitCodeOffset() const { return jitExitCodeOffset_; }
+};
+
+WASM_DECLARE_CACHEABLE_POD(FuncImport)
+
+using FuncImportVector = Vector<FuncImport, 0, SystemAllocPolicy>;
 
 
 
@@ -25,12 +120,42 @@ namespace js::wasm {
 
 
 
-struct ModuleMetadata;
 
-struct CodeMetadata {
+
+
+
+
+
+
+
+
+
+struct ModuleMetadata {
+  
+  
+  ImportVector imports;
+  ExportVector exports;
+
+  
+  DataSegmentRangeVector dataSegmentRanges;
+
+  explicit ModuleMetadata() {}
+};
+
+
+
+
+
+
+
+
+
+using ModuleHash = uint8_t[8];
+
+struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   const ModuleKind kind;
-  const FeatureArgs features;
+  const FeatureArgs features;  
 
   
   
@@ -47,6 +172,8 @@ struct CodeMetadata {
 
   
   
+  
+  
   uint32_t funcImportsOffsetStart;
   
   
@@ -60,6 +187,33 @@ struct CodeMetadata {
   
   
   uint32_t tagsOffsetStart;
+  
+  uint32_t instanceDataLength;
+
+  
+  
+  BuiltinModuleIds builtinModules;  
+  FeatureUsage featureUsage;
+
+  
+  
+  bool filenameIsURL;
+  CacheableChars filename;
+  CacheableChars sourceMapURL;
+  
+  
+  
+  SharedBytes namePayload;
+  
+  
+  
+  Maybe<Name> moduleName;  
+  NameVector funcNames;    
+
+  
+  
+  Maybe<uint32_t> startFuncIndex;
+  Maybe<uint32_t> nameCustomSectionIndex;
 
   
   
@@ -90,6 +244,36 @@ struct CodeMetadata {
   
   bool parsedBranchHints;
 
+  
+  bool debugEnabled;
+  Uint32Vector debugFuncTypeIndices;
+  ModuleHash debugHash;
+
+  
+  WASM_CHECK_CACHEABLE_POD(typeDefsOffsetStart, memoriesOffsetStart,
+                           tablesOffsetStart, tagsOffsetStart,
+                           instanceDataLength, builtinModules, featureUsage,
+                           startFuncIndex, nameCustomSectionIndex);
+
+  
+  explicit CodeMetadata()
+      : kind(ModuleKind::Wasm),
+        features(),
+        numFuncImports(0),
+        numGlobalImports(0),
+        funcImportsOffsetStart(UINT32_MAX),
+        typeDefsOffsetStart(UINT32_MAX),
+        memoriesOffsetStart(UINT32_MAX),
+        tablesOffsetStart(UINT32_MAX),
+        tagsOffsetStart(UINT32_MAX),
+        instanceDataLength(0),
+        builtinModules(),
+        featureUsage(FeatureUsage::None),
+        filenameIsURL(false),
+        parsedBranchHints(false),
+        debugEnabled(false),
+        debugHash() {}
+
   explicit CodeMetadata(FeatureArgs features,
                         ModuleKind kind = ModuleKind::Wasm)
       : kind(kind),
@@ -101,12 +285,39 @@ struct CodeMetadata {
         memoriesOffsetStart(UINT32_MAX),
         tablesOffsetStart(UINT32_MAX),
         tagsOffsetStart(UINT32_MAX),
-        parsedBranchHints(false) {}
+        instanceDataLength(0),
+        builtinModules(),
+        featureUsage(FeatureUsage::None),
+        filenameIsURL(false),
+        parsedBranchHints(false),
+        debugEnabled(false),
+        debugHash() {}
 
   [[nodiscard]] bool init() {
     types = js_new<TypeContext>(features);
     return types;
   }
+
+  
+  const TypeDef& getFuncImportTypeDef(const FuncImport& funcImport) const {
+    return types->type(funcImport.typeIndex());
+  }
+  const FuncType& getFuncImportType(const FuncImport& funcImport) const {
+    return types->type(funcImport.typeIndex()).funcType();
+  }
+  const TypeDef& getFuncExportTypeDef(const FuncExport& funcExport) const {
+    return types->type(funcExport.typeIndex());
+  }
+  const FuncType& getFuncExportType(const FuncExport& funcExport) const {
+    return types->type(funcExport.typeIndex()).funcType();
+  }
+
+  size_t debugNumFuncs() const { return debugFuncTypeIndices.length(); }
+  const FuncType& debugFuncType(uint32_t funcIndex) const {
+    MOZ_ASSERT(debugEnabled);
+    return types->type(debugFuncTypeIndices[funcIndex]).funcType();
+  }
+  
 
   size_t numTables() const { return tables.length(); }
   size_t numTypes() const { return types->length(); }
@@ -202,27 +413,14 @@ struct CodeMetadata {
   bool addImportedFunc( ModuleMetadata* meta, ValTypeVector&& params,
                        ValTypeVector&& results, CacheableName&& importModName,
                        CacheableName&& importFieldName);
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
-struct ModuleMetadata {
-  
-  
-  ImportVector imports;
-  ExportVector exports;
-  Maybe<uint32_t> startFuncIndex;
-  
+using MutableCodeMetadata = RefPtr<CodeMetadata>;
+using SharedCodeMetadata = RefPtr<const CodeMetadata>;
 
-  
-  DataSegmentRangeVector dataSegmentRanges;
-  
-  
-  Maybe<uint32_t> nameCustomSectionIndex;
-  Maybe<Name> moduleName;
-  NameVector funcNames;
-
-  explicit ModuleMetadata() {}
-};
-
+}  
 }  
 
 #endif 
