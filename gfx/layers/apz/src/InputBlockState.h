@@ -164,6 +164,11 @@ class CancelableBlockState : public InputBlockState {
   
 
 
+  bool HasContentResponded() const { return mContentResponded; }
+
+  
+
+
   bool IsDefaultPrevented() const;
 
   
@@ -346,6 +351,13 @@ class PanGestureBlockState : public CancelableBlockState {
     return mAllowedScrollDirections;
   }
 
+  bool IsWaitingForBrowserGestureResponse() const {
+    return mWaitingForBrowserGestureResponse;
+  }
+  bool IsWaitingForContentResponse() const {
+    return mWaitingForContentResponse;
+  }
+
  private:
   bool mInterrupted;
   bool mWaitingForContentResponse;
@@ -377,6 +389,10 @@ class PinchGestureBlockState : public CancelableBlockState {
   bool WasInterrupted() const { return mInterrupted; }
 
   void SetNeedsToWaitForContentResponse(bool aWaitForContentResponse);
+
+  bool IsWaitingForContentResponse() const {
+    return mWaitingForContentResponse;
+  }
 
  private:
   bool mInterrupted;
