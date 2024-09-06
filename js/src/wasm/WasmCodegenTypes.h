@@ -387,7 +387,7 @@ class CodeRange {
     ImportJitExit,     
     BuiltinThunk,      
     TrapExit,          
-    DebugTrap,         
+    DebugStub,         
     FarJumpIsland,     
     Throw              
   };
@@ -450,7 +450,7 @@ class CodeRange {
   bool isImportInterpExit() const { return kind() == ImportInterpExit; }
   bool isImportJitExit() const { return kind() == ImportJitExit; }
   bool isTrapExit() const { return kind() == TrapExit; }
-  bool isDebugTrap() const { return kind() == DebugTrap; }
+  bool isDebugStub() const { return kind() == DebugStub; }
   bool isThunk() const { return kind() == FarJumpIsland; }
 
   
@@ -458,7 +458,7 @@ class CodeRange {
   
 
   bool hasReturn() const {
-    return isFunction() || isImportExit() || isDebugTrap() || isJitEntry();
+    return isFunction() || isImportExit() || isDebugStub() || isJitEntry();
   }
   uint32_t ret() const {
     MOZ_ASSERT(hasReturn());

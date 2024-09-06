@@ -416,7 +416,7 @@ class CodeBlock {
   CodeRangeUnwindInfoVector codeRangeUnwindInfos;
 
   
-  uint32_t debugTrapOffset;
+  uint32_t debugStubOffset;
 
   
   bool unregisterOnDestroy_;
@@ -433,7 +433,7 @@ class CodeBlock {
       : code(nullptr),
         codeBlockIndex((size_t)-1),
         kind(kind),
-        debugTrapOffset(0),
+        debugStubOffset(0),
         unregisterOnDestroy_(false) {}
   ~CodeBlock();
 

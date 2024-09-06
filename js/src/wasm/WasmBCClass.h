@@ -230,7 +230,7 @@ struct BaseCompiler final {
 
   
   
-  NonAssertingLabel debugTrapStub_;
+  NonAssertingLabel perFunctionDebugStub_;
   uint32_t previousBreakablePoint_;
 
   
@@ -947,7 +947,7 @@ struct BaseCompiler final {
   void insertBreakablePoint(CallSiteDesc::Kind kind);
 
   
-  void insertBreakpointStub();
+  void insertPerFunctionDebugStub();
 
   
   

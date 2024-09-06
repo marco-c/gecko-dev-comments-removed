@@ -648,11 +648,10 @@ bool BaseCompiler::endFunction() {
   }
   JitSpew(JitSpew_Codegen, "# endFunction: end of OOL code");
 
-  JitSpew(JitSpew_Codegen, "# endFunction: end of OOL code");
   if (compilerEnv_.debugEnabled()) {
-    JitSpew(JitSpew_Codegen, "# endFunction: start of debug trap stub");
-    insertBreakpointStub();
-    JitSpew(JitSpew_Codegen, "# endFunction: end of debug trap stub");
+    JitSpew(JitSpew_Codegen, "# endFunction: start of per-function debug stub");
+    insertPerFunctionDebugStub();
+    JitSpew(JitSpew_Codegen, "# endFunction: end of per-function debug stub");
   }
 
   offsets_.end = masm.currentOffset();
@@ -665,6 +664,31 @@ bool BaseCompiler::endFunction() {
           (int)func_.index);
   return !masm.oom();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -696,9 +720,9 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   
 #if defined(JS_CODEGEN_X64)
   
-  static_assert(Instance::offsetOfDebugTrapHandler() < 128);
-  masm.cmpq(Imm32(0), Operand(Address(InstanceReg,
-                                      Instance::offsetOfDebugTrapHandler())));
+  static_assert(Instance::offsetOfDebugStub() < 128);
+  masm.cmpq(Imm32(0),
+            Operand(Address(InstanceReg, Instance::offsetOfDebugStub())));
 
   
   Label L;
@@ -706,7 +730,7 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   masm.j(Assembler::Zero, &L);
 
   
-  masm.call(&debugTrapStub_);
+  masm.call(&perFunctionDebugStub_);
   masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
               CodeOffset(masm.currentOffset()));
 
@@ -714,9 +738,9 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() == uint32_t(L.offset()));
 #elif defined(JS_CODEGEN_X86)
   
-  static_assert(Instance::offsetOfDebugTrapHandler() < 128);
-  masm.cmpl(Imm32(0), Operand(Address(InstanceReg,
-                                      Instance::offsetOfDebugTrapHandler())));
+  static_assert(Instance::offsetOfDebugStub() < 128);
+  masm.cmpl(Imm32(0),
+            Operand(Address(InstanceReg, Instance::offsetOfDebugStub())));
 
   
   Label L;
@@ -724,7 +748,7 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   masm.j(Assembler::Zero, &L);
 
   
-  masm.call(&debugTrapStub_);
+  masm.call(&perFunctionDebugStub_);
   masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
               CodeOffset(masm.currentOffset()));
 
@@ -734,29 +758,27 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   ScratchPtr scratch(*this);
   ARMRegister tmp(scratch, 64);
   Label L;
-  masm.Ldr(tmp, MemOperand(Address(InstanceReg,
-                                   Instance::offsetOfDebugTrapHandler())));
+  masm.Ldr(tmp,
+           MemOperand(Address(InstanceReg, Instance::offsetOfDebugStub())));
   masm.Cbz(tmp, &L);
-  masm.Bl(&debugTrapStub_);
+  masm.Bl(&perFunctionDebugStub_);
   masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
               CodeOffset(masm.currentOffset()));
   masm.bind(&L);
 #elif defined(JS_CODEGEN_ARM)
   ScratchPtr scratch(*this);
-  masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugTrapHandler()),
-               scratch);
+  masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugStub()), scratch);
   masm.ma_orr(scratch, scratch, SetCC);
-  masm.ma_bl(&debugTrapStub_, Assembler::NonZero);
+  masm.ma_bl(&perFunctionDebugStub_, Assembler::NonZero);
   masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
               CodeOffset(masm.currentOffset()));
 #elif defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_MIPS64) || \
     defined(JS_CODEGEN_RISCV64)
   ScratchPtr scratch(*this);
   Label L;
-  masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugTrapHandler()),
-               scratch);
+  masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugStub()), scratch);
   masm.branchPtr(Assembler::Equal, scratch, ImmWord(0), &L);
-  masm.call(&debugTrapStub_);
+  masm.call(&perFunctionDebugStub_);
   masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
               CodeOffset(masm.currentOffset()));
   masm.bind(&L);
@@ -765,7 +787,7 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
 #endif
 }
 
-void BaseCompiler::insertBreakpointStub() {
+void BaseCompiler::insertPerFunctionDebugStub() {
   
   
   
@@ -778,7 +800,7 @@ void BaseCompiler::insertBreakpointStub() {
   
 
   Label L;
-  masm.bind(&debugTrapStub_);
+  masm.bind(&perFunctionDebugStub_);
 
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
   {
@@ -843,7 +865,7 @@ void BaseCompiler::insertBreakpointStub() {
 
   
   masm.bind(&L);
-  masm.jump(Address(InstanceReg, Instance::offsetOfDebugTrapHandler()));
+  masm.jump(Address(InstanceReg, Instance::offsetOfDebugStub()));
 }
 
 void BaseCompiler::saveRegisterReturnValues(const ResultType& resultType) {

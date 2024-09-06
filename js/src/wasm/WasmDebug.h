@@ -80,6 +80,10 @@ using WasmBreakpointSiteMap =
 
 
 
+
+
+
+
 class DebugState {
   const SharedCode code_;
   const SharedModule module_;
@@ -93,8 +97,8 @@ class DebugState {
 
   void enableDebuggingForFunction(Instance* instance, uint32_t funcIndex);
   void disableDebuggingForFunction(Instance* instance, uint32_t funcIndex);
-  void enableDebugTrap(Instance* instance);
-  void disableDebugTrap(Instance* instance);
+  void enableDebugTrapping(Instance* instance);
+  void disableDebugTrapping(Instance* instance);
 
  public:
   DebugState(const Code& code, const Module& module);

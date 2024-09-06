@@ -2824,13 +2824,14 @@ static const LiveRegisterSet AllAllocatableRegs =
 
 
 
-static bool GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel,
-                                  CallableOffsets* offsets) {
+
+static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
+                              CallableOffsets* offsets) {
   AssertExpectedSP(masm);
   masm.haltingAlign(CodeAlignment);
   masm.setFramePushed(0);
 
-  GenerateExitPrologue(masm, 0, ExitReason::Fixed::DebugTrap, offsets);
+  GenerateExitPrologue(masm, 0, ExitReason::Fixed::DebugStub, offsets);
 
   
   masm.PushRegsInMask(AllAllocatableRegs);
@@ -2869,7 +2870,7 @@ static bool GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel,
   masm.setFramePushed(framePushed);
   masm.PopRegsInMask(AllAllocatableRegs);
 
-  GenerateExitEpilogue(masm, 0, ExitReason::Fixed::DebugTrap, offsets);
+  GenerateExitEpilogue(masm, 0, ExitReason::Fixed::DebugStub, offsets);
 
   return FinishOffsets(masm, offsets);
 }
@@ -3055,7 +3056,7 @@ bool wasm::GenerateStubs(const CodeMetadata& codeMeta,
     }
   }
 
-  JitSpew(JitSpew_Codegen, "# Emitting wasm trap and throw stubs");
+  JitSpew(JitSpew_Codegen, "# Emitting wasm trap, debug and throw stubs");
 
   Offsets offsets;
 
@@ -3067,10 +3068,10 @@ bool wasm::GenerateStubs(const CodeMetadata& codeMeta,
   }
 
   CallableOffsets callableOffsets;
-  if (!GenerateDebugTrapStub(masm, &throwLabel, &callableOffsets)) {
+  if (!GenerateDebugStub(masm, &throwLabel, &callableOffsets)) {
     return false;
   }
-  if (!code->codeRanges.emplaceBack(CodeRange::DebugTrap, callableOffsets)) {
+  if (!code->codeRanges.emplaceBack(CodeRange::DebugStub, callableOffsets)) {
     return false;
   }
 
