@@ -638,7 +638,7 @@ void DeviceManagerDx::CreateContentDevicesLocked() {
 
   
   
-  MOZ_ASSERT(mDeviceStatus);
+  MOZ_RELEASE_ASSERT(mDeviceStatus);
 
   if (CreateContentDevice() == FeatureStatus::CrashedInHandler) {
     DisableD3D11AfterCrash();
