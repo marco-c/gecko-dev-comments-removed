@@ -2677,33 +2677,6 @@ function HandleAppCommandEvent(evt) {
   evt.preventDefault();
 }
 
-function gotoHistoryIndex(aEvent) {
-  aEvent = getRootEvent(aEvent);
-
-  let index = aEvent.target.getAttribute("index");
-  if (!index) {
-    return false;
-  }
-
-  let where = whereToOpenLink(aEvent);
-
-  if (where == "current") {
-    
-
-    try {
-      gBrowser.gotoIndex(index);
-    } catch (ex) {
-      return false;
-    }
-    return true;
-  }
-  
-
-  let historyindex = aEvent.target.getAttribute("historyindex");
-  duplicateTabIn(gBrowser.selectedTab, where, Number(historyindex));
-  return true;
-}
-
 function BrowserStop() {
   gBrowser.webNavigation.stop(Ci.nsIWebNavigation.STOP_ALL);
 }
@@ -4402,6 +4375,7 @@ function FillHistoryMenu(aParent) {
       item.setAttribute("label", entry.title || uri);
       item.setAttribute("index", j);
 
+      
       
       item.setAttribute("historyindex", j - index);
 
