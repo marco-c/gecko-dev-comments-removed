@@ -1104,17 +1104,6 @@ class nsFlexContainerFrame::FlexLine final {
                                        bool aIsFinalIteration);
 
   
-  nsTArray<FlexItem> mItems;
-
-  
-  
-  
-  uint32_t mNumFrozenItems = 0;
-
-  
-  nscoord mTotalItemMBP = 0;
-
-  
   
   
   
@@ -1124,6 +1113,17 @@ class nsFlexContainerFrame::FlexLine final {
   
   
   AuCoord64 mTotalOuterHypotheticalMainSize = 0;
+
+  
+  nsTArray<FlexItem> mItems;
+
+  
+  
+  
+  uint32_t mNumFrozenItems = 0;
+
+  
+  nscoord mTotalItemMBP = 0;
 
   nscoord mLineCrossSize = 0;
   nscoord mFirstBaselineOffset = nscoord_MIN;
