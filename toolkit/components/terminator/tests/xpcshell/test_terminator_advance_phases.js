@@ -6,12 +6,11 @@
 
 
 
+
 const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
 
-var PATH;
-var PATH_TMP;
 var terminator;
 
 var HEARTBEAT_MS = 100;
@@ -34,8 +33,6 @@ let MeasuredDurations = [];
 
 add_task(async function init() {
   do_get_profile();
-  PATH = PathUtils.join(PathUtils.localProfileDir, "ShutdownDuration.json");
-  PATH_TMP = PATH + ".tmp";
 
   
   
@@ -44,23 +41,12 @@ add_task(async function init() {
   terminator = Cc["@mozilla.org/toolkit/shutdown-terminator;1"].createInstance(
     Ci.nsIObserver
   );
+
+  Assert.ok(
+    terminator instanceof Ci.nsITerminatorTest,
+    "Terminator should implement nsITerminatorTest"
+  );
 });
-
-var promiseShutdownDurationData = async function () {
-  
-  
-  while (true) {
-    if (await IOUtils.exists(PATH)) {
-      break;
-    }
-
-    
-    
-    await new Promise(resolve => setTimeout(resolve, 50));
-  }
-
-  return IOUtils.readJSON(PATH);
-};
 
 var currentPhase = 0;
 
@@ -72,13 +58,16 @@ var advancePhase = async function () {
   terminator.observe(null, key, null);
   await new Promise(resolve => setTimeout(resolve, msDuration));
 
-  let data = await promiseShutdownDurationData();
+  let data = terminator.getTicksForShutdownPhases();
 
-  Assert.ok(KEYS[currentPhase] in data, "The file contains the expected key");
+  Assert.ok(
+    KEYS[currentPhase] in data,
+    "The KEYS object contains the expected key"
+  );
   Assert.equal(
     Object.keys(data).length,
     currentPhase + 1,
-    "File does not contain more durations than expected"
+    "KEYS object does not contain more durations than expected"
   );
 
   DATA[currentPhase] = data;
@@ -107,9 +96,6 @@ add_task(async function test_record() {
     let beforeWait = Date.now();
 
     morePhases = await advancePhase();
-
-    await IOUtils.remove(PATH);
-    await IOUtils.remove(PATH_TMP);
 
     
     
@@ -166,6 +152,6 @@ add_task(async function test_record() {
       .sort()
       .join(", "),
     KEYS.sort().join(", "),
-    "The last file contains all expected keys"
+    "The KEYS object contains all expected keys"
   );
 });
