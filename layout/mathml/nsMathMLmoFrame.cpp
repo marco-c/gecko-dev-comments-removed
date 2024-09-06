@@ -596,9 +596,15 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
 
   
   
-  nscoord em;
-  GetEmHeight(fm, em);
-  nscoord leading = NSToCoordRound(0.2f * em);
+  const nscoord leading = [&fm] {
+    if (StaticPrefs::
+            mathml_top_bottom_spacing_for_stretchy_operators_disabled()) {
+      return 0;
+    }
+    nscoord em;
+    GetEmHeight(fm, em);
+    return NSToCoordRound(0.2f * (float)em);
+  }();
 
   
   
