@@ -39,6 +39,8 @@ default_optimizations = (
     {"upload-symbols": None},
     
     {"reprocess-symbols": None},
+    
+    {"skip-unless-mozlint": voluptuous.Any(str, [str])},
 )
 
 OptimizationSchema = voluptuous.Any(*default_optimizations)
