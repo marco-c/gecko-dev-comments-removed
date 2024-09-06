@@ -22,8 +22,6 @@
 
 
 
-
-
 const browserTestPaths = ["**/test*/**/browser*/"];
 
 const chromeTestPaths = ["**/test*/chrome/"];
