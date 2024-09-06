@@ -6,6 +6,7 @@
 #if !defined(mozilla_dom_HTMLCanvasElement_h)
 #  define mozilla_dom_HTMLCanvasElement_h
 
+#  include "LayoutConstants.h"
 #  include "mozilla/Attributes.h"
 #  include "mozilla/StateWatching.h"
 #  include "mozilla/WeakPtr.h"
@@ -111,8 +112,6 @@ class FrameCaptureListener : public SupportsWeakPtr {
 class HTMLCanvasElement final : public nsGenericHTMLElement,
                                 public CanvasRenderingContextHelper,
                                 public SupportsWeakPtr {
-  enum { DEFAULT_CANVAS_WIDTH = 300, DEFAULT_CANVAS_HEIGHT = 150 };
-
   typedef layers::CanvasRenderer CanvasRenderer;
   typedef layers::LayerManager LayerManager;
   typedef layers::WebRenderCanvasData WebRenderCanvasData;
@@ -132,10 +131,12 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
 
   
   uint32_t Height() {
-    return GetUnsignedIntAttr(nsGkAtoms::height, DEFAULT_CANVAS_HEIGHT);
+    return GetUnsignedIntAttr(nsGkAtoms::height,
+                              kFallbackIntrinsicHeightInPixels);
   }
   uint32_t Width() {
-    return GetUnsignedIntAttr(nsGkAtoms::width, DEFAULT_CANVAS_WIDTH);
+    return GetUnsignedIntAttr(nsGkAtoms::width,
+                              kFallbackIntrinsicWidthInPixels);
   }
   void SetHeight(uint32_t aHeight, ErrorResult& aRv);
   void SetWidth(uint32_t aWidth, ErrorResult& aRv);
@@ -173,7 +174,7 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   
 
 
-  nsIntSize GetSize();
+  CSSIntSize GetSize();
 
   
 
@@ -316,7 +317,7 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
 
-  virtual nsIntSize GetWidthHeight() override;
+  CSSIntSize GetWidthHeight() override;
 
   virtual already_AddRefed<nsICanvasRenderingContextInternal> CreateContext(
       CanvasContextType aContextType) override;

@@ -1033,7 +1033,7 @@ nsresult nsBaseDragSession::DrawDragForImage(
   } else {
     
     NS_ASSERTION(aCanvas, "both image and canvas are null");
-    nsIntSize sz = aCanvas->GetSize();
+    CSSIntSize sz = aCanvas->GetSize();
     aScreenDragRect->SizeTo(sz.width, sz.height);
   }
 
