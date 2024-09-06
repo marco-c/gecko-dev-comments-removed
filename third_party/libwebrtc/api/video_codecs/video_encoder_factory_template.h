@@ -13,16 +13,19 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "absl/algorithm/container.h"
 #include "api/array_view.h"
+#include "api/environment/environment.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/video_coding/svc/scalability_mode_util.h"
 
 namespace webrtc {
+
 
 
 
@@ -62,6 +65,20 @@ class VideoEncoderFactoryTemplate : public VideoEncoderFactory {
     absl::optional<SdpVideoFormat> matched =
         FuzzyMatchSdpVideoFormat(GetSupportedFormats(), format);
     return CreateVideoEncoderInternal<Ts...>(matched.value_or(format));
+  }
+
+  std::unique_ptr<VideoEncoder> Create(const Environment& env,
+                                       const SdpVideoFormat& format) override {
+    
+    
+    
+    
+    
+    
+    
+    absl::optional<SdpVideoFormat> matched =
+        FuzzyMatchSdpVideoFormat(GetSupportedFormats(), format);
+    return CreateInternal<Ts...>(env, matched.value_or(format));
   }
 
   CodecSupport QueryCodecSupport(
@@ -114,11 +131,41 @@ class VideoEncoderFactoryTemplate : public VideoEncoderFactory {
   std::unique_ptr<VideoEncoder> CreateVideoEncoderInternal(
       const SdpVideoFormat& format) {
     if (IsFormatInList(format, V::SupportedFormats())) {
-      return V::CreateEncoder(format);
+      if constexpr (std::is_invocable_r_v<std::unique_ptr<VideoEncoder>,
+                                          decltype(V::CreateEncoder),
+                                          const Environment&,
+                                          const SdpVideoFormat&>) {
+        
+        
+        RTC_CHECK_NOTREACHED();
+      } else {
+        return V::CreateEncoder(format);
+      }
     }
 
     if constexpr (sizeof...(Vs) > 0) {
       return CreateVideoEncoderInternal<Vs...>(format);
+    }
+
+    return nullptr;
+  }
+
+  template <typename V, typename... Vs>
+  std::unique_ptr<VideoEncoder> CreateInternal(const Environment& env,
+                                               const SdpVideoFormat& format) {
+    if (IsFormatInList(format, V::SupportedFormats())) {
+      if constexpr (std::is_invocable_r_v<std::unique_ptr<VideoEncoder>,
+                                          decltype(V::CreateEncoder),
+                                          const Environment&,
+                                          const SdpVideoFormat&>) {
+        return V::CreateEncoder(env, format);
+      } else {
+        return V::CreateEncoder(format);
+      }
+    }
+
+    if constexpr (sizeof...(Vs) > 0) {
+      return CreateInternal<Vs...>(env, format);
     }
 
     return nullptr;
