@@ -157,6 +157,11 @@ class HyperTextAccessible : public AccessibleWrap,
 
   mozilla::LayoutDeviceIntRect GetCaretRect(nsIWidget** aWidget);
 
+  
+
+
+  bool IsCaretAtEndOfLine() const;
+
   virtual int32_t SelectionCount() override;
 
   virtual bool SelectionBoundsAt(int32_t aSelectionNum, int32_t* aStartOffset,
