@@ -46,7 +46,7 @@ class IdentityCredentialStorageService final
  private:
   IdentityCredentialStorageService()
       : mMonitor("mozilla::IdentityCredentialStorageService::mMonitor"),
-        mPendingWrites(0){};
+        mPendingWrites(0) {};
   ~IdentityCredentialStorageService() = default;
 
   
