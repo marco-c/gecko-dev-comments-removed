@@ -13,6 +13,8 @@
 
 #include <memory>
 
+#include "api/environment/environment.h"
+
 
 namespace cricket {
 class SctpTransportInternal;
@@ -34,6 +36,7 @@ class SctpTransportFactoryInterface {
 
   
   virtual std::unique_ptr<cricket::SctpTransportInternal> CreateSctpTransport(
+      const Environment& env,
       rtc::PacketTransportInternal* channel) = 0;
 };
 
