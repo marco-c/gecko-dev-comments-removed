@@ -227,6 +227,9 @@ static nsINode* GetCommonAncestorForMouseUp(
   return parent;
 }
 
+LazyLogModule sMouseBoundaryLog("MouseBoundaryEvents");
+LazyLogModule sPointerBoundaryLog("PointerBoundaryEvents");
+
 
 
 
@@ -282,10 +285,6 @@ UITimerCallback::GetName(nsACString& aName) {
 
 
 
-OverOutElementsWrapper::OverOutElementsWrapper() : mLastOverFrame(nullptr) {}
-
-OverOutElementsWrapper::~OverOutElementsWrapper() = default;
-
 NS_IMPL_CYCLE_COLLECTION(OverOutElementsWrapper, mDeepestEnterEventTarget,
                          mDispatchingOverEventTarget,
                          mDispatchingOutOrDeepestLeaveEventTarget)
@@ -295,6 +294,69 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(OverOutElementsWrapper)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(OverOutElementsWrapper)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
+
+void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
+  if (!mDeepestEnterEventTarget) {
+    return;
+  }
+
+  if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+          mDeepestEnterEventTarget, &aContent)) {
+    return;
+  }
+
+  LogModule* const logModule = mType == BoundaryEventType::Mouse
+                                   ? sMouseBoundaryLog
+                                   : sPointerBoundaryLog;
+
+  if (!StaticPrefs::
+          dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed()) {
+    MOZ_LOG(logModule, LogLevel::Info,
+            ("The last \"over\" event target (%p) is removed",
+             mDeepestEnterEventTarget.get()));
+    mDeepestEnterEventTarget = nullptr;
+    return;
+  }
+
+  if (mDispatchingOverEventTarget &&
+      (mDeepestEnterEventTarget == mDispatchingOverEventTarget ||
+       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+           mDispatchingOverEventTarget, &aContent))) {
+    if (mDispatchingOverEventTarget ==
+        mDispatchingOutOrDeepestLeaveEventTarget) {
+      MOZ_LOG(logModule, LogLevel::Info,
+              ("The dispatching \"%s\" event target (%p) is removed",
+               mDeepestEnterEventTargetIsOverEventTarget ? "out" : "leave",
+               mDispatchingOutOrDeepestLeaveEventTarget.get()));
+      mDispatchingOutOrDeepestLeaveEventTarget = nullptr;
+    }
+    MOZ_LOG(logModule, LogLevel::Info,
+            ("The dispatching \"over\" event target (%p) is removed",
+             mDispatchingOverEventTarget.get()));
+    mDispatchingOverEventTarget = nullptr;
+  }
+  if (mDispatchingOutOrDeepestLeaveEventTarget &&
+      (mDeepestEnterEventTarget == mDispatchingOutOrDeepestLeaveEventTarget ||
+       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+           mDispatchingOutOrDeepestLeaveEventTarget, &aContent))) {
+    MOZ_LOG(logModule, LogLevel::Info,
+            ("The dispatching \"%s\" event target (%p) is removed",
+             mDeepestEnterEventTargetIsOverEventTarget ? "out" : "leave",
+             mDispatchingOutOrDeepestLeaveEventTarget.get()));
+    mDispatchingOutOrDeepestLeaveEventTarget = nullptr;
+  }
+  MOZ_LOG(logModule, LogLevel::Info,
+          ("The last \"%s\" event target (%p) is removed and now the last "
+           "deepest enter target becomes %s(%p)",
+           mDeepestEnterEventTargetIsOverEventTarget ? "over" : "enter",
+           mDeepestEnterEventTarget.get(),
+           aContent.GetFlattenedTreeParent()
+               ? ToString(*aContent.GetFlattenedTreeParent()).c_str()
+               : "nullptr",
+           aContent.GetFlattenedTreeParent()));
+  mDeepestEnterEventTarget = aContent.GetFlattenedTreeParent();
+  mDeepestEnterEventTargetIsOverEventTarget = false;
+}
 
 
 
@@ -4809,6 +4871,10 @@ class EnterLeaveDispatcher {
 
 void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
                                        nsIContent* aMovingInto) {
+  const bool isPointer = aMouseEvent->mClass == ePointerEventClass;
+  LogModule* const logModule =
+      isPointer ? sPointerBoundaryLog : sMouseBoundaryLog;
+
   RefPtr<OverOutElementsWrapper> wrapper = GetWrapperByEventID(aMouseEvent);
 
   
@@ -4821,6 +4887,11 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
   if (wrapper->IsDispatchingOutEventOnLastOverEventTarget()) {
     return;
   }
+
+  MOZ_LOG(logModule, LogLevel::Info,
+          ("NotifyMouseOut: the source event is %s (IsReal()=%s)",
+           ToChar(aMouseEvent->mMessage),
+           aMouseEvent->IsReal() ? "true" : "false"));
 
   
   
@@ -4835,6 +4906,10 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
         if (RefPtr<nsPresContext> presContext = docshell->GetPresContext()) {
           EventStateManager* kidESM = presContext->EventStateManager();
           
+          MOZ_LOG(logModule, LogLevel::Info,
+                  ("Notifying child EventStateManager (%p) of \"out\" "
+                   "event...",
+                   kidESM));
           kidESM->NotifyMouseOut(aMouseEvent, nullptr);
         }
       }
@@ -4852,7 +4927,6 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
   
   
   
-  bool isPointer = aMouseEvent->mClass == ePointerEventClass;
   if (!aMovingInto && !isPointer) {
     
     SetContentState(nullptr, ElementState::HOVER);
@@ -4865,12 +4939,27 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
   
   
   if (nsCOMPtr<nsIContent> outEventTarget = wrapper->GetOutEventTarget()) {
+    MOZ_LOG(logModule, LogLevel::Info,
+            ("Dispatching %s event to %s (%p)",
+             isPointer ? "ePointerOut" : "eMouseOut",
+             outEventTarget ? ToString(*outEventTarget).c_str() : "nullptr",
+             outEventTarget.get()));
     DispatchMouseOrPointerEvent(aMouseEvent,
                                 isPointer ? ePointerOut : eMouseOut,
                                 outEventTarget, aMovingInto);
   }
+
+  MOZ_LOG(logModule, LogLevel::Info,
+          ("Dispatching %s event to %s (%p) and its ancestors",
+           isPointer ? "ePointerLeave" : "eMouseLeave",
+           wrapper->GetDeepestLeaveEventTarget()
+               ? ToString(*wrapper->GetDeepestLeaveEventTarget()).c_str()
+               : "nullptr",
+           wrapper->GetDeepestLeaveEventTarget()));
   leaveDispatcher.Dispatch();
 
+  MOZ_LOG(logModule, LogLevel::Info,
+          ("Dispatched \"out\" and/or \"leave\" events"));
   wrapper->DidDispatchOutAndOrLeaveEvent();
 }
 
@@ -4890,6 +4979,10 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
                                         nsIContent* aContent) {
   NS_ASSERTION(aContent, "Mouse must be over something");
 
+  const bool isPointer = aMouseEvent->mClass == ePointerEventClass;
+  LogModule* const logModule =
+      isPointer ? sPointerBoundaryLog : sMouseBoundaryLog;
+
   RefPtr<OverOutElementsWrapper> wrapper = GetWrapperByEventID(aMouseEvent);
 
   
@@ -4903,6 +4996,11 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
     return;
   }
 
+  MOZ_LOG(logModule, LogLevel::Info,
+          ("NotifyMouseOver: the source event is %s (IsReal()=%s)",
+           ToChar(aMouseEvent->mMessage),
+           aMouseEvent->IsReal() ? "true" : "false"));
+
   
   
   
@@ -4912,6 +5010,10 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
       if (PresShell* parentPresShell = parentDoc->GetPresShell()) {
         RefPtr<EventStateManager> parentESM =
             parentPresShell->GetPresContext()->EventStateManager();
+        MOZ_LOG(logModule, LogLevel::Info,
+                ("Notifying parent EventStateManager (%p) of \"over\" "
+                 "event...",
+                 parentESM.get()));
         parentESM->NotifyMouseOver(aMouseEvent, docContent);
       }
     }
@@ -4928,8 +5030,6 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
   nsCOMPtr<nsIContent> deepestLeaveEventTarget =
       wrapper->GetDeepestLeaveEventTarget();
 
-  bool isPointer = aMouseEvent->mClass == ePointerEventClass;
-
   EnterLeaveDispatcher enterDispatcher(this, aContent, deepestLeaveEventTarget,
                                        aMouseEvent,
                                        isPointer ? ePointerEnter : eMouseEnter);
@@ -4945,11 +5045,22 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
   
   
   
+  MOZ_LOG(logModule, LogLevel::Info,
+          ("Dispatching %s event to %s (%p)",
+           isPointer ? "ePointerOver" : "eMoustOver",
+           aContent ? ToString(*aContent).c_str() : "nullptr", aContent));
   wrapper->mLastOverFrame = DispatchMouseOrPointerEvent(
       aMouseEvent, isPointer ? ePointerOver : eMouseOver, aContent,
       deepestLeaveEventTarget);
+
+  MOZ_LOG(logModule, LogLevel::Info,
+          ("Dispatching %s event to %s (%p) and its ancestors",
+           isPointer ? "ePointerEnter" : "eMouseEnter",
+           aContent ? ToString(*aContent).c_str() : "nullptr", aContent));
   enterDispatcher.Dispatch();
 
+  MOZ_LOG(logModule, LogLevel::Info,
+          ("Dispatched \"over\" and \"enter\" events"));
   wrapper->DidDispatchOverAndEnterEvent();
 }
 
@@ -5141,11 +5252,13 @@ OverOutElementsWrapper* EventStateManager::GetWrapperByEventID(
   if (!pointer) {
     MOZ_ASSERT(aEvent->AsMouseEvent() != nullptr);
     if (!mMouseEnterLeaveHelper) {
-      mMouseEnterLeaveHelper = new OverOutElementsWrapper();
+      mMouseEnterLeaveHelper = new OverOutElementsWrapper(
+          OverOutElementsWrapper::BoundaryEventType::Mouse);
     }
     return mMouseEnterLeaveHelper;
   }
-  return mPointersEnterLeaveHelper.GetOrInsertNew(pointer->pointerId);
+  return mPointersEnterLeaveHelper.GetOrInsertNew(
+      pointer->pointerId, OverOutElementsWrapper::BoundaryEventType::Pointer);
 }
 
 
@@ -6899,42 +7012,6 @@ bool EventStateManager::WheelPrefs::IsOverOnePageScrollAllowedY(
   Init(index);
   return Abs(mMultiplierY[index]) >=
          MIN_MULTIPLIER_VALUE_ALLOWING_OVER_ONE_PAGE_SCROLL;
-}
-
-void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
-  if (!mDeepestEnterEventTarget) {
-    return;
-  }
-
-  if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-          mDeepestEnterEventTarget, &aContent)) {
-    return;
-  }
-
-  if (!StaticPrefs::
-          dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed()) {
-    mDeepestEnterEventTarget = nullptr;
-    return;
-  }
-
-  if (mDispatchingOverEventTarget &&
-      (mDeepestEnterEventTarget == mDispatchingOverEventTarget ||
-       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-           mDispatchingOverEventTarget, &aContent))) {
-    if (mDispatchingOverEventTarget ==
-        mDispatchingOutOrDeepestLeaveEventTarget) {
-      mDispatchingOutOrDeepestLeaveEventTarget = nullptr;
-    }
-    mDispatchingOverEventTarget = nullptr;
-  }
-  if (mDispatchingOutOrDeepestLeaveEventTarget &&
-      (mDeepestEnterEventTarget == mDispatchingOutOrDeepestLeaveEventTarget ||
-       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-           mDispatchingOutOrDeepestLeaveEventTarget, &aContent))) {
-    mDispatchingOutOrDeepestLeaveEventTarget = nullptr;
-  }
-  mDeepestEnterEventTarget = aContent.GetFlattenedTreeParent();
-  mDeepestEnterEventTargetIsOverEventTarget = false;
 }
 
 }  

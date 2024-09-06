@@ -56,10 +56,11 @@ class RemoteDragStartData;
 }  
 
 class OverOutElementsWrapper final : public nsISupports {
-  ~OverOutElementsWrapper();
+  ~OverOutElementsWrapper() = default;
 
  public:
-  OverOutElementsWrapper();
+  enum class BoundaryEventType : bool { Mouse, Pointer };
+  explicit OverOutElementsWrapper(BoundaryEventType aType) : mType(aType) {}
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(OverOutElementsWrapper)
@@ -134,6 +135,8 @@ class OverOutElementsWrapper final : public nsISupports {
   
   
   nsCOMPtr<nsIContent> mDispatchingOutOrDeepestLeaveEventTarget;
+
+  const BoundaryEventType mType;
 
   
   
