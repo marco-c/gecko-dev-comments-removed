@@ -356,13 +356,7 @@ RuleEditor.prototype = {
       
       let computedSelector = "";
       if (this.rule.domRule.selectors) {
-        if (this.rule.domRule.hasMatchedSelectorIndexesTrait) {
-          computedSelector = this.rule.domRule.computedSelector;
-        } else {
-          
-          
-          computedSelector = this.rule.domRule.desugaredSelectors?.join(", ");
-        }
+        computedSelector = this.rule.domRule.computedSelector;
         
         
       }
@@ -641,9 +635,8 @@ RuleEditor.prototype = {
     } else if (this.rule.domRule.type === CSSRule.KEYFRAME_RULE) {
       this.selectorText.textContent = this.rule.domRule.keyText;
     } else {
-      const desugaredSelectors = this.rule.domRule.desugaredSelectors;
       this.rule.domRule.selectors.forEach((selector, i) => {
-        this._populateSelector(selector, i, desugaredSelectors);
+        this._populateSelector(selector, i);
       });
     }
 
@@ -690,10 +683,7 @@ RuleEditor.prototype = {
 
 
 
-
-
-
-  _populateSelector(selector, selectorIndex, desugaredSelectors) {
+  _populateSelector(selector, selectorIndex) {
     if (selectorIndex !== 0) {
       createChild(this.selectorText, "span", {
         class: "ruleview-selector-separator",
@@ -706,21 +696,10 @@ RuleEditor.prototype = {
     
     
 
-    if (this.rule.domRule.hasMatchedSelectorIndexesTrait) {
-      if (this.rule.matchedSelectorIndexes.length) {
-        containerClass += this.rule.matchedSelectorIndexes.includes(
-          selectorIndex
-        )
-          ? "matched"
-          : "unmatched";
-      }
-    } else if (this.rule.matchedDesugaredSelectors.length) {
-      
-      
-      const desugaredSelector = desugaredSelectors[selectorIndex];
-      const matchedSelector =
-        this.rule.matchedDesugaredSelectors.includes(desugaredSelector);
-      containerClass += matchedSelector ? "matched" : "unmatched";
+    if (this.rule.matchedSelectorIndexes.length) {
+      containerClass += this.rule.matchedSelectorIndexes.includes(selectorIndex)
+        ? "matched"
+        : "unmatched";
     }
 
     let selectorContainerTitle;
@@ -996,11 +975,7 @@ RuleEditor.prototype = {
     this.isEditing = true;
 
     
-    const computedSelector = this.rule.domRule.hasMatchedSelectorIndexesTrait
-      ? this.rule.domRule.computedSelector
-      : 
-        
-        this.rule.domRule.desugaredSelectors?.join(", ");
+    const computedSelector = this.rule.domRule.computedSelector;
     if (this.ruleView.isSelectorHighlighted(computedSelector)) {
       await this.ruleView.toggleSelectorHighlighter(
         this.rule,

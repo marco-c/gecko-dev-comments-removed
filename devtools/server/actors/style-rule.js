@@ -293,8 +293,6 @@ class StyleRuleActor extends Actor {
         
         
         canSetRuleText: this.canSetRuleText,
-        
-        hasMatchedSelectorIndexes: true,
       },
     };
 

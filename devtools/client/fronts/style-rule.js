@@ -101,28 +101,6 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
 
 
 
-
-
-
-
-
-
-  get desugaredSelectors() {
-    
-    
-    
-    return this._form.desugaredSelectors || this._form.selectors;
-  }
-
-  
-
-
-
-
-
-
-
-
   get computedSelector() {
     let selector = "";
     for (const ancestor of this.ancestorData) {
@@ -175,11 +153,6 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
 
   get canSetRuleText() {
     return this._form.traits && this._form.traits.canSetRuleText;
-  }
-
-  
-  get hasMatchedSelectorIndexesTrait() {
-    return this._form.traits?.hasMatchedSelectorIndexes;
   }
 
   get location() {

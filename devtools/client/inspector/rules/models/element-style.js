@@ -571,12 +571,7 @@ class ElementStyle {
       
       
       const isStyleRule =
-        rule.pseudoElement === "" &&
-        
-        
-        (rule.domRule.hasMatchedSelectorIndexesTrait
-          ? !!rule.matchedSelectorIndexes.length
-          : !!rule.matchedDesugaredSelectors.length);
+        rule.pseudoElement === "" && rule.matchedSelectorIndexes.length;
 
       
       
