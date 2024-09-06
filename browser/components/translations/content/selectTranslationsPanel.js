@@ -2201,6 +2201,37 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  #maybeReportLanguageChangeToTelemetry() {
+    const {
+      fromLanguage: previousFromLanguage,
+      toLanguage: previousToLanguage,
+    } = this.#translationState;
+    const {
+      fromLanguage: selectedFromLanguage,
+      toLanguage: selectedToLanguage,
+    } = this.#getSelectedLanguagePair();
+
+    if (selectedFromLanguage !== previousFromLanguage) {
+      const { docLangTag } = this.#getLanguageInfo();
+      TranslationsParent.telemetry()
+        .selectTranslationsPanel()
+        .onChangeFromLanguage({
+          previousLangTag: previousFromLanguage,
+          currentLangTag: selectedFromLanguage,
+          docLangTag,
+        });
+    } else if (selectedToLanguage !== previousToLanguage) {
+      TranslationsParent.telemetry()
+        .selectTranslationsPanel()
+        .onChangeToLanguage(selectedToLanguage);
+    }
+  }
+
+  
+
+
+
+
 
 
   #maybeTranslateOnEvents(eventTypes, target) {
@@ -2214,6 +2245,7 @@ var SelectTranslationsPanel = new (class {
           case "focus":
           case "popuphidden": {
             callback = () => {
+              this.#maybeReportLanguageChangeToTelemetry();
               this.#maybeRequestTranslation();
             };
             break;
@@ -2221,6 +2253,7 @@ var SelectTranslationsPanel = new (class {
           case "keypress": {
             callback = event => {
               if (event.key === "Enter") {
+                this.#maybeReportLanguageChangeToTelemetry();
                 this.#maybeRequestTranslation();
               }
             };
