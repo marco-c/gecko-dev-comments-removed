@@ -13,8 +13,11 @@
 namespace mozilla {
 
 struct CycleCollectorStats {
-  CycleCollectorStats() = default;
-  void Init();
+  
+  
+  static CycleCollectorStats* Get();
+
+  CycleCollectorStats();
   void Clear();
   void PrepareForCycleCollection(TimeStamp aNow);
   void AfterPrepareForCycleCollectionSlice(TimeStamp aDeadline,
