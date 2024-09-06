@@ -182,6 +182,15 @@ class SVGContentUtils {
   
 
 
+
+
+
+
+  static float GetLineHeight(const mozilla::dom::Element* aElement);
+
+  
+
+
   static nsresult ReportToConsole(const dom::Document* doc,
                                   const char* aWarning,
                                   const nsTArray<nsString>& aParams);

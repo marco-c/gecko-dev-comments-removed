@@ -2909,6 +2909,13 @@ class CanvasUserSpaceMetrics : public UserSpaceMetricsWithSize {
     return GetCSSViewportSizeFromContext(mPresContext);
   }
 
+  float GetLineHeight(Type aType) const override {
+    
+    
+    
+    return 1.0f;
+  }
+
  private:
   GeckoFontMetrics GetFontMetricsForType(Type aType) const override {
     switch (aType) {
