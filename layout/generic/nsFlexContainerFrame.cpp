@@ -4887,7 +4887,13 @@ void nsFlexContainerFrame::UnionInFlowChildOverflow(
   
   nsRect itemMarginBoxes;
   
-  nsRect relPosItemMarginBoxes;
+  
+  
+  
+  
+  
+  
+  OverflowAreas relPosItemMarginBoxes;
   const bool useMozBoxCollapseBehavior =
       StyleVisibility()->UseLegacyCollapseBehavior();
   for (nsIFrame* f : mFrames) {
@@ -4906,8 +4912,13 @@ void nsFlexContainerFrame::UnionInFlowChildOverflow(
       const nsRect marginRect = f->GetMarginRectRelativeToSelf();
       itemMarginBoxes =
           itemMarginBoxes.Union(marginRect + f->GetNormalPosition());
-      relPosItemMarginBoxes =
-          relPosItemMarginBoxes.Union(marginRect + f->GetPosition());
+      if (f->IsRelativelyPositioned()) {
+        relPosItemMarginBoxes.UnionAllWith(marginRect + f->GetPosition());
+      } else {
+        MOZ_ASSERT(f->IsStickyPositioned());
+        relPosItemMarginBoxes.UnionWith(
+            OverflowAreas(marginRect + f->GetPosition(), nsRect()));
+      }
     } else {
       itemMarginBoxes = itemMarginBoxes.Union(f->GetMarginRect());
     }
@@ -4916,7 +4927,7 @@ void nsFlexContainerFrame::UnionInFlowChildOverflow(
   if (anyScrolledContentItem) {
     itemMarginBoxes.Inflate(GetUsedPadding());
     aOverflowAreas.UnionAllWith(itemMarginBoxes);
-    aOverflowAreas.UnionAllWith(relPosItemMarginBoxes);
+    aOverflowAreas.UnionWith(relPosItemMarginBoxes);
   }
 }
 
