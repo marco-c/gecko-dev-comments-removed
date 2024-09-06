@@ -1045,6 +1045,18 @@ const POLICIES_TESTS = [
       "extensions.formautofill.creditCards.enabled": false,
     },
   },
+
+  
+  {
+    policies: {
+      Proxy: {
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "network.proxy.type": 5,
+    },
+  },
 ];
 
 add_task(async function test_policy_simple_prefs() {
