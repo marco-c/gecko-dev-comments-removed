@@ -1987,7 +1987,12 @@ bool BacktrackingAllocator::tryMergeReusedRegister(VirtualRegister& def,
   
   
   
-  const uint32_t RANGE_SIZE_CUTOFF = 1000000;
+  
+  
+  
+  
+  
+  const uint32_t RANGE_SIZE_CUTOFF = 250000;
   if (inputRange->to() - inputRange->from() > RANGE_SIZE_CUTOFF) {
     def.setMustCopyInput();
     return true;
