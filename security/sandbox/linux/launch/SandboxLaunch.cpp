@@ -43,6 +43,7 @@
 #include "nsThreadUtils.h"
 #include "prenv.h"
 #include "sandbox/linux/system_headers/linux_syscalls.h"
+#include "sandbox/linux/services/syscall_wrappers.h"
 
 #ifdef MOZ_X11
 #  ifndef MOZ_WIDGET_GTK
@@ -53,6 +54,11 @@
 #  include <gdk/gdkx.h>
 #  include "X11UndefineNone.h"
 #  include "gfxPlatform.h"
+#endif
+
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
+
+#  define LIBC_GLIBC 1
 #endif
 
 namespace mozilla {
@@ -448,6 +454,22 @@ static void ResetSignalHandlers() {
 
 namespace {
 
+#if defined(LIBC_GLIBC)
+
+
+
+
+
+#  if !defined(CHECK_EQ)
+#    define CHECK_EQ(a, b) MOZ_ASSERT((a) == (b))
+#  endif
+
+
+using namespace sandbox;
+
+#  include "glibc_hack/namespace_sandbox.inc"
+#endif  
+
 
 
 
@@ -515,6 +537,9 @@ static pid_t ForkWithFlags(int aFlags) {
   }
   RestoreSignals(&oldSigs);
   
+#if defined(LIBC_GLIBC)
+  MaybeUpdateGlibcTidCache();
+#endif
   return ret;
 }
 
