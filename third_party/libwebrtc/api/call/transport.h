@@ -27,7 +27,7 @@ struct PacketOptions {
 
   
   
-  int packet_id = -1;
+  int64_t packet_id = -1;
   
   bool is_retransmit = false;
   bool included_in_feedback = false;
