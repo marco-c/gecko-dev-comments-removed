@@ -27,25 +27,11 @@ class SharedSSLState {
   
   void ResetStoredData();
   void NotePrivateBrowsingStatus();
-  void SetOCSPStaplingEnabled(bool staplingEnabled) {
-    mOCSPStaplingEnabled = staplingEnabled;
-  }
-  void SetOCSPMustStapleEnabled(bool mustStapleEnabled) {
-    mOCSPMustStapleEnabled = mustStapleEnabled;
-  }
-  void SetSignedCertTimestampsEnabled(bool signedCertTimestampsEnabled) {
-    mSignedCertTimestampsEnabled = signedCertTimestampsEnabled;
-  }
 
   
   bool SocketCreated();
   void NoteSocketCreated();
   static void NoteCertOverrideServiceInstantiated();
-  bool IsOCSPStaplingEnabled() const { return mOCSPStaplingEnabled; }
-  bool IsOCSPMustStapleEnabled() const { return mOCSPMustStapleEnabled; }
-  bool IsSignedCertTimestampsEnabled() const {
-    return mSignedCertTimestampsEnabled;
-  }
 
  private:
   ~SharedSSLState();
@@ -60,9 +46,6 @@ class SharedSSLState {
   
   Mutex mMutex MOZ_UNANNOTATED;
   bool mSocketCreated;
-  bool mOCSPStaplingEnabled;
-  bool mOCSPMustStapleEnabled;
-  bool mSignedCertTimestampsEnabled;
 };
 
 SharedSSLState* PublicSSLState();

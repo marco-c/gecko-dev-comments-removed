@@ -931,7 +931,6 @@ nsresult CommonInit() {
 
   mozilla::pkix::RegisterErrorTable();
   SharedSSLState::GlobalInit();
-  SetValidationOptionsCommon();
 
   return NS_OK;
 }
@@ -981,37 +980,6 @@ bool HandleTLSPrefChange(const nsCString& prefName) {
     prefFound = false;
   }
   return prefFound;
-}
-
-void SetValidationOptionsCommon() {
-  
-  
-  bool ocspStaplingEnabled = StaticPrefs::security_ssl_enable_ocsp_stapling();
-  PublicSSLState()->SetOCSPStaplingEnabled(ocspStaplingEnabled);
-  PrivateSSLState()->SetOCSPStaplingEnabled(ocspStaplingEnabled);
-
-  bool ocspMustStapleEnabled =
-      StaticPrefs::security_ssl_enable_ocsp_must_staple();
-  PublicSSLState()->SetOCSPMustStapleEnabled(ocspMustStapleEnabled);
-  PrivateSSLState()->SetOCSPMustStapleEnabled(ocspMustStapleEnabled);
-
-  const CertVerifier::CertificateTransparencyMode defaultCTMode =
-      CertVerifier::CertificateTransparencyMode::TelemetryOnly;
-  CertVerifier::CertificateTransparencyMode ctMode =
-      static_cast<CertVerifier::CertificateTransparencyMode>(
-          StaticPrefs::security_pki_certificate_transparency_mode());
-  switch (ctMode) {
-    case CertVerifier::CertificateTransparencyMode::Disabled:
-    case CertVerifier::CertificateTransparencyMode::TelemetryOnly:
-      break;
-    default:
-      ctMode = defaultCTMode;
-      break;
-  }
-  bool sctsEnabled =
-      ctMode != CertVerifier::CertificateTransparencyMode::Disabled;
-  PublicSSLState()->SetSignedCertTimestampsEnabled(sctsEnabled);
-  PrivateSSLState()->SetSignedCertTimestampsEnabled(sctsEnabled);
 }
 
 namespace {
@@ -1126,21 +1094,8 @@ void nsNSSComponent::setValidationOptions(
     return;
   }
 
-  SetValidationOptionsCommon();
-
-  const CertVerifier::CertificateTransparencyMode defaultCTMode =
-      CertVerifier::CertificateTransparencyMode::TelemetryOnly;
   CertVerifier::CertificateTransparencyMode ctMode =
-      static_cast<CertVerifier::CertificateTransparencyMode>(
-          StaticPrefs::security_pki_certificate_transparency_mode());
-  switch (ctMode) {
-    case CertVerifier::CertificateTransparencyMode::Disabled:
-    case CertVerifier::CertificateTransparencyMode::TelemetryOnly:
-      break;
-    default:
-      ctMode = defaultCTMode;
-      break;
-  }
+      GetCertificateTransparencyMode();
 
   
   
@@ -2183,6 +2138,23 @@ UniqueCERTCertList FindClientCertificatesWithPrivateKeys() {
   }
 
   return certsWithPrivateKeys;
+}
+
+CertVerifier::CertificateTransparencyMode GetCertificateTransparencyMode() {
+  const CertVerifier::CertificateTransparencyMode defaultCTMode =
+      CertVerifier::CertificateTransparencyMode::TelemetryOnly;
+  CertVerifier::CertificateTransparencyMode ctMode =
+      static_cast<CertVerifier::CertificateTransparencyMode>(
+          StaticPrefs::security_pki_certificate_transparency_mode());
+  switch (ctMode) {
+    case CertVerifier::CertificateTransparencyMode::Disabled:
+    case CertVerifier::CertificateTransparencyMode::TelemetryOnly:
+      break;
+    default:
+      ctMode = defaultCTMode;
+      break;
+  }
+  return ctMode;
 }
 
 }  
