@@ -7,6 +7,10 @@ const { MiscDataBackupResource } = ChromeUtils.importESModule(
   "resource:///modules/backup/MiscDataBackupResource.sys.mjs"
 );
 
+const { ActivityStreamStorage } = ChromeUtils.importESModule(
+  "resource://activity-stream/lib/ActivityStreamStorage.sys.mjs"
+);
+
 
 
 
@@ -85,6 +89,18 @@ add_task(async function test_backup() {
   };
   sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
 
+  let snippetsTableStub = {
+    getAllKeys: sandbox.stub().resolves(["key1", "key2"]),
+    get: sandbox.stub().callsFake(key => {
+      return { key: `value for ${key}` };
+    }),
+  };
+
+  sandbox
+    .stub(ActivityStreamStorage.prototype, "getDbTable")
+    .withArgs("snippets")
+    .resolves(snippetsTableStub);
+
   await miscDataBackupResource.backup(stagingPath, sourcePath);
 
   await assertFilesExist(stagingPath, simpleCopyFiles);
@@ -105,6 +121,24 @@ add_task(async function test_backup() {
   
   
   
+  
+  let snippetsBackupPath = PathUtils.join(
+    stagingPath,
+    "activity-stream-snippets.json"
+  );
+  Assert.ok(
+    await IOUtils.exists(snippetsBackupPath),
+    "The activity-stream-snippets.json file should exist"
+  );
+  let snippetsBackupContents = await IOUtils.readJSON(snippetsBackupPath);
+  Assert.deepEqual(
+    snippetsBackupContents,
+    {
+      key1: { key: "value for key1" },
+      key2: { key: "value for key2" },
+    },
+    "The contents of the activity-stream-snippets.json file should be as expected"
+  );
 
   await maybeRemovePath(stagingPath);
   await maybeRemovePath(sourcePath);
