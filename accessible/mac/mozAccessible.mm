@@ -889,9 +889,12 @@ struct RoleDescrComparator {
   
   
   
-  if (mGeckoAccessible->IsLocal() &&
-      [[self moxDOMIdentifier] isEqualToString:@"a11y-announcement"] &&
-      [[self moxParent] isKindOfClass:[mozRootAccessible class]]) {
+  
+  DocAccessible* maybeRoot = mGeckoAccessible->IsLocal()
+                                 ? mGeckoAccessible->AsLocal()->Document()
+                                 : nullptr;
+  if (maybeRoot && maybeRoot->IsRoot() &&
+      [[self moxDOMIdentifier] isEqualToString:@"a11y-announcement"]) {
     
     
     NSArray* children = [self moxChildren];
@@ -908,20 +911,23 @@ struct RoleDescrComparator {
 
     NSDictionary* info = @{
       NSAccessibilityAnnouncementKey : key ? key : @(""),
-      NSAccessibilityPriorityKey : @(NSAccessibilityPriorityMedium)
+      
+      
+      NSAccessibilityPriorityKey : @(NSAccessibilityPriorityHigh)
     };
 
-    id window = [self moxWindow];
-
+    
+    
     
     
     
     
     
     xpcAccessibleMacEvent::FireEvent(
-        window, NSAccessibilityAnnouncementRequestedNotification, info);
+        GetNativeFromGeckoAccessible(maybeRoot),
+        NSAccessibilityAnnouncementRequestedNotification, info);
     NSAccessibilityPostNotificationWithUserInfo(
-        window, NSAccessibilityAnnouncementRequestedNotification, info);
+        NSApp, NSAccessibilityAnnouncementRequestedNotification, info);
   }
 }
 
