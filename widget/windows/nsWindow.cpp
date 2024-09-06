@@ -7724,23 +7724,6 @@ bool nsWindow::GetPopupsToRollup(nsIRollupListener* aRollupListener,
   return true;
 }
 
-
-bool nsWindow::NeedsToHandleNCActivateDelayed(HWND aWnd) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  nsWindow* window = WinUtils::GetNSWindowPtr(aWnd);
-  return window && !window->IsPopup();
-}
-
 static bool IsTouchSupportEnabled(HWND aWnd) {
   nsWindow* topWindow =
       WinUtils::GetNSWindowPtr(WinUtils::GetTopLevelHWND(aWnd, true));
@@ -7794,8 +7777,6 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
     return false;
   }
 
-  static bool sSendingNCACTIVATE = false;
-  static bool sPendingNCACTIVATE = false;
   uint32_t popupsToRollup = UINT32_MAX;
 
   bool consumeRollupEvent = false;
@@ -7888,109 +7869,29 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
       break;
 
     case WM_ACTIVATE: {
+      
+      
       WndProcUrgentInvocation::Marker _marker;
 
+      nsWindow* window = WinUtils::GetNSWindowPtr(aWnd);
+      nsWindow* prevWindow =
+          WinUtils::GetNSWindowPtr(reinterpret_cast<HWND>(aLParam));
       
       
-      if (LOWORD(aWParam) == WA_ACTIVE && aLParam) {
-        nsWindow* window = WinUtils::GetNSWindowPtr(aWnd);
-        if (window && (window->IsPopup() || window->mIsAlert)) {
-          
-          
-          sJustGotDeactivate = false;
-          
-          ::PostMessageW(aWnd, MOZ_WM_REACTIVATE, aWParam, aLParam);
-          return true;
-        }
-        
-        
-        nsWindow* prevWindow =
-            WinUtils::GetNSWindowPtr(reinterpret_cast<HWND>(aLParam));
-        if (prevWindow && prevWindow->IsPopup()) {
-          
-          
-          
-          return true;
-        }
-      } else if (LOWORD(aWParam) == WA_INACTIVE) {
-        nsWindow* activeWindow =
-            WinUtils::GetNSWindowPtr(reinterpret_cast<HWND>(aLParam));
-        if (sPendingNCACTIVATE && NeedsToHandleNCActivateDelayed(aWnd)) {
-          
-          
-          if (!activeWindow || !activeWindow->IsPopup()) {
-            sSendingNCACTIVATE = true;
-            ::SendMessageW(aWnd, WM_NCACTIVATE, false, 0);
-            sSendingNCACTIVATE = false;
-          }
-          sPendingNCACTIVATE = false;
-        }
-        
-        
-        
-        
-        
-        
-        
-        if (activeWindow) {
-          if (activeWindow->IsPopup()) {
-            return true;
-          }
-          nsWindow* deactiveWindow = WinUtils::GetNSWindowPtr(aWnd);
-          if (deactiveWindow && deactiveWindow->IsPopup()) {
-            return true;
-          }
-        }
-      } else if (LOWORD(aWParam) == WA_CLICKACTIVE) {
-        
-        
-        nsWindow* window = WinUtils::GetNSWindowPtr(aWnd);
-        if ((window && window->IsPopup()) ||
-            !GetPopupsToRollup(rollupListener, &popupsToRollup)) {
-          return false;
-        }
+      
+      
+      
+      
+      if ((window && window->IsPopup()) ||
+          (prevWindow && prevWindow->IsPopup())) {
+        return false;
+      }
+      if (LOWORD(aWParam) == WA_CLICKACTIVE &&
+          !GetPopupsToRollup(rollupListener, &popupsToRollup)) {
+        return false;
       }
       allowAnimations = nsIRollupListener::AllowAnimations::No;
     } break;
-
-    case MOZ_WM_REACTIVATE:
-      
-      if (::IsWindow(reinterpret_cast<HWND>(aLParam))) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        ::SetForegroundWindow(reinterpret_cast<HWND>(aLParam));
-      }
-      return true;
-
-    case WM_NCACTIVATE:
-      if (!aWParam && !sSendingNCACTIVATE &&
-          NeedsToHandleNCActivateDelayed(aWnd)) {
-        
-        
-        ::DefWindowProcW(aWnd, aMessage, TRUE, aLParam);
-        
-        
-        *aResult = TRUE;
-        sPendingNCACTIVATE = true;
-        return true;
-      }
-      return false;
 
     case WM_MOUSEACTIVATE:
       if (!EventIsInsideWindow(popupWindow) &&
