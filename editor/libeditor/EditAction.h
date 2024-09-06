@@ -82,14 +82,17 @@ enum class EditAction {
   eUpdateComposition,
 
   
+  
+  
+  eUpdateCompositionToCommit,
+
+  
+  
   eCommitComposition,
 
   
+  
   eCancelComposition,
-
-  
-  
-  eDeleteByComposition,
 
   
   eUndo,
@@ -547,6 +550,7 @@ inline EditorInputType ToInputType(EditAction aEditAction) {
     case EditAction::ePasteAsQuotation:
       return EditorInputType::eInsertFromPasteAsQuotation;
     case EditAction::eUpdateComposition:
+    case EditAction::eUpdateCompositionToCommit:
       return EditorInputType::eInsertCompositionText;
     case EditAction::eCommitComposition:
       if (StaticPrefs::dom_input_events_conform_to_level_1()) {
@@ -558,13 +562,6 @@ inline EditorInputType ToInputType(EditAction aEditAction) {
         return EditorInputType::eInsertCompositionText;
       }
       return EditorInputType::eDeleteCompositionText;
-    case EditAction::eDeleteByComposition:
-      if (StaticPrefs::dom_input_events_conform_to_level_1()) {
-        
-        
-        return EditorInputType::eInsertCompositionText;
-      }
-      return EditorInputType::eDeleteByComposition;
     case EditAction::eInsertLinkElement:
       return EditorInputType::eInsertLink;
     case EditAction::eDeleteWordBackward:
@@ -713,9 +710,9 @@ inline bool MayEditActionDeleteSelection(const EditAction aEditAction) {
       return false;
 
     case EditAction::eUpdateComposition:
+    case EditAction::eUpdateCompositionToCommit:
     case EditAction::eCommitComposition:
     case EditAction::eCancelComposition:
-    case EditAction::eDeleteByComposition:
       return true;
 
     case EditAction::eUndo:
