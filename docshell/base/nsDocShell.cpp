@@ -333,7 +333,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mAppType(nsIDocShell::APP_TYPE_UNKNOWN),
       mLoadType(0),
       mFailedLoadType(0),
-      mMetaViewportOverride(nsIDocShell::META_VIEWPORT_OVERRIDE_NONE),
       mChannelToDisconnectOnPageHide(0),
       mCreatingDocument(false),
 #ifdef DEBUG
@@ -2377,37 +2376,6 @@ nsDocShell::ClearCachedUserAgent() {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsDocShell::GetMetaViewportOverride(
-    MetaViewportOverride* aMetaViewportOverride) {
-  NS_ENSURE_ARG_POINTER(aMetaViewportOverride);
-
-  *aMetaViewportOverride = mMetaViewportOverride;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetMetaViewportOverride(
-    MetaViewportOverride aMetaViewportOverride) {
-  
-  
-  if (!(aMetaViewportOverride == META_VIEWPORT_OVERRIDE_NONE ||
-        aMetaViewportOverride == META_VIEWPORT_OVERRIDE_ENABLED ||
-        aMetaViewportOverride == META_VIEWPORT_OVERRIDE_DISABLED)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  mMetaViewportOverride = aMetaViewportOverride;
-
-  
-  
-  if (RefPtr<PresShell> presShell = GetPresShell()) {
-    presShell->MaybeRecreateMobileViewportManager(true);
-  }
-
-  return NS_OK;
-}
-
 
 int32_t nsDocShell::ItemType() { return mItemType; }
 
@@ -2587,10 +2555,6 @@ nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
       value = false;
     }
     SetAllowDNSPrefetch(mAllowDNSPrefetch && value);
-
-    
-    
-    
   }
 
   nsCOMPtr<nsIURIContentListener> parentURIListener(do_GetInterface(parent));

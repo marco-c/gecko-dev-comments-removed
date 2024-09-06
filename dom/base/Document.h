@@ -5313,9 +5313,6 @@ class Document : public nsINode,
   
   float mSavedResolution;
 
-  
-  float mSavedResolutionBeforeMVM;
-
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
 
   bool mHasStoragePermission;
@@ -5391,11 +5388,6 @@ class Document : public nsINode,
 
   nsRefPtrHashtable<nsRefPtrHashKey<Element>, nsXULPrototypeElement>
       mL10nProtoElements;
-
-  float GetSavedResolutionBeforeMVM() { return mSavedResolutionBeforeMVM; }
-  void SetSavedResolutionBeforeMVM(float aResolution) {
-    mSavedResolutionBeforeMVM = aResolution;
-  }
 
   void LoadEventFired();
 

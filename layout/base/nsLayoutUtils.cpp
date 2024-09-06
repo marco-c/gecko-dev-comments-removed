@@ -715,11 +715,8 @@ bool nsLayoutUtils::AllowZoomingForDocument(
   }
   
   
-  
-  BrowsingContext* bc = aDocument ? aDocument->GetBrowsingContext() : nullptr;
-  return StaticPrefs::apz_allow_zooming() ||
-         (bc && bc->InRDMPane() &&
-          nsLayoutUtils::ShouldHandleMetaViewport(aDocument));
+  BrowsingContext* bc = aDocument->GetBrowsingContext();
+  return StaticPrefs::apz_allow_zooming() || (bc && bc->InRDMPane());
 }
 
 static bool HasVisibleAnonymousContents(Document* aDoc) {
@@ -9769,24 +9766,8 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
 
 
 bool nsLayoutUtils::ShouldHandleMetaViewport(const Document* aDocument) {
-  auto metaViewportOverride = nsIDocShell::META_VIEWPORT_OVERRIDE_NONE;
-  if (aDocument) {
-    if (nsIDocShell* docShell = aDocument->GetDocShell()) {
-      metaViewportOverride = docShell->GetMetaViewportOverride();
-    }
-  }
-  switch (metaViewportOverride) {
-    case nsIDocShell::META_VIEWPORT_OVERRIDE_ENABLED:
-      return true;
-    case nsIDocShell::META_VIEWPORT_OVERRIDE_DISABLED:
-      return false;
-    default:
-      MOZ_ASSERT(metaViewportOverride ==
-                 nsIDocShell::META_VIEWPORT_OVERRIDE_NONE);
-      
-      
-      return StaticPrefs::dom_meta_viewport_enabled();
-  }
+  BrowsingContext* bc = aDocument->GetBrowsingContext();
+  return StaticPrefs::dom_meta_viewport_enabled() || (bc && bc->InRDMPane());
 }
 
 

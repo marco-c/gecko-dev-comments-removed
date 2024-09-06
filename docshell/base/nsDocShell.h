@@ -1268,10 +1268,6 @@ class nsDocShell final : public nsDocLoader,
   uint32_t mFailedLoadType;
 
   
-  
-  MetaViewportOverride mMetaViewportOverride;
-
-  
   mozilla::Maybe<uint64_t> mSingleChannelId;
   uint32_t mRequestForBlockingFromBFCacheCount = 0;
 

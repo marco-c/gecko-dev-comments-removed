@@ -5657,7 +5657,7 @@ nsresult PresShell::SetResolutionAndScaleTo(float aResolution,
 
   
   
-  bool resolutionUpdated = (aResolution != GetResolution());
+  bool resolutionUpdated = aResolution != GetResolution();
 
   mLastResolutionChangeOrigin = aOrigin;
 
@@ -11321,6 +11321,11 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
     return;
   }
 
+  if (!mPresContext->IsRootContentDocumentCrossProcess()) {
+    MOZ_ASSERT(!mMobileViewportManager, "We never create MVMs for subframes");
+    return;
+  }
+
   if (mMobileViewportManager) {
     
     
@@ -11330,16 +11335,6 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
     mMVMContext = nullptr;
 
     ResetVisualViewportSize();
-
-    
-    
-    SetResolutionAndScaleTo(mDocument->GetSavedResolutionBeforeMVM(),
-                            ResolutionChangeOrigin::MainThreadRestore);
-
-    if (aAfterInitialization) {
-      
-      ForceResizeReflowWithCurrentDimensions();
-    }
   }
 
   if (mvmType) {
@@ -11347,32 +11342,33 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
     
     MOZ_ASSERT(!mMobileViewportManager);
 
-    if (mPresContext->IsRootContentDocumentCrossProcess()) {
-      
-      
-      mDocument->SetSavedResolutionBeforeMVM(mResolution.valueOr(1.0f));
-
-      mMVMContext = new GeckoMVMContext(mDocument, this);
-      mMobileViewportManager = new MobileViewportManager(mMVMContext, *mvmType);
-      if (MOZ_UNLIKELY(
-              MOZ_LOG_TEST(MobileViewportManager::gLog, LogLevel::Debug))) {
-        nsIURI* uri = mDocument->GetDocumentURI();
-        MOZ_LOG(MobileViewportManager::gLog, LogLevel::Debug,
-                ("Created MVM %p (type %d) for URI %s",
-                 mMobileViewportManager.get(), (int)*mvmType,
-                 uri ? uri->GetSpecOrDefault().get() : "(null)"));
-      }
-
-      if (aAfterInitialization) {
-        
-        mMobileViewportManager->SetInitialViewport();
-      }
+    mMVMContext = new GeckoMVMContext(mDocument, this);
+    mMobileViewportManager = new MobileViewportManager(mMVMContext, *mvmType);
+    if (MOZ_UNLIKELY(
+            MOZ_LOG_TEST(MobileViewportManager::gLog, LogLevel::Debug))) {
+      nsIURI* uri = mDocument->GetDocumentURI();
+      MOZ_LOG(
+          MobileViewportManager::gLog, LogLevel::Debug,
+          ("Created MVM %p (type %d) for URI %s", mMobileViewportManager.get(),
+           (int)*mvmType, uri ? uri->GetSpecOrDefault().get() : "(null)"));
     }
+  }
+  if (aAfterInitialization) {
+    
+    if (mMobileViewportManager) {
+      mMobileViewportManager->SetInitialViewport();
+    } else {
+      
+      ForceResizeReflowWithCurrentDimensions();
+    }
+    
+    
+    SetResolutionAndScaleTo(1.0f, ResolutionChangeOrigin::MainThreadRestore);
   }
 }
 
 bool PresShell::UsesMobileViewportSizing() const {
-  return mMobileViewportManager != nullptr &&
+  return mMobileViewportManager &&
          nsLayoutUtils::ShouldHandleMetaViewport(mDocument);
 }
 
