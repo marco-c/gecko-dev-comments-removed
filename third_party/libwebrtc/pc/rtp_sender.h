@@ -102,8 +102,7 @@ class RtpSenderInternal : public RtpSenderInterface {
 
   
   
-  virtual void SetCodecPreferences(
-      std::vector<cricket::Codec> codec_preferences) = 0;
+  virtual void SetSendCodecs(std::vector<cricket::Codec> send_codecs) = 0;
 };
 
 
@@ -221,9 +220,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
     is_transceiver_stopped_ = true;
   }
 
-  void SetCodecPreferences(
-      std::vector<cricket::Codec> codec_preferences) override {
-    codec_preferences_ = codec_preferences;
+  void SetSendCodecs(std::vector<cricket::Codec> send_codecs) override {
+    send_codecs_ = send_codecs;
   }
 
  protected:
@@ -261,7 +259,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   std::vector<std::string> stream_ids_;
   RtpParameters init_parameters_;
-  std::vector<cricket::Codec> codec_preferences_;
+  std::vector<cricket::Codec> send_codecs_;
 
   
   

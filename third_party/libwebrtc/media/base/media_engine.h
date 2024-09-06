@@ -42,14 +42,14 @@ namespace cricket {
 
 webrtc::RTCError CheckScalabilityModeValues(
     const webrtc::RtpParameters& new_parameters,
-    rtc::ArrayView<cricket::Codec> codec_preferences,
+    rtc::ArrayView<cricket::Codec> send_codecs,
     absl::optional<cricket::Codec> send_codec);
 
 
 
 webrtc::RTCError CheckRtpParametersValues(
     const webrtc::RtpParameters& new_parameters,
-    rtc::ArrayView<cricket::Codec> codec_preferences,
+    rtc::ArrayView<cricket::Codec> send_codecs,
     absl::optional<cricket::Codec> send_codec);
 
 
@@ -57,7 +57,7 @@ webrtc::RTCError CheckRtpParametersValues(
 webrtc::RTCError CheckRtpParametersInvalidModificationAndValues(
     const webrtc::RtpParameters& old_parameters,
     const webrtc::RtpParameters& new_parameters,
-    rtc::ArrayView<cricket::Codec> codec_preferences,
+    rtc::ArrayView<cricket::Codec> send_codecs,
     absl::optional<cricket::Codec> send_codec);
 
 
