@@ -2834,8 +2834,8 @@ nsFloatManager::ShapeInfo::ConvertToFloatLogical(const nscoord aRadii[8],
 
   
   
-  Side lineLeftSide =
-      aWM.PhysicalSide(aWM.LogicalSideForLineRelativeDir(eLineRelativeDirLeft));
+  Side lineLeftSide = aWM.PhysicalSide(
+      aWM.LogicalSideForLineRelativeDir(LineRelativeDir::Left));
   logicalRadii[eCornerTopLeftX] =
       aRadii[SideToHalfCorner(lineLeftSide, true, false)];
   logicalRadii[eCornerTopLeftY] =
@@ -2846,7 +2846,7 @@ nsFloatManager::ShapeInfo::ConvertToFloatLogical(const nscoord aRadii[8],
       aRadii[SideToHalfCorner(lineLeftSide, false, true)];
 
   Side lineRightSide = aWM.PhysicalSide(
-      aWM.LogicalSideForLineRelativeDir(eLineRelativeDirRight));
+      aWM.LogicalSideForLineRelativeDir(LineRelativeDir::Right));
   logicalRadii[eCornerTopRightX] =
       aRadii[SideToHalfCorner(lineRightSide, false, false)];
   logicalRadii[eCornerTopRightY] =
