@@ -314,8 +314,9 @@ def add_gnu_specific_dso_flags(
         
         
         if not use_sanitizer_runtime:
-            
-            ldopts.append("-Wl,-z,defs")
+            if target.os != "WINNT":
+                
+                ldopts.append("-Wl,-z,defs")
 
             
             if target.os in ("DragonFly", "FreeBSD", "NetBSD", "OpenBSD"):
