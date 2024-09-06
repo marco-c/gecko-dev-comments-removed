@@ -12,6 +12,15 @@ namespace mozilla::a11y {
 
 
 
+
+static const GUID IID_UiaTextRange = {
+    0x74b8e664,
+    0x4578,
+    0x4b52,
+    {0x9c, 0xbc, 0x30, 0xa7, 0xa8, 0x27, 0x1a, 0xe8}};
+
+
+
 UiaTextRange::UiaTextRange(TextLeafRange& aRange) {
   MOZ_ASSERT(aRange);
   SetRange(aRange);
@@ -38,7 +47,19 @@ TextLeafRange UiaTextRange::GetRange() const {
 }
 
 
-IMPL_IUNKNOWN1(UiaTextRange, ITextRangeProvider)
+TextLeafRange UiaTextRange::GetRangeFrom(ITextRangeProvider* aProvider) {
+  if (aProvider) {
+    RefPtr<UiaTextRange> uiaRange;
+    aProvider->QueryInterface(IID_UiaTextRange, getter_AddRefs(uiaRange));
+    if (uiaRange) {
+      return uiaRange->GetRange();
+    }
+  }
+  return TextLeafRange();
+}
+
+
+IMPL_IUNKNOWN2(UiaTextRange, ITextRangeProvider, UiaTextRange)
 
 
 

@@ -103,6 +103,7 @@ class UiaTextRange : public ITextRangeProvider {
  private:
   void SetRange(const TextLeafRange& aRange);
   TextLeafRange GetRange() const;
+  static TextLeafRange GetRangeFrom(ITextRangeProvider* aProvider);
 
   
   
