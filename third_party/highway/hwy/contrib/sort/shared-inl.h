@@ -76,7 +76,8 @@ struct SortConstants {
     
     
     
-    return (2 * kPartitionUnroll + 1) * N;
+    
+    return (2 * kPartitionUnroll + 1 + 2) * N;
   }
 
   
@@ -113,8 +114,9 @@ static_assert(SortConstants::MaxBufBytes<2>(64) <= 1280, "Unexpectedly high");
 #endif  
 
 
-#if defined(HIGHWAY_HWY_CONTRIB_SORT_SHARED_TOGGLE) == \
-    defined(HWY_TARGET_TOGGLE)
+
+#if defined(HIGHWAY_HWY_CONTRIB_SORT_SHARED_TOGGLE) == defined(HWY_TARGET_TOGGLE) 
+
 #ifdef HIGHWAY_HWY_CONTRIB_SORT_SHARED_TOGGLE
 #undef HIGHWAY_HWY_CONTRIB_SORT_SHARED_TOGGLE
 #else
@@ -125,10 +127,12 @@ static_assert(SortConstants::MaxBufBytes<2>(64) <= 1280, "Unexpectedly high");
 
 
 
+
 #undef VQSORT_ENABLED
 #if (HWY_TARGET == HWY_SCALAR) ||                 \
     (HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD) || \
-    (HWY_ARCH_ARM_V7 && HWY_IS_DEBUG_BUILD)
+    (HWY_ARCH_ARM_V7 && HWY_IS_DEBUG_BUILD) ||    \
+    (HWY_ARCH_ARM_A64 && HWY_COMPILER_GCC_ACTUAL && HWY_IS_ASAN)
 #define VQSORT_ENABLED 0
 #else
 #define VQSORT_ENABLED 1
