@@ -144,7 +144,7 @@ void nsTextControlFrame::Destroy(DestroyContext& aContext) {
   
   
   if (nsCOMPtr<nsIDragSession> dragSession =
-        nsContentUtils::GetDragSession(PresContext())) {
+          nsContentUtils::GetDragSession(PresContext())) {
     if (dragSession->IsDraggingTextInTextControl() && mRootNode &&
         mRootNode->GetFirstChild()) {
       nsCOMPtr<nsINode> sourceNode;
@@ -483,7 +483,7 @@ bool nsTextControlFrame::ShouldInitializeEagerly() const {
   
   
   if (nsCOMPtr<nsIDragSession> dragSession =
-        nsContentUtils::GetDragSession(PresContext())) {
+          nsContentUtils::GetDragSession(PresContext())) {
     if (dragSession->IsDraggingTextInTextControl()) {
       nsCOMPtr<nsINode> sourceNode;
       if (NS_SUCCEEDED(
@@ -1219,7 +1219,7 @@ nsTextControlFrame::EditorInitializer::Run() {
   
   
   if (nsCOMPtr<nsIDragSession> dragSession =
-        nsContentUtils::GetDragSession(mFrame->PresContext())) {
+          nsContentUtils::GetDragSession(mFrame->PresContext())) {
     if (dragSession->IsDraggingTextInTextControl()) {
       nsCOMPtr<nsINode> sourceNode;
       if (NS_SUCCEEDED(

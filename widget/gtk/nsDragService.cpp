@@ -977,8 +977,8 @@ nsresult nsDragSession::EndDragSessionImpl(bool aDoneDrag,
     
     
     AddRef();
-    mTempFileTimerID = g_timeout_add(NS_DND_TMP_CLEANUP_TIMEOUT,
-                                     TaskRemoveTempFiles, this);
+    mTempFileTimerID =
+        g_timeout_add(NS_DND_TMP_CLEANUP_TIMEOUT, TaskRemoveTempFiles, this);
     mTempFileUrls.Clear();
   }
 
