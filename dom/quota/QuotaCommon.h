@@ -1493,9 +1493,49 @@ Nothing HandleErrorWithCleanupReturnNothing(const char* aExpr, const T& aRv,
   return Nothing();
 }
 
-template <size_t NFunc, size_t NExpr, typename T, typename CustomRetVal>
+
+#if defined(__GNUC__) && !defined(__clang__)
+namespace gcc_detail {
+
+template <typename T>
+struct invokabilize_impl {
+  auto operator()(T t) -> T { return t; }
+};
+
+template <typename R, typename... Args>
+struct invokabilize_impl<R (&)(Args...)> {
+  auto operator()(R (&t)(Args...)) -> std::function<R(Args...)> {
+    return std::function{t};
+  }
+};
+
+template <typename R, typename... Args>
+struct invokabilize_impl<R (*)(Args...)> {
+  auto operator()(R (*t)(Args...)) -> std::function<R(Args...)> {
+    return std::function{t};
+  }
+};
+
+template <typename T>
+auto invokabilize(T t) {
+  return invokabilize_impl<T>{}(std::forward<T>(t));
+}
+}  
+#endif
+
+template <size_t NFunc, size_t NExpr, typename T, typename CustomRetVal_>
 auto HandleCustomRetVal(const char (&aFunc)[NFunc], const char (&aExpr)[NExpr],
-                        const T& aRv, CustomRetVal&& aCustomRetVal) {
+                        const T& aRv, CustomRetVal_&& aCustomRetVal_) {
+#if defined(__GNUC__) && !defined(__clang__)
+  
+  
+  auto aCustomRetVal =
+      gcc_detail::invokabilize(std::forward<CustomRetVal_>(aCustomRetVal_));
+  using CustomRetVal = decltype(aCustomRetVal);
+#else
+  using CustomRetVal = CustomRetVal_;
+  CustomRetVal& aCustomRetVal = aCustomRetVal_;
+#endif
   if constexpr (std::is_invocable<CustomRetVal, const char[NFunc],
                                   const char[NExpr]>::value) {
     return std::forward<CustomRetVal>(aCustomRetVal)(aFunc, aExpr);
