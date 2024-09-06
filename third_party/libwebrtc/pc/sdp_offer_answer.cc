@@ -3578,8 +3578,7 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
 
   
   error = ValidateSsrcGroups(*sdesc->description());
-  if (!error.ok() &&
-      !pc_->trials().IsDisabled("WebRTC-PreventSsrcGroupsWithUnexpectedSize")) {
+  if (!error.ok()) {
     return error;
   }
 
