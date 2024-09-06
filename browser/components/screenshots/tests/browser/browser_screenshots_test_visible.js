@@ -45,7 +45,7 @@ add_task(async function test_visibleScreenshot() {
       
       let visiblePageButton = panel
         .querySelector("screenshots-buttons")
-        .shadowRoot.querySelector("#visible-page");
+        .shadowRoot.querySelector(".visible-page");
       visiblePageButton.click();
 
       await screenshotReady;
@@ -142,7 +142,7 @@ add_task(async function test_visibleScreenshotScrolledY() {
       
       let visiblePageButton = panel
         .querySelector("screenshots-buttons")
-        .shadowRoot.querySelector("#visible-page");
+        .shadowRoot.querySelector(".visible-page");
       visiblePageButton.click();
 
       await screenshotReady;
@@ -239,7 +239,7 @@ add_task(async function test_visibleScreenshotScrolledX() {
       
       let visiblePageButton = panel
         .querySelector("screenshots-buttons")
-        .shadowRoot.querySelector("#visible-page");
+        .shadowRoot.querySelector(".visible-page");
       visiblePageButton.click();
 
       await screenshotReady;
@@ -336,7 +336,7 @@ add_task(async function test_visibleScreenshotScrolledXAndY() {
       
       let visiblePageButton = panel
         .querySelector("screenshots-buttons")
-        .shadowRoot.querySelector("#visible-page");
+        .shadowRoot.querySelector(".visible-page");
       visiblePageButton.click();
 
       await screenshotReady;
