@@ -77,6 +77,15 @@ function createDirectFromSellerSignalsURL(origin = window.location.origin) {
   return url.toString();
 }
 
+function createUpdateURL(params = {}) {
+  let origin = window.location.origin;
+  let url = new URL(`${origin}${RESOURCE_PATH}update-url.py`);
+  url.searchParams.append('body', params.body);
+  url.searchParams.append('uuid', params.uuid);
+
+  return url.toString();
+}
+
 
 
 
