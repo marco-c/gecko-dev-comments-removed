@@ -6377,6 +6377,12 @@ void CodeGenerator::emitAllocateSpaceForApply(Register argcreg,
     MOZ_ASSERT(JitStackValueAlignment == 2);
     Label noPaddingNeeded;
     
+    
+    
+    
+    
+    
+    
     masm.branchTestPtr(Assembler::NonZero, argcreg, Imm32(1), &noPaddingNeeded);
     masm.addPtr(Imm32(1), scratch);
     masm.bind(&noPaddingNeeded);
@@ -6418,6 +6424,12 @@ void CodeGenerator::emitAllocateSpaceForConstructAndPushNewTarget(
 
     Label noPaddingNeeded;
     
+    
+    
+    
+    
+    
+    
     masm.branchTestPtr(Assembler::Zero, argcreg, Imm32(1), &noPaddingNeeded);
     masm.pushValue(MagicValue(JS_ARG_POISON));
     masm.bind(&noPaddingNeeded);
@@ -6443,7 +6455,6 @@ void CodeGenerator::emitCopyValuesForApply(Register argvSrcBase,
   Label loop;
   masm.bind(&loop);
 
-  
   
   
   BaseValueIndex srcPtr(argvSrcBase, argvIndex,
@@ -6494,6 +6505,9 @@ void CodeGenerator::emitPushArguments(Register argcreg, Register scratch,
   
 
   
+  
+  
+  
   Register argvSrcBase = FramePointer;
   size_t argvSrcOffset =
       JitFrameLayout::offsetOfActualArgs() + extraFormals * sizeof(JS::Value);
@@ -6517,6 +6531,7 @@ void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
   Register copyreg = ToRegister(apply->getTempObject());
   uint32_t extraFormals = apply->numExtraFormals();
 
+  
   emitAllocateSpaceForApply(argcreg, scratch);
 
   emitPushArguments(argcreg, scratch, copyreg, extraFormals);
@@ -6547,6 +6562,7 @@ void CodeGenerator::emitPushArguments(LApplyArgsObj* apply, Register scratch) {
   
   emitPushArrayAsArguments(tmpArgc, argsObj, scratch, argsSrcOffset);
 
+  
   masm.pushValue(ToValue(apply, LApplyArgsObj::ThisIndex));
 }
 
@@ -6570,29 +6586,30 @@ void CodeGenerator::emitPushArrayAsArguments(Register tmpArgc,
 
   
   masm.branchTestPtr(Assembler::Zero, tmpArgc, tmpArgc, &noCopy);
+  {
+    
+    size_t argvDstOffset = 0;
 
-  
-  
-  size_t argvDstOffset = 0;
+    Register argvSrcBase = srcBaseAndArgc;
 
-  Register argvSrcBase = srcBaseAndArgc;
-  Register copyreg = scratch;
+    
+    masm.push(tmpArgc);
+    Register argvIndex = tmpArgc;
+    argvDstOffset += sizeof(void*);
 
-  masm.push(tmpArgc);
-  Register argvIndex = tmpArgc;
-  argvDstOffset += sizeof(void*);
+    
+    emitCopyValuesForApply(argvSrcBase, argvIndex, scratch, argvSrcOffset,
+                           argvDstOffset);
 
-  
-  emitCopyValuesForApply(argvSrcBase, argvIndex, copyreg, argvSrcOffset,
-                         argvDstOffset);
-
-  
-  masm.pop(srcBaseAndArgc);  
-  masm.jump(&epilogue);
-
-  
+    
+    masm.pop(srcBaseAndArgc);  
+    masm.jump(&epilogue);
+  }
   masm.bind(&noCopy);
-  masm.movePtr(ImmWord(0), srcBaseAndArgc);
+  {
+    
+    masm.movePtr(ImmWord(0), srcBaseAndArgc);
+  }
 
   
   
@@ -6684,7 +6701,6 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
   
   Register argcreg = ToRegister(apply->getArgc());
 
-  
   
   
   
