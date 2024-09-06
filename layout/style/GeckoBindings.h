@@ -375,20 +375,6 @@ const mozilla::ServoElementSnapshot* Gecko_GetElementSnapshot(
 
 bool Gecko_HaveSeenPtr(mozilla::SeenPtrs* table, const void* ptr);
 
-
-
-
-void Gecko_EnsureTArrayCapacity(void* array, size_t capacity, size_t elem_size);
-
-
-
-
-
-void Gecko_ClearPODTArray(void* array, size_t elem_size, size_t elem_align);
-
-void Gecko_ResizeTArrayForStrings(nsTArray<nsString>* array, uint32_t length);
-void Gecko_ResizeAtomArray(nsTArray<RefPtr<nsAtom>>* array, uint32_t length);
-
 void Gecko_EnsureImageLayersLength(nsStyleImageLayers* layers, size_t len,
                                    nsStyleImageLayers::LayerType layer_type);
 
@@ -437,13 +423,6 @@ mozilla::Keyframe* Gecko_GetOrCreateFinalKeyframe(
     nsTArray<mozilla::Keyframe>* keyframes,
     const mozilla::StyleComputedTimingFunction* timingFunction,
     const mozilla::dom::CompositeOperationOrAuto composition);
-
-
-
-
-mozilla::PropertyValuePair* Gecko_AppendPropertyValuePair(
-    nsTArray<mozilla::PropertyValuePair>*,
-    const mozilla::AnimatedPropertyID* aProperty);
 
 void Gecko_ResetFilters(nsStyleEffects* effects, size_t new_len);
 

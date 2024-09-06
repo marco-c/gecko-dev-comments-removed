@@ -1107,11 +1107,9 @@ impl<'a> PropertyDeclarationId<'a> {
     
     
     
-    
-    
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn to_gecko_animated_property_id(&self, owned: bool) -> AnimatedPropertyID {
+    pub fn to_gecko_animated_property_id(&self) -> AnimatedPropertyID {
         match self {
             Self::Longhand(id) => AnimatedPropertyID {
                 mID: id.to_nscsspropertyid(),
@@ -1122,11 +1120,7 @@ impl<'a> PropertyDeclarationId<'a> {
                     mID: nsCSSPropertyID::eCSSPropertyExtra_variable,
                     mCustomName: RefPtr::null(),
                 };
-                property_id.mCustomName.mRawPtr = if owned {
-                    (*name).clone().into_addrefed()
-                } else {
-                    name.as_ptr()
-                };
+                property_id.mCustomName.mRawPtr = (*name).clone().into_addrefed();
                 property_id
             },
         }
