@@ -182,9 +182,6 @@ nsAppShellService::CreateTopLevelWindow(nsIAppWindow* aParent, nsIURI* aUrl,
   if (NS_SUCCEEDED(rv)) {
     
     RegisterTopLevelWindow(*aResult);
-    nsCOMPtr<nsIAppWindow> parent;
-    if (aChromeMask & nsIWebBrowserChrome::CHROME_DEPENDENT) parent = aParent;
-    (*aResult)->SetZLevel(CalculateWindowZLevel(parent, aChromeMask));
   }
 
   return rv;
@@ -466,41 +463,6 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, uint32_t aChromeMask,
 
   result.forget(aResult);
   return NS_OK;
-}
-
-uint32_t nsAppShellService::CalculateWindowZLevel(nsIAppWindow* aParent,
-                                                  uint32_t aChromeMask) {
-  uint32_t zLevel;
-
-  zLevel = nsIAppWindow::normalZ;
-  if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_RAISED)
-    zLevel = nsIAppWindow::raisedZ;
-  else if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_LOWERED)
-    zLevel = nsIAppWindow::loweredZ;
-
-#ifdef XP_MACOSX
-  
-
-
-
-
-
-  uint32_t modalDepMask =
-      nsIWebBrowserChrome::CHROME_MODAL | nsIWebBrowserChrome::CHROME_DEPENDENT;
-  if (aParent && (aChromeMask & modalDepMask)) {
-    aParent->GetZLevel(&zLevel);
-  }
-#else
-  
-
-
-
-  if ((aChromeMask & nsIWebBrowserChrome::CHROME_DEPENDENT) && aParent) {
-    aParent->GetZLevel(&zLevel);
-  }
-#endif
-
-  return zLevel;
 }
 
 

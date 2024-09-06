@@ -646,51 +646,6 @@ void nsBaseWidget::RemoveChild(nsIWidget* aChild) {
   aChild->SetPrevSibling(nullptr);
 }
 
-
-
-
-
-
-void nsBaseWidget::SetZIndex(int32_t aZIndex) {
-  
-  
-  nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
-
-  mZIndex = aZIndex;
-
-  
-  auto* parent = static_cast<nsBaseWidget*>(GetParent());
-  if (parent) {
-    parent->RemoveChild(this);
-    
-    nsIWidget* sib = parent->GetFirstChild();
-    for (; sib; sib = sib->GetNextSibling()) {
-      int32_t childZIndex = GetZIndex();
-      if (aZIndex < childZIndex) {
-        
-        nsIWidget* prev = sib->GetPrevSibling();
-        mNextSibling = sib;
-        mPrevSibling = prev;
-        sib->SetPrevSibling(this);
-        if (prev) {
-          prev->SetNextSibling(this);
-        } else {
-          NS_ASSERTION(sib == parent->mFirstChild, "Broken child list");
-          
-          
-          parent->mFirstChild = this;
-        }
-        PlaceBehind(eZPlacementBelow, sib, false);
-        break;
-      }
-    }
-    
-    if (!sib) {
-      parent->AddChild(this);
-    }
-  }
-}
-
 void nsBaseWidget::GetWorkspaceID(nsAString& workspaceID) {
   workspaceID.Truncate();
 }

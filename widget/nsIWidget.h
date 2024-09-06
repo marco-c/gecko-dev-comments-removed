@@ -215,12 +215,6 @@ enum nsCursor {
   eCursorInvalid = eCursorCount + 1
 };
 
-enum nsTopLevelWidgetZPlacement {  
-  eZPlacementBottom = 0,           
-  eZPlacementBelow,                
-  eZPlacementTop                   
-};
-
 
 
 
@@ -408,10 +402,7 @@ class nsIWidget : public nsISupports {
       : mLastChild(nullptr),
         mPrevSibling(nullptr),
         mOnDestroyCalled(false),
-        mWindowType(WindowType::Child),
-        mZIndex(0)
-
-  {
+        mWindowType(WindowType::Child) {
     ClearNativeTouchSequence(nullptr);
   }
 
@@ -797,30 +788,6 @@ class nsIWidget : public nsISupports {
 
 
   virtual void ResizeClient(const DesktopRect& aRect, bool aRepaint) = 0;
-
-  
-
-
-  virtual void SetZIndex(int32_t aZIndex) = 0;
-
-  
-
-
-  int32_t GetZIndex() { return mZIndex; }
-
-  
-
-
-
-
-
-
-
-
-
-
-  virtual void PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
-                           nsIWidget* aWidget, bool aActivate) = 0;
 
   
 
@@ -2129,7 +2096,6 @@ class nsIWidget : public nsISupports {
   
   bool mOnDestroyCalled;
   WindowType mWindowType;
-  int32_t mZIndex;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIWidget, NS_IWIDGET_IID)

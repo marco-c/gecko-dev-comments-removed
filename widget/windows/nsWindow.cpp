@@ -2111,32 +2111,6 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
 
 
 
-
-
-void nsWindow::PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
-                           nsIWidget* aWidget, bool aActivate) {
-  HWND behind = HWND_TOP;
-  if (aPlacement == eZPlacementBottom)
-    behind = HWND_BOTTOM;
-  else if (aPlacement == eZPlacementBelow && aWidget)
-    behind = (HWND)aWidget->GetNativeData(NS_NATIVE_WINDOW);
-  UINT flags = SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOSIZE;
-  if (!aActivate) flags |= SWP_NOACTIVATE;
-
-  if (!CanTakeFocus() && behind == HWND_TOP) {
-    
-    
-    HWND wndAfter = ::GetForegroundWindow();
-    if (!wndAfter)
-      behind = HWND_BOTTOM;
-    else if (!(GetWindowLongPtrW(wndAfter, GWL_EXSTYLE) & WS_EX_TOPMOST))
-      behind = wndAfter;
-    flags |= SWP_NOACTIVATE;
-  }
-
-  ::SetWindowPos(mWnd, behind, 0, 0, 0, 0, flags);
-}
-
 static UINT GetCurrentShowCmd(HWND aWnd) {
   WINDOWPLACEMENT pl;
   pl.length = sizeof(pl);
@@ -6696,39 +6670,9 @@ void nsWindow::OnWindowPosChanging(WINDOWPOS* info) {
   }
 
   
-  if (!(info->flags & SWP_NOZORDER)) {
-    HWND hwndAfter = info->hwndInsertAfter;
-
-    nsWindow* aboveWindow = 0;
-    nsWindowZ placement;
-
-    if (hwndAfter == HWND_BOTTOM)
-      placement = nsWindowZBottom;
-    else if (hwndAfter == HWND_TOP || hwndAfter == HWND_TOPMOST ||
-             hwndAfter == HWND_NOTOPMOST)
-      placement = nsWindowZTop;
-    else {
-      placement = nsWindowZRelative;
-      aboveWindow = WinUtils::GetNSWindowPtr(hwndAfter);
-    }
-
-    if (mWidgetListener) {
-      nsCOMPtr<nsIWidget> actualBelow = nullptr;
-      if (mWidgetListener->ZLevelChanged(false, &placement, aboveWindow,
-                                         getter_AddRefs(actualBelow))) {
-        if (placement == nsWindowZBottom)
-          info->hwndInsertAfter = HWND_BOTTOM;
-        else if (placement == nsWindowZTop)
-          info->hwndInsertAfter = HWND_TOP;
-        else {
-          info->hwndInsertAfter =
-              (HWND)actualBelow->GetNativeData(NS_NATIVE_WINDOW);
-        }
-      }
-    }
+  if (mWindowType == WindowType::Invisible) {
+    info->flags &= ~SWP_SHOWWINDOW;
   }
-  
-  if (mWindowType == WindowType::Invisible) info->flags &= ~SWP_SHOWWINDOW;
 
   
   

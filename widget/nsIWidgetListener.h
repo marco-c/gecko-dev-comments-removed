@@ -89,17 +89,6 @@ class nsIWidgetListener {
   
 
 
-
-
-
-
-  virtual bool ZLevelChanged(bool aImmediate, nsWindowZ* aPlacement,
-                             nsIWidget* aRequestBelow,
-                             nsIWidget** aActualBelow);
-
-  
-
-
   virtual void MacFullscreenMenubarOverlapChanged(
       mozilla::DesktopCoord aOverlapAmount);
 

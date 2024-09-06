@@ -799,7 +799,6 @@ void nsCocoaWindow::Show(bool aState) {
         [mWindow orderFront:nil];
       }
       NS_OBJC_END_TRY_IGNORE_BLOCK;
-      SendSetZLevelEvent();
       
       
       
@@ -848,7 +847,6 @@ void nsCocoaWindow::Show(bool aState) {
         [mWindow makeKeyAndOrderFront:nil];
       }
       NS_OBJC_END_TRY_IGNORE_BLOCK;
-      SendSetZLevelEvent();
     }
     SetSupportsNativeFullscreen(savedValueForSupportsNativeFullscreen);
   } else {
@@ -2056,15 +2054,6 @@ bool nsCocoaWindow::DragEvent(unsigned int aMessage,
   return false;
 }
 
-void nsCocoaWindow::SendSetZLevelEvent() {
-  if (mWidgetListener) {
-    nsWindowZ placement = nsWindowZTop;
-    nsCOMPtr<nsIWidget> actualBelow;
-    mWidgetListener->ZLevelChanged(true, &placement, nullptr,
-                                   getter_AddRefs(actualBelow));
-  }
-}
-
 
 nsresult nsCocoaWindow::DispatchEvent(WidgetGUIEvent* event,
                                       nsEventStatus& aStatus) {
@@ -2215,7 +2204,6 @@ void nsCocoaWindow::SetFocus(Raise aRaise,
       [mWindow deminiaturize:nil];
     }
     [mWindow makeKeyAndOrderFront:nil];
-    SendSetZLevelEvent();
   }
 }
 

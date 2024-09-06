@@ -171,13 +171,6 @@ void HeadlessWidget::RaiseWindow() {
   }
 
   
-  nsWindowZ placement = nsWindowZTop;
-  nsCOMPtr<nsIWidget> actualBelow;
-  if (mWidgetListener)
-    mWidgetListener->ZLevelChanged(true, &placement, nullptr,
-                                   getter_AddRefs(actualBelow));
-
-  
   if (activeWindow && activeWindow->mWidgetListener) {
     activeWindow->mWidgetListener->WindowDeactivated();
   }
