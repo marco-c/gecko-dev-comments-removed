@@ -4361,8 +4361,6 @@ var TabsProgressListener = {
       return;
     }
 
-    Services.obs.notifyObservers(aBrowser, "mailto::onLocationChange", aFlags);
-
     
     
     
@@ -4376,6 +4374,10 @@ var TabsProgressListener = {
     }
 
     gBrowser.readNotificationBox(aBrowser)?.removeTransientNotifications();
+
+    
+    
+    Services.obs.notifyObservers(aBrowser, "mailto::onLocationChange", aFlags);
 
     FullZoom.onLocationChange(aLocationURI, false, aBrowser);
     CaptivePortalWatcher.onLocationChange(aBrowser);
