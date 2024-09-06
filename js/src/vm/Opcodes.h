@@ -422,6 +422,19 @@
 
 
 
+ \
+    MACRO(TypeofEq, typeof_eq, NULL, 2, 1, 1, JOF_UINT8|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2875,6 +2888,7 @@
 
 
 
+
  \
     MACRO(GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_IC|JOF_USES_ENV) \
     
@@ -3635,14 +3649,13 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(235))     \
   IF_RECORD_TUPLE(, MACRO(236))     \
   IF_RECORD_TUPLE(, MACRO(237))     \
   IF_RECORD_TUPLE(, MACRO(238))     \
   IF_RECORD_TUPLE(, MACRO(239))     \
   IF_RECORD_TUPLE(, MACRO(240))     \
   IF_RECORD_TUPLE(, MACRO(241))     \
-  MACRO(242)                                   \
+  IF_RECORD_TUPLE(, MACRO(242))     \
   MACRO(243)                                   \
   MACRO(244)                                   \
   MACRO(245)                                   \

@@ -925,6 +925,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   [[nodiscard]] bool emitTypeof(UnaryNode* typeofNode, JSOp op);
 
+  [[nodiscard]] bool tryEmitTypeofEq(ListNode* node, bool* emitted);
+
   [[nodiscard]] bool emitUnary(UnaryNode* unaryNode);
   [[nodiscard]] bool emitRightAssociative(ListNode* node);
   [[nodiscard]] bool emitLeftAssociative(ListNode* node);

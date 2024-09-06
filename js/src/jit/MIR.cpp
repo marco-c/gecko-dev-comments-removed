@@ -4315,11 +4315,56 @@ static JSType TypeOfName(JSLinearString* str) {
   return JSTYPE_LIMIT;
 }
 
-static mozilla::Maybe<std::pair<MTypeOfName*, JSType>> IsTypeOfCompare(
-    MCompare* ins) {
+struct TypeOfCompareInput {
+  
+  
+  
+  MDefinition* typeOfSide;
+
+  
+  MTypeOf* typeOf;
+
+  
+  JSType type;
+
+  
+  bool isIntComparison;
+
+  TypeOfCompareInput(MDefinition* typeOfSide, MTypeOf* typeOf, JSType type,
+                     bool isIntComparison)
+      : typeOfSide(typeOfSide),
+        typeOf(typeOf),
+        type(type),
+        isIntComparison(isIntComparison) {}
+};
+
+static mozilla::Maybe<TypeOfCompareInput> IsTypeOfCompare(MCompare* ins) {
   if (!IsEqualityOp(ins->jsop())) {
     return mozilla::Nothing();
   }
+
+  if (ins->compareType() == MCompare::Compare_Int32) {
+    auto* lhs = ins->lhs();
+    auto* rhs = ins->rhs();
+
+    if (ins->type() != MIRType::Boolean || lhs->type() != MIRType::Int32 ||
+        rhs->type() != MIRType::Int32) {
+      return mozilla::Nothing();
+    }
+
+    
+    
+    if (!lhs->isTypeOf() || !rhs->isConstant()) {
+      return mozilla::Nothing();
+    }
+
+    auto* typeOf = lhs->toTypeOf();
+    auto* constant = rhs->toConstant();
+
+    JSType type = JSType(constant->toInt32());
+    return mozilla::Some(TypeOfCompareInput(typeOf, typeOf, type, true));
+  }
+
   if (ins->compareType() != MCompare::Compare_String) {
     return mozilla::Nothing();
   }
@@ -4340,21 +4385,21 @@ static mozilla::Maybe<std::pair<MTypeOfName*, JSType>> IsTypeOfCompare(
 
   auto* typeOfName =
       lhs->isTypeOfName() ? lhs->toTypeOfName() : rhs->toTypeOfName();
-  MOZ_ASSERT(typeOfName->input()->isTypeOf());
+  auto* typeOf = typeOfName->input()->toTypeOf();
 
   auto* constant = lhs->isConstant() ? lhs->toConstant() : rhs->toConstant();
 
   JSType type = TypeOfName(&constant->toString()->asLinear());
-  return mozilla::Some(std::pair(typeOfName, type));
+  return mozilla::Some(TypeOfCompareInput(typeOfName, typeOf, type, false));
 }
 
 bool MCompare::tryFoldTypeOf(bool* result) {
-  auto typeOfPair = IsTypeOfCompare(this);
-  if (!typeOfPair) {
+  auto typeOfCompare = IsTypeOfCompare(this);
+  if (!typeOfCompare) {
     return false;
   }
-  auto [typeOfName, type] = *typeOfPair;
-  auto* typeOf = typeOfName->input()->toTypeOf();
+  auto* typeOf = typeOfCompare->typeOf;
+  JSType type = typeOfCompare->type;
 
   switch (type) {
     case JSTYPE_BOOLEAN:
@@ -4644,12 +4689,12 @@ bool MCompare::evaluateConstantOperands(TempAllocator& alloc, bool* result) {
 }
 
 MDefinition* MCompare::tryFoldTypeOf(TempAllocator& alloc) {
-  auto typeOfPair = IsTypeOfCompare(this);
-  if (!typeOfPair) {
+  auto typeOfCompare = IsTypeOfCompare(this);
+  if (!typeOfCompare) {
     return this;
   }
-  auto [typeOfName, type] = *typeOfPair;
-  auto* typeOf = typeOfName->input()->toTypeOf();
+  auto* typeOf = typeOfCompare->typeOf;
+  JSType type = typeOfCompare->type;
 
   auto* input = typeOf->input();
   MOZ_ASSERT(input->type() == MIRType::Value ||
@@ -4681,8 +4726,13 @@ MDefinition* MCompare::tryFoldTypeOf(TempAllocator& alloc) {
   
   
   
-  if (typeOfName->hasOneUse()) {
+  if (typeOfCompare->typeOfSide->hasOneUse()) {
     return MTypeOfIs::New(alloc, input, jsop(), type);
+  }
+
+  if (typeOfCompare->isIntComparison) {
+    
+    return this;
   }
 
   MConstant* cst = MConstant::New(alloc, Int32Value(type));
