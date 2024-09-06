@@ -74,13 +74,34 @@ class Tiers {
 
 
 struct FeatureOptions {
-  FeatureOptions() : isBuiltinModule(false), jsStringBuiltins(false) {}
+  FeatureOptions()
+      : isBuiltinModule(false),
+        jsStringBuiltins(false)
+#ifdef ENABLE_WASM_GC
+        ,
+        requireGC(false)
+#endif
+#ifdef ENABLE_WASM_TAIL_CALLS
+        ,
+        requireTailCalls(false)
+#endif
+  {
+  }
 
   
   bool isBuiltinModule;
   
   
   bool jsStringBuiltins;
+
+#ifdef ENABLE_WASM_GC
+  
+  bool requireGC;
+#endif
+#ifdef ENABLE_WASM_TAIL_CALLS
+  
+  bool requireTailCalls;
+#endif
 
   
   [[nodiscard]] bool init(JSContext* cx, HandleValue val);

@@ -45,6 +45,7 @@ struct CallableOffsets;
 struct FuncOffsets;
 struct Offsets;
 class Frame;
+class FrameWithInstances;
 
 using RegisterState = JS::ProfilingFrameIterator::RegisterState;
 
@@ -73,12 +74,14 @@ class WasmFrameIter {
   uint8_t* resumePCinCurrentFrame_;
   
   bool failedUnwindSignatureMismatch_;
+  bool stackSwitched_;
 
   void popFrame();
 
  public:
   
   explicit WasmFrameIter(jit::JitActivation* activation, Frame* fp = nullptr);
+  WasmFrameIter(FrameWithInstances* fp, void* returnAddress);
   const jit::JitActivation* activation() const { return activation_; }
   void setUnwind(Unwind unwind) { unwind_ = unwind; }
   void operator++();
@@ -99,6 +102,7 @@ class WasmFrameIter {
   uint8_t* unwoundCallerFP() const { return unwoundCallerFP_; }
   Frame* frame() const { return fp_; }
   Instance* instance() const { return instance_; }
+  bool stackSwitched() const { return stackSwitched_; }
 
   
   

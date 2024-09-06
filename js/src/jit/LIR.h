@@ -1422,6 +1422,8 @@ enum class WasmSafepointKind : uint8_t {
   
   
   Trap,
+  
+  StackSwitch,
 };
 
 class LSafepoint : public TempObject {

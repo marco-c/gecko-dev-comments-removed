@@ -409,6 +409,9 @@ class WasmStructObject : public WasmGcObject,
                                        uint32_t fieldOffset);
 
   
+  bool getField(JSContext* cx, uint32_t index, MutableHandle<Value> val);
+
+  
   static const uint32_t inlineDataAlignment = 8;
   static constexpr size_t offsetOfOutlineData() {
     return offsetof(WasmStructObject, outlineData_);

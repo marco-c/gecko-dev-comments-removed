@@ -554,6 +554,7 @@ class CallSiteDesc {
     EnterFrame,     
     LeaveFrame,     
     CollapseFrame,  
+    StackSwitch,    
     Breakpoint      
   };
   CallSiteDesc() : lineOrBytecode_(0), kind_(0) {}
@@ -576,9 +577,10 @@ class CallSiteDesc {
   bool isIndirectCall() const { return kind() == CallSiteDesc::Indirect; }
   bool isFuncRefCall() const { return kind() == CallSiteDesc::FuncRef; }
   bool isReturnStub() const { return kind() == CallSiteDesc::ReturnStub; }
+  bool isStackSwitch() const { return kind() == CallSiteDesc::StackSwitch; }
   bool mightBeCrossInstance() const {
     return isImportCall() || isIndirectCall() || isFuncRefCall() ||
-           isReturnStub();
+           isReturnStub() || isStackSwitch();
   }
 };
 

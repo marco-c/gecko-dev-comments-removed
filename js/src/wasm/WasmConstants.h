@@ -994,6 +994,19 @@ struct BuiltinModuleIds {
 
 WASM_DECLARE_CACHEABLE_POD(BuiltinModuleIds)
 
+enum class StackSwitchKind {
+  SwitchToSuspendable,
+  SwitchToMain,
+  ContinueOnSuspendable,
+};
+
+enum class UpdateSuspenderStateAction {
+  Enter,
+  Suspend,
+  Resume,
+  Leave,
+};
+
 enum class MozOp {
   
   
@@ -1040,6 +1053,8 @@ enum class MozOp {
   
   
   CallBuiltinModuleFunc,
+
+  StackSwitch,
 
   Limit
 };
@@ -1164,6 +1179,21 @@ static const unsigned MaxBranchHintValue = 2;
 
 
 static const unsigned MaxFrameSize = 512 * 1024;
+
+
+static const size_t SuspendableStacksMaxCount = 100;
+
+
+static const size_t SuspendableStackSize = 0x100000;
+
+
+
+
+static const size_t SuspendableRedZoneSize = 0x6000;
+
+
+static constexpr size_t SuspendableStackPlusRedZoneSize =
+    SuspendableStackSize + SuspendableRedZoneSize;
 
 
 
