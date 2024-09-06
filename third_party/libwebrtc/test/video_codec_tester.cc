@@ -15,6 +15,7 @@
 #include <tuple>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "api/array_view.h"
 #include "api/environment/environment.h"
 #include "api/units/time_delta.h"
@@ -88,9 +89,15 @@ class VideoSource {
   explicit VideoSource(VideoSourceSettings source_settings)
       : source_settings_(source_settings) {
     MutexLock lock(&mutex_);
-    frame_reader_ = CreateYuvFrameReader(
-        source_settings_.file_path, source_settings_.resolution,
-        YuvFrameReaderImpl::RepeatMode::kPingPong);
+    if (absl::EndsWith(source_settings.file_path, "y4m")) {
+      frame_reader_ =
+          CreateY4mFrameReader(source_settings_.file_path,
+                               YuvFrameReaderImpl::RepeatMode::kPingPong);
+    } else {
+      frame_reader_ = CreateYuvFrameReader(
+          source_settings_.file_path, source_settings_.resolution,
+          YuvFrameReaderImpl::RepeatMode::kPingPong);
+    }
     RTC_CHECK(frame_reader_);
   }
 
