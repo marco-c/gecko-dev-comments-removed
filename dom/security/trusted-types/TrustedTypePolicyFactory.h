@@ -49,7 +49,7 @@ class TrustedTypePolicyFactory : public nsWrapperCache {
 
   
   already_AddRefed<TrustedTypePolicy> CreatePolicy(
-      const nsAString& aPolicyName,
+      JSContext* aJSContext, const nsAString& aPolicyName,
       const TrustedTypePolicyOptions& aPolicyOptions, ErrorResult& aRv);
 
   
@@ -92,9 +92,11 @@ class TrustedTypePolicyFactory : public nsWrapperCache {
   
   virtual ~TrustedTypePolicyFactory() = default;
 
+  enum class PolicyCreation { Blocked, Allowed };
+
   
-  bool ShouldTrustedTypePolicyCreationBeBlockedByCSP(
-      const nsAString& aPolicyName) const;
+  PolicyCreation ShouldTrustedTypePolicyCreationBeBlockedByCSP(
+      JSContext* aJSContext, const nsAString& aPolicyName) const;
 
   RefPtr<nsIGlobalObject> mGlobalObject;
 

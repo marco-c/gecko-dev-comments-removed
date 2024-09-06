@@ -6,11 +6,16 @@
 
 #include "mozilla/dom/TrustedTypePolicyFactory.h"
 
+#include <utility>
+
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/CSPViolationData.h"
 #include "mozilla/dom/TrustedTypePolicy.h"
 #include "mozilla/dom/nsCSPUtils.h"
+
+#include "jsapi.h"
 
 namespace mozilla::dom {
 
@@ -21,8 +26,43 @@ JSObject* TrustedTypePolicyFactory::WrapObject(
   return TrustedTypePolicyFactory_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-bool TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
-    const nsAString& aPolicyName) const {
+constexpr size_t kCreatePolicyCSPViolationMaxSampleLength = 40;
+
+static CSPViolationData CreateCSPViolationData(JSContext* aJSContext,
+                                               uint32_t aPolicyIndex,
+                                               const nsAString& aPolicyName) {
+  JS::AutoFilename autoFilename;
+  nsAutoString fileName;
+  uint32_t lineNumber{0};
+  JS::ColumnNumberOneOrigin columnNumber;
+  if (JS::DescribeScriptedCaller(aJSContext, &autoFilename, &lineNumber,
+                                 &columnNumber)) {
+    if (const char* file = autoFilename.get()) {
+      CopyUTF8toUTF16(nsDependentCString(file), fileName);
+    }
+  }
+
+  const nsAString& sample =
+      Substring(aPolicyName,  0,
+                 kCreatePolicyCSPViolationMaxSampleLength);
+
+  
+  
+
+  return {aPolicyIndex,
+          CSPViolationData::Resource{
+              CSPViolationData::BlockedContentSource::TrustedTypesPolicy},
+          nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE,
+          fileName,
+          lineNumber,
+          columnNumber.oneOriginValue(),
+           nullptr,
+          sample};
+}
+
+auto TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
+    JSContext* aJSContext,
+    const nsAString& aPolicyName) const -> PolicyCreation {
   
   
   
@@ -30,6 +70,8 @@ bool TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
       mGlobalObject->GetAsInnerWindow()
           ? mGlobalObject->GetAsInnerWindow()->GetCsp()
           : nullptr;
+
+  auto result = PolicyCreation::Allowed;
 
   if (csp) {
     uint32_t numPolicies = 0;
@@ -43,22 +85,30 @@ bool TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
                 aPolicyName, mCreatedPolicyNames)) {
           
           
+          nsICSPEventListener* cspEventListener{nullptr};
+
+          CSPViolationData cspViolationData{
+              CreateCSPViolationData(aJSContext, i, aPolicyName)};
+
+          csp->LogTrustedTypesViolationDetailsUnchecked(
+              std::move(cspViolationData), cspEventListener);
 
           if (policy->getDisposition() == nsCSPPolicy::Disposition::Enforce) {
-            return true;
+            result = PolicyCreation::Blocked;
           }
         }
       }
     }
   }
 
-  return false;
+  return result;
 }
 
 already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
-    const nsAString& aPolicyName,
+    JSContext* aJSContext, const nsAString& aPolicyName,
     const TrustedTypePolicyOptions& aPolicyOptions, ErrorResult& aRv) {
-  if (ShouldTrustedTypePolicyCreationBeBlockedByCSP(aPolicyName)) {
+  if (PolicyCreation::Blocked ==
+      ShouldTrustedTypePolicyCreationBeBlockedByCSP(aJSContext, aPolicyName)) {
     nsCString errorMessage =
         "Content-Security-Policy blocked creating policy named '"_ns +
         NS_ConvertUTF16toUTF8(aPolicyName) + "'"_ns;
