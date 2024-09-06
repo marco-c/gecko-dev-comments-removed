@@ -92,6 +92,11 @@ export interface InstallOptions {
 
 
   unpack?: boolean;
+  
+
+
+
+  forceFallbackForTesting?: boolean;
 }
 
 
@@ -125,6 +130,10 @@ export async function install(
   try {
     return await installUrl(url, options);
   } catch (err) {
+    
+    if (options.baseUrl && !options.forceFallbackForTesting) {
+      throw err;
+    }
     debugInstall(`Error downloading from ${url}.`);
     switch (options.browser) {
       case Browser.CHROME:

@@ -7,6 +7,12 @@
 const versionsPerRelease = new Map([
   
   
+  ['123.0.6312.122', 'v22.6.4'],
+  ['123.0.6312.105', 'v22.6.3'],
+  ['123.0.6312.86', 'v22.6.2'],
+  ['123.0.6312.58', 'v22.6.0'],
+  ['122.0.6261.128', 'v22.5.0'],
+  ['122.0.6261.111', 'v22.4.1'],
   ['122.0.6261.94', 'v22.4.0'],
   ['122.0.6261.69', 'v22.3.0'],
   ['122.0.6261.57', 'v22.2.0'],
@@ -65,7 +71,7 @@ const versionsPerRelease = new Map([
 ]);
 
 
-const lastMaintainedChromeVersion = '119.0.6045.105';
+const lastMaintainedChromeVersion = '120.0.6099.109';
 
 if (!versionsPerRelease.has(lastMaintainedChromeVersion)) {
   throw new Error(

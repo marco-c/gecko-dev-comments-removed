@@ -5,6 +5,10 @@
 
 import type {Protocol} from 'devtools-protocol';
 
+import type {ProtocolError} from '../common/Errors.js';
+import {debugError} from '../common/util.js';
+import {assert} from '../util/assert.js';
+
 import type {CDPSession} from './CDPSession.js';
 import type {Frame} from './Frame.js';
 import type {HTTPResponse} from './HTTPResponse.js';
@@ -120,6 +124,29 @@ export abstract class HTTPRequest {
   
 
 
+  protected interception: {
+    enabled: boolean;
+    handled: boolean;
+    handlers: Array<() => void | PromiseLike<any>>;
+    resolutionState: InterceptResolutionState;
+    requestOverrides: ContinueRequestOverrides;
+    response: Partial<ResponseForRequest> | null;
+    abortReason: Protocol.Network.ErrorReason | null;
+  } = {
+    enabled: false,
+    handled: false,
+    handlers: [],
+    resolutionState: {
+      action: InterceptResolutionAction.None,
+    },
+    requestOverrides: {},
+    response: null,
+    abortReason: null,
+  };
+
+  
+
+
 
 
   abstract get client(): CDPSession;
@@ -139,37 +166,27 @@ export abstract class HTTPRequest {
 
 
 
-  abstract continueRequestOverrides(): ContinueRequestOverrides;
+  continueRequestOverrides(): ContinueRequestOverrides {
+    assert(this.interception.enabled, 'Request Interception is not enabled!');
+    return this.interception.requestOverrides;
+  }
 
   
 
 
 
-  abstract responseForRequest(): Partial<ResponseForRequest> | null;
+  responseForRequest(): Partial<ResponseForRequest> | null {
+    assert(this.interception.enabled, 'Request Interception is not enabled!');
+    return this.interception.response;
+  }
 
   
 
 
-  abstract abortErrorReason(): Protocol.Network.ErrorReason | null;
-
-  
-
-
-
-
-
-
-
-
-
-
-  abstract interceptResolutionState(): InterceptResolutionState;
-
-  
-
-
-
-  abstract isInterceptResolutionHandled(): boolean;
+  abortErrorReason(): Protocol.Network.ErrorReason | null {
+    assert(this.interception.enabled, 'Request Interception is not enabled!');
+    return this.interception.abortReason;
+  }
 
   
 
@@ -177,15 +194,80 @@ export abstract class HTTPRequest {
 
 
 
-  abstract enqueueInterceptAction(
+
+
+
+
+
+  interceptResolutionState(): InterceptResolutionState {
+    if (!this.interception.enabled) {
+      return {action: InterceptResolutionAction.Disabled};
+    }
+    if (this.interception.handled) {
+      return {action: InterceptResolutionAction.AlreadyHandled};
+    }
+    return {...this.interception.resolutionState};
+  }
+
+  
+
+
+
+  isInterceptResolutionHandled(): boolean {
+    return this.interception.handled;
+  }
+
+  
+
+
+
+
+
+  enqueueInterceptAction(
     pendingHandler: () => void | PromiseLike<unknown>
-  ): void;
+  ): void {
+    this.interception.handlers.push(pendingHandler);
+  }
+
+  
+
+
+  abstract _abort(
+    errorReason: Protocol.Network.ErrorReason | null
+  ): Promise<void>;
+
+  
+
+
+  abstract _respond(response: Partial<ResponseForRequest>): Promise<void>;
+
+  
+
+
+  abstract _continue(overrides: ContinueRequestOverrides): Promise<void>;
 
   
 
 
 
-  abstract finalizeInterceptions(): Promise<void>;
+  async finalizeInterceptions(): Promise<void> {
+    await this.interception.handlers.reduce((promiseChain, interceptAction) => {
+      return promiseChain.then(interceptAction);
+    }, Promise.resolve());
+    this.interception.handlers = []; 
+    const {action} = this.interceptResolutionState();
+    switch (action) {
+      case 'abort':
+        return await this._abort(this.interception.abortReason);
+      case 'respond':
+        if (this.interception.response === null) {
+          throw new Error('Response is missing for the interception');
+        }
+        return await this._respond(this.interception.response);
+      case 'continue':
+        return await this._continue(this.interception.requestOverrides);
+    }
+  }
 
   
 
@@ -323,10 +405,42 @@ export abstract class HTTPRequest {
 
 
 
-  abstract continue(
-    overrides?: ContinueRequestOverrides,
+  async continue(
+    overrides: ContinueRequestOverrides = {},
     priority?: number
-  ): Promise<void>;
+  ): Promise<void> {
+    
+    if (this.url().startsWith('data:')) {
+      return;
+    }
+    assert(this.interception.enabled, 'Request Interception is not enabled!');
+    assert(!this.interception.handled, 'Request is already handled!');
+    if (priority === undefined) {
+      return await this._continue(overrides);
+    }
+    this.interception.requestOverrides = overrides;
+    if (
+      this.interception.resolutionState.priority === undefined ||
+      priority > this.interception.resolutionState.priority
+    ) {
+      this.interception.resolutionState = {
+        action: InterceptResolutionAction.Continue,
+        priority,
+      };
+      return;
+    }
+    if (priority === this.interception.resolutionState.priority) {
+      if (
+        this.interception.resolutionState.action === 'abort' ||
+        this.interception.resolutionState.action === 'respond'
+      ) {
+        return;
+      }
+      this.interception.resolutionState.action =
+        InterceptResolutionAction.Continue;
+    }
+    return;
+  }
 
   
 
@@ -360,10 +474,38 @@ export abstract class HTTPRequest {
 
 
 
-  abstract respond(
+  async respond(
     response: Partial<ResponseForRequest>,
     priority?: number
-  ): Promise<void>;
+  ): Promise<void> {
+    
+    if (this.url().startsWith('data:')) {
+      return;
+    }
+    assert(this.interception.enabled, 'Request Interception is not enabled!');
+    assert(!this.interception.handled, 'Request is already handled!');
+    if (priority === undefined) {
+      return await this._respond(response);
+    }
+    this.interception.response = response;
+    if (
+      this.interception.resolutionState.priority === undefined ||
+      priority > this.interception.resolutionState.priority
+    ) {
+      this.interception.resolutionState = {
+        action: InterceptResolutionAction.Respond,
+        priority,
+      };
+      return;
+    }
+    if (priority === this.interception.resolutionState.priority) {
+      if (this.interception.resolutionState.action === 'abort') {
+        return;
+      }
+      this.interception.resolutionState.action =
+        InterceptResolutionAction.Respond;
+    }
+  }
 
   
 
@@ -379,7 +521,33 @@ export abstract class HTTPRequest {
 
 
 
-  abstract abort(errorCode?: ErrorCode, priority?: number): Promise<void>;
+  async abort(
+    errorCode: ErrorCode = 'failed',
+    priority?: number
+  ): Promise<void> {
+    
+    if (this.url().startsWith('data:')) {
+      return;
+    }
+    const errorReason = errorReasons[errorCode];
+    assert(errorReason, 'Unknown error code: ' + errorCode);
+    assert(this.interception.enabled, 'Request Interception is not enabled!');
+    assert(!this.interception.handled, 'Request is already handled!');
+    if (priority === undefined) {
+      return await this._abort(errorReason);
+    }
+    this.interception.abortReason = errorReason;
+    if (
+      this.interception.resolutionState.priority === undefined ||
+      priority >= this.interception.resolutionState.priority
+    ) {
+      this.interception.resolutionState = {
+        action: InterceptResolutionAction.Abort,
+        priority,
+      };
+      return;
+    }
+  }
 }
 
 
@@ -513,3 +681,33 @@ export const STATUS_TEXTS: Record<string, string> = {
   '510': 'Not Extended',
   '511': 'Network Authentication Required',
 } as const;
+
+const errorReasons: Record<ErrorCode, Protocol.Network.ErrorReason> = {
+  aborted: 'Aborted',
+  accessdenied: 'AccessDenied',
+  addressunreachable: 'AddressUnreachable',
+  blockedbyclient: 'BlockedByClient',
+  blockedbyresponse: 'BlockedByResponse',
+  connectionaborted: 'ConnectionAborted',
+  connectionclosed: 'ConnectionClosed',
+  connectionfailed: 'ConnectionFailed',
+  connectionrefused: 'ConnectionRefused',
+  connectionreset: 'ConnectionReset',
+  internetdisconnected: 'InternetDisconnected',
+  namenotresolved: 'NameNotResolved',
+  timedout: 'TimedOut',
+  failed: 'Failed',
+} as const;
+
+
+
+
+export function handleError(error: ProtocolError): void {
+  if (error.originalMessage.includes('Invalid header')) {
+    throw error;
+  }
+  
+  
+  
+  debugError(error);
+}

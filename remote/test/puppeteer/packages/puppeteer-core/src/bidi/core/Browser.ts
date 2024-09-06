@@ -51,20 +51,17 @@ export class Browser extends EventEmitter<{
     return browser;
   }
 
-  
   #closed = false;
   #reason: string | undefined;
   readonly #disposables = new DisposableStack();
   readonly #userContexts = new Map<string, UserContext>();
   readonly session: Session;
   readonly #sharedWorkers = new Map<string, SharedWorkerRealm>();
-  
 
   private constructor(session: Session) {
     super();
-    
+
     this.session = session;
-    
   }
 
   async #initialize() {
@@ -141,7 +138,6 @@ export class Browser extends EventEmitter<{
     return userContext;
   }
 
-  
   get closed(): boolean {
     return this.#closed;
   }
@@ -158,7 +154,6 @@ export class Browser extends EventEmitter<{
   get userContexts(): Iterable<UserContext> {
     return this.#userContexts.values();
   }
-  
 
   @inertIfDisposed
   dispose(reason?: string, closed = false): void {
@@ -197,6 +192,16 @@ export class Browser extends EventEmitter<{
       }) as [string, ...string[]],
     });
     return script;
+  }
+
+  @throwIfDisposed<Browser>(browser => {
+    
+    return browser.#reason!;
+  })
+  async removeIntercept(intercept: Bidi.Network.Intercept): Promise<void> {
+    await this.session.send('network.removeIntercept', {
+      intercept,
+    });
   }
 
   @throwIfDisposed<Browser>(browser => {

@@ -166,6 +166,9 @@ export class ChromeLauncher extends ProductLauncher {
       removeMatchingFlags(options.args, '--disable-features');
     }
 
+    const turnOnExperimentalFeaturesForTesting =
+      process.env['PUPPETEER_TEST_EXPERIMENTAL_CHROME_FEATURES'] === 'true';
+
     
     const disabledFeatures = [
       'Translate',
@@ -174,9 +177,13 @@ export class ChromeLauncher extends ProductLauncher {
       'MediaRouter',
       'OptimizationHints',
       
-      'ProcessPerSiteUpToMainFrameThreshold',
+      turnOnExperimentalFeaturesForTesting
+        ? ''
+        : 'ProcessPerSiteUpToMainFrameThreshold',
       ...userDisabledFeatures,
-    ];
+    ].filter(feature => {
+      return feature !== '';
+    });
 
     const userEnabledFeatures = getFeatures('--enable-features', options.args);
     if (options.args && userEnabledFeatures.length > 0) {
@@ -185,9 +192,11 @@ export class ChromeLauncher extends ProductLauncher {
 
     
     const enabledFeatures = [
-      'NetworkServiceInProcess2',
+      
       ...userEnabledFeatures,
-    ];
+    ].filter(feature => {
+      return feature !== '';
+    });
 
     const chromeArguments = [
       '--allow-pre-commit-input',
@@ -201,7 +210,9 @@ export class ChromeLauncher extends ProductLauncher {
       '--disable-default-apps',
       '--disable-dev-shm-usage',
       '--disable-extensions',
-      '--disable-field-trial-config', 
+      turnOnExperimentalFeaturesForTesting
+        ? ''
+        : '--disable-field-trial-config', 
       '--disable-hang-monitor',
       '--disable-infobars',
       '--disable-ipc-flooding-protection',
@@ -220,7 +231,9 @@ export class ChromeLauncher extends ProductLauncher {
       '--use-mock-keychain',
       `--disable-features=${disabledFeatures.join(',')}`,
       `--enable-features=${enabledFeatures.join(',')}`,
-    ];
+    ].filter(arg => {
+      return arg !== '';
+    });
     const {
       devtools = false,
       headless = !devtools,

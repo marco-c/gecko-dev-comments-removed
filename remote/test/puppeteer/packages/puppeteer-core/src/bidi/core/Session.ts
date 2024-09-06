@@ -71,8 +71,9 @@ export class Session
           platformName: '',
           setWindowRect: false,
           webSocketUrl: '',
+          userAgent: '',
         },
-      };
+      } satisfies Bidi.Session.NewResult;
     }
 
     const session = new Session(connection, result);
@@ -80,21 +81,18 @@ export class Session
     return session;
   }
 
-  
   #reason: string | undefined;
   readonly #disposables = new DisposableStack();
   readonly #info: Bidi.Session.NewResult;
   readonly browser!: Browser;
   @bubble()
   accessor connection: Connection;
-  
 
   private constructor(connection: Connection, info: Bidi.Session.NewResult) {
     super();
-    
+
     this.#info = info;
     this.connection = connection;
-    
   }
 
   async #initialize(): Promise<void> {
@@ -120,7 +118,6 @@ export class Session
     });
   }
 
-  
   get capabilities(): Bidi.Session.NewResult['capabilities'] {
     return this.#info.capabilities;
   }
@@ -133,7 +130,6 @@ export class Session
   get id(): string {
     return this.#info.sessionId;
   }
-  
 
   @inertIfDisposed
   private dispose(reason?: string): void {
@@ -163,9 +159,27 @@ export class Session
     
     return session.#reason!;
   })
-  async subscribe(events: string[]): Promise<void> {
+  async subscribe(
+    events: [string, ...string[]],
+    contexts?: [string, ...string[]]
+  ): Promise<void> {
     await this.send('session.subscribe', {
       events,
+      contexts,
+    });
+  }
+
+  @throwIfDisposed<Session>(session => {
+    
+    return session.#reason!;
+  })
+  async addIntercepts(
+    events: [string, ...string[]],
+    contexts?: [string, ...string[]]
+  ): Promise<void> {
+    await this.send('session.subscribe', {
+      events,
+      contexts,
     });
   }
 

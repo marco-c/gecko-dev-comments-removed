@@ -82,6 +82,13 @@ export abstract class HTTPResponse {
   
 
 
+
+
+
+
+
+
+
   abstract buffer(): Promise<Buffer>;
 
   

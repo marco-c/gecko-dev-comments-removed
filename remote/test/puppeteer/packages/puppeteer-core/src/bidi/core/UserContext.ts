@@ -52,21 +52,18 @@ export class UserContext extends EventEmitter<{
     return context;
   }
 
-  
   #reason?: string;
   
   readonly #browsingContexts = new Map<string, BrowsingContext>();
   readonly #disposables = new DisposableStack();
   readonly #id: string;
   readonly browser: Browser;
-  
 
   private constructor(browser: Browser, id: string) {
     super();
-    
+
     this.#id = id;
     this.browser = browser;
-    
   }
 
   #initialize() {
@@ -110,7 +107,6 @@ export class UserContext extends EventEmitter<{
     });
   }
 
-  
   get #session() {
     return this.browser.session;
   }
@@ -126,7 +122,6 @@ export class UserContext extends EventEmitter<{
   get id(): string {
     return this.#id;
   }
-  
 
   @inertIfDisposed
   private dispose(reason?: string): void {
@@ -227,8 +222,7 @@ export class UserContext extends EventEmitter<{
       origin,
       descriptor,
       state,
-      
-      'goog:userContext': this.#id,
+      userContext: this.#id,
     });
   }
 

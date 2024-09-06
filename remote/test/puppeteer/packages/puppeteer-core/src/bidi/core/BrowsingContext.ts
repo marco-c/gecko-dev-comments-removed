@@ -21,6 +21,14 @@ import {UserPrompt} from './UserPrompt.js';
 
 
 
+export type AddInterceptOptions = Omit<
+  Bidi.Network.AddInterceptParameters,
+  'contexts'
+>;
+
+
+
+
 export type CaptureScreenshotOptions = Omit<
   Bidi.BrowsingContext.CaptureScreenshotParameters,
   'context'
@@ -121,7 +129,6 @@ export class BrowsingContext extends EventEmitter<{
     return browsingContext;
   }
 
-  
   #navigation: Navigation | undefined;
   #reason?: string;
   #url: string;
@@ -133,7 +140,6 @@ export class BrowsingContext extends EventEmitter<{
   readonly id: string;
   readonly parent: BrowsingContext | undefined;
   readonly userContext: UserContext;
-  
 
   private constructor(
     context: UserContext,
@@ -142,12 +148,11 @@ export class BrowsingContext extends EventEmitter<{
     url: string
   ) {
     super();
-    
+
     this.#url = url;
     this.id = id;
     this.parent = parent;
     this.userContext = context;
-    
 
     this.defaultRealm = this.#createWindowRealm();
   }
@@ -275,7 +280,6 @@ export class BrowsingContext extends EventEmitter<{
     });
   }
 
-  
   get #session() {
     return this.userContext.browser.session;
   }
@@ -306,7 +310,6 @@ export class BrowsingContext extends EventEmitter<{
   get url(): string {
     return this.#url;
   }
-  
 
   #createWindowRealm(sandbox?: string) {
     const realm = WindowRealm.from(this, sandbox);
@@ -478,9 +481,24 @@ export class BrowsingContext extends EventEmitter<{
       functionDeclaration,
       {
         ...options,
-        contexts: [this, ...(options.contexts ?? [])],
+        contexts: [this],
       }
     );
+  }
+
+  @throwIfDisposed<BrowsingContext>(context => {
+    
+    return context.#reason!;
+  })
+  async addIntercept(options: AddInterceptOptions): Promise<string> {
+    const {
+      result: {intercept},
+    } = await this.userContext.browser.session.send('network.addIntercept', {
+      ...options,
+      contexts: [this.id],
+    });
+
+    return intercept;
   }
 
   @throwIfDisposed<BrowsingContext>(context => {
@@ -537,6 +555,22 @@ export class BrowsingContext extends EventEmitter<{
       element,
       files,
     });
+  }
+
+  @throwIfDisposed<BrowsingContext>(context => {
+    
+    return context.#reason!;
+  })
+  async subscribe(events: [string, ...string[]]): Promise<void> {
+    await this.#session.subscribe(events, [this.id]);
+  }
+
+  @throwIfDisposed<BrowsingContext>(context => {
+    
+    return context.#reason!;
+  })
+  async addInterception(events: [string, ...string[]]): Promise<void> {
+    await this.#session.subscribe(events, [this.id]);
   }
 
   [disposeSymbol](): void {

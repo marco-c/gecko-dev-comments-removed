@@ -31,17 +31,14 @@ export class CallbackRegistry {
     } catch (error) {
       
       
-      callback.promise
-        .valueOrThrow()
-        .catch(debugError)
-        .finally(() => {
-          this.#callbacks.delete(callback.id);
-        });
+      callback.promise.catch(debugError).finally(() => {
+        this.#callbacks.delete(callback.id);
+      });
       callback.reject(error as Error);
       throw error;
     }
     
-    return callback.promise.valueOrThrow().finally(() => {
+    return callback.promise.finally(() => {
       this.#callbacks.delete(callback.id);
     });
   }
@@ -148,8 +145,8 @@ export class Callback {
     return this.#id;
   }
 
-  get promise(): Deferred<unknown> {
-    return this.#deferred;
+  get promise(): Promise<unknown> {
+    return this.#deferred.valueOrThrow();
   }
 
   get error(): ProtocolError {

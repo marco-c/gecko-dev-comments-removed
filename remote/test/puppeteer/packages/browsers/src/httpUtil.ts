@@ -54,6 +54,9 @@ export function httpRequest(
       res.headers.location
     ) {
       httpRequest(new URL(res.headers.location), method, response);
+      
+      
+      res.resume();
     } else {
       response(res);
     }

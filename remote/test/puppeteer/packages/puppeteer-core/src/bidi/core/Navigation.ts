@@ -6,7 +6,6 @@
 
 import {EventEmitter} from '../../common/EventEmitter.js';
 import {inertIfDisposed} from '../../util/decorators.js';
-import {Deferred} from '../../util/Deferred.js';
 import {DisposableStack, disposeSymbol} from '../../util/disposable.js';
 
 import type {BrowsingContext} from './BrowsingContext.js';
@@ -39,19 +38,16 @@ export class Navigation extends EventEmitter<{
     return navigation;
   }
 
-  
   #request: Request | undefined;
   #navigation: Navigation | undefined;
   readonly #browsingContext: BrowsingContext;
   readonly #disposables = new DisposableStack();
-  readonly #id = new Deferred<string | null>();
-  
+  #id?: string | null;
 
   private constructor(context: BrowsingContext) {
     super();
-    
+
     this.#browsingContext = context;
-    
   }
 
   #initialize() {
@@ -69,7 +65,6 @@ export class Navigation extends EventEmitter<{
     browsingContextEmitter.on('request', ({request}) => {
       if (
         request.navigation === undefined ||
-        this.#request !== undefined ||
         
         
         !this.#matches(request.navigation)
@@ -79,6 +74,13 @@ export class Navigation extends EventEmitter<{
 
       this.#request = request;
       this.emit('request', request);
+      const requestEmitter = this.#disposables.use(
+        new EventEmitter(this.#request)
+      );
+
+      requestEmitter.on('redirect', request => {
+        this.#request = request;
+      });
     });
 
     const sessionEmitter = this.#disposables.use(
@@ -139,14 +141,13 @@ export class Navigation extends EventEmitter<{
     if (this.#navigation !== undefined && !this.#navigation.disposed) {
       return false;
     }
-    if (!this.#id.resolved()) {
-      this.#id.resolve(navigation);
+    if (this.#id === undefined) {
+      this.#id = navigation;
       return true;
     }
-    return this.#id.value() === navigation;
+    return this.#id === navigation;
   }
 
-  
   get #session() {
     return this.#browsingContext.userContext.browser.session;
   }
@@ -159,7 +160,6 @@ export class Navigation extends EventEmitter<{
   get navigation(): Navigation | undefined {
     return this.#navigation;
   }
-  
 
   @inertIfDisposed
   private dispose(): void {
