@@ -104,8 +104,6 @@ class AimdRateControl {
   
   const bool no_bitrate_increase_in_alr_;
   
-  const bool subtract_additional_backoff_term_;
-  
   FieldTrialFlag disable_estimate_bounded_increase_{"Disabled"};
   FieldTrialParameter<bool> use_current_estimate_as_min_upper_bound_{"c_upper",
                                                                      true};
