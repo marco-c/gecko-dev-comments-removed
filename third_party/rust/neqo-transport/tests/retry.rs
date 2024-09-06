@@ -4,7 +4,7 @@
 
 
 
-#![cfg(not(feature = "disable-encryption"))]
+#![cfg(not(feature = "fuzzing"))]
 
 mod common;
 
