@@ -5,6 +5,7 @@
 
 
 #include "AnimationHelper.h"
+#include "CompositorAnimationStorage.h"
 #include "base/process_util.h"
 #include "gfx2DGlue.h"                 
 #include "gfxLineSegment.h"            
@@ -445,7 +446,9 @@ static bool HasTransformLikeAnimations(const AnimationArray& aAnimations) {
 #endif
 
 AnimationStorageData AnimationHelper::ExtractAnimations(
-    const LayersId& aLayersId, const AnimationArray& aAnimations) {
+    const LayersId& aLayersId, const AnimationArray& aAnimations,
+    const CompositorAnimationStorage* aStorage,
+    const TimeStamp& aPreviousSampleTime) {
   AnimationStorageData storageData;
   storageData.mLayersId = aLayersId;
 
@@ -537,12 +540,37 @@ AnimationStorageData AnimationHelper::ExtractAnimations(
     propertyAnimation->mScrollTimelineOptions =
         animation.scrollTimelineOptions();
 
+    RefPtr<StyleAnimationValue> startValue;
+    if (animation.replacedTransitionId()) {
+      if (const auto* animatedValue =
+              aStorage->GetAnimatedValue(*animation.replacedTransitionId())) {
+        startValue = animatedValue->AsAnimationValue(animation.property());
+        
+        
+        
+        
+        
+        if (!aPreviousSampleTime.IsNull() &&
+            (aPreviousSampleTime >= animation.originTime())) {
+          propertyAnimation->mStartTime =
+              Some(aPreviousSampleTime - animation.originTime());
+        }
+
+        MOZ_ASSERT(animation.segments().Length() == 1,
+                   "The CSS Transition only has one segement");
+      }
+    }
+
     nsTArray<PropertyAnimation::SegmentData>& segmentData =
         propertyAnimation->mSegments;
     for (const AnimationSegment& segment : animation.segments()) {
       segmentData.AppendElement(PropertyAnimation::SegmentData{
-          AnimationValue::FromAnimatable(animation.property(),
-                                         segment.startState()),
+          
+          
+          
+          startValue ? startValue
+                     : AnimationValue::FromAnimatable(animation.property(),
+                                                      segment.startState()),
           AnimationValue::FromAnimatable(animation.property(),
                                          segment.endState()),
           segment.sampleFn(), segment.startPortion(), segment.endPortion(),

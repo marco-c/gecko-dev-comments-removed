@@ -418,8 +418,16 @@ void AnimationInfo::AddAnimationForProperty(
   
   
   
+  
+  
+  
+  
+  
+  
+  bool needReplaceTransition = false;
   if (dom::CSSTransition* cssTransition = aAnimation->AsCSSTransition()) {
-    cssTransition->UpdateStartValueFromReplacedTransition();
+    needReplaceTransition =
+        cssTransition->UpdateStartValueFromReplacedTransition();
   }
 
   animation->originTime() =
@@ -463,6 +471,12 @@ void AnimationInfo::AddAnimationForProperty(
   animation->isNotAnimating() = false;
   animation->scrollTimelineOptions() =
       GetScrollTimelineOptions(aAnimation->GetTimeline());
+  
+  
+  
+  
+  animation->replacedTransitionId() =
+      needReplaceTransition ? Some(GetCompositorAnimationsId()) : Nothing();
 
   TransformReferenceBox refBox(aFrame);
 

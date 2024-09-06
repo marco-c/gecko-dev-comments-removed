@@ -39,6 +39,15 @@ struct AnimationTransform {
 
   gfx::Matrix4x4 mFrameTransform;
   TransformData mData;
+
+  
+
+
+
+
+
+
+  SampledAnimationArray mAnimationValues;
 };
 
 struct AnimatedValue final {
@@ -57,22 +66,27 @@ struct AnimatedValue final {
 
   AnimatedValue(const gfx::Matrix4x4& aTransformInDevSpace,
                 const gfx::Matrix4x4& aFrameTransform,
-                const TransformData& aData)
-      : mValue(AsVariant(AnimationTransform{aTransformInDevSpace,
-                                            aFrameTransform, aData})) {}
+                const TransformData& aData, SampledAnimationArray&& aValue)
+      : mValue(AsVariant(AnimationTransform{
+            aTransformInDevSpace, aFrameTransform, aData, std::move(aValue)})) {
+  }
 
   explicit AnimatedValue(const float& aValue) : mValue(AsVariant(aValue)) {}
 
   explicit AnimatedValue(nscolor aValue) : mValue(AsVariant(aValue)) {}
 
+  
+  
   void SetTransform(const gfx::Matrix4x4& aFrameTransform,
-                    const TransformData& aData) {
+                    const TransformData& aData,
+                    SampledAnimationArray&& aValue) {
     MOZ_ASSERT(mValue.is<AnimationTransform>());
     AnimationTransform& previous = mValue.as<AnimationTransform>();
     previous.mFrameTransform = aFrameTransform;
     if (previous.mData != aData) {
       previous.mData = aData;
     }
+    previous.mAnimationValues = std::move(aValue);
   }
   void SetOpacity(float aOpacity) {
     MOZ_ASSERT(mValue.is<float>());
@@ -82,6 +96,8 @@ struct AnimatedValue final {
     MOZ_ASSERT(mValue.is<nscolor>());
     mValue.as<nscolor>() = aColor;
   }
+
+  already_AddRefed<StyleAnimationValue> AsAnimationValue(nsCSSPropertyID) const;
 
  private:
   AnimatedValueType mValue;
@@ -129,7 +145,8 @@ class CompositorAnimationStorage final {
 
 
   void SetAnimations(uint64_t aId, const LayersId& aLayersId,
-                     const AnimationArray& aAnimations);
+                     const AnimationArray& aAnimations,
+                     const TimeStamp& aPreviousSampleTime);
 
   
 
@@ -154,13 +171,13 @@ class CompositorAnimationStorage final {
 
   void ClearById(const uint64_t& aId);
 
- private:
-  ~CompositorAnimationStorage() = default;
-
   
 
 
   AnimatedValue* GetAnimatedValue(const uint64_t& aId) const;
+
+ private:
+  ~CompositorAnimationStorage() = default;
 
   
 
@@ -171,7 +188,8 @@ class CompositorAnimationStorage final {
 
   void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
                         const gfx::Matrix4x4& aFrameTransform,
-                        const TransformData& aData);
+                        const TransformData& aData,
+                        SampledAnimationArray&& aValue);
 
   
 

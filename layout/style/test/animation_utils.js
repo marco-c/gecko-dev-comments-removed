@@ -208,6 +208,90 @@ function findKeyframesRule(name) {
   return undefined;
 }
 
+function isOMTAWorking() {
+  function waitForDocumentLoad() {
+    return new Promise(function (resolve, reject) {
+      if (document.readyState === "complete") {
+        resolve();
+      } else {
+        window.addEventListener("load", resolve);
+      }
+    });
+  }
+
+  function loadPaintListener() {
+    return new Promise(function (resolve, reject) {
+      if (typeof window.waitForAllPaints !== "function") {
+        var script = document.createElement("script");
+        script.onload = resolve;
+        script.onerror = function () {
+          reject(new Error("Failed to load paint listener"));
+        };
+        script.src = "/tests/SimpleTest/paint_listener.js";
+        var firstScript = document.scripts[0];
+        firstScript.parentNode.insertBefore(script, firstScript);
+      } else {
+        resolve();
+      }
+    });
+  }
+
+  
+  const animationName = "a6ce3091ed85"; 
+  var ruleText =
+    "@keyframes " +
+    animationName +
+    " { from { opacity: 0.5 } to { opacity: 0.5 } }";
+  var style = document.createElement("style");
+  style.appendChild(document.createTextNode(ruleText));
+  document.head.appendChild(style);
+
+  
+  var div = document.createElement("div");
+  document.body.appendChild(div);
+
+  
+  div.style.width = "100px";
+  div.style.height = "100px";
+  div.style.backgroundColor = "white";
+
+  var utils = SpecialPowers.DOMWindowUtils;
+
+  
+  var cleanUp = function () {
+    div.remove();
+    style.remove();
+    if (utils.isTestControllingRefreshes) {
+      utils.restoreNormalRefresh();
+    }
+  };
+
+  return waitForDocumentLoad()
+    .then(loadPaintListener)
+    .then(function () {
+      
+      
+      
+      
+      utils.advanceTimeAndRefresh(0);
+      return waitForPaintsFlushed();
+    })
+    .then(function () {
+      div.style.animation = animationName + " 10s";
+
+      return waitForPaintsFlushed();
+    })
+    .then(function () {
+      var opacity = utils.getOMTAStyle(div, "opacity");
+      cleanUp();
+      return Promise.resolve(opacity == 0.5);
+    })
+    .catch(function (err) {
+      cleanUp();
+      return Promise.reject(err);
+    });
+}
+
 
 
 
@@ -261,88 +345,6 @@ function runOMTATest(aTestFunction, aOnSkip, specialPowersForPrefs) {
       ok(false, err);
       aOnSkip();
     });
-
-  function isOMTAWorking() {
-    
-    const animationName = "a6ce3091ed85"; 
-    var ruleText =
-      "@keyframes " +
-      animationName +
-      " { from { opacity: 0.5 } to { opacity: 0.5 } }";
-    var style = document.createElement("style");
-    style.appendChild(document.createTextNode(ruleText));
-    document.head.appendChild(style);
-
-    
-    var div = document.createElement("div");
-    document.body.appendChild(div);
-
-    
-    div.style.width = "100px";
-    div.style.height = "100px";
-    div.style.backgroundColor = "white";
-
-    
-    var cleanUp = function () {
-      div.remove();
-      style.remove();
-      if (utils.isTestControllingRefreshes) {
-        utils.restoreNormalRefresh();
-      }
-    };
-
-    return waitForDocumentLoad()
-      .then(loadPaintListener)
-      .then(function () {
-        
-        
-        
-        
-        utils.advanceTimeAndRefresh(0);
-        return waitForPaintsFlushed();
-      })
-      .then(function () {
-        div.style.animation = animationName + " 10s";
-
-        return waitForPaintsFlushed();
-      })
-      .then(function () {
-        var opacity = utils.getOMTAStyle(div, "opacity");
-        cleanUp();
-        return Promise.resolve(opacity == 0.5);
-      })
-      .catch(function (err) {
-        cleanUp();
-        return Promise.reject(err);
-      });
-  }
-
-  function waitForDocumentLoad() {
-    return new Promise(function (resolve, reject) {
-      if (document.readyState === "complete") {
-        resolve();
-      } else {
-        window.addEventListener("load", resolve);
-      }
-    });
-  }
-
-  function loadPaintListener() {
-    return new Promise(function (resolve, reject) {
-      if (typeof window.waitForAllPaints !== "function") {
-        var script = document.createElement("script");
-        script.onload = resolve;
-        script.onerror = function () {
-          reject(new Error("Failed to load paint listener"));
-        };
-        script.src = "/tests/SimpleTest/paint_listener.js";
-        var firstScript = document.scripts[0];
-        firstScript.parentNode.insertBefore(script, firstScript);
-      } else {
-        resolve();
-      }
-    });
-  }
 }
 
 

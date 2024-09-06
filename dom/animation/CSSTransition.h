@@ -143,7 +143,7 @@ class CSSTransition final : public Animation {
   
   
   
-  void UpdateStartValueFromReplacedTransition();
+  bool UpdateStartValueFromReplacedTransition();
 
  protected:
   virtual ~CSSTransition() {
@@ -222,6 +222,8 @@ class CSSTransition final : public Animation {
   
   double mReversePortion = 1.0;
 
+  
+  
   Maybe<ReplacedTransitionProperties> mReplacedTransition;
 };
 

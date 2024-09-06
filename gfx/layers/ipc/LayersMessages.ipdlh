@@ -241,6 +241,8 @@ struct Animation {
   
   TransformData? transformData;
   
+  uint64_t? replacedTransitionId;
+  
   
   ScrollTimelineOptions? scrollTimelineOptions;
 };
