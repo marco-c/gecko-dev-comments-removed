@@ -76,7 +76,8 @@ class Tiers {
 struct FeatureOptions {
   FeatureOptions()
       : isBuiltinModule(false),
-        jsStringBuiltins(false)
+        jsStringBuiltins(false),
+        jsStringConstants(false)
 #ifdef ENABLE_WASM_GC
         ,
         requireGC(false)
@@ -93,6 +94,9 @@ struct FeatureOptions {
   
   
   bool jsStringBuiltins;
+  
+  
+  bool jsStringConstants;
 
 #ifdef ENABLE_WASM_GC
   
