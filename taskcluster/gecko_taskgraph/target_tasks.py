@@ -43,7 +43,7 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"linux-",  
     r"linux1804-32",  
     
-    r"web-platform-tests.*backlog",  
+    r"web-platform-tests(?!-webgpu).*backlog",  
     r"-ccov",
     r"-profiling-",  
     r"-32-.*-webgpu",  
