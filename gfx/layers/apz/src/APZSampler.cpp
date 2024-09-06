@@ -125,14 +125,11 @@ AsyncTransform APZSampler::GetCurrentAsyncTransform(
 ParentLayerRect APZSampler::GetCompositionBounds(
     const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
     const MutexAutoLock& aProofOfMapLock) const {
-  
-  
   AssertOnSamplerThread();
 
   RefPtr<AsyncPanZoomController> apzc =
       mApz->GetTargetAPZC(aLayersId, aScrollId, aProofOfMapLock);
   if (!apzc) {
-    
     
     
     

@@ -146,7 +146,6 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   
-  
   Maybe<uint64_t> mZoomAnimationId;
 
   
@@ -541,9 +540,6 @@ APZCTreeManager::UpdateHitTestingTree(const WebRenderScrollDataWrapper& aRoot,
           
           
           
-          
-          
-          
           if (node->GetScrollbarAnimationId()) {
             if (node->IsScrollThumbNode()) {
               state.mScrollThumbs.push_back(node);
@@ -555,11 +551,9 @@ APZCTreeManager::UpdateHitTestingTree(const WebRenderScrollDataWrapper& aRoot,
             }
           }
 
-          
           if (node->GetFixedPositionAnimationId().isSome()) {
             state.mFixedPositionInfo.emplace_back(node);
           }
-          
           if (node->GetStickyPositionAnimationId().isSome()) {
             state.mStickyPositionInfo.emplace_back(node);
           }

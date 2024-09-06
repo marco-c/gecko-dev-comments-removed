@@ -1139,7 +1139,6 @@ class AsyncPanZoomController {
   
   
   
-  
   Maybe<uint64_t> mZoomAnimationId;
 
   

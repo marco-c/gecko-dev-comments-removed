@@ -86,6 +86,8 @@ void SampledAPZCState::RemoveFractionalAsyncDelta() {
   
   
   
+  
+  
   if (mLayoutViewport.TopLeft() == mVisualScrollOffset) {
     return;
   }

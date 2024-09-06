@@ -204,8 +204,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
-
   void SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
                           wr::TransactionWrapper& aTxn,
                           const SampleTime& aSampleTime);
@@ -924,7 +922,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
   std::vector<ScrollThumbInfo> mScrollThumbInfo;
 
   
@@ -941,7 +938,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
           mScrollDirection(aScrollDirection) {}
   };
   
-
 
 
 
@@ -975,7 +971,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
   std::vector<FixedPositionInfo> mFixedPositionInfo;
 
   
@@ -993,7 +988,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     explicit StickyPositionInfo(const HitTestingTreeNode* aNode);
   };
   
-
 
 
 
