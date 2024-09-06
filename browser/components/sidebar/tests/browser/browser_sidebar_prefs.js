@@ -5,10 +5,19 @@
 
 add_setup(() => SpecialPowers.pushPrefEnv({ set: [["sidebar.revamp", true]] }));
 
+registerCleanupFunction(() =>
+  Services.prefs.clearUserPref("sidebar.main.tools")
+);
+
 add_task(async function test_tools_prefs() {
   const win = await BrowserTestUtils.openNewBrowserWindow();
   const { document } = win;
   const sidebar = document.querySelector("sidebar-main");
+  ok(sidebar, "Sidebar is shown.");
+  await BrowserTestUtils.waitForCondition(
+    async () => (await sidebar.updateComplete) && sidebar.customizeButton,
+    `The sidebar-main component has fully rendered, and the customize button is present.`
+  );
 
   is(
     Services.prefs.getStringPref("sidebar.main.tools"),
@@ -74,6 +83,11 @@ add_task(async function test_tools_prefs() {
   
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   const newSidebar = newWin.document.querySelector("sidebar-main");
+  ok(newSidebar, "New Window sidebar is shown.");
+  await BrowserTestUtils.waitForCondition(
+    async () => (await newSidebar.updateComplete) && newSidebar.customizeButton,
+    `The sidebar-main component has fully rendered, and the customize button is present.`
+  );
 
   
   
