@@ -98,12 +98,32 @@ void FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
 nsTArray<RefPtr<nsRange>> FragmentDirective::FindTextFragmentsInDocument() {
   MOZ_ASSERT(mDocument);
   mDocument->FlushPendingNotifications(FlushType::Frames);
+  
+  
+  
+  
   nsTArray<RefPtr<nsRange>> textDirectiveRanges;
-  for (const TextDirective& textDirective : mUninvokedTextDirectives) {
+
+  
+  
+  
+  
+  nsTArray<TextDirective> uninvokedTextDirectives(
+      mUninvokedTextDirectives.Length());
+
+  
+  for (TextDirective& textDirective : mUninvokedTextDirectives) {
+    
+    
     if (RefPtr<nsRange> range = FindRangeForTextDirective(textDirective)) {
       textDirectiveRanges.AppendElement(range);
+    } else {
+      uninvokedTextDirectives.AppendElement(std::move(textDirective));
     }
   }
+  mUninvokedTextDirectives = std::move(uninvokedTextDirectives);
+
+  
   return textDirectiveRanges;
 }
 
