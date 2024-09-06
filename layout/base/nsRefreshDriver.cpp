@@ -2743,14 +2743,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   
   
-  
-  
-  if (!TickObserverArray(2, aNowTime)) {
-    return StopTimer();
-  }
-
-  
-  
   if (mNeedToRecomputeVisibility && !mThrottled &&
       aNowTime >= mNextRecomputeVisibilityTick &&
       !presShell->IsPaintingSuppressed()) {
@@ -2786,6 +2778,11 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   
   
   UpdateIntersectionObservations(aNowTime);
+
+  
+  if (!TickObserverArray(2, aNowTime)) {
+    return StopTimer();
+  }
 
   UpdateAnimatedImages(previousRefresh, aNowTime);
 
