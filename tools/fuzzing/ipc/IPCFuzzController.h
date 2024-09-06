@@ -139,11 +139,22 @@ class IPCFuzzController {
   Atomic<bool> useLastPortName;
 
   
+  
+  Atomic<bool> useLastPortNameAlways;
+
+  
+  Atomic<bool> protoFilterTargetExcludeToplevel;
+
+  
+  
   mojo::core::ports::PortName lastActorPortName;
 
   
   
   Atomic<uint32_t> useLastActor;
+
+  
+  Atomic<int32_t> maybeLastActorId;
 
   
   
