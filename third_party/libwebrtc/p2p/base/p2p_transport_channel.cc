@@ -34,7 +34,6 @@
 #include "p2p/base/port.h"
 #include "p2p/base/wrapping_active_ice_controller.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/crc32.h"
 #include "rtc_base/experiments/struct_parameters_parser.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
@@ -1082,8 +1081,7 @@ void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
     
     
     
-    remote_candidate.set_foundation(
-        rtc::ToString(rtc::ComputeCrc32(remote_candidate.id())));
+    remote_candidate.ComputePrflxFoundation();
   }
 
   

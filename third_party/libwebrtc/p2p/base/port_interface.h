@@ -167,18 +167,6 @@ class PortInterface {
   
   virtual void AddPrflxCandidate(const Candidate& local) = 0;
 
-  
-  
-  
-  
-  
-  
-  virtual std::string ComputeFoundation(
-      absl::string_view type,
-      absl::string_view protocol,
-      absl::string_view relay_protocol,
-      const rtc::SocketAddress& base_address) = 0;
-
  protected:
   PortInterface();
   virtual void UpdateNetworkCost() = 0;

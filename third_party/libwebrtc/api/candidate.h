@@ -74,10 +74,18 @@ class RTC_EXPORT Candidate {
   void set_component(int component) { component_ = component; }
 
   const std::string& protocol() const { return protocol_; }
+
+  
+  
+  
   void set_protocol(absl::string_view protocol) { Assign(protocol_, protocol); }
 
   
   const std::string& relay_protocol() const { return relay_protocol_; }
+
+  
+  
+  
   void set_relay_protocol(absl::string_view protocol) {
     Assign(relay_protocol_, protocol);
   }
@@ -169,7 +177,15 @@ class RTC_EXPORT Candidate {
   uint16_t network_id() const { return network_id_; }
   void set_network_id(uint16_t network_id) { network_id_ = network_id; }
 
+  
+  
+  
+  
   const std::string& foundation() const { return foundation_; }
+
+  
+  
+  
   void set_foundation(absl::string_view foundation) {
     Assign(foundation_, foundation);
   }
@@ -220,6 +236,25 @@ class RTC_EXPORT Candidate {
   
   Candidate ToSanitizedCopy(bool use_hostname_address,
                             bool filter_related_address) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void ComputeFoundation(const rtc::SocketAddress& base_address,
+                         uint64_t tie_breaker);
+
+  
+  
+  
+  
+  
+  void ComputePrflxFoundation();
 
  private:
   
