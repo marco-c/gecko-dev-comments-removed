@@ -2,7 +2,7 @@
 
 
 
-use std::{iter::Extend, ops, marker::PhantomData, u32};
+use std::{ops, marker::PhantomData, u32};
 use crate::util::Recycler;
 
 #[derive(Debug, Hash)]
