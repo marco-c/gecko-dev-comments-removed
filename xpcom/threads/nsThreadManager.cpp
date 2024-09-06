@@ -21,6 +21,7 @@
 #include "mozilla/InputTaskManager.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/NeverDestroyed.h"
+#include "mozilla/Perfetto.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/SpinEventLoopUntil.h"
@@ -270,6 +271,9 @@ nsThreadManager::nsThreadManager()
 nsThreadManager::~nsThreadManager() = default;
 
 nsresult nsThreadManager::Init() {
+  
+  InitPerfetto();
+
   
   
   
