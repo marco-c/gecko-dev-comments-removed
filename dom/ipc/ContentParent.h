@@ -1660,8 +1660,7 @@ class ThreadsafeContentParentHandle final {
 };
 
 
-const nsDependentCSubstring RemoteTypePrefix(
-    const nsACString& aContentProcessType);
+nsDependentCSubstring RemoteTypePrefix(const nsACString& aContentProcessType);
 
 
 bool IsWebRemoteType(const nsACString& aContentProcessType);
