@@ -96,68 +96,100 @@ add_task(async function test_closetab_send() {
   
   commandQueue.DELAY = 10;
 
-  
-  
-  queueMock.expects("_ensureTimer").once().withArgs(20);
-  commandMock
-    .expects("sendCloseTabsCommand")
-    .once()
-    .withArgs(targetDevice, ["https://foo.bar/early"])
-    .resolves(true);
-
-  
-  closeTab.invoke = sinon.spy((cmd, device, payload) => {
-    Assert.equal(payload.encrypted, "encryptedpayload");
-  });
-
   const store = await getRemoteCommandStore();
-  
-  
-  const command1 = new RemoteCommand.CloseTab("https://foo.bar/early");
-  Assert.ok(
-    await store.addRemoteCommandAt(targetDevice.id, command1, now - 15),
-    "adding the remote command should work"
-  );
-  const command2 = new RemoteCommand.CloseTab("https://foo.bar/late");
-  Assert.ok(
-    await store.addRemoteCommandAt(targetDevice.id, command2, now),
-    "adding the remote command should work"
-  );
 
   
-  const pending = await store.getUnsentCommands();
-  Assert.equal(pending.length, 2);
+  const command1 = new RemoteCommand.CloseTab("https://foo.bar/must-send");
+  await store.addRemoteCommandAt(targetDevice.id, command1, now - 15);
 
-  Assert.equal(pending[0].deviceId, targetDevice.id);
-  Assert.ok(pending[0].command.url, "https://foo.bar/early");
-  Assert.equal(pending[1].deviceId, targetDevice.id);
-  Assert.ok(pending[1].command.url, "https://foo.bar/late");
+  const command2 = new RemoteCommand.CloseTab("https://foo.bar/can-send");
+  await store.addRemoteCommandAt(targetDevice.id, command2, now - 12);
 
+  const command3 = new RemoteCommand.CloseTab("https://foo.bar/early");
+  await store.addRemoteCommandAt(targetDevice.id, command3, now - 5);
+
+  
+  let pending = await store.getUnsentCommands();
+  Assert.equal(pending.length, 3);
+
+  commandMock.expects("sendCloseTabsCommand").never();
+  
+  queueMock.expects("_ensureTimer").once().withArgs(16);
+
+  
   await commandQueue.flushQueue();
+
   
-  Assert.equal((await store.getUnsentCommands()).length, 1);
+  pending = await store.getUnsentCommands();
+  Assert.equal(pending.length, 3);
 
   commandMock.verify();
   queueMock.verify();
 
   
-  now += 20;
+  now += 15;
+
   
   commandMock = sinon.mock(closeTab);
   queueMock = sinon.mock(commandQueue);
-  queueMock.expects("_ensureTimer").never();
+
   commandMock
     .expects("sendCloseTabsCommand")
     .once()
-    .withArgs(targetDevice, ["https://foo.bar/late"])
+    .withArgs(targetDevice, [
+      "https://foo.bar/early",
+      "https://foo.bar/can-send",
+      "https://foo.bar/must-send",
+    ])
     .resolves(true);
 
+  queueMock.expects("_ensureTimer").never();
+
   await commandQueue.flushQueue();
+
   
-  Assert.equal((await store.getUnsentCommands()).length, 0);
+  pending = await store.getUnsentCommands();
+  Assert.equal(pending.length, 0);
 
   commandMock.verify();
   queueMock.verify();
+
+  
+  
+
+  
+  let command4 = new RemoteCommand.CloseTab("https://foo.bar/due");
+  await store.addRemoteCommandAt(targetDevice.id, command4, now - 5);
+  let command5 = new RemoteCommand.CloseTab("https://foo.bar/due2");
+  await store.addRemoteCommandAt(targetDevice.id, command5, now);
+
+  
+  pending = await store.getUnsentCommands();
+  Assert.equal(pending.length, 2);
+
+  commandMock = sinon.mock(closeTab);
+  queueMock = sinon.mock(commandQueue);
+
+  commandMock.expects("sendCloseTabsCommand").never();
+  queueMock.expects("_ensureTimer").once().withArgs(16); 
+
+  
+  now += 5;
+
+  
+  await commandQueue.flushQueue();
+
+  
+  pending = await store.getUnsentCommands();
+  Assert.equal(pending.length, 2);
+
+  commandMock.verify();
+  queueMock.verify();
+
+  
+  await store.removeRemoteCommand(targetDevice.id, command4);
+  await store.removeRemoteCommand(targetDevice.id, command5);
+
   commandMock.restore();
   queueMock.restore();
   commandQueue.shutdown();
