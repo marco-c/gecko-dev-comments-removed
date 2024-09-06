@@ -139,7 +139,7 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   virtual ~ScriptLoadContext();
 
  public:
-  explicit ScriptLoadContext();
+  explicit ScriptLoadContext(nsIScriptElement* aScriptElement = nullptr);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ScriptLoadContext,
@@ -181,10 +181,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
 
   bool IsAsyncScript() const { return mScriptMode == ScriptMode::eAsync; }
 
- private:
-  nsIScriptElement* GetScriptElement() const;
-
- public:
   
   
   
@@ -197,41 +193,46 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   
   
   inline nsIScriptElement* GetScriptElementForLoadingNode() const {
-    return GetScriptElement();
+    MOZ_ASSERT(mScriptElement);
+    return mScriptElement;
   }
 
   
   
   
   inline nsIScriptElement* GetScriptElementForTrace() const {
-    return GetScriptElement();
+    return mScriptElement;
   }
 
   
   inline nsIScriptElement* GetScriptElementForExecuteEvents() const {
-    return GetScriptElement();
+    MOZ_ASSERT(mScriptElement);
+    return mScriptElement;
   }
 
   
   inline nsIScriptElement* GetScriptElementForCurrentParserInsertedScript()
       const {
-    return GetScriptElement();
+    MOZ_ASSERT(mScriptElement);
+    return mScriptElement;
   }
 
   
   inline nsIScriptElement* GetScriptElementForObserver() const {
-    return GetScriptElement();
+    MOZ_ASSERT(mScriptElement);
+    return mScriptElement;
   }
 
   
   inline nsIScriptElement* GetScriptElementForUrlClassifier() const {
-    return GetScriptElement();
+    return mScriptElement;
   }
 
   
   
   inline nsIScriptElement* GetScriptElementForCurrentScript() const {
-    return GetScriptElement();
+    MOZ_ASSERT(mScriptElement);
+    return mScriptElement;
   }
 
   bool HasScriptElement() const;
@@ -263,11 +264,10 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   void SetIsLoadRequest(nsIScriptElement* aElement);
 
   FromParser GetParserCreated() const {
-    nsIScriptElement* element = GetScriptElement();
-    if (!element) {
+    if (!mScriptElement) {
       return NOT_FROM_PARSER;
     }
-    return element->GetParserCreated();
+    return mScriptElement->GetParserCreated();
   }
 
   
@@ -311,6 +311,10 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
 
   
   RefPtr<Document> mLoadBlockedDocument;
+
+  
+  
+  nsCOMPtr<nsIScriptElement> mScriptElement;
 
   
   
