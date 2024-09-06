@@ -41,9 +41,9 @@ async function run_test() {
     false 
   );
   await checkUpdateManager(
-    STATE_PENDING, 
+    STATE_PENDING_SVC, 
     true, 
-    STATE_PENDING, 
+    STATE_PENDING_SVC, 
     WRITE_ERROR_BACKGROUND_TASK_SHARING_VIOLATION,
     0 
   );
