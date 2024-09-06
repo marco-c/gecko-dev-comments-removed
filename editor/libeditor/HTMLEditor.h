@@ -682,7 +682,13 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  bool IsInDesignMode() const;
+
+  [[nodiscard]] bool HasFocus() const { return mHasFocus; }
+
+  
+
+
+  [[nodiscard]] bool IsInDesignMode() const { return mIsInDesignMode; }
 
   
 
@@ -4508,6 +4514,9 @@ class HTMLEditor final : public EditorBase,
   bool mOldLinkHandlingEnabled = false;
 
   bool mHasBeforeInputBeenCanceled = false;
+
+  bool mHasFocus = false;
+  bool mIsInDesignMode = false;
 
   ParagraphSeparator mDefaultParagraphSeparator;
 

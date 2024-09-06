@@ -40,6 +40,8 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/TextControlElement.h"
+#include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TextServicesDocument.h"
 #include "mozilla/ToString.h"
@@ -70,7 +72,7 @@
 #include "nsGkAtoms.h"
 #include "nsHTMLDocument.h"
 #include "nsIContent.h"
-#include "nsIContentInlines.h"
+#include "nsIContentInlines.h"  
 #include "nsIEditActionListener.h"
 #include "nsIFrame.h"
 #include "nsIPrincipal.h"
@@ -89,6 +91,8 @@ namespace mozilla {
 
 using namespace dom;
 using namespace widget;
+
+LazyLogModule gHTMLEditorFocusLog("HTMLEditorFocus");
 
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
@@ -715,14 +719,23 @@ void HTMLEditor::UpdateRootElement() {
 
 nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
     Document& aDocument, Element* aElement) {
-  const bool isInDesignMode =
-      (IsInDesignMode() && (!aElement || aElement->IsInDesignMode()));
+  MOZ_LOG(gHTMLEditorFocusLog, LogLevel::Info,
+          ("%s(aDocument=%p, aElement=%s): mHasFocus=%s, mIsInDesignMode=%s, "
+           "aDocument.IsInDesignMode()=%s, aElement->IsInDesignMode()=%s",
+           __FUNCTION__, &aDocument, ToString(RefPtr{aElement}).c_str(),
+           mHasFocus ? "true" : "false", mIsInDesignMode ? "true" : "false",
+           aDocument.IsInDesignMode() ? "true" : "false",
+           aElement ? (aElement->IsInDesignMode() ? "true" : "false") : "N/A"));
+
+  const bool enteringInDesignMode =
+      (aDocument.IsInDesignMode() && (!aElement || aElement->IsInDesignMode()));
 
   
   
   
-  if (GetSelectionAncestorLimiter()) {
-    if (isInDesignMode) {
+  if (mHasFocus) {
+    if (enteringInDesignMode) {
+      mIsInDesignMode = true;
       return NS_OK;
     }
     
@@ -731,17 +744,35 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
     nsresult rv = GetPreferredIMEState(&newState);
     if (NS_FAILED(rv)) {
       NS_WARNING("EditorBase::GetPreferredIMEState() failed");
+      mIsInDesignMode = false;
       return NS_OK;
     }
-    if (const RefPtr<Element> focusedElement = GetFocusedElement()) {
+    const RefPtr<Element> focusedElement = GetFocusedElement();
+    if (focusedElement) {
       MOZ_ASSERT(focusedElement == aElement);
+      TextControlElement* const textControlElement =
+          TextControlElement::FromNode(focusedElement);
+      if (textControlElement &&
+          textControlElement->IsSingleLineTextControlOrTextArea()) {
+        
+        DebugOnly<nsresult> rv = FinalizeSelection();
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rv),
+            "HTMLEditor::FinalizeSelection() failed, but ignored");
+        mHasFocus = false;
+        mIsInDesignMode = false;
+      }
       IMEStateManager::UpdateIMEState(newState, focusedElement, *this);
+      
+      
     }
+    mIsInDesignMode = false;
     return NS_OK;
   }
+
   
   
-  if (isInDesignMode) {
+  if (enteringInDesignMode) {
     MOZ_ASSERT(&aDocument == GetDocument());
     nsresult rv = OnFocus(aDocument);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnFocus() failed");
@@ -754,8 +785,7 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
 
   
   
-  MOZ_ASSERT(nsFocusManager::GetFocusManager()->GetFocusedElement() ==
-             aElement);
+  MOZ_ASSERT(nsFocusManager::GetFocusedElementStatic() == aElement);
   nsresult rv = OnFocus(*aElement);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnFocus() failed");
 
@@ -770,6 +800,13 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
 }
 
 nsresult HTMLEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
+  MOZ_LOG(gHTMLEditorFocusLog, LogLevel::Info,
+          ("%s(aOriginalEventTarget=%s): mIsInDesignMode=%s, "
+           "aOriginalEventTargetNode.IsInDesignMode()=%s",
+           __FUNCTION__, ToString(RefPtr{&aOriginalEventTargetNode}).c_str(),
+           mIsInDesignMode ? "true" : "false",
+           aOriginalEventTargetNode.IsInDesignMode() ? "true" : "false"));
+
   
   
   if (!CanKeepHandlingFocusEvent(aOriginalEventTargetNode)) {
@@ -781,47 +818,67 @@ nsresult HTMLEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
     return NS_ERROR_FAILURE;
   }
 
-  return EditorBase::OnFocus(aOriginalEventTargetNode);
+  nsresult rv = EditorBase::OnFocus(aOriginalEventTargetNode);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::OnFocus() failed");
+    return rv;
+  }
+  mHasFocus = true;
+  mIsInDesignMode = aOriginalEventTargetNode.IsInDesignMode();
+  return NS_OK;
 }
 
 nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
     HTMLEditor* aHTMLEditor, Document& aDocument, Element* aElement) {
+  MOZ_LOG(
+      gHTMLEditorFocusLog, LogLevel::Info,
+      ("%s(aHTMLEditor=%p, aDocument=%p, aElement=%s): "
+       "aHTMLEditor->HasFocus()=%s, aHTMLEditor->IsInDesignMode()=%s, "
+       "aDocument.IsInDesignMode()=%s, aElement->IsInDesignMode()=%s, "
+       "nsFocusManager::GetFocusedElementStatic()=%s",
+       __FUNCTION__, aHTMLEditor, &aDocument,
+       ToString(RefPtr{aElement}).c_str(),
+       aHTMLEditor ? (aHTMLEditor->HasFocus() ? "true" : "false") : "N/A",
+       aHTMLEditor ? (aHTMLEditor->IsInDesignMode() ? "true" : "false") : "N/A",
+       aDocument.IsInDesignMode() ? "true" : "false",
+       aElement ? (aElement->IsInDesignMode() ? "true" : "false") : "N/A",
+       ToString(RefPtr{nsFocusManager::GetFocusedElementStatic()}).c_str()));
+
   nsresult rv = [&]() MOZ_CAN_RUN_SCRIPT {
     
     
-    if (!aHTMLEditor) {
-      return NS_OK;
-    }
-
-    nsIContent* const limiter = aHTMLEditor->GetSelectionAncestorLimiter();
-    
-    
-    if (!limiter) {
+    if (!aHTMLEditor || !aHTMLEditor->HasFocus()) {
       return NS_OK;
     }
 
     
-    
-    if (aHTMLEditor->IsInDesignMode() &&
-        (!aElement || aElement->IsInDesignMode())) {
-      MOZ_ASSERT(aHTMLEditor->GetDocument() == &aDocument);
-      nsresult rv = aHTMLEditor->OnBlur(&aDocument);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnBlur() failed");
-      return rv;
-    }
-    
-    
-    
-    if (aElement != limiter) {
-      return NS_OK;
-    }
+    nsresult rv = aHTMLEditor->FinalizeSelection();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "HTMLEditor::FinalizeSelection() failed");
+    aHTMLEditor->mHasFocus = false;
 
-    
-    
-    
-    
-    nsresult rv = aHTMLEditor->OnBlur(aElement);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnBlur() failed");
+    const RefPtr<Element> focusedElement =
+        nsFocusManager::GetFocusedElementStatic();
+    TextControlElement* const focusedTextControlElement =
+        TextControlElement::FromNodeOrNull(focusedElement);
+    if ((focusedElement && focusedElement->IsEditable() &&
+         (!focusedTextControlElement ||
+          !focusedTextControlElement->IsSingleLineTextControlOrTextArea())) ||
+        (!focusedElement && aDocument.IsInDesignMode())) {
+      
+      
+      DebugOnly<nsresult> rvIgnored = aHTMLEditor->OnFocus(
+          focusedElement ? static_cast<nsINode&>(*focusedElement)
+                         : static_cast<nsINode&>(aDocument));
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                           "HTMLEditor::OnFocus() failed, but ignored");
+    } else if (focusedTextControlElement &&
+               focusedTextControlElement->IsSingleLineTextControlOrTextArea()) {
+      if (RefPtr<TextEditor> textEditor =
+              focusedTextControlElement->GetTextEditorWithoutCreation()) {
+        textEditor->OnFocus(*focusedElement);
+      }
+    }
     return rv;
   }();
 
@@ -829,10 +886,7 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
   
   
   
-  RefPtr<Element> focusedElement = aElement ? aElement
-                                   : aHTMLEditor
-                                       ? aHTMLEditor->GetFocusedElement()
-                                       : nullptr;
+  RefPtr<Element> focusedElement = nsFocusManager::GetFocusedElementStatic();
   RefPtr<nsPresContext> presContext =
       focusedElement ? focusedElement->GetPresContext(
                            Element::PresContextFor::eForComposedDoc)
@@ -845,28 +899,39 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
 }
 
 nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
+  MOZ_LOG(gHTMLEditorFocusLog, LogLevel::Info,
+          ("%s(aEventTarget=%s): mHasFocus=%s, mIsInDesignMode=%s, "
+           "aEventTarget->IsInDesignMode()=%s",
+           __FUNCTION__, ToString(RefPtr{aEventTarget}).c_str(),
+           mHasFocus ? "true" : "false", mIsInDesignMode ? "true" : "false",
+           nsINode::FromEventTargetOrNull(aEventTarget)
+               ? (nsINode::FromEventTarget(aEventTarget)->IsInDesignMode()
+                      ? "true"
+                      : "false")
+               : "N/A"));
+
   
   
-  nsFocusManager* focusManager = nsFocusManager::GetFocusManager();
-  if (MOZ_UNLIKELY(!focusManager)) {
+  if (nsFocusManager::GetFocusedElementStatic()) {
+    
+    
+    mIsInDesignMode = false;
+    mHasFocus = false;
     return NS_OK;
   }
 
   
   
-  if (focusManager->GetFocusedElement()) {
+  
+  if (mIsInDesignMode && Element::FromEventTargetOrNull(aEventTarget)) {
     return NS_OK;
   }
 
-  
-  
-  
-  if (IsInDesignMode() && Element::FromEventTargetOrNull(aEventTarget)) {
-    return NS_OK;
-  }
   nsresult rv = FinalizeSelection();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::FinalizeSelection() failed");
+  mIsInDesignMode = false;
+  mHasFocus = false;
   return rv;
 }
 
@@ -896,18 +961,6 @@ Element* HTMLEditor::FindSelectionRoot(const nsINode& aNode) const {
   
   
   return content->GetEditingHost();
-}
-
-bool HTMLEditor::IsInDesignMode() const {
-  
-  
-  
-  
-  
-  
-  
-  Document* document = GetDocument();
-  return document && document->IsInDesignMode();
 }
 
 bool HTMLEditor::EntireDocumentIsEditable() const {
@@ -6850,7 +6903,8 @@ Element* HTMLEditor::GetFocusedElement() const {
   if (NS_WARN_IF(!document)) {
     return nullptr;
   }
-  const bool inDesignMode = IsInDesignMode();
+  const bool inDesignMode = focusedElement ? focusedElement->IsInDesignMode()
+                                           : document->IsInDesignMode();
   if (!focusedElement) {
     
     if (inDesignMode && OurWindowHasFocus()) {
@@ -6888,10 +6942,9 @@ bool HTMLEditor::IsActiveInDOMWindow() const {
   if (NS_WARN_IF(!document)) {
     return false;
   }
-  const bool inDesignMode = IsInDesignMode();
 
   
-  if (inDesignMode) {
+  if (IsInDesignMode()) {
     return true;
   }
 
@@ -6901,6 +6954,10 @@ bool HTMLEditor::IsActiveInDOMWindow() const {
       ourWindow, nsFocusManager::eOnlyCurrentWindow, getter_AddRefs(win));
   if (!content) {
     return false;
+  }
+
+  if (content->IsInDesignMode()) {
+    return true;
   }
 
   
@@ -6943,7 +7000,7 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     return document->GetBodyElement();
   };
 
-  if (IsInDesignMode()) {
+  if (mIsInDesignMode) {
     
     
     
@@ -6960,8 +7017,16 @@ Element* HTMLEditor::ComputeEditingHostInternal(
   const nsIContent* const content =
       aContent ? aContent
                : nsIContent::FromNodeOrNull(SelectionRef().GetFocusNode());
+  if (!content && document->IsInDesignMode()) {
+    return document->GetBodyElement();
+  }
+
   if (NS_WARN_IF(!content)) {
     return nullptr;
+  }
+
+  if (content->IsInDesignMode()) {
+    return document->GetBodyElement();
   }
 
   
@@ -7179,7 +7244,7 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
     return false;
   }
 
-  if (IsInDesignMode()) {
+  if (eventTargetNode->IsInDesignMode()) {
     
     
     if (eventTargetNode->IsDocument()) {
@@ -7191,12 +7256,6 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
     }
     if (document == eventTargetNode->GetUncomposedDoc()) {
       return true;
-    }
-    
-    
-    
-    if (!eventTargetNode->IsInShadowTree()) {
-      return false;
     }
   }
 
