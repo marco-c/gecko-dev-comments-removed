@@ -587,7 +587,7 @@ IncrementalProgress GCRuntime::markAllWeakReferences() {
 void GCRuntime::markAllGrayReferences(gcstats::PhaseKind phase) {
 #ifdef DEBUG
   
-  for (AllZonesIter zone(this); !zone.done(); zone.next()) {
+  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     MOZ_ASSERT(zone->isGCMarkingBlackAndGray());
   }
 #endif
