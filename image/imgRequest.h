@@ -100,8 +100,8 @@ class imgRequest final : public nsIThreadRetargetableStreamListener,
   
   
   
-  
-  static void SetCacheValidation(imgCacheEntry* aEntry, nsIRequest* aRequest);
+  static void SetCacheValidation(imgCacheEntry* aEntry, nsIRequest* aRequest,
+                                 bool aForceTouch = false);
 
   bool GetMultipart() const;
 
