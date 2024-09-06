@@ -330,7 +330,7 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
     
     nsCOMPtr<nsIContentSecurityPolicy> csp = new nsCSPContext();
     nsresult rv = csp->SetRequestContextWithPrincipal(
-        aPrincipal, aBaseURI, u""_ns, 0 );
+        aPrincipal, aBaseURI, ""_ns, 0 );
     NS_ENSURE_SUCCESS_VOID(rv);
     rv = CSP_AppendCSPFromHeader(csp, NS_ConvertUTF8toUTF16(aCSPHeader),
                                  false );

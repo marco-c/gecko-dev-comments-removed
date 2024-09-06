@@ -3412,25 +3412,24 @@ bool IsSchemeChangePermitted(nsIURI* aOldURI, const nsACString& newScheme) {
 }
 
 already_AddRefed<nsIURI> TryChangeProtocol(nsIURI* aURI,
-                                           const nsAString& aProtocol) {
+                                           const nsACString& aProtocol) {
   MOZ_ASSERT(aURI);
 
-  nsAString::const_iterator start;
+  nsACString::const_iterator start;
   aProtocol.BeginReading(start);
 
-  nsAString::const_iterator end;
+  nsACString::const_iterator end;
   aProtocol.EndReading(end);
 
-  nsAString::const_iterator iter(start);
+  nsACString::const_iterator iter(start);
   FindCharInReadable(':', iter, end);
 
   
   
   
   nsCOMPtr<nsIURI> clone;
-  nsresult rv = NS_MutateURI(aURI)
-                    .SetScheme(NS_ConvertUTF16toUTF8(Substring(start, iter)))
-                    .Finalize(clone);
+  nsresult rv =
+      NS_MutateURI(aURI).SetScheme(Substring(start, iter)).Finalize(clone);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }

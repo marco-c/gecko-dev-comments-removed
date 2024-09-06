@@ -1038,7 +1038,7 @@ bool SchemeIsFTP(nsIURI* aURI);
 
 bool SchemeIsSpecial(const nsACString&);
 bool IsSchemeChangePermitted(nsIURI*, const nsACString&);
-already_AddRefed<nsIURI> TryChangeProtocol(nsIURI*, const nsAString&);
+already_AddRefed<nsIURI> TryChangeProtocol(nsIURI*, const nsACString&);
 
 struct LinkHeader {
   nsString mHref;

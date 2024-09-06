@@ -2240,7 +2240,7 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
         }
         
         
-        nsAutoString hash;
+        nsAutoCString hash;
         anchor->GetHash(hash);
         if (hash.IsEmpty()) {
           return rel;
@@ -2248,11 +2248,11 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
 
         
         
-        hash.Trim("#");
-        if (dom::Element* elm = mContent->OwnerDoc()->GetElementById(hash)) {
+        NS_ConvertUTF8toUTF16 hash16(Substring(hash, 1));
+        if (dom::Element* elm = mContent->OwnerDoc()->GetElementById(hash16)) {
           rel.AppendTarget(mDoc->GetAccessibleOrContainer(elm));
         } else if (nsCOMPtr<nsINodeList> list =
-                       mContent->OwnerDoc()->GetElementsByName(hash)) {
+                       mContent->OwnerDoc()->GetElementsByName(hash16)) {
           
           uint32_t length = list->Length();
           for (uint32_t i = 0; i < length; i++) {

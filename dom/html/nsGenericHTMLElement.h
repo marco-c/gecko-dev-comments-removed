@@ -640,6 +640,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
   void GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr, nsAString& aResult) const;
+  void GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr, nsACString& aResult) const;
 
   
 
@@ -647,7 +648,8 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  bool GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr, nsIURI** aURI) const;
+  const nsAttrValue* GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
+                                nsIURI** aURI) const;
 
   bool IsHidden() const { return HasAttr(nsGkAtoms::hidden); }
 
@@ -764,6 +766,9 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
     GetEnumAttr(aName, nullptr, aResult);
   }
   void GetHTMLURIAttr(nsAtom* aName, nsAString& aResult) const {
+    GetURIAttr(aName, nullptr, aResult);
+  }
+  void GetHTMLURIAttr(nsAtom* aName, nsACString& aResult) const {
     GetURIAttr(aName, nullptr, aResult);
   }
 

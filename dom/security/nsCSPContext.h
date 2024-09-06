@@ -175,7 +175,7 @@ class nsCSPContext : public nsIContentSecurityPolicy {
                              uint32_t aViolatedPolicyIndex,
                              uint32_t aLineNumber, uint32_t aColumnNumber);
 
-  nsString mReferrer;
+  nsCString mReferrer;
   uint64_t mInnerWindowID;          
   bool mSkipAllowInlineStyleCheck;  
   

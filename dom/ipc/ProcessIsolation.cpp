@@ -408,8 +408,8 @@ static already_AddRefed<BasePrincipal> GetAboutReaderURLPrincipal(
 
   
   
-  nsAutoString readerSpec;
-  if (URLParams::Extract(query, u"url"_ns, readerSpec)) {
+  nsAutoCString readerSpec;
+  if (URLParams::Extract(query, "url"_ns, readerSpec)) {
     nsCOMPtr<nsIURI> readerUri;
     if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(readerUri), readerSpec))) {
       return BasePrincipal::CreateContentPrincipal(readerUri, aAttrs);

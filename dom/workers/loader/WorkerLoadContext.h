@@ -130,7 +130,7 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   
   
   
-  nsString mFullURL;
+  nsCString mFullURL;
 
   
   

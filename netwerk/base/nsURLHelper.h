@@ -263,8 +263,8 @@ class URLParams final {
     const char* const end = aInput.EndReading();
 
     while (start != end) {
-      nsAutoString name;
-      nsAutoString value;
+      nsAutoCString name;
+      nsAutoCString value;
 
       if (!ParseNextInternal(start, end, aShouldDecode, &name, &value)) {
         continue;
@@ -290,8 +290,8 @@ class URLParams final {
 
 
 
-  static bool Extract(const nsACString& aInput, const nsAString& aName,
-                      nsAString& aValue);
+  static bool Extract(const nsACString& aInput, const nsACString& aName,
+                      nsACString& aValue);
 
   
 
@@ -306,48 +306,46 @@ class URLParams final {
 
 
 
-  void Serialize(nsAString& aValue, bool aEncode) const;
+  void Serialize(nsACString& aValue, bool aEncode) const;
 
-  static void SerializeString(const nsCString& aInput, nsAString& aValue);
+  static void SerializeString(const nsACString& aInput, nsACString& aValue);
+  void Get(const nsACString& aName, nsACString& aRetval);
 
-  void Get(const nsAString& aName, nsString& aRetval);
-
-  void GetAll(const nsAString& aName, nsTArray<nsString>& aRetval);
-
-  
-
-
-
-
-
-
-  void Set(const nsAString& aName, const nsAString& aValue);
-
-  void Append(const nsAString& aName, const nsAString& aValue);
-
-  bool Has(const nsAString& aName);
-
-  bool Has(const nsAString& aName, const nsAString& aValue);
+  void GetAll(const nsACString& aName, nsTArray<nsCString>& aRetval);
 
   
 
 
-  void Delete(const nsAString& aName);
 
-  void Delete(const nsAString& aName, const nsAString& aValue);
+
+
+
+  void Set(const nsACString& aName, const nsACString& aValue);
+
+  void Append(const nsACString& aName, const nsACString& aValue);
+
+  bool Has(const nsACString& aName);
+
+  bool Has(const nsACString& aName, const nsACString& aValue);
+
+  
+
+
+  void Delete(const nsACString& aName);
+
+  void Delete(const nsACString& aName, const nsACString& aValue);
 
   void DeleteAll() { mParams.Clear(); }
 
   uint32_t Length() const { return mParams.Length(); }
 
-  static void DecodeString(const nsACString& aInput, nsAString& aOutput);
-
-  const nsAString& GetKeyAtIndex(uint32_t aIndex) const {
+  static void DecodeString(const nsACString& aInput, nsACString& aOutput);
+  const nsACString& GetKeyAtIndex(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < mParams.Length());
     return mParams[aIndex].mKey;
   }
 
-  const nsAString& GetValueAtIndex(uint32_t aIndex) const {
+  const nsACString& GetValueAtIndex(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < mParams.Length());
     return mParams[aIndex].mValue;
   }
@@ -359,14 +357,13 @@ class URLParams final {
   void Sort();
 
  private:
-  static void ConvertString(const nsACString& aInput, nsAString& aOutput);
   static bool ParseNextInternal(const char*& aStart, const char* aEnd,
-                                bool aShouldDecode, nsAString* aOutputName,
-                                nsAString* aOutputValue);
+                                bool aShouldDecode, nsACString* aOutputName,
+                                nsACString* aOutputValue);
 
   struct Param {
-    nsString mKey;
-    nsString mValue;
+    nsCString mKey;
+    nsCString mValue;
   };
 
   nsTArray<Param> mParams;
