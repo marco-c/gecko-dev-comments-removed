@@ -22,6 +22,8 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Region;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.print.PrintDocumentAdapter;
@@ -268,6 +270,14 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     
     
     setDescendantFocusability(FOCUS_BLOCK_DESCENDANTS);
+
+    
+    
+    final StateListDrawable drawable = new StateListDrawable();
+    drawable.addState(
+        new int[] {android.R.attr.state_focused, -android.R.attr.state_focused},
+        new ColorDrawable(Color.WHITE));
+    setBackground(drawable);
 
     
     
