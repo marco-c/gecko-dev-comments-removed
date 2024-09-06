@@ -6,6 +6,9 @@
 "use strict";
 
 
+const TEST_ICON_BLOB = new Blob([new Uint8Array([5, 11, 2013])]);
+
+
 
 
 add_task(async function test() {
@@ -27,9 +30,8 @@ add_task(async function test() {
 
   
   
-  checkCallCounts(spies, {
+  await checkCallCounts(spies, null, {
     createObjectURL: 0,
-    revokeObjectURL: 0,
   });
 
   
@@ -40,7 +42,7 @@ add_task(async function test() {
         UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         {
           url: "https://example.com/",
-          iconBlob: new Blob([new Uint8Array([])]),
+          iconBlob: TEST_ICON_BLOB,
         }
       ),
     ],
@@ -48,30 +50,24 @@ add_task(async function test() {
   UrlbarProvidersManager.registerProvider(provider);
 
   
-  await doSearches(provider, spies, {
-    createObjectURL: 1,
-    revokeObjectURL: 0,
-  });
+  let blobUrl = await doSearches(provider, spies);
 
   
   await UrlbarTestUtils.promisePopupClose(window);
-  checkCallCounts(spies, {
-    createObjectURL: 1,
+  await checkCallCounts(spies, blobUrl, {
+    createObjectURL: 0,
     revokeObjectURL: 1,
   });
+  resetSpies(spies);
 
   
-  await doSearches(provider, spies, {
-    createObjectURL: 2,
-    revokeObjectURL: 1,
-  });
-
-  
+  blobUrl = await doSearches(provider, spies);
   await UrlbarTestUtils.promisePopupClose(window);
-  checkCallCounts(spies, {
-    createObjectURL: 2,
-    revokeObjectURL: 2,
+  await checkCallCounts(spies, blobUrl, {
+    createObjectURL: 0,
+    revokeObjectURL: 1,
   });
+  resetSpies(spies);
 
   
   
@@ -81,16 +77,16 @@ add_task(async function test() {
     value: "test",
   });
   await UrlbarTestUtils.promisePopupClose(window);
-  checkCallCounts(spies, {
-    createObjectURL: 2,
-    revokeObjectURL: 2,
+  await checkCallCounts(spies, blobUrl, {
+    createObjectURL: 0,
+    revokeObjectURL: 0,
   });
 
   sandbox.restore();
 });
 
-async function doSearches(provider, spies, expectedCountsByName) {
-  let previousImage;
+async function doSearches(provider, spies) {
+  let previousBlobUrl;
   for (let i = 0; i < 3; i++) {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -104,15 +100,31 @@ async function doSearches(provider, spies, expectedCountsByName) {
     if (i > 0) {
       Assert.equal(
         result.image,
-        previousImage,
+        previousBlobUrl,
         "Blob URL should be the same as in previous searches"
       );
     }
-    previousImage = result.image;
+    previousBlobUrl = result.image;
 
     
     
-    checkCallCounts(spies, expectedCountsByName);
+    
+    
+    
+    await checkCallCounts(spies, result.image, {
+      createObjectURL: 1,
+      revokeObjectURL: 0,
+    });
+  }
+
+  resetSpies(spies);
+
+  return previousBlobUrl;
+}
+
+function resetSpies(spies) {
+  for (let spy of Object.values(spies)) {
+    spy.resetHistory();
   }
 }
 
@@ -126,8 +138,53 @@ async function getTestResult(provider) {
   return null;
 }
 
-function checkCallCounts(spies, expectedCountsByName) {
-  for (let [name, count] of Object.entries(expectedCountsByName)) {
-    Assert.strictEqual(spies[name].callCount, count, "Spy call count: " + name);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function checkCallCounts(spies, knownBlobUrl, expectedCountsByName) {
+  
+  
+  let createCalls = [];
+  for (let call of spies.createObjectURL.getCalls()) {
+    if (await areBlobsEqual(call.args[0], TEST_ICON_BLOB)) {
+      createCalls.push(call);
+    }
   }
+  Assert.strictEqual(
+    createCalls.length,
+    expectedCountsByName.createObjectURL,
+    "createObjectURL spy call count"
+  );
+
+  
+  
+  if (knownBlobUrl) {
+    let calls = spies.revokeObjectURL
+      .getCalls()
+      .filter(call => call.args[0] == knownBlobUrl);
+    Assert.strictEqual(
+      calls.length,
+      expectedCountsByName.revokeObjectURL,
+      "revokeObjectURL spy call count"
+    );
+  }
+}
+
+async function areBlobsEqual(blob1, blob2) {
+  let buf1 = new Uint8Array(await blob1.arrayBuffer());
+  let buf2 = new Uint8Array(await blob2.arrayBuffer());
+  return (
+    buf1.length == buf2.length && buf1.every((element, i) => element == buf2[i])
+  );
 }
