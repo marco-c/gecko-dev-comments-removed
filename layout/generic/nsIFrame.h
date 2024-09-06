@@ -602,7 +602,6 @@ class nsIFrame : public nsQueryFrame {
   using ReflowInput = mozilla::ReflowInput;
   using ReflowOutput = mozilla::ReflowOutput;
   using Visibility = mozilla::Visibility;
-  using LengthPercentage = mozilla::LengthPercentage;
   using ContentRelevancy = mozilla::ContentRelevancy;
 
   using nsDisplayItem = mozilla::nsDisplayItem;
@@ -4804,7 +4803,7 @@ class nsIFrame : public nsQueryFrame {
   };
   ISizeComputationResult ComputeISizeValue(
       gfxContext* aRenderingContext, const mozilla::WritingMode aWM,
-      const mozilla::LogicalSize& aContainingBlockSize,
+      const mozilla::LogicalSize& aCBSize,
       const mozilla::LogicalSize& aContentEdgeToBoxSizing,
       nscoord aBoxSizingToMarginEdge, ExtremumLength aSize,
       Maybe<nscoord> aAvailableISizeOverride,
@@ -4816,31 +4815,30 @@ class nsIFrame : public nsQueryFrame {
 
 
   nscoord ComputeISizeValue(const mozilla::WritingMode aWM,
-                            const mozilla::LogicalSize& aContainingBlockSize,
+                            const mozilla::LogicalSize& aCBSize,
                             const mozilla::LogicalSize& aContentEdgeToBoxSizing,
-                            const LengthPercentage& aSize);
+                            const mozilla::LengthPercentage& aSize) const;
 
   template <typename SizeOrMaxSize>
   ISizeComputationResult ComputeISizeValue(
       gfxContext* aRenderingContext, const mozilla::WritingMode aWM,
-      const mozilla::LogicalSize& aContainingBlockSize,
+      const mozilla::LogicalSize& aCBSize,
       const mozilla::LogicalSize& aContentEdgeToBoxSizing,
       nscoord aBoxSizingToMarginEdge, const SizeOrMaxSize& aSize,
       const mozilla::StyleSizeOverrides& aSizeOverrides = {},
       mozilla::ComputeSizeFlags aFlags = {}) {
     if (aSize.IsLengthPercentage()) {
-      return {ComputeISizeValue(aWM, aContainingBlockSize,
-                                aContentEdgeToBoxSizing,
+      return {ComputeISizeValue(aWM, aCBSize, aContentEdgeToBoxSizing,
                                 aSize.AsLengthPercentage())};
     }
     auto length = ToExtremumLength(aSize);
     MOZ_ASSERT(length, "This doesn't handle none / auto");
     Maybe<nscoord> availbleISizeOverride;
     if (aSize.IsFitContentFunction()) {
-      availbleISizeOverride.emplace(aSize.AsFitContentFunction().Resolve(
-          aContainingBlockSize.ISize(aWM)));
+      availbleISizeOverride.emplace(
+          aSize.AsFitContentFunction().Resolve(aCBSize.ISize(aWM)));
     }
-    return ComputeISizeValue(aRenderingContext, aWM, aContainingBlockSize,
+    return ComputeISizeValue(aRenderingContext, aWM, aCBSize,
                              aContentEdgeToBoxSizing, aBoxSizingToMarginEdge,
                              length.valueOr(ExtremumLength::MinContent),
                              availbleISizeOverride, aSizeOverrides, aFlags);
