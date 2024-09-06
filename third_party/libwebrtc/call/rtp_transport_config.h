@@ -38,10 +38,6 @@ struct RtpTransportConfig {
 
   
   absl::optional<TimeDelta> pacer_burst_interval;
-
-  
-  
-  bool allow_bandwidth_estimation_probe_without_media = false;
 };
 }  
 

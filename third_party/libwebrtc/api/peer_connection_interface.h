@@ -112,6 +112,7 @@
 #include "api/set_remote_description_observer_interface.h"
 #include "api/stats/rtc_stats_collector_callback.h"
 #include "api/task_queue/task_queue_factory.h"
+#include "api/transport/bandwidth_estimation_settings.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/enums.h"
 #include "api/transport/network_control.h"
@@ -1132,6 +1133,13 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   virtual RTCError SetBitrate(const BitrateSettings& bitrate) = 0;
+
+  
+  
+  
+  
+  virtual void ReconfigureBandwidthEstimation(
+      const BandwidthEstimationSettings& settings) {}
 
   
   
