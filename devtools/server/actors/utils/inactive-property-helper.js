@@ -793,7 +793,10 @@ class InactivePropertyHelper {
       if (validator.invalidProperties) {
         isRuleConcerned = validator.invalidProperties.includes(property);
       } else if (validator.acceptedProperties) {
-        isRuleConcerned = !validator.acceptedProperties.has(property);
+        isRuleConcerned =
+          !validator.acceptedProperties.has(property) &&
+          
+          !property.startsWith("--");
       }
 
       if (!isRuleConcerned) {
