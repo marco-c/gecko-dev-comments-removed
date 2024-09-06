@@ -295,16 +295,28 @@ nsresult IMEHandler::NotifyIME(nsWindow* aWindow,
         }
         return TSFTextStore::OnMouseButtonEvent(aIMENotification);
       case REQUEST_TO_COMMIT_COMPOSITION:
-        if (TSFTextStore::IsComposingOn(aWindow)) {
+        
+        
+        
+        if (IsTSFAvailable()) {
           TSFTextStore::CommitComposition(false);
-        } else if (IsIMMActive()) {
+        }
+        
+        
+        if (IsIMMActive()) {
           IMMHandler::CommitComposition(aWindow);
         }
         return NS_OK;
       case REQUEST_TO_CANCEL_COMPOSITION:
-        if (TSFTextStore::IsComposingOn(aWindow)) {
+        
+        
+        
+        if (IsTSFAvailable()) {
           TSFTextStore::CommitComposition(true);
-        } else if (IsIMMActive()) {
+        }
+        
+        
+        if (IsIMMActive()) {
           IMMHandler::CancelComposition(aWindow);
         }
         return NS_OK;

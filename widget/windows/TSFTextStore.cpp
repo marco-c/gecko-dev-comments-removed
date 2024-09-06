@@ -6588,23 +6588,33 @@ void TSFTextStore::CommitCompositionInternal(bool aDiscard) {
   }
   
   
-  RefPtr<ITfContext> context = mContext;
-  do {
-    if (context) {
-      RefPtr<ITfContextOwnerCompositionServices> services;
-      context->QueryInterface(IID_ITfContextOwnerCompositionServices,
-                              getter_AddRefs(services));
-      if (services) {
-        MOZ_LOG(gIMELog, LogLevel::Debug,
-                ("0x%p   TSFTextStore::CommitCompositionInternal(), "
-                 "requesting TerminateComposition() for the context 0x%p...",
-                 this, context.get()));
-        services->TerminateComposition(nullptr);
-      }
+  
+  
+  RefPtr<ITfContext> baseContext = mContext;
+  RefPtr<ITfContext> topContext;
+  if (mDocumentMgr) {
+    mDocumentMgr->GetTop(getter_AddRefs(topContext));
+  }
+  const auto TerminateCompositionIn = [this](ITfContext* aContext) {
+    if (MOZ_UNLIKELY(!aContext)) {
+      return;
     }
-    if (context != mContext) break;
-    if (mDocumentMgr) mDocumentMgr->GetTop(getter_AddRefs(context));
-  } while (context != mContext);
+    RefPtr<ITfContextOwnerCompositionServices> services;
+    aContext->QueryInterface(IID_ITfContextOwnerCompositionServices,
+                             getter_AddRefs(services));
+    if (MOZ_UNLIKELY(!services)) {
+      return;
+    }
+    MOZ_LOG(gIMELog, LogLevel::Debug,
+            ("0x%p   TSFTextStore::CommitCompositionInternal(), "
+             "requesting TerminateComposition() for the context 0x%p...",
+             this, aContext));
+    services->TerminateComposition(nullptr);
+  };
+  TerminateCompositionIn(baseContext);
+  if (baseContext != topContext) {
+    TerminateCompositionIn(topContext);
+  }
 }
 
 static bool GetCompartment(IUnknown* pUnk, const GUID& aID,
