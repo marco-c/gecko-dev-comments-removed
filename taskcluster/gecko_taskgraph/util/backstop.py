@@ -37,19 +37,14 @@ def is_backstop(
         return True
 
     project = params["project"]
-    pushid = int(params["pushlog_id"])
-    pushdate = int(params["pushdate"])
-
     if project in TRY_PROJECTS:
         return False
     if project not in integration_projects:
         return True
 
     
-    if pushid % push_interval == 0:
-        return True
-
-    if time_interval <= 0:
+    
+    if params["target_tasks_method"] == "nothing":
         return False
 
     
@@ -67,9 +62,7 @@ def is_backstop(
         return True
 
     try:
-        last_pushdate = get_artifact(last_backstop_id, "public/parameters.yml")[
-            "pushdate"
-        ]
+        last_params = get_artifact(last_backstop_id, "public/parameters.yml")
     except HTTPError as e:
         
         
@@ -79,6 +72,15 @@ def is_backstop(
             return False
         raise
 
-    if (pushdate - last_pushdate) / 60 >= time_interval:
+    
+    if params["pushlog_id"] - last_params["pushlog_id"] >= push_interval:
         return True
+
+    if time_interval <= 0:
+        return False
+
+    
+    if (params["pushdate"] - last_params["pushdate"]) / 60 >= time_interval:
+        return True
+
     return False
