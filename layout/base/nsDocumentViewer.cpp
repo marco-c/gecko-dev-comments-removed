@@ -483,8 +483,7 @@ class nsDocumentShownDispatcher : public Runnable {
 
 
 already_AddRefed<nsIDocumentViewer> NS_NewDocumentViewer() {
-  RefPtr<nsDocumentViewer> viewer = new nsDocumentViewer();
-  return viewer.forget();
+  return MakeAndAddRef<nsDocumentViewer>();
 }
 
 void nsDocumentViewer::PrepareToStartLoad() {
@@ -1254,8 +1253,7 @@ nsDocumentViewer::DispatchBeforeUnload() {
   
   
   nsPresContext* presContext = mDocument->GetPresContext();
-  RefPtr<BeforeUnloadEvent> event =
-      new BeforeUnloadEvent(mDocument, presContext, nullptr);
+  auto event = MakeRefPtr<BeforeUnloadEvent>(mDocument, presContext, nullptr);
   event->InitEvent(u"beforeunload"_ns, false, true);
 
   
@@ -2094,8 +2092,7 @@ nsDocumentViewer::Show() {
 
   
   
-  RefPtr<nsDocumentShownDispatcher> event =
-      new nsDocumentShownDispatcher(document);
+  auto event = MakeRefPtr<nsDocumentShownDispatcher>(document);
   document->Dispatch(event.forget());
 
   return NS_OK;
@@ -2888,10 +2885,10 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
   
   
   
-  RefPtr<nsPrintJob> printJob =
-      new nsPrintJob(*this, *mContainer, *mDocument,
-                     float(AppUnitsPerCSSInch()) /
-                         float(mDeviceContext->AppUnitsPerDevPixel()));
+  auto printJob =
+      MakeRefPtr<nsPrintJob>(*this, *mContainer, *mDocument,
+                             float(AppUnitsPerCSSInch()) /
+                                 float(mDeviceContext->AppUnitsPerDevPixel()));
   mPrintJob = printJob;
 
   nsresult rv = printJob->Print(*mDocument, aPrintSettings, aRemotePrintJob,
@@ -2931,10 +2928,10 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
   
   
   
-  RefPtr<nsPrintJob> printJob =
-      new nsPrintJob(*this, *mContainer, *doc,
-                     float(AppUnitsPerCSSInch()) /
-                         float(mDeviceContext->AppUnitsPerDevPixel()));
+  auto printJob =
+      MakeRefPtr<nsPrintJob>(*this, *mContainer, *doc,
+                             float(AppUnitsPerCSSInch()) /
+                                 float(mDeviceContext->AppUnitsPerDevPixel()));
   mPrintJob = printJob;
 
   nsresult rv = printJob->PrintPreview(
@@ -3373,8 +3370,7 @@ NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
       return NS_ERROR_NOT_AVAILABLE;
     }
 
-    RefPtr<nsDeviceContextSpecProxy> devspec =
-        new nsDeviceContextSpecProxy(aRemotePrintJob);
+    auto devspec = MakeRefPtr<nsDeviceContextSpecProxy>(aRemotePrintJob);
     nsresult rv = devspec->Init(aPrintSettings,  true);
     NS_ENSURE_SUCCESS(rv, rv);
 
