@@ -333,8 +333,16 @@ void FetchParent::ActorDestroy(ActorDestroyReason aReason) {
     FETCH_LOG(("FetchParent::ActorDestroy entry [%p] removed", this));
   }
   
+  if (!mRequest) {
+    return;
+  }
   
-  RecvAbortFetchOp();
+  
+  if (mRequest->GetKeepalive()) {
+    FETCH_LOG(("Skip aborting fetch as the request is marked keepalive"));
+  } else {
+    RecvAbortFetchOp();
+  }
   
 }
 
