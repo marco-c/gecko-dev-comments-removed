@@ -6,12 +6,6 @@
 
 
 
-
-
-
-
-
-
 const EXPECTED_RESULT_INDEX = 1;
 
 const REMOTE_SETTINGS_DATA = [
@@ -30,6 +24,8 @@ const REMOTE_SETTINGS_DATA = [
   },
 ];
 
+requestLongerTimeout(5);
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -47,7 +43,7 @@ add_setup(async function () {
   });
 });
 
-add_task(async function basic() {
+add_tasks_with_rust(async function basic() {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -96,7 +92,7 @@ add_task(async function basic() {
 });
 
 
-add_task(async function resultMenu_showLessFrequently() {
+add_tasks_with_rust(async function resultMenu_showLessFrequently() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.pocket.featureGate", true],
@@ -235,7 +231,7 @@ async function doShowLessFrequently({ input, expected, keepViewOpen = false }) {
 }
 
 
-add_task(async function resultMenu_notInterested() {
+add_tasks_with_rust(async function resultMenu_notInterested() {
   await doDismissTest("not_interested");
 
   
@@ -245,7 +241,7 @@ add_task(async function resultMenu_notInterested() {
 });
 
 
-add_task(async function notRelevant() {
+add_tasks_with_rust(async function notRelevant() {
   await doDismissTest("not_relevant");
 });
 
@@ -361,7 +357,7 @@ async function doDismissTest(command) {
 }
 
 
-add_task(async function rowLabel() {
+add_tasks_with_rust(async function rowLabel() {
   const testCases = [
     
     {
@@ -389,7 +385,7 @@ add_task(async function rowLabel() {
 });
 
 
-add_task(async function showLessFrequentlyMenuVisibility() {
+add_tasks_with_rust(async function showLessFrequentlyMenuVisibility() {
   const testCases = [
     
     {
