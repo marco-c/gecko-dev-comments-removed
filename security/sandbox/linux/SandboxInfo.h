@@ -42,6 +42,8 @@ class SandboxInfo {
     
     kPermissive = 1 << 7,
     
+    
+    kVerboseTests = 1 << 9,
   };
 
   bool Test(Flags aFlag) const { return (mFlags & aFlag) == aFlag; }
