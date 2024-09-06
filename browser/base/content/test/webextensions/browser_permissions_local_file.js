@@ -32,8 +32,21 @@ add_task(async function test_install_extension_from_local_file() {
     },
   });
 
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      
+      
+      
+      ["xpinstall.signatures.dev-root", true],
+    ],
+  });
+
   
   await testInstallMethod(installFile, "installLocal");
+
+  await SpecialPowers.popPrefEnv();
 
   
   ok(

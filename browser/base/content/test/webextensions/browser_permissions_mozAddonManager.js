@@ -9,6 +9,17 @@ async function installMozAM(filename) {
   );
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      
+      
+      
+      ["xpinstall.signatures.dev-root", true],
+    ],
+  });
+
   await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [`${BASE}/${filename}`],
@@ -16,6 +27,8 @@ async function installMozAM(filename) {
       await content.wrappedJSObject.installMozAM(url);
     }
   );
+
+  await SpecialPowers.popPrefEnv();
 }
 
 add_task(() => testInstallMethod(installMozAM, "installAmo"));

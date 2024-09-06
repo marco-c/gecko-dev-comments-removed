@@ -9,6 +9,12 @@ async function installTrigger(filename) {
       ["extensions.InstallTriggerImpl.enabled", true],
       
       ["xpinstall.userActivation.required", false],
+      
+      
+      
+      
+      
+      ["xpinstall.signatures.dev-root", true],
     ],
   });
   BrowserTestUtils.startLoadingURIString(
