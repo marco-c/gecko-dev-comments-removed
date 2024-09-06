@@ -11,7 +11,8 @@
 #ifndef API_VIDEO_VIDEO_FRAME_BUFFER_H_
 #define API_VIDEO_VIDEO_FRAME_BUFFER_H_
 
-#include <stdint.h>
+#include <cstdint>
+#include <string>
 
 #include "api/array_view.h"
 #include "api/ref_count.h"
@@ -124,6 +125,10 @@ class RTC_EXPORT VideoFrameBuffer : public webrtc::RefCountInterface {
   
   virtual rtc::scoped_refptr<VideoFrameBuffer> GetMappedFrameBuffer(
       rtc::ArrayView<Type> types);
+
+  
+  
+  virtual std::string storage_representation() const;
 
  protected:
   ~VideoFrameBuffer() override {}
