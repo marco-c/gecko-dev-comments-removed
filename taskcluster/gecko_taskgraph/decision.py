@@ -356,20 +356,13 @@ def get_decision_parameters(graph_config, options):
         parameters.update(PER_PROJECT_PARAMETERS["default"])
 
     
-    parameters["backstop"] = is_backstop(parameters)
-
-    
     if options.get("target_tasks_method"):
         parameters["target_tasks_method"] = options["target_tasks_method"]
 
     
     
     
-    if (
-        "DONTBUILD" in commit_message
-        and options["tasks_for"] == "hg-push"
-        and not parameters["backstop"]
-    ):
+    if "DONTBUILD" in commit_message and options["tasks_for"] == "hg-push":
         parameters["target_tasks_method"] = "nothing"
 
     if options.get("include_push_tasks"):
@@ -394,6 +387,9 @@ def get_decision_parameters(graph_config, options):
 
     if options.get("optimize_target_tasks") is not None:
         parameters["optimize_target_tasks"] = options["optimize_target_tasks"]
+
+    
+    parameters["backstop"] = is_backstop(parameters)
 
     if "decision-parameters" in graph_config["taskgraph"]:
         find_object(graph_config["taskgraph"]["decision-parameters"])(
