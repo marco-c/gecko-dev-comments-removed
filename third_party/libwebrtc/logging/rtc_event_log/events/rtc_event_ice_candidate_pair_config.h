@@ -38,9 +38,6 @@ enum class IceCandidateType {
   kSrflx,
   kPrflx,
   kRelay,
-  
-  kLocal [[deprecated("Use kHost instead")]] = kHost,
-  kStun [[deprecated("Use kSrflx instead ")]] = kSrflx
 };
 
 enum class IceCandidatePairProtocol {
