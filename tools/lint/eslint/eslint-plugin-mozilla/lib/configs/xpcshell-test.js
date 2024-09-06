@@ -56,10 +56,6 @@ module.exports = {
     
     "@microsoft/sdl/no-insecure-url": "off",
 
-    
-    
-    
-    "mozilla/import-headjs-globals": "error",
     "mozilla/no-comparison-or-assignment-inside-ok": "error",
     "mozilla/no-useless-run-test": "error",
     "no-shadow": "error",
