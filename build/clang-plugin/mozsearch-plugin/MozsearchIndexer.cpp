@@ -512,6 +512,12 @@ private:
 
   std::string getMangledName(clang::MangleContext *Ctx,
                              const clang::NamedDecl *Decl) {
+    
+    
+    if (isa<FunctionDecl>(Decl) && cast<FunctionDecl>(Decl)->isMain()) {
+      return std::string("MF_") + mangleLocation(Decl->getLocation());
+    }
+
     if (isa<FunctionDecl>(Decl) && cast<FunctionDecl>(Decl)->isExternC()) {
       return cast<FunctionDecl>(Decl)->getNameAsString();
     }
