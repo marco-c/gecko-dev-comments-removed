@@ -3865,8 +3865,9 @@ impl<'ctx> CoreStreamData<'ctx> {
             );
 
             
-            if !self.has_input()
-                && self.output_stream_params.channels() == 2
+            
+            let mut maybe_need_mixer = true;
+            if self.output_stream_params.channels() == 2
                 && self.output_stream_params.layout() == ChannelLayout::STEREO
             {
                 let layout = AudioChannelLayout {
@@ -3886,9 +3887,12 @@ impl<'ctx> CoreStreamData<'ctx> {
                         "AudioUnitSetProperty/output/kAudioUnitProperty_AudioChannelLayout rv={}",
                         r
                     );
-                    return Err(Error::error());
                 }
-            } else {
+                maybe_need_mixer = r != NO_ERR;
+            }
+
+            if maybe_need_mixer {
+                
                 
                 
                 
