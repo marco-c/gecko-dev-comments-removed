@@ -6,6 +6,16 @@
 
 
 
+option(
+    env="HOST_CFLAGS",
+    help="Extra flags for compiling host C sources.",
+    nargs=1,
+    default="",
+)
+
+
+
+
 
 option("--disable-optimize", nargs="?", help="Disable optimizations via compiler flags")
 
