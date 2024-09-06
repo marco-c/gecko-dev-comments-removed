@@ -16310,42 +16310,35 @@ static bool AddInlinedCompilations(JSContext* cx, HandleScript script,
   return true;
 }
 
-void CodeGenerator::validateAndRegisterFuseDependencies(JSContext* cx,
-                                                        HandleScript script,
-                                                        bool* isValid) {
-  
-  if (!*isValid) {
-    return;
+struct EmulatesUndefinedDependency final : public CompilationDependency {
+  CompileRuntime* runtime;
+  explicit EmulatesUndefinedDependency(CompileRuntime* runtime)
+      : CompilationDependency(CompilationDependency::Type::EmulatesUndefined),
+        runtime(runtime) {};
+
+  virtual bool operator==(CompilationDependency& dep) {
+    
+    return dep.type == type;
   }
 
-  for (auto dependency : fuseDependencies) {
-    switch (dependency) {
-      case FuseDependencyKind::HasSeenObjectEmulateUndefinedFuse: {
-        auto& hasSeenObjectEmulateUndefinedFuse =
-            cx->runtime()->hasSeenObjectEmulateUndefinedFuse.ref();
-
-        if (!hasSeenObjectEmulateUndefinedFuse.intact()) {
-          JitSpew(JitSpew_Codegen,
-                  "tossing compilation; hasSeenObjectEmulateUndefinedFuse fuse "
-                  "dependency no longer valid\n");
-          *isValid = false;
-          return;
-        }
-
-        if (!hasSeenObjectEmulateUndefinedFuse.addFuseDependency(cx, script)) {
-          JitSpew(JitSpew_Codegen,
-                  "tossing compilation; failed to register "
-                  "hasSeenObjectEmulateUndefinedFuse script dependency\n");
-          *isValid = false;
-          return;
-        }
-        break;
-      }
-
-      default:
-        MOZ_CRASH("Unknown Dependency Kind");
-    }
+  virtual bool checkDependency() {
+    return runtime->hasSeenObjectEmulateUndefinedFuseIntact();
   }
+
+  virtual bool registerDependency(JSContext* cx, HandleScript script) {
+    return cx->runtime()
+        ->hasSeenObjectEmulateUndefinedFuse.ref()
+        .addFuseDependency(cx, script);
+  }
+
+  virtual UniquePtr<CompilationDependency> clone() {
+    return MakeUnique<EmulatesUndefinedDependency>(runtime);
+  }
+};
+
+bool CodeGenerator::addHasSeenObjectEmulateUndefinedFuseDependency() {
+  EmulatesUndefinedDependency dep(gen->runtime);
+  return mirGen().tracker.addDependency(dep);
 }
 
 bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
@@ -16388,20 +16381,10 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
 
   
   
-  
-  
-  
-  
-  validateAndRegisterFuseDependencies(cx, script, &isValid);
-
-  
-  
   if (!isValid) {
     return true;
   }
 
-  
-  
   CompilationDependencyTracker& tracker = mirGen().tracker;
   if (!tracker.checkDependencies()) {
     return true;
