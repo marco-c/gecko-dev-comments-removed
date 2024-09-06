@@ -890,16 +890,17 @@ fn test_set_remote_metric_configuration() {
     );
 
     
-    let mut metrics_enabled_config = json!(
+    let mut remote_settings_config = json!(
         {
-            "category.string_metric": false,
-            "category.labeled_string_metric": false,
+            "metrics_enabled": {
+                "category.string_metric": false,
+                "category.labeled_string_metric": false,
+            }
         }
     )
     .to_string();
-    glean.set_metrics_enabled_config(
-        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
-    );
+    glean
+        .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
 
     
     metric.set_sync(&glean, "VALUE_AFTER_DISABLED");
@@ -921,15 +922,16 @@ fn test_set_remote_metric_configuration() {
     );
 
     
-    metrics_enabled_config = json!(
+    remote_settings_config = json!(
         {
-            "category.string_metric": true,
+            "metrics_enabled": {
+                "category.string_metric": true,
+            }
         }
     )
     .to_string();
-    glean.set_metrics_enabled_config(
-        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
-    );
+    glean
+        .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
 
     
     
@@ -954,15 +956,16 @@ fn test_set_remote_metric_configuration() {
     
     
     
-    metrics_enabled_config = json!(
+    remote_settings_config = json!(
         {
-            "category.labeled_string_metric": true,
+            "metrics_enabled": {
+                "category.labeled_string_metric": true,
+            }
         }
     )
     .to_string();
-    glean.set_metrics_enabled_config(
-        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
-    );
+    glean
+        .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
 
     
     
@@ -992,15 +995,16 @@ fn test_remote_settings_epoch() {
     assert_eq!(0u8, current_epoch, "Current epoch must start at 0");
 
     
-    let metrics_enabled_config = json!(
+    let remote_settings_config = json!(
         {
-            "category.string_metric": false
+            "metrics_enabled": {
+                "category.string_metric": false
+            }
         }
     )
     .to_string();
-    glean.set_metrics_enabled_config(
-        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
-    );
+    glean
+        .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
 
     
     current_epoch = glean.remote_settings_epoch.load(Ordering::Acquire);
@@ -1026,15 +1030,16 @@ fn test_remote_settings_epoch_updates_in_metric() {
     );
 
     
-    let metrics_enabled_config = json!(
+    let remote_settings_config = json!(
         {
-            "category.string_metric": false
+            "metrics_enabled": {
+                "category.string_metric": false
+            }
         }
     )
     .to_string();
-    glean.set_metrics_enabled_config(
-        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
-    );
+    glean
+        .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
 
     
     let current_epoch = glean.remote_settings_epoch.load(Ordering::Acquire);
@@ -1168,7 +1173,16 @@ fn disabled_pings_are_not_submitted() {
     let dir = tempfile::tempdir().unwrap();
     let (mut glean, _t) = new_glean(Some(dir));
 
-    let ping = PingType::new_internal("custom-disabled", true, false, true, true, vec![], false);
+    let ping = PingType::new_internal(
+        "custom-disabled",
+        true,
+        false,
+        true,
+        true,
+        false,
+        vec![],
+        vec![],
+    );
     glean.register_ping_type(&ping);
 
     
@@ -1202,4 +1216,54 @@ fn internal_pings_can_be_disabled() {
 
     let submitted = glean.internal_pings.baseline.submit_sync(&glean, None);
     assert!(!submitted);
+}
+
+#[test]
+fn pings_are_controllable_from_remote_settings_config() {
+    let _ = env_logger::builder().is_test(true).try_init();
+
+    let dir = tempfile::tempdir().unwrap();
+    let (mut glean, _t) = new_glean(Some(dir));
+
+    let disabled_ping = PingType::new(
+        "custom-disabled",
+        true,
+        true,
+        true,
+        true,
+        false,
+        vec![],
+        vec![],
+    );
+    glean.register_ping_type(&disabled_ping);
+    let enabled_ping = PingType::new(
+        "custom-enabled",
+        true,
+        true,
+        true,
+        true,
+        true,
+        vec![],
+        vec![],
+    );
+    glean.register_ping_type(&enabled_ping);
+
+    assert!(!disabled_ping.submit_sync(&glean, None));
+    assert!(enabled_ping.submit_sync(&glean, None));
+
+    
+    let remote_settings_config = json!(
+        {
+            "pings_enabled": {
+                "custom-disabled": true,
+                "custom-enabled": false
+            }
+        }
+    )
+    .to_string();
+    glean
+        .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
+
+    assert!(disabled_ping.submit_sync(&glean, None));
+    assert!(!enabled_ping.submit_sync(&glean, None));
 }

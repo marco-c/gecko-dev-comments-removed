@@ -113,7 +113,7 @@ interface nsIFOG : nsISupports
 
 
 
-  void setMetricsFeatureConfig(in ACString aJsonConfig);
+  void applyServerKnobsConfig(in ACString aJsonConfig);
 
   
 
@@ -186,10 +186,13 @@ interface nsIFOG : nsISupports
 
 
 
+
   uint32_t testRegisterRuntimePing(in ACString aName,
                                    in boolean aIncludeClientId,
                                    in boolean aSendIfEmpty,
                                    in boolean aPreciseTimestamps,
                                    in boolean aIncludeInfoSections,
+                                   in boolean aEnabled,
+                                   in Array<ACString> aSchedulesPings,
                                    in Array<ACString> aReasonCodes);
 };

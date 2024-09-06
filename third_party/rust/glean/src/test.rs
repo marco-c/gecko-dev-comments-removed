@@ -49,7 +49,8 @@ fn send_a_ping() {
 
     
     const PING_NAME: &str = "test-ping";
-    let custom_ping = private::PingType::new(PING_NAME, true, true, true, true, vec![]);
+    let custom_ping =
+        private::PingType::new(PING_NAME, true, true, true, true, true, vec![], vec![]);
     custom_ping.submit(None);
 
     
@@ -90,7 +91,8 @@ fn send_a_ping_without_info_sections() {
 
     
     const PING_NAME: &str = "noinfo-ping";
-    let custom_ping = private::PingType::new(PING_NAME, true, true, true, false, vec![]);
+    let custom_ping =
+        private::PingType::new(PING_NAME, true, true, true, false, true, vec![], vec![]);
     custom_ping.submit(None);
 
     
@@ -594,7 +596,7 @@ fn ping_collection_must_happen_after_concurrently_scheduled_metrics_recordings()
     );
 
     let ping_name = "custom_ping_1";
-    let ping = private::PingType::new(ping_name, true, false, true, true, vec![]);
+    let ping = private::PingType::new(ping_name, true, false, true, true, true, vec![], vec![]);
     let metric = private::StringMetric::new(CommonMetricData {
         name: "string_metric".into(),
         category: "telemetry".into(),
@@ -1097,7 +1099,16 @@ fn flipping_upload_enabled_respects_order_of_events() {
         .build();
 
     
-    let sample_ping = PingType::new("sample-ping-1", true, false, true, true, vec![]);
+    let sample_ping = PingType::new(
+        "sample-ping-1",
+        true,
+        false,
+        true,
+        true,
+        true,
+        vec![],
+        vec![],
+    );
     let metric = private::StringMetric::new(CommonMetricData {
         name: "string_metric".into(),
         category: "telemetry".into(),
@@ -1141,7 +1152,7 @@ fn registering_pings_before_init_must_work() {
     }
 
     
-    let sample_ping = PingType::new("pre-register", true, true, true, true, vec![]);
+    let sample_ping = PingType::new("pre-register", true, true, true, true, true, vec![], vec![]);
 
     
     let dir = tempfile::tempdir().unwrap();
@@ -1193,7 +1204,7 @@ fn test_a_ping_before_submission() {
     let _t = new_glean(Some(cfg), true);
 
     
-    let sample_ping = PingType::new("custom1", true, true, true, true, vec![]);
+    let sample_ping = PingType::new("custom1", true, true, true, true, true, vec![], vec![]);
 
     let metric = CounterMetric::new(CommonMetricData {
         name: "counter_metric".into(),
@@ -1310,7 +1321,8 @@ fn signaling_done() {
 
     
     const PING_NAME: &str = "test-ping";
-    let custom_ping = private::PingType::new(PING_NAME, true, true, true, true, vec![]);
+    let custom_ping =
+        private::PingType::new(PING_NAME, true, true, true, true, true, vec![], vec![]);
     custom_ping.submit(None);
     custom_ping.submit(None);
 
@@ -1381,7 +1393,8 @@ fn configure_ping_throttling() {
 
     
     const PING_NAME: &str = "test-ping";
-    let custom_ping = private::PingType::new(PING_NAME, true, true, true, true, vec![]);
+    let custom_ping =
+        private::PingType::new(PING_NAME, true, true, true, true, true, vec![], vec![]);
 
     
     for _ in 0..pings_per_interval {

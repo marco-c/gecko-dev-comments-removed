@@ -21,9 +21,11 @@ add_task(function test_fog_metrics_disabled_remotely() {
 
   
   const feature_config = {
-    "test_only.cheesy_string": false,
+    metrics_enabled: {
+      "test_only.cheesy_string": false,
+    },
   };
-  Services.fog.setMetricsFeatureConfig(JSON.stringify(feature_config));
+  Services.fog.applyServerKnobsConfig(JSON.stringify(feature_config));
 
   
   
@@ -49,10 +51,12 @@ add_task(function test_fog_multiple_metrics_disabled_remotely() {
   
   
   var feature_config = {
-    "test_only.cheesy_string": false,
-    "test_only.meaning_of_life": false,
+    metrics_enabled: {
+      "test_only.cheesy_string": false,
+      "test_only.meaning_of_life": false,
+    },
   };
-  Services.fog.setMetricsFeatureConfig(JSON.stringify(feature_config));
+  Services.fog.applyServerKnobsConfig(JSON.stringify(feature_config));
 
   
   
@@ -65,10 +69,12 @@ add_task(function test_fog_multiple_metrics_disabled_remotely() {
 
   
   feature_config = {
-    "test_only.cheesy_string": true,
-    "test_only.meaning_of_life": false,
+    metrics_enabled: {
+      "test_only.cheesy_string": true,
+      "test_only.meaning_of_life": false,
+    },
   };
-  Services.fog.setMetricsFeatureConfig(JSON.stringify(feature_config));
+  Services.fog.applyServerKnobsConfig(JSON.stringify(feature_config));
 
   
   
@@ -101,9 +107,11 @@ add_task(function test_fog_metrics_feature_config_api_handles_null_values() {
 
   
   const feature_config = {
-    "test_only.cheesy_string": false,
+    metrics_enabled: {
+      "test_only.cheesy_string": false,
+    },
   };
-  Services.fog.setMetricsFeatureConfig(JSON.stringify(feature_config));
+  Services.fog.applyServerKnobsConfig(JSON.stringify(feature_config));
 
   
   
@@ -113,7 +121,7 @@ add_task(function test_fog_metrics_feature_config_api_handles_null_values() {
   Assert.equal(str1, Glean.testOnly.cheesyString.testGetValue("test-ping"));
 
   
-  Services.fog.setMetricsFeatureConfig(null);
+  Services.fog.applyServerKnobsConfig(null);
 
   
   
@@ -122,7 +130,7 @@ add_task(function test_fog_metrics_feature_config_api_handles_null_values() {
 
   
   
-  Services.fog.setMetricsFeatureConfig("");
+  Services.fog.applyServerKnobsConfig("");
 
   
   
@@ -140,9 +148,11 @@ add_task(function test_fog_metrics_disabled_reset_fog_behavior() {
 
   
   const feature_config = {
-    "test_only.cheesy_string": false,
+    metrics_enabled: {
+      "test_only.cheesy_string": false,
+    },
   };
-  Services.fog.setMetricsFeatureConfig(JSON.stringify(feature_config));
+  Services.fog.applyServerKnobsConfig(JSON.stringify(feature_config));
 
   
   

@@ -16,25 +16,31 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct MetricsEnabledConfig {
+pub struct RemoteSettingsConfig {
     
     
     
     
     
     
-    #[serde(flatten)]
+    #[serde(default)]
     pub metrics_enabled: HashMap<String, bool>,
+
+    
+    
+    
+    #[serde(default)]
+    pub pings_enabled: HashMap<String, bool>,
 }
 
-impl MetricsEnabledConfig {
+impl RemoteSettingsConfig {
     
     pub fn new() -> Self {
         Default::default()
     }
 }
 
-impl TryFrom<String> for MetricsEnabledConfig {
+impl TryFrom<String> for RemoteSettingsConfig {
     type Error = crate::ErrorKind;
 
     fn try_from(json: String) -> Result<Self, Self::Error> {

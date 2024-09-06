@@ -48,6 +48,10 @@ impl ObjectMetric {
     
     #[doc(hidden)]
     pub fn set_sync(&self, glean: &Glean, value: JsonValue) {
+        if !self.should_record(glean) {
+            return;
+        }
+
         let value = Metric::Object(serde_json::to_string(&value).unwrap());
         glean.storage().record(glean, &self.meta, &value)
     }
@@ -63,6 +67,31 @@ impl ObjectMetric {
     pub fn set(&self, value: JsonValue) {
         let metric = self.clone();
         crate::launch_with_glean(move |glean| metric.set_sync(glean, value))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_string(&self, object: String) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| {
+            let object = match serde_json::from_str(&object) {
+                Ok(object) => object,
+                Err(_) => {
+                    let msg = "Value did not match predefined schema";
+                    record_error(glean, &metric.meta, ErrorType::InvalidValue, msg, None);
+                    return;
+                }
+            };
+            metric.set_sync(glean, object)
+        })
     }
 
     

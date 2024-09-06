@@ -32,6 +32,8 @@ pub struct Ping<'a> {
     pub headers: HeaderMap,
     
     pub includes_info_sections: bool,
+    
+    pub schedules_pings: Vec<String>,
 }
 
 
@@ -314,6 +316,7 @@ impl PingMaker {
             url_path,
             headers: self.get_headers(glean),
             includes_info_sections: ping.include_info_sections(),
+            schedules_pings: ping.schedules_pings().to_vec(),
         })
     }
 

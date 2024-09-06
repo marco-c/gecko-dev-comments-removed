@@ -337,7 +337,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, true, vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -364,7 +364,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, true, vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -400,7 +400,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, true, vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, true, vec![], vec![]);
         glean.register_ping_type(&ping_type);
 
         

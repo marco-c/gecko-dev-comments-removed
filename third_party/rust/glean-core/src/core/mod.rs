@@ -16,7 +16,7 @@ use crate::event_database::EventDatabase;
 use crate::internal_metrics::{AdditionalMetrics, CoreMetrics, DatabaseMetrics};
 use crate::internal_pings::InternalPings;
 use crate::metrics::{
-    self, ExperimentMetric, Metric, MetricType, MetricsEnabledConfig, PingType, RecordedExperiment,
+    self, ExperimentMetric, Metric, MetricType, PingType, RecordedExperiment, RemoteSettingsConfig,
 };
 use crate::ping::PingMaker;
 use crate::storage::{StorageManager, INTERNAL_STORAGE};
@@ -162,7 +162,7 @@ pub struct Glean {
     pub(crate) app_build: String,
     pub(crate) schedule_metrics_pings: bool,
     pub(crate) remote_settings_epoch: AtomicU8,
-    pub(crate) remote_settings_metrics_config: Arc<Mutex<MetricsEnabledConfig>>,
+    pub(crate) remote_settings_config: Arc<Mutex<RemoteSettingsConfig>>,
     pub(crate) with_timestamps: bool,
 }
 
@@ -222,7 +222,7 @@ impl Glean {
             
             schedule_metrics_pings: false,
             remote_settings_epoch: AtomicU8::new(0),
-            remote_settings_metrics_config: Arc::new(Mutex::new(MetricsEnabledConfig::new())),
+            remote_settings_config: Arc::new(Mutex::new(RemoteSettingsConfig::new())),
             with_timestamps: cfg.enable_event_timestamps,
         };
 
@@ -764,13 +764,20 @@ impl Glean {
     
     
     
-    pub fn set_metrics_enabled_config(&self, cfg: MetricsEnabledConfig) {
+    pub fn apply_server_knobs_config(&self, cfg: RemoteSettingsConfig) {
         
         
-        let mut metric_config = self.remote_settings_metrics_config.lock().unwrap();
+        let mut remote_settings_config = self.remote_settings_config.lock().unwrap();
 
         
-        metric_config.metrics_enabled.extend(cfg.metrics_enabled);
+        remote_settings_config
+            .metrics_enabled
+            .extend(cfg.metrics_enabled);
+
+        
+        remote_settings_config
+            .pings_enabled
+            .extend(cfg.pings_enabled);
 
         
         self.remote_settings_epoch.fetch_add(1, Ordering::SeqCst);
