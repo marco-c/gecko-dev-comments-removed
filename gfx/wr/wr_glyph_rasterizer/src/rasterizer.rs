@@ -29,6 +29,7 @@ use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub static GLYPH_FLASHING: AtomicBool = AtomicBool::new(false);
+const GLYPH_BATCH_SIZE: usize = 32;
 
 impl FontContexts {
     
@@ -99,7 +100,7 @@ impl GlyphRasterizer {
 
         
         
-        if batch_size >= 8 {
+        if batch_size >= GLYPH_BATCH_SIZE {
             let container = self.pending_glyph_requests.get_mut(&font).unwrap();
             let glyphs = mem::replace(container, SmallVec::new());
             self.flush_glyph_requests(font, glyphs, true);
@@ -185,7 +186,8 @@ impl GlyphRasterizer {
             
             
             profile_scope!("spawning process_glyph jobs");
-            self.workers.install(|| {
+            let tx = self.glyph_tx.clone();
+            self.workers.spawn(move || {
                 FontContext::begin_rasterize(&font);
                 
                 
@@ -193,14 +195,14 @@ impl GlyphRasterizer {
                 if FontContext::distribute_across_threads() {
                     glyphs.par_iter().for_each(|key| {
                         let job = process_glyph(key);
-                        self.glyph_tx.send(job).unwrap();
+                        tx.send(job).unwrap();
                     });
                 } else {
                     
                     
                     for key in glyphs {
                         let job = process_glyph(&key);
-                        self.glyph_tx.send(job).unwrap();
+                        tx.send(job).unwrap();
                     }
                 }
                 FontContext::end_rasterize(&font);
