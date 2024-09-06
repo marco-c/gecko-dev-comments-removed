@@ -49,7 +49,6 @@ class nsIContent;
 class nsIPrincipal;
 class nsIWidget;
 class nsAtom;
-class nsIScrollableFrame;
 class nsRegion;
 enum nsChangeHint : uint32_t;
 class nsFontMetrics;
@@ -216,18 +215,19 @@ class nsLayoutUtils {
   
 
 
-  static nsIScrollableFrame* FindScrollableFrameFor(nsIContent* aContent);
+  static mozilla::ScrollContainerFrame* FindScrollContainerFrameFor(
+      nsIContent* aContent);
 
   
 
 
-  static nsIScrollableFrame* FindScrollableFrameFor(ViewID aId);
+  static mozilla::ScrollContainerFrame* FindScrollContainerFrameFor(ViewID aId);
 
   
 
 
 
-  static nsIFrame* GetScrollFrameFromContent(nsIContent* aContent);
+  static nsIFrame* GetScrollContainerFrameFromContent(nsIContent* aContent);
 
   
 
@@ -525,7 +525,8 @@ class nsLayoutUtils {
   
 
 
-  static nsIScrollableFrame* GetScrollableFrameFor(
+
+  static mozilla::ScrollContainerFrame* GetScrollContainerFrameFor(
       const nsIFrame* aScrolledFrame);
 
   
@@ -591,8 +592,8 @@ class nsLayoutUtils {
 
 
 
-  static nsIScrollableFrame* GetNearestScrollableFrame(nsIFrame* aFrame,
-                                                       uint32_t aFlags = 0);
+  static mozilla::ScrollContainerFrame* GetNearestScrollContainerFrame(
+      nsIFrame* aFrame, uint32_t aFlags = 0);
 
   
 
@@ -2664,7 +2665,8 @@ class nsLayoutUtils {
 
 
   static nsRect CalculateScrollableRectForFrame(
-      const nsIScrollableFrame* aScrollableFrame, const nsIFrame* aRootFrame);
+      const mozilla::ScrollContainerFrame* aScrollContainerFrame,
+      const nsIFrame* aRootFrame);
 
   
 
@@ -2753,9 +2755,10 @@ class nsLayoutUtils {
 
 
   static FrameMetrics CalculateBasicFrameMetrics(
-      nsIScrollableFrame* aScrollFrame);
+      mozilla::ScrollContainerFrame* aScrollContainerFrame);
 
-  static nsIScrollableFrame* GetAsyncScrollableAncestorFrame(nsIFrame* aTarget);
+  static mozilla::ScrollContainerFrame* GetAsyncScrollableAncestorFrame(
+      nsIFrame* aTarget);
 
   static void SetBSizeFromFontMetrics(
       const nsIFrame* aFrame, mozilla::ReflowOutput& aMetrics,
@@ -2845,14 +2848,16 @@ class nsLayoutUtils {
 
 
   static CSSRect GetBoundingContentRect(
-      const nsIContent* aContent, const nsIScrollableFrame* aRootScrollFrame,
+      const nsIContent* aContent,
+      const mozilla::ScrollContainerFrame* aRootScrollContainerFrame,
       mozilla::Maybe<CSSRect>* aOutNearestScrollClip = nullptr);
 
   
 
 
   static CSSRect GetBoundingFrameRect(
-      nsIFrame* aFrame, const nsIScrollableFrame* aRootScrollFrame,
+      nsIFrame* aFrame,
+      const mozilla::ScrollContainerFrame* aRootScrollContainerFrame,
       mozilla::Maybe<CSSRect>* aOutNearestScrollClip = nullptr);
 
   

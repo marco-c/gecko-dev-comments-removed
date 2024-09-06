@@ -22,6 +22,7 @@ namespace mozilla {
 
 class nsDisplayListBuilder;
 class PresShell;
+class ScrollContainerFrame;
 
 
 enum class DisplayportRelativeTo { ScrollPort, ScrollFrame };
@@ -81,8 +82,9 @@ struct DisplayPortMargins {
   
   
   
-  static DisplayPortMargins ForScrollFrame(nsIScrollableFrame* aScrollFrame,
-                                           const ScreenMargin& aMargins);
+  static DisplayPortMargins ForScrollContainerFrame(
+      ScrollContainerFrame* aScrollContainerFrame,
+      const ScreenMargin& aMargins);
 
   
   static DisplayPortMargins ForContent(nsIContent* aContent,
@@ -258,7 +260,7 @@ class DisplayPortUtils {
 
 
   static bool CalculateAndSetDisplayPortMargins(
-      nsIScrollableFrame* aScrollFrame, RepaintMode aRepaintMode);
+      ScrollContainerFrame* aScrollContainerFrame, RepaintMode aRepaintMode);
 
   
 
@@ -272,8 +274,8 @@ class DisplayPortUtils {
 
 
   static bool MaybeCreateDisplayPort(
-      nsDisplayListBuilder* aBuilder, nsIFrame* aScrollFrame,
-      nsIScrollableFrame* aScrollFrameAsScrollable, RepaintMode aRepaintMode);
+      nsDisplayListBuilder* aBuilder,
+      ScrollContainerFrame* aScrollContainerFrame, RepaintMode aRepaintMode);
 
   
 

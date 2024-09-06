@@ -16,9 +16,8 @@
 
 #define PROGRESS_TIMELINE_DURATION_MILLISEC 100000
 
-class nsIScrollableFrame;
-
 namespace mozilla {
+class ScrollContainerFrame;
 class ElementAnimationData;
 struct NonOwningAnimationTarget;
 namespace dom {
@@ -177,7 +176,7 @@ class ScrollTimeline : public AnimationTimeline {
   
   
   
-  bool IsActive() const { return GetScrollFrame(); }
+  bool IsActive() const { return GetScrollContainerFrame(); }
 
   Element* SourceElement() const {
     MOZ_ASSERT(mSource);
@@ -211,7 +210,7 @@ class ScrollTimeline : public AnimationTimeline {
     nscoord mEnd = 0;
   };
   virtual Maybe<ScrollOffsets> ComputeOffsets(
-      const nsIScrollableFrame* aScrollFrame,
+      const ScrollContainerFrame* aScrollFrame,
       layers::ScrollDirection aOrientation) const;
 
   
@@ -225,7 +224,7 @@ class ScrollTimeline : public AnimationTimeline {
   
   void UnregisterFromScrollSource();
 
-  const nsIScrollableFrame* GetScrollFrame() const;
+  const ScrollContainerFrame* GetScrollContainerFrame() const;
 
   static std::pair<const Element*, PseudoStyleType> FindNearestScroller(
       Element* aSubject, PseudoStyleType aPseudoType);

@@ -9,7 +9,6 @@
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "nsIScrollableFrame.h"
 #include "nsLayoutUtils.h"
 
 namespace mozilla::dom {
@@ -65,10 +64,10 @@ void ViewTimeline::ReplacePropertiesWith(Element* aSubjectElement,
 }
 
 Maybe<ScrollTimeline::ScrollOffsets> ViewTimeline::ComputeOffsets(
-    const nsIScrollableFrame* aScrollFrame,
+    const ScrollContainerFrame* aScrollContainerFrame,
     layers::ScrollDirection aOrientation) const {
   MOZ_ASSERT(mSubject);
-  MOZ_ASSERT(aScrollFrame);
+  MOZ_ASSERT(aScrollContainerFrame);
 
   const Element* subjectElement =
       AnimationUtils::GetElementForRestyle(mSubject, mSubjectPseudoType);
@@ -83,7 +82,7 @@ Maybe<ScrollTimeline::ScrollOffsets> ViewTimeline::ComputeOffsets(
   
   
   
-  const nsIFrame* scrolledFrame = aScrollFrame->GetScrolledFrame();
+  const nsIFrame* scrolledFrame = aScrollContainerFrame->GetScrolledFrame();
   MOZ_ASSERT(scrolledFrame);
   const nsRect subjectRect(subject->GetOffsetTo(scrolledFrame),
                            subject->GetSize());
@@ -91,7 +90,7 @@ Maybe<ScrollTimeline::ScrollOffsets> ViewTimeline::ComputeOffsets(
   
   
   
-  const nsRect scrollPort = aScrollFrame->GetScrollPortRect();
+  const nsRect scrollPort = aScrollContainerFrame->GetScrollPortRect();
 
   
   nscoord subjectPosition = subjectRect.y;
@@ -115,7 +114,7 @@ Maybe<ScrollTimeline::ScrollOffsets> ViewTimeline::ComputeOffsets(
   
   
   
-  const auto sideInsets = ComputeInsets(aScrollFrame, aOrientation);
+  const auto sideInsets = ComputeInsets(aScrollContainerFrame, aOrientation);
 
   
   
@@ -132,14 +131,15 @@ Maybe<ScrollTimeline::ScrollOffsets> ViewTimeline::ComputeOffsets(
 }
 
 ScrollTimeline::ScrollOffsets ViewTimeline::ComputeInsets(
-    const nsIScrollableFrame* aScrollFrame,
+    const ScrollContainerFrame* aScrollContainerFrame,
     layers::ScrollDirection aOrientation) const {
   
   
   
-  const WritingMode wm = aScrollFrame->GetScrolledFrame()->GetWritingMode();
+  const WritingMode wm =
+      aScrollContainerFrame->GetScrolledFrame()->GetWritingMode();
   const auto& scrollPadding =
-      LogicalMargin(wm, aScrollFrame->GetScrollPadding());
+      LogicalMargin(wm, aScrollContainerFrame->GetScrollPadding());
   const bool isBlockAxis =
       mAxis == StyleScrollAxis::Block ||
       (mAxis == StyleScrollAxis::Horizontal && wm.IsVertical()) ||
@@ -148,7 +148,7 @@ ScrollTimeline::ScrollOffsets ViewTimeline::ComputeInsets(
   
   
   
-  const nsRect scrollPort = aScrollFrame->GetScrollPortRect();
+  const nsRect scrollPort = aScrollContainerFrame->GetScrollPortRect();
   const nscoord percentageBasis =
       aOrientation == layers::ScrollDirection::eHorizontal ? scrollPort.width
                                                            : scrollPort.height;
