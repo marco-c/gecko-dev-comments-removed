@@ -83,6 +83,7 @@ fn set_mock_cfg() {
     
     
     
+    println!("cargo:rustc-check-cfg=cfg(mock)");
     if env::var_os("CARGO_FEATURE_MOCK").is_some() || mozbuild::config::MOZ_CRASHREPORTER_MOCK {
         println!("cargo:rustc-cfg=mock");
     }
