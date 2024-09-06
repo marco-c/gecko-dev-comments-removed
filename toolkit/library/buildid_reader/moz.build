@@ -1,0 +1,9 @@
+
+
+
+
+
+
+EXPORTS.mozilla.toolkit.library += [
+    "buildid_reader_ffi.h",
+]
