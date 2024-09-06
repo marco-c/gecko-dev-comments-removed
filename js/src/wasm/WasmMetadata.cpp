@@ -177,3 +177,17 @@ Maybe<uint32_t> CodeMetadata::doInstanceLayout() {
 
   return Some(instanceDataLength);
 }
+
+
+
+size_t CodeMetadata::sizeOfExcludingThis(
+    mozilla::MallocSizeOf mallocSizeOf) const {
+  
+  return types->sizeOfExcludingThis(mallocSizeOf) +
+         globals.sizeOfExcludingThis(mallocSizeOf) +
+         tables.sizeOfExcludingThis(mallocSizeOf) +
+         tags.sizeOfExcludingThis(mallocSizeOf) +
+         funcNames.sizeOfExcludingThis(mallocSizeOf) +
+         filename.sizeOfExcludingThis(mallocSizeOf) +
+         sourceMapURL.sizeOfExcludingThis(mallocSizeOf);
+}

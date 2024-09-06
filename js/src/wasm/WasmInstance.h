@@ -368,6 +368,7 @@ class alignas(16) Instance {
   inline uint8_t* codeBase(Tier t) const;
   inline const MetadataTier& metadata(Tier t) const;
   inline const Metadata& metadata() const;
+  inline const CodeMetadata& codeMeta() const;
   inline bool isAsmJS() const;
 
   
@@ -456,6 +457,7 @@ class alignas(16) Instance {
   
 
   void addSizeOfMisc(MallocSizeOf mallocSizeOf, SeenSet<Metadata>* seenMetadata,
+                     SeenSet<CodeMetadata>* seenCodeMeta,
                      SeenSet<Code>* seenCode, SeenSet<Table>* seenTables,
                      size_t* code, size_t* data) const;
 
