@@ -1015,56 +1015,28 @@ static APZHandledResult GetHandledResultFor(
     return APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
   }
 
+  
+  
+
   if (!aApzc) {
     return APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
   }
 
+  Maybe<APZHandledResult> result =
+      APZHandledResult::Initialize(aApzc, DispatchToContent::No);
+
   if (aEvent.mInputType == MULTITOUCH_INPUT) {
-    
-    
     PointerEventsConsumableFlags consumableFlags =
         aApzc->ArePointerEventsConsumable(aCurrentInputBlock->AsTouchBlock(),
                                           aEvent.AsMultiTouchInput());
-    if (!consumableFlags.mAllowedByTouchAction) {
-      APZHandledResult result =
-          APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
-      result.mOverscrollDirections = ScrollDirections();
-      return result;
-    }
+    APZHandledResult::UpdateForTouchEvent(result, *aCurrentInputBlock,
+                                          consumableFlags, aApzc,
+                                          DispatchToContent::No);
   }
-
-  if (aApzc->IsRootContent()) {
-    
-    
-    
-    
-    
-    
-    
-    return (aEagerStatus == nsEventStatus_eConsumeDoDefault &&
-            aApzc->CanVerticalScrollWithDynamicToolbar())
-               ? APZHandledResult{APZHandledPlace::HandledByRoot, aApzc}
-               : APZHandledResult{APZHandledPlace::Unhandled, aApzc, true};
-  }
-
-  bool mayTriggerPullToRefresh =
-      aCurrentInputBlock->GetOverscrollHandoffChain()
-          ->ScrollingUpWillTriggerPullToRefresh(aApzc);
-  if (mayTriggerPullToRefresh) {
-    return APZHandledResult{APZHandledPlace::Unhandled, aApzc, true};
-  }
-
-  auto [willMoveDynamicToolbar, rootApzc] =
-      aCurrentInputBlock->GetOverscrollHandoffChain()
-          ->ScrollingDownWillMoveDynamicToolbar(aApzc);
-  if (!willMoveDynamicToolbar) {
-    return APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
-  }
-
   
   
-  MOZ_ASSERT(rootApzc && rootApzc->IsRootContent());
-  return APZHandledResult{APZHandledPlace::HandledByRoot, rootApzc};
+  MOZ_RELEASE_ASSERT(result.isSome());
+  return *result;
 }
 
 bool InputQueue::ProcessQueue() {
