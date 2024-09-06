@@ -369,5 +369,18 @@ TEST(VideoRtpDepacketizerVp9Test, ReferencesInputCopyOnWriteBuffer) {
   
   EXPECT_EQ(parsed->video_payload.cdata(), rtp_payload.cdata() + kHeaderSize);
 }
+
+TEST(VideoRtpDepacketizerVp9Test, InterLayerPredOnlyFrameMerkedAsDelta) {
+  
+  
+  uint8_t packet[13] = {0};
+  packet[0] = 0b0010'0000;  
+  packet[1] = 0b0000'0001;  
+  packet[2] = 0;            
+
+  RTPVideoHeader video_header;
+  VideoRtpDepacketizerVp9::ParseRtpPayload(packet, &video_header);
+  EXPECT_EQ(video_header.frame_type, VideoFrameType::kVideoFrameDelta);
+}
 }  
 }  
