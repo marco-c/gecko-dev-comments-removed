@@ -228,20 +228,22 @@ class App extends PureComponent {
     
     for (const viewport of this.props.viewports) {
       if (viewport.device === device.name) {
-        this.onRemoveDeviceAssociation(viewport.id);
+        this.onRemoveDeviceAssociation(viewport.id, { resetProfile: true });
       }
     }
 
     this.props.dispatch(removeCustomDevice(device));
   }
 
-  onRemoveDeviceAssociation(id) {
+  onRemoveDeviceAssociation(id, { resetProfile }) {
     
     
-    this.props.dispatch(removeDeviceAssociation(id));
-    this.props.dispatch(toggleTouchSimulation(false));
-    this.props.dispatch(changePixelRatio(id, 0));
-    this.props.dispatch(changeUserAgent(""));
+    this.props.dispatch(removeDeviceAssociation(id, { resetProfile }));
+    if (resetProfile) {
+      this.props.dispatch(toggleTouchSimulation(false));
+      this.props.dispatch(changePixelRatio(id, 0));
+      this.props.dispatch(changeUserAgent(""));
+    }
   }
 
   doResizeViewport(id, width, height) {

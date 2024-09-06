@@ -19,10 +19,6 @@ const {
   ZOOM_VIEWPORT,
 } = require("resource://devtools/client/responsive/actions/index.js");
 
-const {
-  post,
-} = require("resource://devtools/client/responsive/utils/message.js");
-
 module.exports = {
   
 
@@ -80,9 +76,12 @@ module.exports = {
   
 
 
-  removeDeviceAssociation(id) {
+  removeDeviceAssociation(id, { resetProfile } = {}) {
     return async function ({ dispatch }) {
-      post(window, "remove-device-association");
+      window.postMessage({
+        type: "remove-device-association",
+        resetProfile,
+      });
 
       dispatch({
         type: REMOVE_DEVICE_ASSOCIATION,

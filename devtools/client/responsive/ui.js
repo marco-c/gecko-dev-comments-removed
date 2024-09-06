@@ -474,7 +474,7 @@ class ResponsiveUI {
         this.onExit();
         break;
       case "remove-device-association":
-        this.onRemoveDeviceAssociation();
+        this.onRemoveDeviceAssociation(event);
         break;
       case "viewport-orientation-change":
         this.onRotateViewport(event);
@@ -566,23 +566,26 @@ class ResponsiveUI {
     this.manager.closeIfNeeded(browserWindow, tab);
   }
 
-  async onRemoveDeviceAssociation() {
-    let reloadNeeded = false;
-    await this.updateDPPX(null);
-    reloadNeeded |=
-      (await this.updateUserAgent()) && this.reloadOnChange("userAgent");
+  async onRemoveDeviceAssociation(event) {
+    const { resetProfile } = event.data;
+
+    if (resetProfile) {
+      let reloadNeeded = false;
+      await this.updateDPPX(null);
+      reloadNeeded |=
+        (await this.updateUserAgent()) && this.reloadOnChange("userAgent");
+
+      
+      const reloadOnTouchSimulationChange =
+        this.reloadOnChange("touchSimulation") && !reloadNeeded;
+      await this.updateTouchSimulation(null, reloadOnTouchSimulationChange);
+      if (reloadNeeded) {
+        this.reloadBrowser();
+      }
+    }
 
     
-    const reloadOnTouchSimulationChange =
-      this.reloadOnChange("touchSimulation") && !reloadNeeded;
-    await this.updateTouchSimulation(null, reloadOnTouchSimulationChange);
-    if (reloadNeeded) {
-      this.reloadBrowser();
-    }
-    
-    this.emitForTests("device-association-removed", {
-      reloadTriggered: reloadNeeded || reloadOnTouchSimulationChange,
-    });
+    this.emitForTests("device-association-removed");
   }
 
   
