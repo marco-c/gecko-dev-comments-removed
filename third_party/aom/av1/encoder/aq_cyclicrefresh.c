@@ -423,9 +423,7 @@ void av1_cyclic_refresh_update_parameters(AV1_COMP *const cpi) {
   
   
   
-  
-  
-  cr->skip_over4x4 = (cpi->oxcf.speed > 9) ? 1 : 0;
+  cr->skip_over4x4 = (cpi->oxcf.speed > 9 && !cpi->active_map.enabled) ? 1 : 0;
 
   
   cr->apply_cyclic_refresh = 1;

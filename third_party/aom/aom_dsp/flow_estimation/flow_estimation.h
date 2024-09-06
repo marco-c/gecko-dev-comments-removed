@@ -64,11 +64,6 @@ typedef struct {
 
 
 
-extern const int global_motion_pyr_levels[GLOBAL_MOTION_METHODS];
-
-
-
-
 static const GlobalMotionMethod default_global_motion_method =
     GLOBAL_MOTION_METHOD_DISFLOW;
 
@@ -85,7 +80,7 @@ extern const double kIdentityParams[MAX_PARAMDIM];
 bool aom_compute_global_motion(TransformationType type, YV12_BUFFER_CONFIG *src,
                                YV12_BUFFER_CONFIG *ref, int bit_depth,
                                GlobalMotionMethod gm_method,
-                               MotionModel *motion_models,
+                               int downsample_level, MotionModel *motion_models,
                                int num_motion_models, bool *mem_alloc_failed);
 
 #ifdef __cplusplus

@@ -15,6 +15,7 @@
 #include "aom/aom_integer.h"
 #include "aom_dsp/flow_estimation/flow_estimation.h"
 #include "aom_scale/yv12config.h"
+#include "aom_util/aom_pthread.h"
 #include "aom_util/aom_thread.h"
 
 #ifdef __cplusplus
@@ -96,37 +97,6 @@ int av1_is_enough_erroradvantage(double best_erroradvantage, int params_cost);
 void av1_compute_feature_segmentation_map(uint8_t *segment_map, int width,
                                           int height, int *inliers,
                                           int num_inliers);
-
-extern const int error_measure_lut[513];
-
-static INLINE int error_measure(int err) {
-  return error_measure_lut[256 + err];
-}
-
-#if CONFIG_AV1_HIGHBITDEPTH
-static INLINE int highbd_error_measure(int err, int bd) {
-  const int b = bd - 8;
-  const int bmask = (1 << b) - 1;
-  const int v = (1 << b);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const int e1 = err >> b;
-  const int e2 = err & bmask;
-  return error_measure_lut[256 + e1] * (v - e2) +
-         error_measure_lut[257 + e1] * e2;
-}
-#endif  
 
 int64_t av1_segmented_frame_error(int use_hbd, int bd, const uint8_t *ref,
                                   int ref_stride, uint8_t *dst, int dst_stride,

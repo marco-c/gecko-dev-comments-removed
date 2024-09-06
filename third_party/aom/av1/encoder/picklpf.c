@@ -27,12 +27,25 @@
 #include "av1/encoder/encoder.h"
 #include "av1/encoder/picklpf.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 static void yv12_copy_plane(const YV12_BUFFER_CONFIG *src_bc,
                             YV12_BUFFER_CONFIG *dst_bc, int plane) {
   switch (plane) {
-    case 0: aom_yv12_copy_y(src_bc, dst_bc); break;
-    case 1: aom_yv12_copy_u(src_bc, dst_bc); break;
-    case 2: aom_yv12_copy_v(src_bc, dst_bc); break;
+    case 0: aom_yv12_copy_y(src_bc, dst_bc, 0); break;
+    case 1: aom_yv12_copy_u(src_bc, dst_bc, 0); break;
+    case 2: aom_yv12_copy_v(src_bc, dst_bc, 0); break;
     default: assert(plane >= 0 && plane <= 2); break;
   }
 }
@@ -311,7 +324,7 @@ void av1_pick_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
             &cpi->last_frame_uf, cm->width, cm->height,
             seq_params->subsampling_x, seq_params->subsampling_y,
             seq_params->use_highbitdepth, cpi->oxcf.border_in_pixels,
-            cm->features.byte_alignment, NULL, NULL, NULL, 0, 0))
+            cm->features.byte_alignment, NULL, NULL, NULL, false, 0))
       aom_internal_error(cm->error, AOM_CODEC_MEM_ERROR,
                          "Failed to allocate last frame buffer");
 

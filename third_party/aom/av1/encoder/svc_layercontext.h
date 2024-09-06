@@ -234,6 +234,21 @@ void av1_update_temporal_layer_framerate(struct AV1_COMP *const cpi);
 
 
 
+
+bool av1_check_ref_is_low_spatial_res_super_frame(struct AV1_COMP *const cpi,
+                                                  int ref_frame);
+
+
+
+
+
+
+
+
+
+
+
+
 void av1_restore_layer_context(struct AV1_COMP *const cpi);
 
 
