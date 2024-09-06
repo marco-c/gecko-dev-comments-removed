@@ -67,19 +67,34 @@
 
 
 
-@interface mozIncrementableAccessible : mozAccessible
+
+
+@interface mozRangeAccessible : mozAccessible
 
 
 - (id)moxValue;
-
-
-- (NSString*)moxValueDescription;
 
 
 - (id)moxMinValue;
 
 
 - (id)moxMaxValue;
+
+
+- (NSString*)moxOrientation;
+
+
+- (void)handleAccessibleEvent:(uint32_t)eventType;
+
+@end
+
+
+
+
+@interface mozIncrementableAccessible : mozRangeAccessible
+
+
+- (NSString*)moxValueDescription;
 
 
 - (void)moxSetValue:(id)value;
@@ -89,12 +104,6 @@
 
 
 - (void)moxPerformDecrement;
-
-
-- (NSString*)moxOrientation;
-
-
-- (void)handleAccessibleEvent:(uint32_t)eventType;
 
 - (void)changeValueBySteps:(int)factor;
 
