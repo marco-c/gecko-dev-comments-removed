@@ -1219,12 +1219,21 @@ bool uiaRawElmProvider::IsControl() {
     case roles::SUPERSCRIPT:
     case roles::TEXT:
     case roles::TEXT_CONTAINER: {
+      
       if (!acc->NameIsEmpty()) {
         return true;
       }
       nsAutoString text;
       acc->Description(text);
       if (!text.IsEmpty()) {
+        return true;
+      }
+      
+      
+      
+      nsAutoString live;
+      nsAccUtils::GetLiveRegionSetting(acc, live);
+      if (!live.IsEmpty()) {
         return true;
       }
       return false;
