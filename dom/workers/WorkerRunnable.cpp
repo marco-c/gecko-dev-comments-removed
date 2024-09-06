@@ -226,22 +226,6 @@ WorkerRunnable::Run() {
   LOG(("WorkerRunnable::Run [%p]", this));
   bool targetIsWorkerThread = mTarget == WorkerThread;
 
-  if (targetIsWorkerThread) {
-    
-    
-    
-    if (!CycleCollectedJSContext::Get()) {
-#if (defined(MOZ_COLLECTING_RUNNABLE_TELEMETRY) && defined(NIGHTLY_BUILD))
-      
-      
-      MOZ_CRASH_UNSAFE_PRINTF(
-          "Runnable '%s' executed after WorkerThreadPrimaryRunnable ended.",
-          this->mName);
-#endif
-      return NS_OK;
-    }
-  }
-
 #ifdef DEBUG
   if (targetIsWorkerThread) {
     mWorkerPrivate->AssertIsOnWorkerThread();
