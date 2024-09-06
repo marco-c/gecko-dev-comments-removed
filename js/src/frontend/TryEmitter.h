@@ -216,7 +216,23 @@ class MOZ_STACK_CLASS TryEmitter {
     Yes,
   };
 
-  [[nodiscard]] bool emitCatch(ExceptionStack stack = ExceptionStack::No);
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  enum class ForForOfIteratorClose : bool {
+    No,
+    
+
+
+    Yes,
+  };
+#endif
+
+  [[nodiscard]] bool emitCatch(
+      ExceptionStack stack = ExceptionStack::No
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+      ,
+      ForForOfIteratorClose forForOfIteratorClose = ForForOfIteratorClose::No
+#endif
+  );
 
   
   

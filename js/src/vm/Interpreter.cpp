@@ -45,7 +45,11 @@
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
 #include "vm/BigIntType.h"
-#include "vm/BytecodeUtil.h"        
+#include "vm/BytecodeUtil.h"  
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+#  include "vm/DisposeJumpKind.h"
+#  include "vm/ErrorObject.h"
+#endif
 #include "vm/EqualityOperations.h"  
 #include "vm/GeneratorObject.h"
 #include "vm/Iteration.h"
@@ -1745,6 +1749,49 @@ bool js::CreateDisposableResource(JSContext* cx, JS::Handle<JS::Value> obj,
   return true;
 }
 
+
+
+
+ErrorObject* js::CreateSuppressedError(JSContext* cx,
+                                       JS::Handle<JS::Value> error,
+                                       JS::Handle<JS::Value> suppressed) {
+  
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                           JSMSG_ERROR_WAS_SUPPRESSED);
+
+  JS::Rooted<JS::Value> thrownSuppressed(cx);
+
+  if (!cx->getPendingException(&thrownSuppressed)) {
+    return nullptr;
+  }
+
+  cx->clearPendingException();
+
+  JS::Rooted<ErrorObject*> errorObj(
+      cx, &thrownSuppressed.toObject().as<ErrorObject>());
+
+  
+  
+  if (!NativeDefineDataProperty(cx, errorObj, cx->names().error, error, 0)) {
+    return nullptr;
+  }
+
+  
+  
+  
+  if (!NativeDefineDataProperty(cx, errorObj, cx->names().suppressed,
+                                suppressed, 0)) {
+    return nullptr;
+  }
+
+  
+
+  return errorObj;
+}
+
+
+
+
 bool js::DisposeDisposablesOnScopeLeave(JSContext* cx,
                                         JS::Handle<JSObject*> env) {
   if (!env->is<LexicalEnvironmentObject>() &&
@@ -1765,13 +1812,8 @@ bool js::DisposeDisposablesOnScopeLeave(JSContext* cx,
 
     uint32_t index = disposables->length();
 
+    
     bool hadError = false;
-
-    
-    
-    
-    
-    
     JS::Rooted<JS::Value> latestException(cx);
 
     if (cx->isExceptionPending()) {
@@ -1782,51 +1824,67 @@ bool js::DisposeDisposablesOnScopeLeave(JSContext* cx,
       cx->clearPendingException();
     }
 
+    
+    
     while (index) {
       --index;
       Value val = disposables->get(index);
 
       MOZ_ASSERT(val.isObject());
 
-      JS::Rooted<JSObject*> obj(cx, &val.toObject());
-      JS::Rooted<DisposableRecordObject*> record(
-          cx, &obj->as<DisposableRecordObject>());
+      JS::Rooted<DisposableRecordObject*> resource(
+          cx, &val.toObject().as<DisposableRecordObject>());
+
+      
+      JS::Rooted<JS::Value> value(cx, resource->getObject());
 
       
       
       
       
+      JS::Rooted<JS::Value> method(cx, resource->getMethod());
+
       
-      
-      
-      
-      if (record->getObject().isUndefined()) {
+      if (method.isUndefined()) {
         continue;
       }
 
-      JS::Rooted<JS::Value> disposeProp(cx, record->getMethod());
-      JS::Rooted<JSObject*> recordedObj(cx, &record->getObject().toObject());
-
-      
-      
       
       JS::Rooted<JS::Value> rval(cx);
-      if (!Call(cx, disposeProp, recordedObj, &rval)) {
+      if (!Call(cx, method, value, &rval)) {
         
-        
-        
-        
-        hadError = true;
-        if (cx->isExceptionPending()) {
-          if (!cx->getPendingException(&latestException)) {
+        if (hadError) {
+          
+          JS::Rooted<JS::Value> result(cx);
+          if (!cx->getPendingException(&result)) {
             return false;
           }
           cx->clearPendingException();
+
+          
+          JS::Rooted<JS::Value> suppressed(cx, latestException);
+
+          
+          ErrorObject* errorObj = CreateSuppressedError(cx, result, suppressed);
+          if (!errorObj) {
+            return false;
+          }
+          
+          latestException.set(ObjectValue(*errorObj));
+        } else {
+          
+          
+          hadError = true;
+          if (cx->isExceptionPending()) {
+            if (!cx->getPendingException(&latestException)) {
+              return false;
+            }
+            cx->clearPendingException();
+          }
         }
       }
     }
 
-    
     
     
     if (env->is<LexicalEnvironmentObject>()) {
@@ -1837,12 +1895,12 @@ bool js::DisposeDisposablesOnScopeLeave(JSContext* cx,
 
     
     if (hadError) {
-      cx->clearPendingException();
       cx->setPendingException(latestException, ShouldCaptureStack::Maybe);
       return false;
     }
   }
 
+  
   return true;
 }
 #endif
@@ -1856,7 +1914,8 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
 
 #define INTERPRETER_LOOP()
 #define CASE(OP) label_##OP:
-#define DEFAULT() label_default:
+#define DEFAULT() \
+  label_default:
 #define DISPATCH_TO(OP) goto* addresses[(OP)]
 
 #define LABEL(X) (&&label_##X)
@@ -2225,9 +2284,21 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
     CASE(DisposeDisposables) {
       ReservedRooted<JSObject*> env(&rootObject0,
                                     REGS.fp()->environmentChain());
-
-      if (!DisposeDisposablesOnScopeLeave(cx, env)) {
-        goto error;
+      DisposeJumpKind jumpKind = DisposeJumpKind(GET_UINT8(REGS.pc));
+      bool ok = DisposeDisposablesOnScopeLeave(cx, env);
+      if (jumpKind == DisposeJumpKind::JumpOnError) {
+        if (!ok) {
+          goto error;
+        }
+      } else {
+        MOZ_ASSERT(jumpKind == DisposeJumpKind::NoJumpOnError);
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(!ok, "NoJumpOnError used without a pending exception");
       }
     }
     END_CASE(DisposeDisposables)
