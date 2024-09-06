@@ -19,6 +19,7 @@
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 #  include "mozilla/Sandbox.h"
+#  include "mozilla/SandboxProfilerObserver.h"
 #endif
 
 #if defined(XP_OPENBSD) && defined(MOZ_SANDBOX)
@@ -180,6 +181,7 @@ mozilla::ipc::IPCResult UtilityProcessChild::RecvInit(
     fd = aBrokerFd.value().ClonePlatformHandle().release();
   }
 
+  RegisterProfilerObserversForSandboxProfiler();
   SetUtilitySandbox(fd, mSandbox);
 
 #  endif  
@@ -348,6 +350,10 @@ UtilityProcessChild::RecvUnblockUntrustedModulesThread() {
 #endif  
 
 void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
+  DestroySandboxProfiler();
+#endif
+
   if (AbnormalShutdown == aWhy) {
     NS_WARNING("Shutting down Utility process early due to a crash!");
     ipc::ProcessChild::QuickExit();
