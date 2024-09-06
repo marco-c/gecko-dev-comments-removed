@@ -1445,9 +1445,9 @@ function checkPostUpdateRunningFile(aShouldExist) {
 
 
 
-function standardInit() {
+async function standardInit() {
   
-  initUpdateServiceStub();
+  await initUpdateServiceStub();
 }
 
 

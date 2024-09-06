@@ -50,7 +50,7 @@ async function run_test() {
   
   reloadUpdateManagerData();
   await runUpdateUsingApp(STATE_PENDING);
-  standardInit();
+  await standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
   await checkUpdateManager(STATE_PENDING, false, STATE_NONE, 0, 0);

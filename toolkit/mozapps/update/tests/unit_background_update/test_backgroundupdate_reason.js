@@ -10,12 +10,12 @@ const { BackgroundUpdate } = ChromeUtils.importESModule(
   "resource://gre/modules/BackgroundUpdate.sys.mjs"
 );
 
+add_setup(async function test_setup() {
+  
+  
+  setupTestCommon(null);
+  await standardInit();
 
-
-setupTestCommon(null);
-standardInit();
-
-add_setup(function test_setup() {
   
   do_get_profile();
 
