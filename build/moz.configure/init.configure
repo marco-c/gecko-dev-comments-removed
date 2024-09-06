@@ -1048,7 +1048,6 @@ set_define("MOZILLA_OFFICIAL", mozilla_official)
 add_old_configure_assignment("MOZILLA_OFFICIAL", mozilla_official)
 
 
-
 option(
     "--with-version-file-path",
     nargs=1,
