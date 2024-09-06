@@ -13,10 +13,12 @@
 
 #include <utility>
 
+#include "rtc_base/system/rtc_export.h"
+
 namespace webrtc {
 
 
-struct Resolution {
+struct RTC_EXPORT Resolution {
   int width = 0;
   int height = 0;
 

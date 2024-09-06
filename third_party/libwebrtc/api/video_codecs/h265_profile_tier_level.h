@@ -14,6 +14,7 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "api/video/resolution.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -88,6 +89,14 @@ RTC_EXPORT absl::optional<H265Tier> StringToH265Tier(const std::string& tier);
 
 RTC_EXPORT absl::optional<H265Level> StringToH265Level(
     const std::string& level);
+
+
+
+
+
+RTC_EXPORT absl::optional<H265Level> GetSupportedH265Level(
+    const Resolution& resolution,
+    float max_fps);
 
 
 
