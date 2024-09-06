@@ -1689,10 +1689,9 @@ void Connection::MaybeUpdateLocalCandidate(StunRequest* request,
     return;
   }
   const uint32_t priority = priority_attr->value();
-  std::string id = rtc::CreateRandomString(8);
 
   
-  local_candidate_.set_id(id);
+  local_candidate_.generate_id();
   local_candidate_.set_type(PRFLX_PORT_TYPE);
   
   

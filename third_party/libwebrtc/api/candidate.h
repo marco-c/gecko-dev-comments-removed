@@ -63,8 +63,12 @@ class RTC_EXPORT Candidate {
   Candidate(const Candidate&);
   ~Candidate();
 
+  
   const std::string& id() const { return id_; }
-  void set_id(absl::string_view id) { Assign(id_, id); }
+  
+  void generate_id();
+  
+  [[deprecated]] void set_id(absl::string_view id) { Assign(id_, id); }
 
   int component() const { return component_; }
   void set_component(int component) { component_ = component; }
