@@ -517,7 +517,9 @@ class JarMaker(object):
 
         
 
-        if getModTime(realsrc) > outHelper.getDestModTime(e.output):
+        
+        out_mod_time = outHelper.getDestModTime(e.output)
+        if out_mod_time == localtime(0) or getModTime(realsrc) > out_mod_time:
             if self.outputFormat == "symlink":
                 outHelper.symlink(realsrc, out)
                 return
