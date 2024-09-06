@@ -30,6 +30,9 @@ class nsDragSession : public nsBaseDragService {
 
   NSDraggingSession* GetNSDraggingSession() { return mNSDraggingSession; }
 
+  MOZ_CAN_RUN_SCRIPT nsresult EndDragSessionImpl(
+      bool aDoneDrag, uint32_t aKeyModifiers) override;
+
  protected:
   
   
@@ -51,6 +54,8 @@ class nsDragSession : public nsBaseDragService {
   
   NSDraggingSession* mNSDraggingSession = nil;
 
+  NSEvent* mNativeDragEvent = nil;
+
   bool mDragImageChanged = false;
 };
 
@@ -67,15 +72,8 @@ class nsDragService final : public nsDragSession {
       const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
       uint32_t aActionType) override;
 
-  
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD EndDragSession(bool aDoneDrag,
-                                               uint32_t aKeyModifiers) override;
-
  protected:
   virtual ~nsDragService();
-
- private:
-  NSEvent* mNativeDragEvent;
 };
 
 #endif  

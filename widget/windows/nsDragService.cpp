@@ -310,8 +310,11 @@ nsresult nsDragService::StartInvokingDragSession(nsIWidget* aWidget,
   }
   SetDragEndPoint(LayoutDeviceIntPoint(cpos.x, cpos.y));
 
-  ModifierKeyState modifierKeyState;
-  EndDragSession(true, modifierKeyState.GetModifiers());
+  RefPtr<nsIDragSession> session = GetCurrentSession(aWidget);
+  if (session) {
+    ModifierKeyState modifierKeyState;
+    session->EndDragSession(true, modifierKeyState.GetModifiers());
+  }
 
   mDoingDrag = false;
 
@@ -615,8 +618,8 @@ bool nsDragSession::IsCollectionObject(IDataObject* inDataObj) {
 
 
 
-NS_IMETHODIMP
-nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
+nsresult nsDragSession::EndDragSessionImpl(bool aDoneDrag,
+                                           uint32_t aKeyModifiers) {
   
   
   
@@ -624,7 +627,7 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
     ::ReleaseCapture();
   }
 
-  nsBaseDragService::EndDragSession(aDoneDrag, aKeyModifiers);
+  nsBaseDragSession::EndDragSessionImpl(aDoneDrag, aKeyModifiers);
   NS_IF_RELEASE(mDataObject);
 
   return NS_OK;

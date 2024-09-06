@@ -6211,8 +6211,15 @@ nsGlobalWindowOuter* nsGlobalWindowOuter::EnterModalState() {
   
   nsCOMPtr<nsIDragService> ds =
       do_GetService("@mozilla.org/widget/dragservice;1");
-  if (ds) {
-    ds->EndDragSession(true, 0);
+  if (ds && topWin->GetDocShell()) {
+    if (PresShell* presShell = topWin->GetDocShell()->GetPresShell()) {
+      if (nsViewManager* vm = presShell->GetViewManager()) {
+        RefPtr<nsIWidget> widget = vm->GetRootWidget();
+        if (nsCOMPtr<nsIDragSession> session = ds->GetCurrentSession(widget)) {
+          session->EndDragSession(true, 0);
+        }
+      }
+    }
   }
 
   

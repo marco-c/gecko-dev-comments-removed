@@ -355,8 +355,8 @@ nsNativeDragTarget::DragLeave() {
       
       
       ModifierKeyState modifierKeyState;
-      nsCOMPtr<nsIDragService> dragService = mDragService;
-      dragService->EndDragSession(false, modifierKeyState.GetModifiers());
+      currentDragSession->EndDragSession(false,
+                                         modifierKeyState.GetModifiers());
     }
   }
 
@@ -378,8 +378,11 @@ void nsNativeDragTarget::DragCancel() {
     }
     if (mDragService) {
       ModifierKeyState modifierKeyState;
-      nsCOMPtr<nsIDragService> dragService = mDragService;
-      dragService->EndDragSession(false, modifierKeyState.GetModifiers());
+      RefPtr<nsIDragSession> session =
+          mDragService->GetCurrentSession(mWidget);
+      if (session) {
+        session->EndDragSession(false, modifierKeyState.GetModifiers());
+      }
     }
     this->Release();  
     mTookOwnRef = false;
@@ -413,7 +416,6 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
   
   
   RefPtr<nsNativeDragTarget> kungFuDeathGrip = this;
-  nsCOMPtr<nsIDragService> serv = mDragService;
 
   
   ProcessDrag(eDrop, grfKeyState, aPT, pdwEffect);
@@ -440,7 +442,7 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
   cpos.y = GET_Y_LPARAM(pos);
   currentDragSession->SetDragEndPoint(cpos.x, cpos.y);
   ModifierKeyState modifierKeyState;
-  serv->EndDragSession(true, modifierKeyState.GetModifiers());
+  currentDragSession->EndDragSession(true, modifierKeyState.GetModifiers());
 
   
   NS_ASSERTION(mTookOwnRef, "want to release own ref, but not taken!");

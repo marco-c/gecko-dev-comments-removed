@@ -31,14 +31,31 @@ class MockDragService : public nsBaseDragService {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     mDragAction = DRAGDROP_ACTION_MOVE;
     StartDragSession(aWidget);
     return NS_OK;
   }
 
   bool IsMockService() override { return true; }
-
-  uint32_t mLastModifierKeyState = 0;
 };
 
 static void SetDragEndPointFromScreenPoint(
@@ -133,7 +150,6 @@ MockDragServiceController::SendEvent(
       LayoutDeviceIntPoint(aScreenX, aScreenY) - clientPosInScreenCoords;
 
   RefPtr<MockDragService> ds = mDragService;
-  ds->mLastModifierKeyState = aKeyModifiers;
 
   if (aEventType == EventType::eDragEnter) {
     
@@ -166,7 +182,8 @@ MockDragServiceController::SendEvent(
       rv = currentDragSession->GetSourceNode(getter_AddRefs(sourceNode));
       NS_ENSURE_SUCCESS(rv, rv);
       if (!sourceNode) {
-        rv = ds->EndDragSession(false , aKeyModifiers);
+        rv = currentDragSession->EndDragSession(false ,
+                                                aKeyModifiers);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     } break;
@@ -184,7 +201,8 @@ MockDragServiceController::SendEvent(
       widget->DispatchInputEvent(widgetEvent.get());
       SetDragEndPointFromScreenPoint(currentDragSession, presCxt,
                                      LayoutDeviceIntPoint(aScreenX, aScreenY));
-      rv = ds->EndDragSession(true , aKeyModifiers);
+      rv = currentDragSession->EndDragSession(true ,
+                                              aKeyModifiers);
       NS_ENSURE_SUCCESS(rv, rv);
     } break;
     default:
@@ -197,8 +215,10 @@ MockDragServiceController::SendEvent(
 NS_IMETHODIMP
 MockDragServiceController::CancelDrag(uint32_t aKeyModifiers = 0) {
   RefPtr<MockDragService> ds = mDragService;
-  ds->mLastModifierKeyState = aKeyModifiers;
-  return ds->EndDragSession(false , aKeyModifiers);
+  nsCOMPtr<nsIDragSession> currentDragSession;
+  ds->GetCurrentSession(nullptr, getter_AddRefs(currentDragSession));
+  MOZ_ASSERT(currentDragSession);
+  return currentDragSession->EndDragSession(false ,
+                                            aKeyModifiers);
 }
-
 }  

@@ -519,10 +519,7 @@ void DragData::Print() const {
 
  int nsDragSession::sEventLoopDepth = 0;
 
-nsDragService::nsDragService()
-    : mScheduledTask(eDragTaskNone),
-      mTaskSource(0),
-      mScheduledTaskIsRunning(false) {
+nsDragService::nsDragService() {
   
   
   nsCOMPtr<nsIObserverService> obsServ =
@@ -909,8 +906,8 @@ nsDragService::StartDragSession(nsISupports* aWidgetProvider) {
   return nsBaseDragService::StartDragSession(aWidgetProvider);
 }
 
-bool nsDragService::RemoveTempFiles() {
-  LOGDRAGSERVICE("nsDragService::RemoveTempFiles");
+bool nsDragSession::RemoveTempFiles() {
+  LOGDRAGSERVICE("nsDragSession::RemoveTempFiles");
 
   
   
@@ -940,14 +937,19 @@ bool nsDragService::RemoveTempFiles() {
   return false;
 }
 
-gboolean nsDragService::TaskRemoveTempFiles(gpointer data) {
+
+gboolean nsDragSession::TaskRemoveTempFiles(gpointer data) {
+  
+  
+  RefPtr<nsDragSession> session = static_cast<nsDragSession*>(data);
+  session.get()->Release();
   RefPtr<nsDragService> dragService = static_cast<nsDragService*>(data);
-  return dragService->RemoveTempFiles();
+  return session->RemoveTempFiles();
 }
 
-NS_IMETHODIMP
-nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
-  LOGDRAGSERVICE("nsDragService::EndDragSession(%p) %d",
+nsresult nsDragSession::EndDragSessionImpl(bool aDoneDrag,
+                                           uint32_t aKeyModifiers) {
+  LOGDRAGSERVICE("nsDragSession::EndDragSessionImpl(%p) %d",
                  mTargetDragContext.get(), aDoneDrag);
 
   if (sGrabWidget) {
@@ -973,8 +975,11 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
     LOGDRAGSERVICE("  queue removing of temporary files");
     
     
-    mTempFileTimerID =
-        g_timeout_add(NS_DND_TMP_CLEANUP_TIMEOUT, TaskRemoveTempFiles, this);
+    
+    
+    AddRef();
+    mTempFileTimerID = g_timeout_add(NS_DND_TMP_CLEANUP_TIMEOUT,
+                                     TaskRemoveTempFiles, this);
     mTempFileUrls.Clear();
   }
 
@@ -988,7 +993,7 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
   mPendingWindow = nullptr;
   mCachedDragContext = 0;
 
-  return nsBaseDragService::EndDragSession(aDoneDrag, aKeyModifiers);
+  return nsBaseDragSession::EndDragSessionImpl(aDoneDrag, aKeyModifiers);
 }
 
 
@@ -2674,7 +2679,10 @@ gboolean nsDragService::RunScheduledTask() {
       
       
       
-      EndDragSession(false, GetCurrentModifiers());
+      RefPtr<nsIDragSession> session = GetCurrentSession(mTargetWindow);
+      if (session) {
+        session->EndDragSession(false, GetCurrentModifiers());
+      }
     }
   }
 
@@ -2696,7 +2704,10 @@ gboolean nsDragService::RunScheduledTask() {
     LOGDRAGSERVICE("  quit, selected task %s\n", GetDragServiceTaskName(task));
     if (task == eDragTaskSourceEnd) {
       
-      EndDragSession(true, GetCurrentModifiers());
+      RefPtr<nsIDragSession> session = GetCurrentSession(mTargetWindow);
+      if (session) {
+        session->EndDragSession(true, GetCurrentModifiers());
+      }
     }
 
     
@@ -2775,7 +2786,10 @@ gboolean nsDragService::RunScheduledTask() {
     }
     
     
-    EndDragSession(true, GetCurrentModifiers());
+    RefPtr<nsIDragSession> session = GetCurrentSession(mTargetWindow);
+    if (session) {
+      session->EndDragSession(true, GetCurrentModifiers());
+    }
   }
 
   

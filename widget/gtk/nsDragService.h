@@ -107,6 +107,8 @@ class nsDragSession : public nsBaseDragService {
   
   NS_IMETHOD UpdateDragEffect() override;
 
+  MOZ_CAN_RUN_SCRIPT nsresult EndDragSessionImpl(
+      bool aDoneDrag, uint32_t aKeyModifiers) override;
   class AutoEventLoop {
     RefPtr<nsDragSession> mSession;
 
@@ -122,6 +124,18 @@ class nsDragSession : public nsBaseDragService {
 
  protected:
   virtual ~nsDragSession() = default;
+
+  
+  
+  
+  
+  enum DragTask {
+    eDragTaskNone,
+    eDragTaskMotion,
+    eDragTaskLeave,
+    eDragTaskDrop,
+    eDragTaskSourceEnd
+  };
 
   void ReplyToDragMotion(GdkDragContext* aDragContext, guint aTime);
   void ReplyToDragMotion();
@@ -140,6 +154,18 @@ class nsDragSession : public nsBaseDragService {
   
   
   void EnsureCachedDataValidForContext(GdkDragContext* aDragContext);
+
+  static gboolean TaskRemoveTempFiles(gpointer data);
+
+  bool RemoveTempFiles();
+
+  
+  RefPtr<nsWindow> mSourceWindow;
+
+  
+  
+  
+  RefPtr<nsWindow> mTargetWindow;
 
   
   nsCOMPtr<nsIArray> mSourceDataItems;
@@ -174,6 +200,31 @@ class nsDragSession : public nsBaseDragService {
   
   
   nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mCachedData;
+
+  DragTask mScheduledTask = eDragTaskNone;
+  bool mScheduledTaskIsRunning = false;
+
+  
+  
+  
+  
+  RefPtr<nsWindow> mPendingWindow;
+  mozilla::LayoutDeviceIntPoint mPendingWindowPoint;
+  RefPtr<GdkDragContext> mPendingDragContext;
+
+  guint mPendingTime;
+
+  
+  
+  guint mTaskSource = 0;
+
+  
+  nsCOMArray<nsIFile> mTemporaryFiles;
+  
+  guint mTempFileTimerID;
+  
+  
+  nsTArray<nsCString> mTempFileUrls;
 
   
   
@@ -231,9 +282,8 @@ class nsDragService final : public nsDragSession, public nsIObserver {
       nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
       nsIArray* anArrayTransferables, uint32_t aActionType,
       nsContentPolicyType aContentPolicyType) override;
+
   NS_IMETHOD StartDragSession(nsISupports* aWidgetProvider) override;
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD EndDragSession(bool aDoneDrag,
-                                               uint32_t aKeyModifiers) override;
 
   
   
@@ -289,34 +339,6 @@ class nsDragService final : public nsDragSession, public nsIObserver {
  private:
   
   
-  
-  
-  enum DragTask {
-    eDragTaskNone,
-    eDragTaskMotion,
-    eDragTaskLeave,
-    eDragTaskDrop,
-    eDragTaskSourceEnd
-  };
-  DragTask mScheduledTask;
-  
-  
-  guint mTaskSource;
-  bool mScheduledTaskIsRunning;
-
-  
-  RefPtr<nsWindow> mSourceWindow;
-
-  
-  
-
-  
-  
-  
-  
-  RefPtr<nsWindow> mPendingWindow;
-  mozilla::LayoutDeviceIntPoint mPendingWindowPoint;
-  RefPtr<GdkDragContext> mPendingDragContext;
 
   
   
@@ -328,12 +350,6 @@ class nsDragService final : public nsDragSession, public nsIObserver {
 
   void SetCachedDragContext(GdkDragContext* aDragContext);
 
-  guint mPendingTime;
-
-  
-  
-  
-  RefPtr<nsWindow> mTargetWindow;
   mozilla::LayoutDeviceIntPoint mTargetWindowPoint;
 
   int mWaitingForDragDataRequests = 0;
@@ -376,16 +392,6 @@ class nsDragService final : public nsDragSession, public nsIObserver {
   static uint32_t GetCurrentModifiers();
 
   nsresult CreateTempFile(nsITransferable* aItem, nsACString& aURI);
-  bool RemoveTempFiles();
-  static gboolean TaskRemoveTempFiles(gpointer data);
-
-  
-  
-  nsTArray<nsCString> mTempFileUrls;
-  
-  nsCOMArray<nsIFile> mTemporaryFiles;
-  
-  guint mTempFileTimerID;
 };
 
 #endif  

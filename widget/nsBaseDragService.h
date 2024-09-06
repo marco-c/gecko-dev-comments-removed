@@ -72,6 +72,9 @@ class nsBaseDragSession : public nsIDragSession {
   nsBaseDragSession();
   ~nsBaseDragSession();
 
+  MOZ_CAN_RUN_SCRIPT virtual nsresult EndDragSessionImpl(
+      bool aDoneDrag, uint32_t aKeyModifiers);
+
   
   
   bool TakeDragEventDispatchedToChildProcess() {
@@ -117,6 +120,11 @@ class nsBaseDragSession : public nsIDragSession {
 
   
   nsTArray<nsWeakPtr> mBrowsers;
+  
+  RefPtr<mozilla::dom::RemoteDragStartData> mDragStartData;
+
+  
+  mozilla::Maybe<mozilla::CSSIntRegion> mRegion;
 
   
   
@@ -149,6 +157,11 @@ class nsBaseDragSession : public nsIDragSession {
 
   bool mIsDraggingTextInTextControl = false;
   bool mSessionIsSynthesizedForTests = false;
+
+  
+  bool mEndingSession = false;
+  
+  bool mHasImage = false;
 };
 
 
@@ -251,16 +264,8 @@ class nsBaseDragService : public nsIDragService, public nsBaseDragSession {
   virtual bool IsMockService() { return false; }
 
   
-  bool mEndingSession;
-  
-  bool mHasImage;
-
-  
   
   nsContentPolicyType mContentPolicyType;
-
-  
-  RefPtr<mozilla::dom::RemoteDragStartData> mDragStartData;
 
   uint32_t mSuppressLevel;
 

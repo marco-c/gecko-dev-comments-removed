@@ -4150,8 +4150,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
         nsCOMPtr<nsINode> sourceNode;
         dragSession->GetSourceNode(getter_AddRefs(sourceNode));
         if (!sourceNode) {
-          nsCOMPtr<nsIDragService> dragService = mDragService;
-          dragService->EndDragSession(
+          dragSession->EndDragSession(
               false, nsCocoaUtils::ModifiersForEvent([NSApp currentEvent]));
         }
         return NSDragOperationNone;
@@ -4212,8 +4211,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
           
           
           
-          nsCOMPtr<nsIDragService> dragService = mDragService;
-          dragService->EndDragSession(
+          dragSession->EndDragSession(
               false, nsCocoaUtils::ModifiersForEvent([NSApp currentEvent]));
         }
         break;
@@ -4307,10 +4305,6 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   nsCOMPtr<nsIDragSession> session =
       mDragService->GetCurrentSession(mGeckoChild);
   if (session) {
-    RefPtr<nsDragService> dragService =
-        static_cast<nsDragService*>(mDragService);
-    MOZ_ASSERT(dragService);
-
     
     
     
@@ -4336,8 +4330,8 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
       }
     }
 
-    dragService->EndDragSession(true,
-                                nsCocoaUtils::ModifiersForEvent(currentEvent));
+    session->EndDragSession(true,
+                            nsCocoaUtils::ModifiersForEvent(currentEvent));
   }
 
   session = nullptr;
