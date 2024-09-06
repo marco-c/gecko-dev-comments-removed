@@ -2949,18 +2949,25 @@ void nsGenericHTMLFormControlElementWithState::SetInvokeTargetElement(
 }
 
 void nsGenericHTMLFormControlElementWithState::HandleInvokeTargetAction() {
-  
   RefPtr<Element> invokee = GetInvokeTargetElement();
 
-  
   if (!invokee) {
     return;
   }
 
+  
   const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::invokeaction);
+
   nsAtom* actionRaw = attr ? attr->GetAtomValue() : nsGkAtoms::_empty;
   InvokeAction action = GetInvokeAction(actionRaw);
 
+  
+  
+  if (action != InvokeAction::Custom && !invokee->IsValidInvokeAction(action)) {
+    return;
+  }
+
+  
   
   
   
@@ -2977,7 +2984,7 @@ void nsGenericHTMLFormControlElementWithState::HandleInvokeTargetAction() {
 
   
   
-  if (event->DefaultPrevented()) {
+  if (action == InvokeAction::Custom || event->DefaultPrevented()) {
     return;
   }
 
