@@ -164,14 +164,13 @@ NSS_CMSUtil_EncryptSymKey_RSAPubKey(PLArenaPool *poolp,
 extern PK11SymKey *
 NSS_CMSUtil_DecryptSymKey_RSA(SECKEYPrivateKey *privkey, SECItem *encKey, SECOidTag bulkalgtag);
 
-extern SECStatus
-NSS_CMSUtil_EncryptSymKey_ESDH(PLArenaPool *poolp, CERTCertificate *cert, PK11SymKey *key,
-                               SECItem *encKey, SECItem *ukm, SECAlgorithmID *keyEncAlg,
-                               SECItem *originatorPubKey);
+
+
+
+
 
 extern PK11SymKey *
-NSS_CMSUtil_DecryptSymKey_ESDH(SECKEYPrivateKey *privkey, SECItem *encKey,
-                               SECAlgorithmID *keyEncAlg, SECOidTag bulkalgtag, void *pwfn_arg);
+NSS_CMSUtil_DecryptSymKey_RSA_OAEP(SECKEYPrivateKey *privkey, SECItem *parameters, SECItem *encKey, SECOidTag bulkalgtag);
 
 extern SECStatus
 NSS_CMSUtil_EncryptSymKey_ESECDH(PLArenaPool *poolp, CERTCertificate *cert, PK11SymKey *key,

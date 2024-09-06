@@ -157,7 +157,6 @@ nss_cmsrecipientinfo_create(NSSCMSMessage *cmsg,
                 rv = SECFailure;
             }
             break;
-        case SEC_OID_X942_DIFFIE_HELMAN_KEY: 
         case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
             PORT_Assert(type == NSSCMSRecipientID_IssuerSN);
             if (type != NSSCMSRecipientID_IssuerSN) {
@@ -271,7 +270,6 @@ NSS_CMSRecipient_IsSupported(CERTCertificate *cert)
 
     switch (certalgtag) {
         case SEC_OID_PKCS1_RSA_ENCRYPTION:
-        case SEC_OID_X942_DIFFIE_HELMAN_KEY: 
         case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
             return PR_TRUE;
         default:
@@ -497,7 +495,6 @@ NSS_CMSRecipientInfo_WrapBulkKey(NSSCMSRecipientInfo *ri, PK11SymKey *bulkkey,
 
             rv = SECOID_SetAlgorithmID(poolp, &(ri->ri.keyTransRecipientInfo.keyEncAlg), certalgtag, NULL);
             break;
-        case SEC_OID_X942_DIFFIE_HELMAN_KEY: 
         case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
             rek = ri->ri.keyAgreeRecipientInfo.recipientEncryptedKeys[0];
             if (rek == NULL) {
@@ -519,14 +516,6 @@ NSS_CMSRecipientInfo_WrapBulkKey(NSSCMSRecipientInfo *ri, PK11SymKey *bulkkey,
             
             
             switch (certalgtag) {
-                case SEC_OID_X942_DIFFIE_HELMAN_KEY:
-                    rv = NSS_CMSUtil_EncryptSymKey_ESDH(poolp, cert, bulkkey,
-                                                        &rek->encKey,
-                                                        &ri->ri.keyAgreeRecipientInfo.ukm,
-                                                        &ri->ri.keyAgreeRecipientInfo.keyEncAlg,
-                                                        &oiok->id.originatorPublicKey.publicKey);
-                    break;
-
                 case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
                     if (ri->cmsg) {
                         wincx = ri->cmsg->pwfn_arg;
@@ -566,7 +555,7 @@ NSS_CMSRecipientInfo_UnwrapBulkKey(NSSCMSRecipientInfo *ri, int subIndex,
 {
     PK11SymKey *bulkkey = NULL;
     SECOidTag encalgtag;
-    SECItem *enckey, *ukm;
+    SECItem *enckey, *ukm, *parameters;
     NSSCMSOriginatorIdentifierOrKey *oiok;
     int error;
     void *wincx = NULL;
@@ -583,6 +572,12 @@ NSS_CMSRecipientInfo_UnwrapBulkKey(NSSCMSRecipientInfo *ri, int subIndex,
                     
                     
                     bulkkey = NSS_CMSUtil_DecryptSymKey_RSA(privkey, enckey, bulkalgtag);
+                    break;
+                case SEC_OID_PKCS1_RSA_OAEP_ENCRYPTION:
+                    
+                    
+                    parameters = &(ri->ri.keyTransRecipientInfo.keyEncAlg.parameters);
+                    bulkkey = NSS_CMSUtil_DecryptSymKey_RSA_OAEP(privkey, parameters, enckey, bulkalgtag);
                     break;
                 default:
                     error = SEC_ERROR_UNSUPPORTED_KEYALG;
@@ -613,18 +608,6 @@ NSS_CMSRecipientInfo_UnwrapBulkKey(NSSCMSRecipientInfo *ri, int subIndex,
                                                              bulkalgtag, ukm, oiok, wincx);
                     break;
 
-                case SEC_OID_X942_DIFFIE_HELMAN_KEY:
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    error = SEC_ERROR_UNSUPPORTED_KEYALG;
-                    goto loser;
-                    break;
                 default:
                     error = SEC_ERROR_UNSUPPORTED_KEYALG;
                     goto loser;

@@ -526,9 +526,6 @@ PK11_ImportDataKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, PK11Origin origin
         return NULL;
     }
     handle = PK11_GetObjectHandle(PK11_TypeGeneric, genObject, NULL);
-    if (handle == CK_INVALID_HANDLE) {
-        return NULL;
-    }
     
 
 
@@ -536,6 +533,9 @@ PK11_ImportDataKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type, PK11Origin origin
 
 
     PK11_DestroyGenericObject(genObject);
+    if (handle == CK_INVALID_HANDLE) {
+        return NULL;
+    }
     return PK11_SymKeyFromHandle(slot, NULL, origin, type, handle, PR_TRUE, wincx);
 }
 
