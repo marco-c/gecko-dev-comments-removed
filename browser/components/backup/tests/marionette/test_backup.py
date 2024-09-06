@@ -2,7 +2,6 @@
 
 
 
-import json
 import os
 import shutil
 import tempfile
@@ -44,7 +43,7 @@ class BackupTest(MarionetteTestCase):
         self.add_test_preferences()
         self.add_test_permissions()
 
-        resourceKeys = self.marionette.execute_script(
+        self.marionette.execute_script(
             """
           const DefaultBackupResources = ChromeUtils.importESModule("resource:///modules/backup/BackupResources.sys.mjs");
           let resourceKeys = [];
@@ -56,7 +55,8 @@ class BackupTest(MarionetteTestCase):
         """
         )
 
-        originalStagingPath = self.marionette.execute_async_script(
+        recoveryCode = "This is a test password"
+        originalArchivePath = self.marionette.execute_async_script(
             """
           const { OSKeyStore } = ChromeUtils.importESModule(
             "resource://gre/modules/OSKeyStore.sys.mjs"
@@ -67,7 +67,7 @@ class BackupTest(MarionetteTestCase):
             throw new Error("Could not get initialized BackupService.");
           }
 
-          let [outerResolve] = arguments;
+          let [recoveryCode, outerResolve] = arguments;
           (async () => {
             // This is some hackery to make it so that OSKeyStore doesn't kick
             // off an OS authentication dialog in our test, and also to make
@@ -77,17 +77,18 @@ class BackupTest(MarionetteTestCase):
             // testing-common modules aren't available in Marionette tests.
             const ORIGINAL_STORE_LABEL = OSKeyStore.STORE_LABEL;
             OSKeyStore.STORE_LABEL = "test-" + Math.random().toString(36).substr(2);
-            await bs.enableEncryption("This is a test password");
+            await bs.enableEncryption(recoveryCode);
             await OSKeyStore.cleanup();
             OSKeyStore.STORE_LABEL = ORIGINAL_STORE_LABEL;
 
-            let { stagingPath } = await bs.createBackup();
-            if (!stagingPath) {
+            let { archivePath } = await bs.createBackup();
+            if (!archivePath) {
               throw new Error("Could not create backup.");
             }
-            return stagingPath;
+            return archivePath;
           })().then(outerResolve);
-        """
+        """,
+            script_args=[recoveryCode],
         )
 
         
@@ -97,45 +98,13 @@ class BackupTest(MarionetteTestCase):
         
         
         
-        stagingPath = os.path.join(tempfile.gettempdir(), "staging-test")
+        archivePath = os.path.join(tempfile.gettempdir(), "archive.html")
         
-        shutil.rmtree(stagingPath, ignore_errors=True)
-        shutil.move(originalStagingPath, stagingPath)
+        shutil.rmtree(archivePath, ignore_errors=True)
+        shutil.move(originalArchivePath, archivePath)
 
-        
-        self.assertTrue(os.path.exists(stagingPath))
-        
-        manifestPath = os.path.join(stagingPath, "backup-manifest.json")
-        self.assertTrue(os.path.exists(manifestPath))
-
-        
-        
-        
-        
-
-        
-        with open(manifestPath, "r") as f:
-            manifest = json.load(f)
-
-        
-        self.assertIn("resources", manifest)
-        resources = manifest["resources"]
-        self.assertTrue(isinstance(resources, dict))
-        self.assertTrue(len(resources) > 0)
-
-        
-        
-        self.assertEqual(len(resources), len(resourceKeys))
-        for resourceKey in resourceKeys:
-            self.assertIn(resourceKey, resources)
-
-        
-        for resourceKey in resources:
-            print("Checking resource: %s" % resourceKey)
-            
-            
-            resourceStagingDir = os.path.join(stagingPath, resourceKey)
-            self.assertTrue(os.path.exists(resourceStagingDir))
+        recoveryPath = os.path.join(tempfile.gettempdir(), "recovery")
+        shutil.rmtree(recoveryPath, ignore_errors=True)
 
         
         
@@ -160,13 +129,13 @@ class BackupTest(MarionetteTestCase):
             throw new Error("Could not get initialized BackupService.");
           }
 
-          let [stagingPath, outerResolve] = arguments;
+          let [archivePath, recoveryCode, recoveryPath, outerResolve] = arguments;
           (async () => {
             let newProfileRootPath = await IOUtils.createUniqueDirectory(
               PathUtils.tempDir,
-              "recoverFromSnapshotFolderTest-newProfileRoot"
+              "recoverFromBackupArchiveTest-newProfileRoot"
             );
-            let newProfile = await bs.recoverFromSnapshotFolder(stagingPath, false, newProfileRootPath)
+            let newProfile = await bs.recoverFromBackupArchive(archivePath, recoveryCode, false, recoveryPath, newProfileRootPath);
             if (!newProfile) {
               throw new Error("Could not create recovery profile.");
             }
@@ -176,7 +145,7 @@ class BackupTest(MarionetteTestCase):
             return [newProfile.name, newProfile.rootDir.path, expectedClientID];
           })().then(outerResolve);
         """,
-            script_args=[stagingPath],
+            script_args=[archivePath, recoveryCode, recoveryPath],
         )
 
         print("Recovery name: %s" % newProfileName)
@@ -251,7 +220,9 @@ class BackupTest(MarionetteTestCase):
         )
 
         
-        mozfile.remove(stagingPath)
+        
+        mozfile.remove(archivePath)
+        mozfile.remove(recoveryPath)
 
     def add_test_cookie(self):
         self.marionette.execute_async_script(
