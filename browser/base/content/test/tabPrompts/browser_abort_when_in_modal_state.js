@@ -11,11 +11,7 @@ const { PromiseTestUtils } = ChromeUtils.importESModule(
 
 
 
-
 add_task(async function test_check_multiple_prompts() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["prompts.windowPromptSubDialog", true]],
-  });
   let container = document.getElementById("window-modal-dialog");
   let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen();
 

@@ -1690,10 +1690,6 @@ pref("browser.partnerlink.attributionURL", "https://topsites.services.mozilla.co
 pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 
 
-
-pref("prompts.windowPromptSubDialog", true);
-
-
 pref("browser.newtab.preload", true);
 
 
