@@ -1,0 +1,14 @@
+
+
+
+
+
+
+#include "ClipboardContentAnalysisChild.h"
+
+namespace mozilla {
+
+StaticRefPtr<ClipboardContentAnalysisChild>
+    ClipboardContentAnalysisChild::sSingleton;
+
+}  
