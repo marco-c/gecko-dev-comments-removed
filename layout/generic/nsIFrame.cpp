@@ -2402,6 +2402,15 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeHighlightSelectionStyle(
       *element, PseudoStyleType::highlight, aHighlightName, Style());
 }
 
+already_AddRefed<ComputedStyle> nsIFrame::ComputeTargetTextStyle() const {
+  const Element* element = FindElementAncestorForMozSelection(GetContent());
+  if (!element) {
+    return nullptr;
+  }
+  return PresContext()->StyleSet()->ProbePseudoElementStyle(
+      *element, PseudoStyleType::targetText, nullptr, Style());
+}
+
 template <typename SizeOrMaxSize>
 static inline bool IsIntrinsicKeyword(const SizeOrMaxSize& aSize) {
   
@@ -10707,21 +10716,27 @@ ComputedStyle* nsIFrame::DoGetParentComputedStyle(
 }
 
 void nsIFrame::GetLastLeaf(nsIFrame** aFrame) {
-  if (!aFrame || !*aFrame) return;
-  nsIFrame* child = *aFrame;
-  
-  while (1) {
-    child = child->PrincipalChildList().FirstChild();
-    if (!child) return;  
-    nsIFrame* siblingFrame;
-    nsIContent* content;
-    
-    
-    while ((siblingFrame = child->GetNextSibling()) &&
-           (content = siblingFrame->GetContent()) &&
-           !content->IsRootOfNativeAnonymousSubtree())
-      child = siblingFrame;
-    *aFrame = child;
+  if (!aFrame || !*aFrame) {
+    return;
+  }
+  for (nsIFrame* maybeLastLeaf = (*aFrame)->PrincipalChildList().LastChild();
+       maybeLastLeaf;) {
+    nsIFrame* lastChildNotInSubTree = nullptr;
+    for (nsIFrame* child = maybeLastLeaf; child;
+         child = child->GetPrevSibling()) {
+      nsIContent* content = child->GetContent();
+      
+      
+      if (content && !content->IsRootOfNativeAnonymousSubtree()) {
+        lastChildNotInSubTree = child;
+        break;
+      }
+    }
+    if (!lastChildNotInSubTree) {
+      return;
+    }
+    *aFrame = lastChildNotInSubTree;
+    maybeLastLeaf = lastChildNotInSubTree->PrincipalChildList().LastChild();
   }
 }
 

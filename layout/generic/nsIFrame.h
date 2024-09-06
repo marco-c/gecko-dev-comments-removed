@@ -937,6 +937,8 @@ class nsIFrame : public nsQueryFrame {
   already_AddRefed<ComputedStyle> ComputeHighlightSelectionStyle(
       nsAtom* aHighlightName);
 
+  already_AddRefed<ComputedStyle> ComputeTargetTextStyle() const;
+
   
 
 
@@ -3935,6 +3937,9 @@ class nsIFrame : public nsQueryFrame {
   nsresult PeekOffsetForParagraph(mozilla::PeekOffsetStruct* aPos);
 
  public:
+  
+  
+  
   
   
   static void GetLastLeaf(nsIFrame** aFrame);
