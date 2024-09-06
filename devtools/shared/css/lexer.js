@@ -1515,8 +1515,39 @@ Scanner.prototype = {
 
 
 
-function getCSSLexer(input) {
+
+function getCSSLexer(input, useInspectorCSSParser = false) {
+  if (useInspectorCSSParser) {
+    return new InspectorCSSParserWrapper(input);
+  }
   return new Scanner(input);
 }
 
 exports.getCSSLexer = getCSSLexer;
+
+
+
+
+
+class InspectorCSSParserWrapper {
+  #offset = 0;
+  constructor(input) {
+    this.parser = new InspectorCSSParser(input);
+  }
+
+  nextToken() {
+    const token = this.parser.nextToken();
+    if (!token) {
+      return token;
+    }
+
+    
+    
+    
+    
+    token.startOffset = this.#offset;
+    this.#offset += token.text.length;
+    token.endOffset = this.#offset;
+    return token;
+  }
+}
