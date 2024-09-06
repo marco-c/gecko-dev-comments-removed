@@ -1472,13 +1472,8 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
       
       
       
-      
-      
-      
-      
       DebugOnly<bool> hasGoodExcuse = framePtr->isRematerializedFrame() ||
-                                      capture.is<JS::FirstSubsumedFrame>() ||
-                                      !unreachedEvalTargets.empty();
+                                      capture.is<JS::FirstSubsumedFrame>();
       MOZ_ASSERT_IF(seenCached,
                     framePtr->hasCachedSavedFrame() || hasGoodExcuse);
       seenCached |= framePtr->hasCachedSavedFrame();
@@ -1606,6 +1601,16 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
         
         break;
       }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      seenCached = false;
     }
 
     if (capture.is<JS::MaxFrames>()) {
