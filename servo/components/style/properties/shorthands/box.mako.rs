@@ -37,8 +37,6 @@ ${helpers.two_properties_shorthand(
     engines="gecko"
     name="container"
     sub_properties="container-name container-type"
-    gecko_pref="layout.css.container-queries.enabled"
-    enabled_in="ua"
     spec="https:
 >
     use crate::values::specified::box_::{ContainerName, ContainerType};
