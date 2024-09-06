@@ -382,9 +382,6 @@ TEST(TestCookie, TestCookieMain)
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
-  
-  
-  
   SetACookie(
       cookieService, "http://path.net/",
       "test=path; "
@@ -423,12 +420,14 @@ TEST(TestCookie, TestCookieMain)
       "789012345678901234567890123456789012345678901234567890123456789012345678"
       "9012345678901234567890",
       cookie);
-  EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=path"));
+  GetACookie(cookieService, "http://path.net/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=path"));
   
   
   SetACookie(
       cookieService,
-      "http://path.net/"
+      "http://longpath.net/"
       "123456789012345678901234567890123456789012345678901234567890123456789012"
       "345678901234567890123456789012345678901234567890123456789012345678901234"
       "567890123456789012345678901234567890123456789012345678901234567890123456"
@@ -447,7 +446,7 @@ TEST(TestCookie, TestCookieMain)
       "test=path");
   GetACookie(
       cookieService,
-      "http://path.net/"
+      "http://longpath.net/"
       "123456789012345678901234567890123456789012345678901234567890123456789012"
       "345678901234567890123456789012345678901234567890123456789012345678901234"
       "567890123456789012345678901234567890123456789012345678901234567890123456"
@@ -466,19 +465,21 @@ TEST(TestCookie, TestCookieMain)
       cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
-  SetACookie(cookieService, "http://path.net/", "test=path; path=/foo\tbar/");
-  GetACookie(cookieService, "http://path.net/foo\tbar/", cookie);
+  SetACookie(cookieService, "http://pathwithtab.net/",
+             "test=path; path=/foo\tbar/");
+  GetACookie(cookieService, "http://pathwithtab.net/foo\tbar/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
-  SetACookie(cookieService, "http://path.net/", "test\ttabs=tab");
-  GetACookie(cookieService, "http://path.net/", cookie);
+  SetACookie(cookieService, "http://pathwithtab.net/", "test\ttabs=tab");
+  GetACookie(cookieService, "http://pathwithtab.net/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
-  SetACookie(cookieService, "http://path.net/", "test=tab\ttest");
-  GetACookie(cookieService, "http://path.net/", cookie);
+  SetACookie(cookieService, "http://pathwithtab.net/", "test=tab\ttest");
+  GetACookie(cookieService, "http://pathwithtab.net/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=tab\ttest"));
-  SetACookie(cookieService, "http://path.net/", "test=tab\ttest; max-age=-1");
-  GetACookie(cookieService, "http://path.net/", cookie);
+  SetACookie(cookieService, "http://pathwithtab.net/",
+             "test=tab\ttest; max-age=-1");
+  GetACookie(cookieService, "http://pathwithtab.net/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
