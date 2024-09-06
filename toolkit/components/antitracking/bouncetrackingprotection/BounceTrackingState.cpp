@@ -593,11 +593,15 @@ nsresult BounceTrackingState::OnResponseReceived(
   }
 
   
-  NS_ENSURE_TRUE(mBounceTrackingRecord, NS_ERROR_FAILURE);
+  
+  if (!mBounceTrackingRecord) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
-  if (NS_WARN_IF(mClientBounceDetectionTimeout)) {
+  
+  if (mClientBounceDetectionTimeout) {
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
             ("%s: mClientBounceDetectionTimeout->Cancel()", __FUNCTION__));
     mClientBounceDetectionTimeout->Cancel();
@@ -665,7 +669,10 @@ nsresult BounceTrackingState::OnDocumentLoaded(
   }
 
   
-  NS_ENSURE_TRUE(mBounceTrackingRecord, NS_ERROR_FAILURE);
+  
+  if (!mBounceTrackingRecord) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsAutoCString siteHost;
   if (!BounceTrackingState::ShouldTrackPrincipal(aDocumentPrincipal)) {
