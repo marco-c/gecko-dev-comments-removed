@@ -285,6 +285,8 @@ mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed> gStopAndDumpFromSignal(
 
 void profiler_dump_and_stop();
 
+void profiler_start_from_signal();
+
 mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
 #if defined(GP_OS_android)
@@ -630,14 +632,10 @@ class AsyncSignalControlThread {
       if (msg[0] == sAsyncSignalControlCharStart) {
         
         
-        uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk |
-                            ProfilerFeature::CPUUtilization;
         
-        
-        const char* filters[] = {"*"};
-        profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
-                       PROFILER_DEFAULT_INTERVAL, features, filters,
-                       MOZ_ARRAY_LENGTH(filters), 0);
+        if (!profiler_is_active()) {
+          profiler_start_from_signal();
+        }
       } else if (msg[0] == sAsyncSignalControlCharStop) {
         
         
@@ -5560,17 +5558,38 @@ Maybe<nsAutoCString> profiler_find_dump_path() {
 
 void profiler_dump_and_stop() {
   
-  profiler_pause();
-
   
-  if (auto path = profiler_find_dump_path()) {
-    profiler_save_profile_to_file(path.value().get());
-  } else {
-    LOG("Failed to dump profile to disk");
+  if (XRE_IsParentProcess()) {
+    
+    profiler_pause();
+
+    
+    if (auto path = profiler_find_dump_path()) {
+      profiler_save_profile_to_file(path.value().get());
+    } else {
+      LOG("Failed to dump profile to disk");
+    }
+
+    
+    profiler_stop();
   }
+}
 
+void profiler_start_from_signal() {
   
-  profiler_stop();
+  
+  if (XRE_IsParentProcess()) {
+    
+    
+    uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk |
+                        ProfilerFeature::CPUUtilization;
+    
+    
+    const char* filters[] = {"*"};
+    profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
+                   PROFILER_DEFAULT_INTERVAL, features, filters,
+                   MOZ_ARRAY_LENGTH(filters), 0);
+  }
 }
 
 #if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
