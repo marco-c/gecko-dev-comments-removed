@@ -501,6 +501,12 @@ class SnapshotIterator {
     return val.toInt32();
   }
 
+  double readNumber() {
+    Value val = read();
+    MOZ_RELEASE_ASSERT(val.isNumber());
+    return val.toNumber();
+  }
+
   
   
   
