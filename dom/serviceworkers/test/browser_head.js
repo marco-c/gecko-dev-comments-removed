@@ -27,7 +27,10 @@ const SWM = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
 
 
 
-const kMinimumOriginUsageBytes = 65536;
+
+
+
+const kMinimumOriginUsageBytes = 98304;
 
 function getPrincipal(url, attrs) {
   const uri = Services.io.newURI(url);
@@ -62,9 +65,10 @@ async function get_qm_origin_usage(origin) {
   return new Promise(resolve => {
     const principal =
       Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
-    Services.qms.getUsageForPrincipal(principal, request =>
-      resolve(request.result.usage)
-    );
+    Services.qms.getUsageForPrincipal(principal, request => {
+      info(`QM says usage of ${origin} is ${request.result.usage}`);
+      resolve(request.result.usage);
+    });
   });
 }
 
