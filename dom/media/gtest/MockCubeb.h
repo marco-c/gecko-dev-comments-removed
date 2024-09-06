@@ -198,6 +198,7 @@ class MockCubebStream {
   uint32_t OutputChannels() const MOZ_EXCLUDES(mMutex);
   uint32_t SampleRate() const MOZ_EXCLUDES(mMutex);
   uint32_t InputFrequency() const MOZ_EXCLUDES(mMutex);
+  Maybe<cubeb_state> State() const MOZ_EXCLUDES(mMutex);
 
   void SetDriftFactor(float aDriftFactor) MOZ_EXCLUDES(mMutex);
   void ForceError() MOZ_EXCLUDES(mMutex);
@@ -266,7 +267,7 @@ class MockCubebStream {
   
   
   
-  bool mStreamStop MOZ_GUARDED_BY(mMutex) = true;
+  Maybe<cubeb_state> mState MOZ_GUARDED_BY(mMutex);
   
   
   
