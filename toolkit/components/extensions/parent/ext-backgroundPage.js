@@ -771,6 +771,26 @@ class BackgroundBuilder {
         extension.emit("background-script-suspend-canceled");
       }
 
+      if (extension.backgroundState !== BACKGROUND_STATE.RUNNING) {
+        
+        
+        
+        
+        
+        
+        if (
+          extension.backgroundState === BACKGROUND_STATE.STOPPED &&
+          
+          
+          reason !== "event"
+        ) {
+          Cu.reportError(
+            `Background keepalive reset with reason "${reason}" failed for ${extension.id}, state stopped.`
+          );
+        }
+        return;
+      }
+
       this.idleManager.resetTimer();
 
       if (this.isWorker) {
@@ -791,6 +811,16 @@ class BackgroundBuilder {
     };
 
     let idleWaitUntil = (_, { promise, reason }) => {
+      if (extension.backgroundState === BACKGROUND_STATE.STOPPED) {
+        
+        
+        
+        
+        Cu.reportError(
+          `Background keepalive with reason "${reason}" failed for ${extension.id}, state stopped.`
+        );
+        return;
+      }
       this.idleManager.waitUntil(promise, reason);
     };
 
@@ -814,6 +844,14 @@ class BackgroundBuilder {
       ignoreDevToolsAttached = false,
       disableResetIdleForTest = false, 
     } = {}) => {
+      if (extension.backgroundState === BACKGROUND_STATE.STOPPED) {
+        Cu.reportError(
+          `Cannot terminate background of ${extension.id} because it was already stopped.`
+        );
+        
+        
+        return;
+      }
       await bgStartupPromise;
       if (!this.extension || this.extension.hasShutdown) {
         
@@ -985,6 +1023,21 @@ class BackgroundBuilder {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var IdleManager = class IdleManager {
   sleepTime = 0;
   
@@ -1055,6 +1108,10 @@ var IdleManager = class IdleManager {
       if (Cu.now() < this.sleepTime) {
         this.createTimer();
       } else {
+        
+        
+        
+        
         this.extension.terminateBackground();
       }
     }
