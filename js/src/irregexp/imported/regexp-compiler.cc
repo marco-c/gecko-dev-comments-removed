@@ -916,7 +916,7 @@ inline bool EmitAtomLetter(Isolate* isolate, RegExpCompiler* compiler,
     }
     case 4:
       macro_assembler->CheckCharacter(chars[3], &ok);
-      V8_FALLTHROUGH;
+      [[fallthrough]];
     case 3:
       macro_assembler->CheckCharacter(chars[0], &ok);
       macro_assembler->CheckCharacter(chars[1], &ok);
@@ -1367,6 +1367,14 @@ bool RegExpNode::KeepRecursing(RegExpCompiler* compiler) {
 
 void ActionNode::FillInBMInfo(Isolate* isolate, int offset, int budget,
                               BoyerMooreLookahead* bm, bool not_at_start) {
+  base::Optional<RegExpFlags> old_flags;
+  if (action_type_ == MODIFY_FLAGS) {
+    
+    
+    
+    old_flags = bm->compiler()->flags();
+    bm->compiler()->set_flags(flags());
+  }
   if (action_type_ == POSITIVE_SUBMATCH_SUCCESS) {
     
     
@@ -1375,6 +1383,9 @@ void ActionNode::FillInBMInfo(Isolate* isolate, int offset, int budget,
     on_success()->FillInBMInfo(isolate, offset, budget - 1, bm, not_at_start);
   }
   SaveBMInfo(bm, not_at_start, offset);
+  if (old_flags.has_value()) {
+    bm->compiler()->set_flags(*old_flags);
+  }
 }
 
 void ActionNode::GetQuickCheckDetails(QuickCheckDetails* details,
