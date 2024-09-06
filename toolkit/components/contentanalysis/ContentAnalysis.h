@@ -135,6 +135,10 @@ class ContentAnalysis final : public nsIContentAnalysis {
   nsresult CreateContentAnalysisClient(nsCString&& aPipePathName,
                                        nsString&& aClientSignatureSetting,
                                        bool aIsPerUser);
+  nsresult AnalyzeContentRequestCallbackPrivate(
+      nsIContentAnalysisRequest* aRequest, bool aAutoAcknowledge,
+      nsIContentAnalysisCallback* aCallback);
+
   nsresult RunAnalyzeRequestTask(
       const RefPtr<nsIContentAnalysisRequest>& aRequest, bool aAutoAcknowledge,
       int64_t aRequestCount,
@@ -219,6 +223,7 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
 
   void SetOwner(RefPtr<ContentAnalysis> aOwner);
   void DoNotAcknowledge() { mDoNotAcknowledge = true; }
+  void SetCancelError(CancelError aCancelError);
 
  private:
   ~ContentAnalysisResponse() = default;
@@ -238,6 +243,10 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
 
   
   nsCString mRequestToken;
+
+  
+  
+  CancelError mCancelError = CancelError::eUserInitiated;
 
   
   

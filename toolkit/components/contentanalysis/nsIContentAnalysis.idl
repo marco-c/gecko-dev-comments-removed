@@ -52,8 +52,18 @@ interface nsIContentAnalysisResponse : nsISupports
     eCanceled = 1001,
   };
 
+  cenum CancelError : 32 {
+    eUserInitiated = 0,
+    eNoAgent = 1,
+    eInvalidAgentSignature = 2,
+    eErrorOther = 3,
+  };
+
   [infallible] readonly attribute nsIContentAnalysisResponse_Action action;
   [infallible] readonly attribute boolean shouldAllowContent;
+  
+  
+  [infallible] readonly attribute nsIContentAnalysisResponse_CancelError cancelError;
 
   
   readonly attribute ACString requestToken;
