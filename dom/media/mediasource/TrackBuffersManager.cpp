@@ -575,36 +575,71 @@ void TrackBuffersManager::DoEvictData(const TimeUnit& aPlaybackTime,
   
   
   if (!aSizeToEvict) {
-    MOZ_ASSERT(track.mBufferedRanges.Find(aPlaybackTime) ==
-               TimeIntervals::NoIndex);
+    
+    
+    
+    if (track.mBufferedRanges.Find(aPlaybackTime) != TimeIntervals::NoIndex) {
+      return;
+    }
     
     const int64_t sizeToEvict =
         GetSize() - static_cast<int64_t>(EvictionThreshold() *
                                          mEvictionBufferWatermarkRatio);
-    uint32_t lastKeyFrameIndex = 0;
-    int64_t toEvict = sizeToEvict;
-    int64_t partialEvict = 0;
-    for (uint32_t i = 0; i < buffer.Length(); i++) {
-      const auto& frame = buffer[i];
-      if (frame->mKeyframe) {
-        lastKeyFrameIndex = i;
-        toEvict -= partialEvict;
-        if (toEvict < 0) {
-          break;
-        }
-        partialEvict = 0;
-      }
-      partialEvict +=
-          AssertedCast<int64_t>(frame->ComputedSizeOfIncludingThis());
+    
+    if (sizeToEvict <= 0) {
+      return;
     }
-    TimeUnit start = track.mBufferedRanges[0].mStart;
-    TimeUnit end =
-        buffer[lastKeyFrameIndex]->mTime - TimeUnit::FromMicroseconds(1);
-    MSE_DEBUG("Auto evicting %" PRId64 " bytes from [%" PRId64 ", %" PRId64 "]",
-              sizeToEvict - toEvict, start.ToMicroseconds(),
+    int64_t toEvict = sizeToEvict;
+
+    
+    
+    
+    
+    
+    
+    const TimeUnit start = track.mBufferedRanges.GetStart();
+    const TimeUnit end = track.mBufferedRanges.GetEnd();
+    MSE_DEBUG("PlaybackTime=%" PRId64 ", extents=[%" PRId64 ", %" PRId64 "]",
+              aPlaybackTime.ToMicroseconds(), start.ToMicroseconds(),
               end.ToMicroseconds());
-    if (end > start) {
-      CodedFrameRemoval(TimeInterval(start, end));
+    if (end - aPlaybackTime > aPlaybackTime - start) {
+      size_t evictedFramesStartIndex = buffer.Length();
+      while (evictedFramesStartIndex > 0 && toEvict > 0) {
+        --evictedFramesStartIndex;
+        toEvict -= AssertedCast<int64_t>(
+            buffer[evictedFramesStartIndex]->ComputedSizeOfIncludingThis());
+      }
+      MSE_DEBUG("Auto evicting %" PRId64 " bytes [%" PRId64 ", inf] from tail",
+                sizeToEvict - toEvict,
+                buffer[evictedFramesStartIndex]->mTime.ToMicroseconds());
+      CodedFrameRemoval(TimeInterval(buffer[evictedFramesStartIndex]->mTime,
+                                     TimeUnit::FromInfinity()));
+    } else {
+      uint32_t lastKeyFrameIndex = 0;
+      int64_t partialEvict = 0;
+      for (uint32_t i = 0; i < buffer.Length(); i++) {
+        const auto& frame = buffer[i];
+        if (frame->mKeyframe) {
+          lastKeyFrameIndex = i;
+          toEvict -= partialEvict;
+          if (toEvict < 0) {
+            break;
+          }
+          partialEvict = 0;
+        }
+        partialEvict +=
+            AssertedCast<int64_t>(frame->ComputedSizeOfIncludingThis());
+      }
+      TimeUnit start = track.mBufferedRanges[0].mStart;
+      TimeUnit end =
+          buffer[lastKeyFrameIndex]->mTime - TimeUnit::FromMicroseconds(1);
+      MSE_DEBUG("Auto evicting %" PRId64 " bytes [%" PRId64 ", %" PRId64
+                "] from head",
+                sizeToEvict - toEvict, start.ToMicroseconds(),
+                end.ToMicroseconds());
+      if (end > start) {
+        CodedFrameRemoval(TimeInterval(start, end));
+      }
     }
     return;
   }
