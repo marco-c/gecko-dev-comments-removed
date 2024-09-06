@@ -3846,7 +3846,7 @@ void nsGlobalWindowInner::ScrollTo(const ScrollToOptions& aOptions) {
   if (left) {
     scrollPos.x = *left;
   }
-  if (*top) {
+  if (top) {
     scrollPos.y = *top;
   }
   
