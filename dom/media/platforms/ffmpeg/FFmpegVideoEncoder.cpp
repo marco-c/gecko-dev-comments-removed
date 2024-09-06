@@ -510,7 +510,7 @@ Result<MediaDataEncoder::EncodedData, nsresult> FFmpegVideoEncoder<
   
   mDurationMap.Insert(mFrame->pts, aSample->mDuration.ToMicroseconds());
 #  endif
-  mFrame->pkt_duration = aSample->mDuration.ToMicroseconds();
+  Duration(mFrame) = aSample->mDuration.ToMicroseconds();
 
   
   return FFmpegDataEncoder<LIBAV_VER>::EncodeWithModernAPIs();
