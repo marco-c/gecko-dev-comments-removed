@@ -28,9 +28,7 @@ module.exports = {
       single_date: null, 
       date_range: [], 
       startup_cache: true,
-      test_cycles: 5,
-      release_channel: "nightly", 
-      architecture: "arm64-v8a",
+      test_cycles: 50,
     },
   },
 };

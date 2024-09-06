@@ -28,8 +28,6 @@ module.exports = {
       date_range: [], 
       startup_cache: true,
       test_cycles: 50,
-      release_channel: "nightly", 
-      architecture: "arm64-v8a",
     },
   },
 };
