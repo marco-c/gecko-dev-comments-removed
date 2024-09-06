@@ -54,6 +54,8 @@ enum class Option {
                                 
   DefaultPlaybackDeviceMono,    
                                 
+  KeepOriginalPts,  
+                    
 
   SENTINEL  
 };
