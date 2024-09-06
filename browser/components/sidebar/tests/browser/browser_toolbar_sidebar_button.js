@@ -10,15 +10,11 @@ let gAreas = CustomizableUI.getTestOnlyInternalProp("gAreas");
 
 const SIDEBAR_BUTTON_INTRODUCED_PREF =
   "browser.toolbarbuttons.introduced.sidebar-button";
-const SIDEBAR_REVAMP_PREF = "sidebar.revamp";
 const SIDEBAR_VISIBILITY_PREF = "sidebar.visibility";
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [SIDEBAR_REVAMP_PREF, true],
-      [SIDEBAR_BUTTON_INTRODUCED_PREF, false],
-    ],
+    set: [[SIDEBAR_BUTTON_INTRODUCED_PREF, false]],
   });
   let navbarDefaults = gAreas.get("nav-bar").get("defaultPlacements");
   let hadSavedState = !!CustomizableUI.getTestOnlyInternalProp("gSavedState");
@@ -48,8 +44,8 @@ add_setup(async () => {
 
 add_task(async function test_toolbar_sidebar_button() {
   ok(
-    !document.getElementById("sidebar-button"),
-    "Sidebar button is not showing in the toolbar initially."
+    document.getElementById("sidebar-button"),
+    "Sidebar button is showing in the toolbar initially."
   );
   let gFuturePlacements =
     CustomizableUI.getTestOnlyInternalProp("gFuturePlacements");
@@ -58,33 +54,7 @@ add_task(async function test_toolbar_sidebar_button() {
     0,
     "All future placements should be dealt with by now."
   );
-  CustomizableUIInternal._updateForNewVersion();
-  is(
-    gFuturePlacements.size,
-    1,
-    "Sidebar button should be included in gFuturePlacements"
-  );
-  ok(
-    gFuturePlacements.get("nav-bar").has("sidebar-button"),
-    "sidebar-button is added to the nav bar"
-  );
 
-  
-  
-  CustomizableUIInternal._placeNewDefaultWidgetsInArea("nav-bar");
-
-  
-  let navbarSavedPlacements =
-    CustomizableUI.getTestOnlyInternalProp("gSavedState").placements["nav-bar"];
-  Assert.ok(
-    navbarSavedPlacements.includes("sidebar-button"),
-    `${navbarSavedPlacements.join(", ")} should include sidebar-button`
-  );
-  
-  CustomizableUI.getTestOnlyInternalProp("gPlacements").set(
-    "nav-bar",
-    navbarSavedPlacements
-  );
   
   const win = await BrowserTestUtils.openNewBrowserWindow();
   const { document: newDoc } = win;
@@ -192,6 +162,8 @@ add_task(async function test_states_for_hide_sidebar() {
     );
   };
 
+  
+  EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, win);
   info("Check default hidden state.");
   await checkStates({ hidden: true, expanded: false });
 
