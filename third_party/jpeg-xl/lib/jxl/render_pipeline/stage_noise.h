@@ -17,7 +17,7 @@ namespace jxl {
 
 
 std::unique_ptr<RenderPipelineStage> GetAddNoiseStage(
-    const NoiseParams& noise_params, const ColorCorrelationMap& cmap,
+    const NoiseParams& noise_params, const ColorCorrelation& color_correlation,
     size_t noise_c_start);
 
 

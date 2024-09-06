@@ -50,6 +50,15 @@ class ThreadPool;
 namespace test {
 
 std::string GetTestDataPath(const std::string& filename);
+
+
+
+
+
+jxl::IccBytes GetIccTestProfile();
+
+std::vector<uint8_t> GetCompressedIccTestProfile();
+
 std::vector<uint8_t> ReadTestData(const std::string& filename);
 
 void JxlBasicInfoSetFromPixelFormat(JxlBasicInfo* basic_info,
@@ -203,8 +212,6 @@ Status EncodeFile(const CompressParams& params, const CodecInOut* io,
 
 constexpr const char* BoolToCStr(bool b) { return b ? "true" : "false"; }
 
-JxlMemoryManager* MemoryManager();
-
 }  
 
 bool operator==(const jxl::Bytes& a, const jxl::Bytes& b);
@@ -213,16 +220,5 @@ bool operator==(const jxl::Bytes& a, const jxl::Bytes& b);
 bool operator!=(const jxl::Bytes& a, const jxl::Bytes& b);
 
 }  
-
-#if !defined(FUZZ_TEST)
-struct FuzzTestSink {
-  template <typename F>
-  FuzzTestSink WithSeeds(F) {
-    return *this;
-  }
-};
-#define FUZZ_TEST(A, B) \
-  const JXL_MAYBE_UNUSED FuzzTestSink unused##A##B = FuzzTestSink()
-#endif
 
 #endif  

@@ -19,7 +19,8 @@ class ScopeGuard {
   ScopeGuard &operator=(ScopeGuard &&) = delete;
 
   
-  ScopeGuard(ScopeGuard &&other) : callback_(std::move(other.callback_)) {
+  ScopeGuard(ScopeGuard &&other) noexcept
+      : callback_(std::move(other.callback_)) {
     other.armed_ = false;
   }
 

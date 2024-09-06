@@ -8,10 +8,12 @@
 
 
 
+#include <jxl/memory_manager.h>
 #include <jxl/parallel_runner.h>
 #include <jxl/types.h>
-#include <stdint.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
@@ -37,6 +39,9 @@ struct JXLDecompressParams {
   
   JxlParallelRunner runner;
   void* runner_opaque = nullptr;
+
+  
+  JxlMemoryManager* memory_manager = nullptr;
 
   
   bool allow_partial_input = false;

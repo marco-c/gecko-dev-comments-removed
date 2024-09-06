@@ -141,11 +141,6 @@ Status CustomTransformData::VisitFields(Visitor* JXL_RESTRICT visitor) {
     
     
     
-
-    
-    
-    
-    
     
 
     
@@ -154,6 +149,13 @@ Status CustomTransformData::VisitFields(Visitor* JXL_RESTRICT visitor) {
     
     
 
+    
+    
+    
+    
+    
+
+    
     
     
     

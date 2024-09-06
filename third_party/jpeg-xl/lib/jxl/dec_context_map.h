@@ -12,12 +12,10 @@
 #include <cstdint>
 #include <vector>
 
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_bit_reader.h"
 
 namespace jxl {
-
-
-constexpr size_t kMaxClusters = 256;
 
 
 

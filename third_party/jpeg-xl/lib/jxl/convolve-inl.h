@@ -123,7 +123,8 @@ class Neighbors {
 inline const int32_t* MirrorLanes(const size_t mod) {
   const HWY_CAPPED(float, 16) d;
   constexpr size_t kN = MaxLanes(d);
-
+  
+  
   
   
   

@@ -13,7 +13,6 @@
 
 #include "lib/jpegli/test_params.h"
 #include "lib/jpegli/types.h"
-#include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/include_jpeglib.h"  
 
 namespace jpegli {
@@ -119,16 +118,5 @@ void VerifyOutputImage(const TestImage& input, const TestImage& output,
                        double max_rms, double max_diff = 255.0);
 
 }  
-
-#if !defined(FUZZ_TEST)
-struct FuzzTestSink {
-  template <typename F>
-  FuzzTestSink WithSeeds(F) {
-    return *this;
-  }
-};
-#define FUZZ_TEST(A, B) \
-  const JXL_MAYBE_UNUSED FuzzTestSink unused##A##B = FuzzTestSink()
-#endif
 
 #endif  

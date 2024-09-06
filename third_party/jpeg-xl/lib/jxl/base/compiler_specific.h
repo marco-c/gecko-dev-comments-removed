@@ -154,4 +154,15 @@ using ssize_t = intptr_t;
 #define JXL_FORMAT(idx_fmt, idx_arg)
 #endif
 
+
+#if defined(_MSC_VER) && !defined(__clang__) && defined(_MSVC_LANG) && \
+    _MSVC_LANG > __cplusplus
+#define JXL_CXX_LANG _MSVC_LANG
+#else
+#define JXL_CXX_LANG __cplusplus
+#endif
+
+
+#define JXL_CXX_17 201703
+
 #endif  

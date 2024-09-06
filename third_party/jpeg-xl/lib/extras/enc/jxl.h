@@ -7,11 +7,13 @@
 #define LIB_EXTRAS_ENC_JXL_H_
 
 #include <jxl/encode.h>
+#include <jxl/memory_manager.h>
 #include <jxl/parallel_runner.h>
 #include <jxl/thread_parallel_runner.h>
 #include <jxl/types.h>
-#include <stdint.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "lib/extras/packed_image.h"
@@ -36,30 +38,41 @@ struct JXLOption {
 
 struct JXLCompressParams {
   std::vector<JXLOption> options;
+
   
   float distance = 1.0f;
   float alpha_distance = 0.0f;
+
   
   bool use_container = false;
+
   
   bool jpeg_store_metadata = true;
   bool jpeg_strip_exif = false;
   bool jpeg_strip_xmp = false;
   bool jpeg_strip_jumbf = false;
+
   
   bool compress_boxes = true;
+
   
   
   float intensity_target = 0;
   int already_downsampled = 1;
   int upsampling_mode = -1;
+
   
   size_t override_bitdepth = 0;
   int32_t codestream_level = -1;
   int32_t premultiply = -1;
+
   
   JxlParallelRunner runner = JxlThreadParallelRunner;
   void* runner_opaque = nullptr;
+
+  
+  JxlMemoryManager* memory_manager = nullptr;
+
   JxlEncoderOutputProcessor output_processor = {};
   JxlDebugImageCallback debug_image = nullptr;
   void* debug_image_opaque = nullptr;

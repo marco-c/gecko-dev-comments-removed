@@ -431,7 +431,8 @@ class JxlEncoderOutputProcessorWrapper {
   friend class JxlOutputProcessorBuffer;
 
  public:
-  JxlEncoderOutputProcessorWrapper() : memory_manager_(nullptr) {}
+  explicit JxlEncoderOutputProcessorWrapper(JxlMemoryManager* memory_manager)
+      : memory_manager_(memory_manager) {}
   JxlEncoderOutputProcessorWrapper(JxlMemoryManager* memory_manager,
                                    JxlEncoderOutputProcessor processor)
       : memory_manager_(memory_manager),
@@ -475,7 +476,9 @@ class JxlEncoderOutputProcessorWrapper {
 
   struct InternalBuffer {
     explicit InternalBuffer(JxlMemoryManager* memory_manager)
-        : owned_data(memory_manager) {}
+        : owned_data(memory_manager) {
+      JXL_ASSERT(memory_manager != nullptr);
+    }
     
     
     size_t written_bytes = 0;
@@ -585,6 +588,7 @@ jxl::Status AppendData(JxlEncoderOutputProcessorWrapper& output_processor,
 
 
 struct JxlEncoderStruct {
+  JxlEncoderStruct() : output_processor(&memory_manager) {}
   JxlMemoryManager memory_manager;
   jxl::MemoryManagerUniquePtr<jxl::ThreadPool> thread_pool{
       nullptr, jxl::MemoryManagerDeleteHelper(&memory_manager)};

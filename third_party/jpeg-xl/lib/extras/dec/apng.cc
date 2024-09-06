@@ -792,7 +792,7 @@ Status DecodeImageAPNG(const Span<const uint8_t> bytes,
   Bytes sig = input.Read(kPngSignature.size());
   if (sig.size() != 8 ||
       memcmp(sig.data(), kPngSignature.data(), kPngSignature.size()) != 0) {
-    return JXL_FAILURE("PNG signature mismatch");
+    return false;  
   }
 
   
@@ -1061,7 +1061,6 @@ Status DecodeImageAPNG(const Span<const uint8_t> bytes,
         if (!ctx.FeedChunks(chunk)) {
           return JXL_FAILURE("Corrupt iCCP chunk");
         }
-        color_info_type = ColorInfoType::ICCP_OR_SRGB;
 
         
         

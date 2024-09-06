@@ -32,6 +32,7 @@
 #include "lib/jxl/image.h"
 #include "lib/jxl/image_ops.h"
 #include "lib/jxl/image_test_utils.h"
+#include "lib/jxl/test_memory_manager.h"
 #include "lib/jxl/test_utils.h"
 #include "lib/jxl/testing.h"
 
@@ -430,11 +431,12 @@ void VerifyRoundtripCompression(
     JXL_EXPECT_OK(jxl::SamePixels(*original_io.Main().color(),
                                   *decoded_io.Main().color(), _));
   } else {
-    jxl::ButteraugliParams ba;
-    float butteraugli_score = ButteraugliDistance(
-        original_io.frames, decoded_io.frames, ba, *JxlGetDefaultCms(),
-        nullptr, nullptr);
-    float target_score = 1.4f;
+    jxl::ButteraugliParams butteraugli_params;
+    float butteraugli_score =
+        ButteraugliDistance(original_io.frames, decoded_io.frames,
+                            butteraugli_params, *JxlGetDefaultCms(),
+                            nullptr, nullptr);
+    float target_score = 1.5f;
     
     
     if (upsampling_mode == 1 && resampling >= 4 && already_downsampled)
@@ -671,10 +673,11 @@ TEST(RoundtripTest, ExtraBoxesTest) {
   jxl::CodecInOut decoded_io = ConvertTestImage(
       decoded_bytes, xsize, ysize, pixel_format, jxl::Bytes(icc_profile));
 
-  jxl::ButteraugliParams ba;
-  float butteraugli_score = ButteraugliDistance(
-      original_io.frames, decoded_io.frames, ba, *JxlGetDefaultCms(),
-      nullptr, nullptr);
+  jxl::ButteraugliParams butteraugli_params;
+  float butteraugli_score =
+      ButteraugliDistance(original_io.frames, decoded_io.frames,
+                          butteraugli_params, *JxlGetDefaultCms(),
+                          nullptr, nullptr);
   EXPECT_LE(butteraugli_score, 1.0f);
 }
 
@@ -807,10 +810,11 @@ TEST(RoundtripTest, MultiFrameTest) {
         ConvertTestImage(decoded_bytes, xsize, ysize * nb_frames, pixel_format,
                          jxl::Bytes(icc_profile));
 
-    jxl::ButteraugliParams ba;
-    float butteraugli_score = ButteraugliDistance(
-        original_io.frames, decoded_io.frames, ba, *JxlGetDefaultCms(),
-        nullptr, nullptr);
+    jxl::ButteraugliParams butteraugli_params;
+    float butteraugli_score =
+        ButteraugliDistance(original_io.frames, decoded_io.frames,
+                            butteraugli_params, *JxlGetDefaultCms(),
+                            nullptr, nullptr);
     EXPECT_LE(butteraugli_score, 1.0f);
   }
 }
