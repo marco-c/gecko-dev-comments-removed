@@ -190,30 +190,10 @@ bool Module::finishTier2(const LinkData& linkData2,
     
     
 
-    const MetadataTier& metadataTier1 = metadata(Tier::Baseline);
-
-    auto stubs1 = code().codeTier(Tier::Baseline).lazyStubs().readLock();
-    auto stubs2 = borrowedTier2->lazyStubs().writeLock();
-
-    MOZ_ASSERT(stubs2->entryStubsEmpty());
-
-    Uint32Vector funcExportIndices;
-    for (size_t i = 0; i < metadataTier1.funcExports.length(); i++) {
-      const FuncExport& fe = metadataTier1.funcExports[i];
-      if (fe.hasEagerStubs()) {
-        continue;
-      }
-      if (!stubs1->hasEntryStub(fe.funcIndex())) {
-        continue;
-      }
-      if (!funcExportIndices.emplaceBack(i)) {
-        return false;
-      }
-    }
+    auto lazyStubs = code().lazyStubs().writeLock();
 
     Maybe<size_t> stub2Index;
-    if (!stubs2->createTier2(funcExportIndices, codeMeta(), *borrowedTier2,
-                             &stub2Index)) {
+    if (!lazyStubs->createTier2(codeMeta(), *borrowedTier2, &stub2Index)) {
       return false;
     }
 
@@ -230,7 +210,7 @@ bool Module::finishTier2(const LinkData& linkData2,
     MOZ_ASSERT(!code().hasTier2());
     code().commitTier2();
 
-    stubs2->setJitEntries(stub2Index, code());
+    lazyStubs->setJitEntries(stub2Index, code());
   }
 
   

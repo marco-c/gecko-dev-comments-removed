@@ -2090,29 +2090,6 @@ static bool WasmCall(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool WasmInstanceObject::getExportedFunction(
     JSContext* cx, Handle<WasmInstanceObject*> instanceObj, uint32_t funcIndex,
     MutableHandleFunction fun) {
