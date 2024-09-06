@@ -355,11 +355,13 @@ function getTranslationsParent() {
 
 
 
-async function closeAllOpenPanelsAndMenus() {
-  await closeSettingsMenuIfOpen();
-  await closeFullPageTranslationsPanelIfOpen();
-  await closeSelectTranslationsPanelIfOpen();
-  await closeContextMenuIfOpen();
+
+
+async function closeAllOpenPanelsAndMenus(win) {
+  await closeSettingsMenuIfOpen(win);
+  await closeFullPageTranslationsPanelIfOpen(win);
+  await closeSelectTranslationsPanelIfOpen(win);
+  await closeContextMenuIfOpen(win);
 }
 
 
@@ -367,9 +369,10 @@ async function closeAllOpenPanelsAndMenus() {
 
 
 
-async function closePopupIfOpen(popupElementId) {
+
+async function closePopupIfOpen(popupElementId, win = window) {
   await waitForCondition(async () => {
-    const popupElement = document.getElementById(popupElementId);
+    const popupElement = win.document.getElementById(popupElementId);
     if (!popupElement) {
       return true;
     }
@@ -390,29 +393,40 @@ async function closePopupIfOpen(popupElementId) {
 
 
 
-async function closeContextMenuIfOpen() {
-  await closePopupIfOpen("contentAreaContextMenu");
+
+
+async function closeContextMenuIfOpen(win) {
+  await closePopupIfOpen("contentAreaContextMenu", win);
 }
 
 
 
 
-async function closeSettingsMenuIfOpen() {
-  await closePopupIfOpen("full-page-translations-panel-settings-menupopup");
+
+
+async function closeSettingsMenuIfOpen(win) {
+  await closePopupIfOpen(
+    "full-page-translations-panel-settings-menupopup",
+    win
+  );
 }
 
 
 
 
-async function closeFullPageTranslationsPanelIfOpen() {
-  await closePopupIfOpen("full-page-translations-panel");
+
+
+async function closeFullPageTranslationsPanelIfOpen(win) {
+  await closePopupIfOpen("full-page-translations-panel", win);
 }
 
 
 
 
-async function closeSelectTranslationsPanelIfOpen() {
-  await closePopupIfOpen("select-translations-panel");
+
+
+async function closeSelectTranslationsPanelIfOpen(win) {
+  await closePopupIfOpen("select-translations-panel", win);
 }
 
 
@@ -505,38 +519,56 @@ async function loadTestPage({
   prefs,
   autoOffer,
   permissionsUrls,
+  win = window,
 }) {
   info(`Loading test page starting at url: ${page}`);
+
   
-  await EngineProcess.destroyTranslationsEngine();
-  Services.fog.testResetFOG();
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      
-      ["browser.translations.enable", true],
-      ["browser.translations.logLevel", "All"],
-      ["browser.translations.panelShown", true],
-      ["browser.translations.automaticallyPopup", true],
-      ["browser.translations.alwaysTranslateLanguages", ""],
-      ["browser.translations.neverTranslateLanguages", ""],
-      ...(prefs ?? []),
-    ],
-  });
-  await SpecialPowers.pushPermissions(
-    [
-      ENGLISH_PAGE_URL,
-      FRENCH_PAGE_URL,
-      NO_LANGUAGE_URL,
-      SPANISH_PAGE_URL,
-      SPANISH_PAGE_URL_2,
-      SPANISH_PAGE_URL_DOT_ORG,
-      ...(permissionsUrls || []),
-    ].map(url => ({
-      type: TRANSLATIONS_PERMISSION,
-      allow: true,
-      context: url,
-    }))
-  );
+  const isFirstTimeSetup = win === window;
+
+  let remoteClients = null;
+  let removeMocks = () => {};
+
+  if (isFirstTimeSetup) {
+    
+    await EngineProcess.destroyTranslationsEngine();
+
+    Services.fog.testResetFOG();
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        
+        ["browser.translations.enable", true],
+        ["browser.translations.logLevel", "All"],
+        ["browser.translations.panelShown", true],
+        ["browser.translations.automaticallyPopup", true],
+        ["browser.translations.alwaysTranslateLanguages", ""],
+        ["browser.translations.neverTranslateLanguages", ""],
+        ...(prefs ?? []),
+      ],
+    });
+    await SpecialPowers.pushPermissions(
+      [
+        ENGLISH_PAGE_URL,
+        FRENCH_PAGE_URL,
+        NO_LANGUAGE_URL,
+        SPANISH_PAGE_URL,
+        SPANISH_PAGE_URL_2,
+        SPANISH_PAGE_URL_DOT_ORG,
+        ...(permissionsUrls || []),
+      ].map(url => ({
+        type: TRANSLATIONS_PERMISSION,
+        allow: true,
+        context: url,
+      }))
+    );
+
+    const result = await createAndMockRemoteSettings({
+      languagePairs,
+      autoDownloadFromRemoteSettings,
+    });
+    remoteClients = result.remoteClients;
+    removeMocks = result.removeMocks;
+  }
 
   if (autoOffer) {
     TranslationsParent.testAutomaticPopup = true;
@@ -544,15 +576,10 @@ async function loadTestPage({
 
   
   const tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    win.gBrowser,
     BLANK_PAGE,
     true 
   );
-
-  const { remoteClients, removeMocks } = await createAndMockRemoteSettings({
-    languagePairs,
-    autoDownloadFromRemoteSettings,
-  });
 
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, page);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
