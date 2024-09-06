@@ -2068,6 +2068,56 @@ bool TypedArrayObject::copyWithin(JSContext* cx, unsigned argc, Value* vp) {
 using ByteVector =
     js::Vector<uint8_t, FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT>;
 
+class ByteSink final {
+  ByteVector& bytes_;
+
+ public:
+  explicit ByteSink(ByteVector& bytes) : bytes_(bytes) {
+    MOZ_ASSERT(bytes.empty());
+  }
+
+  constexpr bool canAppend(size_t n = 1) const { return true; }
+
+  template <typename... Args>
+  bool append(Args... args) {
+    if (!bytes_.reserve(bytes_.length() + sizeof...(args))) {
+      return false;
+    }
+    (bytes_.infallibleAppend(args), ...);
+    return true;
+  }
+};
+
+class TypedArraySink final {
+  Handle<TypedArrayObject*> typedArray_;
+  size_t maxLength_;
+  size_t index_ = 0;
+
+ public:
+  TypedArraySink(Handle<TypedArrayObject*> typedArray, size_t maxLength)
+      : typedArray_(typedArray), maxLength_(maxLength) {
+    MOZ_ASSERT(typedArray->type() == Scalar::Uint8);
+
+    
+    
+    
+    MOZ_ASSERT(!typedArray->hasDetachedBuffer());
+    MOZ_ASSERT(typedArray->length().valueOr(0) >= maxLength);
+  }
+
+  size_t written() const { return index_; }
+
+  bool canAppend(size_t n = 1) const { return maxLength_ - index_ >= n; }
+
+  template <typename... Args>
+  bool append(Args... args) {
+    MOZ_ASSERT(canAppend(sizeof...(args)));
+    (TypedArrayObjectTemplate<uint8_t>::setIndex(*typedArray_, index_++, args),
+     ...);
+    return true;
+  }
+};
+
 static UniqueChars QuoteString(JSContext* cx, char16_t ch) {
   Sprinter sprinter(cx);
   if (!sprinter.init()) {
@@ -2086,8 +2136,9 @@ static UniqueChars QuoteString(JSContext* cx, char16_t ch) {
 
 
 
-static bool FromHex(JSContext* cx, Handle<JSString*> string, size_t maxLength,
-                    ByteVector& bytes, size_t* readLength) {
+template <class Sink>
+static bool FromHex(JSContext* cx, Handle<JSString*> string, Sink& sink,
+                    size_t* readLength) {
   
 
   
@@ -2106,13 +2157,12 @@ static bool FromHex(JSContext* cx, Handle<JSString*> string, size_t maxLength,
   }
 
   
-  MOZ_ASSERT(bytes.empty());
 
   
   size_t index = 0;
 
   
-  while (index < length && bytes.length() < maxLength) {
+  while (index < length && sink.canAppend()) {
     
     char16_t c0 = linear->latin1OrTwoByteChar(index);
     char16_t c1 = linear->latin1OrTwoByteChar(index + 1);
@@ -2136,7 +2186,7 @@ static bool FromHex(JSContext* cx, Handle<JSString*> string, size_t maxLength,
                    mozilla::AsciiAlphanumericToNumber(c1);
 
     
-    if (!bytes.append(byte)) {
+    if (!sink.append(byte)) {
       return false;
     }
   }
@@ -2220,16 +2270,14 @@ enum class LastChunkHandling {
 
 
 
+template <class Sink>
 static bool FromBase64(JSContext* cx, Handle<JSString*> string,
                        Alphabet alphabet, LastChunkHandling lastChunkHandling,
-                       size_t maxLength, ByteVector& bytes,
-                       size_t* readLength) {
+                       Sink& sink, size_t* readLength) {
   
 
   
-  size_t remaining = maxLength;
-  if (remaining == 0) {
-    MOZ_ASSERT(bytes.empty());
+  if (!sink.canAppend()) {
     *readLength = 0;
     return true;
   }
@@ -2244,15 +2292,7 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
   
   auto decodeChunk = [&](uint32_t chunk) {
     MOZ_ASSERT(chunk <= 0xffffff);
-    MOZ_ASSERT(remaining >= 3);
-
-    if (!bytes.reserve(bytes.length() + 3)) {
-      return false;
-    }
-    bytes.infallibleAppend(chunk >> 16);
-    bytes.infallibleAppend(chunk >> 8);
-    bytes.infallibleAppend(chunk);
-    return true;
+    return sink.append(chunk >> 16, chunk >> 8, chunk);
   };
 
   
@@ -2260,20 +2300,13 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
   
   auto decodeChunk3 = [&](uint32_t chunk, bool throwOnExtraBits) {
     MOZ_ASSERT(chunk <= 0x3ffff);
-    MOZ_ASSERT(remaining >= 2);
 
     if (throwOnExtraBits && (chunk & 0x3) != 0) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TYPED_ARRAY_EXTRA_BASE64_BITS);
       return false;
     }
-
-    if (!bytes.reserve(bytes.length() + 2)) {
-      return false;
-    }
-    bytes.infallibleAppend(chunk >> 10);
-    bytes.infallibleAppend(chunk >> 2);
-    return true;
+    return sink.append(chunk >> 10, chunk >> 2);
   };
 
   
@@ -2281,19 +2314,13 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
   
   auto decodeChunk2 = [&](uint32_t chunk, bool throwOnExtraBits) {
     MOZ_ASSERT(chunk <= 0xfff);
-    MOZ_ASSERT(remaining >= 1);
 
     if (throwOnExtraBits && (chunk & 0xf) != 0) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TYPED_ARRAY_EXTRA_BASE64_BITS);
       return false;
     }
-
-    if (!bytes.reserve(bytes.length() + 1)) {
-      return false;
-    }
-    bytes.infallibleAppend(chunk >> 4);
-    return true;
+    return sink.append(chunk >> 4);
   };
 
   
@@ -2312,7 +2339,6 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
   size_t read = 0;
 
   
-  MOZ_ASSERT(bytes.empty());
 
   
   
@@ -2370,8 +2396,7 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
     
 
     
-    if ((remaining == 1 && chunkLength == 2) ||
-        (remaining == 2 && chunkLength == 3)) {
+    if (chunkLength > 1 && !sink.canAppend(chunkLength)) {
       *readLength = read;
       return true;
     }
@@ -2401,9 +2426,7 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
       read = index + 1;
 
       
-      MOZ_ASSERT(remaining >= 3);
-      remaining -= 3;
-      if (remaining == 0) {
+      if (!sink.canAppend()) {
         *readLength = read;
         return true;
       }
@@ -2674,10 +2697,10 @@ static bool uint8array_fromBase64(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  constexpr size_t maxLength = std::numeric_limits<size_t>::max();
   ByteVector bytes(cx);
+  ByteSink sink{bytes};
   size_t unusedReadLength;
-  if (!FromBase64(cx, string, alphabet, lastChunkHandling, maxLength, bytes,
+  if (!FromBase64(cx, string, alphabet, lastChunkHandling, sink,
                   &unusedReadLength)) {
     return false;
   }
@@ -2718,10 +2741,10 @@ static bool uint8array_fromHex(JSContext* cx, unsigned argc, Value* vp) {
   Rooted<JSString*> string(cx, args[0].toString());
 
   
-  constexpr size_t maxLength = std::numeric_limits<size_t>::max();
   ByteVector bytes(cx);
+  ByteSink sink{bytes};
   size_t unusedReadLength;
-  if (!FromHex(cx, string, maxLength, bytes, &unusedReadLength)) {
+  if (!FromHex(cx, string, sink, &unusedReadLength)) {
     return false;
   }
 
@@ -2791,38 +2814,17 @@ static bool uint8array_setFromBase64(JSContext* cx, const CallArgs& args) {
   }
 
   
-  size_t maxLength = *length;
-
-  
   ByteVector bytes(cx);
+  TypedArraySink sink{tarray, *length};
   size_t readLength;
-  if (!FromBase64(cx, string, alphabet, lastChunkHandling, maxLength, bytes,
-                  &readLength)) {
+  if (!FromBase64(cx, string, alphabet, lastChunkHandling, sink, &readLength)) {
     return false;
   }
 
   
-  size_t written = bytes.length();
+  size_t written = sink.written();
 
   
-  
-  
-  
-  
-  MOZ_ASSERT(!tarray->hasDetachedBuffer());
-  MOZ_ASSERT(tarray->length().valueOr(0) >= *length);
-
-  
-  MOZ_ASSERT(written <= *length);
-
-  
-  auto target = tarray->dataPointerEither().cast<uint8_t*>();
-  auto source = SharedMem<uint8_t*>::unshared(bytes.begin());
-  if (tarray->isSharedMemory()) {
-    SharedOps::podCopy(target, source, written);
-  } else {
-    UnsharedOps::podCopy(target, source, written);
-  }
 
   
   Rooted<PlainObject*> result(cx, NewPlainObject(cx));
@@ -2884,37 +2886,16 @@ static bool uint8array_setFromHex(JSContext* cx, const CallArgs& args) {
   }
 
   
-  size_t maxLength = *length;
-
-  
-  ByteVector bytes(cx);
+  TypedArraySink sink{tarray, *length};
   size_t readLength;
-  if (!FromHex(cx, string, maxLength, bytes, &readLength)) {
+  if (!FromHex(cx, string, sink, &readLength)) {
     return false;
   }
 
   
-  size_t written = bytes.length();
+  size_t written = sink.written();
 
   
-  
-  
-  
-  
-  MOZ_ASSERT(!tarray->hasDetachedBuffer());
-  MOZ_ASSERT(tarray->length().valueOr(0) >= *length);
-
-  
-  MOZ_ASSERT(written <= *length);
-
-  
-  auto target = tarray->dataPointerEither().cast<uint8_t*>();
-  auto source = SharedMem<uint8_t*>::unshared(bytes.begin());
-  if (tarray->isSharedMemory()) {
-    SharedOps::podCopy(target, source, written);
-  } else {
-    UnsharedOps::podCopy(target, source, written);
-  }
 
   
   Rooted<PlainObject*> result(cx, NewPlainObject(cx));
