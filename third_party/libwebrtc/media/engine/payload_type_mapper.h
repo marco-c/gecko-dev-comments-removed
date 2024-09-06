@@ -20,7 +20,7 @@
 
 namespace cricket {
 
-webrtc::SdpAudioFormat AudioCodecToSdpAudioFormat(const AudioCodec& ac);
+webrtc::SdpAudioFormat AudioCodecToSdpAudioFormat(const Codec& ac);
 
 class PayloadTypeMapper {
  public:
@@ -39,7 +39,7 @@ class PayloadTypeMapper {
 
   
   
-  absl::optional<AudioCodec> ToAudioCodec(const webrtc::SdpAudioFormat& format);
+  absl::optional<Codec> ToAudioCodec(const webrtc::SdpAudioFormat& format);
 
  private:
   struct SdpAudioFormatOrdering {

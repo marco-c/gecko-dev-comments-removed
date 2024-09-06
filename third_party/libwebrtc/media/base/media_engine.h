@@ -118,8 +118,8 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
     return nullptr;
   }
 
-  virtual const std::vector<AudioCodec>& send_codecs() const = 0;
-  virtual const std::vector<AudioCodec>& recv_codecs() const = 0;
+  virtual const std::vector<Codec>& send_codecs() const = 0;
+  virtual const std::vector<Codec>& recv_codecs() const = 0;
 
   
   
@@ -164,16 +164,16 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   }
 
   
-  virtual std::vector<VideoCodec> send_codecs() const = 0;
-  virtual std::vector<VideoCodec> recv_codecs() const = 0;
+  virtual std::vector<Codec> send_codecs() const = 0;
+  virtual std::vector<Codec> recv_codecs() const = 0;
   
   
   
-  virtual std::vector<VideoCodec> send_codecs(bool include_rtx) const {
+  virtual std::vector<Codec> send_codecs(bool include_rtx) const {
     RTC_DCHECK(include_rtx);
     return send_codecs();
   }
-  virtual std::vector<VideoCodec> recv_codecs(bool include_rtx) const {
+  virtual std::vector<Codec> recv_codecs(bool include_rtx) const {
     RTC_DCHECK(include_rtx);
     return recv_codecs();
   }

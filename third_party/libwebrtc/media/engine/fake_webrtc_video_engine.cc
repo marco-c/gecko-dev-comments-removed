@@ -121,7 +121,7 @@ void FakeWebRtcVideoDecoderFactory::DecoderDestroyed(
 void FakeWebRtcVideoDecoderFactory::AddSupportedVideoCodecType(
     const std::string& name) {
   
-  cricket::VideoCodec video_codec = cricket::CreateVideoCodec(name);
+  cricket::Codec video_codec = cricket::CreateVideoCodec(name);
   supported_codec_formats_.push_back(
       webrtc::SdpVideoFormat(video_codec.name, video_codec.params));
 }
@@ -288,7 +288,7 @@ void FakeWebRtcVideoEncoderFactory::AddSupportedVideoCodecType(
     const std::string& name,
     const std::vector<webrtc::ScalabilityMode>& scalability_modes) {
   
-  cricket::VideoCodec video_codec = cricket::CreateVideoCodec(name);
+  cricket::Codec video_codec = cricket::CreateVideoCodec(name);
   formats_.push_back(webrtc::SdpVideoFormat(
       video_codec.name, video_codec.params,
       {scalability_modes.begin(), scalability_modes.end()}));
