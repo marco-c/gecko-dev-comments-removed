@@ -185,7 +185,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
 
   
   UniqueLinkData linkData_;
-  UniqueMetadataTier metadataTier_;
+  UniqueCodeTier codeTier_;
   MutableCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   

@@ -1754,7 +1754,7 @@ JSObject* GetSuspendingPromiseResult(Instance* instance,
     
     auto bestTier = instance->code().bestTier();
     const wasm::FuncExport& funcExport =
-        instance->metadata(bestTier).lookupFuncExport(
+        instance->code(bestTier).lookupFuncExport(
             SuspendingFunctionModuleFactory::ExportedFnIndex);
     const wasm::FuncType& sig =
         instance->codeMeta().getFuncExportType(funcExport);

@@ -38,8 +38,6 @@ class WasmInstanceObject;
 
 namespace wasm {
 
-struct MetadataTier;
-
 
 
 
@@ -163,20 +161,16 @@ class DebugState {
 
   
 
-  const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
+  const CodeTier& code(Tier t) const { return code_->codeTier(t); }
   const CodeMetadata& codeMeta() const { return code_->codeMeta(); }
   const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
     return code_->codeMetaForAsmJS();
   }
-  const CodeRangeVector& codeRanges(Tier t) const {
-    return metadata(t).codeRanges;
-  }
-  const CallSiteVector& callSites(Tier t) const {
-    return metadata(t).callSites;
-  }
+  const CodeRangeVector& codeRanges(Tier t) const { return code(t).codeRanges; }
+  const CallSiteVector& callSites(Tier t) const { return code(t).callSites; }
 
   uint32_t funcToCodeRangeIndex(uint32_t funcIndex) const {
-    return metadata(Tier::Debug).funcToCodeRange[funcIndex];
+    return code(Tier::Debug).funcToCodeRange[funcIndex];
   }
 
   
