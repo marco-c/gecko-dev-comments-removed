@@ -800,8 +800,7 @@ class MOZ_STACK_CLASS MaybeEnterAsyncGeneratorRealm {
 
 [[nodiscard]] static bool AsyncGeneratorMethodSanityCheck(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator) {
-  if (generator->isCompleted() || generator->isSuspendedStart() ||
-      generator->isSuspendedYield()) {
+  if (generator->isSuspendedStart() || generator->isSuspendedYield()) {
     
     
     
