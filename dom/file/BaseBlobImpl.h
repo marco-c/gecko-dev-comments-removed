@@ -8,6 +8,7 @@
 #define mozilla_dom_BaseBlobImpl_h
 
 #include "nsIGlobalObject.h"
+#include "mozilla/dom/Blob.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/ErrorResult.h"
 
@@ -29,8 +30,7 @@ class BaseBlobImpl : public BlobImpl {
         mLength(aLength),
         mSerialNumber(NextSerialNumber()),
         mLastModificationDate(aLastModifiedDate) {
-    
-    mContentType.SetIsVoid(false);
+    dom::Blob::MakeValidBlobType(mContentType);
   }
 
   
@@ -41,8 +41,7 @@ class BaseBlobImpl : public BlobImpl {
         mLength(aLength),
         mSerialNumber(NextSerialNumber()),
         mLastModificationDate(0) {
-    
-    mContentType.SetIsVoid(false);
+    dom::Blob::MakeValidBlobType(mContentType);
   }
 
   
@@ -53,8 +52,7 @@ class BaseBlobImpl : public BlobImpl {
         mLength(aLength),
         mSerialNumber(NextSerialNumber()),
         mLastModificationDate(0) {
-    
-    mContentType.SetIsVoid(false);
+    dom::Blob::MakeValidBlobType(mContentType);
   }
 
   void GetName(nsAString& aName) const override;
