@@ -91,18 +91,6 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
   void DeregisterReceivedPacketCallback(void* id);
 
   
-  
-  
-  sigslot::signal5<PacketTransportInternal*,
-                   const char*,
-                   size_t,
-                   
-                   
-                   const int64_t&,
-                   int>
-      SignalReadPacket;
-
-  
   sigslot::signal2<PacketTransportInternal*, const rtc::SentPacket&>
       SignalSentPacket;
 
