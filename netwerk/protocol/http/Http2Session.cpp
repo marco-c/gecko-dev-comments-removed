@@ -300,7 +300,7 @@ void Http2Session::LogIO(Http2Session* self, Http2StreamBase* stream,
 }
 
 using Http2ControlFx = nsresult (*)(Http2Session*);
-static Http2ControlFx sControlFunctions[] = {
+static constexpr Http2ControlFx sControlFunctions[] = {
     nullptr,  
     Http2Session::RecvHeaders,
     Http2Session::RecvPriority,
@@ -311,10 +311,45 @@ static Http2ControlFx sControlFunctions[] = {
     Http2Session::RecvGoAway,
     Http2Session::RecvWindowUpdate,
     Http2Session::RecvContinuation,
-    Http2Session::RecvAltSvc,  
-    Http2Session::RecvUnused,  
-    Http2Session::RecvOrigin   
+    Http2Session::RecvAltSvc,          
+    Http2Session::RecvUnused,          
+    Http2Session::RecvOrigin,          
+    Http2Session::RecvUnused,          
+    Http2Session::RecvUnused,          
+    Http2Session::RecvUnused,          
+    Http2Session::RecvPriorityUpdate,  
 };
+
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_DATA] == nullptr);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_HEADERS] ==
+              Http2Session::RecvHeaders);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_PRIORITY] ==
+              Http2Session::RecvPriority);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_RST_STREAM] ==
+              Http2Session::RecvRstStream);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_SETTINGS] ==
+              Http2Session::RecvSettings);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_PUSH_PROMISE] ==
+              Http2Session::RecvPushPromise);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_PING] ==
+              Http2Session::RecvPing);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_GOAWAY] ==
+              Http2Session::RecvGoAway);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_WINDOW_UPDATE] ==
+              Http2Session::RecvWindowUpdate);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_CONTINUATION] ==
+              Http2Session::RecvContinuation);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_ALTSVC] ==
+              Http2Session::RecvAltSvc);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_UNUSED] ==
+              Http2Session::RecvUnused);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_ORIGIN] ==
+              Http2Session::RecvOrigin);
+static_assert(sControlFunctions[0x0D] == Http2Session::RecvUnused);
+static_assert(sControlFunctions[0x0E] == Http2Session::RecvUnused);
+static_assert(sControlFunctions[0x0F] == Http2Session::RecvUnused);
+static_assert(sControlFunctions[Http2Session::FRAME_TYPE_PRIORITY_UPDATE] ==
+              Http2Session::RecvPriorityUpdate);
 
 bool Http2Session::RoomForMoreConcurrent() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -967,7 +1002,7 @@ void Http2Session::SendHello() {
   
   
   
-  static const uint32_t maxSettings = 5;
+  static const uint32_t maxSettings = 6;
   static const uint32_t prioritySize =
       kPriorityGroupCount * (kFrameHeaderBytes + 5);
   static const uint32_t maxDataLen =
@@ -1034,6 +1069,18 @@ void Http2Session::SendHello() {
       packet + kFrameHeaderBytes + (6 * numberOfEntries) + 2, kMaxFrameData);
   numberOfEntries++;
 
+  bool disableRFC7540Priorities =
+      !StaticPrefs::network_http_http2_enabled_deps() ||
+      !gHttpHandler->CriticalRequestPrioritization() ||
+      StaticPrefs::network_http_priority_header_enabled();
+
+  NetworkEndian::writeUint16(packet + kFrameHeaderBytes + (6 * numberOfEntries),
+                             SETTINGS_NO_RFC7540_PRIORITIES);
+  NetworkEndian::writeUint32(
+      packet + kFrameHeaderBytes + (6 * numberOfEntries) + 2,
+      disableRFC7540Priorities ? 1 : 0);
+  numberOfEntries++;
+
   MOZ_ASSERT(numberOfEntries <= maxSettings);
   uint32_t dataLen = 6 * numberOfEntries;
   CreateFrameHeader(packet, dataLen, FRAME_TYPE_SETTINGS, 0, 0);
@@ -1058,8 +1105,7 @@ void Http2Session::SendHello() {
     LogIO(this, nullptr, "Session Window Bump ", packet, kFrameHeaderBytes + 4);
   }
 
-  if (StaticPrefs::network_http_http2_enabled_deps() &&
-      gHttpHandler->CriticalRequestPrioritization()) {
+  if (!disableRFC7540Priorities) {
     mUseH2Deps = true;
     MOZ_ASSERT(mNextStreamID == kLeaderGroupID);
     CreatePriorityNode(kLeaderGroupID, 0, 200, "leader");
@@ -2700,6 +2746,14 @@ nsresult Http2Session::RecvOrigin(Http2Session* self) {
   return NS_OK;
 }
 
+nsresult Http2Session::RecvPriorityUpdate(Http2Session* self) {
+  
+  
+  
+  
+  return self->SessionError(PROTOCOL_ERROR);
+}
+
 
 
 
@@ -3476,7 +3530,7 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
   if (mInputFrameDataRead != mInputFrameDataSize) return NS_OK;
 
   MOZ_ASSERT(mInputFrameType != FRAME_TYPE_DATA);
-  if (mInputFrameType < FRAME_TYPE_LAST) {
+  if (mInputFrameType < ArrayLength(sControlFunctions)) {
     rv = sControlFunctions[mInputFrameType](this);
   } else {
     

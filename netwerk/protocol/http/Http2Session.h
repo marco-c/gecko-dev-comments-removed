@@ -112,7 +112,7 @@ class Http2Session final : public ASpdySession,
     FRAME_TYPE_ALTSVC = 0xA,
     FRAME_TYPE_UNUSED = 0xB,
     FRAME_TYPE_ORIGIN = 0xC,
-    FRAME_TYPE_LAST = 0xD
+    FRAME_TYPE_PRIORITY_UPDATE = 0x10,
   };
 
   
@@ -146,16 +146,22 @@ class Http2Session final : public ASpdySession,
   const static uint8_t kFlag_PRIORITY = 0x20;  
 
   enum {
-    SETTINGS_TYPE_HEADER_TABLE_SIZE = 1,  
-    SETTINGS_TYPE_ENABLE_PUSH = 2,        
-    SETTINGS_TYPE_MAX_CONCURRENT = 3,     
-    SETTINGS_TYPE_INITIAL_WINDOW = 4,     
-    SETTINGS_TYPE_MAX_FRAME_SIZE =
-        5,  
+    
+    SETTINGS_TYPE_HEADER_TABLE_SIZE = 1,
+    
+    SETTINGS_TYPE_ENABLE_PUSH = 2,
+    
+    SETTINGS_TYPE_MAX_CONCURRENT = 3,
+    
+    SETTINGS_TYPE_INITIAL_WINDOW = 4,
+    
+    SETTINGS_TYPE_MAX_FRAME_SIZE = 5,
     
     
-    SETTINGS_TYPE_ENABLE_CONNECT_PROTOCOL =
-        8  
+    
+    SETTINGS_TYPE_ENABLE_CONNECT_PROTOCOL = 8,
+    
+    SETTINGS_NO_RFC7540_PRIORITIES = 9,
   };
 
   
@@ -220,6 +226,7 @@ class Http2Session final : public ASpdySession,
   static nsresult RecvAltSvc(Http2Session*);
   static nsresult RecvUnused(Http2Session*);
   static nsresult RecvOrigin(Http2Session*);
+  static nsresult RecvPriorityUpdate(Http2Session*);
 
   char* EnsureOutputBuffer(uint32_t needed);
 
