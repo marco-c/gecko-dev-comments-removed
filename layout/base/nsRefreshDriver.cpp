@@ -2659,20 +2659,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   }
 
   
-  
-  
-  
-  
-  DispatchResizeEvents();
-  DispatchVisualViewportResizeEvents();
-
-  if (!mPresContext || !mPresContext->GetPresShell()) {
-    return StopTimer();
-  }
-
-  
-  
-  
   if (!TickObserverArray(0, aNowTime)) {
     return StopTimer();
   }
@@ -2713,6 +2699,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   
   
   FlushAutoFocusDocuments();
+
+  
+  DispatchResizeEvents();
+  DispatchVisualViewportResizeEvents();
 
   
   DispatchScrollEvents();
