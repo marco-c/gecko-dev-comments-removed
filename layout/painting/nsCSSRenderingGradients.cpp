@@ -1195,8 +1195,9 @@ class MOZ_STACK_CLASS WrColorStopInterpolator
   WrColorStopInterpolator(
       const nsTArray<ColorStop>& aStops,
       const StyleColorInterpolationMethod& aStyleColorInterpolationMethod,
-      float aOpacity, nsTArray<wr::GradientStop>& aResult)
-      : ColorStopInterpolator(aStops, aStyleColorInterpolationMethod),
+      float aOpacity, nsTArray<wr::GradientStop>& aResult, bool aExtendLastStop)
+      : ColorStopInterpolator(aStops, aStyleColorInterpolationMethod,
+                              aExtendLastStop),
         mResult(aResult),
         mOpacity(aOpacity),
         mOutputStop(0) {}
@@ -1268,8 +1269,15 @@ void nsCSSGradientRenderer::BuildWebRenderParameters(
   
   if (styleColorInterpolationMethod.space != StyleColorSpace::Srgb ||
       gfxPlatform::GetCMSMode() == CMSMode::All) {
+    
+    
+    
+    
+    bool extendLastStop = aMode == wr::ExtendMode::Clamp &&
+                          styleColorInterpolationMethod.hue ==
+                              StyleHueInterpolationMethod::Longer;
     WrColorStopInterpolator interpolator(mStops, styleColorInterpolationMethod,
-                                         aOpacity, aStops);
+                                         aOpacity, aStops, extendLastStop);
     interpolator.CreateStops();
   } else {
     aStops.SetLength(mStops.Length());
