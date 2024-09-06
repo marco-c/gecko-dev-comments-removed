@@ -39,6 +39,11 @@ static void RemoveExcludedAccessiblesFromRange(TextLeafRange& aRange) {
     return;
   }
   if (end.mOffset != 0) {
+    
+    
+    
+    
+    
     return;
   }
   
