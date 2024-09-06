@@ -2248,8 +2248,7 @@ var gMainPane = {
       return this._storedFullKeyboardNavigation;
     }
     
-    
-    return undefined;
+    return 1;
   },
 
   

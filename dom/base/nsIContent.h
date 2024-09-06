@@ -753,21 +753,6 @@ class nsIContent : public nsINode {
   virtual void DumpContent(FILE* out = stdout, int32_t aIndent = 0,
                            bool aDumpAll = true) const = 0;
 #endif
-
-  enum ETabFocusType {
-    eTabFocus_textControlsMask =
-        (1 << 0),  
-    eTabFocus_formElementsMask = (1 << 1),   
-    eTabFocus_linksMask = (1 << 2),          
-    eTabFocus_any = 1 + (1 << 1) + (1 << 2)  
-  };
-
-  
-  static int32_t sTabFocusModel;
-
-  
-  
-  static bool sTabFocusModelAppliesToXUL;
 };
 
 NON_VIRTUAL_ADDREF_RELEASE(nsIContent)

@@ -50,6 +50,7 @@
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/TabFocusModel.h"
 #include "mozilla/TaskController.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/URLExtraData.h"
@@ -402,12 +403,9 @@ nsXULElement::XULFocusability nsXULElement::GetXULFocusability(
     result.mForcedFocusable.emplace(true);
     result.mForcedTabIndexIfFocusable.emplace(attrVal.value());
   }
-  if (xulControl && sTabFocusModelAppliesToXUL &&
-      !(sTabFocusModel & eTabFocus_formElementsMask) && IsNonList(mNodeInfo)) {
-    
-    
-    
-    
+  if (xulControl && TabFocusModel::AppliesToXUL() &&
+      !TabFocusModel::IsTabFocusable(TabFocusableType::FormElements) &&
+      IsNonList(mNodeInfo)) {
     
     
     
