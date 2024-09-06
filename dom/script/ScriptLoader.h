@@ -16,7 +16,6 @@
 #include "nsCOMPtr.h"
 #include "nsRefPtrHashtable.h"
 #include "nsIScriptElement.h"
-#include "SharedScriptCache.h"
 #include "nsCOMArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
@@ -152,35 +151,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  void DropDocumentReference();
-
-  
-
-
-
-
-
-
-  void RegisterToCache();
-
-  
-
-
-
-  void DeregisterFromCache();
-
-  
-  nsIPrincipal* LoaderPrincipal() const;
-  nsIPrincipal* PartitionedPrincipal() const;
-
-  bool ShouldBypassCache() const;
-
-  template <typename T>
-  bool HasLoaded(const T& aKey) {
-    
-    
-    return false;
-  }
+  void DropDocumentReference() { mDocument = nullptr; }
 
   
 
@@ -462,14 +433,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
  private:
   ~ScriptLoader();
 
-  enum class RequestType { Inline, External, Preload };
-
   already_AddRefed<ScriptLoadRequest> CreateLoadRequest(
       ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
       nsIPrincipal* aTriggeringPrincipal, mozilla::CORSMode aCORSMode,
       const nsAString& aNonce, RequestPriority aRequestPriority,
       const SRIMetadata& aIntegrity, ReferrerPolicy aReferrerPolicy,
-      JS::loader::ParserMetadata aParserMetadata, RequestType requestType);
+      JS::loader::ParserMetadata aParserMetadata);
 
   
 
@@ -540,8 +509,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       const Maybe<nsAutoString>& aCharsetForPreload);
 
   [[nodiscard]] nsresult PrepareIncrementalStreamLoader(
-      nsIIncrementalStreamLoader** aOutLoader, nsIChannel* aChannel,
-      ScriptLoadRequest* aRequest);
+      nsIIncrementalStreamLoader** aOutLoader, ScriptLoadRequest* aRequest);
 
   
 
@@ -628,23 +596,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   
   
-  
-  
-  nsresult InstantiateClassicScriptFromAny(JSContext* aCx,
-                                           JSExecutionContext& aExec,
-                                           ScriptLoadRequest* aRequest);
-
-  
-  
-  
-  nsresult InstantiateClassicScriptFromMaybeEncodedSource(
-      JSContext* aCx, JSExecutionContext& aExec, ScriptLoadRequest* aRequest);
-
-  
-  
-  nsresult InstantiateClassicScriptFromCachedStencil(
-      JSContext* aCx, JSExecutionContext& aExec, ScriptLoadRequest* aRequest,
-      JS::Stencil* aStencil);
+  nsresult CompileOrDecodeClassicScript(JSContext* aCx,
+                                        JSExecutionContext& aExec,
+                                        ScriptLoadRequest* aRequest);
 
   static nsCString& BytecodeMimeTypeFor(ScriptLoadRequest* aRequest);
 
@@ -810,8 +764,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   RefPtr<ModuleLoader> mModuleLoader;
   nsTArray<RefPtr<ModuleLoader>> mWebExtModuleLoaders;
   nsTArray<RefPtr<ModuleLoader>> mShadowRealmModuleLoaders;
-
-  RefPtr<SharedScriptCache> mCache;
 
   
  public:
