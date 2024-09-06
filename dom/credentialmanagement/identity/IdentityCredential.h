@@ -22,6 +22,7 @@ namespace mozilla::dom {
 
 class IdentityCredential final : public Credential {
   friend class mozilla::IdentityCredentialStorageService;
+  friend class WindowGlobalChild;
 
  public:
   
@@ -124,9 +125,10 @@ class IdentityCredential final : public Credential {
   
   
   
-  static RefPtr<GetIdentityCredentialPromise> DiscoverFromExternalSource(
-      nsPIDOMWindowInner* aParent, const CredentialRequestOptions& aOptions,
-      bool aSameOriginWithAncestors);
+  static void DiscoverFromExternalSource(
+      nsPIDOMWindowInner* aParent,
+      const IdentityCredentialRequestOptions& aOptions,
+      bool aSameOriginWithAncestors, const RefPtr<Promise>& aPromise);
 
   
   
@@ -338,8 +340,8 @@ class IdentityCredential final : public Credential {
 
   
   
-  enum RequestType { INVALID, LIGHTWEIGHT, HEAVYWEIGHT };
-  static RequestType DetermineRequestType(
+  enum RequestType { INVALID, LIGHTWEIGHT, HEAVYWEIGHT, NONE };
+  static RequestType DetermineRequestDiscoveryType(
       const IdentityCredentialRequestOptions& aOptions);
 };
 
