@@ -1881,8 +1881,13 @@ pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.di
 pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.enabled", false);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.enabled", false);
-pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact", false);
+#ifdef NIGHTLY_BUILD
+  pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.enabled", true);
+  pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact", true);
+#else
+  pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.enabled", false);
+  pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact", false);
+#endif
 
 
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
