@@ -89,6 +89,10 @@ def fetch_repo(github_path, clone_protocol, force_fetch, tar_path):
 
     
     
+    run_git("git config --local core.autocrlf false")
+
+    
+    
     run_git("git fetch --all", github_path)
 
     
