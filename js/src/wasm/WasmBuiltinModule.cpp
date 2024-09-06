@@ -326,12 +326,6 @@ Maybe<BuiltinModuleId> wasm::ImportMatchesBuiltinModule(
       importName == mozilla::MakeStringSpan(JSStringModuleName)) {
     return Some(BuiltinModuleId::JSString);
   }
-  if (enabledBuiltins.jsStringConstants &&
-      importName ==
-          mozilla::MakeStringSpan(
-              enabledBuiltins.jsStringConstantsNamespace->chars.get())) {
-    return Some(BuiltinModuleId::JSStringConstants);
-  }
 #endif  
   
   MOZ_RELEASE_ASSERT(!enabledBuiltins.selfTest && !enabledBuiltins.intGemm);
@@ -341,12 +335,6 @@ Maybe<BuiltinModuleId> wasm::ImportMatchesBuiltinModule(
 Maybe<const BuiltinModuleFunc*> wasm::ImportMatchesBuiltinModuleFunc(
     mozilla::Span<const char> importName, BuiltinModuleId module) {
 #ifdef ENABLE_WASM_JS_STRING_BUILTINS
-  
-  if (module == BuiltinModuleId::JSStringConstants) {
-    return Nothing();
-  }
-
-  
   
   MOZ_RELEASE_ASSERT(module == BuiltinModuleId::JSString);
   for (BuiltinModuleFuncId funcId : JSStringFuncs) {
@@ -373,8 +361,6 @@ bool wasm::CompileBuiltinModule(JSContext* cx, BuiltinModuleId module,
 #ifdef ENABLE_WASM_JS_STRING_BUILTINS
     case BuiltinModuleId::JSString:
       return CompileBuiltinModule(cx, JSStringFuncs, Nothing(), result);
-    case BuiltinModuleId::JSStringConstants:
-      MOZ_CRASH();
 #endif  
     default:
       MOZ_CRASH();

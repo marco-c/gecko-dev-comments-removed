@@ -171,7 +171,7 @@ bool Module::finishTier2(UniqueCodeBlock tier2CodeBlock,
   
   
 
-  if (tier2Listener_ && code_->codeMeta().features().builtinModules.hasNone()) {
+  if (tier2Listener_) {
     Bytes bytes;
     if (serialize(&bytes)) {
       tier2Listener_->storeOptimizedEncoding(bytes.begin(), bytes.length());
