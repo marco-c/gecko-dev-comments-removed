@@ -613,6 +613,9 @@ void js::Nursery::leaveZealMode() {
 
   MOZ_ASSERT(isEmpty());
 
+  
+  setCapacity(minSpaceSize());
+
   toSpace.moveToStartOfChunk(this, 0);
   toSpace.setStartToCurrentPosition();
 
