@@ -53,15 +53,6 @@ let TEST_LOGIN3 = new nsLoginInfo(
 );
 TEST_LOGIN3.QueryInterface(Ci.nsILoginMetaInfo).timePasswordChanged = 123456;
 
-const PASSWORDS_OS_REAUTH_PREF = "signon.management.page.os-auth.optout";
-const CryptoErrors = {
-  USER_CANCELED_PASSWORD: "User canceled primary password entry",
-  ENCRYPTION_FAILURE: "Couldn't encrypt string",
-  INVALID_ARG_ENCRYPT: "Need at least one plaintext to encrypt",
-  INVALID_ARG_DECRYPT: "Need at least one ciphertext to decrypt",
-  DECRYPTION_FAILURE: "Couldn't decrypt string",
-};
-
 async function addLogin(login) {
   const result = await Services.logins.addLoginAsync(login);
   registerCleanupFunction(() => {
@@ -159,12 +150,6 @@ add_setup(async function setup_head() {
       msg.errorMessage ==
       "NotFoundError: No such JSWindowActor 'MarionetteEvents'"
     ) {
-      
-      return;
-    }
-    if (msg.errorMessage.includes(CryptoErrors.DECRYPTION_FAILURE)) {
-      
-      
       
       return;
     }
