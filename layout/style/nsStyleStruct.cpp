@@ -3547,6 +3547,11 @@ StyleContentVisibility nsStyleDisplay::ContentVisibility(
   if (PrecludesSizeContainmentOrContentVisibilityWithFrame(aFrame)) {
     return StyleContentVisibility::Visible;
   }
+  
+  if (mContentVisibility == StyleContentVisibility::Auto &&
+      aFrame.PresContext()->IsPrintingOrPrintPreview()) {
+    return StyleContentVisibility::Visible;
+  }
   return mContentVisibility;
 }
 
