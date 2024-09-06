@@ -51,55 +51,6 @@ using namespace mozilla::dom::indexedDB;
 using namespace mozilla::dom::quota;
 using namespace mozilla::ipc;
 
-namespace {
-
-Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT IdentifyPrincipalType(
-    const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
-  switch (aPrincipalInfo.type()) {
-    case PrincipalInfo::TSystemPrincipalInfo:
-      return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::system;
-    case PrincipalInfo::TContentPrincipalInfo: {
-      const ContentPrincipalInfo& info =
-          aPrincipalInfo.get_ContentPrincipalInfo();
-
-      nsCOMPtr<nsIURI> uri;
-
-      if (NS_WARN_IF(NS_FAILED(NS_NewURI(getter_AddRefs(uri), info.spec())))) {
-        
-        
-        return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::
-            content_other;
-      }
-
-      
-      if (uri->SchemeIs("file")) {
-        return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::
-            content_file;
-      }
-      if (uri->SchemeIs("http") || uri->SchemeIs("https")) {
-        return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::
-            content_http_https;
-      }
-      if (uri->SchemeIs("moz-extension")) {
-        return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::
-            content_moz_ext;
-      }
-      if (uri->SchemeIs("about")) {
-        return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::
-            content_about;
-      }
-      return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::
-          content_other;
-    }
-    case PrincipalInfo::TExpandedPrincipalInfo:
-      return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::expanded;
-    default:
-      return Telemetry::LABELS_IDB_CUSTOM_OPEN_WITH_OPTIONS_COUNT::other;
-  }
-}
-
-}  
-
 struct IDBFactory::PendingRequestInfo {
   RefPtr<IDBOpenDBRequest> mRequest;
   FactoryRequestParams mParams;
@@ -432,33 +383,11 @@ bool IDBFactory::IsChrome() const {
 
 RefPtr<IDBOpenDBRequest> IDBFactory::Open(JSContext* aCx,
                                           const nsAString& aName,
-                                          uint64_t aVersion,
+                                          const Optional<uint64_t>& aVersion,
                                           CallerType aCallerType,
                                           ErrorResult& aRv) {
   return OpenInternal(aCx,
-                       nullptr, aName,
-                      Optional<uint64_t>(aVersion),
-                       false, aCallerType, aRv);
-}
-
-RefPtr<IDBOpenDBRequest> IDBFactory::Open(JSContext* aCx,
-                                          const nsAString& aName,
-                                          const IDBOpenDBOptions& aOptions,
-                                          CallerType aCallerType,
-                                          ErrorResult& aRv) {
-  
-  
-  
-  
-  
-  
-  
-  if (aOptions.IsAnyMemberPresent()) {
-    Telemetry::AccumulateCategorical(IdentifyPrincipalType(*mPrincipalInfo));
-  }
-
-  return OpenInternal(aCx,
-                       nullptr, aName, aOptions.mVersion,
+                       nullptr, aName, aVersion,
                        false, aCallerType, aRv);
 }
 
