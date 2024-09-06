@@ -439,6 +439,10 @@
             
             
             this.focusHasChanged = true;
+          } else if (!target || !inPanelList) {
+            
+            
+            this.hide();
           } else {
             
             this.focusHasChanged = true;
