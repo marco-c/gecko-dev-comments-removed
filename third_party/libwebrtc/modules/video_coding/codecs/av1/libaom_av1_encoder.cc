@@ -376,6 +376,7 @@ bool LibaomAv1Encoder::SetEncoderControlParameters(int param_id,
 
 
 
+
 int LibaomAv1Encoder::GetCpuSpeed(int width, int height) {
   if (aux_config_) {
     if (auto it = aux_config_->max_pixel_count_to_cpu_speed.lower_bound(width *
@@ -386,6 +387,9 @@ int LibaomAv1Encoder::GetCpuSpeed(int width, int height) {
 
     return 10;
   } else {
+    if (encoder_settings_.mode == VideoCodecMode::kScreensharing) {
+      return 11;
+    }
     
     
     switch (encoder_settings_.GetVideoEncoderComplexity()) {
