@@ -1,3 +1,4 @@
 """Deprecated module for backwards compatibility."""
 
+
 from mozilla_version.mobile import MobileVersion as FenixVersion  
