@@ -8019,10 +8019,16 @@ nsresult nsHttpChannel::LogConsoleError(const char* aTag) {
   return NS_OK;
 }
 
-static void RecordHTTPSUpgradeTelemetry(nsILoadInfo* aLoadInfo) {
+static void RecordHTTPSUpgradeTelemetry(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   
   if (aLoadInfo->GetExternalContentPolicyType() !=
       ExtContentPolicy::TYPE_DOCUMENT) {
+    return;
+  }
+
+  
+  
+  if (nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aURI)) {
     return;
   }
 
@@ -8226,7 +8232,7 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
     mTransferSize = mTransaction->GetTransferSize();
     mRequestSize = mTransaction->GetRequestSize();
 
-    RecordHTTPSUpgradeTelemetry(mLoadInfo);
+    RecordHTTPSUpgradeTelemetry(mURI, mLoadInfo);
 
     
     

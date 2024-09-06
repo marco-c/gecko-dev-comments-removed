@@ -148,6 +148,37 @@ async function runSchemelessTest(aURI, aDesc, aAssertURLStartsWith) {
 }
 
 add_task(async function () {
+  info("(0) exempt loopback addresses");
+
+  await setPrefsAndResetFog(
+    false ,
+    false ,
+    false 
+  );
+
+  
+  
+  await runUpgradeTest(
+    "https://localhost",
+    "(0) exempt loopback addresses",
+    "https://"
+  );
+  verifyGleanValues(
+    "(0) exempt loopback addresses",
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null ,
+    null 
+  );
+});
+
+add_task(async function () {
   info("(1) no upgrade test");
 
   await setPrefsAndResetFog(
