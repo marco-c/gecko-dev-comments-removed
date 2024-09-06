@@ -213,7 +213,7 @@ var gBrowserInit = {
     gBrowser.addProgressListener(window.XULBrowserWindow);
     gBrowser.addTabsProgressListener(window.TabsProgressListener);
 
-    SidebarUI.init();
+    SidebarController.init();
 
     
     
@@ -484,7 +484,7 @@ var gBrowserInit = {
       
       RestoreLastSessionObserver.init();
 
-      SidebarUI.startDelayedLoad();
+      SidebarController.startDelayedLoad();
 
       PanicButtonNotifier.init();
     });
@@ -1021,7 +1021,7 @@ var gBrowserInit = {
 
     CaptivePortalWatcher.uninit();
 
-    SidebarUI.uninit();
+    SidebarController.uninit();
 
     DownloadsButton.uninit();
 

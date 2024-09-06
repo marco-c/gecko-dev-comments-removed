@@ -103,12 +103,12 @@ add_task(async function () {
 
 
 add_task(async function () {
-  await SidebarUI.show("viewBookmarksSidebar");
+  await SidebarController.show("viewBookmarksSidebar");
 
   gURLBar.focus();
 
   
-  await SimpleTest.promiseFocus(SidebarUI.browser);
+  await SimpleTest.promiseFocus(SidebarController.browser);
   is(
     document.activeElement,
     document.getElementById("sidebar"),
@@ -120,7 +120,7 @@ add_task(async function () {
   );
 
   
-  await SimpleTest.promiseFocus(SidebarUI.browser);
+  await SimpleTest.promiseFocus(SidebarController.browser);
   is(
     document.activeElement,
     document.getElementById("sidebar"),
@@ -156,5 +156,5 @@ add_task(async function () {
   );
 
   await BrowserTestUtils.closeWindow(window2);
-  await SidebarUI.hide();
+  await SidebarController.hide();
 });
