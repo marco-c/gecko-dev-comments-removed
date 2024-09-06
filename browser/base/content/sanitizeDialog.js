@@ -218,7 +218,7 @@ var gSanitizePromptDialog = {
     acceptButton.disabled = noneChecked;
   },
 
-  selectByTimespan() {
+  async selectByTimespan() {
     
     
     if (!this._inited) {
@@ -247,7 +247,7 @@ var gSanitizePromptDialog = {
       }
       
       else {
-        this.updateDataSizesInUI();
+        await this.updateDataSizesInUI();
       }
       return;
     }
@@ -267,7 +267,7 @@ var gSanitizePromptDialog = {
 
     if (!lazy.USE_OLD_DIALOG) {
       
-      this.updateDataSizesInUI();
+      await this.updateDataSizesInUI();
     }
   },
 
@@ -399,7 +399,7 @@ var gSanitizePromptDialog = {
     this.cacheSize = lazy.DownloadUtils.convertByteUnits(cacheSize);
 
     this._dataSizesUpdated = true;
-    this.updateDataSizesInUI();
+    await this.updateDataSizesInUI();
   },
 
   
@@ -473,7 +473,7 @@ var gSanitizePromptDialog = {
   
 
 
-  updateDataSizesInUI() {
+  async updateDataSizesInUI() {
     if (!this._dataSizesUpdated) {
       return;
     }
@@ -491,6 +491,7 @@ var gSanitizePromptDialog = {
     let timeSpanSelected = TIMESPAN_SELECTION_MAP[index];
     let [amount, unit] = this.siteDataSizes[timeSpanSelected];
 
+    document.l10n.pauseObserving();
     document.l10n.setAttributes(
       this._cookiesAndSiteDataCheckbox,
       "item-cookies-site-data-with-size",
@@ -503,6 +504,18 @@ var gSanitizePromptDialog = {
       "item-cached-content-with-size",
       { amount, unit }
     );
+
+    
+    await document.l10n.translateElements([
+      this._cookiesAndSiteDataCheckbox,
+      this._cacheCheckbox,
+    ]);
+
+    document.l10n.resumeObserving();
+
+    
+    
+    await window.resizeDialog();
   },
 
   
