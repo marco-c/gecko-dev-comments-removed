@@ -50,6 +50,8 @@
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "nscore.h"
+#include "MockDragServiceController.h"
+
 #include <algorithm>
 
 using namespace mozilla;
@@ -341,18 +343,17 @@ nsBaseDragService::InvokeDragSession(
     return NS_OK;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
   if (XRE_IsParentProcess()) {
+    
+    
+    
+    
+    
+    
+    
+    
     MOZ_ASSERT(
-        !xpc::IsInAutomation(),
+        !xpc::IsInAutomation() || IsMockService(),
         "About to start drag-drop native loop on which will prevent later "
         "tests from running properly.");
   }
@@ -409,7 +410,8 @@ nsBaseDragService::InvokeDragSessionWithImage(
   NS_ENSURE_TRUE(mSuppressLevel == 0, NS_ERROR_FAILURE);
 
   mSessionIsSynthesizedForTests =
-      aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests;
+      aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests &&
+      !GetNeverAllowSessionIsSynthesizedForTests();
   mDataTransfer = aDataTransfer;
   mSelection = nullptr;
   mHasImage = true;
@@ -460,7 +462,8 @@ nsBaseDragService::InvokeDragSessionWithRemoteImage(
   NS_ENSURE_TRUE(mSuppressLevel == 0, NS_ERROR_FAILURE);
 
   mSessionIsSynthesizedForTests =
-      aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests;
+      aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests &&
+      !GetNeverAllowSessionIsSynthesizedForTests();
   mDataTransfer = aDataTransfer;
   mSelection = nullptr;
   mHasImage = true;
@@ -492,7 +495,8 @@ nsBaseDragService::InvokeDragSessionWithSelection(
   NS_ENSURE_TRUE(mSuppressLevel == 0, NS_ERROR_FAILURE);
 
   mSessionIsSynthesizedForTests =
-      aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests;
+      aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests &&
+      !GetNeverAllowSessionIsSynthesizedForTests();
   mDataTransfer = aDataTransfer;
   mSelection = aSelection;
   mHasImage = true;
@@ -550,6 +554,8 @@ nsBaseDragService::StartDragSession() {
 
 NS_IMETHODIMP nsBaseDragService::StartDragSessionForTests(
     uint32_t aAllowedEffect) {
+  
+  MOZ_ASSERT(!mNeverAllowSessionIsSynthesizedForTests);
   if (NS_WARN_IF(NS_FAILED(StartDragSession()))) {
     return NS_ERROR_FAILURE;
   }
@@ -1040,5 +1046,40 @@ nsBaseDragService::MaybeEditorDeletedSourceNode(Element* aEditingHost) {
   if (mSourceNode && !mSourceNode->IsInComposedDoc()) {
     mSourceNode = aEditingHost;
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsBaseDragService::GetMockDragController(
+    nsIMockDragServiceController** aController) {
+#ifdef ENABLE_TESTS
+  if (XRE_IsContentProcess()) {
+    
+    MOZ_ASSERT(!XRE_IsContentProcess());
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  if (!mMockController) {
+    mMockController = new mozilla::test::MockDragServiceController();
+  }
+  auto controller = mMockController;
+  controller.forget(aController);
+  return NS_OK;
+#else
+  *aController = nullptr;
+  MOZ_ASSERT(false, "CreateMockDragController may only be called for testing");
+  return NS_ERROR_NOT_AVAILABLE;
+#endif
+}
+
+NS_IMETHODIMP
+nsBaseDragService::GetNeverAllowSessionIsSynthesizedForTests(
+    bool* aNeverAllow) {
+  *aNeverAllow = mNeverAllowSessionIsSynthesizedForTests;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsBaseDragService::SetNeverAllowSessionIsSynthesizedForTests(bool aNeverAllow) {
+  mNeverAllowSessionIsSynthesizedForTests = aNeverAllow;
   return NS_OK;
 }

@@ -45,6 +45,10 @@ namespace dom {
 class DataTransfer;
 class Selection;
 }  
+
+namespace test {
+class MockDragServiceController;
+}  
 }  
 
 
@@ -146,10 +150,13 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
     return retval;
   }
 
+  virtual bool IsMockService() { return false; }
+
   bool mCanDrop;
   bool mOnlyChromeDrop;
   bool mDoingDrag;
   bool mSessionIsSynthesizedForTests;
+
   bool mIsDraggingTextInTextControl;
 
   
@@ -216,6 +223,13 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
 
   
   mozilla::Maybe<mozilla::CSSIntRegion> mRegion;
+
+  RefPtr<mozilla::test::MockDragServiceController> mMockController;
+
+  
+  
+  
+  bool mNeverAllowSessionIsSynthesizedForTests = false;
 };
 
 #endif  
