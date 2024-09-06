@@ -83,9 +83,43 @@ class BaseDevToolsPanel {
       }
     );
 
+    this.syncToolboxZoom();
+    this.toolbox.win.browsingContext.embedderElement.addEventListener(
+      "FullZoomChange",
+      this
+    );
+
     this.browser.fixupAndLoadURIString(url, {
       triggeringPrincipal: this.context.principal,
     });
+  }
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "FullZoomChange": {
+        this.syncToolboxZoom();
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  syncToolboxZoom() {
+    if (!this.browser) {
+      return;
+    }
+
+    this.browser.fullZoom = this.toolbox.win.browsingContext.fullZoom;
   }
 
   destroyBrowserElement() {
@@ -93,6 +127,13 @@ class BaseDevToolsPanel {
     if (unwatchExtensionProxyContextLoad) {
       this.unwatchExtensionProxyContextLoad = null;
       unwatchExtensionProxyContextLoad();
+    }
+
+    if (this.toolbox) {
+      this.toolbox.win.browsingContext.embedderElement.removeEventListener(
+        "FullZoomChange",
+        this
+      );
     }
 
     if (browser) {
