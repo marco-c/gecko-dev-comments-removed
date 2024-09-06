@@ -2961,8 +2961,33 @@ bool js::IsSelfHostedFunctionWithName(const Value& v, JSAtom* name) {
   return IsSelfHostedFunctionWithName(fun, name);
 }
 
-bool js::ReportUsageCounter(JSContext* cx, HandleObject constructor,
+
+
+bool js::ReportUsageCounter(JSContext* cx, HandleObject constructorArg,
                             int32_t builtin, int32_t type) {
+  RootedObject constructor(cx, constructorArg);
+
+  
+  if (builtin == SUBCLASSING_DETERMINE_THROUGH_CONSTRUCTOR) {
+    MOZ_ASSERT(constructor);
+    if (IsPromiseConstructor(constructor)) {
+      builtin = SUBCLASSING_PROMISE;
+    } else if (IsTypedArrayConstructor(constructor)) {
+      builtin = SUBCLASSING_TYPEDARRAY;
+    } else if (IsArrayConstructor(constructor)) {
+      builtin = SUBCLASSING_ARRAY;
+    }
+
+    
+    if (builtin == SUBCLASSING_DETERMINE_THROUGH_CONSTRUCTOR) {
+      return true;
+    }
+    
+    
+    
+    constructor = nullptr;
+  }
+
   switch (builtin) {
     case SUBCLASSING_ARRAY: {
       
@@ -2991,6 +3016,10 @@ bool js::ReportUsageCounter(JSContext* cx, HandleObject constructor,
         case SUBCLASSING_TYPE_II:
           cx->runtime()->setUseCounter(
               cx->global(), JSUseCounter::SUBCLASSING_PROMISE_TYPE_II);
+          return true;
+        case SUBCLASSING_TYPE_III:
+          cx->runtime()->setUseCounter(
+              cx->global(), JSUseCounter::SUBCLASSING_PROMISE_TYPE_III);
           return true;
         default:
           MOZ_CRASH("Unexpected Subclassing Type");
@@ -3071,7 +3100,7 @@ bool js::intrinsic_ReportUsageCounter(JSContext* cx, unsigned int argc,
   MOZ_ASSERT(type >= SUBCLASSING_TYPE_II && type <= SUBCLASSING_TYPE_IV);
 
   int32_t builtin = packedTypeAndBuiltin >> SUBCLASSING_BUILTIN_SHIFT;
-  MOZ_ASSERT(builtin > 0 && builtin < SUBCLASSING_LAST_BUILTIN);
+  MOZ_ASSERT(builtin >= 0 && builtin < SUBCLASSING_LAST_BUILTIN);
 
   return ReportUsageCounter(cx, constructor, builtin, type);
 }
