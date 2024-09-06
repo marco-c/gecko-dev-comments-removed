@@ -173,22 +173,6 @@ class LibvpxVp9Encoder : public VideoEncoder {
   std::array<RefFrameBuffer, kNumVp9Buffers> ref_buf_;
   std::vector<ScalableVideoController::LayerFrameConfig> layer_frames_;
 
-  
-  const struct VariableFramerateExperiment {
-    bool enabled;
-    
-    float framerate_limit;
-    
-    int steady_state_qp;
-    
-    
-    int steady_state_undershoot_percentage;
-    
-    
-    int frames_before_steady_state;
-  } variable_framerate_experiment_;
-  static VariableFramerateExperiment ParseVariableFramerateConfig(
-      const FieldTrialsView& trials);
   FramerateControllerDeprecated variable_framerate_controller_;
 
   const struct QualityScalerExperiment {
