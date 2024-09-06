@@ -536,6 +536,13 @@ class InactivePropertyHelper {
       },
       
       {
+        invalidProperties: ["resize"],
+        when: () => !this.isScrollContainer && !this.isResizableReplacedElement,
+        fixId: "inactive-css-resize-fix",
+        msgId: "inactive-css-resize",
+      },
+      
+      {
         invalidProperties: ["text-wrap"],
         when: () => {
           if (!this.checkComputedStyle("text-wrap", ["balance"])) {
@@ -1175,6 +1182,15 @@ class InactivePropertyHelper {
     return !(
       overflowValues.includes("visible") || overflowValues.includes("clip")
     );
+  }
+
+  
+
+
+  get isResizableReplacedElement() {
+    
+    
+    return this.localName === "textarea";
   }
 
   
