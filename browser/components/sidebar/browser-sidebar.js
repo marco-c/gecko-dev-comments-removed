@@ -84,14 +84,11 @@ var SidebarController = {
         );
       }
     } else {
-      this._sidebars.set(
-        "viewCustomizeSidebar",
-        this.makeSidebar({
-          url: "chrome://browser/content/sidebar/sidebar-customize.html",
-          revampL10nId: "sidebar-menu-customize",
-          iconUrl: "chrome://browser/skin/preferences/category-general.svg",
-        })
-      );
+      this._sidebars.set("viewCustomizeSidebar", {
+        url: "chrome://browser/content/sidebar/sidebar-customize.html",
+        revampL10nId: "sidebar-menu-customize",
+        iconUrl: "chrome://browser/skin/preferences/category-general.svg",
+      });
     }
 
     return this._sidebars;
@@ -173,7 +170,10 @@ var SidebarController = {
 
     const menubar = document.getElementById("viewSidebarMenu");
     for (const [commandID, sidebar] of this.sidebars.entries()) {
-      if (!Object.hasOwn(sidebar, "extensionId")) {
+      if (
+        !Object.hasOwn(sidebar, "extensionId") &&
+        commandID !== "viewCustomizeSidebar"
+      ) {
         
         const menuitem = this.createMenuItem(commandID, sidebar);
         menubar.appendChild(menuitem);
@@ -216,7 +216,9 @@ var SidebarController = {
 
     
     const megalistItem = popup.querySelector("#menu_megalistSidebar");
-    megalistItem.hidden = !this.megalistEnabled;
+    if (megalistItem) {
+      megalistItem.hidden = !this.megalistEnabled;
+    }
   },
 
   uninit() {
@@ -906,9 +908,12 @@ var SidebarController = {
 
       
       this.lastOpenedId = commandID;
-      this.title = title;
       
-      this.observeTitleChanges(sourceL10nEl);
+      if (!this.sidebarRevampEnabled) {
+        this.title = title;
+        
+        this.observeTitleChanges(sourceL10nEl);
+      }
 
       this.browser.setAttribute("src", url); 
 
@@ -978,6 +983,9 @@ var SidebarController = {
   selectMenuItem(commandID) {
     for (let [id, { menuId, triggerButtonId }] of this.sidebars) {
       let menu = document.getElementById(menuId);
+      if (!menu) {
+        return;
+      }
       let triggerbutton =
         triggerButtonId && document.getElementById(triggerButtonId);
       if (id == commandID) {
