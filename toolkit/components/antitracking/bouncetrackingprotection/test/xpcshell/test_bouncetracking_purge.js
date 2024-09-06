@@ -6,6 +6,9 @@
 const { SiteDataTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SiteDataTestUtils.sys.mjs"
 );
+const { PermissionTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PermissionTestUtils.sys.mjs"
+);
 
 let btp;
 let bounceTrackingGracePeriodSec;
@@ -139,6 +142,14 @@ add_task(async function test_purge() {
       shouldPurge: true,
     },
     
+    "example2.net": {
+      bounceTime: timestampOutsideGracePeriodFiveSeconds,
+      userActivationTime: null,
+      isAllowListed: true,
+      message: "Should not purge after grace period if allowlisted.",
+      shouldPurge: false,
+    },
+    
     "1.2.3.4": {
       bounceTime: timestampOutsideGracePeriodThreeDays,
       userActivationTime: null,
@@ -191,15 +202,29 @@ add_task(async function test_purge() {
 
   let expectedBounceTrackerHosts = [];
   let expectedUserActivationHosts = [];
+  let allowListedHosts = [];
 
   let expiredUserActivationHosts = [];
   let expectedPurgedHosts = [];
 
   
   let initPromises = Object.entries(TEST_TRACKERS).map(
-    async ([siteHost, { bounceTime, userActivationTime, shouldPurge }]) => {
+    async ([
+      siteHost,
+      { bounceTime, userActivationTime, isAllowListed, shouldPurge },
+    ]) => {
       
       await addStateForHost(siteHost);
+
+      
+      if (isAllowListed) {
+        PermissionTestUtils.add(
+          `https://${siteHost}`,
+          "trackingprotection",
+          Services.perms.ALLOW_ACTION
+        );
+        allowListedHosts.push(siteHost);
+      }
 
       if (bounceTime != null) {
         if (userActivationTime != null) {
@@ -275,8 +300,14 @@ add_task(async function test_purge() {
     "Should have purged all expected hosts."
   );
 
+  
+  
+  
   let expectedBounceTrackerHostsAfterPurge = expectedBounceTrackerHosts
-    .filter(host => !expectedPurgedHosts.includes(host))
+    .filter(
+      host =>
+        !expectedPurgedHosts.includes(host) && !allowListedHosts.includes(host)
+    )
     .sort();
   Assert.deepEqual(
     btp
@@ -314,6 +345,7 @@ add_task(async function test_purge() {
   btp.clearAll();
   assertEmpty();
 
-  info("Clean up site data.");
+  info("Clean up site data and permissions.");
   await SiteDataTestUtils.clear();
+  Services.perms.removeAll();
 });

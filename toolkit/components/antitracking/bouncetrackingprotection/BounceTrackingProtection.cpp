@@ -650,6 +650,10 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
                  __FUNCTION__, PromiseFlatCString(host).get(),
                  originAttributeSuffix.get()));
       }
+      
+      
+      
+      bounceTrackerCandidatesToRemove.AppendElement(host);
       continue;
     }
 
