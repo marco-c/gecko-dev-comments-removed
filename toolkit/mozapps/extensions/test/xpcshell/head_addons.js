@@ -1221,3 +1221,10 @@ async function installBuiltinExtension(extensionData, waitForStartup = true) {
   }
   return wrapper;
 }
+
+function useAMOStageCert() {
+  
+  
+  
+  return { pref_set: [["xpinstall.signatures.dev-root", true]] };
+}

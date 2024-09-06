@@ -11,8 +11,10 @@ add_task(async function setup() {
   await promiseStartupManager();
 });
 
+
+
 const IMPLICIT_ID_XPI = "data/webext-implicit-id.xpi";
-const IMPLICIT_ID_ID = "webext_implicit_id@tests.mozilla.org";
+const IMPLICIT_ID_ID = "{46607a7b-1b2a-40ce-9afe-91cda52c46a6}";
 
 
 

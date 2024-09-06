@@ -4,7 +4,7 @@ const ID = "123456789012345678901234567890123456789012345678901@somewhere.com";
 
 
 
-add_task(async function test_long_id() {
+add_task(useAMOStageCert(), async function test_long_id() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
   await promiseStartupManager();
 
