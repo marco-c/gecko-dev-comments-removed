@@ -42,39 +42,37 @@ type LazyAll = {
   getTrimmedString: typeof import("ExtensionTelemetry.sys.mjs").getTrimmedString,
 };
 
-
-type Items<A> = A extends ReadonlyArray<infer U extends string> ? U : never;
-
 declare global {
-  type Lazy<Keys extends keyof LazyAll = keyof LazyAll> = Pick<LazyAll, Keys> & { [k: string]: any };
+  type Lazy = Partial<LazyAll> & { [k: string]: any };
 
-  
-  type ConduitAddress = import("ConduitsParent.sys.mjs").ConduitAddress;
-  type ConduitID = import("ConduitsParent.sys.mjs").ConduitID;
+  type BaseContext = import("ExtensionCommon.sys.mjs").BaseContext;
+  type ExtensionChild = import("ExtensionChild.sys.mjs").ExtensionChild;
   type Extension = import("Extension.sys.mjs").Extension;
+  type callback = (...any) => any;
+
+  interface nsIDOMProcessChild  {
+    getActor(name: "ProcessConduits"): ProcessConduitsChild;
+  }
+
+  interface WebExtensionContentScript {
+    userScriptOptions: { scriptMetadata: object };
+  }
+
+  interface WebExtensionPolicy {
+    extension: Extension;
+    debugName: string;
+    instanceId: string;
+    optionalPermissions: string[];
+  }
 
   
-  type BaseContext = InstanceType<typeof import("ExtensionCommon.sys.mjs").ExtensionCommon.BaseContext>;
-  type BrowserExtensionContent = InstanceType<typeof import("ExtensionContent.sys.mjs").ExtensionContent.BrowserExtensionContent>;
-  type EventEmitter = InstanceType<typeof import("ExtensionCommon.sys.mjs").ExtensionCommon.EventEmitter>;
-  type ExtensionAPI = InstanceType<typeof import("ExtensionCommon.sys.mjs").ExtensionCommon.ExtensionAPI>;
-  type ExtensionError = InstanceType<typeof import("ExtensionUtils.sys.mjs").ExtensionUtils.ExtensionError>;
-  type LocaleData = InstanceType<typeof import("ExtensionCommon.sys.mjs").ExtensionCommon.LocaleData>;
-  type ProxyAPIImplementation = InstanceType<typeof import("ExtensionChild.sys.mjs").ExtensionChild.ProxyAPIImplementation>;
-  type SchemaAPIInterface = InstanceType<typeof import("ExtensionCommon.sys.mjs").ExtensionCommon.SchemaAPIInterface>;
-  type WorkerExtensionError = InstanceType<typeof import("ExtensionUtils.sys.mjs").ExtensionUtils.WorkerExtensionError>;
-
   
-  type AddonWrapper = any;
-  type Context = BaseContext;
-  type NativeTab = Element;
-  type SavedFrame = object;
-
-  
-  
-  type ConduitInit<Send> = ConduitAddress & { send: Send; };
-  type Conduit<Send> = import("../ConduitsChild.sys.mjs").PointConduit & { [s in `send${Items<Send>}`]: callback };
-  type ConduitOpen = <const Send>(subject: object, address: ConduitInit<Send>) => Conduit<Send>;
+  function ConduitGen<const Send>(_, init: Init<Send>, _actor?): Conduit<Send>;
+  type Items<A> = A extends ReadonlyArray<infer U extends string> ? U : never;
 }
 
-export {}
+import { PointConduit, ProcessConduitsChild } from "ConduitsChild.sys.mjs";
+import { ConduitAddress } from "ConduitsParent.sys.mjs";
+
+type Conduit<Send> = PointConduit & { [s in `send${Items<Send>}`]: callback };
+type Init<Send> = ConduitAddress & { send: Send; };
