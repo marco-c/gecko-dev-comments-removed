@@ -70,6 +70,9 @@ function getBaseUrl(origin) {
 
 
 
+
+
+
 function getBounceURL({
   bounceType,
   bounceOrigin = ORIGIN_TRACKER,
@@ -79,6 +82,7 @@ function getBounceURL({
   setStateCrossSiteFrame = false,
   setStateInWebWorker = false,
   setStateInNestedWebWorker = false,
+  setCookieViaImage = null,
   statusCode = 302,
   redirectDelayMS = 50,
 }) {
@@ -144,6 +148,17 @@ function getBounceURL({
       bounceUrlIframe.host = SITE_C;
       searchParams.set("setStateInFrameWithURI", bounceUrlIframe.href);
     }
+  } else if (setCookieViaImage) {
+    let imageOrigin =
+      setCookieViaImage == "same-site" ? bounceOrigin : ORIGIN_C;
+    let imageURL = new URL(getBaseUrl(imageOrigin) + "file_image.png");
+
+    if (setState != "cookie-server") {
+      throw new Error(
+        "setCookieViaImage only supports setState == 'cookie-server'"
+      );
+    }
+    searchParams.set("setCookieViaImageWithURI", imageURL.href);
   }
 
   return bounceUrl;
@@ -259,6 +274,9 @@ async function waitForRecordBounces(browser) {
 
 
 
+
+
+
 async function runTestBounce(options = {}) {
   let {
     bounceType,
@@ -267,6 +285,7 @@ async function runTestBounce(options = {}) {
     setStateCrossSiteFrame = false,
     setStateInWebWorker = false,
     setStateInNestedWebWorker = false,
+    setCookieViaImage = null,
     expectCandidate = true,
     expectPurge = true,
     originAttributes = {},
@@ -336,6 +355,7 @@ async function runTestBounce(options = {}) {
       setStateCrossSiteFrame,
       setStateInWebWorker,
       setStateInNestedWebWorker,
+      setCookieViaImage,
     })
   );
 
