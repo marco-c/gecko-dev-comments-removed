@@ -3446,7 +3446,7 @@ MediaTrackGraphImpl::MediaTrackGraphImpl(uint64_t aWindowID,
       ,
       mMainThreadGraphTime(0, "MediaTrackGraphImpl::mMainThreadGraphTime"),
       mAudioOutputLatency(0.0),
-      mMaxOutputChannelCount(std::min(8u, CubebUtils::MaxNumberOfChannels())) {
+      mMaxOutputChannelCount(CubebUtils::MaxNumberOfChannels()) {
 }
 
 void MediaTrackGraphImpl::Init(GraphDriverType aDriverRequested,
@@ -3577,9 +3577,7 @@ MediaTrackGraphImpl* MediaTrackGraphImpl::GetInstance(
 
   
   
-  
-  uint32_t channelCount =
-      std::min<uint32_t>(8, CubebUtils::MaxNumberOfChannels());
+  uint32_t channelCount = CubebUtils::MaxNumberOfChannels();
   MediaTrackGraphImpl* graph = new MediaTrackGraphImpl(
       aWindowID, aSampleRate, aPrimaryOutputDeviceID, aMainThread);
   graph->Init(aGraphDriverRequested, runType, channelCount);
