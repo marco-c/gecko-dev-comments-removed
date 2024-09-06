@@ -4,10 +4,13 @@
 
 
 
-
 with Files("**"):
     BUG_COMPONENT = ("GeckoView", "General")
 
+with Files("extensions/**"):
+    BUG_COMPONENT = ("WebExtensions", "Android")
+
 DIRS += [
+    "extensions",
     "geckoview",
 ]

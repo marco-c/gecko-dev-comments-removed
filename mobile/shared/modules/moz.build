@@ -10,4 +10,9 @@ with Files("**"):
 
 DIRS += [
     "geckoview",
+    "test",
+]
+
+EXTRA_JS_MODULES += [
+    "dbg-browser-actors.js",
 ]
