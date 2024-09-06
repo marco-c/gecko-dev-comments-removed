@@ -638,10 +638,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("privacy.fingerprintingProtection", false);
    final Pref<Boolean> mFingerprintingProtectionPrivateMode =
       new Pref<Boolean>("privacy.fingerprintingProtection.pbmode", true);
-   final Pref<String> mFingerprintingProtectionOverrides =
-      new Pref<>("privacy.fingerprintingProtection.overrides", "");
-   final Pref<Boolean> mFdlibmMathEnabled =
-      new Pref<Boolean>("javascript.options.use_fdlibm_for_sin_cos_tan", false);
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -809,30 +805,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-
-
-  public @NonNull GeckoRuntimeSettings setFingerprintingProtectionOverrides(
-      @NonNull final String overrides) {
-    mFingerprintingProtectionOverrides.commit(overrides);
-    return this;
-  }
-
-  
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setFdlibmMathEnabled(final boolean enabled) {
-    mFdlibmMathEnabled.commit(enabled);
-    return this;
-  }
-
-  
-
-
-
-
   public boolean getFingerprintingProtection() {
     return mFingerprintingProtection.get();
   }
@@ -844,24 +816,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getFingerprintingProtectionPrivateBrowsing() {
     return mFingerprintingProtectionPrivateMode.get();
-  }
-
-  
-
-
-
-
-  public @NonNull String getFingerprintingProtectionOverrides() {
-    return mFingerprintingProtectionOverrides.get();
-  }
-
-  
-
-
-
-
-  public boolean getFdlibmMathEnabled() {
-    return mFdlibmMathEnabled.get();
   }
 
   
