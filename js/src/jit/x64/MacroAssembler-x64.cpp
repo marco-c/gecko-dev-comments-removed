@@ -16,6 +16,7 @@
 #include "vm/JitActivation.h"  
 #include "vm/JSContext.h"
 #include "vm/StringType.h"
+#include "wasm/WasmStubs.h"
 
 #include "jit/MacroAssembler-inl.h"
 
@@ -638,10 +639,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail,
 
   
   bind(&wasmCatch);
-  loadPtr(Address(rsp, ResumeFromException::offsetOfTarget()), rax);
-  loadPtr(Address(rsp, ResumeFromException::offsetOfFramePointer()), rbp);
-  loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
-  jmp(Operand(rax));
+  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx);
 }
 
 void MacroAssemblerX64::profilerEnterFrame(Register framePtr,

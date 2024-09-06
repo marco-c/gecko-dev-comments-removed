@@ -29,6 +29,7 @@
 #include "vm/JitActivation.h"  
 #include "vm/JSContext.h"
 #include "vm/StringType.h"
+#include "wasm/WasmStubs.h"
 
 #include "jit/MacroAssembler-inl.h"
 
@@ -3436,15 +3437,7 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  {
-    ScratchRegisterScope scratch(asMasm());
-    ma_ldr(Address(sp, ResumeFromException::offsetOfTarget()), r1, scratch);
-    ma_ldr(Address(sp, ResumeFromException::offsetOfFramePointer()), r11,
-           scratch);
-    ma_ldr(Address(sp, ResumeFromException::offsetOfStackPointer()), sp,
-           scratch);
-  }
-  jump(r1);
+  wasm::GenerateJumpToCatchHandler(asMasm(), sp, r0, r1);
 }
 
 Assembler::Condition MacroAssemblerARMCompat::testStringTruthy(

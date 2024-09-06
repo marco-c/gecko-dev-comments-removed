@@ -662,10 +662,7 @@ static const wasm::TryNote* FindNonDelegateTryNote(
 
 
 
-
-
-
-bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
+void wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
                        jit::ResumeFromException* rfe) {
   
   
@@ -743,8 +740,7 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
           activation->finishWasmTrap();
         }
         activation->setWasmExitFP(nullptr);
-
-        return true;
+        return;
       }
     }
 
@@ -802,7 +798,6 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
   rfe->stackPointer = (uint8_t*)iter.unwoundAddressOfReturnAddress();
   rfe->instance = (Instance*)FailInstanceReg;
   rfe->target = nullptr;
-  return false;
 }
 
 static void* WasmHandleThrow(jit::ResumeFromException* rfe) {

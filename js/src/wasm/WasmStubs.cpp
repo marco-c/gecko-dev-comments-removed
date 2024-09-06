@@ -2711,6 +2711,24 @@ static void ClobberWasmRegsForLongJmp(MacroAssembler& masm, Register jumpReg) {
 
 
 
+void wasm::GenerateJumpToCatchHandler(MacroAssembler& masm, Register rfe,
+                                      Register scratch1, Register scratch2) {
+  masm.loadPtr(Address(rfe, ResumeFromException::offsetOfInstance()),
+               InstanceReg);
+  masm.loadWasmPinnedRegsFromInstance();
+  masm.switchToWasmInstanceRealm(scratch1, scratch2);
+  masm.loadPtr(Address(rfe, ResumeFromException::offsetOfTarget()), scratch1);
+  masm.loadPtr(Address(rfe, ResumeFromException::offsetOfFramePointer()),
+               FramePointer);
+  masm.loadStackPtr(Address(rfe, ResumeFromException::offsetOfStackPointer()));
+  MoveSPForJitABI(masm);
+  ClobberWasmRegsForLongJmp(masm, scratch1);
+  masm.jump(scratch1);
+}
+
+
+
+
 
 static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
                               Offsets* offsets) {
@@ -2777,19 +2795,7 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
 
   
   masm.bind(&resumeCatch);
-  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfInstance()),
-               InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance();
-  masm.switchToWasmInstanceRealm(scratch1, scratch2);
-  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfTarget()),
-               scratch1);
-  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfFramePointer()),
-               FramePointer);
-  masm.loadStackPtr(
-      Address(ReturnReg, ResumeFromException::offsetOfStackPointer()));
-  MoveSPForJitABI(masm);
-  ClobberWasmRegsForLongJmp(masm, scratch1);
-  masm.jump(scratch1);
+  GenerateJumpToCatchHandler(masm, ReturnReg, scratch1, scratch2);
 
   
   masm.bind(&leaveWasm);
