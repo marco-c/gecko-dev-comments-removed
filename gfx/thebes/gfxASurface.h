@@ -80,12 +80,6 @@ class gfxASurface {
 
   virtual already_AddRefed<gfxImageSurface> GetAsImageSurface();
 
-  
-
-
-
-  already_AddRefed<gfxImageSurface> CopyToARGB32ImageSurface();
-
   int CairoStatus();
 
   static gfxContentType ContentFromFormat(gfxImageFormat format);
