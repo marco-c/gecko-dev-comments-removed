@@ -635,7 +635,6 @@ static void CleanupActiveSuspender(JSContext* cx) {
 
 
 
-
 class SuspendingFunctionModuleFactory {
  public:
   enum TypeIdx {
@@ -645,7 +644,6 @@ class SuspendingFunctionModuleFactory {
 
   enum FnIdx {
     WrappedFnIndex,
-    GetSuspendingResultsFnIndex,
     ExportedFnIndex,
     TrampolineFnIndex,
     ContinueOnSuspendableFnIndex
@@ -804,13 +802,14 @@ class SuspendingFunctionModuleFactory {
     if (!encoder.writeOp(Op::Call) || !encoder.writeVarU32(WrappedFnIndex)) {
       return false;
     }
-
     if (!encoder.writeOp(Op::RefFunc) ||
         !encoder.writeVarU32(ContinueOnSuspendableFnIndex)) {
       return false;
     }
-    if (!encoder.writeOp(Op::Call) ||
-        !encoder.writeVarU32(GetSuspendingResultsFnIndex)) {
+
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32(
+            (uint32_t)BuiltinModuleFuncId::AddPromiseReactions)) {
       return false;
     }
 
@@ -956,20 +955,6 @@ class SuspendingFunctionModuleFactory {
       return nullptr;
     }
 
-    ValTypeVector paramsGetSuspendingResults, resultsGetSuspendingResults;
-    if (!paramsGetSuspendingResults.emplaceBack(suspenderType) ||
-        !paramsGetSuspendingResults.emplaceBack(promiseType) ||
-        !paramsGetSuspendingResults.emplaceBack(RefType::func())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    MOZ_ASSERT(codeMeta->funcs.length() == GetSuspendingResultsFnIndex);
-    if (!codeMeta->addDefinedFunc(moduleMeta,
-                                  std::move(paramsGetSuspendingResults),
-                                  std::move(resultsGetSuspendingResults))) {
-      return nullptr;
-    }
-
     
     codeMeta->numFuncImports = codeMeta->funcs.length();
 
@@ -1108,31 +1093,6 @@ static bool WasmPISuspendTaskContinue(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static bool WasmPIAddPromiseReactions(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  Rooted<SuspenderObject*> suspenderObject(
-      cx, &args[0].toObject().as<SuspenderObject>());
-  RootedValue rval(cx, args[1]);
-  RootedFunction fn(cx, &args[2].toObject().as<JSFunction>());
-
-  MOZ_ASSERT(rval.toObject().is<PromiseObject>(),
-             "WasmPIWrapSuspendingImport always returning a promise");
-  Rooted<PromiseObject*> promise(cx, &rval.toObject().as<PromiseObject>());
-  suspenderObject->setSuspendingPromise(promise);
-
-  
-  RootedFunction then_(
-      cx, NewNativeFunction(cx, WasmPISuspendTaskContinue, 1, nullptr,
-                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  then_->initExtendedSlot(SUSPENDER_SLOT, ObjectValue(*suspenderObject));
-  then_->initExtendedSlot(CONTINUE_ON_SUSPENDABLE_SLOT, ObjectValue(*fn));
-  return AddPromiseReactions(cx, promise, then_, then_);
-}
-
-
-
-
 static bool WasmPIWrapSuspendingImport(JSContext* cx, unsigned argc,
                                        Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -1210,18 +1170,6 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
     return nullptr;
   }
 
-  
-  RootedFunction addPromiseReactions(
-      cx, NewNativeFunction(cx, WasmPIAddPromiseReactions, 3, nullptr,
-                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  if (!addPromiseReactions) {
-    return nullptr;
-  }
-  if (!imports.get().funcs.append(addPromiseReactions)) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
   Rooted<WasmInstanceObject*> instance(cx);
   if (!module->instantiate(cx, imports.get(), nullptr, &instance)) {
     
@@ -1276,12 +1224,12 @@ class PromisingFunctionModuleFactory {
 
   enum FnIdx {
     WrappedFnIndex,
-    CreateSuspenderFnIndex,
     ExportedFnIndex,
     TrampolineFnIndex,
   };
 
  private:
+  
   
   
   
@@ -1305,15 +1253,29 @@ class PromisingFunctionModuleFactory {
       return false;
     }
 
-    const uint32_t PromiseIndex = paramsSize;
-    if (!encoder.writeOp(Op::Call) ||
-        !encoder.writeVarU32(CreateSuspenderFnIndex)) {
+    const uint32_t SuspenderIndex = paramsSize;
+    if (!encoder.writeOp(Op::I32Const) || !encoder.writeVarU32(0)) {
       return false;
     }
-    if (!encoder.writeOp(Op::LocalSet) || !encoder.writeVarU32(PromiseIndex)) {
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::CreateSuspender)) {
       return false;
     }
 
+    if (!encoder.writeOp(Op::LocalTee) ||
+        !encoder.writeVarU32(SuspenderIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32(
+            (uint32_t)BuiltinModuleFuncId::CreatePromisingPromise)) {
+      return false;
+    }
+
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(SuspenderIndex)) {
+      return false;
+    }
     if (!encoder.writeOp(Op::RefFunc) ||
         !encoder.writeVarU32(TrampolineFnIndex)) {
       return false;
@@ -1332,9 +1294,6 @@ class PromisingFunctionModuleFactory {
       return false;
     }
 
-    if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(PromiseIndex)) {
-      return false;
-    }
     return encoder.writeOp(Op::End);
   }
 
@@ -1412,7 +1371,6 @@ class PromisingFunctionModuleFactory {
     size_t paramsSize = params.length();
 
     RefType suspenderType = RefType::extern_();
-    RefType promiseType = RefType::extern_();
 
     FeatureOptions options;
     options.isBuiltinModule = true;
@@ -1467,18 +1425,6 @@ class PromisingFunctionModuleFactory {
     MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
     if (!codeMeta->addDefinedFunc(moduleMeta, std::move(paramsForWrapper),
                                   std::move(resultsForWrapper))) {
-      return nullptr;
-    }
-
-    ValTypeVector paramsCreateSuspender, resultsCreateSuspender;
-    if (!resultsCreateSuspender.emplaceBack(suspenderType) ||
-        !resultsCreateSuspender.emplaceBack(promiseType)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    MOZ_ASSERT(codeMeta->funcs.length() == CreateSuspenderFnIndex);
-    if (!codeMeta->addDefinedFunc(moduleMeta, std::move(paramsCreateSuspender),
-                                  std::move(resultsCreateSuspender))) {
       return nullptr;
     }
 
@@ -1550,30 +1496,6 @@ class PromisingFunctionModuleFactory {
                            nullptr);
   }
 };
-
-
-
-static bool WasmPICreateSuspender(JSContext* cx, unsigned argc, Value* vp) {
-  Rooted<SuspenderObject*> suspenderObject(cx, SuspenderObject::create(cx));
-  RootedObject promiseObject(cx, NewPromiseObject(cx, nullptr));
-  if (!promiseObject) {
-    return false;
-  }
-
-  Rooted<PromiseObject*> promise(cx, &promiseObject->as<PromiseObject>());
-  suspenderObject->setPromisingPromise(promise);
-
-  CallArgs args = CallArgsFromVp(argc, vp);
-  Rooted<ArrayObject*> results(cx, NewDenseEmptyArray(cx));
-  if (!NewbornArrayPush(cx, results, ObjectValue(*suspenderObject))) {
-    return false;
-  }
-  if (!NewbornArrayPush(cx, results, ObjectValue(*promise))) {
-    return false;
-  }
-  args.rval().setObject(*results);
-  return true;
-}
 
 
 
@@ -1674,18 +1596,6 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func,
     return nullptr;
   }
 
-  
-  RootedFunction createSuspenderFunc(
-      cx, NewNativeFunction(cx, WasmPICreateSuspender, 0, nullptr,
-                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  if (!createSuspenderFunc) {
-    return nullptr;
-  }
-  if (!imports.get().funcs.append(createSuspenderFunc)) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
   Rooted<WasmInstanceObject*> instance(cx);
   if (!module->instantiate(cx, imports.get(), nullptr, &instance)) {
     MOZ_ASSERT(cx->isThrowingOutOfMemory());
@@ -1713,6 +1623,7 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func,
 
 
 
+
 SuspenderObject* CurrentSuspender(Instance* instance, int32_t reserved) {
   MOZ_ASSERT(SASigCurrentSuspender.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
@@ -1724,6 +1635,33 @@ SuspenderObject* CurrentSuspender(Instance* instance, int32_t reserved) {
   }
   return suspender;
 }
+
+
+
+SuspenderObject* CreateSuspender(Instance* instance, int32_t reserved) {
+  MOZ_ASSERT(SASigCheckSuspender.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+  return SuspenderObject::create(cx);
+}
+
+
+
+PromiseObject* CreatePromisingPromise(Instance* instance,
+                                      SuspenderObject* suspender) {
+  MOZ_ASSERT(SASigCheckSuspender.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+
+  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
+  RootedObject promiseObject(cx, NewPromiseObject(cx, nullptr));
+  if (!promiseObject) {
+    return nullptr;
+  }
+
+  Rooted<PromiseObject*> promise(cx, &promiseObject->as<PromiseObject>());
+  suspenderObject->setPromisingPromise(promise);
+  return promise.get();
+}
+
 
 
 SuspenderObject* CheckSuspender(Instance* instance, JSObject* maybeSuspender) {
@@ -1745,6 +1683,7 @@ SuspenderObject* CheckSuspender(Instance* instance, JSObject* maybeSuspender) {
   }
   return suspenderObject;
 }
+
 
 
 
@@ -1818,6 +1757,32 @@ JSObject* GetSuspendingPromiseResult(Instance* instance,
   }
   return results;
 }
+
+
+
+
+int32_t AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
+                            PromiseObject* promise,
+                            JSFunction* continueOnSuspendable) {
+  MOZ_ASSERT(SASigSetPromisingPromiseResults.failureMode ==
+             FailureMode::FailOnNegI32);
+  JSContext* cx = instance->cx();
+
+  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
+  Rooted<PromiseObject*> promiseObject(cx, promise);
+  RootedFunction fn(cx, continueOnSuspendable);
+
+  suspenderObject->setSuspendingPromise(promiseObject);
+
+  
+  RootedFunction then_(
+      cx, NewNativeFunction(cx, WasmPISuspendTaskContinue, 1, nullptr,
+                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
+  then_->initExtendedSlot(SUSPENDER_SLOT, ObjectValue(*suspenderObject));
+  then_->initExtendedSlot(CONTINUE_ON_SUSPENDABLE_SLOT, ObjectValue(*fn));
+  return JS::AddPromiseReactions(cx, promiseObject, then_, then_) ? 0 : -1;
+}
+
 
 
 int32_t SetPromisingPromiseResults(Instance* instance,
