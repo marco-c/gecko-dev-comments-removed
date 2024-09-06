@@ -1458,12 +1458,10 @@ long uiaRawElmProvider::GetLiveSetting() const {
 }
 
 SAFEARRAY* a11y::AccessibleArrayToUiaArray(const nsTArray<Accessible*>& aAccs) {
-  if (aAccs.IsEmpty()) {
-    
-    
-    
-    return nullptr;
-  }
+  
+  
+  
+  
   SAFEARRAY* uias = SafeArrayCreateVector(VT_UNKNOWN, 0, aAccs.Length());
   LONG indices[1] = {0};
   for (Accessible* acc : aAccs) {
