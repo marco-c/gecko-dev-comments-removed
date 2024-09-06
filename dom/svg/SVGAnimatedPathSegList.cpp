@@ -8,7 +8,6 @@
 
 #include <utility>
 
-#include "DOMSVGPathSegList.h"
 #include "SVGPathSegListSMILType.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -31,54 +30,11 @@ nsresult SVGAnimatedPathSegList::SetBaseValueString(const nsAString& aValue) {
   
   
   
-  
-  
-  DOMSVGPathSegList* baseValWrapper = nullptr;
-  DOMSVGPathSegList* animValWrapper = nullptr;
-  if (StaticPrefs::dom_svg_pathSeg_enabled()) {
-    baseValWrapper = DOMSVGPathSegList::GetDOMWrapperIfExists(GetBaseValKey());
-    if (baseValWrapper) {
-      baseValWrapper->InternalListWillChangeTo(newBaseValue);
-    }
-
-    if (!IsAnimating()) {  
-      animValWrapper =
-          DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
-      if (animValWrapper) {
-        animValWrapper->InternalListWillChangeTo(newBaseValue);
-      }
-    }
-  }
-
-  
-
-  
-  
-  
-
   mBaseVal.SwapWith(newBaseValue);
   return rv;
 }
 
 void SVGAnimatedPathSegList::ClearBaseValue() {
-  if (StaticPrefs::dom_svg_pathSeg_enabled()) {
-    
-
-    DOMSVGPathSegList* baseValWrapper =
-        DOMSVGPathSegList::GetDOMWrapperIfExists(GetBaseValKey());
-    if (baseValWrapper) {
-      baseValWrapper->InternalListWillChangeTo(SVGPathData());
-    }
-
-    if (!IsAnimating()) {  
-      DOMSVGPathSegList* animValWrapper =
-          DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
-      if (animValWrapper) {
-        animValWrapper->InternalListWillChangeTo(SVGPathData());
-      }
-    }
-  }
-
   mBaseVal.Clear();
   
 }
@@ -92,19 +48,7 @@ nsresult SVGAnimatedPathSegList::SetAnimValue(const SVGPathData& aNewAnimValue,
   
   
   
-  
-  
-  
 
-  if (StaticPrefs::dom_svg_pathSeg_enabled()) {
-    
-
-    DOMSVGPathSegList* domWrapper =
-        DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
-    if (domWrapper) {
-      domWrapper->InternalListWillChangeTo(aNewAnimValue);
-    }
-  }
   if (!mAnimVal) {
     mAnimVal = MakeUnique<SVGPathData>();
   }
@@ -119,18 +63,6 @@ nsresult SVGAnimatedPathSegList::SetAnimValue(const SVGPathData& aNewAnimValue,
 }
 
 void SVGAnimatedPathSegList::ClearAnimValue(SVGElement* aElement) {
-  if (StaticPrefs::dom_svg_pathSeg_enabled()) {
-    
-
-    DOMSVGPathSegList* domWrapper =
-        DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
-    if (domWrapper) {
-      
-      
-      
-      domWrapper->InternalListWillChangeTo(mBaseVal);
-    }
-  }
   mAnimVal = nullptr;
   aElement->DidAnimatePathSegList();
 }
