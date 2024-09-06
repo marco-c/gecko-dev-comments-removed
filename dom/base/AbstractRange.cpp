@@ -100,12 +100,19 @@ void UpdateDescendantsByShadowIncludingOrder(const nsIContent& aNode,
   ShadowIncludingTreeIterator iter(*const_cast<nsIContent*>(&aNode));
   ++iter;  
 
-  for (nsINode* node : iter) {
+  while (iter) {
+    nsINode* node = *iter;
     if (aMarkDesendants) {
       node->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
     } else {
       node->ClearDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
     }
+
+    if (node->IsClosestCommonInclusiveAncestorForRangeInSelection()) {
+      iter.SkipChildren();
+      continue;
+    }
+    ++iter;
   }
 }
 
