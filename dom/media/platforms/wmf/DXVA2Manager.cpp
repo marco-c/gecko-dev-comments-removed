@@ -127,35 +127,6 @@ using namespace gfx;
 StaticRefPtr<ID3D11Device> sDevice;
 StaticMutex sDeviceMutex;
 
-
-
-
-
-
-
-
-
-
-
-static ID3D11Device* GetDeviceForDecoderCheck() {
-  StaticMutexAutoLock lock(sDeviceMutex);
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown)) {
-    return nullptr;
-  }
-  if (!sDevice) {
-    sDevice = gfx::DeviceManagerDx::Get()->CreateDecoderDevice(
-        {DeviceManagerDx::DeviceFlag::disableDeviceReuse});
-    auto clearOnShutdown = [] { ClearOnShutdown(&sDevice); };
-    if (!NS_IsMainThread()) {
-      Unused << NS_DispatchToMainThread(
-          NS_NewRunnableFunction(__func__, clearOnShutdown));
-    } else {
-      clearOnShutdown();
-    }
-  }
-  return sDevice.get();
-}
-
 void GetDXVA2ExtendedFormatFromMFMediaType(IMFMediaType* pType,
                                            DXVA2_ExtendedFormat* pFormat) {
   
@@ -1190,14 +1161,8 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
 
 bool D3D11DXVA2Manager::CanCreateDecoder(
     const D3D11_VIDEO_DECODER_DESC& aDesc) const {
-  RefPtr<ID3D11Device> device = GetDeviceForDecoderCheck();
-  if (!device) {
-    LOG("Can't create decoder due to lacking of ID3D11Device!");
-    return false;
-  }
-
   RefPtr<ID3D11VideoDevice> videoDevice;
-  HRESULT hr = device->QueryInterface(
+  HRESULT hr = mDevice->QueryInterface(
       static_cast<ID3D11VideoDevice**>(getter_AddRefs(videoDevice)));
   if (FAILED(hr)) {
     LOG("Failed to query ID3D11VideoDevice!");
