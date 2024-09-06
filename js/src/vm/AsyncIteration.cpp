@@ -310,39 +310,11 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
 
 
-[[nodiscard]] static bool AsyncGeneratorUnwrapYieldResumptionAndResume(
-    JSContext* cx, Handle<AsyncGeneratorObject*> generator,
-    CompletionKind completionKind, HandleValue resumptionValue) {
-  
-  
-  if (completionKind != CompletionKind::Return) {
-    return AsyncGeneratorResume(cx, generator, completionKind, resumptionValue);
-  }
-
-  
-  
-  
-  
-  
-  generator->setAwaitingYieldReturn();
-
-  const PromiseHandler onFulfilled =
-      PromiseHandler::AsyncGeneratorYieldReturnAwaitedFulfilled;
-  const PromiseHandler onRejected =
-      PromiseHandler::AsyncGeneratorYieldReturnAwaitedRejected;
-
-  return InternalAsyncGeneratorAwait(cx, generator, resumptionValue,
-                                     onFulfilled, onRejected);
-}
-
-
-
-
-
-
-
 [[nodiscard]] static bool AsyncGeneratorYield(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
+  
+  generator->setSuspendedYield();
+
   
   
   
@@ -351,36 +323,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
 
   
-  
-  
-  
-  if (generator->isQueueEmpty()) {
-    
-    generator->setSuspendedYield();
-
-    
-
-    
-    return true;
-  }
-
-  
-  
-
-  
-  Rooted<AsyncGeneratorRequest*> toYield(
-      cx, AsyncGeneratorObject::peekRequest(generator));
-  if (!toYield) {
-    return false;
-  }
-
-  
-  CompletionKind completionKind = toYield->completionKind();
-  RootedValue resumptionValue(cx, toYield->completionValue());
-
-  
-  return AsyncGeneratorUnwrapYieldResumptionAndResume(
-      cx, generator, completionKind, resumptionValue);
+  return AsyncGeneratorDrainQueue(cx, generator);
 }
 
 
