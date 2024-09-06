@@ -49,7 +49,7 @@ class DecoderTemplate : public DOMEventTargetHelper {
 
   class ControlMessage {
    public:
-    ControlMessage() = default;
+    ControlMessage(WebCodecsId aConfigId) : mConfigId(aConfigId){};
     virtual ~ControlMessage() = default;
     virtual void Cancel() = 0;
     virtual bool IsProcessing() = 0;
@@ -58,14 +58,18 @@ class DecoderTemplate : public DOMEventTargetHelper {
     virtual ConfigureMessage* AsConfigureMessage() { return nullptr; }
     virtual DecodeMessage* AsDecodeMessage() { return nullptr; }
     virtual FlushMessage* AsFlushMessage() { return nullptr; }
+
+    
+    
+    
+    
+    const WebCodecsId mConfigId;
   };
 
   class ConfigureMessage final
       : public ControlMessage,
         public MessageRequestHolder<DecoderAgent::ConfigurePromise> {
    public:
-    using Id = DecoderAgent::Id;
-    static constexpr Id NoId = 0;
     static ConfigureMessage* Create(UniquePtr<ConfigTypeInternal>&& aConfig);
 
     ~ConfigureMessage() = default;
@@ -76,11 +80,9 @@ class DecoderTemplate : public DOMEventTargetHelper {
     const ConfigTypeInternal& Config() { return *mConfig; }
     UniquePtr<ConfigTypeInternal> TakeConfig() { return std::move(mConfig); }
 
-    
-    const Id mId;
-
    private:
-    ConfigureMessage(Id aId, UniquePtr<ConfigTypeInternal>&& aConfig);
+    ConfigureMessage(WebCodecsId aConfigId,
+                     UniquePtr<ConfigTypeInternal>&& aConfig);
 
     UniquePtr<ConfigTypeInternal> mConfig;
   };
@@ -89,9 +91,7 @@ class DecoderTemplate : public DOMEventTargetHelper {
       : public ControlMessage,
         public MessageRequestHolder<DecoderAgent::DecodePromise> {
    public:
-    using SeqId = size_t;
-    using ConfigId = typename Self::ConfigureMessage::Id;
-    DecodeMessage(SeqId aSeqId, ConfigId aConfigId,
+    DecodeMessage(WebCodecsId aSeqId, WebCodecsId aConfigId,
                   UniquePtr<InputTypeInternal>&& aData);
     ~DecodeMessage() = default;
     virtual void Cancel() override { Disconnect(); }
@@ -100,10 +100,8 @@ class DecoderTemplate : public DOMEventTargetHelper {
     virtual DecodeMessage* AsDecodeMessage() override { return this; }
 
     
-    const ConfigId mConfigId;
     
-    
-    const SeqId mSeqId;
+    const WebCodecsId mSeqId;
     UniquePtr<InputTypeInternal> mData;
   };
 
@@ -111,9 +109,7 @@ class DecoderTemplate : public DOMEventTargetHelper {
       : public ControlMessage,
         public MessageRequestHolder<DecoderAgent::DecodePromise> {
    public:
-    using SeqId = size_t;
-    using ConfigId = typename Self::ConfigureMessage::Id;
-    FlushMessage(SeqId aSeqId, ConfigId aConfigId);
+    FlushMessage(WebCodecsId aSeqId, WebCodecsId aConfigId);
     ~FlushMessage() = default;
     virtual void Cancel() override { Disconnect(); }
     virtual bool IsProcessing() override { return Exists(); };
@@ -121,10 +117,8 @@ class DecoderTemplate : public DOMEventTargetHelper {
     virtual FlushMessage* AsFlushMessage() override { return this; }
 
     
-    const ConfigId mConfigId;
     
-    
-    const SeqId mSeqId;
+    const WebCodecsId mSeqId;
     const int64_t mUniqueId;
   };
 
