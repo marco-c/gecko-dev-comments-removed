@@ -29,6 +29,9 @@ class Text : public CharacterData {
                                             const nsAString& aData,
                                             ErrorResult& aRv);
 
+  nsresult BindToTree(BindContext&, nsINode& aParent) override;
+  void UnbindFromTree(UnbindContext&) override;
+
   
 
 

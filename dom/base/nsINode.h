@@ -2071,16 +2071,15 @@ class nsINode : public mozilla::dom::EventTarget {
   void ClearHasValidDir() { ClearBoolFlag(NodeHasValidDirAttribute); }
   bool HasValidDir() const { return GetBoolFlag(NodeHasValidDirAttribute); }
   void SetMaySetDirAuto() {
-    
-    MOZ_ASSERT(NodeType() == TEXT_NODE);
+    MOZ_ASSERT(IsText());
     SetBoolFlag(NodeMaySetDirAuto);
   }
   bool MaySetDirAuto() const {
-    MOZ_ASSERT(NodeType() == TEXT_NODE);
+    MOZ_ASSERT(IsText());
     return GetBoolFlag(NodeMaySetDirAuto);
   }
   void ClearMaySetDirAuto() {
-    MOZ_ASSERT(NodeType() == TEXT_NODE);
+    MOZ_ASSERT(IsText());
     ClearBoolFlag(NodeMaySetDirAuto);
   }
   void SetAncestorHasDirAuto() { SetBoolFlag(NodeAncestorHasDirAuto); }

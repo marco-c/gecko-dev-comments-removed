@@ -13,11 +13,11 @@
 class nsIContent;
 class nsINode;
 class nsAttrValue;
-class nsTextNode;
 
 namespace mozilla::dom {
 class Element;
 class HTMLSlotElement;
+class Text;
 struct UnbindContext;
 }  
 
@@ -115,27 +115,27 @@ void WalkDescendantsClearAncestorDirAuto(nsIContent* aContent);
 
 
 
-bool TextNodeWillChangeDirection(nsTextNode* aTextNode, Directionality* aOldDir,
+bool TextNodeWillChangeDirection(dom::Text* aTextNode, Directionality* aOldDir,
                                  uint32_t aOffset);
 
 
 
 
 
-void TextNodeChangedDirection(nsTextNode* aTextNode, Directionality aOldDir,
+void TextNodeChangedDirection(dom::Text* aTextNode, Directionality aOldDir,
                               bool aNotify);
 
 
 
 
 
-void SetDirectionFromNewTextNode(nsTextNode* aTextNode);
+void SetDirectionFromNewTextNode(dom::Text* aTextNode);
 
 
 
 
 
-void ResetDirectionSetByTextNode(nsTextNode*, dom::UnbindContext&);
+void ResetDirectionSetByTextNode(dom::Text*, dom::UnbindContext&);
 
 
 
