@@ -3,6 +3,8 @@ use super::utils::{
     test_get_drift_compensations, test_get_master_device, DeviceFilter, Scope,
 };
 use super::*;
+use std::iter::zip;
+use std::panic;
 
 
 
@@ -19,21 +21,27 @@ fn test_aggregate_set_sub_devices_for_an_unknown_aggregate_device() {
     let default_input = default_input.unwrap();
     let default_output = default_output.unwrap();
     assert!(
-        AggregateDevice::set_sub_devices(kAudioObjectUnknown, default_input, default_output)
-            .is_err()
+        run_serially_forward_panics(|| AggregateDevice::set_sub_devices(
+            kAudioObjectUnknown,
+            default_input,
+            default_output
+        ))
+        .is_err()
     );
 }
 
 #[test]
 #[should_panic]
 fn test_aggregate_set_sub_devices_for_unknown_devices() {
-    
-    assert!(AggregateDevice::set_sub_devices(
-        kAudioObjectUnknown,
-        kAudioObjectUnknown,
-        kAudioObjectUnknown
-    )
-    .is_err());
+    run_serially_forward_panics(|| {
+        
+        assert!(AggregateDevice::set_sub_devices(
+            kAudioObjectUnknown,
+            kAudioObjectUnknown,
+            kAudioObjectUnknown
+        )
+        .is_err());
+    });
 }
 
 
@@ -48,7 +56,13 @@ fn test_aggregate_get_sub_devices() {
         
         
         
-        let sub_devices = AggregateDevice::get_sub_devices(device).unwrap();
+        println!(
+            "get_sub_devices({}={})",
+            device,
+            run_serially_forward_panics(|| get_device_uid(device))
+        );
+        let sub_devices =
+            run_serially_forward_panics(|| AggregateDevice::get_sub_devices(device).unwrap());
         
         assert!(!sub_devices.is_empty());
     }
@@ -57,8 +71,10 @@ fn test_aggregate_get_sub_devices() {
 #[test]
 #[should_panic]
 fn test_aggregate_get_sub_devices_for_a_unknown_device() {
-    let devices = AggregateDevice::get_sub_devices(kAudioObjectUnknown).unwrap();
-    assert!(devices.is_empty());
+    run_serially_forward_panics(|| {
+        let devices = AggregateDevice::get_sub_devices(kAudioObjectUnknown).unwrap();
+        assert!(devices.is_empty());
+    });
 }
 
 
@@ -66,7 +82,11 @@ fn test_aggregate_get_sub_devices_for_a_unknown_device() {
 #[test]
 #[should_panic]
 fn test_aggregate_set_master_device_for_an_unknown_aggregate_device() {
-    assert!(AggregateDevice::set_master_device(kAudioObjectUnknown, kAudioObjectUnknown).is_err());
+    run_serially_forward_panics(|| {
+        assert!(
+            AggregateDevice::set_master_device(kAudioObjectUnknown, kAudioObjectUnknown).is_err()
+        );
+    });
 }
 
 
@@ -74,7 +94,9 @@ fn test_aggregate_set_master_device_for_an_unknown_aggregate_device() {
 #[test]
 #[should_panic]
 fn test_aggregate_activate_clock_drift_compensation_for_an_unknown_aggregate_device() {
-    assert!(AggregateDevice::activate_clock_drift_compensation(kAudioObjectUnknown).is_err());
+    run_serially_forward_panics(|| {
+        assert!(AggregateDevice::activate_clock_drift_compensation(kAudioObjectUnknown).is_err());
+    });
 }
 
 
@@ -82,60 +104,55 @@ fn test_aggregate_activate_clock_drift_compensation_for_an_unknown_aggregate_dev
 #[test]
 #[should_panic]
 fn test_aggregate_destroy_device_for_unknown_plugin_and_aggregate_devices() {
-    assert!(AggregateDevice::destroy_device(kAudioObjectUnknown, kAudioObjectUnknown).is_err())
+    run_serially_forward_panics(|| {
+        assert!(AggregateDevice::destroy_device(kAudioObjectUnknown, kAudioObjectUnknown).is_err())
+    });
 }
 
 #[test]
 #[should_panic]
 fn test_aggregate_destroy_aggregate_device_for_a_unknown_aggregate_device() {
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    assert!(AggregateDevice::destroy_device(plugin, kAudioObjectUnknown).is_err());
+    run_serially_forward_panics(|| {
+        let plugin = AggregateDevice::get_system_plugin_id().unwrap();
+        assert!(AggregateDevice::destroy_device(plugin, kAudioObjectUnknown).is_err());
+    });
 }
 
 
 
-
-
-
-
-
-
-
-
 #[test]
-#[ignore]
 fn test_aggregate_create_blank_device() {
     
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
+    let plugin = run_serially(|| AggregateDevice::get_system_plugin_id()).unwrap();
+    let device = run_serially(|| AggregateDevice::create_blank_device_sync(plugin)).unwrap();
     let devices = test_get_all_devices(DeviceFilter::IncludeAll);
     let device = devices.into_iter().find(|dev| dev == &device).unwrap();
-    let uid = get_device_global_uid(device).unwrap().into_string();
+    let uid = run_serially(|| get_device_global_uid(device).unwrap().into_string());
     assert!(uid.contains(PRIVATE_AGGREGATE_DEVICE_NAME));
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    assert!(run_serially(|| AggregateDevice::destroy_device(plugin, device)).is_ok());
 }
 
 
 
 #[test]
-#[ignore]
 #[should_panic]
 fn test_aggregate_get_sub_devices_for_blank_aggregate_devices() {
-    
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
-    
-    
-    
-    let sub_devices = AggregateDevice::get_sub_devices(device).unwrap();
-    assert!(sub_devices.is_empty());
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    run_serially_forward_panics(|| {
+        
+        let plugin = AggregateDevice::get_system_plugin_id().unwrap();
+        let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
+        
+        
+        
+        let sub_devices = AggregateDevice::get_sub_devices(device).unwrap();
+        assert!(sub_devices.is_empty());
+        assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    });
 }
 
 
 
 #[test]
-#[ignore]
 fn test_aggregate_set_sub_devices() {
     let input_device = test_get_default_device(Scope::Input);
     let output_device = test_get_default_device(Scope::Output);
@@ -147,13 +164,20 @@ fn test_aggregate_set_sub_devices() {
     let input_device = input_device.unwrap();
     let output_device = output_device.unwrap();
 
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
-    assert!(AggregateDevice::set_sub_devices_sync(device, input_device, output_device).is_ok());
+    let plugin = run_serially(|| AggregateDevice::get_system_plugin_id()).unwrap();
+    let device = run_serially(|| AggregateDevice::create_blank_device_sync(plugin)).unwrap();
+    assert!(run_serially(|| AggregateDevice::set_sub_devices_sync(
+        device,
+        input_device,
+        output_device
+    ))
+    .is_ok());
 
-    let sub_devices = AggregateDevice::get_sub_devices(device).unwrap();
-    let input_sub_devices = AggregateDevice::get_sub_devices(input_device).unwrap();
-    let output_sub_devices = AggregateDevice::get_sub_devices(output_device).unwrap();
+    let sub_devices = run_serially(|| AggregateDevice::get_sub_devices(device)).unwrap();
+    let input_sub_devices =
+        run_serially(|| AggregateDevice::get_sub_devices(input_device)).unwrap();
+    let output_sub_devices =
+        run_serially(|| AggregateDevice::get_sub_devices(output_device)).unwrap();
 
     
     
@@ -168,10 +192,10 @@ fn test_aggregate_set_sub_devices() {
         assert!(sub_devices.contains(dev));
     }
 
-    let onwed_devices = test_get_all_onwed_devices(device);
-    let onwed_device_uids = get_device_uids(&onwed_devices);
-    let input_sub_device_uids = get_device_uids(&input_sub_devices);
-    let output_sub_device_uids = get_device_uids(&output_sub_devices);
+    let onwed_devices = run_serially(|| test_get_all_onwed_devices(device));
+    let onwed_device_uids = run_serially(|| get_device_uids(&onwed_devices));
+    let input_sub_device_uids = run_serially(|| get_device_uids(&input_sub_devices));
+    let output_sub_device_uids = run_serially(|| get_device_uids(&output_sub_devices));
     for uid in &input_sub_device_uids {
         assert!(onwed_device_uids.contains(uid));
     }
@@ -179,11 +203,10 @@ fn test_aggregate_set_sub_devices() {
         assert!(onwed_device_uids.contains(uid));
     }
 
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    assert!(run_serially(|| AggregateDevice::destroy_device(plugin, device)).is_ok());
 }
 
 #[test]
-#[ignore]
 #[should_panic]
 fn test_aggregate_set_sub_devices_for_unknown_input_devices() {
     let output_device = test_get_default_device(Scope::Output);
@@ -192,16 +215,19 @@ fn test_aggregate_set_sub_devices_for_unknown_input_devices() {
     }
     let output_device = output_device.unwrap();
 
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
+    run_serially_forward_panics(|| {
+        let plugin = AggregateDevice::get_system_plugin_id().unwrap();
+        let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
 
-    assert!(AggregateDevice::set_sub_devices(device, kAudioObjectUnknown, output_device).is_err());
+        assert!(
+            AggregateDevice::set_sub_devices(device, kAudioObjectUnknown, output_device).is_err()
+        );
 
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+        assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    });
 }
 
 #[test]
-#[ignore]
 #[should_panic]
 fn test_aggregate_set_sub_devices_for_unknown_output_devices() {
     let input_device = test_get_default_device(Scope::Input);
@@ -210,12 +236,16 @@ fn test_aggregate_set_sub_devices_for_unknown_output_devices() {
     }
     let input_device = input_device.unwrap();
 
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
+    run_serially_forward_panics(|| {
+        let plugin = AggregateDevice::get_system_plugin_id().unwrap();
+        let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
 
-    assert!(AggregateDevice::set_sub_devices(device, input_device, kAudioObjectUnknown).is_err());
+        assert!(
+            AggregateDevice::set_sub_devices(device, input_device, kAudioObjectUnknown).is_err()
+        );
 
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+        assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    });
 }
 
 fn get_device_uids(devices: &Vec<AudioObjectID>) -> Vec<String> {
@@ -228,7 +258,6 @@ fn get_device_uids(devices: &Vec<AudioObjectID>) -> Vec<String> {
 
 
 #[test]
-#[ignore]
 fn test_aggregate_set_master_device() {
     let input_device = test_get_default_device(Scope::Input);
     let output_device = test_get_default_device(Scope::Output);
@@ -240,22 +269,28 @@ fn test_aggregate_set_master_device() {
     let input_device = input_device.unwrap();
     let output_device = output_device.unwrap();
 
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
-    assert!(AggregateDevice::set_sub_devices_sync(device, input_device, output_device).is_ok());
-    assert!(AggregateDevice::set_master_device(device, output_device).is_ok());
+    let plugin = run_serially(|| AggregateDevice::get_system_plugin_id()).unwrap();
+    let device = run_serially(|| AggregateDevice::create_blank_device_sync(plugin)).unwrap();
+    assert!(run_serially(|| AggregateDevice::set_sub_devices_sync(
+        device,
+        input_device,
+        output_device
+    ))
+    .is_ok());
+    assert!(run_serially(|| AggregateDevice::set_master_device(device, output_device)).is_ok());
+
+    let output_sub_devices =
+        run_serially(|| AggregateDevice::get_sub_devices(output_device)).unwrap();
+    let first_output_sub_device_uid = run_serially(|| get_device_uid(output_sub_devices[0]));
 
     
-    let first_output_sub_device_uid =
-        get_device_uid(AggregateDevice::get_sub_devices(device).unwrap()[0]);
-    let master_device_uid = test_get_master_device(device);
+    let master_device_uid = run_serially(|| test_get_master_device(device));
     assert_eq!(first_output_sub_device_uid, master_device_uid);
 
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    assert!(run_serially(|| AggregateDevice::destroy_device(plugin, device)).is_ok());
 }
 
 #[test]
-#[ignore]
 fn test_aggregate_set_master_device_for_a_blank_aggregate_device() {
     let output_device = test_get_default_device(Scope::Output);
     if output_device.is_none() {
@@ -263,9 +298,11 @@ fn test_aggregate_set_master_device_for_a_blank_aggregate_device() {
         return;
     }
 
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
-    assert!(AggregateDevice::set_master_device(device, output_device.unwrap()).is_ok());
+    let plugin = run_serially(|| AggregateDevice::get_system_plugin_id()).unwrap();
+    let device = run_serially(|| AggregateDevice::create_blank_device_sync(plugin)).unwrap();
+    assert!(
+        run_serially(|| AggregateDevice::set_master_device(device, output_device.unwrap())).is_ok()
+    );
 
     
     
@@ -275,17 +312,16 @@ fn test_aggregate_set_master_device_for_a_blank_aggregate_device() {
     
     
 
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    assert!(run_serially(|| AggregateDevice::destroy_device(plugin, device)).is_ok());
 }
 
 fn get_device_uid(id: AudioObjectID) -> String {
-    get_device_global_uid(id).unwrap().into_string()
+    get_device_global_uid(id).map_or(String::new(), |uid| uid.into_string())
 }
 
 
 
 #[test]
-#[ignore]
 fn test_aggregate_activate_clock_drift_compensation() {
     let input_device = test_get_default_device(Scope::Input);
     let output_device = test_get_default_device(Scope::Output);
@@ -297,27 +333,40 @@ fn test_aggregate_activate_clock_drift_compensation() {
     let input_device = input_device.unwrap();
     let output_device = output_device.unwrap();
 
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
-    assert!(AggregateDevice::set_sub_devices_sync(device, input_device, output_device).is_ok());
-    assert!(AggregateDevice::set_master_device(device, output_device).is_ok());
-    assert!(AggregateDevice::activate_clock_drift_compensation(device).is_ok());
+    let plugin = run_serially(|| AggregateDevice::get_system_plugin_id()).unwrap();
+    let device = run_serially(|| AggregateDevice::create_blank_device_sync(plugin)).unwrap();
+    assert!(run_serially(|| AggregateDevice::set_sub_devices_sync(
+        device,
+        input_device,
+        output_device
+    ))
+    .is_ok());
+    assert!(run_serially(|| AggregateDevice::set_master_device(device, output_device)).is_ok());
+    assert!(run_serially(|| AggregateDevice::activate_clock_drift_compensation(device)).is_ok());
 
     
-    let devices = test_get_all_onwed_devices(device);
-    let compensations = get_drift_compensations(&devices);
+    let devices = run_serially(|| test_get_all_onwed_devices(device));
+    let compensations = run_serially(|| get_drift_compensations(&devices));
+    let master_device_uid = run_serially(|| test_get_master_device(device));
     assert!(!compensations.is_empty());
     assert_eq!(devices.len(), compensations.len());
 
-    for (i, compensation) in compensations.iter().enumerate() {
-        assert_eq!(*compensation, if i == 0 { 0 } else { DRIFT_COMPENSATION });
+    for (device, compensation) in zip(devices, compensations) {
+        let uid = get_device_uid(device);
+        assert_eq!(
+            compensation,
+            if uid == master_device_uid {
+                0
+            } else {
+                DRIFT_COMPENSATION
+            }
+        );
     }
 
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    assert!(run_serially(|| AggregateDevice::destroy_device(plugin, device)).is_ok());
 }
 
 #[test]
-#[ignore]
 fn test_aggregate_activate_clock_drift_compensation_for_an_aggregate_device_without_master_device()
 {
     let input_device = test_get_default_device(Scope::Input);
@@ -330,25 +379,32 @@ fn test_aggregate_activate_clock_drift_compensation_for_an_aggregate_device_with
     let input_device = input_device.unwrap();
     let output_device = output_device.unwrap();
 
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
-    assert!(AggregateDevice::set_sub_devices_sync(device, input_device, output_device).is_ok());
+    let plugin = run_serially(|| AggregateDevice::get_system_plugin_id()).unwrap();
+    let device = run_serially(|| AggregateDevice::create_blank_device_sync(plugin)).unwrap();
+    assert!(run_serially(|| AggregateDevice::set_sub_devices_sync(
+        device,
+        input_device,
+        output_device
+    ))
+    .is_ok());
 
     
     
     
-    
-    let first_output_sub_device_uid =
-        get_device_uid(AggregateDevice::get_sub_devices(output_device).unwrap()[0]);
-    let master_device_uid = test_get_master_device(device);
-    assert_eq!(first_output_sub_device_uid, master_device_uid);
+    let first_input_sub_device_uid =
+        run_serially(|| get_device_uid(AggregateDevice::get_sub_devices(input_device).unwrap()[0]));
+    let first_sub_device_uid =
+        run_serially(|| get_device_uid(AggregateDevice::get_sub_devices(device).unwrap()[0]));
+    assert_eq!(first_input_sub_device_uid, first_sub_device_uid);
+    let master_device_uid = run_serially(|| test_get_master_device(device));
+    assert_eq!(first_sub_device_uid, master_device_uid);
 
     
-    assert!(AggregateDevice::activate_clock_drift_compensation(device).is_ok());
+    assert!(run_serially(|| AggregateDevice::activate_clock_drift_compensation(device)).is_ok());
 
     
-    let devices = test_get_all_onwed_devices(device);
-    let compensations = get_drift_compensations(&devices);
+    let devices = run_serially(|| test_get_all_onwed_devices(device));
+    let compensations = run_serially(|| get_drift_compensations(&devices));
     assert!(!compensations.is_empty());
     assert_eq!(devices.len(), compensations.len());
 
@@ -356,25 +412,26 @@ fn test_aggregate_activate_clock_drift_compensation_for_an_aggregate_device_with
         assert_eq!(*compensation, if i == 0 { 0 } else { DRIFT_COMPENSATION });
     }
 
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    assert!(run_serially(|| AggregateDevice::destroy_device(plugin, device)).is_ok());
 }
 
 #[test]
 #[should_panic]
-#[ignore]
 fn test_aggregate_activate_clock_drift_compensation_for_a_blank_aggregate_device() {
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
+    run_serially_forward_panics(|| {
+        let plugin = AggregateDevice::get_system_plugin_id().unwrap();
+        let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
 
-    let sub_devices = AggregateDevice::get_sub_devices(device).unwrap();
-    assert!(sub_devices.is_empty());
-    let onwed_devices = test_get_all_onwed_devices(device);
-    assert!(onwed_devices.is_empty());
+        let sub_devices = AggregateDevice::get_sub_devices(device).unwrap();
+        assert!(sub_devices.is_empty());
+        let onwed_devices = test_get_all_onwed_devices(device);
+        assert!(onwed_devices.is_empty());
 
-    
-    assert!(AggregateDevice::activate_clock_drift_compensation(device).is_err());
+        
+        assert!(AggregateDevice::activate_clock_drift_compensation(device).is_err());
 
-    assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+        assert!(AggregateDevice::destroy_device(plugin, device).is_ok());
+    });
 }
 
 fn get_drift_compensations(devices: &Vec<AudioObjectID>) -> Vec<u32> {
@@ -391,10 +448,56 @@ fn get_drift_compensations(devices: &Vec<AudioObjectID>) -> Vec<u32> {
 
 
 #[test]
-#[ignore]
 #[should_panic]
 fn test_aggregate_destroy_aggregate_device_for_a_unknown_plugin_device() {
-    let plugin = AggregateDevice::get_system_plugin_id().unwrap();
-    let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
-    assert!(AggregateDevice::destroy_device(kAudioObjectUnknown, device).is_err());
+    run_serially_forward_panics(|| {
+        let plugin = AggregateDevice::get_system_plugin_id().unwrap();
+        let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
+        assert!(AggregateDevice::destroy_device(kAudioObjectUnknown, device).is_err());
+    });
+}
+
+
+
+#[test]
+fn test_aggregate_new() {
+    let input_device = test_get_default_device(Scope::Input);
+    let output_device = test_get_default_device(Scope::Output);
+    if input_device.is_none() || output_device.is_none() || input_device == output_device {
+        println!("No input or output device to create an aggregate device.");
+        return;
+    }
+
+    run_serially_forward_panics(|| {
+        let input_device = input_device.unwrap();
+        let output_device = output_device.unwrap();
+
+        let aggr = AggregateDevice::new(input_device, output_device).unwrap();
+
+        
+        let output_sub_devices = AggregateDevice::get_sub_devices(output_device).unwrap();
+        let first_output_sub_device_uid = get_device_uid(output_sub_devices[0]);
+        let master_device_uid = test_get_master_device(aggr.get_device_id());
+        assert_eq!(first_output_sub_device_uid, master_device_uid);
+
+        
+        let devices = test_get_all_onwed_devices(aggr.get_device_id());
+        let compensations = get_drift_compensations(&devices);
+        assert!(!compensations.is_empty());
+        assert_eq!(devices.len(), compensations.len());
+
+        let device_uids = devices.iter().map(|&id| get_device_uid(id));
+        for (uid, compensation) in zip(device_uids, compensations) {
+            assert_eq!(
+                compensation,
+                if uid == master_device_uid {
+                    0
+                } else {
+                    DRIFT_COMPENSATION
+                },
+                "Unexpected drift value for device with uid {}",
+                uid
+            );
+        }
+    });
 }
