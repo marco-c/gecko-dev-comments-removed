@@ -20,7 +20,6 @@
 #include "aom/aom_image.h"
 #include "aom/aom_integer.h"
 #include "aom_ports/mem.h"
-#include "aom_ports/msvc.h"
 
 #if CONFIG_AV1_ENCODER
 #include "common/y4minput.h"
@@ -37,7 +36,12 @@ typedef int64_t FileOffset;
 #define fseeko fseeko64
 #define ftello ftello64
 typedef off64_t FileOffset;
-#elif CONFIG_OS_SUPPORT
+#elif CONFIG_OS_SUPPORT &&                                                  \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 24 && !defined(__LP64__) && \
+      defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS == 64)
+
+
+
 #include <sys/types.h> 
 typedef off_t FileOffset;
 

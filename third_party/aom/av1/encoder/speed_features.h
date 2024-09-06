@@ -1630,6 +1630,15 @@ typedef struct REAL_TIME_SPEED_FEATURES {
   int hybrid_intra_pickmode;
 
   
+  
+  
+  
+  
+  
+  
+  int prune_palette_search_nonrd;
+
+  
   int source_metrics_sb_nonrd;
 
   
@@ -1755,13 +1764,12 @@ typedef struct REAL_TIME_SPEED_FEATURES {
   int use_rtc_tf;
 
   
+  int use_idtx_nonrd;
+
   
   
   
   int prune_idtx_nonrd;
-
-  
-  int prune_palette_nonrd;
 
   
   int dct_only_palette_nonrd;
@@ -1902,6 +1910,15 @@ typedef struct REAL_TIME_SPEED_FEATURES {
   
   
   bool increase_color_thresh_palette;
+
+  
+  int higher_thresh_scene_detection;
+
+  
+  int skip_newmv_flat_blocks_screen;
+
+  
+  int skip_encoding_non_reference_slide_change;
 } REAL_TIME_SPEED_FEATURES;
 
 

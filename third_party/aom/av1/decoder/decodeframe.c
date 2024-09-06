@@ -2241,6 +2241,12 @@ static AOM_INLINE void get_ls_tile_buffer(
   if (tile_copy_mode && (size >> (tile_size_bytes * 8 - 1)) == 1) {
     
     int offset = (size >> (tile_size_bytes - 1) * 8) & 0x7f;
+    if (offset > row) {
+      aom_internal_error(
+          error_info, AOM_CODEC_CORRUPT_FRAME,
+          "Invalid row offset in tile copy mode: row=%d offset=%d", row,
+          offset);
+    }
 
     
     copy_data = tile_buffers[row - offset][col].data;

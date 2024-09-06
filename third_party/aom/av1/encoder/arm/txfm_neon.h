@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_AV1_ENCODER_ARM_NEON_TXFM_NEON_H_
-#define AOM_AV1_ENCODER_ARM_NEON_TXFM_NEON_H_
+#ifndef AOM_AV1_ENCODER_ARM_TXFM_NEON_H_
+#define AOM_AV1_ENCODER_ARM_TXFM_NEON_H_
 
 #include "aom/aom_integer.h"  
 

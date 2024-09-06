@@ -638,6 +638,7 @@ typedef struct aom_codec_enc_cfg {
 
 
 
+
   unsigned int rc_target_bitrate;
 
   

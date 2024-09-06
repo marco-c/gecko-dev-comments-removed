@@ -1124,7 +1124,8 @@ void av1_terminate_workers(AV1_PRIMARY *ppi) {
 
 
 
-static AOM_INLINE int is_fpmt_config(AV1_PRIMARY *ppi, AV1EncoderConfig *oxcf) {
+static AOM_INLINE int is_fpmt_config(const AV1_PRIMARY *ppi,
+                                     const AV1EncoderConfig *oxcf) {
   
   
   if (oxcf->rc_cfg.mode == AOM_CBR || oxcf->rc_cfg.mode == AOM_CQ) {
@@ -1162,7 +1163,7 @@ static AOM_INLINE int is_fpmt_config(AV1_PRIMARY *ppi, AV1EncoderConfig *oxcf) {
 }
 
 int av1_check_fpmt_config(AV1_PRIMARY *const ppi,
-                          AV1EncoderConfig *const oxcf) {
+                          const AV1EncoderConfig *const oxcf) {
   if (is_fpmt_config(ppi, oxcf)) return 1;
   
   if (ppi->num_fp_contexts > 1) {

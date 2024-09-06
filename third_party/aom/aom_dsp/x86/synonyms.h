@@ -12,7 +12,7 @@
 #ifndef AOM_AOM_DSP_X86_SYNONYMS_H_
 #define AOM_AOM_DSP_X86_SYNONYMS_H_
 
-#include <immintrin.h>
+#include <emmintrin.h>
 #include <string.h>
 
 #include "config/aom_config.h"
@@ -48,21 +48,11 @@ static INLINE __m128i xx_loadu_128(const void *a) {
 
 
 
-#if !defined(__clang__) && __GNUC_MAJOR__ < 9
-static INLINE __m128i xx_loadu_2x64(const void *hi, const void *lo) {
-  __m64 hi_, lo_;
-  memcpy(&hi_, hi, sizeof(hi_));
-  memcpy(&lo_, lo, sizeof(lo_));
-  return _mm_set_epi64(hi_, lo_);
-}
-#else
-
-
 
 static INLINE __m128i xx_loadu_2x64(const void *hi, const void *lo) {
-  return _mm_unpacklo_epi64(_mm_loadu_si64(lo), _mm_loadu_si64(hi));
+  return _mm_unpacklo_epi64(_mm_loadl_epi64((const __m128i *)lo),
+                            _mm_loadl_epi64((const __m128i *)hi));
 }
-#endif
 
 static INLINE void xx_storel_32(void *const a, const __m128i v) {
   const int val = _mm_cvtsi128_si32(v);
@@ -79,28 +69,6 @@ static INLINE void xx_store_128(void *const a, const __m128i v) {
 
 static INLINE void xx_storeu_128(void *const a, const __m128i v) {
   _mm_storeu_si128((__m128i *)a, v);
-}
-
-
-
-
-static INLINE __m128i xx_set_64_from_32i(int32_t e1, int32_t e0) {
-#if defined(_MSC_VER) && _MSC_VER < 1900
-  return _mm_set_epi32(0, e1, 0, e0);
-#else
-  return _mm_set_epi64x((uint32_t)e1, (uint32_t)e0);
-#endif
-}
-
-
-
-
-static INLINE __m128i xx_set1_64_from_32i(int32_t a) {
-#if defined(_MSC_VER) && _MSC_VER < 1900
-  return _mm_set_epi32(0, a, 0, a);
-#else
-  return _mm_set1_epi64x((uint32_t)a);
-#endif
 }
 
 

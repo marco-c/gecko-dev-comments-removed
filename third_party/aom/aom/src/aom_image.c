@@ -182,7 +182,9 @@ static aom_image_t *img_alloc_helper(
 
   
 
-  aom_img_set_rect(img, 0, 0, d_w, d_h, border);
+  int ret = aom_img_set_rect(img, 0, 0, d_w, d_h, border);
+  assert(ret == 0);
+  (void)ret;
   return img;
 
 fail:
