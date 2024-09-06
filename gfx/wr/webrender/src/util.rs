@@ -67,9 +67,6 @@ pub trait VecHelper<T> {
     fn take(&mut self) -> Self;
 
     
-    fn cleared(self) -> Self;
-
-    
     
     
     fn take_and_preallocate(&mut self) -> Self;
@@ -100,12 +97,6 @@ impl<T> VecHelper<T> for Vec<T> {
 
     fn take(&mut self) -> Self {
         replace(self, Vec::new())
-    }
-
-    fn cleared(mut self) -> Self {
-        self.clear();
-
-        self
     }
 
     fn take_and_preallocate(&mut self) -> Self {
@@ -401,10 +392,6 @@ pub trait MatrixHelpers<Src, Dst> {
     fn determinant_2d(&self) -> f32;
     
     
-    
-    fn inverse_project_2d_origin(&self) -> Option<Point2D<f32, Src>>;
-    
-    
     fn flatten_z_output(&mut self);
 
     fn cast_unit<NewSrc, NewDst>(&self) -> Transform3D<f32, NewSrc, NewDst>;
@@ -534,17 +521,6 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for Transform3D<f32, Src, Dst> {
         self.m11 * self.m22 - self.m12 * self.m21
     }
 
-    fn inverse_project_2d_origin(&self) -> Option<Point2D<f32, Src>> {
-        let det = self.determinant_2d();
-        if det != 0.0 {
-            let x = (self.m21 * self.m42 - self.m41 * self.m22) / det;
-            let y = (self.m12 * self.m41 - self.m11 * self.m42) / det;
-            Some(Point2D::new(x, y))
-        } else {
-            None
-        }
-    }
-
     fn flatten_z_output(&mut self) {
         self.m13 = 0.0;
         self.m23 = 0.0;
@@ -620,22 +596,6 @@ impl<U> RectHelpers<U> for Box2D<f32, U> {
 
     fn snap(&self) -> Self {
         self.round()
-    }
-}
-
-pub trait VectorHelpers<U>
-where
-    Self: Sized,
-{
-    fn snap(&self) -> Self;
-}
-
-impl<U> VectorHelpers<U> for Vector2D<f32, U> {
-    fn snap(&self) -> Self {
-        Vector2D::new(
-            (self.x + 0.5).floor(),
-            (self.y + 0.5).floor(),
-        )
     }
 }
 
