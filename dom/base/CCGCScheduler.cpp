@@ -10,7 +10,10 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/PerfStats.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsRefreshDriver.h"
+
+using mozilla::CCReason;
 
 
 
@@ -819,12 +822,19 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
       std::max({delaySliceBudget, laterSliceBudget, baseBudget})));
 }
 
+
+
+
+
+
+
 js::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
                                                          TimeStamp aNow) {
   TimeDuration budget =
       aDeadline.IsNull() ? mActiveIntersliceGCBudget : aDeadline - aNow;
-  if (!mCCBlockStart) {
-    return CreateGCSliceBudget(budget, !aDeadline.IsNull(), false);
+  if (!mCCBlockStart) {  
+    return CreateGCSliceBudget(budget, aDeadline.IsNull() ? eNotIdle : eIdle,
+                               eNormalBudget, eInterruptible);
   }
 
   
@@ -833,19 +843,24 @@ js::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
 
   TimeDuration blockedTime = aNow - mCCBlockStart;
   TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 5;
+  
+  
+  
+  
+  
   double percentOfBlockedTime =
       std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
   TimeDuration extendedBudget =
       maxSliceGCBudget.MultDouble(percentOfBlockedTime);
   if (budget >= extendedBudget) {
-    return CreateGCSliceBudget(budget, !aDeadline.IsNull(), false);
+    return CreateGCSliceBudget(budget, aDeadline.IsNull() ? eNotIdle : eIdle,
+                               eNormalBudget, eInterruptible);
   }
 
   
-  auto result = js::SliceBudget(js::TimeBudget(extendedBudget), nullptr);
-  result.idle = !aDeadline.IsNull();
-  result.extended = true;
-  return result;
+  return CreateGCSliceBudget(extendedBudget,
+                             aDeadline.IsNull() ? eNotIdle : eIdle,
+                             eExtendedBudget, eNonInterruptible);
 }
 
 CCReason CCGCScheduler::ShouldScheduleCC(TimeStamp aNow,
