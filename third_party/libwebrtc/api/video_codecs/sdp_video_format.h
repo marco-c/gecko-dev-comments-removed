@@ -26,7 +26,7 @@ namespace webrtc {
 
 
 struct RTC_EXPORT SdpVideoFormat {
-  using Parameters [[deprecated(("Use webrtc::CodecParameterMap"))]] =
+  using Parameters [[deprecated("Use webrtc::CodecParameterMap")]] =
       std::map<std::string, std::string>;
 
   explicit SdpVideoFormat(const std::string& name);
