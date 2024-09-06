@@ -311,8 +311,6 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
   }
 
   
-
-  
   Rooted<CalendarRecord> calendar(cx);
   if (!CreateCalendarMethodsRecord(cx, calendarValue,
                                    {

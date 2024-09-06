@@ -1043,7 +1043,6 @@ mozilla::Result<PlainTime, ParserError> TemporalParser<CharT>::timeSpec() {
   
   
   
-  
   if (auto hour = digits(2)) {
     result.hour = hour.value();
     if (!inBounds(result.hour, 0, 23)) {
@@ -1149,7 +1148,6 @@ TemporalParser<CharT>::timeZoneUTCOffsetName() {
   
   
   
-  
   if (auto hour = digits(2)) {
     result.hour = hour.value();
     if (!inBounds(result.hour, 0, 23)) {
@@ -1214,7 +1212,6 @@ TemporalParser<CharT>::utcOffsetSubMinutePrecision() {
   }
   result.sign = sign();
 
-  
   
   
   
@@ -3268,7 +3265,7 @@ static auto ParseTemporalZonedDateTimeString(Handle<JSLinearString*> str) {
 bool js::temporal::ParseTemporalZonedDateTimeString(
     JSContext* cx, Handle<JSString*> str, PlainDateTime* dateTime, bool* isUTC,
     bool* hasOffset, int64_t* timeZoneOffset,
-    MutableHandle<ParsedTimeZone> timeZoneName,
+    MutableHandle<ParsedTimeZone> timeZoneAnnotation,
     MutableHandle<JSString*> calendar) {
   Rooted<JSLinearString*> linear(cx, str->ensureLinear(cx));
   if (!linear) {
@@ -3312,7 +3309,7 @@ bool js::temporal::ParseTemporalZonedDateTimeString(
     
 
     const auto& annotation = parsed.timeZone.annotation;
-    if (!ParseTimeZoneAnnotation(cx, annotation, linear, timeZoneName)) {
+    if (!ParseTimeZoneAnnotation(cx, annotation, linear, timeZoneAnnotation)) {
       return false;
     }
 
@@ -3369,7 +3366,7 @@ static auto ParseTemporalRelativeToString(Handle<JSLinearString*> str) {
 bool js::temporal::ParseTemporalRelativeToString(
     JSContext* cx, Handle<JSString*> str, PlainDateTime* dateTime, bool* isUTC,
     bool* hasOffset, int64_t* timeZoneOffset,
-    MutableHandle<ParsedTimeZone> timeZoneName,
+    MutableHandle<ParsedTimeZone> timeZoneAnnotation,
     MutableHandle<JSString*> calendar) {
   Rooted<JSLinearString*> linear(cx, str->ensureLinear(cx));
   if (!linear) {
@@ -3419,7 +3416,7 @@ bool js::temporal::ParseTemporalRelativeToString(
     
 
     const auto& annotation = parsed.timeZone.annotation;
-    if (!ParseTimeZoneAnnotation(cx, annotation, linear, timeZoneName)) {
+    if (!ParseTimeZoneAnnotation(cx, annotation, linear, timeZoneAnnotation)) {
       return false;
     }
 
@@ -3443,7 +3440,7 @@ bool js::temporal::ParseTemporalRelativeToString(
     *isUTC = false;
     *hasOffset = false;
     *timeZoneOffset = 0;
-    timeZoneName.set(ParsedTimeZone{});
+    timeZoneAnnotation.set(ParsedTimeZone{});
   }
 
   

@@ -1703,22 +1703,21 @@ static bool UnbalanceDateDurationRelative(
 
   
   if (!UnbalanceDateDurationRelativeHasEffect(duration, largestUnit)) {
-    
     *result = duration;
     return true;
   }
 
   
+  MOZ_ASSERT(largestUnit != TemporalUnit::Year);
+
+  
+
+  
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
+  
   if (largestUnit == TemporalUnit::Month) {
-    
-    MOZ_ASSERT(years != 0);
-
-    
-
-    
-    MOZ_ASSERT(
-        CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
     
     MOZ_ASSERT(
         CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
@@ -1751,15 +1750,6 @@ static bool UnbalanceDateDurationRelative(
   
   if (largestUnit == TemporalUnit::Week) {
     
-    MOZ_ASSERT(years != 0 || months != 0);
-
-    
-
-    
-    MOZ_ASSERT(
-        CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-    
     auto yearsMonthsDuration = DateDuration{years, months};
 
     
@@ -1785,17 +1775,6 @@ static bool UnbalanceDateDurationRelative(
   }
 
   
-
-  
-  MOZ_ASSERT(years != 0 || months != 0 || weeks != 0);
-
-  
-
-  
-
-  
-  MOZ_ASSERT(
-      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
   
   auto yearsMonthsWeeksDuration = DateDuration{years, months, weeks};
@@ -1836,12 +1815,12 @@ static bool UnbalanceDateDurationRelative(JSContext* cx,
 
   
   if (!UnbalanceDateDurationRelativeHasEffect(duration, largestUnit)) {
-    
     *result = duration;
     return true;
   }
 
   
+  MOZ_ASSERT(largestUnit != TemporalUnit::Year);
 
   
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -1943,9 +1922,6 @@ static bool BalanceDateDurationRelative(
     }
 
     
-    
-
-    
     *result = CreateDateDurationRecord(
         int64_t(untilResult.years), int64_t(untilResult.months),
         int64_t(untilResult.weeks), int64_t(untilResult.days));
@@ -1977,9 +1953,6 @@ static bool BalanceDateDurationRelative(
     }
 
     
-    
-
-    
     *result = CreateDateDurationRecord(0, int64_t(untilResult.months),
                                        int64_t(untilResult.weeks),
                                        int64_t(untilResult.days));
@@ -2003,9 +1976,6 @@ static bool BalanceDateDurationRelative(
   if (!untilAddedDate(weeksDaysDuration, &untilResult)) {
     return false;
   }
-
-  
-  
 
   
   *result = CreateDateDurationRecord(0, 0, int64_t(untilResult.weeks),
@@ -2103,9 +2073,6 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   
 
   
-  
-
-  
   auto largestUnit1 = DefaultTemporalLargestUnit(one);
 
   
@@ -2123,18 +2090,6 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
 
   
   auto dateDuration2 = two.toDateDuration();
-
-  
-
-  
-  [[maybe_unused]] bool calendarUnitsPresent = true;
-
-  
-  if (dateDuration1.years == 0 && dateDuration1.months == 0 &&
-      dateDuration1.weeks == 0 && dateDuration2.years == 0 &&
-      dateDuration2.months == 0 && dateDuration2.weeks == 0) {
-    calendarUnitsPresent = false;
-  }
 
   
   Rooted<Wrapped<PlainDateObject*>> intermediate(
@@ -2705,9 +2660,6 @@ static bool ToRelativeTemporalObject(
 
   
   if (value.isUndefined()) {
-    
-    
-
     plainRelativeTo.set(nullptr);
     zonedRelativeTo.set(ZonedDateTime{});
     timeZoneRecord.set(TimeZoneRecord{});
@@ -2913,20 +2865,20 @@ static bool ToRelativeTemporalObject(
     bool isUTC;
     bool hasOffset;
     int64_t timeZoneOffset;
-    Rooted<ParsedTimeZone> timeZoneName(cx);
+    Rooted<ParsedTimeZone> timeZoneAnnotation(cx);
     Rooted<JSString*> calendarString(cx);
     if (!ParseTemporalRelativeToString(cx, string, &dateTime, &isUTC,
                                        &hasOffset, &timeZoneOffset,
-                                       &timeZoneName, &calendarString)) {
+                                       &timeZoneAnnotation, &calendarString)) {
       return false;
     }
 
     
 
     
-    if (timeZoneName) {
+    if (timeZoneAnnotation) {
       
-      if (!ToTemporalTimeZone(cx, timeZoneName, &timeZone)) {
+      if (!ToTemporalTimeZone(cx, timeZoneAnnotation, &timeZone)) {
         return false;
       }
 

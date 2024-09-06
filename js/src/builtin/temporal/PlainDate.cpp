@@ -678,7 +678,6 @@ PlainDate js::temporal::BalanceISODateNew(int32_t year, int32_t month,
   double ms = double(MakeDate(year, month, day));
 
   
-  
 
   
   
@@ -716,7 +715,6 @@ PlainDate js::temporal::BalanceISODate(int32_t year, int32_t month,
   MOZ_ASSERT(1 <= month && month <= 12);
   MOZ_ASSERT(CanBalanceISODay(day));
 
-  
   
   
 

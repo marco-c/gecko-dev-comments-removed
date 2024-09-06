@@ -573,6 +573,20 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   }
 
   
+  Rooted<JSObject*> options(cx);
+  if (args.hasDefined(1)) {
+    const char* name =
+        operation == PlainYearMonthDuration::Add ? "add" : "subtract";
+    options = RequireObjectArg(cx, "options", name, args[1]);
+  } else {
+    
+    options = NewPlainObjectWithProto(cx, nullptr);
+  }
+  if (!options) {
+    return false;
+  }
+
+  
   auto timeDuration = NormalizeTimeDuration(duration);
 
   
@@ -708,25 +722,6 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   }
 
   
-
-  
-  
-  
-  
-
-  
-  Rooted<JSObject*> options(cx);
-  if (args.hasDefined(1)) {
-    const char* name =
-        operation == PlainYearMonthDuration::Add ? "add" : "subtract";
-    options = RequireObjectArg(cx, "options", name, args[1]);
-  } else {
-    
-    options = NewPlainObjectWithProto(cx, nullptr);
-  }
-  if (!options) {
-    return false;
-  }
 
   
   Rooted<PlainObject*> optionsCopy(cx, SnapshotOwnProperties(cx, options));

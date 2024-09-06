@@ -179,11 +179,6 @@ static bool ISODateTimeWithinLimits(T year, T month, T day) {
   
 
   
-  
-  
-  
-
-  
   if (minYear < year && year < maxYear) {
     return true;
   }

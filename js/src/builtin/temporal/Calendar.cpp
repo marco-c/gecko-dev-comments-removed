@@ -141,14 +141,18 @@ static bool IterableToListOfStrings(JSContext* cx, Handle<Value> items,
   Rooted<Value> nextValue(cx);
   Rooted<PropertyKey> value(cx);
   while (true) {
+    
     bool done;
     if (!iterator.next(&nextValue, &done)) {
       return false;
     }
+
+    
     if (done) {
-      break;
+      return true;
     }
 
+    
     if (nextValue.isString()) {
       if (!PrimitiveValueToId<CanGC>(cx, nextValue, &value)) {
         return false;
@@ -159,15 +163,14 @@ static bool IterableToListOfStrings(JSContext* cx, Handle<Value> items,
       continue;
     }
 
+    
     ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, nextValue,
                      nullptr, "not a string");
 
+    
     iterator.closeThrow();
     return false;
   }
-
-  
-  return true;
 }
 
 
@@ -4458,14 +4461,26 @@ static bool Calendar_fields(JSContext* cx, const CallArgs& args) {
     if (!iterator.next(&nextValue, &done)) {
       return false;
     }
+
+    
     if (done) {
-      break;
+      auto* array =
+          NewDenseCopiedArray(cx, fieldNames.length(), fieldNames.begin());
+      if (!array) {
+        return false;
+      }
+
+      args.rval().setObject(*array);
+      return true;
     }
 
     
     if (!nextValue.isString()) {
+      
       ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, nextValue,
                        nullptr, "not a string");
+
+      
       iterator.closeThrow();
       return false;
     }
@@ -4484,11 +4499,14 @@ static bool Calendar_fields(JSContext* cx, const CallArgs& args) {
 
     
     if (seen.contains(field)) {
+      
       if (auto chars = QuoteString(cx, linear, '"')) {
         JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                  JSMSG_TEMPORAL_CALENDAR_DUPLICATE_FIELD,
                                  chars.get());
       }
+
+      
       iterator.closeThrow();
       return false;
     }
@@ -4499,16 +4517,6 @@ static bool Calendar_fields(JSContext* cx, const CallArgs& args) {
     }
     seen += field;
   }
-
-  
-  auto* array =
-      NewDenseCopiedArray(cx, fieldNames.length(), fieldNames.begin());
-  if (!array) {
-    return false;
-  }
-
-  args.rval().setObject(*array);
-  return true;
 }
 
 

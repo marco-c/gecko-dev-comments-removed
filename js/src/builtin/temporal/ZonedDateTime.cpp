@@ -120,7 +120,8 @@ bool js::temporal::InterpretISODateTimeOffset(
 
   
   if (offsetBehaviour == OffsetBehaviour::Wall ||
-      offsetOption == TemporalOffset::Ignore) {
+      (offsetBehaviour == OffsetBehaviour::Option &&
+       offsetOption == TemporalOffset::Ignore)) {
     
     return GetInstantFor(cx, timeZone, temporalDateTime, disambiguation,
                          result);
@@ -128,7 +129,8 @@ bool js::temporal::InterpretISODateTimeOffset(
 
   
   if (offsetBehaviour == OffsetBehaviour::Exact ||
-      offsetOption == TemporalOffset::Use) {
+      (offsetBehaviour == OffsetBehaviour::Option &&
+       offsetOption == TemporalOffset::Use)) {
     
     auto epochNanoseconds = GetUTCEpochNanoseconds(
         dateTime, InstantSpan::fromNanoseconds(offsetNanoseconds));
@@ -151,12 +153,6 @@ bool js::temporal::InterpretISODateTimeOffset(
   
   MOZ_ASSERT(offsetOption == TemporalOffset::Prefer ||
              offsetOption == TemporalOffset::Reject);
-
-  
-
-  
-  MOZ_ASSERT(TimeZoneMethodsRecordHasLookedUp(
-      timeZone, TimeZoneMethod::GetPossibleInstantsFor));
 
   
   Rooted<InstantVector> possibleInstants(cx, InstantVector(cx));
@@ -431,19 +427,19 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
     bool isUTC;
     bool hasOffset;
     int64_t timeZoneOffset;
-    Rooted<ParsedTimeZone> timeZoneString(cx);
+    Rooted<ParsedTimeZone> timeZoneAnnotation(cx);
     Rooted<JSString*> calendarString(cx);
-    if (!ParseTemporalZonedDateTimeString(cx, string, &dateTime, &isUTC,
-                                          &hasOffset, &timeZoneOffset,
-                                          &timeZoneString, &calendarString)) {
+    if (!ParseTemporalZonedDateTimeString(
+            cx, string, &dateTime, &isUTC, &hasOffset, &timeZoneOffset,
+            &timeZoneAnnotation, &calendarString)) {
       return false;
     }
 
     
-    MOZ_ASSERT(timeZoneString);
+    MOZ_ASSERT(timeZoneAnnotation);
 
     
-    if (!ToTemporalTimeZone(cx, timeZoneString, &timeZone)) {
+    if (!ToTemporalTimeZone(cx, timeZoneAnnotation, &timeZone)) {
       return false;
     }
 

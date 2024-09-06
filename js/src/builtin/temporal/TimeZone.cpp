@@ -1655,15 +1655,16 @@ static bool GetPossibleInstantsForSlow(
     if (!iterator.next(&nextValue, &done)) {
       return false;
     }
+
+    
     if (done) {
-      break;
+      return true;
     }
 
     
     if (nextValue.isObject()) {
       JSObject* obj = &nextValue.toObject();
       if (obj->canUnwrapAs<InstantObject>()) {
-        
         if (!list.append(obj)) {
           return false;
         }
@@ -1679,9 +1680,6 @@ static bool GetPossibleInstantsForSlow(
     iterator.closeThrow();
     return false;
   }
-
-  
-  return true;
 }
 
 
