@@ -84,6 +84,10 @@ var gExceptionPaths = [
 
   
   "chrome://global/content/antitracking/",
+
+  
+  
+  "resource:///modules/UrlbarSearchTermsPersistence.sys.mjs",
 ];
 
 
