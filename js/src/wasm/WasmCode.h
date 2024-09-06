@@ -768,7 +768,7 @@ class Code : public ShareableBase<Code> {
   SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   const CodeBlock* sharedStubs_;
-  const CodeBlock* tier1_;
+  const CodeBlock* completeTier1_;
   
   
   
@@ -786,8 +786,10 @@ class Code : public ShareableBase<Code> {
   
   
   
-  mutable const CodeBlock* tier2_;
-  mutable Atomic<bool> hasTier2_;
+  
+  
+  mutable const CodeBlock* completeTier2_;
+  mutable Atomic<bool> hasCompleteTier2_;
 
   FuncImportVector funcImports_;
   ExclusiveData<CacheableCharsVector> profilingLabels_;
@@ -802,10 +804,7 @@ class Code : public ShareableBase<Code> {
 
   
   
-  bool hasTier2() const { return hasTier2_; }
-  Tiers tiers() const;
-  bool hasTier(Tier t) const;
-  const CodeBlock& codeBlock(Tier tier) const;
+  Tiers completeTiers() const;
 
   
   
@@ -834,7 +833,9 @@ class Code : public ShareableBase<Code> {
   Code(CompileMode mode, const CodeMetadata& codeMeta,
        const CodeMetadataForAsmJS* codeMetaForAsmJS,
        const ShareableBytes* maybeBytecode);
-  bool initialized() const { return !!tier1_ && tier1_->initialized(); }
+  bool initialized() const {
+    return !!completeTier1_ && completeTier1_->initialized();
+  }
 
   [[nodiscard]] bool initialize(FuncImportVector&& funcImports,
                                 UniqueCodeBlock sharedStubs,
@@ -869,10 +870,13 @@ class Code : public ShareableBase<Code> {
   }
   const FuncImportVector& funcImports() const { return funcImports_; }
 
-  bool hasSerializableCode() const { return hasTier(Tier::Serialized); }
-  Tier stableTier() const;  
-  Tier bestTier()
-      const;  
+  bool hasCompleteTier(Tier tier) const;
+  
+  Tier stableCompleteTier() const;
+  
+  
+  Tier bestCompleteTier() const;
+  bool hasSerializableCode() const { return hasCompleteTier(Tier::Serialized); }
 
   const CodeMetadata& codeMeta() const { return *codeMeta_; }
   const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
@@ -882,18 +886,15 @@ class Code : public ShareableBase<Code> {
   const CodeBlock& sharedStubs() const { return *sharedStubs_; }
   const CodeBlock& debugCodeBlock() const {
     MOZ_ASSERT(codeMeta_->debugEnabled);
-    MOZ_ASSERT(tier1_->tier() == Tier::Debug);
-    return *tier1_;
+    MOZ_ASSERT(completeTier1_->tier() == Tier::Debug);
+    return *completeTier1_;
   }
-  const CodeBlock& completeTierCodeBlock(Tier tier) const {
-    return codeBlock(tier);
-  }
-  bool hasCompleteTier(Tier tier) const { return hasTier(tier); }
+  const CodeBlock& completeTierCodeBlock(Tier tier) const;
   const CodeBlock& funcCodeBlock(uint32_t funcIndex) const {
     if (funcIndex < funcImports_.length()) {
       return *sharedStubs_;
     }
-    return codeBlock(bestTier());
+    return completeTierCodeBlock(bestCompleteTier());
   }
   bool funcHasTier(uint32_t funcIndex, Tier tier) const {
     return funcCodeBlock(funcIndex).tier() == tier;
@@ -989,7 +990,7 @@ class Code : public ShareableBase<Code> {
       Code::SeenSet* seenCode, size_t* code, size_t* data) const;
 
   size_t tier1CodeMemoryUsed() const {
-    return tier1_->segment->capacityBytes();
+    return completeTier1_->segment->capacityBytes();
   }
 
   WASM_DECLARE_FRIEND_SERIALIZE_ARGS(SharedCode,
