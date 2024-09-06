@@ -57,10 +57,11 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   bool Launch(StringVector aExtraOpts);
 
+  using LaunchPromiseType = MozPromise<Ok, LaunchError, false>;
   
   
   
-  RefPtr<GenericNonExclusivePromise> LaunchPromise();
+  RefPtr<LaunchPromiseType> LaunchPromise();
 
   
   
@@ -130,8 +131,8 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   bool mShutdownRequested = false;
 
-  void RejectPromise();
   void ResolvePromise();
+  void RejectPromise(LaunchError);
 
 #if defined(MOZ_WMF_CDM) && defined(MOZ_SANDBOX) && !defined(MOZ_ASAN)
   void EnsureWidevineL1PathForSandbox(StringVector& aExtraOpts);
@@ -149,7 +150,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   const RefPtr<media::Refcountable<bool>> mLiveToken;
 
-  RefPtr<GenericNonExclusivePromise::Private> mLaunchPromise{};
+  RefPtr<LaunchPromiseType::Private> mLaunchPromise{};
   bool mLaunchPromiseSettled = false;
   bool mLaunchPromiseLaunched = false;
   
