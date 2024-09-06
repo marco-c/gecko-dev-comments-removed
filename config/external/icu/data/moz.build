@@ -33,9 +33,6 @@ SOURCES += [
 
 if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["CC_TYPE"] == "clang-cl":
     USE_INTEGRATED_CLANGCL_AS = True
-    
-    
-    ASM_FLAGS["DEBUG"] = []
 
 if CONFIG["TARGET_ENDIANNESS"] == "big":
     GeneratedFile(
