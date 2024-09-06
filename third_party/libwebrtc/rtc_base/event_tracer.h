@@ -8,23 +8,23 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef RTC_BASE_EVENT_TRACER_H_
 #define RTC_BASE_EVENT_TRACER_H_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <stdio.h>
 
@@ -33,6 +33,9 @@
 
 namespace webrtc {
 
+#if defined(RTC_USE_PERFETTO)
+void RegisterPerfettoTrackEvents();
+#else
 typedef const unsigned char* (*GetCategoryEnabledPtr)(const char* name);
 typedef void (*AddTraceEventPtr)(char phase,
                                  const unsigned char* category_enabled,
@@ -67,11 +70,12 @@ class EventTracer {
                             const unsigned long long* arg_values,
                             unsigned char flags);
 };
+#endif
 
 }  
 
-namespace rtc {
-namespace tracing {
+namespace rtc::tracing {
+
 
 RTC_EXPORT void SetupInternalTracer(bool enable_all_categories = true);
 RTC_EXPORT bool StartInternalCapture(absl::string_view filename);
@@ -79,7 +83,6 @@ RTC_EXPORT void StartInternalCaptureToFile(FILE* file);
 RTC_EXPORT void StopInternalCapture();
 
 RTC_EXPORT void ShutdownInternalTracer();
-}  
 }  
 
 #endif  
