@@ -38,7 +38,26 @@ promise_test(async t => {
   );
   
   iframe.remove();
-}, "navigator.wakeLock.request() aborts if the document is not active.");
+}, "navigator.wakeLock.request() aborts if the document becomes not active.");
+
+promise_test(async t => {
+  const iframe = document.createElement("iframe");
+  document.body.appendChild(iframe);
+  const wakeLock = await getWakeLockObject(
+    iframe,
+    "/screen-wake-lock/resources/page1.html"
+  );
+  
+  const frameDOMException = iframe.contentWindow.DOMException;
+  iframe.remove();
+  await promise_rejects_dom(
+    t,
+    "NotAllowedError",
+    frameDOMException,
+    wakeLock.request('screen'),
+    "Inactive document, so must throw NotAllowedError"
+  );
+}, "navigator.wakeLock.request() aborts if the document is not fully active.");
 
 promise_test(async t => {
   
