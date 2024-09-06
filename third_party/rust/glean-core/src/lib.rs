@@ -693,7 +693,7 @@ pub fn shutdown() {
 
 
 
-pub fn persist_ping_lifetime_data() {
+pub fn glean_persist_ping_lifetime_data() {
     
     crate::launch_with_glean(|glean| {
         let _ = glean.persist_ping_lifetime_data();
@@ -1125,8 +1125,14 @@ pub fn glean_test_destroy_glean(clear_stores: bool, data_path: Option<String>) {
 
         
         
-        let has_storage =
-            core::with_opt_glean(|glean| glean.storage_opt().is_some()).unwrap_or(false);
+        let has_storage = core::with_opt_glean(|glean| {
+            
+            glean
+                .storage_opt()
+                .map(|storage| storage.persist_ping_lifetime_data())
+                .is_some()
+        })
+        .unwrap_or(false);
         if has_storage {
             uploader_shutdown();
         }
