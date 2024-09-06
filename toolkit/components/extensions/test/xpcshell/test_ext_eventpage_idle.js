@@ -473,8 +473,13 @@ add_task(async function test_terminateBackground_after_extension_hasShutdown() {
 
   
   
+  
+  
   extension.extension.hasShutdown = true;
-  await extension.terminateBackground();
+  await extension.terminateBackground({
+    expectStopped: false,
+    disableResetIdleForTest: true,
+  });
   extension.extension.hasShutdown = false;
 
   await extension.unload();
