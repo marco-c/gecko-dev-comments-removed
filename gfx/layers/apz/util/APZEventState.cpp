@@ -26,6 +26,7 @@
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
@@ -100,13 +101,8 @@ APZEventState::APZEventState(nsIWidget* aWidget,
       ,
       mActiveElementManager(new ActiveElementManager()),
       mContentReceivedInputBlockCallback(std::move(aCallback)),
-      mPendingTouchPreventedResponse(false),
       mPendingTouchPreventedBlockId(0),
       mEndTouchState(apz::SingleTapState::NotClick),
-      mFirstTouchCancelled(false),
-      mTouchEndCancelled(false),
-      mReceivedNonTouchStart(false),
-      mTouchStartPrevented(false),
       mLastTouchIdentifier(0) {
   nsresult rv;
   mWidget = do_GetWeakReference(aWidget, &rv);
@@ -139,8 +135,9 @@ void APZEventState::ProcessSingleTap(const CSSPoint& aPoint,
   nsCOMPtr<nsIWidget> localWidget = do_QueryReferent(mWidget);
   if (localWidget) {
     widget::nsAutoRollup rollup(touchRollup);
-    APZCCallbackHelper::FireSingleTapEvent(aPoint * aScale, aModifiers,
-                                           aClickCount, localWidget);
+    APZCCallbackHelper::FireSingleTapEvent(
+        aPoint * aScale, aModifiers, aClickCount, mPrecedingPointerDownState,
+        localWidget);
   }
 
   mActiveElementManager->ProcessSingleTap();
@@ -161,7 +158,8 @@ PreventDefaultResult APZEventState::FireContextmenuEvents(
   
   
   APZCCallbackHelper::DispatchSynthesizedMouseEvent(
-      eMouseMove, aPoint * aScale, aModifiers, 0 , aWidget);
+      eMouseMove, aPoint * aScale, aModifiers, 0 ,
+      mPrecedingPointerDownState, aWidget);
 
   
   
@@ -186,7 +184,7 @@ PreventDefaultResult APZEventState::FireContextmenuEvents(
     
     nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
         eMouseLongTap, aPoint * aScale, aModifiers,
-         1, aWidget);
+         1, mPrecedingPointerDownState, aWidget);
     APZES_LOG("eMouseLongTap event %s\n", ToString(status).c_str());
 #endif
   }
@@ -228,7 +226,8 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
   
   
   APZCCallbackHelper::DispatchSynthesizedMouseEvent(
-      eMouseLongTap, aPoint * aScale, aModifiers,  1, widget);
+      eMouseLongTap, aPoint * aScale, aModifiers,  1,
+      mPrecedingPointerDownState, widget);
 #else
   PreventDefaultResult preventDefaultResult =
       FireContextmenuEvents(aPresShell, aPoint, aScale, aModifiers, widget);
@@ -324,6 +323,14 @@ void APZEventState::ProcessTouchEvent(
       
       if (mTouchCounter.GetActiveTouchCount() == 0) {
         mFirstTouchCancelled = isTouchPrevented;
+        const PointerInfo* pointerInfo =
+            !aEvent.mTouches.IsEmpty() ? PointerEventHandler::GetPointerInfo(
+                                             aEvent.mTouches[0]->Identifier())
+                                       : nullptr;
+        mPrecedingPointerDownState =
+            pointerInfo && pointerInfo->mPreventMouseEventByContent
+                ? PrecedingPointerDown::ConsumedByContent
+                : PrecedingPointerDown::NotConsumed;
       } else {
         if (mFirstTouchCancelled && !isTouchPrevented) {
           APZES_LOG(

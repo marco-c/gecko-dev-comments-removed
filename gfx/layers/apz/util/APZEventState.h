@@ -40,6 +40,7 @@ namespace layers {
 class ActiveElementManager;
 
 namespace apz {
+enum class PrecedingPointerDown : bool { NotConsumed, ConsumedByContent };
 enum class SingleTapState : uint8_t;
 }  
 
@@ -56,6 +57,8 @@ class APZEventState final {
   typedef ScrollableLayerGuid::ViewID ViewID;
 
  public:
+  using PrecedingPointerDown = apz::PrecedingPointerDown;
+
   APZEventState(nsIWidget* aWidget,
                 ContentReceivedInputBlockCallback&& aCallback);
 
@@ -107,17 +110,19 @@ class APZEventState final {
   RefPtr<ActiveElementManager> mActiveElementManager;
   ContentReceivedInputBlockCallback mContentReceivedInputBlockCallback;
   TouchCounter mTouchCounter;
-  bool mPendingTouchPreventedResponse;
   ScrollableLayerGuid mPendingTouchPreventedGuid;
   uint64_t mPendingTouchPreventedBlockId;
   apz::SingleTapState mEndTouchState;
-  bool mFirstTouchCancelled;
-  bool mTouchEndCancelled;
+  PrecedingPointerDown mPrecedingPointerDownState =
+      PrecedingPointerDown::NotConsumed;
+  bool mPendingTouchPreventedResponse = false;
+  bool mFirstTouchCancelled = false;
+  bool mTouchEndCancelled = false;
   
   
   
-  bool mReceivedNonTouchStart;
-  bool mTouchStartPrevented;
+  bool mReceivedNonTouchStart = false;
+  bool mTouchStartPrevented = false;
 
   int32_t mLastTouchIdentifier;
   nsTArray<TouchBehaviorFlags> mTouchBlockAllowedBehaviors;

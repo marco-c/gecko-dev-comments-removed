@@ -33,6 +33,10 @@ namespace layers {
 
 struct RepaintRequest;
 
+namespace apz {
+enum class PrecedingPointerDown : bool;
+}
+
 
 class DisplayportSetListener : public ManagedPostRefreshObserver {
  public:
@@ -61,6 +65,8 @@ class APZCCallbackHelper {
   typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
 
  public:
+  using PrecedingPointerDown = apz::PrecedingPointerDown;
+
   static void NotifyLayerTransforms(const nsTArray<MatrixMessage>& aTransforms);
 
   
@@ -107,7 +113,8 @@ class APZCCallbackHelper {
   MOZ_CAN_RUN_SCRIPT
   static nsEventStatus DispatchSynthesizedMouseEvent(
       EventMessage aMsg, const LayoutDevicePoint& aRefPoint,
-      Modifiers aModifiers, int32_t aClickCount, nsIWidget* aWidget);
+      Modifiers aModifiers, int32_t aClickCount,
+      PrecedingPointerDown aPrecedingPointerDownState, nsIWidget* aWidget);
 
   
 
@@ -123,9 +130,10 @@ class APZCCallbackHelper {
   
 
   MOZ_CAN_RUN_SCRIPT
-  static void FireSingleTapEvent(const LayoutDevicePoint& aPoint,
-                                 Modifiers aModifiers, int32_t aClickCount,
-                                 nsIWidget* aWidget);
+  static void FireSingleTapEvent(
+      const LayoutDevicePoint& aPoint, Modifiers aModifiers,
+      int32_t aClickCount, PrecedingPointerDown aPrecedingPointerDownState,
+      nsIWidget* aWidget);
 
   
 

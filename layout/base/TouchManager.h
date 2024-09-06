@@ -69,6 +69,10 @@ class TouchManager {
   
   static bool IsSingleTapEndToDoDefault(const WidgetTouchEvent* aTouchEndEvent);
 
+  
+  
+  static bool IsPrecedingTouchPointerDownConsumedByContent();
+
  private:
   void EvictTouches(dom::Document* aLimitToDocument = nullptr);
   static void EvictTouchPoint(RefPtr<dom::Touch>& aTouch,
@@ -89,10 +93,20 @@ class TouchManager {
   static layers::LayersId sCaptureTouchLayersId;
   
   
+  
+  
   static TimeStamp sSingleTouchStartTimeStamp;
   
   
+  
+  
   static LayoutDeviceIntPoint sSingleTouchStartPoint;
+  
+  
+  
+  
+  
+  static bool sPrecedingTouchPointerDownConsumedByContent;
 };
 
 }  
