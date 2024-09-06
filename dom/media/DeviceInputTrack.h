@@ -172,19 +172,11 @@ class DeviceInputTrack : public ProcessedMediaTrack {
 
   
   const nsTArray<RefPtr<DeviceInputConsumerTrack>>& GetConsumerTracks() const;
-  
-  
-  
-  void NotifySetRequestedProcessingParamsResult(
-      MediaTrackGraph* aGraph, cubeb_input_processing_params aRequestedParams,
-      const Result<cubeb_input_processing_params, int>& aResult);
 
   
   
   uint32_t MaxRequestedInputChannels() const;
   bool HasVoiceInput() const;
-  
-  cubeb_input_processing_params RequestedProcessingParams() const;
   
   void DeviceChanged(MediaTrackGraph* aGraph) const;
 
@@ -273,7 +265,6 @@ class NonNativeInputTrack final : public DeviceInputTrack {
   void NotifyDeviceChanged(AudioInputSource::Id aSourceId);
   void NotifyInputStopped(AudioInputSource::Id aSourceId);
   AudioInputSource::Id GenerateSourceId();
-  void ReevaluateProcessingParams();
 
  private:
   ~NonNativeInputTrack() = default;
@@ -281,8 +272,6 @@ class NonNativeInputTrack final : public DeviceInputTrack {
   
   RefPtr<AudioInputSource> mAudioSource;
   AudioInputSource::Id mSourceIdNumber;
-  cubeb_input_processing_params mRequestedProcessingParams =
-      CUBEB_INPUT_PROCESSING_PARAM_NONE;
 
 #ifdef DEBUG
   

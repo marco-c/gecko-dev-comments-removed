@@ -112,20 +112,12 @@ class AudioDataListenerInterface {
   
 
 
-  virtual uint32_t RequestedInputChannelCount(
-      MediaTrackGraph* aGraph) const = 0;
-
-  
-
-
-  virtual cubeb_input_processing_params RequestedInputProcessingParams(
-      MediaTrackGraph* aGraph) const = 0;
+  virtual uint32_t RequestedInputChannelCount(MediaTrackGraph* aGraph) = 0;
 
   
 
 
   virtual bool IsVoiceInput(MediaTrackGraph* aGraph) const = 0;
-
   
 
 
@@ -135,14 +127,6 @@ class AudioDataListenerInterface {
 
 
   virtual void Disconnect(MediaTrackGraph* aGraph) = 0;
-
-  
-
-
-
-  virtual void NotifySetRequestedInputProcessingParamsResult(
-      MediaTrackGraph* aGraph, cubeb_input_processing_params aRequestedParams,
-      const Result<cubeb_input_processing_params, int>& aResult) = 0;
 };
 
 class AudioDataListener : public AudioDataListenerInterface {
