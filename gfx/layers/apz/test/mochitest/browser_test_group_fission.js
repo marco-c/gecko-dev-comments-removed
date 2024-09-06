@@ -4,7 +4,6 @@ add_task(async function setup_pref() {
       
       
       ["layout.throttled_frame_rate", 60],
-      ["dom.animations-api.timelines.enabled", true],
       
       ["test.events.async.enabled", true],
       ["apz.test.logging_enabled", true],

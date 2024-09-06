@@ -68,29 +68,6 @@ const closeAnimationInspector = async function () {
 
 
 
-const enableAnimationFeatures = function () {
-  return SpecialPowers.pushPrefEnv({
-    set: [["dom.animations-api.timelines.enabled", true]],
-  });
-};
-
-
-
-
-
-
-
-
-const _addTab = addTab;
-addTab = async function (url) {
-  await enableAnimationFeatures();
-  return _addTab(url);
-};
-
-
-
-
-
 
 
 const removeAnimatedElementsExcept = function (selectors) {

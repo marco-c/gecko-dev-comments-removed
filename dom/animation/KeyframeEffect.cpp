@@ -784,9 +784,6 @@ static KeyframeEffectParams KeyframeEffectParamsFromUnion(
   const KeyframeEffectOptions& options =
       KeyframeEffectOptionsFromUnion(aOptions);
 
-  
-  
-  
   result.mIterationComposite = options.mIterationComposite;
   result.mComposite = options.mComposite;
 
@@ -1272,8 +1269,6 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
       keyframe.mTimingFunction.ref().AppendToString(keyframeDict.mEasing);
     }  
 
-    
-    
     keyframeDict.mComposite = keyframe.mComposite;
 
     JS::Rooted<JS::Value> keyframeJSValue(aCx);
