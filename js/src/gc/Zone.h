@@ -236,14 +236,17 @@ class HashAndLength {
 
 static_assert(HashAndLength::staticChecks());
 
+
+
+
+
+
+
+
+
+
 class AtomCacheHashTable {
  public:
-  MOZ_ALWAYS_INLINE AtomCacheHashTable() { clear(); }
-
-  MOZ_ALWAYS_INLINE void clear() {
-    mEntries.fill({HashAndLength{HashAndLength::unsetValue()}, nullptr});
-  }
-
   static MOZ_ALWAYS_INLINE constexpr uint32_t computeIndexFromHash(
       const HashNumber hash) {
     
@@ -256,29 +259,37 @@ class AtomCacheHashTable {
 
     const uint32_t index = computeIndexFromHash(lookup.hash);
 
-    JSAtom* const atom = mEntries[index].mAtom;
+    const EntrySet& entrySet = mEntrySets[index];
+    for (const Entry& entry : entrySet.mEntries) {
+      JSAtom* const atom = entry.mAtom;
 
-    if (!mEntries[index].mHashAndLength.isEqual(lookup.hash, lookup.length)) {
-      return nullptr;
+      if (!entry.mHashAndLength.isEqual(lookup.hash, lookup.length)) {
+        continue;
+      }
+
+      
+      
+      if (MOZ_UNLIKELY(!lookup.StringsMatch(*atom))) {
+        continue;
+      }
+
+      return atom;
     }
 
-    
-    
-    if (MOZ_UNLIKELY(!lookup.StringsMatch(*atom))) {
-      return nullptr;
-    }
-
-    return atom;
+    return nullptr;
   }
 
   MOZ_ALWAYS_INLINE void add(const HashNumber hash, JSAtom* atom) {
     const uint32_t index = computeIndexFromHash(hash);
 
-    mEntries[index].set(hash, atom->length(), atom);
+    mEntrySets[index].add(hash, atom->length(), atom);
   }
 
  private:
   struct Entry {
+    MOZ_ALWAYS_INLINE Entry()
+        : mHashAndLength(HashAndLength::unsetValue()), mAtom(nullptr) {}
+
     MOZ_ALWAYS_INLINE void set(const HashNumber hash, const uint32_t length,
                                JSAtom* const atom) {
       mHashAndLength.set(hash, length);
@@ -294,11 +305,41 @@ class AtomCacheHashTable {
     JSAtom* mAtom;
   };
 
+  static_assert(sizeof(Entry) <= 16);
+
   
   
-  static constexpr uint32_t sSize = 4 * 1024;
+  
+  
+  
+  
+  
+  
+  
+  struct EntrySet {
+    MOZ_ALWAYS_INLINE void add(const HashNumber hash, const uint32_t length,
+                               JSAtom* const atom) {
+      MOZ_ASSERT(mEntries[0].mAtom != atom);
+      MOZ_ASSERT(mEntries[1].mAtom != atom);
+      MOZ_ASSERT(mEntries[2].mAtom != atom);
+      MOZ_ASSERT(mEntries[3].mAtom != atom);
+      mEntries[3] = mEntries[2];
+      mEntries[2] = mEntries[1];
+      mEntries[1] = mEntries[0];
+      mEntries[0].set(hash, length, atom);
+    }
+
+    std::array<Entry, 4> mEntries;
+  };
+
+  static_assert(sizeof(EntrySet) <= 64,
+                "EntrySet will not fit in a cache line");
+
+  
+  
+  static constexpr uint32_t sSize = 2 * 1024;
   static_assert(mozilla::IsPowerOfTwo(sSize));
-  std::array<Entry, sSize> mEntries;
+  std::array<EntrySet, sSize> mEntrySets;
 };
 
 }  
