@@ -70,12 +70,14 @@ class InlinePreviews extends Component {
       editor.removeLineContentMarker(markerTypes.INLINE_PREVIEW_MARKER);
       return;
     }
+
     editor.setLineContentMarker({
       id: markerTypes.INLINE_PREVIEW_MARKER,
-      condition: line => {
+      lines: Object.keys(previews).map(line => {
         
-        return !!previews[line - 1];
-      },
+        
+        return Number(line) + 1;
+      }),
       createLineElementNode: line => {
         const widgetNode = document.createElement("div");
         widgetNode.className = "inline-preview";

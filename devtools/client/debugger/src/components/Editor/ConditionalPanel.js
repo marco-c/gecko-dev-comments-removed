@@ -125,10 +125,10 @@ export class ConditionalPanel extends PureComponent {
       editor.removeLineContentMarker(markerTypes.CONDITIONAL_BP_MARKER);
       return;
     }
-    const editorLine = toEditorLine(location.source.id, location.line || 0);
+    const line = toEditorLine(location.source.id, location.line || 0);
     editor.setLineContentMarker({
       id: markerTypes.CONDITIONAL_BP_MARKER,
-      condition: line => line == editorLine,
+      lines: [line],
       createLineElementNode: () => {
         
         
