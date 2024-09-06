@@ -26,33 +26,6 @@ add_setup(async () => {
   await ExtensionTestUtils.startAddonManager();
 });
 
-const _origDescs = {};
-function restoreDefaultDnrLimit(key) {
-  info(`Restoring original value of ExtensionDNRLimits.${key}`);
-  Object.defineProperty(ExtensionDNRLimits, key, _origDescs[key]);
-}
-function overrideDefaultDnrLimit(key, value) {
-  
-  
-  
-  
-  
-  if (!_origDescs[key]) {
-    _origDescs[key] = Object.getOwnPropertyDescriptor(ExtensionDNRLimits, key);
-    registerCleanupFunction(() => restoreDefaultDnrLimit(key));
-  }
-  Assert.ok(
-    typeof value === "number" && Number.isInteger(value),
-    `Setting ExtensionDNRLimits.${key} = ${value} (was: ${ExtensionDNRLimits[key]})`
-  );
-  Object.defineProperty(ExtensionDNRLimits, key, {
-    configurable: true,
-    writable: true,
-    enumerable: true,
-    value,
-  });
-}
-
 
 
 
@@ -302,7 +275,10 @@ add_task(async function session_and_dynamic_regexFilter_limit() {
       setup() {
         
         
-        overrideDefaultDnrLimit("MAX_NUMBER_OF_REGEX_RULES", 1);
+        Services.prefs.setIntPref(
+          "extensions.dnr.max_number_of_regex_rules",
+          1
+        );
       },
       backgroundFn: testPart3_too_many_regexFilters_stored_after_lowering_quota,
       checkConsoleMessages: expectError,
@@ -311,7 +287,9 @@ add_task(async function session_and_dynamic_regexFilter_limit() {
       name: "testPart4_reload_after_quota_back",
       setup() {
         
-        restoreDefaultDnrLimit("MAX_NUMBER_OF_REGEX_RULES");
+        Services.prefs.clearUserPref(
+          "extensions.dnr.max_number_of_regex_rules"
+        );
       },
       backgroundFn: testPart4_reload_after_quota_back,
       checkConsoleMessages: noErrors,
@@ -525,8 +503,8 @@ add_task(async function static_regexFilter_limit() {
     {
       name: "testPart5_after_doubling_quota",
       setup() {
-        overrideDefaultDnrLimit(
-          "MAX_NUMBER_OF_REGEX_RULES",
+        Services.prefs.setIntPref(
+          "extensions.dnr.max_number_of_regex_rules",
           2 * MAX_NUMBER_OF_REGEX_RULES
         );
       },
@@ -537,7 +515,9 @@ add_task(async function static_regexFilter_limit() {
       name: "testPart6_after_restoring_original_quota_half",
       setup() {
         
-        restoreDefaultDnrLimit("MAX_NUMBER_OF_REGEX_RULES");
+        Services.prefs.clearUserPref(
+          "extensions.dnr.max_number_of_regex_rules"
+        );
       },
       backgroundFn: testPart6_after_restoring_original_quota_half,
       checkConsoleMessages: (n, m) =>
