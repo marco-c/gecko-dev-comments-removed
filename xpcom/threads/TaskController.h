@@ -15,6 +15,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/EventQueue.h"
+#include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h"
 
 #include <atomic>
@@ -31,6 +32,7 @@ class Task;
 class TaskController;
 class PerformanceCounter;
 class PerformanceCounterState;
+struct PoolThread;
 
 const EventQueuePriority kDefaultPriorityValue = EventQueuePriority::Normal;
 
@@ -251,14 +253,6 @@ class Task {
   mozilla::TimeStamp mInsertionTime;
 };
 
-struct PoolThread {
-  PRThread* mThread;
-  RefPtr<Task> mCurrentTask;
-  
-  
-  uint32_t mEffectiveTaskPriority;
-};
-
 
 
 class IdleTaskManager : public TaskManager {
@@ -387,7 +381,8 @@ class TaskController {
 
   void ShutdownThreadPoolInternal();
 
-  void RunPoolThread();
+  void RunPoolThread(PoolThread* aThread);
+  friend struct PoolThread;
 
   
   Mutex mGraphMutex MOZ_UNANNOTATED;
@@ -397,11 +392,12 @@ class TaskController {
   
   Mutex mPoolInitializationMutex =
       Mutex("TaskController::mPoolInitializationMutex");
+
   
   
   
   
-  std::vector<PoolThread> mPoolThreads;
+  std::vector<UniquePtr<PoolThread>> mPoolThreads;
 
   CondVar mThreadPoolCV;
   CondVar mMainThreadCV;

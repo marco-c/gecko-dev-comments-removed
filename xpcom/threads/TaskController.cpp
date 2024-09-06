@@ -29,11 +29,45 @@ namespace mozilla {
 
 StaticAutoPtr<TaskController> TaskController::sSingleton;
 
-thread_local size_t mThreadPoolIndex = -1;
 std::atomic<uint64_t> Task::sCurrentTaskSeqNo = 0;
 
 const int32_t kMinimumPoolThreadCount = 2;
 const int32_t kMaximumPoolThreadCount = 8;
+
+
+
+
+
+
+
+constexpr uint32_t kBaseStackSize = 2048 * 1024 - 2 * 4096;
+
+
+
+
+
+
+
+
+
+#if defined(MOZ_TSAN) || defined(MOZ_ASAN)
+constexpr uint32_t kStackSize = 2 * kBaseStackSize;
+#else
+constexpr uint32_t kStackSize = kBaseStackSize;
+#endif
+
+struct PoolThread {
+  const size_t mIndex;
+  PRThread* mThread = nullptr;
+
+  RefPtr<Task> mCurrentTask;
+
+  
+  
+  uint32_t mEffectiveTaskPriority = 0;
+
+  explicit PoolThread(size_t aIndex) : mIndex(aIndex) {}
+};
 
 
 int32_t TaskController::GetPoolThreadCount() {
@@ -216,10 +250,9 @@ void TaskController::Initialize() {
   sSingleton = new TaskController();
 }
 
-void ThreadFuncPoolThread(void* aIndex) {
-  mThreadPoolIndex = *reinterpret_cast<int32_t*>(aIndex);
-  delete reinterpret_cast<int32_t*>(aIndex);
-  TaskController::Get()->RunPoolThread();
+void ThreadFuncPoolThread(void* aData) {
+  auto* thread = static_cast<PoolThread*>(aData);
+  TaskController::Get()->RunPoolThread(thread);
 }
 
 TaskController::TaskController()
@@ -237,28 +270,6 @@ TaskController::TaskController()
       []() { TaskController::Get()->ProcessPendingMTTask(true); });
 }
 
-
-
-
-
-
-
-constexpr PRUint32 sBaseStackSize = 2048 * 1024 - 2 * 4096;
-
-
-
-
-
-
-
-
-
-#if defined(MOZ_TSAN) || defined(MOZ_ASAN)
-constexpr PRUint32 sStackSize = 2 * sBaseStackSize;
-#else
-constexpr PRUint32 sStackSize = sBaseStackSize;
-#endif
-
 void TaskController::InitializeThreadPool() {
   mPoolInitializationMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(!mThreadPoolInitialized);
@@ -266,17 +277,18 @@ void TaskController::InitializeThreadPool() {
 
   int32_t poolSize = GetPoolThreadCount();
   for (int32_t i = 0; i < poolSize; i++) {
-    int32_t* index = new int32_t(i);
-    mPoolThreads.push_back(
-        {PR_CreateThread(PR_USER_THREAD, ThreadFuncPoolThread, index,
-                         PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                         PR_JOINABLE_THREAD, sStackSize),
-         nullptr});
+    auto thread = MakeUnique<PoolThread>(i);
+    thread->mThread = PR_CreateThread(
+        PR_USER_THREAD, ThreadFuncPoolThread, thread.get(), PR_PRIORITY_NORMAL,
+        PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, kStackSize);
+    MOZ_RELEASE_ASSERT(thread->mThread,
+                       "Failed to create TaskController pool thread");
+    mPoolThreads.emplace_back(std::move(thread));
   }
 }
 
 
-size_t TaskController::GetThreadStackSize() { return sStackSize; }
+size_t TaskController::GetThreadStackSize() { return kStackSize; }
 
 void TaskController::SetPerformanceCounterState(
     PerformanceCounterState* aPerformanceCounterState) {
@@ -301,12 +313,12 @@ void TaskController::ShutdownThreadPoolInternal() {
     mShuttingDown = true;
     mThreadPoolCV.NotifyAll();
   }
-  for (PoolThread& thread : mPoolThreads) {
-    PR_JoinThread(thread.mThread);
+  for (auto& thread : mPoolThreads) {
+    PR_JoinThread(thread->mThread);
   }
 }
 
-void TaskController::RunPoolThread() {
+void TaskController::RunPoolThread(PoolThread* aThread) {
   IOInterposer::RegisterCurrentThread();
 
   
@@ -316,8 +328,8 @@ void TaskController::RunPoolThread() {
 
   nsAutoCString threadName;
   threadName.AppendLiteral("TaskController #");
-  threadName.AppendInt(static_cast<int64_t>(mThreadPoolIndex));
-  AUTO_PROFILER_REGISTER_THREAD(threadName.BeginReading());
+  threadName.AppendInt(static_cast<int64_t>(aThread->mIndex));
+  AUTO_PROFILER_REGISTER_THREAD(threadName.get());
 
   MutexAutoLock lock(mGraphMutex);
   while (true) {
@@ -336,8 +348,7 @@ void TaskController::RunPoolThread() {
 
         MOZ_ASSERT(!task->mTaskManager);
 
-        mPoolThreads[mThreadPoolIndex].mEffectiveTaskPriority =
-            task->GetPriority();
+        aThread->mEffectiveTaskPriority = task->GetPriority();
 
         Task* nextTask;
         while ((nextTask = task->GetHighestPriorityDependency())) {
@@ -349,7 +360,7 @@ void TaskController::RunPoolThread() {
           continue;
         }
 
-        mPoolThreads[mThreadPoolIndex].mCurrentTask = task;
+        aThread->mCurrentTask = task;
         mThreadableTasks.erase(task->mIterator);
         task->mIterator = mThreadableTasks.end();
         task->mInProgress = true;
@@ -376,8 +387,7 @@ void TaskController::RunPoolThread() {
         if (!taskCompleted) {
           
           
-          auto insertion = mThreadableTasks.insert(
-              mPoolThreads[mThreadPoolIndex].mCurrentTask);
+          auto insertion = mThreadableTasks.insert(aThread->mCurrentTask);
           MOZ_ASSERT(insertion.second);
           task->mIterator = insertion.first;
         } else {
@@ -399,7 +409,7 @@ void TaskController::RunPoolThread() {
 
         
         
-        lastTask = mPoolThreads[mThreadPoolIndex].mCurrentTask.forget();
+        lastTask = aThread->mCurrentTask.forget();
         break;
       }
     }
@@ -1021,15 +1031,15 @@ void TaskController::MaybeInterruptTask(Task* aTask) {
     }
   } else {
     Task* lowestPriorityTask = nullptr;
-    for (PoolThread& thread : mPoolThreads) {
-      if (!thread.mCurrentTask) {
+    for (auto& thread : mPoolThreads) {
+      if (!thread->mCurrentTask) {
         mThreadPoolCV.Notify();
         
         return;
       }
 
       if (!lowestPriorityTask) {
-        lowestPriorityTask = thread.mCurrentTask.get();
+        lowestPriorityTask = thread->mCurrentTask.get();
         continue;
       }
 
@@ -1037,8 +1047,8 @@ void TaskController::MaybeInterruptTask(Task* aTask) {
       
       
       
-      if (lowestPriorityTask->GetPriority() > thread.mEffectiveTaskPriority) {
-        lowestPriorityTask = thread.mCurrentTask.get();
+      if (lowestPriorityTask->GetPriority() > thread->mEffectiveTaskPriority) {
+        lowestPriorityTask = thread->mCurrentTask.get();
       }
     }
 
