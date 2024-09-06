@@ -2716,6 +2716,35 @@ const DSMessageFooter = props => {
 
 
 
+function DSThumbsUpDownButtons({
+  sponsor,
+  onThumbsUpClick,
+  onThumbsDownClick,
+  isThumbsUpActive,
+  isThumbsDownActive
+}) {
+  return external_React_default().createElement("div", {
+    className: "card-stp-thumbs-buttons-wrapper"
+  }, !sponsor && external_React_default().createElement("div", {
+    className: "card-stp-thumbs-buttons"
+  }, external_React_default().createElement("button", {
+    onClick: onThumbsUpClick,
+    className: `card-stp-thumbs-button icon icon-thumbs-up ${isThumbsUpActive ? "is-active" : null}`,
+    "data-l10n-id": "newtab-pocket-thumbs-up-tooltip"
+  }), external_React_default().createElement("button", {
+    onClick: onThumbsDownClick,
+    className: `card-stp-thumbs-button icon icon-thumbs-down ${isThumbsDownActive ? "is-active" : null}`,
+    "data-l10n-id": "newtab-pocket-thumbs-down-tooltip"
+  })));
+}
+
+;
+
+
+
+
+
+
 
 
 
@@ -2812,19 +2841,13 @@ const DefaultMeta = ({
   className: "title clamp"
 }, title), excerpt && external_React_default().createElement("p", {
   className: "excerpt clamp"
-}, excerpt)), mayHaveThumbsUpDown && external_React_default().createElement("div", {
-  className: "card-stp-thumbs-buttons-wrapper"
-}, !sponsor && external_React_default().createElement("div", {
-  className: "card-stp-thumbs-buttons"
-}, external_React_default().createElement("button", {
-  onClick: onThumbsUpClick,
-  className: `card-stp-thumbs-button icon icon-thumbs-up ${state.isThumbsUpActive ? "is-active" : null}`,
-  "data-l10n-id": "newtab-pocket-thumbs-up-tooltip"
-}), external_React_default().createElement("button", {
-  onClick: onThumbsDownClick,
-  className: `card-stp-thumbs-button icon icon-thumbs-down ${state.isThumbsDownActive ? "is-active" : null}`,
-  "data-l10n-id": "newtab-pocket-thumbs-down-tooltip"
-}))), !newSponsoredLabel && external_React_default().createElement(DSContextFooter, {
+}, excerpt)), mayHaveThumbsUpDown && external_React_default().createElement(DSThumbsUpDownButtons, {
+  onThumbsDownClick: onThumbsDownClick,
+  onThumbsUpClick: onThumbsUpClick,
+  sponsor: sponsor,
+  isThumbsDownActive: state.isThumbsDownActive,
+  isThumbsUpActive: state.isThumbsUpActive
+}), !newSponsoredLabel && external_React_default().createElement(DSContextFooter, {
   context_type: context_type,
   context: context,
   sponsor: sponsor,
