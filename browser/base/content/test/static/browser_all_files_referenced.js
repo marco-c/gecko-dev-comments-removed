@@ -359,9 +359,6 @@ const ignorableAllowlist = new Set([
 
   
   "resource://gre/gmp-clearkey/0.1/manifest.json",
-
-  
-  "resource://gre/res/test.properties",
 ]);
 for (let entry of ignorableAllowlist) {
   allowlist.add(entry);
