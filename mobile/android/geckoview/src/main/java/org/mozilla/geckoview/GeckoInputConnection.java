@@ -657,6 +657,11 @@ import org.mozilla.gecko.util.ThreadUtils;
     }
 
     
+    if (InputMethods.dontOverrideCommitText()) {
+      return super.commitText(text, newCursorPosition);
+    }
+
+    
     
     
     
