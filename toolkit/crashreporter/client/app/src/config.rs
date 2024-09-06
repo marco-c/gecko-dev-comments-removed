@@ -79,7 +79,6 @@ impl Config {
     }
 
     
-    #[cfg_attr(mock, allow(unused))]
     pub fn read_from_environment(&mut self) -> anyhow::Result<()> {
         
         macro_rules! ekey {
