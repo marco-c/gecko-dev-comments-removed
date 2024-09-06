@@ -498,7 +498,7 @@ class BackgroundContextOwner {
     }
 
     
-    this.backgroundBuilder.idleManager.clearTimer();
+    this.backgroundBuilder.clearIdleTimer();
 
     const bgInstance = this.bgInstance;
     if (bgInstance) {
@@ -664,7 +664,6 @@ class BackgroundBuilder {
   constructor(extension) {
     this.extension = extension;
     this.backgroundContextOwner = new BackgroundContextOwner(this, extension);
-    this.idleManager = new IdleManager(extension);
   }
 
   async build() {
@@ -719,6 +718,26 @@ class BackgroundBuilder {
     }
   }
 
+  observe(subject, topic) {
+    if (topic == "timer-callback") {
+      let { extension } = this;
+      this.clearIdleTimer();
+      extension?.terminateBackground();
+    }
+  }
+
+  clearIdleTimer() {
+    this.backgroundTimer?.cancel();
+    this.backgroundTimer = null;
+  }
+
+  resetIdleTimer() {
+    this.clearIdleTimer();
+    let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    timer.init(this, backgroundIdleTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
+    this.backgroundTimer = timer;
+  }
+
   primeBackground(isInStartup = true) {
     let { extension } = this;
 
@@ -760,9 +779,20 @@ class BackgroundBuilder {
       return bgStartupPromise;
     };
 
-    let resetBackgroundIdle = (event, { reason }) => {
+    let resetBackgroundIdle = (eventName, resetIdleDetails) => {
+      this.clearIdleTimer();
       if (!this.extension || extension.persistentBackground) {
         
+        
+        return;
+      }
+      
+      
+      
+      
+      if (
+        !Services.prefs.getBoolPref("extensions.background.idle.enabled", true)
+      ) {
         return;
       }
 
@@ -770,38 +800,58 @@ class BackgroundBuilder {
         extension.backgroundState == BACKGROUND_STATE.SUSPENDING &&
         
         
-        reason !== "parentapicall"
+        resetIdleDetails?.reason !== "parentApiCall"
       ) {
         extension.backgroundState = BACKGROUND_STATE.RUNNING;
+        
         extension.emit("background-script-suspend-canceled");
       }
 
-      this.idleManager.resetTimer();
+      this.resetIdleTimer();
 
-      if (this.isWorker) {
+      if (
+        eventName === "background-script-reset-idle" &&
         
-        return;
-      }
-      if (reason === "reset_event" || reason === "reset_parentapicall") {
+        !this.isWorker
+      ) {
         
-        return;
-      }
+        
+        
+        
+        
+        
+        
+        
+        let category = "reset_other";
+        switch (resetIdleDetails?.reason) {
+          case "event":
+            category = "reset_event";
+            return; 
+          case "hasActiveNativeAppPorts":
+            category = "reset_nativeapp";
+            break;
+          case "hasActiveStreamFilter":
+            category = "reset_streamfilter";
+            break;
+          case "pendingListeners":
+            category = "reset_listeners";
+            break;
+          case "parentApiCall":
+            category = "reset_parentapicall";
+            return; 
+        }
 
-      
-      
-      let KNOWN = ["nativeapp", "streamfilter", "listeners"];
-      ExtensionTelemetry.eventPageIdleResult.histogramAdd({
-        extension,
-        category: `reset_${KNOWN.includes(reason) ? reason : "other"}`,
-      });
+        ExtensionTelemetry.eventPageIdleResult.histogramAdd({
+          extension,
+          category,
+        });
+      }
     };
 
     
     extension.on("background-script-reset-idle", resetBackgroundIdle);
     
-    extension.once("background-script-started", () =>
-      this.idleManager.resetTimer()
-    );
+    extension.once("background-script-started", resetBackgroundIdle);
 
     
     
@@ -839,7 +889,9 @@ class BackgroundBuilder {
         !disableResetIdleForTest &&
         extension.backgroundContext?.hasActiveNativeAppPorts
       ) {
-        extension.emit("background-script-reset-idle", { reason: "nativeapp" });
+        extension.emit("background-script-reset-idle", {
+          reason: "hasActiveNativeAppPorts",
+        });
         return;
       }
 
@@ -848,7 +900,7 @@ class BackgroundBuilder {
         extension.backgroundContext?.pendingRunListenerPromisesCount
       ) {
         extension.emit("background-script-reset-idle", {
-          reason: "listeners",
+          reason: "pendingListeners",
           pendingListeners:
             extension.backgroundContext.pendingRunListenerPromisesCount,
         });
@@ -889,7 +941,7 @@ class BackgroundBuilder {
           });
         if (!disableResetIdleForTest && hasActiveStreamFilter) {
           extension.emit("background-script-reset-idle", {
-            reason: "streamfilter",
+            reason: "hasActiveStreamFilter",
           });
           return;
         }
@@ -904,7 +956,7 @@ class BackgroundBuilder {
       }
 
       extension.backgroundState = BACKGROUND_STATE.SUSPENDING;
-      this.idleManager.clearTimer();
+      this.clearIdleTimer();
       
       await extension.emit("background-script-suspend");
       
@@ -974,53 +1026,6 @@ class BackgroundBuilder {
     }
   }
 }
-
-
-
-
-
-
-
-var IdleManager = class IdleManager {
-  sleepTime = 0;
-  
-  timer = null;
-  
-  keepAlive = new Map();
-
-  constructor(extension) {
-    this.extension = extension;
-  }
-
-  clearTimer() {
-    this.timer?.cancel();
-    this.timer = null;
-  }
-
-  resetTimer() {
-    this.sleepTime = Cu.now() + backgroundIdleTimeout;
-    if (!this.timer) {
-      this.createTimer();
-    }
-  }
-
-  createTimer() {
-    let timeLeft = this.sleepTime - Cu.now();
-    this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    this.timer.init(() => this.timeout(), timeLeft, Ci.nsITimer.TYPE_ONE_SHOT);
-  }
-
-  timeout() {
-    this.clearTimer();
-    if (!this.keepAlive.size) {
-      if (Cu.now() < this.sleepTime) {
-        this.createTimer();
-      } else {
-        this.extension.terminateBackground();
-      }
-    }
-  }
-};
 
 this.backgroundPage = class extends ExtensionAPI {
   async onManifestEntry() {
