@@ -5,6 +5,7 @@
 
 
 MOCHITEST_CHROME_MANIFESTS += ["content/tests/chrome/chrome.toml"]
+XPCSHELL_TESTS_MANIFESTS += ["aggregator/tests/unit/xpcshell.toml"]
 
 DIRS += [
     "aggregator",
