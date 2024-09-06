@@ -676,7 +676,9 @@ static nsresult OpenDir(const nsString& aName, nsDir** aDir) {
   
   
   
-  d->handle = ::FindFirstFileW(filename.get(), &(d->data));
+  d->handle = ::FindFirstFileExW(filename.get(), FindExInfoBasic, &(d->data),
+                                 FindExSearchNameMatch, nullptr,
+                                 FIND_FIRST_EX_LARGE_FETCH);
 
   if (d->handle == INVALID_HANDLE_VALUE) {
     delete d;
