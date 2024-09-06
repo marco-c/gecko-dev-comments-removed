@@ -1293,7 +1293,8 @@ class SdpFmtpAttributeList : public SdpAttribute {
 
   class H264Parameters : public Parameters {
    public:
-    static const uint32_t kDefaultProfileLevelId = 0x420010;
+    
+    static const uint32_t kDefaultProfileLevelId = 0x42000A;
 
     H264Parameters()
         : Parameters(SdpRtpmapAttributeList::kH264),
