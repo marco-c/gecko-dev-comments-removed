@@ -227,7 +227,7 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
   }
 
   mPreviousError = error;
-  mCorrectedSourceRate = hysteresisCorrectedRate;
+  mCorrectedSourceRate = std::max(1.f, hysteresisCorrectedRate);
 
   
   mTargetClock = media::TimeUnit::Zero();
