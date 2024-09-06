@@ -34,6 +34,13 @@ function showHint() {
   document.body.innerHTML = `<div class="hint">Message preview is not enabled. Enable it in about:config by setting <code>browser.newtabpage.activity-stream.asrouter.devtoolsEnabled</code> to true.</div>`;
 }
 
+
+document.addEventListener("DOMContentLoaded", () => {
+  document
+    .querySelector("#light-switch")
+    .addEventListener("click", MPToggleLights);
+});
+
 const message = decodeMessageFromUrl();
 
 if (message) {
