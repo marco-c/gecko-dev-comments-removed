@@ -6,18 +6,8 @@ import math
 import os
 import shutil
 import sys
+from importlib.abc import MetaPathFinder
 from pathlib import Path
-
-if sys.version_info[0] < 3:
-    import __builtin__ as builtins
-
-    class MetaPathFinder(object):
-        pass
-
-else:
-    from importlib.abc import MetaPathFinder
-
-from types import ModuleType
 
 STATE_DIR_FIRST_RUN = """
 Mach and the build system store shared state in a common directory
@@ -490,76 +480,6 @@ def _create_state_dir():
 
 
 
-class ImportHook(object):
-    def __init__(self, original_import):
-        self._original_import = original_import
-        
-        
-        self._source_dir = (
-            os.path.normcase(
-                os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-            )
-            + os.sep
-        )
-        self._modules = set()
-
-    def __call__(self, name, globals=None, locals=None, fromlist=None, level=-1):
-        if sys.version_info[0] >= 3 and level < 0:
-            level = 0
-
-        
-        
-        
-        
-        
-        module = self._original_import(name, globals, locals, fromlist, level)
-
-        
-        if not isinstance(module, ModuleType):
-            return module
-
-        resolved_name = module.__name__
-        if resolved_name in self._modules:
-            return module
-        self._modules.add(resolved_name)
-
-        
-        if not getattr(module, "__file__", None):
-            return module
-
-        
-        path = os.path.normcase(os.path.abspath(module.__file__))
-        
-        
-        if not path.endswith((".pyc", ".pyo")):
-            return module
-
-        
-        if not path.startswith(self._source_dir):
-            return module
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if not os.path.exists(module.__file__[:-1]):
-            if os.path.exists(module.__file__):
-                os.remove(module.__file__)
-            del sys.modules[module.__name__]
-            module = self(name, globals, locals, fromlist, level)
-
-        return module
-
-
-
-
-
-
-
 class FinderHook(MetaPathFinder):
     def __init__(self, klass):
         
@@ -616,8 +536,4 @@ def hook(finder):
     return finder
 
 
-
-if sys.version_info[0] < 3:
-    builtins.__import__ = ImportHook(builtins.__import__)
-else:
-    sys.meta_path = [hook(c) for c in sys.meta_path]
+sys.meta_path = [hook(c) for c in sys.meta_path]

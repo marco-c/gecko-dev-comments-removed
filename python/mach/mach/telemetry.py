@@ -29,11 +29,10 @@ SITE_DIR = (Path(__file__) / ".." / ".." / ".." / "sites").resolve()
 def create_telemetry_from_environment(settings):
     """Creates and a Telemetry instance based on system details.
 
-    If telemetry isn't enabled, the current interpreter isn't Python 3, or Glean
-    can't be imported, then a "mock" telemetry instance is returned that doesn't
-    set or record any data. This allows consumers to optimistically set telemetry
-    data without needing to specifically handle the case where the current system
-    doesn't support it.
+    If telemetry isn't enabled or Glean can't be imported, then a "mock" telemetry
+    instance is returned that doesn't set or record any data. This allows consumers
+    to optimistically set telemetry data without needing to specifically handle the
+    case where the current system doesn't support it.
     """
 
     active_metadata = MozSiteMetadata.from_runtime()
@@ -42,8 +41,6 @@ def create_telemetry_from_environment(settings):
 
     if not (
         is_applicable_telemetry_environment()
-        
-        and sys.version_info >= (3, 0)
         
         
         

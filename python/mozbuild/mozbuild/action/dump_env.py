@@ -12,19 +12,5 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from shellutil import quote
 
-
-def environ():
-    
-    
-    def ensure_text(s):
-        if sys.version_info > (3, 0) or isinstance(s, unicode):
-            
-            return s
-        else:
-            return s.decode("utf-8")
-
-    return [(ensure_text(k), ensure_text(v)) for (k, v) in os.environ.items()]
-
-
-for key, value in environ():
+for key, value in os.environ.items():
     print("%s=%s" % (key, quote(value)))
