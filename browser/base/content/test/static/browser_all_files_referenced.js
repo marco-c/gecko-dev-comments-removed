@@ -287,6 +287,10 @@ var allowlist = [
 
   
   { file: "chrome://browser/content/backup/BackupManifest.1.schema.json" },
+
+  
+  { file: "resource://app/modules/backup/ArchiveEncryptionState.sys.mjs" },
+  { file: "resource://app/modules/backup/ArchiveUtils.sys.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
