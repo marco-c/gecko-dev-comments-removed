@@ -132,13 +132,14 @@ static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
     aSerializationResult.Assign(buf);
   } else {
     
-    flags =
-        nsIDocumentEncoder::OutputSelectionOnly |
-        nsIDocumentEncoder::OutputAbsoluteLinks |
-        nsIDocumentEncoder::SkipInvisibleContent |
-        nsIDocumentEncoder::OutputDropInvisibleBreak |
-        (aAdditionalEncoderFlags & (nsIDocumentEncoder::OutputNoScriptContent |
-                                    nsIDocumentEncoder::OutputRubyAnnotation));
+    flags = nsIDocumentEncoder::OutputSelectionOnly |
+            nsIDocumentEncoder::OutputAbsoluteLinks |
+            nsIDocumentEncoder::SkipInvisibleContent |
+            nsIDocumentEncoder::OutputDropInvisibleBreak |
+            (aAdditionalEncoderFlags &
+             (nsIDocumentEncoder::OutputNoScriptContent |
+              nsIDocumentEncoder::OutputRubyAnnotation |
+              nsIDocumentEncoder::AllowCrossShadowBoundary));
 
     mimeType.AssignLiteral(kTextMime);
     rv = aEncoder.Init(&aDocument, mimeType, flags);
@@ -345,6 +346,11 @@ nsresult nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
   NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
 
   uint32_t additionalFlags = nsIDocumentEncoder::SkipInvisibleContent;
+
+  if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
+    additionalFlags |= nsIDocumentEncoder::AllowCrossShadowBoundary;
+  }
+
   if (aWithRubyAnnotation) {
     additionalFlags |= nsIDocumentEncoder::OutputRubyAnnotation;
   }
@@ -898,7 +904,7 @@ bool nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
     
     if (originalEventMessage != eCut || targetElement->IsEditable()) {
       
-      if (sel->IsCollapsed()) {
+      if (sel->AreNormalAndCrossShadowBoundaryRangesCollapsed()) {
         if (aActionTaken) {
           *aActionTaken = true;
         }

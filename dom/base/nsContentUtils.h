@@ -485,8 +485,21 @@ class nsContentUtils {
 
 
   static nsresult GetInclusiveAncestorsAndOffsets(
-      nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>* aAncestorNodes,
-      nsTArray<mozilla::Maybe<uint32_t>>* aAncestorOffsets);
+      nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>& aAncestorNodes,
+      nsTArray<mozilla::Maybe<uint32_t>>& aAncestorOffsets);
+
+  
+
+
+
+
+
+
+
+
+  static nsresult GetShadowIncludingAncestorsAndOffsets(
+      nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>& aAncestorNodes,
+      nsTArray<mozilla::Maybe<uint32_t>>& aAncestorOffsets);
 
   
 

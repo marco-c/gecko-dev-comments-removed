@@ -235,6 +235,7 @@ interface nsIDocumentEncoder : nsISupports
 
   const unsigned long RequiresReinitAfterOutput = (1 << 28);
 
+  const unsigned long AllowCrossShadowBoundary = (1 << 29);
   
 
 
