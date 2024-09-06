@@ -277,6 +277,17 @@ class SheetLoadData final
 
   void Cancel() override { mIsCancelled = true; }
 
+  void AccumulateExpirationTime(uint32_t aExpirationTime) {
+    
+    
+    if (aExpirationTime == 0) {
+      return;
+    }
+    if (mExpirationTime == 0 || aExpirationTime < mExpirationTime) {
+      mExpirationTime = aExpirationTime;
+    }
+  }
+
  private:
   const SheetLoadData& RootLoadData() const {
     const auto* top = this;
