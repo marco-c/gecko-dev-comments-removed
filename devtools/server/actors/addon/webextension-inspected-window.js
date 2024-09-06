@@ -110,7 +110,11 @@ function logAccessDeniedWarning(window, callerInfo, extensionPolicy) {
 
 
 
-function extensionAllowedToInspectPrincipal(extensionPolicy, principal, location) {
+function extensionAllowedToInspectPrincipal(
+  extensionPolicy,
+  principal,
+  location
+) {
   if (principal.isNullPrincipal) {
     if (location.protocol === "view-source:") {
       
