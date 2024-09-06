@@ -29,6 +29,8 @@ namespace webrtc {
 
 namespace {
 
+
+
 std::string GetFmtpParameterOrDefault(const CodecParameterMap& params,
                                       const std::string& name,
                                       const std::string& default_value) {
@@ -74,29 +76,45 @@ bool AV1IsSameLevelIdx(const CodecParameterMap& left,
   return AV1GetLevelIdxOrDefault(left) == AV1GetLevelIdxOrDefault(right);
 }
 
-
-
-bool IsSameCodecSpecific(const SdpVideoFormat& format1,
-                         const SdpVideoFormat& format2) {
+#ifdef RTC_ENABLE_H265
+std::string GetH265TxModeOrDefault(const CodecParameterMap& params) {
   
   
-  RTC_DCHECK(absl::EqualsIgnoreCase(format1.name, format2.name));
+  return GetFmtpParameterOrDefault(params, cricket::kH265FmtpTxMode, "SRST");
+}
 
-  VideoCodecType codec_type = PayloadStringToCodecType(format1.name);
+bool IsSameH265TxMode(const CodecParameterMap& left,
+                      const CodecParameterMap& right) {
+  return absl::EqualsIgnoreCase(GetH265TxModeOrDefault(left),
+                                GetH265TxModeOrDefault(right));
+}
+#endif
+
+
+
+bool IsSameCodecSpecific(const std::string& name1,
+                         const CodecParameterMap& params1,
+                         const std::string& name2,
+                         const CodecParameterMap& params2) {
+  
+  
+  RTC_DCHECK(absl::EqualsIgnoreCase(name1, name2));
+
+  VideoCodecType codec_type = PayloadStringToCodecType(name1);
   switch (codec_type) {
     case kVideoCodecH264:
-      return H264IsSameProfile(format1.parameters, format2.parameters) &&
-             H264IsSamePacketizationMode(format1.parameters,
-                                         format2.parameters);
+      return H264IsSameProfile(params1, params2) &&
+             H264IsSamePacketizationMode(params1, params2);
     case kVideoCodecVP9:
-      return VP9IsSameProfile(format1.parameters, format2.parameters);
+      return VP9IsSameProfile(params1, params2);
     case kVideoCodecAV1:
-      return AV1IsSameProfile(format1.parameters, format2.parameters) &&
-             AV1IsSameTier(format1.parameters, format2.parameters) &&
-             AV1IsSameLevelIdx(format1.parameters, format2.parameters);
+      return AV1IsSameProfile(params1, params2) &&
+             AV1IsSameTier(params1, params2) &&
+             AV1IsSameLevelIdx(params1, params2);
 #ifdef RTC_ENABLE_H265
     case kVideoCodecH265:
-      return H265IsSameProfileTierLevel(format1.parameters, format2.parameters);
+      return H265IsSameProfileTierLevel(params1, params2) &&
+             IsSameH265TxMode(params1, params2);
 #endif
     default:
       return true;
@@ -156,7 +174,7 @@ bool SdpVideoFormat::IsSameCodec(const SdpVideoFormat& other) const {
   
   
   return absl::EqualsIgnoreCase(name, other.name) &&
-         IsSameCodecSpecific(*this, other);
+         IsSameCodecSpecific(name, parameters, other.name, other.parameters);
 }
 
 bool SdpVideoFormat::IsCodecInList(
