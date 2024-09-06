@@ -86,6 +86,10 @@ class DataChannelSink {
   
   
   virtual void OnTransportClosed(RTCError error) {}
+
+  
+  
+  virtual void OnBufferedAmountLow(int channel_id) = 0;
 };
 
 
@@ -120,6 +124,8 @@ class DataChannelTransportInterface {
   virtual bool IsReadyToSend() const = 0;
 
   virtual size_t buffered_amount(int channel_id) const = 0;
+  virtual size_t buffered_amount_low_threshold(int channel_id) const = 0;
+  virtual void SetBufferedAmountLowThreshold(int channel_id, size_t bytes) = 0;
 };
 
 }  

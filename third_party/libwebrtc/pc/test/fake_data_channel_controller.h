@@ -129,6 +129,11 @@ class FakeDataChannelController
   }
 
   size_t buffered_amount(webrtc::StreamId sid) const override { return 0; }
+  size_t buffered_amount_low_threshold(webrtc::StreamId sid) const override {
+    return 0;
+  }
+  void SetBufferedAmountLowThreshold(webrtc::StreamId sid,
+                                     size_t bytes) override {}
 
   
   void set_send_blocked(bool blocked) {

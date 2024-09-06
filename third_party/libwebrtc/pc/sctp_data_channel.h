@@ -56,6 +56,8 @@ class SctpDataChannelControllerInterface {
   virtual void OnChannelStateChanged(SctpDataChannel* data_channel,
                                      DataChannelInterface::DataState state) = 0;
   virtual size_t buffered_amount(StreamId sid) const = 0;
+  virtual size_t buffered_amount_low_threshold(StreamId sid) const = 0;
+  virtual void SetBufferedAmountLowThreshold(StreamId sid, size_t bytes) = 0;
 
  protected:
   virtual ~SctpDataChannelControllerInterface() {}
@@ -208,6 +210,9 @@ class SctpDataChannel : public DataChannelInterface {
   
   
   void OnTransportChannelClosed(RTCError error);
+  
+  
+  void OnBufferedAmountLow();
 
   DataChannelStats GetStats() const;
 
