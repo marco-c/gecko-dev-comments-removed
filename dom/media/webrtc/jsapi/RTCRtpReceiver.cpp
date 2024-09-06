@@ -884,7 +884,13 @@ void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
   }
 }
 
-void RTCRtpReceiver::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {}
+void RTCRtpReceiver::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
+  if (!mTransceiver->GetPreferredCodecs().empty()) {
+    aJsepTransceiver.mRecvTrack.PopulateCodecs(
+        mTransceiver->GetPreferredCodecs(),
+        mTransceiver->GetPreferredCodecsInUse());
+  }
+}
 
 void RTCRtpReceiver::UpdateStreams(StreamAssociationChanges* aChanges) {
   

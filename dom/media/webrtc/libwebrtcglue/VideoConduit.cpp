@@ -512,6 +512,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         mRecvStreamConfig.rtp);
     MOZ_ASSERT(newRtp == mRecvStreamConfig.rtp);
     newRtp.rtx_associated_payload_types.clear();
+    newRtp.rtx_ssrc = 0;
     newRtp.rtcp_mode = rtpRtcpConfig->GetRtcpMode();
     newRtp.nack.rtp_history_ms = 0;
     newRtp.remb = false;
@@ -675,6 +676,14 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         (codecConfig != mControl.mConfiguredSendCodec ||
          rtpRtcpConfig != mControl.mConfiguredSendRtpRtcpConfig)) {
       CSFLogDebug(LOGTAG, "Configuring codec %s", codecConfig->mName.c_str());
+
+      if (mControl.mConfiguredSendCodec.isSome() &&
+          (mControl.mConfiguredSendCodec->mName != codecConfig->mName)) {
+        
+        
+        
+        DeleteSendStream();
+      }
       mControl.mConfiguredSendCodec = codecConfig;
       mControl.mConfiguredSendRtpRtcpConfig = rtpRtcpConfig;
 
@@ -1054,7 +1063,9 @@ void WebrtcVideoConduit::SetRemoteSSRCConfig(uint32_t aSsrc,
   }
 
   mRecvSSRC = mRecvStreamConfig.rtp.remote_ssrc = aSsrc;
-  mRecvStreamConfig.rtp.rtx_ssrc = aRtxSsrc;
+  
+  mRecvStreamConfig.rtp.rtx_ssrc =
+      mRecvStreamConfig.rtp.rtx_associated_payload_types.empty() ? 0 : aRtxSsrc;
 }
 
 void WebrtcVideoConduit::SetRemoteSSRCAndRestartAsNeeded(uint32_t aSsrc,

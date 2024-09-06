@@ -5,6 +5,7 @@
 #define _TRANSCEIVERIMPL_H_
 
 #include <string>
+#include "mozilla/dom/RTCRtpCapabilitiesBinding.h"
 #include "mozilla/StateMirroring.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
@@ -109,6 +110,8 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
     return mCurrentDirection;
   }
   void Stop(ErrorResult& aRv);
+  void SetCodecPreferences(const nsTArray<RTCRtpCodec>& aCodecs,
+                           ErrorResult& aRv);
   void SetDirectionInternal(RTCRtpTransceiverDirection aDirection);
   bool HasBeenUsedToSend() const { return mHasBeenUsedToSend; }
 
@@ -189,6 +192,12 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
   Canonical<std::string>& CanonicalMid() { return mMid; }
   Canonical<std::string>& CanonicalSyncGroup() { return mSyncGroup; }
 
+  const std::vector<UniquePtr<JsepCodecDescription>>& GetPreferredCodecs() {
+    return mPreferredCodecs;
+  }
+
+  bool GetPreferredCodecsInUse() { return mPreferredCodecsInUse; }
+
  private:
   virtual ~RTCRtpTransceiver();
   void InitAudio();
@@ -247,6 +256,14 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
 
   Canonical<std::string> mMid;
   Canonical<std::string> mSyncGroup;
+
+  
+  
+  std::vector<UniquePtr<JsepCodecDescription>> mPreferredCodecs;
+  
+  
+  
+  bool mPreferredCodecsInUse = false;
 };
 
 }  

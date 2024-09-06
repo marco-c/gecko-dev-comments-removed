@@ -136,6 +136,7 @@ class JsepTrack {
       mMaxEncodings = rhs.mMaxEncodings;
       mInHaveRemote = rhs.mInHaveRemote;
       mRtxIsAllowed = rhs.mRtxIsAllowed;
+      mUsePreferredCodecsOrder = rhs.mUsePreferredCodecsOrder;
       mFecCodec = rhs.mFecCodec;
       mAudioPreferredCodec = rhs.mAudioPreferredCodec;
       mVideoPreferredCodec = rhs.mVideoPreferredCodec;
@@ -192,8 +193,13 @@ class JsepTrack {
   bool GetRemoteSetSendBit() const { return mRemoteSetSendBit; }
   bool GetReceptive() const { return mReceptive; }
 
+  void PopulatePreferredCodecs(
+      const std::vector<UniquePtr<JsepCodecDescription>>& aPreferredCodecs,
+      bool aUsePreferredCodecsOrder);
+
   virtual void PopulateCodecs(
-      const std::vector<UniquePtr<JsepCodecDescription>>& prototype);
+      const std::vector<UniquePtr<JsepCodecDescription>>& prototype,
+      bool aUsePreferredCodecsOrder = false);
 
   template <class UnaryFunction>
   void ForEachCodec(UnaryFunction func) {
@@ -311,6 +317,10 @@ class JsepTrack {
 
   
   bool mRtxIsAllowed = true;
+
+  
+  
+  bool mUsePreferredCodecsOrder = false;
 
   
   std::string mFecCodec;

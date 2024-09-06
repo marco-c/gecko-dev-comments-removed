@@ -61,8 +61,10 @@ void JsepTrack::EnsureSsrcs(SsrcGenerator& ssrcGenerator, size_t aNumber) {
 }
 
 void JsepTrack::PopulateCodecs(
-    const std::vector<UniquePtr<JsepCodecDescription>>& prototype) {
+    const std::vector<UniquePtr<JsepCodecDescription>>& prototype,
+    bool aUsePreferredCodecsOrder) {
   mPrototypeCodecs.clear();
+  mUsePreferredCodecsOrder = aUsePreferredCodecsOrder;
   for (const auto& prototypeCodec : prototype) {
     if (prototypeCodec->Type() == mType) {
       mPrototypeCodecs.emplace_back(prototypeCodec->Clone());
@@ -485,8 +487,29 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
   std::vector<UniquePtr<JsepCodecDescription>> negotiatedPseudoCodecs;
   std::vector<UniquePtr<JsepCodecDescription>> newPrototypePseudoCodecs;
 
+  std::vector<std::string> remoteFormats;
+
   
-  for (const std::string& fmt : remote.GetFormats()) {
+  
+  if (mUsePreferredCodecsOrder) {
+    for (auto& codec : mPrototypeCodecs) {
+      if (!codec || !codec->mEnabled) {
+        continue;
+      }
+      for (const std::string& fmt : remote.GetFormats()) {
+        if (!codec->Matches(fmt, remote)) {
+          continue;
+        }
+        remoteFormats.push_back(fmt);
+        break;
+      }
+    }
+  } else {
+    remoteFormats = remote.GetFormats();
+  }
+
+  
+  for (const std::string& fmt : remoteFormats) {
     
     const auto* entry = remote.FindRtpmap(fmt);
     if (entry) {
@@ -531,6 +554,35 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
         }
         break;
       }
+    }
+  }
+
+  
+  
+  
+  
+  for (auto& codec : mPrototypeCodecs) {
+    bool codecEnabled = codec && codec->mEnabled;
+    bool addAllCodecs =
+        !remoteIsOffer && mDirection != sdp::kSend && remote.IsSending();
+    
+    
+    bool validPT = codecEnabled && (codec->mDefaultPt.compare("0") != 0 ||
+                                    (codec->mName.compare("PCMU") == 0));
+    if (!codecEnabled || (!addAllCodecs || !validPT)) {
+      continue;
+    }
+
+    UniquePtr<JsepCodecDescription> clone(codec->Clone());
+    
+    
+    if (codec->mName == "red" || codec->mName == "ulpfec" ||
+        codec->mName == "rtx") {
+      newPrototypePseudoCodecs.emplace_back(std::move(codec));
+      negotiatedPseudoCodecs.emplace_back(std::move(clone));
+    } else {
+      newPrototypeCodecs.emplace_back(std::move(codec));
+      negotiatedCodecs.emplace_back(std::move(clone));
     }
   }
 
