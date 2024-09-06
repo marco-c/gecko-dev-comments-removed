@@ -1,7 +1,6 @@
 
 
 import threading
-import time
 import traceback
 from queue import Empty
 from collections import namedtuple, defaultdict
@@ -29,6 +28,30 @@ def release_mozlog_lock():
 TestImplementation = namedtuple('TestImplementation',
                                 ['executor_cls', 'executor_kwargs',
                                  'browser_cls', 'browser_kwargs'])
+
+
+class StopFlag:
+    """Synchronization for coordinating a graceful exit."""
+
+    def __init__(self, size: int):
+        
+        
+        self._should_stop = threading.Event()
+        
+        
+        
+        
+        
+        self._all_managers_done = threading.Barrier(1 + size)
+
+    def stop(self) -> None:
+        self._should_stop.set()
+
+    def should_stop(self) -> bool:
+        return self._should_stop.is_set()
+
+    def wait_for_all_managers_done(self, timeout: Optional[float] = None) -> None:
+        self._all_managers_done.wait(timeout)
 
 
 class LogMessageHandler:
@@ -443,7 +466,8 @@ class TestRunnerManager(threading.Thread):
             if self.browser is not None:
                 assert self.browser.browser is not None
                 self.browser.browser.cleanup()
-        self.logger.debug("TestRunnerManager main loop terminated")
+            self.logger.debug("TestRunnerManager main loop terminated")
+            self.parent_stop_flag.wait_for_all_managers_done()
 
     def wait_event(self):
         dispatch = {
@@ -517,7 +541,7 @@ class TestRunnerManager(threading.Thread):
             return f(*data)
 
     def should_stop(self):
-        return self.child_stop_flag.is_set() or self.parent_stop_flag.is_set()
+        return self.child_stop_flag.is_set() or self.parent_stop_flag.should_stop()
 
     def start_init(self):
         subsuite, test_type, test, test_group, group_metadata = self.get_next_test()
@@ -977,9 +1001,7 @@ class ManagerGroup:
         self.max_restarts = max_restarts
 
         self.pool = set()
-        
-        
-        self.stop_flag = threading.Event()
+        self.stop_flag = None
         self.logger = structuredlog.StructuredLogger(suite_name)
 
     def __enter__(self):
@@ -992,6 +1014,7 @@ class ManagerGroup:
         """Start all managers in the group"""
         test_queue, size = self.test_queue_builder.make_queue(tests)
         self.logger.info("Using %i child processes" % size)
+        self.stop_flag = StopFlag(size)
 
         for idx in range(size):
             manager = TestRunnerManager(self.suite_name,
@@ -1020,18 +1043,31 @@ class ManagerGroup:
             timeout: Overall timeout (in seconds) for all threads to join. The
                 default value indicates an indefinite timeout.
         """
-        deadline = None if timeout is None else time.time() + timeout
-        for manager in self.pool:
-            manager_timeout = None
-            if deadline is not None:
-                manager_timeout = max(0, deadline - time.time())
-            manager.join(manager_timeout)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        assert self.stop_flag, "ManagerGroup hasn't been started yet"
+        self.stop_flag.wait_for_all_managers_done(timeout)
 
     def stop(self):
         """Set the stop flag so that all managers in the group stop as soon
         as possible"""
-        self.stop_flag.set()
-        self.logger.debug("Stop flag set in ManagerGroup")
+        if self.stop_flag:
+            self.stop_flag.stop()
+            self.logger.debug("Stop flag set in ManagerGroup")
 
     def test_count(self):
         return sum(manager.test_count for manager in self.pool)
