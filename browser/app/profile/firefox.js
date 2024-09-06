@@ -435,7 +435,7 @@ pref("browser.search.param.search_rich_suggestions", "fen");
 pref("browser.urlbar.weather.featureGate", false);
 
 
-pref("browser.urlbar.clipboard.featureGate", true);
+pref("browser.urlbar.clipboard.featureGate", false);
 
 
 
