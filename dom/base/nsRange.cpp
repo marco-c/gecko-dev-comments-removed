@@ -712,6 +712,21 @@ void nsRange::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling) {
   nsINode* startContainer = mStart.Container();
   nsINode* endContainer = mEnd.Container();
 
+  
+  
+  
+  if (mCrossShadowBoundaryRange) {
+    if (mCrossShadowBoundaryRange->GetStartContainer() == aChild ||
+        mCrossShadowBoundaryRange->GetEndContainer() == aChild) {
+      ResetCrossShadowBoundaryRange();
+    } else if (ShadowRoot* shadowRoot = aChild->GetShadowRoot()) {
+      if (mCrossShadowBoundaryRange->GetStartContainer() == shadowRoot ||
+          mCrossShadowBoundaryRange->GetEndContainer() == shadowRoot) {
+        ResetCrossShadowBoundaryRange();
+      }
+    }
+  }
+
   RawRangeBoundary newStart;
   RawRangeBoundary newEnd;
   Maybe<bool> gravitateStart;
@@ -3543,7 +3558,7 @@ void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
 
   if (!mCrossShadowBoundaryRange) {
     mCrossShadowBoundaryRange =
-        CrossShadowBoundaryRange::Create(aStartBoundary, aEndBoundary, this);
+        CrossShadowBoundaryRange::Create(aStartBoundary, aEndBoundary);
     return;
   }
 
