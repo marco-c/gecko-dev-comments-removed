@@ -719,6 +719,7 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
     
     
     if (!IsValidOctetSequenceForCharset(charsetB, caseBResult)) {
+      free(caseBResult);
       caseBResult = nullptr;
     }
   }
@@ -727,6 +728,7 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
     
     
     if (!IsValidOctetSequenceForCharset(charsetCD, caseCDResult)) {
+      free(caseCDResult);
       caseCDResult = nullptr;
     }
   }
