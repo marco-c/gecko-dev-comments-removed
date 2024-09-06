@@ -11350,13 +11350,6 @@ static int Shell(JSContext* cx, OptionParser* op) {
     nocgc.emplace(cx);
   }
 
-  if (op->getBoolOption("fuzzing-safe")) {
-    fuzzingSafe = true;
-  } else {
-    fuzzingSafe =
-        (getenv("MOZ_FUZZING_SAFE") && getenv("MOZ_FUZZING_SAFE")[0] != '0');
-  }
-
 #ifdef DEBUG
   if (op->getBoolOption("differential-testing")) {
     JS::SetSupportDifferentialTesting(true);
@@ -11621,6 +11614,12 @@ static bool SetJSPrefToTrueForBool(const char* name) {
 #undef CHECK_PREF
 
   
+  
+  
+  if (fuzzingSafe) {
+    fprintf(stderr, "Warning: Ignoring unknown pref name: %s\n", name);
+    return true;
+  }
   fprintf(stderr, "Invalid pref name: %s\n", name);
   return false;
 }
@@ -11641,6 +11640,12 @@ static bool SetJSPrefToValue(const char* name, size_t nameLen,
 #undef CHECK_PREF
 
   
+  
+  
+  if (fuzzingSafe) {
+    fprintf(stderr, "Warning: Ignoring unknown pref name: %s\n", name);
+    return true;
+  }
   fprintf(stderr, "Invalid pref name: %s\n", name);
   return false;
 }
@@ -12401,6 +12406,13 @@ bool InitOptionParser(OptionParser& op) {
 }
 
 bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
+  if (op.getBoolOption("fuzzing-safe")) {
+    fuzzingSafe = true;
+  } else {
+    fuzzingSafe =
+        (getenv("MOZ_FUZZING_SAFE") && getenv("MOZ_FUZZING_SAFE")[0] != '0');
+  }
+
   for (MultiStringRange args = op.getMultiStringOption("setpref");
        !args.empty(); args.popFront()) {
     if (!SetJSPref(args.front())) {
