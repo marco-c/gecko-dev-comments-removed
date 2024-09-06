@@ -8508,7 +8508,7 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
   
   nsTArray<TextDirective> textDirectives;
   if (FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragmentString(
-          aState.mNewHash, &textDirectives)) {
+          aState.mNewHash, &textDirectives, aLoadState->URI())) {
     if (Document* doc = GetDocument()) {
       doc->FragmentDirective()->SetTextDirectives(std::move(textDirectives));
     }
