@@ -60,6 +60,7 @@ const COLOR_TAKING_FUNCTIONS = new Set([
   "repeating-conic-gradient",
   "drop-shadow",
   "color-mix",
+  "light-dark",
 ]);
 
 const BASIC_SHAPE_FUNCTIONS = new Set([
