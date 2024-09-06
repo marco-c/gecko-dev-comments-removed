@@ -1216,13 +1216,17 @@ var SelectTranslationsPanel = new (class {
 
 
   onClickTranslateButton() {
-    TranslationsParent.telemetry()
-      .selectTranslationsPanel()
-      .onTranslateButton();
-
     const { fromMenuList, tryAnotherSourceMenuList } = this.elements;
+    const { detectedLanguage, toLanguage } = this.#translationState;
 
     fromMenuList.value = tryAnotherSourceMenuList.value;
+
+    TranslationsParent.telemetry().selectTranslationsPanel().onTranslateButton({
+      detectedLanguage,
+      fromLanguage: fromMenuList.value,
+      toLanguage,
+    });
+
     this.#maybeRequestTranslation();
   }
 
