@@ -27,7 +27,7 @@ namespace js {
 namespace jit {
 class AutoMarkJitCodeWritableForThread;
 struct ResumeFromException;
-}
+}  
 namespace wasm {
 
 class WasmFrameIter;
