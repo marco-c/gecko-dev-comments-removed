@@ -738,8 +738,6 @@ void NodeController::OnAcceptInvite(const NodeName& aFromNode,
   Invite invite;
   {
     auto state = mState.Lock();
-    MOZ_ASSERT(state->mPendingMessages.IsEmpty(),
-               "Shouldn't have pending messages in broker");
 
     
     
