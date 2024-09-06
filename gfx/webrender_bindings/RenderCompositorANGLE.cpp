@@ -13,7 +13,6 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/StackArray.h"
-#include "mozilla/layers/TextureD3D11.h"
 #include "mozilla/layers/HelpersD3D11.h"
 #include "mozilla/layers/SyncObject.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -426,7 +425,7 @@ bool RenderCompositorANGLE::BeginFrame() {
     if (!mSyncObject->Synchronize( true)) {
       
       RenderThread::Get()->HandleDeviceReset(
-          DeviceResetDetectPlace::WR_SYNC_OBJRCT, DeviceResetReason::UNKNOWN);
+          "SyncObject", LOCAL_GL_UNKNOWN_CONTEXT_RESET_ARB);
       return false;
     }
   }
@@ -779,12 +778,29 @@ RenderedFrameId RenderCompositorANGLE::UpdateFrameId() {
   return frameId;
 }
 
-DeviceResetReason RenderCompositorANGLE::IsContextLost(bool aForce) {
+GLenum RenderCompositorANGLE::IsContextLost(bool aForce) {
   
   
   
   auto reason = mDevice->GetDeviceRemovedReason();
-  return layers::DXGIErrorToDeviceResetReason(reason);
+  switch (reason) {
+    case S_OK:
+      return LOCAL_GL_NO_ERROR;
+    case DXGI_ERROR_DEVICE_REMOVED:
+    case DXGI_ERROR_DRIVER_INTERNAL_ERROR:
+      NS_WARNING("Device reset due to system / different device");
+      return LOCAL_GL_INNOCENT_CONTEXT_RESET_ARB;
+    case DXGI_ERROR_DEVICE_HUNG:
+    case DXGI_ERROR_DEVICE_RESET:
+    case DXGI_ERROR_INVALID_CALL:
+      gfxCriticalError() << "Device reset due to WR device: "
+                         << gfx::hexa(reason);
+      return LOCAL_GL_GUILTY_CONTEXT_RESET_ARB;
+    default:
+      gfxCriticalError() << "Device reset with WR device unexpected reason: "
+                         << gfx::hexa(reason);
+      return LOCAL_GL_UNKNOWN_CONTEXT_RESET_ARB;
+  }
 }
 
 bool RenderCompositorANGLE::UseCompositor() {

@@ -807,8 +807,7 @@ void RenderThread::UpdateAndRender(
     renderer->Update();
   }
   
-  renderer->CheckGraphicsResetStatus(DeviceResetDetectPlace::WR_POST_UPDATE,
-                                      false);
+  renderer->CheckGraphicsResetStatus("PostUpdate",  false);
 
   TimeStamp end = TimeStamp::Now();
   RefPtr<const WebRenderPipelineInfo> info = renderer->GetLastPipelineInfo();
@@ -1197,12 +1196,32 @@ void RenderThread::PostRunnable(already_AddRefed<nsIRunnable> aRunnable) {
   mThread->Dispatch(runnable.forget());
 }
 
-void RenderThread::HandleDeviceReset(DeviceResetDetectPlace aPlace,
-                                     DeviceResetReason aReason) {
+#ifndef XP_WIN
+static DeviceResetReason GLenumToResetReason(GLenum aReason) {
+  switch (aReason) {
+    case LOCAL_GL_NO_ERROR:
+      return DeviceResetReason::FORCED_RESET;
+    case LOCAL_GL_INNOCENT_CONTEXT_RESET_ARB:
+      return DeviceResetReason::DRIVER_ERROR;
+    case LOCAL_GL_PURGED_CONTEXT_RESET_NV:
+      return DeviceResetReason::NVIDIA_VIDEO;
+    case LOCAL_GL_GUILTY_CONTEXT_RESET_ARB:
+      return DeviceResetReason::RESET;
+    case LOCAL_GL_UNKNOWN_CONTEXT_RESET_ARB:
+      return DeviceResetReason::UNKNOWN;
+    case LOCAL_GL_OUT_OF_MEMORY:
+      return DeviceResetReason::OUT_OF_MEMORY;
+    default:
+      return DeviceResetReason::OTHER;
+  }
+}
+#endif
+
+void RenderThread::HandleDeviceReset(const char* aWhere, GLenum aReason) {
   MOZ_ASSERT(IsInRenderThread());
 
   
-  if (aReason == DeviceResetReason::FORCED_RESET) {
+  if (aReason == LOCAL_GL_NO_ERROR) {
     if (!mHandlingDeviceReset) {
       mHandlingDeviceReset = true;
 
@@ -1215,8 +1234,15 @@ void RenderThread::HandleDeviceReset(DeviceResetDetectPlace aPlace,
       
       
       
-      gfx::GPUProcessManager::GPUProcessManager::NotifyDeviceReset(
-          DeviceResetReason::FORCED_RESET, aPlace);
+      if (XRE_IsGPUProcess()) {
+        gfx::GPUParent::GetSingleton()->NotifyDeviceReset();
+      } else {
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "gfx::GPUProcessManager::OnInProcessDeviceReset", []() -> void {
+              gfx::GPUProcessManager::Get()->OnInProcessDeviceReset(
+                   false);
+            }));
+      }
     }
     return;
   }
@@ -1229,7 +1255,7 @@ void RenderThread::HandleDeviceReset(DeviceResetDetectPlace aPlace,
 
 #ifndef XP_WIN
   
-  gfx::GPUProcessManager::RecordDeviceReset(aReason);
+  gfx::GPUProcessManager::RecordDeviceReset(GLenumToResetReason(aReason));
 #endif
 
   {
@@ -1244,15 +1270,18 @@ void RenderThread::HandleDeviceReset(DeviceResetDetectPlace aPlace,
   
   
   
+  gfxCriticalNote << "GFX: RenderThread detected a device reset in " << aWhere;
   if (XRE_IsGPUProcess()) {
-    gfx::GPUProcessManager::GPUProcessManager::NotifyDeviceReset(aReason,
-                                                                 aPlace);
+    gfx::GPUParent::GetSingleton()->NotifyDeviceReset();
   } else {
 #ifndef XP_WIN
     
     
-    gfx::GPUProcessManager::GPUProcessManager::NotifyDeviceReset(aReason,
-                                                                 aPlace);
+    bool guilty = aReason == LOCAL_GL_GUILTY_CONTEXT_RESET_ARB;
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "gfx::GPUProcessManager::OnInProcessDeviceReset", [guilty]() -> void {
+          gfx::GPUProcessManager::Get()->OnInProcessDeviceReset(guilty);
+        }));
 #endif
   }
 }
@@ -1270,8 +1299,7 @@ void RenderThread::SimulateDeviceReset() {
     
     
     
-    HandleDeviceReset(DeviceResetDetectPlace::WR_SIMULATE,
-                      DeviceResetReason::FORCED_RESET);
+    HandleDeviceReset("SimulateDeviceReset", LOCAL_GL_NO_ERROR);
   }
 }
 
