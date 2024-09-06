@@ -348,6 +348,36 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoEntryMonitor {
   virtual void Exit(JSContext* cx) {}
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool ShouldAvoidSideEffects(JSContext* cx);
+
 }  
 }  
 

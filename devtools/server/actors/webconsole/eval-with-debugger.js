@@ -325,6 +325,7 @@ function getEvalResult(
     if (noSideEffectDebugger) {
       noSideEffectDebugger.removeAllDebuggees();
       noSideEffectDebugger.onNativeCall = undefined;
+      noSideEffectDebugger.shouldAvoidSideEffects = false;
     }
   }
 }
@@ -544,6 +545,7 @@ function makeSideeffectFreeDebugger(targetActorDbg) {
     
     return null;
   };
+  dbg.shouldAvoidSideEffects = true;
 
   return dbg;
 }
