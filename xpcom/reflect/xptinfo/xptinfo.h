@@ -481,12 +481,6 @@ struct nsXPTMethodInfo {
   
   
 
-  const nsXPTParamInfo& GetParam(uint8_t aIndex) const { return Param(aIndex); }
-
-  
-  
-  
-
   uint32_t mName;    
   uint16_t mParams;  
   uint8_t mNumParams;
