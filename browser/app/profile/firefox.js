@@ -1985,7 +1985,13 @@ pref("browser.translations.newSettingsUI.enable", false);
 
 
 
-pref("browser.translations.select.enable", false);
+#if defined(EARLY_BETA_OR_EARLIER)
+  
+  pref("browser.translations.select.enable", true);
+#else
+  
+  pref("browser.translations.select.enable", false);
+#endif
 
 
 
