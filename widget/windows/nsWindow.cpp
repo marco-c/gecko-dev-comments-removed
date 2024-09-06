@@ -1625,7 +1625,14 @@ void nsWindow::Show(bool bState) {
 
           RECT rect;
           ::GetWindowRect(hwnd, &rect);  
+
+          
+          
           ::MapWindowPoints(HWND_DESKTOP, hwnd, (LPPOINT)&rect, 2);
+          
+          
+          ::OffsetRect(&rect, -rect.left, -rect.top);
+
           ::FillRect(hdc, &rect, brush);
         };
 

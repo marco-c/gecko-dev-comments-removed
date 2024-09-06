@@ -1936,6 +1936,13 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
       sDwmSetWindowAttribute(sPreXULSkeletonUIWindow, DWMWA_CLOAK, &state,
                              sizeof(state));
     };
+    
+    constexpr static auto const OffsetRect = [](LPRECT rect, int dx, int dy) {
+      rect->left += dx;
+      rect->top += dy;
+      rect->right += dx;
+      rect->bottom += dy;
+    };
 
     CloakWindow(sPreXULSkeletonUIWindow, TRUE);
     auto const _uncloak =
@@ -1949,9 +1956,13 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
     auto const _cleanupDC =
         MakeScopeExit([&] { sReleaseDC(sPreXULSkeletonUIWindow, hdc); });
 
+    
     RECT rect;
     sGetWindowRect(sPreXULSkeletonUIWindow, &rect);  
+    
     sMapWindowPoints(HWND_DESKTOP, sPreXULSkeletonUIWindow, (LPPOINT)&rect, 2);
+    
+    OffsetRect(&rect, -rect.left, -rect.top);
     FillRectWithColor(hdc, &rect, currentTheme.backgroundColor);
   }
 
