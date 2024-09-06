@@ -601,6 +601,9 @@ pref("toolkit.telemetry.dap_helper_owner", "Mozilla");
 pref("toolkit.telemetry.dap.logLevel", "Warn");
 
 
+pref("toolkit.telemetry.translations.logLevel", "Error");
+
+
 
 
 pref("toolkit.telemetry.user_characteristics_ping.current_version", 0);
