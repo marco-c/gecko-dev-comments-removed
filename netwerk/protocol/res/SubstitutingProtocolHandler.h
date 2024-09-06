@@ -58,9 +58,8 @@ class SubstitutingProtocolHandler {
   
   
   [[nodiscard]] virtual nsresult GetSubstitutionInternal(
-      const nsACString& aRoot, nsIURI** aResult, uint32_t* aFlags) {
+      const nsACString& aRoot, nsIURI** aResult) {
     *aResult = nullptr;
-    *aFlags = 0;
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -75,8 +74,9 @@ class SubstitutingProtocolHandler {
 
   
   
-  [[nodiscard]] virtual bool MustResolveJAR(const nsACString& aRoot) {
-    return false;
+  
+  [[nodiscard]] virtual uint32_t GetJARFlags(const nsACString& aRoot) {
+    return 0;
   }
 
   
