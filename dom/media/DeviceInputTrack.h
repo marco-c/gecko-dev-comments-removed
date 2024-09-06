@@ -65,7 +65,6 @@ class NonNativeInputTrack;
 
 
 
-
 class DeviceInputConsumerTrack : public ProcessedMediaTrack {
  public:
   explicit DeviceInputConsumerTrack(TrackRate aSampleRate);
@@ -89,8 +88,8 @@ class DeviceInputConsumerTrack : public ProcessedMediaTrack {
   
   
   
-  void GetInputSourceData(AudioSegment& aOutput, const MediaInputPort* aPort,
-                          GraphTime aFrom, GraphTime aTo) const;
+  void GetInputSourceData(AudioSegment& aOutput, GraphTime aFrom,
+                          GraphTime aTo) const;
 
   
   RefPtr<MediaInputPort> mPort;
