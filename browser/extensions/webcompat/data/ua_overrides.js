@@ -1227,6 +1227,23 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+    id: "bug1896354",
+    platform: "all",
+    domain: "my.rhinoshield.fr",
+    bug: "1896354",
+    config: {
+      matches: ["*://my.rhinoshield.fr/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
