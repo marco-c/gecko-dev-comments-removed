@@ -16,19 +16,24 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadBound.h"
 #include "mozilla/dom/PRemoteWorkerChild.h"
+#include "mozilla/dom/RemoteWorkerOp.h"
 #include "mozilla/dom/PRemoteWorkerNonLifeCycleOpControllerChild.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
+#include "mozilla/dom/SharedWorkerOpArgs.h"
 
 class nsISerialEventTarget;
 class nsIConsoleReportCollector;
 
 namespace mozilla::dom {
 
+using remoteworker::RemoteWorkerState;
+
 class ErrorValue;
 class FetchEventOpProxyChild;
 class RemoteWorkerData;
 class RemoteWorkerServiceKeepAlive;
 class ServiceWorkerOp;
+class SharedWorkerOp;
 class UniqueMessagePortId;
 class WeakWorkerRef;
 class WorkerErrorReport;
@@ -45,6 +50,7 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
   friend class FetchEventOpProxyChild;
   friend class PRemoteWorkerChild;
   friend class ServiceWorkerOp;
+  friend class SharedWorkerOp;
 
   ~RemoteWorkerChild();
 
@@ -84,86 +90,17 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
  private:
   class InitializeWorkerRunnable;
 
-  class Op;
-  class SharedWorkerOp;
-
-  struct WorkerPrivateAccessibleState {
-    ~WorkerPrivateAccessibleState();
-    RefPtr<WorkerPrivate> mWorkerPrivate;
-  };
-
   
   
   
   
-  struct Pending : WorkerPrivateAccessibleState {
-    nsTArray<RefPtr<Op>> mPendingOps;
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  struct Running : WorkerPrivateAccessibleState {};
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct Canceled {};
-
-  
-  
-  
-  
-  
-  
-  struct Killed {};
-
-  using State = Variant<Pending, Running, Canceled, Killed>;
-
-  
-  
-  
-  
-  DataMutex<State> mState;
+  DataMutex<RemoteWorkerState> mState;
 
   const RefPtr<RemoteWorkerServiceKeepAlive> mServiceKeepAlive;
 
-  class Op {
-   public:
-    NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
-    virtual ~Op() = default;
-
-    virtual bool MaybeStart(RemoteWorkerChild* aOwner, State& aState) = 0;
-
-    virtual void StartOnMainThread(RefPtr<RemoteWorkerChild>& aOwner) = 0;
-
-    virtual void Cancel() = 0;
-  };
-
   void ActorDestroy(ActorDestroyReason) override;
 
-  mozilla::ipc::IPCResult RecvExecOp(RemoteWorkerOp&& aOp);
+  mozilla::ipc::IPCResult RecvExecOp(SharedWorkerOpArgs&& aOpArgs);
 
   mozilla::ipc::IPCResult RecvExecServiceWorkerOp(
       ServiceWorkerOpArgs&& aArgs, ExecServiceWorkerOpResolver&& aResolve);
@@ -213,18 +150,18 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
   
   
   
-  void TransitionStateFromPendingToCanceled(State& aState);
+  void TransitionStateFromPendingToCanceled(RemoteWorkerState& aState);
   void TransitionStateFromCanceledToKilled();
 
   void TransitionStateToRunning();
 
   void TransitionStateToTerminated();
 
-  void TransitionStateToTerminated(State& aState);
+  void TransitionStateToTerminated(RemoteWorkerState& aState);
 
-  void CancelAllPendingOps(State& aState);
+  void CancelAllPendingOps(RemoteWorkerState& aState);
 
-  void MaybeStartOp(RefPtr<Op>&& aOp);
+  void MaybeStartOp(RefPtr<RemoteWorkerOp>&& aOp);
 
   const bool mIsServiceWorker;
 

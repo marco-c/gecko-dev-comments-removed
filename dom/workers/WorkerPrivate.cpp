@@ -3291,11 +3291,10 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
     
     
     if (mChildEp.IsValid()) {
-      RefPtr<RemoteWorkerNonLifeCycleOpControllerChild>
-          nonLifeCycleOpController =
-              RemoteWorkerNonLifeCycleOpControllerChild::Create();
-      if (nonLifeCycleOpController) {
-        mChildEp.Bind(nonLifeCycleOpController);
+      mRemoteWorkerNonLifeCycleOpController =
+          RemoteWorkerNonLifeCycleOpControllerChild::Create();
+      if (mRemoteWorkerNonLifeCycleOpController) {
+        mChildEp.Bind(mRemoteWorkerNonLifeCycleOpController);
       }
     }
 
@@ -5222,6 +5221,14 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
   
   if (aStatus == Canceling) {
     NotifyWorkerRefs(aStatus);
+  }
+
+  if (aStatus == Canceling && mRemoteWorkerNonLifeCycleOpController) {
+    mRemoteWorkerNonLifeCycleOpController->TransistionStateToCanceled();
+  }
+
+  if (aStatus == Killing && mRemoteWorkerNonLifeCycleOpController) {
+    mRemoteWorkerNonLifeCycleOpController->TransistionStateToKilled();
   }
 
   
