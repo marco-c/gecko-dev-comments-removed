@@ -45,6 +45,7 @@
 #include "threading/ExclusiveData.h"
 #include "util/Memory.h"
 #include "vm/MutexIDs.h"
+#include "wasm/AsmJS.h"  
 #include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCodegenConstants.h"
@@ -62,13 +63,12 @@
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
 
+using js::Metadata;
+
 struct JS_PUBLIC_API JSContext;
 class JSFunction;
 
 namespace js {
-
-struct AsmJSMetadata;
-class ScriptSource;
 
 namespace jit {
 class MacroAssembler;
@@ -77,7 +77,6 @@ class MacroAssembler;
 namespace wasm {
 
 struct MetadataTier;
-struct Metadata;
 
 
 
@@ -229,7 +228,7 @@ class ModuleSegment : public CodeSegment {
                                     const LinkData& linkData);
 
   bool initialize(const CodeTier& codeTier, const LinkData& linkData,
-                  const Metadata& metadata, const CodeMetadata& codeMeta,
+                  const Metadata* metadata, const CodeMetadata& codeMeta,
                   const MetadataTier& metadataTier);
 
   Tier tier() const { return tier_; }
@@ -259,6 +258,13 @@ extern void StaticallyUnlink(uint8_t* base, const LinkData& linkData);
 
 
 
+enum class NameContext { Standalone, BeforeLocation };
+
+
+
+bool GetFuncNameForWasm(NameContext ctx, uint32_t funcIndex,
+                        SharedBytes namePayload, const Maybe<Name>& moduleName,
+                        const NameVector& funcNames, UTF8Bytes* name);
 
 
 
@@ -266,59 +272,13 @@ extern void StaticallyUnlink(uint8_t* base, const LinkData& linkData);
 
 
 
-struct Metadata : public ShareableBase<Metadata> {
-  explicit Metadata() {}
-  virtual ~Metadata() = default;
 
-  
-  
-  
-  
 
-  const AsmJSMetadata& asAsmJS() const {
-    
-    
-    
-    
-    return *(const AsmJSMetadata*)this;
-  }
-  virtual bool mutedErrors() const { return false; }
-  virtual const char16_t* displayURL() const { return nullptr; }
-  virtual ScriptSource* maybeScriptSource() const { return nullptr; }
 
-  
-  
-  
-  
 
-  enum NameContext { Standalone, BeforeLocation };
 
-  virtual bool getFuncName(NameContext ctx, uint32_t funcIndex,
-                           SharedBytes namePayload,
-                           const Maybe<Name>& moduleName,
-                           const NameVector& funcNames, UTF8Bytes* name) const;
 
-  bool getFuncNameStandalone(uint32_t funcIndex, SharedBytes namePayload,
-                             const Maybe<Name>& moduleName,
-                             const NameVector& funcNames,
-                             UTF8Bytes* name) const {
-    return getFuncName(NameContext::Standalone, funcIndex, namePayload,
-                       moduleName, funcNames, name);
-  }
-  bool getFuncNameBeforeLocation(uint32_t funcIndex, SharedBytes namePayload,
-                                 const Maybe<Name>& moduleName,
-                                 const NameVector& funcNames,
-                                 UTF8Bytes* name) const {
-    return getFuncName(NameContext::BeforeLocation, funcIndex, namePayload,
-                       moduleName, funcNames, name);
-  }
 
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-  WASM_DECLARE_FRIEND_SERIALIZE(Metadata);
-};
-
-using MutableMetadata = RefPtr<Metadata>;
-using SharedMetadata = RefPtr<const Metadata>;
 
 struct MetadataTier {
   explicit MetadataTier(Tier tier = Tier::Serialized)
@@ -492,7 +452,7 @@ class CodeTier {
 
   bool initialized() const { return !!code_ && segment_->initialized(); }
   bool initialize(const Code& code, const LinkData& linkData,
-                  const Metadata& metadata, const CodeMetadata& codeMeta);
+                  const Metadata* metadata, const CodeMetadata& codeMeta);
 
   Tier tier() const { return segment_->tier(); }
   const RWExclusiveData<LazyStubTier>& lazyStubs() const { return lazyStubs_; }
@@ -643,7 +603,7 @@ class Code : public ShareableBase<Code> {
   JumpTables jumpTables_;
 
  public:
-  Code(UniqueCodeTier tier1, const Metadata& metadata,
+  Code(UniqueCodeTier tier1, const Metadata* metadata,
        const CodeMetadata& codeMeta, JumpTables&& maybeJumpTables);
   bool initialized() const { return tier1_->initialized(); }
 
@@ -682,7 +642,7 @@ class Code : public ShareableBase<Code> {
       const;  
 
   const CodeTier& codeTier(Tier tier) const;
-  const Metadata& metadata() const { return *metadata_; }
+  const Metadata* metadata() const { return metadata_; }
   const CodeMetadata& codeMeta() const { return *codeMeta_; }
 
   const ModuleSegment& segment(Tier iter) const {

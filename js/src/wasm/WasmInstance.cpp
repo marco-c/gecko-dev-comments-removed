@@ -3348,9 +3348,15 @@ JSAtom* Instance::getFuncDisplayAtom(JSContext* cx, uint32_t funcIndex) const {
   
   
   UTF8Bytes name;
-  if (!metadata().getFuncNameBeforeLocation(funcIndex, codeMeta().namePayload,
-                                            codeMeta().moduleName,
-                                            codeMeta().funcNames, &name)) {
+  bool ok;
+  if (metadata()) {
+    ok = metadata()->getFuncNameForAsmJS(funcIndex, &name);
+  } else {
+    ok = GetFuncNameForWasm(NameContext::BeforeLocation, funcIndex,
+                            codeMeta().namePayload, codeMeta().moduleName,
+                            codeMeta().funcNames, &name);
+  }
+  if (!ok) {
     return nullptr;
   }
 
