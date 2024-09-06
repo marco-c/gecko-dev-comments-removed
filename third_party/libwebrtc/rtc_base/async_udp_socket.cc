@@ -21,12 +21,6 @@
 
 namespace rtc {
 
-
-
-static bool IsScmTimeStampExperimentDisabled() {
-  return webrtc::field_trial::IsDisabled("WebRTC-SCM-Timestamp");
-}
-
 AsyncUDPSocket* AsyncUDPSocket::Create(Socket* socket,
                                        const SocketAddress& bind_address) {
   std::unique_ptr<Socket> owned_socket(socket);
@@ -134,14 +128,8 @@ void AsyncUDPSocket::OnReadEvent(Socket* socket) {
   } else {
     if (!socket_time_offset_) {
       
-      
-      bool estimate_time_offset = !IsScmTimeStampExperimentDisabled();
-      if (estimate_time_offset) {
-        socket_time_offset_ = webrtc::Timestamp::Micros(rtc::TimeMicros()) -
-                              *receive_buffer.arrival_time;
-      } else {
-        socket_time_offset_ = webrtc::TimeDelta::Micros(0);
-      }
+      socket_time_offset_ = webrtc::Timestamp::Micros(rtc::TimeMicros()) -
+                            *receive_buffer.arrival_time;
     }
     *receive_buffer.arrival_time += *socket_time_offset_;
   }
