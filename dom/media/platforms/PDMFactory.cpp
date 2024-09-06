@@ -192,9 +192,8 @@ StaticMutex PDMInitializer::sMonitor;
 
 void PDMInitializer::InitPDMs() {
   StaticMutexAutoLock mon(sMonitor);
-  if (sHasInitializedPDMs) {
-    return;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!sHasInitializedPDMs);
   if (XRE_IsGPUProcess()) {
     PDM_INIT_LOG("Init PDMs in GPU process");
     InitGpuPDMs();
@@ -307,28 +306,26 @@ void PDMFactory::EnsureInit() {
   if (PDMInitializer::HasInitializedPDMs()) {
     return;
   }
-  static Atomic<bool> sInitGfxVarsAndPreferences(false);
-  auto initalizationGfxVarsAndPreferences = []() {
+  auto initalization = []() {
     MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-    if (!sInitGfxVarsAndPreferences) {
+    if (!PDMInitializer::HasInitializedPDMs()) {
       
       gfx::gfxVars::Initialize();
       
       Unused << BrowserTabsRemoteAutostart();
-      sInitGfxVarsAndPreferences = true;
+      PDMInitializer::InitPDMs();
     }
   };
   
+  
   if (NS_IsMainThread()) {
-    initalizationGfxVarsAndPreferences();
-  } else {
-    nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadSerialEventTarget();
-    nsCOMPtr<nsIRunnable> runnable =
-        NS_NewRunnableFunction("PDMFactory::EnsureInit",
-                               std::move(initalizationGfxVarsAndPreferences));
-    SyncRunnable::DispatchToThread(mainTarget, runnable);
+    initalization();
+    return;
   }
-  PDMInitializer::InitPDMs();
+  nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadSerialEventTarget();
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      "PDMFactory::EnsureInit", std::move(initalization));
+  SyncRunnable::DispatchToThread(mainTarget, runnable);
 }
 
 RefPtr<PlatformDecoderModule::CreateDecoderPromise> PDMFactory::CreateDecoder(
