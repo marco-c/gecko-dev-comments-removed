@@ -606,6 +606,10 @@ struct MOZ_STATIC_CLASS JSClassOps {
 
 static constexpr const JSClassOps* JS_NULL_CLASS_OPS = nullptr;
 
+
+
+
+
 struct alignas(js::gc::JSClassAlignBytes) JSClass {
   const char* name;
   uint32_t flags;
@@ -763,7 +767,7 @@ struct alignas(js::gc::JSClassAlignBytes) JSClass {
   JSFunToStringOp getOpsFunToString() const {
     return oOps ? oOps->funToString : nullptr;
   }
-};
+} MOZ_STATIC_CLASS;
 
 static constexpr uint32_t JSCLASS_RESERVED_SLOTS(const JSClass* clasp) {
   return (clasp->flags >> JSCLASS_RESERVED_SLOTS_SHIFT) &
