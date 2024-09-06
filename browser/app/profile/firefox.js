@@ -3025,6 +3025,10 @@ pref("browser.mailto.prompt.os", true);
 
 pref("browser.backup.enabled", true);
 
+pref("browser.backup.sqlite.pages_per_step", 5);
+
+pref("browser.backup.sqlite.step_delay_ms", 250);
+
 
 pref("browser.profiles.enabled", false);
 
