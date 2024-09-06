@@ -219,6 +219,8 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
   uint32_t traversal = 0;
   uint32_t special_ftp_len = 0;
 
+  MOZ_ASSERT(*path == '/', "We expect the path to begin with /");
+
   
   if (flags & NET_COALESCE_DOUBLE_SLASH_IS_ROOT) {
     
@@ -344,6 +346,12 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
   if ((urlPtr > (path + 1)) && (*(urlPtr - 1) == '.') &&
       (*(urlPtr - 2) == '/')) {
     urlPtr--;
+  }
+
+  
+  
+  if (urlPtr == path) {
+    urlPtr++;
   }
 
   
