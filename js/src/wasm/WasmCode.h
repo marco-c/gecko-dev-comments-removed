@@ -157,6 +157,7 @@ struct LinkData : LinkDataCacheablePod {
 WASM_DECLARE_CACHEABLE_POD(LinkData::InternalLink);
 
 using UniqueLinkData = UniquePtr<LinkData>;
+using UniqueLinkDataVector = Vector<UniqueLinkData, 0, SystemAllocPolicy>;
 
 
 
@@ -174,7 +175,8 @@ class CodeBlock;
 
 using UniqueCodeBlock = UniquePtr<CodeBlock>;
 using UniqueConstCodeBlock = UniquePtr<const CodeBlock>;
-using UniqueCodeBlockVector = Vector<UniqueCodeBlock, 0, SystemAllocPolicy>;
+using UniqueConstCodeBlockVector =
+    Vector<UniqueConstCodeBlock, 0, SystemAllocPolicy>;
 using RawCodeBlockVector = Vector<const CodeBlock*, 0, SystemAllocPolicy>;
 
 enum class CodeBlockKind {
@@ -388,6 +390,8 @@ class CodeBlock {
  public:
   
   const Code* code;
+  
+  size_t codeBlockIndex;
 
   
   
@@ -427,14 +431,22 @@ class CodeBlock {
 
   explicit CodeBlock(CodeBlockKind kind)
       : code(nullptr),
+        codeBlockIndex((size_t)-1),
         kind(kind),
         debugTrapOffset(0),
         unregisterOnDestroy_(false) {}
   ~CodeBlock();
 
-  bool initialized() const { return !!code; }
+  bool initialized() const {
+    if (code) {
+      
+      MOZ_ASSERT(codeBlockIndex != (size_t)-1);
+      return true;
+    }
+    return false;
+  }
 
-  bool initialize(const Code& code);
+  bool initialize(const Code& code, size_t codeBlockIndex);
 
   
   Tier tier() const {
@@ -446,6 +458,12 @@ class CodeBlock {
       default:
         MOZ_CRASH();
     }
+  }
+
+  
+  bool isSerializable() const {
+    return kind == CodeBlockKind::SharedStubs ||
+           kind == CodeBlockKind::OptimizedTier;
   }
 
   const uint8_t* base() const { return codeBase; }
@@ -755,8 +773,17 @@ using MetadataAnalysisHashMap =
 
 class Code : public ShareableBase<Code> {
   struct ProtectedData {
-    UniqueCodeBlockVector blocks;
+    
+    
+    UniqueConstCodeBlockVector blocks;
+    
+    
+    
+    UniqueLinkDataVector blocksLinkData;
+
+    
     SharedCodeSegmentVector lazySegments;
+    
     LazyFuncExportVector lazyExports;
   };
   using ReadGuard = RWExclusiveData<ProtectedData>::ReadGuard;
@@ -822,8 +849,13 @@ class Code : public ShareableBase<Code> {
   
   Tiers completeTiers() const;
 
+  [[nodiscard]] bool addCodeBlock(const WriteGuard& guard,
+                                  UniqueCodeBlock block,
+                                  UniqueLinkData maybeLinkData) const;
+
   [[nodiscard]] const LazyFuncExport* lookupLazyFuncExport(
       const WriteGuard& guard, uint32_t funcIndex) const;
+
   
   
   [[nodiscard]] void* lookupLazyInterpEntry(const WriteGuard& guard,
@@ -851,16 +883,14 @@ class Code : public ShareableBase<Code> {
   Code(CompileMode mode, const CodeMetadata& codeMeta,
        const CodeMetadataForAsmJS* codeMetaForAsmJS,
        const ShareableBytes* maybeBytecode);
-  bool initialized() const {
-    return !!completeTier1_ && completeTier1_->initialized();
-  }
 
   [[nodiscard]] bool initialize(FuncImportVector&& funcImports,
                                 UniqueCodeBlock sharedStubs,
-                                const LinkData& sharedStubsLinkData,
-                                UniqueCodeBlock tier1CodeBlock);
-  [[nodiscard]] bool finishTier2(const LinkData& linkData,
-                                 UniqueCodeBlock tier2Code) const;
+                                UniqueLinkData sharedStubsLinkData,
+                                UniqueCodeBlock tier1CodeBlock,
+                                UniqueLinkData tier1LinkData);
+  [[nodiscard]] bool finishTier2(UniqueCodeBlock tier2CodeBlock,
+                                 UniqueLinkData tier2LinkData) const;
 
   [[nodiscard]] bool getOrCreateInterpEntry(uint32_t funcIndex,
                                             const FuncExport** funcExport,
@@ -924,6 +954,9 @@ class Code : public ShareableBase<Code> {
   bool funcHasTier(uint32_t funcIndex, Tier tier) const {
     return funcCodeBlock(funcIndex).tier() == tier;
   }
+
+  const LinkData* codeBlockLinkData(const CodeBlock& block) const;
+  void clearLinkData() const;
 
   
   const CallSite* lookupCallSite(void* pc) const {

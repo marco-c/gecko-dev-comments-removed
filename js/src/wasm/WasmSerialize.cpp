@@ -329,15 +329,10 @@ CoderResult CodeRefPtr(Coder<mode>& coder, CoderArg<mode, RefPtr<T>> item) {
 
 
 
-
-
-
-
-
-
-template <CoderMode mode, typename T, typename CodeTFunctor, typename... Args>
-CoderResult CodeUniquePtr(Coder<mode>& coder, CoderArg<mode, UniquePtr<T>> item,
-                          CodeTFunctor innerCode, Args&&... args) {
+template <CoderMode mode, typename T,
+          CodeFunc<mode, std::remove_const_t<T>> CodeT>
+CoderResult CodeUniquePtr(Coder<mode>& coder,
+                          CoderArg<mode, UniquePtr<T>> item) {
   if constexpr (mode == MODE_DECODE) {
     
     MOZ_ASSERT(!item->get());
@@ -349,14 +344,14 @@ CoderResult CodeUniquePtr(Coder<mode>& coder, CoderArg<mode, UniquePtr<T>> item,
     }
 
     
-    MOZ_TRY(innerCode(coder, allocated.get(), std::forward<Args>(args)...));
+    MOZ_TRY(CodeT(coder, allocated.get()));
 
     
     *item = std::move(allocated);
     return Ok();
   } else {
     
-    return innerCode(coder, item->get(), std::forward<Args>(args)...);
+    return CodeT(coder, item->get());
   }
 }
 
@@ -920,8 +915,8 @@ CoderResult CodeStackMap(Coder<mode>& coder,
   return Ok();
 }
 
-static uint32_t ComputeCodeOffset(const uint8_t* codeStart,
-                                  const uint8_t* codePtr) {
+static inline uint32_t ComputeCodeOffset(const uint8_t* codeStart,
+                                         const uint8_t* codePtr) {
   MOZ_RELEASE_ASSERT(codePtr >= codeStart);
 #ifdef JS_64BIT
   MOZ_RELEASE_ASSERT(codePtr < codeStart + UINT32_MAX);
@@ -1215,24 +1210,31 @@ CoderResult CodeCodeBlock(Coder<mode>& coder,
 }
 
 CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
-                           const wasm::CodeMetadata& codeMeta,
-                           const wasm::LinkData& sharedStubsLinkData,
-                           const wasm::LinkData& optimizedLinkData) {
+                           const wasm::CodeMetadata& codeMeta) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 728);
-  UniqueCodeBlock sharedStubs;
-  UniqueCodeBlock optimizedCode;
+
   FuncImportVector funcImports;
   MOZ_TRY(CodePodVector(coder, &funcImports));
-  MOZ_TRY(CodeCodeBlock(coder, &sharedStubs, sharedStubsLinkData));
-  MOZ_TRY(CodeCodeBlock(coder, &optimizedCode, optimizedLinkData));
+
+  UniqueCodeBlock sharedStubs;
+  UniqueLinkData sharedStubsLinkData;
+  MOZ_TRY((CodeUniquePtr<MODE_DECODE, LinkData, CodeLinkData>(
+      coder, &sharedStubsLinkData)));
+  MOZ_TRY(CodeCodeBlock(coder, &sharedStubs, *sharedStubsLinkData));
+  UniqueLinkData optimizedCodeLinkData;
+  UniqueCodeBlock optimizedCode;
+  MOZ_TRY((CodeUniquePtr<MODE_DECODE, LinkData, CodeLinkData>(
+      coder, &optimizedCodeLinkData)));
+  MOZ_TRY(CodeCodeBlock(coder, &optimizedCode, *optimizedCodeLinkData));
 
   
   MutableCode code =
       js_new<Code>(CompileMode::Once, codeMeta, nullptr,
                    nullptr);
-  if (!code ||
-      !code->initialize(std::move(funcImports), std::move(sharedStubs),
-                        sharedStubsLinkData, std::move(optimizedCode))) {
+  if (!code || !code->initialize(std::move(funcImports), std::move(sharedStubs),
+                                 std::move(sharedStubsLinkData),
+                                 std::move(optimizedCode),
+                                 std::move(optimizedCodeLinkData))) {
     return Err(OutOfMemory());
   }
   *item = code;
@@ -1241,17 +1243,22 @@ CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
 
 template <CoderMode mode>
 CoderResult CodeSharedCode(Coder<mode>& coder,
-                           CoderArg<mode, wasm::SharedCode> item,
-                           const wasm::LinkData& sharedStubsLinkData,
-                           const wasm::LinkData& optimizedLinkData) {
+                           CoderArg<mode, wasm::SharedCode> item) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 728);
   STATIC_ASSERT_ENCODING_OR_SIZING;
   
   MOZ_TRY(CodePodVector(coder, &(*item)->funcImports()));
-  MOZ_TRY(CodeCodeBlock(coder, &(*item)->sharedStubs(), sharedStubsLinkData));
-  MOZ_TRY(CodeCodeBlock(coder,
-                        &(*item)->completeTierCodeBlock(Tier::Serialized),
-                        optimizedLinkData));
+  const CodeBlock& sharedStubsCodeBlock = (*item)->sharedStubs();
+  const LinkData& sharedStubsLinkData =
+      *(*item)->codeBlockLinkData(sharedStubsCodeBlock);
+  MOZ_TRY(CodeLinkData(coder, &sharedStubsLinkData));
+  MOZ_TRY(CodeCodeBlock(coder, &sharedStubsCodeBlock, sharedStubsLinkData));
+  const CodeBlock& optimizedCodeBlock =
+      (*item)->completeTierCodeBlock(Tier::Serialized);
+  const LinkData& optimizedLinkData =
+      *(*item)->codeBlockLinkData(optimizedCodeBlock);
+  MOZ_TRY(CodeLinkData(coder, &optimizedLinkData));
+  MOZ_TRY(CodeCodeBlock(coder, &optimizedCodeBlock, optimizedLinkData));
   return Ok();
 }
 
@@ -1272,16 +1279,9 @@ CoderResult CodeModule(Coder<MODE_DECODE>& coder, MutableModule* item) {
   MOZ_TRY((CodeRefPtr<MODE_DECODE, ModuleMetadata, &CodeModuleMetadata>(
       coder, &moduleMeta)));
 
-  MOZ_TRY(Magic(coder, Marker::LinkData));
-  LinkData sharedStubsLinkData;
-  LinkData optimizedLinkData;
-  MOZ_TRY(CodeLinkData(coder, &sharedStubsLinkData));
-  MOZ_TRY(CodeLinkData(coder, &optimizedLinkData));
-
   SharedCode code;
   MOZ_TRY(Magic(coder, Marker::Code));
-  MOZ_TRY(CodeSharedCode(coder, &code, *moduleMeta->codeMeta,
-                         sharedStubsLinkData, optimizedLinkData));
+  MOZ_TRY(CodeSharedCode(coder, &code, *moduleMeta->codeMeta));
 
   
   
@@ -1300,9 +1300,7 @@ CoderResult CodeModule(Coder<MODE_DECODE>& coder, MutableModule* item) {
 }
 
 template <CoderMode mode>
-CoderResult CodeModule(Coder<mode>& coder, CoderArg<mode, Module> item,
-                       const wasm::LinkData& sharedStubsLinkData,
-                       const wasm::LinkData& optimizedLinkData) {
+CoderResult CodeModule(Coder<mode>& coder, CoderArg<mode, Module> item) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Module, 56);
   STATIC_ASSERT_ENCODING_OR_SIZING;
   MOZ_RELEASE_ASSERT(!item->codeMeta().debugEnabled);
@@ -1315,24 +1313,18 @@ CoderResult CodeModule(Coder<mode>& coder, CoderArg<mode, Module> item,
   MOZ_TRY(CodePodVector(coder, &currentBuildId));
   MOZ_TRY((CodeRefPtr<mode, const ModuleMetadata, &CodeModuleMetadata>(
       coder, &item->moduleMeta_)));
-  MOZ_TRY(Magic(coder, Marker::LinkData));
-  MOZ_TRY(CodeLinkData(coder, &sharedStubsLinkData));
-  MOZ_TRY(CodeLinkData(coder, &optimizedLinkData));
   MOZ_TRY(Magic(coder, Marker::Code));
-  MOZ_TRY(CodeSharedCode(coder, &item->code_, sharedStubsLinkData,
-                         optimizedLinkData));
+  MOZ_TRY(CodeSharedCode(coder, &item->code_));
   return Ok();
 }
 
 }  
 }  
 
-static bool GetSerializedSize(const Module& module,
-                              const LinkData& sharedStubsLinkData,
-                              const LinkData& optimizedLinkData, size_t* size) {
+static bool GetSerializedSize(const Module& module, size_t* size) {
   Coder<MODE_SIZE> coder(module.codeMeta().types.get());
   auto result =
-      CodeModule(coder, &module, sharedStubsLinkData, optimizedLinkData);
+      CodeModule(coder, &module);
   if (result.isErr()) {
     return false;
   }
@@ -1340,13 +1332,12 @@ static bool GetSerializedSize(const Module& module,
   return true;
 }
 
-bool Module::serialize(const LinkData& sharedStubsLinkData,
-                       const LinkData& optimizedLinkData, Bytes* bytes) const {
+bool Module::serialize(Bytes* bytes) const {
   MOZ_RELEASE_ASSERT(!codeMeta().debugEnabled);
   MOZ_RELEASE_ASSERT(code_->hasCompleteTier(Tier::Serialized));
 
   size_t serializedSize;
-  if (!GetSerializedSize(*this, sharedStubsLinkData, optimizedLinkData,
+  if (!GetSerializedSize(*this,
                          &serializedSize)) {
     
     return false;
@@ -1360,13 +1351,17 @@ bool Module::serialize(const LinkData& sharedStubsLinkData,
   Coder<MODE_ENCODE> coder(codeMeta().types.get(), bytes->begin(),
                            serializedSize);
   CoderResult result =
-      CodeModule(coder, this, sharedStubsLinkData, optimizedLinkData);
+      CodeModule(coder, this);
   if (result.isErr()) {
     
     return false;
   }
   
   MOZ_RELEASE_ASSERT(coder.buffer_ == coder.end_);
+
+  
+  code().clearLinkData();
+
   return true;
 }
 
