@@ -15,7 +15,7 @@ class nsUserCharacteristics {
 
   
   
-  static void StealPointerEvent(const mozilla::WidgetPointerEvent& aEvent);
+  static void StealPointerEvent(mozilla::WidgetGUIEvent* aEvent);
 
   
 
