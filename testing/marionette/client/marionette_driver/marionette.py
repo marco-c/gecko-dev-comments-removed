@@ -568,7 +568,7 @@ class Marionette(object):
         baseurl=None,
         socket_timeout=None,
         startup_timeout=None,
-        **instance_args,
+        **instance_args
     ):
         """Construct a holder for the Marionette connection.
 
@@ -1273,8 +1273,6 @@ class Marionette(object):
                 exc_cls, _, tb = sys.exc_info()
 
                 if self.instance.runner.returncode is None:
-                    self.is_shutting_down = False
-
                     
                     
                     
@@ -1293,28 +1291,33 @@ class Marionette(object):
                         tb,
                     )
 
-            self.is_shutting_down = False
+            finally:
+                self.is_shutting_down = False
 
-            
             self.delete_session(send_request=False)
 
         else:
             self.delete_session()
             self.instance.restart(clean=clean)
-
             self.raise_for_port(timeout=self.DEFAULT_STARTUP_TIMEOUT)
 
             restart_details.update({"in_app": False, "forced": True})
-
-        self.start_session(self.requested_capabilities, process_forked=in_app)
-        
-        self.set_context(context)
 
         if restart_details.get("cause") not in (None, "restart"):
             raise errors.MarionetteException(
                 "Unexpected shutdown reason '{}' for "
                 "restarting the process".format(restart_details["cause"])
             )
+
+        self.start_session(self.requested_capabilities)
+        
+        self.set_context(context)
+
+        if in_app and self.process_id:
+            
+            
+            
+            self.instance.runner.process_handler.check_for_detached(self.process_id)
 
         return restart_details
 
@@ -1327,7 +1330,7 @@ class Marionette(object):
         return "{0}{1}".format(self.baseurl, relative_url)
 
     @do_process_check
-    def start_session(self, capabilities=None, process_forked=False, timeout=None):
+    def start_session(self, capabilities=None, timeout=None):
         """Create a new WebDriver session.
         This method must be called before performing any other action.
 
@@ -1337,10 +1340,7 @@ class Marionette(object):
             (including alwaysMatch, firstMatch, desiredCapabilities,
             or requriedCapabilities), and only recognises extension
             capabilities that are specific to Marionette.
-        :param process_forked: If True, the existing process forked itself due
-        to an internal restart.
         :param timeout: Optional timeout in seconds for the server to be ready.
-
         :returns: A dictionary of the capabilities offered.
         """
         if capabilities is None:
@@ -1352,20 +1352,17 @@ class Marionette(object):
 
         self.crashed = 0
 
-        if not process_forked:
+        if self.instance:
+            returncode = self.instance.runner.returncode
             
             
-            if self.instance:
-                returncode = self.instance.runner.returncode
-                
-                
-                if returncode is not None:
-                    self.start_binary(timeout)
+            if returncode is not None:
+                self.start_binary(timeout)
 
-            else:
-                
-                
-                self.raise_for_port(timeout=timeout)
+        else:
+            
+            
+            self.raise_for_port(timeout=timeout)
 
         self.client = transport.TcpTransport(self.host, self.port, self.socket_timeout)
         self.protocol, _ = self.client.connect()
@@ -1383,11 +1380,10 @@ class Marionette(object):
         self.session_id = resp["sessionId"]
         self.session = resp["capabilities"]
         self.cleanup_ran = False
-
-        self.process_id = self.session.get("moz:processID")
-        if process_forked:
-            self.instance.update_process(self.process_id, self.shutdown_timeout)
-
+        
+        self.process_id = self.session.get(
+            "moz:processID", self.session.get("processId")
+        )
         self.profile = self.session.get("moz:profile")
 
         timeout = self.session.get("moz:shutdownTimeout")
