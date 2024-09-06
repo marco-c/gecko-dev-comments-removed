@@ -1481,17 +1481,18 @@ impl UnparsedValue {
         let key = (shorthand, longhand_id);
         match shorthand_cache.get(&key) {
             Some(decl) => Cow::Borrowed(decl),
-            None => {
-                
-                
-                #[cfg(feature = "gecko")]
-                {
-                    if crate::gecko_bindings::structs::GECKO_IS_NIGHTLY {
-                        panic!("Expected {:?} to be in the cache but it was not!", key);
-                    }
-                }
-                invalid_at_computed_value_time()
-            },
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            None => invalid_at_computed_value_time(),
         }
     }
 }
