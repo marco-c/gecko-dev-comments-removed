@@ -11,9 +11,11 @@
 #include "SandboxChrootProto.h"
 #include "SandboxFilter.h"
 #include "SandboxInternal.h"
-#include "SandboxLogging.h"
 #include "SandboxOpenedFiles.h"
 #include "SandboxReporterClient.h"
+
+#include "SandboxProfilerChild.h"
+#include "SandboxLogging.h"
 
 #include <dirent.h>
 #ifdef NIGHTLY_BUILD
@@ -574,6 +576,33 @@ static void SandboxLateInit() {
   }
 
   RunGlibcLazyInitializers();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  SandboxProfiler::Create();
+  const void* top = CallerPC();
+  SandboxProfiler::ReportInit(top);
 }
 
 
@@ -813,5 +842,9 @@ bool SetSandboxCrashOnError(bool aValue) {
   gSandboxCrashOnError = aValue;
   return oldValue;
 }
+
+void DestroySandboxProfiler() { SandboxProfiler::Shutdown(); }
+
+void CreateSandboxProfiler() { SandboxProfiler::Create(); }
 
 }  

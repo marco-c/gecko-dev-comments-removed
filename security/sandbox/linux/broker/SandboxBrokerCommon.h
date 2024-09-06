@@ -8,6 +8,7 @@
 #define mozilla_SandboxBrokerCommon_h
 
 #include <sys/types.h>
+#include <stdint.h>
 
 struct iovec;
 
@@ -48,6 +49,8 @@ class SandboxBrokerCommon {
     
     
     int mFlags;
+    
+    uint64_t mId;
     
     size_t mBufSize;
     

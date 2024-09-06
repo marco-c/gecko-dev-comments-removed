@@ -71,6 +71,12 @@ MOZ_EXPORT void SetUtilitySandbox(int aBroker, ipc::SandboxingKind aKind);
 
 MOZ_EXPORT bool SetSandboxCrashOnError(bool aValue);
 
+
+
+MOZ_EXPORT void CreateSandboxProfiler();
+
+MOZ_EXPORT void DestroySandboxProfiler();
+
 }  
 
 #endif  
