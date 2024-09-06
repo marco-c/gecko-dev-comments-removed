@@ -42,9 +42,7 @@ async def test_partition_context(
         partition=new_tab_partition,
     )
 
-    assert set_cookie_result == {
-        "partitionKey": {"sourceOrigin": source_origin_1, "userContext": "default"}
-    }
+    assert set_cookie_result == {"partitionKey": {"userContext": "default"}}
 
     
     cookies = await bidi_session.storage.get_cookies(partition=new_tab_partition)
