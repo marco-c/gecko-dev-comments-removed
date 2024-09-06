@@ -5,6 +5,7 @@
 
 
 SOURCES += [
+    "UiaGrid.cpp",
     "uiaRawElmProvider.cpp",
     "UiaRoot.cpp",
 ]
@@ -13,6 +14,7 @@ LOCAL_INCLUDES += [
     "/accessible/base",
     "/accessible/generic",
     "/accessible/html",
+    "/accessible/windows/ia2",
     "/accessible/windows/msaa",
     "/accessible/xpcom",
     "/accessible/xul",
