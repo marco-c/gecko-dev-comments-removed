@@ -122,7 +122,6 @@ class RTC_EXPORT VideoAdapter {
   int previous_width_ RTC_GUARDED_BY(mutex_);  
   int previous_height_
       RTC_GUARDED_BY(mutex_);  
-  const bool variable_start_scale_factor_;
 
   
   const int source_resolution_alignment_;
