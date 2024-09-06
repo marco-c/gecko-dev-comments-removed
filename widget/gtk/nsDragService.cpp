@@ -158,6 +158,9 @@ GdkAtom nsDragService::sTabDropTypeAtom;
 GdkAtom nsDragService::sFileMimeAtom;
 GdkAtom nsDragService::sPortalFileAtom;
 GdkAtom nsDragService::sPortalFileTransferAtom;
+GdkAtom nsDragService::sFilePromiseURLMimeAtom;
+GdkAtom nsDragService::sFilePromiseMimeAtom;
+GdkAtom nsDragService::sNativeImageMimeAtom;
 
 
 static const char kGtkDragResults[][100]{
@@ -570,6 +573,9 @@ nsDragService::nsDragService()
     sFileMimeAtom = gdk_atom_intern(kFileMime, FALSE);
     sPortalFileAtom = gdk_atom_intern(gPortalFile, FALSE);
     sPortalFileTransferAtom = gdk_atom_intern(gPortalFileTransfer, FALSE);
+    sFilePromiseURLMimeAtom = gdk_atom_intern(kFilePromiseURLMime, FALSE);
+    sFilePromiseMimeAtom = gdk_atom_intern(kFilePromiseMime, FALSE);
+    sNativeImageMimeAtom = gdk_atom_intern(kNativeImageMime, FALSE);
   });
 
   LOGDRAGSERVICE("nsDragService::nsDragService");
@@ -1591,21 +1597,25 @@ GtkTargetList* nsDragService::GetSourceList(void) {
       currItem->FlavorsTransferableCanExport(flavors);
       for (uint32_t i = 0; i < flavors.Length(); ++i) {
         nsCString& flavorStr = flavors[i];
+        GdkAtom requestedFlavor = gdk_atom_intern(flavorStr.get(), FALSE);
+        if (!requestedFlavor) {
+          continue;
+        }
 
         TargetArrayAddTarget(targetArray, flavorStr.get());
 
         
-        if (flavorStr.EqualsLiteral(kFileMime)) {
+        if (requestedFlavor == sFileMimeAtom) {
           TargetArrayAddTarget(targetArray, gTextUriListType);
         }
         
-        else if (flavorStr.EqualsLiteral(kTextMime)) {
+        else if (requestedFlavor == sTextMimeAtom) {
           TargetArrayAddTarget(targetArray, gTextPlainUTF8Type);
         }
         
         
         
-        else if (flavorStr.EqualsLiteral(kURLMime)) {
+        else if (requestedFlavor == sURLMimeAtom) {
           nsCOMPtr<nsISupports> data;
           if (NS_SUCCEEDED(currItem->GetTransferData(flavorStr.get(),
                                                      getter_AddRefs(data)))) {
@@ -1625,16 +1635,16 @@ GtkTargetList* nsDragService::GetSourceList(void) {
         }
         
         
-        else if (flavorStr.EqualsLiteral(kFilePromiseURLMime)) {
+        else if (requestedFlavor == sFilePromiseURLMimeAtom) {
           TargetArrayAddTarget(targetArray, gTextUriListType);
         }
         
         else if (widget::GdkIsX11Display() && !widget::IsXWaylandProtocol() &&
-                 flavorStr.EqualsLiteral(kFilePromiseMime)) {
+                 requestedFlavor == sFilePromiseMimeAtom) {
           TargetArrayAddTarget(targetArray, gXdndDirectSaveType);
         }
         
-        else if (flavorStr.EqualsLiteral(kNativeImageMime)) {
+        else if (requestedFlavor == sNativeImageMimeAtom) {
           TargetArrayAddTarget(targetArray, kPNGImageMime);
           TargetArrayAddTarget(targetArray, kJPEGImageMime);
           TargetArrayAddTarget(targetArray, kJPGImageMime);
