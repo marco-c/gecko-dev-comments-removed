@@ -252,36 +252,41 @@ class TextProperty {
 
 
 
+  #getDomRuleDeclaration() {
+    const selfIndex = this.rule.textProps.indexOf(this);
+    return this.rule.domRule.declarations?.[selfIndex];
+  }
+
+  
+
+
+
+
 
   isValid() {
-    const selfIndex = this.rule.textProps.indexOf(this);
+    const declaration = this.#getDomRuleDeclaration();
 
     
     
     
     
-    if (!this.rule.domRule.declarations[selfIndex]) {
+    if (!declaration) {
       return true;
     }
 
-    return this.rule.domRule.declarations[selfIndex].isValid;
+    return declaration.isValid;
   }
 
   isUsed() {
-    const selfIndex = this.rule.textProps.indexOf(this);
-    const declarations = this.rule.domRule.declarations;
+    const declaration = this.#getDomRuleDeclaration();
 
     
     
-    if (
-      !declarations ||
-      !declarations[selfIndex] ||
-      !declarations[selfIndex].isUsed
-    ) {
+    if (!declaration?.isUsed) {
       return { used: true };
     }
 
-    return declarations[selfIndex].isUsed;
+    return declaration.isUsed;
   }
 
   
@@ -371,17 +376,17 @@ class TextProperty {
 
 
   isNameValid() {
-    const selfIndex = this.rule.textProps.indexOf(this);
+    const declaration = this.#getDomRuleDeclaration();
 
     
     
     
     
-    if (!this.rule.domRule.declarations[selfIndex]) {
+    if (!declaration) {
       return true;
     }
 
-    return this.rule.domRule.declarations[selfIndex].isNameValid;
+    return declaration.isNameValid;
   }
 
   
