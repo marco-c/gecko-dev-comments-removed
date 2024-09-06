@@ -58,7 +58,8 @@ class VendorImporter:
         """Return a module spec for vendored names."""
         return (
             importlib.util.spec_from_loader(fullname, self)
-            if self._module_matches_namespace(fullname) else None
+            if self._module_matches_namespace(fullname)
+            else None
         )
 
     def install(self):
@@ -69,15 +70,22 @@ class VendorImporter:
             sys.meta_path.append(self)
 
 
+
+
+
+
+
+
 names = (
-    'packaging',
-    'ordered_set',
-    'more_itertools',
+    'backports',
     'importlib_metadata',
-    'zipp',
     'importlib_resources',
     'jaraco',
-    'typing_extensions',
+    'more_itertools',
+    'ordered_set',
+    'packaging',
     'tomli',
+    'zipp',
 )
+
 VendorImporter(__name__, names, 'setuptools._vendor').install()

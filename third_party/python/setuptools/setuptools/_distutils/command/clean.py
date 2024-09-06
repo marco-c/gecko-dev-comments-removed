@@ -5,9 +5,10 @@ Implements the Distutils 'clean' command."""
 
 
 import os
+from distutils._log import log
+
 from ..core import Command
 from ..dir_util import remove_tree
-from distutils._log import log
 
 
 class clean(Command):

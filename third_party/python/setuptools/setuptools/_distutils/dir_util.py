@@ -2,10 +2,11 @@
 
 Utility functions for manipulating directories and directory trees."""
 
-import os
 import errno
-from .errors import DistutilsInternalError, DistutilsFileError
+import os
+
 from ._log import log
+from .errors import DistutilsFileError, DistutilsInternalError
 
 
 
@@ -33,9 +34,7 @@ def mkpath(name, mode=0o777, verbose=1, dry_run=0):
 
     
     if not isinstance(name, str):
-        raise DistutilsInternalError(
-            "mkpath: 'name' must be a string (got {!r})".format(name)
-        )
+        raise DistutilsInternalError(f"mkpath: 'name' must be a string (got {name!r})")
 
     
     
@@ -76,7 +75,7 @@ def mkpath(name, mode=0o777, verbose=1, dry_run=0):
             except OSError as exc:
                 if not (exc.errno == errno.EEXIST and os.path.isdir(head)):
                     raise DistutilsFileError(
-                        "could not create '{}': {}".format(head, exc.args[-1])
+                        f"could not create '{head}': {exc.args[-1]}"
                     )
             created_dirs.append(head)
 
@@ -95,9 +94,7 @@ def create_tree(base_dir, files, mode=0o777, verbose=1, dry_run=0):
     'dry_run' flags are as for 'mkpath()'.
     """
     
-    need_dir = set()
-    for file in files:
-        need_dir.add(os.path.join(base_dir, os.path.dirname(file)))
+    need_dir = set(os.path.join(base_dir, os.path.dirname(file)) for file in files)
 
     
     for dir in sorted(need_dir):
@@ -143,9 +140,7 @@ def copy_tree(
         if dry_run:
             names = []
         else:
-            raise DistutilsFileError(
-                "error listing files in '{}': {}".format(src, e.strerror)
-            )
+            raise DistutilsFileError(f"error listing files in '{src}': {e.strerror}")
 
     if not dry_run:
         mkpath(dst, verbose=verbose)

@@ -8,24 +8,22 @@ import contextlib
 import os
 import re
 import sys
+from distutils._log import log
+from site import USER_BASE
+
+from .._modified import newer_group
 from ..core import Command
 from ..errors import (
-    DistutilsOptionError,
-    DistutilsSetupError,
     CCompilerError,
-    DistutilsError,
     CompileError,
+    DistutilsError,
+    DistutilsOptionError,
     DistutilsPlatformError,
+    DistutilsSetupError,
 )
-from ..sysconfig import customize_compiler, get_python_version
-from ..sysconfig import get_config_h_filename
-from ..dep_util import newer_group
 from ..extension import Extension
+from ..sysconfig import customize_compiler, get_config_h_filename, get_python_version
 from ..util import get_platform
-from distutils._log import log
-from . import py37compat
-
-from site import USER_BASE
 
 
 
@@ -130,6 +128,31 @@ class build_ext(Command):
         self.user = None
         self.parallel = None
 
+    @staticmethod
+    def _python_lib_dir(sysconfig):
+        """
+        Resolve Python's library directory for building extensions
+        that rely on a shared Python library.
+
+        See python/cpython#44264 and python/cpython#48686
+        """
+        if not sysconfig.get_config_var('Py_ENABLE_SHARED'):
+            return
+
+        if sysconfig.python_build:
+            yield '.'
+            return
+
+        if sys.platform == 'zos':
+            
+            
+            installed_dir = sysconfig.get_config_var('base')
+            lib_dir = sysconfig.get_config_var('platlibdir')
+            yield os.path.join(installed_dir, lib_dir)
+        else:
+            
+            yield sysconfig.get_config_var('LIBDIR')
+
     def finalize_options(self):  
         from distutils import sysconfig
 
@@ -231,16 +254,7 @@ class build_ext(Command):
                 
                 self.library_dirs.append('.')
 
-        
-        
-        
-        if sysconfig.get_config_var('Py_ENABLE_SHARED'):
-            if not sysconfig.python_build:
-                
-                self.library_dirs.append(sysconfig.get_config_var('LIBDIR'))
-            else:
-                
-                self.library_dirs.append('.')
+        self.library_dirs.extend(self._python_lib_dir(sysconfig))
 
         
         
@@ -412,9 +426,7 @@ class build_ext(Command):
             
             ext.runtime_library_dirs = build_info.get('rpath')
             if 'def_file' in build_info:
-                log.warning(
-                    "'def_file' element of build info dict " "no longer supported"
-                )
+                log.warning("'def_file' element of build info dict no longer supported")
 
             
             
@@ -499,7 +511,7 @@ class build_ext(Command):
         except (CCompilerError, DistutilsError, CompileError) as e:
             if not ext.optional:
                 raise
-            self.warn('building extension "{}" failed: {}'.format(ext.name, e))
+            self.warn(f'building extension "{ext.name}" failed: {e}')
 
     def build_extension(self, ext):
         sources = ext.sources
@@ -785,4 +797,4 @@ class build_ext(Command):
                 ldversion = get_config_var('LDVERSION')
                 return ext.libraries + ['python' + ldversion]
 
-        return ext.libraries + py37compat.pythonlib()
+        return ext.libraries

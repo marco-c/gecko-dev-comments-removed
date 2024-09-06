@@ -3,6 +3,7 @@ import functools
 import distutils.core
 import distutils.errors
 import distutils.extension
+from typing import TYPE_CHECKING
 
 from .monkey import get_unpatched
 
@@ -23,8 +24,11 @@ def _have_cython():
 
 
 have_pyrex = _have_cython
-
-_Extension = get_unpatched(distutils.core.Extension)
+if TYPE_CHECKING:
+    
+    _Extension = distutils.core.Extension
+else:
+    _Extension = get_unpatched(distutils.core.Extension)
 
 
 class Extension(_Extension):

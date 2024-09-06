@@ -1,0 +1,9 @@
+import sys
+
+
+
+
+
+
+
+LOCALE_ENCODING = "locale" if sys.version_info >= (3, 10) else None
