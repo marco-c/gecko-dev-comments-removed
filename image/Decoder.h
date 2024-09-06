@@ -529,13 +529,14 @@ class Decoder {
 
   
   
+  void PostLoopCount(int32_t aLoopCount);
+
   
   
   
   
   
-  
-  void PostDecodeDone(int32_t aLoopCount = 0);
+  void PostDecodeDone();
 
   
 
