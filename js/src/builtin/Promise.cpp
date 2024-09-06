@@ -107,35 +107,31 @@ enum ReactionJobSlots {
   ReactionJobSlot_ReactionRecord = 0,
 };
 
+
+
+
 enum ThenableJobSlots {
   
   
   
-  ThenableJobSlot_Handler = 0,
+  
+  ThenableJobSlot_Promise = 0,
 
   
   
-  ThenableJobSlot_JobData,
+  
+  
+  ThenableJobSlot_Thenable,
+
+  
+  
+  
+  ThenableJobSlot_Handler,
+
+  ThenableJobSlot_Count
 };
 
-enum ThenableJobDataIndices {
-  
-  ThenableJobDataIndex_Promise = 0,
-
-  
-  ThenableJobDataIndex_Thenable,
-
-  ThenableJobDataLength,
-};
-
-enum BuiltinThenableJobSlots {
-  
-  BuiltinThenableJobSlot_Promise = 0,
-
-  
-  
-  BuiltinThenableJobSlot_Thenable,
-};
+static_assert(ThenableJobSlot_Count <= FunctionExtended::SlotCount);
 
 struct PromiseCapability {
   JSObject* promise = nullptr;
@@ -2287,17 +2283,11 @@ static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedFunction job(cx, &args.callee().as<JSFunction>());
+  RootedObject promise(
+      cx, &job->getExtendedSlot(ThenableJobSlot_Promise).toObject());
+  RootedValue thenable(cx, job->getExtendedSlot(ThenableJobSlot_Thenable));
   RootedValue then(cx, job->getExtendedSlot(ThenableJobSlot_Handler));
   MOZ_ASSERT(then.isObject());
-  Rooted<NativeObject*> jobArgs(cx,
-                                &job->getExtendedSlot(ThenableJobSlot_JobData)
-                                     .toObject()
-                                     .as<NativeObject>());
-
-  RootedObject promise(
-      cx, &jobArgs->getDenseElement(ThenableJobDataIndex_Promise).toObject());
-  RootedValue thenable(cx,
-                       jobArgs->getDenseElement(ThenableJobDataIndex_Thenable));
 
   
   
@@ -2366,9 +2356,11 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
 
   RootedFunction job(cx, &args.callee().as<JSFunction>());
   RootedObject promise(
-      cx, &job->getExtendedSlot(BuiltinThenableJobSlot_Promise).toObject());
+      cx, &job->getExtendedSlot(ThenableJobSlot_Promise).toObject());
   RootedObject thenable(
-      cx, &job->getExtendedSlot(BuiltinThenableJobSlot_Thenable).toObject());
+      cx, &job->getExtendedSlot(ThenableJobSlot_Thenable).toObject());
+  
+  MOZ_ASSERT(job->getExtendedSlot(ThenableJobSlot_Handler).isUndefined());
 
   cx->check(promise, thenable);
   MOZ_ASSERT(promise->is<PromiseObject>());
@@ -2484,24 +2476,10 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   }
 
   
+  
+  job->setExtendedSlot(ThenableJobSlot_Promise, promiseToResolve);
+  job->setExtendedSlot(ThenableJobSlot_Thenable, thenable);
   job->setExtendedSlot(ThenableJobSlot_Handler, ObjectValue(*then));
-
-  
-  
-  
-  Rooted<ArrayObject*> data(
-      cx, NewDenseFullyAllocatedArray(cx, ThenableJobDataLength));
-  if (!data) {
-    return false;
-  }
-
-  
-  data->setDenseInitializedLength(ThenableJobDataLength);
-  data->initDenseElement(ThenableJobDataIndex_Promise, promiseToResolve);
-  data->initDenseElement(ThenableJobDataIndex_Thenable, thenable);
-
-  
-  job->setExtendedSlot(ThenableJobSlot_JobData, ObjectValue(*data));
 
   
   
@@ -2550,9 +2528,8 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   
 
   
-  job->setExtendedSlot(BuiltinThenableJobSlot_Promise,
-                       ObjectValue(*promiseToResolve));
-  job->setExtendedSlot(BuiltinThenableJobSlot_Thenable, ObjectValue(*thenable));
+  job->setExtendedSlot(ThenableJobSlot_Promise, ObjectValue(*promiseToResolve));
+  job->setExtendedSlot(ThenableJobSlot_Thenable, ObjectValue(*thenable));
 
   Rooted<GlobalObject*> incumbentGlobal(cx,
                                         cx->runtime()->getIncumbentGlobal(cx));
