@@ -263,6 +263,7 @@ bool IsPromiseWithDefaultResolvingFunction(PromiseObject* promise);
 void SetAlreadyResolvedPromiseWithDefaultResolvingFunction(
     PromiseObject* promise);
 
+bool IsPromiseConstructor(const JSObject* obj);
 }  
 
 #endif  

@@ -2967,12 +2967,7 @@ bool js::ReportUsageCounter(JSContext* cx, HandleObject constructor,
     case SUBCLASSING_ARRAY: {
       
       
-      
-      
-      
-      
-      if (constructor && IsArrayConstructor(constructor) &&
-          constructor->maybeCCWRealm() == cx->realm()) {
+      if (constructor && IsArrayConstructor(constructor)) {
         return true;
       }
       switch (type) {
@@ -2984,10 +2979,27 @@ bool js::ReportUsageCounter(JSContext* cx, HandleObject constructor,
           MOZ_CRASH("Unexpected Subclassing Type");
       }
     }
+    case SUBCLASSING_PROMISE: {
+      if (constructor && IsPromiseConstructor(constructor)) {
+        return true;
+      }
+      switch (type) {
+        case SUBCLASSING_TYPE_II:
+          cx->runtime()->setUseCounter(
+              cx->global(), JSUseCounter::SUBCLASSING_PROMISE_TYPE_II);
+          return true;
+        default:
+          MOZ_CRASH("Unexpected Subclassing Type");
+      }
+    }
     default:
       MOZ_CRASH("Unexpected builtin");
   };
 }
+
+
+
+
 
 
 
