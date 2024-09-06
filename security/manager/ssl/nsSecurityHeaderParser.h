@@ -6,6 +6,7 @@
 #define nsSecurityHeaderParser_h
 
 #include "mozilla/LinkedList.h"
+#include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
@@ -13,8 +14,11 @@
 class nsSecurityHeaderDirective
     : public mozilla::LinkedListElement<nsSecurityHeaderDirective> {
  public:
+  
   nsCString mName;
-  nsCString mValue;
+  
+  
+  mozilla::Maybe<nsCString> mValue;
 };
 
 
