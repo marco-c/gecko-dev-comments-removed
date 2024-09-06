@@ -1469,35 +1469,22 @@ struct ClearJSHolder : public TraceCallbacks {
   }
 };
 
+void CycleCollectedJSRuntime::RemoveJSHolder(void* aHolder) {
+  nsScriptObjectTracer* tracer = mJSHolders.Extract(aHolder);
+  if (tracer) {
+    
+    
+    JS::AutoSuppressGCAnalysis nogc;
+    tracer->Trace(aHolder, ClearJSHolder(), nullptr);
+  }
+}
+
 #ifdef DEBUG
 static void AssertNoGcThing(JS::GCCellPtr aGCThing, const char* aName,
                             void* aClosure) {
   MOZ_ASSERT(!aGCThing);
 }
-#endif
 
-void CycleCollectedJSRuntime::RemoveJSHolder(void* aHolder,
-                                             ShouldClearJSRefs aClearRefs) {
-  nsScriptObjectTracer* tracer = mJSHolders.Extract(aHolder);
-  if (!tracer) {
-    return;
-  }
-
-  
-  
-  JS::AutoSuppressGCAnalysis nogc;
-
-  if (aClearRefs == ShouldClearJSRefs::Clear) {
-    tracer->Trace(aHolder, ClearJSHolder(), nullptr);
-  } else {
-#ifdef DEBUG
-    
-    tracer->Trace(aHolder, TraceCallbackFunc(AssertNoGcThing), nullptr);
-#endif
-  }
-}
-
-#ifdef DEBUG
 void CycleCollectedJSRuntime::AssertNoObjectsToTrace(void* aPossibleJSHolder) {
   nsScriptObjectTracer* tracer = mJSHolders.Get(aPossibleJSHolder);
   if (tracer) {

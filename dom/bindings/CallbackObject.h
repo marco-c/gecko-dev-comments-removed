@@ -266,7 +266,7 @@ class CallbackObject : public nsISupports {
   
   void Reset() {
     ClearJSReferences();
-    mozilla::DropJSObjects(this, ShouldClearJSRefs::AlreadyCleared);
+    mozilla::DropJSObjects(this);
   }
   friend class mozilla::PromiseJobRunnable;
 

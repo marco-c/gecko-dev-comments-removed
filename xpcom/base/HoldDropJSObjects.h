@@ -21,17 +21,13 @@ class Zone;
 
 
 namespace mozilla {
-
-enum class ShouldClearJSRefs : bool { Clear = true, AlreadyCleared = false };
-
 namespace cyclecollector {
 
 void HoldJSObjectsImpl(void* aHolder, nsScriptObjectTracer* aTracer,
                        JS::Zone* aZone = nullptr);
 void HoldJSObjectsImpl(nsISupports* aHolder);
-void DropJSObjectsImpl(void* aHolder,
-                       ShouldClearJSRefs aClearRefs = ShouldClearJSRefs::Clear);
-void DropJSObjectsImpl(nsISupports* aHolder, ShouldClearJSRefs aClearRefs);
+void DropJSObjectsImpl(void* aHolder);
+void DropJSObjectsImpl(nsISupports* aHolder);
 
 }  
 
@@ -42,9 +38,7 @@ struct HoldDropJSObjectsHelper {
     cyclecollector::HoldJSObjectsImpl(aHolder,
                                       NS_CYCLE_COLLECTION_PARTICIPANT(T));
   }
-  static void Drop(T* aHolder, ShouldClearJSRefs aClearRefs) {
-    cyclecollector::DropJSObjectsImpl(aHolder, aClearRefs);
-  }
+  static void Drop(T* aHolder) { cyclecollector::DropJSObjectsImpl(aHolder); }
 };
 
 template <class T>
@@ -52,20 +46,10 @@ struct HoldDropJSObjectsHelper<T, true> {
   static void Hold(T* aHolder) {
     cyclecollector::HoldJSObjectsImpl(ToSupports(aHolder));
   }
-  static void Drop(T* aHolder, ShouldClearJSRefs aClearRefs) {
-    cyclecollector::DropJSObjectsImpl(ToSupports(aHolder), aClearRefs);
+  static void Drop(T* aHolder) {
+    cyclecollector::DropJSObjectsImpl(ToSupports(aHolder));
   }
 };
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -87,13 +71,12 @@ void HoldJSObjects(T* aHolder) {
 }
 
 template <class T>
-void DropJSObjects(T* aHolder,
-                   ShouldClearJSRefs aClearRefs = ShouldClearJSRefs::Clear) {
+void DropJSObjects(T* aHolder) {
   static_assert(!std::is_base_of<nsCycleCollectionParticipant, T>::value,
                 "Don't call this on the CC participant but on the object that "
                 "it's for (in an Unlink implementation it's usually stored in "
                 "a variable named 'tmp').");
-  HoldDropJSObjectsHelper<T>::Drop(aHolder, aClearRefs);
+  HoldDropJSObjectsHelper<T>::Drop(aHolder);
 }
 
 }  
