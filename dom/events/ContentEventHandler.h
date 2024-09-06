@@ -212,70 +212,11 @@ class MOZ_STACK_CLASS ContentEventHandler {
     bool mAfterOpenTag = true;
 
     RawNodePosition() = default;
-    MOZ_IMPLICIT RawNodePosition(const RawNodePosition& aOther)
+    explicit RawNodePosition(const RawNodePosition& aOther)
         : RawRangeBoundary(aOther),
           mAfterOpenTag(aOther.mAfterOpenTag)
     
     {}
-
-    
-
-
-
-
-
-
-
-    static RawNodePosition BeforeFirstContentOf(const nsINode& aContainer) {
-      return RawNodePosition(const_cast<nsINode*>(&aContainer), 0u);
-    }
-
-    
-
-
-
-
-    static RawNodePosition After(const nsIContent& aContent) {
-      RawNodePosition it(aContent.GetParentNode(),
-                         const_cast<nsIContent*>(&aContent));
-      it.mAfterOpenTag = false;
-      return it;
-    }
-
-    
-
-
-
-
-    static RawNodePosition AtEndOf(const nsINode& aContainer) {
-      return RawNodePosition(const_cast<nsINode*>(&aContainer),
-                             aContainer.IsText()
-                                 ? aContainer.AsText()->TextDataLength()
-                                 : aContainer.GetChildCount());
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    static RawNodePosition Before(const nsIContent& aContent) {
-      if (!aContent.IsBeingRemoved()) {
-        return RawNodePosition(aContent.GetParentNode(),
-                               aContent.GetPreviousSibling());
-      }
-      RawNodePosition ret(const_cast<nsIContent*>(&aContent), 0u);
-      ret.mAfterOpenTag = false;
-      return ret;
-    }
 
     RawNodePosition(nsINode* aContainer, uint32_t aOffset)
         : RawRangeBoundary(aContainer, aOffset) {}
@@ -319,41 +260,43 @@ class MOZ_STACK_CLASS ContentEventHandler {
   };
 
   
+  
+  
+  struct MOZ_STACK_CLASS RawNodePositionBefore final : public RawNodePosition {
+    RawNodePositionBefore(nsINode* aContainer, uint32_t aOffset)
+        : RawNodePosition(aContainer, aOffset) {
+      mAfterOpenTag = false;
+    }
 
+    RawNodePositionBefore(nsINode* aContainer, nsIContent* aRef)
+        : RawNodePosition(aContainer, aRef) {
+      mAfterOpenTag = false;
+    }
+  };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static nsresult GetFlatTextLengthInRange(
       const RawNodePosition& aStartPosition,
       const RawNodePosition& aEndPosition, const Element* aRootElement,
       uint32_t* aLength, LineBreakType aLineBreakType,
       bool aIsRemovingNode = false);
-
   
   
   static uint32_t GetNativeTextLength(const dom::Text& aTextNode,

@@ -11,7 +11,6 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
-#include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocShell.h"  
@@ -243,11 +242,38 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
+  void MaybeNotifyIMEOfAddedTextDuringDocumentChange();
+
+  
+
+
+
+
+
   bool IsInDocumentChange() const {
     return mDocumentObserver && mDocumentObserver->IsUpdating();
   }
 
-  [[nodiscard]] bool EditorIsHandlingEditSubAction() const;
+  
+
+
+  void ClearAddedNodesDuringDocumentChange();
+
+  
+
+
+
+
+
+  bool HasAddedNodesDuringDocumentChange() const {
+    return mFirstAddedContainer && mLastAddedContainer;
+  }
+
+  
+
+
+
+  bool IsNextNodeOfLastAddedNode(nsINode* aParent, nsIContent* aChild) const;
 
   void PostFocusSetNotification();
   void MaybeNotifyIMEOfFocusSet();
@@ -263,57 +289,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
   void CancelNotifyingIMEOfPositionChange();
   void PostCompositionEventHandledNotification();
 
-  void ContentAdded(nsINode* aContainer, nsIContent* aFirstContent,
-                    nsIContent* aLastContent);
-
-  struct MOZ_STACK_CLASS OffsetAndLengthAdjustments {
-    [[nodiscard]] uint32_t AdjustedOffset(uint32_t aOffset) const {
-      MOZ_ASSERT_IF(mOffsetAdjustment < 0, aOffset >= mOffsetAdjustment);
-      return aOffset + mOffsetAdjustment;
-    }
-    [[nodiscard]] uint32_t AdjustedLength(uint32_t aLength) const {
-      MOZ_ASSERT_IF(mOffsetAdjustment < 0, aLength >= mLengthAdjustment);
-      return aLength + mLengthAdjustment;
-    }
-    [[nodiscard]] uint32_t AdjustedEndOffset(uint32_t aEndOffset) const {
-      MOZ_ASSERT_IF(mOffsetAdjustment + mLengthAdjustment < 0,
-                    aEndOffset >= mOffsetAdjustment + mLengthAdjustment);
-      return aEndOffset + (mOffsetAdjustment + mLengthAdjustment);
-    }
-
-    int64_t mOffsetAdjustment = 0;
-    int64_t mLengthAdjustment = 0;
-  };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void NotifyIMEOfCachedConsecutiveNewNodes(
-      const char* aCallerName,
-      const Maybe<uint32_t>& aOffsetOfFirstContent = Nothing(),
-      const Maybe<uint32_t>& aLengthOfContentNNodes = Nothing(),
-      const OffsetAndLengthAdjustments& aAdjustments =
-          OffsetAndLengthAdjustments{0, 0});
-
+  void NotifyContentAdded(nsINode* aContainer, nsIContent* aFirstContent,
+                          nsIContent* aLastContent);
   void ObserveEditableNode();
   
 
@@ -471,318 +448,48 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-
-
-
-
-
-
-
   struct FlatTextCache {
-   public:
-    explicit FlatTextCache(const char* aInstanceName)
-        : mInstanceName(aInstanceName) {}
-
-    void Clear(const char* aCallerName);
-
-    [[nodiscard]] bool HasCache() const { return !!mContainerNode; }
-
     
-
-
-
-    [[nodiscard]] bool IsCachingToEndOfContent() const {
-      return mContainerNode && mContent;
-    }
-
-    
-
-
-
-
-
-    [[nodiscard]] bool IsCachingToStartOfContainer() const {
-      return mContainerNode && !mContent;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] nsresult ComputeAndCacheFlatTextLengthBeforeEndOfContent(
-        const char* aCallerName, const nsIContent& aContent,
-        const dom::Element* aRootElement);
-
-    void CacheFlatTextLengthBeforeEndOfContent(
-        const char* aCallerName, const nsIContent& aContent,
-        uint32_t aFlatTextLength, const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] nsresult ComputeAndCacheFlatTextLengthBeforeFirstContent(
-        const char* aCallerName, const nsINode& aContainer,
-        const dom::Element* aRootElement);
-
-    void CacheFlatTextLengthBeforeFirstContent(
-        const char* aCallerName, const nsINode& aContainer,
-        uint32_t aFlatTextLength, const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] static Result<uint32_t, nsresult> ComputeTextLengthOfContent(
-        const nsIContent& aContent, const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] static Result<uint32_t, nsresult>
-    ComputeTextLengthBeforeContent(const nsIContent& aContent,
-                                   const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] static Result<uint32_t, nsresult>
-    ComputeTextLengthBeforeFirstContentOf(const nsINode& aContainer,
-                                          const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] static Result<uint32_t, nsresult>
-    ComputeTextLengthStartOfContentToEndOfContent(
-        const nsIContent& aStartContent, const nsIContent& aEndContent,
-        const dom::Element* aRootElement);
-
-    [[nodiscard]] uint32_t GetFlatTextLength() const { return mFlatTextLength; }
-
-    
-
-
-
-
-
-    [[nodiscard]] Maybe<uint32_t> GetFlatTextLengthBeforeContent(
-        const nsIContent& aContent, const nsIContent* aPreviousSibling,
-        const dom::Element* aRootElement) const;
-
-    
-
-
-
-
-    [[nodiscard]] Maybe<uint32_t> GetFlatTextOffsetOnInsertion(
-        const nsIContent& aFirstContent, const nsIContent& aLastContent,
-        const dom::Element* aRootElement) const;
-
-    
-
-
-
-
-
-    void AssertValidCache(const dom::Element* aRootElement) const;
-
-    
-
-
-
-
-
-
-
-    void ContentAdded(const char* aCallerName, const nsIContent& aFirstContent,
-                      const nsIContent& aLastContent,
-                      const Maybe<uint32_t>& aAddedFlatTextLength,
-                      const dom::Element* aRootElement);
-
-    
-
-
-
-    void ContentRemoved(const nsIContent& aContent,
-                        const nsIContent* aPreviousSibling,
-                        uint32_t aFlatTextLengthOfContent,
-                        const dom::Element* aRootElement);
-
-   public:
     
     nsCOMPtr<nsINode> mContainerNode;
     
     
     
+    nsCOMPtr<nsINode> mNode;
     
-    nsCOMPtr<nsIContent> mContent;
+    
+    uint32_t mFlatTextLength;
 
-   private:
-    
-    
-    
-    uint32_t mFlatTextLength = 0;
-    MOZ_DEFINE_DBG(FlatTextCache, mContainerNode, mContent, mFlatTextLength);
+    FlatTextCache() : mFlatTextLength(0) {}
 
-    const char* mInstanceName;
+    void Clear() {
+      mContainerNode = nullptr;
+      mNode = nullptr;
+      mFlatTextLength = 0;
+    }
+
+    void Cache(nsINode* aContainer, nsINode* aNode, uint32_t aFlatTextLength) {
+      MOZ_ASSERT(aContainer, "aContainer must not be null");
+      MOZ_ASSERT(!aNode || aNode->GetParentNode() == aContainer,
+                 "aNode must be either null or a child of aContainer");
+      mContainerNode = aContainer;
+      mNode = aNode;
+      mFlatTextLength = aFlatTextLength;
+    }
+
+    bool Match(nsINode* aContainer, nsINode* aNode) const {
+      return aContainer == mContainerNode && aNode == mNode;
+    }
   };
-
-  friend std::ostream& operator<<(std::ostream& aStream,
-                                  const FlatTextCache& aCache);
-
   
   
   
   
-  FlatTextCache mEndOfAddedTextCache = FlatTextCache("mEndOfAddedTextCache");
+  FlatTextCache mEndOfAddedTextCache;
   
   
   
-  
-  
-  FlatTextCache mStartOfRemovingTextRangeCache =
-      FlatTextCache("mStartOfRemovingTextRangeCache");
-
-  
-
-
-
-
-  struct AddedContentCache {
-    
-
-
-
-    void Clear(const char* aCallerName);
-
-    [[nodiscard]] bool HasCache() const { return mFirst && mLast; }
-
-    
-
-
-
-
-    [[nodiscard]] bool CanMergeWith(const nsIContent& aFirstContent,
-                                    const nsIContent& aLastContent,
-                                    const dom::Element* aRootElement) const;
-
-    
-
-
-
-    [[nodiscard]] bool IsInRange(const nsIContent& aContent,
-                                 const dom::Element* aRootElement) const;
-
-    
-
-
-
-
-
-
-    bool TryToCache(const nsIContent& aFirstContent,
-                    const nsIContent& aLastContent,
-                    const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-    [[nodiscard]] bool ContentRemoved(const nsIContent& aContent,
-                                      const nsIContent* aPreviousSibling,
-                                      const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-    [[nodiscard]] Result<std::pair<uint32_t, uint32_t>, nsresult>
-    ComputeFlatTextRangeBeforeInsertingNewContent(
-        const nsIContent& aNewFirstContent, const nsIContent& aNewLastContent,
-        const dom::Element* aRootElement,
-        OffsetAndLengthAdjustments& aDifferences) const;
-
-    MOZ_DEFINE_DBG(AddedContentCache, mFirst, mLast);
-
-    nsCOMPtr<nsIContent> mFirst;
-    nsCOMPtr<nsIContent> mLast;
-  };
+  FlatTextCache mStartOfRemovingTextRangeCache;
 
   
   
@@ -790,9 +497,19 @@ class IMEContentObserver final : public nsStubMutationObserver,
   
   
   
+  nsCOMPtr<nsINode> mFirstAddedContainer;
   
   
-  AddedContentCache mAddedContentCache;
+  
+  
+  
+  
+  nsCOMPtr<nsINode> mLastAddedContainer;
+
+  
+  nsCOMPtr<nsIContent> mFirstAddedContent;
+  
+  nsCOMPtr<nsIContent> mLastAddedContent;
 
   TextChangeData mTextChangeData;
 
