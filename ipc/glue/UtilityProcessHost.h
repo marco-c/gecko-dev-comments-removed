@@ -100,7 +100,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   
-  void OnChannelClosed();
+  void OnChannelClosed(IProtocol::ActorDestroyReason aReason);
 
   
   void KillHard(const char* aReason);

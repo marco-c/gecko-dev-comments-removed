@@ -277,11 +277,15 @@ void UtilityProcessHost::Shutdown() {
   DestroyProcess();
 }
 
-void UtilityProcessHost::OnChannelClosed() {
+void UtilityProcessHost::OnChannelClosed(
+    IProtocol::ActorDestroyReason aReason) {
   MOZ_ASSERT(NS_IsMainThread());
   LOGD("[%p] UtilityProcessHost::OnChannelClosed", this);
 
-  RejectPromise(LaunchError("UtilityProcessHost::OnChannelClosed"));
+  
+  
+  RejectPromise(
+      LaunchError("UtilityProcessHost::OnChannelClosed", 1 + (long)aReason));
 
   if (!mShutdownRequested && mListener) {
     
