@@ -567,6 +567,11 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
     info.flushesSinceLastCongestionCheck = 0;
     info.congestionCheckGeneration++;
 
+    
+    if (!child->CanSend()) {
+      return {};
+    }
+
     return Some(layers::SurfaceDescriptorRemoteTexture(*mLastRemoteTextureId,
                                                        *mRemoteTextureOwnerId));
   }
