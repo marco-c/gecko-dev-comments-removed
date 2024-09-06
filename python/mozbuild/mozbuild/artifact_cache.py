@@ -31,7 +31,7 @@ import mozpack.path as mozpath
 import six
 import six.moves.urllib.parse as urlparse
 
-from mozbuild.util import mkdir
+from mozbuild.dirutils import mkdir
 
 
 

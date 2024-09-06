@@ -2,7 +2,8 @@
 
 
 
-from mozbuild.util import ensure_bytes, ensureParentDir
+from mozbuild.dirutils import ensureParentDir
+from mozbuild.util import ensure_bytes
 from mozpack.errors import ErrorMessage, errors
 from mozpack.files import (
     AbsoluteSymlinkFile,
