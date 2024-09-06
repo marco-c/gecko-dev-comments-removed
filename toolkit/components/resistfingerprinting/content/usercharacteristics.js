@@ -1148,6 +1148,23 @@ async function populateSensorInfo() {
   return promise;
 }
 
+async function populateAudioDeviceProperties() {
+  const ctx = new AudioContext();
+  await ctx.resume();
+
+  
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  
+  
+
+  return {
+    audioFrames: ctx.outputLatency * ctx.sampleRate,
+    audioRate: ctx.sampleRate,
+    audioChannels: ctx.destination.maxChannelCount,
+  };
+}
+
 
 
 function getCanvasSources() {
@@ -1209,6 +1226,7 @@ const LocalFiraSans = new FontFace(
     populatePointerInfo,
     populateICEFoundations,
     populateSensorInfo,
+    populateAudioDeviceProperties,
   ];
   
   
