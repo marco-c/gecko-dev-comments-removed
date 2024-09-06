@@ -732,8 +732,6 @@ imgRequest::OnStopRequest(nsIRequest* aRequest, nsresult status) {
   LOG_FUNC(gImgLog, "imgRequest::OnStopRequest");
   MOZ_ASSERT(NS_IsMainThread(), "Can't send notifications off-main-thread");
 
-  RefPtr<Image> image = GetImage();
-
   RefPtr<imgRequest> strongThis = this;
 
   bool isMultipart = false;
@@ -746,6 +744,9 @@ imgRequest::OnStopRequest(nsIRequest* aRequest, nsresult status) {
   if (isMultipart && newPartPending) {
     OnDataAvailable(aRequest, nullptr, 0, 0);
   }
+
+  
+  RefPtr<Image> image = GetImage();
 
   
   
