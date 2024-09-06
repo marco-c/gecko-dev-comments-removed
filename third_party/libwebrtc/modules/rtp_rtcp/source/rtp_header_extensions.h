@@ -101,9 +101,6 @@ class AudioLevelExtension {
                     uint8_t audio_level);
 };
 
-
-using AudioLevel [[deprecated]] = AudioLevelExtension;
-
 #if !defined(WEBRTC_MOZILLA_BUILD)
 class CsrcAudioLevel {
  public:
