@@ -24,11 +24,14 @@ add_task(
     
     
     
-    targetActor.on("resource-available-form", resources => {
-      if (resources[0].resourceType == Resources.TYPES.CONSOLE_MESSAGE) {
-        lastMessage = resources[0].message;
+    targetActor.on(
+      "resources-available-array",
+      ([[resourceType, resources]]) => {
+        if (resourceType == Resources.TYPES.CONSOLE_MESSAGE) {
+          lastMessage = resources[0].message;
+        }
       }
-    });
+    );
 
     
     

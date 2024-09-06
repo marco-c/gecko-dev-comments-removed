@@ -62,6 +62,8 @@ function TargetMixin(parentClass) {
 
       
       
+      
+      
       const offResourceAvailable = super.on(
         "resource-available-form",
         this._onResourceEvent.bind(this, "resource-available-form")
@@ -71,9 +73,20 @@ function TargetMixin(parentClass) {
         this._onResourceEvent.bind(this, "resource-updated-form")
       );
 
+      const offResourceAvailableArray = super.on(
+        "resources-available-array",
+        this._onResourceEventArray.bind(this, "resources-available-array")
+      );
+      const offResourceUpdatedArray = super.on(
+        "resources-updated-array",
+        this._onResourceEventArray.bind(this, "resources-updated-array")
+      );
+
       this._offResourceEvent = new Map([
         ["resource-available-form", offResourceAvailable],
         ["resource-updated-form", offResourceUpdated],
+        ["resources-available-array", offResourceAvailableArray],
+        ["resources-updated-array", offResourceUpdatedArray],
       ]);
 
       
@@ -549,6 +562,13 @@ function TargetMixin(parentClass) {
         this._resourceCache[eventName] = [];
       }
       this._resourceCache[eventName].push(resources);
+    }
+
+    _onResourceEventArray(eventName, array) {
+      if (!this._resourceCache[eventName]) {
+        this._resourceCache[eventName] = [];
+      }
+      this._resourceCache[eventName].push(array);
     }
 
     toString() {

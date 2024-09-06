@@ -39,10 +39,9 @@ function getFilteredStorageEvents(updates, storageType) {
 }
 
 class ContentProcessStorage {
-  constructor(ActorConstructor, storageKey, storageType) {
+  constructor(ActorConstructor, storageKey) {
     this.ActorConstructor = ActorConstructor;
     this.storageKey = storageKey;
-    this.storageType = storageType;
 
     this.onStoresUpdate = this.onStoresUpdate.bind(this);
     this.onStoresCleared = this.onStoresCleared.bind(this);
@@ -71,8 +70,7 @@ class ContentProcessStorage {
 
     
     
-    storage.resourceType = this.storageType;
-    storage.resourceId = this.storageType;
+    storage.resourceId = this.storageKey;
     storage.resourceKey = this.storageKey;
 
     onAvailable([storage]);

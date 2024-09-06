@@ -157,8 +157,7 @@ class ParentProcessStorage {
 
     
     
-    storage.resourceType = this.storageType;
-    storage.resourceId = `${this.storageType}-${innerWindowId}`;
+    storage.resourceId = `${this.storageKey}-${innerWindowId}`;
     storage.resourceKey = this.storageKey;
     
     storage.browsingContextID = browsingContextID;

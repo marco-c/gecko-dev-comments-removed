@@ -581,7 +581,9 @@ class RootActor extends Actor {
 
 
 
-  notifyResources(updateType, resources) {
+
+
+  notifyResources(updateType, resourceType, resources) {
     if (resources.length === 0) {
       
       return;
@@ -589,13 +591,13 @@ class RootActor extends Actor {
 
     switch (updateType) {
       case "available":
-        this.emit(`resource-available-form`, resources);
+        this.emit(`resources-available-array`, [[resourceType, resources]]);
         break;
       case "updated":
-        this.emit(`resource-updated-form`, resources);
+        this.emit(`resources-updated-array`, [[resourceType, resources]]);
         break;
       case "destroyed":
-        this.emit(`resource-destroyed-form`, resources);
+        this.emit(`resources-destroyed-array`, [[resourceType, resources]]);
         break;
       default:
         throw new Error("Unsupported update type: " + updateType);

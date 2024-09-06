@@ -74,7 +74,7 @@ add_task(async () => {
   is(topTarget.url, TEST_URL);
 
   
-  const onConsoleMessages = topTarget.once("resource-available-form");
+  const onConsoleMessages = topTarget.once("resources-available-array");
 
   
   
@@ -93,7 +93,7 @@ add_task(async () => {
   await webConsoleActor.evaluateJSAsync({ text: "console.log('42')" });
 
   
-  const resources = await onConsoleMessages;
+  const [[, resources]] = await onConsoleMessages;
 
   
   

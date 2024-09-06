@@ -102,7 +102,12 @@ class BaseTargetActor extends Actor {
 
 
 
-  notifyResources(updateType, resources) {
+
+
+
+
+
+  notifyResources(updateType, resourceType, resources) {
     if (resources.length === 0 || this.isDestroyed()) {
       
       
@@ -113,16 +118,27 @@ class BaseTargetActor extends Actor {
       this.overrideResourceBrowsingContextForWebExtension(resources);
     }
 
-    const shouldEmitSynchronously = resources.some(
-      resource =>
-        (resource.resourceType == DOCUMENT_EVENT &&
-          resource.name == "will-navigate") ||
-        resource.resourceType == NETWORK_EVENT_STACKTRACE
-    );
-    this.#throttledResources[updateType].push.apply(
-      this.#throttledResources[updateType],
-      resources
-    );
+    const shouldEmitSynchronously =
+      resourceType == NETWORK_EVENT_STACKTRACE ||
+      (resourceType == DOCUMENT_EVENT &&
+        resources.some(resource => resource.name == "will-navigate"));
+
+    
+    
+    const lastResourceInThrottleCache =
+      this.#throttledResources[updateType].at(-1);
+    if (
+      lastResourceInThrottleCache &&
+      lastResourceInThrottleCache[0] === resourceType
+    ) {
+      lastResourceInThrottleCache[1].push.apply(
+        lastResourceInThrottleCache[1],
+        resources
+      );
+    } else {
+      
+      this.#throttledResources[updateType].push([resourceType, resources]);
+    }
 
     
     
@@ -153,7 +169,7 @@ class BaseTargetActor extends Actor {
         continue;
       }
       this.#throttledResources[updateType] = [];
-      this.emit(`resource-${updateType}-form`, resources);
+      this.emit(`resources-${updateType}-array`, resources);
     }
   }
 

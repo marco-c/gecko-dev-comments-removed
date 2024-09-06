@@ -467,7 +467,9 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
 
-  notifyResources(updateType, resources) {
+
+
+  notifyResources(updateType, resourceType, resources) {
     if (resources.length === 0) {
       
       return;
@@ -477,7 +479,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
       this._overrideResourceBrowsingContextForWebExtension(resources);
     }
 
-    this.emit(`resource-${updateType}-form`, resources);
+    this.emit(`resources-${updateType}-array`, [[resourceType, resources]]);
   }
 
   

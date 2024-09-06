@@ -90,7 +90,7 @@ add_task(async () => {
   is(topTarget.url, TEST_URL);
 
   
-  const onConsoleMessages = client.once("resource-available-form");
+  const onConsoleMessages = client.once("resources-available-array");
 
   
   
@@ -119,8 +119,21 @@ add_task(async () => {
   });
 
   
-  const { resources } = await onConsoleMessages;
+  const { type, array } = await onConsoleMessages;
 
+  
+  is(type, "resources-available-array");
+  is(
+    array.length,
+    1,
+    "The top array has only one array, as only one resourceType is notified"
+  );
+  
+  
+  is(array[0].length, 2);
+  const [resourceType, resources] = array[0];
+  is(resourceType, "console-message");
+  is(resources.length, 1, "Received only one console-message resource");
   
   
   is(resources[0].message.arguments[0], "42");
