@@ -47,7 +47,12 @@ export async function connectBidiOverCdp(
     
     pptrTransport.onmessage(JSON.stringify(message));
   });
-  const pptrBiDiConnection = new BidiConnection(cdp.url(), pptrTransport);
+  const pptrBiDiConnection = new BidiConnection(
+    cdp.url(),
+    pptrTransport,
+    cdp.delay,
+    cdp.timeout
+  );
   const bidiServer = await BidiMapper.BidiServer.createAndStart(
     transportBiDi,
     cdpConnectionAdapter,

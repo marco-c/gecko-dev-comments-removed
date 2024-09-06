@@ -406,20 +406,30 @@ function defaultProfilePreferences(
 
 
 async function writePreferences(options: ProfileOptions): Promise<void> {
+  const prefsPath = path.join(options.path, 'prefs.js');
   const lines = Object.entries(options.preferences).map(([key, value]) => {
     return `user_pref(${JSON.stringify(key)}, ${JSON.stringify(value)});`;
   });
 
-  await fs.promises.writeFile(
-    path.join(options.path, 'user.js'),
-    lines.join('\n')
-  );
-
   
-  const prefsPath = path.join(options.path, 'prefs.js');
-  if (fs.existsSync(prefsPath)) {
-    const prefsBackupPath = path.join(options.path, 'prefs.js.puppeteer');
-    await fs.promises.copyFile(prefsPath, prefsBackupPath);
+  const result = await Promise.allSettled([
+    fs.promises.writeFile(path.join(options.path, 'user.js'), lines.join('\n')),
+    
+    fs.promises.access(prefsPath, fs.constants.F_OK).then(
+      async () => {
+        await fs.promises.copyFile(
+          prefsPath,
+          path.join(options.path, 'prefs.js.puppeteer')
+        );
+      },
+      
+      () => {}
+    ),
+  ]);
+  for (const command of result) {
+    if (command.status === 'rejected') {
+      throw command.reason;
+    }
   }
 }
 

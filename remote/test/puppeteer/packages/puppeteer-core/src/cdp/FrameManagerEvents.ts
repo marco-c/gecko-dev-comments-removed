@@ -4,9 +4,12 @@
 
 
 
+import type Protocol from 'devtools-protocol';
+
 import type {EventType} from '../common/EventEmitter.js';
 
 import type {CdpFrame} from './Frame.js';
+import type {IsolatedWorld} from './IsolatedWorld.js';
 
 
 
@@ -24,6 +27,8 @@ export namespace FrameManagerEvent {
   export const FrameNavigatedWithinDocument = Symbol(
     'FrameManager.FrameNavigatedWithinDocument'
   );
+  export const ConsoleApiCalled = Symbol('FrameManager.ConsoleApiCalled');
+  export const BindingCalled = Symbol('FrameManager.BindingCalled');
 }
 
 
@@ -36,4 +41,13 @@ export interface FrameManagerEvents extends Record<EventType, unknown> {
   [FrameManagerEvent.FrameSwapped]: CdpFrame;
   [FrameManagerEvent.LifecycleEvent]: CdpFrame;
   [FrameManagerEvent.FrameNavigatedWithinDocument]: CdpFrame;
+  
+  [FrameManagerEvent.ConsoleApiCalled]: [
+    IsolatedWorld,
+    Protocol.Runtime.ConsoleAPICalledEvent,
+  ];
+  [FrameManagerEvent.BindingCalled]: [
+    IsolatedWorld,
+    Protocol.Runtime.BindingCalledEvent,
+  ];
 }

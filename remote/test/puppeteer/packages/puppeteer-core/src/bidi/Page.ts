@@ -63,6 +63,8 @@ import type {BidiWebWorker} from './WebWorker.js';
 
 
 
+
+
 export class BidiPage extends Page {
   static from(
     browserContext: BidiBrowserContext,
@@ -123,16 +125,71 @@ export class BidiPage extends Page {
       this.#workers.delete(worker as BidiWebWorker);
     });
   }
+  
 
+
+  _userAgentHeaders: Record<string, string> = {};
+  #userAgentInterception?: string;
+  #userAgentPreloadScript?: string;
   override async setUserAgent(
     userAgent: string,
-    userAgentMetadata?: Protocol.Emulation.UserAgentMetadata | undefined
+    userAgentMetadata?: Protocol.Emulation.UserAgentMetadata
   ): Promise<void> {
-    
-    await this._client().send('Network.setUserAgentOverride', {
-      userAgent: userAgent,
-      userAgentMetadata: userAgentMetadata,
-    });
+    if (!this.#browserContext.browser().cdpSupported && userAgentMetadata) {
+      throw new UnsupportedOperation(
+        'Current Browser does not support `userAgentMetadata`'
+      );
+    } else if (
+      this.#browserContext.browser().cdpSupported &&
+      userAgentMetadata
+    ) {
+      return await this._client().send('Network.setUserAgentOverride', {
+        userAgent: userAgent,
+        userAgentMetadata: userAgentMetadata,
+      });
+    }
+    const enable = userAgent !== '';
+    userAgent = userAgent ?? (await this.#browserContext.browser().userAgent());
+
+    this._userAgentHeaders = enable
+      ? {
+          'User-Agent': userAgent,
+        }
+      : {};
+
+    this.#userAgentInterception = await this.#toggleInterception(
+      [Bidi.Network.InterceptPhase.BeforeRequestSent],
+      this.#userAgentInterception,
+      enable
+    );
+
+    const changeUserAgent = (userAgent: string) => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value: userAgent,
+      });
+    };
+
+    const frames = [this.#frame];
+    for (const frame of frames) {
+      frames.push(...frame.childFrames());
+    }
+
+    if (this.#userAgentPreloadScript) {
+      await this.removeScriptToEvaluateOnNewDocument(
+        this.#userAgentPreloadScript
+      );
+    }
+    const [evaluateToken] = await Promise.all([
+      enable
+        ? this.evaluateOnNewDocument(changeUserAgent, userAgent)
+        : undefined,
+      
+      
+      frames.map(frame => {
+        return frame.evaluate(changeUserAgent, userAgent);
+      }),
+    ]);
+    this.#userAgentPreloadScript = evaluateToken?.identifier;
   }
 
   override async setBypassCSP(enabled: boolean): Promise<void> {

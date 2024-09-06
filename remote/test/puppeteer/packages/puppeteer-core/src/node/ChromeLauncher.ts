@@ -176,10 +176,15 @@ export class ChromeLauncher extends ProductLauncher {
       'AcceptCHFrame',
       'MediaRouter',
       'OptimizationHints',
-      
-      turnOnExperimentalFeaturesForTesting
-        ? ''
-        : 'ProcessPerSiteUpToMainFrameThreshold',
+
+      ...(turnOnExperimentalFeaturesForTesting
+        ? []
+        : [
+            
+            'ProcessPerSiteUpToMainFrameThreshold',
+            
+            'IsolateSandboxedIframes',
+          ]),
       ...userDisabledFeatures,
     ].filter(feature => {
       return feature !== '';
@@ -192,6 +197,7 @@ export class ChromeLauncher extends ProductLauncher {
 
     
     const enabledFeatures = [
+      'PdfOopif',
       
       ...userEnabledFeatures,
     ].filter(feature => {
@@ -210,9 +216,6 @@ export class ChromeLauncher extends ProductLauncher {
       '--disable-default-apps',
       '--disable-dev-shm-usage',
       '--disable-extensions',
-      turnOnExperimentalFeaturesForTesting
-        ? ''
-        : '--disable-field-trial-config', 
       '--disable-hang-monitor',
       '--disable-infobars',
       '--disable-ipc-flooding-protection',

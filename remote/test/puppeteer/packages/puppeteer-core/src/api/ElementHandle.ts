@@ -10,6 +10,7 @@ import type {Frame} from '../api/Frame.js';
 import {getQueryHandlerAndSelector} from '../common/GetQueryHandler.js';
 import {LazyArg} from '../common/LazyArg.js';
 import type {
+  AwaitableIterable,
   ElementFor,
   EvaluateFuncWith,
   HandleFor,
@@ -150,6 +151,13 @@ export abstract class ElementHandle<
 
 
 
+  isolatedHandle?: typeof this;
+
+  
+
+
+
+
 
 
 
@@ -163,7 +171,14 @@ export abstract class ElementHandle<
       if (this.realm === this.frame.isolatedRealm()) {
         return await target.call(this, ...args);
       }
-      using adoptedThis = await this.frame.isolatedRealm().adoptHandle(this);
+      let adoptedThis: This;
+      if (this['isolatedHandle']) {
+        adoptedThis = this['isolatedHandle'];
+      } else {
+        this['isolatedHandle'] = adoptedThis = await this.frame
+          .isolatedRealm()
+          .adoptHandle(this);
+      }
       const result = await target.call(adoptedThis, ...args);
       
       if (result === adoptedThis) {
@@ -862,6 +877,14 @@ export abstract class ElementHandle<
   
 
 
+  abstract queryAXTree(
+    name?: string,
+    role?: string
+  ): AwaitableIterable<ElementHandle<Node>>;
+
+  
+
+
 
 
   @throwIfDisposed()
@@ -1238,17 +1261,13 @@ export abstract class ElementHandle<
   ): Promise<string | Buffer> {
     const {scrollIntoView = true, clip} = options;
 
-    let elementClip = await this.#nonEmptyVisibleBoundingBox();
-
     const page = this.frame.page();
 
     
     if (scrollIntoView) {
       await this.scrollIntoViewIfNeeded();
-
-      
-      elementClip = await this.#nonEmptyVisibleBoundingBox();
     }
+    const elementClip = await this.#nonEmptyVisibleBoundingBox();
 
     const [pageLeft, pageTop] = await this.evaluate(() => {
       if (!window.visualViewport) {

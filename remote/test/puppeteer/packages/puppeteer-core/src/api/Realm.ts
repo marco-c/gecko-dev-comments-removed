@@ -95,10 +95,14 @@ export abstract class Realm implements Disposable {
 
   #disposed = false;
   
-  [disposeSymbol](): void {
+  dispose(): void {
     this.#disposed = true;
     this.taskManager.terminateAll(
       new Error('waitForFunction failed: frame got detached.')
     );
+  }
+  
+  [disposeSymbol](): void {
+    this.dispose();
   }
 }
