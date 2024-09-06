@@ -87,8 +87,56 @@ const CLSID CLSID_ImmersiveShell = {
 
 
 
+namespace mozilla::widget {
+
+
+struct WindowStyles {
+  LONG_PTR style = 0;
+  LONG_PTR ex = 0;
+
+  static WindowStyles FromHWND(HWND);
+
+  constexpr bool operator==(WindowStyles const& that) const {
+    return style == that.style && ex == that.ex;
+  }
+  constexpr bool operator!=(WindowStyles const& that) const {
+    return !(*this == that);
+  }
+  constexpr WindowStyles operator|(WindowStyles const& that) const {
+    return WindowStyles{.style = style | that.style, .ex = ex | that.ex};
+  }
+  constexpr WindowStyles operator&(WindowStyles const& that) const {
+    return WindowStyles{.style = style & that.style, .ex = ex & that.ex};
+  }
+  constexpr WindowStyles operator~() const {
+    return WindowStyles{.style = ~style, .ex = ~ex};
+  }
+
+  constexpr operator bool() const { return style || ex; }
+
+  
+  
+  constexpr WindowStyles merge(WindowStyles zero, WindowStyles one) const {
+    WindowStyles const& mask = *this;
+    return (~mask & zero) | (mask & one);
+  }
+
+  
+  
+  constexpr std::tuple<WindowStyles, WindowStyles> split(
+      WindowStyles data) const {
+    WindowStyles const& mask = *this;
+    return {~mask & data, mask & data};
+  }
+};
+
+void SetWindowStyles(HWND, const WindowStyles&);
+
+}  
+
 class nsWindow final : public nsBaseWidget {
  public:
+  using Styles = mozilla::widget::WindowStyles;
   using WindowHook = mozilla::widget::WindowHook;
   using IMEContext = mozilla::widget::IMEContext;
   using WidgetEventTime = mozilla::WidgetEventTime;
@@ -750,12 +798,7 @@ class nsWindow final : public nsBaseWidget {
   bool mIsAlert = false;
   bool mIsPerformingDwmFlushHack = false;
   bool mDraggingWindowWithMouse = false;
-  
-  
-  struct WindowStyles {
-    LONG_PTR style, exStyle;
-  };
-  mozilla::Maybe<WindowStyles> mOldStyles;
+  mozilla::Maybe<Styles> mOldStyles;
   nsNativeDragTarget* mNativeDragTarget = nullptr;
   HKL mLastKeyboardLayout = 0;
   mozilla::CheckInvariantWrapper<FrameState> mFrameState;
