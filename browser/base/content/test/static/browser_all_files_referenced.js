@@ -297,10 +297,10 @@ var allowlist = [
   { file: "chrome://browser/content/screenshots/copy.svg" },
   { file: "chrome://browser/content/screenshots/download.svg" },
   { file: "chrome://browser/content/screenshots/download-white.svg" },
-    
+
   
   
-  { file: "chrome://browser/content/backup/debug.html" },  
+  { file: "chrome://browser/content/backup/debug.html" },
 ];
 
 if (AppConstants.platform != "win") {
