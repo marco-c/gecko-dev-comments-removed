@@ -184,32 +184,14 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/getrandom/0.2.14"
+    html_root_url = "https://docs.rs/getrandom/0.2.11"
 )]
 #![no_std]
 #![warn(rust_2018_idioms, unused_lifetimes, missing_docs)]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
 extern crate cfg_if;
@@ -239,52 +221,9 @@ cfg_if! {
     if #[cfg(any(target_os = "haiku", target_os = "redox", target_os = "nto", target_os = "aix"))] {
         mod util_libc;
         #[path = "use_file.rs"] mod imp;
-    } else if #[cfg(all(
-        not(feature = "linux_disable_fallback"),
-        any(
-            // Rust supports Android API level 19 (KitKat) [0] and the next upgrade targets
-            // level 21 (Lollipop) [1], while `getrandom(2)` was added only in
-            // level 23 (Marshmallow). Note that it applies only to the "old" `target_arch`es,
-            // RISC-V Android targets sufficiently new API level, same will apply for potential
-            // new Android `target_arch`es.
-            // [0]: https://blog.rust-lang.org/2023/01/09/android-ndk-update-r25.html
-            // [1]: https://github.com/rust-lang/rust/pull/120593
-            all(
-                target_os = "android",
-                any(
-                    target_arch = "aarch64",
-                    target_arch = "arm",
-                    target_arch = "x86",
-                    target_arch = "x86_64",
-                ),
-            ),
-            // Only on these `target_arch`es Rust supports Linux kernel versions (3.2+)
-            // that precede the version (3.17) in which `getrandom(2)` was added:
-            // https://doc.rust-lang.org/stable/rustc/platform-support.html
-            all(
-                target_os = "linux",
-                any(
-                    target_arch = "aarch64",
-                    target_arch = "arm",
-                    target_arch = "powerpc",
-                    target_arch = "powerpc64",
-                    target_arch = "s390x",
-                    target_arch = "x86",
-                    target_arch = "x86_64",
-                    // Minimum supported Linux kernel version for MUSL targets
-                    // is not specified explicitly (as of Rust 1.77) and they
-                    // are used in practice to target pre-3.17 kernels.
-                    target_env = "musl",
-                ),
-            )
-        ),
-    ))] {
-        mod util_libc;
-        mod use_file;
-        mod lazy;
-        #[path = "linux_android_with_fallback.rs"] mod imp;
     } else if #[cfg(any(target_os = "android", target_os = "linux"))] {
         mod util_libc;
+        mod use_file;
         #[path = "linux_android.rs"] mod imp;
     } else if #[cfg(any(target_os = "illumos", target_os = "solaris"))] {
         mod util_libc;
@@ -303,6 +242,7 @@ cfg_if! {
         #[path = "apple-other.rs"] mod imp;
     } else if #[cfg(target_os = "macos")] {
         mod util_libc;
+        mod use_file;
         #[path = "macos.rs"] mod imp;
     } else if #[cfg(target_os = "openbsd")] {
         mod util_libc;
@@ -332,11 +272,9 @@ cfg_if! {
         mod util_libc;
         #[path = "emscripten.rs"] mod imp;
     } else if #[cfg(all(target_arch = "x86_64", target_env = "sgx"))] {
-        mod lazy;
         #[path = "rdrand.rs"] mod imp;
     } else if #[cfg(all(feature = "rdrand",
                         any(target_arch = "x86_64", target_arch = "x86")))] {
-        mod lazy;
         #[path = "rdrand.rs"] mod imp;
     } else if #[cfg(all(feature = "js",
                         any(target_arch = "wasm32", target_arch = "wasm64"),

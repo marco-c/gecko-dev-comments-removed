@@ -4,12 +4,6 @@
 
 
 
-
-const XOF_TURBO_SHAKE_128_DOMAIN_SEPARATION: u8 = 1;
-
-#[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
-const XOF_FIXED_KEY_AES_128_DOMAIN_SEPARATION: u8 = 2;
-
 use crate::{
     field::FieldElement,
     prng::Prng,
@@ -27,17 +21,13 @@ use aes::{
 };
 #[cfg(feature = "crypto-dependencies")]
 use ctr::Ctr64BE;
-#[cfg(feature = "crypto-dependencies")]
-use hmac::{Hmac, Mac};
 use rand_core::{
     impls::{next_u32_via_fill, next_u64_via_fill},
     RngCore, SeedableRng,
 };
-#[cfg(feature = "crypto-dependencies")]
-use sha2::Sha256;
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
-    TurboShake128, TurboShake128Core, TurboShake128Reader,
+    Shake128, Shake128Core, Shake128Reader,
 };
 #[cfg(feature = "crypto-dependencies")]
 use std::fmt::Formatter;
@@ -86,9 +76,8 @@ impl<const SEED_SIZE: usize> ConstantTimeEq for Seed<SEED_SIZE> {
 }
 
 impl<const SEED_SIZE: usize> Encode for Seed<SEED_SIZE> {
-    fn encode(&self, bytes: &mut Vec<u8>) -> Result<(), CodecError> {
+    fn encode(&self, bytes: &mut Vec<u8>) {
         bytes.extend_from_slice(&self.0[..]);
-        Ok(())
     }
 
     fn encoded_len(&self) -> Option<usize> {
@@ -156,9 +145,7 @@ pub struct SeedStreamAes128(Ctr64BE<Aes128>);
 
 #[cfg(feature = "crypto-dependencies")]
 impl SeedStreamAes128 {
-    
-    
-    pub fn new(key: &[u8], iv: &[u8]) -> Self {
+    pub(crate) fn new(key: &[u8], iv: &[u8]) -> Self {
         SeedStreamAes128(<Ctr64BE<Aes128> as KeyIvInit>::new(key.into(), iv.into()))
     }
 
@@ -204,15 +191,13 @@ impl Debug for SeedStreamAes128 {
 
 
 #[derive(Clone, Debug)]
-pub struct XofTurboShake128(TurboShake128);
+pub struct XofShake128(Shake128);
 
-impl Xof<16> for XofTurboShake128 {
-    type SeedStream = SeedStreamTurboShake128;
+impl Xof<16> for XofShake128 {
+    type SeedStream = SeedStreamSha3;
 
     fn init(seed_bytes: &[u8; 16], dst: &[u8]) -> Self {
-        let mut xof = Self(TurboShake128::from_core(TurboShake128Core::new(
-            XOF_TURBO_SHAKE_128_DOMAIN_SEPARATION,
-        )));
+        let mut xof = Self(Shake128::from_core(Shake128Core::default()));
         Update::update(
             &mut xof.0,
             &[dst.len().try_into().expect("dst must be at most 255 bytes")],
@@ -226,21 +211,21 @@ impl Xof<16> for XofTurboShake128 {
         Update::update(&mut self.0, data);
     }
 
-    fn into_seed_stream(self) -> SeedStreamTurboShake128 {
-        SeedStreamTurboShake128::new(self.0.finalize_xof())
+    fn into_seed_stream(self) -> SeedStreamSha3 {
+        SeedStreamSha3::new(self.0.finalize_xof())
     }
 }
 
 
-pub struct SeedStreamTurboShake128(TurboShake128Reader);
+pub struct SeedStreamSha3(Shake128Reader);
 
-impl SeedStreamTurboShake128 {
-    pub(crate) fn new(reader: TurboShake128Reader) -> Self {
+impl SeedStreamSha3 {
+    pub(crate) fn new(reader: Shake128Reader) -> Self {
         Self(reader)
     }
 }
 
-impl RngCore for SeedStreamTurboShake128 {
+impl RngCore for SeedStreamSha3 {
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         XofReader::read(&mut self.0, dest);
     }
@@ -261,11 +246,11 @@ impl RngCore for SeedStreamTurboShake128 {
 
 
 
-impl SeedableRng for SeedStreamTurboShake128 {
+impl SeedableRng for SeedStreamSha3 {
     type Seed = [u8; 16];
 
     fn from_seed(seed: Self::Seed) -> Self {
-        XofTurboShake128::init(&seed, b"").into_seed_stream()
+        XofShake128::init(&seed, b"").into_seed_stream()
     }
 }
 
@@ -284,9 +269,7 @@ pub struct XofFixedKeyAes128Key {
 impl XofFixedKeyAes128Key {
     
     pub fn new(dst: &[u8], binder: &[u8]) -> Self {
-        let mut fixed_key_deriver = TurboShake128::from_core(TurboShake128Core::new(
-            XOF_FIXED_KEY_AES_128_DOMAIN_SEPARATION,
-        ));
+        let mut fixed_key_deriver = Shake128::from_core(Shake128Core::default());
         Update::update(
             &mut fixed_key_deriver,
             &[dst.len().try_into().expect("dst must be at most 255 bytes")],
@@ -326,7 +309,7 @@ impl XofFixedKeyAes128Key {
     doc(cfg(all(feature = "crypto-dependencies", feature = "experimental")))
 )]
 pub struct XofFixedKeyAes128 {
-    fixed_key_deriver: TurboShake128,
+    fixed_key_deriver: Shake128,
     base_block: Block,
 }
 
@@ -335,7 +318,7 @@ impl Xof<16> for XofFixedKeyAes128 {
     type SeedStream = SeedStreamFixedKeyAes128;
 
     fn init(seed_bytes: &[u8; 16], dst: &[u8]) -> Self {
-        let mut fixed_key_deriver = TurboShake128::from_core(TurboShake128Core::new(2u8));
+        let mut fixed_key_deriver = Shake128::from_core(Shake128Core::default());
         Update::update(
             &mut fixed_key_deriver,
             &[dst.len().try_into().expect("dst must be at most 255 bytes")],
@@ -450,37 +433,6 @@ impl RngCore for SeedStreamFixedKeyAes128 {
     }
 }
 
-
-#[cfg(feature = "crypto-dependencies")]
-#[cfg_attr(docsrs, doc(cfg(feature = "crypto-dependencies")))]
-#[derive(Clone, Debug)]
-pub struct XofHmacSha256Aes128(Hmac<Sha256>);
-
-#[cfg(feature = "crypto-dependencies")]
-impl Xof<32> for XofHmacSha256Aes128 {
-    type SeedStream = SeedStreamAes128;
-
-    fn init(seed_bytes: &[u8; 32], dst: &[u8]) -> Self {
-        let mut mac = <Hmac<Sha256> as Mac>::new_from_slice(seed_bytes).unwrap();
-        Mac::update(
-            &mut mac,
-            &[dst.len().try_into().expect("dst must be at most 255 bytes")],
-        );
-        Mac::update(&mut mac, dst);
-        Self(mac)
-    }
-
-    fn update(&mut self, data: &[u8]) {
-        Mac::update(&mut self.0, data);
-    }
-
-    fn into_seed_stream(self) -> SeedStreamAes128 {
-        let tag = Mac::finalize(self.0).into_bytes();
-        let (key, iv) = tag.split_at(16);
-        SeedStreamAes128::new(key, iv)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -528,10 +480,10 @@ mod tests {
     }
 
     #[test]
-    fn xof_turboshake128() {
+    fn xof_shake128() {
         let t: XofTestVector =
-            serde_json::from_str(include_str!("test_vec/08/XofTurboShake128.json")).unwrap();
-        let mut xof = XofTurboShake128::init(&t.seed.try_into().unwrap(), &t.dst);
+            serde_json::from_str(include_str!("test_vec/07/XofShake128.json")).unwrap();
+        let mut xof = XofShake128::init(&t.seed.try_into().unwrap(), &t.dst);
         xof.update(&t.binder);
 
         assert_eq!(
@@ -547,38 +499,14 @@ mod tests {
         let got: Vec<Field128> = xof.clone().into_seed_stream().into_field_vec(t.length);
         assert_eq!(got, want);
 
-        test_xof::<XofTurboShake128, 16>();
-    }
-
-    #[test]
-    fn xof_hmac_sha256_aes128() {
-        let t: XofTestVector =
-            serde_json::from_str(include_str!("test_vec/XofHmacSha256Aes128.json")).unwrap();
-
-        let mut xof = XofHmacSha256Aes128::init(&t.seed.try_into().unwrap(), &t.dst);
-        xof.update(&t.binder);
-
-        assert_eq!(
-            xof.clone().into_seed(),
-            Seed(t.derived_seed.try_into().unwrap())
-        );
-
-        let mut bytes = Cursor::new(t.expanded_vec_field128.as_slice());
-        let mut want = Vec::with_capacity(t.length);
-        while (bytes.position() as usize) < t.expanded_vec_field128.len() {
-            want.push(Field128::decode(&mut bytes).unwrap())
-        }
-        let got: Vec<Field128> = xof.clone().into_seed_stream().into_field_vec(t.length);
-        assert_eq!(got, want);
-
-        test_xof::<XofHmacSha256Aes128, 32>();
+        test_xof::<XofShake128, 16>();
     }
 
     #[cfg(feature = "experimental")]
     #[test]
     fn xof_fixed_key_aes128() {
         let t: XofTestVector =
-            serde_json::from_str(include_str!("test_vec/08/XofFixedKeyAes128.json")).unwrap();
+            serde_json::from_str(include_str!("test_vec/07/XofFixedKeyAes128.json")).unwrap();
         let mut xof = XofFixedKeyAes128::init(&t.seed.try_into().unwrap(), &t.dst);
         xof.update(&t.binder);
 

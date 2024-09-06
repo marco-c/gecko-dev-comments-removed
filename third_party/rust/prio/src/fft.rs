@@ -10,7 +10,6 @@ use std::convert::TryFrom;
 
 
 #[derive(Debug, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
 pub enum FftError {
     
     #[error("output slice is smaller than specified size")]
