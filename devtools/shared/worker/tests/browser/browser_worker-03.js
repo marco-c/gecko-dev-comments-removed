@@ -8,7 +8,9 @@
 
 
 
-const { workerify } = require("resource://devtools/shared/worker/worker.js");
+const { workerify } = ChromeUtils.importESModule(
+  "resource://devtools/shared/worker/worker.sys.mjs"
+);
 function square(x) {
   return x * x;
 }
