@@ -18,15 +18,8 @@ def test_null_response_value(session):
     session.end()
 
 
-def test_dismissed_beforeunload_prompt(session, inline):
-    session.url = inline("""
-      <input type="text">
-      <script>
-        window.addEventListener("beforeunload", function (event) {
-          event.preventDefault();
-        });
-      </script>
-    """)
+def test_accepted_beforeunload_prompt(session, url):
+    session.url = url("/webdriver/tests/support/html/beforeunload.html")
 
     session.find.css("input", all=False).send_keys("foo")
 
