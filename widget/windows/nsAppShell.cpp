@@ -32,6 +32,7 @@
 #include "mozilla/widget/ScreenManager.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/NativeNt.h"
+#include "mozilla/WindowsDiagnostics.h"
 #include "mozilla/WindowsProcessMitigations.h"
 
 #include <winternl.h>
@@ -370,59 +371,6 @@ namespace {
 
 
 
-
-
-
-struct WinErrorState {
-  
-  DWORD error = ~0;
-  
-  NTSTATUS ntStatus = ~0;
-
- private:
-  
-  constexpr static size_t kLastNtStatusOffset =
-      sizeof(size_t) == 8 ? 0x1250 : 0xbf4;
-
-  static void SetLastNtStatus(NTSTATUS status) {
-    auto* teb = ::NtCurrentTeb();
-    *reinterpret_cast<NTSTATUS*>(reinterpret_cast<char*>(teb) +
-                                 kLastNtStatusOffset) = status;
-  }
-
-  static NTSTATUS GetLastNtStatus() {
-    auto const* teb = ::NtCurrentTeb();
-    return *reinterpret_cast<NTSTATUS const*>(
-        reinterpret_cast<char const*>(teb) + kLastNtStatusOffset);
-  }
-
- public:
-  
-  static void Apply(WinErrorState const& state) {
-    SetLastNtStatus(state.ntStatus);
-    ::SetLastError(state.error);
-  }
-
-  
-  static void Clear() { Apply({.error = 0, .ntStatus = 0}); }
-
-  
-  static WinErrorState Get() {
-    return WinErrorState{
-        .error = ::GetLastError(),
-        .ntStatus = GetLastNtStatus(),
-    };
-  }
-
-  bool operator==(WinErrorState const& that) const {
-    return this->error == that.error && this->ntStatus == that.ntStatus;
-  }
-
-  bool operator!=(WinErrorState const& that) const { return !operator==(that); }
-};
-
-
-
 struct AtomTableInformation {
   
   UINT in_use = 0;
@@ -484,138 +432,23 @@ MOZ_NEVER_INLINE static AtomTableInformation DiagnoseUserAtomTable() {
   return retval;
 }
 
-}  
-
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && defined(_M_X64)
-MOZ_NEVER_INLINE MOZ_NAKED void EnableTrapFlag() {
-  asm volatile(
-      "pushfq;"
-      "orw $0x100,(%rsp);"
-      "popfq;"
-      "retq;");
-}
-
-MOZ_NEVER_INLINE MOZ_NAKED void DisableTrapFlag() { asm volatile("retq;"); }
-
-#  define SSD_MAX_USER32_STEPS 0x1800
-#  define SSD_MAX_ERROR_STATES 0x200
-struct SingleStepData {
-  uint32_t mUser32StepsLog[SSD_MAX_USER32_STEPS]{};
-  WinErrorState mErrorStatesLog[SSD_MAX_ERROR_STATES];
-  uint16_t mUser32StepsAtErrorState[SSD_MAX_ERROR_STATES]{};
-};
-
-struct SingleStepStaticState {
-  SingleStepData* mData{};
-  uintptr_t mUser32Start{};
-  uintptr_t mUser32End{};
-  uint32_t mUser32Steps{};
-  uint32_t mErrorStates{};
-  WinErrorState mLastRecordedErrorState;
-
-  constexpr void Reset() { *this = SingleStepStaticState{}; }
-};
-
-static SingleStepStaticState sSingleStepStaticState{};
-
-LONG SingleStepExceptionHandler(_EXCEPTION_POINTERS* aExceptionInfo) {
-  auto& state = sSingleStepStaticState;
-  if (state.mData &&
-      aExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_SINGLE_STEP) {
-    auto instructionPointer = aExceptionInfo->ContextRecord->Rip;
-    if (instructionPointer == reinterpret_cast<uintptr_t>(&DisableTrapFlag)) {
-      
-      state.mData = nullptr;
-    } else {
-      
-      if (state.mUser32Start <= instructionPointer &&
-          instructionPointer < state.mUser32End) {
-        
-        if (state.mUser32Steps < SSD_MAX_USER32_STEPS) {
-          state.mData->mUser32StepsLog[state.mUser32Steps] =
-              static_cast<uint32_t>(instructionPointer - state.mUser32Start);
-        }
-
-        
-        auto currentErrorState{WinErrorState::Get()};
-        if (currentErrorState != state.mLastRecordedErrorState) {
-          state.mLastRecordedErrorState = currentErrorState;
-
-          if (state.mErrorStates < SSD_MAX_ERROR_STATES) {
-            state.mData->mErrorStatesLog[state.mErrorStates] =
-                currentErrorState;
-            state.mData->mUser32StepsAtErrorState[state.mErrorStates] =
-                state.mUser32Steps;
-          }
-
-          ++state.mErrorStates;
-        }
-
-        ++state.mUser32Steps;
-      }
-
-      
-      aExceptionInfo->ContextRecord->EFlags |= 0x100;
-    }
-    return EXCEPTION_CONTINUE_EXECUTION;
-  }
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-enum CSSD_RESULT {
-  CSSD_SUCCESS = 0,
-  CSSD_ERROR_DEBUGGER_PRESENT = 1,
-  CSSD_ERROR_GET_MODULE_HANDLE = 2,
-  CSSD_ERROR_PARSING_USER32 = 3,
-  CSSD_ERROR_ADD_VECTORED_EXCEPTION_HANDLER = 4,
-};
+static constexpr int kMaxStepsUser32 = 0x1800;
+static constexpr int kMaxErrorStatesUser32 = 0x200;
+using User32SingleStepData =
+    ModuleSingleStepData<kMaxStepsUser32, kMaxErrorStatesUser32>;
 
 template <typename CallbackToRun, typename PostCollectionCallback>
-[[clang::optnone]] MOZ_NEVER_INLINE CSSD_RESULT
-CollectSingleStepData(CallbackToRun aCallbackToRun,
-                      PostCollectionCallback aPostCollectionCallback) {
-  if (::IsDebuggerPresent()) {
-    return CSSD_ERROR_DEBUGGER_PRESENT;
-  }
-
-  MOZ_DIAGNOSTIC_ASSERT(!sSingleStepStaticState.mData,
-                        "Single-stepping is already active");
-  HANDLE user32 = ::GetModuleHandleW(L"user32.dll");
-  if (!user32) {
-    return CSSD_ERROR_GET_MODULE_HANDLE;
-  }
-
-  nt::PEHeaders user32Headers{user32};
-  auto bounds = user32Headers.GetBounds();
-  if (bounds.isNothing()) {
-    return CSSD_ERROR_PARSING_USER32;
-  }
-
-  SingleStepData singleStepData{};
-
-  sSingleStepStaticState.Reset();
-  sSingleStepStaticState.mUser32Start =
-      reinterpret_cast<uintptr_t>(bounds.ref().begin().get());
-  sSingleStepStaticState.mUser32End =
-      reinterpret_cast<uintptr_t>(bounds.ref().end().get());
-  sSingleStepStaticState.mData = &singleStepData;
-  auto veh = ::AddVectoredExceptionHandler(TRUE, SingleStepExceptionHandler);
-  if (!veh) {
-    sSingleStepStaticState.mData = nullptr;
-    return CSSD_ERROR_ADD_VECTORED_EXCEPTION_HANDLER;
-  }
-
-  EnableTrapFlag();
-  aCallbackToRun();
-  DisableTrapFlag();
-  ::RemoveVectoredExceptionHandler(veh);
-  sSingleStepStaticState.mData = nullptr;
-
-  aPostCollectionCallback();
-
-  return CSSD_SUCCESS;
+WindowsDiagnosticsError CollectUser32SingleStepData(
+    CallbackToRun aCallbackToRun,
+    PostCollectionCallback aPostCollectionCallback) {
+  return CollectModuleSingleStepData<kMaxStepsUser32, kMaxErrorStatesUser32>(
+      L"user32.dll", std::move(aCallbackToRun),
+      std::move(aPostCollectionCallback));
 }
-#endif
+#endif  
+
+}  
 
 
 
@@ -684,11 +517,11 @@ CollectSingleStepData(CallbackToRun aCallbackToRun,
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && defined(_M_X64)
     if (!_windowClassAtom) {
       
-      auto cssdResult = CollectSingleStepData(
+      WindowsDiagnosticsError rv = CollectUser32SingleStepData(
           [&wc, &_windowClassAtom]() {
             _windowClassAtom = ::RegisterClassW(&wc);
           },
-          [&_windowClassAtom]() {
+          [&_windowClassAtom](const User32SingleStepData& aData) {
             
             MOZ_DIAGNOSTIC_ASSERT(
                 _windowClassAtom,
@@ -696,7 +529,7 @@ CollectSingleStepData(CallbackToRun aCallbackToRun,
           });
       auto const _cssdErr [[maybe_unused]] = WinErrorState::Get();
       MOZ_DIAGNOSTIC_ASSERT(
-          cssdResult == CSSD_SUCCESS,
+          rv == WindowsDiagnosticsError::None,
           "Failed to collect single step data for RegisterClassW");
       
       
@@ -716,20 +549,20 @@ CollectSingleStepData(CallbackToRun aCallbackToRun,
   if (!mEventWnd) {
     
     HWND eventWnd{};
-    auto cssdResult = CollectSingleStepData(
+    WindowsDiagnosticsError rv = CollectUser32SingleStepData(
         [module, &eventWnd]() {
           eventWnd =
               CreateWindowW(kWindowClass, L"nsAppShell:EventWindow", 0, 0, 0,
                             10, 10, HWND_MESSAGE, nullptr, module, nullptr);
         },
-        [&eventWnd]() {
+        [&eventWnd](const User32SingleStepData& aData) {
           
           MOZ_DIAGNOSTIC_ASSERT(eventWnd,
                                 "CreateWindowW for EventWindow failed twice");
         });
     auto const _cssdErr [[maybe_unused]] = WinErrorState::Get();
     MOZ_DIAGNOSTIC_ASSERT(
-        cssdResult == CSSD_SUCCESS,
+        rv == WindowsDiagnosticsError::None,
         "Failed to collect single step data for CreateWindowW");
     
     
