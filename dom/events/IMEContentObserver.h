@@ -247,27 +247,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
     return mDocumentObserver && mDocumentObserver->IsUpdating();
   }
 
-  
-
-
-  void ClearAddedNodesDuringDocumentChange();
-
-  
-
-
-
-
-
-  bool HasAddedNodesDuringDocumentChange() const {
-    return mFirstAddedContainer && mLastAddedContainer;
-  }
-
-  
-
-
-
-  bool IsNextNodeOfLastAddedNode(nsINode* aParent, nsIContent* aChild) const;
-
   void PostFocusSetNotification();
   void MaybeNotifyIMEOfFocusSet();
   void PostTextChangeNotification();
@@ -696,24 +675,54 @@ class IMEContentObserver final : public nsStubMutationObserver,
       FlatTextCache("mStartOfRemovingTextRangeCache");
 
   
-  
-  
-  
-  
-  
-  nsCOMPtr<nsINode> mFirstAddedContainer;
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsINode> mLastAddedContainer;
+
+
+
+
+  struct AddedContentCache {
+    
+
+
+
+    void Clear(const char* aCallerName);
+
+    [[nodiscard]] bool HasCache() const { return mFirst && mLast; }
+
+    
+
+
+
+
+
+
+    bool TryToCache(const nsIContent& aFirstContent,
+                    const nsIContent& aLastContent,
+                    const dom::Element* aRootElement);
+
+    MOZ_DEFINE_DBG(AddedContentCache, mFirst, mLast);
+
+    
+
+
+
+
+    [[nodiscard]] static bool ContentIsPrevNodeOf(
+        const nsIContent& aContent, const nsIContent& aMaybeNextNode,
+        const dom::Element* aRootElement);
+
+    nsCOMPtr<nsIContent> mFirst;
+    nsCOMPtr<nsIContent> mLast;
+  };
 
   
-  nsCOMPtr<nsIContent> mFirstAddedContent;
   
-  nsCOMPtr<nsIContent> mLastAddedContent;
+  
+  
+  
+  
+  
+  
+  AddedContentCache mAddedContentCache;
 
   TextChangeData mTextChangeData;
 
