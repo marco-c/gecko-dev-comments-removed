@@ -1713,7 +1713,11 @@ pref("browser.newtabpage.activity-stream.weather.display", "simple");
 #endif
 
 
-pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
+#ifdef NIGHTLY_BUILD
+  pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
+#else
+  pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
+#endif
 pref("browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled", false);
 
 
