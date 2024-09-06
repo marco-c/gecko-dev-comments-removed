@@ -190,17 +190,24 @@ class VideoCodecTester {
 
   
   
-  static std::map<uint32_t, EncodingSettings> CreateEncodingSettings(
-      std::string codec_type,
-      std::string scalability_name,
-      int width,
-      int height,
-      std::vector<int> bitrates_kbps,
-      double framerate_fps,
+  
+  
+  
+  static EncodingSettings CreateEncodingSettings(std::string codec_type,
+                                                 std::string scalability_name,
+                                                 int width,
+                                                 int height,
+                                                 std::vector<DataRate> bitrate,
+                                                 Frequency framerate,
+                                                 bool screencast = false,
+                                                 bool frame_drop = true);
+
+  
+  
+  static std::map<uint32_t, EncodingSettings> CreateFrameSettings(
+      const EncodingSettings& encoding_settings,
       int num_frames,
-      uint32_t first_timestamp_rtp = 90000,
-      VideoCodecMode content_type = VideoCodecMode::kRealtimeVideo,
-      bool frame_drop = true);
+      uint32_t first_timestamp_rtp = 90000);
 
   
   static std::unique_ptr<VideoCodecStats> RunDecodeTest(
