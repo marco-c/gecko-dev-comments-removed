@@ -30,6 +30,9 @@ using mozilla::StringBuffer;
 const XPCStringConvert::LiteralExternalString
     XPCStringConvert::sLiteralExternalString;
 
+const XPCStringConvert::DOMStringExternalString
+    XPCStringConvert::sDOMStringExternalString;
+
 void XPCStringConvert::LiteralExternalString::finalize(
     JS::Latin1Char* aChars) const {
   
@@ -51,19 +54,66 @@ size_t XPCStringConvert::LiteralExternalString::sizeOfBuffer(
   return 0;
 }
 
+void XPCStringConvert::DOMStringExternalString::finalize(
+    JS::Latin1Char* aChars) const {
+  StringBuffer* buf = StringBuffer::FromData(aChars);
+  buf->Release();
+}
+
+void XPCStringConvert::DOMStringExternalString::finalize(
+    char16_t* aChars) const {
+  StringBuffer* buf = StringBuffer::FromData(aChars);
+  buf->Release();
+}
+
+size_t XPCStringConvert::DOMStringExternalString::sizeOfBuffer(
+    const JS::Latin1Char* aChars, mozilla::MallocSizeOf aMallocSizeOf) const {
+  
+  JS::AutoCheckCannotGC autoCannotGC;
+
+  const StringBuffer* buf =
+      StringBuffer::FromData(const_cast<JS::Latin1Char*>(aChars));
+  
+  
+  
+  return buf->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
+}
+
+size_t XPCStringConvert::DOMStringExternalString::sizeOfBuffer(
+    const char16_t* aChars, mozilla::MallocSizeOf aMallocSizeOf) const {
+  
+  JS::AutoCheckCannotGC autoCannotGC;
+
+  const StringBuffer* buf =
+      StringBuffer::FromData(const_cast<char16_t*>(aChars));
+  
+  
+  
+  return buf->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
+}
 
 
-bool xpc::NonVoidStringToJsval(JSContext* cx, const nsAString& readable,
-                               MutableHandleValue vp) {
+
+bool XPCStringConvert::ReadableToJSVal(JSContext* cx, const nsAString& readable,
+                                       StringBuffer** sharedBuffer,
+                                       MutableHandleValue vp) {
+  *sharedBuffer = nullptr;
+
   uint32_t length = readable.Length();
 
   if (readable.IsLiteral()) {
-    return XPCStringConvert::StringLiteralToJSVal(cx, readable.BeginReading(),
-                                                  length, vp);
+    return StringLiteralToJSVal(cx, readable.BeginReading(), length, vp);
   }
 
   if (StringBuffer* buf = readable.GetStringBuffer()) {
-    return XPCStringConvert::UCStringBufferToJSVal(cx, buf, length, vp);
+    bool shared;
+    if (!UCStringBufferToJSVal(cx, buf, length, vp, &shared)) {
+      return false;
+    }
+    if (shared) {
+      *sharedBuffer = buf;
+    }
+    return true;
   }
 
   
@@ -75,18 +125,28 @@ bool xpc::NonVoidStringToJsval(JSContext* cx, const nsAString& readable,
   return true;
 }
 
-bool xpc::NonVoidLatin1StringToJsval(JSContext* cx, const nsACString& latin1,
+bool XPCStringConvert::Latin1ToJSVal(JSContext* cx, const nsACString& latin1,
+                                     StringBuffer** sharedBuffer,
                                      MutableHandleValue vp) {
+  *sharedBuffer = nullptr;
+
   uint32_t length = latin1.Length();
 
   if (latin1.IsLiteral()) {
-    return XPCStringConvert::StringLiteralToJSVal(
+    return StringLiteralToJSVal(
         cx, reinterpret_cast<const JS::Latin1Char*>(latin1.BeginReading()),
         length, vp);
   }
 
   if (StringBuffer* buf = latin1.GetStringBuffer()) {
-    return XPCStringConvert::Latin1StringBufferToJSVal(cx, buf, length, vp);
+    bool shared;
+    if (!Latin1StringBufferToJSVal(cx, buf, length, vp, &shared)) {
+      return false;
+    }
+    if (shared) {
+      *sharedBuffer = buf;
+    }
+    return true;
   }
 
   JSString* str = JS_NewStringCopyN(cx, latin1.BeginReading(), length);
@@ -97,17 +157,27 @@ bool xpc::NonVoidLatin1StringToJsval(JSContext* cx, const nsACString& latin1,
   return true;
 }
 
-bool xpc::NonVoidUTF8StringToJsval(JSContext* cx, const nsACString& utf8,
+bool XPCStringConvert::UTF8ToJSVal(JSContext* cx, const nsACString& utf8,
+                                   StringBuffer** sharedBuffer,
                                    MutableHandleValue vp) {
+  *sharedBuffer = nullptr;
+
   uint32_t length = utf8.Length();
 
   if (utf8.IsLiteral()) {
-    return XPCStringConvert::UTF8StringLiteralToJSVal(
+    return UTF8StringLiteralToJSVal(
         cx, JS::UTF8Chars(utf8.BeginReading(), length), vp);
   }
 
   if (StringBuffer* buf = utf8.GetStringBuffer()) {
-    return XPCStringConvert::UTF8StringBufferToJSVal(cx, buf, length, vp);
+    bool shared;
+    if (!UTF8StringBufferToJSVal(cx, buf, length, vp, &shared)) {
+      return false;
+    }
+    if (shared) {
+      *sharedBuffer = buf;
+    }
+    return true;
   }
 
   JSString* str =
@@ -118,3 +188,94 @@ bool xpc::NonVoidUTF8StringToJsval(JSContext* cx, const nsACString& utf8,
   vp.setString(str);
   return true;
 }
+
+namespace xpc {
+
+bool NonVoidStringToJsval(JSContext* cx, nsAString& str,
+                          MutableHandleValue rval) {
+  StringBuffer* sharedBuffer;
+  if (!XPCStringConvert::ReadableToJSVal(cx, str, &sharedBuffer, rval)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    
+    
+    str.ForgetSharedBuffer();
+  }
+  return true;
+}
+
+bool NonVoidStringToJsval(JSContext* cx, const nsAString& str,
+                          MutableHandleValue rval) {
+  StringBuffer* sharedBuffer;
+  if (!XPCStringConvert::ReadableToJSVal(cx, str, &sharedBuffer, rval)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    
+    sharedBuffer->AddRef();
+  }
+  return true;
+}
+
+bool NonVoidLatin1StringToJsval(JSContext* cx, nsACString& str,
+                                MutableHandleValue rval) {
+  StringBuffer* sharedBuffer;
+  if (!XPCStringConvert::Latin1ToJSVal(cx, str, &sharedBuffer, rval)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    
+    
+    str.ForgetSharedBuffer();
+  }
+  return true;
+}
+
+bool NonVoidLatin1StringToJsval(JSContext* cx, const nsACString& str,
+                                MutableHandleValue rval) {
+  StringBuffer* sharedBuffer;
+  if (!XPCStringConvert::Latin1ToJSVal(cx, str, &sharedBuffer, rval)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    
+    sharedBuffer->AddRef();
+  }
+  return true;
+}
+
+bool NonVoidUTF8StringToJsval(JSContext* cx, nsACString& str,
+                              MutableHandleValue rval) {
+  StringBuffer* sharedBuffer;
+  if (!XPCStringConvert::UTF8ToJSVal(cx, str, &sharedBuffer, rval)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    
+    
+    str.ForgetSharedBuffer();
+  }
+  return true;
+}
+
+bool NonVoidUTF8StringToJsval(JSContext* cx, const nsACString& str,
+                              MutableHandleValue rval) {
+  StringBuffer* sharedBuffer;
+  if (!XPCStringConvert::UTF8ToJSVal(cx, str, &sharedBuffer, rval)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    
+    sharedBuffer->AddRef();
+  }
+  return true;
+}
+
+}  

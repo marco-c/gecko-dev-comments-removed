@@ -24,11 +24,18 @@
 #  include <atomic>
 #endif  
 
-#if defined(MOZ_SUPPORT_LEAKCHECKING) && defined(NS_BUILD_REFCNT_LOGGING)
+#if defined(MOZILLA_INTERNAL_API)
+#  include "nsXPCOM.h"
+#endif
+
+#if defined(MOZILLA_INTERNAL_API) && defined(NS_BUILD_REFCNT_LOGGING)
 #  define MOZ_REFCOUNTED_LEAK_CHECKING
 #endif
 
 namespace mozilla {
+
+
+
 
 
 
@@ -61,20 +68,6 @@ const MozRefCountType DEAD = 0xffffdead;
 
 
 class RefCountLogger {
-#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-  
-  
-  
-  using LogAddRefFunc = void (*)(void* aPtr, MozRefCountType aNewRefCnt,
-                                 const char* aTypeName, uint32_t aClassSize);
-  using LogReleaseFunc = void (*)(void* aPtr, MozRefCountType aNewRefCnt,
-                                  const char* aTypeName);
-  static MFBT_DATA LogAddRefFunc sLogAddRefFunc;
-  static MFBT_DATA LogReleaseFunc sLogReleaseFunc;
-  static MFBT_DATA size_t sNumStaticCtors;
-  static MFBT_DATA const char* sLastStaticCtorTypeName;
-#endif
-
  public:
   
   
@@ -85,19 +78,9 @@ class RefCountLogger {
     const void* pointer = aPointer;
     const char* typeName = aPointer->typeName();
     uint32_t typeSize = aPointer->typeSize();
-    if (sLogAddRefFunc) {
-      sLogAddRefFunc(const_cast<void*>(pointer), aRefCount, typeName, typeSize);
-    } else {
-      sNumStaticCtors++;
-      sLastStaticCtorTypeName = typeName;
-    }
+    NS_LogAddRef(const_cast<void*>(pointer), aRefCount, typeName, typeSize);
 #endif
   }
-
-#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-  static MFBT_DATA void SetLeakCheckingFunctions(
-      LogAddRefFunc aLogAddRefFunc, LogReleaseFunc aLogReleaseFunc);
-#endif
 
   
   
@@ -117,12 +100,7 @@ class RefCountLogger {
     void logRelease(MozRefCountType aRefCount) {
 #ifdef MOZ_REFCOUNTED_LEAK_CHECKING
       MOZ_ASSERT(aRefCount != DEAD);
-      if (sLogReleaseFunc) {
-        sLogReleaseFunc(const_cast<void*>(mPointer), aRefCount, mTypeName);
-      } else {
-        sNumStaticCtors++;
-        sLastStaticCtorTypeName = mTypeName;
-      }
+      NS_LogRelease(const_cast<void*>(mPointer), aRefCount, mTypeName);
 #endif
     }
 

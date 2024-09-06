@@ -11,15 +11,13 @@
 
 #include "js/shadow/String.h"  
 
-#include "mozilla/Assertions.h"    
-#include "mozilla/Attributes.h"    
-#include "mozilla/Likely.h"        
-#include "mozilla/Maybe.h"         
-#include "mozilla/Range.h"         
-#include "mozilla/RefPtr.h"        
-#include "mozilla/Span.h"          
-                                   
-#include "mozilla/StringBuffer.h"  
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/Likely.h"      
+#include "mozilla/Maybe.h"       
+#include "mozilla/Range.h"       
+#include "mozilla/Span.h"        
+                                 
 
 #include <algorithm>  
 #include <stddef.h>   
@@ -103,41 +101,6 @@ extern JS_PUBLIC_API JSString* JS_NewUCStringCopyN(JSContext* cx,
 
 extern JS_PUBLIC_API JSString* JS_NewUCStringCopyZ(JSContext* cx,
                                                    const char16_t* s);
-
-namespace JS {
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSString* NewStringFromLatin1Buffer(
-    JSContext* cx, RefPtr<mozilla::StringBuffer> buffer, size_t length);
-
-
-
-
-extern JS_PUBLIC_API JSString* NewStringFromTwoByteBuffer(
-    JSContext* cx, RefPtr<mozilla::StringBuffer> buffer, size_t length);
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSString* NewStringFromUTF8Buffer(
-    JSContext* cx, RefPtr<mozilla::StringBuffer> buffer, size_t length);
-
-}  
 
 extern JS_PUBLIC_API JSString* JS_AtomizeUCStringN(JSContext* cx,
                                                    const char16_t* s,
@@ -464,46 +427,6 @@ MOZ_ALWAYS_INLINE bool IsExternalUCString(
 
   *callbacks = s->externalCallbacks;
   *chars = s->nonInlineCharsTwoByte;
-  return true;
-}
-
-
-
-
-
-
-
-
-MOZ_ALWAYS_INLINE bool IsLatin1StringWithStringBuffer(
-    JSString* str, mozilla::StringBuffer** buffer) {
-  shadow::String* s = shadow::AsShadowString(str);
-
-  if (!s->hasStringBuffer() || !s->hasLatin1Chars()) {
-    return false;
-  }
-
-  void* data = const_cast<JS::Latin1Char*>(s->nonInlineCharsLatin1);
-  *buffer = mozilla::StringBuffer::FromData(data);
-  return true;
-}
-
-
-
-
-
-
-
-
-MOZ_ALWAYS_INLINE bool IsTwoByteStringWithStringBuffer(
-    JSString* str, mozilla::StringBuffer** buffer) {
-  shadow::String* s = shadow::AsShadowString(str);
-
-  if (!s->hasStringBuffer() || s->hasLatin1Chars()) {
-    return false;
-  }
-
-  void* data = const_cast<char16_t*>(s->nonInlineCharsTwoByte);
-  *buffer = mozilla::StringBuffer::FromData(data);
   return true;
 }
 

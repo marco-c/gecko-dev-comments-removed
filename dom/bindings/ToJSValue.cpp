@@ -20,7 +20,20 @@ bool ToJSValue(JSContext* aCx, const nsAString& aArgument,
                JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
-  return xpc::NonVoidStringToJsval(aCx, aArgument, aValue);
+
+  
+  
+  mozilla::StringBuffer* sharedBuffer;
+  if (!XPCStringConvert::ReadableToJSVal(aCx, aArgument, &sharedBuffer,
+                                         aValue)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    NS_ADDREF(sharedBuffer);
+  }
+
+  return true;
 }
 
 bool ToJSValue(JSContext* aCx, const nsACString& aArgument,

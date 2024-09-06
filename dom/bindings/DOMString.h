@@ -103,6 +103,20 @@ class MOZ_STACK_CLASS DOMString {
     return mLength;
   }
 
+  
+  
+  void RelinquishBufferOwnership() {
+    MOZ_ASSERT(HasStringBuffer(),
+               "Don't call this if there is no stringbuffer");
+    if (mState == State::OwnedStringBuffer) {
+      
+      mState = State::UnownedStringBuffer;
+    } else {
+      
+      mStringBuffer->AddRef();
+    }
+  }
+
   bool HasLiteral() const {
     MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
     MOZ_ASSERT(mState > State::Null,
