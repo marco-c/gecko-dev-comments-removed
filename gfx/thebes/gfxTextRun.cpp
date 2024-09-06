@@ -2192,34 +2192,15 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
     }
   }
 
-  if (!mDefaultFont && pfl->SharedFontList() && !XRE_IsParentProcess()) {
-    
-    
-    
-    
-    
-    if (NS_IsMainThread()) {
-      uint32_t oldGeneration = pfl->SharedFontList()->GetGeneration();
-      pfl->UpdateFontList();
-      if (pfl->SharedFontList()->GetGeneration() != oldGeneration) {
-        return GetDefaultFont();
-      }
-    }
-  }
-
   if (!mDefaultFont) {
     
     
-    gfxFontEntry* fe = pfl->GetDefaultFontEntry();
-    if (fe) {
-      RefPtr<gfxFont> f = fe->FindOrMakeFont(&mStyle);
-      if (f) {
+    if (gfxFontEntry* fe = pfl->GetDefaultFontEntry()) {
+      if (RefPtr<gfxFont> f = fe->FindOrMakeFont(&mStyle)) {
         return f.forget();
       }
     }
-  }
 
-  if (!mDefaultFont) {
     
     
 
