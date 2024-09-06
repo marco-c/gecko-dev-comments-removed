@@ -125,13 +125,13 @@ async function addTestEngines() {
   
   
   
-  await SearchTestUtils.promiseNewSearchEngine({
+  await SearchTestUtils.installOpenSearchEngine({
     url: `${gDataUrl}/engine.xml`,
   });
-  await SearchTestUtils.promiseNewSearchEngine({
+  await SearchTestUtils.installOpenSearchEngine({
     url: `${gDataUrl}/enginePrivate.xml`,
   });
-  await SearchTestUtils.promiseNewSearchEngine({
+  await SearchTestUtils.installOpenSearchEngine({
     url: `${gDataUrl}/enginePost.xml`,
   });
 }

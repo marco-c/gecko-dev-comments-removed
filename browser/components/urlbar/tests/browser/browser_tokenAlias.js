@@ -24,7 +24,7 @@ if (AppConstants.platform == "macosx") {
 add_setup(async function () {
   
   
-  let defaultEngine = await SearchTestUtils.promiseNewSearchEngine({
+  let defaultEngine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
     setAsDefault: true,
   });

@@ -80,7 +80,7 @@ add_task(async function checkCtrlWorks() {
 
 add_task(async function checkPrefTurnsOffCanonize() {
   
-  await SearchTestUtils.promiseNewSearchEngine({
+  await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
     setAsDefault: true,
   });

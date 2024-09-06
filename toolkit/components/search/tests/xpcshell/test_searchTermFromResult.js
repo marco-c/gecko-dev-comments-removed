@@ -158,7 +158,7 @@ add_task(async function test_searchTermFromResult() {
   await useHttpServer();
 
   
-  let engineISOCharset = await SearchTestUtils.promiseNewSearchEngine({
+  let engineISOCharset = await SearchTestUtils.installOpenSearchEngine({
     url: `${gDataUrl}engine-fr.xml`,
   });
 

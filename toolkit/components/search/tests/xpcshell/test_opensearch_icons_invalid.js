@@ -13,11 +13,11 @@ add_setup(async function () {
 
 add_task(async function test_installedresourceicon() {
   
-  let engine1 = await SearchTestUtils.promiseNewSearchEngine({
+  let engine1 = await SearchTestUtils.installOpenSearchEngine({
     url: `${gDataUrl}opensearch/resourceicon.xml`,
   });
   
-  let engine2 = await SearchTestUtils.promiseNewSearchEngine({
+  let engine2 = await SearchTestUtils.installOpenSearchEngine({
     url: `${gDataUrl}opensearch/chromeicon.xml`,
   });
 
@@ -35,7 +35,7 @@ add_task(async function test_installedhttpplace() {
   
   
   
-  let engine = await SearchTestUtils.promiseNewSearchEngine({
+  let engine = await SearchTestUtils.installOpenSearchEngine({
     url:
       `${gDataUrl}data/engineMaker.sjs?` +
       JSON.stringify({

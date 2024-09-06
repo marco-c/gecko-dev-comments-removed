@@ -33,14 +33,14 @@ add_setup(async function () {
 
   
   
-  await SearchTestUtils.promiseNewSearchEngine({
+  await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "searchSuggestionEngine.xml",
     setAsDefault: true,
     setAsDefaultPrivate: true,
   });
 
   
-  let engine2 = await SearchTestUtils.promiseNewSearchEngine({
+  let engine2 = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "POSTSearchEngine.xml",
   });
   await Services.search.moveEngine(engine2, 0);

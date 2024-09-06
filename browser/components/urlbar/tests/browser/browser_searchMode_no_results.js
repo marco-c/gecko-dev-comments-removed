@@ -236,7 +236,7 @@ add_task(async function backspaceRemainOpen() {
 
 
 add_task(async function spaceToEnterSearchMode() {
-  let engine = await SearchTestUtils.promiseNewSearchEngine({
+  let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
   });
   engine.alias = "@test";

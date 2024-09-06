@@ -48,7 +48,7 @@ add_task(async function test_icon_types() {
     };
     
     
-    SearchTestUtils.promiseNewSearchEngine({
+    SearchTestUtils.installOpenSearchEngine({
       url: `${gDataUrl}engineMaker.sjs?${JSON.stringify(engineData)}`,
     });
     let engine = await promiseEngineAdded;
@@ -65,7 +65,7 @@ add_task(async function test_icon_types() {
 });
 
 add_task(async function test_multiple_icons_in_file() {
-  let engine = await SearchTestUtils.promiseNewSearchEngine({
+  let engine = await SearchTestUtils.installOpenSearchEngine({
     url: `${gDataUrl}engineImages.xml`,
   });
 

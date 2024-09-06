@@ -92,7 +92,7 @@ add_setup(async function () {
 
   
   
-  let suggestionEngine = await SearchTestUtils.promiseNewSearchEngine({
+  let suggestionEngine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "urlbarTelemetrySearchSuggestions.xml",
     setAsDefault: true,
   });
