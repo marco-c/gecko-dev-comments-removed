@@ -211,7 +211,8 @@ int ArchiveReader::Open(const NS_tchar* path) {
 #endif
   if (result == MAR_MEM_ERROR) {
     return ARCHIVE_READER_MEM_ERROR;
-  } else if (result != MAR_READ_SUCCESS) {
+  }
+  if (result != MAR_READ_SUCCESS) {
     return READ_ERROR;
   }
 
@@ -278,7 +279,7 @@ int ArchiveReader::ExtractItemToStream(const MarItem* item, FILE* fp) {
 
   int offset, inlen, ret = OK;
   struct xz_buf strm = {0};
-  enum xz_ret xz_rv = XZ_OK;
+  enum xz_ret xz_rv;
 
   struct xz_dec* dec = xz_dec_init(XZ_DYNALLOC, 64 * 1024 * 1024);
   if (!dec) {
