@@ -5,6 +5,9 @@
 use crate::{url_hash::UrlHash, Error, Interest, RelevancyDb, Result};
 use std::io::{Cursor, Read};
 
+
+const WRITE_CHUNK_SIZE: usize = 100;
+
 pub fn ensure_interest_data_populated(db: &RelevancyDb) -> Result<()> {
     if !db.read(|dao| dao.need_to_load_url_interests())? {
         return Ok(());
@@ -17,8 +20,11 @@ pub fn ensure_interest_data_populated(db: &RelevancyDb) -> Result<()> {
         }
     };
     db.read_write(move |dao| {
-        for (url_hash, interest) in interest_data {
-            dao.add_url_interest(url_hash, interest)?;
+        for chunk in interest_data.chunks(WRITE_CHUNK_SIZE) {
+            for (url_hash, interest) in chunk {
+                dao.add_url_interest(*url_hash, *interest)?;
+            }
+            dao.err_if_interrupted()?;
         }
         Ok(())
     })
@@ -26,6 +32,7 @@ pub fn ensure_interest_data_populated(db: &RelevancyDb) -> Result<()> {
 
 
 fn fetch_interest_data() -> std::io::Result<Vec<(UrlHash, Interest)>> {
+    
     
     let bytes = include_bytes!("../test-data");
     let mut reader = Cursor::new(&bytes);
@@ -53,7 +60,7 @@ mod test {
 
     #[test]
     fn test_interest_vectors() {
-        let db = RelevancyDb::open_for_test();
+        let db = RelevancyDb::new_for_test();
         ensure_interest_data_populated(&db).unwrap();
         db.read(|dao| {
             
@@ -115,7 +122,7 @@ mod test {
 
     #[test]
     fn test_variations_on_the_url() {
-        let db = RelevancyDb::open_for_test();
+        let db = RelevancyDb::new_for_test();
         ensure_interest_data_populated(&db).unwrap();
         db.read(|dao| {
             

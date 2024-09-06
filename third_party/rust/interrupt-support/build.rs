@@ -1,0 +1,8 @@
+
+
+
+
+
+fn main() {
+    uniffi::generate_scaffolding("./src/interrupt_support.udl").unwrap();
+}

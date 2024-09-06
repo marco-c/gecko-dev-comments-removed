@@ -120,3 +120,10 @@ impl Interruptee for SqlInterruptScope {
         self.was_interrupted()
     }
 }
+
+
+impl AsRef<SqlInterruptHandle> for SqlInterruptHandle {
+    fn as_ref(&self) -> &SqlInterruptHandle {
+        self
+    }
+}

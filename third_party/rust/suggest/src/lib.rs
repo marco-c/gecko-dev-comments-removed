@@ -3,7 +3,7 @@
 
 
 
-use remote_settings::RemoteSettingsConfig;
+use remote_settings::{RemoteSettingsConfig, RemoteSettingsServer};
 #[cfg(feature = "benchmark_api")]
 pub mod benchmarks;
 mod config;

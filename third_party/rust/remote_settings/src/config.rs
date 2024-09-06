@@ -8,6 +8,11 @@
 
 
 
+use url::Url;
+
+use crate::Result;
+
+
 
 
 
@@ -15,7 +20,28 @@
 
 #[derive(Debug, Clone)]
 pub struct RemoteSettingsConfig {
+    pub server: Option<RemoteSettingsServer>,
     pub server_url: Option<String>,
     pub bucket_name: Option<String>,
     pub collection_name: String,
+}
+
+
+#[derive(Debug, Clone)]
+pub enum RemoteSettingsServer {
+    Prod,
+    Stage,
+    Dev,
+    Custom { url: String },
+}
+
+impl RemoteSettingsServer {
+    pub fn url(&self) -> Result<Url> {
+        Ok(match self {
+            Self::Prod => Url::parse("https://firefox.settings.services.mozilla.com").unwrap(),
+            Self::Stage => Url::parse("https://firefox.settings.services.allizom.org").unwrap(),
+            Self::Dev => Url::parse("https://remote-settings-dev.allizom.org").unwrap(),
+            Self::Custom { url } => Url::parse(url)?,
+        })
+    }
 }
