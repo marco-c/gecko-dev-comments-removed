@@ -65,6 +65,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFormFillController)
 
 nsFormFillController::nsFormFillController()
     : mFocusedInput(nullptr),
+      mRestartAfterAttributeChangeTask(nullptr),
       mListNode(nullptr),
       
       
@@ -131,11 +132,17 @@ void nsFormFillController::AttributeChanged(mozilla::dom::Element* aElement,
     
     
     
-    nsCOMPtr<nsIRunnable> event =
-        mozilla::NewRunnableMethod<RefPtr<HTMLInputElement>>(
+    
+    
+    if (mRestartAfterAttributeChangeTask) {
+      mRestartAfterAttributeChangeTask->Cancel();
+    }
+    mRestartAfterAttributeChangeTask =
+        mozilla::NewCancelableRunnableMethod<RefPtr<HTMLInputElement>>(
             "nsFormFillController::MaybeStartControllingInput", this,
             &nsFormFillController::MaybeStartControllingInput, focusedInput);
-    aElement->OwnerDoc()->Dispatch(event.forget());
+    RefPtr<Runnable> addrefedRunnable = mRestartAfterAttributeChangeTask;
+    aElement->OwnerDoc()->Dispatch(addrefedRunnable.forget());
   }
 
   if (mListNode && mListNode->Contains(aElement)) {
@@ -841,6 +848,13 @@ nsresult nsFormFillController::HandleFocus(HTMLInputElement* aInput) {
   
   if (!mFocusedInput) {
     return NS_OK;
+  }
+
+  
+  
+  if (mRestartAfterAttributeChangeTask) {
+    mRestartAfterAttributeChangeTask->Cancel();
+    mRestartAfterAttributeChangeTask = nullptr;
   }
 
   

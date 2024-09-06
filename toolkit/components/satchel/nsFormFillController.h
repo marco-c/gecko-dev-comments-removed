@@ -27,6 +27,7 @@ class nsFormHistory;
 class nsINode;
 
 namespace mozilla {
+class CancelableRunnable;
 namespace dom {
 class EventTarget;
 class HTMLInputElement;
@@ -101,6 +102,7 @@ class nsFormFillController final : public nsIFormFillController,
 
   nsCOMPtr<nsIAutoCompleteController> mController;
   mozilla::dom::HTMLInputElement* mFocusedInput;
+  RefPtr<mozilla::CancelableRunnable> mRestartAfterAttributeChangeTask;
 
   
   
