@@ -76,7 +76,8 @@ class nsTextFrame : public nsIFrame {
                      const gfxSkipCharsIterator& aStart, int32_t aLength,
                      nsIFrame* aLineContainer,
                      nscoord aOffsetFromBlockOriginForTabs,
-                     nsTextFrame::TextRunType aWhichTextRun);
+                     nsTextFrame::TextRunType aWhichTextRun,
+                     bool aAtStartOfLine);
 
     
 
@@ -158,6 +159,12 @@ class nsTextFrame : public nsIFrame {
 
     const gfxSkipCharsIterator& GetEndHint() const { return mTempIterator; }
 
+    
+    
+    void SetStartOfLine(const gfxSkipCharsIterator& aPosition) {
+      mStartOfLineOffset = aPosition.GetSkippedOffset();
+    }
+
    protected:
     void SetupJustificationSpacing(bool aPostReflow);
 
@@ -194,6 +201,7 @@ class nsTextFrame : public nsIFrame {
 
     const bool mReflowing;
     const nsTextFrame::TextRunType mWhichTextRun;
+    uint32_t mStartOfLineOffset = UINT32_MAX;
   };
 
   explicit nsTextFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
