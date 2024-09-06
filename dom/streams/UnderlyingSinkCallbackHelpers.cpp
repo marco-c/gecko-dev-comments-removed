@@ -112,6 +112,24 @@ already_AddRefed<Promise> UnderlyingSinkAlgorithms::AbortCallback(
 
 
 
+
+
+
+
+already_AddRefed<Promise> UnderlyingSinkAlgorithmsWrapper::WriteCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aChunk,
+    WritableStreamDefaultController& aController, ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
+  return PromisifyAlgorithm(
+      global,
+      [&](ErrorResult& aRv) {
+        return WriteCallbackImpl(aCx, aChunk, aController, aRv);
+      },
+      aRv);
+}
+
+
+
 already_AddRefed<Promise> UnderlyingSinkAlgorithmsWrapper::CloseCallback(
     JSContext* aCx, ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
@@ -182,19 +200,20 @@ WritableStreamToOutput::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
   return NS_OK;
 }
 
-already_AddRefed<Promise> WritableStreamToOutput::WriteCallback(
+already_AddRefed<Promise> WritableStreamToOutput::WriteCallbackImpl(
     JSContext* aCx, JS::Handle<JS::Value> aChunk,
-    WritableStreamDefaultController& aController, ErrorResult& aError) {
+    WritableStreamDefaultController& aController, ErrorResult& aRv) {
   ArrayBufferViewOrArrayBuffer data;
   if (!data.Init(aCx, aChunk)) {
-    aError.StealExceptionFromJSContext(aCx);
+    aRv.MightThrowJSException();
+    aRv.StealExceptionFromJSContext(aCx);
     return nullptr;
   }
   
   MOZ_ASSERT(data.IsArrayBuffer() || data.IsArrayBufferView());
 
-  RefPtr<Promise> promise = Promise::Create(mParent, aError);
-  if (NS_WARN_IF(aError.Failed())) {
+  RefPtr<Promise> promise = Promise::Create(mParent, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 

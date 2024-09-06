@@ -258,7 +258,7 @@ NS_IMPL_ADDREF_INHERITED(OutgoingDatagramStreamAlgorithms,
 NS_IMPL_RELEASE_INHERITED(OutgoingDatagramStreamAlgorithms,
                           UnderlyingSinkAlgorithmsWrapper)
 
-already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallback(
+already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     JSContext* aCx, JS::Handle<JS::Value> aChunk,
     WritableStreamDefaultController& aController, ErrorResult& aError) {
   
@@ -269,9 +269,9 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallback(
   
   ArrayBufferViewOrArrayBuffer arrayBuffer;
   if (!arrayBuffer.Init(aCx, aChunk)) {
-    return Promise::CreateRejectedWithTypeError(
-        mDatagrams->GetParentObject(),
-        "Wrong type for Datagram stream write"_ns, aError);
+    JS_ClearPendingException(aCx);
+    aError.ThrowTypeError("Wrong type for Datagram stream write"_ns);
+    return nullptr;
   }
 
   
