@@ -19,6 +19,7 @@
 
 
 
+
 var obj = {
   valueOf() {
     throw new Test262Error();

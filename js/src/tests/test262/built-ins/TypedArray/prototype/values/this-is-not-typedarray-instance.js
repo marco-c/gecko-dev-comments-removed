@@ -23,6 +23,7 @@
 
 
 
+
 var values = TypedArray.prototype.values;
 
 assert.throws(TypeError, function() {

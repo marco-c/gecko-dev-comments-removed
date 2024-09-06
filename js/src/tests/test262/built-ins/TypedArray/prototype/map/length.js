@@ -23,6 +23,7 @@
 
 
 
+
 verifyProperty(TypedArray.prototype.map, "length", {
   value: 1,
   writable: false,

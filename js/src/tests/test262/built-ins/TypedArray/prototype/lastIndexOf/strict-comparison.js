@@ -26,6 +26,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([42, undefined, NaN, 0, 1]);
   assert.sameValue(sample.lastIndexOf("42"), -1, "'42'");

@@ -18,6 +18,7 @@
 
 
 
+
 var other = $262.createRealm().global;
 
 testWithTypedArrayConstructors(function(TA) {

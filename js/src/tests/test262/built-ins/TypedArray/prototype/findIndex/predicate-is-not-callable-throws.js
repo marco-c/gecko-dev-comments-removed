@@ -23,6 +23,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA();
   assert.throws(TypeError, function() {

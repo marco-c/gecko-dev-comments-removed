@@ -21,6 +21,7 @@
 
 
 
+
 var slice = TypedArray.prototype.slice;
 
 assert.sameValue(typeof slice, 'function');

@@ -23,6 +23,7 @@
 
 
 
+
 verifyProperty(TypedArray.prototype.toLocaleString, "length", {
   value: 0,
   writable: false,

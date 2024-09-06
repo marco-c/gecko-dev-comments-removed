@@ -19,6 +19,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var ta1 = new TA();
   assert.sameValue(ta1.length, 0);

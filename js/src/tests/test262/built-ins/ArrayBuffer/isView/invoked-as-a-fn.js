@@ -15,6 +15,7 @@
 
 
 
+
 var isView = ArrayBuffer.isView;
 
 testWithTypedArrayConstructors(function(ctor) {

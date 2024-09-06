@@ -15,6 +15,7 @@
 
 
 
+
 testWithTypedArrayConstructors(TA => {
   var ta = new TA([3, 1, 2]);
   Object.defineProperty(ta, "length", { value: 2 })

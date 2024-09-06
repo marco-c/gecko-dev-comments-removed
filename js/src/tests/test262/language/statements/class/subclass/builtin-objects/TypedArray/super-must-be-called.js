@@ -18,6 +18,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(Constructor) {
   class Typed extends Constructor {
     constructor() {}

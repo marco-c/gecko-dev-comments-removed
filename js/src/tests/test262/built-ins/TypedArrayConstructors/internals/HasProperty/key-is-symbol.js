@@ -15,6 +15,7 @@
 
 
 
+
 var s = Symbol("foo");
 
 testWithTypedArrayConstructors(function(TA) {

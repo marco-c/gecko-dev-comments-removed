@@ -36,6 +36,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var sample = new TA([40, 41, 42]);
   var result, ctorThis;

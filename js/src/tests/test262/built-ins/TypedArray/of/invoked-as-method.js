@@ -19,6 +19,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   TypedArray.of();
 });

@@ -21,6 +21,7 @@
 
 
 
+
 var obj = {
   toString: function() {
     throw new Test262Error();

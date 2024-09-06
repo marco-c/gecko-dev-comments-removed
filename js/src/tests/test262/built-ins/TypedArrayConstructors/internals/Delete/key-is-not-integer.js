@@ -27,6 +27,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   let proto = TypedArray.prototype;
   Object.defineProperty(proto, "1.1", {

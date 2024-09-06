@@ -16,6 +16,7 @@
 
 
 
+
 var TypedArrayPrototype = TypedArray.prototype;
 
 assert.throws(TypeError, function() {

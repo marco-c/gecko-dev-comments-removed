@@ -16,6 +16,7 @@
 
 
 
+
 var obj = [7, 42];
 
 testWithTypedArrayConstructors(function(TA) {

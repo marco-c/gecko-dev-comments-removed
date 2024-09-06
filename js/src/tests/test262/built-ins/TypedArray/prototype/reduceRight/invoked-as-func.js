@@ -21,6 +21,7 @@
 
 
 
+
 var reduceRight = TypedArray.prototype.reduceRight;
 
 assert.sameValue(typeof reduceRight, 'function');

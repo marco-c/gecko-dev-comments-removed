@@ -29,6 +29,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var sample, result;
   var src = new TA([42, 43]);

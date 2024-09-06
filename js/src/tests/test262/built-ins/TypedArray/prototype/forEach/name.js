@@ -20,6 +20,7 @@
 
 
 
+
 verifyProperty(TypedArray.prototype.forEach, "name", {
   value: "forEach",
   writable: false,

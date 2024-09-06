@@ -20,6 +20,7 @@
 
 
 
+
 verifyProperty(TypedArray.prototype.join, "name", {
   value: "join",
   writable: false,

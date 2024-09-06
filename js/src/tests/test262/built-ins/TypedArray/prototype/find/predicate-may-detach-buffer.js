@@ -42,6 +42,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var loops = 0;
   var sample = new TA(2);

@@ -21,6 +21,7 @@
 
 
 
+
 var reverse = TypedArray.prototype.reverse;
 
 assert.sameValue(typeof reverse, 'function');

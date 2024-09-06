@@ -21,6 +21,7 @@
 
 
 
+
 var reduce = TypedArray.prototype.reduce;
 
 assert.sameValue(typeof reduce, 'function');

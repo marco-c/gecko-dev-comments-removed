@@ -21,6 +21,7 @@
 
 
 
+
 var indexOf = TypedArray.prototype.indexOf;
 
 assert.throws(TypeError, function() {

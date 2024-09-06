@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(typeof TypedArray.prototype.with, "function", "typeof");
 
 verifyProperty(TypedArray.prototype, "with", {

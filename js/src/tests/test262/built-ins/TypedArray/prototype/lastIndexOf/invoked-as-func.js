@@ -20,6 +20,7 @@
 
 
 
+
 var lastIndexOf = TypedArray.prototype.lastIndexOf;
 
 assert.sameValue(typeof lastIndexOf, 'function');

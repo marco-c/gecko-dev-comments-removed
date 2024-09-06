@@ -8,6 +8,7 @@
 
 
 
+
 var source = [,,42,,44,,];
 
 testWithTypedArrayConstructors(function(TA) {

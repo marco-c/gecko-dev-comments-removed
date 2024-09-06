@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(Object.getPrototypeOf(Float64Array.prototype), TypedArray.prototype);
 
 reportCompare(0, 0);

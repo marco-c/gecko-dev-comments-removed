@@ -20,6 +20,7 @@
 
 
 
+
 verifyProperty(TypedArray.prototype.find, "name", {
   value: "find",
   writable: false,

@@ -14,6 +14,7 @@
 
 
 
+
 var m = { m() {} }.m;
 
 testWithTypedArrayConstructors(function(TA) {

@@ -20,6 +20,7 @@
 
 
 
+
 testWithTypedArrayConstructors(TA => {
   var ta = new TA([1, 2, 3]);
   ta.constructor = TA === Uint8Array ? Int32Array : Uint8Array;

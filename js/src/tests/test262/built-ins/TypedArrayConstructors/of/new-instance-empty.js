@@ -8,6 +8,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   var result = TA.of();
   assert.sameValue(result.length, 0);

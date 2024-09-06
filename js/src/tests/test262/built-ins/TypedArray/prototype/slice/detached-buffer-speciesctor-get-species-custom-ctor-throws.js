@@ -30,6 +30,7 @@
 
 
 
+
 testWithTypedArrayConstructors(function(TA) {
   let counter = 0;
   let sample = new TA(1);

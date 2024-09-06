@@ -20,6 +20,7 @@
 
 
 
+
 var includes = TypedArray.prototype.includes;
 
 assert.sameValue(typeof includes, "function");

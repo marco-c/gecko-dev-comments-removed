@@ -15,6 +15,7 @@
 
 
 
+
 var m = { m() {} }.m;
 
 assert.throws(TypeError, function() {

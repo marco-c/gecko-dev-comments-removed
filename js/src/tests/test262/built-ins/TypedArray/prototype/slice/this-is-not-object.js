@@ -20,6 +20,7 @@
 
 
 
+
 var slice = TypedArray.prototype.slice;
 
 assert.throws(TypeError, function() {
