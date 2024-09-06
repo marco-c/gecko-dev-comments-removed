@@ -796,10 +796,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  GraphTime mIterationEndTime = 0;
-  
-
-
   GraphTime mEndTime;
   
 
