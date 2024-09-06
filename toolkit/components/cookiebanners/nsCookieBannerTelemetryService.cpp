@@ -132,6 +132,9 @@ nsresult nsCookieBannerTelemetryService::Init() {
   rv = obsSvc->AddObserver(this, "cookie-changed", false);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  rv = obsSvc->AddObserver(this, "private-cookie-changed", false);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   return NS_OK;
 }
 
@@ -156,6 +159,9 @@ nsresult nsCookieBannerTelemetryService::Shutdown() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = obsSvc->RemoveObserver(this, "cookie-changed");
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = obsSvc->RemoveObserver(this, "private-cookie-changed");
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
@@ -187,9 +193,9 @@ nsCookieBannerTelemetryService::Observe(nsISupports* aSubject,
     return MaybeReportGoogleGDPRChoiceTelemetry();
   }
 
-  if (nsCRT::strcmp(aTopic, "cookie-changed") == 0) {
-    MOZ_LOG(gCookieBannerTelemetryLog, LogLevel::Debug,
-            ("Observe cookie-changed"));
+  if (nsCRT::strcmp(aTopic, "cookie-changed") == 0 ||
+      nsCRT::strcmp(aTopic, "private-cookie-changed") == 0) {
+    MOZ_LOG(gCookieBannerTelemetryLog, LogLevel::Debug, ("Observe %s", aTopic));
 
     nsCOMPtr<nsICookieNotification> notification = do_QueryInterface(aSubject);
     NS_ENSURE_TRUE(notification, NS_ERROR_FAILURE);
@@ -274,7 +280,10 @@ nsresult nsCookieBannerTelemetryService::MaybeReportGoogleGDPRChoiceTelemetry(
     const auto& attrs = aCookie->AsCookie().OriginAttributesRef();
 
     
-    if (attrs == OriginAttributes()) {
+    
+    if (attrs.mPrivateBrowsingId !=
+            nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID ||
+        attrs == OriginAttributes()) {
       cookies.AppendElement(RefPtr<nsICookie>(aCookie));
     }
   } else {
@@ -327,24 +336,45 @@ nsresult nsCookieBannerTelemetryService::MaybeReportGoogleGDPRChoiceTelemetry(
     rv = DecodeSOCSGoogleCookie(value, choice, region);
     NS_ENSURE_SUCCESS(rv, rv);
 
+    bool isPrivateBrowsing =
+        cookie->AsCookie().OriginAttributesRef().mPrivateBrowsingId !=
+        nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID;
+
     MOZ_LOG(gCookieBannerTelemetryLog, LogLevel::Debug,
-            ("Record the Google GDPR choice %s on the host %s in region %s",
-             choice.get(), host.get(), region.get()));
+            ("Record the Google GDPR choice %s on the host %s in region %s for "
+             "the %s window",
+             choice.get(), host.get(), region.get(),
+             isPrivateBrowsing ? "private" : "normal"));
 
     
     
     
     
-    glean::cookie_banners::google_gdpr_choice_cookie.Get(host).Set(choice);
+    
+    
+    
+    
+    
+    if (!isPrivateBrowsing) {
+      glean::cookie_banners::google_gdpr_choice_cookie.Get(host).Set(choice);
+    }
 
     if (aReportEvent) {
-      glean::cookie_banners::GoogleGdprChoiceCookieEventExtra extra = {
-          .choice = Some(choice),
-          .region = Some(region),
-          .searchDomain = Some(host),
-      };
-      glean::cookie_banners::google_gdpr_choice_cookie_event.Record(
-          Some(extra));
+      if (isPrivateBrowsing) {
+        glean::cookie_banners::GoogleGdprChoiceCookieEventPbmExtra extra = {
+            .choice = Some(choice),
+        };
+        glean::cookie_banners::google_gdpr_choice_cookie_event_pbm.Record(
+            Some(extra));
+      } else {
+        glean::cookie_banners::GoogleGdprChoiceCookieEventExtra extra = {
+            .choice = Some(choice),
+            .region = Some(region),
+            .searchDomain = Some(host),
+        };
+        glean::cookie_banners::google_gdpr_choice_cookie_event.Record(
+            Some(extra));
+      }
     }
   }
 
