@@ -3544,6 +3544,18 @@ pref("reader.errors.includeURLs", false);
 pref("reader.font_size", 5);
 
 
+pref("reader.font_type", "sans-serif");
+
+
+pref("reader.font_type.values", "[\"sans-serif\",\"serif\",\"monospace\"]");
+
+
+pref("reader.font_weight", "regular");
+
+
+pref("reader.font_weight.values", "[\"regular\",\"light\",\"bold\"]");
+
+
 pref("reader.content_width", 3);
 
 
@@ -3553,10 +3565,10 @@ pref("reader.line_height", 4);
 pref("reader.improved_text_menu.enabled", false);
 
 
-pref("reader.character_spacing", "");
+pref("reader.character_spacing", 0);
 
 
-pref("reader.word_spacing", "");
+pref("reader.word_spacing", 0);
 
 
 pref("reader.text_alignment", "start");
@@ -3580,9 +3592,6 @@ pref("reader.custom_colors.unvisited-links", "");
 pref("reader.custom_colors.visited-links", "");
 
 pref("reader.custom_colors.selection-highlight", "");
-
-
-pref("reader.font_type", "sans-serif");
 
 
 pref("reader.toolbar.vertical", true);
