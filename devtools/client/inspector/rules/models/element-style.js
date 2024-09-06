@@ -62,6 +62,7 @@ class ElementStyle {
     this.rules = [];
     this.cssProperties = this.ruleView.cssProperties;
     this.variablesMap = new Map();
+    this.startingStyleVariablesMap = new Map();
 
     
     
@@ -306,6 +307,9 @@ class ElementStyle {
 
     
     const variables = new Map(pseudo ? this.variablesMap.get("") : null);
+    const startingStyleVariables = new Map(
+      pseudo ? this.startingStyleVariablesMap.get("") : null
+    );
 
     
     
@@ -377,6 +381,10 @@ class ElementStyle {
           earlierInStartingStyle._overriddenDirty =
             !earlierInStartingStyle._overriddenDirty;
           earlierInStartingStyle.overridden = true;
+          
+          if (isCssVariable(computedProp.name)) {
+            startingStyleVariables.delete(computedProp.name);
+          }
         }
 
         
@@ -407,12 +415,13 @@ class ElementStyle {
           
           if (
             isCssVariable(computedProp.name) &&
-            !computedProp.textProp.invisible &&
-            
-            
-            !isPropInStartingStyle
+            !computedProp.textProp.invisible
           ) {
-            variables.set(computedProp.name, computedProp.value);
+            if (!isPropInStartingStyle) {
+              variables.set(computedProp.name, computedProp.value);
+            } else {
+              startingStyleVariables.set(computedProp.name, computedProp.value);
+            }
           }
         }
       }
@@ -425,8 +434,17 @@ class ElementStyle {
         k => variables.get(k) !== previousVariablesMap.get(k)
       )
     );
+    const previousStartingStyleVariablesMap = new Map(
+      this.startingStyleVariablesMap.get(pseudo)
+    );
+    const changedStartingStyleVariableNamesSet = new Set(
+      [...variables.keys(), ...previousStartingStyleVariablesMap.keys()].filter(
+        k => variables.get(k) !== previousStartingStyleVariablesMap.get(k)
+      )
+    );
 
     this.variablesMap.set(pseudo, variables);
+    this.startingStyleVariablesMap.set(pseudo, startingStyleVariables);
 
     
     
@@ -440,7 +458,11 @@ class ElementStyle {
       
       if (
         this._updatePropertyOverridden(textProp) ||
-        this._hasUpdatedCSSVariable(textProp, changedVariableNamesSet)
+        this._hasUpdatedCSSVariable(textProp, changedVariableNamesSet) ||
+        this._hasUpdatedCSSVariable(
+          textProp,
+          changedStartingStyleVariableNamesSet
+        )
       ) {
         textProp.updateEditor();
       }
@@ -912,6 +934,7 @@ class ElementStyle {
 
   getVariableData(name, pseudo = "") {
     const variables = this.variablesMap.get(pseudo);
+    const startingStyleVariables = this.startingStyleVariablesMap.get(pseudo);
     const registeredPropertiesMap =
       this.ruleView.getRegisteredPropertiesForSelectedNodeTarget();
 
@@ -920,6 +943,9 @@ class ElementStyle {
       
       
       data.value = variables.get(name);
+    }
+    if (startingStyleVariables?.has(name)) {
+      data.startingStyle = startingStyleVariables.get(name);
     }
     if (registeredPropertiesMap?.has(name)) {
       data.registeredProperty = registeredPropertiesMap.get(name);
@@ -939,26 +965,51 @@ class ElementStyle {
 
   getAllCustomProperties(pseudo = "") {
     let customProperties = this.variablesMap.get(pseudo);
+    const startingStyleCustomProperties =
+      this.startingStyleVariablesMap.get(pseudo);
 
     const registeredPropertiesMap =
       this.ruleView.getRegisteredPropertiesForSelectedNodeTarget();
 
     
-    if (!registeredPropertiesMap || registeredPropertiesMap.size === 0) {
+    if (
+      (!registeredPropertiesMap || registeredPropertiesMap.size === 0) &&
+      (!startingStyleCustomProperties ||
+        startingStyleCustomProperties.size === 0)
+    ) {
       return customProperties;
     }
 
     let newMapCreated = false;
-    for (const [name, propertyDefinition] of registeredPropertiesMap) {
-      
-      if (!customProperties.has(name)) {
+
+    if (startingStyleCustomProperties) {
+      for (const [name, value] of startingStyleCustomProperties) {
         
         
-        if (!newMapCreated) {
-          customProperties = new Map(customProperties);
-          newMapCreated = true;
+        if (!customProperties.has(name)) {
+          
+          
+          if (!newMapCreated) {
+            customProperties = new Map(customProperties);
+            newMapCreated = true;
+          }
+          customProperties.set(name, value);
         }
-        customProperties.set(name, propertyDefinition.initialValue);
+      }
+    }
+
+    if (registeredPropertiesMap) {
+      for (const [name, propertyDefinition] of registeredPropertiesMap) {
+        
+        if (!customProperties.has(name)) {
+          
+          
+          if (!newMapCreated) {
+            customProperties = new Map(customProperties);
+            newMapCreated = true;
+          }
+          customProperties.set(name, propertyDefinition.initialValue);
+        }
       }
     }
 

@@ -148,61 +148,61 @@ add_task(async function () {
   checkRegisteredProperties(view, expectedProperties);
 
   info("Check that var() tooltips handle registered properties");
-  await checkVariableTooltipForProperty(
-    view,
-    "h1",
-    "background-color",
+  await assertVariableTooltipForProperty(view, "h1", "background-color", {
     
-    `--css-no-inherit = ${CSS_NO_INHERIT_INITIAL_VALUE}`,
-    [
+    header: `--css-no-inherit = ${CSS_NO_INHERIT_INITIAL_VALUE}`,
+    registeredProperty: [
       `syntax:"<color>"`,
       `inherits:false`,
       `initial-value:${CSS_NO_INHERIT_INITIAL_VALUE}`,
-    ]
-  );
-  await checkVariableTooltipForProperty(
-    view,
-    "h1",
-    "color",
+    ],
+  });
+  await assertVariableTooltipForProperty(view, "h1", "color", {
     
-    `--css-inherit = ${CSS_INHERIT_MAIN_VALUE}`,
-    [
+    header: `--css-inherit = ${CSS_INHERIT_MAIN_VALUE}`,
+    registeredProperty: [
       `syntax:"<color>"`,
       `inherits:true`,
       `initial-value:${CSS_INHERIT_INITIAL_VALUE}`,
-    ]
-  );
-  await checkVariableTooltipForProperty(
+    ],
+  });
+  await assertVariableTooltipForProperty(
     view,
     "h1",
     "border-color",
     
-    `--css-not-defined = ${CSS_NOT_DEFINED_INITIAL_VALUE}`,
-    [
-      `syntax:"<color>"`,
-      `inherits:true`,
-      `initial-value:${CSS_NOT_DEFINED_INITIAL_VALUE}`,
-    ]
+    {
+      header: `--css-not-defined = ${CSS_NOT_DEFINED_INITIAL_VALUE}`,
+      registeredProperty: [
+        `syntax:"<color>"`,
+        `inherits:true`,
+        `initial-value:${CSS_NOT_DEFINED_INITIAL_VALUE}`,
+      ],
+    }
   );
-  await checkVariableTooltipForProperty(
+  await assertVariableTooltipForProperty(
     view,
     "h1",
     "height",
     
-    `--js-no-inherit = ${JS_NO_INHERIT_INITIAL_VALUE}`,
-    [
-      `syntax:"<length>"`,
-      `inherits:false`,
-      `initial-value:${JS_NO_INHERIT_INITIAL_VALUE}`,
-    ]
+    {
+      header: `--js-no-inherit = ${JS_NO_INHERIT_INITIAL_VALUE}`,
+      registeredProperty: [
+        `syntax:"<length>"`,
+        `inherits:false`,
+        `initial-value:${JS_NO_INHERIT_INITIAL_VALUE}`,
+      ],
+    }
   );
-  await checkVariableTooltipForProperty(
+  await assertVariableTooltipForProperty(
     view,
     "h1",
     "width",
     
-    `--js-inherit = ${JS_INHERIT_MAIN_VALUE}`,
-    [`syntax:"*"`, `inherits:true`]
+    {
+      header: `--js-inherit = ${JS_INHERIT_MAIN_VALUE}`,
+      registeredProperty: [`syntax:"*"`, `inherits:true`],
+    }
   );
 
   info(
@@ -241,13 +241,14 @@ add_task(async function () {
   );
 
   
-  await checkVariableTooltipForProperty(
-    view,
-    "h1",
-    "caret-color",
-    `--css-dynamic-registered = orchid`,
-    [`syntax:"<color>"`, `inherits:false`, `initial-value:orchid`]
-  );
+  await assertVariableTooltipForProperty(view, "h1", "caret-color", {
+    header: `--css-dynamic-registered = orchid`,
+    registeredProperty: [
+      `syntax:"<color>"`,
+      `inherits:false`,
+      `initial-value:orchid`,
+    ],
+  });
 
   info("Check that updating property does update rules view");
   onRuleViewRefreshed = view.once("ruleview-refreshed");
@@ -281,13 +282,14 @@ add_task(async function () {
   );
 
   
-  await checkVariableTooltipForProperty(
-    view,
-    "h1",
-    "caret-color",
-    `--css-dynamic-registered = purple`,
-    [`syntax:"<color>"`, `inherits:true`, `initial-value:purple`]
-  );
+  await assertVariableTooltipForProperty(view, "h1", "caret-color", {
+    header: `--css-dynamic-registered = purple`,
+    registeredProperty: [
+      `syntax:"<color>"`,
+      `inherits:true`,
+      `initial-value:purple`,
+    ],
+  });
 
   info("Check that removing property does update rules view");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
@@ -304,12 +306,9 @@ add_task(async function () {
   checkRegisteredProperties(view, expectedProperties);
 
   
-  await checkVariableTooltipForProperty(
-    view,
-    "h1",
-    "caret-color",
-    `--css-dynamic-registered is not set`
-  );
+  await assertVariableTooltipForProperty(view, "h1", "caret-color", {
+    header: `--css-dynamic-registered is not set`,
+  });
 
   info(
     "Check that registered properties from new constructed stylesheets are displayed"
@@ -353,13 +352,14 @@ add_task(async function () {
   );
 
   
-  await checkVariableTooltipForProperty(
-    view,
-    "h1",
-    "outline",
-    `--constructed = aqua`,
-    [`syntax:"<color>"`, `inherits:true`, `initial-value:aqua`]
-  );
+  await assertVariableTooltipForProperty(view, "h1", "outline", {
+    header: `--constructed = aqua`,
+    registeredProperty: [
+      `syntax:"<color>"`,
+      `inherits:true`,
+      `initial-value:aqua`,
+    ],
+  });
 
   info(
     "Check that selecting a node in another document with no registered property hides the container"
@@ -551,54 +551,4 @@ function checkRegisteredProperties(view, expectedProperties) {
       );
     }
   }
-}
-
-
-
-
-
-
-
-
-
-
-async function checkVariableTooltipForProperty(
-  view,
-  ruleSelector,
-  propertyName,
-  expectedTooltipValueContent,
-  expectedTooltipRegisteredPropertyContent
-) {
-  
-  const variableEl = await waitFor(() =>
-    getRuleViewProperty(
-      view,
-      ruleSelector,
-      propertyName
-    ).valueSpan.querySelector(".ruleview-variable,.ruleview-unmatched-variable")
-  );
-
-  const previewTooltip = await assertShowPreviewTooltip(view, variableEl);
-  const [valueEl, registeredPropertyEl] = previewTooltip.panel.querySelectorAll(
-    ".variable-value,.registered-property"
-  );
-  is(
-    valueEl.textContent,
-    expectedTooltipValueContent,
-    `CSS variable preview tooltip shows the expected value for ${propertyName} in ${ruleSelector}`
-  );
-  if (!expectedTooltipRegisteredPropertyContent) {
-    is(
-      registeredPropertyEl,
-      undefined,
-      `CSS variable preview tooltip doesn't have registered property section for ${propertyName} in ${ruleSelector}`
-    );
-  } else {
-    is(
-      registeredPropertyEl.innerText,
-      expectedTooltipRegisteredPropertyContent.join("\n"),
-      `CSS variable preview tooltip has expected registered property section for ${propertyName} in ${ruleSelector}`
-    );
-  }
-  await assertTooltipHiddenOnMouseOut(previewTooltip, variableEl);
 }

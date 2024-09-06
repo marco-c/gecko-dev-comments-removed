@@ -7,6 +7,18 @@
 
 const TEST_URI = `
   <style>
+    @property --my-registered-color {
+      syntax: "<color>";
+      inherits: true;
+      initial-value: blue;
+    }
+
+    @property --my-unset-registered-color {
+      syntax: "<color>";
+      inherits: true;
+      initial-value: lavender;
+    }
+
     h1, [data-test="top-level"] {
       color: tomato;
       transition: all 1s;
@@ -33,6 +45,12 @@ const TEST_URI = `
 
       main, [data-test="in-starting-style"] {
         --my-color: black !important;
+        --my-overridden-color: black;
+        --my-registered-color: black !important;
+        --check-my-color: var(--my-color);
+        --check-my-overridden-color: var(--my-overridden-color);
+        --check-my-registered-color: var(--my-registered-color);
+        --check-my-unset-registered-color: var(--my-unset-registered-color);
         background-color: dodgerblue;
         padding-top: 1px;
         margin-top: 1px !important;
@@ -60,6 +78,10 @@ const TEST_URI = `
 
     main, [data-test="top-level"] {
       --my-color: white;
+      --my-overridden-color: white !important;
+      --my-registered-color: white;
+      --check-my-overridden-color: var(--my-overridden-color);
+      --check-my-registered-color: var(--my-registered-color);
       color: var(--my-color);
       background-color: firebrick;
       padding-top: 2px !important;
@@ -244,21 +266,126 @@ add_task(async function () {
     !isPropertyOverridden(view, 2, { "--my-color": "white" }),
     "--my-color value in top level rule is not overridden"
   );
-  const variableEl = getRuleViewProperty(
+
+  info(
+    "Check var() in regular rule for a variable set in both regular and starting-style rule"
+  );
+  await assertVariableTooltipForProperty(
     view,
     `main, [data-test="top-level"]`,
-    "color"
-  ).valueSpan.querySelector(".ruleview-variable");
-  is(
-    variableEl.dataset.variable,
-    "--my-color = white",
-    "variable popup for --my-color has the expected value"
+    "color",
+    {
+      header: "--my-color = white",
+      
+      startingStyle: "--my-color = black",
+    }
+  );
+
+  info(
+    "Check var() in starting-style rule for a variable set in both regular and starting-style rule"
+  );
+  await assertVariableTooltipForProperty(
+    view,
+    `main, [data-test="in-starting-style"]`,
+    "--check-my-color",
+    {
+      
+      header: "--my-color = black",
+      
+      startingStyle: null,
+    }
+  );
+
+  info(
+    "Check var() in both regular and starting-style rule for a variable overridden in regular rule"
+  );
+  ok(
+    isPropertyOverridden(view, 3, { "--my-overridden-color": "black" }),
+    "--my-overridden-color in top-level starting style rule is overridden"
+  );
+  await assertVariableTooltipForProperty(
+    view,
+    `main, [data-test="top-level"]`,
+    "--check-my-overridden-color",
+    {
+      header: "--my-overridden-color = white",
+      
+      startingStyle: null,
+    }
+  );
+  await assertVariableTooltipForProperty(
+    view,
+    `main, [data-test="in-starting-style"]`,
+    "--check-my-overridden-color",
+    {
+      
+      header: "--my-overridden-color = white",
+      startingStyle: null,
+    }
+  );
+
+  info(
+    "Check var() for a registered property in both regular and starting-style rule"
+  );
+  await assertVariableTooltipForProperty(
+    view,
+    `main, [data-test="top-level"]`,
+    "--check-my-registered-color",
+    {
+      header: "--my-registered-color = white",
+      
+      startingStyle: "--my-registered-color = black",
+      
+      registeredProperty: [
+        `syntax:"<color>"`,
+        `inherits:true`,
+        `initial-value:blue`,
+      ],
+    }
+  );
+
+  await assertVariableTooltipForProperty(
+    view,
+    `main, [data-test="in-starting-style"]`,
+    "--check-my-registered-color",
+    {
+      
+      header: "--my-registered-color = black",
+      
+      startingStyle: null,
+      
+      registeredProperty: [
+        `syntax:"<color>"`,
+        `inherits:true`,
+        `initial-value:blue`,
+      ],
+    }
+  );
+
+  info("Check var() for a unset registered property in starting-style rule");
+  await assertVariableTooltipForProperty(
+    view,
+    `main, [data-test="in-starting-style"]`,
+    "--check-my-unset-registered-color",
+    {
+      
+      header: "--my-unset-registered-color = lavender",
+      
+      startingStyle: null,
+      
+      registeredProperty: [
+        `syntax:"<color>"`,
+        `inherits:true`,
+        `initial-value:lavender`,
+      ],
+    }
   );
 
   async function assertRules(nodeSelector, expectedRules) {
     await selectNode(nodeSelector, inspector);
     const rulesInView = Array.from(
-      view.element.querySelectorAll(".ruleview-rule")
+      
+      view.element.querySelectorAll(".ruleview-rule:not([data-name])")
     );
     is(
       rulesInView.length,

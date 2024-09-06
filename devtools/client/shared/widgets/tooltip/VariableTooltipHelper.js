@@ -17,20 +17,54 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-function setVariableTooltip(tooltip, doc, text, registeredProperty) {
+
+
+
+
+
+
+
+
+
+
+
+function setVariableTooltip(
+  tooltip,
+  doc,
+  { topSectionText, registeredProperty, startingStyle }
+) {
   
   const div = doc.createElementNS(XHTML_NS, "div");
   div.classList.add("devtools-monospace", "devtools-tooltip-css-variable");
 
   const valueEl = doc.createElementNS(XHTML_NS, "section");
   valueEl.classList.add("variable-value");
-  valueEl.append(doc.createTextNode(text));
+  valueEl.append(doc.createTextNode(topSectionText));
   div.appendChild(valueEl);
 
   
+  if (typeof startingStyle !== "undefined") {
+    const section = doc.createElementNS(XHTML_NS, "section");
+    section.classList.add("starting-style", "variable-tooltip-section");
+
+    const h2 = doc.createElementNS(XHTML_NS, "h2");
+    h2.append(doc.createTextNode("@starting-style"));
+    const startingStyleValue = doc.createElementNS(XHTML_NS, "div");
+    startingStyleValue.append(doc.createTextNode(startingStyle));
+    section.append(h2, startingStyleValue);
+
+    div.appendChild(section);
+  }
+
+  
   if (registeredProperty?.syntax) {
+    const section = doc.createElementNS(XHTML_NS, "section");
+    section.classList.add("registered-property", "variable-tooltip-section");
+
+    const h2 = doc.createElementNS(XHTML_NS, "h2");
+    h2.append(doc.createTextNode("@property"));
+
     const dl = doc.createElementNS(XHTML_NS, "dl");
-    dl.classList.add("registered-property");
     const addProperty = (label, value, lineBreak = true) => {
       const dt = doc.createElementNS(XHTML_NS, "dt");
       dt.append(doc.createTextNode(label));
@@ -50,7 +84,8 @@ function setVariableTooltip(tooltip, doc, text, registeredProperty) {
       addProperty("initial-value:", registeredProperty.initialValue, false);
     }
 
-    div.appendChild(dl);
+    section.append(h2, dl);
+    div.appendChild(section);
   }
 
   tooltip.panel.innerHTML = "";
