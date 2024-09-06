@@ -247,6 +247,14 @@ nsresult nsCookieBannerTelemetryService::MaybeReportGoogleGDPRChoiceTelemetry(
   rv = searchService->GetDefaultEngine(getter_AddRefs(engine));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  if (!engine) {
+    MOZ_LOG(gCookieBannerTelemetryLog, LogLevel::Debug,
+            ("No default search engine is available."));
+    return NS_OK;
+  }
+
   nsAutoString id;
   rv = engine->GetId(id);
   NS_ENSURE_SUCCESS(rv, rv);
