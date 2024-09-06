@@ -56,6 +56,12 @@ class MOZ_RAII StackingContextHelper {
 
   nsDisplayTransform* GetDeferredTransformItem() const;
   Maybe<gfx::Matrix4x4> GetDeferredTransformMatrix() const;
+  
+  
+  
+  
+  void ClearDeferredTransformItem() const;
+  void RestoreDeferredTransformItem(nsDisplayTransform* aItem) const;
 
   bool AffectsClipPositioning() const { return mAffectsClipPositioning; }
   Maybe<wr::WrSpatialId> ReferenceFrameId() const { return mReferenceFrameId; }
@@ -117,7 +123,7 @@ class MOZ_RAII StackingContextHelper {
   
   
   
-  nsDisplayTransform* mDeferredTransformItem;
+  mutable nsDisplayTransform* mDeferredTransformItem;
   Maybe<gfx::Matrix4x4> mDeferredAncestorTransform;
 
   bool mRasterizeLocally;

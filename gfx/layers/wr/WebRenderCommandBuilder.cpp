@@ -2098,7 +2098,10 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         
         
         
+        
+        
         if (newLayerData->mDeferredItem) {
+          aSc.ClearDeferredTransformItem();
           mDeferredTransformStack.push_back(newLayerData->mDeferredItem);
         }
       }
@@ -2143,6 +2146,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         mAsrStack.pop_back();
 
         if (newLayerData->mDeferredItem) {
+          aSc.RestoreDeferredTransformItem(newLayerData->mDeferredItem);
           MOZ_ASSERT(!mDeferredTransformStack.empty());
           mDeferredTransformStack.pop_back();
         }
