@@ -266,6 +266,14 @@ fn((t) => {
     vertex: {
       module,
       entryPoint: 'main'
+    },
+    
+    
+    fragment: {
+      targets: [{ format: 'rgba8unorm' }],
+      module: t.device.createShaderModule({
+        code: `@fragment fn main() -> @location(0) vec4f { return vec4f(0); }`
+      })
     }
   });
   const layout1 = pipeline.getBindGroupLayout(0);
