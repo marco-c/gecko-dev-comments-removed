@@ -2144,8 +2144,9 @@ static void encode_b_nonrd(const AV1_COMP *const cpi, TileDataEnc *tile_data,
     }
     if (tile_data->allow_update_cdf) update_stats(&cpi->common, td);
   }
-  if (cpi->oxcf.q_cfg.aq_mode == CYCLIC_REFRESH_AQ && mbmi->skip_txfm &&
-      !cpi->rc.rtc_external_ratectrl && cm->seg.enabled)
+  if ((cpi->oxcf.q_cfg.aq_mode == CYCLIC_REFRESH_AQ ||
+       cpi->active_map.enabled) &&
+      mbmi->skip_txfm && !cpi->rc.rtc_external_ratectrl && cm->seg.enabled)
     av1_cyclic_reset_segment_skip(cpi, x, mi_row, mi_col, bsize, dry_run);
   
   
@@ -2254,6 +2255,8 @@ static void pick_sb_modes_nonrd(AV1_COMP *const cpi, TileDataEnc *tile_data,
   const AQ_MODE aq_mode = cpi->oxcf.q_cfg.aq_mode;
   TxfmSearchInfo *txfm_info = &x->txfm_search_info;
   int i;
+  const int seg_skip =
+      segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP);
 
   
   
@@ -2276,15 +2279,17 @@ static void pick_sb_modes_nonrd(AV1_COMP *const cpi, TileDataEnc *tile_data,
   }
   for (i = 0; i < 2; ++i) pd[i].color_index_map = ctx->color_index_map[i];
 
-  x->force_zeromv_skip_for_blk =
-      get_force_zeromv_skip_flag_for_blk(cpi, x, bsize);
+  if (!seg_skip) {
+    x->force_zeromv_skip_for_blk =
+        get_force_zeromv_skip_flag_for_blk(cpi, x, bsize);
 
-  
-  
-  if (!x->force_zeromv_skip_for_blk &&
-      (x->source_variance == UINT_MAX || bsize < cm->seq_params->sb_size))
-    x->source_variance = av1_get_perpixel_variance_facade(
-        cpi, xd, &x->plane[0].src, bsize, AOM_PLANE_Y);
+    
+    
+    if (!x->force_zeromv_skip_for_blk &&
+        (x->source_variance == UINT_MAX || bsize < cm->seq_params->sb_size))
+      x->source_variance = av1_get_perpixel_variance_facade(
+          cpi, xd, &x->plane[0].src, bsize, AOM_PLANE_Y);
+  }
 
   
   const int orig_rdmult = x->rdmult;
@@ -2305,16 +2310,13 @@ static void pick_sb_modes_nonrd(AV1_COMP *const cpi, TileDataEnc *tile_data,
 #if CONFIG_COLLECT_COMPONENT_TIMING
     start_timing(cpi, nonrd_pick_inter_mode_sb_time);
 #endif
-    if (segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-      RD_STATS invalid_rd;
-      av1_invalid_rd_stats(&invalid_rd);
+    if (seg_skip) {
+      x->force_zeromv_skip_for_blk = 1;
       
-      av1_rd_pick_inter_mode_sb_seg_skip(cpi, tile_data, x, mi_row, mi_col,
-                                         rd_cost, bsize, ctx,
-                                         invalid_rd.rdcost);
-    } else {
-      av1_nonrd_pick_inter_mode_sb(cpi, tile_data, x, rd_cost, bsize, ctx);
+      
+      
     }
+    av1_nonrd_pick_inter_mode_sb(cpi, tile_data, x, rd_cost, bsize, ctx);
 #if CONFIG_COLLECT_COMPONENT_TIMING
     end_timing(cpi, nonrd_pick_inter_mode_sb_time);
 #endif
@@ -2322,10 +2324,12 @@ static void pick_sb_modes_nonrd(AV1_COMP *const cpi, TileDataEnc *tile_data,
   if (cpi->sf.rt_sf.skip_cdef_sb) {
     
     
+    
     const int allow_cdef_skipping =
-        cpi->rc.frames_since_key > 10 && !cpi->rc.high_source_sad &&
-        !(x->color_sensitivity[COLOR_SENS_IDX(AOM_PLANE_U)] ||
-          x->color_sensitivity[COLOR_SENS_IDX(AOM_PLANE_V)]);
+        seg_skip ||
+        (cpi->rc.frames_since_key > 10 && !cpi->rc.high_source_sad &&
+         !(x->color_sensitivity[COLOR_SENS_IDX(AOM_PLANE_U)] ||
+           x->color_sensitivity[COLOR_SENS_IDX(AOM_PLANE_V)]));
 
     
     

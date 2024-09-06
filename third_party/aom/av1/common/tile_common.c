@@ -177,46 +177,16 @@ int av1_get_sb_cols_in_tile(const AV1_COMMON *cm, const TileInfo *tile) {
                            cm->seq_params->mib_size_log2);
 }
 
-PixelRect av1_get_tile_rect(const TileInfo *tile_info, const AV1_COMMON *cm,
-                            int is_uv) {
-  PixelRect r;
 
-  
-  r.left = tile_info->mi_col_start * MI_SIZE;
-  r.right = tile_info->mi_col_end * MI_SIZE;
-  r.top = tile_info->mi_row_start * MI_SIZE;
-  r.bottom = tile_info->mi_row_end * MI_SIZE;
 
-  
-  
-  
-  if (av1_superres_scaled(cm)) {
-    av1_calculate_unscaled_superres_size(&r.left, &r.top,
-                                         cm->superres_scale_denominator);
-    av1_calculate_unscaled_superres_size(&r.right, &r.bottom,
-                                         cm->superres_scale_denominator);
-  }
 
-  const int frame_w = cm->superres_upscaled_width;
-  const int frame_h = cm->superres_upscaled_height;
 
-  
-  r.right = AOMMIN(r.right, frame_w);
-  r.bottom = AOMMIN(r.bottom, frame_h);
 
-  
-  const int ss_x = is_uv && cm->seq_params->subsampling_x;
-  const int ss_y = is_uv && cm->seq_params->subsampling_y;
 
-  r.left = ROUND_POWER_OF_TWO(r.left, ss_x);
-  r.right = ROUND_POWER_OF_TWO(r.right, ss_x);
-  r.top = ROUND_POWER_OF_TWO(r.top, ss_y);
-  r.bottom = ROUND_POWER_OF_TWO(r.bottom, ss_y);
 
-  return r;
-}
 
-void av1_get_uniform_tile_size(const AV1_COMMON *cm, int *w, int *h) {
+
+bool av1_get_uniform_tile_size(const AV1_COMMON *cm, int *w, int *h) {
   const CommonTileParams *const tiles = &cm->tiles;
   if (tiles->uniform_spacing) {
     *w = tiles->width;
@@ -226,7 +196,10 @@ void av1_get_uniform_tile_size(const AV1_COMMON *cm, int *w, int *h) {
       const int tile_width_sb =
           tiles->col_start_sb[i + 1] - tiles->col_start_sb[i];
       const int tile_w = tile_width_sb * cm->seq_params->mib_size;
-      assert(i == 0 || tile_w == *w);  
+      
+      if (i != 0 && tile_w != *w) {
+        return false;
+      }
       *w = tile_w;
     }
 
@@ -234,10 +207,14 @@ void av1_get_uniform_tile_size(const AV1_COMMON *cm, int *w, int *h) {
       const int tile_height_sb =
           tiles->row_start_sb[i + 1] - tiles->row_start_sb[i];
       const int tile_h = tile_height_sb * cm->seq_params->mib_size;
-      assert(i == 0 || tile_h == *h);  
+      
+      if (i != 0 && tile_h != *h) {
+        return false;
+      }
       *h = tile_h;
     }
   }
+  return true;
 }
 
 int av1_is_min_tile_width_satisfied(const AV1_COMMON *cm) {

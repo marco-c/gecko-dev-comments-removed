@@ -1,10 +1,10 @@
-// Copyright (c) 2012 The WebM project authors. All Rights Reserved.
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the LICENSE file in the root of the source
-// tree. An additional intellectual property rights grant can be found
-// in the file PATENTS.  All contributing project authors may
-// be found in the AUTHORS file in the root of the source tree.
+
+
+
+
+
+
+
 
 #include "mkvmuxer/mkvmuxerutil.h"
 
@@ -29,7 +29,7 @@ namespace mkvmuxer {
 
 namespace {
 
-// Date elements are always 8 octets in size.
+
 const int kDateElementSize = 8;
 
 uint64 WriteBlock(IMkvWriter* writer, const Frame* const frame, int64 timecode,
@@ -103,7 +103,7 @@ uint64 WriteBlock(IMkvWriter* writer, const Frame* const frame, int64 timecode,
   if (SerializeInt(writer, timecode, 2))
     return 0;
 
-  // For a Block, flags is always 0.
+  
   if (SerializeInt(writer, 0, 1))
     return 0;
 
@@ -179,7 +179,7 @@ uint64 WriteSimpleBlock(IMkvWriter* writer, const Frame* const frame,
          frame->length();
 }
 
-}  // namespace
+}  
 
 int32 GetCodedUIntSize(uint64 value) {
   if (value < 0x000000000000007FULL)
@@ -218,30 +218,30 @@ int32 GetUIntSize(uint64 value) {
 }
 
 int32 GetIntSize(int64 value) {
-  // Doubling the requested value ensures positive values with their high bit
-  // set are written with 0-padding to avoid flipping the signedness.
+  
+  
   const uint64 v = (value < 0) ? value ^ -1LL : value;
   return GetUIntSize(2 * v);
 }
 
 uint64 EbmlMasterElementSize(uint64 type, uint64 value) {
-  // Size of EBML ID
+  
   int32 ebml_size = GetUIntSize(type);
 
-  // Datasize
+  
   ebml_size += GetCodedUIntSize(value);
 
   return ebml_size;
 }
 
 uint64 EbmlElementSize(uint64 type, int64 value) {
-  // Size of EBML ID
+  
   int32 ebml_size = GetUIntSize(type);
 
-  // Datasize
+  
   ebml_size += GetIntSize(value);
 
-  // Size of Datasize
+  
   ebml_size++;
 
   return ebml_size;
@@ -252,26 +252,26 @@ uint64 EbmlElementSize(uint64 type, uint64 value) {
 }
 
 uint64 EbmlElementSize(uint64 type, uint64 value, uint64 fixed_size) {
-  // Size of EBML ID
+  
   uint64 ebml_size = GetUIntSize(type);
 
-  // Datasize
+  
   ebml_size += (fixed_size > 0) ? fixed_size : GetUIntSize(value);
 
-  // Size of Datasize
+  
   ebml_size++;
 
   return ebml_size;
 }
 
-uint64 EbmlElementSize(uint64 type, float /* value */) {
-  // Size of EBML ID
+uint64 EbmlElementSize(uint64 type, float ) {
+  
   uint64 ebml_size = GetUIntSize(type);
 
-  // Datasize
+  
   ebml_size += sizeof(float);
 
-  // Size of Datasize
+  
   ebml_size++;
 
   return ebml_size;
@@ -281,13 +281,13 @@ uint64 EbmlElementSize(uint64 type, const char* value) {
   if (!value)
     return 0;
 
-  // Size of EBML ID
+  
   uint64 ebml_size = GetUIntSize(type);
 
-  // Datasize
+  
   ebml_size += strlen(value);
 
-  // Size of Datasize
+  
   ebml_size += GetCodedUIntSize(strlen(value));
 
   return ebml_size;
@@ -297,26 +297,26 @@ uint64 EbmlElementSize(uint64 type, const uint8* value, uint64 size) {
   if (!value)
     return 0;
 
-  // Size of EBML ID
+  
   uint64 ebml_size = GetUIntSize(type);
 
-  // Datasize
+  
   ebml_size += size;
 
-  // Size of Datasize
+  
   ebml_size += GetCodedUIntSize(size);
 
   return ebml_size;
 }
 
 uint64 EbmlDateElementSize(uint64 type) {
-  // Size of EBML ID
+  
   uint64 ebml_size = GetUIntSize(type);
 
-  // Datasize
+  
   ebml_size += kDateElementSize;
 
-  // Size of Datasize
+  
   ebml_size++;
 
   return ebml_size;
@@ -347,8 +347,8 @@ int32 SerializeFloat(IMkvWriter* writer, float f) {
     return -1;
 
   assert(sizeof(uint32) == sizeof(float));
-  // This union is merely used to avoid a reinterpret_cast from float& to
-  // uint32& which will result in violation of strict aliasing.
+  
+  
   union U32 {
     uint32 u32;
     float f;
@@ -553,10 +553,10 @@ uint64 WriteFrame(IMkvWriter* writer, const Frame* const frame,
       !cluster->timecode_scale())
     return 0;
 
-  //  Technically the timecode for a block can be less than the
-  //  timecode for the cluster itself (remember that block timecode
-  //  is a signed, 16-bit integer).  However, as a simplification we
-  //  only permit non-negative cluster-relative timecodes for blocks.
+  
+  
+  
+  
   const int64 relative_timecode = cluster->GetRelativeTimecode(
       frame->timestamp() / cluster->timecode_scale());
   if (relative_timecode < 0 || relative_timecode > kMaxBlockTimecode)
@@ -572,7 +572,7 @@ uint64 WriteVoidElement(IMkvWriter* writer, uint64 size) {
   if (!writer)
     return false;
 
-  // Subtract one for the void ID and the coded size.
+  
   uint64 void_entry_size = size - 1 - GetCodedUIntSize(size - 1);
   uint64 void_size = EbmlMasterElementSize(libwebm::kMkvVoid, void_entry_size) +
                      void_entry_size;
@@ -607,22 +607,18 @@ uint64 WriteVoidElement(IMkvWriter* writer, uint64 size) {
 void GetVersion(int32* major, int32* minor, int32* build, int32* revision) {
   *major = 0;
   *minor = 3;
-  *build = 1;
+  *build = 3;
   *revision = 0;
 }
 
 uint64 MakeUID(unsigned int* seed) {
   uint64 uid = 0;
 
-#ifdef __MINGW32__
-  srand(*seed);
-#endif
-
-  for (int i = 0; i < 7; ++i) {  // avoid problems with 8-byte values
+  for (int i = 0; i < 7; ++i) {  
     uid <<= 8;
 
-// TODO(fgalligan): Move random number generation to platform specific code.
-#ifdef _MSC_VER
+
+#ifdef _WIN32
     (void)seed;
     const int32 nn = rand();
 #elif __ANDROID__
@@ -634,12 +630,10 @@ uint64 MakeUID(unsigned int* seed) {
       close(fd);
     }
     const int32 nn = temp_num;
-#elif defined __MINGW32__
-    const int32 nn = rand();
 #else
     const int32 nn = rand_r(seed);
 #endif
-    const int32 n = 0xFF & (nn >> 4);  // throw away low-order bits
+    const int32 n = 0xFF & (nn >> 4);  
 
     uid |= n;
   }
@@ -740,4 +734,4 @@ bool IsPrimariesValueValid(uint64_t value) {
   return false;
 }
 
-}  // namespace mkvmuxer
+}  

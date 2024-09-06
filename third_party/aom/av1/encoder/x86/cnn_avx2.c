@@ -466,7 +466,7 @@ static INLINE void cnn_convolve_no_maxpool_padding_valid_layer2_avx2(
 
 
 
-void cnn_convolve_no_maxpool_padding_valid_2x2_avx2(
+static void cnn_convolve_no_maxpool_padding_valid_2x2_avx2(
     const float **input, int in_width, int in_height, int in_stride,
     const CNN_LAYER_CONFIG *const layer_config, float **output, int out_stride,
     int start_idx, const int cstep, const int channel_step) {

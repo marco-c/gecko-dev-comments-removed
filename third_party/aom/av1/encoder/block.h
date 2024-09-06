@@ -1349,6 +1349,9 @@ typedef struct macroblock {
   
   int_mv sb_me_mv;
   
+  
+  int sb_force_fixed_part;
+  
   unsigned int pred_sse[REF_FRAMES];
   
 #if CONFIG_RT_ML_PARTITIONING

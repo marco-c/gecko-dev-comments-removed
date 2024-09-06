@@ -30,6 +30,7 @@
 #define SUB_EPI16 _mm_sub_epi16
 #endif
 
+#if defined(FDCT4x4_2D_HELPER)
 static void FDCT4x4_2D_HELPER(const int16_t *input, int stride, __m128i *in0,
                               __m128i *in1) {
   
@@ -185,7 +186,9 @@ static void FDCT4x4_2D_HELPER(const int16_t *input, int stride, __m128i *in0,
     }
   }
 }
+#endif  
 
+#if defined(FDCT4x4_2D)
 void FDCT4x4_2D(const int16_t *input, tran_low_t *output, int stride) {
   
   
@@ -205,13 +208,16 @@ void FDCT4x4_2D(const int16_t *input, tran_low_t *output, int stride) {
   storeu_output(&in0, output + 0 * 4);
   storeu_output(&in1, output + 2 * 4);
 }
+#endif  
 
+#if defined(FDCT4x4_2D_LP)
 void FDCT4x4_2D_LP(const int16_t *input, int16_t *output, int stride) {
   __m128i in0, in1;
   FDCT4x4_2D_HELPER(input, stride, &in0, &in1);
   _mm_storeu_si128((__m128i *)(output + 0 * 4), in0);
   _mm_storeu_si128((__m128i *)(output + 2 * 4), in1);
 }
+#endif  
 
 #if CONFIG_INTERNAL_STATS
 void FDCT8x8_2D(const int16_t *input, tran_low_t *output, int stride) {

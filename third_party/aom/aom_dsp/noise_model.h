@@ -303,8 +303,8 @@ struct aom_denoise_and_model_t;
 
 
 int aom_denoise_and_model_run(struct aom_denoise_and_model_t *ctx,
-                              YV12_BUFFER_CONFIG *buf, aom_film_grain_t *grain,
-                              int apply_denoise);
+                              const YV12_BUFFER_CONFIG *sd,
+                              aom_film_grain_t *grain, int apply_denoise);
 
 
 
