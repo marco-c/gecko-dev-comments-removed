@@ -641,6 +641,10 @@ function runDoorhangerUpdateTest(params, steps) {
       
       executeSoon(() => {
         (async function () {
+          
+          
+          
+          
           gAUS.checkForBackgroundUpdates();
           for (var i = 0; i < params.checkAttempts - 1; i++) {
             await waitForEvent("update-error", "check-attempt-failed");
@@ -916,7 +920,7 @@ function runAboutDialogUpdateTest(params, steps) {
       getVersionParams(params.version);
     if (params.backgroundUpdate) {
       setUpdateURL(updateURL);
-      gAUS.checkForBackgroundUpdates();
+      await gAUS.checkForBackgroundUpdates();
       if (params.continueFile) {
         await continueFileHandler(params.continueFile);
       }
@@ -1248,7 +1252,7 @@ function runAboutPrefsUpdateTest(params, steps) {
       getVersionParams(params.version);
     if (params.backgroundUpdate) {
       setUpdateURL(updateURL);
-      gAUS.checkForBackgroundUpdates();
+      await gAUS.checkForBackgroundUpdates();
       if (params.continueFile) {
         await continueFileHandler(params.continueFile);
       }
@@ -1353,6 +1357,10 @@ function runTelemetryUpdateTest(updateParams, event, stageFailure = false) {
       updateParams +
       getVersionParams();
     setUpdateURL(updateURL);
+    
+    
+    
+    
     gAUS.checkForBackgroundUpdates();
     await waitForEvent(event);
   })();
