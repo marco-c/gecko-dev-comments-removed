@@ -17,18 +17,11 @@
 #include "absl/base/nullability.h"
 #include "api/environment/environment.h"
 #include "api/video_codecs/video_encoder.h"
-#include "api/video_codecs/vp8_frame_buffer_controller.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 
 struct Vp8EncoderSettings {
-  
-  
-  
-  absl::Nullable<std::unique_ptr<Vp8FrameBufferControllerFactory>>
-      frame_buffer_controller_factory;
-
   
   
   std::vector<VideoEncoder::ResolutionBitrateLimits> resolution_bitrate_limits;
