@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_mips32_MacroAssembler_mips32_h
 #define jit_mips32_MacroAssembler_mips32_h
@@ -42,8 +42,8 @@ static const int32_t LOW_32_OFFSET = 4;
 static const int32_t HIGH_32_OFFSET = 0;
 #endif
 
-
-
+// See documentation for ScratchTagScope and ScratchTagScopeRelease in
+// MacroAssembler-x64.h.
 
 class ScratchTagScope {
   const ValueOperand& v_;
@@ -80,16 +80,16 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared {
   void ma_liPatchable(Register dest, ImmPtr imm);
   void ma_liPatchable(Register dest, ImmWord imm);
 
-  
+  // load
   void ma_load(Register dest, Address address, LoadStoreSize size = SizeWord,
                LoadStoreExtension extension = SignExtend);
 
-  
+  // store
   void ma_store(Register data, Address address, LoadStoreSize size = SizeWord,
                 LoadStoreExtension extension = SignExtend);
 
-  
-  
+  // arithmetic based ops
+  // add
   void ma_add32TestOverflow(Register rd, Register rs, Register rt,
                             Label* overflow);
   void ma_add32TestOverflow(Register rd, Register rs, Imm32 imm,
@@ -115,7 +115,7 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared {
     ma_add32TestCarry(cond, rd, rs, imm, overflow);
   }
 
-  
+  // subtract
   void ma_sub32TestOverflow(Register rd, Register rs, Register rt,
                             Label* overflow);
 
@@ -135,8 +135,8 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared {
     ma_mul32TestOverflow(rd, rs, rt, overflow);
   }
 
-  
-  
+  // memory
+  // shortcut for when we know we're transferring 32 bits of data
   void ma_lw(Register data, Address address);
 
   void ma_sw(Register data, Address address);
@@ -147,7 +147,7 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared {
   void ma_push(Register r);
 
   void branchWithCode(InstImm code, Label* label, JumpKind jumpKind);
-  
+  // branches when done from within mips-specific code
   void ma_b(Register lhs, ImmWord imm, Label* l, Condition c,
             JumpKind jumpKind = LongJump) {
     ma_b(lhs, Imm32(uint32_t(imm.value)), l, c, jumpKind);
@@ -172,7 +172,7 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared {
 
   void ma_bal(Label* l, DelaySlotFill delaySlotFill = FillDelaySlot);
 
-  
+  // fp instructions
   void ma_lid(FloatRegister dest, double value);
 
   void ma_mv(FloatRegister src, ValueOperand dest);
@@ -210,10 +210,10 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared {
     ma_cmp_set(dst, SecondScratchReg, imm, c);
   }
 
-  
-  
-  
-  
+  // These fuctions abstract the access to high part of the double precision
+  // float register. It is intended to work on both 32 bit and 64 bit
+  // floating point coprocessor.
+  // :TODO: (Bug 985881) Modify this for N32 ABI to use mthc1 and mfhc1
   void moveToDoubleHi(Register src, FloatRegister dest) {
     as_mtc1(src, getOddPair(dest));
   }
@@ -306,17 +306,17 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
   void pop(Register reg) { ma_pop(reg); }
   void pop(FloatRegister reg) { ma_pop(reg); }
 
-  
-  
-  
+  // Emit a branch that can be toggled to a non-operation. On MIPS we use
+  // "andi" instruction to toggle the branch.
+  // See ToggleToJmp(), ToggleToCmp().
   CodeOffset toggledJump(Label* label);
 
-  
-  
+  // Emit a "jalr" or "nop" instruction. ToggleCall can be used to patch
+  // this instruction.
   CodeOffset toggledCall(JitCode* target, bool enabled);
 
   static size_t ToggledCallSize(uint8_t* code) {
-    
+    // Four instructions used in: MacroAssemblerMIPSCompat::toggledCall
     return 4 * sizeof(uint32_t);
   }
 
@@ -368,7 +368,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
     MOZ_ASSERT(value.typeReg() == tag);
   }
 
-  
+  // unboxing code
   void unboxNonDouble(const ValueOperand& operand, Register dest, JSValueType);
   void unboxNonDouble(const Address& src, Register dest, JSValueType);
   void unboxNonDouble(const BaseIndex& src, Register dest, JSValueType);
@@ -402,13 +402,13 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
     as_xori(val.payloadReg(), val.payloadReg(), 1);
   }
 
-  
+  // boxing code
   void boxDouble(FloatRegister src, const ValueOperand& dest, FloatRegister);
   void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest);
 
-  
-  
-  
+  // Extended unboxing API. If the payload is already in a register, returns
+  // that register. Otherwise, provides a move to the given scratch register,
+  // and returns that.
   [[nodiscard]] Register extractObject(const Address& address,
                                        Register scratch);
   [[nodiscard]] Register extractObject(const ValueOperand& value,
@@ -438,13 +438,10 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
     return value.typeReg();
   }
 
-  void boolValueToDouble(const ValueOperand& operand, FloatRegister dest);
   void loadInt32OrDouble(const Address& address, FloatRegister dest);
   void loadInt32OrDouble(Register base, Register index, FloatRegister dest,
                          int32_t shift = defaultShift);
   void loadConstantDouble(double dp, FloatRegister dest);
-
-  void boolValueToFloat32(const ValueOperand& operand, FloatRegister dest);
   void loadConstantFloat32(float f, FloatRegister dest);
 
   void testNullSet(Condition cond, const ValueOperand& value, Register dest);
@@ -454,7 +451,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
   void testUndefinedSet(Condition cond, const ValueOperand& value,
                         Register dest);
 
-  
+  // higher level tag testing code
   Operand ToPayload(Operand base);
   Address ToPayload(Address base) {
     return ToPayload(Operand(base)).toAddress();
@@ -512,11 +509,11 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
     Register s0 = src.typeReg(), d0 = dest.typeReg(), s1 = src.payloadReg(),
              d1 = dest.payloadReg();
 
-    
-    
+    // Either one or both of the source registers could be the same as a
+    // destination register.
     if (s1 == d0) {
       if (s0 == d1) {
-        
+        // If both are, this is just a swap of two registers.
         MOZ_ASSERT(d1 != ScratchRegister);
         MOZ_ASSERT(d0 != ScratchRegister);
         move32(d1, ScratchRegister);
@@ -524,7 +521,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
         move32(ScratchRegister, d0);
         return;
       }
-      
+      // If only one is, copy that source first.
       std::swap(s0, s1);
       std::swap(d0, d1);
     }
@@ -608,11 +605,11 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
   void wasmAtomicStore64(const wasm::MemoryAccessDesc& access, const T& mem,
                          Register temp, Register64 value);
 
-  
-  
-  
+  /////////////////////////////////////////////////////////////////
+  // Common interface.
+  /////////////////////////////////////////////////////////////////
  public:
-  
+  // The following functions are exposed for use in platform-shared code.
 
   inline void incrementInt32Value(const Address& addr);
 
@@ -769,8 +766,8 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
   void restoreStackPointer();
   static void calculateAlignedStackPointer(void** stackPointer);
 
-  
-  
+  // If source is a double, load it into dest. If source is int32,
+  // convert it to double. Else, branch to failure.
   void ensureDouble(const ValueOperand& source, FloatRegister dest,
                     Label* failure);
 
@@ -808,14 +805,14 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS {
     as_movs(dest, src);
   }
 
-  
+  // Instrumentation for entering and leaving the profiler.
   void profilerEnterFrame(Register framePtr, Register scratch);
   void profilerExitFrame();
 };
 
 typedef MacroAssemblerMIPSCompat MacroAssemblerSpecific;
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_mips32_MacroAssembler_mips32_h */

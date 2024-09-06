@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_wasm32_MacroAssembler_wasm32_h
 #define jit_wasm32_MacroAssembler_wasm32_h
@@ -479,9 +479,6 @@ class MacroAssemblerWasm32 : public Assembler {
 
   void convertFloat32ToDouble(FloatRegister, FloatRegister) { MOZ_CRASH(); }
 
-  void boolValueToDouble(ValueOperand, FloatRegister) { MOZ_CRASH(); }
-  void boolValueToFloat32(ValueOperand, FloatRegister) { MOZ_CRASH(); }
-
   void loadConstantDouble(double, FloatRegister) { MOZ_CRASH(); }
   void loadConstantFloat32(float, FloatRegister) { MOZ_CRASH(); }
   Condition testInt32Truthy(bool, ValueOperand) { MOZ_CRASH(); }
@@ -513,7 +510,7 @@ class MacroAssemblerWasm32 : public Assembler {
 
   Register getStackPointer() const { return StackPointer; }
 
-  
+  // Instrumentation for entering and leaving the profiler.
   void profilerEnterFrame(Register, Register) { MOZ_CRASH(); }
   void profilerExitFrame() { MOZ_CRASH(); }
 
@@ -528,6 +525,6 @@ static inline bool GetTempRegForIntArg(uint32_t, uint32_t, Register*) {
   MOZ_CRASH();
 }
 
-}  
+}  // namespace js::jit
 
-#endif 
+#endif /* jit_wasm32_MacroAssembler_wasm32_h */
