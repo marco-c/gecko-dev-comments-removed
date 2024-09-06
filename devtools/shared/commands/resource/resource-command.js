@@ -181,6 +181,10 @@ class ResourceCommand {
 
     
     
+    resources = [...resources];
+
+    
+    
     
     
     const pendingWatcher = {
