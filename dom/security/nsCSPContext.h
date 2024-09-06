@@ -115,8 +115,7 @@ class nsCSPContext : public nsIContentSecurityPolicy {
       const nsAString& aViolatedDirectiveName,
       const nsAString& aViolatedDirectiveNameAndValue,
       const CSPDirective aEffectiveDirective, const nsAString& aObserverSubject,
-      const nsAString& aSourceFile, bool aReportSample,
-      const nsAString& aScriptSample);
+      const nsAString& aSourceFile, bool aReportSample);
 
   
   
