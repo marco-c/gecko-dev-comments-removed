@@ -669,25 +669,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-
-
-
-    id: "bug1819702",
-    platform: "android",
-    domain: "feelgoodcontacts.com",
-    bug: "1819702",
-    config: {
-      matches: ["*://*.feelgoodcontacts.com/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
     id: "bug1823966",
     platform: "all",
     domain: "elearning.dmv.ca.gov",
@@ -721,7 +702,7 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
     id: "bug1827678-webc67924",
-    platform: "android",
+    platform: "all",
     domain: "bankmandiri.co.id",
     bug: "1827678",
     config: {
@@ -753,11 +734,11 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
     id: "bug1827678-webc68520",
-    platform: "android",
-    domain: "mobile.onvue.com",
+    platform: "all",
+    domain: "onvue.com",
     bug: "1827678",
     config: {
-      matches: ["*://mobile.onvue.com/*"],
+      matches: ["*://*.onvue.com/*"],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
@@ -800,7 +781,7 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1827678-webc77727",
+    id: "bug1827678-webc77727-ua",
     platform: "android",
     domain: "www.free4talk.com",
     bug: "1827678",
@@ -849,7 +830,7 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
     id: "bug1827678-webc83269",
-    platform: "android",
+    platform: "all",
     domain: "jelly.jd.com",
     bug: "1827678",
     config: {
@@ -1004,23 +985,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1836116",
-    platform: "all",
-    domain: "www.slushy.com",
-    bug: "1836116",
-    config: {
-      matches: ["*://www.slushy.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " Chrome/113.0.0.0";
-      },
-    },
-  },
-  {
-    
-
-
-
-
     id: "bug1836135",
     platform: "all",
     domain: "gts-pro.sdimedia.com",
@@ -1063,23 +1027,6 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://atracker.pro/*"],
       uaTransformer: originalUA => {
         return originalUA + " Chrome/113.0.0.0";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-    id: "bug1836182",
-    platform: "all",
-    domain: "www.flatsatshadowglen.com",
-    bug: "1836182",
-    config: {
-      matches: ["*://*.flatsatshadowglen.com/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -1152,51 +1099,6 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1855102",
     config: {
       matches: ["*://my.southerncross.co.nz/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-
-    id: "bug1864903",
-    platform: "all",
-    domain: "Publitas catalogs",
-    bug: "1864903",
-    config: {
-      matches: [
-        "*://aktionen.metro.at/*",
-        "*://cataloagele.metro.ro/*",
-        "*://catalogs.metro-cc.ru/*",
-        "*://catalogues.metro.bg/*",
-        "*://catalogues.metro-cc.hr/*",
-        "*://catalogues.metro.ua/*",
-        "*://folders.makro.nl/*",
-        "*://katalog.metro.rs/*",
-        "*://katalogi.metro-kz.com/*",
-        "*://kataloglar.metro-tr.com/*",
-        "*://katalogus.metro.hu/*",
-        "*://letaky.makro.cz/*",
-        "*://letaky.metro.sk/*",
-        "*://ofertas.makro.es/*",
-        "*://oferte.metro.md/*",
-        "*://promotions-deals.metro.pk/*",
-        "*://promocoes.makro.pt/*",
-        "*://prospekt.aldi-sued.de/*",
-        "*://prospekte.metro.de/*",
-        "*://thematiques.metro.fr/*",
-        "*://volantino.metro.it/*",
-        "*://view.publitas.com/*",
-        "*://magazine.kruidvat.be/*",
-        "*://folder.kruidvat.nl/*",
-      ],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
@@ -1288,7 +1190,25 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1884779",
     config: {
       matches: ["*://*.memurlar.net/*"],
-      uaTransformer: _originalUA => {
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1898531",
+    platform: "all",
+    domain: "cwb.digital",
+    bug: "1898531",
+    config: {
+      matches: ["*://*.cwb.digital/*"],
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },

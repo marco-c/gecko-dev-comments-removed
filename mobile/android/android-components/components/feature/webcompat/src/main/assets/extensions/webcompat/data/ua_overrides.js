@@ -225,7 +225,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1574564",
     config: {
       matches: ["*://*.ceskatelevize.cz/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -302,7 +302,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1622063",
     config: {
       matches: ["*://wp1-ext.usps.gov/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -429,7 +429,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1719859",
     config: {
       matches: ["*://*.saxoinvestor.fr/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -546,7 +546,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1753461",
     config: {
       matches: ["*://serieson.naver.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36";
       },
     },
@@ -565,7 +565,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1771200",
     config: {
       matches: ["*://*.animalplanet.com/video/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -584,7 +584,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1779059",
     config: {
       matches: ["*://member-m.lazada.co.id/address/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -603,7 +603,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1778168",
     config: {
       matches: ["*://watch.antennaplus.gr/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA({
           desktopOS: "nonLinux",
         });
@@ -623,7 +623,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1776897",
     config: {
       matches: ["*://www.edencast.fr/zoomcast*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -641,7 +641,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1784361",
     config: {
       matches: ["*://*.coldwellbankerhomes.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -669,32 +669,13 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-
-
-
-    id: "bug1819702",
-    platform: "android",
-    domain: "feelgoodcontacts.com",
-    bug: "1819702",
-    config: {
-      matches: ["*://*.feelgoodcontacts.com/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
     id: "bug1823966",
     platform: "all",
     domain: "elearning.dmv.ca.gov",
     bug: "1823966",
     config: {
       matches: ["*://*.elearning.dmv.ca.gov/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -710,7 +691,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://*.admissions.nid.edu/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -721,12 +702,12 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
     id: "bug1827678-webc67924",
-    platform: "android",
+    platform: "all",
     domain: "bankmandiri.co.id",
     bug: "1827678",
     config: {
       matches: ["*://*.bankmandiri.co.id/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -742,7 +723,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://*.frankfred.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -753,12 +734,12 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
     id: "bug1827678-webc68520",
-    platform: "android",
-    domain: "mobile.onvue.com",
+    platform: "all",
+    domain: "onvue.com",
     bug: "1827678",
     config: {
-      matches: ["*://mobile.onvue.com/*"],
-      uaTransformer: originalUA => {
+      matches: ["*://*.onvue.com/*"],
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -774,7 +755,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://*.avizia.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -790,7 +771,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://www.yourtexasbenefits.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -800,13 +781,13 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1827678-webc77727",
+    id: "bug1827678-webc77727-ua",
     platform: "android",
     domain: "www.free4talk.com",
     bug: "1827678",
     config: {
       matches: ["*://www.free4talk.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -822,7 +803,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://watch.indee.tv/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -838,7 +819,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://viewer-ebook.books.com.tw/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -849,12 +830,12 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
     id: "bug1827678-webc83269",
-    platform: "android",
+    platform: "all",
     domain: "jelly.jd.com",
     bug: "1827678",
     config: {
       matches: ["*://jelly.jd.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -870,7 +851,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://*.kt.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -886,7 +867,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://*.oirsa.org/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -902,7 +883,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://onp.cloud.waterloo.ca/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -927,7 +908,7 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://*.yebocasino.co.za/*", 
         "*://*.yabbycasino.com/*", 
       ],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -943,7 +924,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1830821",
     config: {
       matches: ["*://*.webcartop.jp/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -959,7 +940,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1830821",
     config: {
       matches: ["*://enjoy.point.auone.jp/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -976,7 +957,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1836109",
     config: {
       matches: ["*://watch.tonton.com.my/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -993,25 +974,8 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1836112",
     config: {
       matches: ["*://www.capcut.cn/editor*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-    id: "bug1836116",
-    platform: "all",
-    domain: "www.slushy.com",
-    bug: "1836116",
-    config: {
-      matches: ["*://www.slushy.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " Chrome/113.0.0.0";
       },
     },
   },
@@ -1072,23 +1036,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1836182",
-    platform: "all",
-    domain: "www.flatsatshadowglen.com",
-    bug: "1836182",
-    config: {
-      matches: ["*://*.flatsatshadowglen.com/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
 
 
     id: "bug1849018",
@@ -1097,7 +1044,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1849018",
     config: {
       matches: ["*://*.carefirst.com/myaccount*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -1115,7 +1062,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1850455",
     config: {
       matches: ["*://*.frontgate.com/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -1134,7 +1081,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1855088",
     config: {
       matches: ["*://hrmis2.eghrmis.gov.my/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -1152,52 +1099,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1855102",
     config: {
       matches: ["*://my.southerncross.co.nz/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-
-    id: "bug1864903",
-    platform: "all",
-    domain: "Publitas catalogs",
-    bug: "1864903",
-    config: {
-      matches: [
-        "*://aktionen.metro.at/*",
-        "*://cataloagele.metro.ro/*",
-        "*://catalogs.metro-cc.ru/*",
-        "*://catalogues.metro.bg/*",
-        "*://catalogues.metro-cc.hr/*",
-        "*://catalogues.metro.ua/*",
-        "*://folders.makro.nl/*",
-        "*://katalog.metro.rs/*",
-        "*://katalogi.metro-kz.com/*",
-        "*://kataloglar.metro-tr.com/*",
-        "*://katalogus.metro.hu/*",
-        "*://letaky.makro.cz/*",
-        "*://letaky.metro.sk/*",
-        "*://ofertas.makro.es/*",
-        "*://oferte.metro.md/*",
-        "*://promotions-deals.metro.pk/*",
-        "*://promocoes.makro.pt/*",
-        "*://prospekt.aldi-sued.de/*",
-        "*://prospekte.metro.de/*",
-        "*://thematiques.metro.fr/*",
-        "*://volantino.metro.it/*",
-        "*://view.publitas.com/*",
-        "*://magazine.kruidvat.be/*",
-        "*://folder.kruidvat.nl/*",
-      ],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -1215,7 +1117,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1864999",
     config: {
       matches: ["*://*.autotrader.ca/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -1234,7 +1136,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1865000",
     config: {
       matches: ["*://*.bmo.com/main/personal/*/getting-started/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -1252,7 +1154,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1865004",
     config: {
       matches: ["*://*.digimart.net/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -1270,7 +1172,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1865007",
     config: {
       matches: ["*://*.circle.ms/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
@@ -1288,7 +1190,25 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1884779",
     config: {
       matches: ["*://*.memurlar.net/*"],
-      uaTransformer: originalUA => {
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1898531",
+    platform: "all",
+    domain: "cwb.digital",
+    bug: "1898531",
+    config: {
+      matches: ["*://*.cwb.digital/*"],
+      uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },

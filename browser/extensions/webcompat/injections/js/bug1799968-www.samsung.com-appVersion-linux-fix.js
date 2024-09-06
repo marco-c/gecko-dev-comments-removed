@@ -18,6 +18,7 @@
 
 
 
+
 console.info(
   "navigator.appVersion has been shimmed for compatibility reasons. See https://webcompat.com/issues/108993 for details."
 );

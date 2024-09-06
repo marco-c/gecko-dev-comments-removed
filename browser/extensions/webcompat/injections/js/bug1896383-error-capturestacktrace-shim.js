@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+console.info(
+  "Shimming captureStackTrace in Error for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1896383 for details."
+);
+
+Object.defineProperty(window.Error.wrappedJSObject, "captureStackTrace", {
+  value: exportFunction(function () {
+    return {};
+  }, window),
+});
