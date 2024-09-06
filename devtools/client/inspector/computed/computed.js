@@ -64,38 +64,39 @@ const FILTER_CHANGED_TIMEOUT = 150;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function UpdateProcess(win, array, options) {
-  this.win = win;
-  this.index = 0;
-  this.array = array;
-
-  this.onItem = options.onItem || function () {};
-  this.onBatch = options.onBatch || function () {};
-  this.onDone = options.onDone || function () {};
-  this.onCancel = options.onCancel || function () {};
-  this.threshold = options.threshold || 45;
-
-  this.canceled = false;
-}
-
-UpdateProcess.prototype = {
+class UpdateProcess {
   
 
 
-  ERROR_ITERATION_DONE: new Error("UpdateProcess iteration done"),
+
+
+
+
+
+
+
+
+
+
+
+  constructor(win, array, options) {
+    this.win = win;
+    this.index = 0;
+    this.array = array;
+
+    this.onItem = options.onItem || function () {};
+    this.onBatch = options.onBatch || function () {};
+    this.onDone = options.onDone || function () {};
+    this.onCancel = options.onCancel || function () {};
+    this.threshold = options.threshold || 45;
+
+    this.canceled = false;
+  }
+
+  
+
+
+  ERROR_ITERATION_DONE = new Error("UpdateProcess iteration done");
 
   
 
@@ -105,7 +106,7 @@ UpdateProcess.prototype = {
       return;
     }
     this._timeout = setTimeout(this._timeoutHandler.bind(this), 0);
-  },
+  }
 
   
 
@@ -118,7 +119,7 @@ UpdateProcess.prototype = {
     }
     this.canceled = true;
     this.onCancel();
-  },
+  }
 
   _timeoutHandler() {
     this._timeout = null;
@@ -134,7 +135,7 @@ UpdateProcess.prototype = {
       console.error(e);
       throw e;
     }
-  },
+  }
 
   _runBatch() {
     const time = Date.now();
@@ -146,7 +147,7 @@ UpdateProcess.prototype = {
         return;
       }
     }
-  },
+  }
 
   
 
@@ -157,112 +158,7 @@ UpdateProcess.prototype = {
       return this.array[this.index++];
     }
     throw this.ERROR_ITERATION_DONE;
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-function CssComputedView(inspector, document) {
-  this.inspector = inspector;
-  this.styleDocument = document;
-  this.styleWindow = this.styleDocument.defaultView;
-
-  this.propertyViews = [];
-
-  this._outputParser = new OutputParser(document, inspector.cssProperties);
-
-  
-  this.focusWindow = this.focusWindow.bind(this);
-  this._onClearSearch = this._onClearSearch.bind(this);
-  this._onClick = this._onClick.bind(this);
-  this._onContextMenu = this._onContextMenu.bind(this);
-  this._onCopy = this._onCopy.bind(this);
-  this._onFilterStyles = this._onFilterStyles.bind(this);
-  this._onIncludeBrowserStyles = this._onIncludeBrowserStyles.bind(this);
-  this.refreshPanel = this.refreshPanel.bind(this);
-
-  const doc = this.styleDocument;
-  this.element = doc.getElementById("computed-property-container");
-  this.searchField = doc.getElementById("computed-searchbox");
-  this.searchClearButton = doc.getElementById("computed-searchinput-clear");
-  this.includeBrowserStylesCheckbox = doc.getElementById(
-    "browser-style-checkbox"
-  );
-
-  this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
-  this._onShortcut = this._onShortcut.bind(this);
-  this.shortcuts.on("CmdOrCtrl+F", event =>
-    this._onShortcut("CmdOrCtrl+F", event)
-  );
-  this.shortcuts.on("Escape", event => this._onShortcut("Escape", event));
-  this.styleDocument.addEventListener("copy", this._onCopy);
-  this.styleDocument.addEventListener("mousedown", this.focusWindow);
-  this.element.addEventListener("click", this._onClick);
-  this.element.addEventListener("contextmenu", this._onContextMenu);
-  this.searchField.addEventListener("input", this._onFilterStyles);
-  this.searchClearButton.addEventListener("click", this._onClearSearch);
-  this.includeBrowserStylesCheckbox.addEventListener(
-    "input",
-    this._onIncludeBrowserStyles
-  );
-
-  if (flags.testing) {
-    
-    this.highlighters.addToView(this);
-  } else {
-    this.element.addEventListener(
-      "mousemove",
-      () => {
-        this.highlighters.addToView(this);
-      },
-      { once: true }
-    );
   }
-
-  if (!this.inspector.is3PaneModeEnabled) {
-    
-    
-    this.inspector.on(
-      "ruleview-added",
-      () => {
-        this.ruleView.on("ruleview-changed", this.refreshPanel);
-      },
-      { once: true }
-    );
-  }
-
-  if (this.ruleView) {
-    this.ruleView.on("ruleview-changed", this.refreshPanel);
-  }
-
-  this.searchClearButton.hidden = true;
-
-  
-  this.noResults = this.styleDocument.getElementById("computed-no-results");
-
-  
-  
-  this._handlePrefChange = this._handlePrefChange.bind(this);
-  this._prefObserver = new PrefObserver("devtools.");
-  this._prefObserver.on("devtools.defaultColorUnit", this._handlePrefChange);
-
-  
-  this._viewedElement = null;
-  
-  this.viewedElementPageStyle = null;
-
-  this.createStyleViews();
-
-  
-  this.tooltips = new TooltipsOverlay(this);
 }
 
 
@@ -270,29 +166,135 @@ function CssComputedView(inspector, document) {
 
 
 
+class CssComputedView {
+  
 
 
-CssComputedView.l10n = function (name) {
-  try {
-    return STYLE_INSPECTOR_L10N.getStr(name);
-  } catch (ex) {
-    console.log("Error reading '" + name + "'");
-    throw new Error("l10n error with " + name);
+
+
+
+  constructor(inspector, document) {
+    this.inspector = inspector;
+    this.styleDocument = document;
+    this.styleWindow = this.styleDocument.defaultView;
+
+    this.propertyViews = [];
+
+    this._outputParser = new OutputParser(document, inspector.cssProperties);
+
+    
+    this.focusWindow = this.focusWindow.bind(this);
+    this._onClearSearch = this._onClearSearch.bind(this);
+    this._onClick = this._onClick.bind(this);
+    this._onContextMenu = this._onContextMenu.bind(this);
+    this._onCopy = this._onCopy.bind(this);
+    this._onFilterStyles = this._onFilterStyles.bind(this);
+    this._onIncludeBrowserStyles = this._onIncludeBrowserStyles.bind(this);
+    this.refreshPanel = this.refreshPanel.bind(this);
+
+    const doc = this.styleDocument;
+    this.element = doc.getElementById("computed-property-container");
+    this.searchField = doc.getElementById("computed-searchbox");
+    this.searchClearButton = doc.getElementById("computed-searchinput-clear");
+    this.includeBrowserStylesCheckbox = doc.getElementById(
+      "browser-style-checkbox"
+    );
+
+    this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
+    this._onShortcut = this._onShortcut.bind(this);
+    this.shortcuts.on("CmdOrCtrl+F", event =>
+      this._onShortcut("CmdOrCtrl+F", event)
+    );
+    this.shortcuts.on("Escape", event => this._onShortcut("Escape", event));
+    this.styleDocument.addEventListener("copy", this._onCopy);
+    this.styleDocument.addEventListener("mousedown", this.focusWindow);
+    this.element.addEventListener("click", this._onClick);
+    this.element.addEventListener("contextmenu", this._onContextMenu);
+    this.searchField.addEventListener("input", this._onFilterStyles);
+    this.searchClearButton.addEventListener("click", this._onClearSearch);
+    this.includeBrowserStylesCheckbox.addEventListener(
+      "input",
+      this._onIncludeBrowserStyles
+    );
+
+    if (flags.testing) {
+      
+      this.highlighters.addToView(this);
+    } else {
+      this.element.addEventListener(
+        "mousemove",
+        () => {
+          this.highlighters.addToView(this);
+        },
+        { once: true }
+      );
+    }
+
+    if (!this.inspector.is3PaneModeEnabled) {
+      
+      
+      this.inspector.on(
+        "ruleview-added",
+        () => {
+          this.ruleView.on("ruleview-changed", this.refreshPanel);
+        },
+        { once: true }
+      );
+    }
+
+    if (this.ruleView) {
+      this.ruleView.on("ruleview-changed", this.refreshPanel);
+    }
+
+    this.searchClearButton.hidden = true;
+
+    
+    this.noResults = this.styleDocument.getElementById("computed-no-results");
+
+    
+    
+    this._handlePrefChange = this._handlePrefChange.bind(this);
+    this._prefObserver = new PrefObserver("devtools.");
+    this._prefObserver.on("devtools.defaultColorUnit", this._handlePrefChange);
+
+    
+    this._viewedElement = null;
+    
+    this.viewedElementPageStyle = null;
+
+    this.createStyleViews();
+
+    
+    this.tooltips = new TooltipsOverlay(this);
   }
-};
-
-CssComputedView.prototype = {
-  
-  _matchedProperties: null,
 
   
-  _filterChangedTimeout: null,
+
+
+
+
+
+
+  static l10n(name) {
+    try {
+      return STYLE_INSPECTOR_L10N.getStr(name);
+    } catch (ex) {
+      console.log("Error reading '" + name + "'");
+      throw new Error("l10n error with " + name);
+    }
+  }
 
   
-  _panelRefreshTimeout: null,
+  _matchedProperties = null;
 
   
-  numVisibleProperties: 0,
+  _filterChangedTimeout = null;
+
+  
+  _panelRefreshTimeout = null;
+
+  
+  numVisibleProperties = 0;
 
   get contextMenu() {
     if (!this._contextMenu) {
@@ -300,7 +302,7 @@ CssComputedView.prototype = {
     }
 
     return this._contextMenu;
-  },
+  }
 
   
   get highlighters() {
@@ -310,24 +312,24 @@ CssComputedView.prototype = {
     }
 
     return this._highlighters;
-  },
+  }
 
   get includeBrowserStyles() {
     return this.includeBrowserStylesCheckbox.checked;
-  },
+  }
 
   get ruleView() {
     return (
       this.inspector.hasPanel("ruleview") &&
       this.inspector.getPanel("ruleview").view
     );
-  },
+  }
 
   _handlePrefChange() {
     if (this._computed) {
       this.refreshPanel();
     }
-  },
+  }
 
   
 
@@ -374,7 +376,7 @@ CssComputedView.prototype = {
     this.refreshSourceFilter();
 
     return this.refreshPanel();
-  },
+  }
 
   
 
@@ -492,7 +494,7 @@ CssComputedView.prototype = {
       type,
       value,
     };
-  },
+  }
 
   _createPropertyViews() {
     if (this._createViewsPromise) {
@@ -534,7 +536,7 @@ CssComputedView.prototype = {
     this._createViewsProcess.schedule();
 
     return this._createViewsPromise;
-  },
+  }
 
   isPanelVisible() {
     return (
@@ -543,7 +545,7 @@ CssComputedView.prototype = {
       this.inspector.toolbox.currentToolId === "inspector" &&
       this.inspector.sidebar.getCurrentTabID() == "computedview"
     );
-  },
+  }
 
   
 
@@ -697,7 +699,7 @@ CssComputedView.prototype = {
     } catch (e) {
       console.error(e);
     }
-  },
+  }
 
   
 
@@ -719,7 +721,7 @@ CssComputedView.prototype = {
       this.searchField.focus();
       event.preventDefault();
     }
-  },
+  }
 
   
 
@@ -730,7 +732,7 @@ CssComputedView.prototype = {
     this.searchField.value = value;
     this.searchField.focus();
     this._onFilterStyles();
-  },
+  }
 
   
 
@@ -749,7 +751,7 @@ CssComputedView.prototype = {
       this.refreshPanel();
       this._filterChangeTimeout = null;
     }, filterTimeout);
-  },
+  }
 
   
 
@@ -762,7 +764,7 @@ CssComputedView.prototype = {
     }
 
     return false;
-  },
+  }
 
   
 
@@ -770,7 +772,7 @@ CssComputedView.prototype = {
   _onIncludeBrowserStyles() {
     this.refreshSourceFilter();
     this.refreshPanel();
-  },
+  }
 
   
 
@@ -783,7 +785,7 @@ CssComputedView.prototype = {
     this._sourceFilter = this.includeBrowserStyles
       ? CssLogic.FILTER.UA
       : CssLogic.FILTER.USER;
-  },
+  }
 
   
 
@@ -829,7 +831,7 @@ CssComputedView.prototype = {
         console.error(e);
       }
     });
-  },
+  }
 
   
 
@@ -838,14 +840,14 @@ CssComputedView.prototype = {
 
   get matchedProperties() {
     return this._matchedProperties || new Set();
-  },
+  }
 
   
 
 
   focusWindow() {
     this.styleWindow.focus();
-  },
+  }
 
   
 
@@ -856,7 +858,7 @@ CssComputedView.prototype = {
     event.stopPropagation();
     event.preventDefault();
     this.contextMenu.show(event);
-  },
+  }
 
   _onClick(event) {
     const target = event.target;
@@ -866,7 +868,7 @@ CssComputedView.prototype = {
       event.preventDefault();
       openContentLink(target.href);
     }
-  },
+  }
 
   
 
@@ -881,7 +883,7 @@ CssComputedView.prototype = {
       this.copySelection();
       event.preventDefault();
     }
-  },
+  }
 
   
 
@@ -895,7 +897,7 @@ CssComputedView.prototype = {
     } catch (e) {
       console.error(e);
     }
-  },
+  }
 
   
 
@@ -964,22 +966,28 @@ CssComputedView.prototype = {
     this.styleWindow = null;
 
     this._isDestroyed = true;
-  },
-};
-
-function PropertyInfo(tree, name) {
-  this.tree = tree;
-  this.name = name;
+  }
 }
 
-PropertyInfo.prototype = {
+class PropertyInfo {
+  
+
+
+
+
+
+  constructor(tree, name) {
+    this.tree = tree;
+    this.name = name;
+  }
+
   get isSupported() {
     
     
     
     
     return this.tree._computed && this.name in this.tree._computed;
-  },
+  }
 
   get value() {
     if (this.isSupported) {
@@ -987,8 +995,8 @@ PropertyInfo.prototype = {
       return value;
     }
     return null;
-  },
-};
+  }
+}
 
 
 
@@ -1495,57 +1503,59 @@ class PropertyView {
 
 
 
-
-
-
-
-function SelectorView(tree, selectorInfo) {
-  this.tree = tree;
-  this.selectorInfo = selectorInfo;
-  this._cacheStatusNames();
-
-  this.openStyleEditor = this.openStyleEditor.bind(this);
-  this._updateLocation = this._updateLocation.bind(this);
-
-  const rule = this.selectorInfo.rule;
-  if (!rule || !rule.parentStyleSheet || rule.type == ELEMENT_STYLE) {
-    this.source = CssLogic.l10n("rule.sourceElement");
-    this.longSource = this.source;
-  } else {
-    
-    const sheet = rule.parentStyleSheet;
-    const sourceSuffix = rule.line > 0 ? ":" + rule.line : "";
-    this.source = CssLogic.shortSource(sheet) + sourceSuffix;
-    this.longSource = CssLogic.longSource(sheet) + sourceSuffix;
-
-    this.generatedLocation = {
-      sheet,
-      href: sheet.href || sheet.nodeHref,
-      line: rule.line,
-      column: rule.column,
-    };
-    this.sourceMapURLService = this.tree.inspector.toolbox.sourceMapURLService;
-    this._unsubscribeCallback = this.sourceMapURLService.subscribeByID(
-      this.generatedLocation.sheet.resourceId,
-      this.generatedLocation.line,
-      this.generatedLocation.column,
-      this._updateLocation
-    );
-  }
-}
-
-
-
-
-
-
-SelectorView.STATUS_NAMES = [
+class SelectorView {
   
-];
 
-SelectorView.CLASS_NAMES = ["parentmatch", "matched", "bestmatch"];
 
-SelectorView.prototype = {
+
+
+  constructor(tree, selectorInfo) {
+    this.tree = tree;
+    this.selectorInfo = selectorInfo;
+    this._cacheStatusNames();
+
+    this.openStyleEditor = this.openStyleEditor.bind(this);
+    this._updateLocation = this._updateLocation.bind(this);
+
+    const rule = this.selectorInfo.rule;
+    if (!rule || !rule.parentStyleSheet || rule.type == ELEMENT_STYLE) {
+      this.source = CssLogic.l10n("rule.sourceElement");
+      this.longSource = this.source;
+    } else {
+      
+      const sheet = rule.parentStyleSheet;
+      const sourceSuffix = rule.line > 0 ? ":" + rule.line : "";
+      this.source = CssLogic.shortSource(sheet) + sourceSuffix;
+      this.longSource = CssLogic.longSource(sheet) + sourceSuffix;
+
+      this.generatedLocation = {
+        sheet,
+        href: sheet.href || sheet.nodeHref,
+        line: rule.line,
+        column: rule.column,
+      };
+      this.sourceMapURLService =
+        this.tree.inspector.toolbox.sourceMapURLService;
+      this._unsubscribeCallback = this.sourceMapURLService.subscribeByID(
+        this.generatedLocation.sheet.resourceId,
+        this.generatedLocation.line,
+        this.generatedLocation.column,
+        this._updateLocation
+      );
+    }
+  }
+
+  
+
+
+
+
+  static STATUS_NAMES = [
+    
+  ];
+
+  static CLASS_NAMES = ["parentmatch", "matched", "bestmatch"];
+
   
 
 
@@ -1566,21 +1576,21 @@ SelectorView.prototype = {
         SelectorView.STATUS_NAMES[i] = value.replace(/ /g, "\u00A0");
       }
     }
-  },
+  }
 
   
 
 
   get statusText() {
     return SelectorView.STATUS_NAMES[this.selectorInfo.status];
-  },
+  }
 
   
 
 
   get statusClass() {
     return SelectorView.CLASS_NAMES[this.selectorInfo.status - 1];
-  },
+  }
 
   get href() {
     if (this._href) {
@@ -1589,15 +1599,15 @@ SelectorView.prototype = {
     const sheet = this.selectorInfo.rule.parentStyleSheet;
     this._href = sheet ? sheet.href : "#";
     return this._href;
-  },
+  }
 
   get sourceText() {
     return this.selectorInfo.sourceText;
-  },
+  }
 
   get value() {
     return this.selectorInfo.value;
-  },
+  }
 
   get outputFragment() {
     
@@ -1617,7 +1627,7 @@ SelectorView.prototype = {
       }
     );
     return frag;
-  },
+  }
 
   
 
@@ -1649,7 +1659,7 @@ SelectorView.prototype = {
     }
 
     this.tree.inspector.emit("computed-view-sourcelinks-updated");
-  },
+  }
 
   
 
@@ -1678,7 +1688,7 @@ SelectorView.prototype = {
     if (ToolDefinitions.styleEditor.isToolSupported(inspector.toolbox)) {
       inspector.toolbox.viewSourceInStyleEditorByResource(sheet, line, column);
     }
-  },
+  }
 
   
 
@@ -1687,42 +1697,46 @@ SelectorView.prototype = {
     if (this._unsubscribeCallback) {
       this._unsubscribeCallback();
     }
-  },
-};
-
-function ComputedViewTool(inspector, window) {
-  this.inspector = inspector;
-  this.document = window.document;
-
-  this.computedView = new CssComputedView(this.inspector, this.document);
-
-  this.onDetachedFront = this.onDetachedFront.bind(this);
-  this.onSelected = this.onSelected.bind(this);
-  this.refresh = this.refresh.bind(this);
-  this.onPanelSelected = this.onPanelSelected.bind(this);
-
-  this.inspector.selection.on("detached-front", this.onDetachedFront);
-  this.inspector.selection.on("new-node-front", this.onSelected);
-  this.inspector.selection.on("pseudoclass", this.refresh);
-  this.inspector.sidebar.on("computedview-selected", this.onPanelSelected);
-  this.inspector.styleChangeTracker.on("style-changed", this.refresh);
-
-  this.computedView.selectElement(null);
-
-  this.onSelected();
+  }
 }
 
-ComputedViewTool.prototype = {
+class ComputedViewTool {
+  
+
+
+
+  constructor(inspector, window) {
+    this.inspector = inspector;
+    this.document = window.document;
+
+    this.computedView = new CssComputedView(this.inspector, this.document);
+
+    this.onDetachedFront = this.onDetachedFront.bind(this);
+    this.onSelected = this.onSelected.bind(this);
+    this.refresh = this.refresh.bind(this);
+    this.onPanelSelected = this.onPanelSelected.bind(this);
+
+    this.inspector.selection.on("detached-front", this.onDetachedFront);
+    this.inspector.selection.on("new-node-front", this.onSelected);
+    this.inspector.selection.on("pseudoclass", this.refresh);
+    this.inspector.sidebar.on("computedview-selected", this.onPanelSelected);
+    this.inspector.styleChangeTracker.on("style-changed", this.refresh);
+
+    this.computedView.selectElement(null);
+
+    this.onSelected();
+  }
+
   isPanelVisible() {
     if (!this.computedView) {
       return false;
     }
     return this.computedView.isPanelVisible();
-  },
+  }
 
   onDetachedFront() {
     this.onSelected(false);
-  },
+  }
 
   async onSelected(selectElement = true) {
     
@@ -1752,13 +1766,13 @@ ComputedViewTool.prototype = {
       await this.computedView.selectElement(this.inspector.selection.nodeFront);
       done();
     }
-  },
+  }
 
   refresh() {
     if (this.isPanelVisible()) {
       this.computedView.refreshPanel();
     }
-  },
+  }
 
   onPanelSelected() {
     if (
@@ -1768,7 +1782,7 @@ ComputedViewTool.prototype = {
     } else {
       this.onSelected();
     }
-  },
+  }
 
   destroy() {
     this.inspector.styleChangeTracker.off("style-changed", this.refresh);
@@ -1781,8 +1795,8 @@ ComputedViewTool.prototype = {
     this.computedView.destroy();
 
     this.computedView = this.document = this.inspector = null;
-  },
-};
+  }
+}
 
 exports.CssComputedView = CssComputedView;
 exports.ComputedViewTool = ComputedViewTool;
