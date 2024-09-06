@@ -3,7 +3,7 @@
 
 
 
-use crate::Result;
+use crate::{Error, Result};
 use remote_settings::RemoteSettingsResponse;
 use serde::Deserialize;
 
@@ -57,4 +57,24 @@ pub struct CategoryToDomains {
 #[derive(Clone, Debug, Deserialize)]
 pub struct RelevancyAttachmentData {
     pub domain: String,
+}
+
+
+pub fn from_json<T: serde::de::DeserializeOwned>(value: serde_json::Value) -> Result<T> {
+    serde_path_to_error::deserialize(value).map_err(|e| Error::RemoteSettingsParseError {
+        type_name: std::any::type_name::<T>().to_owned(),
+        path: e.path().to_string(),
+        error: e.into_inner(),
+    })
+}
+
+
+pub fn from_json_slice<T: serde::de::DeserializeOwned>(value: &[u8]) -> Result<T> {
+    let json_value =
+        serde_json::from_slice(value).map_err(|e| Error::RemoteSettingsParseError {
+            type_name: std::any::type_name::<T>().to_owned(),
+            path: "<while parsing JSON>".to_owned(),
+            error: e,
+        })?;
+    from_json(json_value)
 }

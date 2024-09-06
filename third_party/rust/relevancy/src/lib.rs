@@ -44,6 +44,13 @@ impl RelevancyStore {
     }
 
     
+    #[handle_error(Error)]
+    pub fn ensure_interest_data_populated(&self) -> ApiResult<()> {
+        ingest::ensure_interest_data_populated(&self.db)?;
+        Ok(())
+    }
+
+    
     
     
     
@@ -66,6 +73,7 @@ impl RelevancyStore {
         let mut interest_vector = InterestVector::default();
         for url in top_urls_by_frecency {
             let interest_count = self.db.read(|dao| dao.get_url_interest_vector(&url))?;
+            log::trace!("classified: {url} {}", interest_count.summary());
             interest_vector = interest_vector + interest_count;
         }
 
