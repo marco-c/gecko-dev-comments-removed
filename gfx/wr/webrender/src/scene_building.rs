@@ -3795,6 +3795,9 @@ impl<'a> SceneBuilder<'a> {
         
         let mut current_filter_data_index = 0;
         
+        
+        
+        
         if let Some(Filter::SVGGraphNode(..)) = filter_ops.first() {
             
             
@@ -3808,9 +3811,6 @@ impl<'a> SceneBuilder<'a> {
             
             
             const SVGFE_INFLATE: i16 = 1;
-            
-            
-            const SVGFE_INFLATE_OUTPUT: i16 = 0;
 
             
             
@@ -3846,14 +3846,14 @@ impl<'a> SceneBuilder<'a> {
             let mut filters: Vec<(FilterGraphNode, FilterGraphOp)> = Vec::new();
             filters.reserve(BUFFER_LIMIT);
             for (original_id, parsefilter) in filter_ops.iter().enumerate() {
-                match parsefilter {
-                    Filter::SVGGraphNode(parsenode, op) => {
-                        if filters.len() >= BUFFER_LIMIT {
-                            
-                            
-                            return source;
-                        }
+                if filters.len() >= BUFFER_LIMIT {
+                    
+                    
+                    return source;
+                }
 
+                let newfilter = match parsefilter {
+                    Filter::SVGGraphNode(parsenode, op) => {
                         
                         
                         
@@ -3923,7 +3923,7 @@ impl<'a> SceneBuilder<'a> {
                             FilterGraphOp::SVGFETurbulenceWithTurbulenceNoiseWithNoStitching{..} |
                             FilterGraphOp::SVGFETurbulenceWithTurbulenceNoiseWithStitching{..} => {
                                 assert!(remapped_inputs.len() == 0);
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode.clone(), op.clone())
                             }
                             FilterGraphOp::SVGFEColorMatrix{..} |
                             FilterGraphOp::SVGFEIdentity |
@@ -3932,7 +3932,7 @@ impl<'a> SceneBuilder<'a> {
                             FilterGraphOp::SVGFEToAlpha => {
                                 assert!(remapped_inputs.len() == 1);
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode.clone(), op.clone())
                             }
                             FilterGraphOp::SVGFEComponentTransfer => {
                                 assert!(remapped_inputs.len() == 1);
@@ -3977,7 +3977,7 @@ impl<'a> SceneBuilder<'a> {
                                     .intern(&filter_data_key, || ());
 
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), FilterGraphOp::SVGFEComponentTransferInterned{handle, creates_pixels}));
+                                (newnode.clone(), FilterGraphOp::SVGFEComponentTransferInterned{handle, creates_pixels})
                             }
                             FilterGraphOp::SVGFEComponentTransferInterned{..} => unreachable!(),
                             FilterGraphOp::SVGFETile => {
@@ -3988,7 +3988,7 @@ impl<'a> SceneBuilder<'a> {
                                 remapped_inputs[0].target_padding =
                                     LayoutRect::max_rect();
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode.clone(), op.clone())
                             }
                             FilterGraphOp::SVGFEConvolveMatrixEdgeModeDuplicate{kernel_unit_length_x, kernel_unit_length_y, ..} |
                             FilterGraphOp::SVGFEConvolveMatrixEdgeModeNone{kernel_unit_length_x, kernel_unit_length_y, ..} |
@@ -4010,7 +4010,7 @@ impl<'a> SceneBuilder<'a> {
                                     remapped_inputs[0].target_padding
                                     .inflate(padding.width, padding.height);
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode.clone(), op.clone())
                             },
                             FilterGraphOp::SVGFEDiffuseLightingDistant{kernel_unit_length_x, kernel_unit_length_y, ..} |
                             FilterGraphOp::SVGFEDiffuseLightingPoint{kernel_unit_length_x, kernel_unit_length_y, ..} |
@@ -4035,7 +4035,7 @@ impl<'a> SceneBuilder<'a> {
                                     remapped_inputs[0].target_padding
                                     .inflate(padding.width, padding.height);
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode.clone(), op.clone())
                             },
                             FilterGraphOp::SVGFEDisplacementMap { scale, .. } => {
                                 assert!(remapped_inputs.len() == 2);
@@ -4060,7 +4060,7 @@ impl<'a> SceneBuilder<'a> {
                                     remapped_inputs[1].target_padding
                                     .inflate(padding.width, padding.height);
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode.clone(), op.clone())
                             },
                             FilterGraphOp::SVGFEDropShadow{ dx, dy, std_deviation_x, std_deviation_y, .. } => {
                                 assert!(remapped_inputs.len() == 1);
@@ -4090,7 +4090,7 @@ impl<'a> SceneBuilder<'a> {
                                             )
                                     );
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode.clone(), op.clone())
                             },
                             FilterGraphOp::SVGFEGaussianBlur{std_deviation_x, std_deviation_y} => {
                                 assert!(remapped_inputs.len() == 1);
@@ -4107,7 +4107,7 @@ impl<'a> SceneBuilder<'a> {
                                     remapped_inputs[0].target_padding
                                     .inflate(padding.width, padding.height);
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode.clone(), op.clone())
                             }
                             FilterGraphOp::SVGFEBlendColor |
                             FilterGraphOp::SVGFEBlendColorBurn |
@@ -4134,62 +4134,59 @@ impl<'a> SceneBuilder<'a> {
                             FilterGraphOp::SVGFECompositeXOR => {
                                 assert!(remapped_inputs.len() == 2);
                                 newnode.inputs = remapped_inputs;
-                                filters.push((newnode.clone(), op.clone()));
+                                (newnode, op.clone())
                             }
                         }
-
+                    }
+                    Filter::Opacity(valuebinding, value) => {
                         
                         
-                        let id = (filters.len() - 1) as i16;
-                        if let Some(pic) = reference_for_buffer_id.get_mut(original_id as usize) {
-                            *pic = FilterGraphPictureReference {
-                                buffer_id: FilterOpGraphPictureBufferId::BufferId(id),
-                                subregion: newnode.subregion,
-                                offset: LayoutVector2D::zero(),
-                                inflate: newnode.inflate,
-                                source_padding: LayoutRect::zero(),
-                                target_padding: LayoutRect::zero(),
-                            };
-                        }
+                        
+                        
+                        
+                        let pic = reference_for_buffer_id[original_id as usize - 1];
+                        (
+                            FilterGraphNode {
+                                kept_by_optimizer: false,
+                                linear: false,
+                                inflate: SVGFE_INFLATE,
+                                inputs: [pic].to_vec(),
+                                subregion: pic.subregion,
+                            },
+                            FilterGraphOp::SVGFEOpacity{
+                                valuebinding: *valuebinding,
+                                value: *value,
+                            },
+                        )
                     }
                     _ => {
-                        panic!("wrap_prim_with_filters: Mixed SVG and CSS filters?")
+                        log!(Level::Warn, "wrap_prim_with_filters: unexpected filter after SVG filters filter[{:?}]={:?}", original_id, parsefilter);
+                        
+                        
+                        
+                        return source;
                     }
-                }
+                };
+                let id = filters.len();
+                filters.push(newfilter);
+
+                
+                
+                reference_for_buffer_id[original_id] = FilterGraphPictureReference {
+                    buffer_id: FilterOpGraphPictureBufferId::BufferId(id as i16),
+                    subregion: filters[id].0.subregion,
+                    offset: LayoutVector2D::zero(),
+                    inflate: filters[id].0.inflate,
+                    source_padding: LayoutRect::zero(),
+                    target_padding: LayoutRect::zero(),
+                };
             }
 
-            
-            
-            
-            
             if filters.len() >= BUFFER_LIMIT {
+                
                 
                 return source;
             }
-            let mut outputnode = FilterGraphNode {
-                kept_by_optimizer: true,
-                linear: false,
-                inflate: SVGFE_INFLATE_OUTPUT,
-                inputs: Vec::new(),
-                subregion: LayoutRect::max_rect(),
-            };
-            outputnode.inputs.push(reference_for_buffer_id[filter_ops.len() - 1]);
-            filters.push((
-                outputnode,
-                FilterGraphOp::SVGFEIdentity,
-            ));
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
 
             
             

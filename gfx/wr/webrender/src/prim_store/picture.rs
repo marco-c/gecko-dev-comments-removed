@@ -797,9 +797,6 @@ pub struct FilterGraphNodeKey {
     pub linear: bool,
     
     
-    pub inflate: i16,
-    
-    
     pub inputs: Vec<FilterGraphPictureReferenceKey>,
     
     
@@ -811,7 +808,6 @@ impl From<FilterGraphNode> for FilterGraphNodeKey {
         FilterGraphNodeKey{
             kept_by_optimizer: node.kept_by_optimizer,
             linear: node.linear,
-            inflate: node.inflate,
             inputs: node.inputs.into_iter().map(|node| {node.into()}).collect(),
             subregion: [
                 Au::from_f32_px(node.subregion.min.x),

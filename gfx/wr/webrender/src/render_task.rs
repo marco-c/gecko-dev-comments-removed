@@ -1640,7 +1640,7 @@ impl RenderTask {
         data_stores: &mut DataStores,
         uv_rect_kind: UvRectKind,
         original_task_id: RenderTaskId,
-        _surface_rects_task_size: DeviceIntSize,
+        surface_rects_task_size: DeviceIntSize,
         surface_rects_clipped: DeviceRect,
         surface_rects_clipped_local: PictureRect,
     ) -> RenderTaskId {
@@ -2257,12 +2257,19 @@ impl RenderTask {
             }
 
             
-            
-            
-            let node_subregion = match is_output {
-                true => output_subregion,
-                false => used_subregion,
-            };
+            let node_inflate = node.inflate;
+            let mut create_output_task = false;
+            if is_output {
+                
+                
+                if used_subregion.to_i32().contains_box(&output_rect) {
+                    used_subregion = output_subregion;
+                } else {
+                    
+                    
+                    create_output_task = true;
+                }
+            }
 
             
             
@@ -2271,24 +2278,7 @@ impl RenderTask {
             
             
             
-            
-            
-            
-            let node_task_rect =
-                match is_output {
-                    true => output_rect,
-                    false => node_subregion.to_i32(),
-                };
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            let node_task_rect: DeviceIntRect = used_subregion.to_i32().cast_unit();
             let mut node_task_size = node_task_rect.size().cast_unit();
 
             
@@ -2300,22 +2290,31 @@ impl RenderTask {
             
             
             
-            while node_task_size.width as usize + node.inflate as usize * 2 > MAX_SURFACE_SIZE ||
-                node_task_size.height as usize + node.inflate as usize * 2 > MAX_SURFACE_SIZE {
+            while node_task_size.width as usize + node_inflate as usize * 2 > MAX_SURFACE_SIZE ||
+                node_task_size.height as usize + node_inflate as usize * 2 > MAX_SURFACE_SIZE {
                 node_task_size.width >>= 1;
                 node_task_size.height >>= 1;
             }
+
             
-            node_task_size.width += node.inflate as i32 * 2;
-            node_task_size.height += node.inflate as i32 * 2;
+            
+            
+            
+            
+            
+            
+            
+            
+            node_task_size.width += node_inflate as i32 * 2;
+            node_task_size.height += node_inflate as i32 * 2;
 
             
             
             let node_uv_rect_kind =
-                uv_rect_kind_for_task_size(node_task_size, node.inflate);
+                uv_rect_kind_for_task_size(node_task_size, node_inflate);
 
             
-            let task_id;
+            let mut task_id;
             match op {
                 FilterGraphOp::SVGFEGaussianBlur { std_deviation_x, std_deviation_y } => {
                     
@@ -2430,7 +2429,7 @@ impl RenderTask {
                                 node: FilterGraphNode{
                                     kept_by_optimizer: true,
                                     linear: node.linear,
-                                    inflate: node.inflate,
+                                    inflate: node_inflate,
                                     inputs: [
                                         FilterGraphPictureReference{
                                             buffer_id: blur_input.buffer_id,
@@ -2440,7 +2439,7 @@ impl RenderTask {
                                             source_padding: LayoutRect::zero(),
                                             target_padding: LayoutRect::zero(),
                                         }].to_vec(),
-                                    subregion: node_subregion,
+                                    subregion: used_subregion,
                                 },
                                 op: FilterGraphOp::SVGFEIdentity,
                                 content_origin: DevicePoint::zero(),
@@ -2575,7 +2574,7 @@ impl RenderTask {
                                 node: FilterGraphNode{
                                     kept_by_optimizer: true,
                                     linear: node.linear,
-                                    inflate: node.inflate,
+                                    inflate: node_inflate,
                                     inputs: [
                                         
                                         *blur_input,
@@ -2588,7 +2587,7 @@ impl RenderTask {
                                             source_padding: LayoutRect::zero(),
                                             target_padding: LayoutRect::zero(),
                                         }].to_vec(),
-                                    subregion: node_subregion,
+                                    subregion: used_subregion,
                                 },
                                 op: FilterGraphOp::SVGFEDropShadow{
                                     color,
@@ -2618,7 +2617,7 @@ impl RenderTask {
                                 node: FilterGraphNode{
                                     kept_by_optimizer: true,
                                     linear: node.linear,
-                                    inflate: node.inflate,
+                                    inflate: node_inflate,
                                     inputs: [
                                         FilterGraphPictureReference{
                                             buffer_id: FilterOpGraphPictureBufferId::None,
@@ -2635,7 +2634,7 @@ impl RenderTask {
                                             target_padding: LayoutRect::zero(),
                                         }
                                     ].to_vec(),
-                                    subregion: node_subregion,
+                                    subregion: used_subregion,
                                 },
                                 op: op.clone(),
                                 content_origin: DevicePoint::zero(),
@@ -2661,8 +2660,8 @@ impl RenderTask {
                                     kept_by_optimizer: true,
                                     linear: node.linear,
                                     inputs: node_inputs.iter().map(|input| {input.0}).collect(),
-                                    subregion: node_subregion,
-                                    inflate: node.inflate,
+                                    subregion: used_subregion,
+                                    inflate: node_inflate,
                                 },
                                 op: op.clone(),
                                 content_origin: DevicePoint::zero(),
@@ -2693,8 +2692,8 @@ impl RenderTask {
                                     kept_by_optimizer: true,
                                     linear: node.linear,
                                     inputs: node_inputs.iter().map(|input| {input.0}).collect(),
-                                    subregion: node_subregion,
-                                    inflate: node.inflate,
+                                    subregion: used_subregion,
+                                    inflate: node_inflate,
                                 },
                                 op: op.clone(),
                                 content_origin: DevicePoint::zero(),
@@ -2720,9 +2719,44 @@ impl RenderTask {
             
             
             task_by_buffer_id[filter_index] = task_id;
-            subregion_by_buffer_id[filter_index] = node_subregion;
+            subregion_by_buffer_id[filter_index] = used_subregion;
 
-            if is_output {
+            
+            output_task_id = task_id;
+            if create_output_task {
+                
+                
+                
+                
+                
+                
+                let output_uv_rect_kind =
+                    uv_rect_kind_for_task_size(surface_rects_task_size, 0);
+                task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
+                    surface_rects_task_size,
+                    RenderTaskKind::SVGFENode(
+                        SVGFEFilterTask{
+                            node: FilterGraphNode{
+                                kept_by_optimizer: true,
+                                linear: false,
+                                inputs: [FilterGraphPictureReference{
+                                    buffer_id: FilterOpGraphPictureBufferId::None,
+                                    subregion: used_subregion,
+                                    offset: LayoutVector2D::zero(),
+                                    inflate: node_inflate,
+                                    source_padding: LayoutRect::zero(),
+                                    target_padding: LayoutRect::zero(),
+                                }].to_vec(),
+                                subregion: output_subregion,
+                                inflate: 0,
+                            },
+                            op: FilterGraphOp::SVGFEIdentity,
+                            content_origin: surface_rects_clipped.min,
+                            extra_gpu_cache_handle: None,
+                        }
+                    ),
+                ).with_uv_rect_kind(output_uv_rect_kind));
+                frame_state.rg_builder.add_dependency(task_id, output_task_id);
                 output_task_id = task_id;
             }
         }
