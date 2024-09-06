@@ -25,7 +25,6 @@ NIMBUS_FALLBACK_PREFS = (
 
 ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
     "aboutwelcome",
-    "gleanInternalSdk",
     "majorRelease2022",
     "newtab",
     "pocketNewtab",
