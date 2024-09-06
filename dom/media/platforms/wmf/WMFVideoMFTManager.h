@@ -126,6 +126,9 @@ class WMFVideoMFTManager : public MFTManager {
 
   PerformanceRecorderMulti<DecodeStage> mPerformanceRecorder;
   const Maybe<TrackingId> mTrackingId;
+  
+  
+  nsTArray<int64_t> mPTSQueue;
 };
 
 }  
