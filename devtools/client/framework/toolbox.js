@@ -282,7 +282,7 @@ function Toolbox(commands, selectedTool, hostType, contentWindow, frameId) {
   this.selectedFrameId = null;
 
   
-  this._pausedTargets = 0;
+  this._pausedTargets = new Set();
 
   
 
@@ -686,9 +686,9 @@ Toolbox.prototype = {
 
   _onThreadStateChanged(resource) {
     if (resource.state == "paused") {
-      this._pauseToolbox(resource.why.type);
+      this._onTargetPaused(resource.targetFront, resource.why.type);
     } else if (resource.state == "resumed") {
-      this._resumeToolbox();
+      this._onTargetResumed(resource.targetFront);
     }
   },
 
@@ -719,7 +719,13 @@ Toolbox.prototype = {
 
 
 
-  _pauseToolbox(reason) {
+
+
+
+
+
+
+  _onTargetPaused(targetFront, reason) {
     
     
     if (reason === "interrupted") {
@@ -743,15 +749,20 @@ Toolbox.prototype = {
       
       
       
-      this._pausedTargets++;
+      this._pausedTargets.add(targetFront);
       this.emit("toolbox-paused");
     }
   },
 
-  _resumeToolbox() {
+  
+
+
+
+
+  _onTargetResumed(targetFront) {
     if (this.isHighlighted("jsdebugger")) {
-      this._pausedTargets--;
-      if (this._pausedTargets == 0) {
+      this._pausedTargets.delete(targetFront);
+      if (this._pausedTargets.size == 0) {
         this.emit("toolbox-resumed");
         this.unhighlightTool("jsdebugger");
       }
@@ -843,8 +854,8 @@ Toolbox.prototype = {
     
     
     
-    if (targetFront.isTopLevel || targetFront.threadFront?.paused) {
-      this._resumeToolbox();
+    if (targetFront.isTopLevel || this._pausedTargets.has(targetFront)) {
+      this._onTargetResumed(targetFront);
     }
 
     if (targetFront.targetForm.ignoreSubFrames) {
@@ -3214,9 +3225,9 @@ Toolbox.prototype = {
     
     
     
-    if (this._pausedTargets > 0) {
+    if (this._pausedTargets.size > 0) {
       this.emit("toolbox-resumed");
-      this._pausedTargets = 0;
+      this._pausedTargets.clear();
       if (this.isHighlighted("jsdebugger")) {
         this.unhighlightTool("jsdebugger");
       }
