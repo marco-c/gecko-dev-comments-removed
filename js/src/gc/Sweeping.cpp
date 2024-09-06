@@ -2347,7 +2347,26 @@ bool GCRuntime::initSweepActions() {
   return sweepActions != nullptr;
 }
 
+void GCRuntime::prepareForSweepSlice(JS::GCReason reason) {
+  
+  
+  
+  
+  
+
+  
+  if (storeBuffer().mayHavePointersToDeadCells()) {
+    collectNurseryFromMajorGC(reason);
+  }
+
+  
+  
+  rt->mainContextFromOwnThread()->traceWrapperGCRooters(marker().tracer());
+}
+
 IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
+  MOZ_ASSERT(!storeBuffer().mayHavePointersToDeadCells());
+
   AutoMajorGCProfilerEntry s(this);
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP);
 
@@ -2365,20 +2384,13 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
   
   
 
-#ifdef DEBUG
   MOZ_ASSERT(initialState <= State::Sweep);
-  if (initialState != State::Sweep) {
-    assertNoMarkingWork();
-  }
-#endif
+  bool startOfSweeping = initialState < State::Sweep;
 
-  if (initialState == State::Sweep) {
-    if (markDuringSweeping(gcx, budget) == NotFinished) {
-      return NotFinished;
-    }
+  if (startOfSweeping) {
+    assertNoMarkingWork();
   } else {
-    budget.forceCheck();
-    if (budget.isOverBudget()) {
+    if (markDuringSweeping(gcx, budget) == NotFinished) {
       return NotFinished;
     }
   }

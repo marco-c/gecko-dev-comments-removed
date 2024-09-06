@@ -3819,10 +3819,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
 
     case State::Mark:
       if (mightSweepInThisSlice(budget.isUnlimited())) {
-        
-        
-        rt->mainContextFromOwnThread()->traceWrapperGCRooters(
-            marker().tracer());
+        prepareForSweepSlice(reason);
 
         
         
@@ -3879,13 +3876,8 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       [[fallthrough]];
 
     case State::Sweep:
-      if (storeBuffer().mayHavePointersToDeadCells()) {
-        collectNurseryFromMajorGC(reason);
-      }
-
       if (initialState == State::Sweep) {
-        rt->mainContextFromOwnThread()->traceWrapperGCRooters(
-            marker().tracer());
+        prepareForSweepSlice(reason);
       }
 
       if (performSweepActions(budget) == NotFinished) {
