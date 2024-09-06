@@ -2198,6 +2198,75 @@ void nsRefreshDriver::FlushAutoFocusDocuments() {
   }
 }
 
+void nsRefreshDriver::DispatchResizeEvents() {
+  AutoTArray<RefPtr<PresShell>, 16> observers;
+  observers.AppendElements(mResizeEventFlushObservers);
+  for (RefPtr<PresShell>& presShell : Reversed(observers)) {
+    if (!mPresContext || !mPresContext->GetPresShell()) {
+      return StopTimer();
+    }
+    
+    
+    if (!mResizeEventFlushObservers.RemoveElement(presShell)) {
+      continue;
+    }
+    
+    
+    
+    
+    
+    
+    MOZ_KnownLive(presShell)->FireResizeEvent();
+  }
+}
+
+void nsRefreshDriver::FlushLayoutOnPendingDocsAndFixUpFocus() {
+  AutoTArray<PresShell*, 16> observers;
+  observers.AppendElements(mStyleFlushObservers);
+  for (uint32_t j = observers.Length();
+       j && mPresContext && mPresContext->GetPresShell(); --j) {
+    
+    
+    PresShell* rawPresShell = observers[j - 1];
+    if (!mStyleFlushObservers.RemoveElement(rawPresShell)) {
+      continue;
+    }
+
+    LogPresShellObserver::Run run(rawPresShell, this);
+
+    RefPtr<PresShell> presShell = rawPresShell;
+    presShell->mWasLastReflowInterrupted = false;
+    const ChangesToFlush ctf(FlushType::InterruptibleLayout, false);
+    presShell->FlushPendingNotifications(ctf);
+    const bool fixedUpFocus = presShell->FixUpFocus();
+    if (fixedUpFocus) {
+      presShell->FlushPendingNotifications(ctf);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    presShell->mObservingStyleFlushes = false;
+    if (NS_WARN_IF(presShell->NeedStyleFlush()) ||
+        NS_WARN_IF(presShell->NeedLayoutFlush()) ||
+        NS_WARN_IF(fixedUpFocus && presShell->NeedsFocusFixUp())) {
+      presShell->ObserveStyleFlushes();
+    }
+
+    
+    
+    presShell->NotifyFontFaceSetOnRefresh();
+    mNeedToRecomputeVisibility = true;
+
+    
+    presShell->PingPerTickTelemetry(FlushType::Layout);
+  }
+}
+
 void nsRefreshDriver::MaybeIncreaseMeasuredTicksSinceLoading() {
   if (mPresContext && mPresContext->IsRoot()) {
     mPresContext->MaybeIncreaseMeasuredTicksSinceLoading();
@@ -2438,6 +2507,7 @@ static CallState ReduceAnimations(Document& aDocument) {
 }
 
 bool nsRefreshDriver::TickObserverArray(uint32_t aIdx, TimeStamp aNowTime) {
+  MOZ_ASSERT(aIdx < ArrayLength(mObservers));
   for (RefPtr<nsARefreshObserver> obs : mObservers[aIdx].EndLimitedRange()) {
     obs->WillRefresh(aNowTime);
 
@@ -2445,95 +2515,6 @@ bool nsRefreshDriver::TickObserverArray(uint32_t aIdx, TimeStamp aNowTime) {
       return false;
     }
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aIdx == 1) {
-    
-    {
-      nsAutoMicroTask mt;
-      ReduceAnimations(*mPresContext->Document());
-    }
-
-    
-    
-    if (!mPresContext || !mPresContext->GetPresShell()) {
-      return false;
-    }
-
-    FlushAutoFocusDocuments();
-    DispatchScrollEvents();
-    DispatchVisualViewportScrollEvents();
-    DispatchScrollEndEvents();
-    EvaluateMediaQueriesAndReportChanges();
-    DispatchAnimationEvents();
-    RunFullscreenSteps();
-    RunFrameRequestCallbacks(aNowTime);
-    MaybeIncreaseMeasuredTicksSinceLoading();
-
-    if (!mPresContext || !mPresContext->GetPresShell()) {
-      return false;
-    }
-
-    AutoTArray<PresShell*, 16> observers;
-    observers.AppendElements(mStyleFlushObservers);
-    for (uint32_t j = observers.Length();
-         j && mPresContext && mPresContext->GetPresShell(); --j) {
-      
-      
-      PresShell* rawPresShell = observers[j - 1];
-      if (!mStyleFlushObservers.RemoveElement(rawPresShell)) {
-        continue;
-      }
-
-      LogPresShellObserver::Run run(rawPresShell, this);
-
-      RefPtr<PresShell> presShell = rawPresShell;
-      presShell->mWasLastReflowInterrupted = false;
-      const ChangesToFlush ctf(FlushType::InterruptibleLayout, false);
-      presShell->FlushPendingNotifications(ctf);
-      const bool fixedUpFocus = presShell->FixUpFocus();
-      if (fixedUpFocus) {
-        presShell->FlushPendingNotifications(ctf);
-      }
-      
-      
-      
-      
-      
-      
-      
-      
-      presShell->mObservingStyleFlushes = false;
-      if (NS_WARN_IF(presShell->NeedStyleFlush()) ||
-          NS_WARN_IF(presShell->NeedLayoutFlush()) ||
-          NS_WARN_IF(fixedUpFocus && presShell->NeedsFocusFixUp())) {
-        presShell->ObserveStyleFlushes();
-      }
-
-      
-      
-      presShell->NotifyFontFaceSetOnRefresh();
-      mNeedToRecomputeVisibility = true;
-
-      
-      presShell->PingPerTickTelemetry(FlushType::Layout);
-    }
-  }
-
-  
-  if (!mPresContext || !mPresContext->GetPresShell()) {
-    return false;
-  }
-
   return true;
 }
 
@@ -2673,55 +2654,99 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
     runner->Run();
     
     if (!mPresContext || !mPresContext->GetPresShell()) {
-      StopTimer();
-      return;
+      return StopTimer();
     }
   }
 
   
   
-  AutoTArray<RefPtr<PresShell>, 16> observers;
-  observers.AppendElements(mResizeEventFlushObservers);
-  for (RefPtr<PresShell>& presShell : Reversed(observers)) {
-    if (!mPresContext || !mPresContext->GetPresShell()) {
-      StopTimer();
-      return;
-    }
-    
-    
-    if (!mResizeEventFlushObservers.RemoveElement(presShell)) {
-      continue;
-    }
-    
-    
-    
-    
-    
-    
-    MOZ_KnownLive(presShell)->FireResizeEvent();
-  }
+  
+  
+  
+  DispatchResizeEvents();
   DispatchVisualViewportResizeEvents();
 
   
+  
+  
+  if (!TickObserverArray(0, aNowTime)) {
+    return StopTimer();
+  }
 
-
-
-
-
+  
+  if (!TickObserverArray(1, aNowTime)) {
+    return StopTimer();
+  }
 
   
   
   
-  bool keepGoing = true;
-  MOZ_ASSERT(ArrayLength(mObservers) == 3,
-             "if this changes, then we need to add or remove calls to "
-             "TickObserverArray below");
-  keepGoing = keepGoing && TickObserverArray(0, aNowTime);
-  keepGoing = keepGoing && TickObserverArray(1, aNowTime);
-  keepGoing = keepGoing && TickObserverArray(2, aNowTime);
-  if (!keepGoing) {
-    StopTimer();
-    return;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  {
+    nsAutoMicroTask mt;
+    ReduceAnimations(*mPresContext->Document());
+  }
+
+  
+  
+  if (!mPresContext || !mPresContext->GetPresShell()) {
+    return StopTimer();
+  }
+
+  
+  
+  FlushAutoFocusDocuments();
+
+  
+  DispatchScrollEvents();
+  DispatchVisualViewportScrollEvents();
+  DispatchScrollEndEvents();
+
+  
+  
+  EvaluateMediaQueriesAndReportChanges();
+
+  
+  DispatchAnimationEvents();
+
+  
+  RunFullscreenSteps();
+
+  
+  RunFrameRequestCallbacks(aNowTime);
+  MaybeIncreaseMeasuredTicksSinceLoading();
+
+  
+  
+  
+  
+  
+  
+  FlushLayoutOnPendingDocsAndFixUpFocus();
+
+  if (!mPresContext || !mPresContext->GetPresShell()) {
+    return StopTimer();
+  }
+
+  
+  
+  
+  
+  if (!TickObserverArray(2, aNowTime)) {
+    return StopTimer();
   }
 
   
@@ -2747,18 +2772,19 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   
   
   
+  
+  
+  
   UpdateRelevancyOfContentVisibilityAutoFrames();
 
   
-  
-  
   DetermineProximityToViewportAndNotifyResizeObservers();
   if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
-    
-    StopTimer();
-    return;
+    return StopTimer();
   }
 
+  
+  
   UpdateIntersectionObservations(aNowTime);
 
   UpdateAnimatedImages(previousRefresh, aNowTime);

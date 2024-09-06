@@ -122,6 +122,9 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void PostVisualViewportScrollEvent(VVPScrollEvent* aScrollEvent);
   void DispatchVisualViewportScrollEvents();
 
+  MOZ_CAN_RUN_SCRIPT void DispatchResizeEvents();
+  MOZ_CAN_RUN_SCRIPT void FlushLayoutOnPendingDocsAndFixUpFocus();
+
   
 
 
