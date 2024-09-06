@@ -41,11 +41,6 @@ use crate::error;
 
 
 
-
-
-
-
-
 pub trait Pread<Ctx: Copy, E> {
     #[inline]
     
@@ -172,7 +167,7 @@ impl<Ctx: Copy, E: From<error::Error>> Pread<Ctx, E> for [u8] {
         ctx: Ctx,
     ) -> result::Result<N, E> {
         let start = *offset;
-        if start > self.len() {
+        if start >= self.len() {
             return Err(error::Error::BadOffset(start).into());
         }
         N::try_from_ctx(&self[start..], ctx).map(|(n, size)| {

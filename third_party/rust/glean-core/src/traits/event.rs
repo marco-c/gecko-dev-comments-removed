@@ -3,6 +3,7 @@
 
 
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::hash::Hash;
 
 use crate::event_database::RecordedEvent;

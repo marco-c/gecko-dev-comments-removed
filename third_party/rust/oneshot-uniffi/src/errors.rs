@@ -7,7 +7,6 @@ use core::ptr::NonNull;
 
 
 
-
 pub struct SendError<T> {
     channel_ptr: NonNull<Channel<T>>,
 }
@@ -97,7 +96,6 @@ impl fmt::Display for RecvError {
 impl std::error::Error for RecvError {}
 
 
-
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TryRecvError {
     
@@ -120,7 +118,6 @@ impl fmt::Display for TryRecvError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for TryRecvError {}
-
 
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

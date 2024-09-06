@@ -174,7 +174,7 @@ pub unsafe extern "C" fn debug_log(target: *const c_char, message: *const c_char
 
 #[no_mangle]
 pub extern "C" fn uniffi_rustbuffer_alloc(
-    size: u64,
+    size: i32,
     call_status: &mut uniffi::RustCallStatus,
 ) -> uniffi::RustBuffer {
     uniffi::uniffi_rustbuffer_alloc(size, call_status)

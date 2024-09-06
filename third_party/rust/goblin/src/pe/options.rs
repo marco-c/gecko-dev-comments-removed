@@ -3,19 +3,11 @@
 pub struct ParseOptions {
     
     pub resolve_rva: bool,
-    
-    
-    
-    
-    pub parse_attribute_certificates: bool,
 }
 
 impl ParseOptions {
     
     pub fn default() -> Self {
-        ParseOptions {
-            resolve_rva: true,
-            parse_attribute_certificates: true,
-        }
+        ParseOptions { resolve_rva: true }
     }
 }

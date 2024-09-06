@@ -3,12 +3,7 @@
 
 
 
-use core::cmp::max;
-
-use alloc::borrow::Cow;
-use alloc::string::String;
 use alloc::vec::Vec;
-use log::warn;
 
 pub mod authenticode;
 pub mod certificate_table;
@@ -28,10 +23,7 @@ pub mod utils;
 
 use crate::container;
 use crate::error;
-use crate::pe::utils::pad;
 use crate::strtab;
-
-use scroll::{ctx, Pwrite};
 
 use log::debug;
 
@@ -148,7 +140,7 @@ impl<'a> PE<'a> {
                 entry, image_base, is_64
             );
             let file_alignment = optional_header.windows_fields.file_alignment;
-            if let Some(&export_table) = optional_header.data_directories.get_export_table() {
+            if let Some(export_table) = *optional_header.data_directories.get_export_table() {
                 if let Ok(ed) = export::ExportData::parse_with_opts(
                     bytes,
                     export_table,
@@ -170,7 +162,7 @@ impl<'a> PE<'a> {
                 }
             }
             debug!("exports: {:#?}", exports);
-            if let Some(&import_table) = optional_header.data_directories.get_import_table() {
+            if let Some(import_table) = *optional_header.data_directories.get_import_table() {
                 let id = if is_64 {
                     import::ImportData::parse_with_opts::<u64>(
                         bytes,
@@ -204,7 +196,7 @@ impl<'a> PE<'a> {
                 import_data = Some(id);
             }
             debug!("imports: {:#?}", imports);
-            if let Some(&debug_table) = optional_header.data_directories.get_debug_table() {
+            if let Some(debug_table) = *optional_header.data_directories.get_debug_table() {
                 debug_data = Some(debug::DebugData::parse_with_opts(
                     bytes,
                     debug_table,
@@ -217,8 +209,8 @@ impl<'a> PE<'a> {
             if header.coff_header.machine == header::COFF_MACHINE_X86_64 {
                 
                 debug!("exception data: {:#?}", exception_data);
-                if let Some(&exception_table) =
-                    optional_header.data_directories.get_exception_table()
+                if let Some(exception_table) =
+                    *optional_header.data_directories.get_exception_table()
                 {
                     exception_data = Some(exception::ExceptionData::parse_with_opts(
                         bytes,
@@ -230,30 +222,26 @@ impl<'a> PE<'a> {
                 }
             }
 
-            
-            let certificate_table_size = if opts.parse_attribute_certificates {
-                if let Some(&certificate_table) =
-                    optional_header.data_directories.get_certificate_table()
-                {
-                    certificates = certificate_table::enumerate_certificates(
-                        bytes,
-                        certificate_table.virtual_address,
-                        certificate_table.size,
-                    )?;
+            let certtable = if let Some(certificate_table) =
+                *optional_header.data_directories.get_certificate_table()
+            {
+                certificates = certificate_table::enumerate_certificates(
+                    bytes,
+                    certificate_table.virtual_address,
+                    certificate_table.size,
+                )?;
 
-                    certificate_table.size as usize
-                } else {
-                    0
-                }
+                let start = certificate_table.virtual_address as usize;
+                let end = start + certificate_table.size as usize;
+                Some(start..end)
             } else {
-                0
+                None
             };
 
             authenticode_excluded_sections = Some(authenticode::ExcludedSections::new(
                 checksum,
                 datadir_entry_certtable,
-                certificate_table_size,
-                optional_header.windows_fields.size_of_headers as usize,
+                certtable,
             ));
         }
         Ok(PE {
@@ -277,192 +265,6 @@ impl<'a> PE<'a> {
             certificates,
         })
     }
-
-    pub fn write_sections(
-        &self,
-        bytes: &mut [u8],
-        offset: &mut usize,
-        file_alignment: Option<usize>,
-        ctx: scroll::Endian,
-    ) -> Result<usize, error::Error> {
-        
-        debug_assert!(
-            self.sections
-                .iter()
-                .flat_map(|section_a| {
-                    self.sections
-                        .iter()
-                        .map(move |section_b| (section_a, section_b))
-                })
-                // given sections = (s_1, …, s_n)
-                // for all (s_i, s_j), i != j, verify that s_i does not overlap with s_j and vice versa.
-                .all(|(section_i, section_j)| section_i == section_j
-                    || !section_i.overlaps_with(section_j)),
-            "Overlapping sections were found, this is not supported."
-        );
-
-        for section in &self.sections {
-            let section_data = section.data(&self.bytes)?.ok_or_else(|| {
-                error::Error::Malformed(format!(
-                    "Section data `{}` is malformed",
-                    section.name().unwrap_or("unknown name")
-                ))
-            })?;
-            let file_section_offset =
-                usize::try_from(section.pointer_to_raw_data).map_err(|_| {
-                    error::Error::Malformed(format!(
-                        "Section `{}`'s pointer to raw data does not fit in platform `usize`",
-                        section.name().unwrap_or("unknown name")
-                    ))
-                })?;
-            let vsize: usize = section.virtual_size.try_into()?;
-            let ondisk_size: usize = section.size_of_raw_data.try_into()?;
-            let section_name = String::from(section.name().unwrap_or("unknown name"));
-
-            let mut file_offset = file_section_offset;
-            
-            
-            match section_data {
-                Cow::Borrowed(borrowed) => bytes.gwrite(borrowed, &mut file_offset)?,
-                Cow::Owned(owned) => bytes.gwrite(owned.as_slice(), &mut file_offset)?,
-            };
-
-            
-            bytes.gwrite_with(section, offset, ctx)?;
-
-            
-            
-            
-            if file_offset < vsize {
-                bytes.gwrite(vec![0u8; vsize - file_offset].as_slice(), &mut file_offset)?;
-            }
-
-            
-            if let Some(pad) = pad(file_offset - file_section_offset, file_alignment) {
-                debug!(
-                    "aligning `{}` {:#x} -> {:#x} bytes'",
-                    section_name,
-                    file_offset - file_section_offset,
-                    file_offset - file_section_offset + pad.len()
-                );
-                bytes.gwrite(pad.as_slice(), &mut file_offset)?;
-            }
-
-            let written_data_size = file_offset - file_section_offset;
-            if ondisk_size != written_data_size {
-                warn!("Original PE is inefficient or bug (on-disk data size in PE: {:#x}), we wrote {:#x} bytes",
-                    ondisk_size,
-                    written_data_size);
-            }
-        }
-
-        Ok(*offset)
-    }
-
-    pub fn write_certificates(
-        &self,
-        bytes: &mut [u8],
-        ctx: scroll::Endian,
-    ) -> Result<usize, error::Error> {
-        let opt_header = self
-            .header
-            .optional_header
-            .ok_or(error::Error::Malformed(format!(
-                "This PE binary has no optional header; it is required to write certificates"
-            )))?;
-        let mut max_offset = 0;
-
-        if let Some(certificate_directory) = opt_header.data_directories.get_certificate_table() {
-            let mut certificate_start = certificate_directory.virtual_address.try_into()?;
-            for certificate in &self.certificates {
-                bytes.gwrite_with(certificate, &mut certificate_start, ctx)?;
-                max_offset = max(certificate_start, max_offset);
-            }
-        }
-
-        Ok(max_offset)
-    }
-}
-
-impl<'a> ctx::TryIntoCtx<scroll::Endian> for PE<'a> {
-    type Error = error::Error;
-
-    fn try_into_ctx(self, bytes: &mut [u8], ctx: scroll::Endian) -> Result<usize, Self::Error> {
-        let mut offset = 0;
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut max_offset = 0;
-        let file_alignment: Option<usize> = match self.header.optional_header {
-            Some(opt_header) => {
-                debug_assert!(
-                    opt_header.windows_fields.file_alignment.count_ones() == 1,
-                    "file alignment should be a power of 2"
-                );
-                Some(opt_header.windows_fields.file_alignment.try_into()?)
-            }
-            _ => None,
-        };
-        bytes.gwrite_with(self.header, &mut offset, ctx)?;
-        max_offset = max(offset, max_offset);
-        self.write_sections(bytes, &mut offset, file_alignment, ctx)?;
-        
-        
-        
-        max_offset = max(
-            self.sections
-                .iter()
-                .max_by_key(|section| section.pointer_to_raw_data as usize)
-                .map(|section| (section.pointer_to_raw_data + section.size_of_raw_data) as usize)
-                .unwrap_or(offset),
-            max_offset,
-        );
-
-        
-        
-        
-        assert!(
-            self.header.coff_header.pointer_to_symbol_table == 0,
-            "Symbol tables in PE are deprecated and not supported to write"
-        );
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        max_offset = max(max_offset, self.write_certificates(bytes, ctx)?);
-
-        
-        
-        
-        
-        
-        
-        
-        
-
-        Ok(max_offset)
-    }
 }
 
 
@@ -473,11 +275,9 @@ pub struct Coff<'a> {
     
     pub sections: Vec<section_table::SectionTable>,
     
+    pub symbols: symbol::SymbolTable<'a>,
     
-    
-    pub symbols: Option<symbol::SymbolTable<'a>>,
-    
-    pub strings: Option<strtab::Strtab<'a>>,
+    pub strings: strtab::Strtab<'a>,
 }
 
 impl<'a> Coff<'a> {
@@ -614,7 +414,7 @@ mod tests {
     #[test]
     fn string_table_excludes_length() {
         let coff = Coff::parse(&&COFF_FILE_SINGLE_STRING_IN_STRING_TABLE[..]).unwrap();
-        let string_table = coff.strings.unwrap().to_vec().unwrap();
+        let string_table = coff.strings.to_vec().unwrap();
 
         assert!(string_table == vec!["ExitProcess"]);
     }
@@ -622,10 +422,9 @@ mod tests {
     #[test]
     fn symbol_name_excludes_length() {
         let coff = Coff::parse(&COFF_FILE_SINGLE_STRING_IN_STRING_TABLE).unwrap();
-        let strings = coff.strings.unwrap();
+        let strings = coff.strings;
         let symbols = coff
             .symbols
-            .unwrap()
             .iter()
             .filter(|(_, name, _)| name.is_none())
             .map(|(_, _, sym)| sym.name(&strings).unwrap().to_owned())

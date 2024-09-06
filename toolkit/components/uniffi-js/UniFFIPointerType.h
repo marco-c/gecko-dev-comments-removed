@@ -22,8 +22,6 @@ namespace mozilla::uniffi {
 struct UniFFIPointerType {
   nsLiteralCString typeName;
   
-  void* (*clone)(void*, RustCallStatus*);
-  
   void (*destructor)(void*, RustCallStatus*);
 };
 }  

@@ -30,11 +30,6 @@ pub(crate) trait APIConverter<T> {
 }
 
 
-pub(crate) fn convert_docstring(docstring: &str) -> String {
-    textwrap::dedent(docstring)
-}
-
-
 
 impl<U, T: APIConverter<U>> APIConverter<Vec<U>> for Vec<T> {
     fn convert(&self, ci: &mut InterfaceCollector) -> Result<Vec<U>> {
@@ -77,7 +72,6 @@ impl APIConverter<VariantMetadata> for weedle::interface::OperationInterfaceMemb
         };
         Ok(VariantMetadata {
             name,
-            discr: None,
             fields: self
                 .args
                 .body
@@ -85,7 +79,6 @@ impl APIConverter<VariantMetadata> for weedle::interface::OperationInterfaceMemb
                 .iter()
                 .map(|arg| arg.convert(ci))
                 .collect::<Result<Vec<_>>>()?,
-            docstring: self.docstring.as_ref().map(|v| convert_docstring(&v.0)),
         })
     }
 }
@@ -102,7 +95,6 @@ impl APIConverter<RecordMetadata> for weedle::DictionaryDefinition<'_> {
             module_path: ci.module_path(),
             name: self.identifier.0.to_string(),
             fields: self.members.body.convert(ci)?,
-            docstring: self.docstring.as_ref().map(|v| convert_docstring(&v.0)),
         })
     }
 }
@@ -121,7 +113,6 @@ impl APIConverter<FieldMetadata> for weedle::dictionary::DictionaryMember<'_> {
             name: self.identifier.0.to_string(),
             ty: type_,
             default,
-            docstring: self.docstring.as_ref().map(|v| convert_docstring(&v.0)),
         })
     }
 }
@@ -159,7 +150,6 @@ impl APIConverter<CallbackInterfaceMetadata> for weedle::CallbackInterfaceDefini
         Ok(CallbackInterfaceMetadata {
             module_path: ci.module_path(),
             name: object_name.to_string(),
-            docstring: self.docstring.as_ref().map(|v| convert_docstring(&v.0)),
         })
     }
 }

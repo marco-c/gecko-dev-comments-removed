@@ -119,7 +119,7 @@ pub(crate) enum SuggestRecord {
 
 
 
-#[derive(Copy, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum SuggestRecordType {
     Icon,
     AmpWikipedia,

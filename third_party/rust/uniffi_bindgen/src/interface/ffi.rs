@@ -48,48 +48,19 @@ pub enum FfiType {
     
     ForeignBytes,
     
-    
-    Callback(String),
-    
-    
-    Struct(String),
+    ForeignCallback,
     
     
+    ForeignExecutorHandle,
     
-    Handle,
-    RustCallStatus,
+    ForeignExecutorCallback,
     
-    Reference(Box<FfiType>),
+    RustFutureHandle,
     
-    VoidPointer,
-}
-
-impl FfiType {
-    pub fn reference(self) -> FfiType {
-        FfiType::Reference(Box::new(self))
-    }
-
+    RustFutureContinuationCallback,
+    RustFutureContinuationData,
     
-    pub fn return_type_name(return_type: Option<&FfiType>) -> String {
-        match return_type {
-            Some(t) => match t {
-                FfiType::UInt8 => "u8".to_owned(),
-                FfiType::Int8 => "i8".to_owned(),
-                FfiType::UInt16 => "u16".to_owned(),
-                FfiType::Int16 => "i16".to_owned(),
-                FfiType::UInt32 => "u32".to_owned(),
-                FfiType::Int32 => "i32".to_owned(),
-                FfiType::UInt64 => "u64".to_owned(),
-                FfiType::Int64 => "i64".to_owned(),
-                FfiType::Float32 => "f32".to_owned(),
-                FfiType::Float64 => "f64".to_owned(),
-                FfiType::RustArcPtr(_) => "pointer".to_owned(),
-                FfiType::RustBuffer(_) => "rust_buffer".to_owned(),
-                _ => unimplemented!("FFI return type: {t:?}"),
-            },
-            None => "void".to_owned(),
-        }
-    }
+    
 }
 
 
@@ -123,6 +94,7 @@ impl From<&Type> for FfiType {
             Type::Object { name, .. } => FfiType::RustArcPtr(name.to_owned()),
             
             Type::CallbackInterface { .. } => FfiType::UInt64,
+            Type::ForeignExecutor => FfiType::ForeignExecutorHandle,
             
             Type::Enum { .. }
             | Type::Record { .. }
@@ -134,11 +106,6 @@ impl From<&Type> for FfiType {
             Type::External {
                 name,
                 kind: ExternalKind::Interface,
-                ..
-            }
-            | Type::External {
-                name,
-                kind: ExternalKind::Trait,
                 ..
             } => FfiType::RustArcPtr(name.clone()),
             Type::External {
@@ -165,24 +132,6 @@ impl From<&&Type> for FfiType {
 }
 
 
-#[derive(Debug, Clone)]
-pub enum FfiDefinition {
-    Function(FfiFunction),
-    CallbackFunction(FfiCallbackFunction),
-    Struct(FfiStruct),
-}
-
-impl FfiDefinition {
-    pub fn name(&self) -> &str {
-        match self {
-            Self::Function(f) => f.name(),
-            Self::CallbackFunction(f) => f.name(),
-            Self::Struct(s) => s.name(),
-        }
-    }
-}
-
-
 
 
 
@@ -201,19 +150,6 @@ pub struct FfiFunction {
 }
 
 impl FfiFunction {
-    pub fn callback_init(module_path: &str, trait_name: &str, vtable_name: String) -> Self {
-        Self {
-            name: uniffi_meta::init_callback_vtable_fn_symbol_name(module_path, trait_name),
-            arguments: vec![FfiArgument {
-                name: "vtable".to_string(),
-                type_: FfiType::Struct(vtable_name).reference(),
-            }],
-            return_type: None,
-            has_rust_call_status_arg: false,
-            ..Self::default()
-        }
-    }
-
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -245,7 +181,7 @@ impl FfiFunction {
     ) {
         self.arguments = args.into_iter().collect();
         if self.is_async() {
-            self.return_type = Some(FfiType::Handle);
+            self.return_type = Some(FfiType::RustFutureHandle);
             self.has_rust_call_status_arg = false;
         } else {
             self.return_type = return_type;
@@ -276,110 +212,11 @@ pub struct FfiArgument {
 }
 
 impl FfiArgument {
-    pub fn new(name: impl Into<String>, type_: FfiType) -> Self {
-        Self {
-            name: name.into(),
-            type_,
-        }
-    }
-
     pub fn name(&self) -> &str {
         &self.name
     }
-
     pub fn type_(&self) -> FfiType {
         self.type_.clone()
-    }
-}
-
-
-
-
-#[derive(Debug, Default, Clone)]
-pub struct FfiCallbackFunction {
-    
-    pub(super) name: String,
-    pub(super) arguments: Vec<FfiArgument>,
-    pub(super) return_type: Option<FfiType>,
-    pub(super) has_rust_call_status_arg: bool,
-}
-
-impl FfiCallbackFunction {
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn arguments(&self) -> Vec<&FfiArgument> {
-        self.arguments.iter().collect()
-    }
-
-    pub fn return_type(&self) -> Option<&FfiType> {
-        self.return_type.as_ref()
-    }
-
-    pub fn has_rust_call_status_arg(&self) -> bool {
-        self.has_rust_call_status_arg
-    }
-}
-
-
-#[derive(Debug, Default, Clone)]
-pub struct FfiStruct {
-    pub(super) name: String,
-    pub(super) fields: Vec<FfiField>,
-}
-
-impl FfiStruct {
-    
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    
-    pub fn fields(&self) -> &[FfiField] {
-        &self.fields
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct FfiField {
-    pub(super) name: String,
-    pub(super) type_: FfiType,
-}
-
-impl FfiField {
-    pub fn new(name: impl Into<String>, type_: FfiType) -> Self {
-        Self {
-            name: name.into(),
-            type_,
-        }
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn type_(&self) -> FfiType {
-        self.type_.clone()
-    }
-}
-
-impl From<FfiFunction> for FfiDefinition {
-    fn from(value: FfiFunction) -> FfiDefinition {
-        FfiDefinition::Function(value)
-    }
-}
-
-impl From<FfiStruct> for FfiDefinition {
-    fn from(value: FfiStruct) -> FfiDefinition {
-        FfiDefinition::Struct(value)
-    }
-}
-
-impl From<FfiCallbackFunction> for FfiDefinition {
-    fn from(value: FfiCallbackFunction) -> FfiDefinition {
-        FfiDefinition::CallbackFunction(value)
     }
 }
 

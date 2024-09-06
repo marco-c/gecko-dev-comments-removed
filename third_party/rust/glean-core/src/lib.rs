@@ -17,6 +17,7 @@
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -24,7 +25,7 @@ use std::thread;
 use std::time::Duration;
 
 use crossbeam_channel::unbounded;
-use log::LevelFilter;
+use log::{self, LevelFilter};
 use once_cell::sync::{Lazy, OnceCell};
 use uuid::Uuid;
 
@@ -135,8 +136,6 @@ pub struct InternalConfiguration {
     
     
     pub experimentation_id: Option<String>,
-    
-    pub enable_internal_pings: bool,
 }
 
 

@@ -1,0 +1,18 @@
+
+
+
+
+use super::CodeType;
+
+#[derive(Debug)]
+pub struct ForeignExecutorCodeType;
+
+impl CodeType for ForeignExecutorCodeType {
+    fn type_label(&self) -> String {
+        "asyncio.BaseEventLoop".into()
+    }
+
+    fn canonical_name(&self) -> String {
+        "ForeignExecutor".into()
+    }
+}

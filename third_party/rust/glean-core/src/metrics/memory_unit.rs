@@ -2,6 +2,8 @@
 
 
 
+use std::convert::TryFrom;
+
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, ErrorKind};

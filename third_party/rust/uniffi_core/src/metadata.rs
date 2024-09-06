@@ -32,14 +32,13 @@ pub mod codes {
     pub const RECORD: u8 = 2;
     pub const ENUM: u8 = 3;
     pub const INTERFACE: u8 = 4;
+    pub const ERROR: u8 = 5;
     pub const NAMESPACE: u8 = 6;
     pub const CONSTRUCTOR: u8 = 7;
     pub const UDL_FILE: u8 = 8;
     pub const CALLBACK_INTERFACE: u8 = 9;
     pub const TRAIT_METHOD: u8 = 10;
     pub const UNIFFI_TRAIT: u8 = 11;
-    pub const TRAIT_INTERFACE: u8 = 12;
-    pub const CALLBACK_TRAIT_INTERFACE: u8 = 13;
     pub const UNKNOWN: u8 = 255;
 
     
@@ -67,24 +66,20 @@ pub mod codes {
     pub const TYPE_CALLBACK_INTERFACE: u8 = 21;
     pub const TYPE_CUSTOM: u8 = 22;
     pub const TYPE_RESULT: u8 = 23;
-    pub const TYPE_TRAIT_INTERFACE: u8 = 24;
-    pub const TYPE_CALLBACK_TRAIT_INTERFACE: u8 = 25;
+    pub const TYPE_FUTURE: u8 = 24;
+    pub const TYPE_FOREIGN_EXECUTOR: u8 = 25;
     pub const TYPE_UNIT: u8 = 255;
 
+    
     
     pub const LIT_STR: u8 = 0;
     pub const LIT_INT: u8 = 1;
     pub const LIT_FLOAT: u8 = 2;
     pub const LIT_BOOL: u8 = 3;
-    pub const LIT_NONE: u8 = 4;
-    pub const LIT_SOME: u8 = 5;
-    pub const LIT_EMPTY_SEQ: u8 = 6;
+    pub const LIT_NULL: u8 = 4;
 }
 
-
-
-
-const BUF_SIZE: usize = 16384;
+const BUF_SIZE: usize = 4096;
 
 
 
@@ -174,16 +169,6 @@ impl MetadataBuffer {
     }
 
     
-    pub const fn concat_option_bool(self, value: Option<bool>) -> Self {
-        self.concat_value(match value {
-            None => 0,
-            Some(false) => 1,
-            Some(true) => 2,
-        })
-    }
-
-    
-    
     
     
     
@@ -194,28 +179,6 @@ impl MetadataBuffer {
         assert!(self.size + string.len() < BUF_SIZE);
         self.bytes[self.size] = string.len() as u8;
         self.size += 1;
-        let bytes = string.as_bytes();
-        let mut i = 0;
-        while i < bytes.len() {
-            self.bytes[self.size] = bytes[i];
-            self.size += 1;
-            i += 1;
-        }
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    pub const fn concat_long_str(mut self, string: &str) -> Self {
-        assert!(self.size + string.len() + 1 < BUF_SIZE);
-        let [lo, hi] = (string.len() as u16).to_le_bytes();
-        self.bytes[self.size] = lo;
-        self.bytes[self.size + 1] = hi;
-        self.size += 2;
         let bytes = string.as_bytes();
         let mut i = 0;
         while i < bytes.len() {
