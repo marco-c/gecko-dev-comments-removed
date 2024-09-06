@@ -830,7 +830,10 @@ var SidebarController = {
     const menuitem = document.createXULElement("menuitem");
     menuitem.setAttribute("id", sidebar.menuId);
     menuitem.setAttribute("type", "checkbox");
-    menuitem.addEventListener("command", () => this.toggle(commandID));
+    
+    menuitem.addEventListener("command", () =>
+      this[menuitem.hasAttribute("type") ? "toggle" : "show"](commandID)
+    );
     if (sidebar.classAttribute) {
       menuitem.setAttribute("class", sidebar.classAttribute);
     }
