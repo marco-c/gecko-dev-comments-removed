@@ -411,6 +411,14 @@ typedef struct vpx_rc_gop_decision {
 
 
 
+typedef struct vpx_rc_key_frame_decision {
+  int key_frame_show_index; 
+  int key_frame_group_size; 
+} vpx_rc_key_frame_decision_t;
+
+
+
+
 
 
 
@@ -479,6 +487,18 @@ typedef vpx_rc_status_t (*vpx_rc_update_encodeframe_result_cb_fn_t)(
 
 
 
+typedef vpx_rc_status_t (*vpx_rc_get_key_frame_decision_cb_fn_t)(
+    vpx_rc_model_t rate_ctrl_model,
+    vpx_rc_key_frame_decision_t *key_frame_decision);
+
+
+
+
+
+
+
+
+
 typedef vpx_rc_status_t (*vpx_rc_get_gop_decision_cb_fn_t)(
     vpx_rc_model_t rate_ctrl_model, vpx_rc_gop_decision_t *gop_decision);
 
@@ -536,6 +556,10 @@ typedef struct vpx_rc_funcs {
 
 
   vpx_rc_update_encodeframe_result_cb_fn_t update_encodeframe_result;
+  
+
+
+  vpx_rc_get_key_frame_decision_cb_fn_t get_key_frame_decision;
   
 
 

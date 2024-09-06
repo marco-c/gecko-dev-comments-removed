@@ -10,6 +10,7 @@
 
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "./vpx_dsp_rtcd.h"
@@ -33,11 +34,14 @@
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_ethread.h"
 #include "vp9/encoder/vp9_extend.h"
+#include "vp9/encoder/vp9_ext_ratectrl.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mcomp.h"
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_rd.h"
+#include "vpx/internal/vpx_codec_internal.h"
+#include "vpx/vpx_codec.h"
 #include "vpx/vpx_ext_ratectrl.h"
 #include "vpx_dsp/variance.h"
 
@@ -2295,6 +2299,7 @@ static void define_gf_group_structure(VP9_COMP *cpi) {
 
   find_arf_order(cpi, gf_group, &frame_index, layer_depth, 1, gop_frames);
 
+  
   set_gf_overlay_frame_type(gf_group, frame_index, rc->source_alt_ref_pending);
   gf_group->arf_src_offset[frame_index] = 0;
   gf_group->frame_gop_index[frame_index] = rc->baseline_gf_interval;
@@ -2304,67 +2309,87 @@ static void define_gf_group_structure(VP9_COMP *cpi) {
 }
 
 static INLINE void gf_group_set_overlay_frame(GF_GROUP *gf_group,
-                                              int frame_index) {
+                                              int frame_index,
+                                              int show_frame_index) {
   gf_group->update_type[frame_index] = OVERLAY_UPDATE;
   gf_group->arf_src_offset[frame_index] = 0;
-  gf_group->frame_gop_index[frame_index] = frame_index;
+  gf_group->frame_gop_index[frame_index] = show_frame_index;
   gf_group->rf_level[frame_index] = INTER_NORMAL;
   gf_group->layer_depth[frame_index] = MAX_ARF_LAYERS - 1;
 }
 
-static INLINE void gf_group_set_key_frame(GF_GROUP *gf_group, int frame_index) {
+static INLINE void gf_group_set_key_frame(GF_GROUP *gf_group, int frame_index,
+                                          int show_frame_index) {
   gf_group->update_type[frame_index] = KF_UPDATE;
   gf_group->arf_src_offset[frame_index] = 0;
-  gf_group->frame_gop_index[frame_index] = frame_index;
+  gf_group->frame_gop_index[frame_index] = show_frame_index;
   gf_group->rf_level[frame_index] = KF_STD;
   gf_group->layer_depth[frame_index] = 0;
 }
 
 static INLINE void gf_group_set_arf_frame(GF_GROUP *gf_group, int frame_index,
-                                          int show_frame_count) {
+                                          int show_frame_index) {
   gf_group->update_type[frame_index] = ARF_UPDATE;
-  gf_group->arf_src_offset[frame_index] = (unsigned char)(show_frame_count - 1);
-  gf_group->frame_gop_index[frame_index] = show_frame_count;
+  gf_group->arf_src_offset[frame_index] =
+      (unsigned char)(show_frame_index - frame_index);
+  gf_group->frame_gop_index[frame_index] = show_frame_index;
   gf_group->rf_level[frame_index] = GF_ARF_STD;
   gf_group->layer_depth[frame_index] = 1;
 }
 
 static INLINE void gf_group_set_inter_normal_frame(GF_GROUP *gf_group,
-                                                   int frame_index) {
+                                                   int frame_index,
+                                                   int show_frame_index) {
   gf_group->update_type[frame_index] = LF_UPDATE;
   gf_group->arf_src_offset[frame_index] = 0;
-  gf_group->frame_gop_index[frame_index] = frame_index;
+  gf_group->frame_gop_index[frame_index] = show_frame_index;
   gf_group->rf_level[frame_index] = INTER_NORMAL;
   gf_group->layer_depth[frame_index] = 2;
 }
 
 static void ext_rc_define_gf_group_structure(
-    const vpx_rc_gop_decision_t *gop_decision, GF_GROUP *gf_group,
-    int prev_arf_active) {
+    const vpx_rc_gop_decision_t *gop_decision, GF_GROUP *gf_group) {
   const int key_frame = gop_decision->use_key_frame;
-  const int show_frame_count = gop_decision->gop_coding_frames - 1;
-
+  const int show_frame_count =
+      gop_decision->gop_coding_frames - gop_decision->use_alt_ref;
   int frame_index = 0;
-
+  int show_frame_index = 0;
   if (key_frame) {
-    gf_group_set_key_frame(gf_group, frame_index);
-    ++frame_index;
-  } else if (prev_arf_active) {
-    gf_group_set_overlay_frame(gf_group, frame_index);
-    ++frame_index;
+    gf_group_set_key_frame(gf_group, frame_index, show_frame_index);
+  } else {
+    gf_group_set_overlay_frame(gf_group, frame_index, show_frame_index);
   }
+  ++frame_index;
+  ++show_frame_index;
 
   if (gop_decision->use_alt_ref) {
     assert(frame_index < gop_decision->gop_coding_frames);
-    gf_group_set_arf_frame(gf_group, 1, show_frame_count);
+    gf_group_set_arf_frame(gf_group, frame_index, show_frame_count);
     ++frame_index;
+    
   }
 
   for (; frame_index < gop_decision->gop_coding_frames; frame_index++) {
-    gf_group_set_inter_normal_frame(gf_group, frame_index);
+    gf_group_set_inter_normal_frame(gf_group, frame_index, show_frame_index);
+    ++show_frame_index;
   }
-  gf_group->max_layer_depth = MAX_ARF_LAYERS - 1;
+
+  
+  
+  
+  gf_group->max_layer_depth = 2;
+  gf_group->allowed_max_layer_depth = 1;
   gf_group->gf_group_size = gop_decision->gop_coding_frames;
+
+  
+  assert(show_frame_count == show_frame_index);
+  if (gop_decision->use_alt_ref) {
+    gf_group_set_overlay_frame(gf_group, gf_group->gf_group_size,
+                               show_frame_index);
+  }
+
+  gf_group->frame_start = 0;
+  gf_group->frame_end = gf_group->gf_group_size - 1;
 }
 
 static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
@@ -2778,7 +2803,23 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
 
   int64_t gf_group_bits;
   int gf_arf_bits;
-  const int is_key_frame = frame_is_intra_only(cm);
+  int is_key_frame = frame_is_intra_only(cm);
+
+  vpx_rc_gop_decision_t gop_decision;
+  int gop_decision_ready = 0;
+  if (cpi->ext_ratectrl.ready &&
+      (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
+      cpi->ext_ratectrl.funcs.get_gop_decision != NULL) {
+    vpx_codec_err_t codec_status =
+        vp9_extrc_get_gop_decision(&cpi->ext_ratectrl, &gop_decision);
+    if (codec_status != VPX_CODEC_OK) {
+      vpx_internal_error(&cm->error, codec_status,
+                         "vp9_extrc_get_gop_decision() failed");
+    }
+    is_key_frame = gop_decision.use_key_frame;
+    gop_decision_ready = 1;
+  }
+
   
   
   const int arf_active_or_kf = is_key_frame || rc->source_alt_ref_active;
@@ -2823,6 +2864,12 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
       &active_gf_interval, gop_intra_factor, cpi->oxcf.lag_in_frames,
       &end_of_sequence);
   use_alt_ref &= allow_alt_ref;
+
+  if (gop_decision_ready) {
+    gop_coding_frames = gop_decision.gop_coding_frames;
+    use_alt_ref = gop_decision.use_alt_ref;
+  }
+
 #if CONFIG_RATE_CTRL
   
   
@@ -2928,6 +2975,34 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
       const FIRSTPASS_STATS *frame_stats =
           fps_get_frame_stats(first_pass_info, show_idx);
       
+      
+      
+      
+      
+      if (frame_stats == NULL) {
+        if (cpi->ext_ratectrl.ready &&
+            (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
+            cpi->ext_ratectrl.funcs.get_gop_decision != NULL) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          break;
+        } else {
+          vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                             "In define_gf_group(), frame_stats is NULL when "
+                             "calculating gf_group_err.");
+
+          break;
+        }
+      }
+      
       gf_group_err += calc_norm_frame_score(oxcf, frame_info, frame_stats,
                                             mean_mod_score, av_err);
       gf_group_raw_error += frame_stats->coded_error;
@@ -2997,7 +3072,11 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
   twopass->kf_group_error_left -= gf_group_err;
 
   
-  define_gf_group_structure(cpi);
+  if (gop_decision_ready) {
+    ext_rc_define_gf_group_structure(&gop_decision, &twopass->gf_group);
+  } else {
+    define_gf_group_structure(cpi);
+  }
 
   
   allocate_gf_group_bits(cpi, gf_group_bits, gf_arf_bits);
@@ -3307,8 +3386,22 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
   kf_mod_err = calc_norm_frame_score(oxcf, frame_info, keyframe_stats,
                                      mean_mod_score, av_err);
 
-  rc->frames_to_key = vp9_get_frames_to_next_key(oxcf, twopass, kf_show_idx,
-                                                 rc->min_gf_interval);
+  if (cpi->ext_ratectrl.ready &&
+      (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
+      cpi->ext_ratectrl.funcs.get_key_frame_decision != NULL) {
+    vpx_rc_key_frame_decision_t key_frame_decision;
+    vpx_codec_err_t codec_status = vp9_extrc_get_key_frame_decision(
+        &cpi->ext_ratectrl, &key_frame_decision);
+    if (codec_status == VPX_CODEC_OK) {
+      rc->frames_to_key = key_frame_decision.key_frame_group_size;
+    } else {
+      vpx_internal_error(&cpi->common.error, codec_status,
+                         "vp9_extrc_get_key_frame_decision() failed");
+    }
+  } else {
+    rc->frames_to_key = vp9_get_frames_to_next_key(oxcf, twopass, kf_show_idx,
+                                                   rc->min_gf_interval);
+  }
 
   
   
@@ -3598,8 +3691,8 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     const int frames_left =
         (int)(twopass->total_stats.count - cm->current_video_frame);
     
-    const int section_target_bandwidth =
-        (int)(twopass->bits_left / frames_left);
+    int64_t section_target_bandwidth = twopass->bits_left / frames_left;
+    section_target_bandwidth = VPXMIN(section_target_bandwidth, INT_MAX);
     const double section_length = twopass->total_left_stats.count;
     const double section_error =
         twopass->total_left_stats.coded_error / section_length;
@@ -3614,7 +3707,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 
     tmp_q = get_twopass_worst_quality(
         cpi, section_error, section_intra_skip + section_inactive_zone,
-        section_noise, section_target_bandwidth);
+        section_noise, (int)section_target_bandwidth);
 
     twopass->active_worst_quality = tmp_q;
     twopass->baseline_active_worst_quality = tmp_q;
@@ -3635,69 +3728,29 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     twopass->fr_content_type = FC_NORMAL;
 
   
-  
-  
-  if (cpi->ext_ratectrl.ready &&
-      (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
-      cpi->ext_ratectrl.funcs.get_gop_decision != NULL &&
-      rc->frames_till_gf_update_due == 0) {
-    vpx_codec_err_t codec_status;
-    vpx_rc_gop_decision_t gop_decision;
-    codec_status =
-        vp9_extrc_get_gop_decision(&cpi->ext_ratectrl, &gop_decision);
-    if (codec_status != VPX_CODEC_OK) {
-      vpx_internal_error(&cm->error, codec_status,
-                         "vp9_extrc_get_gop_decision() failed");
-    }
-
-    const int prev_arf_active = rc->source_alt_ref_active;
-
-    if (gop_decision.use_key_frame) {
-      cpi->common.frame_type = KEY_FRAME;
-      rc->frames_since_key = 0;
-      
-      
-      rc->source_alt_ref_active = 0;
-      
-      rc->frames_till_gf_update_due = 0;
-    }
-
+  if (rc->frames_to_key == 0 || (cpi->frame_flags & FRAMEFLAGS_KEY)) {
     
-    vp9_zero(twopass->gf_group);
-    ++rc->gop_global_index;
-    if (gop_decision.use_alt_ref) {
-      rc->source_alt_ref_pending = 1;
-    }
-    rc->baseline_gf_interval =
-        gop_decision.gop_coding_frames - rc->source_alt_ref_pending;
-    ext_rc_define_gf_group_structure(&gop_decision, &twopass->gf_group,
-                                     prev_arf_active);
+    find_next_key_frame(cpi, show_idx);
   } else {
-    
-    if (rc->frames_to_key == 0 || (cpi->frame_flags & FRAMEFLAGS_KEY)) {
-      
-      find_next_key_frame(cpi, show_idx);
-    } else {
-      cm->frame_type = INTER_FRAME;
-    }
+    cm->frame_type = INTER_FRAME;
+  }
 
-    
-    if (rc->frames_till_gf_update_due == 0) {
-      define_gf_group(cpi, show_idx);
+  
+  if (rc->frames_till_gf_update_due == 0) {
+    define_gf_group(cpi, show_idx);
 
 #if ARF_STATS_OUTPUT
-      {
-        FILE *fpfile;
-        fpfile = fopen("arf.stt", "a");
-        ++arf_count;
-        fprintf(fpfile, "%10d %10ld %10d %10d %10ld %10ld\n",
-                cm->current_video_frame, rc->baseline_gf_interval, rc->kf_boost,
-                arf_count, rc->gfu_boost, cm->frame_type);
+    {
+      FILE *fpfile;
+      fpfile = fopen("arf.stt", "a");
+      ++arf_count;
+      fprintf(fpfile, "%10d %10ld %10d %10d %10ld %10ld\n",
+              cm->current_video_frame, rc->baseline_gf_interval, rc->kf_boost,
+              arf_count, rc->gfu_boost, cm->frame_type);
 
-        fclose(fpfile);
-      }
-#endif
+      fclose(fpfile);
     }
+#endif
   }
 
   if (rc->frames_till_gf_update_due == 0) {
@@ -3819,7 +3872,8 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
         rc->vbr_bits_off_target_fast +=
             fast_extra_thresh - rc->projected_frame_size;
         rc->vbr_bits_off_target_fast =
-            VPXMIN(rc->vbr_bits_off_target_fast, (4 * rc->avg_frame_bandwidth));
+            VPXMIN(rc->vbr_bits_off_target_fast,
+                   (4 * (int64_t)rc->avg_frame_bandwidth));
 
         
         if (rc->avg_frame_bandwidth) {
