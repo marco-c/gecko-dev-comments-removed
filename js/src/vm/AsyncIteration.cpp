@@ -852,46 +852,13 @@ bool js::AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  
-  if (generator->isCompleted()) {
-    
-    
-    JSObject* resultObj =
-        CreateIterResultObject(cx, UndefinedHandleValue, true);
-    if (!resultObj) {
+  if (!AsyncGeneratorEnqueue(cx, generator, CompletionKind::Normal,
+                             completionValue, resultPromise)) {
+    return false;
+  }
+  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn()) {
+    if (!AsyncGeneratorDrainQueue(cx, generator)) {
       return false;
-    }
-
-    
-    
-    
-    RootedValue resultValue(cx, ObjectValue(*resultObj));
-    if (!ResolvePromiseInternal(cx, resultPromise, resultValue)) {
-      return false;
-    }
-  } else {
-    
-    
-    
-    
-    if (!AsyncGeneratorEnqueue(cx, generator, CompletionKind::Normal,
-                               completionValue, resultPromise)) {
-      return false;
-    }
-
-    
-    if (generator->isSuspendedStart() || generator->isSuspendedYield()) {
-      RootedValue resumptionValue(cx, completionValue);
-      
-      if (!AsyncGeneratorResume(cx, generator, CompletionKind::Normal,
-                                resumptionValue)) {
-        return false;
-      }
-    } else {
-      
-      
-      MOZ_ASSERT(generator->isExecuting() || generator->isAwaitingReturn() ||
-                 generator->isAwaitingYieldReturn());
     }
   }
 
