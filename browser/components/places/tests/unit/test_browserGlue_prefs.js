@@ -114,12 +114,15 @@ add_task(async function test_restore() {
   await simulatePlacesInit();
 
   
-  Assert.ok(
-    await PlacesUtils.bookmarks.fetch({
-      parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-      index: 0,
-    })
-  );
+  let bm = await PlacesUtils.bookmarks.fetch({
+    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    index: 0,
+  });
+
+  let chanTitle = AppConstants.NIGHTLY_BUILD
+    ? "Firefox Nightly Resources"
+    : "Mozilla Firefox";
+  Assert.equal(bm.title, chanTitle, "Default bookmarks folder restored.");
 
   
   Assert.ok(!Services.prefs.getBoolPref(PREF_RESTORE_DEFAULT_BOOKMARKS));
@@ -148,12 +151,15 @@ add_task(async function test_restore_import() {
   await simulatePlacesInit();
 
   
-  Assert.ok(
-    await PlacesUtils.bookmarks.fetch({
-      parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-      index: 0,
-    })
-  );
+  let bm = await PlacesUtils.bookmarks.fetch({
+    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    index: 0,
+  });
+
+  let chanTitle = AppConstants.NIGHTLY_BUILD
+    ? "Firefox Nightly Resources"
+    : "Mozilla Firefox";
+  Assert.equal(bm.title, chanTitle, "Default bookmarks folder restored.");
 
   
   Assert.ok(!Services.prefs.getBoolPref(PREF_RESTORE_DEFAULT_BOOKMARKS));
