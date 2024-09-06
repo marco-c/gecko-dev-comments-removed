@@ -1317,6 +1317,8 @@ bool Notification::IsInPrivateBrowsing() {
   return false;
 }
 
+
+
 void Notification::ShowInternal() {
   AssertIsOnMainThread();
   MOZ_ASSERT(mTempRef,
@@ -1331,13 +1333,15 @@ void Notification::ShowInternal() {
   std::swap(ownership, mTempRef);
   MOZ_ASSERT(ownership->GetNotification() == this);
 
-  nsresult rv = PersistNotification();
-  if (NS_FAILED(rv)) {
-    NS_WARNING("Could not persist Notification");
-  }
-
   nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service();
 
+  
+  
+  
+  
+  
+  
+  
   ErrorResult result;
   NotificationPermission permission = NotificationPermission::Denied;
   if (mWorkerPrivate) {
@@ -1358,12 +1362,27 @@ void Notification::ShowInternal() {
     } else {
       DispatchTrustedEvent(u"error"_ns);
     }
+    mIsClosed = true;
     return;
   }
 
+  
+  
   nsAutoString iconUrl;
   nsAutoString soundUrl;
   ResolveIconAndSoundURL(iconUrl, soundUrl);
+
+  
+  
+  
+  
+  
+
+  
+  nsresult rv = PersistNotification();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Could not persist Notification");
+  }
 
   bool isPersistent = false;
   nsCOMPtr<nsIObserver> observer;
