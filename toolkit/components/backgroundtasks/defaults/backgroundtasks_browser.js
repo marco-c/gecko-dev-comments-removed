@@ -28,10 +28,6 @@ pref(
 
 pref("browser.newtabpage.activity-stream.asrouter.providers.cfr", "null");
 pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "null");
-pref(
-  "browser.newtabpage.activity-stream.asrouter.providers.whats-new-panel",
-  "null"
-);
 
 
 
