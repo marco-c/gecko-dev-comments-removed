@@ -203,7 +203,11 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   
   
-  if (aNode->mType != nsCounterNode::USE &&
+  
+  
+  
+  if (mCounterName == nsGkAtoms::list_item &&
+      aNode->mType != nsCounterNode::USE &&
       StaticPrefs::layout_css_counter_ancestor_scope_enabled()) {
     for (auto* p = aNode->mPseudoFrame; p; p = p->GetParent()) {
       
