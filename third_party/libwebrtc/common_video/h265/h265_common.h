@@ -16,6 +16,7 @@
 
 #include "common_video/h265/h265_inline.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -76,11 +77,11 @@ struct NaluIndex {
 };
 
 
-std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
-                                       size_t buffer_size);
+RTC_EXPORT std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
+                                                  size_t buffer_size);
 
 
-NaluType ParseNaluType(uint8_t data);
+RTC_EXPORT NaluType ParseNaluType(uint8_t data);
 
 
 

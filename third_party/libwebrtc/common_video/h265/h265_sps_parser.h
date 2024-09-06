@@ -16,6 +16,7 @@
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "rtc_base/bitstream_reader.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -42,7 +43,7 @@ enum H265ProfileIdc {
 };
 
 
-class H265SpsParser {
+class RTC_EXPORT H265SpsParser {
  public:
   struct ProfileTierLevel {
     ProfileTierLevel();
@@ -74,7 +75,7 @@ class H265SpsParser {
 
   
   
-  struct SpsState {
+  struct RTC_EXPORT SpsState {
     SpsState() = default;
 
     uint32_t sps_max_sub_layers_minus1 = 0;
@@ -124,8 +125,6 @@ class H265SpsParser {
   
   static absl::optional<SpsState> ParseSpsInternal(
       rtc::ArrayView<const uint8_t> buffer);
-  static bool ParseProfileTierLevel(BitstreamReader& reader,
-                                    uint32_t sps_max_sub_layers_minus1);
 
   
   static int GetMaxLumaPs(int general_level_idc);

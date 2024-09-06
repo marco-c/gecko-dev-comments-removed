@@ -13,15 +13,16 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 
-class H265VpsParser {
+class RTC_EXPORT H265VpsParser {
  public:
   
   
-  struct VpsState {
+  struct RTC_EXPORT VpsState {
     VpsState();
 
     uint32_t id = 0;

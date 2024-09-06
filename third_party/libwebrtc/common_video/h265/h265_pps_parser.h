@@ -15,11 +15,12 @@
 #include "api/array_view.h"
 #include "common_video/h265/h265_sps_parser.h"
 #include "rtc_base/bitstream_reader.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 
-class H265PpsParser {
+class RTC_EXPORT H265PpsParser {
  public:
   
   
