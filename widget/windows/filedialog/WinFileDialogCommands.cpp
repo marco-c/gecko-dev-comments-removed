@@ -15,6 +15,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
+#include "mozilla/ipc/LaunchError.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/mscom/ApartmentRegion.h"
@@ -34,6 +35,18 @@ const char* Error::KindName(Error::Kind kind) {
       MOZ_ASSERT(false);
       return "<bad value>";
   }
+}
+
+
+
+
+constexpr Error::Location::Location(mozilla::ipc::LaunchError const& err)
+    : text(err.FunctionName()), value(0x867'5309) {}
+
+ Error Error::From(const mozilla::ipc::LaunchError& err) {
+  return Error{.kind = Kind::LocalError,
+               .where = Location(err),
+               .why = static_cast<uint32_t>(err.ErrorCode())};
 }
 
 
