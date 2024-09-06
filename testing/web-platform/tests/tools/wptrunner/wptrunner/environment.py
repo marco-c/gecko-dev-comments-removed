@@ -291,12 +291,18 @@ class TestEnvironment:
                     failed.append((scheme, port))
 
         if not failed and self.test_server_port:
+            
+            
+            
+            
+            for port, server in self.servers.get("webtransport-h3", []):
+                if not webtranport_h3_server_is_running(host, port, timeout=5):
+                    pending.append((host, port))
+
             for scheme, servers in self.servers.items():
+                if scheme == "webtransport-h3":
+                    continue
                 for port, server in servers:
-                    if scheme == "webtransport-h3":
-                        if not webtranport_h3_server_is_running(host, port, timeout=5.0):
-                            pending.append((host, port))
-                        continue
                     s = socket.socket()
                     s.settimeout(0.1)
                     try:
