@@ -34,6 +34,16 @@ add_task(async function () {
       30,
       "Should have at least 30 page load events"
     );
+
+    
+    record.forEach(entry => {
+      Assert.equal(entry.name, "page_load");
+      Assert.greater(parseInt(entry.extra.load_time), 0);
+      Assert.ok(
+        entry.extra.using_webdriver,
+        "Webdriver field should be set to true."
+      );
+    });
   });
 
   
