@@ -80,7 +80,7 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-  bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
 
   
   
@@ -153,7 +153,7 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
 bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
                                             nsILoadInfo* aLoadInfo) {
   
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
   if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
@@ -221,7 +221,7 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
 bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
                                               nsILoadInfo* aLoadInfo) {
   
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
   if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
@@ -270,7 +270,7 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
     const mozilla::EnumSet<UpgradeDowngradeEndlessLoopOptions>& aOptions) {
   
   
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
   bool enforceForHTTPSOnlyMode =
       IsHttpsOnlyModeEnabled(isPrivateWin) &&
       aOptions.contains(
@@ -355,7 +355,7 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
 bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
                                                       nsILoadInfo* aLoadInfo) {
   
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
   if (!IsHttpsFirstModeEnabled(isPrivateWin) &&
       !(aLoadInfo->GetWasSchemelessInput() &&
         mozilla::StaticPrefs::dom_security_https_first_schemeless())) {
@@ -600,8 +600,7 @@ void nsHTTPSOnlyUtils::UpdateLoadStateAfterHTTPSFirstDowngrade(
       nsCOMPtr<nsIChannel> channel = aDocumentLoadListener->GetChannel();
       nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
 
-      bool isPrivateWin =
-          loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+      bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
       bool isSchemeless =
           loadInfo->GetWasSchemelessInput() &&
           !nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin);
@@ -663,7 +662,7 @@ bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
 
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
   if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
@@ -712,7 +711,7 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
   
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = loadInfo->GetOriginAttributes().IsPrivateBrowsing();
   bool isHttpsOnly = IsHttpsOnlyModeEnabled(isPrivateWin);
   bool isHttpsFirst = IsHttpsFirstModeEnabled(isPrivateWin);
   bool isSchemelessHttpsFirst =
@@ -765,7 +764,7 @@ bool nsHTTPSOnlyUtils::IsSafeToAcceptCORSOrMixedContent(
     return false;
   }
   
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
   return nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin);
 }
 
@@ -823,7 +822,7 @@ void nsHTTPSOnlyUtils::LogMessage(const nsAString& aMessage, uint32_t aFlags,
                                               windowId, aURI);
   } else {
     
-    bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+    bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
     nsContentUtils::LogSimpleConsoleError(message, category, isPrivateWin,
                                           true ,
                                           aFlags);
@@ -892,7 +891,7 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeConnection(nsILoadInfo* aLoadInfo) {
   }
 
   
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().IsPrivateBrowsing();
   if (!IsHttpsOnlyModeEnabled(isPrivateWin) &&
       !IsHttpsFirstModeEnabled(isPrivateWin)) {
     return false;

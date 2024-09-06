@@ -378,7 +378,7 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow, nsIURI* aURI,
   
   
   
-  bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
+  bool isPrivate = mOriginAttributes.IsPrivateBrowsing();
   bool shouldResistFingerprinting =
       nsContentUtils::ShouldResistFingerprinting_dangerous(
           aURI, mOriginAttributes,
@@ -467,7 +467,7 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
     }
   }
 
-  const bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
+  const bool isPrivate = mOriginAttributes.IsPrivateBrowsing();
 
   
   
@@ -1146,7 +1146,7 @@ already_AddRefed<nsICookieJarSettings> CreateCookieJarSettings(
 NS_IMETHODIMP
 LoadInfo::GetCookieJarSettings(nsICookieJarSettings** aCookieJarSettings) {
   if (!mCookieJarSettings) {
-    bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
+    bool isPrivate = mOriginAttributes.IsPrivateBrowsing();
     nsCOMPtr<nsIPrincipal> loadingPrincipal;
     Unused << this->GetLoadingPrincipal(getter_AddRefs(loadingPrincipal));
     bool shouldResistFingerprinting =

@@ -131,7 +131,7 @@ nsresult CacheCreator::CreateCacheStorage(nsIPrincipal* aPrincipal) {
   
   
   
-  if (NS_WARN_IF(mOriginAttributes.mPrivateBrowsingId > 0)) {
+  if (NS_WARN_IF(mOriginAttributes.IsPrivateBrowsing())) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 

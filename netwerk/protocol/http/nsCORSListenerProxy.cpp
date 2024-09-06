@@ -308,7 +308,7 @@ nsPreflightCache::CacheEntry* nsPreflightCache::GetEntry(
   
   
   auto newEntry =
-      MakeUnique<CacheEntry>(key, aOriginAttributes.mPrivateBrowsingId != 0);
+      MakeUnique<CacheEntry>(key, aOriginAttributes.IsPrivateBrowsing());
 
   NS_ASSERTION(mTable.Count() <= PREFLIGHT_CACHE_SIZE,
                "Something is borked, too many entries in the cache!");

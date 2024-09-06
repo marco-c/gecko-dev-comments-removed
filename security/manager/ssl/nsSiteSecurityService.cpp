@@ -321,7 +321,7 @@ nsresult nsSiteSecurityService::SetHSTSState(
   nsAutoCString stateString;
   siteState.ToString(stateString);
   SSSLOG(("SSS: setting state for %s", hostname.get()));
-  bool isPrivate = aOriginAttributes.mPrivateBrowsingId > 0;
+  bool isPrivate = aOriginAttributes.IsPrivateBrowsing();
   nsIDataStorage::DataType storageType =
       isPrivate ? nsIDataStorage::DataType::Private
                 : nsIDataStorage::DataType::Persistent;
@@ -364,7 +364,7 @@ nsresult nsSiteSecurityService::SetHSTSState(
 
 nsresult nsSiteSecurityService::MarkHostAsNotHSTS(
     const nsAutoCString& aHost, const OriginAttributes& aOriginAttributes) {
-  bool isPrivate = aOriginAttributes.mPrivateBrowsingId > 0;
+  bool isPrivate = aOriginAttributes.IsPrivateBrowsing();
   nsIDataStorage::DataType storageType =
       isPrivate ? nsIDataStorage::DataType::Private
                 : nsIDataStorage::DataType::Persistent;
@@ -492,7 +492,7 @@ nsresult nsSiteSecurityService::ResetStateInternal(
 
 void nsSiteSecurityService::ResetStateForExactDomain(
     const nsCString& aHostname, const OriginAttributes& aOriginAttributes) {
-  bool isPrivate = aOriginAttributes.mPrivateBrowsingId > 0;
+  bool isPrivate = aOriginAttributes.IsPrivateBrowsing();
   nsIDataStorage::DataType storageType =
       isPrivate ? nsIDataStorage::DataType::Private
                 : nsIDataStorage::DataType::Persistent;
@@ -864,7 +864,7 @@ nsresult nsSiteSecurityService::HostMatchesHSTSEntry(
   
   
   
-  bool isPrivate = aOriginAttributes.mPrivateBrowsingId > 0;
+  bool isPrivate = aOriginAttributes.IsPrivateBrowsing();
   nsIDataStorage::DataType storageType =
       isPrivate ? nsIDataStorage::DataType::Private
                 : nsIDataStorage::DataType::Persistent;
