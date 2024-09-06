@@ -3087,25 +3087,23 @@ TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
   
   
   
-  EXPECT_EQ(cricket::RELAY_PORT_TYPE,
-            caller()->last_candidate_gathered().type());
-  EXPECT_EQ(cricket::RELAY_PORT_TYPE,
-            callee()->last_candidate_gathered().type());
+  EXPECT_TRUE(caller()->last_candidate_gathered().is_relay());
+  EXPECT_TRUE(callee()->last_candidate_gathered().is_relay());
 
   
   caller_config = caller()->pc()->GetConfiguration();
   caller_config.type = PeerConnectionInterface::kAll;
   caller()->pc()->SetConfiguration(caller_config);
   
-  EXPECT_EQ_WAIT(cricket::LOCAL_PORT_TYPE,
-                 caller()->last_candidate_gathered().type(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->last_candidate_gathered().is_local(),
+                   kDefaultTimeout);
 
   
   callee_config = callee()->pc()->GetConfiguration();
   callee_config.type = PeerConnectionInterface::kAll;
   callee()->pc()->SetConfiguration(callee_config);
-  EXPECT_EQ_WAIT(cricket::LOCAL_PORT_TYPE,
-                 callee()->last_candidate_gathered().type(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->last_candidate_gathered().is_local(),
+                   kDefaultTimeout);
 
   
   

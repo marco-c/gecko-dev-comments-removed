@@ -328,17 +328,6 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
         });
   }
 
-  static int CountCandidates(const std::vector<Candidate>& candidates,
-                             absl::string_view type,
-                             absl::string_view proto,
-                             const SocketAddress& addr) {
-    return absl::c_count_if(
-        candidates, [type, proto, addr](const Candidate& c) {
-          return c.type() == type && c.protocol() == proto &&
-                 AddressMatch(c.address(), addr);
-        });
-  }
-
   
   static bool FindCandidate(const std::vector<Candidate>& candidates,
                             absl::string_view type,
@@ -1237,7 +1226,7 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsPortRange) {
   int num_nonrelay_candidates = 0;
   for (const Candidate& candidate : candidates_) {
     
-    if (candidate.type() != RELAY_PORT_TYPE) {
+    if (!candidate.is_relay()) {
       EXPECT_TRUE(CheckPort(candidate.address(), kMinPort, kMaxPort));
       ++num_nonrelay_candidates;
     }
@@ -1272,9 +1261,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoAdapters) {
                            rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0)));
   
   
-  EXPECT_EQ(2,
-            CountCandidates(candidates_, "relay", "udp",
-                            rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+  rtc::SocketAddress addr(kTurnUdpExtAddr.ipaddr(), 0);
+  EXPECT_EQ(2, absl::c_count_if(candidates_, [&](const Candidate& c) {
+              return c.is_relay() && c.protocol() == "udp" &&
+                     AddressMatch(c.address(), addr);
+            }));
 }
 
 
@@ -1548,7 +1539,7 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithRelayOnly) {
 
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_EQ(1U, ports_.size());  
-  EXPECT_EQ(std::string(RELAY_PORT_TYPE), candidates_[0].type());
+  EXPECT_TRUE(candidates_[0].is_relay());
   EXPECT_EQ(
       candidates_[0].related_address(),
       rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()));
@@ -1565,7 +1556,7 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithHostOnly) {
   EXPECT_EQ(2U, candidates_.size());  
   EXPECT_EQ(2U, ports_.size());       
   for (const Candidate& candidate : candidates_) {
-    EXPECT_EQ(std::string(LOCAL_PORT_TYPE), candidate.type());
+    EXPECT_TRUE(candidate.is_local());
   }
 }
 
@@ -1584,7 +1575,7 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
   
   EXPECT_EQ(1U, candidates_.size());  
   EXPECT_EQ(1U, ports_.size());       
-  EXPECT_EQ(std::string(STUN_PORT_TYPE), candidates_[0].type());
+  EXPECT_TRUE(candidates_[0].is_stun());
   EXPECT_EQ(
       candidates_[0].related_address(),
       rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()));
@@ -1603,7 +1594,7 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   EXPECT_EQ(2U, candidates_.size());  
   EXPECT_EQ(2U, ports_.size());  
   for (const Candidate& candidate : candidates_) {
-    EXPECT_EQ(std::string(LOCAL_PORT_TYPE), candidate.type());
+    EXPECT_TRUE(candidate.is_local());
   }
 }
 
@@ -2174,7 +2165,7 @@ TEST_F(BasicPortAllocatorTest, TestSetCandidateFilterAfterCandidatesGathered) {
   }
   for (const Candidate& candidate : candidates) {
     
-    EXPECT_EQ(std::string(RELAY_PORT_TYPE), candidate.type());
+    EXPECT_TRUE(candidate.is_relay());
     
     EXPECT_EQ(candidate.related_address(),
               rtc::EmptySocketAddressWithFamily(candidate.address().family()));
@@ -2210,21 +2201,21 @@ TEST_F(BasicPortAllocatorTest,
   session_->SetCandidateFilter(CF_RELAY);
   ASSERT_EQ_SIMULATED_WAIT(1u, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
-  EXPECT_EQ(RELAY_PORT_TYPE, candidates_.back().type());
+  EXPECT_TRUE(candidates_.back().is_relay());
   EXPECT_EQ(1u, ports_.size());
 
   
   session_->SetCandidateFilter(CF_RELAY | CF_REFLEXIVE);
   ASSERT_EQ_SIMULATED_WAIT(2u, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
-  EXPECT_EQ(STUN_PORT_TYPE, candidates_.back().type());
+  EXPECT_TRUE(candidates_.back().is_stun());
   EXPECT_EQ(2u, ports_.size());
 
   
   session_->SetCandidateFilter(CF_ALL);
   ASSERT_EQ_SIMULATED_WAIT(3u, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
-  EXPECT_EQ(LOCAL_PORT_TYPE, candidates_.back().type());
+  EXPECT_TRUE(candidates_.back().is_local());
   EXPECT_EQ(2u, ports_.size());
 }
 
@@ -2260,21 +2251,21 @@ TEST_F(
   session_->SetCandidateFilter(CF_RELAY);
   EXPECT_EQ_SIMULATED_WAIT(1u, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
-  EXPECT_EQ(RELAY_PORT_TYPE, candidates_.back().type());
+  EXPECT_TRUE(candidates_.back().is_relay());
   EXPECT_EQ(1u, ports_.size());
 
   
   session_->SetCandidateFilter(CF_REFLEXIVE);
   EXPECT_EQ_SIMULATED_WAIT(2u, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
-  EXPECT_EQ(STUN_PORT_TYPE, candidates_.back().type());
+  EXPECT_TRUE(candidates_.back().is_stun());
   EXPECT_EQ(2u, ports_.size());
 
   
   session_->SetCandidateFilter(CF_HOST);
   EXPECT_EQ_SIMULATED_WAIT(3u, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
-  EXPECT_EQ(LOCAL_PORT_TYPE, candidates_.back().type());
+  EXPECT_TRUE(candidates_.back().is_local());
   
   EXPECT_EQ(2u, ports_.size());
 }

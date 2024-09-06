@@ -134,8 +134,7 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
     return NULL;
   }
 
-  if ((address.tcptype() == TCPTYPE_ACTIVE_STR &&
-       address.type() != PRFLX_PORT_TYPE) ||
+  if ((address.tcptype() == TCPTYPE_ACTIVE_STR && !address.is_prflx()) ||
       (address.tcptype().empty() && address.address().port() == 0)) {
     
     

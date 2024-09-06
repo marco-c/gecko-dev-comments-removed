@@ -1214,7 +1214,7 @@ void JsepTransportController::OnTransportCandidateGathered_n(
     cricket::IceTransportInternal* transport,
     const cricket::Candidate& candidate) {
   
-  if (candidate.type() == cricket::PRFLX_PORT_TYPE) {
+  if (candidate.is_prflx()) {
     RTC_DCHECK_NOTREACHED();
     return;
   }

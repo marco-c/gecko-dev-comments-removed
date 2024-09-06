@@ -839,7 +839,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
 
   
   void OnCandidateGathered(IceTransportInternal* ch, const Candidate& c) {
-    if (force_relay_ && c.type() != RELAY_PORT_TYPE)
+    if (force_relay_ && !c.is_relay())
       return;
 
     if (GetEndpoint(ch)->save_candidates_) {
@@ -1571,16 +1571,16 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   ASSERT_TRUE_WAIT(
       (selected_connection = ep1_ch1()->selected_connection()) != nullptr,
       kMediumTimeout);
-  EXPECT_EQ(PRFLX_PORT_TYPE, selected_connection->remote_candidate().type());
+  EXPECT_TRUE(selected_connection->remote_candidate().is_prflx());
   EXPECT_EQ(kIceUfrag[1], selected_connection->remote_candidate().username());
   EXPECT_EQ(kIcePwd[1], selected_connection->remote_candidate().password());
   EXPECT_EQ(1u, selected_connection->remote_candidate().generation());
 
   ResumeCandidates(1);
   
-  EXPECT_EQ_WAIT(LOCAL_PORT_TYPE,
-                 ep1_ch1()->selected_connection()->remote_candidate().type(),
-                 kMediumTimeout);
+  EXPECT_TRUE_WAIT(
+      ep1_ch1()->selected_connection()->remote_candidate().is_local(),
+      kMediumTimeout);
   EXPECT_EQ(selected_connection, ep1_ch1()->selected_connection());
   DestroyChannels();
 }
@@ -1608,15 +1608,15 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveRemoteCandidateIsSanitized) {
   
   auto pair_ep1 = ep1_ch1()->GetSelectedCandidatePair();
   ASSERT_TRUE(pair_ep1.has_value());
-  EXPECT_EQ(PRFLX_PORT_TYPE, pair_ep1->remote_candidate().type());
+  EXPECT_TRUE(pair_ep1->remote_candidate().is_prflx());
   EXPECT_TRUE(pair_ep1->remote_candidate().address().ipaddr().IsNil());
 
   IceTransportStats ice_transport_stats;
   ep1_ch1()->GetStats(&ice_transport_stats);
   
   ASSERT_EQ(1u, ice_transport_stats.connection_infos.size());
-  EXPECT_EQ(PRFLX_PORT_TYPE,
-            ice_transport_stats.connection_infos[0].remote_candidate.type());
+  EXPECT_TRUE(
+      ice_transport_stats.connection_infos[0].remote_candidate.is_prflx());
   EXPECT_TRUE(ice_transport_stats.connection_infos[0]
                   .remote_candidate.address()
                   .ipaddr()
@@ -1626,8 +1626,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveRemoteCandidateIsSanitized) {
   ResumeCandidates(1);
   ASSERT_TRUE_WAIT(
       ep1_ch1()->selected_connection() != nullptr &&
-          ep1_ch1()->selected_connection()->remote_candidate().type() ==
-              LOCAL_PORT_TYPE,
+          ep1_ch1()->selected_connection()->remote_candidate().is_local(),
       kMediumTimeout);
 
   
@@ -1636,14 +1635,14 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveRemoteCandidateIsSanitized) {
   
   auto updated_pair_ep1 = ep1_ch1()->GetSelectedCandidatePair();
   ASSERT_TRUE(updated_pair_ep1.has_value());
-  EXPECT_EQ(LOCAL_PORT_TYPE, updated_pair_ep1->remote_candidate().type());
+  EXPECT_TRUE(updated_pair_ep1->remote_candidate().is_local());
   EXPECT_TRUE(HasRemoteAddress(&updated_pair_ep1.value(), kPublicAddrs[1]));
 
   ep1_ch1()->GetStats(&ice_transport_stats);
   
   ASSERT_EQ(1u, ice_transport_stats.connection_infos.size());
-  EXPECT_EQ(LOCAL_PORT_TYPE,
-            ice_transport_stats.connection_infos[0].remote_candidate.type());
+  EXPECT_TRUE(
+      ice_transport_stats.connection_infos[0].remote_candidate.is_local());
   EXPECT_TRUE(ice_transport_stats.connection_infos[0]
                   .remote_candidate.address()
                   .EqualIPs(kPublicAddrs[1]));
@@ -1679,16 +1678,16 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   ASSERT_TRUE_WAIT(
       (selected_connection = ep1_ch1()->selected_connection()) != nullptr,
       kMediumTimeout);
-  EXPECT_EQ(PRFLX_PORT_TYPE, selected_connection->remote_candidate().type());
+  EXPECT_TRUE(selected_connection->remote_candidate().is_prflx());
   EXPECT_EQ(kIceUfrag[1], selected_connection->remote_candidate().username());
   EXPECT_EQ(kIcePwd[1], selected_connection->remote_candidate().password());
   EXPECT_EQ(1u, selected_connection->remote_candidate().generation());
 
   ResumeCandidates(1);
 
-  EXPECT_EQ_WAIT(PRFLX_PORT_TYPE,
-                 ep1_ch1()->selected_connection()->remote_candidate().type(),
-                 kMediumTimeout);
+  EXPECT_TRUE_WAIT(
+      ep1_ch1()->selected_connection()->remote_candidate().is_prflx(),
+      kMediumTimeout);
   EXPECT_EQ(selected_connection, ep1_ch1()->selected_connection());
   DestroyChannels();
 }
@@ -1728,9 +1727,9 @@ TEST_F(P2PTransportChannelTest,
 
   
   
-  EXPECT_EQ_WAIT(PRFLX_PORT_TYPE,
-                 ep1_ch1()->selected_connection()->remote_candidate().type(),
-                 kDefaultTimeout);
+  EXPECT_TRUE_WAIT(
+      ep1_ch1()->selected_connection()->remote_candidate().is_prflx(),
+      kDefaultTimeout);
   const Connection* prflx_selected_connection =
       ep1_ch1()->selected_connection();
 
@@ -1744,9 +1743,9 @@ TEST_F(P2PTransportChannelTest,
   
   ResumeCandidates(1);
 
-  EXPECT_EQ_WAIT(RELAY_PORT_TYPE,
-                 ep1_ch1()->selected_connection()->remote_candidate().type(),
-                 kDefaultTimeout);
+  EXPECT_TRUE_WAIT(
+      ep1_ch1()->selected_connection()->remote_candidate().is_relay(),
+      kDefaultTimeout);
   EXPECT_EQ(prflx_selected_connection, ep1_ch1()->selected_connection());
   DestroyChannels();
 }
@@ -2021,10 +2020,10 @@ TEST_F(P2PTransportChannelTest, TestForceTurn) {
   EXPECT_TRUE(ep1_ch1()->selected_connection() &&
               ep2_ch1()->selected_connection());
 
-  EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
-  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
-  EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep2_ch1())->type());
-  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep2_ch1())->type());
+  EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_relay());
+  EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
+  EXPECT_TRUE(RemoteCandidate(ep2_ch1())->is_relay());
+  EXPECT_TRUE(LocalCandidate(ep2_ch1())->is_relay());
 
   TestSendRecv(&clock);
   DestroyChannels();
@@ -2172,8 +2171,8 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
   
   
   EXPECT_TRUE_WAIT(ep1_ch1()->selected_connection() != nullptr, kShortTimeout);
-  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
-  EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+  EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
+  EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_relay());
   
   
   EXPECT_TRUE(ep1_ch1()->writable());
@@ -2220,8 +2219,8 @@ TEST_F(P2PTransportChannelTest, TurnToPrflxPresumedWritable) {
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable(),
                              kShortTimeout, fake_clock);
   ASSERT_NE(nullptr, ep1_ch1()->selected_connection());
-  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
-  EXPECT_EQ(PRFLX_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+  EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
+  EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_prflx());
   
   
   EXPECT_FALSE(ep1_ch1()->selected_connection()->writable());
@@ -2265,8 +2264,8 @@ TEST_F(P2PTransportChannelTest, PresumedWritablePreferredOverUnreliable) {
   
   ep1_ch1()->AddRemoteCandidate(
       CreateUdpCandidate(RELAY_PORT_TYPE, "2.2.2.2", 2, 0));
-  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
-  EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+  EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
+  EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_relay());
   EXPECT_TRUE(ep1_ch1()->writable());
   EXPECT_TRUE(GetEndpoint(0)->ready_to_send_);
   EXPECT_NE(old_selected_connection, ep1_ch1()->selected_connection());
@@ -2293,8 +2292,8 @@ TEST_F(P2PTransportChannelTest, SignalReadyToSendWithPresumedWritable) {
       CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 0));
   
   EXPECT_TRUE_WAIT(ep1_ch1()->selected_connection() != nullptr, kShortTimeout);
-  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
-  EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+  EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
+  EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_relay());
 
   
   virtual_socket_server()->SetSendingBlocked(true);
@@ -2349,8 +2348,8 @@ TEST_F(P2PTransportChannelTest,
 
   ASSERT_NE(nullptr, ep1_ch1()->selected_connection());
 
-  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
-  EXPECT_EQ(PRFLX_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+  EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
+  EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_prflx());
 
   DestroyChannels();
 }
@@ -5041,22 +5040,22 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   
   Connection* conn = FindNextPingableConnectionAndPingIt(&ch);
   ASSERT_TRUE(conn != nullptr);
-  EXPECT_EQ(conn->local_candidate().type(), RELAY_PORT_TYPE);
-  EXPECT_EQ(conn->remote_candidate().type(), RELAY_PORT_TYPE);
+  EXPECT_TRUE(conn->local_candidate().is_relay());
+  EXPECT_TRUE(conn->remote_candidate().is_relay());
 
   
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
-  EXPECT_EQ(conn2->local_candidate().type(), LOCAL_PORT_TYPE);
-  EXPECT_EQ(conn2->remote_candidate().type(), LOCAL_PORT_TYPE);
+  EXPECT_TRUE(conn2->local_candidate().is_local());
+  EXPECT_TRUE(conn2->remote_candidate().is_local());
   conn2->ReceivedPing();
   EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
 
   
   Connection* conn3 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn3 != nullptr);
-  EXPECT_EQ(conn3->local_candidate().type(), LOCAL_PORT_TYPE);
-  EXPECT_EQ(conn3->remote_candidate().type(), RELAY_PORT_TYPE);
+  EXPECT_TRUE(conn3->local_candidate().is_local());
+  EXPECT_TRUE(conn3->remote_candidate().is_relay());
   conn3->ReceivedPingResponse(LOW_RTT, "id");
   ASSERT_TRUE(conn3->writable());
   conn3->ReceivedPing();
@@ -5266,16 +5265,16 @@ TEST_F(P2PTransportChannelTest,
   ASSERT_TRUE_WAIT(
       (selected_connection = ep2_ch1()->selected_connection()) != nullptr,
       kMediumTimeout);
-  EXPECT_EQ(PRFLX_PORT_TYPE, selected_connection->remote_candidate().type());
+  EXPECT_TRUE(selected_connection->remote_candidate().is_prflx());
   EXPECT_EQ(kIceUfrag[0], selected_connection->remote_candidate().username());
   EXPECT_EQ(kIcePwd[0], selected_connection->remote_candidate().password());
   
   resolver_fixture.SetAddressToReturn(local_address);
   ResumeCandidates(0);
   
-  EXPECT_EQ_WAIT(LOCAL_PORT_TYPE,
-                 ep2_ch1()->selected_connection()->remote_candidate().type(),
-                 kMediumTimeout);
+  EXPECT_TRUE_WAIT(
+      ep2_ch1()->selected_connection()->remote_candidate().is_local(),
+      kMediumTimeout);
   EXPECT_EQ(selected_connection, ep2_ch1()->selected_connection());
 
   DestroyChannels();
@@ -5328,16 +5327,15 @@ TEST_F(P2PTransportChannelTest,
   
   
   ASSERT_TRUE_WAIT(ep2_ch1()->selected_connection() != nullptr, kMediumTimeout);
-  EXPECT_EQ(PRFLX_PORT_TYPE,
-            ep2_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep2_ch1()->selected_connection()->remote_candidate().is_prflx());
   
   
 
   resolver_fixture.FireDelayedResolution();
 
-  EXPECT_EQ_WAIT(LOCAL_PORT_TYPE,
-                 ep2_ch1()->selected_connection()->remote_candidate().type(),
-                 kMediumTimeout);
+  EXPECT_TRUE_WAIT(
+      ep2_ch1()->selected_connection()->remote_candidate().is_local(),
+      kMediumTimeout);
   EXPECT_EQ(1u, ep2_ch1()->remote_candidates().size());
 
   DestroyChannels();
@@ -5380,10 +5378,8 @@ TEST_F(P2PTransportChannelTest, CanConnectWithHostCandidateWithMdnsName) {
   
   ASSERT_TRUE_WAIT((ep1_ch1()->selected_connection()) != nullptr,
                    kMediumTimeout);
-  EXPECT_EQ(LOCAL_PORT_TYPE,
-            ep1_ch1()->selected_connection()->local_candidate().type());
-  EXPECT_EQ(PRFLX_PORT_TYPE,
-            ep1_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_local());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_prflx());
 
   DestroyChannels();
 }
@@ -5713,10 +5709,8 @@ TEST_F(P2PTransportChannelTest,
   
   ASSERT_TRUE_WAIT((ep1_ch1()->selected_connection()) != nullptr,
                    kMediumTimeout);
-  EXPECT_EQ(STUN_PORT_TYPE,
-            ep1_ch1()->selected_connection()->local_candidate().type());
-  EXPECT_EQ(LOCAL_PORT_TYPE,
-            ep1_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_stun());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_local());
 
   DestroyChannels();
 }
@@ -5747,31 +5741,25 @@ TEST_F(P2PTransportChannelTest,
                              kDefaultTimeout, clock);
   ASSERT_TRUE_SIMULATED_WAIT(ep2_ch1()->selected_connection() != nullptr,
                              kDefaultTimeout, clock);
-  EXPECT_EQ(RELAY_PORT_TYPE,
-            ep1_ch1()->selected_connection()->local_candidate().type());
-  EXPECT_EQ(RELAY_PORT_TYPE,
-            ep2_ch1()->selected_connection()->local_candidate().type());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_relay());
+  EXPECT_TRUE(ep2_ch1()->selected_connection()->local_candidate().is_relay());
 
   
   ep1->allocator_->SetCandidateFilter(CF_ALL);
   EXPECT_TRUE_SIMULATED_WAIT(
       ep1_ch1()->selected_connection() != nullptr &&
-          ep1_ch1()->selected_connection()->local_candidate().type() ==
-              LOCAL_PORT_TYPE,
+          ep1_ch1()->selected_connection()->local_candidate().is_local(),
       kDefaultTimeout, clock);
-  EXPECT_EQ(RELAY_PORT_TYPE,
-            ep1_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_relay());
 
   
   ep2->allocator_->SetCandidateFilter(CF_ALL);
   EXPECT_TRUE_SIMULATED_WAIT(
       ep2_ch1()->selected_connection() != nullptr &&
-          ep2_ch1()->selected_connection()->local_candidate().type() ==
-              LOCAL_PORT_TYPE,
+          ep2_ch1()->selected_connection()->local_candidate().is_local(),
       kDefaultTimeout, clock);
   
-  EXPECT_EQ(LOCAL_PORT_TYPE,
-            ep2_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep2_ch1()->selected_connection()->remote_candidate().is_local());
 
   
   fw()->AddRule(false, rtc::FP_ANY, kPublicAddrs[0], kPublicAddrs[1]);
@@ -5780,12 +5768,10 @@ TEST_F(P2PTransportChannelTest,
   fw()->AddRule(false, rtc::FP_ANY, kPublicAddrs[1], kTurnUdpExtAddr);
 
   
-  EXPECT_EQ_SIMULATED_WAIT(
-      RELAY_PORT_TYPE,
-      ep1_ch1()->selected_connection()->local_candidate().type(),
+  EXPECT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->selected_connection()->local_candidate().is_relay(),
       kDefaultTimeout, clock);
-  EXPECT_EQ(RELAY_PORT_TYPE,
-            ep1_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_relay());
   DestroyChannels();
 }
 
@@ -5824,22 +5810,18 @@ TEST_F(P2PTransportChannelTest,
   ep1->allocator_->SetCandidateFilter(kCandidateFilterNoHost);
   EXPECT_TRUE_SIMULATED_WAIT(
       ep1_ch1()->selected_connection() != nullptr &&
-          ep1_ch1()->selected_connection()->local_candidate().type() ==
-              STUN_PORT_TYPE,
+          ep1_ch1()->selected_connection()->local_candidate().is_stun(),
       kDefaultTimeout, clock);
-  EXPECT_EQ(RELAY_PORT_TYPE,
-            ep1_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_relay());
 
   
   ep2->allocator_->SetCandidateFilter(kCandidateFilterNoHost);
   EXPECT_TRUE_SIMULATED_WAIT(
       ep2_ch1()->selected_connection() != nullptr &&
-          ep2_ch1()->selected_connection()->local_candidate().type() ==
-              STUN_PORT_TYPE,
+          ep2_ch1()->selected_connection()->local_candidate().is_stun(),
       kDefaultTimeout, clock);
   
-  EXPECT_EQ(STUN_PORT_TYPE,
-            ep2_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep2_ch1()->selected_connection()->remote_candidate().is_stun());
 
   
   fw()->AddRule(false, rtc::FP_ANY, kPrivateAddrs[0], kPublicAddrs[1]);
@@ -5847,12 +5829,10 @@ TEST_F(P2PTransportChannelTest,
   fw()->AddRule(false, rtc::FP_ANY, kPrivateAddrs[0], kTurnUdpExtAddr);
   fw()->AddRule(false, rtc::FP_ANY, kPrivateAddrs[1], kTurnUdpExtAddr);
   
-  EXPECT_EQ_SIMULATED_WAIT(
-      RELAY_PORT_TYPE,
-      ep1_ch1()->selected_connection()->local_candidate().type(),
+  EXPECT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->selected_connection()->local_candidate().is_relay(),
       kDefaultTimeout, clock);
-  EXPECT_EQ(RELAY_PORT_TYPE,
-            ep1_ch1()->selected_connection()->remote_candidate().type());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_relay());
   DestroyChannels();
 }
 
@@ -5885,13 +5865,11 @@ TEST_F(P2PTransportChannelTest,
   ep1->allocator_->SetCandidateFilter(CF_ALL);
   
   SIMULATED_WAIT(false, kDefaultTimeout, clock);
-  EXPECT_EQ(RELAY_PORT_TYPE,
-            ep1_ch1()->selected_connection()->local_candidate().type());
+  EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_relay());
 
   
   ep2->allocator_->SetCandidateFilter(CF_ALL);
-  EXPECT_EQ(RELAY_PORT_TYPE,
-            ep2_ch1()->selected_connection()->local_candidate().type());
+  EXPECT_TRUE(ep2_ch1()->selected_connection()->local_candidate().is_relay());
   DestroyChannels();
 }
 
@@ -5928,21 +5906,18 @@ TEST_F(P2PTransportChannelTest,
   ResumeCandidates(1);
   ASSERT_TRUE_SIMULATED_WAIT(
       ep1_ch1()->selected_connection() != nullptr &&
-          LOCAL_PORT_TYPE ==
-              ep1_ch1()->selected_connection()->local_candidate().type() &&
+          ep1_ch1()->selected_connection()->local_candidate().is_local() &&
           ep2_ch1()->selected_connection() != nullptr &&
-          LOCAL_PORT_TYPE ==
-              ep1_ch1()->selected_connection()->remote_candidate().type(),
+          ep1_ch1()->selected_connection()->remote_candidate().is_local(),
       kDefaultTimeout, clock);
   ASSERT_TRUE_SIMULATED_WAIT(ep2_ch1()->selected_connection() != nullptr,
                              kDefaultTimeout, clock);
   
   
   auto test_invariants = [this]() {
-    EXPECT_EQ(LOCAL_PORT_TYPE,
-              ep1_ch1()->selected_connection()->local_candidate().type());
-    EXPECT_EQ(LOCAL_PORT_TYPE,
-              ep1_ch1()->selected_connection()->remote_candidate().type());
+    EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_local());
+    EXPECT_TRUE(
+        ep1_ch1()->selected_connection()->remote_candidate().is_local());
     EXPECT_THAT(ep2_ch1()->remote_candidates(), SizeIs(3));
   };
 
@@ -6005,11 +5980,9 @@ TEST_F(P2PTransportChannelTest, SurfaceRequiresCoordination) {
   ResumeCandidates(1);
   ASSERT_TRUE_SIMULATED_WAIT(
       ep1_ch1()->selected_connection() != nullptr &&
-          RELAY_PORT_TYPE ==
-              ep1_ch1()->selected_connection()->local_candidate().type() &&
+          ep1_ch1()->selected_connection()->local_candidate().is_relay() &&
           ep2_ch1()->selected_connection() != nullptr &&
-          RELAY_PORT_TYPE ==
-              ep1_ch1()->selected_connection()->remote_candidate().type(),
+          ep1_ch1()->selected_connection()->remote_candidate().is_relay(),
       kDefaultTimeout, clock);
   ASSERT_TRUE_SIMULATED_WAIT(ep2_ch1()->selected_connection() != nullptr,
                              kDefaultTimeout, clock);
@@ -6025,11 +5998,9 @@ TEST_F(P2PTransportChannelTest, SurfaceRequiresCoordination) {
 
   
   EXPECT_TRUE(ep1_ch1()->selected_connection() != nullptr &&
-              RELAY_PORT_TYPE ==
-                  ep1_ch1()->selected_connection()->local_candidate().type() &&
+              ep1_ch1()->selected_connection()->local_candidate().is_relay() &&
               ep2_ch1()->selected_connection() != nullptr &&
-              RELAY_PORT_TYPE ==
-                  ep1_ch1()->selected_connection()->remote_candidate().type());
+              ep1_ch1()->selected_connection()->remote_candidate().is_relay());
 
   DestroyChannels();
 }
