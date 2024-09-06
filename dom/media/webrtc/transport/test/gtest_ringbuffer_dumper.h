@@ -47,12 +47,14 @@ class RingbufferDumper : public ::testing::EmptyTestEventListener {
   }
 
   virtual void OnTestStart(const ::testing::TestInfo& testInfo) override {
+    running_ = true;
     mozilla::SyncRunnable::DispatchToThread(
         test_utils_->sts_target(),
         WrapRunnable(this, &RingbufferDumper::ClearRingBuffer_s));
   }
 
   virtual void OnTestEnd(const ::testing::TestInfo& testInfo) override {
+    running_ = false;
     mozilla::SyncRunnable::DispatchToThread(
         test_utils_->sts_target(),
         WrapRunnable(this, &RingbufferDumper::DestroyRingBuffer_s));
@@ -62,6 +64,13 @@ class RingbufferDumper : public ::testing::EmptyTestEventListener {
   virtual void OnTestPartResult(
       const ::testing::TestPartResult& testResult) override {
     if (testResult.failed()) {
+      if (!running_) {
+        
+        running_ = true;
+        mozilla::SyncRunnable::DispatchToThread(
+            test_utils_->sts_target(),
+            WrapRunnable(this, &RingbufferDumper::ClearRingBuffer_s));
+      }
       
       mozilla::SyncRunnable::DispatchToThread(
           test_utils_->sts_target(),
@@ -71,6 +80,7 @@ class RingbufferDumper : public ::testing::EmptyTestEventListener {
 
  private:
   MtransportTestUtils* test_utils_;
+  bool running_ = false;
 };
 
 }  
