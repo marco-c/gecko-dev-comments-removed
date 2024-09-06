@@ -95,6 +95,7 @@ const execute = (context, details, kind, method) => {
   options.runAt = details.injectImmediately
     ? "document_start"
     : "document_idle";
+  options.world = details.world || "ISOLATED";
   options.matchOriginAsFallback = true; 
   options.wantReturnValue = true;
   
@@ -335,6 +336,7 @@ this.scripting = class extends ExtensionAPI {
             script.matches ??= options.matches;
             script.matchOriginAsFallback ??= options.matchOriginAsFallback;
             script.runAt ??= options.runAt;
+            script.world ??= options.world;
             script.persistAcrossSessions ??= options.persistAcrossSessions;
 
             ensureValidScriptParams(extension, script);

@@ -82,7 +82,7 @@ add_task(
           matches: ["http://*/*/*.html"],
           matchOriginAsFallback: true,
           runAt: "document_start",
-          world: "ISOLATED", 
+          world: "MAIN",
           persistAcrossSessions: false,
           css: ["style.js"],
           excludeMatches: ["http://*/*/foobar.html"],
