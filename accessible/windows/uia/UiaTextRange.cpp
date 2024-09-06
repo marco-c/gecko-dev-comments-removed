@@ -6,11 +6,36 @@
 
 #include "UiaTextRange.h"
 
+#include "TextLeafRange.h"
+
 namespace mozilla::a11y {
 
 
 
-UiaTextRange::UiaTextRange(TextLeafRange& aRange) {}
+UiaTextRange::UiaTextRange(TextLeafRange& aRange) {
+  MOZ_ASSERT(aRange);
+  SetRange(aRange);
+}
+
+void UiaTextRange::SetRange(const TextLeafRange& aRange) {
+  TextLeafPoint start = aRange.Start();
+  mStartAcc = MsaaAccessible::GetFrom(start.mAcc);
+  MOZ_ASSERT(mStartAcc);
+  mStartOffset = start.mOffset;
+  TextLeafPoint end = aRange.End();
+  mEndAcc = MsaaAccessible::GetFrom(end.mAcc);
+  MOZ_ASSERT(mEndAcc);
+  mEndOffset = end.mOffset;
+}
+
+TextLeafRange UiaTextRange::GetRange() const {
+  
+  
+  
+  
+  return TextLeafRange({mStartAcc->Acc(), mStartOffset},
+                       {mEndAcc->Acc(), mEndOffset});
+}
 
 
 IMPL_IUNKNOWN1(UiaTextRange, ITextRangeProvider)

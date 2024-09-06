@@ -8,7 +8,9 @@
 #define mozilla_a11y_UiaTextRange_h__
 
 #include "IUnknownImpl.h"
+#include "MsaaAccessible.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/RefPtr.h"
 #include "objbase.h"
 #include "uiautomation.h"
 
@@ -97,6 +99,18 @@ class UiaTextRange : public ITextRangeProvider {
 
   virtual HRESULT STDMETHODCALLTYPE GetChildren(
        __RPC__deref_out_opt SAFEARRAY** aRetVal);
+
+ private:
+  void SetRange(const TextLeafRange& aRange);
+  TextLeafRange GetRange() const;
+
+  
+  
+  
+  RefPtr<MsaaAccessible> mStartAcc;
+  int32_t mStartOffset = -1;
+  RefPtr<MsaaAccessible> mEndAcc;
+  int32_t mEndOffset = -1;
 };
 
 }  
