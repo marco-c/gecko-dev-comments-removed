@@ -628,3 +628,31 @@ add_task(async function test_fog_complex_object_works() {
   result = Glean.testOnly.crashStack.testGetValue();
   Assert.deepEqual(stack, result);
 });
+
+add_task(function test_fog_ride_along_pings() {
+  Assert.equal(null, Glean.testOnly.badCode.testGetValue("test-ping"));
+  Assert.equal(null, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
+
+  Glean.testOnly.badCode.add(37);
+  Assert.equal(37, Glean.testOnly.badCode.testGetValue("test-ping"));
+  Assert.equal(37, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
+
+  let testPingSubmitted = false;
+
+  GleanPings.testPing.testBeforeNextSubmit(() => {
+    testPingSubmitted = true;
+  });
+  
+  
+  
+  
+
+  
+  GleanPings.testPing.submit();
+
+  Assert.ok(testPingSubmitted, "Test ping was submitted, callback was called.");
+
+  
+  Assert.equal(null, Glean.testOnly.badCode.testGetValue("test-ping"));
+  Assert.equal(null, Glean.testOnly.badCode.testGetValue("ride-along-ping"));
+});
