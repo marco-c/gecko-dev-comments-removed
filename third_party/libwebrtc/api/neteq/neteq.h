@@ -280,10 +280,10 @@ class NetEq {
 
   
   
-  virtual void EnableVad() = 0;
+  virtual void EnableVad() {}
 
   
-  virtual void DisableVad() = 0;
+  virtual void DisableVad() {}
 
   
   
