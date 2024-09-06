@@ -163,7 +163,22 @@ add_task(async function test() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function (newTabBrowser) {
+      
+      
+      const outlinePromise = new Promise(resolve => {
+        BrowserTestUtils.addContentEventListener(
+          newTabBrowser,
+          "outlineloaded",
+          resolve,
+          { capture: false, once: true, wantUntrusted: true }
+        );
+      });
+
+      info("Wait for document to load");
       await waitForPdfJS(newTabBrowser, TESTROOT + "file_pdfjs_test.pdf");
+
+      info("Wait for outline items");
+      await outlinePromise;
 
       await SpecialPowers.spawn(newTabBrowser, [], async function () {
         
@@ -173,8 +188,37 @@ add_task(async function test() {
         );
       });
 
-      await SpecialPowers.spawn(newTabBrowser, [], contentSetUp);
+      info("Wait for zoom to page fit");
+      await SpecialPowers.spawn(
+        newTabBrowser,
+        [],
+        
 
+
+
+
+
+
+        function setZoomToPageFit() {
+          const { document } = content;
+          return new Promise(resolve => {
+            document.addEventListener(
+              "pagerendered",
+              function () {
+                document.querySelector("#viewer").click();
+                resolve();
+              },
+              { once: true }
+            );
+
+            const select = document.querySelector("select#scaleSelect");
+            select.selectedIndex = 2;
+            select.dispatchEvent(new content.Event("change"));
+          });
+        }
+      );
+
+      info("PDF loaded successfully: run tests");
       await runTests(newTabBrowser);
 
       await SpecialPowers.spawn(newTabBrowser, [], async function () {
@@ -188,63 +232,6 @@ add_task(async function test() {
     }
   );
 });
-
-async function contentSetUp() {
-  
-
-
-
-
-
-
-  function waitForOutlineItems(document) {
-    return new Promise((resolve, reject) => {
-      document.addEventListener(
-        "outlineloaded",
-        function (evt) {
-          var outlineCount = evt.detail.outlineCount;
-
-          if (
-            document.querySelectorAll("#outlineView .treeItem").length ===
-            outlineCount
-          ) {
-            resolve();
-          } else {
-            reject("Unable to find outline items.");
-          }
-        },
-        { once: true }
-      );
-    });
-  }
-
-  
-
-
-
-
-
-
-  function setZoomToPageFit(document) {
-    return new Promise(resolve => {
-      document.addEventListener(
-        "pagerendered",
-        function () {
-          document.querySelector("#viewer").click();
-          resolve();
-        },
-        { once: true }
-      );
-
-      var select = document.querySelector("select#scaleSelect");
-      select.selectedIndex = 2;
-      select.dispatchEvent(new content.Event("change"));
-    });
-  }
-
-  await waitForOutlineItems(content.document);
-  await setZoomToPageFit(content.document);
-}
 
 
 

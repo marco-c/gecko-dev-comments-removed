@@ -76,6 +76,8 @@ add_task(async function test() {
 
       
       Assert.deepEqual(last, [255, 255, 255]);
+
+      await waitForPdfJSClose(browser);
     }
   );
 
@@ -99,6 +101,10 @@ add_task(async function test() {
 
       
       Assert.deepEqual(last, [255, 0, 0]);
+
+      await waitForPdfJSClose(browser);
     }
   );
+
+  await SpecialPowers.popPrefEnv();
 });

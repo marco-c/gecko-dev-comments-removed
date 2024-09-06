@@ -63,6 +63,7 @@ add_task(async function test_pdf_saveas() {
       );
       saveBrowser(browser);
       await fileSavedPromise;
+      await waitForPdfJSClose(browser);
     }
   );
 });
@@ -75,9 +76,6 @@ add_task(async function test_pdf_saveas() {
 
 
 add_task(async function test_pdf_saveas_forms() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["pdfjs.renderInteractiveForms", true]],
-  });
   let destFile = tempDir.clone();
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
@@ -104,6 +102,7 @@ add_task(async function test_pdf_saveas_forms() {
       );
       saveBrowser(browser);
       await fileSavedPromise;
+      await waitForPdfJSClose(browser);
     }
   );
 
@@ -120,6 +119,7 @@ add_task(async function test_pdf_saveas_forms() {
         ok(formInput, "PDF contains text field.");
         is(formInput.value, "test", "Text field is filled in.");
       });
+      await waitForPdfJSClose(browser);
     }
   );
 });
@@ -165,7 +165,7 @@ add_task(async function test_pdf_saveas_customname() {
       );
       saveBrowser(tab.linkedBrowser);
       await fileSavedPromise;
-      BrowserTestUtils.removeTab(tab);
+      await waitForPdfJSClose(tab.linkedBrowser,  true);
     }
   );
   await SpecialPowers.popPrefEnv();
@@ -211,6 +211,7 @@ add_task(async function () {
         destDirs[0].path,
         "Proposed directory must be based on the domain"
       );
+      await waitForPdfJSClose(browser);
     }
   );
 });
