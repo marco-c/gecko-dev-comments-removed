@@ -417,7 +417,6 @@ static void RecordReflowStatus(bool aChildIsBlock,
 NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(OverflowLinesProperty,
                                                  nsBlockFrame::FrameLines)
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OverflowOutOfFlowsProperty)
-NS_DECLARE_FRAME_PROPERTY_FRAMELIST(FloatsProperty)
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(PushedFloatsProperty)
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OutsideMarkerProperty)
 NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(InsideMarkerProperty, nsIFrame)
@@ -454,14 +453,11 @@ void nsBlockFrame::AddSizeOfExcludingThisForTree(
 void nsBlockFrame::Destroy(DestroyContext& aContext) {
   ClearLineCursors();
   DestroyAbsoluteFrames(aContext);
+  mFloats.DestroyFrames(aContext);
   nsPresContext* presContext = PresContext();
   mozilla::PresShell* presShell = presContext->PresShell();
   nsLineBox::DeleteLineList(presContext, mLines, &mFrames, aContext);
 
-  if (HasFloats()) {
-    SafelyDestroyFrameListProp(aContext, presShell, FloatsProperty());
-    RemoveStateBits(NS_BLOCK_HAS_FLOATS);
-  }
   if (HasPushedFloats()) {
     SafelyDestroyFrameListProp(aContext, presShell, PushedFloatsProperty());
     RemoveStateBits(NS_BLOCK_HAS_PUSHED_FLOATS);
@@ -689,12 +685,10 @@ const nsFrameList& nsBlockFrame::GetChildList(ChildListID aListID) const {
       FrameLines* overflowLines = GetOverflowLines();
       return overflowLines ? overflowLines->mFrames : nsFrameList::EmptyList();
     }
+    case FrameChildListID::Float:
+      return mFloats;
     case FrameChildListID::OverflowOutOfFlow: {
       const nsFrameList* list = GetOverflowOutOfFlows();
-      return list ? *list : nsFrameList::EmptyList();
-    }
-    case FrameChildListID::Float: {
-      const nsFrameList* list = GetFloats();
       return list ? *list : nsFrameList::EmptyList();
     }
     case FrameChildListID::PushedFloats: {
@@ -716,16 +710,17 @@ void nsBlockFrame::GetChildLists(nsTArray<ChildList>* aLists) const {
   if (overflowLines) {
     overflowLines->mFrames.AppendIfNonempty(aLists, FrameChildListID::Overflow);
   }
-  if (const nsFrameList* list = GetOverflowOutOfFlows()) {
+  const nsFrameList* list = GetOverflowOutOfFlows();
+  if (list) {
     list->AppendIfNonempty(aLists, FrameChildListID::OverflowOutOfFlow);
   }
-  if (const nsFrameList* list = GetOutsideMarkerList()) {
+  mFloats.AppendIfNonempty(aLists, FrameChildListID::Float);
+  list = GetOutsideMarkerList();
+  if (list) {
     list->AppendIfNonempty(aLists, FrameChildListID::Bullet);
   }
-  if (const nsFrameList* list = GetFloats()) {
-    list->AppendIfNonempty(aLists, FrameChildListID::Float);
-  }
-  if (const nsFrameList* list = GetPushedFloats()) {
+  list = GetPushedFloats();
+  if (list) {
     list->AppendIfNonempty(aLists, FrameChildListID::PushedFloats);
   }
 }
@@ -1229,18 +1224,6 @@ bool nsBlockFrame::IsInLineClampContext() const {
   return false;
 }
 
-bool nsBlockFrame::MaybeHasFloats() const {
-  if (HasFloats()) {
-    return true;
-  }
-  if (HasPushedFloats()) {
-    return true;
-  }
-  
-  
-  return HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
-}
-
 
 
 
@@ -1653,11 +1636,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         UpdateLineContainerSize(&line, containerSize);
       }
       trialState.mFcBounds.Clear();
-      if (nsFrameList* floats = GetFloats()) {
-        for (nsIFrame* f : *floats) {
-          f->MovePositionBy(physicalDelta);
-          ConsiderChildOverflow(trialState.mFcBounds, f);
-        }
+      for (nsIFrame* f : mFloats) {
+        f->MovePositionBy(physicalDelta);
+        ConsiderChildOverflow(trialState.mFcBounds, f);
       }
       nsFrameList* markerList = GetOutsideMarkerList();
       if (markerList) {
@@ -1784,8 +1765,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   
   
-  nsLayoutUtils::AssertNoDuplicateContinuations(
-      this, GetChildList(FrameChildListID::Float));
+  nsLayoutUtils::AssertNoDuplicateContinuations(this, mFloats);
 
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
@@ -1839,8 +1819,7 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   
   
   
-  nsLayoutUtils::AssertNoDuplicateContinuations(
-      this, GetChildList(FrameChildListID::Float));
+  nsLayoutUtils::AssertNoDuplicateContinuations(this, mFloats);
 #endif
 
   
@@ -2842,7 +2821,7 @@ void nsBlockFrame::ReparentFloats(nsIFrame* aFirstFrame,
                  "CollectFloats should've removed that bit");
       ReparentFrame(f, aOldParent, this);
     }
-    EnsureFloats()->AppendFrames(nullptr, std::move(list));
+    mFloats.AppendFrames(nullptr, std::move(list));
   }
 }
 
@@ -2918,8 +2897,8 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   bool needToRecoverState = false;
   
   bool reflowedFloat =
-      HasFloats() &&
-      GetFloats()->FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
+      mFloats.NotEmpty() &&
+      mFloats.FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
   bool lastLineMovedUp = false;
   
   StyleClear inlineFloatClearType = aState.mTrailingClearFromPIF;
@@ -5750,7 +5729,7 @@ bool nsBlockFrame::DrainOverflowLines() {
           }
         }
         ReparentFrames(oofs.mList, prevBlock, this);
-        EnsureFloats()->InsertFrames(nullptr, nullptr, std::move(oofs.mList));
+        mFloats.InsertFrames(nullptr, nullptr, std::move(oofs.mList));
         if (!pushedFloats.IsEmpty()) {
           nsFrameList* pf = EnsurePushedFloats();
           pf->InsertFrames(nullptr, nullptr, std::move(pushedFloats));
@@ -5797,7 +5776,7 @@ bool nsBlockFrame::DrainSelfOverflowList() {
       }
 #endif
       
-      EnsureFloats()->AppendFrames(nullptr, std::move(oofs).mList);
+      mFloats.AppendFrames(nullptr, std::move(oofs).mList);
     }
   }
   if (!ourOverflowLines->mLines.empty()) {
@@ -5848,14 +5827,12 @@ void nsBlockFrame::DrainSelfPushedFloats() {
   mozilla::PresShell* presShell = PresShell();
   nsFrameList* ourPushedFloats = GetPushedFloats();
   if (ourPushedFloats) {
-    nsFrameList* floats = GetFloats();
-
     
     
     
     
     nsIFrame* insertionPrevSibling = nullptr; 
-    for (nsIFrame* f = floats ? floats->FirstChild() : nullptr;
+    for (nsIFrame* f = mFloats.FirstChild();
          f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
          f = f->GetNextSibling()) {
       insertionPrevSibling = f;
@@ -5874,10 +5851,7 @@ void nsBlockFrame::DrainSelfPushedFloats() {
         
         
         ourPushedFloats->RemoveFrame(f);
-        if (!floats) {
-          floats = EnsureFloats();
-        }
-        floats->InsertFrame(nullptr, insertionPrevSibling, f);
+        mFloats.InsertFrame(nullptr, insertionPrevSibling, f);
       }
 
       f = prevSibling;
@@ -5898,7 +5872,7 @@ void nsBlockFrame::DrainPushedFloats() {
   if (prevBlock) {
     AutoFrameListPtr list(PresContext(), prevBlock->StealPushedFloats());
     if (list && list->NotEmpty()) {
-      EnsureFloats()->InsertFrames(this, nullptr, std::move(*list));
+      mFloats.InsertFrames(this, nullptr, std::move(*list));
     }
   }
 }
@@ -6018,63 +5992,13 @@ nsFrameList* nsBlockFrame::GetOutsideMarkerList() const {
   return list;
 }
 
-bool nsBlockFrame::HasFloats() const {
-  const bool isStateBitSet = HasAnyStateBits(NS_BLOCK_HAS_FLOATS);
-  MOZ_ASSERT(
-      isStateBitSet == HasProperty(FloatsProperty()),
-      "State bit should accurately reflect presence/absence of the property!");
-  return isStateBitSet;
-}
-
-nsFrameList* nsBlockFrame::GetFloats() const {
-  if (!HasFloats()) {
-    return nullptr;
-  }
-  nsFrameList* list = GetProperty(FloatsProperty());
-  MOZ_ASSERT(list, "List should always be valid when the property is set!");
-  MOZ_ASSERT(list->NotEmpty(),
-             "Someone forgot to delete the list when it is empty!");
-  return list;
-}
-
-nsFrameList* nsBlockFrame::EnsureFloats() {
-  nsFrameList* list = GetFloats();
-  if (list) {
-    return list;
-  }
-  list = new (PresShell()) nsFrameList;
-  SetProperty(FloatsProperty(), list);
-  AddStateBits(NS_BLOCK_HAS_FLOATS);
-  return list;
-}
-
-nsFrameList* nsBlockFrame::StealFloats() {
-  if (!HasFloats()) {
-    return nullptr;
-  }
-  nsFrameList* list = TakeProperty(FloatsProperty());
-  RemoveStateBits(NS_BLOCK_HAS_FLOATS);
-  MOZ_ASSERT(list, "List should always be valid when the property is set!");
-  return list;
-}
-
-bool nsBlockFrame::HasPushedFloats() const {
-  const bool isStateBitSet = HasAnyStateBits(NS_BLOCK_HAS_PUSHED_FLOATS);
-  MOZ_ASSERT(
-      isStateBitSet == HasProperty(PushedFloatsProperty()),
-      "State bit should accurately reflect presence/absence of the property!");
-  return isStateBitSet;
-}
-
 nsFrameList* nsBlockFrame::GetPushedFloats() const {
   if (!HasPushedFloats()) {
     return nullptr;
   }
-  nsFrameList* list = GetProperty(PushedFloatsProperty());
-  MOZ_ASSERT(list, "List should always be valid when the property is set!");
-  MOZ_ASSERT(list->NotEmpty(),
-             "Someone forgot to delete the list when it is empty!");
-  return list;
+  nsFrameList* result = GetProperty(PushedFloatsProperty());
+  NS_ASSERTION(result, "value should always be non-empty when state set");
+  return result;
 }
 
 nsFrameList* nsBlockFrame::EnsurePushedFloats() {
@@ -6094,10 +6018,10 @@ nsFrameList* nsBlockFrame::StealPushedFloats() {
   if (!HasPushedFloats()) {
     return nullptr;
   }
-  nsFrameList* list = TakeProperty(PushedFloatsProperty());
+  nsFrameList* result = TakeProperty(PushedFloatsProperty());
   RemoveStateBits(NS_BLOCK_HAS_PUSHED_FLOATS);
-  MOZ_ASSERT(list, "List should always be valid when the property is set!");
-  return list;
+  NS_ASSERTION(result, "value should always be non-empty when state set");
+  return result;
 }
 
 
@@ -6110,7 +6034,7 @@ void nsBlockFrame::AppendFrames(ChildListID aListID, nsFrameList&& aFrameList) {
   if (aListID != FrameChildListID::Principal) {
     if (FrameChildListID::Float == aListID) {
       DrainSelfPushedFloats();  
-      EnsureFloats()->AppendFrames(nullptr, std::move(aFrameList));
+      mFloats.AppendFrames(nullptr, std::move(aFrameList));
       return;
     }
     MOZ_ASSERT(FrameChildListID::NoReflowPrincipal == aListID,
@@ -6161,7 +6085,7 @@ void nsBlockFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
   if (aListID != FrameChildListID::Principal) {
     if (FrameChildListID::Float == aListID) {
       DrainSelfPushedFloats();  
-      EnsureFloats()->InsertFrames(this, aPrevFrame, std::move(aFrameList));
+      mFloats.InsertFrames(this, aPrevFrame, std::move(aFrameList));
       return;
     }
     MOZ_ASSERT(FrameChildListID::NoReflowPrincipal == aListID,
@@ -6437,22 +6361,19 @@ void nsBlockFrame::RemoveFloatFromFloatCache(nsIFrame* aFloat) {
 }
 
 void nsBlockFrame::RemoveFloat(nsIFrame* aFloat) {
-  MOZ_ASSERT(aFloat);
-
+#ifdef DEBUG
   
   
-  MOZ_ASSERT(
-      GetChildList(FrameChildListID::Float).ContainsFrame(aFloat) ||
-          GetChildList(FrameChildListID::PushedFloats).ContainsFrame(aFloat) ||
-          GetChildList(FrameChildListID::OverflowOutOfFlow)
-              .ContainsFrame(aFloat),
-      "aFloat is not our child or on an unexpected frame list");
+  if (!mFloats.ContainsFrame(aFloat)) {
+    MOZ_ASSERT(
+        (GetOverflowOutOfFlows() &&
+         GetOverflowOutOfFlows()->ContainsFrame(aFloat)) ||
+            (HasPushedFloats() && GetPushedFloats()->ContainsFrame(aFloat)),
+        "aFloat is not our child or on an unexpected frame list");
+  }
+#endif
 
-  nsFrameList* floats = GetFloats();
-  if (floats && floats->StartRemoveFrame(aFloat)) {
-    if (floats->IsEmpty()) {
-      StealFloats()->Delete(PresShell());
-    }
+  if (mFloats.StartRemoveFrame(aFloat)) {
     return;
   }
 
@@ -7317,8 +7238,7 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
                                       OverflowAreas& aOverflowAreas) {
   
   
-  nsFrameList* floats = GetFloats();
-  nsIFrame* f = floats ? floats->FirstChild() : nullptr;
+  nsIFrame* f = mFloats.FirstChild();
   nsIFrame* prev = nullptr;
   while (f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
     MOZ_ASSERT(prev == f->GetPrevSibling());
@@ -7356,15 +7276,9 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
     
     nsIFrame* prevContinuation = f->GetPrevContinuation();
     if (prevContinuation && prevContinuation->GetParent() == f->GetParent()) {
-      floats->RemoveFrame(f);
+      mFloats.RemoveFrame(f);
       aState.AppendPushedFloatChain(f);
-      if (floats->IsEmpty()) {
-        StealFloats()->Delete(PresShell());
-        floats = nullptr;
-        f = prev = nullptr;
-        break;
-      }
-      f = !prev ? floats->FirstChild() : prev->GetNextSibling();
+      f = !prev ? mFloats.FirstChild() : prev->GetNextSibling();
       continue;
     }
 
@@ -7378,16 +7292,7 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
       ConsiderChildOverflow(aOverflowAreas, f);
     }
 
-    
-    
-    
-    floats = GetFloats();
-    if (!floats) {
-      f = prev = nullptr;
-      break;
-    }
-
-    nsIFrame* next = !prev ? floats->FirstChild() : prev->GetNextSibling();
+    nsIFrame* next = !prev ? mFloats.FirstChild() : prev->GetNextSibling();
     if (next == f) {
       
       next = f->GetNextSibling();
@@ -7412,8 +7317,7 @@ void nsBlockFrame::RecoverFloats(nsFloatManager& aFloatManager, WritingMode aWM,
   
   nsIFrame* stop = nullptr;  
                              
-  const nsFrameList* floats = GetFloats();
-  for (nsIFrame* f = floats ? floats->FirstChild() : nullptr; f && f != stop;
+  for (nsIFrame* f = mFloats.FirstChild(); f && f != stop;
        f = f->GetNextSibling()) {
     LogicalRect region = nsFloatManager::GetRegionFor(aWM, f, aContainerSize);
     aFloatManager.AddFloat(f, region, aWM, aContainerSize);
@@ -7463,21 +7367,22 @@ void nsBlockFrame::RecoverFloatsFor(nsIFrame* aFrame,
 }
 
 bool nsBlockFrame::HasPushedFloatsFromPrevContinuation() const {
-  if (const nsFrameList* floats = GetFloats()) {
+  if (!mFloats.IsEmpty()) {
     
     
-    if (floats->FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
+    if (mFloats.FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
       return true;
     }
-#ifdef DEBUG
-    
-    
-    for (nsIFrame* f : *floats) {
-      NS_ASSERTION(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
-                   "pushed floats must be at the beginning of the float list");
-    }
-#endif
   }
+
+#ifdef DEBUG
+  
+  
+  for (nsIFrame* f : mFloats) {
+    NS_ASSERTION(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
+                 "pushed floats must be at the beginning of the float list");
+  }
+#endif
 
   
   return HasPushedFloats();
@@ -7610,15 +7515,14 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
+    for (nsIFrame* f : mFloats) {
       if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
         BuildDisplayListForChild(aBuilder, f, aLists);
       }
     }
   }
 
-  aBuilder->MarkFramesForDisplayList(this,
-                                     GetChildList(FrameChildListID::Float));
+  aBuilder->MarkFramesForDisplayList(this, mFloats);
 
   if (HasOutsideMarker()) {
     
@@ -7987,8 +7891,7 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 void nsBlockFrame::SetInitialChildList(ChildListID aListID,
                                        nsFrameList&& aChildList) {
   if (FrameChildListID::Float == aListID) {
-    nsFrameList* floats = EnsureFloats();
-    *floats = std::move(aChildList);
+    mFloats = std::move(aChildList);
   } else if (FrameChildListID::Principal == aListID) {
 #ifdef DEBUG
     
@@ -8170,7 +8073,7 @@ void nsBlockFrame::CheckFloats(BlockReflowState& aState) {
   bool equal = true;
   bool hasHiddenFloats = false;
   uint32_t i = 0;
-  for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
+  for (nsIFrame* f : mFloats) {
     if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
       continue;
     }
@@ -8650,14 +8553,12 @@ void nsBlockFrame::VerifyLines(bool aFinalCheckOK) {
 
 void nsBlockFrame::VerifyOverflowSituation() {
   
-  
   nsFrameList* oofs = GetOverflowOutOfFlows();
   if (oofs) {
     for (nsIFrame* f : *oofs) {
       nsIFrame* nif = f->GetNextInFlow();
       MOZ_ASSERT(!nif ||
-                 (!GetChildList(FrameChildListID::Float).ContainsFrame(nif) &&
-                  !mFrames.ContainsFrame(nif)));
+                 (!mFloats.ContainsFrame(nif) && !mFrames.ContainsFrame(nif)));
     }
   }
 
@@ -8667,8 +8568,7 @@ void nsBlockFrame::VerifyOverflowSituation() {
     for (nsIFrame* f : *oofs) {
       nsIFrame* nif = f->GetNextInFlow();
       MOZ_ASSERT(!nif ||
-                 (!GetChildList(FrameChildListID::Float).ContainsFrame(nif) &&
-                  !mFrames.ContainsFrame(nif)));
+                 (!mFloats.ContainsFrame(nif) && !mFrames.ContainsFrame(nif)));
     }
   }
 

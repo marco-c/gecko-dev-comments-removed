@@ -667,7 +667,20 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  bool MaybeHasFloats() const;
+  bool MaybeHasFloats() const {
+    if (!mFloats.IsEmpty()) {
+      return true;
+    }
+    
+    
+    nsFrameList* list = GetPushedFloats();
+    if (list && !list->IsEmpty()) {
+      return true;
+    }
+    
+    
+    return HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
+  }
 
  protected:
   
@@ -966,26 +979,10 @@ class nsBlockFrame : public nsContainerFrame {
   nsFrameList* GetOutsideMarkerList() const;
 
   
-  bool HasFloats() const;
+  bool HasPushedFloats() const {
+    return HasAnyStateBits(NS_BLOCK_HAS_PUSHED_FLOATS);
+  }
 
-  
-  nsFrameList* GetFloats() const;
-
-  
-  
-  nsFrameList* EnsureFloats() MOZ_NONNULL_RETURN;
-
-  
-  
-  
-  
-  [[nodiscard]] nsFrameList* StealFloats();
-
-  
-  bool HasPushedFloats() const;
-
-  
-  
   
   
   
@@ -993,7 +990,7 @@ class nsBlockFrame : public nsContainerFrame {
 
   
   
-  nsFrameList* EnsurePushedFloats() MOZ_NONNULL_RETURN;
+  nsFrameList* EnsurePushedFloats();
 
   
   
@@ -1011,6 +1008,10 @@ class nsBlockFrame : public nsContainerFrame {
   nscoord mCachedPrefISize = NS_INTRINSIC_ISIZE_UNKNOWN;
 
   nsLineList mLines;
+
+  
+  
+  nsFrameList mFloats;
 
   friend class mozilla::BlockReflowState;
   friend class nsBlockInFlowLineIterator;

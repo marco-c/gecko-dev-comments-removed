@@ -536,7 +536,7 @@ bool BlockReflowState::AddFloat(nsLineLayout* aLineLayout, nsIFrame* aFloat,
 
     
     
-    mBlock->EnsureFloats()->AppendFrame(mBlock, aFloat);
+    mBlock->mFloats.AppendFrame(mBlock, aFloat);
   }
 
   
