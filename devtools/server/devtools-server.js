@@ -258,6 +258,12 @@ var DevToolsServer = {
     
     for (const connID of Object.getOwnPropertyNames(this._connections)) {
       const connection = this._connections[connID];
+      
+      
+      
+      if (!connection) {
+        continue;
+      }
       if (connection.isAcceptedBy(listener)) {
         connection.close();
       }
