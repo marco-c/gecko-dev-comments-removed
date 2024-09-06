@@ -1,6 +1,7 @@
 
 
 
+
 if (typeof newGlobal === "function") {
     var otherGlobal = newGlobal();
 
