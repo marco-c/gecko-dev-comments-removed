@@ -54,6 +54,11 @@ interface nsICookieNotification : nsISupports {
     
 
 
+    [infallible] readonly attribute boolean isThirdParty;
+
+    
+
+
 
     readonly attribute nsIArray batchDeletedCookies;
 
