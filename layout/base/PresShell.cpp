@@ -3062,7 +3062,8 @@ UniquePtr<gfxContext> PresShell::CreateReferenceRenderingContext() {
 }
 
 
-nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
+nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
+                               const nsRange* aFirstTextDirective, bool aScroll,
                                ScrollFlags aAdditionalScrollFlags) {
   if (!mDocument) {
     return NS_ERROR_FAILURE;
@@ -3086,7 +3087,26 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
   
   
   
-  if (aAnchorName.IsEmpty()) {
+  
+  
+  Element* textFragmentTargetElement = [&aFirstTextDirective]() -> Element* {
+    nsINode* node =
+        aFirstTextDirective
+            ? aFirstTextDirective->GetClosestCommonInclusiveAncestor()
+            : nullptr;
+    while (node && !node->IsElement()) {
+      node = node->GetParent();
+    }
+    return Element::FromNodeOrNull(node);
+  }();
+  const bool thereIsATextFragment = !!textFragmentTargetElement;
+
+  
+  
+  
+  
+  
+  if (aAnchorName.IsEmpty() && !thereIsATextFragment) {
     NS_ASSERTION(!aScroll, "can't scroll to empty anchor name");
     esm->SetContentState(nullptr, ElementState::URLTARGET);
     return NS_OK;
@@ -3100,8 +3120,10 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
   
   
   
-  RefPtr<Element> target =
-      nsContentUtils::GetTargetElement(mDocument, aAnchorName);
+  RefPtr<Element> target = textFragmentTargetElement;
+  if (!target) {
+    target = nsContentUtils::GetTargetElement(mDocument, aAnchorName);
+  }
 
   
   
@@ -3124,10 +3146,16 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
       
       
       
+      const auto verticalScrollPosition = WhereToScroll(
+          thereIsATextFragment ? WhereToScroll::Center : WhereToScroll::Start);
+      
+      
+      
+      
       
       ScrollingInteractionContext scrollToAnchorContext(true);
       MOZ_TRY(ScrollContentIntoView(
-          target, ScrollAxis(WhereToScroll::Start, WhenToScroll::Always),
+          target, ScrollAxis(verticalScrollPosition, WhenToScroll::Always),
           ScrollAxis(),
           ScrollFlags::AnchorScrollFlags | aAdditionalScrollFlags));
 
@@ -3243,46 +3271,6 @@ nsresult PresShell::ScrollToAnchor() {
   return ScrollContentIntoView(
       lastAnchor, ScrollAxis(WhereToScroll::Start, WhenToScroll::Always),
       ScrollAxis(), ScrollFlags::AnchorScrollFlags);
-}
-
-bool PresShell::HighlightAndGoToTextFragment(bool aScrollToTextFragment) {
-  MOZ_ASSERT(mDocument);
-  if (!StaticPrefs::dom_text_fragments_enabled()) {
-    return false;
-  }
-  const RefPtr<FragmentDirective> fragmentDirective =
-      mDocument->FragmentDirective();
-
-  nsTArray<RefPtr<nsRange>> textDirectiveRanges =
-      fragmentDirective->FindTextFragmentsInDocument();
-  if (textDirectiveRanges.IsEmpty()) {
-    return false;
-  }
-
-  const RefPtr<Selection> targetTextSelection =
-      GetCurrentSelection(SelectionType::eTargetText);
-  if (!targetTextSelection) {
-    return false;
-  }
-  for (RefPtr<nsRange> range : textDirectiveRanges) {
-    targetTextSelection->AddRangeAndSelectFramesAndNotifyListeners(
-        *range, IgnoreErrors());
-  }
-  if (!aScrollToTextFragment) {
-    return false;
-  }
-
-  
-  nsRange* lastRange = textDirectiveRanges.LastElement();
-  MOZ_ASSERT(lastRange);
-  if (RefPtr<nsIContent> lastRangeStartContent =
-          nsIContent::FromNode(lastRange->GetStartContainer())) {
-    return ScrollContentIntoView(
-               lastRangeStartContent,
-               ScrollAxis(WhereToScroll::Center, WhenToScroll::Always),
-               ScrollAxis(), ScrollFlags::AnchorScrollFlags) == NS_OK;
-  }
-  return false;
 }
 
 

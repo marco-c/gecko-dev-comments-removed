@@ -76,6 +76,11 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   void ClearUninvokedDirectives() { mUninvokedTextDirectives.Clear(); }
 
   
+  MOZ_CAN_RUN_SCRIPT
+  void HighlightTextDirectives(
+      const nsTArray<RefPtr<nsRange>>& aTextDirectiveRanges);
+
+  
 
 
 
