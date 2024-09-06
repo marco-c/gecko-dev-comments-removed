@@ -1,0 +1,16 @@
+
+
+
+
+fn main() {
+    
+    
+    println!(
+        "cargo:rustc-link-search=native={}",
+        mozbuild::TOPOBJDIR
+            .join("dist")
+            .join("bin")
+            .to_str()
+            .unwrap()
+    );
+}
