@@ -26,7 +26,8 @@ class uiaRawElmProvider : public IAccessibleEx,
                           public IToggleProvider,
                           public IExpandCollapseProvider,
                           public IScrollItemProvider,
-                          public IValueProvider {
+                          public IValueProvider,
+                          public IRangeValueProvider {
  public:
   static constexpr enum ProviderOptions kProviderOptions =
       static_cast<enum ProviderOptions>(ProviderOptions_ServerSideProvider |
@@ -122,6 +123,27 @@ class uiaRawElmProvider : public IAccessibleEx,
 
   virtual  HRESULT STDMETHODCALLTYPE get_IsReadOnly(
        __RPC__out BOOL* pRetVal);
+
+  
+  virtual HRESULT STDMETHODCALLTYPE SetValue(
+       double aVal);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_Value(
+       __RPC__out double* aRetVal);
+
+  
+
+  virtual  HRESULT STDMETHODCALLTYPE get_Maximum(
+       __RPC__out double* aRetVal);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_Minimum(
+       __RPC__out double* aRetVal);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_LargeChange(
+       __RPC__out double* aRetVal);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_SmallChange(
+       __RPC__out double* aRetVal);
 
  private:
   Accessible* Acc() const;
