@@ -25,8 +25,10 @@ struct already_AddRefed;
 
 class DOMString;
 
-namespace mozilla::dom {
+namespace mozilla {
+class ErrorResult;
 
+namespace dom {
 class TrustedTypePolicy;
 
 
@@ -48,7 +50,7 @@ class TrustedTypePolicyFactory : public nsWrapperCache {
   
   already_AddRefed<TrustedTypePolicy> CreatePolicy(
       const nsAString& aPolicyName,
-      const TrustedTypePolicyOptions& aPolicyOptions);
+      const TrustedTypePolicyOptions& aPolicyOptions, ErrorResult& aRv);
 
   
   bool IsHTML(JSContext* aJSContext, const JS::Handle<JS::Value>& aValue) const;
@@ -90,11 +92,16 @@ class TrustedTypePolicyFactory : public nsWrapperCache {
   
   virtual ~TrustedTypePolicyFactory() = default;
 
+  
+  bool ShouldTrustedTypePolicyCreationBeBlockedByCSP(
+      const nsAString& aPolicyName) const;
+
   RefPtr<nsIGlobalObject> mGlobalObject;
 
   nsTArray<nsString> mCreatedPolicyNames;
 };
 
+}  
 }  
 
 #endif  

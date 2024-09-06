@@ -7,8 +7,10 @@
 #include "mozilla/dom/TrustedTypePolicyFactory.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/TrustedTypePolicy.h"
+#include "mozilla/dom/nsCSPUtils.h"
 
 namespace mozilla::dom {
 
@@ -19,10 +21,50 @@ JSObject* TrustedTypePolicyFactory::WrapObject(
   return TrustedTypePolicyFactory_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+bool TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
+    const nsAString& aPolicyName) const {
+  
+  
+  
+  nsIContentSecurityPolicy* csp = mGlobalObject->GetAsInnerWindow()->GetCsp();
+
+  if (csp) {
+    uint32_t numPolicies = 0;
+    csp->GetPolicyCount(&numPolicies);
+
+    for (uint64_t i = 0; i < numPolicies; ++i) {
+      const nsCSPPolicy* policy = csp->GetPolicy(i);
+      if (policy->hasDirective(
+              nsIContentSecurityPolicy::TRUSTED_TYPES_DIRECTIVE)) {
+        if (policy->ShouldCreateViolationForNewTrustedTypesPolicy(
+                aPolicyName, mCreatedPolicyNames)) {
+          
+          
+
+          if (policy->getDisposition() == nsCSPPolicy::Disposition::Enforce) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
     const nsAString& aPolicyName,
-    const TrustedTypePolicyOptions& aPolicyOptions) {
-  
+    const TrustedTypePolicyOptions& aPolicyOptions, ErrorResult& aRv) {
+  if (ShouldTrustedTypePolicyCreationBeBlockedByCSP(aPolicyName)) {
+    nsCString errorMessage =
+        "Content-Security-Policy blocked creating policy named '"_ns +
+        NS_ConvertUTF16toUTF8(aPolicyName) + "'"_ns;
+
+    
+    
+    aRv.ThrowTypeError(errorMessage);
+    return nullptr;
+  }
 
   
   
