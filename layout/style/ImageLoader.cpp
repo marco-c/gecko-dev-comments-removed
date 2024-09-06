@@ -565,6 +565,16 @@ static void InvalidateImages(nsIFrame* aFrame, imgIRequest* aRequest,
       }
     }
   }
+#ifdef XP_MACOSX
+  else if (aFrame->HasAnyStateBits(NS_FRAME_IN_POPUP)) {
+    
+    
+    
+    
+    
+    invalidateFrame = true;
+  }
+#endif
 
   
   
