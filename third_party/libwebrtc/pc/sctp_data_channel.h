@@ -86,7 +86,7 @@ class SctpSidAllocator {
   
   
   
-  StreamId AllocateSid(rtc::SSLRole role);
+  absl::optional<StreamId> AllocateSid(rtc::SSLRole role);
 
   
   bool ReserveSid(StreamId sid);
@@ -215,7 +215,7 @@ class SctpDataChannel : public DataChannelInterface {
   
   int internal_id() const { return internal_id_; }
 
-  StreamId sid_n() const {
+  absl::optional<StreamId> sid_n() const {
     RTC_DCHECK_RUN_ON(network_thread_);
     return id_n_;
   }
@@ -267,7 +267,8 @@ class SctpDataChannel : public DataChannelInterface {
 
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const network_thread_;
-  StreamId id_n_ RTC_GUARDED_BY(network_thread_);
+  absl::optional<StreamId> id_n_ RTC_GUARDED_BY(network_thread_) =
+      absl::nullopt;
   const int internal_id_;
   const std::string label_;
   const std::string protocol_;

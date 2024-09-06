@@ -36,36 +36,20 @@ struct DataChannelInit;
 class StreamId {
  public:
   StreamId() = default;
-  explicit StreamId(int id)
-      : id_(id >= cricket::kMinSctpSid && id <= cricket::kSpecMaxSctpSid
-                ? absl::optional<uint16_t>(static_cast<uint16_t>(id))
-                : absl::nullopt) {}
+  explicit StreamId(uint16_t id) : id_(id) {}
   StreamId(const StreamId& sid) = default;
   StreamId& operator=(const StreamId& sid) = default;
-
   
   
   
-  
-  
-  
-  bool HasValue() const { return id_.has_value(); }
-
-  
-  
-  
-  int stream_id_int() const {
-    return id_.has_value() ? static_cast<int>(id_.value().value()) : -1;
-  }
-
-  void reset() { id_ = absl::nullopt; }
+  int stream_id_int() const { return static_cast<int>(id_.value()); }
 
   bool operator==(const StreamId& sid) const { return id_ == sid.id_; }
   bool operator<(const StreamId& sid) const { return id_ < sid.id_; }
   bool operator!=(const StreamId& sid) const { return !(operator==(sid)); }
 
  private:
-  absl::optional<dcsctp::StreamID> id_;
+  dcsctp::StreamID id_;
 };
 
 

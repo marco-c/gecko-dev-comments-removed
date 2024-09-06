@@ -125,7 +125,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   
   
-  RTCError ReserveOrAllocateSid(StreamId& sid,
+  RTCError ReserveOrAllocateSid(absl::optional<StreamId>& sid,
                                 absl::optional<rtc::SSLRole> fallback_ssl_role)
       RTC_RUN_ON(network_thread());
 
