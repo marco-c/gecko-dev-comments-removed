@@ -7,11 +7,6 @@ const { Observers } = ChromeUtils.importESModule(
 );
 
 
-
-
-const l10n = new Localization(["branding/brand.ftl", "browser/accounts.ftl"]);
-
-
 const NOTIFICATION_CLICKED_URL = "about:firefoxview#recentlyclosed";
 
 add_task(async function test_closetab_notification() {
@@ -27,19 +22,10 @@ add_task(async function test_closetab_notification() {
   info("Test verify receiving a close tab command will show a notification");
 
   
-  const [expectedTitle, expectedBody] = await l10n.formatValues([
-    {
-      id: "account-tabs-closed-remotely",
-      args: { closedCount: 1 },
-    },
-    { id: "account-view-recently-closed-tabs" },
-  ]);
-
-  
   
   setupMockAlertsService({
-    title: expectedTitle,
-    body: expectedBody,
+    title: "1 Nightly tab closed",
+    body: "View recently closed tabs",
   });
 
   
@@ -82,19 +68,10 @@ add_task(async function test_closetab_multiple_urls_notification() {
   );
 
   
-  const [expectedTitle, expectedBody] = await l10n.formatValues([
-    {
-      id: "account-tabs-closed-remotely",
-      args: { closedCount: 2 },
-    },
-    { id: "account-view-recently-closed-tabs" },
-  ]);
-
-  
   
   setupMockAlertsService({
-    title: expectedTitle,
-    body: expectedBody,
+    title: "2 Nightly tabs closed",
+    body: "View recently closed tabs",
   });
   
   
