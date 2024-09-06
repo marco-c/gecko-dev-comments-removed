@@ -200,6 +200,13 @@ class Decoder {
   
 
 
+  bool WantsFrameCount() const {
+    return bool(mDecoderFlags & DecoderFlags::COUNT_FRAMES);
+  }
+
+  
+
+
 
 
 
@@ -300,7 +307,7 @@ class Decoder {
   
   bool GetDecodeDone() const {
     return mReachedTerminalState || mDecodeDone ||
-           (mMetadataDecode && HasSize()) || HasError();
+           (mMetadataDecode && HasSize() && !WantsFrameCount()) || HasError();
   }
 
   
@@ -504,6 +511,10 @@ class Decoder {
   
   
   void PostIsAnimated(FrameTimeout aFirstFrameTimeout);
+
+  
+  
+  void PostFrameCount(uint32_t aFrameCount);
 
   
   

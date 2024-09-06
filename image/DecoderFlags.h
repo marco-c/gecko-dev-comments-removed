@@ -42,6 +42,14 @@ enum class DecoderFlags : uint8_t {
   
   AVIF_ANIMATE_AVIF_MAJOR = 1 << 6,
 #endif
+
+  
+
+
+
+
+
+  COUNT_FRAMES = 1 << 7,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DecoderFlags)
 

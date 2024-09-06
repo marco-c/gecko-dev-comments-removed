@@ -191,8 +191,10 @@ class DecoderFactory {
 
 
 
+
   static already_AddRefed<Decoder> CreateAnonymousMetadataDecoder(
-      DecoderType aType, NotNull<SourceBuffer*> aSourceBuffer);
+      DecoderType aType, NotNull<SourceBuffer*> aSourceBuffer,
+      DecoderFlags aDecoderFlags);
 
  private:
   virtual ~DecoderFactory() = 0;

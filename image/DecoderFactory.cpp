@@ -179,6 +179,11 @@ nsresult DecoderFactory::CreateDecoder(
   }
 
   
+  if (NS_WARN_IF(bool(aDecoderFlags & DecoderFlags::COUNT_FRAMES))) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
   
   RefPtr<Decoder> decoder = GetDecoder(
       aType, nullptr, bool(aDecoderFlags & DecoderFlags::IS_REDECODE));
@@ -230,6 +235,11 @@ nsresult DecoderFactory::CreateAnimationDecoder(
     DecoderFlags aDecoderFlags, SurfaceFlags aSurfaceFlags,
     size_t aCurrentFrame, IDecodingTask** aOutTask) {
   if (aType == DecoderType::UNKNOWN) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  if (NS_WARN_IF(bool(aDecoderFlags & DecoderFlags::COUNT_FRAMES))) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -391,6 +401,11 @@ already_AddRefed<Decoder> DecoderFactory::CreateAnonymousDecoder(
     return nullptr;
   }
 
+  
+  if (NS_WARN_IF(bool(aDecoderFlags & DecoderFlags::COUNT_FRAMES))) {
+    return nullptr;
+  }
+
   RefPtr<Decoder> decoder =
       GetDecoder(aType,  nullptr,  false);
   MOZ_ASSERT(decoder, "Should have a decoder now");
@@ -420,7 +435,8 @@ already_AddRefed<Decoder> DecoderFactory::CreateAnonymousDecoder(
 
 
 already_AddRefed<Decoder> DecoderFactory::CreateAnonymousMetadataDecoder(
-    DecoderType aType, NotNull<SourceBuffer*> aSourceBuffer) {
+    DecoderType aType, NotNull<SourceBuffer*> aSourceBuffer,
+    DecoderFlags aDecoderFlags) {
   if (aType == DecoderType::UNKNOWN) {
     return nullptr;
   }
@@ -432,7 +448,7 @@ already_AddRefed<Decoder> DecoderFactory::CreateAnonymousMetadataDecoder(
   
   decoder->SetMetadataDecode(true);
   decoder->SetIterator(aSourceBuffer->Iterator());
-  decoder->SetDecoderFlags(DecoderFlags::FIRST_FRAME_ONLY);
+  decoder->SetDecoderFlags(aDecoderFlags);
 
   if (NS_FAILED(decoder->Init())) {
     return nullptr;
