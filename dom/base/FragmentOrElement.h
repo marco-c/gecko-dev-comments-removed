@@ -74,6 +74,7 @@ class nsNodeSupportsWeakRefTearoff final : public nsISupportsWeakReference {
 
 namespace mozilla::dom {
 
+class DOMIntersectionObserver;
 class ShadowRoot;
 
 class FragmentOrElement : public nsIContent {
@@ -261,6 +262,15 @@ class FragmentOrElement : public nsIContent {
 
 
 
+    nsDOMStringMap* MOZ_UNSAFE_REF("ClearDataSet clears it") mDataset = nullptr;
+
+    
+    RefPtr<nsDOMTokenList> mPart;
+
+    
+
+
+
     nsTHashMap<RefPtr<nsAtom>, nsWeakPtr> mExplicitlySetAttrElements;
   };
 
@@ -284,12 +294,6 @@ class FragmentOrElement : public nsIContent {
     
 
 
-
-    nsDOMStringMap* mDataset;  
-
-    
-
-
     RefPtr<nsDOMAttributeMap> mAttributeMap;
 
     
@@ -301,11 +305,6 @@ class FragmentOrElement : public nsIContent {
 
 
     RefPtr<nsDOMTokenList> mClassList;
-
-    
-
-
-    RefPtr<nsDOMTokenList> mPart;
   };
 
   

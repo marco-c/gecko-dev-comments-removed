@@ -190,7 +190,14 @@ class DOMIntersectionObserver final : public nsISupports,
   
   
   nsTArray<Element*> mObservationTargets;
-  nsTHashSet<Element*> mObservationTargetSet;
+
+  
+  
+  
+  
+  
+  enum ObservationState : int32_t { Uninitialized = -2, NotIntersecting = -1 };
+  nsTHashMap<Element*, int32_t> mObservationTargetMap;
 
   nsTArray<RefPtr<DOMIntersectionObserverEntry>> mQueuedEntries;
   bool mConnected = false;

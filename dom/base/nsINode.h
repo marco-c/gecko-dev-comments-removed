@@ -1371,6 +1371,23 @@ class nsINode : public mozilla::dom::EventTarget {
 
   
   
+  
+  using UnbindCallback = void (*)(nsISupports*, nsINode*);
+  
+  struct BoundObject {
+    nsCOMPtr<nsISupports> mObject;
+    UnbindCallback mDtor = nullptr;
+
+    BoundObject(nsISupports* aObject, UnbindCallback aDtor)
+        : mObject(aObject), mDtor(aDtor) {}
+
+    bool operator==(nsISupports* aOther) const {
+      return mObject.get() == aOther;
+    }
+  };
+
+  
+  
   class nsSlots {
    public:
     nsSlots();
@@ -1399,6 +1416,9 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
     nsNodeWeakReference* MOZ_NON_OWNING_REF mWeakReference;
+
+    
+    nsTArray<BoundObject> mBoundObjects;
 
     
 
@@ -2152,7 +2172,8 @@ class nsINode : public mozilla::dom::EventTarget {
 
  public:
   
-  void BindObject(nsISupports* aObject);
+  
+  void BindObject(nsISupports* aObject, UnbindCallback = nullptr);
   
   
   void UnbindObject(nsISupports* aObject);

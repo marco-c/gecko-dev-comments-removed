@@ -3704,16 +3704,15 @@ class Document : public nsINode,
            GetDocGroup() == GetInProcessParentDocument()->GetDocGroup();
   }
 
-  void AddIntersectionObserver(DOMIntersectionObserver* aObserver) {
-    MOZ_ASSERT(!mIntersectionObservers.Contains(aObserver),
+  void AddIntersectionObserver(DOMIntersectionObserver& aObserver) {
+    MOZ_ASSERT(!mIntersectionObservers.Contains(&aObserver),
                "Intersection observer already in the list");
-    mIntersectionObservers.Insert(aObserver);
+    mIntersectionObservers.AppendElement(&aObserver);
   }
-
-  void RemoveIntersectionObserver(DOMIntersectionObserver* aObserver) {
-    mIntersectionObservers.Remove(aObserver);
+  void RemoveIntersectionObserver(DOMIntersectionObserver& aObserver) {
+    MOZ_ASSERT(mIntersectionObservers.Contains(&aObserver));
+    mIntersectionObservers.RemoveElement(&aObserver);
   }
-
   bool HasIntersectionObservers() const {
     return !mIntersectionObservers.IsEmpty();
   }
@@ -3745,10 +3744,17 @@ class Document : public nsINode,
   bool IsScriptTracking(JSContext* aCx) const;
 
   
-  void AddResizeObserver(ResizeObserver&);
-  void RemoveResizeObserver(ResizeObserver&);
-  void ScheduleResizeObserversNotification() const;
+  void AddResizeObserver(ResizeObserver& aObserver) {
+    MOZ_ASSERT(!mResizeObservers.Contains(&aObserver));
+    mResizeObservers.AppendElement(&aObserver);
+  }
+  void RemoveResizeObserver(ResizeObserver& aObserver) {
+    MOZ_ASSERT(mResizeObservers.Contains(&aObserver));
+    mResizeObservers.RemoveElement(&aObserver);
+  }
   bool HasResizeObservers() const { return !mResizeObservers.IsEmpty(); }
+
+  void ScheduleResizeObserversNotification() const;
   
 
 
@@ -5186,8 +5192,7 @@ class Document : public nsINode,
   nsWeakPtr mScopeObject;
 
   
-  nsTHashSet<DOMIntersectionObserver*> mIntersectionObservers;
-
+  nsTArray<DOMIntersectionObserver*> mIntersectionObservers;
   
   nsTArray<ResizeObserver*> mResizeObservers;
 
