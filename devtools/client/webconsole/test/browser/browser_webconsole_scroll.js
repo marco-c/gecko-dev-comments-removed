@@ -328,7 +328,7 @@ add_task(async function () {
     "Object"
   );
   
-  result.node.querySelector(".arrow").click();
+  result.node.querySelector(".theme-twisty").click();
   
   await waitFor(() => result.node.querySelectorAll(".node").length === 102);
   

@@ -33,7 +33,7 @@ add_task(async function () {
 
   info("Expand the object");
   const oi = objectMessage.querySelector(".tree");
-  oi.querySelector(".arrow").click();
+  oi.querySelector(".theme-twisty").click();
   
   
   

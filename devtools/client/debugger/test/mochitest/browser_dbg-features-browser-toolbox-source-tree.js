@@ -71,9 +71,9 @@ add_task(async function testSourceTreeNamesForWebExtensions() {
       
       if (
         !!rootNodeForExtensions &&
-        !rootNodeForExtensions.querySelector(".arrow.expanded")
+        !rootNodeForExtensions.querySelector(".theme-twisty.open")
       ) {
-        rootNodeForExtensions.querySelector(".arrow").click();
+        rootNodeForExtensions.querySelector(".theme-twisty").click();
       }
 
       

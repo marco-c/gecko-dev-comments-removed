@@ -52,7 +52,7 @@ async function testExpandObject(objectMessage) {
 
   ok(oi, "There's an object inspector component for the content object");
 
-  oi.querySelector(".arrow").click();
+  oi.querySelector(".theme-twisty").click();
   
   
   
@@ -79,7 +79,7 @@ async function testExpandObject(objectMessage) {
   
   
   
-  deepProp.querySelector(".arrow").click();
+  deepProp.querySelector(".theme-twisty").click();
   await waitFor(() => oi.querySelectorAll(".node").length === 7);
   ok(true, "The nested array was expanded");
 }
