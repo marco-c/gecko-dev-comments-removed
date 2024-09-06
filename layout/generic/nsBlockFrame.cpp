@@ -1451,11 +1451,15 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     
     
     
+    
+    
     nsIContent* mContent = nullptr;
     int32_t mOffset = -1;
+    nscoord mBlockCoord = 0;
 
     bool operator==(const BalanceTarget& aOther) const {
-      return mContent == aOther.mContent && mOffset == aOther.mOffset;
+      return mContent == aOther.mContent && mOffset == aOther.mOffset &&
+             mBlockCoord == aOther.mBlockCoord;
     }
     bool operator!=(const BalanceTarget& aOther) const {
       return !(*this == aOther);
@@ -1501,7 +1505,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       auto* textFrame = static_cast<nsTextFrame*>(firstChild);
       offset = textFrame->GetContentOffset();
     }
-    return BalanceTarget{content, offset};
+    return BalanceTarget{content, offset, iter.get()->BStart()};
   };
 
   
@@ -1540,6 +1544,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         
         break;
       }
+      balanceTarget.mBlockCoord = mLines.back()->BEnd();
       
       balanceStep = aReflowInput.ComputedISize() / balanceTarget.mOffset;
       trialState.ResetForBalance(balanceStep);
@@ -1576,7 +1581,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       }
       int32_t numLines =
           countLinesUpTo(StaticPrefs::layout_css_text_wrap_balance_limit());
-      return numLines == balanceTarget.mOffset;
+      return numLines == balanceTarget.mOffset &&
+             mLines.back()->BEnd() == balanceTarget.mBlockCoord;
     };
 
     
