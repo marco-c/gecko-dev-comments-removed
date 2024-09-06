@@ -21,7 +21,7 @@ namespace mozilla::dom {
 class Proxy;
 class DOMString;
 class SendRunnable;
-class StrongWorkerRef;
+class ThreadSafeWorkerRef;
 class WorkerPrivate;
 
 class XMLHttpRequestWorker final : public SupportsWeakPtr,
@@ -56,7 +56,15 @@ class XMLHttpRequestWorker final : public SupportsWeakPtr,
 
  private:
   RefPtr<XMLHttpRequestUpload> mUpload;
-  RefPtr<StrongWorkerRef> mWorkerRef;
+
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
   RefPtr<XMLHttpRequestWorker> mPinnedSelfRef;
   RefPtr<Proxy> mProxy;
 
