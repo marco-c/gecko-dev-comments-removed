@@ -420,7 +420,7 @@ pref("browser.urlbar.suggest.engines",              true);
 pref("browser.urlbar.suggest.calculator",           false);
 pref("browser.urlbar.suggest.recentsearches",       true);
 
-pref("browser.urlbar.secondaryActions.featureGate", false);
+pref("browser.urlbar.scotchBonnet.enableOverride", false);
 
 #if defined(EARLY_BETA_OR_EARLIER)
   
@@ -615,7 +615,7 @@ pref("browser.urlbar.merino.providers", "");
 pref("browser.urlbar.merino.clientVariants", "");
 
 
-pref("browser.urlbar.contextualSearch.enabled", false);
+pref("browser.urlbar.contextualSearch.enabled", true);
 
 
 pref("browser.urlbar.addons.featureGate", true);
