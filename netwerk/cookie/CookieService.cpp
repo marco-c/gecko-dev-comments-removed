@@ -630,9 +630,10 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   ThirdPartyAnalysisResult result = mThirdPartyUtil->AnalyzeChannel(
       aChannel, false, aHostURI, nullptr, &rejectedReason);
 
-  OriginAttributes attrs;
+  OriginAttributes storagePrincipalOriginAttributes;
   StoragePrincipalHelper::GetOriginAttributes(
-      aChannel, attrs, StoragePrincipalHelper::eStorageAccessPrincipal);
+      aChannel, storagePrincipalOriginAttributes,
+      StoragePrincipalHelper::eStorageAccessPrincipal);
 
   
   
@@ -660,11 +661,11 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
                                             baseDomainFromURI);
   NS_ENSURE_SUCCESS(rv, NS_OK);
 
-  CookieStorage* storage = PickStorage(attrs);
+  CookieStorage* storage = PickStorage(storagePrincipalOriginAttributes);
 
   
   uint32_t priorCookieCount = storage->CountCookiesFromHost(
-      baseDomainFromURI, attrs.mPrivateBrowsingId);
+      baseDomainFromURI, storagePrincipalOriginAttributes.mPrivateBrowsingId);
 
   nsCOMPtr<nsIConsoleReportCollector> crc = do_QueryInterface(aChannel);
 
@@ -674,7 +675,8 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
       result.contains(ThirdPartyAnalysis::IsThirdPartyTrackingResource),
       result.contains(ThirdPartyAnalysis::IsThirdPartySocialTrackingResource),
       result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted),
-      aCookieHeader, priorCookieCount, attrs, &rejectedReason);
+      aCookieHeader, priorCookieCount, storagePrincipalOriginAttributes,
+      &rejectedReason);
 
   MOZ_ASSERT_IF(rejectedReason, cookieStatus == STATUS_REJECTED);
 
@@ -718,9 +720,24 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
 
   nsCString cookieHeader(aCookieHeader);
 
-  bool moreCookieToRead = true;
+  
+  
+  
+  
+  
+  OriginAttributes partitionedPrincipalOriginAttributes;
+  bool isPartitionedPrincipal =
+      !storagePrincipalOriginAttributes.mPartitionKey.IsEmpty();
+  bool isCHIPS = StaticPrefs::network_cookie_cookieBehavior_optInPartitioning();
+  
+  if (isCHIPS && !isPartitionedPrincipal) {
+    StoragePrincipalHelper::GetOriginAttributes(
+        aChannel, partitionedPrincipalOriginAttributes,
+        StoragePrincipalHelper::ePartitionedPrincipal);
+  }
 
   
+  bool moreCookieToRead = true;
   while (moreCookieToRead) {
     CookieStruct cookieData;
     bool canSetCookie = false;
@@ -752,7 +769,21 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
     }
 
     
-    RefPtr<Cookie> cookie = Cookie::Create(cookieData, attrs);
+    
+    
+    
+    bool needPartitioned =
+        isCHIPS && cookieData.isPartitioned() && !isPartitionedPrincipal;
+    OriginAttributes& cookieOriginAttributes =
+        needPartitioned ? partitionedPrincipalOriginAttributes
+                        : storagePrincipalOriginAttributes;
+    
+    MOZ_ASSERT_IF(
+        needPartitioned,
+        !partitionedPrincipalOriginAttributes.mPartitionKey.IsEmpty());
+
+    
+    RefPtr<Cookie> cookie = Cookie::Create(cookieData, cookieOriginAttributes);
     MOZ_ASSERT(cookie);
 
     int64_t currentTimeInUsec = PR_Now();
@@ -763,8 +794,8 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
     RefPtr<BrowsingContext> bc = loadInfo->GetBrowsingContext();
 
     
-    storage->AddCookie(crc, baseDomain, attrs, cookie, currentTimeInUsec,
-                       aHostURI, aCookieHeader, true, bc);
+    storage->AddCookie(crc, baseDomain, cookieOriginAttributes, cookie,
+                       currentTimeInUsec, aHostURI, aCookieHeader, true, bc);
   }
 
   return NS_OK;
