@@ -318,6 +318,21 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
   
   
+  
+  virtual bool CanSendPacket(const RtpPacketToSend& packet) const = 0;
+
+  
+  virtual void AssignSequenceNumber(RtpPacketToSend& packet) = 0;
+
+  
+  
+  
+  
+  virtual void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
+                          const PacedPacketInfo& pacing_info) = 0;
+
+  
+  
   virtual void OnBatchComplete() = 0;
 
   
