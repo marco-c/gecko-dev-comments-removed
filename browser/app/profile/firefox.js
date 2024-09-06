@@ -1262,6 +1262,24 @@ pref("browser.sessionstore.interval.idle", 3600000);
 pref("browser.sessionstore.idleDelay", 180); 
 
 
+pref("browser.sessionstore.log.appender.console", "Fatal");
+pref("browser.sessionstore.log.appender.dump", "Error");
+pref("browser.sessionstore.log.appender.file.level", "Trace");
+pref("browser.sessionstore.log.appender.file.logOnError", true);
+
+
+pref("browser.sessionstore.loglevel", "Warn");
+
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("browser.sessionstore.loglevel", "Debug");
+  pref("browser.sessionstore.log.appender.file.logOnSuccess", true);
+#else
+  pref("browser.sessionstore.log.appender.file.logOnSuccess", false);
+#endif
+
+pref("browser.sessionstore.log.appender.file.maxErrorAge", 864000); 
+
+
 
 pref("browser.sessionstore.privacy_level", 0);
 
