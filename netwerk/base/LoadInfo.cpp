@@ -427,16 +427,43 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   
   
   
+  
+  
   bool shouldResistFingerprinting =
       nsContentUtils::ShouldResistFingerprinting_dangerous(
           aURI, mOriginAttributes,
           "We are creating CookieJarSettings, so we can't have one already.",
           RFPTarget::IsAlwaysEnabledForPrecompute);
+
+  nsresult rv = NS_ERROR_NOT_AVAILABLE;
+  nsTArray<uint8_t> randomKey;
   RefPtr<BrowsingContext> opener = aBrowsingContext->GetOpener();
-  if (!shouldResistFingerprinting && opener &&
-      opener->GetCurrentWindowContext()) {
-    shouldResistFingerprinting =
-        opener->GetCurrentWindowContext()->ShouldResistFingerprinting();
+  if (opener) {
+    MOZ_ASSERT(opener->GetCurrentWindowContext());
+    if (opener->GetCurrentWindowContext()) {
+      shouldResistFingerprinting |=
+          opener->GetCurrentWindowContext()->ShouldResistFingerprinting();
+    }
+
+    
+    
+    
+    if (XRE_IsParentProcess()) {
+      MOZ_ASSERT(opener->Canonical()->GetCurrentWindowGlobal());
+      if (opener->Canonical()->GetCurrentWindowGlobal()) {
+        MOZ_ASSERT(
+            opener->Canonical()->GetCurrentWindowGlobal()->CookieJarSettings());
+        rv = opener->Canonical()
+                 ->GetCurrentWindowGlobal()
+                 ->CookieJarSettings()
+                 ->GetFingerprintingRandomizationKey(randomKey);
+      }
+    } else if (opener->GetDocument()) {
+      MOZ_ASSERT(false, "Code is in child");
+      rv = opener->GetDocument()
+               ->CookieJarSettings()
+               ->GetFingerprintingRandomizationKey(randomKey);
+    }
   }
 
   const bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
@@ -447,6 +474,11 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   mCookieJarSettings = CookieJarSettings::Create(
       isPrivate ? CookieJarSettings::ePrivate : CookieJarSettings::eRegular,
       shouldResistFingerprinting);
+
+  if (NS_SUCCEEDED(rv)) {
+    net::CookieJarSettings::Cast(mCookieJarSettings)
+        ->SetFingerprintingRandomizationKey(randomKey);
+  }
 }
 
 LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
