@@ -243,7 +243,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-  void MaybeNotifyIMEOfAddedTextDuringDocumentChange();
+  void NotifyIMEOfAddedContentTextLengthDuringDocumentChange(
+      const char* aCallerName);
 
   
 
@@ -458,11 +459,12 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
   struct FlatTextCache {
    public:
-    void Clear() {
-      mContainerNode = nullptr;
-      mContent = nullptr;
-      mFlatTextLength = 0;
-    }
+    explicit FlatTextCache(const char* aInstanceName)
+        : mInstanceName(aInstanceName) {}
+
+    void Clear(const char* aCallerName);
+
+    [[nodiscard]] bool HasCache() const { return !!mContainerNode; }
 
     
 
@@ -498,17 +500,12 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
     [[nodiscard]] nsresult ComputeAndCacheFlatTextLengthBeforeEndOfContent(
-        const nsIContent& aContent, const dom::Element* aRootElement);
+        const char* aCallerName, const nsIContent& aContent,
+        const dom::Element* aRootElement);
 
     void CacheFlatTextLengthBeforeEndOfContent(
-        const nsIContent& aContent, uint32_t aFlatTextLength,
-        const dom::Element* aRootElement) {
-      mContainerNode = aContent.GetParentNode();
-      mContent = const_cast<nsIContent*>(&aContent);
-      mFlatTextLength = aFlatTextLength;
-      MOZ_ASSERT(IsCachingToEndOfContent());
-      AssertValidCache(aRootElement);
-    }
+        const char* aCallerName, const nsIContent& aContent,
+        uint32_t aFlatTextLength, const dom::Element* aRootElement);
 
     
 
@@ -525,17 +522,12 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
     [[nodiscard]] nsresult ComputeAndCacheFlatTextLengthBeforeFirstContent(
-        const nsINode& aContainer, const dom::Element* aRootElement);
+        const char* aCallerName, const nsINode& aContainer,
+        const dom::Element* aRootElement);
 
     void CacheFlatTextLengthBeforeFirstContent(
-        const nsINode& aContainer, uint32_t aFlatTextLength,
-        const dom::Element* aRootElement) {
-      mContainerNode = const_cast<nsINode*>(&aContainer);
-      mContent = nullptr;
-      mFlatTextLength = aFlatTextLength;
-      MOZ_ASSERT(IsCachingToStartOfContainer());
-      AssertValidCache(aRootElement);
-    }
+        const char* aCallerName, const nsINode& aContainer,
+        uint32_t aFlatTextLength, const dom::Element* aRootElement);
 
     
 
@@ -589,10 +581,10 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
+
     [[nodiscard]] static Result<uint32_t, nsresult>
-    ComputeTextLengthStartOfContentToEndOfContent(
-        const nsIContent& aStartContent, const nsIContent& aEndContent,
-        const dom::Element* aRootElement);
+    ComputeTextLengthBeforeFirstContentOf(const nsINode& aContainer,
+                                          const dom::Element* aRootElement);
 
     
 
@@ -609,9 +601,13 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
+
+
+
     [[nodiscard]] static Result<uint32_t, nsresult>
-    ComputeTextLengthBeforeFirstContentOf(const nsINode& aContainer,
-                                          const dom::Element* aRootElement);
+    ComputeTextLengthStartOfContentToEndOfContent(
+        const nsIContent& aStartContent, const nsIContent& aEndContent,
+        const dom::Element* aRootElement);
 
     [[nodiscard]] bool CachesTextLengthBeforeContent(
         const nsIContent& aContent) const {
@@ -654,18 +650,27 @@ class IMEContentObserver final : public nsStubMutationObserver,
     
     
     uint32_t mFlatTextLength = 0;
+    MOZ_DEFINE_DBG(FlatTextCache, mContainerNode, mContent, mFlatTextLength);
+
+   private:
+    const char* mInstanceName;
   };
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const FlatTextCache& aCache);
+
   
   
   
   
-  FlatTextCache mEndOfAddedTextCache;
+  FlatTextCache mEndOfAddedTextCache = FlatTextCache("mEndOfAddedTextCache");
   
   
   
   
   
-  FlatTextCache mStartOfRemovingTextRangeCache;
+  FlatTextCache mStartOfRemovingTextRangeCache =
+      FlatTextCache("mStartOfRemovingTextRangeCache");
 
   
   
