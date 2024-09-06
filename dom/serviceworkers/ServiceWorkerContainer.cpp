@@ -200,6 +200,8 @@ already_AddRefed<nsIURI> GetBaseURIFromGlobal(nsIGlobalObject* aGlobal,
 already_AddRefed<Promise> ServiceWorkerContainer::Register(
     const nsAString& aScriptURL, const RegistrationOptions& aOptions,
     const CallerType aCallerType, ErrorResult& aRv) {
+  AUTO_PROFILER_MARKER_TEXT("SWC Register", DOM, {}, ""_ns);
+
   
   
   
@@ -375,6 +377,8 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
       [self,
        outer](const IPCServiceWorkerRegistrationDescriptorOrCopyableErrorResult&
                   aResult) {
+        AUTO_PROFILER_MARKER_TEXT("SWC Register (inner)", DOM, {}, ""_ns);
+
         if (aResult.type() ==
             IPCServiceWorkerRegistrationDescriptorOrCopyableErrorResult::
                 TCopyableErrorResult) {
