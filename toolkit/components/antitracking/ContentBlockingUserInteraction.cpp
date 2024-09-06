@@ -28,14 +28,9 @@ void ContentBlockingUserInteraction::Observe(nsIPrincipal* aPrincipal) {
     LOG_PRIN(("Saving the userInteraction for %s", _spec), aPrincipal);
 
     
-    RefPtr<BounceTrackingProtection> bounceTrackingProtection =
-        BounceTrackingProtection::GetSingleton();
-    
-    if (bounceTrackingProtection) {
-      nsresult rv = bounceTrackingProtection->RecordUserActivation(aPrincipal);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        LOG(("BounceTrackingProtection::RecordUserActivation failed."));
-      }
+    nsresult rv = BounceTrackingProtection::RecordUserActivation(aPrincipal);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      LOG(("BounceTrackingProtection::RecordUserActivation failed."));
     }
 
     PermissionManager* permManager = PermissionManager::GetInstance();
@@ -51,7 +46,7 @@ void ContentBlockingUserInteraction::Observe(nsIPrincipal* aPrincipal) {
     int64_t when = (PR_Now() / PR_USEC_PER_MSEC) + expirationTime;
 
     uint32_t privateBrowsingId = 0;
-    nsresult rv = aPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
+    rv = aPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
     if (!NS_WARN_IF(NS_FAILED(rv)) && privateBrowsingId > 0) {
       
       
