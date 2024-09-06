@@ -3548,8 +3548,10 @@ StyleContentVisibility nsStyleDisplay::ContentVisibility(
     return StyleContentVisibility::Visible;
   }
   
+  
   if (mContentVisibility == StyleContentVisibility::Auto &&
-      aFrame.PresContext()->IsPrintingOrPrintPreview()) {
+      (aFrame.PresContext()->IsPrintingOrPrintPreview() ||
+       aFrame.PresContext()->Document()->IsBeingUsedAsImage())) {
     return StyleContentVisibility::Visible;
   }
   return mContentVisibility;
