@@ -145,6 +145,10 @@ class FetchDriver final : public nsIChannelEventSink,
     mAssociatedBrowsingContextID = aID;
   }
 
+  void SetIsThirdPartyWorker(const Maybe<bool> aIsThirdPartyWorker) {
+    mIsThirdPartyWorker = aIsThirdPartyWorker;
+  }
+
  private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
@@ -178,6 +182,10 @@ class FetchDriver final : public nsIChannelEventSink,
   bool mNeedToObserveOnDataAvailable;
 
   bool mIsTrackingFetch;
+
+  
+  
+  Maybe<bool> mIsThirdPartyWorker;
 
   RefPtr<AlternativeDataStreamListener> mAltDataListener;
   bool mOnStopRequestCalled;
