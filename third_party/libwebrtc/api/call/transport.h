@@ -15,8 +15,6 @@
 #include <stdint.h>
 
 #include "api/array_view.h"
-#include "api/ref_counted_base.h"
-#include "api/scoped_refptr.h"
 
 namespace webrtc {
 
@@ -30,9 +28,6 @@ struct PacketOptions {
   
   
   int packet_id = -1;
-  
-  
-  rtc::scoped_refptr<rtc::RefCountedBase> additional_data;
   
   bool is_retransmit = false;
   bool included_in_feedback = false;
