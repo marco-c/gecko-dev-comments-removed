@@ -45,6 +45,8 @@ pub struct PictureCacheEntry {
     
     pub uv_rect_handle: GpuCacheHandle,
     
+    pub filter: TextureFilter,
+    
     pub texture_id: CacheTextureId,
 }
 
@@ -220,6 +222,7 @@ impl PictureTextures {
             size: tile_size,
             last_access: self.now,
             uv_rect_handle: GpuCacheHandle::new(),
+            filter: self.filter,
             texture_id,
         };
 

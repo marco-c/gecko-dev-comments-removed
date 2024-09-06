@@ -827,8 +827,12 @@ impl RenderPass {
     
     pub fn new(src: &Pass) -> Self {
         RenderPass {
-            color: RenderTargetList::new(),
-            alpha: RenderTargetList::new(),
+            color: RenderTargetList::new(
+                ImageFormat::RGBA8,
+            ),
+            alpha: RenderTargetList::new(
+                ImageFormat::R8,
+            ),
             texture_cache: FastHashMap::default(),
             picture_cache: Vec::new(),
             textures_to_invalidate: src.textures_to_invalidate.clone(),
