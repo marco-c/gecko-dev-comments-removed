@@ -4701,7 +4701,9 @@ Toolbox.prototype = {
       }
 
       if (resourceType === TYPES.CONSOLE_MESSAGE) {
-        const { level } = resource.message;
+        
+        
+        const { level } = resource.message || resource;
         if (level === "error" || level === "exception" || level === "assert") {
           errors++;
         }

@@ -110,7 +110,14 @@ function prepareMessage(resource, idGenerator, persistLogs) {
 function transformResource(resource, persistLogs) {
   switch (resource.resourceType || resource.type) {
     case ResourceCommand.TYPES.CONSOLE_MESSAGE: {
-      return transformConsoleAPICallResource(resource, persistLogs);
+      
+      
+      
+      return transformConsoleAPICallResource(
+        resource.message || resource,
+        persistLogs,
+        resource.targetFront
+      );
     }
 
     case ResourceCommand.TYPES.PLATFORM_MESSAGE: {
@@ -145,14 +152,14 @@ function transformResource(resource, persistLogs) {
 }
 
 
-function transformConsoleAPICallResource(consoleMessageResource, persistLogs) {
-  const { message, targetFront } = consoleMessageResource;
-
-  let parameters = message.arguments;
-  let type = message.level;
+function transformConsoleAPICallResource(
+  consoleMessageResource,
+  persistLogs,
+  targetFront
+) {
+  let { arguments: parameters, level: type, timer } = consoleMessageResource;
   let level = getLevelFromType(type);
   let messageText = null;
-  const { timer } = message;
 
   
   switch (type) {
@@ -166,7 +173,7 @@ function transformConsoleAPICallResource(consoleMessageResource, persistLogs) {
     case "countReset":
       
       type = MESSAGE_TYPE.LOG;
-      const { counter } = message;
+      const { counter } = consoleMessageResource;
 
       if (!counter) {
         
@@ -253,12 +260,12 @@ function transformConsoleAPICallResource(consoleMessageResource, persistLogs) {
       break;
   }
 
-  const frame = message.filename
+  const frame = consoleMessageResource.filename
     ? {
-        source: message.filename,
-        sourceId: message.sourceId,
-        line: message.lineNumber,
-        column: message.columnNumber,
+        source: consoleMessageResource.filename,
+        sourceId: consoleMessageResource.sourceId,
+        line: consoleMessageResource.lineNumber,
+        column: consoleMessageResource.columnNumber,
       }
     : null;
 
@@ -273,13 +280,15 @@ function transformConsoleAPICallResource(consoleMessageResource, persistLogs) {
     level,
     parameters,
     messageText,
-    stacktrace: message.stacktrace ? message.stacktrace : null,
+    stacktrace: consoleMessageResource.stacktrace
+      ? consoleMessageResource.stacktrace
+      : null,
     frame,
-    timeStamp: message.timeStamp,
-    userProvidedStyles: message.styles,
-    prefix: message.prefix,
-    private: message.private,
-    chromeContext: message.chromeContext,
+    timeStamp: consoleMessageResource.timeStamp,
+    userProvidedStyles: consoleMessageResource.styles,
+    prefix: consoleMessageResource.prefix,
+    private: consoleMessageResource.private,
+    chromeContext: consoleMessageResource.chromeContext,
   });
 }
 

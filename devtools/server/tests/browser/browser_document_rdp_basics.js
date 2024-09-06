@@ -136,7 +136,7 @@ add_task(async () => {
   is(resources.length, 1, "Received only one console-message resource");
   
   
-  is(resources[0].message.arguments[0], "42");
+  is(resources[0].arguments[0], "42");
 
   await client.close();
 });
