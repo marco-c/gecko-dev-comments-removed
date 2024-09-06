@@ -9,6 +9,42 @@ const { SessionStoreBackupResource } = ChromeUtils.importESModule(
 const { SessionStore } = ChromeUtils.importESModule(
   "resource:///modules/sessionstore/SessionStore.sys.mjs"
 );
+const { NetUtil } = ChromeUtils.importESModule(
+  "resource://gre/modules/NetUtil.sys.mjs"
+);
+
+const TOTAL_COOKIES = 10;
+
+add_setup(async () => {
+  
+  
+  Services.cookies.sessionCookies;
+
+  Services.prefs.setBoolPref(
+    "network.cookieJarSettings.unblocked_for_testing",
+    true
+  );
+
+  let uri = NetUtil.newURI("https://foo.com/");
+  let channel = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
+  });
+  for (let i = 0; i < TOTAL_COOKIES; ++i) {
+    uri = NetUtil.newURI("https://" + i + ".com/");
+    Services.cookies.setCookieStringFromHttp(uri, "oh=hai", channel);
+  }
+
+  Assert.equal(Services.cookies.sessionCookies.length, TOTAL_COOKIES);
+
+  let state = SessionStore.getCurrentState(true);
+  Assert.equal(
+    state.cookies.length,
+    TOTAL_COOKIES,
+    "The cookies are part of the session"
+  );
+});
 
 
 
@@ -73,7 +109,26 @@ add_task(async function test_measure() {
 
 
 
-add_task(async function test_backup() {
+add_task(async function test_backup_encrypted() {
+  await testBackupHelper(true );
+});
+
+
+
+
+
+add_task(async function test_backup_not_encrypted() {
+  await testBackupHelper(false );
+});
+
+
+
+
+
+
+
+
+async function testBackupHelper(isEncrypted) {
   let sandbox = sinon.createSandbox();
 
   let sessionStoreBackupResource = new SessionStoreBackupResource();
@@ -95,7 +150,8 @@ add_task(async function test_backup() {
   let sessionStoreState = SessionStore.getCurrentState(true);
   let manifestEntry = await sessionStoreBackupResource.backup(
     stagingPath,
-    sourcePath
+    sourcePath,
+    isEncrypted
   );
   Assert.equal(
     manifestEntry,
@@ -127,6 +183,12 @@ add_task(async function test_backup() {
 
   delete sessionStoreStateStaged.session.lastUpdate;
   delete sessionStoreState.session.lastUpdate;
+
+  if (!isEncrypted) {
+    
+    sessionStoreState.cookies = [];
+  }
+
   Assert.deepEqual(
     sessionStoreStateStaged,
     sessionStoreState,
@@ -137,7 +199,7 @@ add_task(async function test_backup() {
   await maybeRemovePath(sourcePath);
 
   sandbox.restore();
-});
+}
 
 
 
