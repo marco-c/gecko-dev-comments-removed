@@ -8,10 +8,6 @@
 
 
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-
 do_get_profile(); 
 
 registerCleanupFunction(() => {
@@ -50,38 +46,6 @@ function run_test() {
   });
 
   
-  
-  add_test(() => {
-    TestUtils.topicObserved("psm:intermediate-certs-cached").then(
-      subjectAndData => {
-        Assert.equal(subjectAndData.length, 2, "expecting [subject, data]");
-        Assert.equal(subjectAndData[1], "1", `expecting "1" cert imported`);
-        run_next_test();
-      }
-    );
-    run_next_test();
-  });
-  
-  add_connection_test(
-    "ee-from-missing-intermediate.example.com",
-    PRErrorCodeSuccess
-  );
-
-  
-  
-  add_test(() => {});
-
-  
-  add_test(() => {
-    clearSessionCache();
-    let certDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
-    certDir.append("bad_certs");
-    Assert.ok(certDir.exists(), "bad_certs should exist");
-    let args = ["-D", "-n", "manually-added-missing-intermediate"];
-    run_certutil_on_directory(certDir.path, args);
-    run_next_test();
-  });
-
   
   add_connection_test(
     "ee-from-missing-intermediate.example.com",

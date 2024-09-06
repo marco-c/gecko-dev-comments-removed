@@ -110,8 +110,6 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   nsresult CommonGetEnterpriseCerts(
       nsTArray<nsTArray<uint8_t>>& enterpriseCerts, bool getRoots);
 
-  nsresult MaybeEnableIntermediatePreloadingHealer();
-
   
   mozilla::Monitor mLoadableCertsLoadedMonitor;
   bool mLoadableCertsLoaded MOZ_GUARDED_BY(mLoadableCertsLoadedMonitor);
@@ -134,12 +132,6 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
 
   
   static int mInstanceCount;
-  
-  
-  
-  
-  
-  nsCOMPtr<nsITimer> mIntermediatePreloadingHealerTimer;
 };
 
 inline nsresult BlockUntilLoadableCertsLoaded() {

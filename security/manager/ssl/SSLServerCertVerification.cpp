@@ -1114,12 +1114,6 @@ SSLServerCertVerificationResult::Run() {
   MOZ_ASSERT(onSTSThread);
 #endif
 
-  if (mSucceeded && !XRE_IsSocketProcess() &&
-      !(mProviderFlags & nsISocketProvider::NO_PERMANENT_STORAGE)) {
-    
-    SaveIntermediateCerts(mBuiltChain);
-  }
-
   mSocketControl->SetMadeOCSPRequests(mMadeOCSPRequests);
   mSocketControl->SetIsBuiltCertChainRootBuiltInRoot(
       mIsBuiltCertChainRootBuiltInRoot);
