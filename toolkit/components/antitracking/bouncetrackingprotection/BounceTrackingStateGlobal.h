@@ -103,13 +103,13 @@ class BounceTrackingStateGlobal final {
   
   
   
-  nsTHashMap<nsCStringHashKey, PRTime> mUserActivation;
+  nsTHashMap<nsCStringHashKey, PRTime> mUserActivation{};
 
   
   
   
   
-  nsTHashMap<nsCStringHashKey, PRTime> mBounceTrackers;
+  nsTHashMap<nsCStringHashKey, PRTime> mBounceTrackers{};
 
   
   static nsCString DescribeMap(

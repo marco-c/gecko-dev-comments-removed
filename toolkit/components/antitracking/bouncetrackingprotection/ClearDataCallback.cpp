@@ -28,13 +28,12 @@ static constexpr nsLiteralCString kUrlClassifierFeatures[] = {
 static_assert(ArrayLength(kUrlClassifierFeatures) > 0,
               "At least one URL classifier feature must be defined");
 
-
-
-static StaticAutoPtr<nsTArray<RefPtr<nsIUrlClassifierFeature>>>
-    sUrlClassifierFeatures;
-
 NS_IMPL_ISUPPORTS(ClearDataCallback, nsIClearDataCallback,
                   nsIUrlClassifierFeatureCallback);
+
+
+nsTArray<RefPtr<nsIUrlClassifierFeature>>
+    ClearDataCallback::sUrlClassifierFeatures;
 
 ClearDataCallback::ClearDataCallback(ClearDataMozPromise::Private* aPromise,
                                      const nsACString& aHost,
@@ -53,9 +52,7 @@ ClearDataCallback::ClearDataCallback(ClearDataMozPromise::Private* aPromise,
   }
 
   
-  if (!sUrlClassifierFeatures) {
-    sUrlClassifierFeatures = new nsTArray<RefPtr<nsIUrlClassifierFeature>>();
-
+  if (sUrlClassifierFeatures.IsEmpty()) {
     
     for (const nsCString& featureName : kUrlClassifierFeatures) {
       nsCOMPtr<nsIUrlClassifierFeature> feature =
@@ -63,14 +60,11 @@ ClearDataCallback::ClearDataCallback(ClearDataMozPromise::Private* aPromise,
       if (NS_WARN_IF(!feature)) {
         continue;
       }
-      sUrlClassifierFeatures->AppendElement(feature);
+      sUrlClassifierFeatures.AppendElement(feature);
     }
-    MOZ_ASSERT(!sUrlClassifierFeatures->IsEmpty(),
+    MOZ_ASSERT(!sUrlClassifierFeatures.IsEmpty(),
                "At least one URL classifier feature must be present");
-    RunOnShutdown([] {
-      sUrlClassifierFeatures->Clear();
-      sUrlClassifierFeatures = nullptr;
-    });
+    RunOnShutdown([] { sUrlClassifierFeatures.Clear(); });
   }
 };
 
@@ -141,9 +135,8 @@ void ClearDataCallback::RecordURLClassifierTelemetry() {
   rv = NS_NewURI(getter_AddRefs(uri), uriStr);
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  MOZ_ASSERT(sUrlClassifierFeatures);
   rv = uriClassifier->AsyncClassifyLocalWithFeatures(
-      uri, *sUrlClassifierFeatures, nsIUrlClassifierFeature::blocklist, this);
+      uri, sUrlClassifierFeatures, nsIUrlClassifierFeature::blocklist, this);
   NS_ENSURE_SUCCESS_VOID(rv);
 }
 
