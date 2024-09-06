@@ -420,9 +420,9 @@ pub enum ScrollAxis {
     
     Inline = 1,
     
-    Vertical = 2,
+    X = 2,
     
-    Horizontal = 3,
+    Y = 3,
 }
 
 impl ScrollAxis {
