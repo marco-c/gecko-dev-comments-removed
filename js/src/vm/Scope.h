@@ -1247,11 +1247,19 @@ class BaseAbstractBindingIter {
   
   
   
+  
+  
+  
+  
+  
   MOZ_INIT_OUTSIDE_CTOR uint32_t positionalFormalStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t nonPositionalFormalStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t varStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t letStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t constStart_;
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  MOZ_INIT_OUTSIDE_CTOR uint32_t usingStart_;
+#endif
   MOZ_INIT_OUTSIDE_CTOR uint32_t syntheticStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t privateMethodStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t length_;
@@ -1283,6 +1291,9 @@ class BaseAbstractBindingIter {
 
   void init(uint32_t positionalFormalStart, uint32_t nonPositionalFormalStart,
             uint32_t varStart, uint32_t letStart, uint32_t constStart,
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+            uint32_t usingStart,
+#endif
             uint32_t syntheticStart, uint32_t privateMethodStart, uint8_t flags,
             uint32_t firstFrameSlot, uint32_t firstEnvironmentSlot,
             mozilla::Span<AbstractBindingName<NameT>> names) {
@@ -1291,6 +1302,9 @@ class BaseAbstractBindingIter {
     varStart_ = varStart;
     letStart_ = letStart;
     constStart_ = constStart;
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    usingStart_ = usingStart;
+#endif
     syntheticStart_ = syntheticStart;
     privateMethodStart_ = privateMethodStart;
     length_ = names.size();
@@ -1481,10 +1495,20 @@ class BaseAbstractBindingIter {
     if (index_ < constStart_) {
       return BindingKind::Let;
     }
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    if (index_ < usingStart_) {
+      return isNamedLambda() ? BindingKind::NamedLambdaCallee
+                             : BindingKind::Const;
+    }
+    if (index_ < syntheticStart_) {
+      return BindingKind::Using;
+    }
+#else
     if (index_ < syntheticStart_) {
       return isNamedLambda() ? BindingKind::NamedLambdaCallee
                              : BindingKind::Const;
     }
+#endif
     if (index_ < privateMethodStart_) {
       return BindingKind::Synthetic;
     }
