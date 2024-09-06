@@ -9,6 +9,7 @@
 #include <aom/aomcx.h>
 
 #include "BufferReader.h"
+#include "EncoderConfig.h"
 #include "FFmpegLog.h"
 #include "FFmpegUtils.h"
 #include "H264.h"
@@ -615,6 +616,7 @@ Result<MediaDataEncoder::EncodedData, nsresult> FFmpegVideoEncoder<
   mFrame->pts = aSample->mTime.ToMicroseconds();
 #  if LIBAVCODEC_VERSION_MAJOR >= 60
   mFrame->duration = aSample->mDuration.ToMicroseconds();
+
 #  else
   
   mDurationMap.Insert(mFrame->pts, aSample->mDuration.ToMicroseconds());
@@ -776,20 +778,16 @@ FFmpegVideoEncoder<LIBAV_VER>::GetSVCSettings() {
 
     
     name = "ts-parameters"_ns;
-    parameters.AppendPrintf(
-        "ts_layering_mode=%u",
-        svc->mCodecAppendix->as<VPXSVCAppendix>().mLayeringMode);
-    parameters.Append(":ts_target_bitrate=");
+    parameters.Append("ts_target_bitrate=");
     for (size_t i = 0; i < svc->mTargetBitrates.Length(); ++i) {
       if (i > 0) {
         parameters.Append(",");
       }
       parameters.AppendPrintf("%d", svc->mTargetBitrates[i]);
     }
-
-    
-    
-    
+    parameters.AppendPrintf(
+        ":ts_layering_mode=%u",
+        svc->mCodecAppendix->as<VPXSVCAppendix>().mLayeringMode);
   }
 
   if (codecType == CodecType::AV1) {
