@@ -207,22 +207,18 @@ bool ModuleGenerator::init(CodeMetadataForAsmJS* codeMetaForAsmJS) {
   }
 
   
-  
-  
+  CompiledCode& stubCode = tasks_[0].output;
+  MOZ_ASSERT(stubCode.empty());
 
-  CompiledCode& importCode = tasks_[0].output;
-  MOZ_ASSERT(importCode.empty());
-
-  if (!GenerateImportFunctions(*codeMeta_, codeBlock_->funcImports,
-                               &importCode)) {
+  if (!GenerateStubs(*codeMeta_, codeBlock_->funcImports, &stubCode)) {
     return false;
   }
 
-  if (!linkCompiledCode(importCode)) {
+  if (!linkCompiledCode(stubCode)) {
     return false;
   }
 
-  importCode.clear();
+  stubCode.clear();
   return true;
 }
 
@@ -453,7 +449,8 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
 
   masm_->haltingAlign(CodeAlignment);
   const size_t offsetInModule = masm_->size();
-  if (!masm_->appendRawCode(code.bytes.begin(), code.bytes.length())) {
+  if (code.bytes.length() != 0 &&
+      !masm_->appendRawCode(code.bytes.begin(), code.bytes.length())) {
     return false;
   }
 
@@ -1004,8 +1001,7 @@ UniqueCodeBlock ModuleGenerator::finishCompleteTier(UniqueLinkData* linkData) {
   CompiledCode& stubCode = tasks_[0].output;
   MOZ_ASSERT(stubCode.empty());
 
-  if (!GenerateStubs(*codeMeta_, codeBlock_->funcImports,
-                     codeBlock_->funcExports, &stubCode)) {
+  if (!GenerateEntryStubs(*codeMeta_, codeBlock_->funcExports, &stubCode)) {
     return nullptr;
   }
 
