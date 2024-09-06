@@ -3071,10 +3071,6 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
 - (void)_setNeedsDisplayInRect:(NSRect)aRect;
 @end
 
-@interface NSView (NSVisualEffectViewSetMaskImage)
-- (void)setMaskImage:(NSImage*)image;
-@end
-
 @interface BaseWindow (Private)
 - (void)removeTrackingArea;
 - (void)cursorUpdated:(NSEvent*)aEvent;
@@ -3174,35 +3170,38 @@ static NSImage* GetMenuMaskImage() {
   return maskImage;
 }
 
-- (void)swapOutChildViewWrapper:(NSView*)aNewWrapper {
-  aNewWrapper.frame = self.contentView.frame;
-  NSView* childView = [self.mainChildView retain];
-  [childView removeFromSuperview];
-  [aNewWrapper addSubview:childView];
-  [childView release];
-  [super setContentView:aNewWrapper];
-}
+
 
 - (void)setEffectViewWrapperForStyle:(WindowShadow)aStyle {
-  if (aStyle == WindowShadow::Menu || aStyle == WindowShadow::Tooltip) {
-    
-    
-    BOOL isMenu = aStyle == WindowShadow::Menu;
-    NSView* effectView = VibrancyManager::CreateEffectView(
-        isMenu ? VibrancyType::MENU : VibrancyType::TOOLTIP, YES);
-    if (isMenu) {
+  NSView* wrapper = [&]() -> NSView* {
+    if (aStyle == WindowShadow::Menu || aStyle == WindowShadow::Tooltip) {
+      const bool isMenu = aStyle == WindowShadow::Menu;
+      auto* effectView =
+          [[NSVisualEffectView alloc] initWithFrame:self.contentView.frame];
+      effectView.material =
+          isMenu ? NSVisualEffectMaterialMenu : NSVisualEffectMaterialToolTip;
       
-      [effectView setMaskImage:GetMenuMaskImage()];
+      
+      effectView.state = NSVisualEffectStateActive;
+      effectView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+      if (isMenu) {
+        
+        effectView.maskImage = GetMenuMaskImage();
+      }
+      return effectView;
     }
-    [self swapOutChildViewWrapper:effectView];
-    [effectView release];
-  } else {
-    
-    NSView* wrapper = [[NSView alloc] initWithFrame:NSZeroRect];
-    [wrapper setWantsLayer:YES];
-    [self swapOutChildViewWrapper:wrapper];
-    [wrapper release];
-  }
+    return [[NSView alloc] initWithFrame:self.contentView.frame];
+  }();
+
+  wrapper.wantsLayer = YES;
+  
+  
+  NSView* childView = [self.mainChildView retain];
+  [childView removeFromSuperview];
+  [wrapper addSubview:childView];
+  [childView release];
+  super.contentView = wrapper;
+  [wrapper release];
 }
 
 - (NSTouchBar*)makeTouchBar {

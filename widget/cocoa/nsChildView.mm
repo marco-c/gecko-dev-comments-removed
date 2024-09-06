@@ -1726,32 +1726,52 @@ static Maybe<VibrancyType> ThemeGeometryTypeToVibrancyType(
     nsITheme::ThemeGeometryType aThemeGeometryType) {
   switch (aThemeGeometryType) {
     case eThemeGeometryTypeTitlebar:
-      return Some(VibrancyType::TITLEBAR);
+      return Some(VibrancyType::Titlebar);
     default:
       return Nothing();
   }
 }
 
-static LayoutDeviceIntRegion GatherVibrantRegion(
-    const nsTArray<nsIWidget::ThemeGeometry>& aThemeGeometries,
-    VibrancyType aVibrancyType) {
-  LayoutDeviceIntRegion region;
+static EnumeratedArray<VibrancyType, LayoutDeviceIntRegion>
+GatherVibrantRegions(Span<const nsIWidget::ThemeGeometry> aThemeGeometries) {
+  EnumeratedArray<VibrancyType, LayoutDeviceIntRegion> regions;
   for (const auto& geometry : aThemeGeometries) {
-    if (ThemeGeometryTypeToVibrancyType(geometry.mType) ==
-        Some(aVibrancyType)) {
-      region.OrWith(geometry.mRect);
+    auto vibrancyType = ThemeGeometryTypeToVibrancyType(geometry.mType);
+    if (!vibrancyType) {
+      continue;
     }
+    regions[*vibrancyType].OrWith(geometry.mRect);
   }
-  return region;
+  return regions;
+}
+
+
+
+
+
+static void MakeRegionsNonOverlapping(Span<LayoutDeviceIntRegion> aRegions) {
+  LayoutDeviceIntRegion unionOfAll;
+  for (auto& region : aRegions) {
+    region.SubOut(unionOfAll);
+    unionOfAll.OrWith(region);
+  }
 }
 
 void nsChildView::UpdateVibrancy(
     const nsTArray<ThemeGeometry>& aThemeGeometries) {
-  LayoutDeviceIntRegion titlebarRegion =
-      GatherVibrantRegion(aThemeGeometries, VibrancyType::TITLEBAR);
+  auto regions = GatherVibrantRegions(aThemeGeometries);
+  MakeRegionsNonOverlapping(Span(regions.begin(), regions.end()));
 
   auto& vm = EnsureVibrancyManager();
-  bool changed = vm.UpdateVibrantRegion(VibrancyType::TITLEBAR, titlebarRegion);
+  bool changed = false;
+
+  
+  
+  
+  size_t i = 0;
+  for (const auto& region : regions) {
+    changed |= vm.UpdateVibrantRegion(VibrancyType(i++), region);
+  }
 
   if (changed) {
     SuspendAsyncCATransactions();

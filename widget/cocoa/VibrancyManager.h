@@ -7,24 +7,24 @@
 #ifndef VibrancyManager_h
 #define VibrancyManager_h
 
-#include "mozilla/Assertions.h"
-#include "nsClassHashtable.h"
-#include "nsRegion.h"
-#include "nsTArray.h"
-#include "ViewRegion.h"
+#include "mozilla/EnumeratedArray.h"
+#include "Units.h"
 
-#import <Foundation/NSGeometry.h>
-
-@class NSColor;
 @class NSView;
 class nsChildView;
 
 namespace mozilla {
 
+class ViewRegion;
+
 enum class VibrancyType {
-  TOOLTIP,
-  MENU,
-  TITLEBAR,
+  
+  Titlebar,
+};
+
+template <>
+struct MaxContiguousEnumValue<VibrancyType> {
+  static constexpr auto value = VibrancyType::Titlebar;
 };
 
 
@@ -51,9 +51,9 @@ class VibrancyManager {
 
 
   VibrancyManager(const nsChildView& aCoordinateConverter,
-                  NSView* aContainerView)
-      : mCoordinateConverter(aCoordinateConverter),
-        mContainerView(aContainerView) {}
+                  NSView* aContainerView);
+
+  ~VibrancyManager();
 
   
 
@@ -66,26 +66,10 @@ class VibrancyManager {
   bool UpdateVibrantRegion(VibrancyType aType,
                            const LayoutDeviceIntRegion& aRegion);
 
-  bool HasVibrantRegions() { return !mVibrantRegions.IsEmpty(); }
-
-  LayoutDeviceIntRegion GetUnionOfVibrantRegions() const;
-
-  
-
-
-
-
-
-
-
-
-
-  static NSView* CreateEffectView(VibrancyType aType, BOOL aIsContainer = NO);
-
  protected:
   const nsChildView& mCoordinateConverter;
   NSView* mContainerView;
-  nsClassHashtable<nsUint32HashKey, ViewRegion> mVibrantRegions;
+  EnumeratedArray<VibrancyType, UniquePtr<ViewRegion>> mVibrantRegions;
 };
 
 }  
