@@ -168,6 +168,7 @@ class Editor extends EventEmitter {
   #win;
   #lineGutterMarkers = new Map();
   #lineContentMarkers = new Map();
+  #posContentMarkers = new Map();
   #lineContentEventHandlers = {};
 
   #updateListener = null;
@@ -628,6 +629,7 @@ class Editor extends EventEmitter {
     const lineNumberCompartment = new Compartment();
     const lineNumberMarkersCompartment = new Compartment();
     const lineContentMarkerCompartment = new Compartment();
+    const positionContentMarkersCompartment = new Compartment();
 
     this.#compartments = {
       tabSizeCompartment,
@@ -636,6 +638,7 @@ class Editor extends EventEmitter {
       lineNumberCompartment,
       lineNumberMarkersCompartment,
       lineContentMarkerCompartment,
+      positionContentMarkersCompartment,
     };
 
     const indentStr = (this.config.indentWithTabs ? "\t" : " ").repeat(
@@ -678,7 +681,10 @@ class Editor extends EventEmitter {
       }),
       lineNumberMarkersCompartment.of([]),
       lineContentMarkerCompartment.of(
-        this.#lineContentMarkersExtension({ markers: [] })
+        this.#lineContentMarkersExtension({ lineMarkers: [] })
+      ),
+      positionContentMarkersCompartment.of(
+        this.#positionContentMarkersExtension([])
       ),
       
       codemirror.minimalSetup,
@@ -705,7 +711,7 @@ class Editor extends EventEmitter {
 
 
 
-  #lineContentMarkersExtension({ markers, domEventHandlers }) {
+  #lineContentMarkersExtension({ lineMarkers, domEventHandlers }) {
     const {
       codemirrorView: { Decoration, ViewPlugin, WidgetType },
       codemirrorState: { RangeSetBuilder, RangeSet },
@@ -720,14 +726,14 @@ class Editor extends EventEmitter {
 
     
     function buildDecorations(view) {
-      if (!markers) {
+      if (!lineMarkers) {
         return RangeSet.empty;
       }
       const builder = new RangeSetBuilder();
       for (const { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
           const line = view.state.doc.lineAt(pos);
-          for (const marker of markers) {
+          for (const marker of lineMarkers) {
             if (marker.condition(line.number)) {
               if (marker.lineClassName) {
                 const classDecoration = Decoration.line({
@@ -826,7 +832,7 @@ class Editor extends EventEmitter {
     cm.dispatch({
       effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
         this.#lineContentMarkersExtension({
-          markers: Array.from(this.#lineContentMarkers.values()),
+          lineMarkers: Array.from(this.#lineContentMarkers.values()),
         })
       ),
     });
@@ -843,8 +849,122 @@ class Editor extends EventEmitter {
     cm.dispatch({
       effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
         this.#lineContentMarkersExtension({
-          markers: Array.from(this.#lineContentMarkers.values()),
+          lineMarkers: Array.from(this.#lineContentMarkers.values()),
         })
+      ),
+    });
+  }
+
+  
+
+
+
+
+
+
+  #positionContentMarkersExtension(markers) {
+    const {
+      codemirrorView: { Decoration, ViewPlugin, WidgetType },
+      codemirrorState: { RangeSet },
+    } = this.#CodeMirror6;
+
+    class NodeWidget extends WidgetType {
+      constructor(line, column, createElementNode) {
+        super();
+        this.toDOM = () => createElementNode(line, column);
+      }
+    }
+
+    
+    function buildDecorations(view) {
+      const ranges = [];
+      const { from, to } = view.viewport;
+      const vStartLine = view.state.doc.lineAt(from);
+      const vEndLine = view.state.doc.lineAt(to);
+      for (const marker of markers) {
+        for (const position of marker.positions) {
+          if (
+            position.line >= vStartLine.number &&
+            position.line <= vEndLine.number
+          ) {
+            const line = view.state.doc.line(position.line);
+            const pos = line.from + position.column;
+            if (marker.createPositionElementNode) {
+              const nodeDecoration = Decoration.widget({
+                widget: new NodeWidget(
+                  position.line,
+                  position.column,
+                  marker.createPositionElementNode
+                ),
+                
+                
+                side: 1,
+              });
+              ranges.push({ from: pos, to: pos, value: nodeDecoration });
+            }
+          }
+        }
+      }
+      
+      return RangeSet.of(ranges,  true);
+    }
+
+    
+    
+    const positionContentMarkersView = ViewPlugin.fromClass(
+      class {
+        decorations;
+        constructor(view) {
+          this.decorations = buildDecorations(view);
+        }
+        update(update) {
+          if (update.docChanged || update.viewportChanged) {
+            this.decorations = buildDecorations(update.view);
+          }
+        }
+      },
+      {
+        decorations: v => v.decorations,
+      }
+    );
+
+    return [positionContentMarkersView];
+  }
+
+  
+
+
+
+
+
+
+
+  setPositionContentMarker(marker) {
+    const cm = editors.get(this);
+    this.#posContentMarkers.set(marker.id, marker);
+
+    cm.dispatch({
+      effects: this.#compartments.positionContentMarkersCompartment.reconfigure(
+        this.#positionContentMarkersExtension(
+          Array.from(this.#posContentMarkers.values())
+        )
+      ),
+    });
+  }
+
+  
+
+
+
+  removePositionContentMarker(markerId) {
+    const cm = editors.get(this);
+    this.#posContentMarkers.delete(markerId);
+
+    cm.dispatch({
+      effects: this.#compartments.positionContentMarkersCompartment.reconfigure(
+        this.#positionContentMarkersExtension(
+          Array.from(this.#posContentMarkers.values())
+        )
       ),
     });
   }
@@ -968,6 +1088,62 @@ class Editor extends EventEmitter {
         lineNumberMarkers.of(builder.finish())
       ),
     });
+  }
+
+  
+
+
+
+  getLocationsInViewport() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const { from, to } = cm.viewport;
+      const lineFrom = cm.state.doc.lineAt(from);
+      const lineTo = cm.state.doc.lineAt(to);
+      
+      
+      return {
+        start: { line: lineFrom.number, column: 0 },
+        end: { line: lineTo.number, column: lineTo.to - lineTo.from },
+      };
+    }
+    
+    
+    const offsetHorizontalCharacters = 100;
+    const offsetVerticalLines = 20;
+    
+    if (!cm) {
+      return {
+        start: { line: 0, column: 0 },
+        end: { line: 0, column: 0 },
+      };
+    }
+    const charWidth = cm.defaultCharWidth();
+    const scrollArea = cm.getScrollInfo();
+    const { scrollLeft } = cm.doc;
+    const rect = cm.getWrapperElement().getBoundingClientRect();
+    const topVisibleLine =
+      cm.lineAtHeight(rect.top, "window") - offsetVerticalLines;
+    const bottomVisibleLine =
+      cm.lineAtHeight(rect.bottom, "window") + offsetVerticalLines;
+
+    const leftColumn = Math.floor(
+      scrollLeft > 0 ? scrollLeft / charWidth - offsetHorizontalCharacters : 0
+    );
+    const rightPosition = scrollLeft + (scrollArea.clientWidth - 30);
+    const rightCharacter =
+      Math.floor(rightPosition / charWidth) + offsetHorizontalCharacters;
+
+    return {
+      start: {
+        line: topVisibleLine || 0,
+        column: leftColumn || 0,
+      },
+      end: {
+        line: bottomVisibleLine || 0,
+        column: rightCharacter,
+      },
+    };
   }
 
   
