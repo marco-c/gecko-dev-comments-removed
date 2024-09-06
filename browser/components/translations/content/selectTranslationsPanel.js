@@ -126,11 +126,14 @@ var SelectTranslationsPanel = new (class {
 
 
 
+
+
   async #ensureLangListsBuilt() {
     try {
       await TranslationsPanelShared.ensureLangListsBuilt(
         document,
-        this.elements.panel
+        this.elements.panel,
+        gBrowser.selectedBrowser.innerWindowID
       );
     } catch (error) {
       this.console?.error(error);
@@ -144,26 +147,20 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  async #updateLanguageDropdown(langTag, menuList) {
-    const langTagIsSupported =
+
+  async #initializeLanguageMenuList(langTag, menuList) {
+    const isLangTagSupported =
       menuList.id === this.elements.fromMenuList.id
         ? await TranslationsParent.isSupportedAsFromLang(langTag)
         : await TranslationsParent.isSupportedAsToLang(langTag);
 
-    if (langTagIsSupported) {
+    if (isLangTagSupported) {
       
       
-      menuList.value = langTag;
       menuList.removeAttribute("data-l10n-id");
+      menuList.value = langTag;
     } else {
-      
-      
-      menuList.value = undefined;
-      document.l10n.setAttributes(
-        menuList,
-        "translations-panel-choose-language"
-      );
-      await document.l10n.translateElements([menuList]);
+      await this.#deselectLanguage(menuList);
     }
   }
 
@@ -173,17 +170,14 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  async #updateLanguageDropdowns(langPairPromise) {
+
+
+  async #initializeLanguageMenuLists(langPairPromise) {
     const { fromLang, toLang } = await langPairPromise;
-
-    this.console?.debug(`fromLang(${fromLang})`);
-    this.console?.debug(`toLang(${toLang})`);
-
     const { fromMenuList, toMenuList } = this.elements;
-
     await Promise.all([
-      this.#updateLanguageDropdown(fromLang, fromMenuList),
-      this.#updateLanguageDropdown(toLang, toMenuList),
+      this.#initializeLanguageMenuList(fromLang, fromMenuList),
+      this.#initializeLanguageMenuList(toLang, toMenuList),
     ]);
   }
 
@@ -199,7 +193,7 @@ var SelectTranslationsPanel = new (class {
     this.console?.log("Showing a translation panel.");
 
     await this.#ensureLangListsBuilt();
-    await this.#updateLanguageDropdowns(langPairPromise);
+    await this.#initializeLanguageMenuLists(langPairPromise);
 
     
     
@@ -216,5 +210,17 @@ var SelectTranslationsPanel = new (class {
       position: "bottomright topright",
       triggerEvent: event,
     }).catch(error => this.console?.error(error));
+  }
+
+  
+
+
+
+
+
+  async #deselectLanguage(menuList) {
+    menuList.value = "";
+    document.l10n.setAttributes(menuList, "translations-panel-choose-language");
+    await document.l10n.translateElements([menuList]);
   }
 })();
