@@ -969,6 +969,7 @@ nsresult ModuleLoaderBase::StartDynamicImport(ModuleLoadRequest* aRequest) {
   nsresult rv = StartModuleLoad(aRequest);
   if (NS_FAILED(rv)) {
     mLoader->ReportErrorToConsole(aRequest, rv);
+    RemoveDynamicImport(aRequest);
     FinishDynamicImportAndReject(aRequest, rv);
   }
   return rv;
@@ -1003,6 +1004,9 @@ void ModuleLoaderBase::FinishDynamicImport(
   
   
   MOZ_ASSERT_IF(NS_FAILED(aResult), !aEvaluationPromise);
+
+  
+  MOZ_ASSERT(!aRequest->mLoader->HasDynamicImport(aRequest));
 
   
   
@@ -1090,6 +1094,10 @@ void ModuleLoaderBase::CancelDynamicImport(ModuleLoadRequest* aRequest,
 
   RefPtr<ScriptLoadRequest> req = mDynamicImportRequests.Steal(aRequest);
   if (!aRequest->IsCanceled()) {
+    
+    
+    MOZ_ASSERT(aRequest->mDynamicPromise);
+
     aRequest->Cancel();
     
     
