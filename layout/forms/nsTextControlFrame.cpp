@@ -417,7 +417,8 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
   
   aElements.AppendElement(mRootNode);
 
-  if (StaticPrefs::layout_forms_reveal_password_button_enabled() &&
+  if ((StaticPrefs::layout_forms_reveal_password_button_enabled() ||
+       PresContext()->Document()->ChromeRulesEnabled()) &&
       IsPasswordTextControl() &&
       StyleDisplay()->EffectiveAppearance() != StyleAppearance::Textfield) {
     mRevealButton =
