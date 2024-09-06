@@ -106,6 +106,7 @@ typedef enum aom_transfer_characteristics {
 } aom_transfer_characteristics_t;  
 
 
+
 typedef enum aom_matrix_coefficients {
   AOM_CICP_MC_IDENTITY = 0,    
   AOM_CICP_MC_BT_709 = 1,      
@@ -125,7 +126,7 @@ typedef enum aom_matrix_coefficients {
   AOM_CICP_MC_CHROMAT_CL = 13, 
   AOM_CICP_MC_ICTCP = 14,      
   AOM_CICP_MC_RESERVED_15 = 15 
-} aom_matrix_coefficients_t;
+} aom_matrix_coefficients_t;   
 
 
 typedef enum aom_color_range {
@@ -145,6 +146,7 @@ typedef enum aom_chroma_sample_position {
   AOM_CSP_COLOCATED = 2,        
   AOM_CSP_RESERVED = 3          
 } aom_chroma_sample_position_t; 
+
 
 
 
@@ -253,6 +255,9 @@ typedef struct aom_image {
 
 
 
+
+
+
 aom_image_t *aom_img_alloc(aom_image_t *img, aom_img_fmt_t fmt,
                            unsigned int d_w, unsigned int d_h,
                            unsigned int align);
@@ -277,9 +282,16 @@ aom_image_t *aom_img_alloc(aom_image_t *img, aom_img_fmt_t fmt,
 
 
 
+
+
 aom_image_t *aom_img_wrap(aom_image_t *img, aom_img_fmt_t fmt, unsigned int d_w,
                           unsigned int d_h, unsigned int align,
                           unsigned char *img_data);
+
+
+
+
+
 
 
 

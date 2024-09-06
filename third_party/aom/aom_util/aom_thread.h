@@ -21,8 +21,6 @@
 extern "C" {
 #endif
 
-#define MAX_NUM_THREADS 64
-
 
 typedef enum {
   AVX_WORKER_STATUS_NOT_OK = 0,  

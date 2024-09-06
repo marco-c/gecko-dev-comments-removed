@@ -305,6 +305,7 @@ static INLINE int fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
 
   
   for (int level = already_filled_levels; level < n_levels; ++level) {
+    bool mem_status = false;
     PyramidLayer *prev_layer = &frame_pyr->layers[level - 1];
     uint8_t *prev_buffer = prev_layer->buffer;
     int prev_stride = prev_layer->stride;
@@ -317,6 +318,9 @@ static INLINE int fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
 
     
     
+    const int input_layer_width = this_width << 1;
+    const int input_layer_height = this_height << 1;
+
     
     
     
@@ -329,13 +333,32 @@ static INLINE int fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
     
     
     
-    if (!av1_resize_plane(prev_buffer, this_height << 1, this_width << 1,
-                          prev_stride, this_buffer, this_height, this_width,
-                          this_stride)) {
-      
+    
+    
+
+    
+    
+    
+    
+    if (should_resize_by_half(input_layer_height, input_layer_width,
+                              this_height, this_width)) {
+      assert(input_layer_height % 2 == 0 && input_layer_width % 2 == 0 &&
+             "Input width or height cannot be odd.");
+      mem_status = av1_resize_plane_to_half(
+          prev_buffer, input_layer_height, input_layer_width, prev_stride,
+          this_buffer, this_height, this_width, this_stride);
+    } else {
+      mem_status = av1_resize_plane(prev_buffer, input_layer_height,
+                                    input_layer_width, prev_stride, this_buffer,
+                                    this_height, this_width, this_stride);
+    }
+
+    
+    if (!mem_status) {
       frame_pyr->filled_levels = n_levels;
       return -1;
     }
+
     fill_border(this_buffer, this_width, this_height, this_stride);
   }
 
