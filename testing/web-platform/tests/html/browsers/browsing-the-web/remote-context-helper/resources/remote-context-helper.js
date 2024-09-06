@@ -288,15 +288,22 @@
   function elementExecutorCreator(
       remoteContextWrapper, elementName, attributes) {
     return url => {
-      return remoteContextWrapper.executeScript((url, elementName, attributes) => {
-        const el = document.createElement(elementName);
-        for (const attribute in attributes) {
-          el.setAttribute(attribute, attributes[attribute]);
-        }
-        el.src = url;
-        const parent = elementName == "frame" ? findOrCreateFrameset() : document.body;
-        parent.appendChild(el);
-      }, [url, elementName, attributes]);
+      return remoteContextWrapper.executeScript(
+          (url, elementName, attributes) => {
+            const el = document.createElement(elementName);
+            for (const attribute in attributes) {
+              el.setAttribute(attribute, attributes[attribute]);
+            }
+            if (elementName == 'object') {
+              el.data = url;
+            } else {
+              el.src = url;
+            }
+            const parent =
+                elementName == 'frame' ? findOrCreateFrameset() : document.body;
+            parent.appendChild(el);
+          },
+          [url, elementName, attributes]);
     };
   }
 
@@ -416,6 +423,37 @@
         extraConfig,
       });
     }
+
+    
+
+
+
+
+
+
+
+    addEmbed(extraConfig, attributes = {}) {
+      return this.helper.createContext({
+        executorCreator: elementExecutorCreator(this, 'embed', attributes),
+        extraConfig,
+      });
+    }
+
+    
+
+
+
+
+
+
+
+    addObject(extraConfig, attributes = {}) {
+      return this.helper.createContext({
+        executorCreator: elementExecutorCreator(this, 'object', attributes),
+        extraConfig,
+      });
+    }
+
     
 
 
