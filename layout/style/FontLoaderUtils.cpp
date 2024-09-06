@@ -30,13 +30,18 @@ namespace mozilla {
   
   
   aCorsMapping =
-      aURI->SchemeIs("file")
+      aURI->SchemeIs("file") || aURI->SchemeIs("resource") ||
+              aURI->SchemeIs("chrome")
           ? nsContentSecurityManager::CORSSecurityMapping::
                 CORS_NONE_MAPS_TO_INHERITED_CONTEXT
           : nsContentSecurityManager::CORSSecurityMapping::REQUIRE_CORS_CHECKS;
 
+  
+  
+  
   aSecurityFlags = nsContentSecurityManager::ComputeSecurityFlags(
-      CORSMode::CORS_NONE, aCorsMapping);
+                       CORSMode::CORS_NONE, aCorsMapping) |
+                   nsILoadInfo::SEC_ALLOW_CHROME;
 
   aContentPolicyType = aIsPreload ? nsIContentPolicy::TYPE_INTERNAL_FONT_PRELOAD
                                   : nsIContentPolicy::TYPE_FONT;
