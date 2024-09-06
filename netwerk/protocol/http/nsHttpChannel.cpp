@@ -955,7 +955,7 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
   
   
   if (mRaceCacheWithNetwork && mCachedContentIsValid) {
-    Unused << ReadFromCache(true);
+    Unused << ReadFromCache();
   }
 
   return TriggerNetwork();
@@ -987,7 +987,7 @@ nsresult nsHttpChannel::ContinueConnect() {
           LOG(("  AsyncCall failed (%08x)", static_cast<uint32_t>(rv)));
         }
       }
-      rv = ReadFromCache(true);
+      rv = ReadFromCache();
       if (NS_FAILED(rv) && event) {
         event->Revoke();
       }
@@ -3561,7 +3561,7 @@ nsresult nsHttpChannel::ProcessPartialContent(
   
   mCachedContentIsValid = true;
   return CallOrWaitForResume([aContinueProcessResponseFunc](auto* self) {
-    nsresult rv = self->ReadFromCache(false);
+    nsresult rv = self->ReadFromCache();
     return aContinueProcessResponseFunc(self, rv);
   });
 }
@@ -3702,7 +3702,7 @@ nsresult nsHttpChannel::ProcessNotModified(
   if (NS_FAILED(rv)) return rv;
 
   return CallOrWaitForResume([aContinueProcessResponseFunc](auto* self) {
-    nsresult rv = self->ReadFromCache(false);
+    nsresult rv = self->ReadFromCache();
     return aContinueProcessResponseFunc(self, rv);
   });
 }
@@ -4037,7 +4037,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     rv = OpenCacheInputStream(entry, true);
     if (NS_SUCCEEDED(rv)) {
       mCachedContentIsValid = true;
-      entry->MaybeMarkValid();
     }
     return rv;
   }
@@ -4312,10 +4311,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     }
   }
 
-  if (mCachedContentIsValid) {
-    entry->MaybeMarkValid();
-  }
-
   LOG(
       ("nsHTTPChannel::OnCacheEntryCheck exit [this=%p doValidation=%d "
        "result=%d]\n",
@@ -4409,7 +4404,7 @@ nsresult nsHttpChannel::OnCacheEntryAvailableInternal(nsICacheEntry* entry,
   }
 
   if (mRaceCacheWithNetwork && mCachedContentIsValid) {
-    Unused << ReadFromCache(true);
+    Unused << ReadFromCache();
   }
 
   return TriggerNetwork();
@@ -4759,7 +4754,7 @@ nsresult nsHttpChannel::OpenCacheInputStream(nsICacheEntry* cacheEntry,
 
 
 
-nsresult nsHttpChannel::ReadFromCache(bool alreadyMarkedValid) {
+nsresult nsHttpChannel::ReadFromCache(void) {
   NS_ENSURE_TRUE(mCacheEntry, NS_ERROR_FAILURE);
   NS_ENSURE_TRUE(mCachedContentIsValid, NS_ERROR_FAILURE);
   NS_ENSURE_TRUE(!mCachePump, NS_OK);  
@@ -4824,16 +4819,6 @@ nsresult nsHttpChannel::ReadFromCache(bool alreadyMarkedValid) {
   
   
   if (!mSecurityInfo) mSecurityInfo = mCachedSecurityInfo;
-
-  if (!alreadyMarkedValid && !LoadCachedContentIsPartial()) {
-    
-    
-    
-    
-    
-    
-    mCacheEntry->MaybeMarkValid();
-  }
 
   nsresult rv;
 
@@ -8266,12 +8251,12 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
 
   
   if (mCacheEntry && LoadRequestTimeInitialized()) {
-    bool writeAccess;
     
     
     
-    mCacheEntry->HasWriteAccess(!LoadCacheEntryIsReadOnly(), &writeAccess);
-    if (writeAccess) {
+
+    
+    if (!LoadCacheEntryIsReadOnly()) {
       nsresult rv = FinalizeCacheEntry();
       if (NS_FAILED(rv)) {
         LOG(("FinalizeCacheEntry failed (%08x)", static_cast<uint32_t>(rv)));

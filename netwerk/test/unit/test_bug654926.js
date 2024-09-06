@@ -36,7 +36,6 @@ function write_datafile(status, entry) {
   }
 
   os.close();
-  entry.close();
 
   
   Services.prefs.setIntPref("browser.cache.disk.max_entry_size", 1024);
@@ -67,8 +66,6 @@ function append_datafile(status, entry) {
     os.close();
     do_throw();
   } catch (ex) {}
-
-  entry.close();
 
   do_test_finished();
 }

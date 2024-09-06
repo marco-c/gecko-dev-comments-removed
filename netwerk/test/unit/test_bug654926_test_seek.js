@@ -32,7 +32,6 @@ function write_datafile(status, entry) {
   write_and_check(os, data, data.length);
 
   os.close();
-  entry.close();
 
   
   asyncOpenCacheEntry(
@@ -53,7 +52,6 @@ function open_for_readwrite(status, entry) {
   
 
   os.close();
-  entry.close();
 
   do_test_finished();
 }
