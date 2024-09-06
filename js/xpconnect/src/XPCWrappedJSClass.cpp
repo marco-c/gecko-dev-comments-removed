@@ -776,7 +776,7 @@ nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
   AutoSavePendingResult apr(xpccx);
 
   
-  uint8_t paramCount = info->GetParamCount();
+  uint8_t paramCount = info->ParamCount();
   uint8_t argc = paramCount;
   if (info->HasRetval()) {
     argc -= 1;

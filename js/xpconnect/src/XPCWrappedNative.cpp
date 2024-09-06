@@ -1303,7 +1303,7 @@ bool CallMethodHelper::GetOutParamSource(uint8_t paramIndex,
 
 bool CallMethodHelper::GatherAndConvertResults() {
   
-  uint8_t paramCount = mMethodInfo->GetParamCount();
+  uint8_t paramCount = mMethodInfo->ParamCount();
   for (uint8_t i = 0; i < paramCount; i++) {
     const nsXPTParamInfo& paramInfo = mMethodInfo->GetParam(i);
     if (!paramInfo.IsOut()) {
@@ -1394,7 +1394,7 @@ bool CallMethodHelper::QueryInterfaceFastPath() {
 bool CallMethodHelper::InitializeDispatchParams() {
   const uint8_t wantsOptArgc = mMethodInfo->WantsOptArgc() ? 1 : 0;
   const uint8_t wantsJSContext = mMethodInfo->WantsContext() ? 1 : 0;
-  const uint8_t paramCount = mMethodInfo->GetParamCount();
+  const uint8_t paramCount = mMethodInfo->ParamCount();
   uint8_t requiredArgs = paramCount;
 
   
@@ -1460,7 +1460,7 @@ bool CallMethodHelper::InitializeDispatchParams() {
 }
 
 bool CallMethodHelper::ConvertIndependentParams(bool* foundDependentParam) {
-  const uint8_t paramCount = mMethodInfo->GetParamCount();
+  const uint8_t paramCount = mMethodInfo->ParamCount();
   for (uint8_t i = 0; i < paramCount; i++) {
     const nsXPTParamInfo& paramInfo = mMethodInfo->GetParam(i);
 
@@ -1550,7 +1550,7 @@ bool CallMethodHelper::ConvertIndependentParam(uint8_t i) {
 }
 
 bool CallMethodHelper::ConvertDependentParams() {
-  const uint8_t paramCount = mMethodInfo->GetParamCount();
+  const uint8_t paramCount = mMethodInfo->ParamCount();
   for (uint8_t i = 0; i < paramCount; i++) {
     const nsXPTParamInfo& paramInfo = mMethodInfo->GetParam(i);
 
