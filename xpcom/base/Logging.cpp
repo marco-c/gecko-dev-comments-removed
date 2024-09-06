@@ -774,6 +774,13 @@ class LogModuleManager {
     }
   }
 
+  void DisableModules() {
+    OffTheBooksMutexAutoLock guard(mModulesLock);
+    for (auto& m : mModules) {
+      (*(m.GetModifiableData()))->SetLevel(LogLevel::Disabled);
+    }
+  }
+
  private:
   OffTheBooksMutex mModulesLock;
   nsClassHashtable<nsCharPtrHashKey, LogModule> mModules;
@@ -840,6 +847,8 @@ void LogModule::SetIsSync(bool aIsSync) {
 void LogModule::SetCaptureStacks(bool aCaptureStacks) {
   sLogModuleManager->SetCaptureStacks(aCaptureStacks);
 }
+
+void LogModule::DisableModules() { sLogModuleManager->DisableModules(); }
 
 
 
