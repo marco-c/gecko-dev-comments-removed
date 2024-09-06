@@ -11,3 +11,6 @@ user_pref("dom.input_events.security.minTimeElapsedInMS", 0);
 
 
 user_pref("extensions.formautofill.addresses.experiments.enabled", true);
+
+
+user_pref("app.update.disabledForTesting", true);

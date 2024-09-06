@@ -9,3 +9,5 @@ user_pref("dom.timeout.enable_budget_timer_throttling", false);
 
 
 user_pref("extensions.webextensions.warnings-as-errors", false);
+
+user_pref("app.update.disabledForTesting", true);

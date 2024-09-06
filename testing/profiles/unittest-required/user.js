@@ -50,8 +50,7 @@ user_pref("browser.startup.page", 0);
 
 user_pref("browser.tabs.delayHidingAudioPlayingIconMS", 0);
 
-user_pref("browser.tabs.remote.autostart", false);
-user_pref("browser.ui.layout.tablet", 0); 
+user_pref("browser.ui.layout.tablet", 0);
 
 user_pref("browser.uitour.pinnedTabUrl", "http://{server}/uitour-dummy/pinnedTab");
 user_pref("browser.uitour.url", "http://{server}/uitour-dummy/tour");
@@ -228,4 +227,7 @@ user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
 
 user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
+
+
+user_pref("app.update.disabledForTesting", true);
 
