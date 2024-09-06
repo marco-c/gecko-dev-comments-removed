@@ -20,6 +20,11 @@ next_site = None
 
 RECORDING_LIST = Path(Path(__file__).parent, "pageload_sites.json")
 
+
+
+
+
+
 SCM_1_LOGIN_SITES = ("facebook", "netflix")
 
 
