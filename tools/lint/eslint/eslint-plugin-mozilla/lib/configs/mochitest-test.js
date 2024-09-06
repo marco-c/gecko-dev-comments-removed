@@ -23,12 +23,9 @@ module.exports = {
       files: ["*.js"],
     },
   ],
-  plugins: ["mozilla", "@microsoft/sdl"],
+  plugins: ["mozilla"],
 
   rules: {
-    "mozilla/import-content-task-globals": "error",
-    "mozilla/import-headjs-globals": "error",
-    "mozilla/mark-test-function-used": "error",
     
     
     "mozilla/no-define-cc-etc": "off",
@@ -39,9 +36,5 @@ module.exports = {
     
     "mozilla/use-chromeutils-generateqi": "off",
     "no-shadow": "error",
-    
-    
-    "no-unsanitized/method": "off",
-    "no-unsanitized/property": "off",
   },
 };

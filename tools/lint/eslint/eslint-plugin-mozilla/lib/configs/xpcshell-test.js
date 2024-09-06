@@ -49,21 +49,19 @@ module.exports = {
       },
     },
   ],
+  plugins: ["mozilla", "@microsoft/sdl"],
 
   rules: {
     
     
     "@microsoft/sdl/no-insecure-url": "off",
 
+    
+    
+    
     "mozilla/import-headjs-globals": "error",
-    "mozilla/mark-test-function-used": "error",
-    "mozilla/no-arbitrary-setTimeout": "error",
     "mozilla/no-comparison-or-assignment-inside-ok": "error",
     "mozilla/no-useless-run-test": "error",
     "no-shadow": "error",
-    
-    
-    "no-unsanitized/method": "off",
-    "no-unsanitized/property": "off",
   },
 };
