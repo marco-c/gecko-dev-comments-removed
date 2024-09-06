@@ -188,6 +188,10 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   void GetHintCharset(nsAString& aCharset) const;
 
   
+  uint32_t GetScriptLineNumber() const;
+  JS::ColumnNumberOneOrigin GetScriptColumnNumber() const;
+
+  
   void SetIsPreloadRequest() {
     MOZ_ASSERT(!GetScriptElement());
     MOZ_ASSERT(!IsPreload());
