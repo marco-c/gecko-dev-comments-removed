@@ -42,8 +42,12 @@ class MemoryTelemetry final : public nsIObserver,
   
 
 
+  void DelayedInit();
 
-  nsresult DelayedInit();
+  
+
+
+  void Poke();
 
   nsresult Shutdown();
 
@@ -64,7 +68,12 @@ class MemoryTelemetry final : public nsIObserver,
 
   bool mGatheringTotalMemory = false;
 
-  TimeStamp mLastPoll{};
+  TimeStamp mLastRun{};
+  TimeStamp mLastPoke{};
+  nsCOMPtr<nsITimer> mTimer;
+
+  
+  bool mCanRun = false;
 };
 
 }  

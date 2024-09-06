@@ -25,6 +25,7 @@
 #include "nsPrintfCString.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/MemoryTelemetry.h"
 #include "mozilla/Services.h"
 #ifdef FUZZING
 #  include "mozilla/StaticPrefs_fuzzing.h"
@@ -1432,6 +1433,11 @@ void XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth) {
   MOZ_ASSERT(NS_IsMainThread());
   nsJSContext::MaybePokeCC();
   CycleCollectedJSContext::AfterProcessTask(aNewRecursionDepth);
+
+  
+  if (AppShutdown::GetCurrentShutdownPhase() == ShutdownPhase::NotInShutdown) {
+    MemoryTelemetry::Get().Poke();
+  }
 
   
   
