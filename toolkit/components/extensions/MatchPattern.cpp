@@ -179,14 +179,10 @@ bool URLInfo::InheritsPrincipal() const {
   if (!mInheritsPrincipal.isSome()) {
     
     
-    bool inherits = Spec().EqualsLiteral("about:blank") ||
-                    Spec().EqualsLiteral("about:srcdoc");
-
-    if (!inherits) {
-      nsresult rv = NS_URIChainHasFlags(
-          mURI, nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT, &inherits);
-      Unused << NS_WARN_IF(NS_FAILED(rv));
-    }
+    
+    bool inherits =
+        Scheme() == nsGkAtoms::about && (Spec().EqualsLiteral("about:blank") ||
+                                         Spec().EqualsLiteral("about:srcdoc"));
 
     mInheritsPrincipal.emplace(inherits);
   }
