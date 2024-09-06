@@ -43,6 +43,9 @@ struct ProbeControllerConfig {
   FieldTrialParameter<double> further_exponential_probe_scale;
   FieldTrialParameter<double> further_probe_threshold;
   FieldTrialParameter<bool> abort_further_probe_if_max_lower_than_current;
+  
+  
+  FieldTrialParameter<TimeDelta> repeated_initial_probing_duration;
 
   
   FieldTrialParameter<TimeDelta> alr_probing_interval;
@@ -121,9 +124,11 @@ class ProbeController {
       Timestamp at_time);
 
   void EnablePeriodicAlrProbing(bool enable);
+
   
   
-  void SetFirstProbeToMaxBitrate(bool first_probe_to_max_bitrate);
+  
+  void EnableRepeatedInitialProbing(bool enable);
 
   void SetAlrStartTimeMs(absl::optional<int64_t> alr_start_time);
   void SetAlrEndedTimeMs(int64_t alr_end_time);
@@ -160,10 +165,12 @@ class ProbeController {
       bool probe_further);
   bool TimeForAlrProbe(Timestamp at_time) const;
   bool TimeForNetworkStateProbe(Timestamp at_time) const;
+  bool TimeForNextRepeatedInitialProbe(Timestamp at_time) const;
 
   bool network_available_;
   bool waiting_for_initial_probe_result_ = false;
-  bool first_probe_to_max_bitrate_ = false;
+  bool repeated_initial_probing_enabled_ = false;
+  Timestamp last_allowed_repeated_initial_probe_ = Timestamp::MinusInfinity();
   BandwidthLimitedCause bandwidth_limited_cause_ =
       BandwidthLimitedCause::kDelayBasedLimited;
   State state_;

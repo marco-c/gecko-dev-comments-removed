@@ -49,7 +49,7 @@ struct StreamsConfig {
   
   
   
-  absl::optional<bool> initial_probe_to_max_bitrate;
+  absl::optional<bool> enable_repeated_initial_probing;
   absl::optional<double> pacing_factor;
 
   
