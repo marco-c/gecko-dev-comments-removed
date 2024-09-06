@@ -7,10 +7,8 @@
 
 #include "gfxUserFontSet.h"
 #include "gfxPlatform.h"
-#include "gfxFontConstants.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_gfx.h"
@@ -24,6 +22,8 @@
 #include "nsIFontLoadCompleteCallback.h"
 #include "nsProxyRelease.h"
 #include "nsContentUtils.h"
+#include "nsPresContext.h"
+#include "mozilla/dom/FontFaceSetImpl.h"
 #include "nsTHashSet.h"
 
 using namespace mozilla;
@@ -392,6 +392,20 @@ void gfxUserFontEntry::LoadNextSrc() {
   DoLoadNextSrc(false);
 }
 
+void gfxUserFontEntry::FontLoadComplete() {
+  AutoTArray<RefPtr<gfxUserFontSet>, 4> fontSets;
+  GetUserFontSets(fontSets);
+  for (gfxUserFontSet* fontSet : fontSets) {
+    fontSet->IncrementGeneration();
+    if (nsPresContext* ctx = dom::FontFaceSetImpl::GetPresContextFor(fontSet)) {
+      
+      
+      ctx->UserFontSetUpdated(this);
+      LOG(("userfonts (%p) reflow for pres context %p\n", this, ctx));
+    }
+  }
+}
+
 void gfxUserFontEntry::ContinueLoad() {
   if (mUserFontLoadState == STATUS_NOT_LOADED) {
     
@@ -411,15 +425,7 @@ void gfxUserFontEntry::ContinueLoad() {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    IncrementGeneration();
+    FontLoadComplete();
   }
 }
 
@@ -846,14 +852,6 @@ void gfxUserFontEntry::Load() {
   LoadNextSrc();
 }
 
-void gfxUserFontEntry::IncrementGeneration() {
-  nsTArray<RefPtr<gfxUserFontSet>> fontSets;
-  GetUserFontSets(fontSets);
-  for (gfxUserFontSet* fontSet : fontSets) {
-    fontSet->IncrementGeneration();
-  }
-}
-
 
 
 
@@ -937,7 +935,6 @@ void gfxUserFontEntry::ContinuePlatformFontLoadOnMainThread(
   aSanitizedFontData = nullptr;
 
   if (loaded) {
-    IncrementGeneration();
     aCallback->FontLoadComplete();
   } else {
     FontLoadFailed(aCallback);
@@ -965,7 +962,6 @@ void gfxUserFontEntry::FontLoadFailed(nsIFontLoadCompleteCallback* aCallback) {
   
   
   
-  IncrementGeneration();
   aCallback->FontLoadComplete();
 }
 

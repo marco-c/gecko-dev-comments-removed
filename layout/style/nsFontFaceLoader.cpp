@@ -191,11 +191,12 @@ void nsFontFaceLoader::LoadTimerCallback(nsITimer* aTimer, void* aClosure) {
   
   
   if (updateUserFontSet) {
-    nsTArray<RefPtr<gfxUserFontSet>> fontSets;
+    
+    
+    AutoTArray<RefPtr<gfxUserFontSet>, 4> fontSets;
     ufe->GetUserFontSets(fontSets);
     for (gfxUserFontSet* fontSet : fontSets) {
-      nsPresContext* ctx = FontFaceSetImpl::GetPresContextFor(fontSet);
-      if (ctx) {
+      if (nsPresContext* ctx = FontFaceSetImpl::GetPresContextFor(fontSet)) {
         fontSet->IncrementGeneration();
         ctx->UserFontSetUpdated(ufe);
         LOG(("userfonts (%p) timeout reflow for pres context %p display %d\n",
@@ -303,22 +304,11 @@ nsresult nsFontFaceLoader::FontLoadComplete() {
   }
 
   
-  nsTArray<RefPtr<gfxUserFontSet>> fontSets;
-  mUserFontEntry->GetUserFontSets(fontSets);
-  for (gfxUserFontSet* fontSet : fontSets) {
-    nsPresContext* ctx = FontFaceSetImpl::GetPresContextFor(fontSet);
-    if (ctx) {
-      
-      
-      ctx->UserFontSetUpdated(mUserFontEntry);
-      LOG(("userfonts (%p) reflow for pres context %p\n", this, ctx));
-    }
-  }
+  mUserFontEntry->FontLoadComplete();
 
   MOZ_DIAGNOSTIC_ASSERT(mFontFaceSet);
   mFontFaceSet->RemoveLoader(this);
-  auto* doc = mFontFaceSet->GetDocument();
-  if (doc) {
+  if (auto* doc = mFontFaceSet->GetDocument()) {
     doc->UnblockOnload(false);
   }
   mFontFaceSet = nullptr;

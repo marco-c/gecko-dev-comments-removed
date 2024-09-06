@@ -648,6 +648,9 @@ class gfxUserFontEntry : public gfxFontEntry {
   void Load();
 
   
+  void FontLoadComplete();
+
+  
   
   void SetLoader(nsFontFaceLoader* aLoader) {
     MOZ_ASSERT(NS_IsMainThread());
@@ -763,10 +766,6 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   
   virtual void GetUserFontSets(nsTArray<RefPtr<gfxUserFontSet>>& aResult);
-
-  
-  
-  void IncrementGeneration();
 
   
   UserFontLoadState mUserFontLoadState;
