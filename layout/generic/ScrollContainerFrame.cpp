@@ -7319,6 +7319,8 @@ static void AppendScrollPositionsForSnap(
                                  
                                  
                                  nsSize());
+  logicalScrollRange = logicalScrollRange.ConvertTo(
+      writingMode, aWritingModeOnScroller, nsSize());
 
   Maybe<nscoord> blockDirectionPosition;
   const nsStyleDisplay* styleDisplay = aFrame->StyleDisplay();
