@@ -234,7 +234,6 @@ for (const type of [
   "UPDATE_SEARCH_SHORTCUTS",
   "UPDATE_SECTION_PREFS",
   "WALLPAPERS_SET",
-  "WEATHER_UPDATE",
   "WEBEXT_CLICK",
   "WEBEXT_DISMISS",
 ]) {
@@ -676,11 +675,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.systemTick = this.systemTick.bind(this);
     this.syncRemoteSettings = this.syncRemoteSettings.bind(this);
     this.onStoryToggle = this.onStoryToggle.bind(this);
-    this.handleWeatherSubmit = this.handleWeatherSubmit.bind(this);
-    this.handleWeatherUpdate = this.handleWeatherUpdate.bind(this);
     this.state = {
-      toggledStories: {},
-      weatherQuery: ""
+      toggledStories: {}
     };
   }
   setConfigValue(name, value) {
@@ -723,56 +719,12 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
   syncRemoteSettings() {
     this.dispatchSimpleAction(actionTypes.DISCOVERY_STREAM_DEV_SYNC_RS);
   }
-  handleWeatherUpdate(e) {
-    this.setState({
-      weatherQuery: e.target.value || ""
-    });
-  }
-  handleWeatherSubmit(e) {
-    e.preventDefault();
-    const {
-      weatherQuery
-    } = this.state;
-    this.props.dispatch(actionCreators.SetPref("weather.query", weatherQuery));
-  }
   renderComponent(width, component) {
     return external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
     }, "Type"), external_React_default().createElement("td", null, component.type)), external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
     }, "Width"), external_React_default().createElement("td", null, width)), component.feed && this.renderFeed(component.feed)));
-  }
-  renderWeatherData() {
-    const {
-      suggestions
-    } = this.props.state.Weather;
-    let weatherTable;
-    if (suggestions) {
-      weatherTable = external_React_default().createElement("div", {
-        className: "weather-section"
-      }, external_React_default().createElement("form", {
-        onSubmit: this.handleWeatherSubmit
-      }, external_React_default().createElement("label", {
-        htmlFor: "weather-query"
-      }, "Weather query"), external_React_default().createElement("input", {
-        type: "text",
-        min: "3",
-        max: "10",
-        id: "weather-query",
-        onChange: this.handleWeatherUpdate,
-        value: this.weatherQuery
-      }), external_React_default().createElement("button", {
-        type: "submit"
-      }, "Submit")), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, suggestions.map(suggestion => external_React_default().createElement("tr", {
-        className: "message-item",
-        key: suggestion.city_name
-      }, external_React_default().createElement("td", {
-        className: "message-id"
-      }, external_React_default().createElement("span", null, suggestion.city_name, " ", external_React_default().createElement("br", null))), external_React_default().createElement("td", {
-        className: "message-summary"
-      }, external_React_default().createElement("pre", null, JSON.stringify(suggestion, null, 2))))))));
-    }
-    return weatherTable;
   }
   renderFeedData(url) {
     const {
@@ -884,7 +836,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       state: {
         Personalization: this.props.state.Personalization
       }
-    }), external_React_default().createElement("h3", null, "Spocs"), this.renderSpocs(), external_React_default().createElement("h3", null, "Feeds Data"), this.renderFeedsData(), external_React_default().createElement("h3", null, "Weather Data"), this.renderWeatherData());
+    }), external_React_default().createElement("h3", null, "Spocs"), this.renderSpocs(), external_React_default().createElement("h3", null, "Feeds Data"), this.renderFeedsData());
   }
 }
 class DiscoveryStreamAdminInner extends (external_React_default()).PureComponent {
@@ -907,8 +859,7 @@ class DiscoveryStreamAdminInner extends (external_React_default()).PureComponent
     }, "Click here"))), external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement(DiscoveryStreamAdminUI, {
       state: {
         DiscoveryStream: this.props.DiscoveryStream,
-        Personalization: this.props.Personalization,
-        Weather: this.props.Weather
+        Personalization: this.props.Personalization
       },
       otherPrefs: this.props.Prefs.values,
       dispatch: this.props.dispatch
@@ -978,8 +929,7 @@ const DiscoveryStreamAdmin = (0,external_ReactRedux_namespaceObject.connect)(sta
   Sections: state.Sections,
   DiscoveryStream: state.DiscoveryStream,
   Personalization: state.Personalization,
-  Prefs: state.Prefs,
-  Weather: state.Weather
+  Prefs: state.Prefs
 }))(_DiscoveryStreamAdmin);
 ;
 
@@ -5570,7 +5520,7 @@ const INITIAL_STATE = {
     
     initialized: false,
     
-    suggestions: [],
+    data: {},
     lastUpdated: null,
   },
 };
@@ -6322,21 +6272,6 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
   }
 }
 
-function Weather(prevState = INITIAL_STATE.Weather, action) {
-  switch (action.type) {
-    case actionTypes.WEATHER_UPDATE:
-      return {
-        ...prevState,
-        suggestions: action.data.suggestions,
-        lastUpdated: action.data.date,
-      };
-    case actionTypes.WEATHER_INIT:
-      return { ...prevState, initialized: true };
-    default:
-      return prevState;
-  }
-}
-
 const reducers = {
   TopSites,
   App,
@@ -6349,7 +6284,6 @@ const reducers = {
   DiscoveryStream,
   Search,
   Wallpapers,
-  Weather,
 };
 
 ;
@@ -9832,8 +9766,7 @@ const Base = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Sections: state.Sections,
   DiscoveryStream: state.DiscoveryStream,
   Search: state.Search,
-  Wallpapers: state.Wallpapers,
-  Weather: state.Weather
+  Wallpapers: state.Wallpapers
 }))(_Base);
 ;
 
