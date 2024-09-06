@@ -17,8 +17,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 
 class NetworkEventRecord {
-  addCacheDetails() {}
-  addRawHeaders() {}
   addRequestPostData() {}
   addResponseStart() {}
   addSecurityInfo() {}
