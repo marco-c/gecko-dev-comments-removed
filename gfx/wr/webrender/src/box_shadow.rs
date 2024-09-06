@@ -101,13 +101,10 @@ impl<'a> SceneBuilder<'a> {
 
         
         
-        let shadow_rect = self.snap_rect(
-            &prim_info
-                .rect
-                .translate(*box_offset)
-                .inflate(spread_amount, spread_amount),
-            spatial_node_index,
-        );
+        let shadow_rect = prim_info
+            .rect
+            .translate(*box_offset)
+            .inflate(spread_amount, spread_amount);
 
         
         
