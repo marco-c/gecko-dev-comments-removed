@@ -48,6 +48,8 @@ void DynamicResampler::EnsurePreBuffer(media::TimeUnit aDuration) {
     
     
     
+    
+    
     return;
   }
 
@@ -93,7 +95,6 @@ void DynamicResampler::ResampleInternal(const float* aInBuffer,
   MOZ_ASSERT(mInRate);
   MOZ_ASSERT(mOutRate);
 
-  MOZ_ASSERT(aInBuffer);
   MOZ_ASSERT(aInFrames);
   MOZ_ASSERT(*aInFrames > 0);
   MOZ_ASSERT(aOutBuffer);
@@ -125,7 +126,6 @@ void DynamicResampler::ResampleInternal(const int16_t* aInBuffer,
   MOZ_ASSERT(mInRate);
   MOZ_ASSERT(mOutRate);
 
-  MOZ_ASSERT(aInBuffer);
   MOZ_ASSERT(aInFrames);
   MOZ_ASSERT(*aInFrames > 0);
   MOZ_ASSERT(aOutBuffer);
