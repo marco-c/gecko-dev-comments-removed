@@ -3474,9 +3474,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
   enum {
     IN_CSS_UNITS = 1 << 0,
     STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT = 1 << 1
