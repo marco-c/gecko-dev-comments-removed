@@ -625,7 +625,7 @@ struct PlainDateTimeAndInstant {
 static bool AddDaysToZonedDateTime(JSContext* cx, const Instant& instant,
                                    const PlainDateTime& dateTime,
                                    Handle<TimeZoneRecord> timeZone,
-                                   Handle<CalendarValue> calendar, double days,
+                                   Handle<CalendarValue> calendar, int64_t days,
                                    TemporalOverflow overflow,
                                    PlainDateTimeAndInstant* result) {
   
@@ -670,7 +670,7 @@ static bool AddDaysToZonedDateTime(JSContext* cx, const Instant& instant,
 bool js::temporal::AddDaysToZonedDateTime(
     JSContext* cx, const Instant& instant, const PlainDateTime& dateTime,
     Handle<TimeZoneRecord> timeZone, Handle<CalendarValue> calendar,
-    double days, TemporalOverflow overflow, Instant* result) {
+    int64_t days, TemporalOverflow overflow, Instant* result) {
   
   PlainDateTimeAndInstant dateTimeAndInstant;
   if (!::AddDaysToZonedDateTime(cx, instant, dateTime, timeZone, calendar, days,
@@ -690,7 +690,7 @@ bool js::temporal::AddDaysToZonedDateTime(JSContext* cx, const Instant& instant,
                                           const PlainDateTime& dateTime,
                                           Handle<TimeZoneRecord> timeZone,
                                           Handle<CalendarValue> calendar,
-                                          double days, Instant* result) {
+                                          int64_t days, Instant* result) {
   
   auto overflow = TemporalOverflow::Constrain;
 
@@ -1131,6 +1131,21 @@ static bool NormalizedTimeDurationToDays(
              "abs(ns) < dayLengthNs < 2**53 implies that |ns| fits in int64");
 
   
+
+  
+  static constexpr int64_t durationDays = (int64_t(1) << 53) / (24 * 60 * 60);
+
+  
+  
+  
+  if (std::abs(days) > durationDays) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_ZONED_DATE_TIME_INCORRECT_SIGN,
+                              "days");
+    return false;
+  }
+
+  
   *result = {days, int64_t{timeNanos}, int64_t(dayLengthNanos)};
   return true;
 }
@@ -1242,15 +1257,19 @@ static bool DifferenceZonedDateTime(
   }
 
   
-  *result = CreateNormalizedDurationRecord(
-      {
-          dateDifference.date.years,
-          dateDifference.date.months,
-          dateDifference.date.weeks,
-          double(timeAndDays.days),
-      },
-      NormalizedTimeDuration::fromNanoseconds(timeAndDays.time));
-  return true;
+  auto dateDuration = DateDuration{
+      dateDifference.date.years,
+      dateDifference.date.months,
+      dateDifference.date.weeks,
+      timeAndDays.days,
+  };
+  if (!ThrowIfInvalidDuration(cx, dateDuration)) {
+    return false;
+  }
+
+  return CreateNormalizedDurationRecord(
+      cx, dateDuration,
+      NormalizedTimeDuration::fromNanoseconds(timeAndDays.time), result);
 }
 
 
@@ -1531,7 +1550,7 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
     }
 
     
-    double days = roundResult.date.days + timeAndDays.days;
+    int64_t days = roundResult.date.days + timeAndDays.days;
 
     
     auto toAdjust = NormalizedDuration{
@@ -1571,11 +1590,11 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
 
   
   auto duration = Duration{
-      difference.date.years,        difference.date.months,
-      difference.date.weeks,        difference.date.days,
-      double(timeDuration.hours),   double(timeDuration.minutes),
-      double(timeDuration.seconds), double(timeDuration.milliseconds),
-      timeDuration.microseconds,    timeDuration.nanoseconds,
+      double(difference.date.years), double(difference.date.months),
+      double(difference.date.weeks), double(difference.date.days),
+      double(timeDuration.hours),    double(timeDuration.minutes),
+      double(timeDuration.seconds),  double(timeDuration.milliseconds),
+      timeDuration.microseconds,     timeDuration.nanoseconds,
   };
   if (operation == TemporalDifference::Since) {
     duration = duration.negate();

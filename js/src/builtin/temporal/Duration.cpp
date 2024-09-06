@@ -603,6 +603,16 @@ bool js::temporal::IsValidDuration(const NormalizedDuration& duration) {
 }
 #endif
 
+static bool ThrowInvalidDurationPart(JSContext* cx, double value,
+                                     const char* name, unsigned errorNumber) {
+  ToCStringBuf cbuf;
+  const char* numStr = NumberToCString(&cbuf, value);
+
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, errorNumber, name,
+                            numStr);
+  return false;
+}
+
 
 
 
@@ -617,25 +627,17 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
   
   int32_t sign = DurationSign(duration);
 
-  auto report = [&](double v, const char* name, unsigned errorNumber) {
-    ToCStringBuf cbuf;
-    const char* numStr = NumberToCString(&cbuf, v);
-
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, errorNumber, name,
-                              numStr);
-  };
-
   auto throwIfInvalid = [&](double v, const char* name) {
     
     if (!std::isfinite(v)) {
-      report(v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
-      return false;
+      return ThrowInvalidDurationPart(
+          cx, v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
     }
 
     
     if ((v < 0 && sign > 0) || (v > 0 && sign < 0)) {
-      report(v, name, JSMSG_TEMPORAL_DURATION_INVALID_SIGN);
-      return false;
+      return ThrowInvalidDurationPart(cx, v, name,
+                                      JSMSG_TEMPORAL_DURATION_INVALID_SIGN);
     }
 
     return true;
@@ -643,8 +645,8 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
 
   auto throwIfTooLarge = [&](double v, const char* name) {
     if (std::abs(v) >= double(int64_t(1) << 32)) {
-      report(v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
-      return false;
+      return ThrowInvalidDurationPart(
+          cx, v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
     }
     return true;
   };
@@ -715,41 +717,27 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
 
 static bool ThrowIfInvalidDuration(JSContext* cx,
                                    const DateDuration& duration) {
-  MOZ_ASSERT(IsIntegerOrInfinityDuration(duration.toDuration()));
-
   auto& [years, months, weeks, days] = duration;
 
   
   int32_t sign = DurationSign(duration.toDuration());
 
-  auto report = [&](double v, const char* name, unsigned errorNumber) {
-    ToCStringBuf cbuf;
-    const char* numStr = NumberToCString(&cbuf, v);
-
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, errorNumber, name,
-                              numStr);
-  };
-
-  auto throwIfInvalid = [&](double v, const char* name) {
+  auto throwIfInvalid = [&](int64_t v, const char* name) {
     
-    if (!std::isfinite(v)) {
-      report(v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
-      return false;
-    }
 
     
     if ((v < 0 && sign > 0) || (v > 0 && sign < 0)) {
-      report(v, name, JSMSG_TEMPORAL_DURATION_INVALID_SIGN);
-      return false;
+      return ThrowInvalidDurationPart(cx, v, name,
+                                      JSMSG_TEMPORAL_DURATION_INVALID_SIGN);
     }
 
     return true;
   };
 
-  auto throwIfTooLarge = [&](double v, const char* name) {
-    if (std::abs(v) >= double(int64_t(1) << 32)) {
-      report(v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
-      return false;
+  auto throwIfTooLarge = [&](int64_t v, const char* name) {
+    if (std::abs(v) >= (int64_t(1) << 32)) {
+      return ThrowInvalidDurationPart(
+          cx, v, name, JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
     }
     return true;
   };
@@ -1644,18 +1632,23 @@ static bool BalanceTimeDurationRelative(
 
 
 
-static DateDuration CreateDateDurationRecord(double years, double months,
-                                             double weeks, double days) {
-  MOZ_ASSERT(IsValidDuration(Duration{years, months, weeks, days}));
+static DateDuration CreateDateDurationRecord(int64_t years, int64_t months,
+                                             int64_t weeks, int64_t days) {
+  MOZ_ASSERT(IsValidDuration(Duration{
+      double(years),
+      double(months),
+      double(weeks),
+      double(days),
+  }));
   return {years, months, weeks, days};
 }
 
 
 
 
-static bool CreateDateDurationRecord(JSContext* cx, double years, double months,
-                                     double weeks, double days,
-                                     DateDuration* result) {
+static bool CreateDateDurationRecord(JSContext* cx, int64_t years,
+                                     int64_t months, int64_t weeks,
+                                     int64_t days, DateDuration* result) {
   auto duration = DateDuration{years, months, weeks, days};
   if (!ThrowIfInvalidDuration(cx, duration)) {
     return false;
@@ -1712,7 +1705,7 @@ static bool UnbalanceDateDurationRelative(
         CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
 
     
-    auto yearsDuration = Duration{years};
+    auto yearsDuration = Duration{double(years)};
 
     
     Rooted<Wrapped<PlainDateObject*>> later(
@@ -1729,12 +1722,8 @@ static bool UnbalanceDateDurationRelative(
     }
 
     
-    double yearsInMonths = untilResult.months;
+    int64_t yearsInMonths = int64_t(untilResult.months);
 
-    
-    
-    
-    
     
     return CreateDateDurationRecord(cx, 0, months + yearsInMonths, weeks, days,
                                     result);
@@ -1752,7 +1741,7 @@ static bool UnbalanceDateDurationRelative(
         CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
     
-    auto yearsMonthsDuration = Duration{years, months};
+    auto yearsMonthsDuration = Duration{double(years), double(months)};
 
     
     auto later =
@@ -1772,10 +1761,6 @@ static bool UnbalanceDateDurationRelative(
     int32_t yearsMonthsInDays = DaysUntil(relativeToDate, laterDate);
 
     
-    
-    
-    
-    
     return CreateDateDurationRecord(cx, 0, 0, weeks, days + yearsMonthsInDays,
                                     result);
   }
@@ -1794,7 +1779,8 @@ static bool UnbalanceDateDurationRelative(
       CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
   
-  auto yearsMonthsWeeksDuration = Duration{years, months, weeks};
+  auto yearsMonthsWeeksDuration =
+      Duration{double(years), double(months), double(weeks)};
 
   
   auto later =
@@ -1813,10 +1799,6 @@ static bool UnbalanceDateDurationRelative(
   
   int32_t yearsMonthsWeeksInDay = DaysUntil(relativeToDate, laterDate);
 
-  
-  
-  
-  
   
   return CreateDateDurationRecord(cx, 0, 0, 0, days + yearsMonthsWeeksInDay,
                                   result);
@@ -1918,7 +1900,7 @@ static bool BalanceDateDurationRelative(
       MOZ_ASSERT(days == 0);
 
       
-      auto yearsMonthsDuration = Duration{years, months};
+      auto yearsMonthsDuration = Duration{double(years), double(months)};
 
       
       Duration untilResult;
@@ -1927,15 +1909,14 @@ static bool BalanceDateDurationRelative(
       }
 
       
-
-      
-      *result = CreateDateDurationRecord(untilResult.years, untilResult.months,
-                                         weeks, 0);
+      *result = CreateDateDurationRecord(int64_t(untilResult.years),
+                                         int64_t(untilResult.months), weeks, 0);
       return true;
     }
 
     
-    auto yearsMonthsWeeksDaysDuration = Duration{years, months, weeks, days};
+    auto yearsMonthsWeeksDaysDuration =
+        Duration{double(years), double(months), double(weeks), double(days)};
 
     
     Duration untilResult;
@@ -1947,8 +1928,9 @@ static bool BalanceDateDurationRelative(
     
 
     
-    *result = CreateDateDurationRecord(untilResult.years, untilResult.months,
-                                       untilResult.weeks, untilResult.days);
+    *result = CreateDateDurationRecord(
+        int64_t(untilResult.years), int64_t(untilResult.months),
+        int64_t(untilResult.weeks), int64_t(untilResult.days));
     return true;
   }
 
@@ -1968,7 +1950,8 @@ static bool BalanceDateDurationRelative(
     }
 
     
-    auto monthsWeeksDaysDuration = Duration{0, months, weeks, days};
+    auto monthsWeeksDaysDuration =
+        Duration{0, double(months), double(weeks), double(days)};
 
     
     Duration untilResult;
@@ -1980,8 +1963,9 @@ static bool BalanceDateDurationRelative(
     
 
     
-    *result = CreateDateDurationRecord(0, untilResult.months, untilResult.weeks,
-                                       untilResult.days);
+    *result = CreateDateDurationRecord(0, int64_t(untilResult.months),
+                                       int64_t(untilResult.weeks),
+                                       int64_t(untilResult.days));
     return true;
   }
 
@@ -1995,7 +1979,7 @@ static bool BalanceDateDurationRelative(
   MOZ_ASSERT(months == 0);
 
   
-  auto weeksDaysDuration = Duration{0, 0, weeks, days};
+  auto weeksDaysDuration = Duration{0, 0, double(weeks), double(days)};
 
   
   Duration untilResult;
@@ -2007,7 +1991,8 @@ static bool BalanceDateDurationRelative(
   
 
   
-  *result = CreateDateDurationRecord(0, 0, untilResult.weeks, untilResult.days);
+  *result = CreateDateDurationRecord(0, 0, int64_t(untilResult.weeks),
+                                     int64_t(untilResult.days));
   return true;
 }
 
@@ -2321,11 +2306,11 @@ static bool AddDuration(
 
   
   *result = {
-      difference.date.years,    difference.date.months,
-      difference.date.weeks,    difference.date.days,
-      double(balanced.hours),   double(balanced.minutes),
-      double(balanced.seconds), double(balanced.milliseconds),
-      balanced.microseconds,    balanced.nanoseconds,
+      double(difference.date.years), double(difference.date.months),
+      double(difference.date.weeks), double(difference.date.days),
+      double(balanced.hours),        double(balanced.minutes),
+      double(balanced.seconds),      double(balanced.milliseconds),
+      balanced.microseconds,         balanced.nanoseconds,
   };
   MOZ_ASSERT(IsValidDuration(*result));
   return true;
@@ -3222,123 +3207,61 @@ NormalizedTimeDuration js::temporal::RoundDuration(
   return rounded;
 }
 
-static bool TruncateDays(JSContext* cx,
-                         const NormalizedTimeAndDays& timeAndDays, double days,
-                         int32_t daysToAdd, double* result) {
-  do {
-    int64_t intDays;
-    if (!mozilla::NumberEqualsInt64(days, &intDays)) {
-      break;
-    }
+static int64_t TruncateDays(const NormalizedTimeAndDays& timeAndDays,
+                            int64_t days, int32_t daysToAdd) {
+#ifdef DEBUG
+  
+  static constexpr int64_t durationDays = (int64_t(1) << 53) / (24 * 60 * 60);
 
-    auto totalDays = mozilla::CheckedInt64(intDays);
-    totalDays += timeAndDays.days;
-    totalDays += daysToAdd;
-    if (!totalDays.isValid()) {
-      break;
-    }
+  
+  static constexpr int32_t epochDays = 200'000'000;
+#endif
 
-    int64_t truncatedDays = totalDays.value();
-    if (timeAndDays.time > 0) {
-      
-      
-      if (truncatedDays < 0) {
-        truncatedDays += 1;
-      }
-    } else if (timeAndDays.time < 0) {
-      
-      
-      if (truncatedDays > 0) {
-        truncatedDays -= 1;
-      }
-    }
+  MOZ_ASSERT(std::abs(days) <= durationDays);
+  MOZ_ASSERT(std::abs(timeAndDays.days) <= durationDays);
+  MOZ_ASSERT(std::abs(daysToAdd) <= epochDays);
 
-    *result = double(truncatedDays);
-    return true;
-  } while (false);
+  static_assert(durationDays + durationDays + epochDays <= INT64_MAX,
+                "addition can't overflow");
 
-  Rooted<BigInt*> biDays(cx, BigInt::createFromDouble(cx, days));
-  if (!biDays) {
-    return false;
-  }
+  int64_t totalDays = days + timeAndDays.days + daysToAdd;
 
-  Rooted<BigInt*> biNanoDays(cx, BigInt::createFromInt64(cx, timeAndDays.days));
-  if (!biNanoDays) {
-    return false;
-  }
-
-  Rooted<BigInt*> biDaysToAdd(cx, BigInt::createFromInt64(cx, daysToAdd));
-  if (!biDaysToAdd) {
-    return false;
-  }
-
-  Rooted<BigInt*> truncatedDays(cx, BigInt::add(cx, biDays, biNanoDays));
-  if (!truncatedDays) {
-    return false;
-  }
-
-  truncatedDays = BigInt::add(cx, truncatedDays, biDaysToAdd);
-  if (!truncatedDays) {
-    return false;
-  }
-
+  int64_t truncatedDays = totalDays;
   if (timeAndDays.time > 0) {
     
     
-    if (truncatedDays->isNegative()) {
-      truncatedDays = BigInt::inc(cx, truncatedDays);
-      if (!truncatedDays) {
-        return false;
-      }
+    if (truncatedDays < 0) {
+      truncatedDays += 1;
     }
   } else if (timeAndDays.time < 0) {
     
     
-    if (!truncatedDays->isNegative() && !truncatedDays->isZero()) {
-      truncatedDays = BigInt::dec(cx, truncatedDays);
-      if (!truncatedDays) {
-        return false;
-      }
+    if (truncatedDays > 0) {
+      truncatedDays -= 1;
     }
   }
 
-  *result = BigInt::numberValue(truncatedDays);
-  return true;
+  return truncatedDays;
 }
 
-static bool DaysIsNegative(double days,
+static bool DaysIsNegative(int64_t days,
                            const NormalizedTimeAndDays& timeAndDays,
                            int32_t daysToAdd) {
   
+  static constexpr int64_t durationDays = (int64_t(1) << 53) / (24 * 60 * 60);
+
+  
   static constexpr int32_t epochDays = 200'000'000;
 
+  MOZ_ASSERT(std::abs(days) <= durationDays);
+  MOZ_ASSERT(std::abs(timeAndDays.days) <= durationDays);
   MOZ_ASSERT(std::abs(daysToAdd) <= epochDays * 2);
 
-  int64_t timeDays = timeAndDays.days;
+  static_assert(durationDays + durationDays + epochDays * 2 <= INT64_MAX,
+                "addition can't overflow");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT((days <= 0 && timeDays <= 0) || (days >= 0 && timeDays >= 0) ||
-             std::abs(days) <= epochDays);
-
-  
-  
-  double daysApproximation = days + timeDays;
-
-  if (std::abs(daysApproximation) <= epochDays * 2) {
-    int32_t intDays = int32_t(daysApproximation) + daysToAdd;
-    return intDays < 0 || (intDays == 0 && timeAndDays.time < 0);
-  }
-
-  
-  
-  return daysApproximation < 0;
+  int64_t totalDays = days + timeAndDays.days + daysToAdd;
+  return totalDays < 0 || (totalDays == 0 && timeAndDays.time < 0);
 }
 
 struct RoundedNumber {
@@ -3606,7 +3529,7 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   auto [years, months, weeks, days] = duration.date;
 
   
-  Duration yearsDuration = {years};
+  Duration yearsDuration = {double(years)};
 
   
   auto yearsLater = AddDate(cx, calendar, dateRelativeTo, yearsDuration);
@@ -3619,7 +3542,7 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx, yearsLater);
 
   
-  Duration yearsMonthsWeeks = {years, months, weeks};
+  Duration yearsMonthsWeeks = {double(years), double(months), double(weeks)};
 
   
   PlainDate yearsMonthsWeeksLater;
@@ -3641,11 +3564,7 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   
 
   
-  double truncatedDays;
-  if (!TruncateDays(cx, timeAndDays, days, monthsWeeksInDays, &truncatedDays)) {
-    return false;
-  }
-  MOZ_ASSERT(IsInteger(truncatedDays));
+  int64_t truncatedDays = TruncateDays(timeAndDays, days, monthsWeeksInDays);
 
   PlainDate isoResult;
   if (!AddISODate(cx, yearsLaterDate, {0, 0, 0, truncatedDays},
@@ -3721,14 +3640,19 @@ static bool RoundDurationYear(JSContext* cx, const NormalizedDuration& duration,
   auto [numYears, total] = rounded;
 
   
-  double numMonths = 0;
-  double numWeeks = 0;
+  int64_t numMonths = 0;
+  int64_t numWeeks = 0;
 
   
   constexpr auto time = NormalizedTimeDuration{};
 
   
-  auto resultDuration = DateDuration{numYears, numMonths, numWeeks};
+  if (std::abs(numYears) >= double(int64_t(1) << 32)) {
+    return ThrowInvalidDurationPart(cx, numYears, "years",
+                                    JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
+  }
+
+  auto resultDuration = DateDuration{int64_t(numYears), numMonths, numWeeks};
   if (!ThrowIfInvalidDuration(cx, resultDuration)) {
     return false;
   }
@@ -3752,7 +3676,7 @@ static bool RoundDurationMonth(JSContext* cx,
   auto [years, months, weeks, days] = duration.date;
 
   
-  Duration yearsMonths = {years, months};
+  Duration yearsMonths = {double(years), double(months)};
 
   
   auto yearsMonthsLater = AddDate(cx, calendar, dateRelativeTo, yearsMonths);
@@ -3765,7 +3689,7 @@ static bool RoundDurationMonth(JSContext* cx,
   Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx, yearsMonthsLater);
 
   
-  Duration yearsMonthsWeeks = {years, months, weeks};
+  Duration yearsMonthsWeeks = {double(years), double(months), double(weeks)};
 
   
   PlainDate yearsMonthsWeeksLater;
@@ -3787,11 +3711,7 @@ static bool RoundDurationMonth(JSContext* cx,
   
 
   
-  double truncatedDays;
-  if (!TruncateDays(cx, timeAndDays, days, weeksInDays, &truncatedDays)) {
-    return false;
-  }
-  MOZ_ASSERT(IsInteger(truncatedDays));
+  int64_t truncatedDays = TruncateDays(timeAndDays, days, weeksInDays);
 
   PlainDate isoResult;
   if (!AddISODate(cx, yearsMonthsLaterDate, {0, 0, 0, truncatedDays},
@@ -3867,13 +3787,18 @@ static bool RoundDurationMonth(JSContext* cx,
   auto [numMonths, total] = rounded;
 
   
-  double numWeeks = 0;
+  int64_t numWeeks = 0;
 
   
   constexpr auto time = NormalizedTimeDuration{};
 
   
-  auto resultDuration = DateDuration{years, numMonths, numWeeks};
+  if (std::abs(numMonths) >= double(int64_t(1) << 32)) {
+    return ThrowInvalidDurationPart(cx, numMonths, "months",
+                                    JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
+  }
+
+  auto resultDuration = DateDuration{years, int64_t(numMonths), numWeeks};
   if (!ThrowIfInvalidDuration(cx, resultDuration)) {
     return false;
   }
@@ -3902,11 +3827,7 @@ static bool RoundDurationWeek(JSContext* cx, const NormalizedDuration& duration,
   auto relativeToDate = ToPlainDate(unwrappedRelativeTo);
 
   
-  double truncatedDays;
-  if (!TruncateDays(cx, timeAndDays, days, 0, &truncatedDays)) {
-    return false;
-  }
-  MOZ_ASSERT(IsInteger(truncatedDays));
+  int64_t truncatedDays = TruncateDays(timeAndDays, days, 0);
 
   PlainDate isoResult;
   if (!AddISODate(cx, relativeToDate, {0, 0, 0, truncatedDays},
@@ -3986,7 +3907,12 @@ static bool RoundDurationWeek(JSContext* cx, const NormalizedDuration& duration,
   constexpr auto time = NormalizedTimeDuration{};
 
   
-  auto resultDuration = DateDuration{years, months, numWeeks};
+  if (std::abs(numWeeks) >= double(int64_t(1) << 32)) {
+    return ThrowInvalidDurationPart(cx, numWeeks, "weeks",
+                                    JSMSG_TEMPORAL_DURATION_INVALID_NON_FINITE);
+  }
+
+  auto resultDuration = DateDuration{years, months, int64_t(numWeeks)};
   if (!ThrowIfInvalidDuration(cx, resultDuration)) {
     return false;
   }
@@ -4015,7 +3941,7 @@ static bool RoundDurationDay(JSContext* cx, const NormalizedDuration& duration,
   constexpr auto time = NormalizedTimeDuration{};
 
   
-  auto resultDuration = DateDuration{years, months, weeks, numDays};
+  auto resultDuration = DateDuration{years, months, weeks, int64_t(numDays)};
   if (!ThrowIfInvalidDuration(cx, resultDuration)) {
     return false;
   }
@@ -4113,8 +4039,9 @@ static bool RoundDuration(
     ComputeRemainder computeRemainder, RoundedDuration* result) {
   
   
-  MOZ_ASSERT(IsValidDuration(Duration{duration.date.years, duration.date.months,
-                                      duration.date.weeks}));
+  MOZ_ASSERT(IsValidDuration(Duration{double(duration.date.years),
+                                      double(duration.date.months),
+                                      double(duration.date.weeks)}));
   MOZ_ASSERT(IsValidNormalizedTimeDuration(duration.time));
 
   MOZ_ASSERT(plainRelativeTo || zonedRelativeTo,
@@ -5422,11 +5349,11 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  DateDuration balanceInput = {
+  auto balanceInput = DateDuration{
       roundResult.date.years,
       roundResult.date.months,
       roundResult.date.weeks,
-      double(balanceResult.days),
+      balanceResult.days,
   };
   DateDuration dateResult;
   if (!::BalanceDateDurationRelative(cx, balanceInput, largestUnit,
@@ -5437,16 +5364,11 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
 
   
   auto result = Duration{
-      dateResult.years,
-      dateResult.months,
-      dateResult.weeks,
-      dateResult.days,
-      double(balanceResult.hours),
-      double(balanceResult.minutes),
-      double(balanceResult.seconds),
-      double(balanceResult.milliseconds),
-      balanceResult.microseconds,
-      balanceResult.nanoseconds,
+      double(dateResult.years),      double(dateResult.months),
+      double(dateResult.weeks),      double(dateResult.days),
+      double(balanceResult.hours),   double(balanceResult.minutes),
+      double(balanceResult.seconds), double(balanceResult.milliseconds),
+      balanceResult.microseconds,    balanceResult.nanoseconds,
   };
   MOZ_ASSERT(IsValidDuration(result));
   auto* obj = CreateTemporalDuration(cx, result);
@@ -5578,7 +5500,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   }
 
   
-  double unbalancedDays = unbalanceResult.days;
+  int64_t unbalancedDays = unbalanceResult.days;
 
   
   int64_t days;
@@ -5693,7 +5615,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
           unbalanceResult.years,
           unbalanceResult.months,
           unbalanceResult.weeks,
-          double(days),
+          days,
       },
       balanceResult,
   };

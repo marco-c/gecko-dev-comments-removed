@@ -508,7 +508,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  auto dateDuration = DateDuration{until.years, until.months};
+  auto dateDuration = DateDuration{int64_t(until.years), int64_t(until.months)};
 
   
   if (settings.smallestUnit != TemporalUnit::Month ||
