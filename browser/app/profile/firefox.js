@@ -1104,11 +1104,7 @@ pref("privacy.history.custom",              false);
 
 pref("privacy.sanitize.timeSpan", 1);
 
-#if defined(NIGHTLY_BUILD)
 pref("privacy.sanitize.useOldClearHistoryDialog", false);
-#else
-pref("privacy.sanitize.useOldClearHistoryDialog", true);
-#endif
 
 pref("privacy.sanitize.clearOnShutdown.hasMigratedToNewPrefs", false);
 
