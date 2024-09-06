@@ -1584,13 +1584,6 @@ void nsWindow::Show(bool bState) {
   
   mIsVisible = bState;
 
-  
-  
-  if (mIsVisible)
-    mOldStyle |= WS_VISIBLE;
-  else
-    mOldStyle &= ~WS_VISIBLE;
-
   if (mWnd) {
     if (bState) {
       if (!wasVisible && mWindowType == WindowType::TopLevel) {
@@ -3064,34 +3057,85 @@ void nsWindow::HideWindowChrome(bool aShouldHide) {
 
   if (mHideChrome == aShouldHide) return;
 
-  DWORD_PTR style, exStyle;
-  mHideChrome = aShouldHide;
-  if (aShouldHide) {
-    DWORD_PTR tempStyle = ::GetWindowLongPtrW(hwnd, GWL_STYLE);
-    DWORD_PTR tempExStyle = ::GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-
-    style = tempStyle & ~(WS_CAPTION | WS_THICKFRAME);
-    exStyle = tempExStyle & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE |
-                              WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
-
-    mOldStyle = tempStyle;
-    mOldExStyle = tempExStyle;
-  } else {
-    if (!mOldStyle || !mOldExStyle) {
-      mOldStyle = ::GetWindowLongPtrW(hwnd, GWL_STYLE);
-      mOldExStyle = ::GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+  
+  struct Styles {
+    LONG_PTR style, ex;
+    constexpr Styles operator|(Styles const& that) const {
+      return Styles{.style = style | that.style, .ex = ex | that.ex};
+    }
+    constexpr Styles operator&(Styles const& that) const {
+      return Styles{.style = style & that.style, .ex = ex & that.ex};
+    }
+    constexpr Styles operator~() const {
+      return Styles{.style = ~style, .ex = ~ex};
     }
 
-    style = mOldStyle;
-    exStyle = mOldExStyle;
+    
+    
+    constexpr Styles merge(Styles zero, Styles one) const {
+      Styles const& mask = *this;
+      return (~mask & zero) | (mask & one);
+    }
+
+    
+    
+    constexpr std::tuple<Styles, Styles> split(Styles data) const {
+      Styles const& mask = *this;
+      return {~mask & data, mask & data};
+    }
+  };
+
+  
+  constexpr auto const GetStyles = [](HWND hwnd) {
+    return Styles{.style = ::GetWindowLongPtrW(hwnd, GWL_STYLE),
+                  .ex = ::GetWindowLongPtrW(hwnd, GWL_EXSTYLE)};
+  };
+  constexpr auto const SetStyles = [](HWND hwnd, Styles styles) {
+    VERIFY_WINDOW_STYLE(styles.style);
+    ::SetWindowLongPtrW(hwnd, GWL_STYLE, styles.style);
+    ::SetWindowLongPtrW(hwnd, GWL_EXSTYLE, styles.ex);
+  };
+
+  
+  auto const GetCachedStyles = [&]() {
+    return mOldStyles.map([](auto const& m) {
+      return Styles{.style = m.style, .ex = m.exStyle};
+    });
+  };
+  auto const SetCachedStyles = [&](Styles styles) {
+    using WStyles = nsWindow::WindowStyles;
+    mOldStyles = Some(WStyles{.style = styles.style, .exStyle = styles.ex});
+  };
+
+  
+  
+  constexpr static const Styles kChromeMask{
+      .style = WS_CAPTION | WS_THICKFRAME,
+      .ex = WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE |
+            WS_EX_STATICEDGE};
+
+  
+  
+  constexpr static const Styles kFullscreenChrome{.style = 0, .ex = 0};
+
+  auto const [chromeless, currentChrome] = kChromeMask.split(GetStyles(hwnd));
+  Styles newChrome{}, oldChrome{};
+
+  mHideChrome = aShouldHide;
+  if (aShouldHide) {
+    newChrome = kFullscreenChrome;
+    oldChrome = currentChrome;
+  } else {
+    
+    oldChrome = GetCachedStyles().refOr(currentChrome);
+    newChrome = oldChrome;
     if (mFutureMarginsToUse) {
       SetNonClientMargins(mFutureMarginsOnceChromeShows);
     }
   }
 
-  VERIFY_WINDOW_STYLE(style);
-  ::SetWindowLongPtrW(hwnd, GWL_STYLE, style);
-  ::SetWindowLongPtrW(hwnd, GWL_EXSTYLE, exStyle);
+  SetCachedStyles(oldChrome);
+  SetStyles(hwnd, kChromeMask.merge(chromeless, newChrome));
 }
 
 
