@@ -13,24 +13,6 @@ ChromeUtils.defineESModuleGetters(this, {
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
 });
 
-const CONFIG_DEFAULT = [
-  {
-    webExtension: { id: "basic@search.mozilla.org" },
-    appliesTo: [{ included: { everywhere: true } }],
-    default: "yes",
-  },
-  {
-    webExtension: { id: "private@search.mozilla.org" },
-    appliesTo: [
-      {
-        experiment: "testing",
-        included: { everywhere: true },
-      },
-    ],
-    defaultPrivate: "yes",
-  },
-];
-
 const CONFIG_V2 = [
   {
     recordType: "engine",
@@ -76,11 +58,6 @@ SearchTestUtils.init(this);
 
 add_setup(async () => {
   
-  let searchExtensions = getChromeDir(getResolvedURI(gTestPath));
-  searchExtensions.append("search-engines");
-  await SearchTestUtils.useMochitestEngines(searchExtensions);
-
-  
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.search.separatePrivateDefault.ui.enabled", false],
@@ -91,9 +68,7 @@ add_setup(async () => {
   });
 
   SearchTestUtils.useMockIdleService();
-  await SearchTestUtils.updateRemoteSettingsConfig(
-    SearchUtils.newSearchConfigEnabled ? CONFIG_V2 : CONFIG_DEFAULT
-  );
+  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_V2);
 
   registerCleanupFunction(async () => {
     let settingsWritten = SearchTestUtils.promiseSearchNotification(

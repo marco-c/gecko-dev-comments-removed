@@ -306,28 +306,23 @@ add_task(
     
     
     
-    if (SearchUtils.newSearchConfigEnabled) {
-      let searchConfig = await getSearchConfig();
-      for (let entry of searchConfig.data) {
-        if (
-          entry.recordType == "engine" &&
-          entry.base.classification == "general"
-        ) {
-          entry.base.classification = "unknown";
-        }
+    let searchConfig = await getSearchConfig();
+    for (let entry of searchConfig.data) {
+      if (
+        entry.recordType == "engine" &&
+        entry.base.classification == "general"
+      ) {
+        entry.base.classification = "unknown";
       }
-      const settings = await RemoteSettings(SearchUtils.SETTINGS_KEY);
-      settings.get.returns(searchConfig.data);
-      Services.search.wrappedJSObject.reset();
-      await Services.search.init();
-
-      appPrivateDefault = await Services.search.getDefaultPrivate();
-
-      Services.search.defaultEngine = appPrivateDefault;
-    } else {
-      Services.search.defaultEngine = Services.search.defaultPrivateEngine =
-        appPrivateDefault;
     }
+    const settings = await RemoteSettings(SearchUtils.SETTINGS_KEY);
+    settings.get.returns(searchConfig.data);
+    Services.search.wrappedJSObject.reset();
+    await Services.search.init();
+
+    appPrivateDefault = await Services.search.getDefaultPrivate();
+
+    Services.search.defaultEngine = appPrivateDefault;
 
     
     let visibleEngines = await Services.search.getVisibleEngines();
@@ -341,10 +336,6 @@ add_task(
       appPrivateDefault.name,
       "Should only have one visible engine"
     );
-
-    if (!SearchUtils.newSearchConfigEnabled) {
-      SearchUtils.GENERAL_SEARCH_ENGINE_IDS.clear();
-    }
 
     const observer = new SearchObserver(
       [

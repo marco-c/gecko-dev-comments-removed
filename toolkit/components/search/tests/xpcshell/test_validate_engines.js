@@ -16,51 +16,36 @@ add_task(async function test_validate_engines() {
   let settings = RemoteSettings(SearchUtils.SETTINGS_KEY);
   let config = await settings.get();
 
-  if (SearchUtils.newSearchConfigEnabled) {
-    
-    
-    
-    
-    
-    consoleAllowList.push("Could not load engine");
-    config = config.map(obj => {
-      if (obj.recordType == "engine") {
-        return {
-          recordType: "engine",
-          identifier: obj.identifier,
-          base: {
-            name: obj.base.name,
-            urls: {
-              search: {
-                base: obj.base.urls.search.base || "",
-                searchTermParamName: "q",
-              },
+  
+  
+  
+  
+  
+  consoleAllowList.push("Could not load engine");
+  config = config.map(obj => {
+    if (obj.recordType == "engine") {
+      return {
+        recordType: "engine",
+        identifier: obj.identifier,
+        base: {
+          name: obj.base.name,
+          urls: {
+            search: {
+              base: obj.base.urls.search.base || "",
+              searchTermParamName: "q",
             },
           },
-          variants: [
-            {
-              environment: { allRegionsAndLocales: true },
-            },
-          ],
-        };
-      }
-
-      return obj;
-    });
-  } else {
-    config = config.map(e => {
-      return {
-        appliesTo: [
+        },
+        variants: [
           {
-            included: {
-              everywhere: true,
-            },
+            environment: { allRegionsAndLocales: true },
           },
         ],
-        webExtension: e.webExtension,
       };
-    });
-  }
+    }
+
+    return obj;
+  });
 
   sinon.stub(settings, "get").returns(config);
   await AddonTestUtils.promiseStartupManager();
