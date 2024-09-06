@@ -138,12 +138,12 @@ namespace xsimd
         
 
 
-        inline batch_type as_batch() const noexcept { return { Values... }; }
+        XSIMD_INLINE batch_type as_batch() const noexcept { return { Values... }; }
 
         
 
 
-        inline operator batch_type() const noexcept { return as_batch(); }
+        XSIMD_INLINE operator batch_type() const noexcept { return as_batch(); }
 
         
 
@@ -246,13 +246,13 @@ namespace xsimd
     namespace detail
     {
         template <typename T, class A, class G, std::size_t... Is>
-        inline constexpr auto make_batch_constant(detail::index_sequence<Is...>) noexcept
+        XSIMD_INLINE constexpr auto make_batch_constant(detail::index_sequence<Is...>) noexcept
             -> batch_constant<T, A, (T)G::get(Is, sizeof...(Is))...>
         {
             return {};
         }
         template <typename T, class A, class G, std::size_t... Is>
-        inline constexpr auto make_batch_bool_constant(detail::index_sequence<Is...>) noexcept
+        XSIMD_INLINE constexpr auto make_batch_bool_constant(detail::index_sequence<Is...>) noexcept
             -> batch_bool_constant<T, A, G::get(Is, sizeof...(Is))...>
         {
             return {};
@@ -281,13 +281,13 @@ namespace xsimd
 
 
     template <typename T, class A, class G>
-    inline constexpr auto make_batch_constant() noexcept -> decltype(detail::make_batch_constant<T, A, G>(detail::make_index_sequence<batch<T, A>::size>()))
+    XSIMD_INLINE constexpr auto make_batch_constant() noexcept -> decltype(detail::make_batch_constant<T, A, G>(detail::make_index_sequence<batch<T, A>::size>()))
     {
         return detail::make_batch_constant<T, A, G>(detail::make_index_sequence<batch<T, A>::size>());
     }
 
     template <typename T, class A, class G>
-    inline constexpr auto make_batch_bool_constant() noexcept
+    XSIMD_INLINE constexpr auto make_batch_bool_constant() noexcept
         -> decltype(detail::make_batch_bool_constant<T, A, G>(
             detail::make_index_sequence<batch<T, A>::size>()))
     {
