@@ -436,6 +436,10 @@ nsresult nsHttpChannel::PrepareToConnect() {
 
   AddCookiesToRequest();
 
+  if (StaticPrefs::network_http_priority_header_enabled()) {
+    SetPriorityHeader();
+  }
+
 #ifdef XP_WIN
 
   auto prefEnabledForCurrentContainer = [&]() {
@@ -499,6 +503,13 @@ void nsHttpChannel::HandleContinueCancellingByURLClassifier(
 }
 
 void nsHttpChannel::SetPriorityHeader() {
+  nsAutoCString userSetPriority;
+  Unused << GetRequestHeader("Priority"_ns, userSetPriority);
+  if (!userSetPriority.IsEmpty()) {
+    
+    return;
+  }
+
   uint8_t urgency =
       nsHttpHandler::UrgencyFromCoSFlags(mClassOfService.Flags(), mPriority);
   bool incremental = mClassOfService.Incremental();
@@ -1292,10 +1303,6 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
   nsresult rv;
 
   mozilla::MutexAutoLock lock(mRCWNLock);
-
-  if (StaticPrefs::network_http_priority_header_enabled()) {
-    SetPriorityHeader();
-  }
 
   
   
@@ -9229,6 +9236,10 @@ nsresult nsHttpChannel::DoAuthRetry(
   
   
   AddCookiesToRequest();
+
+  if (StaticPrefs::network_http_priority_header_enabled()) {
+    SetPriorityHeader();
+  }
 
   
   CallOnModifyRequestObservers();
