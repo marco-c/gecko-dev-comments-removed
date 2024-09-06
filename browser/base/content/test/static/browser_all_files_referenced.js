@@ -102,13 +102,6 @@ if (AppConstants.MOZ_BACKGROUNDTASKS) {
   gExceptionPaths.push("resource://app/modules/backgroundtasks/");
 }
 
-if (AppConstants.NIGHTLY_BUILD) {
-  
-  gExceptionPaths.push(
-    "chrome://browser/content/places/interactionsViewer.html"
-  );
-}
-
 
 
 
@@ -297,11 +290,20 @@ var allowlist = [
   { file: "chrome://browser/content/screenshots/copy.svg" },
   { file: "chrome://browser/content/screenshots/download.svg" },
   { file: "chrome://browser/content/screenshots/download-white.svg" },
-
-  
-  
-  { file: "chrome://browser/content/backup/debug.html" },
 ];
+
+if (AppConstants.NIGHTLY_BUILD) {
+  allowlist.push(
+    ...[
+      
+      { file: "chrome://browser/content/places/interactionsViewer.html" },
+
+      
+      
+      { file: "chrome://browser/content/backup/debug.html" },
+    ]
+  );
+}
 
 if (AppConstants.platform != "win") {
   
