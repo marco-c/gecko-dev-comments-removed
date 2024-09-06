@@ -712,7 +712,7 @@ impl DebugOverlayState {
 
 #[derive(Debug, Default)]
 pub(crate) struct BufferDamageTracker {
-    damage_rects: [DeviceRect; 4],
+    damage_rects: [DeviceRect; 2],
     current_offset: usize,
 }
 
