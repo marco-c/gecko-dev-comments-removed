@@ -287,6 +287,7 @@ var allowlist = [
 
   
   { file: "chrome://browser/content/backup/BackupManifest.1.schema.json" },
+  { file: "chrome://browser/content/backup/ArchiveJSONBlock.1.schema.json" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
