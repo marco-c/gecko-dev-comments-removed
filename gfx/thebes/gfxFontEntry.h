@@ -538,6 +538,9 @@ class gfxFontEntry {
 
   mozilla::gfx::Rect GetFontExtents(float aFUnitScaleFactor) const {
     
+    
+    
+    
     return mozilla::gfx::Rect(float(mXMin) * aFUnitScaleFactor,
                               float(-mYMax) * aFUnitScaleFactor,
                               float(mXMax - mXMin) * aFUnitScaleFactor,

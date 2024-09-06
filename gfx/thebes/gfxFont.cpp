@@ -997,6 +997,10 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
   }
 
   mKerningSet = HasFeatureSet(HB_TAG('k', 'e', 'r', 'n'), mKerningEnabled);
+
+  
+  
+  Unused << mFontEntry->UnitsPerEm();
 }
 
 gfxFont::~gfxFont() {
