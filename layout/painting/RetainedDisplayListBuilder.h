@@ -202,11 +202,6 @@ class RetainedDisplayListBuilder {
   
 
 
-  void InvalidateCaretFramesIfNeeded();
-
-  
-
-
 
   bool ShouldBuildPartial(nsTArray<nsIFrame*>& aModifiedFrames);
 

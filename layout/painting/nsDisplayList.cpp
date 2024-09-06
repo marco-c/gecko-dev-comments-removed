@@ -383,6 +383,36 @@ nsDisplayWrapList* nsDisplayListBuilder::MergeItems(
   return merged;
 }
 
+
+
+
+
+void nsDisplayListBuilder::InvalidateCaretFramesIfNeeded() {
+  if (mPaintedCarets.IsEmpty()) {
+    return;
+  }
+  size_t i = mPaintedCarets.Length();
+  while (i--) {
+    nsCaret* caret = mPaintedCarets[i];
+    nsIFrame* oldCaret = caret->GetLastPaintedFrame();
+    nsRect caretRect;
+    nsIFrame* currentCaret = caret->GetPaintGeometry(&caretRect);
+    if (oldCaret == currentCaret) {
+      
+      continue;
+    }
+    if (oldCaret) {
+      oldCaret->MarkNeedsDisplayItemRebuild();
+    }
+    if (currentCaret) {
+      currentCaret->MarkNeedsDisplayItemRebuild();
+    }
+    
+    caret->SetLastPaintedFrame(nullptr);
+    mPaintedCarets.RemoveElementAt(i);
+  }
+}
+
 void nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::
     SetCurrentActiveScrolledRoot(
         const ActiveScrolledRoot* aActiveScrolledRoot) {
@@ -1107,13 +1137,6 @@ void nsDisplayListBuilder::EnterPresShell(const nsIFrame* aReferenceFrame,
   state->mCaretFrame = [&]() -> nsIFrame* {
     RefPtr<nsCaret> caret = state->mPresShell->GetCaret();
     nsIFrame* currentCaret = caret->GetPaintGeometry(&mCaretRect);
-
-    if (auto* oldCaret = caret->GetLastPaintedFrame();
-        oldCaret && oldCaret != currentCaret) {
-      
-      MarkFrameForDisplay(oldCaret, aReferenceFrame);
-    }
-
     if (!currentCaret) {
       return nullptr;
     }
@@ -1132,6 +1155,9 @@ void nsDisplayListBuilder::EnterPresShell(const nsIFrame* aReferenceFrame,
     MOZ_ASSERT(currentCaret->PresShell() == state->mPresShell);
     MarkFrameForDisplay(currentCaret, aReferenceFrame);
     caret->SetLastPaintedFrame(currentCaret);
+    if (!mPaintedCarets.Contains(caret)) {
+      mPaintedCarets.AppendElement(std::move(caret));
+    }
     return currentCaret;
   }();
 }

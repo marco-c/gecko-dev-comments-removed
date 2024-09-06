@@ -906,6 +906,11 @@ class nsDisplayListBuilder {
   
 
 
+  void InvalidateCaretFramesIfNeeded();
+
+  
+
+
 
 
 
@@ -1807,6 +1812,9 @@ class nsDisplayListBuilder {
 
   
   nsTHashSet<nsDisplayItem*> mReuseableItems;
+
+  
+  AutoTArray<RefPtr<nsCaret>, 1> mPaintedCarets;
 
   
   WeakFrameRegion mRetainedWindowDraggingRegion;

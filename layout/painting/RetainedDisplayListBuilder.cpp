@@ -1568,6 +1568,8 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
     MarkFramesWithItemsAndImagesModified(&mList);
   }
 
+  mBuilder.InvalidateCaretFramesIfNeeded();
+
   
   
   
