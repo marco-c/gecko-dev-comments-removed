@@ -25,12 +25,9 @@ namespace webrtc {
 
 
 
-template <typename T>
-using RTCStatsMember = absl::optional<T>;
-
-
 class RTC_EXPORT Attribute {
  public:
+  
   typedef absl::variant<const absl::optional<bool>*,
                         const absl::optional<int32_t>*,
                         const absl::optional<uint32_t>*,
