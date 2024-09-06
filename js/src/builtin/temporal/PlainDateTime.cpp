@@ -823,20 +823,10 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
   MOZ_ASSERT(ISODateTimeWithinLimits(adjustedDate));
 
   
+  const auto& date1 = adjustedDate;
 
   
-  Rooted<PlainDateObject*> date1(
-      cx, CreateTemporalDate(cx, adjustedDate, calendar.receiver()));
-  if (!date1) {
-    return false;
-  }
-
-  
-  Rooted<PlainDateObject*> date2(
-      cx, CreateTemporalDate(cx, two.date, calendar.receiver()));
-  if (!date2) {
-    return false;
-  }
+  const auto& date2 = two.date;
 
   
   auto dateLargestUnit = std::min(TemporalUnit::Day, largestUnit);

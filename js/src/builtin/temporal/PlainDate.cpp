@@ -1248,6 +1248,68 @@ bool js::temporal::DifferenceDate(JSContext* cx,
 
 
 
+bool js::temporal::DifferenceDate(JSContext* cx,
+                                  Handle<CalendarRecord> calendar,
+                                  const PlainDate& one, const PlainDate& two,
+                                  TemporalUnit largestUnit,
+                                  Handle<PlainObject*> options,
+                                  DateDuration* result) {
+  
+
+  
+  if (one == two) {
+    *result = {};
+    return true;
+  }
+
+  
+  if (largestUnit == TemporalUnit::Day) {
+    
+    int32_t days = DaysUntil(one, two);
+
+    
+    *result = {0, 0, 0, days};
+    return true;
+  }
+
+  
+  return CalendarDateUntil(cx, calendar, one, two, largestUnit, options,
+                           result);
+}
+
+
+
+
+bool js::temporal::DifferenceDate(JSContext* cx,
+                                  Handle<CalendarRecord> calendar,
+                                  const PlainDate& one, const PlainDate& two,
+                                  TemporalUnit largestUnit,
+                                  DateDuration* result) {
+  
+
+  
+  if (one == two) {
+    *result = {};
+    return true;
+  }
+
+  
+  if (largestUnit == TemporalUnit::Day) {
+    
+    int32_t days = DaysUntil(one, two);
+
+    
+    *result = {0, 0, 0, days};
+    return true;
+  }
+
+  
+  return CalendarDateUntil(cx, calendar, one, two, largestUnit, result);
+}
+
+
+
+
 int32_t js::temporal::CompareISODate(const PlainDate& one,
                                      const PlainDate& two) {
   

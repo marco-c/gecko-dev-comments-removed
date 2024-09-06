@@ -226,6 +226,21 @@ bool DifferenceDate(JSContext* cx, JS::Handle<CalendarRecord> calendar,
 
 
 
+bool DifferenceDate(JSContext* cx, JS::Handle<CalendarRecord> calendar,
+                    const PlainDate& one, const PlainDate& two,
+                    TemporalUnit largestUnit, JS::Handle<PlainObject*> options,
+                    DateDuration* result);
+
+
+
+
+bool DifferenceDate(JSContext* cx, JS::Handle<CalendarRecord> calendar,
+                    const PlainDate& one, const PlainDate& two,
+                    TemporalUnit largestUnit, DateDuration* result);
+
+
+
+
 int32_t CompareISODate(const PlainDate& one, const PlainDate& two);
 
 
