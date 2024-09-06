@@ -2866,10 +2866,23 @@
       this.tabAnimationsInProgress++;
 
       if (animate) {
-        requestAnimationFrame(function () {
-          
-          t.setAttribute("fadein", "true");
-        });
+        
+        
+        
+        
+        
+        
+        if (usingPreloadedContent) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              t.setAttribute("fadein", "true");
+            });
+          });
+        } else {
+          requestAnimationFrame(() => {
+            t.setAttribute("fadein", "true");
+          });
+        }
       }
 
       
