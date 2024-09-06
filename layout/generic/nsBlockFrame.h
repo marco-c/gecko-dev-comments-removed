@@ -667,20 +667,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  bool MaybeHasFloats() const {
-    if (!mFloats.IsEmpty()) {
-      return true;
-    }
-    
-    
-    nsFrameList* list = GetPushedFloats();
-    if (list && !list->IsEmpty()) {
-      return true;
-    }
-    
-    
-    return HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
-  }
+  bool MaybeHasFloats() const;
 
  protected:
   
