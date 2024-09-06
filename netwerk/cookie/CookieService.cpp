@@ -1839,16 +1839,15 @@ bool CookieService::ParseAttributes(nsIConsoleReportCollector* aCRC,
   }
 
   
-  if (aCookieData.isPartitioned() && !aCookieData.isSecure()) {
+  
+  if (StaticPrefs::network_cookie_CHIPS_enabled() &&
+      aCookieData.isPartitioned() && !aCookieData.isSecure()) {
     CookieLogging::LogMessageToConsole(
         aCRC, aHostURI, nsIScriptError::errorFlag, CONSOLE_REJECTION_CATEGORY,
         "CookieRejectedPartitionedRequiresSecure"_ns,
         AutoTArray<nsString, 1>{NS_ConvertUTF8toUTF16(aCookieData.name())});
 
-    
-    if (StaticPrefs::network_cookie_CHIPS_enabled()) {
-      return newCookie;
-    }
+    return newCookie;
   }
 
   if (aCookieData.rawSameSite() == nsICookie::SAMESITE_NONE &&
