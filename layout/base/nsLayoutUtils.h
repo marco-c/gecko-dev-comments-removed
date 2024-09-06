@@ -1262,11 +1262,14 @@ class nsLayoutUtils {
 
 
 
+
   enum class GetAllInFlowRectsFlag : uint8_t {
     AccountForTransforms,
     UseContentBox,
     UsePaddingBox,
     UseMarginBox,
+    
+    UseMarginBoxWithAutoResolvedAsZero,
   };
   using GetAllInFlowRectsFlags = mozilla::EnumSet<GetAllInFlowRectsFlag>;
   static void GetAllInFlowRects(nsIFrame* aFrame, const nsIFrame* aRelativeTo,

@@ -206,7 +206,7 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
 
   nsRect marginRect = nsLayoutUtils::GetAllInFlowRectsUnion(
       aFrame, aFrame->GetParent(),
-      nsLayoutUtils::GetAllInFlowRectsFlag::UseMarginBox);
+      nsLayoutUtils::GetAllInFlowRectsFlag::UseMarginBoxWithAutoResolvedAsZero);
 
   
   
