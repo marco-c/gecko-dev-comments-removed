@@ -67,19 +67,8 @@ MIDIPermissionRequest::GetTypes(nsIArray** aTypes) {
 NS_IMETHODIMP
 MIDIPermissionRequest::Cancel() {
   mCancelTimer = nullptr;
-
-  if (StaticPrefs::dom_sitepermsaddon_provider_enabled()) {
-    mPromise->MaybeRejectWithSecurityError(
-        "WebMIDI requires a site permission add-on to activate");
-  } else {
-    
-    
-    
-    mPromise->MaybeRejectWithSecurityError(
-        "WebMIDI requires a site permission add-on to activate — see "
-        "https://extensionworkshop.com/documentation/publish/"
-        "site-permission-add-on/ for details.");
-  }
+  mPromise->MaybeRejectWithSecurityError(
+      "WebMIDI requires a site permission add-on to activate");
   return NS_OK;
 }
 
