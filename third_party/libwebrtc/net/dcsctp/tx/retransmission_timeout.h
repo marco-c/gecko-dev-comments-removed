@@ -27,34 +27,30 @@ namespace dcsctp {
 
 class RetransmissionTimeout {
  public:
-  static constexpr int kRttShift = 3;
-  static constexpr int kRttVarShift = 2;
   explicit RetransmissionTimeout(const DcSctpOptions& options);
 
   
-  void ObserveRTT(webrtc::TimeDelta measured_rtt);
+  void ObserveRTT(webrtc::TimeDelta rtt);
 
   
-  webrtc::TimeDelta rto() const { return webrtc::TimeDelta::Millis(rto_); }
+  webrtc::TimeDelta rto() const { return rto_; }
 
   
-  webrtc::TimeDelta srtt() const {
-    return webrtc::TimeDelta::Millis(scaled_srtt_ >> kRttShift);
-  }
+  webrtc::TimeDelta srtt() const { return srtt_; }
 
  private:
   const webrtc::TimeDelta min_rto_;
   const webrtc::TimeDelta max_rto_;
   const webrtc::TimeDelta max_rtt_;
-  const int64_t min_rtt_variance_;
+  const webrtc::TimeDelta min_rtt_variance_;
   
   bool first_measurement_ = true;
   
-  int64_t scaled_srtt_;
+  webrtc::TimeDelta srtt_;
   
-  int64_t scaled_rtt_var_ = 0;
+  webrtc::TimeDelta rtt_var_ = webrtc::TimeDelta::Zero();
   
-  int64_t rto_;
+  webrtc::TimeDelta rto_;
 };
 }  
 
