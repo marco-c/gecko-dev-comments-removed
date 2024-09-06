@@ -134,6 +134,10 @@ MOZ_NEVER_INLINE static void SigSysHandler(int nr, siginfo_t* info,
     return;
   }
 
+#if defined(DEBUG)
+  AutoForbidSignalContext sigContext;
+#endif  
+
   
   
   ucontext_t savedCtx = *ctx;
