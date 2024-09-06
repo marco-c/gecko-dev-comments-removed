@@ -3700,10 +3700,7 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
       
       
       
-      mozilla::DesktopCoord coord = LayoutDeviceCoord(shiftByPixels) /
-                                    mozilla::DesktopToLayoutDeviceScale();
-
-      listener->MacFullscreenMenubarOverlapChanged(coord);
+      listener->MacFullscreenMenubarOverlapChanged(DesktopCoord(shiftByPixels));
     }
   }
 }
