@@ -9,6 +9,7 @@
 #include "APZCTreeManager.h"
 #include "TreeTraversal.h"  
 #include "mozilla/gfx/CompositorHitTestInfo.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDebug.h"        
 #include "nsIXULRuntime.h"  
@@ -91,6 +92,12 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
       wr->HitTest(wr::ToWorldPoint(aHitTestPoint));
 
   Maybe<wr::WrHitResult> chosenResult;
+  
+  
+  
+  
+  
+  DebugOnly<bool> layersIdExists = true;
   for (const wr::WrHitResult& result : results) {
     ScrollableLayerGuid guid{result.mLayersId, 0, result.mScrollId};
     APZCTM_LOG("Examining result with guid %s hit info 0x%x... ",
@@ -119,8 +126,11 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
       
       
       
+      layersIdExists =
+          CompositorBridgeParent::GetIndirectShadowTree(result.mLayersId);
       if (FissionAutostart()) {
-        MOZ_ASSERT(result.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID);
+        MOZ_ASSERT(result.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID ||
+                   !layersIdExists);
       } else {
         NS_ASSERTION(
             result.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID,
@@ -131,7 +141,8 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
       if (!node) {
         
         
-        MOZ_ASSERT(false);
+        MOZ_ASSERT(!layersIdExists,
+                   "No root node found for hit-test result layers id");
         chosenResult = Some(result);
         break;
       }
@@ -163,7 +174,9 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
     return hit;
   }
 
-  MOZ_ASSERT(hit.mTargetApzc);
+  MOZ_ASSERT(
+      hit.mTargetApzc || !layersIdExists,
+      "A hit-test result with a valid layers id should have a target APZC");
   hit.mLayersId = chosenResult->mLayersId;
   ScrollableLayerGuid::ViewID scrollId = chosenResult->mScrollId;
   gfx::CompositorHitTestInfo hitInfo = chosenResult->mHitInfo;
