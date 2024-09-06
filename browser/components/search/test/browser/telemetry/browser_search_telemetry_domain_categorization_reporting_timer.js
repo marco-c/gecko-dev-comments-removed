@@ -88,8 +88,19 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     
-    SearchSERPCategorizationEventScheduler.uninit();
-    SearchSERPCategorizationEventScheduler.init();
+    
+    await SpecialPowers.popPrefEnv();
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.search.serpEventTelemetryCategorization.enabled"
+      )
+    ) {
+      await waitForDomainToCategoriesUninit();
+    } else {
+      
+      SearchSERPCategorizationEventScheduler.uninit();
+      SearchSERPCategorizationEventScheduler.init();
+    }
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     resetTelemetry();
   });

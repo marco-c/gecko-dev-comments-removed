@@ -397,15 +397,22 @@ const TESTS = [
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.search.serpEventTelemetry.enabled", true],
-      ["browser.search.serpEventTelemetryCategorization.enabled", true],
-    ],
+    set: [["browser.search.serpEventTelemetryCategorization.enabled", true]],
   });
 
   await SearchSERPTelemetry.init();
 
   registerCleanupFunction(async () => {
+    
+    
+    await SpecialPowers.popPrefEnv();
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.search.serpEventTelemetryCategorization.enabled"
+      )
+    ) {
+      await waitForDomainToCategoriesUninit();
+    }
     resetTelemetry();
   });
 });

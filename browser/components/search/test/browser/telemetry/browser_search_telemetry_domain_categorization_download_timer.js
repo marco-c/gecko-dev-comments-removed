@@ -76,7 +76,6 @@ const db = client.db;
 
 
 const TIMEOUT_IN_MS = 250;
-let didPushPrefEnv = false;
 add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
@@ -91,7 +90,6 @@ add_setup(async function () {
       "browser.search.serpEventTelemetryCategorization.enabled"
     )
   ) {
-    didPushPrefEnv = true;
     let promise = waitForDomainToCategoriesUninit();
     await SpecialPowers.pushPrefEnv({
       set: [["browser.search.serpEventTelemetryCategorization.enabled", false]],
@@ -117,8 +115,12 @@ add_setup(async function () {
   registerCleanupFunction(async () => {
     
     
-    if (didPushPrefEnv) {
-      await SpecialPowers.popPrefEnv();
+    await SpecialPowers.popPrefEnv();
+    if (
+      Services.prefs.getBoolPref(
+        "browser.search.serpEventTelemetryCategorization.enabled"
+      )
+    ) {
       await waitForDomainToCategoriesInit();
     }
     SearchSERPTelemetry.overrideSearchTelemetryForTests();

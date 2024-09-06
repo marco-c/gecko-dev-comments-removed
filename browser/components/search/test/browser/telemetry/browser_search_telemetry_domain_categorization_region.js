@@ -78,6 +78,17 @@ add_setup(async function () {
   Assert.equal(Region.home, "DE", "Region");
 
   registerCleanupFunction(async () => {
+    
+    
+    await SpecialPowers.popPrefEnv();
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.search.serpEventTelemetryCategorization.enabled"
+      )
+    ) {
+      await waitForDomainToCategoriesUninit();
+    }
+
     Region._setHomeRegion(originalHomeRegion);
     Region._setCurrentRegion(originalCurrentRegion);
 

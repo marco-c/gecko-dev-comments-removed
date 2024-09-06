@@ -71,6 +71,16 @@ add_setup(async function () {
   await promise;
 
   registerCleanupFunction(async () => {
+    
+    
+    await SpecialPowers.popPrefEnv();
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.search.serpEventTelemetryCategorization.enabled"
+      )
+    ) {
+      await waitForDomainToCategoriesUninit();
+    }
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     resetTelemetry();
   });
