@@ -127,6 +127,7 @@ struct CharacterDataChangeInfo;
 namespace mozilla {
 
 enum class CaretAssociationHint;
+enum class IsFocusableFlags : uint8_t;
 enum class PeekOffsetOption : uint16_t;
 enum class PseudoStyleType : uint8_t;
 enum class TableSelectionMode : uint32_t;
@@ -4389,11 +4390,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-  [[nodiscard]] Focusable IsFocusable(bool aWithMouse = false,
-                                      bool aCheckVisibility = true);
+  [[nodiscard]] Focusable IsFocusable(
+      mozilla::IsFocusableFlags = mozilla::IsFocusableFlags(0));
 
  protected:
   

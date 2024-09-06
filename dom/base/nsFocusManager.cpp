@@ -45,6 +45,7 @@
 
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/ContentEvents.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -5513,6 +5514,14 @@ bool nsFocusManager::CanSkipFocus(nsIContent* aContent) {
   return false;
 }
 
+static IsFocusableFlags FocusManagerFlagsToIsFocusableFlags(uint32_t aFlags) {
+  auto flags = IsFocusableFlags(0);
+  if (aFlags & nsIFocusManager::FLAG_BYMOUSE) {
+    flags |= IsFocusableFlags::WithMouse;
+  }
+  return flags;
+}
+
 
 Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
                                              uint32_t aFlags) {
@@ -5542,7 +5551,8 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
   
   
   
-  if (frame->IsFocusable(aFlags & FLAG_BYMOUSE)) {
+  IsFocusableFlags flags = FocusManagerFlagsToIsFocusableFlags(aFlags);
+  if (frame->IsFocusable(flags)) {
     return aTarget;
   }
 
@@ -5562,8 +5572,7 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
         }
       }
 
-      if (Element* firstFocusable =
-              root->GetFocusDelegate(aFlags & FLAG_BYMOUSE)) {
+      if (Element* firstFocusable = root->GetFocusDelegate(flags)) {
         return firstFocusable;
       }
     }
@@ -5581,7 +5590,7 @@ bool nsFocusManager::IsAreaElementFocusable(HTMLAreaElement& aArea) {
   
   
   return frame->IsVisibleConsideringAncestors() &&
-         aArea.IsFocusableWithoutStyle(false );
+         aArea.IsFocusableWithoutStyle();
 }
 
 nsresult NS_NewFocusManager(nsIFocusManager** aResult) {

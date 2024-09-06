@@ -1631,7 +1631,7 @@ MOZ_CAN_RUN_SCRIPT static bool IsNextFocusableElementTextControl(
 
   
   
-  if (!nextElement->IsFocusableWithoutStyle(false)) {
+  if (!nextElement->IsFocusableWithoutStyle()) {
     return false;
   }
 

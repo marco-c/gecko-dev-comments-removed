@@ -16,6 +16,7 @@ class nsTextFragment;
 class nsIFrame;
 
 namespace mozilla {
+enum class IsFocusableFlags : uint8_t;
 class EventChainPreVisitor;
 class HTMLEditor;
 struct URLExtraData;
@@ -274,13 +275,14 @@ class nsIContent : public nsINode {
 
 
 
-  virtual Focusable IsFocusableWithoutStyle(bool aWithMouse = false);
+  virtual Focusable IsFocusableWithoutStyle(
+      mozilla::IsFocusableFlags = mozilla::IsFocusableFlags(0));
 
   
-  mozilla::dom::Element* GetFocusDelegate(bool aWithMouse) const;
+  mozilla::dom::Element* GetFocusDelegate(mozilla::IsFocusableFlags) const;
 
   
-  mozilla::dom::Element* GetAutofocusDelegate(bool aWithMouse) const;
+  mozilla::dom::Element* GetAutofocusDelegate(mozilla::IsFocusableFlags) const;
 
   
 
