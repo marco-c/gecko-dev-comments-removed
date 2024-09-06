@@ -141,15 +141,10 @@ bool GtkCompositorWidget::SetEGLNativeWindowSize(
 }
 
 LayoutDeviceIntRegion GtkCompositorWidget::GetTransparentRegion() {
-  
-  
-  if (!mWidget || mWidget->IsPopup()) {
-    return LayoutDeviceIntRect(LayoutDeviceIntPoint(0, 0), GetClientSize());
-  }
-
-  
-  
-  return mWidget->GetTitlebarRect();
+  LayoutDeviceIntRegion fullRegion(
+      LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize()));
+  fullRegion.SubOut(mWidget->GetOpaqueRegion());
+  return fullRegion;
 }
 
 #ifdef MOZ_WAYLAND
