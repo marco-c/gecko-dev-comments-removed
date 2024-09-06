@@ -1018,6 +1018,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
   bool mHasContentDecompressed;
 
   
+  bool mRenderBlocking;
+
+  
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields3, 8, (
     (bool, AsyncOpenTimeOverriden, 1),
     (bool, ForcePending, 1),

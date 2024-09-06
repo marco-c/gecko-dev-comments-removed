@@ -27,6 +27,7 @@ class nsIHttpChannel;
 namespace mozilla::dom {
 
 class PerformanceTiming;
+enum class RenderBlockingStatusType : uint8_t;
 
 class PerformanceTimingData final {
   friend class PerformanceTiming;
@@ -164,6 +165,10 @@ class PerformanceTimingData final {
 
   nsTArray<nsCOMPtr<nsIServerTiming>> GetServerTiming();
 
+  RenderBlockingStatusType RenderBlockingStatus() const {
+    return mRenderBlockingStatus;
+  }
+
  private:
   
   
@@ -206,6 +211,8 @@ class PerformanceTimingData final {
   uint64_t mDecodedBodySize = 0;
 
   uint8_t mRedirectCount = 0;
+
+  RenderBlockingStatusType mRenderBlockingStatus;
 
   bool mAllRedirectsSameOrigin = false;
 
