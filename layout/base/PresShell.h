@@ -19,7 +19,6 @@
 #include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/layers/FocusTarget.h"
-#include "mozilla/layout/LayoutTelemetryTools.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PresShellForwards.h"
@@ -27,7 +26,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/widget/ThemeChangeKind.h"
 #include "nsColor.h"
 #include "nsCOMArray.h"
 #include "nsCoord.h"
@@ -2925,11 +2923,6 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* mCurrentReflowRoot = nullptr;
 #endif  
 
-  
-  
-  
-  void PingPerTickTelemetry(FlushType aFlushType);
-
  private:
   
   
@@ -3254,8 +3247,6 @@ class PresShell final : public nsStubDocumentObserver,
   static bool sDisableNonTestMouseEvents;
 
   static bool sProcessInteractable;
-
-  layout_telemetry::Data mLayoutTelemetry;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(PresShell, NS_PRESSHELL_IID)
