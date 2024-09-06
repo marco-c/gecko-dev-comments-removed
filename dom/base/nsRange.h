@@ -34,19 +34,11 @@ class DOMRectList;
 class InspectorFontFace;
 class Selection;
 
-enum class RangeBehaviour : uint8_t {
-  
-  KeepDefaultRangeAndCrossShadowBoundaryRanges,
-  
-  
-  
-  
-  MergeDefaultRangeAndCrossShadowBoundaryRanges,
-  
-  CollapseDefaultRange,
-  
-  CollapseDefaultRangeAndCrossShadowBoundaryRanges
-
+enum class CollapsePolicy : uint8_t {
+  No,                                       
+  DefaultRange,                             
+  DefaultRangeAndCrossShadowBoundaryRanges  
+                                            
 };
 }  
 }  
@@ -499,8 +491,8 @@ class nsRange final : public mozilla::dom::AbstractRange,
       const mozilla::RangeBoundaryBase<SPT, SRT>& aStartBoundary,
       const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary,
       nsINode* aRootNode, bool aNotInsertedYet = false,
-      mozilla::dom::RangeBehaviour aRangeBehaviour = mozilla::dom::
-          RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges);
+      mozilla::dom::CollapsePolicy aCollapsePolicy = mozilla::dom::
+          CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges);
 
   
   

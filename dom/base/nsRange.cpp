@@ -106,19 +106,19 @@ template nsresult nsRange::SetStartAndEnd(
 template void nsRange::DoSetRange(const RangeBoundary& aStartBoundary,
                                   const RangeBoundary& aEndBoundary,
                                   nsINode* aRootNode, bool aNotInsertedYet,
-                                  RangeBehaviour aRangeBehaviour);
+                                  CollapsePolicy aCollapsePolicy);
 template void nsRange::DoSetRange(const RangeBoundary& aStartBoundary,
                                   const RawRangeBoundary& aEndBoundary,
                                   nsINode* aRootNode, bool aNotInsertedYet,
-                                  RangeBehaviour aRangeBehaviour);
+                                  CollapsePolicy aCollapsePolicy);
 template void nsRange::DoSetRange(const RawRangeBoundary& aStartBoundary,
                                   const RangeBoundary& aEndBoundary,
                                   nsINode* aRootNode, bool aNotInsertedYet,
-                                  RangeBehaviour aRangeBehaviour);
+                                  CollapsePolicy aCollapsePolicy);
 template void nsRange::DoSetRange(const RawRangeBoundary& aStartBoundary,
                                   const RawRangeBoundary& aEndBoundary,
                                   nsINode* aRootNode, bool aNotInsertedYet,
-                                  RangeBehaviour aRangeBehaviour);
+                                  CollapsePolicy aCollapsePolicy);
 
 template void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
     const RangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary);
@@ -227,21 +227,20 @@ already_AddRefed<nsRange> nsRange::Create(
 
 
 
-static RangeBehaviour GetRangeBehaviour(
+static CollapsePolicy ShouldCollapseBoundary(
     const nsRange* aRange, const nsINode* aNewRoot,
     const RawRangeBoundary& aNewBoundary, const bool aIsSetStart,
     AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (!aRange->IsPositioned()) {
-    return RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges;
+    return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
   }
 
   MOZ_ASSERT(aRange->GetRoot());
-
   if (aNewRoot != aRange->GetRoot()) {
     
     
     if (aNewRoot->GetComposedDoc() != aRange->GetRoot()->GetComposedDoc()) {
-      return RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges;
+      return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
     }
 
     
@@ -249,32 +248,14 @@ static RangeBehaviour GetRangeBehaviour(
     
     if (AbstractRange::IsRootUAWidget(aNewRoot) ||
         AbstractRange::IsRootUAWidget(aRange->GetRoot())) {
-      return RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges;
-    }
-
-    if (const CrossShadowBoundaryRange* crossShadowBoundaryRange =
-            aRange->GetCrossShadowBoundaryRange()) {
-      
-      
-      
-      
-      
-      const RangeBoundary& otherSideExistingBoundary =
-          aIsSetStart ? crossShadowBoundaryRange->EndRef()
-                      : crossShadowBoundaryRange->StartRef();
-      const nsINode* otherSideRoot =
-          RangeUtils::ComputeRootNode(otherSideExistingBoundary.Container());
-      if (aNewRoot == otherSideRoot) {
-        return RangeBehaviour::MergeDefaultRangeAndCrossShadowBoundaryRanges;
-      }
+      return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
     }
 
     
     
     return aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
-               ? RangeBehaviour::CollapseDefaultRange
-               : RangeBehaviour::
-                     CollapseDefaultRangeAndCrossShadowBoundaryRanges;
+               ? CollapsePolicy::DefaultRange
+               : CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
   }
 
   const RangeBoundary& otherSideExistingBoundary =
@@ -300,12 +281,12 @@ static RangeBehaviour GetRangeBehaviour(
       
       
       
-      return RangeBehaviour::KeepDefaultRangeAndCrossShadowBoundaryRanges;
+      return CollapsePolicy::No;
     }
 
     if (!aRange->MayCrossShadowBoundary() ||
         aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::No) {
-      return RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges;
+      return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
     }
 
     const RangeBoundary& otherSideExistingCrossShadowBoundaryBoundary =
@@ -327,15 +308,15 @@ static RangeBehaviour GetRangeBehaviour(
 
     
     if (withCrossShadowBoundaryOrder && *withCrossShadowBoundaryOrder != 1) {
-      return RangeBehaviour::CollapseDefaultRange;
+      return CollapsePolicy::DefaultRange;
     }
 
     
-    return RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges;
+    return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
   }
 
   MOZ_ASSERT_UNREACHABLE();
-  return RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges;
+  return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
 }
 
 
@@ -1060,11 +1041,12 @@ void nsRange::AssertIfMismatchRootAndRangeBoundaries(
 
 
 template <typename SPT, typename SRT, typename EPT, typename ERT>
-void nsRange::
-    DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-               const RangeBoundaryBase<EPT, ERT>& aEndBoundary,
-               nsINode* aRootNode,
-               bool aNotInsertedYet , RangeBehaviour aRangeBehaviour ) {
+void nsRange::DoSetRange(
+    const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
+    const RangeBoundaryBase<EPT, ERT>& aEndBoundary, nsINode* aRootNode,
+    bool aNotInsertedYet ,
+    CollapsePolicy
+        aCollapsePolicy ) {
   mIsPositioned = aStartBoundary.IsSetAndValid() &&
                   aEndBoundary.IsSetAndValid() && aRootNode;
   MOZ_ASSERT_IF(!mIsPositioned, !aStartBoundary.IsSet());
@@ -1093,8 +1075,8 @@ void nsRange::
   mStart.CopyFrom(aStartBoundary, RangeBoundaryIsMutationObserved::Yes);
   mEnd.CopyFrom(aEndBoundary, RangeBoundaryIsMutationObserved::Yes);
 
-  if (aRangeBehaviour ==
-      RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges) {
+  if (aCollapsePolicy ==
+      CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges) {
     ResetCrossShadowBoundaryRange();
   }
 
@@ -1176,12 +1158,12 @@ void nsRange::SetStart(
     return;
   }
 
-  RangeBehaviour behaviour =
-      GetRangeBehaviour(this, newRoot, aPoint, true ,
-                        aAllowCrossShadowBoundary);
+  CollapsePolicy policy =
+      ShouldCollapseBoundary(this, newRoot, aPoint, true ,
+                             aAllowCrossShadowBoundary);
 
-  switch (behaviour) {
-    case RangeBehaviour::KeepDefaultRangeAndCrossShadowBoundaryRanges:
+  switch (policy) {
+    case CollapsePolicy::No:
       
       
       
@@ -1194,22 +1176,17 @@ void nsRange::SetStart(
           ResetCrossShadowBoundaryRange();
         }
       }
-      DoSetRange(aPoint, mEnd, mRoot, false, behaviour);
+      DoSetRange(aPoint, mEnd, mRoot, false, policy);
       break;
-    case RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges:
-      DoSetRange(aPoint, aPoint, newRoot, false, behaviour);
+    case CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges:
+      DoSetRange(aPoint, aPoint, newRoot, false, policy);
       break;
-    case RangeBehaviour::CollapseDefaultRange:
+    case CollapsePolicy::DefaultRange:
       MOZ_ASSERT(aAllowCrossShadowBoundary ==
                  AllowRangeCrossShadowBoundary::Yes);
       CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
           aPoint, MayCrossShadowBoundaryEndRef());
-      DoSetRange(aPoint, aPoint, newRoot, false, behaviour);
-      break;
-    case RangeBehaviour::MergeDefaultRangeAndCrossShadowBoundaryRanges:
-      DoSetRange(aPoint, MayCrossShadowBoundaryEndRef(), newRoot, false,
-                 behaviour);
-      ResetCrossShadowBoundaryRange();
+      DoSetRange(aPoint, aPoint, newRoot, false, policy);
       break;
     default:
       MOZ_ASSERT_UNREACHABLE();
@@ -1293,12 +1270,12 @@ void nsRange::SetEnd(const RawRangeBoundary& aPoint, ErrorResult& aRv,
     return;
   }
 
-  RangeBehaviour policy =
-      GetRangeBehaviour(this, newRoot, aPoint, false ,
-                        aAllowCrossShadowBoundary);
+  CollapsePolicy policy =
+      ShouldCollapseBoundary(this, newRoot, aPoint, false ,
+                             aAllowCrossShadowBoundary);
 
   switch (policy) {
-    case RangeBehaviour::KeepDefaultRangeAndCrossShadowBoundaryRanges:
+    case CollapsePolicy::No:
       
       
       
@@ -1313,20 +1290,15 @@ void nsRange::SetEnd(const RawRangeBoundary& aPoint, ErrorResult& aRv,
       }
       DoSetRange(mStart, aPoint, mRoot, false, policy);
       break;
-    case RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges:
+    case CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges:
       DoSetRange(aPoint, aPoint, newRoot, false, policy);
       break;
-    case RangeBehaviour::CollapseDefaultRange:
+    case CollapsePolicy::DefaultRange:
       MOZ_ASSERT(aAllowCrossShadowBoundary ==
                  AllowRangeCrossShadowBoundary::Yes);
       CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
           MayCrossShadowBoundaryStartRef(), aPoint);
       DoSetRange(aPoint, aPoint, newRoot, false, policy);
-      break;
-    case RangeBehaviour::MergeDefaultRangeAndCrossShadowBoundaryRanges:
-      DoSetRange(MayCrossShadowBoundaryStartRef(), aPoint, newRoot, false,
-                 policy);
-      ResetCrossShadowBoundaryRange();
       break;
     default:
       MOZ_ASSERT_UNREACHABLE();
