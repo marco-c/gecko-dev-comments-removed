@@ -81,13 +81,7 @@ nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
     }
   }
 
-  
-  
-  if (UseRemoteSubframes() ||
-      StaticPrefs::fission_preserve_browsing_contexts()) {
-    return ChangeRemotenessContextType::PRESERVE;
-  }
-  return ChangeRemotenessContextType::DONT_PRESERVE;
+  return ChangeRemotenessContextType::PRESERVE;
 }
 
 void nsFrameLoaderOwner::ChangeRemotenessCommon(
