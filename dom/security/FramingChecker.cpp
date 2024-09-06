@@ -151,6 +151,8 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
     return true;
   }
 
+  static const char kASCIIWhitespace[] = "\t ";
+
   
   
   
@@ -158,7 +160,7 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   XFOHeader xfoOptions;
   for (const nsACString& next : xfoHeaderValue.Split(',')) {
     nsAutoCString option(next);
-    option.StripWhitespace();
+    option.Trim(kASCIIWhitespace);
 
     if (option.LowerCaseEqualsLiteral("allowall")) {
       xfoOptions.ALLOWALL = true;
