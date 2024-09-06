@@ -1514,7 +1514,6 @@ class Document : public nsINode,
 
   nsresult InitCSP(nsIChannel* aChannel);
   nsresult InitCOEP(nsIChannel* aChannel);
-  nsresult InitDocPolicy(nsIChannel* aChannel);
 
   nsresult InitReferrerInfo(nsIChannel* aChannel);
 
@@ -3627,9 +3626,6 @@ class Document : public nsINode,
   bool CloningForSVGUse() const { return mCloningForSVGUse; }
 
   
-  bool ForceLoadAtTop() const { return mForceLoadAtTop; }
-
-  
   
   
   
@@ -4890,8 +4886,6 @@ class Document : public nsINode,
   bool mAllowDeclarativeShadowRoots : 1;
 
   bool mSuspendDOMNotifications : 1;
-
-  bool mForceLoadAtTop : 1;
 
   
   

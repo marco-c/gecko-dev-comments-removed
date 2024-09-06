@@ -1398,7 +1398,6 @@ Document::Document(const char* aContentType)
       mCloningForSVGUse(false),
       mAllowDeclarativeShadowRoots(false),
       mSuspendDOMNotifications(false),
-      mForceLoadAtTop(false),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -3662,9 +3661,6 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   rv = InitCSP(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = InitDocPolicy(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   rv = InitFeaturePolicy(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -3950,35 +3946,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   }
 
   ApplySettingsFromCSP(false);
-  return NS_OK;
-}
-
-nsresult Document::InitDocPolicy(nsIChannel* aChannel) {
-  
-  
-  
-  if (!StaticPrefs::dom_text_fragments_enabled()) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIHttpChannel> httpChannel;
-  nsresult rv = GetHttpChannelHelper(aChannel, getter_AddRefs(httpChannel));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsAutoCString docPolicyString;
-  if (httpChannel) {
-    Unused << httpChannel->GetResponseHeader("Document-Policy"_ns,
-                                             docPolicyString);
-  }
-
-  if (docPolicyString.IsEmpty()) {
-    return NS_OK;
-  }
-
-  mForceLoadAtTop = NS_GetForceLoadAtTopFromHeader(docPolicyString);
-
   return NS_OK;
 }
 
@@ -13238,13 +13205,6 @@ void Document::ScrollToRef() {
   if (!textDirectiveToScroll && mScrollToRef.IsEmpty()) {
     return;
   }
-
-  
-  
-  if (ForceLoadAtTop()) {
-    return;
-  }
-
   
   
   NS_ConvertUTF8toUTF16 ref(mScrollToRef);
