@@ -184,10 +184,10 @@ using HidePopupOptions = mozilla::EnumSet<HidePopupOption>;
 
 extern const nsNavigationDirection DirectionFromKeyCodeTable[2][6];
 
-#define NS_DIRECTION_FROM_KEY_CODE(frame, keycode) \
-  (DirectionFromKeyCodeTable[static_cast<uint8_t>( \
-      (frame)->StyleVisibility()->mDirection)][(   \
-      keycode)-mozilla::dom::KeyboardEvent_Binding::DOM_VK_END])
+#define NS_DIRECTION_FROM_KEY_CODE(frame, keycode)                    \
+  (DirectionFromKeyCodeTable                                          \
+       [static_cast<uint8_t>((frame)->StyleVisibility()->mDirection)] \
+       [(keycode) - mozilla::dom::KeyboardEvent_Binding::DOM_VK_END])
 
 
 struct PendingPopup {
