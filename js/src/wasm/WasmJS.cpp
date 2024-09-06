@@ -491,7 +491,7 @@ bool wasm::CompileAndSerialize(JSContext* cx, const ShareableBytes& bytecode,
     return false;
   }
 
-  MOZ_ASSERT(module->code().hasCompleteTier(Tier::Serialized));
+  MOZ_ASSERT(module->code().hasTier(Tier::Serialized));
   MOZ_ASSERT(listener.called);
   return !listener.serialized->empty();
 }
@@ -1009,10 +1009,7 @@ const JSFunctionSpec WasmModuleObject::static_methods[] = {
 
 void WasmModuleObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   const Module& module = obj->as<WasmModuleObject>().module();
-  size_t codeMemory = module.tier1CodeMemoryUsed();
-  if (codeMemory) {
-    obj->zone()->decJitMemory(codeMemory);
-  }
+  obj->zone()->decJitMemory(module.codeLength(module.code().stableTier()));
   gcx->release(obj, &module, module.gcMallocBytesExcludingCode(),
                MemoryUse::WasmModule);
 }
@@ -1129,7 +1126,8 @@ bool WasmModuleObject::imports(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef ENABLE_WASM_TYPE_REFLECTIONS
   const CodeMetadata& codeMeta = module->codeMeta();
-  const Code& code = module->code();
+  const MetadataTier& metadataTier =
+      module->metadata(module->code().stableTier());
 
   size_t numFuncImport = 0;
   size_t numMemoryImport = 0;
@@ -1170,7 +1168,8 @@ bool WasmModuleObject::imports(JSContext* cx, unsigned argc, Value* vp) {
     switch (import.kind) {
       case DefinitionKind::Function: {
         size_t funcIndex = numFuncImport++;
-        const FuncType& funcType = code.getFuncImportType(funcIndex);
+        const FuncType& funcType =
+            codeMeta.getFuncImportType(metadataTier.funcImports[funcIndex]);
         typeObj = FuncTypeToObject(cx, funcType);
         break;
       }
@@ -1250,6 +1249,8 @@ bool WasmModuleObject::exports(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef ENABLE_WASM_TYPE_REFLECTIONS
   const CodeMetadata& codeMeta = module->codeMeta();
+  const MetadataTier& metadataTier =
+      module->metadata(module->code().stableTier());
 #endif  
 
   for (const Export& exp : moduleMeta.exports) {
@@ -1276,8 +1277,8 @@ bool WasmModuleObject::exports(JSContext* cx, unsigned argc, Value* vp) {
     RootedObject typeObj(cx);
     switch (exp.kind()) {
       case DefinitionKind::Function: {
-        const FuncType& funcType =
-            module->code().getFuncExportType(exp.funcIndex());
+        const FuncExport& fe = metadataTier.lookupFuncExport(exp.funcIndex());
+        const FuncType& funcType = codeMeta.getFuncExportType(fe);
         typeObj = FuncTypeToObject(cx, funcType);
         break;
       }
@@ -1420,10 +1421,7 @@ WasmModuleObject* WasmModuleObject::create(JSContext* cx, const Module& module,
 
   
   
-  size_t codeMemory = module.tier1CodeMemoryUsed();
-  if (codeMemory) {
-    cx->zone()->incJitMemory(codeMemory);
-  }
+  cx->zone()->incJitMemory(module.codeLength(module.code().stableTier()));
   return obj;
 }
 
@@ -2092,6 +2090,29 @@ static bool WasmCall(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool WasmInstanceObject::getExportedFunction(
     JSContext* cx, Handle<WasmInstanceObject*> instanceObj, uint32_t funcIndex,
     MutableHandleFunction fun) {
@@ -2101,9 +2122,10 @@ bool WasmInstanceObject::getExportedFunction(
   }
 
   const Instance& instance = instanceObj->instance();
-  const CodeBlock& codeBlock = instance.code().funcCodeBlock(funcIndex);
-  const FuncExport& funcExport = codeBlock.lookupFuncExport(funcIndex);
-  const TypeDef& funcTypeDef = instance.code().getFuncExportTypeDef(funcIndex);
+  const FuncExport& funcExport =
+      instance.metadata(instance.code().bestTier()).lookupFuncExport(funcIndex);
+  const TypeDef& funcTypeDef =
+      instance.codeMeta().getFuncExportTypeDef(funcExport);
   unsigned numArgs = funcTypeDef.funcType().args().length();
 
   if (instance.isAsmJS()) {
@@ -2167,9 +2189,12 @@ bool WasmInstanceObject::getExportedFunction(
   fun->setExtendedSlot(FunctionExtended::WASM_STV_SLOT,
                        PrivateValue((void*)funcTypeDef.superTypeVector()));
 
-  const CodeRange& codeRange = codeBlock.codeRange(funcExport);
+  const CodeTier& codeTier =
+      instance.code().codeTier(instance.code().bestTier());
+  const CodeRange& codeRange = codeTier.metadata().codeRange(funcExport);
+
   fun->setExtendedSlot(FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT,
-                       PrivateValue(codeBlock.segment->base() +
+                       PrivateValue(codeTier.segment().base() +
                                     codeRange.funcUncheckedCallEntry()));
 
   if (!instanceObj->exports().putNew(funcIndex, fun)) {
@@ -2180,13 +2205,12 @@ bool WasmInstanceObject::getExportedFunction(
   return true;
 }
 
-void WasmInstanceObject::getExportedFunctionCodeRange(
-    JSFunction* fun, const wasm::CodeRange** range, uint8_t** codeBase) {
-  uint32_t funcIndex = wasm::ExportedFunctionToFuncIndex(fun);
+const CodeRange& WasmInstanceObject::getExportedFunctionCodeRange(
+    JSFunction* fun, Tier tier) {
+  uint32_t funcIndex = ExportedFunctionToFuncIndex(fun);
   MOZ_ASSERT(exports().lookup(funcIndex)->value() == fun);
-  const CodeBlock& code = instance().code().funcCodeBlock(funcIndex);
-  *range = &code.codeRanges[code.funcToCodeRange[funcIndex]];
-  *codeBase = code.segment->base();
+  const MetadataTier& metadata = instance().metadata(tier);
+  return metadata.codeRange(metadata.lookupFuncExport(funcIndex));
 }
 
 
@@ -2253,10 +2277,6 @@ WasmInstanceObject* wasm::ExportedFunctionToInstanceObject(JSFunction* fun) {
 
 uint32_t wasm::ExportedFunctionToFuncIndex(JSFunction* fun) {
   return fun->wasmInstance().code().getFuncIndex(fun);
-}
-
-const wasm::TypeDef& wasm::ExportedFunctionToTypeDef(JSFunction* fun) {
-  return *fun->wasmTypeDef();
 }
 
 
@@ -4069,8 +4089,11 @@ bool WasmFunctionTypeImpl(JSContext* cx, const CallArgs& args) {
   RootedFunction function(cx, &args.thisv().toObject().as<JSFunction>());
   Rooted<WasmInstanceObject*> instanceObj(
       cx, ExportedFunctionToInstanceObject(function));
-  const TypeDef& funcTypeDef = ExportedFunctionToTypeDef(function);
-  const FuncType& funcType = funcTypeDef.funcType();
+  uint32_t funcIndex = ExportedFunctionToFuncIndex(function);
+  Instance& instance = instanceObj->instance();
+  const FuncExport& fe =
+      instance.metadata(instance.code().bestTier()).lookupFuncExport(funcIndex);
+  const FuncType& funcType = instance.codeMeta().getFuncExportType(fe);
   RootedObject typeObj(cx, FuncTypeToObject(cx, funcType));
   if (!typeObj) {
     return false;

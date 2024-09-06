@@ -20,7 +20,6 @@
 #define wasm_generator_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 
 #include "jit/MacroAssembler.h"
@@ -169,16 +168,12 @@ struct CompileTask : public HelperThreadTask {
 class MOZ_STACK_CLASS ModuleGenerator {
   using CompileTaskVector = Vector<CompileTask, 0, SystemAllocPolicy>;
   using CodeOffsetVector = Vector<jit::CodeOffset, 0, SystemAllocPolicy>;
-  
-  
-  
-  struct MacroAssemblerScope {
-    jit::TempAllocator masmAlloc;
-    jit::WasmMacroAssembler masm;
-
-    explicit MacroAssemblerScope(LifoAlloc& lifo);
-    ~MacroAssemblerScope() = default;
+  struct CallFarJump {
+    uint32_t funcIndex;
+    jit::CodeOffset jump;
+    CallFarJump(uint32_t fi, jit::CodeOffset j) : funcIndex(fi), jump(j) {}
   };
+  using CallFarJumpVector = Vector<CallFarJump, 0, SystemAllocPolicy>;
 
   
   SharedCompileArgs const compileArgs_;
@@ -189,17 +184,16 @@ class MOZ_STACK_CLASS ModuleGenerator {
   CompilerEnvironment* const compilerEnv_;
 
   
-  FuncImportVector funcImports_;
-  UniqueLinkData sharedStubsLinkData_;
-  UniqueCodeBlock sharedStubsCodeBlock_;
+  UniqueLinkData linkData_;
+  UniqueMetadataTier metadataTier_;
   MutableCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   
-  UniqueCodeBlock codeBlock_;
-  UniqueLinkData linkData_;
+  CompileTaskState taskState_;
   LifoAlloc lifo_;
-  Maybe<MacroAssemblerScope> masmScope_;
-  jit::WasmMacroAssembler* masm_;
+  jit::TempAllocator masmAlloc_;
+  jit::WasmMacroAssembler masm_;
+  Uint32Vector funcToCodeRange_;
   uint32_t debugTrapCodeOffset_;
   CallFarJumpVector callFarJumps_;
   CallSiteTargetVector callSiteTargets_;
@@ -209,7 +203,6 @@ class MOZ_STACK_CLASS ModuleGenerator {
   
   bool parallel_;
   uint32_t outstanding_;
-  CompileTaskState taskState_;
   CompileTaskVector tasks_;
   CompileTaskPtrVector freeTasks_;
   CompileTask* currentTask_;
@@ -218,37 +211,18 @@ class MOZ_STACK_CLASS ModuleGenerator {
   
   DebugOnly<bool> finishedFuncDefs_;
 
-  bool funcIsCompiledInBlock(uint32_t funcIndex) const;
-  const CodeRange& funcCodeRangeInBlock(uint32_t funcIndex) const;
+  bool funcIsCompiled(uint32_t funcIndex) const;
+  const CodeRange& funcCodeRange(uint32_t funcIndex) const;
   bool linkCallSites();
   void noteCodeRange(uint32_t codeRangeIndex, const CodeRange& codeRange);
   bool linkCompiledCode(CompiledCode& code);
-  [[nodiscard]] bool initTasks();
   bool locallyCompileCurrentTask();
   bool finishTask(CompileTask* task);
   bool launchBatchCompile();
   bool finishOutstandingTask();
-
-  
-  
-  [[nodiscard]] bool startCodeBlock(CodeBlockKind kind);
-  
-  
-  
-  UniqueCodeBlock finishCodeBlock(UniqueLinkData* linkData);
-
-  
-  
-  [[nodiscard]] bool generateSharedStubs();
-
-  
-  
-  
-  [[nodiscard]] bool startCompleteTier();
-  
-  
-  UniqueCodeBlock finishCompleteTier(UniqueLinkData* linkData);
-
+  bool finishCodegen();
+  bool finishMetadataTier();
+  UniqueCodeTier finishCodeTier();
   bool finishCodeMetadata(const Bytes& bytecode);
 
   bool isAsmJS() const { return codeMeta_->isAsmJS(); }

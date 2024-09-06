@@ -42,7 +42,22 @@ struct InstanceComparator {
     if (instance == &target) {
       return 0;
     }
-    return instance < &target ? -1 : 1;
+
+    
+    
+    
+
+    
+
+    Tier instanceTier = instance->code().stableTier();
+    Tier targetTier = target.code().stableTier();
+
+    if (instance->codeBase(instanceTier) == target.codeBase(targetTier)) {
+      return instance < &target ? -1 : 1;
+    }
+
+    return target.codeBase(targetTier) < instance->codeBase(instanceTier) ? -1
+                                                                          : 1;
   }
 };
 

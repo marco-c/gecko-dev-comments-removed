@@ -154,14 +154,16 @@ class Module : public JS::WasmModule {
   ~Module() override;
 
   const Code& code() const { return *code_; }
+  const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
   const ModuleMetadata& moduleMeta() const { return *moduleMeta_; }
   const CodeMetadata& codeMeta() const { return code_->codeMeta(); }
   const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
     return code_->codeMetaForAsmJS();
   }
+  const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
   const CustomSectionVector& customSections() const { return customSections_; }
   const Bytes& debugBytecode() const { return debugBytecode_->bytes; }
-  uint32_t tier1CodeMemoryUsed() const { return code_->tier1CodeMemoryUsed(); }
+  uint32_t codeLength(Tier t) const { return code_->segment(t).length(); }
 
   
 
@@ -176,17 +178,14 @@ class Module : public JS::WasmModule {
 
   void startTier2(const CompileArgs& args, const ShareableBytes& bytecode,
                   JS::OptimizedEncodingListener* listener);
-  bool finishTier2(const LinkData& sharedStubsLinkData,
-                   const LinkData& linkData2, UniqueCodeBlock code2) const;
+  bool finishTier2(const LinkData& linkData2, UniqueCodeTier code2) const;
 
   void testingBlockOnTier2Complete() const;
   bool testingTier2Active() const { return testingTier2Active_; }
 
   
 
-  [[nodiscard]] bool serialize(const LinkData& sharedStubsLinkData,
-                               const LinkData& optimizedLinkData,
-                               Bytes* bytes) const;
+  [[nodiscard]] bool serialize(const LinkData& linkData, Bytes* bytes) const;
   static RefPtr<Module> deserialize(const uint8_t* begin, size_t size);
   bool loggingDeserialized() const { return loggingDeserialized_; }
 
@@ -213,9 +212,7 @@ class Module : public JS::WasmModule {
 
   bool extractCode(JSContext* cx, Tier tier, MutableHandleValue vp) const;
 
-  WASM_DECLARE_FRIEND_SERIALIZE_ARGS(Module,
-                                     const wasm::LinkData& sharedStubsLinkData,
-                                     const wasm::LinkData& optimizedLinkData);
+  WASM_DECLARE_FRIEND_SERIALIZE_ARGS(Module, const wasm::LinkData& linkData);
 };
 
 using MutableModule = RefPtr<Module>;
