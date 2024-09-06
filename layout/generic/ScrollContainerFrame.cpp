@@ -1732,20 +1732,6 @@ void ScrollContainerFrame::HandleScrollbarStyleSwitching() {
   }
 }
 
-#if defined(MOZ_WIDGET_ANDROID)
-static bool IsFocused(nsIContent* aContent) {
-  
-  
-  
-  
-  while (aContent && aContent->IsInNativeAnonymousSubtree()) {
-    aContent = aContent->GetParent();
-  }
-
-  return aContent ? nsContentUtils::IsFocusedContent(aContent) : false;
-}
-#endif
-
 void ScrollContainerFrame::SetScrollableByAPZ(bool aScrollable) {
   mScrollableByAPZ = aScrollable;
 }
