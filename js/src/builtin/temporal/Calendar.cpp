@@ -2635,8 +2635,6 @@ static bool ISOYearMonthFromFields(JSContext* cx, Handle<TemporalFields> fields,
                                    TemporalOverflow overflow,
                                    PlainDate* result) {
   
-
-  
   double year = fields.year();
 
   
@@ -2791,8 +2789,6 @@ Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
 static bool ISOMonthDayFromFields(JSContext* cx, Handle<TemporalFields> fields,
                                   TemporalOverflow overflow,
                                   PlainDate* result) {
-  
-
   
   double month = fields.month();
 

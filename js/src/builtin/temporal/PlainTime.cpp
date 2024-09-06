@@ -838,13 +838,19 @@ RoundedTime js::temporal::RoundTime(const PlainTime& time, Increment increment,
       MOZ_CRASH("unexpected temporal unit");
   }
 
-  
-  int64_t nanos = TimeToNanos(quantity);
-  MOZ_ASSERT(0 <= nanos && nanos < ToNanoseconds(TemporalUnit::Day));
+  int64_t quantityNs = TimeToNanos(quantity);
+  MOZ_ASSERT(0 <= quantityNs && quantityNs < ToNanoseconds(TemporalUnit::Day));
 
-  auto r = RoundNumberToIncrement(nanos, ToNanoseconds(unit), increment,
-                                  roundingMode);
-  MOZ_ASSERT(r == Int128{int32_t(r)},
+  
+  int64_t unitLength = ToNanoseconds(unit);
+  int64_t incrementNs = increment.value() * unitLength;
+  MOZ_ASSERT(incrementNs <= ToNanoseconds(TemporalUnit::Day),
+             "incrementNs doesn't overflow time resolution");
+
+  
+  int64_t r = RoundNumberToIncrement(quantityNs, incrementNs, roundingMode) /
+              unitLength;
+  MOZ_ASSERT(r == int64_t(int32_t(r)),
              "can't overflow when inputs are all in range");
 
   *result = int32_t(r);
