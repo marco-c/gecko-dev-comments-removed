@@ -9,6 +9,18 @@ use std::fmt::{self, Debug, Write};
 use style_traits::{CssWriter, ToCss};
 
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, MallocSizeOf, ToShmem)]
+pub struct DependentDataTypes(u8);
+bitflags! {
+    impl DependentDataTypes: u8 {
+        /// <length> values depend on font-size/line-height/zoom...
+        const LENGTH = 1 << 0;
+        /// <color> values depend on color-scheme, etc..
+        const COLOR= 1 << 1;
+    }
+}
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
 pub enum DataType {
     
@@ -84,16 +96,15 @@ impl DataType {
     }
 
     
-    
-    pub fn may_reference_font_relative_length(&self) -> bool {
+    pub fn dependent_types(&self) -> DependentDataTypes {
         match self {
             DataType::Length |
             DataType::LengthPercentage |
             DataType::TransformFunction |
-            DataType::TransformList => true,
+            DataType::TransformList => DependentDataTypes::LENGTH,
+            DataType::Color => DependentDataTypes::COLOR,
             DataType::Number |
             DataType::Percentage |
-            DataType::Color |
             DataType::Image |
             DataType::Url |
             DataType::Integer |
@@ -101,7 +112,7 @@ impl DataType {
             DataType::Time |
             DataType::Resolution |
             DataType::CustomIdent |
-            DataType::String => false,
+            DataType::String => DependentDataTypes::empty(),
         }
     }
 }
