@@ -703,7 +703,12 @@ const errorReasons: Record<ErrorCode, Protocol.Network.ErrorReason> = {
 
 
 export function handleError(error: ProtocolError): void {
-  if (error.originalMessage.includes('Invalid header')) {
+  
+  
+  if (
+    error.originalMessage.includes('Invalid header') ||
+    error.originalMessage.includes('Expected "header"')
+  ) {
     throw error;
   }
   

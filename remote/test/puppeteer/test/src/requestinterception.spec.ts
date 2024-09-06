@@ -760,7 +760,7 @@ describe('request interception', function () {
         await request.continue();
       });
       await page.goto(server.PREFIX + '/empty.html');
-      expect(error.message).toMatch(/Invalid header/);
+      expect(error.message).toMatch(/Invalid header|Expected "header"/);
     });
   });
 
@@ -830,7 +830,7 @@ describe('request interception', function () {
       expect(response.url()).toBe(server.EMPTY_PAGE);
     });
     it('should allow mocking multiple headers with same key', async () => {
-      const {page, server} = await getTestState();
+      const {isFirefox, page, server} = await getTestState();
 
       await page.setRequestInterception(true);
       page.on('request', request => {
@@ -854,7 +854,18 @@ describe('request interception', function () {
       });
       expect(response.status()).toBe(200);
       expect(response.headers()['foo']).toBe('bar');
-      expect(response.headers()['arr']).toBe('1\n2');
+
+      
+      
+      
+      
+      
+      
+      if (isFirefox) {
+        expect(response.headers()['arr']).toBe('1, 2');
+      } else {
+        expect(response.headers()['arr']).toBe('1\n2');
+      }
       
       
       expect(firstCookie?.value).toBe('1');
@@ -928,7 +939,7 @@ describe('request interception', function () {
         });
       });
       await page.goto(server.PREFIX + '/empty.html');
-      expect(error.message).toMatch(/Invalid header/);
+      expect(error.message).toMatch(/Invalid header|Expected "header"/);
     });
   });
 
