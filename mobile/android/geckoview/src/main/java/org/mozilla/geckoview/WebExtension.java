@@ -1813,14 +1813,15 @@ public class WebExtension {
     
 
 
+    @Deprecated
+    @DeprecationSchedule(id = "web-extension-required-permissions", version = 133)
+    public final @NonNull String[] promptPermissions;
 
-
-
-
+    
 
 
     @Deprecated
-    @DeprecationSchedule(id = "web-extension-permission", version = 131)
+    @DeprecationSchedule(id = "web-extension-required-permissions", version = 133)
     public final @NonNull String[] permissions;
 
     
@@ -1830,11 +1831,25 @@ public class WebExtension {
 
 
 
-    public final @NonNull String[] promptPermissions;
+    public final @NonNull String[] requiredPermissions;
 
     
 
 
+    @Deprecated
+    @DeprecationSchedule(id = "web-extension-required-origins", version = 133)
+    public final @NonNull String[] origins;
+
+    
+
+
+
+
+
+
+    public final @NonNull String[] requiredOrigins;
+
+    
 
 
 
@@ -1850,13 +1865,9 @@ public class WebExtension {
 
 
 
-
-
     public final @NonNull String[] grantedOptionalPermissions;
 
     
-
-
 
 
 
@@ -1872,18 +1883,7 @@ public class WebExtension {
 
 
 
-
-
     public final @NonNull String[] grantedOptionalOrigins;
-
-    
-
-
-
-
-
-
-    public final @NonNull String[] origins;
 
     
 
@@ -2057,11 +2057,13 @@ public class WebExtension {
       icon = null;
       permissions = null;
       promptPermissions = null;
+      origins = null;
+      requiredPermissions = null;
+      requiredOrigins = null;
       optionalPermissions = null;
+      optionalOrigins = null;
       grantedOptionalPermissions = null;
       grantedOptionalOrigins = null;
-      optionalOrigins = null;
-      origins = null;
       name = null;
       description = null;
       version = null;
@@ -2089,14 +2091,15 @@ public class WebExtension {
     }
 
      MetaData(final GeckoBundle bundle) {
-      
-      permissions = bundle.getStringArray("promptPermissions");
-      promptPermissions = bundle.getStringArray("promptPermissions");
+      permissions = bundle.getStringArray("requiredPermissions");
+      promptPermissions = bundle.getStringArray("requiredPermissions");
+      requiredPermissions = bundle.getStringArray("requiredPermissions");
+      origins = bundle.getStringArray("requiredOrigins");
+      requiredOrigins = bundle.getStringArray("requiredOrigins");
       optionalPermissions = bundle.getStringArray("optionalPermissions");
-      grantedOptionalPermissions = bundle.getStringArray("grantedOptionalPermissions");
       optionalOrigins = bundle.getStringArray("optionalOrigins");
+      grantedOptionalPermissions = bundle.getStringArray("grantedOptionalPermissions");
       grantedOptionalOrigins = bundle.getStringArray("grantedOptionalOrigins");
-      origins = bundle.getStringArray("origins");
       description = bundle.getString("description");
       version = bundle.getString("version");
       creatorName = bundle.getString("creatorName");

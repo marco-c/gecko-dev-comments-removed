@@ -258,9 +258,32 @@ public class WebExtensionController {
 
 
 
+    @Nullable
+    @Deprecated
+    @DeprecationSchedule(id = "web-extension-required-permissions", version = 133)
+    default GeckoResult<AllowOrDeny> onInstallPrompt(@NonNull final WebExtension extension) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
     @Nullable
-    default GeckoResult<AllowOrDeny> onInstallPrompt(final @NonNull WebExtension extension) {
+    default GeckoResult<AllowOrDeny> onInstallPrompt(
+        @NonNull final WebExtension extension,
+        @NonNull final String[] permissions,
+        @NonNull final String[] origins) {
       return null;
     }
 
@@ -1164,7 +1187,9 @@ public class WebExtensionController {
       return;
     }
 
-    final GeckoResult<AllowOrDeny> promptResponse = mPromptDelegate.onInstallPrompt(extension);
+    final GeckoResult<AllowOrDeny> promptResponse =
+        mPromptDelegate.onInstallPrompt(
+            extension, message.getStringArray("permissions"), message.getStringArray("origins"));
     if (promptResponse == null) {
       return;
     }
