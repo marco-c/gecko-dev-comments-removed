@@ -49,6 +49,15 @@ macro_rules! cc {
     }
 }
 
+
+
+
+macro_rules! ekey {
+    ( $name:literal ) => {
+        concat!("MOZ_CRASHREPORTER_", $name)
+    };
+}
+
 mod async_task;
 mod config;
 mod data;
