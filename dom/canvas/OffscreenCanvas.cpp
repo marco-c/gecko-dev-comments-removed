@@ -358,6 +358,21 @@ UniquePtr<OffscreenCanvasCloneData> OffscreenCanvas::ToCloneData(
     return nullptr;
   }
 
+  
+  
+  
+  
+  
+  
+  if (mDisplay && NS_WARN_IF(mDisplay->UsingElementCaptureStream())) {
+    ErrorResult rv;
+    rv.ThrowNotSupportedError(
+        "Cannot transfer OffscreenCanvas bound to element using "
+        "captureStream.");
+    MOZ_ALWAYS_TRUE(rv.MaybeSetPendingException(aCx));
+    return nullptr;
+  }
+
   auto cloneData = MakeUnique<OffscreenCanvasCloneData>(
       mDisplay, mWidth, mHeight, mCompositorBackendType, mTextureType,
       mNeutered, mIsWriteOnly, mExpandedReader);

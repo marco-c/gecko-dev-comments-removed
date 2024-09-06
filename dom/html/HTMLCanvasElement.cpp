@@ -857,6 +857,20 @@ already_AddRefed<CanvasCaptureMediaStream> HTMLCanvasElement::CaptureStream(
     return nullptr;
   }
 
+  
+  
+  
+  
+  
+  
+  if (mOffscreenDisplay &&
+      NS_WARN_IF(!mOffscreenDisplay->CanElementCaptureStream())) {
+    aRv.ThrowNotSupportedError(
+        "Capture stream not supported when OffscreenCanvas transferred to "
+        "worker");
+    return nullptr;
+  }
+
   auto stream = MakeRefPtr<CanvasCaptureMediaStream>(window, this);
 
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
