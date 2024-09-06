@@ -9,8 +9,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsASCIIMask.h"
-#include <mozilla/Maybe.h>
-#include <mozilla/CompactPair.h>
 
 class nsIFile;
 class nsIURLParser;
@@ -62,10 +60,7 @@ nsresult net_ParseFileURL(const nsACString& inURL, nsACString& outDirectory,
                           nsACString& outFileExtension);
 
 
-
-
-mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
-    netCoalesceFlags flags, char* path);
+void net_CoalesceDirs(netCoalesceFlags flags, char* path);
 
 
 

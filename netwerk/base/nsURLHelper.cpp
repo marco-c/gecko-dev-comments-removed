@@ -206,8 +206,7 @@ nsresult net_ParseFileURL(const nsACString& inURL, nsACString& outDirectory,
 
 
 
-mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
-    netCoalesceFlags flags, char* path) {
+void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
   
 
 
@@ -216,12 +215,13 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
 
   char* fwdPtr = path;
   char* urlPtr = path;
+  char* lastslash = path;
   uint32_t traversal = 0;
   uint32_t special_ftp_len = 0;
 
   MOZ_ASSERT(*path == '/', "We expect the path to begin with /");
   if (*path != '/') {
-    return Nothing();
+    return;
   }
 
   
@@ -238,43 +238,31 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
   }
 
   
-  
-  constexpr int PERCENT_2E_LENGTH = sizeof("%2e") - 1;
-  constexpr uint32_t PERCENT_2E_WITH_PERIOD_LENGTH = PERCENT_2E_LENGTH + 1;
-
   for (; (*fwdPtr != '\0') && (*fwdPtr != '?') && (*fwdPtr != '#'); ++fwdPtr) {
-    
-    if (*fwdPtr == '/' &&
-        nsCRT::strncasecmp(fwdPtr + 1, "%2e", PERCENT_2E_LENGTH) == 0 &&
-        (*(fwdPtr + PERCENT_2E_LENGTH + 1) == '\0' ||
-         *(fwdPtr + PERCENT_2E_LENGTH + 1) == '/')) {
-      *urlPtr++ = '/';
+  }
+
+  
+  
+  if (fwdPtr != path && *fwdPtr == '\0') {
+    --fwdPtr;
+  }
+
+  
+  for (; (fwdPtr != path) && (*fwdPtr != '/'); --fwdPtr) {
+  }
+  lastslash = fwdPtr;
+  fwdPtr = path;
+
+  
+  
+  for (; (*fwdPtr != '\0') && (*fwdPtr != '?') && (*fwdPtr != '#') &&
+         (*lastslash == '\0' || fwdPtr != lastslash);
+       ++fwdPtr) {
+    if (*fwdPtr == '%' && *(fwdPtr + 1) == '2' &&
+        (*(fwdPtr + 2) == 'E' || *(fwdPtr + 2) == 'e')) {
       *urlPtr++ = '.';
-      fwdPtr += PERCENT_2E_LENGTH;
-    }
-    
-    else if (*fwdPtr == '/' &&
-             nsCRT::strncasecmp(fwdPtr + 1, "%2e%2e", PERCENT_2E_LENGTH * 2) ==
-                 0 &&
-             (*(fwdPtr + PERCENT_2E_LENGTH * 2 + 1) == '\0' ||
-              *(fwdPtr + PERCENT_2E_LENGTH * 2 + 1) == '/')) {
-      *urlPtr++ = '/';
-      *urlPtr++ = '.';
-      *urlPtr++ = '.';
-      fwdPtr += PERCENT_2E_LENGTH * 2;
-    }
-    
-    else if (*fwdPtr == '/' &&
-             (nsCRT::strncasecmp(fwdPtr + 1, "%2e.",
-                                 PERCENT_2E_WITH_PERIOD_LENGTH) == 0 ||
-              nsCRT::strncasecmp(fwdPtr + 1, ".%2e",
-                                 PERCENT_2E_WITH_PERIOD_LENGTH) == 0) &&
-             (*(fwdPtr + PERCENT_2E_WITH_PERIOD_LENGTH + 1) == '\0' ||
-              *(fwdPtr + PERCENT_2E_WITH_PERIOD_LENGTH + 1) == '/')) {
-      *urlPtr++ = '/';
-      *urlPtr++ = '.';
-      *urlPtr++ = '.';
-      fwdPtr += PERCENT_2E_WITH_PERIOD_LENGTH;
+      ++fwdPtr;
+      ++fwdPtr;
     } else {
       *urlPtr++ = *fwdPtr;
     }
@@ -376,27 +364,6 @@ mozilla::Maybe<mozilla::CompactPair<uint32_t, uint32_t>> net_CoalesceDirs(
     *urlPtr++ = *fwdPtr;
   }
   *urlPtr = '\0';  
-
-  uint32_t lastSlash = 0;
-  uint32_t endOfBasename = 0;
-
-  
-  
-  for (; (*(path + endOfBasename) != '\0') &&
-         (*(path + endOfBasename) != '?') && (*(path + endOfBasename) != '#');
-       ++endOfBasename) {
-  }
-
-  
-  lastSlash = endOfBasename;
-  if (lastSlash != 0 && *(path + lastSlash) == '\0') {
-    --lastSlash;
-  }
-  
-  for (; lastSlash != 0 && *(path + lastSlash) != '/'; --lastSlash) {
-  }
-
-  return Some(mozilla::MakeCompactPair(lastSlash, endOfBasename));
 }
 
 
