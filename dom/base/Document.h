@@ -3710,7 +3710,9 @@ class Document : public nsINode,
     mIntersectionObservers.AppendElement(&aObserver);
   }
   void RemoveIntersectionObserver(DOMIntersectionObserver& aObserver) {
-    MOZ_ASSERT(mIntersectionObservers.Contains(&aObserver));
+    
+    
+    
     mIntersectionObservers.RemoveElement(&aObserver);
   }
   bool HasIntersectionObservers() const {
