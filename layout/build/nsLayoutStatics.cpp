@@ -253,7 +253,7 @@ nsresult nsLayoutStatics::Initialize() {
   if (XRE_IsParentProcess()) {
     
     
-    mozilla::dom::RemoteWorkerService::Initialize();
+    mozilla::dom::RemoteWorkerService::InitializeParent();
   }
 
   ClearSiteData::Initialize();

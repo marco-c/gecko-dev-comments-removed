@@ -12,7 +12,9 @@
 
 namespace mozilla::dom {
 
+class ContentParent;
 class RemoteWorkerManager;
+class ThreadsafeContentParentHandle;
 
 
 
@@ -20,20 +22,29 @@ class RemoteWorkerManager;
 
 class RemoteWorkerServiceParent final : public PRemoteWorkerServiceParent {
  public:
-  RemoteWorkerServiceParent();
-  NS_INLINE_DECL_REFCOUNTING(RemoteWorkerServiceParent, override);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteWorkerServiceParent, override);
+
+  static RefPtr<RemoteWorkerServiceParent> CreateForProcess(
+      ContentParent* aProcess, Endpoint<PRemoteWorkerServiceChild>* aChildEp);
 
   void ActorDestroy(mozilla::ipc::IProtocol::ActorDestroyReason) override;
 
-  void Initialize(const nsACString& aRemoteType);
+  bool IsOtherProcessActor() const { return mProcess != nullptr; }
 
-  nsCString GetRemoteType() const { return mRemoteType; }
+  ThreadsafeContentParentHandle* GetContentParentHandle() const {
+    return mProcess;
+  }
+
+  nsCString GetRemoteType() const;
 
  private:
+  explicit RemoteWorkerServiceParent(ThreadsafeContentParentHandle* aProcess);
   ~RemoteWorkerServiceParent();
 
+  void InitializeOnThread(Endpoint<PRemoteWorkerServiceParent> aEndpoint);
+
+  const RefPtr<ThreadsafeContentParentHandle> mProcess;
   RefPtr<RemoteWorkerManager> mManager;
-  nsCString mRemoteType = NOT_REMOTE_TYPE;
 };
 
 }  

@@ -95,6 +95,7 @@ class TabContext;
 class GetFilesHelper;
 class MemoryReportRequestHost;
 class RemoteWorkerManager;
+class RemoteWorkerServiceParent;
 class ThreadsafeContentParentHandle;
 struct CancelContentJSOptions;
 
@@ -1448,6 +1449,8 @@ class ContentParent final : public PContentParent,
 
   void AssertAlive();
 
+  void StartRemoteWorkerService();
+
  private:
   
   
@@ -1548,6 +1551,8 @@ class ContentParent final : public PContentParent,
 #endif
 
   RefPtr<PProcessHangMonitorParent> mHangMonitorActor;
+
+  RefPtr<RemoteWorkerServiceParent> mRemoteWorkerServiceActor;
 
   UniquePtr<gfx::DriverCrashGuard> mDriverCrashGuard;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
