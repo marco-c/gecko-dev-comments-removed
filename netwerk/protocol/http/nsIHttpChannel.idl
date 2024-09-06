@@ -494,4 +494,12 @@ interface nsIHttpChannel : nsIIdentChannel
     [must_use] attribute AString classicScriptHintCharset;
 
     [must_use] attribute AString documentCharacterSet;
+
+    
+
+
+
+
+
+    [must_use] attribute boolean requestObserversCalled;
 };
