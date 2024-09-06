@@ -37,6 +37,7 @@ const backgroundtaskPhases = {
         "resource://gre/modules/EnterprisePoliciesParent.sys.mjs",
         "resource://gre/modules/XPCOMUtils.sys.mjs",
         "resource://gre/modules/nsAsyncShutdown.sys.mjs",
+        "resource://devtools/shared/security/DevToolsSocketStatus.sys.mjs",
       ],
       
       
