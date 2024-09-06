@@ -3729,6 +3729,18 @@ void Selection::NotifySelectionListeners() {
 
   
   
+  
+  mFrameSelection->SetClickSelectionType(ClickSelectionType::NotApplicable);
+
+  
+  
+  if (mFrameSelection->IsBatching()) {
+    mFrameSelection->SetChangesDuringBatchingFlag();
+    return;
+  }
+
+  
+  
   AutoRestore<bool> calledByJSRestorer(mCalledByJS);
   mCalledByJS = false;
 
@@ -3742,28 +3754,13 @@ void Selection::NotifySelectionListeners() {
     mStyledRanges.MaybeFocusCommonEditingHost(presShell);
   }
 
-  RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
-
-  
-  
-  
-  frameSelection->SetClickSelectionType(ClickSelectionType::NotApplicable);
-
-  if (frameSelection->IsBatching()) {
-    frameSelection->SetChangesDuringBatchingFlag();
-    return;
-  }
-  if (mSelectionListeners.IsEmpty() && !mNotifyAutoCopy &&
-      !mAccessibleCaretEventHub && !mSelectionChangeEventDispatcher) {
-    
-    return;
-  }
-
   nsCOMPtr<Document> doc;
   if (PresShell* presShell = GetPresShell()) {
     doc = presShell->GetDocument();
     presShell->ScheduleContentRelevancyUpdate(ContentRelevancyReason::Selected);
   }
+
+  RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
 
   
   
@@ -3771,12 +3768,11 @@ void Selection::NotifySelectionListeners() {
   const CopyableAutoTArray<nsCOMPtr<nsISelectionListener>, 5>
       selectionListeners = mSelectionListeners;
 
+  int32_t amount = static_cast<int32_t>(frameSelection->GetCaretMoveAmount());
   int16_t reason = frameSelection->PopChangeReasons();
   if (calledByJSRestorer.SavedValue()) {
     reason |= nsISelectionListener::JS_REASON;
   }
-
-  int32_t amount = static_cast<int32_t>(frameSelection->GetCaretMoveAmount());
 
   if (mNotifyAutoCopy) {
     AutoCopyListener::OnSelectionChange(doc, *this, reason);
