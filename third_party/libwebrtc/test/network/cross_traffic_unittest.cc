@@ -125,8 +125,7 @@ TEST(CrossTrafficTest, RandomWalkCrossTraffic) {
 }
 
 TEST(TcpMessageRouteTest, DeliveredOnLossyNetwork) {
-  NetworkEmulationManagerImpl net(TimeMode::kSimulated,
-                                  EmulatedNetworkStatsGatheringMode::kDefault);
+  NetworkEmulationManagerImpl net({.time_mode = TimeMode::kSimulated});
   BuiltInNetworkBehaviorConfig send;
   
   

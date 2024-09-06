@@ -161,6 +161,26 @@ bool AbslParseFlag(absl::string_view text, TimeMode* mode, std::string* error);
 std::string AbslUnparseFlag(TimeMode mode);
 
 
+struct NetworkEmulationManagerConfig {
+  
+  TimeMode time_mode = TimeMode::kRealTime;
+  
+  
+  EmulatedNetworkStatsGatheringMode stats_gathering_mode =
+      EmulatedNetworkStatsGatheringMode::kDefault;
+  
+  const FieldTrialsView* field_trials = nullptr;
+  
+  
+  
+  
+  
+  
+  
+  bool fake_dtls_handshake_sizes = false;
+};
+
+
 
 
 class NetworkEmulationManager {
