@@ -19,7 +19,6 @@
 #include "MainThreadUtils.h"
 #include "ScopedNSSTypes.h"
 
-#include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
@@ -1268,10 +1267,7 @@ Maybe<nsTArray<uint8_t>> nsRFPService::GenerateKey(nsIChannel* aChannel) {
 
   
   
-  bool foreignByAncestorContext =
-      AntiTrackingUtils::IsThirdPartyChannel(aChannel) &&
-      loadInfo->GetIsThirdPartyContextToTopWindow();
-  attrs.SetPartitionKey(topLevelURI, foreignByAncestorContext);
+  attrs.SetPartitionKey(topLevelURI);
 
   nsAutoCString oaSuffix;
   attrs.CreateSuffix(oaSuffix);
@@ -1341,14 +1337,8 @@ nsRFPService::CleanRandomKeyByPrincipal(nsIPrincipal* aPrincipal) {
 
   OriginAttributes attrs = aPrincipal->OriginAttributesRef();
   nsCOMPtr<nsIURI> uri = aPrincipal->GetURI();
+  attrs.SetPartitionKey(uri);
 
-  attrs.SetPartitionKey(uri, false);
-  ClearBrowsingSessionKey(attrs);
-
-  
-  
-  
-  attrs.SetPartitionKey(uri, true);
   ClearBrowsingSessionKey(attrs);
   return NS_OK;
 }
@@ -1364,21 +1354,14 @@ nsRFPService::CleanRandomKeyByDomain(const nsACString& aDomain) {
 
   
   OriginAttributes attrs;
-  attrs.SetPartitionKey(httpURI, false);
+  attrs.SetPartitionKey(httpURI);
 
   
   
   OriginAttributesPattern pattern;
   pattern.mPartitionKey.Reset();
   pattern.mPartitionKey.Construct(attrs.mPartitionKey);
-  ClearBrowsingSessionKey(pattern);
 
-  
-  
-  
-  attrs.SetPartitionKey(httpURI, true);
-  pattern.mPartitionKey.Reset();
-  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
   ClearBrowsingSessionKey(pattern);
 
   
@@ -1387,17 +1370,10 @@ nsRFPService::CleanRandomKeyByDomain(const nsACString& aDomain) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  attrs.SetPartitionKey(httpsURI, false);
+  attrs.SetPartitionKey(httpsURI);
   pattern.mPartitionKey.Reset();
   pattern.mPartitionKey.Construct(attrs.mPartitionKey);
-  ClearBrowsingSessionKey(pattern);
 
-  
-  
-  
-  attrs.SetPartitionKey(httpsURI, true);
-  pattern.mPartitionKey.Reset();
-  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
   ClearBrowsingSessionKey(pattern);
   return NS_OK;
 }
@@ -1419,20 +1395,12 @@ nsRFPService::CleanRandomKeyByHost(const nsACString& aHost,
 
   
   OriginAttributes attrs;
-  attrs.SetPartitionKey(httpURI, false);
+  attrs.SetPartitionKey(httpURI);
 
   
   pattern.mPartitionKey.Reset();
   pattern.mPartitionKey.Construct(attrs.mPartitionKey);
 
-  ClearBrowsingSessionKey(pattern);
-
-  
-  
-  
-  attrs.SetPartitionKey(httpURI, true);
-  pattern.mPartitionKey.Reset();
-  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
   ClearBrowsingSessionKey(pattern);
 
   
@@ -1441,17 +1409,10 @@ nsRFPService::CleanRandomKeyByHost(const nsACString& aHost,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  attrs.SetPartitionKey(httpsURI, false);
+  attrs.SetPartitionKey(httpsURI);
   pattern.mPartitionKey.Reset();
   pattern.mPartitionKey.Construct(attrs.mPartitionKey);
-  ClearBrowsingSessionKey(pattern);
 
-  
-  
-  
-  attrs.SetPartitionKey(httpsURI, true);
-  pattern.mPartitionKey.Reset();
-  pattern.mPartitionKey.Construct(attrs.mPartitionKey);
   ClearBrowsingSessionKey(pattern);
   return NS_OK;
 }
@@ -2050,7 +2011,7 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
   }
 
   
-  if (!AntiTrackingUtils::IsThirdPartyChannel(aChannel)) {
+  if (!loadInfo->GetIsThirdPartyContextToTopWindow()) {
     return GetOverriddenFingerprintingSettingsForURI(uri, nullptr);
   }
 
@@ -2093,9 +2054,8 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
     nsAutoString scheme;
     nsAutoString domain;
     int32_t unused;
-    bool unused2;
     if (!OriginAttributes::ParsePartitionKey(partitionKey, scheme, domain,
-                                             unused, unused2)) {
+                                             unused)) {
       MOZ_ASSERT(false);
       return Nothing();
     }
@@ -2136,16 +2096,12 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
   cookieJarSettings->GetPartitionKey(partitionKey);
 
   OriginAttributes attrs;
-  attrs.SetPartitionKey(topURI, false);
-
-  OriginAttributes attrsForeignByAncestor;
-  attrsForeignByAncestor.SetPartitionKey(topURI, true);
+  attrs.SetPartitionKey(topURI);
 
   
   
   MOZ_ASSERT_IF(!partitionKey.IsEmpty(),
-                attrs.mPartitionKey.Equals(partitionKey) ||
-                    attrsForeignByAncestor.mPartitionKey.Equals(partitionKey));
+                attrs.mPartitionKey.Equals(partitionKey));
 #endif
 
   return GetOverriddenFingerprintingSettingsForURI(topURI, uri);

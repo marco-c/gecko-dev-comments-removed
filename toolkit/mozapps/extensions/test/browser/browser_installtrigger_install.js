@@ -243,7 +243,6 @@ add_task(async function testInstallTriggerFromSubframe() {
 
   const testCases = [
     ["blank iframe with no attributes", SECURE_TESTROOT, {}, expected.http],
-    ["iframe srcdoc=''", SECURE_TESTROOT, { srcdoc: "" }, expected.http],
 
     
     [
@@ -257,6 +256,12 @@ add_task(async function testInstallTriggerFromSubframe() {
       fileURL,
       { src: "blob:" },
       expected.otherBlockedOnOrigin,
+    ],
+    [
+      "iframe srcdoc=''",
+      SECURE_TESTROOT,
+      { srcdoc: "" },
+      expected.httpBlockedOnOrigin,
     ],
     [
       "blank iframe embedded into a top-level sandbox page",

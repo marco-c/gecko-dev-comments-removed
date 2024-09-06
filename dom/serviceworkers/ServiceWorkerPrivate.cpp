@@ -544,11 +544,10 @@ nsresult ServiceWorkerPrivate::Initialize() {
     nsAutoString scheme;
     nsAutoString pkBaseDomain;
     int32_t unused;
-    bool unused2;
 
     if (OriginAttributes::ParsePartitionKey(
             principal->OriginAttributesRef().mPartitionKey, scheme,
-            pkBaseDomain, unused, unused2)) {
+            pkBaseDomain, unused)) {
       nsCOMPtr<nsIURI> firstPartyURI;
       rv = NS_NewURI(getter_AddRefs(firstPartyURI),
                      scheme + u"://"_ns + pkBaseDomain);
@@ -593,8 +592,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
       }
     }
   } else {
-    net::CookieJarSettings::Cast(cookieJarSettings)
-        ->SetPartitionKey(uri, false);
+    net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
 
     
     

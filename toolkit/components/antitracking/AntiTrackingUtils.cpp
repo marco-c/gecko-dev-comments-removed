@@ -825,8 +825,7 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
     
     
     
-    if (NS_IsAboutBlank(uri) || NS_IsAboutSrcdoc(uri) ||
-        uri->SchemeIs("blob")) {
+    if (NS_IsAboutBlank(uri) || NS_IsAboutSrcdoc(uri)) {
       nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
       if (NS_WARN_IF(!ssm)) {
         return;
@@ -854,34 +853,8 @@ bool AntiTrackingUtils::IsThirdPartyChannel(nsIChannel* aChannel) {
 
   
   
-  
-  
-  nsAutoCString scheme;
-  nsCOMPtr<nsIURI> channelURI;
-  nsresult rv = aChannel->GetURI(getter_AddRefs(channelURI));
-  if (NS_SUCCEEDED(rv) && channelURI->SchemeIs("blob")) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-    for (const nsCOMPtr<nsIPrincipal>& principal :
-         loadInfo->AncestorPrincipals()) {
-      bool thirdParty = true;
-      rv = loadInfo->PrincipalToInherit()->IsThirdPartyPrincipal(principal,
-                                                                 &thirdParty);
-      if (NS_SUCCEEDED(rv) && thirdParty) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  nsCOMPtr<mozIThirdPartyUtil> tpuService =
-      mozilla::components::ThirdPartyUtil::Service();
-  if (!tpuService) {
-    return true;
-  }
-  bool thirdParty = true;
-  rv = tpuService->IsThirdPartyChannel(aChannel, nullptr, &thirdParty);
-  NS_ENSURE_SUCCESS(rv, true);
-  return thirdParty;
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  return loadInfo->GetIsThirdPartyContextToTopWindow();
 }
 
 
@@ -934,17 +907,7 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
 
 bool AntiTrackingUtils::IsThirdPartyDocument(Document* aDocument) {
   MOZ_ASSERT(aDocument);
-  nsCOMPtr<mozIThirdPartyUtil> tpuService =
-      mozilla::components::ThirdPartyUtil::Service();
-  if (!tpuService) {
-    return true;
-  }
-  bool thirdParty = true;
-  if (!aDocument->GetChannel() ||
-      aDocument->GetDocumentURI()->SchemeIs("blob")) {
-    
-    
-    
+  if (!aDocument->GetChannel()) {
     
     
     
@@ -953,10 +916,10 @@ bool AntiTrackingUtils::IsThirdPartyDocument(Document* aDocument) {
     return bc ? IsThirdPartyContext(bc) : true;
   }
 
-  nsresult rv = tpuService->IsThirdPartyChannel(aDocument->GetChannel(),
-                                                nullptr, &thirdParty);
-  NS_ENSURE_SUCCESS(rv, true);
-  return thirdParty;
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aDocument->GetChannel()->LoadInfo();
+  return loadInfo->GetIsThirdPartyContextToTopWindow();
 }
 
 
@@ -964,47 +927,41 @@ bool AntiTrackingUtils::IsThirdPartyContext(BrowsingContext* aBrowsingContext) {
   MOZ_ASSERT(aBrowsingContext);
   MOZ_ASSERT(aBrowsingContext->IsInProcess());
 
+  if (aBrowsingContext->IsTopContent()) {
+    return false;
+  }
+
   
-  
+  if (!aBrowsingContext->Top()->IsInProcess()) {
+    return true;
+  }
+
   nsIDocShell* docShell = aBrowsingContext->GetDocShell();
   if (!docShell) {
     return true;
   }
   Document* doc = docShell->GetExtantDocument();
-  if (!doc || doc->GetSandboxFlags() & SANDBOXED_ORIGIN) {
+  if (!doc) {
     return true;
   }
   nsIPrincipal* principal = doc->NodePrincipal();
 
-  BrowsingContext* traversingParent = aBrowsingContext->GetParent();
-  while (traversingParent) {
-    
-    
-    if (!traversingParent->IsInProcess()) {
-      return true;
-    }
-
-    nsIDocShell* parentDocShell = traversingParent->GetDocShell();
-    if (!parentDocShell) {
-      return true;
-    }
-    Document* parentDoc = parentDocShell->GetDocument();
-    if (!parentDoc || parentDoc->GetSandboxFlags() & SANDBOXED_ORIGIN) {
-      return true;
-    }
-    nsIPrincipal* parentPrincipal = parentDoc->NodePrincipal();
-
-    auto* parentBasePrin = BasePrincipal::Cast(parentPrincipal);
-    bool isThirdParty = true;
-
-    parentBasePrin->IsThirdPartyPrincipal(principal, &isThirdParty);
-    if (isThirdParty) {
-      return true;
-    }
-
-    traversingParent = traversingParent->GetParent();
+  nsIDocShell* topDocShell = aBrowsingContext->Top()->GetDocShell();
+  if (!topDocShell) {
+    return true;
   }
-  return false;
+  Document* topDoc = topDocShell->GetDocument();
+  if (!topDoc) {
+    return true;
+  }
+  nsIPrincipal* topPrincipal = topDoc->NodePrincipal();
+
+  auto* topBasePrin = BasePrincipal::Cast(topPrincipal);
+  bool isThirdParty = true;
+
+  topBasePrin->IsThirdPartyPrincipal(principal, &isThirdParty);
+
+  return isThirdParty;
 }
 
 
@@ -1052,18 +1009,6 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
       ->MarkOverriddenFingerprintingSettingsAsSet();
 #endif
 
-  ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
-  if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
-      contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
-    nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-    Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
-    
-    
-    
-    net::CookieJarSettings::Cast(cookieJarSettings)
-        ->UpdatePartitionKeyForDocumentLoadedByChannel(aChannel);
-  }
-
   
   
   
@@ -1074,15 +1019,17 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-  if (!httpChannel || contentType != ExtContentPolicy::TYPE_DOCUMENT) {
+  if (!httpChannel || loadInfo->GetExternalContentPolicyType() !=
+                          ExtContentPolicy::TYPE_DOCUMENT) {
     return;
   }
+
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
 
   
   
   
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
   net::CookieJarSettings::Cast(cookieJarSettings)
       ->UpdateIsOnContentBlockingAllowList(aChannel);
 
@@ -1090,7 +1037,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   nsCOMPtr<nsIURI> uri;
   Unused << aChannel->GetURI(getter_AddRefs(uri));
-  net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri, false);
+  net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
 
   
   
