@@ -3,10 +3,6 @@
 
 
 
-const isInChaosMode = () => {
-  return !!parseInt(Services.env.get("MOZ_CHAOSMODE"), 16);
-};
-
 
 const getDataBlockSize = () => {
   if (mozinfo.os == "android") {
