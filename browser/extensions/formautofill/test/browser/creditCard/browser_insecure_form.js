@@ -76,7 +76,7 @@ add_task(async function test_insecure_form() {
       urlPath: TEST_URL_PATH_CC,
       protocol: "http",
       focusInput: "#cc-name",
-      expectedType: "autofill-insecureWarning", 
+      expectedType: "insecureWarning", 
       expectedResultLength: 1,
     },
   ];
