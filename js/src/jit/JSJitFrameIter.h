@@ -519,6 +519,12 @@ class SnapshotIterator {
     return val.toBigInt();
   }
 
+  JSObject* readObject() {
+    Value val = read();
+    MOZ_RELEASE_ASSERT(val.isObject());
+    return &val.toObject();
+  }
+
   
   
   
