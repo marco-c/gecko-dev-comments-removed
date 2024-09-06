@@ -63,8 +63,6 @@ const enginesSettings = {
 };
 
 add_setup(async function () {
-  await AddonTestUtils.promiseStartupManager();
-
   
   Services.prefs.setBoolPref(
     "toolkit.telemetry.testing.overrideProductsCheck",

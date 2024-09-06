@@ -1,12 +1,12 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
 ChromeUtils.defineESModuleGetters(this, {
+  AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
+  ExtensionTestUtils:
+    "resource://testing-common/ExtensionXPCShellUtils.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
+  HttpServer: "resource://testing-common/httpd.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   RemoteSettingsClient:
@@ -18,39 +18,26 @@ ChromeUtils.defineESModuleGetters(this, {
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  updateAppInfo: "resource://testing-common/AppInfo.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
-var { HttpServer } = ChromeUtils.importESModule(
-  "resource://testing-common/httpd.sys.mjs"
-);
-var { AddonTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/AddonTestUtils.sys.mjs"
-);
-const { ExtensionTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/ExtensionXPCShellUtils.sys.mjs"
-);
+
+
+
+updateAppInfo({ name: "XPCShell", version: "48", platformVersion: "48" });
+
+
+do_get_profile();
 
 SearchTestUtils.init(this);
 
 const SETTINGS_FILENAME = "search.json.mozlz4";
 
 
-
-var XULRuntime = Cc["@mozilla.org/xre/runtime;1"].getService(Ci.nsIXULRuntime);
-
-
 Services.prefs.setBoolPref("browser.search.log", true);
 Services.prefs.setBoolPref("browser.region.log", true);
-
-AddonTestUtils.init(this, false);
-AddonTestUtils.createAppInfo(
-  "xpcshell@tests.mozilla.org",
-  "XPCShell",
-  "42",
-  "42"
-);
 
 
 Services.prefs.setBoolPref(

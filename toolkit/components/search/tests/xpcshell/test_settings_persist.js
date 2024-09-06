@@ -40,7 +40,6 @@ const SEARCH_CONFIG_V2_UPDATED = [
 async function startup() {
   let settingsFileWritten = promiseAfterSettings();
   let ss = new SearchService();
-  await AddonTestUtils.promiseRestartManager();
   await ss.init(false);
   await settingsFileWritten;
   return ss;
@@ -61,8 +60,6 @@ async function visibleEngines(ss) {
 
 add_setup(async function () {
   await SearchTestUtils.useTestEngines("test-extensions");
-  registerCleanupFunction(AddonTestUtils.promiseShutdownManager);
-  await AddonTestUtils.promiseStartupManager();
   
   
   let settingsFileWritten = promiseAfterSettings();

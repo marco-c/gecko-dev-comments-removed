@@ -8,8 +8,17 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
+  AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
   ExtensionTestCommon: "resource://testing-common/ExtensionTestCommon.sys.mjs",
 });
+
+AddonTestUtils.init(this, false);
+AddonTestUtils.createAppInfo(
+  "xpcshell@tests.mozilla.org",
+  "XPCShell",
+  "42",
+  "42"
+);
 
 
 
@@ -85,6 +94,8 @@ const REMOTE_SETTINGS_RESULTS = [
 ];
 
 add_setup(async function init() {
+  await AddonTestUtils.promiseStartupManager();
+
   
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
 

@@ -59,7 +59,6 @@ add_setup(async function () {
   policies.observe(null, "policies-startup", null);
 
   await SearchTestUtils.useTestEngines("data1");
-  await AddonTestUtils.promiseStartupManager();
   await EnterprisePolicyTesting.setupPolicyEngineWithJson(enterprisePolicy);
   
   

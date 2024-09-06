@@ -17,8 +17,6 @@ var settingsTemplate;
 
 
 add_setup(async function () {
-  await AddonTestUtils.promiseStartupManager();
-
   await setupRemoteSettings();
 
   settingsTemplate = await readJSONFile(

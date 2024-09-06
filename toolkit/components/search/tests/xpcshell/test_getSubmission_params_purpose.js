@@ -12,8 +12,6 @@ add_setup(async function () {
   
   
   await SearchTestUtils.useTestEngines();
-
-  await AddonTestUtils.promiseStartupManager();
   await Services.search.init();
 });
 

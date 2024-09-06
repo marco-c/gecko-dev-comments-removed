@@ -7,7 +7,7 @@
 
 add_setup(async function () {
   useHttpServer("opensearch");
-  await AddonTestUtils.promiseStartupManager();
+
   await Services.search.init();
 
   
