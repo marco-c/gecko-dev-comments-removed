@@ -80,7 +80,9 @@ impl Instance {
     }
 }
 
-impl crate::Instance<Api> for Instance {
+impl crate::Instance for Instance {
+    type A = Api;
+
     unsafe fn init(_desc: &crate::InstanceDescriptor) -> Result<Self, crate::InstanceError> {
         profiling::scope!("Init Metal Backend");
         
@@ -365,7 +367,9 @@ impl std::borrow::Borrow<Texture> for SurfaceTexture {
 unsafe impl Send for SurfaceTexture {}
 unsafe impl Sync for SurfaceTexture {}
 
-impl crate::Queue<Api> for Queue {
+impl crate::Queue for Queue {
+    type A = Api;
+
     unsafe fn submit(
         &self,
         command_buffers: &[&CommandBuffer],
