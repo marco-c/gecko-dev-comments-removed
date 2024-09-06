@@ -302,6 +302,20 @@ class SharedTranslationsTestUtils {
 
 
 
+  static _assertL10nId(element, l10nId) {
+    is(
+      element.getAttribute("data-l10n-id"),
+      l10nId,
+      `The element ${element.id} should have L10n Id ${l10nId}.`
+    );
+  }
+
+  
+
+
+
+
+
   static _assertPanelMainViewId(panel, expectedId) {
     const mainViewId = panel.elements.multiview.getAttribute("mainViewId");
     is(
@@ -685,11 +699,7 @@ class FullPageTranslationsTestUtils {
    */
   static #assertPanelHeaderL10nId(l10nId) {
     const { header } = FullPageTranslationsPanel.elements;
-    is(
-      header.getAttribute("data-l10n-id"),
-      l10nId,
-      "The translations panel header should match the expected data-l10n-id"
-    );
+    SharedTranslationsTestUtils._assertL10nId(header, l10nId);
   }
 
   /**
@@ -699,11 +709,7 @@ class FullPageTranslationsTestUtils {
    */
   static #assertPanelErrorL10nId(l10nId) {
     const { errorMessage } = FullPageTranslationsPanel.elements;
-    is(
-      errorMessage.getAttribute("data-l10n-id"),
-      l10nId,
-      "The translations panel error message should match the expected data-l10n-id"
-    );
+    SharedTranslationsTestUtils._assertL10nId(errorMessage, l10nId);
   }
 
   /**
