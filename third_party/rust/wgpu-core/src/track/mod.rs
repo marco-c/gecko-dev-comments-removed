@@ -102,11 +102,11 @@ mod stateless;
 mod texture;
 
 use crate::{
-    binding_model, command, conv,
+    binding_model, command,
     hal_api::HalApi,
     lock::{rank, Mutex, RwLock},
     pipeline,
-    resource::{self, Resource, ResourceErrorIdent},
+    resource::{self, Labeled, ResourceErrorIdent},
     snatch::SnatchGuard,
 };
 
@@ -126,14 +126,11 @@ use wgt::strict_assert_ne;
 pub(crate) struct TrackerIndex(u32);
 
 impl TrackerIndex {
-    
-    pub const INVALID: Self = TrackerIndex(u32::MAX);
-
     pub fn as_usize(self) -> usize {
-        debug_assert!(self != Self::INVALID);
         self.0 as usize
     }
 }
+
 
 
 
@@ -327,7 +324,7 @@ pub(crate) trait ResourceUses:
 fn invalid_resource_state<T: ResourceUses>(state: T) -> bool {
     
     
-    state.any_exclusive() && !conv::is_power_of_two_u16(state.bits())
+    state.any_exclusive() && !state.bits().is_power_of_two()
 }
 
 
@@ -386,12 +383,6 @@ impl ResourceUsageCompatibilityError {
                 new_state,
             },
         }
-    }
-}
-
-impl crate::error::PrettyError for ResourceUsageCompatibilityError {
-    fn fmt_pretty(&self, fmt: &mut crate::error::ErrorFormatter) {
-        fmt.error(self);
     }
 }
 

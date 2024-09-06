@@ -287,6 +287,35 @@ impl Wrapped {
     }
 }
 
+
+
+
+
+
+
+
+
+pub struct FragmentEntryPoint<'a> {
+    module: &'a crate::Module,
+    func: &'a crate::Function,
+}
+
+impl<'a> FragmentEntryPoint<'a> {
+    
+    
+    pub fn new(module: &'a crate::Module, ep_name: &'a str) -> Option<Self> {
+        module
+            .entry_points
+            .iter()
+            .find(|ep| ep.name == ep_name)
+            .filter(|ep| ep.stage == crate::ShaderStage::Fragment)
+            .map(|ep| Self {
+                module,
+                func: &ep.function,
+            })
+    }
+}
+
 pub struct Writer<'a, W> {
     out: W,
     names: crate::FastHashMap<proc::NameKey, String>,

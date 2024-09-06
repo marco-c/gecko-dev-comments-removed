@@ -5,7 +5,7 @@ use crate::{
     device::{Device, DeviceError, MissingDownlevelFlags, MissingFeatures, RenderPassContext},
     hal_api::HalApi,
     id::{PipelineCacheId, PipelineLayoutId, ShaderModuleId},
-    resource::{ParentDevice, Resource, ResourceInfo, ResourceType},
+    resource::{Labeled, TrackingData},
     resource_log, validation, Label,
 };
 use arrayvec::ArrayVec;
@@ -50,7 +50,8 @@ pub struct ShaderModule<A: HalApi> {
     pub(crate) raw: Option<A::ShaderModule>,
     pub(crate) device: Arc<Device<A>>,
     pub(crate) interface: Option<validation::Interface>,
-    pub(crate) info: ResourceInfo<ShaderModule<A>>,
+    
+    pub(crate) label: String,
 }
 
 impl<A: HalApi> Drop for ShaderModule<A> {
@@ -65,25 +66,10 @@ impl<A: HalApi> Drop for ShaderModule<A> {
     }
 }
 
-impl<A: HalApi> Resource for ShaderModule<A> {
-    const TYPE: ResourceType = "ShaderModule";
-
-    type Marker = crate::id::markers::ShaderModule;
-
-    fn as_info(&self) -> &ResourceInfo<Self> {
-        &self.info
-    }
-
-    fn as_info_mut(&mut self) -> &mut ResourceInfo<Self> {
-        &mut self.info
-    }
-}
-
-impl<A: HalApi> ParentDevice<A> for ShaderModule<A> {
-    fn device(&self) -> &Arc<Device<A>> {
-        &self.device
-    }
-}
+crate::impl_resource_type!(ShaderModule);
+crate::impl_labeled!(ShaderModule);
+crate::impl_parent_device!(ShaderModule);
+crate::impl_storage_item!(ShaderModule);
 
 impl<A: HalApi> ShaderModule<A> {
     pub(crate) fn raw(&self) -> &A::ShaderModule {
@@ -166,6 +152,35 @@ pub struct ProgrammableStageDescriptor<'a> {
 }
 
 
+#[derive(Clone, Debug)]
+pub struct ResolvedProgrammableStageDescriptor<'a, A: HalApi> {
+    
+    pub module: Arc<ShaderModule<A>>,
+    
+    
+    
+    
+    
+    
+    pub entry_point: Option<Cow<'a, str>>,
+    
+    
+    
+    
+    
+    
+    
+    pub constants: Cow<'a, naga::back::PipelineConstants>,
+    
+    
+    
+    
+    pub zero_initialize_workgroup_memory: bool,
+    
+    pub vertex_pulling_transform: bool,
+}
+
+
 pub type ImplicitBindGroupCount = u8;
 
 #[derive(Clone, Debug, Error)]
@@ -194,6 +209,18 @@ pub struct ComputePipelineDescriptor<'a> {
     pub cache: Option<PipelineCacheId>,
 }
 
+
+#[derive(Clone, Debug)]
+pub struct ResolvedComputePipelineDescriptor<'a, A: HalApi> {
+    pub label: Label<'a>,
+    
+    pub layout: Option<Arc<PipelineLayout<A>>>,
+    
+    pub stage: ResolvedProgrammableStageDescriptor<'a, A>,
+    
+    pub cache: Option<Arc<PipelineCache<A>>>,
+}
+
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
 pub enum CreateComputePipelineError {
@@ -201,6 +228,8 @@ pub enum CreateComputePipelineError {
     Device(#[from] DeviceError),
     #[error("Pipeline layout is invalid")]
     InvalidLayout,
+    #[error("Cache is invalid")]
+    InvalidCache,
     #[error("Unable to derive an implicit layout")]
     Implicit(#[from] ImplicitLayoutError),
     #[error("Error matching shader requirements against the pipeline")]
@@ -218,7 +247,9 @@ pub struct ComputePipeline<A: HalApi> {
     pub(crate) device: Arc<Device<A>>,
     pub(crate) _shader_module: Arc<ShaderModule<A>>,
     pub(crate) late_sized_buffer_groups: ArrayVec<LateSizedBufferGroup, { hal::MAX_BIND_GROUPS }>,
-    pub(crate) info: ResourceInfo<ComputePipeline<A>>,
+    
+    pub(crate) label: String,
+    pub(crate) tracking_data: TrackingData,
 }
 
 impl<A: HalApi> Drop for ComputePipeline<A> {
@@ -233,25 +264,11 @@ impl<A: HalApi> Drop for ComputePipeline<A> {
     }
 }
 
-impl<A: HalApi> Resource for ComputePipeline<A> {
-    const TYPE: ResourceType = "ComputePipeline";
-
-    type Marker = crate::id::markers::ComputePipeline;
-
-    fn as_info(&self) -> &ResourceInfo<Self> {
-        &self.info
-    }
-
-    fn as_info_mut(&mut self) -> &mut ResourceInfo<Self> {
-        &mut self.info
-    }
-}
-
-impl<A: HalApi> ParentDevice<A> for ComputePipeline<A> {
-    fn device(&self) -> &Arc<Device<A>> {
-        &self.device
-    }
-}
+crate::impl_resource_type!(ComputePipeline);
+crate::impl_labeled!(ComputePipeline);
+crate::impl_parent_device!(ComputePipeline);
+crate::impl_storage_item!(ComputePipeline);
+crate::impl_trackable!(ComputePipeline);
 
 impl<A: HalApi> ComputePipeline<A> {
     pub(crate) fn raw(&self) -> &A::ComputePipeline {
@@ -286,7 +303,9 @@ impl From<hal::PipelineCacheError> for CreatePipelineCacheError {
 pub struct PipelineCache<A: HalApi> {
     pub(crate) raw: Option<A::PipelineCache>,
     pub(crate) device: Arc<Device<A>>,
-    pub(crate) info: ResourceInfo<PipelineCache<A>>,
+    
+    pub(crate) label: String,
+    pub(crate) tracking_data: TrackingData,
 }
 
 impl<A: HalApi> Drop for PipelineCache<A> {
@@ -301,25 +320,11 @@ impl<A: HalApi> Drop for PipelineCache<A> {
     }
 }
 
-impl<A: HalApi> Resource for PipelineCache<A> {
-    const TYPE: ResourceType = "PipelineCache";
-
-    type Marker = crate::id::markers::PipelineCache;
-
-    fn as_info(&self) -> &ResourceInfo<Self> {
-        &self.info
-    }
-
-    fn as_info_mut(&mut self) -> &mut ResourceInfo<Self> {
-        &mut self.info
-    }
-}
-
-impl<A: HalApi> ParentDevice<A> for PipelineCache<A> {
-    fn device(&self) -> &Arc<Device<A>> {
-        &self.device
-    }
-}
+crate::impl_resource_type!(PipelineCache);
+crate::impl_labeled!(PipelineCache);
+crate::impl_parent_device!(PipelineCache);
+crate::impl_storage_item!(PipelineCache);
+crate::impl_trackable!(PipelineCache);
 
 
 #[derive(Clone, Debug)]
@@ -346,10 +351,28 @@ pub struct VertexState<'a> {
 
 
 #[derive(Clone, Debug)]
+pub struct ResolvedVertexState<'a, A: HalApi> {
+    
+    pub stage: ResolvedProgrammableStageDescriptor<'a, A>,
+    
+    pub buffers: Cow<'a, [VertexBufferLayout<'a>]>,
+}
+
+
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FragmentState<'a> {
     
     pub stage: ProgrammableStageDescriptor<'a>,
+    
+    pub targets: Cow<'a, [Option<wgt::ColorTargetState>]>,
+}
+
+
+#[derive(Clone, Debug)]
+pub struct ResolvedFragmentState<'a, A: HalApi> {
+    
+    pub stage: ResolvedProgrammableStageDescriptor<'a, A>,
     
     pub targets: Cow<'a, [Option<wgt::ColorTargetState>]>,
 }
@@ -379,6 +402,29 @@ pub struct RenderPipelineDescriptor<'a> {
     pub multiview: Option<NonZeroU32>,
     
     pub cache: Option<PipelineCacheId>,
+}
+
+
+#[derive(Clone, Debug)]
+pub struct ResolvedRenderPipelineDescriptor<'a, A: HalApi> {
+    pub label: Label<'a>,
+    
+    pub layout: Option<Arc<PipelineLayout<A>>>,
+    
+    pub vertex: ResolvedVertexState<'a, A>,
+    
+    pub primitive: wgt::PrimitiveState,
+    
+    pub depth_stencil: Option<wgt::DepthStencilState>,
+    
+    pub multisample: wgt::MultisampleState,
+    
+    pub fragment: Option<ResolvedFragmentState<'a, A>>,
+    
+    
+    pub multiview: Option<NonZeroU32>,
+    
+    pub cache: Option<Arc<PipelineCache<A>>>,
 }
 
 #[derive(Clone, Debug)]
@@ -433,6 +479,8 @@ pub enum CreateRenderPipelineError {
     Device(#[from] DeviceError),
     #[error("Pipeline layout is invalid")]
     InvalidLayout,
+    #[error("Pipeline cache is invalid")]
+    InvalidCache,
     #[error("Unable to derive an implicit layout")]
     Implicit(#[from] ImplicitLayoutError),
     #[error("Color state [{0}] is invalid")]
@@ -545,7 +593,9 @@ pub struct RenderPipeline<A: HalApi> {
     pub(crate) strip_index_format: Option<wgt::IndexFormat>,
     pub(crate) vertex_steps: Vec<VertexStep>,
     pub(crate) late_sized_buffer_groups: ArrayVec<LateSizedBufferGroup, { hal::MAX_BIND_GROUPS }>,
-    pub(crate) info: ResourceInfo<RenderPipeline<A>>,
+    
+    pub(crate) label: String,
+    pub(crate) tracking_data: TrackingData,
 }
 
 impl<A: HalApi> Drop for RenderPipeline<A> {
@@ -560,25 +610,11 @@ impl<A: HalApi> Drop for RenderPipeline<A> {
     }
 }
 
-impl<A: HalApi> Resource for RenderPipeline<A> {
-    const TYPE: ResourceType = "RenderPipeline";
-
-    type Marker = crate::id::markers::RenderPipeline;
-
-    fn as_info(&self) -> &ResourceInfo<Self> {
-        &self.info
-    }
-
-    fn as_info_mut(&mut self) -> &mut ResourceInfo<Self> {
-        &mut self.info
-    }
-}
-
-impl<A: HalApi> ParentDevice<A> for RenderPipeline<A> {
-    fn device(&self) -> &Arc<Device<A>> {
-        &self.device
-    }
-}
+crate::impl_resource_type!(RenderPipeline);
+crate::impl_labeled!(RenderPipeline);
+crate::impl_parent_device!(RenderPipeline);
+crate::impl_storage_item!(RenderPipeline);
+crate::impl_trackable!(RenderPipeline);
 
 impl<A: HalApi> RenderPipeline<A> {
     pub(crate) fn raw(&self) -> &A::RenderPipeline {

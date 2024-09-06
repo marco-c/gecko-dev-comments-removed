@@ -802,14 +802,6 @@ bitflags::bitflags! {
         ///
         /// This is a native only feature.
         const VERTEX_ATTRIBUTE_64BIT = 1 << 45;
-        /// Allows vertex shaders to have outputs which are not consumed
-        /// by the fragment shader.
-        ///
-        /// Supported platforms:
-        /// - Vulkan
-        /// - Metal
-        /// - OpenGL
-        const SHADER_UNUSED_VERTEX_OUTPUT = 1 << 46;
         /// Allows for creation of textures of format [`TextureFormat::NV12`]
         ///
         /// Supported platforms:
@@ -1780,8 +1772,40 @@ pub struct AdapterInfo {
 
 
 
+#[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum MemoryHints {
+    
+    #[default]
+    Performance,
+    
+    MemoryUsage,
+    
+    
+    
+    Manual {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        suballocated_device_memory_block_size: Range<u64>,
+    },
+}
 
-#[repr(C)]
+
+
+
+
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DeviceDescriptor<L> {
@@ -1799,6 +1823,8 @@ pub struct DeviceDescriptor<L> {
     
     
     pub required_limits: Limits,
+    
+    pub memory_hints: MemoryHints,
 }
 
 impl<L> DeviceDescriptor<L> {
@@ -1808,6 +1834,7 @@ impl<L> DeviceDescriptor<L> {
             label: fun(&self.label),
             required_features: self.required_features,
             required_limits: self.required_limits.clone(),
+            memory_hints: self.memory_hints.clone(),
         }
     }
 }
@@ -3628,27 +3655,35 @@ impl TextureFormat {
     
     pub fn target_pixel_byte_cost(&self) -> Option<u32> {
         match *self {
-            Self::R8Unorm | Self::R8Uint | Self::R8Sint => Some(1),
+            Self::R8Unorm | Self::R8Snorm | Self::R8Uint | Self::R8Sint => Some(1),
             Self::Rg8Unorm
+            | Self::Rg8Snorm
             | Self::Rg8Uint
             | Self::Rg8Sint
             | Self::R16Uint
             | Self::R16Sint
+            | Self::R16Unorm
+            | Self::R16Snorm
             | Self::R16Float => Some(2),
             Self::Rgba8Uint
             | Self::Rgba8Sint
             | Self::Rg16Uint
             | Self::Rg16Sint
+            | Self::Rg16Unorm
+            | Self::Rg16Snorm
             | Self::Rg16Float
             | Self::R32Uint
             | Self::R32Sint
             | Self::R32Float => Some(4),
             Self::Rgba8Unorm
             | Self::Rgba8UnormSrgb
+            | Self::Rgba8Snorm
             | Self::Bgra8Unorm
             | Self::Bgra8UnormSrgb
             | Self::Rgba16Uint
             | Self::Rgba16Sint
+            | Self::Rgba16Unorm
+            | Self::Rgba16Snorm
             | Self::Rgba16Float
             | Self::Rg32Uint
             | Self::Rg32Sint
@@ -3657,14 +3692,45 @@ impl TextureFormat {
             | Self::Rgb10a2Unorm
             | Self::Rg11b10Float => Some(8),
             Self::Rgba32Uint | Self::Rgba32Sint | Self::Rgba32Float => Some(16),
-            Self::Rgba8Snorm | Self::Rg8Snorm | Self::R8Snorm => None,
-            _ => None,
+            Self::Stencil8
+            | Self::Depth16Unorm
+            | Self::Depth24Plus
+            | Self::Depth24PlusStencil8
+            | Self::Depth32Float
+            | Self::Depth32FloatStencil8
+            | Self::NV12
+            | Self::Rgb9e5Ufloat
+            | Self::Bc1RgbaUnorm
+            | Self::Bc1RgbaUnormSrgb
+            | Self::Bc2RgbaUnorm
+            | Self::Bc2RgbaUnormSrgb
+            | Self::Bc3RgbaUnorm
+            | Self::Bc3RgbaUnormSrgb
+            | Self::Bc4RUnorm
+            | Self::Bc4RSnorm
+            | Self::Bc5RgUnorm
+            | Self::Bc5RgSnorm
+            | Self::Bc6hRgbUfloat
+            | Self::Bc6hRgbFloat
+            | Self::Bc7RgbaUnorm
+            | Self::Bc7RgbaUnormSrgb
+            | Self::Etc2Rgb8Unorm
+            | Self::Etc2Rgb8UnormSrgb
+            | Self::Etc2Rgb8A1Unorm
+            | Self::Etc2Rgb8A1UnormSrgb
+            | Self::Etc2Rgba8Unorm
+            | Self::Etc2Rgba8UnormSrgb
+            | Self::EacR11Unorm
+            | Self::EacR11Snorm
+            | Self::EacRg11Unorm
+            | Self::EacRg11Snorm
+            | Self::Astc { .. } => None,
         }
     }
 
     
     pub fn target_component_alignment(&self) -> Option<u32> {
-        match self {
+        match *self {
             Self::R8Unorm
             | Self::R8Snorm
             | Self::R8Uint
@@ -3682,12 +3748,18 @@ impl TextureFormat {
             | Self::Bgra8UnormSrgb => Some(1),
             Self::R16Uint
             | Self::R16Sint
+            | Self::R16Unorm
+            | Self::R16Snorm
             | Self::R16Float
             | Self::Rg16Uint
             | Self::Rg16Sint
+            | Self::Rg16Unorm
+            | Self::Rg16Snorm
             | Self::Rg16Float
             | Self::Rgba16Uint
             | Self::Rgba16Sint
+            | Self::Rgba16Unorm
+            | Self::Rgba16Snorm
             | Self::Rgba16Float => Some(2),
             Self::R32Uint
             | Self::R32Sint
@@ -3701,7 +3773,39 @@ impl TextureFormat {
             | Self::Rgb10a2Uint
             | Self::Rgb10a2Unorm
             | Self::Rg11b10Float => Some(4),
-            _ => None,
+            Self::Stencil8
+            | Self::Depth16Unorm
+            | Self::Depth24Plus
+            | Self::Depth24PlusStencil8
+            | Self::Depth32Float
+            | Self::Depth32FloatStencil8
+            | Self::NV12
+            | Self::Rgb9e5Ufloat
+            | Self::Bc1RgbaUnorm
+            | Self::Bc1RgbaUnormSrgb
+            | Self::Bc2RgbaUnorm
+            | Self::Bc2RgbaUnormSrgb
+            | Self::Bc3RgbaUnorm
+            | Self::Bc3RgbaUnormSrgb
+            | Self::Bc4RUnorm
+            | Self::Bc4RSnorm
+            | Self::Bc5RgUnorm
+            | Self::Bc5RgSnorm
+            | Self::Bc6hRgbUfloat
+            | Self::Bc6hRgbFloat
+            | Self::Bc7RgbaUnorm
+            | Self::Bc7RgbaUnormSrgb
+            | Self::Etc2Rgb8Unorm
+            | Self::Etc2Rgb8UnormSrgb
+            | Self::Etc2Rgb8A1Unorm
+            | Self::Etc2Rgb8A1UnormSrgb
+            | Self::Etc2Rgba8Unorm
+            | Self::Etc2Rgba8UnormSrgb
+            | Self::EacR11Unorm
+            | Self::EacR11Snorm
+            | Self::EacRg11Unorm
+            | Self::EacRg11Snorm
+            | Self::Astc { .. } => None,
         }
     }
 

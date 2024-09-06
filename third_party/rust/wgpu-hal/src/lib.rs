@@ -447,7 +447,11 @@ pub trait Instance: Sized + WasmNotSendSync {
         window_handle: raw_window_handle::RawWindowHandle,
     ) -> Result<<Self::A as Api>::Surface, InstanceError>;
     unsafe fn destroy_surface(&self, surface: <Self::A as Api>::Surface);
-    unsafe fn enumerate_adapters(&self) -> Vec<ExposedAdapter<Self::A>>;
+    
+    unsafe fn enumerate_adapters(
+        &self,
+        surface_hint: Option<&<Self::A as Api>::Surface>,
+    ) -> Vec<ExposedAdapter<Self::A>>;
 }
 
 pub trait Surface: WasmNotSendSync {
@@ -558,6 +562,7 @@ pub trait Adapter: WasmNotSendSync {
         &self,
         features: wgt::Features,
         limits: &wgt::Limits,
+        memory_hints: &wgt::MemoryHints,
     ) -> Result<OpenDevice<Self::A>, DeviceError>;
 
     

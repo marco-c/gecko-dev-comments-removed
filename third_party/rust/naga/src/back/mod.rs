@@ -3,25 +3,20 @@
 
 #![allow(dead_code)] 
 
-#[cfg(feature = "dot-out")]
+#[cfg(dot_out)]
 pub mod dot;
-#[cfg(feature = "glsl-out")]
+#[cfg(glsl_out)]
 pub mod glsl;
-#[cfg(feature = "hlsl-out")]
+#[cfg(hlsl_out)]
 pub mod hlsl;
-#[cfg(feature = "msl-out")]
+#[cfg(msl_out)]
 pub mod msl;
-#[cfg(feature = "spv-out")]
+#[cfg(spv_out)]
 pub mod spv;
-#[cfg(feature = "wgsl-out")]
+#[cfg(wgsl_out)]
 pub mod wgsl;
 
-#[cfg(any(
-    feature = "hlsl-out",
-    feature = "msl-out",
-    feature = "spv-out",
-    feature = "glsl-out"
-))]
+#[cfg(any(hlsl_out, msl_out, spv_out, glsl_out))]
 pub mod pipeline_constants;
 
 

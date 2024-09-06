@@ -46,13 +46,31 @@ mod placed {
 
     pub(crate) fn create_allocator_wrapper(
         raw: &d3d12::Device,
+        memory_hints: &wgt::MemoryHints,
     ) -> Result<Option<Mutex<GpuAllocatorWrapper>>, crate::DeviceError> {
         let device = raw.as_ptr();
+
+        
+        
+        let mb = 1024 * 1024;
+        let allocation_sizes = match memory_hints {
+            wgt::MemoryHints::Performance => gpu_allocator::AllocationSizes::default(),
+            wgt::MemoryHints::MemoryUsage => gpu_allocator::AllocationSizes::new(8 * mb, 4 * mb),
+            wgt::MemoryHints::Manual {
+                suballocated_device_memory_block_size,
+            } => {
+                
+                
+                let device_size = suballocated_device_memory_block_size.start;
+                let host_size = device_size / 2;
+                gpu_allocator::AllocationSizes::new(device_size, host_size)
+            }
+        };
 
         match gpu_allocator::d3d12::Allocator::new(&gpu_allocator::d3d12::AllocatorCreateDesc {
             device: gpu_allocator::d3d12::ID3D12DeviceVersion::Device(device.as_windows().clone()),
             debug_settings: Default::default(),
-            allocation_sizes: gpu_allocator::AllocationSizes::default(),
+            allocation_sizes,
         }) {
             Ok(allocator) => Ok(Some(Mutex::new(GpuAllocatorWrapper { allocator }))),
             Err(e) => {
@@ -279,6 +297,7 @@ mod committed {
     #[allow(unused)]
     pub(crate) fn create_allocator_wrapper(
         _raw: &d3d12::Device,
+        _memory_hints: &wgt::MemoryHints,
     ) -> Result<Option<Mutex<GpuAllocatorWrapper>>, crate::DeviceError> {
         Ok(None)
     }

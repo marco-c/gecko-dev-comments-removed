@@ -295,7 +295,10 @@ pub enum VertexFormat {
     
     Sint32x4 = 29,
     
-    #[cfg_attr(feature = "serde", serde(rename = "unorm10-10-10-2"))]
+    #[cfg_attr(
+        any(feature = "serialize", feature = "deserialize"),
+        serde(rename = "unorm10-10-10-2")
+    )]
     Unorm10_10_10_2 = 34,
 }
 

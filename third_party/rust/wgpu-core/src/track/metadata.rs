@@ -1,8 +1,7 @@
 
 
-use crate::resource::Resource;
 use bit_vec::BitVec;
-use std::{borrow::Cow, mem, sync::Arc};
+use std::{mem, sync::Arc};
 use wgt::strict_assert;
 
 
@@ -13,7 +12,7 @@ use wgt::strict_assert;
 
 
 #[derive(Debug)]
-pub(super) struct ResourceMetadata<T: Resource> {
+pub(super) struct ResourceMetadata<T> {
     
     owned: BitVec<usize>,
 
@@ -21,7 +20,7 @@ pub(super) struct ResourceMetadata<T: Resource> {
     resources: Vec<Option<Arc<T>>>,
 }
 
-impl<T: Resource> ResourceMetadata<T> {
+impl<T> ResourceMetadata<T> {
     pub(super) fn new() -> Self {
         Self {
             owned: BitVec::default(),
@@ -175,13 +174,13 @@ impl<T: Resource> ResourceMetadata<T> {
 
 
 
-pub(super) enum ResourceMetadataProvider<'a, T: Resource> {
+pub(super) enum ResourceMetadataProvider<'a, T> {
     
-    Direct { resource: Cow<'a, Arc<T>> },
+    Direct { resource: &'a Arc<T> },
     
     Indirect { metadata: &'a ResourceMetadata<T> },
 }
-impl<T: Resource> ResourceMetadataProvider<'_, T> {
+impl<T> ResourceMetadataProvider<'_, T> {
     
     
     

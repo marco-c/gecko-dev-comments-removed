@@ -5,7 +5,6 @@
 
 
 
-
 use super::{ExpressionError, FunctionError, ModuleInfo, ShaderStages, ValidationFlags};
 use crate::span::{AddSpan as _, WithSpan};
 use crate::{

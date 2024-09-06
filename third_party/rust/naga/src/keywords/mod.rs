@@ -2,5 +2,5 @@
 
 
 
-#[cfg(any(feature = "wgsl-in", feature = "wgsl-out"))]
+#[cfg(any(feature = "wgsl-in", wgsl_out))]
 pub mod wgsl;

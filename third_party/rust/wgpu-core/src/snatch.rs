@@ -33,12 +33,12 @@ impl<T> Snatchable<T> {
     }
 
     
-    pub fn get(&self, _guard: &SnatchGuard) -> Option<&T> {
+    pub fn get<'a>(&'a self, _guard: &'a SnatchGuard) -> Option<&'a T> {
         unsafe { (*self.value.get()).as_ref() }
     }
 
     
-    pub fn get_mut(&self, _guard: &mut ExclusiveSnatchGuard) -> Option<&mut T> {
+    pub fn get_mut<'a>(&'a self, _guard: &'a mut ExclusiveSnatchGuard) -> Option<&'a mut T> {
         unsafe { (*self.value.get()).as_mut() }
     }
 
