@@ -57,6 +57,17 @@ void nsFileControlFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   mMouseListener = new DnDListener(this);
 }
 
+void nsFileControlFrame::Reflow(nsPresContext* aPresContext,
+                                ReflowOutput& aReflowOutput,
+                                const ReflowInput& aReflowInput,
+                                nsReflowStatus& aStatus) {
+  nsBlockFrame::Reflow(aPresContext, aReflowOutput, aReflowInput, aStatus);
+
+  
+  
+  aStatus.Reset();
+}
+
 void nsFileControlFrame::Destroy(DestroyContext& aContext) {
   NS_ENSURE_TRUE_VOID(mContent);
 
