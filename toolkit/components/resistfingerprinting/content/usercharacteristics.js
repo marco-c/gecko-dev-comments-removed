@@ -60,18 +60,30 @@ async function stringifyError(error) {
   return errStr;
 }
 
-function sample(list, count) {
-  const range = list.length - 1;
+function sample(array, count) {
+  const range = array.length - 1;
   if (range <= count) {
-    return list;
+    return array;
   }
 
   const samples = [];
   const step = Math.floor(range / count);
   for (let i = 0; i < range; i += step) {
-    samples.push(list[i]);
+    samples.push(array[i]);
   }
   return samples;
+}
+
+function mean(array) {
+  if (array.length === 0) {
+    return 0;
+  }
+  return array.reduce((a, b) => a + b) / array.length;
+}
+
+function standardDeviation(array) {
+  const m = mean(array);
+  return Math.sqrt(mean(array.map(x => Math.pow(x - m, 2))));
 }
 
 
@@ -921,6 +933,106 @@ function populatePointerInfo() {
   };
 }
 
+async function populateICEFoundations() {
+  function getFoundationsAndLatencies() {
+    const { promise, resolve, reject } = Promise.withResolvers();
+
+    
+    
+    
+    const result = {
+      hostLatencies: [],
+      hostFoundations: [],
+      srflxLatencies: [],
+      srflxFoundations: [],
+    };
+
+    let lastTime;
+    function calculateLatency() {
+      const now = window.performance.now();
+      const latency = window.performance.now() - lastTime;
+      lastTime = now;
+      return latency;
+    }
+
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: ["stun:stun.l.google.com:19302"] }],
+    });
+    pc.onicecandidate = e => {
+      const latency = calculateLatency();
+      if (e.candidate && e.candidate.candidate !== "") {
+        result[e.candidate.type + "Latencies"].push(latency);
+        result[e.candidate.type + "Foundations"].push(e.candidate.foundation);
+      }
+    };
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState !== "complete") {
+        return;
+      }
+      pc.close();
+      resolve(result);
+    };
+
+    pc.createOffer({ offerToReceiveAudio: 1 })
+      .then(desc => {
+        pc.setLocalDescription(desc);
+        lastTime = window.performance.now();
+      })
+      .catch(reject);
+
+    return promise;
+  }
+
+  
+  
+  const allLatencies = {
+    srflx: [],
+    host: [],
+  };
+  const allFoundations = {
+    srflx: {},
+    host: {},
+  };
+  for (let i = 0; i < 10; i++) {
+    const result = await getFoundationsAndLatencies();
+    const hostFoundations = result.hostFoundations.join("");
+    const srflxFoundations = result.srflxFoundations.join("");
+
+    allLatencies.host.push(result.hostLatencies);
+    allLatencies.srflx.push(result.srflxLatencies);
+
+    if (hostFoundations) {
+      allFoundations.host[hostFoundations] =
+        (allFoundations.host[hostFoundations] ?? 0) + 1;
+    }
+    if (srflxFoundations) {
+      allFoundations.srflx[srflxFoundations] =
+        (allFoundations.srflx[srflxFoundations] ?? 0) + 1;
+    }
+  }
+
+  const sdLatencies = {
+    host: [],
+    srflx: [],
+  };
+  for (let i = 0; i < (allLatencies.host?.[0]?.length ?? 0); i++) {
+    sdLatencies.host.push(standardDeviation(allLatencies.host.map(a => a[i])));
+  }
+  for (let i = 0; i < (allLatencies.srflx?.[0]?.length ?? 0); i++) {
+    sdLatencies.srflx.push(
+      standardDeviation(allLatencies.srflx.map(a => a[i]))
+    );
+  }
+
+  return {
+    iceFoundations: JSON.stringify({
+      uniqueHostOrder: Object.keys(allFoundations.host).length,
+      uniqueSrflxOrder: Object.keys(allFoundations.srflx).length,
+      sdLatencies,
+    }),
+  };
+}
+
 
 
 
@@ -947,13 +1059,14 @@ const LocalFiraSans = new FontFace(
     populateMediaCapabilities,
     populateAudioFingerprint,
     populatePointerInfo,
+    populateICEFoundations,
   ];
   
   
   
   for (const source of sources) {
     try {
-      Object.assign(data, source());
+      Object.assign(data, await source());
     } catch (error) {
       errors.push(`${source.name}: ${await stringifyError(error)}`);
     }
