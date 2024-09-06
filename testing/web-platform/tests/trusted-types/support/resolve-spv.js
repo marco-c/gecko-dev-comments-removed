@@ -1,0 +1,9 @@
+
+    
+function promise_spv() {
+  return new Promise((resolve, reject) => {
+    window.addEventListener("securitypolicyviolation", e => {
+      resolve(e);
+    }, { once: true });
+  });
+}
