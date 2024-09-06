@@ -14,6 +14,9 @@ const {
 const {
   waitForConsoleOutputChildListChange,
 } = require("damp-test/tests/webconsole/webconsole-helpers");
+const {
+  TRACER_FIELDS_INDEXES,
+} = require("resource://devtools/server/actors/tracer.js");
 
 
 
@@ -44,7 +47,13 @@ module.exports = async function () {
   const { promise, resolve } = Promise.withResolvers();
   function onAvailable(resources) {
     const tracedLastFunctionCall = resources.some(resource => {
-      return resource.displayName == "λ c";
+      const { frames } = resource;
+      return (
+        frames &&
+        frames.some(
+          framesArray => framesArray[TRACER_FIELDS_INDEXES.FRAME_NAME] == "λ c"
+        )
+      );
     });
     if (tracedLastFunctionCall) {
       resolve();

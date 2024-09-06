@@ -20,6 +20,7 @@ const {
 
 const {
   isPacketPrivate,
+  transformTraceResource,
 } = require("resource://devtools/client/webconsole/utils/messages.js");
 const {
   getMutableMessagesById,
@@ -193,6 +194,14 @@ class WebConsoleWrapper {
 
   dispatchMessagesAdd(messages) {
     this.batchedMessagesAdd(messages);
+  }
+
+  
+  dispatchJsTraces(traceResource) {
+    const messages = transformTraceResource(traceResource);
+
+    const { ui } = store.getState();
+    store.dispatch(actions.messagesAdd(messages, null, ui.persistLogs));
   }
 
   dispatchNetworkMessagesDisable() {

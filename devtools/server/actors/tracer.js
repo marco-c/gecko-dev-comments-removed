@@ -36,6 +36,16 @@ loader.lazyRequireGetter(
   true
 );
 
+
+exports.TRACER_FIELDS_INDEXES = {
+  FRAME_IMPLEMENTATION: 0,
+  FRAME_NAME: 1,
+  FRAME_SOURCEID: 2,
+  FRAME_LINE: 3,
+  FRAME_COLUMN: 4,
+  FRAME_URL: 5,
+};
+
 const LOG_METHODS = {
   STDOUT: "stdout",
   CONSOLE: "console",
@@ -52,7 +62,6 @@ class TracerActor extends Actor {
     this.targetActor = targetActor;
     this.sourcesManager = this.targetActor.sourcesManager;
 
-    this.throttledTraces = [];
     
     this.throttleEmitTraces = isWorker
       ? this.flushTraces.bind(this)
@@ -60,6 +69,22 @@ class TracerActor extends Actor {
 
     this.geckoProfileCollector = new GeckoProfileCollector();
   }
+
+  
+  
+  
+  #throttledTraces = [];
+  #throttledExitTraces = [];
+  #throttledDOMMutations = [];
+  #throttledEvents = [];
+  #throttledFrames = [];
+
+  
+  #frameIndex = 0;
+  
+  
+  
+  #frameMap = new Map();
 
   destroy() {
     this.stopTracing();
@@ -188,6 +213,9 @@ class TracerActor extends Actor {
 
     lazy.JSTracer.stopTracing();
     this.logMethod = null;
+
+    this.#frameIndex = 0;
+    this.#frameMap.clear();
   }
 
   
@@ -313,20 +341,22 @@ class TracerActor extends Actor {
 
     if (this.logMethod == LOG_METHODS.CONSOLE) {
       const dbgObj = makeDebuggeeValue(this.targetActor, element);
-      this.throttledTraces.push({
-        resourceType: JSTRACER_TRACE,
+      const frameIndex = this.#getFrameIndex(
+        null,
+        null,
+        caller.sourceId,
+        caller.lineNumber,
+        caller.columnNumber,
+        caller.filename
+      );
+      this.#throttledDOMMutations.push([
         prefix,
-        timeStamp: ChromeUtils.dateNow(),
-
-        filename: caller?.filename,
-        lineNumber: caller?.lineNumber,
-        columnNumber: caller?.columnNumber,
-        sourceId: caller.sourceId,
-
+        frameIndex,
+        ChromeUtils.dateNow(),
         depth,
-        mutationType: type,
-        mutationElement: createValueGripForTarget(this.targetActor, dbgObj),
-      });
+        type,
+        createValueGripForTarget(this.targetActor, dbgObj),
+      ]);
       this.throttleEmitTraces();
       return false;
     }
@@ -356,15 +386,10 @@ class TracerActor extends Actor {
     
     
     const columnBase = script.format === "wasm" ? 0 : 1;
+    const column = columnNumber - columnBase;
 
     
-    if (
-      this.sourcesManager.isBlackBoxed(
-        url,
-        lineNumber,
-        columnNumber - columnBase
-      )
-    ) {
+    if (this.sourcesManager.isBlackBoxed(url, lineNumber, column)) {
       return false;
     }
 
@@ -374,21 +399,40 @@ class TracerActor extends Actor {
     }
 
     if (this.logMethod == LOG_METHODS.CONSOLE) {
-      this.throttledTraces.push({
-        resourceType: JSTRACER_TRACE,
-        prefix,
-        timeStamp: ChromeUtils.dateNow(),
-
-        depth,
-        filename: url,
+      const frameIndex = this.#getFrameIndex(
+        frame.implementation,
+        null,
+        script,
         lineNumber,
-        columnNumber: columnNumber - columnBase,
-        sourceId: script.source.id,
-      });
+        column,
+        url
+      );
+      this.#throttledTraces.push([
+        prefix,
+        frameIndex,
+        ChromeUtils.dateNow(),
+        depth,
+        null,
+      ]);
       this.throttleEmitTraces();
     }
 
     return false;
+  }
+
+  #getFrameIndex(implementation, name, sourceId, line, column, url) {
+    const key = `${sourceId}:${line}:${column}`;
+    let frameIndex = this.#frameMap.get(key);
+    if (frameIndex == undefined) {
+      frameIndex = this.#frameIndex++;
+
+      
+      const frameArray = [implementation, name, sourceId, line, column, url];
+
+      this.#frameMap.set(key, frameIndex);
+      this.#throttledFrames.push(frameArray);
+    }
+    return frameIndex;
   }
   
 
@@ -424,15 +468,10 @@ class TracerActor extends Actor {
     
     
     const columnBase = script.format === "wasm" ? 0 : 1;
+    const column = columnNumber - columnBase;
 
     
-    if (
-      this.sourcesManager.isBlackBoxed(
-        url,
-        lineNumber,
-        columnNumber - columnBase
-      )
-    ) {
+    if (this.sourcesManager.isBlackBoxed(url, lineNumber, column)) {
       return false;
     }
 
@@ -446,13 +485,11 @@ class TracerActor extends Actor {
       
       if (currentDOMEvent && depth == 0) {
         
-        this.throttledTraces.push({
-          resourceType: JSTRACER_TRACE,
+        this.#throttledEvents.push([
           prefix,
-          timeStamp: ChromeUtils.dateNow(),
-
-          eventName: currentDOMEvent,
-        });
+          ChromeUtils.dateNow(),
+          currentDOMEvent,
+        ]);
       }
 
       let args = undefined;
@@ -473,21 +510,21 @@ class TracerActor extends Actor {
         }
       }
 
-      
-      this.throttledTraces.push({
-        resourceType: JSTRACER_TRACE,
-        prefix,
-        timeStamp: ChromeUtils.dateNow(),
-
-        depth,
-        implementation: frame.implementation,
-        displayName: formatedDisplayName,
-        filename: url,
+      const frameIndex = this.#getFrameIndex(
+        frame.implementation,
+        formatedDisplayName,
+        script.source.id,
         lineNumber,
-        columnNumber: columnNumber - columnBase,
-        sourceId: script.source.id,
+        column,
+        url
+      );
+      this.#throttledTraces.push([
+        prefix,
+        frameIndex,
+        ChromeUtils.dateNow(),
+        depth,
         args,
-      });
+      ]);
       this.throttleEmitTraces();
     } else if (this.logMethod == LOG_METHODS.PROFILER) {
       if (currentDOMEvent && depth == 0) {
@@ -549,15 +586,10 @@ class TracerActor extends Actor {
     
     
     const columnBase = script.format === "wasm" ? 0 : 1;
+    const column = columnNumber - columnBase;
 
     
-    if (
-      this.sourcesManager.isBlackBoxed(
-        url,
-        lineNumber,
-        columnNumber - columnBase
-      )
-    ) {
+    if (this.sourcesManager.isBlackBoxed(url, lineNumber, column)) {
       return false;
     }
 
@@ -580,23 +612,23 @@ class TracerActor extends Actor {
         returnedValue = createValueGripForTarget(this.targetActor, dbgObj);
       }
 
-      
-      this.throttledTraces.push({
-        resourceType: JSTRACER_TRACE,
-        prefix,
-        timeStamp: ChromeUtils.dateNow(),
-
-        depth,
-        displayName: formatedDisplayName,
-        filename: url,
+      const frameIndex = this.#getFrameIndex(
+        frame.implementation,
+        formatedDisplayName,
+        script.source.id,
         lineNumber,
-        columnNumber: columnNumber - columnBase,
-        sourceId: script.source.id,
-
-        relatedTraceId: frameId,
+        column,
+        url
+      );
+      this.#throttledExitTraces.push([
+        prefix,
+        frameIndex,
+        ChromeUtils.dateNow(),
+        depth,
+        frameId,
         returnedValue,
         why,
-      });
+      ]);
       this.throttleEmitTraces();
     } else if (this.logMethod == LOG_METHODS.PROFILER) {
       this.geckoProfileCollector.onFramePop();
@@ -615,10 +647,43 @@ class TracerActor extends Actor {
     if (!traceWatcher) {
       return;
     }
-    const traces = this.throttledTraces;
-    this.throttledTraces = [];
+    const traces = this.#throttledTraces;
+    this.#throttledTraces = [];
 
-    traceWatcher.emitTraces(traces);
+    let exitTraces = undefined;
+    if (this.#throttledExitTraces.length) {
+      exitTraces = this.#throttledExitTraces;
+      this.#throttledExitTraces = [];
+    }
+
+    let domMutations = undefined;
+    if (this.#throttledDOMMutations.length) {
+      domMutations = this.#throttledDOMMutations;
+      this.#throttledDOMMutations = [];
+    }
+
+    let events = undefined;
+    if (this.#throttledEvents.length) {
+      events = this.#throttledEvents;
+      this.#throttledEvents = [];
+    }
+
+    let frames = undefined;
+    if (this.#throttledFrames.length) {
+      frames = this.#throttledFrames;
+      this.#throttledFrames = [];
+    }
+
+    traceWatcher.emitTraces([
+      {
+        resourceType: JSTRACER_TRACE,
+        traces,
+        exitTraces,
+        domMutations,
+        events,
+        frames,
+      },
+    ]);
   }
 }
 exports.TracerActor = TracerActor;

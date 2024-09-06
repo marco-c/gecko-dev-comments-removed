@@ -595,6 +595,17 @@ function TargetMixin(parentClass) {
       }
       return Promise.resolve();
     }
+
+    
+
+
+
+
+
+    #jsTracerCollectedFrames = [];
+    getJsTracerCollectedFramesArray() {
+      return this.#jsTracerCollectedFrames;
+    }
   }
   return Target;
 }

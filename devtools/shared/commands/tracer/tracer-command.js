@@ -33,6 +33,13 @@ class TracerCommand {
         continue;
       }
       this.#isTracing = resource.enabled;
+
+      
+      
+      
+      if (resource.enabled) {
+        resource.targetFront.getJsTracerCollectedFramesArray().length = 0;
+      }
     }
   };
 
