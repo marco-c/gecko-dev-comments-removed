@@ -31,7 +31,7 @@ async def test_modify_cookies(
     
     await bidi_session.browsing_context.navigate(
         context=top_context["context"],
-        url=url("/webdriver/tests/bidi/support/empty.html"),
+        url=url("/webdriver/tests/bidi/network/support/empty.html"),
         wait="complete"
     )
 
