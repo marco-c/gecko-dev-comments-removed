@@ -112,7 +112,8 @@ class AudioDataListenerInterface {
   
 
 
-  virtual uint32_t RequestedInputChannelCount(MediaTrackGraph* aGraph) = 0;
+  virtual uint32_t RequestedInputChannelCount(
+      MediaTrackGraph* aGraph) const = 0;
 
   
 
