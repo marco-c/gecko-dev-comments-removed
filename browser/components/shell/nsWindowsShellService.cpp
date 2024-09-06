@@ -1730,7 +1730,7 @@ static nsresult PinCurrentAppToTaskbarImpl(
   }
 
   auto pinWithWin11TaskbarAPIResults =
-      PinCurrentAppToTaskbarWin11(aCheckOnly, aAppUserModelId, shortcutPath);
+      PinCurrentAppToTaskbarWin11(aCheckOnly, aAppUserModelId);
   switch (pinWithWin11TaskbarAPIResults.result) {
     case Win11PinToTaskBarResultStatus::NotSupported:
       
