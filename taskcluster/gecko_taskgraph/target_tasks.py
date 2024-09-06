@@ -1623,6 +1623,10 @@ def target_tasks_snap_upstream_tests(full_task_graph, parameters, graph_config):
 def target_tasks_nightly_android(full_task_graph, parameters, graph_config):
     def filter(task, parameters):
         
+        if task.kind == "push-bundle":
+            return False
+
+        
         if task.attributes.get("shipping_product") == "fennec" and task.kind in (
             "beetmover-geckoview",
             "upload-symbols",
