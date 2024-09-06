@@ -201,6 +201,16 @@ void HTMLSelectElement::ShowPicker(ErrorResult& aRv) {
   }
 
   
+  
+  
+  
+
+  
+  OwnerDoc()->ConsumeTransientUserGestureActivation();
+
+  
+  
+  
 #if !defined(ANDROID)
   if (!IsCombobox()) {
     return;
