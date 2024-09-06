@@ -446,14 +446,13 @@ function accessibleTask(doc, task, options = {}) {
     }
 
     registerCleanupFunction(() => {
+      
+      
+      
       for (let observer of Services.obs.enumerateObservers(
         "accessible-event"
       )) {
         Services.obs.removeObserver(observer, "accessible-event");
-      }
-      if (gPythonSocket) {
-        
-        runPython(`__reset__`);
       }
     });
 
@@ -561,6 +560,14 @@ function accessibleTask(doc, task, options = {}) {
         );
       }
     );
+
+    if (gPythonSocket) {
+      
+      
+      
+      
+      await runPython(`__reset__`);
+    }
   };
 }
 
