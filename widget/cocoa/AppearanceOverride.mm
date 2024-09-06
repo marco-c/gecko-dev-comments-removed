@@ -6,53 +6,27 @@
 #import <Cocoa/Cocoa.h>
 
 #include "AppearanceOverride.h"
-
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_widget.h"
-
+#include "nsNativeThemeColors.h"
 #include "nsXULAppAPI.h"
-
-static void ToolbarThemePrefChanged(const char* aPref, void* aUserInfo);
-
-@interface MOZGlobalAppearance ()
-@property NSInteger toolbarTheme;
-@end
+#include "nsThreadUtils.h"
 
 @implementation MOZGlobalAppearance
+NSAppearance* mAppearance;
 
 + (MOZGlobalAppearance*)sharedInstance {
   static MOZGlobalAppearance* sInstance = nil;
   if (!sInstance) {
     sInstance = [[MOZGlobalAppearance alloc] init];
-    if (XRE_IsParentProcess()) {
-      mozilla::Preferences::RegisterCallbackAndCall(
-          &ToolbarThemePrefChanged,
-          nsDependentCString(
-              mozilla::StaticPrefs::GetPrefName_browser_theme_toolbar_theme()));
-    }
   }
   return sInstance;
 }
 
-+ (NSSet*)keyPathsForValuesAffectingAppearance {
-  return [NSSet setWithObjects:@"toolbarTheme", nil];
-}
-
 - (NSAppearance*)appearance {
-  switch (self.toolbarTheme) {  
-    case 0:                     
-      return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-    case 1:  
-      return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-    case 2:  
-    default:
-      return nil;  
-  }
+  return mAppearance;
 }
 
 - (void)setAppearance:(NSAppearance*)aAppearance {
-  
+  mAppearance = aAppearance;
 }
 
 - (NSApplication*)_app {
@@ -62,29 +36,24 @@ static void ToolbarThemePrefChanged(const char* aPref, void* aUserInfo);
 + (NSSet*)keyPathsForValuesAffectingEffectiveAppearance {
   
   
-  return
-      [NSSet setWithObjects:@"toolbarTheme", @"_app.effectiveAppearance", nil];
+  return [NSSet setWithObjects:@"appearance", @"_app.effectiveAppearance", nil];
 }
 
 - (NSAppearance*)effectiveAppearance {
-  switch (self.toolbarTheme) {  
-    case 0:                     
-      return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-    case 1:  
-      return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-    case 2:  
-    default:
-      
-      return NSApp.effectiveAppearance;
-  }
+  return mAppearance ? mAppearance : NSApp.effectiveAppearance;
 }
 
 @end
 
-static void ToolbarThemePrefChanged(const char* aPref, void* aUserInfo) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+void OverrideGlobalAppearance(mozilla::ColorScheme aScheme) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
 
-  MOZGlobalAppearance.sharedInstance.toolbarTheme =
-      mozilla::StaticPrefs::browser_theme_toolbar_theme();
+  auto* inst = MOZGlobalAppearance.sharedInstance;
+  auto* appearance = NSAppearanceForColorScheme(aScheme);
+  if (inst.appearance != appearance) {
+    inst.appearance = appearance;
+  }
 }

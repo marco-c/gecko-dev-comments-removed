@@ -8,6 +8,12 @@
 
 #import <Cocoa/Cocoa.h>
 
+namespace mozilla {
+enum class ColorScheme: uint8_t;
+}
+
+void OverrideGlobalAppearance(mozilla::ColorScheme);
+
 
 
 
