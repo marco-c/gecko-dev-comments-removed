@@ -4642,7 +4642,7 @@ bool nsGlobalWindowOuter::CanMoveResizeWindows(CallerType aCallerType) {
   if (aCallerType != CallerType::System) {
     
     
-    if (!mBrowsingContext->HadOriginalOpener()) {
+    if (!mBrowsingContext->GetTopLevelCreatedByWebContent()) {
       return false;
     }
 
@@ -6001,8 +6001,8 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
     NS_ENSURE_SUCCESS_VOID(rv);
 
     if (!StringBeginsWith(url, u"about:neterror"_ns) &&
-        !mBrowsingContext->HadOriginalOpener() && !aTrustedCaller &&
-        !IsOnlyTopLevelDocumentInSHistory()) {
+        !mBrowsingContext->GetTopLevelCreatedByWebContent() &&
+        !aTrustedCaller && !IsOnlyTopLevelDocumentInSHistory()) {
       bool allowClose =
           mAllowScriptsToClose ||
           Preferences::GetBool("dom.allow_scripts_to_close_windows", true);
