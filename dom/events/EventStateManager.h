@@ -537,9 +537,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIWidget>
-  DispatchMouseOrPointerEvent(WidgetMouseEvent* aMouseEvent,
-                              EventMessage aMessage, nsIContent* aTargetContent,
-                              nsIContent* aRelatedContent);
+  DispatchMouseOrPointerBoundaryEvent(WidgetMouseEvent* aMouseEvent,
+                                      EventMessage aMessage,
+                                      nsIContent* aTargetContent,
+                                      nsIContent* aRelatedContent);
   
 
 
