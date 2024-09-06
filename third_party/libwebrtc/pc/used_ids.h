@@ -166,8 +166,9 @@ class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
       if (next_extension_id_ < min_allowed_id_) {
         
         
+        
         next_extension_id_ =
-            webrtc::RtpExtension::kOneByteHeaderExtensionMaxId + 1;
+            webrtc::RtpExtension::kOneByteHeaderExtensionMaxId + 2;
       }
 
       if (next_extension_id_ >
