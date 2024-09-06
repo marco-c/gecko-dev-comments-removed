@@ -304,6 +304,14 @@ bool AudioEncoderTraits::Validate(const AudioEncoderConfig& aConfig,
     return false;
   }
 
+  
+  if ((aConfig.mBitrate.WasPassed() && aConfig.mBitrate.Value() == 0)) {
+    aErrorMessage.AssignLiteral(
+        "Invalid AudioEncoderConfig: bitrate equal to 0");
+    LOGE("%s", aErrorMessage.get());
+    return false;
+  }
+
   if (codec->EqualsLiteral("opus")) {
     
     

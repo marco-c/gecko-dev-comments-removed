@@ -425,17 +425,24 @@ bool VideoEncoderTraits::Validate(const VideoEncoderConfig& aConfig,
   }
 
   
-  if ((aConfig.mDisplayWidth.WasPassed() &&
-       aConfig.mDisplayWidth.Value() == 0)) {
+  if (aConfig.mDisplayWidth.WasPassed() && aConfig.mDisplayWidth.Value() == 0) {
     aErrorMessage.AssignLiteral(
         "Invalid VideoEncoderConfig: displayWidth equal to 0");
     LOGE("%s", aErrorMessage.get());
     return false;
   }
-  if ((aConfig.mDisplayHeight.WasPassed() &&
-       aConfig.mDisplayHeight.Value() == 0)) {
+  if (aConfig.mDisplayHeight.WasPassed() &&
+      aConfig.mDisplayHeight.Value() == 0) {
     aErrorMessage.AssignLiteral(
         "Invalid VideoEncoderConfig: displayHeight equal to 0");
+    LOGE("%s", aErrorMessage.get());
+    return false;
+  }
+
+  
+  if ((aConfig.mBitrate.WasPassed() && aConfig.mBitrate.Value() == 0)) {
+    aErrorMessage.AssignLiteral(
+        "Invalid VideoEncoderConfig: bitrate equal to 0");
     LOGE("%s", aErrorMessage.get());
     return false;
   }
