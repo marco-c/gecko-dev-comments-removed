@@ -88,7 +88,7 @@ void CacheStorageChild::NoteDeletedActor() {
   
   
   
-  if (NumChildActors() == 1 && mDelayedDestroy) DestroyInternal();
+  if (NumChildActors() == 0 && mDelayedDestroy) DestroyInternal();
 }
 
 void CacheStorageChild::ActorDestroy(ActorDestroyReason aReason) {

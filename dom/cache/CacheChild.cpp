@@ -112,7 +112,7 @@ void CacheChild::NoteDeletedActor() {
   
   
   
-  if (NumChildActors() == 1 && mDelayedDestroy && !mLocked) DestroyInternal();
+  if (NumChildActors() == 0 && mDelayedDestroy && !mLocked) DestroyInternal();
 }
 
 already_AddRefed<PCacheOpChild> CacheChild::AllocPCacheOpChild(
