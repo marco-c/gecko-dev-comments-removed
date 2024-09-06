@@ -1502,7 +1502,6 @@ class ImportSymmetricKeyTask : public ImportKeyTask {
 
   virtual nsresult BeforeCrypto() override {
     nsresult rv;
-
     
     if (mDataIsJwk) {
       if (!mJwk.mK.WasPassed()) {
@@ -1556,7 +1555,7 @@ class ImportSymmetricKeyTask : public ImportKeyTask {
                                   CryptoKey::DERIVEBITS)) {
         return NS_ERROR_DOM_DATA_ERR;
       }
-      mKey->Algorithm().MakeAes(mAlgName, length);
+      mKey->Algorithm().MakeKDF(mAlgName);
 
       if (mDataIsJwk && mJwk.mUse.WasPassed()) {
         
