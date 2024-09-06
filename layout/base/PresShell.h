@@ -3221,6 +3221,10 @@ class PresShell final : public nsStubDocumentObserver,
   bool mProcessingReflowCommands : 1;
   bool mPendingDidDoReflow : 1;
 
+  
+  
+  TimeStamp mLastConsumedEscapeKeyUpForFullscreen;
+
   struct CapturingContentInfo final {
     CapturingContentInfo()
         : mRemoteTarget(nullptr),
