@@ -345,12 +345,8 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   #endif
 
   
-pref("media.peerconnection.dtls.version.min", 771);
-#ifdef NIGHTLY_BUILD
+  pref("media.peerconnection.dtls.version.min", 771);
   pref("media.peerconnection.dtls.version.max", 772);
-#else
-  pref("media.peerconnection.dtls.version.max", 771);
-#endif
 
   
   
