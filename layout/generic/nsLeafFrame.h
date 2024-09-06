@@ -16,9 +16,6 @@
 
 
 
-
-
-
 class nsLeafFrame : public nsIFrame {
  public:
   NS_DECL_ABSTRACT_FRAME(nsLeafFrame)
@@ -30,8 +27,8 @@ class nsLeafFrame : public nsIFrame {
   
 
 
-  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
+  nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
   
 
@@ -47,21 +44,15 @@ class nsLeafFrame : public nsIFrame {
   
 
 
-  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowInput,
-                      nsReflowStatus& aStatus) override = 0;
+  void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+              const ReflowInput& aReflowInput,
+              nsReflowStatus& aStatus) override = 0;
 
  protected:
   nsLeafFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)
       : nsIFrame(aStyle, aPresContext, aID) {}
 
   virtual ~nsLeafFrame();
-
-  
-
-
-  void SizeToAvailSize(const ReflowInput& aReflowInput,
-                       ReflowOutput& aDesiredSize);
 };
 
 #endif 

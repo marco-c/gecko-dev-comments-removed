@@ -1301,9 +1301,10 @@ void nsHTMLFramesetBorderFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  SizeToAvailSize(aReflowInput, aDesiredSize);
-
+  aDesiredSize.SetSize(aReflowInput.GetWritingMode(),
+                       aReflowInput.AvailableSize());
   aDesiredSize.SetOverflowAreasToDesiredBounds();
+  FinishAndStoreOverflow(&aDesiredSize, aReflowInput.mStyleDisplay);
 }
 
 class nsDisplayFramesetBorder : public nsPaintedDisplayItem {
@@ -1475,9 +1476,10 @@ void nsHTMLFramesetBlankFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  SizeToAvailSize(aReflowInput, aDesiredSize);
-
+  aDesiredSize.SetSize(aReflowInput.GetWritingMode(),
+                       aReflowInput.AvailableSize());
   aDesiredSize.SetOverflowAreasToDesiredBounds();
+  FinishAndStoreOverflow(&aDesiredSize, aReflowInput.mStyleDisplay);
 }
 
 class nsDisplayFramesetBlank : public nsPaintedDisplayItem {
