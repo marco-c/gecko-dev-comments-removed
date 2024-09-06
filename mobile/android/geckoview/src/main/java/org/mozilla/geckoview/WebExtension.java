@@ -1817,7 +1817,20 @@ public class WebExtension {
 
 
 
+
+
+    @Deprecated
+    @DeprecationSchedule(id = "web-extension-permission", version = 131)
     public final @NonNull String[] permissions;
+
+    
+
+
+
+
+
+
+    public final @NonNull String[] promptPermissions;
 
     
 
@@ -2043,6 +2056,7 @@ public class WebExtension {
     protected MetaData() {
       icon = null;
       permissions = null;
+      promptPermissions = null;
       optionalPermissions = null;
       grantedOptionalPermissions = null;
       grantedOptionalOrigins = null;
@@ -2077,6 +2091,7 @@ public class WebExtension {
      MetaData(final GeckoBundle bundle) {
       
       permissions = bundle.getStringArray("promptPermissions");
+      promptPermissions = bundle.getStringArray("promptPermissions");
       optionalPermissions = bundle.getStringArray("optionalPermissions");
       grantedOptionalPermissions = bundle.getStringArray("grantedOptionalPermissions");
       optionalOrigins = bundle.getStringArray("optionalOrigins");
