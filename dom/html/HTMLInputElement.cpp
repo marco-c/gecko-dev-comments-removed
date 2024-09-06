@@ -1986,18 +1986,21 @@ Decimal HTMLInputElement::GetStepBase() const {
   return kDefaultStepBase;
 }
 
-nsresult HTMLInputElement::GetValueIfStepped(int32_t aStep,
-                                             StepCallerType aCallerType,
-                                             Decimal* aNextStep) {
+Decimal HTMLInputElement::GetValueIfStepped(int32_t aStep,
+                                            StepCallerType aCallerType,
+                                            ErrorResult& aRv) {
+  constexpr auto kNaN = Decimal::nan();
   if (!DoStepDownStepUpApply()) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+    aRv.ThrowInvalidStateError("Step doesn't apply to this input type");
+    return kNaN;
   }
 
   Decimal stepBase = GetStepBase();
   Decimal step = GetStep();
   if (step == kStepAny) {
-    if (aCallerType != CALLED_FOR_USER_EVENT) {
-      return NS_ERROR_DOM_INVALID_STATE_ERR;
+    if (aCallerType != StepCallerType::ForUserEvent) {
+      aRv.ThrowInvalidStateError("Can't step an input with step=\"any\"");
+      return kNaN;
     }
     
     step = GetDefaultStep();
@@ -2015,7 +2018,7 @@ nsresult HTMLInputElement::GetValueIfStepped(int32_t aStep,
         
         
         
-        return NS_OK;
+        return kNaN;
       }
     }
   }
@@ -2062,25 +2065,20 @@ nsresult HTMLInputElement::GetValueIfStepped(int32_t aStep,
        (aStep < 0 && value > valueBeforeStepping))) {
     
     
-    return NS_OK;
+    return kNaN;
   }
 
-  *aNextStep = value;
-  return NS_OK;
+  return value;
 }
 
-nsresult HTMLInputElement::ApplyStep(int32_t aStep) {
-  Decimal nextStep = Decimal::nan();  
-
-  nsresult rv = GetValueIfStepped(aStep, CALLED_FOR_SCRIPT, &nextStep);
-
-  if (NS_SUCCEEDED(rv) && nextStep.isFinite()) {
-    
-    
-    SetValue(nextStep, CallerType::NonSystem);
+void HTMLInputElement::ApplyStep(int32_t aStep, ErrorResult& aRv) {
+  Decimal nextStep = GetValueIfStepped(aStep, StepCallerType::ForScript, aRv);
+  if (aRv.Failed() || !nextStep.isFinite()) {
+    return;
   }
-
-  return rv;
+  
+  
+  SetValue(nextStep, CallerType::NonSystem);
 }
 
 bool HTMLInputElement::IsDateTimeInputType(FormControlType aType) {
@@ -3520,11 +3518,9 @@ void HTMLInputElement::StepNumberControlForUserEvent(int32_t aDirection) {
     }
   }
 
-  Decimal newValue = Decimal::nan();  
-
-  nsresult rv = GetValueIfStepped(aDirection, CALLED_FOR_USER_EVENT, &newValue);
-
-  if (NS_FAILED(rv) || !newValue.isFinite()) {
+  Decimal newValue = GetValueIfStepped(aDirection, StepCallerType::ForUserEvent,
+                                       IgnoreErrors());
+  if (!newValue.isFinite()) {
     return;  
   }
 

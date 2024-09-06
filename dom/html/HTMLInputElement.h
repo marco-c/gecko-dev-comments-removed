@@ -663,9 +663,8 @@ class HTMLInputElement final : public TextControlElement,
     SetUnsignedIntAttr(nsGkAtoms::width, aValue, 0, aRv);
   }
 
-  void StepUp(int32_t aN, ErrorResult& aRv) { aRv = ApplyStep(aN); }
-
-  void StepDown(int32_t aN, ErrorResult& aRv) { aRv = ApplyStep(-aN); }
+  void StepUp(int32_t aN, ErrorResult& aRv) { ApplyStep(aN, aRv); }
+  void StepDown(int32_t aN, ErrorResult& aRv) { ApplyStep(-aN, aRv); }
 
   
 
@@ -1311,7 +1310,7 @@ class HTMLInputElement final : public TextControlElement,
 
   Decimal GetDefaultStep() const;
 
-  enum StepCallerType { CALLED_FOR_USER_EVENT, CALLED_FOR_SCRIPT };
+  enum class StepCallerType { ForUserEvent, ForScript };
 
   
 
@@ -1321,12 +1320,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-
-
-
-
-  nsresult GetValueIfStepped(int32_t aStepCount, StepCallerType aCallerType,
-                             Decimal* aNextStep);
+  Decimal GetValueIfStepped(int32_t aStepCount, StepCallerType, ErrorResult&);
 
   
 
@@ -1334,7 +1328,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  nsresult ApplyStep(int32_t aStep);
+  void ApplyStep(int32_t aStep, ErrorResult&);
 
   
 

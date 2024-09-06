@@ -234,11 +234,13 @@ public:
     
     static MFBT_API Decimal fromString(const std::string& aValue);
     static MFBT_API Decimal infinity(Sign);
-    static MFBT_API Decimal nan();
+    static constexpr Decimal nan() {
+        return Decimal(EncodedData(Positive, EncodedData::ClassNaN));
+    }
     static MFBT_API Decimal zero(Sign);
 
     
-    MFBT_API explicit Decimal(const EncodedData&);
+    constexpr explicit Decimal(const EncodedData& data) : m_data(data) {}
     const EncodedData& value() const { return m_data; }
 
 private:
