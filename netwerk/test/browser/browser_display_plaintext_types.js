@@ -61,4 +61,7 @@ add_task(async function test_display_plaintext_type() {
   await expectOutcome("application/json", "jsonviewer");
   
   await expectOutcome("text/json", "text");
+
+  
+  await expectOutcome("text/unknown-type", "text");
 });
