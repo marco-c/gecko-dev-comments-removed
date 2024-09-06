@@ -1523,10 +1523,9 @@ class SelectorView {
   constructor(tree, selectorInfo) {
     this.tree = tree;
     this.selectorInfo = selectorInfo;
-    this._cacheStatusNames();
+    this.#cacheStatusNames();
 
     this.openStyleEditor = this.openStyleEditor.bind(this);
-    this._updateLocation = this._updateLocation.bind(this);
 
     const rule = this.selectorInfo.rule;
     if (!rule || !rule.parentStyleSheet || rule.type == ELEMENT_STYLE) {
@@ -1547,14 +1546,17 @@ class SelectorView {
       };
       this.sourceMapURLService =
         this.tree.inspector.toolbox.sourceMapURLService;
-      this._unsubscribeCallback = this.sourceMapURLService.subscribeByID(
+      this.#unsubscribeCallback = this.sourceMapURLService.subscribeByID(
         this.generatedLocation.sheet.resourceId,
         this.generatedLocation.line,
         this.generatedLocation.column,
-        this._updateLocation
+        this.#updateLocation
       );
     }
   }
+
+  #href;
+  #unsubscribeCallback;
 
   
 
@@ -1574,7 +1576,7 @@ class SelectorView {
 
 
 
-  _cacheStatusNames() {
+  #cacheStatusNames() {
     if (SelectorView.STATUS_NAMES.length) {
       return;
     }
@@ -1604,12 +1606,12 @@ class SelectorView {
   }
 
   get href() {
-    if (this._href) {
-      return this._href;
+    if (this.#href) {
+      return this.#href;
     }
     const sheet = this.selectorInfo.rule.parentStyleSheet;
-    this._href = sheet ? sheet.href : "#";
-    return this._href;
+    this.#href = sheet ? sheet.href : "#";
+    return this.#href;
   }
 
   get sourceText() {
@@ -1648,7 +1650,7 @@ class SelectorView {
 
 
 
-  _updateLocation(originalLocation) {
+  #updateLocation = originalLocation => {
     if (!this.tree.element) {
       return;
     }
@@ -1670,7 +1672,7 @@ class SelectorView {
     }
 
     this.tree.inspector.emit("computed-view-sourcelinks-updated");
-  }
+  };
 
   
 
@@ -1705,8 +1707,8 @@ class SelectorView {
 
 
   destroy() {
-    if (this._unsubscribeCallback) {
-      this._unsubscribeCallback();
+    if (this.#unsubscribeCallback) {
+      this.#unsubscribeCallback();
     }
   }
 }
