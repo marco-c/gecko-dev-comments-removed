@@ -107,6 +107,44 @@ var SelectTranslationsPanel = new (class {
 
 
 
+
+
+
+
+
+
+
+  #mostRecentUIPhase = "closed";
+
+  
+
+
+
+
+
+
+
+
+
+  #sourceTextWordCount = undefined;
+
+  
+
+
+
+
+
+  #languageInfo = {
+    docLangTag: undefined,
+    isDocLangTagSupported: undefined,
+    topPreferredLanguage: undefined,
+  };
+
+  
+
+
+
+
   get longTextHeight() {
     return this.#longTextHeight;
   }
@@ -270,14 +308,43 @@ var SelectTranslationsPanel = new (class {
 
     
     
+    const { docLangTag, isDocLangTagSupported } = this.#languageInfo;
+    if (isDocLangTagSupported) {
+      return docLangTag;
+    }
+
+    
+    
+    return language;
+  }
+
+  
+
+
+
+
+
+
+  #maybeCacheLanguageInfo() {
+    this.#languageInfo = {
+      docLangTag: undefined,
+      isDocLangTagSupported: undefined,
+      topPreferredLanguage: undefined,
+    };
     try {
       const actor = TranslationsParent.getTranslationsActor(
         gBrowser.selectedBrowser
       );
-      const detectedLanguages = actor.languageState.detectedLanguages;
-      if (detectedLanguages?.isDocLangTagSupported) {
-        return detectedLanguages.docLangTag;
-      }
+      const {
+        detectedLanguages: { docLangTag, isDocLangTagSupported },
+      } = actor.languageState;
+      const preferredLanguages = TranslationsParent.getPreferredLanguages();
+      const topPreferredLanguage = preferredLanguages?.[0];
+      this.#languageInfo = {
+        docLangTag,
+        isDocLangTagSupported,
+        topPreferredLanguage,
+      };
     } catch (error) {
       
       
@@ -298,9 +365,7 @@ var SelectTranslationsPanel = new (class {
       }
     }
 
-    
-    
-    return language;
+    return this.#languageInfo;
   }
 
   
@@ -338,6 +403,7 @@ var SelectTranslationsPanel = new (class {
 
   close() {
     PanelMultiView.hidePopup(this.elements.panel);
+    this.#mostRecentUIPhase = "closed";
   }
 
   
@@ -441,7 +507,15 @@ var SelectTranslationsPanel = new (class {
 
 
 
-  async open(event, screenX, screenY, sourceText, langPairPromise) {
+
+  async open(
+    event,
+    screenX,
+    screenY,
+    sourceText,
+    langPairPromise,
+    maintainFlow = false
+  ) {
     if (this.#isOpen()) {
       await this.#forceReopen(
         event,
@@ -453,7 +527,19 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
+    const { docLangTag, topPreferredLanguage } = this.#maybeCacheLanguageInfo();
+    const { fromLanguage, toLanguage } = await langPairPromise;
+
+    TranslationsParent.telemetry().selectTranslationsPanel().onOpen({
+      maintainFlow,
+      docLangTag,
+      fromLanguage,
+      toLanguage,
+      topPreferredLanguage,
+    });
+
     try {
+      this.#sourceTextWordCount = undefined;
       this.#isFullPageTranslationsRestrictedForPage =
         TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser);
       this.#initializeEventListeners();
@@ -599,10 +685,15 @@ var SelectTranslationsPanel = new (class {
 
 
   #openSettingsPopup() {
+    TranslationsParent.telemetry()
+      .selectTranslationsPanel()
+      .onOpenSettingsMenu();
+
     const { settingsButton } = this.elements;
     const popup = settingsButton.ownerDocument.getElementById(
       "select-translations-panel-settings-menupopup"
     );
+
     popup.openPopup(settingsButton, "after_start");
   }
 
@@ -610,6 +701,10 @@ var SelectTranslationsPanel = new (class {
 
 
   onAboutTranslations() {
+    TranslationsParent.telemetry()
+      .selectTranslationsPanel()
+      .onAboutTranslations();
+
     this.close();
     const window =
       gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
@@ -628,6 +723,10 @@ var SelectTranslationsPanel = new (class {
 
 
   openTranslationsSettingsPage() {
+    TranslationsParent.telemetry()
+      .selectTranslationsPanel()
+      .onTranslationSettings();
+
     this.close();
     const window =
       gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
@@ -657,14 +756,17 @@ var SelectTranslationsPanel = new (class {
       tryAnotherSourceMenuPopup,
     } = this.elements;
     switch (target.id) {
-      case cancelButton.id:
-      case doneButtonPrimary.id:
-      case doneButtonSecondary.id: {
-        this.close();
+      case cancelButton.id: {
+        this.onClickCancelButton();
         break;
       }
       case copyButton.id: {
         this.onClickCopyButton();
+        break;
+      }
+      case doneButtonPrimary.id:
+      case doneButtonSecondary.id: {
+        this.onClickDoneButton();
         break;
       }
       case fromMenuList.id:
@@ -943,6 +1045,7 @@ var SelectTranslationsPanel = new (class {
     const { panel } = this.elements;
     switch (target.id) {
       case panel.id: {
+        TranslationsParent.telemetry().selectTranslationsPanel().onClose();
         this.#changeStateToClosed();
         this.#removeActiveTranslationListeners();
         break;
@@ -984,6 +1087,7 @@ var SelectTranslationsPanel = new (class {
 
 
   onChangeFromLanguage() {
+    this.#sourceTextWordCount = undefined;
     this.#updateConditionalUIEnabledState();
   }
 
@@ -1007,7 +1111,17 @@ var SelectTranslationsPanel = new (class {
   
 
 
+  onClickCancelButton() {
+    TranslationsParent.telemetry().selectTranslationsPanel().onCancelButton();
+    this.close();
+  }
+
+  
+
+
   onClickCopyButton() {
+    TranslationsParent.telemetry().selectTranslationsPanel().onCopyButton();
+
     try {
       ClipboardHelper.copyString(this.getTranslatedText());
     } catch (error) {
@@ -1021,8 +1135,21 @@ var SelectTranslationsPanel = new (class {
   
 
 
+  onClickDoneButton() {
+    TranslationsParent.telemetry().selectTranslationsPanel().onDoneButton();
+    this.close();
+  }
+
+  
+
+
   onClickTranslateButton() {
+    TranslationsParent.telemetry()
+      .selectTranslationsPanel()
+      .onTranslateButton();
+
     const { fromMenuList, tryAnotherSourceMenuList } = this.elements;
+
     fromMenuList.value = tryAnotherSourceMenuList.value;
     this.#maybeRequestTranslation();
   }
@@ -1031,6 +1158,10 @@ var SelectTranslationsPanel = new (class {
 
 
   onClickTranslateFullPageButton() {
+    TranslationsParent.telemetry()
+      .selectTranslationsPanel()
+      .onTranslateFullPageButton();
+
     const { panel } = this.elements;
     const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
 
@@ -1064,6 +1195,8 @@ var SelectTranslationsPanel = new (class {
 
 
   onClickTryAgainButton() {
+    TranslationsParent.telemetry().selectTranslationsPanel().onTryAgainButton();
+
     switch (this.phase()) {
       case "translation-failure": {
         
@@ -1079,7 +1212,15 @@ var SelectTranslationsPanel = new (class {
 
         panel.addEventListener(
           "popuphidden",
-          () => this.open(event, screenX, screenY, sourceText, langPairPromise),
+          () =>
+            this.open(
+              event,
+              screenX,
+              screenY,
+              sourceText,
+              langPairPromise,
+               true
+            ),
           { once: true }
         );
 
@@ -1620,9 +1761,12 @@ var SelectTranslationsPanel = new (class {
 
   #updatePanelUIFromState() {
     const phase = this.phase();
+
     this.#handlePrimaryUIChanges(phase);
     this.#handleCopyButtonChanges(phase);
     this.#handleTextAreaBackgroundChanges(phase);
+
+    this.#mostRecentUIPhase = phase;
   }
 
   
@@ -1706,6 +1850,12 @@ var SelectTranslationsPanel = new (class {
 
 
   #displayInitFailureMessage() {
+    if (this.#mostRecentUIPhase !== "init-failure") {
+      TranslationsParent.telemetry()
+        .selectTranslationsPanel()
+        .onInitializationFailureMessage();
+    }
+
     const {
       cancelButton,
       copyButton,
@@ -1737,6 +1887,13 @@ var SelectTranslationsPanel = new (class {
 
 
   #displayTranslationFailureMessage() {
+    if (this.#mostRecentUIPhase !== "translation-failure") {
+      const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
+      TranslationsParent.telemetry()
+        .selectTranslationsPanel()
+        .onTranslationFailureMessage({ fromLanguage, toLanguage });
+    }
+
     const {
       cancelButton,
       copyButton,
@@ -1778,6 +1935,14 @@ var SelectTranslationsPanel = new (class {
 
   #displayUnsupportedLanguageMessage() {
     const { detectedLanguage } = this.#translationState;
+
+    if (this.#mostRecentUIPhase !== "unsupported") {
+      const { docLangTag } = this.#languageInfo;
+      TranslationsParent.telemetry()
+        .selectTranslationsPanel()
+        .onUnsupportedLanguageMessage({ docLangTag, detectedLanguage });
+    }
+
     const { unsupportedLanguageMessageBar, tryAnotherSourceMenuList } =
       this.elements;
     const displayNames = new Services.intl.DisplayNames(undefined, {
@@ -1884,7 +2049,10 @@ var SelectTranslationsPanel = new (class {
       return;
     }
 
+    const { docLangTag, topPreferredLanguage } = this.#languageInfo;
+    const sourceText = this.getSourceText();
     const translationId = ++this.#translationId;
+
     this.#createTranslator(fromLanguage, toLanguage)
       .then(translator => {
         if (
@@ -1915,6 +2083,30 @@ var SelectTranslationsPanel = new (class {
         this.console?.error(error);
         this.#changeStateToTranslationFailure();
       });
+
+    try {
+      if (!this.#sourceTextWordCount) {
+        this.#sourceTextWordCount = TranslationsParent.countWords(
+          fromLanguage,
+          sourceText
+        );
+      }
+    } catch (error) {
+      
+      
+      this.console?.warn(error);
+    }
+
+    TranslationsParent.telemetry().onTranslate({
+      docLangTag,
+      fromLanguage,
+      toLanguage,
+      topPreferredLanguage,
+      autoTranslate: false,
+      requestTarget: "select",
+      sourceTextCodeUnits: sourceText.length,
+      sourceTextWordCount: this.#sourceTextWordCount,
+    });
   }
 
   
