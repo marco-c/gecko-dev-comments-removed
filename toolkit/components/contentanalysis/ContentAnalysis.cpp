@@ -500,8 +500,31 @@ static nsresult ConvertToProtobuf(
   return NS_OK;
 }
 
+namespace {
+
+
+template <typename T>
+typename std::enable_if_t<!std::is_same<std::string, std::decay_t<T>>::value,
+                          void>
+LogWithMaxLength(std::stringstream& ss, T value, size_t maxLength) {
+  ss << value;
+}
+
+
+template <typename T>
+typename std::enable_if_t<std::is_same<std::string, std::decay_t<T>>::value,
+                          void>
+LogWithMaxLength(std::stringstream& ss, T value, size_t maxLength) {
+  if (!maxLength || value.length() < maxLength) {
+    ss << value;
+  } else {
+    ss << value.substr(0, maxLength) << " (truncated)";
+  }
+}
+}  
+
 static void LogRequest(
-    content_analysis::sdk::ContentAnalysisRequest* aPbRequest) {
+    const content_analysis::sdk::ContentAnalysisRequest* aPbRequest) {
   
   
   if (!static_cast<LogModule*>(gContentAnalysisLog)
@@ -513,12 +536,13 @@ static void LogRequest(
   ss << "ContentAnalysisRequest:"
      << "\n";
 
-#define ADD_FIELD(PBUF, NAME, FUNC) \
-  ss << "  " << (NAME) << ": ";     \
-  if ((PBUF)->has_##FUNC())         \
-    ss << (PBUF)->FUNC() << "\n";   \
-  else                              \
-    ss << "<none>"                  \
+#define ADD_FIELD(PBUF, NAME, FUNC)            \
+  ss << "  " << (NAME) << ": ";                \
+  if ((PBUF)->has_##FUNC()) {                  \
+    LogWithMaxLength(ss, (PBUF)->FUNC(), 500); \
+    ss << "\n";                                \
+  } else                                       \
+    ss << "<none>"                             \
        << "\n";
 
 #define ADD_EXISTS(PBUF, NAME, FUNC) \
