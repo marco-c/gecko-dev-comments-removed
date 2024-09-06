@@ -8,6 +8,7 @@
 #include "nsDBusRemoteServer.h"
 
 #include "nsCOMPtr.h"
+#include "nsAppRunner.h"
 #include "mozilla/XREAppData.h"
 #include "mozilla/Base64.h"
 #include "mozilla/ScopeExit.h"
@@ -189,12 +190,13 @@ nsresult nsDBusRemoteServer::Startup(const char* aAppName,
   MOZ_DIAGNOSTIC_ASSERT(!mDBusID);
 
   
-  if (!aAppName || aAppName[0] == '\0' || !aProfileName ||
-      aProfileName[0] == '\0')
-    return NS_ERROR_INVALID_ARG;
+  if (!aProfileName || aProfileName[0] == '\0') return NS_ERROR_INVALID_ARG;
 
-  mAppName = aAppName;
-  mozilla::XREAppData::SanitizeNameForDBus(mAppName);
+  
+  
+  
+  
+  gAppData->GetDBusAppName(mAppName);
 
   nsAutoCString profileName;
   MOZ_TRY(
