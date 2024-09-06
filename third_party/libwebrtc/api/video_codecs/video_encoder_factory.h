@@ -16,13 +16,14 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/environment/environment.h"
 #include "api/units/data_rate.h"
 #include "api/video/render_resolution.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_encoder.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
-
-class VideoEncoder;
 
 
 
@@ -96,8 +97,21 @@ class VideoEncoderFactory {
   }
 
   
+  virtual std::unique_ptr<VideoEncoder> Create(const Environment& env,
+                                               const SdpVideoFormat& format) {
+    return CreateVideoEncoder(format);
+  }
+
+  
+  
+  
+  
   virtual std::unique_ptr<VideoEncoder> CreateVideoEncoder(
-      const SdpVideoFormat& format) = 0;
+      const SdpVideoFormat& format) {
+    
+    
+    RTC_CHECK_NOTREACHED();
+  }
 
   
   
