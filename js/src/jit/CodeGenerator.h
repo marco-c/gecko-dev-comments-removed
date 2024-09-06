@@ -471,18 +471,38 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                                            const MInstruction* mir);
 
   
-  bool addHasSeenObjectEmulateUndefinedFuseDependency();
+  
+  enum class FuseDependencyKind {
+    HasSeenObjectEmulateUndefinedFuse,
+    OptimizeGetIteratorFuse,
+  };
+
+  
+  mozilla::EnumSet<FuseDependencyKind> fuseDependencies;
+
+  
+  void addHasSeenObjectEmulateUndefinedFuseDependency() {
+    fuseDependencies += FuseDependencyKind::HasSeenObjectEmulateUndefinedFuse;
+  }
+
+  void addOptimizeGetIteratorFuseDependency() {
+    fuseDependencies += FuseDependencyKind::OptimizeGetIteratorFuse;
+  }
+
+  
+  
+  
+  void validateAndRegisterFuseDependencies(JSContext* cx, HandleScript script,
+                                           bool* isValid);
 
   
   
   bool hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted() {
     bool intact = gen->outerInfo().hasSeenObjectEmulateUndefinedFuseIntact();
     if (intact) {
-      bool tryToAdd = addHasSeenObjectEmulateUndefinedFuseDependency();
-      
-      return tryToAdd;
+      addHasSeenObjectEmulateUndefinedFuseDependency();
     }
-    return false;
+    return intact;
   }
 };
 

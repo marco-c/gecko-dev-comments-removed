@@ -4195,6 +4195,15 @@ void CodeGenerator::visitGuardShape(LGuardShape* guard) {
 
 void CodeGenerator::visitGuardFuse(LGuardFuse* guard) {
   auto fuseIndex = guard->mir()->fuseIndex();
+  switch (fuseIndex) {
+    case RealmFuses::FuseIndex::OptimizeGetIteratorFuse:
+      addOptimizeGetIteratorFuseDependency();
+      return;
+    default:
+      
+      
+      break;
+  }
 
   Register temp = ToRegister(guard->temp0());
   Label bail;
@@ -16310,35 +16319,63 @@ static bool AddInlinedCompilations(JSContext* cx, HandleScript script,
   return true;
 }
 
-struct EmulatesUndefinedDependency final : public CompilationDependency {
-  CompileRuntime* runtime;
-  explicit EmulatesUndefinedDependency(CompileRuntime* runtime)
-      : CompilationDependency(CompilationDependency::Type::EmulatesUndefined),
-        runtime(runtime) {};
-
-  virtual bool operator==(CompilationDependency& dep) {
-    
-    return dep.type == type;
+void CodeGenerator::validateAndRegisterFuseDependencies(JSContext* cx,
+                                                        HandleScript script,
+                                                        bool* isValid) {
+  
+  if (!*isValid) {
+    return;
   }
 
-  virtual bool checkDependency() {
-    return runtime->hasSeenObjectEmulateUndefinedFuseIntact();
-  }
+  for (auto dependency : fuseDependencies) {
+    switch (dependency) {
+      case FuseDependencyKind::HasSeenObjectEmulateUndefinedFuse: {
+        auto& hasSeenObjectEmulateUndefinedFuse =
+            cx->runtime()->hasSeenObjectEmulateUndefinedFuse.ref();
 
-  virtual bool registerDependency(JSContext* cx, HandleScript script) {
-    return cx->runtime()
-        ->hasSeenObjectEmulateUndefinedFuse.ref()
-        .addFuseDependency(cx, script);
-  }
+        if (!hasSeenObjectEmulateUndefinedFuse.intact()) {
+          JitSpew(JitSpew_Codegen,
+                  "tossing compilation; hasSeenObjectEmulateUndefinedFuse fuse "
+                  "dependency no longer valid\n");
+          *isValid = false;
+          return;
+        }
 
-  virtual UniquePtr<CompilationDependency> clone() {
-    return MakeUnique<EmulatesUndefinedDependency>(runtime);
-  }
-};
+        if (!hasSeenObjectEmulateUndefinedFuse.addFuseDependency(cx, script)) {
+          JitSpew(JitSpew_Codegen,
+                  "tossing compilation; failed to register "
+                  "hasSeenObjectEmulateUndefinedFuse script dependency\n");
+          *isValid = false;
+          return;
+        }
+        break;
+      }
 
-bool CodeGenerator::addHasSeenObjectEmulateUndefinedFuseDependency() {
-  EmulatesUndefinedDependency dep(gen->runtime);
-  return mirGen().tracker.addDependency(dep);
+      case FuseDependencyKind::OptimizeGetIteratorFuse: {
+        auto& optimizeGetIteratorFuse =
+            cx->realm()->realmFuses.optimizeGetIteratorFuse;
+        if (!optimizeGetIteratorFuse.intact()) {
+          JitSpew(JitSpew_Codegen,
+                  "tossing compilation; optimizeGetIteratorFuse fuse "
+                  "dependency no longer valid\n");
+          *isValid = false;
+          return;
+        }
+
+        if (!optimizeGetIteratorFuse.addFuseDependency(cx, script)) {
+          JitSpew(JitSpew_Codegen,
+                  "tossing compilation; failed to register "
+                  "optimizeGetIteratorFuse script dependency\n");
+          *isValid = false;
+          return;
+        }
+        break;
+      }
+
+      default:
+        MOZ_CRASH("Unknown Dependency Kind");
+    }
+  }
 }
 
 bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
@@ -16381,20 +16418,16 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
 
   
   
+  
+  
+  
+  
+  validateAndRegisterFuseDependencies(cx, script, &isValid);
+
+  
+  
   if (!isValid) {
     return true;
-  }
-
-  CompilationDependencyTracker& tracker = mirGen().tracker;
-  if (!tracker.checkDependencies()) {
-    return true;
-  }
-
-  for (auto& dep : tracker.dependencies) {
-    if (!dep->registerDependency(cx, script)) {
-      return false;  
-                     
-    }
   }
 
   uint32_t argumentSlots = (gen->outerInfo().nargs() + 1) * sizeof(Value);

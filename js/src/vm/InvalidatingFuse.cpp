@@ -51,35 +51,35 @@ void js::DependentScriptSet::invalidateForFuse(JSContext* cx,
     return;
   }
 
-  jit::InvalidateAndClearScriptSet(cx, weakScripts, "fuse");
-}
-
-void js::jit::InvalidateAndClearScriptSet(JSContext* cx,
-                                          WeakScriptCache& scripts,
-                                          const char* reason) {
-  
-  
-  
-  WeakScriptSet localScripts = scripts.stealContents();
-  MOZ_ASSERT(scripts.empty());
-
-  for (auto r = localScripts.all(); !r.empty(); r.popFront()) {
+  for (auto r = weakScripts.all(); !r.empty(); r.popFront()) {
     JSScript* script = r.front().get();
     
     
     
     if (script->hasIonScript()) {
-      JitSpew(jit::JitSpew_IonInvalidate, "Invalidating ion script %p for %s",
-              script->ionScript(), reason);
+      JitSpew(jit::JitSpew_IonInvalidate, "Invalidating ion script %p",
+              script->ionScript());
       js::jit::Invalidate(cx, script);
     }
   }
+
+  
+  weakScripts.clear();
 }
 
 bool js::DependentScriptSet::addScriptForFuse(InvalidatingFuse* fuse,
                                               Handle<JSScript*> script) {
   MOZ_ASSERT(fuse == associatedFuse);
-  return jit::AddScriptToSet(weakScripts, script);
+
+  WeakScriptSet::AddPtr p = weakScripts.lookupForAdd(script);
+  if (!p) {
+    if (!weakScripts.add(p, script)) {
+      return false;
+    }
+  }
+
+  
+  return true;
 }
 
 js::DependentScriptSet* js::DependentScriptGroup::getOrCreateDependentScriptSet(
@@ -97,24 +97,4 @@ js::DependentScriptSet* js::DependentScriptGroup::getOrCreateDependentScriptSet(
   auto& dss = dependencies.back();
   MOZ_ASSERT(dss.associatedFuse == fuse);
   return &dss;
-}
-
-bool js::jit::AddScriptToSet(WeakScriptCache& scripts,
-                             Handle<JSScript*> script) {
-  js::jit::WeakScriptSet::AddPtr p = scripts.lookupForAdd(script);
-  if (!p) {
-    if (!scripts.add(p, script)) {
-      return false;
-    }
-  }
-
-  
-  return true;
-}
-
-void js::jit::RemoveFromScriptSet(WeakScriptCache& scripts, JSScript* script) {
-  js::jit::WeakScriptSet::Ptr p = scripts.lookup(script);
-  if (p) {
-    scripts.remove(p);
-  }
 }
