@@ -480,6 +480,8 @@ class ModuleLoaderBase : public nsISupports {
 
   nsresult CreateModuleScript(ModuleLoadRequest* aRequest);
 
+  bool IsFetchingAndHasWaitingRequest(ModuleLoadRequest* aRequest);
+
   
   enum { ModulePrivateSlot = 0, SlotCount };
 
