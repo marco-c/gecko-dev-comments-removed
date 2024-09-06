@@ -16,12 +16,7 @@
 #include "nsISupports.h"
 #include "nsString.h"
 #include "nsTArray.h"
-
-#ifdef DEBUG
-#  include "nsStringStats.h"
-#else
-#  define STRING_STAT_INCREMENT(_s)
-#endif
+#include "nsStringStats.h"
 
 
 
