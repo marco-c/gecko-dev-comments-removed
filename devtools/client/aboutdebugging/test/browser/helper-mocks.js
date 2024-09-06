@@ -242,9 +242,28 @@ const silenceWorkerUpdates = function () {
 
 async function createLocalClientWrapper() {
   info("Create a local DevToolsClient");
+
+  
+  
   const {
-    DevToolsServer,
-  } = require("resource://devtools/server/devtools-server.js");
+    useDistinctSystemPrincipalLoader,
+    releaseDistinctSystemPrincipalLoader,
+  } = ChromeUtils.importESModule(
+    "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs"
+  );
+  const requester = {};
+  const serverLoader = useDistinctSystemPrincipalLoader(requester);
+  registerCleanupFunction(() => {
+    releaseDistinctSystemPrincipalLoader(requester);
+  });
+  const { DevToolsServer } = serverLoader.require(
+    "resource://devtools/server/devtools-server.js"
+  );
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
+  DevToolsServer.allowChromeProcess = true;
+
+  
   const {
     DevToolsClient,
   } = require("resource://devtools/client/devtools-client.js");
@@ -252,8 +271,6 @@ async function createLocalClientWrapper() {
     ClientWrapper,
   } = require("resource://devtools/client/aboutdebugging/src/modules/client-wrapper.js");
 
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
   const client = new DevToolsClient(DevToolsServer.connectPipe());
 
   await client.connect();
