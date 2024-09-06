@@ -1536,7 +1536,7 @@ class AsyncPanZoomController {
 
 
   PointerEventsConsumableFlags ArePointerEventsConsumable(
-      const TouchBlockState* aBlock, const MultiTouchInput& aInput) const;
+      TouchBlockState* aBlock, const MultiTouchInput& aInput) const;
 
   
 

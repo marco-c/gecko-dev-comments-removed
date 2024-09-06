@@ -44,6 +44,11 @@ enum class BrowserGestureResponse : bool;
 using InputBlockCallback = std::function<void(uint64_t aInputBlockId,
                                               APZHandledResult aHandledResult)>;
 
+struct InputBlockCallbackInfo {
+  nsEventStatus mEagerStatus;
+  InputBlockCallback mCallback;
+};
+
 
 
 
@@ -152,7 +157,7 @@ class InputQueue {
   InputBlockState* GetBlockForId(uint64_t aInputBlockId);
 
   void AddInputBlockCallback(uint64_t aInputBlockId,
-                             InputBlockCallback&& aCallback);
+                             InputBlockCallbackInfo&& aCallback);
 
   void SetBrowserGestureResponse(uint64_t aInputBlockId,
                                  BrowserGestureResponse aResponse);
@@ -275,7 +280,7 @@ class InputQueue {
   
   
   using InputBlockCallbackMap =
-      std::unordered_map<uint64_t, InputBlockCallback>;
+      std::unordered_map<uint64_t, InputBlockCallbackInfo>;
   InputBlockCallbackMap mInputBlockCallbacks;
 };
 

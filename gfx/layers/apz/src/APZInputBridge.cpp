@@ -26,130 +26,6 @@
 namespace mozilla {
 namespace layers {
 
-APZHandledResult::APZHandledResult(APZHandledPlace aPlace,
-                                   const AsyncPanZoomController* aTarget,
-                                   bool aPopulateDirectionsForUnhandled)
-    : mPlace(aPlace) {
-  MOZ_ASSERT(aTarget);
-  switch (aPlace) {
-    case APZHandledPlace::Unhandled:
-      if (aTarget && aPopulateDirectionsForUnhandled) {
-        mScrollableDirections = aTarget->ScrollableDirections();
-        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
-      }
-      break;
-    case APZHandledPlace::HandledByContent:
-      if (aTarget) {
-        mScrollableDirections = aTarget->ScrollableDirections();
-        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
-      }
-      break;
-    case APZHandledPlace::HandledByRoot: {
-      MOZ_ASSERT(aTarget->IsRootContent());
-      if (aTarget) {
-        mScrollableDirections = aTarget->ScrollableDirections();
-        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
-      }
-      break;
-    }
-    default:
-      MOZ_ASSERT_UNREACHABLE("Invalid APZHandledPlace");
-      break;
-  }
-}
-
-
-Maybe<APZHandledResult> APZHandledResult::Initialize(
-    const AsyncPanZoomController* aInitialTarget,
-    DispatchToContent aDispatchToContent) {
-  if (!aInitialTarget->IsRootContent()) {
-    
-    
-    
-    return Some(
-        APZHandledResult{APZHandledPlace::HandledByContent, aInitialTarget});
-  }
-
-  if (!bool(aDispatchToContent)) {
-    
-    
-    return Some(
-        APZHandledResult{APZHandledPlace::HandledByRoot, aInitialTarget});
-  }
-
-  
-  return Nothing();
-}
-
-
-void APZHandledResult::UpdateForTouchEvent(
-    Maybe<APZHandledResult>& aHandledResult, const InputBlockState& aBlock,
-    PointerEventsConsumableFlags aConsumableFlags,
-    const AsyncPanZoomController* aTarget,
-    DispatchToContent aDispatchToContent) {
-  
-  
-  
-  
-  if (!aConsumableFlags.mAllowedByTouchAction) {
-    aHandledResult =
-        Some(APZHandledResult{APZHandledPlace::HandledByContent, aTarget});
-    aHandledResult->mOverscrollDirections = ScrollDirections();
-    return;
-  }
-
-  if (aHandledResult && !bool(aDispatchToContent) &&
-      !aConsumableFlags.mHasRoom) {
-    
-    
-    
-    aHandledResult->mPlace = APZHandledPlace::Unhandled;
-  }
-
-  if (aTarget && !aTarget->IsRootContent()) {
-    
-    
-    
-    bool mayTriggerPullToRefresh =
-        aBlock.GetOverscrollHandoffChain()->ScrollingUpWillTriggerPullToRefresh(
-            aTarget);
-    if (mayTriggerPullToRefresh) {
-      
-      
-      
-      
-      aHandledResult = bool(aDispatchToContent)
-                           ? Nothing()
-                           : Some(APZHandledResult{APZHandledPlace::Unhandled,
-                                                   aTarget, true});
-    }
-
-    auto [mayMoveDynamicToolbar, rootApzc] =
-        aBlock.GetOverscrollHandoffChain()->ScrollingDownWillMoveDynamicToolbar(
-            aTarget);
-    if (mayMoveDynamicToolbar) {
-      MOZ_ASSERT(rootApzc && rootApzc->IsRootContent());
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      aHandledResult =
-          bool(aDispatchToContent)
-              ? Nothing()
-              : Some(APZHandledResult{aConsumableFlags.IsConsumable()
-                                          ? APZHandledPlace::HandledByRoot
-                                          : APZHandledPlace::Unhandled,
-                                      rootApzc});
-    }
-  }
-}
-
 APZEventResult::APZEventResult()
     : mStatus(nsEventStatus_eIgnore),
       mInputBlockId(InputBlockState::NO_BLOCK_ID) {}
@@ -158,8 +34,25 @@ APZEventResult::APZEventResult(
     const RefPtr<AsyncPanZoomController>& aInitialTarget,
     TargetConfirmationFlags aFlags)
     : APZEventResult() {
-  mHandledResult =
-      APZHandledResult::Initialize(aInitialTarget, aFlags.DispatchToContent());
+  mHandledResult = [&]() -> Maybe<APZHandledResult> {
+    if (!aInitialTarget->IsRootContent()) {
+      
+      
+      
+      return Some(
+          APZHandledResult{APZHandledPlace::HandledByContent, aInitialTarget});
+    }
+
+    if (!aFlags.mDispatchToContent) {
+      
+      
+      return Some(
+          APZHandledResult{APZHandledPlace::HandledByRoot, aInitialTarget});
+    }
+
+    
+    return Nothing();
+  }();
   aInitialTarget->GetGuid(&mTargetGuid);
 }
 
@@ -189,9 +82,74 @@ void APZEventResult::SetStatusForTouchEvent(
   mStatus = aConsumableFlags.IsConsumable() ? nsEventStatus_eConsumeDoDefault
                                             : nsEventStatus_eIgnore;
 
-  APZHandledResult::UpdateForTouchEvent(mHandledResult, aBlock,
-                                        aConsumableFlags, aTarget,
-                                        aFlags.DispatchToContent());
+  UpdateHandledResult(aBlock, aConsumableFlags, aTarget,
+                      aFlags.mDispatchToContent);
+}
+
+void APZEventResult::UpdateHandledResult(
+    const InputBlockState& aBlock,
+    PointerEventsConsumableFlags aConsumableFlags,
+    const AsyncPanZoomController* aTarget, bool aDispatchToContent) {
+  
+  
+  
+  
+  if (!aConsumableFlags.mAllowedByTouchAction) {
+    mHandledResult =
+        Some(APZHandledResult{APZHandledPlace::HandledByContent, aTarget});
+    mHandledResult->mOverscrollDirections = ScrollDirections();
+    return;
+  }
+
+  if (mHandledResult && !aDispatchToContent && !aConsumableFlags.mHasRoom) {
+    
+    
+    
+    mHandledResult->mPlace = APZHandledPlace::Unhandled;
+  }
+
+  if (aTarget && !aTarget->IsRootContent()) {
+    
+    
+    
+    bool mayTriggerPullToRefresh =
+        aBlock.GetOverscrollHandoffChain()->ScrollingUpWillTriggerPullToRefresh(
+            aTarget);
+    if (mayTriggerPullToRefresh) {
+      
+      
+      
+      
+      mHandledResult = (aDispatchToContent)
+                           ? Nothing()
+                           : Some(APZHandledResult{APZHandledPlace::Unhandled,
+                                                   aTarget, true});
+    }
+
+    auto [mayMoveDynamicToolbar, rootApzc] =
+        aBlock.GetOverscrollHandoffChain()->ScrollingDownWillMoveDynamicToolbar(
+            aTarget);
+    if (mayMoveDynamicToolbar) {
+      MOZ_ASSERT(rootApzc && rootApzc->IsRootContent());
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      mHandledResult =
+          aDispatchToContent
+              ? Nothing()
+              : Some(APZHandledResult{aConsumableFlags.IsConsumable()
+                                          ? APZHandledPlace::HandledByRoot
+                                          : APZHandledPlace::Unhandled,
+                                      rootApzc});
+    }
+  }
 }
 
 void APZEventResult::SetStatusForFastFling(
@@ -207,8 +165,8 @@ void APZEventResult::SetStatusForFastFling(
   
   
   
-  APZHandledResult::UpdateForTouchEvent(
-      mHandledResult, aBlock, aConsumableFlags, aTarget, DispatchToContent::No);
+  UpdateHandledResult(aBlock, aConsumableFlags, aTarget, false 
+);
 }
 
 static bool WillHandleMouseEvent(const WidgetMouseEventBase& aEvent) {
@@ -396,6 +354,38 @@ APZEventResult APZInputBridge::ReceiveInputEvent(
   MOZ_ASSERT_UNREACHABLE("Invalid WidgetInputEvent type.");
   result.SetStatusAsConsumeNoDefault();
   return result;
+}
+
+APZHandledResult::APZHandledResult(APZHandledPlace aPlace,
+                                   const AsyncPanZoomController* aTarget,
+                                   bool aPopulateDirectionsForUnhandled)
+    : mPlace(aPlace) {
+  MOZ_ASSERT(aTarget);
+  switch (aPlace) {
+    case APZHandledPlace::Unhandled:
+      if (aTarget && aPopulateDirectionsForUnhandled) {
+        mScrollableDirections = aTarget->ScrollableDirections();
+        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
+      }
+      break;
+    case APZHandledPlace::HandledByContent:
+      if (aTarget) {
+        mScrollableDirections = aTarget->ScrollableDirections();
+        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
+      }
+      break;
+    case APZHandledPlace::HandledByRoot: {
+      MOZ_ASSERT(aTarget->IsRootContent());
+      if (aTarget) {
+        mScrollableDirections = aTarget->ScrollableDirections();
+        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
+      }
+      break;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Invalid APZHandledPlace");
+      break;
+  }
 }
 
 std::ostream& operator<<(std::ostream& aOut, const SideBits& aSideBits) {

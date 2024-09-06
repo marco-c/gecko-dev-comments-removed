@@ -783,7 +783,7 @@ InputBlockState* InputQueue::GetBlockForId(uint64_t aInputBlockId) {
 }
 
 void InputQueue::AddInputBlockCallback(uint64_t aInputBlockId,
-                                       InputBlockCallback&& aCallbackInfo) {
+                                       InputBlockCallbackInfo&& aCallbackInfo) {
   mInputBlockCallbacks.insert(InputBlockCallbackMap::value_type(
       aInputBlockId, std::move(aCallbackInfo)));
 }
@@ -1007,35 +1007,64 @@ void InputQueue::SetBrowserGestureResponse(uint64_t aInputBlockId,
   ProcessQueue();
 }
 
-static APZHandledResult GetHandledResultFor(
-    const AsyncPanZoomController* aApzc,
-    const InputBlockState* aCurrentInputBlock, const InputData& aEvent) {
+static APZHandledResult GetHandledResultFor(const AsyncPanZoomController* aApzc,
+                                            InputBlockState* aCurrentInputBlock,
+                                            nsEventStatus aEagerStatus,
+                                            const InputData& aEvent) {
   if (aCurrentInputBlock->ShouldDropEvents()) {
     return APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
   }
-
-  
-  
 
   if (!aApzc) {
     return APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
   }
 
-  Maybe<APZHandledResult> result =
-      APZHandledResult::Initialize(aApzc, DispatchToContent::No);
-
   if (aEvent.mInputType == MULTITOUCH_INPUT) {
+    
+    
     PointerEventsConsumableFlags consumableFlags =
         aApzc->ArePointerEventsConsumable(aCurrentInputBlock->AsTouchBlock(),
                                           aEvent.AsMultiTouchInput());
-    APZHandledResult::UpdateForTouchEvent(result, *aCurrentInputBlock,
-                                          consumableFlags, aApzc,
-                                          DispatchToContent::No);
+    if (!consumableFlags.mAllowedByTouchAction) {
+      APZHandledResult result =
+          APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
+      result.mOverscrollDirections = ScrollDirections();
+      return result;
+    }
   }
+
+  if (aApzc->IsRootContent()) {
+    
+    
+    
+    
+    
+    
+    
+    return (aEagerStatus == nsEventStatus_eConsumeDoDefault &&
+            aApzc->CanVerticalScrollWithDynamicToolbar())
+               ? APZHandledResult{APZHandledPlace::HandledByRoot, aApzc}
+               : APZHandledResult{APZHandledPlace::Unhandled, aApzc, true};
+  }
+
+  bool mayTriggerPullToRefresh =
+      aCurrentInputBlock->GetOverscrollHandoffChain()
+          ->ScrollingUpWillTriggerPullToRefresh(aApzc);
+  if (mayTriggerPullToRefresh) {
+    return APZHandledResult{APZHandledPlace::Unhandled, aApzc, true};
+  }
+
+  auto [willMoveDynamicToolbar, rootApzc] =
+      aCurrentInputBlock->GetOverscrollHandoffChain()
+          ->ScrollingDownWillMoveDynamicToolbar(aApzc);
+  if (!willMoveDynamicToolbar) {
+    return APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
+  }
+
   
   
-  MOZ_RELEASE_ASSERT(result.isSome());
-  return *result;
+  MOZ_ASSERT(rootApzc && rootApzc->IsRootContent());
+  return APZHandledResult{APZHandledPlace::HandledByRoot, rootApzc};
 }
 
 bool InputQueue::ProcessQueue() {
@@ -1099,8 +1128,9 @@ bool InputQueue::ProcessQueue() {
                  "\n",
                  curBlock, curBlock->GetBlockId());
         APZHandledResult handledResult =
-            GetHandledResultFor(target, curBlock, *(mQueuedInputs[0]->Input()));
-        it->second(curBlock->GetBlockId(), handledResult);
+            GetHandledResultFor(target, curBlock, it->second.mEagerStatus,
+                                *(mQueuedInputs[0]->Input()));
+        it->second.mCallback(curBlock->GetBlockId(), handledResult);
         
         mInputBlockCallbacks.erase(it);
       }
