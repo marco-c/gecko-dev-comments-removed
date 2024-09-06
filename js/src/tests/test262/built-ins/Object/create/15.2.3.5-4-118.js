@@ -9,7 +9,7 @@
 
 
 
-var descObj = new Date();
+var descObj = new Date(0);
 
 descObj.configurable = true;
 

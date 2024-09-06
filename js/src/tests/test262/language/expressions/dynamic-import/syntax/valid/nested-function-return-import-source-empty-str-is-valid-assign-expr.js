@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fn() {
+  return import.source('<module source>');
+}
+
+reportCompare(0, 0);

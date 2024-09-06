@@ -16,14 +16,14 @@
 
 
 
+
+
+
 const invalidFirstDayOfWeekOptions = [
   "",
   "m",
   "mo",
-  "monday",
-  true,
-  false,
-  null,
+  "longerThan8Chars",
 ];
 for (const firstDayOfWeek of invalidFirstDayOfWeekOptions) {
   assert.throws(RangeError, function() {

@@ -7,7 +7,7 @@
 
 
 var obj = {};
-var props = new Date();
+var props = new Date(0);
 var result = false;
 
 Object.defineProperty(props, "prop", {

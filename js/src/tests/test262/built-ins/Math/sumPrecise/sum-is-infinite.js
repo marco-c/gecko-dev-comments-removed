@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.sumPrecise([Infinity]), Infinity);
+assert.sameValue(Math.sumPrecise([Infinity, Infinity]), Infinity);
+assert.sameValue(Math.sumPrecise([-Infinity]), -Infinity);
+assert.sameValue(Math.sumPrecise([-Infinity, -Infinity]), -Infinity);
+
+reportCompare(0, 0);

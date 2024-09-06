@@ -33,12 +33,10 @@
 
 
 
-
-const tz = TemporalHelpers.specificOffsetTimeZone(-2);
-const datetime = new Temporal.ZonedDateTime(1001n, tz);
+const datetime = new Temporal.ZonedDateTime(1001n, "-00:02");
 
 const jsonString = datetime.toJSON();
 
-assert.sameValue(jsonString, "1970-01-01T00:00:00.000000999+00:00[-00:00:00.000000002]");
+assert.sameValue(jsonString, "1969-12-31T23:58:00.000001001-00:02[-00:02]");
 
 reportCompare(0, 0);

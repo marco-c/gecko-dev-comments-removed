@@ -8,10 +8,8 @@
 
 
 
-
 [null, undefined, true, 3.1416, "a string", Symbol("symbol"), 7n].forEach((primitive) => {
-  const calendar = TemporalHelpers.calendarThrowEverything();
-  const plainMonthDay = new Temporal.PlainMonthDay(5, 2, calendar);
+  const plainMonthDay = new Temporal.PlainMonthDay(5, 2);
   assert.throws(TypeError, () => plainMonthDay.toPlainDate(primitive));
 });
 

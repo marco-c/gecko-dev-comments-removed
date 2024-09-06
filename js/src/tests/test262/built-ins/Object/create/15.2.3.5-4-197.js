@@ -9,7 +9,7 @@
 
 
 
-var dateObj = new Date();
+var dateObj = new Date(0);
 
 dateObj.writable = true;
 

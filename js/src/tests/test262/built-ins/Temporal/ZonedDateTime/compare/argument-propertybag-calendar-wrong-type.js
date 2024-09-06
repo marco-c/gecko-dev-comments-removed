@@ -10,7 +10,7 @@
 
 
 
-const datetime = new Temporal.ZonedDateTime(0n, new Temporal.TimeZone("UTC"));
+const datetime = new Temporal.ZonedDateTime(0n, "UTC");
 
 const primitiveTests = [
   [null, "null"],
@@ -36,10 +36,8 @@ for (const [calendar, description] of primitiveTests) {
 
 const typeErrorTests = [
   [Symbol(), "symbol"],
-  [{}, "plain object that doesn't implement the protocol"],
-  [new Temporal.TimeZone("UTC"), "time zone instance"],
-  [Temporal.Calendar, "Temporal.Calendar, object"],
-  [Temporal.Calendar.prototype, "Temporal.Calendar.prototype, object"],  
+  [{}, "object"],
+  [new Temporal.Duration(), "duration instance"],
 ];
 
 for (const [calendar, description] of typeErrorTests) {

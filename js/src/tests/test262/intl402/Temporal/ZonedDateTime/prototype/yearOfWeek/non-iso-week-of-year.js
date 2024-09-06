@@ -12,14 +12,14 @@
 
 
 
-let calendar = new Temporal.Calendar("gregory");
+let calendar = "gregory";
 
 
 const date = new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", calendar);
 
 assert.sameValue(date.yearOfWeek, 2024);
 
-calendar = new Temporal.Calendar("hebrew");
+calendar = "hebrew";
 const nonisodate = new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", calendar);
 
 assert.sameValue(nonisodate.yearOfWeek, undefined);

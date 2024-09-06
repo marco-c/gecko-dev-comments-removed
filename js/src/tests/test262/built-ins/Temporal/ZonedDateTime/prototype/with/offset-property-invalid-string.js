@@ -8,8 +8,7 @@
 
 
 
-const timeZone = new Temporal.TimeZone("UTC");
-const instance = new Temporal.ZonedDateTime(0n, timeZone);
+const instance = new Temporal.ZonedDateTime(0n, "UTC");
 
 const offsetOptions = ['use', 'prefer', 'ignore', 'reject'];
 

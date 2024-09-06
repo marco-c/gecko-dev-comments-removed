@@ -12,8 +12,6 @@
 
 
 
-
-var AsyncArrowFunction = Object.getPrototypeOf(async () => {}).constructor;
 var AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 var AsyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor;
 var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;

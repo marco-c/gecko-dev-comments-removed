@@ -11,55 +11,18 @@
 
 const expected = [
   
-  "has timeZone.getOffsetNanosecondsFor",
-  "has timeZone.getPossibleInstantsFor",
-  "has timeZone.id",
-  
   "get options.disambiguation",
   "get options.disambiguation.toString",
   "call options.disambiguation.toString",
-  
-  "get timeZone.getOffsetNanosecondsFor",
-  "get timeZone.getPossibleInstantsFor",
-  
-  "call timeZone.getPossibleInstantsFor",
 ];
 const actual = [];
 
-const calendar = TemporalHelpers.calendarObserver(actual, "this.calendar");
-const instance = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 654, 321, calendar);
-const fallBackInstance = new Temporal.PlainDateTime(2000, 10, 29, 1, 30, 0, 0, 0, 0, calendar);
-const springForwardInstance = new Temporal.PlainDateTime(2000, 4, 2, 2, 30, 0, 0, 0, 0, calendar);
-
-actual.splice(0);
-
-const dstTimeZone = TemporalHelpers.springForwardFallBackTimeZone();
-const timeZone = TemporalHelpers.timeZoneObserver(actual, "timeZone", {
-  getOffsetNanosecondsFor: dstTimeZone.getOffsetNanosecondsFor,
-  getPossibleInstantsFor: dstTimeZone.getPossibleInstantsFor,
-});
+const instance = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 654, 321, "iso8601");
 
 const options = TemporalHelpers.propertyBagObserver(actual, { disambiguation: "compatible" }, "options");
 
-instance.toZonedDateTime(timeZone, options);
-assert.compareArray(actual, expected, "order of operations at normal wall-clock time");
-actual.splice(0); 
-
-fallBackInstance.toZonedDateTime(timeZone, options);
-assert.compareArray(actual, expected, "order of operations at repeated wall-clock time");
-actual.splice(0); 
-
-springForwardInstance.toZonedDateTime(timeZone, options);
-assert.compareArray(actual, expected.concat([
-  "call timeZone.getOffsetNanosecondsFor",
-  "call timeZone.getOffsetNanosecondsFor",
-  "call timeZone.getPossibleInstantsFor",
-]), "order of operations at skipped wall-clock time");
-actual.splice(0); 
-
-const rejectOptions = TemporalHelpers.propertyBagObserver(actual, { disambiguation: "reject" }, "options");
-assert.throws(RangeError, () => springForwardInstance.toZonedDateTime(timeZone, rejectOptions));
-assert.compareArray(actual, expected, "order of operations at skipped wall-clock time with disambiguation: reject");
+instance.toZonedDateTime("UTC", options);
+assert.compareArray(actual, expected, "order of operations");
 actual.splice(0); 
 
 reportCompare(0, 0);

@@ -11,30 +11,6 @@
 
 const expected = [
   "get other.calendar",
-  "has other.calendar.dateAdd",
-  "has other.calendar.dateFromFields",
-  "has other.calendar.dateUntil",
-  "has other.calendar.day",
-  "has other.calendar.dayOfWeek",
-  "has other.calendar.dayOfYear",
-  "has other.calendar.daysInMonth",
-  "has other.calendar.daysInWeek",
-  "has other.calendar.daysInYear",
-  "has other.calendar.fields",
-  "has other.calendar.id",
-  "has other.calendar.inLeapYear",
-  "has other.calendar.mergeFields",
-  "has other.calendar.month",
-  "has other.calendar.monthCode",
-  "has other.calendar.monthDayFromFields",
-  "has other.calendar.monthsInYear",
-  "has other.calendar.weekOfYear",
-  "has other.calendar.year",
-  "has other.calendar.yearMonthFromFields",
-  "has other.calendar.yearOfWeek",
-  "get other.calendar.dateFromFields",
-  "get other.calendar.fields",
-  "call other.calendar.fields",
   
   "get other.day",
   "get other.day.valueOf",
@@ -70,23 +46,6 @@ const expected = [
   "get other.year",
   "get other.year.valueOf",
   "call other.year.valueOf",
-  "has other.timeZone.getOffsetNanosecondsFor",
-  "has other.timeZone.getPossibleInstantsFor",
-  "has other.timeZone.id",
-  
-  "call other.calendar.dateFromFields",
-  
-  "get other.timeZone.getOffsetNanosecondsFor",
-  "get other.timeZone.getPossibleInstantsFor",
-  
-  "call other.timeZone.getPossibleInstantsFor",
-  "call other.timeZone.getOffsetNanosecondsFor",
-  
-  "get this.timeZone.id",
-  "get other.timeZone.id",
-  
-  "get this.calendar.id",
-  "get other.calendar.id",
 ];
 const actual = [];
 
@@ -102,18 +61,11 @@ const other = TemporalHelpers.propertyBagObserver(actual, {
   microsecond: 654,
   nanosecond: 321,
   offset: "+00:00",
-  calendar: TemporalHelpers.calendarObserver(actual, "other.calendar"),
-  timeZone: TemporalHelpers.timeZoneObserver(actual, "other.timeZone"),
-}, "other");
+  calendar: "iso8601",
+  timeZone: "UTC",
+}, "other", ["calendar", "timeZone"]);
 
-const instance = new Temporal.ZonedDateTime(
-  988786472_987_654_321n,  
-  TemporalHelpers.timeZoneObserver(actual, "this.timeZone"),
-  TemporalHelpers.calendarObserver(actual, "this.calendar"),
-);
-
-
-actual.splice(0);
+const instance = new Temporal.ZonedDateTime(988786472_987_654_321n,   "UTC");
 
 instance.equals(other);
 assert.compareArray(actual, expected, "order of operations");

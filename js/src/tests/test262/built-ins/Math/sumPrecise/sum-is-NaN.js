@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.sumPrecise([NaN]), NaN);
+assert.sameValue(Math.sumPrecise([Infinity, -Infinity]), NaN);
+assert.sameValue(Math.sumPrecise([-Infinity, Infinity]), NaN);
+
+reportCompare(0, 0);

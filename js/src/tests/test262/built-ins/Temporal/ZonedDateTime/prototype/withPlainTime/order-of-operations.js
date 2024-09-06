@@ -30,26 +30,9 @@ const expected = [
   "get plainTimeLike.second",
   "get plainTimeLike.second.valueOf",
   "call plainTimeLike.second.valueOf",
-  
-  "get this.timeZone.getOffsetNanosecondsFor",
-  "get this.timeZone.getPossibleInstantsFor",
-  
-  "call this.timeZone.getOffsetNanosecondsFor",
-  
-  "call this.timeZone.getPossibleInstantsFor",
 ];
 
-const calendar = TemporalHelpers.calendarObserver(actual, "this.calendar");
-const dstTimeZone = TemporalHelpers.springForwardFallBackTimeZone();
-const timeZone = TemporalHelpers.timeZoneObserver(actual, "this.timeZone", {
-  getOffsetNanosecondsFor: dstTimeZone.getOffsetNanosecondsFor,
-  getPossibleInstantsFor: dstTimeZone.getPossibleInstantsFor,
-});
-
-const instance = new Temporal.ZonedDateTime(946713600_000_000_000n , timeZone, calendar);
-const fallBackInstance = new Temporal.ZonedDateTime(972802800_000_000_000n , timeZone, calendar);
-const springForwardInstance = new Temporal.ZonedDateTime(954662400_000_000_000n , timeZone, calendar);
-actual.splice(0); 
+const instance = new Temporal.ZonedDateTime(946713600_000_000_000n , "UTC");
 
 const plainTimeLike = TemporalHelpers.propertyBagObserver(actual, {
   hour: 2,
@@ -61,28 +44,7 @@ const plainTimeLike = TemporalHelpers.propertyBagObserver(actual, {
 }, "plainTimeLike");
 
 instance.withPlainTime(plainTimeLike);
-assert.compareArray(actual, expected, "order of operations at normal wall-clock time");
-actual.splice(0); 
-
-const plainTimeLike130 = TemporalHelpers.propertyBagObserver(actual, {
-  hour: 1,
-  minute: 30,
-  second: 0,
-  millisecond: 0,
-  microsecond: 0,
-  nanosecond: 0,
-}, "plainTimeLike");
-
-fallBackInstance.withPlainTime(plainTimeLike130);
-assert.compareArray(actual, expected, "order of operations at repeated wall-clock time");
-actual.splice(0); 
-
-springForwardInstance.withPlainTime(plainTimeLike);
-assert.compareArray(actual, expected.concat([
-  "call this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getPossibleInstantsFor",
-]), "order of operations at skipped wall-clock time");
+assert.compareArray(actual, expected, "order of operations");
 actual.splice(0); 
 
 reportCompare(0, 0);

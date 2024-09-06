@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Uint8Array.prototype.toHex, 'name', {
+  value: 'toHex',
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

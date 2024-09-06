@@ -1,0 +1,57 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function f() {
+  import.source('./empty_FIXTURE.js').catch(error => {
+
+    assert.sameValue(error.name, 'ReferenceError');
+
+  }).then($DONE, $DONE);
+}
+f();

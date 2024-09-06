@@ -7,8 +7,7 @@
 
 
 
-
-const timeZone = new Temporal.TimeZone("UTC");
+const timeZone = "UTC";
 
 const numbers = [
   1,

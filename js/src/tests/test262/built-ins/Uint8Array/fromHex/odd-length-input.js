@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  Uint8Array.fromHex('a');
+});
+
+reportCompare(0, 0);

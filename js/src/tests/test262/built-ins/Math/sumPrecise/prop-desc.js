@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Math, "sumPrecise", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

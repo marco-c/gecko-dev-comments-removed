@@ -34,11 +34,7 @@ assert.throws(RangeError, () => yearmonth.subtract(duration, { overflow: 2 }), "
 assert.throws(RangeError, () => yearmonth.subtract(duration, { overflow: 2n }), "bigint");
 assert.throws(RangeError, () => yearmonth.subtract(duration, { overflow: {} }), "plain object");
 
-
-
 const expected = [
-  "get overflow.toString",
-  "call overflow.toString",
   "get overflow.toString",
   "call overflow.toString",
 ];

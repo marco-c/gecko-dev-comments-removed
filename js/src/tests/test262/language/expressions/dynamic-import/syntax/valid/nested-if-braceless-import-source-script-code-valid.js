@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var smoosh; function smoosh() {}
+
+
+if (true) import.source('<module source>');
+
+reportCompare(0, 0);

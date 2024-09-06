@@ -1,0 +1,56 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const f = async () => await import.source('./empty_FIXTURE.js');
+
+f().catch(error => {
+
+  assert.sameValue(error.name, 'ReferenceError');
+
+}).then($DONE, $DONE);

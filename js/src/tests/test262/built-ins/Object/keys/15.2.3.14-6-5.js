@@ -8,7 +8,7 @@
 
 
 
-var obj = new Date();
+var obj = new Date(0);
 obj.prop1 = 100;
 obj.prop2 = "prop2";
 

@@ -8,7 +8,6 @@
 
 
 
-
 var zdt = Temporal.ZonedDateTime.from("1976-11-18T15:23:30.123456789+01:00[+01:00]");
 
 
@@ -213,32 +212,5 @@ var bal = Temporal.ZonedDateTime.from("1976-11-18T23:59:59.999999999+01:00[+01:0
 ].forEach(smallestUnit => {
   assert.sameValue(`${ bal.round({ smallestUnit }) }`, "1976-11-19T00:00:00+01:00[+01:00]");
 });
-
-var timeZone = TemporalHelpers.springForwardFallBackTimeZone();
-
-
-
-var roundTo = { smallestUnit: "day" };
-var roundMeDown = Temporal.PlainDateTime.from("2000-10-29T11:29:59").toZonedDateTime(timeZone);
-assert.sameValue(`${ roundMeDown.round(roundTo) }`, "2000-10-29T00:00:00-07:00[Custom/Spring_Fall]");
-var roundMeUp = Temporal.PlainDateTime.from("2000-10-29T11:30:01").toZonedDateTime(timeZone);
-assert.sameValue(`${ roundMeUp.round(roundTo) }`, "2000-10-30T00:00:00-08:00[Custom/Spring_Fall]");
-
-
-
-var roundTo = { smallestUnit: "day" };
-var roundMeDown = Temporal.PlainDateTime.from("2000-04-02T12:29:59").toZonedDateTime(timeZone);
-assert.sameValue(`${ roundMeDown.round(roundTo) }`, "2000-04-02T00:00:00-08:00[Custom/Spring_Fall]");
-var roundMeUp = Temporal.PlainDateTime.from("2000-04-02T12:30:01").toZonedDateTime(timeZone);
-assert.sameValue(`${ roundMeUp.round(roundTo) }`, "2000-04-03T00:00:00-07:00[Custom/Spring_Fall]");
-
-
-var almostSkipped = Temporal.PlainDateTime.from("2000-04-02T01:59:59.999999999").toZonedDateTime(timeZone);
-var rounded = almostSkipped.round({
-  smallestUnit: "microsecond",
-  roundingMode: "halfExpand"
-});
-assert.sameValue(`${ rounded }`, "2000-04-02T03:00:00-07:00[Custom/Spring_Fall]");
-assert.sameValue(rounded.epochNanoseconds - almostSkipped.epochNanoseconds, 1n);
 
 reportCompare(0, 0);

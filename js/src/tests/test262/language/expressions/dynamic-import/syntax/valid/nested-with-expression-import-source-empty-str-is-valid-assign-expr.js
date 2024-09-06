@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+with (import.source('<module source>')) {
+    assert.sameValue(then, Promise.prototype.then);
+    assert.sameValue(constructor, Promise);
+}
+
+reportCompare(0, 0);

@@ -21,11 +21,10 @@
 
 
 
+const datetime = new Temporal.ZonedDateTime(1001n, "-00:02");
 
-const tz = TemporalHelpers.specificOffsetTimeZone(-2);
-const datetime = new Temporal.ZonedDateTime(1001n, tz);
-
-assert.sameValue(datetime.microsecond, 0);
-assert.sameValue(datetime.nanosecond, 999);
+assert.sameValue(datetime.minute, 58);
+assert.sameValue(datetime.microsecond, 1);
+assert.sameValue(datetime.nanosecond, 1);
 
 reportCompare(0, 0);

@@ -24,9 +24,6 @@
 
 
 
-
-
-
 const validFirstDayOfWeekOptions = [
   ["mon", "en-u-fw-mon"],
   ["tue", "en-u-fw-tue"],
@@ -51,6 +48,24 @@ const validFirstDayOfWeekOptions = [
   [6, "en-u-fw-sat"],
   [7, "en-u-fw-sun"],
   [0, "en-u-fw-sun"],
+  [true, "en-u-fw-true"],
+  [false, "en-u-fw-false"],
+  [null, "en-u-fw-null"],
+  ["primidi", "en-u-fw-primidi"],
+  ["duodi", "en-u-fw-duodi"],
+  ["tridi", "en-u-fw-tridi"],
+  ["quartidi", "en-u-fw-quartidi"],
+  ["quintidi", "en-u-fw-quintidi"],
+  ["sextidi", "en-u-fw-sextidi"],
+  ["septidi", "en-u-fw-septidi"],
+  ["octidi", "en-u-fw-octidi"],
+  ["nonidi", "en-u-fw-nonidi"],
+  ["decadi", "en-u-fw-decadi"],
+  ["frank", "en-u-fw-frank"],
+  ["yungfong", "en-u-fw-yungfong"],
+  ["yung-fong", "en-u-fw-yung-fong"],
+  ["tang", "en-u-fw-tang"],
+  ["frank-yung-fong-tang", "en-u-fw-frank-yung-fong-tang"],
 ];
 for (const [firstDayOfWeek, expected] of validFirstDayOfWeekOptions) {
   assert.sameValue(

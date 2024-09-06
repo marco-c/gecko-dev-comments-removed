@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isConstructor(Math.sumPrecise), false, "isConstructor(Math.sumPrecise) must return false");
+
+assert.throws(TypeError, function () {
+  new Math.sumPrecise();
+});
+
+reportCompare(0, 0);

@@ -22,7 +22,7 @@
 
 
 TemporalHelpers.checkToTemporalCalendarFastPath((temporalObject) => {
-  const monthday = new Temporal.PlainMonthDay(5, 2, temporalObject);
+  const monthday = new Temporal.PlainMonthDay(5, 2);
   monthday.equals({ monthCode: "M06", day: 2, calendar: temporalObject });
 });
 

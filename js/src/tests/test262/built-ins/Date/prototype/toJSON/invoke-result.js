@@ -17,7 +17,7 @@
 
 
 
-var date = new Date();
+var date = new Date(0);
 assert.sameValue(date.toJSON(), date.toISOString());
 
 var result = {};

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Uint8Array.prototype.setFromBase64, 'name', {
+  value: 'setFromBase64',
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+import "../resources/ensure-linking-error_FIXTURE.js";
+
+import source from '<do not resolve>';
+import from from '<do not resolve>';

@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+let x = 0;
+while (!x) {
+  x++;
+  typeof import.source.UNKNOWN;
+};
+
+

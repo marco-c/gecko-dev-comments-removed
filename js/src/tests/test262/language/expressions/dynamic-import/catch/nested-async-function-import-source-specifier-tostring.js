@@ -1,0 +1,68 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const obj = {
+    toString() {
+        return './empty_FIXTURE.js';
+    }
+};
+
+
+async function f() {
+  import.source(obj).catch(error => {
+
+    assert.sameValue(error.name, 'ReferenceError');
+
+  }).then($DONE, $DONE);
+}
+
+f();
+

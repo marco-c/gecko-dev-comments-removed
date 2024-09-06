@@ -8,7 +8,7 @@
 
 
 
-const timeZone = new Temporal.TimeZone("UTC");
+const timeZone = "UTC";
 const datetime = new Temporal.ZonedDateTime(1_000_000_000_987_654_321n, timeZone);
 
 const badOffsets = [

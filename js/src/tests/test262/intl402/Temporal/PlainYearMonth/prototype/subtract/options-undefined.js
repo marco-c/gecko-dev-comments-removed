@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const yearmonth = Temporal.PlainYearMonth.from({
+  year: 5779,
+  monthCode: "M05L",
+  calendar: "hebrew"
+});
+const duration = { years: 1 };
+
+yearmonth.subtract(duration, undefined);
+
+yearmonth.subtract(duration);
+
+reportCompare(0, 0);

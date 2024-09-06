@@ -8,7 +8,7 @@
 
 
 
-const timeZone = new Temporal.TimeZone("+01:00");
+const timeZone = "+01:00";
 const instance = new Temporal.ZonedDateTime(0n, timeZone);
 
 let str = "1970-01-01T00:00";

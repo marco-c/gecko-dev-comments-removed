@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Math.sumPrecise([]), -0);
+assert.sameValue(Math.sumPrecise([-0]), -0);
+assert.sameValue(Math.sumPrecise([-0, -0]), -0);
+assert.sameValue(Math.sumPrecise([-0, 0]), 0);
+
+reportCompare(0, 0);

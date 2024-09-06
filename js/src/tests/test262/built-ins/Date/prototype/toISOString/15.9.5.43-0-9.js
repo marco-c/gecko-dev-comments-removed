@@ -9,7 +9,7 @@
 
 
 
-var timeZoneMinutes = new Date().getTimezoneOffset() * (-1);
+var timeZoneMinutes = new Date(0).getTimezoneOffset() * (-1);
 var date, dateStr;
 
 if (timeZoneMinutes > 0) {

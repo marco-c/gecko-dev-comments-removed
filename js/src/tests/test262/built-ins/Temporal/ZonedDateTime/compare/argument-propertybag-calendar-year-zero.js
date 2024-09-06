@@ -8,7 +8,7 @@
 
 
 
-const datetime = new Temporal.ZonedDateTime(0n, new Temporal.TimeZone("UTC"));
+const datetime = new Temporal.ZonedDateTime(0n, "UTC");
 const invalidStrings = [
   "-000000-10-31",
   "-000000-10-31T17:45",

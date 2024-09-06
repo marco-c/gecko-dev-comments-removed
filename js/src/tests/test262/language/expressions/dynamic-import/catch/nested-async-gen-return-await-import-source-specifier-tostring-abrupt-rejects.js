@@ -1,0 +1,60 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const obj = {
+    toString() {
+        throw 'custom error';
+    }
+};
+
+
+async function * f() {
+  return await import.source(obj);
+}
+
+f().next().catch(error => {
+
+  assert.sameValue(error, 'custom error');
+
+}).then($DONE, $DONE);

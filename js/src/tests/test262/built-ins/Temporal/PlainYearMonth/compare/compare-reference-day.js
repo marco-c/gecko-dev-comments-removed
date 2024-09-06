@@ -8,9 +8,8 @@
 
 
 
-const iso = Temporal.Calendar.from("iso8601");
-const ym1 = new Temporal.PlainYearMonth(2000, 1, iso, 1);
-const ym2 = new Temporal.PlainYearMonth(2000, 1, iso, 2);
+const ym1 = new Temporal.PlainYearMonth(2000, 1, "iso8601", 1);
+const ym2 = new Temporal.PlainYearMonth(2000, 1, "iso8601", 2);
 assert.sameValue(Temporal.PlainYearMonth.compare(ym1, ym2), -1);
 
 reportCompare(0, 0);

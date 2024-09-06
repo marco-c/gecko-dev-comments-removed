@@ -9,7 +9,7 @@
 
 
 
-var dateObj = new Date();
+var dateObj = new Date(0);
 var data = "data";
 dateObj.set = function(value) {
   data = value;

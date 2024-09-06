@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.ZonedDateTime.prototype.getTimeZoneTransition();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.ZonedDateTime.prototype.getTimeZoneTransition), false,
+  "isConstructor(Temporal.ZonedDateTime.prototype.getTimeZoneTransition)");
+
+reportCompare(0, 0);

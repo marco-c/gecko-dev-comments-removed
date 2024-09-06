@@ -36,11 +36,10 @@
 
 
 
-const tz = TemporalHelpers.specificOffsetTimeZone(-2);
-const datetime = new Temporal.ZonedDateTime(3661_001_001_001n, tz);
+const datetime = new Temporal.ZonedDateTime(3661_001_001_001n, "-00:02");
 
 const diff = new Temporal.PlainDateTime(1970, 1, 1).until(datetime);
 
-TemporalHelpers.assertDuration(diff, 0, 0, 0, 0, 1, 1, 1, 1, 0, 999);
+TemporalHelpers.assertDuration(diff, 0, 0, 0, 0, 0, 59, 1, 1, 1, 1);
 
 reportCompare(0, 0);

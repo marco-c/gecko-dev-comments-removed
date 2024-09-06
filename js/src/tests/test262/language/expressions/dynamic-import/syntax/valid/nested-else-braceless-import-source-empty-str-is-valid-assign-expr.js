@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (false) {
+
+} else import.source('<module source>');
+
+reportCompare(0, 0);
