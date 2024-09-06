@@ -73,7 +73,7 @@ function registerEvent(
   let info2 = [];
   if (info) {
     for (let desc of info) {
-      if ((desc == "blocking" || desc == "asyncBlocking") && !blockingAllowed) {
+      if (desc == "blocking" && !blockingAllowed) {
         
         
         
@@ -140,10 +140,7 @@ function makeWebRequestEventRegistrar(event) {
 this.webRequest = class extends ExtensionAPIPersistent {
   primeListener(event, fire, params, isInStartup) {
     
-    if (
-      !isInStartup ||
-      params[1]?.some(v => v === "blocking" || v === "asyncBlocking")
-    ) {
+    if (!isInStartup || params[1]?.includes("blocking")) {
       return super.primeListener(event, fire, params, isInStartup);
     }
   }
