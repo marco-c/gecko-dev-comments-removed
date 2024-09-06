@@ -350,7 +350,9 @@ static const JSPropertySpec arraybuffer_properties[] = {
 
 static const JSFunctionSpec arraybuffer_proto_functions[] = {
     JS_SELF_HOSTED_FN("slice", "ArrayBufferSlice", 2, 0),
+#ifdef NIGHTLY_BUILD
     JS_FN("resize", ArrayBufferObject::resize, 1, 0),
+#endif
     JS_FN("transfer", ArrayBufferObject::transfer, 0, 0),
     JS_FN("transferToFixedLength", ArrayBufferObject::transferToFixedLength, 0,
           0),
@@ -359,8 +361,10 @@ static const JSFunctionSpec arraybuffer_proto_functions[] = {
 
 static const JSPropertySpec arraybuffer_proto_properties[] = {
     JS_PSG("byteLength", ArrayBufferObject::byteLengthGetter, 0),
+#ifdef NIGHTLY_BUILD
     JS_PSG("maxByteLength", ArrayBufferObject::maxByteLengthGetter, 0),
     JS_PSG("resizable", ArrayBufferObject::resizableGetter, 0),
+#endif
     JS_PSG("detached", ArrayBufferObject::detachedGetter, 0),
     JS_STRING_SYM_PS(toStringTag, "ArrayBuffer", JSPROP_READONLY),
     JS_PS_END,
@@ -424,9 +428,11 @@ static bool IsArrayBuffer(HandleValue v) {
   return v.isObject() && v.toObject().is<ArrayBufferObject>();
 }
 
+#ifdef NIGHTLY_BUILD
 static bool IsResizableArrayBuffer(HandleValue v) {
   return v.isObject() && v.toObject().is<ResizableArrayBufferObject>();
 }
+#endif
 
 MOZ_ALWAYS_INLINE bool ArrayBufferObject::byteLengthGetterImpl(
     JSContext* cx, const CallArgs& args) {
@@ -518,6 +524,7 @@ static ArrayBufferObject* ArrayBufferCopyAndDetach(
                                           arrayBuffer);
 }
 
+#ifdef NIGHTLY_BUILD
 
 
 
@@ -576,6 +583,7 @@ bool ArrayBufferObject::resizableGetter(JSContext* cx, unsigned argc,
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsArrayBuffer, resizableGetterImpl>(cx, args);
 }
+#endif
 
 
 
@@ -669,6 +677,7 @@ bool ArrayBufferObject::transferToFixedLength(JSContext* cx, unsigned argc,
                                                                         args);
 }
 
+#ifdef NIGHTLY_BUILD
 
 
 
@@ -723,6 +732,7 @@ bool ArrayBufferObject::resize(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsResizableArrayBuffer, resizeImpl>(cx, args);
 }
+#endif
 
 
 
@@ -753,6 +763,7 @@ bool ArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
 
   
   mozilla::Maybe<uint64_t> maxByteLength;
+#ifdef NIGHTLY_BUILD
   if (JS::Prefs::experimental_arraybuffer_resizable()) {
     
     if (args.get(1).isObject()) {
@@ -779,6 +790,7 @@ bool ArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
       }
     }
   }
+#endif
 
   
   
