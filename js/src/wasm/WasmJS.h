@@ -25,7 +25,6 @@
 #include <stdint.h>  
 
 #include "gc/Barrier.h"        
-#include "gc/SweepingAPI.h"    
 #include "gc/ZoneAllocator.h"  
 #include "js/AllocPolicy.h"    
 #include "js/Class.h"          
@@ -33,6 +32,7 @@
 #include "js/GCVector.h"       
 #include "js/PropertySpec.h"   
 #include "js/RootingAPI.h"     
+#include "js/SweepingAPI.h"    
 #include "js/TypeDecls.h"  
 #include "js/Vector.h"  
 #include "js/WasmFeatures.h"
