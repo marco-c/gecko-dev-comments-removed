@@ -21,6 +21,7 @@
 #  include "mozilla/StateMirroring.h"
 #  include "mozilla/StaticPrefs_media.h"
 #  include "mozilla/TaskQueue.h"
+#  include "mozilla/TimeStamp.h"
 #  include "mozilla/ThreadSafeWeakPtr.h"
 #  include "mozilla/dom/MediaDebugInfoBinding.h"
 
@@ -370,7 +371,7 @@ class MediaFormatReader final
           mCodecName(""),
           mUpdateScheduled(false),
           mDemuxEOS(false),
-          mWaitingForData(false),
+          mWaitingForDataStartTime(Nothing()),
           mWaitingForKey(false),
           mReceivedNewData(false),
           mFlushing(false),
@@ -426,7 +427,7 @@ class MediaFormatReader final
     
     bool mUpdateScheduled;
     bool mDemuxEOS;
-    bool mWaitingForData;
+    Maybe<TimeStamp> mWaitingForDataStartTime;
     bool mWaitingForKey;
     bool mReceivedNewData;
 
@@ -446,7 +447,7 @@ class MediaFormatReader final
 
     bool IsWaitingForData() const {
       MOZ_ASSERT(mOwner->OnTaskQueue());
-      return mWaitingForData;
+      return !!mWaitingForDataStartTime;
     }
 
     bool IsWaitingForKey() const {
@@ -583,7 +584,7 @@ class MediaFormatReader final
     void ResetState() {
       MOZ_ASSERT(mOwner->OnTaskQueue());
       mDemuxEOS = false;
-      mWaitingForData = false;
+      mWaitingForDataStartTime.reset();
       mQueuedSamples.Clear();
       mDecodeRequest.DisconnectIfExists();
       mDrainRequest.DisconnectIfExists();
@@ -885,6 +886,16 @@ class MediaFormatReader final
   Maybe<uint64_t> mMediaEngineId;
 
   const Maybe<TrackingId> mTrackingId;
+
+  
+  
+  
+  Maybe<TimeStamp> mReadMetadataStartTime;
+  TimeDuration mReadMetaDataTime;
+
+  
+  
+  TimeDuration mTotalWaitingForVideoDataTime;
 };
 
 }  
