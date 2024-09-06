@@ -130,11 +130,11 @@ void GMPVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
     mUnorderedData.AppendElement(std::move(v));
   }
 
-    if (mSamples.IsEmpty()) {
-      
-      
-      ProcessReorderQueue(mDecodePromise, __func__);
-    }
+  if (mSamples.IsEmpty()) {
+    
+    
+    ProcessReorderQueue(mDecodePromise, __func__);
+  }
 }
 
 void GMPVideoDecoder::ReceivedDecodedReferenceFrame(const uint64_t aPictureId) {

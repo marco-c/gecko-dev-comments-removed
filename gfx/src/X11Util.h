@@ -18,7 +18,7 @@
 #  error Unknown toolkit
 #endif
 
-#include <string.h>          
+#include <string.h>  
 
 namespace mozilla {
 

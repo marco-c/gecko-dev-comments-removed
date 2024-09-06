@@ -24,8 +24,7 @@ inline bool EmulatesUndefined(JSObject* obj) {
   return actual->getClass()->emulatesUndefined();
 }
 
-inline bool EmulatesUndefinedCheckFuse(JSObject* obj,
-                                       size_t fuseValue) {
+inline bool EmulatesUndefinedCheckFuse(JSObject* obj, size_t fuseValue) {
   
   
   AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);

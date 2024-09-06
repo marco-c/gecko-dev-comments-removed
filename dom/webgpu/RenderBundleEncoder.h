@@ -33,7 +33,9 @@ class RenderBundleEncoder final : public ObjectBase, public ChildOf<Device> {
   ~RenderBundleEncoder();
   void Cleanup();
 
-  std::unique_ptr<ffi::WGPURenderBundleEncoder, ffiWGPURenderBundleEncoderDeleter> mEncoder;
+  std::unique_ptr<ffi::WGPURenderBundleEncoder,
+                  ffiWGPURenderBundleEncoderDeleter>
+      mEncoder;
   
   nsTArray<RefPtr<const BindGroup>> mUsedBindGroups;
   nsTArray<RefPtr<const Buffer>> mUsedBuffers;
