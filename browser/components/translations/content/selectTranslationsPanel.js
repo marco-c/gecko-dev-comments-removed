@@ -449,6 +449,45 @@ var SelectTranslationsPanel = new (class {
   
 
 
+  #openSettingsPopup() {
+    const { settingsButton } = this.elements;
+    const popup = settingsButton.ownerDocument.getElementById(
+      "select-translations-panel-settings-menupopup"
+    );
+    popup.openPopup(settingsButton, "after_start");
+  }
+
+  
+
+
+  onAboutTranslations() {
+    this.close();
+    const window =
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+    window.openTrustedLinkIn(
+      "https://support.mozilla.org/kb/website-translation",
+      "tab",
+      {
+        forceForeground: true,
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+      }
+    );
+  }
+
+  
+
+
+  openTranslationsSettingsPage() {
+    this.close();
+    const window =
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+    window.openTrustedLinkIn("about:preferences#general-translations", "tab");
+  }
+
+  
+
+
 
 
   #handleCommandEvent(target) {
@@ -458,6 +497,7 @@ var SelectTranslationsPanel = new (class {
       doneButton,
       fromMenuList,
       fromMenuPopup,
+      settingsButton,
       toMenuList,
       toMenuPopup,
       translateButton,
@@ -478,6 +518,10 @@ var SelectTranslationsPanel = new (class {
       case fromMenuList.id:
       case fromMenuPopup.id: {
         this.onChangeFromLanguage();
+        break;
+      }
+      case settingsButton.id: {
+        this.#openSettingsPopup();
         break;
       }
       case toMenuList.id:
