@@ -459,6 +459,26 @@ var SelectTranslationsPanel = new (class {
   
 
 
+  onChangeTryAnotherSourceLanguage() {
+    const { tryAnotherSourceMenuList, translateButton } = this.elements;
+    if (tryAnotherSourceMenuList.value) {
+      translateButton.disabled = false;
+    }
+  }
+
+  
+
+
+  onClickTranslateButton() {
+    const { fromMenuList, tryAnotherSourceMenuList } = this.elements;
+    fromMenuList.value = tryAnotherSourceMenuList.value;
+    this.#deselectLanguage(tryAnotherSourceMenuList);
+    this.#maybeRequestTranslation();
+  }
+
+  
+
+
 
 
 
