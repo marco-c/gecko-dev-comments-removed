@@ -861,42 +861,6 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
 
 
 
-bool js::temporal::DifferenceISODateTime(JSContext* cx,
-                                         const PlainDateTime& one,
-                                         const PlainDateTime& two,
-                                         Handle<CalendarRecord> calendar,
-                                         TemporalUnit largestUnit,
-                                         DateDuration* result) {
-  NormalizedDuration normalized;
-  if (!::DifferenceISODateTime(cx, one, two, calendar, largestUnit, nullptr,
-                               &normalized)) {
-    return false;
-  }
-  *result = normalized.date;
-  return true;
-}
-
-
-
-
-
-bool js::temporal::DifferenceISODateTime(
-    JSContext* cx, const PlainDateTime& one, const PlainDateTime& two,
-    Handle<CalendarRecord> calendar, TemporalUnit largestUnit,
-    Handle<PlainObject*> options, DateDuration* result) {
-  NormalizedDuration normalized;
-  if (!::DifferenceISODateTime(cx, one, two, calendar, largestUnit, options,
-                               &normalized)) {
-    return false;
-  }
-  *result = normalized.date;
-  return true;
-}
-
-
-
-
-
 static PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
                                       Increment increment, TemporalUnit unit,
                                       TemporalRoundingMode roundingMode) {

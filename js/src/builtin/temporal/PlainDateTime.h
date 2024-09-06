@@ -170,26 +170,6 @@ bool InterpretTemporalDateTimeFields(JSContext* cx,
                                      JS::Handle<PlainObject*> fields,
                                      PlainDateTime* result);
 
-
-
-
-
-bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
-                           const PlainDateTime& two,
-                           JS::Handle<CalendarRecord> calendar,
-                           TemporalUnit largestUnit, DateDuration* result);
-
-
-
-
-
-bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
-                           const PlainDateTime& two,
-                           JS::Handle<CalendarRecord> calendar,
-                           TemporalUnit largestUnit,
-                           JS::Handle<PlainObject*> options,
-                           DateDuration* result);
-
 class MOZ_STACK_CLASS PlainDateTimeWithCalendar final {
   PlainDateTime dateTime_;
   CalendarValue calendar_;

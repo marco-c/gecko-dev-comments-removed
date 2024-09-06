@@ -1165,7 +1165,7 @@ static bool DifferenceZonedDateTime(
     JSContext* cx, const Instant& ns1, const Instant& ns2,
     Handle<TimeZoneRecord> timeZone, Handle<CalendarRecord> calendar,
     TemporalUnit largestUnit, Handle<PlainObject*> maybeOptions,
-    mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime,
+    const PlainDateTime& precalculatedPlainDateTime,
     NormalizedDuration* result) {
   MOZ_ASSERT(IsValidEpochInstant(ns1));
   MOZ_ASSERT(IsValidEpochInstant(ns2));
@@ -1177,16 +1177,10 @@ static bool DifferenceZonedDateTime(
   }
 
   
-  PlainDateTime startDateTime;
-  if (!precalculatedPlainDateTime) {
-    
-    if (!GetPlainDateTimeFor(cx, timeZone, ns1, &startDateTime)) {
-      return false;
-    }
-  } else {
-    
-    startDateTime = *precalculatedPlainDateTime;
-  }
+  
+
+  
+  const auto& startDateTime = precalculatedPlainDateTime;
 
   
   PlainDateTime endDateTime;
@@ -1195,62 +1189,100 @@ static bool DifferenceZonedDateTime(
   }
 
   
-  DateDuration dateDifference;
-  if (maybeOptions) {
-    if (!DifferenceISODateTime(cx, startDateTime, endDateTime, calendar,
-                               largestUnit, maybeOptions, &dateDifference)) {
+  int32_t sign = (ns2 - ns1 < InstantSpan{}) ? -1 : 1;
+
+  
+  int32_t maxDayCorrection = 1 + (sign > 0);
+
+  
+  int32_t dayCorrection = 0;
+
+  
+  auto timeDuration = DifferenceTime(startDateTime.time, endDateTime.time);
+
+  
+  if (NormalizedTimeDurationSign(timeDuration) == -sign) {
+    dayCorrection += 1;
+  }
+
+  
+  Rooted<PlainDateTimeWithCalendar> intermediateDateTime(cx);
+  while (dayCorrection <= maxDayCorrection) {
+    
+    auto intermediateDate =
+        BalanceISODate(endDateTime.date.year, endDateTime.date.month,
+                       endDateTime.date.day - dayCorrection * sign);
+
+    
+    
+
+    
+    if (!CreateTemporalDateTime(cx, {intermediateDate, startDateTime.time},
+                                calendar.receiver(), &intermediateDateTime)) {
       return false;
     }
-  } else {
-    if (!DifferenceISODateTime(cx, startDateTime, endDateTime, calendar,
-                               largestUnit, &dateDifference)) {
+
+    
+    Instant intermediateInstant;
+    if (!GetInstantFor(cx, timeZone, intermediateDateTime,
+                       TemporalDisambiguation::Compatible,
+                       &intermediateInstant)) {
       return false;
     }
+
+    
+    auto norm = NormalizedTimeDurationFromEpochNanosecondsDifference(
+        ns2, intermediateInstant);
+
+    
+    int32_t timeSign = NormalizedTimeDurationSign(norm);
+
+    
+    if (sign != -timeSign) {
+      
+      const auto& date1 = startDateTime.date;
+      MOZ_ASSERT(ISODateTimeWithinLimits(date1));
+
+      
+      const auto& date2 = intermediateDate;
+      MOZ_ASSERT(ISODateTimeWithinLimits(date2));
+
+      
+      auto dateLargestUnit = std::min(largestUnit, TemporalUnit::Day);
+
+      
+      
+      
+      
+      auto untilOptions = maybeOptions;
+
+      
+      DateDuration dateDifference;
+      if (untilOptions) {
+        if (!DifferenceDate(cx, calendar, date1, date2, dateLargestUnit,
+                            untilOptions, &dateDifference)) {
+          return false;
+        }
+      } else {
+        if (!DifferenceDate(cx, calendar, date1, date2, dateLargestUnit,
+                            &dateDifference)) {
+          return false;
+        }
+      }
+
+      
+      return CreateNormalizedDurationRecord(cx, dateDifference, norm, result);
+    }
+
+    
+    dayCorrection += 1;
   }
 
   
-  Instant intermediateNs;
-  if (!AddZonedDateTime(cx, ns1, timeZone, calendar,
-                        DateDuration{
-                            dateDifference.years,
-                            dateDifference.months,
-                            dateDifference.weeks,
-                        },
-                        startDateTime, &intermediateNs)) {
-    return false;
-  }
-  MOZ_ASSERT(IsValidEpochInstant(intermediateNs));
-
-  
-  auto timeDuration =
-      NormalizedTimeDurationFromEpochNanosecondsDifference(ns2, intermediateNs);
-
-  
-  Rooted<ZonedDateTime> intermediate(
-      cx,
-      ZonedDateTime{intermediateNs, timeZone.receiver(), calendar.receiver()});
-
-  
-  NormalizedTimeAndDays timeAndDays;
-  if (!NormalizedTimeDurationToDays(cx, timeDuration, intermediate, timeZone,
-                                    &timeAndDays)) {
-    return false;
-  }
-
-  
-  auto dateDuration = DateDuration{
-      dateDifference.years,
-      dateDifference.months,
-      dateDifference.weeks,
-      timeAndDays.days,
-  };
-  if (!ThrowIfInvalidDuration(cx, dateDuration)) {
-    return false;
-  }
-
-  return CreateNormalizedDurationRecord(
-      cx, dateDuration,
-      NormalizedTimeDuration::fromNanoseconds(timeAndDays.time), result);
+  JS_ReportErrorNumberASCII(
+      cx, GetErrorMessage, nullptr,
+      JSMSG_TEMPORAL_ZONED_DATE_TIME_INCONSISTENT_INSTANT);
+  return false;
 }
 
 
@@ -1262,9 +1294,9 @@ bool js::temporal::DifferenceZonedDateTime(
     Handle<TimeZoneRecord> timeZone, Handle<CalendarRecord> calendar,
     TemporalUnit largestUnit, const PlainDateTime& precalculatedPlainDateTime,
     NormalizedDuration* result) {
-  return ::DifferenceZonedDateTime(
-      cx, ns1, ns2, timeZone, calendar, largestUnit, nullptr,
-      mozilla::SomeRef(precalculatedPlainDateTime), result);
+  return ::DifferenceZonedDateTime(cx, ns1, ns2, timeZone, calendar,
+                                   largestUnit, nullptr,
+                                   precalculatedPlainDateTime, result);
 }
 
 
@@ -1489,11 +1521,10 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
 
   
   NormalizedDuration difference;
-  if (!::DifferenceZonedDateTime(
-          cx, zonedDateTime.instant(), other.instant(), timeZone, calendar,
-          settings.largestUnit, resolvedOptions,
-          mozilla::SomeRef<const PlainDateTime>(precalculatedPlainDateTime),
-          &difference)) {
+  if (!::DifferenceZonedDateTime(cx, zonedDateTime.instant(), other.instant(),
+                                 timeZone, calendar, settings.largestUnit,
+                                 resolvedOptions, precalculatedPlainDateTime,
+                                 &difference)) {
     return false;
   }
 
