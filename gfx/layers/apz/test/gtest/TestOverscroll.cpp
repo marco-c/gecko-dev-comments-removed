@@ -7,6 +7,7 @@
 #include "APZCBasicTester.h"
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 
 #include "InputUtils.h"
@@ -1845,8 +1846,7 @@ TEST_F(APZCOverscrollTesterMock,
   EXPECT_TRUE(ApzcOf(layers[1])->IsOverscrolled());
 
   
-  while (SampleAnimationsOnce())
-    ;
+  while (SampleAnimationsOnce());
 
   
   
@@ -2025,6 +2025,93 @@ TEST_F(APZCOverscrollTesterMock, OverscrollIntoPreventDefault) {
   EXPECT_FALSE(rootApzc->IsOverscrolled());
   EXPECT_EQ(rootApzc->GetFrameMetrics().GetVisualScrollOffset(),
             CSSPoint(0, 0));
+}
+#endif
+
+#ifndef MOZ_WIDGET_ANDROID  
+TEST_F(APZCOverscrollTesterMock, StuckInOverscroll_Bug1810935) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+
+  using ViewID = ScrollableLayerGuid::ViewID;
+  ViewID rootScrollId = ScrollableLayerGuid::START_SCROLL_ID;
+  ViewID subframeScrollId = ScrollableLayerGuid::START_SCROLL_ID + 1;
+
+  const char* treeShape = "x(x)";
+  LayerIntRect layerVisibleRects[] = {LayerIntRect(0, 0, 100, 100),
+                                      LayerIntRect(50, 0, 50, 100)};
+  CreateScrollData(treeShape, layerVisibleRects);
+  SetScrollableFrameMetrics(root, rootScrollId, CSSRect(0, 0, 100, 200));
+  SetScrollableFrameMetrics(layers[1], subframeScrollId,
+                            CSSRect(0, 0, 50, 200));
+  SetScrollHandoff(layers[1], root);
+
+  registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+  UpdateHitTestingTree();
+  rootApzc = ApzcOf(root);
+  auto* subframeApzc = ApzcOf(layers[1]);
+  rootApzc->GetFrameMetrics().SetIsRootContent(true);
+
+  
+  ScreenIntPoint panPoint(75, 50);
+  QueueMockHitResult(subframeScrollId);
+  PanGesture(PanGestureInput::PANGESTURE_START, manager, panPoint,
+             ScreenPoint(0, -10), mcc->Time());
+  mcc->AdvanceByMillis(10);
+  QueueMockHitResult(subframeScrollId);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,
+             ScreenPoint(0, -50), mcc->Time());
+  mcc->AdvanceByMillis(10);
+  QueueMockHitResult(subframeScrollId);
+  PanGesture(PanGestureInput::PANGESTURE_END, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time());
+
+  
+  EXPECT_TRUE(rootApzc->IsOverscrolled());
+  EXPECT_FALSE(subframeApzc->IsOverscrolled());
+
+  
+  mcc->AdvanceByMillis(10);
+  EXPECT_TRUE(rootApzc->IsOverscrollAnimationRunning());
+
+  
+  QueueMockHitResult(subframeScrollId);
+  PanGesture(PanGestureInput::PANGESTURE_START, manager, panPoint,
+             ScreenPoint(0, 50), mcc->Time());
+
+  
+  
+  EXPECT_FALSE(rootApzc->IsOverscrollAnimationRunning());
+
+  
+  mcc->AdvanceByMillis(10);
+  QueueMockHitResult(subframeScrollId);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,
+             ScreenPoint(0, 100), mcc->Time());
+  mcc->AdvanceByMillis(10);
+  QueueMockHitResult(subframeScrollId);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,
+             ScreenPoint(0, 100), mcc->Time());
+  mcc->AdvanceByMillis(10);
+  QueueMockHitResult(subframeScrollId);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,
+             ScreenPoint(0, 100), mcc->Time());
+  mcc->AdvanceByMillis(10);
+  QueueMockHitResult(subframeScrollId);
+  
+  PanGesture(PanGestureInput::PANGESTURE_END, manager, panPoint,
+             ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
+             true);
+
+  
+  EXPECT_TRUE(rootApzc->IsOverscrolled());
+  EXPECT_TRUE(subframeApzc->IsOverscrolled());
+
+  
+  while (SampleAnimationsOnce());
+
+  
+  EXPECT_FALSE(rootApzc->IsOverscrolled());
+  EXPECT_FALSE(subframeApzc->IsOverscrolled());
 }
 #endif
 
