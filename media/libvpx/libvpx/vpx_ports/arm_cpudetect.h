@@ -30,7 +30,7 @@
 #endif
 
 #if defined(__ANDROID__) && (__ANDROID_API__ < 18)
-#define ANDROID_USE_CPU_FEATURES_LIB 1
+#define VPX_USE_ANDROID_CPU_FEATURES 1
 
 
 

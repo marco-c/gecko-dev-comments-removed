@@ -465,6 +465,8 @@ typedef struct vpx_codec_enc_cfg {
 
 
 
+
+
   unsigned int rc_target_bitrate;
 
   
@@ -969,6 +971,15 @@ vpx_codec_err_t vpx_codec_enc_config_default(vpx_codec_iface_t *iface,
 
 vpx_codec_err_t vpx_codec_enc_config_set(vpx_codec_ctx_t *ctx,
                                          const vpx_codec_enc_cfg_t *cfg);
+
+
+
+
+
+
+
+
+
 
 
 

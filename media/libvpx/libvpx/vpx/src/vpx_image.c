@@ -148,7 +148,11 @@ static vpx_image_t *img_alloc_helper(vpx_image_t *img, vpx_img_fmt_t fmt,
   img->stride[VPX_PLANE_U] = img->stride[VPX_PLANE_V] = stride_in_bytes >> xcs;
 
   
-  if (!vpx_img_set_rect(img, 0, 0, d_w, d_h)) return img;
+
+  int ret = vpx_img_set_rect(img, 0, 0, d_w, d_h);
+  assert(ret == 0);
+  (void)ret;
+  return img;
 
 fail:
   vpx_img_free(img);

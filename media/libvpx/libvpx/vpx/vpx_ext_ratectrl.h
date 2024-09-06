@@ -8,6 +8,10 @@
 
 
 
+
+
+
+
 #ifndef VPX_VPX_VPX_EXT_RATECTRL_H_
 #define VPX_VPX_VPX_EXT_RATECTRL_H_
 
@@ -30,8 +34,9 @@ extern "C" {
 
 
 
-
 #define VPX_RC_MAX_STATIC_GF_GROUP_LENGTH 250
+
+
 
 
 
@@ -42,18 +47,34 @@ extern "C" {
 
 
 
-
-
-
-
-
-
-
 typedef enum vpx_rc_type {
+  
+
+
+
+  VPX_RC_NONE = 0,
+  
+
+
+
   VPX_RC_QP = 1 << 0,
+  
+
+
+
   VPX_RC_GOP = 1 << 1,
+  
+
+
+
   VPX_RC_RDMULT = 1 << 2,
+  
+
+
   VPX_RC_GOP_QP = VPX_RC_QP | VPX_RC_GOP,
+  
+
+
   VPX_RC_GOP_QP_RDMULT = VPX_RC_QP | VPX_RC_GOP | VPX_RC_RDMULT
 } vpx_rc_type_t;
 
@@ -77,6 +98,8 @@ typedef enum vpx_rc_frame_update_type {
   VPX_RC_MID_OVERLAY_UPDATE = 5,
   VPX_RC_USE_BUF_FRAME = 6,
 } vpx_rc_frame_update_type_t;
+
+
 
 
 
@@ -353,7 +376,16 @@ typedef struct vpx_rc_config {
 
 
 typedef struct vpx_rc_ref_frame {
+  
+
+
+
   int index[VPX_RC_MAX_REF_FRAMES];
+  
+
+
+
+
   vpx_rc_ref_name_t name[VPX_RC_MAX_REF_FRAMES];
 } vpx_rc_ref_frame_t;
 
@@ -365,8 +397,10 @@ typedef struct vpx_rc_gop_decision {
   int use_alt_ref;       
   int use_key_frame;     
   
-  
-  
+
+
+
+
   vpx_rc_frame_update_type_t update_type[VPX_RC_MAX_STATIC_GF_GROUP_LENGTH + 2];
   
   int update_ref_index[VPX_RC_MAX_STATIC_GF_GROUP_LENGTH + 2];
@@ -514,6 +548,11 @@ typedef struct vpx_rc_funcs {
 
 
   vpx_rc_delete_model_cb_fn_t delete_model;
+
+  
+
+
+  const char *rate_ctrl_log_path;
   
 
 

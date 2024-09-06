@@ -404,6 +404,13 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::Values(::libvpx_test::kTwoPassGood),
         ::testing::Range(0, 4)));  
 
+constexpr libvpx_test::TestMode kOnePassTestModes[] = {
+  libvpx_test::kRealTime,
+#if !CONFIG_REALTIME_ONLY
+  libvpx_test::kOnePassGood,
+#endif
+};
+
 
 
 
@@ -412,17 +419,31 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Combine(
         ::testing::Values(
             static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)),
-        ONE_PASS_TEST_MODES, ::testing::Range(3, 10),  
-        ::testing::Range(0, 3),                        
-        ::testing::Range(2, 5)));                      
+        ::testing::ValuesIn(kOnePassTestModes),
+        ::testing::Range(3, 10),   
+        ::testing::Range(0, 3),    
+        ::testing::Range(2, 5)));  
 
 INSTANTIATE_TEST_SUITE_P(
     VP9Large, VPxEncoderThreadTest,
     ::testing::Combine(
         ::testing::Values(
             static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)),
-        ONE_PASS_TEST_MODES, ::testing::Range(0, 3),  
-        ::testing::Range(0, 3),                       
-        ::testing::Range(2, 5)));                     
+        ::testing::ValuesIn(kOnePassTestModes),
+        ::testing::Range(0, 3),    
+        ::testing::Range(0, 3),    
+        ::testing::Range(2, 5)));  
+
+#if !CONFIG_REALTIME_ONLY
+INSTANTIATE_TEST_SUITE_P(
+    VP9LargeBest, VPxEncoderThreadTest,
+    ::testing::Combine(
+        ::testing::Values(
+            static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)),
+        ::testing::Values(libvpx_test::kOnePassBest),
+        ::testing::Range(0, 10),   
+        ::testing::Range(0, 3),    
+        ::testing::Range(2, 5)));  
+#endif
 
 }  

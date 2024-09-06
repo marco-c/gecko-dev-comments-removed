@@ -8,13 +8,13 @@
 
 
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include "args.h"
 
 #include "vpx/vpx_integer.h"
-#include "vpx_ports/msvc.h"
 
 #if defined(__GNUC__)
 __attribute__((noreturn)) extern void die(const char *fmt, ...);
