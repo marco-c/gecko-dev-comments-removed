@@ -31,6 +31,7 @@
 #include "prtime.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "xpcpublic.h"
+#include "mozilla/glean/GleanMetrics.h"
 
 #define TEST_OBSERVER_MSG_RECORD_BOUNCES_FINISHED "test-record-bounces-finished"
 
@@ -804,54 +805,6 @@ nsresult BounceTrackingProtection::MaybeMigrateUserInteractionPermissions() {
   
   return mozilla::Preferences::SetBool(
       "privacy.bounceTrackingProtection.hasMigratedUserActivationData", true);
-}
-
-
-
-NS_IMPL_ISUPPORTS(BounceTrackingProtection::ClearDataCallback,
-                  nsIClearDataCallback);
-
-BounceTrackingProtection::ClearDataCallback::ClearDataCallback(
-    ClearDataMozPromise::Private* aPromise, const nsACString& aHost)
-    : mHost(aHost), mClearDurationTimer(0), mPromise(aPromise) {
-  MOZ_ASSERT(!aHost.IsEmpty(), "Host must not be empty");
-  if (!StaticPrefs::privacy_bounceTrackingProtection_enableDryRunMode()) {
-    
-    mClearDurationTimer =
-        glean::bounce_tracking_protection::purge_duration.Start();
-    MOZ_ASSERT(mClearDurationTimer);
-  }
-};
-
-BounceTrackingProtection::ClearDataCallback::~ClearDataCallback() {
-  mPromise->Reject(0, __func__);
-  if (mClearDurationTimer) {
-    glean::bounce_tracking_protection::purge_duration.Cancel(
-        std::move(mClearDurationTimer));
-  }
-}
-
-
-NS_IMETHODIMP BounceTrackingProtection::ClearDataCallback::OnDataDeleted(
-    uint32_t aFailedFlags) {
-  if (aFailedFlags) {
-    mPromise->Reject(aFailedFlags, __func__);
-  } else {
-    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
-            ("%s: Cleared %s", __FUNCTION__, mHost.get()));
-    mPromise->Resolve(std::move(mHost), __func__);
-  }
-  RecordClearDurationTelemetry();
-  return NS_OK;
-}
-
-void BounceTrackingProtection::ClearDataCallback::
-    RecordClearDurationTelemetry() {
-  if (mClearDurationTimer) {
-    glean::bounce_tracking_protection::purge_duration.StopAndAccumulate(
-        std::move(mClearDurationTimer));
-    mClearDurationTimer = 0;
-  }
 }
 
 }  
