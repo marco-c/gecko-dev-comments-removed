@@ -134,7 +134,6 @@
 #include "nsError.h"
 #include "nsFlexContainerFrame.h"
 #include "nsFocusManager.h"
-#include "nsFrameManager.h"
 #include "nsFrameSelection.h"
 #include "nsGkAtoms.h"
 #include "nsGlobalWindowOuter.h"
@@ -748,7 +747,6 @@ bool PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell) {
 PresShell::PresShell(Document* aDocument)
     : mDocument(aDocument),
       mViewManager(nullptr),
-      mFrameManager(nullptr),
       mAutoWeakFrames(nullptr),
 #ifdef ACCESSIBILITY
       mDocAccessible(nullptr),
@@ -863,9 +861,7 @@ PresShell::~PresShell() {
   MOZ_ASSERT(!mAllocatedPointers || mAllocatedPointers->IsEmpty(),
              "Some pres arena objects were not freed");
 
-  mFrameManager = nullptr;
   mFrameConstructor = nullptr;
-
   mCurrentEventContent = nullptr;
 }
 
@@ -892,8 +888,6 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
 
   
   mFrameConstructor = MakeUnique<nsCSSFrameConstructor>(mDocument, this);
-
-  mFrameManager = mFrameConstructor.get();
 
   
   mViewManager->SetPresShell(this);

@@ -31,8 +31,8 @@
 #include "nsColor.h"
 #include "nsCOMArray.h"
 #include "nsCoord.h"
+#include "nsCSSFrameConstructor.h"
 #include "nsDOMNavigationTiming.h"
-#include "nsFrameManager.h"
 #include "nsFrameState.h"
 #include "nsIContent.h"
 #include "nsIObserver.h"
@@ -426,10 +426,11 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   void LoadComplete();
+
   
 
 
-  nsIFrame* GetRootFrame() const { return mFrameManager->GetRootFrame(); }
+  nsIFrame* GetRootFrame() const { return mFrameConstructor->GetRootFrame(); }
 
   
 
@@ -2953,9 +2954,6 @@ class PresShell final : public nsStubDocumentObserver,
   RefPtr<nsCaret> mCaret;
   RefPtr<nsCaret> mOriginalCaret;
   RefPtr<AccessibleCaretEventHub> mAccessibleCaretEventHub;
-  
-  
-  nsFrameManager* mFrameManager;
   WeakPtr<nsDocShell> mForwardingContainer;
 
   
