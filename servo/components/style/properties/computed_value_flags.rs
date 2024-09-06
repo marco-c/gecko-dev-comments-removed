@@ -126,6 +126,9 @@ bitflags! {
 
         /// Whether there are author-specific rules for text `color`.
         const HAS_AUTHOR_SPECIFIED_TEXT_COLOR = 1 << 25;
+
+        /// Whether this style considered a scope style rule.
+        const CONSIDERED_SCOPED_STYLE = 1 << 26;
     }
 }
 
@@ -158,7 +161,8 @@ impl ComputedValueFlags {
     
     #[inline]
     fn cascade_input_flags() -> Self {
-        Self::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES
+        Self::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES |
+        Self::CONSIDERED_SCOPED_STYLE
     }
 
     
