@@ -1550,8 +1550,8 @@ nsWindow* nsWindow::GetParentWindowBase(bool aIncludeOwner) {
 
 
 
-void nsWindow::Show(bool bState) {
-  if (bState && mIsShowingPreXULSkeletonUI) {
+void nsWindow::Show(bool aState) {
+  if (aState && mIsShowingPreXULSkeletonUI) {
     
     
     
@@ -1585,10 +1585,10 @@ void nsWindow::Show(bool bState) {
   bool wasVisible = mIsVisible;
   
   
-  mIsVisible = bState;
+  mIsVisible = aState;
 
   if (mWnd) {
-    if (bState) {
+    if (aState) {
       if (!wasVisible && mWindowType == WindowType::TopLevel) {
         
         
@@ -1743,7 +1743,7 @@ void nsWindow::Show(bool bState) {
     }
   }
 
-  if (!wasVisible && bState) {
+  if (!wasVisible && aState) {
     Invalidate();
     if (syncInvalidate && !mInDtor && !mOnDestroyCalled) {
       ::UpdateWindow(mWnd);
@@ -2298,9 +2298,9 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
 
 
 
-void nsWindow::Enable(bool bState) {
+void nsWindow::Enable(bool aState) {
   if (mWnd) {
-    ::EnableWindow(mWnd, bState);
+    ::EnableWindow(mWnd, aState);
   }
 }
 
