@@ -232,6 +232,10 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   
   uintptr_t mCachedDragContext;
+  nsTHashMap<void*, RefPtr<DragData>> mCachedDragData;
+  nsTArray<GdkAtom> mCachedDragFlavors;
+
+  void SetCachedDragContext(GdkDragContext* aDragContext);
 
   nsTHashMap<nsCStringHashKey, mozilla::GUniquePtr<gchar*>> mCachedUris;
 
@@ -269,6 +273,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   mozilla::GUniquePtr<gchar*> mTargetDragUris;
   
   bool IsTargetContextList(void);
+  bool IsDragFlavorAvailable(GdkAtom aRequestedFlavor);
   
   
   void GetTargetDragData(GdkAtom aFlavor, nsTArray<nsCString>& aDropFlavors,
