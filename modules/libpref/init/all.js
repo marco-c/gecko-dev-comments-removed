@@ -641,6 +641,7 @@ pref("toolkit.telemetry.user_characteristics_ping.last_version_sent", 0);
 
 
 pref("toolkit.telemetry.user_characteristics_ping.uuid", "");
+pref("toolkit.telemetry.user_characteristics_ping.logLevel", "Warn");
 
 
 

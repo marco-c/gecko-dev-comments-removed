@@ -7,9 +7,12 @@
 
 #include "nsID.h"
 #include "nsIUUIDGenerator.h"
+#include "nsIUserCharacteristicsPageService.h"
 #include "nsServiceManagerUtils.h"
 
+#include "mozilla/Components.h"
 #include "mozilla/Logging.h"
+#include "mozilla/dom/Promise-inl.h"
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/GleanMetrics.h"
 
@@ -58,6 +61,15 @@ int MaxTouchPoints() {
 }  
 };  
 
+
+void CanvasStuff() {
+  nsCOMPtr<nsIUserCharacteristicsPageService> ucp =
+      do_GetService("@mozilla.org/user-characteristics-page;1");
+  MOZ_ASSERT(ucp);
+
+  RefPtr<mozilla::dom::Promise> promise;
+  mozilla::Unused << ucp->CreateContentPage(getter_AddRefs(promise));
+}
 
 void PopulateCSSProperties() {
   glean::characteristics::prefers_reduced_transparency.Set(
@@ -242,6 +254,13 @@ const auto* const kUUIDPref =
 nsresult nsUserCharacteristics::PopulateData(bool aTesting ) {
   MOZ_LOG(gUserCharacteristicsLog, LogLevel::Warning, ("Populating Data"));
   MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  NS_ENSURE_TRUE(obs, NS_ERROR_NOT_AVAILABLE);
+
+  obs->NotifyObservers(nullptr, "user-characteristics-populating-data",
+                       nullptr);
+
   glean::characteristics::submission_schema.Set(kSubmissionSchema);
 
   nsAutoCString uuidString;
