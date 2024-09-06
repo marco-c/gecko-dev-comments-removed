@@ -25,6 +25,7 @@
 #include "NamespaceImports.h"
 
 #include "builtin/temporal/Instant.h"
+#include "builtin/temporal/Int128.h"
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/PlainMonthDay.h"
@@ -989,6 +990,36 @@ bool js::temporal::RoundNumberToIncrement(
 
   *result = BigInt::numberValue(adjusted);
   return true;
+}
+
+#ifdef DEBUG
+
+static bool IsValidMul(const Int128& x, const Int128& y) {
+  static constexpr auto min = Int128{1} << 127;
+  static constexpr auto max = ~min;
+
+  if (x == Int128{0} || y == Int128{0}) {
+    return true;
+  }
+  if (x > Int128{0}) {
+    return y > Int128{0} ? x <= max / y : y >= min / x;
+  }
+  return y > Int128{0} ? x >= min / y : y >= max / x;
+}
+#endif
+
+
+
+
+Int128 js::temporal::RoundNumberToIncrement(const Int128& numerator,
+                                            const Int128& increment,
+                                            TemporalRoundingMode roundingMode) {
+  
+  auto rounded = Divide(numerator, increment, roundingMode);
+
+  
+  MOZ_ASSERT(IsValidMul(rounded, increment), "unsupported overflow");
+  return rounded * increment;
 }
 
 

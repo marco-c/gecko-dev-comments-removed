@@ -37,6 +37,7 @@ class TemporalObject : public NativeObject {
 
 struct Instant;
 struct PlainTime;
+class Int128;
 
 
 
@@ -167,6 +168,12 @@ bool GetTemporalUnit(JSContext* cx, JS::Handle<JSString*> value,
 
 bool ToTemporalRoundingMode(JSContext* cx, JS::Handle<JSObject*> options,
                             TemporalRoundingMode* mode);
+
+
+
+
+Int128 RoundNumberToIncrement(const Int128& x, const Int128& increment,
+                              TemporalRoundingMode roundingMode);
 
 
 
