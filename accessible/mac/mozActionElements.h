@@ -88,6 +88,13 @@
 
 @end
 
+@interface mozMeterAccessible : mozRangeAccessible
+
+
+- (NSString*)moxValueDescription;
+
+@end
+
 
 
 

@@ -3452,6 +3452,14 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         fields->SetAttribute(CacheKey::SrcURL, DeleteEntry());
       }
     }
+
+    if (TagName() == nsGkAtoms::meter) {
+      
+      
+      
+      HTMLMeterAccessible* meter = static_cast<HTMLMeterAccessible*>(this);
+      fields->SetAttribute(CacheKey::ValueRegion, meter->ValueRegion());
+    }
   }
 
   if (aCacheDomain & CacheDomain::Viewport && IsDoc()) {

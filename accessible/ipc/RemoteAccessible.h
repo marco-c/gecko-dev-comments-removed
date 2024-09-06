@@ -375,6 +375,9 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
 #endif  
 
   
+  int32_t ValueRegion() const;
+
+  
   virtual already_AddRefed<AccAttributes> DefaultTextAttributes() override;
 
   virtual void ScrollSubstringToPoint(int32_t aStartOffset, int32_t aEndOffset,

@@ -244,6 +244,8 @@ class CacheKey {
   
   static constexpr nsStaticAtom* TransformMatrix = nsGkAtoms::transform;
   
+  static constexpr nsStaticAtom* ValueRegion = nsGkAtoms::valuetype;
+  
   
   
   static constexpr nsStaticAtom* Viewport = nsGkAtoms::viewport;

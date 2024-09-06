@@ -335,6 +335,17 @@ class HTMLMeterAccessible : public LeafAccessible {
   
   virtual bool IsWidget() const override;
 
+  
+
+  
+
+
+
+
+
+
+  int32_t ValueRegion() const;
+
  protected:
   virtual ~HTMLMeterAccessible() {}
 
