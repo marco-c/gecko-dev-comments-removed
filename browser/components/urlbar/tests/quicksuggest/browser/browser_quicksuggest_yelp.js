@@ -402,6 +402,11 @@ async function doDismiss({ menu, assert }) {
 }
 
 
+add_task(async function resultMenu_manage() {
+  await doManageTest({ input: "ramen", index: 1 });
+});
+
+
 add_task(async function rowLabel() {
   let tests = [
     { topPick: true, label: "Local recommendations" },

@@ -532,6 +532,45 @@ async function doCommandTest({
 
 
 
+async function doManageTest({ index, input }) {
+  await BrowserTestUtils.withNewTab({ gBrowser }, async browser => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: input,
+    });
+
+    const managePage = "about:preferences#search";
+    let onManagePageLoaded = BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      managePage
+    );
+    
+    await UrlbarTestUtils.openResultMenuAndClickItem(window, "manage", {
+      resultIndex: index,
+    });
+    await onManagePageLoaded;
+
+    Assert.equal(
+      browser.currentURI.spec,
+      managePage,
+      "The manage page is loaded"
+    );
+
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

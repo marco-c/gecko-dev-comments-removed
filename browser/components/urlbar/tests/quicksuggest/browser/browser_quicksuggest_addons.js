@@ -245,8 +245,13 @@ add_task(async function resultMenu_notInterested() {
 });
 
 
-add_task(async function notRelevant() {
+add_task(async function resultMenu_notRelevant() {
   await doDismissTest("not_relevant", false);
+});
+
+
+add_task(async function resultMenu_manage() {
+  await doManageTest({ input: "only match the Merino suggestion", index: 1 });
 });
 
 
