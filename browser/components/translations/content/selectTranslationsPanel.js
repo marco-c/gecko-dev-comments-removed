@@ -896,36 +896,41 @@ var SelectTranslationsPanel = new (class {
 
 
 
-
-  #changeStateByLanguagePair(fromLanguage, toLanguage) {
+  #maybeChangeStateToTranslatable(fromLanguage, toLanguage) {
     const {
-      phase: previousPhase,
       fromLanguage: previousFromLanguage,
       toLanguage: previousToLanguage,
     } = this.#translationState;
 
-    let nextPhase = "translatable";
+    const langSelectionChanged = () =>
+      previousFromLanguage !== fromLanguage ||
+      previousToLanguage !== toLanguage;
+
+    const shouldTranslateEvenIfLangSelectionHasNotChanged = () => {
+      const phase = this.phase();
+      return (
+        
+        phase === "idle" ||
+        
+        phase === "failure"
+      );
+    };
 
     if (
       
-      !fromLanguage ||
+      fromLanguage &&
       
-      !toLanguage ||
+      toLanguage &&
       
-      (this.phase() !== "idle" &&
-        this.phase() !== "failure" &&
-        previousFromLanguage === fromLanguage &&
-        previousToLanguage === toLanguage)
+      (langSelectionChanged() ||
+        
+        shouldTranslateEvenIfLangSelectionHasNotChanged())
     ) {
-      nextPhase = previousPhase;
+      this.#changeStateTo("translatable", /* retainEntries */ true, {
+        fromLanguage,
+        toLanguage,
+      });
     }
-
-    this.#changeStateTo(nextPhase, /* retainEntries */ true, {
-      fromLanguage,
-      toLanguage,
-    });
-
-    return nextPhase;
   }
 
   
@@ -1355,9 +1360,11 @@ var SelectTranslationsPanel = new (class {
     if (this.#isClosed()) {
       return;
     }
+
     const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
-    const nextState = this.#changeStateByLanguagePair(fromLanguage, toLanguage);
-    if (nextState !== "translatable") {
+    this.#maybeChangeStateToTranslatable(fromLanguage, toLanguage);
+
+    if (this.phase() !== "translatable") {
       return;
     }
 
