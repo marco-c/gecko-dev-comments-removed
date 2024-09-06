@@ -291,10 +291,13 @@ class FontFaceImpl final {
 
   
   
-  bool mUnicodeRangeDirty;
+  bool mUnicodeRangeDirty = true;
 
   
-  bool mInFontFaceSet;
+  bool mInFontFaceSet = false;
+
+  
+  bool mKeepingOwnerAlive = false;
 };
 
 }  
