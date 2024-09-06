@@ -1702,7 +1702,11 @@ pref("browser.newtabpage.activity-stream.weather.locationSearchEnabled", false);
 pref("browser.newtabpage.activity-stream.weather.temperatureUnits", "f");
 pref("browser.newtabpage.activity-stream.weather.display", "simple");
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "");
+#ifdef NIGHTLY_BUILD
+  pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "US,CA");
+#else
+  pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "");
+#endif
 
 
 pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
