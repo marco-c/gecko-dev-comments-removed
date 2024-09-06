@@ -1025,15 +1025,6 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
   MOZ_LOG(gUserCharacteristicsLog, LogLevel::Warning, ("Populating Data"));
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (!obs) {
-    return;
-  }
-
-  
-  obs->NotifyObservers(nullptr, "user-characteristics-populating-data",
-                       nullptr);
-
   if (NS_FAILED(PopulateEssentials())) {
     
     AfterPingSentSteps(false);
