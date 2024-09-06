@@ -4800,9 +4800,6 @@ function showFullScreenViewContextMenuItems(popup) {
 
 function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
   var popup = aEvent.target;
-  if (popup != aEvent.currentTarget) {
-    return;
-  }
 
   
   let toolbarItem = popup.triggerNode;
