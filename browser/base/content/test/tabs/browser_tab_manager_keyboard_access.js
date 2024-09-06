@@ -32,8 +32,6 @@ add_task(async function test_open_tabmanager_keyboard() {
     "popuphidden"
   );
   EventUtils.synthesizeKey("KEY_Escape", { shiftKey: false }, newWindow);
-  
-  EventUtils.synthesizeKey("KEY_Escape", { shiftKey: false }, newWindow);
   await hidden;
   await BrowserTestUtils.closeWindow(newWindow);
 });
