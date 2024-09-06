@@ -112,7 +112,7 @@ size_t PretenuringNursery::doPretenuring(GCRuntime* gc, JS::GCReason reason,
   }
 
   if (reportInfo) {
-    AllocSite::printInfoHeader(reason, promotionRate);
+    AllocSite::printInfoHeader(gc, reason, promotionRate);
   }
 
   AllocSite* site = allocatedSites;
@@ -451,21 +451,6 @@ bool PretenuringZone::shouldResetPretenuredAllocSites() {
   return shouldReset;
 }
 
-
-void AllocSite::printInfoHeader(JS::GCReason reason, double promotionRate) {
-  fprintf(stderr, "  %-16s %-16s %-20s %-8s %-8s %-6s %-10s\n", "site", "zone",
-          "script/kind", "nallocs", "promotes", "prate", "state");
-}
-
-
-void AllocSite::printInfoFooter(size_t sitesCreated, size_t sitesActive,
-                                size_t sitesPretenured,
-                                size_t sitesInvalidated) {
-  fprintf(stderr,
-          "  %zu alloc sites created, %zu active, %zu pretenured, %zu "
-          "invalidated\n",
-          sitesCreated, sitesActive, sitesPretenured, sitesInvalidated);
-}
 static const char* AllocSiteKindName(AllocSite::Kind kind) {
   switch (kind) {
     case AllocSite::Kind::Normal:
@@ -481,25 +466,60 @@ static const char* AllocSiteKindName(AllocSite::Kind kind) {
   }
 }
 
+
+void AllocSite::printInfoHeader(GCRuntime* gc, JS::GCReason reason,
+                                double promotionRate) {
+  fprintf(stderr,
+          "Pretenuring info after minor GC %zu for %s reason with promotion "
+          "rate %4.1f%%:\n",
+          size_t(gc->minorGCCount()), ExplainGCReason(reason),
+          promotionRate * 100.0);
+  fprintf(stderr, "  %-16s %-16s %-20s %-12s %-9s %-9s %-8s %-8s %-6s %-10s\n",
+          "Site", "Zone", "Location", "BytecodeOp", "SiteKind", "TraceKind",
+          "NAllocs", "Promotes", "PRate", "State");
+}
+
+static const char* FindBaseName(const char* filename) {
+#ifdef XP_WIN
+  constexpr char PathSeparator = '\\';
+#else
+  constexpr char PathSeparator = '/';
+#endif
+
+  const char* lastSep = strrchr(filename, PathSeparator);
+  if (!lastSep) {
+    return filename;
+  }
+
+  return lastSep + 1;
+}
+
 void AllocSite::printInfo(bool hasPromotionRate, double promotionRate,
                           bool wasInvalidated) const {
   
   fprintf(stderr, "  %16p %16p", this, zone());
 
   
-  if (!hasScript()) {
-    const char* siteKindName = AllocSiteKindName(kind());
-    if (isUnknown()) {
-      char buffer[32];
-      const char* traceKindName = JS::GCTraceKindToAscii(traceKind());
-      SprintfLiteral(buffer, "%s %s", siteKindName, traceKindName);
-      fprintf(stderr, " %-20s", buffer);
-    } else {
-      fprintf(stderr, " %-20s", siteKindName);
-    }
-  } else {
-    fprintf(stderr, " %20p", script());
+  char location[21] = {'\0'};
+  char opName[13] = {'\0'};
+  if (hasScript()) {
+    uint32_t line = PCToLineNumber(script(), script()->offsetToPC(pcOffset()));
+    const char* scriptName = FindBaseName(script()->filename());
+    SprintfLiteral(location, "%s:%u", scriptName, line);
+    BytecodeLocation location = script()->offsetToLocation(pcOffset());
+    SprintfLiteral(opName, "%s", CodeName(location.getOp()));
   }
+  fprintf(stderr, " %-20s %-12s", location, opName);
+
+  
+  fprintf(stderr, " %-9s", AllocSiteKindName(kind()));
+
+  
+  const char* traceKindName = "";
+  if (!isOptimized()) {
+    traceKindName = JS::GCTraceKindToAscii(traceKind());
+  }
+  fprintf(stderr, " %-9s", traceKindName);
 
   
   char buffer[16] = {'\0'};
@@ -519,7 +539,10 @@ void AllocSite::printInfo(bool hasPromotionRate, double promotionRate,
   fprintf(stderr, " %6s", buffer);
 
   
-  const char* state = !isOptimized() ? stateName() : "";
+  const char* state = "";
+  if (!isOptimized()) {
+    state = stateName();
+  }
   fprintf(stderr, " %-10s", state);
 
   
@@ -531,6 +554,14 @@ void AllocSite::printInfo(bool hasPromotionRate, double promotionRate,
 }
 
 
+void AllocSite::printInfoFooter(size_t sitesCreated, size_t sitesActive,
+                                size_t sitesPretenured,
+                                size_t sitesInvalidated) {
+  fprintf(stderr,
+          "  %zu alloc sites created, %zu active, %zu pretenured, %zu "
+          "invalidated\n",
+          sitesCreated, sitesActive, sitesPretenured, sitesInvalidated);
+}
 
 const char* AllocSite::stateName() const {
   switch (state()) {
