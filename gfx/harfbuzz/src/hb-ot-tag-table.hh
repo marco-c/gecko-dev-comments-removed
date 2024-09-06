@@ -2825,6 +2825,7 @@ out:
 
 
 
+
 static inline hb_language_t
 hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
 {
@@ -2834,8 +2835,6 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("alt", -1);  
   case HB_TAG('A','P','P','H'):  
     return hb_language_from_string ("und-fonnapa", -1);  
-  case HB_TAG('A','R','A',' '):  
-    return hb_language_from_string ("ar", -1);  
   case HB_TAG('A','R','K',' '):  
     return hb_language_from_string ("rki", -1);  
   case HB_TAG('A','T','H',' '):  
@@ -2856,12 +2855,6 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("din", -1);  
   case HB_TAG('D','R','I',' '):  
     return hb_language_from_string ("prs", -1);  
-  case HB_TAG('D','Z','N',' '):  
-    return hb_language_from_string ("dz", -1);  
-  case HB_TAG('E','T','I',' '):  
-    return hb_language_from_string ("et", -1);  
-  case HB_TAG('F','A','R',' '):  
-    return hb_language_from_string ("fa", -1);  
   case HB_TAG('G','O','N',' '):  
     return hb_language_from_string ("gon", -1);  
   case HB_TAG('H','M','A',' '):  
@@ -2876,10 +2869,6 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("iba", -1);  
   case HB_TAG('I','J','O',' '):  
     return hb_language_from_string ("ijo", -1);  
-  case HB_TAG('I','N','U',' '):  
-    return hb_language_from_string ("iu", -1);  
-  case HB_TAG('I','P','K',' '):  
-    return hb_language_from_string ("ik", -1);  
   case HB_TAG('I','P','P','H'):  
     return hb_language_from_string ("und-fonipa", -1);  
   case HB_TAG('I','R','T',' '):  
@@ -2890,36 +2879,24 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("kln", -1);  
   case HB_TAG('K','G','E',' '):  
     return hb_language_from_string ("und-Geok", -1);  
-  case HB_TAG('K','N','R',' '):  
-    return hb_language_from_string ("kr", -1);  
   case HB_TAG('K','O','H',' '):  
     return hb_language_from_string ("okm", -1);  
   case HB_TAG('K','O','K',' '):  
     return hb_language_from_string ("kok", -1);  
-  case HB_TAG('K','O','M',' '):  
-    return hb_language_from_string ("kv", -1);  
   case HB_TAG('K','P','L',' '):  
     return hb_language_from_string ("kpe", -1);  
   case HB_TAG('K','R','N',' '):  
     return hb_language_from_string ("kar", -1);  
   case HB_TAG('K','U','I',' '):  
     return hb_language_from_string ("uki", -1);  
-  case HB_TAG('K','U','R',' '):  
-    return hb_language_from_string ("ku", -1);  
   case HB_TAG('L','M','A',' '):  
     return hb_language_from_string ("mhr", -1);  
   case HB_TAG('L','U','H',' '):  
     return hb_language_from_string ("luy", -1);  
-  case HB_TAG('L','V','I',' '):  
-    return hb_language_from_string ("lv", -1);  
   case HB_TAG('M','A','W',' '):  
     return hb_language_from_string ("mwr", -1);  
-  case HB_TAG('M','L','G',' '):  
-    return hb_language_from_string ("mg", -1);  
   case HB_TAG('M','L','Y',' '):  
     return hb_language_from_string ("ms", -1);  
-  case HB_TAG('M','N','G',' '):  
-    return hb_language_from_string ("mn", -1);  
   case HB_TAG('M','N','K',' '):  
     return hb_language_from_string ("man", -1);  
   case HB_TAG('M','O','L',' '):  
@@ -2930,26 +2907,16 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("myn", -1);  
   case HB_TAG('N','A','H',' '):  
     return hb_language_from_string ("nah", -1);  
-  case HB_TAG('N','E','P',' '):  
-    return hb_language_from_string ("ne", -1);  
   case HB_TAG('N','I','S',' '):  
     return hb_language_from_string ("njz", -1);  
   case HB_TAG('N','O','R',' '):  
     return hb_language_from_string ("no", -1);  
-  case HB_TAG('O','J','B',' '):  
-    return hb_language_from_string ("oj", -1);  
-  case HB_TAG('O','R','O',' '):  
-    return hb_language_from_string ("om", -1);  
-  case HB_TAG('P','A','S',' '):  
-    return hb_language_from_string ("ps", -1);  
   case HB_TAG('P','G','R',' '):  
     return hb_language_from_string ("el-polyton", -1);  
   case HB_TAG('P','R','O',' '):  
     return hb_language_from_string ("pro", -1);  
   case HB_TAG('Q','U','H',' '):  
     return hb_language_from_string ("quh", -1);  
-  case HB_TAG('Q','U','Z',' '):  
-    return hb_language_from_string ("qu", -1);  
   case HB_TAG('Q','V','I',' '):  
     return hb_language_from_string ("qvi", -1);  
   case HB_TAG('Q','W','H',' '):  
@@ -2960,10 +2927,6 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("ro", -1);  
   case HB_TAG('R','O','Y',' '):  
     return hb_language_from_string ("rom", -1);  
-  case HB_TAG('S','A','N',' '):  
-    return hb_language_from_string ("sa", -1);  
-  case HB_TAG('S','Q','I',' '):  
-    return hb_language_from_string ("sq", -1);  
   case HB_TAG('S','R','B',' '):  
     return hb_language_from_string ("sr", -1);  
   case HB_TAG('S','X','T',' '):  

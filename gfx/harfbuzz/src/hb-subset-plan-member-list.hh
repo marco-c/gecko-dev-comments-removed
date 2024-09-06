@@ -103,6 +103,12 @@ HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb_pair_t E(<const void*, const
 HB_SUBSET_PLAN_MEMBER (hb_map_t, colrv1_layers)
 HB_SUBSET_PLAN_MEMBER (hb_map_t, colr_palettes)
 
+HB_SUBSET_PLAN_MEMBER (hb_vector_t<hb_inc_bimap_t>, colrv1_varstore_inner_maps)
+
+HB_SUBSET_PLAN_MEMBER (mutable hb_hashmap_t E(<unsigned, hb_pair_t E(<unsigned, int>)>), colrv1_variation_idx_delta_map)
+
+HB_SUBSET_PLAN_MEMBER (hb_map_t, colrv1_new_deltaset_idx_varidx_map)
+
 
 HB_SUBSET_PLAN_MEMBER (mutable hb_hashmap_t E(<unsigned, hb_pair_t E(<unsigned, int>)>), layout_variation_idx_delta_map)
 
@@ -144,7 +150,7 @@ HB_SUBSET_PLAN_MEMBER (mutable hb_hashmap_t E(<hb_codepoint_t, contour_point_vec
 HB_SUBSET_PLAN_MEMBER (hb_set_t, composite_new_gids)
 
 
-HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb_pair_t E(<unsigned, int>)>), base_variation_idx_map)
+HB_SUBSET_PLAN_MEMBER (mutable hb_hashmap_t E(<unsigned, hb_pair_t E(<unsigned, int>)>), base_variation_idx_map)
 
 
 HB_SUBSET_PLAN_MEMBER (hb_vector_t<hb_inc_bimap_t>, base_varstore_inner_maps)
