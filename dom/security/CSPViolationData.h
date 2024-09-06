@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#ifndef DOM_SECURITY_CSPVIOLATION_H_
+#define DOM_SECURITY_CSPVIOLATION_H_
+
+#include <cstdint>
+
+namespace mozilla::dom {
+
+struct CSPViolationData {
+  const uint32_t mViolatedPolicyIndex;
+};
+}  
+
+#endif  
