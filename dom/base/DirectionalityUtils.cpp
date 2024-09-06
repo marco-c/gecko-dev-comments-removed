@@ -199,17 +199,6 @@ static bool ParticipatesInAutoDirection(const nsIContent* aContent) {
 
 
 
-
-
-static bool AffectsDirectionOfAncestors(const Element* aElement) {
-  return ParticipatesInAutoDirection(aElement) &&
-         !aElement->IsHTMLElement(nsGkAtoms::bdi) && !aElement->HasFixedDir() &&
-         !aElement->HasDirAuto();
-}
-
-
-
-
 static Directionality GetDirectionFromChar(uint32_t ch) {
   switch (intl::UnicodeProperties::GetBidiClass(ch)) {
     case intl::BidiClass::RightToLeft:
@@ -224,15 +213,30 @@ static Directionality GetDirectionFromChar(uint32_t ch) {
   }
 }
 
-inline static bool TextChildrenAffectDirAutoAncestor(nsIContent* aContent) {
-  return ParticipatesInAutoDirection(aContent) &&
-         aContent->NodeOrAncestorHasDirAuto();
+
+
+
+
+
+
+
+inline static bool EstablishesOwnDirection(const Element* aElement) {
+  return !ParticipatesInAutoDirection(aElement) ||
+         aElement->IsHTMLElement(nsGkAtoms::bdi) || aElement->HasFixedDir() ||
+         aElement->HasDirAuto();
 }
 
-inline static bool NodeAffectsDirAutoAncestor(Text* aTextNode) {
-  nsIContent* parent = GetParentOrHostOrSlot(aTextNode);
-  return parent && TextChildrenAffectDirAutoAncestor(parent) &&
-         !aTextNode->IsInNativeAnonymousSubtree();
+
+
+
+
+
+
+
+
+inline static bool AffectsDirAutoElement(nsIContent* aContent) {
+  return aContent && ParticipatesInAutoDirection(aContent) &&
+         aContent->NodeOrAncestorHasDirAuto();
 }
 
 Directionality GetDirectionFromText(const char16_t* aText,
@@ -307,8 +311,7 @@ static Text* WalkDescendantsAndGetDirectionFromText(
     nsINode* aRoot, Directionality* aDirectionality) {
   nsIContent* child = aRoot->GetFirstChild();
   while (child) {
-    if ((child->IsElement() &&
-         !AffectsDirectionOfAncestors(child->AsElement())) ||
+    if ((child->IsElement() && EstablishesOwnDirection(child->AsElement())) ||
         child->GetAssignedSlot()) {
       child = child->GetNextNonChildNode(aRoot);
       continue;
@@ -325,7 +328,7 @@ static Text* WalkDescendantsAndGetDirectionFromText(
             return text;
           }
         } else if (assignedNode->IsElement() &&
-                   AffectsDirectionOfAncestors(assignedNode->AsElement())) {
+                   !EstablishesOwnDirection(assignedNode->AsElement())) {
           Text* text = WalkDescendantsAndGetDirectionFromText(assignedNode,
                                                               aDirectionality);
           if (text) {
@@ -600,8 +603,7 @@ static void SetAncestorHasDirAutoOnDescendants(nsINode* aRoot) {
 
   nsIContent* child = aRoot->GetFirstChild();
   while (child) {
-    if (child->IsElement() &&
-        !AffectsDirectionOfAncestors(child->AsElement())) {
+    if (child->IsElement() && EstablishesOwnDirection(child->AsElement())) {
       child = child->GetNextNonChildNode(aRoot);
       continue;
     }
@@ -739,7 +741,7 @@ static DirAutoElementResult SetAncestorDirectionIfAuto(Text* aTextNode,
 
 bool TextNodeWillChangeDirection(Text* aTextNode, Directionality* aOldDir,
                                  uint32_t aOffset) {
-  if (!NodeAffectsDirAutoAncestor(aTextNode)) {
+  if (!AffectsDirAutoElement(aTextNode)) {
     return false;
   }
 
@@ -752,7 +754,7 @@ bool TextNodeWillChangeDirection(Text* aTextNode, Directionality* aOldDir,
 
 void TextNodeChangedDirection(Text* aTextNode, Directionality aOldDir,
                               bool aNotify) {
-  MOZ_ASSERT(NodeAffectsDirAutoAncestor(aTextNode), "Caller should check");
+  MOZ_ASSERT(AffectsDirAutoElement(aTextNode), "Caller should check");
   Directionality newDir = GetDirectionFromText(aTextNode);
   if (newDir == aOldDir) {
     return;
@@ -768,7 +770,8 @@ void TextNodeChangedDirection(Text* aTextNode, Directionality aOldDir,
 }
 
 void SetDirectionFromNewTextNode(Text* aTextNode) {
-  if (!NodeAffectsDirAutoAncestor(aTextNode)) {
+  
+  if (!AffectsDirAutoElement(aTextNode->GetParent())) {
     return;
   }
 
@@ -802,7 +805,7 @@ void ResetDirectionSetByTextNode(Text* aTextNode,
   aTextNode->ClearMaySetDirAuto();
   auto* unboundFrom =
       nsIContent::FromNodeOrNull(aContext.GetOriginalSubtreeParent());
-  if (!unboundFrom || !TextChildrenAffectDirAutoAncestor(unboundFrom)) {
+  if (!unboundFrom || !AffectsDirAutoElement(unboundFrom)) {
     return;
   }
 
@@ -837,7 +840,16 @@ void OnSetDirAttr(Element* aElement, const nsAttrValue* aNewValue,
     return;
   }
 
-  if (aElement->AncestorHasDirAuto()) {
+  
+  if ((hadDirAuto || hadValidDir) && !EstablishesOwnDirection(aElement)) {
+    if (auto* parent = aElement->GetParent()) {
+      if (parent->NodeOrAncestorHasDirAuto()) {
+        SetAncestorHasDirAutoOnDescendants(parent);
+      }
+    }
+  }
+
+  if (AffectsDirAutoElement(aElement)) {
     
     
     
@@ -867,7 +879,6 @@ void OnSetDirAttr(Element* aElement, const nsAttrValue* aNewValue,
 }
 
 void SetDirOnBind(Element* aElement, nsIContent* aParent) {
-  
   
   if (ParticipatesInAutoDirection(aElement) &&
       !aElement->IsHTMLElement(nsGkAtoms::bdi) && aParent &&
