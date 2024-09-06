@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 use core::{fmt, num::NonZeroU32};
 
 
@@ -35,6 +28,10 @@ impl Error {
     pub const UNSUPPORTED: Error = internal_error(0);
     
     pub const ERRNO_NOT_POSITIVE: Error = internal_error(1);
+    
+    pub const UNEXPECTED: Error = internal_error(2);
+    
+    
     
     pub const IOS_SEC_RANDOM: Error = internal_error(3);
     
@@ -164,6 +161,7 @@ fn internal_desc(error: Error) -> Option<&'static str> {
     match error {
         Error::UNSUPPORTED => Some("getrandom: this target is not supported"),
         Error::ERRNO_NOT_POSITIVE => Some("errno: did not return a positive value"),
+        Error::UNEXPECTED => Some("unexpected situation"),
         Error::IOS_SEC_RANDOM => Some("SecRandomCopyBytes: iOS Security framework failure"),
         Error::WINDOWS_RTL_GEN_RANDOM => Some("RtlGenRandom: Windows system function failure"),
         Error::FAILED_RDRAND => Some("RDRAND: failed multiple times: CPU issue likely"),

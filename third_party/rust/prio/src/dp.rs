@@ -20,6 +20,7 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum DpError {
     
     #[error(

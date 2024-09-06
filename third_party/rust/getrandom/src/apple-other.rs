@@ -1,23 +1,20 @@
 
-
-
-
-
-
-
-
-
 use crate::Error;
-use core::{ffi::c_void, mem::MaybeUninit, ptr::null};
+use core::{ffi::c_void, mem::MaybeUninit};
 
-#[link(name = "Security", kind = "framework")]
+
+
 extern "C" {
-    fn SecRandomCopyBytes(rnd: *const c_void, count: usize, bytes: *mut u8) -> i32;
+    
+    
+    
+    
+    
+    fn CCRandomGenerateBytes(bytes: *mut c_void, size: usize) -> i32;
 }
 
 pub fn getrandom_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
-    
-    let ret = unsafe { SecRandomCopyBytes(null(), dest.len(), dest.as_mut_ptr() as *mut u8) };
+    let ret = unsafe { CCRandomGenerateBytes(dest.as_mut_ptr() as *mut c_void, dest.len()) };
     
     if ret != 0 {
         Err(Error::IOS_SEC_RANDOM)

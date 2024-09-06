@@ -1,5 +1,11 @@
+
 use crate::Error;
-use core::{cmp::min, mem::MaybeUninit, num::NonZeroU32};
+use core::{mem::MaybeUninit, num::NonZeroU32};
+
+
+
+
+const MIN_RET_CODE: isize = -(i32::MAX as isize);
 
 extern "C" {
     fn sys_read_entropy(buffer: *mut u8, length: usize, flags: u32) -> isize;
@@ -8,14 +14,16 @@ extern "C" {
 pub fn getrandom_inner(mut dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     while !dest.is_empty() {
         let res = unsafe { sys_read_entropy(dest.as_mut_ptr() as *mut u8, dest.len(), 0) };
-        if res < 0 {
-            
-            
-            let code = unsafe { NonZeroU32::new_unchecked((-res) as u32) };
-            return Err(code.into());
+        
+        if res > 0 && (res as usize) <= dest.len() {
+            dest = &mut dest[res as usize..];
+        } else {
+            let err = match res {
+                MIN_RET_CODE..=-1 => NonZeroU32::new(-res as u32).unwrap().into(),
+                _ => Error::UNEXPECTED,
+            };
+            return Err(err);
         }
-        let len = min(res as usize, dest.len());
-        dest = &mut dest[len..];
     }
     Ok(())
 }
