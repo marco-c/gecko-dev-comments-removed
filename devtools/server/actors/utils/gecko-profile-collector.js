@@ -33,8 +33,8 @@ class GeckoProfileCollector {
   #stackMap = new Map();
   #frameMap = new Map();
   #categories = DEFAULT_CATEGORIES;
-  #currentStack = [];
-  #time = 0;
+  #currentStackIndex = null;
+  #startTime = null;
 
   
 
@@ -42,6 +42,7 @@ class GeckoProfileCollector {
   start() {
     this.#reset();
     this.#thread = this.#getEmptyThread();
+    this.#startTime = ChromeUtils.dateNow();
   }
 
   
@@ -70,8 +71,7 @@ class GeckoProfileCollector {
     this.#stackMap = new Map();
     this.#frameMap = new Map();
     this.#categories = DEFAULT_CATEGORIES;
-    this.#currentStack = [];
-    this.#time = 0;
+    this.#currentStackIndex = null;
   }
 
   
@@ -81,29 +81,31 @@ class GeckoProfileCollector {
 
 
   #getEmptyProfile() {
-    const httpHandler = Cc[
-      "@mozilla.org/network/protocol;1?name=http"
-    ].getService(Ci.nsIHttpProtocolHandler);
+    const httpHandler = isWorker
+      ? {}
+      : Cc["@mozilla.org/network/protocol;1?name=http"].getService(
+          Ci.nsIHttpProtocolHandler
+        );
     return {
       meta: {
         
         
         interval: 1,
-        startTime: 0,
-        product: Services.appinfo.name,
+        startTime: this.#startTime,
+        product: Services.appinfo?.name,
         importedFrom: "JS Tracer",
         version: 28,
         presymbolicated: true,
-        abi: Services.appinfo.XPCOMABI,
+        abi: Services.appinfo?.XPCOMABI,
         misc: httpHandler.misc,
         oscpu: httpHandler.oscpu,
         platform: httpHandler.platform,
-        processType: Services.appinfo.processType,
+        processType: Services.appinfo?.processType,
         categories: [],
         stackwalk: 0,
-        toolkit: Services.appinfo.widgetToolkit,
-        appBuildID: Services.appinfo.appBuildID,
-        sourceURL: Services.appinfo.sourceURL,
+        toolkit: Services.appinfo?.widgetToolkit,
+        appBuildID: Services.appinfo?.appBuildID,
+        sourceURL: Services.appinfo?.sourceURL,
         physicalCPUs: 0,
         logicalCPUs: 0,
         CPUName: "",
@@ -130,7 +132,8 @@ class GeckoProfileCollector {
       name: "GeckoMain",
       "eTLD+1": "JS Tracer",
       isMainThread: true,
-      pid: Services.appinfo.processID,
+      
+      pid: Services.appinfo?.processID,
       tid: 0,
       samples: {
         schema: {
@@ -180,74 +183,76 @@ class GeckoProfileCollector {
 
 
 
+  onEnterFrame(frameInfo) {
+    const frameIndex = this.#getOrCreateFrame(frameInfo);
+    this.#currentStackIndex = this.#getOrCreateStack(
+      frameIndex,
+      this.#currentStackIndex
+    );
 
-
-
-
-
-
-
-
-
-
-
-
-  addSample(frame, depth) {
-    const currentDepth = this.#currentStack.length;
-    if (currentDepth == depth) {
-      
-      
-      this.#currentStack[currentDepth] = frame;
-    } else if (currentDepth < depth) {
-      
-      this.#currentStack.push(frame);
-    } else {
-      
-      this.#currentStack.length = depth;
-      this.#currentStack[depth] = frame;
-    }
-
-    const stack = this.#currentStack.reduce((prefix, stackFrame) => {
-      const frameIndex = this.#getOrCreateFrame(stackFrame);
-      return this.#getOrCreateStack(frameIndex, prefix);
-    }, null);
     this.#thread.samples.data.push([
-      stack,
-      
-      
-      this.#time++,
+      this.#currentStackIndex,
+      ChromeUtils.dateNow() - this.#startTime,
       0, 
     ]);
   }
 
-  #getOrCreateFrame(frame) {
+  
+
+
+  onFramePop() {
+    if (this.#currentStackIndex === null) {
+      return;
+    }
+
+    this.#currentStackIndex =
+      this.#thread.stackTable.data[this.#currentStackIndex][0];
+
+    
+    
+    this.#thread.samples.data.push([
+      this.#currentStackIndex,
+      ChromeUtils.dateNow() - this.#startTime,
+      0, 
+    ]);
+  }
+
+  
+
+
+
+
+
+
+  #getOrCreateFrame(frameInfo) {
     const { frameTable, stringTable } = this.#thread;
-    const frameString = `${frame.name}:${frame.url}:${frame.lineNumber}:${frame.columnNumber}:${frame.category}`;
-    let frameIndex = this.#frameMap.get(frameString);
+    const key = `${frameInfo.sourceId}:${frameInfo.lineNumber}:${frameInfo.columnNumber}:${frameInfo.category}`;
+    let frameIndex = this.#frameMap.get(key);
 
     if (frameIndex === undefined) {
       frameIndex = frameTable.data.length;
-      const location = stringTable.length;
+      const locationStringIndex = stringTable.length;
+
       
       
       
       stringTable.push(
-        `${frame.name} (${frame.url}:${frame.lineNumber}:${frame.columnNumber})`
+        `${frameInfo.name} (${frameInfo.url}:${frameInfo.lineNumber}:${frameInfo.columnNumber})`
       );
 
-      const category = this.#getOrCreateCategory(frame.category);
+      const categoryIndex = this.#getOrCreateCategory(frameInfo.category);
 
       frameTable.data.push([
-        location,
+        locationStringIndex,
         true, 
         0, 
         null, 
-        frame.lineNumber, 
-        frame.columnNumber, 
-        category,
+        frameInfo.lineNumber, 
+        frameInfo.columnNumber, 
+        categoryIndex,
         0, 
       ]);
-      this.#frameMap.set(frameString, frameIndex);
+      this.#frameMap.set(key, frameIndex);
     }
 
     return frameIndex;
@@ -256,14 +261,14 @@ class GeckoProfileCollector {
   #getOrCreateStack(frameIndex, prefix) {
     const { stackTable } = this.#thread;
     const key = prefix === null ? `${frameIndex}` : `${frameIndex},${prefix}`;
-    let stack = this.#stackMap.get(key);
+    let stackIndex = this.#stackMap.get(key);
 
-    if (stack === undefined) {
-      stack = stackTable.data.length;
+    if (stackIndex === undefined) {
+      stackIndex = stackTable.data.length;
       stackTable.data.push([prefix, frameIndex]);
-      this.#stackMap.set(key, stack);
+      this.#stackMap.set(key, stackIndex);
     }
-    return stack;
+    return stackIndex;
   }
 
   #getOrCreateCategory(category) {

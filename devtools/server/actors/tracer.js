@@ -134,6 +134,10 @@ class TracerActor extends Actor {
 
     if (this.logMethod == LOG_METHODS.PROFILER) {
       this.geckoProfileCollector.start();
+
+      
+      
+      options.traceFunctionReturn = true;
     }
 
     this.tracingListener = {
@@ -486,17 +490,15 @@ class TracerActor extends Actor {
       });
       this.throttleEmitTraces();
     } else if (this.logMethod == LOG_METHODS.PROFILER) {
-      this.geckoProfileCollector.addSample(
-        {
-          
-          name: formatedDisplayName.replace("λ ", ""),
-          url,
-          lineNumber,
-          columnNumber,
-          category: frame.implementation,
-        },
-        depth
-      );
+      this.geckoProfileCollector.onEnterFrame({
+        
+        name: formatedDisplayName.replace("λ ", ""),
+        url,
+        lineNumber,
+        columnNumber,
+        category: frame.implementation,
+        sourceId: script.source.id,
+      });
     }
 
     return false;
@@ -594,7 +596,7 @@ class TracerActor extends Actor {
       });
       this.throttleEmitTraces();
     } else if (this.logMethod == LOG_METHODS.PROFILER) {
-      
+      this.geckoProfileCollector.onFramePop();
     }
 
     return false;
