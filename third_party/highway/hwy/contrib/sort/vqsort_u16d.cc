@@ -13,14 +13,13 @@
 
 
 
-#include "hwy/contrib/sort/vqsort.h"
+#include "hwy/contrib/sort/vqsort.h"  
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "hwy/contrib/sort/vqsort_u16d.cc"
 #include "hwy/foreach_target.h"  
 
 
-#include "hwy/contrib/sort/traits-inl.h"
 #include "hwy/contrib/sort/vqsort-inl.h"
 
 HWY_BEFORE_NAMESPACE();
@@ -28,10 +27,7 @@ namespace hwy {
 namespace HWY_NAMESPACE {
 
 void SortU16Desc(uint16_t* HWY_RESTRICT keys, size_t num) {
-  SortTag<uint16_t> d;
-  detail::SharedTraits<detail::TraitsLane<detail::OrderDescending<uint16_t>>>
-      st;
-  Sort(d, st, keys, num);
+  return VQSortStatic(keys, num, SortDescending());
 }
 
 

@@ -17,12 +17,17 @@
 #define HIGHWAY_HWY_PER_TARGET_H_
 
 #include <stddef.h>
+#include <stdint.h>
+
+#include "hwy/highway_export.h"
+
 
 
 
 namespace hwy {
 
 
+HWY_DLLEXPORT int64_t DispatchedTarget();
 
 
 
@@ -30,7 +35,13 @@ namespace hwy {
 
 
 
-size_t VectorBytes();
+
+
+HWY_DLLEXPORT size_t VectorBytes();
+
+
+HWY_DLLEXPORT bool HaveFloat16();
+HWY_DLLEXPORT bool HaveFloat64();
 
 }  
 

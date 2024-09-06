@@ -15,455 +15,22 @@
 
 #include "hwy/nanobenchmark.h"
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
-#include <inttypes.h>  
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>    
+#include <time.h>  
 
 #include <algorithm>  
-#include <array>
-#include <chrono>  
-#include <limits>
-#include <numeric>  
+#include <numeric>    
 #include <random>
-#include <string>
-#include <utility>  
 #include <vector>
 
-#if defined(_WIN32) || defined(_WIN64)
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif  
-#include <windows.h>
-#endif
-
-#if defined(__APPLE__)
-#include <mach/mach.h>
-#include <mach/mach_time.h>
-#endif
-
-#if defined(__HAIKU__)
-#include <OS.h>
-#endif
-
-#include "hwy/base.h"
-#if HWY_ARCH_PPC && defined(__GLIBC__)
-#include <sys/platform/ppc.h>  
-#elif HWY_ARCH_X86
-
-#if HWY_COMPILER_MSVC
-#include <intrin.h>
-#else
-#include <cpuid.h>  
-#endif              
-
-#endif  
+#include "hwy/robust_statistics.h"
+#include "hwy/timer-inl.h"
+#include "hwy/timer.h"
 
 namespace hwy {
 namespace {
-namespace timer {
-
-
-
-using Ticks = uint64_t;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-inline Ticks Start() {
-  Ticks t;
-#if HWY_ARCH_PPC && defined(__GLIBC__)
-  asm volatile("mfspr %0, %1" : "=r"(t) : "i"(268));
-#elif HWY_ARCH_ARM_A64 && !HWY_COMPILER_MSVC
-  
-  asm volatile("mrs %0, cntvct_el0" : "=r"(t));
-#elif HWY_ARCH_X86 && HWY_COMPILER_MSVC
-  _ReadWriteBarrier();
-  _mm_lfence();
-  _ReadWriteBarrier();
-  t = __rdtsc();
-  _ReadWriteBarrier();
-  _mm_lfence();
-  _ReadWriteBarrier();
-#elif HWY_ARCH_X86_64
-  asm volatile(
-      "lfence\n\t"
-      "rdtsc\n\t"
-      "shl $32, %%rdx\n\t"
-      "or %%rdx, %0\n\t"
-      "lfence"
-      : "=a"(t)
-      :
-      
-      
-      : "rdx", "memory", "cc");
-#elif HWY_ARCH_RVV
-  asm volatile("rdtime %0" : "=r"(t));
-#elif defined(_WIN32) || defined(_WIN64)
-  LARGE_INTEGER counter;
-  (void)QueryPerformanceCounter(&counter);
-  t = counter.QuadPart;
-#elif defined(__APPLE__)
-  t = mach_absolute_time();
-#elif defined(__HAIKU__)
-  t = system_time_nsecs();  
-#else  
-  timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  t = static_cast<Ticks>(ts.tv_sec * 1000000000LL + ts.tv_nsec);
-#endif
-  return t;
-}
-
-
-inline Ticks Stop() {
-  uint64_t t;
-#if HWY_ARCH_PPC && defined(__GLIBC__)
-  asm volatile("mfspr %0, %1" : "=r"(t) : "i"(268));
-#elif HWY_ARCH_ARM_A64 && !HWY_COMPILER_MSVC
-  
-  asm volatile("mrs %0, cntvct_el0" : "=r"(t));
-#elif HWY_ARCH_X86 && HWY_COMPILER_MSVC
-  _ReadWriteBarrier();
-  unsigned aux;
-  t = __rdtscp(&aux);
-  _ReadWriteBarrier();
-  _mm_lfence();
-  _ReadWriteBarrier();
-#elif HWY_ARCH_X86_64
-  
-  asm volatile(
-      "rdtscp\n\t"
-      "shl $32, %%rdx\n\t"
-      "or %%rdx, %0\n\t"
-      "lfence"
-      : "=a"(t)
-      :
-      
-      
-      : "rcx", "rdx", "memory", "cc");
-#else
-  t = Start();
-#endif
-  return t;
-}
-
-}  
-
-namespace robust_statistics {
-
-
-
-template <class T>
-void CountingSort(T* values, size_t num_values) {
-  
-  using Unique = std::pair<T, int>;
-  std::vector<Unique> unique;
-  for (size_t i = 0; i < num_values; ++i) {
-    const T value = values[i];
-    const auto pos =
-        std::find_if(unique.begin(), unique.end(),
-                     [value](const Unique u) { return u.first == value; });
-    if (pos == unique.end()) {
-      unique.push_back(std::make_pair(value, 1));
-    } else {
-      ++pos->second;
-    }
-  }
-
-  
-  std::sort(unique.begin(), unique.end());
-
-  
-  T* HWY_RESTRICT p = values;
-  for (const auto& value_count : unique) {
-    std::fill(p, p + value_count.second, value_count.first);
-    p += value_count.second;
-  }
-  NANOBENCHMARK_CHECK(p == values + num_values);
-}
-
-
-
-template <typename T>
-size_t MinRange(const T* const HWY_RESTRICT sorted, const size_t idx_begin,
-                const size_t half_count) {
-  T min_range = std::numeric_limits<T>::max();
-  size_t min_idx = 0;
-
-  for (size_t idx = idx_begin; idx < idx_begin + half_count; ++idx) {
-    NANOBENCHMARK_CHECK(sorted[idx] <= sorted[idx + half_count]);
-    const T range = sorted[idx + half_count] - sorted[idx];
-    if (range < min_range) {
-      min_range = range;
-      min_idx = idx;
-    }
-  }
-
-  return min_idx;
-}
-
-
-
-
-
-
-
-template <typename T>
-T ModeOfSorted(const T* const HWY_RESTRICT sorted, const size_t num_values) {
-  size_t idx_begin = 0;
-  size_t half_count = num_values / 2;
-  while (half_count > 1) {
-    idx_begin = MinRange(sorted, idx_begin, half_count);
-    half_count >>= 1;
-  }
-
-  const T x = sorted[idx_begin + 0];
-  if (half_count == 0) {
-    return x;
-  }
-  NANOBENCHMARK_CHECK(half_count == 1);
-  const T average = (x + sorted[idx_begin + 1] + 1) / 2;
-  return average;
-}
-
-
-template <typename T>
-T Mode(T* values, const size_t num_values) {
-  CountingSort(values, num_values);
-  return ModeOfSorted(values, num_values);
-}
-
-template <typename T, size_t N>
-T Mode(T (&values)[N]) {
-  return Mode(&values[0], N);
-}
-
-
-template <typename T>
-T Median(T* values, const size_t num_values) {
-  NANOBENCHMARK_CHECK(!values->empty());
-  std::sort(values, values + num_values);
-  const size_t half = num_values / 2;
-  
-  if (num_values % 2) {
-    return values[half];
-  }
-  
-  return (values[half] + values[half - 1] + 1) / 2;
-}
-
-
-template <typename T>
-T MedianAbsoluteDeviation(const T* values, const size_t num_values,
-                          const T median) {
-  NANOBENCHMARK_CHECK(num_values != 0);
-  std::vector<T> abs_deviations;
-  abs_deviations.reserve(num_values);
-  for (size_t i = 0; i < num_values; ++i) {
-    const int64_t abs = std::abs(static_cast<int64_t>(values[i]) -
-                                 static_cast<int64_t>(median));
-    abs_deviations.push_back(static_cast<T>(abs));
-  }
-  return Median(abs_deviations.data(), num_values);
-}
-
-}  
-}  
-namespace platform {
-namespace {
-
-
-
-
-
-HWY_MAYBE_UNUSED double MeasureNominalClockRate() {
-  double max_ticks_per_sec = 0.0;
-  
-  for (int rep = 0; rep < 3; ++rep) {
-    auto time0 = std::chrono::steady_clock::now();
-    using Time = decltype(time0);
-    const timer::Ticks ticks0 = timer::Start();
-    const Time time_min = time0 + std::chrono::milliseconds(10);
-
-    Time time1;
-    timer::Ticks ticks1;
-    for (;;) {
-      time1 = std::chrono::steady_clock::now();
-      
-      
-      
-      ticks1 = timer::Start();  
-      if (time1 >= time_min) break;
-    }
-
-    const double dticks = static_cast<double>(ticks1 - ticks0);
-    std::chrono::duration<double, std::ratio<1>> dtime = time1 - time0;
-    const double ticks_per_sec = dticks / dtime.count();
-    max_ticks_per_sec = std::max(max_ticks_per_sec, ticks_per_sec);
-  }
-  return max_ticks_per_sec;
-}
-
-#if HWY_ARCH_X86
-
-void Cpuid(const uint32_t level, const uint32_t count,
-           uint32_t* HWY_RESTRICT abcd) {
-#if HWY_COMPILER_MSVC
-  int regs[4];
-  __cpuidex(regs, level, count);
-  for (int i = 0; i < 4; ++i) {
-    abcd[i] = regs[i];
-  }
-#else
-  uint32_t a;
-  uint32_t b;
-  uint32_t c;
-  uint32_t d;
-  __cpuid_count(level, count, a, b, c, d);
-  abcd[0] = a;
-  abcd[1] = b;
-  abcd[2] = c;
-  abcd[3] = d;
-#endif
-}
-
-bool HasRDTSCP() {
-  uint32_t abcd[4];
-  Cpuid(0x80000001U, 0, abcd);         
-  return (abcd[3] & (1u << 27)) != 0;  
-}
-
-std::string BrandString() {
-  char brand_string[49];
-  std::array<uint32_t, 4> abcd;
-
-  
-  Cpuid(0x80000000U, 0, abcd.data());
-  if (abcd[0] < 0x80000004U) {
-    return std::string();
-  }
-
-  for (size_t i = 0; i < 3; ++i) {
-    Cpuid(static_cast<uint32_t>(0x80000002U + i), 0, abcd.data());
-    CopyBytes<sizeof(abcd)>(&abcd[0], brand_string + i * 16);  
-  }
-  brand_string[48] = 0;
-  return brand_string;
-}
-
-#endif  
-
-}  
-
-HWY_DLLEXPORT double InvariantTicksPerSecond() {
-#if HWY_ARCH_PPC && defined(__GLIBC__)
-  return static_cast<double>(__ppc_get_timebase_freq());
-#elif HWY_ARCH_X86 || HWY_ARCH_RVV || (HWY_ARCH_ARM_A64 && !HWY_COMPILER_MSVC)
-  
-  static const double freq = MeasureNominalClockRate();
-  return freq;
-#elif defined(_WIN32) || defined(_WIN64)
-  LARGE_INTEGER freq;
-  (void)QueryPerformanceFrequency(&freq);
-  return static_cast<double>(freq.QuadPart);
-#elif defined(__APPLE__)
-  
-  mach_timebase_info_data_t timebase;
-  (void)mach_timebase_info(&timebase);
-  return static_cast<double>(timebase.denom) / timebase.numer * 1E9;
-#else
-  return 1E9;  
-#endif
-}
-
-HWY_DLLEXPORT double Now() {
-  static const double mul = 1.0 / InvariantTicksPerSecond();
-  return static_cast<double>(timer::Start()) * mul;
-}
-
-HWY_DLLEXPORT uint64_t TimerResolution() {
-#if HWY_ARCH_X86
-  bool can_use_stop = platform::HasRDTSCP();
-#else
-  constexpr bool can_use_stop = true;
-#endif
-
-  
-  timer::Ticks repetitions[Params::kTimerSamples];
-  for (size_t rep = 0; rep < Params::kTimerSamples; ++rep) {
-    timer::Ticks samples[Params::kTimerSamples];
-    if (can_use_stop) {
-      for (size_t i = 0; i < Params::kTimerSamples; ++i) {
-        const timer::Ticks t0 = timer::Start();
-        const timer::Ticks t1 = timer::Stop();  
-        samples[i] = t1 - t0;
-      }
-    } else {
-      for (size_t i = 0; i < Params::kTimerSamples; ++i) {
-        const timer::Ticks t0 = timer::Start();
-        const timer::Ticks t1 = timer::Start();  
-        samples[i] = t1 - t0;
-      }
-    }
-    repetitions[rep] = robust_statistics::Mode(samples);
-  }
-  return robust_statistics::Mode(repetitions);
-}
-
-}  
-namespace {
+namespace timer = hwy::HWY_NAMESPACE::timer;
 
 static const timer::Ticks timer_resolution = platform::TimerResolution();
 
@@ -518,21 +85,18 @@ timer::Ticks SampleUntilStable(const double max_rel_mad, double* rel_mad,
 
     if (*rel_mad <= max_rel_mad || abs_mad <= max_abs_mad) {
       if (p.verbose) {
-        printf("%6" PRIu64 " samples => %5" PRIu64 " (abs_mad=%4" PRIu64
-               ", rel_mad=%4.2f%%)\n",
-               static_cast<uint64_t>(samples.size()),
-               static_cast<uint64_t>(est), static_cast<uint64_t>(abs_mad),
-               *rel_mad * 100.0);
+        printf("%6d samples => %5d (abs_mad=%4d, rel_mad=%4.2f%%)\n",
+               static_cast<int>(samples.size()), static_cast<int>(est),
+               static_cast<int>(abs_mad), *rel_mad * 100.0);
       }
       return est;
     }
   }
 
   if (p.verbose) {
-    printf("WARNING: rel_mad=%4.2f%% still exceeds %4.2f%% after %6" PRIu64
-           " samples.\n",
+    printf("WARNING: rel_mad=%4.2f%% still exceeds %4.2f%% after %6d samples\n",
            *rel_mad * 100.0, max_rel_mad * 100.0,
-           static_cast<uint64_t>(samples.size()));
+           static_cast<int>(samples.size()));
   }
   return est;
 }
@@ -569,11 +133,9 @@ size_t NumSkip(const Func func, const uint8_t* arg, const InputVec& unique,
           ? 0
           : static_cast<size_t>((max_skip + min_duration - 1) / min_duration);
   if (p.verbose) {
-    printf("res=%" PRIu64 " max_skip=%" PRIu64 " min_dur=%" PRIu64
-           " num_skip=%" PRIu64 "\n",
-           static_cast<uint64_t>(timer_resolution),
-           static_cast<uint64_t>(max_skip), static_cast<uint64_t>(min_duration),
-           static_cast<uint64_t>(num_skip));
+    printf("res=%d max_skip=%d min_dur=%d num_skip=%d\n",
+           static_cast<int>(timer_resolution), static_cast<int>(max_skip),
+           static_cast<int>(min_duration), static_cast<int>(num_skip));
   }
   return num_skip;
 }
@@ -679,13 +241,12 @@ HWY_DLLEXPORT size_t Measure(const Func func, const uint8_t* arg,
                              Result* results, const Params& p) {
   NANOBENCHMARK_CHECK(num_inputs != 0);
 
-#if HWY_ARCH_X86
-  if (!platform::HasRDTSCP()) {
+  char cpu100[100];
+  if (!platform::HaveTimerStop(cpu100)) {
     fprintf(stderr, "CPU '%s' does not support RDTSCP, skipping benchmark.\n",
-            platform::BrandString().c_str());
+            cpu100);
     return 0;
   }
-#endif
 
   const InputVec& unique = UniqueInputs(inputs, num_inputs);
 
@@ -701,19 +262,15 @@ HWY_DLLEXPORT size_t Measure(const Func func, const uint8_t* arg,
   const timer::Ticks overhead = Overhead(arg, &full, p);
   const timer::Ticks overhead_skip = Overhead(arg, &subset, p);
   if (overhead < overhead_skip) {
-    fprintf(stderr, "Measurement failed: overhead %" PRIu64 " < %" PRIu64 "\n",
-            static_cast<uint64_t>(overhead),
-            static_cast<uint64_t>(overhead_skip));
+    fprintf(stderr, "Measurement failed: overhead %d < %d\n",
+            static_cast<int>(overhead), static_cast<int>(overhead_skip));
     return 0;
   }
 
   if (p.verbose) {
-    printf("#inputs=%5" PRIu64 ",%5" PRIu64 " overhead=%5" PRIu64 ",%5" PRIu64
-           "\n",
-           static_cast<uint64_t>(full.size()),
-           static_cast<uint64_t>(subset.size()),
-           static_cast<uint64_t>(overhead),
-           static_cast<uint64_t>(overhead_skip));
+    printf("#inputs=%5d,%5d overhead=%5d,%5d\n", static_cast<int>(full.size()),
+           static_cast<int>(subset.size()), static_cast<int>(overhead),
+           static_cast<int>(overhead_skip));
   }
 
   double max_rel_mad = 0.0;
@@ -725,8 +282,8 @@ HWY_DLLEXPORT size_t Measure(const Func func, const uint8_t* arg,
         TotalDuration(func, arg, &subset, p, &max_rel_mad);
 
     if (total < total_skip) {
-      fprintf(stderr, "Measurement failed: total %" PRIu64 " < %" PRIu64 "\n",
-              static_cast<uint64_t>(total), static_cast<uint64_t>(total_skip));
+      fprintf(stderr, "Measurement failed: total %f < %f\n",
+              static_cast<double>(total), static_cast<double>(total_skip));
       return 0;
     }
 

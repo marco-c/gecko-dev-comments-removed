@@ -41,6 +41,9 @@ using Constants = hwy::SortConstants;
 
 template <class Base>
 struct SharedTraits : public Base {
+  using SharedTraitsForSortingNetwork =
+      SharedTraits<typename Base::TraitsForSortingNetwork>;
+
   
   template <class D>
   HWY_INLINE Vec<D> SortPairsDistance2(D d, Vec<D> v) const {
@@ -309,6 +312,7 @@ HWY_INLINE void Merge8x4(D d, Traits st, V& v0, V& v1, V& v2, V& v3, V& v4,
   v6 = st.SortPairsDistance1(d, v6);
   v7 = st.SortPairsDistance1(d, v7);
 }
+
 
 template <size_t kKeysPerVector, class D, class Traits, class V = Vec<D>,
           HWY_IF_LANES_GT(kKeysPerVector, 1)>

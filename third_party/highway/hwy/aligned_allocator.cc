@@ -15,7 +15,6 @@
 
 #include "hwy/aligned_allocator.h"
 
-#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>  
@@ -39,7 +38,9 @@ constexpr size_t kAlignment = HWY_ALIGNMENT;
 #if HWY_ARCH_X86
 
 
-constexpr size_t kAlias = kAlignment * 4;
+
+
+constexpr size_t kAlias = HWY_MAX(kAlignment, 1024);
 #else
 constexpr size_t kAlias = kAlignment;
 #endif
@@ -53,9 +54,10 @@ struct AllocationHeader {
 
 
 size_t NextAlignedOffset() {
-  static std::atomic<uint32_t> next{0};
-  constexpr uint32_t kGroups = kAlias / kAlignment;
-  const uint32_t group = next.fetch_add(1, std::memory_order_relaxed) % kGroups;
+  static std::atomic<size_t> next{0};
+  static_assert(kAlias % kAlignment == 0, "kAlias must be a multiple");
+  constexpr size_t kGroups = kAlias / kAlignment;
+  const size_t group = next.fetch_add(1, std::memory_order_relaxed) % kGroups;
   const size_t offset = kAlignment * group;
   HWY_DASSERT((offset % kAlignment == 0) && offset <= kAlias);
   return offset;
@@ -80,8 +82,7 @@ HWY_DLLEXPORT void* AllocateAlignedBytes(const size_t payload_size,
   
   
   if (offset == 0) {
-    offset = kAlignment;  
-    static_assert(sizeof(AllocationHeader) <= kAlignment, "Else: round up");
+    offset = RoundUpTo(sizeof(AllocationHeader), kAlignment);
   }
 
   const size_t allocated_size = kAlias + offset + payload_size;
@@ -100,10 +101,12 @@ HWY_DLLEXPORT void* AllocateAlignedBytes(const size_t payload_size,
   aligned &= ~(kAlias - 1);
 
   const uintptr_t payload = aligned + offset;  
+  HWY_DASSERT(payload % kAlignment == 0);
 
   
   
   AllocationHeader* header = reinterpret_cast<AllocationHeader*>(payload) - 1;
+  HWY_DASSERT(reinterpret_cast<uintptr_t>(header) >= aligned);
   header->allocated = allocated;
   header->payload_size = payload_size;
 

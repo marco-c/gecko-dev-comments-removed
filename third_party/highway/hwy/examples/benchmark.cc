@@ -13,10 +13,6 @@
 
 
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
-#include <inttypes.h>  
 #include <stdio.h>
 #include <stdlib.h>  
 
@@ -88,8 +84,8 @@ void RunBenchmark(const char* caption) {
     const double cycles_per_item =
         results[i].ticks / static_cast<double>(results[i].input);
     const double mad = results[i].variability * cycles_per_item;
-    printf("%6" PRIu64 ": %6.3f (+/- %5.3f)\n",
-           static_cast<uint64_t>(results[i].input), cycles_per_item, mad);
+    printf("%6d: %6.3f (+/- %5.3f)\n", static_cast<int>(results[i].input),
+           cycles_per_item, mad);
   }
 }
 

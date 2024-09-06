@@ -15,16 +15,15 @@
 
 #include "hwy/contrib/sort/vqsort.h"
 
-#include <time.h>
-
-#include <cstdint>
-
 #include "hwy/base.h"
-#include "hwy/contrib/sort/shared-inl.h"
+#include "hwy/contrib/sort/vqsort-inl.h"
+#include "hwy/per_target.h"
 
 
 
-#if defined(ANDROID) || defined(__ANDROID__) || HWY_ARCH_RVV
+
+
+#if defined(ANDROID) || defined(__ANDROID__) || (HWY_ARCH_RVV && !HWY_OS_LINUX)
 #define VQSORT_GETRANDOM 0
 #endif
 
@@ -73,19 +72,22 @@
 #include <sys/random.h>
 #elif VQSORT_SECURE_SEED == 2
 #include <windows.h>
+#if HWY_COMPILER_MSVC || HWY_COMPILER_CLANGCL
 #pragma comment(lib, "advapi32.lib")
+#endif  
 
 #include <wincrypt.h>
 #endif  
 
 namespace hwy {
-namespace {
 
-void Fill16Bytes(void* bytes) {
+
+
+bool Fill16BytesSecure(void* bytes) {
 #if VQSORT_SECURE_SEED == 1
   
   const ssize_t ret = getrandom(bytes, 16, 0);
-  if (ret == 16) return;
+  if (ret == 16) return true;
 #elif VQSORT_SECURE_SEED == 2
   HCRYPTPROV hProvider{};
   if (CryptAcquireContextA(&hProvider, nullptr, nullptr, PROV_RSA_FULL,
@@ -93,32 +95,122 @@ void Fill16Bytes(void* bytes) {
     const BOOL ok =
         CryptGenRandom(hProvider, 16, reinterpret_cast<BYTE*>(bytes));
     CryptReleaseContext(hProvider, 0);
-    if (ok) return;
+    if (ok) return true;
   }
+#else
+  (void)bytes;
 #endif
 
-  
-  
-  uint64_t* words = reinterpret_cast<uint64_t*>(bytes);
-  uint64_t** seed_stack = &words;
-  void (*seed_code)(void*) = &Fill16Bytes;
-  const uintptr_t bits_stack = reinterpret_cast<uintptr_t>(seed_stack);
-  const uintptr_t bits_code = reinterpret_cast<uintptr_t>(seed_code);
-  const uint64_t bits_time = static_cast<uint64_t>(clock());
-  words[0] = bits_stack ^ bits_time ^ 0xFEDCBA98;  
-  words[1] = bits_code ^ bits_time ^ 0x01234567;   
+  return false;
 }
 
-}  
-
-uint64_t* GetGeneratorState() {
-  thread_local uint64_t state[3] = {0};
-  
-  if (HWY_UNLIKELY(state[2] == 0)) {
-    Fill16Bytes(state);
-    state[2] = 1;
-  }
-  return state;
+void Sorter::operator()(uint16_t* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
 }
+void Sorter::operator()(uint16_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(uint32_t* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(uint32_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(uint64_t* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(uint64_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+
+void Sorter::operator()(int16_t* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(int16_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(int32_t* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(int32_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(int64_t* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(int64_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+
+void Sorter::operator()(float16_t* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(float16_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(float* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(float* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(double* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(double* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+
+void Sorter::operator()(uint128_t* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(uint128_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+
+void Sorter::operator()(K64V64* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(K64V64* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+
+void Sorter::operator()(K32V32* HWY_RESTRICT keys, size_t n,
+                        SortAscending tag) const {
+  VQSort(keys, n, tag);
+}
+void Sorter::operator()(K32V32* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
+}
+
+
+void Sorter::Fill24Bytes(const void*, size_t, void*) {}
+bool Sorter::HaveFloat64() { return hwy::HaveFloat64(); }
+Sorter::Sorter() {}
+void Sorter::Delete() {}
+uint64_t* GetGeneratorState() { return hwy::detail::GetGeneratorStateStatic(); }
 
 }  
