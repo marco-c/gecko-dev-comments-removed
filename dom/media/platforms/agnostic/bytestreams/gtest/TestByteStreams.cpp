@@ -24,7 +24,7 @@ static already_AddRefed<MediaByteBuffer> GetExtraData() {
   
   
   
-  return H264::CreateExtraData(0x42, 0xc0, 0x28, {1280, 720});
+  return H264::CreateExtraData(0x42, 0xc0, H264_LEVEL{0x28}, {1280, 720});
 }
 
 
