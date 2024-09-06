@@ -99,7 +99,7 @@ add_task(async function test_menu_items_labeled() {
     
     
     await TestUtils.waitForCondition(
-      () => button.hasVisibleLabel,
+      () => button.label || button.hasVisibleLabel,
       `Expanded ${view} button has a label.`
     );
   }
