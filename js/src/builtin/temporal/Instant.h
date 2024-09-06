@@ -90,13 +90,6 @@ JS::BigInt* ToEpochNanoseconds(JSContext* cx, const Instant& instant);
 
 
 
-
-JS::BigInt* ToNanoseconds(JSContext* cx,
-                          const NormalizedTimeDuration& duration);
-
-
-
-
 Wrapped<InstantObject*> ToTemporalInstant(JSContext* cx,
                                           JS::Handle<JS::Value> item);
 
