@@ -1869,7 +1869,7 @@ var gBrowserInit = {
     BrowserOffline.init();
     CanvasPermissionPromptHelper.init();
     WebAuthnPromptHelper.init();
-    ContentAnalysis.initialize();
+    ContentAnalysis.initialize(document);
 
     
     
