@@ -285,10 +285,6 @@ def link_to_cpp(interfaces, fd, header_fd):
         tag = type["tag"]
         d1 = d2 = 0
 
-        
-        
-        assert tag != "TD_VOID"
-
         if tag == "TD_LEGACY_ARRAY":
             d1 = type["size_is"]
             d2 = lower_extra_type(type["element"])
@@ -353,13 +349,13 @@ def link_to_cpp(interfaces, fd, header_fd):
 
         return True
 
-    def lower_method(method, ifacename):
+    def lower_method(method, ifacename, builtinclass):
         methodname = "%s::%s" % (ifacename, method["name"])
 
         isSymbol = "symbol" in method["flags"]
         reflectable = is_method_reflectable(method)
 
-        if not reflectable:
+        if not reflectable and builtinclass:
             
             
             paramidx = name = numparams = 0
@@ -442,6 +438,8 @@ def link_to_cpp(interfaces, fd, header_fd):
         assert method_cnt < 250, "%s has too many methods" % iface["name"]
         assert const_cnt < 256, "%s has too many constants" % iface["name"]
 
+        builtinclass = "builtinclass" in iface["flags"]
+
         
         iface["cxx"] = nsXPTInterfaceInfo(
             "%d = %s" % (iface["idx"], iface["name"]),
@@ -453,14 +451,14 @@ def link_to_cpp(interfaces, fd, header_fd):
             mConsts=len(consts),
             mNumConsts=const_cnt,
             
-            mBuiltinClass="builtinclass" in iface["flags"],
+            mBuiltinClass=builtinclass,
             mMainProcessScriptableOnly="main_process_only" in iface["flags"],
             mFunction="function" in iface["flags"],
         )
 
         
         for method in iface["methods"]:
-            lower_method(method, iface["name"])
+            lower_method(method, iface["name"], builtinclass)
         for const in iface["consts"]:
             lower_const(const, iface["name"])
 
