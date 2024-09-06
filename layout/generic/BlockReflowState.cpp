@@ -38,7 +38,6 @@ BlockReflowState::BlockReflowState(
       mContentArea(aReflowInput.GetWritingMode()),
       mInsetForBalance(aInset),
       mContainerSize(aReflowInput.ComputedSizeAsContainerIfConstrained()),
-      mPushedFloats(nullptr),
       mOverflowTracker(nullptr),
       mBorderPadding(
           mReflowInput
@@ -406,27 +405,11 @@ void BlockReflowState::ReconstructMarginBefore(nsLineList::iterator aLine) {
   }
 }
 
-void BlockReflowState::SetupPushedFloatList() {
-  MOZ_ASSERT(!mFlags.mIsFloatListInBlockPropertyTable == !mPushedFloats,
-             "flag mismatch");
-  if (!mFlags.mIsFloatListInBlockPropertyTable) {
-    
-    
-    
-    
-    
-    
-    
-    mPushedFloats = mBlock->EnsurePushedFloats();
-    mFlags.mIsFloatListInBlockPropertyTable = true;
-  }
-}
-
 void BlockReflowState::AppendPushedFloatChain(nsIFrame* aFloatCont) {
-  SetupPushedFloatList();
+  nsFrameList* pushedFloats = mBlock->EnsurePushedFloats();
   while (true) {
     aFloatCont->AddStateBits(NS_FRAME_IS_PUSHED_FLOAT);
-    mPushedFloats->AppendFrame(mBlock, aFloatCont);
+    pushedFloats->AppendFrame(mBlock, aFloatCont);
     aFloatCont = aFloatCont->GetNextInFlow();
     if (!aFloatCont || aFloatCont->GetParent() != mBlock) {
       break;

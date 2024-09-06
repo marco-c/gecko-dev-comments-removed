@@ -37,7 +37,6 @@ class BlockReflowState {
           mHasLineAdjacentToTop(false),
           mBlockNeedsFloatManager(false),
           mIsLineLayoutEmpty(false),
-          mIsFloatListInBlockPropertyTable(false),
           mCanHaveOverflowMarkers(false) {}
 
     
@@ -85,9 +84,6 @@ class BlockReflowState {
     
     
     bool mIsLineLayoutEmpty : 1;
-
-    
-    bool mIsFloatListInBlockPropertyTable : 1;
 
     
     bool mCanHaveOverflowMarkers : 1;
@@ -322,13 +318,6 @@ class BlockReflowState {
   nsSize mContainerSize;
   const nsSize& ContainerSize() const { return mContainerSize; }
 
-  
-  
-  
-  nsFrameList* mPushedFloats;
-  
-  
-  void SetupPushedFloatList();
   
 
 
