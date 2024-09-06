@@ -9,6 +9,7 @@
 #include "vm/Modules.h"
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Utf8.h"        
 
 #include <stdint.h>  
@@ -41,6 +42,12 @@
 using namespace js;
 
 using mozilla::Utf8Unit;
+
+static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module);
+static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
+                           MutableHandle<Value> result);
+static bool SyntheticModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
+                                    MutableHandle<Value> result);
 
 
 
@@ -184,7 +191,7 @@ JS_PUBLIC_API bool JS::ModuleLink(JSContext* cx, Handle<JSObject*> moduleArg) {
   CHECK_THREAD(cx);
   cx->releaseCheck(moduleArg);
 
-  return js::ModuleLink(cx, moduleArg.as<ModuleObject>());
+  return ::ModuleLink(cx, moduleArg.as<ModuleObject>());
 }
 
 JS_PUBLIC_API bool JS::ModuleEvaluate(JSContext* cx,
@@ -198,7 +205,7 @@ JS_PUBLIC_API bool JS::ModuleEvaluate(JSContext* cx,
     return SyntheticModuleEvaluate(cx, moduleRecord.as<ModuleObject>(), rval);
   }
 
-  return js::ModuleEvaluate(cx, moduleRecord.as<ModuleObject>(), rval);
+  return ::ModuleEvaluate(cx, moduleRecord.as<ModuleObject>(), rval);
 }
 
 JS_PUBLIC_API bool JS::ThrowOnModuleEvaluationFailure(
@@ -361,11 +368,12 @@ static ModuleObject* HostResolveImportedModule(
     JSContext* cx, Handle<ModuleObject*> module,
     Handle<ModuleRequestObject*> moduleRequest,
     ModuleStatus expectedMinimumStatus);
-static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
-                                Handle<JSAtom*> exportName,
-                                MutableHandle<ResolveSet> resolveSet,
-                                MutableHandle<Value> result,
-                                ModuleErrorInfo* errorInfoOut = nullptr);
+static bool CyclicModuleResolveExport(JSContext* cx,
+                                      Handle<ModuleObject*> module,
+                                      Handle<JSAtom*> exportName,
+                                      MutableHandle<ResolveSet> resolveSet,
+                                      MutableHandle<Value> result,
+                                      ModuleErrorInfo* errorInfoOut = nullptr);
 static bool SyntheticModuleResolveExport(JSContext* cx,
                                          Handle<ModuleObject*> module,
                                          Handle<JSAtom*> exportName,
@@ -582,20 +590,20 @@ static ModuleObject* HostResolveImportedModule(
 
 
 
-bool js::ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
-                             Handle<JSAtom*> exportName,
-                             MutableHandle<Value> result,
-                             ModuleErrorInfo* errorInfoOut = nullptr) {
+static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                                Handle<JSAtom*> exportName,
+                                MutableHandle<Value> result,
+                                ModuleErrorInfo* errorInfoOut = nullptr) {
   if (module->hasSyntheticModuleFields()) {
-    return ::SyntheticModuleResolveExport(cx, module, exportName, result,
-                                          errorInfoOut);
+    return SyntheticModuleResolveExport(cx, module, exportName, result,
+                                        errorInfoOut);
   }
 
   
   Rooted<ResolveSet> resolveSet(cx);
 
-  return ::ModuleResolveExport(cx, module, exportName, &resolveSet, result,
-                               errorInfoOut);
+  return CyclicModuleResolveExport(cx, module, exportName, &resolveSet, result,
+                                   errorInfoOut);
 }
 
 static bool CreateResolvedBindingObject(JSContext* cx,
@@ -612,11 +620,12 @@ static bool CreateResolvedBindingObject(JSContext* cx,
   return true;
 }
 
-static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
-                                Handle<JSAtom*> exportName,
-                                MutableHandle<ResolveSet> resolveSet,
-                                MutableHandle<Value> result,
-                                ModuleErrorInfo* errorInfoOut) {
+static bool CyclicModuleResolveExport(JSContext* cx,
+                                      Handle<ModuleObject*> module,
+                                      Handle<JSAtom*> exportName,
+                                      MutableHandle<ResolveSet> resolveSet,
+                                      MutableHandle<Value> result,
+                                      ModuleErrorInfo* errorInfoOut) {
   
   for (const auto& entry : resolveSet) {
     
@@ -683,8 +692,8 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
         
         
         name = e.importName();
-        return ModuleResolveExport(cx, importedModule, name, resolveSet, result,
-                                   errorInfoOut);
+        return CyclicModuleResolveExport(cx, importedModule, name, resolveSet,
+                                         result, errorInfoOut);
       }
     }
   }
@@ -721,8 +730,8 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
 
     
     
-    if (!ModuleResolveExport(cx, importedModule, exportName, resolveSet,
-                             &resolution, errorInfoOut)) {
+    if (!CyclicModuleResolveExport(cx, importedModule, exportName, resolveSet,
+                                   &resolution, errorInfoOut)) {
       return false;
     }
 
@@ -1048,8 +1057,8 @@ static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
 
 
 
-bool js::ModuleInitializeEnvironment(JSContext* cx,
-                                     Handle<ModuleObject*> module) {
+static bool ModuleInitializeEnvironment(JSContext* cx,
+                                        Handle<ModuleObject*> module) {
   MOZ_ASSERT(module->status() == ModuleStatus::Linking);
 
   
@@ -1195,7 +1204,7 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
 
 
 
-bool js::ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
+static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
   
   ModuleStatus status = module->status();
   if (status == ModuleStatus::Linking || status == ModuleStatus::Evaluating) {
@@ -1374,8 +1383,9 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   return true;
 }
 
-bool js::SyntheticModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
-                                 MutableHandle<Value> result) {
+static bool SyntheticModuleEvaluate(JSContext* cx,
+                                    Handle<ModuleObject*> moduleArg,
+                                    MutableHandle<Value> result) {
   
 
   
@@ -1398,8 +1408,8 @@ bool js::SyntheticModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
 
 
 
-bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
-                        MutableHandle<Value> result) {
+static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
+                           MutableHandle<Value> result) {
   Rooted<ModuleObject*> module(cx, moduleArg);
 
   
