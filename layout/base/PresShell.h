@@ -439,11 +439,6 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  nsIScrollableFrame* GetRootScrollFrameAsScrollable() const;
-
-  
-
-
 
   already_AddRefed<nsIContent> GetContentForScrolling() const;
 
