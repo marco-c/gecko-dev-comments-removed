@@ -18,8 +18,6 @@
 
 
 namespace mozilla {
-
-class JSONWriter;
 namespace Telemetry {
 struct ScalarAction;
 struct KeyedScalarAction;
@@ -112,22 +110,6 @@ void AddDynamicScalarDefinitions(
 
 
 nsresult GetAllStores(mozilla::Telemetry::Common::StringHashSet& set);
-
-
-
-nsresult SerializeScalars(mozilla::JSONWriter& aWriter);
-nsresult SerializeKeyedScalars(mozilla::JSONWriter& aWriter);
-nsresult DeserializePersistedScalars(JSContext* aCx,
-                                     JS::Handle<JS::Value> aData);
-nsresult DeserializePersistedKeyedScalars(JSContext* aCx,
-                                          JS::Handle<JS::Value> aData);
-
-
-
-void DeserializationStarted();
-
-
-void ApplyPendingOperations();
 }  
 
 #endif  

@@ -30,9 +30,7 @@ with Files("docs/**"):
     SCHEDULES.exclusive = ["docs"]
 
 if CONFIG["ENABLE_TESTS"]:
-    
-    
-    DIRS += ["geckoview/gtest", "tests/gtest"]
+    DIRS += ["tests/gtest"]
 
 TEST_DIRS += ["tests", "dap/ffi-gtest"]
 
@@ -78,7 +76,6 @@ SOURCES += [
     "core/TelemetryScalar.cpp",
     "core/TelemetryUserInteraction.cpp",
     "dap/DAPTelemetry.cpp",
-    "geckoview/streaming/GeckoViewStreamingTelemetry.cpp",
     "other/CombinedStacks.cpp",
     "other/ProcessedStack.cpp",
     "other/TelemetryIOInterposeObserver.cpp",
@@ -242,18 +239,6 @@ GeneratedFile(
     "TelemetryProcessData.h",
     script="build_scripts/gen_process_data.py",
     inputs=processes_files,
-)
-
-
-
-
-
-
-
-GeneratedFile(
-    "glean_checks",
-    script="build_scripts/run_glean_parser.py",
-    inputs=["geckoview/streaming/metrics.yaml"],
 )
 
 

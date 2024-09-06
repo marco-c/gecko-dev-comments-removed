@@ -12,11 +12,6 @@
 #include "nsXULAppAPI.h"
 #include "TelemetryCommon.h"
 
-namespace mozilla {
-
-class JSONWriter;
-}  
-
 
 
 
@@ -109,15 +104,6 @@ nsresult GetKeyedHistogramSnapshots(JSContext* aCx,
                                     bool aFilterTest = false);
 
 size_t GetHistogramSizesOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
-
-
-
-
-nsresult SerializeHistograms(mozilla::JSONWriter& aWriter);
-nsresult SerializeKeyedHistograms(mozilla::JSONWriter& aWriter);
-nsresult DeserializeHistograms(JSContext* aCx, JS::Handle<JS::Value> aData);
-nsresult DeserializeKeyedHistograms(JSContext* aCx,
-                                    JS::Handle<JS::Value> aData);
 
 }  
 

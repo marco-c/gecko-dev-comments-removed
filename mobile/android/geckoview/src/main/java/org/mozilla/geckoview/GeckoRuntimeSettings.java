@@ -463,21 +463,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-    @Deprecated
-    @DeprecationSchedule(id = "geckoview-gvst", version = 127)
-    public @NonNull Builder telemetryDelegate(final @NonNull RuntimeTelemetry.Delegate delegate) {
-      getSettings().mTelemetryProxy = new RuntimeTelemetry.Proxy(delegate);
-      getSettings().mTelemetryEnabled.set(true);
-      return this;
-    }
-
-    
-
-
-
-
-
-
     @AnyThread
     public @NonNull Builder experimentDelegate(final @Nullable ExperimentDelegate delegate) {
       getSettings().mExperimentDelegate = delegate;
@@ -663,7 +648,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    int mScreenHeightOverride;
    Class<? extends Service> mCrashHandler;
    String[] mRequestedLocales;
-   RuntimeTelemetry.Proxy mTelemetryProxy;
    ExperimentDelegate mExperimentDelegate;
 
   
@@ -674,10 +658,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    void attachTo(final @NonNull GeckoRuntime runtime) {
     mRuntime = runtime;
     commit();
-
-    if (mTelemetryProxy != null) {
-      mTelemetryProxy.attach();
-    }
   }
 
   @Override 
@@ -719,7 +699,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mCrashHandler = settings.mCrashHandler;
     mRequestedLocales = settings.mRequestedLocales;
     mConfigFilePath = settings.mConfigFilePath;
-    mTelemetryProxy = settings.mTelemetryProxy;
     mExperimentDelegate = settings.mExperimentDelegate;
   }
 
@@ -1366,11 +1345,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   public @NonNull GeckoRuntimeSettings setGlMsaaLevel(final int level) {
     mGlMsaaLevel.commit(level);
     return this;
-  }
-
-  @SuppressWarnings("checkstyle:javadocmethod")
-  public @Nullable RuntimeTelemetry.Delegate getTelemetryDelegate() {
-    return mTelemetryProxy.getDelegate();
   }
 
   
