@@ -136,8 +136,6 @@ struct TableBCData final {
   nscoord mIEndBorderWidth = 0;
   nscoord mBEndBorderWidth = 0;
   nscoord mIStartBorderWidth = 0;
-  nscoord mIStartCellBorderWidth = 0;
-  nscoord mIEndCellBorderWidth = 0;
 };
 
 }  
@@ -1376,7 +1374,7 @@ nsTableFrame::IntrinsicISizeOffsets(nscoord aPercentageBasis) {
     result.padding = 0;
 
     WritingMode wm = GetWritingMode();
-    LogicalMargin outerBC = GetIncludedOuterBCBorder(wm);
+    LogicalMargin outerBC = GetOuterBCBorder(wm);
     result.border = outerBC.IStartEnd(wm);
   }
 
@@ -1816,12 +1814,6 @@ void nsTableFrame::Reflow(nsPresContext* aPresContext,
   
   nsRect tableRect(0, 0, aDesiredSize.Width(), aDesiredSize.Height());
 
-  if (ShouldApplyOverflowClipping(aReflowInput.mStyleDisplay) !=
-      kPhysicalAxesBoth) {
-    
-    LogicalMargin bcMargin = GetExcludedOuterBCBorder(wm);
-    tableRect.Inflate(bcMargin.GetPhysicalMargin(wm));
-  }
   aDesiredSize.mOverflowAreas.UnionAllWith(tableRect);
 
   FinishAndStoreOverflow(&aDesiredSize);
@@ -1888,16 +1880,6 @@ void nsTableFrame::FixupPositionedTableParts(nsPresContext* aPresContext,
 }
 
 bool nsTableFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
-  
-  
-  if (ShouldApplyOverflowClipping(StyleDisplay()) != kPhysicalAxesBoth) {
-    nsRect bounds(nsPoint(0, 0), GetSize());
-    WritingMode wm = GetWritingMode();
-    LogicalMargin bcMargin = GetExcludedOuterBCBorder(wm);
-    bounds.Inflate(bcMargin.GetPhysicalMargin(wm));
-
-    aOverflowAreas.UnionAllWith(bounds);
-  }
   return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
@@ -2374,7 +2356,7 @@ nsMargin nsTableFrame::GetUsedBorder() const {
   if (!IsBorderCollapse()) return nsContainerFrame::GetUsedBorder();
 
   WritingMode wm = GetWritingMode();
-  return GetIncludedOuterBCBorder(wm).GetPhysicalMargin(wm);
+  return GetOuterBCBorder(wm).GetPhysicalMargin(wm);
 }
 
 
@@ -2434,35 +2416,13 @@ LogicalMargin nsTableFrame::GetOuterBCBorder(const WritingMode aWM) const {
   return LogicalMargin(aWM);
 }
 
-LogicalMargin nsTableFrame::GetIncludedOuterBCBorder(
-    const WritingMode aWM) const {
-  if (NeedToCalcBCBorders()) {
-    const_cast<nsTableFrame*>(this)->CalcBCBorders();
-  }
-
-  TableBCData* propData = GetTableBCData();
-  if (propData) {
-    return LogicalMargin(
-        aWM, BC_BORDER_START_HALF(propData->mBStartBorderWidth),
-        BC_BORDER_END_HALF(propData->mIEndCellBorderWidth),
-        BC_BORDER_END_HALF(propData->mBEndBorderWidth),
-        BC_BORDER_START_HALF(propData->mIStartCellBorderWidth));
-  }
-  return LogicalMargin(aWM);
-}
-
-LogicalMargin nsTableFrame::GetExcludedOuterBCBorder(
-    const WritingMode aWM) const {
-  return GetOuterBCBorder(aWM) - GetIncludedOuterBCBorder(aWM);
-}
-
 void nsTableFrame::GetCollapsedBorderPadding(
     Maybe<LogicalMargin>& aBorder, Maybe<LogicalMargin>& aPadding) const {
   if (IsBorderCollapse()) {
     
     
     const auto wm = GetWritingMode();
-    aBorder.emplace(GetIncludedOuterBCBorder(wm));
+    aBorder.emplace(GetOuterBCBorder(wm));
     aPadding.emplace(wm);
   }
 }
@@ -3949,8 +3909,8 @@ struct BCMapTableInfo final {
 
   void ResetTableBEndBorderWidth() { mTableBCData->mBEndBorderWidth = 0; }
 
-  void SetTableIStartBorderWidth(int32_t aRowB, nscoord aWidth);
-  void SetTableIEndBorderWidth(int32_t aRowB, nscoord aWidth);
+  void SetTableIStartBorderWidth(nscoord aWidth);
+  void SetTableIEndBorderWidth(nscoord aWidth);
   void SetTableBStartBorderWidth(nscoord aWidth);
   void SetTableBEndBorderWidth(nscoord aWidth);
 
@@ -4893,20 +4853,12 @@ void nsTableFrame::ExpandBCDamageArea(TableArea& aArea) const {
 #define ADJACENT true
 #define INLINE_DIR true
 
-void BCMapTableInfo::SetTableIStartBorderWidth(int32_t aRowB, nscoord aWidth) {
-  
-  if (aRowB == 0) {
-    mTableBCData->mIStartCellBorderWidth = aWidth;
-  }
+void BCMapTableInfo::SetTableIStartBorderWidth(nscoord aWidth) {
   mTableBCData->mIStartBorderWidth =
       std::max(mTableBCData->mIStartBorderWidth, aWidth);
 }
 
-void BCMapTableInfo::SetTableIEndBorderWidth(int32_t aRowB, nscoord aWidth) {
-  
-  if (aRowB == 0) {
-    mTableBCData->mIEndCellBorderWidth = aWidth;
-  }
+void BCMapTableInfo::SetTableIEndBorderWidth(nscoord aWidth) {
   mTableBCData->mIEndBorderWidth =
       std::max(mTableBCData->mIEndBorderWidth, aWidth);
 }
@@ -5334,7 +5286,7 @@ void nsTableFrame::CalcBCBorders() {
                                       currentBorder.width, startSeg);
         
         
-        tableInfo.SetTableIStartBorderWidth(rowB, currentBorder.width);
+        tableInfo.SetTableIStartBorderWidth(currentBorder.width);
         if (!reset) {
           info.ResetIStartBorderWidths();
           reset = true;
@@ -5386,7 +5338,7 @@ void nsTableFrame::CalcBCBorders() {
             currentBorder.width, startSeg);
         
         
-        tableInfo.SetTableIEndBorderWidth(rowB, currentBorder.width);
+        tableInfo.SetTableIEndBorderWidth(currentBorder.width);
         if (!reset) {
           info.ResetIEndBorderWidths();
           reset = true;
@@ -6026,7 +5978,7 @@ BCPaintBorderIterator::BCPaintBorderIterator(nsTableFrame* aTable)
   MOZ_ASSERT(mTable->IsBorderCollapse(),
              "Why are we here if the table is not border-collapsed?");
 
-  const LogicalMargin bp = mTable->GetIncludedOuterBCBorder(mTableWM);
+  const LogicalMargin bp = mTable->GetOuterBCBorder(mTableWM);
   
   mInitialOffsetB = mTable->GetPrevInFlow() ? 0 : bp.BStart(mTableWM);
   mNumTableRows = mTable->GetRowCount();
@@ -6095,7 +6047,7 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
   haveIntersect = false;
   if (0 == mNumTableCols) return false;
 
-  LogicalMargin bp = mTable->GetIncludedOuterBCBorder(mTableWM);
+  LogicalMargin bp = mTable->GetOuterBCBorder(mTableWM);
 
   
   mInitialOffsetI = bp.IStart(mTableWM);

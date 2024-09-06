@@ -252,17 +252,6 @@ class nsTableFrame : public nsContainerFrame {
   
 
 
-  LogicalMargin GetIncludedOuterBCBorder(const WritingMode aWM) const;
-
-  
-
-
-
-  LogicalMargin GetExcludedOuterBCBorder(const WritingMode aWM) const;
-
-  
-
-
 
   void GetCollapsedBorderPadding(
       mozilla::Maybe<mozilla::LogicalMargin>& aBorder,
