@@ -332,7 +332,7 @@ async function selectResourceTypesAndStartMigration(
 
   
   let selector = shadow.querySelector("#browser-profile-selector");
-  selector.click();
+  EventUtils.synthesizeMouseAtCenter(selector, {}, wizard.ownerGlobal);
 
   await new Promise(resolve => {
     shadow
