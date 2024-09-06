@@ -21,125 +21,84 @@
 #include "aom_ports/mem.h"
 #include "aom_dsp/flow_estimation/corner_match.h"
 
-DECLARE_ALIGNED(16, static const uint16_t, ones_array[8]) = { 1, 1, 1, 1,
-                                                              1, 1, 1, 1 };
-
-#if MATCH_SZ != 16
-#error "Need to apply pixel mask in corner_match_sse4.c if MATCH_SZ != 16"
+DECLARE_ALIGNED(16, static const uint8_t,
+                byte_mask[16]) = { 255, 255, 255, 255, 255, 255, 255, 255,
+                                   255, 255, 255, 255, 255, 0,   0,   0 };
+#if MATCH_SZ != 13
+#error "Need to change byte_mask in corner_match_sse4.c if MATCH_SZ != 13"
 #endif
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-bool aom_compute_mean_stddev_sse4_1(const unsigned char *frame, int stride,
-                                    int x, int y, double *mean,
-                                    double *one_over_stddev) {
+double av1_compute_cross_correlation_sse4_1(const unsigned char *frame1,
+                                            int stride1, int x1, int y1,
+                                            const unsigned char *frame2,
+                                            int stride2, int x2, int y2) {
+  int i;
   
   
+  __m128i sum1_vec = _mm_setzero_si128();
+  __m128i sum2_vec = _mm_setzero_si128();
   
-  
-  __m128i sum_vec = _mm_setzero_si128();
+  __m128i sumsq2_vec = _mm_setzero_si128();
+  __m128i cross_vec = _mm_setzero_si128();
 
-  
-  __m128i sumsq_vec_l = _mm_setzero_si128();
-  __m128i sumsq_vec_r = _mm_setzero_si128();
-
-  frame += (y - MATCH_SZ_BY2) * stride + (x - MATCH_SZ_BY2);
-
-  for (int i = 0; i < MATCH_SZ; ++i) {
-    const __m128i v = _mm_loadu_si128((__m128i *)frame);
-    const __m128i v_l = _mm_cvtepu8_epi16(v);
-    const __m128i v_r = _mm_cvtepu8_epi16(_mm_srli_si128(v, 8));
-
-    sum_vec = _mm_add_epi16(sum_vec, _mm_add_epi16(v_l, v_r));
-    sumsq_vec_l = _mm_add_epi32(sumsq_vec_l, _mm_madd_epi16(v_l, v_l));
-    sumsq_vec_r = _mm_add_epi32(sumsq_vec_r, _mm_madd_epi16(v_r, v_r));
-
-    frame += stride;
-  }
-
-  
-  
-  
-  const __m128i ones = _mm_load_si128((__m128i *)ones_array);
-  const __m128i partial_sum = _mm_madd_epi16(sum_vec, ones);
-  const __m128i partial_sumsq = _mm_add_epi32(sumsq_vec_l, sumsq_vec_r);
-  const __m128i tmp = _mm_hadd_epi32(partial_sum, partial_sumsq);
-  const int sum = _mm_extract_epi32(tmp, 0) + _mm_extract_epi32(tmp, 1);
-  const int sumsq = _mm_extract_epi32(tmp, 2) + _mm_extract_epi32(tmp, 3);
-
-  *mean = (double)sum / MATCH_SZ;
-  const double variance = sumsq - (*mean) * (*mean);
-  if (variance < MIN_FEATURE_VARIANCE) {
-    *one_over_stddev = 0.0;
-    return false;
-  }
-  *one_over_stddev = 1.0 / sqrt(variance);
-  return true;
-}
-
-
-
-
-
-
-double aom_compute_correlation_sse4_1(const unsigned char *frame1, int stride1,
-                                      int x1, int y1, double mean1,
-                                      double one_over_stddev1,
-                                      const unsigned char *frame2, int stride2,
-                                      int x2, int y2, double mean2,
-                                      double one_over_stddev2) {
-  
-  __m128i cross_vec_l = _mm_setzero_si128();
-  __m128i cross_vec_r = _mm_setzero_si128();
+  const __m128i mask = _mm_load_si128((__m128i *)byte_mask);
+  const __m128i zero = _mm_setzero_si128();
 
   frame1 += (y1 - MATCH_SZ_BY2) * stride1 + (x1 - MATCH_SZ_BY2);
   frame2 += (y2 - MATCH_SZ_BY2) * stride2 + (x2 - MATCH_SZ_BY2);
 
-  for (int i = 0; i < MATCH_SZ; ++i) {
-    const __m128i v1 = _mm_loadu_si128((__m128i *)frame1);
-    const __m128i v2 = _mm_loadu_si128((__m128i *)frame2);
+  for (i = 0; i < MATCH_SZ; ++i) {
+    const __m128i v1 =
+        _mm_and_si128(_mm_loadu_si128((__m128i *)&frame1[i * stride1]), mask);
+    const __m128i v2 =
+        _mm_and_si128(_mm_loadu_si128((__m128i *)&frame2[i * stride2]), mask);
+
+    
+    
+    
+    sum1_vec = _mm_add_epi16(sum1_vec, _mm_sad_epu8(v1, zero));
+    sum2_vec = _mm_add_epi16(sum2_vec, _mm_sad_epu8(v2, zero));
 
     const __m128i v1_l = _mm_cvtepu8_epi16(v1);
     const __m128i v1_r = _mm_cvtepu8_epi16(_mm_srli_si128(v1, 8));
     const __m128i v2_l = _mm_cvtepu8_epi16(v2);
     const __m128i v2_r = _mm_cvtepu8_epi16(_mm_srli_si128(v2, 8));
 
-    cross_vec_l = _mm_add_epi32(cross_vec_l, _mm_madd_epi16(v1_l, v2_l));
-    cross_vec_r = _mm_add_epi32(cross_vec_r, _mm_madd_epi16(v1_r, v2_r));
-
-    frame1 += stride1;
-    frame2 += stride2;
+    sumsq2_vec = _mm_add_epi32(
+        sumsq2_vec,
+        _mm_add_epi32(_mm_madd_epi16(v2_l, v2_l), _mm_madd_epi16(v2_r, v2_r)));
+    cross_vec = _mm_add_epi32(
+        cross_vec,
+        _mm_add_epi32(_mm_madd_epi16(v1_l, v2_l), _mm_madd_epi16(v1_r, v2_r)));
   }
 
   
-  const __m128i tmp = _mm_add_epi32(cross_vec_l, cross_vec_r);
-  const int cross = _mm_extract_epi32(tmp, 0) + _mm_extract_epi32(tmp, 1) +
-                    _mm_extract_epi32(tmp, 2) + _mm_extract_epi32(tmp, 3);
+  
+  
+  
+  __m128i tmp_0 = _mm_unpacklo_epi32(sum1_vec, sum2_vec);
+  __m128i tmp_1 = _mm_unpackhi_epi32(sum1_vec, sum2_vec);
+  __m128i tmp_2 = _mm_unpacklo_epi32(sumsq2_vec, cross_vec);
+  __m128i tmp_3 = _mm_unpackhi_epi32(sumsq2_vec, cross_vec);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const double covariance = cross - mean1 * mean2;
-  const double correlation = covariance * (one_over_stddev1 * one_over_stddev2);
-  return correlation;
+  __m128i tmp_4 = _mm_unpacklo_epi64(tmp_0, tmp_2);
+  __m128i tmp_5 = _mm_unpackhi_epi64(tmp_0, tmp_2);
+  __m128i tmp_6 = _mm_unpacklo_epi64(tmp_1, tmp_3);
+  __m128i tmp_7 = _mm_unpackhi_epi64(tmp_1, tmp_3);
+
+  __m128i res =
+      _mm_add_epi32(_mm_add_epi32(tmp_4, tmp_5), _mm_add_epi32(tmp_6, tmp_7));
+
+  int sum1 = _mm_extract_epi32(res, 0);
+  int sum2 = _mm_extract_epi32(res, 1);
+  int sumsq2 = _mm_extract_epi32(res, 2);
+  int cross = _mm_extract_epi32(res, 3);
+
+  int var2 = sumsq2 * MATCH_SZ_SQ - sum2 * sum2;
+  int cov = cross * MATCH_SZ_SQ - sum1 * sum2;
+  return cov / sqrt((double)var2);
 }

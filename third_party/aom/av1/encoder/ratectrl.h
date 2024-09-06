@@ -250,9 +250,6 @@ typedef struct {
   int percent_blocks_with_motion;
 
   
-  int percent_blocks_inactive;
-
-  
   uint64_t max_block_source_sad;
 
   

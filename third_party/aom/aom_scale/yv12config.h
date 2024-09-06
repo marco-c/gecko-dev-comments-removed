@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>
-
 #include "config/aom_config.h"
 
 #include "aom/aom_codec.h"
@@ -47,29 +45,18 @@ typedef struct yv12_buffer_config {
   
   union {
     struct {
-      
-      
-      
       int y_width;
-      
-      
       int uv_width;
     };
     int widths[2];
   };
   union {
     struct {
-      
-      
-      
       int y_height;
-      
-      
       int uv_height;
     };
     int heights[2];
   };
-  
   union {
     struct {
       int y_crop_width;
@@ -152,8 +139,12 @@ typedef struct yv12_buffer_config {
 
 int aom_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
                            int ss_x, int ss_y, int use_highbitdepth, int border,
-                           int byte_alignment, bool alloc_pyramid,
+                           int byte_alignment, int num_pyramid_levels,
                            int alloc_y_plane_only);
+
+
+
+
 
 
 
@@ -174,7 +165,7 @@ int aom_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
                              int border, int byte_alignment,
                              aom_codec_frame_buffer_t *fb,
                              aom_get_frame_buffer_cb_fn_t cb, void *cb_priv,
-                             bool alloc_pyramid, int alloc_y_plane_only);
+                             int num_pyramid_levels, int alloc_y_plane_only);
 
 int aom_free_frame_buffer(YV12_BUFFER_CONFIG *ybf);
 

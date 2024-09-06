@@ -2638,11 +2638,6 @@ void av1_lowbd_fwd_txfm2d_16x64_sse2(const int16_t *input, int32_t *output,
   }
 }
 
-
-
-
-
-#if AOM_ARCH_X86
 static FwdTxfm2dFunc fwd_txfm2d_func_ls[TX_SIZES_ALL] = {
   av1_lowbd_fwd_txfm2d_4x4_sse2,    
   av1_lowbd_fwd_txfm2d_8x8_sse2,    
@@ -2676,4 +2671,3 @@ void av1_lowbd_fwd_txfm_sse2(const int16_t *src_diff, tran_low_t *coeff,
     fwd_txfm2d_func(src_diff, coeff, diff_stride, txfm_param->tx_type,
                     txfm_param->bd);
 }
-#endif  

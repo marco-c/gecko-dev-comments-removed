@@ -70,7 +70,7 @@ struct lookahead_ctx *av1_lookahead_init(
     unsigned int width, unsigned int height, unsigned int subsampling_x,
     unsigned int subsampling_y, int use_highbitdepth, unsigned int depth,
     const int border_in_pixels, int byte_alignment, int num_lap_buffers,
-    bool is_all_intra, bool alloc_pyramid);
+    bool is_all_intra, int num_pyramid_levels);
 
 
 
@@ -96,7 +96,7 @@ int av1_lookahead_full(const struct lookahead_ctx *ctx);
 
 int av1_lookahead_push(struct lookahead_ctx *ctx, const YV12_BUFFER_CONFIG *src,
                        int64_t ts_start, int64_t ts_end, int use_highbitdepth,
-                       bool alloc_pyramid, aom_enc_frame_flags_t flags);
+                       int num_pyramid_levels, aom_enc_frame_flags_t flags);
 
 
 

@@ -237,9 +237,6 @@ enum aom_dec_control_id {
   
 
 
-
-
-
   AV1D_GET_TILE_SIZE,
 
   

@@ -588,9 +588,6 @@ typedef struct GLOBAL_MOTION_SPEED_FEATURES {
   int disable_gm_search_based_on_stats;
 
   
-  int downsample_level;
-
-  
   int num_refinement_steps;
 } GLOBAL_MOTION_SPEED_FEATURES;
 

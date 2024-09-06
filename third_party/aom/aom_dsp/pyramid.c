@@ -12,7 +12,7 @@
 #include "aom_dsp/pyramid.h"
 #include "aom_mem/aom_mem.h"
 #include "aom_ports/bitops.h"
-#include "aom_util/aom_pthread.h"
+#include "aom_util/aom_thread.h"
 
 
 #include "av1/common/resize.h"
@@ -32,10 +32,12 @@
 
 
 
-size_t aom_get_pyramid_alloc_size(int width, int height, bool image_is_16bit) {
+size_t aom_get_pyramid_alloc_size(int width, int height, int n_levels,
+                                  bool image_is_16bit) {
   
   const int msb = get_msb(AOMMIN(width, height));
-  const int n_levels = AOMMAX(msb - MIN_PYRAMID_SIZE_LOG2, 1);
+  const int max_levels = AOMMAX(msb - MIN_PYRAMID_SIZE_LOG2, 1);
+  n_levels = AOMMIN(n_levels, max_levels);
 
   size_t alloc_size = 0;
   alloc_size += sizeof(ImagePyramid);
@@ -98,10 +100,12 @@ size_t aom_get_pyramid_alloc_size(int width, int height, bool image_is_16bit) {
   return alloc_size;
 }
 
-ImagePyramid *aom_alloc_pyramid(int width, int height, bool image_is_16bit) {
+ImagePyramid *aom_alloc_pyramid(int width, int height, int n_levels,
+                                bool image_is_16bit) {
   
   const int msb = get_msb(AOMMIN(width, height));
-  const int n_levels = AOMMAX(msb - MIN_PYRAMID_SIZE_LOG2, 1);
+  const int max_levels = AOMMAX(msb - MIN_PYRAMID_SIZE_LOG2, 1);
+  n_levels = AOMMIN(n_levels, max_levels);
 
   ImagePyramid *pyr = aom_calloc(1, sizeof(*pyr));
   if (!pyr) {
@@ -114,8 +118,8 @@ ImagePyramid *aom_alloc_pyramid(int width, int height, bool image_is_16bit) {
     return NULL;
   }
 
-  pyr->max_levels = n_levels;
-  pyr->filled_levels = 0;
+  pyr->valid = false;
+  pyr->n_levels = n_levels;
 
   
   
@@ -246,65 +250,44 @@ static INLINE void fill_border(uint8_t *img_buf, const int width,
 
 
 
-
-
-
-
-
-
-
-
-static INLINE int fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
-                               int n_levels, ImagePyramid *frame_pyr) {
-  int already_filled_levels = frame_pyr->filled_levels;
-
-  
-  assert(n_levels <= frame_pyr->max_levels);
-
-  if (already_filled_levels >= n_levels) {
-    return n_levels;
-  }
-
+static INLINE bool fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
+                                ImagePyramid *frame_pyr) {
+  int n_levels = frame_pyr->n_levels;
   const int frame_width = frame->y_crop_width;
   const int frame_height = frame->y_crop_height;
   const int frame_stride = frame->y_stride;
   assert((frame_width >> n_levels) >= 0);
   assert((frame_height >> n_levels) >= 0);
 
-  if (already_filled_levels == 0) {
+  PyramidLayer *first_layer = &frame_pyr->layers[0];
+  if (frame->flags & YV12_FLAG_HIGHBITDEPTH) {
     
-    PyramidLayer *first_layer = &frame_pyr->layers[0];
-    if (frame->flags & YV12_FLAG_HIGHBITDEPTH) {
-      
-      assert(first_layer->width == frame_width);
-      assert(first_layer->height == frame_height);
+    assert(first_layer->width == frame_width);
+    assert(first_layer->height == frame_height);
 
-      uint16_t *frame_buffer = CONVERT_TO_SHORTPTR(frame->y_buffer);
-      uint8_t *pyr_buffer = first_layer->buffer;
-      int pyr_stride = first_layer->stride;
-      for (int y = 0; y < frame_height; y++) {
-        uint16_t *frame_row = frame_buffer + y * frame_stride;
-        uint8_t *pyr_row = pyr_buffer + y * pyr_stride;
-        for (int x = 0; x < frame_width; x++) {
-          pyr_row[x] = frame_row[x] >> (bit_depth - 8);
-        }
+    uint16_t *frame_buffer = CONVERT_TO_SHORTPTR(frame->y_buffer);
+    uint8_t *pyr_buffer = first_layer->buffer;
+    int pyr_stride = first_layer->stride;
+    for (int y = 0; y < frame_height; y++) {
+      uint16_t *frame_row = frame_buffer + y * frame_stride;
+      uint8_t *pyr_row = pyr_buffer + y * pyr_stride;
+      for (int x = 0; x < frame_width; x++) {
+        pyr_row[x] = frame_row[x] >> (bit_depth - 8);
       }
-
-      fill_border(pyr_buffer, frame_width, frame_height, pyr_stride);
-    } else {
-      
-      
-      first_layer->buffer = frame->y_buffer;
-      first_layer->width = frame_width;
-      first_layer->height = frame_height;
-      first_layer->stride = frame_stride;
     }
 
-    already_filled_levels = 1;
+    fill_border(pyr_buffer, frame_width, frame_height, pyr_stride);
+  } else {
+    
+    
+    first_layer->buffer = frame->y_buffer;
+    first_layer->width = frame_width;
+    first_layer->height = frame_height;
+    first_layer->stride = frame_stride;
   }
 
   
-  for (int level = already_filled_levels; level < n_levels; ++level) {
+  for (int level = 1; level < n_levels; ++level) {
     PyramidLayer *prev_layer = &frame_pyr->layers[level - 1];
     uint8_t *prev_buffer = prev_layer->buffer;
     int prev_stride = prev_layer->stride;
@@ -331,16 +314,11 @@ static INLINE int fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
     
     if (!av1_resize_plane(prev_buffer, this_height << 1, this_width << 1,
                           prev_stride, this_buffer, this_height, this_width,
-                          this_stride)) {
-      
-      frame_pyr->filled_levels = n_levels;
-      return -1;
-    }
+                          this_stride))
+      return false;
     fill_border(this_buffer, this_width, this_height, this_stride);
   }
-
-  frame_pyr->filled_levels = n_levels;
-  return n_levels;
+  return true;
 }
 
 
@@ -355,10 +333,8 @@ static INLINE int fill_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
 
 
 
-
-
-int aom_compute_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
-                        int n_levels, ImagePyramid *pyr) {
+bool aom_compute_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
+                         ImagePyramid *pyr) {
   assert(pyr);
 
   
@@ -369,21 +345,18 @@ int aom_compute_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
   pthread_mutex_lock(&pyr->mutex);
 #endif  
 
-  n_levels = AOMMIN(n_levels, pyr->max_levels);
-  int result = n_levels;
-  if (pyr->filled_levels < n_levels) {
-    
-    result = fill_pyramid(frame, bit_depth, n_levels, pyr);
+  if (!pyr->valid) {
+    pyr->valid = fill_pyramid(frame, bit_depth, pyr);
   }
+  bool valid = pyr->valid;
 
   
   
-  
-  assert(IMPLIES(result >= 0, pyr->filled_levels >= n_levels));
+
 #if CONFIG_MULTITHREAD
   pthread_mutex_unlock(&pyr->mutex);
 #endif  
-  return result;
+  return valid;
 }
 
 #ifndef NDEBUG
@@ -393,14 +366,10 @@ int aom_compute_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
 
 
 
-
-
-
-
-
-bool aom_is_pyramid_valid(ImagePyramid *pyr, int n_levels) {
+bool aom_is_pyramid_valid(ImagePyramid *pyr) {
   assert(pyr);
 
+  
   
   
   
@@ -408,13 +377,13 @@ bool aom_is_pyramid_valid(ImagePyramid *pyr, int n_levels) {
   pthread_mutex_lock(&pyr->mutex);
 #endif  
 
-  bool result = (pyr->filled_levels >= n_levels);
+  bool valid = pyr->valid;
 
 #if CONFIG_MULTITHREAD
   pthread_mutex_unlock(&pyr->mutex);
 #endif  
 
-  return result;
+  return valid;
 }
 #endif
 
@@ -425,7 +394,7 @@ void aom_invalidate_pyramid(ImagePyramid *pyr) {
 #if CONFIG_MULTITHREAD
     pthread_mutex_lock(&pyr->mutex);
 #endif  
-    pyr->filled_levels = 0;
+    pyr->valid = false;
 #if CONFIG_MULTITHREAD
     pthread_mutex_unlock(&pyr->mutex);
 #endif  

@@ -19,7 +19,7 @@
 #include "config/aom_config.h"
 
 #include "aom_scale/yv12config.h"
-#include "aom_util/aom_pthread.h"
+#include "aom_util/aom_thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,20 +68,12 @@ typedef struct image_pyramid {
   
   
   
-  
-  
-  
-  
-  
-  
   pthread_mutex_t mutex;
 #endif
   
+  bool valid;
   
-  
-  int max_levels;
-  
-  int filled_levels;
+  int n_levels;
   
   uint8_t *buffer_alloc;
   
@@ -90,13 +82,11 @@ typedef struct image_pyramid {
   PyramidLayer *layers;
 } ImagePyramid;
 
-size_t aom_get_pyramid_alloc_size(int width, int height, bool image_is_16bit);
+size_t aom_get_pyramid_alloc_size(int width, int height, int n_levels,
+                                  bool image_is_16bit);
 
-ImagePyramid *aom_alloc_pyramid(int width, int height, bool image_is_16bit);
-
-
-
-
+ImagePyramid *aom_alloc_pyramid(int width, int height, int n_levels,
+                                bool image_is_16bit);
 
 
 
@@ -106,8 +96,12 @@ ImagePyramid *aom_alloc_pyramid(int width, int height, bool image_is_16bit);
 
 
 
-int aom_compute_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
-                        int n_levels, ImagePyramid *pyr);
+
+
+
+
+bool aom_compute_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
+                         ImagePyramid *pyr);
 
 #ifndef NDEBUG
 
@@ -116,12 +110,7 @@ int aom_compute_pyramid(const YV12_BUFFER_CONFIG *frame, int bit_depth,
 
 
 
-
-
-
-
-
-bool aom_is_pyramid_valid(ImagePyramid *pyr, int n_levels);
+bool aom_is_pyramid_valid(ImagePyramid *pyr);
 #endif
 
 

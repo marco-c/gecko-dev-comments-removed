@@ -1105,39 +1105,6 @@ static INLINE int wrap_index(int i, int wiener_win) {
 
 
 
-static INLINE void split_wiener_filter_coefficients(int wiener_win,
-                                                    const int32_t *w,
-                                                    int32_t *w1, int32_t *w2) {
-  for (int i = 0; i < wiener_win; i++) {
-    w1[i] = w[i] / WIENER_TAP_SCALE_FACTOR;
-    w2[i] = w[i] - w1[i] * WIENER_TAP_SCALE_FACTOR;
-    assert(w[i] == w1[i] * WIENER_TAP_SCALE_FACTOR + w2[i]);
-  }
-}
-
-
-
-
-
-
-static INLINE int64_t multiply_and_scale(int64_t x, int32_t w1, int32_t w2) {
-  
-  
-  const int64_t y = x * w1 + x * w2 / WIENER_TAP_SCALE_FACTOR;
-  
-  
-#if !defined(NDEBUG) && defined(__GNUC__) && defined(__LP64__)
-  const int32_t w = w1 * WIENER_TAP_SCALE_FACTOR + w2;
-  const __int128 z = (__int128)x * w / WIENER_TAP_SCALE_FACTOR;
-  assert(z >= INT64_MIN);
-  assert(z <= INT64_MAX);
-  assert(y == (int64_t)z);
-#endif
-  return y;
-}
-
-
-
 static int linsolve_wiener(int n, int64_t *A, int stride, int64_t *b,
                            int64_t *x) {
   for (int k = 0; k < n - 1; k++) {
@@ -1208,12 +1175,10 @@ static int linsolve_wiener(int n, int64_t *A, int stride, int64_t *b,
 
 
 static AOM_INLINE void update_a_sep_sym(int wiener_win, int64_t **Mc,
-                                        int64_t **Hc, int32_t *a,
-                                        const int32_t *b) {
+                                        int64_t **Hc, int32_t *a, int32_t *b) {
   int i, j;
   int64_t S[WIENER_WIN];
   int64_t A[WIENER_HALFWIN1], B[WIENER_HALFWIN1 * WIENER_HALFWIN1];
-  int32_t b1[WIENER_WIN], b2[WIENER_WIN];
   const int wiener_win2 = wiener_win * wiener_win;
   const int wiener_halfwin1 = (wiener_win >> 1) + 1;
   memset(A, 0, sizeof(A));
@@ -1224,7 +1189,16 @@ static AOM_INLINE void update_a_sep_sym(int wiener_win, int64_t **Mc,
       A[jj] += Mc[i][j] * b[i] / WIENER_TAP_SCALE_FACTOR;
     }
   }
-  split_wiener_filter_coefficients(wiener_win, b, b1, b2);
+
+  
+  
+  int32_t max_b_l = 0;
+  for (int l = 0; l < wiener_win; ++l) {
+    const int32_t abs_b_l = abs(b[l]);
+    if (abs_b_l > max_b_l) max_b_l = abs_b_l;
+  }
+  const int scale_threshold = 128 * WIENER_TAP_SCALE_FACTOR;
+  const int scaler = max_b_l < scale_threshold ? 1 : 4;
 
   for (i = 0; i < wiener_win; i++) {
     for (j = 0; j < wiener_win; j++) {
@@ -1233,17 +1207,10 @@ static AOM_INLINE void update_a_sep_sym(int wiener_win, int64_t **Mc,
         const int kk = wrap_index(k, wiener_win);
         for (l = 0; l < wiener_win; ++l) {
           const int ll = wrap_index(l, wiener_win);
-          
-          
-          
-          
-          
-          
-          
-          const int64_t x = Hc[j * wiener_win + i][k * wiener_win2 + l] * b[i] /
-                            WIENER_TAP_SCALE_FACTOR;
-          
-          B[ll * wiener_halfwin1 + kk] += multiply_and_scale(x, b1[j], b2[j]);
+          B[ll * wiener_halfwin1 + kk] +=
+              Hc[j * wiener_win + i][k * wiener_win2 + l] * b[i] /
+              (scaler * WIENER_TAP_SCALE_FACTOR) * b[j] /
+              (WIENER_TAP_SCALE_FACTOR / scaler);
         }
       }
     }
@@ -1279,12 +1246,10 @@ static AOM_INLINE void update_a_sep_sym(int wiener_win, int64_t **Mc,
 
 
 static AOM_INLINE void update_b_sep_sym(int wiener_win, int64_t **Mc,
-                                        int64_t **Hc, const int32_t *a,
-                                        int32_t *b) {
+                                        int64_t **Hc, int32_t *a, int32_t *b) {
   int i, j;
   int64_t S[WIENER_WIN];
   int64_t A[WIENER_HALFWIN1], B[WIENER_HALFWIN1 * WIENER_HALFWIN1];
-  int32_t a1[WIENER_WIN], a2[WIENER_WIN];
   const int wiener_win2 = wiener_win * wiener_win;
   const int wiener_halfwin1 = (wiener_win >> 1) + 1;
   memset(A, 0, sizeof(A));
@@ -1295,7 +1260,32 @@ static AOM_INLINE void update_b_sep_sym(int wiener_win, int64_t **Mc,
       A[ii] += Mc[i][j] * a[j] / WIENER_TAP_SCALE_FACTOR;
     }
   }
-  split_wiener_filter_coefficients(wiener_win, a, a1, a2);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t max_a_l = 0;
+  for (int l = 0; l < wiener_win; ++l) {
+    const int32_t abs_a_l = abs(a[l]);
+    if (abs_a_l > max_a_l) max_a_l = abs_a_l;
+  }
+  const int scale_threshold = 128 * WIENER_TAP_SCALE_FACTOR;
+  const int scaler = max_a_l < scale_threshold ? 1 : 4;
 
   for (i = 0; i < wiener_win; i++) {
     const int ii = wrap_index(i, wiener_win);
@@ -1304,17 +1294,10 @@ static AOM_INLINE void update_b_sep_sym(int wiener_win, int64_t **Mc,
       int k, l;
       for (k = 0; k < wiener_win; ++k) {
         for (l = 0; l < wiener_win; ++l) {
-          
-          
-          
-          
-          
-          
-          
-          const int64_t x = Hc[i * wiener_win + j][k * wiener_win2 + l] * a[k] /
-                            WIENER_TAP_SCALE_FACTOR;
-          
-          B[jj * wiener_halfwin1 + ii] += multiply_and_scale(x, a1[l], a2[l]);
+          B[jj * wiener_halfwin1 + ii] +=
+              Hc[i * wiener_win + j][k * wiener_win2 + l] * a[k] /
+              (scaler * WIENER_TAP_SCALE_FACTOR) * a[l] /
+              (WIENER_TAP_SCALE_FACTOR / scaler);
         }
       }
     }
@@ -2067,7 +2050,7 @@ void av1_pick_filter_restoration(const YV12_BUFFER_CONFIG *src, AV1_COMP *cpi) {
           &cpi->trial_frame_rst, cm->superres_upscaled_width,
           cm->superres_upscaled_height, seq_params->subsampling_x,
           seq_params->subsampling_y, highbd, AOM_RESTORATION_FRAME_BORDER,
-          cm->features.byte_alignment, NULL, NULL, NULL, false, 0))
+          cm->features.byte_alignment, NULL, NULL, NULL, 0, 0))
     aom_internal_error(cm->error, AOM_CODEC_MEM_ERROR,
                        "Failed to allocate trial restored frame buffer");
 
