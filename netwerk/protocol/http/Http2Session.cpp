@@ -2152,9 +2152,6 @@ nsresult Http2Session::RecvPing(Http2Session* self) {
     
     
     self->mPreviousUsed = false;
-    
-    
-    self->mLastDataReadEpoch = self->mLastReadEpoch;
   } else {
     
     self->GeneratePing(true);
