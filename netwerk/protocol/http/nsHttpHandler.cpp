@@ -270,6 +270,7 @@ nsHttpHandler::nsHttpHandler()
   runtime = mozilla::components::XULRuntime::Service();
   if (runtime) {
     runtime->GetProcessID(&mProcessId);
+    runtime->GetUniqueProcessID(&mUniqueProcessId);
   }
 }
 
@@ -2527,8 +2528,7 @@ nsresult nsHttpHandler::NewChannelId(uint64_t& channelId) {
       
       
       
-      ((static_cast<uint64_t>(mProcessId) << 31) & 0xFFFFFFFF80000000LL) |
-      mNextChannelId++;
+      ((mUniqueProcessId << 31) & 0xFFFFFFFF80000000LL) | mNextChannelId++;
   return NS_OK;
 }
 

@@ -783,8 +783,11 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   void ExcludeHttp2OrHttp3Internal(const nsHttpConnectionInfo* ci);
 
   
-  uint32_t mProcessId{0};
+  uint64_t mUniqueProcessId{0};
   Atomic<uint32_t, Relaxed> mNextChannelId{1};
+
+  
+  uint32_t mProcessId{0};
 
   
   
