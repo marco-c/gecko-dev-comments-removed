@@ -546,6 +546,8 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         layers.mImageCount > 0 &&
         layers.mLayers[0].mAttachment == StyleImageLayerAttachment::Fixed;
 
+    nsDisplayList list(aBuilder);
+
     if (!hasFixedBottomLayer || needBlendContainer) {
       
       
@@ -557,20 +559,18 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       
       
-      aLists.BorderBackground()->AppendNewToTop<nsDisplayCanvasBackgroundColor>(
-          aBuilder, this);
+      list.AppendNewToTop<nsDisplayCanvasBackgroundColor>(aBuilder, this);
     }
 
-    aLists.BorderBackground()->AppendToTop(&layerItems);
+    list.AppendToTop(&layerItems);
 
     if (needBlendContainer) {
       const ActiveScrolledRoot* containerASR = contASRTracker.GetContainerASR();
       DisplayListClipState::AutoSaveRestore blendContainerClip(aBuilder);
-      aLists.BorderBackground()->AppendToTop(
-          nsDisplayBlendContainer::CreateForBackgroundBlendMode(
-              aBuilder, this, nullptr, aLists.BorderBackground(),
-              containerASR));
+      list.AppendToTop(nsDisplayBlendContainer::CreateForBackgroundBlendMode(
+          aBuilder, this, nullptr, &list, containerASR));
     }
+    aLists.BorderBackground()->AppendToTop(&list);
   }
 
   for (nsIFrame* kid : PrincipalChildList()) {
