@@ -107,10 +107,7 @@ add_task(async function test_showLoginItemErrors() {
     
     return;
   }
-  let reauthObserved = Promise.resolve();
-  if (OSKeyStore.canReauth()) {
-    reauthObserved = OSKeyStoreTestUtils.waitForOSKeyStoreLogin(true);
-  }
+  let reauthObserved = OSKeyStoreTestUtils.waitForOSKeyStoreLogin(true);
   await SpecialPowers.spawn(
     browser,
     [[LoginHelper.loginToVanillaObject(LOGIN_TO_UPDATE), LOGIN_UPDATES]],
