@@ -1203,9 +1203,32 @@ static constexpr size_t SuspendableStackPlusRedZoneSize =
 static const unsigned MaxVarU32DecodedBytes = 5;
 
 
+enum class CompileMode {
+  
+  Once,
+  
+  
+  EagerTiering,
+  
+  
+  LazyTiering,
+};
 
 
-enum class CompileMode { Once, Tier1, Tier2 };
+enum class CompileState {
+  
+  Once,
+  
+  
+  
+  EagerTier1,
+  
+  
+  EagerTier2,
+  
+  
+  LazyTier1
+};
 
 
 

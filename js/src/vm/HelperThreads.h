@@ -123,13 +123,14 @@ size_t GetMaxWasmCompilationThreads();
 bool SetFakeCPUCount(size_t count);
 
 
-bool StartOffThreadWasmCompile(wasm::CompileTask* task, wasm::CompileMode mode);
+bool StartOffThreadWasmCompile(wasm::CompileTask* task,
+                               wasm::CompileState state);
 
 
 
 
 size_t RemovePendingWasmCompileTasks(const wasm::CompileTaskState& taskState,
-                                     wasm::CompileMode mode,
+                                     wasm::CompileState state,
                                      const AutoLockHelperThreadState& lock);
 
 
