@@ -4,6 +4,7 @@
 
 
 
+use super::AbsoluteColor;
 use crate::{
     parser::ParserContext,
     values::{
@@ -61,6 +62,12 @@ impl<ValueType> ColorComponent<ValueType> {
 
 pub trait ColorComponentType: Sized {
     
+    
+    
+    
+    fn from_value(value: f32) -> Self;
+
+    
     fn units() -> CalcUnits;
 
     
@@ -77,12 +84,22 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_none: bool,
+        origin_color: Option<&AbsoluteColor>,
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
 
         match *input.next()? {
             Token::Ident(ref value) if allow_none && value.eq_ignore_ascii_case("none") => {
                 Ok(ColorComponent::None)
+            },
+            ref t @ Token::Ident(ref ident) if origin_color.is_some() => {
+                match origin_color
+                    .unwrap()
+                    .get_component_by_channel_keyword(ident)
+                {
+                    Ok(Some(value)) => Ok(Self::Value(ValueType::from_value(value))),
+                    _ => Err(location.new_unexpected_token_error(t.clone())),
+                }
             },
             Token::Function(ref name) => {
                 let function = SpecifiedCalcNode::math_function(context, name, location)?;
