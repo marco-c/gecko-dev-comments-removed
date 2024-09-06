@@ -1,13 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-
-
-
-
-
+// Test hovering on an object, which will show a popup and on a
+// simple value, which will show a tooltip.
 
 "use strict";
 
-
+// Showing/hiding the preview tooltip can be slow as we wait for CodeMirror scroll...
 requestLongerTimeout(2);
 
 add_task(async function () {
@@ -125,10 +125,10 @@ async function testPreviews(dbg, fnName, previews) {
 }
 
 async function testHoveringInvalidTargetTokens(dbg) {
-  
+  // Test hovering tokens for which we shouldn't have a preview popup displayed
   invokeInTab("invalidTargets");
   await waitForPaused(dbg);
-  
+  // CodeMirror refreshes after inline previews are displayed, so wait until they're rendered.
   await waitForInlinePreviews(dbg);
 
   await assertNoPreviews(dbg, `"a"`, 69, 4);
@@ -138,8 +138,8 @@ async function testHoveringInvalidTargetTokens(dbg) {
   await assertNoPreviews(dbg, `42`, 73, 4);
   await assertNoPreviews(dbg, `const`, 74, 4);
 
-  
-  
+  // checking inline preview widget
+  // Move the cursor to the top left corner to have a clean state
   resetCursorPositionToTopLeftCorner(dbg);
 
   const inlinePreviewEl = findElementWithSelector(
@@ -152,19 +152,59 @@ async function testHoveringInvalidTargetTokens(dbg) {
     waitForElement(dbg, "previewPopup"),
     wait(500).then(() => "TIMEOUT"),
   ]);
-  
+  // Hover over the inline preview element
   hoverToken(inlinePreviewEl);
   const raceResult = await racePromise;
   is(raceResult, "TIMEOUT", "No popup was displayed over the inline preview");
 
   await resume(dbg);
+
+  info("Test hovering element not in a line");
+  await getDebuggerSplitConsole(dbg);
+  const { hud } = dbg.toolbox.getPanel("webconsole");
+  evaluateExpressionInConsole(
+    hud,
+    `
+      a = 1;
+      debugger;
+      b = 2;`
+  );
+  await waitForPaused(dbg);
+  await dbg.toolbox.toggleSplitConsole();
+
+  resetCursorPositionToTopLeftCorner(dbg);
+
+  const racePromiseLines = Promise.any([
+    waitForElement(dbg, "previewPopup"),
+    wait(500).then(() => "TIMEOUT_LINES"),
+  ]);
+  // We don't want to use hoverToken, as it synthesize the event at the center of the element,
+  // which wouldn't reproduce the original issue we want to check
+  EventUtils.synthesizeMouse(
+    findElementWithSelector(dbg, ".CodeMirror-lines"),
+    0,
+    0,
+    {
+      type: "mousemove",
+    },
+    dbg.win
+  );
+  is(
+    await racePromiseLines,
+    "TIMEOUT_LINES",
+    "No popup was displayed over the .CodeMirror-lines element"
+  );
+
+  // Resume and select back the main JS file that is used by the other assertions
+  await resume(dbg);
+  await selectSource(dbg, "preview.js");
 }
 
 async function assertNoPreviews(dbg, expression, line, column) {
-  
+  // Move the cursor to the top left corner to have a clean state
   resetCursorPositionToTopLeftCorner(dbg);
 
-  
+  // Hover the token
   const result = await Promise.race([
     tryHoverTokenAtLine(dbg, expression, line, column, "previewPopup"),
     wait(500).then(() => "TIMEOUT"),
@@ -204,7 +244,7 @@ async function testMovingFromATokenToAnother(dbg) {
     "`Foo` token is highlighted"
   );
 
-  
+  // store original position
   const originalPopupPosition = fooPopupEl.getBoundingClientRect().x;
 
   info(
@@ -212,11 +252,11 @@ async function testMovingFromATokenToAnother(dbg) {
   );
   const privateStaticTokenEl = getTokenElAtLine(dbg, "#privateStatic", 50, 48);
 
-  
-  
-  
+  // The sequence of event to trigger the bug this is covering isn't easily reproducible
+  // by firing a few chosen events (because of React async rendering), so we are going to
+  // mimick moving the mouse from the `Foo` to `#privateStatic` in a given amount of time
 
-  
+  // So get all the different token quads to compute their center
   const fooTokenQuad = fooTokenEl.getBoxQuads()[0];
   const privateStaticTokenQuad = privateStaticTokenEl.getBoxQuads()[0];
   const fooXCenter =
@@ -230,14 +270,14 @@ async function testMovingFromATokenToAnother(dbg) {
     privateStaticTokenQuad.p1.y +
     (privateStaticTokenQuad.p3.y - privateStaticTokenQuad.p1.y) / 2;
 
-  
+  // we can then compute the distance to cover between the two token centers
   const xDistance = privateStaticXCenter - fooXCenter;
   const yDistance = privateStaticYCenter - fooYCenter;
   const movementDuration = 50;
   const xIncrements = xDistance / movementDuration;
   const yIncrements = yDistance / movementDuration;
 
-  
+  // Finally, we're going to fire a mouseover event every ms
   info("Move mousecursor between the `Foo` token to the `#privateStatic` one");
   for (let i = 0; i < movementDuration; i++) {
     const x = fooXCenter + (yDistance + i * xIncrements);
@@ -259,8 +299,8 @@ async function testMovingFromATokenToAnother(dbg) {
     if (!popup) {
       return false;
     }
-    
-    
+    // for `Foo`, the header text content is "Foo", so when it's "Object", we know the
+    // popup was updated
     return (
       popup.querySelector(".preview-popup .node .objectBox")?.textContent ===
       "Object"
@@ -309,7 +349,7 @@ async function testBucketedArray(dbg) {
     oiNode => oiNode.querySelector(".object-label")?.textContent
   );
   Assert.deepEqual(displayedPropertyNames, [
-    null, 
+    null, // No property name is displayed for the root node
     "[0…99]",
     "[100…100]",
     "length",

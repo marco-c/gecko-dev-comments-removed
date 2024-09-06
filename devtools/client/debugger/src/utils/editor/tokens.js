@@ -50,6 +50,8 @@ function _isInvalidTarget(target) {
     target.closest(".CodeMirror-widget") ||
     
     target.matches(".CodeMirror-line, .CodeMirror-gutter-elt") ||
+    
+    !target.closest(".CodeMirror-line") ||
     target.getBoundingClientRect().top == 0
   ) {
     return true;
