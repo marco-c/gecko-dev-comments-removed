@@ -3377,6 +3377,38 @@ class MToFloat32 : public MToFPInstruction {
   ALLOW_CLONE(MToFloat32)
 };
 
+
+
+class MToFloat16 : public MToFPInstruction {
+  explicit MToFloat16(MDefinition* def)
+      : MToFPInstruction(classOpcode, def, MIRType::Float32) {}
+
+ public:
+  INSTRUCTION_HEADER(ToFloat16)
+  TRIVIAL_NEW_WRAPPERS
+
+  virtual MDefinition* foldsTo(TempAllocator& alloc) override;
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  
+  bool canProduceFloat32() const override { return true; }
+
+#ifdef DEBUG
+  
+  
+  bool isConsistentFloat32Use(MUse* use) const override { return true; }
+#endif
+
+  [[nodiscard]] bool writeRecoverData(
+      CompactBufferWriter& writer) const override;
+  bool canRecoverOnBailout() const override { return true; }
+
+  ALLOW_CLONE(MToFloat16)
+};
+
 class MWrapInt64ToInt32 : public MUnaryInstruction, public NoTypePolicy::Data {
   bool bottomHalf_;
 
