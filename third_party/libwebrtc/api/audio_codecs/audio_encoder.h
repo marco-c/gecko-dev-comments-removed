@@ -20,6 +20,7 @@
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/call/bitrate_allocation.h"
+#include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/buffer.h"
 
@@ -245,6 +246,14 @@ class AudioEncoder {
   
   virtual absl::optional<std::pair<TimeDelta, TimeDelta>> GetFrameLengthRange()
       const = 0;
+
+  
+  
+  
+  virtual absl::optional<std::pair<DataRate, DataRate>> GetBitrateRange()
+      const {
+    return absl::nullopt;
+  }
 
   
   static constexpr int kMaxNumberOfChannels = 24;
