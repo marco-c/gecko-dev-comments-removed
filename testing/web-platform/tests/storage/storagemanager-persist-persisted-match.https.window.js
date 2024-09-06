@@ -1,5 +1,12 @@
 
 
+
+
+
+promise_setup(async () => {
+    await tryDenyingPermission();
+});
+
 promise_test(async t => {
     var persistResult = await navigator.storage.persist();
     assert_equals(typeof persistResult, 'boolean', persistResult + ' should be boolean');

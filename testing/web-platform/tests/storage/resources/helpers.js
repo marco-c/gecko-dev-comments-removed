@@ -1,0 +1,9 @@
+
+async function tryDenyingPermission() {
+  try {
+    await test_driver.set_permission({ name: "persistent-storage" }, "denied");
+  } catch {
+    
+    
+  }
+}

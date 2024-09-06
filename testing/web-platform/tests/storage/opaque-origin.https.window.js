@@ -1,5 +1,8 @@
 
 
+
+
+
 function load_iframe(src, sandbox) {
   return new Promise(resolve => {
     const iframe = document.createElement('iframe');
@@ -48,6 +51,10 @@ function make_script(snippet) {
          '  };' +
          '<\/script>';
 }
+
+promise_setup(async () => {
+  await tryDenyingPermission();
+});
 
 ['navigator.storage.persisted()',
  'navigator.storage.estimate()',

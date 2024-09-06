@@ -1,5 +1,12 @@
 
 
+
+
+
+promise_setup(async () => {
+    await tryDenyingPermission();
+});
+
 promise_test(function() {
     var promise = navigator.storage.persist();
     assert_true(promise instanceof Promise,
