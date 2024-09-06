@@ -1344,6 +1344,13 @@ void nsHtml5TreeOpExecutor::SetSpeculationBase(const nsAString& aURL) {
   }
 
   
+  
+  
+  if (newBaseURI->SchemeIs("data") || newBaseURI->SchemeIs("javascript")) {
+    return;
+  }
+
+  
   if (nsCOMPtr<nsIContentSecurityPolicy> csp = mDocument->GetCsp()) {
     
     

@@ -86,14 +86,21 @@ static void SetBaseURIUsingFirstBaseWithHref(Document* aDocument,
           aDocument->GetFallbackBaseURI());
 
       
-      nsresult rv = NS_OK;
+      
+
+      if (newBaseURI && (newBaseURI->SchemeIs("data") ||
+                         newBaseURI->SchemeIs("javascript"))) {
+        newBaseURI = nullptr;
+      }
+
+      
       nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
       if (csp && newBaseURI) {
         
         
         
         bool cspPermitsBaseURI = true;
-        rv = csp->Permits(
+        nsresult rv = csp->Permits(
             child->AsElement(), nullptr , newBaseURI,
             nsIContentSecurityPolicy::BASE_URI_DIRECTIVE, true ,
             true , &cspPermitsBaseURI);
@@ -101,6 +108,7 @@ static void SetBaseURIUsingFirstBaseWithHref(Document* aDocument,
           newBaseURI = nullptr;
         }
       }
+
       aDocument->SetBaseURI(newBaseURI);
       aDocument->SetChromeXHRDocBaseURI(nullptr);
       return;
