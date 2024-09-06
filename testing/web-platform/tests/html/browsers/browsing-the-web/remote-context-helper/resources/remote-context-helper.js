@@ -311,9 +311,14 @@
     };
   }
 
-  function workerExecutorCreator() {
+  function workerExecutorCreator(remoteContextWrapper, globalVariable) {
     return url => {
-      new Worker(url);
+      return remoteContextWrapper.executeScript((url, globalVariable) => {
+        const worker = new Worker(url);
+        if (globalVariable) {
+          window[globalVariable] = worker;
+        }
+      }, [url, globalVariable]);
     };
   }
 
@@ -431,9 +436,12 @@
 
 
 
-    addWorker(extraConfig) {
+
+
+
+    addWorker(globalVariable, extraConfig) {
       return this.helper.createContext({
-        executorCreator: workerExecutorCreator(),
+        executorCreator: workerExecutorCreator(this, globalVariable),
         extraConfig,
         isWorker: true,
       });
