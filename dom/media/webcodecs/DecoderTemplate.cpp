@@ -416,7 +416,6 @@ void DecoderTemplate<DecoderType>::CancelPendingControlMessagesAndFlushPromises(
   }
 
   
-  
   mPendingFlushPromises.ForEach(
       [&](const int64_t& id, const RefPtr<Promise>& p) {
         LOG("%s %p, reject the promise for flush %" PRId64 " (unique id)",
