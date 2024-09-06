@@ -307,7 +307,7 @@ var BookmarkPropertiesPanel = {
     });
 
     switch (this._action) {
-      case ACTION_EDIT:
+      case ACTION_EDIT: {
         await gEditItemOverlay.initPanel({
           node: this._node,
           hiddenRows: this._hiddenRows,
@@ -315,14 +315,17 @@ var BookmarkPropertiesPanel = {
         });
         acceptButtonDisabled = gEditItemOverlay.readOnly;
         break;
-      case ACTION_ADD:
+      }
+      case ACTION_ADD: {
         this._node = await this._promiseNewItem();
+
         
         await gEditItemOverlay.initPanel({
           node: this._node,
           hiddenRows: this._hiddenRows,
           postData: this._postData,
           focusedElement: "first",
+          addedMultipleBookmarks: this._node.children?.length > 1,
         });
 
         
@@ -339,6 +342,7 @@ var BookmarkPropertiesPanel = {
           acceptButtonDisabled = !this._inputIsValid();
         }
         break;
+      }
     }
 
     if (!gEditItemOverlay.readOnly) {
