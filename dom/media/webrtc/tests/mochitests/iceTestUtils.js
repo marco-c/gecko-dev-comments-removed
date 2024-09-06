@@ -75,6 +75,18 @@ async function iceConnected(pc) {
   });
 }
 
+async function dtlsConnected(pc) {
+  return new Promise((resolve, reject) => {
+    pc.addEventListener("connectionstatechange", () => {
+      if (["connected", "completed"].includes(pc.connectionState)) {
+        resolve();
+      } else if (pc.connectionState == "failed") {
+        reject(new Error(`Connection failed`));
+      }
+    });
+  });
+}
+
 
 
 
@@ -87,7 +99,8 @@ async function connect(
   answerer,
   timeout,
   context,
-  noTrickleWait = false
+  noTrickleWait = false,
+  waitForDtls = false
 ) {
   const trickle1 = trickleIce(offerer, answerer);
   const trickle2 = trickleIce(answerer, offerer);
@@ -110,8 +123,12 @@ async function connect(
       }
     };
 
+    const connectionPromises = waitForDtls
+      ? [dtlsConnected(offerer), dtlsConnected(answerer)]
+      : [iceConnected(offerer), iceConnected(answerer)];
+
     await Promise.race([
-      Promise.all([iceConnected(offerer), iceConnected(answerer)]),
+      Promise.all(connectionPromises),
       throwOnTimeout(timeout, context),
     ]);
   } finally {
