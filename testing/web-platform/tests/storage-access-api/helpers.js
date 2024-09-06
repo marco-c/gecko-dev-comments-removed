@@ -29,8 +29,13 @@ async function CreateFrameHelper(setUpFrame, fetchTests) {
 
 
 
-function CreateFrame(sourceURL, fetchTests = false) {
+function CreateFrame(
+  sourceURL, fetchTests = false, frameSandboxAttribute = undefined) {
   return CreateFrameHelper((frame) => {
+    if (frameSandboxAttribute !== undefined) {
+      frame.sandbox = frameSandboxAttribute;
+    }
+
     frame.src = sourceURL;
     document.body.appendChild(frame);
   }, fetchTests);
@@ -38,8 +43,8 @@ function CreateFrame(sourceURL, fetchTests = false) {
 
 
 
-function RunTestsInIFrame(sourceURL) {
-  return CreateFrame(sourceURL, true);
+function RunTestsInIFrame(sourceURL, frameSandboxAttribute = undefined) {
+  return CreateFrame(sourceURL, true, frameSandboxAttribute);
 }
 
 function RunTestsInNestedIFrame(sourceURL) {
