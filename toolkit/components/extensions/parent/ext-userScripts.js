@@ -48,6 +48,8 @@ class UserScriptParent {
       
       matchOriginAsFallback: false,
       runAt: details.runAt || "document_idle",
+      
+      
       jsPaths: details.js,
       userScriptOptions: {
         scriptMetadata: details.scriptMetadata,
