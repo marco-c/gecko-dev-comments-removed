@@ -193,6 +193,12 @@ if __name__ == "__main__":
         default=False,
         help="continue an interrupted cherry-pick",
     )
+    parser.add_argument(
+        "--skip-restore",
+        action="store_true",
+        default=False,
+        help="to skip restoring the patch-stack if it is already restored and verified",
+    )
     args = parser.parse_args()
 
     
@@ -283,6 +289,43 @@ if __name__ == "__main__":
 
     if len(resume_state) == 0:
         update_resume_state("resume2", resume_state_filename)
+        if args.skip_restore is False:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            print("restoring patch stack")
+            restore_patch_stack(
+                args.repo_path,
+                args.branch,
+                os.path.abspath(args.patch_path),
+                args.state_path,
+                args.tar_name,
+                "https",  
+            )
+
+    if len(resume_state) == 0 or resume_state == "resume2":
+        resume_state = ""
+        update_resume_state("resume3", resume_state_filename)
+        
+        print("verifying patch stack")
+        run_shell(f"bash {args.script_path}/verify_vendoring.sh", False)
+
+    if len(resume_state) == 0 or resume_state == "resume3":
+        resume_state = ""
+        update_resume_state("resume4", resume_state_filename)
         print("-------")
         print(f"------- write commit message file {commit_message_filename}")
         print("-------")
@@ -294,9 +337,9 @@ if __name__ == "__main__":
             args.reviewers,
         )
 
-    if len(resume_state) == 0 or resume_state == "resume2":
+    if len(resume_state) == 0 or resume_state == "resume4":
         resume_state = ""
-        update_resume_state("resume3", resume_state_filename)
+        update_resume_state("resume5", resume_state_filename)
         print("-------")
         print(f"------- cherry-pick {args.commit_sha} into {args.repo_path}")
         print("-------")
@@ -319,9 +362,9 @@ if __name__ == "__main__":
         )
         error_help = None
 
-    if len(resume_state) == 0 or resume_state == "resume3":
+    if len(resume_state) == 0 or resume_state == "resume5":
         resume_state = ""
-        update_resume_state("resume4", resume_state_filename)
+        update_resume_state("resume6", resume_state_filename)
         print("-------")
         print(f"------- vendor from {args.repo_path}")
         print("-------")
@@ -358,9 +401,9 @@ if __name__ == "__main__":
         )
         error_help = None
 
-    if len(resume_state) == 0 or resume_state == "resume4":
+    if len(resume_state) == 0 or resume_state == "resume6":
         resume_state = ""
-        update_resume_state("resume5", resume_state_filename)
+        update_resume_state("resume7", resume_state_filename)
         error_help = (
             "Reverting change to 'third_party/libwebrtc/README.mozilla'\n"
             "has failed.  The cherry-pick commit should not modify\n"
@@ -379,9 +422,9 @@ if __name__ == "__main__":
         run_hg(cmd)
         error_help = None
 
-    if len(resume_state) == 0 or resume_state == "resume5":
+    if len(resume_state) == 0 or resume_state == "resume7":
         resume_state = ""
-        update_resume_state("resume6", resume_state_filename)
+        update_resume_state("resume8", resume_state_filename)
         
         
         cmd = "hg status --change tip --exclude '**/README.*'"
@@ -407,7 +450,7 @@ if __name__ == "__main__":
             sys.exit(1)
         error_help = None
 
-    if len(resume_state) == 0 or resume_state == "resume6":
+    if len(resume_state) == 0 or resume_state == "resume8":
         resume_state = ""
         update_resume_state("", resume_state_filename)
         print("-------")
