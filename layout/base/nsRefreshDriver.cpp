@@ -50,6 +50,7 @@
 #include "nsComponentManagerUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "nsIXULRuntime.h"
 #include "jsapi.h"
@@ -1364,6 +1365,7 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mNotifyDOMContentFlushed(false),
       mNeedToUpdateIntersectionObservations(false),
       mNeedToUpdateResizeObservers(false),
+      mNeedToUpdateAnimations(false),
       mMightNeedMediaQueryListenerUpdate(false),
       mNeedToUpdateContentRelevancy(false),
       mInNormalTick(false),
@@ -1487,18 +1489,6 @@ bool nsRefreshDriver::RemoveRefreshObserver(nsARefreshObserver* aObserver,
              "Registration count shouldn't be able to go negative");
 #endif
   return true;
-}
-
-void nsRefreshDriver::AddTimerAdjustmentObserver(
-    nsATimerAdjustmentObserver* aObserver) {
-  MOZ_ASSERT(!mTimerAdjustmentObservers.Contains(aObserver));
-  mTimerAdjustmentObservers.AppendElement(aObserver);
-}
-
-void nsRefreshDriver::RemoveTimerAdjustmentObserver(
-    nsATimerAdjustmentObserver* aObserver) {
-  MOZ_ASSERT(mTimerAdjustmentObservers.Contains(aObserver));
-  mTimerAdjustmentObservers.RemoveElement(aObserver);
 }
 
 void nsRefreshDriver::PostVisualViewportResizeEvent(
@@ -1885,11 +1875,6 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
 
   if (mMostRecentRefresh != mActiveTimer->MostRecentRefresh()) {
     mMostRecentRefresh = mActiveTimer->MostRecentRefresh();
-
-    for (nsATimerAdjustmentObserver* obs :
-         mTimerAdjustmentObservers.EndLimitedRange()) {
-      obs->NotifyTimerAdjusted(mMostRecentRefresh);
-    }
   }
 }
 
@@ -1919,7 +1904,6 @@ uint32_t nsRefreshDriver::ObserverCount() const {
   sum += mThrottledFrameRequestCallbackDocs.Length();
   sum += mViewManagerFlushIsPending;
   sum += mEarlyRunners.Length();
-  sum += mTimerAdjustmentObservers.Length();
   sum += mAutoFocusFlushDocuments.Length();
   return sum;
 }
@@ -2011,6 +1995,9 @@ auto nsRefreshDriver::GetReasonsToTick() const -> TickReasons {
   if (mNeedToUpdateResizeObservers) {
     reasons |= TickReasons::eNeedsToNotifyResizeObservers;
   }
+  if (mNeedToUpdateAnimations) {
+    reasons |= TickReasons::eNeedsToUpdateAnimations;
+  }
   if (mNeedToUpdateIntersectionObservations) {
     reasons |= TickReasons::eNeedsToUpdateIntersectionObservations;
   }
@@ -2053,6 +2040,9 @@ void nsRefreshDriver::AppendTickReasonsToString(TickReasons aReasons,
   }
   if (aReasons & TickReasons::eNeedsToNotifyResizeObservers) {
     aStr.AppendLiteral(" NeedsToNotifyResizeObservers");
+  }
+  if (aReasons & TickReasons::eNeedsToUpdateAnimations) {
+    aStr.AppendLiteral(" NeedsToUpdateAnimations");
   }
   if (aReasons & TickReasons::eNeedsToUpdateIntersectionObservations) {
     aStr.AppendLiteral(" NeedsToUpdateIntersectionObservations");
@@ -2345,9 +2335,39 @@ void nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers() {
   }
 }
 
-void nsRefreshDriver::DispatchAnimationEvents() {
+static CallState UpdateAndReduceAnimations(Document& aDocument) {
+  for (DocumentTimeline* timeline : aDocument.Timelines()) {
+    timeline->WillRefresh();
+  }
+
+  if (nsPresContext* pc = aDocument.GetPresContext()) {
+    if (pc->EffectCompositor()->NeedsReducing()) {
+      pc->EffectCompositor()->ReduceAnimations();
+    }
+  }
+  aDocument.EnumerateSubDocuments(UpdateAndReduceAnimations);
+  return CallState::Continue;
+}
+
+void nsRefreshDriver::UpdateAnimationsAndSendEvents() {
+  
+  
+  mNeedToUpdateAnimations = false;
   if (!mPresContext) {
     return;
+  }
+
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+    nsAutoMicroTask mt;
+    UpdateAndReduceAnimations(*mPresContext->Document());
   }
 
   
@@ -2494,16 +2514,6 @@ void nsRefreshDriver::CancelIdleTask(Task* aTask) {
   if (sPendingIdleTasks->IsEmpty()) {
     sPendingIdleTasks = nullptr;
   }
-}
-
-static CallState ReduceAnimations(Document& aDocument) {
-  if (nsPresContext* pc = aDocument.GetPresContext()) {
-    if (pc->EffectCompositor()->NeedsReducing()) {
-      pc->EffectCompositor()->ReduceAnimations();
-    }
-  }
-  aDocument.EnumerateSubDocuments(ReduceAnimations);
-  return CallState::Continue;
 }
 
 bool nsRefreshDriver::TickObserverArray(uint32_t aIdx, TimeStamp aNowTime) {
@@ -2670,28 +2680,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  {
-    nsAutoMicroTask mt;
-    ReduceAnimations(*mPresContext->Document());
-  }
-
-  
-  
   if (!mPresContext || !mPresContext->GetPresShell()) {
     return StopTimer();
   }
@@ -2714,7 +2702,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   EvaluateMediaQueriesAndReportChanges();
 
   
-  DispatchAnimationEvents();
+  UpdateAnimationsAndSendEvents();
 
   
   RunFullscreenSteps();
