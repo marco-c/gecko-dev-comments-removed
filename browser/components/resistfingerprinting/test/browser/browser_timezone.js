@@ -3,6 +3,7 @@
 
 
 
+
 async function verifySpoofed() {
   ok(true, "Running on " + content.location.origin);
 
@@ -16,13 +17,15 @@ async function verifySpoofed() {
   
   function test() {
     let date = new Date();
+    const TZ_NAME = "Atlantic/Reykjavik";
+    const TZ_SUFFIX = "Greenwich Mean Time";
     ok(
-      date.toString().endsWith("(Coordinated Universal Time)"),
-      "The date toString() is in UTC timezone."
+      date.toString().endsWith(`(${TZ_SUFFIX})`),
+      `The date toString() is in ${TZ_NAME} timezone.`
     );
     ok(
-      date.toTimeString().endsWith("(Coordinated Universal Time)"),
-      "The date toTimeString() is in UTC timezone."
+      date.toTimeString().endsWith(`(${TZ_SUFFIX})`),
+      `The date toTimeString() is in ${TZ_NAME} timezone.`
     );
     let dateTimeFormat = Intl.DateTimeFormat("en-US", {
       dateStyle: "full",
@@ -30,12 +33,12 @@ async function verifySpoofed() {
     });
     is(
       dateTimeFormat.resolvedOptions().timeZone,
-      "UTC",
-      "The Intl.DateTimeFormat is in UTC timezone."
+      TZ_NAME,
+      `The Intl.DateTimeFormat is in ${TZ_NAME} timezone.`
     );
     ok(
-      dateTimeFormat.format(date).endsWith("Coordinated Universal Time"),
-      "The Intl.DateTimeFormat is formatting with the UTC timezone."
+      dateTimeFormat.format(date).endsWith(TZ_SUFFIX),
+      `The Intl.DateTimeFormat is formatting with the ${TZ_NAME} timezone.`
     );
     is(
       date.getFullYear(),
