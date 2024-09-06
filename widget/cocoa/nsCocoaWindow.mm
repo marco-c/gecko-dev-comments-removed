@@ -3528,7 +3528,9 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
     
     
     if (@available(macOS 11.0, *)) {
-      aWindow.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
+      aWindow.titlebarSeparatorStyle = aWindow.titlebarAppearsTransparent
+                                           ? NSTitlebarSeparatorStyleNone
+                                           : NSTitlebarSeparatorStyleAutomatic;
     }
   }
 }
@@ -3621,11 +3623,6 @@ static bool MaybeDropEventForModalWindow(NSEvent* aEvent, id aDelegate) {
                                  backing:aBufferingType
                                    defer:aFlag])) {
     mWindowButtonsRect = NSZeroRect;
-
-    self.titlebarAppearsTransparent = YES;
-    if (@available(macOS 11.0, *)) {
-      self.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
-    }
 
     mFullscreenTitlebarTracker = [[FullscreenTitlebarTracker alloc] init];
     
@@ -3753,6 +3750,9 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
   [super setDrawsContentsIntoWindowFrame:aState];
   if (stateChanged && [self.delegate isKindOfClass:[WindowDelegate class]]) {
     
+    self.titlebarAppearsTransparent = self.drawsContentsIntoWindowFrame;
+
+    
     
     
     
@@ -3768,6 +3768,26 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
     
     
     ChildViewMouseTracker::ResendLastMouseMoveEvent();
+  }
+}
+
+
+
+
+
+
+
+
+- (void)setTitlebarAppearsTransparent:(BOOL)aState {
+  BOOL stateChanged = self.titlebarAppearsTransparent != aState;
+  [super setTitlebarAppearsTransparent:aState];
+
+  if (stateChanged) {
+    if (@available(macOS 11.0, *)) {
+      self.titlebarSeparatorStyle = self.titlebarAppearsTransparent
+                                        ? NSTitlebarSeparatorStyleNone
+                                        : NSTitlebarSeparatorStyleAutomatic;
+    }
   }
 }
 
