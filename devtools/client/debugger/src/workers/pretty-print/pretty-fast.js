@@ -316,7 +316,30 @@ class PrettyFast {
   #writeToken(token) {
     if (token.type.label == "string") {
       this.#write(
-        `'${sanitize(token.value)}'`,
+        `'${stringSanitize(token.value)}'`,
+        token.loc.start.line,
+        token.loc.start.column,
+        true
+      );
+    } else if (token.type.label == "template") {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this.#write(
+        templateSanitize(token.value),
         token.loc.start.line,
         token.loc.start.column,
         true
@@ -1119,11 +1142,9 @@ function needsLineBreakBeforeClosingCurlyBracket(tokenTypeLabel) {
   );
 }
 
-const escapeCharacters = {
+const commonEscapeCharacters = {
   
   "\\": "\\\\",
-  
-  "\n": "\\n",
   
   "\r": "\\r",
   
@@ -1138,24 +1159,53 @@ const escapeCharacters = {
   "\u2028": "\\u2028",
   
   "\u2029": "\\u2029",
+};
+
+const stringEscapeCharacters = {
+  ...commonEscapeCharacters,
+
+  
+  "\n": "\\n",
   
   "'": "\\'",
 };
 
+const templateEscapeCharacters = {
+  ...commonEscapeCharacters,
 
-const regExpString = "(" + Object.values(escapeCharacters).join("|") + ")";
-const escapeCharactersRegExp = new RegExp(regExpString, "g");
+  
+  "`": "\\`",
+};
 
-function sanitizerReplaceFunc(_, c) {
-  return escapeCharacters[c];
+const stringRegExpString = `(${Object.values(stringEscapeCharacters).join(
+  "|"
+)})`;
+const templateRegExpString = `(${Object.values(templateEscapeCharacters).join(
+  "|"
+)})`;
+
+const stringEscapeCharactersRegExp = new RegExp(stringRegExpString, "g");
+const templateEscapeCharactersRegExp = new RegExp(templateRegExpString, "g");
+
+function stringSanitizerReplaceFunc(_, c) {
+  return stringEscapeCharacters[c];
+}
+function templateSanitizerReplaceFunc(_, c) {
+  return templateEscapeCharacters[c];
 }
 
 
 
 
 
-function sanitize(str) {
-  return str.replace(escapeCharactersRegExp, sanitizerReplaceFunc);
+function stringSanitize(str) {
+  return str.replace(stringEscapeCharactersRegExp, stringSanitizerReplaceFunc);
+}
+function templateSanitize(str) {
+  return str.replace(
+    templateEscapeCharactersRegExp,
+    templateSanitizerReplaceFunc
+  );
 }
 
 
