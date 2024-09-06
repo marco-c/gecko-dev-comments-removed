@@ -5,7 +5,6 @@
 
 
 import os
-import re
 import shutil
 import tempfile
 import unittest
@@ -621,12 +620,6 @@ yellow = submarine
         after = "edit-manifest-after.toml"
         after_path = os.path.join(here, after)
         after_str = open(after_path, "r", encoding="utf-8").read()
-
-        
-        pattern = re.compile(r"^.*lineno.*$\n?", re.MULTILINE)
-        
-        manifest_str = re.sub(pattern, "", manifest_str)
-
         assert manifest_str == after_str
 
 
