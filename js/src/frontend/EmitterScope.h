@@ -45,6 +45,10 @@ class EmitterScope : public Nestable<EmitterScope> {
   
   bool hasEnvironment_;
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  bool hasDisposables_ = false;
+#endif
+
   
   uint8_t environmentChainLength_;
 
@@ -141,6 +145,15 @@ class EmitterScope : public Nestable<EmitterScope> {
   mozilla::Maybe<ScopeIndex> scopeIndex(const BytecodeEmitter* bce) const;
 
   bool hasEnvironment() const { return hasEnvironment_; }
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  bool hasDisposables() const { return hasDisposables_; }
+
+  bool setHasDisposables() {
+    hasDisposables_ = true;
+    return true;
+  }
+#endif
 
   
   uint32_t frameSlotStart() const {

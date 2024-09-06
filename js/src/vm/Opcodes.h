@@ -3399,6 +3399,34 @@
 
 
 
+ \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(AddDisposable, add_disposable, NULL, 1, 1, 1, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(DisposeDisposables, dispose_disposables, NULL, 1, 0, 0, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3648,27 +3676,50 @@
 
 
 
-#define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(236))     \
-  IF_RECORD_TUPLE(, MACRO(237))     \
-  IF_RECORD_TUPLE(, MACRO(238))     \
-  IF_RECORD_TUPLE(, MACRO(239))     \
-  IF_RECORD_TUPLE(, MACRO(240))     \
-  IF_RECORD_TUPLE(, MACRO(241))     \
-  IF_RECORD_TUPLE(, MACRO(242))     \
-  MACRO(243)                                   \
-  MACRO(244)                                   \
-  MACRO(245)                                   \
-  MACRO(246)                                   \
-  MACRO(247)                                   \
-  MACRO(248)                                   \
-  MACRO(249)                                   \
-  MACRO(250)                                   \
-  MACRO(251)                                   \
-  MACRO(252)                                   \
-  MACRO(253)                                   \
-  MACRO(254)                                   \
-  MACRO(255)
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+#  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+    IF_RECORD_TUPLE(, MACRO(238))     \
+    IF_RECORD_TUPLE(, MACRO(239))     \
+    IF_RECORD_TUPLE(, MACRO(240))     \
+    IF_RECORD_TUPLE(, MACRO(241))     \
+    IF_RECORD_TUPLE(, MACRO(242))     \
+    IF_RECORD_TUPLE(, MACRO(243))     \
+    IF_RECORD_TUPLE(, MACRO(244))     \
+    MACRO(245)                                   \
+    MACRO(246)                                   \
+    MACRO(247)                                   \
+    MACRO(248)                                   \
+    MACRO(249)                                   \
+    MACRO(250)                                   \
+    MACRO(251)                                   \
+    MACRO(252)                                   \
+    MACRO(253)                                   \
+    MACRO(254)                                   \
+    MACRO(255)
+#else
+#  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+    IF_RECORD_TUPLE(, MACRO(236))     \
+    IF_RECORD_TUPLE(, MACRO(237))     \
+    IF_RECORD_TUPLE(, MACRO(238))     \
+    IF_RECORD_TUPLE(, MACRO(239))     \
+    IF_RECORD_TUPLE(, MACRO(240))     \
+    IF_RECORD_TUPLE(, MACRO(241))     \
+    IF_RECORD_TUPLE(, MACRO(242))     \
+    MACRO(243)                                   \
+    MACRO(244)                                   \
+    MACRO(245)                                   \
+    MACRO(246)                                   \
+    MACRO(247)                                   \
+    MACRO(248)                                   \
+    MACRO(249)                                   \
+    MACRO(250)                                   \
+    MACRO(251)                                   \
+    MACRO(252)                                   \
+    MACRO(253)                                   \
+    MACRO(254)                                   \
+    MACRO(255)
+#endif
 
 namespace js {
 

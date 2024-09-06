@@ -126,10 +126,14 @@ static inline BindingKind DeclarationKindToBindingKind(DeclarationKind kind) {
     case DeclarationKind::Const:
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     
-    case DeclarationKind::Using:
     case DeclarationKind::AwaitUsing:
 #endif
       return BindingKind::Const;
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    case DeclarationKind::Using:
+      return BindingKind::Using;
+#endif
 
     case DeclarationKind::Import:
       return BindingKind::Import;
@@ -186,7 +190,17 @@ class DeclaredNameInfo {
         kind_(kind),
         closedOver_(bool(closedOver)),
         privateNameKind_(PrivateNameKind::None),
-        placement_(FieldPlacement::Unspecified) {}
+        placement_(FieldPlacement::Unspecified) {
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    
+    
+    
+    
+    if (kind == DeclarationKind::Using) {
+      closedOver_ = true;
+    }
+#endif
+  }
 
   
   DeclaredNameInfo() = default;

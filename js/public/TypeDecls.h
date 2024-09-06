@@ -154,4 +154,12 @@ using jsid = JS::PropertyKey;
 #  define IF_EXPLICIT_RESOURCE_MANAGEMENT(x, ...) __VA_ARGS__
 #endif
 
+
+
+#if defined(ENABLE_EXPLICIT_RESOURCE_MANAGEMENT) || defined(ENABLE_DECORATORS)
+#  define IF_EXPLICIT_RESOURCE_MANAGEMENT_OR_DECORATORS(x, ...) x
+#else
+#  define IF_EXPLICIT_RESOURCE_MANAGEMENT_OR_DECORATORS(x, ...) __VA_ARGS__
+#endif
+
 #endif 

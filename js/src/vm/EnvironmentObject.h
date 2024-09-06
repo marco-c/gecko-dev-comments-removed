@@ -733,10 +733,18 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   
   static constexpr uint32_t THIS_VALUE_OR_SCOPE_SLOT = 1;
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  static constexpr uint32_t DISPOSABLE_OBJECTS_SLOT = 2;
+#endif
+
  public:
   static const JSClass class_;
 
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  static constexpr uint32_t RESERVED_SLOTS = 3;
+#else
   static constexpr uint32_t RESERVED_SLOTS = 2;
+#endif
 
  protected:
   static LexicalEnvironmentObject* create(JSContext* cx,
@@ -755,6 +763,18 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   
   
   bool isSyntactic() const { return !isExtensible() || isGlobal(); }
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  bool addDisposableObject(JSContext* cx, JS::Handle<JS::Value> val);
+
+  
+  
+  
+  
+  Value getDisposables();
+
+  void clearDisposables();
+#endif
 };
 
 

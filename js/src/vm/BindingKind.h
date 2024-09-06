@@ -22,6 +22,9 @@ enum class BindingKind : uint8_t {
   Var,
   Let,
   Const,
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  Using,
+#endif
 
   
   
@@ -38,7 +41,11 @@ enum class BindingKind : uint8_t {
 };
 
 static inline bool BindingKindIsLexical(BindingKind kind) {
-  return kind == BindingKind::Let || kind == BindingKind::Const;
+  return kind == BindingKind::Let || kind == BindingKind::Const
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+         || kind == BindingKind::Using
+#endif
+      ;
 }
 
 class BindingLocation {

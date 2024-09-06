@@ -58,6 +58,7 @@
 #include "frontend/TaggedParserAtomIndexHasher.h"  
 #include "frontend/TDZCheckCache.h"                
 #include "frontend/TryEmitter.h"                   
+#include "frontend/UsingEmitter.h"                 
 #include "frontend/WhileEmitter.h"                 
 #include "js/ColumnNumber.h"  
 #include "js/friend/ErrorMessages.h"  
@@ -2513,7 +2514,7 @@ BytecodeEmitter::createImmutableScriptData() {
       bytecodeSection().tryNoteList().span());
 }
 
-#ifdef ENABLE_DECORATORS
+#if defined(ENABLE_DECORATORS) || defined(ENABLE_EXPLICIT_RESOURCE_MANAGEMENT)
 bool BytecodeEmitter::emitCheckIsCallable() {
   
   
@@ -4243,10 +4244,23 @@ bool BytecodeEmitter::emitSingleDeclaration(ListNode* declList, NameNode* decl,
       return false;
     }
   }
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+  if (declList->isKind(ParseNodeKind::UsingDecl)) {
+    UsingEmitter uem(this);
+
+    if (!uem.prepareForAssignment(UsingEmitter::Kind::Sync)) {
+      
+      return false;
+    }
+  }
+#endif
+
   if (!noe.emitAssignment()) {
     
     return false;
   }
+
   if (!emit1(JSOp::Pop)) {
     
     return false;
@@ -12736,6 +12750,13 @@ bool BytecodeEmitter::emitTree(
         return false;
       }
       break;
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    case ParseNodeKind::UsingDecl:
+      if (!emitDeclarationList(&pn->as<ListNode>())) {
+        return false;
+      }
+      break;
+#endif
 
     case ParseNodeKind::ImportDecl:
       MOZ_ASSERT(sc->isModuleContext());
