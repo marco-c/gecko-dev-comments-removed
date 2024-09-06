@@ -184,12 +184,47 @@ var SelectTranslationsPanel = new (class {
 
 
 
+  async getTopSupportedDetectedLanguage(textToTranslate) {
+    
+    const { language, languages } = await LanguageDetector.detectLanguage(
+      textToTranslate
+    );
+    for (const { languageCode } of languages) {
+      const isSupported = await TranslationsParent.isSupportedAsFromLang(
+        languageCode
+      );
+      if (isSupported) {
+        return languageCode;
+      }
+    }
+
+    
+    
+    const actor = TranslationsParent.getTranslationsActor(
+      gBrowser.selectedBrowser
+    );
+    const detectedLanguages = actor.languageState.detectedLanguages;
+    if (detectedLanguages?.isDocLangTagSupported) {
+      return detectedLanguages.docLangTag;
+    }
+
+    
+    
+    return language;
+  }
+
+  
+
+
+
+
+
+
+
 
   async getLangPairPromise(textToTranslate) {
     const [fromLang, toLang] = await Promise.all([
-      LanguageDetector.detectLanguage(textToTranslate).then(
-        ({ language }) => language
-      ),
+      SelectTranslationsPanel.getTopSupportedDetectedLanguage(textToTranslate),
       TranslationsParent.getTopPreferredSupportedToLang(),
     ]);
 
