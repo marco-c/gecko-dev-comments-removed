@@ -174,12 +174,8 @@ async def session(capabilities, configuration):
 
     
     if _current_session.capabilities.get("setWindowRect"):
-        
-        
-        if _current_session.window.size != defaults.WINDOW_SIZE:
-            _current_session.window.size = defaults.WINDOW_SIZE
-        if _current_session.window.position != defaults.WINDOW_POSITION:
-            _current_session.window.position = defaults.WINDOW_POSITION
+        _current_session.window.size = defaults.WINDOW_SIZE
+        _current_session.window.position = defaults.WINDOW_POSITION
 
     
     multiplier = configuration["timeout_multiplier"]
@@ -226,12 +222,8 @@ async def bidi_session(capabilities, configuration):
 
     
     if _current_session.capabilities.get("setWindowRect"):
-        
-        
-        if _current_session.window.size != defaults.WINDOW_SIZE:
-            _current_session.window.size = defaults.WINDOW_SIZE
-        if _current_session.window.position != defaults.WINDOW_POSITION:
-            _current_session.window.position = defaults.WINDOW_POSITION
+        _current_session.window.size = defaults.WINDOW_SIZE
+        _current_session.window.position = defaults.WINDOW_POSITION
 
     yield _current_session.bidi_session
 

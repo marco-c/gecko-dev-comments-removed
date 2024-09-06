@@ -55,19 +55,10 @@ def cleanup_session(session):
         """Reset window to an acceptable size.
 
         This also includes bringing it out of maximized, minimized,
-        or fullscreened state.
+        or fullscreen state.
         """
         if session.capabilities.get("setWindowRect"):
-            
-            
-            if (
-                session.capabilities.get("browserName") != "chrome" or
-                session.window.size != defaults.WINDOW_SIZE
-                or document_hidden(session)
-                or is_fullscreen(session)
-                or is_maximized(session)
-            ):
-                session.window.size = defaults.WINDOW_SIZE
+            session.window.size = defaults.WINDOW_SIZE
 
     @ignore_exceptions
     def _restore_windows(session):
