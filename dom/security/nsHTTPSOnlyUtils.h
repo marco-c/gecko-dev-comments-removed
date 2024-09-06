@@ -249,14 +249,6 @@ class nsHTTPSOnlyUtils {
 
 
   static bool LoopbackOrLocalException(nsIURI* aURI);
-
-  
-
-
-
-
-
-  static bool UnknownPublicSuffixException(nsIURI* aURI);
 };
 
 

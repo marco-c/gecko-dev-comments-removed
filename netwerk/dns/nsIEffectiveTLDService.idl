@@ -45,10 +45,6 @@ interface nsIEffectiveTLDService : nsISupports
 
 
 
-
-
-
-
     ACString getKnownPublicSuffix(in nsIURI aURI);
 
     
@@ -206,21 +202,4 @@ interface nsIEffectiveTLDService : nsISupports
 
 
     boolean hasRootDomain(in AUTF8String aInput, in AUTF8String aHost);
-
-    
-
-
-
-
-
-    boolean hasKnownPublicSuffix(in nsIURI aURI);
-
-    
-
-
-
-
-
-
-    boolean hasKnownPublicSuffixFromHost(in AUTF8String aHost);
 };
