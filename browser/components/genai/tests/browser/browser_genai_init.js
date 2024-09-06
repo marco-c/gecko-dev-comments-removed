@@ -1,6 +1,13 @@
 
 
 
+const { GenAI } = ChromeUtils.importESModule(
+  "resource:///modules/GenAI.sys.mjs"
+);
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 
 
 
@@ -28,4 +35,18 @@ add_task(async function test_chat_no_open() {
   });
 
   Assert.ok(!SidebarController.isOpen, "Pref changes didn't open sidebar");
+});
+
+
+
+
+add_task(async function test_preferences_observer() {
+  const sandbox = sinon.createSandbox();
+  const stub = sandbox.stub(GenAI, "buildPreferences");
+
+  await BrowserTestUtils.withNewTab("about:preferences#experimental", () => {
+    Assert.equal(stub.callCount, 1, "Would have built genai preferences");
+  });
+
+  sandbox.restore();
 });
