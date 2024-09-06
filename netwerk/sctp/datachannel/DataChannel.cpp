@@ -322,35 +322,29 @@ class DataChannelRegistry {
 
 StaticMutex DataChannelRegistry::sInstanceMutex;
 
-OutgoingMsg::OutgoingMsg(struct sctp_sendv_spa& info, const uint8_t* data,
-                         size_t length)
-    : mLength(length), mData(data) {
-  mInfo = &info;
-  mPos = 0;
-}
+OutgoingMsg::OutgoingMsg(struct sctp_sendv_spa& info, Span<const uint8_t> data)
+    : mData(data), mInfo(&info) {}
 
 void OutgoingMsg::Advance(size_t offset) {
   mPos += offset;
-  if (mPos > mLength) {
-    mPos = mLength;
+  if (mPos > mData.Length()) {
+    mPos = mData.Length();
   }
 }
 
-BufferedOutgoingMsg::BufferedOutgoingMsg(OutgoingMsg& msg) {
-  size_t length = msg.GetLeft();
-  auto* tmp = new uint8_t[length];  
-  memcpy(tmp, msg.GetData(), length);
-  mLength = length;
-  mData = tmp;
-  mInfo = new sctp_sendv_spa;
-  *mInfo = msg.GetInfo();
-  mPos = 0;
+
+UniquePtr<BufferedOutgoingMsg> BufferedOutgoingMsg::CopyFrom(
+    const OutgoingMsg& msg) {
+  nsTArray<uint8_t> data(msg.GetRemainingData());
+  auto info = MakeUnique<struct sctp_sendv_spa>(msg.GetInfo());
+  return WrapUnique(new BufferedOutgoingMsg(std::move(data), std::move(info)));
 }
 
-BufferedOutgoingMsg::~BufferedOutgoingMsg() {
-  delete mInfo;
-  delete[] mData;
-}
+BufferedOutgoingMsg::BufferedOutgoingMsg(
+    nsTArray<uint8_t>&& data, UniquePtr<struct sctp_sendv_spa>&& info)
+    : OutgoingMsg(*info, data),
+      mDataStorage(std::move(data)),
+      mInfoStorage(std::move(info)) {}
 
 static int receive_cb(struct socket* sock, union sctp_sockstore addr,
                       void* data, size_t datalen, struct sctp_rcvinfo rcv,
@@ -1191,7 +1185,7 @@ int DataChannelConnection::SendControlMessage(const uint8_t* data, uint32_t len,
     return EMSGSIZE;
   }
 #endif
-  OutgoingMsg msg(info, data, (size_t)len);
+  OutgoingMsg msg(info, Span(data, len));
   bool buffered;
   int error = SendMsgInternalOrBuffer(mBufferedControl, msg, buffered, nullptr);
 
@@ -2535,19 +2529,15 @@ int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
   bool eor_set = (info.snd_flags & SCTP_EOR) != 0;
 
   
-  size_t left = msg.GetLeft();
+  Span<const uint8_t> toSend = msg.GetRemainingData();
   do {
-    size_t length;
-
     
-    if (left > DATA_CHANNEL_MAX_BINARY_FRAGMENT) {
-      length = DATA_CHANNEL_MAX_BINARY_FRAGMENT;
+    if (toSend.Length() > DATA_CHANNEL_MAX_BINARY_FRAGMENT) {
+      toSend = toSend.To(DATA_CHANNEL_MAX_BINARY_FRAGMENT);
 
       
       info.snd_flags &= ~SCTP_EOR;
     } else {
-      length = left;
-
       
       if (eor_set) {
         info.snd_flags |= SCTP_EOR;
@@ -2558,9 +2548,10 @@ int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
     
     
     
-    ssize_t written = usrsctp_sendv(
-        mSocket, msg.GetData(), length, nullptr, 0, (void*)&msg.GetInfo(),
-        (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA, 0);
+    ssize_t written = usrsctp_sendv(mSocket, toSend.Elements(), toSend.Length(),
+                                    nullptr, 0, (void*)&msg.GetInfo(),
+                                    (socklen_t)sizeof(struct sctp_sendv_spa),
+                                    SCTP_SENDV_SPA, 0);
 
     if (written < 0) {
       error = errno;
@@ -2571,7 +2562,8 @@ int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
       *aWritten += written;
     }
     DC_DEBUG(("Sent buffer (written=%zu, len=%zu, left=%zu)", (size_t)written,
-              length, left - (size_t)written));
+              toSend.Length(),
+              msg.GetRemainingData().Length() - (size_t)written));
 
     
     
@@ -2583,7 +2575,7 @@ int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
 
     
     
-    if ((size_t)written < length) {
+    if ((size_t)written < toSend.Length()) {
       msg.Advance((size_t)written);
       error = EAGAIN;
       goto out;
@@ -2593,8 +2585,8 @@ int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
     msg.Advance((size_t)written);
 
     
-    left = msg.GetLeft();
-  } while (left > 0);
+    toSend = msg.GetRemainingData();
+  } while (toSend.Length() > 0);
 
   
   error = 0;
@@ -2659,10 +2651,10 @@ int DataChannelConnection::SendMsgInternalOrBuffer(
   if (need_buffering) {
     
     
-    auto* bufferedMsg = new BufferedOutgoingMsg(msg);  
-    buffer.AppendElement(bufferedMsg);  
+    buffer.EmplaceBack(
+        BufferedOutgoingMsg::CopyFrom(msg));  
     DC_DEBUG(("Queued %zu buffers (left=%zu, total=%zu)", buffer.Length(),
-              msg.GetLeft(), msg.GetLength()));
+              buffer.LastElement()->GetLength(), msg.GetLength()));
     buffered = true;
     return 0;
   }
@@ -2707,7 +2699,7 @@ int DataChannelConnection::SendDataMsgInternalOrBuffer(DataChannel& channel,
   }
 
   
-  OutgoingMsg msg(info, data, len);
+  OutgoingMsg msg(info, Span(data, len));
   bool buffered;
   size_t written = 0;
   mDeferSend = true;
