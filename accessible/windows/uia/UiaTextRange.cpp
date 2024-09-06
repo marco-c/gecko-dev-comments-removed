@@ -6,6 +6,7 @@
 
 #include "UiaTextRange.h"
 
+#include "nsAccUtils.h"
 #include "TextLeafRange.h"
 
 namespace mozilla::a11y {
@@ -18,6 +19,16 @@ static const GUID IID_UiaTextRange = {
     0x4578,
     0x4b52,
     {0x9c, 0xbc, 0x30, 0xa7, 0xa8, 0x27, 0x1a, 0xe8}};
+
+
+
+static TextLeafPoint GetEndpoint(TextLeafRange& aRange,
+                                 enum TextPatternRangeEndpoint aEndpoint) {
+  if (aEndpoint == TextPatternRangeEndpoint_Start) {
+    return aRange.Start();
+  }
+  return aRange.End();
+}
 
 
 
@@ -59,19 +70,130 @@ TextLeafRange UiaTextRange::GetRangeFrom(ITextRangeProvider* aProvider) {
 }
 
 
+TextLeafPoint UiaTextRange::FindBoundary(const TextLeafPoint& aOrigin,
+                                         enum TextUnit aUnit,
+                                         nsDirection aDirection,
+                                         bool aIncludeOrigin) {
+  if (aUnit == TextUnit_Page || aUnit == TextUnit_Document) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Accessible* doc = nsAccUtils::DocumentFor(aOrigin.mAcc);
+    if (aDirection == eDirPrevious) {
+      return TextLeafPoint(doc, 0);
+    }
+    return TextLeafPoint(doc, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT);
+  }
+  AccessibleTextBoundary boundary;
+  switch (aUnit) {
+    case TextUnit_Character:
+      boundary = nsIAccessibleText::BOUNDARY_CLUSTER;
+      break;
+    case TextUnit_Word:
+      boundary = nsIAccessibleText::BOUNDARY_WORD_START;
+      break;
+    case TextUnit_Line:
+      boundary = nsIAccessibleText::BOUNDARY_LINE_START;
+      break;
+    case TextUnit_Paragraph:
+      boundary = nsIAccessibleText::BOUNDARY_PARAGRAPH;
+      break;
+    default:
+      return TextLeafPoint();
+  }
+  return aOrigin.FindBoundary(
+      boundary, aDirection,
+      aIncludeOrigin ? TextLeafPoint::BoundaryFlags::eIncludeOrigin
+                     : TextLeafPoint::BoundaryFlags::eDefaultBoundaryFlags);
+}
+
+bool UiaTextRange::MovePoint(TextLeafPoint& aPoint, enum TextUnit aUnit,
+                             const int aRequestedCount, int& aActualCount) {
+  aActualCount = 0;
+  const nsDirection direction = aRequestedCount < 0 ? eDirPrevious : eDirNext;
+  while (aActualCount != aRequestedCount) {
+    TextLeafPoint oldPoint = aPoint;
+    aPoint = FindBoundary(aPoint, aUnit, direction);
+    if (!aPoint) {
+      return false;  
+    }
+    if (aPoint == oldPoint) {
+      break;  
+    }
+    direction == eDirPrevious ? --aActualCount : ++aActualCount;
+  }
+  return true;
+}
+
+void UiaTextRange::SetEndpoint(enum TextPatternRangeEndpoint aEndpoint,
+                               const TextLeafPoint& aDest) {
+  
+  
+  
+  
+  
+  
+  
+  TextLeafRange origRange = GetRange();
+  MOZ_ASSERT(origRange);
+  if (aEndpoint == TextPatternRangeEndpoint_Start) {
+    TextLeafPoint end = origRange.End();
+    if (end < aDest) {
+      end = aDest;
+    }
+    SetRange({aDest, end});
+  } else {
+    TextLeafPoint start = origRange.Start();
+    if (aDest < start) {
+      start = aDest;
+    }
+    SetRange({start, aDest});
+  }
+}
+
+
 IMPL_IUNKNOWN2(UiaTextRange, ITextRangeProvider, UiaTextRange)
 
 
 
 STDMETHODIMP
 UiaTextRange::Clone(__RPC__deref_out_opt ITextRangeProvider** aRetVal) {
-  return E_NOTIMPL;
+  if (!aRetVal) {
+    return E_INVALIDARG;
+  }
+  TextLeafRange range = GetRange();
+  if (!range) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  RefPtr uiaRange = new UiaTextRange(range);
+  uiaRange.forget(aRetVal);
+  return S_OK;
 }
 
 STDMETHODIMP
 UiaTextRange::Compare(__RPC__in_opt ITextRangeProvider* aRange,
                       __RPC__out BOOL* aRetVal) {
-  return E_NOTIMPL;
+  if (!aRange || !aRetVal) {
+    return E_INVALIDARG;
+  }
+  *aRetVal = GetRange() == GetRangeFrom(aRange);
+  return S_OK;
 }
 
 STDMETHODIMP
@@ -79,11 +201,45 @@ UiaTextRange::CompareEndpoints(enum TextPatternRangeEndpoint aEndpoint,
                                __RPC__in_opt ITextRangeProvider* aTargetRange,
                                enum TextPatternRangeEndpoint aTargetEndpoint,
                                __RPC__out int* aRetVal) {
-  return E_NOTIMPL;
+  if (!aTargetRange || !aRetVal) {
+    return E_INVALIDARG;
+  }
+  TextLeafRange origRange = GetRange();
+  if (!origRange) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  TextLeafPoint origPoint = GetEndpoint(origRange, aEndpoint);
+  TextLeafRange targetRange = GetRangeFrom(aTargetRange);
+  if (!targetRange) {
+    return E_INVALIDARG;
+  }
+  TextLeafPoint targetPoint = GetEndpoint(targetRange, aTargetEndpoint);
+  if (origPoint == targetPoint) {
+    *aRetVal = 0;
+  } else if (origPoint < targetPoint) {
+    *aRetVal = -1;
+  } else {
+    *aRetVal = 1;
+  }
+  return S_OK;
 }
 
 STDMETHODIMP
-UiaTextRange::ExpandToEnclosingUnit(enum TextUnit aUnit) { return E_NOTIMPL; }
+UiaTextRange::ExpandToEnclosingUnit(enum TextUnit aUnit) {
+  TextLeafRange range = GetRange();
+  if (!range) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  TextLeafPoint origin = range.Start();
+  TextLeafPoint start = FindBoundary(origin, aUnit, eDirPrevious,
+                                      true);
+  if (!start) {
+    return E_FAIL;  
+  }
+  TextLeafPoint end = FindBoundary(origin, aUnit, eDirNext);
+  SetRange({start, end});
+  return S_OK;
+}
 
 STDMETHODIMP
 UiaTextRange::FindAttribute(TEXTATTRIBUTEID aAttributeId, VARIANT aVal,
@@ -146,14 +302,65 @@ UiaTextRange::GetText(int aMaxLength, __RPC__deref_out_opt BSTR* aRetVal) {
 
 STDMETHODIMP
 UiaTextRange::Move(enum TextUnit aUnit, int aCount, __RPC__out int* aRetVal) {
-  return E_NOTIMPL;
+  if (!aRetVal) {
+    return E_INVALIDARG;
+  }
+  TextLeafRange range = GetRange();
+  if (!range) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  TextLeafPoint start = range.Start();
+  const bool wasCollapsed = start == range.End();
+  if (!wasCollapsed) {
+    
+    
+    
+    
+    
+    
+    
+    start = FindBoundary(start, aUnit, eDirPrevious,  true);
+  }
+  if (!MovePoint(start, aUnit, aCount, *aRetVal)) {
+    return E_FAIL;
+  }
+  if (wasCollapsed) {
+    
+    
+    SetRange({start, start});
+  } else {
+    
+    
+    TextLeafPoint end = FindBoundary(start, aUnit, eDirNext);
+    if (end == start) {
+      
+      
+      start = FindBoundary(start, aUnit, eDirPrevious);
+      
+      --*aRetVal;
+    }
+    SetRange({start, end});
+  }
+  return S_OK;
 }
 
 STDMETHODIMP
 UiaTextRange::MoveEndpointByUnit(enum TextPatternRangeEndpoint aEndpoint,
                                  enum TextUnit aUnit, int aCount,
                                  __RPC__out int* aRetVal) {
-  return E_NOTIMPL;
+  if (!aRetVal) {
+    return E_INVALIDARG;
+  }
+  TextLeafRange range = GetRange();
+  if (!range) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  TextLeafPoint point = GetEndpoint(range, aEndpoint);
+  if (!MovePoint(point, aUnit, aCount, *aRetVal)) {
+    return E_FAIL;
+  }
+  SetEndpoint(aEndpoint, point);
+  return S_OK;
 }
 
 STDMETHODIMP
@@ -161,7 +368,20 @@ UiaTextRange::MoveEndpointByRange(
     enum TextPatternRangeEndpoint aEndpoint,
     __RPC__in_opt ITextRangeProvider* aTargetRange,
     enum TextPatternRangeEndpoint aTargetEndpoint) {
-  return E_NOTIMPL;
+  if (!aTargetRange) {
+    return E_INVALIDARG;
+  }
+  TextLeafRange origRange = GetRange();
+  if (!origRange) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+  TextLeafRange targetRange = GetRangeFrom(aTargetRange);
+  if (!targetRange) {
+    return E_INVALIDARG;
+  }
+  TextLeafPoint dest = GetEndpoint(targetRange, aTargetEndpoint);
+  SetEndpoint(aEndpoint, dest);
+  return S_OK;
 }
 
 STDMETHODIMP
