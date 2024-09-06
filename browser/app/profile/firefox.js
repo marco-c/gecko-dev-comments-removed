@@ -2698,8 +2698,7 @@ pref("devtools.inspector.simple-highlighters-reduced-motion", false);
 
 pref("devtools.inspector.rule-view.focusNextOnEnter", true);
 
-
-pref("devtools.inspector.rule-view.starting-style", false);
+pref("devtools.inspector.rule-view.starting-style", true);
 
 
 pref("devtools.layout.boxmodel.opened", true);
