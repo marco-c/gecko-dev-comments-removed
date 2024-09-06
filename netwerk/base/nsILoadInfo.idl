@@ -550,6 +550,14 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+  [infallible] attribute boolean textDirectiveUserActivation;
+
+  
+
+
+
   [infallible] attribute boolean allowDeprecatedSystemRequests;
 
   

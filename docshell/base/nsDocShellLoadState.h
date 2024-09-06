@@ -258,6 +258,10 @@ class nsDocShellLoadState final {
 
   void SetHasValidUserGestureActivation(bool HasValidUserGestureActivation);
 
+  void SetTextDirectiveUserActivation(bool aTextDirectiveUserActivation);
+
+  bool GetTextDirectiveUserActivation();
+
   const nsCString& TypeHint() const;
 
   void SetTypeHint(const nsCString& aTypeHint);
@@ -558,6 +562,11 @@ class nsDocShellLoadState final {
 
   
   bool mHasValidUserGestureActivation;
+
+  
+  
+  
+  bool mTextDirectiveUserActivation = false;
 
   
   bool mAllowFocusMove;
