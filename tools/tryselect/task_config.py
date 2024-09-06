@@ -129,6 +129,7 @@ class Pernosco(TryConfig):
         return super().add_arguments(group)
 
     def try_config(self, pernosco, **kwargs):
+        pernosco = pernosco or os.environ.get("MOZ_USE_PERNOSCO")
         if pernosco is None:
             return
 
@@ -167,9 +168,12 @@ class Pernosco(TryConfig):
                         break
 
         return {
+            "pernosco": True,
+            
+            
             "env": {
                 "PERNOSCO": str(int(pernosco)),
-            }
+            },
         }
 
     def validate(self, **kwargs):
