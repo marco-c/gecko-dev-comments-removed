@@ -19,9 +19,14 @@ log = mozlog.unstructured.getLogger("gtest")
 
 class GTests(object):
     
-    TEST_PROC_TIMEOUT = 2400
-    
     TEST_PROC_NO_OUTPUT_TIMEOUT = 300
+
+    def gtest_timeout_value(self):
+        
+        if mozinfo.info["tsan"]:
+            return 3600
+        else:
+            return 2400
 
     def run_gtest(
         self,
@@ -68,7 +73,9 @@ class GTests(object):
 
         def proc_timeout_handler(proc):
             GTests.run_gtest.timed_out = True
-            log.testFail("gtest | timed out after %d seconds", GTests.TEST_PROC_TIMEOUT)
+            log.testFail(
+                "gtest | timed out after %d seconds", self.gtest_timeout_value()
+            )
             mozcrash.kill_and_get_minidump(proc.pid, cwd, utility_path)
 
         def output_timeout_handler(proc):
@@ -84,7 +91,7 @@ class GTests(object):
             cwd=cwd,
             env=env,
             output_line_handler=output_line_handler,
-            timeout=GTests.TEST_PROC_TIMEOUT,
+            timeout=self.gtest_timeout_value(),
             timeout_handler=proc_timeout_handler,
             output_timeout=GTests.TEST_PROC_NO_OUTPUT_TIMEOUT,
             output_timeout_handler=output_timeout_handler,
