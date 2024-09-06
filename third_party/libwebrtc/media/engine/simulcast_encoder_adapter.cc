@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/scoped_refptr.h"
 #include "api/transport/field_trial_based_config.h"
@@ -808,7 +809,8 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
   
   
   
-  ScalabilityMode scalability_mode = stream_params.GetScalabilityMode();
+  absl::optional<ScalabilityMode> scalability_mode =
+      stream_params.GetScalabilityMode2();
   
   
   
@@ -821,10 +823,12 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
       }
     }
     if (only_active_stream) {
-      scalability_mode = codec.GetScalabilityMode().value();
+      scalability_mode = codec.GetScalabilityMode();
     }
   }
-  codec_params.SetScalabilityMode(scalability_mode);
+  if (scalability_mode.has_value()) {
+    codec_params.SetScalabilityMode(*scalability_mode);
+  }
   
   if (is_lowest_quality_stream) {
     
