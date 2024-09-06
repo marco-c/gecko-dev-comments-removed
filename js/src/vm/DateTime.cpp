@@ -483,11 +483,9 @@ bool js::DateTimeInfo::internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
 mozilla::intl::TimeZone* js::DateTimeInfo::timeZone() {
   if (!timeZone_) {
     
-    
     mozilla::Maybe<mozilla::Span<const char16_t>> timeZoneOverride;
     if (forceUTC_) {
-      timeZoneOverride =
-          mozilla::Some(mozilla::MakeStringSpan(u"Atlantic/Reykjavik"));
+      timeZoneOverride = mozilla::Some(mozilla::MakeStringSpan(u"UTC"));
     }
 
     auto timeZone = mozilla::intl::TimeZone::TryCreate(timeZoneOverride);
