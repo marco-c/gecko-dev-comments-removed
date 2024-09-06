@@ -3047,3 +3047,5 @@ pref("startup.homepage_override_nimbus_maxVersion", "");
 
 
 pref("toolkit.contentRelevancy.enabled", false);
+
+pref("toolkit.contentRelevancy.ingestEnabled", false);

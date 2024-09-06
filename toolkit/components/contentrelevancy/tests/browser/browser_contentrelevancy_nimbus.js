@@ -41,6 +41,7 @@ add_task(async function test_NimbusIntegration_enable() {
       maxInputUrls: 3,
       
       timerInterval: 0,
+      ingestEnabled: false,
     },
   });
 
@@ -73,6 +74,7 @@ add_task(async function test_NimbusIntegration_disable() {
       maxInputUrls: 3,
       
       timerInterval: 0,
+      ingestEnabled: false,
     },
   });
 

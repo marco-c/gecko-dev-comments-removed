@@ -20,7 +20,7 @@ pub struct RelevancyDb {
 }
 
 impl RelevancyDb {
-    pub fn new(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn new(path: impl AsRef<Path>) -> Self {
         
         
         
@@ -31,10 +31,10 @@ impl RelevancyDb {
             | OpenFlags::SQLITE_OPEN_NO_MUTEX
             | OpenFlags::SQLITE_OPEN_CREATE
             | OpenFlags::SQLITE_OPEN_READ_WRITE;
-        Ok(Self {
+        Self {
             reader: LazyDb::new(path.as_ref(), db_open_flags, RelevancyConnectionInitializer),
             writer: LazyDb::new(path.as_ref(), db_open_flags, RelevancyConnectionInitializer),
-        })
+        }
     }
 
     pub fn close(&self) {
@@ -52,7 +52,7 @@ impl RelevancyDb {
         use std::sync::atomic::{AtomicU32, Ordering};
         static COUNTER: AtomicU32 = AtomicU32::new(0);
         let count = COUNTER.fetch_add(1, Ordering::Relaxed);
-        Self::new(format!("file:test{count}.sqlite?mode=memory&cache=shared")).unwrap()
+        Self::new(format!("file:test{count}.sqlite?mode=memory&cache=shared"))
     }
 
     
@@ -118,7 +118,7 @@ impl<'a> RelevancyDao<'a> {
         ",
         )?;
         let interests = stmt.query_and_then((hash,), |row| -> Result<Interest> {
-            Ok(row.get::<_, u32>(0)?.into())
+            row.get::<_, u32>(0)?.try_into()
         })?;
 
         let mut interest_vec = InterestVector::default();

@@ -188,6 +188,12 @@ impl<'a> SuggestDao<'a> {
     
     
 
+    pub fn suggestions_table_empty(&self) -> Result<bool> {
+        Ok(self
+            .conn
+            .query_one::<bool>("SELECT NOT EXISTS (SELECT 1 FROM suggestions)")?)
+    }
+
     
     pub fn fetch_suggestions(&self, query: &SuggestionQuery) -> Result<Vec<Suggestion>> {
         let unique_providers = query.providers.iter().collect::<HashSet<_>>();
