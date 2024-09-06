@@ -608,9 +608,13 @@ pref("toolkit.telemetry.translations.logLevel", "Error");
 
 pref("toolkit.telemetry.user_characteristics_ping.current_version", 0);
 
-
-
 pref("toolkit.telemetry.user_characteristics_ping.last_version_sent", 0);
+
+
+pref("toolkit.telemetry.user_characteristics_ping.opt-out", false);
+
+
+pref("toolkit.telemetry.user_characteristics_ping.send-once", false);
 
 
 

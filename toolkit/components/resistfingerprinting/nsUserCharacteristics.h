@@ -18,6 +18,7 @@ class nsUserCharacteristics {
 
 
 
+  static bool ShouldSubmit();
   static void PopulateDataAndEventuallySubmit(bool aUpdatePref = true,
                                               bool aTesting = false);
   static void SubmitPing();

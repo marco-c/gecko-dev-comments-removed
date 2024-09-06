@@ -698,53 +698,55 @@ const auto* const kLastVersionPref =
     "toolkit.telemetry.user_characteristics_ping.last_version_sent";
 const auto* const kCurrentVersionPref =
     "toolkit.telemetry.user_characteristics_ping.current_version";
+const auto* const kOptOutPref =
+    "toolkit.telemetry.user_characteristics_ping.opt-out";
+const auto* const kSendOncePref =
+    "toolkit.telemetry.user_characteristics_ping.send-once";
 
 
-void nsUserCharacteristics::MaybeSubmitPing() {
-  MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug, ("In MaybeSubmitPing()"));
-  MOZ_ASSERT(XRE_IsParentProcess());
+
+
+
+
+
+
+
+
+
+
+bool nsUserCharacteristics::ShouldSubmit() {
+  
+  bool optOut = Preferences::GetBool(kOptOutPref, false);
+  bool sendOnce = Preferences::GetBool(kSendOncePref, false);
+
+  if (optOut && sendOnce) {
+    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Warning,
+            ("BOTH OPT-OUT AND SEND-ONCE IS SET TO TRUE. OPT-OUT HAS PRIORITY "
+             "OVER SEND-ONCE. THE PING WON'T BE SEND."));
+  }
+
+  if (optOut) {
+    return false;
+  }
 
   
+  if (sendOnce) {
+    return true;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  auto lastSubmissionVersion = Preferences::GetInt(kLastVersionPref, 0);
-  auto currentVersion = Preferences::GetInt(kCurrentVersionPref, 0);
-
-  MOZ_ASSERT(currentVersion == -1 || lastSubmissionVersion <= currentVersion,
+  int32_t currentVersion = Preferences::GetInt(kCurrentVersionPref, 0);
+  int32_t lastSubmissionVersion = Preferences::GetInt(kLastVersionPref, 0);
+  MOZ_ASSERT(lastSubmissionVersion <= currentVersion,
              "lastSubmissionVersion is somehow greater than currentVersion "
              "- did you edit prefs improperly?");
 
-  if (lastSubmissionVersion < 0) {
-    
-    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
-            ("Returning, User Opt-out"));
-    return;
-  }
   if (currentVersion == 0) {
     
     MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
             ("Returning, currentVersion == 0"));
-    return;
+    return false;
   }
-  if (currentVersion == -1) {
-    
-    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
-            ("Force-Submitting Ping"));
-    PopulateDataAndEventuallySubmit(false);
-    return;
-  }
+
   if (lastSubmissionVersion > currentVersion) {
     
     
@@ -752,19 +754,30 @@ void nsUserCharacteristics::MaybeSubmitPing() {
     Preferences::SetInt(kLastVersionPref, currentVersion);
     MOZ_LOG(gUserCharacteristicsLog, LogLevel::Warning,
             ("Returning, lastSubmissionVersion > currentVersion"));
-    return;
+    return false;
   }
+
   if (lastSubmissionVersion == currentVersion) {
     
     MOZ_LOG(gUserCharacteristicsLog, LogLevel::Warning,
             ("Returning, lastSubmissionVersion == currentVersion"));
-    return;
+    return false;
   }
-  if (lastSubmissionVersion < currentVersion) {
-    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Warning, ("Ping requested"));
+
+  MOZ_LOG(gUserCharacteristicsLog, LogLevel::Warning, ("Ping requested"));
+
+  return true;
+}
+
+
+void nsUserCharacteristics::MaybeSubmitPing() {
+  MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug, ("In MaybeSubmitPing()"));
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  
+  
+  if (ShouldSubmit()) {
     PopulateDataAndEventuallySubmit(true);
-  } else {
-    MOZ_ASSERT_UNREACHABLE("Should never reach here");
   }
 }
 
@@ -878,6 +891,9 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
       auto current_version =
           mozilla::Preferences::GetInt(kCurrentVersionPref, 0);
       mozilla::Preferences::SetInt(kLastVersionPref, current_version);
+      if (Preferences::GetBool(kSendOncePref, false)) {
+        Preferences::SetBool(kSendOncePref, false);
+      }
     }
   };
 
