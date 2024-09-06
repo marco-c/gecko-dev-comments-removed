@@ -93,6 +93,8 @@ class LookAndFeel {
     
     TreeScrollLinesMax,
     
+    TabFocusModel,
+    
     ChosenMenuItemsShouldBlink,
 
     

@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/TabFocusModel.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/HTMLImageElementBinding.h"
@@ -495,8 +494,7 @@ bool HTMLImageElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
 
   if (IsInComposedDoc() && FindImageMap()) {
     
-    *aTabIndex =
-        TabFocusModel::IsTabFocusable(TabFocusableType::Links) ? 0 : -1;
+    *aTabIndex = (sTabFocusModel & eTabFocus_linksMask) ? 0 : -1;
     
     
     *aIsFocusable = false;
@@ -504,9 +502,7 @@ bool HTMLImageElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   }
 
   
-  *aTabIndex = TabFocusModel::IsTabFocusable(TabFocusableType::FormElements)
-                   ? tabIndex
-                   : -1;
+  *aTabIndex = (sTabFocusModel & eTabFocus_formElementsMask) ? tabIndex : -1;
   *aIsFocusable = IsFormControlDefaultFocusable(aWithMouse) &&
                   (tabIndex >= 0 || GetTabIndexAttrValue().isSome());
 
