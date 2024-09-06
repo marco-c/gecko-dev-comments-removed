@@ -153,6 +153,11 @@ class Nursery {
 
   
   
+  void* tryAllocateNurseryBuffer(JS::Zone* zone, size_t nbytes,
+                                 arena_id_t arenaId);
+
+  
+  
   void* allocateBuffer(JS::Zone* zone, gc::Cell* owner, size_t nbytes,
                        arena_id_t arenaId);
 

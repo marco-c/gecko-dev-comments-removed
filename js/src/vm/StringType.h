@@ -484,6 +484,19 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   static const JS::Latin1Char MAX_LATIN1_CHAR = 0xff;
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr size_t MIN_BYTES_FOR_BUFFER = 514;
+
+  
 
 
 
