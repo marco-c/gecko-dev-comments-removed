@@ -962,49 +962,6 @@ AsyncAssociateIconToPage::Run() {
 
 
 
-AsyncSetIconForPage::AsyncSetIconForPage(const IconData& aIcon,
-                                         const PageData& aPage,
-                                         PlacesCompletionCallback* aCallback)
-    : Runnable("places::AsyncSetIconForPage"),
-      mCallback(new nsMainThreadPtrHolder<PlacesCompletionCallback>(
-          "AsyncSetIconForPage::mCallback", aCallback, false)),
-      mIcon(aIcon),
-      mPage(aPage) {}
-
-NS_IMETHODIMP
-AsyncSetIconForPage::Run() {
-  MOZ_ASSERT(!NS_IsMainThread());
-  MOZ_ASSERT(mIcon.payloads.Length(), "The icon should have valid data");
-  MOZ_ASSERT(mPage.spec.Length(), "The page should have spec");
-  MOZ_ASSERT(mPage.guid.IsEmpty(), "The page should not have guid");
-
-  nsresult rv = NS_OK;
-  auto guard = MakeScopeExit([&]() {
-    if (mCallback) {
-      NS_DispatchToMainThread(
-          NS_NewRunnableFunction("AsyncSetIconForPage::Callback",
-                                 [rv, callback = std::move(mCallback)]() {
-                                   (void)callback->Complete(rv);
-                                 }));
-    }
-  });
-
-  
-  RefPtr<Database> DB = Database::GetDatabase();
-  if (MOZ_UNLIKELY(!DB)) {
-    return (rv = NS_ERROR_UNEXPECTED);
-  }
-  rv = FetchPageInfo(DB, mPage);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsMainThreadPtrHandle<nsIFaviconDataCallback> nullCallback;
-  AsyncAssociateIconToPage event(mIcon, mPage, nullCallback);
-  return (rv = event.Run());
-}
-
-
-
-
 AsyncGetFaviconURLForPage::AsyncGetFaviconURLForPage(
     const nsACString& aPageSpec, const nsACString& aPageHost,
     uint16_t aPreferredWidth, nsIFaviconDataCallback* aCallback)
@@ -1080,6 +1037,61 @@ AsyncGetFaviconDataForPage::Run() {
       new NotifyIconObservers(iconData, pageData, mCallback);
   rv = NS_DispatchToMainThread(event);
   NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
+
+
+
+
+AsyncReplaceFaviconData::AsyncReplaceFaviconData(const IconData& aIcon)
+    : Runnable("places::AsyncReplaceFaviconData"), mIcon(aIcon) {
+  MOZ_ASSERT(NS_IsMainThread());
+}
+
+NS_IMETHODIMP
+AsyncReplaceFaviconData::Run() {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  RefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
+
+  mozStorageTransaction transaction(
+      DB->MainConn(), false, mozIStorageConnection::TRANSACTION_IMMEDIATE);
+
+  
+  Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
+
+  nsresult rv = SetIconInfo(DB, mIcon, true);
+  if (rv == NS_ERROR_NOT_AVAILABLE) {
+    
+    (void)transaction.Commit();
+    return NS_OK;
+  }
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = transaction.Commit();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsCOMPtr<nsIRunnable> event = NewRunnableMethod(
+      "places::AsyncReplaceFaviconData::RemoveIconDataCacheEntry", this,
+      &AsyncReplaceFaviconData::RemoveIconDataCacheEntry);
+  rv = NS_DispatchToMainThread(event);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+nsresult AsyncReplaceFaviconData::RemoveIconDataCacheEntry() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIURI> iconURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(iconURI), mIcon.spec);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsFaviconService* favicons = nsFaviconService::GetFaviconService();
+  NS_ENSURE_STATE(favicons);
+  favicons->mUnassociatedIcons.RemoveEntry(iconURI);
+
   return NS_OK;
 }
 
@@ -1195,7 +1207,6 @@ AsyncCopyFavicons::Run() {
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
   
   rv = FetchIconPerSpec(DB, mFromPage.spec, ""_ns, icon, UINT16_MAX);
   NS_ENSURE_SUCCESS(rv, rv);

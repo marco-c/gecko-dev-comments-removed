@@ -179,46 +179,11 @@ function readFileData(aFile) {
 
 
 
+
 function readFileOfLength(aFileName, aExpectedLength) {
   let data = readFileData(do_get_file(aFileName));
   Assert.equal(data.length, aExpectedLength);
   return data;
-}
-
-
-
-
-
-
-
-
-
-
-async function readFileDataAsDataURL(file, mimeType) {
-  const data = readFileData(file);
-  return fileDataToDataURL(data, mimeType);
-}
-
-
-
-
-
-
-
-
-
-
-async function fileDataToDataURL(data, mimeType) {
-  const dataURL = await new Promise(resolve => {
-    const buffer = new Uint8ClampedArray(data);
-    const blob = new Blob([buffer], { type: mimeType });
-    const reader = new FileReader();
-    reader.onload = e => {
-      resolve(e.target.result);
-    };
-    reader.readAsDataURL(blob);
-  });
-  return dataURL;
 }
 
 

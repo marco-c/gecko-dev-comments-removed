@@ -9,7 +9,6 @@ interface nsIURI;
 interface nsIPrincipal;
 interface mozIPlacesPendingOperation;
 interface nsIFaviconDataCallback;
-interface PlacesCompletionCallback;
 
 [scriptable, uuid(e81e0b0c-b9f1-4c2e-8f3c-b809933cf73c)]
 interface nsIFaviconService : nsISupports
@@ -164,13 +163,50 @@ interface nsIFaviconService : nsISupports
 
 
 
-  void setFaviconForPage(
-    in nsIURI aPageURI,
-    in nsIURI aFaviconURI,
-    in nsIURI aDataURL,
-    [optional] in PRTime aExpiration,
-    [optional] in PlacesCompletionCallback aCallback
-  );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void replaceFaviconData(in nsIURI aFaviconURI,
+                          in Array<octet> aData,
+                          in AUTF8String aMimeType,
+                          [optional] in PRTime aExpiration);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void replaceFaviconDataFromDataURL(in nsIURI aFaviconURI,
+                                     in AString aDataURL,
+                                     [optional] in PRTime aExpiration,
+                                     [optional] in nsIPrincipal aLoadingPrincipal);
 
   
 
