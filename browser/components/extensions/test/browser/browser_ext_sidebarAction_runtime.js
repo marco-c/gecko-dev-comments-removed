@@ -52,9 +52,10 @@ add_task(async function test_sidebar_disconnect() {
   await connected;
 
   
-  let currentURI = window.SidebarUI.browser.contentDocument.getElementById(
-    "webext-panels-browser"
-  ).currentURI;
+  let currentURI =
+    window.SidebarController.browser.contentDocument.getElementById(
+      "webext-panels-browser"
+    ).currentURI;
   is(currentURI.scheme, "moz-extension", "currentURI is set correctly");
 
   
@@ -68,7 +69,7 @@ add_task(async function test_sidebar_disconnect() {
 
   
   let disconnected = extension2.awaitMessage("disconnected");
-  window.SidebarUI.show("viewBookmarksSidebar");
+  window.SidebarController.show("viewBookmarksSidebar");
   await disconnected;
 
   await extension.unload();

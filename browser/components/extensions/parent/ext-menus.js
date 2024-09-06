@@ -1100,11 +1100,11 @@ const menuTracker = {
     );
     sidebarHeader.addEventListener("SidebarShown", menuTracker.onSidebarShown);
 
-    await window.SidebarUI.promiseInitialized;
+    await window.SidebarController.promiseInitialized;
 
     if (
       !window.closed &&
-      window.SidebarUI.currentID === "viewBookmarksSidebar"
+      window.SidebarController.currentID === "viewBookmarksSidebar"
     ) {
       menuTracker.onSidebarShown({ currentTarget: sidebarHeader });
     }
@@ -1121,8 +1121,8 @@ const menuTracker = {
     );
     sidebarHeader.removeEventListener("SidebarShown", this.onSidebarShown);
 
-    if (window.SidebarUI.currentID === "viewBookmarksSidebar") {
-      let sidebarBrowser = window.SidebarUI.browser;
+    if (window.SidebarController.currentID === "viewBookmarksSidebar") {
+      let sidebarBrowser = window.SidebarController.browser;
       sidebarBrowser.removeEventListener("load", this.onSidebarShown);
       const menu =
         sidebarBrowser.contentDocument.getElementById("placesContext");
@@ -1134,8 +1134,8 @@ const menuTracker = {
     
     
     const window = event.currentTarget.ownerGlobal;
-    if (window.SidebarUI.currentID === "viewBookmarksSidebar") {
-      let sidebarBrowser = window.SidebarUI.browser;
+    if (window.SidebarController.currentID === "viewBookmarksSidebar") {
+      let sidebarBrowser = window.SidebarController.browser;
       if (sidebarBrowser.contentDocument.readyState !== "complete") {
         
         

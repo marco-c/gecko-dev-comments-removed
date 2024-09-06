@@ -42,7 +42,7 @@ add_task(async function sidebar_httpAuthPrompt() {
 
   
   let promptPromise = PromptTestUtils.handleNextPrompt(
-    SidebarUI.browser.contentWindow,
+    SidebarController.browser.contentWindow,
     {
       modalType: Services.prompt.MODAL_TYPE_WINDOW,
       promptType: "promptUserAndPass",

@@ -590,7 +590,7 @@ add_task(async function webextension() {
 
     
     
-    window.SidebarUI.lastOpenedId = null;
+    window.SidebarController.lastOpenedId = null;
 
     
     click("random_addon2_example_com-browser-action");
