@@ -1293,6 +1293,9 @@ bool DataChannelConnection::SendDeferredMessages() {
   do {
     channel = mChannels.Get(i);
     
+    
+    channel->mConnection->mLock.AssertCurrentThreadOwns();
+    
     if (!channel || channel->mBufferedData.IsEmpty()) {
       i = UpdateCurrentStreamIndex();
       continue;
@@ -1336,9 +1339,9 @@ bool DataChannelConnection::SendDeferredMessages() {
 
 
 
-
 bool DataChannelConnection::SendBufferedMessages(
     nsTArray<UniquePtr<BufferedOutgoingMsg>>& buffer, size_t* aWritten) {
+  mLock.AssertCurrentThreadOwns();
   do {
     
     int error = SendMsgInternal(*buffer[0], aWritten);
@@ -1598,6 +1601,10 @@ void DataChannelConnection::HandleDataMessage(const void* data, size_t length,
 
   
   
+  channel->mConnection->mLock.AssertCurrentThreadOwns();
+
+  
+  
   
   
   
@@ -1817,7 +1824,6 @@ void DataChannelConnection::HandleDCEPMessage(const void* buffer, size_t length,
   
   mRecvBuffer.Truncate(0);
 }
-
 
 void DataChannelConnection::HandleMessage(const void* buffer, size_t length,
                                           uint32_t ppid, uint16_t stream,
@@ -2279,7 +2285,6 @@ void DataChannelConnection::HandleStreamChangeEvent(
   }
 }
 
-
 void DataChannelConnection::HandleNotification(
     const union sctp_notification* notif, size_t n) {
   mLock.AssertCurrentThreadOwns();
@@ -2520,8 +2525,8 @@ request_error_cleanup:
 }
 
 
-
 int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
+  mLock.AssertCurrentThreadOwns();
   struct sctp_sndinfo& info = msg.GetInfo().sendv_sndinfo;
   int error;
 
@@ -2602,7 +2607,6 @@ out:
 
 
 
-
 int DataChannelConnection::SendMsgInternalOrBuffer(
     nsTArray<UniquePtr<BufferedOutgoingMsg>>& buffer, OutgoingMsg& msg,
     bool& buffered, size_t* aWritten) {
@@ -2669,6 +2673,10 @@ int DataChannelConnection::SendDataMsgInternalOrBuffer(DataChannel& channel,
                                                        const uint8_t* data,
                                                        size_t len,
                                                        uint32_t ppid) {
+  
+  
+  channel.mConnection->mLock.AssertCurrentThreadOwns();
+
   if (NS_WARN_IF(channel.GetReadyState() != DataChannelState::Open)) {
     return EINVAL;  
   }
@@ -2943,6 +2951,9 @@ void DataChannelConnection::CloseLocked(DataChannel* aChannel) {
   RefPtr<DataChannel> channel(aChannel);  
 
   mLock.AssertCurrentThreadOwns();
+  
+  
+  aChannel->mConnection->mLock.AssertCurrentThreadOwns();
   DC_DEBUG(("Connection %p/Channel %p: Closing stream %u",
             channel->mConnection.get(), channel.get(), channel->mStream));
 
@@ -3223,7 +3234,11 @@ void DataChannel::AnnounceClosed() {
           mConnection->mListener->NotifyDataChannelClosed(this);
         }
         SetReadyState(DataChannelState::Closed);
+        MOZ_PUSH_IGNORE_THREAD_SAFETY
+        
+        
         mBufferedData.Clear();
+        MOZ_POP_THREAD_SAFETY
         if (mListener) {
           DC_DEBUG(("%s: sending ON_CHANNEL_CLOSED for %s/%s: %u", __FUNCTION__,
                     mLabel.get(), mProtocol.get(), mStream));
@@ -3321,7 +3336,6 @@ uint32_t DataChannel::GetBufferedAmountLowThreshold() const {
 void DataChannel::SetBufferedAmountLowThreshold(uint32_t aThreshold) {
   mBufferedThreshold = aThreshold;
 }
-
 
 void DataChannel::SendOrQueue(DataChannelOnMessageAvailable* aMessage) {
   nsCOMPtr<nsIRunnable> runnable = aMessage;
