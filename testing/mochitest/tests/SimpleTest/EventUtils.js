@@ -685,7 +685,8 @@ function getDragService() {
 
 function _maybeEndDragSession(left, top, aEvent, aWindow) {
   const dragService = getDragService();
-  const dragSession = dragService?.getCurrentSession();
+  let utils = _getDOMWindowUtils(aWindow);
+  const dragSession = utils.dragSession;
   if (!dragSession) {
     return false;
   }
@@ -700,7 +701,8 @@ function _maybeEndDragSession(left, top, aEvent, aWindow) {
 }
 
 function _maybeSynthesizeDragOver(left, top, aEvent, aWindow) {
-  const dragSession = getDragService()?.getCurrentSession();
+  let utils = _getDOMWindowUtils(aWindow);
+  const dragSession = utils.dragSession;
   if (!dragSession) {
     return false;
   }
@@ -2179,7 +2181,7 @@ function _getDOMWindowUtils(aWindow = window) {
 
   
   
-  if (!window.document || window.document.documentURIObject) {
+  if (!aWindow.document || aWindow.document.documentURIObject) {
     return aWindow.windowUtils;
   }
 
@@ -2187,11 +2189,14 @@ function _getDOMWindowUtils(aWindow = window) {
   
   
   
-  if ("SpecialPowers" in window && window.SpecialPowers != undefined) {
-    return SpecialPowers.getDOMWindowUtils(aWindow);
+  if ("SpecialPowers" in aWindow && aWindow.SpecialPowers != undefined) {
+    return aWindow.SpecialPowers.getDOMWindowUtils(aWindow);
   }
-  if ("SpecialPowers" in parent && parent.SpecialPowers != undefined) {
-    return parent.SpecialPowers.getDOMWindowUtils(aWindow);
+  if (
+    "SpecialPowers" in aWindow.parent &&
+    aWindow.parent.SpecialPowers != undefined
+  ) {
+    return aWindow.parent.SpecialPowers.getDOMWindowUtils(aWindow);
   }
 
   
@@ -3170,10 +3175,8 @@ function synthesizeDragOver(
   const obs = _EU_Cc["@mozilla.org/observer-service;1"].getService(
     _EU_Ci.nsIObserverService
   );
-  const ds = _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
-    _EU_Ci.nsIDragService
-  );
-  var sess = ds.getCurrentSession();
+  let utils = _getDOMWindowUtils(aDestWindow);
+  var sess = utils.dragSession;
 
   
   
@@ -3501,6 +3504,9 @@ async function synthesizePlainDragAndDrop(aParams) {
     return `left: ${aRect.left}, top: ${aRect.top}, right: ${aRect.right}, bottom: ${aRect.bottom}`;
   }
 
+  let srcWindowUtils = _getDOMWindowUtils(srcWindow);
+  let destWindowUtils = _getDOMWindowUtils(destWindow);
+
   if (logFunc) {
     logFunc("synthesizePlainDragAndDrop() -- START");
   }
@@ -3575,7 +3581,7 @@ async function synthesizePlainDragAndDrop(aParams) {
     return lastEditableElement;
   })();
   try {
-    _getDOMWindowUtils(srcWindow).disableNonTestMouseEvents(true);
+    srcWindowUtils.disableNonTestMouseEvents(true);
 
     await new Promise(r => setTimeout(r, 0));
 
@@ -3703,8 +3709,8 @@ async function synthesizePlainDragAndDrop(aParams) {
       });
     }
 
-    let session = ds.getCurrentSession();
-    if (!session) {
+    let srcSession = srcWindowUtils.dragSession;
+    if (!srcSession) {
       if (expectCancelDragStart) {
         synthesizeMouse(
           srcElement,
@@ -3813,7 +3819,10 @@ async function synthesizePlainDragAndDrop(aParams) {
       
       
       
-      if (session.dragAction != _EU_Ci.nsIDragService.DRAGDROP_ACTION_NONE) {
+      let destSession = destWindowUtils.dragSession;
+      if (
+        destSession.dragAction != _EU_Ci.nsIDragService.DRAGDROP_ACTION_NONE
+      ) {
         let dropEvent;
         function onDrop(aEvent) {
           dropEvent = aEvent;
@@ -3841,7 +3850,7 @@ async function synthesizePlainDragAndDrop(aParams) {
             dragEvent
           );
           sendDragEvent(event, destElement, destWindow);
-          if (!dropEvent && session.canDrop) {
+          if (!dropEvent && destSession.canDrop) {
             throw new Error('"drop" event is not fired');
           }
         } finally {
@@ -3863,11 +3872,11 @@ async function synthesizePlainDragAndDrop(aParams) {
       null,
       dragEvent
     );
-    session.setDragEndPointForTests(event.screenX, event.screenY);
+    srcSession.setDragEndPointForTests(event.screenX, event.screenY);
   } finally {
     await new Promise(r => setTimeout(r, 0));
 
-    if (ds.getCurrentSession()) {
+    if (srcWindowUtils.dragSession) {
       const sourceNode = ds.sourceNode;
       let dragEndEvent;
       function onDragEnd(aEvent) {
@@ -3911,7 +3920,7 @@ async function synthesizePlainDragAndDrop(aParams) {
         srcWindow.removeEventListener("dragend", onDragEnd, { capture: true });
       }
     }
-    _getDOMWindowUtils(srcWindow).disableNonTestMouseEvents(false);
+    srcWindowUtils.disableNonTestMouseEvents(false);
     if (logFunc) {
       logFunc("synthesizePlainDragAndDrop() -- END");
     }
@@ -4325,7 +4334,7 @@ async function synthesizeMockDragAndDrop(aParams) {
 
     if (expectNoDragEvents) {
       ok(
-        !dragController.mockDragService.getCurrentSession(),
+        !_getDOMWindowUtils(sourceBrowsingCxt.ownerGlobal).dragSession,
         "Drag was properly blocked from starting."
       );
       return;
@@ -4349,8 +4358,8 @@ async function synthesizeMockDragAndDrop(aParams) {
     await sourceCxt.checkExpected();
 
     ok(
-      dragController.mockDragService.getCurrentSession(),
-      `Parent process has drag session.`
+      _getDOMWindowUtils(sourceBrowsingCxt.ownerGlobal).dragSession,
+      `Parent process source widget has drag session.`
     );
 
     if (expectCancelDragStart) {
@@ -4467,6 +4476,16 @@ async function synthesizeMockDragAndDrop(aParams) {
     } else {
       await sourceCxt.checkExpected();
     }
+
+    ok(
+      !_getDOMWindowUtils(sourceBrowsingCxt.ownerGlobal).dragSession,
+      `Parent process source widget does not have a drag session.`
+    );
+
+    ok(
+      !_getDOMWindowUtils(targetBrowsingCxt.ownerGlobal).dragSession,
+      `Parent process target widget does not have a drag session.`
+    );
   } catch (e) {
     
     record(false, e.toString(), null, e.stack);

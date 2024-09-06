@@ -1505,8 +1505,9 @@ var PlacesControllerDragHelper = {
   
 
 
+
   getSession: function PCDH__getSession() {
-    return this.dragService.getCurrentSession();
+    return this.dragService.getCurrentSession(window);
   },
 
   
