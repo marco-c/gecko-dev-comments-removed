@@ -20,6 +20,7 @@
 #include "api/scoped_refptr.h"
 #include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
+#include "rtc_base/network/ecn_marking.h"
 
 namespace webrtc {
 
@@ -49,6 +50,11 @@ class RtpPacketReceived : public RtpPacket {
   void set_arrival_time(webrtc::Timestamp time) { arrival_time_ = time; }
 
   
+  
+  rtc::EcnMarking ecn() const { return ecn_; }
+  void set_ecn(rtc::EcnMarking ecn) { ecn_ = ecn; }
+
+  
   bool recovered() const { return recovered_; }
   void set_recovered(bool value) { recovered_ = value; }
 
@@ -68,6 +74,7 @@ class RtpPacketReceived : public RtpPacket {
 
  private:
   webrtc::Timestamp arrival_time_ = Timestamp::MinusInfinity();
+  rtc::EcnMarking ecn_ = rtc::EcnMarking::kNotEct;
   int payload_type_frequency_ = 0;
   bool recovered_ = false;
   rtc::scoped_refptr<rtc::RefCountedBase> additional_data_;

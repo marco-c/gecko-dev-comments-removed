@@ -50,6 +50,14 @@ struct RTC_EXPORT PacketOptions {
   ~PacketOptions();
 
   DiffServCodePoint dscp = DSCP_NO_CHANGE;
+
+  
+  
+  
+  
+  
+  bool ecn_1 = false;
+
   
   
   int64_t packet_id = -1;
