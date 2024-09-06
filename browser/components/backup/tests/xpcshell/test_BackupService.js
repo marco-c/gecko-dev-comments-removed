@@ -9,6 +9,9 @@ const { AppConstants } = ChromeUtils.importESModule(
 const { JsonSchemaValidator } = ChromeUtils.importESModule(
   "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs"
 );
+const { UIState } = ChromeUtils.importESModule(
+  "resource://services-sync/UIState.sys.mjs"
+);
 
 add_setup(function () {
   
@@ -56,8 +59,24 @@ add_setup(function () {
 
 
 
-add_task(async function test_createBackup() {
-  let sandbox = sinon.createSandbox();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function testCreateBackupHelper(sandbox, taskFn) {
   let fake1ManifestEntry = { fake1: "hello from 1" };
   sandbox
     .stub(FakeBackupResource1.prototype, "backup")
@@ -172,11 +191,71 @@ add_task(async function test_createBackup() {
     "Manifest contains the expected entry for FakeBackupResource3"
   );
 
+  taskFn(manifest);
+
   
   
   
   
   await IOUtils.remove(fakeProfilePath, { recursive: true });
+}
+
+
+
+
+
+
+add_task(async function test_createBackup_signed_out() {
+  let sandbox = sinon.createSandbox();
+
+  sandbox
+    .stub(UIState, "get")
+    .returns({ status: UIState.STATUS_NOT_CONFIGURED });
+  await testCreateBackupHelper(sandbox, manifest => {
+    Assert.equal(
+      manifest.meta.accountID,
+      undefined,
+      "Account ID should be undefined."
+    );
+    Assert.equal(
+      manifest.meta.accountEmail,
+      undefined,
+      "Account email should be undefined."
+    );
+  });
+
+  sandbox.restore();
+});
+
+
+
+
+
+
+add_task(async function test_createBackup_signed_in() {
+  let sandbox = sinon.createSandbox();
+
+  const TEST_UID = "ThisIsMyTestUID";
+  const TEST_EMAIL = "foxy@mozilla.org";
+
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_SIGNED_IN,
+    uid: TEST_UID,
+    email: TEST_EMAIL,
+  });
+
+  await testCreateBackupHelper(sandbox, manifest => {
+    Assert.equal(
+      manifest.meta.accountID,
+      TEST_UID,
+      "Account ID should be set properly."
+    );
+    Assert.equal(
+      manifest.meta.accountEmail,
+      TEST_EMAIL,
+      "Account email should be set properly."
+    );
+  });
 
   sandbox.restore();
 });
