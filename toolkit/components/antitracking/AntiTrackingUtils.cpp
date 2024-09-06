@@ -774,6 +774,40 @@ AntiTrackingUtils::GetTopWindowExcludingExtensionAccessibleContentFrames(
 }
 
 
+nsresult AntiTrackingUtils::IsThirdPartyToPartitionKeySite(
+    nsIChannel* aChannel, const nsCOMPtr<nsIURI>& aURI, bool* aIsThirdParty) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  NS_ENSURE_ARG(aChannel);
+  NS_ENSURE_ARG(aURI);
+  NS_ENSURE_ARG(aIsThirdParty);
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  nsCOMPtr<nsICookieJarSettings> cjs;
+  nsresult rv = loadInfo->GetCookieJarSettings(getter_AddRefs(cjs));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoString partitionKey;
+  rv = cjs->GetPartitionKey(partitionKey);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoString scheme, host;
+  int32_t _unused1;
+  bool _unused2;
+  if (!OriginAttributes::ParsePartitionKey(partitionKey, scheme, host, _unused1,
+                                           _unused2)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsAutoString partitionKeySite = scheme + u"://"_ns + host;
+  nsCOMPtr<nsIURI> partitionKeySiteURI;
+  rv = NS_NewURI(getter_AddRefs(partitionKeySiteURI), partitionKeySite);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+      components::ThirdPartyUtil::Service();
+  return thirdPartyUtil->IsThirdPartyURI(aURI, partitionKeySiteURI,
+                                         aIsThirdParty);
+}
+
+
 void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -792,6 +826,9 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
 
   RefPtr<BrowsingContext> bc;
   loadInfo->GetBrowsingContext(getter_AddRefs(bc));
+  if (!bc) {
+    bc = loadInfo->GetWorkerAssociatedBrowsingContext();
+  }
 
   nsCOMPtr<nsIURI> uri;
   Unused << aChannel->GetURI(getter_AddRefs(uri));
@@ -812,12 +849,28 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
     }
 
     
-    auto* loadingPrincipal =
-        BasePrincipal::Cast(loadInfo->GetLoadingPrincipal());
+    auto* principal = BasePrincipal::Cast(loadInfo->GetTopLevelPrincipal());
 
-    if (uri && loadingPrincipal) {
+    
+    
+    
+    
+    
+    if (uri) {
+      if (!principal) {
+        bool isThirdParty = true;
+        nsresult rv =
+            IsThirdPartyToPartitionKeySite(aChannel, uri, &isThirdParty);
+        if (NS_SUCCEEDED(rv)) {
+          loadInfo->SetIsThirdPartyContextToTopWindow(isThirdParty);
+          return;
+        }
+      }
+      principal = BasePrincipal::Cast(loadInfo->GetLoadingPrincipal());
+    }
+    if (principal) {
       bool isThirdParty = true;
-      nsresult rv = loadingPrincipal->IsThirdPartyURI(uri, &isThirdParty);
+      nsresult rv = principal->IsThirdPartyURI(uri, &isThirdParty);
 
       if (NS_SUCCEEDED(rv)) {
         loadInfo->SetIsThirdPartyContextToTopWindow(isThirdParty);
@@ -1049,17 +1102,13 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
       ->MarkOverriddenFingerprintingSettingsAsSet();
 #endif
 
-  ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
-  if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
-      contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
-    nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-    Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
-    
-    
-    
-    net::CookieJarSettings::Cast(cookieJarSettings)
-        ->UpdatePartitionKeyForDocumentLoadedByChannel(aChannel);
-  }
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+  
+  
+  
+  net::CookieJarSettings::Cast(cookieJarSettings)
+      ->UpdatePartitionKeyForDocumentLoadedByChannel(aChannel);
 
   
   
@@ -1070,6 +1119,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   
   
+  ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (!httpChannel || contentType != ExtContentPolicy::TYPE_DOCUMENT) {
     return;
@@ -1078,8 +1128,6 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   
   
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
   net::CookieJarSettings::Cast(cookieJarSettings)
       ->UpdateIsOnContentBlockingAllowList(aChannel);
 
