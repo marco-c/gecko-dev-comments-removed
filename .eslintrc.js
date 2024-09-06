@@ -130,6 +130,16 @@ module.exports = {
       },
     },
     {
+      
+      
+      
+      
+      files: ["**/*.stories.mjs"],
+      rules: {
+        "import/no-unassigned-import": "off",
+      },
+    },
+    {
       files: [
         
         
