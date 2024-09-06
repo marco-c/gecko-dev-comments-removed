@@ -230,6 +230,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
       
       
       Malloc,
+
+      
+      
+      StringBuffer,
     };
 
    private:
@@ -240,6 +244,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     OwnedChars() = default;
     OwnedChars(CharT* chars, size_t length, Kind kind);
     OwnedChars(js::UniquePtr<CharT[], JS::FreePolicy>&& chars, size_t length);
+    OwnedChars(RefPtr<mozilla::StringBuffer>&& buffer, size_t length);
     OwnedChars(OwnedChars&&);
     OwnedChars(const OwnedChars&) = delete;
     ~OwnedChars() { reset(); }
@@ -262,6 +267,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     }
     size_t size() const { return length() * sizeof(CharT); }
     bool isMalloced() const { return kind_ == Kind::Malloc; }
+    bool hasStringBuffer() const { return kind_ == Kind::StringBuffer; }
 
     
     inline CharT* release();
@@ -933,6 +939,7 @@ class WrappedPtrOperations<JSString::OwnedChars<CharT>, Wrapper> {
   size_t length() const { return get().length(); }
   size_t size() const { return get().size(); }
   bool isMalloced() const { return get().isMalloced(); }
+  bool hasStringBuffer() const { return get().hasStringBuffer(); }
 };
 
 template <typename Wrapper, typename CharT>
@@ -1083,18 +1090,8 @@ class JSLinearString : public JSString {
                                      js::gc::Heap heap);
 
   template <js::AllowGC allowGC, typename CharT>
-  static inline JSLinearString* new_(JSContext* cx,
-                                     RefPtr<mozilla::StringBuffer>&& buffer,
-                                     size_t length, js::gc::Heap heap);
-
-  template <js::AllowGC allowGC, typename CharT>
   static inline JSLinearString* newValidLength(
       JSContext* cx, JS::MutableHandle<OwnedChars<CharT>> chars,
-      js::gc::Heap heap);
-
-  template <js::AllowGC allowGC, typename CharT>
-  static inline JSLinearString* newValidLength(
-      JSContext* cx, RefPtr<mozilla::StringBuffer>&& buffer, size_t length,
       js::gc::Heap heap);
 
   
