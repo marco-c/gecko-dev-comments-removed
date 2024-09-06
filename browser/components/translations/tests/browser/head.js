@@ -1298,31 +1298,47 @@ class SelectTranslationsTestUtils {
    *
    * @param {Function} runInPage - A content-exposed function to run within the context of the page.
    * @param {object} options - Options for how to open the context menu and what properties to assert about the translate-selection item.
-   * @param {boolean} options.selectFirstParagraph - Selects the first paragraph before opening the context menu.
-   * @param {boolean} options.selectSpanishParagraph - Selects the Spanish paragraph before opening the context menu.
-   *                                                   This is only available in SPANISH_TEST_PAGE.
-   * @param {boolean} options.expectMenuItemVisible - Whether the translate-selection item is expected to be visible.
-   *                                                  Does not assert visibility if left undefined.
-   * @param {string} options.expectedTargetLanguage - The target language for translation.
-   * @param {boolean} options.openAtFirstParagraph - Opens the context menu at the first paragraph in the test page.
-   * @param {boolean} options.openAtSpanishParagraph - Opens the context menu at the Spanish paragraph in the test page.
-   *                                                   This is only available in SPANISH_TEST_PAGE.
-   * @param {boolean} options.openAtEnglishHyperlink - Opens the context menu at the English hyperlink in the test page.
-   *                                                   This is only available in SPANISH_TEST_PAGE.
-   * @param {boolean} options.openAtSpanishHyperlink - Opens the context menu at the Spanish hyperlink in the test page.
-   *                                                   This is only available in SPANISH_TEST_PAGE.
+   *
+   * The following options will only work when testing SELECT_TEST_PAGE_URL.
+   *
+   * @param {boolean} options.expectMenuItemVisible - Whether the select-translations menu item should be present in the context menu.
+   * @param {boolean} options.expectedTargetLanguage - The expected target language to be shown in the context menu.
+   * @param {boolean} options.selectFrenchSection - Selects the section of French text.
+   * @param {boolean} options.selectEnglishSection - Selects the section of English text.
+   * @param {boolean} options.selectSpanishSection - Selects the section of Spanish text.
+   * @param {boolean} options.selectFrenchSentence - Selects a French sentence.
+   * @param {boolean} options.selectEnglishSentence - Selects an English sentence.
+   * @param {boolean} options.selectSpanishSentence - Selects a Spanish sentence.
+   * @param {boolean} options.openAtFrenchSection - Opens the context menu at the section of French text.
+   * @param {boolean} options.openAtEnglishSection - Opens the context menu at the section of English text.
+   * @param {boolean} options.openAtSpanishSection - Opens the context menu at the section of Spanish text.
+   * @param {boolean} options.openAtFrenchSentence - Opens the context menu at a French sentence.
+   * @param {boolean} options.openAtEnglishSentence - Opens the context menu at an English sentence.
+   * @param {boolean} options.openAtSpanishSentence - Opens the context menu at a Spanish sentence.
+   * @param {boolean} options.openAtFrenchHyperlink - Opens the context menu at a hyperlinked French text.
+   * @param {boolean} options.openAtEnglishHyperlink - Opens the context menu at an hyperlinked English text.
+   * @param {boolean} options.openAtSpanishHyperlink - Opens the context menu at a hyperlinked Spanish text.
    * @param {string} [message] - A message to log to info.
    * @throws Throws an error if the properties of the translate-selection item do not match the expected options.
    */
   static async assertContextMenuTranslateSelectionItem(
     runInPage,
     {
-      selectFirstParagraph,
-      selectSpanishParagraph,
       expectMenuItemVisible,
       expectedTargetLanguage,
-      openAtFirstParagraph,
-      openAtSpanishParagraph,
+      selectFrenchSection,
+      selectEnglishSection,
+      selectSpanishSection,
+      selectFrenchSentence,
+      selectEnglishSentence,
+      selectSpanishSentence,
+      openAtFrenchSection,
+      openAtEnglishSection,
+      openAtSpanishSection,
+      openAtFrenchSentence,
+      openAtEnglishSentence,
+      openAtSpanishSentence,
+      openAtFrenchHyperlink,
       openAtEnglishHyperlink,
       openAtSpanishHyperlink,
     },
@@ -1337,10 +1353,21 @@ class SelectTranslationsTestUtils {
     await closeAllOpenPanelsAndMenus();
 
     await SelectTranslationsTestUtils.openContextMenu(runInPage, {
-      selectFirstParagraph,
-      selectSpanishParagraph,
-      openAtFirstParagraph,
-      openAtSpanishParagraph,
+      expectMenuItemVisible,
+      expectedTargetLanguage,
+      selectFrenchSection,
+      selectEnglishSection,
+      selectSpanishSection,
+      selectFrenchSentence,
+      selectEnglishSentence,
+      selectSpanishSentence,
+      openAtFrenchSection,
+      openAtEnglishSection,
+      openAtSpanishSection,
+      openAtFrenchSentence,
+      openAtEnglishSentence,
+      openAtSpanishSentence,
+      openAtFrenchHyperlink,
       openAtEnglishHyperlink,
       openAtSpanishHyperlink,
     });
@@ -1359,7 +1386,12 @@ class SelectTranslationsTestUtils {
       if (expectedTargetLanguage) {
         // Target language expected, check for the data-l10n-id with a `{$language}` argument.
         const expectedL10nId =
-          selectFirstParagraph === true || selectSpanishParagraph === true
+          selectFrenchSection ||
+          selectEnglishSection ||
+          selectSpanishSection ||
+          selectFrenchSentence ||
+          selectEnglishSentence ||
+          selectSpanishSentence
             ? "main-context-menu-translate-selection-to-language"
             : "main-context-menu-translate-link-text-to-language";
         await waitForCondition(
@@ -1382,7 +1414,12 @@ class SelectTranslationsTestUtils {
       } else {
         // No target language expected, check for the data-l10n-id that has no `{$language}` argument.
         const expectedL10nId =
-          selectFirstParagraph === true || selectSpanishParagraph === true
+          selectFrenchSection ||
+          selectEnglishSection ||
+          selectSpanishSection ||
+          selectFrenchSentence ||
+          selectEnglishSentence ||
+          selectSpanishSentence
             ? "main-context-menu-translate-selection"
             : "main-context-menu-translate-link-text";
         await waitForCondition(
@@ -1399,13 +1436,13 @@ class SelectTranslationsTestUtils {
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Asserts that for each provided expectation, the visible state of the corresponding
+   * element in FullPageTranslationsPanel.elements both exists and matches the visibility expectation.
+   *
+   * @param {object} expectations
+   *   A list of expectations for the visibility of any subset of SelectTranslationsPanel.elements
+   */
   static #assertPanelElementVisibility(expectations = {}) {
     SharedTranslationsTestUtils._assertPanelElementVisibility(
       SelectTranslationsPanel.elements,
@@ -1420,17 +1457,17 @@ class SelectTranslationsTestUtils {
         toLabel: false,
         toMenuList: false,
         translateFullPageButton: false,
-        
+        // Overwrite any of the above defaults with the passed in expectations.
         ...expectations,
       }
     );
   }
 
-  
-
-
-
-
+  /**
+   * Asserts that the mainViewId of the panel matches the given string.
+   *
+   * @param {string} expectedId
+   */
   static #assertPanelMainViewId(expectedId) {
     SharedTranslationsTestUtils._assertPanelMainViewId(
       SelectTranslationsPanel,
@@ -1438,9 +1475,9 @@ class SelectTranslationsTestUtils {
     );
   }
 
-  
-
-
+  /**
+   * Asserts that panel element visibility matches the default panel view.
+   */
   static assertPanelViewDefault() {
     info("Checking that the select-translations panel shows the default view");
     SelectTranslationsTestUtils.#assertPanelMainViewId(
@@ -1460,11 +1497,11 @@ class SelectTranslationsTestUtils {
     });
   }
 
-  
-
-
-
-
+  /**
+   * Asserts that the selected from-language matches the provided language tag.
+   *
+   * @param {string} langTag - A BCP-47 language tag.
+   */
   static assertSelectedFromLanguage({ langTag, l10nId }) {
     SharedTranslationsTestUtils._assertSelectedFromLanguage(
       SelectTranslationsPanel,
@@ -1472,11 +1509,11 @@ class SelectTranslationsTestUtils {
     );
   }
 
-  
-
-
-
-
+  /**
+   * Asserts that the selected to-language matches the provided language tag.
+   *
+   * @param {string} langTag - A BCP-47 language tag.
+   */
   static assertSelectedToLanguage({ langTag, l10nId }) {
     SharedTranslationsTestUtils._assertSelectedToLanguage(
       SelectTranslationsPanel,
@@ -1484,9 +1521,9 @@ class SelectTranslationsTestUtils {
     );
   }
 
-  
-
-
+  /**
+   * Simulates clicking the done button and waits for the panel to close.
+   */
   static async clickDoneButton() {
     logAction();
     const { doneButton } = SelectTranslationsPanel.elements;
@@ -1499,115 +1536,94 @@ class SelectTranslationsTestUtils {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static async openContextMenu(
-    runInPage,
-    {
-      selectFirstParagraph,
-      selectSpanishParagraph,
-      openAtFirstParagraph,
-      openAtSpanishParagraph,
-      openAtEnglishHyperlink,
-      openAtSpanishHyperlink,
-    }
-  ) {
+  /**
+   * Opens the context menu at a specified element on the page, based on the provided options.
+   *
+   * @param {Function} runInPage - A content-exposed function to run within the context of the page.
+   * @param {object} options - Options for opening the context menu.
+   *
+   * The following options will only work when testing SELECT_TEST_PAGE_URL.
+   *
+   * @param {boolean} options.selectFrenchSection - Selects the section of French text.
+   * @param {boolean} options.selectEnglishSection - Selects the section of English text.
+   * @param {boolean} options.selectSpanishSection - Selects the section of Spanish text.
+   * @param {boolean} options.selectFrenchSentence - Selects a French sentence.
+   * @param {boolean} options.selectEnglishSentence - Selects an English sentence.
+   * @param {boolean} options.selectSpanishSentence - Selects a Spanish sentence.
+   * @param {boolean} options.openAtFrenchSection - Opens the context menu at the section of French text.
+   * @param {boolean} options.openAtEnglishSection - Opens the context menu at the section of English text.
+   * @param {boolean} options.openAtSpanishSection - Opens the context menu at the section of Spanish text.
+   * @param {boolean} options.openAtFrenchSentence - Opens the context menu at a French sentence.
+   * @param {boolean} options.openAtEnglishSentence - Opens the context menu at an English sentence.
+   * @param {boolean} options.openAtSpanishSentence - Opens the context menu at a Spanish sentence.
+   * @param {boolean} options.openAtFrenchHyperlink - Opens the context menu at a hyperlinked French text.
+   * @param {boolean} options.openAtEnglishHyperlink - Opens the context menu at an hyperlinked English text.
+   * @param {boolean} options.openAtSpanishHyperlink - Opens the context menu at a hyperlinked Spanish text.
+   * @throws Throws an error if no valid option was provided for opening the menu.
+   */
+  static async openContextMenu(runInPage, options) {
     logAction();
 
-    if (selectFirstParagraph === true) {
-      await runInPage(async TranslationsTest => {
-        const { getFirstParagraph } = TranslationsTest.getSelectors();
-        const paragraph = getFirstParagraph();
-        TranslationsTest.selectContentElement(paragraph);
-      });
-    }
+    const maybeSelectContentFrom = async keyword => {
+      const conditionVariableName = `select${keyword}`;
+      const selectorFunctionName = `get${keyword}`;
 
-    if (selectSpanishParagraph === true) {
-      await runInPage(async TranslationsTest => {
-        const { getSpanishParagraph } = TranslationsTest.getSelectors();
-        const paragraph = getSpanishParagraph();
-        TranslationsTest.selectContentElement(paragraph);
-      });
-    }
+      if (options[conditionVariableName]) {
+        await runInPage(
+          async (TranslationsTest, data) => {
+            const selectorFunction =
+              TranslationsTest.getSelectors()[data.selectorFunctionName];
+            if (typeof selectorFunction === "function") {
+              const paragraph = selectorFunction();
+              TranslationsTest.selectContentElement(paragraph);
+            }
+          },
+          { selectorFunctionName }
+        );
+      }
+    };
 
-    if (openAtFirstParagraph === true) {
-      await SharedTranslationsTestUtils._waitForPopupEvent(
-        "contentAreaContextMenu",
-        "popupshown",
-        async () => {
-          await runInPage(async TranslationsTest => {
-            const { getFirstParagraph } = TranslationsTest.getSelectors();
-            const paragraph = getFirstParagraph();
-            await TranslationsTest.rightClickContentElement(paragraph);
-          });
-        }
-      );
-      return;
-    }
+    await maybeSelectContentFrom("FrenchSection");
+    await maybeSelectContentFrom("EnglishSection");
+    await maybeSelectContentFrom("SpanishSection");
+    await maybeSelectContentFrom("FrenchSentence");
+    await maybeSelectContentFrom("EnglishSentence");
+    await maybeSelectContentFrom("SpanishSentence");
 
-    if (openAtSpanishParagraph === true) {
-      await SharedTranslationsTestUtils._waitForPopupEvent(
-        "contentAreaContextMenu",
-        "popupshown",
-        async () => {
-          await runInPage(async TranslationsTest => {
-            const { getSpanishParagraph } = TranslationsTest.getSelectors();
-            const paragraph = getSpanishParagraph();
-            await TranslationsTest.rightClickContentElement(paragraph);
-          });
-        }
-      );
-      return;
-    }
+    const maybeOpenContextMenuAt = async keyword => {
+      const optionVariableName = `openAt${keyword}`;
+      const selectorFunctionName = `get${keyword}`;
 
-    if (openAtEnglishHyperlink === true) {
-      await SharedTranslationsTestUtils._waitForPopupEvent(
-        "contentAreaContextMenu",
-        "popupshown",
-        async () => {
-          await runInPage(async TranslationsTest => {
-            const { getEnglishHyperlink } = TranslationsTest.getSelectors();
-            const hyperlink = getEnglishHyperlink();
-            await TranslationsTest.rightClickContentElement(hyperlink);
-          });
-        }
-      );
-      return;
-    }
+      if (options[optionVariableName]) {
+        await SharedTranslationsTestUtils._waitForPopupEvent(
+          "contentAreaContextMenu",
+          "popupshown",
+          async () => {
+            await runInPage(
+              async (TranslationsTest, data) => {
+                const selectorFunction =
+                  TranslationsTest.getSelectors()[data.selectorFunctionName];
+                if (typeof selectorFunction === "function") {
+                  const element = selectorFunction();
+                  await TranslationsTest.rightClickContentElement(element);
+                }
+              },
+              { selectorFunctionName }
+            );
+          }
+        );
+      }
+    };
 
-    if (openAtSpanishHyperlink === true) {
-      await SharedTranslationsTestUtils._waitForPopupEvent(
-        "contentAreaContextMenu",
-        "popupshown",
-        async () => {
-          await runInPage(async TranslationsTest => {
-            const { getSpanishHyperlink } = TranslationsTest.getSelectors();
-            const hyperlink = getSpanishHyperlink();
-            await TranslationsTest.rightClickContentElement(hyperlink);
-          });
-        }
-      );
-      return;
-    }
-
-    throw new Error(
-      "openContextMenu() was not provided a declaration for which element to open the menu at."
-    );
+    await maybeOpenContextMenuAt("FrenchSection");
+    await maybeOpenContextMenuAt("EnglishSection");
+    await maybeOpenContextMenuAt("SpanishSection");
+    await maybeOpenContextMenuAt("FrenchSentence");
+    await maybeOpenContextMenuAt("EnglishSentence");
+    await maybeOpenContextMenuAt("SpanishSentence");
+    await maybeOpenContextMenuAt("FrenchHyperlink");
+    await maybeOpenContextMenuAt("EnglishHyperlink");
+    await maybeOpenContextMenuAt("SpanishHyperlink");
   }
 
   
@@ -1631,20 +1647,16 @@ class SelectTranslationsTestUtils {
 
 
 
-  static async openPanel(
-    runInPage,
-    {
-      selectFirstParagraph,
-      selectSpanishParagraph,
-      expectedTargetLanguage,
-      openAtFirstParagraph,
-      openAtSpanishParagraph,
-      openAtEnglishHyperlink,
-      openAtSpanishHyperlink,
-      onOpenPanel,
-    },
-    message
-  ) {
+
+
+
+
+
+
+
+
+
+  static async openPanel(runInPage, options, message) {
     logAction();
 
     if (message) {
@@ -1653,19 +1665,12 @@ class SelectTranslationsTestUtils {
 
     await SelectTranslationsTestUtils.assertContextMenuTranslateSelectionItem(
       runInPage,
-      {
-        selectFirstParagraph,
-        selectSpanishParagraph,
-        expectedTargetLanguage,
-        openAtFirstParagraph,
-        openAtSpanishParagraph,
-        openAtEnglishHyperlink,
-        openAtSpanishHyperlink,
-      },
+      options,
       message
     );
 
     const menuItem = getById("context-translate-selection");
+    const { onOpenPanel } = options;
 
     await SelectTranslationsTestUtils.waitForPanelPopupEvent(
       "popupshown",
