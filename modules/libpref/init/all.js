@@ -3566,6 +3566,12 @@ pref("reader.content_width", 3);
 pref("reader.line_height", 4);
 
 
+pref("reader.improved_text_menu.enabled", false);
+
+
+pref("reader.text_alignment", "start");
+
+
 
 
 pref("reader.color_scheme", "auto");
