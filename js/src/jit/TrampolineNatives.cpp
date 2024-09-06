@@ -193,7 +193,7 @@ uint32_t JitRuntime::generateArraySortTrampoline(MacroAssembler& masm) {
   pushExitFrame(temp0, temp1);
   masm.setupAlignedABICall();
   masm.passABIArg(temp2);
-  masm.callWithABI<Fn2, ArraySortData::sortWithComparator>(
+  masm.callWithABI<Fn2, ArraySortData::sortArrayWithComparator>(
       ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   

@@ -21,6 +21,7 @@
 #include "builtin/Object.h"            
 #include "builtin/RegExp.h"            
                                        
+#include "builtin/Sorting.h"           
 #include "builtin/TestingFunctions.h"  
 
 #include "irregexp/RegExpAPI.h"
@@ -103,7 +104,7 @@ namespace jit {
   _(js::ArgumentsObject::finishForIonPure)                            \
   _(js::ArgumentsObject::finishInlineForIonPure)                      \
   _(js::ArrayShiftMoveElements)                                       \
-  _(js::ArraySortData::sortWithComparator)                            \
+  _(js::ArraySortData::sortArrayWithComparator)                       \
   _(js::ArraySortFromJit)                                             \
   _(js::ecmaAtan2)                                                    \
   _(js::ecmaHypot)                                                    \
