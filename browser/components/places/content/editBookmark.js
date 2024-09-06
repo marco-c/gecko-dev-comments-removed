@@ -93,7 +93,7 @@ var gEditItemOverlay = {
         );
       }
       let parent = node.parent;
-      isParentReadOnly = !PlacesUtils.nodeIsFolder(parent);
+      isParentReadOnly = !PlacesUtils.nodeIsFolderOrShortcut(parent);
       
       
       parentGuid = parent.bookmarkGuid;
@@ -453,7 +453,8 @@ var gEditItemOverlay = {
       this._bookmarkState = this.makeNewStateObject({
         children: aInfo.node?.children,
         index: aInfo.node?.index,
-        isFolder: aInfo.node != null && PlacesUtils.nodeIsFolder(aInfo.node),
+        isFolder:
+          aInfo.node != null && PlacesUtils.nodeIsFolderOrShortcut(aInfo.node),
       });
       if (isBookmark || bulkTagging) {
         await this._initAllTags();

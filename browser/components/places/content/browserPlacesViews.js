@@ -1537,7 +1537,7 @@ class PlacesToolbar extends PlacesViewBase {
 
 
   _getDropPoint(aEvent) {
-    if (!PlacesUtils.nodeIsFolder(this._resultNode)) {
+    if (!PlacesUtils.nodeIsFolderOrShortcut(this._resultNode)) {
       return null;
     }
 
@@ -1551,7 +1551,7 @@ class PlacesToolbar extends PlacesViewBase {
       let eltRect = elt.getBoundingClientRect();
       let eltIndex = Array.prototype.indexOf.call(this._rootElt.children, elt);
       if (
-        PlacesUtils.nodeIsFolder(elt._placesNode) &&
+        PlacesUtils.nodeIsFolderOrShortcut(elt._placesNode) &&
         !PlacesUIUtils.isFolderReadOnly(elt._placesNode)
       ) {
         
@@ -1915,7 +1915,7 @@ class PlacesToolbar extends PlacesViewBase {
       PlacesUIUtils.getViewForNode(popup) == this &&
       
       
-      !PlacesUtils.nodeIsFolder(placesNode)
+      !PlacesUtils.nodeIsFolderOrShortcut(placesNode)
     ) {
       placesNode.containerOpen = false;
     }
@@ -2042,7 +2042,7 @@ class PlacesMenu extends PlacesViewBase {
 
     
     
-    if (!PlacesUtils.nodeIsFolder(placesNode)) {
+    if (!PlacesUtils.nodeIsFolderOrShortcut(placesNode)) {
       placesNode.containerOpen = false;
     }
 
@@ -2255,7 +2255,7 @@ this.PlacesPanelview = class PlacesPanelview extends PlacesViewBase {
       PlacesUIUtils.getViewForNode(panelview) == this &&
       
       
-      !PlacesUtils.nodeIsFolder(placesNode)
+      !PlacesUtils.nodeIsFolderOrShortcut(placesNode)
     ) {
       placesNode.containerOpen = false;
     }
