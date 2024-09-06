@@ -1768,6 +1768,17 @@ bool nsContentUtils::IsAlphanumericOrSymbol(uint32_t aChar) {
 }
 
 
+bool nsContentUtils::IsHyphen(uint32_t aChar) {
+  
+  
+  return aChar == uint32_t('-') ||  
+         aChar == 0x2010 ||         
+         aChar == 0x2012 ||         
+         aChar == 0x2013 ||         
+         aChar == 0x058A;           
+}
+
+
 bool nsContentUtils::IsHTMLWhitespace(char16_t aChar) {
   return aChar == char16_t(0x0009) || aChar == char16_t(0x000A) ||
          aChar == char16_t(0x000C) || aChar == char16_t(0x000D) ||

@@ -787,6 +787,10 @@ class nsContentUtils {
 
 
   static bool IsAlphanumericOrSymbol(uint32_t aChar);
+  
+
+
+  static bool IsHyphen(uint32_t aChar);
 
   
 
