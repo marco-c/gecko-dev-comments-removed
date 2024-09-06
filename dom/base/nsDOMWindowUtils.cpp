@@ -398,7 +398,7 @@ nsDOMWindowUtils::UpdateLayerTree() {
     
     
     presShell->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Display, false ));
+        ChangesToFlush(FlushType::Layout, false ));
     RefPtr<nsViewManager> vm = presShell->GetViewManager();
     if (nsView* view = vm->GetRootView()) {
       nsAutoScriptBlocker scriptBlocker;
@@ -2065,10 +2065,6 @@ nsDOMWindowUtils::NeedsFlush(int32_t aFlushType, bool* aResult) {
 
     case FLUSH_LAYOUT:
       flushType = FlushType::Layout;
-      break;
-
-    case FLUSH_DISPLAY:
-      flushType = FlushType::Display;
       break;
 
     default:
