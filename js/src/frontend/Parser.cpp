@@ -10955,6 +10955,12 @@ GeneralParser<ParseHandler, Unit>::memberPropertyAccess(
   if (handler_.isArgumentsName(lhs) && handler_.isLengthName(name)) {
     MOZ_ASSERT(pc_->numberOfArgumentsNames > 0);
     pc_->numberOfArgumentsNames--;
+    
+    
+    
+    if (pc_->isGeneratorOrAsync()) {
+      pc_->sc()->setIneligibleForArgumentsLength();
+    }
     return handler_.newArgumentsLength(lhs, name);
   }
 
