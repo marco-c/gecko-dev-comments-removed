@@ -85,13 +85,8 @@ static bool IsRemoteAcceleratedCompositor(
          ident.mParentProcessType == GeckoProcessType_GPU;
 }
 
-static Atomic<bool> sSupportedTypesInitialized(false);
-static EnumSet<WMFStreamType> sSupportedTypes;
-static EnumSet<WMFStreamType> sLackOfExtensionTypes;
-
 
 void WMFDecoderModule::Init(Config aConfig) {
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   if (XRE_IsContentProcess()) {
     
     
@@ -134,6 +129,7 @@ void WMFDecoderModule::Init(Config aConfig) {
   sDXVAEnabled = sDXVAEnabled && hwVideo;
 
   mozilla::mscom::EnsureMTA([&]() {
+    StaticMutexAutoLock lock(sMutex);
     
     sSupportedTypes.clear();
     sLackOfExtensionTypes.clear();
@@ -163,7 +159,10 @@ void WMFDecoderModule::Init(Config aConfig) {
     }
   });
 
-  sSupportedTypesInitialized = true;
+  {
+    StaticMutexAutoLock lock(sMutex);
+    sSupportedTypesInitialized = true;
+  }
 
   WmfDecoderModuleMarkerAndLog("WMFInit Result",
                                "WMFDecoderModule::Init finishing");
@@ -270,15 +269,13 @@ HRESULT WMFDecoderModule::CreateMFTDecoder(const WMFStreamType& aType,
 
 bool WMFDecoderModule::CanCreateMFTDecoder(const WMFStreamType& aType) {
   MOZ_ASSERT(WMFStreamType::Unknown < aType && aType < WMFStreamType::SENTINEL);
-  if (!sSupportedTypesInitialized) {
-    if (NS_IsMainThread()) {
-      Init();
-    } else {
-      nsCOMPtr<nsIRunnable> runnable =
-          NS_NewRunnableFunction("WMFDecoderModule::Init", [&]() { Init(); });
-      SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(),
-                                     runnable);
-    }
+  bool hasInitialized = false;
+  {
+    StaticMutexAutoLock lock(sMutex);
+    hasInitialized = sSupportedTypesInitialized;
+  }
+  if (!hasInitialized) {
+    Init();
   }
 
   
@@ -324,7 +321,7 @@ bool WMFDecoderModule::CanCreateMFTDecoder(const WMFStreamType& aType) {
         break;
     }
   }
-
+  StaticMutexAutoLock lock(sMutex);
   return sSupportedTypes.contains(aType);
 }
 
@@ -380,6 +377,7 @@ media::DecodeSupportSet WMFDecoderModule::Supports(
       return media::DecodeSupport::SoftwareDecode;
     }
   }
+  StaticMutexAutoLock lock(sMutex);
   return sLackOfExtensionTypes.contains(type)
              ? media::DecodeSupport::UnsureDueToLackOfExtension
              : media::DecodeSupportSet{};
