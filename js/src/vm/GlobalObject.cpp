@@ -920,6 +920,10 @@ bool GlobalObject::getSelfHostedFunction(JSContext* cx,
     return true;
   }
 
+  
+  
+  AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
+
   JSRuntime* runtime = cx->runtime();
   frontend::ScriptIndex index =
       runtime->getSelfHostedScriptIndexRange(selfHostedName)->start;
@@ -940,6 +944,10 @@ bool GlobalObject::getIntrinsicValueSlow(JSContext* cx,
                                          Handle<GlobalObject*> global,
                                          Handle<PropertyName*> name,
                                          MutableHandleValue value) {
+  
+  
+  AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
+
   
   
   if (const JSFunctionSpec* spec = js::FindIntrinsicSpec(name)) {

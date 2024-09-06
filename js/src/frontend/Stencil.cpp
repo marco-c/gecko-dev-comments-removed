@@ -1,89 +1,89 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "frontend/Stencil.h"
 
-#include "mozilla/AlreadyAddRefed.h"        // already_AddRefed
-#include "mozilla/Assertions.h"             // MOZ_RELEASE_ASSERT
-#include "mozilla/Maybe.h"                  // mozilla::Maybe
-#include "mozilla/OperatorNewExtensions.h"  // mozilla::KnownNotNull
-#include "mozilla/PodOperations.h"          // mozilla::PodCopy
-#include "mozilla/RefPtr.h"                 // RefPtr
-#include "mozilla/ScopeExit.h"              // mozilla::ScopeExit
-#include "mozilla/Sprintf.h"                // SprintfLiteral
+#include "mozilla/AlreadyAddRefed.h"        
+#include "mozilla/Assertions.h"             
+#include "mozilla/Maybe.h"                  
+#include "mozilla/OperatorNewExtensions.h"  
+#include "mozilla/PodOperations.h"          
+#include "mozilla/RefPtr.h"                 
+#include "mozilla/ScopeExit.h"              
+#include "mozilla/Sprintf.h"                
 
-#include <algorithm>  // std::fill
-#include <string.h>   // strlen
+#include <algorithm>  
+#include <string.h>   
 
-#include "ds/LifoAlloc.h"               // LifoAlloc
-#include "frontend/AbstractScopePtr.h"  // ScopeIndex
-#include "frontend/BytecodeCompiler.h"  // CompileGlobalScriptToStencil, InstantiateStencils, CanLazilyParse, ParseModuleToStencil
-#include "frontend/BytecodeSection.h"   // EmitScriptThingsVector
-#include "frontend/CompilationStencil.h"  // CompilationStencil, CompilationState, ExtensibleCompilationStencil, CompilationGCOutput, CompilationStencilMerger
+#include "ds/LifoAlloc.h"               
+#include "frontend/AbstractScopePtr.h"  
+#include "frontend/BytecodeCompiler.h"  
+#include "frontend/BytecodeSection.h"   
+#include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"
-#include "frontend/NameAnalysisTypes.h"  // EnvironmentCoordinate
-#include "frontend/ParserAtom.h"  // ParserAtom, ParserAtomIndex, TaggedParserAtomIndex, ParserAtomsTable, Length{1,2,3}StaticParserString, InstantiateMarkedAtoms, InstantiateMarkedAtomsAsPermanent, GetWellKnownAtom
-#include "frontend/ScopeBindingCache.h"  // ScopeBindingCache
+#include "frontend/NameAnalysisTypes.h"  
+#include "frontend/ParserAtom.h"  
+#include "frontend/ScopeBindingCache.h"  
 #include "frontend/SharedContext.h"
-#include "frontend/StencilXdr.h"  // XDRStencilEncoder, XDRStencilDecoder
-#include "gc/AllocKind.h"         // gc::AllocKind
-#include "gc/Tracer.h"            // TraceNullableRoot
-#include "js/CallArgs.h"          // JSNative
-#include "js/CompileOptions.h"  // JS::DecodeOptions, JS::ReadOnlyDecodeOptions
-#include "js/experimental/JSStencil.h"  // JS::Stencil
-#include "js/GCAPI.h"                   // JS::AutoCheckCannotGC
-#include "js/Printer.h"                 // js::Fprinter
-#include "js/RealmOptions.h"            // JS::RealmBehaviors
-#include "js/RootingAPI.h"              // Rooted
-#include "js/Transcoding.h"             // JS::TranscodeBuffer
-#include "js/Utility.h"                 // js_malloc, js_calloc, js_free
-#include "js/Value.h"                   // ObjectValue
-#include "js/WasmModule.h"              // JS::WasmModule
-#include "vm/BigIntType.h"   // ParseBigIntLiteral, BigIntLiteralIsZero
-#include "vm/BindingKind.h"  // BindingKind
+#include "frontend/StencilXdr.h"  
+#include "gc/AllocKind.h"         
+#include "gc/Tracer.h"            
+#include "js/CallArgs.h"          
+#include "js/CompileOptions.h"  
+#include "js/experimental/JSStencil.h"  
+#include "js/GCAPI.h"                   
+#include "js/Printer.h"                 
+#include "js/RealmOptions.h"            
+#include "js/RootingAPI.h"              
+#include "js/Transcoding.h"             
+#include "js/Utility.h"                 
+#include "js/Value.h"                   
+#include "js/WasmModule.h"              
+#include "vm/BigIntType.h"   
+#include "vm/BindingKind.h"  
 #include "vm/EnvironmentObject.h"
-#include "vm/GeneratorAndAsyncKind.h"  // GeneratorKind, FunctionAsyncKind
-#include "vm/JSContext.h"              // JSContext
-#include "vm/JSFunction.h"  // JSFunction, GetFunctionPrototype, NewFunctionWithProto
-#include "vm/JSObject.h"      // JSObject, TenuredObject
-#include "vm/JSONPrinter.h"   // js::JSONPrinter
-#include "vm/JSScript.h"      // BaseScript, JSScript
-#include "vm/Realm.h"         // JS::Realm
-#include "vm/RegExpObject.h"  // js::RegExpObject
-#include "vm/Scope.h"  // Scope, *Scope, ScopeKind::*, ScopeKindString, ScopeIter, ScopeKindIsCatch, BindingIter, GetScopeDataTrailingNames, SizeOfParserScopeData
-#include "vm/ScopeKind.h"    // ScopeKind
-#include "vm/SelfHosting.h"  // SetClonedSelfHostedFunctionName
+#include "vm/GeneratorAndAsyncKind.h"  
+#include "vm/JSContext.h"              
+#include "vm/JSFunction.h"  
+#include "vm/JSObject.h"      
+#include "vm/JSONPrinter.h"   
+#include "vm/JSScript.h"      
+#include "vm/Realm.h"         
+#include "vm/RegExpObject.h"  
+#include "vm/Scope.h"  
+#include "vm/ScopeKind.h"    
+#include "vm/SelfHosting.h"  
 #include "vm/StaticStrings.h"
-#include "vm/StencilEnums.h"  // ImmutableScriptFlagsEnum
-#include "vm/StringType.h"    // JSAtom, js::CopyChars
-#include "wasm/AsmJS.h"       // InstantiateAsmJS
+#include "vm/StencilEnums.h"  
+#include "vm/StringType.h"    
+#include "wasm/AsmJS.h"       
 
-#include "vm/EnvironmentObject-inl.h"  // JSObject::enclosingEnvironment
-#include "vm/JSFunction-inl.h"         // JSFunction::create
+#include "vm/EnvironmentObject-inl.h"  
+#include "vm/JSFunction-inl.h"         
 
 using namespace js;
 using namespace js::frontend;
 
-// These 2 functions are used to write the same code with lambda using auto
-// arguments. The auto argument type is set by the Variant.match function of the
-// InputScope variant. Thus dispatching to either a Scope* or to a
-// ScopeStencilRef. This function can then be used as a way to specialize the
-// code within the lambda without duplicating the code.
-//
-// Identically, an InputName is constructed using the scope type and the
-// matching binding name type. This way, functions which are called by this
-// lambda can manipulate an InputName and do not have to be duplicated.
-//
-// for (InputScopeIter si(...); si; si++) {
-//   si.scope().match([](auto& scope) {
-//     for (auto bi = InputBindingIter(scope); bi; bi++) {
-//       InputName name(scope, bi.name());
-//     }
-//   });
-// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static js::BindingIter InputBindingIter(Scope* ptr) {
   return js::BindingIter(ptr);
 }
@@ -129,20 +129,20 @@ bool InputName::isEqualTo(FrontendContext* fc, ParserAtomsTable& parserAtoms,
           return false;
         }
 
-        // JSAtom variant is used only on the main thread delazification,
-        // where JSContext is always available.
+        
+        
         JSContext* cx = fc->maybeCurrentJSContext();
         MOZ_ASSERT(cx);
 
         if (!*otherCached) {
-          // TODO-Stencil:
-          // Here, we convert our name into a JSAtom*, and hard-crash on failure
-          // to allocate. This conversion should not be required as we should be
-          // able to iterate up snapshotted scope chains that use parser atoms.
-          //
-          // This will be fixed when the enclosing scopes are snapshotted.
-          //
-          // See bug 1690277.
+          
+          
+          
+          
+          
+          
+          
+          
           AutoEnterOOMUnsafeRegion oomUnsafe;
           *otherCached = parserAtoms.toJSAtom(cx, fc, other, atomCache);
           if (!*otherCached) {
@@ -189,7 +189,7 @@ bool GenericAtom::operator==(const GenericAtom& other) const {
       [&other](const EmitterName& name) -> bool {
         return other.ref.match(
             [&name](const EmitterName& other) -> bool {
-              // We never have multiple Emitter context at the same time.
+              
               MOZ_ASSERT(name.fc == other.fc);
               MOZ_ASSERT(&name.parserAtoms == &other.parserAtoms);
               MOZ_ASSERT(&name.atomCache == &other.atomCache);
@@ -200,8 +200,8 @@ bool GenericAtom::operator==(const GenericAtom& other) const {
                   name.index, other.stencil, other.index);
             },
             [&name](JSAtom* other) -> bool {
-              // JSAtom variant is used only on the main thread delazification,
-              // where JSContext is always available.
+              
+              
               JSContext* cx = name.fc->maybeCurrentJSContext();
               MOZ_ASSERT(cx);
               AutoEnterOOMUnsafeRegion oomUnsafe;
@@ -220,14 +220,14 @@ bool GenericAtom::operator==(const GenericAtom& other) const {
                   other.index, name.stencil, name.index);
             },
             [&name](const StencilName& other) -> bool {
-              // Technically it is possible to have multiple stencils, but in
-              // this particular case let's assume we never encounter a case
-              // where we are comparing names from different stencils.
-              //
-              // The reason this assumption is safe today is that we are only
-              // using this in the context of a stencil-delazification, where
-              // the only StencilNames are coming from the CompilationStencil
-              // provided to CompilationInput::initFromStencil.
+              
+              
+              
+              
+              
+              
+              
+              
               MOZ_ASSERT(&name.stencil == &other.stencil);
               return name.index == other.index;
             },
@@ -239,8 +239,8 @@ bool GenericAtom::operator==(const GenericAtom& other) const {
       [&other](JSAtom* name) -> bool {
         return other.ref.match(
             [&name](const EmitterName& other) -> bool {
-              // JSAtom variant is used only on the main thread delazification,
-              // where JSContext is always available.
+              
+              
               JSContext* cx = other.fc->maybeCurrentJSContext();
               MOZ_ASSERT(cx);
               AutoEnterOOMUnsafeRegion oomUnsafe;
@@ -400,22 +400,22 @@ bool ScopeContext::init(FrontendContext* fc, CompilationInput& input,
                         ParserAtomsTable& parserAtoms,
                         ScopeBindingCache* scopeCache, InheritThis inheritThis,
                         JSObject* enclosingEnv) {
-  // Record the scopeCache to be used while looking up NameLocation bindings.
+  
   this->scopeCache = scopeCache;
   scopeCacheGen = scopeCache->getCurrentGeneration();
 
   InputScope maybeNonDefaultEnclosingScope(
       input.maybeNonDefaultEnclosingScope());
 
-  // If this eval is in response to Debugger.Frame.eval, we may have an
-  // incomplete scope chain. In order to provide a better debugging experience,
-  // we inspect the (optional) environment chain to determine it's enclosing
-  // FunctionScope if there is one. If there is no such scope, we use the
-  // orignal scope provided.
-  //
-  // NOTE: This is used to compute the ThisBinding kind and to allow access to
-  //       private fields and methods, while other contextual information only
-  //       uses the actual scope passed to the compile.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   auto effectiveScope =
       determineEffectiveScope(maybeNonDefaultEnclosingScope, enclosingEnv);
 
@@ -444,8 +444,8 @@ void ScopeContext::computeThisEnvironment(const InputScope& enclosingScope) {
   uint32_t envCount = 0;
   for (InputScopeIter si(enclosingScope); si; si++) {
     if (si.kind() == ScopeKind::Function) {
-      // Arrow function inherit the "this" environment of the enclosing script,
-      // so continue ignore them.
+      
+      
       if (!si.scope().isArrow()) {
         allowNewTarget = true;
 
@@ -470,7 +470,7 @@ void ScopeContext::computeThisEnvironment(const InputScope& enclosingScope) {
           allowSuperCall = true;
         }
 
-        // Found the effective "this" environment, so stop.
+        
         return;
       }
     }
@@ -482,7 +482,7 @@ void ScopeContext::computeThisEnvironment(const InputScope& enclosingScope) {
 }
 
 void ScopeContext::computeThisBinding(const InputScope& scope) {
-  // Inspect the scope-chain.
+  
   for (InputScopeIter si(scope); si; si++) {
     if (si.kind() == ScopeKind::Module) {
       thisBinding = ThisBinding::Module;
@@ -490,14 +490,14 @@ void ScopeContext::computeThisBinding(const InputScope& scope) {
     }
 
     if (si.kind() == ScopeKind::Function) {
-      // Arrow functions don't have their own `this` binding.
+      
       if (si.scope().isArrow()) {
         continue;
       }
 
-      // Derived class constructors (and their nested arrow functions and evals)
-      // use ThisBinding::DerivedConstructor, which ensures TDZ checks happen
-      // when accessing |this|.
+      
+      
+      
       if (si.scope().isDerivedClassConstructor()) {
         thisBinding = ThisBinding::DerivedConstructor;
       } else {
@@ -542,10 +542,10 @@ void ScopeContext::cacheEnclosingScope(const InputScope& enclosingScope) {
   hasNonSyntacticScopeOnChain =
       enclosingScope.hasOnChain(ScopeKind::NonSyntactic);
 
-  // This computes a general answer for the query "does the enclosing scope
-  // have a function scope that needs a home object?", but it's only asserted
-  // if the parser parses eval body that contains `super` that needs a home
-  // object.
+  
+  
+  
+  
   for (InputScopeIter si(enclosingScope); si; si++) {
     if (si.kind() == ScopeKind::Function) {
       if (si.scope().isArrow()) {
@@ -559,13 +559,13 @@ void ScopeContext::cacheEnclosingScope(const InputScope& enclosingScope) {
   }
 #endif
 
-  // Pre-fill the scope cache by iterating over all the names. Stop iterating
-  // as soon as we find a scope which already has a filled scope cache.
+  
+  
   AutoEnterOOMUnsafeRegion oomUnsafe;
   for (InputScopeIter si(enclosingScope); si; si++) {
-    // If the current scope already exists, then there is no need to go deeper
-    // as the scope which are encoded after this one should already be present
-    // in the cache.
+    
+    
+    
     bool hasScopeCache = si.scope().match([&](auto& scope_ref) -> bool {
       MOZ_ASSERT(scopeCache->canCacheFor(scope_ref));
       return scopeCache->lookupScope(scope_ref, scopeCacheGen);
@@ -685,9 +685,9 @@ void ScopeContext::cacheEnclosingScope(const InputScope& enclosingScope) {
         break;
 
       case ScopeKind::Module:
-        // This case is used only when delazifying a function inside
-        // module.
-        // Initial compilation of module doesn't have enlcosing scope.
+        
+        
+        
         if (hasEnv) {
           si.scope().match([&](auto& scope_ref) {
             using BindingMapPtr =
@@ -703,9 +703,9 @@ void ScopeContext::cacheEnclosingScope(const InputScope& enclosingScope) {
             }
 
             for (auto bi = InputBindingIter(scope_ref); bi; bi++) {
-              // Imports are on the environment but are indirect
-              // bindings and must be accessed dynamically instead of
-              // using an EnvironmentCoordinate.
+              
+              
+              
               NameLocation loc = bi.nameLocation();
               if (loc.kind() != NameLocation::Kind::EnvironmentCoordinate &&
                   loc.kind() != NameLocation::Kind::Import) {
@@ -727,9 +727,9 @@ void ScopeContext::cacheEnclosingScope(const InputScope& enclosingScope) {
         break;
 
       case ScopeKind::Eval:
-        // As an optimization, if the eval doesn't have its own var
-        // environment and its immediate enclosing scope is a global
-        // scope, all accesses are global.
+        
+        
+        
         if (!hasEnv) {
           ScopeKind kind = si.scope().enclosing().kind();
           if (kind == ScopeKind::Global || kind == ScopeKind::NonSyntactic) {
@@ -759,39 +759,39 @@ void ScopeContext::cacheEnclosingScope(const InputScope& enclosingScope) {
   MOZ_CRASH("Malformed scope chain");
 }
 
-// Given an input scope, possibly refine this to a more precise scope.
-// This is used during eval in the debugger to provide the appropriate scope and
-// ThisBinding kind and environment, which is key to making private field eval
-// work correctly.
-//
-// The trick here is that an eval may have a non-syntatic scope but nevertheless
-// have an 'interesting' environment which can be traversed to find the
-// appropriate scope the the eval to function as desired. See the diagram below.
-//
-// Eval Scope    Eval Env         Frame Env    Frame Scope
-// ============  =============    =========    =============
-//
-// NonSyntactic
-//    |
-//    v
-//   null        DebugEnvProxy                 LexicalScope
-//                     |                            |
-//                     v                            v
-//               DebugEnvProxy --> CallObj --> FunctionScope
-//                     |              |             |
-//                     v              v             v
-//                    ...            ...           ...
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 InputScope ScopeContext::determineEffectiveScope(InputScope& scope,
                                                  JSObject* environment) {
   MOZ_ASSERT(effectiveScopeHops == 0);
-  // If the scope-chain is non-syntactic, we may still determine a more precise
-  // effective-scope to use instead.
+  
+  
   if (environment && scope.hasOnChain(ScopeKind::NonSyntactic)) {
     JSObject* env = environment;
     while (env) {
-      // Look at target of any DebugEnvironmentProxy, but be sure to use
-      // enclosingEnvironment() of the proxy itself.
+      
+      
       JSObject* unwrapped = env;
       if (env->is<DebugEnvironmentProxy>()) {
         unwrapped = &env->as<DebugEnvironmentProxy>().environment();
@@ -846,8 +846,8 @@ bool ScopeContext::cacheEnclosingScopeBindingForEval(
       for (auto bi = InputBindingIter(scope_ref); bi; bi++) {
         switch (bi.kind()) {
           case BindingKind::Let: {
-            // Annex B.3.5 allows redeclaring simple (non-destructured)
-            // catch parameters with var declarations.
+            
+            
             bool annexB35Allowance = si.kind() == ScopeKind::SimpleCatch;
             if (!annexB35Allowance) {
               auto kind = ScopeKindIsCatch(si.kind())
@@ -923,15 +923,15 @@ bool ScopeContext::addToEnclosingLexicalBindingCache(
     return false;
   }
 
-  // Same lexical binding can appear multiple times across scopes.
-  //
-  // enclosingLexicalBindingCache_ map is used for detecting conflicting
-  // `var` binding, and inner binding should be reported in the error.
-  //
-  // cacheEnclosingScopeBindingForEval iterates from inner scope, and
-  // inner-most binding is added to the map first.
-  //
-  // Do not overwrite the value with outer bindings.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   auto p = enclosingLexicalBindingCache_->lookupForAdd(parserName);
   if (!p) {
     if (!enclosingLexicalBindingCache_->add(p, parserName, kind)) {
@@ -964,13 +964,13 @@ static bool IsPrivateField(ScopeStencilRef& scope, TaggedParserAtomIndex atom) {
 #ifdef DEBUG
   if (atom.isWellKnownAtomId()) {
     const auto& info = GetWellKnownAtomInfo(atom.toWellKnownAtomId());
-    // #constructor is a well-known term, but it is invalid private name.
+    
     MOZ_ASSERT(!(info.length > 1 && info.content[0] == '#'));
   } else if (atom.isLength2StaticParserString()) {
     char content[2];
     ParserAtomsTable::getLength2Content(atom.toLength2StaticParserString(),
                                         content);
-    // # character is not part of the allowed character of static strings.
+    
     MOZ_ASSERT(content[0] != '#');
   }
 #endif
@@ -990,10 +990,10 @@ bool ScopeContext::cachePrivateFieldsForEval(FrontendContext* fc,
                                              ParserAtomsTable& parserAtoms) {
   effectiveScopePrivateFieldCache_.emplace();
 
-  // We compute an environment coordinate relative to the effective scope
-  // environment. In order to safely consume these environment coordinates,
-  // we re-map them to include the hops to get the to the effective scope:
-  // see EmitterScope::lookupPrivate
+  
+  
+  
+  
   uint32_t hops = effectiveScopeHops;
   for (InputScopeIter si(effectiveScope); si; si++) {
     if (si.scope().kind() == ScopeKind::ClassBody) {
@@ -1027,12 +1027,12 @@ bool ScopeContext::cachePrivateFieldsForEval(FrontendContext* fc,
       }
     }
 
-    // Hops is only consumed by GetAliasedDebugVar, which uses this to
-    // traverse the debug environment chain. See the [SMDOC] for Debug
-    // Environment Chain, which explains why we don't check for
-    // isEnvironment when computing hops here (basically, debug proxies
-    // pretend all scopes have environments, even if they were actually
-    // optimized out).
+    
+    
+    
+    
+    
+    
     hops++;
   }
 
@@ -1047,24 +1047,24 @@ static bool NameIsOnEnvironment(FrontendContext* fc,
   JSAtom* jsname = nullptr;
   return scope.match([&](auto& scope_ref) {
     if (std::is_same_v<decltype(scope_ref), FakeStencilGlobalScope&>) {
-      // This condition is added to handle the FakeStencilGlobalScope which is
-      // used to emulate the global object when delazifying while executing, and
-      // which is not provided by the Stencil.
+      
+      
+      
       return true;
     }
     for (auto bi = InputBindingIter(scope_ref); bi; bi++) {
-      // If found, the name must already be on the environment or an import,
-      // or else there is a bug in the closed-over name analysis in the
-      // Parser.
+      
+      
+      
       InputName binding(scope_ref, bi.name());
       if (binding.isEqualTo(fc, parserAtoms, atomCache, name, &jsname)) {
         BindingLocation::Kind kind = bi.location().kind();
 
         if (bi.hasArgumentSlot()) {
-          // The following is equivalent to
-          // functionScope.script()->functionAllowsParameterRedeclaration()
+          
+          
           if (scope.hasMappedArgsObj()) {
-            // Check for duplicate positional formal parameters.
+            
             using InputBindingIter = decltype(bi);
             for (InputBindingIter bi2(bi); bi2 && bi2.hasArgumentSlot();
                  bi2++) {
@@ -1083,7 +1083,7 @@ static bool NameIsOnEnvironment(FrontendContext* fc,
       }
     }
 
-    // If not found, assume it's on the global or dynamically accessed.
+    
     return true;
   });
 }
@@ -1103,8 +1103,8 @@ NameLocation ScopeContext::searchInEnclosingScope(FrontendContext* fc,
   }
 
 #ifdef DEBUG
-  // Catch assertion failures in the NoCache variant before looking at the
-  // cached content.
+  
+  
   NameLocation expect =
       searchInEnclosingScopeNoCache(fc, input, parserAtoms, name);
 #endif
@@ -1122,19 +1122,19 @@ NameLocation ScopeContext::searchInEnclosingScopeWithCache(
                  CompilationInput::CompilationTarget::Delazification ||
              input.target == CompilationInput::CompilationTarget::Eval);
 
-  // Generic atom of the looked up name.
+  
   GenericAtom genName(fc, parserAtoms, input.atomCache, name);
   mozilla::Maybe<NameLocation> found;
 
-  // Number of enclosing scope we walked over.
+  
   uint8_t hops = 0;
 
   for (InputScopeIter si(input.enclosingScope); si; si++) {
     MOZ_ASSERT(NameIsOnEnvironment(fc, parserAtoms, input.atomCache, si.scope(),
                                    name));
 
-    // If the result happens to be in the cached content of the scope that we
-    // are iterating over, then return it.
+    
+    
     si.scope().match([&](auto& scope_ref) {
       using BindingMapPtr =
           decltype(scopeCache->lookupScope(scope_ref, scopeCacheGen));
@@ -1148,8 +1148,8 @@ NameLocation ScopeContext::searchInEnclosingScopeWithCache(
         return;
       }
 
-      // The scope_ref is given as argument to know where to lookup the key
-      // index of the hash table if the names have to be compared.
+      
+      
       using Lookup = typename std::remove_pointer_t<BindingMapPtr>::Lookup;
       Lookup ctxName(scope_ref, genName);
       auto ptr = bindingMap.hashMap.lookup(ctxName);
@@ -1161,8 +1161,8 @@ NameLocation ScopeContext::searchInEnclosingScopeWithCache(
     });
 
     if (found.isSome()) {
-      // Cached entries do not store the number of hops, as it might be reused
-      // by multiple inner functions, which might different number of hops.
+      
+      
       found = found.map([&hops](NameLocation loc) {
         if (loc.kind() != NameLocation::Kind::EnvironmentCoordinate) {
           return loc;
@@ -1190,13 +1190,13 @@ NameLocation ScopeContext::searchInEnclosingScopeNoCache(
                  CompilationInput::CompilationTarget::Delazification ||
              input.target == CompilationInput::CompilationTarget::Eval);
 
-  // Cached JSAtom equivalent of the TaggedParserAtomIndex `name` argument.
+  
   JSAtom* jsname = nullptr;
 
-  // NameLocation which contains relative locations to access `name`.
+  
   mozilla::Maybe<NameLocation> result;
 
-  // Number of enclosing scoep we walked over.
+  
   uint8_t hops = 0;
 
   for (InputScopeIter si(input.enclosingScope); si; si++) {
@@ -1220,9 +1220,9 @@ NameLocation ScopeContext::searchInEnclosingScopeNoCache(
               }
 
               BindingLocation bindLoc = bi.location();
-              // hasMappedArgsObj == script.functionAllowsParameterRedeclaration
+              
               if (bi.hasArgumentSlot() && si.scope().hasMappedArgsObj()) {
-                // Check for duplicate positional formal parameters.
+                
                 using InputBindingIter = decltype(bi);
                 for (InputBindingIter bi2(bi); bi2 && bi2.hasArgumentSlot();
                      bi2++) {
@@ -1259,9 +1259,9 @@ NameLocation ScopeContext::searchInEnclosingScopeNoCache(
                 continue;
               }
 
-              // The name must already have been marked as closed
-              // over. If this assertion is hit, there is a bug in the
-              // name analysis.
+              
+              
+              
               BindingLocation bindLoc = bi.location();
               MOZ_ASSERT(bindLoc.kind() == BindingLocation::Kind::Environment);
               result.emplace(NameLocation::EnvironmentCoordinate(
@@ -1273,9 +1273,9 @@ NameLocation ScopeContext::searchInEnclosingScopeNoCache(
         break;
 
       case ScopeKind::Module:
-        // This case is used only when delazifying a function inside
-        // module.
-        // Initial compilation of module doesn't have enlcosing scope.
+        
+        
+        
         if (hasEnv) {
           si.scope().match([&](auto& scope_ref) {
             for (auto bi = InputBindingIter(scope_ref); bi; bi++) {
@@ -1287,9 +1287,9 @@ NameLocation ScopeContext::searchInEnclosingScopeNoCache(
 
               BindingLocation bindLoc = bi.location();
 
-              // Imports are on the environment but are indirect
-              // bindings and must be accessed dynamically instead of
-              // using an EnvironmentCoordinate.
+              
+              
+              
               if (bindLoc.kind() == BindingLocation::Kind::Import) {
                 MOZ_ASSERT(si.kind() == ScopeKind::Module);
                 result.emplace(NameLocation::Import());
@@ -1306,9 +1306,9 @@ NameLocation ScopeContext::searchInEnclosingScopeNoCache(
         break;
 
       case ScopeKind::Eval:
-        // As an optimization, if the eval doesn't have its own var
-        // environment and its immediate enclosing scope is a global
-        // scope, all accesses are global.
+        
+        
+        
         if (!hasEnv) {
           ScopeKind kind = si.scope().enclosing().kind();
           if (kind == ScopeKind::Global || kind == ScopeKind::NonSyntactic) {
@@ -1359,10 +1359,10 @@ bool ScopeContext::effectiveScopePrivateFieldCacheHas(
 
 mozilla::Maybe<NameLocation> ScopeContext::getPrivateFieldLocation(
     TaggedParserAtomIndex name) {
-  // The locations returned by this method are only valid for
-  // traversing debug environments.
-  //
-  // See the comment in cachePrivateFieldsForEval
+  
+  
+  
+  
   MOZ_ASSERT(enclosingEnvironmentIsDebugProxy_);
   auto p = effectiveScopePrivateFieldCache_->lookup(name);
   if (!p) {
@@ -1401,7 +1401,7 @@ FunctionSyntaxKind CompilationInput::functionSyntaxKind() const {
   }
   if (functionFlags().isMethod()) {
     if (functionFlags().hasBaseScript() && isSyntheticFunction()) {
-      // return FunctionSyntaxKind::FieldInitializer;
+      
       MOZ_ASSERT_UNREACHABLE(
           "Lazy parsing of class field initializers not supported (yet)");
     }
@@ -1524,7 +1524,7 @@ bool CompilationSyntaxParseCache::copyScriptInfo(
     return true;
   }
 
-  // Reduce the length to the first element which is not a function.
+  
   for (size_t i = 0; i < length; i++) {
     gc::Cell* cell = gcthings[i].asCell();
     if (!cell || !cell->is<JSObject>()) {
@@ -1568,9 +1568,9 @@ bool CompilationSyntaxParseCache::copyScriptInfo(
     extra.immutableFlags = lazy->immutableFlags();
     extra.extent = lazy->extent();
 
-    // Info derived from parent compilation should not be set yet for our inner
-    // lazy functions. Instead that info will be updated when we finish our
-    // compilation.
+    
+    
+    
     MOZ_ASSERT(lazy->hasEnclosingScript());
   }
 
@@ -1596,7 +1596,7 @@ bool CompilationSyntaxParseCache::copyScriptInfo(
     return true;
   }
 
-  // Reduce the length to the first element which is not a function.
+  
   for (size_t i = offset; i < offset + length; i++) {
     if (!lazy.context_.gcThingData[i].isFunction()) {
       length = i - offset;
@@ -1648,9 +1648,9 @@ bool CompilationSyntaxParseCache::copyClosedOverBindings(
   using ClosedOverBindingsSpan = mozilla::Span<TaggedParserAtomIndex>;
   closedOverBindings_ = ClosedOverBindingsSpan(nullptr);
 
-  // The gcthings() array contains the inner function list followed by the
-  // closed-over bindings data. Skip the inner function list, as it is already
-  // cached in cachedGCThings_. See also: BaseScript::CreateLazy.
+  
+  
+  
   size_t start = cachedGCThings_.Length();
   auto gcthings = lazy->gcthings();
   size_t length = gcthings.Length();
@@ -1695,9 +1695,9 @@ bool CompilationSyntaxParseCache::copyClosedOverBindings(
   using ClosedOverBindingsSpan = mozilla::Span<TaggedParserAtomIndex>;
   closedOverBindings_ = ClosedOverBindingsSpan(nullptr);
 
-  // The gcthings array contains the inner function list followed by the
-  // closed-over bindings data. Skip the inner function list, as it is already
-  // cached in cachedGCThings_. See also: BaseScript::CreateLazy.
+  
+  
+  
   size_t offset = lazy.scriptData().gcThingsOffset.index;
   size_t length = lazy.scriptData().gcThingsLength;
   size_t start = cachedGCThings_.Length();
@@ -1708,9 +1708,9 @@ bool CompilationSyntaxParseCache::copyClosedOverBindings(
   length -= start;
   start += offset;
 
-  // Atoms from the lazy.context (CompilationStencil) are not registered in the
-  // the parseAtoms table. Thus we create a new span which will contain all the
-  // interned atoms.
+  
+  
+  
   TaggedParserAtomIndex* closedOverBindings =
       alloc.newArrayUninitialized<TaggedParserAtomIndex>(length);
   if (!closedOverBindings) {
@@ -1896,13 +1896,13 @@ Scope* ScopeStencil::enclosingExistingScope(
     return result;
   }
 
-  // When creating a scope based on the input and a gc-output, we assume that
-  // the scope stencil that we are looking at has not been merged into another
-  // stencil, and thus that we still have the compilation input of the stencil.
-  //
-  // Otherwise, if this was in the case of an input generated from a Stencil
-  // instead of live-gc values, we would not know its associated gcOutput as it
-  // might not even have one yet.
+  
+  
+  
+  
+  
+  
+  
   return input.enclosingScope.variant().as<Scope*>();
 }
 
@@ -1974,7 +1974,7 @@ Scope* ScopeStencil::createScope(JSContext* cx, CompilationAtomCache& atomCache,
     }
     case ScopeKind::WasmFunction:
     case ScopeKind::WasmInstance: {
-      // ScopeStencil does not support WASM
+      
       break;
     }
   }
@@ -2026,12 +2026,12 @@ static bool CreateLazyScript(JSContext* cx,
   return true;
 }
 
-// Parser-generated functions with the same prototype will share the same shape.
-// By computing the correct values up front, we can save a lot of time in the
-// Object creation code. For simplicity, we focus only on plain synchronous
-// functions which are by far the most common.
-//
-// NOTE: Keep this in sync with `js::NewFunctionWithProto`.
+
+
+
+
+
+
 static JSFunction* CreateFunctionFast(JSContext* cx,
                                       CompilationAtomCache& atomCache,
                                       Handle<SharedShape*> shape,
@@ -2087,8 +2087,8 @@ static JSFunction* CreateFunction(JSContext* cx,
           ? FunctionAsyncKind::AsyncFunction
           : FunctionAsyncKind::SyncFunction;
 
-  // Determine the new function's proto. This must be done for singleton
-  // functions.
+  
+  
   RootedObject proto(cx);
   if (!GetFunctionPrototype(cx, generatorKind, asyncKind, &proto)) {
     return nullptr;
@@ -2155,8 +2155,8 @@ static bool InstantiateScriptSourceObject(JSContext* cx,
   return true;
 }
 
-// Instantiate ModuleObject. Further initialization is done after the associated
-// BaseScript is instantiated in InstantiateTopLevel.
+
+
 static bool InstantiateModuleObject(JSContext* cx, FrontendContext* fc,
                                     CompilationAtomCache& atomCache,
                                     const CompilationStencil& stencil,
@@ -2172,7 +2172,7 @@ static bool InstantiateModuleObject(JSContext* cx, FrontendContext* fc,
   return stencil.moduleMetadata->initModule(cx, fc, atomCache, module);
 }
 
-// Instantiate JSFunctions for each FunctionBox.
+
 static bool InstantiateFunctions(JSContext* cx, FrontendContext* fc,
                                  CompilationAtomCache& atomCache,
                                  const CompilationStencil& stencil,
@@ -2181,19 +2181,19 @@ static bool InstantiateFunctions(JSContext* cx, FrontendContext* fc,
 
   MOZ_ASSERT(gcOutput.functions.length() == stencil.scriptData.size());
 
-  // Most JSFunctions will be have the same Shape so we can compute it now to
-  // allow fast object creation. Generators / Async will use the slow path
-  // instead.
+  
+  
+  
   Rooted<SharedShape*> functionShape(
       cx, GlobalObject::getFunctionShapeWithDefaultProto(
-              cx, /* extended = */ false));
+              cx,  false));
   if (!functionShape) {
     return false;
   }
 
   Rooted<SharedShape*> extendedShape(
       cx, GlobalObject::getFunctionShapeWithDefaultProto(
-              cx, /* extended = */ true));
+              cx,  true));
   if (!extendedShape) {
     return false;
   }
@@ -2206,7 +2206,7 @@ static bool InstantiateFunctions(JSContext* cx, FrontendContext* fc,
 
     MOZ_ASSERT(!item.function);
 
-    // Plain functions can use a fast path.
+    
     bool useFastPath =
         !scriptExtra.immutableFlags.hasFlag(ImmutableFlags::IsAsync) &&
         !scriptExtra.immutableFlags.hasFlag(ImmutableFlags::IsGenerator) &&
@@ -2228,8 +2228,8 @@ static bool InstantiateFunctions(JSContext* cx, FrontendContext* fc,
       return false;
     }
 
-    // Self-hosted functions may have a canonical name to use when instantiating
-    // into other realms.
+    
+    
     if (scriptStencil.hasSelfHostedCanonicalName()) {
       JSAtom* canonicalName = atomCache.getExistingAtomAt(
           cx, scriptStencil.selfHostedCanonicalName());
@@ -2242,25 +2242,25 @@ static bool InstantiateFunctions(JSContext* cx, FrontendContext* fc,
   return true;
 }
 
-// Instantiate Scope for each ScopeStencil.
-//
-// This should be called after InstantiateFunctions, given FunctionScope needs
-// associated JSFunction pointer, and also should be called before
-// InstantiateScriptStencils, given JSScript needs Scope pointer in gc things.
+
+
+
+
+
 static bool InstantiateScopes(JSContext* cx, CompilationInput& input,
                               const CompilationStencil& stencil,
                               CompilationGCOutput& gcOutput) {
-  // While allocating Scope object from ScopeStencil, Scope object for the
-  // enclosing Scope should already be allocated.
-  //
-  // Enclosing scope of ScopeStencil can be either ScopeStencil or Scope*
-  // pointer.
-  //
-  // If the enclosing scope is ScopeStencil, it's guaranteed to be earlier
-  // element in stencil.scopeData, because enclosing_ field holds
-  // index into it, and newly created ScopeStencil is pushed back to the array.
-  //
-  // If the enclosing scope is Scope*, it's CompilationInput.enclosingScope.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   MOZ_ASSERT(stencil.scopeData.size() == stencil.scopeNames.size());
   size_t scopeCount = stencil.scopeData.size();
@@ -2276,9 +2276,9 @@ static bool InstantiateScopes(JSContext* cx, CompilationInput& input,
   return true;
 }
 
-// Instantiate js::BaseScripts from ScriptStencils for inner functions of the
-// compilation. Note that standalone functions and functions being delazified
-// are handled below with other top-levels.
+
+
+
 static bool InstantiateScriptStencils(JSContext* cx,
                                       CompilationAtomCache& atomCache,
                                       const CompilationStencil& stencil,
@@ -2293,11 +2293,11 @@ static bool InstantiateScriptStencils(JSContext* cx,
     fun = item.function;
     auto index = item.index;
     if (scriptStencil.hasSharedData()) {
-      // If the function was not referenced by enclosing script's bytecode, we
-      // do not generate a BaseScript for it. For example, `(function(){});`.
-      //
-      // `wasEmittedByEnclosingScript` is false also for standalone
-      // functions. They are handled in InstantiateTopLevel.
+      
+      
+      
+      
+      
       if (!scriptStencil.wasEmittedByEnclosingScript()) {
         continue;
       }
@@ -2326,15 +2326,15 @@ static bool InstantiateScriptStencils(JSContext* cx,
   return true;
 }
 
-// Instantiate the Stencil for the top-level script of the compilation. This
-// includes standalone functions and functions being delazified.
+
+
 static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
                                 const CompilationStencil& stencil,
                                 CompilationGCOutput& gcOutput) {
   const ScriptStencil& scriptStencil =
       stencil.scriptData[CompilationStencil::TopLevelIndex];
 
-  // Top-level asm.js does not generate a JSScript.
+  
   if (scriptStencil.functionFlags.isAsmJSNative()) {
     return true;
   }
@@ -2376,7 +2376,7 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
   const ScriptStencilExtra& scriptExtra =
       stencil.scriptExtra[CompilationStencil::TopLevelIndex];
 
-  // Finish initializing the ModuleObject if needed.
+  
   if (scriptExtra.isModule()) {
     RootedScript script(cx, gcOutput.script);
     Rooted<ModuleObject*> module(cx, gcOutput.module);
@@ -2397,10 +2397,10 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInput& input,
   return true;
 }
 
-// When a function is first referenced by enclosing script's bytecode, we need
-// to update it with information determined by the BytecodeEmitter. This applies
-// to both initial and delazification parses. The functions being update may or
-// may not have bytecode at this point.
+
+
+
+
 static void UpdateEmittedInnerFunctions(JSContext* cx,
                                         CompilationAtomCache& atomCache,
                                         const CompilationStencil& stencil,
@@ -2415,18 +2415,18 @@ static void UpdateEmittedInnerFunctions(JSContext* cx,
 
     if (scriptStencil.functionFlags.isAsmJSNative() ||
         fun->baseScript()->hasBytecode()) {
-      // Non-lazy inner functions don't use the enclosingScope_ field.
+      
       MOZ_ASSERT(!scriptStencil.hasLazyFunctionEnclosingScopeIndex());
     } else {
-      // Apply updates from FunctionEmitter::emitLazy().
+      
       BaseScript* script = fun->baseScript();
 
       ScopeIndex index = scriptStencil.lazyFunctionEnclosingScopeIndex();
       Scope* scope = gcOutput.getScopeNoBaseIndex(index);
       script->setEnclosingScope(scope);
 
-      // Inferred and Guessed names are computed by BytecodeEmitter and so may
-      // need to be applied to existing JSFunctions during delazification.
+      
+      
       if (fun->fullDisplayAtom() == nullptr) {
         JSAtom* funcAtom = nullptr;
         if (scriptStencil.functionFlags.hasInferredName() ||
@@ -2446,8 +2446,8 @@ static void UpdateEmittedInnerFunctions(JSContext* cx,
   }
 }
 
-// During initial parse we must link lazy-functions-inside-lazy-functions to
-// their enclosing script.
+
+
 static void LinkEnclosingLazyScript(const CompilationStencil& stencil,
                                     CompilationGCOutput& gcOutput) {
   for (auto item :
@@ -2481,10 +2481,10 @@ static void LinkEnclosingLazyScript(const CompilationStencil& stencil,
         continue;
       }
 
-      // Check for the case that the inner function has the base script flag,
-      // but still doesn't have the actual base script pointer.
-      // `baseScript` method asserts the pointer itself, so no extra MOZ_ASSERT
-      // here.
+      
+      
+      
+      
       if (!innerFun->baseScript()) {
         continue;
       }
@@ -2495,8 +2495,8 @@ static void LinkEnclosingLazyScript(const CompilationStencil& stencil,
 }
 
 #ifdef DEBUG
-// Some fields aren't used in delazification, given the target functions and
-// scripts are already instantiated, but they still should match.
+
+
 static void AssertDelazificationFieldsMatch(const CompilationStencil& stencil,
                                             CompilationGCOutput& gcOutput) {
   for (auto item :
@@ -2507,7 +2507,7 @@ static void AssertDelazificationFieldsMatch(const CompilationStencil& stencil,
 
     MOZ_ASSERT(scriptExtra == nullptr);
 
-    // Names are updated by UpdateInnerFunctions.
+    
     constexpr uint16_t HAS_INFERRED_NAME =
         uint16_t(FunctionFlags::Flags::HAS_INFERRED_NAME);
     constexpr uint16_t HAS_GUESSED_ATOM =
@@ -2521,18 +2521,18 @@ static void AssertDelazificationFieldsMatch(const CompilationStencil& stencil,
                (scriptStencil.functionFlags.toRaw() |
                 acceptableDifferenceForFunction));
 
-    // Delazification shouldn't delazify inner scripts.
+    
     MOZ_ASSERT_IF(item.index == CompilationStencil::TopLevelIndex,
                   scriptStencil.hasSharedData());
     MOZ_ASSERT_IF(item.index > CompilationStencil::TopLevelIndex,
                   !scriptStencil.hasSharedData());
   }
 }
-#endif  // DEBUG
+#endif  
 
-// When delazifying, use the existing JSFunctions. The initial and delazifying
-// parse are required to generate the same sequence of functions for lazy
-// parsing to work at all.
+
+
+
 static void FunctionsFromExistingLazy(CompilationInput& input,
                                       CompilationGCOutput& gcOutput) {
   MOZ_ASSERT(!gcOutput.functions[0]);
@@ -2554,7 +2554,7 @@ void CompilationStencil::borrowFromExtensibleCompilationStencil(
   canLazilyParse = extensibleStencil.canLazilyParse;
   functionKey = extensibleStencil.functionKey;
 
-  // Borrow the vector content as span.
+  
   scriptData = extensibleStencil.scriptData;
   scriptExtra = extensibleStencil.scriptExtra;
 
@@ -2567,13 +2567,13 @@ void CompilationStencil::borrowFromExtensibleCompilationStencil(
   bigIntData = extensibleStencil.bigIntData;
   objLiteralData = extensibleStencil.objLiteralData;
 
-  // Borrow the parser atoms as span.
+  
   parserAtomData = extensibleStencil.parserAtoms.entries_;
 
-  // Borrow container.
+  
   sharedData.setBorrow(&extensibleStencil.sharedData);
 
-  // Share ref-counted data.
+  
   source = extensibleStencil.source;
   asmJS = extensibleStencil.asmJS;
   moduleMetadata = extensibleStencil.moduleMetadata;
@@ -2622,7 +2622,7 @@ CompilationStencil::CompilationStencil(
 #endif
 }
 
-/* static */
+
 bool CompilationStencil::instantiateStencils(JSContext* cx,
                                              CompilationInput& input,
                                              const CompilationStencil& stencil,
@@ -2635,37 +2635,37 @@ bool CompilationStencil::instantiateStencils(JSContext* cx,
   return instantiateStencilAfterPreparation(cx, input, stencil, gcOutput);
 }
 
-/* static */
+
 bool CompilationStencil::instantiateStencilAfterPreparation(
     JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
     CompilationGCOutput& gcOutput) {
-  // Distinguish between the initial (possibly lazy) compile and any subsequent
-  // delazification compiles. Delazification will update existing GC things.
+  
+  
   bool isInitialParse = stencil.isInitialStencil();
   MOZ_ASSERT(stencil.isInitialStencil() == input.isInitialStencil());
 
-  // Assert the consistency between the compile option and the target global.
+  
   MOZ_ASSERT_IF(cx->realm()->behaviors().discardSource(),
                 !stencil.canLazilyParse);
 
   CompilationAtomCache& atomCache = input.atomCache;
   const JS::InstantiateOptions options(input.options);
 
-  // Phase 1: Instantiate JSAtom/JSStrings.
+  
   AutoReportFrontendContext fc(cx);
   if (!InstantiateAtoms(cx, &fc, atomCache, stencil)) {
     return false;
   }
 
-  // Phase 2: Instantiate ScriptSourceObject, ModuleObject, JSFunctions.
+  
   if (isInitialParse) {
     if (!InstantiateScriptSourceObject(cx, options, stencil, gcOutput)) {
       return false;
     }
 
     if (stencil.moduleMetadata) {
-      // The enclosing script of a module is always the global scope. Fetch the
-      // scope of the current global and update input data.
+      
+      
       MOZ_ASSERT(input.enclosingScope.isNull());
       input.enclosingScope = InputScope(&cx->global()->emptyGlobalScope());
       MOZ_ASSERT(input.enclosingScope.environmentChainLength() ==
@@ -2683,9 +2683,9 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
     MOZ_ASSERT(
         stencil.scriptData[CompilationStencil::TopLevelIndex].isFunction());
 
-    // FunctionKey is used when caching to map a delazification stencil to a
-    // specific lazy script. It is not used by instantiation, but we should
-    // ensure it is correctly defined.
+    
+    
+    
     MOZ_ASSERT(stencil.functionKey == input.extent().toFunctionKey());
 
     FunctionsFromExistingLazy(input, gcOutput);
@@ -2696,26 +2696,26 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
 #endif
   }
 
-  // Phase 3: Instantiate js::Scopes.
+  
   if (!InstantiateScopes(cx, input, stencil, gcOutput)) {
     return false;
   }
 
-  // Phase 4: Instantiate (inner) BaseScripts.
+  
   if (isInitialParse) {
     if (!InstantiateScriptStencils(cx, atomCache, stencil, gcOutput)) {
       return false;
     }
   }
 
-  // Phase 5: Finish top-level handling
+  
   if (!InstantiateTopLevel(cx, input, stencil, gcOutput)) {
     return false;
   }
 
-  // !! Must be infallible from here forward !!
+  
 
-  // Phase 6: Update lazy scripts.
+  
   if (stencil.canLazilyParse) {
     UpdateEmittedInnerFunctions(cx, atomCache, stencil, gcOutput);
 
@@ -2727,10 +2727,10 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
   return true;
 }
 
-// The top-level self-hosted script is created and executed in each realm that
-// needs it. While the stencil has a gcthings list for the various top-level
-// functions, we use special machinery to create them on demand. So instead we
-// use a placeholder JSFunction that should never be called.
+
+
+
+
 static bool SelfHostedDummyFunction(JSContext* cx, unsigned argc,
                                     JS::Value* vp) {
   MOZ_CRASH("Self-hosting top-level should not use functions directly");
@@ -2740,8 +2740,8 @@ bool CompilationStencil::instantiateSelfHostedAtoms(
     JSContext* cx, AtomSet& atomSet, CompilationAtomCache& atomCache) const {
   MOZ_ASSERT(isInitialStencil());
 
-  // We must instantiate atoms during startup so they can be made permanent
-  // across multiple runtimes.
+  
+  
   AutoReportFrontendContext fc(cx);
   return InstantiateMarkedAtomsAsPermanent(cx, &fc, atomSet, parserAtomData,
                                            atomCache);
@@ -2758,10 +2758,10 @@ JSScript* CompilationStencil::instantiateSelfHostedTopLevelForRealm(
     return nullptr;
   }
 
-  // The top-level script has ScriptIndex references in its gcthings list, but
-  // we do not want to instantiate those functions here since they are instead
-  // created on demand from the stencil. Create a dummy function and populate
-  // the functions array of the CompilationGCOutput with references to it.
+  
+  
+  
+  
   RootedFunction dummy(
       cx, NewNativeFunction(cx, SelfHostedDummyFunction, 0, nullptr));
   if (!dummy) {
@@ -2783,6 +2783,8 @@ JSScript* CompilationStencil::instantiateSelfHostedTopLevelForRealm(
 JSFunction* CompilationStencil::instantiateSelfHostedLazyFunction(
     JSContext* cx, CompilationAtomCache& atomCache, ScriptIndex index,
     Handle<JSAtom*> name) {
+  MOZ_ASSERT(cx->zone()->suppressAllocationMetadataBuilder);
+
   GeneratorKind generatorKind = scriptExtra[index].immutableFlags.hasFlag(
                                     ImmutableScriptFlagsEnum::IsGenerator)
                                     ? GeneratorKind::Generator
@@ -2794,11 +2796,11 @@ JSFunction* CompilationStencil::instantiateSelfHostedLazyFunction(
 
   Rooted<JSAtom*> funName(cx);
   if (scriptData[index].hasSelfHostedCanonicalName()) {
-    // SetCanonicalName was used to override the name.
+    
     funName = atomCache.getExistingAtomAt(
         cx, scriptData[index].selfHostedCanonicalName());
   } else if (name) {
-    // Our caller has a name it wants to use.
+    
     funName = name;
   } else {
     MOZ_ASSERT(scriptData[index].functionAtom);
@@ -2833,9 +2835,9 @@ JSFunction* CompilationStencil::instantiateSelfHostedLazyFunction(
 bool CompilationStencil::delazifySelfHostedFunction(
     JSContext* cx, CompilationAtomCache& atomCache, ScriptIndexRange range,
     HandleFunction fun) {
-  // Determine the equivalent ScopeIndex range by looking at the outermost scope
-  // of the scripts defining the range. Take special care if this is the last
-  // script in the list.
+  
+  
+  
   auto getOutermostScope = [this](ScriptIndex scriptIndex) -> ScopeIndex {
     MOZ_ASSERT(scriptData[scriptIndex].hasSharedData());
     auto gcthings = scriptData[scriptIndex].gcthings(*this);
@@ -2846,8 +2848,8 @@ bool CompilationStencil::delazifySelfHostedFunction(
                               ? getOutermostScope(range.limit)
                               : ScopeIndex(scopeData.size());
 
-  // Prepare to instantiate by allocating the output arrays. We also set a base
-  // index to avoid allocations in most cases.
+  
+  
   AutoReportFrontendContext fc(cx);
   Rooted<CompilationGCOutput> gcOutput(cx);
   if (!gcOutput.get().ensureAllocatedWithBaseIndex(
@@ -2855,13 +2857,13 @@ bool CompilationStencil::delazifySelfHostedFunction(
     return false;
   }
 
-  // Phase 1: Instantiate JSAtoms.
-  //  NOTE: The self-hosted atoms are all "permanent" and the
-  //        CompilationAtomCache is already stored on the JSRuntime.
+  
+  
+  
 
-  // Phase 2: Instantiate ScriptSourceObject, ModuleObject, JSFunctions.
+  
 
-  // Get the corresponding ScriptSourceObject to use in current realm.
+  
   gcOutput.get().sourceObject = SelfHostingScriptSourceObject(cx);
   if (!gcOutput.get().sourceObject) {
     return false;
@@ -2869,11 +2871,11 @@ bool CompilationStencil::delazifySelfHostedFunction(
 
   size_t instantiatedFunIndex = 0;
 
-  // Delazification target function.
+  
   gcOutput.get().functions[instantiatedFunIndex++] = fun;
 
-  // Allocate inner functions. Self-hosted functions do not allocate these with
-  // the initial function.
+  
+  
   for (size_t i = range.start + 1; i < range.limit; i++) {
     JSFunction* innerFun = CreateFunction(cx, atomCache, *this, scriptData[i],
                                           scriptExtra[i], ScriptIndex(i));
@@ -2883,11 +2885,11 @@ bool CompilationStencil::delazifySelfHostedFunction(
     gcOutput.get().functions[instantiatedFunIndex++] = innerFun;
   }
 
-  // Phase 3: Instantiate js::Scopes.
-  // NOTE: When the enclosing scope is not a stencil, directly use the
-  //       `emptyGlobalScope` instead of reading from CompilationInput. This is
-  //       a special case for self-hosted delazification that allows us to reuse
-  //       the CompilationInput between different realms.
+  
+  
+  
+  
+  
   size_t instantiatedScopeIndex = 0;
   for (size_t i = scopeIndex; i < scopeLimit; i++) {
     ScopeStencil& data = scopeData[i];
@@ -2903,7 +2905,7 @@ bool CompilationStencil::delazifySelfHostedFunction(
     gcOutput.get().scopes[instantiatedScopeIndex++] = scope;
   }
 
-  // Phase 4: Instantiate (inner) BaseScripts.
+  
   ScriptIndex innerStart(range.start + 1);
   for (size_t i = innerStart; i < range.limit; i++) {
     if (!JSScript::fromStencil(cx, atomCache, *this, gcOutput.get(),
@@ -2912,27 +2914,27 @@ bool CompilationStencil::delazifySelfHostedFunction(
     }
   }
 
-  // Phase 5: Finish top-level handling
-  // NOTE: We do not have a `CompilationInput` handy here, so avoid using the
-  //       `InstantiateTopLevel` helper and directly create the JSScript. Our
-  //       caller also handles the `AllowRelazify` flag for us since self-hosted
-  //       delazification is a special case.
+  
+  
+  
+  
+  
   if (!JSScript::fromStencil(cx, atomCache, *this, gcOutput.get(),
                              range.start)) {
     return false;
   }
 
-  // Phase 6: Update lazy scripts.
-  //  NOTE: Self-hosting is always fully parsed so there is nothing to do here.
+  
+  
 
   return true;
 }
 
-/* static */
+
 bool CompilationStencil::prepareForInstantiate(
     FrontendContext* fc, CompilationAtomCache& atomCache,
     const CompilationStencil& stencil, CompilationGCOutput& gcOutput) {
-  // Allocate the `gcOutput` arrays.
+  
   if (!gcOutput.ensureAllocated(fc, stencil.scriptData.size(),
                                 stencil.scopeData.size())) {
     return false;
@@ -2941,7 +2943,7 @@ bool CompilationStencil::prepareForInstantiate(
   return atomCache.allocate(fc, stencil.parserAtomData.size());
 }
 
-/* static */
+
 bool CompilationStencil::prepareForInstantiate(
     FrontendContext* fc, const CompilationStencil& stencil,
     PreallocatedCompilationGCOutput& gcOutput) {
@@ -3040,7 +3042,7 @@ BorrowingCompilationStencil::BorrowingCompilationStencil(
 
 SharedDataContainer::~SharedDataContainer() {
   if (isEmpty()) {
-    // Nothing to do.
+    
   } else if (isSingle()) {
     asSingle()->Release();
   } else if (isVector()) {
@@ -3049,7 +3051,7 @@ SharedDataContainer::~SharedDataContainer() {
     js_delete(asMap());
   } else {
     MOZ_ASSERT(isBorrow());
-    // Nothing to do.
+    
   }
 }
 
@@ -3087,12 +3089,12 @@ bool SharedDataContainer::prepareStorageFor(FrontendContext* fc,
     return true;
   }
 
-  // If the ratio of scripts with bytecode is small, allocating the Vector
-  // storage with the number of all scripts isn't space-efficient.
-  // In that case use HashMap instead.
-  //
-  // In general, we expect either all scripts to contain bytecode (priviledge
-  // and self-hosted), or almost none to (eg standard lazy parsing output).
+  
+  
+  
+  
+  
+  
   constexpr size_t thresholdRatio = 8;
   bool useHashMap = nonLazyScriptCount < allScriptCount / thresholdRatio;
   if (useHashMap) {
@@ -3125,7 +3127,7 @@ bool SharedDataContainer::cloneFrom(FrontendContext* fc,
   }
 
   if (other.isSingle()) {
-    // As we clone, we add an extra reference.
+    
     RefPtr<SharedImmutableScriptData> ref(other.asSingle());
     setSingle(ref.forget());
   } else if (other.isVector()) {
@@ -3187,7 +3189,7 @@ js::SharedImmutableScriptData* SharedDataContainer::get(
 bool SharedDataContainer::convertFromSingleToMap(FrontendContext* fc) {
   MOZ_ASSERT(isSingle());
 
-  // Use a temporary container so that on OOM we do not break the stencil.
+  
   SharedDataContainer other;
   if (!other.initMap(fc)) {
     return false;
@@ -3218,14 +3220,14 @@ bool SharedDataContainer::addAndShare(FrontendContext* fc, ScriptIndex index,
 
   if (isVector()) {
     auto& vec = *asVector();
-    // Resized by SharedDataContainer::prepareStorageFor.
+    
     vec[index] = data;
     return SharedImmutableScriptData::shareScriptData(fc, vec[index]);
   }
 
   MOZ_ASSERT(isMap());
   auto& map = *asMap();
-  // Reserved by SharedDataContainer::prepareStorageFor.
+  
   map.putNewInfallible(index, data);
   auto p = map.lookup(index);
   MOZ_ASSERT(p);
@@ -3244,14 +3246,14 @@ bool SharedDataContainer::addExtraWithoutShare(
   }
 
   if (isVector()) {
-    // SharedDataContainer::prepareStorageFor allocates space for all scripts.
+    
     (*asVector())[index] = data;
     return true;
   }
 
   MOZ_ASSERT(isMap());
-  // SharedDataContainer::prepareStorageFor doesn't allocate space for
-  // delazification, and this can fail.
+  
+  
   if (!asMap()->putNew(index, data)) {
     ReportOutOfMemory(fc);
     return false;
@@ -3316,7 +3318,7 @@ void ExtensibleCompilationStencil::assertNoExternalDependency() const {
 
   MOZ_ASSERT(!sharedData.isBorrow());
 }
-#endif  // DEBUG
+#endif  
 
 template <typename T, typename VectorT>
 [[nodiscard]] bool CopySpanToVector(FrontendContext* fc, VectorT& vec,
@@ -3341,7 +3343,7 @@ template <typename T, typename IntoSpanT, size_t Inline, typename AllocPolicy>
   return CopySpanToVector(fc, vec, span);
 }
 
-// Span and Vector do not share the same method names.
+
 template <typename T, size_t Inline, typename AllocPolicy>
 size_t GetLength(const mozilla::Vector<T, Inline, AllocPolicy>& vec) {
   return vec.length();
@@ -3351,7 +3353,7 @@ size_t GetLength(const mozilla::Span<T>& span) {
   return span.Length();
 }
 
-// Copy scope names from `src` into `alloc`, and returns the allocated data.
+
 BaseParserScopeData* CopyScopeData(FrontendContext* fc, LifoAlloc& alloc,
                                    ScopeKind kind,
                                    const BaseParserScopeData* src) {
@@ -3414,7 +3416,7 @@ bool ExtensibleCompilationStencil::cloneFromImpl(FrontendContext* fc,
     return false;
   }
 
-  // If CompilationStencil has external dependency, peform deep copy.
+  
 
   size_t bigIntSize = GetLength(other.bigIntData);
   if (!bigIntData.resize(bigIntSize)) {
@@ -3444,8 +3446,8 @@ bool ExtensibleCompilationStencil::cloneFromImpl(FrontendContext* fc,
                                          data.flags(), data.propertyCount());
   }
 
-  // Regardless of whether CompilationStencil has external dependency or not,
-  // ParserAtoms should be interned, to populate internal HashMap.
+  
+  
   for (const auto* entry : other.parserAtomsSpan()) {
     if (!entry) {
       if (!parserAtoms.addPlaceholder(fc)) {
@@ -3460,15 +3462,15 @@ bool ExtensibleCompilationStencil::cloneFromImpl(FrontendContext* fc,
     }
   }
 
-  // We copy the stencil and increment the reference count of each
-  // SharedImmutableScriptData.
+  
+  
   if (!sharedData.cloneFrom(fc, other.sharedData)) {
     return false;
   }
 
-  // Note: moduleMetadata and asmJS are known after the first parse, and are
-  // not mutated by any delazifications later on. Thus we can safely increment
-  // the reference counter and keep these as-is.
+  
+  
+  
   moduleMetadata = other.moduleMetadata;
   asmJS = other.asmJS;
 
@@ -3544,8 +3546,8 @@ bool ExtensibleCompilationStencil::steal(FrontendContext* fc,
   MOZ_ASSERT(other->refCount == 1);
 #endif
 
-  // If CompilationStencil has no external dependency,
-  // steal LifoAlloc and perform shallow copy.
+  
+  
   alloc.steal(&other->alloc);
 
   if (!CopySpanToVector(fc, scriptData, other->scriptData)) {
@@ -3579,8 +3581,8 @@ bool ExtensibleCompilationStencil::steal(FrontendContext* fc,
     return false;
   }
 
-  // Regardless of whether CompilationStencil has external dependency or not,
-  // ParserAtoms should be interned, to populate internal HashMap.
+  
+  
   for (const auto* entry : other->parserAtomData) {
     if (!entry) {
       if (!parserAtoms.addPlaceholder(fc)) {
@@ -3622,8 +3624,8 @@ mozilla::Span<TaggedScriptThingIndex> ScriptStencil::gcthings(
 bool BigIntStencil::init(FrontendContext* fc, LifoAlloc& alloc,
                          const mozilla::Span<const char16_t> buf) {
 #ifdef DEBUG
-  // Assert we have no separators; if we have a separator then the algorithm
-  // used in BigInt::literalIsZero will be incorrect.
+  
+  
   for (char16_t c : buf) {
     MOZ_ASSERT(c != '_');
   }
@@ -3701,7 +3703,7 @@ void frontend::DumpTaggedParserAtomIndex(js::JSONPrinter& json,
         }
 
       default:
-        // This includes tiny WellKnownAtomId atoms, which is invalid.
+        
         json.property("index", size_t(index));
         break;
     }
@@ -3777,7 +3779,7 @@ void frontend::DumpTaggedParserAtomIndexNoQuote(
         }
 
       default:
-        // This includes tiny WellKnownAtomId atoms, which is invalid.
+        
         out.printf("WellKnown#%zu", size_t(index));
         break;
     }
@@ -4092,7 +4094,7 @@ static void DumpModuleEntryVectorItems(
       DumpTaggedParserAtomIndex(json, entry.exportName, stencil);
       json.endObject();
     }
-    // TODO: Dump assertions.
+    
     json.endObject();
   }
 }
@@ -4709,7 +4711,7 @@ void CompilationInput::dumpFields(js::JSONPrinter& json) const {
     json.endObject();
   }
 
-  // TODO: Support printing the atomCache and the source fields.
+  
 }
 
 void CompilationStencil::dump() const {
@@ -4831,7 +4833,7 @@ void ExtensibleCompilationStencil::dumpAtom(TaggedParserAtomIndex index) {
   borrowingStencil.dumpAtom(index);
 }
 
-#endif  // defined(DEBUG) || defined(JS_JITSPEW)
+#endif  
 
 JSString* CompilationAtomCache::getExistingStringAt(
     ParserAtomIndex index) const {
@@ -4931,7 +4933,7 @@ bool CompilationAtomCache::allocate(FrontendContext* fc, size_t length) {
 
 void CompilationAtomCache::stealBuffer(AtomCacheVector& atoms) {
   atoms_ = std::move(atoms);
-  // Destroy elements, without unreserving.
+  
   atoms_.clear();
 }
 
@@ -5031,7 +5033,7 @@ void CompilationState::rewind(
     }
     MOZ_ASSERT(asmJS->moduleMap.count() == pos.asmJSCount);
   }
-  // scriptExtra is empty for delazification.
+  
   if (scriptExtra.length()) {
     MOZ_ASSERT(scriptExtra.length() == scriptData.length());
     scriptExtra.shrinkTo(pos.scriptDataLength);
@@ -5057,13 +5059,13 @@ bool CompilationStencilMerger::buildFunctionKeyToIndex(FrontendContext* fc) {
     const auto& extra = initial_->scriptExtra[i];
     auto key = extra.extent.toFunctionKey();
 
-    // There can be multiple ScriptStencilExtra with same extent if
-    // the function is parsed multiple times because of rewind for
-    // arrow function, and in that case the last one's index should be used.
-    // Overwrite with the last one.
-    //
-    // Already reserved above, but OOMTest can hit failure mode in
-    // HashTable::add.
+    
+    
+    
+    
+    
+    
+    
     if (!functionKeyToInitialScriptIndex_.put(key, ScriptIndex(i))) {
       ReportOutOfMemory(fc);
       return false;
@@ -5114,10 +5116,10 @@ static void MergeScriptStencil(ScriptStencil& dest, const ScriptStencil& src,
                                AtomIndexMapFunc mapAtomIndex,
                                ScopeIndexMapFunc mapScopeIndex,
                                bool isTopLevel) {
-  // If this function was lazy, all inner functions should have been lazy.
+  
   MOZ_ASSERT(!dest.hasSharedData());
 
-  // If the inner lazy function is skipped, gcThingsLength is empty.
+  
   if (src.gcThingsLength) {
     dest.gcThingsOffset = mapGCThingIndex(src.gcThingsOffset);
     dest.gcThingsLength = src.gcThingsLength;
@@ -5129,17 +5131,17 @@ static void MergeScriptStencil(ScriptStencil& dest, const ScriptStencil& src,
 
   if (!dest.hasLazyFunctionEnclosingScopeIndex() &&
       src.hasLazyFunctionEnclosingScopeIndex()) {
-    // Both enclosing function and this function were lazy, and
-    // now enclosing function is non-lazy and this function is still lazy.
+    
+    
     dest.setLazyFunctionEnclosingScopeIndex(
         mapScopeIndex(src.lazyFunctionEnclosingScopeIndex()));
   } else if (dest.hasLazyFunctionEnclosingScopeIndex() &&
              !src.hasLazyFunctionEnclosingScopeIndex()) {
-    // The enclosing function was non-lazy and this function was lazy, and
-    // now this function is non-lazy.
+    
+    
     dest.resetHasLazyFunctionEnclosingScopeIndexAfterStencilMerge();
   } else {
-    // The enclosing function is still lazy.
+    
     MOZ_ASSERT(!dest.hasLazyFunctionEnclosingScopeIndex());
     MOZ_ASSERT(!src.hasLazyFunctionEnclosingScopeIndex());
   }
@@ -5158,19 +5160,19 @@ static void MergeScriptStencil(ScriptStencil& dest, const ScriptStencil& src,
       (dest.functionFlags.toRaw() | acceptableDifferenceForNonLazy) ==
           (src.functionFlags.toRaw() | acceptableDifferenceForNonLazy));
 
-  // NOTE: Currently we don't delazify inner functions.
+  
   MOZ_ASSERT_IF(!isTopLevel,
                 (dest.functionFlags.toRaw() | acceptableDifferenceForLazy) ==
                     (src.functionFlags.toRaw() | acceptableDifferenceForLazy));
-#endif  // DEBUG
+#endif  
   dest.functionFlags = src.functionFlags;
 
-  // Other flags.
+  
 
   if (src.wasEmittedByEnclosingScript()) {
-    // NOTE: the top-level function of the delazification have
-    //       src.wasEmittedByEnclosingScript() == false, and that shouldn't
-    //       be copied.
+    
+    
+    
     dest.setWasEmittedByEnclosingScript();
   }
 
@@ -5191,47 +5193,47 @@ bool CompilationStencilMerger::addDelazification(
   auto& destFun = initial_->scriptData[delazifiedFunctionIndex];
 
   if (destFun.hasSharedData()) {
-    // If the function was already non-lazy, it means the following happened:
-    //   A. delazified twice within single incremental encoding
-    //     1. this function is lazily parsed
-    //     2. incremental encoding is started
-    //     3. this function is delazified, encoded, and merged
-    //     4. this function is relazified
-    //     5. this function is delazified, encoded, and merged
-    //
-    //   B. delazified twice across decode
-    //     1. this function is lazily parsed
-    //     2. incremental encoding is started
-    //     3. this function is delazified, encoded, and merged
-    //     4. incremental encoding is finished
-    //     5. decoded
-    //     6. incremental encoding is started
-    //        here, this function is non-lazy
-    //     7. this function is relazified
-    //     8. this function is delazified, encoded, and merged
-    //
-    // A can happen with public API.
-    //
-    // B cannot happen with public API, but can happen if incremental
-    // encoding at step B.6 is explicitly started by internal function.
-    // See Evaluate and StartIncrementalEncoding in js/src/shell/js.cpp.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     return true;
   }
 
-  // If any failure happens, the initial stencil is left in the broken state.
-  // Immediately discard it.
+  
+  
   auto failureCase = mozilla::MakeScopeExit([&] { initial_.reset(); });
 
   mozilla::Maybe<ScopeIndex> functionEnclosingScope;
   if (destFun.hasLazyFunctionEnclosingScopeIndex()) {
-    // lazyFunctionEnclosingScopeIndex_ can be Nothing if this is
-    // top-level function.
+    
+    
     functionEnclosingScope =
         mozilla::Some(destFun.lazyFunctionEnclosingScopeIndex());
   }
 
-  // A map from ParserAtomIndex in delazification to TaggedParserAtomIndex
-  // in initial_.
+  
+  
   AtomIndexMap atomIndexMap;
   if (!buildAtomIndexMap(fc, delazification, atomIndexMap)) {
     return false;
@@ -5250,13 +5252,13 @@ bool CompilationStencilMerger::addDelazification(
   size_t objLiteralOffset = initial_->objLiteralData.length();
   size_t scopeOffset = initial_->scopeData.length();
 
-  // Map delazification's ScriptIndex to initial's ScriptIndex.
-  //
-  // The lazy function's gcthings list stores inner function's ScriptIndex.
-  // The n-th gcthing holds the ScriptIndex of the (n+1)-th script in
-  // delazification.
-  //
-  // NOTE: Currently we don't delazify inner functions.
+  
+  
+  
+  
+  
+  
+  
   auto lazyFunctionGCThingsOffset = destFun.gcThingsOffset;
   auto mapScriptIndex = [&](ScriptIndex index) {
     if (index == CompilationStencil::TopLevelIndex) {
@@ -5267,7 +5269,7 @@ bool CompilationStencilMerger::addDelazification(
         .toFunction();
   };
 
-  // Map other delazification's indices into initial's indices.
+  
   auto mapGCThingIndex = [&](CompilationGCThingIndex offset) {
     return CompilationGCThingIndex(gcThingOffset + offset.index);
   };
@@ -5284,7 +5286,7 @@ bool CompilationStencilMerger::addDelazification(
     return ScopeIndex(scopeOffset + index.index);
   };
 
-  // Append gcThingData, with mapping TaggedScriptThingIndex.
+  
   if (!initial_->gcThingData.append(delazification.gcThingData.data(),
                                     delazification.gcThingData.size())) {
     js::ReportOutOfMemory(fc);
@@ -5293,7 +5295,7 @@ bool CompilationStencilMerger::addDelazification(
   for (size_t i = gcThingOffset; i < initial_->gcThingData.length(); i++) {
     auto& index = initial_->gcThingData[i];
     if (index.isNull()) {
-      // Nothing to do.
+      
     } else if (index.isAtom()) {
       index = TaggedScriptThingIndex(mapAtomIndex(index.toAtom()));
     } else if (index.isBigInt()) {
@@ -5308,11 +5310,11 @@ bool CompilationStencilMerger::addDelazification(
       index = TaggedScriptThingIndex(mapScriptIndex(index.toFunction()));
     } else {
       MOZ_ASSERT(index.isEmptyGlobalScope());
-      // Nothing to do
+      
     }
   }
 
-  // Append regExpData, with mapping RegExpStencil.atom_.
+  
   if (!initial_->regExpData.append(delazification.regExpData.data(),
                                    delazification.regExpData.size())) {
     js::ReportOutOfMemory(fc);
@@ -5323,7 +5325,7 @@ bool CompilationStencilMerger::addDelazification(
     data.atom_ = mapAtomIndex(data.atom_);
   }
 
-  // Append bigIntData, with copying BigIntStencil.source_.
+  
   if (!initial_->bigIntData.reserve(bigIntOffset +
                                     delazification.bigIntData.size())) {
     js::ReportOutOfMemory(fc);
@@ -5336,8 +5338,8 @@ bool CompilationStencilMerger::addDelazification(
     }
   }
 
-  // Append objLiteralData, with copying ObjLiteralStencil.code_, and mapping
-  // TaggedParserAtomIndex in it.
+  
+  
   if (!initial_->objLiteralData.reserve(objLiteralOffset +
                                         delazification.objLiteralData.size())) {
     js::ReportOutOfMemory(fc);
@@ -5359,9 +5361,9 @@ bool CompilationStencilMerger::addDelazification(
         code, length, data.kind(), data.flags(), data.propertyCount());
   }
 
-  // Append scopeData, with mapping indices in ScopeStencil fields.
-  // And append scopeNames, with copying the entire data, and mapping
-  // trailingNames.
+  
+  
+  
   if (!initial_->scopeData.reserve(scopeOffset +
                                    delazification.scopeData.size())) {
     js::ReportOutOfMemory(fc);
@@ -5378,8 +5380,8 @@ bool CompilationStencilMerger::addDelazification(
 
     mozilla::Maybe<ScriptIndex> functionIndex = mozilla::Nothing();
     if (srcData.isFunction()) {
-      // Inner functions should be in the same order as initial, beginning from
-      // the delazification's index.
+      
+      
       functionIndex = mozilla::Some(mapScriptIndex(srcData.functionIndex()));
     }
 
@@ -5412,16 +5414,16 @@ bool CompilationStencilMerger::addDelazification(
     initial_->scopeNames.infallibleEmplaceBack(destNames);
   }
 
-  // Add delazified function's shared data.
-  //
-  // NOTE: Currently we don't delazify inner functions.
+  
+  
+  
   if (!initial_->sharedData.addExtraWithoutShare(
           fc, delazifiedFunctionIndex,
           delazification.sharedData.get(CompilationStencil::TopLevelIndex))) {
     return false;
   }
 
-  // Update scriptData, with mapping indices in ScriptStencil fields.
+  
   for (uint32_t i = 0; i < delazification.scriptData.size(); i++) {
     auto destIndex = mapScriptIndex(ScriptIndex(i));
     MergeScriptStencil(initial_->scriptData[destIndex],
@@ -5430,15 +5432,15 @@ bool CompilationStencilMerger::addDelazification(
                        i == CompilationStencil::TopLevelIndex);
   }
 
-  // WARNING: moduleMetadata and asmJS fields are known at script/module
-  // top-level parsing, any mutation made in this function should be reflected
-  // to ExtensibleCompilationStencil::steal and CompilationStencil::clone.
+  
+  
+  
 
-  // Function shouldn't be a module.
+  
   MOZ_ASSERT(!delazification.moduleMetadata);
 
-  // asm.js shouldn't appear inside delazification, given asm.js forces
-  // full-parse.
+  
+  
   MOZ_ASSERT(!delazification.asmJS);
 
   failureCase.release();
@@ -5470,7 +5472,7 @@ static already_AddRefed<JS::Stencil> CompileGlobalScriptToStencilImpl(
     return nullptr;
   }
 
-  // Convert the UniquePtr to a RefPtr and increment the count (to 1).
+  
   return stencil.forget();
 }
 
@@ -5502,7 +5504,7 @@ static already_AddRefed<JS::Stencil> CompileModuleScriptToStencilImpl(
     return nullptr;
   }
 
-  // Convert the UniquePtr to a RefPtr and increment the count (to 1).
+  
   return stencil.forget();
 }
 
