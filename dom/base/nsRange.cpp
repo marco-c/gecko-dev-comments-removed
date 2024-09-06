@@ -245,6 +245,14 @@ static CollapsePolicy ShouldCollapseBoundary(
 
     
     
+    
+    if (AbstractRange::IsRootUAWidget(aNewRoot) ||
+        AbstractRange::IsRootUAWidget(aRange->GetRoot())) {
+      return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
+    }
+
+    
+    
     return aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
                ? CollapsePolicy::DefaultRange
                : CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;

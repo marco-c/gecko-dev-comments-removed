@@ -349,8 +349,15 @@ nsresult AbstractRange::SetStartAndEndInternal(
       
       
       aRange->DoSetRange(aEndBoundary, aEndBoundary, newEndRoot);
-      aRange->AsDynamicRange()->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
-          aStartBoundary, aEndBoundary);
+
+      
+      
+      
+      if (!IsRootUAWidget(newStartRoot) && !IsRootUAWidget(newEndRoot)) {
+        aRange->AsDynamicRange()
+            ->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(aStartBoundary,
+                                                             aEndBoundary);
+      }
     }
     return NS_OK;
   }
@@ -564,4 +571,12 @@ void AbstractRange::ClearForReuse() {
   mCalledByJS = false;
 }
 
+
+bool AbstractRange::IsRootUAWidget(const nsINode* aRoot) {
+  MOZ_ASSERT(aRoot);
+  if (const ShadowRoot* shadowRoot = ShadowRoot::FromNode(aRoot)) {
+    return shadowRoot->IsUAWidget();
+  }
+  return false;
+}
 }  
