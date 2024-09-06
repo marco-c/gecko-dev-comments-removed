@@ -32,6 +32,7 @@ MessageBufferWriter::MessageBufferWriter(MessageWriter* writer,
       
       
       shmem_ = nullptr;
+      writer->NoteLargeBufferShmemFailure(full_len);
     }
   }
   remaining_ = full_len;
