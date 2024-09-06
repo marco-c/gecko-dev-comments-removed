@@ -2931,15 +2931,8 @@ bool handleResultFunc(bool aAllowSTS, bool aIsStsHost) {
   if (aIsStsHost) {
     LOG(("nsHttpChannel::Connect() STS permissions found\n"));
     if (aAllowSTS) {
-      Telemetry::AccumulateCategorical(
-          Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::STS);
       return true;
     }
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::PrefBlockedSTS);
-  } else {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::NoReasonToUpgrade);
   }
   return false;
 };
@@ -2966,8 +2959,6 @@ static bool ShouldSecureUpgradeNoHSTS(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
                         nsIScriptError::warningFlag,
                         "upgradeInsecureRequest"_ns, innerWindowId,
                         !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId);
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::CSP);
     return true;
   }
   
@@ -2999,22 +2990,22 @@ static bool ShouldSecureUpgradeNoHSTS(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
     
     
     aLoadInfo->SetBrowserDidUpgradeInsecureRequests(true);
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::BrowserDisplay);
-
     return true;
   }
 
   
   if (nsHTTPSOnlyUtils::ShouldUpgradeRequest(aURI, aLoadInfo)) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::HTTPSOnly);
+    aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::HTTPS_ONLY_UPGRADE);
     return true;
   }
   
   if (nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(aURI, aLoadInfo)) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::HTTPSFirst);
+    if (aLoadInfo->GetWasSchemelessInput()) {
+      aLoadInfo->SetHttpsUpgradeTelemetry(
+          nsILoadInfo::HTTPS_FIRST_SCHEMELESS_UPGRADE);
+    } else {
+      aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::HTTPS_FIRST_UPGRADE);
+    }
     return true;
   }
   return false;
@@ -3047,8 +3038,7 @@ nsresult NS_ShouldSecureUpgrade(
 
   
   if (isHttps) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::AlreadyHTTPS);
+    aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::ALREADY_HTTPS);
     aShouldUpgrade = false;
     return NS_OK;
   }
@@ -3131,6 +3121,11 @@ nsresult NS_ShouldSecureUpgrade(
   NS_ENSURE_SUCCESS(rv, rv);
 
   aShouldUpgrade = handleResultFunc(aAllowSTS, isStsHost);
+  
+  
+  if (aShouldUpgrade) {
+    aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::HSTS);
+  }
   if (!aShouldUpgrade) {
     
     

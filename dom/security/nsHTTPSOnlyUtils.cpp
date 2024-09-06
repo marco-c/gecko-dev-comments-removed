@@ -589,15 +589,25 @@ void nsHTTPSOnlyUtils::UpdateLoadStateAfterHTTPSFirstDowngrade(
   aLoadState->SetIsExemptFromHTTPSFirstMode(true);
 
   
+  
+  
+  nsCOMPtr<nsIChannel> channel = aDocumentLoadListener->GetChannel();
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  if (loadInfo->GetWasSchemelessInput()) {
+    aLoadState->SetHttpsUpgradeTelemetry(
+        nsILoadInfo::HTTPS_FIRST_SCHEMELESS_UPGRADE_DOWNGRADE);
+  } else {
+    aLoadState->SetHttpsUpgradeTelemetry(
+        nsILoadInfo::HTTPS_FIRST_UPGRADE_DOWNGRADE);
+  }
+
+  
   nsDOMNavigationTiming* timing = aDocumentLoadListener->GetTiming();
   if (timing) {
     mozilla::TimeStamp navigationStart = timing->GetNavigationStartTimeStamp();
     if (navigationStart) {
       mozilla::TimeDuration duration =
           mozilla::TimeStamp::Now() - navigationStart;
-
-      nsCOMPtr<nsIChannel> channel = aDocumentLoadListener->GetChannel();
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
 
       bool isPrivateWin =
           loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;

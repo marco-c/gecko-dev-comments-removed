@@ -337,6 +337,15 @@ class nsDocShellLoadState final {
 
   bool GetWasSchemelessInput() { return mWasSchemelessInput; }
 
+  void SetHttpsUpgradeTelemetry(
+      nsILoadInfo::HTTPSUpgradeTelemetryType aHttpsUpgradeTelemetry) {
+    mHttpsUpgradeTelemetry = aHttpsUpgradeTelemetry;
+  }
+
+  nsILoadInfo::HTTPSUpgradeTelemetryType GetHttpsUpgradeTelemetry() {
+    return mHttpsUpgradeTelemetry;
+  }
+
   
   
   
@@ -612,6 +621,10 @@ class nsDocShellLoadState final {
 
   
   bool mWasSchemelessInput = false;
+
+  
+  nsILoadInfo::HTTPSUpgradeTelemetryType mHttpsUpgradeTelemetry =
+      nsILoadInfo::NO_UPGRADE;
 };
 
 #endif 
