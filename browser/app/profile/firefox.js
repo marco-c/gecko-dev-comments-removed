@@ -651,6 +651,17 @@ pref("browser.urlbar.yelp.priority", false);
 pref("browser.urlbar.suggest.yelp", true);
 
 
+pref("browser.urlbar.fakespot.featureGate", false);
+
+
+
+pref("browser.urlbar.fakespot.minKeywordLength", 0);
+
+
+
+pref("browser.urlbar.suggest.fakespot", true);
+
+
 
 pref("browser.urlbar.addons.minKeywordLength", 0);
 
