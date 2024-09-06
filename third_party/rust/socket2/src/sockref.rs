@@ -3,35 +3,11 @@ use std::marker::PhantomData;
 use std::mem::ManuallyDrop;
 use std::ops::Deref;
 #[cfg(unix)]
-use std::os::unix::io::{AsRawFd, FromRawFd};
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd};
 #[cfg(windows)]
-use std::os::windows::io::{AsRawSocket, FromRawSocket};
+use std::os::windows::io::{AsRawSocket, AsSocket, FromRawSocket};
 
 use crate::Socket;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -105,11 +81,11 @@ impl<'s> Deref for SockRef<'s> {
 #[cfg_attr(docsrs, doc(cfg(unix)))]
 impl<'s, S> From<&'s S> for SockRef<'s>
 where
-    S: AsRawFd,
+    S: AsFd,
 {
     
     fn from(socket: &'s S) -> Self {
-        let fd = socket.as_raw_fd();
+        let fd = socket.as_fd().as_raw_fd();
         assert!(fd >= 0);
         SockRef {
             socket: ManuallyDrop::new(unsafe { Socket::from_raw_fd(fd) }),
@@ -123,12 +99,12 @@ where
 #[cfg_attr(docsrs, doc(cfg(windows)))]
 impl<'s, S> From<&'s S> for SockRef<'s>
 where
-    S: AsRawSocket,
+    S: AsSocket,
 {
     
     fn from(socket: &'s S) -> Self {
-        let socket = socket.as_raw_socket();
-        assert!(socket != winapi::um::winsock2::INVALID_SOCKET as _);
+        let socket = socket.as_socket().as_raw_socket();
+        assert!(socket != windows_sys::Win32::Networking::WinSock::INVALID_SOCKET as _);
         SockRef {
             socket: ManuallyDrop::new(unsafe { Socket::from_raw_socket(socket) }),
             _lifetime: PhantomData,

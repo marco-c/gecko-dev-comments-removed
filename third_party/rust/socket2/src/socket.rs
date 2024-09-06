@@ -21,10 +21,11 @@ use std::os::windows::io::{FromRawSocket, IntoRawSocket};
 use std::time::Duration;
 
 use crate::sys::{self, c_int, getsockopt, setsockopt, Bool};
+#[cfg(all(unix, not(target_os = "redox")))]
+use crate::MsgHdrMut;
 use crate::{Domain, Protocol, SockAddr, TcpKeepalive, Type};
 #[cfg(not(target_os = "redox"))]
-use crate::{MaybeUninitSlice, RecvFlags};
-
+use crate::{MaybeUninitSlice, MsgHdr, RecvFlags};
 
 
 
@@ -126,6 +127,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(socket(2))]
     pub fn new(domain: Domain, ty: Type, protocol: Option<Protocol>) -> io::Result<Socket> {
         let ty = set_common_type(ty);
         Socket::new_raw(domain, ty, protocol).and_then(set_common_flags)
@@ -136,7 +138,7 @@ impl Socket {
     
     
     pub fn new_raw(domain: Domain, ty: Type, protocol: Option<Protocol>) -> io::Result<Socket> {
-        let protocol = protocol.map(|p| p.0).unwrap_or(0);
+        let protocol = protocol.map_or(0, |p| p.0);
         sys::socket(domain.0, ty.0, protocol).map(Socket::from_raw)
     }
 
@@ -146,7 +148,8 @@ impl Socket {
     
     
     
-    #[cfg(any(doc, all(feature = "all", unix)))]
+    #[doc = man_links!(unix: socketpair(2))]
+    #[cfg(all(feature = "all", unix))]
     #[cfg_attr(docsrs, doc(cfg(all(feature = "all", unix))))]
     pub fn pair(
         domain: Domain,
@@ -163,14 +166,14 @@ impl Socket {
     
     
     
-    #[cfg(any(doc, all(feature = "all", unix)))]
+    #[cfg(all(feature = "all", unix))]
     #[cfg_attr(docsrs, doc(cfg(all(feature = "all", unix))))]
     pub fn pair_raw(
         domain: Domain,
         ty: Type,
         protocol: Option<Protocol>,
     ) -> io::Result<(Socket, Socket)> {
-        let protocol = protocol.map(|p| p.0).unwrap_or(0);
+        let protocol = protocol.map_or(0, |p| p.0);
         sys::socketpair(domain.0, ty.0, protocol)
             .map(|[a, b]| (Socket::from_raw(a), Socket::from_raw(b)))
     }
@@ -179,6 +182,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(bind(2))]
     pub fn bind(&self, address: &SockAddr) -> io::Result<()> {
         sys::bind(self.as_raw(), address)
     }
@@ -190,6 +194,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(connect(2))]
     
     
     
@@ -244,6 +249,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(listen(2))]
     pub fn listen(&self, backlog: c_int) -> io::Result<()> {
         sys::listen(self.as_raw(), backlog)
     }
@@ -255,6 +261,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(accept(2))]
     pub fn accept(&self) -> io::Result<(Socket, SockAddr)> {
         
         #[cfg(any(
@@ -303,6 +310,10 @@ impl Socket {
     
     
     
+    #[doc = man_links!(getsockname(2))]
+    
+    
+    
     
     
     
@@ -312,6 +323,10 @@ impl Socket {
     }
 
     
+    
+    
+    
+    #[doc = man_links!(getpeername(2))]
     
     
     
@@ -353,6 +368,20 @@ impl Socket {
     
     
     
+    #[cfg(all(feature = "all", unix))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", unix))))]
+    pub fn nonblocking(&self) -> io::Result<bool> {
+        sys::nonblocking(self.as_raw())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn set_nonblocking(&self, nonblocking: bool) -> io::Result<()> {
         sys::set_nonblocking(self.as_raw(), nonblocking)
     }
@@ -361,6 +390,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(shutdown(2))]
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
         sys::shutdown(self.as_raw(), how)
     }
@@ -370,6 +400,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(recv(2))]
     
     
     
@@ -396,6 +427,7 @@ impl Socket {
     
     
     
+    #[cfg_attr(target_os = "redox", allow(rustdoc::broken_intra_doc_links))]
     pub fn recv_out_of_band(&self, buf: &mut [MaybeUninit<u8>]) -> io::Result<usize> {
         self.recv_with_flags(buf, sys::MSG_OOB)
     }
@@ -421,6 +453,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(recvmsg(2))]
     
     
     
@@ -486,6 +519,7 @@ impl Socket {
 
     
     
+    #[doc = man_links!(recvfrom(2))]
     
     
     
@@ -512,6 +546,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(recvmsg(2))]
     
     
     
@@ -600,6 +635,20 @@ impl Socket {
     
     
     
+    #[doc = man_links!(recvmsg(2))]
+    #[cfg(all(unix, not(target_os = "redox")))]
+    #[cfg_attr(docsrs, doc(cfg(all(unix, not(target_os = "redox")))))]
+    pub fn recvmsg(&self, msg: &mut MsgHdrMut<'_, '_, '_>, flags: sys::c_int) -> io::Result<usize> {
+        sys::recvmsg(self.as_raw(), msg, flags)
+    }
+
+    
+    
+    
+    
+    
+    
+    #[doc = man_links!(send(2))]
     pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
         self.send_with_flags(buf, 0)
     }
@@ -621,6 +670,7 @@ impl Socket {
 
     
     
+    #[doc = man_links!(sendmsg(2))]
     
     
     #[cfg(not(target_os = "redox"))]
@@ -640,6 +690,7 @@ impl Socket {
     
     
     
+    #[cfg_attr(target_os = "redox", allow(rustdoc::broken_intra_doc_links))]
     pub fn send_out_of_band(&self, buf: &[u8]) -> io::Result<usize> {
         self.send_with_flags(buf, sys::MSG_OOB)
     }
@@ -648,6 +699,7 @@ impl Socket {
     
     
     
+    #[doc = man_links!(sendto(2))]
     pub fn send_to(&self, buf: &[u8], addr: &SockAddr) -> io::Result<usize> {
         self.send_to_with_flags(buf, addr, 0)
     }
@@ -667,6 +719,7 @@ impl Socket {
 
     
     
+    #[doc = man_links!(sendmsg(2))]
     #[cfg(not(target_os = "redox"))]
     #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
     pub fn send_to_vectored(&self, bufs: &[IoSlice<'_>], addr: &SockAddr) -> io::Result<usize> {
@@ -687,18 +740,27 @@ impl Socket {
     ) -> io::Result<usize> {
         sys::send_to_vectored(self.as_raw(), bufs, addr, flags)
     }
+
+    
+    #[doc = man_links!(sendmsg(2))]
+    #[cfg(not(target_os = "redox"))]
+    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
+    pub fn sendmsg(&self, msg: &MsgHdr<'_, '_, '_>, flags: sys::c_int) -> io::Result<usize> {
+        sys::sendmsg(self.as_raw(), msg, flags)
+    }
 }
 
 
 
 #[inline(always)]
-fn set_common_type(ty: Type) -> Type {
+const fn set_common_type(ty: Type) -> Type {
     
     #[cfg(any(
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "fuchsia",
+        target_os = "hurd",
         target_os = "illumos",
         target_os = "linux",
         target_os = "netbsd",
@@ -725,16 +787,24 @@ fn set_common_flags(socket: Socket) -> io::Result<Socket> {
             target_os = "dragonfly",
             target_os = "freebsd",
             target_os = "fuchsia",
+            target_os = "hurd",
             target_os = "illumos",
             target_os = "linux",
             target_os = "netbsd",
             target_os = "openbsd",
+            target_os = "espidf",
+            target_os = "vita",
         ))
     ))]
     socket._set_cloexec(true)?;
 
     
-    #[cfg(target_vendor = "apple")]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "tvos",
+        target_os = "watchos",
+    ))]
     socket._set_nosigpipe(true)?;
 
     Ok(socket)
@@ -900,6 +970,37 @@ impl Socket {
     
     
     
+    #[cfg(all(unix, target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all(unix, target_os = "linux"))))]
+    pub fn passcred(&self) -> io::Result<bool> {
+        unsafe {
+            getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_PASSCRED)
+                .map(|passcred| passcred != 0)
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(all(unix, target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all(unix, target_os = "linux"))))]
+    pub fn set_passcred(&self, passcred: bool) -> io::Result<()> {
+        unsafe {
+            setsockopt(
+                self.as_raw(),
+                sys::SOL_SOCKET,
+                sys::SO_PASSCRED,
+                passcred as c_int,
+            )
+        }
+    }
+
+    
+    
+    
+    
+    
     pub fn recv_buffer_size(&self) -> io::Result<usize> {
         unsafe {
             getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_RCVBUF)
@@ -1010,7 +1111,7 @@ impl Socket {
     }
 }
 
-fn from_linger(linger: sys::linger) -> Option<Duration> {
+const fn from_linger(linger: sys::linger) -> Option<Duration> {
     if linger.l_onoff == 0 {
         None
     } else {
@@ -1018,7 +1119,7 @@ fn from_linger(linger: sys::linger) -> Option<Duration> {
     }
 }
 
-fn into_linger(duration: Option<Duration>) -> sys::linger {
+const fn into_linger(duration: Option<Duration>) -> sys::linger {
     match duration {
         Some(duration) => sys::linger {
             l_onoff: 1,
@@ -1042,8 +1143,11 @@ impl Socket {
     
     
     
-    #[cfg(all(feature = "all", not(target_os = "redox")))]
-    #[cfg_attr(docsrs, doc(all(feature = "all", not(target_os = "redox"))))]
+    #[cfg(all(feature = "all", not(any(target_os = "redox", target_os = "espidf"))))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(feature = "all", not(any(target_os = "redox", target_os = "espidf")))))
+    )]
     pub fn header_included(&self) -> io::Result<bool> {
         unsafe {
             getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, sys::IP_HDRINCL)
@@ -1062,8 +1166,15 @@ impl Socket {
     
     
     
-    #[cfg(all(feature = "all", not(target_os = "redox")))]
-    #[cfg_attr(docsrs, doc(all(feature = "all", not(target_os = "redox"))))]
+    #[cfg_attr(
+        any(target_os = "fuchsia", target_os = "illumos", target_os = "solaris"),
+        allow(rustdoc::broken_intra_doc_links)
+    )]
+    #[cfg(all(feature = "all", not(any(target_os = "redox", target_os = "espidf"))))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(feature = "all", not(any(target_os = "redox", target_os = "espidf")))))
+    )]
     pub fn set_header_included(&self, included: bool) -> io::Result<()> {
         unsafe {
             setsockopt(
@@ -1080,7 +1191,7 @@ impl Socket {
     
     
     
-    #[cfg(any(doc, all(feature = "all", target_os = "linux")))]
+    #[cfg(all(feature = "all", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
     pub fn ip_transparent(&self) -> io::Result<bool> {
         unsafe {
@@ -1104,7 +1215,7 @@ impl Socket {
     
     
     
-    #[cfg(any(doc, all(feature = "all", target_os = "linux")))]
+    #[cfg(all(feature = "all", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
     pub fn set_ip_transparent(&self, transparent: bool) -> io::Result<()> {
         unsafe {
@@ -1159,6 +1270,7 @@ impl Socket {
     
     
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "haiku",
         target_os = "illumos",
         target_os = "netbsd",
@@ -1166,6 +1278,8 @@ impl Socket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "nto",
+        target_os = "espidf",
+        target_os = "vita",
     )))]
     pub fn join_multicast_v4_n(
         &self,
@@ -1189,6 +1303,7 @@ impl Socket {
     
     
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "haiku",
         target_os = "illumos",
         target_os = "netbsd",
@@ -1196,6 +1311,8 @@ impl Socket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "nto",
+        target_os = "espidf",
+        target_os = "vita",
     )))]
     pub fn leave_multicast_v4_n(
         &self,
@@ -1223,11 +1340,14 @@ impl Socket {
     #[cfg(not(any(
         target_os = "dragonfly",
         target_os = "haiku",
+        target_os = "hurd",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "redox",
         target_os = "fuchsia",
         target_os = "nto",
+        target_os = "espidf",
+        target_os = "vita",
     )))]
     pub fn join_ssm_v4(
         &self,
@@ -1258,11 +1378,14 @@ impl Socket {
     #[cfg(not(any(
         target_os = "dragonfly",
         target_os = "haiku",
+        target_os = "hurd",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "redox",
         target_os = "fuchsia",
         target_os = "nto",
+        target_os = "espidf",
+        target_os = "vita",
     )))]
     pub fn leave_ssm_v4(
         &self,
@@ -1281,6 +1404,43 @@ impl Socket {
                 sys::IPPROTO_IP,
                 sys::IP_DROP_SOURCE_MEMBERSHIP,
                 mreqs,
+            )
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(all(feature = "all", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
+    pub fn multicast_all_v4(&self) -> io::Result<bool> {
+        unsafe {
+            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, libc::IP_MULTICAST_ALL)
+                .map(|all| all != 0)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(feature = "all", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
+    pub fn set_multicast_all_v4(&self, all: bool) -> io::Result<()> {
+        unsafe {
+            setsockopt(
+                self.as_raw(),
+                sys::IPPROTO_IP,
+                libc::IP_MULTICAST_ALL,
+                all as c_int,
             )
         }
     }
@@ -1399,6 +1559,7 @@ impl Socket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
+        target_os = "haiku",
     )))]
     pub fn set_tos(&self, tos: u32) -> io::Result<()> {
         unsafe { setsockopt(self.as_raw(), sys::IPPROTO_IP, sys::IP_TOS, tos as c_int) }
@@ -1417,6 +1578,7 @@ impl Socket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
+        target_os = "haiku",
     )))]
     pub fn tos(&self) -> io::Result<u32> {
         unsafe {
@@ -1430,19 +1592,21 @@ impl Socket {
     
     
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "dragonfly",
         target_os = "fuchsia",
+        target_os = "hurd",
         target_os = "illumos",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "redox",
         target_os = "solaris",
-        target_os = "windows",
+        target_os = "haiku",
         target_os = "nto",
+        target_os = "espidf",
+        target_os = "vita",
     )))]
     pub fn set_recv_tos(&self, recv_tos: bool) -> io::Result<()> {
-        let recv_tos = if recv_tos { 1 } else { 0 };
-
         unsafe {
             setsockopt(
                 self.as_raw(),
@@ -1459,15 +1623,19 @@ impl Socket {
     
     
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "dragonfly",
         target_os = "fuchsia",
+        target_os = "hurd",
         target_os = "illumos",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "redox",
         target_os = "solaris",
-        target_os = "windows",
+        target_os = "haiku",
         target_os = "nto",
+        target_os = "espidf",
+        target_os = "vita",
     )))]
     pub fn recv_tos(&self) -> io::Result<bool> {
         unsafe {
@@ -1555,6 +1723,43 @@ impl Socket {
                 sys::IPPROTO_IPV6,
                 sys::IPV6_MULTICAST_HOPS,
                 hops as c_int,
+            )
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(all(feature = "all", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
+    pub fn multicast_all_v6(&self) -> io::Result<bool> {
+        unsafe {
+            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IPV6, libc::IPV6_MULTICAST_ALL)
+                .map(|all| all != 0)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(feature = "all", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
+    pub fn set_multicast_all_v6(&self, all: bool) -> io::Result<()> {
+        unsafe {
+            setsockopt(
+                self.as_raw(),
+                sys::IPPROTO_IPV6,
+                libc::IPV6_MULTICAST_ALL,
+                all as c_int,
             )
         }
     }
@@ -1668,6 +1873,60 @@ impl Socket {
             )
         }
     }
+
+    
+    
+    
+    
+    
+    #[cfg(not(any(
+        target_os = "dragonfly",
+        target_os = "fuchsia",
+        target_os = "illumos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris",
+        target_os = "haiku",
+        target_os = "hurd",
+        target_os = "espidf",
+        target_os = "vita",
+    )))]
+    pub fn recv_tclass_v6(&self) -> io::Result<bool> {
+        unsafe {
+            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IPV6, sys::IPV6_RECVTCLASS)
+                .map(|recv_tclass| recv_tclass > 0)
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(not(any(
+        target_os = "dragonfly",
+        target_os = "fuchsia",
+        target_os = "illumos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris",
+        target_os = "haiku",
+        target_os = "hurd",
+        target_os = "espidf",
+        target_os = "vita",
+    )))]
+    pub fn set_recv_tclass_v6(&self, recv_tclass: bool) -> io::Result<()> {
+        unsafe {
+            setsockopt(
+                self.as_raw(),
+                sys::IPPROTO_IPV6,
+                sys::IPV6_RECVTCLASS,
+                recv_tclass as c_int,
+            )
+        }
+    }
 }
 
 
@@ -1680,18 +1939,25 @@ impl Socket {
     
     
     
-    #[cfg(any(
-        doc,
-        all(
-            feature = "all",
-            not(any(windows, target_os = "haiku", target_os = "openbsd"))
-        )
+    #[cfg(all(
+        feature = "all",
+        not(any(
+            windows,
+            target_os = "haiku",
+            target_os = "openbsd",
+            target_os = "vita"
+        ))
     ))]
     #[cfg_attr(
         docsrs,
         doc(cfg(all(
             feature = "all",
-            not(any(windows, target_os = "haiku", target_os = "openbsd"))
+            not(any(
+                windows,
+                target_os = "haiku",
+                target_os = "openbsd",
+                target_os = "vita"
+            ))
         )))
     )]
     pub fn keepalive_time(&self) -> io::Result<Duration> {
@@ -1706,15 +1972,17 @@ impl Socket {
     #[cfg(all(
         feature = "all",
         any(
-            doc,
             target_os = "android",
             target_os = "dragonfly",
             target_os = "freebsd",
             target_os = "fuchsia",
             target_os = "illumos",
+            target_os = "ios",
             target_os = "linux",
+            target_os = "macos",
             target_os = "netbsd",
-            target_vendor = "apple",
+            target_os = "tvos",
+            target_os = "watchos",
         )
     ))]
     #[cfg_attr(
@@ -1727,9 +1995,12 @@ impl Socket {
                 target_os = "freebsd",
                 target_os = "fuchsia",
                 target_os = "illumos",
+                target_os = "ios",
                 target_os = "linux",
+                target_os = "macos",
                 target_os = "netbsd",
-                target_vendor = "apple",
+                target_os = "tvos",
+                target_os = "watchos",
             )
         )))
     )]
@@ -1748,15 +2019,17 @@ impl Socket {
     #[cfg(all(
         feature = "all",
         any(
-            doc,
             target_os = "android",
             target_os = "dragonfly",
             target_os = "freebsd",
             target_os = "fuchsia",
             target_os = "illumos",
+            target_os = "ios",
             target_os = "linux",
+            target_os = "macos",
             target_os = "netbsd",
-            target_vendor = "apple",
+            target_os = "tvos",
+            target_os = "watchos",
         )
     ))]
     #[cfg_attr(
@@ -1769,9 +2042,12 @@ impl Socket {
                 target_os = "freebsd",
                 target_os = "fuchsia",
                 target_os = "illumos",
+                target_os = "ios",
                 target_os = "linux",
+                target_os = "macos",
                 target_os = "netbsd",
-                target_vendor = "apple",
+                target_os = "tvos",
+                target_os = "watchos",
             )
         )))
     )]
