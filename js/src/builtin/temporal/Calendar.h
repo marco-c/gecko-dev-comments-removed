@@ -934,13 +934,6 @@ bool CalendarEqualsOrThrow(JSContext* cx, JS::Handle<CalendarValue> one,
 
 
 
-bool ConsolidateCalendars(JSContext* cx, JS::Handle<CalendarValue> one,
-                          JS::Handle<CalendarValue> two,
-                          JS::MutableHandle<CalendarValue> result);
-
-
-
-
 bool CreateCalendarMethodsRecord(JSContext* cx,
                                  JS::Handle<CalendarValue> calendar,
                                  mozilla::EnumSet<CalendarMethod> methods,
