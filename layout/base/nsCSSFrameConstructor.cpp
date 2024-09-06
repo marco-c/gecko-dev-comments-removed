@@ -7209,6 +7209,19 @@ static bool IsOnlyMeaningfulChildOfWrapperPseudo(nsIFrame* aFrame,
   return false;
 }
 
+static bool CanRemoveWrapperPseudoForChildRemoval(nsIFrame* aFrame,
+                                                  nsIFrame* aParent) {
+  if (!IsOnlyMeaningfulChildOfWrapperPseudo(aFrame, aParent)) {
+    return false;
+  }
+  if (aParent->IsRubyBaseContainerFrame()) {
+    
+    
+    return aParent->GetPrevSibling() || !aParent->GetNextSibling();
+  }
+  return true;
+}
+
 bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
                                            nsIContent* aOldNextSibling,
                                            RemoveFlags aFlags) {
@@ -7461,7 +7474,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
     
     
     while (IsWrapperPseudo(parentFrame) &&
-           IsOnlyMeaningfulChildOfWrapperPseudo(childFrame, parentFrame)) {
+           CanRemoveWrapperPseudoForChildRemoval(childFrame, parentFrame)) {
       childFrame = parentFrame;
       parentFrame = childFrame->GetParent();
     }
