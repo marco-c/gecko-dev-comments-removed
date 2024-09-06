@@ -2421,12 +2421,6 @@ class nsLayoutUtils {
 
 
 
-  static bool GPUImageScalingEnabled();
-
-  
-
-
-
 
   static void UnionChildOverflow(
       nsIFrame* aFrame, mozilla::OverflowAreas& aOverflowAreas,
