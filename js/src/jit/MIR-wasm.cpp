@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/MIR-wasm.h"
 
@@ -11,7 +11,7 @@
 #include "jit/MIRGraph.h"
 #include "js/Conversions.h"
 #include "wasm/WasmCode.h"
-#include "wasm/WasmFeatures.h"  // for wasm::ReportSimdAnalysis
+#include "wasm/WasmFeatures.h"  
 
 #include "wasm/WasmInstance-inl.h"
 
@@ -102,13 +102,13 @@ MDefinition* MWasmWrapU32Index::foldsTo(TempAllocator& alloc) {
   return this;
 }
 
-// Some helpers for folding wasm and/or/xor on int32/64 values.  Rather than
-// duplicating these for 32 and 64-bit values, all folding is done on 64-bit
-// values and masked for the 32-bit case.
+
+
+
 
 const uint64_t Low32Mask = uint64_t(0xFFFFFFFFULL);
 
-// Routines to check and disassemble values.
+
 
 static bool IsIntegralConstant(const MDefinition* def) {
   return def->isConstant() &&
@@ -131,7 +131,7 @@ static bool IsIntegralConstantOnes(const MDefinition* def) {
   return IsIntegralConstant(def) && GetIntegralConstant(def) == ones;
 }
 
-// Routines to create values.
+
 static MDefinition* ToIntegralConstant(TempAllocator& alloc, MIRType ty,
                                        uint64_t val) {
   switch (ty) {
@@ -161,7 +161,7 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
   MDefinition* argR = getOperand(1);
   MOZ_ASSERT(argL->type() == type() && argR->type() == type());
 
-  // The args are the same (SSA name)
+  
   if (argL == argR) {
     switch (subOpcode()) {
       case SubOpcode::And:
@@ -174,7 +174,7 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
     }
   }
 
-  // Both args constant
+  
   if (IsIntegralConstant(argL) && IsIntegralConstant(argR)) {
     uint64_t valL = GetIntegralConstant(argL);
     uint64_t valR = GetIntegralConstant(argR);
@@ -195,7 +195,7 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
     return ToIntegralConstant(alloc, type(), val);
   }
 
-  // Left arg is zero
+  
   if (IsIntegralConstantZero(argL)) {
     switch (subOpcode()) {
       case SubOpcode::And:
@@ -208,7 +208,7 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
     }
   }
 
-  // Right arg is zero
+  
   if (IsIntegralConstantZero(argR)) {
     switch (subOpcode()) {
       case SubOpcode::And:
@@ -221,7 +221,7 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
     }
   }
 
-  // Left arg is ones
+  
   if (IsIntegralConstantOnes(argL)) {
     switch (subOpcode()) {
       case SubOpcode::And:
@@ -235,7 +235,7 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
     }
   }
 
-  // Right arg is ones
+  
   if (IsIntegralConstantOnes(argR)) {
     switch (subOpcode()) {
       case SubOpcode::And:
@@ -327,23 +327,23 @@ MDefinition::AliasType MWasmLoadInstanceDataField::mightAlias(
 MDefinition::AliasType MWasmLoadGlobalCell::mightAlias(
     const MDefinition* def) const {
   if (def->isWasmStoreGlobalCell()) {
-    // No globals of different type can alias.  See bug 1467415 comment 3.
+    
     if (type() != def->toWasmStoreGlobalCell()->value()->type()) {
       return AliasType::NoAlias;
     }
 
-    // We could do better here.  We're dealing with two indirect globals.
-    // If at at least one of them is created in this module, then they
-    // can't alias -- in other words they can only alias if they are both
-    // imported.  That would require having a flag on globals to indicate
-    // which are imported.  See bug 1467415 comment 3, 4th rule.
+    
+    
+    
+    
+    
   }
 
   return AliasType::MayAlias;
 }
 
 HashNumber MWasmLoadInstanceDataField::valueHash() const {
-  // Same comment as in MWasmLoadInstanceDataField::congruentTo() applies here.
+  
   HashNumber hash = MDefinition::valueHash();
   hash = addU32ToHash(hash, instanceDataOffset_);
   return hash;
@@ -356,16 +356,16 @@ bool MWasmLoadInstanceDataField::congruentTo(const MDefinition* ins) const {
 
   const MWasmLoadInstanceDataField* other = ins->toWasmLoadInstanceDataField();
 
-  // We don't need to consider the isConstant_ markings here, because
-  // equivalence of offsets implies equivalence of constness.
+  
+  
   bool sameOffsets = instanceDataOffset_ == other->instanceDataOffset_;
   MOZ_ASSERT_IF(sameOffsets, isConstant_ == other->isConstant_);
 
-  // We omit checking congruence of the operands.  There is only one
-  // operand, the instance pointer, and it only ever has one value within the
-  // domain of optimization.  If that should ever change then operand
-  // congruence checking should be reinstated.
-  return sameOffsets /* && congruentIfOperandsEqual(other) */;
+  
+  
+  
+  
+  return sameOffsets ;
 }
 
 MDefinition* MWasmLoadInstanceDataField::foldsTo(TempAllocator& alloc) {
@@ -424,67 +424,67 @@ inline static bool MatchSpecificShift(MDefinition* instr,
              shiftValue;
 }
 
-// Matches MIR subtree that represents PMADDUBSW instruction generated by
-// emscripten. The a and b parameters return subtrees that correspond
-// operands of the instruction, if match is found.
+
+
+
 static bool MatchPmaddubswSequence(MWasmBinarySimd128* lhs,
                                    MWasmBinarySimd128* rhs, MDefinition** a,
                                    MDefinition** b) {
   MOZ_ASSERT(lhs->simdOp() == wasm::SimdOp::I16x8Mul &&
              rhs->simdOp() == wasm::SimdOp::I16x8Mul);
-  // The emscripten/LLVM produced the following sequence for _mm_maddubs_epi16:
-  //
-  //  return _mm_adds_epi16(
-  //    _mm_mullo_epi16(
-  //      _mm_and_si128(__a, _mm_set1_epi16(0x00FF)),
-  //      _mm_srai_epi16(_mm_slli_epi16(__b, 8), 8)),
-  //    _mm_mullo_epi16(_mm_srli_epi16(__a, 8), _mm_srai_epi16(__b, 8)));
-  //
-  //  This will roughly correspond the following MIR:
-  //    MWasmBinarySimd128[I16x8AddSatS]
-  //      |-- lhs: MWasmBinarySimd128[I16x8Mul]                      (lhs)
-  //      |     |-- lhs: MWasmBinarySimd128WithConstant[V128And]     (op0)
-  //      |     |     |-- lhs: a
-  //      |     |      -- rhs: SimdConstant::SplatX8(0x00FF)
-  //      |      -- rhs: MWasmShiftSimd128[I16x8ShrS]                (op1)
-  //      |           |-- lhs: MWasmShiftSimd128[I16x8Shl]
-  //      |           |     |-- lhs: b
-  //      |           |      -- rhs: MConstant[8]
-  //      |            -- rhs: MConstant[8]
-  //       -- rhs: MWasmBinarySimd128[I16x8Mul]                      (rhs)
-  //            |-- lhs: MWasmShiftSimd128[I16x8ShrU]                (op2)
-  //            |     |-- lhs: a
-  //            |     |-- rhs: MConstant[8]
-  //             -- rhs: MWasmShiftSimd128[I16x8ShrS]                (op3)
-  //                  |-- lhs: b
-  //                   -- rhs: MConstant[8]
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  // The I16x8AddSatS and I16x8Mul are commutative, so their operands
-  // may be swapped. Rearrange op0, op1, op2, op3 to be in the order
-  // noted above.
+  
+  
+  
   MDefinition *op0 = lhs->lhs(), *op1 = lhs->rhs(), *op2 = rhs->lhs(),
               *op3 = rhs->rhs();
   if (op1->isWasmBinarySimd128WithConstant()) {
-    // Move MWasmBinarySimd128WithConstant[V128And] as first operand in lhs.
+    
     std::swap(op0, op1);
   } else if (op3->isWasmBinarySimd128WithConstant()) {
-    // Move MWasmBinarySimd128WithConstant[V128And] as first operand in rhs.
+    
     std::swap(op2, op3);
   }
   if (op2->isWasmBinarySimd128WithConstant()) {
-    // The lhs and rhs are swapped.
-    // Make MWasmBinarySimd128WithConstant[V128And] to be op0.
+    
+    
     std::swap(op0, op2);
     std::swap(op1, op3);
   }
   if (op2->isWasmShiftSimd128() &&
       op2->toWasmShiftSimd128()->simdOp() == wasm::SimdOp::I16x8ShrS) {
-    // The op2 and op3 appears to be in wrong order, swap.
+    
     std::swap(op2, op3);
   }
 
-  // Check all instructions SIMD code and constant values for assigned
-  // names op0, op1, op2, op3 (see diagram above).
+  
+  
   const uint16_t const00FF[8] = {255, 255, 255, 255, 255, 255, 255, 255};
   if (!op0->isWasmBinarySimd128WithConstant() ||
       op0->toWasmBinarySimd128WithConstant()->simdOp() !=
@@ -499,8 +499,8 @@ static bool MatchPmaddubswSequence(MWasmBinarySimd128* lhs,
     return false;
   }
 
-  // Check if the instructions arguments that are subtrees match the
-  // a and b assignments. May depend on GVN behavior.
+  
+  
   MDefinition* maybeA = op0->toWasmBinarySimd128WithConstant()->lhs();
   MDefinition* maybeB = op3->toWasmShiftSimd128()->lhs();
   if (maybeA != op2->toWasmShiftSimd128()->lhs() ||
@@ -515,14 +515,14 @@ static bool MatchPmaddubswSequence(MWasmBinarySimd128* lhs,
 
 MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
   if (simdOp() == wasm::SimdOp::I8x16Swizzle && rhs()->isWasmFloatConstant()) {
-    // Specialize swizzle(v, constant) as shuffle(mask, v, zero) to trigger all
-    // our shuffle optimizations.  We don't report this rewriting as the report
-    // will be overwritten by the subsequent shuffle analysis.
+    
+    
+    
     int8_t shuffleMask[16];
     memcpy(shuffleMask, rhs()->toWasmFloatConstant()->toSimd128().bytes(), 16);
     for (int i = 0; i < 16; i++) {
-      // Out-of-bounds lanes reference the zero vector; in many cases, the zero
-      // vector is removed by subsequent optimizations.
+      
+      
       if (shuffleMask[i] < 0 || shuffleMask[i] > 15) {
         shuffleMask[i] = 16;
       }
@@ -536,16 +536,16 @@ MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
     return BuildWasmShuffleSimd128(alloc, shuffleMask, lhs(), zero);
   }
 
-  // Specialize var OP const / const OP var when possible.
-  //
-  // As the LIR layer can't directly handle v128 constants as part of its normal
-  // machinery we specialize some nodes here if they have single-use v128
-  // constant arguments.  The purpose is to generate code that inlines the
-  // constant in the instruction stream, using either a rip-relative load+op or
-  // quickly-synthesized constant in a scratch on x64.  There is a general
-  // assumption here that that is better than generating the constant into an
-  // allocatable register, since that register value could not be reused. (This
-  // ignores the possibility that the constant load could be hoisted).
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   if (lhs()->isWasmFloatConstant() != rhs()->isWasmFloatConstant() &&
       specializeForConstantRhs()) {
@@ -560,7 +560,7 @@ MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
     }
   }
 
-  // Check special encoding for PMADDUBSW.
+  
   if (canPmaddubsw() && simdOp() == wasm::SimdOp::I16x8AddSatS &&
       lhs()->isWasmBinarySimd128() && rhs()->isWasmBinarySimd128() &&
       lhs()->toWasmBinarySimd128()->simdOp() == wasm::SimdOp::I16x8Mul &&
@@ -568,7 +568,7 @@ MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
     MDefinition *a, *b;
     if (MatchPmaddubswSequence(lhs()->toWasmBinarySimd128(),
                                rhs()->toWasmBinarySimd128(), &a, &b)) {
-      return MWasmBinarySimd128::New(alloc, a, b, /* commutative = */ false,
+      return MWasmBinarySimd128::New(alloc, a, b,  false,
                                      wasm::SimdOp::MozPMADDUBSW);
     }
   }
@@ -741,7 +741,7 @@ MDefinition* MWasmReduceSimd128::foldsTo(TempAllocator& alloc) {
 #  endif
   return this;
 }
-#endif  // ENABLE_WASM_SIMD
+#endif  
 
 MDefinition* MWasmUnsignedToDouble::foldsTo(TempAllocator& alloc) {
   if (input()->isConstant()) {
@@ -858,11 +858,11 @@ MIonToWasmCall* MIonToWasmCall::New(TempAllocator& alloc,
                                     WasmInstanceObject* instanceObj,
                                     const wasm::FuncExport& funcExport) {
   const wasm::FuncType& funcType =
-      instanceObj->instance().codeMeta().getFuncExportType(funcExport);
+      instanceObj->instance().code().getFuncExportType(funcExport);
   const wasm::ValTypeVector& results = funcType.results();
   MIRType resultType = MIRType::Value;
-  // At the JS boundary some wasm types must be represented as a Value, and in
-  // addition a void return requires an Undefined value.
+  
+  
   if (results.length() > 0 && !results[0].isEncodedAsJSValueOnEscape()) {
     MOZ_ASSERT(results.length() == 1,
                "multiple returns not implemented for inlined Wasm calls");
@@ -879,7 +879,7 @@ MIonToWasmCall* MIonToWasmCall::New(TempAllocator& alloc,
 #ifdef DEBUG
 bool MIonToWasmCall::isConsistentFloat32Use(MUse* use) const {
   const wasm::FuncType& funcType =
-      instance()->codeMeta().getFuncExportType(funcExport_);
+      instance()->code().getFuncExportType(funcExport_);
   return funcType.args()[use->index()].kind() == wasm::ValType::F32;
 }
 #endif
@@ -917,13 +917,13 @@ MWasmShuffleSimd128* jit::BuildWasmShuffleSimd128(TempAllocator& alloc,
       AnalyzeSimdShuffle(SimdConstant::CreateX16(control), lhs, rhs);
   switch (s.opd) {
     case SimdShuffle::Operand::LEFT:
-      // When SimdShuffle::Operand is LEFT the right operand is not used,
-      // lose reference to rhs.
+      
+      
       rhs = lhs;
       break;
     case SimdShuffle::Operand::RIGHT:
-      // When SimdShuffle::Operand is RIGHT the left operand is not used,
-      // lose reference to lhs.
+      
+      
       lhs = rhs;
       break;
     default:
@@ -931,18 +931,18 @@ MWasmShuffleSimd128* jit::BuildWasmShuffleSimd128(TempAllocator& alloc,
   }
   return MWasmShuffleSimd128::New(alloc, lhs, rhs, s);
 }
-#endif  // ENABLE_WASM_SIMD
+#endif  
 
 static MDefinition* FoldTrivialWasmCasts(TempAllocator& alloc,
                                          wasm::RefType sourceType,
                                          wasm::RefType destType) {
-  // Upcasts are trivially valid.
+  
   if (wasm::RefType::isSubTypeOf(sourceType, destType)) {
     return MConstant::New(alloc, Int32Value(1), MIRType::Int32);
   }
 
-  // If two types are completely disjoint, then all casts between them are
-  // impossible.
+  
+  
   if (!wasm::RefType::castPossible(destType, sourceType)) {
     return MConstant::New(alloc, Int32Value(0), MIRType::Int32);
   }

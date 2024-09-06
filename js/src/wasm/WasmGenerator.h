@@ -169,12 +169,6 @@ struct CompileTask : public HelperThreadTask {
 class MOZ_STACK_CLASS ModuleGenerator {
   using CompileTaskVector = Vector<CompileTask, 0, SystemAllocPolicy>;
   using CodeOffsetVector = Vector<jit::CodeOffset, 0, SystemAllocPolicy>;
-  struct CallFarJump {
-    uint32_t funcIndex;
-    jit::CodeOffset jump;
-    CallFarJump(uint32_t fi, jit::CodeOffset j) : funcIndex(fi), jump(j) {}
-  };
-  using CallFarJumpVector = Vector<CallFarJump, 0, SystemAllocPolicy>;
   
   
   
@@ -195,6 +189,9 @@ class MOZ_STACK_CLASS ModuleGenerator {
   CompilerEnvironment* const compilerEnv_;
 
   
+  FuncImportVector funcImports_;
+  UniqueLinkData sharedStubsLinkData_;
+  UniqueCodeBlock sharedStubsCodeBlock_;
   MutableCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   
@@ -226,6 +223,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   bool linkCallSites();
   void noteCodeRange(uint32_t codeRangeIndex, const CodeRange& codeRange);
   bool linkCompiledCode(CompiledCode& code);
+  [[nodiscard]] bool initTasks();
   bool locallyCompileCurrentTask();
   bool finishTask(CompileTask* task);
   bool launchBatchCompile();
@@ -233,11 +231,15 @@ class MOZ_STACK_CLASS ModuleGenerator {
 
   
   
-  [[nodiscard]] bool startCodeBlock();
+  [[nodiscard]] bool startCodeBlock(CodeBlockKind kind);
   
   
   
   UniqueCodeBlock finishCodeBlock(UniqueLinkData* linkData);
+
+  
+  
+  [[nodiscard]] bool generateSharedStubs();
 
   
   
