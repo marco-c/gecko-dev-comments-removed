@@ -12,10 +12,9 @@ LOCAL_INCLUDES += ["!..", ".."]
 include("../js-config.mozbuild")
 include("../js-cxxflags.mozbuild")
 
-CXXFLAGS += ["-Wno-error=type-limits", "-Wno-error=return-type"]
 
 
-
+CXXFLAGS += ["-Wno-error=type-limits", "-Wno-error=return-type", "-Wno-sign-compare"]
 if CONFIG["CC_TYPE"] == "gcc":
     CXXFLAGS += ["-Wno-error=nonnull", "-Wno-narrowing"]
 if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
