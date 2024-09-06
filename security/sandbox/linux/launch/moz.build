@@ -13,14 +13,23 @@ UNIFIED_SOURCES += [
     "SandboxLaunch.cpp",
 ]
 
-include("/ipc/chromium/chromium-config.mozbuild")
+SOURCES += [
+    "../../chromium-shim/base/logging.cpp",
+    "../../chromium/sandbox/linux/services/syscall_wrappers.cc",
+]
+
+
+
 
 LOCAL_INCLUDES += [
     
     
     "/security/sandbox/chromium",
+    "/security/sandbox/chromium-shim",
     "/security/sandbox/linux",
 ]
+
+include("/ipc/chromium/chromium-config.mozbuild")
 
 USE_LIBS += [
     "mozsandbox",
