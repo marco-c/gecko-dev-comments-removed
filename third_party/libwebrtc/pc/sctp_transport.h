@@ -35,8 +35,8 @@ namespace webrtc {
 class SctpTransport : public SctpTransportInterface,
                       public DataChannelTransportInterface {
  public:
-  explicit SctpTransport(
-      std::unique_ptr<cricket::SctpTransportInternal> internal);
+  SctpTransport(std::unique_ptr<cricket::SctpTransportInternal> internal,
+                rtc::scoped_refptr<DtlsTransport> dtls_transport);
 
   
   rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const override;
@@ -58,7 +58,6 @@ class SctpTransport : public SctpTransportInterface,
 
   
   void Clear();
-  void SetDtlsTransport(rtc::scoped_refptr<DtlsTransport>);
   
   
   void Start(int local_port, int remote_port, int max_message_size);
