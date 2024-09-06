@@ -38,8 +38,8 @@ async function closePreviews(win = window) {
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.tabs.cardPreview.enabled", true],
-      ["browser.tabs.cardPreview.showThumbnails", false],
+      ["browser.tabs.hoverPreview.enabled", true],
+      ["browser.tabs.hoverPreview.showThumbnails", false],
       ["browser.tabs.tooltipsShowPidAndActiveness", false],
       ["ui.tooltip.delay_ms", 0],
     ],
@@ -99,7 +99,7 @@ add_task(async function hoverTests() {
     resolved = true;
   });
   
-  let timeoutPromise = new Promise(resolve => setTimeout(resolve, 100));
+  let timeoutPromise = new Promise(resolve => setTimeout(resolve, 500));
   await Promise.race([openPreviewPromise, timeoutPromise]);
   Assert.ok(!resolved, "preview does not open from background window");
   Assert.ok(
@@ -218,7 +218,7 @@ add_task(async function pidAndActivenessTests() {
 
 add_task(async function thumbnailTests() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.cardPreview.showThumbnails", true]],
+    set: [["browser.tabs.hoverPreview.showThumbnails", true]],
   });
   const tabUrl1 = "about:blank";
   const tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl1);

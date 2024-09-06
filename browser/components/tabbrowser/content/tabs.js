@@ -9,7 +9,7 @@
 
 
 {
-  const TAB_PREVIEW_PREF = "browser.tabs.cardPreview.enabled";
+  const TAB_PREVIEW_PREF = "browser.tabs.hoverPreview.enabled";
 
   class MozTabbrowserTabs extends MozElements.TabsBase {
     constructor() {

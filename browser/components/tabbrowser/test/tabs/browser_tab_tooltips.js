@@ -31,6 +31,12 @@ function closeTooltip(node, tooltip) {
   return tooltipHiddenPromise;
 }
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.hoverPreview.enabled", false]],
+  });
+});
+
 
 
 add_task(async function () {
