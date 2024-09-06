@@ -385,6 +385,31 @@ class InactivePropertyHelper {
       },
       
       {
+        invalidProperties: ["float"],
+        when: () => this.gridItem || this.flexItem,
+        fixId: "inactive-css-only-non-grid-or-flex-item-fix",
+        msgId: "inactive-css-only-non-grid-or-flex-item",
+      },
+      
+      {
+        invalidProperties: ["clear"],
+        when: () => !this.isBlockLevel(),
+        fixId: "inactive-css-not-block-fix",
+        msgId: "inactive-css-not-block",
+      },
+      
+      {
+        invalidProperties: [
+          "shape-image-threshold",
+          "shape-margin",
+          "shape-outside",
+        ],
+        when: () => !this.isFloated,
+        fixId: "inactive-css-not-floated-fix",
+        msgId: "inactive-css-not-floated",
+      },
+      
+      {
         invalidProperties: VISITED_INVALID_PROPERTIES,
         when: () => this.isVisitedRule(),
         fixId: "learn-more",
@@ -933,6 +958,19 @@ class InactivePropertyHelper {
     const { style } = this.cssRule;
 
     return values.some(value => style[propName] === value);
+  }
+
+  
+
+
+  isBlockLevel() {
+    return this.checkComputedStyle("display", [
+      "block",
+      "flow-root",
+      "flex",
+      "grid",
+      "table",
+    ]);
   }
 
   
