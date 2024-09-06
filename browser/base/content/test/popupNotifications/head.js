@@ -365,31 +365,3 @@ function triggerSecondaryCommand(popup, index) {
     altKey: !navigator.platform.includes("Mac"),
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function ensureSecurityDelayReady(timeNewWindowOpened = 0) {
-  let secDelay = Services.prefs.getIntPref(
-    "security.notification_enable_delay"
-  );
-
-  await TestUtils.waitForCondition(
-    () => Cu.now() - timeNewWindowOpened > secDelay,
-    "Wait for performance.now() > SECURITY_DELAY",
-    500,
-    50
-  );
-}
