@@ -856,8 +856,6 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
 
   
   
-  
-  
   nsTArray<KeySystemConfig::EMECodecString> supportedVideoCodecs;
 
   if (aFlags.contains(CapabilitesFlag::NeedClearLeadCheck)) {
@@ -985,31 +983,6 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
       c->encryptionSchemes().AppendElement(CryptoScheme::Cenc);
       MFCDM_PARENT_SLOG("%s: +audio:%s", __func__, codec.get());
     }
-  }
-
-  
-  
-  if (!supportedVideoCodecs.IsEmpty()) {
-    aCapabilitiesOut.encryptionSchemes().AppendElement(CryptoScheme::Cenc);
-    MFCDM_PARENT_SLOG("%s: +scheme:cenc", __func__);
-  }
-
-  
-  static std::pair<CryptoScheme, nsDependentString> kCbcs =
-      std::pair<CryptoScheme, nsDependentString>(
-          CryptoScheme::Cbcs, u"encryption-type=cbcs,encryption-iv-size=16,");
-  bool ok = true;
-  for (const auto& codec : supportedVideoCodecs) {
-    ok &= FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
-                          nsCString(""), kCbcs.second ,
-                          isHardwareDecryption);
-    if (!ok) {
-      break;
-    }
-  }
-  if (ok) {
-    aCapabilitiesOut.encryptionSchemes().AppendElement(kCbcs.first);
-    MFCDM_PARENT_SLOG("%s: +scheme:cbcs", __func__);
   }
 
   
