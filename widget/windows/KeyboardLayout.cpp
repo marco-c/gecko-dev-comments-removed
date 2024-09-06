@@ -1643,7 +1643,7 @@ void NativeKey::InitWithKeyOrChar() {
                  "The high surrogate input is discarded",
                  this));
       }
-    } else if (pendingHighSurrogate && !mFollowingCharMsgs.IsEmpty()) {
+    } else if (!mFollowingCharMsgs.IsEmpty()) {
       MOZ_LOG(gKeyLog, LogLevel::Warning,
               ("%p   NativeKey::InitWithKeyOrChar(), there is pending "
                "high surrogate input, but received 2 or more character input.  "
@@ -2073,11 +2073,7 @@ nsEventStatus NativeKey::InitKeyEvent(
       
       
       
-      
-      
-      
-      if (mCharMessageHasGone || (IsSysKeyDownMessage() && mIsPrintableKey &&
-                                  mFollowingCharMsgs.IsEmpty())) {
+      if (mCharMessageHasGone) {
         aKeyEvent.PreventDefaultBeforeDispatch(CrossProcessForwarding::eAllow);
       }
       aKeyEvent.mKeyCode = mDOMKeyCode;

@@ -278,6 +278,7 @@ BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
       mUniqueId(aTabId),
       mDidFakeShow(false),
       mTriedBrowserInit(false),
+      mIgnoreKeyPressEvent(false),
       mHasValidInnerSize(false),
       mDestroyed(false),
       mIsTopLevel(aIsTopLevel),
@@ -1983,13 +1984,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
 
   
   
-  
-  
-  
-  
   const bool isPrecedingKeyDownEventConsumed =
-      aEvent.mMessage == eKeyPress && mPreviousConsumedKeyDownCode.isSome() &&
-      mPreviousConsumedKeyDownCode.value() == aEvent.mCodeNameIndex;
+      aEvent.mMessage == eKeyPress && mIgnoreKeyPressEvent;
 
   WidgetKeyboardEvent localEvent(aEvent);
   localEvent.mWidget = mPuppetWidget;
@@ -2003,41 +1999,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
     UpdateRepeatedKeyEventEndTime(localEvent);
 
     if (aEvent.mMessage == eKeyDown) {
-      
-      
-      
-      if (status == nsEventStatus_eConsumeNoDefault) {
-        MOZ_ASSERT_IF(!aEvent.mFlags.mIsSynthesizedForTests,
-                      aEvent.mCodeNameIndex != CODE_NAME_INDEX_USE_STRING);
-        
-        
-        
-        
-        
-        
-        
-        mPreviousConsumedKeyDownCode = Some(aEvent.mCodeNameIndex);
-      }
-      
-      
-      
-      else if (mPreviousConsumedKeyDownCode.isSome() &&
-               aEvent.mCodeNameIndex == mPreviousConsumedKeyDownCode.value()) {
-        mPreviousConsumedKeyDownCode.reset();
-      }
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    else if (aEvent.mMessage == eKeyUp &&
-             mPreviousConsumedKeyDownCode.isSome() &&
-             aEvent.mCodeNameIndex == mPreviousConsumedKeyDownCode.value()) {
-      mPreviousConsumedKeyDownCode.reset();
+      mIgnoreKeyPressEvent = status == nsEventStatus_eConsumeNoDefault;
     }
 
     if (localEvent.mFlags.mIsSuppressedOrDelayed) {
