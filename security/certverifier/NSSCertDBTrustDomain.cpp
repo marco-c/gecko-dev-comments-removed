@@ -476,9 +476,16 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
         
         SECItem candidateCertDERSECItem =
             UnsafeMapInputToSECItem(candidateCertDER);
+        auto timerId =
+            mozilla::glean::cert_verifier::cert_trust_evaluation_time.Start();
+
         UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
             CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false,
             true));
+
+        mozilla::glean::cert_verifier::cert_trust_evaluation_time
+            .StopAndAccumulate(std::move(timerId));
+
         if (!candidateCert) {
           result = MapPRErrorCodeToResult(PR_GetError());
           return;
@@ -488,6 +495,7 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
         
         
         
+
         CERTCertTrust trust;
         if (CERT_GetCertTrust(candidateCert.get(), &trust) == SECSuccess) {
           uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, mCertDBTrustType);
