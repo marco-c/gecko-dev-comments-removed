@@ -309,10 +309,24 @@ class ElementSpecific {
     MOZ_ASSERT(offset <= targetLength);
     MOZ_ASSERT(sourceLength <= targetLength - offset);
 
+    
+    
+    
+    
+    
+    if (sourceLength == 0) {
+      return true;
+    }
+
     if (TypedArrayObject::sameBuffer(target, source)) {
       return setFromOverlappingTypedArray(target, targetLength, source,
                                           sourceLength, offset);
     }
+
+    
+    
+    
+    static_assert(alignof(std::max_align_t) % sizeof(T) == 0);
 
     SharedMem<T*> dest =
         target->dataPointerEither().template cast<T*>() + offset;
