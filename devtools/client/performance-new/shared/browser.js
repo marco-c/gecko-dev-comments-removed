@@ -21,6 +21,7 @@
 
 
 
+
 const UI_BASE_URL_PREF = "devtools.performance.recording.ui-base-url";
 
 const UI_BASE_URL_PATH_PREF = "devtools.performance.recording.ui-base-url-path";
@@ -48,7 +49,12 @@ const UI_BASE_URL_PATH_DEFAULT = "/from-browser";
 
 
 
-async function openProfilerTab(profilerViewMode) {
+
+
+
+
+
+async function openProfilerTab({ profilerViewMode, defaultPanel }) {
   
   const baseUrl = Services.prefs.getStringPref(
     UI_BASE_URL_PREF,
@@ -59,6 +65,7 @@ async function openProfilerTab(profilerViewMode) {
     UI_BASE_URL_PATH_PREF,
     UI_BASE_URL_PATH_DEFAULT
   );
+  const additionalPath = defaultPanel ? `/${defaultPanel}/` : "";
   
   
   const enableActiveTab = Services.prefs.getBoolPref(
@@ -82,7 +89,7 @@ async function openProfilerTab(profilerViewMode) {
     viewModeQueryString = `?view=${profilerViewMode}`;
   }
 
-  const urlToLoad = `${baseUrl}${baseUrlPath}${viewModeQueryString}`;
+  const urlToLoad = `${baseUrl}${baseUrlPath}${additionalPath}${viewModeQueryString}`;
 
   
   

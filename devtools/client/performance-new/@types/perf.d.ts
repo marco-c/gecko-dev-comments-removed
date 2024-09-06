@@ -438,6 +438,15 @@ export interface ScaleFunctions {
 
 export type ProfilerViewMode = "full" | "active-tab" | "origins";
 
+
+
+
+
+
+
+export type ProfilerPanel = "calltree" | "flame-graph" | "stack-chart" |
+  "marker-chart" | "marker-table" | "network-chart" | "js-tracer";
+
 export interface PresetDefinition {
   entries: number;
   interval: number;
