@@ -9,6 +9,7 @@
 
 #include <android/log.h>
 #include <pthread.h>
+#include <sys/prctl.h>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
@@ -167,7 +168,17 @@ JNIEnv* GetEnvForThread() {
   
   
   
-  if (!sJavaVM->AttachCurrentThread(&env, nullptr)) {
+  
+  
+  char threadName[16] = {'\0'};
+  prctl(PR_GET_NAME, threadName);
+  JavaVMAttachArgs attachArgs{
+      .version = JNI_VERSION_1_4, .name = threadName, .group = nullptr};
+
+  
+  
+  
+  if (!sJavaVM->AttachCurrentThread(&env, &attachArgs)) {
     MOZ_ASSERT(env);
     MOZ_ALWAYS_TRUE(!pthread_setspecific(sThreadEnvKey, env));
     return env;
