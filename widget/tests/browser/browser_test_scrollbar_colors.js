@@ -27,6 +27,15 @@ add_task(async () => {
 
     
 
+    const WIN_REFERENCES = [
+      
+      ["255,255,0", 6889],
+      
+      ["0,0,255", 540],
+      
+      ["0,255,255", 2487],
+    ];
+
     const MAC_REFERENCES = [
       
       ["255,255,0", 7225],
@@ -37,8 +46,18 @@ add_task(async () => {
     ];
 
     
+    const LINUX_REFERENCES = [
+      
+      ["255,255,0", 7744],
+      
+      ["0,0,255", 1104],
+      
+      ["0,255,255", 1152],
+    ];
 
-    const WIN10_REFERENCES = [
+    
+
+    const WIN10_NNT_REFERENCES = [
       
       ["255,255,0", 6889],
       
@@ -47,7 +66,7 @@ add_task(async () => {
       ["0,255,255", 2355],
     ];
 
-    const WIN11_REFERENCES = [
+    const WIN11_NNT_REFERENCES = [
       
       ["255,255,0", 6889],
       
@@ -56,7 +75,9 @@ add_task(async () => {
       ["0,255,255", 2787],
     ];
 
-    const LINUX_REFERENCES = [
+    const MAC_NNT_REFERENCES = MAC_REFERENCES;
+
+    const LINUX_NNT_REFERENCES = [
       
       ["255,255,0", 7744],
       
@@ -95,19 +116,23 @@ add_task(async () => {
 
     let canvas = snapshotRect(content.window, outerRect);
     let stats = countPixels(canvas);
+    let isNNT = SpecialPowers.getBoolPref("widget.non-native-theme.enabled");
+
     let references;
     if (content.navigator.platform.startsWith("Win")) {
-      if (WindowsVersionInfo.get().buildNumber >= 22000) {
+      if (!isNNT) {
+        references = WIN_REFERENCES;
+      } else if (WindowsVersionInfo.get().buildNumber >= 22000) {
         
-        references = WIN11_REFERENCES;
+        references = WIN11_NNT_REFERENCES;
       } else {
         
-        references = WIN10_REFERENCES;
+        references = WIN10_NNT_REFERENCES;
       }
     } else if (content.navigator.platform.startsWith("Mac")) {
-      references = MAC_REFERENCES;
+      references = isNNT ? MAC_NNT_REFERENCES : MAC_REFERENCES;
     } else if (content.navigator.platform.startsWith("Linux")) {
-      references = LINUX_REFERENCES;
+      references = isNNT ? LINUX_NNT_REFERENCES : LINUX_REFERENCES;
     } else {
       ok(false, "Unsupported platform");
     }

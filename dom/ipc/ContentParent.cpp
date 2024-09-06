@@ -2635,7 +2635,9 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
 
 #ifdef MOZ_WIDGET_GTK
   
-  if (StaticPrefs::dom_ipc_avoid_gtk() && widget::GdkIsX11Display()) {
+  if (StaticPrefs::dom_ipc_avoid_gtk() &&
+      StaticPrefs::widget_non_native_theme_enabled() &&
+      widget::GdkIsX11Display()) {
     mSubprocess->SetEnv("MOZ_HEADLESS", "1");
   }
 #endif

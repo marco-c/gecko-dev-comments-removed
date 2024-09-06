@@ -1233,7 +1233,8 @@ void LookAndFeel::DoHandleGlobalThemeChange() {
   
   
   
-  if (XRE_IsParentProcess()) {
+  if (XRE_IsParentProcess() ||
+      !StaticPrefs::widget_non_native_theme_enabled()) {
     if (nsCOMPtr<nsITheme> theme = do_GetNativeThemeDoNotUseDirectly()) {
       theme->ThemeChanged();
     }
