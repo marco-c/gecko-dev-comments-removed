@@ -667,20 +667,13 @@ void DrawTargetCairo::Link(const char* aDestination, const Rect& aRect) {
   
   
   
-  
-  
-  
   nsAutoCString dest(aDestination);
   for (size_t i = dest.Length(); i > 0;) {
     --i;
     if (dest[i] == '\'') {
       dest.ReplaceLiteral(i, 1, "\\'");
     } else if (dest[i] == '\\') {
-#ifdef XP_MACOSX
       dest.ReplaceLiteral(i, 1, "\\\\");
-#else
-      dest.ReplaceLiteral(i, 1, "\\\\\\\\");
-#endif
     }
   }
 
