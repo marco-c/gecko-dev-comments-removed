@@ -248,6 +248,11 @@ module.exports = {
       path: "source-map/source-map-library.js",
       description: "Measure source map library performance",
     },
+    {
+      name: "jstracer",
+      path: "jstracer/jstracer.js",
+      description: "Measure JavaScript tracer performance",
+    },
     
     
     
