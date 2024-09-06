@@ -184,23 +184,24 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, gc::CellColor mapColor, K& key,
   }
 
   if (populateWeakKeysTable) {
-    
-    
-    
+    MOZ_ASSERT(trc->weakMapAction() == JS::WeakMapTraceAction::Expand);
 
+    
+    
+    
     if (keyColor < mapColor) {
-      MOZ_ASSERT(trc->weakMapAction() == JS::WeakMapTraceAction::Expand);
       
       
       
       
+
       gc::TenuredCell* tenuredValue = nullptr;
       if (cellValue && cellValue->isTenured()) {
         tenuredValue = &cellValue->asTenured();
       }
 
-      if (!this->addImplicitEdges(AsMarkColor(mapColor), keyCell, delegate,
-                                  tenuredValue)) {
+      if (!this->addEphemeronEdgesForEntry(AsMarkColor(mapColor), keyCell,
+                                           delegate, tenuredValue)) {
         marker->abortLinearWeakMarking();
       }
     }

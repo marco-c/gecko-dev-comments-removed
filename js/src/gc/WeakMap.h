@@ -152,12 +152,12 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   
   
-  [[nodiscard]] bool addImplicitEdges(gc::MarkColor mapColor, gc::Cell* key,
-                                      gc::Cell* delegate,
-                                      gc::TenuredCell* value);
-  [[nodiscard]] bool addEphemeronTableEntries(gc::MarkColor mapColor,
-                                              gc::Cell* key, gc::Cell* value,
-                                              gc::Cell* maybeValue);
+  [[nodiscard]] bool addEphemeronEdgesForEntry(gc::MarkColor mapColor,
+                                               gc::Cell* key,
+                                               gc::Cell* delegate,
+                                               gc::TenuredCell* value);
+  [[nodiscard]] bool addEphemeronEdge(gc::MarkColor color, gc::Cell* src,
+                                      gc::Cell* dst);
 
   virtual bool markEntries(GCMarker* marker) = 0;
 
