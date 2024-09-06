@@ -22,6 +22,15 @@ void MacroAssembler::move64(Imm64 imm, Register64 dest) {
   Mov(ARMRegister(dest.reg, 64), imm.value);
 }
 
+void MacroAssembler::moveFloat16ToGPR(FloatRegister src, Register dest) {
+  
+  
+  Fmov(ARMRegister(dest, 32), ARMFPRegister(src, 32));
+
+  
+  Uxth(ARMRegister(dest, 32), ARMRegister(dest, 32));
+}
+
 void MacroAssembler::moveGPRToFloat16(Register src, FloatRegister dest) {
   
   Uxth(ARMRegister(src, 32), ARMRegister(src, 32));

@@ -6898,6 +6898,15 @@ class MStoreDataViewElement : public MQuaternaryInstruction,
     return use == getUseFor(2) && writeType() == Scalar::Float32;
   }
 
+#ifdef DEBUG
+  
+  
+  bool isConsistentFloat32Use(MUse* use) const override {
+    return use == getUseFor(2) &&
+           (writeType() == Scalar::Float32 || writeType() == Scalar::Float16);
+  }
+#endif
+
   ALLOW_CLONE(MStoreDataViewElement)
 };
 
