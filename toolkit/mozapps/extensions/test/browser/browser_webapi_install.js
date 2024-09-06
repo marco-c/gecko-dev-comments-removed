@@ -17,12 +17,11 @@ const TESTPAGE = `${SECURE_TESTROOT}${TESTPATH}`;
 const XPI_URL = `${SECURE_TESTROOT}../xpinstall/amosigned.xpi`;
 const XPI_ADDON_ID = "amosigned-xpi@tests.mozilla.org";
 
-const XPI_SHA =
-  "sha256:91121ed2c27f670f2307b9aebdd30979f147318c7fb9111c254c14ddbb84e4b0";
-
 const ID = "amosigned-xpi@tests.mozilla.org";
 
-const XPI_LEN = 4287;
+let XPI_LEN = -1;
+let XPI_SHA =
+  "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
 AddonTestUtils.initMochitest(this);
 
@@ -50,6 +49,17 @@ add_setup(async function () {
     ],
   });
   info("added preferences");
+
+  
+  
+  
+  const xpiFilePath = getTestFilePath("../xpinstall/amosigned.xpi");
+  const xpiStat = await IOUtils.stat(xpiFilePath);
+  XPI_LEN = xpiStat.size;
+
+  
+  const xpiFileHash = await IOUtils.computeHexDigest(xpiFilePath, "sha256");
+  XPI_SHA = `sha256:${xpiFileHash}`;
 });
 
 
@@ -165,7 +175,7 @@ async function testInstall(browser, args, steps, description) {
               }
             } catch (err) {
               if (!nextStep.expectError) {
-                throw new Error("Install failed unexpectedly");
+                throw new Error("Install failed unexpectedly: " + err);
               }
             }
           } else if (nextStep.action == "cancel") {
@@ -287,12 +297,12 @@ add_task(
     "install with empty string for hash works"
   )
 );
-add_task(
-  makeRegularTest(
+add_task(async function test_install_successfully_with_filehash() {
+  await makeRegularTest(
     { url: XPI_URL, addonId, hash: XPI_SHA },
     "install with hash works"
-  )
-);
+  );
+});
 
 add_task(
   makeInstallTest(async function (browser) {
@@ -531,7 +541,7 @@ add_task(
 add_task(
   makeInstallTest(async function (browser) {
     let id = "amosigned-xpi@tests.mozilla.org";
-    let version = "2.1";
+    let version = "2.2";
 
     await AddonTestUtils.loadBlocklistRawData({
       extensionsMLBF: [
