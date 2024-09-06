@@ -50,10 +50,10 @@ assertDecl("function f(a,[x,y]) { function a() { } }",
                    blockStmt([funDecl(ident("a"), [], blockStmt([]))])));
 
 
-
-
-
-
+assertDecl("function f(a,[x,y],b,[w,z],c) { function b() { } }",
+           funDecl(ident("f"),
+                   [ident("a"), arrPatt([ident("x"), ident("y")]), ident("b"), arrPatt([ident("w"), ident("z")]), ident("c")],
+                   blockStmt([funDecl(ident("b"), [], blockStmt([]))])));
 
 
 
@@ -61,10 +61,9 @@ assertStmt("function f() { function g() { } function g() { } }",
            funDecl(ident("f"), [], blockStmt([funDecl(ident("g"), [], blockStmt([])),
                                               funDecl(ident("g"), [], blockStmt([]))])));
 
-
-
-
-
+assertStmt("function f() { function g() { } function g() { return 42 } }",
+          funDecl(ident("f"), [], blockStmt([funDecl(ident("g"), [], blockStmt([])),
+                                             funDecl(ident("g"), [], blockStmt([returnStmt(lit(42))]))])));
 
 assertStmt("function f() { var x = 42; var x = 43; }",
            funDecl(ident("f"), [], blockStmt([varDecl([{ id: ident("x"), init: lit(42) }]),
