@@ -25,6 +25,7 @@ function debug(...args) {
 debug("Debug Line");
 debug("Another debug line, with", { an: "object" });
 
+
 let output = {
   foo: "Hello World",
 };
