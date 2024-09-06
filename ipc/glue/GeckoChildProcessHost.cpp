@@ -68,7 +68,6 @@
 #ifdef XP_WIN
 #  include <stdlib.h>
 
-#  include "mozilla/WindowsVersion.h"
 #  include "nsIWinTaskbar.h"
 #  define NS_TASKBAR_CONTRACTID "@mozilla.org/windows-taskbar;1"
 
@@ -257,7 +256,7 @@ class BaseProcessLauncher {
 };
 
 #ifdef XP_WIN
-class WindowsProcessLauncher final : public BaseProcessLauncher {
+class WindowsProcessLauncher : public BaseProcessLauncher {
  public:
   WindowsProcessLauncher(GeckoChildProcessHost* aHost,
                          std::vector<std::string>&& aExtraOpts)
@@ -268,9 +267,6 @@ class WindowsProcessLauncher final : public BaseProcessLauncher {
   virtual Result<Ok, LaunchError> DoSetup() override;
   virtual RefPtr<ProcessHandlePromise> DoLaunch() override;
   virtual Result<Ok, LaunchError> DoFinishLaunch() override;
-
- private:
-  void AddApplicationPrefetchArgument();
 
   mozilla::Maybe<CommandLine> mCmdLine;
 #  ifdef MOZ_SANDBOX
@@ -1566,97 +1562,6 @@ Result<Ok, LaunchError> MacProcessLauncher::DoFinishLaunch() {
 #endif  
 
 #ifdef XP_WIN
-void WindowsProcessLauncher::AddApplicationPrefetchArgument() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  static size_t const kMaxSlotNo = IsWin1122H2OrLater() ? 16 : 8;
-
-  
-  
-  
-  
-  
-  size_t const prefetchSlot = [&]() -> size_t {
-    switch (mProcessType) {
-      
-      case GeckoProcessType_Default:
-      
-      case GeckoProcessType_ForkServer:
-      
-      case GeckoProcessType_End:
-      
-      default:
-        MOZ_ASSERT_UNREACHABLE("Invalid process type");
-        return 0;
-
-      
-      
-      
-      case GeckoProcessType_Content:
-        return 2;
-      case GeckoProcessType_Socket:
-        return 3;  
-      case GeckoProcessType_GMPlugin:
-        return 4;
-      case GeckoProcessType_GPU:
-        return 5;
-      case GeckoProcessType_RemoteSandboxBroker:
-        return 6;  
-      case GeckoProcessType_RDD:
-        return 7;
-
-      case GeckoProcessType_Utility: {
-        
-        
-        
-        
-        
-#  ifndef MOZ_SANDBOX
-        size_t const val = 0;
-#  else
-        size_t const val = static_cast<size_t>(mSandbox);
-#  endif
-        return std::min(kMaxSlotNo, 8 + val);
-      }
-
-      
-      
-      
-      case GeckoProcessType_IPDLUnitTest:
-      case GeckoProcessType_VR:
-        return kMaxSlotNo;
-    }
-  }();
-  MOZ_ASSERT(prefetchSlot <= kMaxSlotNo);
-
-  if (prefetchSlot == 0) {
-    
-    return;
-  }
-
-  mCmdLine->AppendLooseValue(StringPrintf(L"/prefetch:%zu", prefetchSlot));
-}
-
 Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   Result<Ok, LaunchError> aError = BaseProcessLauncher::DoSetup();
   if (aError.isErr()) {
@@ -1836,9 +1741,6 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
 
   
   mCmdLine->AppendLooseValue(UTF8ToWide(ChildProcessType()));
-
-  
-  AddApplicationPrefetchArgument();
 
 #  ifdef MOZ_SANDBOX
   if (mUseSandbox) {
