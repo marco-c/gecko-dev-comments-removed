@@ -2523,7 +2523,7 @@ const BrowserSearch = {
     event
   ) {
     event = getRootEvent(event);
-    let where = whereToOpenLink(event);
+    let where = BrowserUtils.whereToOpenLink(event);
     if (where == "current") {
       
       where = "tab";
@@ -4537,7 +4537,7 @@ nsBrowserAccess.prototype = {
       : PrivateBrowsingUtils.isWindowPrivate(window);
 
     switch (aWhere) {
-      case Ci.nsIBrowserDOMWindow.OPEN_NEWWINDOW:
+      case Ci.nsIBrowserDOMWindow.OPEN_NEWWINDOW: {
         
         
         var url = aURI && aURI.spec;
@@ -4581,6 +4581,7 @@ nsBrowserAccess.prototype = {
           console.error(ex);
         }
         break;
+      }
       case Ci.nsIBrowserDOMWindow.OPEN_NEWTAB:
       case Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_BACKGROUND: {
         
@@ -4991,7 +4992,7 @@ function setToolbarVisibility(
         document.documentElement.toggleAttribute(overlapAttr, false);
         break;
       case "newtab":
-      default:
+      default: {
         let currentURI = gBrowser?.currentURI;
         if (!gBrowserInit.domContentLoaded) {
           let uriToLoad = gBrowserInit.uriToLoadPromise;
@@ -5008,6 +5009,7 @@ function setToolbarVisibility(
         isVisible = BookmarkingUI.isOnNewTabPage(currentURI);
         document.documentElement.toggleAttribute(overlapAttr, isVisible);
         break;
+      }
     }
   }
 
@@ -5420,7 +5422,7 @@ function handleLinkClick(event, href, linkNode) {
     return false;
   }
 
-  var where = whereToOpenLink(event);
+  var where = BrowserUtils.whereToOpenLink(event);
   if (where == "current") {
     return false;
   }
@@ -5493,7 +5495,7 @@ function middleMousePaste(event) {
 
   
   
-  let where = whereToOpenLink(event, true, false);
+  let where = BrowserUtils.whereToOpenLink(event, true, false);
   let lastLocationChange;
   if (where == "current") {
     lastLocationChange = gBrowser.selectedBrowser.lastLocationChange;
@@ -7051,7 +7053,7 @@ function safeModeRestart() {
 
 function duplicateTabIn(aTab, where, delta) {
   switch (where) {
-    case "window":
+    case "window": {
       let otherWin = OpenBrowserWindow({
         private: PrivateBrowsingUtils.isBrowserPrivate(aTab.linkedBrowser),
       });
@@ -7073,6 +7075,7 @@ function duplicateTabIn(aTab, where, delta) {
         "browser-delayed-startup-finished"
       );
       break;
+    }
     case "tabshifted":
       SessionStore.duplicateTab(window, aTab, delta);
       
@@ -8085,7 +8088,7 @@ var FirefoxViewHandler = {
   },
   handleEvent(e) {
     switch (e.type) {
-      case "TabSelect":
+      case "TabSelect": {
         const selected = e.target == this.tab;
         this.button?.toggleAttribute("open", selected);
         this.button?.setAttribute("aria-pressed", selected);
@@ -8096,6 +8099,7 @@ var FirefoxViewHandler = {
         gBrowser.visibleTabs[0].style.MozUserFocus =
           e.target == this.tab ? "normal" : "";
         break;
+      }
       case "TabClose":
         this.tab = null;
         gBrowser.tabContainer.removeEventListener("TabSelect", this);

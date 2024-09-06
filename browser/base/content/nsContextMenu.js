@@ -1685,7 +1685,7 @@ class nsContextMenu {
 
   
   viewMedia(e) {
-    let where = whereToOpenLink(e, false, false);
+    let where = BrowserUtils.whereToOpenLink(e, false, false);
     if (where == "current") {
       where = "tab";
     }
@@ -2499,7 +2499,7 @@ class nsContextMenu {
     let drmInfoURL =
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
       "drm-content";
-    let dest = whereToOpenLink(aEvent);
+    let dest = BrowserUtils.whereToOpenLink(aEvent);
     
     
     if (dest == "current") {
