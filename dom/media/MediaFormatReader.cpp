@@ -2402,14 +2402,6 @@ void MediaFormatReader::Update(TrackType aTrack) {
                 !!mVideo.mIsHardwareAccelerated);
           }
         }
-#ifdef XP_WIN
-        
-        
-        mVideo.mIsHardwareAccelerated =
-            mVideo.mIsHardwareAccelerated ||
-            (videoData->mImage &&
-             videoData->mImage->GetFormat() == ImageFormat::D3D11_YCBCR_IMAGE);
-#endif
       }
     } else if (decoder.HasFatalError()) {
       nsCString mimeType = decoder.GetCurrentInfo()->mMimeType;

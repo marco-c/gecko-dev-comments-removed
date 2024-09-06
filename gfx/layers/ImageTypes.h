@@ -85,11 +85,6 @@ enum class ImageFormat {
   
 
 
-  D3D11_YCBCR_IMAGE,
-
-  
-
-
 
   GPU_VIDEO,
 
