@@ -3589,16 +3589,6 @@ pref("browser.search.removeEngineInfobar.enabled", true);
 
 
 
-#ifdef NIGHTLY_BUILD
-pref("browser.search.newSearchConfig.enabled", true);
-#else
-pref("browser.search.newSearchConfig.enabled", false);
-#endif
-
-
-
-
-
 
 
 
