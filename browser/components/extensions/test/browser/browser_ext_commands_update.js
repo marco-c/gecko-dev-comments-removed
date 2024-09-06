@@ -401,11 +401,11 @@ add_task(async function updateSidebarCommand() {
   await extension.awaitMessage("sidebar");
 
   
-  let switcherShown = promisePopupShown(SidebarController._switcherPanel);
-  SidebarController.showSwitcherPanel();
+  let switcherShown = promisePopupShown(SidebarUI._switcherPanel);
+  SidebarUI.showSwitcherPanel();
   await switcherShown;
-  let switcherHidden = promisePopupHidden(SidebarController._switcherPanel);
-  SidebarController.hideSwitcherPanel();
+  let switcherHidden = promisePopupHidden(SidebarUI._switcherPanel);
+  SidebarUI.hideSwitcherPanel();
   await switcherHidden;
 
   let menuitemId = `sidebarswitcher_menu_${makeWidgetId(

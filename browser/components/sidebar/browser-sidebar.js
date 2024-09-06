@@ -5,9 +5,7 @@
 
 
 
-
-
-var SidebarController = {
+var SidebarUI = {
   get sidebars() {
     if (this._sidebars) {
       return this._sidebars;
@@ -136,8 +134,8 @@ var SidebarController = {
     }
 
     if (this.sidebarRevampEnabled) {
-      await import("chrome://browser/content/sidebar/sidebar-main.mjs");
-      document.getElementById("sidebar-main").hidden = false;
+      await import("chrome://browser/content/sidebar/sidebar-launcher.mjs");
+      document.getElementById("sidebar-launcher").hidden = false;
       document.getElementById("sidebar-header").hidden = true;
     } else {
       this._switcherTarget.addEventListener("command", () => {
@@ -353,7 +351,7 @@ var SidebarController = {
     [...browser.children].forEach((node, i) => {
       node.style.order = i + 1;
     });
-    let sidebarMain = document.querySelector("sidebar-main");
+    let sidebarLauncher = document.querySelector("sidebar-launcher");
 
     if (!this._positionStart) {
       
@@ -365,18 +363,18 @@ var SidebarController = {
 
       appcontent.style.order = boxOrdinal;
       
-      sidebarMain.style.order = parseInt(this._box.style.order) + 1;
+      sidebarLauncher.style.order = parseInt(this._box.style.order) + 1;
       
       this._box.setAttribute("positionend", true);
-      sidebarMain.setAttribute("positionend", true);
+      sidebarLauncher.setAttribute("positionend", true);
     } else {
       this._box.removeAttribute("positionend");
-      sidebarMain.removeAttribute("positionend");
+      sidebarLauncher.removeAttribute("positionend");
     }
 
     this.hideSwitcherPanel();
 
-    let content = SidebarController.browser.contentWindow;
+    let content = SidebarUI.browser.contentWindow;
     if (content && content.updatePosition) {
       content.updatePosition();
     }
@@ -393,7 +391,7 @@ var SidebarController = {
     
     
     
-    let sourceUI = sourceWindow.SidebarController;
+    let sourceUI = sourceWindow.SidebarUI;
     if (!sourceUI || !sourceUI._box) {
       
       return false;
@@ -906,14 +904,14 @@ var SidebarController = {
 
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  SidebarController,
+  SidebarUI,
   "_positionStart",
-  SidebarController.POSITION_START_PREF,
+  SidebarUI.POSITION_START_PREF,
   true,
-  SidebarController.setPosition.bind(SidebarController)
+  SidebarUI.setPosition.bind(SidebarUI)
 );
 XPCOMUtils.defineLazyPreferenceGetter(
-  SidebarController,
+  SidebarUI,
   "sidebarRevampEnabled",
   "sidebar.revamp",
   false

@@ -124,7 +124,7 @@ async function runTests(options) {
   });
 
   
-  SidebarController.browser.addEventListener(
+  SidebarUI.browser.addEventListener(
     "load",
     async () => {
       

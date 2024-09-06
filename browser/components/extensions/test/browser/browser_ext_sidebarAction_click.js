@@ -54,7 +54,7 @@ add_task(async function test_sidebar_click_isAppTab_behavior() {
   await extension.awaitMessage("sidebar-ready");
 
   
-  let content = SidebarController.browser.contentWindow;
+  let content = SidebarUI.browser.contentWindow;
 
   
   
