@@ -247,9 +247,30 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
       if (hasNextPage) {
         tabs = tabs.slice(0, maxTabs);
       }
+      
+      
+      let device =
+        fxAccounts.device.recentDeviceList &&
+        fxAccounts.device.recentDeviceList.find(
+          d =>
+            d.id === Weave.Service.clientsEngine.getClientFxaDeviceId(client.id)
+        );
+      let remoteTabCloseAvailable =
+        device && fxAccounts.commands.closeTab.isDeviceCompatible(device);
       for (let [index, tab] of tabs.entries()) {
+        let tabEntContainer = document.createXULElement("hbox");
+        tabEntContainer.setAttribute("class", "PanelUI-tabitem-container");
+
         let tabEnt = this._createSyncedTabElement(tab, index);
-        container.appendChild(tabEnt);
+        tabEntContainer.appendChild(tabEnt);
+        
+        
+        if (remoteTabCloseAvailable) {
+          tabEntContainer.appendChild(
+            this._createCloseTabElement(tab.url, device)
+          );
+        }
+        container.appendChild(tabEntContainer);
       }
       if (numInactive) {
         let elt = this._createShowInactiveTabsElement(
@@ -345,6 +366,20 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
       this._showSyncedTabs(paginationInfo);
     });
     return showItem;
+  }
+
+  _createCloseTabElement(url, device) {
+    let closeBtn = document.createXULElement("image");
+    closeBtn.setAttribute("class", "close-icon remotetabs-close");
+
+    closeBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      
+      
+      
+      fxAccounts.commands.closeTab.enqueueTabToClose(device, url);
+    });
+    return closeBtn;
   }
 
   destroy() {
