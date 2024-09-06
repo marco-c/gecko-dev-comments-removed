@@ -143,35 +143,56 @@ add_task(async function () {
     "h1",
     "background-color",
     
-    `--css-no-inherit = ${CSS_NO_INHERIT_INITIAL_VALUE}`
+    `--css-no-inherit = ${CSS_NO_INHERIT_INITIAL_VALUE}`,
+    [
+      `syntax:"<color>"`,
+      `inherits:false`,
+      `initial-value:${CSS_NO_INHERIT_INITIAL_VALUE}`,
+    ]
   );
   await checkVariableTooltipForProperty(
     view,
     "h1",
     "color",
     
-    `--css-inherit = ${CSS_INHERIT_MAIN_VALUE}`
+    `--css-inherit = ${CSS_INHERIT_MAIN_VALUE}`,
+    [
+      `syntax:"<color>"`,
+      `inherits:true`,
+      `initial-value:${CSS_INHERIT_INITIAL_VALUE}`,
+    ]
   );
   await checkVariableTooltipForProperty(
     view,
     "h1",
     "border-color",
     
-    `--css-not-defined = ${CSS_NOT_DEFINED_INITIAL_VALUE}`
+    `--css-not-defined = ${CSS_NOT_DEFINED_INITIAL_VALUE}`,
+    [
+      `syntax:"<color>"`,
+      `inherits:true`,
+      `initial-value:${CSS_NOT_DEFINED_INITIAL_VALUE}`,
+    ]
   );
   await checkVariableTooltipForProperty(
     view,
     "h1",
     "height",
     
-    `--js-no-inherit = ${JS_NO_INHERIT_INITIAL_VALUE}`
+    `--js-no-inherit = ${JS_NO_INHERIT_INITIAL_VALUE}`,
+    [
+      `syntax:"<length>"`,
+      `inherits:false`,
+      `initial-value:${JS_NO_INHERIT_INITIAL_VALUE}`,
+    ]
   );
   await checkVariableTooltipForProperty(
     view,
     "h1",
     "width",
     
-    `--js-inherit = ${JS_INHERIT_MAIN_VALUE}`
+    `--js-inherit = ${JS_INHERIT_MAIN_VALUE}`,
+    [`syntax:"*"`, `inherits:true`]
   );
 
   info(
@@ -214,7 +235,8 @@ add_task(async function () {
     view,
     "h1",
     "caret-color",
-    `--css-dynamic-registered = orchid`
+    `--css-dynamic-registered = orchid`,
+    [`syntax:"<color>"`, `inherits:false`, `initial-value:orchid`]
   );
 
   info("Check that updating property does update rules view");
@@ -253,7 +275,8 @@ add_task(async function () {
     view,
     "h1",
     "caret-color",
-    `--css-dynamic-registered = purple`
+    `--css-dynamic-registered = purple`,
+    [`syntax:"<color>"`, `inherits:true`, `initial-value:purple`]
   );
 
   info("Check that removing property does update rules view");
@@ -324,7 +347,8 @@ add_task(async function () {
     view,
     "h1",
     "outline",
-    `--constructed = aqua`
+    `--constructed = aqua`,
+    [`syntax:"<color>"`, `inherits:true`, `initial-value:aqua`]
   );
 
   info(
@@ -465,11 +489,13 @@ function checkRegisteredProperties(view, expectedProperties) {
 
 
 
+
 async function checkVariableTooltipForProperty(
   view,
   ruleSelector,
   propertyName,
-  expectedTooltipContent
+  expectedTooltipValueContent,
+  expectedTooltipRegisteredPropertyContent
 ) {
   
   const variableEl = await waitFor(() =>
@@ -481,10 +507,26 @@ async function checkVariableTooltipForProperty(
   );
 
   const previewTooltip = await assertShowPreviewTooltip(view, variableEl);
+  const [valueEl, registeredPropertyEl] = previewTooltip.panel.querySelectorAll(
+    ".variable-value,.registered-property"
+  );
   is(
-    previewTooltip.panel.textContent,
-    expectedTooltipContent,
+    valueEl.textContent,
+    expectedTooltipValueContent,
     `CSS variable preview tooltip shows the expected value for ${propertyName} in ${ruleSelector}`
   );
+  if (!expectedTooltipRegisteredPropertyContent) {
+    is(
+      registeredPropertyEl,
+      undefined,
+      `CSS variable preview tooltip doesn't have registered property section for ${propertyName} in ${ruleSelector}`
+    );
+  } else {
+    is(
+      registeredPropertyEl.innerText,
+      expectedTooltipRegisteredPropertyContent.join("\n"),
+      `CSS variable preview tooltip has expected registered property section for ${propertyName} in ${ruleSelector}`
+    );
+  }
   await assertTooltipHiddenOnMouseOut(previewTooltip, variableEl);
 }

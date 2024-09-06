@@ -854,20 +854,24 @@ class ElementStyle {
 
 
 
-  getVariable(name, pseudo = "") {
+
+
+  getVariableData(name, pseudo = "") {
     const variables = this.variablesMap.get(pseudo);
-
-    if (variables && variables.has(name)) {
-      return variables.get(name);
-    }
-
-    
-    
     const registeredPropertiesMap =
       this.ruleView.getRegisteredPropertiesForSelectedNodeTarget();
-    return registeredPropertiesMap && registeredPropertiesMap.has(name)
-      ? registeredPropertiesMap.get(name).initialValue
-      : null;
+
+    const data = {};
+    if (variables?.has(name)) {
+      
+      
+      data.value = variables.get(name);
+    }
+    if (registeredPropertiesMap?.has(name)) {
+      data.registeredProperty = registeredPropertiesMap.get(name);
+    }
+
+    return data;
   }
 
   
