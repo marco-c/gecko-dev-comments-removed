@@ -71,6 +71,11 @@ class RtpPacketToSend : public RtpPacket {
     return retransmitted_sequence_number_;
   }
 
+  
+  
+  void set_original_ssrc(uint32_t ssrc) { original_ssrc_ = ssrc; }
+  absl::optional<uint32_t> original_ssrc() const { return original_ssrc_; }
+
   void set_allow_retransmission(bool allow_retransmission) {
     allow_retransmission_ = allow_retransmission;
   }
@@ -149,6 +154,7 @@ class RtpPacketToSend : public RtpPacket {
   webrtc::Timestamp capture_time_ = webrtc::Timestamp::Zero();
   absl::optional<RtpPacketMediaType> packet_type_;
   absl::optional<OriginalType> original_packet_type_;
+  absl::optional<uint32_t> original_ssrc_;
   absl::optional<int64_t> transport_sequence_number_;
   bool allow_retransmission_ = false;
   absl::optional<uint16_t> retransmitted_sequence_number_;
