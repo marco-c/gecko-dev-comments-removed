@@ -178,11 +178,11 @@ class CCGCScheduler {
   enum IsIdle { eNotIdle = false, eIdle = true };
   enum IsExtended { eNormalBudget = false, eExtendedBudget = true };
   enum IsInterruptible { eNonInterruptible = false, eInterruptible = true };
-  JS::SliceBudget CreateGCSliceBudget(mozilla::TimeDuration aDuration,
+  js::SliceBudget CreateGCSliceBudget(mozilla::TimeDuration aDuration,
                                       IsIdle aIsIdle, IsExtended aIsExtended,
                                       IsInterruptible aIsInterruptible) {
     mInterruptRequested = false;
-    auto budget = JS::SliceBudget(aDuration, aIsInterruptible == eInterruptible
+    auto budget = js::SliceBudget(aDuration, aIsInterruptible == eInterruptible
                                                  ? &mInterruptRequested
                                                  : nullptr);
     budget.idle = aIsIdle == eIdle;
@@ -352,13 +352,13 @@ class CCGCScheduler {
   
   
   
-  JS::SliceBudget ComputeCCSliceBudget(TimeStamp aDeadline,
+  js::SliceBudget ComputeCCSliceBudget(TimeStamp aDeadline,
                                        TimeStamp aCCBeginTime,
                                        TimeStamp aPrevSliceEndTime,
                                        TimeStamp aNow,
                                        bool* aPreferShorterSlices) const;
 
-  JS::SliceBudget ComputeInterSliceGCBudget(TimeStamp aDeadline,
+  js::SliceBudget ComputeInterSliceGCBudget(TimeStamp aDeadline,
                                             TimeStamp aNow);
 
   bool ShouldForgetSkippable(uint32_t aSuspectedCCObjects) const {
@@ -459,7 +459,7 @@ class CCGCScheduler {
 
   
   
-  JS::SliceBudget ComputeForgetSkippableBudget(TimeStamp aStartTimeStamp,
+  js::SliceBudget ComputeForgetSkippableBudget(TimeStamp aStartTimeStamp,
                                                TimeStamp aDeadline);
 
  private:
@@ -482,7 +482,7 @@ class CCGCScheduler {
 
   
   
-  JS::SliceBudget::InterruptRequestFlag mInterruptRequested;
+  js::SliceBudget::InterruptRequestFlag mInterruptRequested;
 
   
   
