@@ -121,6 +121,7 @@ class UiaTextRange : public ITextRangeProvider {
   int32_t mStartOffset = -1;
   RefPtr<MsaaAccessible> mEndAcc;
   int32_t mEndOffset = -1;
+  bool mIsEndOfLineInsertionPoint = false;
 };
 
 }  
