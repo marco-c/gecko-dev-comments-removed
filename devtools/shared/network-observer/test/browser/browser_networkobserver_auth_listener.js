@@ -344,6 +344,12 @@ async function testAuthRequestWithCredentialsListener({ earlyEvents }) {
   gBrowser.removeTab(tab);
 }
 add_task(async function () {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.auth.use_redirect_for_retries", true]],
+  });
   await testAuthRequestWithCredentialsListener({ earlyEvents: false });
   await testAuthRequestWithCredentialsListener({ earlyEvents: true });
 });
