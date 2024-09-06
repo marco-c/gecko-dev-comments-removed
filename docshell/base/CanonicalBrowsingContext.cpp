@@ -2174,9 +2174,11 @@ CanonicalBrowsingContext::ChangeRemoteness(
 
   
   
-  if (aOptions.mSpecificGroupId) {
+  if (aOptions.mReplaceBrowsingContext) {
     change->mSpecificGroup =
-        BrowsingContextGroup::GetOrCreate(aOptions.mSpecificGroupId);
+        aOptions.mSpecificGroupId
+            ? BrowsingContextGroup::GetOrCreate(aOptions.mSpecificGroupId)
+            : BrowsingContextGroup::Create(aOptions.mShouldCrossOriginIsolate);
     change->mSpecificGroup->AddKeepAlive();
   }
 

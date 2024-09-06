@@ -422,6 +422,24 @@ static already_AddRefed<BasePrincipal> GetAboutReaderURLPrincipal(
 
 
 
+static bool ShouldCrossOriginIsolate(nsIChannel* aChannel,
+                                     WindowGlobalParent* aParentWindow) {
+  nsILoadInfo::CrossOriginOpenerPolicy coop =
+      nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
+  if (aParentWindow) {
+    coop = aParentWindow->BrowsingContext()->Top()->GetOpenerPolicy();
+  } else if (nsCOMPtr<nsIHttpChannelInternal> httpChannel =
+                 do_QueryInterface(aChannel)) {
+    MOZ_ALWAYS_SUCCEEDS(httpChannel->GetCrossOriginOpenerPolicy(&coop));
+  }
+  return coop ==
+         nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
+}
+
+
+
+
+
 
 static bool ShouldIsolateSite(nsIPrincipal* aPrincipal,
                               bool aUseRemoteSubframes) {
@@ -580,6 +598,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
   NavigationIsolationOptions options;
   options.mReplaceBrowsingContext = aHasCOOPMismatch;
+  options.mShouldCrossOriginIsolate =
+      ShouldCrossOriginIsolate(aChannel, aParentWindow);
 
   
   
@@ -872,27 +892,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   }
 
   
-  
-  nsILoadInfo::CrossOriginOpenerPolicy coop =
-      nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
-  if (aParentWindow) {
-    coop = aTopBC->GetOpenerPolicy();
-  } else if (nsCOMPtr<nsIHttpChannelInternal> httpChannel =
-                 do_QueryInterface(aChannel)) {
-    MOZ_ALWAYS_SUCCEEDS(httpChannel->GetCrossOriginOpenerPolicy(&coop));
-  }
-  if (coop ==
-      nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP) {
+  if (options.mShouldCrossOriginIsolate) {
     webProcessType = WebProcessType::WebCoopCoep;
-
-    
-    
-    if (options.mReplaceBrowsingContext) {
-      MOZ_ASSERT(!options.mSpecificGroupId,
-                 "overriding previously-specified BCG ID");
-      options.mSpecificGroupId = BrowsingContextGroup::CreateId(
-           true);
-    }
   }
 
   switch (webProcessType) {
