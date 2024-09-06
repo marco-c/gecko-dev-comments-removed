@@ -490,16 +490,8 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   Duration until;
   if (resolvedOptions) {
     
-    Rooted<Value> largestUnitValue(
-        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
-    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
-                            largestUnitValue)) {
-      return false;
-    }
-
-    
     if (!CalendarDateUntil(cx, calendarRec, thisDate, otherDate,
-                           resolvedOptions, &until)) {
+                           settings.largestUnit, resolvedOptions, &until)) {
       return false;
     }
   } else {

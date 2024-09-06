@@ -1149,6 +1149,7 @@ bool js::temporal::DifferenceDate(JSContext* cx,
                                   Handle<CalendarRecord> calendar,
                                   Handle<Wrapped<PlainDateObject*>> one,
                                   Handle<Wrapped<PlainDateObject*>> two,
+                                  TemporalUnit largestUnit,
                                   Handle<PlainObject*> options,
                                   DateDuration* result) {
   auto* unwrappedOne = one.unwrap(cx);
@@ -1169,7 +1170,6 @@ bool js::temporal::DifferenceDate(JSContext* cx,
   MOZ_ASSERT(options->staticPrototype() == nullptr);
 
   
-  MOZ_ASSERT(options->containsPure(cx->names().largestUnit));
 
   
   if (oneDate == twoDate) {
@@ -1178,31 +1178,19 @@ bool js::temporal::DifferenceDate(JSContext* cx,
   }
 
   
-  Rooted<JS::Value> largestUnit(cx);
-  if (!GetProperty(cx, options, options, cx->names().largestUnit,
-                   &largestUnit)) {
-    return false;
-  }
+  if (largestUnit == TemporalUnit::Day) {
+    
+    int32_t days = DaysUntil(oneDate, twoDate);
 
-  if (largestUnit.isString()) {
-    bool isDay;
-    if (!EqualStrings(cx, largestUnit.toString(), cx->names().day, &isDay)) {
-      return false;
-    }
-
-    if (isDay) {
-      
-      int32_t days = DaysUntil(oneDate, twoDate);
-
-      
-      *result = {0, 0, 0, days};
-      return true;
-    }
+    
+    *result = {0, 0, 0, days};
+    return true;
   }
 
   
   Duration duration;
-  if (!CalendarDateUntil(cx, calendar, one, two, options, &duration)) {
+  if (!CalendarDateUntil(cx, calendar, one, two, largestUnit, options,
+                         &duration)) {
     return false;
   }
   *result = duration.toDateDuration();
@@ -1587,16 +1575,8 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   DateDuration difference;
   if (resolvedOptions) {
     
-    Rooted<Value> largestUnitValue(
-        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
-    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
-                            largestUnitValue)) {
-      return false;
-    }
-
-    
-    if (!DifferenceDate(cx, calendar, temporalDate, other, resolvedOptions,
-                        &difference)) {
+    if (!DifferenceDate(cx, calendar, temporalDate, other, settings.largestUnit,
+                        resolvedOptions, &difference)) {
       return false;
     }
   } else {

@@ -850,16 +850,8 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
     auto untilOptions = maybeOptions;
 
     
-    Rooted<Value> largestUnitValue(
-        cx, StringValue(TemporalUnitToString(cx, dateLargestUnit)));
-    if (!DefineDataProperty(cx, untilOptions, cx->names().largestUnit,
-                            largestUnitValue)) {
-      return false;
-    }
-
-    
-    if (!DifferenceDate(cx, calendar, date1, date2, untilOptions,
-                        &dateDifference)) {
+    if (!DifferenceDate(cx, calendar, date1, date2, dateLargestUnit,
+                        untilOptions, &dateDifference)) {
       return false;
     }
   } else {

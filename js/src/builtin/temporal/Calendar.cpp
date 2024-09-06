@@ -3506,27 +3506,6 @@ static bool BuiltinCalendarDateUntil(JSContext* cx,
   return true;
 }
 
-
-
-
-static bool BuiltinCalendarDateUntil(JSContext* cx,
-                                     Handle<Wrapped<PlainDateObject*>> one,
-                                     Handle<Wrapped<PlainDateObject*>> two,
-                                     Handle<JSObject*> options,
-                                     Duration* result) {
-  
-
-  
-  auto largestUnit = TemporalUnit::Day;
-  if (!GetTemporalUnit(cx, options, TemporalUnitKey::LargestUnit,
-                       TemporalUnitGroup::Date, &largestUnit)) {
-    return false;
-  }
-
-  
-  return BuiltinCalendarDateUntil(cx, one, two, largestUnit, result);
-}
-
 static bool CalendarDateUntilSlow(JSContext* cx,
                                   Handle<CalendarRecord> calendar,
                                   Handle<Wrapped<PlainDateObject*>> one,
@@ -3573,14 +3552,33 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
                                      Handle<CalendarRecord> calendar,
                                      Handle<Wrapped<PlainDateObject*>> one,
                                      Handle<Wrapped<PlainDateObject*>> two,
+                                     TemporalUnit largestUnit,
                                      Handle<PlainObject*> options,
                                      Duration* result) {
   MOZ_ASSERT(
       CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
 
   
+  
+#ifdef DEBUG
+  
+  
+  MOZ_ASSERT(options->isExtensible());
+
+  
+  
+  auto largestUnitProp = options->lookupPure(cx->names().largestUnit);
+  MOZ_ASSERT_IF(largestUnitProp, largestUnitProp->configurable());
+#endif
+
+  
   if (!calendar.dateUntil()) {
-    return BuiltinCalendarDateUntil(cx, one, two, options, result);
+    return BuiltinCalendarDateUntil(cx, one, two, largestUnit, result);
+  }
+
+  Rooted<Value> value(cx, StringValue(TemporalUnitToString(cx, largestUnit)));
+  if (!DefineDataProperty(cx, options, cx->names().largestUnit, value)) {
+    return false;
   }
 
   
