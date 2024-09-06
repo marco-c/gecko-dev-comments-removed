@@ -1099,7 +1099,7 @@ class nsINode : public mozilla::dom::EventTarget {
                             : nullptr;
   }
 
-  enum FlattenedParentType { eNotForStyle, eForStyle };
+  enum FlattenedParentType { eNormal, eForStyle, eForSelection };
 
   
 
@@ -1120,6 +1120,15 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   inline nsINode* GetFlattenedTreeParentNodeForStyle() const;
+
+  
+
+
+
+
+
+
+  inline nsIContent* GetFlattenedTreeParentNodeForSelection() const;
 
   inline mozilla::dom::Element* GetFlattenedTreeParentElement() const;
   inline mozilla::dom::Element* GetFlattenedTreeParentElementForStyle() const;

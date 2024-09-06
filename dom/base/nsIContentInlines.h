@@ -82,10 +82,27 @@ static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
     return parent;
   }
 
-  if (parentAsContent->GetShadowRoot()) {
+  
+  
+  
+  
+  const nsINode* shadowRootForParent =
+      aType == nsINode::eForSelection
+          ? parentAsContent->GetShadowRootForSelection()
+          : parentAsContent->GetShadowRoot();
+
+  if (shadowRootForParent) {
     
     
-    return content->GetAssignedSlot();
+    auto* assignedSlot = content->GetAssignedSlot();
+    if (assignedSlot || aType != nsINode::eForSelection) {
+      return assignedSlot;
+    }
+
+    MOZ_ASSERT(aType == nsINode::eForSelection);
+    
+    
+    return parent;
   }
 
   if (parentAsContent->IsInShadowTree()) {
@@ -106,7 +123,7 @@ static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
 }
 
 inline nsINode* nsINode::GetFlattenedTreeParentNode() const {
-  return ::GetFlattenedTreeParentNode<nsINode::eNotForStyle>(this);
+  return ::GetFlattenedTreeParentNode<nsINode::eNormal>(this);
 }
 
 inline nsIContent* nsIContent::GetFlattenedTreeParent() const {
@@ -125,6 +142,11 @@ inline bool nsIContent::IsEventAttributeName(nsAtom* aName) {
 
 inline nsINode* nsINode::GetFlattenedTreeParentNodeForStyle() const {
   return ::GetFlattenedTreeParentNode<nsINode::eForStyle>(this);
+}
+
+inline nsIContent* nsINode::GetFlattenedTreeParentNodeForSelection() const {
+  nsINode* parent = ::GetFlattenedTreeParentNode<nsINode::eForSelection>(this);
+  return (parent && parent->IsContent()) ? parent->AsContent() : nullptr;
 }
 
 inline bool nsINode::NodeOrAncestorHasDirAuto() const {

@@ -518,6 +518,13 @@ class nsContentUtils {
 
 
 
+  static nsIContent* GetCommonFlattenedTreeAncestorForSelection(
+      nsIContent* aContent1, nsIContent* aContent2);
+
+  
+
+
+
   static Element* GetCommonFlattenedTreeAncestorForStyle(Element* aElement1,
                                                          Element* aElement2);
 
