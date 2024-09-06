@@ -30,33 +30,33 @@ def test_all_browser_abc():
             assert not inspect.isabstract(cls), "%s is abstract" % name
 
 
-def test_edgechromium_webdriver_supports_browser():
+def test_edge_webdriver_supports_browser():
     
-    edge = browser.EdgeChromium(logger)
+    edge = browser.Edge(logger)
     edge.webdriver_version = mock.MagicMock(return_value=None)
     assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'stable')
 
     
-    edge = browser.EdgeChromium(logger)
+    edge = browser.Edge(logger)
     edge.webdriver_version = mock.MagicMock(return_value='70.0.1')
     edge.version = mock.MagicMock(return_value=None)
     assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'stable')
 
     
-    edge = browser.EdgeChromium(logger)
+    edge = browser.Edge(logger)
     
     edge.webdriver_version = mock.MagicMock(return_value='70.1.5')
     edge.version = mock.MagicMock(return_value='70.1.5')
     assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'stable')
 
     
-    edge = browser.EdgeChromium(logger)
+    edge = browser.Edge(logger)
     edge.webdriver_version = mock.MagicMock(return_value='70.0.1')
     edge.version = mock.MagicMock(return_value='69.0.1')
     assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'stable')
 
     
-    edge = browser.EdgeChromium(logger)
+    edge = browser.Edge(logger)
     edge.webdriver_version = mock.MagicMock(return_value='70.0.1.0')
     edge.version = mock.MagicMock(return_value='70.0.1.1 dev')
     assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'dev')
@@ -68,8 +68,8 @@ def test_edgechromium_webdriver_supports_browser():
 
 @pytest.mark.skipif(sys.platform.startswith('win'), reason='just uses _get_fileversion on Windows')
 @mock.patch('tools.wpt.browser.call')
-def test_edgechromium_webdriver_version(mocked_call):
-    edge = browser.EdgeChromium(logger)
+def test_edge_webdriver_version(mocked_call):
+    edge = browser.Edge(logger)
     webdriver_binary = '/usr/bin/edgedriver'
 
     
