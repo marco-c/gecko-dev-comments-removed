@@ -21,10 +21,7 @@ const later = new Temporal.ZonedDateTime(1_213_200_000_000_000n, timeZone, calen
 
 
 
-
-
-
 later.since(earlier, { smallestUnit: "weeks" });
-assert.sameValue(calendar.dateAddCallCount, 3, "rounding difference with calendar smallestUnit");
+assert.sameValue(calendar.dateAddCallCount, 2, "rounding difference with calendar smallestUnit");
 
 reportCompare(0, 0);

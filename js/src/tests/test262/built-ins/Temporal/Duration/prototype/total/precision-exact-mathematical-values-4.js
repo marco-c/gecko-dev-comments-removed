@@ -76,26 +76,14 @@ function createTimeZone() {
   TemporalHelpers.substituteMethod(tz, "getPossibleInstantsFor", [
     TemporalHelpers.SUBSTITUTE_SKIP,  
     TemporalHelpers.SUBSTITUTE_SKIP,  
-    TemporalHelpers.SUBSTITUTE_SKIP,  
-    TemporalHelpers.SUBSTITUTE_SKIP,  
-    [new Temporal.Instant(-86400_0000_0000_000_000_000n)],  
-    [new Temporal.Instant(-86400_0000_0000_000_000_000n + 2n ** 53n - 1n)],  
-    
+    [new Temporal.Instant(-86400_0000_0000_000_000_000n)],
+    [new Temporal.Instant(86400_0000_0000_000_000_000n)],
   ]);
   return tz;
 }
 
-function createCalendar() {
-  const cal = new Temporal.Calendar("iso8601");
-  TemporalHelpers.substituteMethod(cal, "dateAdd", [
-    TemporalHelpers.SUBSTITUTE_SKIP,  
-    TemporalHelpers.SUBSTITUTE_SKIP,  
-    new Temporal.PlainDate(-271821, 4, 20),  
-    new Temporal.PlainDate(-271821, 4, 20),  
-    new Temporal.PlainDate(275760, 9, 13),  
-    
-  ]);
-  return cal;
+function createRelativeTo() {
+  return new Temporal.ZonedDateTime(-86400_0000_0000_000_000_000n, createTimeZone());
 }
 
 
@@ -112,44 +100,27 @@ function createCalendar() {
 
 
 
+const expected = 1.000001830000000_5355699074074074074074074074074074;
 
 
 
-const expected = 1.000000005000000_1104671915053146003490515686745299;
 
 
 
-assert.sameValue(expected, 1.000000005000000_2, "the float representation of the result is 1.0000000050000002");
+assert.sameValue(expected, 1.000001830000000_64659, "the float representation of the result is 1.00000183000000064659");
 assert.compareArray(
   f64Repr(expected),
-  [0x3f, 0xf0, 0x00, 0x00, 0x01, 0x57, 0x98, 0xef],
-  "the bit representation of the result is 0x3ff00000015798ef"
+  [0x3f, 0xf0, 0x00, 0x01, 0xeb, 0x3c, 0xa4, 0x79],
+  "the bit representation of the result is 0x3ff00001eb3ca479"
 );
 
-assert.sameValue(nextDown(expected), 1.000000004999999_96961, "the next Number in direction -Infinity is less precise");
+assert.sameValue(nextDown(expected), 1.000001830000000_42455, "the next Number in direction -Infinity is less precise");
 
-assert.sameValue(nextUp(expected), 1.000000005000000_4137, "the next Number in direction +Infinity is less precise");
-
-
-
-let relativeTo = new Temporal.ZonedDateTime(-86400_0000_0000_000_000_000n, createTimeZone(), createCalendar());
-const dYears = new Temporal.Duration( 1, 0, 0,  1, 0, 0, 0,  199, 0,  1);
-assert.sameValue(dYears.total({ unit: "years", relativeTo }), expected, "Correct division by large number in years total");
-
-relativeTo = new Temporal.ZonedDateTime(-86400_0000_0000_000_000_000n, createTimeZone(), createCalendar());
-const dMonths = new Temporal.Duration(0,  1, 0,  1, 0, 0, 0,  199, 0,  1);
-assert.sameValue(dMonths.total({ unit: "months", relativeTo }), expected, "Correct division by large number in months total");
+assert.sameValue(nextUp(expected), 1.000001830000000_86864, "the next Number in direction +Infinity is less precise");
 
 
-const weeksCal = new Temporal.Calendar("iso8601");
-TemporalHelpers.substituteMethod(weeksCal, "dateAdd", [
-  TemporalHelpers.SUBSTITUTE_SKIP,  
-  TemporalHelpers.SUBSTITUTE_SKIP,  
-  new Temporal.PlainDate(275760, 9, 13),  
-  
-]);
-relativeTo = new Temporal.ZonedDateTime(-86400_0000_0000_000_000_000n, createTimeZone(), weeksCal);
-const dWeeks = new Temporal.Duration(0, 0,  1,  1, 0, 0, 0,  199, 0,  1);
-assert.sameValue(dWeeks.total({ unit: "weeks", relativeTo }), expected, "Correct division by large number in weeks total");
+
+const duration = new Temporal.Duration( 1, 0, 0, 0, 0, 0, 0, 9, 254, 648);
+assert.sameValue(duration.total({ unit: "years", relativeTo: createRelativeTo() }), expected, "Correct division by large number in years total");
 
 reportCompare(0, 0);

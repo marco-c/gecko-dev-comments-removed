@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(function () {
+  return assert.throwsAsync(
+    Test262Error,
+    function () {
+      return Promise.try(function () { throw new Test262Error(); })
+    },
+    "error thrown from callback must become a rejection"
+  );
+});

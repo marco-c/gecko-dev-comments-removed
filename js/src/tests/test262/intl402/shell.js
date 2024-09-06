@@ -2516,7 +2516,68 @@ function isCanonicalizedStructurallyValidTimeZoneName(timeZone) {
 
 
 
-function partitionDurationFormatPattern(duration, style = "short") {
+function partitionDurationFormatPattern(durationFormat, duration) {
+  function durationToFractional(duration, exponent) {
+    let {
+      seconds = 0,
+      milliseconds = 0,
+      microseconds = 0,
+      nanoseconds = 0,
+    } = duration;
+
+    
+    switch (exponent) {
+      case 9: {
+        if (milliseconds === 0 && microseconds === 0 && nanoseconds === 0) {
+          return seconds;
+        }
+        break;
+      }
+      case 6: {
+        if (microseconds === 0 && nanoseconds === 0) {
+          return milliseconds;
+        }
+        break;
+      }
+      case 3: {
+        if (nanoseconds === 0) {
+          return microseconds;
+        }
+        break;
+      }
+    }
+
+    
+    
+    let ns = BigInt(nanoseconds);
+    switch (exponent) {
+      case 9:
+        ns += BigInt(seconds) * 1_000_000_000n;
+        
+      case 6:
+        ns += BigInt(milliseconds) * 1_000_000n;
+        
+      case 3:
+        ns += BigInt(microseconds) * 1_000n;
+        
+    }
+
+    let e = BigInt(10 ** exponent);
+
+    
+    let q = ns / e;
+    let r = ns % e;
+
+    
+    if (r < 0) {
+      r = -r;
+    }
+    r = String(r).padStart(exponent, "0");
+
+    
+    return `${q}.${r}`;
+  }
+
   const units = [
     "years",
     "months",
@@ -2530,39 +2591,7 @@ function partitionDurationFormatPattern(duration, style = "short") {
     "nanoseconds",
   ];
 
-  function durationToFractionalSeconds(duration) {
-    let {
-      seconds = 0,
-      milliseconds = 0,
-      microseconds = 0,
-      nanoseconds = 0,
-    } = duration;
-
-    
-    if (milliseconds === 0 && microseconds === 0 && nanoseconds === 0) {
-      return seconds;
-    }
-
-    
-    
-    let ns_sec = BigInt(seconds) * 1_000_000_000n;
-    let ns_ms = BigInt(milliseconds) * 1_000_000n;
-    let ns_us = BigInt(microseconds) * 1_000n;
-    let ns = ns_sec + ns_ms + ns_us + BigInt(nanoseconds);
-
-    
-    let q = ns / 1_000_000_000n;
-    let r = ns % 1_000_000_000n;
-
-    
-    if (r < 0) {
-      r = -r;
-    }
-    r = String(r).padStart(9, "0");
-
-    
-    return `${q}.${r}`;
-  }
+  let options = durationFormat.resolvedOptions();
 
   
   const locale = "en";
@@ -2570,116 +2599,131 @@ function partitionDurationFormatPattern(duration, style = "short") {
   const timeSeparator = ":";
 
   let result = [];
-  let separated = false;
+  let needSeparator = false;
+  let displayNegativeSign = true;
 
   for (let unit of units) {
     
     let value = duration[unit] ?? 0;
 
-    let display = "auto";
-    if (style === "digital") {
-      
-      if (unit === "hours" || unit === "minutes" || unit === "seconds") {
-        display = "always";
-      }
+    let style = options[unit];
+    let display = options[unit + "Display"];
 
-      
-      if (unit === "seconds") {
-        value = durationToFractionalSeconds(duration);
+    
+    let numberFormatUnit = unit.slice(0, -1);
+
+    
+    let nfOpts = Object.create(null);
+
+    
+    let done = false;
+    if (unit === "seconds" || unit === "milliseconds" || unit === "microseconds") {
+      let nextStyle = options[units[units.indexOf(unit) + 1]];
+      if (nextStyle === "numeric") {
+        if (unit === "seconds") {
+          value = durationToFractional(duration, 9);
+        } else if (unit === "milliseconds") {
+          value = durationToFractional(duration, 6);
+        } else {
+          value = durationToFractional(duration, 3);
+        }
+
+        nfOpts.maximumFractionDigits = options.fractionalDigits ?? 9;
+        nfOpts.minimumFractionDigits = options.fractionalDigits ?? 0;
+        nfOpts.roundingMode = "trunc";
+
+        done = true;
       }
     }
 
     
-    if (value !== 0 || display !== "auto") {
+    let displayRequired = false;
+    if (unit === "minutes" && needSeparator) {
+      displayRequired = options.secondsDisplay === "always" ||
+                        (duration.seconds ?? 0) !== 0 ||
+                        (duration.milliseconds ?? 0) !== 0 ||
+                        (duration.microseconds ?? 0) !== 0 ||
+                        (duration.nanoseconds ?? 0) !== 0;
+    }
+
+    
+    if (value !== 0 || display !== "auto" || displayRequired) {
       
-      let unitStyle = style;
-      if (style === "digital") {
-        if (unit === "hours") {
-          unitStyle = "numeric";
-        } else if (unit === "minutes" || unit === "seconds") {
-          unitStyle = "2-digit";
-        } else {
-          unitStyle = "short";
+      if (displayNegativeSign) {
+        displayNegativeSign = false;
+
+        
+        if (value === 0) {
+          let negative = units.some(unit => (duration[unit] ?? 0) < 0);
+          if (negative) {
+            value = -0;
+          }
         }
+      } else {
+        nfOpts.signDisplay = "never";
+      }
+
+      nfOpts.numberingSystem = options.numberingSystem;
+
+      
+      if (style === "2-digit") {
+        nfOpts.minimumIntegerDigits = 2;
       }
 
       
-      let numberFormatUnit = unit.slice(0, -1);
-
-      
-      let nfOpts;
-      if (unitStyle !== "numeric" && unitStyle !== "2-digit") {
-        
-        nfOpts = {
-          numberingSystem,
-          style: "unit",
-          unit: numberFormatUnit,
-          unitDisplay: unitStyle,
-        };
-      } else {
-        let roundingMode = undefined;
-        let minimumFractionDigits = undefined;
-        let maximumFractionDigits = undefined;
-
-        
-        if (style === "digital" && unit === "seconds") {
-          roundingMode = "trunc";
-          minimumFractionDigits = 0;
-          maximumFractionDigits = 9;
-        }
-
-        
-        nfOpts = {
-          numberingSystem,
-          minimumIntegerDigits: (unitStyle === "2-digit" ? 2 : 1),
-          roundingMode,
-          minimumFractionDigits,
-          maximumFractionDigits,
-        };
+      if (style !== "numeric" && style !== "2-digit") {
+        nfOpts.style = "unit";
+        nfOpts.unit = numberFormatUnit;
+        nfOpts.unitDisplay = style;
       }
 
       let nf = new Intl.NumberFormat(locale, nfOpts);
-      let formatted = nf.formatToParts(value);
+
+      let list;
+      if (!needSeparator) {
+        list = [];
+      } else {
+        list = result[result.length - 1];
+
+        
+        list.push({
+          type: "literal",
+          value: timeSeparator,
+        });
+      }
 
       
-      let list = [];
-      for (let {value, type} of formatted) {
+      let parts = nf.formatToParts(value);
+
+      
+      for (let {value, type} of parts) {
         list.push({type, value, unit: numberFormatUnit});
       }
 
-      if (!separated) {
+      if (!needSeparator) {
         
-        if (unitStyle === "2-digit" || unitStyle === "numeric") {
-          separated = true;
+        if (style === "2-digit" || style === "numeric") {
+          needSeparator = true;
         }
 
         
         result.push(list);
-      } else {
-        let last = result[result.length - 1];
-
-        
-        last.push({
-          type: "literal",
-          value: timeSeparator,
-        });
-
-        
-        last.push(...list);
       }
-    } else {
-      separated = false;
     }
 
-    
-    if (style === "digital" && unit === "seconds") {
+    if (done) {
       break;
     }
   }
 
+  let listStyle = options.style;
+  if (listStyle === "digital") {
+    listStyle = "short";
+  }
+
   let lf = new Intl.ListFormat(locale, {
     type: "unit",
-    style: (style !== "digital" ? style : "short"),
+    style: listStyle,
   });
 
   
@@ -2712,6 +2756,7 @@ function partitionDurationFormatPattern(duration, style = "short") {
 
 
 
-function formatDurationFormatPattern(duration, style) {
-  return partitionDurationFormatPattern(duration, style).reduce((acc, e) => acc + e.value, "");
+function formatDurationFormatPattern(durationFormat, duration) {
+  let parts = partitionDurationFormatPattern(durationFormat, duration);
+  return parts.reduce((acc, e) => acc + e.value, "");
 }

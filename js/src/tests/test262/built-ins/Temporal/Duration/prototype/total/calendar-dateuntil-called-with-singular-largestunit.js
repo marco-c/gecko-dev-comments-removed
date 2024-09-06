@@ -15,35 +15,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const duration = new Temporal.Duration(0, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
 TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
@@ -54,7 +25,7 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
   {
     years: ["year"],
     months: ["month"],
-    weeks: ["week"],
+    weeks: ["week", "week"],
     days: [],
     hours: [],
     minutes: [],

@@ -141,15 +141,8 @@ actual.splice(0);
 
 
 const expectedOpsForYearRounding = expected.concat([
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil",  
-  "call this.calendar.dateAdd",    
-  
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil"   
+  "call this.calendar.dateAdd",
+  "call this.calendar.dateAdd",
 ]);
 instance.since(otherYearMonthPropertyBag, createOptionsObserver({ smallestUnit: "years" }));
 assert.compareArray(actual, expectedOpsForYearRounding, "order of operations with smallestUnit = years");
@@ -163,13 +156,8 @@ const otherYearMonthPropertyBagSameMonth = TemporalHelpers.propertyBagObserver(a
   calendar: TemporalHelpers.calendarObserver(actual, "other.calendar"),
 }, "other");
 const expectedOpsForYearRoundingSameMonth = expected.concat([
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
-  
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil"   
+  "call this.calendar.dateAdd",
+  "call this.calendar.dateAdd",
 ]);
 instance.since(otherYearMonthPropertyBagSameMonth, createOptionsObserver({ smallestUnit: "years" }));
 assert.compareArray(actual, expectedOpsForYearRoundingSameMonth, "order of operations with smallestUnit = years and no excess months");
@@ -177,14 +165,9 @@ actual.splice(0);
 
 
 const expectedOpsForMonthRounding = expected.concat([
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
-  
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil"   
+  "call this.calendar.dateAdd",
+  "call this.calendar.dateAdd",
+  "call this.calendar.dateAdd",  
 ]);
 instance.since(otherYearMonthPropertyBag, createOptionsObserver({ smallestUnit: "months", roundingIncrement: 2 }));
 assert.compareArray(actual, expectedOpsForMonthRounding, "order of operations with smallestUnit = months");

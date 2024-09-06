@@ -10,23 +10,39 @@
 
 
 
+
 const df = new Intl.DurationFormat("en", {
   
   hours: "numeric",
 });
 
-const duration = {
-  hours: 1,
-  minutes: 0,
-  seconds: 3,
-};
+const durations = [
+  
+  
+  {hours: 0, minutes: 0, seconds: 0},
+  {hours: 0, minutes: 0, seconds: 1},
+  {hours: 0, minutes: 1, seconds: 0},
+  {hours: 0, minutes: 1, seconds: 1},
+  {hours: 1, minutes: 0, seconds: 0},
+  {hours: 1, minutes: 0, seconds: 1},
+  {hours: 1, minutes: 1, seconds: 0},
+  {hours: 1, minutes: 1, seconds: 1},
 
-const expected = "1:00:03"
+  
+  
+  {hours: 1, minutes: 0, seconds: 0, milliseconds: 1},
+  {hours: 1, minutes: 0, seconds: 0, microseconds: 1},
+  {hours: 1, minutes: 0, seconds: 0, nanoseconds: 1},
+];
 
-assert.sameValue(
-  df.format(duration),
-  expected,
-  `Minutes always displayed when between displayed hours and seconds, even if minutes is 0`
-);
+for (const duration of durations) {
+  const expected = formatDurationFormatPattern(df, duration);
+
+  assert.sameValue(
+    df.format(duration),
+    expected,
+    `Duration is ${JSON.stringify(duration)}`
+  );
+}
 
 reportCompare(0, 0);

@@ -30,7 +30,6 @@ const relativeTo = new Temporal.PlainDate(2018, 10, 12, calendar);
 
 const expected = [
   "call dateUntil",  
-  "call dateUntil",  
 ];
 
 const years = new Temporal.Duration(2);

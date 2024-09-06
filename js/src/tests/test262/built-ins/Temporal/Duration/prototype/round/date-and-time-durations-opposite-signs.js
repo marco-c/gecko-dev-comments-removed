@@ -21,14 +21,8 @@
 
 
 const calendar = new class extends Temporal.Calendar {
-    #dateUntil = 0;
-  
     dateUntil(one, two, options) {
-        let result = super.dateUntil(one, two, options);
-        if (++this.#dateUntil === 2) {
-            result = result.negated();
-        }
-        return result;
+        return super.dateUntil(one, two, options).negated();
     }
 }("iso8601");
   

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var sentinel = { sentinel: true };
+
+asyncTest(function() {
+  return Promise.try(function () {
+    return sentinel;
+  }).then(function (v) {
+    assert.sameValue(v, sentinel);
+  })
+});
+

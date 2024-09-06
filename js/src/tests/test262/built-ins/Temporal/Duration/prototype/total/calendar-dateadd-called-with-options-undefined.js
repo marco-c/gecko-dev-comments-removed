@@ -32,8 +32,6 @@ assert.sameValue(calendar.dateAddCallCount, 1, "converting larger calendar units
 
 
 
-
-
 calendar.dateAddCallCount = 0;
 
 const instance2 = new Temporal.Duration(0, 0, 1, 1);

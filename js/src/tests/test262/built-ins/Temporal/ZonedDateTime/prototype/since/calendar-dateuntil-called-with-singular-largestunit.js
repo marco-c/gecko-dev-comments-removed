@@ -11,44 +11,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
   (calendar, largestUnit) => {
     const earlier = new Temporal.ZonedDateTime(1_000_000_000_987_654_321n, "UTC", calendar);
@@ -78,9 +40,9 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
     later.since(earlier, { largestUnit, roundingIncrement: 2, roundingMode: 'ceil' });
   },
   {
-    years: ["year", "year", "year"],
-    months: ["month", "month", "month"],
-    weeks: ["week", "week", "week"],
+    years: ["year"],
+    months: ["month"],
+    weeks: ["week"],
     days: [],
     hours: [],
     minutes: [],
@@ -101,9 +63,9 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
     later.since(earlier, { smallestUnit });
   },
   {
-    years: ["year", "year", "year"],
-    months: ["month", "month", "month"],
-    weeks: ["week", "week", "week"],
+    years: ["year"],
+    months: ["month"],
+    weeks: ["week", "week"],
     days: [],
     hours: [],
     minutes: [],

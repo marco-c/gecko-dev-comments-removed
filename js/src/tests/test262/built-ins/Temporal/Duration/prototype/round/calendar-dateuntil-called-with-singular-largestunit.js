@@ -20,66 +20,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const durations = [
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 86399_999_999_999],
   [0, 1, 0, 0, 0, 0, 0, 0, 0, 86399_999_999_999],
@@ -100,9 +40,9 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
     duration.round({ largestUnit, roundingIncrement: 2, roundingMode: 'ceil', relativeTo });
   },
   {
-    years: ["year", "year"],
-    months: ["month", "month"],
-    weeks: ["week", "week"],
+    years: ["year"],
+    months: ["month"],
+    weeks: ["week"],
     days: [],
     hours: [],
     minutes: [],
@@ -124,7 +64,7 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
   },
   {
     years: ["year"],
-    months: ["month", "month"],
+    months: ["month"],
     weeks: ["week"],
     days: [],
     hours: [],

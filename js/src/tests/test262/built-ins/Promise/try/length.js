@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+verifyProperty(Promise.try, "length", {
+  value: 1,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

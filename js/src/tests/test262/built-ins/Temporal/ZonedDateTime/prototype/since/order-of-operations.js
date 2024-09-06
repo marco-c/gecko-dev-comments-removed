@@ -328,16 +328,13 @@ const expectedOpsForCalendarDifference = [
   "call this.calendar.dateUntil",
 ];
 
-const expectedOpsForCalendarRounding = [
+const expectedOpsForCalendarRounding = expected.concat(expectedOpsForCalendarDifference, [
   
   "call this.calendar.dateAdd",
+  "call this.calendar.dateAdd",
   "call this.timeZone.getPossibleInstantsFor",
-  
-  "call this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getOffsetNanosecondsFor",
-  
   "call this.timeZone.getPossibleInstantsFor",
-];
+]);
 
 
 instance.since(otherDateTimePropertyBag, createOptionsObserver({ largestUnit: "years", smallestUnit: "nanoseconds", roundingIncrement: 1 }));
@@ -345,47 +342,25 @@ assert.compareArray(actual, expected.concat(expectedOpsForCalendarDifference), "
 actual.splice(0); 
 
 
-const expectedOpsForYearRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil",  
-  "call this.calendar.dateAdd",    
-  
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil"   
-]);
 instance.since(otherDateTimePropertyBag, createOptionsObserver({ smallestUnit: "years" }));
-assert.compareArray(actual, expectedOpsForYearRounding, "order of operations with smallestUnit = years");
+assert.compareArray(actual, expectedOpsForCalendarRounding, "order of operations with smallestUnit = years");
 actual.splice(0); 
 
 
-const expectedOpsForMonthRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil",  
-  "call this.calendar.dateAdd",    
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil",  
-]);
 instance.since(otherDateTimePropertyBag, createOptionsObserver({ smallestUnit: "months" }));
-assert.compareArray(actual, expectedOpsForMonthRounding, "order of operations with smallestUnit = months");
+assert.compareArray(actual, expectedOpsForCalendarRounding, "order of operations with smallestUnit = months");
 actual.splice(0); 
 
 
-const expectedOpsForWeekRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
-  
-  "call this.calendar.dateUntil",  
-  "call this.calendar.dateAdd",    
-  
-  "call this.calendar.dateAdd",    
-  "call this.calendar.dateUntil",  
-]);
 instance.since(otherDateTimePropertyBag, createOptionsObserver({ smallestUnit: "weeks" }));
-assert.compareArray(actual, expectedOpsForWeekRounding, "order of operations with smallestUnit = weeks");
+assert.compareArray(actual, expected.concat(expectedOpsForCalendarDifference, [
+  
+  "call this.calendar.dateUntil",
+  "call this.calendar.dateAdd",
+  "call this.calendar.dateAdd",
+  "call this.timeZone.getPossibleInstantsFor",
+  "call this.timeZone.getPossibleInstantsFor",
+]), "order of operations with smallestUnit = weeks");
 actual.splice(0); 
 
 instance.since(otherDateTimePropertyBag, createOptionsObserver({ largestUnit: "hours" }));

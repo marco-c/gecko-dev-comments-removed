@@ -16,6 +16,7 @@
 
 
 
+
 const locale = "en";
 const timeSeparator = ":";
 
@@ -28,7 +29,7 @@ expectedList.push(new Intl.NumberFormat(locale, {style: "unit", unit: "day", uni
 expectedList.push(new Intl.NumberFormat(locale, {style: "unit", unit: "hour", unitDisplay: "short"}).format(d.hours));
 expectedList.push(new Intl.NumberFormat(locale).format(d.minutes) + timeSeparator + new Intl.NumberFormat(locale, {minimumIntegerDigits: 2}).format(d.seconds));
 
-let expected = new Intl.ListFormat(locale, {style: "short"}).format(expectedList);
+let expected = new Intl.ListFormat(locale, {type: "unit", style: "short"}).format(expectedList);
 let actual = new Intl.DurationFormat(locale, dfOpts).format(d);
 
 assert.sameValue(actual, expected);
