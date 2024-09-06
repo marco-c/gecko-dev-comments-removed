@@ -5,10 +5,47 @@
 
 
 
+const { MockRegistry } = ChromeUtils.importESModule(
+  "resource://testing-common/MockRegistry.sys.mjs"
+);
+
 const nsIWindowsRegKey = Ci.nsIWindowsRegKey;
 let regKeyComponent = Cc["@mozilla.org/windows-registry-key;1"];
 
-function run_test() {
+
+
+
+
+
+
+
+
+add_task(function test_native_registry() {
+  info("Running test for native Windows registry");
+  run_one_test();
+});
+
+add_task(function test_MockRegistry() {
+  let registry = new MockRegistry();
+  registerCleanupFunction(() => {
+    registry.shutdown();
+  });
+
+  
+  let linesBefore = [];
+  MockRegistry.dump(null, "", linesBefore.push.bind(linesBefore));
+  strictEqual(linesBefore.length, 3);
+
+  info("Running test for MockRegistry");
+  run_one_test({ cleanup: false });
+
+  
+  let linesAfter = [];
+  MockRegistry.dump(null, "", linesAfter.push.bind(linesAfter));
+  strictEqual(linesAfter.length, 8);
+});
+
+function run_one_test({ cleanup = true } = {}) {
   
   let testKey = regKeyComponent.createInstance(nsIWindowsRegKey);
 
@@ -29,10 +66,15 @@ function run_test() {
   test_invalidread_functions(testKey);
 
   
+  test_remove_functions(testKey);
+
+  
   test_childkey_functions(testKey);
 
   
-  cleanup_test_run(testKey, keyName);
+  if (cleanup) {
+    cleanup_test_run(testKey, keyName);
+  }
 }
 
 function setup_test_run(testKey, keyName) {
@@ -150,6 +192,15 @@ function test_invalidread_functions(testKey) {
       throw e;
     }
   }
+}
+
+function test_remove_functions(testKey) {
+  strictEqual(testKey.valueCount, 4);
+  testKey.removeValue(TESTDATA_INT64NAME);
+  strictEqual(testKey.valueCount, 3);
+
+  testKey.removeValue(TESTDATA_INT64NAME);
+  strictEqual(testKey.valueCount, 3);
 }
 
 function test_childkey_functions(testKey) {
