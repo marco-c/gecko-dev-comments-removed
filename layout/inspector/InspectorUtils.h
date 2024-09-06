@@ -275,6 +275,14 @@ class InspectorUtils {
   static void GetRuleBodyTextOffsets(
       GlobalObject&, const nsACString& aInitialText,
       Nullable<InspectorGetRuleBodyTextResult>& aResult);
+
+  
+
+
+  static void ReplaceBlockRuleBodyTextInStylesheet(
+      GlobalObject&, const nsACString& aStyleSheetText, uint32_t aLine,
+      uint32_t aColumn, const nsACString& aNewBodyText,
+      nsACString& aNewStyleSheetText);
 };
 
 }  
