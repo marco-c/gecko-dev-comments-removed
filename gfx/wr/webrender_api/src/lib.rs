@@ -570,10 +570,11 @@ pub type VoidPtrToSizeFn = unsafe extern "C" fn(ptr: *const c_void) -> usize;
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Parameter {
     Bool(BoolParameter, bool),
     Int(IntParameter, i32),
+    Float(FloatParameter, f32),
 }
 
 
@@ -591,6 +592,14 @@ pub enum BoolParameter {
 #[repr(u32)]
 pub enum IntParameter {
     BatchedUploadThreshold = 0,
+}
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub enum FloatParameter {
+    
+    SlowCpuFrameThreshold = 0,
 }
 
 
