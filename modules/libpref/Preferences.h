@@ -525,6 +525,8 @@ class Preferences final : public nsIPrefService,
 
  private:
   nsCOMPtr<nsIFile> mCurrentFile;
+  
+  PRTime mUserPrefsFileLastModifiedAtStartup = 0;
   bool mDirty = false;
   bool mProfileShutdown = false;
   
