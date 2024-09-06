@@ -237,6 +237,9 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool UsingHttpProxy() const { return mUsingHttpProxy || mUsingHttpsProxy; }
 
   
+  bool UsingOnlyHttpProxy() const { return mUsingHttpProxy; }
+
+  
   bool UsingHttpsProxy() const { return mUsingHttpsProxy; }
 
   

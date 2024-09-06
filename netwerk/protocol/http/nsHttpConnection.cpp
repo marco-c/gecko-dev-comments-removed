@@ -1067,25 +1067,25 @@ void nsHttpConnection::HandleTunnelResponse(uint16_t responseStatus,
       *reset = true;
     }
     nsresult rv;
-    
-    
     if (isHttps) {
-      if (!onlyConnect) {
-        if (mConnInfo->UsingHttpsProxy()) {
-          LOG(("%p new TLSFilterTransaction %s %d\n", this, mConnInfo->Origin(),
-               mConnInfo->OriginPort()));
-          SetupSecondaryTLS();
-        }
+      bool skipSSL = false;
+      if (mConnInfo->UsingHttpsProxy()) {
+        LOG(("%p SetupSecondaryTLS %s %d\n", this, mConnInfo->Origin(),
+             mConnInfo->OriginPort()));
+        SetupSecondaryTLS();
+      } else if (onlyConnect) {
+        MOZ_ASSERT(mConnInfo->UsingOnlyHttpProxy(), "Must be a HTTP proxy");
 
-        rv = mTlsHandshaker->InitSSLParams(false, true);
-        LOG(("InitSSLParams [rv=%" PRIx32 "]\n", static_cast<uint32_t>(rv)));
-      } else {
-        
-        
         
         
         
         mTlsHandshaker->SetNPNComplete();
+        skipSSL = true;
+      }
+
+      if (!skipSSL) {
+        rv = mTlsHandshaker->InitSSLParams(false, true);
+        LOG(("InitSSLParams [rv=%" PRIx32 "]\n", static_cast<uint32_t>(rv)));
       }
     }
     rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
@@ -1612,14 +1612,15 @@ nsresult nsHttpConnection::OnSocketWritable() {
       return NS_ERROR_FAILURE;
     }
 
-    if (mState == HttpConnectionState::REQUEST) {
+    if (mState == HttpConnectionState::REQUEST &&
+        mTlsHandshaker->EnsureNPNComplete()) {
       
       
       
       
       
-      LOG(("return ok because proxy connect successful\n"));
-      return NS_OK;
+      LOG(("return NS_BASE_STREAM_CLOSED to make transaction closed\n"));
+      return NS_BASE_STREAM_CLOSED;
     }
   }
 
