@@ -2542,6 +2542,16 @@ bool JSString::tryReplaceWithAtomRef(JSAtom* atom) {
     }
   }
 
+  
+  
+  MOZ_ASSERT(isRope() || isLinear());
+  if (isRope()) {
+    PreWriteBarrier(d.s.u2.left);
+    PreWriteBarrier(d.s.u3.right);
+  } else if (isDependent()) {
+    PreWriteBarrier(d.s.u3.base);
+  }
+
   uint32_t flags = INIT_ATOM_REF_FLAGS;
   d.s.u3.atom = atom;
   if (atom->hasLatin1Chars()) {
