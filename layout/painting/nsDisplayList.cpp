@@ -2299,32 +2299,8 @@ void nsDisplayList::PaintRoot(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
       gfx::Matrix5x4* colorMatrix =
           nsDocShell::Cast(docShell)->GetColorMatrix();
       if (colorMatrix) {
-        
-        
-        
-        
-        
-        
-        if (StaticPrefs::gfx_webrender_svg_filter_effects() &&
-            StaticPrefs::
-                gfx_webrender_svg_filter_effects_also_use_for_docshell_fecolormatrix()) {
-          
-          
-          static constexpr float kExtent = 1024.0f * 1024.0f * 1024.0f;
-          wr::LayoutRect subregion = {{-kExtent, -kExtent}, {kExtent, kExtent}};
-          auto node = wr::FilterOpGraphNode{};
-          node.input.buffer_id = wr::FilterOpGraphPictureBufferId::None();
-          node.input2.buffer_id = wr::FilterOpGraphPictureBufferId::None();
-          node.subregion = subregion;
-          wrFilters.filters.AppendElement(
-              wr::FilterOp::SVGFESourceGraphic(node));
-          node.input.buffer_id = wr::FilterOpGraphPictureBufferId::BufferId(0);
-          wrFilters.filters.AppendElement(
-              wr::FilterOp::SVGFEColorMatrix(node, colorMatrix->components));
-        } else {
-          wrFilters.filters.AppendElement(
-              wr::FilterOp::ColorMatrix(colorMatrix->components));
-        }
+        wrFilters.filters.AppendElement(
+            wr::FilterOp::ColorMatrix(colorMatrix->components));
       }
 
       wrManager->EndTransactionWithoutLayer(this, aBuilder,
@@ -8308,25 +8284,18 @@ bool nsDisplayBackdropFilters::CreateWebRenderCommands(
   WrFiltersHolder wrFilters;
   const ComputedStyle& style = mStyle ? *mStyle : *mFrame->Style();
   auto filterChain = style.StyleEffects()->mBackdropFilters.AsSpan();
-  
-  WrFiltersStatus status = SVGIntegrationUtils::CreateWebRenderCSSFilters(
-      filterChain, mFrame, wrFilters);
-  if (status == WrFiltersStatus::BLOB_FALLBACK) {
-    
-    auto offsetForSVGFilters =
-        nsLayoutUtils::ComputeOffsetToUserSpace(aDisplayListBuilder, mFrame);
-    status = SVGIntegrationUtils::BuildWebRenderFilters(
-        mFrame, filterChain, StyleFilterType::BackdropFilter, wrFilters,
-        offsetForSVGFilters);
-  }
-
-  if (status == WrFiltersStatus::BLOB_FALLBACK) {
+  bool initialized = true;
+  if (!SVGIntegrationUtils::CreateWebRenderCSSFilters(filterChain, mFrame,
+                                                      wrFilters) &&
+      !SVGIntegrationUtils::BuildWebRenderFilters(
+          mFrame, filterChain, StyleFilterType::BackdropFilter, wrFilters,
+          initialized)) {
     
     
     wrFilters = {};
   }
 
-  if (status == WrFiltersStatus::UNSUPPORTED) {
+  if (!initialized) {
     wrFilters = {};
   }
 
@@ -8430,47 +8399,32 @@ bool nsDisplayFilters::CreateWebRenderCommands(
   WrFiltersHolder wrFilters;
   const ComputedStyle& style = mStyle ? *mStyle : *mFrame->Style();
   auto filterChain = style.StyleEffects()->mFilters.AsSpan();
-  
-  WrFiltersStatus status = SVGIntegrationUtils::CreateWebRenderCSSFilters(
-      filterChain, mFrame, wrFilters);
-  if (status == WrFiltersStatus::BLOB_FALLBACK) {
-    
-    auto offsetForSVGFilters =
-        nsLayoutUtils::ComputeOffsetToUserSpace(aDisplayListBuilder, mFrame);
-    status = SVGIntegrationUtils::BuildWebRenderFilters(
-        mFrame, filterChain, StyleFilterType::Filter, wrFilters,
-        offsetForSVGFilters);
-    if (status == WrFiltersStatus::BLOB_FALLBACK && mStyle) {
+  bool initialized = true;
+  if (!SVGIntegrationUtils::CreateWebRenderCSSFilters(filterChain, mFrame,
+                                                      wrFilters) &&
+      !SVGIntegrationUtils::BuildWebRenderFilters(mFrame, filterChain,
+                                                  StyleFilterType::Filter,
+                                                  wrFilters, initialized)) {
+    if (mStyle) {
       
       
-      status = WrFiltersStatus::UNSUPPORTED;
+      wrFilters = {};
+    } else {
+      
+      return false;
     }
   }
 
-  switch (status) {
-    case WrFiltersStatus::BLOB_FALLBACK:
-      
-      return false;
-    case WrFiltersStatus::UNSUPPORTED:
-      
-      
-      
-      
-      
-      
-      
-      
-      wrFilters = {};
-      break;
-    case WrFiltersStatus::DISABLED_FOR_PERFORMANCE:
-      
-      
-      wrFilters = {};
-      break;
-    case WrFiltersStatus::CHAIN:
-    case WrFiltersStatus::SVGFE:
-      
-      break;
+  if (!initialized) {
+    
+    
+    
+    
+    
+    
+    
+    
+    wrFilters = {};
   }
 
   uint64_t clipChainId;

@@ -22,27 +22,7 @@ struct nsPoint;
 struct nsRect;
 struct nsSize;
 
-enum class WrFiltersStatus {
-  
-  
-  UNSUPPORTED = 0,
-  
-  
-  
-  DISABLED_FOR_PERFORMANCE = 1,
-  
-  
-  BLOB_FALLBACK = 2,
-  
-  CHAIN = 3,
-  
-  
-  
-  SVGFE = 4,
-};
-
 struct WrFiltersHolder {
-  
   nsTArray<mozilla::wr::FilterOp> filters;
   nsTArray<mozilla::wr::WrFilterData> filter_datas;
   mozilla::Maybe<nsRect> post_filters_clip;
@@ -212,18 +192,19 @@ class SVGIntegrationUtils final {
   
 
 
-  static WrFiltersStatus CreateWebRenderCSSFilters(
-      Span<const StyleFilter> aFilters, nsIFrame* aFrame,
-      WrFiltersHolder& aWrFilters);
+  static bool CreateWebRenderCSSFilters(Span<const StyleFilter> aFilters,
+                                        nsIFrame* aFrame,
+                                        WrFiltersHolder& aWrFilters);
 
   
 
 
 
-  static WrFiltersStatus BuildWebRenderFilters(
-      nsIFrame* aFilteredFrame, Span<const StyleFilter> aFilters,
-      StyleFilterType aStyleFilterType, WrFiltersHolder& aWrFilters,
-      const nsPoint& aOffsetForSVGFilters);
+  static bool BuildWebRenderFilters(nsIFrame* aFilteredFrame,
+                                    Span<const StyleFilter> aFilters,
+                                    StyleFilterType aStyleFilterType,
+                                    WrFiltersHolder& aWrFilters,
+                                    bool& aInitialized);
 
   
 

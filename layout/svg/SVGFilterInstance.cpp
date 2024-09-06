@@ -32,8 +32,7 @@ SVGFilterInstance::SVGFilterInstance(
     const StyleFilter& aFilter, SVGFilterFrame* aFilterFrame,
     nsIContent* aTargetContent, const UserSpaceMetrics& aMetrics,
     const gfxRect& aTargetBBox,
-    const MatrixScalesDouble& aUserSpaceToFilterSpaceScale,
-    gfxRect& aFilterSpaceBoundsNotSnapped)
+    const MatrixScalesDouble& aUserSpaceToFilterSpaceScale)
     : mFilter(aFilter),
       mTargetContent(aTargetContent),
       mMetrics(aMetrics),
@@ -55,7 +54,6 @@ SVGFilterInstance::SVGFilterInstance(
   if (!ComputeBounds()) {
     return;
   }
-  aFilterSpaceBoundsNotSnapped = mFilterSpaceBoundsNotSnapped;
 
   mInitialized = true;
 }
@@ -90,7 +88,6 @@ bool SVGFilterInstance::ComputeBounds() {
   
   
   gfxRect filterSpaceBounds = UserSpaceToFilterSpace(userSpaceBounds);
-  mFilterSpaceBoundsNotSnapped = filterSpaceBounds;
   filterSpaceBounds.RoundOut();
   if (filterSpaceBounds.width <= 0 || filterSpaceBounds.height <= 0) {
     
