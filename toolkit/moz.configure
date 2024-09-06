@@ -7,6 +7,15 @@
 
 
 
+project_flag(
+    env="MOZ_APP_ID",
+    nargs=1,
+    help='used for application.ini\'s "ID" field, and crash reporter server url',
+)
+
+
+
+
 @dependable
 @imports(_from="mozbuild.shellutil", _import="quote")
 @imports(_from="mozbuild.util", _import="ensure_unicode")
