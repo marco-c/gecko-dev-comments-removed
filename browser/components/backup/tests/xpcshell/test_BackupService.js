@@ -18,6 +18,9 @@ const { ClientID } = ChromeUtils.importESModule(
 
 add_setup(function () {
   
+  Services.fog.initializeFOG();
+
+  
   
   
   
@@ -80,6 +83,11 @@ add_setup(function () {
 
 
 async function testCreateBackupHelper(sandbox, taskFn) {
+  Services.fog.testResetFOG();
+  
+  let totalBackupSizeHistogram = TelemetryTestUtils.getAndClearHistogram(
+    "BROWSER_BACKUP_TOTAL_BACKUP_SIZE"
+  );
   const EXPECTED_CLIENT_ID = await ClientID.getClientID();
 
   let fake1ManifestEntry = { fake1: "hello from 1" };
@@ -220,6 +228,28 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     manifest.meta.legacyClientID,
     EXPECTED_CLIENT_ID,
     "The client ID was stored properly."
+  );
+
+  
+  
+  const SMALLEST_BACKUP_SIZE_BYTES = 1048576;
+  const SMALLEST_BACKUP_SIZE_MEBIBYTES = 1;
+
+  let totalBackupSize = Glean.browserBackup.totalBackupSize.testGetValue();
+  Assert.equal(
+    totalBackupSize.count,
+    1,
+    "Should have collected a single measurement for the total backup size"
+  );
+  Assert.equal(
+    totalBackupSize.sum,
+    SMALLEST_BACKUP_SIZE_BYTES,
+    "Should have collected the right value for the total backup size"
+  );
+  TelemetryTestUtils.assertHistogram(
+    totalBackupSizeHistogram,
+    SMALLEST_BACKUP_SIZE_MEBIBYTES,
+    1
   );
 
   taskFn(manifest);
