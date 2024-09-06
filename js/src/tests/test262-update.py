@@ -25,7 +25,6 @@ UNSUPPORTED_FEATURES = set(
         "legacy-regexp",  
         "regexp-duplicate-named-groups",  
         "set-methods",  
-        "Float16Array",  
         "explicit-resource-management",  
         "regexp-modifiers",
     ]
@@ -42,6 +41,7 @@ FEATURE_CHECK_NEEDED = {
     "resizable-arraybuffer": "!ArrayBuffer.prototype.resize",  
     "uint8array-base64": "!Uint8Array.fromBase64",  
     "json-parse-with-source": "!JSON.hasOwnProperty('isRawJSON')",  
+    "Float16Array": "!this.hasOwnProperty('Float16Array')",
 }
 RELEASE_OR_BETA = set(
     [
@@ -57,6 +57,11 @@ SHELL_OPTIONS = {
     "resizable-arraybuffer": "--enable-arraybuffer-resizable",
     "uint8array-base64": "--enable-uint8array-base64",
     "json-parse-with-source": "--enable-json-parse-with-source",
+    "Float16Array": "--enable-float16array",
+}
+
+INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {
+    "testTypedArray.js": "Float16Array",
 }
 
 
@@ -392,6 +397,19 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     
     
     if "includes" in testRec:
+        optionalShellOptions = (
+            SHELL_OPTIONS[INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS[include]]
+            for include in testRec["includes"]
+            if include in INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS
+        )
+        refTestOptions.extend(
+            ("shell-option({})".format(opt) for opt in sorted(optionalShellOptions))
+        )
+
+    
+    
+    
+    if "includes" in testRec:
         assert not raw, "Raw test with includes: %s" % testName
         includeSet.update(testRec["includes"])
 
@@ -555,7 +573,11 @@ def process_test262(test262Dir, test262OutDir, strictTests, externManifests):
                 convert = convertFixtureFile(testSource, testName)
             else:
                 convert = convertTestFile(
-                    test262parser, testSource, testName, includeSet, strictTests
+                    test262parser,
+                    testSource,
+                    testName,
+                    includeSet,
+                    strictTests,
                 )
 
             for newFileName, newSource, externRefTest in convert:
