@@ -638,6 +638,15 @@ class IMEContentObserver final : public nsStubMutationObserver,
     void AssertValidCache(const dom::Element* aRootElement) const;
 
     
+
+
+
+    void ContentRemoved(const nsIContent& aContent,
+                        const nsIContent* aPreviousSibling,
+                        uint32_t aFlatTextLengthOfContent,
+                        const dom::Element* aRootElement);
+
+    
     nsCOMPtr<nsINode> mContainerNode;
     
     

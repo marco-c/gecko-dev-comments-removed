@@ -1075,13 +1075,23 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
     return;
   }
 
-  mEndOfAddedTextCache.Clear(__FUNCTION__);
   if (HasAddedNodesDuringDocumentChange()) {
     NotifyIMEOfAddedContentTextLengthDuringDocumentChange(__FUNCTION__);
   }
 
   nsINode* containerNode = aChild->GetParentNode();
   MOZ_ASSERT(containerNode);
+
+  Result<uint32_t, nsresult> textLengthOrError =
+      FlatTextCache::ComputeTextLengthOfContent(*aChild, mRootElement);
+  if (NS_WARN_IF(textLengthOrError.isErr())) {
+    mEndOfAddedTextCache.Clear(__FUNCTION__);
+    mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
+    return;
+  }
+
+  mEndOfAddedTextCache.ContentRemoved(
+      *aChild, aPreviousSibling, textLengthOrError.inspect(), mRootElement);
 
   Maybe<uint32_t> offset =
       mStartOfRemovingTextRangeCache.GetFlatTextLengthBeforeContent(
@@ -1125,10 +1135,8 @@ void IMEContentObserver::ContentRemoved(nsIContent* aChild,
   }
 
   
-  const Result<uint32_t, nsresult> textLengthOrError =
-      FlatTextCache::ComputeTextLengthOfContent(*aChild, mRootElement);
-  if (NS_WARN_IF(textLengthOrError.isErr())) {
-    mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
+  
+  if (textLengthOrError.inspect() == 0u) {
     return;
   }
 
@@ -2593,6 +2601,70 @@ void IMEContentObserver::FlatTextCache::AssertValidCache(
   }
   MOZ_ASSERT(mFlatTextLength == offset.inspect());
 #endif  
+}
+
+void IMEContentObserver::FlatTextCache::ContentRemoved(
+    const nsIContent& aContent, const nsIContent* aPreviousSibling,
+    uint32_t aFlatTextLengthOfContent, const Element* aRootElement) {
+  if (!mContainerNode) {
+    return;  
+  }
+
+  MOZ_ASSERT_IF(aPreviousSibling,
+                aContent.GetPreviousSibling() != aPreviousSibling);
+  MOZ_ASSERT_IF(aPreviousSibling,
+                aPreviousSibling->GetNextSibling() != &aContent);
+
+  
+  if (mContent && mContent == aPreviousSibling) {
+    return;
+  }
+
+  if (IsCachingToStartOfContainer()) {
+    MOZ_ASSERT(!mContent);
+    
+    
+    
+    if (mContainerNode == aContent.GetParentNode()) {
+      AssertValidCache(aRootElement);
+      return;
+    }
+
+    
+    
+    
+    Clear("FlatTextCache::ContentRemoved");
+    return;
+  }
+
+  MOZ_ASSERT(IsCachingToEndOfContent());
+  if (&aContent == mContent) {
+    MOZ_ASSERT(mFlatTextLength >= aFlatTextLengthOfContent);
+    if (NS_WARN_IF(mFlatTextLength < aFlatTextLengthOfContent)) {
+      Clear("FlatTextCache::ContentRemoved");
+      return;
+    }
+    
+    
+    
+    if (aPreviousSibling) {
+      CacheFlatTextLengthBeforeEndOfContent(
+          "FlatTextCache::ContentRemoved", *aPreviousSibling,
+          mFlatTextLength - aFlatTextLengthOfContent, aRootElement);
+      return;
+    }
+    
+    
+    
+    CacheFlatTextLengthBeforeFirstContent(
+        "FlatTextCache::ContentRemoved", *mContainerNode,
+        mFlatTextLength - aFlatTextLengthOfContent, aRootElement);
+    return;
+  }
+  
+  
+  
+  Clear("FlatTextCache::ContentRemoved");
 }
 
 }  
