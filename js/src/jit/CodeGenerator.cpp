@@ -15995,6 +15995,14 @@ static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
   }
 
   
+  MOZ_ASSERT(safepoint.gcRegs().empty() && safepoint.gcSlots().empty());
+#ifdef JS_NUNBOX32
+  MOZ_ASSERT(safepoint.nunboxParts().empty());
+#elif JS_PUNBOX64
+  MOZ_ASSERT(safepoint.valueRegs().empty() && safepoint.valueSlots().empty());
+#endif
+
+  
   
   const LSafepoint::SlotList& wasmAnyRefSlots = safepoint.wasmAnyRefSlots();
   for (SafepointSlotEntry wasmAnyRefSlot : wasmAnyRefSlots) {
