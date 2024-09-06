@@ -403,6 +403,8 @@ if CONFIG["ENABLE_TESTS"]:
 
 include("/ipc/chromium/chromium-config.mozbuild")
 
+LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
+
 
 
 
