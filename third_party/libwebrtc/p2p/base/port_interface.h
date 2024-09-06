@@ -23,7 +23,6 @@
 #include "p2p/base/transport_description.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/callback_list.h"
-#include "rtc_base/proxy_info.h"
 #include "rtc_base/socket_address.h"
 
 namespace rtc {
@@ -154,10 +153,6 @@ class PortInterface {
 
   
   virtual rtc::PacketSocketFactory* socket_factory() const = 0;
-  [[deprecated("Unsupported function")]] virtual const std::string&
-  user_agent() = 0;
-  [[deprecated("Unsupported function")]] virtual const rtc::ProxyInfo&
-  proxy() = 0;
 
   
   virtual uint32_t generation() const = 0;

@@ -17,7 +17,6 @@
 
 #include "api/async_dns_resolver.h"
 #include "rtc_base/async_packet_socket.h"
-#include "rtc_base/proxy_info.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -64,30 +63,10 @@ class RTC_EXPORT PacketSocketFactory {
       uint16_t max_port,
       int opts) = 0;
 
-  
-  
-  [[deprecated]] virtual AsyncPacketSocket* CreateClientTcpSocket(
-      const SocketAddress& local_address,
-      const SocketAddress& remote_address,
-      const ProxyInfo& proxy_info,
-      const std::string& user_agent,
-      const PacketSocketTcpOptions& tcp_options) {
-    return CreateClientTcpSocket(local_address, remote_address, tcp_options);
-  }
-
-  
-  
-  
   virtual AsyncPacketSocket* CreateClientTcpSocket(
       const SocketAddress& local_address,
       const SocketAddress& remote_address,
-      const PacketSocketTcpOptions& tcp_options) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    return CreateClientTcpSocket(local_address, remote_address, ProxyInfo(),
-                                 std::string(), tcp_options);
-#pragma clang diagnostic pop
-  }
+      const PacketSocketTcpOptions& tcp_options) = 0;
 
   virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface>
   CreateAsyncDnsResolver() = 0;
