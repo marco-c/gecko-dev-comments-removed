@@ -8,6 +8,7 @@
 #include "HttpLog.h"
 
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Components.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/Tokenizer.h"
 #include "MockHttpAuth.h"
@@ -1690,8 +1691,8 @@ bool nsHttpChannelAuthProvider::ConfirmAuth(const char* bundleKey,
   
   
 
-  nsCOMPtr<nsIStringBundleService> bundleService =
-      do_GetService(NS_STRINGBUNDLE_CONTRACTID);
+  nsCOMPtr<nsIStringBundleService> bundleService;
+  bundleService = mozilla::components::StringBundle::Service();
   if (!bundleService) return true;
 
   nsCOMPtr<nsIStringBundle> bundle;
@@ -1748,8 +1749,8 @@ bool nsHttpChannelAuthProvider::ConfirmAuth(const char* bundleKey,
   rv = mAuthChannel->GetLoadGroup(getter_AddRefs(loadGroup));
   if (NS_FAILED(rv)) return true;
 
-  nsCOMPtr<nsIPromptService> promptSvc =
-      do_GetService("@mozilla.org/prompter;1", &rv);
+  nsCOMPtr<nsIPromptService> promptSvc;
+  promptSvc = mozilla::components::Prompt::Service(&rv);
   if (NS_FAILED(rv) || !promptSvc) {
     return true;
   }
