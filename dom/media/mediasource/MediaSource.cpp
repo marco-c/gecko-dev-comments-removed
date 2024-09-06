@@ -191,8 +191,7 @@ void MediaSource::IsTypeSupported(const nsAString& aType,
     return;
   }
   if (mimeType == MEDIAMIMETYPE("audio/webm")) {
-    if (!(StaticPrefs::media_mediasource_webm_enabled() ||
-          StaticPrefs::media_mediasource_webm_audio_enabled())) {
+    if (!StaticPrefs::media_mediasource_webm_enabled()) {
       
       
       return aRv.ThrowNotSupportedError("Can't play type");
