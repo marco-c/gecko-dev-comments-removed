@@ -1,4 +1,3 @@
-from tests.support import platform_name
 from tests.support.asserts import assert_success
 
 
@@ -7,11 +6,11 @@ def get_current_url(session):
         "GET", "session/{session_id}/url".format(**vars(session)))
 
 
-def test_get_current_url_file_protocol(session, server_config):
+def test_get_current_url_file_protocol(session, target_platform, server_config):
     
     
     path = server_config["doc_root"]
-    if platform_name == "windows":
+    if target_platform == "windows":
         
         path = "/{}".format(path.replace("\\", "/"))
     url = u"file://{}".format(path)
