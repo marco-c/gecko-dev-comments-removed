@@ -817,7 +817,10 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
   
   
   
-  if (mMatchAboutBlank && aDoc.IsTopLevelOpaqueAboutBlank()) {
+  if (mMatchAboutBlank && aDoc.IsTopLevel() &&
+      (aDoc.URL().Spec().EqualsLiteral("about:blank") ||
+       aDoc.URL().Scheme() == nsGkAtoms::data) &&
+      aDoc.Principal() && aDoc.Principal()->GetIsNullPrincipal()) {
     if (StaticPrefs::extensions_script_about_blank_without_permission()) {
       return true;
     }
@@ -1035,48 +1038,6 @@ bool DocInfo::IsTopLevel() const {
     mIsTopLevel.emplace(mObj.match(Matcher()));
   }
   return mIsTopLevel.ref();
-}
-
-bool DocInfo::IsTopLevelOpaqueAboutBlank() const {
-  if (mIsTopLevelOpaqueAboutBlank.isNothing()) {
-    struct Matcher {
-      explicit Matcher(const DocInfo& aThis) : mThis(aThis) {}
-      const DocInfo& mThis;
-
-      bool operator()(Window aWin) {
-        if (!mThis.IsTopLevel()) {
-          return false;
-        }
-
-        bool isFinalAboutBlankDoc =
-            mThis.URL().Scheme() == nsGkAtoms::about &&
-            mThis.URL().Spec().EqualsLiteral("about:blank") &&
-            
-            
-            !aWin->GetDoc()->IsInitialDocument();
-
-        
-        MOZ_ASSERT(mThis.Principal());
-
-        return (isFinalAboutBlankDoc ||
-                
-                mThis.URL().Scheme() == nsGkAtoms::data) &&
-               mThis.Principal()->GetIsNullPrincipal();
-      }
-      bool operator()(LoadInfo aLoadInfo) {
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!mThis.URL().Spec().EqualsLiteral("about:blank"));
-        MOZ_ASSERT(mThis.URL().Scheme() != nsGkAtoms::data);
-        return false;
-      }
-    };
-    mIsTopLevelOpaqueAboutBlank.emplace(mObj.match(Matcher(*this)));
-  }
-  return mIsTopLevelOpaqueAboutBlank.ref();
 }
 
 bool WindowShouldMatchActiveTab(nsPIDOMWindowOuter* aWin) {
