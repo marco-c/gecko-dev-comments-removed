@@ -875,14 +875,14 @@ void InternalJobQueue::runJobs(JSContext* cx) {
           if (!cx->isExceptionPending()) {
             continue;
           }
+
+          
+          
+          
           RootedValue exn(cx);
-          if (cx->getPendingException(&exn)) {
-            
-
-
-
-
-            cx->clearPendingException();
+          bool success = cx->getPendingException(&exn);
+          cx->clearPendingException();
+          if (success) {
             js::ReportExceptionClosure reportExn(exn);
             PrepareScriptEnvironmentAndInvoke(cx, cx->global(), reportExn);
           }
