@@ -8,14 +8,15 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <stdint.h>    
-#include "js/Array.h"  
+#include <stdint.h>          
+#include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
 #include "js/Date.h"
 #include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
+#include "js/SharedArrayBuffer.h"   
 #include "js/Value.h"
 #include "jsfriendapi.h"
 #include "mozilla/Casting.h"
@@ -29,7 +30,6 @@
 #include "mozilla/dom/indexedDB/Key.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
-#include "mozilla/dom/TypedArray.h"
 #include "mozIStorageStatement.h"
 #include "mozIStorageValueArray.h"
 #include "nsJSUtils.h"
@@ -102,6 +102,83 @@ IDBResult<Ok, IDBSpecialValue::Invalid> ConvertArrayValueToKey(
   
   aPolicy.EndSubkeyList();
   return Ok();
+}
+
+bool IsDetachedBuffer(JSContext* aCx, JS::Handle<JSObject*> aJsBufferSource) {
+  if (JS_IsArrayBufferViewObject(aJsBufferSource)) {
+    bool unused = false;
+    JS::Rooted<JSObject*> viewedArrayBuffer(
+        aCx, JS_GetArrayBufferViewBuffer(aCx, aJsBufferSource, &unused));
+    return JS::IsDetachedArrayBufferObject(viewedArrayBuffer);
+  }
+
+  return JS::IsDetachedArrayBufferObject(aJsBufferSource);
+}
+
+
+
+IDBResult<Span<const uint8_t>, IDBSpecialValue::Invalid>
+GetByteSpanFromJSBufferSource(JSContext* aCx,
+                              JS::Handle<JSObject*> aJsBufferSource) {
+  
+  
+
+  
+  JS::Handle<JSObject*>& jsArrayBuffer = aJsBufferSource;
+
+  
+  size_t offset = 0u;
+
+  
+  size_t length = 0u;
+
+  
+  uint8_t* bytes = nullptr;  
+
+  
+  if (JS_IsArrayBufferViewObject(aJsBufferSource)) {
+    
+    
+    
+
+    
+    
+    
+    (void)offset;
+    bool unused = false;
+    if (!JS_GetObjectAsArrayBufferView(jsArrayBuffer, &length, &unused,
+                                       &bytes)) {
+      return Err(IDBError(SpecialValues::Invalid));
+    }
+
+    
+  } else {
+    
+    MOZ_RELEASE_ASSERT(JS::IsArrayBufferObject(aJsBufferSource) ||
+                       JS::IsSharedArrayBufferObject(aJsBufferSource));
+
+    
+
+    
+    
+    
+    (void)offset;
+    if (!JS::GetObjectAsArrayBuffer(jsArrayBuffer, &length, &bytes)) {
+      return Err(IDBError(SpecialValues::Invalid));
+    }
+  }
+
+  
+  
+  if (IsDetachedBuffer(aCx, aJsBufferSource)) {
+    
+    
+    
+    return Err(IDBError(SpecialValues::Invalid));
+  }
+
+  
+  return Span<uint8_t>{bytes, length}.AsConst();
 }
 
 }  
@@ -436,9 +513,20 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
     }
 
     
-    if (JS::ArrayBufferOrView arrayBufferOrView =
-            JS::ArrayBufferOrView::fromObject(object)) {
-      return EncodeBinary(arrayBufferOrView, aTypeOffset);
+    if (JS::IsArrayBufferObject(object) || JS_IsArrayBufferViewObject(object)) {
+      
+      
+
+      auto res = GetByteSpanFromJSBufferSource(aCx, object);
+
+      
+      if (res.isErr()) {
+        return res.propagateErr();
+      }
+
+      
+      
+      return EncodeAsString(res.inspect(), eBinary + aTypeOffset);
     }
 
     
@@ -520,7 +608,8 @@ nsresult Key::DecodeJSValInternal(const EncodedDataType*& aPos,
   } else if (*aPos - aTypeOffset == eFloat) {
     aVal.setDouble(DecodeNumber(aPos, aEnd));
   } else if (*aPos - aTypeOffset == eBinary) {
-    JSObject* arrayBufferObject = DecodeBinary(aPos, aEnd, aCx);
+    JSObject* arrayBufferObject =
+        GetArrayBufferObjectFromDataRange(aPos, aEnd, aCx);
     if (!arrayBufferObject) {
       IDB_REPORT_INTERNAL_ERR();
       return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
@@ -879,57 +968,10 @@ double Key::DecodeNumber(const EncodedDataType*& aPos,
   return BitwiseCast<double>(bits);
 }
 
-Result<Ok, nsresult> Key::EncodeBinary(
-    const JS::ArrayBufferOrView& aArrayBufferOrView, uint8_t aTypeOffset) {
-  
-  
-  
-  
-  
 
-  
-  
-  
-  
-  
-  
-  
-  if (aArrayBufferOrView.isDetached()) {
-    return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
-  }
-
-  
-  
-  
-  
-  
-  
-  return [aArrayBufferOrView](
-             const std::function<Result<Ok, nsresult>(
-                 const Span<uint8_t>&, JS::AutoCheckCannotGC&&)>& aCallback) {
-    JSObject* object = aArrayBufferOrView.asObjectUnbarriered();
-
-    mozilla::dom::ArrayBufferView arrayBufferView;
-    if (arrayBufferView.Init(object)) {
-      return arrayBufferView.ProcessData(aCallback);
-    }
-
-    mozilla::dom::ArrayBuffer arrayBuffer;
-    if (arrayBuffer.Init(object)) {
-      return arrayBuffer.ProcessData(aCallback);
-    }
-
-    MOZ_CRASH("ArrayBufferOrView must be ArrayBuffer or ArrayBufferView");
-  }([aTypeOffset, this](const Span<uint8_t>& aData,
-                        JS::AutoCheckCannotGC&& aNoGC) {
-    return EncodeAsString((const Span<const uint8_t>)aData,
-                          eBinary + aTypeOffset);
-  });
-}
-
-
-JSObject* Key::DecodeBinary(const EncodedDataType*& aPos,
-                            const EncodedDataType* aEnd, JSContext* aCx) {
+JSObject* Key::GetArrayBufferObjectFromDataRange(const EncodedDataType*& aPos,
+                                                 const EncodedDataType* aEnd,
+                                                 JSContext* aCx) {
   JS::Rooted<JSObject*> rv(aCx);
   DecodeStringy<eBinary, uint8_t>(
       aPos, aEnd,
