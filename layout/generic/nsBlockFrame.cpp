@@ -2207,6 +2207,13 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
       finalSize.BSize(wm) =
           std::max(finalSize.BSize(wm),
                    contentBSizeWithBStartBP + borderPadding.BEnd(wm));
+
+      
+      if (aReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
+        finalSize.BSize(wm) =
+            std::min(finalSize.BSize(wm), aReflowInput.ComputedMaxBSize() +
+                                              borderPadding.BStartEnd(wm));
+      }
     }
 
     

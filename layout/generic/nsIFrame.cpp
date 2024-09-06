@@ -6540,7 +6540,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
                "aspect-ratio minimums should not apply to replaced elements");
     
     
-    minISize = GetMinISize(aRenderingContext);
+    minISize = std::min(GetMinISize(aRenderingContext), maxISize);
   } else {
     
     
