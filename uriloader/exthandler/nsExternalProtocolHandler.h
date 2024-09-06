@@ -30,7 +30,6 @@ class nsExternalProtocolHandler final : public nsIExternalProtocolHandler,
   ~nsExternalProtocolHandler();
 
   
-  bool HaveExternalProtocolHandler(nsIURI* aURI);
   nsCString m_schemeName;
 };
 
