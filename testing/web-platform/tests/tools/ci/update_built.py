@@ -9,6 +9,7 @@ logger = logging.getLogger()
 
 wpt_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
+
 scripts = {
     "canvas": ["html/canvas/tools/gentest.py"],
     "conformance-checkers": ["conformance-checkers/tools/dl.py",
