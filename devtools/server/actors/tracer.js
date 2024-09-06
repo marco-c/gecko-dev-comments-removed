@@ -16,23 +16,22 @@ ChromeUtils.defineESModuleGetters(
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const { tracerSpec } = require("resource://devtools/shared/specs/tracer.js");
 
-const { throttle } = require("resource://devtools/shared/throttle.js");
-
-const {
-  makeDebuggeeValue,
-  createValueGripForTarget,
-} = require("devtools/server/actors/object/utils");
-
-const {
-  TYPES,
-  getResourceWatcher,
-} = require("resource://devtools/server/actors/resources/index.js");
-const { JSTRACER_TRACE } = TYPES;
-
 loader.lazyRequireGetter(
   this,
-  "GeckoProfileCollector",
-  "resource://devtools/server/actors/utils/gecko-profile-collector.js",
+  "StdoutTracingListener",
+  "resource://devtools/server/actors/tracer/stdout.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "ConsoleTracingListener",
+  "resource://devtools/server/actors/tracer/console.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "ProfilerTracingListener",
+  "resource://devtools/server/actors/tracer/profiler.js",
   true
 );
 
@@ -54,33 +53,15 @@ const LOG_METHODS = {
 exports.LOG_METHODS = LOG_METHODS;
 const VALID_LOG_METHODS = Object.values(LOG_METHODS);
 
-const CONSOLE_THROTTLING_DELAY = 250;
-
 class TracerActor extends Actor {
   constructor(conn, targetActor) {
     super(conn, tracerSpec);
     this.targetActor = targetActor;
-    this.sourcesManager = this.targetActor.sourcesManager;
-
-    
-    this.throttleEmitTraces = isWorker
-      ? this.flushTraces.bind(this)
-      : throttle(this.flushTraces.bind(this), CONSOLE_THROTTLING_DELAY);
-
-    this.geckoProfileCollector = new GeckoProfileCollector();
   }
 
   
   
-  
-  #throttledTraces = [];
-
-  
-  #frameIndex = 0;
-  
-  
-  
-  #frameMap = new Map();
+  #stopResult = null;
 
   destroy() {
     this.stopTracing();
@@ -153,24 +134,28 @@ class TracerActor extends Actor {
 
     this.logMethod = options.logMethod || LOG_METHODS.STDOUT;
 
-    if (this.logMethod == LOG_METHODS.PROFILER) {
-      this.geckoProfileCollector.start();
-
-      
-      
-      options.traceFunctionReturn = true;
+    let ListenerClass = null;
+    switch (this.logMethod) {
+      case LOG_METHODS.STDOUT:
+        ListenerClass = StdoutTracingListener;
+        break;
+      case LOG_METHODS.CONSOLE:
+        ListenerClass = ConsoleTracingListener;
+        break;
+      case LOG_METHODS.PROFILER:
+        ListenerClass = ProfilerTracingListener;
+        
+        
+        options.traceFunctionReturn = true;
+        break;
     }
-
-    this.tracingListener = {
-      onTracingFrame: this.onTracingFrame.bind(this),
-      onTracingFrameStep: this.onTracingFrameStep.bind(this),
-      onTracingFrameExit: this.onTracingFrameExit.bind(this),
-      onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
-      onTracingToggled: this.onTracingToggled.bind(this),
-      onTracingPending: this.onTracingPending.bind(this),
-      onTracingDOMMutation: this.onTracingDOMMutation.bind(this),
-    };
+    this.tracingListener = new ListenerClass({
+      targetActor: this.targetActor,
+      traceValues: !!options.traceValues,
+      traceActor: this,
+    });
     lazy.JSTracer.addTracingListener(this.tracingListener);
+
     this.traceValues = !!options.traceValues;
     try {
       lazy.JSTracer.startTracing({
@@ -205,13 +190,12 @@ class TracerActor extends Actor {
     }
     
     lazy.JSTracer.removeTracingListener(this.tracingListener);
+    
+    this.#stopResult = this.tracingListener.stop();
     this.tracingListener = null;
 
     lazy.JSTracer.stopTracing();
     this.logMethod = null;
-
-    this.#frameIndex = 0;
-    this.#frameMap.clear();
   }
 
   
@@ -221,445 +205,12 @@ class TracerActor extends Actor {
 
 
   getProfile() {
-    const profile = this.geckoProfileCollector.stop();
+    const profile = this.#stopResult;
     
     if (profile.threads[0].samples.data.length) {
       return profile;
     }
     return null;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  onTracingToggled(enabled) {
-    
-    const shouldLogToStdout = this.logMethod == LOG_METHODS.STDOUT;
-
-    if (!enabled) {
-      this.stopTracing();
-    }
-    return shouldLogToStdout;
-  }
-
-  
-
-
-
-  onTracingPending() {
-    
-    if (this.logMethod == LOG_METHODS.STDOUT) {
-      return true;
-    }
-
-    if (this.logMethod == LOG_METHODS.CONSOLE) {
-      const consoleMessageWatcher = getResourceWatcher(
-        this.targetActor,
-        TYPES.CONSOLE_MESSAGE
-      );
-      if (consoleMessageWatcher) {
-        consoleMessageWatcher.emitMessages([
-          {
-            arguments: [lazy.JSTracer.NEXT_INTERACTION_MESSAGE],
-            styles: [],
-            level: "jstracer",
-            chromeContext: false,
-            timeStamp: ChromeUtils.dateNow(),
-          },
-        ]);
-      }
-      return false;
-    }
-    return false;
-  }
-
-  onTracingInfiniteLoop() {
-    if (this.logMethod == LOG_METHODS.STDOUT) {
-      return true;
-    }
-    if (this.logMethod == LOG_METHODS.PROFILER) {
-      this.geckoProfileCollector.stop();
-      return true;
-    }
-    const consoleMessageWatcher = getResourceWatcher(
-      this.targetActor,
-      TYPES.CONSOLE_MESSAGE
-    );
-    if (!consoleMessageWatcher) {
-      return true;
-    }
-
-    const message =
-      "Looks like an infinite recursion? We stopped the JavaScript tracer, but code may still be running!";
-    consoleMessageWatcher.emitMessages([
-      {
-        arguments: [message],
-        styles: [],
-        level: "jstracer",
-        chromeContext: false,
-        timeStamp: ChromeUtils.dateNow(),
-      },
-    ]);
-
-    return false;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  onTracingDOMMutation({ depth, prefix, type, caller, element }) {
-    
-    if (this.logMethod == LOG_METHODS.STDOUT) {
-      return true;
-    }
-
-    if (this.logMethod == LOG_METHODS.CONSOLE) {
-      const dbgObj = makeDebuggeeValue(this.targetActor, element);
-      const frameIndex = this.#getFrameIndex(
-        null,
-        null,
-        caller.sourceId,
-        caller.lineNumber,
-        caller.columnNumber,
-        caller.filename
-      );
-      this.#throttledTraces.push([
-        "dom-mutation",
-        prefix,
-        frameIndex,
-        ChromeUtils.dateNow(),
-        depth,
-        type,
-        createValueGripForTarget(this.targetActor, dbgObj),
-      ]);
-      this.throttleEmitTraces();
-      return false;
-    }
-    return false;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  onTracingFrameStep({ frame, depth, prefix }) {
-    const { script } = frame;
-    const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
-    const url = script.source.url;
-
-    
-    
-    
-    
-    const columnBase = script.format === "wasm" ? 0 : 1;
-    const column = columnNumber - columnBase;
-
-    
-    if (this.sourcesManager.isBlackBoxed(url, lineNumber, column)) {
-      return false;
-    }
-
-    if (this.logMethod == LOG_METHODS.STDOUT) {
-      
-      return true;
-    }
-
-    if (this.logMethod == LOG_METHODS.CONSOLE) {
-      const frameIndex = this.#getFrameIndex(
-        frame.implementation,
-        null,
-        script,
-        lineNumber,
-        column,
-        url
-      );
-      this.#throttledTraces.push([
-        "step",
-        prefix,
-        frameIndex,
-        ChromeUtils.dateNow(),
-        depth,
-        null,
-      ]);
-      this.throttleEmitTraces();
-    }
-
-    return false;
-  }
-
-  #getFrameIndex(implementation, name, sourceId, line, column, url) {
-    const key = `${sourceId}:${line}:${column}`;
-    let frameIndex = this.#frameMap.get(key);
-    if (frameIndex == undefined) {
-      frameIndex = this.#frameIndex++;
-
-      
-      const frameArray = [
-        "frame",
-        implementation,
-        name,
-        sourceId,
-        line,
-        column,
-        url,
-      ];
-
-      this.#frameMap.set(key, frameIndex);
-      this.#throttledTraces.push(frameArray);
-    }
-    return frameIndex;
-  }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  onTracingFrame({
-    frame,
-    depth,
-    formatedDisplayName,
-    prefix,
-    currentDOMEvent,
-  }) {
-    const { script } = frame;
-    const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
-    const url = script.source.url;
-
-    
-    
-    
-    
-    const columnBase = script.format === "wasm" ? 0 : 1;
-    const column = columnNumber - columnBase;
-
-    
-    if (this.sourcesManager.isBlackBoxed(url, lineNumber, column)) {
-      return false;
-    }
-
-    if (this.logMethod == LOG_METHODS.STDOUT) {
-      
-      return true;
-    }
-
-    if (this.logMethod == LOG_METHODS.CONSOLE) {
-      
-      
-      if (currentDOMEvent && depth == 0) {
-        
-        this.#throttledTraces.push([
-          "event",
-          prefix,
-          ChromeUtils.dateNow(),
-          currentDOMEvent,
-        ]);
-      }
-
-      let args = undefined;
-      
-      
-      
-      
-      if (this.traceValues && frame.arguments) {
-        args = [];
-        for (let arg of frame.arguments) {
-          
-          if (arg?.unsafeDereference) {
-            arg = arg.unsafeDereference();
-          }
-          
-          const dbgObj = makeDebuggeeValue(this.targetActor, arg);
-          args.push(createValueGripForTarget(this.targetActor, dbgObj));
-        }
-      }
-
-      const frameIndex = this.#getFrameIndex(
-        frame.implementation,
-        formatedDisplayName,
-        script.source.id,
-        lineNumber,
-        column,
-        url
-      );
-      this.#throttledTraces.push([
-        "enter",
-        prefix,
-        frameIndex,
-        ChromeUtils.dateNow(),
-        depth,
-        args,
-      ]);
-      this.throttleEmitTraces();
-    } else if (this.logMethod == LOG_METHODS.PROFILER) {
-      if (currentDOMEvent && depth == 0) {
-        this.geckoProfileCollector.logDOMEvent(currentDOMEvent);
-      }
-      this.geckoProfileCollector.onEnterFrame({
-        
-        name: formatedDisplayName.replace("λ ", ""),
-        url,
-        lineNumber,
-        columnNumber,
-        category: frame.implementation,
-        sourceId: script.source.id,
-      });
-    }
-
-    return false;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  onTracingFrameExit({
-    frameId,
-    frame,
-    depth,
-    formatedDisplayName,
-    prefix,
-    why,
-    rv,
-  }) {
-    const { script } = frame;
-    const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
-    const url = script.source.url;
-
-    
-    
-    
-    
-    const columnBase = script.format === "wasm" ? 0 : 1;
-    const column = columnNumber - columnBase;
-
-    
-    if (this.sourcesManager.isBlackBoxed(url, lineNumber, column)) {
-      return false;
-    }
-
-    if (this.logMethod == LOG_METHODS.STDOUT) {
-      
-      return true;
-    }
-
-    if (this.logMethod == LOG_METHODS.CONSOLE) {
-      let returnedValue = undefined;
-      
-      
-      if (this.traceValues) {
-        
-        if (rv?.unsafeDereference) {
-          rv = rv.unsafeDereference();
-        }
-        
-        const dbgObj = makeDebuggeeValue(this.targetActor, rv);
-        returnedValue = createValueGripForTarget(this.targetActor, dbgObj);
-      }
-
-      const frameIndex = this.#getFrameIndex(
-        frame.implementation,
-        formatedDisplayName,
-        script.source.id,
-        lineNumber,
-        column,
-        url
-      );
-      this.#throttledTraces.push([
-        "exit",
-        prefix,
-        frameIndex,
-        ChromeUtils.dateNow(),
-        depth,
-        frameId,
-        returnedValue,
-        why,
-      ]);
-      this.throttleEmitTraces();
-    } else if (this.logMethod == LOG_METHODS.PROFILER) {
-      this.geckoProfileCollector.onFramePop();
-    }
-
-    return false;
-  }
-
-  
-
-
-
-  flushTraces() {
-    const traceWatcher = getResourceWatcher(this.targetActor, JSTRACER_TRACE);
-    
-    if (!traceWatcher) {
-      return;
-    }
-    const traces = this.#throttledTraces;
-    this.#throttledTraces = [];
-
-    traceWatcher.emitTraces(traces);
   }
 }
 exports.TracerActor = TracerActor;
