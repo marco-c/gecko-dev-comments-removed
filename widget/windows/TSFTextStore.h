@@ -1003,7 +1003,9 @@ class TSFTextStore final : public ITextStoreACP,
 
   
   
-  bool GetCurrentText(nsAString& aTextContent);
+  enum class AllowToFlushLayoutIfNoCache { No, Yes };
+  bool GetCurrentText(nsAString& aTextContent,
+                      AllowToFlushLayoutIfNoCache aAllowToFlushLayoutIfNoCache);
 
   class MouseTracker final {
    public:

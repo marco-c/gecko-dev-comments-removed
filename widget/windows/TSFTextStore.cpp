@@ -7,16 +7,11 @@
 #define TEXTATTRS_INIT_GUID
 #include "TSFTextStore.h"
 
-#include <algorithm>
-#include <comutil.h>  
-#include <oleauto.h>  
-#include <olectl.h>
-#include "nscore.h"
-
 #include "IMMHandler.h"
 #include "KeyboardLayout.h"
 #include "WinIMEHandler.h"
 #include "WinUtils.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_intl.h"
@@ -28,6 +23,11 @@
 #include "mozilla/widget/WinRegistry.h"
 #include "nsWindow.h"
 #include "nsPrintfCString.h"
+
+#include <algorithm>
+#include <comutil.h>  
+#include <oleauto.h>  
+#include <olectl.h>
 
 
 
@@ -2819,12 +2819,22 @@ Maybe<TSFTextStore::Content>& TSFTextStore::ContentForTSF() {
         !mIsInitializingContentForTSF,
         "TSFTextStore::ContentForTSF() shouldn't be called recursively");
 
+    
+    
+    
+    
+    
+    const AllowToFlushLayoutIfNoCache allowToFlushPendingLayout =
+        !mIsInitializingSelectionForTSF && !mIsInitializingContentForTSF
+            ? AllowToFlushLayoutIfNoCache::Yes
+            : AllowToFlushLayoutIfNoCache::No;
+
     AutoNotifyingTSFBatch deferNotifyingTSF(*this);
     AutoRestore<bool> saveInitializingContetTSF(mIsInitializingContentForTSF);
     mIsInitializingContentForTSF = true;
 
     nsString text;  
-    if (NS_WARN_IF(!GetCurrentText(text))) {
+    if (NS_WARN_IF(!GetCurrentText(text, allowToFlushPendingLayout))) {
       MOZ_LOG(gIMELog, LogLevel::Error,
               ("0x%p   TSFTextStore::ContentForTSF(), FAILED, due to "
                "GetCurrentText() failure",
@@ -2832,10 +2842,13 @@ Maybe<TSFTextStore::Content>& TSFTextStore::ContentForTSF() {
       return mContentForTSF;
     }
 
-    MOZ_DIAGNOSTIC_ASSERT(mContentForTSF.isNothing(),
-                          "How was it initialized recursively?");
-    mContentForTSF.reset();  
-    mContentForTSF.emplace(*this, text);
+    
+    
+    
+    
+    if (mContentForTSF.isNothing()) {
+      mContentForTSF.emplace(*this, text);
+    }
     
     
     
@@ -2872,7 +2885,9 @@ bool TSFTextStore::CanAccessActualContentDirectly() const {
   return mSelectionForTSF->EqualsExceptDirection(*mPendingSelectionChangeData);
 }
 
-bool TSFTextStore::GetCurrentText(nsAString& aTextContent) {
+bool TSFTextStore::GetCurrentText(
+    nsAString& aTextContent,
+    AllowToFlushLayoutIfNoCache aAllowToFlushLayoutIfNoCache) {
   if (mContentForTSF.isSome()) {
     aTextContent = mContentForTSF->TextRef();
     return true;
@@ -2889,6 +2904,8 @@ bool TSFTextStore::GetCurrentText(nsAString& aTextContent) {
   WidgetQueryContentEvent queryTextContentEvent(true, eQueryTextContent,
                                                 mWidget);
   queryTextContentEvent.InitForQueryTextContent(0, UINT32_MAX);
+  queryTextContentEvent.mNeedsToFlushLayout =
+      aAllowToFlushLayoutIfNoCache == AllowToFlushLayoutIfNoCache::Yes;
   mWidget->InitEvent(queryTextContentEvent);
   DispatchEvent(queryTextContentEvent);
   if (NS_WARN_IF(queryTextContentEvent.Failed())) {
@@ -2917,6 +2934,14 @@ Maybe<TSFTextStore::Selection>& TSFTextStore::SelectionForTSF() {
         !mIsInitializingSelectionForTSF,
         "TSFTextStore::SelectionForTSF() shouldn't be called recursively");
 
+    
+    
+    
+    
+    
+    const bool allowToFlushPendingLayout =
+        !mIsInitializingSelectionForTSF && !mIsInitializingContentForTSF;
+
     AutoNotifyingTSFBatch deferNotifyingTSF(*this);
     AutoRestore<bool> saveInitializingSelectionForTSF(
         mIsInitializingSelectionForTSF);
@@ -2924,14 +2949,19 @@ Maybe<TSFTextStore::Selection>& TSFTextStore::SelectionForTSF() {
 
     WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                    mWidget);
+    querySelectedTextEvent.mNeedsToFlushLayout = allowToFlushPendingLayout;
     mWidget->InitEvent(querySelectedTextEvent);
     DispatchEvent(querySelectedTextEvent);
     if (NS_WARN_IF(querySelectedTextEvent.Failed())) {
       return mSelectionForTSF;
     }
-    MOZ_DIAGNOSTIC_ASSERT(mSelectionForTSF.isNothing(),
-                          "How was it initialized recursively?");
-    mSelectionForTSF = Some(Selection(querySelectedTextEvent));
+    
+    
+    
+    
+    if (mSelectionForTSF.isNothing()) {
+      mSelectionForTSF.emplace(querySelectedTextEvent);
+    }
   }
 
   if (mPendingToCreateNativeCaret) {
@@ -7443,7 +7473,8 @@ TSFTextStore::MouseTracker::AdviseSink(TSFTextStore* aTextStore,
   }
 
   nsAutoString textContent;
-  if (NS_WARN_IF(!aTextStore->GetCurrentText(textContent))) {
+  if (NS_WARN_IF(!aTextStore->GetCurrentText(
+          textContent, AllowToFlushLayoutIfNoCache::Yes))) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p   TSFTextStore::MouseTracker::AdviseMouseSink() FAILED "
              "due to failure of TSFTextStore::GetCurrentText()",
