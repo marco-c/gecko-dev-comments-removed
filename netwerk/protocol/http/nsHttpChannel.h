@@ -617,7 +617,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  uint32_t mSuspendTotalTime{0};
+  TimeDuration mSuspendTotalTime{0};
 
   friend class AutoRedirectVetoNotifier;
   friend class HttpAsyncAborter<nsHttpChannel>;
