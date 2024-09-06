@@ -354,10 +354,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   bool IsDocumentLoaded() const;
 
-  mozilla::dom::TimeoutManager& TimeoutManager();
-
-  bool IsRunningTimeout();
-
   
   
   void TryToCacheTopInnerWindow();

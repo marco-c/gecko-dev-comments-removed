@@ -297,7 +297,8 @@ static bool IsPresContextInScriptAnimationCallback(
   }
   
   
-  nsPIDOMWindowInner* win = aPresContext->Document()->GetInnerWindow();
+  nsGlobalWindowInner* win =
+      nsGlobalWindowInner::Cast(aPresContext->Document()->GetInnerWindow());
   return win && win->IsRunningTimeout();
 }
 
