@@ -542,8 +542,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
   mozilla::dom::Element* GetNearestInclusiveTargetPopoverForInvoker() const;
 
-  nsGenericHTMLElement* GetEffectiveInvokeTargetElement() const;
-
   
 
 

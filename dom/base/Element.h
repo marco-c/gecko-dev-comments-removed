@@ -1131,20 +1131,8 @@ class Element : public FragmentOrElement {
   virtual bool IsValidInvokeAction(InvokeAction aAction) const {
     return aAction == InvokeAction::Auto;
   }
-
-  
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual bool HandleInvokeInternal(Element* invoker,
-                                                       InvokeAction aAction,
-                                                       ErrorResult& aRv) {
-    return false;
-  }
+  MOZ_CAN_RUN_SCRIPT virtual void HandleInvokeInternal(InvokeAction aAction,
+                                                       ErrorResult& aRv) {}
 
  private:
   void DescribeAttribute(uint32_t index, nsAString& aOutDescription) const;
