@@ -59,5 +59,6 @@ parallelPromiseTest(async t => {
   await loadFetchLaterIframe(HTTPS_NOTSAMESITE_ORIGIN, url);
 
   
-  await expectBeacon(uuid, {count: 1});
-}, 'A cross-origin iframe can trigger fetchLater.');
+  
+  await expectBeacon(uuid, {count: 0});
+}, 'A cross-origin iframe cannot trigger fetchLater.');
