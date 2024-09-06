@@ -811,6 +811,11 @@ EXPORT_XPCOM_API(void)
 NS_LogInit() {
   NS_SetMainThread();
 
+#if defined(NS_BUILD_REFCNT_LOGGING)
+  mozilla::detail::RefCountLogger::SetLeakCheckingFunctions(NS_LogAddRef,
+                                                            NS_LogRelease);
+#endif
+
   
   if (++gInitCount) {
     nsTraceRefcnt::SetActivityIsLegal(true);
