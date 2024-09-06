@@ -39,19 +39,9 @@ class WorkerRunnable : public nsIRunnable
                        public nsINamed
 #endif
 {
- public:
-  enum Target {
-    
-    
-    ParentThread,
-
-    
-    WorkerThread,
-  };
-
  protected:
   
-  Target mTarget;
+  WorkerPrivate* mWorkerPrivate;
 
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
   const char* mName = nullptr;
@@ -72,7 +62,7 @@ class WorkerRunnable : public nsIRunnable
 
   
   
-  virtual bool Dispatch() = 0;
+  virtual bool Dispatch();
 
   
   
@@ -85,11 +75,27 @@ class WorkerRunnable : public nsIRunnable
   
   virtual bool IsDebuggeeRunnable() const { return false; }
 
+  
+  
+  virtual bool IsControlRunnable() const { return false; }
+
+  
+  
+  virtual bool IsDebuggerRunnable() const { return false; }
+
   static WorkerRunnable* FromRunnable(nsIRunnable* aRunnable);
 
  protected:
-  WorkerRunnable(const char* aName = "WorkerRunnable",
-                 Target aTarget = WorkerThread);
+  WorkerRunnable(WorkerPrivate* aWorkerPrivate,
+                 const char* aName = "WorkerRunnable")
+#ifdef DEBUG
+      ;
+#else
+      : mWorkerPrivate(aWorkerPrivate),
+        mName(aName),
+        mCallingCancelWithinRun(false) {
+  }
+#endif
 
   
   virtual ~WorkerRunnable() = default;
@@ -97,42 +103,15 @@ class WorkerRunnable : public nsIRunnable
   
   
   NS_DECL_NSIRUNNABLE
-};
-
-class WorkerThreadRunnable : public WorkerRunnable {
- protected:
-  
-  WorkerPrivate* mWorkerPrivate;
-
- public:
-  virtual nsresult Cancel() override;
 
   
-  
-  bool Dispatch() override;
+  virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate) = 0;
 
- protected:
-  explicit WorkerThreadRunnable(WorkerPrivate* aWorkerPrivate,
-                                const char* aName = "WorkerThreadRunnable",
-                                Target aTarget = WorkerRunnable::WorkerThread);
-
-  
-  virtual ~WorkerThreadRunnable() = default;
-
-  
-  
-  virtual bool IsDebuggerRunnable() const;
-
-  nsIGlobalObject* DefaultGlobalObject() const;
-
-  
-  
-  virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate);
-
-  
   
   virtual void PostDispatch(WorkerPrivate* aWorkerPrivate,
-                            bool aDispatchResult);
+                            bool aDispatchResult) = 0;
+
+  virtual bool DispatchInternal() = 0;
 
   
   
@@ -141,8 +120,10 @@ class WorkerThreadRunnable : public WorkerRunnable {
   
   
   
-  virtual bool PreRun(WorkerPrivate* aWorkerPrivate);
+  virtual bool PreRun(WorkerPrivate* aWorkerPrivate) = 0;
 
+  
+  
   
   
   
@@ -174,9 +155,125 @@ class WorkerThreadRunnable : public WorkerRunnable {
   
   
   virtual void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-                       bool aRunResult);
+                       bool aRunResult) = 0;
+};
 
-  virtual bool DispatchInternal();
+class WorkerParentThreadRunnable : public WorkerRunnable {
+ public:
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(WorkerParentThreadRunnable,
+                                       WorkerRunnable)
+
+  virtual nsresult Cancel() override;
+
+ protected:
+  explicit WorkerParentThreadRunnable(
+      WorkerPrivate* aWorkerPrivate,
+      const char* aName = "WorkerParentThreadRunnable");
+
+  
+  virtual ~WorkerParentThreadRunnable() = default;
+
+  virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate) override;
+
+  virtual void PostDispatch(WorkerPrivate* aWorkerPrivate,
+                            bool aDispatchResult) override;
+
+  virtual bool PreRun(WorkerPrivate* aWorkerPrivate) override;
+
+  virtual bool WorkerRun(JSContext* aCx,
+                         WorkerPrivate* aWorkerPrivate) override = 0;
+
+  virtual void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
+                       bool aRunResult) override;
+
+  virtual bool DispatchInternal() override;
+
+  
+  
+  NS_DECL_NSIRUNNABLE
+};
+
+class WorkerParentControlRunnable : public WorkerParentThreadRunnable {
+  friend class WorkerPrivate;
+
+ protected:
+  explicit WorkerParentControlRunnable(
+      WorkerPrivate* aWorkerPrivate,
+      const char* aName = "WorkerParentControlRunnable")
+#ifdef DEBUG
+      ;
+#else
+      : WorkerParentThreadRunnable(aWorkerPrivate, aName) {
+  }
+#endif
+
+  virtual ~WorkerParentControlRunnable() = default;
+
+  nsresult Cancel() override;
+
+ public:
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(WorkerParentControlRunnable,
+                                       WorkerParentThreadRunnable)
+
+ private:
+  bool IsControlRunnable() const override { return true; }
+
+  
+  using WorkerParentThreadRunnable::Cancel;
+};
+
+class WorkerParentDebuggeeRunnable : public WorkerParentThreadRunnable {
+ protected:
+  explicit WorkerParentDebuggeeRunnable(
+      WorkerPrivate* aWorkerPrivate,
+      const char* aName = "WorkerParentDebuggeeRunnable")
+      : WorkerParentThreadRunnable(aWorkerPrivate, aName) {}
+
+  bool PreDispatch(WorkerPrivate* aWorkerPrivate) override;
+
+ private:
+  
+  
+  bool IsDebuggeeRunnable() const override { return true; }
+
+  
+  
+  
+  
+  
+  
+  RefPtr<ThreadSafeWorkerRef> mSender;
+};
+
+class WorkerThreadRunnable : public WorkerRunnable {
+ public:
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(WorkerThreadRunnable, WorkerRunnable)
+
+  virtual nsresult Cancel() override;
+
+ protected:
+  explicit WorkerThreadRunnable(WorkerPrivate* aWorkerPrivate,
+                                const char* aName = "WorkerThreadRunnable");
+
+  
+  virtual ~WorkerThreadRunnable() = default;
+
+  nsIGlobalObject* DefaultGlobalObject() const;
+
+  virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate) override;
+
+  virtual void PostDispatch(WorkerPrivate* aWorkerPrivate,
+                            bool aDispatchResult) override;
+
+  virtual bool PreRun(WorkerPrivate* aWorkerPrivate) override;
+
+  virtual bool WorkerRun(JSContext* aCx,
+                         WorkerPrivate* aWorkerPrivate) override = 0;
+
+  virtual void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
+                       bool aRunResult) override;
+
+  virtual bool DispatchInternal() override;
 
   
   
@@ -188,8 +285,7 @@ class WorkerDebuggerRunnable : public WorkerThreadRunnable {
  protected:
   explicit WorkerDebuggerRunnable(WorkerPrivate* aWorkerPrivate,
                                   const char* aName = "WorkerDebuggerRunnable")
-      : WorkerThreadRunnable(aWorkerPrivate, aName,
-                             WorkerRunnable::WorkerThread) {}
+      : WorkerThreadRunnable(aWorkerPrivate, aName) {}
 
   virtual ~WorkerDebuggerRunnable() = default;
 
@@ -268,12 +364,11 @@ class WorkerControlRunnable : public WorkerThreadRunnable {
 
  protected:
   explicit WorkerControlRunnable(WorkerPrivate* aWorkerPrivate,
-                                 const char* aName = "WorkerControlRunnable",
-                                 Target aTarget = WorkerRunnable::WorkerThread)
+                                 const char* aName = "WorkerControlRunnable")
 #ifdef DEBUG
       ;
 #else
-      : WorkerThreadRunnable(aWorkerPrivate, aName, aTarget) {
+      : WorkerThreadRunnable(aWorkerPrivate, aName) {
   }
 #endif
 
@@ -286,7 +381,7 @@ class WorkerControlRunnable : public WorkerThreadRunnable {
                                        WorkerThreadRunnable)
 
  private:
-  virtual bool DispatchInternal() override;
+  bool IsControlRunnable() const override { return true; }
 
   
   using WorkerThreadRunnable::Cancel;
@@ -299,8 +394,7 @@ class MainThreadWorkerRunnable : public WorkerThreadRunnable {
   explicit MainThreadWorkerRunnable(
       WorkerPrivate* aWorkerPrivate,
       const char* aName = "MainThreadWorkerRunnable")
-      : WorkerThreadRunnable(aWorkerPrivate, aName,
-                             WorkerRunnable::WorkerThread) {
+      : WorkerThreadRunnable(aWorkerPrivate, aName) {
     AssertIsOnMainThread();
   }
 
@@ -324,8 +418,7 @@ class MainThreadWorkerControlRunnable : public WorkerControlRunnable {
   explicit MainThreadWorkerControlRunnable(
       WorkerPrivate* aWorkerPrivate,
       const char* aName = "MainThreadWorkerControlRunnable")
-      : WorkerControlRunnable(aWorkerPrivate, aName,
-                              WorkerRunnable::WorkerThread) {}
+      : WorkerControlRunnable(aWorkerPrivate, aName) {}
 
   virtual ~MainThreadWorkerControlRunnable() = default;
 
@@ -350,8 +443,7 @@ class WorkerSameThreadRunnable : public WorkerThreadRunnable {
   explicit WorkerSameThreadRunnable(
       WorkerPrivate* aWorkerPrivate,
       const char* aName = "WorkerSameThreadRunnable")
-      : WorkerThreadRunnable(aWorkerPrivate, aName,
-                             WorkerRunnable::WorkerThread) {}
+      : WorkerThreadRunnable(aWorkerPrivate, aName) {}
 
   virtual ~WorkerSameThreadRunnable() = default;
 
@@ -486,28 +578,13 @@ class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable {
 class WorkerDebuggeeRunnable : public WorkerThreadRunnable {
  protected:
   explicit WorkerDebuggeeRunnable(WorkerPrivate* aWorkerPrivate,
-                                  const char* aName = "WorkerDebuggeeRunnable",
-                                  Target aTarget = WorkerRunnable::ParentThread)
-      : WorkerThreadRunnable(aWorkerPrivate, aName, aTarget) {}
-
-  bool PreDispatch(WorkerPrivate* aWorkerPrivate) override;
+                                  const char* aName = "WorkerDebuggeeRunnable")
+      : WorkerThreadRunnable(aWorkerPrivate, aName) {}
 
  private:
   
   
   bool IsDebuggeeRunnable() const override { return true; }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<ThreadSafeWorkerRef> mSender;
 };
 
 }  
