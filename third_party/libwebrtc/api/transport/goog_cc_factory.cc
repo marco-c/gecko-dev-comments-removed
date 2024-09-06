@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/transport/goog_cc_factory.h"
+
+#include <memory>
+#include <utility>
+
+#include "api/units/time_delta.h"
+#include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
+#include "rtc_base/checks.h"
+
+namespace webrtc {
+
+GoogCcNetworkControllerFactory::GoogCcNetworkControllerFactory(
+    GoogCcFactoryConfig config)
+    : factory_config_(std::move(config)) {}
+
+std::unique_ptr<NetworkControllerInterface>
+GoogCcNetworkControllerFactory::Create(NetworkControllerConfig config) {
+  GoogCcConfig goog_cc_config;
+  goog_cc_config.feedback_only = factory_config_.feedback_only;
+  if (factory_config_.network_state_estimator_factory) {
+    RTC_DCHECK(config.key_value_config);
+    goog_cc_config.network_state_estimator =
+        factory_config_.network_state_estimator_factory->Create(
+            config.key_value_config);
+  }
+  if (factory_config_.network_state_predictor_factory) {
+    goog_cc_config.network_state_predictor =
+        factory_config_.network_state_predictor_factory
+            ->CreateNetworkStatePredictor();
+  }
+  return std::make_unique<GoogCcNetworkController>(config,
+                                                   std::move(goog_cc_config));
+}
+
+TimeDelta GoogCcNetworkControllerFactory::GetProcessInterval() const {
+  const int64_t kUpdateIntervalMs = 25;
+  return TimeDelta::Millis(kUpdateIntervalMs);
+}
+
+}  
