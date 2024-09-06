@@ -2910,9 +2910,9 @@ bool EventStateManager::DoDefaultDragStart(
   
   
   if (!dragImage && aSelection) {
-    dragService->InvokeDragSessionWithSelection(aSelection, aPrincipal, aCsp,
-                                                aCookieJarSettings, transArray,
-                                                action, event, dataTransfer);
+    dragService->InvokeDragSessionWithSelection(
+        aSelection, aPrincipal, aCsp, aCookieJarSettings, transArray, action,
+        event, dataTransfer, dragTarget);
   } else if (aDragStartData) {
     MOZ_ASSERT(XRE_IsParentProcess());
     dragService->InvokeDragSessionWithRemoteImage(
