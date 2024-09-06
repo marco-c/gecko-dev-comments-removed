@@ -87,21 +87,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
 
-  bool TryLayout(ScrollReflowInput& aState, ReflowOutput* aKidMetrics,
-                 bool aAssumeHScroll, bool aAssumeVScroll, bool aForce);
-
-  
-  
-  
-  bool ScrolledContentDependsOnBSize(const ScrollReflowInput& aState) const;
-
-  void ReflowScrolledFrame(ScrollReflowInput& aState, bool aAssumeHScroll,
-                           bool aAssumeVScroll, ReflowOutput* aMetrics);
-  void ReflowContents(ScrollReflowInput& aState,
-                      const ReflowOutput& aDesiredSize);
-  void PlaceScrollArea(ScrollReflowInput& aState,
-                       const nsPoint& aScrollPosition);
-
   
   
   
@@ -855,6 +840,10 @@ class ScrollContainerFrame : public nsContainerFrame,
                                    ScrollSnapFlags::IntendedEndPosition);
 
   
+  bool ReflowFinished() final;
+  void ReflowCallbackCanceled() final;
+
+  
   UniquePtr<PresState> SaveState() final;
   NS_IMETHOD RestoreState(PresState* aState) final;
 
@@ -968,24 +957,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool IsPhysicalLTR() const { return GetWritingMode().IsPhysicalLTR(); }
   bool IsBidiLTR() const { return GetWritingMode().IsBidiLTR(); }
 
-  void UpdateSticky();
-
-  void UpdatePrevScrolledRect();
-
-  
-  
-  
-  void AdjustScrollbarRectForResizer(nsIFrame* aFrame,
-                                     nsPresContext* aPresContext, nsRect& aRect,
-                                     bool aHasResizer,
-                                     layers::ScrollDirection aDirection);
-  void LayoutScrollbars(ScrollReflowInput& aState,
-                        const nsRect& aInsideBorderArea,
-                        const nsRect& aOldScrollPort);
-
-  void LayoutScrollbarPartAtRect(const ScrollReflowInput&,
-                                 ReflowInput& aKidReflowInput, const nsRect&);
-
   bool IsAlwaysActive() const;
   void MarkRecentlyScrolled();
   void MarkNotRecentlyScrolled();
@@ -1051,6 +1022,38 @@ class ScrollContainerFrame : public nsContainerFrame,
   
   bool InInitialReflow() const;
 
+  bool TryLayout(ScrollReflowInput& aState, ReflowOutput* aKidMetrics,
+                 bool aAssumeHScroll, bool aAssumeVScroll, bool aForce);
+
+  
+  
+  
+  bool ScrolledContentDependsOnBSize(const ScrollReflowInput& aState) const;
+
+  void ReflowScrolledFrame(ScrollReflowInput& aState, bool aAssumeHScroll,
+                           bool aAssumeVScroll, ReflowOutput* aMetrics);
+  void ReflowContents(ScrollReflowInput& aState,
+                      const ReflowOutput& aDesiredSize);
+  void PlaceScrollArea(ScrollReflowInput& aState,
+                       const nsPoint& aScrollPosition);
+
+  void UpdateSticky();
+  void UpdatePrevScrolledRect();
+
+  
+  
+  
+  void AdjustScrollbarRectForResizer(nsIFrame* aFrame,
+                                     nsPresContext* aPresContext, nsRect& aRect,
+                                     bool aHasResizer,
+                                     layers::ScrollDirection aDirection);
+  void LayoutScrollbars(ScrollReflowInput& aState,
+                        const nsRect& aInsideBorderArea,
+                        const nsRect& aOldScrollPort);
+
+  void LayoutScrollbarPartAtRect(const ScrollReflowInput&,
+                                 ReflowInput& aKidReflowInput, const nsRect&);
+
   
 
 
@@ -1084,10 +1087,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   void AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
                            const nsDisplayListSet& aLists, bool aCreateLayer,
                            bool aPositioned);
-
-  
-  bool ReflowFinished() final;
-  void ReflowCallbackCanceled() final;
 
   
 
