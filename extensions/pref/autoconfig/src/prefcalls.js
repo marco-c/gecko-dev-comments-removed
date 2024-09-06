@@ -8,7 +8,6 @@
 
 const LDAPSyncQueryContractID = "@mozilla.org/ldapsyncquery;1";
 
-var gVersion;
 var gIsUTF8;
 
 function getPrefBranch() {
@@ -111,8 +110,8 @@ function clearPref(prefName) {
   } catch (e) {}
 }
 
-function setLDAPVersion(version) {
-  gVersion = version;
+function setLDAPVersion(_version) {
+  
 }
 
 function getLDAPAttributes(host, base, filter, attribs, isSecure) {
@@ -139,15 +138,10 @@ function getLDAPAttributes(host, base, filter, attribs, isSecure) {
       Ci.nsILDAPSyncQuery
     );
     
-    if (!gVersion) {
-      
-      gVersion = Ci.nsILDAPConnection.VERSION3;
-    }
-    
     if ("processLDAPValues" in gSandbox) {
-      gSandbox.processLDAPValues(ldapquery.getQueryResults(url, gVersion));
+      gSandbox.processLDAPValues(ldapquery.getQueryResults(url));
     } else {
-      processLDAPValues(ldapquery.getQueryResults(url, gVersion));
+      processLDAPValues(ldapquery.getQueryResults(url));
     }
   } catch (e) {
     displayError("getLDAPAttributes", e);
