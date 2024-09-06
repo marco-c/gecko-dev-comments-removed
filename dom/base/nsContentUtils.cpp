@@ -6718,6 +6718,16 @@ nsresult nsContentUtils::GetWebExposedOriginSerialization(nsIURI* aURI,
       return NS_OK;
     }
 
+    if (
+        
+        !uri->SchemeIs("http") && !uri->SchemeIs("https") &&
+        !uri->SchemeIs("file") && !uri->SchemeIs("resource") &&
+        
+        !uri->SchemeIs("moz-extension")) {
+      aOrigin.AssignLiteral("null");
+      return NS_OK;
+    }
+
     return GetWebExposedOriginSerialization(uri, aOrigin);
   }
 
