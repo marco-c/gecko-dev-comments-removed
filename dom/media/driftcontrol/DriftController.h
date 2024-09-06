@@ -49,7 +49,6 @@ class DriftController final {
   
 
 
-
   void ResetAfterUnderrun();
 
   
@@ -114,22 +113,6 @@ class DriftController final {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   void CalculateCorrection(uint32_t aBufferedFrames, uint32_t aBufferSize);
 
  public:
@@ -140,10 +123,7 @@ class DriftController final {
 
  private:
   media::TimeUnit mDesiredBuffering;
-  float mPreviousError = 0.f;
   float mCorrectedSourceRate;
-  Maybe<int32_t> mLastHysteresisBoundaryCorrection;
-  media::TimeUnit mDurationWithinHysteresis;
   media::TimeUnit mDurationNearDesired;
   uint32_t mNumCorrectionChanges = 0;
   

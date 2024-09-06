@@ -349,12 +349,13 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   EXPECT_EQ(ad.BufferSize(), 4800U);
   
   
-  EXPECT_LE(ad.NumCorrectionChanges(), 0U);
+  
+  EXPECT_GT(ad.NumCorrectionChanges(), 0U);
   EXPECT_EQ(ad.NumUnderruns(), 0U);
 
   
   
-  produceSomeData(transmitterBlockSize2, 10 * sampleRate);
+  produceSomeData(transmitterBlockSize2, 25 * sampleRate);
   auto numCorrectionChanges = ad.NumCorrectionChanges();
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
@@ -373,7 +374,7 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   EXPECT_EQ(ad.BufferSize(), 9600U);
   
   produceSomeData(transmitterBlockSize1, 20 * sampleRate);
-  EXPECT_LE(ad.NumCorrectionChanges(), numCorrectionChanges + 9);
+  EXPECT_LE(ad.NumCorrectionChanges(), numCorrectionChanges + 2);
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
   EXPECT_NEAR(inToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
