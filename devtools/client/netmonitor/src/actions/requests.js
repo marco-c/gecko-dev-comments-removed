@@ -144,15 +144,10 @@ function removeSelectedCustomRequest() {
 
 
 
-
-
-
-
-
-function clearRequests({ isExplicitClear }) {
+function clearRequests() {
   return ({ dispatch, connector }) => {
     dispatch({ type: CLEAR_REQUESTS });
-    connector.clear({ isExplicitClear });
+    connector.clear();
   };
 }
 

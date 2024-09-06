@@ -42,24 +42,11 @@ add_task(async function () {
   
   let sortedRequests = getSortedRequests(store.getState());
 
-  
-  
-  
-  
-  
-  
-  let optRequest, postRequest;
-  if (sortedRequests[0].method === "POST") {
-    optRequest = sortedRequests[1];
-    postRequest = sortedRequests[0];
-  } else {
-    optRequest = sortedRequests[0];
-    postRequest = sortedRequests[1];
-  }
-
+  const optRequest = sortedRequests[0];
   is(optRequest.method, "OPTIONS", `The OPTIONS request has the right method`);
   is(optRequest.url, requestUrl, `The OPTIONS request has the right URL`);
 
+  const postRequest = sortedRequests[1];
   is(postRequest.method, "POST", `The POST request has the right method`);
   is(postRequest.url, requestUrl, `The POST request has the right URL`);
 
@@ -92,21 +79,7 @@ add_task(async function () {
   sortedRequests = getSortedRequests(store.getState());
   is(sortedRequests.length, 4, "There are 4 requests in total");
 
-  
-  
-  
-  
-  
-  
-  
-  let resentOptRequest, resentPostRequest;
-  if (sortedRequests[2].method === "POST") {
-    resentOptRequest = sortedRequests[3];
-    resentPostRequest = sortedRequests[2];
-  } else {
-    resentOptRequest = sortedRequests[2];
-    resentPostRequest = sortedRequests[3];
-  }
+  const resentOptRequest = sortedRequests[2];
   is(
     resentOptRequest.method,
     "OPTIONS",
@@ -128,6 +101,7 @@ add_task(async function () {
     `The resent OPTIONS request was not blocked`
   );
 
+  let resentPostRequest = sortedRequests[3];
   is(
     resentPostRequest.method,
     "POST",
