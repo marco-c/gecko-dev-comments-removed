@@ -47,6 +47,8 @@ class HLSDecoder final : public MediaDecoder {
   
   void NotifyLoad(nsCString aMediaUrl);
 
+  bool IsHLSDecoder() const override { return true; }
+
  private:
   friend class HLSResourceCallbacksSupport;
 
