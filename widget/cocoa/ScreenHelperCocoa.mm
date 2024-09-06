@@ -109,10 +109,23 @@ static already_AddRefed<Screen> MakeScreen(NSScreen* aScreen) {
   if (pixelDepth > MAX_REPORTED_PIXEL_DEPTH) {
     pixelDepth = MAX_REPORTED_PIXEL_DEPTH;
   }
+
+  
+  
+  CGFloat componentValueMax =
+      aScreen.maximumPotentialExtendedDynamicRangeColorComponentValue;
+
   
   
   
-  bool isHDR = pixelDepth > 24;
+  
+  
+  
+  
+  
+  
+  
+  bool isHDR = pixelDepth > 24 && componentValueMax > 1.0;
 
   
   isHDR &= nsCocoaFeatures::OnBigSurOrLater();
