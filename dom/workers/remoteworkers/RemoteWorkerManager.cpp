@@ -235,47 +235,11 @@ void RemoteWorkerManager::RegisterActor(RemoteWorkerServiceParent* aActor) {
   if (!aActor->IsOtherProcessActor()) {
     MOZ_ASSERT(!mParentActor);
     mParentActor = aActor;
-    MOZ_ASSERT(mPendings.IsEmpty());
     return;
   }
 
   MOZ_ASSERT(!mChildActors.Contains(aActor));
   mChildActors.AppendElement(aActor);
-
-  if (!mPendings.IsEmpty()) {
-    const auto& processRemoteType = aActor->GetRemoteType();
-    nsTArray<Pending> unlaunched;
-
-    
-    for (Pending& p : mPendings) {
-      if (p.mController->IsTerminated()) {
-        continue;
-      }
-
-      const auto& workerRemoteType = p.mData.remoteType();
-
-      if (MatchRemoteType(processRemoteType, workerRemoteType)) {
-        LOG(("RegisterActor - Launch Pending, workerRemoteType=%s",
-             workerRemoteType.get()));
-        LaunchInternal(p.mController, aActor, p.mData);
-      } else {
-        unlaunched.AppendElement(std::move(p));
-        continue;
-      }
-    }
-
-    std::swap(mPendings, unlaunched);
-
-    
-    
-    
-    
-    if (mPendings.IsEmpty()) {
-      Release();
-    }
-
-    LOG(("RegisterActor - mPendings length: %zu", mPendings.Length()));
-  }
 }
 
 void RemoteWorkerManager::UnregisterActor(RemoteWorkerServiceParent* aActor) {
@@ -303,17 +267,19 @@ void RemoteWorkerManager::Launch(RemoteWorkerController* aController,
   
   if (!targetActor) {
     
-    
-    if (mPendings.IsEmpty()) {
-      AddRef();
-    }
-
-    Pending* pending = mPendings.AppendElement();
-    pending->mController = aController;
-    pending->mData = aData;
-
-    
-    LaunchNewContentProcess(aData);
+    LaunchNewContentProcess(aData)->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [self = RefPtr{this}, controller = RefPtr{aController},
+         data = aData](const RefPtr<RemoteWorkerServiceParent>& aTargetActor) {
+          if (aTargetActor->CanSend()) {
+            self->LaunchInternal(controller, aTargetActor, data, false);
+          } else {
+            controller->CreationFailed();
+          }
+        },
+        [controller = RefPtr{aController}](nsresult) {
+          controller->CreationFailed();
+        });
     return;
   }
 
@@ -523,103 +489,49 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActor(
   return SelectTargetActorInternal(aData, aProcessId);
 }
 
-void RemoteWorkerManager::LaunchNewContentProcess(
-    const RemoteWorkerData& aData) {
+RefPtr<RemoteWorkerManager::LaunchProcessPromise>
+RemoteWorkerManager::LaunchNewContentProcess(const RemoteWorkerData& aData) {
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
-  nsCOMPtr<nsISerialEventTarget> bgEventTarget = GetCurrentSerialEventTarget();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
+                     [remoteType = aData.remoteType()]() {
+                       if (AppShutdown::IsInOrBeyond(
+                               ShutdownPhase::AppShutdownConfirmed)) {
+                         return ContentParent::LaunchPromise::CreateAndReject(
+                             NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
+                       }
 
-  using LaunchPromiseType = ContentParent::LaunchPromise;
-  using CallbackParamType = LaunchPromiseType::ResolveOrRejectValue;
-
-  
-  
-  
-  
-  
-  
-  auto processLaunchCallback = [principalInfo = aData.principalInfo(),
-                                bgEventTarget = std::move(bgEventTarget),
-                                self = RefPtr<RemoteWorkerManager>(this)](
-                                   const CallbackParamType& aValue,
-                                   const nsCString& remoteType) mutable {
-    if (aValue.IsResolve()) {
-      LOG(("LaunchNewContentProcess: successfully got child process"));
-
-      
-      
-      NS_ProxyRelease(__func__, bgEventTarget, self.forget());
-    } else {
-      
-      nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-          __func__, [self = std::move(self), remoteType] {
-            nsTArray<Pending> uncancelled;
-            auto pendings = std::move(self->mPendings);
-
-            for (const auto& pending : pendings) {
-              const auto& workerRemoteType = pending.mData.remoteType();
-              if (self->MatchRemoteType(remoteType, workerRemoteType)) {
-                LOG(
-                    ("LaunchNewContentProcess: Cancel pending with "
-                     "workerRemoteType=%s",
-                     workerRemoteType.get()));
-                pending.mController->CreationFailed();
-              } else {
-                uncancelled.AppendElement(pending);
-              }
-            }
-
-            std::swap(self->mPendings, uncancelled);
+                       return ContentParent::GetNewOrUsedBrowserProcessAsync(
+                            remoteType,
+                            nullptr,
+                           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
+                            true);
+                     })
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [](ContentParent* aContentParent) {
+            RefPtr<RemoteWorkerServiceParent> actor =
+                aContentParent->GetRemoteWorkerServiceParent();
+            MOZ_ASSERT(actor, "RemoteWorkerServiceParent not initialized?");
+            return RemoteWorkerManager::LaunchProcessPromise::CreateAndResolve(
+                actor, __func__);
+          },
+          [](nsresult aError) {
+            return RemoteWorkerManager::LaunchProcessPromise::CreateAndReject(
+                aError, __func__);
           });
-
-      bgEventTarget->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
-    }
-  };
-
-  LOG(("LaunchNewContentProcess: remoteType=%s", aData.remoteType().get()));
-
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-      __func__, [callback = std::move(processLaunchCallback),
-                 workerRemoteType = aData.remoteType()]() mutable {
-        auto remoteType =
-            workerRemoteType.IsEmpty() ? DEFAULT_REMOTE_TYPE : workerRemoteType;
-
-        RefPtr<LaunchPromiseType> onFinished;
-        if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          onFinished = ContentParent::GetNewOrUsedBrowserProcessAsync(
-               remoteType,
-               nullptr,
-              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-               true);
-        } else {
-          
-          
-          
-          onFinished = LaunchPromiseType::CreateAndReject(
-              NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
-        }
-        onFinished->Then(GetCurrentSerialEventTarget(), __func__,
-                         [callback = std::move(callback),
-                          remoteType](const CallbackParamType& aValue) mutable {
-                           callback(aValue, remoteType);
-                         });
-      });
-
-  SchedulerGroup::Dispatch(r.forget());
 }
 
 }  

@@ -26,8 +26,6 @@ class RemoteWorkerServiceParent;
 
 
 
-
-
 class RemoteWorkerManager final {
  public:
   NS_INLINE_DECL_REFCOUNTING(RemoteWorkerManager)
@@ -74,7 +72,10 @@ class RemoteWorkerManager final {
                       const RemoteWorkerData& aData,
                       bool aRemoteWorkerAlreadyRegistered = false);
 
-  void LaunchNewContentProcess(const RemoteWorkerData& aData);
+  using LaunchProcessPromise =
+      MozPromise<RefPtr<RemoteWorkerServiceParent>, nsresult, true>;
+  RefPtr<LaunchProcessPromise> LaunchNewContentProcess(
+      const RemoteWorkerData& aData);
 
   void AsyncCreationFailed(RemoteWorkerController* aController);
 
@@ -104,13 +105,6 @@ class RemoteWorkerManager final {
   
   nsTArray<RemoteWorkerServiceParent*> mChildActors;
   RemoteWorkerServiceParent* mParentActor;
-
-  struct Pending {
-    RefPtr<RemoteWorkerController> mController;
-    RemoteWorkerData mData;
-  };
-
-  nsTArray<Pending> mPendings;
 };
 
 }  
