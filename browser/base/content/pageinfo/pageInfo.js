@@ -174,6 +174,7 @@ const COL_IMAGE_ALT = 3;
 const COL_IMAGE_COUNT = 4;
 const COL_IMAGE_NODE = 5;
 const COL_IMAGE_BG = 6;
+const COL_IMAGE_RAWSIZE = 7;
 
 
 const COPYCOL_NONE = -1;
@@ -213,6 +214,11 @@ gImageView.onPageMediaSort = function (columnname) {
     comparator = function numComparator(a, b) {
       return a - b;
     };
+
+    
+    if (index == COL_IMAGE_SIZE) {
+      index = COL_IMAGE_RAWSIZE;
+    }
   } else {
     comparator = function textComparator(a, b) {
       return (a || "").toLowerCase().localeCompare((b || "").toLowerCase());
@@ -580,21 +586,30 @@ async function addImage({ url, type, alt, altNotProvided, element, isBg }) {
   }
   if (!gImageHash[url][type].hasOwnProperty(alt)) {
     gImageHash[url][type][alt] = gImageView.data.length;
-    var row = [url, MEDIA_STRINGS[type], SIZE_UNKNOWN, alt, 1, element, isBg];
+    var row = [
+      url,
+      MEDIA_STRINGS[type],
+      SIZE_UNKNOWN,
+      alt,
+      1,
+      element,
+      isBg,
+      -1,
+    ];
     gImageView.addRow(row);
 
     
     openCacheEntry(url, function (cacheEntry) {
-      
       if (cacheEntry) {
         let value = cacheEntry.dataSize;
         
         if (value != -1) {
+          row[COL_IMAGE_RAWSIZE] = value;
           let kbSize = Number(Math.round((value / 1024) * 100) / 100);
           document.l10n
             .formatValue("media-file-size", { size: kbSize })
             .then(function (response) {
-              row[2] = response;
+              row[COL_IMAGE_SIZE] = response;
               
               gImageView.tree.invalidateRow(gImageView.data.indexOf(row));
             });
