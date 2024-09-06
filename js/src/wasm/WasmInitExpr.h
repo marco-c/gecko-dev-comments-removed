@@ -29,12 +29,11 @@ namespace js {
 namespace wasm {
 
 class Decoder;
-struct ModuleMetadata;
+struct CodeMetadata;
 
 
 
-[[nodiscard]] bool DecodeConstantExpression(Decoder& d,
-                                            ModuleMetadata* moduleMeta,
+[[nodiscard]] bool DecodeConstantExpression(Decoder& d, CodeMetadata* codeMeta,
                                             ValType expected,
                                             Maybe<LitVal>* literal);
 
@@ -74,7 +73,7 @@ class InitExpr {
   
   
   
-  static bool decodeAndValidate(Decoder& d, ModuleMetadata* moduleMeta,
+  static bool decodeAndValidate(Decoder& d, CodeMetadata* codeMeta,
                                 ValType expected, InitExpr* expr);
 
   

@@ -204,7 +204,7 @@ struct BaseCompiler final {
   
 
   
-  const ModuleMetadata& moduleMeta_;
+  const CodeMetadata& codeMeta_;
   const CompilerEnvironment& compilerEnv_;
   const FuncCompileInput& func_;
   const ValTypeVector& locals_;
@@ -331,7 +331,7 @@ struct BaseCompiler final {
   
   
 
-  BaseCompiler(const ModuleMetadata& moduleMeta,
+  BaseCompiler(const CodeMetadata& codeMetadata,
                const CompilerEnvironment& compilerEnv,
                const FuncCompileInput& func, const ValTypeVector& locals,
                const RegisterOffsets& trapExitLayout,

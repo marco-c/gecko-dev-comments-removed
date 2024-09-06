@@ -80,7 +80,7 @@ bool Decoder::readSectionHeader(uint8_t* id, SectionRange* range) {
   return true;
 }
 
-bool Decoder::startSection(SectionId id, ModuleMetadata* moduleMeta,
+bool Decoder::startSection(SectionId id, CodeMetadata* codeMeta,
                            MaybeSectionRange* range, const char* sectionName) {
   MOZ_ASSERT(!*range);
 
@@ -89,7 +89,7 @@ bool Decoder::startSection(SectionId id, ModuleMetadata* moduleMeta,
   
   const uint8_t* const initialCur = cur_;
   const size_t initialCustomSectionsLength =
-      moduleMeta->customSectionRanges.length();
+      codeMeta->customSectionRanges.length();
 
   
   
@@ -110,7 +110,7 @@ bool Decoder::startSection(SectionId id, ModuleMetadata* moduleMeta,
     
     
     cur_ = currentSectionStart;
-    if (!skipCustomSection(moduleMeta)) {
+    if (!skipCustomSection(codeMeta)) {
       return false;
     }
 
@@ -139,7 +139,7 @@ bool Decoder::startSection(SectionId id, ModuleMetadata* moduleMeta,
 
 rewind:
   cur_ = initialCur;
-  moduleMeta->customSectionRanges.shrinkTo(initialCustomSectionsLength);
+  codeMeta->customSectionRanges.shrinkTo(initialCustomSectionsLength);
   return true;
 
 fail:
@@ -158,20 +158,20 @@ bool Decoder::finishSection(const SectionRange& range,
 }
 
 bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
-                                 ModuleMetadata* moduleMeta,
+                                 CodeMetadata* codeMeta,
                                  MaybeSectionRange* range) {
   
   
   
   const uint8_t* const initialCur = cur_;
   const size_t initialCustomSectionsLength =
-      moduleMeta->customSectionRanges.length();
+      codeMeta->customSectionRanges.length();
 
   while (true) {
     
     
     
-    if (!startSection(SectionId::Custom, moduleMeta, range, "custom")) {
+    if (!startSection(SectionId::Custom, codeMeta, range, "custom")) {
       return false;
     }
     if (!*range) {
@@ -202,7 +202,7 @@ bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
     
     
     
-    if (!moduleMeta->customSectionRanges.append(secRange)) {
+    if (!codeMeta->customSectionRanges.append(secRange)) {
       return false;
     }
 
@@ -221,7 +221,7 @@ bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
 
 rewind:
   cur_ = initialCur;
-  moduleMeta->customSectionRanges.shrinkTo(initialCustomSectionsLength);
+  codeMeta->customSectionRanges.shrinkTo(initialCustomSectionsLength);
   return true;
 
 fail:
@@ -263,9 +263,9 @@ void Decoder::skipAndFinishCustomSection(const SectionRange& range) {
   clearError();
 }
 
-bool Decoder::skipCustomSection(ModuleMetadata* moduleMeta) {
+bool Decoder::skipCustomSection(CodeMetadata* codeMeta) {
   MaybeSectionRange range;
-  if (!startCustomSection(nullptr, 0, moduleMeta, &range)) {
+  if (!startCustomSection(nullptr, 0, codeMeta, &range)) {
     return false;
   }
   if (!range) {

@@ -47,7 +47,9 @@ using mozilla::Some;
 
 
 
-struct ModuleMetadata {
+struct ModuleMetadata;
+
+struct CodeMetadata {
   
   const ModuleKind kind;
   const FeatureArgs features;
@@ -57,19 +59,13 @@ struct ModuleMetadata {
   Maybe<uint32_t> dataCount;
   MemoryDescVector memories;
   MutableTypeContext types;
-  FuncDescVector funcs;
   BranchHintCollection branchHints;
+
   uint32_t numFuncImports;
   uint32_t numGlobalImports;
   GlobalDescVector globals;
   TagDescVector tags;
   TableDescVector tables;
-  Uint32Vector asmJSSigToTableIndex;
-  ImportVector imports;
-  ExportVector exports;
-  Maybe<uint32_t> startFuncIndex;
-  ModuleElemSegmentVector elemSegments;
-  MaybeSectionRange codeSection;
 
   
   
@@ -88,17 +84,36 @@ struct ModuleMetadata {
   uint32_t tagsOffsetStart;
 
   
-  DataSegmentRangeVector dataSegmentRanges;
-  CustomSectionRangeVector customSectionRanges;
-  Maybe<uint32_t> nameCustomSectionIndex;
-  Maybe<Name> moduleName;
-  NameVector funcNames;
+  
+  
+  
+  
+  
+  FuncDescVector funcs;
+
+  
+  
+  
+  
+  ModuleElemSegmentVector elemSegments;
 
   
   bool parsedBranchHints;
 
-  explicit ModuleMetadata(FeatureArgs features,
-                          ModuleKind kind = ModuleKind::Wasm)
+  
+  
+  
+  Uint32Vector asmJSSigToTableIndex;
+
+  
+  MaybeSectionRange
+      codeSection;  
+
+  
+  CustomSectionRangeVector customSectionRanges;  
+
+  explicit CodeMetadata(FeatureArgs features,
+                        ModuleKind kind = ModuleKind::Wasm)
       : kind(kind),
         features(features),
         numFuncImports(0),
@@ -202,13 +217,32 @@ struct ModuleMetadata {
   }
 
   bool addDefinedFunc(
-      ValTypeVector&& params, ValTypeVector&& results,
-      bool declareForRef = false,
+       ModuleMetadata* meta, ValTypeVector&& params,
+      ValTypeVector&& results, bool declareForRef = false,
       Maybe<CacheableName>&& optionalExportedName = mozilla::Nothing());
 
-  bool addImportedFunc(ValTypeVector&& params, ValTypeVector&& results,
-                       CacheableName&& importModName,
+  bool addImportedFunc( ModuleMetadata* meta, ValTypeVector&& params,
+                       ValTypeVector&& results, CacheableName&& importModName,
                        CacheableName&& importFieldName);
+};
+
+struct ModuleMetadata {
+  
+  
+  ImportVector imports;
+  ExportVector exports;
+  Maybe<uint32_t> startFuncIndex;
+  
+
+  
+  DataSegmentRangeVector dataSegmentRanges;
+  
+  
+  Maybe<uint32_t> nameCustomSectionIndex;
+  Maybe<Name> moduleName;
+  NameVector funcNames;
+
+  explicit ModuleMetadata() {}
 };
 
 
@@ -287,8 +321,7 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 
-[[nodiscard]] bool CheckIsSubtypeOf(Decoder& d,
-                                    const ModuleMetadata& moduleMeta,
+[[nodiscard]] bool CheckIsSubtypeOf(Decoder& d, const CodeMetadata& codeMeta,
                                     size_t opcodeOffset, StorageType subType,
                                     StorageType superType);
 
@@ -307,9 +340,10 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 
-[[nodiscard]] bool DecodeLocalEntriesWithParams(
-    Decoder& d, const ModuleMetadata& moduleMeta, uint32_t funcIndex,
-    ValTypeVector* locals);
+[[nodiscard]] bool DecodeLocalEntriesWithParams(Decoder& d,
+                                                const CodeMetadata& codeMeta,
+                                                uint32_t funcIndex,
+                                                ValTypeVector* locals);
 
 
 
@@ -327,14 +361,15 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 
-[[nodiscard]] bool DecodeModuleEnvironment(Decoder& d,
+[[nodiscard]] bool DecodeModuleEnvironment(Decoder& d, CodeMetadata* codeMeta,
                                            ModuleMetadata* moduleMeta);
 
-[[nodiscard]] bool ValidateFunctionBody(const ModuleMetadata& moduleMeta,
+[[nodiscard]] bool ValidateFunctionBody(const CodeMetadata& codeMeta,
                                         uint32_t funcIndex, uint32_t bodySize,
                                         Decoder& d);
 
-[[nodiscard]] bool DecodeModuleTail(Decoder& d, ModuleMetadata* moduleMeta);
+[[nodiscard]] bool DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
+                                    ModuleMetadata* meta);
 
 
 
