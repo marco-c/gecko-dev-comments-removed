@@ -270,7 +270,6 @@ nsresult nsTextEquivUtils::AppendFromAccessible(Accessible* aAccessible,
 
   
   
-  
   if (isEmptyTextEquiv) {
     if (ShouldIncludeInSubtreeCalculation(aAccessible)) {
       rv = AppendFromAccessibleChildren(aAccessible, aString);
@@ -305,7 +304,6 @@ nsresult nsTextEquivUtils::AppendFromValue(Accessible* aAccessible,
   
   
   
-
   if (aAccessible == sInitiatorAcc) {
     return NS_OK_NO_NAME_CLAUSE_HANDLED;
   }
@@ -323,6 +321,7 @@ nsresult nsTextEquivUtils::AppendFromValue(Accessible* aAccessible,
     return NS_ERROR_FAILURE;
   }
 
+  
   aAccessible->Value(text);
 
   return AppendString(aString, text) ? NS_OK : NS_OK_NO_NAME_CLAUSE_HANDLED;

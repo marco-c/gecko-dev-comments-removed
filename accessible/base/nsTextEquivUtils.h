@@ -22,6 +22,7 @@ class LocalAccessible;
 
 
 
+
 enum ETextEquivRule {
   
   eNoNameRule = 0x00,
@@ -31,6 +32,7 @@ enum ETextEquivRule {
   eNameFromSubtreeIfReqRule = 0x01,
 
   
+  
   eNameFromSubtreeRule = 0x03,
 
   
@@ -38,6 +40,8 @@ enum ETextEquivRule {
   
   eNameFromValueRule = 0x04
 };
+
+
 
 
 
@@ -70,6 +74,8 @@ class nsTextEquivUtils {
                                      nsAString& aName);
 
   
+
+
 
 
 
@@ -144,6 +150,8 @@ class nsTextEquivUtils {
                                        nsAString* aString);
 
   
+
+
 
 
   static nsresult AppendFromValue(Accessible* aAccessible, nsAString* aString);
