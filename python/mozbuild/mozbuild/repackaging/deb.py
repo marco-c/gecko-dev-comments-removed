@@ -40,18 +40,33 @@ class HgServerError(Exception):
         super().__init__(msg)
 
 
+
+
+
 _DEB_ARCH = {
     "all": "all",
     "x86": "i386",
     "x86_64": "amd64",
+    "aarch64": "arm64",
 }
 
 
 
+_DEB_SYSROOT_ARCH = {
+    "all": "amd64",
+    "x86": "i386",
+    "x86_64": "amd64",
+    "aarch64": "amd64",
+}
 
 
 
-_DEB_DIST = "jessie"
+_DEB_SYSROOT_DIST = {
+    "all": "jessie",
+    "x86": "jessie",
+    "x86_64": "jessie",
+    "aarch64": "buster",
+}
 
 
 def repackage_deb(
@@ -729,8 +744,15 @@ def _is_chroot_available(arch):
 
 
 def _get_chroot_path(arch):
-    deb_arch = "amd64" if arch == "all" else _DEB_ARCH[arch]
-    return f"/srv/{_DEB_DIST}-{deb_arch}"
+    
+    
+    
+    
+    
+    
+    deb_sysroot_dist = _DEB_SYSROOT_DIST[arch]
+    deb_sysroot_arch = _DEB_SYSROOT_ARCH[arch]
+    return f"/srv/{deb_sysroot_dist}-{deb_sysroot_arch}"
 
 
 _MANIFEST_FILE_NAME = "manifest.json"
