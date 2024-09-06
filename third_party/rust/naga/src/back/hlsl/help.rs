@@ -70,6 +70,11 @@ pub(super) struct WrappedMath {
     pub(super) components: Option<u32>,
 }
 
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+pub(super) struct WrappedZeroValue {
+    pub(super) ty: Handle<crate::Type>,
+}
+
 
 
 
@@ -359,7 +364,7 @@ impl<'a, W: Write> super::Writer<'a, W> {
     }
 
     
-    pub(super) fn write_wrapped_constructor_function(
+    fn write_wrapped_constructor_function(
         &mut self,
         module: &crate::Module,
         constructor: WrappedConstructor,
@@ -862,6 +867,25 @@ impl<'a, W: Write> super::Writer<'a, W> {
         Ok(())
     }
 
+    
+    
+    
+    pub(super) fn write_wrapped_zero_value_functions(
+        &mut self,
+        module: &crate::Module,
+        expressions: &crate::Arena<crate::Expression>,
+    ) -> BackendResult {
+        for (handle, _) in expressions.iter() {
+            if let crate::Expression::ZeroValue(ty) = expressions[handle] {
+                let zero_value = WrappedZeroValue { ty };
+                if self.wrapped.zero_values.insert(zero_value) {
+                    self.write_wrapped_zero_value_function(module, zero_value)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub(super) fn write_wrapped_math_functions(
         &mut self,
         module: &crate::Module,
@@ -1006,6 +1030,7 @@ impl<'a, W: Write> super::Writer<'a, W> {
     ) -> BackendResult {
         self.write_wrapped_math_functions(module, func_ctx)?;
         self.write_wrapped_compose_functions(module, func_ctx.expressions)?;
+        self.write_wrapped_zero_value_functions(module, func_ctx.expressions)?;
 
         for (handle, _) in func_ctx.expressions.iter() {
             match func_ctx.expressions[handle] {
@@ -1280,6 +1305,73 @@ impl<'a, W: Write> super::Writer<'a, W> {
                 }
             }
         }
+
+        Ok(())
+    }
+
+    pub(super) fn write_wrapped_zero_value_function_name(
+        &mut self,
+        module: &crate::Module,
+        zero_value: WrappedZeroValue,
+    ) -> BackendResult {
+        let name = crate::TypeInner::hlsl_type_id(zero_value.ty, module.to_ctx(), &self.names)?;
+        write!(self.out, "ZeroValue{name}")?;
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write_wrapped_zero_value_function(
+        &mut self,
+        module: &crate::Module,
+        zero_value: WrappedZeroValue,
+    ) -> BackendResult {
+        use crate::back::INDENT;
+
+        const RETURN_VARIABLE_NAME: &str = "ret";
+
+        
+        if let crate::TypeInner::Array { base, size, .. } = module.types[zero_value.ty].inner {
+            write!(self.out, "typedef ")?;
+            self.write_type(module, zero_value.ty)?;
+            write!(self.out, " ret_")?;
+            self.write_wrapped_zero_value_function_name(module, zero_value)?;
+            self.write_array_size(module, base, size)?;
+            writeln!(self.out, ";")?;
+
+            write!(self.out, "ret_")?;
+            self.write_wrapped_zero_value_function_name(module, zero_value)?;
+        } else {
+            self.write_type(module, zero_value.ty)?;
+        }
+        write!(self.out, " ")?;
+        self.write_wrapped_zero_value_function_name(module, zero_value)?;
+
+        
+        writeln!(self.out, "() {{")?;
+
+        
+        write!(self.out, "{INDENT}return ")?;
+        self.write_default_init(module, zero_value.ty)?;
+        writeln!(self.out, ";")?;
+
+        
+        writeln!(self.out, "}}")?;
+        
+        writeln!(self.out)?;
 
         Ok(())
     }

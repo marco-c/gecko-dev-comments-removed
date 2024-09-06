@@ -119,6 +119,92 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![allow(
     
@@ -645,6 +731,10 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
     
     unsafe fn begin_encoding(&mut self, label: Label) -> Result<(), DeviceError>;
 
+    
+    
+    
+    
     
     
     
@@ -1459,6 +1549,11 @@ pub struct ProgrammableStage<'a, A: Api> {
     pub entry_point: &'a str,
     
     pub constants: &'a naga::back::PipelineConstants,
+    
+    
+    
+    
+    pub zero_initialize_workgroup_memory: bool,
 }
 
 
@@ -1468,6 +1563,7 @@ impl<A: Api> Clone for ProgrammableStage<'_, A> {
             module: self.module,
             entry_point: self.entry_point,
             constants: self.constants,
+            zero_initialize_workgroup_memory: self.zero_initialize_workgroup_memory,
         }
     }
 }

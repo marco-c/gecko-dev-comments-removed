@@ -507,6 +507,8 @@ impl crate::Instance for Instance {
                 .supported_extensions()
                 .contains("GL_ARB_framebuffer_sRGB");
 
+        
+        
         if srgb_capable {
             unsafe { gl.enable(glow::FRAMEBUFFER_SRGB) };
         }

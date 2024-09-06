@@ -3,18 +3,19 @@ mod bind;
 mod bundle;
 mod clear;
 mod compute;
+mod compute_command;
 mod draw;
 mod memory_init;
 mod query;
 mod render;
 mod transfer;
 
-use std::slice;
 use std::sync::Arc;
 
 pub(crate) use self::clear::clear_texture;
 pub use self::{
-    bundle::*, clear::ClearError, compute::*, draw::*, query::*, render::*, transfer::*,
+    bundle::*, clear::ClearError, compute::*, compute_command::ComputeCommand, draw::*, query::*,
+    render::*, transfer::*,
 };
 pub(crate) use allocator::CommandAllocator;
 
@@ -24,6 +25,7 @@ use crate::device::{Device, DeviceError};
 use crate::error::{ErrorFormatter, PrettyError};
 use crate::hub::Hub;
 use crate::id::CommandBufferId;
+use crate::lock::{rank, Mutex};
 use crate::snatch::SnatchGuard;
 
 use crate::init_tracker::BufferInitTrackerAction;
@@ -32,7 +34,6 @@ use crate::track::{Tracker, UsageScope};
 use crate::{api_log, global::Global, hal_api::HalApi, id, resource_log, Label};
 
 use hal::CommandEncoder as _;
-use parking_lot::Mutex;
 use thiserror::Error;
 
 #[cfg(feature = "trace")]
@@ -94,7 +95,9 @@ pub(crate) enum CommandEncoderStatus {
 
 
 
+
 pub(crate) struct CommandEncoder<A: HalApi> {
+    
     
     
     
@@ -113,8 +116,11 @@ pub(crate) struct CommandEncoder<A: HalApi> {
     
     
     
+    
     list: Vec<A::CommandBuffer>,
 
+    
+    
     
     
     
@@ -126,6 +132,8 @@ pub(crate) struct CommandEncoder<A: HalApi> {
 
 
 impl<A: HalApi> CommandEncoder<A> {
+    
+    
     
     
     
@@ -229,6 +237,8 @@ pub(crate) struct DestroyedTextureError(pub id::TextureId);
 pub struct CommandBufferMutable<A: HalApi> {
     
     
+    
+    
     pub(crate) encoder: CommandEncoder<A>,
 
     
@@ -330,25 +340,28 @@ impl<A: HalApi> CommandBuffer<A> {
                     .as_str(),
                 None,
             ),
-            data: Mutex::new(Some(CommandBufferMutable {
-                encoder: CommandEncoder {
-                    raw: encoder,
-                    is_open: false,
-                    list: Vec::new(),
-                    label,
-                },
-                status: CommandEncoderStatus::Recording,
-                trackers: Tracker::new(),
-                buffer_memory_init_actions: Default::default(),
-                texture_memory_actions: Default::default(),
-                pending_query_resets: QueryResetMap::new(),
-                #[cfg(feature = "trace")]
-                commands: if enable_tracing {
-                    Some(Vec::new())
-                } else {
-                    None
-                },
-            })),
+            data: Mutex::new(
+                rank::COMMAND_BUFFER_DATA,
+                Some(CommandBufferMutable {
+                    encoder: CommandEncoder {
+                        raw: encoder,
+                        is_open: false,
+                        list: Vec::new(),
+                        label,
+                    },
+                    status: CommandEncoderStatus::Recording,
+                    trackers: Tracker::new(),
+                    buffer_memory_init_actions: Default::default(),
+                    texture_memory_actions: Default::default(),
+                    pending_query_resets: QueryResetMap::new(),
+                    #[cfg(feature = "trace")]
+                    commands: if enable_tracing {
+                        Some(Vec::new())
+                    } else {
+                        None
+                    },
+                }),
+            ),
         }
     }
 
@@ -757,16 +770,15 @@ impl BindGroupStateChange {
         }
     }
 
-    unsafe fn set_and_check_redundant(
+    fn set_and_check_redundant(
         &mut self,
         bind_group_id: id::BindGroupId,
         index: u32,
         dynamic_offsets: &mut Vec<u32>,
-        offsets: *const wgt::DynamicOffset,
-        offset_length: usize,
+        offsets: &[wgt::DynamicOffset],
     ) -> bool {
         
-        if offset_length == 0 {
+        if offsets.is_empty() {
             
             
             if let Some(current_bind_group) = self.last_states.get_mut(index as usize) {
@@ -782,8 +794,7 @@ impl BindGroupStateChange {
             if let Some(current_bind_group) = self.last_states.get_mut(index as usize) {
                 current_bind_group.reset();
             }
-            dynamic_offsets
-                .extend_from_slice(unsafe { slice::from_raw_parts(offsets, offset_length) });
+            dynamic_offsets.extend_from_slice(offsets);
         }
         false
     }

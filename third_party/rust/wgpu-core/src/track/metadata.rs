@@ -91,12 +91,14 @@ impl<T: Resource> ResourceMetadata<T> {
     
     
     
+    
+    
+    
     #[inline(always)]
-    pub(super) unsafe fn insert(&mut self, index: usize, resource: Arc<T>) {
+    pub(super) unsafe fn insert(&mut self, index: usize, resource: Arc<T>) -> &Arc<T> {
         self.owned.set(index, true);
-        unsafe {
-            *self.resources.get_unchecked_mut(index) = Some(resource);
-        }
+        let resource_dst = unsafe { self.resources.get_unchecked_mut(index) };
+        resource_dst.insert(resource)
     }
 
     

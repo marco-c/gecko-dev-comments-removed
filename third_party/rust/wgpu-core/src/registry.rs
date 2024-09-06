@@ -38,6 +38,7 @@ impl RegistryReport {
 
 #[derive(Debug)]
 pub(crate) struct Registry<T: Resource> {
+    
     identity: Arc<IdentityManager<T::Marker>>,
     storage: RwLock<Storage<T>>,
     backend: Backend,
@@ -95,9 +96,6 @@ impl<T: Resource> FutureId<'_, T> {
         (self.id, data.get(self.id).unwrap().clone())
     }
 
-    
-    
-    
     
     
     
@@ -165,8 +163,11 @@ impl<T: Resource> Registry<T> {
         storage.insert_error(id, label);
     }
     pub(crate) fn unregister(&self, id: Id<T::Marker>) -> Option<Arc<T>> {
-        self.identity.free(id);
         let value = self.storage.write().remove(id);
+        
+        
+        
+        self.identity.free(id);
         
         value
     }
@@ -207,5 +208,55 @@ impl<T: Resource> Registry<T> {
             }
         }
         report
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use crate::{
+        id::Marker,
+        resource::{Resource, ResourceInfo, ResourceType},
+    };
+
+    use super::Registry;
+    struct TestData {
+        info: ResourceInfo<TestData>,
+    }
+    struct TestDataId;
+    impl Marker for TestDataId {}
+
+    impl Resource for TestData {
+        type Marker = TestDataId;
+
+        const TYPE: ResourceType = "Test data";
+
+        fn as_info(&self) -> &ResourceInfo<Self> {
+            &self.info
+        }
+
+        fn as_info_mut(&mut self) -> &mut ResourceInfo<Self> {
+            &mut self.info
+        }
+    }
+
+    #[test]
+    fn simultaneous_registration() {
+        let registry = Registry::without_backend();
+        std::thread::scope(|s| {
+            for _ in 0..5 {
+                s.spawn(|| {
+                    for _ in 0..1000 {
+                        let value = Arc::new(TestData {
+                            info: ResourceInfo::new("Test data", None),
+                        });
+                        let new_id = registry.prepare(None);
+                        let (id, _) = new_id.assign(value);
+                        registry.unregister(id);
+                    }
+                });
+            }
+        })
     }
 }

@@ -431,6 +431,11 @@ pub enum BuiltIn {
     WorkGroupId,
     WorkGroupSize,
     NumWorkGroups,
+    
+    NumSubgroups,
+    SubgroupId,
+    SubgroupSize,
+    SubgroupInvocationId,
 }
 
 
@@ -866,7 +871,7 @@ pub enum TypeInner {
     BindingArray { base: Handle<Type>, size: ArraySize },
 }
 
-#[derive(Debug, Clone, Copy, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -1277,6 +1282,51 @@ pub enum SwizzleComponent {
     W = 3,
 }
 
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum GatherMode {
+    
+    BroadcastFirst,
+    
+    Broadcast(Handle<Expression>),
+    
+    Shuffle(Handle<Expression>),
+    
+    ShuffleDown(Handle<Expression>),
+    
+    ShuffleUp(Handle<Expression>),
+    
+    ShuffleXor(Handle<Expression>),
+}
+
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum SubgroupOperation {
+    All = 0,
+    Any = 1,
+    Add = 2,
+    Mul = 3,
+    Min = 4,
+    Max = 5,
+    And = 6,
+    Or = 7,
+    Xor = 8,
+}
+
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum CollectiveOperation {
+    Reduce = 0,
+    InclusiveScan = 1,
+    ExclusiveScan = 2,
+}
+
 bitflags::bitflags! {
     /// Memory barrier flags.
     #[cfg_attr(feature = "serialize", derive(Serialize))]
@@ -1285,9 +1335,11 @@ bitflags::bitflags! {
     #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
     pub struct Barrier: u32 {
         /// Barrier affects all `AddressSpace::Storage` accesses.
-        const STORAGE = 0x1;
+        const STORAGE = 1 << 0;
         /// Barrier affects all `AddressSpace::WorkGroup` accesses.
-        const WORK_GROUP = 0x2;
+        const WORK_GROUP = 1 << 1;
+        /// Barrier synchronizes execution across all invocations within a subgroup that exectue this instruction.
+        const SUB_GROUP = 1 << 2;
     }
 }
 
@@ -1588,6 +1640,15 @@ pub enum Expression {
         query: Handle<Expression>,
         committed: bool,
     },
+    
+    
+    
+    SubgroupBallotResult,
+    
+    
+    
+    
+    SubgroupOperationResult { ty: Handle<Type> },
 }
 
 pub use block::Block;
@@ -1871,6 +1932,39 @@ pub enum Statement {
 
         
         fun: RayQueryFunction,
+    },
+    
+    SubgroupBallot {
+        
+        
+        
+        result: Handle<Expression>,
+        
+        predicate: Option<Handle<Expression>>,
+    },
+    
+    SubgroupGather {
+        
+        mode: GatherMode,
+        
+        argument: Handle<Expression>,
+        
+        
+        
+        result: Handle<Expression>,
+    },
+    
+    SubgroupCollectiveOperation {
+        
+        op: SubgroupOperation,
+        
+        collective_op: CollectiveOperation,
+        
+        argument: Handle<Expression>,
+        
+        
+        
+        result: Handle<Expression>,
     },
 }
 

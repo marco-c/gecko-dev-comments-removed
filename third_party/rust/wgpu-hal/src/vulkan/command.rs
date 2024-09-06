@@ -104,6 +104,11 @@ impl crate::CommandEncoder for super::CommandEncoder {
     }
 
     unsafe fn discard_encoding(&mut self) {
+        
+        
+        
+        assert_ne!(self.active, vk::CommandBuffer::null());
+
         self.discarded.push(self.active);
         self.active = vk::CommandBuffer::null();
     }

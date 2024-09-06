@@ -241,6 +241,11 @@ pub struct ProgrammableStageDescriptor<'a> {
     
     
     pub constants: Cow<'a, naga::back::PipelineConstants>,
+    
+    
+    
+    
+    pub zero_initialize_workgroup_memory: bool,
 }
 
 

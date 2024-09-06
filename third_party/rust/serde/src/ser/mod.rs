@@ -796,9 +796,9 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_some<T>(self, value: &T) -> Result<Self::Ok, Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     
@@ -891,13 +891,13 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_newtype_struct<T: ?Sized>(
+    fn serialize_newtype_struct<T>(
         self,
         name: &'static str,
         value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     
@@ -925,7 +925,7 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_newtype_variant<T: ?Sized>(
+    fn serialize_newtype_variant<T>(
         self,
         name: &'static str,
         variant_index: u32,
@@ -933,7 +933,7 @@ pub trait Serializer: Sized {
         value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     
@@ -1194,12 +1194,15 @@ pub trait Serializer: Sized {
     
     
     
+    
     fn serialize_struct(
         self,
         name: &'static str,
         len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error>;
 
+    
+    
     
     
     
@@ -1346,9 +1349,9 @@ pub trait Serializer: Sized {
     
     
     #[cfg(any(feature = "std", feature = "alloc"))]
-    fn collect_str<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
+    fn collect_str<T>(self, value: &T) -> Result<Self::Ok, Self::Error>
     where
-        T: Display,
+        T: ?Sized + Display,
     {
         self.serialize_str(&value.to_string())
     }
@@ -1379,9 +1382,9 @@ pub trait Serializer: Sized {
     
     
     #[cfg(not(any(feature = "std", feature = "alloc")))]
-    fn collect_str<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
+    fn collect_str<T>(self, value: &T) -> Result<Self::Ok, Self::Error>
     where
-        T: Display;
+        T: ?Sized + Display;
 
     
     
@@ -1493,9 +1496,9 @@ pub trait SerializeSeq {
     type Error: Error;
 
     
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_element<T>(&mut self, value: &T) -> Result<(), Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
@@ -1593,9 +1596,9 @@ pub trait SerializeTuple {
     type Error: Error;
 
     
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_element<T>(&mut self, value: &T) -> Result<(), Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
@@ -1638,9 +1641,9 @@ pub trait SerializeTupleStruct {
     type Error: Error;
 
     
-    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T>(&mut self, value: &T) -> Result<(), Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
@@ -1696,9 +1699,9 @@ pub trait SerializeTupleVariant {
     type Error: Error;
 
     
-    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T>(&mut self, value: &T) -> Result<(), Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
@@ -1767,9 +1770,9 @@ pub trait SerializeMap {
     
     
     
-    fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Self::Error>
+    fn serialize_key<T>(&mut self, key: &T) -> Result<(), Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     
@@ -1777,9 +1780,9 @@ pub trait SerializeMap {
     
     
     
-    fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_value<T>(&mut self, value: &T) -> Result<(), Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
     
     
@@ -1798,14 +1801,10 @@ pub trait SerializeMap {
     
     
     
-    fn serialize_entry<K: ?Sized, V: ?Sized>(
-        &mut self,
-        key: &K,
-        value: &V,
-    ) -> Result<(), Self::Error>
+    fn serialize_entry<K, V>(&mut self, key: &K, value: &V) -> Result<(), Self::Error>
     where
-        K: Serialize,
-        V: Serialize,
+        K: ?Sized + Serialize,
+        V: ?Sized + Serialize,
     {
         tri!(self.serialize_key(key));
         self.serialize_value(value)
@@ -1856,14 +1855,12 @@ pub trait SerializeStruct {
     type Error: Error;
 
     
-    fn serialize_field<T: ?Sized>(
-        &mut self,
-        key: &'static str,
-        value: &T,
-    ) -> Result<(), Self::Error>
+    fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
+    
+    
     
     #[inline]
     fn skip_field(&mut self, key: &'static str) -> Result<(), Self::Error> {
@@ -1922,14 +1919,12 @@ pub trait SerializeStructVariant {
     type Error: Error;
 
     
-    fn serialize_field<T: ?Sized>(
-        &mut self,
-        key: &'static str,
-        value: &T,
-    ) -> Result<(), Self::Error>
+    fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
     where
-        T: Serialize;
+        T: ?Sized + Serialize;
 
+    
+    
     
     #[inline]
     fn skip_field(&mut self, key: &'static str) -> Result<(), Self::Error> {

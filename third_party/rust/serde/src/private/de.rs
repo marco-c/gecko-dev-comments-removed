@@ -313,6 +313,8 @@ mod content {
         }
     }
 
+    
+    
     struct ContentVisitor<'de> {
         value: PhantomData<Content<'de>>,
     }
@@ -528,6 +530,8 @@ mod content {
         Content(Content<'de>),
     }
 
+    
+    
     struct TagOrContentVisitor<'de> {
         name: &'static str,
         value: PhantomData<TagOrContent<'de>>,
@@ -812,6 +816,9 @@ mod content {
         }
     }
 
+    
+    
+    
     
     
     

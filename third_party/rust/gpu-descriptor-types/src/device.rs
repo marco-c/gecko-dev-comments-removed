@@ -31,6 +31,12 @@ pub enum DeviceAllocationError {
 
 
 pub trait DescriptorDevice<L, P, S> {
+    
+    
+    
+    
+    
+    
     unsafe fn create_descriptor_pool(
         &self,
         descriptor_count: &DescriptorTotalCount,
@@ -38,8 +44,19 @@ pub trait DescriptorDevice<L, P, S> {
         flags: DescriptorPoolCreateFlags,
     ) -> Result<P, CreatePoolError>;
 
+    
+    
+    
+    
+    
+    
     unsafe fn destroy_descriptor_pool(&self, pool: P);
 
+    
+    
+    
+    
+    
     unsafe fn alloc_descriptor_sets<'a>(
         &self,
         pool: &mut P,
@@ -49,5 +66,10 @@ pub trait DescriptorDevice<L, P, S> {
     where
         L: 'a;
 
-    unsafe fn dealloc_descriptor_sets<'a>(&self, pool: &mut P, sets: impl Iterator<Item = S>);
+    
+    
+    
+    
+    
+    unsafe fn dealloc_descriptor_sets(&self, pool: &mut P, sets: impl Iterator<Item = S>);
 }

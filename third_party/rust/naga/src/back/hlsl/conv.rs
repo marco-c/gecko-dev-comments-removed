@@ -179,6 +179,11 @@ impl crate::BuiltIn {
             
             
             Self::NumWorkGroups => "SV_GroupID",
+            
+            Self::SubgroupSize
+            | Self::SubgroupInvocationId
+            | Self::NumSubgroups
+            | Self::SubgroupId => unreachable!(),
             Self::BaseInstance | Self::BaseVertex | Self::WorkGroupSize => {
                 return Err(Error::Unimplemented(format!("builtin {self:?}")))
             }
