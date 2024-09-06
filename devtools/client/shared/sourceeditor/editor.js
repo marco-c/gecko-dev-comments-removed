@@ -929,7 +929,6 @@ class Editor extends EventEmitter {
   }
 
   #createEventHandlers() {
-    const cm = editors.get(this);
     function posToLineColumn(pos, view) {
       if (!pos) {
         return { line: null, column: null };
@@ -955,20 +954,7 @@ class Editor extends EventEmitter {
               view.state.selection.main.head,
               view
             );
-            
-            const pos =
-              !event.pageX || !event.pageY
-                ? null
-                : cm.posAtCoords({ x: event.pageX, y: event.pageY });
-            const eventPos = posToLineColumn(pos, view);
-            handler(
-              event,
-              view,
-              cursorPos.line,
-              cursorPos.column,
-              eventPos.line,
-              eventPos.column
-            );
+            handler(event, view, cursorPos.line, cursorPos.column);
           }, 0);
         }
       };
@@ -1832,6 +1818,41 @@ class Editor extends EventEmitter {
       end: { line: lineNumber, column: expressionEnd },
     };
     return { expression, location };
+  }
+
+  
+
+
+
+
+
+
+
+  getPositionAtScreenCoords(left, top) {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const position = cm.posAtCoords(
+        { x: left, y: top },
+        
+        false
+      );
+      const line = cm.state.doc.lineAt(position);
+      return {
+        line: line.number,
+        column: position - line.from,
+      };
+    }
+    const { line, ch } = cm.coordsChar(
+      { left, top },
+      
+      
+      
+      "window"
+    );
+    return {
+      line: line + 1,
+      column: ch,
+    };
   }
 
   
