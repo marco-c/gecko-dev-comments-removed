@@ -2878,31 +2878,24 @@ static bool ToRelativeTemporalObject(
     }
 
     
-    JS::RootedVector<PropertyKey> fieldNames(cx);
-    if (!CalendarFields(cx, calendarRec,
-                        {CalendarField::Day, CalendarField::Month,
-                         CalendarField::MonthCode, CalendarField::Year},
-                        &fieldNames)) {
-      return false;
-    }
-
-    
-    if (!AppendSorted(cx, fieldNames.get(),
-                      {
-                          TemporalField::Hour,
-                          TemporalField::Microsecond,
-                          TemporalField::Millisecond,
-                          TemporalField::Minute,
-                          TemporalField::Nanosecond,
-                          TemporalField::Offset,
-                          TemporalField::Second,
-                          TemporalField::TimeZone,
-                      })) {
-      return false;
-    }
-
-    
-    Rooted<PlainObject*> fields(cx, PrepareTemporalFields(cx, obj, fieldNames));
+    Rooted<PlainObject*> fields(
+        cx, PrepareCalendarFields(cx, calendarRec, obj,
+                                  {
+                                      CalendarField::Day,
+                                      CalendarField::Month,
+                                      CalendarField::MonthCode,
+                                      CalendarField::Year,
+                                  },
+                                  {
+                                      TemporalField::Hour,
+                                      TemporalField::Microsecond,
+                                      TemporalField::Millisecond,
+                                      TemporalField::Minute,
+                                      TemporalField::Nanosecond,
+                                      TemporalField::Offset,
+                                      TemporalField::Second,
+                                      TemporalField::TimeZone,
+                                  }));
     if (!fields) {
       return false;
     }

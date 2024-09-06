@@ -233,17 +233,14 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
     }
 
     
-    JS::RootedVector<PropertyKey> fieldNames(cx);
-    if (!CalendarFields(cx, calendar,
-                        {CalendarField::Day, CalendarField::Month,
-                         CalendarField::MonthCode, CalendarField::Year},
-                        &fieldNames)) {
-      return nullptr;
-    }
-
-    
-    Rooted<PlainObject*> fields(cx,
-                                PrepareTemporalFields(cx, itemObj, fieldNames));
+    Rooted<PlainObject*> fields(
+        cx, PrepareCalendarFields(cx, calendar, itemObj,
+                                  {
+                                      CalendarField::Day,
+                                      CalendarField::Month,
+                                      CalendarField::MonthCode,
+                                      CalendarField::Year,
+                                  }));
     if (!fields) {
       return nullptr;
     }
@@ -564,18 +561,16 @@ static bool PlainMonthDay_with(JSContext* cx, const CallArgs& args) {
   }
 
   
+  Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::Day, CalendarField::Month,
-                       CalendarField::MonthCode, CalendarField::Year},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(cx,
-                              PrepareTemporalFields(cx, monthDay, fieldNames));
-  if (!fields) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, monthDay,
+                                          {
+                                              CalendarField::Day,
+                                              CalendarField::Month,
+                                              CalendarField::MonthCode,
+                                              CalendarField::Year,
+                                          },
+                                          &fields, &fieldNames)) {
     return false;
   }
 
@@ -786,36 +781,32 @@ static bool PlainMonthDay_toPlainDate(JSContext* cx, const CallArgs& args) {
   }
 
   
+  Rooted<PlainObject*> receiverFields(cx);
   JS::RootedVector<PropertyKey> receiverFieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::Day, CalendarField::MonthCode},
-                      &receiverFieldNames)) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, monthDay,
+                                          {
+                                              CalendarField::Day,
+                                              CalendarField::MonthCode,
+                                          },
+                                          &receiverFields,
+                                          &receiverFieldNames)) {
     return false;
   }
 
   
-  Rooted<PlainObject*> fields(
-      cx, PrepareTemporalFields(cx, monthDay, receiverFieldNames));
-  if (!fields) {
-    return false;
-  }
-
-  
+  Rooted<PlainObject*> inputFields(cx);
   JS::RootedVector<PropertyKey> inputFieldNames(cx);
-  if (!CalendarFields(cx, calendar, {CalendarField::Year}, &inputFieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> inputFields(
-      cx, PrepareTemporalFields(cx, item, inputFieldNames));
-  if (!inputFields) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, item,
+                                          {
+                                              CalendarField::Year,
+                                          },
+                                          &inputFields, &inputFieldNames)) {
     return false;
   }
 
   
   Rooted<JSObject*> mergedFields(
-      cx, CalendarMergeFields(cx, calendar, fields, inputFields));
+      cx, CalendarMergeFields(cx, calendar, receiverFields, inputFields));
   if (!mergedFields) {
     return false;
   }

@@ -586,30 +586,22 @@ static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
     }
 
     
-    JS::RootedVector<PropertyKey> fieldNames(cx);
-    if (!CalendarFields(cx, calendarRec,
-                        {CalendarField::Day, CalendarField::Month,
-                         CalendarField::MonthCode, CalendarField::Year},
-                        &fieldNames)) {
-      return nullptr;
-    }
-
-    
-    if (!AppendSorted(cx, fieldNames.get(),
-                      {
-                          TemporalField::Hour,
-                          TemporalField::Microsecond,
-                          TemporalField::Millisecond,
-                          TemporalField::Minute,
-                          TemporalField::Nanosecond,
-                          TemporalField::Second,
-                      })) {
-      return nullptr;
-    }
-
-    
-    Rooted<PlainObject*> fields(cx,
-                                PrepareTemporalFields(cx, itemObj, fieldNames));
+    Rooted<PlainObject*> fields(
+        cx, PrepareCalendarFields(cx, calendarRec, itemObj,
+                                  {
+                                      CalendarField::Day,
+                                      CalendarField::Month,
+                                      CalendarField::MonthCode,
+                                      CalendarField::Year,
+                                  },
+                                  {
+                                      TemporalField::Hour,
+                                      TemporalField::Microsecond,
+                                      TemporalField::Millisecond,
+                                      TemporalField::Minute,
+                                      TemporalField::Nanosecond,
+                                      TemporalField::Second,
+                                  }));
     if (!fields) {
       return nullptr;
     }
@@ -1796,18 +1788,16 @@ static bool PlainDateTime_with(JSContext* cx, const CallArgs& args) {
   }
 
   
+  Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::Day, CalendarField::Month,
-                       CalendarField::MonthCode, CalendarField::Year},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(cx,
-                              PrepareTemporalFields(cx, dateTime, fieldNames));
-  if (!fields) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, dateTime,
+                                          {
+                                              CalendarField::Day,
+                                              CalendarField::Month,
+                                              CalendarField::MonthCode,
+                                              CalendarField::Year,
+                                          },
+                                          &fields, &fieldNames)) {
     return false;
   }
 
@@ -2596,16 +2586,10 @@ static bool PlainDateTime_toPlainYearMonth(JSContext* cx,
   }
 
   
-  JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::MonthCode, CalendarField::Year},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(cx,
-                              PrepareTemporalFields(cx, dateTime, fieldNames));
+  Rooted<PlainObject*> fields(
+      cx,
+      PrepareCalendarFields(cx, calendar, dateTime,
+                            {CalendarField::MonthCode, CalendarField::Year}));
   if (!fields) {
     return false;
   }
@@ -2651,16 +2635,10 @@ static bool PlainDateTime_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
   }
 
   
-  JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::Day, CalendarField::MonthCode},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(cx,
-                              PrepareTemporalFields(cx, dateTime, fieldNames));
+  Rooted<PlainObject*> fields(
+      cx,
+      PrepareCalendarFields(cx, calendar, dateTime,
+                            {CalendarField::Day, CalendarField::MonthCode}));
   if (!fields) {
     return false;
   }

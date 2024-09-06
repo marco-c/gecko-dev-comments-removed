@@ -237,17 +237,13 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
     }
 
     
-    JS::RootedVector<PropertyKey> fieldNames(cx);
-    if (!CalendarFields(cx, calendar,
-                        {CalendarField::Month, CalendarField::MonthCode,
-                         CalendarField::Year},
-                        &fieldNames)) {
-      return nullptr;
-    }
-
-    
-    Rooted<PlainObject*> fields(cx,
-                                PrepareTemporalFields(cx, itemObj, fieldNames));
+    Rooted<PlainObject*> fields(
+        cx, PrepareCalendarFields(cx, calendar, itemObj,
+                                  {
+                                      CalendarField::Month,
+                                      CalendarField::MonthCode,
+                                      CalendarField::Year,
+                                  }));
     if (!fields) {
       return nullptr;
     }
@@ -436,17 +432,14 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendarRec,
-                      {CalendarField::MonthCode, CalendarField::Year},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> thisFields(
-      cx, PrepareTemporalFields(cx, yearMonth, fieldNames));
-  if (!thisFields) {
+  Rooted<PlainObject*> thisFields(cx);
+  JS::RootedVector<PropertyKey> thisFieldNames(cx);
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendarRec, yearMonth,
+                                          {
+                                              CalendarField::MonthCode,
+                                              CalendarField::Year,
+                                          },
+                                          &thisFields, &thisFieldNames)) {
     return false;
   }
 
@@ -466,7 +459,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
 
   
   Rooted<PlainObject*> otherFields(
-      cx, PrepareTemporalFields(cx, other, fieldNames));
+      cx, PrepareTemporalFields(cx, other, thisFieldNames));
   if (!otherFields) {
     return false;
   }
@@ -606,17 +599,14 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   };
 
   
+  Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::MonthCode, CalendarField::Year},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(cx,
-                              PrepareTemporalFields(cx, yearMonth, fieldNames));
-  if (!fields) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
+                                          {
+                                              CalendarField::MonthCode,
+                                              CalendarField::Year,
+                                          },
+                                          &fields, &fieldNames)) {
     return false;
   }
 
@@ -1102,18 +1092,15 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
   }
 
   
+  Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(
-          cx, calendar,
-          {CalendarField::Month, CalendarField::MonthCode, CalendarField::Year},
-          &fieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(cx,
-                              PrepareTemporalFields(cx, yearMonth, fieldNames));
-  if (!fields) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
+                                          {
+                                              CalendarField::Month,
+                                              CalendarField::MonthCode,
+                                              CalendarField::Year,
+                                          },
+                                          &fields, &fieldNames)) {
     return false;
   }
 
@@ -1404,36 +1391,32 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
   }
 
   
+  Rooted<PlainObject*> receiverFields(cx);
   JS::RootedVector<PropertyKey> receiverFieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::MonthCode, CalendarField::Year},
-                      &receiverFieldNames)) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, yearMonth,
+                                          {
+                                              CalendarField::MonthCode,
+                                              CalendarField::Year,
+                                          },
+                                          &receiverFields,
+                                          &receiverFieldNames)) {
     return false;
   }
 
   
-  Rooted<PlainObject*> fields(
-      cx, PrepareTemporalFields(cx, yearMonth, receiverFieldNames));
-  if (!fields) {
-    return false;
-  }
-
-  
+  Rooted<PlainObject*> inputFields(cx);
   JS::RootedVector<PropertyKey> inputFieldNames(cx);
-  if (!CalendarFields(cx, calendar, {CalendarField::Day}, &inputFieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> inputFields(
-      cx, PrepareTemporalFields(cx, item, inputFieldNames));
-  if (!inputFields) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, item,
+                                          {
+                                              CalendarField::Day,
+                                          },
+                                          &inputFields, &inputFieldNames)) {
     return false;
   }
 
   
   Rooted<JSObject*> mergedFields(
-      cx, CalendarMergeFields(cx, calendar, fields, inputFields));
+      cx, CalendarMergeFields(cx, calendar, receiverFields, inputFields));
   if (!mergedFields) {
     return false;
   }

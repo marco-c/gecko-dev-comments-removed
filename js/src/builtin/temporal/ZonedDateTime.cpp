@@ -304,32 +304,24 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
     }
 
     
-    JS::RootedVector<PropertyKey> fieldNames(cx);
-    if (!CalendarFields(cx, calendarRec,
-                        {CalendarField::Day, CalendarField::Month,
-                         CalendarField::MonthCode, CalendarField::Year},
-                        &fieldNames)) {
-      return false;
-    }
-
-    
-    if (!AppendSorted(cx, fieldNames.get(),
-                      {
-                          TemporalField::Hour,
-                          TemporalField::Microsecond,
-                          TemporalField::Millisecond,
-                          TemporalField::Minute,
-                          TemporalField::Nanosecond,
-                          TemporalField::Offset,
-                          TemporalField::Second,
-                          TemporalField::TimeZone,
-                      })) {
-      return false;
-    }
-
-    
     Rooted<PlainObject*> fields(
-        cx, PrepareTemporalFields(cx, itemObj, fieldNames,
+        cx, PrepareCalendarFields(cx, calendarRec, itemObj,
+                                  {
+                                      CalendarField::Day,
+                                      CalendarField::Month,
+                                      CalendarField::MonthCode,
+                                      CalendarField::Year,
+                                  },
+                                  {
+                                      TemporalField::Hour,
+                                      TemporalField::Microsecond,
+                                      TemporalField::Millisecond,
+                                      TemporalField::Minute,
+                                      TemporalField::Nanosecond,
+                                      TemporalField::Offset,
+                                      TemporalField::Second,
+                                      TemporalField::TimeZone,
+                                  },
                                   {TemporalField::TimeZone}));
     if (!fields) {
       return false;
@@ -2736,18 +2728,16 @@ static bool ZonedDateTime_with(JSContext* cx, const CallArgs& args) {
   }
 
   
+  Rooted<PlainObject*> fields(cx);
   JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::Day, CalendarField::Month,
-                       CalendarField::MonthCode, CalendarField::Year},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(cx,
-                              PrepareTemporalFields(cx, dateTime, fieldNames));
-  if (!fields) {
+  if (!PrepareCalendarFieldsAndFieldNames(cx, calendar, dateTime,
+                                          {
+                                              CalendarField::Day,
+                                              CalendarField::Month,
+                                              CalendarField::MonthCode,
+                                              CalendarField::Year,
+                                          },
+                                          &fields, &fieldNames)) {
     return false;
   }
 
@@ -3814,16 +3804,10 @@ static bool ZonedDateTime_toPlainYearMonth(JSContext* cx,
   }
 
   
-  JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::MonthCode, CalendarField::Year},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
   Rooted<PlainObject*> fields(
-      cx, PrepareTemporalFields(cx, temporalDateTime, fieldNames));
+      cx,
+      PrepareCalendarFields(cx, calendar, temporalDateTime,
+                            {CalendarField::MonthCode, CalendarField::Year}));
   if (!fields) {
     return false;
   }
@@ -3877,16 +3861,10 @@ static bool ZonedDateTime_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
   }
 
   
-  JS::RootedVector<PropertyKey> fieldNames(cx);
-  if (!CalendarFields(cx, calendar,
-                      {CalendarField::Day, CalendarField::MonthCode},
-                      &fieldNames)) {
-    return false;
-  }
-
-  
   Rooted<PlainObject*> fields(
-      cx, PrepareTemporalFields(cx, temporalDateTime, fieldNames));
+      cx,
+      PrepareCalendarFields(cx, calendar, temporalDateTime,
+                            {CalendarField::Day, CalendarField::MonthCode}));
   if (!fields) {
     return false;
   }
