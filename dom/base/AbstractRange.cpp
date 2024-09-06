@@ -96,7 +96,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 void UpdateDescendantsInFlattenedTree(const nsIContent& aNode,
                                       bool aMarkDesendants) {
-  if (!aNode.IsElement() || aNode.IsHTMLElement(nsGkAtoms::slot)) {
+  if (!aNode.IsElement()) {
     return;
   }
 
@@ -120,13 +120,13 @@ void AbstractRange::MarkDescendants(const nsINode& aNode) {
   
   if (!aNode.IsMaybeSelected()) {
     
-    nsINode* node = aNode.GetNextNode(&aNode);
-    if (!node) {
-      if (aNode.GetShadowRootForSelection()) {
-        UpdateDescendantsInFlattenedTree(*aNode.AsContent(), true);
-      }
+    
+    if (aNode.GetShadowRootForSelection()) {
+      UpdateDescendantsInFlattenedTree(*aNode.AsContent(), true);
       return;
     }
+    
+    nsINode* node = aNode.GetNextNode(&aNode);
     while (node) {
       node->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
       if (!node->IsClosestCommonInclusiveAncestorForRangeInSelection()) {
@@ -153,13 +153,13 @@ void AbstractRange::UnmarkDescendants(const nsINode& aNode) {
   if (!aNode
            .IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
     
-    nsINode* node = aNode.GetNextNode(&aNode);
-    if (!node) {
-      if (aNode.GetShadowRootForSelection()) {
-        UpdateDescendantsInFlattenedTree(*aNode.AsContent(), false);
-      }
+    
+    if (aNode.GetShadowRootForSelection()) {
+      UpdateDescendantsInFlattenedTree(*aNode.AsContent(), false);
       return;
     }
+    
+    nsINode* node = aNode.GetNextNode(&aNode);
     while (node) {
       node->ClearDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
       if (!node->IsClosestCommonInclusiveAncestorForRangeInSelection()) {
