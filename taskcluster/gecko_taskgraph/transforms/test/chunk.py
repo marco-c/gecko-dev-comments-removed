@@ -92,7 +92,9 @@ def set_test_manifests(config, tasks):
             continue
 
         mozinfo = guess_mozinfo_from_task(
-            task, config.params.get("head_repository", "")
+            task,
+            config.params.get("head_repository", ""),
+            config.params.get("try_task_config", {}).get("env", {}),
         )
 
         loader_name = task.pop(
@@ -116,7 +118,10 @@ def set_test_manifests(config, tasks):
                 config.params["try_task_config"]["env"]["MOZHARNESS_TEST_PATHS"]
             )
 
-        if task["attributes"]["unittest_suite"] in mh_test_paths.keys():
+        if (
+            mh_test_paths
+            and task["attributes"]["unittest_suite"] in mh_test_paths.keys()
+        ):
             input_paths = mh_test_paths[task["attributes"]["unittest_suite"]]
             remaining_manifests = []
 
@@ -158,6 +163,19 @@ def set_test_manifests(config, tasks):
 
             if remaining_manifests == []:
                 continue
+
+        elif mh_test_paths:
+            
+            
+            continue
+        elif (
+            config.params.get("try_task_config", {})
+            .get("env", {})
+            .get("MOZHARNESS_TEST_TAG", "")
+            and not task["test-manifests"]["active"]
+        ):
+            
+            continue
 
         
         
