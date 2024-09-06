@@ -20,7 +20,7 @@ async function openPreview(tab, win = window) {
     win.document.getElementById("tab-preview-panel"),
     "shown"
   );
-  EventUtils.synthesizeMouseAtCenter(tab, { type: "mouseover" }, win);
+  EventUtils.synthesizeMouse(tab, 1, 1, { type: "mouseover" }, win);
   return previewShown;
 }
 
@@ -540,6 +540,40 @@ add_task(async function panelSuppressionOnPanelTests() {
 
 
 
+add_task(async function urlBarInputTests() {
+  const previewElement = document.getElementById("tab-preview-panel");
+  const tab1 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  await openPreview(tab1);
+  gURLBar.focus();
+  Assert.equal(previewElement.state, "open", "Preview is open");
+
+  let previewHidden = BrowserTestUtils.waitForEvent(
+    previewElement,
+    "popuphidden"
+  );
+  EventUtils.sendChar("q", window);
+  await previewHidden;
+
+  Assert.equal(previewElement.state, "closed", "Preview is closed");
+  await closePreviews();
+  await openPreview(tab1);
+  Assert.equal(previewElement.state, "open", "Preview is open");
+
+  previewHidden = BrowserTestUtils.waitForEvent(previewElement, "popuphidden");
+  EventUtils.sendChar("q", window);
+  await previewHidden;
+  Assert.equal(previewElement.state, "closed", "Preview is closed");
+
+  BrowserTestUtils.removeTab(tab1);
+});
+
+
+
+
 
 add_task(async function wheelTests() {
   const previewPanel = document.getElementById("tab-preview-panel");
@@ -553,9 +587,14 @@ add_task(async function wheelTests() {
     "Panel does not have rolluponmousewheel when no overflow"
   );
 
-  await BrowserTestUtils.overflowTabs(registerCleanupFunction, window, {
+  let scrollOverflowEvent = BrowserTestUtils.waitForEvent(
+    document.getElementById("tabbrowser-arrowscrollbox"),
+    "overflow"
+  );
+  BrowserTestUtils.overflowTabs(registerCleanupFunction, window, {
     overflowAtStart: false,
   });
+  await scrollOverflowEvent;
   await openPreview(tab1);
 
   Assert.equal(
