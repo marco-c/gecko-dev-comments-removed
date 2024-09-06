@@ -1158,5 +1158,11 @@ ConnectionCloseReason ToCloseReason(nsresult aErrorCode) {
   return ConnectionCloseReason::OTHER_NET_ERROR;
 }
 
+void DisallowHTTPSRR(uint32_t& aCaps) {
+  
+  
+  aCaps = (aCaps | NS_HTTP_DISALLOW_HTTPS_RR) & ~NS_HTTP_FORCE_WAIT_HTTP_RR;
+}
+
 }  
 }  

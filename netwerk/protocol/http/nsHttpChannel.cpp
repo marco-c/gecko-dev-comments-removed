@@ -641,7 +641,7 @@ nsresult nsHttpChannel::OnBeforeConnect() {
 
 
 
-static bool canUseHTTPSRRonNetwork() {
+static bool canUseHTTPSRRonNetwork(bool* aTRREnabled = nullptr) {
   if (nsCOMPtr<nsIDNSService> dns = mozilla::components::DNS::Service()) {
     nsIDNSService::ResolverMode mode;
     
@@ -649,6 +649,9 @@ static bool canUseHTTPSRRonNetwork() {
     if (NS_SUCCEEDED(dns->GetCurrentTrrMode(&mode)) &&
         (mode == nsIDNSService::MODE_TRRFIRST ||
          mode == nsIDNSService::MODE_TRRONLY)) {
+      if (aTRREnabled) {
+        *aTRREnabled = true;
+      }
       return true;
     }
   }
@@ -686,7 +689,13 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
     
     
     
-    if (!canUseHTTPSRRonNetwork()) {
+    bool trrEnabled = false;
+    if (!canUseHTTPSRRonNetwork(&trrEnabled)) {
+      return true;
+    }
+
+    
+    if (!trrEnabled) {
       return true;
     }
 
@@ -717,7 +726,7 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
     
     
     
-    mCaps |= NS_HTTP_DISALLOW_HTTPS_RR;
+    DisallowHTTPSRR(mCaps);
     return ContinueOnBeforeConnect(aShouldUpgrade, aStatus);
   }
 
@@ -806,12 +815,12 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
     mCaps |= NS_HTTP_DISALLOW_HTTP3;
     
     
-    mCaps |= NS_HTTP_DISALLOW_HTTPS_RR;
+    DisallowHTTPSRR(mCaps);
   }
 
   if (LoadIsTRRServiceChannel()) {
     mCaps |= NS_HTTP_LARGE_KEEPALIVE;
-    mCaps |= NS_HTTP_DISALLOW_HTTPS_RR;
+    DisallowHTTPSRR(mCaps);
   }
 
   if (mTransactionSticky) {
@@ -6588,14 +6597,19 @@ nsresult nsHttpChannel::BeginConnect() {
     Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, false);
   }
 
+  bool trrEnabled = false;
   bool httpsRRAllowed =
       !LoadBeConservative() && !(mCaps & NS_HTTP_BE_CONSERVATIVE) &&
       !(mLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
         mLoadInfo->GetExternalContentPolicyType() !=
             ExtContentPolicy::TYPE_DOCUMENT) &&
-      !mConnectionInfo->UsingConnect() && canUseHTTPSRRonNetwork();
+      !mConnectionInfo->UsingConnect() && canUseHTTPSRRonNetwork(&trrEnabled);
   if (!httpsRRAllowed) {
-    mCaps |= NS_HTTP_DISALLOW_HTTPS_RR;
+    DisallowHTTPSRR(mCaps);
+  } else if (trrEnabled) {
+    if (nsIRequest::GetTRRMode() != nsIRequest::TRR_DISABLED_MODE) {
+      mCaps |= NS_HTTP_FORCE_WAIT_HTTP_RR;
+    }
   }
   
   
