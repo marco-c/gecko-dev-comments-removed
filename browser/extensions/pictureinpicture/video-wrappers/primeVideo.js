@@ -18,6 +18,7 @@ class PictureInPictureVideoWrapper {
       video.play();
     });
   }
+
   
 
 
@@ -52,6 +53,7 @@ class PictureInPictureVideoWrapper {
         });
     }
   }
+
   setCaptionContainerObserver(video, updateCaptionsFunction) {
     let container = document?.querySelector("#dv-web-player");
 
@@ -85,14 +87,18 @@ class PictureInPictureVideoWrapper {
       
       callback([1], null);
 
-      let captionsObserver = new MutationObserver(callback);
+      this.captionsObserver = new MutationObserver(callback);
 
-      captionsObserver.observe(container, {
+      this.captionsObserver.observe(container, {
         attributes: true,
         childList: true,
         subtree: true,
       });
     }
+  }
+
+  removeCaptionContainerObserver() {
+    this.captionsObserver?.disconnect();
   }
 
   shouldHideToggle(video) {

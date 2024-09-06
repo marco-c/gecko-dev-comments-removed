@@ -28,8 +28,8 @@ class PictureInPictureVideoWrapper {
       
       callback();
 
-      let captionsObserver = new MutationObserver(callback);
-      captionsObserver.observe(container, {
+      this.captionsObserver = new MutationObserver(callback);
+      this.captionsObserver.observe(container, {
         attributes: false,
         childList: true,
         subtree: true,
@@ -56,14 +56,18 @@ class PictureInPictureVideoWrapper {
       
       callback([1], null);
 
-      let captionsObserver = new MutationObserver(callback);
+      this.captionsObserver = new MutationObserver(callback);
 
-      captionsObserver.observe(container, {
+      this.captionsObserver.observe(container, {
         attributes: false,
         childList: true,
         subtree: true,
       });
     }
+  }
+
+  removeCaptionContainerObserver() {
+    this.captionsObserver?.disconnect();
   }
 }
 

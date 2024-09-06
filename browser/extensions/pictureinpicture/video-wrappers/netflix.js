@@ -18,6 +18,7 @@ class PictureInPictureVideoWrapper {
     }
     this.player = netflixPlayerAPI.getVideoPlayerBySessionId(sessionId);
   }
+
   
 
 
@@ -27,6 +28,7 @@ class PictureInPictureVideoWrapper {
   getCurrentTime() {
     return this.player.getCurrentTime() / 1000;
   }
+
   
 
 
@@ -36,9 +38,11 @@ class PictureInPictureVideoWrapper {
   getDuration() {
     return this.player.getDuration() / 1000;
   }
+
   play() {
     this.player.play();
   }
+
   pause() {
     this.player.pause();
   }
@@ -56,14 +60,18 @@ class PictureInPictureVideoWrapper {
       
       callback([1], null);
 
-      let captionsObserver = new MutationObserver(callback);
+      this.captionsObserver = new MutationObserver(callback);
 
-      captionsObserver.observe(container, {
+      this.captionsObserver.observe(container, {
         attributes: false,
         childList: true,
         subtree: true,
       });
     }
+  }
+
+  removeCaptionContainerObserver() {
+    this.captionsObserver?.disconnect();
   }
 
   
@@ -75,15 +83,19 @@ class PictureInPictureVideoWrapper {
   setCurrentTime(video, position) {
     this.player.seek(position * 1000);
   }
+
   setVolume(video, volume) {
     this.player.setVolume(volume);
   }
+
   getVolume() {
     return this.player.getVolume();
   }
+
   setMuted(video, shouldMute) {
     this.player.setMuted(shouldMute);
   }
+
   isMuted() {
     return this.player.isMuted();
   }
