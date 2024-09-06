@@ -85,8 +85,6 @@ class DecryptingInputStreamBase : public nsIInputStream,
   size_t mNextByte = 0;
 
   LazyInitializedOnceNotNull<const size_t> mBlockSize;
-
-  size_t mLastBlockLength = 0;
 };
 
 
@@ -125,7 +123,6 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
  private:
   ~DecryptingInputStream();
 
-  
   
   
   nsresult ParseNextChunk(uint32_t* aBytesReadOut);

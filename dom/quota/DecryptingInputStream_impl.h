@@ -129,7 +129,7 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::ReadSegments(
   while (aCount > 0) {
     
     
-    if (mPlainBytes > 0) {
+    if (mNextByte < mPlainBytes) {
       MOZ_ASSERT(!mPlainBuffer.IsEmpty());
       uint32_t remaining = PlainLength();
       uint32_t numToWrite = std::min(aCount, remaining);
@@ -152,12 +152,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::ReadSegments(
       mNextByte += numWritten;
       MOZ_ASSERT(mNextByte <= mPlainBytes);
 
-      if (mNextByte == mPlainBytes) {
-        mNextByte = 0;
-        mLastBlockLength = mPlainBytes;
-        mPlainBytes = 0;
-      }
-
       aCount -= numWritten;
 
       continue;
@@ -172,12 +166,12 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::ReadSegments(
     }
 
     
-    
-    if (bytesRead == 0 && mPlainBytes == 0) {
+    if (bytesRead == 0) {
       return NS_OK;
     }
 
-    mPlainBytes += bytesRead;
+    mPlainBytes = bytesRead;
+    mNextByte = 0;
   }
 
   return NS_OK;
@@ -186,10 +180,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::ReadSegments(
 template <typename CipherStrategy>
 nsresult DecryptingInputStream<CipherStrategy>::ParseNextChunk(
     uint32_t* const aBytesReadOut) {
-  
-  MOZ_ASSERT(mPlainBytes == 0);
-  MOZ_ASSERT(mNextByte == 0);
-
   *aBytesReadOut = 0;
 
   if (!EnsureBuffers()) {
@@ -293,12 +283,17 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Tell(
     return rv;
   }
 
-  const auto fullBlocks = basePosition / *mBlockSize;
+  if (basePosition == 0) {
+    *aRetval = 0;
+    return NS_OK;
+  }
+
   MOZ_ASSERT(0 == basePosition % *mBlockSize);
 
-  *aRetval = (fullBlocks - ((mPlainBytes || mLastBlockLength) ? 1 : 0)) *
-                 mEncryptedBlock->MaxPayloadLength() +
-             mNextByte + (mNextByte ? 0 : mLastBlockLength);
+  const auto fullBlocks = basePosition / *mBlockSize;
+  MOZ_ASSERT(fullBlocks);
+
+  *aRetval = (fullBlocks - 1) * mEncryptedBlock->MaxPayloadLength() + mNextByte;
   return NS_OK;
 }
 
@@ -362,9 +357,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
       return Err(rv);
     }
 
-    mNextByte = 0;
-    mPlainBytes = 0;
-
     uint32_t bytesRead;
     rv = ParseNextChunk(&bytesRead);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -372,7 +364,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     }
     MOZ_ASSERT(bytesRead);
 
-    
     mPlainBytes = bytesRead;
 
     mNextByte = bytesRead;
@@ -424,23 +415,18 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return rv;
   }
 
-  mNextByte = 0;
-  mPlainBytes = 0;
-  mLastBlockLength = 0;
-
   uint32_t readBytes;
   rv = ParseNextChunk(&readBytes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  mPlainBytes = readBytes;
-  mNextByte = nextByteOffset;
-
-  if (mNextByte == mPlainBytes) {
-    mNextByte = 0;
-    mLastBlockLength = mPlainBytes;
-    mPlainBytes = 0;
+  if (readBytes == 0 && baseBlocksOffset != 0) {
+    mPlainBytes = mEncryptedBlock->MaxPayloadLength();
+    mNextByte = mEncryptedBlock->MaxPayloadLength();
+  } else {
+    mPlainBytes = readBytes;
+    mNextByte = nextByteOffset;
   }
 
   autoRestorePreviousState.release();
