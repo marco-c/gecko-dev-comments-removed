@@ -318,6 +318,7 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
+    const unsigned long TLS_FLAG_CONFIGURE_AS_RETRY = (1 << 16);
     [must_use] attribute unsigned long tlsFlags;
 
     [must_use] readonly attribute PRTime lastModifiedTime;
