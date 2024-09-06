@@ -21,7 +21,7 @@ async function testVal(urlFormatString, clobberedURLString = null) {
   info("Setting the value property directly");
   gURLBar.value = str;
   gBrowser.selectedBrowser.focus();
-  UrlbarTestUtils.checkFormatting(window, urlFormatString, {
+  await UrlbarTestUtils.checkFormatting(window, urlFormatString, {
     clobberedURLString,
   });
 
@@ -33,7 +33,7 @@ async function testVal(urlFormatString, clobberedURLString = null) {
     "URL is not highlighted"
   );
   gBrowser.selectedBrowser.focus();
-  UrlbarTestUtils.checkFormatting(window, urlFormatString, {
+  await UrlbarTestUtils.checkFormatting(window, urlFormatString, {
     clobberedURLString,
     additionalMsg: "with input simulation",
   });
@@ -159,4 +159,32 @@ add_task(async function () {
   Services.prefs.setBoolPref(PREF_FORMATTING, false);
 
   await testVal("https://mozilla.org");
+});
+
+add_task(async function test_url_formatting_after_visiting_bookmarks() {
+  SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.trimURLs", true],
+      ["browser.urlbar.trimHttps", true],
+      ["browser.urlbar.formatting.enabled", true],
+    ],
+  });
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "https://something.example.com/test",
+  });
+  await search({
+    searchString: "something",
+    valueBefore: "something",
+    valueAfter: "something.example.com/",
+    placeholderAfter: "something.example.com/",
+  });
+  EventUtils.sendKey("DOWN");
+  EventUtils.sendKey("RETURN");
+  await BrowserTestUtils.browserLoaded(gBrowser, false, null, true);
+
+  await UrlbarTestUtils.checkFormatting(
+    window,
+    "<something.>example.com</test>"
+  );
+  SpecialPowers.popPrefEnv();
 });
