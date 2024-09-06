@@ -60,6 +60,15 @@ class VideoStreamFactory
   std::vector<webrtc::VideoStream> CreateEncoderStreams(
       int aWidth, int aHeight,
       const webrtc::VideoEncoderConfig& aConfig) override;
+
+  
+
+
+
+  void SelectMaxFramerate(int aWidth, int aHeight,
+                          const VideoCodecConfig::Encoding& aEncoding,
+                          webrtc::VideoStream& aVideoStream);
+
   
 
 
