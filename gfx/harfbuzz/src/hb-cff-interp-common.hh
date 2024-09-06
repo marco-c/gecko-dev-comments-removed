@@ -624,7 +624,6 @@ struct opset_t
 	} else {
 	  
 	  env.clear_args ();
-	  env.set_error ();
 	}
 	break;
     }

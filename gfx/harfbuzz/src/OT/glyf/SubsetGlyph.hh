@@ -53,23 +53,12 @@ struct SubsetGlyph
       if (plan->new_gid_for_old_gid (_.get_gid(), &new_gid))
 	const_cast<CompositeGlyphRecord &> (_).set_gid (new_gid);
     }
-#ifndef HB_NO_VAR_COMPOSITES
-    for (auto &_ : Glyph (dest_glyph).get_var_composite_iterator ())
-    {
-      hb_codepoint_t new_gid;
-      if (plan->new_gid_for_old_gid (_.get_gid(), &new_gid))
-	const_cast<VarCompositeGlyphRecord &> (_).set_gid (new_gid);
-    }
-#endif
 
 #ifndef HB_NO_BEYOND_64K
     auto it = Glyph (dest_glyph).get_composite_iterator ();
     if (it)
     {
       
-
-
-
       char *p = it ? (char *) &*it : nullptr;
       char *q = p;
       const char *end = dest_glyph.arrayZ + dest_glyph.length;
