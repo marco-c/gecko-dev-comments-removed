@@ -20,6 +20,7 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -217,7 +218,8 @@ LoadInfo::LoadInfo(
         aLoadingContext->OwnerDoc()->UserHasInteracted();
 
     
-    mHttpsOnlyStatus |= aLoadingContext->OwnerDoc()->HttpsOnlyStatus();
+    mHttpsOnlyStatus |= nsHTTPSOnlyUtils::GetStatusForSubresourceLoad(
+        aLoadingContext->OwnerDoc()->HttpsOnlyStatus());
 
     
     
@@ -528,7 +530,9 @@ LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
         parentBC->UsePrivateBrowsing());
   }
 
-  mHttpsOnlyStatus |= aParentWGP->HttpsOnlyStatus();
+  
+  mHttpsOnlyStatus |= nsHTTPSOnlyUtils::GetStatusForSubresourceLoad(
+      aParentWGP->HttpsOnlyStatus());
 
   
   
