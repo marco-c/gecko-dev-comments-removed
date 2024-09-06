@@ -3528,121 +3528,6 @@ static bool ZonedDateTime_toPlainDateTime(JSContext* cx, unsigned argc,
 
 
 
-static bool ZonedDateTime_toPlainYearMonth(JSContext* cx,
-                                           const CallArgs& args) {
-  Rooted<ZonedDateTime> zonedDateTime(
-      cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
-
-  
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, zonedDateTime.calendar(),
-                                   {
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::YearMonthFromFields,
-                                   },
-                                   &calendar)) {
-    return false;
-  }
-
-  
-  Rooted<PlainDateTimeObject*> temporalDateTime(
-      cx,
-      GetPlainDateTimeFor(cx, zonedDateTime.timeZone(), zonedDateTime.instant(),
-                          zonedDateTime.calendar()));
-  if (!temporalDateTime) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(
-      cx,
-      PrepareCalendarFields(cx, calendar, temporalDateTime,
-                            {CalendarField::MonthCode, CalendarField::Year}));
-  if (!fields) {
-    return false;
-  }
-
-  
-  auto result = CalendarYearMonthFromFields(cx, calendar, fields);
-  if (!result) {
-    return false;
-  }
-
-  args.rval().setObject(*result);
-  return true;
-}
-
-
-
-
-static bool ZonedDateTime_toPlainYearMonth(JSContext* cx, unsigned argc,
-                                           Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsZonedDateTime, ZonedDateTime_toPlainYearMonth>(
-      cx, args);
-}
-
-
-
-
-static bool ZonedDateTime_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
-  Rooted<ZonedDateTime> zonedDateTime(
-      cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
-
-  
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, zonedDateTime.calendar(),
-                                   {
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::MonthDayFromFields,
-                                   },
-                                   &calendar)) {
-    return false;
-  }
-
-  
-  Rooted<PlainDateTimeObject*> temporalDateTime(
-      cx,
-      GetPlainDateTimeFor(cx, zonedDateTime.timeZone(), zonedDateTime.instant(),
-                          zonedDateTime.calendar()));
-  if (!temporalDateTime) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(
-      cx,
-      PrepareCalendarFields(cx, calendar, temporalDateTime,
-                            {CalendarField::Day, CalendarField::MonthCode}));
-  if (!fields) {
-    return false;
-  }
-
-  
-  auto result = CalendarMonthDayFromFields(cx, calendar, fields);
-  if (!result) {
-    return false;
-  }
-
-  args.rval().setObject(*result);
-  return true;
-}
-
-
-
-
-static bool ZonedDateTime_toPlainMonthDay(JSContext* cx, unsigned argc,
-                                          Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsZonedDateTime, ZonedDateTime_toPlainMonthDay>(
-      cx, args);
-}
-
-
-
-
 static bool ZonedDateTime_getISOFields(JSContext* cx, const CallArgs& args) {
   Rooted<ZonedDateTime> zonedDateTime(
       cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
@@ -3859,8 +3744,6 @@ static const JSFunctionSpec ZonedDateTime_prototype_methods[] = {
     JS_FN("toPlainDate", ZonedDateTime_toPlainDate, 0, 0),
     JS_FN("toPlainTime", ZonedDateTime_toPlainTime, 0, 0),
     JS_FN("toPlainDateTime", ZonedDateTime_toPlainDateTime, 0, 0),
-    JS_FN("toPlainYearMonth", ZonedDateTime_toPlainYearMonth, 0, 0),
-    JS_FN("toPlainMonthDay", ZonedDateTime_toPlainMonthDay, 0, 0),
     JS_FN("getISOFields", ZonedDateTime_getISOFields, 0, 0),
     JS_FN("getCalendar", ZonedDateTime_getCalendar, 0, 0),
     JS_FN("getTimeZone", ZonedDateTime_getTimeZone, 0, 0),

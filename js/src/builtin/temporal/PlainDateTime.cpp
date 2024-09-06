@@ -2686,105 +2686,6 @@ static bool PlainDateTime_toPlainDate(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static bool PlainDateTime_toPlainYearMonth(JSContext* cx,
-                                           const CallArgs& args) {
-  Rooted<PlainDateTimeObject*> dateTime(
-      cx, &args.thisv().toObject().as<PlainDateTimeObject>());
-  Rooted<CalendarValue> calendarValue(cx, dateTime->calendar());
-
-  
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::YearMonthFromFields,
-                                   },
-                                   &calendar)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(
-      cx,
-      PrepareCalendarFields(cx, calendar, dateTime,
-                            {CalendarField::MonthCode, CalendarField::Year}));
-  if (!fields) {
-    return false;
-  }
-
-  
-  auto obj = CalendarYearMonthFromFields(cx, calendar, fields);
-  if (!obj) {
-    return false;
-  }
-
-  args.rval().setObject(*obj);
-  return true;
-}
-
-
-
-
-static bool PlainDateTime_toPlainYearMonth(JSContext* cx, unsigned argc,
-                                           Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_toPlainYearMonth>(
-      cx, args);
-}
-
-
-
-
-static bool PlainDateTime_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
-  Rooted<PlainDateTimeObject*> dateTime(
-      cx, &args.thisv().toObject().as<PlainDateTimeObject>());
-  Rooted<CalendarValue> calendarValue(cx, dateTime->calendar());
-
-  
-  Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                   {
-                                       CalendarMethod::Fields,
-                                       CalendarMethod::MonthDayFromFields,
-                                   },
-                                   &calendar)) {
-    return false;
-  }
-
-  
-  Rooted<PlainObject*> fields(
-      cx,
-      PrepareCalendarFields(cx, calendar, dateTime,
-                            {CalendarField::Day, CalendarField::MonthCode}));
-  if (!fields) {
-    return false;
-  }
-
-  
-  auto obj = CalendarMonthDayFromFields(cx, calendar, fields);
-  if (!obj) {
-    return false;
-  }
-
-  args.rval().setObject(*obj);
-  return true;
-}
-
-
-
-
-static bool PlainDateTime_toPlainMonthDay(JSContext* cx, unsigned argc,
-                                          Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_toPlainMonthDay>(
-      cx, args);
-}
-
-
-
-
 static bool PlainDateTime_toPlainTime(JSContext* cx, const CallArgs& args) {
   auto* dateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
 
@@ -2840,8 +2741,6 @@ static const JSFunctionSpec PlainDateTime_prototype_methods[] = {
     JS_FN("valueOf", PlainDateTime_valueOf, 0, 0),
     JS_FN("toZonedDateTime", PlainDateTime_toZonedDateTime, 1, 0),
     JS_FN("toPlainDate", PlainDateTime_toPlainDate, 0, 0),
-    JS_FN("toPlainYearMonth", PlainDateTime_toPlainYearMonth, 0, 0),
-    JS_FN("toPlainMonthDay", PlainDateTime_toPlainMonthDay, 0, 0),
     JS_FN("toPlainTime", PlainDateTime_toPlainTime, 0, 0),
     JS_FN("getISOFields", PlainDateTime_getISOFields, 0, 0),
     JS_FN("getCalendar", PlainDateTime_getCalendar, 0, 0),
