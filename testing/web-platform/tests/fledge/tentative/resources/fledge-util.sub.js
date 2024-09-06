@@ -153,16 +153,18 @@ async function waitForObservedRequests(uuid, expectedRequests, filter) {
 
     
     
-    if (trackedRequests.length >= expectedRequests.length) {
-      assert_array_equals(trackedRequests, expectedRequests);
-      break;
+    
+    for (const trackedRequest of trackedRequests) {
+      assert_in_array(trackedRequest, expectedRequests);
     }
 
     
     
     
-    for (const trackedRequest of trackedRequests) {
-      assert_in_array(trackedRequest, expectedRequests);
+    
+    if (trackedRequests.length >= expectedRequests.length) {
+      assert_array_equals(trackedRequests, expectedRequests);
+      break;
     }
   }
 }
@@ -839,3 +841,21 @@ let additionalBidHelper = function() {
     fetchAdditionalBids: fetchAdditionalBids
   };
 }();
+
+
+
+
+
+
+
+function createStringBeforeAndAfterReplacements(deprecatedRenderURLReplacements) {
+  let beforeReplacements = '';
+  let afterReplacements = '';
+  if(deprecatedRenderURLReplacements){
+    for (const [match, replacement] of Object.entries(deprecatedRenderURLReplacements)) {
+      beforeReplacements += match + "/";
+      afterReplacements += replacement + "/";
+    }
+  }
+  return { beforeReplacements, afterReplacements };
+}
