@@ -412,11 +412,7 @@ void WeakMap<K, V>::checkAfterMovingGC() const {
 }
 #endif  
 
-inline HashNumber GetHash(JS::Symbol* sym) { return sym->hash(); }
-
-inline bool HashMatch(JS::Symbol* key, JS::Symbol* lookup) {
-  return key->hash() == lookup->hash();
-}
+inline HashNumber GetSymbolHash(JS::Symbol* sym) { return sym->hash(); }
 
 }  
 

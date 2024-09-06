@@ -370,10 +370,7 @@ class ObjectWeakMap {
 };
 
 
-[[nodiscard]] HashNumber GetHash(JS::Symbol* sym);
-
-
-[[nodiscard]] bool HashMatch(JS::Symbol* key, JS::Symbol* lookup);
+HashNumber GetSymbolHash(JS::Symbol* sym);
 
 
 
@@ -388,27 +385,27 @@ struct StableCellHasher<HeapPtr<Value>> {
 
   static bool maybeGetHash(const Lookup& l, HashNumber* hashOut) {
     if (l.isSymbol()) {
-      *hashOut = GetHash(l.toSymbol());
+      *hashOut = GetSymbolHash(l.toSymbol());
       return true;
     }
     return StableCellHasher<gc::Cell*>::maybeGetHash(l.toGCThing(), hashOut);
   }
   static bool ensureHash(const Lookup& l, HashNumber* hashOut) {
     if (l.isSymbol()) {
-      *hashOut = GetHash(l.toSymbol());
+      *hashOut = GetSymbolHash(l.toSymbol());
       return true;
     }
     return StableCellHasher<gc::Cell*>::ensureHash(l.toGCThing(), hashOut);
   }
   static HashNumber hash(const Lookup& l) {
     if (l.isSymbol()) {
-      return GetHash(l.toSymbol());
+      return GetSymbolHash(l.toSymbol());
     }
     return StableCellHasher<gc::Cell*>::hash(l.toGCThing());
   }
   static bool match(const Key& k, const Lookup& l) {
     if (l.isSymbol()) {
-      return HashMatch(k.toSymbol(), l.toSymbol());
+      return k.toSymbol() == l.toSymbol();
     }
     return StableCellHasher<gc::Cell*>::match(k.toGCThing(), l.toGCThing());
   }
