@@ -1319,8 +1319,6 @@ void HttpBaseChannel::ExplicitSetUploadStreamLength(
     return;
   }
 
-  
-  MOZ_ASSERT(!LoadWasOpened());
   nsAutoCString contentLengthStr;
   contentLengthStr.AppendInt(aContentLength);
   SetRequestHeader(header, contentLengthStr, false);
