@@ -19,6 +19,7 @@
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/PBrowserParent.h"
 #include "mozilla/dom/TabContext.h"
+#include "mozilla/dom/UniqueContentParentKeepAlive.h"
 #include "mozilla/dom/VsyncParent.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layout/RemoteLayerTreeOwner.h"
@@ -871,6 +872,12 @@ class BrowserParent final : public PBrowserParent,
   
   
   BrowserHost* mBrowserHost;
+
+  
+  
+  
+  
+  UniqueContentParentKeepAlive mContentParentKeepAlive;
 
   ContentCacheInParent mContentCache;
 

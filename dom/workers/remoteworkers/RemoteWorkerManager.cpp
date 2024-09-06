@@ -261,18 +261,18 @@ void RemoteWorkerManager::Launch(RemoteWorkerController* aController,
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
-  RemoteWorkerServiceParent* targetActor = SelectTargetActor(aData, aProcessId);
+  TargetActorAndKeepAlive target = SelectTargetActor(aData, aProcessId);
 
   
-  
-  if (!targetActor) {
+  if (!target.mActor) {
     
     LaunchNewContentProcess(aData)->Then(
         GetCurrentSerialEventTarget(), __func__,
         [self = RefPtr{this}, controller = RefPtr{aController},
-         data = aData](const RefPtr<RemoteWorkerServiceParent>& aTargetActor) {
-          if (aTargetActor->CanSend()) {
-            self->LaunchInternal(controller, aTargetActor, data, false);
+         data = aData](TargetActorAndKeepAlive&& aTarget) {
+          if (aTarget.mActor->CanSend()) {
+            self->LaunchInternal(controller, aTarget.mActor,
+                                 std::move(aTarget.mKeepAlive), data);
           } else {
             controller->CreationFailed();
           }
@@ -283,20 +283,15 @@ void RemoteWorkerManager::Launch(RemoteWorkerController* aController,
     return;
   }
 
-  
-
-
-
-
-
-
-  LaunchInternal(aController, targetActor, aData, true);
+  LaunchInternal(aController, target.mActor, std::move(target.mKeepAlive),
+                 aData);
 }
 
 void RemoteWorkerManager::LaunchInternal(
     RemoteWorkerController* aController,
-    RemoteWorkerServiceParent* aTargetActor, const RemoteWorkerData& aData,
-    bool aRemoteWorkerAlreadyRegistered) {
+    RemoteWorkerServiceParent* aTargetActor,
+    UniqueThreadsafeContentParentKeepAlive aKeepAlive,
+    const RemoteWorkerData& aData) {
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aController);
@@ -307,14 +302,13 @@ void RemoteWorkerManager::LaunchInternal(
   
   
   if (aTargetActor != mParentActor) {
-    RefPtr<ThreadsafeContentParentHandle> contentHandle =
-        aTargetActor->GetContentParentHandle();
+    MOZ_ASSERT(aKeepAlive);
 
     
     
     
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-        __func__, [contentHandle = std::move(contentHandle),
+        __func__, [contentHandle = RefPtr{aKeepAlive.get()},
                    principalInfo = aData.principalInfo()] {
           AssertIsOnMainThread();
           if (RefPtr<ContentParent> contentParent =
@@ -327,13 +321,12 @@ void RemoteWorkerManager::LaunchInternal(
     MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
   }
 
-  RefPtr<RemoteWorkerParent> workerActor = MakeAndAddRef<RemoteWorkerParent>();
+  RefPtr<RemoteWorkerParent> workerActor =
+      MakeAndAddRef<RemoteWorkerParent>(std::move(aKeepAlive));
   if (!aTargetActor->SendPRemoteWorkerConstructor(workerActor, aData)) {
     AsyncCreationFailed(aController);
     return;
   }
-
-  workerActor->Initialize(aRemoteWorkerAlreadyRegistered);
 
   
   aController->SetWorkerActor(workerActor);
@@ -408,20 +401,14 @@ void RemoteWorkerManager::ForEachActor(
 
 
 
-
-
-
-
-
-
-
-
-RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActorInternal(
+RemoteWorkerManager::TargetActorAndKeepAlive
+RemoteWorkerManager::SelectTargetActorInternal(
     const RemoteWorkerData& aData, base::ProcessId aProcessId) const {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mChildActors.IsEmpty());
 
   RemoteWorkerServiceParent* actor = nullptr;
+  UniqueThreadsafeContentParentKeepAlive keepAlive;
 
   const auto& workerRemoteType = aData.remoteType();
 
@@ -436,11 +423,7 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActorInternal(
         
         
         
-        if (aContentHandle->MaybeRegisterRemoteWorkerActor(
-                [&](uint32_t count, bool shutdownStarted) -> bool {
-                  return (count || !shutdownStarted) &&
-                         (aActor->OtherPid() == aProcessId || !actor);
-                })) {
+        if ((keepAlive = aContentHandle->TryAddKeepAlive())) {
           actor = aActor;
           return false;
         }
@@ -449,18 +432,19 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActorInternal(
       },
       workerRemoteType, IsServiceWorker(aData) ? Nothing() : Some(aProcessId));
 
-  return actor;
+  return {actor, std::move(keepAlive)};
 }
 
-RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActor(
-    const RemoteWorkerData& aData, base::ProcessId aProcessId) {
+RemoteWorkerManager::TargetActorAndKeepAlive
+RemoteWorkerManager::SelectTargetActor(const RemoteWorkerData& aData,
+                                       base::ProcessId aProcessId) {
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
   
   if (aData.principalInfo().type() == PrincipalInfo::TSystemPrincipalInfo) {
     MOZ_ASSERT(mParentActor);
-    return mParentActor;
+    return {mParentActor, nullptr};
   }
 
   
@@ -470,20 +454,20 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActor(
       !StaticPrefs::extensions_webextensions_remote() &&
       HasExtensionPrincipal(aData)) {
     MOZ_ASSERT(mParentActor);
-    return mParentActor;
+    return {mParentActor, nullptr};
   }
 
   
   if (!BrowserTabsRemoteAutostart()) {
     MOZ_ASSERT(mParentActor);
-    return mParentActor;
+    return {mParentActor, nullptr};
   }
 
   
   MOZ_ASSERT(aProcessId != base::GetCurrentProcId());
 
   if (mChildActors.IsEmpty()) {
-    return nullptr;
+    return {nullptr, nullptr};
   }
 
   return SelectTargetActorInternal(aData, aProcessId);
@@ -521,12 +505,15 @@ RemoteWorkerManager::LaunchNewContentProcess(const RemoteWorkerData& aData) {
                      })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [](ContentParent* aContentParent) {
+          [](UniqueContentParentKeepAlive&& aContentParent) {
             RefPtr<RemoteWorkerServiceParent> actor =
                 aContentParent->GetRemoteWorkerServiceParent();
             MOZ_ASSERT(actor, "RemoteWorkerServiceParent not initialized?");
             return RemoteWorkerManager::LaunchProcessPromise::CreateAndResolve(
-                actor, __func__);
+                TargetActorAndKeepAlive{
+                    actor, UniqueContentParentKeepAliveToThreadsafe(
+                               std::move(aContentParent))},
+                __func__);
           },
           [](nsresult aError) {
             return RemoteWorkerManager::LaunchProcessPromise::CreateAndReject(
