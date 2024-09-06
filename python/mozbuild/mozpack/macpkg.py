@@ -16,8 +16,6 @@ import zlib
 from collections import deque, namedtuple
 from xml.etree.ElementTree import XML
 
-from mozbuild.util import cpu_count
-
 
 class ZlibFile(object):
     def __init__(self, fileobj):
@@ -110,7 +108,9 @@ class Pbzx(object):
         
         chunk_size = fileobj.read(8)
         chunk_size = struct.unpack(">Q", chunk_size)[0]
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count())
+        
+        
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count())
         self.chunk_getter = executor.map(self._uncompress_chunk, self._chunker(fileobj))
         self._init_one_chunk()
 
