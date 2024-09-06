@@ -162,14 +162,14 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   
-  nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mCachedData;
+  nsTHashMap<nsVoidPtrHashKey, nsTArray<uint8_t>> mCachedData;
   
   
   
   
   uintptr_t mCachedDragContext;
 
-  nsTHashMap<nsCStringHashKey, mozilla::GUniquePtr<gchar*>> mCachedUris;
+  nsTHashMap<nsVoidPtrHashKey, mozilla::GUniquePtr<gchar*>> mCachedUris;
 
   guint mPendingTime;
 
@@ -208,7 +208,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   
   void GetDragData(GdkAtom aRequestedFlavor,
-                   const nsTArray<nsCString>& aAvailableDragFlavors,
+                   const nsTArray<GdkAtom>& aAvailableDragFlavors,
                    bool aResetDragData = true);
   
   void TargetResetData(void);
@@ -248,7 +248,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 #ifdef MOZ_LOGGING
   const char* GetDragServiceTaskName(nsDragService::DragTask aTask);
 #endif
-  void GetAvailableDragFlavors(nsTArray<nsCString>& aAvailableFlavors);
+  void GetAvailableDragFlavors(nsTArray<GdkAtom>& aAvailableFlavors);
   gboolean DispatchDropEvent();
   static uint32_t GetCurrentModifiers();
 
@@ -266,6 +266,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   int mEventLoopDepth;
 
+ public:
   static GdkAtom sTextMimeAtom;
   static GdkAtom sMozUrlTypeAtom;
   static GdkAtom sMimeListTypeAtom;
