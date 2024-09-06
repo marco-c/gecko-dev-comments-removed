@@ -446,6 +446,7 @@ static auto AsyncExecute(Fn1 local, Fn2 remote, Args const&... args) ->
           typename RPromiseT::RejectValueType err) mutable -> RefPtr<PromiseT> {
         
         auto const t1 = GetTime();
+        
         HRESULT const hrRemote = err.why;
 
         

@@ -44,6 +44,19 @@ struct Results {
   uint32_t selectedFileTypeIndex;
 };
 
+
+struct RemoteError {
+  
+  
+  
+  
+  
+  nsCString where;
+  
+  
+  uint32_t why;
+};
+
 } 
 } 
 } 
