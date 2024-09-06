@@ -1470,19 +1470,14 @@ nscoord nsImageFrame::GetMinISize(gfxContext* aRenderingContext) {
   
   
   EnsureIntrinsicSizeAndRatio();
-  const auto& iSize = GetWritingMode().IsVertical() ? mIntrinsicSize.height
-                                                    : mIntrinsicSize.width;
-  return iSize.valueOr(0);
+  return mIntrinsicSize.ISize(GetWritingMode()).valueOr(0);
 }
 
 nscoord nsImageFrame::GetPrefISize(gfxContext* aRenderingContext) {
   
   
   EnsureIntrinsicSizeAndRatio();
-  const auto& iSize = GetWritingMode().IsVertical() ? mIntrinsicSize.height
-                                                    : mIntrinsicSize.width;
-  
-  return iSize.valueOr(0);
+  return mIntrinsicSize.ISize(GetWritingMode()).valueOr(0);
 }
 
 void nsImageFrame::ReflowChildren(nsPresContext* aPresContext,
