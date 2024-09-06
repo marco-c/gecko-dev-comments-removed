@@ -696,10 +696,16 @@ void nsRange::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling) {
   
   
   
-  if (mCrossShadowBoundaryRange &&
-      (mCrossShadowBoundaryRange->GetStartContainer() == aChild ||
-       mCrossShadowBoundaryRange->GetEndContainer() == aChild)) {
-    ResetCrossShadowBoundaryRange();
+  if (mCrossShadowBoundaryRange) {
+    if (mCrossShadowBoundaryRange->GetStartContainer() == aChild ||
+        mCrossShadowBoundaryRange->GetEndContainer() == aChild) {
+      ResetCrossShadowBoundaryRange();
+    } else if (ShadowRoot* shadowRoot = aChild->GetShadowRoot()) {
+      if (mCrossShadowBoundaryRange->GetStartContainer() == shadowRoot ||
+          mCrossShadowBoundaryRange->GetEndContainer() == shadowRoot) {
+        ResetCrossShadowBoundaryRange();
+      }
+    }
   }
 
   RawRangeBoundary newStart;
