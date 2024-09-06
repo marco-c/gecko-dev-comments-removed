@@ -1054,8 +1054,7 @@ class nsDocShell final : public nsDocLoader,
   
   MOZ_CAN_RUN_SCRIPT
   nsresult HandleSameDocumentNavigation(nsDocShellLoadState* aLoadState,
-                                        SameDocumentNavigationState& aState,
-                                        bool& aSameDocument);
+                                        SameDocumentNavigationState& aState);
 
   uint32_t GetSameDocumentNavigationFlags(nsIURI* aNewURI);
 
@@ -1134,6 +1133,16 @@ class nsDocShell final : public nsDocLoader,
                                nsIStructuredCloneContainer* aData,
                                const nsAString& aTitle, bool aReplace,
                                nsIURI* aCurrentURI, bool aEqualURIs);
+
+  
+
+
+
+
+
+  bool CurrentLoadIsSameDocumentNavigation() const {
+    return mCurrentLoadIsSameDocumentNavigation;
+  }
 
  private:
   void SetCurrentURIInternal(nsIURI* aURI);
@@ -1354,6 +1363,12 @@ class nsDocShell final : public nsDocLoader,
   
   
   bool mNeedToReportActiveAfterLoadingBecomesActive : 1;
+
+  
+
+
+
+  bool mCurrentLoadIsSameDocumentNavigation : 1;
 };
 
 inline nsISupports* ToSupports(nsDocShell* aDocShell) {
