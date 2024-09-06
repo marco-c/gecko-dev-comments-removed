@@ -22,6 +22,9 @@ async function networkRequest(url, opts) {
 
   const response = await fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache",
+    
+    
+    credentials: "same-origin",
     redirect: opts.allowRedirects ? "follow" : "error",
   });
 
