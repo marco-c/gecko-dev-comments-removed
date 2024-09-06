@@ -3813,22 +3813,14 @@ struct BCMapCellInfo {
 
   
   
-  
-  
-  
-  
-  
-  
-  void SetTableIStartBorderWidth(int32_t aRowB, BCPixelSize aWidth,
-                                 bool aPickMax);
-  void SetTableIEndBorderWidth(int32_t aRowB, BCPixelSize aWidth,
-                               bool aPickMax);
-  void SetTableBStartBorderWidth(BCPixelSize aWidth, bool aPickMax);
-  void SetTableBEndBorderWidth(BCPixelSize aWidth, bool aPickMax);
-  void SetIStartBorderWidths(BCPixelSize aWidth, bool aPickMax);
-  void SetIEndBorderWidths(BCPixelSize aWidth, bool aPickMax);
-  void SetBStartBorderWidths(BCPixelSize aWidth, bool aPickMax);
-  void SetBEndBorderWidths(BCPixelSize aWidth, bool aPickMax);
+  void SetTableBStartBorderWidth(BCPixelSize aWidth);
+  void SetTableIStartBorderWidth(int32_t aRowB, BCPixelSize aWidth);
+  void SetTableIEndBorderWidth(int32_t aRowB, BCPixelSize aWidth);
+  void SetTableBEndBorderWidth(BCPixelSize aWidth);
+  void SetIStartBorderWidths(BCPixelSize aWidth);
+  void SetIEndBorderWidths(BCPixelSize aWidth);
+  void SetBStartBorderWidths(BCPixelSize aWidth);
+  void SetBEndBorderWidths(BCPixelSize aWidth);
 
   
   
@@ -4866,93 +4858,86 @@ void nsTableFrame::ExpandBCDamageArea(TableArea& aArea) const {
 #define ADJACENT true
 #define INLINE_DIR true
 
-void BCMapCellInfo::SetTableIStartBorderWidth(int32_t aRowB, BCPixelSize aWidth,
-                                              bool aPickMax) {
+void BCMapCellInfo::SetTableBStartBorderWidth(BCPixelSize aWidth) {
+  mTableBCData->mBStartBorderWidth =
+      std::max(mTableBCData->mBStartBorderWidth, aWidth);
+}
+
+void BCMapCellInfo::SetTableIStartBorderWidth(int32_t aRowB,
+                                              BCPixelSize aWidth) {
   
   if (aRowB == 0) {
     mTableBCData->mIStartCellBorderWidth = aWidth;
   }
   mTableBCData->mIStartBorderWidth =
-      aPickMax ? std::max(mTableBCData->mIStartBorderWidth, aWidth) : aWidth;
+      std::max(mTableBCData->mIStartBorderWidth, aWidth);
 }
 
-void BCMapCellInfo::SetTableIEndBorderWidth(int32_t aRowB, BCPixelSize aWidth,
-                                            bool aPickMax) {
+void BCMapCellInfo::SetTableIEndBorderWidth(int32_t aRowB, BCPixelSize aWidth) {
   
   if (aRowB == 0) {
     mTableBCData->mIEndCellBorderWidth = aWidth;
   }
   mTableBCData->mIEndBorderWidth =
-      aPickMax ? std::max(mTableBCData->mIEndBorderWidth, aWidth) : aWidth;
+      std::max(mTableBCData->mIEndBorderWidth, aWidth);
 }
 
-void BCMapCellInfo::SetTableBStartBorderWidth(BCPixelSize aWidth,
-                                              bool aPickMax) {
-  mTableBCData->mBStartBorderWidth =
-      aPickMax ? std::max(mTableBCData->mBStartBorderWidth, aWidth) : aWidth;
-}
-
-void BCMapCellInfo::SetTableBEndBorderWidth(BCPixelSize aWidth, bool aPickMax) {
-  mTableBCData->mBEndBorderWidth =
-      aPickMax ? std::max(mTableBCData->mBEndBorderWidth, aWidth) : aWidth;
-}
-
-void BCMapCellInfo::SetIEndBorderWidths(BCPixelSize aWidth, bool aPickMax) {
+void BCMapCellInfo::SetIEndBorderWidths(BCPixelSize aWidth) {
   
   if (mCell) {
     mCell->SetBorderWidth(
         LogicalSide::IEnd,
-        aPickMax ? std::max(aWidth, mCell->GetBorderWidth(LogicalSide::IEnd))
-                 : aWidth);
+        std::max(aWidth, mCell->GetBorderWidth(LogicalSide::IEnd)));
   }
   if (mEndCol) {
     BCPixelSize half = BC_BORDER_START_HALF(aWidth);
-    mEndCol->SetIEndBorderWidth(
-        aPickMax ? std::max(half, mEndCol->GetIEndBorderWidth()) : half);
+    mEndCol->SetIEndBorderWidth(std::max(half, mEndCol->GetIEndBorderWidth()));
   }
 }
 
-void BCMapCellInfo::SetBEndBorderWidths(BCPixelSize aWidth, bool aPickMax) {
+void BCMapCellInfo::SetBEndBorderWidths(BCPixelSize aWidth) {
   
   if (mCell) {
     mCell->SetBorderWidth(
         LogicalSide::BEnd,
-        aPickMax ? std::max(aWidth, mCell->GetBorderWidth(LogicalSide::BEnd))
-                 : aWidth);
+        std::max(aWidth, mCell->GetBorderWidth(LogicalSide::BEnd)));
   }
   if (mEndRow) {
     BCPixelSize half = BC_BORDER_START_HALF(aWidth);
     mEndRow->SetBEndBCBorderWidth(
-        aPickMax ? std::max(half, mEndRow->GetBEndBCBorderWidth()) : half);
+        std::max(half, mEndRow->GetBEndBCBorderWidth()));
   }
 }
 
-void BCMapCellInfo::SetBStartBorderWidths(BCPixelSize aWidth, bool aPickMax) {
+void BCMapCellInfo::SetBStartBorderWidths(BCPixelSize aWidth) {
   if (mCell) {
     mCell->SetBorderWidth(
         LogicalSide::BStart,
-        aPickMax ? std::max(aWidth, mCell->GetBorderWidth(LogicalSide::BStart))
-                 : aWidth);
+        std::max(aWidth, mCell->GetBorderWidth(LogicalSide::BStart)));
   }
   if (mStartRow) {
     BCPixelSize half = BC_BORDER_END_HALF(aWidth);
     mStartRow->SetBStartBCBorderWidth(
-        aPickMax ? std::max(half, mStartRow->GetBStartBCBorderWidth()) : half);
+        std::max(half, mStartRow->GetBStartBCBorderWidth()));
   }
 }
 
-void BCMapCellInfo::SetIStartBorderWidths(BCPixelSize aWidth, bool aPickMax) {
+void BCMapCellInfo::SetIStartBorderWidths(BCPixelSize aWidth) {
   if (mCell) {
     mCell->SetBorderWidth(
         LogicalSide::IStart,
-        aPickMax ? std::max(aWidth, mCell->GetBorderWidth(LogicalSide::IStart))
-                 : aWidth);
+        std::max(aWidth, mCell->GetBorderWidth(LogicalSide::IStart)));
   }
   if (mStartCol) {
     BCPixelSize half = BC_BORDER_END_HALF(aWidth);
     mStartCol->SetIStartBorderWidth(
-        aPickMax ? std::max(half, mStartCol->GetIStartBorderWidth()) : half);
+        std::max(half, mStartCol->GetIStartBorderWidth()));
   }
+}
+
+void BCMapCellInfo::SetTableBEndBorderWidth(BCPixelSize aWidth) {
+  mTableBCData->mBEndBorderWidth =
+      std::max(mTableBCData->mBEndBorderWidth, aWidth);
 }
 
 void BCMapCellInfo::SetColumn(int32_t aColX) {
@@ -5184,7 +5169,6 @@ void nsTableFrame::CalcBCBorders() {
         propData->mBStartBorderWidth = 0;
         tableBorderReset[idxBStart] = true;
       }
-      bool setOnce = false;
       for (int32_t colIdx = info.mColIndex; colIdx <= info.GetCellEndColIndex();
            colIdx++) {
         info.SetColumn(colIdx);
@@ -5219,9 +5203,8 @@ void nsTableFrame::CalcBCBorders() {
 
         
         
-        info.SetTableBStartBorderWidth(currentBorder.width, setOnce);
-        info.SetBStartBorderWidths(currentBorder.width, setOnce);
-        setOnce = true;
+        info.SetTableBStartBorderWidth(currentBorder.width);
+        info.SetBStartBorderWidths(currentBorder.width);
       }
     } else {
       
@@ -5249,7 +5232,6 @@ void nsTableFrame::CalcBCBorders() {
         tableBorderReset[idxIStart] = true;
       }
       info.mCurrentRowFrame = nullptr;
-      bool setOnce = false;
       for (int32_t rowB = info.mRowIndex; rowB <= info.GetCellEndRowIndex();
            rowB++) {
         info.IncrementRow(rowB == info.mRowIndex);
@@ -5272,9 +5254,8 @@ void nsTableFrame::CalcBCBorders() {
                                       currentBorder.width, startSeg);
         
         
-        info.SetTableIStartBorderWidth(rowB, currentBorder.width, setOnce);
-        info.SetIStartBorderWidths(currentBorder.width, setOnce);
-        setOnce = true;
+        info.SetTableIStartBorderWidth(rowB, currentBorder.width);
+        info.SetIStartBorderWidths(currentBorder.width);
       }
     }
 
@@ -5288,7 +5269,6 @@ void nsTableFrame::CalcBCBorders() {
         tableBorderReset[idxIEnd] = true;
       }
       info.mCurrentRowFrame = nullptr;
-      bool setOnce = false;
       for (int32_t rowB = info.mRowIndex; rowB <= info.GetCellEndRowIndex();
            rowB++) {
         info.IncrementRow(rowB == info.mRowIndex);
@@ -5321,16 +5301,14 @@ void nsTableFrame::CalcBCBorders() {
             currentBorder.width, startSeg);
         
         
-        info.SetTableIEndBorderWidth(rowB, currentBorder.width, setOnce);
-        info.SetIEndBorderWidths(currentBorder.width, setOnce);
-        setOnce = true;
+        info.SetTableIEndBorderWidth(rowB, currentBorder.width);
+        info.SetIEndBorderWidths(currentBorder.width);
       }
     } else {
       
       int32_t segLength = 0;
       BCMapCellInfo ajaInfo(this);
       BCMapCellInfo priorAjaInfo(this);
-      bool setOnce = false;
       for (int32_t rowB = info.mRowIndex; rowB <= info.GetCellEndRowIndex();
            rowB += segLength) {
         
@@ -5353,9 +5331,8 @@ void nsTableFrame::CalcBCBorders() {
               LogicalSide::IEnd, *iter.mCellMap, iter.mRowGroupStart, rowB,
               info.GetCellEndColIndex(), segLength, currentBorder.owner,
               currentBorder.width, startSeg);
-          info.SetIEndBorderWidths(currentBorder.width, setOnce);
-          ajaInfo.SetIStartBorderWidths(currentBorder.width, setOnce);
-          setOnce = true;
+          info.SetIEndBorderWidths(currentBorder.width);
+          ajaInfo.SetIStartBorderWidths(currentBorder.width);
         }
         
         
@@ -5431,7 +5408,6 @@ void nsTableFrame::CalcBCBorders() {
         propData->mBEndBorderWidth = 0;
         tableBorderReset[idxBEnd] = true;
       }
-      bool setOnce = false;
       for (int32_t colIdx = info.mColIndex; colIdx <= info.GetCellEndColIndex();
            colIdx++) {
         info.SetColumn(colIdx);
@@ -5477,14 +5453,12 @@ void nsTableFrame::CalcBCBorders() {
 
         
         
-        info.SetBEndBorderWidths(currentBorder.width, setOnce);
-        info.SetTableBEndBorderWidth(currentBorder.width, setOnce);
-        setOnce = true;
+        info.SetBEndBorderWidths(currentBorder.width);
+        info.SetTableBEndBorderWidth(currentBorder.width);
       }
     } else {
       int32_t segLength = 0;
       BCMapCellInfo ajaInfo(this);
-      bool setOnce = false;
       for (int32_t colIdx = info.mColIndex; colIdx <= info.GetCellEndColIndex();
            colIdx += segLength) {
         
@@ -5566,10 +5540,8 @@ void nsTableFrame::CalcBCBorders() {
               LogicalSide::BEnd, *iter.mCellMap, iter.mRowGroupStart,
               info.GetCellEndRowIndex(), colIdx, segLength, currentBorder.owner,
               currentBorder.width, startSeg);
-
-          info.SetBEndBorderWidths(currentBorder.width, setOnce);
-          ajaInfo.SetBStartBorderWidths(currentBorder.width, setOnce);
-          setOnce = true;
+          info.SetBEndBorderWidths(currentBorder.width);
+          ajaInfo.SetBStartBorderWidths(currentBorder.width);
         }
         
         BCCornerInfo& bEndIEndCorner = bEndCorners[colIdx + segLength];
