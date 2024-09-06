@@ -336,7 +336,8 @@ impl SanitizationKind {
             CssRule::LayerBlock(..) |
             
             
-            CssRule::Scope(..) => false,
+            CssRule::Scope(..) |
+            CssRule::StartingStyle(..) => false,
 
             CssRule::FontFace(..) | CssRule::Namespace(..) | CssRule::Style(..) => true,
 
