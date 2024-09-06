@@ -372,6 +372,12 @@ add_task(async function test_dismiss_tab() {
 
     info("calling dismiss_tab on the top, most-recently closed tab");
     let closedTabItem = listItems[0];
+    
+    
+    ok(
+      !isNaN(closedTabItem.sourceClosedId),
+      "Item has a sourceClosedId property"
+    );
 
     
     await dismiss_tab(closedTabItem);
@@ -390,6 +396,12 @@ add_task(async function test_dismiss_tab() {
 
     
     closedTabItem = listItems[listItems.length - 1];
+    ok(
+      isNaN(closedTabItem.sourceClosedId),
+      "Item does not have a sourceClosedId property"
+    );
+    ok(closedTabItem.sourceWindowId, "Item has a sourceWindowId property");
+
     await dismiss_tab(closedTabItem);
     await listElem.getUpdateComplete;
 
