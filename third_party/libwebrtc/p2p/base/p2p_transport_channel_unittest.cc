@@ -286,14 +286,6 @@ class P2PTransportChannelTestBase : public ::testing::Test,
         main_(ss_.get()),
         stun_server_(TestStunServer::Create(ss_.get(), kStunAddr, main_)),
         turn_server_(&main_, ss_.get(), kTurnUdpIntAddr, kTurnUdpExtAddr),
-        socks_server1_(ss_.get(),
-                       kSocksProxyAddrs[0],
-                       ss_.get(),
-                       kSocksProxyAddrs[0]),
-        socks_server2_(ss_.get(),
-                       kSocksProxyAddrs[1],
-                       ss_.get(),
-                       kSocksProxyAddrs[1]),
         force_relay_(false) {
     ep1_.role_ = ICEROLE_CONTROLLING;
     ep2_.role_ = ICEROLE_CONTROLLED;
@@ -330,7 +322,6 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     BLOCK_UDP_AND_INCOMING_TCP,   
     BLOCK_ALL_BUT_OUTGOING_HTTP,  
     PROXY_HTTPS,                  
-    PROXY_SOCKS,                  
     NUM_CONFIGS
   };
 
@@ -1028,8 +1019,6 @@ class P2PTransportChannelTestBase : public ::testing::Test,
       PendingTaskSafetyFlag::Create();
   TestStunServer::StunServerPtr stun_server_;
   TestTurnServer turn_server_;
-  rtc::SocksProxyServer socks_server1_;
-  rtc::SocksProxyServer socks_server2_;
   Endpoint ep1_;
   Endpoint ep2_;
   RemoteIceParameterSource remote_ice_parameter_source_ = FROM_CANDIDATE;
@@ -1179,7 +1168,6 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
       case BLOCK_UDP_AND_INCOMING_TCP:
       case BLOCK_ALL_BUT_OUTGOING_HTTP:
       case PROXY_HTTPS:
-      case PROXY_SOCKS:
         AddAddress(endpoint, kPublicAddrs[endpoint]);
         
         fw()->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kPublicAddrs[endpoint]);
@@ -1202,13 +1190,6 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
           fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY,
                         kPublicAddrs[endpoint]);
           SetProxy(endpoint, rtc::PROXY_HTTPS);
-        } else if (config == PROXY_SOCKS) {
-          
-          fw()->AddRule(true, rtc::FP_TCP, kPublicAddrs[endpoint],
-                        kSocksProxyAddrs[endpoint]);
-          fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY,
-                        kPublicAddrs[endpoint]);
-          SetProxy(endpoint, rtc::PROXY_SOCKS5);
         }
         break;
       default:
@@ -1254,41 +1235,27 @@ const P2PTransportChannelMatrixTest::Result*
     P2PTransportChannelMatrixTest::kMatrix[NUM_CONFIGS][NUM_CONFIGS] = {
         
         
-         {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, LTPT, LTPT, LSRS,
-                NULL, LTPT},
+        {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, LTPT, LTPT, LSRS, NULL},
         
-        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL,
-         LTRT},
+        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL},
         
-        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL,
-         LTRT},
+        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL},
         
-        {SULU, SUSU, SUSU, SUSU, RUPU, SUSU, RUPU, NULL, NULL, LSRS, NULL,
-         LTRT},
+        {SULU, SUSU, SUSU, SUSU, RUPU, SUSU, RUPU, NULL, NULL, LSRS, NULL},
         
-        {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL,
-         LTRT},
+        {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL},
         
-        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL,
-         LTRT},
+        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL},
         
-        {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL,
-         LTRT},
+        {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL},
         
-        {LTPT, NULL, NULL, NULL, NULL, NULL, NULL, LTPT, LTPT, LSRS, NULL,
-         LTRT},
+        {LTPT, NULL, NULL, NULL, NULL, NULL, NULL, LTPT, LTPT, LSRS, NULL},
         
-        {PTLT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTRT, LSRS, NULL,
-         LTRT},
+        {PTLT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTRT, LSRS, NULL},
         
-        {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL,
-         LSRS},
+        {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL},
         
-        {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-         NULL},
-        
-        {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL,
-         LTRT},
+        {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
 };
 
 
@@ -1316,8 +1283,7 @@ const P2PTransportChannelMatrixTest::Result*
   P2P_TEST(x, BLOCK_UDP)                   \
   P2P_TEST(x, BLOCK_UDP_AND_INCOMING_TCP)  \
   P2P_TEST(x, BLOCK_ALL_BUT_OUTGOING_HTTP) \
-  P2P_TEST(x, PROXY_HTTPS)                 \
-  P2P_TEST(x, PROXY_SOCKS)
+  P2P_TEST(x, PROXY_HTTPS)
 
 P2P_TEST_SET(OPEN)
 P2P_TEST_SET(NAT_FULL_CONE)
@@ -1330,7 +1296,6 @@ P2P_TEST_SET(BLOCK_UDP)
 P2P_TEST_SET(BLOCK_UDP_AND_INCOMING_TCP)
 P2P_TEST_SET(BLOCK_ALL_BUT_OUTGOING_HTTP)
 P2P_TEST_SET(PROXY_HTTPS)
-P2P_TEST_SET(PROXY_SOCKS)
 
 INSTANTIATE_TEST_SUITE_P(
     All,
