@@ -443,12 +443,11 @@ static nsIFrame* GetIBContainingBlockFor(nsIFrame* aFrame) {
     
     
     if (!IsFramePartOfIBSplit(parentFrame) &&
-        !parentFrame->Style()->IsPseudoOrAnonBox()) {
+        !parentFrame->Style()->IsPseudoOrAnonBox())
       break;
-    }
 
     aFrame = parentFrame;
-  } while (true);
+  } while (1);
 
   
   NS_ASSERTION(parentFrame,
@@ -482,6 +481,16 @@ static nsContainerFrame* GetMultiColumnContainingBlockFor(nsIFrame* aFrame) {
              "No multicol containing block in a valid column hierarchy?");
 
   return current;
+}
+
+
+static bool ParentIsWrapperAnonBox(nsIFrame* aParent) {
+  nsIFrame* maybeAnonBox = aParent;
+  if (maybeAnonBox->Style()->GetPseudoType() == PseudoStyleType::cellContent) {
+    
+    maybeAnonBox = maybeAnonBox->GetParent();
+  }
+  return maybeAnonBox->Style()->IsWrapperAnonBox();
 }
 
 static bool InsertSeparatorBeforeAccessKey() {
@@ -1966,41 +1975,33 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
 
 static bool IsTablePseudo(nsIFrame* aFrame) {
   auto pseudoType = aFrame->Style()->GetPseudoType();
-  if (pseudoType == PseudoStyleType::NotPseudo) {
-    return false;
-  }
-  return pseudoType == PseudoStyleType::table ||
-         pseudoType == PseudoStyleType::inlineTable ||
-         pseudoType == PseudoStyleType::tableColGroup ||
-         pseudoType == PseudoStyleType::tableRowGroup ||
-         pseudoType == PseudoStyleType::tableRow ||
-         pseudoType == PseudoStyleType::tableCell ||
-         (pseudoType == PseudoStyleType::cellContent &&
-          aFrame->GetParent()->Style()->GetPseudoType() ==
-              PseudoStyleType::tableCell) ||
-         (pseudoType == PseudoStyleType::tableWrapper &&
-          aFrame->PrincipalChildList()
-              .FirstChild()
-              ->Style()
-              ->IsPseudoOrAnonBox());
+  return pseudoType != PseudoStyleType::NotPseudo &&
+         (pseudoType == PseudoStyleType::table ||
+          pseudoType == PseudoStyleType::inlineTable ||
+          pseudoType == PseudoStyleType::tableColGroup ||
+          pseudoType == PseudoStyleType::tableRowGroup ||
+          pseudoType == PseudoStyleType::tableRow ||
+          pseudoType == PseudoStyleType::tableCell ||
+          (pseudoType == PseudoStyleType::cellContent &&
+           aFrame->GetParent()->Style()->GetPseudoType() ==
+               PseudoStyleType::tableCell) ||
+          (pseudoType == PseudoStyleType::tableWrapper &&
+           (aFrame->PrincipalChildList()
+                    .FirstChild()
+                    ->Style()
+                    ->GetPseudoType() == PseudoStyleType::table ||
+            aFrame->PrincipalChildList()
+                    .FirstChild()
+                    ->Style()
+                    ->GetPseudoType() == PseudoStyleType::inlineTable)));
 }
 
 static bool IsRubyPseudo(nsIFrame* aFrame) {
   return RubyUtils::IsRubyPseudo(aFrame->Style()->GetPseudoType());
 }
 
-
-
-
-
-
-
-static bool IsWrapperPseudo(nsIFrame* aFrame) {
-  auto pseudoType = aFrame->Style()->GetPseudoType();
-  if (!PseudoStyle::IsAnonBox(pseudoType)) {
-    return false;
-  }
-  return PseudoStyle::IsWrapperAnonBox(pseudoType) || IsTablePseudo(aFrame);
+static bool IsTableOrRubyPseudo(nsIFrame* aFrame) {
+  return IsTablePseudo(aFrame) || IsRubyPseudo(aFrame);
 }
 
 
@@ -6350,16 +6351,6 @@ nsIFrame* nsCSSFrameConstructor::FindNextSiblingForAppend(
   return SlowPath();
 }
 
-
-static bool ParentIsWrapperAnonBox(nsIFrame* aParent) {
-  nsIFrame* maybeAnonBox = aParent;
-  if (maybeAnonBox->Style()->GetPseudoType() == PseudoStyleType::cellContent) {
-    
-    maybeAnonBox = maybeAnonBox->GetParent();
-  }
-  return maybeAnonBox->Style()->IsWrapperAnonBox();
-}
-
 void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
                                             InsertionKind aInsertionKind) {
   MOZ_ASSERT(aInsertionKind == InsertionKind::Sync ||
@@ -7169,38 +7160,6 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
 #endif
 }
 
-static bool IsWhitespaceFrame(const nsIFrame* aFrame) {
-  MOZ_ASSERT(aFrame, "invalid argument");
-  return aFrame->IsTextFrame() && aFrame->GetContent()->TextIsOnlyWhitespace();
-}
-
-static bool IsOnlyNonWhitespaceFrameInList(const nsFrameList& aFrameList,
-                                           const nsIFrame* aFrame) {
-  for (const nsIFrame* f : aFrameList) {
-    if (f != aFrame && !IsWhitespaceFrame(f)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool IsOnlyMeaningfulChildOfWrapperPseudo(nsIFrame* aFrame,
-                                                 nsIFrame* aParent) {
-  MOZ_ASSERT(IsWrapperPseudo(aParent));
-  if (IsOnlyNonWhitespaceFrameInList(aParent->PrincipalChildList(), aFrame)) {
-    return true;
-  }
-  if (aFrame->IsTableColGroupFrame()) {
-    return IsOnlyNonWhitespaceFrameInList(
-        aParent->GetChildList(FrameChildListID::ColGroup), aFrame);
-  }
-  if (aFrame->IsTableCaption()) {
-    return IsOnlyNonWhitespaceFrameInList(
-        aParent->GetChildList(FrameChildListID::Caption), aFrame);
-  }
-  return false;
-}
-
 bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
                                            nsIContent* aOldNextSibling,
                                            RemoveFlags aFlags) {
@@ -7449,15 +7408,6 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
       parentFrame = childFrame->GetParent();
     }
 
-    
-    
-    
-    while (IsWrapperPseudo(parentFrame) &&
-           IsOnlyMeaningfulChildOfWrapperPseudo(childFrame, parentFrame)) {
-      childFrame = parentFrame;
-      parentFrame = childFrame->GetParent();
-    }
-
     DestroyContext context(mPresShell);
     RemoveFrame(context, nsLayoutUtils::GetChildListNameFor(childFrame),
                 childFrame);
@@ -7481,9 +7431,16 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
     
     
     
-    if (aOldNextSibling && aFlags == REMOVE_CONTENT) {
+    
+    
+    
+    if (aOldNextSibling && aFlags == REMOVE_CONTENT &&
+        GetParentType(parentType) == eTypeBlock) {
       MOZ_ASSERT(aChild->GetParentNode(),
                  "How did we have a sibling without a parent?");
+      
+      
+      
       
       
       
@@ -8079,6 +8036,14 @@ static bool IsWhitespaceFrame(nsIFrame* aFrame) {
   return aFrame->IsTextFrame() && aFrame->GetContent()->TextIsOnlyWhitespace();
 }
 
+static nsIFrame* FindFirstNonWhitespaceChild(nsIFrame* aParentFrame) {
+  nsIFrame* f = aParentFrame->PrincipalChildList().FirstChild();
+  while (f && IsWhitespaceFrame(f)) {
+    f = f->GetNextSibling();
+  }
+  return f;
+}
+
 static nsIFrame* FindNextNonWhitespaceSibling(nsIFrame* aFrame) {
   nsIFrame* f = aFrame;
   do {
@@ -8183,20 +8148,42 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
   
   
   
+  if (IsTableOrRubyPseudo(parent)) {
+    if (FindFirstNonWhitespaceChild(parent) == inFlowFrame ||
+        !FindNextNonWhitespaceSibling(inFlowFrame->LastContinuation()) ||
+        
+        
+        (IsWhitespaceFrame(aFrame) &&
+         parent->PrincipalChildList().OnlyChild()) ||
+        
+        
+        (inFlowFrame->IsTableColGroupFrame() &&
+         parent->GetChildList(FrameChildListID::ColGroup).FirstChild() ==
+             inFlowFrame) ||
+        
+        (inFlowFrame->IsTableCaption() &&
+         parent->GetChildList(FrameChildListID::Caption).FirstChild() ==
+             inFlowFrame)) {
+      TRACE("Table or ruby pseudo parent");
+      RecreateFramesForContent(parent->GetContent(), InsertionKind::Async);
+      return true;
+    }
+  }
+
+  
+  
+  
+  
   nsIFrame* nextSibling =
       FindNextNonWhitespaceSibling(inFlowFrame->LastContinuation());
-  NS_ASSERTION(!IsWrapperPseudo(inFlowFrame),
-               "Shouldn't happen here (we start removals from primary frames)");
+  NS_ASSERTION(!IsTableOrRubyPseudo(inFlowFrame), "Shouldn't happen here");
   
   
   
-  if (nextSibling && IsWrapperPseudo(nextSibling)) {
+  if (nextSibling && IsTableOrRubyPseudo(nextSibling)) {
     nsIFrame* prevSibling = FindPreviousNonWhitespaceSibling(inFlowFrame);
-    if (prevSibling && IsWrapperPseudo(prevSibling)) {
-      TRACE("Pseudo sibling");
-      
-      
-      
+    if (prevSibling && IsTableOrRubyPseudo(prevSibling)) {
+      TRACE("Table or ruby pseudo sibling");
       
       
       RecreateFramesForContent(parent->GetContent(), InsertionKind::Async);
@@ -8217,6 +8204,34 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
     
     TRACE("Ruby container");
     RecreateFramesForContent(parent->GetContent(), InsertionKind::Async);
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (nextSibling && IsAnonymousItem(nextSibling)) {
+    AssertAnonymousFlexOrGridItemParent(nextSibling, parent);
+    TRACE("Anon flex or grid item next sibling");
+    
+    RecreateFramesForContent(parent->GetContent(), InsertionKind::Async);
+    return true;
+  }
+
+  
+  
+  
+  if (!nextSibling && IsAnonymousItem(parent)) {
+    AssertAnonymousFlexOrGridItemParent(parent, parent->GetParent());
+    TRACE("Anon flex or grid item parent");
+    
+    RecreateFramesForContent(parent->GetParent()->GetContent(),
+                             InsertionKind::Async);
     return true;
   }
 
@@ -11156,25 +11171,6 @@ bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
 #undef TRACE
 }
 
-static bool SafeToInsertPseudoNeedingChildren(nsIFrame* aFrame) {
-  for (auto& [list, listID] : aFrame->ChildLists()) {
-    if (list.IsEmpty()) {
-      continue;
-    }
-    
-    
-    
-    if (listID == FrameChildListID::ColGroup) {
-      if (nsIFrame* f = list.OnlyChild();
-          f && static_cast<nsTableColGroupFrame*>(f)->IsSynthetic()) {
-        continue;
-      }
-    }
-    return false;
-  }
-  return true;
-}
-
 bool nsCSSFrameConstructor::WipeContainingBlock(
     nsFrameConstructorState& aState, nsIFrame* aContainingBlock,
     nsIFrame* aFrame, FrameConstructionItemList& aItems, bool aIsAppend,
@@ -11438,10 +11434,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
       return false;
     }
 
-    
-    
-    if (!aItems.AllWantParentType(parentType) &&
-        !SafeToInsertPseudoNeedingChildren(aFrame)) {
+    if (!aItems.AllWantParentType(parentType)) {
       
       
       TRACE("Pseudo-frames going wrong");
@@ -11553,7 +11546,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
 
     
     
-  } while (false);
+  } while (0);
 
   
   if (!aContainingBlock) {
