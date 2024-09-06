@@ -571,7 +571,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   void SetMaxOutputChannelCount(uint32_t aMaxChannelCount);
 
   double AudioOutputLatency();
+  
 
+  bool OutputForAECMightDrift() {
+    AssertOnGraphThread();
+    return mOutputDeviceForAEC != PrimaryOutputDeviceID();
+  }
   
 
 

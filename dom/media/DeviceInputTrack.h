@@ -84,8 +84,10 @@ class DeviceInputConsumerTrack : public ProcessedMediaTrack {
     return this;
   }
 
- protected:
   
+  DeviceInputTrack* GetDeviceInputTrackGraphThread() const;
+
+ protected:
   
   
   void GetInputSourceData(AudioSegment& aOutput, GraphTime aFrom,

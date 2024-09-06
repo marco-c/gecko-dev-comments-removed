@@ -1200,6 +1200,10 @@ class MediaTrackGraph {
   }
 
   double AudioOutputLatency();
+  
+
+
+  bool OutputForAECMightDrift();
 
   void RegisterCaptureTrackForWindow(uint64_t aWindowId,
                                      ProcessedMediaTrack* aCaptureTrack);

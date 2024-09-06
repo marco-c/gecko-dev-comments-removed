@@ -176,6 +176,9 @@ class AudioInputProcessing : public AudioDataListener {
   UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
   
   
+  bool mHadAECAndDrift = false;
+  
+  
   Maybe<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
   
   
