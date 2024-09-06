@@ -5495,21 +5495,10 @@ void CodeGenerator::visitAssertCanElidePostWriteBarrier(
 }
 
 template <typename LCallIns>
-void CodeGenerator::emitCallNative(LCallIns* call, JSNative native) {
-  MCallBase* mir = call->mir();
-
-  uint32_t unusedStack = UnusedStackBytesForCall(mir->paddedNumStackArgs());
-
-  
-  const Register argContextReg = ToRegister(call->getArgContextReg());
-  const Register argUintNReg = ToRegister(call->getArgUintNReg());
-  const Register argVpReg = ToRegister(call->getArgVpReg());
-
-  
-  const Register tempReg = ToRegister(call->getTempReg());
-
-  DebugOnly<uint32_t> initialStack = masm.framePushed();
-
+void CodeGenerator::emitCallNative(LCallIns* call, JSNative native,
+                                   Register argContextReg, Register argUintNReg,
+                                   Register argVpReg, Register tempReg,
+                                   uint32_t unusedStack) {
   masm.checkStackAlignment();
 
   
@@ -5524,17 +5513,21 @@ void CodeGenerator::emitCallNative(LCallIns* call, JSNative native) {
   
   
   
+  
+  
   if constexpr (std::is_same_v<LCallIns, LCallClassHook>) {
     Register calleeReg = ToRegister(call->getCallee());
     masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
 
+    
     if (call->mir()->maybeCrossRealm()) {
       masm.switchToObjectRealm(calleeReg, tempReg);
     }
   } else {
-    WrappedFunction* target = call->getSingleTarget();
+    WrappedFunction* target = call->mir()->getSingleTarget();
     masm.Push(ObjectValue(*target->rawNativeJSFunction()));
 
+    
     if (call->mir()->maybeCrossRealm()) {
       masm.movePtr(ImmGCPtr(target->rawNativeJSFunction()), tempReg);
       masm.switchToObjectRealm(tempReg, tempReg);
@@ -5543,11 +5536,16 @@ void CodeGenerator::emitCallNative(LCallIns* call, JSNative native) {
 
   
   masm.loadJSContext(argContextReg);
-  masm.move32(Imm32(call->mir()->numActualArgs()), argUintNReg);
   masm.moveStackPtrTo(argVpReg);
 
+  
   masm.Push(argUintNReg);
 
+  
+  
+  
+  
+  
   
   uint32_t safepointOffset = masm.buildFakeExitFrame(tempReg);
   masm.enterFakeExitFrameForNative(argContextReg, tempReg,
@@ -5581,6 +5579,7 @@ void CodeGenerator::emitCallNative(LCallIns* call, JSNative native) {
   
   masm.branchIfFalseBool(ReturnReg, masm.failureLabel());
 
+  
   if (call->mir()->maybeCrossRealm()) {
     masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
   }
@@ -5593,9 +5592,43 @@ void CodeGenerator::emitCallNative(LCallIns* call, JSNative native) {
   
   
   if (JitOptions.spectreJitToCxxCalls && !call->mir()->ignoresReturnValue() &&
-      mir->hasLiveDefUses()) {
+      call->mir()->hasLiveDefUses()) {
     masm.speculationBarrier();
   }
+
+#ifdef DEBUG
+  
+  if (call->mir()->isConstructing()) {
+    Label notPrimitive;
+    masm.branchTestPrimitive(Assembler::NotEqual, JSReturnOperand,
+                             &notPrimitive);
+    masm.assumeUnreachable("native constructors don't return primitives");
+    masm.bind(&notPrimitive);
+  }
+#endif
+}
+
+template <typename LCallIns>
+void CodeGenerator::emitCallNative(LCallIns* call, JSNative native) {
+  uint32_t unusedStack =
+      UnusedStackBytesForCall(call->mir()->paddedNumStackArgs());
+
+  
+  const Register argContextReg = ToRegister(call->getArgContextReg());
+  const Register argUintNReg = ToRegister(call->getArgUintNReg());
+  const Register argVpReg = ToRegister(call->getArgVpReg());
+
+  
+  const Register tempReg = ToRegister(call->getTempReg());
+
+  DebugOnly<uint32_t> initialStack = masm.framePushed();
+
+  
+  masm.move32(Imm32(call->mir()->numActualArgs()), argUintNReg);
+
+  
+  emitCallNative(call, native, argContextReg, argUintNReg, argVpReg, tempReg,
+                 unusedStack);
 
   
   
@@ -6841,15 +6874,35 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
 }
 
 template <typename T>
-void CodeGenerator::emitCallInvokeNativeFunction(T* apply) {
-  pushArg(masm.getStackPointer());                     
-  pushArg(ToRegister(apply->getArgc()));               
-  pushArg(Imm32(apply->mir()->ignoresReturnValue()));  
-  pushArg(Imm32(apply->mir()->isConstructing()));      
+void CodeGenerator::emitAlignStackForApplyNative(T* apply, Register argc) {
+  static_assert(JitStackAlignment % ABIStackAlignment == 0,
+                "aligning on JIT stack subsumes ABI alignment");
 
-  using Fn =
-      bool (*)(JSContext*, bool, bool, uint32_t, Value*, MutableHandleValue);
-  callVM<Fn, jit::InvokeNativeFunction>(apply);
+  
+  if constexpr (JitStackValueAlignment > 1) {
+    static_assert(JitStackValueAlignment == 2,
+                  "Stack padding adds exactly one Value");
+    MOZ_ASSERT(frameSize() % JitStackValueAlignment == 0,
+               "Stack padding assumes that the frameSize is correct");
+
+    Assembler::Condition cond;
+    if constexpr (T::isConstructing()) {
+      
+      
+      
+      cond = Assembler::Zero;
+    } else {
+      
+      
+      
+      cond = Assembler::NonZero;
+    }
+
+    Label noPaddingNeeded;
+    masm.branchTestPtr(cond, argc, Imm32(1), &noPaddingNeeded);
+    masm.pushValue(MagicValue(JS_ARG_POISON));
+    masm.bind(&noPaddingNeeded);
+  }
 }
 
 template <typename T>
@@ -6858,6 +6911,14 @@ void CodeGenerator::emitPushNativeArguments(T* apply) {
   Register tmpArgc = ToRegister(apply->getTempObject());
   Register scratch = ToRegister(apply->getTempForArgCopy());
   uint32_t extraFormals = apply->numExtraFormals();
+
+  
+  emitAlignStackForApplyNative(apply, argc);
+
+  
+  if constexpr (T::isConstructing()) {
+    masm.pushValue(JSVAL_TYPE_OBJECT, ToRegister(apply->getNewTarget()));
+  }
 
   
   Label noCopy;
@@ -6885,6 +6946,13 @@ void CodeGenerator::emitPushNativeArguments(T* apply) {
                            argvDstOffset);
   }
   masm.bind(&noCopy);
+
+  
+  if constexpr (T::isConstructing()) {
+    masm.pushValue(MagicValue(JS_IS_CONSTRUCTING));
+  } else {
+    masm.pushValue(ToValue(apply, T::ThisIndex));
+  }
 }
 
 template <typename T>
@@ -6905,6 +6973,14 @@ void CodeGenerator::emitPushArrayAsNativeArguments(T* apply) {
   masm.load32(Address(elements, ObjectElements::offsetOfLength()), tmpArgc);
 
   
+  emitAlignStackForApplyNative(apply, tmpArgc);
+
+  
+  if constexpr (T::isConstructing()) {
+    masm.pushValue(JSVAL_TYPE_OBJECT, ToRegister(apply->getNewTarget()));
+  }
+
+  
   Label noCopy;
   masm.branchTestPtr(Assembler::Zero, tmpArgc, tmpArgc, &noCopy);
   {
@@ -6921,6 +6997,13 @@ void CodeGenerator::emitPushArrayAsNativeArguments(T* apply) {
 
   
   masm.load32(Address(elements, ObjectElements::offsetOfLength()), argc);
+
+  
+  if constexpr (T::isConstructing()) {
+    masm.pushValue(MagicValue(JS_IS_CONSTRUCTING));
+  } else {
+    masm.pushValue(ToValue(apply, T::ThisIndex));
+  }
 }
 
 void CodeGenerator::emitPushArguments(LApplyArgsNative* apply) {
@@ -6944,12 +7027,16 @@ void CodeGenerator::emitPushArguments(LApplyArgsObjNative* apply) {
   Register argsObj = ToRegister(apply->getArgsObj());
   Register tmpArgc = ToRegister(apply->getTempObject());
   Register scratch = ToRegister(apply->getTempForArgCopy());
+  Register scratch2 = ToRegister(apply->getTempExtra());
 
   
   MOZ_ASSERT(argc == argsObj);
 
   
   masm.loadArgumentsObjectLength(argsObj, tmpArgc);
+
+  
+  emitAlignStackForApplyNative(apply, tmpArgc);
 
   
   Label noCopy, epilogue;
@@ -6970,56 +7057,65 @@ void CodeGenerator::emitPushArguments(LApplyArgsObjNative* apply) {
     size_t argvSrcOffset = ArgumentsData::offsetOfArgs();
     size_t argvDstOffset = 0;
 
-    
-    masm.push(tmpArgc);
-    argvDstOffset += sizeof(void*);
+    Register argvIndex = scratch2;
+    masm.move32(tmpArgc, argvIndex);
 
     
-    emitCopyValuesForApply(argvSrcBase, tmpArgc, scratch, argvSrcOffset,
+    emitCopyValuesForApply(argvSrcBase, argvIndex, scratch, argvSrcOffset,
                            argvDstOffset);
-
-    
-    masm.pop(argc);
-    masm.jump(&epilogue);
   }
   masm.bind(&noCopy);
-  {
-    
-    masm.movePtr(ImmWord(0), argc);
-  }
-  masm.bind(&epilogue);
+
+  
+  masm.movePtr(tmpArgc, argc);
+
+  
+  masm.pushValue(ToValue(apply, LApplyArgsObjNative::ThisIndex));
 }
 
 template <typename T>
 void CodeGenerator::emitApplyNative(T* apply) {
-  MOZ_ASSERT(apply->mir()->getSingleTarget()->isNativeWithoutJitEntry());
-
-  constexpr bool isConstructing = T::isConstructing();
-  MOZ_ASSERT(isConstructing == apply->mir()->isConstructing(),
+  MOZ_ASSERT(T::isConstructing() == apply->mir()->isConstructing(),
              "isConstructing condition must be consistent");
 
-  
-  if constexpr (isConstructing) {
-    masm.pushValue(JSVAL_TYPE_OBJECT, ToRegister(apply->getNewTarget()));
+  WrappedFunction* target = apply->mir()->getSingleTarget();
+  MOZ_ASSERT(target->isNativeWithoutJitEntry());
+
+  JSNative native = target->native();
+  if (apply->mir()->ignoresReturnValue() && target->hasJitInfo()) {
+    const JSJitInfo* jitInfo = target->jitInfo();
+    if (jitInfo->type() == JSJitInfo::IgnoresReturnValueNative) {
+      native = jitInfo->ignoresReturnValueMethod;
+    }
   }
 
   
   emitPushArguments(apply);
 
   
-  if constexpr (isConstructing) {
-    masm.pushValue(MagicValue(JS_IS_CONSTRUCTING));
-  } else {
-    masm.pushValue(ToValue(apply, T::ThisIndex));
-  }
+  Register argContextReg = ToRegister(apply->getTempObject());
+  Register argUintNReg = ToRegister(apply->getArgc());
+  Register argVpReg = ToRegister(apply->getTempForArgCopy());
+  Register tempReg = ToRegister(apply->getTempExtra());
 
   
-  masm.pushValue(JSVAL_TYPE_OBJECT, ToRegister(apply->getFunction()));
+  uint32_t unusedStack = 0;
 
   
-  emitCallInvokeNativeFunction(apply);
+  MOZ_ASSERT(masm.framePushed() == frameSize());
 
   
+  emitCallNative(apply, native, argContextReg, argUintNReg, argVpReg, tempReg,
+                 unusedStack);
+
+  
+  MOZ_ASSERT(masm.framePushed() == frameSize() + NativeExitFrameLayout::Size());
+
+  
+  
+
+  
+  masm.setFramePushed(frameSize());
   emitRestoreStackPointerFromFP();
 }
 
