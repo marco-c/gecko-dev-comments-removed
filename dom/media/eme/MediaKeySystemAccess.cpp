@@ -19,6 +19,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/KeySystemNames.h"
 #include "mozilla/dom/MediaKeySession.h"
 #include "mozilla/dom/MediaKeySystemAccessBinding.h"
@@ -489,7 +490,7 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
     const nsTArray<MediaKeySystemMediaCapability>& aRequestedCapabilities,
     const MediaKeySystemConfiguration& aPartialConfig,
     const KeySystemConfig& aKeySystem, DecoderDoctorDiagnostics* aDiagnostics,
-    const std::function<void(const char*)>& aDeprecationLogFn) {
+    const Document* aDocument) {
   
   
   
@@ -624,7 +625,7 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
     
     if (codecs.IsEmpty()) {
       
-      aDeprecationLogFn("MediaEMENoCodecsDeprecatedWarning");
+      DeprecationWarningLog(aDocument, "MediaEMENoCodecsDeprecatedWarning");
       
       
       
@@ -823,12 +824,12 @@ static Sequence<nsString> UnboxSessionTypes(
 }
 
 
-static bool GetSupportedConfig(
-    const KeySystemConfig& aKeySystem,
-    const MediaKeySystemConfiguration& aCandidate,
-    MediaKeySystemConfiguration& aOutConfig,
-    DecoderDoctorDiagnostics* aDiagnostics, bool aInPrivateBrowsing,
-    const std::function<void(const char*)>& aDeprecationLogFn) {
+static bool GetSupportedConfig(const KeySystemConfig& aKeySystem,
+                               const MediaKeySystemConfiguration& aCandidate,
+                               MediaKeySystemConfiguration& aOutConfig,
+                               DecoderDoctorDiagnostics* aDiagnostics,
+                               bool aInPrivateBrowsing,
+                               const Document* aDocument) {
   EME_LOG("Compare implementation '%s'\n with request '%s'",
           NS_ConvertUTF16toUTF8(aKeySystem.GetDebugInfo()).get(),
           ToCString(aCandidate).get());
@@ -956,7 +957,7 @@ static bool GetSupportedConfig(
     
     
     
-    aDeprecationLogFn("MediaEMENoCapabilitiesDeprecatedWarning");
+    DeprecationWarningLog(aDocument, "MediaEMENoCapabilitiesDeprecatedWarning");
   }
 
   
@@ -967,7 +968,7 @@ static bool GetSupportedConfig(
     
     Sequence<MediaKeySystemMediaCapability> caps =
         GetSupportedCapabilities(Video, aCandidate.mVideoCapabilities, config,
-                                 aKeySystem, aDiagnostics, aDeprecationLogFn);
+                                 aKeySystem, aDiagnostics, aDocument);
     
     if (caps.IsEmpty()) {
       EME_LOG(
@@ -993,7 +994,7 @@ static bool GetSupportedConfig(
     
     Sequence<MediaKeySystemMediaCapability> caps =
         GetSupportedCapabilities(Audio, aCandidate.mAudioCapabilities, config,
-                                 aKeySystem, aDiagnostics, aDeprecationLogFn);
+                                 aKeySystem, aDiagnostics, aDocument);
     
     if (caps.IsEmpty()) {
       EME_LOG(
@@ -1078,7 +1079,7 @@ bool MediaKeySystemAccess::GetSupportedConfig(
     const Sequence<MediaKeySystemConfiguration>& aConfigs,
     MediaKeySystemConfiguration& aOutConfig,
     DecoderDoctorDiagnostics* aDiagnostics, bool aIsPrivateBrowsing,
-    const std::function<void(const char*)>& aDeprecationLogFn) {
+    const Document* aDocument) {
   nsTArray<KeySystemConfig> implementations;
   const bool isHardwareDecryptionRequest =
       CheckIfHarewareDRMConfigExists(aConfigs) ||
@@ -1089,9 +1090,9 @@ bool MediaKeySystemAccess::GetSupportedConfig(
   }
   for (const auto& implementation : implementations) {
     for (const MediaKeySystemConfiguration& candidate : aConfigs) {
-      if (mozilla::dom::GetSupportedConfig(
-              implementation, candidate, aOutConfig, aDiagnostics,
-              aIsPrivateBrowsing, aDeprecationLogFn)) {
+      if (mozilla::dom::GetSupportedConfig(implementation, candidate,
+                                           aOutConfig, aDiagnostics,
+                                           aIsPrivateBrowsing, aDocument)) {
         return true;
       }
     }
