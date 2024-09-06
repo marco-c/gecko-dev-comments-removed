@@ -53,9 +53,20 @@ static nsIWidget* GetWidget(PresShell* aPresShell) {
     return nullptr;
   }
   if (nsIFrame* rootFrame = aPresShell->GetRootFrame()) {
+#if defined(MOZ_WIDGET_ANDROID)
+    
+    
+    
+    
+    
+    
+    
+    return rootFrame->GetNearestWidget();
+#else
     if (nsView* view = rootFrame->GetView()) {
       return view->GetWidget();
     }
+#endif
   }
   return nullptr;
 }
