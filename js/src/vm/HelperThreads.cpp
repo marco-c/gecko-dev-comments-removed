@@ -986,34 +986,21 @@ void GlobalHelperThreadState::waitForAllTasksLocked(
 bool GlobalHelperThreadState::checkTaskThreadLimit(
     ThreadType threadType, size_t maxThreads, bool isMaster,
     const AutoLockHelperThreadState& lock) const {
-  MOZ_ASSERT(maxThreads > 0);
+  MOZ_ASSERT(maxThreads >= 1);
+  MOZ_ASSERT(maxThreads <= threadCount);
 
-  if (!isMaster && maxThreads >= threadCount) {
-    return true;
-  }
-
+  
   size_t count = runningTaskCount[threadType];
   if (count >= maxThreads) {
     return false;
   }
 
+  
+  
   MOZ_ASSERT(threadCount >= totalCountRunningTasks);
-  size_t idle = threadCount - totalCountRunningTasks;
-
-  
-  
-  
-  if (idle == 0) {
-    return false;
-  }
-
-  
-  
-  if (isMaster && idle == 1) {
-    return false;
-  }
-
-  return true;
+  size_t idleCount = threadCount - totalCountRunningTasks;
+  size_t idleRequired = isMaster ? 2 : 1;
+  return idleCount >= idleRequired;
 }
 
 static inline bool IsHelperThreadSimulatingOOM(js::ThreadType threadType) {
