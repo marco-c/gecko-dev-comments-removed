@@ -26,8 +26,8 @@ add_task(async function () {
       ),
     ],
     priority: 999,
-    onEngagement: () => {
-      info("Blur the address bar during the onEngagement notification");
+    onLegacyEngagement: () => {
+      info("Blur the address bar during the onLegacyEngagement notification");
       gURLBar.blur();
       
       TestUtils.waitForTick().then(() => {
@@ -37,7 +37,7 @@ add_task(async function () {
   });
   UrlbarProvidersManager.registerProvider(provider);
   
-  let engagementSpy = sinon.spy(provider, "onEngagement");
+  let engagementSpy = sinon.spy(provider, "onLegacyEngagement");
 
   let beforeRecordCall = false,
     recordReentered = false;
@@ -68,7 +68,7 @@ add_task(async function () {
     Assert.equal(
       engagementSpy.callCount,
       1,
-      "`onEngagement` was invoked twice"
+      "`onLegacyEngagement` was invoked twice"
     );
     Assert.equal(
       engagementSpy.args[0][0],

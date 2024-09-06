@@ -375,7 +375,10 @@ async function doEngagementWithoutAddingResultToView(
   getPriorityStub.returns(Infinity);
 
   
-  let onEngagementSpy = sandbox.spy(UrlbarProviderQuickSuggest, "onEngagement");
+  let onLegacyEngagementSpy = sandbox.spy(
+    UrlbarProviderQuickSuggest,
+    "onLegacyEngagement"
+  );
 
   let sandboxCleanup = () => {
     getPriorityStub?.restore();
@@ -452,7 +455,7 @@ async function doEngagementWithoutAddingResultToView(
   });
   await loadPromise;
 
-  let engagementCalls = onEngagementSpy.getCalls().filter(call => {
+  let engagementCalls = onLegacyEngagementSpy.getCalls().filter(call => {
     let state = call.args[0];
     return state == "engagement";
   });

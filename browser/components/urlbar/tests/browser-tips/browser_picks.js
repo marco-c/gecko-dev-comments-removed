@@ -117,8 +117,8 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
   });
   UrlbarProvidersManager.registerProvider(provider);
 
-  let onEngagementPromise = new Promise(
-    resolve => (provider.onEngagement = resolve)
+  let onLegacyEngagementPromise = new Promise(
+    resolve => (provider.onLegacyEngagement = resolve)
   );
 
   
@@ -160,7 +160,7 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
       EventUtils.synthesizeKey("KEY_Enter");
     }
   });
-  await onEngagementPromise;
+  await onLegacyEngagementPromise;
   await loadPromise;
 
   

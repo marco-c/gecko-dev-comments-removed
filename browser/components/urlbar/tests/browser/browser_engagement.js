@@ -186,7 +186,7 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
     });
   }
 
-  onEngagement(...args) {
+  onLegacyEngagement(...args) {
     let resolve = this._resolves.shift();
     if (resolve) {
       resolve(args);
