@@ -200,6 +200,9 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   nsImageFrame* CreateContinuingFrame(mozilla::PresShell*,
                                       ComputedStyle*) const;
 
+  mozilla::AspectRatio ComputeIntrinsicRatioForImage(
+      imgIContainer*, bool aIgnoreContainment = false) const;
+
  private:
   friend nsIFrame* NS_NewImageFrame(mozilla::PresShell*, ComputedStyle*);
   friend nsIFrame* NS_NewXULImageFrame(mozilla::PresShell*, ComputedStyle*);
@@ -291,6 +294,11 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   void OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage);
   void OnFrameUpdate(imgIRequest* aRequest, const nsIntRect* aRect);
   void OnLoadComplete(imgIRequest* aRequest, nsresult aStatus);
+  mozilla::IntrinsicSize ComputeIntrinsicSize(
+      bool aIgnoreContainment = false) const;
+  
+  
+  bool ShouldUseMappedAspectRatio() const;
 
   
 
@@ -312,16 +320,12 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
 
 
-
-  nsRect PredictedDestRect(const nsRect& aFrameContentBox);
+  nsRect GetDestRect(const nsRect& aFrameContentBox,
+                     nsPoint* aAnchorPoint = nullptr);
 
  private:
   nscoord GetContinuationOffset() const;
   bool ShouldDisplaySelection();
-
-  
-  
-  bool ShouldUseMappedAspectRatio() const;
 
   
   bool UpdateIntrinsicSize();
