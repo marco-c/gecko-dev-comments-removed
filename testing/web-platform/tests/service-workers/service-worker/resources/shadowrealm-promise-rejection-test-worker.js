@@ -1,0 +1,11 @@
+var realm = new ShadowRealm();
+
+
+
+realm.evaluate('Promise.reject("foo"); () => {}');
+
+
+realm.evaluate(`
+const innerRealm = new ShadowRealm();
+innerRealm.evaluate('Promise.reject("foo"); () => {}');
+`);
