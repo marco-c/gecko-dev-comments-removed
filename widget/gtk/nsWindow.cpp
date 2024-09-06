@@ -9177,6 +9177,10 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
       ClearTransparencyBitmap();
     }
   }
+
+  
+  
+  SetInputRegion(mInputRegion);
 }
 
 GtkWindow* nsWindow::GetCurrentTopmostWindow() const {
