@@ -469,7 +469,14 @@ NS_IMPL_RELEASE_INHERITED(XMLHttpRequestMainThread, XMLHttpRequestEventTarget)
 
 void XMLHttpRequestMainThread::DisconnectFromOwner() {
   XMLHttpRequestEventTarget::DisconnectFromOwner();
-  Abort();
+  
+  
+  
+  
+  
+  if (!mForWorker) {
+    Abort();
+  }
 }
 
 size_t XMLHttpRequestMainThread::SizeOfEventTargetIncludingThis(
