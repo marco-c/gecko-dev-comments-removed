@@ -13,9 +13,11 @@
 
 #include <memory>
 
+#include "absl/functional/any_invocable.h"
 #include "api/array_view.h"
 #include "api/sequence_checker.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -91,7 +93,16 @@ class RTC_EXPORT StreamInterface {
   
   
   
-  sigslot::signal3<StreamInterface*, int, int> SignalEvent;
+  
+  void SetEventCallback(absl::AnyInvocable<void(int, int)> callback) {
+    RTC_DCHECK_RUN_ON(&callback_sequence_);
+    RTC_DCHECK(!callback_ || !callback);
+    callback_ = std::move(callback);
+  }
+
+  
+  sigslot::signal3<StreamInterface*, int, int> SignalEvent
+      [[deprecated("Use SetEventCallback instead")]];
 
   
   virtual bool Flush();
@@ -126,13 +137,23 @@ class RTC_EXPORT StreamInterface {
 
   
   void FireEvent(int stream_events, int err) RTC_RUN_ON(&callback_sequence_) {
+    if (callback_) {
+      callback_(stream_events, err);
+    }
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     
     
     SignalEvent(this, stream_events, err);
+#pragma clang diagnostic pop
   }
 
   RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker callback_sequence_{
       webrtc::SequenceChecker::kDetached};
+
+ private:
+  absl::AnyInvocable<void(int, int)> callback_
+      RTC_GUARDED_BY(&callback_sequence_) = nullptr;
 };
 
 }  
