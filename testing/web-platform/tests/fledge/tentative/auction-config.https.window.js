@@ -242,9 +242,12 @@ makeTest({
   }
 });
 
+
+
+
 makeTest({
   name: 'trustedScoringSignalsURL is cross-origin with seller',
-  expect: EXPECT_EXCEPTION(TypeError),
+  expect: EXPECT_WINNER,
   auctionConfigOverrides: { trustedScoringSignalsURL: "https://example.com" },
 });
 

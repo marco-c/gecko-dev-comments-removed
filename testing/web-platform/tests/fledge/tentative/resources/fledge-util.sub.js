@@ -27,6 +27,12 @@ const OTHER_ORIGIN6 = 'https://{{hosts[alt][www]}}:{{ports[https][0]}}';
 const OTHER_ORIGIN7 = 'https://{{hosts[alt][www]}}:{{ports[https][1]}}';
 
 
+const CROSS_ORIGIN_TRUSTED_BIDDING_SIGNALS_URL = OTHER_ORIGIN1 + BASE_PATH +
+    'resources/trusted-bidding-signals.py';
+const CROSS_ORIGIN_TRUSTED_SCORING_SIGNALS_URL = OTHER_ORIGIN1 + BASE_PATH +
+    'resources/trusted-scoring-signals.py';
+
+
 
 
 
@@ -232,6 +238,10 @@ function createDecisionScriptURL(uuid, params = {}) {
     url.searchParams.append('reportResult', params.reportResult);
   if (params.error != null)
     url.searchParams.append('error', params.error);
+  if (params.permitCrossOriginTrustedSignals != null) {
+    url.searchParams.append('permit-cross-origin-trusted-signals',
+                            params.permitCrossOriginTrustedSignals);
+  }
   return url.toString();
 }
 
@@ -858,4 +868,20 @@ function createStringBeforeAndAfterReplacements(deprecatedRenderURLReplacements)
     }
   }
   return { beforeReplacements, afterReplacements };
+}
+
+
+
+async function deleteAllCookies() {
+  await test_driver.delete_all_cookies();
+}
+
+
+
+
+
+async function setCookie(test) {
+  await deleteAllCookies();
+  document.cookie = 'cookie=cookie; path=/'
+  test.add_cleanup(deleteAllCookies);
 }

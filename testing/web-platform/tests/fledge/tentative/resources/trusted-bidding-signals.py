@@ -40,6 +40,13 @@ def main(request, response):
         return fail(response, "Unexpected query parameter: " + param)
 
     
+    
+    
+    if keys and "cors" in keys and fledge_http_server_util.handle_cors_headers_and_preflight(
+            request, response):
+        return
+
+    
     if not hostname:
         return fail(response, "hostname missing")
     if not interestGroupNames:
