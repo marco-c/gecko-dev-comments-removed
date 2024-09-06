@@ -342,6 +342,34 @@ add_task(async function test_timer_reset_on_new_tab() {
   }
 });
 
+
+add_task(async function test_idle_flush() {
+  const commandQueue = new CommandQueue({}, {});
+
+  let addIdleObserver = (obs, duration) => {
+    Assert.equal(duration, 3);
+    obs();
+  };
+  let spyAddIdleObserver = sinon.spy(addIdleObserver);
+  let idleService = {
+    addIdleObserver: spyAddIdleObserver,
+    removeIdleObserver: sinon.mock(),
+  };
+  commandQueue._getIdleService = () => {
+    return idleService;
+  };
+  let spyFlushQueue = sinon.spy(commandQueue, "flushQueue");
+
+  
+  Services.obs.notifyObservers(null, "weave:engine:sync:finish", "tabs");
+  Services.obs.notifyObservers(null, "weave:engine:sync:finish", "tabs");
+
+  Assert.ok(spyAddIdleObserver.calledOnce);
+  Assert.ok(spyFlushQueue.calledOnce);
+  commandQueue.shutdown();
+  spyFlushQueue.restore();
+});
+
 add_task(async function test_telemetry_on_sendCloseTabsCommand() {
   const targetDevice = {
     id: "dev1",
