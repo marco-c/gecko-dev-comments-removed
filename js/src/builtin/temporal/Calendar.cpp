@@ -511,12 +511,6 @@ static bool StringIsAsciiLowerCase(const JSLinearString* str) {
 }
 #endif
 
-#ifdef DEBUG
-static bool IsISO8601Calendar(const CalendarObject* calendar) {
-  return calendar->identifier() == CalendarId::ISO8601;
-}
-#endif
-
 
 
 
@@ -4214,9 +4208,6 @@ static bool Calendar_id(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool Calendar_dateFromFields(JSContext* cx, const CallArgs& args) {
   
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
-  
   Rooted<JSObject*> fields(
       cx, RequireObjectArg(cx, "fields", "dateFromFields", args.get(0)));
   if (!fields) {
@@ -4255,9 +4246,6 @@ static bool Calendar_dateFromFields(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_yearMonthFromFields(JSContext* cx, const CallArgs& args) {
-  
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   Rooted<JSObject*> fields(
       cx, RequireObjectArg(cx, "fields", "yearMonthFromFields", args.get(0)));
@@ -4300,9 +4288,6 @@ static bool Calendar_yearMonthFromFields(JSContext* cx, unsigned argc,
 
 static bool Calendar_monthDayFromFields(JSContext* cx, const CallArgs& args) {
   
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
-  
   Rooted<JSObject*> fields(
       cx, RequireObjectArg(cx, "fields", "monthDayFromFields", args.get(0)));
   if (!fields) {
@@ -4343,9 +4328,6 @@ static bool Calendar_monthDayFromFields(JSContext* cx, unsigned argc,
 
 
 static bool Calendar_dateAdd(JSContext* cx, const CallArgs& args) {
-  
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToTemporalDate(cx, args.get(0), &date)) {
@@ -4391,9 +4373,6 @@ static bool Calendar_dateAdd(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool Calendar_dateUntil(JSContext* cx, const CallArgs& args) {
   
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
-  
   PlainDate one;
   if (!ToTemporalDate(cx, args.get(0), &one)) {
     return false;
@@ -4408,6 +4387,7 @@ static bool Calendar_dateUntil(JSContext* cx, const CallArgs& args) {
   
   auto largestUnit = TemporalUnit::Day;
   if (args.hasDefined(2)) {
+    
     Rooted<JSObject*> options(
         cx, RequireObjectArg(cx, "options", "dateUntil", args[2]));
     if (!options) {
@@ -4447,8 +4427,6 @@ static bool Calendar_dateUntil(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_era(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
@@ -4473,8 +4451,6 @@ static bool Calendar_era(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_eraYear(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
@@ -4499,8 +4475,6 @@ static bool Calendar_eraYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_year(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
@@ -4525,8 +4499,6 @@ static bool Calendar_year(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_month(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   Handle<Value> temporalDateLike = args.get(0);
   if (temporalDateLike.isObject() &&
@@ -4560,8 +4532,6 @@ static bool Calendar_month(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_monthCode(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainMonthDayObject,
@@ -4586,8 +4556,6 @@ static bool Calendar_monthCode(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_day(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainMonthDayObject>(
@@ -4612,8 +4580,6 @@ static bool Calendar_day(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_dayOfWeek(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToTemporalDate(cx, args.get(0), &date)) {
@@ -4637,8 +4603,6 @@ static bool Calendar_dayOfWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_dayOfYear(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToTemporalDate(cx, args.get(0), &date)) {
@@ -4662,8 +4626,6 @@ static bool Calendar_dayOfYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_weekOfYear(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToTemporalDate(cx, args.get(0), &date)) {
@@ -4687,8 +4649,6 @@ static bool Calendar_weekOfYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_yearOfWeek(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToTemporalDate(cx, args.get(0), &date)) {
@@ -4712,8 +4672,6 @@ static bool Calendar_yearOfWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_daysInWeek(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToTemporalDate(cx, args.get(0), &date)) {
@@ -4737,8 +4695,6 @@ static bool Calendar_daysInWeek(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_daysInMonth(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
@@ -4763,8 +4719,6 @@ static bool Calendar_daysInMonth(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_daysInYear(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
@@ -4789,8 +4743,6 @@ static bool Calendar_daysInYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_monthsInYear(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
@@ -4815,8 +4767,6 @@ static bool Calendar_monthsInYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_inLeapYear(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   PlainDate date;
   if (!ToPlainDate<PlainDateObject, PlainDateTimeObject, PlainYearMonthObject>(
@@ -4841,8 +4791,6 @@ static bool Calendar_inLeapYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_fields(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   return BuiltinCalendarFields(cx, args.get(0), args.rval());
 }
@@ -4860,9 +4808,6 @@ static bool Calendar_fields(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_mergeFields(JSContext* cx, const CallArgs& args) {
-  
-  MOZ_ASSERT(IsISO8601Calendar(&args.thisv().toObject().as<CalendarObject>()));
-
   
   Rooted<JSObject*> fields(cx, JS::ToObject(cx, args.get(0)));
   if (!fields) {
