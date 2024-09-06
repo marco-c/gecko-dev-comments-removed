@@ -545,7 +545,8 @@ class AsyncPanZoomController {
 
   
   
-  ScrollDirections GetAllowedHandoffDirections() const;
+  ScrollDirections GetAllowedHandoffDirections(
+      HandoffConsumer aConsumer = HandoffConsumer::Scrolling) const;
 
   
   ScrollDirections GetOverscrollableDirections() const;

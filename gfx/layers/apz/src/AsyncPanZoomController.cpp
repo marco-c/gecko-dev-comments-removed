@@ -2306,7 +2306,8 @@ bool AsyncPanZoomController::CanScroll(const InputData& aEvent) const {
   return CanScroll(delta);
 }
 
-ScrollDirections AsyncPanZoomController::GetAllowedHandoffDirections() const {
+ScrollDirections AsyncPanZoomController::GetAllowedHandoffDirections(
+    HandoffConsumer aConsumer) const {
   ScrollDirections result;
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
@@ -2320,7 +2321,14 @@ ScrollDirections AsyncPanZoomController::GetAllowedHandoffDirections() const {
     result += ScrollDirection::eHorizontal;
   }
   if ((!isScrollable && !isRoot) || mY.OverscrollBehaviorAllowsHandoff()) {
-    result += ScrollDirection::eVertical;
+    
+    
+    bool blockPullToRefreshForOverflowHidden =
+        isRoot && aConsumer == HandoffConsumer::PullToRefresh &&
+        GetScrollMetadata().GetOverflow().mOverflowY == StyleOverflow::Hidden;
+    if (!blockPullToRefreshForOverflowHidden) {
+      result += ScrollDirection::eVertical;
+    }
   }
   return result;
 }

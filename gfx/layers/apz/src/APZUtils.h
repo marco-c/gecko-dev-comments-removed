@@ -181,6 +181,13 @@ enum class AsyncTransformConsumer {
 
 
 
+enum class HandoffConsumer { Scrolling, PullToRefresh };
+
+
+
+
+
+
 struct GeckoViewMetrics {
   CSSPoint mVisualScrollOffset;
   CSSToParentLayerScale mZoom;
