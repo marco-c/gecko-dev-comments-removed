@@ -21,7 +21,7 @@ class AutofillEditDialog {
     this._elements = elements;
     this._record = record;
     this.localizeDocument();
-    window.addEventListener("DOMContentLoaded", this, { once: true });
+    window.addEventListener("load", this, { once: true });
   }
 
   async init() {
@@ -30,7 +30,7 @@ class AutofillEditDialog {
     
     
     
-    window.dispatchEvent(new CustomEvent("FormReady"));
+    window.dispatchEvent(new CustomEvent("FormReadyForTests"));
   }
 
   
@@ -65,7 +65,7 @@ class AutofillEditDialog {
 
   handleEvent(event) {
     switch (event.type) {
-      case "DOMContentLoaded": {
+      case "load": {
         this.init();
         break;
       }

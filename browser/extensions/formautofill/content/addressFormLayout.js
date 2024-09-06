@@ -16,7 +16,7 @@ const fieldTemplates = {
       id: item.fieldId,
       name: item.fieldId,
       required: item.required,
-      value: item.value,
+      value: item.value ?? "",
     };
   },
   input(item) {
@@ -35,9 +35,7 @@ const fieldTemplates = {
   select(item) {
     return {
       tag: "select",
-      
-      
-      children: [...item.options].map(([value, text]) => ({
+      children: item.options.map(({ value, text }) => ({
         tag: "option",
         selected: value === item.value,
         value,
@@ -150,6 +148,14 @@ const createFormLayoutFromRecord = (
   l10nStrings = {}
 ) => {
   
+  
+  
+  const selects = formElement.querySelectorAll("select:not(#country)");
+  for (const select of selects) {
+    select.value = "";
+  }
+
+  
   const formData = getCurrentFormData();
   record = {
     ...record,
@@ -165,8 +171,18 @@ const createFormLayoutFromRecord = (
     formElement.appendChild(fieldElement);
   }
 
-  document.querySelector("#country").addEventListener("change", ev => {
-    record.country = ev.target.value;
-    createFormLayoutFromRecord(formElement, record, l10nStrings);
-  });
+  document.querySelector("#country").addEventListener(
+    "change",
+    ev =>
+      
+      
+      setTimeout(() => {
+        record.country = ev.target.value;
+        createFormLayoutFromRecord(formElement, record, l10nStrings);
+      }, 300),
+    { once: true }
+  );
+
+  
+  window.dispatchEvent(new CustomEvent("FormReadyForTests"));
 };
