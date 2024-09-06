@@ -562,6 +562,9 @@ nsStaticAtom* Accessible::LandmarkRole() const {
 
 nsStaticAtom* Accessible::ComputedARIARole() const {
   const nsRoleMapEntry* roleMap = ARIARoleMap();
+  if (roleMap && roleMap->IsOfType(eDPub)) {
+    return roleMap->roleAtom;
+  }
   if (roleMap && roleMap->roleAtom != nsGkAtoms::_empty &&
       
       
