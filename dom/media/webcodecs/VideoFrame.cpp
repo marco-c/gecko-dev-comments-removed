@@ -2303,8 +2303,23 @@ uint32_t VideoFrame::Format::SampleBytes(const Plane& aPlane) const {
     case VideoPixelFormat::I420:
     case VideoPixelFormat::I420A:
     case VideoPixelFormat::I422:
+    case VideoPixelFormat::I422A:
     case VideoPixelFormat::I444:
+    case VideoPixelFormat::I444A:
       return 1;  
+    case VideoPixelFormat::I420P10:
+    case VideoPixelFormat::I420P12:
+    case VideoPixelFormat::I420AP10:
+    case VideoPixelFormat::I420AP12:
+    case VideoPixelFormat::I422P10:
+    case VideoPixelFormat::I422P12:
+    case VideoPixelFormat::I422AP10:
+    case VideoPixelFormat::I422AP12:
+    case VideoPixelFormat::I444P10:
+    case VideoPixelFormat::I444P12:
+    case VideoPixelFormat::I444AP10:
+    case VideoPixelFormat::I444AP12:
+      return 2;  
     case VideoPixelFormat::NV12:
       switch (aPlane) {
         case Plane::Y:
