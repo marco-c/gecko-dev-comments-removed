@@ -129,6 +129,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
     }
   }
 
+  {
   
   
   
@@ -298,6 +299,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
   _requestedCapability = capability;
   _captureStarted = true;
   _streaming = true;
+  }
 
   
   if (_captureThread.empty()) {
