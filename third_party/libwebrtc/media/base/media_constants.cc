@@ -24,7 +24,6 @@ const float kProcessCpuThreshold = 0.10f;
 
 const char kRedCodecName[] = "red";
 const char kUlpfecCodecName[] = "ulpfec";
-const char kMultiplexCodecName[] = "multiplex";
 
 
 

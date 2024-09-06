@@ -217,36 +217,6 @@ TEST(PCFullStackTest, MAYBE_Pc_Generator_Net_Delay_0_0_Plr_0_VP9Profile2) {
   fixture->Run(RunParams(TimeDelta::Seconds(kTestDurationSec)));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif  
 
 TEST(PCFullStackTest, Pc_Net_Delay_0_0_Plr_0) {
