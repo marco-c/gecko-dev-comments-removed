@@ -3,10 +3,9 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -52,12 +51,13 @@ struct Symbol {
 
 
 TEST(BitReaderTest, TestRoundTrip) {
+  JxlMemoryManager* memory_manager = jxl::test::MemoryManager();
   test::ThreadPoolForTests pool(8);
   EXPECT_TRUE(RunOnPool(
       pool.get(), 0, 1000, ThreadPool::NoInit,
-      [](const uint32_t task, size_t ) {
+      [&memory_manager](const uint32_t task, size_t ) {
         constexpr size_t kMaxBits = 8000;
-        BitWriter writer;
+        BitWriter writer{memory_manager};
         BitWriter::Allotment allotment(&writer, kMaxBits);
 
         std::vector<Symbol> symbols;
@@ -86,14 +86,15 @@ TEST(BitReaderTest, TestRoundTrip) {
 
 
 TEST(BitReaderTest, TestSkip) {
+  JxlMemoryManager* memory_manager = jxl::test::MemoryManager();
   test::ThreadPoolForTests pool(8);
   EXPECT_TRUE(RunOnPool(
       pool.get(), 0, 96, ThreadPool::NoInit,
-      [](const uint32_t task, size_t ) {
+      [&memory_manager](const uint32_t task, size_t ) {
         constexpr size_t kSize = 100;
 
         for (size_t skip = 0; skip < 128; ++skip) {
-          BitWriter writer;
+          BitWriter writer{memory_manager};
           BitWriter::Allotment allotment(&writer, kSize * kBitsPerByte);
           
           for (size_t i = 0; i < task; ++i) {
@@ -142,11 +143,12 @@ TEST(BitReaderTest, TestSkip) {
 
 
 TEST(BitReaderTest, TestOrder) {
+  JxlMemoryManager* memory_manager = jxl::test::MemoryManager();
   constexpr size_t kMaxBits = 16;
 
   
   {
-    BitWriter writer;
+    BitWriter writer{memory_manager};
     BitWriter::Allotment allotment(&writer, kMaxBits);
     for (size_t i = 0; i < 5; ++i) {
       writer.Write(1, 1);
@@ -168,7 +170,7 @@ TEST(BitReaderTest, TestOrder) {
 
   
   {
-    BitWriter writer;
+    BitWriter writer{memory_manager};
     BitWriter::Allotment allotment(&writer, kMaxBits);
     writer.Write(8, 0xF8);
     writer.Write(8, 0x3F);
@@ -183,7 +185,7 @@ TEST(BitReaderTest, TestOrder) {
 
   
   {
-    BitWriter writer;
+    BitWriter writer{memory_manager};
     BitWriter::Allotment allotment(&writer, kMaxBits);
     writer.Write(16, 0xF83F);
 
@@ -197,7 +199,7 @@ TEST(BitReaderTest, TestOrder) {
 
   
   {
-    BitWriter writer;
+    BitWriter writer{memory_manager};
     BitWriter::Allotment allotment(&writer, kMaxBits);
     writer.Write(1, 1);
     writer.Write(3, 6);

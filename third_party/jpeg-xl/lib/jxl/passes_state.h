@@ -6,14 +6,19 @@
 #ifndef LIB_JXL_PASSES_STATE_H_
 #define LIB_JXL_PASSES_STATE_H_
 
+#include <jxl/memory_manager.h>
+
+#include <array>
+#include <memory>
+
 #include "lib/jxl/ac_context.h"
 #include "lib/jxl/ac_strategy.h"
+#include "lib/jxl/base/common.h"
 #include "lib/jxl/chroma_from_luma.h"
 #include "lib/jxl/dec_patch_dictionary.h"
 #include "lib/jxl/frame_header.h"
 #include "lib/jxl/image.h"
 #include "lib/jxl/image_bundle.h"
-#include "lib/jxl/loop_filter.h"
 #include "lib/jxl/noise.h"
 #include "lib/jxl/quant_weights.h"
 #include "lib/jxl/quantizer.h"
@@ -33,6 +38,14 @@ struct ImageFeatures {
 
 
 struct PassesSharedState {
+  explicit PassesSharedState(JxlMemoryManager* memory_manager_)
+      : memory_manager(memory_manager_) {
+    for (auto& reference_frame : reference_frames) {
+      reference_frame.frame = jxl::make_unique<ImageBundle>(memory_manager_);
+    }
+  }
+
+  JxlMemoryManager* memory_manager;
   const CodecMetadata* metadata;
 
   FrameDimensions frame_dim;
@@ -68,11 +81,12 @@ struct PassesSharedState {
 
   Image3F dc_frames[4];
 
-  struct {
-    ImageBundle frame;
+  struct ReferceFrame {
+    std::unique_ptr<ImageBundle> frame;
     
     bool ib_is_in_xyb = false;
-  } reference_frames[4] = {};
+  };
+  std::array<ReferceFrame, 4> reference_frames;
 
   
   

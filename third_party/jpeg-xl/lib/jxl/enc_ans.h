@@ -9,6 +9,8 @@
 
 
 
+#include <jxl/memory_manager.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -106,13 +108,11 @@ void EncodeHistograms(const std::vector<uint8_t>& context_map,
 
 
 
-size_t BuildAndEncodeHistograms(const HistogramParams& params,
-                                size_t num_contexts,
-                                std::vector<std::vector<Token>>& tokens,
-                                EntropyEncodingData* codes,
-                                std::vector<uint8_t>* context_map,
-                                BitWriter* writer, size_t layer,
-                                AuxOut* aux_out);
+size_t BuildAndEncodeHistograms(
+    JxlMemoryManager* memory_manager, const HistogramParams& params,
+    size_t num_contexts, std::vector<std::vector<Token>>& tokens,
+    EntropyEncodingData* codes, std::vector<uint8_t>* context_map,
+    BitWriter* writer, size_t layer, AuxOut* aux_out);
 
 
 void WriteTokens(const std::vector<Token>& tokens,

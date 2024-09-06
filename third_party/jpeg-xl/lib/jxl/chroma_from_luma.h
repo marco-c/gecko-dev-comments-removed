@@ -9,6 +9,8 @@
 
 
 
+#include <jxl/memory_manager.h>
+
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -52,7 +54,8 @@ struct ColorCorrelationMap {
   
   
   
-  static StatusOr<ColorCorrelationMap> Create(size_t xsize, size_t ysize,
+  static StatusOr<ColorCorrelationMap> Create(JxlMemoryManager* memory_manager,
+                                              size_t xsize, size_t ysize,
                                               bool XYB = true);
 
   float YtoXRatio(int32_t x_factor) const {

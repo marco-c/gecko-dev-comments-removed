@@ -115,6 +115,11 @@ class RectT {
            y1() <= other.y1();
   }
 
+  bool IsSame(const RectT& other) const {
+    return x0_ == other.x0_ && xsize_ == other.xsize_ && y0_ == other.y0_ &&
+           ysize_ <= other.ysize_;
+  }
+
   
   
   template <class ImageT>
