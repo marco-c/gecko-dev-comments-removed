@@ -7,6 +7,7 @@
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 
 
 
@@ -45,4 +46,53 @@ TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
       AsyncPanZoomController::eForEventHandling);
   EXPECT_EQ(scroll.x, 0);
   EXPECT_EQ(scroll.y, 10);  
+}
+
+
+
+
+
+
+TEST_F(APZCTreeManagerTester, HorizontalDeltaInterferesWithVerticalScrolling) {
+  using ViewID = ScrollableLayerGuid::ViewID;
+  ViewID rootScrollId = ScrollableLayerGuid::START_SCROLL_ID;
+  const char* treeShape = "x";
+  LayerIntRect layerVisibleRect[] = {
+      LayerIntRect(0, 0, 100, 100),
+  };
+  CreateScrollData(treeShape, layerVisibleRect);
+  
+  SetScrollableFrameMetrics(layers[0], rootScrollId, CSSRect(0, 0, 100, 1000));
+
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
+  UpdateHitTestingTree();
+  RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
+
+  
+  
+  apzc->SetWaitForMainThread();
+
+  
+  ScreenIntPoint cursorLocation(50, 50);
+  uint64_t wheelBlockId1 =
+      Wheel(apzc, cursorLocation, ScreenIntPoint(-10, 0), mcc->Time())
+          .mInputBlockId;
+
+  
+  uint64_t wheelBlockId2 =
+      Wheel(apzc, cursorLocation, ScreenIntPoint(0, 10), mcc->Time())
+          .mInputBlockId;
+
+  
+  
+  EXPECT_EQ(wheelBlockId1, wheelBlockId2);
+
+  
+  manager->ContentReceivedInputBlock(wheelBlockId1, false);
+  manager->SetTargetAPZC(wheelBlockId1, {apzc->GetGuid()});
+
+  
+  EXPECT_EQ(ParentLayerPoint(0, 10),
+            apzc->GetCurrentAsyncScrollOffset(
+                AsyncPanZoomController::eForEventHandling));
 }

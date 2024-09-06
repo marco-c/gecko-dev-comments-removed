@@ -326,8 +326,23 @@ bool WheelBlockState::SetConfirmedTargetApzc(
   
   RefPtr<AsyncPanZoomController> apzc = aTargetApzc;
   if (apzc && aFirstInput) {
-    apzc = apzc->BuildOverscrollHandoffChain()->FindFirstScrollable(
-        *aFirstInput->Input(), &mAllowedScrollDirections);
+    auto handoffChain = apzc->BuildOverscrollHandoffChain();
+    apzc = handoffChain->FindFirstScrollable(*aFirstInput->Input(),
+                                             &mAllowedScrollDirections);
+
+    
+    
+    
+    
+    while (!apzc) {
+      ++aFirstInput;
+      if (!aFirstInput) break;
+      if (aFirstInput->Block() != this) {
+        continue;
+      }
+      apzc = handoffChain->FindFirstScrollable(*aFirstInput->Input(),
+                                               &mAllowedScrollDirections);
+    }
   }
 
   InputBlockState::SetConfirmedTargetApzc(apzc, aState, aFirstInput,
