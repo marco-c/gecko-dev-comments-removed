@@ -337,6 +337,7 @@ pub(crate) use ui;
 pub struct Application {
     pub windows: Vec<TypedElement<Window>>,
     
+    #[cfg_attr(test, allow(dead_code))]
     pub rtl: bool,
 }
 
