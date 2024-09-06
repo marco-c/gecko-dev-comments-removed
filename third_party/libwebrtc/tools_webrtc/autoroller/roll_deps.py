@@ -35,6 +35,7 @@ DONT_AUTOROLL_THESE = [
     
     'src/third_party/android_ndk',
     'src/third_party/mockito/src',
+    'src/third_party/protobuf-javascript',
 ]
 
 
