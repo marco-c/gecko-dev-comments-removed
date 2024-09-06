@@ -13,6 +13,7 @@ use crate::{error_reporting::ContextualParseError, parser::ParserContext};
 use cssparser::{Parser, Token};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use selectors::kleene_value::KleeneValue;
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
@@ -27,93 +28,6 @@ pub enum Operator {
 enum AllowOr {
     Yes,
     No,
-}
-
-
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss)]
-pub enum KleeneValue {
-    
-    False = 0,
-    
-    True = 1,
-    
-    Unknown,
-}
-
-impl From<bool> for KleeneValue {
-    fn from(b: bool) -> Self {
-        if b {
-            Self::True
-        } else {
-            Self::False
-        }
-    }
-}
-
-impl KleeneValue {
-    
-    
-    pub fn to_bool(self, unknown: bool) -> bool {
-        match self {
-            Self::True => true,
-            Self::False => false,
-            Self::Unknown => unknown,
-        }
-    }
-}
-
-impl std::ops::Not for KleeneValue {
-    type Output = Self;
-
-    fn not(self) -> Self {
-        match self {
-            Self::True => Self::False,
-            Self::False => Self::True,
-            Self::Unknown => Self::Unknown,
-        }
-    }
-}
-
-
-impl std::ops::BitAnd for KleeneValue {
-    type Output = Self;
-
-    fn bitand(self, other: Self) -> Self {
-        if self == Self::False || other == Self::False {
-            return Self::False;
-        }
-        if self == Self::Unknown || other == Self::Unknown {
-            return Self::Unknown;
-        }
-        Self::True
-    }
-}
-
-
-impl std::ops::BitOr for KleeneValue {
-    type Output = Self;
-
-    fn bitor(self, other: Self) -> Self {
-        if self == Self::True || other == Self::True {
-            return Self::True;
-        }
-        if self == Self::Unknown || other == Self::Unknown {
-            return Self::Unknown;
-        }
-        Self::False
-    }
-}
-
-impl std::ops::BitOrAssign for KleeneValue {
-    fn bitor_assign(&mut self, other: Self) {
-        *self = *self | other;
-    }
-}
-
-impl std::ops::BitAndAssign for KleeneValue {
-    fn bitand_assign(&mut self, other: Self) {
-        *self = *self & other;
-    }
 }
 
 
