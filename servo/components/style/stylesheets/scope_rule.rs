@@ -17,6 +17,7 @@ use cssparser::{Parser, SourceLocation, ToCss};
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalSizeOf, MallocUnconditionalShallowSizeOf};
 use selectors::parser::{ParseRelative, SelectorList};
+use selectors::OpaqueElement;
 use servo_arc::Arc;
 use std::fmt::{self, Write};
 use style_traits::CssWriter;
@@ -158,4 +159,18 @@ impl ScopeBounds {
         );
         Self { start, end }
     }
+}
+
+
+#[derive(Debug, Clone, MallocSizeOf)]
+pub enum ImplicitScopeRoot {
+    
+    InLightTree(OpaqueElement),
+    
+    InShadowTree(OpaqueElement),
+    
+    ShadowHost(OpaqueElement),
+    
+    
+    Constructed,
 }

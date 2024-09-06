@@ -18,6 +18,9 @@ pub struct OpaqueElement(NonNull<()>);
 
 unsafe impl Send for OpaqueElement {}
 
+
+unsafe impl Sync for OpaqueElement {}
+
 impl OpaqueElement {
     
     pub fn new<T>(ptr: &T) -> Self {

@@ -442,6 +442,33 @@ void Gecko_StyleSheet_Release(const StyleSheet* aSheet) {
   const_cast<StyleSheet*>(aSheet)->Release();
 }
 
+GeckoImplicitScopeRoot Gecko_StyleSheet_ImplicitScopeRoot(
+    const mozilla::StyleSheet* aSheet) {
+  if (aSheet->IsConstructed()) {
+    return GeckoImplicitScopeRoot{
+        .mHost = nullptr, .mRoot = nullptr, .mConstructed = true};
+  }
+  
+  
+  
+  const auto* node = aSheet->GetOwnerNodeOfOutermostSheet();
+  if (!node) {
+    return GeckoImplicitScopeRoot{
+        .mHost = nullptr, .mRoot = nullptr, .mConstructed = false};
+  }
+  const auto* host = node->GetContainingShadowHost();
+
+  if (auto* aElement = node->GetParentElement()) {
+    return GeckoImplicitScopeRoot{
+        .mHost = host, .mRoot = aElement, .mConstructed = false};
+  }
+  
+  
+  
+  return GeckoImplicitScopeRoot{
+      .mHost = host, .mRoot = host, .mConstructed = false};
+}
+
 const StyleLockedDeclarationBlock* Gecko_GetVisitedLinkAttrDeclarationBlock(
     const Element* aElement) {
   AttributeStyles* attrStyles = aElement->OwnerDoc()->GetAttributeStyles();

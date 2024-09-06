@@ -224,8 +224,8 @@ where
     
     
     
-    pub fn each(self, mut callback: impl FnMut(&S, SheetRebuildKind) -> bool) {
-        for potential_sheet in self.entries.iter_mut() {
+    pub fn each(self, mut callback: impl FnMut(usize, &S, SheetRebuildKind) -> bool) {
+        for (index, potential_sheet) in self.entries.iter_mut().enumerate() {
             let committed = mem::replace(&mut potential_sheet.committed, true);
             let rebuild_kind = if !committed {
                 
@@ -239,7 +239,7 @@ where
                 }
             };
 
-            if !callback(&potential_sheet.sheet, rebuild_kind) {
+            if !callback(index, &potential_sheet.sheet, rebuild_kind) {
                 return;
             }
         }
