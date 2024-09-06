@@ -785,6 +785,20 @@ const buildSlice = (operationName, builder, resources) => {
   return namedOutputOperand;
 };
 
+const buildSoftmax = (operationName, builder, resources) => {
+  
+  const namedOutputOperand = {};
+  const inputOperand = createSingleInputOperand(builder, resources);
+  if (resources.axis !== undefined) {
+    
+    namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.axis);
+  } else {
+    
+    namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand);
+  }
+  return namedOutputOperand;
+};
+
 const buildSplit = (operationName, builder, resources) => {
   
   

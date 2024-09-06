@@ -10,4 +10,4 @@
 
 
 
-runWebNNConformanceTests('softmax', buildOperationWithSingleInput);
+runWebNNConformanceTests('softmax', buildSoftmax);
