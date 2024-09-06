@@ -181,6 +181,10 @@ enum AVFrameSideDataType {
 
 
 
+
+
+
+
     AV_FRAME_DATA_FILM_GRAIN_PARAMS,
 
     
@@ -250,6 +254,37 @@ typedef struct AVFrameSideData {
     AVDictionary *metadata;
     AVBufferRef *buf;
 } AVFrameSideData;
+
+enum AVSideDataProps {
+    
+
+
+
+
+    AV_SIDE_DATA_PROP_GLOBAL = (1 << 0),
+
+    
+
+
+
+    AV_SIDE_DATA_PROP_MULTI  = (1 << 1),
+};
+
+
+
+
+
+typedef struct AVSideDataDescriptor {
+    
+
+
+    const char      *name;
+
+    
+
+
+    unsigned         props;
+} AVSideDataDescriptor;
 
 
 
@@ -466,19 +501,6 @@ typedef struct AVFrame {
 
     AVRational time_base;
 
-#if FF_API_FRAME_PICTURE_NUMBER
-    
-
-
-    attribute_deprecated
-    int coded_picture_number;
-    
-
-
-    attribute_deprecated
-    int display_picture_number;
-#endif
-
     
 
 
@@ -546,34 +568,10 @@ typedef struct AVFrame {
     int palette_has_changed;
 #endif
 
-#if FF_API_REORDERED_OPAQUE
-    
-
-
-
-
-
-
-
-
-
-    attribute_deprecated
-    int64_t reordered_opaque;
-#endif
-
     
 
 
     int sample_rate;
-
-#if FF_API_OLD_CHANNEL_LAYOUT
-    
-
-
-
-    attribute_deprecated
-    uint64_t channel_layout;
-#endif
 
     
 
@@ -687,19 +685,6 @@ typedef struct AVFrame {
     int64_t pkt_pos;
 #endif
 
-#if FF_API_PKT_DURATION
-    
-
-
-
-
-
-
-
-    attribute_deprecated
-    int64_t pkt_duration;
-#endif
-
     
 
 
@@ -719,17 +704,6 @@ typedef struct AVFrame {
 #define FF_DECODE_ERROR_MISSING_REFERENCE   2
 #define FF_DECODE_ERROR_CONCEALMENT_ACTIVE  4
 #define FF_DECODE_ERROR_DECODE_SLICES       8
-
-#if FF_API_OLD_CHANNEL_LAYOUT
-    
-
-
-
-
-
-    attribute_deprecated
-    int channels;
-#endif
 
 #if FF_API_FRAME_PKT
     
@@ -1048,6 +1022,94 @@ int av_frame_apply_cropping(AVFrame *frame, int flags);
 
 
 const char *av_frame_side_data_name(enum AVFrameSideDataType type);
+
+
+
+
+
+const AVSideDataDescriptor *av_frame_side_data_desc(enum AVFrameSideDataType type);
+
+
+
+
+
+
+
+
+
+
+void av_frame_side_data_free(AVFrameSideData ***sd, int *nb_sd);
+
+#define AV_FRAME_SIDE_DATA_FLAG_UNIQUE (1 << 0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AVFrameSideData *av_frame_side_data_new(AVFrameSideData ***sd, int *nb_sd,
+                                        enum AVFrameSideDataType type,
+                                        size_t size, unsigned int flags);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_frame_side_data_clone(AVFrameSideData ***sd, int *nb_sd,
+                             const AVFrameSideData *src, unsigned int flags);
+
+
+
+
+
+
+
+
+
+
+
+const AVFrameSideData *av_frame_side_data_get_c(const AVFrameSideData * const *sd,
+                                                const int nb_sd,
+                                                enum AVFrameSideDataType type);
+
+
+
+
+
+
+
+static inline
+const AVFrameSideData *av_frame_side_data_get(AVFrameSideData * const *sd,
+                                              const int nb_sd,
+                                              enum AVFrameSideDataType type)
+{
+    return av_frame_side_data_get_c((const AVFrameSideData * const *)sd,
+                                    nb_sd, type);
+}
 
 
 

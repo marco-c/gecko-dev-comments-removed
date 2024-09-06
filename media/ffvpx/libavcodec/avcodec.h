@@ -187,12 +187,16 @@ struct AVCodecParameters;
 
 
 
+#if FF_API_BUFFER_MIN_SIZE
+
+
 
 
 
 
 
 #define AV_INPUT_BUFFER_MIN_SIZE 16384
+#endif
 
 
 
@@ -495,29 +499,6 @@ typedef struct AVCodecContext {
 
 
 
-
-    int bit_rate_tolerance;
-
-    
-
-
-
-
-
-    int global_quality;
-
-    
-
-
-
-    int compression_level;
-#define FF_COMPRESSION_DEFAULT -1
-
-    
-
-
-
-
     int flags;
 
     
@@ -561,6 +542,22 @@ typedef struct AVCodecContext {
 
 
     AVRational time_base;
+
+    
+
+
+
+
+    AVRational pkt_timebase;
+
+    
+
+
+
+
+
+
+    AVRational framerate;
 
 #if FF_API_TICKS_PER_FRAME
     
@@ -640,7 +637,9 @@ typedef struct AVCodecContext {
 
 
 
-    int gop_size;
+
+
+    AVRational sample_aspect_ratio;
 
     
 
@@ -656,6 +655,82 @@ typedef struct AVCodecContext {
 
 
     enum AVPixelFormat pix_fmt;
+
+    
+
+
+
+
+    enum AVPixelFormat sw_pix_fmt;
+
+    
+
+
+
+
+    enum AVColorPrimaries color_primaries;
+
+    
+
+
+
+
+    enum AVColorTransferCharacteristic color_trc;
+
+    
+
+
+
+
+    enum AVColorSpace colorspace;
+
+    
+
+
+
+
+
+
+
+    enum AVColorRange color_range;
+
+    
+
+
+
+
+    enum AVChromaLocation chroma_sample_location;
+
+    
+
+
+
+    enum AVFieldOrder field_order;
+
+    
+
+
+
+
+    int refs;
+
+    
+
+
+
+
+
+    int has_b_frames;
+
+    
+
+
+
+
+    int slice_flags;
+#define SLICE_FLAG_CODED_ORDER    0x0001 ///< draw_horiz_band() is called in coded order instead of display
+#define SLICE_FLAG_ALLOW_FIELD    0x0002 ///< allow draw_horiz_band() with field slices (MPEG-2 field pics)
+#define SLICE_FLAG_ALLOW_PLANE    0x0004 ///< allow draw_horiz_band() with 1 component at a time (SVQ1)
 
     
 
@@ -741,14 +816,6 @@ typedef struct AVCodecContext {
 
 
 
-    int has_b_frames;
-
-    
-
-
-
-
-
 
     float i_quant_factor;
 
@@ -794,32 +861,12 @@ typedef struct AVCodecContext {
 
     float dark_masking;
 
-#if FF_API_SLICE_OFFSET
     
 
 
 
 
-    attribute_deprecated
-    int slice_count;
-
-    
-
-
-
-
-    attribute_deprecated
-    int *slice_offset;
-#endif
-
-    
-
-
-
-
-
-
-    AVRational sample_aspect_ratio;
+     int nsse_weight;
 
     
 
@@ -912,16 +959,6 @@ typedef struct AVCodecContext {
 
 
 
-    int slice_flags;
-#define SLICE_FLAG_CODED_ORDER    0x0001 ///< draw_horiz_band() is called in coded order instead of display
-#define SLICE_FLAG_ALLOW_FIELD    0x0002 ///< allow draw_horiz_band() with field slices (MPEG-2 field pics)
-#define SLICE_FLAG_ALLOW_PLANE    0x0004 ///< allow draw_horiz_band() with 1 component at a time (SVQ1)
-
-    
-
-
-
-
     int mb_decision;
 #define FF_MB_DECISION_SIMPLE 0        ///< uses mb_cmp
 #define FF_MB_DECISION_BITS   1        ///< chooses the one which needs the fewest bits
@@ -950,21 +987,14 @@ typedef struct AVCodecContext {
 
 
 
+    uint16_t *chroma_intra_matrix;
+
+    
+
+
+
+
     int intra_dc_precision;
-
-    
-
-
-
-
-    int skip_top;
-
-    
-
-
-
-
-    int skip_bottom;
 
     
 
@@ -998,7 +1028,7 @@ typedef struct AVCodecContext {
 
 
 
-    int refs;
+    int gop_size;
 
     
 
@@ -1012,65 +1042,12 @@ typedef struct AVCodecContext {
 
 
 
-    enum AVColorPrimaries color_primaries;
-
-    
-
-
-
-
-    enum AVColorTransferCharacteristic color_trc;
-
-    
-
-
-
-
-    enum AVColorSpace colorspace;
-
-    
-
-
-
-
-
-
-
-    enum AVColorRange color_range;
-
-    
-
-
-
-
-    enum AVChromaLocation chroma_sample_location;
-
-    
-
-
-
-
 
 
     int slices;
 
     
-
-
-
-    enum AVFieldOrder field_order;
-
-    
     int sample_rate; 
-
-#if FF_API_OLD_CHANNEL_LAYOUT
-    
-
-
-
-    attribute_deprecated
-    int channels;
-#endif
 
     
 
@@ -1078,6 +1055,14 @@ typedef struct AVCodecContext {
 
 
     enum AVSampleFormat sample_fmt;  
+
+    
+
+
+
+
+
+    AVChannelLayout ch_layout;
 
     
     
@@ -1091,21 +1076,6 @@ typedef struct AVCodecContext {
 
     int frame_size;
 
-#if FF_API_AVCTX_FRAME_NUMBER
-    
-
-
-
-
-
-
-
-
-
-    attribute_deprecated
-    int frame_number;
-#endif
-
     
 
 
@@ -1118,26 +1088,6 @@ typedef struct AVCodecContext {
 
 
     int cutoff;
-
-#if FF_API_OLD_CHANNEL_LAYOUT
-    
-
-
-
-
-
-    attribute_deprecated
-    uint64_t channel_layout;
-
-    
-
-
-
-
-
-    attribute_deprecated
-    uint64_t request_channel_layout;
-#endif
 
     
 
@@ -1153,6 +1103,41 @@ typedef struct AVCodecContext {
 
 
     enum AVSampleFormat request_sample_fmt;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int initial_padding;
+
+    
+
+
+
+
+
+
+
+
+    int trailing_padding;
+
+    
+
+
+
+
+    int seek_preroll;
 
     
 
@@ -1237,6 +1222,29 @@ typedef struct AVCodecContext {
     int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
 
     
+    
+
+
+
+
+
+    int bit_rate_tolerance;
+
+    
+
+
+
+
+
+    int global_quality;
+
+    
+
+
+
+    int compression_level;
+#define FF_COMPRESSION_DEFAULT -1
+
     float qcompress;  
     float qblur;      
 
@@ -1411,22 +1419,6 @@ typedef struct AVCodecContext {
 
     int err_recognition;
 
-#if FF_API_REORDERED_OPAQUE
-    
-
-
-
-
-
-
-
-
-
-
-    attribute_deprecated
-    int64_t reordered_opaque;
-#endif
-
     
 
 
@@ -1457,6 +1449,75 @@ typedef struct AVCodecContext {
 
 
     void *hwaccel_context;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    AVBufferRef *hw_frames_ctx;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    AVBufferRef *hw_device_ctx;
+
+    
+
+
+
+
+
+
+    int hwaccel_flags;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    int extra_hw_frames;
 
     
 
@@ -1496,10 +1557,6 @@ typedef struct AVCodecContext {
 #define FF_IDCT_SIMPLEARMV6   17
 #define FF_IDCT_FAAN          20
 #define FF_IDCT_SIMPLENEON    22
-#if FF_API_IDCT_NONE
-
-#define FF_IDCT_NONE          24
-#endif
 #define FF_IDCT_SIMPLEAUTO    128
 
     
@@ -1515,13 +1572,6 @@ typedef struct AVCodecContext {
 
 
     int bits_per_raw_sample;
-
-    
-
-
-
-
-     int lowres;
 
     
 
@@ -1579,13 +1629,6 @@ typedef struct AVCodecContext {
 
 
     int (*execute2)(struct AVCodecContext *c, int (*func)(struct AVCodecContext *c2, void *arg, int jobnr, int threadnr), void *arg2, int *ret, int count);
-
-    
-
-
-
-
-     int nsse_weight;
 
     
 
@@ -1749,6 +1792,16 @@ typedef struct AVCodecContext {
 
 
 
+    unsigned properties;
+#define FF_CODEC_PROPERTY_LOSSLESS        0x00000001
+#define FF_CODEC_PROPERTY_CLOSED_CAPTIONS 0x00000002
+#define FF_CODEC_PROPERTY_FILM_GRAIN      0x00000004
+
+    
+
+
+
+
     enum AVDiscard skip_loop_filter;
 
     
@@ -1773,48 +1826,32 @@ typedef struct AVCodecContext {
 
 
 
-    uint8_t *subtitle_header;
-    int subtitle_header_size;
+
+
+
+
+    int skip_alpha;
 
     
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-    int initial_padding;
+    int skip_top;
 
     
 
 
 
 
-
-
-    AVRational framerate;
+    int skip_bottom;
 
     
 
 
 
 
-    enum AVPixelFormat sw_pix_fmt;
-
-    
-
-
-
-
-    AVRational pkt_timebase;
+     int lowres;
 
     
 
@@ -1822,16 +1859,6 @@ typedef struct AVCodecContext {
 
 
     const struct AVCodecDescriptor *codec_descriptor;
-
-    
-
-
-
-
-    int64_t pts_correction_num_faulty_pts; 
-    int64_t pts_correction_num_faulty_dts; 
-    int64_t pts_correction_last_pts;       
-    int64_t pts_correction_last_dts;       
 
     
 
@@ -1860,25 +1887,8 @@ typedef struct AVCodecContext {
 
 
 
-
-
-
-
-    int skip_alpha;
-
-    
-
-
-
-
-    int seek_preroll;
-
-    
-
-
-
-
-    uint16_t *chroma_intra_matrix;
+    int subtitle_header_size;
+    uint8_t *subtitle_header;
 
     
 
@@ -1901,16 +1911,6 @@ typedef struct AVCodecContext {
 
 
 
-    unsigned properties;
-#define FF_CODEC_PROPERTY_LOSSLESS        0x00000001
-#define FF_CODEC_PROPERTY_CLOSED_CAPTIONS 0x00000002
-#define FF_CODEC_PROPERTY_FILM_GRAIN      0x00000004
-
-    
-
-
-
-
 
     AVPacketSideData *coded_side_data;
     int            nb_coded_side_data;
@@ -1923,32 +1923,7 @@ typedef struct AVCodecContext {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    AVBufferRef *hw_frames_ctx;
-
-    
-
-
-
-
-
-
-
-
-    int trailing_padding;
+    int export_side_data;
 
     
 
@@ -1957,37 +1932,6 @@ typedef struct AVCodecContext {
 
 
     int64_t max_pixels;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    AVBufferRef *hw_device_ctx;
-
-    
-
-
-
-
-
-
-    int hwaccel_flags;
 
     
 
@@ -2022,20 +1966,6 @@ typedef struct AVCodecContext {
 
 
 
-
-
-
-
-
-
-    int extra_hw_frames;
-
-    
-
-
-
-
-
     int discard_damaged_percentage;
 
     
@@ -2045,16 +1975,6 @@ typedef struct AVCodecContext {
 
 
     int64_t max_samples;
-
-    
-
-
-
-
-
-
-
-    int export_side_data;
 
     
 
@@ -2104,7 +2024,10 @@ typedef struct AVCodecContext {
 
 
 
-    AVChannelLayout ch_layout;
+
+
+
+    int64_t frame_num;
 
     
 
@@ -2115,7 +2038,43 @@ typedef struct AVCodecContext {
 
 
 
-    int64_t frame_num;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int        *side_data_prefer_packet;
+    
+
+
+    unsigned nb_side_data_prefer_packet;
+
+    
+
+
+
+
+
+
+
+
+
+    AVFrameSideData  **decoded_side_data;
+    int             nb_decoded_side_data;
 } AVCodecContext;
 
 
@@ -2252,6 +2211,7 @@ typedef struct AVSubtitleRect {
     uint8_t *data[4];
     int linesize[4];
 
+    int flags;
     enum AVSubtitleType type;
 
     char *text;                     
@@ -2262,8 +2222,6 @@ typedef struct AVSubtitleRect {
 
 
     char *ass;
-
-    int flags;
 } AVSubtitleRect;
 
 typedef struct AVSubtitle {
@@ -2411,6 +2369,7 @@ int avcodec_parameters_to_context(AVCodecContext *codec,
 
 int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
 
+#if FF_API_AVCODEC_CLOSE
 
 
 
@@ -2424,7 +2383,9 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
 
 
 
+attribute_deprecated
 int avcodec_close(AVCodecContext *avctx);
+#endif
 
 
 
@@ -2474,34 +2435,6 @@ void avcodec_align_dimensions(AVCodecContext *s, int *width, int *height);
 
 void avcodec_align_dimensions2(AVCodecContext *s, int *width, int *height,
                                int linesize_align[AV_NUM_DATA_POINTERS]);
-
-#ifdef FF_API_AVCODEC_CHROMA_POS
-
-
-
-
-
-
-
-
-
-
- attribute_deprecated
-int avcodec_enum_to_chroma_pos(int *xpos, int *ypos, enum AVChromaLocation pos);
-
-
-
-
-
-
-
-
-
-
-
- attribute_deprecated
-enum AVChromaLocation avcodec_chroma_pos_to_enum(int xpos, int ypos);
-#endif
 
 
 

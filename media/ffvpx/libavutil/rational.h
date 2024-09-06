@@ -173,6 +173,10 @@ static av_always_inline AVRational av_inv_q(AVRational q)
 
 
 
+
+
+
+
 AVRational av_d2q(double d, int max) av_const;
 
 

@@ -586,8 +586,6 @@ union unaligned_16 { uint16_t l; } __attribute__((packed)) av_alias;
 
 
 
-
-
 #define AV_COPY(n, d, s) \
     (((av_alias##n*)(d))->u##n = ((const av_alias##n*)(s))->u##n)
 

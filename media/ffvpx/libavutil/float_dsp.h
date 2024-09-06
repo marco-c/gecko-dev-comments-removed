@@ -19,8 +19,6 @@
 #ifndef AVUTIL_FLOAT_DSP_H
 #define AVUTIL_FLOAT_DSP_H
 
-#include "config.h"
-
 typedef struct AVFloatDSPContext {
     
 
@@ -161,7 +159,7 @@ typedef struct AVFloatDSPContext {
 
 
 
-    void (*butterflies_float)(float *av_restrict v1, float *av_restrict v2, int len);
+    void (*butterflies_float)(float *restrict v1, float *restrict v2, int len);
 
     
 

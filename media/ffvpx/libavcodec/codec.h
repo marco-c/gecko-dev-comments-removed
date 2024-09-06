@@ -209,13 +209,6 @@ typedef struct AVCodec {
     const enum AVPixelFormat *pix_fmts;     
     const int *supported_samplerates;       
     const enum AVSampleFormat *sample_fmts; 
-#if FF_API_OLD_CHANNEL_LAYOUT
-    
-
-
-    attribute_deprecated
-    const uint64_t *channel_layouts;         
-#endif
     const AVClass *priv_class;              
     const AVProfile *profiles;              
 
