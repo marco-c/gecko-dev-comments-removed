@@ -328,6 +328,8 @@ class StyleRuleActor extends Actor {
         
         
         canSetRuleText: this.canSetRuleText,
+        
+        hasMatchedSelectorIndexes: true,
       },
     };
 
@@ -1208,7 +1210,7 @@ class StyleRuleActor extends Actor {
         }
 
         isMatching = entries.some(
-          ruleProp => !!ruleProp.matchedDesugaredSelectors.length
+          ruleProp => !!ruleProp.matchedSelectorIndexes.length
         );
       }
 

@@ -115,7 +115,11 @@ const selector = (exports.selector = {
   
   getUniqueSelector: PropTypes.func,
   
+  
+  
   matchedDesugaredSelectors: PropTypes.arrayOf(PropTypes.string),
+  
+  matchedSelectorIndexes: PropTypes.arrayOf(PropTypes.number),
   
   selectorText: PropTypes.string,
   

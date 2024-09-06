@@ -51,7 +51,15 @@ class Rule {
     this.elementStyle = elementStyle;
     this.domRule = options.rule;
     this.compatibilityIssues = null;
-    this.matchedDesugaredSelectors = options.matchedDesugaredSelectors || [];
+
+    if (this.domRule.hasMatchedSelectorIndexesTrait) {
+      this.matchedSelectorIndexes = options.matchedSelectorIndexes || [];
+    } else {
+      
+      
+      this.matchedDesugaredSelectors = options.matchedDesugaredSelectors || [];
+    }
+
     this.pseudoElement = options.pseudoElement || "";
     this.isSystem = options.isSystem;
     this.isUnmatched = options.isUnmatched || false;
@@ -100,13 +108,22 @@ class Rule {
   }
 
   get selector() {
-    return {
+    const data = {
       getUniqueSelector: this.getUniqueSelector,
-      matchedDesugaredSelectors: this.matchedDesugaredSelectors,
       selectors: this.domRule.selectors,
       selectorWarnings: this.domRule.selectors,
       selectorText: this.keyframes ? this.domRule.keyText : this.selectorText,
     };
+
+    if (this.domRule.hasMatchedSelectorIndexesTrait) {
+      data.matchedSelectorIndexes = this.matchedSelectorIndexes;
+    } else {
+      
+      
+      data.matchedDesugaredSelectors = this.matchedDesugaredSelectors;
+    }
+
+    return data;
   }
 
   get sourceMapURLService() {
@@ -634,7 +651,13 @@ class Rule {
 
 
   refresh(options) {
-    this.matchedDesugaredSelectors = options.matchedDesugaredSelectors || [];
+    if (this.domRule.hasMatchedSelectorIndexesTrait) {
+      this.matchedSelectorIndexes = options.matchedSelectorIndexes || [];
+    } else {
+      
+      
+      this.matchedDesugaredSelectors = options.matchedDesugaredSelectors || [];
+    }
     const newTextProps = this._getTextProperties();
 
     

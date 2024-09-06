@@ -626,7 +626,16 @@ RuleEditor.prototype = {
 
         
         
-        if (this.rule.matchedDesugaredSelectors.length) {
+
+        if (this.rule.domRule.hasMatchedSelectorIndexesTrait) {
+          if (this.rule.matchedSelectorIndexes.length) {
+            containerClass += this.rule.matchedSelectorIndexes.includes(i)
+              ? "matched"
+              : "unmatched";
+          }
+        } else if (this.rule.matchedDesugaredSelectors.length) {
+          
+          
           const desugaredSelector = desugaredSelectors[i];
           const matchedSelector =
             this.rule.matchedDesugaredSelectors.includes(desugaredSelector);

@@ -143,6 +143,11 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
     return this._form.traits && this._form.traits.canSetRuleText;
   }
 
+  
+  get hasMatchedSelectorIndexesTrait() {
+    return this._form.traits?.hasMatchedSelectorIndexes;
+  }
+
   get location() {
     return {
       source: this.parentStyleSheet,
