@@ -18,6 +18,7 @@ namespace mozilla {
 class ViewRegion;
 
 enum class VibrancyType {
+  Sidebar,
   
   Titlebar,
 };
