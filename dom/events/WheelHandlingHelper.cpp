@@ -30,6 +30,10 @@
 #include "Units.h"
 #include "ScrollAnimationPhysics.h"
 
+static mozilla::LazyLogModule sWheelTransactionLog("dom.wheeltransaction");
+#define WTXN_LOG(...) \
+  MOZ_LOG(sWheelTransactionLog, LogLevel::Debug, (__VA_ARGS__))
+
 namespace mozilla {
 
 
@@ -146,6 +150,9 @@ void WheelTransaction::BeginTransaction(nsIFrame* aScrollTargetFrame,
 
   
   if (StaticPrefs::dom_event_wheel_event_groups_enabled()) {
+    WTXN_LOG("WheelTransaction start for frame=0x%p handled-by-apz=%s",
+             aEventTargetFrame,
+             aEvent->mFlags.mHandledByAPZ ? "true" : "false");
     
     
     
@@ -234,6 +241,7 @@ bool WheelTransaction::WillHandleDefaultAction(
     BeginTransaction(aScrollTargetWeakFrame.GetFrame(),
                      aEventTargetWeakFrame.GetFrame(), aWheelEvent);
   } else if (lastTargetFrame != aScrollTargetWeakFrame.GetFrame()) {
+    WTXN_LOG("Wheel transaction ending due to new target frame");
     EndTransaction();
     BeginTransaction(aScrollTargetWeakFrame.GetFrame(),
                      aEventTargetWeakFrame.GetFrame(), aWheelEvent);
@@ -246,6 +254,7 @@ bool WheelTransaction::WillHandleDefaultAction(
   
   
   if (!aScrollTargetWeakFrame.IsAlive()) {
+    WTXN_LOG("Wheel transaction ending due to target frame removal");
     EndTransaction();
     return false;
   }
@@ -275,6 +284,7 @@ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
                     StaticPrefs::mousewheel_transaction_ignoremovedelay())) {
         
         
+        WTXN_LOG("Wheel transaction ending due to transaction timeout");
         EndTransaction();
       }
       return;
@@ -289,6 +299,7 @@ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
             sScrollTargetFrame->GetScreenRectInAppUnits(),
             sScrollTargetFrame->PresContext()->AppUnitsPerDevPixel());
         if (!r.Contains(pt)) {
+          WTXN_LOG("Wheel transaction ending due to mousemove");
           EndTransaction();
           return;
         }
@@ -319,6 +330,7 @@ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
     case ePointerClick:
     case eContextMenu:
     case eDrop:
+      WTXN_LOG("Wheel transaction ending due to keyboard event");
       EndTransaction();
       return;
     default:
@@ -362,6 +374,7 @@ void WheelTransaction::OnFailToScrollTarget() {
   
   
   if (!sScrollTargetFrame) {
+    WTXN_LOG("Wheel transaction ending due to failed scroll");
     EndTransaction();
   }
 }
@@ -370,9 +383,11 @@ void WheelTransaction::OnFailToScrollTarget() {
 void WheelTransaction::OnTimeout(nsITimer* aTimer, void* aClosure) {
   if (!sScrollTargetFrame) {
     
+    WTXN_LOG("Wheel transaction ending due to target removal");
     EndTransaction();
     return;
   }
+  WTXN_LOG("Wheel transaction may end due to timeout");
   
   nsIFrame* frame = sScrollTargetFrame;
   
@@ -516,6 +531,7 @@ void ScrollbarsForWheel::Inactivate() {
   sActiveOwner = nullptr;
   DeactivateAllTemporarilyActivatedScrollTargets();
   if (sOwnWheelTransaction) {
+    WTXN_LOG("Wheel transaction ending due to inactive scrollbar");
     sOwnWheelTransaction = false;
     WheelTransaction::OwnScrollbars(false);
     WheelTransaction::EndTransaction();
