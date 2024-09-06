@@ -95,6 +95,13 @@ interface nsIProxyInfo : nsISupports
 
 
 
+  const unsigned short SOCKS_V4 = 4;
+  const unsigned short SOCKS_V5 = 5;
+
+  
+
+
+
 
 
   

@@ -12,12 +12,15 @@
 #include "nsIDNSService.h"
 #include "nsIProtocolProxyService2.h"
 #include "nsIPrefBranch.h"
+#include "nsIProxyInfo.h"
 
 namespace mozilla::net {
 
 static const char kPrefProxyType[] = "network.proxy.type";
 static const char kPrefDisablePrefetch[] = "network.dns.disablePrefetch";
 static const char kPrefNetworkProxySOCKS[] = "network.proxy.socks";
+static const char kPrefNetworkProxySOCKSVersion[] =
+    "network.proxy.socks_version";
 
 NS_IMPL_ISUPPORTS(DNSServiceBase, nsIObserver)
 
@@ -26,13 +29,23 @@ void DNSServiceBase::AddPrefObserver(nsIPrefBranch* aPrefs) {
   aPrefs->AddObserver(kPrefDisablePrefetch, this, false);
   
   aPrefs->AddObserver(kPrefNetworkProxySOCKS, this, false);
+  aPrefs->AddObserver(kPrefNetworkProxySOCKSVersion, this, false);
 }
 
 void DNSServiceBase::ReadPrefs(const char* aName) {
-  if (!aName || !strcmp(aName, kPrefNetworkProxySOCKS)) {
+  if (!aName || !strcmp(aName, kPrefNetworkProxySOCKS) ||
+      !strcmp(aName, kPrefNetworkProxySOCKSVersion)) {
+    uint32_t socksVersion = Preferences::GetInt(kPrefNetworkProxySOCKSVersion);
     nsAutoCString socks;
     if (NS_SUCCEEDED(Preferences::GetCString(kPrefNetworkProxySOCKS, socks))) {
-      mHasSocksProxy = !socks.IsEmpty();
+      mSocksProxyVersion = 0;
+      if (!socks.IsEmpty()) {
+        if (socksVersion == nsIProxyInfo::SOCKS_V4) {
+          mSocksProxyVersion = nsIProxyInfo::SOCKS_V4;
+        } else if (socksVersion == nsIProxyInfo::SOCKS_V5) {
+          mSocksProxyVersion = nsIProxyInfo::SOCKS_V5;
+        }
+      }
     }
   }
   if (!aName || !strcmp(aName, kPrefDisablePrefetch) ||
@@ -50,9 +63,14 @@ bool DNSServiceBase::DNSForbiddenByActiveProxy(const nsACString& aHostname,
   }
 
   
+  
+  
   if (StaticPrefs::network_proxy_type() ==
           nsIProtocolProxyService::PROXYCONFIG_MANUAL &&
-      mHasSocksProxy && StaticPrefs::network_proxy_socks_remote_dns()) {
+      ((mSocksProxyVersion == nsIProxyInfo::SOCKS_V4 &&
+        StaticPrefs::network_proxy_socks_remote_dns()) ||
+       (mSocksProxyVersion == nsIProxyInfo::SOCKS_V5 &&
+        StaticPrefs::network_proxy_socks5_remote_dns()))) {
     
     if (!HostIsIPLiteral(aHostname)) {
       return true;
