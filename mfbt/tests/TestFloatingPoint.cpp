@@ -267,15 +267,15 @@ template <typename T>
 static void TestEqualsIsForInt32(T aVal) {
   int32_t i32;
   A(NumberIsInt32(aVal, &i32));
-  MOZ_ASSERT(i32 == aVal);
+  MOZ_RELEASE_ASSERT(i32 == aVal);
   A(NumberEqualsInt32(aVal, &i32));
-  MOZ_ASSERT(i32 == aVal);
+  MOZ_RELEASE_ASSERT(i32 == aVal);
 
   int64_t i64;
   A(NumberIsInt64(aVal, &i64));
-  MOZ_ASSERT(i64 == aVal);
+  MOZ_RELEASE_ASSERT(i64 == aVal);
   A(NumberEqualsInt64(aVal, &i64));
-  MOZ_ASSERT(i64 == aVal);
+  MOZ_RELEASE_ASSERT(i64 == aVal);
 };
 
 
@@ -288,9 +288,9 @@ static void TestEqualsIsForInt64(T aVal) {
 
   int64_t i64;
   A(NumberIsInt64(aVal, &i64));
-  MOZ_ASSERT(i64 == aVal);
+  MOZ_RELEASE_ASSERT(i64 == aVal);
   A(NumberEqualsInt64(aVal, &i64));
-  MOZ_ASSERT(i64 == aVal);
+  MOZ_RELEASE_ASSERT(i64 == aVal);
 };
 
 
