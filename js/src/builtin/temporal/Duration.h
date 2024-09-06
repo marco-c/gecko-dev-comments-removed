@@ -319,6 +319,16 @@ NormalizedTimeDuration RoundDuration(const NormalizedTimeDuration& duration,
 
 
 
+bool RoundDuration(JSContext* cx, const NormalizedTimeDuration& duration,
+                   Increment increment, TemporalUnit unit,
+                   TemporalRoundingMode roundingMode,
+                   NormalizedTimeDuration* result);
+
+
+
+
+
+
 bool RoundDuration(JSContext* cx, const NormalizedDuration& duration,
                    Increment increment, TemporalUnit unit,
                    TemporalRoundingMode roundingMode,

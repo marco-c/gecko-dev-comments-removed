@@ -2507,7 +2507,46 @@ static bool AdjustRoundedDurationDays(
   }
 
   
-  auto roundedTime = RoundDuration(oneDayLess, increment, unit, roundingMode);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  NormalizedTimeDuration roundedTime;
+  if (!RoundDuration(cx, oneDayLess, increment, unit, roundingMode,
+                     &roundedTime)) {
+    return false;
+  }
 
   
   return CombineDateAndNormalizedTimeDuration(
@@ -3145,6 +3184,29 @@ static NormalizedTimeDuration RoundNormalizedTimeDurationToIncrement(
 
 
 
+static bool RoundNormalizedTimeDurationToIncrement(
+    JSContext* cx, const NormalizedTimeDuration& duration,
+    const TemporalUnit unit, Increment increment,
+    TemporalRoundingMode roundingMode, NormalizedTimeDuration* result) {
+  
+  auto rounded = RoundNormalizedTimeDurationToIncrement(
+      duration, unit, increment, roundingMode);
+
+  
+  if (!IsValidNormalizedTimeDuration(rounded)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_DURATION_INVALID_NORMALIZED_TIME);
+    return false;
+  }
+
+  
+  *result = rounded;
+  return true;
+}
+
+
+
+
 static double TotalNormalizedTimeDuration(
     const NormalizedTimeDuration& duration, const TemporalUnit unit) {
   MOZ_ASSERT(IsValidNormalizedTimeDuration(duration));
@@ -3175,6 +3237,26 @@ NormalizedTimeDuration js::temporal::RoundDuration(
 
   
   return rounded;
+}
+
+
+
+
+
+
+bool js::temporal::RoundDuration(JSContext* cx,
+                                 const NormalizedTimeDuration& duration,
+                                 Increment increment, TemporalUnit unit,
+                                 TemporalRoundingMode roundingMode,
+                                 NormalizedTimeDuration* result) {
+  MOZ_ASSERT(IsValidNormalizedTimeDuration(duration));
+  MOZ_ASSERT(unit > TemporalUnit::Day);
+
+  
+
+  
+  return RoundNormalizedTimeDurationToIncrement(cx, duration, unit, increment,
+                                                roundingMode, result);
 }
 
 struct FractionalDays final {
@@ -3900,6 +3982,9 @@ static bool RoundDuration(JSContext* cx, const NormalizedDuration& duration,
                           TemporalRoundingMode roundingMode,
                           ComputeRemainder computeRemainder,
                           RoundedDuration* result) {
+  MOZ_ASSERT(IsValidNormalizedTimeDuration(duration.time));
+  MOZ_ASSERT_IF(unit > TemporalUnit::Day, IsValidDuration(duration.date));
+
   
   
   MOZ_ASSERT_IF(computeRemainder == ComputeRemainder::Yes,
@@ -3949,8 +4034,10 @@ static bool RoundDuration(JSContext* cx, const NormalizedDuration& duration,
   auto time = duration.time;
   double total = 0;
   if (computeRemainder == ComputeRemainder::No) {
-    time = RoundNormalizedTimeDurationToIncrement(time, unit, increment,
-                                                  roundingMode);
+    if (!RoundNormalizedTimeDurationToIncrement(cx, time, unit, increment,
+                                                roundingMode, &time)) {
+      return false;
+    }
   } else {
     MOZ_ASSERT(increment == Increment{1});
     MOZ_ASSERT(roundingMode == TemporalRoundingMode::Trunc);
@@ -3984,6 +4071,7 @@ static bool RoundDuration(
                                       double(duration.date.months),
                                       double(duration.date.weeks)}));
   MOZ_ASSERT(IsValidNormalizedTimeDuration(duration.time));
+  MOZ_ASSERT_IF(unit > TemporalUnit::Day, IsValidDuration(duration.date));
 
   MOZ_ASSERT(plainRelativeTo || zonedRelativeTo,
              "Use RoundDuration without relativeTo when plainRelativeTo and "
@@ -4116,44 +4204,16 @@ static bool RoundDuration(
 
 
 
-static bool RoundDuration(
+bool js::temporal::RoundDuration(
     JSContext* cx, const NormalizedDuration& duration, Increment increment,
     TemporalUnit unit, TemporalRoundingMode roundingMode,
     Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    Handle<CalendarRecord> calendar, Handle<ZonedDateTime> zonedRelativeTo,
-    Handle<TimeZoneRecord> timeZone,
-    mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime,
-    double* result) {
-  
-  
-  MOZ_ASSERT(increment == Increment{1});
-  MOZ_ASSERT(roundingMode == TemporalRoundingMode::Trunc);
+    Handle<CalendarRecord> calendar, NormalizedDuration* result) {
+  MOZ_ASSERT(IsValidDuration(duration));
 
-  RoundedDuration rounded;
-  if (!::RoundDuration(cx, duration, increment, unit, roundingMode,
-                       plainRelativeTo, calendar, zonedRelativeTo, timeZone,
-                       precalculatedPlainDateTime, ComputeRemainder::Yes,
-                       &rounded)) {
-    return false;
-  }
-
-  *result = rounded.total;
-  return true;
-}
-
-
-
-
-
-
-static bool RoundDuration(
-    JSContext* cx, const NormalizedDuration& duration, Increment increment,
-    TemporalUnit unit, TemporalRoundingMode roundingMode,
-    Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    Handle<CalendarRecord> calendar, Handle<ZonedDateTime> zonedRelativeTo,
-    Handle<TimeZoneRecord> timeZone,
-    mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime,
-    NormalizedDuration* result) {
+  Rooted<ZonedDateTime> zonedRelativeTo(cx, ZonedDateTime{});
+  Rooted<TimeZoneRecord> timeZone(cx, TimeZoneRecord{});
+  mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime{};
   RoundedDuration rounded;
   if (!::RoundDuration(cx, duration, increment, unit, roundingMode,
                        plainRelativeTo, calendar, zonedRelativeTo, timeZone,
@@ -4171,72 +4231,6 @@ static bool RoundDuration(
 
 
 
-static bool RoundDuration(JSContext* cx, const NormalizedDuration& duration,
-                          Increment increment, TemporalUnit unit,
-                          TemporalRoundingMode roundingMode, double* result) {
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  
-  
-  MOZ_ASSERT(increment == Increment{1});
-  MOZ_ASSERT(roundingMode == TemporalRoundingMode::Trunc);
-
-  RoundedDuration rounded;
-  if (!::RoundDuration(cx, duration, increment, unit, roundingMode,
-                       ComputeRemainder::Yes, &rounded)) {
-    return false;
-  }
-
-  *result = rounded.total;
-  return true;
-}
-
-
-
-
-
-
-static bool RoundDuration(JSContext* cx, const NormalizedDuration& duration,
-                          Increment increment, TemporalUnit unit,
-                          TemporalRoundingMode roundingMode,
-                          NormalizedDuration* result) {
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  RoundedDuration rounded;
-  if (!::RoundDuration(cx, duration, increment, unit, roundingMode,
-                       ComputeRemainder::No, &rounded)) {
-    return false;
-  }
-
-  *result = rounded.duration;
-  return true;
-}
-
-
-
-
-
-
-bool js::temporal::RoundDuration(
-    JSContext* cx, const NormalizedDuration& duration, Increment increment,
-    TemporalUnit unit, TemporalRoundingMode roundingMode,
-    Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    Handle<CalendarRecord> calendar, NormalizedDuration* result) {
-  MOZ_ASSERT(IsValidDuration(duration));
-
-  Rooted<ZonedDateTime> zonedRelativeTo(cx, ZonedDateTime{});
-  Rooted<TimeZoneRecord> timeZone(cx, TimeZoneRecord{});
-  mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime{};
-  return ::RoundDuration(cx, duration, increment, unit, roundingMode,
-                         plainRelativeTo, calendar, zonedRelativeTo, timeZone,
-                         precalculatedPlainDateTime, result);
-}
-
-
-
-
-
-
 bool js::temporal::RoundDuration(
     JSContext* cx, const NormalizedDuration& duration, Increment increment,
     TemporalUnit unit, TemporalRoundingMode roundingMode,
@@ -4246,9 +4240,16 @@ bool js::temporal::RoundDuration(
     NormalizedDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
 
-  return ::RoundDuration(cx, duration, increment, unit, roundingMode,
-                         plainRelativeTo, calendar, zonedRelativeTo, timeZone,
-                         mozilla::SomeRef(precalculatedPlainDateTime), result);
+  RoundedDuration rounded;
+  if (!::RoundDuration(cx, duration, increment, unit, roundingMode,
+                       plainRelativeTo, calendar, zonedRelativeTo, timeZone,
+                       mozilla::SomeRef(precalculatedPlainDateTime),
+                       ComputeRemainder::No, &rounded)) {
+    return false;
+  }
+
+  *result = rounded.duration;
+  return true;
 }
 
 enum class DurationOperation { Add, Subtract };
@@ -5239,24 +5240,30 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     }
     MOZ_ASSERT(duration.toDateDuration() == unbalanceResult);
   }
+  MOZ_ASSERT(IsValidDuration(unbalanceResult));
 
   
   auto roundInput =
       NormalizedDuration{unbalanceResult, NormalizeTimeDuration(duration)};
-  NormalizedDuration roundResult;
+  RoundedDuration rounded;
   if (plainRelativeTo || zonedRelativeTo) {
     if (!::RoundDuration(cx, roundInput, roundingIncrement, smallestUnit,
                          roundingMode, plainRelativeTo, calendar,
                          zonedRelativeTo, timeZone, precalculatedPlainDateTime,
-                         &roundResult)) {
+                         ComputeRemainder::No, &rounded)) {
       return false;
     }
   } else {
+    MOZ_ASSERT(IsValidDuration(roundInput));
+
     if (!::RoundDuration(cx, roundInput, roundingIncrement, smallestUnit,
-                         roundingMode, &roundResult)) {
+                         roundingMode, ComputeRemainder::No, &rounded)) {
       return false;
     }
   }
+
+  
+  auto roundResult = rounded.duration;
 
   
   TimeDuration balanceResult;
@@ -5448,7 +5455,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
 
   
   int64_t days;
-  NormalizedTimeDuration balanceResult;
+  NormalizedTimeDuration normTime;
   if (zonedRelativeTo) {
     
     Rooted<ZonedDateTime> intermediate(cx);
@@ -5529,13 +5536,13 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
       }
 
       
-      balanceResult = NormalizedTimeDuration::fromNanoseconds(timeAndDays.time);
+      normTime = NormalizedTimeDuration::fromNanoseconds(timeAndDays.time);
 
       
       days = timeAndDays.days;
     } else {
       
-      balanceResult = difference;
+      normTime = difference;
       days = 0;
     }
   } else {
@@ -5544,14 +5551,14 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
 
     
     if (!Add24HourDaysToNormalizedTimeDuration(cx, timeDuration, unbalancedDays,
-                                               &balanceResult)) {
+                                               &normTime)) {
       return false;
     }
 
     
     days = 0;
   }
-  MOZ_ASSERT(IsValidNormalizedTimeDuration(balanceResult));
+  MOZ_ASSERT(IsValidNormalizedTimeDuration(normTime));
 
   
   auto roundInput = NormalizedDuration{
@@ -5561,25 +5568,30 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
           unbalanceResult.weeks,
           days,
       },
-      balanceResult,
+      normTime,
   };
-  double total;
+  MOZ_ASSERT_IF(unit > TemporalUnit::Day, IsValidDuration(roundInput.date));
+
+  RoundedDuration rounded;
   if (plainRelativeTo || zonedRelativeTo) {
     if (!::RoundDuration(cx, roundInput, Increment{1}, unit,
                          TemporalRoundingMode::Trunc, plainRelativeTo, calendar,
                          zonedRelativeTo, timeZone, precalculatedPlainDateTime,
-                         &total)) {
+                         ComputeRemainder::Yes, &rounded)) {
       return false;
     }
   } else {
+    MOZ_ASSERT(IsValidDuration(roundInput));
+
     if (!::RoundDuration(cx, roundInput, Increment{1}, unit,
-                         TemporalRoundingMode::Trunc, &total)) {
+                         TemporalRoundingMode::Trunc, ComputeRemainder::Yes,
+                         &rounded)) {
       return false;
     }
   }
 
   
-  args.rval().setNumber(total);
+  args.rval().setNumber(rounded.total);
   return true;
 }
 
@@ -5654,8 +5666,11 @@ static bool Duration_toString(JSContext* cx, const CallArgs& args) {
     auto largestUnit = DefaultTemporalLargestUnit(duration);
 
     
-    auto rounded = RoundDuration(timeDuration, precision.increment,
-                                 precision.unit, roundingMode);
+    NormalizedTimeDuration rounded;
+    if (!RoundDuration(cx, timeDuration, precision.increment, precision.unit,
+                       roundingMode, &rounded)) {
+      return false;
+    }
 
     
     auto balanced = BalanceTimeDuration(
