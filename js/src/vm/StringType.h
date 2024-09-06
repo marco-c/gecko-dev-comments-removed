@@ -1817,6 +1817,10 @@ static inline UniqueChars StringToNewUTF8CharsZ(JSContext* cx, JSString& str) {
           : JS::CharsToNewUTF8CharsZ(cx, linear->twoByteRange(nogc)).c_str());
 }
 
+template <typename CharT>
+extern JSString::OwnedChars<CharT> AllocAtomCharsValidLength(JSContext* cx,
+                                                             size_t length);
+
 
 
 
