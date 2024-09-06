@@ -1210,6 +1210,23 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+    id: "bug1842767",
+    platform: "android",
+    domain: "passport.bilibili.com",
+    bug: "1842767",
+    config: {
+      matches: ["*://*.passport.bilibili.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
