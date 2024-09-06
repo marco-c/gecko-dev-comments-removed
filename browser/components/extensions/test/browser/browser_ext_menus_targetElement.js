@@ -308,6 +308,14 @@ add_task(async function independentMenusInDifferentTabs() {
   gBrowser.selectedTab = tab2;
 
   let targetElementId2 = await extension.openAndCloseMenu("#editabletext");
+  if (targetElementId === targetElementId2) {
+    
+    
+    
+    info(`Got same targetElementId ${targetElementId}, retrying for a new one`);
+    targetElementId2 = await extension.openAndCloseMenu("#editabletext");
+  }
+  Assert.notEqual(targetElementId, targetElementId2, "targetElementId differ");
 
   await extension.checkIsValid(
     targetElementId2,
