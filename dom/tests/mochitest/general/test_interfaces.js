@@ -797,8 +797,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "MediaCapabilities", insecureContext: true },
   
-  { name: "MediaCapabilitiesInfo", insecureContext: true },
-  
   { name: "MediaDeviceInfo", insecureContext: false },
   
   { name: "MediaDevices", insecureContext: false },

@@ -248,8 +248,6 @@ let interfaceNamesInGlobalScope = [
   
   "MediaCapabilities",
   
-  "MediaCapabilitiesInfo",
-  
   "MessageChannel",
   
   "MessageEvent",
