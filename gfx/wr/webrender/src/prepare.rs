@@ -28,7 +28,7 @@ use crate::prim_store::line_dec::MAX_LINE_DECORATION_RESOLUTION;
 use crate::prim_store::*;
 use crate::quad;
 use crate::pattern::Pattern;
-use crate::prim_store::gradient::GradientGpuBlockBuilder;
+use crate::prim_store::gradient::{radial_gradient_pattern, GradientGpuBlockBuilder};
 use crate::render_backend::DataStores;
 use crate::render_task_graph::RenderTaskId;
 use crate::render_task_cache::RenderTaskCacheKeyKind;
@@ -209,6 +209,32 @@ fn prepare_prim_for_render(
     let prim_instance = &mut prim_instances[prim_instance_index];
 
     if !is_passthrough {
+        fn may_need_repetition(stretch_size: LayoutSize, prim_rect: LayoutRect) -> bool {
+            stretch_size.width < prim_rect.width() ||
+                stretch_size.height < prim_rect.height()
+        }
+        
+        
+        
+        let disable_quad_path = match &prim_instance.kind {
+            PrimitiveInstanceKind::Rectangle { .. } => false,
+            PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
+                let prim_data = &data_stores.linear_grad[*data_handle];
+                !prim_data.brush_segments.is_empty() ||
+                    may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
+            }
+            PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
+                let prim_data = &data_stores.radial_grad[*data_handle];
+                !prim_data.brush_segments.is_empty() ||
+                    may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
+            }
+            PrimitiveInstanceKind::ConicGradient { data_handle, .. } => {
+                let prim_data = &data_stores.conic_grad[*data_handle];
+                !prim_data.brush_segments.is_empty() ||
+                    may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
+            }
+            _ => true,
+        };
 
         
         
@@ -216,18 +242,18 @@ fn prepare_prim_for_render(
         
         
         let should_update_clip_task = match prim_instance.kind {
-            PrimitiveInstanceKind::Rectangle { ref mut use_legacy_path, .. } => {
-                *use_legacy_path = !can_use_clip_chain_for_quad_path(
+            PrimitiveInstanceKind::Rectangle { use_legacy_path: ref mut no_quads, .. }
+            | PrimitiveInstanceKind::RadialGradient { cached: ref mut no_quads, .. }
+            => {
+                *no_quads = disable_quad_path || !can_use_clip_chain_for_quad_path(
                     &prim_instance.vis.clip_chain,
                     frame_state.clip_store,
                     data_stores,
                 );
 
-                *use_legacy_path
+                *no_quads
             }
-            PrimitiveInstanceKind::Picture { .. } => {
-                false
-            }
+            PrimitiveInstanceKind::Picture { .. } => false,
             _ => true,
         };
 
@@ -778,12 +804,45 @@ fn prepare_interned_prim_for_render(
                 }
             }
         }
-        PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, .. } => {
+        PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, cached, .. } => {
             profile_scope!("RadialGradient");
             let prim_data = &mut data_stores.radial_grad[*data_handle];
 
+            if !*cached {
+                
+                
+                let no_scale = DeviceVector2D::one();
+
+                let pattern = radial_gradient_pattern(
+                    prim_data.center,
+                    no_scale,
+                    &prim_data.params,
+                    prim_data.extend_mode,
+                    &prim_data.stops,
+                    &mut frame_state.frame_gpu_data,
+                );
+
+                quad::push_quad(
+                    &pattern,
+                    &prim_data.common.prim_rect,
+                    prim_instance_index,
+                    prim_spatial_node_index,
+                    &prim_instance.vis.clip_chain,
+                    device_pixel_scale,
+                    frame_context,
+                    pic_context,
+                    targets,
+                    &data_stores.clip,
+                    frame_state,
+                    pic_state,
+                    scratch,
+                );
+
+                return;
+            }
+
             prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_rect.width()
-                || prim_data.stretch_size.height < prim_data.common.prim_rect.height();
+            || prim_data.stretch_size.height < prim_data.common.prim_rect.height();
 
             
             
@@ -808,9 +867,6 @@ fn prepare_interned_prim_for_render(
                     prim_instance.clear_visibility();
                 }
             }
-
-            
-            
         }
         PrimitiveInstanceKind::ConicGradient { data_handle, ref mut visible_tiles_range, .. } => {
             profile_scope!("ConicGradient");
