@@ -3062,7 +3062,9 @@ pref("browser.backup.sqlite.step_delay_ms", 250);
 pref("browser.profiles.enabled", false);
 
 pref("startup.homepage_override_url_nimbus", "");
+
 pref("startup.homepage_override_nimbus_maxVersion", "");
+pref("startup.homepage_override_nimbus_minVersion", "");
 
 
 pref("toolkit.contentRelevancy.enabled", false);
