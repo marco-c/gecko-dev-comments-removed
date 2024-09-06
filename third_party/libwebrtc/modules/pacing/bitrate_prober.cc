@@ -52,6 +52,18 @@ void BitrateProber::SetEnabled(bool enable) {
   }
 }
 
+void BitrateProber::SetAllowProbeWithoutMediaPacket(bool allow) {
+  config_.allow_start_probing_immediately = allow;
+  MaybeSetActiveState(DataSize::Zero());
+}
+
+void BitrateProber::MaybeSetActiveState(DataSize packet_size) {
+  if (ReadyToSetActiveState(packet_size)) {
+    next_probe_time_ = Timestamp::MinusInfinity();
+    probing_state_ = ProbingState::kActive;
+  }
+}
+
 bool BitrateProber::ReadyToSetActiveState(DataSize packet_size) const {
   if (clusters_.empty()) {
     RTC_DCHECK(probing_state_ == ProbingState::kDisabled ||
@@ -63,6 +75,9 @@ bool BitrateProber::ReadyToSetActiveState(DataSize packet_size) const {
     case ProbingState::kActive:
       return false;
     case ProbingState::kInactive:
+      if (config_.allow_start_probing_immediately) {
+        return true;
+      }
       
       
       
@@ -72,10 +87,7 @@ bool BitrateProber::ReadyToSetActiveState(DataSize packet_size) const {
 }
 
 void BitrateProber::OnIncomingPacket(DataSize packet_size) {
-  if (ReadyToSetActiveState(packet_size)) {
-    next_probe_time_ = Timestamp::MinusInfinity();
-    probing_state_ = ProbingState::kActive;
-  }
+  MaybeSetActiveState(packet_size);
 }
 
 void BitrateProber::CreateProbeCluster(
@@ -101,10 +113,8 @@ void BitrateProber::CreateProbeCluster(
   cluster.pace_info.probe_cluster_id = cluster_config.id;
   clusters_.push(cluster);
 
-  if (ReadyToSetActiveState(DataSize::Zero())) {
-    next_probe_time_ = Timestamp::MinusInfinity();
-    probing_state_ = ProbingState::kActive;
-  }
+  MaybeSetActiveState(DataSize::Zero());
+
   RTC_DCHECK(probing_state_ == ProbingState::kActive ||
              probing_state_ == ProbingState::kInactive);
 

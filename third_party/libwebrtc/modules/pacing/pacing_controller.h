@@ -161,6 +161,9 @@ class PacingController {
   void SetSendBurstInterval(TimeDelta burst_interval);
 
   
+  void SetAllowProbeWithoutMediaPacket(bool allow);
+
+  
   Timestamp OldestPacketEnqueueTime() const;
 
   

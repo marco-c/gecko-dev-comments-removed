@@ -38,6 +38,9 @@ struct BitrateProberConfig {
   
   
   FieldTrialParameter<DataSize> min_packet_size;
+
+  
+  bool allow_start_probing_immediately = false;
 };
 
 
@@ -48,6 +51,7 @@ class BitrateProber {
   ~BitrateProber() = default;
 
   void SetEnabled(bool enable);
+  void SetAllowProbeWithoutMediaPacket(bool allow);
 
   
   
@@ -105,6 +109,8 @@ class BitrateProber {
   };
 
   Timestamp CalculateNextProbeTime(const ProbeCluster& cluster) const;
+
+  void MaybeSetActiveState(DataSize packet_size);
   bool ReadyToSetActiveState(DataSize packet_size) const;
 
   ProbingState probing_state_;

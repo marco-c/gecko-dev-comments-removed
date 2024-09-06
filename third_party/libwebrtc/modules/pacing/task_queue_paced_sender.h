@@ -61,6 +61,9 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   void SetSendBurstInterval(TimeDelta burst_interval);
 
   
+  void SetAllowProbeWithoutMediaPacket(bool allow);
+
+  
   void EnsureStarted();
 
   
