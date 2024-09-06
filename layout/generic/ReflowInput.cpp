@@ -70,24 +70,22 @@ static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
     return 0;
   }
 
-  const auto* list = aFrame->StyleList();
-  if (!list->mListStyleType.IsNone()) {
-    return 0;
-  }
-
   
   
   
   
   
   auto margin = nsPresContext::CSSPixelsToAppUnits(40) * (inflation - 1);
-  if (!list->mListStyleType.IsName()) {
+
+  auto* list = aFrame->StyleList();
+  if (!list->mCounterStyle.IsAtom()) {
     return margin;
   }
 
-  nsAtom* type = list->mListStyleType.AsName().AsAtom();
-  if (type != nsGkAtoms::disc && type != nsGkAtoms::circle &&
-      type != nsGkAtoms::square && type != nsGkAtoms::disclosure_closed &&
+  nsAtom* type = list->mCounterStyle.AsAtom();
+  if (type != nsGkAtoms::none && type != nsGkAtoms::disc &&
+      type != nsGkAtoms::circle && type != nsGkAtoms::square &&
+      type != nsGkAtoms::disclosure_closed &&
       type != nsGkAtoms::disclosure_open) {
     return margin;
   }
