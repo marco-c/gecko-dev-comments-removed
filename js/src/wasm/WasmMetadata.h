@@ -137,7 +137,15 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
   ModuleElemSegmentVector elemSegments;
 
   
+  
+  
+  
+  
+  
   DataSegmentRangeVector dataSegmentRanges;
+  DataSegmentVector dataSegments;
+
+  CustomSectionVector customSections;
 
   explicit ModuleMetadata() = default;
 
@@ -212,7 +220,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
-  SharedBytes namePayload;
+  
+  
+  
+  mutable SharedBytes namePayload;
   Maybe<Name> moduleName;
   NameVector funcNames;
 
@@ -241,11 +252,11 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   Uint32Vector asmJSSigToTableIndex;
 
   
-  MaybeSectionRange
-      codeSection;  
+  MaybeSectionRange codeSection;
 
   
-  CustomSectionRangeVector customSectionRanges;  
+  
+  CustomSectionRangeVector customSectionRanges;
 
   
   bool parsedBranchHints;

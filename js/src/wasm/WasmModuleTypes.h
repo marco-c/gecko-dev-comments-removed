@@ -532,6 +532,7 @@ struct DataSegment : AtomicRefCounted<DataSegment> {
         return false;
       }
     }
+    MOZ_ASSERT(bytes.length() == 0);
     return bytes.append(bytecode.begin() + src.bytecodeOffset, src.length);
   }
 

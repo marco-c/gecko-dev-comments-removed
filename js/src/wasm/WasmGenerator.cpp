@@ -1126,8 +1126,9 @@ SharedModule ModuleGenerator::finishModule(
   
   
 
-  DataSegmentVector dataSegments;
-  if (!dataSegments.reserve(moduleMeta->dataSegmentRanges.length())) {
+  MOZ_ASSERT(moduleMeta->dataSegments.empty());
+  if (!moduleMeta->dataSegments.reserve(
+          moduleMeta->dataSegmentRanges.length())) {
     return nullptr;
   }
   for (const DataSegmentRange& srcRange : moduleMeta->dataSegmentRanges) {
@@ -1138,11 +1139,12 @@ SharedModule ModuleGenerator::finishModule(
     if (!dstSeg->init(bytecode, srcRange)) {
       return nullptr;
     }
-    dataSegments.infallibleAppend(std::move(dstSeg));
+    moduleMeta->dataSegments.infallibleAppend(std::move(dstSeg));
   }
 
-  CustomSectionVector customSections;
-  if (!customSections.reserve(codeMeta_->customSectionRanges.length())) {
+  MOZ_ASSERT(moduleMeta->customSections.empty());
+  if (!moduleMeta->customSections.reserve(
+          codeMeta_->customSectionRanges.length())) {
     return nullptr;
   }
   for (const CustomSectionRange& srcRange : codeMeta_->customSectionRanges) {
@@ -1160,12 +1162,12 @@ SharedModule ModuleGenerator::finishModule(
       return nullptr;
     }
     sec.payload = std::move(payload);
-    customSections.infallibleAppend(std::move(sec));
+    moduleMeta->customSections.infallibleAppend(std::move(sec));
   }
 
   if (codeMeta_->nameCustomSectionIndex) {
     codeMeta_->namePayload =
-        customSections[*codeMeta_->nameCustomSectionIndex].payload;
+        moduleMeta->customSections[*codeMeta_->nameCustomSectionIndex].payload;
   }
 
   if (!finishCodeMetadata(bytecode.bytes)) {
@@ -1189,10 +1191,7 @@ SharedModule ModuleGenerator::finishModule(
   
   
 
-  MutableModule module =
-      js_new<Module>(*moduleMeta, *code, std::move(dataSegments),
-                     std::move(moduleMeta->elemSegments),
-                     std::move(customSections), debugBytecode);
+  MutableModule module = js_new<Module>(*moduleMeta, *code, debugBytecode);
   if (!module) {
     return nullptr;
   }
