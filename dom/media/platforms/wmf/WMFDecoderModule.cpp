@@ -485,9 +485,6 @@ bool WMFDecoderModule::IsHEVCSupported() {
   return sForceEnableHEVC || StaticPrefs::media_wmf_hevc_enabled() == 1;
 }
 
-
-void WMFDecoderModule::DisableForceEnableHEVC() { sForceEnableHEVC = false; }
-
 }  
 
 #undef WFM_DECODER_MODULE_STATUS_MARKER

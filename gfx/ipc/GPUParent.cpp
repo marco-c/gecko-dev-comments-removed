@@ -14,7 +14,6 @@
 #include "GPUProcessManager.h"
 #include "gfxGradientCache.h"
 #include "GfxInfoBase.h"
-#include "VideoUtils.h"
 #include "VRGPUChild.h"
 #include "VRManager.h"
 #include "VRManagerParent.h"
@@ -106,6 +105,63 @@ using namespace ipc;
 using namespace layers;
 
 static GPUParent* sGPUParent;
+
+static void ReportHardwareMediaCodecSupportIfNeeded() {
+  
+  static bool sReported = false;
+  if (sReported) {
+    return;
+  }
+#if defined(XP_WIN)
+  
+  if (!gfx::gfxVars::IsInitialized() ||
+      !gfx::gfxVars::CanUseHardwareVideoDecoding()) {
+    return;
+  }
+  sReported = true;
+
+  
+  
+  
+  if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
+    WMFDecoderModule::Init(WMFDecoderModule::Config::ForceEnableHEVC);
+  }
+  const auto support = PDMFactory::Supported(true );
+  if (support.contains(
+          mozilla::media::MediaCodecsSupport::H264HardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"h264"_ns,
+        true);
+  }
+  if (support.contains(mozilla::media::MediaCodecsSupport::VP8HardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"vp8"_ns,
+        true);
+  }
+  if (support.contains(mozilla::media::MediaCodecsSupport::VP9HardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"vp9"_ns,
+        true);
+  }
+  if (support.contains(mozilla::media::MediaCodecsSupport::AV1HardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"av1"_ns,
+        true);
+  }
+  if (support.contains(
+          mozilla::media::MediaCodecsSupport::HEVCHardwareDecode)) {
+    Telemetry::ScalarSet(
+        Telemetry::ScalarID::MEDIA_DEVICE_HARDWARE_DECODING_SUPPORT, u"hevc"_ns,
+        true);
+  }
+  if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
+    WMFDecoderModule::Init();
+  }
+
+#endif
+  
+  
+}
 
 GPUParent::GPUParent() : mLaunchTime(TimeStamp::Now()) { sGPUParent = this; }
 
@@ -411,7 +467,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
               Unused << GPUParent::GetSingleton()
                             ->SendUpdateMediaCodecsSupported(supported);
             }));
-        ReportHardwareMediaCodecSupportProbe();
+        ReportHardwareMediaCodecSupportIfNeeded();
       });
   MOZ_ALWAYS_SUCCEEDS(
       NS_DispatchBackgroundTask(task, nsIEventTarget::DISPATCH_NORMAL));
@@ -511,7 +567,7 @@ mozilla::ipc::IPCResult GPUParent::RecvUpdateVar(const GfxVarUpdate& aUpdate) {
                       Unused << GPUParent::GetSingleton()
                                     ->SendUpdateMediaCodecsSupported(supported);
                     }));
-                ReportHardwareMediaCodecSupportProbe();
+                ReportHardwareMediaCodecSupportIfNeeded();
               });
           MOZ_ALWAYS_SUCCEEDS(
               NS_DispatchBackgroundTask(task, nsIEventTarget::DISPATCH_NORMAL));

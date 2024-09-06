@@ -553,10 +553,6 @@ bool IsWaveMimetype(const nsACString& aMimeType);
 void DetermineResolutionForTelemetry(const MediaInfo& aInfo,
                                      nsCString& aResolutionOut);
 
-
-
-void ReportHardwareMediaCodecSupportProbe();
-
 }  
 
 #endif
