@@ -12,6 +12,7 @@
 #include "include/private/base/SkAssert.h"
 #include "include/private/base/SkAttributes.h"
 #include "include/private/base/SkContainers.h"
+#include "include/private/base/SkDebug.h"
 #include "include/private/base/SkMalloc.h"
 #include "include/private/base/SkMath.h"
 #include "include/private/base/SkSpan_impl.h"
@@ -47,8 +48,7 @@ public:
     
 
 
-
-    explicit TArray(int reserveCount) : TArray() { this->reserve_back(reserveCount); }
+    explicit TArray(int reserveCount) : TArray() { this->reserve_exact(reserveCount); }
 
     
 
@@ -151,6 +151,8 @@ public:
     
 
 
+
+
     void reserve(int n) {
         SkASSERT(n >= 0);
         if (n > this->size()) {
@@ -162,11 +164,10 @@ public:
 
 
 
-
-    void reserve_back(int n) {
+    void reserve_exact(int n) {
         SkASSERT(n >= 0);
-        if (n > 0) {
-            this->checkRealloc(n, kExactFit);
+        if (n > this->size()) {
+            this->checkRealloc(n - this->size(), kExactFit);
         }
     }
 
@@ -187,7 +188,6 @@ public:
 
 
 
-
     T& push_back() {
         void* newT = this->push_back_raw(1);
         return *new (newT) T;
@@ -196,25 +196,50 @@ public:
     
 
 
+
     T& push_back(const T& t) {
-        void* newT = this->push_back_raw(1);
-        return *new (newT) T(t);
+        T* newT;
+        if (this->capacity() > fSize) SK_LIKELY {
+            
+            newT = new (fData + fSize) T(t);
+        } else {
+            newT = this->growAndConstructAtEnd(t);
+        }
+
+        fSize += 1;
+        return *newT;
     }
 
     
 
 
     T& push_back(T&& t) {
-        void* newT = this->push_back_raw(1);
-        return *new (newT) T(std::move(t));
+        T* newT;
+        if (this->capacity() > fSize) SK_LIKELY {
+            
+            newT = new (fData + fSize) T(std::move(t));
+        } else {
+            newT = this->growAndConstructAtEnd(std::move(t));
+        }
+
+        fSize += 1;
+        return *newT;
     }
 
     
 
 
-    template<class... Args> T& emplace_back(Args&&... args) {
-        void* newT = this->push_back_raw(1);
-        return *new (newT) T(std::forward<Args>(args)...);
+    template <typename... Args> T& emplace_back(Args&&... args) {
+        T* newT;
+        if (this->capacity() > fSize) SK_LIKELY {
+            
+            newT = new (fData + fSize) T(std::forward<Args>(args)...);
+        } else {
+            newT = this->growAndConstructAtEnd(std::forward<Args>(args)...);
+        }
+
+        fSize += 1;
+        return *newT;
     }
 
     
@@ -277,7 +302,7 @@ public:
 
 
     void pop_back() {
-        SkASSERT(fSize > 0);
+        sk_collection_not_empty(this->empty());
         --fSize;
         fData[fSize].~T();
     }
@@ -298,11 +323,13 @@ public:
     
 
 
-
     void resize_back(int newCount) {
         SkASSERT(newCount >= 0);
-
         if (newCount > this->size()) {
+            if (this->empty()) {
+                
+                this->checkRealloc(newCount, kExactFit);
+            }
             this->push_back_n(newCount - fSize);
         } else if (newCount < this->size()) {
             this->pop_back_n(fSize - newCount);
@@ -332,6 +359,25 @@ public:
         }
     }
 
+    
+
+
+
+    void move_back(TArray& that) {
+        if (that.empty() || &that == this) {
+            return;
+        }
+        void* dst = this->push_back_raw(that.size());
+        
+        
+        
+        that.move(dst);
+        
+        
+        
+        that.fSize = 0;
+    }
+
     T* begin() {
         return fData;
     }
@@ -356,7 +402,7 @@ public:
     T* data() { return fData; }
     const T* data() const { return fData; }
     int size() const { return fSize; }
-    size_t size_bytes() const { return this->bytes(fSize); }
+    size_t size_bytes() const { return Bytes(fSize); }
     void resize(size_t count) { this->resize_back((int)count); }
 
     void clear() {
@@ -386,15 +432,11 @@ public:
 
 
     T& operator[] (int i) {
-        SkASSERT(i < this->size());
-        SkASSERT(i >= 0);
-        return fData[i];
+        return fData[sk_collection_check_bounds(i, this->size())];
     }
 
     const T& operator[] (int i) const {
-        SkASSERT(i < this->size());
-        SkASSERT(i >= 0);
-        return fData[i];
+        return fData[sk_collection_check_bounds(i, this->size())];
     }
 
     T& at(int i) { return (*this)[i]; }
@@ -403,30 +445,38 @@ public:
     
 
 
-    T& front() { SkASSERT(fSize > 0); return fData[0];}
+    T& front() {
+        sk_collection_not_empty(this->empty());
+        return fData[0];
+    }
 
-    const T& front() const { SkASSERT(fSize > 0); return fData[0];}
+    const T& front() const {
+        sk_collection_not_empty(this->empty());
+        return fData[0];
+    }
 
     
 
 
-    T& back() { SkASSERT(fSize); return fData[fSize - 1];}
+    T& back() {
+        sk_collection_not_empty(this->empty());
+        return fData[fSize - 1];
+    }
 
-    const T& back() const { SkASSERT(fSize > 0); return fData[fSize - 1];}
+    const T& back() const {
+        sk_collection_not_empty(this->empty());
+        return fData[fSize - 1];
+    }
 
     
 
 
     T& fromBack(int i) {
-        SkASSERT(i >= 0);
-        SkASSERT(i < this->size());
-        return fData[fSize - i - 1];
+        return (*this)[fSize - i - 1];
     }
 
     const T& fromBack(int i) const {
-        SkASSERT(i >= 0);
-        SkASSERT(i < this->size());
-        return fData[fSize - i - 1];
+        return (*this)[fSize - i - 1];
     }
 
     bool operator==(const TArray<T, MEM_MOVE>& right) const {
@@ -498,7 +548,7 @@ private:
         
         
         size_t size = std::min(allocation.size() / sizeof(T), SkToSizeT(kMaxCapacity));
-        setData(SkSpan<T>(data, size));
+        this->setData(SkSpan<T>(data, size));
     }
 
     void setData(SkSpan<T> array) {
@@ -523,7 +573,7 @@ private:
         return (T*)buffer;
     }
 
-    size_t bytes(int n) const {
+    static size_t Bytes(int n) {
         SkASSERT(n <= kMaxCapacity);
         return SkToSizeT(n) * sizeof(T);
     }
@@ -576,10 +626,10 @@ private:
 
     void move(void* dst) {
         if constexpr (MEM_MOVE) {
-            sk_careful_memcpy(dst, fData, this->bytes(fSize));
+            sk_careful_memcpy(dst, fData, Bytes(fSize));
         } else {
             for (int i = 0; i < this->size(); ++i) {
-                new (static_cast<char*>(dst) + this->bytes(i)) T(std::move(fData[i]));
+                new (static_cast<char*>(dst) + Bytes(i)) T(std::move(fData[i]));
                 fData[i].~T();
             }
         }
@@ -594,17 +644,31 @@ private:
         return ptr;
     }
 
+    template <typename... Args>
+    SK_ALWAYS_INLINE T* growAndConstructAtEnd(Args&&... args) {
+        SkSpan<std::byte> buffer = this->preallocateNewData(1, kGrowing);
+        T* newT = new (TCast(buffer.data()) + fSize) T(std::forward<Args>(args)...);
+        this->installDataAndUpdateCapacity(buffer);
+
+        return newT;
+    }
+
     void checkRealloc(int delta, double growthFactor) {
-        
-        
         SkASSERT(delta >= 0);
         SkASSERT(fSize >= 0);
         SkASSERT(fCapacity >= 0);
 
         
-        if (this->capacity() - fSize >= delta) {
-            return;
+        if (this->capacity() - fSize < delta) {
+            
+            this->installDataAndUpdateCapacity(this->preallocateNewData(delta, growthFactor));
         }
+    }
+
+    SkSpan<std::byte> preallocateNewData(int delta, double growthFactor) {
+        SkASSERT(delta >= 0);
+        SkASSERT(fSize >= 0);
+        SkASSERT(fCapacity >= 0);
 
         
         
@@ -615,14 +679,15 @@ private:
         }
         const int newCount = fSize + delta;
 
-        SkSpan<std::byte> allocation = Allocate(newCount, growthFactor);
+        return Allocate(newCount, growthFactor);
+    }
 
+    void installDataAndUpdateCapacity(SkSpan<std::byte> allocation) {
         this->move(TCast(allocation.data()));
         if (fOwnMemory) {
             sk_free(fData);
         }
         this->setDataFromBytes(allocation);
-        SkASSERT(this->capacity() >= newCount);
         SkASSERT(fData != nullptr);
     }
 
@@ -636,61 +701,63 @@ template <typename T, bool M> static inline void swap(TArray<T, M>& a, TArray<T,
     a.swap(b);
 }
 
-}  
-
-
-
 
 template <int N, typename T, bool MEM_MOVE = sk_is_trivially_relocatable_v<T>>
-class SkSTArray : private SkAlignedSTStorage<N,T>, public skia_private::TArray<T, MEM_MOVE> {
-private:
+class STArray : private SkAlignedSTStorage<N,T>, public TArray<T, MEM_MOVE> {
     static_assert(N > 0);
-    using STORAGE   = SkAlignedSTStorage<N,T>;
-    using INHERITED = skia_private::TArray<T, MEM_MOVE>;
+    using Storage = SkAlignedSTStorage<N,T>;
 
 public:
-    SkSTArray()
-        : STORAGE{}, INHERITED(static_cast<STORAGE*>(this)) {}
+    STArray()
+        : Storage{}
+        , TArray<T, MEM_MOVE>(this) {}  
+                                        
 
-    SkSTArray(const T* array, int count)
-        : STORAGE{}, INHERITED(array, count, static_cast<STORAGE*>(this)) {}
+    STArray(const T* array, int count)
+        : Storage{}
+        , TArray<T, MEM_MOVE>{array, count, this} {}
 
-    SkSTArray(std::initializer_list<T> data) : SkSTArray(data.begin(), SkToInt(data.size())) {}
+    STArray(std::initializer_list<T> data)
+        : STArray{data.begin(), SkToInt(data.size())} {}
 
-    explicit SkSTArray(int reserveCount) : SkSTArray() {
-        this->reserve_back(reserveCount);
-    }
+    explicit STArray(int reserveCount)
+        : STArray() { this->reserve_exact(reserveCount); }
 
-    SkSTArray         (const SkSTArray&  that) : SkSTArray() { *this = that; }
-    explicit SkSTArray(const INHERITED&  that) : SkSTArray() { *this = that; }
-    SkSTArray         (      SkSTArray&& that) : SkSTArray() { *this = std::move(that); }
-    explicit SkSTArray(      INHERITED&& that) : SkSTArray() { *this = std::move(that); }
+    STArray(const STArray& that)
+        : STArray() { *this = that; }
 
-    SkSTArray& operator=(const SkSTArray& that) {
-        INHERITED::operator=(that);
+    explicit STArray(const TArray<T, MEM_MOVE>& that)
+        : STArray() { *this = that; }
+
+    STArray(STArray&& that)
+        : STArray() { *this = std::move(that); }
+
+    explicit STArray(TArray<T, MEM_MOVE>&& that)
+        : STArray() { *this = std::move(that); }
+
+    STArray& operator=(const STArray& that) {
+        TArray<T, MEM_MOVE>::operator=(that);
         return *this;
     }
-    SkSTArray& operator=(const INHERITED& that) {
-        INHERITED::operator=(that);
+
+    STArray& operator=(const TArray<T, MEM_MOVE>& that) {
+        TArray<T, MEM_MOVE>::operator=(that);
         return *this;
     }
 
-    SkSTArray& operator=(SkSTArray&& that) {
-        INHERITED::operator=(std::move(that));
+    STArray& operator=(STArray&& that) {
+        TArray<T, MEM_MOVE>::operator=(std::move(that));
         return *this;
     }
-    SkSTArray& operator=(INHERITED&& that) {
-        INHERITED::operator=(std::move(that));
+
+    STArray& operator=(TArray<T, MEM_MOVE>&& that) {
+        TArray<T, MEM_MOVE>::operator=(std::move(that));
         return *this;
     }
 
     
-    using INHERITED::data;
-    using INHERITED::size;
+    using TArray<T, MEM_MOVE>::data;
+    using TArray<T, MEM_MOVE>::size;
 };
-
-
-template <typename T, bool MEM_MOVE = sk_is_trivially_relocatable_v<T>>
-using SkTArray = skia_private::TArray<T, MEM_MOVE>;
-
-#endif
+}  
+#endif  

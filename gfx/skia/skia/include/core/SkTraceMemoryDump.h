@@ -89,6 +89,21 @@ public:
 
     virtual void dumpWrappedState(const char* , bool ) {}
 
+    
+
+
+
+
+
+    virtual bool shouldDumpUnbudgetedObjects() const { return true; }
+
+    
+
+
+
+
+    virtual void dumpBudgetedState(const char* , bool ) {}
+
 protected:
     virtual ~SkTraceMemoryDump() = default;
     SkTraceMemoryDump() = default;

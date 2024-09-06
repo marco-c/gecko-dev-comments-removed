@@ -22,17 +22,21 @@ enum SkCopyPixelsMode {
 
 
 
-sk_sp<SkShader> SkMakeBitmapShader(const SkBitmap& src, SkTileMode, SkTileMode,
-                                   const SkSamplingOptions&, const SkMatrix* localMatrix,
-                                   SkCopyPixelsMode);
-
-
-
 
 
 sk_sp<SkShader> SkMakeBitmapShaderForPaint(const SkPaint& paint, const SkBitmap& src,
                                            SkTileMode, SkTileMode, const SkSamplingOptions&,
                                            const SkMatrix* localMatrix, SkCopyPixelsMode);
+
+
+
+
+SkRect SkModifyPaintAndDstForDrawImageRect(const SkImage* image,
+                                           const SkSamplingOptions&,
+                                           SkRect src,
+                                           SkRect dst,
+                                           bool strictSrcSubset,
+                                           SkPaint* paint);
 
 
 

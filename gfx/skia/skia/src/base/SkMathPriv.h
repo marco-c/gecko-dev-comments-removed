@@ -36,21 +36,8 @@ static inline int SkClampPos(int value) {
 
 template <typename In, typename Out>
 inline void SkTDivMod(In numer, In denom, Out* div, Out* mod) {
-#ifdef SK_CPU_ARM32
-    
-    
-    
-    
-    
-    
-    const In d = numer/denom;
-    *div = static_cast<Out>(d);
-    *mod = static_cast<Out>(numer-d*denom);
-#else
-    
     *div = static_cast<Out>(numer/denom);
     *mod = static_cast<Out>(numer%denom);
-#endif
 }
 
 

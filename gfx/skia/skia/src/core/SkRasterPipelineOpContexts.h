@@ -8,17 +8,58 @@
 #ifndef SkRasterPipelineOpContexts_DEFINED
 #define SkRasterPipelineOpContexts_DEFINED
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+
+namespace SkSL { class TraceHook; }
+
 
 
 
 
 inline static constexpr int SkRasterPipeline_kMaxStride = 16;
-inline static constexpr int SkRasterPipeline_kMaxStride_highp = 8;
+inline static constexpr int SkRasterPipeline_kMaxStride_highp = 16;
+
+
+inline static constexpr size_t SkRasterPipeline_MaxScratchPerPatch =
+        std::max(SkRasterPipeline_kMaxStride_highp * 16,  
+                 SkRasterPipeline_kMaxStride * 4);        
 
 
 struct SkRasterPipeline_MemoryCtx {
     void* pixels;
     int   stride;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct SkRasterPipeline_MemoryCtxInfo {
+    SkRasterPipeline_MemoryCtx* context;
+
+    int bytesPerPixel;
+    bool load;
+    bool store;
+};
+
+struct SkRasterPipeline_MemoryCtxPatch {
+    SkRasterPipeline_MemoryCtxInfo info;
+
+    void* backup;  
+    std::byte scratch[SkRasterPipeline_MaxScratchPerPatch];
 };
 
 struct SkRasterPipeline_GatherCtx {
@@ -67,6 +108,18 @@ struct SkRasterPipeline_DecalTileCtx {
     float    inclusiveEdge_y = 0;
 };
 
+enum class SkPerlinNoiseShaderType;
+
+struct SkRasterPipeline_PerlinNoiseCtx {
+    SkPerlinNoiseShaderType noiseType;
+    float baseFrequencyX, baseFrequencyY;
+    float stitchDataInX, stitchDataInY;
+    bool stitching;
+    int numOctaves;
+    const uint8_t* latticeSelector;  
+    const uint16_t* noiseData;       
+};
+
 
 struct SkRasterPipeline_MipmapCtx {
     
@@ -113,6 +166,7 @@ struct SkRasterPipeline_RewindCtx {
     float dg[SkRasterPipeline_kMaxStride_highp];
     float db[SkRasterPipeline_kMaxStride_highp];
     float da[SkRasterPipeline_kMaxStride_highp];
+    std::byte* base;
     SkRasterPipelineStage* stage;
 };
 
@@ -148,37 +202,61 @@ struct SkRasterPipeline_TablesCtx {
     const uint8_t *r, *g, *b, *a;
 };
 
+using SkRPOffset = uint32_t;
+
+struct SkRasterPipeline_InitLaneMasksCtx {
+    uint8_t* tail;
+};
+
+struct SkRasterPipeline_ConstantCtx {
+    int32_t value;
+    SkRPOffset dst;
+};
+
+struct SkRasterPipeline_UniformCtx {
+    int32_t* dst;
+    const int32_t* src;
+};
+
 struct SkRasterPipeline_BinaryOpCtx {
-    float *dst;
-    const float *src;
+    SkRPOffset dst;
+    SkRPOffset src;
 };
 
 struct SkRasterPipeline_TernaryOpCtx {
-    float *dst;
-    const float *src0;
-    const float *src1;
+    SkRPOffset dst;
+    SkRPOffset delta;
+};
+
+struct SkRasterPipeline_MatrixMultiplyCtx {
+    SkRPOffset dst;
+    uint8_t leftColumns, leftRows, rightColumns, rightRows;
 };
 
 struct SkRasterPipeline_SwizzleCtx {
-    float *ptr;
-    uint16_t offsets[4];  
+    
+    
+    static_assert(SkRasterPipeline_kMaxStride_highp <= 16);
+
+    SkRPOffset dst;
+    uint8_t offsets[4];  
 };
 
 struct SkRasterPipeline_ShuffleCtx {
-    float *ptr;
+    int32_t* ptr;
     int count;
     uint16_t offsets[16];  
 };
 
 struct SkRasterPipeline_SwizzleCopyCtx {
-    float *dst;
-    float *src;           
+    int32_t* dst;
+    const int32_t* src;   
     uint16_t offsets[4];  
 };
 
 struct SkRasterPipeline_CopyIndirectCtx {
-    float *dst;
-    const float *src;
+    int32_t* dst;
+    const int32_t* src;
     const uint32_t *indirectOffset;  
     uint32_t indirectLimit;          
     uint32_t slots;                  
@@ -192,14 +270,45 @@ struct SkRasterPipeline_BranchCtx {
     int offset;  
 };
 
+struct SkRasterPipeline_BranchIfAllLanesActiveCtx : public SkRasterPipeline_BranchCtx {
+    uint8_t* tail = nullptr;  
+};
+
 struct SkRasterPipeline_BranchIfEqualCtx : public SkRasterPipeline_BranchCtx {
     int value;
-    const int *ptr;
+    const int* ptr;
 };
 
 struct SkRasterPipeline_CaseOpCtx {
     int expectedValue;
-    int* ptr;  
+    SkRPOffset offset;  
+};
+
+struct SkRasterPipeline_TraceFuncCtx {
+    const int* traceMask;
+    SkSL::TraceHook* traceHook;
+    int funcIdx;
+};
+
+struct SkRasterPipeline_TraceScopeCtx {
+    const int* traceMask;
+    SkSL::TraceHook* traceHook;
+    int delta;
+};
+
+struct SkRasterPipeline_TraceLineCtx {
+    const int* traceMask;
+    SkSL::TraceHook* traceHook;
+    int lineNumber;
+};
+
+struct SkRasterPipeline_TraceVarCtx {
+    const int* traceMask;
+    SkSL::TraceHook* traceHook;
+    int slotIdx, numSlots;
+    const int* data;
+    const uint32_t *indirectOffset;  
+    uint32_t indirectLimit;          
 };
 
 #endif  

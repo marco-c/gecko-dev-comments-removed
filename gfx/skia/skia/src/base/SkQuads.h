@@ -19,18 +19,57 @@ public:
 
 
 
-    static int RootsReal(double A, double B, double C,
-                         double solution[2]);
+
+
+
+
+
+
+
+
+    static double Discriminant(double A, double B, double C);
+
+    struct RootResult {
+        double discriminant;
+        double root0;
+        double root1;
+    };
 
     
 
 
 
-    static double EvalAt(double A, double B, double C, double t) {
-        return A * t * t +
-               B * t +
-               C;
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static RootResult Roots(double A, double B, double C);
+
+    
+
+
+
+
+    static int RootsReal(double A, double B, double C, double solution[2]);
+
+    
+
+
+
+    static double EvalAt(double A, double B, double C, double t);
 };
 
 #endif

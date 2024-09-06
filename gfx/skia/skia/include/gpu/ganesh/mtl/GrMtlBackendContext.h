@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+#ifndef GrMtlBackendContext_DEFINED
+#define GrMtlBackendContext_DEFINED
+
+#include "include/gpu/ganesh/mtl/GrMtlTypes.h"
+#include "include/ports/SkCFObject.h"
+
+
+
+struct SK_API GrMtlBackendContext {
+    sk_cfp<GrMTLHandle> fDevice;
+    sk_cfp<GrMTLHandle> fQueue;
+};
+
+#endif

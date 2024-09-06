@@ -26,8 +26,6 @@ public:
     SkNoDrawCanvas(int width, int height);
     SkNoDrawCanvas(const SkIRect&);
 
-    explicit SkNoDrawCanvas(sk_sp<SkBaseDevice> device);
-
     
     void resetCanvas(int w, int h)        { this->resetForNextPicture(SkIRect::MakeWH(w, h)); }
     void resetCanvas(const SkIRect& rect) { this->resetForNextPicture(rect); }

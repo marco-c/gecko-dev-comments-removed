@@ -5,24 +5,26 @@
 
 
 
+#include "include/effects/SkImageFilters.h"
+
 #include "include/core/SkBitmap.h"
+#include "include/core/SkColor.h"
 #include "include/core/SkColorType.h"
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkImageFilter.h"
 #include "include/core/SkImageInfo.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkSize.h"
 #include "include/core/SkTileMode.h"
 #include "include/core/SkTypes.h"
-#include "include/effects/SkImageFilters.h"
 #include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkMalloc.h"
+#include "include/private/base/SkTo.h"
 #include "src/base/SkArenaAlloc.h"
 #include "src/base/SkVx.h"
+#include "src/core/SkImageFilterTypes.h"
 #include "src/core/SkImageFilter_Base.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkSpecialImage.h"
@@ -32,15 +34,14 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
-#include <memory>
+#include <optional>
 #include <utility>
 
-#if defined(SK_GANESH)
-#include "include/private/gpu/ganesh/GrTypesPriv.h"
-#include "src/core/SkGpuBlurUtils.h"
-#include "src/gpu/ganesh/GrSurfaceProxyView.h"
-#include "src/gpu/ganesh/SurfaceDrawContext.h"
-#endif 
+struct SkIPoint;
+
+#if defined(SK_GANESH) || defined(SK_GRAPHITE)
+#include "src/gpu/BlurUtils.h"
+#endif
 
 #if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE1
     #include <xmmintrin.h>
@@ -55,35 +56,50 @@ namespace {
 
 class SkBlurImageFilter final : public SkImageFilter_Base {
 public:
-    SkBlurImageFilter(SkScalar sigmaX, SkScalar sigmaY,  SkTileMode tileMode,
-                      sk_sp<SkImageFilter> input, const SkRect* cropRect)
-            : INHERITED(&input, 1, cropRect)
-            , fSigma{sigmaX, sigmaY}
-            , fTileMode(tileMode) {}
+    SkBlurImageFilter(SkSize sigma, sk_sp<SkImageFilter> input)
+            : SkImageFilter_Base(&input, 1)
+            , fSigma{sigma} {}
+
+    SkBlurImageFilter(SkSize sigma, SkTileMode legacyTileMode, sk_sp<SkImageFilter> input)
+            : SkImageFilter_Base(&input, 1)
+            , fSigma(sigma)
+            , fLegacyTileMode(legacyTileMode) {}
 
     SkRect computeFastBounds(const SkRect&) const override;
 
 protected:
     void flatten(SkWriteBuffer&) const override;
-    sk_sp<SkSpecialImage> onFilterImage(const Context&, SkIPoint* offset) const override;
-    SkIRect onFilterNodeBounds(const SkIRect& src, const SkMatrix& ctm,
-                               MapDirection, const SkIRect* inputRect) const override;
 
 private:
     friend void ::SkRegisterBlurImageFilterFlattenable();
     SK_FLATTENABLE_HOOKS(SkBlurImageFilter)
 
-#if defined(SK_GANESH)
-    sk_sp<SkSpecialImage> gpuFilter(
-            const Context& ctx, SkVector sigma,
-            const sk_sp<SkSpecialImage> &input,
-            SkIRect inputBounds, SkIRect dstBounds, SkIPoint inputOffset, SkIPoint* offset) const;
-#endif
+    skif::FilterResult onFilterImage(const skif::Context& context) const override;
 
-    SkSize     fSigma;
-    SkTileMode fTileMode;
+    skif::LayerSpace<SkIRect> onGetInputLayerBounds(
+            const skif::Mapping& mapping,
+            const skif::LayerSpace<SkIRect>& desiredOutput,
+            std::optional<skif::LayerSpace<SkIRect>> contentBounds) const override;
 
-    using INHERITED = SkImageFilter_Base;
+    std::optional<skif::LayerSpace<SkIRect>> onGetOutputLayerBounds(
+            const skif::Mapping& mapping,
+            std::optional<skif::LayerSpace<SkIRect>> contentBounds) const override;
+
+    skif::LayerSpace<SkSize> mapSigma(const skif::Mapping& mapping, bool gpuBacked) const;
+
+    skif::LayerSpace<SkIRect> kernelBounds(const skif::Mapping& mapping,
+                                           skif::LayerSpace<SkIRect> bounds,
+                                           bool gpuBacked) const {
+        skif::LayerSpace<SkSize> sigma = this->mapSigma(mapping, gpuBacked);
+        bounds.outset(skif::LayerSpace<SkSize>({3 * sigma.width(), 3 * sigma.height()}).ceil());
+        return bounds;
+    }
+
+    skif::ParameterSpace<SkSize> fSigma;
+    
+    
+    
+    SkTileMode fLegacyTileMode = SkTileMode::kDecal;
 };
 
 } 
@@ -91,11 +107,34 @@ private:
 sk_sp<SkImageFilter> SkImageFilters::Blur(
         SkScalar sigmaX, SkScalar sigmaY, SkTileMode tileMode, sk_sp<SkImageFilter> input,
         const CropRect& cropRect) {
-    if (sigmaX < SK_ScalarNearlyZero && sigmaY < SK_ScalarNearlyZero && !cropRect) {
-        return input;
+    if (!SkScalarsAreFinite(sigmaX, sigmaY) || sigmaX < 0.f || sigmaY < 0.f) {
+        
+        
+        
+        return nullptr;
     }
-    return sk_sp<SkImageFilter>(
-          new SkBlurImageFilter(sigmaX, sigmaY, tileMode, input, cropRect));
+
+    
+    if (tileMode != SkTileMode::kDecal && !cropRect) {
+        return sk_make_sp<SkBlurImageFilter>(SkSize{sigmaX, sigmaY}, tileMode, std::move(input));
+    }
+
+    
+    
+    sk_sp<SkImageFilter> filter = std::move(input);
+    if (tileMode != SkTileMode::kDecal && cropRect) {
+        
+        
+        
+        filter = SkImageFilters::Crop(*cropRect, tileMode, std::move(filter));
+    }
+
+    filter = sk_make_sp<SkBlurImageFilter>(SkSize{sigmaX, sigmaY}, std::move(filter));
+    if (cropRect) {
+        
+        filter = SkImageFilters::Crop(*cropRect, SkTileMode::kDecal, std::move(filter));
+    }
+    return filter;
 }
 
 void SkRegisterBlurImageFilterFlattenable() {
@@ -108,22 +147,35 @@ sk_sp<SkFlattenable> SkBlurImageFilter::CreateProc(SkReadBuffer& buffer) {
     SkScalar sigmaX = buffer.readScalar();
     SkScalar sigmaY = buffer.readScalar();
     SkTileMode tileMode = buffer.read32LE(SkTileMode::kLastTileMode);
+
+    
+    
+    
+    
+    
+    
+    
     return SkImageFilters::Blur(
           sigmaX, sigmaY, tileMode, common.getInput(0), common.cropRect());
 }
 
 void SkBlurImageFilter::flatten(SkWriteBuffer& buffer) const {
-    this->INHERITED::flatten(buffer);
-    buffer.writeScalar(fSigma.fWidth);
-    buffer.writeScalar(fSigma.fHeight);
+    this->SkImageFilter_Base::flatten(buffer);
 
-    SkASSERT(fTileMode <= SkTileMode::kLastTileMode);
-    buffer.writeInt(static_cast<int>(fTileMode));
+    buffer.writeScalar(SkSize(fSigma).fWidth);
+    buffer.writeScalar(SkSize(fSigma).fHeight);
+    buffer.writeInt(static_cast<int>(fLegacyTileMode));
 }
 
 
 
 namespace {
+
+
+
+
+
+
 
 
 int calculate_window(double sigma) {
@@ -137,22 +189,6 @@ int calculate_window(double sigma) {
 
 
 static constexpr SkScalar kMaxSigma = 532.f;
-
-static SkVector map_sigma(const SkSize& localSigma, const SkMatrix& ctm) {
-    SkVector sigma = SkVector::Make(localSigma.width(), localSigma.height());
-    ctm.mapVectors(&sigma, 1);
-    sigma.fX = std::min(SkScalarAbs(sigma.fX), kMaxSigma);
-    sigma.fY = std::min(SkScalarAbs(sigma.fY), kMaxSigma);
-    
-    if (!SkScalarIsFinite(sigma.fX)) {
-        sigma.fX = 0.f;
-    }
-    if (!SkScalarIsFinite(sigma.fY)) {
-        sigma.fY = 0.f;
-    }
-    return sigma;
-}
-
 
 class Pass {
 public:
@@ -177,7 +213,8 @@ public:
             
             
             
-            while (dstIdx < srcIdx) {
+            int commonEnd = std::min(srcIdx, dstEnd);
+            while (dstIdx < commonEnd) {
                 *dstCursor = 0;
                 dstCursor += dstStride;
                 SK_PREFETCH(dstCursor);
@@ -201,10 +238,11 @@ public:
             }
         }
 
-        
-        
-        SkASSERT(srcIdx == dstIdx);
         if (int commonEnd = std::min(dstEnd, srcEnd); dstIdx < commonEnd) {
+            
+            
+            SkASSERT(srcIdx == dstIdx);
+
             int n = commonEnd - dstIdx;
             this->blurSegment(n, srcCursor, srcStride, dstCursor, dstStride);
             srcCursor += n * srcStride;
@@ -730,80 +768,26 @@ private:
     skvx::Vec<4, uint32_t>* fBuffer1Cursor;
 };
 
-sk_sp<SkSpecialImage> copy_image_with_bounds(
-        const SkImageFilter_Base::Context& ctx, const sk_sp<SkSpecialImage> &input,
-        SkIRect srcBounds, SkIRect dstBounds) {
-    SkBitmap inputBM;
-    if (!input->getROPixels(&inputBM)) {
-        return nullptr;
-    }
-
-    if (inputBM.colorType() != kN32_SkColorType) {
-        return nullptr;
-    }
-
-    SkBitmap src;
-    inputBM.extractSubset(&src, srcBounds);
-
-    
-    srcBounds.offset(-dstBounds.x(), -dstBounds.y());
-    dstBounds.offset(-dstBounds.x(), -dstBounds.y());
-
-    auto srcW = srcBounds.width(),
-         dstW = dstBounds.width(),
-         dstH = dstBounds.height();
-
-    SkImageInfo dstInfo = SkImageInfo::Make(dstW, dstH, inputBM.colorType(), inputBM.alphaType());
-
-    SkBitmap dst;
-    if (!dst.tryAllocPixels(dstInfo)) {
-        return nullptr;
-    }
-
-    
-    
-    int y = 0;
-    size_t dstWBytes = dstW * sizeof(uint32_t);
-    for (;y < srcBounds.top(); y++) {
-        sk_bzero(dst.getAddr32(0, y), dstWBytes);
-    }
-
-    for (;y < srcBounds.bottom(); y++) {
-        int x = 0;
-        uint32_t* dstPtr = dst.getAddr32(0, y);
-        for (;x < srcBounds.left(); x++) {
-            *dstPtr++ = 0;
-        }
-
-        memcpy(dstPtr, src.getAddr32(x - srcBounds.left(), y - srcBounds.top()),
-               srcW * sizeof(uint32_t));
-
-        dstPtr += srcW;
-        x += srcW;
-
-        for (;x < dstBounds.right(); x++) {
-            *dstPtr++ = 0;
-        }
-    }
-
-    for (;y < dstBounds.bottom(); y++) {
-        sk_bzero(dst.getAddr32(0, y), dstWBytes);
-    }
-
-    return SkSpecialImage::MakeFromRaster(SkIRect::MakeWH(dstBounds.width(),
-                                                          dstBounds.height()),
-                                          dst, ctx.surfaceProps());
-}
 
 
-sk_sp<SkSpecialImage> cpu_blur(
-        const SkImageFilter_Base::Context& ctx,
-        SkVector sigma, const sk_sp<SkSpecialImage> &input,
-        SkIRect srcBounds, SkIRect dstBounds) {
+
+
+
+
+
+
+sk_sp<SkSpecialImage> cpu_blur(const skif::Context& ctx,
+                               skif::LayerSpace<SkSize> sigma,
+                               const sk_sp<SkSpecialImage>& input,
+                               skif::LayerSpace<SkIRect> srcBounds,
+                               skif::LayerSpace<SkIRect> dstBounds) {
     
     
     
     static_assert(kMaxSigma <= 2183.0f);
+
+    
+    SkASSERT(input->width() == srcBounds.width() && input->height() == srcBounds.height());
 
     SkSTArenaAlloc<1024> alloc;
     auto makeMaker = [&](double sigma) -> PassMaker* {
@@ -817,222 +801,237 @@ sk_sp<SkSpecialImage> cpu_blur(
         SK_ABORT("Sigma is out of range.");
     };
 
-    PassMaker* makerX = makeMaker(sigma.x());
-    PassMaker* makerY = makeMaker(sigma.y());
-
-    if (makerX->window() <= 1 && makerY->window() <= 1) {
-        return copy_image_with_bounds(ctx, input, srcBounds, dstBounds);
-    }
-
-    SkBitmap inputBM;
-
-    if (!input->getROPixels(&inputBM)) {
-        return nullptr;
-    }
-
-    if (inputBM.colorType() != kN32_SkColorType) {
-        return nullptr;
-    }
+    PassMaker* makerX = makeMaker(sigma.width());
+    PassMaker* makerY = makeMaker(sigma.height());
+    
+    SkASSERT(makerX->window() > 1 || makerY->window() > 1);
 
     SkBitmap src;
-    inputBM.extractSubset(&src, srcBounds);
+    if (!SkSpecialImages::AsBitmap(input.get(), &src)) {
+        return nullptr;
+    }
+    if (src.colorType() != kN32_SkColorType) {
+        return nullptr;
+    }
 
-    
-    srcBounds.offset(-dstBounds.x(), -dstBounds.y());
-    dstBounds.offset(-dstBounds.x(), -dstBounds.y());
-
-    auto srcW = srcBounds.width(),
-         srcH = srcBounds.height(),
-         dstW = dstBounds.width(),
-         dstH = dstBounds.height();
-
-    SkImageInfo dstInfo = inputBM.info().makeWH(dstW, dstH);
+    auto originalDstBounds = dstBounds;
+    if (makerX->window() > 1) {
+        
+        
+        
+        
+        
+        
+        const auto yPadding = skif::LayerSpace<SkSize>({0.f, 3 * sigma.height()}).ceil();
+        dstBounds.outset(yPadding);
+    }
 
     SkBitmap dst;
-    if (!dst.tryAllocPixels(dstInfo)) {
+    const skif::LayerSpace<SkIPoint> dstOrigin = dstBounds.topLeft();
+    if (!dst.tryAllocPixels(src.info().makeWH(dstBounds.width(), dstBounds.height()))) {
         return nullptr;
     }
+    dst.eraseColor(SK_ColorTRANSPARENT);
 
-    size_t bufferSizeBytes = std::max(makerX->bufferSizeBytes(), makerY->bufferSizeBytes());
-    auto buffer = alloc.makeBytesAlignedTo(bufferSizeBytes, alignof(skvx::Vec<4, uint32_t>));
-
-    
-    
-    
-    
-    
-
-    
-    
-    auto intermediateSrc = static_cast<uint32_t *>(src.getPixels());
-    auto intermediateRowBytesAsPixels = src.rowBytesAsPixels();
-    auto intermediateWidth = srcW;
+    auto buffer = alloc.makeBytesAlignedTo(std::max(makerX->bufferSizeBytes(),
+                                                    makerY->bufferSizeBytes()),
+                                           alignof(skvx::Vec<4, uint32_t>));
 
     
     
     
     
     
-    auto intermediateDst = dst.getAddr32(srcBounds.left(), 0);
 
     
-    
-    
-    
-    if (makerX->window() == 1 || makerY->window() == 1) {
-        dst.eraseColor(0);
-    }
+    int loopStart  = std::max(srcBounds.left(),  dstBounds.left());
+    int loopEnd    = std::min(srcBounds.right(), dstBounds.right());
+    int dstYOffset = 0;
 
     if (makerX->window() > 1) {
+        
+        
+        loopStart = std::max(srcBounds.top(),    dstBounds.top());
+        loopEnd   = std::min(srcBounds.bottom(), dstBounds.bottom());
+
+        auto srcAddr = src.getAddr32(0, loopStart - srcBounds.top());
+        auto dstAddr = dst.getAddr32(0, loopStart - dstBounds.top());
+
+        
         Pass* pass = makerX->makePass(buffer, &alloc);
-        
-        int64_t shift = srcBounds.top() - dstBounds.top();
-
-        
-        
-        
-        intermediateSrc = static_cast<uint32_t *>(dst.getPixels())
-                          + (shift > 0 ? shift * dst.rowBytesAsPixels() : 0);
-        intermediateRowBytesAsPixels = dst.rowBytesAsPixels();
-        intermediateWidth = dstW;
-        intermediateDst = static_cast<uint32_t *>(dst.getPixels());
-
-        const uint32_t* srcCursor = static_cast<uint32_t*>(src.getPixels());
-        uint32_t* dstCursor = intermediateSrc;
-        for (auto y = 0; y < srcH; y++) {
-            pass->blur(srcBounds.left(), srcBounds.right(), dstBounds.right(),
-                      srcCursor, 1, dstCursor, 1);
-            srcCursor += src.rowBytesAsPixels();
-            dstCursor += intermediateRowBytesAsPixels;
+        for (int y = loopStart; y < loopEnd; ++y) {
+            pass->blur(srcBounds.left()  - dstBounds.left(),
+                       srcBounds.right() - dstBounds.left(),
+                       dstBounds.width(),
+                       srcAddr, 1,
+                       dstAddr, 1);
+            srcAddr += src.rowBytesAsPixels();
+            dstAddr += dst.rowBytesAsPixels();
         }
+
+        
+        src = dst;
+        loopStart = originalDstBounds.left();
+        loopEnd   = originalDstBounds.right();
+        
+        
+        
+        dstYOffset = originalDstBounds.top() - dstBounds.top();
+
+        srcBounds = dstBounds;
+        dstBounds = originalDstBounds;
     }
 
+    
+    
     if (makerY->window() > 1) {
+        auto srcAddr = src.getAddr32(loopStart - srcBounds.left(), 0);
+        auto dstAddr = dst.getAddr32(loopStart - dstBounds.left(), dstYOffset);
+
         Pass* pass = makerY->makePass(buffer, &alloc);
-        const uint32_t* srcCursor = intermediateSrc;
-        uint32_t* dstCursor = intermediateDst;
-        for (auto x = 0; x < intermediateWidth; x++) {
-            pass->blur(srcBounds.top(), srcBounds.bottom(), dstBounds.bottom(),
-                       srcCursor, intermediateRowBytesAsPixels,
-                       dstCursor, dst.rowBytesAsPixels());
-            srcCursor += 1;
-            dstCursor += 1;
+        for (int x = loopStart; x < loopEnd; ++x) {
+            pass->blur(srcBounds.top()    - dstBounds.top(),
+                       srcBounds.bottom() - dstBounds.top(),
+                       dstBounds.height(),
+                       srcAddr, src.rowBytesAsPixels(),
+                       dstAddr, dst.rowBytesAsPixels());
+            srcAddr += 1;
+            dstAddr += 1;
         }
     }
 
-    return SkSpecialImage::MakeFromRaster(SkIRect::MakeWH(dstBounds.width(),
-                                                          dstBounds.height()),
-                                          dst, ctx.surfaceProps());
+    originalDstBounds.offset(-dstOrigin); 
+    return SkSpecialImages::MakeFromRaster(SkIRect(originalDstBounds),
+                                           dst,
+                                           ctx.backend()->surfaceProps());
 }
+
 }  
 
-sk_sp<SkSpecialImage> SkBlurImageFilter::onFilterImage(const Context& ctx,
-                                                       SkIPoint* offset) const {
-    SkIPoint inputOffset = SkIPoint::Make(0, 0);
+skif::FilterResult SkBlurImageFilter::onFilterImage(const skif::Context& ctx) const {
+    const bool gpuBacked = SkToBool(ctx.backend()->getBlurEngine());
 
-    sk_sp<SkSpecialImage> input(this->filterInput(0, ctx, &inputOffset));
-    if (!input) {
-        return nullptr;
+    skif::Context inputCtx = ctx.withNewDesiredOutput(
+            this->kernelBounds(ctx.mapping(), ctx.desiredOutput(), gpuBacked));
+
+    skif::FilterResult childOutput = this->getChildOutput(0, inputCtx);
+    skif::LayerSpace<SkSize> sigma = this->mapSigma(ctx.mapping(), gpuBacked);
+    if (sigma.width() == 0.f && sigma.height() == 0.f) {
+        
+        return childOutput;
     }
 
-    SkIRect inputBounds = SkIRect::MakeXYWH(inputOffset.fX, inputOffset.fY,
-                                            input->width(), input->height());
+    SkASSERT(sigma.width() >= 0.f && sigma.width() <= kMaxSigma &&
+             sigma.height() >= 0.f && sigma.height() <= kMaxSigma);
 
     
-    SkIRect dstBounds;
-    if (!this->applyCropRect(this->mapContext(ctx), inputBounds, &dstBounds)) {
-        return nullptr;
+    
+    
+    skif::LayerSpace<SkIRect> maxOutput =
+            this->kernelBounds(ctx.mapping(), childOutput.layerBounds(), gpuBacked);
+    if (!maxOutput.intersect(ctx.desiredOutput())) {
+        return {};
     }
-    if (!inputBounds.intersect(dstBounds)) {
-        return nullptr;
-    }
 
-    
-    SkIPoint resultOffset = SkIPoint::Make(dstBounds.fLeft, dstBounds.fTop);
-
-    
-    inputBounds.offset(-inputOffset);
-    dstBounds.offset(-inputOffset);
-
-    SkVector sigma = map_sigma(fSigma, ctx.ctm());
-    SkASSERT(SkScalarIsFinite(sigma.x()) && sigma.x() >= 0.f && sigma.x() <= kMaxSigma &&
-             SkScalarIsFinite(sigma.y()) && sigma.y() >= 0.f && sigma.y() <= kMaxSigma);
-
-    sk_sp<SkSpecialImage> result;
-#if defined(SK_GANESH)
-    if (ctx.gpuBacked()) {
+    if (fLegacyTileMode != SkTileMode::kDecal) {
         
         
-        input = ImageToColorSpace(input.get(), ctx.colorType(), ctx.colorSpace(),
-                                  ctx.surfaceProps());
-        result = this->gpuFilter(ctx, sigma, input, inputBounds, dstBounds, inputOffset,
-                                 &resultOffset);
-    } else
-#endif
-    {
-        result = cpu_blur(ctx, sigma, input, inputBounds, dstBounds);
+        
+        childOutput = childOutput.applyCrop(inputCtx,
+                                            childOutput.layerBounds(),
+                                            fLegacyTileMode);
     }
 
     
-    if (result != nullptr) {
-        *offset = resultOffset;
+    
+    if (gpuBacked) {
+        
+        
+        
+        skif::Context croppedOutput = ctx.withNewDesiredOutput(maxOutput);
+        skif::FilterResult::Builder builder{croppedOutput};
+        builder.add(childOutput);
+        return builder.blur(sigma);
     }
-    return result;
+
+    
+    
+
+    auto [resolvedChildOutput, origin] = childOutput.imageAndOffset(inputCtx);
+    if (!resolvedChildOutput) {
+        return {};
+    }
+    skif::LayerSpace<SkIRect> srcBounds{SkIRect::MakeXYWH(origin.x(),
+                                                          origin.y(),
+                                                          resolvedChildOutput->width(),
+                                                          resolvedChildOutput->height())};
+
+    return skif::FilterResult{cpu_blur(ctx, sigma, std::move(resolvedChildOutput),
+                                       srcBounds, maxOutput),
+                              maxOutput.topLeft()};
 }
 
-#if defined(SK_GANESH)
-sk_sp<SkSpecialImage> SkBlurImageFilter::gpuFilter(
-        const Context& ctx, SkVector sigma, const sk_sp<SkSpecialImage> &input, SkIRect inputBounds,
-        SkIRect dstBounds, SkIPoint inputOffset, SkIPoint* offset) const {
-    if (SkGpuBlurUtils::IsEffectivelyZeroSigma(sigma.x()) &&
-        SkGpuBlurUtils::IsEffectivelyZeroSigma(sigma.y())) {
-        offset->fX = inputBounds.x() + inputOffset.fX;
-        offset->fY = inputBounds.y() + inputOffset.fY;
-        return input->makeSubset(inputBounds);
-    }
+skif::LayerSpace<SkSize> SkBlurImageFilter::mapSigma(const skif::Mapping& mapping,
+                                                     bool gpuBacked) const {
+    skif::LayerSpace<SkSize> sigma = mapping.paramToLayer(fSigma);
+    
+    sigma = skif::LayerSpace<SkSize>({std::min(sigma.width(), kMaxSigma),
+                                      std::min(sigma.height(), kMaxSigma)});
 
-    auto context = ctx.getContext();
+    
+    
+    
+    
+    
+    
 
-    GrSurfaceProxyView inputView = input->view(context);
-    if (!inputView.proxy()) {
-        return nullptr;
-    }
-    SkASSERT(inputView.asTextureProxy());
-
-    dstBounds.offset(input->subset().topLeft());
-    inputBounds.offset(input->subset().topLeft());
-    auto sdc = SkGpuBlurUtils::GaussianBlur(
-            context,
-            std::move(inputView),
-            SkColorTypeToGrColorType(input->colorType()),
-            input->alphaType(),
-            ctx.refColorSpace(),
-            dstBounds,
-            inputBounds,
-            sigma.x(),
-            sigma.y(),
-            fTileMode);
-    if (!sdc) {
-        return nullptr;
-    }
-
-    return SkSpecialImage::MakeDeferredFromGpu(context,
-                                               SkIRect::MakeSize(dstBounds.size()),
-                                               kNeedNewImageUniqueID_SpecialImage,
-                                               sdc->readSurfaceView(),
-                                               sdc->colorInfo(),
-                                               ctx.surfaceProps());
-}
+    
+    
+    if (!SkScalarIsFinite(sigma.width()) || (!gpuBacked && calculate_window(sigma.width()) <= 1)
+#if defined(SK_GANESH) || defined(SK_GRAPHITE)
+        || (gpuBacked && skgpu::BlurIsEffectivelyIdentity(sigma.width()))
 #endif
+    ) {
+        sigma = skif::LayerSpace<SkSize>({0.f, sigma.height()});
+    }
+
+    if (!SkScalarIsFinite(sigma.height()) || (!gpuBacked && calculate_window(sigma.height()) <= 1)
+#if defined(SK_GANESH) || defined(SK_GRAPHITE)
+        || (gpuBacked && skgpu::BlurIsEffectivelyIdentity(sigma.height()))
+#endif
+    ) {
+        sigma = skif::LayerSpace<SkSize>({sigma.width(), 0.f});
+    }
+
+    return sigma;
+}
+
+skif::LayerSpace<SkIRect> SkBlurImageFilter::onGetInputLayerBounds(
+        const skif::Mapping& mapping,
+        const skif::LayerSpace<SkIRect>& desiredOutput,
+        std::optional<skif::LayerSpace<SkIRect>> contentBounds) const {
+    
+    
+    skif::LayerSpace<SkIRect> requiredInput =
+            this->kernelBounds(mapping, desiredOutput, true);
+    return this->getChildInputLayerBounds(0, mapping, requiredInput, contentBounds);
+}
+
+std::optional<skif::LayerSpace<SkIRect>> SkBlurImageFilter::onGetOutputLayerBounds(
+        const skif::Mapping& mapping,
+        std::optional<skif::LayerSpace<SkIRect>> contentBounds) const {
+    auto childOutput = this->getChildOutputLayerBounds(0, mapping, contentBounds);
+    if (childOutput) {
+        
+        
+        return this->kernelBounds(mapping, *childOutput, true);
+    } else {
+        return skif::LayerSpace<SkIRect>::Unbounded();
+    }
+}
 
 SkRect SkBlurImageFilter::computeFastBounds(const SkRect& src) const {
     SkRect bounds = this->getInput(0) ? this->getInput(0)->computeFastBounds(src) : src;
-    bounds.outset(fSigma.width() * 3, fSigma.height() * 3);
+    bounds.outset(SkSize(fSigma).width() * 3, SkSize(fSigma).height() * 3);
     return bounds;
-}
-
-SkIRect SkBlurImageFilter::onFilterNodeBounds(const SkIRect& src, const SkMatrix& ctm,
-                                              MapDirection, const SkIRect* inputRect) const {
-    SkVector sigma = map_sigma(fSigma, ctm);
-    return src.makeOutset(SkScalarCeilToInt(sigma.x() * 3), SkScalarCeilToInt(sigma.y() * 3));
 }

@@ -7,8 +7,12 @@
 #ifndef SkTextCoordShader_DEFINED
 #define SkTextCoordShader_DEFINED
 
-#include "src/core/SkVM.h"
+#include "include/core/SkScalar.h"
+#include "include/private/base/SkAssert.h"
 #include "src/shaders/SkShaderBase.h"
+
+class SkMatrix;
+struct SkStageRec;
 
 
 
@@ -22,22 +26,12 @@ public:
 
     
     
-    
-    skvm::Color program(skvm::Builder* b,
-                        skvm::Coord device,
-                        skvm::Coord local,
-                        skvm::Color color,
-                        const MatrixRec& mRec,
-                        const SkColorInfo& dst,
-                        skvm::Uniforms* uniforms,
-                        SkArenaAlloc* alloc) const override;
-
-    
-    
-    bool appendStages(const SkStageRec& rec, const MatrixRec&) const override;
+    bool appendStages(const SkStageRec& rec, const SkShaders::MatrixRec&) const override;
 
     
     bool update(const SkMatrix& matrix);
+
+    ShaderType type() const override { return ShaderType::kTransform; }
 
     
     Factory getFactory() const override {

@@ -9,11 +9,16 @@
 #define SkImageFilterCache_DEFINED
 
 #include "include/core/SkMatrix.h"
+#include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#include "src/core/SkImageFilterTypes.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkDebug.h"
 
-struct SkIPoint;
+#include <cstddef>
+#include <cstdint>
+
 class SkImageFilter;
+namespace skif { class FilterResult; }
 
 struct SkImageFilterCacheKey {
     SkImageFilterCacheKey(const uint32_t uniqueID, const SkMatrix& matrix,
@@ -51,11 +56,11 @@ struct SkImageFilterCacheKey {
 
 class SkImageFilterCache : public SkRefCnt {
 public:
-    enum { kDefaultTransientSize = 32 * 1024 * 1024 };
+    static constexpr size_t kDefaultTransientSize = 32 * 1024 * 1024;
 
     ~SkImageFilterCache() override {}
-    static SkImageFilterCache* Create(size_t maxBytes);
-    static SkImageFilterCache* Get();
+    static sk_sp<SkImageFilterCache> Create(size_t maxBytes);
+    static sk_sp<SkImageFilterCache> Get();
 
     
     

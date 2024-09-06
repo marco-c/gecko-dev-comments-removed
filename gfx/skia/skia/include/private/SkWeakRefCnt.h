@@ -100,7 +100,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT try_ref() const {
+    [[nodiscard]] bool try_ref() const {
         if (atomic_conditional_acquire_strong_ref() != 0) {
             
             

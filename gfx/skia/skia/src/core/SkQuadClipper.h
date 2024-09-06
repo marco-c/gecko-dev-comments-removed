@@ -10,6 +10,9 @@
 #define SkQuadClipper_DEFINED
 
 #include "include/core/SkPath.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkScalar.h"
 
 
 

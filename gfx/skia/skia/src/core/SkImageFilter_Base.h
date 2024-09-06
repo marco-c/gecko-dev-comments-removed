@@ -16,16 +16,12 @@
 
 #include "src/core/SkImageFilterTypes.h"
 
-class GrFragmentProcessor;
-class GrRecordingContext;
+#include <optional>
 
 
 
 class SkImageFilter_Base : public SkImageFilter {
 public:
-    
-    using Context = skif::Context;
-
     
 
 
@@ -40,6 +36,19 @@ public:
     skif::FilterResult filterImage(const skif::Context& context) const;
 
     
+
+
+
+
+    sk_sp<SkImage> makeImageWithFilter(sk_sp<skif::Backend> backend,
+                                       sk_sp<SkImage> src,
+                                       const SkIRect& subset,
+                                       const SkIRect& clipBounds,
+                                       SkIRect* outSubset,
+                                       SkIPoint* offset) const;
+
+    
+
 
 
 
@@ -69,8 +78,9 @@ public:
 
 
     skif::LayerSpace<SkIRect> getInputBounds(
-            const skif::Mapping& mapping, const skif::DeviceSpace<SkIRect>& desiredOutput,
-            const skif::ParameterSpace<SkRect>* knownContentBounds) const;
+            const skif::Mapping& mapping,
+            const skif::DeviceSpace<SkIRect>& desiredOutput,
+            std::optional<skif::ParameterSpace<SkRect>> knownContentBounds) const;
 
     
 
@@ -96,23 +106,25 @@ public:
 
 
 
-    skif::DeviceSpace<SkIRect> getOutputBounds(
-            const skif::Mapping& mapping, const skif::ParameterSpace<SkRect>& contentBounds) const;
+
+
+
+
+    std::optional<skif::DeviceSpace<SkIRect>> getOutputBounds(
+            const skif::Mapping& mapping,
+            const skif::ParameterSpace<SkRect>& contentBounds) const;
 
     
     
     bool affectsTransparentBlack() const;
 
     
+    bool usesSource() const { return fUsesSrcInput; }
+
+    
 
 
-
-
-    enum class MatrixCapability {
-        kTranslate,
-        kScaleTranslate,
-        kComplex,
-    };
+    using MatrixCapability = skif::MatrixCapability;
     MatrixCapability getCTMCapability() const;
 
     uint32_t uniqueID() const { return fUniqueID; }
@@ -125,44 +137,13 @@ public:
         return kSkImageFilter_Type;
     }
 
-protected:
     
-    class CropRect {
-    public:
-        enum CropEdge {
-            kHasLeft_CropEdge   = 0x01,
-            kHasTop_CropEdge    = 0x02,
-            kHasWidth_CropEdge  = 0x04,
-            kHasHeight_CropEdge = 0x08,
-            kHasAll_CropEdge    = 0x0F,
-        };
-        CropRect() : fFlags(0) {}
-        explicit CropRect(const SkRect* rect)
-            : fRect(rect ? *rect : SkRect::MakeEmpty()), fFlags(rect ? kHasAll_CropEdge : 0x0) {}
+    
+    
+    static std::pair<sk_sp<SkImageFilter>, std::optional<SkRect>>
+    Unflatten(SkReadBuffer& buffer);
 
-        
-
-        uint32_t flags() const { return fFlags; }
-        const SkRect& rect() const { return fRect; }
-
-        
-
-
-
-
-
-
-
-
-
-        void applyTo(const SkIRect& imageBounds, const SkMatrix& matrix, bool embiggen,
-                     SkIRect* cropped) const;
-
-    private:
-        SkRect fRect;
-        uint32_t fFlags;
-    };
-
+protected:
     class Common {
     public:
         
@@ -175,62 +156,39 @@ protected:
 
         bool unflatten(SkReadBuffer&, int expectedInputs);
 
-        const SkRect* cropRect() const {
-            return fCropRect.flags() != 0x0 ? &fCropRect.rect() : nullptr;
-        }
+        std::optional<SkRect> cropRect() const { return fCropRect; }
+
         int inputCount() const { return fInputs.size(); }
         sk_sp<SkImageFilter>* inputs() { return fInputs.begin(); }
 
         sk_sp<SkImageFilter> getInput(int index) { return fInputs[index]; }
 
     private:
-        CropRect fCropRect;
         
-        SkSTArray<2, sk_sp<SkImageFilter>, true> fInputs;
-    };
+        std::optional<SkRect> fCropRect;
 
-    
-    enum class VisitChildren : bool {
-        kNo  = false,
-        kYes = true
+        
+        skia_private::STArray<2, sk_sp<SkImageFilter>, true> fInputs;
     };
 
     SkImageFilter_Base(sk_sp<SkImageFilter> const* inputs, int inputCount,
-                       const SkRect* cropRect);
+                       std::optional<bool> usesSrc = {});
 
     ~SkImageFilter_Base() override;
 
     void flatten(SkWriteBuffer&) const override;
 
     
-    virtual sk_sp<SkSpecialImage> onFilterImage(const Context&, SkIPoint* offset) const {
-        return nullptr;
-    }
-
     
-    
-    
-    virtual SkIRect onFilterBounds(const SkIRect&, const SkMatrix& ctm,
-                                   MapDirection, const SkIRect* inputRect) const;
-    virtual SkIRect onFilterNodeBounds(const SkIRect&, const SkMatrix& ctm,
-                                       MapDirection, const SkIRect* inputRect) const;
-
-    
-    sk_sp<SkSpecialImage> filterInput(int index, const Context& ctx, SkIPoint* offset) const {
-        return this->filterInput(index, ctx).imageAndOffset(offset);
-    }
-
-    
-    
-    
-    skif::LayerSpace<SkIRect> visitInputLayerBounds(
-            const skif::Mapping& mapping, const skif::LayerSpace<SkIRect>& desiredOutput,
-            const skif::LayerSpace<SkIRect>& contentBounds) const;
-    
-    
-    
-    skif::LayerSpace<SkIRect> visitOutputLayerBounds(
-            const skif::Mapping& mapping, const skif::LayerSpace<SkIRect>& contentBounds) const;
+    skif::LayerSpace<SkIRect> getChildInputLayerBounds(
+            int index,
+            const skif::Mapping& mapping,
+            const skif::LayerSpace<SkIRect>& desiredOutput,
+            std::optional<skif::LayerSpace<SkIRect>> contentBounds) const;
+    std::optional<skif::LayerSpace<SkIRect>> getChildOutputLayerBounds(
+            int index,
+            const skif::Mapping& mapping,
+            std::optional<skif::LayerSpace<SkIRect>> contentBounds) const;
 
     
     
@@ -239,101 +197,7 @@ protected:
     
     
     
-    
-    
-    skif::FilterResult filterInput(int index, const skif::Context& ctx) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    bool cropRectIsSet() const { return fCropRect.flags() != 0x0; }
-
-    
-    CropRect getCropRect() const { return fCropRect; }
-
-    
-    const CropRect* getCropRectIfSet() const {
-        return this->cropRectIsSet() ? &fCropRect : nullptr;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool applyCropRect(const Context&, const SkIRect& srcBounds, SkIRect* dstBounds) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    sk_sp<SkSpecialImage> applyCropRectAndPad(const Context&, SkSpecialImage* src,
-                                              SkIPoint* srcOffset, SkIRect* bounds) const;
-
-    
-
-
-
-
-
-    
-    
-    
-    Context mapContext(const Context& ctx) const;
-
-#if defined(SK_GANESH)
-    static sk_sp<SkSpecialImage> DrawWithFP(GrRecordingContext* context,
-                                            std::unique_ptr<GrFragmentProcessor> fp,
-                                            const SkIRect& bounds,
-                                            SkColorType colorType,
-                                            const SkColorSpace* colorSpace,
-                                            const SkSurfaceProps&,
-                                            GrSurfaceOrigin surfaceOrigin,
-                                            GrProtected isProtected = GrProtected::kNo);
-
-    
-
-
-
-
-    static sk_sp<SkSpecialImage> ImageToColorSpace(SkSpecialImage* src,
-                                                   SkColorType colorType,
-                                                   SkColorSpace* colorSpace,
-                                                   const SkSurfaceProps&);
-#endif
-
-    
-    
-    
-    
-    
-    
-    static SkIRect DetermineRepeatedSrcBound(const SkIRect& srcBounds,
-                                             const SkIVector& filterOffset,
-                                             const SkISize& filterSize,
-                                             const SkIRect& originalSrcBounds);
+    skif::FilterResult getChildOutput(int index, const skif::Context& ctx) const;
 
 private:
     friend class SkImageFilter;
@@ -373,15 +237,7 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-    virtual skif::FilterResult onFilterImage(const skif::Context& context) const;
+    virtual bool ignoreInputsAffectsTransparentBlack() const { return false; }
 
     
 
@@ -390,6 +246,14 @@ private:
 
 
 
+
+
+
+
+
+    virtual skif::FilterResult onFilterImage(const skif::Context& context) const = 0;
+
+    
 
 
 
@@ -406,9 +270,9 @@ private:
 
 
     virtual skif::LayerSpace<SkIRect> onGetInputLayerBounds(
-            const skif::Mapping& mapping, const skif::LayerSpace<SkIRect>& desiredOutput,
-            const skif::LayerSpace<SkIRect>& contentBounds,
-            VisitChildren recurse = VisitChildren::kYes) const;
+            const skif::Mapping& mapping,
+            const skif::LayerSpace<SkIRect>& desiredOutput,
+            std::optional<skif::LayerSpace<SkIRect>> contentBounds) const = 0;
 
     
 
@@ -423,15 +287,21 @@ private:
 
 
 
+
+
+
+
+
+
     
     
-    virtual skif::LayerSpace<SkIRect> onGetOutputLayerBounds(
-            const skif::Mapping& mapping, const skif::LayerSpace<SkIRect>& contentBounds) const;
+    virtual std::optional<skif::LayerSpace<SkIRect>> onGetOutputLayerBounds(
+            const skif::Mapping& mapping,
+            std::optional<skif::LayerSpace<SkIRect>> contentBounds) const = 0;
 
     skia_private::AutoSTArray<2, sk_sp<SkImageFilter>> fInputs;
 
     bool fUsesSrcInput;
-    CropRect fCropRect;
     uint32_t fUniqueID; 
 
     using INHERITED = SkImageFilter;
@@ -466,15 +336,12 @@ static inline const SkImageFilter_Base* as_IFB(const SkImageFilter* filter) {
 
 
 
-void SkRegisterAlphaThresholdImageFilterFlattenable();
-void SkRegisterArithmeticImageFilterFlattenable();
 void SkRegisterBlendImageFilterFlattenable();
 void SkRegisterBlurImageFilterFlattenable();
 void SkRegisterColorFilterImageFilterFlattenable();
 void SkRegisterComposeImageFilterFlattenable();
 void SkRegisterCropImageFilterFlattenable();
 void SkRegisterDisplacementMapImageFilterFlattenable();
-void SkRegisterDropShadowImageFilterFlattenable();
 void SkRegisterImageImageFilterFlattenable();
 void SkRegisterLightingImageFilterFlattenables();
 void SkRegisterMagnifierImageFilterFlattenable();
@@ -483,10 +350,11 @@ void SkRegisterMatrixTransformImageFilterFlattenable();
 void SkRegisterMergeImageFilterFlattenable();
 void SkRegisterMorphologyImageFilterFlattenables();
 void SkRegisterPictureImageFilterFlattenable();
-#ifdef SK_ENABLE_SKSL
 void SkRegisterRuntimeImageFilterFlattenable();
-#endif
 void SkRegisterShaderImageFilterFlattenable();
-void SkRegisterTileImageFilterFlattenable();
+
+
+
+void SkRegisterLegacyDropShadowImageFilterFlattenable();
 
 #endif 

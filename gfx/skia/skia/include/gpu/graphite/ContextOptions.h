@@ -8,9 +8,14 @@
 #ifndef skgpu_graphite_ContextOptions_DEFINED
 #define skgpu_graphite_ContextOptions_DEFINED
 
+#include "include/private/base/SkAPI.h"
+#include "include/private/base/SkMath.h"
+
 namespace skgpu { class ShaderErrorHandler; }
 
 namespace skgpu::graphite {
+
+struct ContextOptionsPriv;
 
 struct SK_API ContextOptions {
     ContextOptions() {}
@@ -27,6 +32,14 @@ struct SK_API ContextOptions {
 
 
     skgpu::ShaderErrorHandler* fShaderErrorHandler = nullptr;
+
+    
+
+
+
+
+
+    int fInternalMultisampleCount = 4;
 
     
 
@@ -60,26 +73,33 @@ struct SK_API ContextOptions {
     
 
 
+    int fMaxPathAtlasTextureSize = 8192;  
 
-    bool fAllowMultipleGlyphCacheTextures = true;
+    
+
+
+
+    bool fAllowMultipleAtlasTextures = true;
     bool fSupportBilerpFromGlyphAtlas = false;
 
-#if GRAPHITE_TEST_UTILS
     
 
 
 
+
+
+    bool fDisableCachedGlyphUploads = false;
+
+    static constexpr size_t kDefaultContextBudget = 256 * (1 << 20);
     
 
 
-    int  fMaxTextureAtlasSize = 2048;
+    size_t fGpuBudgetInBytes = kDefaultContextBudget;
 
     
 
 
-
-    bool fStoreContextRefInRecorder = false;
-#endif
+    ContextOptionsPriv* fOptionsPriv = nullptr;
 };
 
 }  

@@ -8,11 +8,11 @@
 #ifndef SKSL_FUNCTIONDEFINITION
 #define SKSL_FUNCTIONDEFINITION
 
-#include "include/private/SkSLIRNode.h"
-#include "include/private/SkSLProgramElement.h"
-#include "include/private/SkSLStatement.h"
-#include "include/sksl/SkSLPosition.h"
+#include "src/sksl/SkSLPosition.h"
 #include "src/sksl/ir/SkSLFunctionDeclaration.h"
+#include "src/sksl/ir/SkSLIRNode.h"
+#include "src/sksl/ir/SkSLProgramElement.h"
+#include "src/sksl/ir/SkSLStatement.h"
 
 #include <memory>
 #include <string>
@@ -29,14 +29,18 @@ class FunctionDefinition final : public ProgramElement {
 public:
     inline static constexpr Kind kIRNodeKind = Kind::kFunction;
 
-    FunctionDefinition(Position pos, const FunctionDeclaration* declaration, bool builtin,
+    FunctionDefinition(Position pos,
+                       const FunctionDeclaration* declaration,
+                       bool builtin,
                        std::unique_ptr<Statement> body)
-        : INHERITED(pos, kIRNodeKind)
-        , fDeclaration(declaration)
-        , fBuiltin(builtin)
-        , fBody(std::move(body)) {}
+            : INHERITED(pos, kIRNodeKind)
+            , fDeclaration(declaration)
+            , fBuiltin(builtin)
+            , fBody(std::move(body)) {}
 
     
+
+
 
 
 
@@ -53,6 +57,12 @@ public:
                                                        std::unique_ptr<Statement> body,
                                                        bool builtin);
 
+    static std::unique_ptr<FunctionDefinition> Make(const Context& context,
+                                                    Position pos,
+                                                    const FunctionDeclaration& function,
+                                                    std::unique_ptr<Statement> body,
+                                                    bool builtin);
+
     const FunctionDeclaration& declaration() const {
         return *fDeclaration;
     }
@@ -67,11 +77,6 @@ public:
 
     const std::unique_ptr<Statement>& body() const {
         return fBody;
-    }
-
-    std::unique_ptr<ProgramElement> clone() const override {
-        return std::make_unique<FunctionDefinition>(fPosition, &this->declaration(),
-                                                    false, this->body()->clone());
     }
 
     std::string description() const override {

@@ -33,7 +33,7 @@ class SkPixelRef;
 class SkShader;
 enum SkColorType : int;
 enum class SkTileMode;
-struct SkMask;
+struct SkMaskBuilder;
 
 
 
@@ -270,6 +270,16 @@ public:
 
 
 
+
+
+
+
+    void setColorSpace(sk_sp<SkColorSpace> colorSpace);
+
+    
+
+
+
     void* getPixels() const { return fPixmap.writable_addr(); }
 
     
@@ -440,7 +450,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocPixelsFlags(const SkImageInfo& info, uint32_t flags);
+    [[nodiscard]] bool tryAllocPixelsFlags(const SkImageInfo& info, uint32_t flags);
 
     
 
@@ -478,7 +488,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info, size_t rowBytes);
+    [[nodiscard]] bool tryAllocPixels(const SkImageInfo& info, size_t rowBytes);
 
     
 
@@ -514,7 +524,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info) {
+    [[nodiscard]] bool tryAllocPixels(const SkImageInfo& info) {
         return this->tryAllocPixels(info, info.minRowBytes());
     }
 
@@ -553,7 +563,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocN32Pixels(int width, int height, bool isOpaque = false);
+    [[nodiscard]] bool tryAllocN32Pixels(int width, int height, bool isOpaque = false);
 
     
 
@@ -637,7 +647,7 @@ public:
 
     
 
-    bool installMaskPixels(const SkMask& mask);
+    bool installMaskPixels(SkMaskBuilder& mask);
 
     
 
@@ -661,7 +671,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels() {
+    [[nodiscard]] bool tryAllocPixels() {
         return this->tryAllocPixels((Allocator*)nullptr);
     }
 
@@ -685,7 +695,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(Allocator* allocator);
+    [[nodiscard]] bool tryAllocPixels(Allocator* allocator);
 
     
 
@@ -777,8 +787,7 @@ public:
 
 
 
-
-    void eraseColor(SkColor4f c, SkColorSpace* colorSpace = nullptr) const;
+    void eraseColor(SkColor4f) const;
 
     
 
@@ -821,8 +830,6 @@ public:
 
 
 
-
-    void erase(SkColor4f c, SkColorSpace* colorSpace, const SkIRect& area) const;
     void erase(SkColor4f c, const SkIRect& area) const;
 
     

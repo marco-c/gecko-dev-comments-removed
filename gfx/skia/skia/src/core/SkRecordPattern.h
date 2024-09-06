@@ -45,8 +45,7 @@ class IsDraw {
 public:
     IsDraw() : fPaint(nullptr) {}
 
-    typedef SkPaint type;
-    type* get() { return fPaint; }
+    SkPaint* get() { return fPaint; }
 
     template <typename T>
     std::enable_if_t<(T::kTags & kDrawWithPaint_Tag) == kDrawWithPaint_Tag, bool>
@@ -72,7 +71,47 @@ private:
     template <typename T> static T* AsPtr(SkRecords::Optional<T>& x) { return x; }
     template <typename T> static T* AsPtr(T& x) { return &x; }
 
-    type* fPaint;
+    SkPaint* fPaint;
+};
+
+
+class IsSingleDraw {
+public:
+    IsSingleDraw() : fPaint(nullptr) {}
+
+    SkPaint* get() { return fPaint; }
+
+    template <typename T>
+    std::enable_if_t<(T::kTags & kDrawWithPaint_Tag) == kDrawWithPaint_Tag &&
+                             !(T::kTags & kMultiDraw_Tag),
+                     bool>
+    operator()(T* draw) {
+        fPaint = AsPtr(draw->paint);
+        return true;
+    }
+
+    template <typename T>
+    std::enable_if_t<(T::kTags & kDrawWithPaint_Tag) == kDraw_Tag &&
+                             !(T::kTags & kMultiDraw_Tag),
+                     bool>
+    operator()(T* draw) {
+        fPaint = nullptr;
+        return true;
+    }
+
+    template <typename T>
+    std::enable_if_t<!(T::kTags & kDraw_Tag) || (T::kTags & kMultiDraw_Tag), bool>
+    operator()(T* draw) {
+        fPaint = nullptr;
+        return false;
+    }
+
+private:
+    
+    template <typename T> static T* AsPtr(SkRecords::Optional<T>& x) { return x; }
+    template <typename T> static T* AsPtr(T& x) { return &x; }
+
+    SkPaint* fPaint;
 };
 
 

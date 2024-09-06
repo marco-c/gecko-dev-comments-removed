@@ -8,16 +8,59 @@
 #ifndef skgpu_graphite_DawnBackendContext_DEFINED
 #define skgpu_graphite_DawnBackendContext_DEFINED
 
-#include "webgpu/webgpu_cpp.h"
+#include "include/core/SkTypes.h"
+#include "webgpu/webgpu_cpp.h"  
 
 namespace skgpu::graphite {
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using DawnTickFunction = void(const wgpu::Instance& device);
+
+#if !defined(__EMSCRIPTEN__)
+SK_API inline void DawnNativeProcessEventsFunction(const wgpu::Instance& instance) {
+    instance.ProcessEvents();
+}
+#endif
+
+
+
+
 struct SK_API DawnBackendContext {
+    wgpu::Instance fInstance;
     wgpu::Device fDevice;
-    wgpu::Queue  fQueue;
+    wgpu::Queue fQueue;
+    
+    DawnTickFunction* fTick =
+#if defined(__EMSCRIPTEN__)
+            nullptr;
+#else
+            DawnNativeProcessEventsFunction;
+#endif
 };
 
 } 

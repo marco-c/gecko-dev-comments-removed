@@ -10,8 +10,8 @@
 
 #include <memory>
 
-#include "include/private/SkSLDefines.h"
-#include "include/sksl/SkSLOperator.h"
+#include "src/sksl/SkSLDefines.h"
+#include "src/sksl/SkSLOperator.h"
 
 namespace SkSL {
 
@@ -48,7 +48,10 @@ public:
 
 
 
-    static const Expression* GetConstantValueOrNullForVariable(const Expression& value);
+    static const Expression* GetConstantValueOrNull(const Expression& value);
+
+    
+    static bool IsConstantSplat(const Expression& expr, double value);
 
     
 

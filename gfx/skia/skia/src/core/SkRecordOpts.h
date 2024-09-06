@@ -8,7 +8,7 @@
 #ifndef SkRecordOpts_DEFINED
 #define SkRecordOpts_DEFINED
 
-#include "src/core/SkRecord.h"
+class SkRecord;
 
 
 void SkRecordOptimize(SkRecord*);
@@ -25,8 +25,5 @@ void SkRecordNoopSaveLayerDrawRestores(SkRecord*);
 
 
 void SkRecordMergeSvgOpacityAndFilterLayers(SkRecord*);
-
-
-void SkRecordOptimize2(SkRecord*);
 
 #endif

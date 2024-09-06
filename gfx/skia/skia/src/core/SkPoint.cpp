@@ -6,7 +6,6 @@
 
 
 #include "include/core/SkPoint.h"
-#include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkFloatingPoint.h"
 #include "src/core/SkPointPriv.h"
@@ -15,20 +14,20 @@
 
 
 
-void SkPoint::scale(SkScalar scale, SkPoint* dst) const {
+void SkPoint::scale(float scale, SkPoint* dst) const {
     SkASSERT(dst);
     dst->set(fX * scale, fY * scale);
 }
 
 bool SkPoint::normalize() {
-    return this->setLength(fX, fY, SK_Scalar1);
+    return this->setLength(fX, fY, 1);
 }
 
-bool SkPoint::setNormalize(SkScalar x, SkScalar y) {
-    return this->setLength(x, y, SK_Scalar1);
+bool SkPoint::setNormalize(float x, float y) {
+    return this->setLength(x, y, 1);
 }
 
-bool SkPoint::setLength(SkScalar length) {
+bool SkPoint::setLength(float length) {
     return this->setLength(fX, fY, length);
 }
 
@@ -69,7 +68,7 @@ template <bool use_rsqrt> bool set_point_length(SkPoint* pt, float x, float y, f
     return true;
 }
 
-SkScalar SkPoint::Normalize(SkPoint* pt) {
+float SkPoint::Normalize(SkPoint* pt) {
     float mag;
     if (set_point_length<false>(pt, pt->fX, pt->fY, 1.0f, &mag)) {
         return mag;
@@ -77,9 +76,9 @@ SkScalar SkPoint::Normalize(SkPoint* pt) {
     return 0;
 }
 
-SkScalar SkPoint::Length(SkScalar dx, SkScalar dy) {
+float SkPoint::Length(float dx, float dy) {
     float mag2 = dx * dx + dy * dy;
-    if (SkScalarIsFinite(mag2)) {
+    if (sk_float_isfinite(mag2)) {
         return sk_float_sqrt(mag2);
     } else {
         double xx = dx;
@@ -99,32 +98,32 @@ bool SkPointPriv::SetLengthFast(SkPoint* pt, float length) {
 
 
 
-SkScalar SkPointPriv::DistanceToLineBetweenSqd(const SkPoint& pt, const SkPoint& a,
+float SkPointPriv::DistanceToLineBetweenSqd(const SkPoint& pt, const SkPoint& a,
                                                const SkPoint& b,
                                                Side* side) {
 
     SkVector u = b - a;
     SkVector v = pt - a;
 
-    SkScalar uLengthSqd = LengthSqd(u);
-    SkScalar det = u.cross(v);
+    float uLengthSqd = LengthSqd(u);
+    float det = u.cross(v);
     if (side) {
         SkASSERT(-1 == kLeft_Side &&
                   0 == kOn_Side &&
                   1 == kRight_Side);
-        *side = (Side) SkScalarSignAsInt(det);
+        *side = (Side)sk_float_sgn(det);
     }
-    SkScalar temp = sk_ieee_float_divide(det, uLengthSqd);
+    float temp = sk_ieee_float_divide(det, uLengthSqd);
     temp *= det;
     
     
-    if (!SkScalarIsFinite(temp)) {
+    if (!sk_float_isfinite(temp)) {
         return LengthSqd(v);
     }
     return temp;
 }
 
-SkScalar SkPointPriv::DistanceToLineSegmentBetweenSqd(const SkPoint& pt, const SkPoint& a,
+float SkPointPriv::DistanceToLineSegmentBetweenSqd(const SkPoint& pt, const SkPoint& a,
                                                       const SkPoint& b) {
     
     
@@ -145,8 +144,8 @@ SkScalar SkPointPriv::DistanceToLineSegmentBetweenSqd(const SkPoint& pt, const S
     SkVector u = b - a;
     SkVector v = pt - a;
 
-    SkScalar uLengthSqd = LengthSqd(u);
-    SkScalar uDotV = SkPoint::DotProduct(u, v);
+    float uLengthSqd = LengthSqd(u);
+    float uDotV = SkPoint::DotProduct(u, v);
 
     
     if (uDotV <= 0) {
@@ -156,12 +155,12 @@ SkScalar SkPointPriv::DistanceToLineSegmentBetweenSqd(const SkPoint& pt, const S
         return DistanceToSqd(b, pt);
     
     } else {
-        SkScalar det = u.cross(v);
-        SkScalar temp = sk_ieee_float_divide(det, uLengthSqd);
+        float det = u.cross(v);
+        float temp = sk_ieee_float_divide(det, uLengthSqd);
         temp *= det;
         
         
-        if (!SkScalarIsFinite(temp)) {
+        if (!sk_float_isfinite(temp)) {
             return LengthSqd(v);
         }
         return temp;

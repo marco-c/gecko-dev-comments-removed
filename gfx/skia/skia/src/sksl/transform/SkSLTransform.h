@@ -9,6 +9,8 @@
 #define SKSL_TRANSFORM
 
 #include "include/core/SkSpan.h"
+#include "src/sksl/ir/SkSLModifierFlags.h"
+
 #include <memory>
 #include <vector>
 
@@ -17,12 +19,12 @@ namespace SkSL {
 class Context;
 class Expression;
 class IndexExpression;
-struct Modifiers;
 struct Module;
 struct Program;
 class ProgramElement;
 class ProgramUsage;
 class Statement;
+class SwitchStatement;
 class Variable;
 enum class ProgramKind : int8_t;
 
@@ -33,10 +35,9 @@ namespace Transform {
 
 
 
-const Modifiers* AddConstToVarModifiers(const Context& context,
-                                        const Variable& var,
-                                        const Expression* initialValue,
-                                        const ProgramUsage* usage);
+ModifierFlags AddConstToVarModifiers(const Variable& var,
+                                     const Expression* initialValue,
+                                     const ProgramUsage* usage);
 
 
 
@@ -56,6 +57,12 @@ void FindAndDeclareBuiltinFunctions(Program& program);
 
 
 
+void FindAndDeclareBuiltinStructs(Program& program);
+
+
+
+
+
 void FindAndDeclareBuiltinVariables(Program& program);
 
 
@@ -70,6 +77,12 @@ void EliminateUnreachableCode(Program& program);
 
 
 void EliminateEmptyStatements(Module& module);
+
+
+
+
+
+void EliminateUnnecessaryBraces(Module& module);
 
 
 
@@ -96,6 +109,38 @@ void RenamePrivateSymbols(Context& context, Module& module, ProgramUsage* usage,
 
 
 void ReplaceConstVarsWithLiterals(Module& module, ProgramUsage* usage);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+std::unique_ptr<Statement> HoistSwitchVarDeclarationsAtTopLevel(const Context&,
+                                                                std::unique_ptr<SwitchStatement>);
 
 } 
 } 

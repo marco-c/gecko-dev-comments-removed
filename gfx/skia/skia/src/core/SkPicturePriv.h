@@ -33,7 +33,7 @@ public:
     static void Flatten(const sk_sp<const SkPicture> , SkWriteBuffer& buffer);
 
     
-    static const SkBigPicture* AsSkBigPicture(const sk_sp<const SkPicture> picture) {
+    static const SkBigPicture* AsSkBigPicture(const sk_sp<const SkPicture>& picture) {
         return picture->asSkBigPicture();
     }
 
@@ -46,6 +46,15 @@ public:
         pic->fAddedToCache.store(true);
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -122,6 +131,15 @@ public:
         kBlend4fColorFilter                 = 93,
         kNoShaderLocalMatrix                = 94,
         kShaderImageFilterSerializeShader   = 95,
+        kRevampMagnifierFilter              = 96,
+        kRuntimeImageFilterSampleRadius     = 97,
+        kCombineBlendArithmeticFilters      = 98,
+        kRemoveLegacyMagnifierFilter        = 99,
+        kDropShadowImageFilterComposition   = 100,
+        kCropImageFilterSupportsTiling      = 101,
+        kConvolutionImageFilterTilingUpdate = 102,
+        kRemoveDeprecatedCropRect           = 103,
+        kMultipleFiltersOnSaveLayer         = 104,
 
         
         
@@ -145,9 +163,8 @@ public:
         
         
         
-        
         kMin_Version     = kPictureShaderFilterParam_Version,
-        kCurrent_Version = kShaderImageFilterSerializeShader
+        kCurrent_Version = kMultipleFiltersOnSaveLayer
     };
 };
 

@@ -423,11 +423,11 @@ private:
         
         
         
-        inline static constexpr size_t kAddressAlign = 8;
+        static constexpr size_t kAddressAlign = 8;
     #else
         
         
-        inline static constexpr size_t kAddressAlign = alignof(std::max_align_t);
+        static constexpr size_t kAddressAlign = alignof(std::max_align_t);
     #endif
 
     

@@ -321,7 +321,7 @@ public:
 
 
 
-    T* SK_WARN_UNUSED_RESULT release() {
+    [[nodiscard]] T* release() {
         T* ptr = fPtr;
         fPtr = nullptr;
         return ptr;

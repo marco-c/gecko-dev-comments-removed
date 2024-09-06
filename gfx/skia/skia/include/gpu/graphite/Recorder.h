@@ -15,11 +15,14 @@
 #include "include/private/base/SingleOwner.h"
 #include "include/private/base/SkTArray.h"
 
+#include <chrono>
 #include <vector>
 
+struct AHardwareBuffer;
 class SkCanvas;
 struct SkImageInfo;
 class SkPixmap;
+class SkTraceMemoryDump;
 
 namespace skgpu {
 class RefCntedCallback;
@@ -33,7 +36,7 @@ class TextBlobRedrawCoordinator;
 
 namespace skgpu::graphite {
 
-class AtlasManager;
+class AtlasProvider;
 class BackendTexture;
 class Caps;
 class Context;
@@ -41,12 +44,13 @@ class Device;
 class DrawBufferManager;
 class GlobalCache;
 class ImageProvider;
+class ProxyCache;
 class RecorderPriv;
 class ResourceProvider;
 class RuntimeEffectDictionary;
 class SharedContext;
 class Task;
-class TaskGraph;
+class TaskList;
 class TextureDataBlock;
 class TextureInfo;
 class UniformDataBlock;
@@ -62,6 +66,10 @@ struct SK_API RecorderOptions final {
     ~RecorderOptions();
 
     sk_sp<ImageProvider> fImageProvider;
+
+    static constexpr size_t kDefaultRecorderBudget = 256 * (1 << 20);
+    
+    size_t fGpuBudgetInBytes = kDefaultRecorderBudget;
 };
 
 class SK_API Recorder final {
@@ -72,6 +80,8 @@ public:
     Recorder& operator=(Recorder&&) = delete;
 
     ~Recorder();
+
+    BackendApi backend() const;
 
     std::unique_ptr<Recording> snap();
 
@@ -90,6 +100,14 @@ public:
 
 
     BackendTexture createBackendTexture(SkISize dimensions, const TextureInfo&);
+
+#ifdef SK_BUILD_FOR_ANDROID
+    BackendTexture createBackendTexture(AHardwareBuffer*,
+                                        bool isRenderable,
+                                        bool isProtectedContent,
+                                        SkISize dimensions,
+                                        bool fromAndroidWindow = false) const;
+#endif
 
     
 
@@ -119,7 +137,22 @@ public:
 
 
 
-    void deleteBackendTexture(BackendTexture&);
+
+
+    bool updateCompressedBackendTexture(const BackendTexture&,
+                                        const void* data,
+                                        size_t dataSize);
+
+    
+
+
+
+
+
+
+
+
+    void deleteBackendTexture(const BackendTexture&);
 
     
     
@@ -134,12 +167,40 @@ public:
     SkCanvas* makeDeferredCanvas(const SkImageInfo&, const TextureInfo&);
 
     
+
+
+
+
+
+    void freeGpuResources();
+
+    
+
+
+
+
+    void performDeferredCleanup(std::chrono::milliseconds msNotUsed);
+
+    
+
+
+
+    size_t currentBudgetedBytes() const;
+
+    
+
+
+    size_t maxBudgetedBytes() const;
+
+    
+
+
+
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
+
+    
     RecorderPriv priv();
     const RecorderPriv priv() const;  
-
-#if GR_TEST_UTILS
-    bool deviceIsRegistered(Device*);
-#endif
 
 private:
     friend class Context; 
@@ -150,8 +211,6 @@ private:
 
     SingleOwner* singleOwner() const { return &fSingleOwner; }
 
-    BackendApi backend() const;
-
     
     
     
@@ -169,22 +228,25 @@ private:
     
     
     
-    void registerDevice(Device*);
+    
+    void registerDevice(sk_sp<Device>);
     void deregisterDevice(const Device*);
 
     sk_sp<SharedContext> fSharedContext;
     std::unique_ptr<ResourceProvider> fResourceProvider;
     std::unique_ptr<RuntimeEffectDictionary> fRuntimeEffectDict;
 
-    std::unique_ptr<TaskGraph> fGraph;
+    
+    std::unique_ptr<TaskList> fRootTaskList;
     std::unique_ptr<UniformDataCache> fUniformDataCache;
     std::unique_ptr<TextureDataCache> fTextureDataCache;
     std::unique_ptr<DrawBufferManager> fDrawBufferManager;
     std::unique_ptr<UploadBufferManager> fUploadBufferManager;
-    std::vector<Device*> fTrackedDevices;
+    std::vector<sk_sp<Device>> fTrackedDevices;
 
-    uint32_t fRecorderID;  
-    std::unique_ptr<AtlasManager> fAtlasManager;
+    uint32_t fUniqueID;  
+    uint32_t fNextRecordingID = 1;
+    std::unique_ptr<AtlasProvider> fAtlasProvider;
     std::unique_ptr<TokenTracker> fTokenTracker;
     std::unique_ptr<sktext::gpu::StrikeCache> fStrikeCache;
     std::unique_ptr<sktext::gpu::TextBlobRedrawCoordinator> fTextBlobCache;
@@ -199,9 +261,9 @@ private:
     std::unique_ptr<SkCanvas> fTargetProxyCanvas;
     std::unique_ptr<Recording::LazyProxyData> fTargetProxyData;
 
-    SkTArray<sk_sp<RefCntedCallback>> fFinishedProcs;
+    skia_private::TArray<sk_sp<RefCntedCallback>> fFinishedProcs;
 
-#if GRAPHITE_TEST_UTILS
+#if defined(GRAPHITE_TEST_UTILS)
     
     Context* fContext = nullptr;
 #endif

@@ -8,40 +8,36 @@
 #ifndef SkFontMgr_DEFINED
 #define SkFontMgr_DEFINED
 
-#include "include/core/SkFontArguments.h"
-#include "include/core/SkFontStyle.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
 
 #include <memory>
 
 class SkData;
-class SkFontData;
+class SkFontStyle;
 class SkStreamAsset;
 class SkString;
 class SkTypeface;
+struct SkFontArguments;
 
 class SK_API SkFontStyleSet : public SkRefCnt {
 public:
     virtual int count() = 0;
     virtual void getStyle(int index, SkFontStyle*, SkString* style) = 0;
-    virtual SkTypeface* createTypeface(int index) = 0;
-    virtual SkTypeface* matchStyle(const SkFontStyle& pattern) = 0;
+    virtual sk_sp<SkTypeface> createTypeface(int index) = 0;
+    virtual sk_sp<SkTypeface> matchStyle(const SkFontStyle& pattern) = 0;
 
-    static SkFontStyleSet* CreateEmpty();
+    static sk_sp<SkFontStyleSet> CreateEmpty();
 
 protected:
-    SkTypeface* matchStyleCSS3(const SkFontStyle& pattern);
-
-private:
-    using INHERITED = SkRefCnt;
+    sk_sp<SkTypeface> matchStyleCSS3(const SkFontStyle& pattern);
 };
 
 class SK_API SkFontMgr : public SkRefCnt {
 public:
     int countFamilies() const;
     void getFamilyName(int index, SkString* familyName) const;
-    SkFontStyleSet* createStyleSet(int index) const;
+    sk_sp<SkFontStyleSet> createStyleSet(int index) const;
 
     
 
@@ -54,21 +50,7 @@ public:
 
 
 
-    SkFontStyleSet* matchFamily(const char familyName[]) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    SkTypeface* matchFamilyStyle(const char familyName[], const SkFontStyle&) const;
+    sk_sp<SkFontStyleSet> matchFamily(const char familyName[]) const;
 
     
 
@@ -82,12 +64,26 @@ public:
 
 
 
+    sk_sp<SkTypeface> matchFamilyStyle(const char familyName[], const SkFontStyle&) const;
+
+    
 
 
 
-    SkTypeface* matchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
-                                          const char* bcp47[], int bcp47Count,
-                                          SkUnichar character) const;
+
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkTypeface> matchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
+                                                const char* bcp47[], int bcp47Count,
+                                                SkUnichar character) const;
 
     
 
@@ -117,24 +113,22 @@ public:
     sk_sp<SkTypeface> legacyMakeTypeface(const char familyName[], SkFontStyle style) const;
 
     
-    static sk_sp<SkFontMgr> RefDefault();
-
-    
     static sk_sp<SkFontMgr> RefEmpty();
 
 protected:
     virtual int onCountFamilies() const = 0;
     virtual void onGetFamilyName(int index, SkString* familyName) const = 0;
-    virtual SkFontStyleSet* onCreateStyleSet(int index)const  = 0;
+    virtual sk_sp<SkFontStyleSet> onCreateStyleSet(int index)const  = 0;
 
     
-    virtual SkFontStyleSet* onMatchFamily(const char familyName[]) const = 0;
+    virtual sk_sp<SkFontStyleSet> onMatchFamily(const char familyName[]) const = 0;
 
-    virtual SkTypeface* onMatchFamilyStyle(const char familyName[],
-                                           const SkFontStyle&) const = 0;
-    virtual SkTypeface* onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
-                                                    const char* bcp47[], int bcp47Count,
-                                                    SkUnichar character) const = 0;
+    virtual sk_sp<SkTypeface> onMatchFamilyStyle(const char familyName[],
+                                                 const SkFontStyle&) const = 0;
+    virtual sk_sp<SkTypeface> onMatchFamilyStyleCharacter(const char familyName[],
+                                                          const SkFontStyle&,
+                                                          const char* bcp47[], int bcp47Count,
+                                                          SkUnichar character) const = 0;
 
     virtual sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData>, int ttcIndex) const = 0;
     virtual sk_sp<SkTypeface> onMakeFromStreamIndex(std::unique_ptr<SkStreamAsset>,
@@ -144,19 +138,6 @@ protected:
     virtual sk_sp<SkTypeface> onMakeFromFile(const char path[], int ttcIndex) const = 0;
 
     virtual sk_sp<SkTypeface> onLegacyMakeTypeface(const char familyName[], SkFontStyle) const = 0;
-
-    
-    virtual SkTypeface* onMatchFaceStyle(const SkTypeface*,
-                                         const SkFontStyle&) const {
-        return nullptr;
-    }
-
-private:
-
-    
-    static sk_sp<SkFontMgr> Factory();
-
-    using INHERITED = SkRefCnt;
 };
 
 #endif

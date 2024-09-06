@@ -8,9 +8,9 @@
 #ifndef SKSL_PROGRAMSETTINGS
 #define SKSL_PROGRAMSETTINGS
 
-#include "include/private/SkSLDefines.h"
-#include "include/private/SkSLProgramKind.h"
 #include "include/sksl/SkSLVersion.h"
+#include "src/sksl/SkSLDefines.h"
+#include "src/sksl/SkSLProgramKind.h"
 
 #include <vector>
 
@@ -71,19 +71,8 @@ struct ProgramSettings {
     
     
     
-    bool fAllowTraceVarInSkVMDebugTrace = true;
-    
-    
-    
-    
     
     bool fUseMemoryPool = true;
-    
-    
-    bool fAllowVarDeclarationCloneForTesting = false;
-    
-    
-    bool fSPIRVDawnCompatMode = false;
 };
 
 
@@ -123,12 +112,14 @@ struct ProgramConfig {
 
     static bool IsFragment(ProgramKind kind) {
         return kind == ProgramKind::kFragment ||
-               kind == ProgramKind::kGraphiteFragment;
+               kind == ProgramKind::kGraphiteFragment ||
+               kind == ProgramKind::kGraphiteFragmentES2;
     }
 
     static bool IsVertex(ProgramKind kind) {
         return kind == ProgramKind::kVertex ||
-               kind == ProgramKind::kGraphiteVertex;
+               kind == ProgramKind::kGraphiteVertex ||
+               kind == ProgramKind::kGraphiteVertexES2;
     }
 
     static bool IsCompute(ProgramKind kind) {
@@ -144,6 +135,21 @@ struct ProgramConfig {
                 kind == ProgramKind::kPrivateRuntimeBlender ||
                 kind == ProgramKind::kMeshVertex ||
                 kind == ProgramKind::kMeshFragment);
+    }
+
+    static bool IsRuntimeShader(ProgramKind kind) {
+        return (kind == ProgramKind::kRuntimeShader ||
+                kind == ProgramKind::kPrivateRuntimeShader);
+    }
+
+    static bool IsRuntimeColorFilter(ProgramKind kind) {
+        return (kind == ProgramKind::kRuntimeColorFilter ||
+                kind == ProgramKind::kPrivateRuntimeColorFilter);
+    }
+
+    static bool IsRuntimeBlender(ProgramKind kind) {
+        return (kind == ProgramKind::kRuntimeBlender ||
+                kind == ProgramKind::kPrivateRuntimeBlender);
     }
 
     static bool AllowsPrivateIdentifiers(ProgramKind kind) {

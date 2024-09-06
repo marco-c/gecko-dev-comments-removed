@@ -28,18 +28,41 @@ public:
         kMetal,
 
         
-        kWGSLUniform,
+        kWGSLUniform_Base,       
+        kWGSLUniform_EnableF16,  
 
         
-        kWGSLStorage,
+        kWGSLStorage_Base,
+        kWGSLStorage_EnableF16,
     };
 
-    MemoryLayout(Standard std)
-    : fStd(std) {}
+    MemoryLayout(Standard std) : fStd(std) {}
 
-    bool isWGSL() const { return fStd == Standard::kWGSLUniform || fStd == Standard::kWGSLStorage; }
+    bool isWGSL_Base() const {
+        return fStd == Standard::kWGSLUniform_Base ||
+               fStd == Standard::kWGSLStorage_Base;
+    }
 
-    bool isMetal() const { return fStd == Standard::kMetal; }
+    bool isWGSL_F16() const {
+        return fStd == Standard::kWGSLUniform_EnableF16 ||
+               fStd == Standard::kWGSLStorage_EnableF16;
+    }
+
+    bool isWGSL_Uniform() const {
+        return fStd == Standard::kWGSLUniform_Base ||
+               fStd == Standard::kWGSLUniform_EnableF16;
+    }
+
+    bool isWGSL() const {
+        return fStd == Standard::kWGSLUniform_Base ||
+               fStd == Standard::kWGSLStorage_Base ||
+               fStd == Standard::kWGSLUniform_EnableF16 ||
+               fStd == Standard::kWGSLStorage_EnableF16;
+    }
+
+    bool isMetal() const {
+        return fStd == Standard::kMetal;
+    }
 
     
 
@@ -54,7 +77,7 @@ public:
         }
         
         
-        if (fStd == Standard::kWGSLUniform && type != Type::TypeKind::kMatrix) {
+        if (this->isWGSL_Uniform() && type != Type::TypeKind::kMatrix) {
             return roundUp16(raw);
         }
         return raw;
@@ -74,15 +97,19 @@ public:
             case Type::TypeKind::kScalar:
             case Type::TypeKind::kAtomic:
                 return this->size(type);
+
             case Type::TypeKind::kVector:
                 return GetVectorAlignment(this->size(type.componentType()), type.columns());
+
             case Type::TypeKind::kMatrix:
                 return this->roundUpIfNeeded(
                         GetVectorAlignment(this->size(type.componentType()), type.rows()),
                         type.typeKind());
+
             case Type::TypeKind::kArray:
                 return this->roundUpIfNeeded(this->alignment(type.componentType()),
                                              type.typeKind());
+
             case Type::TypeKind::kStruct: {
                 size_t result = 0;
                 for (const auto& f : type.fields()) {
@@ -94,7 +121,7 @@ public:
                 return this->roundUpIfNeeded(result, type.typeKind());
             }
             default:
-                SK_ABORT("cannot determine alignment of type %s", type.displayName().c_str());
+                SK_ABORT("cannot determine alignment of type '%s'", type.displayName().c_str());
         }
     }
 
@@ -106,6 +133,7 @@ public:
         switch (type.typeKind()) {
             case Type::TypeKind::kMatrix:
                 return this->alignment(type);
+
             case Type::TypeKind::kArray: {
                 int stride = this->size(type.componentType());
                 if (stride > 0) {
@@ -117,7 +145,7 @@ public:
                 return stride;
             }
             default:
-                SK_ABORT("type does not have a stride");
+                SK_ABORT("type '%s' does not have a stride", type.displayName().c_str());
         }
     }
 
@@ -128,27 +156,30 @@ public:
         switch (type.typeKind()) {
             case Type::TypeKind::kScalar:
                 if (type.isBoolean()) {
-                    if (this->isWGSL()) {
-                        return 0;
-                    }
-                    return 1;
+                    return this->isWGSL() ? 0 : 1;
                 }
-                if ((this->isMetal() || this->isWGSL()) && !type.highPrecision() &&
-                    type.isNumber()) {
+                if (this->isMetal() && !type.highPrecision() && type.isNumber()) {
+                    return 2;
+                }
+                if (this->isWGSL_F16() && !type.highPrecision() && type.isFloat()) {
                     return 2;
                 }
                 return 4;
+
             case Type::TypeKind::kAtomic:
                 
                 return 4;
+
             case Type::TypeKind::kVector:
                 if (this->isMetal() && type.columns() == 3) {
                     return 4 * this->size(type.componentType());
                 }
                 return type.columns() * this->size(type.componentType());
+
             case Type::TypeKind::kMatrix: 
             case Type::TypeKind::kArray:
                 return type.isUnsizedArray() ? 0 : (type.columns() * this->stride(type));
+
             case Type::TypeKind::kStruct: {
                 size_t total = 0;
                 for (const auto& f : type.fields()) {
@@ -165,7 +196,7 @@ public:
                 return (total + alignment - 1) & ~(alignment - 1);
             }
             default:
-                SK_ABORT("cannot determine size of type %s", type.displayName().c_str());
+                SK_ABORT("cannot determine size of type '%s'", type.displayName().c_str());
         }
     }
 
@@ -179,8 +210,7 @@ public:
 
             case Type::TypeKind::kScalar:
                 
-                return !this->isWGSL() ||
-                       (!type.isBoolean() && (type.isFloat() || type.highPrecision()));
+                return this->isWGSL() ? !type.isBoolean() : true;
 
             case Type::TypeKind::kVector:
             case Type::TypeKind::kMatrix:
@@ -189,7 +219,7 @@ public:
 
             case Type::TypeKind::kStruct:
                 return std::all_of(
-                        type.fields().begin(), type.fields().end(), [this](const Type::Field& f) {
+                        type.fields().begin(), type.fields().end(), [this](const Field& f) {
                             return this->isSupported(*f.fType);
                         });
 

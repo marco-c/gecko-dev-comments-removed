@@ -11,7 +11,6 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkShadowFlags.h"
 
 #include <cstdint>
 
@@ -20,6 +19,21 @@ class SkMatrix;
 class SkPath;
 struct SkPoint3;
 struct SkRect;
+
+enum SkShadowFlags {
+    kNone_ShadowFlag = 0x00,
+    
+
+    kTransparentOccluder_ShadowFlag = 0x01,
+    
+    kGeometricOnly_ShadowFlag = 0x02,
+    
+    kDirectionalLight_ShadowFlag = 0x04,
+    
+    kConcaveBlurOnly_ShadowFlag = 0x08,
+    
+    kAll_ShadowFlag = 0x0F
+};
 
 class SK_API SkShadowUtils {
 public:

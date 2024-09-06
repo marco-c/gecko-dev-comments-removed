@@ -93,7 +93,10 @@ public:
         return this->onSnapGpuDrawHandler(backendApi, matrix, clipBounds, bufferInfo);
     }
 
-    SkPicture* newPictureSnapshot();
+    
+
+
+    sk_sp<SkPicture> makePictureSnapshot();
 
     
 
@@ -166,7 +169,7 @@ protected:
 
 
 
-    virtual SkPicture* onNewPictureSnapshot();
+    virtual sk_sp<SkPicture> onMakePictureSnapshot();
 
 private:
     int32_t fGenerationID;

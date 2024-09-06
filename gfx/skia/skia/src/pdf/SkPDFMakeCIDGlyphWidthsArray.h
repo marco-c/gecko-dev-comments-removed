@@ -17,6 +17,6 @@ class SkTypeface;
 
 std::unique_ptr<SkPDFArray> SkPDFMakeCIDGlyphWidthsArray(const SkTypeface& typeface,
                                                          const SkPDFGlyphUse& subset,
-                                                         SkScalar* defaultAdvance);
+                                                         int32_t* defaultAdvance);
 
 #endif  

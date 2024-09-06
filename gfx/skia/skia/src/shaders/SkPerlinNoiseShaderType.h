@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef SkPerlinNoiseShaderType_DEFINED
+#define SkPerlinNoiseShaderType_DEFINED
+
+
+
+
+
+
+
+
+
+enum class SkPerlinNoiseShaderType { kFractalNoise, kTurbulence, kLast = kTurbulence };
+
+#endif

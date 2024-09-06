@@ -10,17 +10,18 @@
 
 #include "include/core/SkDrawable.h"
 #include "include/core/SkPath.h"
+#include "include/core/SkPicture.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkChecksum.h"
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkFixed.h"
 #include "include/private/base/SkTo.h"
 #include "src/base/SkVx.h"
+#include "src/core/SkChecksum.h"
 #include "src/core/SkMask.h"
 
 #include <algorithm>
@@ -31,6 +32,7 @@
 #include <optional>
 
 class SkArenaAlloc;
+class SkCanvas;
 class SkGlyph;
 class SkReadBuffer;
 class SkScalerContext;
@@ -395,6 +397,19 @@ private:
     uint16_t fWidth, fHeight;
 };
 
+class SkPictureBackedGlyphDrawable final : public SkDrawable {
+public:
+    static sk_sp<SkPictureBackedGlyphDrawable>MakeFromBuffer(SkReadBuffer& buffer);
+    static void FlattenDrawable(SkWriteBuffer& buffer, SkDrawable* drawable);
+    SkPictureBackedGlyphDrawable(sk_sp<SkPicture> self);
+
+private:
+    sk_sp<SkPicture> fPicture;
+    SkRect onGetBounds() override;
+    size_t onApproximateBytesUsed() override;
+    void onDraw(SkCanvas* canvas) override;
+};
+
 class SkGlyph {
 public:
     static std::optional<SkGlyph> MakeFromBuffer(SkReadBuffer&);
@@ -442,7 +457,8 @@ public:
 
     
     bool setImageHasBeenCalled() const {
-        return fImage != nullptr || this->isEmpty() || this->imageTooLarge();
+        
+        return this->isEmpty() || fImage != nullptr || this->imageTooLarge();
     }
 
     
@@ -496,11 +512,11 @@ public:
     int width()  const { return fWidth;  }
     int height() const { return fHeight; }
     bool isEmpty() const {
-        
-        SkASSERT(fHeight != 0 || fWidth == 0);
-        return fWidth == 0;
+        return fWidth == 0 || fHeight == 0;
     }
     bool imageTooLarge() const { return fWidth >= kMaxGlyphWidth; }
+
+    uint16_t extraBits() const { return fScalerContextBits; }
 
     
     
@@ -541,22 +557,7 @@ private:
     
     
     
-    friend class RandomScalerContext;
     friend class SkScalerContext;
-    friend class SkScalerContextProxy;
-    friend class SkScalerContext_Empty;
-    friend class SkScalerContext_FreeType;
-    friend class SkScalerContext_FreeType_Base;
-    friend class SkScalerContext_CairoFT;
-    friend class SkScalerContext_DW;
-    friend class SkScalerContext_GDI;
-    friend class SkScalerContext_Mac;
-    friend class SkStrikeClientImpl;
-    friend class SkTestScalerContext;
-    friend class SkTestSVGScalerContext;
-    friend class SkUserScalerContext;
-    friend class TestSVGTypeface;
-    friend class TestTypeface;
     friend class SkGlyphTestPeer;
 
     inline static constexpr uint16_t kMaxGlyphWidth = 1u << 13u;

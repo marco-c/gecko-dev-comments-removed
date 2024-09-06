@@ -8,16 +8,18 @@
 #ifndef SkBigPicture_DEFINED
 #define SkBigPicture_DEFINED
 
-#include "include/core/SkM44.h"
+#include "include/core/SkBBHFactory.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
 #include "include/private/base/SkNoncopyable.h"
-#include "include/private/base/SkOnce.h"
 #include "include/private/base/SkTemplates.h"
+#include "src/core/SkRecord.h"
 
-class SkBBoxHierarchy;
-class SkMatrix;
-class SkRecord;
+#include <cstddef>
+#include <memory>
+
+class SkCanvas;
 
 
 
@@ -51,11 +53,6 @@ public:
     size_t approximateBytesUsed() const override;
     const SkBigPicture* asSkBigPicture() const override { return this; }
 
-
-    void partialPlayback(SkCanvas*,
-                         int start,
-                         int stop,
-                         const SkM44& initialCTM) const;
 
     const SkBBoxHierarchy* bbh() const { return fBBH.get(); }
     const SkRecord*     record() const { return fRecord.get(); }

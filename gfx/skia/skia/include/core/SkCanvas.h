@@ -24,11 +24,13 @@
 #include "include/core/SkSamplingOptions.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkSize.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkString.h"
 #include "include/core/SkSurfaceProps.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkCPUTypes.h"
 #include "include/private/base/SkDeque.h"
+#include "include/private/base/SkTArray.h"
 
 #include <cstdint>
 #include <cstring>
@@ -47,10 +49,10 @@ class GlyphRunList;
 class AutoLayerForImageFilter;
 class GrRecordingContext;
 
-class SkBaseDevice;
 class SkBitmap;
 class SkBlender;
 class SkData;
+class SkDevice;
 class SkDrawable;
 class SkFont;
 class SkImage;
@@ -70,18 +72,12 @@ class SkVertices;
 struct SkDrawShadowRec;
 struct SkRSXform;
 
+template<typename E>
+class SkEnumBitMask;
+
 namespace skgpu::graphite { class Recorder; }
 namespace sktext::gpu { class Slug; }
 namespace SkRecords { class Draw; }
-
-#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK) && defined(SK_GANESH)
-class GrBackendRenderTarget;
-#endif
-
-
-
-
-using GrSlug = sktext::gpu::Slug;
 
 
 
@@ -197,7 +193,7 @@ public:
 
     
 
-    explicit SkCanvas(sk_sp<SkBaseDevice> device);
+    explicit SkCanvas(sk_sp<SkDevice> device);
 
     
 
@@ -297,15 +293,6 @@ public:
 
 
 
-    void flush();
-
-    
-
-
-
-
-
-
 
     virtual SkISize getBaseLayerSize() const;
 
@@ -329,13 +316,14 @@ public:
 
 
 
-    virtual GrRecordingContext* recordingContext();
+    virtual GrRecordingContext* recordingContext() const;
+
 
     
 
 
 
-    virtual skgpu::graphite::Recorder* recorder();
+    virtual skgpu::graphite::Recorder* recorder() const;
 
     
 
@@ -684,7 +672,9 @@ public:
         kF16ColorType                   = 1 << 4,
     };
 
-    typedef uint32_t SaveLayerFlags;
+    using SaveLayerFlags = uint32_t;
+    using FilterSpan = SkSpan<sk_sp<SkImageFilter>>;
+    static constexpr int kMaxFiltersPerLayer = 16;
 
     
 
@@ -704,7 +694,7 @@ public:
 
 
         SaveLayerRec(const SkRect* bounds, const SkPaint* paint, SaveLayerFlags saveLayerFlags = 0)
-            : SaveLayerRec(bounds, paint, nullptr, 1.f, saveLayerFlags) {}
+            : SaveLayerRec(bounds, paint, nullptr, 1.f, saveLayerFlags, {}) {}
 
         
 
@@ -720,13 +710,15 @@ public:
 
         SaveLayerRec(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
                      SaveLayerFlags saveLayerFlags)
-            : SaveLayerRec(bounds, paint, backdrop, 1.f, saveLayerFlags) {}
+            : SaveLayerRec(bounds, paint, backdrop, 1.f, saveLayerFlags, {}) {}
 
         
         const SkRect*        fBounds         = nullptr;
 
         
         const SkPaint*       fPaint          = nullptr;
+
+        FilterSpan           fFilters        = {};
 
         
 
@@ -743,13 +735,23 @@ public:
         friend class SkCanvas;
         friend class SkCanvasPriv;
 
-        SaveLayerRec(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
-                     SkScalar backdropScale, SaveLayerFlags saveLayerFlags)
-            : fBounds(bounds)
-            , fPaint(paint)
-            , fBackdrop(backdrop)
-            , fSaveLayerFlags(saveLayerFlags)
-            , fExperimentalBackdropScale(backdropScale) {}
+        SaveLayerRec(const SkRect* bounds,
+                     const SkPaint* paint,
+                     const SkImageFilter* backdrop,
+                     SkScalar backdropScale,
+                     SaveLayerFlags saveLayerFlags,
+                     FilterSpan filters)
+                : fBounds(bounds)
+                , fPaint(paint)
+                , fFilters(filters)
+                , fBackdrop(backdrop)
+                , fSaveLayerFlags(saveLayerFlags)
+                , fExperimentalBackdropScale(backdropScale) {
+            
+            SkASSERT(fFilters.empty() || !paint || !paint->getImageFilter());
+            
+            SkASSERT(fFilters.size() <= kMaxFiltersPerLayer);
+        }
 
         
         
@@ -1991,7 +1993,6 @@ public:
 
     void drawVertices(const sk_sp<SkVertices>& vertices, SkBlendMode mode, const SkPaint& paint);
 
-#if defined(SK_ENABLE_SKSL)
     
 
 
@@ -2011,8 +2012,8 @@ public:
 
 
 
+
     void drawMesh(const SkMesh& mesh, sk_sp<SkBlender> blender, const SkPaint& paint);
-#endif
 
     
 
@@ -2183,12 +2184,6 @@ public:
 
     
 
-#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK) && defined(SK_GANESH)
-    
-    SkIRect topLayerBounds() const;
-    GrBackendRenderTarget topLayerBackendRenderTarget() const;
-#endif
-
     
 
 
@@ -2207,7 +2202,6 @@ protected:
     virtual bool onAccessTopLayerPixels(SkPixmap* pixmap);
     virtual SkImageInfo onImageInfo() const;
     virtual bool onGetProps(SkSurfaceProps* props, bool top) const;
-    virtual void onFlush();
 
     
     
@@ -2273,9 +2267,7 @@ protected:
 
     virtual void onDrawVerticesObject(const SkVertices* vertices, SkBlendMode mode,
                                       const SkPaint& paint);
-#ifdef SK_ENABLE_SKSL
     virtual void onDrawMesh(const SkMesh&, sk_sp<SkBlender>, const SkPaint&);
-#endif
     virtual void onDrawAnnotation(const SkRect& rect, const char key[], SkData* value);
     virtual void onDrawShadowRec(const SkPath&, const SkDrawShadowRec&);
 
@@ -2300,7 +2292,6 @@ protected:
 
     virtual void onDiscard();
 
-#if (defined(SK_GANESH) || defined(SK_GRAPHITE))
     
 
     virtual sk_sp<sktext::gpu::Slug> onConvertGlyphRunListToSlug(
@@ -2308,56 +2299,62 @@ protected:
 
     
 
-    virtual void onDrawSlug(const sktext::gpu::Slug* slug);
-#endif
+    virtual void onDrawSlug(const sktext::gpu::Slug* slug, const SkPaint& paint);
 
 private:
-
-    enum ShaderOverrideOpacity {
-        kNone_ShaderOverrideOpacity,        
-        kOpaque_ShaderOverrideOpacity,      
-        kNotOpaque_ShaderOverrideOpacity,   
+    enum class PredrawFlags : unsigned {
+        kNone                    = 0,
+        kOpaqueShaderOverride    = 1, 
+        kNonOpaqueShaderOverride = 2, 
+        kCheckForOverwrite       = 4, 
+        kSkipMaskFilterAutoLayer = 8, 
     };
+    
+    friend constexpr SkEnumBitMask<PredrawFlags> operator|(PredrawFlags, PredrawFlags);
+    friend constexpr SkEnumBitMask<PredrawFlags> operator&(PredrawFlags, PredrawFlags);
+    friend constexpr SkEnumBitMask<PredrawFlags> operator^(PredrawFlags, PredrawFlags);
+    friend constexpr SkEnumBitMask<PredrawFlags> operator~(PredrawFlags);
 
     
     
     
-    bool SK_WARN_UNUSED_RESULT predrawNotify(bool willOverwritesEntireSurface = false);
-    bool SK_WARN_UNUSED_RESULT predrawNotify(const SkRect*, const SkPaint*, ShaderOverrideOpacity);
+    [[nodiscard]] bool predrawNotify(bool willOverwritesEntireSurface = false);
+    [[nodiscard]] bool predrawNotify(const SkRect*, const SkPaint*, SkEnumBitMask<PredrawFlags>);
 
-    enum class CheckForOverwrite : bool {
-        kNo = false,
-        kYes = true
-    };
     
     std::optional<AutoLayerForImageFilter> aboutToDraw(
-        SkCanvas* canvas,
-        const SkPaint& paint,
-        const SkRect* rawBounds = nullptr,
-        CheckForOverwrite = CheckForOverwrite::kNo,
-        ShaderOverrideOpacity = kNone_ShaderOverrideOpacity);
+            const SkPaint& paint,
+            const SkRect* rawBounds,
+            SkEnumBitMask<PredrawFlags> flags);
+    std::optional<AutoLayerForImageFilter> aboutToDraw(
+            const SkPaint& paint,
+            const SkRect* rawBounds = nullptr);
 
     
     
-    SkBaseDevice* baseDevice() const {
-        SkASSERT(fBaseDevice);
-        return fBaseDevice.get();
+    SkDevice* rootDevice() const {
+        SkASSERT(fRootDevice);
+        return fRootDevice.get();
     }
 
     
     
-    SkBaseDevice* topDevice() const;
+    SkDevice* topDevice() const;
 
     
     
     
     struct Layer {
-        sk_sp<SkBaseDevice>  fDevice;
-        sk_sp<SkImageFilter> fImageFilter; 
-        SkPaint              fPaint;
-        bool                 fDiscard;
+        sk_sp<SkDevice>                                fDevice;
+        skia_private::STArray<1, sk_sp<SkImageFilter>> fImageFilters;
+        SkPaint                                        fPaint;
+        bool                                           fIsCoverage;
+        bool                                           fDiscard;
 
-        Layer(sk_sp<SkBaseDevice> device, sk_sp<SkImageFilter> imageFilter, const SkPaint& paint);
+        Layer(sk_sp<SkDevice> device,
+              FilterSpan imageFilters,
+              const SkPaint& paint,
+              bool isCoverage);
     };
 
     
@@ -2382,21 +2379,22 @@ private:
 
         
         
-        SkBaseDevice* fDevice;
+        SkDevice* fDevice;
 
         std::unique_ptr<BackImage> fBackImage;
         SkM44 fMatrix;
         int fDeferredSaveCount = 0;
 
-        MCRec(SkBaseDevice* device);
+        MCRec(SkDevice* device);
         MCRec(const MCRec* prev);
         ~MCRec();
 
-        void newLayer(sk_sp<SkBaseDevice> layerDevice,
-                      sk_sp<SkImageFilter> filter,
-                      const SkPaint& restorePaint);
+        void newLayer(sk_sp<SkDevice> layerDevice,
+                      FilterSpan filters,
+                      const SkPaint& restorePaint,
+                      bool layerIsCoverage);
 
-        void reset(SkBaseDevice* device);
+        void reset(SkDevice* device);
     };
 
     
@@ -2410,7 +2408,7 @@ private:
     MCRec*      fMCRec;
 
     
-    sk_sp<SkBaseDevice> fBaseDevice;
+    sk_sp<SkDevice> fRootDevice;
     const SkSurfaceProps fProps;
 
     int         fSaveCount;         
@@ -2423,7 +2421,7 @@ private:
         fSurfaceBase = sb;
     }
     friend class SkSurface_Base;
-    friend class SkSurface_Gpu;
+    friend class SkSurface_Ganesh;
 
     SkIRect fClipRestrictionRect = SkIRect::MakeEmpty();
     int fClipRestrictionSaveCount = -1;
@@ -2457,8 +2455,8 @@ private:
     SkCanvas& operator=(SkCanvas&&) = delete;
     SkCanvas& operator=(const SkCanvas&) = delete;
 
-#if (defined(SK_GANESH) || defined(SK_GRAPHITE))
     friend class sktext::gpu::Slug;
+    friend class SkPicturePlayback;
     
 
 
@@ -2468,8 +2466,7 @@ private:
     
 
 
-    void drawSlug(const sktext::gpu::Slug* slug);
-#endif
+    void drawSlug(const sktext::gpu::Slug* slug, const SkPaint& paint);
 
     
 
@@ -2492,7 +2489,7 @@ private:
     
     friend class SkCanvasStateUtils;
 
-    void init(sk_sp<SkBaseDevice>);
+    void init(sk_sp<SkDevice>);
 
     
     
@@ -2500,7 +2497,7 @@ private:
                              const SkMatrix* matrix = nullptr);
 
     void internalDrawPaint(const SkPaint& paint);
-    void internalSaveLayer(const SaveLayerRec&, SaveLayerStrategy);
+    void internalSaveLayer(const SaveLayerRec&, SaveLayerStrategy, bool coverageOnly=false);
     void internalSaveBehind(const SkRect*);
 
     void internalConcat44(const SkM44&);
@@ -2528,17 +2525,19 @@ private:
 
 
 
-    void internalDrawDeviceWithFilter(SkBaseDevice* src, SkBaseDevice* dst,
-                                      const SkImageFilter* filter, const SkPaint& paint,
+    void internalDrawDeviceWithFilter(SkDevice* src, SkDevice* dst,
+                                      FilterSpan filters, const SkPaint& paint,
                                       DeviceCompatibleWithFilter compat,
-                                      SkScalar scaleFactor = 1.f);
+                                      SkScalar scaleFactor = 1.f,
+                                      bool srcIsCoverageLayer = false);
 
     
 
 
 
 
-    bool wouldOverwriteEntireSurface(const SkRect*, const SkPaint*, ShaderOverrideOpacity) const;
+    bool wouldOverwriteEntireSurface(const SkRect*, const SkPaint*,
+                                     SkEnumBitMask<PredrawFlags>) const;
 
     
 
@@ -2569,12 +2568,18 @@ private:
     
     SkRect computeDeviceClipBounds(bool outsetForAA=true) const;
 
+    
+    
+    
+    
+    std::optional<AutoLayerForImageFilter> attemptBlurredRRectDraw(const SkRRect&,
+                                                                   const SkPaint&,
+                                                                   SkEnumBitMask<PredrawFlags>);
+
     class AutoUpdateQRBounds;
     void validateClip() const;
 
     std::unique_ptr<sktext::GlyphRunBuilder> fScratchGlyphRunBuilder;
-
-    using INHERITED = SkRefCnt;
 };
 
 

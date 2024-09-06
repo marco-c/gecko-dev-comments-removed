@@ -4,8 +4,10 @@
 
 
 
-#include "src/base/SkTSearch.h"
 #include "src/core/SkPtrRecorder.h"
+
+#include "include/private/base/SkAssert.h"
+#include "src/base/SkTSearch.h"
 
 void SkPtrSet::reset() {
     Pair* p = fList.begin();

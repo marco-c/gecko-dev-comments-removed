@@ -8,6 +8,7 @@
 #ifndef SkTypeface_win_DEFINED
 #define SkTypeface_win_DEFINED
 
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkTypeface.h"
 #include "include/core/SkTypes.h"
 
@@ -26,7 +27,7 @@ typedef LOGFONTA LOGFONT;
 
 
 
-SK_API SkTypeface* SkCreateTypefaceFromLOGFONT(const LOGFONT&);
+SK_API sk_sp<SkTypeface> SkCreateTypefaceFromLOGFONT(const LOGFONT&);
 
 
 

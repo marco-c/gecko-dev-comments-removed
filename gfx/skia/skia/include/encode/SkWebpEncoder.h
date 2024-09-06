@@ -8,56 +8,26 @@
 #ifndef SkWebpEncoder_DEFINED
 #define SkWebpEncoder_DEFINED
 
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkSpan.h" 
 #include "include/encode/SkEncoder.h"
 #include "include/private/base/SkAPI.h"
 
 class SkPixmap;
 class SkWStream;
+class SkData;
+class GrDirectContext;
+class SkImage;
 struct skcms_ICCProfile;
 
 namespace SkWebpEncoder {
 
-    enum class Compression {
-        kLossy,
-        kLossless,
-    };
+enum class Compression {
+    kLossy,
+    kLossless,
+};
 
-    struct SK_API Options {
-        
-
-
-
-
-
-
-
-
-
-
-
-        Compression fCompression = Compression::kLossy;
-        float fQuality = 100.0f;
-
-        
-
-
-
-
-
-
-        const skcms_ICCProfile* fICCProfile = nullptr;
-        const char* fICCProfileDescription = nullptr;
-    };
-
-    
-
-
-
-
-
-    SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
-
+struct SK_API Options {
     
 
 
@@ -70,9 +40,53 @@ namespace SkWebpEncoder {
 
 
 
-    SK_API bool EncodeAnimated(SkWStream* dst,
-                               SkSpan<const SkEncoder::Frame> src,
-                               const Options& options);
+    Compression fCompression = Compression::kLossy;
+    float fQuality = 100.0f;
+
+    
+
+
+
+
+
+
+    const skcms_ICCProfile* fICCProfile = nullptr;
+    const char* fICCProfileDescription = nullptr;
+};
+
+
+
+
+
+
+
+SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
+
+
+
+
+
+
+
+
+
+SK_API sk_sp<SkData> Encode(GrDirectContext* ctx, const SkImage* img, const Options& options);
+
+
+
+
+
+
+
+
+
+
+
+
+
+SK_API bool EncodeAnimated(SkWStream* dst,
+                           SkSpan<const SkEncoder::Frame> src,
+                           const Options& options);
 } 
 
 #endif

@@ -10,8 +10,8 @@
 
 #include "include/core/SkBlender.h"
 #include "src/base/SkArenaAlloc.h"
-#include "src/core/SkVM.h"
 
+#include <memory>
 #include <optional>
 
 struct GrFPArgs;
@@ -27,6 +27,10 @@ class PaintParamsKeyBuilder;
 class PipelineDataGatherer;
 }
 
+#define SK_ALL_BLENDERS(M) \
+    M(BlendMode)           \
+    M(Runtime)
+
 
 
 
@@ -40,56 +44,26 @@ public:
 
     virtual std::optional<SkBlendMode> asBlendMode() const { return {}; }
 
-    SK_WARN_UNUSED_RESULT bool appendStages(const SkStageRec& rec) const {
+    bool affectsTransparentBlack() const;
+
+    [[nodiscard]] bool appendStages(const SkStageRec& rec) const {
         return this->onAppendStages(rec);
     }
 
-    SK_WARN_UNUSED_RESULT
-    virtual bool onAppendStages(const SkStageRec& rec) const = 0;
-
-    
-    SK_WARN_UNUSED_RESULT
-    skvm::Color program(skvm::Builder* p, skvm::Color src, skvm::Color dst,
-                        const SkColorInfo& colorInfo, skvm::Uniforms* uniforms,
-                        SkArenaAlloc* alloc) const {
-        return this->onProgram(p, src, dst, colorInfo, uniforms, alloc);
-    }
-
-#if defined(SK_GANESH)
-    
-
-
-
-    virtual std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(
-            std::unique_ptr<GrFragmentProcessor> srcFP,
-            std::unique_ptr<GrFragmentProcessor> dstFP,
-            const GrFPArgs& fpArgs) const = 0;
-#endif
+    [[nodiscard]] virtual bool onAppendStages(const SkStageRec& rec) const = 0;
 
     virtual SkRuntimeEffect* asRuntimeEffect() const { return nullptr; }
 
-#if defined(SK_GRAPHITE)
-    
-
-
-
-
-
-    virtual void addToKey(const skgpu::graphite::KeyContext&,
-                          skgpu::graphite::PaintParamsKeyBuilder*,
-                          skgpu::graphite::PipelineDataGatherer*,
-                          skgpu::graphite::DstColorType dstColorType) const;
-#endif
-
     static SkFlattenable::Type GetFlattenableType() { return kSkBlender_Type; }
-    Type getFlattenableType() const override { return GetFlattenableType(); }
+    SkFlattenable::Type getFlattenableType() const override { return GetFlattenableType(); }
 
-private:
-    virtual skvm::Color onProgram(skvm::Builder* p, skvm::Color src, skvm::Color dst,
-                                  const SkColorInfo& colorInfo, skvm::Uniforms* uniforms,
-                                  SkArenaAlloc* alloc) const = 0;
+    enum class BlenderType {
+    #define M(type) k ## type,
+        SK_ALL_BLENDERS(M)
+    #undef M
+    };
 
-    using INHERITED = SkFlattenable;
+    virtual BlenderType type() const = 0;
 };
 
 inline SkBlenderBase* as_BB(SkBlender* blend) {

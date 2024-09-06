@@ -9,6 +9,7 @@
 
 #include "include/core/SkM44.h"
 #include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTPin.h"
 #include "src/core/SkRectPriv.h"
 
 class SkMatrix;
@@ -98,15 +99,15 @@ bool SkRect::setBoundsCheck(const SkPoint pts[], int count) {
 
 void SkRect::setBoundsNoCheck(const SkPoint pts[], int count) {
     if (!this->setBoundsCheck(pts, count)) {
-        this->setLTRB(SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN);
+        this->setLTRB(SK_FloatNaN, SK_FloatNaN, SK_FloatNaN, SK_FloatNaN);
     }
 }
 
 #define CHECK_INTERSECT(al, at, ar, ab, bl, bt, br, bb) \
-    SkScalar L = std::max(al, bl);                   \
-    SkScalar R = std::min(ar, br);                   \
-    SkScalar T = std::max(at, bt);                   \
-    SkScalar B = std::min(ab, bb);                   \
+    float L = std::max(al, bl);                         \
+    float R = std::min(ar, br);                         \
+    float T = std::max(at, bt);                         \
+    float B = std::min(ab, bb);                         \
     do { if (!(L < R && T < B)) return false; } while (0)
     
 
@@ -142,7 +143,7 @@ void SkRect::join(const SkRect& r) {
 #include "include/core/SkString.h"
 #include "src/core/SkStringUtils.h"
 
-static const char* set_scalar(SkString* storage, SkScalar value, SkScalarAsStringType asType) {
+static const char* set_scalar(SkString* storage, float value, SkScalarAsStringType asType) {
     storage->reset();
     SkAppendScalar(storage, value, asType);
     return storage->c_str();
@@ -257,11 +258,21 @@ bool SkRectPriv::Subtract(const SkIRect& a, const SkIRect& b, SkIRect* out) {
 }
 
 
-bool SkRectPriv::QuadContainsRect(const SkMatrix& m, const SkIRect& a, const SkIRect& b) {
-    return QuadContainsRect(SkM44(m), SkRect::Make(a), SkRect::Make(b));
+bool SkRectPriv::QuadContainsRect(const SkMatrix& m,
+                                  const SkIRect& a,
+                                  const SkIRect& b,
+                                  float tol) {
+    return QuadContainsRect(SkM44(m), SkRect::Make(a), SkRect::Make(b), tol);
 }
 
-bool SkRectPriv::QuadContainsRect(const SkM44& m, const SkRect& a, const SkRect& b) {
+bool SkRectPriv::QuadContainsRect(const SkM44& m, const SkRect& a, const SkRect& b, float tol) {
+    return all(QuadContainsRectMask(m, a, b, tol));
+}
+
+skvx::int4 SkRectPriv::QuadContainsRectMask(const SkM44& m,
+                                            const SkRect& a,
+                                            const SkRect& b,
+                                            float tol) {
     SkDEBUGCODE(SkM44 inverse;)
     SkASSERT(m.invert(&inverse));
     
@@ -269,7 +280,7 @@ bool SkRectPriv::QuadContainsRect(const SkM44& m, const SkRect& a, const SkRect&
     
     
     if (a.isEmpty()) {
-        return false;
+        return skvx::int4(0); 
     }
     
     
@@ -285,7 +296,7 @@ bool SkRectPriv::QuadContainsRect(const SkM44& m, const SkRect& a, const SkRect&
     if (all(maw < 0.f)) {
         
         
-        return false;
+        return skvx::int4(0); 
     }
 
     
@@ -299,11 +310,47 @@ bool SkRectPriv::QuadContainsRect(const SkM44& m, const SkRect& a, const SkRect&
 
     
     
-    auto d0 = sign * (lA*b.fLeft  + lB*b.fTop    + lC);
-    auto d1 = sign * (lA*b.fRight + lB*b.fTop    + lC);
-    auto d2 = sign * (lA*b.fRight + lB*b.fBottom + lC);
-    auto d3 = sign * (lA*b.fLeft  + lB*b.fBottom + lC);
+    SkRect bInset = b.makeInset(tol, tol);
+    auto d0 = sign * (lA*bInset.fLeft  + lB*bInset.fTop    + lC);
+    auto d1 = sign * (lA*bInset.fRight + lB*bInset.fTop    + lC);
+    auto d2 = sign * (lA*bInset.fRight + lB*bInset.fBottom + lC);
+    auto d3 = sign * (lA*bInset.fLeft  + lB*bInset.fBottom + lC);
 
     
-    return all((d0 >= 0.f) & (d1 >= 0.f) & (d2 >= 0.f) & (d3 >= 0.f));
+    return (d0 >= 0.f) & (d1 >= 0.f) & (d2 >= 0.f) & (d3 >= 0.f);
+}
+
+SkIRect SkRectPriv::ClosestDisjointEdge(const SkIRect& src, const SkIRect& dst) {
+    if (src.isEmpty() || dst.isEmpty()) {
+        return SkIRect::MakeEmpty();
+    }
+
+    int l = src.fLeft;
+    int r = src.fRight;
+    if (r <= dst.fLeft) {
+        
+        l = r - 1;
+    } else if (l >= dst.fRight) {
+        
+        r = l + 1;
+    } else {
+        
+        l = SkTPin(l, dst.fLeft, dst.fRight);
+        r = SkTPin(r, dst.fLeft, dst.fRight);
+    }
+
+    int t = src.fTop;
+    int b = src.fBottom;
+    if (b <= dst.fTop) {
+        
+        t = b - 1;
+    } else if (t >= dst.fBottom) {
+        
+        b = t + 1;
+    } else {
+        t = SkTPin(t, dst.fTop, dst.fBottom);
+        b = SkTPin(b, dst.fTop, dst.fBottom);
+    }
+
+    return SkIRect::MakeLTRB(l,t,r,b);
 }

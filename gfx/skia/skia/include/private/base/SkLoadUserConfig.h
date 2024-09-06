@@ -19,9 +19,14 @@
 
 
 
-
-#if defined (SK_USER_CONFIG_HEADER)
+#if defined(SK_USER_CONFIG_HEADER)
     #include SK_USER_CONFIG_HEADER
+#elif defined(SK_USE_BAZEL_CONFIG_HEADER)
+    
+    
+    
+    
+    #include "SkUserConfig.h"  
 #else
     #include "include/config/SkUserConfig.h"
 #endif

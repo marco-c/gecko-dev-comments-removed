@@ -8,10 +8,12 @@
 #ifndef SkOpts_DEFINED
 #define SkOpts_DEFINED
 
-#include "include/core/SkTypes.h"
-#include "include/private/SkOpts_spi.h"
+#include "include/private/base/SkSpan_impl.h"
+#include "src/core/SkRasterPipelineOpContexts.h"
 #include "src/core/SkRasterPipelineOpList.h"
-#include "src/core/SkXfermodePriv.h"
+
+#include <cstddef>
+#include <cstdint>
 
 
 
@@ -57,15 +59,7 @@
 
 
 
-
-struct SkBitmapProcState;
 struct SkRasterPipelineStage;
-namespace skvm {
-struct InterpreterInstruction;
-}
-namespace SkSL {
-class TraceHook;
-}
 
 namespace SkOpts {
     
@@ -74,66 +68,20 @@ namespace SkOpts {
     void Init();
 
     
-
-    
-    extern SkXfermode* (*create_xfermode)(SkBlendMode);
-
-    extern void (*blit_mask_d32_a8)(SkPMColor*, size_t, const SkAlpha*, size_t, SkColor, int, int);
-    extern void (*blit_row_color32)(SkPMColor*, const SkPMColor*, int, SkPMColor);
-    extern void (*blit_row_s32a_opaque)(SkPMColor*, const SkPMColor*, int, U8CPU);
-
-    
-    typedef void (*Swizzle_8888_u32)(uint32_t*, const uint32_t*, int);
-    extern Swizzle_8888_u32 RGBA_to_BGRA,          
-                            RGBA_to_rgbA,          
-                            RGBA_to_bgrA,          
-                            inverted_CMYK_to_RGB1, 
-                            inverted_CMYK_to_BGR1; 
-
-    typedef void (*Swizzle_8888_u8)(uint32_t*, const uint8_t*, int);
-    extern Swizzle_8888_u8 RGB_to_RGB1,     
-                           RGB_to_BGR1,     
-                           gray_to_RGB1,    
-                           grayA_to_RGBA,   
-                           grayA_to_rgbA;   
-
-    extern void (*memset16)(uint16_t[], uint16_t, int);
-    extern void (*memset32)(uint32_t[], uint32_t, int);
-    extern void (*memset64)(uint64_t[], uint64_t, int);
-
-    extern void (*rect_memset16)(uint16_t[], uint16_t, int, size_t, int);
-    extern void (*rect_memset32)(uint32_t[], uint32_t, int, size_t, int);
-    extern void (*rect_memset64)(uint64_t[], uint64_t, int, size_t, int);
-
-    extern float (*cubic_solver)(float, float, float, float);
-
-    static inline uint32_t hash(const void* data, size_t bytes, uint32_t seed=0) {
-        
-        return hash_fn(data, bytes, seed);
-    }
-
-    
-    extern void (*S32_alpha_D32_filter_DX)(const SkBitmapProcState&,
-                                           const uint32_t* xy, int count, SkPMColor*);
-    extern void (*S32_alpha_D32_filter_DXDY)(const SkBitmapProcState&,
-                                             const uint32_t* xy, int count, SkPMColor*);
-
-    
     
     using StageFn = void(*)(void);
     extern StageFn ops_highp[kNumRasterPipelineHighpOps], just_return_highp;
     extern StageFn ops_lowp [kNumRasterPipelineLowpOps ], just_return_lowp;
 
-    extern void (*start_pipeline_highp)(size_t,size_t,size_t,size_t, SkRasterPipelineStage*);
-    extern void (*start_pipeline_lowp )(size_t,size_t,size_t,size_t, SkRasterPipelineStage*);
+    extern void (*start_pipeline_highp)(size_t,size_t,size_t,size_t, SkRasterPipelineStage*,
+                                        SkSpan<SkRasterPipeline_MemoryCtxPatch>,
+                                        uint8_t*);
+    extern void (*start_pipeline_lowp )(size_t,size_t,size_t,size_t, SkRasterPipelineStage*,
+                                        SkSpan<SkRasterPipeline_MemoryCtxPatch>,
+                                        uint8_t*);
 
     extern size_t raster_pipeline_lowp_stride;
     extern size_t raster_pipeline_highp_stride;
-
-    extern void (*interpret_skvm)(const skvm::InterpreterInstruction insts[], int ninsts,
-                                  int nregs, int loop, const int strides[],
-                                  SkSL::TraceHook* traceHooks[], int nTraceHooks,
-                                  int nargs, int n, void* args[]);
 }  
 
 #endif 
