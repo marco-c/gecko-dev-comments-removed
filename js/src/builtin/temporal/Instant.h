@@ -127,12 +127,6 @@ Instant RoundTemporalInstant(const Instant& ns, Increment increment,
 
 
 
-Instant AddNormalizedTimeDurationToEpochNanoseconds(
-    const NormalizedTimeDuration& d, const Instant& epochNs);
-
-
-
-
 bool AddInstant(JSContext* cx, const Instant& instant,
                 const NormalizedTimeDuration& duration, Instant* result);
 
