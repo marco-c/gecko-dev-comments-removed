@@ -97,10 +97,12 @@ using StringWrapperMap =
 
 
 
+
+
 class MOZ_NON_TEMPORARY_CLASS ExternalStringCache {
   static const size_t NumEntries = 4;
-  mozilla::Array<JSExternalString*, NumEntries> externalEntries_;
-  mozilla::Array<JSInlineString*, NumEntries> inlineEntries_;
+  mozilla::Array<JSInlineString*, NumEntries> inlineLatin1Entries_;
+  mozilla::Array<JSLinearString*, NumEntries> entries_;
 
  public:
   ExternalStringCache() { purge(); }
@@ -109,29 +111,29 @@ class MOZ_NON_TEMPORARY_CLASS ExternalStringCache {
   void operator=(const ExternalStringCache&) = delete;
 
   void purge() {
-    externalEntries_ = {};
-    inlineEntries_ = {};
+    inlineLatin1Entries_ = {};
+    entries_ = {};
   }
 
-  MOZ_ALWAYS_INLINE JSExternalString* lookupExternal(
-      const JS::Latin1Char* chars, size_t len) const;
-  MOZ_ALWAYS_INLINE JSExternalString* lookupExternal(const char16_t* chars,
-                                                     size_t len) const;
-  MOZ_ALWAYS_INLINE void putExternal(JSExternalString* s);
+  MOZ_ALWAYS_INLINE JSLinearString* lookup(const JS::Latin1Char* chars,
+                                           size_t len) const;
+  MOZ_ALWAYS_INLINE JSLinearString* lookup(const char16_t* chars,
+                                           size_t len) const;
+  MOZ_ALWAYS_INLINE void put(JSLinearString* s);
 
-  MOZ_ALWAYS_INLINE JSInlineString* lookupInline(const JS::Latin1Char* chars,
-                                                 size_t len) const;
-  MOZ_ALWAYS_INLINE JSInlineString* lookupInline(const char16_t* chars,
-                                                 size_t len) const;
-  MOZ_ALWAYS_INLINE void putInline(JSInlineString* s);
+  MOZ_ALWAYS_INLINE JSInlineString* lookupInlineLatin1(
+      const JS::Latin1Char* chars, size_t len) const;
+  MOZ_ALWAYS_INLINE JSInlineString* lookupInlineLatin1(const char16_t* chars,
+                                                       size_t len) const;
+  MOZ_ALWAYS_INLINE void putInlineLatin1(JSInlineString* s);
 
  private:
   template <typename CharT>
-  MOZ_ALWAYS_INLINE JSExternalString* lookupExternalImpl(const CharT* chars,
-                                                         size_t len) const;
+  MOZ_ALWAYS_INLINE JSLinearString* lookupImpl(const CharT* chars,
+                                               size_t len) const;
   template <typename CharT>
-  MOZ_ALWAYS_INLINE JSInlineString* lookupInlineImpl(const CharT* chars,
-                                                     size_t len) const;
+  MOZ_ALWAYS_INLINE JSInlineString* lookupInlineLatin1Impl(const CharT* chars,
+                                                           size_t len) const;
 };
 
 class MOZ_NON_TEMPORARY_CLASS FunctionToStringCache {
