@@ -14,7 +14,6 @@
 #include "GPUProcessManager.h"
 #include "gfxGradientCache.h"
 #include "GfxInfoBase.h"
-#include "VideoUtils.h"
 #include "VRGPUChild.h"
 #include "VRManager.h"
 #include "VRManagerParent.h"
@@ -104,6 +103,25 @@ namespace mozilla::gfx {
 
 using namespace ipc;
 using namespace layers;
+
+static media::MediaCodecsSupported GetFullMediaCodecSupport(
+    bool aForceRefresh = false) {
+#if defined(XP_WIN)
+  
+  
+  
+  if (aForceRefresh || (gfx::gfxVars::IsInitialized() &&
+                        gfx::gfxVars::CanUseHardwareVideoDecoding())) {
+    WMFDecoderModule::Init(WMFDecoderModule::Config::ForceEnableHEVC);
+  }
+  auto disableHEVCIfNeeded = MakeScopeExit([]() {
+    if (StaticPrefs::media_wmf_hevc_enabled() != 1) {
+      WMFDecoderModule::DisableForceEnableHEVC();
+    }
+  });
+#endif
+  return PDMFactory::Supported(aForceRefresh);
+}
 
 static GPUParent* sGPUParent;
 
@@ -401,20 +419,18 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
 
   
   
-  
-
-  nsCOMPtr<nsIRunnable> task =
-      NS_NewRunnableFunction("GPUParent::Supported", []() {
-        NS_DispatchToMainThread(NS_NewRunnableFunction(
-            "GPUParent::UpdateMediaCodecsSupported",
-            [supported = PDMFactory::Supported()]() {
-              Unused << GPUParent::GetSingleton()
-                            ->SendUpdateMediaCodecsSupported(supported);
-            }));
-        ReportHardwareMediaCodecSupportProbe();
-      });
-  MOZ_ALWAYS_SUCCEEDS(
-      NS_DispatchBackgroundTask(task, nsIEventTarget::DISPATCH_NORMAL));
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "GPUParent::Supported",
+          []() {
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "GPUParent::UpdateMediaCodecsSupported",
+                [supported = GetFullMediaCodecSupport()]() {
+                  Unused << GPUParent::GetSingleton()
+                                ->SendUpdateMediaCodecsSupported(supported);
+                }));
+          }),
+      nsIEventTarget::DISPATCH_NORMAL));
 
   Telemetry::AccumulateTimeDelta(Telemetry::GPU_PROCESS_INITIALIZATION_TIME_MS,
                                  mLaunchTime);
@@ -499,22 +515,20 @@ mozilla::ipc::IPCResult GPUParent::RecvUpdateVar(const GfxVarUpdate& aUpdate) {
   auto scopeExit = MakeScopeExit(
       [couldUseHWDecoder = gfx::gfxVars::CanUseHardwareVideoDecoding()] {
         if (couldUseHWDecoder != gfx::gfxVars::CanUseHardwareVideoDecoding()) {
-          
-          
-          nsCOMPtr<nsIRunnable> task =
-              NS_NewRunnableFunction("GPUParent::RecvUpdateVar", []() {
-                WMFDecoderModule::Init();
-                NS_DispatchToMainThread(NS_NewRunnableFunction(
-                    "GPUParent::UpdateMediaCodecsSupported",
-                    [supported =
-                         PDMFactory::Supported(true )]() {
-                      Unused << GPUParent::GetSingleton()
-                                    ->SendUpdateMediaCodecsSupported(supported);
-                    }));
-                ReportHardwareMediaCodecSupportProbe();
-              });
-          MOZ_ALWAYS_SUCCEEDS(
-              NS_DispatchBackgroundTask(task, nsIEventTarget::DISPATCH_NORMAL));
+          MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
+              NS_NewRunnableFunction(
+                  "GPUParent::RecvUpdateVar",
+                  []() {
+                    NS_DispatchToMainThread(NS_NewRunnableFunction(
+                        "GPUParent::UpdateMediaCodecsSupported",
+                        [supported = GetFullMediaCodecSupport(
+                             true )]() {
+                          Unused << GPUParent::GetSingleton()
+                                        ->SendUpdateMediaCodecsSupported(
+                                            supported);
+                        }));
+                  }),
+              nsIEventTarget::DISPATCH_NORMAL));
         }
       });
 #endif

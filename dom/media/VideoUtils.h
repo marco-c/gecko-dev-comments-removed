@@ -9,6 +9,7 @@
 
 #include "AudioSampleFormat.h"
 #include "MediaInfo.h"
+#include "MediaCodecsSupport.h"
 #include "VideoLimits.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Attributes.h"
@@ -554,8 +555,8 @@ void DetermineResolutionForTelemetry(const MediaInfo& aInfo,
                                      nsCString& aResolutionOut);
 
 
-
-void ReportHardwareMediaCodecSupportProbe();
+bool ContainHardwareCodecsSupported(
+    const media::MediaCodecsSupported& aSupport);
 
 }  
 
