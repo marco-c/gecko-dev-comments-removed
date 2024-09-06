@@ -17,6 +17,7 @@
 #  include "Logging.h"
 #endif
 
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/PresShell.h"
@@ -464,7 +465,18 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
     
     
     parentDocAcc = GetDocAccessible(aDocument->GetInProcessParentDocument());
-    NS_ASSERTION(parentDocAcc, "Can't create an accessible for the document!");
+    
+    
+    
+    NS_ASSERTION(
+        parentDocAcc ||
+            (BasePrincipal::Cast(aDocument->GetPrincipal())->AddonPolicy() &&
+             aDocument->GetInProcessParentDocument() &&
+             aDocument->GetInProcessParentDocument()->GetDocShell() &&
+             aDocument->GetInProcessParentDocument()
+                 ->GetDocShell()
+                 ->IsInvisible()),
+        "Can't create an accessible for the document!");
     if (!parentDocAcc) return nullptr;
   }
 
