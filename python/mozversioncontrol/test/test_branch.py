@@ -3,8 +3,6 @@
 
 
 import mozunit
-import pytest
-from looseversion import LooseVersion
 
 from mozversioncontrol import get_repository_object
 
