@@ -279,11 +279,13 @@
         return this._lastSeenActive;
       }
 
-      const appStartTime = Services.startup.getStartupInfo().start.getTime();
-      if (!this._lastAccessed || this._lastAccessed >= appStartTime) {
+      if (
+        !this._lastAccessed ||
+        this._lastAccessed >= this.container.startupTime
+      ) {
         
         
-        return appStartTime;
+        return this.container.startupTime;
       }
       
       
