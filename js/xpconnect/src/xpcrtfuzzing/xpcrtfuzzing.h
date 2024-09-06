@@ -10,11 +10,11 @@
 #define shell_xpcrtfuzzing_h
 
 #include "mozilla/dom/ScriptSettings.h"  
-#include "FuzzerRegistry.h"              
+#include "XREShellData.h"
 
 
 int FuzzXPCRuntimeStart(mozilla::dom::AutoJSAPI* jsapi, int* argc, char*** argv,
-                        LibFuzzerDriver);
+                        const XREShellData*);
 
 
 
