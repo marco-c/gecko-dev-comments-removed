@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tempfile
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 
 
 
@@ -311,11 +312,8 @@ class OpenSSLEnvironment:
                                    "-enddate",
                                    "-in", cert_path).decode("utf8").split("=", 1)[1].strip()
             
-            end_date = datetime.strptime(end_date_str, "%b %d %H:%M:%S %Y %Z")
+            end_date = parsedate_to_datetime(end_date_str)
             time_buffer = timedelta(**CERT_EXPIRY_BUFFER)
-            
-            
-            
             if end_date < datetime.now(timezone.utc) + time_buffer:
                 return False
 
