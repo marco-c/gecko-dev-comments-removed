@@ -12,7 +12,7 @@
 
 
 #[cfg(doc)]
-use crate::{maps, script, GeneralCategory, GeneralCategoryGroup, Script};
+use super::{maps, script, GeneralCategory, GeneralCategoryGroup, Script};
 
 
 

@@ -1,17 +1,20 @@
 
 
+use super::lifetimes::{Lifetime, MaybeStatic};
 use super::{
-    EnumPath, Everywhere, MaybeStatic, NonOptional, OpaquePath, Optional, OutputOnly,
-    PrimitiveType, StructPath, TyPosition, TypeContext, TypeLifetime,
+    EnumPath, Everywhere, NonOptional, OpaqueOwner, OpaquePath, Optional, OutputOnly,
+    PrimitiveType, StructPath, StructPathLike, TyPosition, TypeContext, TypeId,
 };
 use crate::ast;
 pub use ast::Mutability;
+pub use ast::StringEncoding;
+use either::Either;
 
 
 pub type OutType = Type<OutputOnly>;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum Type<P: TyPosition = Everywhere> {
     Primitive(PrimitiveType),
@@ -34,10 +37,28 @@ pub enum SelfType {
 #[non_exhaustive]
 pub enum Slice {
     
-    Str(MaybeStatic<TypeLifetime>),
+    
+    
+    
+    
+    
+    
+    Str(Option<MaybeStatic<Lifetime>>, StringEncoding),
 
     
-    Primitive(Borrow, PrimitiveType),
+    
+    
+    
+    
+    
+    
+    Primitive(Option<Borrow>, PrimitiveType),
+
+    
+    
+    
+    
+    Strs(StringEncoding),
 }
 
 
@@ -51,7 +72,7 @@ pub enum Slice {
 #[derive(Copy, Clone, Debug)]
 #[non_exhaustive]
 pub struct Borrow {
-    pub lifetime: MaybeStatic<TypeLifetime>,
+    pub lifetime: MaybeStatic<Lifetime>,
     pub mutability: Mutability,
 }
 
@@ -72,6 +93,40 @@ impl Type {
     }
 }
 
+impl<P: TyPosition> Type<P> {
+    
+    pub fn lifetimes(&self) -> impl Iterator<Item = MaybeStatic<Lifetime>> + '_ {
+        match self {
+            Type::Opaque(opaque) => Either::Right(
+                opaque
+                    .lifetimes
+                    .as_slice()
+                    .iter()
+                    .copied()
+                    .chain(opaque.owner.lifetime()),
+            ),
+            Type::Struct(struct_) => Either::Left(struct_.lifetimes().as_slice().iter().copied()),
+            Type::Slice(slice) => Either::Left(
+                slice
+                    .lifetime()
+                    .map(|lt| std::slice::from_ref(lt).iter().copied())
+                    .unwrap_or([].iter().copied()),
+            ),
+            _ => Either::Left([].iter().copied()),
+        }
+    }
+
+    
+    pub fn id(&self) -> Option<TypeId> {
+        Some(match self {
+            Self::Opaque(p) => TypeId::Opaque(p.tcx_id),
+            Self::Enum(p) => TypeId::Enum(p.tcx_id),
+            Self::Struct(p) => p.id(),
+            _ => return None,
+        })
+    }
+}
+
 impl SelfType {
     
     
@@ -87,16 +142,21 @@ impl SelfType {
 impl Slice {
     
     
-    pub fn lifetime(&self) -> &MaybeStatic<TypeLifetime> {
+    pub fn lifetime(&self) -> Option<&MaybeStatic<Lifetime>> {
         match self {
-            Slice::Str(lifetime) => lifetime,
-            Slice::Primitive(reference, _) => &reference.lifetime,
+            Slice::Str(lifetime, ..) => lifetime.as_ref(),
+            Slice::Primitive(Some(reference), ..) => Some(&reference.lifetime),
+            Slice::Primitive(..) => None,
+            Slice::Strs(..) => Some({
+                const X: MaybeStatic<Lifetime> = MaybeStatic::NonStatic(Lifetime::new(usize::MAX));
+                &X
+            }),
         }
     }
 }
 
 impl Borrow {
-    pub(super) fn new(lifetime: MaybeStatic<TypeLifetime>, mutability: Mutability) -> Self {
+    pub(super) fn new(lifetime: MaybeStatic<Lifetime>, mutability: Mutability) -> Self {
         Self {
             lifetime,
             mutability,

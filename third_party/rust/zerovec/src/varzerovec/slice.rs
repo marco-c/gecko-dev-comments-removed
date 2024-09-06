@@ -97,7 +97,6 @@ use core::ops::Range;
 
 
 
-
 #[repr(transparent)]
 pub struct VarZeroSlice<T: ?Sized, F = Index16> {
     marker: PhantomData<(F, T)>,
@@ -145,12 +144,10 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
     
     
     
-    
     pub fn len(&self) -> usize {
         self.as_components().len()
     }
 
-    
     
     
     
@@ -187,12 +184,10 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
     
     
     
-    
     pub fn iter<'b>(&'b self) -> impl Iterator<Item = &'b T> {
         self.as_components().iter()
     }
 
-    
     
     
     
@@ -240,7 +235,6 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
     
     
     
-    
     pub unsafe fn get_unchecked(&self, idx: usize) -> &T {
         self.as_components().get_unchecked(idx)
     }
@@ -250,7 +244,6 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
         self.as_components().to_vec()
     }
 
-    
     
     
     
@@ -331,13 +324,11 @@ where
     
     
     
-    
     #[inline]
     pub fn binary_search(&self, x: &T) -> Result<usize, usize> {
         self.as_components().binary_search(x)
     }
 
-    
     
     
     
@@ -407,13 +398,11 @@ where
     
     
     
-    
     #[inline]
     pub fn binary_search_by(&self, predicate: impl FnMut(&T) -> Ordering) -> Result<usize, usize> {
         self.as_components().binary_search_by(predicate)
     }
 
-    
     
     
     

@@ -181,7 +181,7 @@ pub struct ScriptExtensionsSet<'a> {
     values: &'a ZeroSlice<Script>,
 }
 
-impl ScriptExtensionsSet<'_> {
+impl<'a> ScriptExtensionsSet<'a> {
     
     
     
@@ -213,7 +213,7 @@ impl ScriptExtensionsSet<'_> {
     
     
     
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = Script> + '_ {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = Script> + 'a {
         ZeroSlice::iter(self.values)
     }
 
@@ -550,6 +550,9 @@ impl<'a> ScriptWithExtensionsBorrowed<'a> {
 }
 
 impl ScriptWithExtensionsBorrowed<'static> {
+    
+    
+    
     
     pub const fn static_to_owned(self) -> ScriptWithExtensions {
         ScriptWithExtensions {

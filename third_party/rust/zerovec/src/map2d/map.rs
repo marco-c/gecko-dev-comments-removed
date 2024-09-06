@@ -527,7 +527,6 @@ where
     
     
     
-    
     pub fn get0_by<'l>(
         &'l self,
         predicate: impl FnMut(&K0) -> Ordering,

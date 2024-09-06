@@ -2,6 +2,7 @@
 
 
 
+use crate::cartable_ptr::{CartableOptionPointer, CartablePointerLike};
 use crate::either::EitherCart;
 #[cfg(feature = "alloc")]
 use crate::erased::{ErasedArcCart, ErasedBoxCart, ErasedRcCart};
@@ -79,6 +80,11 @@ pub struct Yoke<Y: for<'a> Yokeable<'a>, C> {
     
     
     yokeable: KindaSortaDangling<Y>,
+    
+    
+    
+    
+    
     cart: C,
 }
 
@@ -112,6 +118,44 @@ impl<Y: for<'a> Yokeable<'a>, C: StableDeref> Yoke<Y, C>
 where
     <C as Deref>::Target: 'static,
 {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -312,6 +356,14 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub unsafe fn replace_cart<C2>(self, f: impl FnOnce(C) -> C2) -> Yoke<Y, C2> {
         Yoke {
@@ -442,7 +494,6 @@ impl<Y: for<'a> Yokeable<'a>> Yoke<Y, ()> {
     
     
     
-    
     pub fn new_always_owned(yokeable: Y) -> Self {
         Self {
             yokeable: KindaSortaDangling::new(yokeable),
@@ -460,7 +511,9 @@ impl<Y: for<'a> Yokeable<'a>> Yoke<Y, ()> {
     }
 }
 
-impl<Y: for<'a> Yokeable<'a>, C: StableDeref> Yoke<Y, Option<C>> {
+
+
+impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, Option<C>> {
     
     
     
@@ -497,12 +550,94 @@ impl<Y: for<'a> Yokeable<'a>, C: StableDeref> Yoke<Y, Option<C>> {
     
     
     pub fn try_into_yokeable(self) -> Result<Y, Self> {
+        
+        
         match self.cart {
             Some(_) => Err(self),
             None => Ok(self.yokeable.into_inner()),
         }
     }
 }
+
+impl<Y: for<'a> Yokeable<'a>, C: CartablePointerLike> Yoke<Y, Option<C>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn convert_cart_into_option_pointer(self) -> Yoke<Y, CartableOptionPointer<C>> {
+        match self.cart {
+            Some(cart) => Yoke {
+                yokeable: self.yokeable,
+                cart: CartableOptionPointer::from_cartable(cart),
+            },
+            None => Yoke {
+                yokeable: self.yokeable,
+                cart: CartableOptionPointer::none(),
+            },
+        }
+    }
+}
+
+impl<Y: for<'a> Yokeable<'a>, C: CartablePointerLike> Yoke<Y, CartableOptionPointer<C>> {
+    
+    
+    
+    
+    #[inline]
+    pub fn try_into_yokeable(self) -> Result<Y, Self> {
+        if self.cart.is_none() {
+            Ok(self.yokeable.into_inner())
+        } else {
+            Err(self)
+        }
+    }
+}
+
+
 
 
 
@@ -650,7 +785,6 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
     
     
     
-    
     pub fn map_project<P, F>(self, f: F) -> Yoke<P, C>
     where
         P: for<'a> Yokeable<'a>,
@@ -687,7 +821,6 @@ impl<Y: for<'a> Yokeable<'a>, C> Yoke<Y, C> {
         }
     }
 
-    
     
     
     

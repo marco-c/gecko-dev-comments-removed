@@ -11,7 +11,7 @@ use core::hash::Hash;
 use core::str::FromStr;
 use icu_locid::extensions::unicode as unicode_ext;
 use icu_locid::subtags::{Language, Region, Script, Variants};
-use icu_locid::{LanguageIdentifier, Locale, SubtagOrderingResult};
+use icu_locid::{LanguageIdentifier, Locale};
 use writeable::{LengthHint, Writeable};
 
 #[cfg(feature = "experimental")]
@@ -340,36 +340,8 @@ impl DataLocale {
     
     
     
-    
     pub fn strict_cmp(&self, other: &[u8]) -> Ordering {
-        let subtags = other.split(|b| *b == b'-');
-        let mut subtag_result = self.langid.strict_cmp_iter(subtags);
-        if self.has_unicode_ext() {
-            let mut subtags = match subtag_result {
-                SubtagOrderingResult::Subtags(s) => s,
-                SubtagOrderingResult::Ordering(o) => return o,
-            };
-            match subtags.next() {
-                Some(b"u") => (),
-                Some(s) => return s.cmp(b"u").reverse(),
-                None => return Ordering::Greater,
-            }
-            subtag_result = self.keywords.strict_cmp_iter(subtags);
-        }
-        #[cfg(feature = "experimental")]
-        if let Some(aux) = self.get_aux() {
-            let mut subtags = match subtag_result {
-                SubtagOrderingResult::Subtags(s) => s,
-                SubtagOrderingResult::Ordering(o) => return o,
-            };
-            match subtags.next() {
-                Some(b"x") => (),
-                Some(s) => return s.cmp(b"x").reverse(),
-                None => return Ordering::Greater,
-            }
-            subtag_result = aux.strict_cmp_iter(subtags);
-        }
-        subtag_result.end()
+        self.writeable_cmp_bytes(other)
     }
 }
 
@@ -396,6 +368,24 @@ impl DataLocale {
     
     pub fn is_empty(&self) -> bool {
         self == <&DataLocale>::default()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn total_cmp(&self, other: &Self) -> Ordering {
+        self.langid
+            .total_cmp(&other.langid)
+            .then_with(|| self.keywords.cmp(&other.keywords))
+            .then_with(|| {
+                #[cfg(feature = "experimental")]
+                return self.aux.cmp(&other.aux);
+                #[cfg(not(feature = "experimental"))]
+                return Ordering::Equal;
+            })
     }
 
     
@@ -526,9 +516,6 @@ impl DataLocale {
     
     
     
-    
-    
-    
     pub fn into_locale(self) -> Locale {
         let mut loc = Locale {
             id: self.langid,
@@ -615,10 +602,6 @@ impl DataLocale {
         self.keywords.contains_key(key)
     }
 
-    
-    
-    
-    
     
     
     
@@ -781,8 +764,7 @@ impl DataLocale {
 
 
 
-
-#[derive(Debug, PartialEq, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
 #[cfg(feature = "experimental")]
 pub struct AuxiliaryKeys {
     value: AuxiliaryKeysInner,
@@ -821,6 +803,20 @@ impl PartialEq for AuxiliaryKeysInner {
 impl Eq for AuxiliaryKeysInner {}
 
 #[cfg(feature = "experimental")]
+impl PartialOrd for AuxiliaryKeysInner {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl Ord for AuxiliaryKeysInner {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.deref().cmp(other.deref())
+    }
+}
+
+#[cfg(feature = "experimental")]
 impl Debug for AuxiliaryKeysInner {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -857,7 +853,31 @@ impl FromStr for AuxiliaryKeys {
     type Err = DataError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::try_from_str(s)
+        if !s.is_empty()
+            && s.split(Self::separator()).all(|b| {
+                if let Ok(subtag) = Subtag::from_str(b) {
+                    
+                    b == subtag.as_str()
+                } else {
+                    false
+                }
+            })
+        {
+            if s.len() <= 23 {
+                #[allow(clippy::unwrap_used)] 
+                Ok(Self {
+                    value: AuxiliaryKeysInner::Stack(s.parse().unwrap()),
+                })
+            } else {
+                Ok(Self {
+                    value: AuxiliaryKeysInner::Boxed(s.into()),
+                })
+            }
+        } else {
+            Err(DataErrorKind::KeyLocaleSyntax
+                .into_error()
+                .with_display_context(s))
+        }
     }
 }
 
@@ -933,34 +953,6 @@ impl AuxiliaryKeys {
         }
     }
 
-    pub(crate) fn try_from_str(s: &str) -> Result<Self, DataError> {
-        if !s.is_empty()
-            && s.split(Self::separator()).all(|b| {
-                if let Ok(subtag) = Subtag::from_str(b) {
-                    
-                    b == subtag.as_str()
-                } else {
-                    false
-                }
-            })
-        {
-            if s.len() <= 23 {
-                #[allow(clippy::unwrap_used)] 
-                Ok(Self {
-                    value: AuxiliaryKeysInner::Stack(s.parse().unwrap()),
-                })
-            } else {
-                Ok(Self {
-                    value: AuxiliaryKeysInner::Boxed(s.into()),
-                })
-            }
-        } else {
-            Err(DataErrorKind::KeyLocaleSyntax
-                .into_error()
-                .with_display_context(s))
-        }
-    }
-
     
     
     
@@ -987,23 +979,6 @@ impl AuxiliaryKeys {
             })
     }
 
-    pub(crate) fn strict_cmp_iter<'l, I>(&self, mut subtags: I) -> SubtagOrderingResult<I>
-    where
-        I: Iterator<Item = &'l [u8]>,
-    {
-        for subtag in self.value.split(Self::separator()) {
-            if let Some(other) = subtags.next() {
-                match subtag.as_bytes().cmp(other) {
-                    Ordering::Equal => (),
-                    not_equal => return SubtagOrderingResult::Ordering(not_equal),
-                }
-            } else {
-                return SubtagOrderingResult::Ordering(Ordering::Greater);
-            }
-        }
-        SubtagOrderingResult::Subtags(subtags)
-    }
-
     
     
     
@@ -1028,43 +1003,41 @@ impl From<Subtag> for AuxiliaryKeys {
 
 #[test]
 fn test_data_locale_to_string() {
-    use icu_locid::locale;
-
     struct TestCase {
-        pub locale: Locale,
+        pub locale: &'static str,
         pub aux: Option<&'static str>,
         pub expected: &'static str,
     }
 
     for cas in [
         TestCase {
-            locale: Locale::UND,
+            locale: "und",
             aux: None,
             expected: "und",
         },
         TestCase {
-            locale: locale!("und-u-cu-gbp"),
+            locale: "und-u-cu-gbp",
             aux: None,
             expected: "und-u-cu-gbp",
         },
         TestCase {
-            locale: locale!("en-ZA-u-cu-gbp"),
+            locale: "en-ZA-u-cu-gbp",
             aux: None,
             expected: "en-ZA-u-cu-gbp",
         },
         #[cfg(feature = "experimental")]
         TestCase {
-            locale: locale!("en-ZA-u-nu-arab"),
+            locale: "en-ZA-u-nu-arab",
             aux: Some("gbp"),
             expected: "en-ZA-u-nu-arab-x-gbp",
         },
     ] {
-        let mut data_locale = DataLocale::from(cas.locale);
+        let mut locale = cas.locale.parse::<DataLocale>().unwrap();
         #[cfg(feature = "experimental")]
         if let Some(aux) = cas.aux {
-            data_locale.set_aux(aux.parse().unwrap());
+            locale.set_aux(aux.parse().unwrap());
         }
-        writeable::assert_writeable_eq!(data_locale, cas.expected);
+        writeable::assert_writeable_eq!(locale, cas.expected);
     }
 }
 

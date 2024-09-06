@@ -140,10 +140,6 @@ use super::*;
 
 
 
-
-
-
-
 #[non_exhaustive]
 pub enum VarZeroVec<'a, T: ?Sized, F = Index16> {
     
@@ -271,7 +267,6 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVec<'a, T, F> {
     
     
     
-    
     pub fn parse_byte_slice(slice: &'a [u8]) -> Result<Self, ZeroVecError> {
         let borrowed = VarZeroSlice::<T, F>::parse_byte_slice(slice)?;
 
@@ -284,10 +279,9 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVec<'a, T, F> {
     
     
     pub const unsafe fn from_bytes_unchecked(bytes: &'a [u8]) -> Self {
-        Self::Borrowed(core::mem::transmute(bytes))
+        Self::Borrowed(core::mem::transmute::<&[u8], &VarZeroSlice<T, F>>(bytes))
     }
 
-    
     
     
     
@@ -342,7 +336,6 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVec<'a, T, F> {
     
     
     
-    
     pub fn into_owned(mut self) -> VarZeroVec<'static, T, F> {
         self.make_mut();
         match self {
@@ -359,7 +352,6 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVec<'a, T, F> {
         }
     }
 
-    
     
     
     

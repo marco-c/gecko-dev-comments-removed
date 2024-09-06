@@ -2,29 +2,94 @@
 
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
+use std::borrow::Cow;
+use std::convert::Infallible;
+use std::str::FromStr;
 use syn::parse::{Error as ParseError, Parse, ParseStream};
-use syn::{Attribute, Ident, LitStr, Meta, Token};
+use syn::{Attribute, Expr, Ident, Lit, LitStr, Meta, MetaList, Token};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Default)]
 #[non_exhaustive]
 pub struct Attrs {
+    
+    
     pub cfg: Vec<Attribute>,
+    
+    
+    
+    
+    
+    
     pub attrs: Vec<DiplomatBackendAttr>,
+    
+    
+    
+    
+    
+    
+    pub skip_if_ast: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    pub abi_rename: RenameAttr,
 }
 
 impl Attrs {
     fn add_attr(&mut self, attr: Attr) {
         match attr {
             Attr::Cfg(attr) => self.cfg.push(attr),
-            Attr::DiplomatBackendAttr(attr) => self.attrs.push(attr),
+            Attr::DiplomatBackend(attr) => self.attrs.push(attr),
+            Attr::SkipIfAst => self.skip_if_ast = true,
+            Attr::CRename(rename) => self.abi_rename.extend(&rename),
         }
     }
 
     
-    pub(crate) fn merge_parent_attrs(&mut self, other: &Attrs) {
-        self.cfg.extend(other.cfg.iter().cloned())
+    
+    pub(crate) fn attrs_for_inheritance(&self, context: AttrInheritContext) -> Self {
+        
+        
+        
+        
+        
+        let attrs = if context == AttrInheritContext::MethodFromImpl {
+            self.attrs.clone()
+        } else {
+            Vec::new()
+        };
+
+        let abi_rename = self.abi_rename.attrs_for_inheritance(context, true);
+        Self {
+            cfg: self.cfg.clone(),
+
+            attrs,
+            
+            skip_if_ast: false,
+            abi_rename,
+        }
     }
+
     pub(crate) fn add_attrs(&mut self, attrs: &[Attribute]) {
         for attr in syn_attr_to_ast_attr(attrs) {
             self.add_attr(attr)
@@ -45,21 +110,29 @@ impl From<&[Attribute]> for Attrs {
 
 enum Attr {
     Cfg(Attribute),
-    DiplomatBackendAttr(DiplomatBackendAttr),
+    DiplomatBackend(DiplomatBackendAttr),
+    SkipIfAst,
+    CRename(RenameAttr),
     
 }
 
 fn syn_attr_to_ast_attr(attrs: &[Attribute]) -> impl Iterator<Item = Attr> + '_ {
     let cfg_path: syn::Path = syn::parse_str("cfg").unwrap();
     let dattr_path: syn::Path = syn::parse_str("diplomat::attr").unwrap();
+    let crename_attr: syn::Path = syn::parse_str("diplomat::abi_rename").unwrap();
+    let skipast: syn::Path = syn::parse_str("diplomat::skip_if_ast").unwrap();
     attrs.iter().filter_map(move |a| {
         if a.path() == &cfg_path {
             Some(Attr::Cfg(a.clone()))
         } else if a.path() == &dattr_path {
-            Some(Attr::DiplomatBackendAttr(
+            Some(Attr::DiplomatBackend(
                 a.parse_args()
                     .expect("Failed to parse malformed diplomat::attr"),
             ))
+        } else if a.path() == &crename_attr {
+            Some(Attr::CRename(RenameAttr::from_meta(&a.meta).unwrap()))
+        } else if a.path() == &skipast {
+            Some(Attr::SkipIfAst)
         } else {
             None
         }
@@ -73,12 +146,23 @@ impl Serialize for Attrs {
     {
         
         let mut state = serializer.serialize_struct("Attrs", 1)?;
-        let cfg: Vec<_> = self
-            .cfg
-            .iter()
-            .map(|a| quote::quote!(#a).to_string())
-            .collect();
-        state.serialize_field("cfg", &cfg)?;
+        if !self.cfg.is_empty() {
+            let cfg: Vec<_> = self
+                .cfg
+                .iter()
+                .map(|a| quote::quote!(#a).to_string())
+                .collect();
+            state.serialize_field("cfg", &cfg)?;
+        }
+        if !self.attrs.is_empty() {
+            state.serialize_field("attrs", &self.attrs)?;
+        }
+        if self.skip_if_ast {
+            state.serialize_field("skip_if_ast", &self.skip_if_ast)?;
+        }
+        if !self.abi_rename.is_empty() {
+            state.serialize_field("abi_rename", &self.abi_rename)?;
+        }
         state.end()
     }
 }
@@ -174,13 +258,181 @@ impl Parse for DiplomatBackendAttr {
     }
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub(crate) enum AttrInheritContext {
+    Variant,
+    Type,
+    
+    MethodOrImplFromModule,
+    
+    
+    
+    
+    MethodFromImpl,
+    
+    
+    #[allow(unused)]
+    Module,
+}
+
+
+
+
+
+
+
+
+#[derive(Default, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
+pub struct RenameAttr {
+    pattern: Option<RenamePattern>,
+}
+
+impl RenameAttr {
+    
+    pub fn apply<'a>(&'a self, name: Cow<'a, str>) -> Cow<'a, str> {
+        if let Some(ref pattern) = self.pattern {
+            let replacement = &pattern.replacement;
+            if let Some(index) = pattern.insertion_index {
+                format!("{}{name}{}", &replacement[..index], &replacement[index..]).into()
+            } else {
+                replacement.into()
+            }
+        } else {
+            name
+        }
+    }
+
+    
+    fn is_empty(&self) -> bool {
+        self.pattern.is_none()
+    }
+
+    pub(crate) fn extend(&mut self, other: &Self) {
+        if other.pattern.is_some() {
+            self.pattern.clone_from(&other.pattern);
+        }
+
+        
+        
+    }
+
+    
+    
+    pub(crate) fn attrs_for_inheritance(
+        &self,
+        context: AttrInheritContext,
+        is_abi_rename: bool,
+    ) -> Self {
+        let pattern = match context {
+            
+            AttrInheritContext::MethodOrImplFromModule if !is_abi_rename => Default::default(),
+            
+            AttrInheritContext::Variant => Default::default(),
+            _ => self.pattern.clone(),
+        };
+        
+        
+        Self { pattern }
+    }
+
+    
+    fn from_pattern(s: &str) -> Self {
+        Self {
+            pattern: Some(s.parse().unwrap()),
+        }
+    }
+
+    pub(crate) fn from_meta(meta: &Meta) -> Result<Self, &'static str> {
+        let attr = StandardAttribute::from_meta(meta)
+            .map_err(|_| "#[diplomat::abi_rename] must be given a string value")?;
+
+        match attr {
+            StandardAttribute::String(s) => Ok(RenameAttr::from_pattern(&s)),
+            StandardAttribute::List(_) => {
+                Err("Failed to parse malformed #[diplomat::abi_rename(...)]: found list")
+            }
+            StandardAttribute::Empty => {
+                Err("Failed to parse malformed #[diplomat::abi_rename(...)]: found no parameters")
+            }
+        }
+    }
+}
+
+impl FromStr for RenamePattern {
+    type Err = Infallible;
+    fn from_str(s: &str) -> Result<Self, Infallible> {
+        if let Some(index) = s.find("{0}") {
+            let replacement = format!("{}{}", &s[..index], &s[index + 3..]);
+            Ok(Self {
+                replacement,
+                insertion_index: Some(index),
+            })
+        } else {
+            Ok(Self {
+                replacement: s.into(),
+                insertion_index: None,
+            })
+        }
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
+struct RenamePattern {
+    
+    replacement: String,
+    
+    
+    insertion_index: Option<usize>,
+}
+
+
+
+
+
+
+
+
+
+pub(crate) enum StandardAttribute<'a> {
+    String(String),
+    List(#[allow(dead_code)] &'a MetaList),
+    Empty,
+}
+
+impl<'a> StandardAttribute<'a> {
+    
+    pub(crate) fn from_meta(meta: &'a Meta) -> Result<Self, ()> {
+        match meta {
+            Meta::Path(..) => Ok(Self::Empty),
+            Meta::NameValue(ref nv) => {
+                
+                let Expr::Lit(ref lit) = nv.value else {
+                    return Err(());
+                };
+                let Lit::Str(ref lit) = lit.lit else {
+                    return Err(());
+                };
+                Ok(Self::String(lit.value()))
+            }
+            
+            Meta::List(list) => {
+                if let Ok(lit) = list.parse_args::<LitStr>() {
+                    Ok(Self::String(lit.value()))
+                } else {
+                    Ok(Self::List(list))
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use insta;
 
     use syn;
 
-    use super::{DiplomatBackendAttr, DiplomatBackendAttrCfg};
+    use super::{DiplomatBackendAttr, DiplomatBackendAttrCfg, RenameAttr};
 
     #[test]
     fn test_cfgs() {
@@ -202,6 +454,16 @@ mod tests {
         let attr: syn::Attribute =
             syn::parse_quote!(#[diplomat::attr(any(cpp, has = "overloading"), namespacing)]);
         let attr: DiplomatBackendAttr = attr.parse_args().unwrap();
+        insta::assert_yaml_snapshot!(attr);
+    }
+
+    #[test]
+    fn test_rename() {
+        let attr: syn::Attribute = syn::parse_quote!(#[diplomat::abi_rename = "foobar_{0}"]);
+        let attr = RenameAttr::from_meta(&attr.meta).unwrap();
+        insta::assert_yaml_snapshot!(attr);
+        let attr: syn::Attribute = syn::parse_quote!(#[diplomat::abi_rename("foobar_{0}")]);
+        let attr = RenameAttr::from_meta(&attr.meta).unwrap();
         insta::assert_yaml_snapshot!(attr);
     }
 }

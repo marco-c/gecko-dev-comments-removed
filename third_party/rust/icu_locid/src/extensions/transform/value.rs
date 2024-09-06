@@ -2,8 +2,8 @@
 
 
 
-use crate::helpers::ShortSlice;
 use crate::parser::{ParserError, SubtagIterator};
+use crate::shortvec::ShortBoxSlice;
 use core::ops::RangeInclusive;
 use core::str::FromStr;
 use tinystr::TinyAsciiStr;
@@ -27,7 +27,7 @@ use tinystr::TinyAsciiStr;
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Default)]
-pub struct Value(ShortSlice<TinyAsciiStr<{ *TYPE_LENGTH.end() }>>);
+pub struct Value(ShortBoxSlice<TinyAsciiStr<{ *TYPE_LENGTH.end() }>>);
 
 const TYPE_LENGTH: RangeInclusive<usize> = 3..=8;
 const TRUE_TVALUE: TinyAsciiStr<8> = tinystr::tinystr!(8, "true");
@@ -44,7 +44,7 @@ impl Value {
     
     
     pub fn try_from_bytes(input: &[u8]) -> Result<Self, ParserError> {
-        let mut v = ShortSlice::default();
+        let mut v = ShortBoxSlice::default();
         let mut has_value = false;
 
         for subtag in SubtagIterator::new(input) {
@@ -66,7 +66,7 @@ impl Value {
     }
 
     pub(crate) fn from_short_slice_unchecked(
-        input: ShortSlice<TinyAsciiStr<{ *TYPE_LENGTH.end() }>>,
+        input: ShortBoxSlice<TinyAsciiStr<{ *TYPE_LENGTH.end() }>>,
     ) -> Self {
         Self(input)
     }

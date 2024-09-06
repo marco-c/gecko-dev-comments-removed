@@ -5,40 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use crate::provider::*;
 use icu_locid::extensions::unicode::Value;
 use icu_locid::subtags::Variants;
@@ -48,6 +14,9 @@ use icu_provider::prelude::*;
 pub use icu_provider::fallback::*;
 
 mod algorithms;
+
+
+
 
 
 
@@ -246,6 +215,9 @@ impl<'a> LocaleFallbackerBorrowed<'a> {
 }
 
 impl LocaleFallbackerBorrowed<'static> {
+    
+    
+    
     
     pub const fn static_to_owned(self) -> LocaleFallbacker {
         LocaleFallbacker {

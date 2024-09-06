@@ -194,7 +194,6 @@ where
     
     
     
-    
     pub fn get_2d(&self, key0: &K0, key1: &K1) -> Option<&'a V::GetType> {
         self.get0(key0)?.get1(key1)
     }
@@ -209,7 +208,6 @@ where
     K1: ?Sized,
     V: ?Sized,
 {
-    
     
     
     
@@ -241,7 +239,6 @@ where
     
     
     
-    
     pub fn get0_by<'l>(
         &'l self,
         predicate: impl FnMut(&K0) -> Ordering,
@@ -250,7 +247,6 @@ where
         Some(ZeroMap2dCursor::from_borrowed(self, key0_index))
     }
 
-    
     
     
     

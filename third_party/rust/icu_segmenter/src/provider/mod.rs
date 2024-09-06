@@ -18,10 +18,7 @@
 mod lstm;
 pub use lstm::*;
 
-
-#[cfg(feature = "datagen")]
-pub use crate::rule_segmenter::RuleStatusType;
-
+use crate::WordType;
 use icu_collections::codepointtrie::CodePointTrie;
 use icu_provider::prelude::*;
 use zerovec::ZeroVec;
@@ -89,22 +86,22 @@ pub const KEYS: &[DataKey] = &[
 pub struct RuleBreakDataV1<'data> {
     
     #[cfg_attr(feature = "serde", serde(borrow))]
-    pub property_table: RuleBreakPropertyTable<'data>,
+    pub property_table: CodePointTrie<'data, u8>,
 
     
     #[cfg_attr(feature = "serde", serde(borrow))]
-    pub break_state_table: RuleBreakStateTable<'data>,
+    pub break_state_table: ZeroVec<'data, BreakState>,
 
     
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    pub rule_status_table: RuleStatusTable<'data>,
+    #[cfg_attr(feature = "serde", serde(borrow, rename = "rule_status_table"))]
+    pub word_type_table: ZeroVec<'data, WordType>,
 
     
     pub property_count: u8,
 
     
     
-    pub last_codepoint_property: i8,
+    pub last_codepoint_property: u8,
 
     
     pub sot_property: u8,
@@ -116,60 +113,6 @@ pub struct RuleBreakDataV1<'data> {
     
     pub complex_property: u8,
 }
-
-
-
-
-
-
-
-
-#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
-#[cfg_attr(
-    feature = "datagen",
-    derive(serde::Serialize,databake::Bake),
-    databake(path = icu_segmenter::provider),
-)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct RuleBreakPropertyTable<'data>(
-    #[cfg_attr(feature = "serde", serde(borrow))] pub CodePointTrie<'data, u8>,
-);
-
-
-
-
-
-
-
-
-#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
-#[cfg_attr(
-    feature = "datagen",
-    derive(serde::Serialize,databake::Bake),
-    databake(path = icu_segmenter::provider),
-)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct RuleBreakStateTable<'data>(
-    #[cfg_attr(feature = "serde", serde(borrow))] pub ZeroVec<'data, i8>,
-);
-
-
-
-
-
-
-
-
-#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
-#[cfg_attr(
-    feature = "datagen",
-    derive(serde::Serialize,databake::Bake),
-    databake(path = icu_segmenter::provider),
-)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct RuleStatusTable<'data>(
-    #[cfg_attr(feature = "serde", serde(borrow))] pub ZeroVec<'data, u8>,
-);
 
 
 
@@ -199,4 +142,127 @@ pub(crate) struct UCharDictionaryBreakDataV1Marker;
 
 impl DataMarker for UCharDictionaryBreakDataV1Marker {
     type Yokeable = UCharDictionaryBreakDataV1<'static>;
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+#[cfg_attr(
+    feature = "datagen",
+    derive(databake::Bake),
+    databake(path = icu_segmenter::provider),
+)]
+
+
+
+
+
+
+
+pub enum BreakState {
+    
+    Break,
+    
+    Keep,
+    
+    NoMatch,
+    
+    Intermediate(u8),
+    
+    Index(u8),
+}
+
+#[cfg(feature = "datagen")]
+impl serde::Serialize for BreakState {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        
+        if serializer.is_human_readable() {
+            i8::from_le_bytes([zerovec::ule::AsULE::to_unaligned(*self)]).serialize(serializer)
+        } else {
+            zerovec::ule::AsULE::to_unaligned(*self).serialize(serializer)
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for BreakState {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        if deserializer.is_human_readable() {
+            Ok(zerovec::ule::AsULE::from_unaligned(
+                i8::deserialize(deserializer)?.to_le_bytes()[0],
+            ))
+        } else {
+            u8::deserialize(deserializer).map(zerovec::ule::AsULE::from_unaligned)
+        }
+    }
+}
+
+impl zerovec::ule::AsULE for BreakState {
+    type ULE = u8;
+
+    fn to_unaligned(self) -> Self::ULE {
+        match self {
+            BreakState::Break => 128,
+            BreakState::Keep => 255,
+            BreakState::NoMatch => 254,
+            BreakState::Intermediate(i) => i | 64,
+            BreakState::Index(i) => i,
+        }
+    }
+
+    fn from_unaligned(unaligned: Self::ULE) -> Self {
+        match unaligned {
+            128 => BreakState::Break,
+            255 => BreakState::Keep,
+            254 => BreakState::NoMatch,
+            i if i & 64 != 0 => BreakState::Intermediate(i & !64),
+            i => BreakState::Index(i),
+        }
+    }
+}
+
+#[cfg(feature = "datagen")]
+impl serde::Serialize for WordType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if serializer.is_human_readable() {
+            (*self as u8).serialize(serializer)
+        } else {
+            unreachable!("only used as ULE")
+        }
+    }
+}
+
+#[cfg(feature = "datagen")]
+impl databake::Bake for WordType {
+    fn bake(&self, _crate_env: &databake::CrateEnv) -> databake::TokenStream {
+        unreachable!("only used as ULE")
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for WordType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        if deserializer.is_human_readable() {
+            use serde::de::Error;
+            match u8::deserialize(deserializer) {
+                Ok(0) => Ok(WordType::None),
+                Ok(1) => Ok(WordType::Number),
+                Ok(2) => Ok(WordType::Letter),
+                Ok(_) => Err(D::Error::custom("invalid value")),
+                Err(e) => Err(e),
+            }
+        } else {
+            unreachable!("only used as ULE")
+        }
+    }
 }

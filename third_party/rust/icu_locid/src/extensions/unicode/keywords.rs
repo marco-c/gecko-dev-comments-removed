@@ -6,14 +6,13 @@ use core::borrow::Borrow;
 use core::cmp::Ordering;
 use core::iter::FromIterator;
 use litemap::LiteMap;
+use writeable::Writeable;
 
 use super::Key;
 use super::Value;
-use crate::helpers::ShortSlice;
+#[allow(deprecated)]
 use crate::ordering::SubtagOrderingResult;
-
-
-
+use crate::shortvec::ShortBoxSlice;
 
 
 
@@ -66,7 +65,7 @@ use crate::ordering::SubtagOrderingResult;
 
 
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash, PartialOrd, Ord)]
-pub struct Keywords(LiteMap<Key, Value, ShortSlice<(Key, Value)>>);
+pub struct Keywords(LiteMap<Key, Value, ShortBoxSlice<(Key, Value)>>);
 
 impl Keywords {
     
@@ -87,11 +86,10 @@ impl Keywords {
     #[inline]
     pub const fn new_single(key: Key, value: Value) -> Self {
         Self(LiteMap::from_sorted_store_unchecked(
-            ShortSlice::new_single((key, value)),
+            ShortBoxSlice::new_single((key, value)),
         ))
     }
 
-    
     
     
     
@@ -180,8 +178,6 @@ impl Keywords {
         self.0.get_mut(key)
     }
 
-    
-    
     
     
     
@@ -301,9 +297,8 @@ impl Keywords {
     
     
     
-    
     pub fn strict_cmp(&self, other: &[u8]) -> Ordering {
-        self.strict_cmp_iter(other.split(|b| *b == b'-')).end()
+        self.writeable_cmp_bytes(other)
     }
 
     
@@ -339,7 +334,8 @@ impl Keywords {
     
     
     
-    
+    #[deprecated(since = "1.5.0", note = "if you need this, please file an issue")]
+    #[allow(deprecated)]
     pub fn strict_cmp_iter<'l, I>(&self, mut subtags: I) -> SubtagOrderingResult<I>
     where
         I: Iterator<Item = &'l [u8]>,
@@ -378,8 +374,8 @@ impl Keywords {
     }
 }
 
-impl From<LiteMap<Key, Value, ShortSlice<(Key, Value)>>> for Keywords {
-    fn from(map: LiteMap<Key, Value, ShortSlice<(Key, Value)>>) -> Self {
+impl From<LiteMap<Key, Value, ShortBoxSlice<(Key, Value)>>> for Keywords {
+    fn from(map: LiteMap<Key, Value, ShortBoxSlice<(Key, Value)>>) -> Self {
         Self(map)
     }
 }

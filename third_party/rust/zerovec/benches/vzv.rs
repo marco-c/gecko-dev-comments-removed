@@ -10,10 +10,6 @@ use std::ops::RangeInclusive;
 
 use zerovec::VarZeroVec;
 
-#[repr(align(8))]
-#[derive(Default)]
-struct AlignedBuffer(Vec<u8>);
-
 
 
 

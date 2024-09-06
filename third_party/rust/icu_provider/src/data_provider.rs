@@ -2,11 +2,71 @@
 
 
 
+use core::marker::PhantomData;
+use yoke::Yokeable;
+
 use crate::error::DataError;
 use crate::key::DataKey;
 use crate::marker::{DataMarker, KeyedDataMarker};
 use crate::request::DataRequest;
 use crate::response::DataResponse;
+
+
+pub trait DataProvider<M>
+where
+    M: KeyedDataMarker,
+{
+    
+    
+    
+    
+    fn load(&self, req: DataRequest) -> Result<DataResponse<M>, DataError>;
+}
+
+impl<'a, M, P> DataProvider<M> for &'a P
+where
+    M: KeyedDataMarker,
+    P: DataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (*self).load(req)
+    }
+}
+
+impl<M, P> DataProvider<M> for alloc::boxed::Box<P>
+where
+    M: KeyedDataMarker,
+    P: DataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (**self).load(req)
+    }
+}
+
+impl<M, P> DataProvider<M> for alloc::rc::Rc<P>
+where
+    M: KeyedDataMarker,
+    P: DataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (**self).load(req)
+    }
+}
+
+#[cfg(target_has_atomic = "ptr")]
+impl<M, P> DataProvider<M> for alloc::sync::Arc<P>
+where
+    M: KeyedDataMarker,
+    P: DataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (**self).load(req)
+    }
+}
 
 
 
@@ -25,16 +85,15 @@ where
     fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError>;
 }
 
-
-pub trait DataProvider<M>
+impl<'a, M, P> DynamicDataProvider<M> for &'a P
 where
-    M: KeyedDataMarker,
+    M: DataMarker,
+    P: DynamicDataProvider<M> + ?Sized,
 {
-    
-    
-    
-    
-    fn load(&self, req: DataRequest) -> Result<DataResponse<M>, DataError>;
+    #[inline]
+    fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (*self).load_data(key, req)
+    }
 }
 
 impl<M, P> DynamicDataProvider<M> for alloc::boxed::Box<P>
@@ -42,8 +101,156 @@ where
     M: DataMarker,
     P: DynamicDataProvider<M> + ?Sized,
 {
+    #[inline]
     fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
         (**self).load_data(key, req)
+    }
+}
+
+impl<M, P> DynamicDataProvider<M> for alloc::rc::Rc<P>
+where
+    M: DataMarker,
+    P: DynamicDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (**self).load_data(key, req)
+    }
+}
+
+#[cfg(target_has_atomic = "ptr")]
+impl<M, P> DynamicDataProvider<M> for alloc::sync::Arc<P>
+where
+    M: DataMarker,
+    P: DynamicDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (**self).load_data(key, req)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+pub trait BoundDataProvider<M>
+where
+    M: DataMarker,
+{
+    
+    
+    
+    
+    fn load_bound(&self, req: DataRequest) -> Result<DataResponse<M>, DataError>;
+    
+    fn bound_key(&self) -> DataKey;
+}
+
+impl<'a, M, P> BoundDataProvider<M> for &'a P
+where
+    M: DataMarker,
+    P: BoundDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load_bound(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (*self).load_bound(req)
+    }
+    #[inline]
+    fn bound_key(&self) -> DataKey {
+        (*self).bound_key()
+    }
+}
+
+impl<M, P> BoundDataProvider<M> for alloc::boxed::Box<P>
+where
+    M: DataMarker,
+    P: BoundDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load_bound(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (**self).load_bound(req)
+    }
+    #[inline]
+    fn bound_key(&self) -> DataKey {
+        (**self).bound_key()
+    }
+}
+
+impl<M, P> BoundDataProvider<M> for alloc::rc::Rc<P>
+where
+    M: DataMarker,
+    P: BoundDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load_bound(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (**self).load_bound(req)
+    }
+    #[inline]
+    fn bound_key(&self) -> DataKey {
+        (**self).bound_key()
+    }
+}
+
+#[cfg(target_has_atomic = "ptr")]
+impl<M, P> BoundDataProvider<M> for alloc::sync::Arc<P>
+where
+    M: DataMarker,
+    P: BoundDataProvider<M> + ?Sized,
+{
+    #[inline]
+    fn load_bound(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        (**self).load_bound(req)
+    }
+    #[inline]
+    fn bound_key(&self) -> DataKey {
+        (**self).bound_key()
+    }
+}
+
+
+
+
+#[derive(Debug)]
+pub struct DataProviderWithKey<M, P> {
+    inner: P,
+    _marker: PhantomData<M>,
+}
+
+impl<M, P> DataProviderWithKey<M, P>
+where
+    M: KeyedDataMarker,
+    P: DataProvider<M>,
+{
+    
+    pub const fn new(inner: P) -> Self {
+        Self {
+            inner,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<M, M0, Y, P> BoundDataProvider<M0> for DataProviderWithKey<M, P>
+where
+    M: KeyedDataMarker<Yokeable = Y>,
+    M0: DataMarker<Yokeable = Y>,
+    Y: for<'a> Yokeable<'a>,
+    P: DataProvider<M>,
+{
+    #[inline]
+    fn load_bound(&self, req: DataRequest) -> Result<DataResponse<M0>, DataError> {
+        self.inner.load(req).map(DataResponse::cast)
+    }
+    #[inline]
+    fn bound_key(&self) -> DataKey {
+        M::KEY
     }
 }
 

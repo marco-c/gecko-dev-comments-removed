@@ -38,6 +38,7 @@ derive_usize_iterator_with_type!(WordBreakIterator);
 #[non_exhaustive]
 #[derive(Copy, Clone, PartialEq, Debug)]
 #[repr(u8)]
+#[zerovec::make_ule(WordTypeULE)]
 pub enum WordType {
     
     None = 0,
@@ -47,21 +48,33 @@ pub enum WordType {
     Letter = 2,
 }
 
+impl WordType {
+    
+    
+    pub fn is_word_like(&self) -> bool {
+        self != &WordType::None
+    }
+}
+
 impl<'l, 's, Y: RuleBreakType<'l, 's> + ?Sized> WordBreakIterator<'l, 's, Y> {
     
     #[inline]
     pub fn word_type(&self) -> WordType {
-        match self.0.rule_status() {
-            RuleStatusType::None => WordType::None,
-            RuleStatusType::Number => WordType::Number,
-            RuleStatusType::Letter => WordType::Letter,
-        }
+        self.0.word_type()
     }
+
+    
+    pub fn iter_with_word_type<'i: 'l + 's>(
+        &'i mut self,
+    ) -> impl Iterator<Item = (usize, WordType)> + '_ {
+        core::iter::from_fn(move || self.next().map(|i| (i, self.word_type())))
+    }
+
     
     
     #[inline]
     pub fn is_word_like(&self) -> bool {
-        self.0.is_word_like()
+        self.word_type().is_word_like()
     }
 }
 

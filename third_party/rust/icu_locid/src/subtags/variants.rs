@@ -3,7 +3,7 @@
 
 
 use super::Variant;
-use crate::helpers::ShortSlice;
+use crate::shortvec::ShortBoxSlice;
 
 use alloc::vec::Vec;
 use core::ops::Deref;
@@ -26,7 +26,7 @@ use core::ops::Deref;
 
 
 #[derive(Default, Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct Variants(ShortSlice<Variant>);
+pub struct Variants(ShortBoxSlice<Variant>);
 
 impl Variants {
     
@@ -40,7 +40,7 @@ impl Variants {
     
     #[inline]
     pub const fn new() -> Self {
-        Self(ShortSlice::new())
+        Self(ShortBoxSlice::new())
     }
 
     
@@ -54,7 +54,7 @@ impl Variants {
     
     #[inline]
     pub const fn from_variant(variant: Variant) -> Self {
-        Self(ShortSlice::new_single(variant))
+        Self(ShortBoxSlice::new_single(variant))
     }
 
     
@@ -80,7 +80,7 @@ impl Variants {
         Self(input.into())
     }
 
-    pub(crate) fn from_short_slice_unchecked(input: ShortSlice<Variant>) -> Self {
+    pub(crate) fn from_short_slice_unchecked(input: ShortBoxSlice<Variant>) -> Self {
         Self(input)
     }
 

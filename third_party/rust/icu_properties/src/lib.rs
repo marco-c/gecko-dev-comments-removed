@@ -92,7 +92,8 @@ mod trievalue;
 
 pub use props::{
     BidiClass, CanonicalCombiningClass, EastAsianWidth, GeneralCategory, GeneralCategoryGroup,
-    GraphemeClusterBreak, IndicSyllabicCategory, LineBreak, Script, SentenceBreak, WordBreak,
+    GraphemeClusterBreak, HangulSyllableType, IndicSyllabicCategory, JoiningType, LineBreak,
+    Script, SentenceBreak, WordBreak,
 };
 
 

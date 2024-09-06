@@ -15,6 +15,20 @@ mod result;
 pub use result::DiplomatResult;
 
 
+pub type DiplomatChar = u32;
+
+
+pub type DiplomatStr = [u8];
+
+
+pub type DiplomatStr16 = [u16];
+
+
+
+
+pub type DiplomatByte = u8;
+
+
 
 
 

@@ -8,8 +8,8 @@ use crate::ZeroSlice;
 use core::cmp::Ordering;
 use core::fmt;
 
-pub use super::kv::ZeroMapKV;
-pub use super::vecs::{MutableZeroVecLike, ZeroVecLike};
+use super::kv::ZeroMapKV;
+use super::vecs::ZeroVecLike;
 
 
 
@@ -160,7 +160,6 @@ where
     
     
     
-    
     pub fn get(&self, key: &K) -> Option<&'a V::GetType> {
         let index = self.keys.zvl_binary_search(key).ok()?;
         self.values.zvl_get(index)
@@ -182,13 +181,11 @@ where
     
     
     
-    
     pub fn get_by(&self, predicate: impl FnMut(&K) -> Ordering) -> Option<&'a V::GetType> {
         let index = self.keys.zvl_binary_search_by(predicate).ok()?;
         self.values.zvl_get(index)
     }
 
-    
     
     
     

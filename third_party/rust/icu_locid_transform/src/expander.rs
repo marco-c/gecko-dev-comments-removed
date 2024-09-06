@@ -4,7 +4,6 @@
 
 use crate::{provider::*, LocaleTransformError};
 
-use core::mem;
 use icu_locid::subtags::{Language, Region, Script};
 use icu_locid::LanguageIdentifier;
 use icu_provider::prelude::*;
@@ -178,6 +177,44 @@ fn update_langid(
         TransformResult::Modified
     } else {
         TransformResult::Unmodified
+    }
+}
+
+#[inline]
+fn update_langid_minimize(
+    language: Language,
+    script: Option<Script>,
+    region: Option<Region>,
+    langid: &mut LanguageIdentifier,
+) -> TransformResult {
+    let mut modified = false;
+
+    if langid.language != language {
+        langid.language = language;
+        modified = true;
+    }
+
+    if langid.script != script {
+        langid.script = script;
+        modified = true;
+    }
+
+    if langid.region != region {
+        langid.region = region;
+        modified = true;
+    }
+
+    if modified {
+        TransformResult::Modified
+    } else {
+        TransformResult::Unmodified
+    }
+}
+
+#[cfg(feature = "compiled_data")]
+impl Default for LocaleExpander {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -369,6 +406,36 @@ impl LocaleExpander {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn maximize<T: AsMut<LanguageIdentifier>>(&self, mut langid: T) -> TransformResult {
         let langid = langid.as_mut();
         let data = self.as_borrowed();
@@ -391,6 +458,8 @@ impl LocaleExpander {
             if let Some((script, region)) = data.get_l(langid.language) {
                 return update_langid(Language::UND, Some(script), Some(region), langid);
             }
+            
+            return TransformResult::Unmodified;
         }
         if let Some(script) = langid.script {
             if let Some(region) = langid.region {
@@ -408,6 +477,9 @@ impl LocaleExpander {
             }
         }
 
+        
+        
+        debug_assert!(langid.language.is_empty());
         update_langid(
             data.get_und().0,
             Some(data.get_und().1),
@@ -442,102 +514,94 @@ impl LocaleExpander {
     
     
     
-    pub fn minimize<T: AsMut<LanguageIdentifier>>(&self, mut langid: T) -> TransformResult {
+    pub fn minimize<T: AsMut<LanguageIdentifier>>(&self, langid: T) -> TransformResult {
+        self.minimize_impl(langid, true)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn minimize_favor_script<T: AsMut<LanguageIdentifier>>(
+        &self,
+        langid: T,
+    ) -> TransformResult {
+        self.minimize_impl(langid, false)
+    }
+
+    fn minimize_impl<T: AsMut<LanguageIdentifier>>(
+        &self,
+        mut langid: T,
+        favor_region: bool,
+    ) -> TransformResult {
         let langid = langid.as_mut();
 
         let mut max = langid.clone();
         self.maximize(&mut max);
-        let variants = mem::take(&mut max.variants);
-        max.variants.clear();
+
         let mut trial = max.clone();
 
         trial.script = None;
         trial.region = None;
         self.maximize(&mut trial);
         if trial == max {
-            if langid.language != max.language || langid.script.is_some() || langid.region.is_some()
-            {
-                if langid.language != max.language {
-                    langid.language = max.language
-                }
-                if langid.script.is_some() {
-                    langid.script = None;
-                }
-                if langid.region.is_some() {
-                    langid.region = None;
-                }
-                langid.variants = variants;
-                return TransformResult::Modified;
-            } else {
-                return TransformResult::Unmodified;
-            }
+            return update_langid_minimize(max.language, None, None, langid);
         }
 
-        trial.script = None;
-        trial.region = max.region;
-        self.maximize(&mut trial);
-        if trial == max {
-            if langid.language != max.language
-                || langid.script.is_some()
-                || langid.region != max.region
-            {
-                if langid.language != max.language {
-                    langid.language = max.language
-                }
-                if langid.script.is_some() {
-                    langid.script = None;
-                }
-                if langid.region != max.region {
-                    langid.region = max.region;
-                }
-                langid.variants = variants;
-                return TransformResult::Modified;
-            } else {
-                return TransformResult::Unmodified;
-            }
-        }
+        if favor_region {
+            trial.script = None;
+            trial.region = max.region;
+            self.maximize(&mut trial);
 
-        trial.script = max.script;
-        trial.region = None;
-        self.maximize(&mut trial);
-        if trial == max {
-            if langid.language != max.language
-                || langid.script != max.script
-                || langid.region.is_some()
-            {
-                if langid.language != max.language {
-                    langid.language = max.language
-                }
-                if langid.script != max.script {
-                    langid.script = max.script;
-                }
-                if langid.region.is_some() {
-                    langid.region = None;
-                }
-                langid.variants = variants;
-                return TransformResult::Modified;
-            } else {
-                return TransformResult::Unmodified;
+            if trial == max {
+                return update_langid_minimize(max.language, None, max.region, langid);
             }
-        }
 
-        if langid.language != max.language
-            || langid.script != max.script
-            || langid.region != max.region
-        {
-            if langid.language != max.language {
-                langid.language = max.language
+            trial.script = max.script;
+            trial.region = None;
+            self.maximize(&mut trial);
+            if trial == max {
+                return update_langid_minimize(max.language, max.script, None, langid);
             }
-            if langid.script != max.script {
-                langid.script = max.script;
-            }
-            if langid.region != max.region {
-                langid.region = max.region;
-            }
-            TransformResult::Modified
         } else {
-            TransformResult::Unmodified
+            trial.script = max.script;
+            trial.region = None;
+            self.maximize(&mut trial);
+            if trial == max {
+                return update_langid_minimize(max.language, max.script, None, langid);
+            }
+
+            trial.script = None;
+            trial.region = max.region;
+            self.maximize(&mut trial);
+
+            if trial == max {
+                return update_langid_minimize(max.language, None, max.region, langid);
+            }
         }
+
+        update_langid_minimize(max.language, max.script, max.region, langid)
     }
 
     
@@ -718,5 +782,24 @@ mod tests {
         let mut locale = locale!("zh-CN");
         assert_eq!(lc.maximize(&mut locale), TransformResult::Modified);
         assert_eq!(locale, locale!("zh-Hans-CN"));
+    }
+
+    #[test]
+    fn test_minimize_favor_script() {
+        let lc = LocaleExpander::new();
+        let mut locale = locale!("yue-Hans");
+        assert_eq!(
+            lc.minimize_favor_script(&mut locale),
+            TransformResult::Unmodified
+        );
+        assert_eq!(locale, locale!("yue-Hans"));
+    }
+
+    #[test]
+    fn test_minimize_favor_region() {
+        let lc = LocaleExpander::new();
+        let mut locale = locale!("yue-Hans");
+        assert_eq!(lc.minimize(&mut locale), TransformResult::Modified);
+        assert_eq!(locale, locale!("yue-CN"));
     }
 }

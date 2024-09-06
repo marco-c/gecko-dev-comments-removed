@@ -11,6 +11,7 @@ use core::convert::TryFrom;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::ops::Deref;
+use yoke::cartable_ptr::CartableOptionPointer;
 use yoke::trait_hack::YokeTraitHack;
 use yoke::*;
 
@@ -73,15 +74,100 @@ pub struct DataResponseMetadata {
 
 pub struct DataPayload<M: DataMarker>(pub(crate) DataPayloadInner<M>);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[doc(hidden)] 
+pub struct DataPayloadOr<M: DataMarker, O>(pub(crate) DataPayloadOrInner<M, O>);
+
 pub(crate) enum DataPayloadInner<M: DataMarker> {
-    Yoke(Yoke<M::Yokeable, Option<Cart>>),
+    Yoke(Yoke<M::Yokeable, CartableOptionPointer<CartInner>>),
     StaticRef(&'static M::Yokeable),
 }
+
+pub(crate) enum DataPayloadOrInner<M: DataMarker, O> {
+    Yoke(Yoke<M::Yokeable, CartableOptionPointer<CartInner>>),
+    Inner(DataPayloadOrInnerInner<M, O>),
+}
+
+pub(crate) enum DataPayloadOrInnerInner<M: DataMarker, O> {
+    StaticRef(&'static M::Yokeable),
+    Other(O),
+}
+
+
+
+
 
 
 #[derive(Clone, Debug)]
 #[allow(clippy::redundant_allocation)] 
-pub struct Cart(SelectedRc<Box<[u8]>>);
+pub struct Cart(CartInner);
+
+
+pub(crate) type CartInner = SelectedRc<Box<[u8]>>;
 
 impl Deref for Cart {
     type Target = Box<[u8]>;
@@ -106,6 +192,17 @@ impl Cart {
             .map(|yoke| unsafe { yoke.replace_cart(Cart) })
             .map(Yoke::wrap_cart_in_option)
     }
+
+    
+    #[inline]
+    pub(crate) fn unwrap_cart<Y>(yoke: Yoke<Y, Option<Cart>>) -> Yoke<Y, Option<CartInner>>
+    where
+        for<'a> Y: Yokeable<'a>,
+    {
+        
+        
+        unsafe { yoke.replace_cart(|option_cart| option_cart.map(|cart| cart.0)) }
+    }
 }
 
 impl<M> Debug for DataPayload<M>
@@ -115,6 +212,19 @@ where
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.get().fmt(f)
+    }
+}
+
+impl<M, O> Debug for DataPayloadOr<M, O>
+where
+    M: DataMarker,
+    for<'a> &'a <M::Yokeable as Yokeable<'a>>::Output: Debug,
+    O: Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.get()
+            .map(|v| Debug::fmt(&v, f))
+            .unwrap_or_else(|v| Debug::fmt(v, f))
     }
 }
 
@@ -143,6 +253,25 @@ where
     }
 }
 
+impl<M, O> Clone for DataPayloadOr<M, O>
+where
+    M: DataMarker,
+    for<'a> YokeTraitHack<<M::Yokeable as Yokeable<'a>>::Output>: Clone,
+    O: Clone,
+{
+    fn clone(&self) -> Self {
+        Self(match &self.0 {
+            DataPayloadOrInner::Yoke(yoke) => DataPayloadOrInner::Yoke(yoke.clone()),
+            DataPayloadOrInner::Inner(DataPayloadOrInnerInner::StaticRef(r)) => {
+                DataPayloadOrInner::Inner(DataPayloadOrInnerInner::StaticRef(*r))
+            }
+            DataPayloadOrInner::Inner(DataPayloadOrInnerInner::Other(o)) => {
+                DataPayloadOrInner::Inner(DataPayloadOrInnerInner::Other(o.clone()))
+            }
+        })
+    }
+}
+
 impl<M> PartialEq for DataPayload<M>
 where
     M: DataMarker,
@@ -153,10 +282,33 @@ where
     }
 }
 
+impl<M, O> PartialEq for DataPayloadOr<M, O>
+where
+    M: DataMarker,
+    for<'a> YokeTraitHack<<M::Yokeable as Yokeable<'a>>::Output>: PartialEq,
+    O: Eq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        match (self.get(), other.get()) {
+            (Ok(x), Ok(y)) => YokeTraitHack(x).into_ref() == YokeTraitHack(y).into_ref(),
+            (Err(x), Err(y)) => x == y,
+            _ => false,
+        }
+    }
+}
+
 impl<M> Eq for DataPayload<M>
 where
     M: DataMarker,
     for<'a> YokeTraitHack<<M::Yokeable as Yokeable<'a>>::Output>: Eq,
+{
+}
+
+impl<M, O> Eq for DataPayloadOr<M, O>
+where
+    M: DataMarker,
+    for<'a> YokeTraitHack<<M::Yokeable as Yokeable<'a>>::Output>: Eq,
+    O: Eq,
 {
 }
 
@@ -167,6 +319,27 @@ fn test_clone_eq() {
     #[allow(clippy::redundant_clone)]
     let p2 = p1.clone();
     assert_eq!(p1, p2);
+
+    let p1 = DataPayloadOr::<HelloWorldV1Marker, usize>::from_payload(p1);
+    #[allow(clippy::redundant_clone)]
+    let p2 = p1.clone();
+    assert_eq!(p1, p2);
+
+    let p3 = DataPayloadOr::<HelloWorldV1Marker, usize>::from_other(555);
+    #[allow(clippy::redundant_clone)]
+    let p4 = p3.clone();
+    assert_eq!(p3, p4);
+
+    let p5 = DataPayloadOr::<HelloWorldV1Marker, usize>::from_other(666);
+    assert_ne!(p3, p5);
+    assert_ne!(p4, p5);
+
+    assert_ne!(p1, p3);
+    assert_ne!(p1, p4);
+    assert_ne!(p1, p5);
+    assert_ne!(p2, p3);
+    assert_ne!(p2, p4);
+    assert_ne!(p2, p5);
 }
 
 impl<M> DataPayload<M>
@@ -194,8 +367,10 @@ where
     
     
     #[inline]
-    pub const fn from_owned(data: M::Yokeable) -> Self {
-        Self(DataPayloadInner::Yoke(Yoke::new_owned(data)))
+    pub fn from_owned(data: M::Yokeable) -> Self {
+        Self(DataPayloadInner::Yoke(
+            Yoke::new_owned(data).convert_cart_into_option_pointer(),
+        ))
     }
 
     #[doc(hidden)]
@@ -255,7 +430,10 @@ where
         M::Yokeable: zerofrom::ZeroFrom<'static, M::Yokeable>,
     {
         if let DataPayloadInner::StaticRef(r) = self.0 {
-            self.0 = DataPayloadInner::Yoke(Yoke::new_owned(zerofrom::ZeroFrom::zero_from(r)));
+            self.0 = DataPayloadInner::Yoke(
+                Yoke::new_owned(zerofrom::ZeroFrom::zero_from(r))
+                    .convert_cart_into_option_pointer(),
+            );
         }
         match &mut self.0 {
             DataPayloadInner::Yoke(yoke) => yoke.with_mut(f),
@@ -341,7 +519,8 @@ where
         DataPayload(DataPayloadInner::Yoke(
             match self.0 {
                 DataPayloadInner::Yoke(yoke) => yoke,
-                DataPayloadInner::StaticRef(r) => Yoke::new_owned(zerofrom::ZeroFrom::zero_from(r)),
+                DataPayloadInner::StaticRef(r) => Yoke::new_owned(zerofrom::ZeroFrom::zero_from(r))
+                    .convert_cart_into_option_pointer(),
             }
             .map_project(f),
         ))
@@ -394,7 +573,7 @@ where
                 
                 
                 let yokeable: M2::Yokeable = unsafe { M2::Yokeable::make(output) };
-                Yoke::new_owned(yokeable)
+                Yoke::new_owned(yokeable).convert_cart_into_option_pointer()
             }
         }))
     }
@@ -448,7 +627,8 @@ where
         Ok(DataPayload(DataPayloadInner::Yoke(
             match self.0 {
                 DataPayloadInner::Yoke(yoke) => yoke,
-                DataPayloadInner::StaticRef(r) => Yoke::new_owned(zerofrom::ZeroFrom::zero_from(r)),
+                DataPayloadInner::StaticRef(r) => Yoke::new_owned(zerofrom::ZeroFrom::zero_from(r))
+                    .convert_cart_into_option_pointer(),
             }
             .try_map_project(f)?,
         )))
@@ -509,11 +689,11 @@ where
                     f(Yokeable::transform(*r), PhantomData)?;
                 
                 Yoke::new_owned(unsafe { M2::Yokeable::make(output) })
+                    .convert_cart_into_option_pointer()
             }
         })))
     }
 
-    
     
     
     
@@ -619,20 +799,25 @@ where
 impl DataPayload<BufferMarker> {
     
     pub fn from_owned_buffer(buffer: Box<[u8]>) -> Self {
-        let yoke = Yoke::attach_to_cart(SelectedRc::new(buffer), |b| &**b);
-        
-        let yoke = unsafe { yoke.replace_cart(|b| Some(Cart(b))) };
+        let yoke = Yoke::attach_to_cart(SelectedRc::new(buffer), |b| &**b)
+            .wrap_cart_in_option()
+            .convert_cart_into_option_pointer();
         Self(DataPayloadInner::Yoke(yoke))
     }
 
     
     pub fn from_yoked_buffer(yoke: Yoke<&'static [u8], Option<Cart>>) -> Self {
-        Self(DataPayloadInner::Yoke(yoke))
+        let yoke = Cart::unwrap_cart(yoke);
+        Self(DataPayloadInner::Yoke(
+            yoke.convert_cart_into_option_pointer(),
+        ))
     }
 
     
     pub fn from_static_buffer(buffer: &'static [u8]) -> Self {
-        Self(DataPayloadInner::Yoke(Yoke::new_owned(buffer)))
+        Self(DataPayloadInner::Yoke(
+            Yoke::new_owned(buffer).convert_cart_into_option_pointer(),
+        ))
     }
 }
 
@@ -643,6 +828,56 @@ where
 {
     fn default() -> Self {
         Self::from_owned(Default::default())
+    }
+}
+
+impl<M, O> DataPayloadOr<M, O>
+where
+    M: DataMarker,
+{
+    
+    #[inline]
+    pub fn from_payload(payload: DataPayload<M>) -> Self {
+        match payload.0 {
+            DataPayloadInner::Yoke(yoke) => Self(DataPayloadOrInner::Yoke(yoke)),
+            DataPayloadInner::StaticRef(r) => Self(DataPayloadOrInner::Inner(
+                DataPayloadOrInnerInner::StaticRef(r),
+            )),
+        }
+    }
+
+    
+    #[inline]
+    pub fn from_other(other: O) -> Self {
+        Self(DataPayloadOrInner::Inner(DataPayloadOrInnerInner::Other(
+            other,
+        )))
+    }
+
+    
+    #[allow(clippy::needless_lifetimes)]
+    #[inline]
+    pub fn get<'a>(&'a self) -> Result<&'a <M::Yokeable as Yokeable<'a>>::Output, &'a O> {
+        match &self.0 {
+            DataPayloadOrInner::Yoke(yoke) => Ok(yoke.get()),
+            DataPayloadOrInner::Inner(DataPayloadOrInnerInner::StaticRef(r)) => {
+                Ok(Yokeable::transform(*r))
+            }
+            DataPayloadOrInner::Inner(DataPayloadOrInnerInner::Other(o)) => Err(o),
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn into_inner(self) -> Result<DataPayload<M>, O> {
+        match self.0 {
+            DataPayloadOrInner::Yoke(yoke) => Ok(DataPayload(DataPayloadInner::Yoke(yoke))),
+            DataPayloadOrInner::Inner(DataPayloadOrInnerInner::StaticRef(r)) => {
+                Ok(DataPayload(DataPayloadInner::StaticRef(r)))
+            }
+            DataPayloadOrInner::Inner(DataPayloadOrInnerInner::Other(o)) => Err(o),
+        }
     }
 }
 
@@ -681,6 +916,32 @@ where
             self.payload
                 .ok_or_else(|| DataErrorKind::MissingPayload.with_type_context::<M>())?,
         ))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn cast<M2>(self) -> DataResponse<M2>
+    where
+        M2: DataMarker<Yokeable = M::Yokeable>,
+    {
+        match self.payload {
+            Some(payload) => DataResponse {
+                metadata: self.metadata,
+                payload: Some(payload.cast()),
+            },
+            None => DataResponse {
+                metadata: self.metadata,
+                payload: None,
+            },
+        }
     }
 }
 

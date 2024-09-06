@@ -4,7 +4,7 @@
 
 use super::Attribute;
 
-use crate::helpers::ShortSlice;
+use crate::shortvec::ShortBoxSlice;
 use alloc::vec::Vec;
 use core::ops::Deref;
 
@@ -31,7 +31,7 @@ use core::ops::Deref;
 
 
 #[derive(Default, Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct Attributes(ShortSlice<Attribute>);
+pub struct Attributes(ShortBoxSlice<Attribute>);
 
 impl Attributes {
     
@@ -45,7 +45,7 @@ impl Attributes {
     
     #[inline]
     pub const fn new() -> Self {
-        Self(ShortSlice::new())
+        Self(ShortBoxSlice::new())
     }
 
     
@@ -72,7 +72,7 @@ impl Attributes {
         Self(input.into())
     }
 
-    pub(crate) fn from_short_slice_unchecked(input: ShortSlice<Attribute>) -> Self {
+    pub(crate) fn from_short_slice_unchecked(input: ShortBoxSlice<Attribute>) -> Self {
         Self(input)
     }
 

@@ -4,8 +4,6 @@
 
 
 
-#[cfg(doc)]
-use crate::codepointtrie::CodePointTrie;
 use displaydoc::Display;
 
 

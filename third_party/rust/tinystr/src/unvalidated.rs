@@ -4,6 +4,7 @@
 
 use crate::TinyAsciiStr;
 use crate::TinyStrError;
+use core::fmt;
 
 
 
@@ -12,8 +13,18 @@ use crate::TinyStrError;
 
 
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone, Copy)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Copy)]
 pub struct UnvalidatedTinyAsciiStr<const N: usize>(pub(crate) [u8; N]);
+
+impl<const N: usize> fmt::Debug for UnvalidatedTinyAsciiStr<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        
+        match self.try_into_tinystr() {
+            Ok(s) => fmt::Debug::fmt(&s, f),
+            Err(_) => fmt::Debug::fmt(&self.0, f),
+        }
+    }
+}
 
 impl<const N: usize> UnvalidatedTinyAsciiStr<N> {
     #[inline]
@@ -33,6 +44,12 @@ impl<const N: usize> TinyAsciiStr<N> {
     
     pub const fn to_unvalidated(self) -> UnvalidatedTinyAsciiStr<N> {
         UnvalidatedTinyAsciiStr(*self.all_bytes())
+    }
+}
+
+impl<const N: usize> From<TinyAsciiStr<N>> for UnvalidatedTinyAsciiStr<N> {
+    fn from(other: TinyAsciiStr<N>) -> Self {
+        other.to_unvalidated()
     }
 }
 

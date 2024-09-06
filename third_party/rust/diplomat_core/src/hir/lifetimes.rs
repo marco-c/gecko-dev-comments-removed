@@ -3,21 +3,24 @@
 
 use super::IdentBuf;
 use crate::ast;
+use core::fmt::Debug;
+use core::hash::Hash;
+
 use smallvec::{smallvec, SmallVec};
+use std::borrow::{Borrow, Cow};
 
 
 
-const INLINE_NUM_LIFETIMES: usize = 4;
-
-
+pub(crate) const INLINE_NUM_LIFETIMES: usize = 4;
 
 
 #[derive(Debug)]
 pub struct LifetimeEnv {
     
-    
-    nodes: SmallVec<[Lifetime; INLINE_NUM_LIFETIMES]>,
+    nodes: SmallVec<[BoundedLifetime; INLINE_NUM_LIFETIMES]>,
 
+    
+    
     
     
     
@@ -29,21 +32,111 @@ pub struct LifetimeEnv {
     num_lifetimes: usize,
 }
 
+impl LifetimeEnv {
+    
+    pub fn fmt_lifetime(&self, lt: impl Borrow<Lifetime>) -> Cow<str> {
+        
+        let lt = *lt.borrow();
+        if let Some(lt) = self.nodes.get(lt.0) {
+            Cow::from(lt.ident.as_str())
+        } else if lt.0 < self.num_lifetimes {
+            format!("anon_{}", lt.0 - self.nodes.len()).into()
+        } else {
+            panic!("Found out of range lifetime: Got {lt:?} for env with {} nodes and {} total lifetimes", self.nodes.len(), self.num_lifetimes);
+        }
+    }
+
+    
+    
+
+    pub fn all_shorter_lifetimes(
+        &self,
+        lt: impl Borrow<Lifetime>,
+    ) -> impl Iterator<Item = Lifetime> + '_ {
+        
+        let lt = *lt.borrow();
+        
+        LifetimeTransitivityIterator::new(self, lt.0, false)
+    }
+
+    
+    pub fn all_longer_lifetimes(
+        &self,
+        lt: impl Borrow<Lifetime>,
+    ) -> impl Iterator<Item = Lifetime> + '_ {
+        
+        let lt = *lt.borrow();
+        LifetimeTransitivityIterator::new(self, lt.0, true)
+    }
+
+    
+    pub fn num_lifetimes(&self) -> usize {
+        self.num_lifetimes
+    }
+
+    pub fn all_lifetimes(&self) -> impl ExactSizeIterator<Item = Lifetime> {
+        (0..self.num_lifetimes()).map(Lifetime::new)
+    }
+
+    
+    pub(super) fn get_bounds(&self, named_lifetime: Lifetime) -> Option<&BoundedLifetime> {
+        self.nodes.get(named_lifetime.0)
+    }
+
+    
+    pub(super) fn new(
+        nodes: SmallVec<[BoundedLifetime; INLINE_NUM_LIFETIMES]>,
+        num_lifetimes: usize,
+    ) -> Self {
+        Self {
+            nodes,
+            num_lifetimes,
+        }
+    }
+
+    
+    pub fn lifetimes(&self) -> Lifetimes {
+        let indices = (0..self.num_lifetimes)
+            .map(|index| MaybeStatic::NonStatic(Lifetime::new(index)))
+            .collect();
+
+        Lifetimes { indices }
+    }
+
+    
+    
+    pub fn subtype_lifetimes_visitor<F>(&self, visit_fn: F) -> SubtypeLifetimeVisitor<'_, F>
+    where
+        F: FnMut(Lifetime),
+    {
+        SubtypeLifetimeVisitor::new(self, visit_fn)
+    }
+}
+
+
+
+
 
 
 #[derive(Debug)]
-pub(super) struct Lifetime {
-    ident: IdentBuf,
-    longer: SmallVec<[MethodLifetime; 2]>,
-    shorter: SmallVec<[MethodLifetime; 2]>,
+pub(super) struct BoundedLifetime {
+    pub(super) ident: IdentBuf,
+    
+    
+    
+    pub(super) longer: SmallVec<[Lifetime; 2]>,
+    
+    
+    
+    pub(super) shorter: SmallVec<[Lifetime; 2]>,
 }
 
-impl Lifetime {
+impl BoundedLifetime {
     
     pub(super) fn new(
         ident: IdentBuf,
-        longer: SmallVec<[MethodLifetime; 2]>,
-        shorter: SmallVec<[MethodLifetime; 2]>,
+        longer: SmallVec<[Lifetime; 2]>,
+        shorter: SmallVec<[Lifetime; 2]>,
     ) -> Self {
         Self {
             ident,
@@ -63,7 +156,7 @@ pub struct SubtypeLifetimeVisitor<'lt, F> {
 
 impl<'lt, F> SubtypeLifetimeVisitor<'lt, F>
 where
-    F: FnMut(MethodLifetime),
+    F: FnMut(Lifetime),
 {
     fn new(lifetime_env: &'lt LifetimeEnv, visit_fn: F) -> Self {
         Self {
@@ -75,7 +168,7 @@ where
 
     
     
-    pub fn visit_subtypes(&mut self, method_lifetime: MethodLifetime) {
+    pub fn visit_subtypes(&mut self, method_lifetime: Lifetime) {
         if let Some(visited @ false) = self.visited.get_mut(method_lifetime.0) {
             *visited = true;
 
@@ -132,80 +225,39 @@ impl<T> MaybeStatic<T> {
 
 
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct TypeLifetime(usize);
-
-
-
-
-
-
-
-
-
+#[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub struct Lifetime(usize);
 
 
 #[derive(Clone, Debug)]
-pub struct TypeLifetimes {
-    indices: SmallVec<[MaybeStatic<TypeLifetime>; 2]>,
+pub struct Lifetimes {
+    indices: SmallVec<[MaybeStatic<Lifetime>; 2]>,
 }
 
-
-
-
-
-
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct MethodLifetime(usize);
-
-
-
-pub struct MethodLifetimes {
-    indices: SmallVec<[MaybeStatic<MethodLifetime>; 2]>,
-}
-
-impl LifetimeEnv {
-    
-    pub(super) fn new(
-        nodes: SmallVec<[Lifetime; INLINE_NUM_LIFETIMES]>,
-        num_lifetimes: usize,
-    ) -> Self {
-        Self {
-            nodes,
-            num_lifetimes,
-        }
-    }
-
-    
-    pub fn method_lifetimes(&self) -> MethodLifetimes {
-        let indices = (0..self.num_lifetimes)
-            .map(|index| MaybeStatic::NonStatic(MethodLifetime(index)))
-            .collect();
-
-        MethodLifetimes { indices }
-    }
-
-    
-    
-    pub fn subtype_lifetimes_visitor<F>(&self, visit_fn: F) -> SubtypeLifetimeVisitor<'_, F>
-    where
-        F: FnMut(MethodLifetime),
-    {
-        SubtypeLifetimeVisitor::new(self, visit_fn)
+impl Lifetime {
+    pub(super) const fn new(index: usize) -> Self {
+        Self(index)
     }
 }
 
-impl TypeLifetime {
+impl Lifetimes {
+    
+    pub fn lifetimes(&self) -> impl ExactSizeIterator<Item = MaybeStatic<Lifetime>> + '_ {
+        self.indices.iter().copied()
+    }
+
+    pub(super) fn as_slice(&self) -> &[MaybeStatic<Lifetime>] {
+        self.indices.as_slice()
+    }
+}
+
+impl Lifetime {
     
     pub(super) fn from_ast(named: &ast::NamedLifetime, lifetime_env: &ast::LifetimeEnv) -> Self {
         let index = lifetime_env
             .id(named)
             .unwrap_or_else(|| panic!("lifetime `{named}` not found in lifetime env"));
-        Self(index)
-    }
-
-    pub(super) fn new(index: usize) -> Self {
-        Self(index)
+        Self::new(index)
     }
 
     
@@ -216,18 +268,15 @@ impl TypeLifetime {
     
     
     
-    pub fn as_method_lifetime(
-        self,
-        method_lifetimes: &MethodLifetimes,
-    ) -> MaybeStatic<MethodLifetime> {
+    pub fn as_method_lifetime(self, method_lifetimes: &Lifetimes) -> MaybeStatic<Lifetime> {
         method_lifetimes.indices[self.0]
     }
 }
 
-impl TypeLifetimes {
+impl Lifetimes {
     pub(super) fn from_fn<F>(lifetimes: &[ast::Lifetime], lower_fn: F) -> Self
     where
-        F: FnMut(&ast::Lifetime) -> MaybeStatic<TypeLifetime>,
+        F: FnMut(&ast::Lifetime) -> MaybeStatic<Lifetime>,
     {
         Self {
             indices: lifetimes.iter().map(lower_fn).collect(),
@@ -235,6 +284,10 @@ impl TypeLifetimes {
     }
 
     
+    pub(super) fn append_lifetime(&mut self, lifetime: MaybeStatic<Lifetime>) {
+        self.indices.push(lifetime)
+    }
+
     
     
     
@@ -257,7 +310,8 @@ impl TypeLifetimes {
     
     
     
-    pub fn as_method_lifetimes(&self, method_lifetimes: &MethodLifetimes) -> MethodLifetimes {
+    
+    pub fn as_method_lifetimes(&self, method_lifetimes: &Lifetimes) -> Lifetimes {
         let indices = self
             .indices
             .iter()
@@ -266,20 +320,135 @@ impl TypeLifetimes {
             })
             .collect();
 
-        MethodLifetimes { indices }
+        Lifetimes { indices }
     }
 }
 
-impl MethodLifetime {
+struct LifetimeTransitivityIterator<'env> {
+    env: &'env LifetimeEnv,
+    visited: Vec<bool>,
+    queue: Vec<usize>,
+    longer: bool,
+}
+
+impl<'env> LifetimeTransitivityIterator<'env> {
     
-    pub(super) fn new(index: usize) -> Self {
-        Self(index)
+    fn new(env: &'env LifetimeEnv, starting: usize, longer: bool) -> Self {
+        Self {
+            env,
+            visited: vec![false; env.num_lifetimes()],
+            queue: vec![starting],
+            longer,
+        }
     }
 }
 
-impl MethodLifetimes {
+impl<'env> Iterator for LifetimeTransitivityIterator<'env> {
+    type Item = Lifetime;
+
+    fn next(&mut self) -> Option<Lifetime> {
+        while let Some(next) = self.queue.pop() {
+            if self.visited[next] {
+                continue;
+            }
+            self.visited[next] = true;
+
+            if let Some(named) = self.env.nodes.get(next) {
+                let edge_dir = if self.longer {
+                    &named.longer
+                } else {
+                    &named.shorter
+                };
+                self.queue.extend(edge_dir.iter().map(|i| i.0));
+            }
+
+            return Some(Lifetime::new(next));
+        }
+        None
+    }
+}
+
+
+
+
+
+pub struct LinkedLifetimes<'def, 'tcx> {
+    env: &'tcx LifetimeEnv,
+    self_lt: Option<MaybeStatic<Lifetime>>,
+    lifetimes: &'def Lifetimes,
+}
+
+impl<'def, 'tcx> LinkedLifetimes<'def, 'tcx> {
+    pub(crate) fn new(
+        env: &'tcx LifetimeEnv,
+        self_lt: Option<MaybeStatic<Lifetime>>,
+        lifetimes: &'def Lifetimes,
+    ) -> Self {
+        debug_assert_eq!(
+            lifetimes.lifetimes().len(),
+            env.all_lifetimes().len(),
+            "Should only link lifetimes between a type and its def"
+        );
+        Self {
+            env,
+            self_lt,
+            lifetimes,
+        }
+    }
+
     
-    pub(super) fn lifetimes(&self) -> impl Iterator<Item = MaybeStatic<MethodLifetime>> + '_ {
-        self.indices.iter().copied()
+    pub fn def_to_use(&self, def_lt: Lifetime) -> MaybeStatic<Lifetime> {
+        *self
+            .lifetimes
+            .as_slice()
+            .get(def_lt.0)
+            .expect("All def site lifetimes must be used!")
+    }
+
+    
+    
+    pub fn def_env(&self) -> &'tcx LifetimeEnv {
+        self.env
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn lifetimes_def_only(
+        &self,
+    ) -> impl Iterator<Item = (MaybeStatic<Lifetime>, Lifetime)> + '_ {
+        self.lifetimes.lifetimes().zip(self.env.all_lifetimes())
+    }
+
+    
+    
+    pub fn self_lifetime(&self) -> Option<MaybeStatic<Lifetime>> {
+        self.self_lt
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn lifetimes_all(
+        &self,
+    ) -> impl Iterator<Item = (MaybeStatic<Lifetime>, Option<Lifetime>)> + '_ {
+        self.self_lt.iter().map(|i| (*i, None)).chain(
+            self.lifetimes
+                .lifetimes()
+                .zip(self.env.all_lifetimes().map(Some)),
+        )
     }
 }

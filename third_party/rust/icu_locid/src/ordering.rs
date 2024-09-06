@@ -36,13 +36,17 @@ use core::cmp::Ordering;
 
 #[allow(clippy::exhaustive_enums)] 
 #[derive(Debug)]
+#[deprecated(since = "1.5.0", note = "if you need this, please file an issue")]
 pub enum SubtagOrderingResult<I> {
     
+    #[deprecated(since = "1.5.0", note = "if you need this, please file an issue")]
     Subtags(I),
     
+    #[deprecated(since = "1.5.0", note = "if you need this, please file an issue")]
     Ordering(Ordering),
 }
 
+#[allow(deprecated)]
 impl<I> SubtagOrderingResult<I>
 where
     I: Iterator,

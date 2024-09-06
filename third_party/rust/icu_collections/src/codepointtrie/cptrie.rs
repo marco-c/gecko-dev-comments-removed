@@ -478,7 +478,6 @@ impl<'trie, T: TrieValue> CodePointTrie<'trie, T> {
     
     
     
-    
     pub fn try_alloc_map_value<P, E>(
         &self,
         mut f: impl FnMut(T) -> Result<P, E>,
@@ -496,7 +495,6 @@ impl<'trie, T: TrieValue> CodePointTrie<'trie, T> {
         })
     }
 
-    
     
     
     

@@ -161,6 +161,9 @@ impl<'a> BidiAuxiliaryPropertiesBorrowed<'a> {
 
 impl BidiAuxiliaryPropertiesBorrowed<'static> {
     
+    
+    
+    
     pub const fn static_to_owned(self) -> BidiAuxiliaryProperties {
         BidiAuxiliaryProperties {
             data: DataPayload::from_static_ref(self.data),

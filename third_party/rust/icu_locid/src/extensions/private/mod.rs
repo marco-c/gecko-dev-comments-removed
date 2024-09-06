@@ -35,9 +35,9 @@ use core::ops::Deref;
 #[doc(inline)]
 pub use other::{subtag, Subtag};
 
-use crate::helpers::ShortSlice;
 use crate::parser::ParserError;
 use crate::parser::SubtagIterator;
+use crate::shortvec::ShortBoxSlice;
 
 
 
@@ -60,7 +60,7 @@ use crate::parser::SubtagIterator;
 
 
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash, PartialOrd, Ord)]
-pub struct Private(ShortSlice<Subtag>);
+pub struct Private(ShortBoxSlice<Subtag>);
 
 impl Private {
     
@@ -74,7 +74,7 @@ impl Private {
     
     #[inline]
     pub const fn new() -> Self {
-        Self(ShortSlice::new())
+        Self(ShortBoxSlice::new())
     }
 
     
@@ -107,7 +107,7 @@ impl Private {
     
     
     pub const fn new_single(input: Subtag) -> Self {
-        Self(ShortSlice::new_single(input))
+        Self(ShortBoxSlice::new_single(input))
     }
 
     
@@ -134,7 +134,7 @@ impl Private {
     pub(crate) fn try_from_iter(iter: &mut SubtagIterator) -> Result<Self, ParserError> {
         let keys = iter
             .map(Subtag::try_from_bytes)
-            .collect::<Result<ShortSlice<_>, _>>()?;
+            .collect::<Result<ShortBoxSlice<_>, _>>()?;
 
         Ok(Self(keys))
     }

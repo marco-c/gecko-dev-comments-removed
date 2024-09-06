@@ -118,11 +118,17 @@ impl CodePointInversionListBuilder {
     
     
     
-    pub fn add_u32(&mut self, c: u32) {
+    pub fn add32(&mut self, c: u32) {
         if c <= char::MAX as u32 {
             
             self.add(c, c + 1);
         }
+    }
+
+    
+    #[deprecated(since = "1.5.0", note = "Use `add32`")]
+    pub fn add_u32(&mut self, c: u32) {
+        self.add32(c)
     }
 
     
@@ -152,12 +158,18 @@ impl CodePointInversionListBuilder {
     
     
     
-    pub fn add_range_u32(&mut self, range: &impl RangeBounds<u32>) {
+    pub fn add_range32(&mut self, range: &impl RangeBounds<u32>) {
         let (start, end) = deconstruct_range(range);
         
         if start <= end && end <= char::MAX as u32 + 1 {
             self.add(start, end);
         }
+    }
+
+    
+    #[deprecated(since = "1.5.0", note = "Use `add_range32`")]
+    pub fn add_range_u32(&mut self, range: &impl RangeBounds<u32>) {
+        self.add_range32(range)
     }
 
     
@@ -221,8 +233,12 @@ impl CodePointInversionListBuilder {
     
     
     pub fn remove_char(&mut self, c: char) {
-        let to_remove = c as u32;
-        self.remove(to_remove, to_remove + 1);
+        self.remove32(c as u32)
+    }
+
+    
+    pub fn remove32(&mut self, c: u32) {
+        self.remove(c, c + 1);
     }
 
     
@@ -237,6 +253,12 @@ impl CodePointInversionListBuilder {
     
     
     pub fn remove_range(&mut self, range: &impl RangeBounds<char>) {
+        let (start, end) = deconstruct_range(range);
+        self.remove(start, end);
+    }
+
+    
+    pub fn remove_range32(&mut self, range: &impl RangeBounds<u32>) {
         let (start, end) = deconstruct_range(range);
         self.remove(start, end);
     }
@@ -281,9 +303,13 @@ impl CodePointInversionListBuilder {
     
     
     pub fn retain_char(&mut self, c: char) {
-        let code_point = c as u32;
-        self.remove(0, code_point);
-        self.remove(code_point + 1, (char::MAX as u32) + 1);
+        self.retain32(c as u32)
+    }
+
+    
+    pub fn retain32(&mut self, c: u32) {
+        self.remove(0, c);
+        self.remove(c + 1, (char::MAX as u32) + 1);
     }
 
     
@@ -302,6 +328,13 @@ impl CodePointInversionListBuilder {
     
     
     pub fn retain_range(&mut self, range: &impl RangeBounds<char>) {
+        let (start, end) = deconstruct_range(range);
+        self.remove(0, start);
+        self.remove(end, (char::MAX as u32) + 1);
+    }
+
+    
+    pub fn retain_range32(&mut self, range: &impl RangeBounds<u32>) {
         let (start, end) = deconstruct_range(range);
         self.remove(0, start);
         self.remove(end, (char::MAX as u32) + 1);
@@ -430,9 +463,12 @@ impl CodePointInversionListBuilder {
     
     
     pub fn complement_char(&mut self, c: char) {
-        let code_point = c as u32;
-        let to_complement = [code_point, code_point + 1];
-        self.complement_list(to_complement.iter().copied());
+        self.complement32(c as u32);
+    }
+
+    
+    pub fn complement32(&mut self, c: u32) {
+        self.complement_list([c, c + 1].into_iter());
     }
 
     
@@ -450,6 +486,13 @@ impl CodePointInversionListBuilder {
     
     
     pub fn complement_range(&mut self, range: &impl RangeBounds<char>) {
+        let (start, end) = deconstruct_range(range);
+        let to_complement = [start, end];
+        self.complement_list(to_complement.iter().copied());
+    }
+
+    
+    pub fn complement_range32(&mut self, range: &impl RangeBounds<u32>) {
         let (start, end) = deconstruct_range(range);
         let to_complement = [start, end];
         self.complement_list(to_complement.iter().copied());
@@ -480,8 +523,6 @@ impl CodePointInversionListBuilder {
         self.complement_list(inv_list_iter_owned);
     }
 
-    
-    
     
     
     
@@ -713,9 +754,9 @@ mod tests {
     }
 
     #[test]
-    fn test_add_range_u32() {
+    fn test_add_range32() {
         let mut builder = CodePointInversionListBuilder::new();
-        builder.add_range_u32(&(0xd800..=0xdfff));
+        builder.add_range32(&(0xd800..=0xdfff));
         let expected = [0xd800, 0xe000];
         assert_eq!(builder.intervals, expected);
     }

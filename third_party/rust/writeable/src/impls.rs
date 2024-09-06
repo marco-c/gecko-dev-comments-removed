@@ -3,7 +3,6 @@
 
 
 use crate::*;
-use alloc::borrow::Cow;
 use core::fmt;
 
 macro_rules! impl_write_num {
@@ -116,6 +115,11 @@ impl Writeable for str {
     fn write_to_string(&self) -> Cow<str> {
         Cow::Borrowed(self)
     }
+
+    #[inline]
+    fn writeable_cmp_bytes(&self, other: &[u8]) -> core::cmp::Ordering {
+        self.as_bytes().cmp(other)
+    }
 }
 
 impl Writeable for String {
@@ -132,6 +136,35 @@ impl Writeable for String {
     #[inline]
     fn write_to_string(&self) -> Cow<str> {
         Cow::Borrowed(self)
+    }
+
+    #[inline]
+    fn writeable_cmp_bytes(&self, other: &[u8]) -> core::cmp::Ordering {
+        self.as_bytes().cmp(other)
+    }
+}
+
+impl Writeable for char {
+    #[inline]
+    fn write_to<W: fmt::Write + ?Sized>(&self, sink: &mut W) -> fmt::Result {
+        sink.write_char(*self)
+    }
+
+    #[inline]
+    fn writeable_length_hint(&self) -> LengthHint {
+        LengthHint::exact(self.len_utf8())
+    }
+
+    #[inline]
+    fn write_to_string(&self) -> Cow<str> {
+        let mut s = String::with_capacity(self.len_utf8());
+        s.push(*self);
+        Cow::Owned(s)
+    }
+
+    #[inline]
+    fn writeable_cmp_bytes(&self, other: &[u8]) -> core::cmp::Ordering {
+        self.encode_utf8(&mut [0u8; 4]).as_bytes().cmp(other)
     }
 }
 
@@ -155,13 +188,56 @@ impl<T: Writeable + ?Sized> Writeable for &T {
     fn write_to_string(&self) -> Cow<str> {
         (*self).write_to_string()
     }
+
+    #[inline]
+    fn writeable_cmp_bytes(&self, other: &[u8]) -> core::cmp::Ordering {
+        (*self).writeable_cmp_bytes(other)
+    }
 }
+
+macro_rules! impl_write_smart_pointer {
+    ($ty:path, T: $extra_bound:path) => {
+        impl<'a, T: ?Sized + Writeable + $extra_bound> Writeable for $ty {
+            #[inline]
+            fn write_to<W: fmt::Write + ?Sized>(&self, sink: &mut W) -> fmt::Result {
+                core::borrow::Borrow::<T>::borrow(self).write_to(sink)
+            }
+            #[inline]
+            fn write_to_parts<W: PartsWrite + ?Sized>(&self, sink: &mut W) -> fmt::Result {
+                core::borrow::Borrow::<T>::borrow(self).write_to_parts(sink)
+            }
+            #[inline]
+            fn writeable_length_hint(&self) -> LengthHint {
+                core::borrow::Borrow::<T>::borrow(self).writeable_length_hint()
+            }
+            #[inline]
+            fn write_to_string(&self) -> Cow<str> {
+                core::borrow::Borrow::<T>::borrow(self).write_to_string()
+            }
+            #[inline]
+            fn writeable_cmp_bytes(&self, other: &[u8]) -> core::cmp::Ordering {
+                core::borrow::Borrow::<T>::borrow(self).writeable_cmp_bytes(other)
+            }
+        }
+    };
+    ($ty:path) => {
+        // Add a harmless duplicate Writeable bound
+        impl_write_smart_pointer!($ty, T: Writeable);
+    };
+}
+
+impl_write_smart_pointer!(Cow<'a, T>, T: alloc::borrow::ToOwned);
+impl_write_smart_pointer!(alloc::boxed::Box<T>);
+impl_write_smart_pointer!(alloc::rc::Rc<T>);
+impl_write_smart_pointer!(alloc::sync::Arc<T>);
 
 #[test]
 fn test_string_impls() {
     fn check_writeable_slice<W: Writeable + core::fmt::Display>(writeables: &[W]) {
         assert_writeable_eq!(&writeables[0], "");
         assert_writeable_eq!(&writeables[1], "abc");
+        assert!(matches!(writeables[0].write_to_string(), Cow::Borrowed(_)));
+        assert!(matches!(writeables[1].write_to_string(), Cow::Borrowed(_)));
     }
 
     
@@ -170,6 +246,38 @@ fn test_string_impls() {
 
     
     let arr: &[String] = &[String::new(), "abc".to_owned()];
+    check_writeable_slice(arr);
+
+    
+    let chars = ['a', 'β', '你', '😀'];
+    for i in 0..chars.len() {
+        let s = String::from(chars[i]);
+        assert_writeable_eq!(&chars[i], s);
+        for j in 0..chars.len() {
+            assert_eq!(
+                chars[j].writeable_cmp_bytes(s.as_bytes()),
+                chars[j].cmp(&chars[i]),
+                "{:?} vs {:?}",
+                chars[j],
+                chars[i]
+            );
+        }
+    }
+
+    
+    let arr: &[Cow<str>] = &[Cow::Borrowed(""), Cow::Owned("abc".to_string())];
+    check_writeable_slice(arr);
+
+    
+    let arr: &[Box<str>] = &["".into(), "abc".into()];
+    check_writeable_slice(arr);
+
+    
+    let arr: &[alloc::rc::Rc<str>] = &["".into(), "abc".into()];
+    check_writeable_slice(arr);
+
+    
+    let arr: &[alloc::sync::Arc<str>] = &["".into(), "abc".into()];
     check_writeable_slice(arr);
 
     

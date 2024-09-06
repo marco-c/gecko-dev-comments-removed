@@ -263,7 +263,6 @@ impl<'data> CodePointInversionList<'data> {
     
     
     
-    
     pub fn try_from_inversion_list_slice(
         inv_list: &'data [u32],
     ) -> Result<Self, CodePointInversionListError> {
@@ -271,8 +270,6 @@ impl<'data> CodePointInversionList<'data> {
         CodePointInversionList::try_from_inversion_list(inv_list_zv)
     }
 
-    
-    
     
     
     
@@ -343,7 +340,6 @@ impl<'data> CodePointInversionList<'data> {
     
     
     
-    
     pub fn all() -> Self {
         Self {
             inv_list: ALL_VEC,
@@ -351,7 +347,6 @@ impl<'data> CodePointInversionList<'data> {
         }
     }
 
-    
     
     
     

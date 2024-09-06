@@ -350,9 +350,3 @@ pub enum LstmDataV1<'data> {
     
     
 }
-
-pub(crate) struct LstmDataV1Marker;
-
-impl DataMarker for LstmDataV1Marker {
-    type Yokeable = LstmDataV1<'static>;
-}

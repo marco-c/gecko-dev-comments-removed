@@ -5,18 +5,13 @@
 use displaydoc::Display;
 use icu_provider::DataError;
 
-#[cfg(doc)]
-use crate::GeneralCategoryGroup;
-#[cfg(doc)]
-use crate::Script;
-
 #[cfg(feature = "std")]
 impl std::error::Error for PropertiesError {}
 
 
 
 
-#[derive(Display, Debug, Copy, Clone)]
+#[derive(Display, Debug, Copy, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum PropertiesError {
     

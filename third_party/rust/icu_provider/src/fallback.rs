@@ -180,6 +180,7 @@ pub struct LocaleFallbackConfig {
     
     
     
+    
     pub fallback_supplement: Option<LocaleFallbackSupplement>,
 }
 

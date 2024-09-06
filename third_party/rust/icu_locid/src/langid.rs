@@ -5,6 +5,7 @@
 use core::cmp::Ordering;
 use core::str::FromStr;
 
+#[allow(deprecated)]
 use crate::ordering::SubtagOrderingResult;
 use crate::parser::{
     parse_language_identifier, parse_language_identifier_with_single_variant, ParserError,
@@ -199,7 +200,28 @@ impl LanguageIdentifier {
     
     
     pub fn strict_cmp(&self, other: &[u8]) -> Ordering {
-        self.strict_cmp_iter(other.split(|b| *b == b'-')).end()
+        self.writeable_cmp_bytes(other)
+    }
+
+    pub(crate) fn as_tuple(
+        &self,
+    ) -> (
+        subtags::Language,
+        Option<subtags::Script>,
+        Option<subtags::Region>,
+        &subtags::Variants,
+    ) {
+        (self.language, self.script, self.region, &self.variants)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn total_cmp(&self, other: &Self) -> Ordering {
+        self.as_tuple().cmp(&other.as_tuple())
     }
 
     
@@ -235,6 +257,8 @@ impl LanguageIdentifier {
     
     
     
+    #[deprecated(since = "1.5.0", note = "if you need this, please file an issue")]
+    #[allow(deprecated)]
     pub fn strict_cmp_iter<'l, I>(&self, mut subtags: I) -> SubtagOrderingResult<I>
     where
         I: Iterator<Item = &'l [u8]>,
@@ -255,7 +279,6 @@ impl LanguageIdentifier {
         }
     }
 
-    
     
     
     
@@ -398,6 +421,7 @@ impl LanguageIdentifier {
 }
 
 impl AsRef<LanguageIdentifier> for LanguageIdentifier {
+    #[inline(always)]
     fn as_ref(&self) -> &Self {
         self
     }

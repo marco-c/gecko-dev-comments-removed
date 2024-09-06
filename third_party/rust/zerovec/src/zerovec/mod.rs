@@ -22,7 +22,7 @@ use core::marker::PhantomData;
 use core::mem;
 use core::num::NonZeroUsize;
 use core::ops::Deref;
-use core::ptr;
+use core::ptr::{self, NonNull};
 
 
 
@@ -127,7 +127,7 @@ struct EyepatchHackVector<U> {
     
     
     
-    buf: *mut [U],
+    buf: NonNull<[U]>,
     
     capacity: usize,
 }
@@ -136,12 +136,13 @@ impl<U> EyepatchHackVector<U> {
     
     #[inline]
     unsafe fn as_arbitrary_slice<'a>(&self) -> &'a [U] {
-        &*self.buf
+        self.buf.as_ref()
     }
     
     #[inline]
     const fn as_slice<'a>(&'a self) -> &'a [U] {
-        unsafe { &*(self.buf as *const [U]) }
+        
+        unsafe { &*(self.buf.as_ptr() as *const [U]) }
     }
 
     
@@ -158,7 +159,7 @@ impl<U> EyepatchHackVector<U> {
         let len = slice.len();
         
         
-        Vec::from_raw_parts(self.buf as *mut U, len, self.capacity)
+        Vec::from_raw_parts(self.buf.as_ptr() as *mut U, len, self.capacity)
     }
 }
 
@@ -312,10 +313,14 @@ where
         let capacity = vec.capacity();
         let len = vec.len();
         let ptr = mem::ManuallyDrop::new(vec).as_mut_ptr();
+        
         let slice = ptr::slice_from_raw_parts_mut(ptr, len);
         Self {
             vector: EyepatchHackVector {
-                buf: slice,
+                
+                
+                
+                buf: unsafe { NonNull::new_unchecked(slice) },
                 capacity,
             },
             marker: PhantomData,
@@ -326,7 +331,9 @@ where
     
     #[inline]
     pub const fn new_borrowed(slice: &'a [T::ULE]) -> Self {
-        let slice = slice as *const [_] as *mut [_];
+        
+        
+        let slice = unsafe { NonNull::new_unchecked(slice as *const [_] as *mut [_]) };
         Self {
             vector: EyepatchHackVector {
                 buf: slice,
@@ -777,7 +784,6 @@ where
     
     
     
-    
     #[inline]
     pub fn for_each_mut(&mut self, mut f: impl FnMut(&mut T)) {
         self.to_mut_slice().iter_mut().for_each(|item| {
@@ -787,7 +793,6 @@ where
         })
     }
 
-    
     
     
     
@@ -902,11 +907,96 @@ where
             let slice = self.vector.as_slice();
             *self = ZeroVec::new_owned(slice.into());
         }
-        unsafe { &mut *self.vector.buf }
+        unsafe { self.vector.buf.as_mut() }
     }
     
     pub fn clear(&mut self) {
         *self = Self::new_borrowed(&[])
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn take_first(&mut self) -> Option<T> {
+        match core::mem::take(self).into_cow() {
+            Cow::Owned(mut vec) => {
+                if vec.is_empty() {
+                    return None;
+                }
+                let ule = vec.remove(0);
+                let rv = T::from_unaligned(ule);
+                *self = ZeroVec::new_owned(vec);
+                Some(rv)
+            }
+            Cow::Borrowed(b) => {
+                let (ule, remainder) = b.split_first()?;
+                let rv = T::from_unaligned(*ule);
+                *self = ZeroVec::new_borrowed(remainder);
+                Some(rv)
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn take_last(&mut self) -> Option<T> {
+        match core::mem::take(self).into_cow() {
+            Cow::Owned(mut vec) => {
+                let ule = vec.pop()?;
+                let rv = T::from_unaligned(ule);
+                *self = ZeroVec::new_owned(vec);
+                Some(rv)
+            }
+            Cow::Borrowed(b) => {
+                let (ule, remainder) = b.split_last()?;
+                let rv = T::from_unaligned(*ule);
+                *self = ZeroVec::new_borrowed(remainder);
+                Some(rv)
+            }
+        }
     }
 
     

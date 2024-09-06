@@ -131,10 +131,6 @@ mod word;
 pub mod provider;
 
 
-#[doc(hidden)]
-pub mod symbols;
-
-
 pub use crate::grapheme::GraphemeClusterBreakIterator;
 pub use crate::grapheme::GraphemeClusterSegmenter;
 pub use crate::line::LineBreakIterator;
