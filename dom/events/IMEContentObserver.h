@@ -500,12 +500,14 @@ class IMEContentObserver final : public nsStubMutationObserver,
     [[nodiscard]] nsresult ComputeAndCacheFlatTextLengthBeforeEndOfContent(
         const nsIContent& aContent, const dom::Element* aRootElement);
 
-    void CacheFlatTextLengthBeforeEndOfContent(const nsIContent& aContent,
-                                               uint32_t aFlatTextLength) {
+    void CacheFlatTextLengthBeforeEndOfContent(
+        const nsIContent& aContent, uint32_t aFlatTextLength,
+        const dom::Element* aRootElement) {
       mContainerNode = aContent.GetParentNode();
       mContent = const_cast<nsIContent*>(&aContent);
       mFlatTextLength = aFlatTextLength;
       MOZ_ASSERT(IsCachingToEndOfContent());
+      AssertValidCache(aRootElement);
     }
 
     
@@ -525,12 +527,14 @@ class IMEContentObserver final : public nsStubMutationObserver,
     [[nodiscard]] nsresult ComputeAndCacheFlatTextLengthBeforeFirstContent(
         const nsINode& aContainer, const dom::Element* aRootElement);
 
-    void CacheFlatTextLengthBeforeFirstContent(const nsINode& aContainer,
-                                               uint32_t aFlatTextLength) {
+    void CacheFlatTextLengthBeforeFirstContent(
+        const nsINode& aContainer, uint32_t aFlatTextLength,
+        const dom::Element* aRootElement) {
       mContainerNode = const_cast<nsINode*>(&aContainer);
       mContent = nullptr;
       mFlatTextLength = aFlatTextLength;
       MOZ_ASSERT(IsCachingToStartOfContainer());
+      AssertValidCache(aRootElement);
     }
 
     
@@ -590,6 +594,25 @@ class IMEContentObserver final : public nsStubMutationObserver,
         const nsIContent& aStartContent, const nsIContent& aEndContent,
         const dom::Element* aRootElement);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] static Result<uint32_t, nsresult>
+    ComputeTextLengthBeforeFirstContentOf(const nsINode& aContainer,
+                                          const dom::Element* aRootElement);
+
     [[nodiscard]] bool CachesTextLengthBeforeContent(
         const nsIContent& aContent) const {
       MOZ_ASSERT(!aContent.IsBeingRemoved());
@@ -611,6 +634,14 @@ class IMEContentObserver final : public nsStubMutationObserver,
       return mContainerNode == aContent.GetParentNode() &&
              mContent == aPreviousSibling;
     }
+
+    
+
+
+
+
+
+    void AssertValidCache(const dom::Element* aRootElement) const;
 
     
     nsCOMPtr<nsINode> mContainerNode;
