@@ -17,12 +17,39 @@ let DebugUI = {
   init() {
     let controls = document.querySelector("#controls");
     controls.addEventListener("click", this);
+
+    let encryptionEnabled = document.querySelector("#encryption-enabled");
+    encryptionEnabled.addEventListener("click", this);
+
+    
+    
+    let service = BackupService.init();
+    service.addEventListener("BackupService:StateUpdate", this);
+    this.onStateUpdate();
+
+    
+    service.loadEncryptionState();
   },
 
   handleEvent(event) {
-    let target = event.target;
-    if (HTMLButtonElement.isInstance(event.target)) {
-      this.onButtonClick(target);
+    switch (event.type) {
+      case "BackupService:StateUpdate": {
+        this.onStateUpdate();
+        break;
+      }
+      case "click": {
+        let target = event.target;
+        if (HTMLButtonElement.isInstance(event.target)) {
+          this.onButtonClick(target);
+        } else if (
+          HTMLInputElement.isInstance(event.target) &&
+          event.target.type == "checkbox"
+        ) {
+          event.preventDefault();
+          this.onCheckboxClick(target);
+        }
+        break;
+      }
     }
   },
 
@@ -111,9 +138,50 @@ let DebugUI = {
           );
           throw e;
         }
+        break;
       }
     }
   },
+
+  async onCheckboxClick(checkbox) {
+    if (checkbox.id == "encryption-enabled") {
+      let service = BackupService.get();
+      if (checkbox.checked) {
+        let password = prompt("What's the encryption password? (8 char min)");
+        if (password != null) {
+          try {
+            await service.enableEncryption(password);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      } else if (confirm("Disable encryption?")) {
+        try {
+          await service.disableEncryption();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  },
+
+  onStateUpdate() {
+    let service = BackupService.get();
+    let state = service.state;
+
+    let encryptionEnabled = document.querySelector("#encryption-enabled");
+    encryptionEnabled.checked = state.encryptionEnabled;
+  },
 };
 
-DebugUI.init();
+
+
+
+
+addEventListener(
+  "load",
+  () => {
+    DebugUI.init();
+  },
+  { once: true }
+);
