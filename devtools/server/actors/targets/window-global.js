@@ -869,6 +869,13 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     }
 
     
+    
+    if (this.docShell.isBeingDestroyed()) {
+      this.destroy();
+      return;
+    }
+
+    
     Services.obs.addObserver(this, "webnavigation-create");
     Services.obs.addObserver(this, "webnavigation-destroy");
     this._docShellsObserved = true;
@@ -1743,6 +1750,12 @@ class DebuggerProgressListener {
   }
 
   unwatch(docShell) {
+    
+    
+    if (docShell.isBeingDestroyed()) {
+      return;
+    }
+
     const docShellWindow = docShell.domWindow;
     if (!this._watchedDocShells.has(docShellWindow)) {
       return;
