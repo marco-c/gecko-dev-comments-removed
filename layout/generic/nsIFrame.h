@@ -2533,6 +2533,23 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
+
+
+
+
+
+
+  virtual void SetPrevContinuationWithoutUpdatingCache(nsIFrame*);
+  virtual void SetPrevInFlowWithoutUpdatingCache(nsIFrame*);
+
+  
+
+
+
+
   virtual void MarkIntrinsicISizesDirty();
 
   
