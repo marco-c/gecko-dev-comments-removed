@@ -1145,6 +1145,20 @@ async function populateSensorInfo() {
   return promise;
 }
 
+async function populateMathML() {
+  
+  
+  
+  
+  const mathElements = [...document.querySelectorAll("math[id]")];
+
+  return mathElements.reduce((acc, el) => {
+    
+    acc["mathml" + el.id] = el.getBoundingClientRect().width * 10 ** 15;
+    return acc;
+  }, {});
+}
+
 
 
 function getCanvasSources() {
@@ -1206,6 +1220,7 @@ const LocalFiraSans = new FontFace(
     populatePointerInfo,
     populateICEFoundations,
     populateSensorInfo,
+    populateMathML,
   ];
   
   
