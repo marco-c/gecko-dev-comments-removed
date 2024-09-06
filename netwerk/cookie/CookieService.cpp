@@ -1554,7 +1554,7 @@ bool CookieService::CanSetCookie(
 
 
 
-static inline bool isnull(char c) { return c == 0; }
+
 static inline bool iswhitespace(char c) { return c == ' ' || c == '\t'; }
 static inline bool isterminator(char c) { return c == '\n' || c == '\r'; }
 static inline bool isvalueseparator(char c) {
@@ -1582,7 +1582,7 @@ bool CookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
     ++aIter;
   }
   start = aIter;
-  while (aIter != aEndIter && !isnull(*aIter) && !istokenseparator(*aIter)) {
+  while (aIter != aEndIter && !istokenseparator(*aIter)) {
     ++aIter;
   }
 
@@ -1605,7 +1605,7 @@ bool CookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
 
     
     
-    while (aIter != aEndIter && !isnull(*aIter) && !isvalueseparator(*aIter)) {
+    while (aIter != aEndIter && !isvalueseparator(*aIter)) {
       ++aIter;
     }
 
@@ -1643,6 +1643,17 @@ static inline void SetSameSiteAttribute(CookieStruct& aCookieData,
                                         int32_t aValue) {
   aCookieData.sameSite() = aValue;
   aCookieData.rawSameSite() = aValue;
+}
+
+
+
+static bool ContainsControlChars(const nsACString& aString) {
+  const auto* start = aString.BeginReading();
+  const auto* end = aString.EndReading();
+
+  return std::find_if(start, end, [](unsigned char c) {
+           return (c <= 0x1F && c != 0x09) || c == 0x7F;
+         }) != end;
 }
 
 
@@ -1701,6 +1712,14 @@ bool CookieService::ParseAttributes(nsIConsoleReportCollector* aCRC,
   while (cookieStart != cookieEnd && !newCookie) {
     newCookie = GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue,
                               equalsFound);
+
+    if (ContainsControlChars(tokenString) || ContainsControlChars(tokenValue)) {
+      CookieLogging::LogMessageToConsole(
+          aCRC, aHostURI, nsIScriptError::errorFlag, CONSOLE_REJECTION_CATEGORY,
+          "CookieRejectedInvalidCharAttributes"_ns,
+          AutoTArray<nsString, 1>{NS_ConvertUTF8toUTF16(aCookieData.name())});
+      return newCookie;
+    }
 
     
     if (tokenString.LowerCaseEqualsLiteral(kPath)) {
