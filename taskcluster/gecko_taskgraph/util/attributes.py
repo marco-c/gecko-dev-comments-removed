@@ -16,10 +16,12 @@ RELEASE_PROJECTS = {
     "mozilla-beta",
     "mozilla-release",
     "mozilla-esr115",
+    "mozilla-esr128",
     "comm-central",
     "comm-beta",
     "comm-release",
     "comm-esr115",
+    "comm-esr128",
     
     
     "pine",
