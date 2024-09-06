@@ -9,6 +9,7 @@
 
 #include <queue>
 
+#include "SimpleMap.h"
 #include "WebCodecsUtils.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/DecoderAgent.h"
@@ -110,17 +111,16 @@ class DecoderTemplate : public DOMEventTargetHelper {
    public:
     using SeqId = size_t;
     using ConfigId = typename Self::ConfigureMessage::Id;
-    FlushMessage(SeqId aSeqId, ConfigId aConfigId, Promise* aPromise);
+    FlushMessage(SeqId aSeqId, ConfigId aConfigId);
     ~FlushMessage() = default;
     virtual void Cancel() override { Disconnect(); }
     virtual bool IsProcessing() override { return Exists(); };
     virtual FlushMessage* AsFlushMessage() override { return this; }
-    already_AddRefed<Promise> TakePromise() { return mPromise.forget(); }
-    void RejectPromiseIfAny(const nsresult& aReason);
 
     
     
     const SeqId mSeqId;
+    const int64_t mUniqueId;
 
    private:
     RefPtr<Promise> mPromise;
@@ -181,7 +181,7 @@ class DecoderTemplate : public DOMEventTargetHelper {
   nsresult FireEvent(nsAtom* aTypeWithOn, const nsAString& aEventType);
 
   void ProcessControlMessageQueue();
-  void CancelPendingControlMessages(const nsresult& aResult);
+  void CancelPendingControlMessagesAndFlushPromises(const nsresult& aResult);
 
   
   
@@ -213,6 +213,11 @@ class DecoderTemplate : public DOMEventTargetHelper {
   bool mMessageQueueBlocked;
   std::queue<UniquePtr<ControlMessage>> mControlMessageQueue;
   UniquePtr<ControlMessage> mProcessingMessage;
+
+  
+  
+  
+  SimpleMap<RefPtr<Promise>> mPendingFlushPromises;
 
   uint32_t mDecodeQueueSize;
   bool mDequeueEventScheduled;
