@@ -1618,18 +1618,6 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool HighlightAndGoToTextFragment(
-      bool aScrollToTextFragment);
-
-  
-
-
-
-
-
-
-
-
 
 
 
