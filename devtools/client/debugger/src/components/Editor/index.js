@@ -283,7 +283,7 @@ class Editor extends PureComponent {
     }
   };
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     const {
       selectedSource,
       blackboxedRanges,
@@ -300,7 +300,9 @@ class Editor extends PureComponent {
     if (features.codemirrorNext) {
       const shouldUpdateBreakableLines =
         prevProps.breakableLines.size !== this.props.breakableLines.size ||
-        prevProps.selectedSource?.id !== selectedSource.id;
+        prevProps.selectedSource?.id !== selectedSource.id ||
+        
+        (!prevState.editor && !!editor);
 
       const isSourceWasm = isWasm(selectedSource.id);
 
