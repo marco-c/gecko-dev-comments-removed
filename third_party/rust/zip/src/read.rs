@@ -334,10 +334,13 @@ impl<R: Read + io::Seek> ZipArchive<R> {
                 
                 
                 
+                let archive_offset = cde_start_pos
+                    .checked_sub(footer.central_directory_size as u64)
+                    .and_then(|x| x.checked_sub(footer.central_directory_offset as u64))
+                    .ok_or(ZipError::InvalidArchive(
+                        "Invalid central directory size or offset",
+                    ))?;
 
-                
-                
-                let archive_offset = 0;
                 let directory_start = footer.central_directory_offset as u64 + archive_offset;
                 let number_of_files = footer.number_of_files_on_this_disk as usize;
                 Ok((archive_offset, directory_start, number_of_files))
