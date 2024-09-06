@@ -591,12 +591,9 @@ impl RenderTaskGraphBuilder {
             }
         }
 
-        if !self.active_surfaces.is_empty() {
-            graph.print();
-            
-            
-            assert!(self.active_surfaces.is_empty());
-        }
+        
+        
+        assert!(self.active_surfaces.is_empty());
 
         
         
@@ -659,30 +656,29 @@ impl RenderTaskGraph {
     pub fn print(
         &self,
     ) {
-        print!("-- RenderTaskGraph --\n");
+        debug!("-- RenderTaskGraph --");
 
         for (i, task) in self.tasks.iter().enumerate() {
-            print!("Task {} [{}]: render_on={} free_after={} children={:?} target_size={:?}\n",
+            debug!("Task {} [{}]: render_on={} free_after={} children={:?}",
                 i,
                 task.kind.as_str(),
                 task.render_on.0,
                 task.free_after.0,
                 task.children,
-                task.get_target_size(),
             );
         }
 
         for (p, pass) in self.passes.iter().enumerate() {
-            print!("Pass {}:\n", p);
+            debug!("Pass {}:", p);
 
             for (s, sub_pass) in pass.sub_passes.iter().enumerate() {
-                print!("\tSubPass {}: {:?}\n",
+                debug!("\tSubPass {}: {:?}",
                     s,
                     sub_pass.surface,
                 );
 
                 for task_id in &sub_pass.task_ids {
-                    print!("\t\tTask {:?}\n", task_id.index);
+                    debug!("\t\tTask {:?}", task_id.index);
                 }
             }
         }
