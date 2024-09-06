@@ -6572,6 +6572,8 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
       
       blankDoc->SetSandboxFlags(sandboxFlags);
 
+      blankDoc->InitFeaturePolicy();
+
       
       docFactory->CreateInstanceForDocument(
           NS_ISUPPORTS_CAST(nsIDocShell*, this), blankDoc, "view",
@@ -6588,12 +6590,6 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
                        true,
                        0);
         rv = mIsBeingDestroyed ? NS_ERROR_NOT_AVAILABLE : NS_OK;
-      }
-
-      if (Element* embedderElement = blankDoc->GetEmbedderElement()) {
-        blankDoc->InitFeaturePolicy(AsVariant(embedderElement));
-      } else {
-        blankDoc->InitFeaturePolicy(AsVariant(Nothing{}));
       }
     }
   }
