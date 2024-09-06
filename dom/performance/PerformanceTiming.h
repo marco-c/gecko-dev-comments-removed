@@ -63,8 +63,6 @@ class PerformanceTimingData final {
 
   uint64_t DecodedBodySize() const { return mDecodedBodySize; }
 
-  const nsString& ContentType() const { return mContentType; }
-
   
 
 
@@ -162,11 +160,6 @@ class PerformanceTimingData final {
       bool aEnsureSameOriginAndIgnoreTAO) const;
 
   
-  nsITimedChannel::BodyInfoAccess BodyInfoAccessAllowed() const {
-    return mBodyInfoAccessAllowed;
-  }
-
-  
   
   bool TimingAllowed() const { return mTimingAllowed; }
 
@@ -179,17 +172,9 @@ class PerformanceTimingData final {
  private:
   
   
-  nsITimedChannel::BodyInfoAccess CheckBodyInfoAccessAllowedForOrigin(
-      nsIHttpChannel* aResourceChannel, nsITimedChannel* aChannel);
-
-  nsIPrincipal* GetLoadingPrincipalForResourceChannel(
-      nsIHttpChannel* aResourceChannel) const;
-
   
-  
-  
-  bool CheckTimingAllowedForOrigin(nsIHttpChannel* aResourceChannel,
-                                   nsITimedChannel* aChannel);
+  bool CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
+                          nsITimedChannel* aChannel);
 
   nsTArray<nsCOMPtr<nsIServerTiming>> mServerTiming;
   nsString mNextHopProtocol;
@@ -229,16 +214,11 @@ class PerformanceTimingData final {
 
   RenderBlockingStatusType mRenderBlockingStatus;
 
-  nsString mContentType;
-
   bool mAllRedirectsSameOrigin = false;
 
   bool mAllRedirectsPassTAO = false;
 
   bool mSecureConnection = false;
-
-  nsITimedChannel::BodyInfoAccess mBodyInfoAccessAllowed =
-      nsITimedChannel::BodyInfoAccess::DISALLOWED;
 
   bool mTimingAllowed = false;
 
@@ -478,11 +458,9 @@ struct IPDLParamTraits<mozilla::dom::PerformanceTimingData> {
     WriteIPDLParam(aWriter, aActor, aParam.mTransferSize);
     WriteIPDLParam(aWriter, aActor, aParam.mDecodedBodySize);
     WriteIPDLParam(aWriter, aActor, aParam.mRedirectCount);
-    WriteIPDLParam(aWriter, aActor, aParam.mContentType);
     WriteIPDLParam(aWriter, aActor, aParam.mAllRedirectsSameOrigin);
     WriteIPDLParam(aWriter, aActor, aParam.mAllRedirectsPassTAO);
     WriteIPDLParam(aWriter, aActor, aParam.mSecureConnection);
-    WriteIPDLParam(aWriter, aActor, aParam.mBodyInfoAccessAllowed);
     WriteIPDLParam(aWriter, aActor, aParam.mTimingAllowed);
     WriteIPDLParam(aWriter, aActor, aParam.mInitialized);
   }
@@ -561,9 +539,6 @@ struct IPDLParamTraits<mozilla::dom::PerformanceTimingData> {
     if (!ReadIPDLParam(aReader, aActor, &aResult->mRedirectCount)) {
       return false;
     }
-    if (!ReadIPDLParam(aReader, aActor, &aResult->mContentType)) {
-      return false;
-    }
     if (!ReadIPDLParam(aReader, aActor, &aResult->mAllRedirectsSameOrigin)) {
       return false;
     }
@@ -571,9 +546,6 @@ struct IPDLParamTraits<mozilla::dom::PerformanceTimingData> {
       return false;
     }
     if (!ReadIPDLParam(aReader, aActor, &aResult->mSecureConnection)) {
-      return false;
-    }
-    if (!ReadIPDLParam(aReader, aActor, &aResult->mBodyInfoAccessAllowed)) {
       return false;
     }
     if (!ReadIPDLParam(aReader, aActor, &aResult->mTimingAllowed)) {
