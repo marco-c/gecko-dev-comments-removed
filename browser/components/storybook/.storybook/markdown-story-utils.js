@@ -122,18 +122,20 @@ function getStoryTitle(resourcePath) {
 
 function getImportPath(resourcePath) {
   
+  let normalizedPath = resourcePath.split(path.sep).join("/");
   
-  if (!resourcePath.includes("toolkit/content/widgets")) {
+  
+  if (!normalizedPath.includes("toolkit/content/widgets")) {
     return "";
   }
-  let componentName = getComponentName(resourcePath);
+  let componentName = getComponentName(normalizedPath);
   let fileExtension = "";
   if (componentName) {
-    let mjsPath = resourcePath.replace(
+    let mjsPath = normalizedPath.replace(
       "README.stories.md",
       `${componentName}.mjs`
     );
-    let jsPath = resourcePath.replace(
+    let jsPath = normalizedPath.replace(
       "README.stories.md",
       `${componentName}.js`
     );
