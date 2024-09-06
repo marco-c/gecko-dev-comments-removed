@@ -140,22 +140,9 @@ def _handle_artifact(path, response):
 
 def get_artifact_url(task_id, path, use_proxy=False):
     artifact_tmpl = liburls.api(
-        get_root_url(False), "queue", "v1", "task/{}/artifacts/{}"
+        get_root_url(use_proxy), "queue", "v1", "task/{}/artifacts/{}"
     )
-    data = artifact_tmpl.format(task_id, path)
-    if use_proxy:
-        
-        
-        
-        
-        
-        response = _do_request(
-            os.environ["TASKCLUSTER_PROXY_URL"] + "/bewit",
-            data=data,
-            allow_redirects=False,
-        )
-        return response.text
-    return data
+    return artifact_tmpl.format(task_id, path)
 
 
 def get_artifact(task_id, path, use_proxy=False):

@@ -167,7 +167,8 @@ def add_resource_monitor(config, tasks):
                 config.graph_config, task["worker-type"]
             )
             
-            worker_os = worker_os.split("-")[0]
+            if worker_os:
+                worker_os = worker_os.split("-")[0]
             if "win7" in task["worker-type"]:
                 arch = "32"
             else:
