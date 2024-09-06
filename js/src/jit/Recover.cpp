@@ -6,6 +6,8 @@
 
 #include "jit/Recover.h"
 
+#include "mozilla/Casting.h"
+
 #include "jsmath.h"
 
 #include "builtin/Object.h"
@@ -1957,7 +1959,12 @@ bool RSubstr::recover(JSContext* cx, SnapshotIterator& iter) const {
 
   
   
-  int32_t length = iter.readInt32();
+  
+  
+  
+  
+  
+  int32_t length = mozilla::ReleaseAssertedCast<int32_t>(iter.readNumber());
 
   JSString* result = SubstringKernel(cx, str, begin, length);
   if (!result) {
