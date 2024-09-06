@@ -1356,7 +1356,8 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   
 
 
-  virtual void Link(const char* aDestination, const Rect& aRect) {}
+  virtual void Link(const char* aLocalDest, const char* aURI,
+                    const Rect& aRect) {}
   virtual void Destination(const char* aDestination, const Point& aPoint) {}
 
   

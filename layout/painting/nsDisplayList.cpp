@@ -615,7 +615,7 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
 
   
   
-  if (!aBuilder->mLinkSpec.IsEmpty()) {
+  if (!aBuilder->mLinkURI.IsEmpty() || !aBuilder->mLinkDest.IsEmpty()) {
     return;
   }
 
@@ -636,20 +636,26 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
       NS_SUCCEEDED(uri->GetHasRef(&hasRef)) && hasRef &&
       (docURI = aFrame->PresContext()->Document()->GetDocumentURI()) &&
       NS_SUCCEEDED(uri->EqualsExceptRef(docURI, &eqExRef)) && eqExRef) {
-    if (NS_FAILED(uri->GetRef(aBuilder->mLinkSpec)) ||
-        aBuilder->mLinkSpec.IsEmpty()) {
-      return;
+    
+    
+    if (NS_FAILED(uri->GetRef(aBuilder->mLinkDest))) {
+      aBuilder->mLinkDest.Truncate();
     }
     
     
-    NS_UnescapeURL(aBuilder->mLinkSpec);
-    
-    aBuilder->mLinkSpec.Insert('#', 0);
-  } else {
-    if (NS_FAILED(uri->GetSpec(aBuilder->mLinkSpec)) ||
-        aBuilder->mLinkSpec.IsEmpty()) {
-      return;
+    if (!aBuilder->mLinkDest.IsEmpty()) {
+      NS_UnescapeURL(aBuilder->mLinkDest);
     }
+  }
+
+  if (NS_FAILED(uri->GetSpec(aBuilder->mLinkURI))) {
+    aBuilder->mLinkURI.Truncate();
+  }
+
+  
+  
+  if (aBuilder->mLinkDest.IsEmpty() && aBuilder->mLinkURI.IsEmpty()) {
+    return;
   }
 
   
@@ -661,9 +667,10 @@ void nsDisplayListBuilder::Linkifier::MaybeAppendLink(
   
   
   
-  if (!aBuilder->mLinkSpec.IsEmpty()) {
+  if (!aBuilder->mLinkURI.IsEmpty() || !aBuilder->mLinkDest.IsEmpty()) {
     auto* link = MakeDisplayItem<nsDisplayLink>(
-        aBuilder, aFrame, aBuilder->mLinkSpec.get(), aFrame->GetRect());
+        aBuilder, aFrame, aBuilder->mLinkDest.get(), aBuilder->mLinkURI.get(),
+        aFrame->GetRect());
     mList->AppendToTop(link);
   }
 }
@@ -6351,8 +6358,8 @@ static bool ShouldUsePartialPrerender(const nsIFrame* aFrame) {
 
 
 auto nsDisplayTransform::ShouldPrerenderTransformedContent(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsRect* aDirtyRect)
-    -> PrerenderInfo {
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+    nsRect* aDirtyRect) -> PrerenderInfo {
   PrerenderInfo result;
   
   
@@ -8531,7 +8538,8 @@ bool nsDisplayForeignObject::CreateWebRenderCommands(
 void nsDisplayLink::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
   auto appPerDev = mFrame->PresContext()->AppUnitsPerDevPixel();
   aCtx->GetDrawTarget()->Link(
-      mLinkSpec.get(), NSRectToRect(GetPaintRect(aBuilder, aCtx), appPerDev));
+      mLinkURI.get(), mLinkDest.get(),
+      NSRectToRect(GetPaintRect(aBuilder, aCtx), appPerDev));
 }
 
 void nsDisplayDestination::Paint(nsDisplayListBuilder* aBuilder,
