@@ -127,6 +127,7 @@ pub use schema::MarkerSchema;
 use crate::gecko_bindings::{bindings, profiling_categories::ProfilingCategoryPair};
 use crate::json_writer::JSONWriter;
 use crate::marker::deserializer_tags_state::get_or_insert_deserializer_tag;
+use crate::ProfilerTime;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::os::raw::c_char;
 
@@ -173,6 +174,88 @@ pub fn add_text_marker(
             text.len(),
         )
     }
+}
+
+
+
+
+
+pub struct AutoProfilerTextMarker<'a> {
+    name: &'a str,
+    category: ProfilingCategoryPair,
+    options: MarkerOptions,
+    text: &'a str,
+    
+    
+    
+    start: ProfilerTime,
+}
+
+impl<'a> AutoProfilerTextMarker<'a> {
+    
+    pub fn new(
+        name: &'a str,
+        category: ProfilingCategoryPair,
+        options: MarkerOptions,
+        text: &'a str,
+    ) -> Option<AutoProfilerTextMarker<'a>> {
+        if !crate::profiler_state::can_accept_markers() {
+            return None;
+        }
+        let start = ProfilerTime::now();
+        Some(AutoProfilerTextMarker {
+            name,
+            category,
+            options,
+            text,
+            start,
+        })
+    }
+}
+
+impl<'a> Drop for AutoProfilerTextMarker<'a> {
+    fn drop(&mut self) {
+        add_text_marker(
+            self.name,
+            self.category,
+            self.options
+                .with_timing(MarkerTiming::interval_until_now_from(self.start.clone())),
+            self.text,
+        );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "enabled")]
+#[macro_export]
+macro_rules! auto_profiler_marker_text {
+    ($name:expr, $category:expr,$options:expr, $text:expr) => {
+        let _macro_created_rust_text_marker =
+            $crate::AutoProfilerTextMarker::new($name, $category, $options, $text);
+    };
+}
+
+#[cfg(not(feature = "enabled"))]
+#[macro_export]
+macro_rules! auto_profiler_marker_text {
+    ($name:expr, $category:expr,$options:expr, $text:expr) => {
+        // Do nothing if the profiler is not enabled
+    };
 }
 
 
@@ -280,4 +363,95 @@ impl ProfilerMarker for Tracing {
         schema.add_key_label_format("category", "Type", Format::String);
         schema
     }
+}
+
+
+
+
+
+pub struct AutoProfilerTracingMarker<'a> {
+    name: &'a str,
+    category: ProfilingCategoryPair,
+    options: MarkerOptions,
+    payload: String,
+}
+
+impl<'a> AutoProfilerTracingMarker<'a> {
+    pub fn new(
+        name: &'a str,
+        category: ProfilingCategoryPair,
+        options: MarkerOptions,
+        payload: String,
+    ) -> Option<AutoProfilerTracingMarker<'a>> {
+        if !crate::profiler_state::can_accept_markers() {
+            return None;
+        }
+        
+        add_marker(
+            name,
+            category,
+            options.with_timing(MarkerTiming::interval_start(ProfilerTime::now())),
+            Tracing(payload.clone()),
+        );
+        Some(AutoProfilerTracingMarker {
+            name,
+            category,
+            options,
+            payload,
+        })
+    }
+}
+
+impl<'a> Drop for AutoProfilerTracingMarker<'a> {
+    fn drop(&mut self) {
+        
+        
+        
+        
+        
+        if !crate::profiler_state::can_accept_markers() {
+            return;
+        }
+        
+        add_marker(
+            self.name,
+            self.category,
+            self.options
+                .with_timing(MarkerTiming::interval_end(ProfilerTime::now())),
+            Tracing(self.payload.clone()),
+        );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "enabled")]
+#[macro_export]
+macro_rules! auto_profiler_marker_tracing {
+    ($name:expr, $category:expr,$options:expr, $payload:expr) => {
+        let _macro_created_rust_tracing_marker =
+            $crate::AutoProfilerTracingMarker::new($name, $category, $options, $payload);
+    };
+}
+
+#[cfg(not(feature = "enabled"))]
+#[macro_export]
+macro_rules! auto_profiler_marker_tracing {
+    ($name:expr, $category:expr,$options:expr, $payload:expr) => {
+        // Do nothing if the profiler is not enabled
+    };
 }

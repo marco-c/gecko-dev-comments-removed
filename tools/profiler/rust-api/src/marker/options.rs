@@ -136,3 +136,33 @@ pub struct MarkerOptions {
     pub timing: MarkerTiming,
     pub stack: MarkerStack,
 }
+
+impl MarkerOptions {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_timing(&self, timing: MarkerTiming) -> Self {
+        MarkerOptions {
+            timing,
+            stack: self.stack,
+        }
+    }
+}
