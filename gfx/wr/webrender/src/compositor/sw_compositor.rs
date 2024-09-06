@@ -357,6 +357,8 @@ struct SwCompositeGraphNode {
     
     job: Option<SwCompositeJob>,
     
+    has_job: AtomicBool,
+    
     
     
     
@@ -378,6 +380,7 @@ impl SwCompositeGraphNode {
     fn new() -> SwCompositeGraphNodeRef {
         SwCompositeGraphNodeRef::new(SwCompositeGraphNode {
             job: None,
+            has_job: AtomicBool::new(false),
             remaining_bands: AtomicU8::new(0),
             available_bands: AtomicI8::new(0),
             parents: AtomicU32::new(0),
@@ -388,6 +391,7 @@ impl SwCompositeGraphNode {
     
     fn reset(&mut self) {
         self.job = None;
+        self.has_job.store(false, Ordering::SeqCst);
         self.remaining_bands.store(0, Ordering::SeqCst);
         self.available_bands.store(0, Ordering::SeqCst);
         
@@ -406,6 +410,7 @@ impl SwCompositeGraphNode {
     
     fn set_job(&mut self, job: SwCompositeJob, num_bands: u8) -> bool {
         self.job = Some(job);
+        self.has_job.store(true, Ordering::SeqCst);
         self.remaining_bands.store(num_bands, Ordering::SeqCst);
         self.available_bands.store(num_bands as _, Ordering::SeqCst);
         
@@ -439,6 +444,8 @@ impl SwCompositeGraphNode {
         }
         
         self.job = None;
+        
+        self.has_job.store(false, Ordering::SeqCst);
         let mut lock = None;
         for child in self.children.drain(..) {
             
@@ -1331,6 +1338,12 @@ impl Compositor for SwCompositor {
                     if let Some(tile_info) = self.compositor.map_tile(device, id, dirty_rect, valid_rect) {
                         stride = tile_info.stride;
                         buf = tile_info.data;
+                    }
+                } else if let Some(ref composite_thread) = self.composite_thread {
+                    
+                    if tile.graph_node.get().has_job.load(Ordering::SeqCst) {
+                        
+                        composite_thread.wait_for_composites(false);
                     }
                 }
                 self.gl.set_texture_buffer(
