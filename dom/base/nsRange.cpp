@@ -511,22 +511,8 @@ void nsRange::CharacterDataChanged(nsIContent* aContent,
             ->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
       }
     } else {
-      
-      
-      CheckedUint32 newStartOffset{0};
-      if (*mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) <=
-          aInfo.mChangeEnd) {
-        newStartOffset = aInfo.mChangeStart;
-      } else {
-        newStartOffset =
-            *mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets);
-        newStartOffset -= aInfo.LengthOfRemovedText();
-        newStartOffset += aInfo.mReplaceLength;
-      }
-
-      
-      
-      newStart = {mStart.Container(), newStartOffset.value()};
+      newStart = ComputeNewBoundaryWhenBoundaryInsideChangedText(
+          aInfo, mStart.AsRaw());
     }
   }
 
@@ -567,20 +553,8 @@ void nsRange::CharacterDataChanged(nsIContent* aContent,
             ->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
       }
     } else {
-      CheckedUint32 newEndOffset{0};
-      if (*mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets) <=
-          aInfo.mChangeEnd) {
-        newEndOffset = aInfo.mChangeStart;
-      } else {
-        newEndOffset =
-            *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets);
-        newEndOffset -= aInfo.LengthOfRemovedText();
-        newEndOffset += aInfo.mReplaceLength;
-      }
-
-      
-      
-      newEnd = {mEnd.Container(), newEndOffset.value()};
+      newEnd =
+          ComputeNewBoundaryWhenBoundaryInsideChangedText(aInfo, mEnd.AsRaw());
     }
   }
 
@@ -3548,4 +3522,28 @@ void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
   }
 
   mCrossShadowBoundaryRange->SetStartAndEnd(aStartBoundary, aEndBoundary);
+}
+
+RawRangeBoundary nsRange::ComputeNewBoundaryWhenBoundaryInsideChangedText(
+    const CharacterDataChangeInfo& aInfo, const RawRangeBoundary& aBoundary) {
+  MOZ_ASSERT(aInfo.mChangeStart <
+             *aBoundary.Offset(
+                 RawRangeBoundary::OffsetFilter::kValidOrInvalidOffsets));
+  
+  
+  CheckedUint32 newOffset{0};
+  if (*aBoundary.Offset(
+          RawRangeBoundary::OffsetFilter::kValidOrInvalidOffsets) <=
+      aInfo.mChangeEnd) {
+    newOffset = aInfo.mChangeStart;
+  } else {
+    newOffset = *aBoundary.Offset(
+        RawRangeBoundary::OffsetFilter::kValidOrInvalidOffsets);
+    newOffset -= aInfo.LengthOfRemovedText();
+    newOffset += aInfo.mReplaceLength;
+  }
+
+  
+  
+  return {aBoundary.Container(), newOffset.value()};
 }

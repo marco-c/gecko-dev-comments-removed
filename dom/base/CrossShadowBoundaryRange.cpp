@@ -198,4 +198,49 @@ void CrossShadowBoundaryRange::ContentRemoved(nsIContent* aChild,
                    newEndBoundary ? newEndBoundary.ref() : mEnd.AsRaw());
   }
 }
+
+
+
+void CrossShadowBoundaryRange::CharacterDataChanged(
+    nsIContent* aContent, const CharacterDataChangeInfo& aInfo) {
+  
+  
+  
+  if (aInfo.mDetails) {
+    return;
+  }
+  MOZ_ASSERT(aContent);
+  MOZ_ASSERT(mIsPositioned);
+
+  auto MaybeCreateNewBoundary =
+      [aContent,
+       &aInfo](const RangeBoundary& aBoundary) -> Maybe<RawRangeBoundary> {
+    
+    
+    if (aContent == aBoundary.Container() &&
+        
+        
+        
+        
+        aInfo.mChangeStart <
+            *aBoundary.Offset(
+                RangeBoundary::OffsetFilter::kValidOrInvalidOffsets)) {
+      RawRangeBoundary newStart =
+          nsRange::ComputeNewBoundaryWhenBoundaryInsideChangedText(
+              aInfo, aBoundary.AsRaw());
+      return Some(newStart);
+    }
+    return Nothing();
+  };
+
+  const Maybe<RawRangeBoundary> newStartBoundary =
+      MaybeCreateNewBoundary(mStart);
+  const Maybe<RawRangeBoundary> newEndBoundary = MaybeCreateNewBoundary(mEnd);
+
+  if (newStartBoundary || newEndBoundary) {
+    DoSetRange(newStartBoundary ? newStartBoundary.ref() : mStart.AsRaw(),
+               newEndBoundary ? newEndBoundary.ref() : mEnd.AsRaw(), nullptr,
+               mOwner);
+  }
+}
 }  

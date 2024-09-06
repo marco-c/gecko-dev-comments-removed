@@ -297,6 +297,11 @@ class nsRange final : public mozilla::dom::AbstractRange,
                                JS::Handle<JSObject*> aGivenProto) final;
   DocGroup* GetDocGroup() const;
 
+  
+  
+  static RawRangeBoundary ComputeNewBoundaryWhenBoundaryInsideChangedText(
+      const CharacterDataChangeInfo& aInfo, const RawRangeBoundary& aBoundary);
+
  private:
   
   nsRange(const nsRange&);
