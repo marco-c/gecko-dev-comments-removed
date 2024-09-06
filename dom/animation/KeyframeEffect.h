@@ -76,7 +76,7 @@ struct AnimationProperty {
 
   
   
-  AnimationProperty() : mProperty(eCSSProperty_UNKNOWN){};
+  AnimationProperty() : mProperty(eCSSProperty_UNKNOWN) {};
   AnimationProperty(const AnimationProperty& aOther)
       : mProperty(aOther.mProperty), mSegments(aOther.mSegments.Clone()) {}
   AnimationProperty& operator=(const AnimationProperty& aOther) {
@@ -275,7 +275,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   void ComposeStyle(StyleAnimationValueMap& aComposeResult,
-                    const nsCSSPropertyIDSet& aPropertiesToSkip);
+                    const InvertibleAnimatedPropertyIDSet& aPropertiesToSkip);
 
   
   bool IsRunningOnCompositor() const;

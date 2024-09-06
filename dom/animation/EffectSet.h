@@ -188,10 +188,10 @@ class EffectSet {
   nsCSSPropertyIDSet& PropertiesWithImportantRules() {
     return mPropertiesWithImportantRules;
   }
-  nsCSSPropertyIDSet PropertiesForAnimationsLevel() const {
+  const AnimatedPropertyIDSet& PropertiesForAnimationsLevel() const {
     return mPropertiesForAnimationsLevel;
   }
-  nsCSSPropertyIDSet& PropertiesForAnimationsLevel() {
+  AnimatedPropertyIDSet& PropertiesForAnimationsLevel() {
     return mPropertiesForAnimationsLevel;
   }
 
@@ -221,7 +221,7 @@ class EffectSet {
   
   
   
-  nsCSSPropertyIDSet mPropertiesForAnimationsLevel;
+  AnimatedPropertyIDSet mPropertiesForAnimationsLevel;
 
 #ifdef DEBUG
   

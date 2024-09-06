@@ -608,8 +608,9 @@ void KeyframeEffect::ComposeStyleRule(StyleAnimationValueMap& aAnimationValues,
                          &aComputedTiming, mEffectOptions.mIterationComposite);
 }
 
-void KeyframeEffect::ComposeStyle(StyleAnimationValueMap& aComposeResult,
-                                  const nsCSSPropertyIDSet& aPropertiesToSkip) {
+void KeyframeEffect::ComposeStyle(
+    StyleAnimationValueMap& aComposeResult,
+    const InvertibleAnimatedPropertyIDSet& aPropertiesToSkip) {
   ComputedTiming computedTiming = GetComputedTiming();
 
   
@@ -1652,8 +1653,8 @@ bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
   
   
   nsCSSPropertyIDSet blockedProperties =
-      effectSet->PropertiesWithImportantRules().Intersect(
-          effectSet->PropertiesForAnimationsLevel());
+      effectSet->PropertiesForAnimationsLevel().Intersect(
+          effectSet->PropertiesWithImportantRules());
   if (blockedProperties.Intersects(aPropertySet)) {
     aPerformanceWarning =
         AnimationPerformanceWarning::Type::TransformIsBlockedByImportantRules;

@@ -148,15 +148,6 @@ class nsCSSPropertyIDSet {
   }
 
   
-  nsCSSPropertyIDSet Inverse() const {
-    nsCSSPropertyIDSet result;
-    for (size_t i = 0; i < mozilla::ArrayLength(mProperties); ++i) {
-      result.mProperties[i] = ~mProperties[i];
-    }
-    return result;
-  }
-
-  
   
   nsCSSPropertyIDSet Intersect(const nsCSSPropertyIDSet& aOther) const {
     nsCSSPropertyIDSet result;
