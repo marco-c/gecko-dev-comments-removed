@@ -6289,51 +6289,6 @@ static bool ShouldApplyAutomaticMinimumOnInlineAxis(
   return !aDisplay->IsScrollableOverflow() && aPosition->MinISize(aWM).IsAuto();
 }
 
-struct MinMaxSize {
-  nscoord mMinSize = 0;
-  nscoord mMaxSize = NS_UNCONSTRAINEDSIZE;
-
-  nscoord ClampSizeToMinAndMax(nscoord aSize) const {
-    return NS_CSS_MINMAX(aSize, mMinSize, mMaxSize);
-  }
-};
-static MinMaxSize ComputeTransferredMinMaxInlineSize(
-    const WritingMode aWM, const AspectRatio& aAspectRatio,
-    const MinMaxSize& aMinMaxBSize, const LogicalSize& aBoxSizingAdjustment) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  MinMaxSize transferredISize;
-
-  if (aMinMaxBSize.mMinSize > 0) {
-    transferredISize.mMinSize = aAspectRatio.ComputeRatioDependentSize(
-        LogicalAxis::Inline, aWM, aMinMaxBSize.mMinSize, aBoxSizingAdjustment);
-  }
-
-  if (aMinMaxBSize.mMaxSize != NS_UNCONSTRAINEDSIZE) {
-    transferredISize.mMaxSize = aAspectRatio.ComputeRatioDependentSize(
-        LogicalAxis::Inline, aWM, aMinMaxBSize.mMaxSize, aBoxSizingAdjustment);
-  }
-
-  
-  transferredISize.mMaxSize =
-      std::max(transferredISize.mMinSize, transferredISize.mMaxSize);
-  return transferredISize;
-}
-
 
 nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
@@ -6443,15 +6398,9 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     
     
     if (!stretch && mayUseAspectRatio) {
-      
-      
-      
-      
-      auto bSize = nsLayoutUtils::ComputeBSizeValue(
-          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
-          styleBSize.AsLengthPercentage());
-      result.ISize(aWM) = aspectRatio.ComputeRatioDependentSize(
-          LogicalAxis::Inline, aWM, bSize, boxSizingAdjust);
+      result.ISize(aWM) = ComputeISizeValueFromAspectRatio(
+          aWM, aCBSize, boxSizingAdjust, styleBSize.AsLengthPercentage(),
+          aspectRatio);
       aspectRatioUsage = AspectRatioUsage::ToComputeISize;
     }
 
@@ -6464,11 +6413,16 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
       }
     }
   } else if (aspectRatio && !isAutoBSize) {
-    auto bSize = nsLayoutUtils::ComputeBSizeValue(
-        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
-        styleBSize.AsLengthPercentage());
-    result.ISize(aWM) = aspectRatio.ComputeRatioDependentSize(
-        LogicalAxis::Inline, aWM, bSize, boxSizingAdjust);
+    
+    
+    
+    
+    
+    
+    
+    result.ISize(aWM) = ComputeISizeValueFromAspectRatio(
+        aWM, aCBSize, boxSizingAdjust, styleBSize.AsLengthPercentage(),
+        aspectRatio);
     aspectRatioUsage = AspectRatioUsage::ToComputeISize;
   }
 
@@ -6503,20 +6457,34 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   const bool isAutoMaxBSize =
       nsLayoutUtils::IsAutoBSize(maxBSizeCoord, aCBSize.BSize(aWM));
   if (aspectRatio && !isDefiniteISize) {
-    const MinMaxSize minMaxBSize{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const nscoord transferredMinISize =
         isAutoMinBSize ? 0
-                       : nsLayoutUtils::ComputeBSizeValue(
-                             aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
-                             minBSizeCoord.AsLengthPercentage()),
-        isAutoMaxBSize ? NS_UNCONSTRAINEDSIZE
-                       : nsLayoutUtils::ComputeBSizeValue(
-                             aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
-                             maxBSizeCoord.AsLengthPercentage())};
-    MinMaxSize transferredMinMaxISize = ComputeTransferredMinMaxInlineSize(
-        aWM, aspectRatio, minMaxBSize, boxSizingAdjust);
+                       : ComputeISizeValueFromAspectRatio(
+                             aWM, aCBSize, boxSizingAdjust,
+                             minBSizeCoord.AsLengthPercentage(), aspectRatio);
+    const nscoord transferredMaxISize =
+        isAutoMaxBSize ? nscoord_MAX
+                       : ComputeISizeValueFromAspectRatio(
+                             aWM, aCBSize, boxSizingAdjust,
+                             maxBSizeCoord.AsLengthPercentage(), aspectRatio);
 
-    result.ISize(aWM) =
-        transferredMinMaxISize.ClampSizeToMinAndMax(result.ISize(aWM));
+    result.ISize(aWM) = NS_CSS_MINMAX(result.ISize(aWM), transferredMinISize,
+                                      transferredMaxISize);
   }
 
   
