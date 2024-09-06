@@ -181,9 +181,11 @@ class GlobalHelperThreadState {
   JS::HelperThreadTaskCallback dispatchTaskCallback = nullptr;
   friend class AutoHelperTaskQueue;
 
+#ifdef DEBUG
   
   
   size_t tasksPending_ = 0;
+#endif
 
   bool isInitialized_ = false;
 
@@ -417,7 +419,7 @@ class GlobalHelperThreadState {
   bool submitTask(PromiseHelperTask* task);
   bool submitTask(GCParallelTask* task,
                   const AutoLockHelperThreadState& locked);
-  void runOneTask(AutoLockHelperThreadState& lock);
+  void runOneTask(HelperThreadTask* task, AutoLockHelperThreadState& lock);
   void runTaskLocked(HelperThreadTask* task, AutoLockHelperThreadState& lock);
 
   using Selector = HelperThreadTask* (
