@@ -16,9 +16,9 @@ use serde::{ser, Serialize, Serializer};
 
 
 #[cfg(test)]
-fn assert_json<T>(v: &T, expected: serde_json::Value)
+fn assert_json<T: ?Sized>(v: &T, expected: serde_json::Value)
 where
-    T: serde::Serialize + ?Sized,
+    T: serde::Serialize,
 {
     assert_eq!(
         serde_json::to_value(v).expect("should get a value"),
@@ -36,7 +36,6 @@ struct WhenTook {
 
 
 
-#[allow(dead_code)]
 #[derive(Debug)]
 enum Stopwatch {
     Started(time::SystemTime, time::Instant),

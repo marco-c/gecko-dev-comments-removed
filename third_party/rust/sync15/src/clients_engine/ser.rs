@@ -3,25 +3,82 @@
 
 
 use crate::error::Result;
-use payload_support::Fit;
 use serde::Serialize;
+use std::io::{self, Write};
+
+
+
+#[derive(Clone, Copy, Default)]
+pub struct WriteCount(usize);
+
+impl WriteCount {
+    #[inline]
+    pub fn len(self) -> usize {
+        self.0
+    }
+}
+
+impl Write for WriteCount {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0 += buf.len();
+        Ok(buf.len())
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+
+fn compute_serialized_size<T: Serialize>(value: &T) -> Result<usize> {
+    let mut w = WriteCount::default();
+    serde_json::to_writer(&mut w, value)?;
+    Ok(w.len())
+}
 
 
 
 pub fn shrink_to_fit<T: Serialize>(list: &mut Vec<T>, payload_size_max_bytes: usize) -> Result<()> {
-    match payload_support::try_fit_items(list, payload_size_max_bytes) {
-        Fit::All => {}
-        Fit::Some(count) => list.truncate(count.get()),
-        Fit::None => list.clear(),
-        Fit::Err(e) => Err(e)?,
-    };
-    Ok(())
+    let size = compute_serialized_size(&list)?;
+    
+    match ((payload_size_max_bytes / 4) * 3).checked_sub(1500) {
+        Some(max_serialized_size) => {
+            if size > max_serialized_size {
+                
+                let cutoff = (list.len() * max_serialized_size - 1) / size + 1;
+                list.truncate(cutoff + 1);
+                
+                while compute_serialized_size(&list)? > max_serialized_size {
+                    if list.pop().is_none() {
+                        break;
+                    }
+                }
+            }
+            Ok(())
+        }
+        None => {
+            list.clear();
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::super::record::CommandRecord;
     use super::*;
+
+    #[test]
+    fn test_compute_serialized_size() {
+        assert_eq!(compute_serialized_size(&1).unwrap(), 1);
+        assert_eq!(compute_serialized_size(&"hi").unwrap(), 4);
+        assert_eq!(
+            compute_serialized_size(&["hi", "hello", "bye"]).unwrap(),
+            20
+        );
+    }
 
     #[test]
     fn test_shrink_to_fit() {
@@ -46,6 +103,12 @@ mod tests {
         
         shrink_to_fit(&mut commands, 4096).unwrap();
         assert_eq!(commands.len(), 3);
+
+        let sizes = commands
+            .iter()
+            .map(|c| compute_serialized_size(c).unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(sizes, &[61, 60, 30]);
 
         
         shrink_to_fit(&mut commands, 2168).unwrap();

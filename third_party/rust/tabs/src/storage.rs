@@ -169,6 +169,7 @@ impl TabsStorage {
                 .collect();
             
             sanitized_tabs.sort_by(|a, b| b.last_used.cmp(&a.last_used));
+            
             trim_tabs_length(&mut sanitized_tabs, MAX_PAYLOAD_SIZE);
             return Some(sanitized_tabs);
         }
@@ -269,10 +270,8 @@ impl TabsStorage {
             Ok(Some(conn)) => conn,
         };
         let pending_tabs_result: Result<Vec<(String, String)>> = conn.query_rows_and_then_cached(
-            "SELECT device_id, url
-             FROM remote_tab_commands
-             WHERE command = :command_close_tab",
-            rusqlite::named_params! { ":command_close_tab": CommandKind::CloseTab },
+            "SELECT device_id, url FROM remote_tab_commands",
+            [],
             |row| {
                 Ok((
                     row.get::<_, String>(0)?, 
@@ -494,7 +493,7 @@ impl TabsStorage {
         let Some(conn) = self.open_if_exists()? else {
             return Ok(Vec::new());
         };
-        let result = conn.query_rows_and_then_cached(
+        let records: Vec<Option<PendingCommand>> = match conn.query_rows_and_then_cached(
             &format!(
                 "SELECT device_id, command, url, time_requested, time_sent
                     FROM remote_tab_commands
@@ -525,14 +524,15 @@ impl TabsStorage {
                     },
                 }))
             },
-        );
-        Ok(match result {
-            Ok(records) => records.into_iter().flatten().collect(),
+        ) {
+            Ok(records) => records,
             Err(e) => {
                 error_support::report_error!("tabs-get_unsent", "Failed to read database: {}", e);
-                Vec::new()
+                return Ok(Vec::new());
             }
-        })
+        };
+
+        Ok(records.into_iter().flatten().collect())
     }
 
     pub fn set_pending_command_sent(&mut self, command: &PendingCommand) -> Result<bool> {
@@ -589,13 +589,11 @@ impl TabsStorage {
                 .get(&record.id)
                 .and_then(|r| r.fxa_device_id.as_ref())
                 .unwrap_or(&record.id);
-            for tab in &record.tabs {
-                if let Some(url) = tab.url_history.first() {
-                    conn.execute(
-                        "INSERT INTO new_remote_tabs (device_id, url) VALUES (?, ?)",
-                        rusqlite::params![fxa_id, url],
-                    )?;
-                }
+            if let Some(url) = record.tabs.first().and_then(|tab| tab.url_history.first()) {
+                conn.execute(
+                    "INSERT INTO new_remote_tabs (device_id, url) VALUES (?, ?)",
+                    rusqlite::params![fxa_id, url],
+                )?;
             }
         }
 
@@ -670,11 +668,25 @@ impl ToSql for CommandKind {
 }
 
 
-
 fn trim_tabs_length(tabs: &mut Vec<RemoteTab>, payload_size_max_bytes: usize) {
-    if let Some(count) = payload_support::try_fit_items(tabs, payload_size_max_bytes).as_some() {
-        tabs.truncate(count.get());
+    
+    
+    let max_serialized_size = (payload_size_max_bytes / 4) * 3 - 1500;
+    let size = compute_serialized_size(tabs);
+    if size > max_serialized_size {
+        
+        let cutoff = (tabs.len() * max_serialized_size) / size;
+        tabs.truncate(cutoff);
+
+        
+        while compute_serialized_size(tabs) > max_serialized_size {
+            tabs.pop();
+        }
     }
+}
+
+fn compute_serialized_size(v: &Vec<RemoteTab>) -> usize {
+    serde_json::to_string(v).unwrap_or_default().len()
 }
 
 
@@ -712,7 +724,6 @@ fn is_url_syncable(url: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use payload_support::compute_serialized_size;
     use std::time::Duration;
 
     use super::*;
@@ -927,14 +938,14 @@ mod tests {
                 ..Default::default()
             });
         }
-        let tabs_mem_size = compute_serialized_size(&too_many_tabs).unwrap();
+        let tabs_mem_size = compute_serialized_size(&too_many_tabs);
         
         assert!(tabs_mem_size > MAX_PAYLOAD_SIZE);
         
         storage.update_local_state(too_many_tabs.clone());
         
         let tabs_to_upload = &storage.prepare_local_tabs_for_upload().unwrap();
-        assert!(compute_serialized_size(tabs_to_upload).unwrap() <= MAX_PAYLOAD_SIZE);
+        assert!(compute_serialized_size(tabs_to_upload) <= MAX_PAYLOAD_SIZE);
     }
     
     struct TabsSQLRecord {
@@ -1345,16 +1356,10 @@ mod tests {
             TabsRecord {
                 id: "device-recent".to_string(),
                 client_name: "".to_string(),
-                tabs: vec![
-                    TabsRecordTab {
-                        url_history: vec!["https://example99.com".to_string()],
-                        ..Default::default()
-                    },
-                    TabsRecordTab {
-                        url_history: vec!["https://example.com".to_string()],
-                        ..Default::default()
-                    },
-                ],
+                tabs: vec![TabsRecordTab {
+                    url_history: vec!["https://example.com".to_string()],
+                    ..Default::default()
+                }],
             },
             ServerTimestamp::default(),
         )];

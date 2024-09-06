@@ -2,6 +2,8 @@
 
 
 
+#![cfg(feature = "rusqlite_support")]
+
 use crate::Guid;
 use rusqlite::{
     self,

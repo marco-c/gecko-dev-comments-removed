@@ -2,6 +2,8 @@
 
 
 
+#![cfg(feature = "serde_support")]
+
 use std::fmt;
 
 use serde::{
