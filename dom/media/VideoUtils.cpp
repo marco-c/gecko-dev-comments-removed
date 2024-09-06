@@ -189,11 +189,12 @@ uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& aInfo,
   } else if (aInfo.mRate >= 44100) {
     
     
-    rate = aInfo.mRate;
+    
+    rate = std::min<unsigned>(aInfo.mRate, 384000u);
   } else {
     
     rate = CubebUtils::PreferredSampleRate(aShouldResistFingerprinting);
-    if (rate > 384000) {
+    if (rate > 768000) {
       
       rate = 48000;
     }
