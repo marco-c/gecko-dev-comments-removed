@@ -363,11 +363,11 @@ static SizeSpec CalcSizeSpec(const WindowFeatures&, bool aHasChromeParent,
 
 NS_IMETHODIMP
 nsWindowWatcher::OpenWindow2(
-    mozIDOMWindowProxy* aParent, const nsACString& aUrl,
-    const nsACString& aName, const nsACString& aFeatures,
-    const UserActivation::Modifiers& aModifiers, bool aCalledFromScript,
-    bool aDialog, bool aNavigate, nsISupports* aArguments, bool aIsPopupSpam,
-    bool aForceNoOpener, bool aForceNoReferrer, PrintKind aPrintKind,
+    mozIDOMWindowProxy* aParent, nsIURI* aUri, const nsACString& aName,
+    const nsACString& aFeatures, const UserActivation::Modifiers& aModifiers,
+    bool aCalledFromScript, bool aDialog, bool aNavigate,
+    nsISupports* aArguments, bool aIsPopupSpam, bool aForceNoOpener,
+    bool aForceNoReferrer, PrintKind aPrintKind,
     nsDocShellLoadState* aLoadState, BrowsingContext** aResult) {
   nsCOMPtr<nsIArray> argv = ConvertArgsToArray(aArguments);
 
@@ -384,7 +384,7 @@ nsWindowWatcher::OpenWindow2(
     dialog = argc > 0;
   }
 
-  return OpenWindowInternal(aParent, aUrl, aName, aFeatures, aModifiers,
+  return OpenWindowInternal(aParent, aUri, aName, aFeatures, aModifiers,
                             aCalledFromScript, dialog, aNavigate, argv,
                             aIsPopupSpam, aForceNoOpener, aForceNoReferrer,
                             aPrintKind, aLoadState, aResult);
@@ -620,6 +620,31 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     bool aIsPopupSpam, bool aForceNoOpener, bool aForceNoReferrer,
     PrintKind aPrintKind, nsDocShellLoadState* aLoadState,
     BrowsingContext** aResult) {
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = nullptr;
+
+  nsCOMPtr<nsIURI> uriToLoad;
+  if (!aUrl.IsVoid()) {
+    nsresult rv = URIfromURL(aUrl, aParent, getter_AddRefs(uriToLoad));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+
+  return nsWindowWatcher::OpenWindowInternal(
+      aParent, uriToLoad, aName, aFeatures, aModifiers, aCalledFromJS, aDialog,
+      aNavigate, aArgv, aIsPopupSpam, aForceNoOpener, aForceNoReferrer,
+      aPrintKind, aLoadState, aResult);
+}
+
+nsresult nsWindowWatcher::OpenWindowInternal(
+    mozIDOMWindowProxy* aParent, nsIURI* aUri, const nsACString& aName,
+    const nsACString& aFeatures,
+    const mozilla::dom::UserActivation::Modifiers& aModifiers,
+    bool aCalledFromJS, bool aDialog, bool aNavigate, nsIArray* aArgv,
+    bool aIsPopupSpam, bool aForceNoOpener, bool aForceNoReferrer,
+    PrintKind aPrintKind, nsDocShellLoadState* aLoadState,
+    BrowsingContext** aResult) {
   MOZ_ASSERT_IF(aForceNoReferrer, aForceNoOpener);
 
   nsresult rv = NS_OK;
@@ -630,8 +655,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   bool uriToLoadIsChrome = false;
 
   uint32_t chromeFlags;
-  nsAutoString name;           
-  nsCOMPtr<nsIURI> uriToLoad;  
+  nsAutoString name;  
   nsCOMPtr<nsIDocShellTreeOwner>
       parentTreeOwner;               
   RefPtr<BrowsingContext> targetBC;  
@@ -651,15 +675,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     parentTreeOwner = parentOuterWin->GetTreeOwner();
   }
 
-  
-  
-  
-  if (!aUrl.IsVoid()) {
-    rv = URIfromURL(aUrl, aParent, getter_AddRefs(uriToLoad));
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    uriToLoadIsChrome = uriToLoad->SchemeIs("chrome");
+  if (aUri) {
+    uriToLoadIsChrome = aUri->SchemeIs("chrome");
   }
 
   bool nameSpecified = false;
@@ -948,11 +965,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
       nsCOMPtr<nsIWindowProvider> provider = do_GetInterface(parentTreeOwner);
       if (provider) {
-        rv = provider->ProvideWindow(openWindowInfo, chromeFlags, aCalledFromJS,
-                                     uriToLoad, name, featuresStr, aModifiers,
-                                     aForceNoOpener, aForceNoReferrer,
-                                     isPopupRequested, aLoadState, &windowIsNew,
-                                     getter_AddRefs(targetBC));
+        rv = provider->ProvideWindow(
+            openWindowInfo, chromeFlags, aCalledFromJS, aUri, name, featuresStr,
+            aModifiers, aForceNoOpener, aForceNoReferrer, isPopupRequested,
+            aLoadState, &windowIsNew, getter_AddRefs(targetBC));
 
         if (NS_SUCCEEDED(rv) && targetBC) {
           nsCOMPtr<nsIDocShell> newDocShell = targetBC->GetDocShell();
@@ -1278,14 +1294,14 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       !!(chromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW));
 
   RefPtr<nsDocShellLoadState> loadState = aLoadState;
-  if (uriToLoad && loadState) {
+  if (aUri && loadState) {
     
     
-    loadState->SetURI(uriToLoad);
-  } else if (uriToLoad && aNavigate && !loadState) {
+    loadState->SetURI(aUri);
+  } else if (aUri && aNavigate && !loadState) {
     RefPtr<WindowContext> context =
         parentInnerWin ? parentInnerWin->GetWindowContext() : nullptr;
-    loadState = new nsDocShellLoadState(uriToLoad);
+    loadState = new nsDocShellLoadState(aUri);
 
     loadState->SetSourceBrowsingContext(parentBC);
     loadState->SetAllowFocusMove(true);
@@ -1360,10 +1376,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     if (obsSvc) {
       RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
 
-      if (uriToLoad) {
+      if (aUri) {
         
         
-        props->SetPropertyAsACString(u"url"_ns, uriToLoad->GetSpecOrDefault());
+        props->SetPropertyAsACString(u"url"_ns, aUri->GetSpecOrDefault());
       }
 
       props->SetPropertyAsInterface(u"sourceTabDocShell"_ns, parentDocShell);
@@ -1376,7 +1392,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     }
   }
 
-  if (uriToLoad && aNavigate) {
+  if (aUri && aNavigate) {
     uint32_t loadFlags = nsIWebNavigation::LOAD_FLAGS_NONE;
     if (windowIsNew) {
       loadFlags |= nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD;
@@ -1796,6 +1812,8 @@ nsresult nsWindowWatcher::URIfromURL(const nsACString& aURL,
     }
   }
 
+  
+  
   
   return NS_NewURI(aURI, aURL, nullptr, baseURI);
 }

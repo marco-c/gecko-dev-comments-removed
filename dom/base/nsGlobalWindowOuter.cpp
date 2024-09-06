@@ -24,6 +24,7 @@
 #include "nsISecureBrowserUI.h"
 #include "nsIWebProgressListener.h"
 #include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/AutoPrintEventDispatcher.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -6831,18 +6832,17 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       !nsContentUtils::LegacyIsCallerChromeOrNativeCode() && !aDialog &&
       !windowExists;
 
-  
-  
-  nsCString url;
-  url.SetIsVoid(true);
-  nsresult rv = NS_OK;
-
   nsCOMPtr<nsIURI> uri;
 
   
   
   
   if (!aUrl.IsEmpty()) {
+    
+    
+    
+    nsCString url;
+    url.SetIsVoid(true);
     AppendUTF16toUTF8(aUrl, url);
 
     
@@ -6850,14 +6850,18 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     
     
     
-    
-    if (!url.IsVoid() && !aDialog && aNavigate)
-      rv = SecurityCheckURL(url.get(), getter_AddRefs(uri));
+    if (!url.IsVoid()) {
+      auto result =
+          URIfromURLAndMaybeDoSecurityCheck(url, !aDialog && aNavigate);
+      if (result.isErr()) {
+        return result.unwrapErr();
+      }
+
+      uri = result.unwrap();
+    }
   } else if (mDoc) {
     mDoc->SetUseCounter(eUseCounter_custom_WindowOpenEmptyUrl);
   }
-
-  if (NS_FAILED(rv)) return rv;
 
   UserActivation::Modifiers modifiers;
   mBrowsingContext->GetUserActivationModifiersForPopup(&modifiers);
@@ -6890,6 +6894,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
 
   RefPtr<BrowsingContext> domReturn;
 
+  nsresult rv = NS_OK;
   nsCOMPtr<nsIWindowWatcher> wwatch =
       do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
   NS_ENSURE_TRUE(wwatch, rv);
@@ -6930,7 +6935,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     if (!aCalledNoScript) {
       
       
-      rv = pwwatch->OpenWindow2(this, url, name, options, modifiers,
+      rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
                                  true, aDialog,
                                 aNavigate, argv, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,
@@ -6950,7 +6955,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
         nojsapi.emplace();
       }
 
-      rv = pwwatch->OpenWindow2(this, url, name, options, modifiers,
+      rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
                                  false, aDialog,
                                 aNavigate, aExtraArgument, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,
@@ -7066,16 +7071,14 @@ ScrollContainerFrame* nsGlobalWindowOuter::GetScrollContainerFrame() {
   return nullptr;
 }
 
-nsresult nsGlobalWindowOuter::SecurityCheckURL(const char* aURL,
-                                               nsIURI** aURI) {
+Result<already_AddRefed<nsIURI>, nsresult>
+nsGlobalWindowOuter::URIfromURLAndMaybeDoSecurityCheck(const nsACString& aURL,
+                                                       bool aSecurityCheck) {
   nsCOMPtr<nsPIDOMWindowInner> sourceWindow =
       do_QueryInterface(GetEntryGlobal());
   if (!sourceWindow) {
     sourceWindow = GetCurrentInnerWindow();
   }
-  AutoJSContext cx;
-  nsGlobalWindowInner* sourceWin = nsGlobalWindowInner::Cast(sourceWindow);
-  JSAutoRealm ar(cx, sourceWin->GetGlobalJSObject());
 
   
   
@@ -7089,19 +7092,23 @@ nsresult nsGlobalWindowOuter::SecurityCheckURL(const char* aURL,
     encoding = doc->GetDocumentCharacterSet();
   }
   nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), nsDependentCString(aURL),
-                          encoding, baseURI);
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), aURL, encoding, baseURI);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_ERROR_DOM_SYNTAX_ERR;
+    return Err(NS_ERROR_DOM_SYNTAX_ERR);
   }
 
-  if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckLoadURIFromScript(
-          cx, uri))) {
-    return NS_ERROR_FAILURE;
+  if (aSecurityCheck) {
+    AutoJSContext cx;
+    nsGlobalWindowInner* sourceWin = nsGlobalWindowInner::Cast(sourceWindow);
+    JSAutoRealm ar(cx, sourceWin->GetGlobalJSObject());
+
+    if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckLoadURIFromScript(
+            cx, uri))) {
+      return Err(NS_ERROR_FAILURE);
+    }
   }
 
-  uri.forget(aURI);
-  return NS_OK;
+  return uri.forget();
 }
 
 void nsGlobalWindowOuter::FlushPendingNotifications(FlushType aType) {
