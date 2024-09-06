@@ -233,6 +233,8 @@ for (const type of [
   "UPDATE_PINNED_SEARCH_SHORTCUTS",
   "UPDATE_SEARCH_SHORTCUTS",
   "UPDATE_SECTION_PREFS",
+  "WALLPAPERS_FEATURE_HIGHLIGHT_COUNTER_INCREMENT",
+  "WALLPAPERS_FEATURE_HIGHLIGHT_SEEN",
   "WALLPAPERS_SET",
   "WALLPAPER_CLICK",
   "WEATHER_IMPRESSION",
@@ -2422,21 +2424,26 @@ function FeatureHighlight({
   ariaLabel,
   feature = "FEATURE_HIGHLIGHT_DEFAULT",
   dispatch = () => {},
-  windowObj = __webpack_require__.g
+  windowObj = __webpack_require__.g,
+  openedOverride = false,
+  showButtonIcon = true,
+  dismissCallback = () => {},
+  outsideClickCallback = () => {}
 }) {
-  const [opened, setOpened] = (0,external_React_namespaceObject.useState)(false);
+  const [opened, setOpened] = (0,external_React_namespaceObject.useState)(openedOverride);
   const ref = (0,external_React_namespaceObject.useRef)(null);
   (0,external_React_namespaceObject.useEffect)(() => {
     const handleOutsideClick = e => {
       if (!ref?.current?.contains(e.target)) {
         setOpened(false);
+        outsideClickCallback();
       }
     };
     windowObj.document.addEventListener("click", handleOutsideClick);
     return () => {
       windowObj.document.removeEventListener("click", handleOutsideClick);
     };
-  }, [windowObj]);
+  }, [windowObj, outsideClickCallback]);
   const onToggleClick = (0,external_React_namespaceObject.useCallback)(() => {
     if (!opened) {
       dispatch(actionCreators.DiscoveryStreamUserEvent({
@@ -2449,6 +2456,11 @@ function FeatureHighlight({
     }
     setOpened(!opened);
   }, [dispatch, feature, opened]);
+  const onDismissClick = (0,external_React_namespaceObject.useCallback)(() => {
+    setOpened(false);
+    dismissCallback();
+  }, [dismissCallback]);
+  const hideButtonClass = showButtonIcon ? `` : `isHidden`;
   const openedClassname = opened ? `opened` : `closed`;
   return external_React_default().createElement("div", {
     ref: ref,
@@ -2457,17 +2469,16 @@ function FeatureHighlight({
     title: title,
     "aria-haspopup": "true",
     "aria-label": ariaLabel,
-    className: "toggle-button",
+    className: `toggle-button ${hideButtonClass}`,
     onClick: onToggleClick
   }, toggle), external_React_default().createElement("div", {
     className: `feature-highlight-modal ${position} ${openedClassname}`
   }, external_React_default().createElement("div", {
     className: "message-icon"
   }, icon), external_React_default().createElement("p", null, message), external_React_default().createElement("button", {
-    title: "Dismiss",
-    "aria-label": "Close sponsored content more info popup",
+    "data-l10n-id": "feature-highlight-dismiss-button",
     className: "icon icon-dismiss",
-    onClick: () => setOpened(false)
+    onClick: onDismissClick
   })));
 }
 ;
@@ -5638,6 +5649,7 @@ const INITIAL_STATE = {
   },
   Wallpapers: {
     wallpaperList: [],
+    highlightSeenCounter: 0,
   },
   Weather: {
     initialized: false,
@@ -6397,7 +6409,15 @@ function Search(prevState = INITIAL_STATE.Search, action) {
 function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
   switch (action.type) {
     case actionTypes.WALLPAPERS_SET:
-      return { wallpaperList: action.data };
+      return {
+        ...prevState,
+        wallpaperList: action.data,
+      };
+    case actionTypes.WALLPAPERS_FEATURE_HIGHLIGHT_COUNTER_INCREMENT:
+      return {
+        ...prevState,
+        highlightSeenCounter: action.data,
+      };
     default:
       return prevState;
   }
@@ -10010,7 +10030,107 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
   document: globalThis.document
 }))(_Weather);
 ;
+
+
+
+
+
+
+
+const WallpaperFeatureHighlight_INTERSECTION_RATIO = 1;
+const WallpaperFeatureHighlight_VISIBLE = "visible";
+const WallpaperFeatureHighlight_VISIBILITY_CHANGE_EVENT = "visibilitychange";
+const WALLPAPER_HIGHLIGHT_DISMISSED_PREF = "newtabWallpapers.highlightDismissed";
+function WallpaperFeatureHighlight({
+  position,
+  dispatch,
+  windowObj = globalThis
+}) {
+  const [highlightVisibilityTimeoutID, setHighlightVisibilityTimeoutID] = (0,external_React_namespaceObject.useState)("");
+  const heightElement = (0,external_React_namespaceObject.useRef)(null);
+  const onToggleClick = (0,external_React_namespaceObject.useCallback)(() => {
+    dispatch(actionCreators.SetPref(WALLPAPER_HIGHLIGHT_DISMISSED_PREF, true));
+  }, [dispatch]);
+
+  
+  const onDismissCallback = (0,external_React_namespaceObject.useCallback)(() => {
+    dispatch(actionCreators.SetPref(WALLPAPER_HIGHLIGHT_DISMISSED_PREF, true));
+  }, [dispatch]);
+
+  
+  const onOutsideClickCallback = () => {
+    clearTimeout(highlightVisibilityTimeoutID);
+  };
+
+  
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const options = {
+      threshold: WallpaperFeatureHighlight_INTERSECTION_RATIO
+    };
+    const intersectionObserver = new windowObj.IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= WallpaperFeatureHighlight_INTERSECTION_RATIO)) {
+        intersectionObserver.unobserve(heightElement.current);
+
+        
+        
+        setHighlightVisibilityTimeoutID(setTimeout(() => {
+          dispatch(actionCreators.OnlyToMain({
+            type: actionTypes.WALLPAPERS_FEATURE_HIGHLIGHT_SEEN
+          }));
+        }, 3000));
+      }
+    }, options);
+    const onVisibilityChange = () => {
+      intersectionObserver.observe(heightElement.current);
+      windowObj.document.removeEventListener(WallpaperFeatureHighlight_VISIBILITY_CHANGE_EVENT, onVisibilityChange);
+    };
+    if (heightElement.current) {
+      if (windowObj.document.visibilityState === WallpaperFeatureHighlight_VISIBLE) {
+        intersectionObserver.observe(heightElement.current);
+      } else {
+        windowObj.document.addEventListener(WallpaperFeatureHighlight_VISIBILITY_CHANGE_EVENT, onVisibilityChange);
+      }
+    }
+    return () => {
+      intersectionObserver?.disconnect();
+      windowObj.document.removeEventListener(WallpaperFeatureHighlight_VISIBILITY_CHANGE_EVENT, onVisibilityChange);
+    };
+  }, [dispatch, windowObj]);
+  return external_React_default().createElement("div", {
+    className: "wallpaper-feature-highlight",
+    ref: heightElement
+  }, external_React_default().createElement(FeatureHighlight, {
+    position: position,
+    "data-l10n-id": "feature-highlight-wallpaper",
+    feature: "FEATURE_HIGHLIGHT_WALLPAPER",
+    dispatch: dispatch,
+    message: external_React_default().createElement("div", {
+      className: "wallpaper-feature-highlight-content"
+    }, external_React_default().createElement("span", {
+      className: "highlightHeader",
+      "data-l10n-id": "newtab-wallpaper-feature-highlight-header"
+    }), external_React_default().createElement("span", {
+      className: "highlightContent",
+      "data-l10n-id": "newtab-wallpaper-feature-highlight-content"
+    }), external_React_default().createElement("button", {
+      onClick: onToggleClick,
+      "data-l10n-id": "newtab-wallpaper-feature-highlight-button"
+    })),
+    icon: external_React_default().createElement("div", {
+      className: "paintbrush-icon"
+    }),
+    toggle: external_React_default().createElement("div", {
+      className: "icon icon-help"
+    }),
+    openedOverride: true,
+    showButtonIcon: false,
+    dismissCallback: onDismissCallback,
+    outsideClickCallback: onOutsideClickCallback
+  }));
+}
+;
 function Base_extends() { Base_extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return Base_extends.apply(this, arguments); }
+
 
 
 
@@ -10028,6 +10148,7 @@ function Base_extends() { Base_extends = Object.assign ? Object.assign.bind() : 
 
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
+const Base_WALLPAPER_HIGHLIGHT_DISMISSED_PREF = "newtabWallpapers.highlightDismissed";
 const PrefsButton = ({
   onClick,
   icon
@@ -10107,6 +10228,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.handleOnKeyDown = this.handleOnKeyDown.bind(this);
     this.onWindowScroll = debounce(this.onWindowScroll.bind(this), 5);
     this.setPref = this.setPref.bind(this);
+    this.shouldShowWallpapersHighlight = this.shouldShowWallpapersHighlight.bind(this);
     this.updateWallpaper = this.updateWallpaper.bind(this);
     this.prefersDarkQuery = null;
     this.handleColorModeChange = this.handleColorModeChange.bind(this);
@@ -10266,6 +10388,49 @@ class BaseContent extends (external_React_default()).PureComponent {
       }
     }
   }
+
+  
+  shouldShowWallpapersHighlight() {
+    const prefs = this.props.Prefs.values;
+
+    
+    const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
+    if (!wallpapersEnabled) {
+      return false;
+    }
+
+    
+    const wallpapersHighlightDismissed = prefs[Base_WALLPAPER_HIGHLIGHT_DISMISSED_PREF];
+    if (wallpapersHighlightDismissed) {
+      return false;
+    }
+
+    
+    const activeWallpaperLight = prefs[`newtabWallpapers.wallpaper-light`];
+    const activeWallpaperDark = prefs[`newtabWallpapers.wallpaper-dark`];
+    if (activeWallpaperLight || activeWallpaperDark) {
+      this.props.dispatch(actionCreators.SetPref(Base_WALLPAPER_HIGHLIGHT_DISMISSED_PREF, true));
+      return false;
+    }
+
+    
+    
+    const {
+      highlightSeenCounter
+    } = this.props.Wallpapers;
+    if (highlightSeenCounter.value > 3) {
+      return false;
+    }
+
+    
+    const wallpapersHighlightEnabled = prefs["newtabWallpapers.highlightEnabled"];
+    if (wallpapersHighlightEnabled) {
+      return true;
+    }
+
+    
+    return false;
+  }
   render() {
     const {
       props
@@ -10313,7 +10478,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     if (wallpapersEnabled) {
       this.updateWallpaper();
     }
-    return external_React_default().createElement("div", null, external_React_default().createElement(CustomizeMenu, {
+    return external_React_default().createElement("div", null, external_React_default().createElement("menu", {
+      className: "personalizeButtonWrapper"
+    }, external_React_default().createElement(CustomizeMenu, {
       onClose: this.closeCustomizationMenu,
       onOpen: this.openCustomizationMenu,
       openPreferences: this.openPreferences,
@@ -10327,7 +10494,10 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveWeather: mayHaveWeather,
       spocMessageVariant: spocMessageVariant,
       showing: customizeMenuVisible
-    }), external_React_default().createElement("div", {
+    }), this.shouldShowWallpapersHighlight() && external_React_default().createElement(WallpaperFeatureHighlight, {
+      position: "inset-block-end inset-inline-start",
+      dispatch: this.props.dispatch
+    })), external_React_default().createElement("div", {
       className: outerClassName,
       onClick: this.closeCustomizationMenu
     }, external_React_default().createElement("main", null, prefs.showSearch && external_React_default().createElement("div", {
