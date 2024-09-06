@@ -2,7 +2,7 @@ import importlib
 from urllib.parse import urlsplit
 
 
-keys = importlib.import_module("credential-management.support.fedcm.keys")
+keys = importlib.import_module("fedcm.support.keys")
 
 def main(request, response):
   root_manifest_url = "/.well-known/web-identity"
