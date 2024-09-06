@@ -2247,6 +2247,11 @@ static bool ScrollbarGenerationChanged(const nsStyleDisplay& aOld,
 static bool AppearanceValueAffectsFrames(StyleAppearance aAppearance,
                                          StyleAppearance aDefaultAppearance) {
   switch (aAppearance) {
+    case StyleAppearance::None:
+      
+      
+      return aDefaultAppearance == StyleAppearance::Checkbox ||
+             aDefaultAppearance == StyleAppearance::Radio;
     case StyleAppearance::Textfield:
       
       
@@ -2274,6 +2279,8 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   auto oldAppearance = EffectiveAppearance();
   auto newAppearance = aNewData.EffectiveAppearance();
   if (oldAppearance != newAppearance) {
+    
+    
     
     
     
