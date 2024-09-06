@@ -288,6 +288,13 @@ async function MaybeSetStorageAccess(origin, embedding_origin, value) {
 }
 
 
+
+function NavigateChild(frame, url) {
+  return PostMessageAndAwaitReply(
+    { command: "navigate_child", url }, frame.contentWindow);
+}
+
+
 function StartDedicatedWorker(frame) {
   return PostMessageAndAwaitReply(
     { command: "start_dedicated_worker" }, frame.contentWindow);
