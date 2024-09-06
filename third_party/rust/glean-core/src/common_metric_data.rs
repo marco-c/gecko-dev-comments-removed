@@ -2,7 +2,6 @@
 
 
 
-use std::convert::TryFrom;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use crate::error::{Error, ErrorKind};

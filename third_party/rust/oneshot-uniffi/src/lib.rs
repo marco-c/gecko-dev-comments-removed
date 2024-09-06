@@ -314,6 +314,31 @@ impl<T> Sender<T> {
             _ => unreachable!(),
         }
     }
+
+    
+    
+    
+    
+    
+    pub fn into_raw(self) -> *mut () {
+        let raw = self.channel_ptr.as_ptr() as *mut ();
+        mem::forget(self);
+        raw
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn from_raw(raw: *mut ()) -> Self {
+        Self {
+            channel_ptr: NonNull::new_unchecked(raw as *mut Channel<T>),
+            _invariant: PhantomData,
+        }
+    }
 }
 
 impl<T> Drop for Sender<T> {
@@ -816,6 +841,30 @@ impl<T> Receiver<T> {
             _ => unreachable!(),
         }
     }
+
+    
+    
+    
+    
+    
+    pub fn into_raw(self) -> *mut () {
+        let raw = self.channel_ptr.as_ptr() as *mut ();
+        mem::forget(self);
+        raw
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn from_raw(raw: *mut ()) -> Self {
+        Self {
+            channel_ptr: NonNull::new_unchecked(raw as *mut Channel<T>),
+        }
+    }
 }
 
 #[cfg(feature = "async")]
@@ -1178,7 +1227,7 @@ fn receiver_waker_size() {
         (false, false) => 0,
         (false, true) => 16,
         (true, false) => 8,
-        (true, true) => 24,
+        (true, true) => 16,
     };
     assert_eq!(mem::size_of::<ReceiverWaker>(), expected);
 }

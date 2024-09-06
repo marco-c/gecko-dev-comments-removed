@@ -9,7 +9,11 @@ use paste::paste;
 
 fn render_literal(literal: &Literal) -> String {
     fn typed_number(type_: &Type, num_str: String) -> String {
-        match type_ {
+        let unwrapped_type = match type_ {
+            Type::Optional { inner_type } => inner_type,
+            t => t,
+        };
+        match unwrapped_type {
             
             Type::Int32 => num_str,
             
@@ -29,7 +33,7 @@ fn render_literal(literal: &Literal) -> String {
                     super::SwiftCodeOracle.find(type_).type_label()
                 )
             }
-            _ => panic!("Unexpected literal: {num_str} is not a number"),
+            _ => panic!("Unexpected literal: {num_str} for type: {type_:?}"),
         }
     }
 
