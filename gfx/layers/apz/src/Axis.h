@@ -244,8 +244,6 @@ class Axis {
 
   CSSCoord ClampOriginToScrollableRect(CSSCoord aOrigin) const;
 
-  void SetAxisLocked(bool aAxisLocked) { mAxisLocked = aAxisLocked; }
-
   
 
 
@@ -296,6 +294,11 @@ class Axis {
 
 
   bool IsAxisLocked() const;
+
+  
+
+
+  void SetAxisLocked(bool aAxisLocked);
 
   ParentLayerCoord GetOrigin() const;
   ParentLayerCoord GetCompositionLength() const;
@@ -359,7 +362,8 @@ class Axis {
   
   
   mutable DataMutex<float> mVelocity;
-  bool mAxisLocked;  
+  
+  mutable DataMutex<bool> mAxisLocked;
   AsyncPanZoomController* mAsyncPanZoomController;
 
   
