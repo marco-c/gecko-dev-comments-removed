@@ -153,6 +153,9 @@ void CanvasRenderThread::Shutdown() {
   CanvasManagerParent::Shutdown();
 
   
+  layers::CanvasTranslator::Shutdown();
+
+  
   
   
   while (true) {

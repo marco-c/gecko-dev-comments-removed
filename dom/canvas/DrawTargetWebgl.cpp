@@ -326,6 +326,11 @@ void SharedContextWebgl::UnlinkGlyphCaches() {
 
 void SharedContextWebgl::OnMemoryPressure() { mShouldClearCaches = true; }
 
+void SharedContextWebgl::ClearCaches() {
+  OnMemoryPressure();
+  ClearCachesIfNecessary();
+}
+
 
 void SharedContextWebgl::ClearAllTextures() {
   while (!mTextureHandles.isEmpty()) {

@@ -113,6 +113,8 @@ static bool CreateAndMapShmem(RefPtr<ipc::SharedMemoryBasic>& aShmem,
   return true;
 }
 
+StaticRefPtr<gfx::SharedContextWebgl> CanvasTranslator::sSharedContext;
+
 bool CanvasTranslator::EnsureSharedContextWebgl() {
   if (!mSharedContext || mSharedContext->IsContextLost()) {
     if (mSharedContext) {
@@ -122,7 +124,14 @@ bool CanvasTranslator::EnsureSharedContextWebgl() {
         mRemoteTextureOwner->ClearRecycledTextures();
       }
     }
-    mSharedContext = gfx::SharedContextWebgl::Create();
+    
+    
+    if (!sSharedContext || sSharedContext->IsContextLost()) {
+      sSharedContext = gfx::SharedContextWebgl::Create();
+    }
+    mSharedContext = sSharedContext;
+    
+    
     if (!mSharedContext || mSharedContext->IsContextLost()) {
       mSharedContext = nullptr;
       BlockCanvas();
@@ -130,6 +139,13 @@ bool CanvasTranslator::EnsureSharedContextWebgl() {
     }
   }
   return true;
+}
+
+void CanvasTranslator::Shutdown() {
+  if (sSharedContext) {
+    gfx::CanvasRenderThread::Dispatch(NS_NewRunnableFunction(
+        "CanvasTranslator::Shutdown", []() { sSharedContext = nullptr; }));
+  }
 }
 
 mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
@@ -1145,6 +1161,13 @@ void CanvasTranslator::ClearTextureInfo() {
   mTextureInfo.clear();
   mDrawTargets.Clear();
   mSharedContext = nullptr;
+  
+  
+  
+  
+  if (sSharedContext && sSharedContext->hasOneRef()) {
+    sSharedContext->ClearCaches();
+  }
   mBaseDT = nullptr;
   if (mReferenceTextureData) {
     mReferenceTextureData->Unlock();
