@@ -15,7 +15,7 @@ LOCAL_INCLUDES += [
 
 include('/tools/fuzzing/libfuzzer-config.mozbuild')
 
-FINAL_LIBRARY = 'gkmedias'
+FINAL_LIBRARY = 'xul'
 
 
 AllowCompilerWarnings()

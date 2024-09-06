@@ -32,4 +32,4 @@ for k, v in graphite_defines:
 
 AllowCompilerWarnings()
 
-FINAL_LIBRARY = 'gkmedias'
+FINAL_LIBRARY = 'xul'

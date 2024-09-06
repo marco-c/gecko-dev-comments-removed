@@ -44,7 +44,7 @@ SOURCES += [
 
 AllowCompilerWarnings()
 
-FINAL_LIBRARY = 'gkmedias'
+FINAL_LIBRARY = 'xul'
 LOCAL_INCLUDES += [
     '../../cairo/src',
 ]
