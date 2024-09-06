@@ -984,6 +984,9 @@ pref("javascript.options.mem.gc_parallel_marking_threshold_mb", 16);
 #endif
 
 
+pref("javascript.options.mem.gc_max_parallel_marking_threads", 2);
+
+
 pref("javascript.options.mem.gc_high_frequency_time_limit_ms", 1000);
 
 
