@@ -11,12 +11,13 @@ use api::{ColorF, PremultipliedColorF};
 pub enum PatternKind {
     ColorOrTexture = 0,
     RadialGradient = 1,
+    ConicGradient = 2,
 
-    Mask = 2,
+    Mask = 3,
     
 }
 
-pub const NUM_PATTERNS: u32 = 3;
+pub const NUM_PATTERNS: u32 = 4;
 
 impl PatternKind {
     pub fn from_u32(val: u32) -> Self {
