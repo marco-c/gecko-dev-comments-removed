@@ -70,8 +70,8 @@ class AudioResampler final {
   
 
 
-  void UpdateOutRate(uint32_t aOutRate) {
-    Update(aOutRate, mResampler.GetChannels());
+  void UpdateInRate(uint32_t aInRate) {
+    Update(aInRate, mResampler.GetChannels());
   }
 
   
@@ -83,9 +83,9 @@ class AudioResampler final {
 
  private:
   void UpdateChannels(uint32_t aChannels) {
-    Update(mResampler.GetOutRate(), aChannels);
+    Update(mResampler.GetInRate(), aChannels);
   }
-  void Update(uint32_t aOutRate, uint32_t aChannels);
+  void Update(uint32_t aInRate, uint32_t aChannels);
 
  private:
   DynamicResampler mResampler;

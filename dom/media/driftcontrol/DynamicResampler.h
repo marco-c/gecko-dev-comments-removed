@@ -53,7 +53,7 @@ class DynamicResampler final {
 
 
   void SetSampleFormat(AudioSampleFormat aFormat);
-  uint32_t GetOutRate() const { return mOutRate; }
+  uint32_t GetInRate() const { return mInRate; }
   uint32_t GetChannels() const { return mChannels; }
 
   
@@ -118,7 +118,7 @@ class DynamicResampler final {
 
 
 
-  void UpdateResampler(uint32_t aOutRate, uint32_t aChannels);
+  void UpdateResampler(uint32_t aInRate, uint32_t aChannels);
 
  private:
   template <typename T>
@@ -283,14 +283,14 @@ class DynamicResampler final {
   }
 
  public:
-  const uint32_t mInRate;
+  const uint32_t mOutRate;
 
  private:
   bool mIsPreBufferSet = false;
   bool mIsWarmingUp = false;
   uint32_t mInputPreBufferFrameCount;
   uint32_t mChannels = 0;
-  uint32_t mOutRate;
+  uint32_t mInRate;
 
   AutoTArray<AudioRingBuffer, STEREO> mInternalInBuffer;
 

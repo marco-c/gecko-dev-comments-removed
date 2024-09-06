@@ -91,8 +91,8 @@ TEST(TestAudioResampler, OutAudioSegment_Float)
   }
 
   
-  out_rate = 44100;
-  dr.UpdateOutRate(out_rate);
+  in_rate = 26122;
+  dr.UpdateInRate(in_rate);
   out_frames = in_frames * out_rate / in_rate;
   EXPECT_EQ(out_frames, 18u);
   
@@ -147,8 +147,8 @@ TEST(TestAudioResampler, OutAudioSegment_Short)
   }
 
   
-  out_rate = 44100;
-  dr.UpdateOutRate(out_rate);
+  in_rate = 26122;
+  dr.UpdateInRate(out_rate);
   out_frames = in_frames * out_rate / in_rate;
   EXPECT_EQ(out_frames, 18u);
   
@@ -652,7 +652,7 @@ TEST(TestAudioResampler, ChannelChange_Discontinuity3)
   
   
   
-  dr.UpdateOutRate(out_rate + 400);
+  dr.UpdateInRate(in_rate - 400);
   dr.AppendInput(inSegment);
   AudioSegment s2 = dr.Resample(out_frames, &hasUnderrun);
   EXPECT_FALSE(hasUnderrun);

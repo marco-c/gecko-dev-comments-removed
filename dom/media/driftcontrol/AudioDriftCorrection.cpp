@@ -94,7 +94,7 @@ AudioSegment AudioDriftCorrection::RequestFrames(const AudioSegment& aInput,
   mDriftController->UpdateClock(inputDuration, outputDuration,
                                 CurrentBuffering(), BufferSize());
   
-  mResampler->UpdateOutRate(mDriftController->GetCorrectedTargetRate());
+  mResampler->UpdateInRate(mDriftController->GetCorrectedSourceRate());
   if (hasUnderrun) {
     if (!mIsHandlingUnderrun) {
       NS_WARNING("Drift-correction: Underrun");

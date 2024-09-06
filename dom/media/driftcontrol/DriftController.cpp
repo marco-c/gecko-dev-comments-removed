@@ -50,7 +50,7 @@ DriftController::DriftController(uint32_t aSourceRate, uint32_t aTargetRate,
       mSourceRate(aSourceRate),
       mTargetRate(aTargetRate),
       mDesiredBuffering(aDesiredBuffering),
-      mCorrectedTargetRate(static_cast<float>(aTargetRate)),
+      mCorrectedSourceRate(static_cast<float>(aSourceRate)),
       mMeasuredSourceLatency(5),
       mMeasuredTargetLatency(5) {
   LOG_CONTROLLER(
@@ -76,8 +76,8 @@ void DriftController::ResetAfterUnderrun() {
   mTargetClock = mAdjustmentInterval;
 }
 
-uint32_t DriftController::GetCorrectedTargetRate() const {
-  return std::lround(mCorrectedTargetRate);
+uint32_t DriftController::GetCorrectedSourceRate() const {
+  return std::lround(mCorrectedSourceRate);
 }
 
 void DriftController::UpdateClock(media::TimeUnit aSourceDuration,
@@ -112,14 +112,16 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
   static constexpr float kDerivativeGain = 0.12;
 
   
-  const float cap = static_cast<float>(mTargetRate) / 1000.0f;
+  const float cap = static_cast<float>(mSourceRate) / 1000.0f;
 
   
   
   const float integralCap = cap / kIntegralGain;
 
-  int32_t error = CheckedInt32(mDesiredBuffering.ToTicksAtRate(mSourceRate) -
-                               aBufferedFrames)
+  
+  
+  int32_t error = CheckedInt32(aBufferedFrames -
+                               mDesiredBuffering.ToTicksAtRate(mSourceRate))
                       .value();
   int32_t proportional = error;
   
@@ -135,8 +137,8 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
                         kIntegralGain * mIntegral +
                         kDerivativeGain * derivative;
   float correctedRate =
-      std::clamp(static_cast<float>(mTargetRate) + controlSignal,
-                 mCorrectedTargetRate - cap, mCorrectedTargetRate + cap);
+      std::clamp(static_cast<float>(mSourceRate) + controlSignal,
+                 mCorrectedSourceRate - cap, mCorrectedSourceRate + cap);
 
   
   
@@ -183,7 +185,7 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
       return correctedRate;
     }
 
-    return mCorrectedTargetRate;
+    return mCorrectedSourceRate;
   }();
 
   if (mDurationWithinHysteresis > mIntegralCapTimeLimit) {
@@ -201,10 +203,10 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
   LOG_CONTROLLER(
       LogLevel::Verbose, this,
       "Recalculating Correction: Nominal: %uHz->%uHz, Corrected: "
-      "%uHz->%.2fHz  (diff %.2fHz), error: %.2fms (hysteresisThreshold: "
+      "%.2fHz->%uHz  (diff %.2fHz), error: %.2fms (hysteresisThreshold: "
       "%.2fms), buffering: %.2fms, desired buffering: %.2fms",
-      mSourceRate, mTargetRate, mSourceRate, hysteresisCorrectedRate,
-      hysteresisCorrectedRate - mCorrectedTargetRate,
+      mSourceRate, mTargetRate, hysteresisCorrectedRate, mTargetRate,
+      hysteresisCorrectedRate - mCorrectedSourceRate,
       media::TimeUnit(error, mSourceRate).ToSeconds() * 1000.0,
       media::TimeUnit(hysteresisThreshold, mSourceRate).ToSeconds() * 1000.0,
       media::TimeUnit(aBufferedFrames, mSourceRate).ToSeconds() * 1000.0,
@@ -219,13 +221,13 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
                   kProportionalGain * proportional, kIntegralGain * mIntegral,
                   kDerivativeGain * derivative, controlSignal);
 
-  if (std::lround(mCorrectedTargetRate) !=
+  if (std::lround(mCorrectedSourceRate) !=
       std::lround(hysteresisCorrectedRate)) {
     ++mNumCorrectionChanges;
   }
 
   mPreviousError = error;
-  mCorrectedTargetRate = hysteresisCorrectedRate;
+  mCorrectedSourceRate = hysteresisCorrectedRate;
 
   
   mTargetClock = media::TimeUnit::Zero();

@@ -55,7 +55,7 @@ class DriftController final {
   
 
 
-  uint32_t GetCorrectedTargetRate() const;
+  uint32_t GetCorrectedSourceRate() const;
 
   
 
@@ -129,6 +129,9 @@ class DriftController final {
   
   
   
+  
+  
+  
   void CalculateCorrection(uint32_t aBufferedFrames, uint32_t aBufferSize);
 
  public:
@@ -144,7 +147,7 @@ class DriftController final {
   int32_t mPreviousError = 0;
   float mIntegral = 0.0;
   Maybe<float> mIntegralCenterForCap;
-  float mCorrectedTargetRate;
+  float mCorrectedSourceRate;
   Maybe<int32_t> mLastHysteresisBoundaryCorrection;
   media::TimeUnit mDurationWithinHysteresis;
   uint32_t mNumCorrectionChanges = 0;
