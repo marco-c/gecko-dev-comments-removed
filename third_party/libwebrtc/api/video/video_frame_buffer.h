@@ -127,7 +127,6 @@ class RTC_EXPORT VideoFrameBuffer : public webrtc::RefCountInterface {
       rtc::ArrayView<Type> types);
 
   
-  
   virtual std::string storage_representation() const;
 
  protected:
