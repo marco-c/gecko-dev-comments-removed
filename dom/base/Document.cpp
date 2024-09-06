@@ -7110,7 +7110,7 @@ void Document::DeletePresShell() {
   
   
   
-  MarkUserFontSetDirty();
+  mFontFaceSetDirty = true;
 
   if (IsEditingOn()) {
     TurnEditingOff();
