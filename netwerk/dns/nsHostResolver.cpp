@@ -912,7 +912,7 @@ bool nsHostResolver::TRRServiceEnabledForRecord(nsHostRecord* aRec) {
   if (NS_IsOffline()) {
     
     
-    aRec->RecordReason(TRRSkippedReason::TRR_IS_OFFLINE);
+    aRec->RecordReason(TRRSkippedReason::TRR_BROWSER_IS_OFFLINE);
     return false;
   }
 
