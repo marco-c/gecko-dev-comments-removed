@@ -11,4 +11,4 @@ let imports = WebAssembly.Module.imports(module);
 
 
 
-assertEq(imports.length, 1);
+assertEq(imports.length, 0);
