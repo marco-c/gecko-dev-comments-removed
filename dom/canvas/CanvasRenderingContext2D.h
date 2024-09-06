@@ -858,6 +858,8 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   
   bool mWillReadFrequently = false;
   
+  bool mForceSoftwareRendering = false;
+  
   bool mHasShutdown = false;
   
   bool mIsContextLost = false;
