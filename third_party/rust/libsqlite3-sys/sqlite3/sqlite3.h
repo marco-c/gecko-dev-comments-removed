@@ -146,9 +146,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.44.0"
-#define SQLITE_VERSION_NUMBER 3044000
-#define SQLITE_SOURCE_ID      "2023-11-01 11:23:50 17129ba1ff7f0daf37100ee82d507aef7827cf38de1866e2633096ae6ad81301"
+#define SQLITE_VERSION        "3.45.0"
+#define SQLITE_VERSION_NUMBER 3045000
+#define SQLITE_SOURCE_ID      "2024-01-15 17:01:13 1066602b2b1976fe58b5150777cced894af17c803e068f5918390d6915b46e1d"
 
 
 
@@ -3987,6 +3987,8 @@ SQLITE_API void sqlite3_free_filename(sqlite3_filename);
 
 
 
+
+
 SQLITE_API int sqlite3_errcode(sqlite3 *db);
 SQLITE_API int sqlite3_extended_errcode(sqlite3 *db);
 SQLITE_API const char *sqlite3_errmsg(sqlite3*);
@@ -5583,10 +5585,25 @@ SQLITE_API int sqlite3_create_window_function(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define SQLITE_DETERMINISTIC    0x000000800
 #define SQLITE_DIRECTONLY       0x000080000
 #define SQLITE_SUBTYPE          0x000100000
 #define SQLITE_INNOCUOUS        0x000200000
+#define SQLITE_RESULT_SUBTYPE   0x001000000
 
 
 
@@ -5784,6 +5801,12 @@ SQLITE_API int sqlite3_value_encoding(sqlite3_value*);
 
 
 
+
+
+
+
+
+
 SQLITE_API unsigned int sqlite3_value_subtype(sqlite3_value*);
 
 
@@ -5875,6 +5898,14 @@ SQLITE_API void *sqlite3_user_data(sqlite3_context*);
 
 
 SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
+
+
+
+
+
+
+
+
 
 
 
@@ -6181,6 +6212,20 @@ SQLITE_API void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 SQLITE_API void sqlite3_result_pointer(sqlite3_context*, void*,const char*,void(*)(void*));
 SQLITE_API void sqlite3_result_zeroblob(sqlite3_context*, int n);
 SQLITE_API int sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -8009,6 +8054,8 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 
 
 
+
+
 SQLITE_API sqlite3_mutex *sqlite3_mutex_alloc(int);
 SQLITE_API void sqlite3_mutex_free(sqlite3_mutex*);
 SQLITE_API void sqlite3_mutex_enter(sqlite3_mutex*);
@@ -8255,6 +8302,7 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_ASSERT                  12
 #define SQLITE_TESTCTRL_ALWAYS                  13
 #define SQLITE_TESTCTRL_RESERVE                 14  /* NOT USED */
+#define SQLITE_TESTCTRL_JSON_SELFCHECK          14
 #define SQLITE_TESTCTRL_OPTIMIZATIONS           15
 #define SQLITE_TESTCTRL_ISKEYWORD               16  /* NOT USED */
 #define SQLITE_TESTCTRL_SCRATCHMALLOC           17  /* NOT USED */
@@ -12942,6 +12990,49 @@ struct Fts5PhraseIter {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct Fts5ExtensionApi {
   int iVersion;                   
 
@@ -12978,6 +13069,13 @@ struct Fts5ExtensionApi {
 
   int (*xPhraseFirstColumn)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*);
   void (*xPhraseNextColumn)(Fts5Context*, Fts5PhraseIter*, int *piCol);
+
+  
+  int (*xQueryToken)(Fts5Context*,
+      int iPhrase, int iToken,
+      const char **ppToken, int *pnToken
+  );
+  int (*xInstToken)(Fts5Context*, int iIdx, int iToken, const char**, int*);
 };
 
 

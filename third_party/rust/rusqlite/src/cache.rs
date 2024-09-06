@@ -57,7 +57,7 @@ impl Connection {
 }
 
 
-
+#[derive(Debug)]
 pub struct StatementCache(RefCell<LruCache<Arc<str>, RawStatement>>);
 
 #[allow(clippy::non_send_fields_in_send_ty)]

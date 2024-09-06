@@ -9,6 +9,7 @@ use std::os::raw::c_int;
 
 
 
+#[derive(Copy, Clone, Debug)]
 #[repr(i32)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms, non_camel_case_types)]

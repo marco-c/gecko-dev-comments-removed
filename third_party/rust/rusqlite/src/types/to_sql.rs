@@ -23,6 +23,11 @@ pub enum ToSqlOutput<'a> {
     ZeroBlob(i32),
 
     
+    #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
+    Arg(usize),
+
+    
     #[cfg(feature = "array")]
     #[cfg_attr(docsrs, doc(cfg(feature = "array")))]
     Array(Array),
@@ -107,6 +112,8 @@ impl ToSql for ToSqlOutput<'_> {
 
             #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(i) => ToSqlOutput::ZeroBlob(i),
+            #[cfg(feature = "functions")]
+            ToSqlOutput::Arg(i) => ToSqlOutput::Arg(i),
             #[cfg(feature = "array")]
             ToSqlOutput::Array(ref a) => ToSqlOutput::Array(a.clone()),
         })

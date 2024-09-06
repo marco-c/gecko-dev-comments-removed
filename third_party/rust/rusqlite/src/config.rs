@@ -9,6 +9,7 @@ use crate::{Connection, Result};
 
 
 #[repr(i32)]
+#[derive(Copy, Clone, Debug)]
 #[allow(non_snake_case, non_camel_case_types)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
