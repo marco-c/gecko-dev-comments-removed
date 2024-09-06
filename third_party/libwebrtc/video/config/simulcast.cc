@@ -19,6 +19,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/types/optional.h"
+#include "api/field_trials_view.h"
 #include "api/video/video_codec_constants.h"
 #include "media/base/media_constants.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
@@ -32,6 +33,8 @@
 namespace cricket {
 
 namespace {
+
+using ::webrtc::FieldTrialsView;
 
 constexpr char kUseLegacySimulcastLayerLimitFieldTrial[] =
     "WebRTC-LegacySimulcastLayerLimit";
@@ -218,10 +221,12 @@ int FindSimulcastFormatIndex(int width,
 
 
 
-int NormalizeSimulcastSize(int size, size_t simulcast_layers) {
+int NormalizeSimulcastSize(const FieldTrialsView& field_trials,
+                           int size,
+                           size_t simulcast_layers) {
   int base2_exponent = static_cast<int>(simulcast_layers) - 1;
   const absl::optional<int> experimental_base2_exponent =
-      webrtc::NormalizeSimulcastSizeExperiment::GetBase2Exponent();
+      webrtc::NormalizeSimulcastSizeExperiment::GetBase2Exponent(field_trials);
   if (experimental_base2_exponent &&
       (size > (1 << *experimental_base2_exponent))) {
     base2_exponent = *experimental_base2_exponent;
@@ -411,8 +416,8 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
   const int num_temporal_layers = DefaultNumberOfTemporalLayers(trials);
   
   
-  width = NormalizeSimulcastSize(width, layer_count);
-  height = NormalizeSimulcastSize(height, layer_count);
+  width = NormalizeSimulcastSize(trials, width, layer_count);
+  height = NormalizeSimulcastSize(trials, height, layer_count);
   
   
   for (size_t s = layer_count - 1;; --s) {

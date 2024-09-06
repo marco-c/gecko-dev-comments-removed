@@ -12,12 +12,14 @@
 #define RTC_BASE_EXPERIMENTS_NORMALIZE_SIMULCAST_SIZE_EXPERIMENT_H_
 
 #include "absl/types/optional.h"
+#include "api/field_trials_view.h"
 
 namespace webrtc {
 class NormalizeSimulcastSizeExperiment {
  public:
   
-  static absl::optional<int> GetBase2Exponent();
+  static absl::optional<int> GetBase2Exponent(
+      const FieldTrialsView& field_trials);
 };
 
 }  
