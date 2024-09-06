@@ -26,17 +26,6 @@ debug("Debug Line");
 debug("Another debug line, with", { an: "object" });
 
 
-
-
-
-
-
-
-
-
-navigator.getGamepads();
-
-
 let output = {
   foo: "Hello World",
 };

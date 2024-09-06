@@ -1643,20 +1643,6 @@ GamepadServiceTest* Navigator::RequestGamepadServiceTest(ErrorResult& aRv) {
   return mGamepadServiceTest;
 }
 
-already_AddRefed<Promise> Navigator::RequestAllGamepads(ErrorResult& aRv) {
-  if (!mWindow || !mWindow->IsFullyActive()) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
-
-  
-  
-  win->SetHasGamepadEventListener(true);
-  return win->RequestAllGamepads(aRv);
-}
-
 already_AddRefed<Promise> Navigator::GetVRDisplays(ErrorResult& aRv) {
   if (!mWindow || !mWindow->GetDocShell() || !mWindow->GetExtantDoc()) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
