@@ -23,8 +23,6 @@ class ScreenshotsPreview extends HTMLElement {
     
     this.openerBrowser = window.arguments[0];
 
-    window.ensureCustomElements("moz-button");
-
     let [downloadKey, copyKey] =
       lazy.screenshotsLocalization.formatMessagesSync([
         { id: "screenshots-component-download-key" },
