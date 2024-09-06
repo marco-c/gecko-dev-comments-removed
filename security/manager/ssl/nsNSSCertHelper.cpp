@@ -26,12 +26,6 @@
 
 using namespace mozilla;
 
-
-
-
-const char* kRootModuleName = "Builtin Roots Module";
-const size_t kRootModuleNameLen = strlen(kRootModuleName);
-
 static nsresult GetPIPNSSBundle(nsIStringBundle** pipnssBundle) {
   nsCOMPtr<nsIStringBundleService> bundleService(
       do_GetService(NS_STRINGBUNDLE_CONTRACTID));
