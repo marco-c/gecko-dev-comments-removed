@@ -2,15 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-#![cfg(any(linking_with_gecko, not(windows)))]
-
 extern crate euclid;
 extern crate style;
 
