@@ -310,11 +310,6 @@ class nsCoreUtils {
   
 
 
-  static void TrimNonBreakingSpaces(nsAString& aString);
-
-  
-
-
   static bool AccEventObserversExist();
 
   
