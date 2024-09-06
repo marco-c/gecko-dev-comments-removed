@@ -107,6 +107,15 @@ add_task(async function test_backup() {
   
   
   
+  await createTestFiles(sourcePath, [
+    { path: "cert9.db" },
+    { path: "key4.db" },
+    { path: "credentialstate.sqlite" },
+  ]);
+
+  
+  
+  
   
   let fakeConnection = {
     backup: sandbox.stub().resolves(true),
@@ -114,7 +123,16 @@ add_task(async function test_backup() {
   };
   sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
 
-  await credentialsAndSecurityBackupResource.backup(stagingPath, sourcePath);
+  let manifestEntry = await credentialsAndSecurityBackupResource.backup(
+    stagingPath,
+    sourcePath
+  );
+
+  Assert.equal(
+    manifestEntry,
+    null,
+    "CredentialsAndSecurityBackupResource.backup should return null as its ManifestEntry"
+  );
 
   await assertFilesExist(stagingPath, simpleCopyFiles);
 

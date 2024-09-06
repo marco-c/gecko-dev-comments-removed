@@ -63,6 +63,10 @@ add_task(async function test_backup() {
 
   
   
+  await createTestFiles(sourcePath, [{ path: "cookies.sqlite" }]);
+
+  
+  
   
   
   let fakeConnection = {
@@ -71,7 +75,15 @@ add_task(async function test_backup() {
   };
   sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
 
-  await cookiesBackupResource.backup(stagingPath, sourcePath);
+  let manifestEntry = await cookiesBackupResource.backup(
+    stagingPath,
+    sourcePath
+  );
+  Assert.equal(
+    manifestEntry,
+    null,
+    "CookiesBackupResource.backup should return null as its ManifestEntry"
+  );
 
   
   

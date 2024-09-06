@@ -89,6 +89,14 @@ add_task(async function test_backup() {
   
   
   
+  await createTestFiles(sourcePath, [
+    { path: "permissions.sqlite" },
+    { path: "content-prefs.sqlite" },
+  ]);
+
+  
+  
+  
   
   let fakeConnection = {
     backup: sandbox.stub().resolves(true),
@@ -96,7 +104,15 @@ add_task(async function test_backup() {
   };
   sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
 
-  await preferencesBackupResource.backup(stagingPath, sourcePath);
+  let manifestEntry = await preferencesBackupResource.backup(
+    stagingPath,
+    sourcePath
+  );
+  Assert.equal(
+    manifestEntry,
+    null,
+    "PreferencesBackupResource.backup should return null as its ManifestEntry"
+  );
 
   await assertFilesExist(stagingPath, simpleCopyFiles);
 

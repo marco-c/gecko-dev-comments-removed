@@ -67,6 +67,10 @@ add_task(async function test_backup() {
 
   
   
+  await createTestFiles(sourcePath, [{ path: "formhistory.sqlite" }]);
+
+  
+  
   
   
   let fakeConnection = {
@@ -75,7 +79,15 @@ add_task(async function test_backup() {
   };
   sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
 
-  await formHistoryBackupResource.backup(stagingPath, sourcePath);
+  let manifestEntry = await formHistoryBackupResource.backup(
+    stagingPath,
+    sourcePath
+  );
+  Assert.equal(
+    manifestEntry,
+    null,
+    "FormHistoryBackupResource.backup should return null as its ManifestEntry"
+  );
 
   
   

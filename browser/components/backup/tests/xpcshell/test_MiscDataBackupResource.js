@@ -82,6 +82,11 @@ add_task(async function test_backup() {
   
   
   
+  await createTestFiles(sourcePath, [{ path: "protections.sqlite" }]);
+
+  
+  
+  
   
   let fakeConnection = {
     backup: sandbox.stub().resolves(true),
@@ -101,7 +106,15 @@ add_task(async function test_backup() {
     .withArgs("snippets")
     .resolves(snippetsTableStub);
 
-  await miscDataBackupResource.backup(stagingPath, sourcePath);
+  let manifestEntry = await miscDataBackupResource.backup(
+    stagingPath,
+    sourcePath
+  );
+  Assert.equal(
+    manifestEntry,
+    null,
+    "MiscDataBackupResource.backup should return null as its ManifestEntry"
+  );
 
   await assertFilesExist(stagingPath, simpleCopyFiles);
 
