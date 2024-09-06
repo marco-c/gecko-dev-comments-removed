@@ -7,18 +7,14 @@
 
 
 async function focusButtonAndPressKeyWithDelay(key, elem, modifiers) {
-  let focused = BrowserTestUtils.waitForEvent(elem, "focus", true);
   elem.setAttribute("tabindex", "-1");
   elem.focus();
-  elem.removeAttribute("tabindex");
-  await focused;
 
   EventUtils.synthesizeKey(key, { type: "keydown", modifiers });
   await new Promise(executeSoon);
   EventUtils.synthesizeKey(key, { type: "keyup", modifiers });
-  let blurred = BrowserTestUtils.waitForEvent(elem, "blur", true);
+  elem.removeAttribute("tabindex");
   elem.blur();
-  await blurred;
 }
 
 
