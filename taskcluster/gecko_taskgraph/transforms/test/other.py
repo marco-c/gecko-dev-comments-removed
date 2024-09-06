@@ -575,7 +575,7 @@ def enable_code_coverage(config, tasks):
                 yield task
                 continue
             task["mozharness"].setdefault("extra-options", []).append("--code-coverage")
-            task["instance-size"] = "xlarge"
+            task["instance-size"] = "xlarge-noscratch"
 
             
             if "mac" in task["build-platform"]:
