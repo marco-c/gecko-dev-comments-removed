@@ -849,112 +849,26 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
        KeySystemConfig::EME_CODEC_AV1});
 
   
-  static nsTArray<CryptoScheme> kSchemes({
-      CryptoScheme::Cenc,
-      CryptoScheme::Cbcs,
-  });
-
   
   
   nsTArray<KeySystemConfig::EMECodecString> supportedVideoCodecs;
-
-  if (aFlags.contains(CapabilitesFlag::NeedClearLeadCheck)) {
-    for (const auto& codec : kVideoCodecs) {
-      if (codec == KeySystemConfig::EME_CODEC_HEVC &&
-          !StaticPrefs::media_wmf_hevc_enabled()) {
-        continue;
-      }
-      CryptoSchemeSet supportedScheme;
-      for (const auto& scheme : kSchemes) {
-        nsAutoString additionalFeature(u"encryption-type=");
-        
-        
-        
-        
-        
-        
-        
-        
-        if (scheme == CryptoScheme::Cenc) {
-          additionalFeature.AppendLiteral(u"cenc-clearlead,");
-        } else {
-          additionalFeature.AppendLiteral(u"cbcs-clearlead,");
-        }
-        bool rv = FactorySupports(factory, aKeySystem,
-                                  convertCodecToFourCC(codec), nsCString(""),
-                                  additionalFeature, isHardwareDecryption);
-        MFCDM_PARENT_SLOG("clearlead %s IV 8 bytes %s %s",
-                          CryptoSchemeToString(scheme), codec.get(),
-                          rv ? "supported" : "not supported");
-        if (rv) {
-          supportedScheme += scheme;
-          break;
-        }
-        
-        additionalFeature.AppendLiteral(u"encryption-iv-size=16,");
-        rv = FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
-                             nsCString(""), additionalFeature,
-                             isHardwareDecryption);
-        MFCDM_PARENT_SLOG("clearlead %s IV 16 bytes %s %s",
-                          CryptoSchemeToString(scheme), codec.get(),
-                          rv ? "supported" : "not supported");
-
-        if (rv) {
-          supportedScheme += scheme;
-          break;
-        }
-      }
-      
-      if (!supportedScheme.isEmpty()) {
-        MFCDMMediaCapability* c =
-            aCapabilitiesOut.videoCapabilities().AppendElement();
-        c->contentType() = NS_ConvertUTF8toUTF16(codec);
-        c->robustness() =
-            GetRobustnessStringForKeySystem(aKeySystem, isHardwareDecryption);
-        if (supportedScheme.contains(CryptoScheme::Cenc)) {
-          c->encryptionSchemes().AppendElement(CryptoScheme::Cenc);
-          MFCDM_PARENT_SLOG("%s: +video:%s (cenc)", __func__, codec.get());
-        }
-        if (supportedScheme.contains(CryptoScheme::Cbcs)) {
-          c->encryptionSchemes().AppendElement(CryptoScheme::Cbcs);
-          MFCDM_PARENT_SLOG("%s: +video:%s (cbcs)", __func__, codec.get());
-        }
-        supportedVideoCodecs.AppendElement(codec);
-      }
+  for (const auto& codec : kVideoCodecs) {
+    if (codec == KeySystemConfig::EME_CODEC_HEVC &&
+        !StaticPrefs::media_wmf_hevc_enabled()) {
+      continue;
     }
-  } else {
-    
-    for (const auto& codec : kVideoCodecs) {
-      if (codec == KeySystemConfig::EME_CODEC_HEVC &&
-          !StaticPrefs::media_wmf_hevc_enabled()) {
-        continue;
-      }
-      if (FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
-                          KeySystemConfig::EMECodecString(""), nsString(u""),
-                          isHardwareDecryption)) {
-        MFCDMMediaCapability* c =
-            aCapabilitiesOut.videoCapabilities().AppendElement();
-        c->contentType() = NS_ConvertUTF8toUTF16(codec);
-        c->robustness() =
-            GetRobustnessStringForKeySystem(aKeySystem, isHardwareDecryption);
-        
-        
-        c->encryptionSchemes().AppendElement(CryptoScheme::Cenc);
-        MFCDM_PARENT_SLOG("%s: +video:%s (cenc)", __func__, codec.get());
-        
-        if (FactorySupports(
-                factory, aKeySystem, convertCodecToFourCC(codec),
-                KeySystemConfig::EMECodecString(""),
-                nsString(u"encryption-type=cbcs,encryption-iv-size=16,"),
-                isHardwareDecryption)) {
-          c->encryptionSchemes().AppendElement(CryptoScheme::Cbcs);
-          MFCDM_PARENT_SLOG("%s: +video:%s (cbcs)", __func__, codec.get());
-        }
-        supportedVideoCodecs.AppendElement(codec);
-      }
+    if (FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
+                        KeySystemConfig::EMECodecString(""), nsString(u""),
+                        isHardwareDecryption)) {
+      MFCDMMediaCapability* c =
+          aCapabilitiesOut.videoCapabilities().AppendElement();
+      c->contentType() = NS_ConvertUTF8toUTF16(codec);
+      c->robustness() =
+          GetRobustnessStringForKeySystem(aKeySystem, isHardwareDecryption);
+      MFCDM_PARENT_SLOG("%s: +video:%s", __func__, codec.get());
+      supportedVideoCodecs.AppendElement(codec);
     }
   }
-
   if (supportedVideoCodecs.IsEmpty()) {
     
     return;
@@ -980,8 +894,92 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
       c->contentType() = NS_ConvertUTF8toUTF16(codec);
       c->robustness() = GetRobustnessStringForKeySystem(
           aKeySystem, false , false );
-      c->encryptionSchemes().AppendElement(CryptoScheme::Cenc);
       MFCDM_PARENT_SLOG("%s: +audio:%s", __func__, codec.get());
+    }
+  }
+
+  
+  
+  if (!supportedVideoCodecs.IsEmpty()) {
+    aCapabilitiesOut.encryptionSchemes().AppendElement(CryptoScheme::Cenc);
+    MFCDM_PARENT_SLOG("%s: +scheme:cenc", __func__);
+  }
+
+  
+  static std::pair<CryptoScheme, nsDependentString> kCbcs =
+      std::pair<CryptoScheme, nsDependentString>(
+          CryptoScheme::Cbcs, u"encryption-type=cbcs,encryption-iv-size=16,");
+  bool ok = true;
+  for (const auto& codec : supportedVideoCodecs) {
+    ok &= FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
+                          nsCString(""), kCbcs.second ,
+                          isHardwareDecryption);
+    if (!ok) {
+      break;
+    }
+  }
+  if (ok) {
+    aCapabilitiesOut.encryptionSchemes().AppendElement(kCbcs.first);
+    MFCDM_PARENT_SLOG("%s: +scheme:cbcs", __func__);
+  }
+
+  
+  
+  if (aFlags.contains(CapabilitesFlag::NeedClearLeadCheck)) {
+    nsTArray<KeySystemConfig::EMECodecString> noClearLeadCodecs;
+    for (const auto& codec : supportedVideoCodecs) {
+      bool foundSupportedScheme = false;
+      for (const auto& scheme : aCapabilitiesOut.encryptionSchemes()) {
+        nsAutoString additionalFeature(u"encryption-type=");
+        
+        
+        
+        
+        
+        
+        
+        
+        if (scheme == CryptoScheme::Cenc) {
+          additionalFeature.AppendLiteral(u"cenc-clearlead,");
+        } else {
+          additionalFeature.AppendLiteral(u"cbcs-clearlead,");
+        }
+        bool rv = FactorySupports(factory, aKeySystem,
+                                  convertCodecToFourCC(codec), nsCString(""),
+                                  additionalFeature, isHardwareDecryption);
+        MFCDM_PARENT_SLOG("clearlead %s IV 8 bytes %s %s",
+                          CryptoSchemeToString(scheme), codec.get(),
+                          rv ? "supported" : "not supported");
+        if (rv) {
+          foundSupportedScheme = true;
+          break;
+        }
+        
+        additionalFeature.AppendLiteral(u"encryption-iv-size=16,");
+        rv = FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
+                             nsCString(""), additionalFeature,
+                             isHardwareDecryption);
+        MFCDM_PARENT_SLOG("clearlead %s IV 16 bytes %s %s",
+                          CryptoSchemeToString(scheme), codec.get(),
+                          rv ? "supported" : "not supported");
+
+        if (rv) {
+          foundSupportedScheme = true;
+          break;
+        }
+      }
+      
+      if (!foundSupportedScheme) {
+        noClearLeadCodecs.AppendElement(codec);
+      }
+    }
+    for (const auto& codec : noClearLeadCodecs) {
+      MFCDM_PARENT_SLOG("%s: -video:%s", __func__, codec.get());
+      aCapabilitiesOut.videoCapabilities().RemoveElementsBy(
+          [&codec](const MFCDMMediaCapability& aCapbilities) {
+            return aCapbilities.contentType() == NS_ConvertUTF8toUTF16(codec);
+          });
+      supportedVideoCodecs.RemoveElement(codec);
     }
   }
 

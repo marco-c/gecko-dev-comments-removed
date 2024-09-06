@@ -319,18 +319,17 @@ static bool CanDecryptAndDecode(
     CodecType aCodecType,
     const KeySystemConfig::ContainerSupport& aContainerSupport,
     const nsTArray<KeySystemConfig::EMECodecString>& aCodecs,
-    const Maybe<CryptoScheme>& aScheme,
     DecoderDoctorDiagnostics* aDiagnostics) {
   MOZ_ASSERT(aCodecType != Invalid);
   for (const KeySystemConfig::EMECodecString& codec : aCodecs) {
     MOZ_ASSERT(!codec.IsEmpty());
 
-    if (aContainerSupport.DecryptsAndDecodes(codec, aScheme)) {
+    if (aContainerSupport.DecryptsAndDecodes(codec)) {
       
       continue;
     }
 
-    if (aContainerSupport.Decrypts(codec, aScheme)) {
+    if (aContainerSupport.Decrypts(codec)) {
       IgnoredErrorResult rv;
       MediaSource::IsTypeSupported(aContentType, aDiagnostics, rv);
       if (!rv.Failed()) {
@@ -365,15 +364,26 @@ static bool CanDecryptAndDecode(
 
 
 
-Maybe<CryptoScheme> ConvertEncryptionSchemeStrToScheme(
-    const nsString& aEncryptionScheme) {
+
+
+
+
+
+
+static bool SupportsEncryptionScheme(
+    const nsString& aEncryptionScheme,
+    const nsTArray<nsString>& aSupportedEncryptionSchemes) {
+  MOZ_ASSERT(
+      DOMStringIsNull(aEncryptionScheme) ||
+          StaticPrefs::media_eme_encrypted_media_encryption_scheme_enabled(),
+      "Encryption scheme checking support must be preffed on for "
+      "encryptionScheme to be a non-null string");
   if (DOMStringIsNull(aEncryptionScheme)) {
     
     
-    return Nothing();
+    return true;
   }
-  auto scheme = StringToCryptoScheme(aEncryptionScheme);
-  return Some(scheme);
+  return aSupportedEncryptionSchemes.Contains(aEncryptionScheme);
 }
 
 static bool ToSessionType(const nsAString& aSessionType,
@@ -467,7 +477,6 @@ static bool IsParameterUnrecognized(const nsAString& aContentType) {
   }
   return false;
 }
-
 
 
 static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
@@ -660,20 +669,6 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
     }
     
     
-    const auto scheme = ConvertEncryptionSchemeStrToScheme(encryptionScheme);
-    if (scheme && *scheme == CryptoScheme::None) {
-      EME_LOG(
-          "MediaKeySystemConfiguration (label='%s') "
-          "MediaKeySystemMediaCapability('%s','%s','%s') unsupported; "
-          "unsupported scheme string.",
-          NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
-          NS_ConvertUTF16toUTF8(contentTypeString).get(),
-          NS_ConvertUTF16toUTF8(robustness).get(),
-          NS_ConvertUTF16toUTF8(encryptionScheme).get());
-      continue;
-    }
-    
-    
     
     if (!robustness.IsEmpty()) {
       if (majorType == Audio &&
@@ -706,11 +701,27 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
     
     
     
+    if (!SupportsEncryptionScheme(encryptionScheme,
+                                  aKeySystem.mEncryptionSchemes)) {
+      EME_LOG(
+          "MediaKeySystemConfiguration (label='%s') "
+          "MediaKeySystemMediaCapability('%s','%s','%s') unsupported; "
+          "encryption scheme unsupported by CDM requested.",
+          NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+          NS_ConvertUTF16toUTF8(contentTypeString).get(),
+          NS_ConvertUTF16toUTF8(robustness).get(),
+          NS_ConvertUTF16toUTF8(encryptionScheme).get());
+      continue;
+    }
+
+    
+    
+    
     
     const auto& containerSupport =
         supportedInMP4 ? aKeySystem.mMP4 : aKeySystem.mWebM;
     if (!CanDecryptAndDecode(aKeySystem.mKeySystem, contentTypeString,
-                             majorType, containerSupport, codecs, scheme,
+                             majorType, containerSupport, codecs,
                              aDiagnostics)) {
       EME_LOG(
           "MediaKeySystemConfiguration (label='%s') "

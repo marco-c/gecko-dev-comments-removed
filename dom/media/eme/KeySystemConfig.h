@@ -7,7 +7,6 @@
 #ifndef DOM_MEDIA_EME_KEYSYSTEMCONFIG_H_
 #define DOM_MEDIA_EME_KEYSYSTEMCONFIG_H_
 
-#include "MediaData.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "mozilla/MozPromise.h"
@@ -82,51 +81,37 @@ struct KeySystemConfig {
     }
 
     
-    bool DecryptsAndDecodes(
-        const EMECodecString& aCodec,
-        const Maybe<CryptoScheme>& aScheme = Nothing()) const {
-      return CheckCodecAndSchemePair(mCodecsDecoded, aCodec, aScheme);
+    
+    bool DecryptsAndDecodes(const EMECodecString& aCodec) const {
+      return mCodecsDecoded.Contains(aCodec);
     }
 
     
-    bool Decrypts(const EMECodecString& aCodec,
-                  const Maybe<CryptoScheme>& aScheme = Nothing()) const {
-      return CheckCodecAndSchemePair(mCodecsDecrypted, aCodec, aScheme);
+    bool Decrypts(const EMECodecString& aCodec) const {
+      return mCodecsDecrypted.Contains(aCodec);
     }
 
-    void SetCanDecryptAndDecode(
-        const EMECodecString& aCodec,
-        const Maybe<CryptoSchemeSet>& aSchemes = Nothing{}) {
+    void SetCanDecryptAndDecode(const EMECodecString& aCodec) {
       
-      MOZ_ASSERT(!ContainsDecryptedOnlyCodec(aCodec));
+      MOZ_ASSERT(!Decrypts(aCodec));
       
-      MOZ_ASSERT(!ContainsDecryptedAndDecodedCodec(aCodec));
-
-      mCodecsDecoded.AppendElement(CodecSchemePair{aCodec, aSchemes});
+      MOZ_ASSERT(!DecryptsAndDecodes(aCodec));
+      mCodecsDecoded.AppendElement(aCodec);
     }
 
-    void SetCanDecrypt(const EMECodecString& aCodec,
-                       const Maybe<CryptoSchemeSet>& aSchemes = Nothing{}) {
+    void SetCanDecrypt(const EMECodecString& aCodec) {
       
-      MOZ_ASSERT(!ContainsDecryptedOnlyCodec(aCodec));
+      MOZ_ASSERT(!Decrypts(aCodec));
       
-      MOZ_ASSERT(!ContainsDecryptedAndDecodedCodec(aCodec));
-      mCodecsDecrypted.AppendElement(CodecSchemePair{aCodec, aSchemes});
+      MOZ_ASSERT(!DecryptsAndDecodes(aCodec));
+      mCodecsDecrypted.AppendElement(aCodec);
     }
 
     EMECodecString GetDebugInfo() const {
       EMECodecString info;
       info.AppendLiteral("decoding-and-decrypting:[");
       for (size_t idx = 0; idx < mCodecsDecoded.Length(); idx++) {
-        const auto& cur = mCodecsDecoded[idx];
-        info.Append(cur.first);
-        if (cur.second) {
-          info.AppendLiteral("(");
-          info.Append(CryptoSchemeSetToString(*cur.second));
-          info.AppendLiteral(")");
-        } else {
-          info.AppendLiteral("(all)");
-        }
+        info.Append(mCodecsDecoded[idx]);
         if (idx + 1 < mCodecsDecoded.Length()) {
           info.AppendLiteral(",");
         }
@@ -134,15 +119,7 @@ struct KeySystemConfig {
       info.AppendLiteral("],");
       info.AppendLiteral("decrypting-only:[");
       for (size_t idx = 0; idx < mCodecsDecrypted.Length(); idx++) {
-        const auto& cur = mCodecsDecrypted[idx];
-        info.Append(cur.first);
-        if (cur.second) {
-          info.AppendLiteral("(");
-          info.Append(CryptoSchemeSetToString(*cur.second));
-          info.AppendLiteral(")");
-        } else {
-          info.AppendLiteral("(all)");
-        }
+        info.Append(mCodecsDecrypted[idx]);
         if (idx + 1 < mCodecsDecrypted.Length()) {
           info.AppendLiteral(",");
         }
@@ -152,38 +129,8 @@ struct KeySystemConfig {
     }
 
    private:
-    using CodecSchemePair = std::pair<EMECodecString, Maybe<CryptoSchemeSet>>;
-    
-    
-    
-    
-    nsTArray<CodecSchemePair> mCodecsDecoded;
-    nsTArray<CodecSchemePair> mCodecsDecrypted;
-
-    bool ContainsDecryptedOnlyCodec(const EMECodecString& aCodec) const {
-      return std::any_of(
-          mCodecsDecrypted.begin(), mCodecsDecrypted.end(),
-          [&](const auto& aPair) { return aPair.first.Equals(aCodec); });
-    }
-    bool ContainsDecryptedAndDecodedCodec(const EMECodecString& aCodec) const {
-      return std::any_of(
-          mCodecsDecoded.begin(), mCodecsDecoded.end(),
-          [&](const auto& aPair) { return aPair.first.Equals(aCodec); });
-    }
-    bool CheckCodecAndSchemePair(const nsTArray<CodecSchemePair>& aArray,
-                                 const EMECodecString& aCodec,
-                                 const Maybe<CryptoScheme>& aScheme) const {
-      return std::any_of(aArray.begin(), aArray.end(), [&](const auto& aPair) {
-        if (!aPair.first.Equals(aCodec)) {
-          return false;
-        }
-        
-        if (!aPair.second || !aScheme) {
-          return true;
-        }
-        return aPair.second->contains(*aScheme);
-      });
-    }
+    nsTArray<EMECodecString> mCodecsDecoded;
+    nsTArray<EMECodecString> mCodecsDecrypted;
   };
 
   
@@ -207,6 +154,7 @@ struct KeySystemConfig {
     mSessionTypes = aOther.mSessionTypes.Clone();
     mVideoRobustness = aOther.mVideoRobustness.Clone();
     mAudioRobustness = aOther.mAudioRobustness.Clone();
+    mEncryptionSchemes = aOther.mEncryptionSchemes.Clone();
     mMP4 = aOther.mMP4;
     mWebM = aOther.mWebM;
   }
@@ -221,6 +169,7 @@ struct KeySystemConfig {
     mSessionTypes = aOther.mSessionTypes.Clone();
     mVideoRobustness = aOther.mVideoRobustness.Clone();
     mAudioRobustness = aOther.mAudioRobustness.Clone();
+    mEncryptionSchemes = aOther.mEncryptionSchemes.Clone();
     mMP4 = aOther.mMP4;
     mWebM = aOther.mWebM;
     return *this;
@@ -237,6 +186,7 @@ struct KeySystemConfig {
   nsTArray<SessionType> mSessionTypes;
   nsTArray<nsString> mVideoRobustness;
   nsTArray<nsString> mAudioRobustness;
+  nsTArray<nsString> mEncryptionSchemes;
   ContainerSupport mMP4;
   ContainerSupport mWebM;
   bool mIsHDCP22Compatible = false;
