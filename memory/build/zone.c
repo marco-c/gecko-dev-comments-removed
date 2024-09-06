@@ -232,8 +232,9 @@ static void zone_print(malloc_zone_t* zone, boolean_t verbose) {}
 
 static void zone_log(malloc_zone_t* zone, void* address) {}
 
+
 extern void _malloc_prefork(void);
-extern void _malloc_postfork_child(void);
+extern void _malloc_postfork(void);
 
 static void zone_force_lock(malloc_zone_t* zone) {
   
@@ -244,7 +245,7 @@ static void zone_force_lock(malloc_zone_t* zone) {
 static void zone_force_unlock(malloc_zone_t* zone) {
   
   
-  _malloc_postfork_child();
+  _malloc_postfork();
 }
 
 static void zone_statistics(malloc_zone_t* zone, malloc_statistics_t* stats) {

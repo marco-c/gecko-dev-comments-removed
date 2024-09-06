@@ -1539,6 +1539,9 @@ static bool malloc_init_hard();
 FORK_HOOK void _malloc_prefork(void);
 FORK_HOOK void _malloc_postfork_parent(void);
 FORK_HOOK void _malloc_postfork_child(void);
+#  ifdef XP_DARWIN
+FORK_HOOK void _malloc_postfork(void);
+#  endif
 #endif
 
 
@@ -5167,13 +5170,23 @@ inline void MozJemalloc::moz_set_max_dirty_page_modifier(int32_t aModifier) {
 
 
 
+
+
 static pthread_t gForkingThread;
+
+#  ifdef XP_DARWIN
+
+static pid_t gForkingProcess;
+#  endif
 
 FORK_HOOK
 void _malloc_prefork(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
   
   gArenas.mLock.Lock();
   gForkingThread = pthread_self();
+#  ifdef XP_DARWIN
+  gForkingProcess = getpid();
+#  endif
 
   for (auto arena : gArenas.iter()) {
     if (arena->mLock.LockIsEnabled()) {
@@ -5218,7 +5231,22 @@ void _malloc_postfork_child(void) {
 
   gArenas.mLock.Init();
 }
-#endif  
+
+#  ifdef XP_DARWIN
+FORK_HOOK
+void _malloc_postfork(void) {
+  
+  
+  bool is_in_parent = getpid() == gForkingProcess;
+  gForkingProcess = 0;
+  if (is_in_parent) {
+    _malloc_postfork_parent();
+  } else {
+    _malloc_postfork_child();
+  }
+}
+#  endif  
+#endif    
 
 
 
