@@ -2736,13 +2736,6 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
   CrashReporter::RecordAnnotationNSCString(
       CrashReporter::Annotation::RemoteType, remoteTypePrefix);
 
-  
-  
-  
-  if (mRemoteType != PREALLOC_REMOTE_TYPE) {
-    RemoteWorkerService::Initialize();
-  }
-
   return IPC_OK();
 }
 
@@ -2758,6 +2751,12 @@ void ContentChild::PreallocInit() {
 
 
 const nsACString& ContentChild::GetRemoteType() const { return mRemoteType; }
+
+mozilla::ipc::IPCResult ContentChild::RecvInitRemoteWorkerService(
+    Endpoint<PRemoteWorkerServiceChild>&& aEndpoint) {
+  RemoteWorkerService::InitializeChild(std::move(aEndpoint));
+  return IPC_OK();
+}
 
 mozilla::ipc::IPCResult ContentChild::RecvInitBlobURLs(
     nsTArray<BlobURLRegistrationData>&& aRegistrations) {
