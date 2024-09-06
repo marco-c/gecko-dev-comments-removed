@@ -216,35 +216,19 @@ static ARMRegister toXRegister(const T* a) {
   return ARMRegister(ToRegister(a), 64);
 }
 
-Operand toWOperand(const LAllocation* a) {
+static Operand toWOperand(const LAllocation* a) {
   if (a->isConstant()) {
     return Operand(ToInt32(a));
   }
   return Operand(toWRegister(a));
 }
 
-vixl::CPURegister ToCPURegister(const LAllocation* a, Scalar::Type type) {
-  if (a->isFloatReg() && type == Scalar::Float64) {
-    return ARMFPRegister(ToFloatRegister(a), 64);
-  }
-  if (a->isFloatReg() && type == Scalar::Float32) {
-    return ARMFPRegister(ToFloatRegister(a), 32);
-  }
-  if (a->isGeneralReg()) {
-    return ARMRegister(ToRegister(a), 32);
-  }
-  MOZ_CRASH("Unknown LAllocation");
-}
-
-vixl::CPURegister ToCPURegister(const LDefinition* d, Scalar::Type type) {
-  return ToCPURegister(d->output(), type);
-}
 
 
 
 
-
-Assembler::Condition GetCondForSwappedOperands(Assembler::Condition cond) {
+static Assembler::Condition GetCondForSwappedOperands(
+    Assembler::Condition cond) {
   
   
   
