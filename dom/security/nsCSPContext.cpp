@@ -1617,6 +1617,10 @@ class CSPReportSenderRunnable final : public Runnable {
 
 
 
+
+
+
+
 nsresult nsCSPContext::AsyncReportViolation(
     nsICSPEventListener* aCSPEventListener,
     mozilla::dom::CSPViolationData&& aCSPViolationData, nsIURI* aOriginalURI,
