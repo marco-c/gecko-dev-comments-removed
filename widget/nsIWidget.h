@@ -758,7 +758,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void LockAspectRatio(bool aShouldLock){};
+  virtual void LockAspectRatio(bool aShouldLock) {};
 
   
 
@@ -961,6 +961,7 @@ class nsIWidget : public nsISupports {
   }
 
   
+
 
 
 
@@ -2010,7 +2011,7 @@ class nsIWidget : public nsISupports {
 
   virtual void UpdateZoomConstraints(
       const uint32_t& aPresShellId, const ScrollableLayerGuid::ViewID& aViewId,
-      const mozilla::Maybe<ZoomConstraints>& aConstraints){};
+      const mozilla::Maybe<ZoomConstraints>& aConstraints) {};
 
   
 

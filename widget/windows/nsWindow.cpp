@@ -665,7 +665,6 @@ static bool IsCloaked(HWND hwnd) {
 
 nsWindow::nsWindow(bool aIsChildWindow)
     : nsBaseWidget(BorderStyle::Default),
-      mBrush(::CreateSolidBrush(NSRGB_2_COLOREF(::GetSysColor(COLOR_BTNFACE)))),
       mFrameState(std::in_place, this),
       mIsChildWindow(aIsChildWindow),
       mLastPaintEndTime(TimeStamp::Now()),
@@ -1206,6 +1205,16 @@ static void RegisterWindowClass(const wchar_t* aClassName, UINT aExtraStyle,
   wc.hIcon =
       aIconID ? ::LoadIconW(::GetModuleHandleW(nullptr), aIconID) : nullptr;
   wc.lpszClassName = aClassName;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  wc.hbrBackground = (HBRUSH)::GetStockObject(DKGRAY_BRUSH);
 
   
   ::RegisterClassW(&wc);
@@ -2747,23 +2756,6 @@ void nsWindow::InvalidateNonClientRegion() {
   
   RedrawWindow(mWnd, nullptr, winRgn, RDW_FRAME | RDW_INVALIDATE);
   DeleteObject(winRgn);
-}
-
-
-
-
-
-
-
-
-
-void nsWindow::SetBackgroundColor(const nscolor& aColor) {
-  if (mBrush) ::DeleteObject(mBrush);
-
-  mBrush = ::CreateSolidBrush(NSRGB_2_COLOREF(aColor));
-  if (mWnd != nullptr) {
-    ::SetClassLongPtrW(mWnd, GCLP_HBRBACKGROUND, (LONG_PTR)mBrush);
-  }
 }
 
 
@@ -7061,12 +7053,6 @@ void nsWindow::OnDestroy() {
   }
 
   IMEHandler::OnDestroyWindow(this);
-
-  
-  if (mBrush) {
-    VERIFY(::DeleteObject(mBrush));
-    mBrush = nullptr;
-  }
 
   
   if (mCursor.IsCustom()) {
