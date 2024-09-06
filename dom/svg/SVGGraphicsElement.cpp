@@ -125,8 +125,7 @@ already_AddRefed<SVGRect> SVGGraphicsElement::GetBBox(
 }
 
 already_AddRefed<SVGMatrix> SVGGraphicsElement::GetCTM() {
-  Document* currentDoc = GetComposedDoc();
-  if (currentDoc) {
+  if (auto* currentDoc = GetComposedDoc()) {
     
     currentDoc->FlushPendingNotifications(FlushType::Layout);
   }
@@ -137,8 +136,7 @@ already_AddRefed<SVGMatrix> SVGGraphicsElement::GetCTM() {
 }
 
 already_AddRefed<SVGMatrix> SVGGraphicsElement::GetScreenCTM() {
-  Document* currentDoc = GetComposedDoc();
-  if (currentDoc) {
+  if (auto* currentDoc = GetComposedDoc()) {
     
     currentDoc->FlushPendingNotifications(FlushType::Layout);
   }
@@ -154,33 +152,22 @@ bool SVGGraphicsElement::IsSVGFocusable(bool* aIsFocusable,
   
   if (!IsInComposedDoc() || IsInDesignMode()) {
     
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-
+    *aTabIndex = -1;
     *aIsFocusable = false;
-
     return true;
   }
 
-  int32_t tabIndex = TabIndex();
-
-  if (aTabIndex) {
-    *aTabIndex = tabIndex;
-  }
-
+  *aTabIndex = TabIndex();
   
   
-  *aIsFocusable = tabIndex >= 0 || GetTabIndexAttrValue().isSome();
-
+  *aIsFocusable = *aTabIndex >= 0 || GetTabIndexAttrValue().isSome();
   return false;
 }
 
-bool SVGGraphicsElement::IsFocusableInternal(int32_t* aTabIndex,
-                                             bool aWithMouse) {
-  bool isFocusable = false;
-  IsSVGFocusable(&isFocusable, aTabIndex);
-  return isFocusable;
+Focusable SVGGraphicsElement::IsFocusableWithoutStyle(bool aWithMouse) {
+  Focusable result;
+  IsSVGFocusable(&result.mFocusable, &result.mTabIndex);
+  return result;
 }
 
 }  

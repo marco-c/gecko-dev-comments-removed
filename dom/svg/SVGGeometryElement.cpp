@@ -187,7 +187,7 @@ bool SVGGeometryElement::IsPointInFill(const DOMPointInit& aPoint) {
 bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
   
   
-  if (nsCOMPtr<Document> doc = GetComposedDoc()) {
+  if (auto* doc = GetComposedDoc()) {
     doc->FlushPendingNotifications(FlushType::Layout);
   }
 
