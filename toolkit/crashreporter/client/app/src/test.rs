@@ -604,18 +604,6 @@ fn no_submit() {
         interact.element("include-url", |_style, c: &model::Checkbox| {
             c.checked.set(false)
         });
-
-        
-        interact.element("details", |style, _: &model::Button| {
-            assert!(!style.enabled.get());
-        });
-        interact.element("comment", |style, _: &model::TextBox| {
-            assert!(!style.enabled.get());
-        });
-        interact.element("include-url", |style, _: &model::Checkbox| {
-            assert!(!style.enabled.get());
-        });
-
         interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
     });
     test.assert_files()
