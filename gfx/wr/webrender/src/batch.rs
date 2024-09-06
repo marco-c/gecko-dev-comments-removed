@@ -437,19 +437,16 @@ impl OpaqueBatchList {
         
         z_bounding_rect: &PictureRect,
     ) -> &mut Vec<PrimitiveInstanceData> {
-        
-        
-        
-        
-        let is_large_occluder = z_bounding_rect.area() > self.pixel_area_threshold_for_new_batch;
-        
-        
-        
-        
-        if is_large_occluder || self.current_batch_index == usize::MAX ||
+        if self.current_batch_index == usize::MAX ||
            !self.batches[self.current_batch_index].key.is_compatible_with(&key) {
             let mut selected_batch_index = None;
-            if is_large_occluder {
+            let item_area = z_bounding_rect.area();
+
+            
+            
+            
+            
+            if item_area > self.pixel_area_threshold_for_new_batch {
                 if let Some(batch) = self.batches.last() {
                     if batch.key.is_compatible_with(&key) {
                         selected_batch_index = Some(self.batches.len() - 1);
