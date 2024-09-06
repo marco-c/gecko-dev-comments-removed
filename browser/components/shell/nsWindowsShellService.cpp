@@ -39,6 +39,7 @@
 #include "nsIXULAppInfo.h"
 #include "nsINIParser.h"
 #include "nsNativeAppSupportWin.h"
+#include "Windows11TaskbarPinning.h"
 
 #include <windows.h>
 #include <shellapi.h>
@@ -1626,7 +1627,7 @@ nsWindowsShellService::GetTaskbarTabPins(nsTArray<nsString>& aShortcutPaths) {
 
 static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
                                             const nsAString& aAppUserModelId,
-                                            nsAutoString aShortcutPath) {
+                                            const nsAString& aShortcutPath) {
   
   
   if (!aCheckOnly) {
@@ -1695,6 +1696,28 @@ static nsresult PinCurrentAppToTaskbarImpl(
     }
   }
 
+  auto pinWithWin11TaskbarAPIResults =
+      PinCurrentAppToTaskbarWin11(aCheckOnly, aAppUserModelId, shortcutPath);
+  switch (pinWithWin11TaskbarAPIResults.result) {
+    case Win11PinToTaskBarResultStatus::NotSupported:
+      
+      break;
+
+    case Win11PinToTaskBarResultStatus::Success:
+    case Win11PinToTaskBarResultStatus::AlreadyPinned:
+      return NS_OK;
+
+    case Win11PinToTaskBarResultStatus::NotCurrentlyAllowed:
+    case Win11PinToTaskBarResultStatus::Failed:
+      
+
+      
+      
+      
+      
+      break;
+  }
+
   return PinCurrentAppToTaskbarWin10(aCheckOnly, aAppUserModelId, shortcutPath);
 }
 
@@ -1720,7 +1743,7 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
   }
 
   nsAutoString aumid;
-  if (NS_WARN_IF(!mozilla::widget::WinTaskbar::GenerateAppUserModelID(
+  if (NS_WARN_IF(!mozilla::widget::WinTaskbar::GetAppUserModelID(
           aumid, aPrivateBrowsing))) {
     return NS_ERROR_FAILURE;
   }
