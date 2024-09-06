@@ -36,7 +36,10 @@ from pip._internal.metadata import BaseDistribution, get_default_environment
 from pip._internal.models.link import Link
 from pip._internal.models.wheel import Wheel
 from pip._internal.operations.prepare import RequirementPreparer
-from pip._internal.req.constructors import install_req_from_link_and_ireq
+from pip._internal.req.constructors import (
+    install_req_drop_extras,
+    install_req_from_link_and_ireq,
+)
 from pip._internal.req.req_install import (
     InstallRequirement,
     check_invalid_constraint_type,
@@ -62,6 +65,7 @@ from .requirements import (
     ExplicitRequirement,
     RequiresPythonRequirement,
     SpecifierRequirement,
+    SpecifierWithoutExtrasRequirement,
     UnsatisfiableRequirement,
 )
 
@@ -112,7 +116,7 @@ class Factory:
         self._editable_candidate_cache: Cache[EditableCandidate] = {}
         self._installed_candidate_cache: Dict[str, AlreadyInstalledCandidate] = {}
         self._extras_candidate_cache: Dict[
-            Tuple[int, FrozenSet[str]], ExtrasCandidate
+            Tuple[int, FrozenSet[NormalizedName]], ExtrasCandidate
         ] = {}
 
         if not ignore_installed:
@@ -132,19 +136,23 @@ class Factory:
         if not link.is_wheel:
             return
         wheel = Wheel(link.filename)
-        if wheel.supported(self._finder.target_python.get_tags()):
+        if wheel.supported(self._finder.target_python.get_unsorted_tags()):
             return
         msg = f"{link.filename} is not a supported wheel on this platform."
         raise UnsupportedWheel(msg)
 
     def _make_extras_candidate(
-        self, base: BaseCandidate, extras: FrozenSet[str]
+        self,
+        base: BaseCandidate,
+        extras: FrozenSet[str],
+        *,
+        comes_from: Optional[InstallRequirement] = None,
     ) -> ExtrasCandidate:
-        cache_key = (id(base), extras)
+        cache_key = (id(base), frozenset(canonicalize_name(e) for e in extras))
         try:
             candidate = self._extras_candidate_cache[cache_key]
         except KeyError:
-            candidate = ExtrasCandidate(base, extras)
+            candidate = ExtrasCandidate(base, extras, comes_from=comes_from)
             self._extras_candidate_cache[cache_key] = candidate
         return candidate
 
@@ -161,7 +169,7 @@ class Factory:
             self._installed_candidate_cache[dist.canonical_name] = base
         if not extras:
             return base
-        return self._make_extras_candidate(base, extras)
+        return self._make_extras_candidate(base, extras, comes_from=template)
 
     def _make_candidate_from_link(
         self,
@@ -171,6 +179,20 @@ class Factory:
         name: Optional[NormalizedName],
         version: Optional[CandidateVersion],
     ) -> Optional[Candidate]:
+        base: Optional[BaseCandidate] = self._make_base_candidate_from_link(
+            link, template, name, version
+        )
+        if not extras or base is None:
+            return base
+        return self._make_extras_candidate(base, extras, comes_from=template)
+
+    def _make_base_candidate_from_link(
+        self,
+        link: Link,
+        template: InstallRequirement,
+        name: Optional[NormalizedName],
+        version: Optional[CandidateVersion],
+    ) -> Optional[BaseCandidate]:
         
         
 
@@ -199,7 +221,7 @@ class Factory:
                     self._build_failures[link] = e
                     return None
 
-            base: BaseCandidate = self._editable_candidate_cache[link]
+            return self._editable_candidate_cache[link]
         else:
             if link not in self._link_candidate_cache:
                 try:
@@ -219,11 +241,7 @@ class Factory:
                     )
                     self._build_failures[link] = e
                     return None
-            base = self._link_candidate_cache[link]
-
-        if not extras:
-            return base
-        return self._make_extras_candidate(base, extras)
+            return self._link_candidate_cache[link]
 
     def _iter_found_candidates(
         self,
@@ -357,9 +375,8 @@ class Factory:
         """
         for link in constraint.links:
             self._fail_if_link_is_unsupported_wheel(link)
-            candidate = self._make_candidate_from_link(
+            candidate = self._make_base_candidate_from_link(
                 link,
-                extras=frozenset(),
                 template=install_req_from_link_and_ireq(link, template),
                 name=canonicalize_name(identifier),
                 version=None,
@@ -389,12 +406,17 @@ class Factory:
         
         with contextlib.suppress(InvalidRequirement):
             parsed_requirement = get_requirement(identifier)
-            explicit_candidates.update(
-                self._iter_explicit_candidates_from_base(
-                    requirements.get(parsed_requirement.name, ()),
-                    frozenset(parsed_requirement.extras),
-                ),
-            )
+            if parsed_requirement.name != identifier:
+                explicit_candidates.update(
+                    self._iter_explicit_candidates_from_base(
+                        requirements.get(parsed_requirement.name, ()),
+                        frozenset(parsed_requirement.extras),
+                    ),
+                )
+                for req in requirements.get(parsed_requirement.name, []):
+                    _, ireq = req.get_candidate_lookup()
+                    if ireq is not None:
+                        ireqs.append(ireq)
 
         
         
@@ -437,37 +459,58 @@ class Factory:
             and all(req.is_satisfied_by(c) for req in requirements[identifier])
         )
 
-    def _make_requirement_from_install_req(
+    def _make_requirements_from_install_req(
         self, ireq: InstallRequirement, requested_extras: Iterable[str]
-    ) -> Optional[Requirement]:
+    ) -> Iterator[Requirement]:
+        """
+        Returns requirement objects associated with the given InstallRequirement. In
+        most cases this will be a single object but the following special cases exist:
+            - the InstallRequirement has markers that do not apply -> result is empty
+            - the InstallRequirement has both a constraint (or link) and extras
+                -> result is split in two requirement objects: one with the constraint
+                (or link) and one with the extra. This allows centralized constraint
+                handling for the base, resulting in fewer candidate rejections.
+        """
         if not ireq.match_markers(requested_extras):
             logger.info(
                 "Ignoring %s: markers '%s' don't match your environment",
                 ireq.name,
                 ireq.markers,
             )
-            return None
-        if not ireq.link:
-            return SpecifierRequirement(ireq)
-        self._fail_if_link_is_unsupported_wheel(ireq.link)
-        cand = self._make_candidate_from_link(
-            ireq.link,
-            extras=frozenset(ireq.extras),
-            template=ireq,
-            name=canonicalize_name(ireq.name) if ireq.name else None,
-            version=None,
-        )
-        if cand is None:
+        elif not ireq.link:
+            if ireq.extras and ireq.req is not None and ireq.req.specifier:
+                yield SpecifierWithoutExtrasRequirement(ireq)
+            yield SpecifierRequirement(ireq)
+        else:
+            self._fail_if_link_is_unsupported_wheel(ireq.link)
             
             
             
             
-            
-            
-            if not ireq.name:
-                raise self._build_failures[ireq.link]
-            return UnsatisfiableRequirement(canonicalize_name(ireq.name))
-        return self.make_requirement_from_candidate(cand)
+            cand = self._make_base_candidate_from_link(
+                ireq.link,
+                template=install_req_drop_extras(ireq) if ireq.extras else ireq,
+                name=canonicalize_name(ireq.name) if ireq.name else None,
+                version=None,
+            )
+            if cand is None:
+                
+                
+                
+                
+                
+                
+                if not ireq.name:
+                    raise self._build_failures[ireq.link]
+                yield UnsatisfiableRequirement(canonicalize_name(ireq.name))
+            else:
+                
+                yield self.make_requirement_from_candidate(cand)
+                if ireq.extras:
+                    
+                    yield self.make_requirement_from_candidate(
+                        self._make_extras_candidate(cand, frozenset(ireq.extras))
+                    )
 
     def collect_root_requirements(
         self, root_ireqs: List[InstallRequirement]
@@ -488,15 +531,27 @@ class Factory:
                 else:
                     collected.constraints[name] = Constraint.from_ireq(ireq)
             else:
-                req = self._make_requirement_from_install_req(
-                    ireq,
-                    requested_extras=(),
+                reqs = list(
+                    self._make_requirements_from_install_req(
+                        ireq,
+                        requested_extras=(),
+                    )
                 )
-                if req is None:
+                if not reqs:
                     continue
-                if ireq.user_supplied and req.name not in collected.user_requested:
-                    collected.user_requested[req.name] = i
-                collected.requirements.append(req)
+                template = reqs[0]
+                if ireq.user_supplied and template.name not in collected.user_requested:
+                    collected.user_requested[template.name] = i
+                collected.requirements.extend(reqs)
+        
+        
+        
+        
+        
+        
+        
+        
+        collected.requirements.sort(key=lambda r: r.name != r.project_name)
         return collected
 
     def make_requirement_from_candidate(
@@ -504,14 +559,23 @@ class Factory:
     ) -> ExplicitRequirement:
         return ExplicitRequirement(candidate)
 
-    def make_requirement_from_spec(
+    def make_requirements_from_spec(
         self,
         specifier: str,
         comes_from: Optional[InstallRequirement],
         requested_extras: Iterable[str] = (),
-    ) -> Optional[Requirement]:
+    ) -> Iterator[Requirement]:
+        """
+        Returns requirement objects associated with the given specifier. In most cases
+        this will be a single object but the following special cases exist:
+            - the specifier has markers that do not apply -> result is empty
+            - the specifier has both a constraint and extras -> result is split
+                in two requirement objects: one with the constraint and one with the
+                extra. This allows centralized constraint handling for the base,
+                resulting in fewer candidate rejections.
+        """
         ireq = self._make_install_req_from_spec(specifier, comes_from)
-        return self._make_requirement_from_install_req(ireq, requested_extras)
+        return self._make_requirements_from_install_req(ireq, requested_extras)
 
     def make_requires_python_requirement(
         self,
@@ -535,7 +599,7 @@ class Factory:
         hash mismatches. Furthermore, cached wheels at present have
         nondeterministic contents due to file modification times.
         """
-        if self._wheel_cache is None or self.preparer.require_hashes:
+        if self._wheel_cache is None:
             return None
         return self._wheel_cache.get_cache_entry(
             link=link,
@@ -603,8 +667,26 @@ class Factory:
 
         cands = self._finder.find_all_candidates(req.project_name)
         skipped_by_requires_python = self._finder.requires_python_skipped_reasons()
-        versions = [str(v) for v in sorted({c.version for c in cands})]
 
+        versions_set: Set[CandidateVersion] = set()
+        yanked_versions_set: Set[CandidateVersion] = set()
+        for c in cands:
+            is_yanked = c.link.is_yanked if c.link else False
+            if is_yanked:
+                yanked_versions_set.add(c.version)
+            else:
+                versions_set.add(c.version)
+
+        versions = [str(v) for v in sorted(versions_set)]
+        yanked_versions = [str(v) for v in sorted(yanked_versions_set)]
+
+        if yanked_versions:
+            
+            
+            logger.critical(
+                "Ignored the following yanked versions: %s",
+                ", ".join(yanked_versions) or "none",
+            )
         if skipped_by_requires_python:
             logger.critical(
                 "Ignored the following versions that require a different python "
@@ -632,7 +714,6 @@ class Factory:
         e: "ResolutionImpossible[Requirement, Candidate]",
         constraints: Dict[str, Constraint],
     ) -> InstallationError:
-
         assert e.causes, "Installation error reported with no cause"
 
         
@@ -693,8 +774,8 @@ class Factory:
             info = "the requested packages"
 
         msg = (
-            "Cannot install {} because these package versions "
-            "have conflicting dependencies.".format(info)
+            f"Cannot install {info} because these package versions "
+            "have conflicting dependencies."
         )
         logger.critical(msg)
         msg = "\nThe conflict is caused by:"

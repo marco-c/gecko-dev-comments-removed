@@ -22,7 +22,10 @@ class InstallationReport:
             
             
             
-            "is_direct": bool(ireq.original_link),
+            "is_direct": ireq.is_direct,
+            
+            
+            "is_yanked": ireq.link.is_yanked if ireq.link else False,
             
             
             
@@ -33,7 +36,7 @@ class InstallationReport:
         }
         if ireq.user_supplied and ireq.extras:
             
-            res["requested_extras"] = list(sorted(ireq.extras))
+            res["requested_extras"] = sorted(ireq.extras)
         return res
 
     def to_dict(self) -> Dict[str, Any]:

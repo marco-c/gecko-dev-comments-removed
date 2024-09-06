@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_INDEX = 'https://pypi.org/pypi'
 DEFAULT_REALM = 'pypi'
 
+
 class PackageIndex(object):
     """
     This class represents a package index compatible with PyPI, the Python
@@ -119,7 +120,7 @@ class PackageIndex(object):
         d = metadata.todict()
         d[':action'] = 'verify'
         request = self.encode_request(d.items(), [])
-        response = self.send_request(request)
+        self.send_request(request)
         d[':action'] = 'submit'
         request = self.encode_request(d.items(), [])
         return self.send_request(request)
@@ -358,8 +359,7 @@ class PackageIndex(object):
                                       keystore)
         rc, stdout, stderr = self.run_command(cmd)
         if rc not in (0, 1):
-            raise DistlibException('verify command failed with error '
-                             'code %s' % rc)
+            raise DistlibException('verify command failed with error code %s' % rc)
         return rc == 0
 
     def download_file(self, url, destfile, digest=None, reporthook=None):

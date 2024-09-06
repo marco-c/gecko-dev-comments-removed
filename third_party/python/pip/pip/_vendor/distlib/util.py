@@ -33,7 +33,7 @@ import time
 from . import DistlibException
 from .compat import (string_types, text_type, shutil, raw_input, StringIO,
                      cache_from_source, urlopen, urljoin, httplib, xmlrpclib,
-                     splittype, HTTPHandler, BaseConfigurator, valid_ident,
+                     HTTPHandler, BaseConfigurator, valid_ident,
                      Container, configparser, URLError, ZipFile, fsdecode,
                      unquote, urlparse)
 
@@ -62,6 +62,7 @@ def parse_marker(marker_string):
     interpreted as a literal string, and a string not contained in quotes is a
     variable (such as os_name).
     """
+
     def marker_var(remaining):
         
         m = IDENTIFIER.match(remaining)
@@ -87,7 +88,8 @@ def parse_marker(marker_string):
                 else:
                     m = STRING_CHUNK.match(remaining)
                     if not m:
-                        raise SyntaxError('error in string literal: %s' % remaining)
+                        raise SyntaxError('error in string literal: %s' %
+                                          remaining)
                     parts.append(m.groups()[0])
                     remaining = remaining[m.end():]
             else:
@@ -95,7 +97,7 @@ def parse_marker(marker_string):
                 raise SyntaxError('unterminated string: %s' % s)
             parts.append(q)
             result = ''.join(parts)
-            remaining = remaining[1:].lstrip() 
+            remaining = remaining[1:].lstrip()  
         return result, remaining
 
     def marker_expr(remaining):
@@ -208,7 +210,8 @@ def parse_requirement(req):
                         ver_remaining = ver_remaining[m.end():]
                         m = VERSION_IDENTIFIER.match(ver_remaining)
                         if not m:
-                            raise SyntaxError('invalid version: %s' % ver_remaining)
+                            raise SyntaxError('invalid version: %s' %
+                                              ver_remaining)
                         v = m.groups()[0]
                         versions.append((op, v))
                         ver_remaining = ver_remaining[m.end():]
@@ -221,7 +224,8 @@ def parse_requirement(req):
                             break
                         m = COMPARE_OP.match(ver_remaining)
                         if not m:
-                            raise SyntaxError('invalid constraint: %s' % ver_remaining)
+                            raise SyntaxError('invalid constraint: %s' %
+                                              ver_remaining)
                     if not versions:
                         versions = None
                 return versions, ver_remaining
@@ -231,7 +235,8 @@ def parse_requirement(req):
             else:
                 i = remaining.find(')', 1)
                 if i < 0:
-                    raise SyntaxError('unterminated parenthesis: %s' % remaining)
+                    raise SyntaxError('unterminated parenthesis: %s' %
+                                      remaining)
                 s = remaining[1:i]
                 remaining = remaining[i + 1:].lstrip()
                 
@@ -262,9 +267,14 @@ def parse_requirement(req):
     if not versions:
         rs = distname
     else:
-        rs = '%s %s' % (distname, ', '.join(['%s %s' % con for con in versions]))
-    return Container(name=distname, extras=extras, constraints=versions,
-                     marker=mark_expr, url=uri, requirement=rs)
+        rs = '%s %s' % (distname, ', '.join(
+            ['%s %s' % con for con in versions]))
+    return Container(name=distname,
+                     extras=extras,
+                     constraints=versions,
+                     marker=mark_expr,
+                     url=uri,
+                     requirement=rs)
 
 
 def get_resources_dests(resources_root, rules):
@@ -304,15 +314,15 @@ def in_venv():
 
 
 def get_executable():
-
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     result = sys.executable
@@ -345,6 +355,7 @@ def extract_by_key(d, keys):
         if key in d:
             result[key] = d[key]
     return result
+
 
 def read_exports(stream):
     if sys.version_info[0] >= 3:
@@ -420,6 +431,7 @@ def tempdir():
     finally:
         shutil.rmtree(td)
 
+
 @contextlib.contextmanager
 def chdir(d):
     cwd = os.getcwd()
@@ -441,6 +453,7 @@ def socket_timeout(seconds=15):
 
 
 class cached_property(object):
+
     def __init__(self, func):
         self.func = func
         
@@ -453,6 +466,7 @@ class cached_property(object):
         object.__setattr__(obj, self.func.__name__, value)
         
         return value
+
 
 def convert_path(pathname):
     """Return 'pathname' as a name that will work on the native filesystem.
@@ -482,6 +496,7 @@ def convert_path(pathname):
 
 
 class FileOperator(object):
+
     def __init__(self, dry_run=False):
         self.dry_run = dry_run
         self.ensured = set()
@@ -586,7 +601,12 @@ class FileOperator(object):
             if self.record:
                 self.dirs_created.add(path)
 
-    def byte_compile(self, path, optimize=False, force=False, prefix=None, hashed_invalidation=False):
+    def byte_compile(self,
+                     path,
+                     optimize=False,
+                     force=False,
+                     prefix=None,
+                     hashed_invalidation=False):
         dpath = cache_from_source(path, not optimize)
         logger.info('Byte-compiling %s to %s', path, dpath)
         if not self.dry_run:
@@ -597,9 +617,12 @@ class FileOperator(object):
                     assert path.startswith(prefix)
                     diagpath = path[len(prefix):]
             compile_kwargs = {}
-            if hashed_invalidation and hasattr(py_compile, 'PycInvalidationMode'):
-                compile_kwargs['invalidation_mode'] = py_compile.PycInvalidationMode.CHECKED_HASH
-            py_compile.compile(path, dpath, diagpath, True, **compile_kwargs)     
+            if hashed_invalidation and hasattr(py_compile,
+                                               'PycInvalidationMode'):
+                compile_kwargs[
+                    'invalidation_mode'] = py_compile.PycInvalidationMode.CHECKED_HASH
+            py_compile.compile(path, dpath, diagpath, True,
+                               **compile_kwargs)  
         self.record_as_written(dpath)
         return dpath
 
@@ -661,8 +684,9 @@ class FileOperator(object):
                     assert flist == ['__pycache__']
                     sd = os.path.join(d, flist[0])
                     os.rmdir(sd)
-                os.rmdir(d)     
+                os.rmdir(d)  
         self._init_record()
+
 
 def resolve(module_name, dotted_path):
     if module_name in sys.modules:
@@ -680,6 +704,7 @@ def resolve(module_name, dotted_path):
 
 
 class ExportEntry(object):
+
     def __init__(self, name, prefix, suffix, flags):
         self.name = name
         self.prefix = prefix
@@ -698,19 +723,20 @@ class ExportEntry(object):
         if not isinstance(other, ExportEntry):
             result = False
         else:
-            result = (self.name == other.name and
-                      self.prefix == other.prefix and
-                      self.suffix == other.suffix and
-                      self.flags == other.flags)
+            result = (self.name == other.name and self.prefix == other.prefix
+                      and self.suffix == other.suffix
+                      and self.flags == other.flags)
         return result
 
     __hash__ = object.__hash__
 
 
-ENTRY_RE = re.compile(r'''(?P<name>(\w|[-.+])+)
+ENTRY_RE = re.compile(
+    r'''(?P<name>([^\[]\S*))
                       \s*=\s*(?P<callable>(\w+)([:\.]\w+)*)
                       \s*(\[\s*(?P<flags>[\w-]+(=\w+)?(,\s*\w+(=\w+)?)*)\s*\])?
                       ''', re.VERBOSE)
+
 
 def get_export_entry(specification):
     m = ENTRY_RE.search(specification)
@@ -827,6 +853,7 @@ def get_process_umask():
     os.umask(result)
     return result
 
+
 def is_string_sequence(seq):
     result = True
     i = None
@@ -837,8 +864,10 @@ def is_string_sequence(seq):
     assert i is not None
     return result
 
-PROJECT_NAME_AND_VERSION = re.compile('([a-z0-9_]+([.-][a-z_][a-z0-9_]*)*)-'
-                                      '([a-z0-9_.+-]+)', re.I)
+
+PROJECT_NAME_AND_VERSION = re.compile(
+    '([a-z0-9_]+([.-][a-z_][a-z0-9_]*)*)-'
+    '([a-z0-9_.+-]+)', re.I)
 PYTHON_VERSION = re.compile(r'-py(\d\.?\d?)')
 
 
@@ -867,8 +896,10 @@ def split_filename(filename, project_name=None):
     return result
 
 
+
 NAME_VERSION_RE = re.compile(r'(?P<name>[\w .-]+)\s*'
                              r'\(\s*(?P<ver>[^\s)]+)\)$')
+
 
 def parse_name_and_version(p):
     """
@@ -884,6 +915,7 @@ def parse_name_and_version(p):
         raise DistlibException('Ill-formed name/version string: \'%s\'' % p)
     d = m.groupdict()
     return d['name'].strip().lower(), d['ver']
+
 
 def get_extras(requested, available):
     result = set()
@@ -910,6 +942,9 @@ def get_extras(requested, available):
 
 
 
+
+
+
 def _get_external_data(url):
     result = {}
     try:
@@ -930,13 +965,16 @@ def _get_external_data(url):
         logger.exception('Failed to get external data for %s: %s', url, e)
     return result
 
+
 _external_data_base_url = 'https://www.red-dove.com/pypi/projects/'
+
 
 def get_project_data(name):
     url = '%s/%s/project.json' % (name[0].upper(), name)
     url = urljoin(_external_data_base_url, url)
     result = _get_external_data(url)
     return result
+
 
 def get_package_data(name, version):
     url = '%s/%s/package-%s.json' % (name[0].upper(), name, version)
@@ -992,6 +1030,7 @@ class EventMixin(object):
     """
     A very simple publish/subscribe system.
     """
+
     def __init__(self):
         self._subscribers = {}
 
@@ -1053,18 +1092,20 @@ class EventMixin(object):
                 logger.exception('Exception during event publication')
                 value = None
             result.append(value)
-        logger.debug('publish %s: args = %s, kwargs = %s, result = %s',
-                     event, args, kwargs, result)
+        logger.debug('publish %s: args = %s, kwargs = %s, result = %s', event,
+                     args, kwargs, result)
         return result
 
 
 
 
+
 class Sequencer(object):
+
     def __init__(self):
         self._preds = {}
         self._succs = {}
-        self._nodes = set()     
+        self._nodes = set()  
 
     def add_node(self, node):
         self._nodes.add(node)
@@ -1104,8 +1145,8 @@ class Sequencer(object):
             raise ValueError('%r not a successor of %r' % (succ, pred))
 
     def is_step(self, step):
-        return (step in self._preds or step in self._succs or
-                step in self._nodes)
+        return (step in self._preds or step in self._succs
+                or step in self._nodes)
 
     def get_steps(self, final):
         if not self.is_step(final):
@@ -1159,11 +1200,11 @@ class Sequencer(object):
                 if successor not in lowlinks:
                     
                     strongconnect(successor)
-                    lowlinks[node] = min(lowlinks[node],lowlinks[successor])
+                    lowlinks[node] = min(lowlinks[node], lowlinks[successor])
                 elif successor in stack:
                     
                     
-                    lowlinks[node] = min(lowlinks[node],index[successor])
+                    lowlinks[node] = min(lowlinks[node], index[successor])
 
             
             if lowlinks[node] == index[node]:
@@ -1172,7 +1213,8 @@ class Sequencer(object):
                 while True:
                     successor = stack.pop()
                     connected_component.append(successor)
-                    if successor == node: break
+                    if successor == node:
+                        break
                 component = tuple(connected_component)
                 
                 result.append(component)
@@ -1199,8 +1241,10 @@ class Sequencer(object):
 
 
 
-ARCHIVE_EXTENSIONS = ('.tar.gz', '.tar.bz2', '.tar', '.zip',
-                      '.tgz', '.tbz', '.whl')
+
+ARCHIVE_EXTENSIONS = ('.tar.gz', '.tar.bz2', '.tar', '.zip', '.tgz', '.tbz',
+                      '.whl')
+
 
 def unarchive(archive_filename, dest_dir, format=None, check=True):
 
@@ -1249,6 +1293,20 @@ def unarchive(archive_filename, dest_dir, format=None, check=True):
             for tarinfo in archive.getmembers():
                 if not isinstance(tarinfo.name, text_type):
                     tarinfo.name = tarinfo.name.decode('utf-8')
+
+        
+        
+        
+        def extraction_filter(member, path):
+            """Run tarfile.tar_filter, but raise the expected ValueError"""
+            
+            try:
+                return tarfile.tar_filter(member, path)
+            except tarfile.FilterError as exc:
+                raise ValueError(str(exc))
+
+        archive.extraction_filter = extraction_filter
+
         archive.extractall(dest_dir)
 
     finally:
@@ -1273,7 +1331,8 @@ def zip_dir(directory):
 
 
 
-UNITS = ('', 'K', 'M', 'G','T','P')
+
+UNITS = ('', 'K', 'M', 'G', 'T', 'P')
 
 
 class Progress(object):
@@ -1369,6 +1428,7 @@ class Progress(object):
 
 
 
+
 RICH_GLOB = re.compile(r'\{([^}]*)\}')
 _CHECK_RECURSIVE_GLOB = re.compile(r'[^/\\,{]\*\*|\*\*[^/\\,}]')
 _CHECK_MISMATCH_SET = re.compile(r'^[^{]*\}|\{[^}]*$')
@@ -1412,22 +1472,23 @@ def _iglob(path_glob):
                 for fn in _iglob(os.path.join(path, radical)):
                     yield fn
 
+
 if ssl:
     from .compat import (HTTPSHandler as BaseHTTPSHandler, match_hostname,
                          CertificateError)
 
-
-
-
-
+    
+    
+    
 
     class HTTPSConnection(httplib.HTTPSConnection):
-        ca_certs = None 
-        check_domain = True 
+        ca_certs = None  
+        check_domain = True  
 
         
         def connect(self):
-            sock = socket.create_connection((self.host, self.port), self.timeout)
+            sock = socket.create_connection((self.host, self.port),
+                                            self.timeout)
             if getattr(self, '_tunnel_host', False):
                 self.sock = sock
                 self._tunnel()
@@ -1435,7 +1496,7 @@ if ssl:
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             if hasattr(ssl, 'OP_NO_SSLv2'):
                 context.options |= ssl.OP_NO_SSLv2
-            if self.cert_file:
+            if getattr(self, 'cert_file', None):
                 context.load_cert_chain(self.cert_file, self.key_file)
             kwargs = {}
             if self.ca_certs:
@@ -1455,6 +1516,7 @@ if ssl:
                     raise
 
     class HTTPSHandler(BaseHTTPSHandler):
+
         def __init__(self, ca_certs, check_domain=True):
             BaseHTTPSHandler.__init__(self)
             self.ca_certs = ca_certs
@@ -1481,8 +1543,9 @@ if ssl:
                 return self.do_open(self._conn_maker, req)
             except URLError as e:
                 if 'certificate verify failed' in str(e.reason):
-                    raise CertificateError('Unable to verify server certificate '
-                                           'for %s' % req.host)
+                    raise CertificateError(
+                        'Unable to verify server certificate '
+                        'for %s' % req.host)
                 else:
                     raise
 
@@ -1496,14 +1559,18 @@ if ssl:
     
     
     class HTTPSOnlyHandler(HTTPSHandler, HTTPHandler):
+
         def http_open(self, req):
-            raise URLError('Unexpected HTTP request on what should be a secure '
-                           'connection: %s' % req)
+            raise URLError(
+                'Unexpected HTTP request on what should be a secure '
+                'connection: %s' % req)
+
 
 
 
 
 class Transport(xmlrpclib.Transport):
+
     def __init__(self, timeout, use_datetime=0):
         self.timeout = timeout
         xmlrpclib.Transport.__init__(self, use_datetime)
@@ -1515,8 +1582,11 @@ class Transport(xmlrpclib.Transport):
             self._connection = host, httplib.HTTPConnection(h)
         return self._connection[1]
 
+
 if ssl:
+
     class SafeTransport(xmlrpclib.SafeTransport):
+
         def __init__(self, timeout, use_datetime=0):
             self.timeout = timeout
             xmlrpclib.SafeTransport.__init__(self, use_datetime)
@@ -1528,12 +1598,13 @@ if ssl:
             kwargs['timeout'] = self.timeout
             if not self._connection or host != self._connection[0]:
                 self._extra_headers = eh
-                self._connection = host, httplib.HTTPSConnection(h, None,
-                                                                 **kwargs)
+                self._connection = host, httplib.HTTPSConnection(
+                    h, None, **kwargs)
             return self._connection[1]
 
 
 class ServerProxy(xmlrpclib.ServerProxy):
+
     def __init__(self, uri, **kwargs):
         self.timeout = timeout = kwargs.pop('timeout', None)
         
@@ -1555,6 +1626,8 @@ class ServerProxy(xmlrpclib.ServerProxy):
 
 
 
+
+
 def _csv_open(fn, mode, **kwargs):
     if sys.version_info[0] < 3:
         mode += 'b'
@@ -1568,9 +1641,9 @@ def _csv_open(fn, mode, **kwargs):
 
 class CSVBase(object):
     defaults = {
-        'delimiter': str(','),      
-        'quotechar': str('"'),      
-        'lineterminator': str('\n') 
+        'delimiter': str(','),  
+        'quotechar': str('"'),  
+        'lineterminator': str('\n')  
     }
 
     def __enter__(self):
@@ -1581,6 +1654,7 @@ class CSVBase(object):
 
 
 class CSVReader(CSVBase):
+
     def __init__(self, **kwargs):
         if 'stream' in kwargs:
             stream = kwargs['stream']
@@ -1605,7 +1679,9 @@ class CSVReader(CSVBase):
 
     __next__ = next
 
+
 class CSVWriter(CSVBase):
+
     def __init__(self, fn, **kwargs):
         self.stream = _csv_open(fn, 'w')
         self.writer = csv.writer(self.stream, **self.defaults)
@@ -1624,6 +1700,8 @@ class CSVWriter(CSVBase):
 
 
 
+
+
 class Configurator(BaseConfigurator):
 
     value_converters = dict(BaseConfigurator.value_converters)
@@ -1634,6 +1712,7 @@ class Configurator(BaseConfigurator):
         self.base = base or os.getcwd()
 
     def configure_custom(self, config):
+
         def convert(o):
             if isinstance(o, (list, tuple)):
                 result = type(o)([convert(i) for i in o])
@@ -1683,6 +1762,7 @@ class SubprocessMixin(object):
     """
     Mixin for running subprocesses and capturing their output
     """
+
     def __init__(self, verbose=False, progress=None):
         self.verbose = verbose
         self.progress = progress
@@ -1709,8 +1789,10 @@ class SubprocessMixin(object):
         stream.close()
 
     def run_command(self, cmd, **kwargs):
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, **kwargs)
+        p = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             **kwargs)
         t1 = threading.Thread(target=self.reader, args=(p.stdout, 'stdout'))
         t1.start()
         t2 = threading.Thread(target=self.reader, args=(p.stderr, 'stderr'))
@@ -1731,14 +1813,16 @@ def normalize_name(name):
     return re.sub('[-_.]+', '-', name).lower()
 
 
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
 
 class PyPIRCFile(object):
 
@@ -1763,9 +1847,10 @@ class PyPIRCFile(object):
             if 'distutils' in sections:
                 
                 index_servers = config.get('distutils', 'index-servers')
-                _servers = [server.strip() for server in
-                            index_servers.split('\n')
-                            if server.strip() != '']
+                _servers = [
+                    server.strip() for server in index_servers.split('\n')
+                    if server.strip() != ''
+                ]
                 if _servers == []:
                     
                     if 'pypi' in sections:
@@ -1776,7 +1861,8 @@ class PyPIRCFile(object):
                         result['username'] = config.get(server, 'username')
 
                         
-                        for key, default in (('repository', self.DEFAULT_REPOSITORY),
+                        for key, default in (('repository',
+                                              self.DEFAULT_REPOSITORY),
                                              ('realm', self.DEFAULT_REALM),
                                              ('password', None)):
                             if config.has_option(server, key):
@@ -1787,11 +1873,11 @@ class PyPIRCFile(object):
                         
                         
                         
-                        if (server == 'pypi' and
-                            repository in (self.DEFAULT_REPOSITORY, 'pypi')):
+                        if (server == 'pypi' and repository
+                                in (self.DEFAULT_REPOSITORY, 'pypi')):
                             result['repository'] = self.DEFAULT_REPOSITORY
-                        elif (result['server'] != repository and
-                              result['repository'] != repository):
+                        elif (result['server'] != repository
+                              and result['repository'] != repository):
                             result = {}
             elif 'server-login' in sections:
                 
@@ -1821,14 +1907,18 @@ class PyPIRCFile(object):
         with open(fn, 'w') as f:
             config.write(f)
 
+
 def _load_pypirc(index):
     """
     Read the PyPI access configuration as supported by distutils.
     """
     return PyPIRCFile(url=index.url).read()
 
+
 def _store_pypirc(index):
     PyPIRCFile().update(index.username, index.password)
+
+
 
 
 
@@ -1886,16 +1976,16 @@ def get_host_platform():
         
         
         
-        return  "%s-%s" % (osname, machine)
+        return "%s-%s" % (osname, machine)
 
     elif osname[:5] == 'sunos':
-        if release[0] >= '5':           
+        if release[0] >= '5':  
             osname = 'solaris'
             release = '%d.%s' % (int(release[0]) - 3, release[2:])
             
             
             
-            bitness = {2147483647:'32bit', 9223372036854775807:'64bit'}
+            bitness = {2147483647: '32bit', 9223372036854775807: '64bit'}
             machine += '.%s' % bitness[sys.maxsize]
         
     elif osname[:3] == 'aix':
@@ -1903,23 +1993,26 @@ def get_host_platform():
         return aix_platform()
     elif osname[:6] == 'cygwin':
         osname = 'cygwin'
-        rel_re = re.compile (r'[\d.]+', re.ASCII)
+        rel_re = re.compile(r'[\d.]+', re.ASCII)
         m = rel_re.match(release)
         if m:
             release = m.group()
     elif osname[:6] == 'darwin':
-        import _osx_support, distutils.sysconfig
+        import _osx_support
+        try:
+            from distutils import sysconfig
+        except ImportError:
+            import sysconfig
         osname, release, machine = _osx_support.get_platform_osx(
-                                        distutils.sysconfig.get_config_vars(),
-                                        osname, release, machine)
+            sysconfig.get_config_vars(), osname, release, machine)
 
     return '%s-%s-%s' % (osname, release, machine)
 
 
 _TARGET_TO_PLAT = {
-    'x86' : 'win32',
-    'x64' : 'win-amd64',
-    'arm' : 'win-arm32',
+    'x86': 'win32',
+    'x64': 'win-amd64',
+    'arm': 'win-arm32',
 }
 
 

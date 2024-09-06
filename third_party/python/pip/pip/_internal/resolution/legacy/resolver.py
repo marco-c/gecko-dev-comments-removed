@@ -231,9 +231,7 @@ class Resolver(BaseResolver):
             tags = compatibility_tags.get_supported()
             if requirement_set.check_supported_wheels and not wheel.supported(tags):
                 raise InstallationError(
-                    "{} is not a supported wheel on this platform.".format(
-                        wheel.filename
-                    )
+                    f"{wheel.filename} is not a supported wheel on this platform."
                 )
 
         
@@ -287,9 +285,9 @@ class Resolver(BaseResolver):
         )
         if does_not_satisfy_constraint:
             raise InstallationError(
-                "Could not satisfy constraints for '{}': "
+                f"Could not satisfy constraints for '{install_req.name}': "
                 "installation from path or url cannot be "
-                "constrained to a version".format(install_req.name)
+                "constrained to a version"
             )
         
         
@@ -398,9 +396,9 @@ class Resolver(BaseResolver):
                 
                 
                 "The candidate selected for download or install is a "
-                "yanked version: {candidate}\n"
-                "Reason for being yanked: {reason}"
-            ).format(candidate=best_candidate, reason=reason)
+                f"yanked version: {best_candidate}\n"
+                f"Reason for being yanked: {reason}"
+            )
             logger.warning(msg)
 
         return link
@@ -431,7 +429,7 @@ class Resolver(BaseResolver):
         if cache_entry is not None:
             logger.debug("Using cached wheel link: %s", cache_entry.link)
             if req.link is req.original_link and cache_entry.persistent:
-                req.original_link_is_in_wheel_cache = True
+                req.cached_wheel_source_link = req.link
             if cache_entry.origin is not None:
                 req.download_info = cache_entry.origin
             else:

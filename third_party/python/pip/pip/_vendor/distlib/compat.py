@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 import os
 import re
+import shutil
 import sys
 
 try:
@@ -33,9 +34,8 @@ if sys.version_info[0] < 3:
 
     import urllib2
     from urllib2 import (Request, urlopen, URLError, HTTPError,
-                         HTTPBasicAuthHandler, HTTPPasswordMgr,
-                         HTTPHandler, HTTPRedirectHandler,
-                         build_opener)
+                         HTTPBasicAuthHandler, HTTPPasswordMgr, HTTPHandler,
+                         HTTPRedirectHandler, build_opener)
     if ssl:
         from urllib2 import HTTPSHandler
     import httplib
@@ -50,15 +50,15 @@ if sys.version_info[0] < 3:
     
     
     
-        
-        
-        
-            
-            
+    
+    
+    
+    
+    
 
-        
-        
-        
+    
+    
+    
 
 else:  
     from io import StringIO
@@ -67,14 +67,12 @@ else:
     from io import TextIOWrapper as file_type
     import builtins
     import configparser
-    import shutil
-    from urllib.parse import (urlparse, urlunparse, urljoin, quote,
-                              unquote, urlsplit, urlunsplit, splittype)
+    from urllib.parse import (urlparse, urlunparse, urljoin, quote, unquote,
+                              urlsplit, urlunsplit, splittype)
     from urllib.request import (urlopen, urlretrieve, Request, url2pathname,
-                                pathname2url,
-                                HTTPBasicAuthHandler, HTTPPasswordMgr,
-                                HTTPHandler, HTTPRedirectHandler,
-                                build_opener)
+                                pathname2url, HTTPBasicAuthHandler,
+                                HTTPPasswordMgr, HTTPHandler,
+                                HTTPRedirectHandler, build_opener)
     if ssl:
         from urllib.request import HTTPSHandler
     from urllib.error import HTTPError, URLError, ContentTooShortError
@@ -88,13 +86,12 @@ else:
     from itertools import filterfalse
     filter = filter
 
-
 try:
     from ssl import match_hostname, CertificateError
-except ImportError: 
+except ImportError:  
+
     class CertificateError(ValueError):
         pass
-
 
     def _dnsname_match(dn, hostname, max_wildcards=1):
         """Matching according to RFC 6125, section 6.4.3
@@ -145,7 +142,6 @@ except ImportError:
         pat = re.compile(r'\A' + r'\.'.join(pats) + r'\Z', re.IGNORECASE)
         return pat.match(hostname)
 
-
     def match_hostname(cert, hostname):
         """Verify that *cert* (in decoded format as returned by
         SSLSocket.getpeercert()) matches the *hostname*.  RFC 2818 and RFC 6125
@@ -178,24 +174,26 @@ except ImportError:
                         dnsnames.append(value)
         if len(dnsnames) > 1:
             raise CertificateError("hostname %r "
-                "doesn't match either of %s"
-                % (hostname, ', '.join(map(repr, dnsnames))))
+                                   "doesn't match either of %s" %
+                                   (hostname, ', '.join(map(repr, dnsnames))))
         elif len(dnsnames) == 1:
             raise CertificateError("hostname %r "
-                "doesn't match %r"
-                % (hostname, dnsnames[0]))
+                                   "doesn't match %r" %
+                                   (hostname, dnsnames[0]))
         else:
             raise CertificateError("no appropriate commonName or "
-                "subjectAltName fields were found")
+                                   "subjectAltName fields were found")
 
 
 try:
     from types import SimpleNamespace as Container
 except ImportError:  
+
     class Container(object):
         """
         A generic container for when multiple values need to be returned
         """
+
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
 
@@ -214,6 +212,7 @@ except ImportError:
         path.
 
         """
+
         
         
         
@@ -237,7 +236,7 @@ except ImportError:
 
         if sys.platform == "win32":
             
-            if not os.curdir in path:
+            if os.curdir not in path:
                 path.insert(0, os.curdir)
 
             
@@ -258,7 +257,7 @@ except ImportError:
         seen = set()
         for dir in path:
             normdir = os.path.normcase(dir)
-            if not normdir in seen:
+            if normdir not in seen:
                 seen.add(normdir)
                 for thefile in files:
                     name = os.path.join(dir, thefile)
@@ -277,6 +276,7 @@ else:
     from zipfile import ZipExtFile as BaseZipExtFile
 
     class ZipExtFile(BaseZipExtFile):
+
         def __init__(self, base):
             self.__dict__.update(base.__dict__)
 
@@ -288,6 +288,7 @@ else:
             
 
     class ZipFile(BaseZipFile):
+
         def __enter__(self):
             return self
 
@@ -299,9 +300,11 @@ else:
             base = BaseZipFile.open(self, *args, **kwargs)
             return ZipExtFile(base)
 
+
 try:
     from platform import python_implementation
-except ImportError: 
+except ImportError:  
+
     def python_implementation():
         """Return a string identifying the Python implementation."""
         if 'PyPy' in sys.version:
@@ -312,12 +315,12 @@ except ImportError:
             return 'IronPython'
         return 'CPython'
 
-import shutil
+
 import sysconfig
 
 try:
     callable = callable
-except NameError:   
+except NameError:  
     from collections.abc import Callable
 
     def callable(obj):
@@ -358,11 +361,11 @@ except AttributeError:
             raise TypeError("expect bytes or str, not %s" %
                             type(filename).__name__)
 
+
 try:
     from tokenize import detect_encoding
-except ImportError: 
+except ImportError:  
     from codecs import BOM_UTF8, lookup
-    import re
 
     cookie_re = re.compile(r"coding[:=]\s*([-\w.]+)")
 
@@ -401,6 +404,7 @@ except ImportError:
         bom_found = False
         encoding = None
         default = 'utf-8'
+
         def read_or_stop():
             try:
                 return readline()
@@ -430,8 +434,8 @@ except ImportError:
                 if filename is None:
                     msg = "unknown encoding: " + encoding
                 else:
-                    msg = "unknown encoding for {!r}: {}".format(filename,
-                            encoding)
+                    msg = "unknown encoding for {!r}: {}".format(
+                        filename, encoding)
                 raise SyntaxError(msg)
 
             if bom_found:
@@ -440,7 +444,8 @@ except ImportError:
                     if filename is None:
                         msg = 'encoding problem: utf-8'
                     else:
-                        msg = 'encoding problem for {!r}: utf-8'.format(filename)
+                        msg = 'encoding problem for {!r}: utf-8'.format(
+                            filename)
                     raise SyntaxError(msg)
                 encoding += '-sig'
             return encoding
@@ -468,6 +473,7 @@ except ImportError:
         return default, [first, second]
 
 
+
 try:
     from html import escape
 except ImportError:
@@ -479,12 +485,13 @@ else:
 
 try:
     from collections import ChainMap
-except ImportError: 
+except ImportError:  
     from collections import MutableMapping
 
     try:
         from reprlib import recursive_repr as _recursive_repr
     except ImportError:
+
         def _recursive_repr(fillvalue='...'):
             '''
             Decorator to make a repr function return fillvalue for a recursive
@@ -509,13 +516,15 @@ except ImportError:
                 wrapper.__module__ = getattr(user_function, '__module__')
                 wrapper.__doc__ = getattr(user_function, '__doc__')
                 wrapper.__name__ = getattr(user_function, '__name__')
-                wrapper.__annotations__ = getattr(user_function, '__annotations__', {})
+                wrapper.__annotations__ = getattr(user_function,
+                                                  '__annotations__', {})
                 return wrapper
 
             return decorating_function
 
     class ChainMap(MutableMapping):
-        ''' A ChainMap groups multiple dicts (or other mappings) together
+        '''
+        A ChainMap groups multiple dicts (or other mappings) together
         to create a single, updateable view.
 
         The underlying mappings are stored in a list.  That list is public and can
@@ -524,7 +533,6 @@ except ImportError:
         Lookups search the underlying mappings successively until a key is found.
         In contrast, writes, updates, and deletions only operate on the first
         mapping.
-
         '''
 
         def __init__(self, *maps):
@@ -532,7 +540,7 @@ except ImportError:
             If no mappings are provided, a single empty dictionary is used.
 
             '''
-            self.maps = list(maps) or [{}]          
+            self.maps = list(maps) or [{}]  
 
         def __missing__(self, key):
             raise KeyError(key)
@@ -540,16 +548,19 @@ except ImportError:
         def __getitem__(self, key):
             for mapping in self.maps:
                 try:
-                    return mapping[key]             
+                    return mapping[
+                        key]  
                 except KeyError:
                     pass
-            return self.__missing__(key)            
+            return self.__missing__(
+                key)  
 
         def get(self, key, default=None):
             return self[key] if key in self else default
 
         def __len__(self):
-            return len(set().union(*self.maps))     
+            return len(set().union(
+                *self.maps))  
 
         def __iter__(self):
             return iter(set().union(*self.maps))
@@ -576,12 +587,12 @@ except ImportError:
 
         __copy__ = copy
 
-        def new_child(self):                        
+        def new_child(self):  
             'New ChainMap with a new dict followed by all previous maps.'
             return self.__class__({}, *self.maps)
 
         @property
-        def parents(self):                          
+        def parents(self):  
             'New ChainMap from maps[1:].'
             return self.__class__(*self.maps[1:])
 
@@ -592,7 +603,8 @@ except ImportError:
             try:
                 del self.maps[0][key]
             except KeyError:
-                raise KeyError('Key not found in the first mapping: {!r}'.format(key))
+                raise KeyError(
+                    'Key not found in the first mapping: {!r}'.format(key))
 
         def popitem(self):
             'Remove and return an item pair from maps[0]. Raise KeyError is maps[0] is empty.'
@@ -606,15 +618,18 @@ except ImportError:
             try:
                 return self.maps[0].pop(key, *args)
             except KeyError:
-                raise KeyError('Key not found in the first mapping: {!r}'.format(key))
+                raise KeyError(
+                    'Key not found in the first mapping: {!r}'.format(key))
 
         def clear(self):
             'Clear maps[0], leaving maps[1:] intact.'
             self.maps[0].clear()
 
+
 try:
     from importlib.util import cache_from_source  
 except ImportError:  
+
     def cache_from_source(path, debug_override=None):
         assert path.endswith('.py')
         if debug_override is None:
@@ -625,12 +640,13 @@ except ImportError:
             suffix = 'o'
         return path + suffix
 
+
 try:
     from collections import OrderedDict
-except ImportError: 
-
-
-
+except ImportError:  
+    
+    
+    
     try:
         from thread import get_ident as _get_ident
     except ImportError:
@@ -641,9 +657,9 @@ except ImportError:
     except ImportError:
         pass
 
-
     class OrderedDict(dict):
         'Dictionary that remembers insertion order'
+
         
         
         
@@ -661,11 +677,12 @@ except ImportError:
 
             '''
             if len(args) > 1:
-                raise TypeError('expected at most 1 arguments, got %d' % len(args))
+                raise TypeError('expected at most 1 arguments, got %d' %
+                                len(args))
             try:
                 self.__root
             except AttributeError:
-                self.__root = root = []                     
+                self.__root = root = []  
                 root[:] = [root, root, None]
                 self.__map = {}
             self.__update(*args, **kwds)
@@ -779,7 +796,7 @@ except ImportError:
             '''
             if len(args) > 2:
                 raise TypeError('update() takes at most 2 positional '
-                                'arguments (%d given)' % (len(args),))
+                                'arguments (%d given)' % (len(args), ))
             elif not args:
                 raise TypeError('update() takes at least 1 argument (0 given)')
             self = args[0]
@@ -825,14 +842,15 @@ except ImportError:
 
         def __repr__(self, _repr_running=None):
             'od.__repr__() <==> repr(od)'
-            if not _repr_running: _repr_running = {}
+            if not _repr_running:
+                _repr_running = {}
             call_key = id(self), _get_ident()
             if call_key in _repr_running:
                 return '...'
             _repr_running[call_key] = 1
             try:
                 if not self:
-                    return '%s()' % (self.__class__.__name__,)
+                    return '%s()' % (self.__class__.__name__, )
                 return '%s(%r)' % (self.__class__.__name__, self.items())
             finally:
                 del _repr_running[call_key]
@@ -844,8 +862,8 @@ except ImportError:
             for k in vars(OrderedDict()):
                 inst_dict.pop(k, None)
             if inst_dict:
-                return (self.__class__, (items,), inst_dict)
-            return self.__class__, (items,)
+                return (self.__class__, (items, ), inst_dict)
+            return self.__class__, (items, )
 
         def copy(self):
             'od.copy() -> a shallow copy of od'
@@ -868,7 +886,8 @@ except ImportError:
 
             '''
             if isinstance(other, OrderedDict):
-                return len(self)==len(other) and self.items() == other.items()
+                return len(self) == len(
+                    other) and self.items() == other.items()
             return dict.__eq__(self, other)
 
         def __ne__(self, other):
@@ -888,18 +907,17 @@ except ImportError:
             "od.viewitems() -> a set-like object providing a view on od's items"
             return ItemsView(self)
 
+
 try:
     from logging.config import BaseConfigurator, valid_ident
-except ImportError: 
+except ImportError:  
     IDENTIFIER = re.compile('^[a-z_][a-z0-9_]*$', re.I)
-
 
     def valid_ident(s):
         m = IDENTIFIER.match(s)
         if not m:
             raise ValueError('Not a valid Python identifier: %r' % s)
         return True
-
 
     
     
@@ -949,6 +967,7 @@ except ImportError:
 
     class ConvertingList(list):
         """A converting list wrapper."""
+
         def __getitem__(self, key):
             value = list.__getitem__(self, key)
             result = self.configurator.convert(value)
@@ -972,6 +991,7 @@ except ImportError:
 
     class ConvertingTuple(tuple):
         """A converting tuple wrapper."""
+
         def __getitem__(self, key):
             value = tuple.__getitem__(self, key)
             result = self.configurator.convert(value)
@@ -995,8 +1015,8 @@ except ImportError:
         DIGIT_PATTERN = re.compile(r'^\d+$')
 
         value_converters = {
-            'ext' : 'ext_convert',
-            'cfg' : 'cfg_convert',
+            'ext': 'ext_convert',
+            'cfg': 'cfg_convert',
         }
 
         
@@ -1042,7 +1062,6 @@ except ImportError:
             else:
                 rest = rest[m.end():]
                 d = self.config[m.groups()[0]]
-                
                 while rest:
                     m = self.DOT_PATTERN.match(rest)
                     if m:
@@ -1055,7 +1074,9 @@ except ImportError:
                                 d = d[idx]
                             else:
                                 try:
-                                    n = int(idx) 
+                                    n = int(
+                                        idx
+                                    )  
                                     d = d[n]
                                 except TypeError:
                                     d = d[idx]
@@ -1073,14 +1094,15 @@ except ImportError:
             replaced by their converting alternatives. Strings are checked to
             see if they have a conversion format and are converted if they do.
             """
-            if not isinstance(value, ConvertingDict) and isinstance(value, dict):
+            if not isinstance(value, ConvertingDict) and isinstance(
+                    value, dict):
                 value = ConvertingDict(value)
                 value.configurator = self
-            elif not isinstance(value, ConvertingList) and isinstance(value, list):
+            elif not isinstance(value, ConvertingList) and isinstance(
+                    value, list):
                 value = ConvertingList(value)
                 value.configurator = self
-            elif not isinstance(value, ConvertingTuple) and\
-                     isinstance(value, tuple):
+            elif not isinstance(value, ConvertingTuple) and isinstance(value, tuple):
                 value = ConvertingTuple(value)
                 value.configurator = self
             elif isinstance(value, string_types):

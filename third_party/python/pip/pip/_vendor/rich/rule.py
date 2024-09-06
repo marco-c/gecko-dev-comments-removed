@@ -51,13 +51,9 @@ class Rule(JupyterMixin):
     ) -> RenderResult:
         width = options.max_width
 
-        
-        isascii = getattr(str, "isascii", None) or (
-            lambda s: all(ord(c) < 128 for c in s)
-        )
         characters = (
             "-"
-            if (options.ascii_only and not isascii(self.characters))
+            if (options.ascii_only and not self.characters.isascii())
             else self.characters
         )
 

@@ -50,6 +50,13 @@ from .util.url import Url, _encode_target
 from .util.url import _normalize_host as normalize_host
 from .util.url import get_host, parse_url
 
+try:  
+    import weakref
+
+    weakref_finalize = weakref.finalize
+except AttributeError:  
+    from .packages.backports.weakref_finalize import weakref_finalize
+
 xrange = six.moves.xrange
 
 log = logging.getLogger(__name__)
@@ -220,6 +227,16 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
             self.conn_kw["proxy"] = self.proxy
             self.conn_kw["proxy_config"] = self.proxy_config
 
+        
+        
+        
+        
+        pool = self.pool
+
+        
+        
+        weakref_finalize(self, _close_pool_connections, pool)
+
     def _new_conn(self):
         """
         Return a fresh :class:`HTTPConnection`.
@@ -379,7 +396,7 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
 
         timeout_obj = self._get_timeout(timeout)
         timeout_obj.start_connect()
-        conn.timeout = timeout_obj.connect_timeout
+        conn.timeout = Timeout.resolve_default_timeout(timeout_obj.connect_timeout)
 
         
         try:
@@ -489,14 +506,8 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
         
         old_pool, self.pool = self.pool, None
 
-        try:
-            while True:
-                conn = old_pool.get(block=False)
-                if conn:
-                    conn.close()
-
-        except queue.Empty:
-            pass  
+        
+        _close_pool_connections(old_pool)
 
     def is_same_host(self, url):
         """
@@ -1108,3 +1119,14 @@ def _normalize_host(host, scheme):
     if host.startswith("[") and host.endswith("]"):
         host = host[1:-1]
     return host
+
+
+def _close_pool_connections(pool):
+    """Drains a queue of connections and closes each one."""
+    try:
+        while True:
+            conn = pool.get(block=False)
+            if conn:
+                conn.close()
+    except queue.Empty:
+        pass  

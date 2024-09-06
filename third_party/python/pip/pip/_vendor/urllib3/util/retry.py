@@ -235,7 +235,7 @@ class Retry(object):
     RETRY_AFTER_STATUS_CODES = frozenset([413, 429, 503])
 
     
-    DEFAULT_REMOVE_HEADERS_ON_REDIRECT = frozenset(["Authorization"])
+    DEFAULT_REMOVE_HEADERS_ON_REDIRECT = frozenset(["Cookie", "Authorization"])
 
     
     DEFAULT_BACKOFF_MAX = 120

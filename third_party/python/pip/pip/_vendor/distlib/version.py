@@ -176,9 +176,9 @@ class Matcher(object):
         return self._string
 
 
-PEP440_VERSION_RE = re.compile(r'^v?(\d+!)?(\d+(\.\d+)*)((a|b|c|rc)(\d+))?'
-                               r'(\.(post)(\d+))?(\.(dev)(\d+))?'
-                               r'(\+([a-zA-Z\d]+(\.[a-zA-Z\d]+)?))?$')
+PEP440_VERSION_RE = re.compile(r'^v?(\d+!)?(\d+(\.\d+)*)((a|alpha|b|beta|c|rc|pre|preview)(\d+)?)?'
+                               r'(\.(post|r|rev)(\d+)?)?([._-]?(dev)(\d+)?)?'
+                               r'(\+([a-zA-Z\d]+(\.[a-zA-Z\d]+)?))?$', re.I)
 
 
 def _pep_440_key(s):
@@ -202,15 +202,24 @@ def _pep_440_key(s):
     if pre == (None, None):
         pre = ()
     else:
-        pre = pre[0], int(pre[1])
+        if pre[1] is None:
+            pre = pre[0], 0
+        else:
+            pre = pre[0], int(pre[1])
     if post == (None, None):
         post = ()
     else:
-        post = post[0], int(post[1])
+        if post[1] is None:
+            post = post[0], 0
+        else:
+            post = post[0], int(post[1])
     if dev == (None, None):
         dev = ()
     else:
-        dev = dev[0], int(dev[1])
+        if dev[1] is None:
+            dev = dev[0], 0
+        else:
+            dev = dev[0], int(dev[1])
     if local is None:
         local = ()
     else:
@@ -238,7 +247,6 @@ def _pep_440_key(s):
     if not dev:
         dev = ('final',)
 
-    
     return epoch, nums, pre, post, dev, local
 
 
@@ -378,6 +386,7 @@ class NormalizedMatcher(Matcher):
         pfx = '.'.join([str(i) for i in release_clause])
         return _match_prefix(version, pfx)
 
+
 _REPLACEMENTS = (
     (re.compile('[.+-]$'), ''),                     
     (re.compile(r'^[.](\d)'), r'0.\1'),             
@@ -388,7 +397,7 @@ _REPLACEMENTS = (
     (re.compile('[.]{2,}'), '.'),                   
     (re.compile(r'\b(alfa|apha)\b'), 'alpha'),      
     (re.compile(r'\b(pre-alpha|prealpha)\b'),
-                'pre.alpha'),                       
+        'pre.alpha'),                               
     (re.compile(r'\(beta\)$'), 'beta'),             
 )
 
@@ -563,6 +572,7 @@ def _suggest_normalized_version(s):
 
 
 
+
 _VERSION_PART = re.compile(r'([a-z]+|\d+|[\.-])', re.I)
 _VERSION_REPLACE = {
     'pre': 'c',
@@ -610,7 +620,7 @@ class LegacyVersion(Version):
         result = False
         for x in self._parts:
             if (isinstance(x, string_types) and x.startswith('*') and
-                x < '*final'):
+                    x < '*final'):
                 result = True
                 break
         return result
@@ -636,6 +646,7 @@ class LegacyMatcher(Matcher):
         if '.' in s:
             s = s.rsplit('.', 1)[0]
         return _match_prefix(version, s)
+
 
 
 
@@ -721,6 +732,7 @@ class VersionScheme(object):
         else:
             result = self.suggester(s)
         return result
+
 
 _SCHEMES = {
     'normalized': VersionScheme(_normalized_key, NormalizedMatcher,

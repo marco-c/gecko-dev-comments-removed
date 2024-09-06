@@ -55,25 +55,25 @@ class LinkHash:
     name: str
     value: str
 
-    _hash_re = re.compile(
+    _hash_url_fragment_re = re.compile(
         
         
         
         
         
-        r"({choices})=(.*)".format(
+        r"[#&]({choices})=([^&]*)".format(
             choices="|".join(re.escape(hash_name) for hash_name in _SUPPORTED_HASHES)
         ),
     )
 
     def __post_init__(self) -> None:
-        assert self._hash_re.match(f"{self.name}={self.value}")
+        assert self.name in _SUPPORTED_HASHES
 
     @classmethod
     @functools.lru_cache(maxsize=None)
-    def split_hash_name_and_value(cls, url: str) -> Optional["LinkHash"]:
+    def find_hash_url_fragment(cls, url: str) -> Optional["LinkHash"]:
         """Search a string for a checksum algorithm name and encoded output value."""
-        match = cls._hash_re.search(url)
+        match = cls._hash_url_fragment_re.search(url)
         if match is None:
             return None
         name, value = match.groups()
@@ -93,6 +93,28 @@ class LinkHash:
         if hashes is None:
             return False
         return hashes.is_hash_allowed(self.name, hex_digest=self.value)
+
+
+@dataclass(frozen=True)
+class MetadataFile:
+    """Information about a core metadata file associated with a distribution."""
+
+    hashes: Optional[Dict[str, str]]
+
+    def __post_init__(self) -> None:
+        if self.hashes is not None:
+            assert all(name in _SUPPORTED_HASHES for name in self.hashes)
+
+
+def supported_hashes(hashes: Optional[Dict[str, str]]) -> Optional[Dict[str, str]]:
+    
+    
+    if hashes is None:
+        return None
+    hashes = {n: v for n, v in hashes.items() if n in _SUPPORTED_HASHES}
+    if not hashes:
+        return None
+    return hashes
 
 
 def _clean_url_path_part(part: str) -> str:
@@ -167,7 +189,7 @@ class Link(KeyBasedCompareMixin):
         "comes_from",
         "requires_python",
         "yanked_reason",
-        "dist_info_metadata",
+        "metadata_file_data",
         "cache_link_parsing",
         "egg_fragment",
     ]
@@ -178,7 +200,7 @@ class Link(KeyBasedCompareMixin):
         comes_from: Optional[Union[str, "IndexContent"]] = None,
         requires_python: Optional[str] = None,
         yanked_reason: Optional[str] = None,
-        dist_info_metadata: Optional[str] = None,
+        metadata_file_data: Optional[MetadataFile] = None,
         cache_link_parsing: bool = True,
         hashes: Optional[Mapping[str, str]] = None,
     ) -> None:
@@ -196,17 +218,20 @@ class Link(KeyBasedCompareMixin):
             a simple repository HTML link. If the file has been yanked but
             no reason was provided, this should be the empty string. See
             PEP 592 for more information and the specification.
-        :param dist_info_metadata: the metadata attached to the file, or None if no such
-            metadata is provided. This is the value of the "data-dist-info-metadata"
-            attribute, if present, in a simple repository HTML link. This may be parsed
-            into its own `Link` by `self.metadata_link()`. See PEP 658 for more
-            information and the specification.
+        :param metadata_file_data: the metadata attached to the file, or None if
+            no such metadata is provided. This argument, if not None, indicates
+            that a separate metadata file exists, and also optionally supplies
+            hashes for that file.
         :param cache_link_parsing: A flag that is used elsewhere to determine
             whether resources retrieved from this link should be cached. PyPI
             URLs should generally have this set to False, for example.
         :param hashes: A mapping of hash names to digests to allow us to
             determine the validity of a download.
         """
+
+        
+        
+        
 
         
         if url.startswith("\\\\"):
@@ -217,7 +242,7 @@ class Link(KeyBasedCompareMixin):
         
         self._url = url
 
-        link_hash = LinkHash.split_hash_name_and_value(url)
+        link_hash = LinkHash.find_hash_url_fragment(url)
         hashes_from_link = {} if link_hash is None else link_hash.as_dict()
         if hashes is None:
             self._hashes = hashes_from_link
@@ -227,7 +252,7 @@ class Link(KeyBasedCompareMixin):
         self.comes_from = comes_from
         self.requires_python = requires_python if requires_python else None
         self.yanked_reason = yanked_reason
-        self.dist_info_metadata = dist_info_metadata
+        self.metadata_file_data = metadata_file_data
 
         super().__init__(key=url, defining_class=Link)
 
@@ -250,8 +275,24 @@ class Link(KeyBasedCompareMixin):
         url = _ensure_quoted_url(urllib.parse.urljoin(page_url, file_url))
         pyrequire = file_data.get("requires-python")
         yanked_reason = file_data.get("yanked")
-        dist_info_metadata = file_data.get("dist-info-metadata")
         hashes = file_data.get("hashes", {})
+
+        
+        
+        metadata_info = file_data.get("core-metadata")
+        if metadata_info is None:
+            metadata_info = file_data.get("dist-info-metadata")
+
+        
+        if isinstance(metadata_info, dict):
+            
+            metadata_file_data = MetadataFile(supported_hashes(metadata_info))
+        elif metadata_info:
+            
+            metadata_file_data = MetadataFile(None)
+        else:
+            
+            metadata_file_data = None
 
         
         if yanked_reason and not isinstance(yanked_reason, str):
@@ -266,7 +307,7 @@ class Link(KeyBasedCompareMixin):
             requires_python=pyrequire,
             yanked_reason=yanked_reason,
             hashes=hashes,
-            dist_info_metadata=dist_info_metadata,
+            metadata_file_data=metadata_file_data,
         )
 
     @classmethod
@@ -286,14 +327,39 @@ class Link(KeyBasedCompareMixin):
         url = _ensure_quoted_url(urllib.parse.urljoin(base_url, href))
         pyrequire = anchor_attribs.get("data-requires-python")
         yanked_reason = anchor_attribs.get("data-yanked")
-        dist_info_metadata = anchor_attribs.get("data-dist-info-metadata")
+
+        
+        
+        metadata_info = anchor_attribs.get("data-core-metadata")
+        if metadata_info is None:
+            metadata_info = anchor_attribs.get("data-dist-info-metadata")
+        
+        
+        if metadata_info == "true":
+            
+            metadata_file_data = MetadataFile(None)
+        elif metadata_info is None:
+            
+            metadata_file_data = None
+        else:
+            
+            hashname, sep, hashval = metadata_info.partition("=")
+            if sep == "=":
+                metadata_file_data = MetadataFile(supported_hashes({hashname: hashval}))
+            else:
+                
+                logger.debug(
+                    "Index returned invalid data-dist-info-metadata value: %s",
+                    metadata_info,
+                )
+                metadata_file_data = MetadataFile(None)
 
         return cls(
             url,
             comes_from=page_url,
             requires_python=pyrequire,
             yanked_reason=yanked_reason,
-            dist_info_metadata=dist_info_metadata,
+            metadata_file_data=metadata_file_data,
         )
 
     def __str__(self) -> str:
@@ -302,9 +368,7 @@ class Link(KeyBasedCompareMixin):
         else:
             rp = ""
         if self.comes_from:
-            return "{} (from {}){}".format(
-                redact_auth_from_url(self._url), self.comes_from, rp
-            )
+            return f"{redact_auth_from_url(self._url)} (from {self.comes_from}){rp}"
         else:
             return redact_auth_from_url(str(self._url))
 
@@ -395,22 +459,13 @@ class Link(KeyBasedCompareMixin):
         return match.group(1)
 
     def metadata_link(self) -> Optional["Link"]:
-        """Implementation of PEP 658 parsing."""
-        
-        
-        
-        if self.dist_info_metadata is None:
+        """Return a link to the associated core metadata file (if any)."""
+        if self.metadata_file_data is None:
             return None
         metadata_url = f"{self.url_without_fragment}.metadata"
-        
-        
-        if self.dist_info_metadata != "true":
-            link_hash = LinkHash.split_hash_name_and_value(self.dist_info_metadata)
-        else:
-            link_hash = None
-        if link_hash is None:
+        if self.metadata_file_data.hashes is None:
             return Link(metadata_url)
-        return Link(metadata_url, hashes=link_hash.as_dict())
+        return Link(metadata_url, hashes=self.metadata_file_data.hashes)
 
     def as_hashes(self) -> Hashes:
         return Hashes({k: [v] for k, v in self._hashes.items()})

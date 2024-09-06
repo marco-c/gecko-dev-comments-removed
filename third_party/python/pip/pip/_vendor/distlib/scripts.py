@@ -66,7 +66,9 @@ def enquote_executable(executable):
     return executable
 
 
+
 _enquote_executable = enquote_executable
+
 
 class ScriptMaker(object):
     """
@@ -77,21 +79,25 @@ class ScriptMaker(object):
 
     executable = None  
 
-    def __init__(self, source_dir, target_dir, add_launchers=True,
-                 dry_run=False, fileop=None):
+    def __init__(self,
+                 source_dir,
+                 target_dir,
+                 add_launchers=True,
+                 dry_run=False,
+                 fileop=None):
         self.source_dir = source_dir
         self.target_dir = target_dir
         self.add_launchers = add_launchers
         self.force = False
         self.clobber = False
         
-        self.set_mode = (os.name == 'posix') or (os.name == 'java' and
-                                                 os._name == 'posix')
+        self.set_mode = (os.name == 'posix') or (os.name == 'java'
+                                                 and os._name == 'posix')
         self.variants = set(('', 'X.Y'))
         self._fileop = fileop or FileOperator(dry_run)
 
-        self._is_nt = os.name == 'nt' or (
-            os.name == 'java' and os._name == 'nt')
+        self._is_nt = os.name == 'nt' or (os.name == 'java'
+                                          and os._name == 'nt')
         self.version_info = sys.version_info
 
     def _get_alternate_executable(self, executable, options):
@@ -102,6 +108,7 @@ class ScriptMaker(object):
         return executable
 
     if sys.platform.startswith('java'):  
+
         def _is_shell(self, executable):
             """
             Determine if the specified executable is a script
@@ -146,8 +153,8 @@ class ScriptMaker(object):
                 max_shebang_length = 512
             else:
                 max_shebang_length = 127
-            simple_shebang = ((b' ' not in executable) and
-                              (shebang_length <= max_shebang_length))
+            simple_shebang = ((b' ' not in executable)
+                              and (shebang_length <= max_shebang_length))
 
         if simple_shebang:
             result = b'#!' + executable + post_interp + b'\n'
@@ -161,22 +168,25 @@ class ScriptMaker(object):
         enquote = True
         if self.executable:
             executable = self.executable
-            enquote = False     
+            enquote = False  
         elif not sysconfig.is_python_build():
             executable = get_executable()
         elif in_venv():  
-            executable = os.path.join(sysconfig.get_path('scripts'),
-                            'python%s' % sysconfig.get_config_var('EXE'))
-        else:  
             executable = os.path.join(
-                sysconfig.get_config_var('BINDIR'),
-               'python%s%s' % (sysconfig.get_config_var('VERSION'),
-                               sysconfig.get_config_var('EXE')))
-            if not os.path.isfile(executable):
+                sysconfig.get_path('scripts'),
+                'python%s' % sysconfig.get_config_var('EXE'))
+        else:  
+            if os.name == 'nt':
                 
                 
-                executable = os.path.join(sysconfig.get_config_var('BINDIR'),
-                                'python%s' % (sysconfig.get_config_var('EXE')))
+                executable = os.path.join(
+                    sysconfig.get_config_var('BINDIR'),
+                    'python%s' % (sysconfig.get_config_var('EXE')))
+            else:
+                executable = os.path.join(
+                    sysconfig.get_config_var('BINDIR'),
+                    'python%s%s' % (sysconfig.get_config_var('VERSION'),
+                                    sysconfig.get_config_var('EXE')))
         if options:
             executable = self._get_alternate_executable(executable, options)
 
@@ -201,7 +211,7 @@ class ScriptMaker(object):
         executable = executable.encode('utf-8')
         
         if (sys.platform == 'cli' and '-X:Frames' not in post_interp
-            and '-X:FullFrames' not in post_interp):  
+                and '-X:FullFrames' not in post_interp):  
             post_interp += b' -X:Frames'
         shebang = self._build_shebang(executable, post_interp)
         
@@ -212,8 +222,8 @@ class ScriptMaker(object):
         try:
             shebang.decode('utf-8')
         except UnicodeDecodeError:  
-            raise ValueError(
-                'The shebang (%r) is not decodable from utf-8' % shebang)
+            raise ValueError('The shebang (%r) is not decodable from utf-8' %
+                             shebang)
         
         
         
@@ -221,15 +231,16 @@ class ScriptMaker(object):
             try:
                 shebang.decode(encoding)
             except UnicodeDecodeError:  
-                raise ValueError(
-                    'The shebang (%r) is not decodable '
-                    'from the script encoding (%r)' % (shebang, encoding))
+                raise ValueError('The shebang (%r) is not decodable '
+                                 'from the script encoding (%r)' %
+                                 (shebang, encoding))
         return shebang
 
     def _get_script_text(self, entry):
-        return self.script_template % dict(module=entry.prefix,
-                                           import_name=entry.suffix.split('.')[0],
-                                           func=entry.suffix)
+        return self.script_template % dict(
+            module=entry.prefix,
+            import_name=entry.suffix.split('.')[0],
+            func=entry.suffix)
 
     manifest = _DEFAULT_MANIFEST
 
@@ -254,7 +265,8 @@ class ScriptMaker(object):
                 source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH')
                 if source_date_epoch:
                     date_time = time.gmtime(int(source_date_epoch))[:6]
-                    zinfo = ZipInfo(filename='__main__.py', date_time=date_time)
+                    zinfo = ZipInfo(filename='__main__.py',
+                                    date_time=date_time)
                     zf.writestr(zinfo, script_bytes)
                 else:
                     zf.writestr('__main__.py', script_bytes)
@@ -275,7 +287,7 @@ class ScriptMaker(object):
                                    'use .deleteme logic')
                     dfname = '%s.deleteme' % outname
                     if os.path.exists(dfname):
-                        os.remove(dfname)       
+                        os.remove(dfname)  
                     os.rename(outname, dfname)  
                     self._fileop.write_binary_file(outname, script_bytes)
                     logger.debug('Able to replace executable using '
@@ -283,9 +295,10 @@ class ScriptMaker(object):
                     try:
                         os.remove(dfname)
                     except Exception:
-                        pass    
+                        pass  
             else:
-                if self._is_nt and not outname.endswith('.' + ext):  
+                if self._is_nt and not outname.endswith(
+                        '.' + ext):  
                     outname = '%s.%s' % (outname, ext)
                 if os.path.exists(outname) and not self.clobber:
                     logger.warning('Skipping existing file %s', outname)
@@ -304,8 +317,9 @@ class ScriptMaker(object):
         if 'X' in self.variants:
             result.add('%s%s' % (name, self.version_info[0]))
         if 'X.Y' in self.variants:
-            result.add('%s%s%s.%s' % (name, self.variant_separator,
-                                      self.version_info[0], self.version_info[1]))
+            result.add('%s%s%s.%s' %
+                       (name, self.variant_separator, self.version_info[0],
+                        self.version_info[1]))
         return result
 
     def _make_script(self, entry, filenames, options=None):
@@ -383,12 +397,13 @@ class ScriptMaker(object):
     def dry_run(self, value):
         self._fileop.dry_run = value
 
-    if os.name == 'nt' or (os.name == 'java' and os._name == 'nt'):  
+    if os.name == 'nt' or (os.name == 'java'
+                           and os._name == 'nt'):  
         
         
 
         def _get_launcher(self, kind):
-            if struct.calcsize('P') == 8:   
+            if struct.calcsize('P') == 8:  
                 bits = '64'
             else:
                 bits = '32'
@@ -399,8 +414,8 @@ class ScriptMaker(object):
             distlib_package = __name__.rsplit('.', 1)[0]
             resource = finder(distlib_package).find(name)
             if not resource:
-                msg = ('Unable to find resource %s in package %s' % (name,
-                       distlib_package))
+                msg = ('Unable to find resource %s in package %s' %
+                       (name, distlib_package))
                 raise ValueError(msg)
             return resource.bytes
 
