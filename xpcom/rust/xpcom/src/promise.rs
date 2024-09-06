@@ -22,6 +22,9 @@ mod ffi {
     }
 }
 
+
+
+#[allow(dead_code)]
 #[repr(C)]
 pub struct Promise {
     private: [u8; 0],
