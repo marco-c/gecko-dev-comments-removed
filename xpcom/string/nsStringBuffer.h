@@ -9,10 +9,9 @@
 
 #include <atomic>
 #include "mozilla/MemoryReporting.h"
-#include "nsStringFwd.h"
-
-template <class T>
-struct already_AddRefed;
+#include "mozilla/Assertions.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/RefCounted.h"
 
 
 
@@ -25,12 +24,12 @@ struct already_AddRefed;
 
 class nsStringBuffer {
  private:
-  friend class CheckStaticAtomSizes;
-
   std::atomic<uint32_t> mRefCount;
   uint32_t mStorageSize;
 
  public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(nsStringBuffer)
+
   
 
 
@@ -48,7 +47,20 @@ class nsStringBuffer {
 
 
 
-  static already_AddRefed<nsStringBuffer> Alloc(size_t aStorageSize);
+  static already_AddRefed<nsStringBuffer> Alloc(size_t aSize) {
+    MOZ_ASSERT(aSize != 0, "zero capacity allocation not allowed");
+    MOZ_ASSERT(sizeof(nsStringBuffer) + aSize <= size_t(uint32_t(-1)) &&
+                   sizeof(nsStringBuffer) + aSize > aSize,
+               "mStorageSize will truncate");
+
+    auto* hdr = (nsStringBuffer*)malloc(sizeof(nsStringBuffer) + aSize);
+    if (hdr) {
+      hdr->mRefCount = 1;
+      hdr->mStorageSize = aSize;
+      mozilla::detail::RefCountLogger::logAddRef(hdr, 1);
+    }
+    return already_AddRefed(hdr);
+  }
 
   
 
@@ -74,16 +86,35 @@ class nsStringBuffer {
 
   static nsStringBuffer* Realloc(nsStringBuffer* aBuf, size_t aStorageSize);
 
-  
+  void AddRef() {
+    
+    
+    
+    
+    
+    
+    
+    
+    uint32_t count = mRefCount.fetch_add(1, std::memory_order_relaxed) + 1;
+    mozilla::detail::RefCountLogger::logAddRef(this, count);
+  }
 
-
-  void NS_FASTCALL AddRef();
-
-  
-
-
-
-  void NS_FASTCALL Release();
+  void Release() {
+    
+    
+    
+    mozilla::detail::RefCountLogger::ReleaseLogger logger(this);
+    uint32_t count = mRefCount.fetch_sub(1, std::memory_order_release) - 1;
+    logger.logRelease(count);
+    if (count == 0) {
+      
+      
+      
+      
+      count = mRefCount.load(std::memory_order_acquire);
+      free(this);  
+    }
+  }
 
   
 
@@ -147,34 +178,6 @@ class nsStringBuffer {
     return mRefCount.load(std::memory_order_relaxed) > 1;
 #endif
   }
-
-  
-
-
-
-
-
-
-
-  static nsStringBuffer* FromString(const nsAString& aStr);
-  static nsStringBuffer* FromString(const nsACString& aStr);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void ToString(uint32_t aLen, nsAString& aStr, bool aMoveOwnership = false);
-  void ToString(uint32_t aLen, nsACString& aStr, bool aMoveOwnership = false);
 
   
 

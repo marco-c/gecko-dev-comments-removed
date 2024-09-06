@@ -7,64 +7,7 @@
 #include "nsStringBuffer.h"
 
 #include "mozilla/MemoryReporting.h"
-#include "nsISupportsImpl.h"
-#include "nsString.h"
-
-void nsStringBuffer::AddRef() {
-  
-  
-  
-  
-  
-  
-  
-  
-#ifdef NS_BUILD_REFCNT_LOGGING
-  uint32_t count =
-#endif
-      mRefCount.fetch_add(1, std::memory_order_relaxed)
-#ifdef NS_BUILD_REFCNT_LOGGING
-      + 1
-#endif
-      ;
-  NS_LOG_ADDREF(this, count, "nsStringBuffer", sizeof(*this));
-}
-
-void nsStringBuffer::Release() {
-  
-  
-  
-  
-  uint32_t count = mRefCount.fetch_sub(1, std::memory_order_release) - 1;
-  NS_LOG_RELEASE(this, count, "nsStringBuffer");
-  if (count == 0) {
-    
-    
-    
-    
-    count = mRefCount.load(std::memory_order_acquire);
-
-    free(this);  
-  }
-}
-
-
-
-
-already_AddRefed<nsStringBuffer> nsStringBuffer::Alloc(size_t aSize) {
-  NS_ASSERTION(aSize != 0, "zero capacity allocation not allowed");
-  NS_ASSERTION(sizeof(nsStringBuffer) + aSize <= size_t(uint32_t(-1)) &&
-                   sizeof(nsStringBuffer) + aSize > aSize,
-               "mStorageSize will truncate");
-
-  auto* hdr = (nsStringBuffer*)malloc(sizeof(nsStringBuffer) + aSize);
-  if (hdr) {
-    hdr->mRefCount = 1;
-    hdr->mStorageSize = aSize;
-    NS_LOG_ADDREF(hdr, 1, "nsStringBuffer", sizeof(*hdr));
-  }
-  return already_AddRefed(hdr);
-}
+#include "mozilla/RefPtr.h"
 
 template <typename CharT>
 static already_AddRefed<nsStringBuffer> DoCreate(const CharT* aData,
@@ -91,76 +34,29 @@ already_AddRefed<nsStringBuffer> nsStringBuffer::Create(const char16_t* aData,
 }
 
 nsStringBuffer* nsStringBuffer::Realloc(nsStringBuffer* aHdr, size_t aSize) {
-  NS_ASSERTION(aSize != 0, "zero capacity allocation not allowed");
-  NS_ASSERTION(sizeof(nsStringBuffer) + aSize <= size_t(uint32_t(-1)) &&
-                   sizeof(nsStringBuffer) + aSize > aSize,
-               "mStorageSize will truncate");
+  MOZ_ASSERT(aSize != 0, "zero capacity allocation not allowed");
+  MOZ_ASSERT(sizeof(nsStringBuffer) + aSize <= size_t(uint32_t(-1)) &&
+                 sizeof(nsStringBuffer) + aSize > aSize,
+             "mStorageSize will truncate");
 
   
-  NS_ASSERTION(!aHdr->IsReadonly(), "|Realloc| attempted on readonly string");
+  MOZ_ASSERT(!aHdr->IsReadonly(), "|Realloc| attempted on readonly string");
 
   
   
   
-  NS_LOG_RELEASE(aHdr, 0, "nsStringBuffer");
+  {
+    mozilla::detail::RefCountLogger::ReleaseLogger logger(aHdr);
+    logger.logRelease(0);
+  }
 
   aHdr = (nsStringBuffer*)realloc(aHdr, sizeof(nsStringBuffer) + aSize);
   if (aHdr) {
-    NS_LOG_ADDREF(aHdr, 1, "nsStringBuffer", sizeof(*aHdr));
+    mozilla::detail::RefCountLogger::logAddRef(aHdr, 1);
     aHdr->mStorageSize = aSize;
   }
 
   return aHdr;
-}
-
-nsStringBuffer* nsStringBuffer::FromString(const nsAString& aStr) {
-  if (!(aStr.mDataFlags & nsAString::DataFlags::REFCOUNTED)) {
-    return nullptr;
-  }
-
-  return FromData(aStr.mData);
-}
-
-nsStringBuffer* nsStringBuffer::FromString(const nsACString& aStr) {
-  if (!(aStr.mDataFlags & nsACString::DataFlags::REFCOUNTED)) {
-    return nullptr;
-  }
-
-  return FromData(aStr.mData);
-}
-
-void nsStringBuffer::ToString(uint32_t aLen, nsAString& aStr,
-                              bool aMoveOwnership) {
-  char16_t* data = static_cast<char16_t*>(Data());
-
-  MOZ_DIAGNOSTIC_ASSERT(data[aLen] == char16_t(0),
-                        "data should be null terminated");
-
-  nsAString::DataFlags flags =
-      nsAString::DataFlags::REFCOUNTED | nsAString::DataFlags::TERMINATED;
-
-  if (!aMoveOwnership) {
-    AddRef();
-  }
-  aStr.Finalize();
-  aStr.SetData(data, aLen, flags);
-}
-
-void nsStringBuffer::ToString(uint32_t aLen, nsACString& aStr,
-                              bool aMoveOwnership) {
-  char* data = static_cast<char*>(Data());
-
-  MOZ_DIAGNOSTIC_ASSERT(data[aLen] == char(0),
-                        "data should be null terminated");
-
-  nsACString::DataFlags flags =
-      nsACString::DataFlags::REFCOUNTED | nsACString::DataFlags::TERMINATED;
-
-  if (!aMoveOwnership) {
-    AddRef();
-  }
-  aStr.Finalize();
-  aStr.SetData(data, aLen, flags);
 }
 
 size_t nsStringBuffer::SizeOfIncludingThisIfUnshared(

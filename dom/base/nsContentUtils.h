@@ -115,7 +115,6 @@ class nsNodeInfoManager;
 class nsParser;
 class nsPIWindowRoot;
 class nsPresContext;
-class nsStringBuffer;
 class nsTextFragment;
 class nsView;
 class nsWrapperCache;
@@ -2445,14 +2444,6 @@ class nsContentUtils {
   static void PlatformToDOMLineBreaks(nsString& aString);
   [[nodiscard]] static bool PlatformToDOMLineBreaks(nsString& aString,
                                                     const mozilla::fallible_t&);
-
-  
-
-
-
-
-  static void PopulateStringFromStringBuffer(nsStringBuffer* aBuf,
-                                             nsAString& aResultString);
 
   static bool IsHandlingKeyBoardEvent() { return sIsHandlingKeyBoardEvent; }
 

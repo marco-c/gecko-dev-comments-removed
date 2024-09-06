@@ -8,7 +8,8 @@
 
 #include <ostream>
 #include "mozilla/HashFunctions.h"  
-#include "nsPrintfCString.h"        
+#include "mozilla/IntegerPrintfMacros.h"
+#include "nsPrintfCString.h"  
 
 namespace mozilla {
 namespace layers {

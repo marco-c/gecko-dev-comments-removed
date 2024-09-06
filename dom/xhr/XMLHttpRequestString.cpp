@@ -58,8 +58,7 @@ class XMLHttpRequestStringBuffer final {
 
     
     
-    nsStringBuffer* buf = nsStringBuffer::FromString(mData);
-    if (buf) {
+    if (nsStringBuffer* buf = mData.GetStringBuffer()) {
       
       
       
