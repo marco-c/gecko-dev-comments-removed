@@ -13,9 +13,6 @@ function getNewUtils() {
 const TEST_BUCKET = "main";
 const TEST_COLLECTION = "password-recipes";
 
-let client;
-let DUMP_LAST_MODIFIED;
-
 async function importData(records) {
   await RemoteSettingsWorker._execute("_test_only_import", [
     TEST_BUCKET,
@@ -29,7 +26,6 @@ async function clear_state() {
   Services.env.set("MOZ_REMOTE_SETTINGS_DEVTOOLS", "0");
   Services.prefs.clearUserPref("services.settings.server");
   Services.prefs.clearUserPref("services.settings.preview_enabled");
-  await client.db.clear();
 }
 
 add_setup(async function () {
@@ -38,15 +34,6 @@ add_setup(async function () {
   
   const before = Services.env.get("MOZ_DISABLE_NONLOCAL_CONNECTIONS");
   Services.env.set("MOZ_DISABLE_NONLOCAL_CONNECTIONS", "0");
-
-  
-  
-  
-
-  client = new RemoteSettingsClient(TEST_COLLECTION);
-
-  const dump = await SharedUtils.loadJSONDump(TEST_BUCKET, TEST_COLLECTION);
-  DUMP_LAST_MODIFIED = dump.timestamp;
 
   registerCleanupFunction(() => {
     clear_state();
@@ -212,12 +199,25 @@ add_task(
 
     
     
+    
+    
+    
+    
+
+    let client = new RemoteSettingsClient(TEST_COLLECTION);
+
+    const dump = await SharedUtils.loadJSONDump(TEST_BUCKET, TEST_COLLECTION);
+    let DUMP_LAST_MODIFIED = dump.timestamp;
+
+    
+    
     Assert.greater(
       DUMP_LAST_MODIFIED,
       1234,
       "Assuming dump to be newer than dummy 1234"
     );
 
+    await client.db.clear();
     await importData([{ last_modified: 1234, id: "dummy" }]);
 
     const after = await client.get();
@@ -231,6 +231,7 @@ add_task(
       1234,
       "Should have kept the import's timestamp"
     );
+    await client.db.clear();
   }
 );
 add_task(clear_state);
