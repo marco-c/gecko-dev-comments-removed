@@ -439,7 +439,8 @@ var gMainPane = {
       if (
         Cc["@mozilla.org/toolkit/profile-service;1"].getService(
           Ci.nsIToolkitProfileService
-        ).startWithLastProfile
+        ).startWithLastProfile &&
+        !Services.sysinfo.getProperty("hasWinPackageId", false)
       ) {
         NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
           once: true,
@@ -692,16 +693,12 @@ var gMainPane = {
         let launchOnLoginCheckbox = document.getElementById(
           "windowsLaunchOnLogin"
         );
-        WindowsLaunchOnLogin.getLaunchOnLoginEnabled().then(enabled => {
-          launchOnLoginCheckbox.checked = enabled;
-        });
-        WindowsLaunchOnLogin.getLaunchOnLoginApproved().then(
-          approvedByWindows => {
-            launchOnLoginCheckbox.disabled = !approvedByWindows;
-            document.getElementById("windowsLaunchOnLoginDisabledBox").hidden =
-              approvedByWindows;
-          }
-        );
+        launchOnLoginCheckbox.checked =
+          WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
+        let approvedByWindows = WindowsLaunchOnLogin.getLaunchOnLoginApproved();
+        launchOnLoginCheckbox.disabled = !approvedByWindows;
+        document.getElementById("windowsLaunchOnLoginDisabledBox").hidden =
+          approvedByWindows;
 
         
         
@@ -1651,18 +1648,15 @@ var gMainPane = {
     }
     if (event.target.checked) {
       
-      
-      
-      
-      
-      await WindowsLaunchOnLogin.createLaunchOnLogin();
+      WindowsLaunchOnLogin.createLaunchOnLoginRegistryKey();
       Services.prefs.setBoolPref(
         "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
         true
       );
     } else {
       
-      await WindowsLaunchOnLogin.removeLaunchOnLogin();
+      WindowsLaunchOnLogin.removeLaunchOnLoginRegistryKey();
+      await WindowsLaunchOnLogin.removeLaunchOnLoginShortcuts();
     }
   },
 
