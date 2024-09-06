@@ -57,18 +57,11 @@ const known_scripts = {
   ]),
 };
 
-if (!Services.appinfo.sessionHistoryInParent) {
-  known_scripts.modules.add(
-    "resource:///modules/sessionstore/ContentSessionStore.sys.mjs"
-  );
-}
-
 
 
 const intermittently_loaded_scripts = {
   modules: new Set([
     "resource://gre/modules/nsAsyncShutdown.sys.mjs",
-    "resource://gre/modules/sessionstore/Utils.sys.mjs",
 
     
     "resource://gre/actors/TranslationsChild.sys.mjs",
