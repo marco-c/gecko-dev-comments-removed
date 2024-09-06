@@ -54,3 +54,6 @@ class TestLogger(object):
         record["status"] = status
         record.update(**details)
         self._log_obj(record)
+
+    def log_info(self, message):
+        self._log(action="log", level="INFO", message=message)

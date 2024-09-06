@@ -571,6 +571,10 @@ if use_minidump:
         env[v] = "--args='--dll %s' %s" % (injector_lib, env.get(v, ""))
 
 
+env["JITTEST_EXTRA_ARGS"] = "--show-slow " + env.get("JITTEST_EXTRA_ARGS", "")
+env["JSTESTS_EXTRA_ARGS"] = "--show-slow " + env.get("JSTESTS_EXTRA_ARGS", "")
+
+
 
 results = [("(make-nonempty)", 0)]
 
