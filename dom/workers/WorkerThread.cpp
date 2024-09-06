@@ -247,7 +247,12 @@ WorkerThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
   WorkerPrivate* workerPrivate = nullptr;
   if (onWorkerThread) {
     
-    MOZ_ASSERT(mWorkerPrivate);
+    
+    
+    if (!mWorkerPrivate) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    
     mWorkerPrivate->AssertIsOnWorkerThread();
 
     workerPrivate = mWorkerPrivate;
@@ -266,13 +271,7 @@ WorkerThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
   }
 
   nsresult rv;
-  if (runnable && onWorkerThread) {
-    RefPtr<WorkerRunnable> workerRunnable =
-        workerPrivate->MaybeWrapAsWorkerRunnable(runnable.forget());
-    rv = nsThread::Dispatch(workerRunnable.forget(), NS_DISPATCH_NORMAL);
-  } else {
-    rv = nsThread::Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
-  }
+  rv = nsThread::Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
 
   if (!onWorkerThread && workerPrivate) {
     

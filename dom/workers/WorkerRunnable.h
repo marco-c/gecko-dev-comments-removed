@@ -13,8 +13,10 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerStatus.h"
+#include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "nsCOMPtr.h"
 #include "nsIRunnable.h"
 #include "nsISupports.h"
@@ -33,8 +35,6 @@ class ErrorResult;
 namespace dom {
 
 class Worker;
-class WorkerParentRef;
-class WorkerPrivate;
 
 class WorkerRunnable : public nsIRunnable
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
@@ -225,6 +225,8 @@ class WorkerParentDebuggeeRunnable : public WorkerParentThreadRunnable {
 };
 
 class WorkerThreadRunnable : public WorkerRunnable {
+  friend class WorkerPrivate;
+
  public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(WorkerThreadRunnable, WorkerRunnable)
 
@@ -261,6 +263,18 @@ class WorkerThreadRunnable : public WorkerRunnable {
   
   
   bool mCallingCancelWithinRun;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  CheckedUnsafePtr<WorkerPrivate> mWorkerPrivateForPreStartCleaning;
 };
 
 
