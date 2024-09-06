@@ -341,6 +341,14 @@ public class WebExtensionController {
 
 
     @UiThread
+    default void onOptionalPermissionsChanged(@NonNull WebExtension extension) {}
+
+    
+
+
+
+
+    @UiThread
     default void onDisabled(final @NonNull WebExtension extension) {}
 
     
@@ -489,6 +497,7 @@ public class WebExtensionController {
       EventDispatcher.getInstance()
           .unregisterUiThreadListener(
               mInternals,
+              "GeckoView:WebExtension:OnOptionalPermissionsChanged",
               "GeckoView:WebExtension:OnDisabling",
               "GeckoView:WebExtension:OnDisabled",
               "GeckoView:WebExtension:OnEnabling",
@@ -503,6 +512,7 @@ public class WebExtensionController {
       EventDispatcher.getInstance()
           .registerUiThreadListener(
               mInternals,
+              "GeckoView:WebExtension:OnOptionalPermissionsChanged",
               "GeckoView:WebExtension:OnDisabling",
               "GeckoView:WebExtension:OnDisabled",
               "GeckoView:WebExtension:OnEnabling",
@@ -1021,6 +1031,9 @@ public class WebExtensionController {
     } else if ("GeckoView:WebExtension:OnDisabling".equals(event)) {
       onDisabling(bundle);
       return;
+    } else if ("GeckoView:WebExtension:OnOptionalPermissionsChanged".equals(event)) {
+      onOptionalPermissionsChanged(bundle);
+      return;
     } else if ("GeckoView:WebExtension:OnDisabled".equals(event)) {
       onDisabled(bundle);
       return;
@@ -1263,6 +1276,17 @@ public class WebExtensionController {
     final GeckoBundle extensionBundle = bundle.getBundle("extension");
     final WebExtension extension = new WebExtension(mDelegateControllerProvider, extensionBundle);
     mAddonManagerDelegate.onDisabling(extension);
+  }
+
+  private void onOptionalPermissionsChanged(final GeckoBundle bundle) {
+    if (mAddonManagerDelegate == null) {
+      Log.e(LOGTAG, "no AddonManager delegate registered");
+      return;
+    }
+
+    final GeckoBundle extensionBundle = bundle.getBundle("extension");
+    final WebExtension extension = new WebExtension(mDelegateControllerProvider, extensionBundle);
+    mAddonManagerDelegate.onOptionalPermissionsChanged(extension);
   }
 
   private void onDisabled(final GeckoBundle bundle) {
