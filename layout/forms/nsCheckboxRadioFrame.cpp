@@ -6,11 +6,15 @@
 
 #include "nsCheckboxRadioFrame.h"
 
+#include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
+#include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/PresShell.h"
 #include "nsIContent.h"
+#include "nsStyleConsts.h"
 
 using namespace mozilla;
+using mozilla::dom::HTMLInputElement;
 
 
 
@@ -36,7 +40,7 @@ nscoord nsCheckboxRadioFrame::DefaultSize() {
   if (StyleDisplay()->HasAppearance()) {
     return PresContext()->Theme()->GetCheckboxRadioPrefSize();
   }
-  return CSSPixel::ToAppUnits(13);
+  return CSSPixel::ToAppUnits(9);
 }
 
 
@@ -91,18 +95,18 @@ Maybe<nscoord> nsCheckboxRadioFrame::GetNaturalBaselineBOffset(
   }
 
   if (aWM.IsCentralBaseline()) {
-    return Some(BSize(aWM) / 2);
+    return Some(GetLogicalUsedBorderAndPadding(aWM).BStart(aWM) +
+                ContentBSize(aWM) / 2);
   }
-
   
   
   
   
   
   
-  auto bp = CSSPixel::ToAppUnits(2);  
-  return Some(aWM.IsLineInverted() ? std::min(bp, BSize(aWM))
-                                   : std::max(0, BSize(aWM) - bp));
+  return Some(aWM.IsLineInverted()
+                  ? GetLogicalUsedBorderAndPadding(aWM).BStart(aWM)
+                  : BSize(aWM) - GetLogicalUsedBorderAndPadding(aWM).BEnd(aWM));
 }
 
 void nsCheckboxRadioFrame::Reflow(nsPresContext* aPresContext,
@@ -118,11 +122,11 @@ void nsCheckboxRadioFrame::Reflow(nsPresContext* aPresContext,
        aReflowInput.AvailableWidth(), aReflowInput.AvailableHeight()));
 
   const auto wm = aReflowInput.GetWritingMode();
-  MOZ_ASSERT(aReflowInput.ComputedLogicalBorderPadding(wm).IsAllZero());
-
   const auto contentBoxSize =
       aReflowInput.ComputedSizeWithBSizeFallback([&] { return DefaultSize(); });
-  aDesiredSize.SetSize(wm, contentBoxSize);
+  aDesiredSize.SetSize(
+      wm,
+      contentBoxSize + aReflowInput.ComputedLogicalBorderPadding(wm).Size(wm));
   if (nsLayoutUtils::FontSizeInflationEnabled(aPresContext)) {
     const float inflation = nsLayoutUtils::FontSizeInflationFor(this);
     aDesiredSize.Width() *= inflation;
