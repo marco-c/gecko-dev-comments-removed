@@ -905,7 +905,16 @@ add_task(
       promiseObservable("unregister-primed-listener", 2),
       promiseObservable("prime-event-listener", 2),
     ]);
-    await extension.terminateBackground();
+    await extension.terminateBackground({
+      
+      
+      
+      
+      
+      
+      
+      disableResetIdleForTest: true,
+    });
     await registrationEvents;
     await testAfterRestart();
 
