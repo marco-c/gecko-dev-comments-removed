@@ -336,7 +336,9 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
     
     
-    this._progressListener = new DebuggerProgressListener(this);
+    if (!this.followWindowGlobalLifeCycle) {
+      this._progressListener = new DebuggerProgressListener(this);
+    }
 
     TargetActorRegistry.registerTargetActor(this);
 
@@ -557,11 +559,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   get originalDocShell() {
-    if (!this._originalWindow) {
-      return this.docShell;
-    }
-
-    return this._originalWindow.docShell;
+    return this._originalWindow?.docShell || this.docShell;
   }
 
   
@@ -879,6 +877,13 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   _watchDocshells() {
     
     
+    
+    if (this.followWindowGlobalLifeCycle) {
+      return;
+    }
+
+    
+    
     if (this.isDestroyed()) {
       return;
     }
@@ -896,6 +901,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   }
 
   _unwatchDocshells() {
+    if (this.followWindowGlobalLifeCycle) {
+      return;
+    }
+
     if (this._progressListener) {
       this._progressListener.destroy();
       this._progressListener = null;
@@ -1435,7 +1444,12 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   _restoreTargetConfiguration() {
-    if (this._restoreFocus && this.browsingContext?.isActive) {
+    
+    if (
+      this._restoreFocus &&
+      this.browsingContext?.isActive &&
+      !this.browsingContext?.isDiscarded
+    ) {
       try {
         this.window.focus();
       } catch (e) {
