@@ -69,10 +69,6 @@
         if (!engine) {
           return;
         }
-        
-        if (!this.searchbar.value) {
-          return;
-        }
         this.oneOffButtons.handleSearchCommand(event, engine);
       });
 
