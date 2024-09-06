@@ -55,7 +55,6 @@ class MOZ_STACK_CLASS nsPropertiesParser {
         mUnicodeValue(u'\0'),
         mHaveMultiLine(false),
         mMultiLineCanSkipN(false),
-        mMinLength(0),
         mState(eParserState_AwaitingKey),
         mSpecialState(eParserSpecial_None),
         mProps(aProps) {}
@@ -63,19 +62,6 @@ class MOZ_STACK_CLASS nsPropertiesParser {
   void FinishValueState(nsAString& aOldValue) {
     static const char trimThese[] = " \t";
     mKey.Trim(trimThese, false, true);
-
-    
-    char16_t backup_char;
-    uint32_t minLength = mMinLength;
-    if (minLength) {
-      backup_char = mValue[minLength - 1];
-      mValue.SetCharAt('x', minLength - 1);
-    }
-    mValue.Trim(trimThese, false, true);
-    if (minLength) {
-      mValue.SetCharAt(backup_char, minLength - 1);
-    }
-
     mProps->SetStringProperty(NS_ConvertUTF16toUTF8(mKey), mValue, aOldValue);
     mSpecialState = eParserSpecial_None;
     WaitForKey();
@@ -112,7 +98,6 @@ class MOZ_STACK_CLASS nsPropertiesParser {
 
   void EnterValueState() {
     mValue.Truncate();
-    mMinLength = 0;
     mState = eParserState_Value;
     mSpecialState = eParserSpecial_None;
   }
@@ -132,8 +117,6 @@ class MOZ_STACK_CLASS nsPropertiesParser {
                                 
                                 
   bool mMultiLineCanSkipN;      
-  uint32_t mMinLength;          
-                                
   EParserState mState;
   
   EParserSpecial mSpecialState;
@@ -222,15 +205,12 @@ bool nsPropertiesParser::ParseValueCharacter(char16_t aChar,
         
         case 't':
           mValue += char16_t('\t');
-          mMinLength = mValue.Length();
           break;
         case 'n':
           mValue += char16_t('\n');
-          mMinLength = mValue.Length();
           break;
         case 'r':
           mValue += char16_t('\r');
-          mMinLength = mValue.Length();
           break;
         case '\\':
           mValue += char16_t('\\');
@@ -271,7 +251,6 @@ bool nsPropertiesParser::ParseValueCharacter(char16_t aChar,
       } else {
         
         mValue += mUnicodeValue;
-        mMinLength = mValue.Length();
         mSpecialState = eParserSpecial_None;
 
         
@@ -285,7 +264,6 @@ bool nsPropertiesParser::ParseValueCharacter(char16_t aChar,
         aTokenStart = aCur + 1;
         mSpecialState = eParserSpecial_None;
         mValue += mUnicodeValue;
-        mMinLength = mValue.Length();
       }
 
       break;
@@ -436,8 +414,7 @@ nsPersistentProperties::Load(nsIInputStream* aIn) {
   
   while (NS_SUCCEEDED(rv = mIn->ReadSegments(nsPropertiesParser::SegmentWriter,
                                              &parser, 4096, &nProcessed)) &&
-         nProcessed != 0)
-    ;
+         nProcessed != 0);
   mIn = nullptr;
   if (NS_FAILED(rv)) {
     return rv;

@@ -14,7 +14,7 @@ const name_edit = "edit";
 const value_edit = "Edit"; 
 
 const name_view = "view";
-const value_view = "View"; 
+const value_view = "View "; 
 
 const name_go = "go";
 const value_go = " Go"; 
