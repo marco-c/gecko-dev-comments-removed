@@ -307,6 +307,14 @@ DWORD SetProcessIntegrityLevel(IntegrityLevel integrity_level) {
     return ERROR_SUCCESS;
   }
 
+  
+  
+  
+  DWORD rv =
+      SetObjectIntegrityLabel(::GetCurrentProcess(), SE_KERNEL_OBJECT, L"",
+                              GetIntegrityLevelString(integrity_level));
+  DCHECK(rv == ERROR_SUCCESS);
+
   HANDLE token_handle;
   if (!::OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_DEFAULT,
                           &token_handle))
