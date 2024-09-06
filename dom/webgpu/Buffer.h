@@ -15,6 +15,40 @@
 #include <memory>
 
 namespace mozilla {
+namespace webgpu {
+struct MappedView;
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <>
+struct nsTArray_RelocationStrategy<mozilla::webgpu::MappedView> {
+  
+  using Type =
+      nsTArray_RelocateUsingMoveConstructor<mozilla::webgpu::MappedView>;
+};
+
+namespace mozilla {
 class ErrorResult;
 
 namespace dom {
@@ -28,11 +62,23 @@ namespace webgpu {
 
 class Device;
 
+
+
+struct MappedView {
+  BufferAddress mOffset;
+  BufferAddress mRangeEnd;
+  JS::Heap<JSObject*> mArrayBuffer;
+
+  MappedView(BufferAddress aOffset, BufferAddress aRangeEnd,
+             JSObject* aArrayBuffer)
+      : mOffset(aOffset), mRangeEnd(aRangeEnd), mArrayBuffer(aArrayBuffer) {}
+};
+
 struct MappedInfo {
   
   bool mWritable = false;
   
-  nsTArray<JS::Heap<JSObject*>> mArrayBuffers;
+  nsTArray<MappedView> mViews;
   BufferAddress mOffset;
   BufferAddress mSize;
   MappedInfo() = default;
@@ -84,6 +130,20 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   
   Maybe<MappedInfo> mMapped;
   RefPtr<dom::Promise> mMapRequest;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   std::shared_ptr<ipc::WritableSharedMemoryMapping> mShmem;
