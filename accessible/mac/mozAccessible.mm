@@ -880,12 +880,9 @@ struct RoleDescrComparator {
   
   
   
-  
   if (mGeckoAccessible->IsLocal() &&
       [[self moxDOMIdentifier] isEqualToString:@"a11y-announcement"] &&
-      ((gfxPlatform::IsHeadless() &&
-        [[self moxParent] isKindOfClass:[mozRootAccessible class]]) ||
-       [[self moxParent] isKindOfClass:[ChildView class]])) {
+      [[self moxParent] isKindOfClass:[mozRootAccessible class]]) {
     
     
     NSArray* children = [self moxChildren];
@@ -899,24 +896,23 @@ struct RoleDescrComparator {
     } else {
       key = [announcement moxTitle];
     }
+
     NSDictionary* info = @{
       NSAccessibilityAnnouncementKey : key ? key : @(""),
-      
-      
-      NSAccessibilityPriorityKey : @(NSAccessibilityPriorityHigh)
+      NSAccessibilityPriorityKey : @(NSAccessibilityPriorityMedium)
     };
+
+    id window = [self moxWindow];
 
     
     
     
     
     
-    
-    
     xpcAccessibleMacEvent::FireEvent(
-        NSApp, NSAccessibilityAnnouncementRequestedNotification, info);
+        window, NSAccessibilityAnnouncementRequestedNotification, info);
     NSAccessibilityPostNotificationWithUserInfo(
-        NSApp, NSAccessibilityAnnouncementRequestedNotification, info);
+        window, NSAccessibilityAnnouncementRequestedNotification, info);
   }
 }
 
