@@ -286,6 +286,9 @@ nscoord ViewportFrame::GetPrefISize(gfxContext* aRenderingContext) {
 nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
     ReflowInput* aReflowInput) const {
   if (ScrollContainerFrame* scrollContainerFrame = GetScrollTargetFrame()) {
+    
+    
+    
     WritingMode wm = aReflowInput->GetWritingMode();
     LogicalMargin scrollbars(wm,
                              scrollContainerFrame->GetActualScrollbarSizes());

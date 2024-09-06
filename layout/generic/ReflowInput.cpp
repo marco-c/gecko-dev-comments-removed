@@ -13,6 +13,7 @@
 #include "CounterStyleManager.h"
 #include "LayoutLogging.h"
 #include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/WritingModes.h"
 #include "nsBlockFrame.h"
 #include "nsFlexContainerFrame.h"
@@ -1415,8 +1416,24 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   
-  nsPoint cbOffset =
-      containingBlock->GetOffsetToIgnoringScrolling(aCBReflowInput->mFrame);
+  const nsIFrame* cbFrame = aCBReflowInput->mFrame;
+  nsPoint cbOffset = containingBlock->GetOffsetToIgnoringScrolling(cbFrame);
+  if (cbFrame->IsViewportFrame()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (ScrollContainerFrame* sf = cbFrame->GetScrollTargetFrame()) {
+      const nsMargin scrollbarSizes = sf->GetActualScrollbarSizes();
+      cbOffset.MoveBy(-scrollbarSizes.left, -scrollbarSizes.top);
+    }
+  }
 
   nsSize reflowSize = aCBReflowInput->ComputedSizeAsContainerIfConstrained();
   LogicalPoint logCBOffs(wm, cbOffset, reflowSize - containerSize);
