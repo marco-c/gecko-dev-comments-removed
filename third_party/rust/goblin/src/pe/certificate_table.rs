@@ -3,15 +3,12 @@
 
 
 use crate::error;
-use scroll::{ctx, Pread, Pwrite};
+use scroll::Pread;
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
 
-use super::utils::pad;
-
 #[repr(u16)]
-#[non_exhaustive]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum AttributeCertificateRevision {
     
@@ -41,7 +38,7 @@ impl TryFrom<u16> for AttributeCertificateRevision {
 }
 
 #[repr(u16)]
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug)]
 pub enum AttributeCertificateType {
     
     X509 = 0x0001,
@@ -130,28 +127,7 @@ impl<'a> AttributeCertificate<'a> {
     }
 }
 
-impl<'a> ctx::TryIntoCtx<scroll::Endian> for &AttributeCertificate<'a> {
-    type Error = error::Error;
-
-    
-    fn try_into_ctx(self, bytes: &mut [u8], ctx: scroll::Endian) -> Result<usize, Self::Error> {
-        let offset = &mut 0;
-        bytes.gwrite_with(self.length, offset, ctx)?;
-        bytes.gwrite_with(self.revision as u16, offset, ctx)?;
-        bytes.gwrite_with(self.certificate_type as u16, offset, ctx)?;
-        
-        let maybe_certificate_padding = pad(self.certificate.len(), Some(16usize));
-        bytes.gwrite(self.certificate, offset)?;
-        if let Some(cert_padding) = maybe_certificate_padding {
-            bytes.gwrite(&cert_padding[..], offset)?;
-        }
-
-        Ok(*offset)
-    }
-}
-
 pub type CertificateDirectoryTable<'a> = Vec<AttributeCertificate<'a>>;
-
 pub(crate) fn enumerate_certificates(
     bytes: &[u8],
     table_virtual_address: u32,

@@ -46,8 +46,6 @@ pub struct Configuration {
     
     
     pub experimentation_id: Option<String>,
-    
-    pub enable_internal_pings: bool,
 }
 
 
@@ -94,8 +92,6 @@ pub struct Builder {
     
     
     pub experimentation_id: Option<String>,
-    
-    pub enable_internal_pings: bool,
 }
 
 impl Builder {
@@ -119,7 +115,6 @@ impl Builder {
             rate_limit: None,
             enable_event_timestamps: true,
             experimentation_id: None,
-            enable_internal_pings: true,
         }
     }
 
@@ -139,7 +134,6 @@ impl Builder {
             rate_limit: self.rate_limit,
             enable_event_timestamps: self.enable_event_timestamps,
             experimentation_id: self.experimentation_id,
-            enable_internal_pings: self.enable_internal_pings,
         }
     }
 
@@ -188,12 +182,6 @@ impl Builder {
     
     pub fn with_experimentation_id(mut self, value: String) -> Self {
         self.experimentation_id = Some(value);
-        self
-    }
-
-    
-    pub fn with_internal_pings(mut self, value: bool) -> Self {
-        self.enable_internal_pings = value;
         self
     }
 }

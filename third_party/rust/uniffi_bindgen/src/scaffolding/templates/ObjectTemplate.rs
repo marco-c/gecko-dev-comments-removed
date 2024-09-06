@@ -1,15 +1,24 @@
-{#
 
-#}
 
-{%- if obj.is_trait_interface() %}
-#[::uniffi::export_for_udl{% if obj.has_callback_interface() %}(with_foreign){% endif %}]
+
+
+
+
+
+
+
+
+
+
+{%- match obj.imp() -%}
+{%- when ObjectImpl::Trait %}
+#[::uniffi::export_for_udl]
 pub trait r#{{ obj.name() }} {
     {%- for meth in obj.methods() %}
-    {% if meth.is_async() %}async {% endif %}fn r#{{ meth.name() }}(
+    fn {{ meth.name() }}(
         {% if meth.takes_self_by_arc()%}self: Arc<Self>{% else %}&self{% endif %},
         {%- for arg in meth.arguments() %}
-        r#{{ arg.name() }}: {% if arg.by_ref() %}&{% endif %}{{ arg.as_type().borrow()|type_rs }},
+        {{ arg.name() }}: {% if arg.by_ref() %}&{% endif %}{{ arg.as_type().borrow()|type_rs }},
         {%- endfor %}
     )
     {%- match (meth.return_type(), meth.throws_type()) %}
@@ -20,7 +29,7 @@ pub trait r#{{ obj.name() }} {
     {%- endmatch %}
     {% endfor %}
 }
-{%- else %}
+{% when ObjectImpl::Struct %}
 {%- for tm in obj.uniffi_traits() %}
 {%      match tm %}
 {%          when UniffiTrait::Debug { fmt }%}
@@ -37,10 +46,9 @@ pub trait r#{{ obj.name() }} {
 struct {{ obj.rust_name() }} { }
 
 {%- for cons in obj.constructors() %}
-#[::uniffi::export_for_udl]
+#[::uniffi::export_for_udl(constructor)]
 impl {{ obj.rust_name() }} {
-    #[uniffi::constructor]
-    pub {% if cons.is_async() %}async {% endif %}fn r#{{ cons.name() }}(
+    pub fn r#{{ cons.name() }}(
         {%- for arg in cons.arguments() %}
         r#{{ arg.name() }}: {% if arg.by_ref() %}&{% endif %}{{ arg.as_type().borrow()|type_rs }},
         {%- endfor %}
@@ -60,7 +68,7 @@ impl {{ obj.rust_name() }} {
 {%- for meth in obj.methods() %}
 #[::uniffi::export_for_udl]
 impl {{ obj.rust_name() }} {
-    pub {% if meth.is_async() %}async {% endif %}fn r#{{ meth.name() }}(
+    pub fn r#{{ meth.name() }}(
         {% if meth.takes_self_by_arc()%}self: Arc<Self>{% else %}&self{% endif %},
         {%- for arg in meth.arguments() %}
         r#{{ arg.name() }}: {% if arg.by_ref() %}&{% endif %}{{ arg.as_type().borrow()|type_rs }},
@@ -78,4 +86,4 @@ impl {{ obj.rust_name() }} {
 }
 {%- endfor %}
 
-{% endif %}
+{% endmatch %}

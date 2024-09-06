@@ -45,8 +45,7 @@ pub mod metadata;
 
 pub use ffi::*;
 pub use ffi_converter_traits::{
-    ConvertError, FfiConverter, FfiConverterArc, HandleAlloc, Lift, LiftRef, LiftReturn, Lower,
-    LowerReturn,
+    ConvertError, FfiConverter, FfiConverterArc, Lift, LiftRef, LiftReturn, Lower, LowerReturn,
 };
 pub use metadata::*;
 
@@ -58,8 +57,9 @@ pub mod deps {
     pub use async_compat;
     pub use bytes;
     pub use log;
-    pub use oneshot;
     pub use static_assertions;
+    
+    pub use once_cell;
 }
 
 mod panichook;

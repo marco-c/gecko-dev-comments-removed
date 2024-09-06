@@ -141,7 +141,6 @@ where
 
 
 
-
 #[derive(Debug)]
 pub struct Glean {
     upload_enabled: bool,
@@ -209,7 +208,7 @@ impl Glean {
             core_metrics: CoreMetrics::new(),
             additional_metrics: AdditionalMetrics::new(),
             database_metrics: DatabaseMetrics::new(),
-            internal_pings: InternalPings::new(cfg.enable_internal_pings),
+            internal_pings: InternalPings::new(),
             upload_manager,
             data_path: PathBuf::from(&cfg.data_path),
             application_id,
@@ -289,9 +288,7 @@ impl Glean {
         }
 
         
-        
-        
-        glean.schedule_metrics_pings = cfg.enable_internal_pings && cfg.use_core_mps;
+        glean.schedule_metrics_pings = cfg.use_core_mps;
 
         
         
@@ -308,7 +305,6 @@ impl Glean {
         data_path: &str,
         application_id: &str,
         upload_enabled: bool,
-        enable_internal_pings: bool,
     ) -> Self {
         let cfg = InternalConfiguration {
             data_path: data_path.into(),
@@ -324,7 +320,6 @@ impl Glean {
             rate_limit: None,
             enable_event_timestamps: true,
             experimentation_id: None,
-            enable_internal_pings,
         };
 
         let mut glean = Self::new(cfg).unwrap();

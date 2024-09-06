@@ -23,13 +23,6 @@ use crate::error;
 
 
 
-
-
-
-
-
-
-
 pub trait Pwrite<Ctx: Copy, E> {
     #[inline]
     fn pwrite<N: TryIntoCtx<Ctx, Self, Error = E>>(
@@ -94,7 +87,7 @@ impl<Ctx: Copy, E: From<error::Error>> Pwrite<Ctx, E> for [u8] {
         offset: usize,
         ctx: Ctx,
     ) -> result::Result<usize, E> {
-        if offset > self.len() {
+        if offset >= self.len() {
             return Err(error::Error::BadOffset(offset).into());
         }
         let dst = &mut self[offset..];

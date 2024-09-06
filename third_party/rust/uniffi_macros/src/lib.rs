@@ -6,7 +6,9 @@
 
 
 
-#[cfg(feature = "trybuild")]
+
+
+
 use camino::Utf8Path;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -16,7 +18,6 @@ use syn::{
 };
 
 mod custom;
-mod default;
 mod enum_;
 mod error;
 mod export;
@@ -31,6 +32,20 @@ use self::{
     enum_::expand_enum, error::expand_error, export::expand_export, object::expand_object,
     record::expand_record,
 };
+
+struct IdentPair {
+    lhs: Ident,
+    rhs: Ident,
+}
+
+impl Parse for IdentPair {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let lhs = input.parse()?;
+        input.parse::<Token![,]>()?;
+        let rhs = input.parse()?;
+        Ok(Self { lhs, rhs })
+    }
+}
 
 struct CustomTypeInfo {
     ident: Ident,
@@ -92,8 +107,9 @@ fn do_export(attr_args: TokenStream, input: TokenStream, udl_mode: bool) -> Toke
     let copied_input = (!udl_mode).then(|| proc_macro2::TokenStream::from(input.clone()));
 
     let gen_output = || {
+        let args = syn::parse(attr_args)?;
         let item = syn::parse(input)?;
-        expand_export(item, attr_args, udl_mode)
+        expand_export(item, args, udl_mode)
     };
     let output = gen_output().unwrap_or_else(syn::Error::into_compile_error);
 
@@ -113,7 +129,7 @@ pub fn derive_record(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(Enum)]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
-    expand_enum(parse_macro_input!(input), None, false)
+    expand_enum(parse_macro_input!(input), false)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
@@ -209,14 +225,10 @@ pub fn derive_record_for_udl(_attrs: TokenStream, input: TokenStream) -> TokenSt
 
 #[doc(hidden)]
 #[proc_macro_attribute]
-pub fn derive_enum_for_udl(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    expand_enum(
-        syn::parse_macro_input!(input),
-        Some(syn::parse_macro_input!(attrs)),
-        true,
-    )
-    .unwrap_or_else(syn::Error::into_compile_error)
-    .into()
+pub fn derive_enum_for_udl(_attrs: TokenStream, input: TokenStream) -> TokenStream {
+    expand_enum(syn::parse_macro_input!(input), true)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 #[doc(hidden)]
@@ -243,6 +255,22 @@ pub fn derive_object_for_udl(_attrs: TokenStream, input: TokenStream) -> TokenSt
 #[proc_macro_attribute]
 pub fn export_for_udl(attrs: TokenStream, input: TokenStream) -> TokenStream {
     do_export(attrs, input, true)
+}
+
+
+
+#[doc(hidden)]
+#[proc_macro]
+pub fn expand_trait_interface_support(tokens: TokenStream) -> TokenStream {
+    export::ffi_converter_trait_impl(&syn::parse_macro_input!(tokens), true).into()
+}
+
+
+#[doc(hidden)]
+#[proc_macro]
+pub fn scaffolding_ffi_converter_callback_interface(tokens: TokenStream) -> TokenStream {
+    let input: IdentPair = syn::parse_macro_input!(tokens);
+    export::ffi_converter_callback_interface_impl(&input.lhs, &input.rhs, true).into()
 }
 
 
@@ -345,7 +373,6 @@ pub fn use_udl_object(tokens: TokenStream) -> TokenStream {
 
 
 #[proc_macro]
-#[cfg(feature = "trybuild")]
 pub fn generate_and_include_scaffolding(udl_file: TokenStream) -> TokenStream {
     let udl_file = syn::parse_macro_input!(udl_file as LitStr);
     let udl_file_string = udl_file.value();
@@ -377,17 +404,7 @@ pub fn generate_and_include_scaffolding(udl_file: TokenStream) -> TokenStream {
 
 
 
-
-
 #[proc_macro_attribute]
 pub fn constructor(_attrs: TokenStream, input: TokenStream) -> TokenStream {
-    input
-}
-
-
-
-
-#[proc_macro_attribute]
-pub fn method(_attrs: TokenStream, input: TokenStream) -> TokenStream {
     input
 }

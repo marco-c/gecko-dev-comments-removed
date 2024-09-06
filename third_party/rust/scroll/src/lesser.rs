@@ -1,6 +1,5 @@
-use std::io::{Read, Result, Write};
-
 use crate::ctx::{FromCtx, IntoCtx, SizeWith};
+use std::io::{Read, Result, Write};
 
 
 
@@ -105,8 +104,8 @@ pub trait IOread<Ctx: Copy>: Read {
     fn ioread_with<N: FromCtx<Ctx> + SizeWith<Ctx>>(&mut self, ctx: Ctx) -> Result<N> {
         let mut scratch = [0u8; 256];
         let size = N::size_with(&ctx);
-        let buf = &mut scratch[0..size];
-        self.read_exact(buf)?;
+        let mut buf = &mut scratch[0..size];
+        self.read_exact(&mut buf)?;
         Ok(N::from_ctx(buf, ctx))
     }
 }

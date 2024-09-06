@@ -180,14 +180,17 @@
 
 
 
-use core::mem::{size_of, MaybeUninit};
+use core::mem::size_of;
+use core::mem::transmute;
 use core::ptr::copy_nonoverlapping;
-use core::{result, str};
+use core::result;
+use core::str;
+
 #[cfg(feature = "std")]
 use std::ffi::{CStr, CString};
 
 use crate::endian::Endian;
-use crate::{error, Pread, Pwrite};
+use crate::error;
 
 
 pub trait MeasureWith<Ctx> {
@@ -237,14 +240,18 @@ impl Default for StrCtx {
 
 impl StrCtx {
     pub fn len(&self) -> usize {
-        match self {
+        match *self {
             StrCtx::Delimiter(_) | StrCtx::DelimiterUntil(_, _) => 1,
             StrCtx::Length(_) => 0,
         }
     }
 
     pub fn is_empty(&self) -> bool {
-        matches!(self, StrCtx::Length(_))
+        if let StrCtx::Length(_) = *self {
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -252,8 +259,6 @@ impl StrCtx {
 pub trait FromCtx<Ctx: Copy = (), This: ?Sized = [u8]> {
     fn from_ctx(this: &This, ctx: Ctx) -> Self;
 }
-
-
 
 
 
@@ -365,8 +370,6 @@ pub trait IntoCtx<Ctx: Copy = (), This: ?Sized = [u8]>: Sized {
 
 
 
-
-
 pub trait TryIntoCtx<Ctx: Copy = (), This: ?Sized = [u8]>: Sized {
     type Error;
     fn try_into_ctx(self, _: &mut This, ctx: Ctx) -> Result<usize, Self::Error>;
@@ -400,14 +403,13 @@ macro_rules! signed_to_unsigned {
 
 macro_rules! write_into {
     ($typ:ty, $size:expr, $n:expr, $dst:expr, $endian:expr) => {{
-        assert!($dst.len() >= $size);
-        let bytes = if $endian.is_little() {
-            $n.to_le()
-        } else {
-            $n.to_be()
-        }
-        .to_ne_bytes();
         unsafe {
+            assert!($dst.len() >= $size);
+            let bytes = transmute::<$typ, [u8; $size]>(if $endian.is_little() {
+                $n.to_le()
+            } else {
+                $n.to_be()
+            });
             copy_nonoverlapping((&bytes).as_ptr(), $dst.as_mut_ptr(), $size);
         }
     }};
@@ -568,12 +570,12 @@ macro_rules! from_ctx_float_impl {
                         &mut data as *mut signed_to_unsigned!($typ) as *mut u8,
                         $size,
                     );
+                    transmute(if le.is_little() {
+                        data.to_le()
+                    } else {
+                        data.to_be()
+                    })
                 }
-                $typ::from_bits(if le.is_little() {
-                    data.to_le()
-                } else {
-                    data.to_be()
-                })
             }
         }
         impl<'a> TryFromCtx<'a, Endian> for $typ
@@ -619,7 +621,13 @@ macro_rules! into_ctx_float_impl {
             #[inline]
             fn into_ctx(self, dst: &mut [u8], le: Endian) {
                 assert!(dst.len() >= $size);
-                write_into!(signed_to_unsigned!($typ), $size, self.to_bits(), dst, le);
+                write_into!(
+                    signed_to_unsigned!($typ),
+                    $size,
+                    transmute::<$typ, signed_to_unsigned!($typ)>(self),
+                    dst,
+                    le
+                );
             }
         }
         impl<'a> IntoCtx<Endian> for &'a $typ {
@@ -781,56 +789,6 @@ impl<'a> TryFromCtx<'a, usize> for &'a [u8] {
     }
 }
 
-impl<'a, Ctx: Copy, T: TryFromCtx<'a, Ctx, Error = error::Error>, const N: usize>
-    TryFromCtx<'a, Ctx> for [T; N]
-{
-    type Error = error::Error;
-    fn try_from_ctx(src: &'a [u8], ctx: Ctx) -> Result<(Self, usize), Self::Error> {
-        let mut offset = 0;
-
-        let mut buf: [MaybeUninit<T>; N] = core::array::from_fn(|_| MaybeUninit::uninit());
-
-        let mut error_ctx = None;
-        for (idx, element) in buf.iter_mut().enumerate() {
-            match src.gread_with::<T>(&mut offset, ctx) {
-                Ok(val) => {
-                    *element = MaybeUninit::new(val);
-                }
-                Err(e) => {
-                    error_ctx = Some((e, idx));
-                    break;
-                }
-            }
-        }
-        if let Some((e, idx)) = error_ctx {
-            for element in &mut buf[0..idx].iter_mut() {
-                
-                
-                unsafe {
-                    element.assume_init_drop();
-                }
-            }
-            Err(e)
-        } else {
-            
-            
-            Ok((buf.map(|element| unsafe { element.assume_init() }), offset))
-        }
-    }
-}
-impl<Ctx: Copy, T: TryIntoCtx<Ctx, Error = error::Error>, const N: usize> TryIntoCtx<Ctx>
-    for [T; N]
-{
-    type Error = error::Error;
-    fn try_into_ctx(self, buf: &mut [u8], ctx: Ctx) -> Result<usize, Self::Error> {
-        let mut offset = 0;
-        for element in self {
-            buf.gwrite_with(element, &mut offset, ctx)?;
-        }
-        Ok(offset)
-    }
-}
-
 #[cfg(feature = "std")]
 impl<'a> TryFromCtx<'a> for &'a CStr {
     type Error = error::Error;
@@ -905,11 +863,11 @@ impl TryIntoCtx for CString {
 
 
 #[cfg(test)]
-#[cfg(feature = "std")]
 mod tests {
     use super::*;
 
     #[test]
+    #[cfg(feature = "std")]
     fn parse_a_cstr() {
         let src = CString::new("Hello World").unwrap();
         let as_bytes = src.as_bytes_with_nul();
@@ -921,6 +879,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "std")]
     fn round_trip_a_c_str() {
         let src = CString::new("Hello World").unwrap();
         let src = src.as_c_str();

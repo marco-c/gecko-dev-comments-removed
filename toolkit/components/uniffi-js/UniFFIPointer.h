@@ -42,7 +42,9 @@ class UniFFIPointer final : public nsISupports, public nsWrapperCache {
 
 
 
-  void* ClonePtr() const;
+
+
+  void* GetPtr() const;
 
   
 
