@@ -109,7 +109,7 @@ async function rewriteChromeUris(source) {
 
     
     if (
-      this.resourcePath.endsWith("/moz-label.mjs") ||
+      path.basename(this.resourcePath) == "moz-label.mjs" ||
       this.resourcePath.endsWith(".js")
     ) {
       rewrittenSource = rewrittenSource.replaceAll(`"${chromeUri}"`, cssImport);
