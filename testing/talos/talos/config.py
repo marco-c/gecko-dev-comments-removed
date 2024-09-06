@@ -267,8 +267,8 @@ def setup_pdfpaint_test(config, test_instance):
     
     
     if chunk_number is not None or pdfpaint_test is not None:
-        print("Setting pdfpaint tppagecycles to 5")
-        test_instance.tppagecycles = 5
+        print("Setting pdfpaint tppagecycles to 15")
+        test_instance.tppagecycles = 15
 
 
 def get_test_host(manifest_line):
