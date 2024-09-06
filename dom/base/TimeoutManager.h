@@ -12,7 +12,7 @@
 
 class nsIEventTarget;
 class nsITimer;
-class nsGlobalWindowInner;
+class nsIGlobalObject;
 
 namespace mozilla {
 
@@ -27,7 +27,7 @@ class TimeoutManager final {
   struct Timeouts;
 
  public:
-  TimeoutManager(nsGlobalWindowInner& aWindow, uint32_t aMaxIdleDeferMS);
+  TimeoutManager(nsIGlobalObject& aHandle, uint32_t aMaxIdleDeferMS);
   ~TimeoutManager();
   TimeoutManager(const TimeoutManager& rhs) = delete;
   void operator=(const TimeoutManager& rhs) = delete;
@@ -103,6 +103,13 @@ class TimeoutManager final {
 
  private:
   void MaybeStartThrottleTimeout();
+
+  
+  
+  
+  nsGlobalWindowInner* GetInnerWindow() const {
+    return nsGlobalWindowInner::Cast(mGlobalObject.GetAsInnerWindow());
+  }
 
   
   bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout,
@@ -206,7 +213,7 @@ class TimeoutManager final {
 
   
   
-  nsGlobalWindowInner& mWindow;
+  nsIGlobalObject& mGlobalObject;
   
   
   
