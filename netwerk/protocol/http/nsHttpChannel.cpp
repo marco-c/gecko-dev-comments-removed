@@ -4070,6 +4070,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     rv = OpenCacheInputStream(entry, true);
     if (NS_SUCCEEDED(rv)) {
       mCachedContentIsValid = true;
+      entry->MaybeMarkValid();
     }
     return rv;
   }
@@ -4342,6 +4343,10 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     if (doBackgroundValidation) {
       PerformBackgroundCacheRevalidation();
     }
+  }
+
+  if (mCachedContentIsValid) {
+    entry->MaybeMarkValid();
   }
 
   LOG(
@@ -4787,7 +4792,7 @@ nsresult nsHttpChannel::OpenCacheInputStream(nsICacheEntry* cacheEntry,
 
 
 
-nsresult nsHttpChannel::ReadFromCache(void) {
+nsresult nsHttpChannel::ReadFromCache(bool alreadyMarkedValid) {
   NS_ENSURE_TRUE(mCacheEntry, NS_ERROR_FAILURE);
   NS_ENSURE_TRUE(mCachedContentIsValid, NS_ERROR_FAILURE);
   NS_ENSURE_TRUE(!mCachePump, NS_OK);  
@@ -4852,6 +4857,16 @@ nsresult nsHttpChannel::ReadFromCache(void) {
   
   
   if (!mSecurityInfo) mSecurityInfo = mCachedSecurityInfo;
+
+  if (!alreadyMarkedValid && !LoadCachedContentIsPartial()) {
+    
+    
+    
+    
+    
+    
+    mCacheEntry->MaybeMarkValid();
+  }
 
   nsresult rv;
 
@@ -8272,12 +8287,12 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
 
   
   if (mCacheEntry && LoadRequestTimeInitialized()) {
+    bool writeAccess;
     
     
     
-
-    
-    if (!LoadCacheEntryIsReadOnly()) {
+    mCacheEntry->HasWriteAccess(!LoadCacheEntryIsReadOnly(), &writeAccess);
+    if (writeAccess) {
       nsresult rv = FinalizeCacheEntry();
       if (NS_FAILED(rv)) {
         LOG(("FinalizeCacheEntry failed (%08x)", static_cast<uint32_t>(rv)));
