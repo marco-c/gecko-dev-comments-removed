@@ -50,13 +50,36 @@ namespace snappy {
   class Source;
   class Sink;
 
+  struct CompressionOptions {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    int level = DefaultCompressionLevel();
+
+    constexpr CompressionOptions() = default;
+    constexpr explicit CompressionOptions(int compression_level)
+        : level(compression_level) {}
+    static constexpr int MinCompressionLevel() { return 1; }
+    static constexpr int MaxCompressionLevel() { return 2; }
+    static constexpr int DefaultCompressionLevel() { return 1; }
+  };
+
   
   
   
 
   
   
-  size_t Compress(Source* source, Sink* sink);
+  size_t Compress(Source* reader, Sink* writer,
+                  CompressionOptions options = {});
 
   
   
@@ -76,7 +99,15 @@ namespace snappy {
   
   
   size_t Compress(const char* input, size_t input_length,
-                  std::string* compressed);
+                  std::string* compressed, CompressionOptions options = {});
+
+  
+  
+  
+  
+  size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
+                           std::string* compressed,
+                           CompressionOptions options = {});
 
   
   
@@ -119,10 +150,15 @@ namespace snappy {
   
   
   
-  void RawCompress(const char* input,
-                   size_t input_length,
-                   char* compressed,
-                   size_t* compressed_length);
+  void RawCompress(const char* input, size_t input_length, char* compressed,
+                   size_t* compressed_length, CompressionOptions options = {});
+
+  
+  
+  
+  void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
+                            char* compressed, size_t* compressed_length,
+                            CompressionOptions options = {});
 
   
   
@@ -202,7 +238,7 @@ namespace snappy {
   static constexpr int kMinHashTableBits = 8;
   static constexpr size_t kMinHashTableSize = 1 << kMinHashTableBits;
 
-  static constexpr int kMaxHashTableBits = 14;
+  static constexpr int kMaxHashTableBits = 15;
   static constexpr size_t kMaxHashTableSize = 1 << kMaxHashTableBits;
 }  
 

@@ -29,18 +29,6 @@
 #include "snappy-internal.h"
 #include "snappy-sinksource.h"
 #include "snappy.h"
-
-#if !defined(SNAPPY_HAVE_SSSE3)
-
-
-
-#if defined(__SSSE3__) || defined(__AVX__)
-#define SNAPPY_HAVE_SSSE3 1
-#else
-#define SNAPPY_HAVE_SSSE3 0
-#endif
-#endif  
-
 #if !defined(SNAPPY_HAVE_BMI2)
 
 
@@ -56,16 +44,28 @@
 #endif
 #endif  
 
-#if SNAPPY_HAVE_SSSE3
-
-
-#include <tmmintrin.h>
+#if !defined(SNAPPY_HAVE_X86_CRC32)
+#if defined(__SSE4_2__)
+#define SNAPPY_HAVE_X86_CRC32 1
+#else
+#define SNAPPY_HAVE_X86_CRC32 0
 #endif
+#endif  
 
-#if SNAPPY_HAVE_BMI2
+#if !defined(SNAPPY_HAVE_NEON_CRC32)
+#if SNAPPY_HAVE_NEON && defined(__ARM_FEATURE_CRC32)
+#define SNAPPY_HAVE_NEON_CRC32 1
+#else
+#define SNAPPY_HAVE_NEON_CRC32 0
+#endif
+#endif  
+
+#if SNAPPY_HAVE_BMI2 || SNAPPY_HAVE_X86_CRC32
 
 
 #include <immintrin.h>
+#elif SNAPPY_HAVE_NEON_CRC32
+#include <arm_acle.h>
 #endif
 
 #include <algorithm>
@@ -74,6 +74,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -91,6 +92,14 @@ using internal::COPY_2_BYTE_OFFSET;
 using internal::COPY_4_BYTE_OFFSET;
 using internal::kMaximumTagLength;
 using internal::LITERAL;
+#if SNAPPY_HAVE_VECTOR_BYTE_SHUFFLE
+using internal::V128;
+using internal::V128_Load;
+using internal::V128_LoadU;
+using internal::V128_Shuffle;
+using internal::V128_StoreU;
+using internal::V128_DupChar;
+#endif
 
 
 
@@ -133,21 +142,53 @@ constexpr std::array<int16_t, 256> MakeTable(index_sequence<seq...>) {
   return std::array<int16_t, 256>{LengthMinusOffset(seq)...};
 }
 
-
-
-struct {
-  alignas(64) const std::array<int16_t, 256> length_minus_offset;
-  uint32_t extract_masks[4];  
-} table = {MakeTable(make_index_sequence<256>{}), {0, 0xFF, 0xFFFF, 0}};
+alignas(64) const std::array<int16_t, 256> kLengthMinusOffset =
+    MakeTable(make_index_sequence<256>{});
 
 
 
 
 
 
-inline uint32_t HashBytes(uint32_t bytes, uint32_t mask) {
+
+inline uint16_t* TableEntry(uint16_t* table, uint32_t bytes, uint32_t mask) {
+  
+  
+  
+  
+  
+  
+  
+#if SNAPPY_HAVE_NEON_CRC32
+  
+  
+  
+  
+  const uint32_t hash = __crc32cw(bytes, mask);
+#elif SNAPPY_HAVE_X86_CRC32
+  const uint32_t hash = _mm_crc32_u32(bytes, mask);
+#else
   constexpr uint32_t kMagic = 0x1e35a7bd;
-  return ((kMagic * bytes) >> (32 - kMaxHashTableBits)) & mask;
+  const uint32_t hash = (kMagic * bytes) >> (31 - kMaxHashTableBits);
+#endif
+  return reinterpret_cast<uint16_t*>(reinterpret_cast<uintptr_t>(table) +
+                                     (hash & mask));
+}
+
+inline uint16_t* TableEntry4ByteMatch(uint16_t* table, uint32_t bytes,
+                                      uint32_t mask) {
+  constexpr uint32_t kMagic = 2654435761U;
+  const uint32_t hash = (kMagic * bytes) >> (32 - kMaxHashTableBits);
+  return reinterpret_cast<uint16_t*>(reinterpret_cast<uintptr_t>(table) +
+                                     (hash & mask));
+}
+
+inline uint16_t* TableEntry8ByteMatch(uint16_t* table, uint64_t bytes,
+                                      uint32_t mask) {
+  constexpr uint64_t kMagic = 58295818150454627ULL;
+  const uint32_t hash = (kMagic * bytes) >> (64 - kMaxHashTableBits);
+  return reinterpret_cast<uint16_t*>(reinterpret_cast<uintptr_t>(table) +
+                                     (hash & mask));
 }
 
 }  
@@ -228,7 +269,7 @@ inline char* IncrementalCopySlow(const char* src, char* op,
   return op_limit;
 }
 
-#if SNAPPY_HAVE_SSSE3
+#if SNAPPY_HAVE_VECTOR_BYTE_SHUFFLE
 
 
 
@@ -248,19 +289,19 @@ inline constexpr std::array<char, sizeof...(indexes)> MakePatternMaskBytes(
 
 
 template <size_t... pattern_sizes_minus_one>
-inline constexpr std::array<std::array<char, sizeof(__m128i)>,
+inline constexpr std::array<std::array<char, sizeof(V128)>,
                             sizeof...(pattern_sizes_minus_one)>
 MakePatternMaskBytesTable(int index_offset,
                           index_sequence<pattern_sizes_minus_one...>) {
-  return {MakePatternMaskBytes(
-      index_offset, pattern_sizes_minus_one + 1,
-      make_index_sequence<sizeof(__m128i)>())...};
+  return {
+      MakePatternMaskBytes(index_offset, pattern_sizes_minus_one + 1,
+                           make_index_sequence<sizeof(V128)>())...};
 }
 
 
 
 
-alignas(16) constexpr std::array<std::array<char, sizeof(__m128i)>,
+alignas(16) constexpr std::array<std::array<char, sizeof(V128)>,
                                  16> pattern_generation_masks =
     MakePatternMaskBytesTable(
         0,
@@ -271,27 +312,27 @@ alignas(16) constexpr std::array<std::array<char, sizeof(__m128i)>,
 
 
 
-alignas(16) constexpr std::array<std::array<char, sizeof(__m128i)>,
+alignas(16) constexpr std::array<std::array<char, sizeof(V128)>,
                                  16> pattern_reshuffle_masks =
     MakePatternMaskBytesTable(
         16,
         make_index_sequence<16>());
 
 SNAPPY_ATTRIBUTE_ALWAYS_INLINE
-static inline __m128i LoadPattern(const char* src, const size_t pattern_size) {
-  __m128i generation_mask = _mm_load_si128(reinterpret_cast<const __m128i*>(
+static inline V128 LoadPattern(const char* src, const size_t pattern_size) {
+  V128 generation_mask = V128_Load(reinterpret_cast<const V128*>(
       pattern_generation_masks[pattern_size - 1].data()));
   
   
   SNAPPY_ANNOTATE_MEMORY_IS_INITIALIZED(src + pattern_size, 16 - pattern_size);
-  return _mm_shuffle_epi8(
-      _mm_loadu_si128(reinterpret_cast<const __m128i*>(src)), generation_mask);
+  return V128_Shuffle(V128_LoadU(reinterpret_cast<const V128*>(src)),
+                      generation_mask);
 }
 
 SNAPPY_ATTRIBUTE_ALWAYS_INLINE
-static inline std::pair<__m128i , __m128i >
+static inline std::pair<V128 , V128 >
 LoadPatternAndReshuffleMask(const char* src, const size_t pattern_size) {
-  __m128i pattern = LoadPattern(src, pattern_size);
+  V128 pattern = LoadPattern(src, pattern_size);
 
   
   
@@ -299,7 +340,7 @@ LoadPatternAndReshuffleMask(const char* src, const size_t pattern_size) {
   
   
   
-  __m128i reshuffle_mask = _mm_load_si128(reinterpret_cast<const __m128i*>(
+  V128 reshuffle_mask = V128_Load(reinterpret_cast<const V128*>(
       pattern_reshuffle_masks[pattern_size - 1].data()));
   return {pattern, reshuffle_mask};
 }
@@ -312,33 +353,38 @@ LoadPatternAndReshuffleMask(const char* src, const size_t pattern_size) {
 
 SNAPPY_ATTRIBUTE_ALWAYS_INLINE
 static inline bool Copy64BytesWithPatternExtension(char* dst, size_t offset) {
-#if SNAPPY_HAVE_SSSE3
+#if SNAPPY_HAVE_VECTOR_BYTE_SHUFFLE
   if (SNAPPY_PREDICT_TRUE(offset <= 16)) {
     switch (offset) {
       case 0:
         return false;
       case 1: {
-        std::memset(dst, dst[-1], 64);
+        
+        
+        V128 pattern = V128_DupChar(dst[-1]);
+        for (int i = 0; i < 4; i++) {
+          V128_StoreU(reinterpret_cast<V128*>(dst + 16 * i), pattern);
+        }
         return true;
       }
       case 2:
       case 4:
       case 8:
       case 16: {
-        __m128i pattern = LoadPattern(dst - offset, offset);
+        V128 pattern = LoadPattern(dst - offset, offset);
         for (int i = 0; i < 4; i++) {
-          _mm_storeu_si128(reinterpret_cast<__m128i*>(dst + 16 * i), pattern);
+          V128_StoreU(reinterpret_cast<V128*>(dst + 16 * i), pattern);
         }
         return true;
       }
       default: {
         auto pattern_and_reshuffle_mask =
             LoadPatternAndReshuffleMask(dst - offset, offset);
-        __m128i pattern = pattern_and_reshuffle_mask.first;
-        __m128i reshuffle_mask = pattern_and_reshuffle_mask.second;
+        V128 pattern = pattern_and_reshuffle_mask.first;
+        V128 reshuffle_mask = pattern_and_reshuffle_mask.second;
         for (int i = 0; i < 4; i++) {
-          _mm_storeu_si128(reinterpret_cast<__m128i*>(dst + 16 * i), pattern);
-          pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
+          V128_StoreU(reinterpret_cast<V128*>(dst + 16 * i), pattern);
+          pattern = V128_Shuffle(pattern, reshuffle_mask);
         }
         return true;
       }
@@ -347,6 +393,7 @@ static inline bool Copy64BytesWithPatternExtension(char* dst, size_t offset) {
 #else
   if (SNAPPY_PREDICT_TRUE(offset < 16)) {
     if (SNAPPY_PREDICT_FALSE(offset == 0)) return false;
+    
     
     for (int i = 0; i < 16; i++) dst[i] = (dst - offset)[i];
     
@@ -375,7 +422,7 @@ static inline bool Copy64BytesWithPatternExtension(char* dst, size_t offset) {
 
 inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
                              char* const buf_limit) {
-#if SNAPPY_HAVE_SSSE3
+#if SNAPPY_HAVE_VECTOR_BYTE_SHUFFLE
   constexpr int big_pattern_size_lower_bound = 16;
 #else
   constexpr int big_pattern_size_lower_bound = 8;
@@ -425,7 +472,7 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
   
   
   if (pattern_size < big_pattern_size_lower_bound) {
-#if SNAPPY_HAVE_SSSE3
+#if SNAPPY_HAVE_VECTOR_BYTE_SHUFFLE
     
     
     
@@ -444,26 +491,26 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
     if (SNAPPY_PREDICT_TRUE(op_limit <= buf_limit - 15)) {
       auto pattern_and_reshuffle_mask =
           LoadPatternAndReshuffleMask(src, pattern_size);
-      __m128i pattern = pattern_and_reshuffle_mask.first;
-      __m128i reshuffle_mask = pattern_and_reshuffle_mask.second;
+      V128 pattern = pattern_and_reshuffle_mask.first;
+      V128 reshuffle_mask = pattern_and_reshuffle_mask.second;
 
       
       
       
       
-      _mm_storeu_si128(reinterpret_cast<__m128i*>(op), pattern);
+      V128_StoreU(reinterpret_cast<V128*>(op), pattern);
 
       if (op + 16 < op_limit) {
-        pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
-        _mm_storeu_si128(reinterpret_cast<__m128i*>(op + 16), pattern);
+        pattern = V128_Shuffle(pattern, reshuffle_mask);
+        V128_StoreU(reinterpret_cast<V128*>(op + 16), pattern);
       }
       if (op + 32 < op_limit) {
-        pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
-        _mm_storeu_si128(reinterpret_cast<__m128i*>(op + 32), pattern);
+        pattern = V128_Shuffle(pattern, reshuffle_mask);
+        V128_StoreU(reinterpret_cast<V128*>(op + 32), pattern);
       }
       if (op + 48 < op_limit) {
-        pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
-        _mm_storeu_si128(reinterpret_cast<__m128i*>(op + 48), pattern);
+        pattern = V128_Shuffle(pattern, reshuffle_mask);
+        V128_StoreU(reinterpret_cast<V128*>(op + 48), pattern);
       }
       return op_limit;
     }
@@ -471,8 +518,8 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
     if (SNAPPY_PREDICT_TRUE(op < op_end)) {
       auto pattern_and_reshuffle_mask =
           LoadPatternAndReshuffleMask(src, pattern_size);
-      __m128i pattern = pattern_and_reshuffle_mask.first;
-      __m128i reshuffle_mask = pattern_and_reshuffle_mask.second;
+      V128 pattern = pattern_and_reshuffle_mask.first;
+      V128 reshuffle_mask = pattern_and_reshuffle_mask.second;
 
       
       
@@ -483,8 +530,8 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
 #pragma clang loop unroll(disable)
 #endif
       do {
-        _mm_storeu_si128(reinterpret_cast<__m128i*>(op), pattern);
-        pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
+        V128_StoreU(reinterpret_cast<V128*>(op), pattern);
+        pattern = V128_Shuffle(pattern, reshuffle_mask);
         op += 16;
       } while (SNAPPY_PREDICT_TRUE(op < op_end));
     }
@@ -599,7 +646,19 @@ static inline char* EmitLiteral(char* op, const char* literal, int len) {
     LittleEndian::Store32(op, n);
     op += count;
   }
-  std::memcpy(op, literal, len);
+  
+  if (allow_fast_path) {
+    char* destination = op;
+    const char* source = literal;
+    const char* end = destination + len;
+    do {
+      std::memcpy(destination, source, 16);
+      destination += 16;
+      source += 16;
+    } while (destination < end);
+  } else {
+    std::memcpy(op, literal, len);
+  }
   return op + len;
 }
 
@@ -734,7 +793,7 @@ char* CompressFragment(const char* input, size_t input_size, char* op,
   const char* ip = input;
   assert(input_size <= kBlockSize);
   assert((table_size & (table_size - 1)) == 0);  
-  const uint32_t mask = table_size - 1;
+  const uint32_t mask = 2 * (table_size - 1);
   const char* ip_end = input + input_size;
   const char* base_ip = ip;
 
@@ -785,11 +844,11 @@ char* CompressFragment(const char* input, size_t input_size, char* op,
             
             uint32_t dword = i == 0 ? preload : static_cast<uint32_t>(data);
             assert(dword == LittleEndian::Load32(ip + i));
-            uint32_t hash = HashBytes(dword, mask);
-            candidate = base_ip + table[hash];
+            uint16_t* table_entry = TableEntry(table, dword, mask);
+            candidate = base_ip + *table_entry;
             assert(candidate >= base_ip);
             assert(candidate < ip + i);
-            table[hash] = delta + i;
+            *table_entry = delta + i;
             if (SNAPPY_PREDICT_FALSE(LittleEndian::Load32(candidate) == dword)) {
               *op = LITERAL | (i << 2);
               UnalignedCopy128(next_emit, op + 1);
@@ -806,7 +865,7 @@ char* CompressFragment(const char* input, size_t input_size, char* op,
       }
       while (true) {
         assert(static_cast<uint32_t>(data) == LittleEndian::Load32(ip));
-        uint32_t hash = HashBytes(data, mask);
+        uint16_t* table_entry = TableEntry(table, data, mask);
         uint32_t bytes_between_hash_lookups = skip >> 5;
         skip += bytes_between_hash_lookups;
         const char* next_ip = ip + bytes_between_hash_lookups;
@@ -814,11 +873,11 @@ char* CompressFragment(const char* input, size_t input_size, char* op,
           ip = next_emit;
           goto emit_remainder;
         }
-        candidate = base_ip + table[hash];
+        candidate = base_ip + *table_entry;
         assert(candidate >= base_ip);
         assert(candidate < ip);
 
-        table[hash] = ip - base_ip;
+        *table_entry = ip - base_ip;
         if (SNAPPY_PREDICT_FALSE(static_cast<uint32_t>(data) ==
                                 LittleEndian::Load32(candidate))) {
           break;
@@ -866,10 +925,11 @@ char* CompressFragment(const char* input, size_t input_size, char* op,
         
         
         
-        table[HashBytes(LittleEndian::Load32(ip - 1), mask)] = ip - base_ip - 1;
-        uint32_t hash = HashBytes(data, mask);
-        candidate = base_ip + table[hash];
-        table[hash] = ip - base_ip;
+        *TableEntry(table, LittleEndian::Load32(ip - 1), mask) =
+            ip - base_ip - 1;
+        uint16_t* table_entry = TableEntry(table, data, mask);
+        candidate = base_ip + *table_entry;
+        *table_entry = ip - base_ip;
         
         
         
@@ -895,12 +955,180 @@ emit_remainder:
 
   return op;
 }
+
+char* CompressFragmentDoubleHash(const char* input, size_t input_size, char* op,
+                                 uint16_t* table, const int table_size,
+                                 uint16_t* table2, const int table_size2) {
+  (void)table_size2;
+  assert(table_size == table_size2);
+  
+  const char* ip = input;
+  assert(input_size <= kBlockSize);
+  assert((table_size & (table_size - 1)) == 0);  
+  const uint32_t mask = 2 * (table_size - 1);
+  const char* ip_end = input + input_size;
+  const char* base_ip = ip;
+
+  const size_t kInputMarginBytes = 15;
+  if (SNAPPY_PREDICT_TRUE(input_size >= kInputMarginBytes)) {
+    const char* ip_limit = input + input_size - kInputMarginBytes;
+
+    for (;;) {
+      const char* next_emit = ip++;
+      uint64_t data = LittleEndian::Load64(ip);
+      uint32_t skip = 512;
+
+      const char* candidate;
+      uint32_t candidate_length;
+      while (true) {
+        assert(static_cast<uint32_t>(data) == LittleEndian::Load32(ip));
+        uint16_t* table_entry2 = TableEntry8ByteMatch(table2, data, mask);
+        uint32_t bytes_between_hash_lookups = skip >> 9;
+        skip++;
+        const char* next_ip = ip + bytes_between_hash_lookups;
+        if (SNAPPY_PREDICT_FALSE(next_ip > ip_limit)) {
+          ip = next_emit;
+          goto emit_remainder;
+        }
+        candidate = base_ip + *table_entry2;
+        assert(candidate >= base_ip);
+        assert(candidate < ip);
+
+        *table_entry2 = ip - base_ip;
+        if (SNAPPY_PREDICT_FALSE(static_cast<uint32_t>(data) ==
+                                LittleEndian::Load32(candidate))) {
+          candidate_length =
+              FindMatchLengthPlain(candidate + 4, ip + 4, ip_end) + 4;
+          break;
+        }
+
+        uint16_t* table_entry = TableEntry4ByteMatch(table, data, mask);
+        candidate = base_ip + *table_entry;
+        assert(candidate >= base_ip);
+        assert(candidate < ip);
+
+        *table_entry = ip - base_ip;
+        if (SNAPPY_PREDICT_FALSE(static_cast<uint32_t>(data) ==
+                                LittleEndian::Load32(candidate))) {
+          candidate_length =
+              FindMatchLengthPlain(candidate + 4, ip + 4, ip_end) + 4;
+          table_entry2 =
+              TableEntry8ByteMatch(table2, LittleEndian::Load64(ip + 1), mask);
+          auto candidate2 = base_ip + *table_entry2;
+          size_t candidate_length2 =
+              FindMatchLengthPlain(candidate2, ip + 1, ip_end);
+          if (candidate_length2 > candidate_length) {
+            *table_entry2 = ip - base_ip;
+            candidate = candidate2;
+            candidate_length = candidate_length2;
+            ++ip;
+          }
+          break;
+        }
+        data = LittleEndian::Load64(next_ip);
+        ip = next_ip;
+      }
+      
+      while (ip > next_emit && candidate > base_ip &&
+             *(ip - 1) == *(candidate - 1)) {
+        --ip;
+        --candidate;
+        ++candidate_length;
+      }
+      *TableEntry8ByteMatch(table2, LittleEndian::Load64(ip + 1), mask) =
+          ip - base_ip + 1;
+      *TableEntry8ByteMatch(table2, LittleEndian::Load64(ip + 2), mask) =
+          ip - base_ip + 2;
+      *TableEntry4ByteMatch(table, LittleEndian::Load32(ip + 1), mask) =
+          ip - base_ip + 1;
+      
+      
+      
+      
+      assert(next_emit + 16 <= ip_end);
+      if (ip - next_emit > 0) {
+        op = EmitLiteral<true>(op, next_emit,
+                                                   ip - next_emit);
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+      do {
+        
+        
+        const char* base = ip;
+        ip += candidate_length;
+        size_t offset = base - candidate;
+        if (candidate_length < 12) {
+          op =
+              EmitCopy<true>(op, offset, candidate_length);
+        } else {
+          op = EmitCopy<false>(op, offset,
+                                                    candidate_length);
+        }
+        if (SNAPPY_PREDICT_FALSE(ip >= ip_limit)) {
+          goto emit_remainder;
+        }
+        
+        
+        
+        if (ip - base_ip > 7) {
+          *TableEntry8ByteMatch(table2, LittleEndian::Load64(ip - 7), mask) =
+              ip - base_ip - 7;
+          *TableEntry8ByteMatch(table2, LittleEndian::Load64(ip - 4), mask) =
+              ip - base_ip - 4;
+        }
+        *TableEntry8ByteMatch(table2, LittleEndian::Load64(ip - 3), mask) =
+            ip - base_ip - 3;
+        *TableEntry8ByteMatch(table2, LittleEndian::Load64(ip - 2), mask) =
+            ip - base_ip - 2;
+        *TableEntry4ByteMatch(table, LittleEndian::Load32(ip - 2), mask) =
+            ip - base_ip - 2;
+        *TableEntry4ByteMatch(table, LittleEndian::Load32(ip - 1), mask) =
+            ip - base_ip - 1;
+
+        uint16_t* table_entry =
+            TableEntry8ByteMatch(table2, LittleEndian::Load64(ip), mask);
+        candidate = base_ip + *table_entry;
+        *table_entry = ip - base_ip;
+        if (LittleEndian::Load32(ip) == LittleEndian::Load32(candidate)) {
+          candidate_length =
+              FindMatchLengthPlain(candidate + 4, ip + 4, ip_end) + 4;
+          continue;
+        }
+        table_entry =
+            TableEntry4ByteMatch(table, LittleEndian::Load32(ip), mask);
+        candidate = base_ip + *table_entry;
+        *table_entry = ip - base_ip;
+        if (LittleEndian::Load32(ip) == LittleEndian::Load32(candidate)) {
+          candidate_length =
+              FindMatchLengthPlain(candidate + 4, ip + 4, ip_end) + 4;
+          continue;
+        }
+        break;
+      } while (true);
+    }
+  }
+
+emit_remainder:
+  
+  if (ip < ip_end) {
+    op = EmitLiteral<false>(op, ip, ip_end - ip);
+  }
+
+  return op;
+}
 }  
 
-
-static inline void Report(const char *algorithm, size_t compressed_size,
-                          size_t uncompressed_size) {
+static inline void Report(int token, const char *algorithm, size_t
+compressed_size, size_t uncompressed_size) {
   
+  (void)token;
   (void)algorithm;
   (void)compressed_size;
   (void)uncompressed_size;
@@ -962,7 +1190,7 @@ static inline void Report(const char *algorithm, size_t compressed_size,
 
 
 
-static inline uint32_t ExtractLowBytes(uint32_t v, int n) {
+static inline uint32_t ExtractLowBytes(const uint32_t& v, int n) {
   assert(n >= 0);
   assert(n <= 4);
 #if SNAPPY_HAVE_BMI2
@@ -991,30 +1219,87 @@ inline bool Copy64BytesWithPatternExtension(ptrdiff_t dst, size_t offset) {
   return offset != 0;
 }
 
-void MemCopy(char* dst, const uint8_t* src, size_t size) {
-  std::memcpy(dst, src, size);
+
+
+
+
+void MemCopy64(char* dst, const void* src, size_t size) {
+  
+  constexpr int kShortMemCopy = 32;
+
+  assert(size <= 64);
+  assert(std::less_equal<const void*>()(static_cast<const char*>(src) + size,
+                                        dst) ||
+         std::less_equal<const void*>()(dst + size, src));
+
+  
+  
+  
+  
+#if defined(__x86_64__) && defined(__AVX__)
+  assert(kShortMemCopy <= 32);
+  __m256i data = _mm256_lddqu_si256(static_cast<const __m256i *>(src));
+  _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), data);
+  
+  if (SNAPPY_PREDICT_FALSE(size > kShortMemCopy)) {
+    data = _mm256_lddqu_si256(static_cast<const __m256i *>(src) + 1);
+    _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst) + 1, data);
+  }
+#else
+  std::memmove(dst, src, kShortMemCopy);
+  
+  if (SNAPPY_PREDICT_FALSE(size > kShortMemCopy)) {
+    std::memmove(dst + kShortMemCopy,
+                 static_cast<const uint8_t*>(src) + kShortMemCopy,
+                 64 - kShortMemCopy);
+  }
+#endif
 }
 
-void MemCopy(ptrdiff_t dst, const uint8_t* src, size_t size) {
+void MemCopy64(ptrdiff_t dst, const void* src, size_t size) {
   
   (void)dst;
   (void)src;
   (void)size;
 }
 
-void MemMove(char* dst, const void* src, size_t size) {
-  std::memmove(dst, src, size);
+void ClearDeferred(const void** deferred_src, size_t* deferred_length,
+                   uint8_t* safe_source) {
+  *deferred_src = safe_source;
+  *deferred_length = 0;
 }
 
-void MemMove(ptrdiff_t dst, const void* src, size_t size) {
-  
-  (void)dst;
-  (void)src;
-  (void)size;
+void DeferMemCopy(const void** deferred_src, size_t* deferred_length,
+                  const void* src, size_t length) {
+  *deferred_src = src;
+  *deferred_length = length;
 }
 
 SNAPPY_ATTRIBUTE_ALWAYS_INLINE
-size_t AdvanceToNextTag(const uint8_t** ip_p, size_t* tag) {
+inline size_t AdvanceToNextTagARMOptimized(const uint8_t** ip_p, size_t* tag) {
+  const uint8_t*& ip = *ip_p;
+  
+  
+  
+  
+  
+  
+  
+  const size_t tag_type = *tag & 3;
+  const bool is_literal = (tag_type == 0);
+  if (is_literal) {
+    size_t next_literal_tag = (*tag >> 2) + 1;
+    *tag = ip[next_literal_tag];
+    ip += next_literal_tag + 1;
+  } else {
+    *tag = ip[tag_type];
+    ip += tag_type + 1;
+  }
+  return tag_type;
+}
+
+SNAPPY_ATTRIBUTE_ALWAYS_INLINE
+inline size_t AdvanceToNextTagX86Optimized(const uint8_t** ip_p, size_t* tag) {
   const uint8_t*& ip = *ip_p;
   
   
@@ -1026,11 +1311,12 @@ size_t AdvanceToNextTag(const uint8_t** ip_p, size_t* tag) {
   size_t literal_len = *tag >> 2;
   size_t tag_type = *tag;
   bool is_literal;
-#if defined(__GNUC__) && defined(__x86_64__) && defined(__GCC_ASM_FLAG_OUTPUTS__)
+#if defined(__GCC_ASM_FLAG_OUTPUTS__) && defined(__x86_64__)
   
   
   asm("and $3, %k[tag_type]\n\t"
-      : [tag_type] "+r"(tag_type), "=@ccz"(is_literal));
+      : [tag_type] "+r"(tag_type), "=@ccz"(is_literal)
+      :: "cc");
 #else
   tag_type &= 3;
   is_literal = (tag_type == 0);
@@ -1060,7 +1346,24 @@ size_t AdvanceToNextTag(const uint8_t** ip_p, size_t* tag) {
 
 
 inline uint32_t ExtractOffset(uint32_t val, size_t tag_type) {
-  return val & table.extract_masks[tag_type];
+  
+  
+  
+#if defined(__x86_64__)
+  constexpr uint64_t kExtractMasksCombined = 0x0000FFFF00FF0000ull;
+  uint16_t result;
+  memcpy(&result,
+         reinterpret_cast<const char*>(&kExtractMasksCombined) + 2 * tag_type,
+         sizeof(result));
+  return val & result;
+#elif defined(__aarch64__)
+  constexpr uint64_t kExtractMasksCombined = 0x0000FFFF00FF0000ull;
+  return val & static_cast<uint32_t>(
+      (kExtractMasksCombined >> (tag_type * 16)) & 0xFFFF);
+#else
+  static constexpr uint32_t kExtractMasks[4] = {0, 0xFF, 0xFFFF, 0};
+  return val & kExtractMasks[tag_type];
+#endif
 };
 
 
@@ -1077,6 +1380,12 @@ std::pair<const uint8_t*, ptrdiff_t> DecompressBranchless(
     const uint8_t* ip, const uint8_t* ip_limit, ptrdiff_t op, T op_base,
     ptrdiff_t op_limit_min_slop) {
   
+  uint8_t safe_source[64];
+  const void* deferred_src;
+  size_t deferred_length;
+  ClearDeferred(&deferred_src, &deferred_length, safe_source);
+
+  
   op_limit_min_slop -= kSlopBytes;
   if (2 * (kSlopBytes + 1) < ip_limit - ip && op < op_limit_min_slop) {
     const uint8_t* const ip_limit_min_slop = ip_limit - 2 * kSlopBytes - 1;
@@ -1084,21 +1393,41 @@ std::pair<const uint8_t*, ptrdiff_t> DecompressBranchless(
     
     
     size_t tag = ip[-1];
+#if defined(__clang__) && defined(__aarch64__)
+    
+    
+    
+    
+    
+    
+    asm("" ::"r"(tag));
+#endif
     do {
       
       
       
+
+      SNAPPY_PREFETCH(ip + 128);
       for (int i = 0; i < 2; i++) {
         const uint8_t* old_ip = ip;
         assert(tag == ip[-1]);
         
         
-        ptrdiff_t len_min_offset = table.length_minus_offset[tag];
-        size_t tag_type = AdvanceToNextTag(&ip, &tag);
-        uint32_t next = LittleEndian::Load32(old_ip);
-        size_t len = len_min_offset & 0xFF;
-        len_min_offset -= ExtractOffset(next, tag_type);
-        if (SNAPPY_PREDICT_FALSE(len_min_offset > 0)) {
+        ptrdiff_t len_minus_offset = kLengthMinusOffset[tag];
+        uint32_t next;
+#if defined(__aarch64__)
+        size_t tag_type = AdvanceToNextTagARMOptimized(&ip, &tag);
+        
+        
+        next = LittleEndian::Load16(old_ip);
+#else
+        size_t tag_type = AdvanceToNextTagX86Optimized(&ip, &tag);
+        next = LittleEndian::Load32(old_ip);
+#endif
+        size_t len = len_minus_offset & 0xFF;
+        ptrdiff_t extracted = ExtractOffset(next, tag_type);
+        ptrdiff_t len_min_offset = len_minus_offset - extracted;
+        if (SNAPPY_PREDICT_FALSE(len_minus_offset > extracted)) {
           if (SNAPPY_PREDICT_FALSE(len & 0x80)) {
             
             
@@ -1110,39 +1439,29 @@ std::pair<const uint8_t*, ptrdiff_t> DecompressBranchless(
           }
           
           assert(tag_type == 1 || tag_type == 2);
-          std::ptrdiff_t delta = op + len_min_offset - len;
+          std::ptrdiff_t delta = (op + deferred_length) + len_min_offset - len;
           
+          
+          MemCopy64(op_base + op, deferred_src, deferred_length);
+          op += deferred_length;
+          ClearDeferred(&deferred_src, &deferred_length, safe_source);
           if (SNAPPY_PREDICT_FALSE(delta < 0 ||
                                   !Copy64BytesWithPatternExtension(
                                       op_base + op, len - len_min_offset))) {
             goto break_loop;
           }
+          
           op += len;
           continue;
         }
-        std::ptrdiff_t delta = op + len_min_offset - len;
+        std::ptrdiff_t delta = (op + deferred_length) + len_min_offset - len;
         if (SNAPPY_PREDICT_FALSE(delta < 0)) {
-#if defined(__GNUC__) && defined(__x86_64__)
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          asm("");
-#endif
-
           
           
           if (tag_type != 0) goto break_loop;
-          MemCopy(op_base + op, old_ip, 64);
-          op += len;
+          MemCopy64(op_base + op, deferred_src, deferred_length);
+          op += deferred_length;
+          DeferMemCopy(&deferred_src, &deferred_length, old_ip, len);
           continue;
         }
 
@@ -1150,13 +1469,22 @@ std::pair<const uint8_t*, ptrdiff_t> DecompressBranchless(
         
         const void* from =
             tag_type ? reinterpret_cast<void*>(op_base + delta) : old_ip;
-        MemMove(op_base + op, from, 64);
-        op += len;
+        MemCopy64(op_base + op, deferred_src, deferred_length);
+        op += deferred_length;
+        DeferMemCopy(&deferred_src, &deferred_length, from, len);
       }
-    } while (ip < ip_limit_min_slop && op < op_limit_min_slop);
+    } while (ip < ip_limit_min_slop &&
+             static_cast<ptrdiff_t>(op + deferred_length) < op_limit_min_slop);
   exit:
     ip--;
     assert(ip <= ip_limit);
+  }
+  
+  
+  if (deferred_length) {
+    MemCopy64(op_base + op, deferred_src, deferred_length);
+    op += deferred_length;
+    ClearDeferred(&deferred_src, &deferred_length, safe_source);
   }
   return {ip, op};
 }
@@ -1325,7 +1653,7 @@ class SnappyDecompressor {
 
           if (!writer->AppendFromSelf(copy_offset, length, &op)) goto exit;
         } else {
-          const ptrdiff_t entry = table.length_minus_offset[c];
+          const ptrdiff_t entry = kLengthMinusOffset[c];
           preload = LittleEndian::Load32(ip);
           const uint32_t trailer = ExtractLowBytes(preload, c & 3);
           const uint32_t length = entry & 0xff;
@@ -1448,7 +1776,8 @@ template <typename Writer>
 static bool InternalUncompressAllTags(SnappyDecompressor* decompressor,
                                       Writer* writer, uint32_t compressed_len,
                                       uint32_t uncompressed_len) {
-  Report("snappy_uncompress", compressed_len, uncompressed_len);
+    int token = 0;
+  Report(token, "snappy_uncompress", compressed_len, uncompressed_len);
 
   writer->SetExpectedLength(uncompressed_len);
 
@@ -1463,7 +1792,9 @@ bool GetUncompressedLength(Source* source, uint32_t* result) {
   return decompressor.ReadUncompressedLength(result);
 }
 
-size_t Compress(Source* reader, Sink* writer) {
+size_t Compress(Source* reader, Sink* writer, CompressionOptions options) {
+  assert(options.level == 1 || options.level == 2);
+  int token = 0;
   size_t written = 0;
   size_t N = reader->Available();
   const size_t uncompressed_size = N;
@@ -1510,17 +1841,23 @@ size_t Compress(Source* reader, Sink* writer) {
     uint16_t* table = wmem.GetHashTable(num_to_read, &table_size);
 
     
-    const int max_output = MaxCompressedLength(num_to_read);
+    int max_output = MaxCompressedLength(num_to_read);
 
     
     
-
     
     
     
     char* dest = writer->GetAppendBuffer(max_output, wmem.GetScratchOutput());
-    char* end = internal::CompressFragment(fragment, fragment_size, dest, table,
-                                           table_size);
+    char* end = nullptr;
+    if (options.level == 1) {
+      end = internal::CompressFragment(fragment, fragment_size, dest, table,
+                                       table_size);
+    } else if (options.level == 2) {
+      end = internal::CompressFragmentDoubleHash(
+          fragment, fragment_size, dest, table, table_size >> 1,
+          table + (table_size >> 1), table_size >> 1);
+    }
     writer->Append(dest, end - dest);
     written += (end - dest);
 
@@ -1528,14 +1865,74 @@ size_t Compress(Source* reader, Sink* writer) {
     reader->Skip(pending_advance);
   }
 
-  Report("snappy_compress", written, uncompressed_size);
-
+  Report(token, "snappy_compress", written, uncompressed_size);
   return written;
 }
 
 
 
 
+
+
+
+
+class SnappyIOVecReader : public Source {
+ public:
+  SnappyIOVecReader(const struct iovec* iov, size_t total_size)
+      : curr_iov_(iov),
+        curr_pos_(total_size > 0 ? reinterpret_cast<const char*>(iov->iov_base)
+                                 : nullptr),
+        curr_size_remaining_(total_size > 0 ? iov->iov_len : 0),
+        total_size_remaining_(total_size) {
+    
+    if (total_size > 0 && curr_size_remaining_ == 0) Advance();
+  }
+
+  ~SnappyIOVecReader() override = default;
+
+  size_t Available() const override { return total_size_remaining_; }
+
+  const char* Peek(size_t* len) override {
+    *len = curr_size_remaining_;
+    return curr_pos_;
+  }
+
+  void Skip(size_t n) override {
+    while (n >= curr_size_remaining_ && n > 0) {
+      n -= curr_size_remaining_;
+      Advance();
+    }
+    curr_size_remaining_ -= n;
+    total_size_remaining_ -= n;
+    curr_pos_ += n;
+  }
+
+ private:
+  
+  void Advance() {
+    do {
+      assert(total_size_remaining_ >= curr_size_remaining_);
+      total_size_remaining_ -= curr_size_remaining_;
+      if (total_size_remaining_ == 0) {
+        curr_pos_ = nullptr;
+        curr_size_remaining_ = 0;
+        return;
+      }
+      ++curr_iov_;
+      curr_pos_ = reinterpret_cast<const char*>(curr_iov_->iov_base);
+      curr_size_remaining_ = curr_iov_->iov_len;
+    } while (curr_size_remaining_ == 0);
+  }
+
+  
+  const struct iovec* curr_iov_;
+  
+  const char* curr_pos_;
+  
+  size_t curr_size_remaining_;
+  
+  size_t total_size_remaining_;
+};
 
 
 
@@ -1902,24 +2299,54 @@ bool IsValidCompressed(Source* compressed) {
 }
 
 void RawCompress(const char* input, size_t input_length, char* compressed,
-                 size_t* compressed_length) {
+                 size_t* compressed_length, CompressionOptions options) {
   ByteArraySource reader(input, input_length);
   UncheckedByteArraySink writer(compressed);
-  Compress(&reader, &writer);
+  Compress(&reader, &writer, options);
 
   
   *compressed_length = (writer.CurrentDestination() - compressed);
 }
 
-size_t Compress(const char* input, size_t input_length,
-                std::string* compressed) {
+void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
+                          char* compressed, size_t* compressed_length,
+                          CompressionOptions options) {
+  SnappyIOVecReader reader(iov, uncompressed_length);
+  UncheckedByteArraySink writer(compressed);
+  Compress(&reader, &writer, options);
+
+  
+  *compressed_length = writer.CurrentDestination() - compressed;
+}
+
+size_t Compress(const char* input, size_t input_length, std::string* compressed,
+                CompressionOptions options) {
   
   STLStringResizeUninitialized(compressed, MaxCompressedLength(input_length));
 
   size_t compressed_length;
   RawCompress(input, input_length, string_as_array(compressed),
-              &compressed_length);
-  compressed->resize(compressed_length);
+              &compressed_length, options);
+  compressed->erase(compressed_length);
+  return compressed_length;
+}
+
+size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
+                         std::string* compressed, CompressionOptions options) {
+  
+  size_t uncompressed_length = 0;
+  for (size_t i = 0; i < iov_cnt; ++i) {
+    uncompressed_length += iov[i].iov_len;
+  }
+
+  
+  STLStringResizeUninitialized(compressed, MaxCompressedLength(
+      uncompressed_length));
+
+  size_t compressed_length;
+  RawCompressFromIOVec(iov, uncompressed_length, string_as_array(compressed),
+                       &compressed_length, options);
+  compressed->erase(compressed_length);
   return compressed_length;
 }
 
@@ -2108,7 +2535,6 @@ bool SnappyScatteredWriter<Allocator>::SlowAppendFromSelf(size_t offset,
 class SnappySinkAllocator {
  public:
   explicit SnappySinkAllocator(Sink* dest) : dest_(dest) {}
-  ~SnappySinkAllocator() {}
 
   char* Allocate(int size) {
     Datablock block(new char[size], size);
