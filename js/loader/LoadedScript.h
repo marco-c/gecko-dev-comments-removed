@@ -192,11 +192,15 @@ class LoadedScript : public nsIMemoryReporter {
     mReceivedScriptTextLength = aLength;
   }
 
+  bool CanHaveBytecode() const {
+    return IsBytecode() || IsSource();
+  }
+
   JS::TranscodeBuffer& SRIAndBytecode() {
     
     
     
-    MOZ_ASSERT(IsBytecode() || IsSource());
+    MOZ_ASSERT(CanHaveBytecode());
     return mScriptBytecode;
   }
   JS::TranscodeRange Bytecode() const {
@@ -208,16 +212,16 @@ class LoadedScript : public nsIMemoryReporter {
   }
 
   size_t GetSRILength() const {
-    MOZ_ASSERT(IsBytecode() || IsSource());
+    MOZ_ASSERT(CanHaveBytecode());
     return mBytecodeOffset;
   }
   void SetSRILength(size_t sriLength) {
-    MOZ_ASSERT(IsBytecode() || IsSource());
+    MOZ_ASSERT(CanHaveBytecode());
     mBytecodeOffset = JS::AlignTranscodingBytecodeOffset(sriLength);
   }
 
   void DropBytecode() {
-    MOZ_ASSERT(IsBytecode() || IsSource());
+    MOZ_ASSERT(CanHaveBytecode());
     mScriptBytecode.clearAndFree();
   }
 
