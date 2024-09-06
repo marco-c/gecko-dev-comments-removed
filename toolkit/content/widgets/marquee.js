@@ -4,87 +4,25 @@
 
 "use strict";
 
-
-
-
-
 this.MarqueeWidget = class {
-  constructor(shadowRoot) {
-    this.shadowRoot = shadowRoot;
-    this.element = shadowRoot.host;
-  }
-
-  
-
-
-  onsetup() {
-    this.switchImpl();
-  }
-
-  
-
-
-
-  onchange() {
-    this.switchImpl();
-  }
-
-  switchImpl() {
-    let newImpl;
-    switch (this.element.direction) {
-      case "up":
-      case "down":
-        newImpl = MarqueeVerticalImplWidget;
-        break;
-      case "left":
-      case "right":
-        newImpl = MarqueeHorizontalImplWidget;
-        break;
-    }
-
-    
-    
-    if (this.impl && this.impl.constructor == newImpl) {
-      return;
-    }
-    this.teardown();
-    if (newImpl) {
-      this.impl = new newImpl(this.shadowRoot);
-      this.impl.onsetup();
-    }
-  }
-
-  teardown() {
-    if (!this.impl) {
-      return;
-    }
-    this.impl.teardown();
-    this.shadowRoot.firstChild.remove();
-    delete this.impl;
-  }
-};
-
-this.MarqueeBaseImplWidget = class {
   constructor(shadowRoot) {
     this.shadowRoot = shadowRoot;
     this.element = shadowRoot.host;
     this.document = this.element.ownerDocument;
     this.window = this.document.defaultView;
+    
+    
+    this.dirsign = 1;
+    this._currentLoop = this.element.loop;
+    this.animation = null;
+    this._restartScheduled = null;
   }
 
   onsetup() {
-    this.generateContent();
-
     
-    this._currentDirection = this.element.direction || "left";
-    this._currentLoop = this.element.loop;
-    this.dirsign = 1;
-    this.startAt = 0;
-    this.stopAt = 0;
-    this.newPosition = 0;
-    this.runId = 0;
-    this.originalHeight = 0;
-    this.invalidateCache = true;
+    
+    this.shadowRoot.innerHTML = `<link rel="stylesheet" href="chrome://global/content/elements/marquee.css"
+      /><slot></slot>`;
 
     this._mutationObserver = new this.window.MutationObserver(aMutations =>
       this._mutationActor(aMutations)
@@ -92,7 +30,7 @@ this.MarqueeBaseImplWidget = class {
     this._mutationObserver.observe(this.element, {
       attributes: true,
       attributeOldValue: true,
-      attributeFilter: ["loop", "", "behavior", "direction", "width", "height"],
+      attributeFilter: ["loop", "direction", "behavior"],
     });
 
     
@@ -108,12 +46,13 @@ this.MarqueeBaseImplWidget = class {
   }
 
   teardown() {
+    this.doStop();
     this._mutationObserver.disconnect();
-    this.window.clearTimeout(this.runId);
 
     this.window.removeEventListener("load", this);
     this.shadowRoot.removeEventListener("marquee-start", this);
     this.shadowRoot.removeEventListener("marquee-stop", this);
+    this.shadowRoot.replaceChildren();
   }
 
   handleEvent(aEvent) {
@@ -131,15 +70,26 @@ this.MarqueeBaseImplWidget = class {
       case "marquee-stop":
         this.doStop();
         break;
+      case "finish":
+        this._animationFinished();
+        break;
     }
   }
 
-  get outerDiv() {
-    return this.shadowRoot.firstChild;
-  }
-
-  get innerDiv() {
-    return this.shadowRoot.getElementById("innerDiv");
+  _animationFinished() {
+    let behavior = this.element.behavior;
+    let shouldLoop =
+      this._currentLoop > 1 || (this._currentLoop == -1 && behavior != "slide");
+    if (shouldLoop) {
+      if (this._currentLoop > 0) {
+        this._currentLoop--;
+      }
+      if (behavior == "alternate") {
+        this.dirsign = -this.dirsign;
+      }
+      this.doStop();
+      this.doStart();
+    }
   }
 
   get scrollDelayWithTruespeed() {
@@ -149,255 +99,249 @@ this.MarqueeBaseImplWidget = class {
     return this.element.scrollDelay;
   }
 
-  doStart() {
-    if (this.runId == 0) {
-      var lambda = () => this._doMove(false);
-      this.runId = this.window.setTimeout(
-        lambda,
-        this.scrollDelayWithTruespeed - this._deltaStartStop
-      );
-      this._deltaStartStop = 0;
+  get slot() {
+    return this.shadowRoot.lastChild;
+  }
+
+  
+
+
+
+
+
+
+
+  getMetrics() {
+    let slot = this.slot;
+    slot.style.width = "max-content";
+    let slotCS = this.window.getComputedStyle(slot);
+    let marqueeCS = this.window.getComputedStyle(this.element);
+    let contentWidth = parseFloat(slotCS.width) || 0;
+    let contentHeight = parseFloat(slotCS.height) || 0;
+    let marqueeWidth = parseFloat(marqueeCS.width) || 0;
+    let marqueeHeight = parseFloat(marqueeCS.height) || 0;
+    slot.style.width = "";
+    return {
+      contentWidth,
+      contentHeight,
+      marqueeWidth,
+      marqueeHeight,
+      cssDirection: marqueeCS.direction,
+    };
+  }
+
+  
+
+
+
+
+  getTransformParameters({
+    contentWidth,
+    contentHeight,
+    marqueeWidth,
+    marqueeHeight,
+    cssDirection,
+  }) {
+    const innerWidth = marqueeWidth - contentWidth;
+    const innerHeight = marqueeHeight - contentHeight;
+    const dir = this.element.direction;
+
+    let start = 0;
+    let end = 0;
+    const axis = dir == "up" || dir == "down" ? "y" : "x";
+    switch (this.element.behavior) {
+      case "alternate":
+        switch (dir) {
+          case "up":
+          case "down": {
+            if (innerHeight >= 0) {
+              start = innerHeight;
+              end = 0;
+            } else {
+              start = 0;
+              end = innerHeight;
+            }
+            if (dir == "down") {
+              [start, end] = [end, start];
+            }
+            if (this.dirsign == -1) {
+              [start, end] = [end, start];
+            }
+            break;
+          }
+          case "right":
+          case "left":
+          default: {
+            if (innerWidth >= 0) {
+              start = innerWidth;
+              end = 0;
+            } else {
+              start = 0;
+              end = innerWidth;
+            }
+            if (dir == "right") {
+              [start, end] = [end, start];
+            }
+            if (cssDirection == "rtl") {
+              [start, end] = [end, start];
+            }
+            if (this.dirsign == -1) {
+              [start, end] = [end, start];
+            }
+            break;
+          }
+        }
+        break;
+      case "slide":
+        switch (dir) {
+          case "up": {
+            start = marqueeHeight;
+            end = 0;
+            break;
+          }
+          case "down": {
+            start = -contentHeight;
+            end = innerHeight;
+            break;
+          }
+          case "right":
+          default: {
+            let isRight = dir == "right";
+            if (cssDirection == "rtl") {
+              isRight = !isRight;
+            }
+            if (isRight) {
+              start = -contentWidth;
+              end = innerWidth;
+            } else {
+              start = marqueeWidth;
+              end = 0;
+            }
+            break;
+          }
+        }
+        break;
+      case "scroll":
+      default:
+        switch (dir) {
+          case "up":
+          case "down": {
+            start = marqueeHeight;
+            end = -contentHeight;
+            if (dir == "down") {
+              [start, end] = [end, start];
+            }
+            break;
+          }
+          case "right":
+          case "left":
+          default: {
+            start = marqueeWidth;
+            end = -contentWidth;
+            if (dir == "right") {
+              [start, end] = [end, start];
+            }
+            if (cssDirection == "rtl") {
+              [start, end] = [end, start];
+            }
+            break;
+          }
+        }
+        break;
     }
+    return { start, end, axis };
+  }
+
+  
+
+
+
+
+
+  doStart() {
+    if (this.animation) {
+      return;
+    }
+    let scrollAmount = this.element.scrollAmount;
+    if (!scrollAmount) {
+      return;
+    }
+    let metrics = this.getMetrics();
+    let { axis, start, end } = this.getTransformParameters(metrics);
+    let duration =
+      (Math.abs(end - start) * this.scrollDelayWithTruespeed) / scrollAmount;
+    let startValue = start + "px";
+    let endValue = end + "px";
+    if (axis == "y") {
+      startValue = "0 " + startValue;
+      endValue = "0 " + endValue;
+    }
+    
+    
+    
+    
+    
+    
+    
+    this.animation = this.slot.animate(
+      {
+        translate: [startValue, endValue],
+      },
+      {
+        duration,
+        easing: "linear",
+        fill: "forwards",
+      }
+    );
+    this.animation.addEventListener("finish", this, { once: true });
   }
 
   doStop() {
-    if (this.runId != 0) {
-      this._deltaStartStop = Date.now() - this._lastMoveDate;
-      this.window.clearTimeout(this.runId);
+    if (!this.animation) {
+      return;
     }
-
-    this.runId = 0;
-  }
-
-  _doMove(aResetPosition) {
-    this._lastMoveDate = Date.now();
-
-    
-    
-    if (this.invalidateCache) {
-      this.invalidateCache = false; 
-
-      var corrvalue = 0;
-
-      switch (this._currentDirection) {
-        case "up":
-        case "down": {
-          let height = this.window.getComputedStyle(this.element).height;
-          this.outerDiv.style.height = height;
-          if (this.originalHeight > this.outerDiv.offsetHeight) {
-            corrvalue = this.originalHeight - this.outerDiv.offsetHeight;
-          }
-          this.innerDiv.style.padding = height + " 0";
-          let isUp = this._currentDirection == "up";
-          if (isUp) {
-            this.dirsign = 1;
-            this.startAt =
-              this.element.behavior == "alternate"
-                ? this.originalHeight - corrvalue
-                : 0;
-            this.stopAt =
-              this.element.behavior == "alternate" ||
-              this.element.behavior == "slide"
-                ? parseInt(height) + corrvalue
-                : this.originalHeight + parseInt(height);
-          } else {
-            this.dirsign = -1;
-            this.startAt =
-              this.element.behavior == "alternate"
-                ? parseInt(height) + corrvalue
-                : this.originalHeight + parseInt(height);
-            this.stopAt =
-              this.element.behavior == "alternate" ||
-              this.element.behavior == "slide"
-                ? this.originalHeight - corrvalue
-                : 0;
-          }
-          break;
-        }
-        case "left":
-        case "right":
-        default: {
-          let isRight = this._currentDirection == "right";
-          
-          let innerWidth = parseInt(
-            this.window.getComputedStyle(this.innerDiv).width
-          );
-          if (innerWidth > this.outerDiv.offsetWidth) {
-            corrvalue = innerWidth - this.outerDiv.offsetWidth;
-          }
-          let rtl =
-            this.window.getComputedStyle(this.element).direction == "rtl";
-          if (isRight != rtl) {
-            this.dirsign = -1;
-            this.stopAt =
-              this.element.behavior == "alternate" ||
-              this.element.behavior == "slide"
-                ? innerWidth - corrvalue
-                : 0;
-            this.startAt =
-              this.outerDiv.offsetWidth +
-              (this.element.behavior == "alternate"
-                ? corrvalue
-                : innerWidth + this.stopAt);
-          } else {
-            this.dirsign = 1;
-            this.startAt =
-              this.element.behavior == "alternate" ? innerWidth - corrvalue : 0;
-            this.stopAt =
-              this.outerDiv.offsetWidth +
-              (this.element.behavior == "alternate" ||
-              this.element.behavior == "slide"
-                ? corrvalue
-                : innerWidth + this.startAt);
-          }
-          if (rtl) {
-            this.startAt = -this.startAt;
-            this.stopAt = -this.stopAt;
-            this.dirsign = -this.dirsign;
-          }
-          break;
-        }
-      }
-
-      if (aResetPosition) {
-        this.newPosition = this.startAt;
-      }
-    } 
-
-    this.newPosition =
-      this.newPosition + this.dirsign * this.element.scrollAmount;
-
-    if (
-      (this.dirsign == 1 && this.newPosition > this.stopAt) ||
-      (this.dirsign == -1 && this.newPosition < this.stopAt)
-    ) {
-      switch (this.element.behavior) {
-        case "alternate":
-          
-          this.invalidateCache = true;
-
-          
-          const swap = { left: "right", down: "up", up: "down", right: "left" };
-          this._currentDirection = swap[this._currentDirection] || "left";
-          this.newPosition = this.stopAt;
-
-          if (
-            this._currentDirection == "up" ||
-            this._currentDirection == "down"
-          ) {
-            this.outerDiv.scrollTop = this.newPosition;
-          } else {
-            this.outerDiv.scrollLeft = this.newPosition;
-          }
-
-          break;
-
-        case "slide":
-          if (this._currentLoop > 1) {
-            this.newPosition = this.startAt;
-          }
-          break;
-
-        default:
-          this.newPosition = this.startAt;
-
-          if (
-            this._currentDirection == "up" ||
-            this._currentDirection == "down"
-          ) {
-            this.outerDiv.scrollTop = this.newPosition;
-          } else {
-            this.outerDiv.scrollLeft = this.newPosition;
-          }
-      }
-
-      if (this._currentLoop > 1) {
-        this._currentLoop--;
-      } else if (this._currentLoop == 1) {
-        if (
-          this._currentDirection == "up" ||
-          this._currentDirection == "down"
-        ) {
-          this.outerDiv.scrollTop = this.stopAt;
-        } else {
-          this.outerDiv.scrollLeft = this.stopAt;
-        }
-        this.element.stop();
-        return;
-      }
-    } else if (
-      this._currentDirection == "up" ||
-      this._currentDirection == "down"
-    ) {
-      this.outerDiv.scrollTop = this.newPosition;
-    } else {
-      this.outerDiv.scrollLeft = this.newPosition;
+    if (this._restartScheduled) {
+      this.window.cancelAnimationFrame(this._restartScheduled);
+      this._restartScheduled = null;
     }
-
-    var myThis = this;
-    var lambda = function myTimeOutFunction() {
-      myThis._doMove(false);
-    };
-    this.runId = this.window.setTimeout(lambda, this.scrollDelayWithTruespeed);
+    this.animation.removeEventListener("finish", this);
+    this.animation.cancel();
+    this.animation = null;
   }
 
   init() {
     this.element.stop();
-
-    if (this._currentDirection == "up" || this._currentDirection == "down") {
-      
-      this.innerDiv.style.padding = 0;
-      this.originalHeight = this.innerDiv.offsetHeight;
-    }
-
-    this._doMove(true);
+    this.doStart();
   }
 
   _mutationActor(aMutations) {
     while (aMutations.length) {
-      var mutation = aMutations.shift();
-      var attrName = mutation.attributeName.toLowerCase();
-      var oldValue = mutation.oldValue;
-      var target = mutation.target;
-      var newValue = target.getAttribute(attrName);
-
-      if (oldValue != newValue) {
-        this.invalidateCache = true;
-        switch (attrName) {
-          case "loop":
-            this._currentLoop = target.loop;
-            break;
-          case "direction":
-            this._currentDirection = target.direction;
-            break;
-        }
+      let mutation = aMutations.shift();
+      let attrName = mutation.attributeName.toLowerCase();
+      let oldValue = mutation.oldValue;
+      let newValue = this.element.getAttribute(attrName);
+      if (oldValue == newValue) {
+        continue;
+      }
+      if (attrName == "loop") {
+        this._currentLoop = this.element.loop;
+      }
+      if (attrName == "direction" || attrName == "behavior") {
+        this._scheduleRestartIfNeeded();
       }
     }
   }
-};
 
-this.MarqueeHorizontalImplWidget = class extends MarqueeBaseImplWidget {
-  generateContent() {
-    
-    
-    this.shadowRoot.innerHTML = `<div class="outerDiv horizontal"
-        ><link rel="stylesheet" href="chrome://global/content/elements/marquee.css"
-          /><div class="innerDiv" id="innerDiv"
-            ><slot
-          /></div
-      ></div>`;
-  }
-};
-
-this.MarqueeVerticalImplWidget = class extends MarqueeBaseImplWidget {
-  generateContent() {
-    
-    
-    this.shadowRoot.innerHTML = `<div class="outerDiv vertical"
-        ><link rel="stylesheet" href="chrome://global/content/elements/marquee.css"
-          /><div class="innerDiv" id="innerDiv"
-            ><slot
-          /></div
-      ></div>`;
+  
+  _scheduleRestartIfNeeded() {
+    if (!this.animation || this._restartScheduled != null) {
+      return;
+    }
+    this._restartScheduled = this.window.requestAnimationFrame(() => {
+      if (this.animation) {
+        this.doStop();
+        this.doStart();
+      }
+    });
   }
 };
