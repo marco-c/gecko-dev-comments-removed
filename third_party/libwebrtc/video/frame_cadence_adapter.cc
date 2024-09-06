@@ -384,10 +384,6 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   TaskQueueBase* const queue_;
 
   
-  
-  const bool zero_hertz_screenshare_enabled_;
-
-  
   const bool frame_cadence_adapter_zero_hertz_queue_overload_enabled_;
 
   
@@ -847,8 +843,6 @@ FrameCadenceAdapterImpl::FrameCadenceAdapterImpl(
     const FieldTrialsView& field_trials)
     : clock_(clock),
       queue_(queue),
-      zero_hertz_screenshare_enabled_(
-          !field_trials.IsDisabled("WebRTC-ZeroHertzScreenshare")),
       frame_cadence_adapter_zero_hertz_queue_overload_enabled_(
           !field_trials.IsDisabled("WebRTC-ZeroHertzQueueOverload")),
       use_video_frame_timestamp_(field_trials.IsEnabled(
@@ -1016,7 +1010,7 @@ void FrameCadenceAdapterImpl::OnFrameOnMainQueue(Timestamp post_time,
 
 bool FrameCadenceAdapterImpl::IsZeroHertzScreenshareEnabled() const {
   RTC_DCHECK_RUN_ON(queue_);
-  return zero_hertz_screenshare_enabled_ && source_constraints_.has_value() &&
+  return source_constraints_.has_value() &&
          source_constraints_->max_fps.value_or(-1) > 0 &&
          source_constraints_->min_fps.value_or(-1) == 0 &&
          zero_hertz_params_.has_value();
