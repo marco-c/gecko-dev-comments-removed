@@ -12,6 +12,14 @@ const { BackupResource } = ChromeUtils.importESModule(
   "resource:///modules/backup/BackupResource.sys.mjs"
 );
 
+const { TelemetryTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TelemetryTestUtils.sys.mjs"
+);
+
+const { Sqlite } = ChromeUtils.importESModule(
+  "resource://gre/modules/Sqlite.sys.mjs"
+);
+
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -60,6 +68,78 @@ class FakeBackupResource3 extends BackupResource {
 async function createKilobyteSizedFile(path, sizeInKB) {
   let bytes = new Uint8Array(sizeInKB * BYTES_IN_KB);
   await IOUtils.write(path, bytes);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function createTestFiles(parentPath, testFilesArray) {
+  for (let { path, sizeInKB } of testFilesArray) {
+    if (Array.isArray(path)) {
+      
+      
+      
+      let folders = path.slice(0, -1);
+      await IOUtils.getDirectory(PathUtils.join(parentPath, ...folders));
+    }
+
+    if (sizeInKB === undefined) {
+      sizeInKB = 10;
+    }
+
+    
+    
+    let filePath = PathUtils.join(parentPath, ...[].concat(path));
+    await createKilobyteSizedFile(filePath, sizeInKB);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertFilesExist(parentPath, testFilesArray) {
+  for (let { path } of testFilesArray) {
+    let copiedFileName = PathUtils.join(parentPath, ...[].concat(path));
+    Assert.ok(
+      await IOUtils.exists(copiedFileName),
+      `${copiedFileName} should exist in the staging folder`
+    );
+  }
 }
 
 
