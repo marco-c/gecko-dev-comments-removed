@@ -7447,7 +7447,12 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
     return result;
   }
 
-  *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrameInProcess(this);
+  
+  
+
+  nsPoint crossdocOffset;
+  *aOutAncestor =
+      nsLayoutUtils::GetCrossDocParentFrameInProcess(this, &crossdocOffset);
 
   
 
@@ -7470,29 +7475,56 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
             (aOutAncestor->IsStackingContext() ||
              DisplayPortUtils::FrameHasDisplayPort(aOutAncestor, aCurrent)));
   };
+
+  
+  
+  
+  const int32_t finalAPD = PresContext()->AppUnitsPerDevPixel();
+  
+  nsPoint offset = GetPosition();
+
+  int32_t currAPD = (*aOutAncestor)->PresContext()->AppUnitsPerDevPixel();
+  
+  
+  nsPoint docOffset = crossdocOffset;
+  MOZ_ASSERT(crossdocOffset == nsPoint(0, 0) || !GetParent());
+
   while (*aOutAncestor != aStopAtAncestor.mFrame &&
          !shouldStopAt(current, aStopAtAncestor, *aOutAncestor, aFlags)) {
-    
-    nsIFrame* parent =
-        nsLayoutUtils::GetCrossDocParentFrameInProcess(*aOutAncestor);
-    if (!parent) break;
+    docOffset += (*aOutAncestor)->GetPosition();
+
+    nsIFrame* parent = (*aOutAncestor)->GetParent();
+    if (!parent) {
+      crossdocOffset.x = crossdocOffset.y = 0;
+      parent = nsLayoutUtils::GetCrossDocParentFrameInProcess(*aOutAncestor,
+                                                              &crossdocOffset);
+
+      int32_t newAPD =
+          parent ? parent->PresContext()->AppUnitsPerDevPixel() : currAPD;
+      if (!parent || newAPD != currAPD) {
+        
+        offset += docOffset.ScaleToOtherAppUnits(currAPD, finalAPD);
+        docOffset.x = docOffset.y = 0;
+      }
+      currAPD = newAPD;
+      docOffset += crossdocOffset;
+
+      if (!parent) break;
+    }
 
     current = *aOutAncestor;
     *aOutAncestor = parent;
   }
+  offset += docOffset.ScaleToOtherAppUnits(currAPD, finalAPD);
 
   NS_ASSERTION(*aOutAncestor, "Somehow ended up with a null ancestor...?");
 
-  
-
-
-  nsPoint delta = GetOffsetToCrossDoc(*aOutAncestor);
   int32_t scaleFactor =
       ((aFlags & IN_CSS_UNITS) ? AppUnitsPerCSSPixel()
                                : PresContext()->AppUnitsPerDevPixel());
   return Matrix4x4Flagged::Translation2d(
-      NSAppUnitsToFloatPixels(delta.x, scaleFactor),
-      NSAppUnitsToFloatPixels(delta.y, scaleFactor));
+      NSAppUnitsToFloatPixels(offset.x, scaleFactor),
+      NSAppUnitsToFloatPixels(offset.y, scaleFactor));
 }
 
 static void InvalidateRenderingObservers(nsIFrame* aDisplayRoot,
