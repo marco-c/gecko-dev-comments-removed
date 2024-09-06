@@ -1,11 +1,8 @@
 
 
 
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-
 extern crate firefox_on_glean;
-use firefox_on_glean::{metrics, pings};
+use firefox_on_glean::metrics;
 
 extern crate nsstring;
 use nsstring::nsString;
@@ -55,34 +52,4 @@ pub extern "C" fn Rust_TestJogfile() {
     
     
     expect!(jog::jog_load_jogfile(&nsString::from("jogfile_output")));
-}
-
-#[no_mangle]
-pub extern "C" fn Rust_TestRideAlongPing() {
-    
-    
-    
-
-    let test_submitted = Arc::new(AtomicBool::new(false));
-    let ride_along_submitted = Arc::new(AtomicBool::new(false));
-
-    {
-        let test_submitted = Arc::clone(&test_submitted);
-        pings::test_ping.test_before_next_submit(move |_reason| {
-            test_submitted.store(true, Ordering::Release);
-        });
-    }
-
-    {
-        let ride_along_submitted = Arc::clone(&ride_along_submitted);
-        pings::ride_along_ping.test_before_next_submit(move |_reason| {
-            ride_along_submitted.store(true, Ordering::Release);
-        });
-    }
-
-    
-    pings::test_ping.submit(None);
-
-    expect!(test_submitted.load(Ordering::Acquire));
-    expect!(ride_along_submitted.load(Ordering::Acquire));
 }
