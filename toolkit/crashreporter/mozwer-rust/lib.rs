@@ -9,7 +9,7 @@ use serde::Serialize;
 use serde_json::ser::to_writer;
 use std::convert::TryInto;
 use std::ffi::{c_void, OsString};
-use std::fs::{read_to_string, DirBuilder, File};
+use std::fs::{read_to_string, DirBuilder, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::mem::{size_of, transmute, zeroed};
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
@@ -525,8 +525,7 @@ impl ApplicationInformation {
         let install_time = ApplicationInformation::get_install_time(
             &crash_reports_dir,
             &application_data.build_id,
-        )
-        .unwrap_or("0".to_string());
+        );
 
         Ok(ApplicationInformation {
             install_path,
@@ -597,10 +596,29 @@ impl ApplicationInformation {
         }
     }
 
-    fn get_install_time(crash_reports_path: &Path, build_id: &str) -> Result<String> {
+    fn get_install_time(crash_reports_path: &Path, build_id: &str) -> String {
         let file_name = "InstallTime".to_owned() + build_id;
         let file_path = crash_reports_path.join(file_name);
-        read_to_string(file_path).map_err(|_e| ())
+
+        
+        
+        
+        if let Ok(mut file) = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&file_path)
+        {
+            
+            let _ = write!(&mut file, "{}", unsafe { time(null_mut()) }.to_string());
+        }
+
+        
+        
+        
+        
+        
+        
+        read_to_string(&file_path).unwrap_or(unsafe { time(null_mut()) }.to_string())
     }
 }
 
