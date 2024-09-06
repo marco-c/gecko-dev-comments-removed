@@ -3569,6 +3569,12 @@ pref("reader.line_height", 4);
 pref("reader.improved_text_menu.enabled", false);
 
 
+pref("reader.character_spacing", "");
+
+
+pref("reader.word_spacing", "");
+
+
 pref("reader.text_alignment", "start");
 
 
