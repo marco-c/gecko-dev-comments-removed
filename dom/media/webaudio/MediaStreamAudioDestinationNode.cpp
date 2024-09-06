@@ -12,6 +12,7 @@
 #include "AudioStreamTrack.h"
 #include "DOMMediaStream.h"
 #include "ForwardedInputTrack.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 
@@ -83,15 +84,15 @@ MediaStreamAudioDestinationNode::MediaStreamAudioDestinationNode(
     AudioContext* aContext)
     : AudioNode(aContext, 2, ChannelCountMode::Explicit,
                 ChannelInterpretation::Speakers),
-      mDOMStream(MakeAndAddRef<DOMMediaStream>(GetOwner())) {
+      mDOMStream(MakeAndAddRef<DOMMediaStream>(GetOwnerWindow())) {
   
   
   
   
   
   nsCOMPtr<nsIPrincipal> principal = nullptr;
-  if (aContext->GetParentObject()) {
-    Document* doc = aContext->GetParentObject()->GetExtantDoc();
+  if (nsGlobalWindowInner* win = aContext->GetOwnerWindow()) {
+    Document* doc = win->GetExtantDoc();
     principal = doc->NodePrincipal();
   }
   mTrack = AudioNodeTrack::Create(aContext, new AudioNodeEngine(this),
@@ -101,7 +102,8 @@ MediaStreamAudioDestinationNode::MediaStreamAudioDestinationNode(
       this, mTrack,
       aContext->Graph()->CreateForwardedInputTrack(MediaSegment::AUDIO),
       principal);
-  auto track = MakeRefPtr<AudioStreamTrack>(GetOwner(), source->mTrack, source);
+  auto track =
+      MakeRefPtr<AudioStreamTrack>(GetOwnerWindow(), source->mTrack, source);
   mDOMStream->AddTrackInternal(track);
 }
 

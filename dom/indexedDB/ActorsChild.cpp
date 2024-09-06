@@ -1242,7 +1242,7 @@ mozilla::ipc::IPCResult BackgroundDatabaseChild::RecvVersionChange(
   RefPtr<IDBDatabase> kungFuDeathGrip = mDatabase;
 
   
-  if (nsPIDOMWindowInner* owner = kungFuDeathGrip->GetOwner()) {
+  if (nsPIDOMWindowInner* owner = kungFuDeathGrip->GetOwnerWindow()) {
     
     bool shouldAbortAndClose = owner->IsFrozen();
 

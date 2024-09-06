@@ -299,9 +299,8 @@ void XRSession::WillRefresh(mozilla::TimeStamp aTime) {
   
   
   if (!IsImmersive() && !mXRSystem->HasActiveImmersiveSession()) {
-    nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(GetOwner());
-    if (win) {
-      if (JSObject* obj = win->AsGlobal()->GetGlobalJSObject()) {
+    if (nsIGlobalObject* global = GetOwnerGlobal()) {
+      if (JSObject* obj = global->GetGlobalJSObject()) {
         js::NotifyAnimationActivity(obj);
       }
     }

@@ -233,8 +233,7 @@ void AudioContext::StartBlockedAudioContextIfAllowed() {
 
 void AudioContext::DisconnectFromWindow() {
   MaybeClearPageAwakeRequest();
-  nsPIDOMWindowInner* window = GetOwner();
-  if (window) {
+  if (nsGlobalWindowInner* window = GetOwnerWindow()) {
     window->RemoveAudioContext(this);
   }
 }
@@ -249,9 +248,8 @@ JSObject* AudioContext::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
   if (mIsOffline) {
     return OfflineAudioContext_Binding::Wrap(aCx, this, aGivenProto);
-  } else {
-    return AudioContext_Binding::Wrap(aCx, this, aGivenProto);
   }
+  return AudioContext_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 static bool CheckFullyActive(nsPIDOMWindowInner* aWindow, ErrorResult& aRv) {
@@ -374,7 +372,7 @@ already_AddRefed<AudioBuffer> AudioContext::CreateBuffer(
     return nullptr;
   }
 
-  return AudioBuffer::Create(GetOwner(), aNumberOfChannels, aLength,
+  return AudioBuffer::Create(GetOwnerWindow(), aNumberOfChannels, aLength,
                              aSampleRate, aRv);
 }
 
@@ -591,8 +589,8 @@ void AudioContext::GetOutputTimestamp(AudioTimestamp& aTimeStamp) {
   
   aTimeStamp.mContextTime.Construct(
       std::max(0.0, CurrentTime() - OutputLatency()));
-  nsPIDOMWindowInner* parent = GetParentObject();
-  Performance* perf = parent ? parent->GetPerformance() : nullptr;
+  nsGlobalWindowInner* win = GetOwnerWindow();
+  Performance* perf = win ? win->GetPerformance() : nullptr;
   if (perf) {
     
     aTimeStamp.mPerformanceTime.Construct(
@@ -614,6 +612,7 @@ bool AudioContext::IsRunning() const {
 }
 
 already_AddRefed<Promise> AudioContext::CreatePromise(ErrorResult& aRv) {
+  
   
   
   
@@ -765,8 +764,8 @@ double AudioContext::CurrentTime() {
 }
 
 nsISerialEventTarget* AudioContext::GetMainThread() const {
-  if (nsPIDOMWindowInner* window = GetParentObject()) {
-    return window->AsGlobal()->SerialEventTarget();
+  if (nsIGlobalObject* global = GetOwnerGlobal()) {
+    return global->SerialEventTarget();
   }
   return GetCurrentSerialEventTarget();
 }
@@ -830,12 +829,12 @@ class OnStateChangeTask final : public Runnable {
 
   NS_IMETHODIMP
   Run() override {
-    nsPIDOMWindowInner* parent = mAudioContext->GetParentObject();
-    if (!parent) {
+    nsGlobalWindowInner* win = mAudioContext->GetOwnerWindow();
+    if (!win) {
       return NS_ERROR_FAILURE;
     }
 
-    Document* doc = parent->GetExtantDoc();
+    Document* doc = win->GetExtantDoc();
     if (!doc) {
       return NS_ERROR_FAILURE;
     }
@@ -903,7 +902,7 @@ void AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState) {
 }
 
 BrowsingContext* AudioContext::GetTopLevelBrowsingContext() {
-  nsCOMPtr<nsPIDOMWindowInner> window = GetParentObject();
+  nsGlobalWindowInner* window = GetOwnerWindow();
   if (!window) {
     return nullptr;
   }
@@ -1173,15 +1172,14 @@ void AudioContext::ReportBlocked() {
     return;
   }
 
-  RefPtr<AudioContext> self = this;
-  RefPtr<nsIRunnable> r =
-      NS_NewRunnableFunction("AudioContext::AutoplayBlocked", [self]() {
-        nsPIDOMWindowInner* parent = self->GetParentObject();
-        if (!parent) {
+  RefPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      "AudioContext::AutoplayBlocked", [self = RefPtr{this}]() {
+        nsGlobalWindowInner* win = self->GetOwnerWindow();
+        if (!win) {
           return;
         }
 
-        Document* doc = parent->GetExtantDoc();
+        Document* doc = win->GetExtantDoc();
         if (!doc) {
           return;
         }
@@ -1365,8 +1363,7 @@ BasicWaveFormCache* AudioContext::GetBasicWaveFormCache() {
 void AudioContext::ReportToConsole(uint32_t aErrorFlags,
                                    const char* aMsg) const {
   MOZ_ASSERT(aMsg);
-  Document* doc =
-      GetParentObject() ? GetParentObject()->GetExtantDoc() : nullptr;
+  Document* doc = GetOwnerWindow() ? GetOwnerWindow()->GetExtantDoc() : nullptr;
   nsContentUtils::ReportToConsole(aErrorFlags, "Media"_ns, doc,
                                   nsContentUtils::eDOM_PROPERTIES, aMsg);
 }

@@ -638,8 +638,8 @@ void WebSocketImpl::Disconnect(const RefPtr<WebSocketImpl>& aProofOfRef) {
 
     
     
-    if (mWebSocket->GetOwner()) {
-      mWebSocket->GetOwner()->UpdateWebSocketCount(-1);
+    if (nsGlobalWindowInner* win = mWebSocket->GetOwnerWindow()) {
+      win->UpdateWebSocketCount(-1);
     }
   } else {
     RefPtr<DisconnectInternalRunnable> runnable =
@@ -1373,8 +1373,8 @@ already_AddRefed<WebSocket> WebSocket::ConstructorCommon(
   if (NS_IsMainThread()) {
     
     
-    if (webSocket->GetOwner()) {
-      webSocket->GetOwner()->UpdateWebSocketCount(1);
+    if (nsGlobalWindowInner* win = webSocket->GetOwnerWindow()) {
+      win->UpdateWebSocketCount(1);
     }
 
     bool isSecure = principal->SchemeIs("https");
@@ -1582,8 +1582,8 @@ void WebSocket::DisconnectFromOwner() {
   
   
   if (NS_IsMainThread() && mImpl && !mImpl->mDisconnectingOrDisconnected &&
-      GetOwner()) {
-    GetOwner()->UpdateWebSocketCount(-1);
+      GetOwnerWindow()) {
+    GetOwnerWindow()->UpdateWebSocketCount(-1);
   }
 
   DOMEventTargetHelper::DisconnectFromOwner();
@@ -1674,7 +1674,7 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
   
   
   if (aCx) {
-    if (nsPIDOMWindowInner* ownerWindow = mWebSocket->GetOwner()) {
+    if (nsPIDOMWindowInner* ownerWindow = mWebSocket->GetOwnerWindow()) {
       mInnerWindowID = ownerWindow->WindowID();
     }
   }
@@ -2596,17 +2596,17 @@ WebSocketImpl::Observe(nsISupports* aSubject, const char* aTopic,
   AssertIsOnMainThread();
 
   int64_t readyState = mWebSocket->ReadyState();
-  if ((readyState == WebSocket::CLOSING) || (readyState == WebSocket::CLOSED)) {
+  if (readyState == WebSocket::CLOSING || readyState == WebSocket::CLOSED) {
     return NS_OK;
   }
 
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aSubject);
-  if (!mWebSocket->GetOwner() || window != mWebSocket->GetOwner()) {
+  if (!mWebSocket->GetOwnerWindow() || window != mWebSocket->GetOwnerWindow()) {
     return NS_OK;
   }
 
-  if ((strcmp(aTopic, DOM_WINDOW_FROZEN_TOPIC) == 0) ||
-      (strcmp(aTopic, DOM_WINDOW_DESTROYED_TOPIC) == 0)) {
+  if (!strcmp(aTopic, DOM_WINDOW_FROZEN_TOPIC) ||
+      !strcmp(aTopic, DOM_WINDOW_DESTROYED_TOPIC)) {
     RefPtr<WebSocketImpl> self(this);
     CloseConnection(self, nsIWebSocketChannel::CLOSE_GOING_AWAY);
   }
