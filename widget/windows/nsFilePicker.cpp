@@ -226,7 +226,12 @@ static nsTArray<T> Copy(nsTArray<T> const& arr) {
 }
 
 
-enum Strategy { LocalOnly, RemoteOnly, RemoteWithFallback };
+enum Strategy {
+  LocalOnly,
+  RemoteOnly,
+  RemoteWithFallback,
+  FallbackUnlessCrash,
+};
 
 
 
@@ -236,6 +241,8 @@ static Strategy GetStrategy() {
   switch (pref) {
     case -1:
       return LocalOnly;
+    case 3:
+      return FallbackUnlessCrash;
     case 2:
       return RemoteOnly;
     case 1:
@@ -244,7 +251,7 @@ static Strategy GetStrategy() {
     default:
 #ifdef NIGHTLY_BUILD
       
-      return RemoteWithFallback;
+      return FallbackUnlessCrash;
 #else
       
       return LocalOnly;
@@ -455,6 +462,15 @@ static auto AsyncExecute(Fn1 local, Fn2 remote, Args const&... args) ->
 
     case RemoteWithFallback:
       useLocalFallback = [](Error const&) { return true; };
+      break;
+
+    case FallbackUnlessCrash:
+      useLocalFallback = [](Error const& err) {
+        
+        
+        
+        return err.kind != Error::IPCError;
+      };
       break;
   }
 
