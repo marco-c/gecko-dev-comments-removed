@@ -1031,7 +1031,7 @@ bool nsBaseDragService::MustUpdateDataTransfer(EventMessage aMessage) {
 }
 
 NS_IMETHODIMP
-nsBaseDragService::MaybeEditorDeletedSourceNode(Element* aEditingHost) {
+nsBaseDragSession::MaybeEditorDeletedSourceNode(Element* aEditingHost) {
   
   
   

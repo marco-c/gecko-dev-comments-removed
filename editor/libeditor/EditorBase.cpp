@@ -4932,9 +4932,11 @@ nsresult EditorBase::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
   
   
   if (editingHost) {
-    if (nsCOMPtr<nsIDragService> dragService =
-            do_GetService("@mozilla.org/widget/dragservice;1")) {
-      dragService->MaybeEditorDeletedSourceNode(editingHost);
+    RefPtr<nsIWidget> widget = GetWidget();
+    if (nsCOMPtr<nsIDragSession> dragSession =
+            nsContentUtils::GetDragSession(widget)) {
+
+      dragSession->MaybeEditorDeletedSourceNode(editingHost);
     }
   }
   return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
