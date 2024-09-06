@@ -41,11 +41,6 @@ nsNumberControlFrame::nsNumberControlFrame(ComputedStyle* aStyle,
                                            nsPresContext* aPresContext)
     : nsTextControlFrame(aStyle, aPresContext, kClassID) {}
 
-void nsNumberControlFrame::Destroy(DestroyContext& aContext) {
-  aContext.AddAnonymousContent(mSpinBox.forget());
-  nsTextControlFrame::Destroy(aContext);
-}
-
 nsresult nsNumberControlFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   
@@ -75,15 +70,15 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
   }
 
   
-  mSpinBox = MakeAnonElement(PseudoStyleType::mozNumberSpinBox);
+  mButton = MakeAnonElement(PseudoStyleType::mozNumberSpinBox);
 
   
-  mSpinUp = MakeAnonElement(PseudoStyleType::mozNumberSpinUp, mSpinBox);
+  mSpinUp = MakeAnonElement(PseudoStyleType::mozNumberSpinUp, mButton);
 
   
-  mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mSpinBox);
+  mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mButton);
 
-  aElements.AppendElement(mSpinBox);
+  aElements.AppendElement(mButton);
 
   return NS_OK;
 #endif
@@ -113,7 +108,7 @@ int32_t nsNumberControlFrame::GetSpinButtonForPointerEvent(
     WidgetGUIEvent* aEvent) const {
   MOZ_ASSERT(aEvent->mClass == eMouseEventClass, "Unexpected event type");
 
-  if (!mSpinBox) {
+  if (!mButton) {
     
     return eSpinButtonNone;
   }
@@ -123,7 +118,7 @@ int32_t nsNumberControlFrame::GetSpinButtonForPointerEvent(
   if (aEvent->mOriginalTarget == mSpinDown) {
     return eSpinButtonDown;
   }
-  if (aEvent->mOriginalTarget == mSpinBox) {
+  if (aEvent->mOriginalTarget == mButton) {
     
     
     
@@ -131,9 +126,9 @@ int32_t nsNumberControlFrame::GetSpinButtonForPointerEvent(
     
     LayoutDeviceIntPoint absPoint = aEvent->mRefPoint;
     nsPoint point = nsLayoutUtils::GetEventCoordinatesRelativeTo(
-        aEvent, absPoint, RelativeTo{mSpinBox->GetPrimaryFrame()});
+        aEvent, absPoint, RelativeTo{mButton->GetPrimaryFrame()});
     if (point != nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE)) {
-      if (point.y < mSpinBox->GetPrimaryFrame()->GetSize().height / 2) {
+      if (point.y < mButton->GetPrimaryFrame()->GetSize().height / 2) {
         return eSpinButtonUp;
       }
       return eSpinButtonDown;
@@ -165,14 +160,6 @@ bool nsNumberControlFrame::SpinnerUpButtonIsDepressed() const {
 bool nsNumberControlFrame::SpinnerDownButtonIsDepressed() const {
   return HTMLInputElement::FromNode(mContent)
       ->NumberSpinnerDownButtonIsDepressed();
-}
-
-void nsNumberControlFrame::AppendAnonymousContentTo(
-    nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
-  nsTextControlFrame::AppendAnonymousContentTo(aElements, aFilter);
-  if (mSpinBox) {
-    aElements.AppendElement(mSpinBox);
-  }
 }
 
 #ifdef ACCESSIBILITY

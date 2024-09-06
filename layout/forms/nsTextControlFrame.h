@@ -190,7 +190,11 @@ class nsTextControlFrame : public nsContainerFrame,
 
   Element* GetPlaceholderNode() const { return mPlaceholderDiv; }
 
-  Element* GetRevealButton() const { return mRevealButton; }
+  Element* GetButton() const { return mButton; }
+
+  bool IsButtonBox(const nsIFrame* aFrame) const {
+    return aFrame->GetContent() == GetButton();
+  }
 
   
   nsresult MaybeBeginSecureKeyboardInput();
@@ -322,7 +326,7 @@ class nsTextControlFrame : public nsContainerFrame,
   RefPtr<Element> mPreviewDiv;
   
   
-  RefPtr<Element> mRevealButton;
+  RefPtr<Element> mButton;
   RefPtr<nsAnonDivObserver> mMutationObserver;
   
   
