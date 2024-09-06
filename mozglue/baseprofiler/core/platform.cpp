@@ -1283,9 +1283,9 @@ struct NativeStack {
 
 
 
-static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
+static void MergeStacks(bool aIsSynchronous,
                         const RegisteredThread& aRegisteredThread,
-                        const Registers& aRegs, const NativeStack& aNativeStack,
+                        const NativeStack& aNativeStack,
                         ProfilerStackCollector& aCollector) {
   
   
@@ -1695,13 +1695,11 @@ static inline void DoSharedSample(
       aCaptureOptions == StackCaptureOptions::Full) {
     DoNativeBacktrace(aLock, aRegisteredThread, aRegs, nativeStack);
 
-    MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aRegisteredThread,
-                aRegs, nativeStack, collector);
+    MergeStacks(aIsSynchronous, aRegisteredThread, nativeStack, collector);
   } else
 #endif
   {
-    MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aRegisteredThread,
-                aRegs, nativeStack, collector);
+    MergeStacks(aIsSynchronous, aRegisteredThread, nativeStack, collector);
 
     
     if (aCaptureOptions == StackCaptureOptions::Full) {
@@ -3786,13 +3784,11 @@ void profiler_suspend_and_sample_thread(BaseProfilerThreadId aThreadId,
 #    error "Invalid configuration"
 #  endif
 
-          MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
-                      nativeStack, aCollector);
+          MergeStacks(isSynchronous, registeredThread, nativeStack, aCollector);
         } else
 #endif
         {
-          MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
-                      nativeStack, aCollector);
+          MergeStacks(isSynchronous, registeredThread, nativeStack, aCollector);
 
           aCollector.CollectNativeLeafAddr((void*)aRegs.mPC);
         }
