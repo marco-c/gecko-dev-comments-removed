@@ -517,7 +517,12 @@ void BaselineStackBuilder::setNextCallee(
     
     
     icScript_ = nextCallee->nonLazyScript()->jitScript()->icScript();
+
     if (trialInliningState != TrialInliningState::MonomorphicInlined) {
+      
+      
+      
+      
       canUseTrialInlinedICScripts_ = false;
     }
   }
