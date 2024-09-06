@@ -1383,12 +1383,10 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       GetEffectiveComputedBSize(aReflowInput, consumedBSize);
   
   
-  const PhysicalAxes physicalBlockAxis =
-      wm.IsVertical() ? PhysicalAxes::Horizontal : PhysicalAxes::Vertical;
   if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
       aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE &&
-      (ShouldApplyOverflowClipping(aReflowInput.mStyleDisplay) &
-       physicalBlockAxis)) {
+      ShouldApplyOverflowClipping(aReflowInput.mStyleDisplay)
+          .contains(wm.PhysicalAxis(LogicalAxis::Block))) {
     LogicalMargin blockDirExtras =
         aReflowInput.ComputedLogicalBorderPadding(wm);
     if (GetLogicalSkipSides().BStart()) {
@@ -2490,8 +2488,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
   
   auto overflowClipAxes = ShouldApplyOverflowClipping(aDisplay);
   auto overflowClipMargin = OverflowClipMargin(overflowClipAxes);
-  if (overflowClipAxes == PhysicalAxes::Both &&
-      overflowClipMargin == nsSize()) {
+  if (overflowClipAxes == kPhysicalAxesBoth && overflowClipMargin == nsSize()) {
     return;
   }
 
@@ -2525,7 +2522,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 
   ConsiderBlockEndEdgeOfChildren(aOverflowAreas, aBEndEdgeOfChildren, aDisplay);
 
-  if (overflowClipAxes != PhysicalAxes::None) {
+  if (!overflowClipAxes.isEmpty()) {
     aOverflowAreas.ApplyClipping(frameBounds, overflowClipAxes,
                                  overflowClipMargin);
   }
