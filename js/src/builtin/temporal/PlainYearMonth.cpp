@@ -1460,20 +1460,8 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<PlainObject*> options(cx, NewPlainObjectWithProto(cx, nullptr));
-  if (!options) {
-    return false;
-  }
-
-  
-  Rooted<Value> overflow(cx, StringValue(cx->names().constrain));
-  if (!DefineDataProperty(cx, options, cx->names().overflow, overflow)) {
-    return false;
-  }
-
-  
   auto obj = CalendarDateFromFields(cx, calendar, mergedFromConcatenatedFields,
-                                    options);
+                                    TemporalOverflow::Constrain);
   if (!obj) {
     return false;
   }
