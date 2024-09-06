@@ -323,7 +323,8 @@ static Maybe<nsRect> ComputeTheIntersection(
   
   
   auto inflowRect = nsLayoutUtils::GetAllInFlowRectsUnion(
-      target, target, nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
+      target, target,
+      nsLayoutUtils::GetAllInFlowRectsFlag::AccountForTransforms);
   
   
   if (aIsForProximityToViewport ==

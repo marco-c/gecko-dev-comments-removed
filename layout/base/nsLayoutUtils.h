@@ -1241,15 +1241,6 @@ class nsLayoutUtils {
 
   static nsIFrame* GetContainingBlockForClientRect(nsIFrame* aFrame);
 
-  enum {
-    RECTS_ACCOUNT_FOR_TRANSFORMS = 0x01,
-    
-    
-    RECTS_USE_CONTENT_BOX = 0x02,
-    RECTS_USE_PADDING_BOX = 0x04,
-    RECTS_USE_MARGIN_BOX = 0x06,  
-    RECTS_WHICH_BOX_MASK = 0x06   
-  };
   
 
 
@@ -1265,19 +1256,30 @@ class nsLayoutUtils {
 
 
 
+
+
+
+
+
+
+  enum class GetAllInFlowRectsFlag : uint8_t {
+    AccountForTransforms,
+    UseContentBox,
+    UsePaddingBox,
+    UseMarginBox,
+  };
+  using GetAllInFlowRectsFlags = mozilla::EnumSet<GetAllInFlowRectsFlag>;
   static void GetAllInFlowRects(nsIFrame* aFrame, const nsIFrame* aRelativeTo,
                                 mozilla::RectCallback* aCallback,
-                                uint32_t aFlags = 0);
+                                GetAllInFlowRectsFlags aFlags = {});
 
   static void GetAllInFlowRectsAndTexts(
       nsIFrame* aFrame, const nsIFrame* aRelativeTo,
       mozilla::RectCallback* aCallback,
-      mozilla::dom::Sequence<nsString>* aTextList, uint32_t aFlags = 0);
+      mozilla::dom::Sequence<nsString>* aTextList,
+      GetAllInFlowRectsFlags aFlags = {});
 
   
-
-
-
 
 
 
@@ -1286,7 +1288,7 @@ class nsLayoutUtils {
 
   static nsRect GetAllInFlowRectsUnion(nsIFrame* aFrame,
                                        const nsIFrame* aRelativeTo,
-                                       uint32_t aFlags = 0);
+                                       GetAllInFlowRectsFlags aFlags = {});
 
   enum { EXCLUDE_BLUR_SHADOWS = 0x01 };
   
