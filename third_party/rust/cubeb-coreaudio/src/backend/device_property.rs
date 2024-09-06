@@ -18,6 +18,32 @@ pub fn get_device_uid(
     }
 }
 
+pub fn get_devices() -> Vec<AudioObjectID> {
+    debug_assert_running_serially();
+    let mut size: usize = 0;
+    let address = get_property_address(
+        Property::HardwareDevices,
+        DeviceType::INPUT | DeviceType::OUTPUT,
+    );
+    let mut ret =
+        audio_object_get_property_data_size(kAudioObjectSystemObject, &address, &mut size);
+    if ret != NO_ERR {
+        return Vec::new();
+    }
+    
+    let mut devices: Vec<AudioObjectID> = allocate_array_by_size(size);
+    ret = audio_object_get_property_data(
+        kAudioObjectSystemObject,
+        &address,
+        &mut size,
+        devices.as_mut_ptr(),
+    );
+    if ret != NO_ERR {
+        return Vec::new();
+    }
+    devices
+}
+
 pub fn get_device_model_uid(
     id: AudioDeviceID,
     devtype: DeviceType,
@@ -169,10 +195,15 @@ pub fn get_device_latency(
     }
 }
 
+#[derive(Debug)]
+pub struct DeviceStream {
+    pub device: AudioDeviceID,
+    pub stream: AudioStreamID,
+}
 pub fn get_device_streams(
     id: AudioDeviceID,
     devtype: DeviceType,
-) -> std::result::Result<Vec<AudioStreamID>, OSStatus> {
+) -> std::result::Result<Vec<DeviceStream>, OSStatus> {
     assert_ne!(id, kAudioObjectUnknown);
     debug_assert_running_serially();
 
@@ -184,13 +215,77 @@ pub fn get_device_streams(
         return Err(err);
     }
 
-    let mut streams: Vec<AudioObjectID> = allocate_array_by_size(size);
+    let mut streams = vec![AudioObjectID::default(); size / mem::size_of::<AudioObjectID>()];
     let err = audio_object_get_property_data(id, &address, &mut size, streams.as_mut_ptr());
-    if err == NO_ERR {
-        Ok(streams)
-    } else {
-        Err(err)
+    if err != NO_ERR {
+        return Err(err);
     }
+
+    let mut device_streams = streams
+        .into_iter()
+        .map(|stream| DeviceStream { device: id, stream })
+        .collect::<Vec<_>>();
+    if devtype.contains(DeviceType::INPUT) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut devices = get_devices();
+        let sub_devices = AggregateDevice::get_sub_devices(id);
+        if let Ok(sub_device_ids) = sub_devices {
+            cubeb_log!(
+                "Getting input device streams for aggregate device {}. Summing over sub devices {:?}.",
+                id,
+                sub_device_ids
+            );
+            return Ok(sub_device_ids
+                .into_iter()
+                .filter_map(|sub_id| get_device_streams(sub_id, devtype).ok())
+                .flatten()
+                .collect());
+        }
+        debug_assert!(devices.contains(&id));
+        devices.sort();
+        let next_id = devices.into_iter().skip_while(|&i| i != id).nth(1);
+        cubeb_log!(
+            "Filtering input streams {:?} for device {}. Next device is {:?}.",
+            device_streams
+                .iter()
+                .map(|ds| ds.stream)
+                .collect::<Vec<_>>(),
+            id,
+            next_id
+        );
+        if let Some(next_id) = next_id {
+            device_streams.retain(|ds| ds.stream > id && ds.stream < next_id);
+        } else {
+            device_streams.retain(|ds| ds.stream > id);
+        }
+        cubeb_log!(
+            "Input stream filtering for device {} retained {:?}.",
+            id,
+            device_streams
+                .iter()
+                .map(|ds| ds.stream)
+                .collect::<Vec<_>>()
+        );
+    }
+
+    Ok(device_streams)
 }
 
 pub fn get_device_sample_rate(
@@ -248,24 +343,6 @@ pub fn get_stream_latency(id: AudioStreamID) -> std::result::Result<u32, OSStatu
     let err = audio_object_get_property_data(id, &address, &mut size, &mut latency);
     if err == NO_ERR {
         Ok(latency)
-    } else {
-        Err(err)
-    }
-}
-
-pub fn get_stream_terminal_type(id: AudioStreamID) -> std::result::Result<u32, OSStatus> {
-    assert_ne!(id, kAudioObjectUnknown);
-    debug_assert_running_serially();
-
-    let address = get_property_address(
-        Property::StreamTerminalType,
-        DeviceType::INPUT | DeviceType::OUTPUT,
-    );
-    let mut size = mem::size_of::<u32>();
-    let mut terminal_type: u32 = 0;
-    let err = audio_object_get_property_data(id, &address, &mut size, &mut terminal_type);
-    if err == NO_ERR {
-        Ok(terminal_type)
     } else {
         Err(err)
     }
