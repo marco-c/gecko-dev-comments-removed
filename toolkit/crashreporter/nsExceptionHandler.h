@@ -284,28 +284,6 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
 
 const char* GetChildNotificationPipe();
 
-#  ifdef MOZ_CRASHREPORTER_INJECTOR
-
-
-
-class InjectorCrashCallback {
- public:
-  InjectorCrashCallback() {}
-
-  
-
-
-
-
-
-
-  virtual void OnCrash(DWORD processID) = 0;
-};
-
-
-void InjectCrashReporterIntoProcess(DWORD processID, InjectorCrashCallback* cb);
-void UnregisterInjectorCallback(DWORD processID);
-#  endif
 #else
 
 
