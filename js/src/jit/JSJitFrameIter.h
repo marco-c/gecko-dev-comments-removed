@@ -525,6 +525,12 @@ class SnapshotIterator {
     return &val.toObject();
   }
 
+  JS::GCCellPtr readGCCellPtr() {
+    Value val = read();
+    MOZ_RELEASE_ASSERT(val.isGCThing());
+    return val.toGCCellPtr();
+  }
+
   
   
   
