@@ -132,7 +132,8 @@ class nsHTTPSOnlyUtils {
 
 
 
-  static bool TestIfPrincipalIsExempt(nsIPrincipal* aPrincipal);
+  static bool TestIfPrincipalIsExempt(nsIPrincipal* aPrincipal,
+                                      bool aCheckForHTTPSFirst = false);
 
   
 
