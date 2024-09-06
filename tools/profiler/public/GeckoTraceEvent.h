@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 #ifndef GECKO_TRACE_EVENT_H_
 #define GECKO_TRACE_EVENT_H_
 
@@ -725,6 +730,7 @@ class TraceEndOnScopeClose {
 
 }  
 }  
+
 #else
 
 
