@@ -23,9 +23,7 @@ async function testFontHighlighting(view) {
   
   
   
-  
-  
-  const expectedSelectionChangeEvents = [2, 2, 2, 1, 1];
+  const expectedSelectionChangeEvents = [1, 1, 1, 1, 1];
 
   const viewDoc = view.document;
 
