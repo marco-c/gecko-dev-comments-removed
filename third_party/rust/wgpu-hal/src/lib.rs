@@ -406,6 +406,24 @@ pub trait Api: Clone + fmt::Debug + Sized {
     type TextureView: fmt::Debug + WasmNotSendSync;
     type Sampler: fmt::Debug + WasmNotSendSync;
     type QuerySet: fmt::Debug + WasmNotSendSync;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     type Fence: fmt::Debug + WasmNotSendSync;
 
     type BindGroupLayout: fmt::Debug + WasmNotSendSync;
@@ -605,6 +623,24 @@ pub trait Device: WasmNotSendSync {
         &self,
         fence: &<Self::A as Api>::Fence,
     ) -> Result<FenceValue, DeviceError>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     unsafe fn wait(
         &self,
@@ -637,6 +673,30 @@ pub trait Device: WasmNotSendSync {
 pub trait Queue: WasmNotSendSync {
     type A: Api;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

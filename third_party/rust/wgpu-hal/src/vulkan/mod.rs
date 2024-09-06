@@ -559,9 +559,47 @@ pub struct QuerySet {
     raw: vk::QueryPool,
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub enum Fence {
+    
+    
+    
+    
+    
+    
+    
     TimelineSemaphore(vk::Semaphore),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     FencePool {
         last_completed: crate::FenceValue,
         
@@ -571,21 +609,32 @@ pub enum Fence {
 }
 
 impl Fence {
+    
+    
+    
+    
+    
+    
+    
+    
     fn check_active(
         device: &ash::Device,
-        mut max_value: crate::FenceValue,
+        mut last_completed: crate::FenceValue,
         active: &[(crate::FenceValue, vk::Fence)],
     ) -> Result<crate::FenceValue, crate::DeviceError> {
         for &(value, raw) in active.iter() {
             unsafe {
-                if value > max_value && device.get_fence_status(raw)? {
-                    max_value = value;
+                if value > last_completed && device.get_fence_status(raw)? {
+                    last_completed = value;
                 }
             }
         }
-        Ok(max_value)
+        Ok(last_completed)
     }
 
+    
+    
+    
     fn get_latest(
         &self,
         device: &ash::Device,
@@ -606,6 +655,18 @@ impl Fence {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn maintain(&mut self, device: &ash::Device) -> Result<(), crate::DeviceError> {
         match *self {
             Self::TimelineSemaphore(_) => {}

@@ -970,6 +970,11 @@ impl Writer {
         handle: Handle<crate::Type>,
     ) -> Result<Word, Error> {
         let ty = &arena[handle];
+        
+        
+        
+        
+        self.request_type_capabilities(&ty.inner)?;
         let id = if let Some(local) = make_local(&ty.inner) {
             
             
@@ -984,10 +989,6 @@ impl Writer {
                     e.insert(id);
 
                     self.write_type_declaration_local(id, local);
-
-                    
-                    
-                    self.request_type_capabilities(&ty.inner)?;
 
                     id
                 }

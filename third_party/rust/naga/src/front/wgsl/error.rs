@@ -13,6 +13,7 @@ use thiserror::Error;
 #[derive(Clone, Debug)]
 pub struct ParseError {
     message: String,
+    
     labels: Vec<(Span, Cow<'static, str>)>,
     notes: Vec<String>,
 }

@@ -81,7 +81,11 @@ pub struct Mutex<T> {
 
 pub struct MutexGuard<'a, T> {
     inner: parking_lot::MutexGuard<'a, T>,
-    saved: LockState,
+    saved: LockStateGuard,
+}
+
+thread_local! {
+    static LOCK_STATE: Cell<LockState> = const { Cell::new(LockState::INITIAL) };
 }
 
 
@@ -103,8 +107,77 @@ impl LockState {
     };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+struct LockStateGuard(LockState);
+
+impl Drop for LockStateGuard {
+    fn drop(&mut self) {
+        release(self.0)
+    }
+}
+
+
+
+
+
+
+
+fn acquire(new_rank: LockRank, location: &'static Location<'static>) -> LockState {
+    let state = LOCK_STATE.get();
+    
+    
+    if let Some((ref last_rank, ref last_location)) = state.last_acquired {
+        assert!(
+            last_rank.followers.contains(new_rank.bit),
+            "Attempt to acquire nested mutexes in wrong order:\n\
+             last locked {:<35} at {}\n\
+             now locking {:<35} at {}\n\
+             Locking {} after locking {} is not permitted.",
+            last_rank.bit.name(),
+            last_location,
+            new_rank.bit.name(),
+            location,
+            new_rank.bit.name(),
+            last_rank.bit.name(),
+        );
+    }
+    LOCK_STATE.set(LockState {
+        last_acquired: Some((new_rank, location)),
+        depth: state.depth + 1,
+    });
+    state
+}
+
+
+
+
+
+fn release(saved: LockState) {
+    let prior = LOCK_STATE.replace(saved);
+
+    
+    
+    
+    
+    assert_eq!(
+        prior.depth,
+        saved.depth + 1,
+        "Lock not released in stacking order"
+    );
+}
+
 impl<T> Mutex<T> {
-    #[inline]
     pub fn new(rank: LockRank, value: T) -> Mutex<T> {
         Mutex {
             inner: parking_lot::Mutex::new(value),
@@ -112,57 +185,14 @@ impl<T> Mutex<T> {
         }
     }
 
-    #[inline]
     #[track_caller]
     pub fn lock(&self) -> MutexGuard<T> {
-        let state = LOCK_STATE.get();
-        let location = Location::caller();
-        
-        
-        if let Some((ref last_rank, ref last_location)) = state.last_acquired {
-            assert!(
-                last_rank.followers.contains(self.rank.bit),
-                "Attempt to acquire nested mutexes in wrong order:\n\
-                 last locked {:<35} at {}\n\
-                 now locking {:<35} at {}\n\
-                 Locking {} after locking {} is not permitted.",
-                last_rank.bit.name(),
-                last_location,
-                self.rank.bit.name(),
-                location,
-                self.rank.bit.name(),
-                last_rank.bit.name(),
-            );
-        }
-        LOCK_STATE.set(LockState {
-            last_acquired: Some((self.rank, location)),
-            depth: state.depth + 1,
-        });
+        let saved = acquire(self.rank, Location::caller());
         MutexGuard {
             inner: self.inner.lock(),
-            saved: state,
+            saved: LockStateGuard(saved),
         }
     }
-}
-
-impl<'a, T> Drop for MutexGuard<'a, T> {
-    fn drop(&mut self) {
-        let prior = LOCK_STATE.replace(self.saved);
-
-        
-        
-        
-        
-        assert_eq!(
-            prior.depth,
-            self.saved.depth + 1,
-            "Lock not released in stacking order"
-        );
-    }
-}
-
-thread_local! {
-    static LOCK_STATE: Cell<LockState> = const { Cell::new(LockState::INITIAL) };
 }
 
 impl<'a, T> std::ops::Deref for MutexGuard<'a, T> {
@@ -182,6 +212,109 @@ impl<'a, T> std::ops::DerefMut for MutexGuard<'a, T> {
 impl<T: std::fmt::Debug> std::fmt::Debug for Mutex<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.inner.fmt(f)
+    }
+}
+
+
+
+
+
+
+
+
+
+pub struct RwLock<T> {
+    inner: parking_lot::RwLock<T>,
+    rank: LockRank,
+}
+
+
+
+
+
+
+
+
+
+pub struct RwLockReadGuard<'a, T> {
+    inner: parking_lot::RwLockReadGuard<'a, T>,
+    saved: LockStateGuard,
+}
+
+
+
+
+
+
+
+
+
+pub struct RwLockWriteGuard<'a, T> {
+    inner: parking_lot::RwLockWriteGuard<'a, T>,
+    saved: LockStateGuard,
+}
+
+impl<T> RwLock<T> {
+    pub fn new(rank: LockRank, value: T) -> RwLock<T> {
+        RwLock {
+            inner: parking_lot::RwLock::new(value),
+            rank,
+        }
+    }
+
+    #[track_caller]
+    pub fn read(&self) -> RwLockReadGuard<T> {
+        let saved = acquire(self.rank, Location::caller());
+        RwLockReadGuard {
+            inner: self.inner.read(),
+            saved: LockStateGuard(saved),
+        }
+    }
+
+    #[track_caller]
+    pub fn write(&self) -> RwLockWriteGuard<T> {
+        let saved = acquire(self.rank, Location::caller());
+        RwLockWriteGuard {
+            inner: self.inner.write(),
+            saved: LockStateGuard(saved),
+        }
+    }
+}
+
+impl<'a, T> RwLockWriteGuard<'a, T> {
+    pub fn downgrade(this: Self) -> RwLockReadGuard<'a, T> {
+        RwLockReadGuard {
+            inner: parking_lot::RwLockWriteGuard::downgrade(this.inner),
+            saved: this.saved,
+        }
+    }
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for RwLock<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl<'a, T> std::ops::Deref for RwLockReadGuard<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.inner.deref()
+    }
+}
+
+impl<'a, T> std::ops::Deref for RwLockWriteGuard<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.inner.deref()
+    }
+}
+
+impl<'a, T> std::ops::DerefMut for RwLockWriteGuard<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.inner.deref_mut()
     }
 }
 

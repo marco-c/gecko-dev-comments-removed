@@ -1,12 +1,14 @@
 #![allow(unused)]
 
-use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use crate::lock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::{
     backtrace::Backtrace,
     cell::{Cell, RefCell, UnsafeCell},
     panic::{self, Location},
     thread,
 };
+
+use crate::lock::rank;
 
 
 pub struct SnatchGuard<'a>(RwLockReadGuard<'a, ()>);
@@ -128,9 +130,9 @@ impl SnatchLock {
     
     
     
-    pub unsafe fn new() -> Self {
+    pub unsafe fn new(rank: rank::LockRank) -> Self {
         SnatchLock {
-            lock: RwLock::new(()),
+            lock: RwLock::new(rank, ()),
         }
     }
 

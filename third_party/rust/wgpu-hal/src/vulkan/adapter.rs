@@ -35,6 +35,8 @@ fn indexing_features() -> wgt::Features {
 
 
 
+
+
 #[derive(Debug, Default)]
 pub struct PhysicalDeviceFeatures {
     
@@ -86,8 +88,13 @@ pub struct PhysicalDeviceFeatures {
     
     
     
+    
+    
+    
     buffer_device_address: Option<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>,
 
+    
+    
     
     
     
@@ -157,6 +164,7 @@ impl PhysicalDeviceFeatures {
         info
     }
 
+    
     
     
     
@@ -454,6 +462,9 @@ impl PhysicalDeviceFeatures {
         }
     }
 
+    
+    
+    
     
     
     
