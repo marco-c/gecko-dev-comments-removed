@@ -2541,7 +2541,9 @@ impl TileCacheInstance {
                 
                 if prim_clip_chain.needs_mask {
                     
-                    if self.backdrop.kind.is_none() {
+                    
+                    
+                    if !self.backdrop.opaque_rect.contains_box(&pic_coverage_rect) {
                         return Err(UnderlayAlphaBackdrop);
                     }
 
