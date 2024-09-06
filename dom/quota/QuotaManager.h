@@ -370,8 +370,7 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
-  EnsureTemporaryOriginIsInitialized(PersistenceType aPersistenceType,
-                                     const OriginMetadata& aOriginMetadata);
+  EnsureTemporaryOriginIsInitialized(const OriginMetadata& aOriginMetadata);
 
   RefPtr<BoolPromise> InitializePersistentClient(
       const PrincipalInfo& aPrincipalInfo, Client::Type aClientType);
