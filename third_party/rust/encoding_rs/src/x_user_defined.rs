@@ -14,12 +14,13 @@ use crate::variant::*;
 cfg_if! {
     if #[cfg(feature = "simd-accel")] {
         use simd_funcs::*;
-        use packed_simd::u16x8;
+        use core::simd::u16x8;
+        use core::simd::cmp::SimdPartialOrd;
 
         #[inline(always)]
         fn shift_upper(unpacked: u16x8) -> u16x8 {
             let highest_ascii = u16x8::splat(0x7F);
-            unpacked + unpacked.gt(highest_ascii).select(u16x8::splat(0xF700), u16x8::splat(0))        }
+            unpacked + unpacked.simd_gt(highest_ascii).select(u16x8::splat(0xF700), u16x8::splat(0))        }
     } else {
     }
 }
@@ -116,10 +117,15 @@ impl UserDefinedDecoder {
         let simd_iterations = length >> 4;
         let src_ptr = src.as_ptr();
         let dst_ptr = dst.as_mut_ptr();
+        
         for i in 0..simd_iterations {
+            
+            
+            
             let input = unsafe { load16_unaligned(src_ptr.add(i * 16)) };
             let (first, second) = simd_unpack(input);
             unsafe {
+                
                 store8_unaligned(dst_ptr.add(i * 16), shift_upper(first));
                 store8_unaligned(dst_ptr.add((i * 16) + 8), shift_upper(second));
             }
