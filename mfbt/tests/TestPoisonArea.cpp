@@ -354,7 +354,7 @@ static uintptr_t ReserveNegativeControl() {
   
 
   if (MakeRegionExecutable(result)) {
-    printf("ERROR | making negative control executable | %s\n", LastErrMsg());
+    ReleaseRegion(result);
     return 0;
   }
 
@@ -514,15 +514,29 @@ int main() {
 #endif
 
   uintptr_t ncontrol = ReserveNegativeControl();
+  if (!ncontrol) {
+#if (defined __aarch64__ || defined _M_ARM64) && defined(XP_DARWIN)
+    
+    
+    printf("TEST-SKIP | making negative control executable | %s\n",
+           LastErrMsg());
+#else
+    printf("ERROR | making negative control executable | %s\n", LastErrMsg());
+    return 2;
+#endif
+  }
+
   uintptr_t pcontrol = ReservePositiveControl();
   uintptr_t poison = ReservePoisonArea();
 
-  if (!ncontrol || !pcontrol || !poison) {
+  if (!pcontrol || !poison) {
     return 2;
   }
 
   bool failed = false;
-  failed |= TestPage("negative control", ncontrol, 1);
+  if (ncontrol) {
+    failed |= TestPage("negative control", ncontrol, 1);
+  }
   failed |= TestPage("positive control", pcontrol, 0);
   failed |= TestPage("poison area", poison, 0);
 
