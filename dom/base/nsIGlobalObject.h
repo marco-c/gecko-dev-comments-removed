@@ -283,9 +283,6 @@ class nsIGlobalObject : public nsISupports {
 
 
   virtual bool IsEligibleForMessaging() { return false; };
-  virtual bool IsBackgroundInternal() const { return false; }
-  virtual mozilla::dom::TimeoutManager* GetTimeoutManager() { return nullptr; }
-  virtual bool IsRunningTimeout() { return false; }
 
  protected:
   virtual ~nsIGlobalObject();
