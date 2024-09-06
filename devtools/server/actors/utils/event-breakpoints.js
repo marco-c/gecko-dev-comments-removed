@@ -131,7 +131,8 @@ const AVAILABLE_BREAKPOINTS = [
     items: [
       
       generalEvent("control", "beforetoggle", () =>
-        Services.prefs.getBoolPref("dom.element.popover.enabled")
+        
+        Services.prefs?.getBoolPref("dom.element.popover.enabled")
       ),
       generalEvent("control", "blur"),
       generalEvent("control", "change"),
@@ -139,7 +140,11 @@ const AVAILABLE_BREAKPOINTS = [
       generalEvent("control", "focusin"),
       generalEvent("control", "focusout"),
       
-      generalEvent("control", "invoke", win => "InvokeEvent" in win),
+      generalEvent(
+        "control",
+        "invoke",
+        global => global && "InvokeEvent" in global
+      ),
       generalEvent("control", "reset"),
       generalEvent("control", "resize"),
       generalEvent("control", "scroll"),
@@ -487,13 +492,13 @@ exports.getAvailableEventBreakpoints = getAvailableEventBreakpoints;
 
 
 
-function getAvailableEventBreakpoints(window) {
+function getAvailableEventBreakpoints(global) {
   const available = [];
   for (const { name, items } of AVAILABLE_BREAKPOINTS) {
     available.push({
       name,
       events: items
-        .filter(item => !item.condition || item.condition(window))
+        .filter(item => !item.condition || item.condition(global))
         .map(item => ({
           id: item.id,
           name: item.name,
