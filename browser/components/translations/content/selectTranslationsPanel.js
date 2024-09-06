@@ -2182,16 +2182,10 @@ var SelectTranslationsPanel = new (class {
 
 
   async #requestTranslationsPort(fromLanguage, toLanguage) {
-    const innerWindowId =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement
-        .innerWindowID;
-    if (!innerWindowId) {
-      return undefined;
-    }
     const port = await TranslationsParent.requestTranslationsPort(
-      innerWindowId,
       fromLanguage,
-      toLanguage
+      toLanguage,
+       null
     );
     return port;
   }
