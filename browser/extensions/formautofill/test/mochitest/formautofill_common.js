@@ -3,6 +3,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 let formFillChromeScript;
@@ -378,7 +382,21 @@ async function canTestOSKeyStoreLogin() {
 }
 
 async function waitForOSKeyStoreLogin(login = false) {
-  await invokeAsyncChromeTask("FormAutofillTest:OSKeyStoreLogin", { login });
+  
+  let isOSAuthEnabled = await SpecialPowers.spawnChrome([], () => {
+    
+    
+    const { FormAutofillUtils } = ChromeUtils.importESModule(
+      "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
+    );
+
+    return FormAutofillUtils.getOSAuthEnabled(
+      FormAutofillUtils.AUTOFILL_CREDITCARDS_REAUTH_PREF
+    );
+  });
+  if (isOSAuthEnabled) {
+    await invokeAsyncChromeTask("FormAutofillTest:OSKeyStoreLogin", { login });
+  }
 }
 
 function patchRecordCCNumber(record) {
