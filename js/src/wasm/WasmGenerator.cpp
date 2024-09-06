@@ -85,6 +85,7 @@ ModuleGenerator::ModuleGenerator(const CompileArgs& args,
       cancelled_(cancelled),
       codeMeta_(codeMeta),
       compilerEnv_(compilerEnv),
+      featureUsage_(FeatureUsage::None),
       codeBlock_(nullptr),
       linkData_(nullptr),
       lifo_(GENERATOR_LIFO_DEFAULT_CHUNK_SIZE),
@@ -401,7 +402,7 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   JitContext jcx;
 
   
-  codeMeta_->featureUsage |= code.featureUsage;
+  featureUsage_ |= code.featureUsage;
 
   
   
@@ -1171,6 +1172,9 @@ SharedModule ModuleGenerator::finishModule(
   if (!tier1Code) {
     return nullptr;
   }
+
+  
+  moduleMeta->featureUsage = featureUsage_;
 
   
   
