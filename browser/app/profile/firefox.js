@@ -1728,7 +1728,7 @@ pref("browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled", false);
 
 pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper-light", "");
 pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper-dark", "");
-pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper-color", "");
+pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "");
 
 
 pref("browser.newtabpage.activity-stream.newtabWallpapers.highlightEnabled", false);
