@@ -1,4 +1,9 @@
 export type TestConfig = {
+  
+
+
+  enableDebugLogs: boolean;
+
   maxSubcasesInFlight: number;
   testHeartbeatCallback: () => void;
   noRaceWithRejectOnTimeout: boolean;
@@ -21,12 +26,25 @@ export type TestConfig = {
 
 
   compatibility: boolean;
+
+  
+
+
+  forceFallbackAdapter: boolean;
+
+  
+
+
+  logToWebSocket: boolean;
 };
 
 export const globalTestConfig: TestConfig = {
+  enableDebugLogs: false,
   maxSubcasesInFlight: 500,
   testHeartbeatCallback: () => {},
   noRaceWithRejectOnTimeout: false,
   unrollConstEvalLoops: false,
   compatibility: false,
+  forceFallbackAdapter: false,
+  logToWebSocket: false,
 };

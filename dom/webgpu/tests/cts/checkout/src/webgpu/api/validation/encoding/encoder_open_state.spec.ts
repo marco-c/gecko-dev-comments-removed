@@ -57,7 +57,10 @@ class F extends ValidationTest {
 
 export const g = makeTestGroup(F);
 
-type EncoderCommands = keyof Omit<GPUCommandEncoder, '__brand' | 'label' | 'finish'>;
+
+type EncoderCommands =
+  | keyof Omit<GPUCommandEncoder, '__brand' | 'label' | 'finish'>
+  | 'writeTimestamp';
 const kEncoderCommandInfo: {
   readonly [k in EncoderCommands]: {};
 } = {
@@ -146,6 +149,8 @@ g.test('non_pass_commands')
     `
   Test that functions of GPUCommandEncoder generate a validation error if the encoder is already
   finished.
+
+  TODO: writeTimestamp is removed from the spec so it's skipped if it TypeErrors.
   `
   )
   .params(u =>
@@ -260,8 +265,11 @@ g.test('non_pass_commands')
           }
           break;
         case 'writeTimestamp':
-          {
-            encoder.writeTimestamp(querySet, 0);
+          try {
+            
+            (encoder as any).writeTimestamp(querySet, 0);
+          } catch (ex) {
+            t.skipIf(ex instanceof TypeError, 'writeTimestamp is actually not available');
           }
           break;
         case 'resolveQuerySet':

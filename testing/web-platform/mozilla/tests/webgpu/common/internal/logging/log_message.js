@@ -1,25 +1,47 @@
 
 
 import { extractImportantStackTrace } from '../stack.js';
+
+
 export class LogMessageWithStack extends Error {
 
 
   stackHiddenMessage = undefined;
 
-  constructor(name, ex) {
-    super(ex.message);
+  
 
-    this.name = name;
-    this.stack = ex.stack;
-    if ('extra' in ex) {
-      this.extra = ex.extra;
-    }
+
+
+
+
+
+  static wrapError(name, ex) {
+    return new LogMessageWithStack({
+      name,
+      message: ex.message,
+      stackHiddenMessage: undefined,
+      stack: ex.stack,
+      extra: 'extra' in ex ? ex.extra : undefined
+    });
+  }
+
+  constructor(o) {
+    super(o.message);
+    this.name = o.name;
+    this.stackHiddenMessage = o.stackHiddenMessage;
+    this.stack = o.stack;
+    this.extra = o.extra;
   }
 
   
   setStackHidden(stackHiddenMessage) {
     this.stackHiddenMessage ??= stackHiddenMessage;
   }
+
+  
+
+
+
 
   toJSON() {
     let m = this.name;
@@ -32,6 +54,21 @@ export class LogMessageWithStack extends Error {
       }
     }
     return m;
+  }
+
+  
+
+
+
+
+  toRawData() {
+    return {
+      name: this.name,
+      message: this.message,
+      stackHiddenMessage: this.stackHiddenMessage,
+      stack: this.stack,
+      extra: this.extra
+    };
   }
 }
 

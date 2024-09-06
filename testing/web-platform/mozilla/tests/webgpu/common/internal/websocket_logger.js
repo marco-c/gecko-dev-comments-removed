@@ -1,19 +1,24 @@
 
 
- 
-
-
-
-
-let connection = 'uninitialized';
+import { globalTestConfig } from '../framework/test_config.js'; 
 
 
 
 
 
+let connection =
+'uninitialized';
 
-export function logToWebsocket(msg) {
-  if (connection === 'failed') {
+
+
+
+
+
+
+
+
+export function logToWebSocket(msg) {
+  if (!globalTestConfig.logToWebSocket || connection === 'failed') {
     return;
   }
 

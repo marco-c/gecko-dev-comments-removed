@@ -40,6 +40,27 @@ class GPUContextTest extends GPUTest {
 
     return ctx;
   }
+
+  expectTextureDestroyed(texture: GPUTexture, expectDestroyed = true) {
+    this.expectValidationError(() => {
+      
+      
+      assert((texture.usage & GPUTextureUsage.RENDER_ATTACHMENT) !== 0);
+      const encoder = this.device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: texture.createView(),
+            loadOp: 'clear',
+            storeOp: 'store',
+          },
+        ],
+      });
+      pass.end();
+      
+      this.queue.submit([encoder.finish()]);
+    }, expectDestroyed);
+  }
 }
 
 export const g = makeTestGroup(GPUContextTest);
@@ -179,6 +200,7 @@ g.test('multiple_frames')
 
         if (clearTexture) {
           
+          
           const encoder = t.device.createCommandEncoder();
           const pass = encoder.beginRenderPass({
             colorAttachments: [
@@ -216,9 +238,7 @@ g.test('multiple_frames')
       }
 
       
-      
-      
-      requestAnimationFrame(frameCheck);
+      frameCheck();
     });
   });
 
@@ -234,6 +254,8 @@ g.test('resize')
 
     
     ctx.canvas.width = 4;
+
+    t.expectTextureDestroyed(prevTexture);
 
     
     
@@ -263,7 +285,6 @@ g.test('resize')
     t.expect(currentTexture.height === ctx.canvas.height);
     t.expect(prevTexture.width === 4);
     t.expect(prevTexture.height === 2);
-    prevTexture = currentTexture;
 
     
     t.expectSingleColor(currentTexture, currentTexture.format, {
@@ -272,12 +293,30 @@ g.test('resize')
     });
 
     
-    
-    ctx.canvas.width = 4;
-    ctx.canvas.height = 4;
+    if (t.params.canvasType === 'onscreen') {
+      
+      ctx.canvas.width = -1;
+      currentTexture = ctx.getCurrentTexture();
+      t.expect(currentTexture.width === 300);
+      t.expect(currentTexture.height === 4);
 
-    currentTexture = ctx.getCurrentTexture();
-    t.expect(prevTexture === currentTexture);
+      ctx.canvas.height = -1;
+      currentTexture = ctx.getCurrentTexture();
+      t.expect(currentTexture.width === 300);
+      t.expect(currentTexture.height === 150);
+
+      
+      
+      prevTexture = ctx.getCurrentTexture();
+      const { width, height } = ctx.canvas;
+      ctx.canvas.width = width;
+      ctx.canvas.height = height;
+
+      t.expectTextureDestroyed(prevTexture);
+
+      currentTexture = ctx.getCurrentTexture();
+      t.expect(prevTexture !== currentTexture);
+    }
   });
 
 g.test('expiry')
@@ -307,6 +346,14 @@ TODO: test more canvas types, and ways to update the rendering
       .combine('prevFrameCallsite', ['runInNewCanvasFrame', 'requestAnimationFrame'] as const)
       .combine('getCurrentTextureAgain', [true, false] as const)
   )
+  .beforeAllSubcases(t => {
+    if (
+      t.params.prevFrameCallsite === 'requestAnimationFrame' &&
+      typeof requestAnimationFrame === 'undefined'
+    ) {
+      throw new SkipTestCase('requestAnimationFrame not available');
+    }
+  })
   .fn(t => {
     const { canvasType, prevFrameCallsite, getCurrentTextureAgain } = t.params;
     const ctx = t.initCanvasContext(t.params.canvasType);

@@ -4,6 +4,7 @@ import { assert, unreachable } from '../../common/util/util.js';import { Float16
 
 
 
+
 import { anyOf } from './compare.js';
 import { kValue } from './constants.js';
 import {
@@ -23,6 +24,7 @@ import {
   correctlyRoundedF16,
   correctlyRoundedF32,
   correctlyRoundedF64,
+  every2DArray,
   flatten2DArray,
 
   flushSubnormalNumberF16,
@@ -36,10 +38,24 @@ import {
   map2DArray,
   oneULPF16,
   oneULPF32,
-  quantizeToF32,
   quantizeToF16,
+  quantizeToF32,
+  scalarF16Range,
+  scalarF32Range,
+  scalarF64Range,
+  sparseMatrixF16Range,
+  sparseMatrixF32Range,
+  sparseMatrixF64Range,
+  sparseScalarF16Range,
+  sparseScalarF32Range,
+  sparseScalarF64Range,
+  sparseVectorF16Range,
+  sparseVectorF32Range,
+  sparseVectorF64Range,
   unflatten2DArray,
-  every2DArray } from
+  vectorF16Range,
+  vectorF32Range,
+  vectorF64Range } from
 './math.js';
 
 var
@@ -104,13 +120,16 @@ export class FPInterval {
 
 
 
-  constructor(kind, ...bounds) {
+  constructor(kind, ...endpoints) {
     this.kind = kind;
 
-    const begin = bounds[0];
-    const end = bounds.length === 2 ? bounds[1] : bounds[0];
-    assert(!Number.isNaN(begin) && !Number.isNaN(end), `bounds need to be non-NaN`);
-    assert(begin <= end, `bounds[0] (${begin}) must be less than or equal to bounds[1]  (${end})`);
+    const begin = endpoints[0];
+    const end = endpoints.length === 2 ? endpoints[1] : endpoints[0];
+    assert(!Number.isNaN(begin) && !Number.isNaN(end), `endpoints need to be non-NaN`);
+    assert(
+      begin <= end,
+      `endpoints[0] (${begin}) must be less than or equal to endpoints[1]  (${end})`
+    );
 
     this.begin = begin;
     this.end = end;
@@ -122,7 +141,7 @@ export class FPInterval {
   }
 
   
-  bounds() {
+  endpoints() {
     return this.isPoint() ? [this.begin] : [this.begin, this.end];
   }
 
@@ -163,7 +182,7 @@ export class FPInterval {
 
   
   toString() {
-    return `{ '${this.kind}', [${this.bounds().map(this.traits().scalarBuilder)}] }`;
+    return `{ '${this.kind}', [${this.endpoints().map(this.traits().scalarBuilder)}] }`;
   }
 }
 
@@ -639,6 +658,24 @@ function addFlushedIfNeededF16(values) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export class FPTraits {
 
   constructor(k) {
@@ -661,7 +698,7 @@ export class FPTraits {
         return this.constants().unboundedInterval;
       }
 
-      return new FPInterval(this.kind, ...n.bounds());
+      return new FPInterval(this.kind, ...n.endpoints());
     }
 
     if (n instanceof Array) {
@@ -841,48 +878,6 @@ export class FPTraits {
   }
 
   
-
-
-
-
-
-
-
-
-
-  limitScalarToIntervalDomain(
-  domain,
-  impl)
-  {
-    return (n) => {
-      return domain.contains(n) ? impl(n) : this.constants().unboundedInterval;
-    };
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  limitScalarPairToIntervalDomain(
-  domain,
-  impl)
-  {
-    return (x, y) => {
-      if (!domain.x.some((d) => d.contains(x)) || !domain.y.some((d) => d.contains(y))) {
-        return this.constants().unboundedInterval;
-      }
-
-      return impl(x, y);
-    };
-  }
-
-  
   unimplementedScalarToInterval(name, _x) {
     unreachable(`'${name}' is not yet implemented for '${this.kind}'`);
   }
@@ -1054,13 +1049,13 @@ export class FPTraits {
   }
 
   
-  unboundedAbsoluteErrorInterval(_n, _error_range) {
-    return this.constants().unboundedInterval;
+  unimplementedAbsoluteErrorInterval(_n, _error_range) {
+    unreachable(`Absolute Error is not implement for '${this.kind}'`);
   }
 
   
-  unboundedUlpInterval(_n, _numULP) {
-    return this.constants().unboundedInterval;
+  unimplementedUlpInterval(_n, _numULP) {
+    unreachable(`ULP Error is not implement for '${this.kind}'`);
   }
 
   
@@ -1080,6 +1075,20 @@ export class FPTraits {
   
 
   
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
 
 
   
@@ -1705,7 +1714,6 @@ export class FPTraits {
   {
     param0 = map2DArray(param0, this.quantize);
     param1 = map2DArray(param1, this.quantize);
-
     const results = ops.map((o) => o(param0, param1));
     if (filter === 'finite' && results.some((m) => m.some((c) => c.some((r) => !r.isFinite())))) {
       return undefined;
@@ -1973,6 +1981,15 @@ export class FPTraits {
     assert(!Number.isNaN(n), `flush not defined for NaN`);
     const values = this.correctlyRounded(n);
     const inputs = this.addFlushedIfNeeded(values);
+
+    if (op.domain !== undefined) {
+      
+      const domain = op.domain();
+      if (inputs.some((i) => !domain.contains(i))) {
+        return this.constants().unboundedInterval;
+      }
+    }
+
     const results = new Set(inputs.map(op.impl));
     return this.spanIntervals(...results);
   }
@@ -1998,10 +2015,25 @@ export class FPTraits {
   {
     assert(!Number.isNaN(x), `flush not defined for NaN`);
     assert(!Number.isNaN(y), `flush not defined for NaN`);
+
     const x_values = this.correctlyRounded(x);
     const y_values = this.correctlyRounded(y);
     const x_inputs = this.addFlushedIfNeeded(x_values);
     const y_inputs = this.addFlushedIfNeeded(y_values);
+
+    if (op.domain !== undefined) {
+      
+      const domain = op.domain();
+
+      if (x_inputs.some((i) => !domain.x.some((e) => e.contains(i)))) {
+        return this.constants().unboundedInterval;
+      }
+
+      if (y_inputs.some((j) => !domain.y.some((e) => e.contains(j)))) {
+        return this.constants().unboundedInterval;
+      }
+    }
+
     const intervals = new Set();
     x_inputs.forEach((inner_x) => {
       y_inputs.forEach((inner_y) => {
@@ -2252,7 +2284,7 @@ export class FPTraits {
     }
 
     const result = this.spanIntervals(
-      ...x.bounds().map((b) => this.roundAndFlushScalarToInterval(b, op))
+      ...x.endpoints().map((b) => this.roundAndFlushScalarToInterval(b, op))
     );
     return result.isFinite() ? result : this.constants().unboundedInterval;
   }
@@ -2282,8 +2314,8 @@ export class FPTraits {
     }
 
     const outputs = new Set();
-    x.bounds().forEach((inner_x) => {
-      y.bounds().forEach((inner_y) => {
+    x.endpoints().forEach((inner_x) => {
+      y.endpoints().forEach((inner_y) => {
         outputs.add(this.roundAndFlushScalarPairToInterval(inner_x, inner_y, op));
       });
     });
@@ -2312,9 +2344,9 @@ export class FPTraits {
     }
 
     const outputs = new Set();
-    x.bounds().forEach((inner_x) => {
-      y.bounds().forEach((inner_y) => {
-        z.bounds().forEach((inner_z) => {
+    x.endpoints().forEach((inner_x) => {
+      y.endpoints().forEach((inner_y) => {
+        z.endpoints().forEach((inner_z) => {
           outputs.add(this.roundAndFlushScalarTripleToInterval(inner_x, inner_y, inner_z, op));
         });
       });
@@ -2337,7 +2369,7 @@ export class FPTraits {
       return this.constants().unboundedInterval;
     }
 
-    const x_values = cartesianProduct(...x.map((e) => e.bounds()));
+    const x_values = cartesianProduct(...x.map((e) => e.endpoints()));
 
     const outputs = new Set();
     x_values.forEach((inner_x) => {
@@ -2366,8 +2398,8 @@ export class FPTraits {
       return this.constants().unboundedInterval;
     }
 
-    const x_values = cartesianProduct(...x.map((e) => e.bounds()));
-    const y_values = cartesianProduct(...y.map((e) => e.bounds()));
+    const x_values = cartesianProduct(...x.map((e) => e.endpoints()));
+    const y_values = cartesianProduct(...y.map((e) => e.endpoints()));
 
     const outputs = new Set();
     x_values.forEach((inner_x) => {
@@ -2393,7 +2425,7 @@ export class FPTraits {
       return this.constants().unboundedVector[x.length];
     }
 
-    const x_values = cartesianProduct(...x.map((e) => e.bounds()));
+    const x_values = cartesianProduct(...x.map((e) => e.endpoints()));
 
     const outputs = new Set();
     x_values.forEach((inner_x) => {
@@ -2437,8 +2469,8 @@ export class FPTraits {
       return this.constants().unboundedVector[x.length];
     }
 
-    const x_values = cartesianProduct(...x.map((e) => e.bounds()));
-    const y_values = cartesianProduct(...y.map((e) => e.bounds()));
+    const x_values = cartesianProduct(...x.map((e) => e.endpoints()));
+    const y_values = cartesianProduct(...y.map((e) => e.endpoints()));
 
     const outputs = new Set();
     x_values.forEach((inner_x) => {
@@ -2495,12 +2527,15 @@ export class FPTraits {
   runMatrixToMatrixOp(m, op) {
     const num_cols = m.length;
     const num_rows = m[0].length;
-    if (m.some((c) => c.some((r) => !r.isFinite()))) {
-      return this.constants().unboundedMatrix[num_cols][num_rows];
-    }
+
+    
+    
+    
 
     const m_flat = flatten2DArray(m);
-    const m_values = cartesianProduct(...m_flat.map((e) => e.bounds()));
+    const m_values = cartesianProduct(
+      ...m_flat.map((e) => e.endpoints())
+    );
 
     const outputs = new Set();
     m_values.forEach((inner_m) => {
@@ -2531,14 +2566,41 @@ export class FPTraits {
 
 
 
-  runScalarPairToIntervalOpMatrixComponentWise(
+  runScalarPairToIntervalOpScalarMatrixComponentWise(
+  i,
+  m,
+  op)
+  {
+    const cols = m.length;
+    const rows = m[0].length;
+    return this.toMatrix(
+      unflatten2DArray(
+        flatten2DArray(m).map((e) => this.runScalarPairToIntervalOp(i, e, op)),
+        cols,
+        rows
+      )
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  runScalarPairToIntervalOpMatrixMatrixComponentWise(
   x,
   y,
   op)
   {
     assert(
       x.length === y.length && x[0].length === y[0].length,
-      `runScalarPairToIntervalOpMatrixComponentWise requires matrices of the same dimensions`
+      `runScalarPairToIntervalOpMatrixMatrixComponentWise requires matrices of the same dimensions`
     );
 
     const cols = x.length;
@@ -2673,7 +2735,7 @@ export class FPTraits {
 
   
   AcosIntervalOp = {
-    impl: this.limitScalarToIntervalDomain(this.toInterval([-1.0, 1.0]), (n) => {
+    impl: (n) => {
       assert(this.kind === 'f32' || this.kind === 'f16');
       
       const y = this.sqrtInterval(this.subtractionInterval(1, this.multiplicationInterval(n, n)));
@@ -2682,7 +2744,10 @@ export class FPTraits {
         this.atan2Interval(y, n),
         this.absoluteErrorInterval(Math.acos(n), approx_abs_error)
       );
-    })
+    },
+    domain: () => {
+      return this.constants().negOneToOneInterval;
+    }
   };
 
   acosIntervalImpl(n) {
@@ -2751,7 +2816,7 @@ export class FPTraits {
 
 
   additionMatrixMatrixIntervalImpl(x, y) {
-    return this.runScalarPairToIntervalOpMatrixComponentWise(
+    return this.runScalarPairToIntervalOpMatrixMatrixComponentWise(
       this.toMatrix(x),
       this.toMatrix(y),
       this.AdditionIntervalOp
@@ -2766,16 +2831,19 @@ export class FPTraits {
 
   
   AsinIntervalOp = {
-    impl: this.limitScalarToIntervalDomain(this.toInterval([-1.0, 1.0]), (n) => {
+    impl: (n) => {
       assert(this.kind === 'f32' || this.kind === 'f16');
       
       const x = this.sqrtInterval(this.subtractionInterval(1, this.multiplicationInterval(n, n)));
-      const approx_abs_error = this.kind === 'f32' ? 6.77e-5 : 3.91e-3;
+      const approx_abs_error = this.kind === 'f32' ? 6.81e-5 : 3.91e-3;
       return this.spanIntervals(
         this.atan2Interval(n, x),
         this.absoluteErrorInterval(Math.asin(n), approx_abs_error)
       );
-    })
+    },
+    domain: () => {
+      return this.constants().negOneToOneInterval;
+    }
   };
 
   
@@ -2836,29 +2904,23 @@ export class FPTraits {
     [this.toInterval([-(2 ** 14), -(2 ** -14)]), this.toInterval([2 ** -14, 2 ** 14])];
     const ulp_error = this.kind === 'f32' ? 4096 : 5;
     return {
-      impl: this.limitScalarPairToIntervalDomain(
-        {
-          x: domain_x,
-          y: domain_y
-        },
-        (y, x) => {
+      impl: (y, x) => {
+        
+        let atan_yx = Math.atan(y / x);
+        
+        
+        if (x < 0) {
           
-          let atan_yx = Math.atan(y / x);
-          
-          
-          if (x < 0) {
+          if (y > 0) {
+            atan_yx = atan_yx + kValue.f64.positive.pi.whole;
+          } else {
             
-            if (y > 0) {
-              atan_yx = atan_yx + kValue.f64.positive.pi.whole;
-            } else {
-              
-              atan_yx = atan_yx - kValue.f64.positive.pi.whole;
-            }
+            atan_yx = atan_yx - kValue.f64.positive.pi.whole;
           }
-
-          return this.ulpInterval(atan_yx, ulp_error);
         }
-      ),
+
+        return this.ulpInterval(atan_yx, ulp_error);
+      },
       extrema: (y, x) => {
         
         if (y.contains(0)) {
@@ -2868,6 +2930,9 @@ export class FPTraits {
           return [this.toInterval(0), x];
         }
         return [y, x];
+      },
+      domain: () => {
+        return { x: domain_x, y: domain_y };
       }
     };
   }
@@ -2984,14 +3049,14 @@ export class FPTraits {
 
 
   CosIntervalOp = {
-    impl: this.limitScalarToIntervalDomain(
-      this.constants().negPiToPiInterval,
-      (n) => {
-        assert(this.kind === 'f32' || this.kind === 'f16');
-        const abs_error = this.kind === 'f32' ? 2 ** -11 : 2 ** -7;
-        return this.absoluteErrorInterval(Math.cos(n), abs_error);
-      }
-    )
+    impl: (n) => {
+      assert(this.kind === 'f32' || this.kind === 'f16');
+      const abs_error = this.kind === 'f32' ? 2 ** -11 : 2 ** -7;
+      return this.absoluteErrorInterval(Math.cos(n), abs_error);
+    },
+    domain: () => {
+      return this.constants().negPiToPiInterval;
+    }
   };
 
   cosIntervalImpl(n) {
@@ -3041,7 +3106,11 @@ export class FPTraits {
         this.multiplicationInterval(x[0], y[1]),
         this.multiplicationInterval(x[1], y[0])
       );
-      return [r0, r1, r2];
+
+      if (r0.isFinite() && r1.isFinite() && r2.isFinite()) {
+        return [r0, r1, r2];
+      }
+      return this.constants().unboundedVector[3];
     }
   };
 
@@ -3281,24 +3350,21 @@ export class FPTraits {
     [this.toInterval([-(2 ** 126), -(2 ** -126)]), this.toInterval([2 ** -126, 2 ** 126])] :
     [this.toInterval([-(2 ** 14), -(2 ** -14)]), this.toInterval([2 ** -14, 2 ** 14])];
     return {
-      impl: this.limitScalarPairToIntervalDomain(
-        {
-          x: domain_x,
-          y: domain_y
-        },
-        (x, y) => {
-          if (y === 0) {
-            return constants.unboundedInterval;
-          }
-          return this.ulpInterval(x / y, 2.5);
+      impl: (x, y) => {
+        if (y === 0) {
+          return constants.unboundedInterval;
         }
-      ),
+        return this.ulpInterval(x / y, 2.5);
+      },
       extrema: (x, y) => {
         
         if (y.contains(0)) {
           y = this.toInterval(0);
         }
         return [x, y];
+      },
+      domain: () => {
+        return { x: domain_x, y: domain_y };
       }
     };
   }
@@ -3346,7 +3412,10 @@ export class FPTraits {
   x,
   y)
   {
-    assert(x.length === y.length, `dot not defined for vectors with different lengths`);
+    assert(
+      x.length === y.length,
+      `dot not defined for vectors with different lengths, x = ${x}, y = ${y}`
+    );
     return this.runVectorPairToIntervalOp(this.toVector(x), this.toVector(y), this.DotIntervalOp);
   }
 
@@ -3517,12 +3586,12 @@ export class FPTraits {
 
 
   InverseSqrtIntervalOp = {
-    impl: this.limitScalarToIntervalDomain(
-      this.constants().greaterThanZeroInterval,
-      (n) => {
-        return this.ulpInterval(1 / Math.sqrt(n), 2);
-      }
-    )
+    impl: (n) => {
+      return this.ulpInterval(1 / Math.sqrt(n), 2);
+    },
+    domain: () => {
+      return this.constants().greaterThanZeroInterval;
+    }
   };
 
   inverseSqrtIntervalImpl(n) {
@@ -3534,11 +3603,9 @@ export class FPTraits {
 
   LdexpIntervalOp = {
     impl: (e1, e2) => {
-      assert(this.kind === 'f32' || this.kind === 'f16');
       assert(Number.isInteger(e2), 'the second param of ldexp must be an integer');
-      const bias = this.kind === 'f32' ? 127 : 15;
       
-      if (e2 > bias + 1) {
+      if (e2 > this.constants().bias + 1) {
         return this.constants().unboundedInterval;
       }
       
@@ -3606,17 +3673,17 @@ export class FPTraits {
 
 
   LogIntervalOp = {
-    impl: this.limitScalarToIntervalDomain(
-      this.constants().greaterThanZeroInterval,
-      (n) => {
-        assert(this.kind === 'f32' || this.kind === 'f16');
-        const abs_error = this.kind === 'f32' ? 2 ** -21 : 2 ** -7;
-        if (n >= 0.5 && n <= 2.0) {
-          return this.absoluteErrorInterval(Math.log(n), abs_error);
-        }
-        return this.ulpInterval(Math.log(n), 3);
+    impl: (n) => {
+      assert(this.kind === 'f32' || this.kind === 'f16');
+      const abs_error = this.kind === 'f32' ? 2 ** -21 : 2 ** -7;
+      if (n >= 0.5 && n <= 2.0) {
+        return this.absoluteErrorInterval(Math.log(n), abs_error);
       }
-    )
+      return this.ulpInterval(Math.log(n), 3);
+    },
+    domain: () => {
+      return this.constants().greaterThanZeroInterval;
+    }
   };
 
   logIntervalImpl(x) {
@@ -3627,17 +3694,17 @@ export class FPTraits {
 
 
   Log2IntervalOp = {
-    impl: this.limitScalarToIntervalDomain(
-      this.constants().greaterThanZeroInterval,
-      (n) => {
-        assert(this.kind === 'f32' || this.kind === 'f16');
-        const abs_error = this.kind === 'f32' ? 2 ** -21 : 2 ** -7;
-        if (n >= 0.5 && n <= 2.0) {
-          return this.absoluteErrorInterval(Math.log2(n), abs_error);
-        }
-        return this.ulpInterval(Math.log2(n), 3);
+    impl: (n) => {
+      assert(this.kind === 'f32' || this.kind === 'f16');
+      const abs_error = this.kind === 'f32' ? 2 ** -21 : 2 ** -7;
+      if (n >= 0.5 && n <= 2.0) {
+        return this.absoluteErrorInterval(Math.log2(n), abs_error);
       }
-    )
+      return this.ulpInterval(Math.log2(n), 3);
+    },
+    domain: () => {
+      return this.constants().greaterThanZeroInterval;
+    }
   };
 
   log2IntervalImpl(x) {
@@ -3791,14 +3858,10 @@ export class FPTraits {
   }
 
   multiplicationMatrixScalarIntervalImpl(mat, scalar) {
-    const cols = mat.length;
-    const rows = mat[0].length;
-    return this.toMatrix(
-      unflatten2DArray(
-        flatten2DArray(mat).map((e) => this.multiplicationInterval(e, scalar)),
-        cols,
-        rows
-      )
+    return this.runScalarPairToIntervalOpScalarMatrixComponentWise(
+      this.toInterval(scalar),
+      this.toMatrix(mat),
+      this.MultiplicationIntervalOp
     );
   }
 
@@ -3809,7 +3872,7 @@ export class FPTraits {
 
 
   multiplicationScalarMatrixIntervalImpl(scalar, mat) {
-    return this.multiplicationMatrixScalarIntervalImpl(mat, scalar);
+    return this.multiplicationMatrixScalarInterval(mat, scalar);
   }
 
   
@@ -3830,13 +3893,22 @@ export class FPTraits {
 
     const x_transposed = this.transposeInterval(mat_x);
 
+    let oob_result = false;
     const result = [...Array(y_cols)].map((_) => [...Array(x_rows)]);
     mat_y.forEach((y, i) => {
       x_transposed.forEach((x, j) => {
         result[i][j] = this.dotInterval(x, y);
+        if (!oob_result && !result[i][j].isFinite()) {
+          oob_result = true;
+        }
       });
     });
 
+    if (oob_result) {
+      return this.constants().unboundedMatrix[result.length][
+      result[0].length];
+
+    }
     return result;
   }
 
@@ -3896,7 +3968,11 @@ export class FPTraits {
   NormalizeIntervalOp = {
     impl: (n) => {
       const length = this.lengthInterval(n);
-      return this.toVector(n.map((e) => this.divisionInterval(e, length)));
+      const result = this.toVector(n.map((e) => this.divisionInterval(e, length)));
+      if (result.some((r) => !r.isFinite())) {
+        return this.constants().unboundedVector[result.length];
+      }
+      return result;
     }
   };
 
@@ -3955,11 +4031,16 @@ export class FPTraits {
       
       const t = this.multiplicationInterval(2.0, this.dotInterval(x, y));
       const rhs = this.multiplyVectorByScalar(y, t);
-      return this.runScalarPairToIntervalOpVectorComponentWise(
+      const result = this.runScalarPairToIntervalOpVectorComponentWise(
         this.toVector(x),
         rhs,
         this.SubtractionIntervalOp
       );
+
+      if (result.some((r) => !r.isFinite())) {
+        return this.constants().unboundedVector[result.length];
+      }
+      return result;
     }
   };
 
@@ -4015,11 +4096,16 @@ export class FPTraits {
     const k_sqrt = this.sqrtInterval(k);
     const t = this.additionInterval(dot_times_r, k_sqrt); 
 
-    return this.runScalarPairToIntervalOpVectorComponentWise(
+    const result = this.runScalarPairToIntervalOpVectorComponentWise(
       this.multiplyVectorByScalar(i, r),
       this.multiplyVectorByScalar(s, t),
       this.SubtractionIntervalOp
     ); 
+
+    if (result.some((r) => !r.isFinite())) {
+      return this.constants().unboundedVector[result.length];
+    }
+    return result;
   }
 
   
@@ -4116,14 +4202,14 @@ export class FPTraits {
 
 
   SinIntervalOp = {
-    impl: this.limitScalarToIntervalDomain(
-      this.constants().negPiToPiInterval,
-      (n) => {
-        assert(this.kind === 'f32' || this.kind === 'f16');
-        const abs_error = this.kind === 'f32' ? 2 ** -11 : 2 ** -7;
-        return this.absoluteErrorInterval(Math.sin(n), abs_error);
-      }
-    )
+    impl: (n) => {
+      assert(this.kind === 'f32' || this.kind === 'f16');
+      const abs_error = this.kind === 'f32' ? 2 ** -11 : 2 ** -7;
+      return this.absoluteErrorInterval(Math.sin(n), abs_error);
+    },
+    domain: () => {
+      return this.constants().negPiToPiInterval;
+    }
   };
 
   sinIntervalImpl(n) {
@@ -4250,7 +4336,7 @@ export class FPTraits {
 
 
   subtractionMatrixMatrixIntervalImpl(x, y) {
-    return this.runScalarPairToIntervalOpMatrixComponentWise(
+    return this.runScalarPairToIntervalOpMatrixMatrixComponentWise(
       this.toMatrix(x),
       this.toMatrix(y),
       this.SubtractionIntervalOp
@@ -4375,6 +4461,7 @@ class F32Traits extends FPTraits {
         sixth: kValue.f32.negative.pi.sixth
       }
     },
+    bias: 127,
     unboundedInterval: kF32UnboundedInterval,
     zeroInterval: kF32ZeroInterval,
     
@@ -4389,6 +4476,7 @@ class F32Traits extends FPTraits {
       kValue.f32.positive.subnormal.min,
       kValue.f32.positive.max
     ),
+    negOneToOneInterval: new FPInterval('f32', -1, 1),
     zeroVector: {
       2: [kF32ZeroInterval, kF32ZeroInterval],
       3: [kF32ZeroInterval, kF32ZeroInterval, kF32ZeroInterval],
@@ -4520,6 +4608,11 @@ class F32Traits extends FPTraits {
   flushSubnormal = flushSubnormalNumberF32;
   oneULP = oneULPF32;
   scalarBuilder = f32;
+  scalarRange = scalarF32Range;
+  sparseScalarRange = sparseScalarF32Range;
+  vectorRange = vectorF32Range;
+  sparseVectorRange = sparseVectorF32Range;
+  sparseMatrixRange = sparseMatrixF32Range;
 
   
   absoluteErrorInterval = this.absoluteErrorIntervalImpl.bind(this);
@@ -4686,7 +4779,7 @@ class F32Traits extends FPTraits {
   unpack2x16floatIntervalImpl(n) {
     assert(
       n >= kValue.u32.min && n <= kValue.u32.max,
-      'unpack2x16floatInterval only accepts values on the bounds of u32'
+      'unpack2x16floatInterval only accepts valid u32 values'
     );
     this.unpackDataU32[0] = n;
     if (this.unpackDataF16.some((f) => !isFiniteF16(f))) {
@@ -4710,7 +4803,7 @@ class F32Traits extends FPTraits {
   unpack2x16snormIntervalImpl(n) {
     assert(
       n >= kValue.u32.min && n <= kValue.u32.max,
-      'unpack2x16snormInterval only accepts values on the bounds of u32'
+      'unpack2x16snormInterval only accepts valid u32 values'
     );
     const op = (n) => {
       return this.ulpInterval(Math.max(n / 32767, -1), 3);
@@ -4726,7 +4819,7 @@ class F32Traits extends FPTraits {
   unpack2x16unormIntervalImpl(n) {
     assert(
       n >= kValue.u32.min && n <= kValue.u32.max,
-      'unpack2x16unormInterval only accepts values on the bounds of u32'
+      'unpack2x16unormInterval only accepts valid u32 values'
     );
     const op = (n) => {
       return this.ulpInterval(n / 65535, 3);
@@ -4742,7 +4835,7 @@ class F32Traits extends FPTraits {
   unpack4x8snormIntervalImpl(n) {
     assert(
       n >= kValue.u32.min && n <= kValue.u32.max,
-      'unpack4x8snormInterval only accepts values on the bounds of u32'
+      'unpack4x8snormInterval only accepts valid u32 values'
     );
     const op = (n) => {
       return this.ulpInterval(Math.max(n / 127, -1), 3);
@@ -4762,7 +4855,7 @@ class F32Traits extends FPTraits {
   unpack4x8unormIntervalImpl(n) {
     assert(
       n >= kValue.u32.min && n <= kValue.u32.max,
-      'unpack4x8unormInterval only accepts values on the bounds of u32'
+      'unpack4x8unormInterval only accepts valid u32 values'
     );
     const op = (n) => {
       return this.ulpInterval(n / 255, 3);
@@ -4836,6 +4929,7 @@ class FPAbstractTraits extends FPTraits {
         sixth: kValue.f64.negative.pi.sixth
       }
     },
+    bias: 1023,
     unboundedInterval: kAbstractUnboundedInterval,
     zeroInterval: kAbstractZeroInterval,
     
@@ -4850,6 +4944,8 @@ class FPAbstractTraits extends FPTraits {
       kValue.f64.positive.subnormal.min,
       kValue.f64.positive.max
     ),
+    negOneToOneInterval: new FPInterval('abstract', -1, 1),
+
     zeroVector: {
       2: [kAbstractZeroInterval, kAbstractZeroInterval],
       3: [kAbstractZeroInterval, kAbstractZeroInterval, kAbstractZeroInterval],
@@ -4992,14 +5088,17 @@ class FPAbstractTraits extends FPTraits {
     unreachable(`'FPAbstractTraits.oneULP should never be called`);
   };
   scalarBuilder = abstractFloat;
+  scalarRange = scalarF64Range;
+  sparseScalarRange = sparseScalarF64Range;
+  vectorRange = vectorF64Range;
+  sparseVectorRange = sparseVectorF64Range;
+  sparseMatrixRange = sparseMatrixF64Range;
 
   
-  absoluteErrorInterval = this.unboundedAbsoluteErrorInterval.bind(this);
+  absoluteErrorInterval = this.unimplementedAbsoluteErrorInterval.bind(this); 
   correctlyRoundedInterval = this.correctlyRoundedIntervalImpl.bind(this);
   correctlyRoundedMatrix = this.correctlyRoundedMatrixImpl.bind(this);
-  ulpInterval = (n, numULP) => {
-    return this.toInterval(kF32Traits.ulpInterval(n, numULP));
-  };
+  ulpInterval = this.unimplementedUlpInterval.bind(this); 
 
   
   absInterval = this.absIntervalImpl.bind(this);
@@ -5023,40 +5122,38 @@ class FPAbstractTraits extends FPTraits {
     'atan2Interval'
   );
   atanhInterval = this.unimplementedScalarToInterval.bind(this, 'atanhInterval');
-  ceilInterval = this.unimplementedScalarToInterval.bind(this, 'ceilInterval');
+  ceilInterval = this.ceilIntervalImpl.bind(this);
   clampMedianInterval = this.clampMedianIntervalImpl.bind(this);
   clampMinMaxInterval = this.clampMinMaxIntervalImpl.bind(this);
   clampIntervals = [this.clampMedianInterval, this.clampMinMaxInterval];
   cosInterval = this.unimplementedScalarToInterval.bind(this, 'cosInterval');
   coshInterval = this.unimplementedScalarToInterval.bind(this, 'coshInterval');
-  crossInterval = this.crossIntervalImpl.bind(this);
-  degreesInterval = this.degreesIntervalImpl.bind(this);
+  crossInterval = this.unimplementedVectorPairToVector.bind(this, 'crossInterval');
+  degreesInterval = this.unimplementedScalarToInterval.bind(
+    this,
+    'degreesInterval'
+  );
   determinantInterval = this.unimplementedMatrixToInterval.bind(
     this,
-    'determinantInterval'
+    'determinant'
   );
   distanceInterval = this.unimplementedDistance.bind(this);
-  divisionInterval = (
-  x,
-  y) =>
-  {
-    return this.toInterval(kF32Traits.divisionInterval(x, y));
-  };
+  divisionInterval = this.unimplementedScalarPairToInterval.bind(
+    this,
+    'divisionInterval'
+  );
   dotInterval = this.unimplementedVectorPairToInterval.bind(this, 'dotInterval');
   expInterval = this.unimplementedScalarToInterval.bind(this, 'expInterval');
   exp2Interval = this.unimplementedScalarToInterval.bind(this, 'exp2Interval');
   faceForwardIntervals = this.unimplementedFaceForward.bind(this);
   floorInterval = this.floorIntervalImpl.bind(this);
-  fmaInterval = this.fmaIntervalImpl.bind(this);
-  fractInterval = this.unimplementedScalarToInterval.bind(this, 'fractInterval');
+  fmaInterval = this.unimplementedScalarTripleToInterval.bind(this, 'fmaInterval');
+  fractInterval = this.fractIntervalImpl.bind(this);
   inverseSqrtInterval = this.unimplementedScalarToInterval.bind(
     this,
     'inverseSqrtInterval'
   );
-  ldexpInterval = this.unimplementedScalarPairToInterval.bind(
-    this,
-    'ldexpInterval'
-  );
+  ldexpInterval = this.ldexpIntervalImpl.bind(this);
   lengthInterval = this.unimplementedLength.bind(this);
   logInterval = this.unimplementedScalarToInterval.bind(this, 'logInterval');
   log2Interval = this.unimplementedScalarToInterval.bind(this, 'log2Interval');
@@ -5077,14 +5174,10 @@ class FPAbstractTraits extends FPTraits {
     this,
     'multiplicationMatrixMatrixInterval'
   );
-  multiplicationMatrixScalarInterval = this.unimplementedMatrixScalarToMatrix.bind(
-    this,
-    'multiplicationMatrixScalarInterval'
-  );
-  multiplicationScalarMatrixInterval = this.unimplementedScalarMatrixToMatrix.bind(
-    this,
-    'multiplicationScalarMatrixInterval'
-  );
+  multiplicationMatrixScalarInterval =
+  this.multiplicationMatrixScalarIntervalImpl.bind(this);
+  multiplicationScalarMatrixInterval =
+  this.multiplicationScalarMatrixIntervalImpl.bind(this);
   multiplicationMatrixVectorInterval = this.unimplementedMatrixVectorToVector.bind(
     this,
     'multiplicationMatrixVectorInterval'
@@ -5099,16 +5192,17 @@ class FPAbstractTraits extends FPTraits {
     'normalizeInterval'
   );
   powInterval = this.unimplementedScalarPairToInterval.bind(this, 'powInterval');
-  radiansInterval = this.radiansIntervalImpl.bind(this);
+  radiansInterval = this.unimplementedScalarToInterval.bind(this, 'radiansImpl');
   reflectInterval = this.unimplementedVectorPairToVector.bind(
     this,
     'reflectInterval'
   );
   refractInterval = this.unimplementedRefract.bind(this);
-  remainderInterval = (x, y) => {
-    return this.toInterval(kF32Traits.remainderInterval(x, y));
-  };
-  roundInterval = this.unimplementedScalarToInterval.bind(this, 'roundInterval');
+  remainderInterval = this.unimplementedScalarPairToInterval.bind(
+    this,
+    'remainderInterval'
+  );
+  roundInterval = this.roundIntervalImpl.bind(this);
   saturateInterval = this.saturateIntervalImpl.bind(this);
   signInterval = this.signIntervalImpl.bind(this);
   sinInterval = this.unimplementedScalarToInterval.bind(this, 'sinInterval');
@@ -5118,7 +5212,7 @@ class FPAbstractTraits extends FPTraits {
     'smoothStepInterval'
   );
   sqrtInterval = this.unimplementedScalarToInterval.bind(this, 'sqrtInterval');
-  stepInterval = this.unimplementedScalarPairToInterval.bind(this, 'stepInterval');
+  stepInterval = this.stepIntervalImpl.bind(this);
   subtractionInterval = this.subtractionIntervalImpl.bind(this);
   subtractionMatrixMatrixInterval =
   this.subtractionMatrixMatrixIntervalImpl.bind(this);
@@ -5179,6 +5273,7 @@ class F16Traits extends FPTraits {
         sixth: kValue.f16.negative.pi.sixth
       }
     },
+    bias: 15,
     unboundedInterval: kF16UnboundedInterval,
     zeroInterval: kF16ZeroInterval,
     
@@ -5193,6 +5288,8 @@ class F16Traits extends FPTraits {
       kValue.f16.positive.subnormal.min,
       kValue.f16.positive.max
     ),
+    negOneToOneInterval: new FPInterval('f16', -1, 1),
+
     zeroVector: {
       2: [kF16ZeroInterval, kF16ZeroInterval],
       3: [kF16ZeroInterval, kF16ZeroInterval, kF16ZeroInterval],
@@ -5324,6 +5421,11 @@ class F16Traits extends FPTraits {
   flushSubnormal = flushSubnormalNumberF16;
   oneULP = oneULPF16;
   scalarBuilder = f16;
+  scalarRange = scalarF16Range;
+  sparseScalarRange = sparseScalarF16Range;
+  vectorRange = vectorF16Range;
+  sparseVectorRange = sparseVectorF16Range;
+  sparseMatrixRange = sparseMatrixF16Range;
 
   
   absoluteErrorInterval = this.absoluteErrorIntervalImpl.bind(this);
@@ -5437,5 +5539,6 @@ export function isRepresentable(value, type) {
     const constants = fpTraitsFor(type).constants();
     return value >= constants.negative.min && value <= constants.positive.max;
   }
+
   assert(false, `isRepresentable() is not yet implemented for type ${type}`);
 }

@@ -553,13 +553,6 @@ Test that the depth stencil read only state in render passes or bundles is compa
           const depthStencilInfo = kTextureFormatInfo[p.format];
           
           
-          if (depthStencilInfo.depth && depthStencilInfo.stencil) {
-            if (p.depthReadOnly !== p.stencilReadOnly) {
-              return false;
-            }
-          }
-          
-          
           if (!depthStencilInfo.depth && p.depthWriteEnabled) {
             return false;
           }

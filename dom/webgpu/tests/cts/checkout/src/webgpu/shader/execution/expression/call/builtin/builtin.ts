@@ -1,5 +1,6 @@
 import {
   abstractFloatShaderBuilder,
+  abstractIntShaderBuilder,
   basicExpressionBuilder,
   basicExpressionWithPredeclarationBuilder,
   ShaderBuilder,
@@ -11,8 +12,13 @@ export function builtin(name: string): ShaderBuilder {
 }
 
 
-export function abstractBuiltin(name: string): ShaderBuilder {
+export function abstractFloatBuiltin(name: string): ShaderBuilder {
   return abstractFloatShaderBuilder(values => `${name}(${values.join(', ')})`);
+}
+
+
+export function abstractIntBuiltin(name: string): ShaderBuilder {
+  return abstractIntShaderBuilder(values => `${name}(${values.join(', ')})`);
 }
 
 

@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../../shader/validation/parse/const_assert.spec.js';
+import { wrapTestGroupForWorker } from '../../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

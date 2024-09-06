@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../shader/execution/shadow.spec.js';
+import { wrapTestGroupForWorker } from '../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

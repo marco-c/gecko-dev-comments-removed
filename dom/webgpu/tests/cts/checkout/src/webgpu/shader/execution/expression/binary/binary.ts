@@ -3,6 +3,7 @@ import {
   basicExpressionBuilder,
   compoundAssignmentBuilder,
   abstractFloatShaderBuilder,
+  abstractIntShaderBuilder,
 } from '../expression.js';
 
 
@@ -16,6 +17,11 @@ export function compoundBinary(op: string): ShaderBuilder {
 }
 
 
-export function abstractBinary(op: string): ShaderBuilder {
+export function abstractFloatBinary(op: string): ShaderBuilder {
   return abstractFloatShaderBuilder(values => `(${values.map(v => `(${v})`).join(op)})`);
+}
+
+
+export function abstractIntBinary(op: string): ShaderBuilder {
+  return abstractIntShaderBuilder(values => `(${values.map(v => `(${v})`).join(op)})`);
 }

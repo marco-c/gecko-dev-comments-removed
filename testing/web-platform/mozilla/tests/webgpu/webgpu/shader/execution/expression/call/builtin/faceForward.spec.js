@@ -3,140 +3,66 @@
 export const description = `
 Execution tests for the 'faceForward' builtin function
 
-T is vecN<AbstractFloat>, vecN<f32>, or vecN<f16>
+T is vecN<Type.abstractFloat>, vecN<f32>, or vecN<f16>
 @const fn faceForward(e1: T ,e2: T ,e3: T ) -> T
 Returns e1 if dot(e2,e3) is negative, and -e1 otherwise.
 `;import { makeTestGroup } from '../../../../../../common/framework/test_group.js';
-
 import { GPUTest } from '../../../../../gpu_test.js';
-import { anyOf } from '../../../../../util/compare.js';
-import { toVector, TypeF32, TypeF16, TypeVec } from '../../../../../util/conversion.js';
-import { FP } from '../../../../../util/floating_point.js';
-import {
-  cartesianProduct,
-  sparseVectorF32Range,
-  sparseVectorF16Range } from
-'../../../../../util/math.js';
-import { makeCaseCache } from '../../case_cache.js';
-import { allInputSources, run } from '../../expression.js';
+import { Type } from '../../../../../util/conversion.js';
+import { allInputSources, onlyConstInputSource, run } from '../../expression.js';
 
-import { builtin } from './builtin.js';
+import { abstractFloatBuiltin, builtin } from './builtin.js';
+import { d } from './faceForward.cache.js';
 
 export const g = makeTestGroup(GPUTest);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function makeCase(
-kind,
-x,
-y,
-z,
-check)
-{
-  const fp = FP[kind];
-  x = x.map(fp.quantize);
-  y = y.map(fp.quantize);
-  z = z.map(fp.quantize);
-
-  const results = FP[kind].faceForwardIntervals(x, y, z);
-  if (check === 'finite' && results.some((r) => r === undefined)) {
-    return undefined;
-  }
-
-  
-  
-  
-  const define_results = results.filter((r) => r !== undefined);
-
-  return {
-    input: [
-    toVector(x, fp.scalarBuilder),
-    toVector(y, fp.scalarBuilder),
-    toVector(z, fp.scalarBuilder)],
-
-    expected: anyOf(...define_results)
-  };
-}
-
-
-
-
-
-
-
-
-
-function generateCases(
-kind,
-xs,
-ys,
-zs,
-check)
-{
-  
-  return cartesianProduct(xs, ys, zs).
-  map((e) => makeCase(kind, e[0], e[1], e[2], check)).
-  filter((c) => c !== undefined);
-}
-
-
-const f32_vec_cases = [2, 3, 4].
-flatMap((n) =>
-[true, false].map((nonConst) => ({
-  [`f32_vec${n}_${nonConst ? 'non_const' : 'const'}`]: () => {
-    return generateCases(
-      'f32',
-      sparseVectorF32Range(n),
-      sparseVectorF32Range(n),
-      sparseVectorF32Range(n),
-      nonConst ? 'unfiltered' : 'finite'
-    );
-  }
-}))
-).
-reduce((a, b) => ({ ...a, ...b }), {});
-
-
-const f16_vec_cases = [2, 3, 4].
-flatMap((n) =>
-[true, false].map((nonConst) => ({
-  [`f16_vec${n}_${nonConst ? 'non_const' : 'const'}`]: () => {
-    return generateCases(
-      'f16',
-      sparseVectorF16Range(n),
-      sparseVectorF16Range(n),
-      sparseVectorF16Range(n),
-      nonConst ? 'unfiltered' : 'finite'
-    );
-  }
-}))
-).
-reduce((a, b) => ({ ...a, ...b }), {});
-
-export const d = makeCaseCache('faceForward', {
-  ...f32_vec_cases,
-  ...f16_vec_cases
+g.test('abstract_float_vec2').
+specURL('https://www.w3.org/TR/WGSL/#numeric-builtin-functions').
+desc(`abstract float tests using vec2s`).
+params((u) => u.combine('inputSource', onlyConstInputSource)).
+fn(async (t) => {
+  const cases = await d.get('abstract_vec2_const');
+  await run(
+    t,
+    abstractFloatBuiltin('faceForward'),
+    [Type.vec2af, Type.vec2af, Type.vec2af],
+    Type.vec2af,
+    t.params,
+    cases
+  );
 });
 
-g.test('abstract_float').
-specURL('https://www.w3.org/TR/WGSL/#float-builtin-functions').
-desc(`abstract float tests`).
-params((u) => u.combine('inputSource', allInputSources).combine('vectorize', [2, 3, 4])).
-unimplemented();
+g.test('abstract_float_vec3').
+specURL('https://www.w3.org/TR/WGSL/#numeric-builtin-functions').
+desc(`abstract float tests using vec3s`).
+params((u) => u.combine('inputSource', onlyConstInputSource)).
+fn(async (t) => {
+  const cases = await d.get('abstract_vec3_const');
+  await run(
+    t,
+    abstractFloatBuiltin('faceForward'),
+    [Type.vec3af, Type.vec3af, Type.vec3af],
+    Type.vec3af,
+    t.params,
+    cases
+  );
+});
+
+g.test('abstract_float_vec4').
+specURL('https://www.w3.org/TR/WGSL/#numeric-builtin-functions').
+desc(`abstract float tests using vec4s`).
+params((u) => u.combine('inputSource', onlyConstInputSource)).
+fn(async (t) => {
+  const cases = await d.get('abstract_vec4_const');
+  await run(
+    t,
+    abstractFloatBuiltin('faceForward'),
+    [Type.vec4af, Type.vec4af, Type.vec4af],
+    Type.vec4af,
+    t.params,
+    cases
+  );
+});
 
 g.test('f32_vec2').
 specURL('https://www.w3.org/TR/WGSL/#numeric-builtin-functions').
@@ -149,8 +75,8 @@ fn(async (t) => {
   await run(
     t,
     builtin('faceForward'),
-    [TypeVec(2, TypeF32), TypeVec(2, TypeF32), TypeVec(2, TypeF32)],
-    TypeVec(2, TypeF32),
+    [Type.vec2f, Type.vec2f, Type.vec2f],
+    Type.vec2f,
     t.params,
     cases
   );
@@ -167,8 +93,8 @@ fn(async (t) => {
   await run(
     t,
     builtin('faceForward'),
-    [TypeVec(3, TypeF32), TypeVec(3, TypeF32), TypeVec(3, TypeF32)],
-    TypeVec(3, TypeF32),
+    [Type.vec3f, Type.vec3f, Type.vec3f],
+    Type.vec3f,
     t.params,
     cases
   );
@@ -185,8 +111,8 @@ fn(async (t) => {
   await run(
     t,
     builtin('faceForward'),
-    [TypeVec(4, TypeF32), TypeVec(4, TypeF32), TypeVec(4, TypeF32)],
-    TypeVec(4, TypeF32),
+    [Type.vec4f, Type.vec4f, Type.vec4f],
+    Type.vec4f,
     t.params,
     cases
   );
@@ -206,8 +132,8 @@ fn(async (t) => {
   await run(
     t,
     builtin('faceForward'),
-    [TypeVec(2, TypeF16), TypeVec(2, TypeF16), TypeVec(2, TypeF16)],
-    TypeVec(2, TypeF16),
+    [Type.vec2h, Type.vec2h, Type.vec2h],
+    Type.vec2h,
     t.params,
     cases
   );
@@ -227,8 +153,8 @@ fn(async (t) => {
   await run(
     t,
     builtin('faceForward'),
-    [TypeVec(3, TypeF16), TypeVec(3, TypeF16), TypeVec(3, TypeF16)],
-    TypeVec(3, TypeF16),
+    [Type.vec3h, Type.vec3h, Type.vec3h],
+    Type.vec3h,
     t.params,
     cases
   );
@@ -248,8 +174,8 @@ fn(async (t) => {
   await run(
     t,
     builtin('faceForward'),
-    [TypeVec(4, TypeF16), TypeVec(4, TypeF16), TypeVec(4, TypeF16)],
-    TypeVec(4, TypeF16),
+    [Type.vec4h, Type.vec4h, Type.vec4h],
+    Type.vec4h,
     t.params,
     cases
   );

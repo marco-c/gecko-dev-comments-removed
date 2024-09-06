@@ -1,90 +1,127 @@
 
 
 import { assert, unreachable } from '../../../../../../common/util/util.js';import { kValue } from '../../../../../util/constants.js';import {
+  Type,
 
-  TypeF16,
-
-  elementType,
-  elementsOf,
-  isAbstractType } from
+  elementTypeOf,
+  isAbstractType,
+  scalarElementsOf,
+  scalarTypeOf } from
 '../../../../../util/conversion.js';
-import { fullF16Range, fullF32Range, fullF64Range, linearRange } from '../../../../../util/math.js';
+import {
+  scalarF16Range,
+  scalarF32Range,
+  scalarF64Range,
+  linearRange,
+  linearRangeBigInt } from
+'../../../../../util/math.js';
 
 
 
-export const kMinusTwoToTwo = linearRange(-2, 2, 10);
-
-
-export const kMinus3PiTo3Pi = [
--3 * Math.PI,
--2.999 * Math.PI,
-
--2.501 * Math.PI,
--2.5 * Math.PI,
--2.499 * Math.PI,
-
--2.001 * Math.PI,
--2.0 * Math.PI,
--1.999 * Math.PI,
-
--1.501 * Math.PI,
--1.5 * Math.PI,
--1.499 * Math.PI,
-
--1.001 * Math.PI,
--1.0 * Math.PI,
--0.999 * Math.PI,
-
--0.501 * Math.PI,
--0.5 * Math.PI,
--0.499 * Math.PI,
-
--0.001,
-0,
-0.001,
-
-0.499 * Math.PI,
-0.5 * Math.PI,
-0.501 * Math.PI,
-
-0.999 * Math.PI,
-1.0 * Math.PI,
-1.001 * Math.PI,
-
-1.499 * Math.PI,
-1.5 * Math.PI,
-1.501 * Math.PI,
-
-1.999 * Math.PI,
-2.0 * Math.PI,
-2.001 * Math.PI,
-
-2.499 * Math.PI,
-2.5 * Math.PI,
-2.501 * Math.PI,
-
-2.999 * Math.PI,
-3 * Math.PI];
+export function rangeForType(
+number_range,
+bigint_range)
+{
+  return (type) => {
+    switch (scalarTypeOf(type).kind) {
+      case 'abstract-float':
+      case 'f32':
+      case 'f16':
+        return number_range;
+      case 'abstract-int':
+        return bigint_range;
+    }
+    unreachable(`Received unexpected type '${type}'`);
+  };
+}
 
 
 
+export const minusTwoToTwoRangeForType = rangeForType(
+  linearRange(-2, 2, 10),
+  [-2n, -1n, 0n, 1n, 2n]
+);
 
 
-export const kSparseMinus3PiTo3Pi = [
--3 * Math.PI,
--2.5 * Math.PI,
--2.0 * Math.PI,
--1.5 * Math.PI,
--1.0 * Math.PI,
--0.5 * Math.PI,
-0,
-0.5 * Math.PI,
-Math.PI,
-1.5 * Math.PI,
-2.0 * Math.PI,
-2.5 * Math.PI,
-3 * Math.PI];
+export const minusThreePiToThreePiRangeForType = rangeForType(
+  [
+  -3 * Math.PI,
+  -2.999 * Math.PI,
 
+  -2.501 * Math.PI,
+  -2.5 * Math.PI,
+  -2.499 * Math.PI,
+
+  -2.001 * Math.PI,
+  -2.0 * Math.PI,
+  -1.999 * Math.PI,
+
+  -1.501 * Math.PI,
+  -1.5 * Math.PI,
+  -1.499 * Math.PI,
+
+  -1.001 * Math.PI,
+  -1.0 * Math.PI,
+  -0.999 * Math.PI,
+
+  -0.501 * Math.PI,
+  -0.5 * Math.PI,
+  -0.499 * Math.PI,
+
+  -0.001,
+  0,
+  0.001,
+
+  0.499 * Math.PI,
+  0.5 * Math.PI,
+  0.501 * Math.PI,
+
+  0.999 * Math.PI,
+  1.0 * Math.PI,
+  1.001 * Math.PI,
+
+  1.499 * Math.PI,
+  1.5 * Math.PI,
+  1.501 * Math.PI,
+
+  1.999 * Math.PI,
+  2.0 * Math.PI,
+  2.001 * Math.PI,
+
+  2.499 * Math.PI,
+  2.5 * Math.PI,
+  2.501 * Math.PI,
+
+  2.999 * Math.PI,
+  3 * Math.PI],
+
+  [-2n, -1n, 0n, 1n, 2n]
+);
+
+
+
+
+
+
+
+export const sparseMinusThreePiToThreePiRangeForType = rangeForType(
+  [
+  -3 * Math.PI,
+  -2.5 * Math.PI,
+  -2.0 * Math.PI,
+  -1.5 * Math.PI,
+  -1.0 * Math.PI,
+  -0.5 * Math.PI,
+  0,
+  0.5 * Math.PI,
+  Math.PI,
+  1.5 * Math.PI,
+  2.0 * Math.PI,
+  2.5 * Math.PI,
+  3 * Math.PI],
+
+  [-2n, -1n, 0n, 1n, 2n]
+);
 
 
 export const kConstantAndOverrideStages = ['constant', 'override'];
@@ -94,8 +131,9 @@ export const kConstantAndOverrideStages = ['constant', 'override'];
 
 
 
+
 export function stageSupportsType(stage, type) {
-  if (stage === 'override' && isAbstractType(elementType(type))) {
+  if (stage === 'override' && isAbstractType(elementTypeOf(type))) {
     
     return false;
   }
@@ -111,22 +149,25 @@ export function stageSupportsType(stage, type) {
 
 
 
+
 export function validateConstOrOverrideBuiltinEval(
 t,
 builtin,
 expectedResult,
 args,
-stage)
+stage,
+returnType)
 {
-  const elTys = args.map((arg) => elementType(arg.type));
-  const enables = elTys.some((ty) => ty === TypeF16) ? 'enable f16;' : '';
+  const elTys = args.map((arg) => elementTypeOf(arg.type));
+  const enables = elTys.some((ty) => ty === Type.f16) ? 'enable f16;' : '';
+  const optionalVarType = returnType ? `: ${returnType.toString()}` : '';
 
   switch (stage) {
     case 'constant':{
         t.expectCompileResult(
           expectedResult,
           `${enables}
-const v = ${builtin}(${args.map((arg) => arg.wgsl()).join(', ')});`
+const v ${optionalVarType} = ${builtin}(${args.map((arg) => arg.wgsl()).join(', ')});`
         );
         break;
       }
@@ -138,7 +179,7 @@ const v = ${builtin}(${args.map((arg) => arg.wgsl()).join(', ')});`
         let numOverrides = 0;
         for (const arg of args) {
           const argOverrides = [];
-          for (const el of elementsOf(arg)) {
+          for (const el of scalarElementsOf(arg)) {
             const name = `o${numOverrides++}`;
             overrideDecls.push(`override ${name} : ${el.type};`);
             argOverrides.push(name);
@@ -150,7 +191,7 @@ const v = ${builtin}(${args.map((arg) => arg.wgsl()).join(', ')});`
           expectedResult,
           code: `${enables}
 ${overrideDecls.join('\n')}
-var<private> v = ${builtin}(${callArgs.join(', ')});`,
+var<private> v ${optionalVarType} = ${builtin}(${callArgs.join(', ')});`,
           constants,
           reference: ['v']
         });
@@ -160,23 +201,91 @@ var<private> v = ${builtin}(${callArgs.join(', ')});`,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+export function validateConstOrOverrideBinaryOpEval(
+t,
+binaryOp,
+expectedResult,
+leftStage,
+left,
+rightStage,
+right)
+{
+  const allArgs = [left, right];
+  const elTys = allArgs.map((arg) => elementTypeOf(arg.type));
+  const enables = elTys.some((ty) => ty === Type.f16) ? 'enable f16;' : '';
+
+  const codeLines = [enables];
+  const constants = {};
+  let numOverrides = 0;
+
+  function addOperand(name, stage, value) {
+    switch (stage) {
+      case 'runtime':
+        assert(!isAbstractType(value.type));
+        codeLines.push(`var<private> ${name} = ${value.wgsl()};`);
+        return name;
+
+      case 'constant':
+        codeLines.push(`const ${name} = ${value.wgsl()};`);
+        return name;
+
+      case 'override':{
+          assert(!isAbstractType(value.type));
+          const argOverrides = [];
+          for (const el of scalarElementsOf(value)) {
+            const elName = `o${numOverrides++}`;
+            codeLines.push(`override ${elName} : ${el.type};`);
+            constants[elName] = Number(el.value);
+            argOverrides.push(elName);
+          }
+          return `${value.type}(${argOverrides.join(', ')})`;
+        }
+    }
+  }
+
+  const leftOperand = addOperand('left', leftStage, left);
+  const rightOperand = addOperand('right', rightStage, right);
+
+  if (leftStage === 'override' || rightStage === 'override') {
+    t.expectPipelineResult({
+      expectedResult,
+      code: codeLines.join('\n'),
+      constants,
+      reference: [`${leftOperand} ${binaryOp} ${rightOperand}`]
+    });
+  } else {
+    codeLines.push(`fn f() { _ = ${leftOperand} ${binaryOp} ${rightOperand}; }`);
+    t.expectCompileResult(expectedResult, codeLines.join('\n'));
+  }
+}
+
 export function fullRangeForType(type, count) {
   if (count === undefined) {
     count = 25;
   }
-  switch (elementType(type)?.kind) {
+  switch (scalarTypeOf(type)?.kind) {
     case 'abstract-float':
-      return fullF64Range({
+      return scalarF64Range({
         pos_sub: Math.ceil(count * 1 / 5),
         pos_norm: Math.ceil(count * 4 / 5)
       });
     case 'f32':
-      return fullF32Range({
+      return scalarF32Range({
         pos_sub: Math.ceil(count * 1 / 5),
         pos_norm: Math.ceil(count * 4 / 5)
       });
     case 'f16':
-      return fullF16Range({
+      return scalarF16Range({
         pos_sub: Math.ceil(count * 1 / 5),
         pos_norm: Math.ceil(count * 4 / 5)
       });
@@ -186,6 +295,9 @@ export function fullRangeForType(type, count) {
       );
     case 'u32':
       return linearRange(0, kValue.u32.max, count).map((f) => Math.floor(f));
+    case 'abstract-int':
+      
+      return linearRangeBigInt(kValue.i64.negative.min, kValue.i64.positive.max, count);
   }
   unreachable();
 }

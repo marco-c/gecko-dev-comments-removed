@@ -417,6 +417,25 @@ export function oneULPF32(target, mode = 'flush') {
 
 
 
+export function hashU32(...values) {
+  let n = 0x3504_f333;
+  for (const v of values) {
+    n = v + (n << 7) + (n >>> 1);
+    n = n * 0x29493 & 0xffff_ffff;
+  }
+  n ^= n >>> 8;
+  n += n << 15;
+  n = n & 0xffff_ffff;
+  if (n < 0) {
+    n = ~n * 2 + 1;
+  }
+  return n;
+}
+
+
+
+
+
 
 
 
@@ -894,9 +913,44 @@ export function biasedRange(a, b, num_steps) {
 
 
 
+export function biasedRangeBigInt(a, b, num_steps) {
+  if (num_steps <= 0) {
+    return [];
+  }
+
+  
+  if (num_steps === 1) {
+    return [a];
+  }
+
+  const c = 2;
+  const scaling = 1000;
+  const scaled_num_steps = num_steps * scaling;
+
+  return Array.from(Array(num_steps).keys()).map((i) => {
+    const biased_i = Math.pow(i / (num_steps - 1), c); 
+    const scaled_i = Math.trunc((scaled_num_steps - 1) * biased_i); 
+    return lerpBigInt(a, b, scaled_i, scaled_num_steps);
+  });
+}
 
 
-export function fullF32Range(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function scalarF32Range(
 counts =
 
 
@@ -943,8 +997,8 @@ counts =
 
 
 
-export function sourceFilteredF32Range(source, low, high) {
-  return fullF32Range().filter((x) => source !== 'const' || x >= low && x <= high);
+export function filteredScalarF32Range(source, low, high) {
+  return scalarF32Range().filter((x) => source !== 'const' || x >= low && x <= high);
 }
 
 
@@ -963,7 +1017,7 @@ export function sourceFilteredF32Range(source, low, high) {
 
 
 
-export function fullF16Range(
+export function scalarF16Range(
 counts =
 
 
@@ -1014,7 +1068,7 @@ counts =
 
 
 
-export function fullF64Range(
+export function scalarF64Range(
 counts =
 
 
@@ -1065,7 +1119,7 @@ counts =
 
 
 
-export function filteredF64Range(
+export function limitedScalarF64Range(
 begin,
 end,
 counts = {
@@ -1136,27 +1190,18 @@ export function sparseI32Range() {
 const kVectorI32Values = {
   2: kInterestingI32Values.flatMap((f) => [
   [f, 1],
-  [1, f],
-  [f, -1],
   [-1, f]]
   ),
   3: kInterestingI32Values.flatMap((f) => [
-  [f, 1, 2],
-  [1, f, 2],
-  [1, 2, f],
-  [f, -1, -2],
-  [-1, f, -2],
-  [-1, -2, f]]
+  [f, 1, -2],
+  [-1, f, 2],
+  [1, -2, f]]
   ),
   4: kInterestingI32Values.flatMap((f) => [
-  [f, 1, 2, 3],
-  [1, f, 2, 3],
-  [1, 2, f, 3],
-  [1, 2, 3, f],
-  [f, -1, -2, -3],
-  [-1, f, -2, -3],
-  [-1, -2, f, -3],
-  [-1, -2, -3, f]]
+  [f, -1, 2, 3],
+  [1, f, -2, 3],
+  [1, 2, f, -3],
+  [-1, 2, -3, f]]
   )
 };
 
@@ -1176,6 +1221,38 @@ const kVectorI32Values = {
 export function vectorI32Range(dim) {
   assert(dim === 2 || dim === 3 || dim === 4, 'vectorI32Range only accepts dimensions 2, 3, and 4');
   return kVectorI32Values[dim];
+}
+
+const kSparseVectorI32Values = {
+  2: sparseI32Range().map((i, idx) => [idx % 2 === 0 ? i : idx, idx % 2 === 1 ? i : -idx]),
+  3: sparseI32Range().map((i, idx) => [
+  idx % 3 === 0 ? i : idx,
+  idx % 3 === 1 ? i : -idx,
+  idx % 3 === 2 ? i : idx]
+  ),
+  4: sparseI32Range().map((i, idx) => [
+  idx % 4 === 0 ? i : idx,
+  idx % 4 === 1 ? i : -idx,
+  idx % 4 === 2 ? i : idx,
+  idx % 4 === 3 ? i : -idx]
+  )
+};
+
+
+
+
+
+
+
+
+
+
+export function sparseVectorI32Range(dim) {
+  assert(
+    dim === 2 || dim === 3 || dim === 4,
+    'sparseVectorI32Range only accepts dimensions 2, 3, and 4'
+  );
+  return kSparseVectorI32Values[dim];
 }
 
 
@@ -1256,6 +1333,38 @@ export function vectorU32Range(dim) {
   return kVectorU32Values[dim];
 }
 
+const kSparseVectorU32Values = {
+  2: sparseU32Range().map((i, idx) => [idx % 2 === 0 ? i : idx, idx % 2 === 1 ? i : -idx]),
+  3: sparseU32Range().map((i, idx) => [
+  idx % 3 === 0 ? i : idx,
+  idx % 3 === 1 ? i : -idx,
+  idx % 3 === 2 ? i : idx]
+  ),
+  4: sparseU32Range().map((i, idx) => [
+  idx % 4 === 0 ? i : idx,
+  idx % 4 === 1 ? i : -idx,
+  idx % 4 === 2 ? i : idx,
+  idx % 4 === 3 ? i : -idx]
+  )
+};
+
+
+
+
+
+
+
+
+
+
+export function sparseVectorU32Range(dim) {
+  assert(
+    dim === 2 || dim === 3 || dim === 4,
+    'sparseVectorU32Range only accepts dimensions 2, 3, and 4'
+  );
+  return kSparseVectorU32Values[dim];
+}
+
 
 
 
@@ -1265,6 +1374,124 @@ export function vectorU32Range(dim) {
 
 export function fullU32Range(count = 50) {
   return [0, ...biasedRange(1, kValue.u32.max, count)].map(Math.trunc);
+}
+
+
+const kInterestingI64Values = [
+kValue.i64.negative.max,
+kValue.i64.negative.max / 2n,
+-256n,
+-10n,
+-1n,
+0n,
+1n,
+10n,
+256n,
+kValue.i64.positive.max / 2n,
+kValue.i64.positive.max];
+
+
+
+
+
+
+
+
+export function sparseI64Range() {
+  return kInterestingI64Values;
+}
+
+const kVectorI64Values = {
+  2: kInterestingI64Values.flatMap((f) => [
+  [f, 1n],
+  [-1n, f]]
+  ),
+  3: kInterestingI64Values.flatMap((f) => [
+  [f, 1n, -2n],
+  [-1n, f, 2n],
+  [1n, -2n, f]]
+  ),
+  4: kInterestingI64Values.flatMap((f) => [
+  [f, -1n, 2n, 3n],
+  [1n, f, -2n, 3n],
+  [1n, 2n, f, -3n],
+  [-1n, 2n, -3n, f]]
+  )
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function vectorI64Range(dim) {
+  assert(dim === 2 || dim === 3 || dim === 4, 'vectorI64Range only accepts dimensions 2, 3, and 4');
+  return kVectorI64Values[dim];
+}
+
+const kSparseVectorI64Values = {
+  2: sparseI64Range().map((i, idx) => [
+  idx % 2 === 0 ? i : BigInt(idx),
+  idx % 2 === 1 ? i : -BigInt(idx)]
+  ),
+  3: sparseI64Range().map((i, idx) => [
+  idx % 3 === 0 ? i : BigInt(idx),
+  idx % 3 === 1 ? i : -BigInt(idx),
+  idx % 3 === 2 ? i : BigInt(idx)]
+  ),
+  4: sparseI64Range().map((i, idx) => [
+  idx % 4 === 0 ? i : BigInt(idx),
+  idx % 4 === 1 ? i : -BigInt(idx),
+  idx % 4 === 2 ? i : BigInt(idx),
+  idx % 4 === 3 ? i : -BigInt(idx)]
+  )
+};
+
+
+
+
+
+
+
+
+
+
+export function sparseVectorI64Range(dim) {
+  assert(
+    dim === 2 || dim === 3 || dim === 4,
+    'sparseVectorI64Range only accepts dimensions 2, 3, and 4'
+  );
+  return kSparseVectorI64Values[dim];
+}
+
+
+
+
+
+
+
+
+
+export function fullI64Range(
+counts =
+
+
+{ positive: 50 })
+{
+  counts.negative = counts.negative === undefined ? counts.positive : counts.negative;
+  return [
+  ...biasedRangeBigInt(kValue.i64.negative.min, -1n, counts.negative),
+  0n,
+  ...biasedRangeBigInt(1n, kValue.i64.positive.max, counts.positive)];
+
 }
 
 
@@ -1299,34 +1526,25 @@ kValue.f32.positive.max];
 
 
 
-export function sparseF32Range() {
+export function sparseScalarF32Range() {
   return kInterestingF32Values;
 }
 
 const kVectorF32Values = {
-  2: sparseF32Range().flatMap((f) => [
+  2: kInterestingF32Values.flatMap((f) => [
   [f, 1.0],
-  [1.0, f],
-  [f, -1.0],
   [-1.0, f]]
   ),
-  3: sparseF32Range().flatMap((f) => [
-  [f, 1.0, 2.0],
-  [1.0, f, 2.0],
-  [1.0, 2.0, f],
-  [f, -1.0, -2.0],
-  [-1.0, f, -2.0],
-  [-1.0, -2.0, f]]
+  3: kInterestingF32Values.flatMap((f) => [
+  [f, 1.0, -2.0],
+  [-1.0, f, 2.0],
+  [1.0, -2.0, f]]
   ),
-  4: sparseF32Range().flatMap((f) => [
-  [f, 1.0, 2.0, 3.0],
-  [1.0, f, 2.0, 3.0],
-  [1.0, 2.0, f, 3.0],
-  [1.0, 2.0, 3.0, f],
-  [f, -1.0, -2.0, -3.0],
-  [-1.0, f, -2.0, -3.0],
-  [-1.0, -2.0, f, -3.0],
-  [-1.0, -2.0, -3.0, f]]
+  4: kInterestingF32Values.flatMap((f) => [
+  [f, -1.0, 2.0, 3.0],
+  [1.0, f, -2.0, 3.0],
+  [1.0, 2.0, f, -3.0],
+  [-1.0, 2.0, -3.0, f]]
   )
 };
 
@@ -1349,13 +1567,13 @@ export function vectorF32Range(dim) {
 }
 
 const kSparseVectorF32Values = {
-  2: sparseF32Range().map((f, idx) => [idx % 2 === 0 ? f : idx, idx % 2 === 1 ? f : -idx]),
-  3: sparseF32Range().map((f, idx) => [
+  2: sparseScalarF32Range().map((f, idx) => [idx % 2 === 0 ? f : idx, idx % 2 === 1 ? f : -idx]),
+  3: sparseScalarF32Range().map((f, idx) => [
   idx % 3 === 0 ? f : idx,
   idx % 3 === 1 ? f : -idx,
   idx % 3 === 2 ? f : idx]
   ),
-  4: sparseF32Range().map((f, idx) => [
+  4: sparseScalarF32Range().map((f, idx) => [
   idx % 4 === 0 ? f : idx,
   idx % 4 === 1 ? f : -idx,
   idx % 4 === 2 ? f : idx,
@@ -1535,34 +1753,25 @@ kValue.f16.positive.max];
 
 
 
-export function sparseF16Range() {
+export function sparseScalarF16Range() {
   return kInterestingF16Values;
 }
 
 const kVectorF16Values = {
-  2: sparseF16Range().flatMap((f) => [
+  2: kInterestingF16Values.flatMap((f) => [
   [f, 1.0],
-  [1.0, f],
-  [f, -1.0],
   [-1.0, f]]
   ),
-  3: sparseF16Range().flatMap((f) => [
-  [f, 1.0, 2.0],
-  [1.0, f, 2.0],
-  [1.0, 2.0, f],
-  [f, -1.0, -2.0],
-  [-1.0, f, -2.0],
-  [-1.0, -2.0, f]]
+  3: kInterestingF16Values.flatMap((f) => [
+  [f, 1.0, -2.0],
+  [-1.0, f, 2.0],
+  [1.0, -2.0, f]]
   ),
-  4: sparseF16Range().flatMap((f) => [
-  [f, 1.0, 2.0, 3.0],
-  [1.0, f, 2.0, 3.0],
-  [1.0, 2.0, f, 3.0],
-  [1.0, 2.0, 3.0, f],
-  [f, -1.0, -2.0, -3.0],
-  [-1.0, f, -2.0, -3.0],
-  [-1.0, -2.0, f, -3.0],
-  [-1.0, -2.0, -3.0, f]]
+  4: kInterestingF16Values.flatMap((f) => [
+  [f, -1.0, 2.0, 3.0],
+  [1.0, f, -2.0, 3.0],
+  [1.0, 2.0, f, -3.0],
+  [-1.0, 2.0, -3.0, f]]
   )
 };
 
@@ -1585,13 +1794,13 @@ export function vectorF16Range(dim) {
 }
 
 const kSparseVectorF16Values = {
-  2: sparseF16Range().map((f, idx) => [idx % 2 === 0 ? f : idx, idx % 2 === 1 ? f : -idx]),
-  3: sparseF16Range().map((f, idx) => [
+  2: sparseScalarF16Range().map((f, idx) => [idx % 2 === 0 ? f : idx, idx % 2 === 1 ? f : -idx]),
+  3: sparseScalarF16Range().map((f, idx) => [
   idx % 3 === 0 ? f : idx,
   idx % 3 === 1 ? f : -idx,
   idx % 3 === 2 ? f : idx]
   ),
-  4: sparseF16Range().map((f, idx) => [
+  4: sparseScalarF16Range().map((f, idx) => [
   idx % 4 === 0 ? f : idx,
   idx % 4 === 1 ? f : -idx,
   idx % 4 === 2 ? f : idx,
@@ -1771,34 +1980,25 @@ kValue.f64.positive.max];
 
 
 
-export function sparseF64Range() {
+export function sparseScalarF64Range() {
   return kInterestingF64Values;
 }
 
 const kVectorF64Values = {
-  2: sparseF64Range().flatMap((f) => [
+  2: kInterestingF64Values.flatMap((f) => [
   [f, 1.0],
-  [1.0, f],
-  [f, -1.0],
   [-1.0, f]]
   ),
-  3: sparseF64Range().flatMap((f) => [
-  [f, 1.0, 2.0],
-  [1.0, f, 2.0],
-  [1.0, 2.0, f],
-  [f, -1.0, -2.0],
-  [-1.0, f, -2.0],
-  [-1.0, -2.0, f]]
+  3: kInterestingF64Values.flatMap((f) => [
+  [f, 1.0, -2.0],
+  [-1.0, f, 2.0],
+  [1.0, -2.0, f]]
   ),
-  4: sparseF64Range().flatMap((f) => [
-  [f, 1.0, 2.0, 3.0],
-  [1.0, f, 2.0, 3.0],
-  [1.0, 2.0, f, 3.0],
-  [1.0, 2.0, 3.0, f],
-  [f, -1.0, -2.0, -3.0],
-  [-1.0, f, -2.0, -3.0],
-  [-1.0, -2.0, f, -3.0],
-  [-1.0, -2.0, -3.0, f]]
+  4: kInterestingF64Values.flatMap((f) => [
+  [f, -1.0, 2.0, 3.0],
+  [1.0, f, -2.0, 3.0],
+  [1.0, 2.0, f, -3.0],
+  [-1.0, 2.0, -3.0, f]]
   )
 };
 
@@ -1821,13 +2021,13 @@ export function vectorF64Range(dim) {
 }
 
 const kSparseVectorF64Values = {
-  2: sparseF64Range().map((f, idx) => [idx % 2 === 0 ? f : idx, idx % 2 === 1 ? f : -idx]),
-  3: sparseF64Range().map((f, idx) => [
+  2: sparseScalarF64Range().map((f, idx) => [idx % 2 === 0 ? f : idx, idx % 2 === 1 ? f : -idx]),
+  3: sparseScalarF64Range().map((f, idx) => [
   idx % 3 === 0 ? f : idx,
   idx % 3 === 1 ? f : -idx,
   idx % 3 === 2 ? f : idx]
   ),
-  4: sparseF64Range().map((f, idx) => [
+  4: sparseScalarF64Range().map((f, idx) => [
   idx % 4 === 0 ? f : idx,
   idx % 4 === 1 ? f : -idx,
   idx % 4 === 2 ? f : idx,
@@ -1963,16 +2163,16 @@ const kSparseMatrixF64Values = {
 
 
 
-export function sparseMatrixF64Range(c, r) {
+export function sparseMatrixF64Range(cols, rows) {
   assert(
-    c === 2 || c === 3 || c === 4,
+    cols === 2 || cols === 3 || cols === 4,
     'sparseMatrixF64Range only accepts column counts of 2, 3, and 4'
   );
   assert(
-    r === 2 || r === 3 || r === 4,
+    rows === 2 || rows === 3 || rows === 4,
     'sparseMatrixF64Range only accepts row counts of 2, 3, and 4'
   );
-  return kSparseMatrixF64Values[c][r];
+  return kSparseMatrixF64Values[cols][rows];
 }
 
 
@@ -2052,10 +2252,24 @@ export function quantizeToU32(num) {
 }
 
 
+
+
+export function quantizeToI64(num) {
+  if (num >= kValue.i64.positive.max) {
+    return kValue.i64.positive.max;
+  }
+  if (num <= kValue.i64.negative.min) {
+    return kValue.i64.negative.min;
+  }
+  return num;
+}
+
+
 export function isPowerOfTwo(n) {
   if (!Number.isInteger(n)) {
     return false;
   }
+  assert((n | 0) === n, 'isPowerOfTwo only supports 32-bit numbers');
   return n !== 0 && (n & n - 1) === 0;
 }
 
@@ -2244,4 +2458,33 @@ export function every2DArray(m, op) {
     `Unexpectedly received jagged array to map`
   );
   return m.every((col) => col.every((el) => op(el)));
+}
+
+
+
+
+export function subtractVectors(v1, v2) {
+  return v1.map((v, i) => v - v2[i]);
+}
+
+
+
+
+export function dotProduct(v1, v2) {
+  return v1.reduce((a, v, i) => a + v * v2[i], 0);
+}
+
+
+export function absBigInt(v) {
+  return v < 0n ? -v : v;
+}
+
+
+export function maxBigInt(...vals) {
+  return vals.reduce((prev, cur) => cur > prev ? cur : prev);
+}
+
+
+export function minBigInt(...vals) {
+  return vals.reduce((prev, cur) => cur < prev ? cur : prev);
 }

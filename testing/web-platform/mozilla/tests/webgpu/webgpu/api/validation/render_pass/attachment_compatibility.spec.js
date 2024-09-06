@@ -553,13 +553,6 @@ filter((p) => {
     const depthStencilInfo = kTextureFormatInfo[p.format];
     
     
-    if (depthStencilInfo.depth && depthStencilInfo.stencil) {
-      if (p.depthReadOnly !== p.stencilReadOnly) {
-        return false;
-      }
-    }
-    
-    
     if (!depthStencilInfo.depth && p.depthWriteEnabled) {
       return false;
     }

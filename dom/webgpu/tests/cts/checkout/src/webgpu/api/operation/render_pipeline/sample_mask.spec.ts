@@ -6,6 +6,8 @@ Also tested:
 - The positions of samples in the standard sample patterns.
 - Per-sample interpolation sampling: @interpolate(perspective, sample).
 
+TODO: Test sample_mask as an input.
+
 TODO: add a test without a 0th color attachment (sparse color attachment), with different color attachments and alpha value output.
 The cross-platform behavior is unknown. could be any of:
 - coverage is always 100%
@@ -19,7 +21,7 @@ import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import { assert, range } from '../../../../common/util/util.js';
 import { GPUTest, TextureTestMixin } from '../../../gpu_test.js';
 import { checkElementsPassPredicate, checkElementsEqual } from '../../../util/check_contents.js';
-import { TypeF32, TypeU32 } from '../../../util/conversion.js';
+import { Type } from '../../../util/conversion.js';
 import { TexelView } from '../../../util/texture/texel_view.js';
 
 const kColors = [
@@ -435,8 +437,8 @@ class F extends TextureTestMixin(GPUTest) {
     sampleMask: number,
     fragmentShaderOutputMask: number
   ) {
-    const buffer = this.copySinglePixelTextureToBufferUsingComputePass(
-      TypeF32, 
+    const buffer = this.copy2DTextureToBufferUsingComputePass(
+      Type.f32, 
       4,
       texture.createView(),
       sampleCount
@@ -459,10 +461,10 @@ class F extends TextureTestMixin(GPUTest) {
     sampleMask: number,
     fragmentShaderOutputMask: number
   ) {
-    const buffer = this.copySinglePixelTextureToBufferUsingComputePass(
+    const buffer = this.copy2DTextureToBufferUsingComputePass(
       
       
-      aspect === 'depth-only' ? TypeF32 : TypeU32,
+      aspect === 'depth-only' ? Type.f32 : Type.u32,
       1,
       depthStencilTexture.createView({ aspect }),
       sampleCount
@@ -702,8 +704,8 @@ color' <= color.
         2
       );
 
-      const colorBuffer = t.copySinglePixelTextureToBufferUsingComputePass(
-        TypeF32, 
+      const colorBuffer = t.copy2DTextureToBufferUsingComputePass(
+        Type.f32, 
         4,
         color.createView(),
         sampleCount
@@ -714,8 +716,8 @@ color' <= color.
       });
       colorResultPromises.push(colorResult);
 
-      const depthBuffer = t.copySinglePixelTextureToBufferUsingComputePass(
-        TypeF32, 
+      const depthBuffer = t.copy2DTextureToBufferUsingComputePass(
+        Type.f32, 
         1,
         depthStencil.createView({ aspect: 'depth-only' }),
         sampleCount
@@ -726,8 +728,8 @@ color' <= color.
       });
       depthResultPromises.push(depthResult);
 
-      const stencilBuffer = t.copySinglePixelTextureToBufferUsingComputePass(
-        TypeU32, 
+      const stencilBuffer = t.copy2DTextureToBufferUsingComputePass(
+        Type.u32, 
         1,
         depthStencil.createView({ aspect: 'stencil-only' }),
         sampleCount

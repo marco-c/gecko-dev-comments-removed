@@ -45,8 +45,6 @@ export class TestCaseRecorder {
   logs = [];
   logLinesAtCurrentSeverity = 0;
   debugging = false;
-  
-  messagesForPreviouslySeenStacks = new Map();
 
   constructor(result, debugging) {
     this.result = result;
@@ -143,13 +141,15 @@ export class TestCaseRecorder {
       this.skipped(ex);
       return;
     }
-    this.logImpl(LogSeverity.ThrewException, 'EXCEPTION', ex);
+    
+    const name = ex instanceof Error ? `EXCEPTION: ${ex.name}` : 'EXCEPTION';
+    this.logImpl(LogSeverity.ThrewException, name, ex);
   }
 
   logImpl(level, name, baseException) {
     assert(baseException instanceof Error, 'test threw a non-Error object');
     globalTestConfig.testHeartbeatCallback();
-    const logMessage = new LogMessageWithStack(name, baseException);
+    const logMessage = LogMessageWithStack.wrapError(name, baseException);
 
     
     if (this.inSubCase) {

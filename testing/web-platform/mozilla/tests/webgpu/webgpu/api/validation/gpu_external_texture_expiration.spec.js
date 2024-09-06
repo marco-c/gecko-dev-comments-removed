@@ -86,10 +86,7 @@ fn(async (t) => {
     sourceType === 'VideoFrame' ?
     await getVideoFrameFromVideoElement(t, videoElement) :
     videoElement;
-    externalTexture = t.device.importExternalTexture({
-
-      source: source
-    });
+    externalTexture = t.device.importExternalTexture({ source });
 
     bindGroup = t.device.createBindGroup({
       layout: t.getDefaultBindGroupLayout(),
@@ -99,10 +96,7 @@ fn(async (t) => {
     t.submitCommandBuffer(bindGroup, true);
 
     
-    const mayBeTheSameExternalTexture = t.device.importExternalTexture({
-
-      source: source
-    });
+    const mayBeTheSameExternalTexture = t.device.importExternalTexture({ source });
 
     if (externalTexture === mayBeTheSameExternalTexture) {
       t.submitCommandBuffer(bindGroup, true);
@@ -142,10 +136,7 @@ fn(async (t) => {
 
     
     queueMicrotask(() => {
-      externalTexture = t.device.importExternalTexture({
-
-        source: source
-      });
+      externalTexture = t.device.importExternalTexture({ source });
     });
 
     
@@ -182,10 +173,7 @@ fn(async (t) => {
     sourceType === 'VideoFrame' ?
     await getVideoFrameFromVideoElement(t, videoElement) :
     videoElement;
-    externalTexture = t.device.importExternalTexture({
-
-      source: source
-    });
+    externalTexture = t.device.importExternalTexture({ source });
 
     bindGroup = t.device.createBindGroup({
       layout: t.getDefaultBindGroupLayout(),
@@ -218,10 +206,7 @@ fn(async (t) => {
   let source;
   await startPlayingAndWaitForVideo(videoElement, () => {
     source = videoElement;
-    externalTexture = t.device.importExternalTexture({
-
-      source: source
-    });
+    externalTexture = t.device.importExternalTexture({ source });
 
     bindGroup = t.device.createBindGroup({
       layout: t.getDefaultBindGroupLayout(),
@@ -232,10 +217,7 @@ fn(async (t) => {
   });
 
   await waitForNextTask(() => {
-    const mayBeTheSameExternalTexture = t.device.importExternalTexture({
-
-      source: source
-    });
+    const mayBeTheSameExternalTexture = t.device.importExternalTexture({ source });
 
     if (externalTexture === mayBeTheSameExternalTexture) {
       
@@ -264,10 +246,7 @@ fn(async (t) => {
   let externalTexture;
   await startPlayingAndWaitForVideo(videoElement, async () => {
     const source = await getVideoFrameFromVideoElement(t, videoElement);
-    externalTexture = t.device.importExternalTexture({
-
-      source: source
-    });
+    externalTexture = t.device.importExternalTexture({ source });
 
     bindGroup = t.device.createBindGroup({
       layout: t.getDefaultBindGroupLayout(),

@@ -1,6 +1,7 @@
 
 
-import { abstractFloatShaderBuilder, basicExpressionBuilder,
+import { abstractFloatShaderBuilder, abstractIntShaderBuilder,
+  basicExpressionBuilder,
   basicExpressionWithPredeclarationBuilder } from
 
 '../../expression.js';
@@ -11,8 +12,13 @@ export function builtin(name) {
 }
 
 
-export function abstractBuiltin(name) {
+export function abstractFloatBuiltin(name) {
   return abstractFloatShaderBuilder((values) => `${name}(${values.join(', ')})`);
+}
+
+
+export function abstractIntBuiltin(name) {
+  return abstractIntShaderBuilder((values) => `${name}(${values.join(', ')})`);
 }
 
 

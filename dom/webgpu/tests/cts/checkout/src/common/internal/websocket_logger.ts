@@ -1,3 +1,5 @@
+import { globalTestConfig } from '../framework/test_config.js';
+
 
 
 
@@ -12,8 +14,11 @@ let connection: Promise<WebSocket | 'failed'> | WebSocket | 'failed' | 'uninitia
 
 
 
-export function logToWebsocket(msg: string) {
-  if (connection === 'failed') {
+
+
+
+export function logToWebSocket(msg: string) {
+  if (!globalTestConfig.logToWebSocket || connection === 'failed') {
     return;
   }
 

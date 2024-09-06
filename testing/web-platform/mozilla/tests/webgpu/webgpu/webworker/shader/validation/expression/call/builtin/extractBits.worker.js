@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../../../../shader/validation/expression/call/builtin/extractBits.spec.js';
+import { wrapTestGroupForWorker } from '../../../../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

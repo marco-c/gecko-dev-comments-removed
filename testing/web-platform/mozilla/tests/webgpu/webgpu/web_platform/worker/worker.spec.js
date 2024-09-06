@@ -1,35 +1,67 @@
 
 
 export const description = `
-Tests WebGPU is available in a worker.
+Tests WebGPU is available in a dedicated worker and a shared worker.
 
-Note: The CTS test can be run in a worker by passing in worker=1 as
-a query parameter. This test is specifically to check that WebGPU
-is available in a worker.
+Note: Any CTS test can be run in a worker by passing ?worker=dedicated, ?worker=shared,
+?worker=service as a query parameter. The tests in this file are specifically to check
+that WebGPU is available in each worker type. When run in combination with a ?worker flag,
+they will test workers created from other workers (where APIs exist to do so).
+
+TODO[2]: Figure out how to make these tests run in service workers (not actually
+important unless service workers gain the ability to launch other workers).
 `;import { Fixture } from '../../../common/framework/fixture.js';
 import { makeTestGroup } from '../../../common/framework/test_group.js';
 import { assert } from '../../../common/util/util.js';
 
 export const g = makeTestGroup(Fixture);
 
-function isNode() {
-  return typeof process !== 'undefined' && process?.versions?.node !== undefined;
-}
+const isNode = typeof process !== 'undefined' && process?.versions?.node !== undefined;
 
-g.test('worker').
-desc(`test WebGPU is available in DedicatedWorkers and check for basic functionality`).
+
+
+
+
+
+
+
+const isServiceWorker = globalThis.constructor.name === 'ServiceWorkerGlobalScope';
+
+g.test('dedicated_worker').
+desc(`test WebGPU is available in dedicated workers and check for basic functionality`).
 fn(async (t) => {
-  if (isNode()) {
-    t.skip('node does not support 100% compatible workers');
-    return;
-  }
-  
-  
-  
-  
-  
+  t.skipIf(isNode, 'node does not support 100% compatible workers');
+
+  t.skipIf(isServiceWorker, 'Service workers do not support this import() hack'); 
   const url = './worker_launcher.js';
-  const { launchWorker } = await import(url);
-  const result = await launchWorker();
+  const { launchDedicatedWorker } = await import(url); 
+
+  const result = await launchDedicatedWorker();
+  assert(result.error === undefined, `should be no error from worker but was: ${result.error}`);
+});
+
+g.test('shared_worker').
+desc(`test WebGPU is available in shared workers and check for basic functionality`).
+fn(async (t) => {
+  t.skipIf(isNode, 'node does not support 100% compatible workers');
+
+  t.skipIf(isServiceWorker, 'Service workers do not support this import() hack'); 
+  const url = './worker_launcher.js';
+  const { launchSharedWorker } = await import(url); 
+
+  const result = await launchSharedWorker();
+  assert(result.error === undefined, `should be no error from worker but was: ${result.error}`);
+});
+
+g.test('service_worker').
+desc(`test WebGPU is available in service workers and check for basic functionality`).
+fn(async (t) => {
+  t.skipIf(isNode, 'node does not support 100% compatible workers');
+
+  t.skipIf(isServiceWorker, 'Service workers do not support this import() hack'); 
+  const url = './worker_launcher.js';
+  const { launchServiceWorker } = await import(url); 
+
+  const result = await launchServiceWorker();
   assert(result.error === undefined, `should be no error from worker but was: ${result.error}`);
 });

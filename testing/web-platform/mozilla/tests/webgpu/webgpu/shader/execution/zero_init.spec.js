@@ -108,6 +108,10 @@ expandWithParams(function* (p) {
       [false]) {
         for (const scalarType of supportedScalarTypes({ isAtomic, ...p })) {
           
+          
+          if (scalarType === 'f16') continue;
+
+          
           if (p._containerDepth > 0) {
             if (scalarType === 'u32' && isAtomic) continue;
             if (scalarType === 'i32' && !isAtomic) continue;

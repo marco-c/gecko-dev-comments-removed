@@ -322,7 +322,9 @@ export type PerStageBindingLimitClass =
   | 'storageBuf'
   | 'sampler'
   | 'sampledTex'
-  | 'storageTex';
+  | 'readonlyStorageTex'
+  | 'writeonlyStorageTex'
+  | 'readwriteStorageTex';
 
 
 
@@ -337,7 +339,9 @@ export type ValidBindableResource =
   | 'compareSamp'
   | 'sampledTex'
   | 'sampledTexMS'
-  | 'storageTex';
+  | 'readonlyStorageTex'
+  | 'writeonlyStorageTex'
+  | 'readwriteStorageTex';
 type ErrorBindableResource = 'errorBuf' | 'errorSamp' | 'errorTex';
 
 
@@ -353,7 +357,9 @@ export const kBindableResources = [
   'compareSamp',
   'sampledTex',
   'sampledTexMS',
-  'storageTex',
+  'readonlyStorageTex',
+  'writeonlyStorageTex',
+  'readwriteStorageTex',
   'errorBuf',
   'errorSamp',
   'errorTex',
@@ -376,11 +382,13 @@ export const kPerStageBindingLimits: {
   };
 } =
    {
-  'uniformBuf': { class: 'uniformBuf', maxLimit: 'maxUniformBuffersPerShaderStage', },
-  'storageBuf': { class: 'storageBuf', maxLimit: 'maxStorageBuffersPerShaderStage', },
-  'sampler':    { class: 'sampler',    maxLimit: 'maxSamplersPerShaderStage', },
-  'sampledTex': { class: 'sampledTex', maxLimit: 'maxSampledTexturesPerShaderStage', },
-  'storageTex': { class: 'storageTex', maxLimit: 'maxStorageTexturesPerShaderStage', },
+  'uniformBuf':          { class: 'uniformBuf', maxLimit: 'maxUniformBuffersPerShaderStage', },
+  'storageBuf':          { class: 'storageBuf', maxLimit: 'maxStorageBuffersPerShaderStage', },
+  'sampler':             { class: 'sampler',    maxLimit: 'maxSamplersPerShaderStage', },
+  'sampledTex':          { class: 'sampledTex', maxLimit: 'maxSampledTexturesPerShaderStage', },
+  'readonlyStorageTex':  { class: 'readonlyStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage', },
+  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage', },
+  'readwriteStorageTex': { class: 'readwriteStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage', },
 };
 
 
@@ -398,11 +406,13 @@ export const kPerPipelineBindingLimits: {
   };
 } =
    {
-  'uniformBuf': { class: 'uniformBuf', maxDynamicLimit: 'maxDynamicUniformBuffersPerPipelineLayout', },
-  'storageBuf': { class: 'storageBuf', maxDynamicLimit: 'maxDynamicStorageBuffersPerPipelineLayout', },
-  'sampler':    { class: 'sampler',    maxDynamicLimit: '', },
-  'sampledTex': { class: 'sampledTex', maxDynamicLimit: '', },
-  'storageTex': { class: 'storageTex', maxDynamicLimit: '', },
+  'uniformBuf':          { class: 'uniformBuf', maxDynamicLimit: 'maxDynamicUniformBuffersPerPipelineLayout', },
+  'storageBuf':          { class: 'storageBuf', maxDynamicLimit: 'maxDynamicStorageBuffersPerPipelineLayout', },
+  'sampler':             { class: 'sampler',    maxDynamicLimit: '', },
+  'sampledTex':          { class: 'sampledTex', maxDynamicLimit: '', },
+  'readonlyStorageTex':  { class: 'readonlyStorageTex', maxDynamicLimit: '', },
+  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxDynamicLimit: '', },
+  'readwriteStorageTex': { class: 'readwriteStorageTex', maxDynamicLimit: '', },
 };
 
 interface BindingKindInfo {
@@ -416,14 +426,16 @@ const kBindingKind: {
   readonly [k in ValidBindableResource]: BindingKindInfo;
 } =
    {
-  uniformBuf:   { resource: 'uniformBuf',   perStageLimitClass: kPerStageBindingLimits.uniformBuf, perPipelineLimitClass: kPerPipelineBindingLimits.uniformBuf, },
-  storageBuf:   { resource: 'storageBuf',   perStageLimitClass: kPerStageBindingLimits.storageBuf, perPipelineLimitClass: kPerPipelineBindingLimits.storageBuf, },
-  filtSamp:     { resource: 'filtSamp',     perStageLimitClass: kPerStageBindingLimits.sampler,    perPipelineLimitClass: kPerPipelineBindingLimits.sampler,    },
-  nonFiltSamp:  { resource: 'nonFiltSamp',  perStageLimitClass: kPerStageBindingLimits.sampler,    perPipelineLimitClass: kPerPipelineBindingLimits.sampler,    },
-  compareSamp:  { resource: 'compareSamp',  perStageLimitClass: kPerStageBindingLimits.sampler,    perPipelineLimitClass: kPerPipelineBindingLimits.sampler,    },
-  sampledTex:   { resource: 'sampledTex',   perStageLimitClass: kPerStageBindingLimits.sampledTex, perPipelineLimitClass: kPerPipelineBindingLimits.sampledTex, },
-  sampledTexMS: { resource: 'sampledTexMS', perStageLimitClass: kPerStageBindingLimits.sampledTex, perPipelineLimitClass: kPerPipelineBindingLimits.sampledTex, },
-  storageTex:   { resource: 'storageTex',   perStageLimitClass: kPerStageBindingLimits.storageTex, perPipelineLimitClass: kPerPipelineBindingLimits.storageTex, },
+  uniformBuf:          { resource: 'uniformBuf',   perStageLimitClass: kPerStageBindingLimits.uniformBuf, perPipelineLimitClass: kPerPipelineBindingLimits.uniformBuf, },
+  storageBuf:          { resource: 'storageBuf',   perStageLimitClass: kPerStageBindingLimits.storageBuf, perPipelineLimitClass: kPerPipelineBindingLimits.storageBuf, },
+  filtSamp:            { resource: 'filtSamp',     perStageLimitClass: kPerStageBindingLimits.sampler,    perPipelineLimitClass: kPerPipelineBindingLimits.sampler,    },
+  nonFiltSamp:         { resource: 'nonFiltSamp',  perStageLimitClass: kPerStageBindingLimits.sampler,    perPipelineLimitClass: kPerPipelineBindingLimits.sampler,    },
+  compareSamp:         { resource: 'compareSamp',  perStageLimitClass: kPerStageBindingLimits.sampler,    perPipelineLimitClass: kPerPipelineBindingLimits.sampler,    },
+  sampledTex:          { resource: 'sampledTex',   perStageLimitClass: kPerStageBindingLimits.sampledTex, perPipelineLimitClass: kPerPipelineBindingLimits.sampledTex, },
+  sampledTexMS:        { resource: 'sampledTexMS', perStageLimitClass: kPerStageBindingLimits.sampledTex, perPipelineLimitClass: kPerPipelineBindingLimits.sampledTex, },
+  readonlyStorageTex:  { resource: 'readonlyStorageTex',   perStageLimitClass: kPerStageBindingLimits.readonlyStorageTex, perPipelineLimitClass: kPerPipelineBindingLimits.readonlyStorageTex, },
+  writeonlyStorageTex: { resource: 'writeonlyStorageTex',   perStageLimitClass: kPerStageBindingLimits.writeonlyStorageTex, perPipelineLimitClass: kPerPipelineBindingLimits.writeonlyStorageTex, },
+  readwriteStorageTex: { resource: 'readwriteStorageTex',   perStageLimitClass: kPerStageBindingLimits.readwriteStorageTex, perPipelineLimitClass: kPerPipelineBindingLimits.readwriteStorageTex, },
 };
 
 
@@ -483,14 +495,30 @@ assertTypeTrue<TypeEqual<GPUTextureSampleType, (typeof kTextureSampleTypes)[numb
 
 
 export function storageTextureBindingTypeInfo(d: GPUStorageTextureBindingLayout) {
-  return {
-    usage: GPUConst.TextureUsage.STORAGE_BINDING,
-    ...kBindingKind.storageTex,
-    ...kValidStagesStorageWrite,
-  };
+  switch (d.access) {
+    case undefined:
+    case 'write-only':
+      return {
+        usage: GPUConst.TextureUsage.STORAGE_BINDING,
+        ...kBindingKind.writeonlyStorageTex,
+        ...kValidStagesStorageWrite,
+      };
+    case 'read-only':
+      return {
+        usage: GPUConst.TextureUsage.STORAGE_BINDING,
+        ...kBindingKind.readonlyStorageTex,
+        ...kValidStagesAll,
+      };
+    case 'read-write':
+      return {
+        usage: GPUConst.TextureUsage.STORAGE_BINDING,
+        ...kBindingKind.readwriteStorageTex,
+        ...kValidStagesStorageWrite,
+      };
+  }
 }
 
-export const kStorageTextureAccessValues = ['write-only'] as const;
+export const kStorageTextureAccessValues = ['read-only', 'read-write', 'write-only'] as const;
 assertTypeTrue<TypeEqual<GPUStorageTextureAccess, (typeof kStorageTextureAccessValues)[number]>>();
 
 
@@ -539,8 +567,10 @@ export function samplerBindingEntries(includeUndefined: boolean): readonly BGLEn
 
 export function textureBindingEntries(includeUndefined: boolean): readonly BGLEntry[] {
   return [
-    ...(includeUndefined ? [{ texture: { multisampled: undefined } }] : []),
-    { texture: { multisampled: false } },
+    ...(includeUndefined
+      ? [{ texture: { multisampled: undefined, sampleType: 'unfilterable-float' } } as const]
+      : []),
+    { texture: { multisampled: false, sampleType: 'unfilterable-float' } },
     { texture: { multisampled: true, sampleType: 'unfilterable-float' } },
   ] as const;
 }
@@ -549,34 +579,29 @@ export function textureBindingEntries(includeUndefined: boolean): readonly BGLEn
 
 
 
-export function storageTextureBindingEntries(format: GPUTextureFormat): readonly BGLEntry[] {
-  return [{ storageTexture: { access: 'write-only', format } }] as const;
-}
-
-export function sampledAndStorageBindingEntries(
-  includeUndefined: boolean,
-  storageTextureFormat: GPUTextureFormat = 'rgba8unorm'
-): readonly BGLEntry[] {
+export function storageTextureBindingEntries(): readonly BGLEntry[] {
   return [
-    ...textureBindingEntries(includeUndefined),
-    ...storageTextureBindingEntries(storageTextureFormat),
+    { storageTexture: { access: 'write-only', format: 'r32float' } },
+    { storageTexture: { access: 'read-only', format: 'r32float' } },
+    { storageTexture: { access: 'read-write', format: 'r32float' } },
   ] as const;
 }
 
+export function sampledAndStorageBindingEntries(includeUndefined: boolean): readonly BGLEntry[] {
+  return [...textureBindingEntries(includeUndefined), ...storageTextureBindingEntries()] as const;
+}
 
 
 
 
 
 
-export function allBindingEntries(
-  includeUndefined: boolean,
-  storageTextureFormat: GPUTextureFormat = 'rgba8unorm'
-): readonly BGLEntry[] {
+
+export function allBindingEntries(includeUndefined: boolean): readonly BGLEntry[] {
   return [
     ...bufferBindingEntries(includeUndefined),
     ...samplerBindingEntries(includeUndefined),
-    ...sampledAndStorageBindingEntries(includeUndefined, storageTextureFormat),
+    ...sampledAndStorageBindingEntries(includeUndefined),
   ] as const;
 }
 
@@ -689,7 +714,7 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxVertexAttributes':                       [           ,        16,              16,                          ],
   'maxVertexBufferArrayStride':                [           ,      2048,            2048,                          ],
   'maxInterStageShaderComponents':             [           ,        60,              60,                          ],
-  'maxInterStageShaderVariables':              [           ,        16,              16,                          ],
+  'maxInterStageShaderVariables':              [           ,        16,              15,                          ],
 
   'maxColorAttachments':                       [           ,         8,               4,                          ],
   'maxColorAttachmentBytesPerSample':          [           ,        32,              32,                          ],
@@ -790,3 +815,13 @@ export const kFeatureNameInfo: {
 };
 
 export const kFeatureNames = keysOf(kFeatureNameInfo);
+
+
+export const kKnownWGSLLanguageFeatures = [
+  'readonly_and_readwrite_storage_textures',
+  'packed_4x8_integer_dot_product',
+  'unrestricted_pointer_parameters',
+  'pointer_composite_access',
+] as const;
+
+export type WGSLLanguageFeature = (typeof kKnownWGSLLanguageFeatures)[number];

@@ -1,6 +1,6 @@
 
 
-import { range } from '../../../../../common/util/util.js';import {
+import { assert } from '../../../../../common/util/util.js';import {
   kCreatePipelineTypes,
   kEncoderTypes,
   kMaximumLimitBaseParams,
@@ -10,30 +10,152 @@ import { range } from '../../../../../common/util/util.js';import {
 const limit = 'maxBindGroups';
 export const { g, description } = makeLimitTestGroup(limit);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+const kLimitToBindingLayout = [
+{
+  name: 'maxSampledTexturesPerShaderStage',
+  entry: {
+    texture: {}
+  }
+},
+{
+  name: 'maxSamplersPerShaderStage',
+  entry: {
+    sampler: {}
+  }
+},
+{
+  name: 'maxUniformBuffersPerShaderStage',
+  entry: {
+    buffer: {}
+  }
+},
+{
+  name: 'maxStorageBuffersPerShaderStage',
+  entry: {
+    buffer: {
+      type: 'read-only-storage'
+    }
+  }
+},
+{
+  name: 'maxStorageTexturesPerShaderStage',
+  entry: {
+    storageTexture: {
+      access: 'write-only',
+      format: 'rgba8unorm',
+      viewDimension: '2d'
+    }
+  }
+}];
+
+
+
+
+
+function* getBindingLayoutEntriesForStage(device) {
+  for (const { name, entry } of kLimitToBindingLayout) {
+    const limit = device.limits[name];
+    for (let i = 0; i < limit; ++i) {
+      yield entry;
+    }
+  }
+}
+
+
+
+
+function* getBindingLayoutEntriesForRenderPipeline(
+device)
+{
+  const visibilities = [GPUShaderStage.VERTEX, GPUShaderStage.FRAGMENT];
+  for (const visibility of visibilities) {
+    for (const bindEntryResourceType of getBindingLayoutEntriesForStage(device)) {
+      const entry = {
+        binding: 0,
+        visibility,
+        ...bindEntryResourceType
+      };
+      yield entry;
+    }
+  }
+}
+
+
+
+
+function getTotalPossibleBindingsPerRenderPipeline(device) {
+  const totalPossibleBindingsPerStage =
+  device.limits.maxSampledTexturesPerShaderStage +
+  device.limits.maxSamplersPerShaderStage +
+  device.limits.maxUniformBuffersPerShaderStage +
+  device.limits.maxStorageBuffersPerShaderStage +
+  device.limits.maxStorageTexturesPerShaderStage;
+  return totalPossibleBindingsPerStage * 2;
+}
+
+
+
+
+function* getBindingLayoutEntries(
+device,
+count)
+{
+  assert(count < getTotalPossibleBindingsPerRenderPipeline(device));
+  const iter = getBindingLayoutEntriesForRenderPipeline(device);
+  for (; count > 0; --count) {
+    yield iter.next().value;
+  }
+}
+
 g.test('createPipelineLayout,at_over').
 desc(`Test using createPipelineLayout at and over ${limit} limit`).
 params(kMaximumLimitBaseParams).
 fn(async (t) => {
   const { limitTest, testValueName } = t.params;
+
   await t.testDeviceWithRequestedMaximumLimits(
     limitTest,
     testValueName,
-    async ({ device, testValue, shouldError }) => {
-      const bindGroupLayouts = range(testValue, (_i) =>
-      device.createBindGroupLayout({
-        entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {}
-        }]
-
-      })
+    async ({ device, testValue, shouldError, actualLimit }) => {
+      const totalPossibleBindingsPerPipeline = getTotalPossibleBindingsPerRenderPipeline(device);
+      
+      assert(
+        testValue < totalPossibleBindingsPerPipeline,
+        `not enough possible bindings(${totalPossibleBindingsPerPipeline}) to test ${testValue} bindGroups`
       );
 
-      await t.expectValidationError(() => {
-        device.createPipelineLayout({ bindGroupLayouts });
-      }, shouldError);
+      const bindingDescriptions = [];
+      const bindGroupLayouts = [...getBindingLayoutEntries(device, testValue)].map((entry) => {
+        bindingDescriptions.push(
+          `${JSON.stringify(entry)} // group(${bindingDescriptions.length})`
+        );
+        return device.createBindGroupLayout({
+          entries: [entry]
+        });
+      });
+
+      await t.expectValidationError(
+        () => {
+          device.createPipelineLayout({ bindGroupLayouts });
+        },
+        shouldError,
+        `testing ${testValue} bindGroups on maxBindGroups = ${actualLimit} with \n${bindingDescriptions.join(
+          '\n'
+        )}`
+      );
     }
   );
 });
@@ -76,8 +198,8 @@ fn(async (t) => {
       const lastIndex = testValue - 1;
       await t.testGPUBindingCommandsMixin(
         encoderType,
-        ({ mixin, bindGroup }) => {
-          mixin.setBindGroup(lastIndex, bindGroup);
+        ({ passEncoder, bindGroup }) => {
+          passEncoder.setBindGroup(lastIndex, bindGroup);
         },
         shouldError,
         `shouldError: ${shouldError}, actualLimit: ${actualLimit}, testValue: ${lastIndex}`

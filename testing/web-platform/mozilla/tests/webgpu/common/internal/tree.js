@@ -286,6 +286,7 @@ loader,
 queryToLoad,
 {
   subqueriesToExpand,
+  fullyExpandSubtrees = [],
   maxChunkTime = Infinity
 })
 {
@@ -303,6 +304,10 @@ queryToLoad,
     
     if (ordering === Ordering.Equal) seenSubqueriesToExpand[i] = true;
     return ordering !== Ordering.StrictSubset;
+  }) &&
+  fullyExpandSubtrees.every((toExpand) => {
+    const ordering = compareQueries(toExpand, subquery);
+    return ordering === Ordering.Unordered;
   });
 
   

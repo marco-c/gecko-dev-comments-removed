@@ -345,6 +345,10 @@ export const kVertexFormats = keysOf(kVertexFormatInfo);
 
 
 
+
+
+
+
 export const kBindableResources = [
 'uniformBuf',
 'storageBuf',
@@ -353,7 +357,9 @@ export const kBindableResources = [
 'compareSamp',
 'sampledTex',
 'sampledTexMS',
-'storageTex',
+'readonlyStorageTex',
+'writeonlyStorageTex',
+'readwriteStorageTex',
 'errorBuf',
 'errorSamp',
 'errorTex'];
@@ -380,7 +386,9 @@ export const kPerStageBindingLimits =
   'storageBuf': { class: 'storageBuf', maxLimit: 'maxStorageBuffersPerShaderStage' },
   'sampler': { class: 'sampler', maxLimit: 'maxSamplersPerShaderStage' },
   'sampledTex': { class: 'sampledTex', maxLimit: 'maxSampledTexturesPerShaderStage' },
-  'storageTex': { class: 'storageTex', maxLimit: 'maxStorageTexturesPerShaderStage' }
+  'readonlyStorageTex': { class: 'readonlyStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage' },
+  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage' },
+  'readwriteStorageTex': { class: 'readwriteStorageTex', maxLimit: 'maxStorageTexturesPerShaderStage' }
 };
 
 
@@ -402,7 +410,9 @@ export const kPerPipelineBindingLimits =
   'storageBuf': { class: 'storageBuf', maxDynamicLimit: 'maxDynamicStorageBuffersPerPipelineLayout' },
   'sampler': { class: 'sampler', maxDynamicLimit: '' },
   'sampledTex': { class: 'sampledTex', maxDynamicLimit: '' },
-  'storageTex': { class: 'storageTex', maxDynamicLimit: '' }
+  'readonlyStorageTex': { class: 'readonlyStorageTex', maxDynamicLimit: '' },
+  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxDynamicLimit: '' },
+  'readwriteStorageTex': { class: 'readwriteStorageTex', maxDynamicLimit: '' }
 };
 
 
@@ -423,7 +433,9 @@ const kBindingKind =
   compareSamp: { resource: 'compareSamp', perStageLimitClass: kPerStageBindingLimits.sampler, perPipelineLimitClass: kPerPipelineBindingLimits.sampler },
   sampledTex: { resource: 'sampledTex', perStageLimitClass: kPerStageBindingLimits.sampledTex, perPipelineLimitClass: kPerPipelineBindingLimits.sampledTex },
   sampledTexMS: { resource: 'sampledTexMS', perStageLimitClass: kPerStageBindingLimits.sampledTex, perPipelineLimitClass: kPerPipelineBindingLimits.sampledTex },
-  storageTex: { resource: 'storageTex', perStageLimitClass: kPerStageBindingLimits.storageTex, perPipelineLimitClass: kPerPipelineBindingLimits.storageTex }
+  readonlyStorageTex: { resource: 'readonlyStorageTex', perStageLimitClass: kPerStageBindingLimits.readonlyStorageTex, perPipelineLimitClass: kPerPipelineBindingLimits.readonlyStorageTex },
+  writeonlyStorageTex: { resource: 'writeonlyStorageTex', perStageLimitClass: kPerStageBindingLimits.writeonlyStorageTex, perPipelineLimitClass: kPerPipelineBindingLimits.writeonlyStorageTex },
+  readwriteStorageTex: { resource: 'readwriteStorageTex', perStageLimitClass: kPerStageBindingLimits.readwriteStorageTex, perPipelineLimitClass: kPerPipelineBindingLimits.readwriteStorageTex }
 };
 
 
@@ -483,14 +495,30 @@ assertTypeTrue();
 
 
 export function storageTextureBindingTypeInfo(d) {
-  return {
-    usage: GPUConst.TextureUsage.STORAGE_BINDING,
-    ...kBindingKind.storageTex,
-    ...kValidStagesStorageWrite
-  };
+  switch (d.access) {
+    case undefined:
+    case 'write-only':
+      return {
+        usage: GPUConst.TextureUsage.STORAGE_BINDING,
+        ...kBindingKind.writeonlyStorageTex,
+        ...kValidStagesStorageWrite
+      };
+    case 'read-only':
+      return {
+        usage: GPUConst.TextureUsage.STORAGE_BINDING,
+        ...kBindingKind.readonlyStorageTex,
+        ...kValidStagesAll
+      };
+    case 'read-write':
+      return {
+        usage: GPUConst.TextureUsage.STORAGE_BINDING,
+        ...kBindingKind.readwriteStorageTex,
+        ...kValidStagesStorageWrite
+      };
+  }
 }
 
-export const kStorageTextureAccessValues = ['write-only'];
+export const kStorageTextureAccessValues = ['read-only', 'read-write', 'write-only'];
 assertTypeTrue();
 
 
@@ -539,8 +567,10 @@ export function samplerBindingEntries(includeUndefined) {
 
 export function textureBindingEntries(includeUndefined) {
   return [
-  ...(includeUndefined ? [{ texture: { multisampled: undefined } }] : []),
-  { texture: { multisampled: false } },
+  ...(includeUndefined ?
+  [{ texture: { multisampled: undefined, sampleType: 'unfilterable-float' } }] :
+  []),
+  { texture: { multisampled: false, sampleType: 'unfilterable-float' } },
   { texture: { multisampled: true, sampleType: 'unfilterable-float' } }];
 
 }
@@ -549,18 +579,16 @@ export function textureBindingEntries(includeUndefined) {
 
 
 
-export function storageTextureBindingEntries(format) {
-  return [{ storageTexture: { access: 'write-only', format } }];
-}
-
-export function sampledAndStorageBindingEntries(
-includeUndefined,
-storageTextureFormat = 'rgba8unorm')
-{
+export function storageTextureBindingEntries() {
   return [
-  ...textureBindingEntries(includeUndefined),
-  ...storageTextureBindingEntries(storageTextureFormat)];
+  { storageTexture: { access: 'write-only', format: 'r32float' } },
+  { storageTexture: { access: 'read-only', format: 'r32float' } },
+  { storageTexture: { access: 'read-write', format: 'r32float' } }];
 
+}
+
+export function sampledAndStorageBindingEntries(includeUndefined) {
+  return [...textureBindingEntries(includeUndefined), ...storageTextureBindingEntries()];
 }
 
 
@@ -569,14 +597,11 @@ storageTextureFormat = 'rgba8unorm')
 
 
 
-export function allBindingEntries(
-includeUndefined,
-storageTextureFormat = 'rgba8unorm')
-{
+export function allBindingEntries(includeUndefined) {
   return [
   ...bufferBindingEntries(includeUndefined),
   ...samplerBindingEntries(includeUndefined),
-  ...sampledAndStorageBindingEntries(includeUndefined, storageTextureFormat)];
+  ...sampledAndStorageBindingEntries(includeUndefined)];
 
 }
 
@@ -689,7 +714,7 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxVertexAttributes': [, 16, 16],
   'maxVertexBufferArrayStride': [, 2048, 2048],
   'maxInterStageShaderComponents': [, 60, 60],
-  'maxInterStageShaderVariables': [, 16, 16],
+  'maxInterStageShaderVariables': [, 16, 15],
 
   'maxColorAttachments': [, 8, 4],
   'maxColorAttachmentBytesPerSample': [, 32, 32],
@@ -790,3 +815,10 @@ export const kFeatureNameInfo =
 };
 
 export const kFeatureNames = keysOf(kFeatureNameInfo);
+
+
+export const kKnownWGSLLanguageFeatures = [
+'readonly_and_readwrite_storage_textures',
+'packed_4x8_integer_dot_product',
+'unrestricted_pointer_parameters',
+'pointer_composite_access'];

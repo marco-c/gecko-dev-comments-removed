@@ -14,6 +14,11 @@ import { getDefaultLimits, kLimits } from '../capability_info.js';
 
 
 
+
+
+
+
+
 class TestFailedButDeviceReusable extends Error {}
 class FeaturesNotSupported extends Error {}
 export class TestOOMedShouldAttemptGC extends Error {}
@@ -286,6 +291,8 @@ class DeviceHolder {
   
 
   
+
+  
   state = 'free';
   
 
@@ -307,10 +314,11 @@ class DeviceHolder {
     const device = await adapter.requestDevice(descriptor);
     assert(device !== null, 'requestDevice returned null');
 
-    return new DeviceHolder(device);
+    return new DeviceHolder(adapter, device);
   }
 
-  constructor(device) {
+  constructor(adapter, device) {
+    this.adapter = adapter;
     this._device = device;
     void this._device.lost.then((ev) => {
       this.lostInfo = ev;

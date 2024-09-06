@@ -17,12 +17,49 @@ import {
 import { kBigSeparator, kWildcard, kPathSeparator, kParamSeparator } from './separators.js';
 import { validQueryPart } from './validQueryPart.js';
 
-export function parseQuery(s: string): TestQuery {
+
+
+
+function convertPathToQuery(path: string) {
+  
+  const parts = path.substring(0, path.length - 8).split(/\/|\\/g);
+  
+  
+  const partsAfterSrc = parts.slice(parts.lastIndexOf('src') + 1);
+  const suite = partsAfterSrc.shift();
+  return `${suite}:${partsAfterSrc.join(',')},*`;
+}
+
+
+
+
+
+function convertPathLikeToQuery(queryOrPath: string) {
+  return queryOrPath.endsWith('.spec.ts') &&
+    (queryOrPath.includes('/') || queryOrPath.includes('\\'))
+    ? convertPathToQuery(queryOrPath)
+    : queryOrPath;
+}
+
+
+
+
+
+
+function shortenSuiteName(query: string) {
+  const parts = query.split(':');
+  
+  const suite = parts.shift()?.replace(/.*\.(\w+)$/, '$1');
+  return [suite, ...parts].join(':');
+}
+
+export function parseQuery(queryLike: string): TestQuery {
   try {
-    return parseQueryImpl(s);
+    const query = shortenSuiteName(convertPathLikeToQuery(queryLike));
+    return parseQueryImpl(query);
   } catch (ex) {
     if (ex instanceof Error) {
-      ex.message += '\n  on: ' + s;
+      ex.message += `\n  on: ${queryLike}`;
     }
     throw ex;
   }

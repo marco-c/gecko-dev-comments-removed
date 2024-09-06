@@ -1,25 +1,47 @@
 import { ErrorWithExtra } from '../../util/util.js';
 import { extractImportantStackTrace } from '../stack.js';
 
+import { LogMessageRawData } from './result.js';
+
 export class LogMessageWithStack extends Error {
   readonly extra: unknown;
 
   private stackHiddenMessage: string | undefined = undefined;
 
-  constructor(name: string, ex: Error | ErrorWithExtra) {
-    super(ex.message);
+  
 
-    this.name = name;
-    this.stack = ex.stack;
-    if ('extra' in ex) {
-      this.extra = ex.extra;
-    }
+
+
+
+
+
+  static wrapError(name: string, ex: Error | ErrorWithExtra) {
+    return new LogMessageWithStack({
+      name,
+      message: ex.message,
+      stackHiddenMessage: undefined,
+      stack: ex.stack,
+      extra: 'extra' in ex ? ex.extra : undefined,
+    });
+  }
+
+  constructor(o: LogMessageRawData) {
+    super(o.message);
+    this.name = o.name;
+    this.stackHiddenMessage = o.stackHiddenMessage;
+    this.stack = o.stack;
+    this.extra = o.extra;
   }
 
   
   setStackHidden(stackHiddenMessage: string) {
     this.stackHiddenMessage ??= stackHiddenMessage;
   }
+
+  
+
+
+
 
   toJSON(): string {
     let m = this.name;
@@ -32,6 +54,21 @@ export class LogMessageWithStack extends Error {
       }
     }
     return m;
+  }
+
+  
+
+
+
+
+  toRawData(): LogMessageRawData {
+    return {
+      name: this.name,
+      message: this.message,
+      stackHiddenMessage: this.stackHiddenMessage,
+      stack: this.stack,
+      extra: this.extra,
+    };
   }
 }
 

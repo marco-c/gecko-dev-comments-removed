@@ -1,0 +1,8 @@
+
+
+
+
+
+export type IntervalFilter =
+  | 'finite' 
+  | 'unfiltered'; 

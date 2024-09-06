@@ -86,6 +86,16 @@ export default class BinaryStream {
   }
 
   
+  writeI64(value) {
+    this.view.setBigInt64(this.alignedOffset(8), value, true);
+  }
+
+  
+  readI64() {
+    return this.view.getBigInt64(this.alignedOffset(8), true);
+  }
+
+  
   writeI32(value) {
     this.view.setInt32(this.alignedOffset(4), value, true);
   }

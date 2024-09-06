@@ -9,7 +9,12 @@ import {
 } from '../../common/util/util.js';
 import { getDefaultLimits, kLimits } from '../capability_info.js';
 
+
+
+
 export interface DeviceProvider {
+  
+  readonly adapter: GPUAdapter;
   readonly device: GPUDevice;
   expectDeviceLost(reason: GPUDeviceLostReason): void;
 }
@@ -284,6 +289,8 @@ type DeviceHolderState = 'free' | 'acquired';
 
 class DeviceHolder implements DeviceProvider {
   
+  readonly adapter: GPUAdapter;
+  
   private _device: GPUDevice | undefined;
   
   state: DeviceHolderState = 'free';
@@ -307,10 +314,11 @@ class DeviceHolder implements DeviceProvider {
     const device = await adapter.requestDevice(descriptor);
     assert(device !== null, 'requestDevice returned null');
 
-    return new DeviceHolder(device);
+    return new DeviceHolder(adapter, device);
   }
 
-  private constructor(device: GPUDevice) {
+  private constructor(adapter: GPUAdapter, device: GPUDevice) {
+    this.adapter = adapter;
     this._device = device;
     void this._device.lost.then(ev => {
       this.lostInfo = ev;

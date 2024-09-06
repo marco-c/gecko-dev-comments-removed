@@ -4,99 +4,13 @@ export const description = `
 Execution Tests for the u32 conversion operations
 `;import { makeTestGroup } from '../../../../../common/framework/test_group.js';
 import { GPUTest } from '../../../../gpu_test.js';
-import { kValue } from '../../../../util/constants.js';
-import {
-  bool,
-  f32,
-  f16,
-  i32,
-  TypeBool,
-  TypeF32,
-  TypeF16,
-  TypeI32,
-  TypeU32,
-  u32 } from
-'../../../../util/conversion.js';
-import {
-  fullF32Range,
-  fullF16Range,
-  fullI32Range,
-  fullU32Range,
-  quantizeToF32,
-  quantizeToF16 } from
-'../../../../util/math.js';
-import { reinterpretI32AsU32 } from '../../../../util/reinterpret.js';
-import { makeCaseCache } from '../case_cache.js';
-import { allInputSources, run } from '../expression.js';
+import { Type } from '../../../../util/conversion.js';
+import { allInputSources, run, onlyConstInputSource } from '../expression.js';
 
+import { d } from './u32_conversion.cache.js';
 import { unary } from './unary.js';
 
 export const g = makeTestGroup(GPUTest);
-
-export const d = makeCaseCache('unary/u32_conversion', {
-  bool: () => {
-    return [
-    { input: bool(true), expected: u32(1) },
-    { input: bool(false), expected: u32(0) }];
-
-  },
-  u32: () => {
-    return fullU32Range().map((u) => {
-      return { input: u32(u), expected: u32(u) };
-    });
-  },
-  i32: () => {
-    return fullI32Range().map((i) => {
-      return { input: i32(i), expected: u32(reinterpretI32AsU32(i)) };
-    });
-  },
-  f32: () => {
-    return fullF32Range().map((f) => {
-      
-      if (f < 1.0) {
-        return { input: f32(f), expected: u32(0) };
-      }
-
-      if (f >= kValue.u32.max) {
-        return { input: f32(f), expected: u32(kValue.u32.max) };
-      }
-
-      
-      
-      if (f <= 2 ** 24) {
-        return { input: f32(f), expected: u32(Math.floor(f)) };
-      }
-
-      
-      
-      
-      
-      
-      return { input: f32(f), expected: u32(quantizeToF32(f)) };
-    });
-  },
-  f16: () => {
-    
-    return fullF16Range().map((f) => {
-      
-      if (f < 1.0) {
-        return { input: f16(f), expected: u32(0) };
-      }
-
-      
-      
-      if (f <= 2 ** 12) {
-        return { input: f16(f), expected: u32(Math.trunc(f)) };
-      }
-
-      
-      
-      
-      
-      return { input: f16(f), expected: u32(quantizeToF16(f)) };
-    });
-  }
-});
 
 
 function vectorizeToExpression(vectorize) {
@@ -117,7 +31,7 @@ u.combine('inputSource', allInputSources).combine('vectorize', [undefined, 2, 3,
 ).
 fn(async (t) => {
   const cases = await d.get('bool');
-  await run(t, vectorizeToExpression(t.params.vectorize), [TypeBool], TypeU32, t.params, cases);
+  await run(t, vectorizeToExpression(t.params.vectorize), [Type.bool], Type.u32, t.params, cases);
 });
 
 g.test('u32').
@@ -134,7 +48,7 @@ u.combine('inputSource', allInputSources).combine('vectorize', [undefined, 2, 3,
 ).
 fn(async (t) => {
   const cases = await d.get('u32');
-  await run(t, vectorizeToExpression(t.params.vectorize), [TypeU32], TypeU32, t.params, cases);
+  await run(t, vectorizeToExpression(t.params.vectorize), [Type.u32], Type.u32, t.params, cases);
 });
 
 g.test('i32').
@@ -151,7 +65,7 @@ u.combine('inputSource', allInputSources).combine('vectorize', [undefined, 2, 3,
 ).
 fn(async (t) => {
   const cases = await d.get('i32');
-  await run(t, vectorizeToExpression(t.params.vectorize), [TypeI32], TypeU32, t.params, cases);
+  await run(t, vectorizeToExpression(t.params.vectorize), [Type.i32], Type.u32, t.params, cases);
 });
 
 g.test('f32').
@@ -168,7 +82,7 @@ u.combine('inputSource', allInputSources).combine('vectorize', [undefined, 2, 3,
 ).
 fn(async (t) => {
   const cases = await d.get('f32');
-  await run(t, vectorizeToExpression(t.params.vectorize), [TypeF32], TypeU32, t.params, cases);
+  await run(t, vectorizeToExpression(t.params.vectorize), [Type.f32], Type.u32, t.params, cases);
 });
 
 g.test('f16').
@@ -188,7 +102,7 @@ beforeAllSubcases((t) => {
 }).
 fn(async (t) => {
   const cases = await d.get('f16');
-  await run(t, vectorizeToExpression(t.params.vectorize), [TypeF16], TypeU32, t.params, cases);
+  await run(t, vectorizeToExpression(t.params.vectorize), [Type.f16], Type.u32, t.params, cases);
 });
 
 g.test('abstract_int').
@@ -201,6 +115,44 @@ Identity operation if the e can be represented in u32, otherwise it produces a s
 `
 ).
 params((u) =>
-u.combine('inputSource', allInputSources).combine('vectorize', [undefined, 2, 3, 4])
+u.
+combine('inputSource', onlyConstInputSource).
+combine('vectorize', [undefined, 2, 3, 4])
 ).
-unimplemented();
+fn(async (t) => {
+  const cases = await d.get('abstractInt');
+  await run(
+    t,
+    vectorizeToExpression(t.params.vectorize),
+    [Type.abstractInt],
+    Type.u32,
+    t.params,
+    cases
+  );
+});
+
+g.test('abstract_float').
+specURL('https://www.w3.org/TR/WGSL/#value-constructor-builtin-function').
+desc(
+  `
+u32(e), where e is an AbstractFloat
+
+e is converted to u32, rounding towards zero
+`
+).
+params((u) =>
+u.
+combine('inputSource', onlyConstInputSource).
+combine('vectorize', [undefined, 2, 3, 4])
+).
+fn(async (t) => {
+  const cases = await d.get('abstractFloat');
+  await run(
+    t,
+    vectorizeToExpression(t.params.vectorize),
+    [Type.abstractFloat],
+    Type.u32,
+    t.params,
+    cases
+  );
+});

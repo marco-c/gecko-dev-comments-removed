@@ -333,6 +333,26 @@ export interface Float16Array {
   
 
 
+  toReversed(): Float16Array;
+
+  
+
+
+
+
+
+  toSorted(compareFn?: (a: number, b: number) => number): Float16Array;
+
+  
+
+
+
+
+  with(index: number, value: number): Float16Array;
+
+  
+
+
   toLocaleString(): string;
 
   
@@ -463,6 +483,13 @@ export declare function setFloat16(
   value: number,
   littleEndian?: boolean,
 ): void;
+
+
+
+
+
+export declare function f16round(x: number): number;
+
 
 
 

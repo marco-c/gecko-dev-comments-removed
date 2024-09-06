@@ -2,19 +2,32 @@ import { keysOf } from '../../common/util/data_tables.js';
 import { assert } from '../../common/util/util.js';
 import { align } from '../util/math.js';
 
-const kArrayLength = 3;
+const kDefaultArrayLength = 3;
 
 export type Requirement = 'never' | 'may' | 'must'; 
-export type ContainerType = 'scalar' | 'vector' | 'matrix' | 'atomic' | 'array';
-export type ScalarType = 'i32' | 'u32' | 'f32' | 'bool';
+export type ContainerType = 'scalar' | 'vector' | 'matrix' | 'array';
+export type ScalarType = 'i32' | 'u32' | 'f16' | 'f32' | 'bool';
 
-export const HostSharableTypes = ['i32', 'u32', 'f32'] as const;
+export const HostSharableTypes = ['i32', 'u32', 'f16', 'f32'] as const;
+
+
+
+
+
+
+type AlignmentAndSize = {
+  
+  alignment: number;
+  
+  size: number;
+};
 
 
 export const kScalarTypeInfo =
    {
   'i32':    { layout: { alignment:  4, size:  4 }, supportsAtomics:  true, arrayLength: 1, innerLength: 0 },
   'u32':    { layout: { alignment:  4, size:  4 }, supportsAtomics:  true, arrayLength: 1, innerLength: 0 },
+  'f16':    { layout: { alignment:  2, size:  2 }, supportsAtomics: false, arrayLength: 1, innerLength: 0, feature: 'shader-f16' },
   'f32':    { layout: { alignment:  4, size:  4 }, supportsAtomics: false, arrayLength: 1, innerLength: 0 },
   'bool':   { layout:                   undefined, supportsAtomics: false, arrayLength: 1, innerLength: 0 },
 } as const;
@@ -24,28 +37,70 @@ export const kScalarTypes = keysOf(kScalarTypeInfo);
 
 export const kVectorContainerTypeInfo =
    {
-  'vec2':   { layout: { alignment:  8, size:  8 }, arrayLength: 2 , innerLength: 0 },
-  'vec3':   { layout: { alignment: 16, size: 12 }, arrayLength: 3 , innerLength: 0 },
-  'vec4':   { layout: { alignment: 16, size: 16 }, arrayLength: 4 , innerLength: 0 },
+  'vec2':   { arrayLength: 2 , innerLength: 0 },
+  'vec3':   { arrayLength: 3 , innerLength: 0 },
+  'vec4':   { arrayLength: 4 , innerLength: 0 },
 } as const;
 
 export const kVectorContainerTypes = keysOf(kVectorContainerTypeInfo);
 
 
+function vectorLayout(
+  vectorContainer: 'vec2' | 'vec3' | 'vec4',
+  baseType: ScalarType
+): undefined | AlignmentAndSize {
+  const n = kVectorContainerTypeInfo[vectorContainer].arrayLength;
+  const scalarLayout = kScalarTypeInfo[baseType].layout;
+  if (scalarLayout === undefined) {
+    return undefined;
+  }
+  if (n === 3) {
+    return { alignment: scalarLayout.alignment * 4, size: scalarLayout.size * 3 };
+  }
+  return { alignment: scalarLayout.alignment * n, size: scalarLayout.size * n };
+}
+
+
 export const kMatrixContainerTypeInfo =
    {
-  'mat2x2': { layout: { alignment:  8, size: 16 }, arrayLength: 2, innerLength: 2 },
-  'mat3x2': { layout: { alignment:  8, size: 24 }, arrayLength: 3, innerLength: 2 },
-  'mat4x2': { layout: { alignment:  8, size: 32 }, arrayLength: 4, innerLength: 2 },
-  'mat2x3': { layout: { alignment: 16, size: 32 }, arrayLength: 2, innerLength: 3 },
-  'mat3x3': { layout: { alignment: 16, size: 48 }, arrayLength: 3, innerLength: 3 },
-  'mat4x3': { layout: { alignment: 16, size: 64 }, arrayLength: 4, innerLength: 3 },
-  'mat2x4': { layout: { alignment: 16, size: 32 }, arrayLength: 2, innerLength: 4 },
-  'mat3x4': { layout: { alignment: 16, size: 48 }, arrayLength: 3, innerLength: 4 },
-  'mat4x4': { layout: { alignment: 16, size: 64 }, arrayLength: 4, innerLength: 4 },
+  'mat2x2': { arrayLength: 2, innerLength: 2 },
+  'mat3x2': { arrayLength: 3, innerLength: 2 },
+  'mat4x2': { arrayLength: 4, innerLength: 2 },
+  'mat2x3': { arrayLength: 2, innerLength: 3 },
+  'mat3x3': { arrayLength: 3, innerLength: 3 },
+  'mat4x3': { arrayLength: 4, innerLength: 3 },
+  'mat2x4': { arrayLength: 2, innerLength: 4 },
+  'mat3x4': { arrayLength: 3, innerLength: 4 },
+  'mat4x4': { arrayLength: 4, innerLength: 4 },
 } as const;
 
 export const kMatrixContainerTypes = keysOf(kMatrixContainerTypeInfo);
+
+export const kMatrixContainerTypeLayoutInfo =
+   {
+  'f16': {
+    'mat2x2': { layout: { alignment:  4, size:  8 } },
+    'mat3x2': { layout: { alignment:  4, size: 12 } },
+    'mat4x2': { layout: { alignment:  4, size: 16 } },
+    'mat2x3': { layout: { alignment:  8, size: 16 } },
+    'mat3x3': { layout: { alignment:  8, size: 24 } },
+    'mat4x3': { layout: { alignment:  8, size: 32 } },
+    'mat2x4': { layout: { alignment:  8, size: 16 } },
+    'mat3x4': { layout: { alignment:  8, size: 24 } },
+    'mat4x4': { layout: { alignment:  8, size: 32 } },
+  },
+  'f32': {
+    'mat2x2': { layout: { alignment:  8, size: 16 } },
+    'mat3x2': { layout: { alignment:  8, size: 24 } },
+    'mat4x2': { layout: { alignment:  8, size: 32 } },
+    'mat2x3': { layout: { alignment: 16, size: 32 } },
+    'mat3x3': { layout: { alignment: 16, size: 48 } },
+    'mat4x3': { layout: { alignment: 16, size: 64 } },
+    'mat2x4': { layout: { alignment: 16, size: 32 } },
+    'mat3x4': { layout: { alignment: 16, size: 48 } },
+    'mat4x4': { layout: { alignment: 16, size: 64 } },
+  }
+} as const;
 
 export type AddressSpace = 'storage' | 'uniform' | 'private' | 'function' | 'workgroup' | 'handle';
 export type AccessMode = 'read' | 'write' | 'read_write';
@@ -161,10 +216,39 @@ export function* generateTypes({
   containerType: ContainerType;
   
   isAtomic?: boolean;
-}) {
+}): Generator<
+  {
+    
+    type: string;
+    _kTypeInfo: {
+      
+
+
+
+
+
+      elementBaseType: string;
+      
+      layout: undefined | AlignmentAndSize;
+      supportsAtomics: boolean;
+      
+      arrayLength: number;
+      
+
+
+
+      innerLength?: number;
+    };
+  },
+  void
+> {
   const scalarInfo = kScalarTypeInfo[baseType];
   if (isAtomic) {
     assert(scalarInfo.supportsAtomics, 'type does not support atomics');
+    assert(
+      containerType === 'scalar' || containerType === 'array',
+      "can only generate atomic inner types with containerType 'scalar' or 'array'"
+    );
   }
   const scalarType = isAtomic ? `atomic<${baseType}>` : baseType;
 
@@ -189,21 +273,29 @@ export function* generateTypes({
     for (const vectorType of kVectorContainerTypes) {
       yield {
         type: `${vectorType}<${scalarType}>`,
-        _kTypeInfo: { elementBaseType: baseType, ...kVectorContainerTypeInfo[vectorType] },
+        _kTypeInfo: {
+          elementBaseType: baseType,
+          ...kVectorContainerTypeInfo[vectorType],
+          layout: vectorLayout(vectorType, scalarType as ScalarType),
+          supportsAtomics: false,
+        },
       };
     }
   }
 
   if (containerType === 'matrix') {
     
-    if (baseType === 'f32') {
+    if (baseType === 'f16' || baseType === 'f32') {
       for (const matrixType of kMatrixContainerTypes) {
-        const matrixInfo = kMatrixContainerTypeInfo[matrixType];
+        const matrixDimInfo = kMatrixContainerTypeInfo[matrixType];
+        const matrixLayoutInfo = kMatrixContainerTypeLayoutInfo[baseType][matrixType];
         yield {
           type: `${matrixType}<${scalarType}>`,
           _kTypeInfo: {
-            elementBaseType: `vec${matrixInfo.innerLength}<${scalarType}>`,
-            ...matrixInfo,
+            elementBaseType: `vec${matrixDimInfo.innerLength}<${scalarType}>`,
+            ...matrixDimInfo,
+            ...matrixLayoutInfo,
+            supportsAtomics: false,
           },
         };
       }
@@ -212,41 +304,57 @@ export function* generateTypes({
 
   
   if (containerType === 'array') {
+    let arrayElemType: string = scalarType;
+    let arrayElementCount: number = kDefaultArrayLength;
+    let supportsAtomics = scalarInfo.supportsAtomics;
+    let layout: undefined | AlignmentAndSize = undefined;
+    if (scalarInfo.layout) {
+      
+      
+      if (addressSpace === 'uniform') {
+        
+        
+        
+        assert(!isAtomic, 'the uniform case is making vec4 of scalar, which cannot handle atomics');
+        arrayElemType = `vec4<${baseType}>`;
+        supportsAtomics = false;
+        const arrayElemLayout = vectorLayout('vec4', baseType) as AlignmentAndSize;
+        
+        arrayElementCount = align(arrayElementCount, 4) / 4;
+        const arrayByteSize = arrayElementCount * arrayElemLayout.size;
+        layout = { alignment: arrayElemLayout.alignment, size: arrayByteSize };
+      } else {
+        
+        const stride = arrayStride(scalarInfo.layout);
+        let arrayByteSize = arrayElementCount * stride;
+        if (addressSpace === 'storage') {
+          
+          
+          while (arrayByteSize % 4 > 0) {
+            arrayElementCount++;
+            arrayByteSize = arrayElementCount * stride;
+          }
+        }
+        layout = { alignment: scalarInfo.layout.alignment, size: arrayByteSize };
+      }
+    }
+
     const arrayTypeInfo = {
       elementBaseType: `${baseType}`,
-      arrayLength: kArrayLength,
-      layout: scalarInfo.layout
-        ? {
-            alignment: scalarInfo.layout.alignment,
-            size:
-              addressSpace === 'uniform'
-                ? 
-                  kArrayLength *
-                  arrayStride({
-                    ...scalarInfo.layout,
-                    alignment: 16,
-                  })
-                : kArrayLength * arrayStride(scalarInfo.layout),
-          }
-        : undefined,
+      arrayLength: arrayElementCount,
+      layout,
+      supportsAtomics,
     };
 
     
-    if (addressSpace === 'uniform') {
-      yield {
-        type: `array<vec4<${scalarType}>,${kArrayLength}>`,
-        _kTypeInfo: arrayTypeInfo,
-      };
-    } else {
-      yield { type: `array<${scalarType},${kArrayLength}>`, _kTypeInfo: arrayTypeInfo };
-    }
+    yield { type: `array<${arrayElemType},${arrayElementCount}>`, _kTypeInfo: arrayTypeInfo };
     
     if (addressSpace === 'storage') {
-      yield { type: `array<${scalarType}>`, _kTypeInfo: arrayTypeInfo };
+      yield { type: `array<${arrayElemType}>`, _kTypeInfo: arrayTypeInfo };
     }
   }
 
-  function arrayStride(elementLayout: { size: number; alignment: number }) {
+  function arrayStride(elementLayout: AlignmentAndSize) {
     return align(elementLayout.size, elementLayout.alignment);
   }
 

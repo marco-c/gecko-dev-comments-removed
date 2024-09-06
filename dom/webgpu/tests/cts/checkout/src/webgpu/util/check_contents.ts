@@ -19,7 +19,7 @@ import { generatePrettyTable } from './pretty_diff_tables.js';
 
 export type CheckElementsGenerator = (index: number) => number;
 
-export type CheckElementsPredicate = (index: number, value: number) => boolean;
+export type CheckElementsPredicate = (index: number, value: number | bigint) => boolean;
 
 
 
@@ -31,7 +31,7 @@ export type CheckElementsSupplementalTableRows = Array<{
 
 
 
-  getValueForCell: (index: number) => number | string;
+  getValueForCell: (index: number) => string | number | bigint;
 }>;
 
 
@@ -43,7 +43,10 @@ export function checkElementsEqual(
   expected: TypedArrayBufferView
 ): ErrorWithExtra | undefined {
   assert(actual.constructor === expected.constructor, 'TypedArray type mismatch');
-  assert(actual.length === expected.length, 'size mismatch');
+  assert(
+    actual.length === expected.length,
+    `length mismatch: expected ${expected.length} got ${actual.length}`
+  );
 
   let failedElementsFirstMaybe: number | undefined = undefined;
   
@@ -221,13 +224,17 @@ function failCheckElements({
   const printElementsEnd = Math.min(size, failedElementsLast + 2);
   const printElementsCount = printElementsEnd - printElementsStart;
 
-  const numberToString = printAsFloat
-    ? (n: number) => n.toPrecision(4)
-    : (n: number) => intToPaddedHex(n, { byteLength: ctor.BYTES_PER_ELEMENT });
+  const numericToString = (val: number | bigint): string => {
+    if (typeof val === 'number' && printAsFloat) {
+      return val.toPrecision(4);
+    }
+    return intToPaddedHex(val, { byteLength: ctor.BYTES_PER_ELEMENT });
+  };
+
   const numberPrefix = printAsFloat ? '' : '0x:';
 
   const printActual = actual.subarray(printElementsStart, printElementsEnd);
-  const printExpected: Array<Iterable<string | number>> = [];
+  const printExpected: Array<Iterable<string | number | bigint>> = [];
   if (predicatePrinter) {
     for (const { leftHeader, getValueForCell: cell } of predicatePrinter) {
       printExpected.push(
@@ -246,7 +253,7 @@ function failCheckElements({
 
   const opts = {
     fillToWidth: 120,
-    numberToString,
+    numericToString,
   };
   const msg = `Array had unexpected contents at indices ${failedElementsFirst} through ${failedElementsLast}.
  Starting at index ${printElementsStart}:
@@ -263,10 +270,11 @@ ${generatePrettyTable(opts, [
 
 
 
-function intToPaddedHex(number: number, { byteLength }: { byteLength: number }) {
-  assert(Number.isInteger(number), 'number must be integer');
-  let s = Math.abs(number).toString(16);
-  if (byteLength) s = s.padStart(byteLength * 2, '0');
-  if (number < 0) s = '-' + s;
-  return s;
+function intToPaddedHex(val: number | bigint, { byteLength }: { byteLength: number }) {
+  assert(Number.isInteger(val), 'number must be integer');
+  const is_negative = typeof val === 'number' ? val < 0 : val < 0n;
+  let str = (is_negative ? -val : val).toString(16);
+  if (byteLength) str = str.padStart(byteLength * 2, '0');
+  if (is_negative) str = '-' + str;
+  return str;
 }

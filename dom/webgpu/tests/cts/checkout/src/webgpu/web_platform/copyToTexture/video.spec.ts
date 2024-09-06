@@ -1,8 +1,10 @@
 export const description = `
 copyToTexture with HTMLVideoElement and VideoFrame.
 
-- videos with various encodings/formats (webm vp8, webm vp9, ogg theora, mp4), color spaces
-  (bt.601, bt.709, bt.2020)
+- videos with various encodings/formats (webm vp8, webm vp9, ogg theora, mp4), video color spaces
+  (bt.601, bt.709, bt.2020) and dst color spaces(display-p3, srgb).
+
+  TODO: Test video in BT.2020 color space
 `;
 
 import { makeTestGroup } from '../../../common/framework/test_group.js';
@@ -11,7 +13,11 @@ import {
   startPlayingAndWaitForVideo,
   getVideoElement,
   getVideoFrameFromVideoElement,
-  kVideoExpectations,
+  convertToUnorm8,
+  kPredefinedColorSpace,
+  kVideoNames,
+  kVideoInfo,
+  kVideoExpectedColors,
 } from '../../web_platform/util.js';
 
 const kFormat = 'rgba8unorm';
@@ -36,17 +42,17 @@ It creates HTMLVideoElement with videos under Resource folder.
   - Valid 'flipY' config in 'GPUImageCopyExternalImage' (named 'srcDoFlipYDuringCopy' in cases)
   - TODO: partial copy tests should be added
   - TODO: all valid dstColorFormat tests should be added.
-  - TODO: dst color space tests need to be added
 `
   )
   .params(u =>
     u 
-      .combineWithParams(kVideoExpectations)
+      .combine('videoName', kVideoNames)
       .combine('sourceType', ['VideoElement', 'VideoFrame'] as const)
       .combine('srcDoFlipYDuringCopy', [true, false])
+      .combine('dstColorSpace', kPredefinedColorSpace)
   )
   .fn(async t => {
-    const { videoName, sourceType, srcDoFlipYDuringCopy } = t.params;
+    const { videoName, sourceType, srcDoFlipYDuringCopy, dstColorSpace } = t.params;
 
     if (sourceType === 'VideoFrame' && typeof VideoFrame === 'undefined') {
       t.skip('WebCodec is not supported');
@@ -58,8 +64,8 @@ It creates HTMLVideoElement with videos under Resource folder.
       let source, width, height;
       if (sourceType === 'VideoFrame') {
         source = await getVideoFrameFromVideoElement(t, videoElement);
-        width = source.codedWidth;
-        height = source.codedHeight;
+        width = source.displayWidth;
+        height = source.displayHeight;
       } else {
         source = videoElement;
         width = source.videoWidth;
@@ -82,33 +88,63 @@ It creates HTMLVideoElement with videos under Resource folder.
         {
           texture: dstTexture,
           origin: { x: 0, y: 0 },
-          colorSpace: 'srgb',
+          colorSpace: dstColorSpace,
           premultipliedAlpha: true,
         },
         { width, height, depthOrArrayLayers: 1 }
       );
 
+      const srcColorSpace = kVideoInfo[videoName].colorSpace;
+      const presentColors = kVideoExpectedColors[srcColorSpace][dstColorSpace];
+
+      
+      const expect = kVideoInfo[videoName].display;
+
       if (srcDoFlipYDuringCopy) {
         t.expectSinglePixelComparisonsAreOkInTexture({ texture: dstTexture }, [
           
-          { coord: { x: width * 0.25, y: height * 0.25 }, exp: t.params._blueExpectation },
+          {
+            coord: { x: width * 0.25, y: height * 0.25 },
+            exp: convertToUnorm8(presentColors[expect.bottomLeftColor]),
+          },
           
-          { coord: { x: width * 0.75, y: height * 0.25 }, exp: t.params._greenExpectation },
+          {
+            coord: { x: width * 0.75, y: height * 0.25 },
+            exp: convertToUnorm8(presentColors[expect.bottomRightColor]),
+          },
           
-          { coord: { x: width * 0.25, y: height * 0.75 }, exp: t.params._yellowExpectation },
+          {
+            coord: { x: width * 0.25, y: height * 0.75 },
+            exp: convertToUnorm8(presentColors[expect.topLeftColor]),
+          },
           
-          { coord: { x: width * 0.75, y: height * 0.75 }, exp: t.params._redExpectation },
+          {
+            coord: { x: width * 0.75, y: height * 0.75 },
+            exp: convertToUnorm8(presentColors[expect.topRightColor]),
+          },
         ]);
       } else {
         t.expectSinglePixelComparisonsAreOkInTexture({ texture: dstTexture }, [
           
-          { coord: { x: width * 0.25, y: height * 0.25 }, exp: t.params._yellowExpectation },
+          {
+            coord: { x: width * 0.25, y: height * 0.25 },
+            exp: convertToUnorm8(presentColors[expect.topLeftColor]),
+          },
           
-          { coord: { x: width * 0.75, y: height * 0.25 }, exp: t.params._redExpectation },
+          {
+            coord: { x: width * 0.75, y: height * 0.25 },
+            exp: convertToUnorm8(presentColors[expect.topRightColor]),
+          },
           
-          { coord: { x: width * 0.25, y: height * 0.75 }, exp: t.params._blueExpectation },
+          {
+            coord: { x: width * 0.25, y: height * 0.75 },
+            exp: convertToUnorm8(presentColors[expect.bottomLeftColor]),
+          },
           
-          { coord: { x: width * 0.75, y: height * 0.75 }, exp: t.params._greenExpectation },
+          {
+            coord: { x: width * 0.75, y: height * 0.75 },
+            exp: convertToUnorm8(presentColors[expect.bottomRightColor]),
+          },
         ]);
       }
 

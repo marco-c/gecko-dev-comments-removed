@@ -6,73 +6,13 @@ which is then placed in bits 16 × i through 16 × i + 15 of the result.
 
 import { makeTestGroup } from '../../../../../../common/framework/test_group.js';
 import { GPUTest } from '../../../../../gpu_test.js';
-import { anyOf, skipUndefined } from '../../../../../util/compare.js';
-import {
-  f32,
-  pack2x16float,
-  TypeF32,
-  TypeU32,
-  TypeVec,
-  u32,
-  vec2,
-} from '../../../../../util/conversion.js';
-import { cartesianProduct, fullF32Range, quantizeToF32 } from '../../../../../util/math.js';
-import { makeCaseCache } from '../../case_cache.js';
-import { allInputSources, Case, run } from '../../expression.js';
+import { Type } from '../../../../../util/conversion.js';
+import { allInputSources, run } from '../../expression.js';
 
 import { builtin } from './builtin.js';
+import { d } from './pack2x16float.cache.js';
 
 export const g = makeTestGroup(GPUTest);
-
-
-
-
-
-
-
-
-
-
-
-
-function makeCase(param0: number, param1: number, filter_undefined: boolean): Case | undefined {
-  param0 = quantizeToF32(param0);
-  param1 = quantizeToF32(param1);
-
-  const results = pack2x16float(param0, param1);
-  if (filter_undefined && results.some(r => r === undefined)) {
-    return undefined;
-  }
-
-  return {
-    input: [vec2(f32(param0), f32(param1))],
-    expected: anyOf(
-      ...results.map(r => (r === undefined ? skipUndefined(undefined) : skipUndefined(u32(r))))
-    ),
-  };
-}
-
-
-
-
-
-
-
-
-function generateCases(param0s: number[], param1s: number[], filter_undefined: boolean): Case[] {
-  return cartesianProduct(param0s, param1s)
-    .map(e => makeCase(e[0], e[1], filter_undefined))
-    .filter((c): c is Case => c !== undefined);
-}
-
-export const d = makeCaseCache('pack2x16float', {
-  f32_const: () => {
-    return generateCases(fullF32Range(), fullF32Range(), true);
-  },
-  f32_non_const: () => {
-    return generateCases(fullF32Range(), fullF32Range(), false);
-  },
-});
 
 g.test('pack')
   .specURL('https://www.w3.org/TR/WGSL/#pack-builtin-functions')
@@ -84,5 +24,5 @@ g.test('pack')
   .params(u => u.combine('inputSource', allInputSources))
   .fn(async t => {
     const cases = await d.get(t.params.inputSource === 'const' ? 'f32_const' : 'f32_non_const');
-    await run(t, builtin('pack2x16float'), [TypeVec(2, TypeF32)], TypeU32, t.params, cases);
+    await run(t, builtin('pack2x16float'), [Type.vec2f], Type.u32, t.params, cases);
   });

@@ -14,8 +14,24 @@ export interface LiveTestCaseResult extends TestCaseResult {
   logs?: LogMessageWithStack[];
 }
 
+
+
+
+
+
+export interface LogMessageRawData {
+  name: string;
+  message: string;
+  stackHiddenMessage: string | undefined;
+  stack: string | undefined;
+  extra: unknown;
+}
+
+
+
+
+
+
 export interface TransferredTestCaseResult extends TestCaseResult {
-  
-  
-  logs?: Error[];
+  logs?: LogMessageRawData[];
 }
