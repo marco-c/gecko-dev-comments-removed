@@ -700,6 +700,11 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       response.outerWindowID = this.outerWindowID;
     }
 
+    
+    if (this.destroying) {
+      return response;
+    }
+
     const actors = this._createExtraActors();
     Object.assign(response, actors);
 
