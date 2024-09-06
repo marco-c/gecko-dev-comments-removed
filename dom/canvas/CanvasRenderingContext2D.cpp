@@ -5743,6 +5743,10 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
       
       
       srcSurf = ExtractSubrect(srcSurf, &sourceRect, mTarget);
+      
+      
+      
+      res.mSourceSurface = nullptr;
     }
 
     AdjustedTarget tempTarget(this, bounds.IsEmpty() ? nullptr : &bounds, true);

@@ -32,7 +32,10 @@ RecordedTextureData::~RecordedTextureData() {
   
   mSnapshot = nullptr;
   DetachSnapshotWrapper();
-  mDT = nullptr;
+  if (mDT) {
+    mDT->DetachTextureData(this);
+    mDT = nullptr;
+  }
   mCanvasChild->CleanupTexture(mTextureId);
   mCanvasChild->RecordEvent(RecordedTextureDestruction(
       mTextureId, ToRemoteTextureTxnType(mFwdTransactionTracker),
@@ -78,6 +81,8 @@ bool RecordedTextureData::Lock(OpenMode aMode) {
     if (!mDT) {
       return false;
     }
+
+    mDT->AttachTextureData(this);
 
     
     mLockedMode = aMode;
@@ -139,16 +144,20 @@ void RecordedTextureData::EndDraw() {
   }
 }
 
+void RecordedTextureData::DrawTargetWillChange() {
+  
+  
+  
+  mSnapshot = nullptr;
+  DetachSnapshotWrapper(true);
+}
+
 already_AddRefed<gfx::SourceSurface> RecordedTextureData::BorrowSnapshot() {
   if (mSnapshotWrapper) {
-    if (!mDT || !mDT->IsDirty()) {
-      
-      
-      mCanvasChild->AttachSurface(mSnapshotWrapper);
-      return do_AddRef(mSnapshotWrapper);
-    }
-
-    DetachSnapshotWrapper();
+    
+    
+    mCanvasChild->AttachSurface(mSnapshotWrapper);
+    return do_AddRef(mSnapshotWrapper);
   }
 
   
@@ -156,8 +165,6 @@ already_AddRefed<gfx::SourceSurface> RecordedTextureData::BorrowSnapshot() {
   if (!mDT) {
     return nullptr;
   }
-
-  mDT->MarkClean();
 
   RefPtr<gfx::SourceSurface> wrapper = mCanvasChild->WrapSurface(
       mSnapshot ? mSnapshot : mDT->Snapshot(), mTextureId);
