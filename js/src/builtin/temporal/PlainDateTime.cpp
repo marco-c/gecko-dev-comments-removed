@@ -446,7 +446,7 @@ bool js::temporal::InterpretTemporalDateTimeFields(
 
   
   auto overflow = TemporalOverflow::Constrain;
-  if (!ToTemporalOverflow(cx, options, &overflow)) {
+  if (!GetTemporalOverflowOption(cx, options, &overflow)) {
     return false;
   }
 
@@ -540,7 +540,7 @@ static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
       
       if (maybeResolvedOptions) {
         TemporalOverflow ignored;
-        if (!ToTemporalOverflow(cx, maybeResolvedOptions, &ignored)) {
+        if (!GetTemporalOverflowOption(cx, maybeResolvedOptions, &ignored)) {
           return nullptr;
         }
       }
@@ -560,7 +560,7 @@ static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
       
       if (maybeResolvedOptions) {
         TemporalOverflow ignored;
-        if (!ToTemporalOverflow(cx, maybeResolvedOptions, &ignored)) {
+        if (!GetTemporalOverflowOption(cx, maybeResolvedOptions, &ignored)) {
           return nullptr;
         }
       }
@@ -650,7 +650,7 @@ static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
     
     if (maybeResolvedOptions) {
       TemporalOverflow ignored;
-      if (!ToTemporalOverflow(cx, maybeResolvedOptions, &ignored)) {
+      if (!GetTemporalOverflowOption(cx, maybeResolvedOptions, &ignored)) {
         return nullptr;
       }
     }
@@ -1251,7 +1251,7 @@ static bool PlainDateTime_from(JSContext* cx, unsigned argc, Value* vp) {
       if (options) {
         
         TemporalOverflow ignored;
-        if (!ToTemporalOverflow(cx, options, &ignored)) {
+        if (!GetTemporalOverflowOption(cx, options, &ignored)) {
           return false;
         }
       }
@@ -2134,8 +2134,9 @@ static bool PlainDateTime_round(JSContext* cx, const CallArgs& args) {
 
     
     Rooted<JSString*> paramString(cx, args[0].toString());
-    if (!GetTemporalUnit(cx, paramString, TemporalUnitKey::SmallestUnit,
-                         TemporalUnitGroup::DayTime, &smallestUnit)) {
+    if (!GetTemporalUnitValuedOption(
+            cx, paramString, TemporalUnitKey::SmallestUnit,
+            TemporalUnitGroup::DayTime, &smallestUnit)) {
       return false;
     }
 
@@ -2152,18 +2153,19 @@ static bool PlainDateTime_round(JSContext* cx, const CallArgs& args) {
     }
 
     
-    if (!ToTemporalRoundingIncrement(cx, roundTo, &roundingIncrement)) {
+    if (!GetRoundingIncrementOption(cx, roundTo, &roundingIncrement)) {
       return false;
     }
 
     
-    if (!ToTemporalRoundingMode(cx, roundTo, &roundingMode)) {
+    if (!GetRoundingModeOption(cx, roundTo, &roundingMode)) {
       return false;
     }
 
     
-    if (!GetTemporalUnit(cx, roundTo, TemporalUnitKey::SmallestUnit,
-                         TemporalUnitGroup::DayTime, &smallestUnit)) {
+    if (!GetTemporalUnitValuedOption(cx, roundTo, TemporalUnitKey::SmallestUnit,
+                                     TemporalUnitGroup::DayTime,
+                                     &smallestUnit)) {
       return false;
     }
 
@@ -2270,7 +2272,7 @@ static bool PlainDateTime_toString(JSContext* cx, const CallArgs& args) {
   SecondsStringPrecision precision = {Precision::Auto(),
                                       TemporalUnit::Nanosecond, Increment{1}};
   auto roundingMode = TemporalRoundingMode::Trunc;
-  auto showCalendar = CalendarOption::Auto;
+  auto showCalendar = ShowCalendar::Auto;
   if (args.hasDefined(0)) {
     
     Rooted<JSObject*> options(
@@ -2280,25 +2282,25 @@ static bool PlainDateTime_toString(JSContext* cx, const CallArgs& args) {
     }
 
     
-    if (!ToCalendarNameOption(cx, options, &showCalendar)) {
+    if (!GetTemporalShowCalendarNameOption(cx, options, &showCalendar)) {
       return false;
     }
 
     
     auto digits = Precision::Auto();
-    if (!ToFractionalSecondDigits(cx, options, &digits)) {
+    if (!GetTemporalFractionalSecondDigitsOption(cx, options, &digits)) {
       return false;
     }
 
     
-    if (!ToTemporalRoundingMode(cx, options, &roundingMode)) {
+    if (!GetRoundingModeOption(cx, options, &roundingMode)) {
       return false;
     }
 
     
     auto smallestUnit = TemporalUnit::Auto;
-    if (!GetTemporalUnit(cx, options, TemporalUnitKey::SmallestUnit,
-                         TemporalUnitGroup::Time, &smallestUnit)) {
+    if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
+                                     TemporalUnitGroup::Time, &smallestUnit)) {
       return false;
     }
 
@@ -2349,7 +2351,7 @@ static bool PlainDateTime_toLocaleString(JSContext* cx, const CallArgs& args) {
 
   
   JSString* str = ::TemporalDateTimeToString(
-      cx, dt, calendar, Precision::Auto(), CalendarOption::Auto);
+      cx, dt, calendar, Precision::Auto(), ShowCalendar::Auto);
   if (!str) {
     return false;
   }
@@ -2379,7 +2381,7 @@ static bool PlainDateTime_toJSON(JSContext* cx, const CallArgs& args) {
 
   
   JSString* str = ::TemporalDateTimeToString(
-      cx, dt, calendar, Precision::Auto(), CalendarOption::Auto);
+      cx, dt, calendar, Precision::Auto(), ShowCalendar::Auto);
   if (!str) {
     return false;
   }
@@ -2549,7 +2551,7 @@ static bool PlainDateTime_toZonedDateTime(JSContext* cx, const CallArgs& args) {
     }
 
     
-    if (!ToTemporalDisambiguation(cx, options, &disambiguation)) {
+    if (!GetTemporalDisambiguationOption(cx, options, &disambiguation)) {
       return false;
     }
   }

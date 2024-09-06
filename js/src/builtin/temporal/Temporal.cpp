@@ -138,9 +138,9 @@ static bool GetNumberOption(JSContext* cx, Handle<JSObject*> options,
 
 
 
-bool js::temporal::ToTemporalRoundingIncrement(JSContext* cx,
-                                               Handle<JSObject*> options,
-                                               Increment* increment) {
+bool js::temporal::GetRoundingIncrementOption(JSContext* cx,
+                                              Handle<JSObject*> options,
+                                              Increment* increment) {
   
   double number = 1;
   if (!GetNumberOption(cx, options, cx->names().roundingIncrement, &number)) {
@@ -331,10 +331,11 @@ static std::pair<TemporalUnit, TemporalUnit> AllowedValues(
 
 
 
-bool js::temporal::GetTemporalUnit(JSContext* cx, Handle<JSObject*> options,
-                                   TemporalUnitKey key,
-                                   TemporalUnitGroup unitGroup,
-                                   TemporalUnit* unit) {
+bool js::temporal::GetTemporalUnitValuedOption(JSContext* cx,
+                                               Handle<JSObject*> options,
+                                               TemporalUnitKey key,
+                                               TemporalUnitGroup unitGroup,
+                                               TemporalUnit* unit) {
   
 
   
@@ -348,17 +349,18 @@ bool js::temporal::GetTemporalUnit(JSContext* cx, Handle<JSObject*> options,
     return true;
   }
 
-  return GetTemporalUnit(cx, value, key, unitGroup, unit);
+  return GetTemporalUnitValuedOption(cx, value, key, unitGroup, unit);
 }
 
 
 
 
 
-bool js::temporal::GetTemporalUnit(JSContext* cx, Handle<JSString*> value,
-                                   TemporalUnitKey key,
-                                   TemporalUnitGroup unitGroup,
-                                   TemporalUnit* unit) {
+bool js::temporal::GetTemporalUnitValuedOption(JSContext* cx,
+                                               Handle<JSString*> value,
+                                               TemporalUnitKey key,
+                                               TemporalUnitGroup unitGroup,
+                                               TemporalUnit* unit) {
   
 
   
@@ -396,9 +398,9 @@ bool js::temporal::GetTemporalUnit(JSContext* cx, Handle<JSString*> value,
 
 
 
-bool js::temporal::ToTemporalRoundingMode(JSContext* cx,
-                                          Handle<JSObject*> options,
-                                          TemporalRoundingMode* mode) {
+bool js::temporal::GetRoundingModeOption(JSContext* cx,
+                                         Handle<JSObject*> options,
+                                         TemporalRoundingMode* mode) {
   
   Rooted<JSString*> string(cx);
   if (!GetStringOption(cx, options, cx->names().roundingMode, &string)) {
@@ -797,9 +799,9 @@ double js::temporal::FractionToDouble(const Int128& numerator,
 
 
 
-bool js::temporal::ToCalendarNameOption(JSContext* cx,
-                                        Handle<JSObject*> options,
-                                        CalendarOption* result) {
+bool js::temporal::GetTemporalShowCalendarNameOption(JSContext* cx,
+                                                     Handle<JSObject*> options,
+                                                     ShowCalendar* result) {
   
   Rooted<JSString*> calendarName(cx);
   if (!GetStringOption(cx, options, cx->names().calendarName, &calendarName)) {
@@ -817,13 +819,13 @@ bool js::temporal::ToCalendarNameOption(JSContext* cx,
   }
 
   if (StringEqualsLiteral(linear, "auto")) {
-    *result = CalendarOption::Auto;
+    *result = ShowCalendar::Auto;
   } else if (StringEqualsLiteral(linear, "always")) {
-    *result = CalendarOption::Always;
+    *result = ShowCalendar::Always;
   } else if (StringEqualsLiteral(linear, "never")) {
-    *result = CalendarOption::Never;
+    *result = ShowCalendar::Never;
   } else if (StringEqualsLiteral(linear, "critical")) {
-    *result = CalendarOption::Critical;
+    *result = ShowCalendar::Critical;
   } else {
     if (auto chars = QuoteString(cx, linear, '"')) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
@@ -838,9 +840,8 @@ bool js::temporal::ToCalendarNameOption(JSContext* cx,
 
 
 
-bool js::temporal::ToFractionalSecondDigits(JSContext* cx,
-                                            Handle<JSObject*> options,
-                                            Precision* precision) {
+bool js::temporal::GetTemporalFractionalSecondDigitsOption(
+    JSContext* cx, Handle<JSObject*> options, Precision* precision) {
   
   Rooted<Value> digitsValue(cx);
   if (!GetProperty(cx, options, options, cx->names().fractionalSecondDigits,
@@ -998,8 +999,9 @@ SecondsStringPrecision js::temporal::ToSecondsStringPrecision(
 
 
 
-bool js::temporal::ToTemporalOverflow(JSContext* cx, Handle<JSObject*> options,
-                                      TemporalOverflow* result) {
+bool js::temporal::GetTemporalOverflowOption(JSContext* cx,
+                                             Handle<JSObject*> options,
+                                             TemporalOverflow* result) {
   
   Rooted<JSString*> overflow(cx);
   if (!GetStringOption(cx, options, cx->names().overflow, &overflow)) {
@@ -1034,7 +1036,7 @@ bool js::temporal::ToTemporalOverflow(JSContext* cx, Handle<JSObject*> options,
 
 
 
-bool js::temporal::ToTemporalDisambiguation(
+bool js::temporal::GetTemporalDisambiguationOption(
     JSContext* cx, Handle<JSObject*> options,
     TemporalDisambiguation* disambiguation) {
   
@@ -1077,8 +1079,9 @@ bool js::temporal::ToTemporalDisambiguation(
 
 
 
-bool js::temporal::ToTemporalOffset(JSContext* cx, Handle<JSObject*> options,
-                                    TemporalOffset* offset) {
+bool js::temporal::GetTemporalOffsetOption(JSContext* cx,
+                                           Handle<JSObject*> options,
+                                           TemporalOffset* offset) {
   
 
   
@@ -1119,9 +1122,9 @@ bool js::temporal::ToTemporalOffset(JSContext* cx, Handle<JSObject*> options,
 
 
 
-bool js::temporal::ToTimeZoneNameOption(JSContext* cx,
-                                        Handle<JSObject*> options,
-                                        TimeZoneNameOption* result) {
+bool js::temporal::GetTemporalShowTimeZoneNameOption(JSContext* cx,
+                                                     Handle<JSObject*> options,
+                                                     ShowTimeZoneName* result) {
   
   Rooted<JSString*> timeZoneName(cx);
   if (!GetStringOption(cx, options, cx->names().timeZoneName, &timeZoneName)) {
@@ -1139,11 +1142,11 @@ bool js::temporal::ToTimeZoneNameOption(JSContext* cx,
   }
 
   if (StringEqualsLiteral(linear, "auto")) {
-    *result = TimeZoneNameOption::Auto;
+    *result = ShowTimeZoneName::Auto;
   } else if (StringEqualsLiteral(linear, "never")) {
-    *result = TimeZoneNameOption::Never;
+    *result = ShowTimeZoneName::Never;
   } else if (StringEqualsLiteral(linear, "critical")) {
-    *result = TimeZoneNameOption::Critical;
+    *result = ShowTimeZoneName::Critical;
   } else {
     if (auto chars = QuoteString(cx, linear, '"')) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
@@ -1158,13 +1161,9 @@ bool js::temporal::ToTimeZoneNameOption(JSContext* cx,
 
 
 
-bool js::temporal::ToShowOffsetOption(JSContext* cx, Handle<JSObject*> options,
-                                      ShowOffsetOption* result) {
-  
-  
-  
-  
-
+bool js::temporal::GetTemporalShowOffsetOption(JSContext* cx,
+                                               Handle<JSObject*> options,
+                                               ShowOffset* result) {
   
   Rooted<JSString*> offset(cx);
   if (!GetStringOption(cx, options, cx->names().offset, &offset)) {
@@ -1182,9 +1181,9 @@ bool js::temporal::ToShowOffsetOption(JSContext* cx, Handle<JSObject*> options,
   }
 
   if (StringEqualsLiteral(linear, "auto")) {
-    *result = ShowOffsetOption::Auto;
+    *result = ShowOffset::Auto;
   } else if (StringEqualsLiteral(linear, "never")) {
-    *result = ShowOffsetOption::Never;
+    *result = ShowOffset::Never;
   } else {
     if (auto chars = QuoteString(cx, linear, '"')) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
@@ -1501,8 +1500,8 @@ bool js::temporal::GetDifferenceSettings(
     DifferenceSettings* result) {
   
   auto largestUnit = TemporalUnit::Auto;
-  if (!GetTemporalUnit(cx, options, TemporalUnitKey::LargestUnit, unitGroup,
-                       &largestUnit)) {
+  if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::LargestUnit,
+                                   unitGroup, &largestUnit)) {
     return false;
   }
 
@@ -1516,25 +1515,25 @@ bool js::temporal::GetDifferenceSettings(
 
   
   auto roundingIncrement = Increment{1};
-  if (!ToTemporalRoundingIncrement(cx, options, &roundingIncrement)) {
+  if (!GetRoundingIncrementOption(cx, options, &roundingIncrement)) {
     return false;
   }
 
   
   auto roundingMode = TemporalRoundingMode::Trunc;
-  if (!ToTemporalRoundingMode(cx, options, &roundingMode)) {
+  if (!GetRoundingModeOption(cx, options, &roundingMode)) {
     return false;
   }
 
   
   if (operation == TemporalDifference::Since) {
-    roundingMode = NegateTemporalRoundingMode(roundingMode);
+    roundingMode = NegateRoundingMode(roundingMode);
   }
 
   
   auto smallestUnit = fallbackSmallestUnit;
-  if (!GetTemporalUnit(cx, options, TemporalUnitKey::SmallestUnit, unitGroup,
-                       &smallestUnit)) {
+  if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
+                                   unitGroup, &smallestUnit)) {
     return false;
   }
 

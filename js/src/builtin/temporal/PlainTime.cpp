@@ -1103,7 +1103,7 @@ static bool PlainTime_from(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    if (!ToTemporalOverflow(cx, options, &overflow)) {
+    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
       return false;
     }
   }
@@ -1318,7 +1318,7 @@ static bool PlainTime_with(JSContext* cx, const CallArgs& args) {
     }
 
     
-    if (!ToTemporalOverflow(cx, options, &overflow)) {
+    if (!GetTemporalOverflowOption(cx, options, &overflow)) {
       return false;
     }
   }
@@ -1408,8 +1408,9 @@ static bool PlainTime_round(JSContext* cx, const CallArgs& args) {
 
     
     Rooted<JSString*> paramString(cx, args[0].toString());
-    if (!GetTemporalUnit(cx, paramString, TemporalUnitKey::SmallestUnit,
-                         TemporalUnitGroup::Time, &smallestUnit)) {
+    if (!GetTemporalUnitValuedOption(cx, paramString,
+                                     TemporalUnitKey::SmallestUnit,
+                                     TemporalUnitGroup::Time, &smallestUnit)) {
       return false;
     }
 
@@ -1423,18 +1424,18 @@ static bool PlainTime_round(JSContext* cx, const CallArgs& args) {
     }
 
     
-    if (!ToTemporalRoundingIncrement(cx, options, &roundingIncrement)) {
+    if (!GetRoundingIncrementOption(cx, options, &roundingIncrement)) {
       return false;
     }
 
     
-    if (!ToTemporalRoundingMode(cx, options, &roundingMode)) {
+    if (!GetRoundingModeOption(cx, options, &roundingMode)) {
       return false;
     }
 
     
-    if (!GetTemporalUnit(cx, options, TemporalUnitKey::SmallestUnit,
-                         TemporalUnitGroup::Time, &smallestUnit)) {
+    if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
+                                     TemporalUnitGroup::Time, &smallestUnit)) {
       return false;
     }
 
@@ -1713,19 +1714,19 @@ static bool PlainTime_toString(JSContext* cx, const CallArgs& args) {
 
     
     auto digits = Precision::Auto();
-    if (!ToFractionalSecondDigits(cx, options, &digits)) {
+    if (!GetTemporalFractionalSecondDigitsOption(cx, options, &digits)) {
       return false;
     }
 
     
-    if (!ToTemporalRoundingMode(cx, options, &roundingMode)) {
+    if (!GetRoundingModeOption(cx, options, &roundingMode)) {
       return false;
     }
 
     
     auto smallestUnit = TemporalUnit::Auto;
-    if (!GetTemporalUnit(cx, options, TemporalUnitKey::SmallestUnit,
-                         TemporalUnitGroup::Time, &smallestUnit)) {
+    if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
+                                     TemporalUnitGroup::Time, &smallestUnit)) {
       return false;
     }
 

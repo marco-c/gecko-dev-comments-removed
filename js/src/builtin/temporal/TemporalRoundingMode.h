@@ -54,7 +54,7 @@ enum class TemporalRoundingMode {
 
 
 
-constexpr auto NegateTemporalRoundingMode(TemporalRoundingMode roundingMode) {
+constexpr auto NegateRoundingMode(TemporalRoundingMode roundingMode) {
   
   switch (roundingMode) {
     case TemporalRoundingMode::Ceil:
