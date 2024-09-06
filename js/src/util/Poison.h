@@ -22,6 +22,7 @@
 
 #include "jstypes.h"
 
+#include "js/Prefs.h"
 #include "js/Value.h"
 #include "util/DiagnosticAssertions.h"
 
@@ -184,23 +185,18 @@ static inline void AlwaysPoison(void* ptr, uint8_t value, size_t num,
   SetMemCheckKind(ptr, num, kind);
 }
 
-#if defined(JS_GC_ALLOW_EXTRA_POISONING)
-extern bool gExtraPoisoningEnabled;
-#endif
-
 
 
 
 static inline void Poison(void* ptr, uint8_t value, size_t num,
                           MemCheckKind kind) {
 #if defined(JS_GC_ALLOW_EXTRA_POISONING)
-  if (js::gExtraPoisoningEnabled) {
+  if (JS::Prefs::extra_gc_poisoning()) {
     PoisonImpl(ptr, value, num);
   }
 #endif
   SetMemCheckKind(ptr, num, kind);
 }
-
 
 
 static inline void DebugOnlyPoison(void* ptr, uint8_t value, size_t num,
