@@ -1855,8 +1855,17 @@ void nsSocketTransportService::EndPolling() {
 void nsSocketTransportService::TryRepairPollableEvent() {
   mLock.AssertCurrentThreadOwns();
 
+  PollableEvent* pollable = nullptr;
+  {
+    
+    
+    
+    MutexAutoUnlock unlock(mLock);
+    pollable = new PollableEvent();
+  }
+
   NS_WARNING("Trying to repair mPollableEvent");
-  mPollableEvent.reset(new PollableEvent());
+  mPollableEvent.reset(pollable);
   if (!mPollableEvent->Valid()) {
     mPollableEvent = nullptr;
   }
