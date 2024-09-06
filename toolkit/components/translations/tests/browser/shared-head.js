@@ -553,6 +553,10 @@ async function loadTestPage({
         ["browser.translations.automaticallyPopup", true],
         ["browser.translations.alwaysTranslateLanguages", ""],
         ["browser.translations.neverTranslateLanguages", ""],
+        
+        
+        
+        ["accessibility.tabfocus_applies_to_xul", false],
         ...(prefs ?? []),
       ],
     });
