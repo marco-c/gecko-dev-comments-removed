@@ -6,8 +6,6 @@
 
 
 
-
-
 use super::{
     color_function::ColorFunction,
     component::{ColorComponent, ColorComponentType},
@@ -34,13 +32,6 @@ use style_traits::{ParseError, StyleParseErrorKind};
 #[inline]
 pub fn rcs_enabled() -> bool {
     static_prefs::pref!("layout.css.relative-color-syntax.enabled")
-}
-
-impl From<u8> for ColorComponent<u8> {
-    #[inline]
-    fn from(value: u8) -> Self {
-        ColorComponent::Value(value)
-    }
 }
 
 
@@ -603,75 +594,4 @@ impl<'a, 'b: 'a> ComponentParser<'a, 'b> {
             }))
         }
     }
-}
-
-
-pub trait FromParsedColor {
-    
-    fn from_current_color() -> Self;
-
-    
-    fn from_rgba(
-        red: ColorComponent<u8>,
-        green: ColorComponent<u8>,
-        blue: ColorComponent<u8>,
-        alpha: ColorComponent<NumberOrPercentage>,
-    ) -> Self;
-
-    
-    fn from_hsl(
-        hue: ColorComponent<NumberOrAngle>,
-        saturation: ColorComponent<NumberOrPercentage>,
-        lightness: ColorComponent<NumberOrPercentage>,
-        alpha: ColorComponent<NumberOrPercentage>,
-    ) -> Self;
-
-    
-    fn from_hwb(
-        hue: ColorComponent<NumberOrAngle>,
-        whiteness: ColorComponent<NumberOrPercentage>,
-        blackness: ColorComponent<NumberOrPercentage>,
-        alpha: ColorComponent<NumberOrPercentage>,
-    ) -> Self;
-
-    
-    fn from_lab(
-        lightness: ColorComponent<NumberOrPercentage>,
-        a: ColorComponent<NumberOrPercentage>,
-        b: ColorComponent<NumberOrPercentage>,
-        alpha: ColorComponent<NumberOrPercentage>,
-    ) -> Self;
-
-    
-    fn from_lch(
-        lightness: ColorComponent<NumberOrPercentage>,
-        chroma: ColorComponent<NumberOrPercentage>,
-        hue: ColorComponent<NumberOrAngle>,
-        alpha: ColorComponent<NumberOrPercentage>,
-    ) -> Self;
-
-    
-    fn from_oklab(
-        lightness: ColorComponent<NumberOrPercentage>,
-        a: ColorComponent<NumberOrPercentage>,
-        b: ColorComponent<NumberOrPercentage>,
-        alpha: ColorComponent<NumberOrPercentage>,
-    ) -> Self;
-
-    
-    fn from_oklch(
-        lightness: ColorComponent<NumberOrPercentage>,
-        chroma: ColorComponent<NumberOrPercentage>,
-        hue: ColorComponent<NumberOrAngle>,
-        alpha: ColorComponent<NumberOrPercentage>,
-    ) -> Self;
-
-    
-    fn from_color_function(
-        color_space: PredefinedColorSpace,
-        c1: ColorComponent<NumberOrPercentage>,
-        c2: ColorComponent<NumberOrPercentage>,
-        c3: ColorComponent<NumberOrPercentage>,
-        alpha: ColorComponent<NumberOrPercentage>,
-    ) -> Self;
 }
