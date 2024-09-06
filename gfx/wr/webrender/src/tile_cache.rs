@@ -610,15 +610,6 @@ fn create_tile_cache(
 
     
     
-    
-    let overlay_surface_count = if prim_list.has_opaque_compositor_surface {
-        0
-    } else {
-        prim_list.overlay_surface_count
-    };
-
-    
-    
     tile_caches.insert(slice_id, TileCacheParams {
         slice,
         slice_flags,
@@ -627,7 +618,7 @@ fn create_tile_cache(
         shared_clip_node_id,
         shared_clip_leaf_id,
         virtual_surface_size: frame_builder_config.compositor_kind.get_virtual_surface_size(),
-        overlay_surface_count,
+        overlay_surface_count: prim_list.overlay_surface_count,
     });
 
     let pic_index = prim_store.pictures.alloc().init(PicturePrimitive::new_image(
