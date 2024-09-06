@@ -3489,11 +3489,6 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 @end
 
-@interface NSView (NSThemeFrame)
-- (void)_drawTitleStringInClip:(NSRect)aRect;
-- (void)_maskCorners:(NSUInteger)aFlags clipRect:(NSRect)aRect;
-@end
-
 @interface MOZTitlebarAccessoryView : NSView
 @end
 
@@ -3725,18 +3720,6 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 
 - (void)windowMainStateChanged {
   [[self mainChildView] ensureNextCompositeIsAtomicWithMainThreadPaint];
-}
-
-- (CGFloat)titlebarHeight {
-  
-  
-  
-  NSRect frameRect = self.frame;
-  NSUInteger styleMask = self.styleMask;
-  styleMask &= ~NSWindowStyleMaskFullSizeContentView;
-  NSRect originalContentRect = [NSWindow contentRectForFrameRect:frameRect
-                                                       styleMask:styleMask];
-  return NSMaxY(frameRect) - NSMaxY(originalContentRect);
 }
 
 
