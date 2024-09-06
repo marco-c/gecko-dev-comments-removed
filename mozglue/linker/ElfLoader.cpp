@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <dlfcn.h>
+#include <link.h>
 #include <optional>
 #include <unistd.h>
 #include <errno.h>
@@ -54,12 +55,6 @@ static int GetAndroidSDKVersion() {
 extern "C" MOZ_EXPORT const void* __gnu_Unwind_Find_exidx(void* pc, int* pcount)
     __attribute__((weak));
 #endif
-
-
-
-
-extern "C" MOZ_EXPORT int dl_iterate_phdr(dl_phdr_cb callback, void* data)
-    __attribute__((weak));
 
 
 
@@ -246,33 +241,18 @@ int __wrap_dl_iterate_phdr(dl_phdr_cb callback, void* data) {
   DlIteratePhdrHelper helper;
   AutoLock lock(&ElfLoader::Singleton.handlesMutex);
 
-  if (dl_iterate_phdr) {
-    for (ElfLoader::LibHandleList::reverse_iterator it =
-             ElfLoader::Singleton.handles.rbegin();
-         it < ElfLoader::Singleton.handles.rend(); ++it) {
-      BaseElf* elf = (*it)->AsBaseElf();
-      if (!elf) {
-        continue;
-      }
-      int ret = helper.fill_and_call(callback, (*it)->GetBase(),
-                                     (*it)->GetPath(), data);
-      if (ret) return ret;
+  for (ElfLoader::LibHandleList::reverse_iterator it =
+           ElfLoader::Singleton.handles.rbegin();
+       it < ElfLoader::Singleton.handles.rend(); ++it) {
+    BaseElf* elf = (*it)->AsBaseElf();
+    if (!elf) {
+      continue;
     }
-    return dl_iterate_phdr(callback, data);
-  }
-
-  
-
-
-  if (!ElfLoader::Singleton.dbg) return -1;
-
-  for (ElfLoader::DebuggerHelper::iterator it =
-           ElfLoader::Singleton.dbg.begin();
-       it < ElfLoader::Singleton.dbg.end(); ++it) {
-    int ret = helper.fill_and_call(callback, it->l_addr, it->l_name, data);
+    int ret = helper.fill_and_call(callback, (*it)->GetBase(), (*it)->GetPath(),
+                                   data);
     if (ret) return ret;
   }
-  return 0;
+  return dl_iterate_phdr(callback, data);
 }
 
 #ifdef __ARM_EABI__
@@ -304,11 +284,6 @@ const char* LeafName(const char* path) {
 
 template <class Lambda>
 static bool RunWithSystemLinkerLock(Lambda&& aLambda) {
-  if (!dl_iterate_phdr) {
-    
-    return false;
-  }
-
 #if defined(ANDROID)
   if (GetAndroidSDKVersion() < 23) {
     
@@ -530,19 +505,6 @@ void ElfLoader::Init() {
   if (dladdr(_DYNAMIC, &info) != 0) {
     self_elf = LoadedElf::Create(info.dli_fname, info.dli_fbase);
   }
-#if defined(ANDROID)
-  
-  
-  
-  if (GetAndroidSDKVersion() < 21) {
-    if (dladdr(FunctionPtr(syscall), &info) != 0) {
-      libc = LoadedElf::Create(info.dli_fname, info.dli_fbase);
-    }
-    if (dladdr(FunctionPtr<int (*)(double)>(isnan), &info) != 0) {
-      libm = LoadedElf::Create(info.dli_fname, info.dli_fbase);
-    }
-  }
-#endif
 }
 
 ElfLoader::~ElfLoader() {
@@ -554,10 +516,6 @@ ElfLoader::~ElfLoader() {
 
   
   self_elf = nullptr;
-#if defined(ANDROID)
-  libc = nullptr;
-  libm = nullptr;
-#endif
 
   AutoLock lock(&handlesMutex);
   
@@ -701,8 +659,7 @@ ElfLoader::DebuggerHelper::DebuggerHelper()
 
   
 
-  while (*scan++)
-    ;
+  while (*scan++);
 
   
   while (!*scan) scan++;

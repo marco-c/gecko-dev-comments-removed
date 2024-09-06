@@ -34,13 +34,6 @@ typedef struct {
 #endif
 int __wrap_dladdr(const void* addr, Dl_info* info);
 
-struct dl_phdr_info {
-  Elf::Addr dlpi_addr;
-  const char* dlpi_name;
-  const Elf::Phdr* dlpi_phdr;
-  Elf::Half dlpi_phnum;
-};
-
 typedef int (*dl_phdr_cb)(struct dl_phdr_info*, size_t, void*);
 int __wrap_dl_iterate_phdr(dl_phdr_cb callback, void* data);
 
@@ -407,17 +400,6 @@ class ElfLoader : public SEGVHandler {
   
 
   RefPtr<LibHandle> self_elf;
-
-#if defined(ANDROID)
-  
-
-
-
-  RefPtr<LibHandle> libc;
-
-  
-  RefPtr<LibHandle> libm;
-#endif
 
   
   typedef std::vector<LibHandle*> LibHandleList;
