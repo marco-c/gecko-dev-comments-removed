@@ -138,9 +138,6 @@ function setPrefDefaults() {
   );
 
   
-  Services.prefs.setBoolPref("devtools.performance.enabled", true);
-
-  
   
   Services.prefs.setBoolPref("browser.sessionstore.resume_from_crash", false);
 
