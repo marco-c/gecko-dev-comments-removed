@@ -447,6 +447,15 @@ this.theme = class extends ExtensionAPIPersistent {
       experiment: manifest.theme_experiment,
       startupData: extension.startupData,
     });
+    if (extension.startupData.lwtData?._processedColors) {
+      
+      
+      
+      
+      
+      delete extension.startupData.lwtData._processedColors;
+      extension.saveStartupData();
+    }
   }
 
   onShutdown(isAppShutdown) {
