@@ -455,11 +455,14 @@ void nsThread::InitCommon() {
   {
 #if defined(XP_LINUX)
     pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_getattr_np(pthread_self(), &attr);
+    int res = pthread_attr_init(&attr);
+    MOZ_RELEASE_ASSERT(!res);
+    res = pthread_getattr_np(pthread_self(), &attr);
+    MOZ_RELEASE_ASSERT(!res);
 
     size_t stackSize;
-    pthread_attr_getstack(&attr, &mStackBase, &stackSize);
+    res = pthread_attr_getstack(&attr, &mStackBase, &stackSize);
+    MOZ_RELEASE_ASSERT(!res);
 
     
     
@@ -477,7 +480,8 @@ void nsThread::InitCommon() {
     });
     if (sAdjustForGuardSize) {
       size_t guardSize;
-      pthread_attr_getguardsize(&attr, &guardSize);
+      res = pthread_attr_getguardsize(&attr, &guardSize);
+      MOZ_RELEASE_ASSERT(!res);
 
       
       
@@ -504,7 +508,8 @@ void nsThread::InitCommon() {
     
     madvise(mStackBase, stackSize, MADV_NOHUGEPAGE);
 
-    pthread_attr_destroy(&attr);
+    res = pthread_attr_destroy(&attr);
+    MOZ_RELEASE_ASSERT(!res);
 #elif defined(XP_WIN)
     static const StaticDynamicallyLinkedFunctionPtr<
         GetCurrentThreadStackLimitsFn>
