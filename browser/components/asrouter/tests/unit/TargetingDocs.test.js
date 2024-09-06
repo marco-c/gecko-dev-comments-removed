@@ -70,7 +70,11 @@ describe("ASRTargeting docs", () => {
     
     
     
-    const allow = ["messageImpressions", "screenImpressions"];
+    const allow = [
+      "messageImpressions",
+      "screenImpressions",
+      "browserIsSelected",
+    ];
     for (const targetingParam of DOCS_TARGETING_HEADINGS.filter(
       doc => !allow.includes(doc)
     )) {
