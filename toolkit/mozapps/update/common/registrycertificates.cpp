@@ -24,9 +24,29 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 BOOL DoesBinaryMatchAllowedCertificates(LPCWSTR basePathForUpdate,
                                         LPCWSTR filePath,
                                         BOOL allowFallbackKeySkip) {
+#ifdef DISABLE_UPDATER_AUTHENTICODE_CHECK
+  if (allowFallbackKeySkip) {
+    LOG_WARN(("Skipping authenticode check"));
+    return TRUE;
+  } else {
+    LOG(("Performing a diagnostic authenticode check"));
+  }
+#endif
+
   WCHAR maintenanceServiceKey[MAX_PATH + 1];
   if (!CalculateRegistryPathFromFilePath(basePathForUpdate,
                                          maintenanceServiceKey)) {
