@@ -3,13 +3,18 @@ import pytest
 
 import webdriver.bidi.error as error
 from webdriver.bidi.modules.script import ContextTarget
+from webdriver.error import TimeoutException
+
 
 pytestmark = pytest.mark.asyncio
 
+USER_PROMPT_CLOSED_EVENT = "browsingContext.userPromptClosed"
 USER_PROMPT_OPENED_EVENT = "browsingContext.userPromptOpened"
 
 
-async def test_alert(bidi_session, wait_for_event, wait_for_future_safe, top_context, subscribe_events):
+async def test_alert(
+    bidi_session, wait_for_event, wait_for_future_safe, new_tab, subscribe_events
+):
     await subscribe_events([USER_PROMPT_OPENED_EVENT])
     on_entry = wait_for_event(USER_PROMPT_OPENED_EVENT)
 
@@ -17,7 +22,7 @@ async def test_alert(bidi_session, wait_for_event, wait_for_future_safe, top_con
     task = asyncio.create_task(
         bidi_session.script.evaluate(
             expression="window.alert('test')",
-            target=ContextTarget(top_context["context"]),
+            target=ContextTarget(new_tab["context"]),
             await_promise=False,
         )
     )
@@ -25,9 +30,7 @@ async def test_alert(bidi_session, wait_for_event, wait_for_future_safe, top_con
     
     await wait_for_future_safe(on_entry)
 
-    await bidi_session.browsing_context.handle_user_prompt(
-        context=top_context["context"]
-    )
+    await bidi_session.browsing_context.handle_user_prompt(context=new_tab["context"])
 
     
     result = await task
@@ -37,7 +40,12 @@ async def test_alert(bidi_session, wait_for_event, wait_for_future_safe, top_con
 
 @pytest.mark.parametrize("accept", [True, False])
 async def test_confirm(
-    bidi_session, wait_for_event, wait_for_future_safe, top_context, subscribe_events, accept
+    bidi_session,
+    wait_for_event,
+    wait_for_future_safe,
+    new_tab,
+    subscribe_events,
+    accept,
 ):
     await subscribe_events([USER_PROMPT_OPENED_EVENT])
     on_entry = wait_for_event(USER_PROMPT_OPENED_EVENT)
@@ -46,7 +54,7 @@ async def test_confirm(
     task = asyncio.create_task(
         bidi_session.script.evaluate(
             expression="window.confirm('test')",
-            target=ContextTarget(top_context["context"]),
+            target=ContextTarget(new_tab["context"]),
             await_promise=False,
         )
     )
@@ -55,7 +63,7 @@ async def test_confirm(
     await wait_for_future_safe(on_entry)
 
     await bidi_session.browsing_context.handle_user_prompt(
-        context=top_context["context"], accept=accept
+        context=new_tab["context"], accept=accept
     )
 
     
@@ -66,7 +74,12 @@ async def test_confirm(
 
 @pytest.mark.parametrize("accept", [True, False])
 async def test_prompt(
-    bidi_session, wait_for_event, wait_for_future_safe, top_context, subscribe_events, accept
+    bidi_session,
+    wait_for_event,
+    wait_for_future_safe,
+    new_tab,
+    subscribe_events,
+    accept,
 ):
     await subscribe_events([USER_PROMPT_OPENED_EVENT])
     on_entry = wait_for_event(USER_PROMPT_OPENED_EVENT)
@@ -75,7 +88,7 @@ async def test_prompt(
     task = asyncio.create_task(
         bidi_session.script.evaluate(
             expression="window.prompt('Enter Your Name: ')",
-            target=ContextTarget(top_context["context"]),
+            target=ContextTarget(new_tab["context"]),
             await_promise=False,
         )
     )
@@ -85,7 +98,7 @@ async def test_prompt(
 
     test_user_text = "Test"
     await bidi_session.browsing_context.handle_user_prompt(
-        context=top_context["context"], accept=accept, user_text=test_user_text
+        context=new_tab["context"], accept=accept, user_text=test_user_text
     )
 
     
@@ -97,10 +110,69 @@ async def test_prompt(
         assert result == {"type": "null"}
 
 
+@pytest.mark.parametrize("accept", [True, False])
+async def test_beforeunload(
+    bidi_session,
+    subscribe_events,
+    url,
+    new_tab,
+    setup_beforeunload_page,
+    wait_for_event,
+    wait_for_future_safe,
+    accept,
+):
+    await subscribe_events(events=[USER_PROMPT_CLOSED_EVENT, USER_PROMPT_OPENED_EVENT])
+
+    on_entry = wait_for_event(USER_PROMPT_OPENED_EVENT)
+
+    await setup_beforeunload_page(new_tab)
+
+    page_target = url("/webdriver/tests/support/html/default.html")
+    navigated_future = await bidi_session.send_command(
+        "browsingContext.navigate",
+        {
+            "context": new_tab["context"],
+            "url": page_target,
+            "wait": "complete",
+        },
+    )
+
+    
+    event = await wait_for_future_safe(on_entry)
+
+    on_prompt_closed = wait_for_event(USER_PROMPT_CLOSED_EVENT)
+
+    await bidi_session.browsing_context.handle_user_prompt(
+        context=new_tab["context"], accept=accept
+    )
+
+    
+    event = await wait_for_future_safe(on_prompt_closed)
+
+    if accept:
+        
+        navigated = await wait_for_future_safe(navigated_future)
+        assert navigated["url"] == page_target
+    else:
+        
+        with pytest.raises(TimeoutException):
+            await wait_for_future_safe(navigated_future, timeout=0.5)
+
+        contexts = await bidi_session.browsing_context.get_tree(
+            root=new_tab["context"], max_depth=0
+        )
+        assert contexts[0]["url"] != page_target
+
+
 @pytest.mark.parametrize("type_hint", ["tab", "window"])
 async def test_two_top_level_contexts(
-    bidi_session, top_context, inline, subscribe_events, wait_for_event,
-    wait_for_future_safe, type_hint
+    bidi_session,
+    new_tab,
+    inline,
+    subscribe_events,
+    wait_for_event,
+    wait_for_future_safe,
+    type_hint,
 ):
     new_context = await bidi_session.browsing_context.create(type_hint=type_hint)
 
@@ -118,7 +190,7 @@ async def test_two_top_level_contexts(
     
     with pytest.raises(error.NoSuchAlertException):
         await bidi_session.browsing_context.handle_user_prompt(
-            context=top_context["context"]
+            context=new_tab["context"]
         )
 
     
@@ -131,7 +203,7 @@ async def test_two_top_level_contexts(
 
 async def test_multiple_frames(
     bidi_session,
-    top_context,
+    new_tab,
     inline,
     test_page_multiple_frames,
     subscribe_events,
@@ -142,12 +214,12 @@ async def test_multiple_frames(
     on_entry = wait_for_event(USER_PROMPT_OPENED_EVENT)
 
     await bidi_session.browsing_context.navigate(
-        context=top_context["context"],
+        context=new_tab["context"],
         url=test_page_multiple_frames,
         wait="complete",
     )
 
-    contexts = await bidi_session.browsing_context.get_tree(root=top_context["context"])
+    contexts = await bidi_session.browsing_context.get_tree(root=new_tab["context"])
     assert len(contexts) == 1
 
     assert len(contexts[0]["children"]) == 2
