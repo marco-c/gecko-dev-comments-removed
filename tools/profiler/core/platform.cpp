@@ -117,13 +117,27 @@
 
 
 
+
+
+
 #ifndef MOZ_CODE_COVERAGE
 #  ifdef XP_WIN
 
+#  elif defined(GP_OS_darwin) || defined(GP_OS_linux) || \
+      defined(GP_OS_android) || defined(GP_OS_freebsd)
+
+#    define GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL 1
 #  else
-#    include <signal.h>
-#    include <unistd.h>
+
 #  endif
+#endif
+
+
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
+#  include <signal.h>
+#  include <fcntl.h>
+#  include <unistd.h>
+#  include <errno.h>
 #endif
 
 #if defined(GP_OS_android)
@@ -250,11 +264,22 @@ ProfileChunkedBuffer& profiler_get_core_buffer() {
   return sProfileChunkedBuffer;
 }
 
-mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
+
+static const char sAsyncSignalControlCharStart = 'g';
+
+
+
+
+static mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed>
+    sAsyncStartProfilerWriteFd(-1);
 
 
 mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed> gStopAndDumpFromSignal(
     false);
+#endif
+
+mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
 #if defined(GP_OS_android)
 class GeckoJavaSampler
@@ -506,6 +531,132 @@ static constexpr size_t MAX_JS_FRAMES =
 using JsFrame = mozilla::profiler::ThreadRegistrationData::JsFrame;
 using JsFrameBuffer = mozilla::profiler::ThreadRegistrationData::JsFrameBuffer;
 
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
+
+static void* AsyncSignalControlThreadEntry(void* aArg);
+
+
+class AsyncSignalControlThread {
+ public:
+  AsyncSignalControlThread() : mThread() {
+    
+    
+    
+    int pipeFds[2];
+    if (pipe(pipeFds)) {
+      LOG("Profiler AsyncSignalControlThread failed to create a pipe.");
+      return;
+    }
+
+    
+    fcntl(pipeFds[0], F_SETFD, FD_CLOEXEC);
+    fcntl(pipeFds[1], F_SETFD, FD_CLOEXEC);
+
+    
+    mFd = pipeFds[0];
+    sAsyncStartProfilerWriteFd = pipeFds[1];
+
+    
+    
+    pthread_attr_t* attr_ptr = nullptr;
+    if (pthread_create(&mThread, attr_ptr, AsyncSignalControlThreadEntry,
+                       this) != 0) {
+      MOZ_CRASH("pthread_create failed");
+    }
+  };
+
+  ~AsyncSignalControlThread() {
+    
+    
+    
+    
+    
+    
+    
+    
+    int asyncStartProfilerWriteFd = sAsyncStartProfilerWriteFd.exchange(-1);
+    
+    close(asyncStartProfilerWriteFd);
+    
+    pthread_join(mThread, nullptr);
+  };
+
+  void Watch() {
+    char msg[1];
+    ssize_t nread;
+    while (true) {
+      
+      nread = read(mFd, msg, sizeof(msg));
+
+      if (nread == -1 && errno == EINTR) {
+        
+        
+        
+        
+        continue;
+      }
+
+      if (nread == -1 && errno != EINTR) {
+        
+        
+        
+        LOG("Error (%d) when reading in AsyncSignalControlThread", errno);
+        return;
+      }
+
+      if (nread == 0) {
+        
+        
+        close(mFd);
+        return;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      MOZ_RELEASE_ASSERT(nread == 1);
+
+      if (msg[0] == sAsyncSignalControlCharStart) {
+        
+        
+        uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk |
+                            ProfilerFeature::CPUUtilization;
+        
+        
+        const char* filters[] = {"*"};
+        profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
+                       PROFILER_DEFAULT_INTERVAL, features, filters,
+                       MOZ_ARRAY_LENGTH(filters), 0);
+      } else {
+        LOG("AsyncSignalControlThread recieved unknown control signal: %c",
+            msg[0]);
+      }
+    }
+  };
+
+ private:
+  
+  
+  int mFd;
+
+  
+  
+  
+  
+  pthread_t mThread;
+};
+
+static void* AsyncSignalControlThreadEntry(void* aArg) {
+  auto* thread = static_cast<AsyncSignalControlThread*>(aArg);
+  thread->Watch();
+  return nullptr;
+}
+#endif
+
 
 
 
@@ -529,6 +680,10 @@ class CorePS {
   CorePS()
       : mProcessStartTime(TimeStamp::ProcessCreation()),
         mMaybeBandwidthCounter(nullptr)
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
+        ,
+        mAsyncSignalControlThread(nullptr)
+#endif
 #ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -539,6 +694,9 @@ class CorePS {
   }
 
   ~CorePS() {
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
+    delete mAsyncSignalControlThread;
+#endif
 #ifdef USE_LUL_STACKWALK
     delete sInstance->mLul;
     delete mMaybeBandwidthCounter;
@@ -684,6 +842,14 @@ class CorePS {
     return sInstance->mMaybeBandwidthCounter;
   }
 
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
+  static void SetAsyncSignalControlThread(
+      AsyncSignalControlThread* aAsyncSignalControlThread) {
+    MOZ_ASSERT(sInstance);
+    sInstance->mAsyncSignalControlThread = aAsyncSignalControlThread;
+  }
+#endif
+
  private:
   
   static CorePS* sInstance;
@@ -700,6 +866,11 @@ class CorePS {
 
   
   Vector<BaseProfilerCount*> mCounters;
+
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
+  
+  AsyncSignalControlThread* mAsyncSignalControlThread;
+#endif
 
 #ifdef USE_LUL_STACKWALK
   
@@ -4766,6 +4937,7 @@ void SamplerThread::Run() {
       SleepMicro(static_cast<uint32_t>(sampleInterval.ToMicroseconds()));
     }
 
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
     
     
     
@@ -4786,6 +4958,7 @@ void SamplerThread::Run() {
       
       return;
     }
+#endif
   }
 
   
@@ -5069,9 +5242,9 @@ void SamplerThread::SpyOnUnregisteredThreads() {
 
 MOZ_DEFINE_MALLOC_SIZE_OF(GeckoProfilerMallocSizeOf)
 
-NS_IMETHODIMP
-GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
-                                      nsISupports* aData, bool aAnonymize) {
+NS_IMETHODIMP GeckoProfilerReporter::CollectReports(
+    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+    bool aAnonymize) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   size_t profSize = 0;
@@ -5294,7 +5467,7 @@ static const char* get_size_suffix(const char* str) {
   return ptr;
 }
 
-#if !defined(XP_WIN) && !defined(MOZ_CODE_COVERAGE)
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
 static void profiler_stop_signal_handler(int signal, siginfo_t* info,
                                          void* context) {
   
@@ -5304,6 +5477,26 @@ static void profiler_stop_signal_handler(int signal, siginfo_t* info,
   
   
   gStopAndDumpFromSignal = true;
+}
+
+static void profiler_start_signal_handler(int signal, siginfo_t* info,
+                                          void* context) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (sAsyncStartProfilerWriteFd != -1) {
+    char signalControlCharacter = sAsyncSignalControlCharStart;
+    Unused << write(sAsyncStartProfilerWriteFd, &signalControlCharacter,
+                    sizeof(signalControlCharacter));
+  }
 }
 #endif
 
@@ -5379,8 +5572,17 @@ void profiler_dump_and_stop() {
   profiler_stop();
 }
 
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
 void profiler_init_signal_handlers() {
-#if !defined(XP_WIN) && !defined(MOZ_CODE_COVERAGE)
+  
+  struct sigaction prof_start_sa {};
+  memset(&prof_start_sa, 0, sizeof(struct sigaction));
+  prof_start_sa.sa_sigaction = profiler_start_signal_handler;
+  prof_start_sa.sa_flags = SA_RESTART | SA_SIGINFO;
+  sigemptyset(&prof_start_sa.sa_mask);
+  DebugOnly<int> rstart = sigaction(SIGUSR1, &prof_start_sa, nullptr);
+  MOZ_ASSERT(rstart == 0, "Failed to install Profiler SIGUSR1 handler");
+
   
   struct sigaction prof_stop_sa {};
   memset(&prof_stop_sa, 0, sizeof(struct sigaction));
@@ -5389,8 +5591,8 @@ void profiler_init_signal_handlers() {
   sigemptyset(&prof_stop_sa.sa_mask);
   DebugOnly<int> rstop = sigaction(SIGUSR2, &prof_stop_sa, nullptr);
   MOZ_ASSERT(rstop == 0, "Failed to install Profiler SIGUSR2 handler");
-#endif
 }
+#endif
 
 void profiler_init(void* aStackTop) {
   LOG("profiler_init");
@@ -5444,8 +5646,14 @@ void profiler_init(void* aStackTop) {
     
     PlatformInit(lock);
 
+#if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
+    
+    
+    CorePS::SetAsyncSignalControlThread(new AsyncSignalControlThread);
+
     
     profiler_init_signal_handlers();
+#endif
 
 #if defined(GP_OS_android)
     if (jni::IsAvailable()) {
