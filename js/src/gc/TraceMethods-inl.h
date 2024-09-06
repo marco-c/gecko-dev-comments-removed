@@ -79,9 +79,7 @@ inline void JSString::traceChildren(JSTracer* trc) {
     asRope().traceChildren(trc);
   }
 }
-inline void JSString::traceBaseFromStoreBuffer(JSTracer* trc) {
-  MOZ_ASSERT(!d.s.u3.base->isTenured());
-
+inline void JSString::traceBaseAndRecordOldRoot(JSTracer* trc) {
   
   
   JSLinearString* root = asDependent().rootBaseDuringMinorGC();
@@ -91,6 +89,10 @@ inline void JSString::traceBaseFromStoreBuffer(JSTracer* trc) {
     
     
     
+
+    if (!root->isTenured()) {
+      storeBuffer()->putWholeCell(this);
+    }
   }
 }
 template <uint32_t opts>
