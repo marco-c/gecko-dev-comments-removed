@@ -24,6 +24,7 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StyleAnimationValue.h"
+#include "mozilla/SVGObserverUtils.h"
 #include "nsContentUtils.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
@@ -77,17 +78,9 @@ bool EffectCompositor::AllowCompositorAnimationsOnFrame(
   
   
   
-  nsIContent* content = aFrame->GetContent();
-  while (content) {
-    if (content->HasRenderingObservers()) {
-      aWarning = AnimationPerformanceWarning::Type::HasRenderingObserver;
-      return false;
-    }
-    const auto* frame = content->GetPrimaryFrame();
-    if (frame && frame->IsRenderingObserverContainer()) {
-      break;
-    }
-    content = content->GetParent();
+  if (SVGObserverUtils::SelfOrAncestorHasRenderingObservers(aFrame)) {
+    aWarning = AnimationPerformanceWarning::Type::HasRenderingObserver;
+    return false;
   }
 
   return true;

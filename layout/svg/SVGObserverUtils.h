@@ -203,6 +203,11 @@ class SVGObserverUtils {
   
 
 
+  static bool SelfOrAncestorHasRenderingObservers(const nsIFrame* aFrame);
+
+  
+
+
   static void AddRenderingObserver(Element* aElement,
                                    SVGRenderingObserver* aObserver);
   

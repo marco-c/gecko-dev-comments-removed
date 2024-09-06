@@ -1868,7 +1868,8 @@ class nsINode : public mozilla::dom::EventTarget {
  private:
   enum BooleanFlag {
     
-    NodeHasRenderingObservers,
+    
+    NodeHasDirectRenderingObservers,
     
     
     IsInDocument,
@@ -1971,11 +1972,11 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 
  public:
-  bool HasRenderingObservers() const {
-    return GetBoolFlag(NodeHasRenderingObservers);
+  bool HasDirectRenderingObservers() const {
+    return GetBoolFlag(NodeHasDirectRenderingObservers);
   }
-  void SetHasRenderingObservers(bool aValue) {
-    SetBoolFlag(NodeHasRenderingObservers, aValue);
+  void SetHasDirectRenderingObservers(bool aValue) {
+    SetBoolFlag(NodeHasDirectRenderingObservers, aValue);
   }
   bool IsContent() const { return GetBoolFlag(NodeIsContent); }
   bool HasID() const { return GetBoolFlag(ElementHasID); }
