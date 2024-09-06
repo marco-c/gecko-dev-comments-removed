@@ -73,8 +73,14 @@ class CacheObserver : public nsIObserver, public nsSupportsWeakReference {
   }
   static uint32_t HalfLifeSeconds() { return sHalfLifeHours * 60.0F * 60.0F; }
   static bool ClearCacheOnShutdown() {
-    return StaticPrefs::privacy_sanitize_sanitizeOnShutdown() &&
-           StaticPrefs::privacy_clearOnShutdown_cache();
+    if (!StaticPrefs::privacy_sanitize_sanitizeOnShutdown()) {
+      return false;
+    }
+    if (StaticPrefs::privacy_sanitize_useOldClearHistoryDialog()) {
+      return StaticPrefs::privacy_clearOnShutdown_cache();
+    }
+    
+    return StaticPrefs::privacy_clearOnShutdown_v2_cache();
   }
   static void ParentDirOverride(nsIFile** aDir);
 
