@@ -2050,11 +2050,7 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType,
           interval = 0;
           break;
         }
-
         backsteps = std::min(backsteps + 1, maxBackStep);
-        
-        
-        mustBackoff = false;
       } else {
         backsteps = 0;
       }
