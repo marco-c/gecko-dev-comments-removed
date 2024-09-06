@@ -2200,8 +2200,7 @@ impl TileCacheInstance {
         }
 
         
-        
-        let local_to_raster = local_to_device.pre_transform(&raster_to_device.inverse());
+        let local_to_raster = local_to_device.then(&raster_to_device.inverse());
 
         const EPSILON: f32 = 0.001;
         let compositor_translation_changed =
