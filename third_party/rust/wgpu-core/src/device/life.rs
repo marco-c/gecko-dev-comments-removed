@@ -99,9 +99,8 @@ pub enum WaitIdleError {
 
 
 
-
-
 pub(crate) struct LifetimeTracker<A: HalApi> {
+    
     
     
     mapped: Vec<Arc<Buffer<A>>>,

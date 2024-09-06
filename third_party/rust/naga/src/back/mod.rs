@@ -254,7 +254,9 @@ impl crate::TypeInner {
     
     pub const fn is_handle(&self) -> bool {
         match *self {
-            crate::TypeInner::Image { .. } | crate::TypeInner::Sampler { .. } => true,
+            crate::TypeInner::Image { .. }
+            | crate::TypeInner::Sampler { .. }
+            | crate::TypeInner::AccelerationStructure { .. } => true,
             _ => false,
         }
     }

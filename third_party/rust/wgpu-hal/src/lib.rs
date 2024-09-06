@@ -294,6 +294,7 @@ pub const QUERY_SIZE: wgt::BufferAddress = 8;
 pub type Label<'a> = Option<&'a str>;
 pub type MemoryRange = Range<wgt::BufferAddress>;
 pub type FenceValue = u64;
+pub type AtomicFenceValue = std::sync::atomic::AtomicU64;
 
 
 pub type DropGuard = Box<dyn std::any::Any + Send + Sync>;
@@ -717,6 +718,10 @@ pub trait Device: WasmNotSendSync {
     
     
     
+    
+    
+    
+    
     unsafe fn map_buffer(
         &self,
         buffer: &<Self::A as Api>::Buffer,
@@ -728,7 +733,7 @@ pub trait Device: WasmNotSendSync {
     
     
     
-    unsafe fn unmap_buffer(&self, buffer: &<Self::A as Api>::Buffer) -> Result<(), DeviceError>;
+    unsafe fn unmap_buffer(&self, buffer: &<Self::A as Api>::Buffer);
 
     
     
@@ -894,6 +899,9 @@ pub trait Device: WasmNotSendSync {
 pub trait Queue: WasmNotSendSync {
     type A: Api;
 
+    
+    
+    
     
     
     

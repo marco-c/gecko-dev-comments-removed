@@ -5,7 +5,12 @@
 
 
 
+use block::Block;
+
 use super::NSUInteger;
+
+type DrawablePresentedHandler<'a> = Block<(&'a DrawableRef,), ()>;
+type CFTimeInterval = f64;
 
 
 pub enum MTLDrawable {}
@@ -22,5 +27,13 @@ impl DrawableRef {
 
     pub fn drawable_id(&self) -> NSUInteger {
         unsafe { msg_send![self, drawableID] }
+    }
+
+    pub fn add_presented_handler(&self, block: &DrawablePresentedHandler) {
+        unsafe { msg_send![self, addPresentedHandler: block] }
+    }
+
+    pub fn presented_time(&self) -> CFTimeInterval {
+        unsafe { msg_send![self, presentedTime] }
     }
 }

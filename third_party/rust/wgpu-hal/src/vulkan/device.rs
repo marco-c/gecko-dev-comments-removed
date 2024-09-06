@@ -951,12 +951,10 @@ impl crate::Device for super::Device {
             Err(crate::DeviceError::OutOfMemory)
         }
     }
-    unsafe fn unmap_buffer(&self, buffer: &super::Buffer) -> Result<(), crate::DeviceError> {
+    unsafe fn unmap_buffer(&self, buffer: &super::Buffer) {
+        
         if let Some(ref block) = buffer.block {
             unsafe { block.lock().unmap(&*self.shared) };
-            Ok(())
-        } else {
-            Err(crate::DeviceError::OutOfMemory)
         }
     }
 
