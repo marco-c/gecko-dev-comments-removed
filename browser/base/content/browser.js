@@ -4348,6 +4348,8 @@ var TabsProgressListener = {
       return;
     }
 
+    Services.obs.notifyObservers(aBrowser, "mailto::onLocationChange", aFlags);
+
     
     
     

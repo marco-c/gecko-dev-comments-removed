@@ -3045,7 +3045,11 @@ pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
 pref("browser.mailto.dualPrompt", false);
 
 
-pref("browser.mailto.prompt.os", true);
+pref("browser.mailto.dualPrompt.onLocationChange", false);
+
+
+pref("browser.mailto.dualPrompt.dismissNotNowMinutes", 525600); 
+pref("browser.mailto.dualPrompt.dismissXClickMinutes", 1440); 
 
 
 pref("browser.backup.enabled", true);
