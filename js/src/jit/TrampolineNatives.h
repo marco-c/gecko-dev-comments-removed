@@ -32,7 +32,9 @@ class CallArgs;
 }  
 
 
-#define TRAMPOLINE_NATIVE_LIST(_) _(ArraySort)
+#define TRAMPOLINE_NATIVE_LIST(_) \
+  _(ArraySort)                    \
+  _(TypedArraySort)
 
 namespace js {
 namespace jit {

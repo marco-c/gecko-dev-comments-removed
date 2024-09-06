@@ -1131,67 +1131,6 @@ SetIsInlinableLargeFunction(TypedArraySome);
 
 
 
-function TypedArraySortCompare(comparefn) {
-  return function(x, y) {
-    
-    var v = +callContentFunction(comparefn, undefined, x, y);
-
-    
-    if (v !== v) {
-      return 0;
-    }
-
-    
-    return v;
-  };
-}
-
-
-
-function TypedArraySort(comparefn) {
-  
-
-  
-  if (comparefn !== undefined) {
-    if (!IsCallable(comparefn)) {
-      ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, comparefn));
-    }
-  }
-
-  
-  var obj = this;
-
-  
-  EnsureTypedArrayWithArrayBuffer(obj);
-
-  
-  var len = PossiblyWrappedTypedArrayLength(obj);
-
-  
-  if (len <= 1) {
-    return obj;
-  }
-
-  if (comparefn === undefined) {
-    return TypedArrayNativeSort(obj);
-  }
-
-  
-  var wrappedCompareFn = TypedArraySortCompare(comparefn);
-
-  
-  var sorted = MergeSortTypedArray(obj, len, wrappedCompareFn);
-
-  
-  for (var i = 0; i < len; i++) {
-    obj[i] = sorted[i];
-  }
-
-  return obj;
-}
-
-
-
 
 
 function TypedArrayToLocaleString(locales = undefined, options = undefined) {
@@ -2133,6 +2072,7 @@ function TypedArrayWith(index, value) {
 
 function TypedArrayToSorted(comparefn) {
   
+  
   if (comparefn !== undefined) {
     if (!IsCallable(comparefn)) {
       ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, comparefn));
@@ -2146,47 +2086,26 @@ function TypedArrayToSorted(comparefn) {
   EnsureTypedArrayWithArrayBuffer(O);
 
   
-  
-
-  
   var len = PossiblyWrappedTypedArrayLength(O);
 
   
-  if (len <= 1) {
-    
-    var A = TypedArrayCreateSameType(O, len);
+  var A = TypedArrayCreateSameType(O, len);
 
-    
-    if (len > 0) {
-      A[0] = O[0];
-    }
+  
+  
+  
 
-    
-    return A;
-  }
-
-  if (comparefn === undefined) {
-    
-    var A = TypedArrayCreateSameType(O, len);
-
-    
-    
-    
-
-    
-    for (var k = 0; k < len; k++) {
-      A[k] = O[k];
-    }
-
-    
-    return TypedArrayNativeSort(A);
+  
+  for (var k = 0; k < len; k++) {
+    A[k] = O[k];
   }
 
   
-  var wrappedCompareFn = TypedArraySortCompare(comparefn);
+  if (len > 1) {
+    
+    callFunction(std_TypedArray_sort, A, comparefn);
+  }
 
   
-  
-  
-  return MergeSortTypedArray(O, len, wrappedCompareFn);
+  return A;
 }

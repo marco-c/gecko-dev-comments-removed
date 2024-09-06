@@ -14,6 +14,7 @@
 #include "jit/PerfSpewer.h"
 #include "js/CallArgs.h"
 #include "js/experimental/JitInfo.h"
+#include "vm/TypedArrayObject.h"
 
 #include "jit/MacroAssembler-inl.h"
 #include "vm/Activation-inl.h"
@@ -42,7 +43,8 @@ void js::jit::SetTrampolineNativeJitEntry(JSContext* cx, JSFunction* fun,
   fun->setTrampolineNativeJitEntry(entry);
 }
 
-uint32_t JitRuntime::generateArraySortTrampoline(MacroAssembler& masm) {
+uint32_t JitRuntime::generateArraySortTrampoline(MacroAssembler& masm,
+                                                 ArraySortKind kind) {
   AutoCreatedBy acb(masm, "JitRuntime::generateArraySortTrampoline");
 
   const uint32_t offset = startTrampolineCode(masm);
@@ -114,6 +116,7 @@ uint32_t JitRuntime::generateArraySortTrampoline(MacroAssembler& masm) {
   
   
   
+  
 
   auto pushExitFrame = [&](Register cxReg, Register scratchReg) {
     MOZ_ASSERT(masm.framePushed() == FrameSize);
@@ -131,8 +134,16 @@ uint32_t JitRuntime::generateArraySortTrampoline(MacroAssembler& masm) {
   masm.setupAlignedABICall();
   masm.passABIArg(temp0);
   masm.passABIArg(FramePointer);
-  masm.callWithABI<Fn1, ArraySortFromJit>(
-      ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+  switch (kind) {
+    case ArraySortKind::Array:
+      masm.callWithABI<Fn1, ArraySortFromJit>(
+          ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+      break;
+    case ArraySortKind::TypedArray:
+      masm.callWithABI<Fn1, TypedArraySortFromJit>(
+          ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+      break;
+  }
 
   
   Label checkReturnValue;
@@ -193,8 +204,16 @@ uint32_t JitRuntime::generateArraySortTrampoline(MacroAssembler& masm) {
   pushExitFrame(temp0, temp1);
   masm.setupAlignedABICall();
   masm.passABIArg(temp2);
-  masm.callWithABI<Fn2, ArraySortData::sortArrayWithComparator>(
-      ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+  switch (kind) {
+    case ArraySortKind::Array:
+      masm.callWithABI<Fn2, ArraySortData::sortArrayWithComparator>(
+          ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+      break;
+    case ArraySortKind::TypedArray:
+      masm.callWithABI<Fn2, ArraySortData::sortTypedArrayWithComparator>(
+          ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+      break;
+  }
 
   
   masm.bind(&checkReturnValue);
@@ -225,8 +244,13 @@ uint32_t JitRuntime::generateArraySortTrampoline(MacroAssembler& masm) {
 void JitRuntime::generateTrampolineNatives(
     MacroAssembler& masm, TrampolineNativeJitEntryOffsets& offsets,
     PerfSpewerRangeRecorder& rangeRecorder) {
-  offsets[TrampolineNative::ArraySort] = generateArraySortTrampoline(masm);
+  offsets[TrampolineNative::ArraySort] =
+      generateArraySortTrampoline(masm, ArraySortKind::Array);
   rangeRecorder.recordOffset("Trampoline: ArraySort");
+
+  offsets[TrampolineNative::TypedArraySort] =
+      generateArraySortTrampoline(masm, ArraySortKind::TypedArray);
+  rangeRecorder.recordOffset("Trampoline: TypedArraySort");
 }
 
 bool jit::CallTrampolineNativeJitCode(JSContext* cx, TrampolineNative native,

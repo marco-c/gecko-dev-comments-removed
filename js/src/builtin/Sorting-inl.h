@@ -58,21 +58,31 @@ void ArraySortData::freeMallocData() {
 #endif
 }
 
+template <ArraySortKind Kind>
 static MOZ_ALWAYS_INLINE ArraySortResult
 MaybeYieldToComparator(ArraySortData* d, const Value& x, const Value& y) {
-  
-  
+  if constexpr (Kind == ArraySortKind::Array) {
+    
+    
 
-  
-  if (x.isUndefined()) {
-    d->setComparatorReturnValue(Int32Value(y.isUndefined() ? 0 : 1));
-    return ArraySortResult::Done;
-  }
+    
+    if (x.isUndefined()) {
+      d->setComparatorReturnValue(Int32Value(y.isUndefined() ? 0 : 1));
+      return ArraySortResult::Done;
+    }
 
-  
-  if (y.isUndefined()) {
-    d->setComparatorReturnValue(Int32Value(-1));
-    return ArraySortResult::Done;
+    
+    if (y.isUndefined()) {
+      d->setComparatorReturnValue(Int32Value(-1));
+      return ArraySortResult::Done;
+    }
+  } else {
+    
+    
+
+    
+    MOZ_ASSERT((x.isNumber() && y.isNumber()) ||
+               (x.isBigInt() && y.isBigInt()));
   }
 
   
@@ -89,6 +99,12 @@ MaybeYieldToComparator(ArraySortData* d, const Value& x, const Value& y) {
 
 static MOZ_ALWAYS_INLINE bool RvalIsLessOrEqual(ArraySortData* data,
                                                 bool* lessOrEqual) {
+  
+  
+  
+  
+  
+  
   
   
 
@@ -119,6 +135,7 @@ static MOZ_ALWAYS_INLINE void CopyValues(Value* out, const Value* list,
 }
 
 
+template <ArraySortKind Kind>
 ArraySortResult ArraySortData::sortWithComparatorShared(ArraySortData* d) {
   auto& vec = d->vec;
 
@@ -141,13 +158,14 @@ ArraySortResult ArraySortData::sortWithComparatorShared(ArraySortData* d) {
   d->list = vec.begin();
 
   
-  if (d->denseLen < InsertionSortLimit) {
+  if (d->denseLen < insertionSortLimit<Kind>()) {
     for (d->i = 1; d->i < d->denseLen; d->i++) {
       d->item = vec[d->i];
       d->j = d->i - 1;
       do {
         {
-          ArraySortResult res = MaybeYieldToComparator(d, vec[d->j], d->item);
+          ArraySortResult res =
+              MaybeYieldToComparator<Kind>(d, vec[d->j], d->item);
           if (res != ArraySortResult::Done) {
             d->state = State::InsertionSortCall1;
             return res;
@@ -178,7 +196,8 @@ ArraySortResult ArraySortData::sortWithComparatorShared(ArraySortData* d) {
         d->j = d->i - 1;
         do {
           {
-            ArraySortResult res = MaybeYieldToComparator(d, vec[d->j], d->item);
+            ArraySortResult res =
+                MaybeYieldToComparator<Kind>(d, vec[d->j], d->item);
             if (res != ArraySortResult::Done) {
               d->state = State::InsertionSortCall2;
               return res;
@@ -222,8 +241,8 @@ ArraySortResult ArraySortData::sortWithComparatorShared(ArraySortData* d) {
 
         
         {
-          ArraySortResult res =
-              MaybeYieldToComparator(d, d->list[d->mid], d->list[d->mid + 1]);
+          ArraySortResult res = MaybeYieldToComparator<Kind>(
+              d, d->list[d->mid], d->list[d->mid + 1]);
           if (res != ArraySortResult::Done) {
             d->state = State::MergeSortCall1;
             return res;
@@ -246,7 +265,7 @@ ArraySortResult ArraySortData::sortWithComparatorShared(ArraySortData* d) {
         while (d->i <= d->mid && d->j <= d->end) {
           {
             ArraySortResult res =
-                MaybeYieldToComparator(d, d->list[d->i], d->list[d->j]);
+                MaybeYieldToComparator<Kind>(d, d->list[d->i], d->list[d->j]);
             if (res != ArraySortResult::Done) {
               d->state = State::MergeSortCall2;
               return res;

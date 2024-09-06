@@ -46,11 +46,12 @@
 
 #include "proxy/Proxy.h"  
 
-#include "vm/ArgumentsObject.h"  
-#include "vm/Interpreter.h"      
-#include "vm/NativeObject.h"     
-#include "vm/RegExpShared.h"     
-#include "wasm/WasmBuiltins.h"   
+#include "vm/ArgumentsObject.h"   
+#include "vm/Interpreter.h"       
+#include "vm/NativeObject.h"      
+#include "vm/RegExpShared.h"      
+#include "vm/TypedArrayObject.h"  
+#include "wasm/WasmBuiltins.h"    
 
 #include "builtin/Boolean-inl.h"  
 
@@ -105,6 +106,7 @@ namespace jit {
   _(js::ArgumentsObject::finishInlineForIonPure)                      \
   _(js::ArrayShiftMoveElements)                                       \
   _(js::ArraySortData::sortArrayWithComparator)                       \
+  _(js::ArraySortData::sortTypedArrayWithComparator)                  \
   _(js::ArraySortFromJit)                                             \
   _(js::ecmaAtan2)                                                    \
   _(js::ecmaHypot)                                                    \
@@ -190,6 +192,7 @@ namespace jit {
   _(js::RegExpPrototypeOptimizableRaw)                                \
   _(js::SetIteratorObject::next)                                      \
   _(js::StringToNumberPure)                                           \
+  _(js::TypedArraySortFromJit)                                        \
   _(js::TypeOfObject)                                                 \
   _(mozilla::SIMD::memchr16)                                          \
   _(mozilla::SIMD::memchr2x16)                                        \
