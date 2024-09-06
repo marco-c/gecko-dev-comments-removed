@@ -650,6 +650,10 @@ class HTMLInputElement final : public TextControlElement,
                 ErrorResult& aRv);
   void GetValue(nsAString& aValue, CallerType aCallerType);
 
+  
+  
+  void GetValueInternal(nsAString& aValue, CallerType aCallerType) const;
+
   void GetValueAsDate(JSContext* aCx, JS::MutableHandle<JSObject*> aObj,
                       ErrorResult& aRv);
 
@@ -872,6 +876,13 @@ class HTMLInputElement final : public TextControlElement,
   
   static mozilla::Maybe<nscolor> ParseSimpleColor(const nsAString& aColor);
 
+  
+
+
+  bool IsAutoDirectionalityAssociated() const {
+    return IsAutoDirectionalityAssociated(mType);
+  }
+
  protected:
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual ~HTMLInputElement();
 
@@ -939,10 +950,6 @@ class HTMLInputElement final : public TextControlElement,
       const nsAString& aValue, const ValueSetterOptions& aOptions) {
     return SetValueInternal(aValue, nullptr, aOptions);
   }
-
-  
-  
-  void GetValueInternal(nsAString& aValue, CallerType aCallerType) const;
 
   
   
@@ -1107,13 +1114,6 @@ class HTMLInputElement final : public TextControlElement,
 
   MOZ_CAN_RUN_SCRIPT
   nsresult SetDefaultValueAsValue();
-
-  
-
-
-
-  void SetAutoDirectionality(bool aNotify,
-                             const nsAString* aKnownValue = nullptr);
 
   
 
@@ -1580,10 +1580,6 @@ class HTMLInputElement final : public TextControlElement,
       default:
         return false;
     }
-  }
-
-  bool IsAutoDirectionalityAssociated() const {
-    return IsAutoDirectionalityAssociated(mType);
   }
 
   static bool CreatesDateTimeWidget(FormControlType aType) {

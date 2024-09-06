@@ -33,10 +33,12 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/UnbindContext.h"
 #include "mozilla/intl/UnicodeProperties.h"
+#include "mozilla/Maybe.h"
 #include "nsUnicodeProperties.h"
 #include "nsTextFragment.h"
 #include "nsAttrValue.h"
@@ -70,6 +72,33 @@ static bool ParticipatesInAutoDirection(const nsIContent* aContent) {
   }
   return !aContent->IsAnyOfHTMLElements(nsGkAtoms::script, nsGkAtoms::style,
                                         nsGkAtoms::input, nsGkAtoms::textarea);
+}
+
+static bool IsAutoDirectionalityFormAssociatedElement(Element* aElement) {
+  if (HTMLInputElement* input = HTMLInputElement::FromNode(aElement)) {
+    return input->IsAutoDirectionalityAssociated();
+  }
+  return aElement->IsHTMLElement(nsGkAtoms::textarea);
+}
+
+static Maybe<nsAutoString> GetValueIfFormAssociatedElement(Element* aElement) {
+  Maybe<nsAutoString> result;
+  if (HTMLInputElement* input = HTMLInputElement::FromNode(aElement)) {
+    if (input->IsAutoDirectionalityAssociated()) {
+      
+      
+      
+      
+      
+      result.emplace();
+      input->GetValueInternal(*result, dom::CallerType::System);
+    }
+  } else if (dom::HTMLTextAreaElement* ta =
+                 dom::HTMLTextAreaElement::FromNode(aElement)) {
+    result.emplace();
+    ta->GetValue(*result);
+  }
+  return result;
 }
 
 
@@ -248,6 +277,17 @@ Directionality ComputeAutoDirectionFromAssignedNodes(
       MOZ_ASSERT(assignedElement);
 
       
+      
+      
+      if (Maybe<nsAutoString> maybe =
+              GetValueIfFormAssociatedElement(assignedElement)) {
+        const nsAutoString& value = maybe.value();
+        childDirection =
+            GetDirectionFromText(value.BeginReading(), value.Length());
+        if (childDirection == Directionality::Unset && !value.IsEmpty()) {
+          childDirection = Directionality::Ltr;
+        }
+      }
       
       if (ParticipatesInAutoDirection(assignedElement)) {
         childDirection = ComputeAutoDirectionality(assignedElement, aNotify);
@@ -735,16 +775,41 @@ void ResetDirectionSetByTextNode(Text* aTextNode,
   }
 }
 
-void SetDirectionalityFromValue(Element* aElement, const nsAString& value,
-                                bool aNotify) {
-  Directionality dir =
-      GetDirectionFromText(value.BeginReading(), value.Length());
-  if (dir == Directionality::Unset) {
-    dir = Directionality::Ltr;
+void ResetDirFormAssociatedElement(Element* aElement, bool aNotify,
+                                   bool aHasDirAuto,
+                                   const nsAString* aKnownValue) {
+  if (aHasDirAuto) {
+    Directionality dir = Directionality::Unset;
+
+    if (aKnownValue && IsAutoDirectionalityFormAssociatedElement(aElement)) {
+      dir = GetDirectionFromText(aKnownValue->BeginReading(),
+                                 aKnownValue->Length());
+    } else if (!aKnownValue) {
+      if (Maybe<nsAutoString> maybe =
+              GetValueIfFormAssociatedElement(aElement)) {
+        dir = GetDirectionFromText(maybe.value().BeginReading(),
+                                   maybe.value().Length());
+      }
+    }
+
+    
+    
+    if (dir == Directionality::Unset) {
+      dir = Directionality::Ltr;
+    }
+
+    if (aElement->GetDirectionality() != dir) {
+      aElement->SetDirectionality(dir, aNotify);
+    }
   }
 
-  if (aElement->GetDirectionality() != dir) {
-    aElement->SetDirectionality(dir, aNotify);
+  
+  
+  if (HTMLSlotElement* slot = aElement->GetAssignedSlot()) {
+    if (slot->HasDirAuto() &&
+        slot->GetDirectionality() != aElement->GetDirectionality()) {
+      ResetAutoDirection(slot, aNotify);
+    }
   }
 }
 

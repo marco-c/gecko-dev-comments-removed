@@ -1252,8 +1252,8 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       
       if (!mValueChanged && GetValueMode() == VALUE_MODE_VALUE) {
         SetDefaultValueAsValue();
-      } else if (GetValueMode() == VALUE_MODE_DEFAULT && HasDirAuto()) {
-        SetAutoDirectionality(aNotify);
+      } else if (GetValueMode() == VALUE_MODE_DEFAULT) {
+        ResetDirFormAssociatedElement(this, aNotify, HasDirAuto());
       }
       
       
@@ -1380,7 +1380,7 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                  "HTML5 spec does not allow underflow for type=range");
     } else if (aName == nsGkAtoms::dir && aValue &&
                aValue->Equals(nsGkAtoms::_auto, eIgnoreCase)) {
-      SetAutoDirectionality(aNotify);
+      ResetDirFormAssociatedElement(this, aNotify, true);
     } else if (aName == nsGkAtoms::lang) {
       
       
@@ -4383,9 +4383,7 @@ nsresult HTMLInputElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
 
   
-  if (HasDirAuto()) {
-    SetAutoDirectionality(false);
-  }
+  ResetDirFormAssociatedElement(this, false, HasDirAuto());
 
   
   
@@ -4675,15 +4673,14 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
   UpdateBarredFromConstraintValidation();
 
   
+  const bool autoDirAssociated = IsAutoDirectionalityAssociated(mType);
+  if (IsAutoDirectionalityAssociated(oldType) != autoDirAssociated) {
+    ResetDirFormAssociatedElement(this, aNotify, true);
+  }
   
   
-  if (HasDirAuto()) {
-    const bool autoDirAssociated = IsAutoDirectionalityAssociated(mType);
-    if (IsAutoDirectionalityAssociated(oldType) != autoDirAssociated) {
-      SetAutoDirectionality(aNotify);
-    }
-  } else if (oldType == FormControlType::InputTel ||
-             mType == FormControlType::InputTel) {
+  if (!HasDirAuto() && (oldType == FormControlType::InputTel ||
+                        mType == FormControlType::InputTel)) {
     RecomputeDirectionality(this, aNotify);
   }
 
@@ -5939,25 +5936,6 @@ nsresult HTMLInputElement::SetDefaultValueAsValue() {
   return SetValueInternal(resetVal, ValueSetterOption::ByInternalAPI);
 }
 
-
-void HTMLInputElement::SetAutoDirectionality(bool aNotify,
-                                             const nsAString* aKnownValue) {
-  if (!IsAutoDirectionalityAssociated()) {
-    return SetDirectionality(Directionality::Ltr, aNotify);
-  }
-  nsAutoString value;
-  if (!aKnownValue) {
-    
-    
-    
-    
-    
-    GetValueInternal(value, CallerType::System);
-    aKnownValue = &value;
-  }
-  SetDirectionalityFromValue(this, *aKnownValue, aNotify);
-}
-
 NS_IMETHODIMP
 HTMLInputElement::Reset() {
   
@@ -7076,9 +7054,7 @@ void HTMLInputElement::OnValueChanged(ValueChangeKind aKind,
 
   UpdateAllValidityStates(true);
 
-  if (HasDirAuto()) {
-    SetAutoDirectionality(true, aKnownNewValue);
-  }
+  ResetDirFormAssociatedElement(this, true, HasDirAuto(), aKnownNewValue);
 }
 
 bool HTMLInputElement::HasCachedSelection() {

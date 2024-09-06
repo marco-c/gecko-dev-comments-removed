@@ -134,9 +134,9 @@ void ResetDirectionSetByTextNode(dom::Text*, dom::UnbindContext&);
 
 
 
-
-void SetDirectionalityFromValue(mozilla::dom::Element* aElement,
-                                const nsAString& aValue, bool aNotify);
+void ResetDirFormAssociatedElement(mozilla::dom::Element* aElement,
+                                   bool aNotify, bool aHasDirAuto,
+                                   const nsAString* aKnownValue = nullptr);
 
 
 
