@@ -396,20 +396,22 @@ add_task(async function () {
     if (!knownIOList.length) {
       continue;
     }
-    
-    
-    
-    is(
-      !!markers.length,
-      !AppConstants.RELEASE_OR_BETA,
-      procName +
-        " startup profiles should have IO markers in builds that are not RELEASE_OR_BETA"
-    );
-    if (!markers.length) {
+    if (knownIOList.some(io => !io.ignoreIfUnused)) {
       
       
       
-      continue;
+      is(
+        !!markers.length,
+        !AppConstants.RELEASE_OR_BETA,
+        procName +
+          " startup profiles should have IO markers in builds that are not RELEASE_OR_BETA"
+      );
+      if (!markers.length) {
+        
+        
+        
+        continue;
+      }
     }
 
     for (let entry of knownIOList) {
