@@ -339,10 +339,17 @@ struct NSSCMSOriginatorIdentifierOrKeyStr {
 };
 typedef struct NSSCMSOriginatorIdentifierOrKeyStr NSSCMSOriginatorIdentifierOrKey;
 
+struct NSSCMSOtherKeyAttributeStr {
+    SECItem keyAttrId;
+    SECItem keyAttr; 
+};
+
+typedef struct NSSCMSOtherKeyAttributeStr NSSCMSOtherKeyAttribute;
+
 struct NSSCMSRecipientKeyIdentifierStr {
     SECItem *subjectKeyIdentifier;
-    SECItem *date;  
-    SECItem *other; 
+    SECItem *date;                  
+    NSSCMSOtherKeyAttribute *other; 
 };
 typedef struct NSSCMSRecipientKeyIdentifierStr NSSCMSRecipientKeyIdentifier;
 
@@ -369,7 +376,7 @@ typedef struct NSSCMSRecipientEncryptedKeyStr NSSCMSRecipientEncryptedKey;
 struct NSSCMSKeyAgreeRecipientInfoStr {
     SECItem version;
     NSSCMSOriginatorIdentifierOrKey originatorIdentifierOrKey;
-    SECItem *ukm; 
+    SECItem ukm; 
     SECAlgorithmID keyEncAlg;
     NSSCMSRecipientEncryptedKey **recipientEncryptedKeys;
 };
@@ -382,8 +389,8 @@ typedef struct NSSCMSKeyAgreeRecipientInfoStr NSSCMSKeyAgreeRecipientInfo;
 
 struct NSSCMSKEKIdentifierStr {
     SECItem keyIdentifier;
-    SECItem *date;  
-    SECItem *other; 
+    SECItem *date;                  
+    NSSCMSOtherKeyAttribute *other; 
 };
 typedef struct NSSCMSKEKIdentifierStr NSSCMSKEKIdentifier;
 
