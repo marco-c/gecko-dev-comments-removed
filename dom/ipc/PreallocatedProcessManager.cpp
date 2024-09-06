@@ -371,14 +371,6 @@ void PreallocatedProcessManagerImpl::CloseProcesses() {
     process->ShutDownProcess(ContentParent::SEND_SHUTDOWN_MESSAGE);
     
   }
-
-  
-  
-  
-  if (RefPtr<ContentParent> recycled =
-          ContentParent::sRecycledE10SProcess.forget()) {
-    recycled->MaybeBeginShutDown();
-  }
 }
 
 inline PreallocatedProcessManagerImpl*

@@ -600,7 +600,6 @@ ProcessID GetTelemetryProcessID(const nsACString& remoteType) {
 }  
 
 StaticAutoPtr<LinkedList<ContentParent>> ContentParent::sContentParents;
-StaticRefPtr<ContentParent> ContentParent::sRecycledE10SProcess;
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 StaticAutoPtr<SandboxBrokerPolicyFactory>
     ContentParent::sSandboxBrokerPolicyFactory;
@@ -936,7 +935,6 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
                  (unsigned int)retval->ChildID(),
                  PromiseFlatCString(aRemoteType).get()));
         retval->AssertAlive();
-        retval->StopRecyclingE10SOnly(true);
         return retval.forget();
       }
     }
@@ -951,27 +949,8 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
                random.get(), (unsigned int)random->ChildID(),
                PromiseFlatCString(aRemoteType).get()));
       random->AssertAlive();
-      random->StopRecyclingE10SOnly(true);
       return random.forget();
     }
-  }
-
-  
-  
-  if (aRemoteType == DEFAULT_REMOTE_TYPE && sRecycledE10SProcess) {
-    RefPtr<ContentParent> recycled = sRecycledE10SProcess;
-    MOZ_DIAGNOSTIC_ASSERT(recycled->GetRemoteType() == DEFAULT_REMOTE_TYPE);
-    recycled->AssertAlive();
-    recycled->StopRecyclingE10SOnly(true);
-    if (profiler_thread_is_being_profiled_for_markers()) {
-      nsPrintfCString marker("Recycled process %u (%p)",
-                             (unsigned int)recycled->ChildID(), recycled.get());
-      PROFILER_MARKER_TEXT("Process", DOM, {}, marker);
-    }
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Recycled process %p", recycled.get()));
-
-    return recycled.forget();
   }
 
   
@@ -983,7 +962,6 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
       (preallocated = PreallocatedProcessManager::Take(aRemoteType))) {
     MOZ_DIAGNOSTIC_ASSERT(preallocated->GetRemoteType() ==
                           PREALLOC_REMOTE_TYPE);
-    MOZ_DIAGNOSTIC_ASSERT(sRecycledE10SProcess != preallocated);
     preallocated->AssertAlive();
 
     if (profiler_thread_is_being_profiled_for_markers()) {
@@ -1064,7 +1042,6 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
               ("GetNewOrUsedProcess: Existing host process %p (launching %d)",
                contentParent.get(), contentParent->IsLaunching()));
       contentParent->AssertAlive();
-      contentParent->StopRecyclingE10SOnly(true);
       return contentParent.forget();
     }
   }
@@ -1106,7 +1083,6 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
   
 
   contentParent->AssertAlive();
-  contentParent->StopRecyclingE10SOnly(true);
   if (aGroup) {
     aGroup->EnsureHostProcess(contentParent);
   }
@@ -1709,9 +1685,6 @@ void ContentParent::Init() {
   Unused << SendInitNextGenLocalStorageEnabled(NextGenLocalStorageEnabled());
 }
 
-
-
-
 bool ContentParent::CheckTabDestroyWillKeepAlive(
     uint32_t aExpectedBrowserCount) {
   return ManagedPBrowserParent().Count() != aExpectedBrowserCount ||
@@ -1762,8 +1735,7 @@ void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
   
   
   
-  if (CheckTabDestroyWillKeepAlive(aExpectedBrowserCount) ||
-      TryToRecycleE10SOnly()) {
+  if (CheckTabDestroyWillKeepAlive(aExpectedBrowserCount)) {
     return;
   }
 
@@ -1790,7 +1762,6 @@ void ContentParent::AsyncSendShutDownMessage() {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("AsyncSendShutDownMessage %p", this));
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(sRecycledE10SProcess != this);
 
   
   
@@ -1955,7 +1926,6 @@ void ContentParent::RemoveFromPool(nsTArray<ContentParent*>& aPool) {
 void ContentParent::AssertNotInPool() {
   MOZ_RELEASE_ASSERT(!mIsInPool);
 
-  MOZ_RELEASE_ASSERT(sRecycledE10SProcess != this);
   MOZ_RELEASE_ASSERT(!sBrowserContentParents ||
                      !sBrowserContentParents->Contains(mRemoteType) ||
                      !sBrowserContentParents->Get(mRemoteType)->Contains(this));
@@ -1986,8 +1956,6 @@ void ContentParent::RemoveFromList() {
   for (const auto& group : mGroups) {
     group->RemoveHostProcess(this);
   }
-
-  StopRecyclingE10SOnly( false);
 
   if (sBrowserContentParents) {
     if (auto entry = sBrowserContentParents->Lookup(mRemoteType)) {
@@ -2020,7 +1988,6 @@ void ContentParent::MarkAsDead() {
 
   
   PreallocatedProcessManager::Erase(this);
-  StopRecyclingE10SOnly(false);
 
 #if defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_PROFILE_GENERATE)
   if (IsAlive()) {
@@ -2247,76 +2214,6 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   MOZ_DIAGNOSTIC_ASSERT(mGroups.IsEmpty());
 
   mPendingLoadStates.Clear();
-}
-
-bool ContentParent::TryToRecycleE10SOnly() {
-  
-  
-  
-  
-  
-  
-  if (mRemoteType != DEFAULT_REMOTE_TYPE || mozilla::FissionAutostart() ||
-      !PreallocatedProcessManager::Enabled()) {
-    return false;
-  }
-
-  
-  
-
-  
-  
-  const double kMaxLifeSpan = 5;
-  MOZ_LOG(
-      ContentParent::GetLog(), LogLevel::Debug,
-      ("TryToRecycle ContentProcess %p (%u) with lifespan %f seconds", this,
-       (unsigned int)ChildID(), (TimeStamp::Now() - mActivateTS).ToSeconds()));
-
-  if (mCalledKillHard || !IsAlive() ||
-      (TimeStamp::Now() - mActivateTS).ToSeconds() > kMaxLifeSpan) {
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("TryToRecycle did not recycle %p", this));
-
-    
-    
-    
-    StopRecyclingE10SOnly( false);
-    return false;
-  }
-
-  if (!sRecycledE10SProcess) {
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("TryToRecycle began recycling %p", this));
-    sRecycledE10SProcess = this;
-
-    ProcessPriorityManager::SetProcessPriority(this,
-                                               PROCESS_PRIORITY_BACKGROUND);
-    return true;
-  }
-
-  if (sRecycledE10SProcess == this) {
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("TryToRecycle continue recycling %p", this));
-    return true;
-  }
-
-  
-  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("TryToRecycle did not recycle %p (already recycling %p)", this,
-           sRecycledE10SProcess.get()));
-  return false;
-}
-
-void ContentParent::StopRecyclingE10SOnly(bool aForeground) {
-  if (sRecycledE10SProcess != this) {
-    return;
-  }
-
-  sRecycledE10SProcess = nullptr;
-  if (aForeground) {
-    ProcessPriorityManager::SetProcessPriority(this,
-                                               PROCESS_PRIORITY_FOREGROUND);
-  }
 }
 
 bool ContentParent::HasActiveWorker() {
@@ -3868,7 +3765,6 @@ ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
     
     
     PreallocatedProcessManager::Erase(this);
-    StopRecyclingE10SOnly(false);
 
     if (sQuitApplicationGrantedClient) {
       Unused << sQuitApplicationGrantedClient->RemoveBlocker(this);

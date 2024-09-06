@@ -688,16 +688,6 @@ class ContentParent final : public PContentParent,
       sBrowserContentParents;
   static mozilla::StaticAutoPtr<LinkedList<ContentParent>> sContentParents;
 
-  
-
-
-
-
-
-
-
-  static StaticRefPtr<ContentParent> sRecycledE10SProcess;
-
   void AddShutdownBlockers();
   void RemoveShutdownBlockers();
 
@@ -760,24 +750,6 @@ class ContentParent final : public PContentParent,
   
   
   void ForwardKnownInfo();
-
-  
-
-
-
-
-
-  bool TryToRecycleE10SOnly();
-
-  
-
-
-
-
-
-
-
-  void StopRecyclingE10SOnly(bool aForeground);
 
   
 
