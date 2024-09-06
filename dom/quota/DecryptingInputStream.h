@@ -143,6 +143,9 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
 
   bool EnsureBuffers();
 
+  
+  nsresult EnsureDecryptedStreamSize();
+
   CipherStrategy mCipherStrategy;
   LazyInitializedOnce<const typename CipherStrategy::KeyType> mKey;
 
@@ -154,6 +157,8 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
 
   
   nsTArray<uint8_t> mPlainBuffer;
+
+  LazyInitializedOnce<const int64_t> mDecryptedStreamSize;
 };
 
 }  
