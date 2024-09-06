@@ -41,6 +41,9 @@ class EmptyLines extends Component {
 
   shouldComponentUpdate(nextProps) {
     const { breakableLines, selectedSource } = this.props;
+    if (!selectedSource) {
+      return false;
+    }
     return (
       
       
@@ -52,6 +55,9 @@ class EmptyLines extends Component {
 
   disableEmptyLines() {
     const { breakableLines, selectedSource, editor } = this.props;
+    if (!selectedSource) {
+      return;
+    }
 
     const { codeMirror } = editor;
     const isSourceWasm = isWasm(selectedSource.id);
@@ -78,7 +84,7 @@ class EmptyLines extends Component {
 const mapStateToProps = state => {
   const selectedSource = getSelectedSource(state);
   if (!selectedSource) {
-    throw new Error("no selectedSource");
+    return {};
   }
   const breakableLines = getSelectedBreakableLines(state);
 
