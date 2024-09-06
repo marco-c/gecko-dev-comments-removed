@@ -46,8 +46,8 @@ add_setup(async function setup() {
   
   Services.prefs.setIntPref("signon.suggestImportCount", 3);
 
-  registerCleanupFunction(async () => {
-    await doExperimentCleanup();
+  registerCleanupFunction(() => {
+    doExperimentCleanup();
     debounce.restore();
     importable.restore();
     migrator.restore();
