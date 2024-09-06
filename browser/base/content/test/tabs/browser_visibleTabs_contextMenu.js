@@ -2,11 +2,6 @@
 
 
 
-const remoteClientsFixture = [
-  { id: 1, name: "Foo" },
-  { id: 2, name: "Bar" },
-];
-
 add_task(async function test() {
   
   let [origTab] = gBrowser.visibleTabs;
@@ -16,9 +11,8 @@ add_task(async function test() {
 
   
   updateTabContextMenu(origTab);
-  is(
-    document.getElementById("context_closeTab").disabled,
-    false,
+  ok(
+    !document.getElementById("context_closeTab").disabled,
     "Close Tab is enabled"
   );
 
@@ -29,10 +23,13 @@ add_task(async function test() {
 
   
   updateTabContextMenu(testTab);
-  is(
-    document.getElementById("context_closeTab").disabled,
-    false,
+  ok(
+    !document.getElementById("context_closeTab").disabled,
     "Close Tab is enabled when more than one tab exists"
+  );
+  ok(
+    !document.getElementById("context_closeDuplicateTabs").disabled,
+    "Close duplicate tabs is enabled when more than one tab with the same URL exists"
   );
 
   

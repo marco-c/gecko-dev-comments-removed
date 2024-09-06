@@ -9037,8 +9037,7 @@ var ConfirmationHint = {
 
     MozXULElement.insertFTLIfNeeded("toolkit/branding/brandings.ftl");
     MozXULElement.insertFTLIfNeeded("browser/confirmationHints.ftl");
-    document.l10n.setAttributes(this._message, messageId);
-
+    document.l10n.setAttributes(this._message, messageId, options.l10nArgs);
     if (options.descriptionId) {
       document.l10n.setAttributes(this._description, options.descriptionId);
       this._description.hidden = false;

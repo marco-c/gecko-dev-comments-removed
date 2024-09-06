@@ -161,6 +161,7 @@
       TO_START: 2,
       TO_END: 3,
       MULTI_SELECTED: 4,
+      DUPLICATES: 6,
     },
 
     _lastRelatedTabMap: new WeakMap(),
@@ -346,6 +347,46 @@
 
     get visibleTabs() {
       return this.tabContainer._getVisibleTabs();
+    },
+
+    getDuplicateTabsToClose(aTab) {
+      
+      
+      
+      let urisToLookFor = [];
+      if (aTab.multiselected) {
+        for (let tab of this.selectedTabs) {
+          let uri = tab.linkedBrowser?.currentURI;
+          if (uri) {
+            urisToLookFor.push(uri);
+          }
+        }
+      } else {
+        let uri = aTab.linkedBrowser?.currentURI;
+        if (uri) {
+          urisToLookFor.push(uri);
+        }
+      }
+
+      if (!urisToLookFor.length) {
+        return [];
+      }
+
+      let duplicateTabs = [];
+      for (let tab of this.tabs) {
+        if (tab == aTab || tab.pinned) {
+          continue;
+        }
+        if (aTab.multiselected && tab.multiselected) {
+          continue;
+        }
+        let uri = tab.linkedBrowser?.currentURI;
+        if (uri && urisToLookFor.some(u => u.equals(uri))) {
+          duplicateTabs.push(tab);
+        }
+      }
+
+      return duplicateTabs;
     },
 
     get _numPinnedTabs() {
@@ -3507,6 +3548,28 @@
         tabsToEnd.push(tabs[i]);
       }
       return tabsToEnd;
+    },
+
+    removeDuplicateTabs(aTab) {
+      let tabs = this.getDuplicateTabsToClose(aTab);
+      if (!tabs.length) {
+        return;
+      }
+
+      if (
+        !this.warnAboutClosingTabs(tabs.length, this.closingTabsEnum.DUPLICATES)
+      ) {
+        return;
+      }
+
+      this.removeTabs(tabs);
+      if (tabs.length) {
+        ConfirmationHint.show(aTab, "confirmation-hint-duplicate-tabs-closed", {
+          l10nArgs: {
+            tabCount: tabs.length,
+          },
+        });
+      }
     },
 
     
@@ -7554,9 +7617,8 @@ var TabContextMenu = {
       tabsToMove[0] == visibleTabs[gBrowser._numPinnedTabs];
     contextMoveTabToStart.disabled = isFirstTab && allSelectedTabsAdjacent;
 
-    if (this.contextTab.hasAttribute("customizemode")) {
-      document.getElementById("context_openTabInWindow").disabled = true;
-    }
+    document.getElementById("context_openTabInWindow").disabled =
+      this.contextTab.hasAttribute("customizemode");
 
     
     document.getElementById("context_duplicateTab").hidden =
@@ -7589,6 +7651,17 @@ var TabContextMenu = {
     document
       .getElementById("context_closeTab")
       .setAttribute("data-l10n-args", tabCountInfo);
+
+    let closeDuplicateEnabled = Services.prefs.getBoolPref(
+      "browser.tabs.context.close-duplicate.enabled"
+    );
+    let closeDuplicateTabsItem = document.getElementById(
+      "context_closeDuplicateTabs"
+    );
+    closeDuplicateTabsItem.hidden = !closeDuplicateEnabled;
+    closeDuplicateTabsItem.disabled =
+      !closeDuplicateEnabled ||
+      !gBrowser.getDuplicateTabsToClose(this.contextTab).length;
 
     
     document.getElementById("context_closeTabOptions").disabled =

@@ -2229,6 +2229,13 @@ pref("privacy.exposeContentTitleInWindow.pbm", true);
 pref("media.peerconnection.mtransport_process", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.tabs.context.close-duplicate.enabled", true);
+#else
+pref("browser.tabs.context.close-duplicate.enabled", false);
+#endif
+
+
 
 pref("browser.tabs.remote.warmup.enabled", true);
 
