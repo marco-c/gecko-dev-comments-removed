@@ -962,6 +962,49 @@ AsyncAssociateIconToPage::Run() {
 
 
 
+AsyncSetIconForPage::AsyncSetIconForPage(const IconData& aIcon,
+                                         const PageData& aPage,
+                                         PlacesCompletionCallback* aCallback)
+    : Runnable("places::AsyncSetIconForPage"),
+      mCallback(new nsMainThreadPtrHolder<PlacesCompletionCallback>(
+          "AsyncSetIconForPage::mCallback", aCallback, false)),
+      mIcon(aIcon),
+      mPage(aPage) {}
+
+NS_IMETHODIMP
+AsyncSetIconForPage::Run() {
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(mIcon.payloads.Length(), "The icon should have valid data");
+  MOZ_ASSERT(mPage.spec.Length(), "The page should have spec");
+  MOZ_ASSERT(mPage.guid.IsEmpty(), "The page should not have guid");
+
+  nsresult rv = NS_OK;
+  auto guard = MakeScopeExit([&]() {
+    if (mCallback) {
+      NS_DispatchToMainThread(
+          NS_NewRunnableFunction("AsyncSetIconForPage::Callback",
+                                 [rv, callback = std::move(mCallback)]() {
+                                   (void)callback->Complete(rv);
+                                 }));
+    }
+  });
+
+  
+  RefPtr<Database> DB = Database::GetDatabase();
+  if (MOZ_UNLIKELY(!DB)) {
+    return (rv = NS_ERROR_UNEXPECTED);
+  }
+  rv = FetchPageInfo(DB, mPage);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsMainThreadPtrHandle<nsIFaviconDataCallback> nullCallback;
+  AsyncAssociateIconToPage event(mIcon, mPage, nullCallback);
+  return (rv = event.Run());
+}
+
+
+
+
 AsyncGetFaviconURLForPage::AsyncGetFaviconURLForPage(
     const nsACString& aPageSpec, const nsACString& aPageHost,
     uint16_t aPreferredWidth, nsIFaviconDataCallback* aCallback)
@@ -1207,6 +1250,7 @@ AsyncCopyFavicons::Run() {
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
   
   rv = FetchIconPerSpec(DB, mFromPage.spec, ""_ns, icon, UINT16_MAX);
   NS_ENSURE_SUCCESS(rv, rv);
