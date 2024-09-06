@@ -8,7 +8,7 @@ pub fn ingest_single_provider(c: &mut Criterion) {
     
     group.sample_size(10);
     for (name, benchmark) in ingest::all_benchmarks() {
-        group.bench_function(format!("ingest-{name}"), |b| {
+        group.bench_function(name.to_string(), |b| {
             b.iter_batched(
                 || benchmark.generate_input(),
                 |input| benchmark.benchmarked_code(input),

@@ -3,6 +3,33 @@
 
 
 use crate::Error;
+use rusqlite::{types::ToSqlOutput, ToSql};
+
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u32)]
+pub enum InterestVectorKind {
+    
+    
+    Frecency = 1,
+}
+
+impl InterestVectorKind {
+    pub fn as_raw(&self) -> u32 {
+        *self as u32
+    }
+}
+
+impl ToSql for InterestVectorKind {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.as_raw()))
+    }
+}
 
 
 
@@ -106,6 +133,16 @@ impl Interest {
             Self::Travel,
         ]
     }
+
+    pub fn as_raw(&self) -> u32 {
+        *self as u32
+    }
+}
+
+impl ToSql for Interest {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.as_raw()))
+    }
 }
 
 
@@ -160,6 +197,68 @@ impl InterestVector {
             (Interest::Tech, self.tech),
             (Interest::Travel, self.travel),
         ]
+    }
+
+    pub fn set(&mut self, interest: Interest, count: u32) {
+        match interest {
+            Interest::Inconclusive => {
+                self.inconclusive = count;
+            }
+            Interest::Animals => {
+                self.animals = count;
+            }
+            Interest::Arts => {
+                self.arts = count;
+            }
+            Interest::Autos => {
+                self.autos = count;
+            }
+            Interest::Business => {
+                self.business = count;
+            }
+            Interest::Career => {
+                self.career = count;
+            }
+            Interest::Education => {
+                self.education = count;
+            }
+            Interest::Fashion => {
+                self.fashion = count;
+            }
+            Interest::Finance => {
+                self.finance = count;
+            }
+            Interest::Food => {
+                self.food = count;
+            }
+            Interest::Government => {
+                self.government = count;
+            }
+            Interest::Hobbies => {
+                self.hobbies = count;
+            }
+            Interest::Home => {
+                self.home = count;
+            }
+            Interest::News => {
+                self.news = count;
+            }
+            Interest::RealEstate => {
+                self.real_estate = count;
+            }
+            Interest::Society => {
+                self.society = count;
+            }
+            Interest::Sports => {
+                self.sports = count;
+            }
+            Interest::Tech => {
+                self.tech = count;
+            }
+            Interest::Travel => {
+                self.travel = count;
+            }
+        }
     }
 
     pub fn summary(&self) -> String {
