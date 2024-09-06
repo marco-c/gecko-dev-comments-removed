@@ -1049,9 +1049,14 @@ CoderResult CodeMetadataTier(Coder<mode>& coder,
   return Ok();
 }
 
+
+
+
+
+
 template <CoderMode mode>
-CoderResult CodeMetadata(Coder<mode>& coder,
-                         CoderArg<mode, wasm::Metadata> item) {
+CoderResult CodeMetadata_(Coder<mode>& coder,
+                          CoderArg<mode, wasm::Metadata> item) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Metadata, 448);
   if constexpr (mode == MODE_ENCODE) {
     
@@ -1119,7 +1124,8 @@ CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 192);
   MutableMetadata metadata;
   UniqueCodeTier codeTier;
-  MOZ_TRY((CodeRefPtr<MODE_DECODE, Metadata, &CodeMetadata>(coder, &metadata)));
+  MOZ_TRY(
+      (CodeRefPtr<MODE_DECODE, Metadata, &CodeMetadata_>(coder, &metadata)));
   MOZ_TRY(CodeCodeTier(coder, &codeTier, linkData));
 
   
@@ -1154,7 +1160,7 @@ CoderResult CodeSharedCode(Coder<mode>& coder,
                            const wasm::LinkData& linkData) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 192);
   STATIC_ASSERT_ENCODING_OR_SIZING;
-  MOZ_TRY((CodeRefPtr<mode, const Metadata, &CodeMetadata>(
+  MOZ_TRY((CodeRefPtr<mode, const Metadata, &CodeMetadata_>(
       coder, &(*item)->metadata_)));
   MOZ_TRY(CodeCodeTier(coder, &(*item)->codeTier(Tier::Serialized), linkData));
   return Ok();
