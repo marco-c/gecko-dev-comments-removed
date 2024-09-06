@@ -2606,6 +2606,7 @@ TemporalParser<CharT>::dateSpecMonthDay() {
   
   PlainDate result = {};
 
+  
   string("--");
 
   result.year = AbsentYear;
@@ -2624,6 +2625,7 @@ TemporalParser<CharT>::dateSpecMonthDay() {
     return mozilla::Err(JSMSG_TEMPORAL_PARSER_MISSING_MONTH);
   }
 
+  
   character('-');
 
   
@@ -2672,6 +2674,7 @@ mozilla::Result<PlainDate, ParserError> TemporalParser<CharT>::validMonthDay() {
     return mozilla::Err(JSMSG_TEMPORAL_PARSER_MISSING_MONTH);
   }
 
+  
   character('-');
 
   if (auto day = digits(2)) {
