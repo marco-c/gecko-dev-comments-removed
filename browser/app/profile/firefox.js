@@ -1873,6 +1873,8 @@ pref("browser.newtabpage.activity-stream.discoverystream.spocs.personalized", tr
 
 pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.enabled", false);
 
+pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.enabled", false);
+
 
 pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.dismissed", false);
 pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.enabled", false);
