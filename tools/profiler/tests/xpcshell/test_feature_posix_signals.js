@@ -5,7 +5,7 @@
 ChromeUtils.defineESModuleGetters(this, {
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
-  BrowserTestUtils: "resource://testing-common/BrowserTestUtils.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
 const { ctypes } = ChromeUtils.importESModule(
@@ -68,23 +68,6 @@ function raiseSignal(pid, sig) {
   return { ok: true };
 }
 
-
-
-
-
-
-
-
-
-async function waitUntilProfilerStopped(interval = 1000, maxTries = 100) {
-  await BrowserTestUtils.waitForCondition(
-    () => !Services.profiler.IsActive(),
-    "the profiler should be inactive",
-    interval,
-    maxTries
-  );
-}
-
 async function cleanupAfterTest() {
   
   
@@ -137,10 +120,14 @@ add_task(async () => {
   let pid = Services.appinfo.processID;
 
   
+  let stopPromise = TestUtils.topicObserved("profiler-stopped");
+
+  
   let result = raiseSignal(pid, SIGUSR2);
   Assert.ok(result, "Raising a SIGUSR2 signal should succeed.");
 
-  await waitUntilProfilerStopped();
+  
+  Assert.ok(await stopPromise, "The profiler should stop");
 
   Assert.ok(
     !Services.profiler.IsActive(),
@@ -178,16 +165,20 @@ add_task(async () => {
   Assert.ok(Services.profiler.IsActive(), "The profiler should now be active.");
 
   
+  let stopPromise = TestUtils.topicObserved("profiler-stopped");
+
+  
   let result = raiseSignal(pid, SIGUSR2);
   Assert.ok(result, "Raising a SIGUSR2 signal should succeed.");
 
   
-  await BrowserTestUtils.waitForCondition(
-    async () => await IOUtils.exists(profile.path),
-    "Waiting for a profile file to be written to disk."
-  );
+  Assert.ok(await stopPromise, "The profiler should stop");
 
-  await waitUntilProfilerStopped();
+  
+  Assert.ok(
+    await IOUtils.exists(profile.path),
+    "A profile file should be written to disk."
+  );
 
   Assert.ok(
     !Services.profiler.IsActive(),
