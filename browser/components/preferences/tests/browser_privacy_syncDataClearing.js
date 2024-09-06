@@ -6,12 +6,6 @@
 
 
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.useOldClearHistoryDialog", true]],
-  });
-});
-
 add_task(async function test_syncWithoutCustomPrefs() {
   await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
     leaveOpen: true,
