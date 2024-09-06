@@ -9,9 +9,10 @@ use crate::stylesheets::CorsMode;
 use crate::values::computed::{Context, ToComputedValue};
 use cssparser::Parser;
 use servo_arc::Arc;
-use servo_url::ServoUrl;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
+use to_shmem::{SharedMemoryBuilder, ToShmem};
+use url::Url;
 
 
 
@@ -24,7 +25,7 @@ use style_traits::{CssWriter, ParseError, ToCss};
 
 
 
-#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize, SpecifiedValueInfo, ToShmem)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize, SpecifiedValueInfo)]
 pub struct CssUrl {
     
     
@@ -36,7 +37,14 @@ pub struct CssUrl {
     original: Option<Arc<String>>,
 
     
-    resolved: Option<ServoUrl>,
+    #[ignore_malloc_size_of = "Arc"]
+    resolved: Option<Arc<Url>>,
+}
+
+impl ToShmem for CssUrl {
+    fn to_shmem(&self, _builder: &mut SharedMemoryBuilder) -> to_shmem::Result<Self> {
+        unimplemented!("If servo wants to share stylesheets across processes, ToShmem for Url must be implemented");
+    }
 }
 
 impl CssUrl {
@@ -46,7 +54,7 @@ impl CssUrl {
     
     pub fn parse_from_string(url: String, context: &ParserContext, _: CorsMode) -> Self {
         let serialization = Arc::new(url);
-        let resolved = context.url_data.join(&serialization).ok();
+        let resolved = context.url_data.0.join(&serialization).ok().map(Arc::new);
         CssUrl {
             original: Some(serialization),
             resolved: resolved,
@@ -71,7 +79,7 @@ impl CssUrl {
     }
 
     
-    pub fn url(&self) -> Option<&ServoUrl> {
+    pub fn url(&self) -> Option<&Arc<Url>> {
         self.resolved.as_ref()
     }
 
@@ -87,7 +95,7 @@ impl CssUrl {
 
     
     
-    pub fn for_cascade(url: ServoUrl) -> Self {
+    pub fn for_cascade(url: Arc<::url::Url>) -> Self {
         CssUrl {
             original: None,
             resolved: Some(url),
@@ -98,7 +106,7 @@ impl CssUrl {
     pub fn new_for_testing(url: &str) -> Self {
         CssUrl {
             original: Some(Arc::new(url.into())),
-            resolved: ServoUrl::parse(url).ok(),
+            resolved: ::url::Url::parse(url).ok().map(Arc::new),
         }
     }
 
@@ -205,12 +213,12 @@ pub enum ComputedUrl {
     
     Invalid(#[ignore_malloc_size_of = "Arc"] Arc<String>),
     
-    Valid(ServoUrl),
+    Valid(#[ignore_malloc_size_of = "Arc"] Arc<Url>),
 }
 
 impl ComputedUrl {
     
-    pub fn url(&self) -> Option<&ServoUrl> {
+    pub fn url(&self) -> Option<&Arc<Url>> {
         match *self {
             ComputedUrl::Valid(ref url) => Some(url),
             _ => None,

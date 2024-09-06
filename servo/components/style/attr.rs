@@ -20,7 +20,6 @@ use euclid::num::Zero;
 use num_traits::ToPrimitive;
 use selectors::attr::AttrSelectorOperation;
 use servo_arc::Arc;
-use servo_url::ServoUrl;
 use std::str::FromStr;
 
 
@@ -51,7 +50,10 @@ pub enum AttrValue {
     
     
     
-    ResolvedUrl(String, Option<ServoUrl>),
+    ResolvedUrl(
+        String,
+        #[ignore_malloc_size_of = "Arc"] Option<Arc<url::Url>>
+    ),
 
     
     
@@ -243,8 +245,8 @@ impl AttrValue {
         AttrValue::Atom(value)
     }
 
-    pub fn from_resolved_url(base: &ServoUrl, url: String) -> AttrValue {
-        let joined = base.join(&url).ok();
+    pub fn from_resolved_url(base: &Arc<::url::Url>, url: String) -> AttrValue {
+        let joined = base.join(&url).ok().map(Arc::new);
         AttrValue::ResolvedUrl(url, joined)
     }
 
@@ -316,7 +318,7 @@ impl AttrValue {
     
     
     
-    pub fn as_resolved_url(&self) -> Option<&ServoUrl> {
+    pub fn as_resolved_url(&self) -> Option<&Arc<::url::Url>> {
         match *self {
             AttrValue::ResolvedUrl(_, ref url) => url.as_ref(),
             _ => panic!("Url not found"),
