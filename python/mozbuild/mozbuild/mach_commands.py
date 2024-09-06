@@ -394,7 +394,8 @@ def cargo_vet(command_context, arguments, stdout=None, env=os.environ):
         
         topsrcdir = Path(command_context.topsrcdir)
         shutil.copyfile(
-            topsrcdir / ".cargo" / "config.in", topsrcdir / ".cargo" / "config"
+            topsrcdir / ".cargo" / "config.toml.in",
+            topsrcdir / ".cargo" / "config.toml",
         )
 
     try:
@@ -406,7 +407,7 @@ def cargo_vet(command_context, arguments, stdout=None, env=os.environ):
         )
     finally:
         if locked:
-            (topsrcdir / ".cargo" / "config").unlink()
+            (topsrcdir / ".cargo" / "config.toml").unlink()
 
     
     
