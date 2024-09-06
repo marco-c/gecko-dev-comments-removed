@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/tabbrowser/test/tabs/common_link_in_tab_title_and_url_prefilled.js",
+  "chrome://mochitests/content/browser/browser/components/tabbrowser/test/browser/tabs/common_link_in_tab_title_and_url_prefilled.js",
   this
 );
 
