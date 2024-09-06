@@ -160,6 +160,11 @@ impl PseudoElement {
     }
 
     
+    #[inline]
+    pub fn is_target_text(&self) -> bool {
+        *self == PseudoElement::TargetText
+    }
+    
     pub fn supports_user_action_state(&self) -> bool {
         (self.flags() & structs::CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE) != 0
     }
@@ -168,6 +173,7 @@ impl PseudoElement {
     pub fn enabled_in_content(&self) -> bool {
         match *self {
             Self::Highlight(..) => pref!("dom.customHighlightAPI.enabled"),
+            Self::TargetText => pref!("dom.text_fragments.enabled"),
             Self::SliderFill | Self::SliderTrack | Self::SliderThumb => {
                 pref!("layout.css.modern-range-pseudos.enabled")
             },
