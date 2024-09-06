@@ -98,7 +98,6 @@ void Rule::AssertParentRuleType() {
   
   
   
-  
   if (mParentRule) {
     auto type = mParentRule->Type();
     MOZ_ASSERT(type == StyleCssRuleType::Media ||
@@ -109,8 +108,7 @@ void Rule::AssertParentRuleType() {
                type == StyleCssRuleType::LayerBlock ||
                type == StyleCssRuleType::Container ||
                type == StyleCssRuleType::Scope ||
-               type == StyleCssRuleType::StartingStyle ||
-               type == StyleCssRuleType::Page);
+               type == StyleCssRuleType::StartingStyle);
   }
 }
 #endif
