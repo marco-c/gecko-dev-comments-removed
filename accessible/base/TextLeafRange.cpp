@@ -995,30 +995,16 @@ TextLeafPoint TextLeafPoint::FindNextWordStartSameAcc(
   return TextLeafPoint(mAcc, wordStart);
 }
 
-bool TextLeafPoint::IsCaretAtEndOfLine() const {
-  MOZ_ASSERT(IsCaret());
-  if (LocalAccessible* acc = mAcc->AsLocal()) {
-    HyperTextAccessible* ht = HyperTextFor(acc);
-    if (!ht) {
-      return false;
-    }
-    
-    
-    
-    return ht->IsCaretAtEndOfLine();
-  }
-  return mAcc->AsRemote()->Document()->IsCaretAtEndOfLine();
-}
 
-TextLeafPoint TextLeafPoint::ActualizeCaret(bool aAdjustAtEndOfLine) const {
-  MOZ_ASSERT(IsCaret());
+TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
   HyperTextAccessibleBase* ht;
   int32_t htOffset;
-  if (LocalAccessible* acc = mAcc->AsLocal()) {
+  bool isEndOfLine;
+  if (LocalAccessible* localAcc = aAcc->AsLocal()) {
     
     
     
-    ht = HyperTextFor(acc);
+    ht = HyperTextFor(localAcc);
     if (!ht) {
       return TextLeafPoint();
     }
@@ -1026,38 +1012,56 @@ TextLeafPoint TextLeafPoint::ActualizeCaret(bool aAdjustAtEndOfLine) const {
     if (htOffset == -1) {
       return TextLeafPoint();
     }
+    
+    
+    
+    isEndOfLine = localAcc->AsHyperText()->IsCaretAtEndOfLine();
   } else {
     
     
-    std::tie(ht, htOffset) = mAcc->AsRemote()->Document()->GetCaret();
+    DocAccessibleParent* remoteDoc = aAcc->AsRemote()->Document();
+    std::tie(ht, htOffset) = remoteDoc->GetCaret();
     if (!ht) {
       return TextLeafPoint();
     }
+    isEndOfLine = remoteDoc->IsCaretAtEndOfLine();
   }
-  if (aAdjustAtEndOfLine && htOffset > 0 && IsCaretAtEndOfLine()) {
-    
-    
-    
-    
-    
-    --htOffset;
-  }
-  return ht->ToTextLeafPoint(htOffset);
+  TextLeafPoint point = ht->ToTextLeafPoint(htOffset);
+  point.mIsEndOfLineInsertionPoint = isEndOfLine;
+  return point;
+}
+
+TextLeafPoint TextLeafPoint::AdjustEndOfLine() const {
+  MOZ_ASSERT(mIsEndOfLineInsertionPoint);
+  
+  
+  return TextLeafPoint(mAcc, mOffset)
+      .FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
 }
 
 TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
                                           nsDirection aDirection,
                                           BoundaryFlags aFlags) const {
-  if (IsCaret()) {
+  if (mIsEndOfLineInsertionPoint) {
+    
+    
+    
     if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR ||
         aBoundaryType == nsIAccessibleText::BOUNDARY_CLUSTER) {
-      if (IsCaretAtEndOfLine()) {
+      if (aDirection == eDirNext || (aDirection == eDirPrevious &&
+                                     aFlags & BoundaryFlags::eIncludeOrigin)) {
         
-        return ActualizeCaret( false);
+        
+        
+        return TextLeafPoint(mAcc, mOffset);
       }
+      
+      return TextLeafPoint(mAcc, mOffset)
+          .FindBoundary(aBoundaryType, aDirection, aFlags);
     }
-    return ActualizeCaret().FindBoundary(
-        aBoundaryType, aDirection, aFlags & BoundaryFlags::eIncludeOrigin);
+    
+    
+    return AdjustEndOfLine().FindBoundary(aBoundaryType, aDirection, aFlags);
   }
 
   bool inEditableAndStopInIt = (aFlags & BoundaryFlags::eStopInEditable) &&
@@ -1746,8 +1750,8 @@ already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributes(
 
 TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
                                                 bool aIncludeOrigin) const {
-  if (IsCaret()) {
-    return ActualizeCaret().FindTextAttrsStart(aDirection, aIncludeOrigin);
+  if (mIsEndOfLineInsertionPoint) {
+    return AdjustEndOfLine().FindTextAttrsStart(aDirection, aIncludeOrigin);
   }
   const bool isRemote = mAcc->IsRemote();
   RefPtr<const AccAttributes> lastAttrs =

@@ -404,9 +404,11 @@ void HyperTextAccessibleBase::AdjustOriginIfEndBoundary(
       aBoundaryType != nsIAccessibleText::BOUNDARY_WORD_END) {
     return;
   }
-  TextLeafPoint actualOrig =
-      aOrigin.IsCaret() ? aOrigin.ActualizeCaret( false)
-                        : aOrigin;
+  TextLeafPoint actualOrig = aOrigin;
+  
+  
+  
+  actualOrig.mIsEndOfLineInsertionPoint = false;
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END) {
     if (!actualOrig.IsLineFeedChar()) {
       return;
@@ -513,7 +515,7 @@ void HyperTextAccessibleBase::TextAtOffset(int32_t aOffset,
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR) {
     if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
       TextLeafPoint caret = TextLeafPoint::GetCaret(Acc());
-      if (caret.IsCaretAtEndOfLine()) {
+      if (caret.mIsEndOfLineInsertionPoint) {
         
         *aStartOffset = *aEndOffset = static_cast<int32_t>(adjustedOffset);
         return;
@@ -581,7 +583,7 @@ void HyperTextAccessibleBase::TextAfterOffset(
 
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR) {
     if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET && adjustedOffset > 0 &&
-        TextLeafPoint::GetCaret(Acc()).IsCaretAtEndOfLine()) {
+        TextLeafPoint::GetCaret(Acc()).mIsEndOfLineInsertionPoint) {
       --adjustedOffset;
     }
     uint32_t count = CharacterCount();
@@ -624,8 +626,7 @@ void HyperTextAccessibleBase::TextAfterOffset(
 }
 
 int32_t HyperTextAccessibleBase::CaretOffset() const {
-  TextLeafPoint point = TextLeafPoint::GetCaret(const_cast<Accessible*>(Acc()))
-                            .ActualizeCaret( false);
+  TextLeafPoint point = TextLeafPoint::GetCaret(const_cast<Accessible*>(Acc()));
   if (point.mOffset == 0 && point.mAcc == Acc()) {
     
     
@@ -641,8 +642,7 @@ int32_t HyperTextAccessibleBase::CaretOffset() const {
 }
 
 int32_t HyperTextAccessibleBase::CaretLineNumber() {
-  TextLeafPoint point = TextLeafPoint::GetCaret(const_cast<Accessible*>(Acc()))
-                            .ActualizeCaret( false);
+  TextLeafPoint point = TextLeafPoint::GetCaret(const_cast<Accessible*>(Acc()));
   if (point.mOffset == 0 && point.mAcc == Acc()) {
     MOZ_ASSERT(CharacterCount() == 0);
     

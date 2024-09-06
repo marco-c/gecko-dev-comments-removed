@@ -46,15 +46,22 @@ class TextLeafPoint final {
   
 
 
-
-
-
-  static TextLeafPoint GetCaret(Accessible* aAcc) {
-    return TextLeafPoint(aAcc, nsIAccessibleText::TEXT_OFFSET_CARET);
-  }
+  static TextLeafPoint GetCaret(Accessible* aAcc);
 
   Accessible* mAcc;
   int32_t mOffset;
+
+  
+
+
+
+
+
+
+
+
+
+  bool mIsEndOfLineInsertionPoint = false;
 
   bool operator==(const TextLeafPoint& aPoint) const {
     return mAcc == aPoint.mAcc && mOffset == aPoint.mOffset;
@@ -73,21 +80,6 @@ class TextLeafPoint final {
 
 
   explicit operator bool() const { return !!mAcc; }
-
-  bool IsCaret() const {
-    return mOffset == nsIAccessibleText::TEXT_OFFSET_CARET;
-  }
-
-  bool IsCaretAtEndOfLine() const;
-
-  
-
-
-
-
-
-
-  TextLeafPoint ActualizeCaret(bool aAdjustAtEndOfLine = true) const;
 
   enum class BoundaryFlags : uint32_t {
     eDefaultBoundaryFlags = 0,
@@ -202,6 +194,12 @@ class TextLeafPoint final {
       bool aIncludeGenerated = true) const;
 
  private:
+  
+
+
+
+  TextLeafPoint AdjustEndOfLine() const;
+
   bool IsEmptyLastLine() const;
 
   bool IsDocEdge(nsDirection aDirection) const;

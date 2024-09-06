@@ -162,7 +162,7 @@ void a11y::PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
   if (!aTarget->IsDoc() && !aFromUser && !aIsSelectionCollapsed) {
     
     
-    Accessible* leaf = TextLeafPoint::GetCaret(aTarget).ActualizeCaret().mAcc;
+    Accessible* leaf = TextLeafPoint::GetCaret(aTarget).mAcc;
     MOZ_ASSERT(leaf);
     if (leaf) {
       if (Accessible* result = AccessibleWrap::DoPivot(
