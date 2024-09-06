@@ -590,7 +590,7 @@ def fetch_local_changes(inDir, outDir, srcDir, strictTests):
     
     
     status = subprocess.check_output(
-        ("git -C %s status --porcelain" % srcDir).split(" ")
+        ("git -C %s status --porcelain" % srcDir).split(" "), encoding="utf-8"
     )
 
     if status.strip():
@@ -601,31 +601,35 @@ def fetch_local_changes(inDir, outDir, srcDir, strictTests):
 
     
     branchName = subprocess.check_output(
-        ("git -C %s rev-parse --abbrev-ref HEAD" % srcDir).split(" ")
+        ("git -C %s rev-parse --abbrev-ref HEAD" % srcDir).split(" "), encoding="utf-8"
     ).split("\n")[0]
 
     
     files = subprocess.check_output(
-        ("git -C %s diff main --diff-filter=ACMR --name-only" % srcDir).split(" ")
+        ("git -C %s diff main --diff-filter=ACMR --name-only" % srcDir).split(" "),
+        encoding="utf-8",
     )
 
     
     
     deletedFiles = subprocess.check_output(
-        ("git -C %s diff main --diff-filter=D --name-only" % srcDir).split(" ")
+        ("git -C %s diff main --diff-filter=D --name-only" % srcDir).split(" "),
+        encoding="utf-8",
     )
 
     
     
     modifiedFiles = subprocess.check_output(
-        ("git -C %s diff main --diff-filter=M --name-only" % srcDir).split(" ")
+        ("git -C %s diff main --diff-filter=M --name-only" % srcDir).split(" "),
+        encoding="utf-8",
     )
 
     
     
     
     renamedFiles = subprocess.check_output(
-        ("git -C %s diff main --diff-filter=R --summary" % srcDir).split(" ")
+        ("git -C %s diff main --diff-filter=R --summary" % srcDir).split(" "),
+        encoding="utf-8",
     )
 
     
