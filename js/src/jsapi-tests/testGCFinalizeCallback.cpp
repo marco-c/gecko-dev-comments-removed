@@ -41,7 +41,7 @@ BEGIN_TEST(testGCFinalizeCallback) {
 #ifdef JS_GC_ZEAL
   
   
-  JS_SetGCZeal(cx, 0, 0);
+  JS::SetGCZeal(cx, 0, 0);
 #endif
 
   JS::RootedObject global1(cx, createTestGlobal());
@@ -108,7 +108,7 @@ BEGIN_TEST(testGCFinalizeCallback) {
   
 
   FinalizeCalls = 0;
-  JS_SetGCZeal(cx, 9, 1000000);
+  JS::SetGCZeal(cx, 9, 1000000);
   JS::PrepareForFullGC(cx);
   budget = SliceBudget(WorkBudget(1));
   cx->runtime()->gc.startDebugGC(JS::GCOptions::Normal, budget);
@@ -125,7 +125,7 @@ BEGIN_TEST(testGCFinalizeCallback) {
   CHECK(checkSingleGroup());
   CHECK(checkFinalizeStatus());
 
-  JS_SetGCZeal(cx, 0, 0);
+  JS::SetGCZeal(cx, 0, 0);
 
 #endif
 
