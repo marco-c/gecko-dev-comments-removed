@@ -993,7 +993,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     }
   }
 
-  if (aInitData->mIsPrivate) {
+  if (Preferences::GetBool("browser.privateWindowSeparation.enabled", true) &&
+      (aInitData->mIsPrivate)) {
     
     
     

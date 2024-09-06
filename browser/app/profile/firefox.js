@@ -823,6 +823,10 @@ pref("browser.dataFeatureRecommendations.enabled", false);
 pref("browser.theme.dark-private-windows", true);
 
 
+
+pref("browser.privateWindowSeparation.enabled", true);
+
+
 pref("browser.privacySegmentation.preferences.show", false);
 
 pref("browser.sessionhistory.max_entries", 50);
