@@ -357,15 +357,6 @@ async function watchResources(rootOrWatcherOrTargetActor, resourceTypes) {
     watchers.set(rootOrWatcherOrTargetActor, watcher);
   }
   await Promise.all(promises);
-
-  
-  
-  
-  
-  
-  if (rootOrWatcherOrTargetActor.emitResources) {
-    rootOrWatcherOrTargetActor.emitResources();
-  }
 }
 exports.watchResources = watchResources;
 
