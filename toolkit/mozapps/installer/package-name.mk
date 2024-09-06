@@ -23,10 +23,10 @@ endif
 
 # TARGET_RAW_OS/TARGET_RAW_CPU may be unintuitive, so we hardcode some special formats
 ifeq ($(OS_ARCH),WINNT)
-ifeq ($(CPU_ARCH),x86)
+ifeq ($(TARGET_CPU),x86)
 MOZ_PKG_PLATFORM := win32
 else
-ifeq ($(CPU_ARCH),aarch64)
+ifeq ($(TARGET_CPU),aarch64)
 MOZ_PKG_PLATFORM := win64-aarch64
 else
 MOZ_PKG_PLATFORM := win64
@@ -110,6 +110,9 @@ GTEST_PACKAGE = $(PKG_BASENAME).gtest.tests.tar.gz
 
 # `.xpt` artifacts: for use in artifact builds.
 XPT_ARTIFACTS_ARCHIVE_BASENAME = $(PKG_BASENAME).xpt_artifacts
+ifeq (Darwin, $(OS_ARCH))
+UPDATE_FRAMEWORK_ARTIFACTS_ARCHIVE_BASENAME = $(PKG_BASENAME).update_framework_artifacts
+endif # Darwin
 
 ifneq (,$(wildcard $(DIST)/bin/application.ini))
 BUILDID = $(shell $(PYTHON3) $(MOZILLA_DIR)/config/printconfigsetting.py $(DIST)/bin/application.ini App BuildID)
