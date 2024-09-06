@@ -168,6 +168,7 @@ class Editor extends EventEmitter {
   #win;
   #lineGutterMarkers = new Map();
   #lineContentMarkers = new Map();
+  #lineContentEventHandlers = {};
 
   #updateListener = null;
 
@@ -676,7 +677,9 @@ class Editor extends EventEmitter {
         }
       }),
       lineNumberMarkersCompartment.of([]),
-      lineContentMarkerCompartment.of(this.#lineContentMarkersExtension([])),
+      lineContentMarkerCompartment.of(
+        this.#lineContentMarkersExtension({ markers: [] })
+      ),
       
       codemirror.minimalSetup,
     ];
@@ -700,14 +703,19 @@ class Editor extends EventEmitter {
 
 
 
-  #lineContentMarkersExtension(markers) {
+
+
+  #lineContentMarkersExtension({ markers, domEventHandlers }) {
     const {
       codemirrorView: { Decoration, ViewPlugin },
-      codemirrorState: { RangeSetBuilder },
+      codemirrorState: { RangeSetBuilder, RangeSet },
     } = this.#CodeMirror6;
 
     
     function buildDecorations(view) {
+      if (!markers) {
+        return RangeSet.empty;
+      }
       const builder = new RangeSetBuilder();
       for (const { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
@@ -729,7 +737,7 @@ class Editor extends EventEmitter {
 
     
     
-    const showLineContentDecorations = ViewPlugin.fromClass(
+    const lineContentMarkersView = ViewPlugin.fromClass(
       class {
         decorations;
         constructor(view) {
@@ -741,10 +749,46 @@ class Editor extends EventEmitter {
           }
         }
       },
-      { decorations: v => v.decorations }
+      {
+        decorations: v => v.decorations,
+        eventHandlers: domEventHandlers || this.#lineContentEventHandlers,
+      }
     );
 
-    return [showLineContentDecorations];
+    return [lineContentMarkersView];
+  }
+
+  
+
+
+
+  setContentEventListeners(domEventHandlers) {
+    const cm = editors.get(this);
+
+    for (const eventName in domEventHandlers) {
+      const handler = domEventHandlers[eventName];
+      domEventHandlers[eventName] = (event, editor) => {
+        
+        
+        
+        event.target.ownerGlobal.setTimeout(() => {
+          const view = editor.viewState;
+          const head = view.state.selection.main.head;
+          const cursor = view.state.doc.lineAt(head);
+          const column = head - cursor.from;
+          handler(event, view, cursor.number, column);
+        }, 0);
+      };
+    }
+
+    
+    this.#lineContentEventHandlers = domEventHandlers;
+
+    cm.dispatch({
+      effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
+        this.#lineContentMarkersExtension({ domEventHandlers })
+      ),
+    });
   }
 
   
@@ -761,9 +805,9 @@ class Editor extends EventEmitter {
 
     cm.dispatch({
       effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
-        this.#lineContentMarkersExtension(
-          Array.from(this.#lineContentMarkers.values())
-        )
+        this.#lineContentMarkersExtension({
+          markers: Array.from(this.#lineContentMarkers.values()),
+        })
       ),
     });
   }
@@ -778,9 +822,9 @@ class Editor extends EventEmitter {
 
     cm.dispatch({
       effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
-        this.#lineContentMarkersExtension(
-          Array.from(this.#lineContentMarkers.values())
-        )
+        this.#lineContentMarkersExtension({
+          markers: Array.from(this.#lineContentMarkers.values()),
+        })
       ),
     });
   }
@@ -904,6 +948,61 @@ class Editor extends EventEmitter {
         lineNumberMarkers.of(builder.finish())
       ),
     });
+  }
+
+  
+
+
+
+
+
+  getSelectionCursor() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const selection = cm.state.selection.ranges[0];
+      const lineFrom = cm.state.doc.lineAt(selection.from);
+      const lineTo = cm.state.doc.lineAt(selection.to);
+      return {
+        from: {
+          line: lineFrom.number,
+          ch: selection.from - lineFrom.from,
+        },
+        to: {
+          line: lineTo.number,
+          ch: selection.to - lineTo.from,
+        },
+      };
+    }
+    return {
+      from: cm.getCursor("from"),
+      to: cm.getCursor("to"),
+    };
+  }
+
+  
+
+
+
+  getSelectedText() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const selection = cm.state.selection.ranges[0];
+      return cm.state.doc.sliceString(selection.from, selection.to);
+    }
+    return cm.getSelection().trim();
+  }
+
+  
+
+
+
+  isTextSelected() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const selection = cm.state.selection.ranges[0];
+      return selection.from !== selection.to;
+    }
+    return cm.somethingSelected();
   }
 
   
@@ -1901,6 +2000,8 @@ class Editor extends EventEmitter {
     this.#ownerDoc = null;
     this.#updateListener = null;
     this.#lineGutterMarkers.clear();
+    this.#lineContentMarkers.clear();
+    this.#lineContentEventHandlers = {};
 
     if (this.#prefObserver) {
       this.#prefObserver.off(KEYMAP_PREF, this.setKeyMap);

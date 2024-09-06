@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 import { showMenu } from "../../context-menu/menu";
 
@@ -39,7 +39,7 @@ import { toggleBlackBox } from "../../actions/sources/blackbox";
 import { addExpression } from "../../actions/expressions";
 import { evaluateInConsole } from "../../actions/toolbox";
 
-export function showEditorContextMenu(event, editor, location) {
+export function showEditorContextMenu(event, editor, lineObject, location) {
   return async ({ dispatch, getState }) => {
     const { source } = location;
     const state = getState();
@@ -63,9 +63,9 @@ export function showEditorContextMenu(event, editor, location) {
         location,
         isPaused,
         editorWrappingEnabled,
-        selectionText: editor.codeMirror.getSelection().trim(),
-        isTextSelected: editor.codeMirror.somethingSelected(),
-        editor,
+        selectionText: editor.getSelectedText(),
+        isTextSelected: editor.isTextSelected(),
+        lineObject,
         isSourceOnIgnoreList,
         dispatch,
       })
@@ -100,7 +100,7 @@ export function showEditorGutterContextMenu(event, line, location, lineText) {
   };
 }
 
-
+// Menu Items
 const continueToHereItem = (location, isPaused, dispatch) => ({
   accesskey: L10N.getStr("editor.continueToHere.accesskey"),
   disabled: !isPaused,
@@ -181,9 +181,9 @@ const blackBoxLineMenuItem = (
   { from, to },
   blackboxedRanges,
   isSourceOnIgnoreList,
-  
-  
-  
+  // the clickedLine is passed when the context menu
+  // is opened from the gutter, it is not available when the
+  // the context menu is opened from the editor.
   clickedLine = null,
   dispatch
 ) => {
@@ -205,11 +205,11 @@ const blackBoxLineMenuItem = (
     blackboxedRanges[selectedSource.url] &&
     !blackboxedRanges[selectedSource.url].length;
 
-  
-  
-  
-  
-  
+  // The ignore/unignore line context menu item should be disabled when
+  // 1) The source is on the sourcemap ignore list
+  // 2) The whole source is blackboxed or
+  // 3) Multiple lines are blackboxed or
+  // 4) Multiple lines are selected in the editor
   const shouldDisable =
     isSourceOnIgnoreList || isSourceFullyBlackboxed || !isSingleLine;
 
@@ -339,7 +339,7 @@ function editorMenuItems({
   isTextSelected,
   isPaused,
   editorWrappingEnabled,
-  editor,
+  lineObject,
   isSourceOnIgnoreList,
   dispatch,
 }) {
@@ -368,16 +368,10 @@ function editorMenuItems({
     blackBoxMenuItem(source, blackboxedRanges, isSourceOnIgnoreList, dispatch)
   );
 
-  const startLine = toSourceLine(
-    source.id,
-    editor.codeMirror.getCursor("from").line
-  );
-  const endLine = toSourceLine(
-    source.id,
-    editor.codeMirror.getCursor("to").line
-  );
+  const startLine = toSourceLine(source.id, lineObject.from.line);
+  const endLine = toSourceLine(source.id, lineObject.to.line);
 
-  
+  // Find any blackbox ranges that exist for the selected lines
   const blackboxRange = findBlackBoxRange(source, blackboxedRanges, {
     start: startLine,
     end: endLine,
@@ -387,8 +381,8 @@ function editorMenuItems({
     ? blackboxRange.start.line !== blackboxRange.end.line
     : startLine !== endLine;
 
-  
-  
+  // When the range is defined and is an empty array,
+  // the whole source is blackboxed
   const theWholeSourceIsBlackBoxed =
     blackboxedRanges[source.url] && !blackboxedRanges[source.url].length;
 
@@ -400,10 +394,7 @@ function editorMenuItems({
     items.push(
       blackBoxSourceLinesMenuItem(
         source,
-        {
-          from: editor.codeMirror.getCursor("from"),
-          to: editor.codeMirror.getCursor("to"),
-        },
+        lineObject,
         blackboxedRanges,
         isSourceOnIgnoreList,
         null,
