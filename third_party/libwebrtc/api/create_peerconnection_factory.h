@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "api/audio/audio_mixer.h"
+#include "api/audio/audio_processing.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/field_trials_view.h"
@@ -34,7 +35,6 @@ namespace webrtc {
 
 class AudioDeviceModule;
 class AudioFrameProcessor;
-class AudioProcessing;
 
 
 

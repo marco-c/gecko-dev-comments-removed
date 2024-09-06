@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef API_AUDIO_ECHO_DETECTOR_CREATOR_H_
+#define API_AUDIO_ECHO_DETECTOR_CREATOR_H_
+
+#include "api/audio/audio_processing.h"
+#include "api/scoped_refptr.h"
+
+namespace webrtc {
+
+
+
+
+rtc::scoped_refptr<EchoDetector> CreateEchoDetector();
+
+}  
+
+#endif  
