@@ -27,6 +27,8 @@ SOURCES += [
     'sqlite3.c',
 ]
 
+OS_LIBS += CONFIG["DL_LIBS"]
+
 
 
 
