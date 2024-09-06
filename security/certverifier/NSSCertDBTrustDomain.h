@@ -87,6 +87,8 @@ bool LoadLoadableRoots(const nsCString& dir);
 
 bool LoadOSClientCertsModule(const nsCString& dir);
 
+extern const char* kOSClientCertsModuleName;
+
 
 
 
@@ -96,6 +98,8 @@ bool LoadOSClientCertsModule(const nsCString& dir);
 
 
 bool LoadIPCClientCertsModule(const nsCString& dir);
+
+extern const char* kIPCClientCertsModuleName;
 
 
 
