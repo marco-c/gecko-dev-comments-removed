@@ -8,6 +8,7 @@
 #define builtin_temporal_Calendar_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
 
 #include <initializer_list>
@@ -49,7 +50,7 @@ class CalendarObject : public NativeObject {
 
 
 
-class CalendarValue final {
+class MOZ_STACK_CLASS CalendarValue final {
   JS::Value value_{};
 
  public:
@@ -126,7 +127,7 @@ enum class CalendarMethod {
   YearMonthFromFields,
 };
 
-class CalendarRecord {
+class MOZ_STACK_CLASS CalendarRecord final {
   CalendarValue receiver_;
 
   

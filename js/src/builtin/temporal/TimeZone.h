@@ -8,6 +8,7 @@
 #define builtin_temporal_TimeZone_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
 
 #include <stddef.h>
@@ -142,7 +143,7 @@ namespace js::temporal {
 
 
 
-class TimeZoneValue final {
+class MOZ_STACK_CLASS TimeZoneValue final {
   JSObject* object_ = nullptr;
 
  public:
@@ -252,7 +253,7 @@ enum class TimeZoneMethod {
   GetPossibleInstantsFor,
 };
 
-class TimeZoneRecord {
+class MOZ_STACK_CLASS TimeZoneRecord final {
   TimeZoneValue receiver_;
 
   
