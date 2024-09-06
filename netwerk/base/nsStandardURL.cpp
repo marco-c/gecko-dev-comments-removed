@@ -2674,6 +2674,17 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
   scheme.mPos = schemePos;
   scheme.mLen = schemeLen;
 
+  
+  if (NS_SUCCEEDED(rv) && protocol == "file"_ns && baseProtocol == "file"_ns) {
+    const char* path = buf.get() + scheme.mPos + scheme.mLen;
+    
+    if (path[0] == ':' && IsAsciiAlpha(path[1]) &&
+        (path[2] == ':' || path[2] == '|')) {
+      out = buf;
+      return NS_OK;
+    }
+  }
+
   protocol.Assign(Segment(scheme));
 
   
@@ -2768,7 +2779,13 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
         }
         break;
       default:
-        if (coalesceFlag & NET_COALESCE_DOUBLE_SLASH_IS_ROOT) {
+        if (protocol.IsEmpty() && Scheme() == "file" &&
+            IsAsciiAlpha(realrelpath[0]) && realrelpath[1] == '|') {
+          
+          
+          
+          len = mAuthority.mPos + mAuthority.mLen + 1;
+        } else if (coalesceFlag & NET_COALESCE_DOUBLE_SLASH_IS_ROOT) {
           if (Filename().Equals("%2F"_ns, nsCaseInsensitiveCStringComparator)) {
             
             
@@ -2792,7 +2809,21 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
   }
 
   if (resultPath) {
-    net_CoalesceDirs(coalesceFlag, resultPath);
+    constexpr uint32_t slashDriveSpecifierLength = sizeof("/C:") - 1;
+    
+    
+    
+    if (protocol.IsEmpty() && Scheme() == "file") {
+      if (resultPath[0] == '/' && IsAsciiAlpha(resultPath[1]) &&
+          (resultPath[2] == ':' || resultPath[2] == '|')) {
+        resultPath += slashDriveSpecifierLength;
+      }
+    }
+
+    
+    if (resultPath && resultPath[0] == '/') {
+      net_CoalesceDirs(coalesceFlag, resultPath);
+    }
   } else {
     
     resultPath = strstr(result, "://");
