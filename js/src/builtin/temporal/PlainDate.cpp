@@ -319,7 +319,7 @@ static PlainDateObject* CreateTemporalDate(JSContext* cx, const CallArgs& args,
                        Int32Value(int32_t(isoDay)));
 
   
-  object->setFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toValue());
+  object->setFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toSlotValue());
 
   
   return object;
@@ -360,7 +360,7 @@ PlainDateObject* js::temporal::CreateTemporalDate(
   object->setFixedSlot(PlainDateObject::ISO_DAY_SLOT, Int32Value(isoDay));
 
   
-  object->setFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toValue());
+  object->setFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toSlotValue());
 
   
   return object;
@@ -530,7 +530,7 @@ static Wrapped<PlainDateObject*> ToTemporalDate(
   MOZ_ASSERT(IsValidISODate(result));
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   if (calendarString) {
     if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
       return nullptr;
@@ -2355,7 +2355,11 @@ static bool PlainDate_getISOFields(JSContext* cx, const CallArgs& args) {
   Rooted<IdValueVector> fields(cx, IdValueVector(cx));
 
   
-  if (!fields.emplaceBack(NameToId(cx->names().calendar), calendar.toValue())) {
+  Rooted<Value> cal(cx);
+  if (!ToTemporalCalendar(cx, calendar, &cal)) {
+    return false;
+  }
+  if (!fields.emplaceBack(NameToId(cx->names().calendar), cal)) {
     return false;
   }
 

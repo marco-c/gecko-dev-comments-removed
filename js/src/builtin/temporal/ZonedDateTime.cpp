@@ -113,7 +113,7 @@ bool js::temporal::InterpretISODateTimeOffset(
       timeZone, TimeZoneMethod::GetPossibleInstantsFor));
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   Rooted<PlainDateTimeWithCalendar> temporalDateTime(cx);
   if (!CreateTemporalDateTime(cx, dateTime, calendar, &temporalDateTime)) {
     return false;
@@ -454,7 +454,7 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
         return false;
       }
     } else {
-      calendar.set(CalendarValue(cx->names().iso8601));
+      calendar.set(CalendarValue(CalendarId::ISO8601));
     }
 
     
@@ -564,7 +564,7 @@ static ZonedDateTimeObject* CreateTemporalZonedDateTime(
   obj->setFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT, timeZone.toSlotValue());
 
   
-  obj->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT, calendar.toValue());
+  obj->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT, calendar.toSlotValue());
 
   
   return obj;
@@ -596,7 +596,7 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
   obj->setFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT, timeZone.toSlotValue());
 
   
-  obj->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT, calendar.toValue());
+  obj->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT, calendar.toSlotValue());
 
   
   return obj;
@@ -2441,7 +2441,7 @@ static bool ZonedDateTime_hoursInDay(JSContext* cx, const CallArgs& args) {
 
   
   const auto& date = temporalDateTime.date;
-  Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> isoCalendar(cx, CalendarValue(CalendarId::ISO8601));
 
   
   Rooted<PlainDateTimeWithCalendar> today(cx);
@@ -3338,7 +3338,7 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
   Instant epochNanoseconds;
   if (smallestUnit == TemporalUnit::Day) {
     
-    Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
+    Rooted<CalendarValue> isoCalendar(cx, CalendarValue(CalendarId::ISO8601));
     Rooted<PlainDateTimeWithCalendar> dtStart(cx);
     if (!CreateTemporalDateTime(cx, {temporalDateTime.date, {}}, isoCalendar,
                                 &dtStart)) {
@@ -3983,7 +3983,11 @@ static bool ZonedDateTime_getISOFields(JSContext* cx, const CallArgs& args) {
   }
 
   
-  if (!fields.emplaceBack(NameToId(cx->names().calendar), calendar.toValue())) {
+  Rooted<Value> cal(cx);
+  if (!ToTemporalCalendar(cx, calendar, &cal)) {
+    return false;
+  }
+  if (!fields.emplaceBack(NameToId(cx->names().calendar), cal)) {
     return false;
   }
 

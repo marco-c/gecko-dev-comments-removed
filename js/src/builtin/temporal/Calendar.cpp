@@ -117,7 +117,7 @@ void js::temporal::CalendarRecord::trace(JSTracer* trc) {
 
 bool js::temporal::WrapCalendarValue(JSContext* cx,
                                      MutableHandle<JS::Value> calendar) {
-  MOZ_ASSERT(calendar.isString() || calendar.isObject());
+  MOZ_ASSERT(calendar.isInt32() || calendar.isObject());
   return cx->compartment()->wrap(cx, calendar);
 }
 
@@ -503,7 +503,7 @@ static bool StringIsAsciiLowerCase(mozilla::Range<CharT> str) {
   });
 }
 
-static bool StringIsAsciiLowerCase(JSLinearString* str) {
+static bool StringIsAsciiLowerCase(const JSLinearString* str) {
   JS::AutoCheckCannotGC nogc;
   return str->hasLatin1Chars()
              ? StringIsAsciiLowerCase(str->latin1Range(nogc))
@@ -511,65 +511,84 @@ static bool StringIsAsciiLowerCase(JSLinearString* str) {
 }
 #endif
 
-static bool IsISO8601Calendar(JSLinearString* id) {
-  return StringEqualsLiteral(id, "iso8601");
-}
-
 #ifdef DEBUG
-static bool IsISO8601Calendar(CalendarObject* calendar) {
-  return IsISO8601Calendar(calendar->identifier());
+static bool IsISO8601Calendar(const CalendarObject* calendar) {
+  return calendar->identifier() == CalendarId::ISO8601;
 }
 #endif
 
-static bool IsISO8601Calendar(JSContext* cx, JSString* id, bool* result) {
-  JSLinearString* linear = id->ensureLinear(cx);
-  if (!linear) {
-    return false;
+
+
+
+static const char* CalendarIdToBcp47(CalendarId id) {
+  switch (id) {
+    case CalendarId::ISO8601:
+      return "iso8601";
   }
-  *result = IsISO8601Calendar(linear);
-  return true;
+  MOZ_CRASH("invalid calendar id");
 }
 
 
 
 
-static bool IsBuiltinCalendar(JSLinearString* id) {
+static constexpr auto AvailableCalendars() {
+  return std::array{
+      CalendarId::ISO8601,
+  };
+}
+
+
+
+
+static mozilla::Maybe<CalendarId> IsBuiltinCalendar(JSLinearString* id) {
   
   MOZ_ASSERT(StringIsAsciiLowerCase(id));
 
   
-  return StringEqualsLiteral(id, "iso8601");
+  static constexpr auto calendars = AvailableCalendars();
+
+  
+  for (auto identifier : calendars) {
+    if (StringEqualsAscii(id, CalendarIdToBcp47(identifier))) {
+      return mozilla::Some(identifier);
+    }
+  }
+
+  
+  return mozilla::Nothing();
 }
 
-static JSLinearString* ThrowIfNotBuiltinCalendar(JSContext* cx,
-                                                 Handle<JSLinearString*> id) {
+static bool ToBuiltinCalendar(JSContext* cx, Handle<JSLinearString*> id,
+                              CalendarId* result) {
   if (!StringIsAscii(id)) {
     if (auto chars = QuoteString(cx, id)) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_TEMPORAL_CALENDAR_INVALID_ID, chars.get());
     }
-    return nullptr;
+    return false;
   }
 
   JSString* lower = StringToLowerCase(cx, id);
   if (!lower) {
-    return nullptr;
+    return false;
   }
 
   JSLinearString* linear = lower->ensureLinear(cx);
   if (!linear) {
-    return nullptr;
+    return false;
   }
 
-  if (!IsBuiltinCalendar(linear)) {
+  auto builtin = IsBuiltinCalendar(linear);
+  if (!builtin) {
     if (auto chars = QuoteString(cx, id)) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_TEMPORAL_CALENDAR_INVALID_ID, chars.get());
     }
-    return nullptr;
+    return false;
   }
 
-  return linear;
+  *result = *builtin;
+  return true;
 }
 
 bool js::temporal::ToBuiltinCalendar(JSContext* cx, Handle<JSString*> id,
@@ -579,8 +598,8 @@ bool js::temporal::ToBuiltinCalendar(JSContext* cx, Handle<JSString*> id,
     return false;
   }
 
-  auto* identifier = ThrowIfNotBuiltinCalendar(cx, linear);
-  if (!identifier) {
+  CalendarId identifier;
+  if (!::ToBuiltinCalendar(cx, linear, &identifier)) {
     return false;
   }
 
@@ -591,10 +610,10 @@ bool js::temporal::ToBuiltinCalendar(JSContext* cx, Handle<JSString*> id,
 
 
 
-static CalendarObject* CreateTemporalCalendar(
-    JSContext* cx, const CallArgs& args, Handle<JSLinearString*> identifier) {
+static CalendarObject* CreateTemporalCalendar(JSContext* cx,
+                                              const CallArgs& args,
+                                              CalendarId identifier) {
   
-  MOZ_ASSERT(IsBuiltinCalendar(identifier));
 
   
   Rooted<JSObject*> proto(cx);
@@ -608,7 +627,8 @@ static CalendarObject* CreateTemporalCalendar(
   }
 
   
-  obj->setFixedSlot(CalendarObject::IDENTIFIER_SLOT, StringValue(identifier));
+  obj->setFixedSlot(CalendarObject::IDENTIFIER_SLOT,
+                    Int32Value(static_cast<int32_t>(identifier)));
 
   
   return obj;
@@ -617,10 +637,9 @@ static CalendarObject* CreateTemporalCalendar(
 
 
 
-static CalendarObject* CreateTemporalCalendar(
-    JSContext* cx, Handle<JSLinearString*> identifier) {
+static CalendarObject* CreateTemporalCalendar(JSContext* cx,
+                                              CalendarId identifier) {
   
-  MOZ_ASSERT(IsBuiltinCalendar(identifier));
 
   
   auto* obj = NewBuiltinClassInstance<CalendarObject>(cx);
@@ -629,7 +648,8 @@ static CalendarObject* CreateTemporalCalendar(
   }
 
   
-  obj->setFixedSlot(CalendarObject::IDENTIFIER_SLOT, StringValue(identifier));
+  obj->setFixedSlot(CalendarObject::IDENTIFIER_SLOT,
+                    Int32Value(static_cast<int32_t>(identifier)));
 
   
   return obj;
@@ -749,14 +769,14 @@ bool js::temporal::ToTemporalCalendar(JSContext* cx,
   Rooted<JSString*> str(cx, calendarLike.toString());
 
   
-  Rooted<JSLinearString*> identifier(cx, ParseTemporalCalendarString(cx, str));
-  if (!identifier) {
+  Rooted<JSLinearString*> id(cx, ParseTemporalCalendarString(cx, str));
+  if (!id) {
     return false;
   }
 
   
-  identifier = ThrowIfNotBuiltinCalendar(cx, identifier);
-  if (!identifier) {
+  CalendarId identifier;
+  if (!::ToBuiltinCalendar(cx, id, &identifier)) {
     return false;
   }
 
@@ -775,7 +795,7 @@ bool js::temporal::ToTemporalCalendarWithISODefault(
     MutableHandle<CalendarValue> result) {
   
   if (temporalCalendarLike.isUndefined()) {
-    result.set(CalendarValue(cx->names().iso8601));
+    result.set(CalendarValue(CalendarId::ISO8601));
     return true;
   }
 
@@ -814,15 +834,20 @@ bool js::temporal::GetTemporalCalendarWithISODefault(
 
 
 
+static JSLinearString* ToTemporalCalendarIdentifier(JSContext* cx,
+                                                    CalendarId id) {
+  
+  return NewStringCopyZ<CanGC>(cx, CalendarIdToBcp47(id));
+}
+
+
+
+
 JSLinearString* js::temporal::ToTemporalCalendarIdentifier(
     JSContext* cx, Handle<CalendarValue> calendar) {
   
   if (calendar.isString()) {
-    
-    MOZ_ASSERT(IsBuiltinCalendar(calendar.toString()));
-
-    
-    return calendar.toString();
+    return ToTemporalCalendarIdentifier(cx, calendar.toString());
   }
 
   
@@ -854,8 +879,24 @@ JSObject* js::temporal::ToTemporalCalendarObject(
   }
 
   
-  Rooted<JSLinearString*> calendarId(cx, calendar.toString());
-  return CreateTemporalCalendar(cx, calendarId);
+  return CreateTemporalCalendar(cx, calendar.toString());
+}
+
+bool js::temporal::ToTemporalCalendar(JSContext* cx,
+                                      const CalendarValue& calendar,
+                                      MutableHandle<Value> result) {
+  if (calendar.isObject()) {
+    result.setObject(*calendar.toObject());
+    return true;
+  }
+
+  auto* str = ToTemporalCalendarIdentifier(cx, calendar.toString());
+  if (!str) {
+    return false;
+  }
+
+  result.setString(str);
+  return true;
 }
 
 static bool Calendar_dateAdd(JSContext* cx, unsigned argc, Value* vp);
@@ -1205,7 +1246,7 @@ bool js::temporal::CalendarFields(
   Rooted<Value> calendarFieldNames(cx);
   if (fields) {
     Rooted<Value> fieldsFn(cx, ObjectValue(*fields));
-    auto thisv = calendar.receiver().toValue();
+    auto thisv = calendar.receiver().toObjectValue();
     if (!Call(cx, fieldsFn, thisv, fieldsArray, &calendarFieldNames)) {
       return false;
     }
@@ -1767,7 +1808,7 @@ static bool CalendarDay(JSContext* cx, Handle<CalendarRecord> calendar,
 
   
   Rooted<Value> fn(cx, ObjectValue(*day));
-  auto thisv = calendar.receiver().toValue();
+  auto thisv = calendar.receiver().toObjectValue();
   Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
   if (!Call(cx, fn, thisv, dateLikeValue, result)) {
     return false;
@@ -2670,7 +2711,7 @@ static PlainDateObject* BuiltinCalendarDateFromFields(
   }
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   return CreateTemporalDate(cx, result, calendar);
 }
 
@@ -2694,7 +2735,7 @@ static Wrapped<PlainDateObject*> CalendarDateFromFields(
   
 
   Rooted<Value> dateFromFieldsFn(cx, ObjectValue(*dateFromFields));
-  auto thisv = calendar.receiver().toValue();
+  auto thisv = calendar.receiver().toObjectValue();
   Rooted<Value> rval(cx);
 
   FixedInvokeArgs<2> args(cx);
@@ -2853,7 +2894,7 @@ static PlainYearMonthObject* BuiltinCalendarYearMonthFromFields(
   }
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   return CreateTemporalYearMonth(cx, result, calendar);
 }
 
@@ -2877,7 +2918,7 @@ static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
   
 
   Rooted<Value> yearMonthFromFieldsFn(cx, ObjectValue(*yearMonthFromFields));
-  auto thisv = calendar.receiver().toValue();
+  auto thisv = calendar.receiver().toObjectValue();
   Rooted<Value> rval(cx);
 
   FixedInvokeArgs<2> args(cx);
@@ -3004,7 +3045,7 @@ static PlainMonthDayObject* BuiltinCalendarMonthDayFromFields(
   }
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   return CreateTemporalMonthDay(cx, result, calendar);
 }
 
@@ -3028,7 +3069,7 @@ static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
   
 
   Rooted<Value> monthDayFromFieldsFn(cx, ObjectValue(*monthDayFromFields));
-  auto thisv = calendar.receiver().toValue();
+  auto thisv = calendar.receiver().toObjectValue();
   Rooted<Value> rval(cx);
 
   FixedInvokeArgs<2> args(cx);
@@ -3293,7 +3334,7 @@ JSObject* js::temporal::CalendarMergeFields(
   
 
   Rooted<Value> mergeFieldsFn(cx, ObjectValue(*mergeFields));
-  auto thisv = calendar.receiver().toValue();
+  auto thisv = calendar.receiver().toObjectValue();
   Rooted<Value> result(cx);
 
   FixedInvokeArgs<2> args(cx);
@@ -3371,7 +3412,7 @@ static PlainDateObject* BuiltinCalendarAdd(JSContext* cx, const PlainDate& date,
   }
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   return CreateTemporalDate(cx, result, calendar);
 }
 
@@ -3393,7 +3434,7 @@ static PlainDateObject* BuiltinCalendarAdd(JSContext* cx, const PlainDate& date,
   }
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   return CreateTemporalDate(cx, result, calendar);
 }
 
@@ -3413,7 +3454,7 @@ static Wrapped<PlainDateObject*> CalendarDateAddSlow(
 
   
   Rooted<JS::Value> dateAdd(cx, ObjectValue(*calendar.dateAdd()));
-  auto thisv = calendar.receiver().toValue();
+  auto thisv = calendar.receiver().toObjectValue();
   Rooted<Value> rval(cx);
 
   FixedInvokeArgs<3> args(cx);
@@ -3784,7 +3825,7 @@ static bool CalendarDateUntilSlow(JSContext* cx,
 
   
   Rooted<JS::Value> dateUntil(cx, ObjectValue(*calendar.dateUntil()));
-  auto thisv = calendar.receiver().toValue();
+  auto thisv = calendar.receiver().toObjectValue();
   Rooted<Value> rval(cx);
 
   FixedInvokeArgs<3> args(cx);
@@ -4100,14 +4141,14 @@ static bool CalendarConstructor(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  Rooted<JSLinearString*> identifier(cx, args[0].toString()->ensureLinear(cx));
-  if (!identifier) {
+  Rooted<JSLinearString*> id(cx, args[0].toString()->ensureLinear(cx));
+  if (!id) {
     return false;
   }
 
   
-  identifier = ThrowIfNotBuiltinCalendar(cx, identifier);
-  if (!identifier) {
+  CalendarId identifier;
+  if (!::ToBuiltinCalendar(cx, id, &identifier)) {
     return false;
   }
 
@@ -4150,7 +4191,12 @@ static bool Calendar_id(JSContext* cx, const CallArgs& args) {
   auto* calendar = &args.thisv().toObject().as<CalendarObject>();
 
   
-  args.rval().setString(calendar->identifier());
+  auto* str = ToTemporalCalendarIdentifier(cx, calendar->identifier());
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
   return true;
 }
 
@@ -4934,7 +4980,12 @@ static bool Calendar_toString(JSContext* cx, const CallArgs& args) {
   auto* calendar = &args.thisv().toObject().as<CalendarObject>();
 
   
-  args.rval().setString(calendar->identifier());
+  auto* str = ToTemporalCalendarIdentifier(cx, calendar->identifier());
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
   return true;
 }
 
@@ -4954,7 +5005,12 @@ static bool Calendar_toJSON(JSContext* cx, const CallArgs& args) {
   auto* calendar = &args.thisv().toObject().as<CalendarObject>();
 
   
-  args.rval().setString(calendar->identifier());
+  auto* str = ToTemporalCalendarIdentifier(cx, calendar->identifier());
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
   return true;
 }
 

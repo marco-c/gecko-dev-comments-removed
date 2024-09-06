@@ -1899,7 +1899,7 @@ bool js::temporal::DisambiguatePossibleInstants(
                                       dateTime.date.day + earlierTime.days);
 
     
-    Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+    Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
     Rooted<PlainDateTimeWithCalendar> earlierDateTime(
         cx,
         PlainDateTimeWithCalendar{{earlierDate, earlierTime.time}, calendar});
@@ -1937,7 +1937,7 @@ bool js::temporal::DisambiguatePossibleInstants(
                                   dateTime.date.day + laterTime.days);
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
   Rooted<PlainDateTimeWithCalendar> laterDateTime(
       cx, PlainDateTimeWithCalendar{{laterDate, laterTime.time}, calendar});
 
