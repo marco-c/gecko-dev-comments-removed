@@ -91,6 +91,7 @@ class WorkerRef;
 class WorkerRunnable;
 class WorkerDebuggeeRunnable;
 class WorkerThread;
+class WorkerThreadRunnable;
 
 
 
@@ -1435,7 +1436,8 @@ class WorkerPrivate final
   RefPtr<WorkerCSPEventListener> mCSPEventListener;
 
   
-  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables MOZ_GUARDED_BY(mMutex);
+  nsTArray<RefPtr<WorkerThreadRunnable>> mPreStartRunnables
+      MOZ_GUARDED_BY(mMutex);
 
   
   

@@ -264,17 +264,7 @@ class WorkerThreadRunnable : public WorkerRunnable {
   
   bool mCallingCancelWithinRun;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  CheckedUnsafePtr<WorkerPrivate> mWorkerPrivateForPreStartCleaning;
+  bool mCleanPreStartDispatching{false};
 };
 
 
