@@ -941,6 +941,17 @@ void MacOSWebAuthnService::DoGetAssertion(
           Unused << aArgs->GetAllowList(allowList);
           Unused << aArgs->GetAllowListTransports(allowListTransports);
         }
+        
+        uint8_t transports = 0;
+        for (uint8_t credTransports : allowListTransports) {
+          if (credTransports == 0) {
+            
+            transports = ~0;
+            break;
+          }
+          transports |= credTransports;
+        }
+
         NSMutableArray* platformAllowedCredentials =
             [[NSMutableArray alloc] init];
         for (const auto& allowedCredentialId : allowList) {
@@ -998,6 +1009,15 @@ void MacOSWebAuthnService::DoGetAssertion(
         if (userVerificationPreference.isSome()) {
           platformAssertionRequest.userVerificationPreference =
               *userVerificationPreference;
+        }
+        if (__builtin_available(macos 13.5, *)) {
+          
+          
+          bool shouldShowHybridTransport =
+              !transports ||
+              (transports & MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_HYBRID);
+          platformAssertionRequest.shouldShowHybridTransport =
+              shouldShowHybridTransport;
         }
 
         
