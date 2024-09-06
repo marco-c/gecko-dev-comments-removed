@@ -65,21 +65,6 @@ interface nsIOpenWindowInfo : nsISupports {
   readonly attribute boolean isTopLevelCreatedByWebContent;
 
   
-
-
-
-  [infallible]
-  readonly attribute boolean hasValidUserGestureActivation;
-
-  
-
-
-
-
-  [infallible]
-  readonly attribute boolean textDirectiveUserActivation;
-
-  
   [notxpcom, nostdcall]
   BrowserParent getNextRemoteBrowser();
 
