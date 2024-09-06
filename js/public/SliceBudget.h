@@ -16,7 +16,7 @@
 
 #include "jstypes.h"
 
-namespace js {
+namespace JS {
 
 struct JS_PUBLIC_API TimeBudget {
   const mozilla::TimeDuration budget;
