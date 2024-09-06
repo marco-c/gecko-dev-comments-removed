@@ -256,7 +256,11 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
 }
 
 SamplerThread::~SamplerThread() {
-  pthread_join(mThread, nullptr);
+  if (pthread_equal(mThread, pthread_self())) {
+    pthread_detach(mThread);
+  } else {
+    pthread_join(mThread, nullptr);
+  }
   
   
   InvokePostSamplingCallbacks(std::move(mPostSamplingCallbackList),
