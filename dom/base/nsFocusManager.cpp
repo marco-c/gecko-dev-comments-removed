@@ -3663,11 +3663,9 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
     } else {
       if (aNavigateByKey) {
         
-        
-        bool tookFocus;
-        docShell->TabToTreeOwner(forward, forDocumentNavigation, &tookFocus);
-        
-        if (tookFocus) {
+        if (auto* child = BrowserChild::GetFrom(docShell)) {
+          child->SendMoveFocus(forward, forDocumentNavigation);
+          
           RefPtr<BrowsingContext> focusedBC = GetFocusedBrowsingContext();
           if (focusedBC && focusedBC->IsInProcess()) {
             Blur(focusedBC, nullptr, true, true, false,
