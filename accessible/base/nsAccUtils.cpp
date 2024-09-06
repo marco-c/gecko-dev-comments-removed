@@ -454,6 +454,27 @@ void nsAccUtils::GetLiveRegionSetting(Accessible* aAcc, nsAString& aLive) {
   }
 }
 
+Accessible* nsAccUtils::GetLiveRegionRoot(Accessible* aAcc) {
+  MOZ_ASSERT(aAcc);
+  nsAutoString live;
+  Accessible* acc;
+  for (acc = aAcc; acc; acc = acc->Parent()) {
+    GetLiveRegionSetting(acc, live);
+    if (!live.IsEmpty()) {
+      break;
+    }
+    if (acc->IsDoc()) {
+      
+      
+      return nullptr;
+    }
+  }
+  if (live.IsEmpty() || live.EqualsLiteral("off")) {
+    return nullptr;
+  }
+  return acc;
+}
+
 Accessible* nsAccUtils::DocumentFor(Accessible* aAcc) {
   if (!aAcc) {
     return nullptr;

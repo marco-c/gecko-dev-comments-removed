@@ -243,6 +243,12 @@ class nsAccUtils {
 
 
 
+  static Accessible* GetLiveRegionRoot(Accessible* aAcc);
+
+  
+
+
+
 
 
   static Accessible* DocumentFor(Accessible* aAcc);
