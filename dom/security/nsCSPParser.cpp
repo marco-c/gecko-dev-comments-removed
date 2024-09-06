@@ -1029,20 +1029,32 @@ void nsCSPParser::directive() {
     srcs.InsertElementAt(0, keyword);
   }
 
+  MaybeWarnAboutIgnoredSources(srcs);
+  MaybeWarnAboutUnsafeInline(*cspDir);
+  MaybeWarnAboutUnsafeEval(*cspDir);
+
+  
+  
+  cspDir->addSrcs(srcs);
+  mPolicy->addDirective(cspDir);
+}
+
+void nsCSPParser::MaybeWarnAboutIgnoredSources(
+    const nsTArray<nsCSPBaseSrc*>& aSrcs) {
   
   if (mStrictDynamic &&
       !CSP_IsDirective(mCurDir[0],
                        nsIContentSecurityPolicy::DEFAULT_SRC_DIRECTIVE)) {
-    for (uint32_t i = 0; i < srcs.Length(); i++) {
+    for (uint32_t i = 0; i < aSrcs.Length(); i++) {
       nsAutoString srcStr;
-      srcs[i]->toString(srcStr);
+      aSrcs[i]->toString(srcStr);
       
       
-      if (!srcs[i]->isKeyword(CSP_STRICT_DYNAMIC) &&
-          !srcs[i]->isKeyword(CSP_UNSAFE_EVAL) &&
-          !srcs[i]->isKeyword(CSP_WASM_UNSAFE_EVAL) &&
-          !srcs[i]->isKeyword(CSP_UNSAFE_HASHES) && !srcs[i]->isNonce() &&
-          !srcs[i]->isHash()) {
+      if (!aSrcs[i]->isKeyword(CSP_STRICT_DYNAMIC) &&
+          !aSrcs[i]->isKeyword(CSP_UNSAFE_EVAL) &&
+          !aSrcs[i]->isKeyword(CSP_WASM_UNSAFE_EVAL) &&
+          !aSrcs[i]->isKeyword(CSP_UNSAFE_HASHES) && !aSrcs[i]->isNonce() &&
+          !aSrcs[i]->isHash()) {
         AutoTArray<nsString, 2> params = {srcStr, mCurDir[0]};
         logWarningErrorToConsole(nsIScriptError::warningFlag,
                                  "ignoringScriptSrcForStrictDynamic", params);
@@ -1057,37 +1069,37 @@ void nsCSPParser::directive() {
                                "strictDynamicButNoHashOrNonce", params);
     }
   }
+}
 
+void nsCSPParser::MaybeWarnAboutUnsafeInline(const nsCSPDirective& aDirective) {
   
   
   
   if (mHasHashOrNonce && mUnsafeInlineKeywordSrc &&
-      (cspDir->isDefaultDirective() ||
-       cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
-       cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) ||
-       cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE) ||
-       cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE) ||
-       cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_ELEM_DIRECTIVE) ||
-       cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_ATTR_DIRECTIVE))) {
+      (aDirective.isDefaultDirective() ||
+       aDirective.equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
+       aDirective.equals(nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) ||
+       aDirective.equals(nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE) ||
+       aDirective.equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE) ||
+       aDirective.equals(nsIContentSecurityPolicy::STYLE_SRC_ELEM_DIRECTIVE) ||
+       aDirective.equals(nsIContentSecurityPolicy::STYLE_SRC_ATTR_DIRECTIVE))) {
     
     AutoTArray<nsString, 2> params = {u"'unsafe-inline'"_ns, mCurDir[0]};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "ignoringSrcWithinNonceOrHashDirective", params);
   }
+}
 
+void nsCSPParser::MaybeWarnAboutUnsafeEval(const nsCSPDirective& aDirective) {
   if (mHasAnyUnsafeEval &&
-      (cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) ||
-       cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE))) {
+      (aDirective.equals(nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) ||
+       aDirective.equals(
+           nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE))) {
     
     AutoTArray<nsString, 1> params = {mCurDir[0]};
     logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringUnsafeEval",
                              params);
   }
-
-  
-  
-  cspDir->addSrcs(srcs);
-  mPolicy->addDirective(cspDir);
 }
 
 
