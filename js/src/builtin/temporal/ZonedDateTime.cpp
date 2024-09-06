@@ -993,8 +993,6 @@ static bool NormalizedTimeDurationToDays(
   MOZ_ASSERT(IsValidEpochInstant(oneDayFarther.instant));
 
   
-
-  
   auto dayLengthNs = oneDayFarther.instant - relativeResult.instant;
   MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
 
@@ -1041,8 +1039,6 @@ static bool NormalizedTimeDurationToDays(
     MOZ_ASSERT(IsValidEpochInstant(oneDayFarther.instant));
 
     
-
-    
     dayLengthNs = oneDayFarther.instant - relativeResult.instant;
     MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
 
@@ -1064,8 +1060,6 @@ static bool NormalizedTimeDurationToDays(
     
     
     
-    
-
     
 
     
@@ -1493,10 +1487,6 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   if (!plainRelativeTo) {
     return false;
   }
-
-  
-  
-  
 
   
   NormalizedDuration difference;

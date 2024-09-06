@@ -423,9 +423,6 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  
-
-  
   Rooted<CalendarRecord> calendarRec(cx);
   if (!CreateCalendarMethodsRecord(cx, calendar,
                                    {
@@ -489,13 +486,11 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   
   DateDuration until;
   if (resolvedOptions) {
-    
     if (!CalendarDateUntil(cx, calendarRec, thisDate, otherDate,
                            settings.largestUnit, resolvedOptions, &until)) {
       return false;
     }
   } else {
-    
     if (!CalendarDateUntil(cx, calendarRec, thisDate, otherDate,
                            settings.largestUnit, &until)) {
       return false;
@@ -1461,8 +1456,7 @@ static bool PlainYearMonth_toPlainDate(JSContext* cx, const CallArgs& args) {
   }
 
   
-  auto obj = CalendarDateFromFields(cx, calendar, mergedFromConcatenatedFields,
-                                    TemporalOverflow::Constrain);
+  auto obj = CalendarDateFromFields(cx, calendar, mergedFromConcatenatedFields);
   if (!obj) {
     return false;
   }

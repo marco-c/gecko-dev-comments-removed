@@ -2504,41 +2504,6 @@ static bool AdjustRoundedDurationDays(
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
   NormalizedTimeDuration roundedTime;
   if (!RoundDuration(cx, oneDayLess, increment, unit, roundingMode,
                      &roundedTime)) {
@@ -4151,10 +4116,6 @@ static bool RoundDuration(
 
   
 
-  
-
-  
-  
   
 
   

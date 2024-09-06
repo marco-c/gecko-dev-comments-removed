@@ -2589,35 +2589,6 @@ Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
   return ::CalendarDateFromFields(cx, calendar, fields, options);
 }
 
-
-
-
-Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
-    TemporalOverflow overflow) {
-  
-  
-
-  Rooted<PlainObject*> options(cx, NewPlainObjectWithProto(cx, nullptr));
-  if (!options) {
-    return nullptr;
-  }
-
-  Rooted<Value> value(cx);
-  if (overflow == TemporalOverflow::Constrain) {
-    value = StringValue(cx->names().constrain);
-  } else {
-    MOZ_ASSERT(overflow == TemporalOverflow::Reject);
-    value = StringValue(cx->names().reject);
-  }
-  if (!DefineDataProperty(cx, options, cx->names().overflow, value)) {
-    return nullptr;
-  }
-
-  
-  return ::CalendarDateFromFields(cx, calendar, fields, options);
-}
-
 struct RegulatedISOYearMonth final {
   double year = 0;
   int32_t month = 0;

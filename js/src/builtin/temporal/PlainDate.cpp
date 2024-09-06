@@ -2722,7 +2722,7 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<TimeZoneValue> timeZone(cx);
-  Rooted<Value> temporalTime(cx);
+  PlainTime time = {};
   if (args.get(0).isObject()) {
     Rooted<JSObject*> item(cx, &args[0].toObject());
 
@@ -2732,7 +2732,6 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
       timeZone.set(TimeZoneValue(item));
 
       
-      temporalTime.setUndefined();
     } else {
       
       Rooted<Value> timeZoneLike(cx);
@@ -2748,7 +2747,6 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
         }
 
         
-        temporalTime.setUndefined();
       } else {
         
         if (!ToTemporalTimeZone(cx, timeZoneLike, &timeZone)) {
@@ -2756,9 +2754,17 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
         }
 
         
+        Rooted<Value> temporalTime(cx);
         if (!GetProperty(cx, item, item, cx->names().plainTime,
                          &temporalTime)) {
           return false;
+        }
+
+        
+        if (!temporalTime.isUndefined()) {
+          if (!ToTemporalTime(cx, temporalTime, &time)) {
+            return false;
+          }
         }
       }
     }
@@ -2769,16 +2775,9 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
     }
 
     
-    temporalTime.setUndefined();
   }
 
   
-  PlainTime time = {};
-  if (!temporalTime.isUndefined()) {
-    if (!ToTemporalTime(cx, temporalTime, &time)) {
-      return false;
-    }
-  }
 
   
   Rooted<PlainDateTimeWithCalendar> temporalDateTime(cx);

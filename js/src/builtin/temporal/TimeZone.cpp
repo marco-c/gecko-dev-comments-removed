@@ -2300,8 +2300,11 @@ static bool TimeZone_getOffsetStringFor(JSContext* cx, const CallArgs& args) {
   Rooted<TimeZoneValue> timeZone(cx, &args.thisv().toObject());
 
   
-  
-  
+  Rooted<Wrapped<InstantObject*>> instant(cx,
+                                          ToTemporalInstant(cx, args.get(0)));
+  if (!instant) {
+    return false;
+  }
 
   
   Rooted<TimeZoneRecord> timeZoneRec(cx);
@@ -2310,13 +2313,6 @@ static bool TimeZone_getOffsetStringFor(JSContext* cx, const CallArgs& args) {
                                        TimeZoneMethod::GetOffsetNanosecondsFor,
                                    },
                                    &timeZoneRec)) {
-    return false;
-  }
-
-  
-  Rooted<Wrapped<InstantObject*>> instant(cx,
-                                          ToTemporalInstant(cx, args.get(0)));
-  if (!instant) {
     return false;
   }
 
