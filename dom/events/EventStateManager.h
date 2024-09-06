@@ -118,12 +118,42 @@ class OverOutElementsWrapper final : public nsISupports {
                : nullptr;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void TryToRestorePendingRemovedOverTarget(const WidgetEvent* aEvent);
+
+  
+
+
+
+
+  [[nodiscard]] bool MaybeHasPendingRemovingOverEventTarget() const {
+    return mPendingRemovingOverEventTarget;
+  }
+
  private:
   
 
 
 
   [[nodiscard]] bool LastOverEventTargetIsOutEventTarget() const {
+    MOZ_ASSERT_IF(mDeepestEnterEventTargetIsOverEventTarget,
+                  mDeepestEnterEventTarget);
+    MOZ_ASSERT_IF(mDeepestEnterEventTargetIsOverEventTarget,
+                  !MaybeHasPendingRemovingOverEventTarget());
     return mDeepestEnterEventTargetIsOverEventTarget;
   }
 
@@ -131,11 +161,28 @@ class OverOutElementsWrapper final : public nsISupports {
       nsIContent* aOverEventTargetAndDeepestEnterEventTarget);
   void UpdateDeepestEnterEventTarget(nsIContent* aDeepestEnterEventTarget);
 
+  nsCOMPtr<nsIContent> GetPendingRemovingOverEventTarget() const {
+    nsCOMPtr<nsIContent> pendingRemovingOverEventTarget =
+        do_QueryReferent(mPendingRemovingOverEventTarget);
+    return pendingRemovingOverEventTarget.forget();
+  }
+
   
   
   
   
   nsCOMPtr<nsIContent> mDeepestEnterEventTarget;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsWeakPtr mPendingRemovingOverEventTarget;
 
   
   
@@ -158,7 +205,7 @@ class OverOutElementsWrapper final : public nsISupports {
   
   
   
-  bool mDeepestEnterEventTargetIsOverEventTarget = true;
+  bool mDeepestEnterEventTargetIsOverEventTarget = false;
 };
 
 class EventStateManager : public nsSupportsWeakReference, public nsIObserver {

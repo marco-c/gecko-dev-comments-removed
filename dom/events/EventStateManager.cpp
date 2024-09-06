@@ -364,6 +364,77 @@ void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
   UpdateDeepestEnterEventTarget(aContent.GetFlattenedTreeParent());
 }
 
+void OverOutElementsWrapper::TryToRestorePendingRemovedOverTarget(
+    const WidgetEvent* aEvent) {
+  if (!MaybeHasPendingRemovingOverEventTarget()) {
+    return;
+  }
+
+  LogModule* const logModule = mType == BoundaryEventType::Mouse
+                                   ? sMouseBoundaryLog
+                                   : sPointerBoundaryLog;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aEvent->AsMouseEvent()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIContent> pendingRemovingOverEventTarget =
+        GetPendingRemovingOverEventTarget();
+    if (pendingRemovingOverEventTarget &&
+        pendingRemovingOverEventTarget->IsInclusiveDescendantOf(
+            mDeepestEnterEventTarget)) {
+      
+      
+      
+      nsCOMPtr<nsIWeakReference> widget = std::move(mLastOverWidget);
+      StoreOverEventTargetAndDeepestEnterEventTarget(
+          pendingRemovingOverEventTarget);
+      mLastOverWidget = std::move(widget);
+      MOZ_LOG(logModule, LogLevel::Info,
+              ("The \"over\" event target (%p) is restored",
+               mDeepestEnterEventTarget.get()));
+      return;
+    }
+    MOZ_LOG(logModule, LogLevel::Debug,
+            ("Forgetting the last \"over\" event target (%p) because it is not "
+             "reconnected under the deepest enter event target (%p)",
+             mPendingRemovingOverEventTarget.get(),
+             mDeepestEnterEventTarget.get()));
+  } else {
+    MOZ_LOG(logModule, LogLevel::Debug,
+            ("Forgetting the last \"over\" event target (%p) because an "
+             "unexpected event (%s) is being dispatched, that means that "
+             "EventStateManager didn't receive a synthesized mousemove which "
+             "should be dispatched at next animation frame from the removal",
+             mPendingRemovingOverEventTarget.get(), ToChar(aEvent->mMessage)));
+  }
+
+  
+  
+  
+  mPendingRemovingOverEventTarget = nullptr;
+}
+
 void OverOutElementsWrapper::WillDispatchOverAndEnterEvent(
     nsIContent* aOverEventTarget) {
   StoreOverEventTargetAndDeepestEnterEventTarget(aOverEventTarget);
@@ -424,23 +495,58 @@ void OverOutElementsWrapper::DidDispatchOverAndEnterEvent(
 void OverOutElementsWrapper::StoreOverEventTargetAndDeepestEnterEventTarget(
     nsIContent* aOverEventTargetAndDeepestEnterEventTarget) {
   mDeepestEnterEventTarget = aOverEventTargetAndDeepestEnterEventTarget;
-  mDeepestEnterEventTargetIsOverEventTarget = true;
+  mPendingRemovingOverEventTarget = nullptr;
+  mDeepestEnterEventTargetIsOverEventTarget = !!mDeepestEnterEventTarget;
   mLastOverWidget = nullptr;  
 }
 
 void OverOutElementsWrapper::UpdateDeepestEnterEventTarget(
     nsIContent* aDeepestEnterEventTarget) {
+  if (MOZ_UNLIKELY(mDeepestEnterEventTarget == aDeepestEnterEventTarget)) {
+    return;
+  }
+
   if (!aDeepestEnterEventTarget) {
     
     
     StoreOverEventTargetAndDeepestEnterEventTarget(nullptr);
+    return;
+  }
+
+  if (LastOverEventTargetIsOutEventTarget()) {
+    MOZ_ASSERT(mDeepestEnterEventTarget);
+    if (mType == BoundaryEventType::Pointer) {
+      
+      
+      
+      
+      
+      
+      
+      
+      mPendingRemovingOverEventTarget = nullptr;
+    } else {
+      
+      
+      
+      
+      
+      MOZ_ASSERT(!mPendingRemovingOverEventTarget);
+      MOZ_ASSERT(mDeepestEnterEventTarget);
+      mPendingRemovingOverEventTarget =
+          do_GetWeakReference(mDeepestEnterEventTarget);
+    }
   } else {
-    mDeepestEnterEventTarget = aDeepestEnterEventTarget;
-    mDeepestEnterEventTargetIsOverEventTarget = false;
+    MOZ_ASSERT(!mDeepestEnterEventTargetIsOverEventTarget);
     
     
     
   }
+  mDeepestEnterEventTarget = aDeepestEnterEventTarget;
+  mDeepestEnterEventTargetIsOverEventTarget = false;
+  
+  
+  
 }
 
 
@@ -856,6 +962,23 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       mInTouchDrag = false;
       StopTrackingDragGesture(true);
     }
+  }
+
+  if (mMouseEnterLeaveHelper && aEvent->IsTrusted()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mMouseEnterLeaveHelper->TryToRestorePendingRemovedOverTarget(aEvent);
   }
 
   switch (aEvent->mMessage) {
@@ -4313,6 +4436,7 @@ void EventStateManager::NotifyDestroyPresContext(nsPresContext* aPresContext) {
   
   ResetHoverState();
 
+  mMouseEnterLeaveHelper = nullptr;
   mPointersEnterLeaveHelper.Clear();
   PointerEventHandler::NotifyDestroyPresContext(presContext);
 }
