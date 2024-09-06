@@ -10,6 +10,14 @@ ChromeUtils.defineESModuleGetters(this, {
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
 });
 
+const LARGE_USAGE_NUM = 100000000000000000000000000000000000000000000000000;
+
+function isIframeOverflowing(win) {
+  return (
+    win.scrollWidth > win.clientWidth || win.scrollHeight > win.clientHeight
+  );
+}
+
 add_setup(async function () {
   await blankSlate();
   registerCleanupFunction(async function () {
@@ -304,6 +312,61 @@ add_task(async function testClearingBeforeDataSizesLoad() {
     !(await SiteDataTestUtils.hasIndexedDB("https://example.com")),
     "We don't have indexedDB data for example.com"
   );
+
+  
+  sandbox.restore();
+});
+
+
+
+add_task(async function testPossibleWrappingOfDialog() {
+  await blankSlate();
+
+  let dh = new ClearHistoryDialogHelper({
+    checkingDataSizes: true,
+  });
+  
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(SiteDataManager, "getQuotaUsageForTimeRanges")
+    .callsFake(async () => {
+      info("stubbed getQuotaUsageForTimeRanges called");
+
+      return {
+        TIMESPAN_HOUR: 0,
+        TIMESPAN_2HOURS: 0,
+        TIMESPAN_4HOURS: LARGE_USAGE_NUM,
+        TIMESPAN_TODAY: 0,
+        TIMESPAN_EVERYTHING: 0,
+      };
+    });
+
+  dh.onload = async function () {
+    let windowObj =
+      window.browsingContext.topChromeWindow.gDialogBox._dialog._frame
+        .contentWindow;
+    let promise = new Promise(resolve => {
+      windowObj.addEventListener("resize", resolve);
+    });
+    this.selectDuration(Sanitizer.TIMESPAN_4HOURS);
+
+    await promise;
+    ok(
+      !isIframeOverflowing(windowObj.document.getElementById("SanitizeDialog")),
+      "There should be no overflow on wrapping in the dialog"
+    );
+
+    this.selectDuration(Sanitizer.TIMESPAN_2HOURS);
+    await promise;
+    ok(
+      !isIframeOverflowing(windowObj.document.getElementById("SanitizeDialog")),
+      "There should be no overflow on wrapping in the dialog"
+    );
+
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
 
   
   sandbox.restore();
