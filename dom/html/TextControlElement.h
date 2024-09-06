@@ -31,7 +31,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   TextControlElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo,
                      dom::FromParser aFromParser, FormControlType aType)
       : nsGenericHTMLFormControlElementWithState(std::move(aNodeInfo),
-                                                 aFromParser, aType){};
+                                                 aFromParser, aType) {};
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
@@ -164,6 +164,16 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
   virtual void GetPreviewValue(nsAString& aValue) = 0;
+
+  
+
+
+  virtual void SetAutofillState(const nsAString& aState) = 0;
+
+  
+
+
+  virtual void GetAutofillState(nsAString& aState) = 0;
 
   
 
