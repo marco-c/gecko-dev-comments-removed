@@ -8,10 +8,13 @@
 #define mozilla_PreallocatedProcessManager_h
 
 #include "base/basictypes.h"
-#include "mozilla/dom/UniqueContentParentKeepAlive.h"
+#include "mozilla/AlreadyAddRefed.h"
 #include "nsStringFwd.h"
 
 namespace mozilla {
+namespace dom {
+class ContentParent;
+}  
 
 
 
@@ -29,9 +32,7 @@ namespace mozilla {
 class PreallocatedProcessManagerImpl;
 
 class PreallocatedProcessManager final {
-  using ContentParent = mozilla::dom::ContentParent;
-  using UniqueContentParentKeepAlive =
-      mozilla::dom::UniqueContentParentKeepAlive;
+  typedef mozilla::dom::ContentParent ContentParent;
 
  public:
   static PreallocatedProcessManagerImpl* GetPPMImpl();
@@ -54,7 +55,7 @@ class PreallocatedProcessManager final {
 
 
 
-  static UniqueContentParentKeepAlive Take(const nsACString& aRemoteType);
+  static already_AddRefed<ContentParent> Take(const nsACString& aRemoteType);
 
   
 

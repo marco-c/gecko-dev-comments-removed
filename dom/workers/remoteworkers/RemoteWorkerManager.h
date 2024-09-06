@@ -26,6 +26,8 @@ class RemoteWorkerServiceParent;
 
 
 
+
+
 class RemoteWorkerManager final {
  public:
   NS_INLINE_DECL_REFCOUNTING(RemoteWorkerManager)
@@ -61,26 +63,18 @@ class RemoteWorkerManager final {
   RemoteWorkerManager();
   ~RemoteWorkerManager();
 
-  struct TargetActorAndKeepAlive {
-    RefPtr<RemoteWorkerServiceParent> mActor;
-    UniqueThreadsafeContentParentKeepAlive mKeepAlive;
-  };
+  RemoteWorkerServiceParent* SelectTargetActor(const RemoteWorkerData& aData,
+                                               base::ProcessId aProcessId);
 
-  TargetActorAndKeepAlive SelectTargetActor(const RemoteWorkerData& aData,
-                                            base::ProcessId aProcessId);
-
-  TargetActorAndKeepAlive SelectTargetActorInternal(
+  RemoteWorkerServiceParent* SelectTargetActorInternal(
       const RemoteWorkerData& aData, base::ProcessId aProcessId) const;
 
   void LaunchInternal(RemoteWorkerController* aController,
                       RemoteWorkerServiceParent* aTargetActor,
-                      UniqueThreadsafeContentParentKeepAlive aKeepAlive,
-                      const RemoteWorkerData& aData);
+                      const RemoteWorkerData& aData,
+                      bool aRemoteWorkerAlreadyRegistered = false);
 
-  using LaunchProcessPromise =
-      MozPromise<TargetActorAndKeepAlive, nsresult, true>;
-  RefPtr<LaunchProcessPromise> LaunchNewContentProcess(
-      const RemoteWorkerData& aData);
+  void LaunchNewContentProcess(const RemoteWorkerData& aData);
 
   void AsyncCreationFailed(RemoteWorkerController* aController);
 
@@ -110,6 +104,13 @@ class RemoteWorkerManager final {
   
   nsTArray<RemoteWorkerServiceParent*> mChildActors;
   RemoteWorkerServiceParent* mParentActor;
+
+  struct Pending {
+    RefPtr<RemoteWorkerController> mController;
+    RemoteWorkerData mData;
+  };
+
+  nsTArray<Pending> mPendings;
 };
 
 }  
