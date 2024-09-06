@@ -283,16 +283,13 @@ class CCGCScheduler {
 
   
   
-  void NoteCCBegin(CCReason aReason, TimeStamp aWhen,
-                   uint32_t aNumForgetSkippables, uint32_t aSuspected,
-                   uint32_t aRemovedPurples);
+  void NoteCCBegin();
 
   
   
   
   
-  void NoteCCEnd(const CycleCollectorResults& aResults, TimeStamp aWhen,
-                 mozilla::TimeDuration aMaxSliceTime);
+  void NoteCCEnd(const CycleCollectorResults& aResults, TimeStamp aWhen);
 
   
   void NoteGCSliceEnd(TimeStamp aStart, TimeStamp aEnd);
