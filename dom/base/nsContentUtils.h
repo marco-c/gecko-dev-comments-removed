@@ -501,6 +501,9 @@ class nsContentUtils {
     return GetCommonAncestorHelper(aNode1, aNode2);
   }
 
+  static nsINode* GetClosestCommonShadowIncludingInclusiveAncestor(
+      nsINode* aNode1, nsINode* aNode2);
+
   
 
 
@@ -2779,8 +2782,12 @@ class nsContentUtils {
 
 
 
+
+
+
   static bool IsPointInSelection(const mozilla::dom::Selection& aSelection,
-                                 const nsINode& aNode, const uint32_t aOffset);
+                                 const nsINode& aNode, const uint32_t aOffset,
+                                 const bool aAllowCrossShadowBoundary = false);
 
   
 
@@ -3597,6 +3604,8 @@ class nsContentUtils {
           aCallback);
 
   static nsINode* GetCommonAncestorHelper(nsINode* aNode1, nsINode* aNode2);
+  static nsINode* GetCommonShadowIncludingAncestorHelper(nsINode* aNode1,
+                                                         nsINode* aNode2);
   static nsIContent* GetCommonFlattenedTreeAncestorHelper(
       nsIContent* aContent1, nsIContent* aContent2);
 

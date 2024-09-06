@@ -389,6 +389,30 @@ class Selection final : public nsSupportsWeakReference,
   
   
   
+  
+  
+  bool AreNormalAndCrossShadowBoundaryRangesCollapsed() const {
+    if (!IsCollapsed()) {
+      return false;
+    }
+
+    size_t cnt = mStyledRanges.Length();
+    if (cnt == 0) {
+      return true;
+    }
+
+    AbstractRange* range = mStyledRanges.mRanges[0].mRange;
+    MOZ_ASSERT_IF(
+        range->MayCrossShadowBoundary(),
+        !range->AsDynamicRange()->CrossShadowBoundaryRangeCollapsed());
+    
+    
+    return !range->MayCrossShadowBoundary();
+  }
+
+  
+  
+  
   MOZ_CAN_RUN_SCRIPT void CollapseJS(nsINode* aContainer, uint32_t aOffset,
                                      mozilla::ErrorResult& aRv);
   MOZ_CAN_RUN_SCRIPT void CollapseToStartJS(mozilla::ErrorResult& aRv);

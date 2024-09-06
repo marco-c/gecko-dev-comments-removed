@@ -14,6 +14,7 @@
 #include "nsCOMPtr.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/StaticRange.h"
+#include "mozilla/dom/CrossShadowBoundaryRange.h"
 #include "prmon.h"
 #include "nsStubMutationObserver.h"
 #include "nsWrapperCache.h"
@@ -209,7 +210,8 @@ class nsRange final : public mozilla::dom::AbstractRange,
   int16_t CompareBoundaryPoints(uint16_t aHow, const nsRange& aOtherRange,
                                 ErrorResult& aRv);
   int16_t ComparePoint(const nsINode& aContainer, uint32_t aOffset,
-                       ErrorResult& aRv) const;
+                       ErrorResult& aRv,
+                       bool aAllowCrossShadowBoundary = false) const;
   void DeleteContents(ErrorResult& aRv);
   already_AddRefed<mozilla::dom::DocumentFragment> ExtractContents(
       ErrorResult& aErr);
@@ -223,7 +225,8 @@ class nsRange final : public mozilla::dom::AbstractRange,
   void InsertNode(nsINode& aNode, ErrorResult& aErr);
   bool IntersectsNode(nsINode& aNode, ErrorResult& aRv);
   bool IsPointInRange(const nsINode& aContainer, uint32_t aOffset,
-                      ErrorResult& aRv) const;
+                      ErrorResult& aRv,
+                      bool aAllowCrossShadowBoundary = false) const;
   void ToString(nsAString& aReturn, ErrorResult& aErr);
   void Detach();
 
@@ -336,7 +339,13 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   
   bool IsPointComparableToRange(const nsINode& aContainer, uint32_t aOffset,
+                                bool aAllowCrossShadowBoundary,
                                 ErrorResult& aErrorResult) const;
+
+  
+  
+  bool IsShadowIncludingInclusiveDescendantOfCrossBoundaryRangeAncestor(
+      const nsINode& aContainer) const;
 
   
 
@@ -424,7 +433,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
                : mEnd.GetChildAtOffset();
   }
 
-  mozilla::dom::StaticRange* GetCrossShadowBoundaryRange() const {
+  mozilla::dom::CrossShadowBoundaryRange* GetCrossShadowBoundaryRange() const {
     return mCrossShadowBoundaryRange;
   }
 
@@ -549,7 +558,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   
   
-  RefPtr<mozilla::dom::StaticRange> mCrossShadowBoundaryRange;
+  RefPtr<mozilla::dom::CrossShadowBoundaryRange> mCrossShadowBoundaryRange;
 
   friend class mozilla::dom::AbstractRange;
 };
