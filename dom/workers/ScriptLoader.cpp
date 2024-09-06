@@ -1854,12 +1854,6 @@ void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
                       NS_ConvertUTF16toUTF8(aScriptURL).get());
 
   switch (aLoadResult) {
-    case NS_ERROR_FILE_NOT_FOUND:
-    case NS_ERROR_NOT_AVAILABLE:
-    case NS_ERROR_CORRUPTED_CONTENT:
-      aRv.Throw(NS_ERROR_DOM_NETWORK_ERR);
-      break;
-
     case NS_ERROR_MALFORMED_URI:
     case NS_ERROR_DOM_SYNTAX_ERR:
       aRv.ThrowSyntaxError(err);
@@ -1875,7 +1869,7 @@ void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
       
       
       aRv.Throw(aLoadResult);
-      return;
+      break;
 
     case NS_ERROR_DOM_BAD_URI:
       
@@ -1883,15 +1877,16 @@ void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
       aRv.ThrowSecurityError(err);
       break;
 
+    case NS_ERROR_FILE_NOT_FOUND:
+    case NS_ERROR_NOT_AVAILABLE:
+    case NS_ERROR_CORRUPTED_CONTENT:
+    case NS_ERROR_DOM_NETWORK_ERR:
+    
+    
+    
     default:
-      
-      
-      
-      aRv.ThrowNetworkError(nsPrintfCString(
-          "Failed to load worker script at %s (nsresult = 0x%" PRIx32 ")",
-          NS_ConvertUTF16toUTF8(aScriptURL).get(),
-          static_cast<uint32_t>(aLoadResult)));
-      return;
+      aRv.Throw(NS_ERROR_DOM_NETWORK_ERR);
+      break;
   }
 }
 
