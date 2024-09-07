@@ -22,43 +22,39 @@ namespace jit {
 
 
 #define WARP_UNSUPPORTED_OPCODE_LIST(_)
-                       \
-  _(ForceInterpreter)                                       \
-  /* With */                                                \
-  _(EnterWith)                                              \
-  _(LeaveWith)                                              \
-  /* Eval */                                                \
-  _(Eval)                                                   \
-  _(StrictEval)                                             \
-  _(SpreadEval)                                             \
-  _(StrictSpreadEval)                                       \
-  /* Super */                                               \
-  _(SetPropSuper)                                           \
-  _(SetElemSuper)                                           \
-  _(StrictSetPropSuper)                                     \
-  _(StrictSetElemSuper)                                     \
-  /* Generators / Async (bug 1317690) */                    \
-  _(IsGenClosing)                                           \
-  _(Resume)                                                 \
-  /* Misc */                                                \
-  _(DelName)                                                \
-  _(SetIntrinsic)                                           \
-  /* Private Fields */                                      \
-  _(GetAliasedDebugVar)                                     \
-  /* Non-syntactic scope */                                 \
-  _(NonSyntacticGlobalThis)                                 \
-  /* TODO: To be implemented (Bug 1899501) */               \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(_(AddDisposable))         \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(_(TakeDisposeCapability)) \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(_(CreateSuppressedError)) \
-  /* Records and Tuples */                                  \
-  IF_RECORD_TUPLE(_(InitRecord))                            \
-  IF_RECORD_TUPLE(_(AddRecordProperty))                     \
-  IF_RECORD_TUPLE(_(AddRecordSpread))                       \
-  IF_RECORD_TUPLE(_(FinishRecord))                          \
-  IF_RECORD_TUPLE(_(InitTuple))                             \
-  IF_RECORD_TUPLE(_(AddTupleElement))                       \
-  IF_RECORD_TUPLE(_(FinishTuple))                           \
+    \
+  _(ForceInterpreter)                    \
+  /* With */                             \
+  _(EnterWith)                           \
+  _(LeaveWith)                           \
+  /* Eval */                             \
+  _(Eval)                                \
+  _(StrictEval)                          \
+  _(SpreadEval)                          \
+  _(StrictSpreadEval)                    \
+  /* Super */                            \
+  _(SetPropSuper)                        \
+  _(SetElemSuper)                        \
+  _(StrictSetPropSuper)                  \
+  _(StrictSetElemSuper)                  \
+  /* Generators / Async (bug 1317690) */ \
+  _(IsGenClosing)                        \
+  _(Resume)                              \
+  /* Misc */                             \
+  _(DelName)                             \
+  _(SetIntrinsic)                        \
+  /* Private Fields */                   \
+  _(GetAliasedDebugVar)                  \
+  /* Non-syntactic scope */              \
+  _(NonSyntacticGlobalThis)              \
+  /* Records and Tuples */               \
+  IF_RECORD_TUPLE(_(InitRecord))         \
+  IF_RECORD_TUPLE(_(AddRecordProperty))  \
+  IF_RECORD_TUPLE(_(AddRecordSpread))    \
+  IF_RECORD_TUPLE(_(FinishRecord))       \
+  IF_RECORD_TUPLE(_(InitTuple))          \
+  IF_RECORD_TUPLE(_(AddTupleElement))    \
+  IF_RECORD_TUPLE(_(FinishTuple))        \
   // === !! WARNING WARNING WARNING !! ===
   
   

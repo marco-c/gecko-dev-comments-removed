@@ -48,8 +48,8 @@ namespace jit {
 
 
 #define VMFUNCTION_LIST(_)                                                     \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(                                             \
-      _(AddDisposableResource, js::AddDisposableResourceToCapability))         \
+  IF_EXPLICIT_RESOURCE_MANAGEMENT(_(AddDisposableResourceToCapability,         \
+                                    js::AddDisposableResourceToCapability))    \
   _(AddOrUpdateSparseElementHelper, js::AddOrUpdateSparseElementHelper)        \
   _(AddSlotAndCallAddPropHook, js::AddSlotAndCallAddPropHook)                  \
   _(ArgumentsObjectCreateForInlinedIon,                                        \
