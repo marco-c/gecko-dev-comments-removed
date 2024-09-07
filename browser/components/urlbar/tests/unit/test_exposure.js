@@ -2,12 +2,13 @@
 
 
 
+
+
+
 ChromeUtils.defineESModuleGetters(this, {
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.sys.mjs",
 });
-
-
 
 const REMOTE_SETTINGS_RESULTS = [
   QuickSuggestTestUtils.ampRemoteSettings({
@@ -236,6 +237,39 @@ add_task(async function manyExposureResults_hidden_oneMatched_2() {
     matches: [
       {
         ...QuickSuggestTestUtils.wikipediaResult(),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+      },
+    ],
+  });
+});
+
+add_task(async function manyExposureResults_hidden_manyMatched() {
+  UrlbarPrefs.set(
+    "exposureResults",
+    [
+      suggestResultType("adm_sponsored"),
+      suggestResultType("adm_nonsponsored"),
+    ].join(",")
+  );
+  UrlbarPrefs.set("showExposureResults", false);
+
+  let keyword = "amp and wikipedia";
+  let context = createContext(keyword, {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+
+  
+  
+  await check_results({
+    context,
+    matches: [
+      {
+        ...QuickSuggestTestUtils.ampResult({ keyword }),
+        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+      },
+      {
+        ...QuickSuggestTestUtils.wikipediaResult({ keyword }),
         exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
       },
     ],
