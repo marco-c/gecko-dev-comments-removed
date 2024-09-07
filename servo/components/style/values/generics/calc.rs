@@ -1141,6 +1141,13 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
         })
     }
 
+    fn is_nan_leaf(&self) -> Result<bool, ()> {
+        Ok(match *self {
+            Self::Leaf(ref l) => l.is_nan()?,
+            _ => false,
+        })
+    }
+
     
     
     
@@ -1420,8 +1427,17 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                     MinMaxOp::Max => cmp::Ordering::Greater,
                 };
 
+                if value_or_stop!(children[0].is_nan_leaf()) {
+                    replace_self_with!(&mut children[0]);
+                    return
+                }
+
                 let mut result = 0;
                 for i in 1..children.len() {
+                    if value_or_stop!(children[i].is_nan_leaf()) {
+                        replace_self_with!(&mut children[i]);
+                        return
+                    }
                     let o = match children[i]
                         .compare(&children[result], PositivePercentageBasis::Unknown)
                     {
