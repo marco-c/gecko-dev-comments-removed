@@ -25,8 +25,8 @@
 #include <functional>
 
 #include "gc/Barrier.h"
-#include "gc/Zone.h"
-#include "js/Stack.h"  
+#include "js/shadow/Zone.h"  
+#include "js/Stack.h"        
 #include "js/TypeDecls.h"
 #include "vm/SharedMem.h"
 #include "wasm/WasmExprType.h"  

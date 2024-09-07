@@ -9,6 +9,7 @@
 
 #include "vm/JSObject.h"
 
+#include "gc/Zone.h"
 #include "js/Object.h"  
 #include "vm/ArrayObject.h"
 #include "vm/BoundFunctionObject.h"
@@ -88,7 +89,7 @@ inline void JSObject::finalize(JS::GCContext* gcx) {
   MOZ_ASSERT(isTenured());
   if (!IsBackgroundFinalized(asTenured().getAllocKind())) {
     
-    MOZ_ASSERT(CurrentThreadCanAccessZone(zone()));
+    MOZ_ASSERT(js::CurrentThreadCanAccessZone(zone()));
   }
 #endif
 

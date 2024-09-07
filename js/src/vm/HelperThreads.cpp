@@ -14,6 +14,7 @@
 
 #include "frontend/CompilationStencil.h"  
 #include "gc/GC.h"
+#include "gc/Zone.h"
 #include "jit/Ion.h"
 #include "jit/IonCompileTask.h"
 #include "jit/JitRuntime.h"
