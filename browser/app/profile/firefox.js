@@ -1769,6 +1769,7 @@ pref("browser.newtabpage.activity-stream.newNewtabExperience.colors", "#0090ED,#
 
 
 pref("browser.newtabpage.activity-stream.newtabLayouts.variant-a", false);
+pref("browser.newtabpage.activity-stream.newtabLayouts.variant-b", false);
 
 
 #ifndef RELEASE_OR_BETA
