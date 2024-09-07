@@ -45,6 +45,13 @@ pub trait PseudoElement: Sized + ToCss {
     fn specificity_count(&self) -> u32 {
         1
     }
+
+    
+    
+    
+    fn is_in_pseudo_element_tree(&self) -> bool {
+        false
+    }
 }
 
 
@@ -83,7 +90,7 @@ fn to_ascii_lowercase(s: &str) -> Cow<str> {
 bitflags! {
     /// Flags that indicate at which point of parsing a selector are we.
     #[derive(Copy, Clone)]
-    struct SelectorParsingState: u8 {
+    struct SelectorParsingState: u16 {
         /// Whether we should avoid adding default namespaces to selectors that
         /// aren't type or universal selectors.
         const SKIP_DEFAULT_NAMESPACE = 1 << 0;
@@ -122,6 +129,10 @@ bitflags! {
 
         /// Whether we explicitly disallow relative selectors (i.e. `:has()`).
         const DISALLOW_RELATIVE_SELECTOR = 1 << 7;
+
+        /// Whether we've parsed a pseudo-element which is in a pseudo-element tree (i.e. it is a
+        /// descendant pseudo of a pseudo-element root).
+        const IN_PSEUDO_ELEMENT_TREE = 1 << 8;
     }
 }
 
@@ -149,12 +160,17 @@ impl SelectorParsingState {
 
     #[inline]
     fn allows_tree_structural_pseudo_classes(self) -> bool {
-        !self.intersects(Self::AFTER_PSEUDO)
+        !self.intersects(Self::AFTER_PSEUDO) || self.intersects(Self::IN_PSEUDO_ELEMENT_TREE)
     }
 
     #[inline]
     fn allows_combinators(self) -> bool {
         !self.intersects(Self::DISALLOW_COMBINATORS)
+    }
+
+    #[inline]
+    fn allows_only_child_pseudo_class_only(self) -> bool {
+        self.intersects(Self::IN_PSEUDO_ELEMENT_TREE)
     }
 }
 
@@ -3261,6 +3277,9 @@ where
                 if !p.accepts_state_pseudo_classes() {
                     state.insert(SelectorParsingState::AFTER_NON_STATEFUL_PSEUDO_ELEMENT);
                 }
+                if p.is_in_pseudo_element_tree() {
+                    state.insert(SelectorParsingState::IN_PSEUDO_ELEMENT_TREE);
+                }
                 builder.push_combinator(Combinator::PseudoElement);
                 builder.push_simple_selector(Component::PseudoElement(p));
             },
@@ -3574,6 +3593,20 @@ where
     }
 
     if state.allows_tree_structural_pseudo_classes() {
+        
+        
+        
+        
+        if state.allows_only_child_pseudo_class_only() {
+            if name.eq_ignore_ascii_case("only-child") {
+                return Ok(Component::Nth(NthSelectorData::only( false)));
+            }
+            
+            
+            
+            return Err(location.new_custom_error(SelectorParseErrorKind::InvalidState));
+        }
+
         match_ignore_ascii_case! { &name,
             "first-child" => return Ok(Component::Nth(NthSelectorData::first(/* of_type = */ false))),
             "last-child" => return Ok(Component::Nth(NthSelectorData::last(/* of_type = */ false))),

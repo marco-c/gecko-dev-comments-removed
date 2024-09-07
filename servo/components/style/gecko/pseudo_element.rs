@@ -45,12 +45,21 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
 
     #[inline]
     fn accepts_state_pseudo_classes(&self) -> bool {
-        self.supports_user_action_state()
+        
+        
+        self.supports_user_action_state() || self.is_in_pseudo_element_tree()
     }
 
     #[inline]
     fn specificity_count(&self) -> u32 {
         self.specificity_count()
+    }
+
+    #[inline]
+    fn is_in_pseudo_element_tree(&self) -> bool {
+        
+        
+        self.is_named_view_transition()
     }
 }
 
@@ -168,6 +177,17 @@ impl PseudoElement {
     #[inline]
     pub fn is_target_text(&self) -> bool {
         *self == PseudoElement::TargetText
+    }
+
+    
+    pub fn is_named_view_transition(&self) -> bool {
+        matches!(
+            *self,
+            Self::ViewTransitionGroup(..) |
+                Self::ViewTransitionImagePair(..) |
+                Self::ViewTransitionOld(..) |
+                Self::ViewTransitionNew(..)
+        )
     }
 
     
