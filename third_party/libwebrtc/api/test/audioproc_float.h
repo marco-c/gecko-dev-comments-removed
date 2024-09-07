@@ -53,18 +53,6 @@ int AudioprocFloat(std::unique_ptr<AudioProcessingBuilder> ap_builder,
                    int argc,
                    char* argv[]);
 
-
-
-
-
-
-
-
-int AudioprocFloat(std::unique_ptr<AudioProcessingBuilder> ap_builder,
-                   int argc,
-                   char* argv[],
-                   absl::string_view input_aecdump,
-                   std::vector<float>* processed_capture_samples);
 }  
 }  
 
