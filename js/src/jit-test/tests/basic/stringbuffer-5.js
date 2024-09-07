@@ -63,6 +63,7 @@ test();
 
 
 gc();
+finishBackgroundFree();
 checkRefCount(strLatin1, 1);
 checkRefCount(strTwoByte, 1);
 
