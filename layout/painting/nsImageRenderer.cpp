@@ -785,28 +785,28 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItemsForLayer(
 
 
 
-static nsRect ComputeTile(nsRect& aFill, StyleBorderImageRepeat aHFill,
-                          StyleBorderImageRepeat aVFill,
+static nsRect ComputeTile(nsRect& aFill, StyleBorderImageRepeatKeyword aHFill,
+                          StyleBorderImageRepeatKeyword aVFill,
                           const nsSize& aUnitSize, nsSize& aRepeatSize) {
   nsRect tile;
   switch (aHFill) {
-    case StyleBorderImageRepeat::Stretch:
+    case StyleBorderImageRepeatKeyword::Stretch:
       tile.x = aFill.x;
       tile.width = aFill.width;
       aRepeatSize.width = tile.width;
       break;
-    case StyleBorderImageRepeat::Repeat:
+    case StyleBorderImageRepeatKeyword::Repeat:
       tile.x = aFill.x + aFill.width / 2 - aUnitSize.width / 2;
       tile.width = aUnitSize.width;
       aRepeatSize.width = tile.width;
       break;
-    case StyleBorderImageRepeat::Round:
+    case StyleBorderImageRepeatKeyword::Round:
       tile.x = aFill.x;
       tile.width =
           nsCSSRendering::ComputeRoundedSize(aUnitSize.width, aFill.width);
       aRepeatSize.width = tile.width;
       break;
-    case StyleBorderImageRepeat::Space: {
+    case StyleBorderImageRepeatKeyword::Space: {
       nscoord space;
       aRepeatSize.width = nsCSSRendering::ComputeBorderSpacedRepeatSize(
           aUnitSize.width, aFill.width, space);
@@ -820,23 +820,23 @@ static nsRect ComputeTile(nsRect& aFill, StyleBorderImageRepeat aHFill,
   }
 
   switch (aVFill) {
-    case StyleBorderImageRepeat::Stretch:
+    case StyleBorderImageRepeatKeyword::Stretch:
       tile.y = aFill.y;
       tile.height = aFill.height;
       aRepeatSize.height = tile.height;
       break;
-    case StyleBorderImageRepeat::Repeat:
+    case StyleBorderImageRepeatKeyword::Repeat:
       tile.y = aFill.y + aFill.height / 2 - aUnitSize.height / 2;
       tile.height = aUnitSize.height;
       aRepeatSize.height = tile.height;
       break;
-    case StyleBorderImageRepeat::Round:
+    case StyleBorderImageRepeatKeyword::Round:
       tile.y = aFill.y;
       tile.height =
           nsCSSRendering::ComputeRoundedSize(aUnitSize.height, aFill.height);
       aRepeatSize.height = tile.height;
       break;
-    case StyleBorderImageRepeat::Space: {
+    case StyleBorderImageRepeatKeyword::Space: {
       nscoord space;
       aRepeatSize.height = nsCSSRendering::ComputeBorderSpacedRepeatSize(
           aUnitSize.height, aFill.height, space);
@@ -857,20 +857,21 @@ static nsRect ComputeTile(nsRect& aFill, StyleBorderImageRepeat aHFill,
 
 
 
-static bool RequiresScaling(const nsRect& aFill, StyleBorderImageRepeat aHFill,
-                            StyleBorderImageRepeat aVFill,
+static bool RequiresScaling(const nsRect& aFill,
+                            StyleBorderImageRepeatKeyword aHFill,
+                            StyleBorderImageRepeatKeyword aVFill,
                             const nsSize& aUnitSize) {
   
   
-  return (aHFill != StyleBorderImageRepeat::Stretch ||
-          aVFill != StyleBorderImageRepeat::Stretch) &&
+  return (aHFill != StyleBorderImageRepeatKeyword::Stretch ||
+          aVFill != StyleBorderImageRepeatKeyword::Stretch) &&
          (aUnitSize.width != aFill.width || aUnitSize.height != aFill.height);
 }
 
 ImgDrawResult nsImageRenderer::DrawBorderImageComponent(
     nsPresContext* aPresContext, gfxContext& aRenderingContext,
     const nsRect& aDirtyRect, const nsRect& aFill, const CSSIntRect& aSrc,
-    StyleBorderImageRepeat aHFill, StyleBorderImageRepeat aVFill,
+    StyleBorderImageRepeatKeyword aHFill, StyleBorderImageRepeatKeyword aVFill,
     const nsSize& aUnitSize, uint8_t aIndex,
     const Maybe<nsSize>& aSVGViewportSize, const bool aHasIntrinsicRatio) {
   if (!IsReady()) {
