@@ -268,11 +268,10 @@ class GetOriginUsageOp final
   const PrincipalInfo mPrincipalInfo;
   PrincipalMetadata mPrincipalMetadata;
   UsageInfo mUsageInfo;
-  bool mFromMemory;
 
  public:
   GetOriginUsageOp(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-                   const PrincipalInfo& aPrincipalInfo, bool aFromMemory);
+                   const PrincipalInfo& aPrincipalInfo);
 
  private:
   ~GetOriginUsageOp() = default;
@@ -814,9 +813,8 @@ CreateGetUsageOp(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
 
 RefPtr<ResolvableNormalOriginOp<UsageInfo>> CreateGetOriginUsageOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-    const mozilla::ipc::PrincipalInfo& aPrincipalInfo, bool aFromMemory) {
-  return MakeRefPtr<GetOriginUsageOp>(std::move(aQuotaManager), aPrincipalInfo,
-                                      aFromMemory);
+    const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
+  return MakeRefPtr<GetOriginUsageOp>(std::move(aQuotaManager), aPrincipalInfo);
 }
 
 RefPtr<QuotaRequestBase> CreateStorageNameOp(
@@ -1444,11 +1442,10 @@ void GetUsageOp::CloseDirectory() {
 
 GetOriginUsageOp::GetOriginUsageOp(
     MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-    const PrincipalInfo& aPrincipalInfo, bool aFromMemory)
+    const PrincipalInfo& aPrincipalInfo)
     : OpenStorageDirectoryHelper(std::move(aQuotaManager),
                                  "dom::quota::GetOriginUsageOp"),
-      mPrincipalInfo(aPrincipalInfo),
-      mFromMemory(aFromMemory) {
+      mPrincipalInfo(aPrincipalInfo) {
   AssertIsOnOwningThread();
 }
 
@@ -1487,21 +1484,7 @@ nsresult GetOriginUsageOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
 
   AUTO_PROFILER_LABEL("GetOriginUsageOp::DoDirectoryWork", OTHER);
 
-  if (mFromMemory) {
-    
-    
-    if (!aQuotaManager.IsTemporaryStorageInitializedInternal()) {
-      return NS_OK;
-    }
-
-    
-    
-    mUsageInfo += DatabaseUsageType(
-        Some(aQuotaManager.GetOriginUsage(mPrincipalMetadata)));
-
-    return NS_OK;
-  }
-
+  
   
   for (const PersistenceType type : kAllPersistenceTypes) {
     const OriginMetadata originMetadata = {mPrincipalMetadata, type};

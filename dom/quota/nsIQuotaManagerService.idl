@@ -174,16 +174,9 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
-
-
-
-
-
-
   [must_use] nsIQuotaUsageRequest
   getUsageForPrincipal(in nsIPrincipal aPrincipal,
-                       in nsIQuotaUsageCallback aCallback,
-                       [optional] in boolean aFromMemory);
+                       in nsIQuotaUsageCallback aCallback);
 
   
 
