@@ -91,7 +91,9 @@ absl::optional<double> RateUtilizationTracker::GetRateUtilizationFactor(
 
     if (update.produced_data.IsZero()) {
       
-      data_allocated_for_last_data += allocated_since_previous_data_point;
+      data_allocated_for_last_data =
+          std::min(size_of_last_data, data_allocated_for_last_data +
+                                          allocated_since_previous_data_point);
     } else {
       
       
