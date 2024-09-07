@@ -9013,6 +9013,7 @@ nsHttpChannel::OnTransportStatus(nsITransport* trans, nsresult status,
   
   if (!mProgressSink) GetCallback(mProgressSink);
 
+  mLastTransportStatus = status;
   if (status == NS_NET_STATUS_CONNECTED_TO ||
       status == NS_NET_STATUS_WAITING_FOR) {
     bool isTrr = false;
@@ -10933,6 +10934,12 @@ nsHttpChannel::GetWebTransportSessionEventListener() {
   RefPtr<WebTransportSessionEventListener> wt =
       mWebTransportSessionEventListener;
   return wt.forget();
+}
+
+NS_IMETHODIMP nsHttpChannel::GetLastTransportStatus(
+    nsresult* aLastTransportStatus) {
+  *aLastTransportStatus = mLastTransportStatus;
+  return NS_OK;
 }
 
 }  
