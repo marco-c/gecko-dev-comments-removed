@@ -221,8 +221,25 @@
       this._invalidateCachedVisibleTabs();
     }
 
-    on_TabGroupCollapse() {
+    on_TabGroupCollapse(event) {
       this._invalidateCachedVisibleTabs();
+
+      
+      
+      
+      const group = event.target;
+      if (gBrowser.selectedTab.group === group) {
+        let tabToSelect = gBrowser._findTabToBlurTo(
+          gBrowser.selectedTab,
+          group.tabs
+        );
+
+        if (tabToSelect) {
+          gBrowser.selectedTab = tabToSelect;
+        } else {
+          gBrowser.addAdjacentNewTab(group.tabs.at(-1));
+        }
+      }
     }
 
     on_transitionend(event) {
