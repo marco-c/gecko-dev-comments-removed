@@ -308,8 +308,14 @@ struct nsGridContainerFrame::TrackSize {
     return (aStateBits & (eIntrinsicMaxSizing | eFlexMaxSizing)) == 0;
   }
 
+  
+  
   nscoord mBase;
+
+  
+  
   nscoord mLimit;
+
   nscoord mPosition;  
   
   
@@ -2263,6 +2269,9 @@ struct nsGridContainerFrame::Tracks {
                             SizingConstraint aConstraint);
 
   
+
+
+
 
 
 
@@ -6503,8 +6512,6 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
     GridReflowInput& aState, nsTArray<GridItemInfo>& aGridItems,
     const TrackSizingFunctions& aFunctions, LineRange GridArea::*aRange,
     nscoord aPercentageBasis, SizingConstraint aConstraint) {
-  
-  
   
   
 
