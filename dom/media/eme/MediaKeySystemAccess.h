@@ -74,6 +74,17 @@ class MediaKeySystemAccess final : public nsISupports, public nsWrapperCache {
   static nsCString ToCString(const MediaKeySystemConfiguration& aConfig);
 
  private:
+#ifdef MOZ_WMF_CDM
+  
+  
+  
+  
+  
+  static bool ShouldBlockMFCDMSupportByOrigin(const nsString& aKeySystem,
+                                              bool aIsHardwareDecryptionRequest,
+                                              const Document* aDocument);
+#endif
+
   nsCOMPtr<nsPIDOMWindowInner> mParent;
   const nsString mKeySystem;
   const MediaKeySystemConfiguration mConfig;
