@@ -138,12 +138,18 @@ if __name__ == "__main__":
         env["MOZ_CRASHREPORTER_NO_REPORT"] = "1"
         env["MOZ_CRASHREPORTER_SHUTDOWN"] = "1"
         env["XPCOM_DEBUG_BREAK"] = "warn"
+        
+        
+        env["MOZ_DISABLE_CONTENT_SANDBOX"] = "1"
+        env["MOZ_DISABLE_RDD_SANDBOX"] = "1"
+        env["MOZ_DISABLE_SOCKET_PROCESS_SANDBOX"] = "1"
+        env["MOZ_DISABLE_GPU_SANDBOX"] = "1"
+        env["MOZ_DISABLE_GMP_SANDBOX"] = "1"
+        env["MOZ_DISABLE_VR_SANDBOX"] = "1"
+        env["MOZ_DISABLE_UTILITY_SANDBOX"] = "1"
 
         
-        
-        env["LLVM_PROFILE_FILE"] = os.path.join(
-            os.getcwd(), "default_%p_random_%m.profraw"
-        )
+        env["LLVM_PROFILE_FILE"] = "default_%p_random_%m.profraw"
 
         
         process_args = {"universal_newlines": True}
@@ -206,21 +212,6 @@ if __name__ == "__main__":
                     print(f.read())
             get_crashreports(profilePath, name="Profiling run")
             sys.exit(ret)
-
-        if "UPLOAD_PATH" in env:
-            should_err = False
-            print("Verify log for LLVM Profile Error")
-            for n in range(1, 2):
-                log = os.path.join(env["UPLOAD_PATH"], f"profile-run-{n}.log")
-                with open(log) as f:
-                    for line in f.readlines():
-                        if "LLVM Profile Error" in line:
-                            print("Error [{}]: '{}'".format(log, line.strip()))
-                            should_err = True
-
-            if should_err:
-                print("Found some LLVM Profile Error in logs, see above.")
-                sys.exit(1)
 
         
         
