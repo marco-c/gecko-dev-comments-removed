@@ -3386,9 +3386,7 @@ function _nodeIsFlattenedTreeDescendantOf(
 }
 
 function _computeSrcElementFromSrcSelection(aSrcSelection) {
-  let srcElement = _EU_maybeUnwrap(
-    _EU_maybeWrap(aSrcSelection).mayCrossShadowBoundaryFocusNode
-  );
+  let srcElement = aSrcSelection.focusNode;
   while (_EU_maybeWrap(srcElement).isNativeAnonymous) {
     srcElement = _getFlattenedTreeParentNode(srcElement);
   }
@@ -3490,9 +3488,7 @@ async function synthesizePlainDragAndDrop(aParams) {
     }
     
     
-    let selectionRectList = SpecialPowers.wrap(
-      srcSelection.getRangeAt(0)
-    ).getAllowCrossShadowBoundaryClientRects();
+    let selectionRectList = srcSelection.getRangeAt(0).getClientRects();
     let lastSelectionRect = selectionRectList[selectionRectList.length - 1];
     if (logFunc) {
       logFunc(

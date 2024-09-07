@@ -830,12 +830,11 @@ nsresult DragDataProducer::GetDraggableSelectionData(
   *outImageOrLinkNode = nullptr;
   *outDragSelectedText = false;
 
-  if (!inSelection->AreNormalAndCrossShadowBoundaryRangesCollapsed()) {
+  if (!inSelection->IsCollapsed()) {
     if (inSelection->ContainsNode(*inRealTargetNode, false, IgnoreErrors())) {
       
-      nsINode* selectionStart =
-          inSelection->GetMayCrossShadowBoundaryAnchorNode();
-      nsINode* selectionEnd = inSelection->GetMayCrossShadowBoundaryFocusNode();
+      nsINode* selectionStart = inSelection->GetAnchorNode();
+      nsINode* selectionEnd = inSelection->GetFocusNode();
 
       
       
