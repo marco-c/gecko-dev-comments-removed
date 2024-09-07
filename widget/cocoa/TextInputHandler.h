@@ -929,6 +929,7 @@ class IMEInputHandler : public TextInputHandlerBase {
 
   void OnSelectionChange(const IMENotification& aIMENotification);
   void OnLayoutChange();
+  void OnTextChange(const IMENotification& aIMENotification);
 
   
 
@@ -1053,6 +1054,10 @@ class IMEInputHandler : public TextInputHandlerBase {
   
   static TSMDocumentID GetCurrentTSMDocumentID();
 
+  void EnableTextSubstitution(bool aEnableTextSubstitution) {
+    mEnableTextSubstitution = aEnableTextSubstitution;
+  }
+
  protected:
   
   
@@ -1060,6 +1065,11 @@ class IMEInputHandler : public TextInputHandlerBase {
   nsCOMPtr<nsITimer> mTimer;
   enum { kNotifyIMEOfFocusChangeInGecko = 1, kSyncASCIICapableOnly = 2 };
   uint32_t mPendingMethods;
+
+  
+  nsString mOriginalTextForTextSubstitution;
+  NSTextCheckingResult* mCandidatedTextSubstitutionResult;
+  bool mProcessTextSubstitution;
 
   IMEInputHandler(nsChildView* aWidget, NSView<mozView>* aNativeView);
   virtual ~IMEInputHandler();
@@ -1092,6 +1102,13 @@ class IMEInputHandler : public TextInputHandlerBase {
 
   bool MaybeDispatchCurrentKeydownEvent(bool aIsProcessedByIME);
 
+  
+
+
+
+  void ShowTextSubstitutionPanel();
+  void DismissTextSubstitutionPanel();
+
  private:
   
   NSString* mIMECompositionString;
@@ -1112,6 +1129,7 @@ class IMEInputHandler : public TextInputHandlerBase {
   bool mIsASCIICapableOnly;
   bool mIgnoreIMECommit;
   bool mIMEHasFocus;
+  bool mEnableTextSubstitution;
 
   void KillIMEComposition();
   void SendCommittedText(NSString* aString);
@@ -1205,6 +1223,23 @@ class IMEInputHandler : public TextInputHandlerBase {
 
 
   bool DispatchCompositionCommitEvent(const nsAString* aCommitString = nullptr);
+
+  
+
+
+
+  void HandleTextSubstitution(const IMENotification& aIMENotification);
+
+  
+
+
+  void OnTextSubstitution(uint32_t aStartOffset);
+
+  enum class PreventSetSelection { Yes, No };
+
+  void ReplaceTextForTextSubstitution(const nsAString& aOriginalString,
+                                      NSString* aString, const NSRange& aRange,
+                                      PreventSetSelection aPreventSetSelection);
 
   
   

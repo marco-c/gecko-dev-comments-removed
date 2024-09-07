@@ -14,6 +14,7 @@
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/StaticPrefs_intl.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
@@ -415,6 +416,17 @@ static const char* GetWindowLevelName(NSInteger aWindowLevel) {
 
 static bool IsControlChar(uint32_t aCharCode) {
   return aCharCode < ' ' || aCharCode == 0x7F;
+}
+
+static std::ostream& operator<<(std::ostream& aStream, const NSRange& aRange) {
+  aStream << "{ location=";
+  if (aRange.location == NSNotFound) {
+    aStream << "NSNotFound";
+  } else {
+    aStream << aRange.location;
+  }
+  aStream << ", length=" << aRange.length << " }";
+  return aStream;
 }
 
 static uint32_t gHandlerInstanceCount = 0;
@@ -2007,6 +2019,11 @@ void TextInputHandler::HandleKeyUpEvent(NSEvent* aNativeEvent) {
   mDispatcher->DispatchKeyboardEvent(eKeyUp, keyupEvent, status,
                                      &currentKeyEvent);
 
+  if (!mCurrentKeyEvents.Length()) {
+    
+    ShowTextSubstitutionPanel();
+  }
+
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
@@ -2587,6 +2604,13 @@ void TextInputHandler::InsertText(NSString* aString,
   bool keyPressHandled = (status == nsEventStatus_eConsumeNoDefault);
 
   
+  
+  if (keypressEvent.mKeyCode == NS_VK_SPACE && keyPressDispatched) {
+    mProcessTextSubstitution = true;
+    DismissTextSubstitutionPanel();
+  }
+
+  
 
   if (currentKeyEvent) {
     currentKeyEvent->mKeyPressHandled = keyPressHandled;
@@ -3090,6 +3114,12 @@ bool TextInputHandler::DoCommandBySelector(const char* aSelector) {
          "dispatched, Destroyed()=%s, keypressHandled=%s",
          this, TrueOrFalse(Destroyed()),
          TrueOrFalse(currentKeyEvent->mKeyPressHandled)));
+
+    
+    
+    mProcessTextSubstitution = (keypressEvent.mKeyCode == NS_VK_RETURN);
+    DismissTextSubstitutionPanel();
+
     
     
     return true;
@@ -3369,6 +3399,9 @@ nsresult IMEInputHandler::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
     case NOTIFY_IME_OF_POSITION_CHANGE:
       OnLayoutChange();
       return NS_OK;
+    case NOTIFY_IME_OF_TEXT_CHANGE:
+      OnTextChange(aNotification);
+      return NS_OK;
     default:
       return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -3379,7 +3412,7 @@ IMEInputHandler::GetIMENotificationRequests() {
   
   
   
-  return IMENotificationRequests();
+  return IMENotificationRequests(IMENotificationRequests::NOTIFY_TEXT_CHANGE);
 }
 
 NS_IMETHODIMP_(void)
@@ -4605,6 +4638,8 @@ IMEInputHandler::IMEInputHandler(nsChildView* aWidget,
                                  NSView<mozView>* aNativeView)
     : TextInputHandlerBase(aWidget, aNativeView),
       mPendingMethods(0),
+      mCandidatedTextSubstitutionResult(nullptr),
+      mProcessTextSubstitution(false),
       mIMECompositionString(nullptr),
       mIMECompositionStart(UINT32_MAX),
       mRangeForWritingMode(),
@@ -4613,7 +4648,8 @@ IMEInputHandler::IMEInputHandler(nsChildView* aWidget,
       mIsIMEEnabled(true),
       mIsASCIICapableOnly(false),
       mIgnoreIMECommit(false),
-      mIMEHasFocus(false) {
+      mIMEHasFocus(false),
+      mEnableTextSubstitution(false) {
   InitStaticMembers();
 
   mMarkedRange.location = NSNotFound;
@@ -4646,6 +4682,8 @@ void IMEInputHandler::OnFocusChangeInGecko(bool aFocus) {
 
   mSelectedRange.location = NSNotFound;  
   mIMEHasFocus = aFocus;
+
+  DismissTextSubstitutionPanel();
 
   
   
@@ -4944,6 +4982,317 @@ void IMEInputHandler::OnLayoutChange() {
   [inputContext invalidateCharacterCoordinates];
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+static NSTextCheckingType GetTextCheckingTypes() {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  NSTextCheckingType types = 0;
+
+  if (StaticPrefs::widget_macos_automatic_text_replacement() &&
+      [NSSpellChecker isAutomaticTextReplacementEnabled]) {
+    types |= NSTextCheckingTypeReplacement;
+  }
+
+  if (StaticPrefs::widget_macos_automatic_quote_substitution() &&
+      [NSSpellChecker isAutomaticQuoteSubstitutionEnabled]) {
+    types |= NSTextCheckingTypeQuote;
+  }
+
+  if (StaticPrefs::widget_macos_automatic_dash_substitution() &&
+      [NSSpellChecker isAutomaticDashSubstitutionEnabled]) {
+    types |= NSTextCheckingTypeDash;
+  }
+  return types;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(0);
+}
+
+void IMEInputHandler::OnTextChange(const IMENotification& aIMENotification) {
+  HandleTextSubstitution(aIMENotification);
+}
+
+void IMEInputHandler::HandleTextSubstitution(
+    const IMENotification& aIMENotification) {
+  if (!StaticPrefs::widget_macos_automatic_text_replacement() &&
+      !StaticPrefs::widget_macos_automatic_quote_substitution() &&
+      !StaticPrefs::widget_macos_automatic_dash_substitution()) {
+    return;
+  }
+
+  
+  mProcessTextSubstitution = false;
+  DismissTextSubstitutionPanel();
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!mEnableTextSubstitution) {
+    return;
+  }
+
+  MOZ_LOG(gIMELog, LogLevel::Verbose,
+          ("%p IMEInputHandler::HandleTextSubstitution, "
+           "aIMENotification.mTextChangeData=%s",
+           this, ToString(aIMENotification.mTextChangeData).c_str()));
+
+  if (aIMENotification.mTextChangeData.mCausedOnlyByComposition) {
+    return;
+  }
+
+  if (aIMENotification.mTextChangeData.mStartOffset !=
+      aIMENotification.mTextChangeData.mRemovedEndOffset) {
+    
+    return;
+  }
+
+  NS_DispatchToCurrentThreadQueue(
+      NewRunnableMethod<uint32_t>(
+          "IMEInputHandler::OnTextSubstitution", this,
+          &IMEInputHandler::OnTextSubstitution,
+          aIMENotification.mTextChangeData.mAddedEndOffset),
+      100, EventQueuePriority::Idle);
+}
+
+void IMEInputHandler::OnTextSubstitution(uint32_t aStartOffset) {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  MOZ_LOG(gIMELog, LogLevel::Info,
+          ("%p IMEInputHandler::OnTextSubstitution, aStartOffset=%u", this,
+           aStartOffset));
+
+  if (Destroyed() || !IsFocused()) {
+    return;
+  }
+
+  NSTextCheckingType checkingTypes = GetTextCheckingTypes();
+  if (!checkingTypes) {
+    return;
+  }
+
+  
+  
+  const uint32_t fetchLength =
+      StaticPrefs::widget_macos_automatic_text_substitution_fetch_length();
+  uint32_t startFetch =
+      std::max<uint32_t>(fetchLength, aStartOffset) - fetchLength;
+  WidgetQueryContentEvent queryTextContentEvent(true, eQueryTextContent,
+                                                mWidget);
+  WidgetQueryContentEvent::Options options;
+  queryTextContentEvent.InitForQueryTextContent(
+      startFetch, aStartOffset - startFetch, options);
+  DispatchEvent(queryTextContentEvent);
+  if (NS_WARN_IF(queryTextContentEvent.Failed())) {
+    return;
+  }
+
+  NSString* str;
+  if (!queryTextContentEvent.mReply->DataRef().IsEmpty() &&
+      NS_IS_LOW_SURROGATE(queryTextContentEvent.mReply->DataRef().CharAt(0))) {
+    str = nsCocoaUtils::ToNSString(
+        Substring(queryTextContentEvent.mReply->DataRef(), 1));
+  } else {
+    str = nsCocoaUtils::ToNSString(queryTextContentEvent.mReply->DataRef());
+  }
+  NSSpellChecker* spellchecker = [NSSpellChecker sharedSpellChecker];
+  if (!spellchecker) {
+    return;
+  }
+  NSArray* results = [spellchecker checkString:str
+                                         range:NSMakeRange(0, [str length])
+                                         types:checkingTypes
+                                       options:nil
+                        inSpellDocumentWithTag:0
+                                   orthography:nil
+                                     wordCount:nil];
+  if (!results.count) {
+    return;
+  }
+
+  MOZ_LOG(gIMELog, LogLevel::Info,
+          ("%p   IMEInputHandler::HandleTextSubstitution, found text "
+           "substitution for correction.",
+           this));
+
+  NSTextCheckingResult* candidate = nullptr;
+  for (NSTextCheckingResult* checkingResult in results) {
+    NSRange candidateRange = checkingResult.range;
+    if (!NSLocationInRange(
+            aStartOffset - startFetch,
+            NSMakeRange(candidateRange.location, candidateRange.length + 1))) {
+      continue;
+    }
+    if (checkingResult.resultType &
+        (NSTextCheckingTypeQuote | NSTextCheckingTypeDash)) {
+      
+      
+      const nsDependentSubstring& originalStr =
+          Substring(queryTextContentEvent.mReply->DataRef(),
+                    candidateRange.location, candidateRange.length);
+      candidateRange.location += startFetch;
+      ReplaceTextForTextSubstitution(originalStr,
+                                     checkingResult.replacementString,
+                                     candidateRange, PreventSetSelection::No);
+      continue;
+    }
+    
+    candidate = checkingResult;
+    break;
+  }
+  if (!candidate) {
+    return;
+  }
+
+  
+  NSRange candidatedRange = NSMakeRange(candidate.range.location + startFetch,
+                                        candidate.range.length);
+  mCandidatedTextSubstitutionResult = [[NSTextCheckingResult
+      correctionCheckingResultWithRange:candidatedRange
+                      replacementString:candidate.replacementString
+                     alternativeStrings:candidate.alternativeStrings] retain];
+  mOriginalTextForTextSubstitution =
+      Substring(queryTextContentEvent.mReply->DataRef(),
+                candidatedRange.location - startFetch, candidatedRange.length);
+
+  
+  
+  mProcessTextSubstitution = true;
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void IMEInputHandler::ShowTextSubstitutionPanel() {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  MOZ_LOG(gIMELog, LogLevel::Info,
+          ("%p IMEInputHandler::ShowTextSubstitutionPanel", this));
+
+  if (!mCandidatedTextSubstitutionResult) {
+    return;
+  }
+
+  
+  
+  NSRect rect = [&]() {
+    WidgetQueryContentEvent queryCaretRectEvent(true, eQueryCaretRect, mWidget);
+    WidgetQueryContentEvent::Options options;
+    queryCaretRectEvent.InitForQueryCaretRect(
+        mCandidatedTextSubstitutionResult.range.location +
+            mCandidatedTextSubstitutionResult.range.length,
+        options);
+    DispatchEvent(queryCaretRectEvent);
+    if (queryCaretRectEvent.Succeeded()) {
+      LayoutDeviceIntRect r = queryCaretRectEvent.mReply->mRect;
+      return nsCocoaUtils::DevPixelsToCocoaPoints(
+          r, mWidget->BackingScaleFactor());
+    }
+    return NSMakeRect(0, 0, 0, 0);
+  }();
+
+  if (!Destroyed()) {
+    return;
+  }
+
+  uint32_t replacementLocation =
+      mCandidatedTextSubstitutionResult.range.location;
+  NSSpellChecker* spellchecker = [NSSpellChecker sharedSpellChecker];
+  if (!spellchecker) {
+    return;
+  }
+  [spellchecker
+      showCorrectionIndicatorOfType:NSCorrectionIndicatorTypeDefault
+                      primaryString:mCandidatedTextSubstitutionResult
+                                        .replacementString
+                 alternativeStrings:mCandidatedTextSubstitutionResult
+                                        .alternativeStrings
+                    forStringInRect:rect
+                               view:mView
+                  completionHandler:^(NSString* aAcceptedString) {
+                    
+                    MOZ_LOG(gIMELog, LogLevel::Info,
+                            ("%p   IMEInputHandler::ShowTextSubstitutionPanel, "
+                             "dismissing correction panel",
+                             this));
+
+                    if (!mProcessTextSubstitution) {
+                      return;
+                    }
+
+                    mProcessTextSubstitution = false;
+
+                    
+                    
+                    if (!aAcceptedString || Destroyed() || !IsFocused() ||
+                        mOriginalTextForTextSubstitution.IsEmpty()) {
+                      return;
+                    }
+
+                    NSRange replacementRange =
+                        NSMakeRange(replacementLocation,
+                                    mOriginalTextForTextSubstitution.Length());
+
+                    
+                    ReplaceTextForTextSubstitution(
+                        mOriginalTextForTextSubstitution, aAcceptedString,
+                        replacementRange, PreventSetSelection::Yes);
+
+                    mOriginalTextForTextSubstitution.Truncate();
+                  }];
+
+  [mCandidatedTextSubstitutionResult release];
+  mCandidatedTextSubstitutionResult = nullptr;
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void IMEInputHandler::DismissTextSubstitutionPanel() {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  NSSpellChecker* spellchecker = [NSSpellChecker sharedSpellChecker];
+  if (!spellchecker) {
+    return;
+  }
+  [spellchecker dismissCorrectionIndicatorForView:mView];
+
+  if (mCandidatedTextSubstitutionResult) {
+    [mCandidatedTextSubstitutionResult release];
+    mCandidatedTextSubstitutionResult = nullptr;
+  }
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void IMEInputHandler::ReplaceTextForTextSubstitution(
+    const nsAString& aOriginalString, NSString* aNewString,
+    const NSRange& aRange, PreventSetSelection aPreventSetSelection) {
+  nsAutoString insertStr;
+  nsCocoaUtils::GetStringForNSString(aNewString, insertStr);
+
+  MOZ_LOG(gIMELog, LogLevel::Info,
+          ("%p IMEInputHandler::ReplaceTextForTextsubstitution, "
+           "aOriginalString=\"%s\", aNewString=\"%s\", aRange=%s",
+           this, NS_ConvertUTF16toUTF8(aOriginalString).get(),
+           NS_ConvertUTF16toUTF8(insertStr).get(), ToString(aRange).c_str()));
+
+  WidgetContentCommandEvent replaceTextEvent(true, eContentCommandReplaceText,
+                                             mWidget);
+  replaceTextEvent.mString = Some(insertStr);
+  replaceTextEvent.mSelection.mReplaceSrcString = aOriginalString;
+  replaceTextEvent.mSelection.mOffset = aRange.location;
+  replaceTextEvent.mSelection.mPreventSetSelection =
+      aPreventSetSelection == PreventSetSelection::Yes;
+  DispatchEvent(replaceTextEvent);
+  if (!replaceTextEvent.mSucceeded || Destroyed()) {
+    MOZ_LOG(
+        gIMELog, LogLevel::Error,
+        ("%p   IMEInputHandler::ReplaceTextForTextsubstitution, FAILED", this));
+  }
 }
 
 bool IMEInputHandler::OnHandleEvent(NSEvent* aEvent) {
