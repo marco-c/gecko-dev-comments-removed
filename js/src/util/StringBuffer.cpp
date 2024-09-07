@@ -103,6 +103,14 @@ JSLinearString* StringBuffer::finishStringInternal(JSContext* cx,
     return NewInlineString<CanGC>(cx, range);
   }
 
+  
+  
+  
+  using Vec = std::remove_reference_t<decltype(chars<CharT>())>;
+  if (len <= Vec::InlineLength) {
+    return NewStringCopyNDontDeflate<CanGC>(cx, begin<CharT>(), len, heap);
+  }
+
   UniquePtr<CharT[], JS::FreePolicy> buf(
       ExtractWellSized<CharT>(chars<CharT>()));
 
