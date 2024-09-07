@@ -1,12 +1,12 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ActorsParent.h"
 
-
+// Local includes
 #include "CanonicalQuotaObject.h"
 #include "ClientUsageArray.h"
 #include "Flatten.h"
@@ -26,7 +26,7 @@
 #include "ScopedLogExtraInfo.h"
 #include "UsageInfo.h"
 
-
+// Global includes
 #include <cinttypes>
 #include <cstdlib>
 #include <cstring>
@@ -169,33 +169,33 @@
 #include "prio.h"
 #include "prtime.h"
 
-
-
+// The amount of time, in milliseconds, that our IO thread will stay alive
+// after the last event it processes.
 #define DEFAULT_THREAD_TIMEOUT_MS 30000
 
-
-
-
-
+/**
+ * If shutdown takes this long, kill actors of a quota client, to avoid reaching
+ * the crash timeout.
+ */
 #define SHUTDOWN_KILL_ACTORS_TIMEOUT_MS 5000
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Automatically crash the browser if shutdown of a quota client takes this
+ * long. We've chosen a value that is long enough that it is unlikely for the
+ * problem to be falsely triggered by slow system I/O.  We've also chosen a
+ * value long enough so that automated tests should time out and fail if
+ * shutdown of a quota client takes too long.  Also, this value is long enough
+ * so that testers can notice the timeout; we want to know about the timeouts,
+ * not hide them. On the other hand this value is less than 60 seconds which is
+ * used by nsTerminator to crash a hung main process.
+ */
 #define SHUTDOWN_CRASH_BROWSER_TIMEOUT_MS 45000
 
 static_assert(
     SHUTDOWN_CRASH_BROWSER_TIMEOUT_MS > SHUTDOWN_KILL_ACTORS_TIMEOUT_MS,
     "The kill actors timeout must be shorter than the crash browser one.");
 
-
+// profile-before-change, when we need to shut down quota manager
 #define PROFILE_BEFORE_CHANGE_QM_OBSERVER_ID "profile-before-change-qm"
 
 #define KB *1024ULL
@@ -206,46 +206,46 @@ namespace mozilla::dom::quota {
 
 using namespace mozilla::ipc;
 
-
-
-
-
+// We want profiles to be platform-independent so we always need to replace
+// the same characters on every platform. Windows has the most extensive set
+// of illegal characters so we use its FILE_ILLEGAL_CHARACTERS and
+// FILE_PATH_SEPARATOR.
 const char QuotaManager::kReplaceChars[] = CONTROL_CHARACTERS "/:*?\"<>|\\";
 const char16_t QuotaManager::kReplaceChars16[] =
     u"" CONTROL_CHARACTERS "/:*?\"<>|\\";
 
 namespace {
 
-
-
-
+/*******************************************************************************
+ * Constants
+ ******************************************************************************/
 
 const uint32_t kSQLitePageSizeOverride = 512;
 
+// Important version history:
+// - Bug 1290481 bumped our schema from major.minor 2.0 to 3.0 in Firefox 57
+//   which caused Firefox 57 release concerns because the major schema upgrade
+//   means anyone downgrading to Firefox 56 will experience a non-operational
+//   QuotaManager and all of its clients.
+// - Bug 1404344 got very concerned about that and so we decided to effectively
+//   rename 3.0 to 2.1, effective in Firefox 57.  This works because post
+//   storage.sqlite v1.0, QuotaManager doesn't care about minor storage version
+//   increases.  It also works because all the upgrade did was give the DOM
+//   Cache API QuotaClient an opportunity to create its newly added .padding
+//   files during initialization/upgrade, which isn't functionally necessary as
+//   that can be done on demand.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Major storage version. Bump for backwards-incompatible changes.
+// (The next major version should be 4 to distinguish from the Bug 1290481
+// downgrade snafu.)
 const uint32_t kMajorStorageVersion = 2;
 
-
+// Minor storage version. Bump for backwards-compatible changes.
 const uint32_t kMinorStorageVersion = 3;
 
-
-
-
+// The storage version we store in the SQLite database is a (signed) 32-bit
+// integer. The major version is left-shifted 16 bits so the max value is
+// 0xFFFF. The minor version occupies the lower 16 bits and its max is 0xFFFF.
 static_assert(kMajorStorageVersion <= 0xFFFF,
               "Major version needs to fit in 16 bits.");
 static_assert(kMinorStorageVersion <= 0xFFFF,
@@ -254,7 +254,7 @@ static_assert(kMinorStorageVersion <= 0xFFFF,
 const int32_t kStorageVersion =
     int32_t((kMajorStorageVersion << 16) + kMinorStorageVersion);
 
-
+// See comments above about why these are a thing.
 const int32_t kHackyPreDowngradeStorageVersion = int32_t((3 << 16) + 0);
 const int32_t kHackyPostDowngradeStorageVersion = int32_t((2 << 16) + 1);
 
@@ -284,9 +284,9 @@ const char kPrivateBrowsingObserverTopic[] = "last-pb-context-exited";
 
 const int32_t kCacheVersion = 2;
 
-
-
-
+/******************************************************************************
+ * SQLite functions
+ ******************************************************************************/
 
 int32_t MakeStorageVersion(uint32_t aMajorStorageVersion,
                            uint32_t aMinorStorageVersion) {
@@ -301,7 +301,7 @@ nsresult CreateTables(mozIStorageConnection* aConnection) {
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
-  
+  // Table `database`
   QM_TRY(MOZ_TO_RESULT(
       aConnection->ExecuteSimpleSQL("CREATE TABLE database"
                                     "( cache_version INTEGER NOT NULL DEFAULT 0"
@@ -354,21 +354,21 @@ nsresult SaveCacheVersion(mozIStorageConnection& aConnection,
 nsresult CreateCacheTables(mozIStorageConnection& aConnection) {
   AssertIsOnIOThread();
 
-  
+  // Table `cache`
   QM_TRY(MOZ_TO_RESULT(
       aConnection.ExecuteSimpleSQL("CREATE TABLE cache"
                                    "( valid INTEGER NOT NULL DEFAULT 0"
                                    ", build_id TEXT NOT NULL DEFAULT ''"
                                    ");"_ns)));
 
-  
+  // Table `repository`
   QM_TRY(
       MOZ_TO_RESULT(aConnection.ExecuteSimpleSQL("CREATE TABLE repository"
                                                  "( id INTEGER PRIMARY KEY"
                                                  ", name TEXT NOT NULL"
                                                  ");"_ns)));
 
-  
+  // Table `origin`
   QM_TRY(MOZ_TO_RESULT(
       aConnection.ExecuteSimpleSQL("CREATE TABLE origin"
                                    "( repository_id INTEGER NOT NULL"
@@ -404,10 +404,10 @@ OkOrErr InvalidateCache(mozIStorageConnection& aConnection) {
   static constexpr auto kSetInvalidFlagQuery = "UPDATE cache SET valid = 0"_ns;
 
   QM_TRY(QM_OR_ELSE_WARN(
-      
+      // Expression.
       ([&]() -> OkOrErr {
         mozStorageTransaction transaction(&aConnection,
-                                           false);
+                                          /*aCommitOnComplete */ false);
 
         QM_TRY(QM_TO_RESULT(transaction.Start()));
         QM_TRY(QM_TO_RESULT(aConnection.ExecuteSimpleSQL(kDeleteCacheQuery)));
@@ -417,7 +417,7 @@ OkOrErr InvalidateCache(mozIStorageConnection& aConnection) {
 
         return Ok{};
       }()),
-      
+      // Fallback.
       ([&](const QMResult& rv) -> OkOrErr {
         QM_TRY(
             QM_TO_RESULT(aConnection.ExecuteSimpleSQL(kSetInvalidFlagQuery)));
@@ -502,7 +502,7 @@ Result<bool, nsresult> MaybeCreateOrUpgradeCache(
         QM_TRY(MOZ_TO_RESULT(insertStmt->Execute()));
       }
     } else {
-      
+      // This logic needs to change next time we change the cache!
       static_assert(kCacheVersion == 2,
                     "Upgrade function needed due to cache version increase.");
 
@@ -533,12 +533,12 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateWebAppsStoreConnection(
     nsIFile& aWebAppsStoreFile, mozIStorageService& aStorageService) {
   AssertIsOnIOThread();
 
-  
+  // Check if the old database exists at all.
   QM_TRY_INSPECT(const bool& exists,
                  MOZ_TO_RESULT_INVOKE_MEMBER(aWebAppsStoreFile, Exists));
 
   if (!exists) {
-    
+    // webappsstore.sqlite doesn't exist, return a null connection.
     return nsCOMPtr<mozIStorageConnection>{};
   }
 
@@ -552,20 +552,20 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateWebAppsStoreConnection(
 
   QM_TRY_INSPECT(const auto& connection,
                  QM_OR_ELSE_WARN_IF(
-                     
+                     // Expression.
                      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                          nsCOMPtr<mozIStorageConnection>, aStorageService,
                          OpenUnsharedDatabase, &aWebAppsStoreFile,
                          mozIStorageService::CONNECTION_DEFAULT),
-                     
+                     // Predicate.
                      IsDatabaseCorruptionError,
-                     
-                     
+                     // Fallback. Don't throw an error, leave a corrupted
+                     // webappsstore database as it is.
                      ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
 
   if (connection) {
-    
-    
+    // Don't propagate an error, leave a non-updateable webappsstore database as
+    // it is.
     QM_TRY(MOZ_TO_RESULT(StorageDBUpdater::Update(connection)),
            nsCOMPtr<mozIStorageConnection>{});
   }
@@ -694,7 +694,7 @@ Result<mozilla::Ok, nsresult> CollectEachFileEntry(
             return aFileFunc(file);
 
           case nsIFileKind::DoesNotExist:
-            
+            // Ignore files that got removed externally while iterating.
             break;
         }
 
@@ -702,11 +702,11 @@ Result<mozilla::Ok, nsresult> CollectEachFileEntry(
       });
 }
 
+/******************************************************************************
+ * Quota manager class declarations
+ ******************************************************************************/
 
-
-
-
-}  
+}  // namespace
 
 class QuotaManager::Observer final : public nsIObserver {
   static Observer* sInstance;
@@ -738,11 +738,11 @@ class QuotaManager::Observer final : public nsIObserver {
 
 namespace {
 
+/*******************************************************************************
+ * Local class declarations
+ ******************************************************************************/
 
-
-
-
-}  
+}  // namespace
 
 namespace {
 
@@ -752,7 +752,7 @@ class CollectOriginsHelper final : public Runnable {
   Mutex& mMutex;
   CondVar mCondVar;
 
-  
+  // The members below are protected by mMutex.
   nsTArray<RefPtr<OriginDirectoryLock>> mLocks;
   uint64_t mSizeToBeFreed;
   bool mWaiting;
@@ -760,8 +760,8 @@ class CollectOriginsHelper final : public Runnable {
  public:
   CollectOriginsHelper(mozilla::Mutex& aMutex, uint64_t aMinSizeToBeFreed);
 
-  
-  
+  // Blocks the current thread until origins are collected on the main thread.
+  // The returned value contains an aggregate size of those origins.
   int64_t BlockAndReturnOriginsForEviction(
       nsTArray<RefPtr<OriginDirectoryLock>>& aLocks);
 
@@ -772,9 +772,9 @@ class CollectOriginsHelper final : public Runnable {
   Run() override;
 };
 
-
-
-
+/*******************************************************************************
+ * Other class declarations
+ ******************************************************************************/
 
 class StoragePressureRunnable final : public Runnable {
   const uint64_t mUsage;
@@ -793,11 +793,11 @@ class StoragePressureRunnable final : public Runnable {
 class RecordTimeDeltaHelper final : public Runnable {
   const Telemetry::HistogramID mHistogram;
 
-  
+  // TimeStamps that are set on the IO thread.
   LazyInitializedOnceNotNull<const TimeStamp> mStartTime;
   LazyInitializedOnceNotNull<const TimeStamp> mEndTime;
 
-  
+  // A TimeStamp that is set on the main thread.
   LazyInitializedOnceNotNull<const TimeStamp> mInitializedTime;
 
  public:
@@ -814,15 +814,15 @@ class RecordTimeDeltaHelper final : public Runnable {
   NS_DECL_NSIRUNNABLE
 };
 
+/*******************************************************************************
+ * Helper classes
+ ******************************************************************************/
 
+/*******************************************************************************
+ * Helper Functions
+ ******************************************************************************/
 
-
-
-
-
-
-
-
+// Return whether the group was actually updated.
 Result<bool, nsresult> MaybeUpdateGroupForOrigin(
     OriginMetadata& aOriginMetadata) {
   MOZ_ASSERT(!NS_IsMainThread());
@@ -871,7 +871,7 @@ Result<bool, nsresult> MaybeUpdateLastAccessTimeForOrigin(
     QM_TRY_UNWRAP(int64_t timestamp, MOZ_TO_RESULT_INVOKE_MEMBER(
                                          metadataFile, GetLastModifiedTime));
 
-    
+    // Need to convert from milliseconds to microseconds.
     MOZ_ASSERT((INT64_MAX / PR_USEC_PER_MSEC) > timestamp);
     timestamp *= int64_t(PR_USEC_PER_MSEC);
 
@@ -883,10 +883,10 @@ Result<bool, nsresult> MaybeUpdateLastAccessTimeForOrigin(
   return false;
 }
 
-}  
+}  // namespace
 
 void ReportInternalError(const char* aFile, uint32_t aLine, const char* aStr) {
-  
+  // Get leaf of file path
   for (const char* p = aFile; *p; ++p) {
     if (*p == '/' && *(p + 1)) {
       aFile = p + 1;
@@ -897,8 +897,8 @@ void ReportInternalError(const char* aFile, uint32_t aLine, const char* aStr) {
       NS_ConvertUTF8toUTF16(
           nsPrintfCString("Quota %s: %s:%" PRIu32, aStr, aFile, aLine)),
       "quota"_ns,
-      false ,
-      true );
+      false /* Quota Manager is not active in private browsing mode */,
+      true /* Quota Manager runs always in a chrome context */);
 }
 
 namespace {
@@ -915,11 +915,11 @@ bool gQuotaManagerInitialized = false;
 StaticRefPtr<QuotaManager> gInstance;
 mozilla::Atomic<bool> gShutdown(false);
 
-
+// A time stamp that can only be accessed on the main thread.
 TimeStamp gLastOSWake;
 
-
-
+// XXX Move to QuotaManager once NormalOriginOperationBase is declared in a
+// separate and includable file.
 using NormalOriginOpArray =
     nsTArray<CheckedUnsafePtr<NormalOriginOperationBase>>;
 StaticAutoPtr<NormalOriginOpArray> gNormalOriginOps;
@@ -975,12 +975,12 @@ class StorageOperationBase {
                                 nsACString& aGroup, nsACString& aOrigin,
                                 Nullable<bool>& aIsApp);
 
-  
-  
-  
-  
-  
-  
+  // Upgrade helper to load the contents of ".metadata-v2" files from previous
+  // schema versions.  Although QuotaManager has a similar GetDirectoryMetadata2
+  // method, it is only intended to read current version ".metadata-v2" files.
+  // And unlike the old ".metadata" files, the ".metadata-v2" format can evolve
+  // because our "storage.sqlite" lets us track the overall version of the
+  // storage directory.
   nsresult GetDirectoryMetadata2(nsIFile* aDirectory, int64_t& aTimestamp,
                                  nsACString& aSuffix, nsACString& aGroup,
                                  nsACString& aOrigin, bool& aIsApp);
@@ -989,17 +989,17 @@ class StorageOperationBase {
 
   nsresult RemoveObsoleteOrigin(const OriginProps& aOriginProps);
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Rename the origin if the origin string generation from nsIPrincipal
+   * changed. This consists of renaming the origin in the metadata files and
+   * renaming the origin directory itself. For simplicity, the origin in
+   * metadata files is not actually updated, but the metadata files are
+   * recreated instead.
+   *
+   * @param  aOriginProps the properties of the origin to check.
+   *
+   * @return whether origin was renamed.
+   */
   Result<bool, nsresult> MaybeRenameOrigin(const OriginProps& aOriginProps);
 
   nsresult ProcessOriginDirectories();
@@ -1036,12 +1036,12 @@ class CreateOrUpgradeDirectoryMetadataHelper final
     : public RepositoryOperationBase {
   nsCOMPtr<nsIFile> mPermanentStorageDir;
 
-  
+  // The legacy PersistenceType, before the default repository introduction.
   enum class LegacyPersistenceType {
     Persistent = 0,
     Temporary
-    
-    
+    // The PersistenceType had also PERSISTENCE_TYPE_INVALID, but we don't need
+    // it here.
   };
 
   LazyInitializedOnce<const LegacyPersistenceType> mLegacyPersistenceType;
@@ -1102,13 +1102,13 @@ class UpgradeStorageFrom1_0To2_0Helper final : public UpgradeStorageHelperBase {
  private:
   nsresult MaybeRemoveMorgueDirectory(const OriginProps& aOriginProps);
 
-  
-
-
-
-
-
-
+  /**
+   * Remove the origin directory if appId is present in origin attributes.
+   *
+   * @param aOriginProps the properties of the origin to check.
+   *
+   * @return whether the origin directory was removed.
+   */
   Result<bool, nsresult> MaybeRemoveAppsData(const OriginProps& aOriginProps);
 
   nsresult PrepareOriginDirectory(OriginProps& aOriginProps,
@@ -1197,7 +1197,7 @@ int64_t GetLastModifiedTime(PersistenceType aPersistenceType, nsIFile& aFile) {
                          MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoString, aFile,
                                                            GetLeafName));
 
-          
+          // Bug 1595445 will handle unknown files here.
 
           if (IsOriginMetadata(leafName) || IsTempMetadata(leafName) ||
               IsDotFile(leafName)) {
@@ -1207,7 +1207,7 @@ int64_t GetLastModifiedTime(PersistenceType aPersistenceType, nsIFile& aFile) {
           QM_TRY_UNWRAP(int64_t timestamp, MOZ_TO_RESULT_INVOKE_MEMBER(
                                                aFile, GetLastModifiedTime));
 
-          
+          // Need to convert from milliseconds to microseconds.
           MOZ_ASSERT((INT64_MAX / PR_USEC_PER_MSEC) > timestamp);
           timestamp *= int64_t(PR_USEC_PER_MSEC);
 
@@ -1218,7 +1218,7 @@ int64_t GetLastModifiedTime(PersistenceType aPersistenceType, nsIFile& aFile) {
         }
 
         case nsIFileKind::DoesNotExist:
-          
+          // Ignore files that got removed externally while iterating.
           break;
       }
 
@@ -1236,31 +1236,31 @@ int64_t GetLastModifiedTime(PersistenceType aPersistenceType, nsIFile& aFile) {
     timestamp = PR_Now();
   }
 
-  
-  
-  
+  // XXX if there were no suitable files for getting last modified time
+  // (timestamp is still set to INT64_MIN), we should return the current time
+  // instead of returning INT64_MIN.
 
   return timestamp;
 }
 
-
+// Returns a bool indicating whether the directory was newly created.
 Result<bool, nsresult> EnsureDirectory(nsIFile& aDirectory) {
   AssertIsOnIOThread();
 
-  
-  
-  
-  
+  // Callers call this function without checking if the directory already
+  // exists (idempotent usage). QM_OR_ELSE_WARN_IF is not used here since we
+  // just want to log NS_ERROR_FILE_ALREADY_EXISTS result and not spam the
+  // reports.
   QM_TRY_INSPECT(const auto& exists,
                  QM_OR_ELSE_LOG_VERBOSE_IF(
-                     
+                     // Expression.
                      MOZ_TO_RESULT_INVOKE_MEMBER(aDirectory, Create,
                                                  nsIFile::DIRECTORY_TYPE, 0755,
-                                                  false)
+                                                 /* aSkipAncestors = */ false)
                          .map([](Ok) { return false; }),
-                     
+                     // Predicate.
                      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
-                     
+                     // Fallback.
                      ErrToOk<true>));
 
   if (exists) {
@@ -1275,25 +1275,25 @@ Result<bool, nsresult> EnsureDirectory(nsIFile& aDirectory) {
 void GetJarPrefix(bool aInIsolatedMozBrowser, nsACString& aJarPrefix) {
   aJarPrefix.Truncate();
 
-  
+  // Fallback.
   if (!aInIsolatedMozBrowser) {
     return;
   }
 
-  
-  
-  
-  aJarPrefix.AppendInt(0);  
+  // AppId is an unused b2g identifier. Let's set it to 0 all the time (see bug
+  // 1320404).
+  // aJarPrefix = appId + "+" + { 't', 'f' } + "+";
+  aJarPrefix.AppendInt(0);  // TODO: this is the appId, to be removed.
   aJarPrefix.Append('+');
   aJarPrefix.Append(aInIsolatedMozBrowser ? 't' : 'f');
   aJarPrefix.Append('+');
 }
 
-
-
+// This method computes and returns our best guess for the temporary storage
+// limit (in bytes), based on disk capacity.
 Result<uint64_t, nsresult> GetTemporaryStorageLimit(nsIFile& aStorageDir) {
-  
-  
+  // The fixed limit pref can be used to override temporary storage limit
+  // calculation.
   if (StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit() >= 0) {
     return static_cast<uint64_t>(
                StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit()) *
@@ -1303,20 +1303,20 @@ Result<uint64_t, nsresult> GetTemporaryStorageLimit(nsIFile& aStorageDir) {
   constexpr int64_t teraByte = (1024LL * 1024LL * 1024LL * 1024LL);
   constexpr int64_t maxAllowedCapacity = 8LL * teraByte;
 
-  
+  // Check for disk capacity of user's device on which storage directory lives.
   int64_t diskCapacity = maxAllowedCapacity;
 
-  
+  // Log error when default disk capacity is returned due to the error
   QM_WARNONLY_TRY(MOZ_TO_RESULT(aStorageDir.GetDiskCapacity(&diskCapacity)));
 
   MOZ_ASSERT(diskCapacity >= 0LL);
 
-  
+  // Allow temporary storage to consume up to 50% of disk capacity.
   int64_t capacityLimit = diskCapacity / 2LL;
 
-  
-  
-  
+  // If the disk capacity reported by the operating system is very
+  // large and potentially incorrect due to hardware issues,
+  // a hardcoded limit is supplied instead.
   QM_WARNONLY_TRY(
       OkIf(capacityLimit < maxAllowedCapacity),
       ([&capacityLimit](const auto&) { capacityLimit = maxAllowedCapacity; }));
@@ -1350,11 +1350,11 @@ bool IsDirectoryLockBlockedByUninitStorageOperation(
                                   DirectoryLockCategory::UninitStorage);
 }
 
-}  
+}  // namespace
 
-
-
-
+/*******************************************************************************
+ * Exported functions
+ ******************************************************************************/
 
 void InitializeQuotaManager() {
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -1362,7 +1362,7 @@ void InitializeQuotaManager() {
   MOZ_ASSERT(!gQuotaManagerInitialized);
 
   if (!QuotaManager::IsRunningGTests()) {
-    
+    // These services have to be started on the main thread currently.
     const nsCOMPtr<mozIStorageService> ss =
         do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID);
     QM_WARNONLY_TRY(OkIf(ss));
@@ -1391,11 +1391,11 @@ void InitializeScopedLogExtraInfo() {
 bool RecvShutdownQuotaManager() {
   AssertIsOnBackgroundThread();
 
-  
-  
-  
-  
-  
+  // If we are already in shutdown, don't call ShutdownInstance()
+  // again and return true immediately. We shall see this incident
+  // in Telemetry.
+  // XXX todo: Make QM_TRY stacks thread-aware (Bug 1735124)
+  // XXX todo: Active QM_TRY context for shutdown (Bug 1735170)
   QM_TRY(OkIf(!gShutdown), true);
 
   QuotaManager::ShutdownInstance();
@@ -1405,7 +1405,7 @@ bool RecvShutdownQuotaManager() {
 
 QuotaManager::Observer* QuotaManager::Observer::sInstance = nullptr;
 
-
+// static
 nsresult QuotaManager::Observer::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1421,14 +1421,14 @@ nsresult QuotaManager::Observer::Initialize() {
   return NS_OK;
 }
 
-
+// static
 nsIObserver* QuotaManager::Observer::GetInstance() {
   MOZ_ASSERT(NS_IsMainThread());
 
   return sInstance;
 }
 
-
+// static
 void QuotaManager::Observer::ShutdownCompleted() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sInstance);
@@ -1444,7 +1444,7 @@ nsresult QuotaManager::Observer::Init() {
     return NS_ERROR_FAILURE;
   }
 
-  
+  // XXX: Improve the way that we remove observer in failure cases.
   nsresult rv = obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -1500,11 +1500,11 @@ nsresult QuotaManager::Observer::Shutdown() {
 
   sInstance = nullptr;
 
-  
-  
-  
-  
-  
+  // In general, the instance will have died after the latter removal call, so
+  // it's not safe to do anything after that point.
+  // However, Shutdown is currently called from Observe which is called by the
+  // Observer Service which holds a strong reference to the observer while the
+  // Observe method is being called.
 
   return NS_OK;
 }
@@ -1547,7 +1547,7 @@ QuotaManager::Observer::Observe(nsISupports* aSubject, const char* aTopic,
     }
 
 #ifdef XP_WIN
-    
+    // Annotate if our profile lives on a network resource.
     bool isNetworkPath = PathIsNetworkPathW(gBasePath->get());
     CrashReporter::RecordAnnotationBool(
         CrashReporter::Annotation::QuotaManagerStorageIsNetworkResource,
@@ -1583,8 +1583,8 @@ QuotaManager::Observer::Observe(nsISupports* aSubject, const char* aTopic,
       return NS_OK;
     }
 
-    
-    
+    // mPendingProfileChange is our re-entrancy guard (the nested event loop
+    // below may cause re-entrancy).
     if (mPendingProfileChange) {
       return NS_OK;
     }
@@ -1654,9 +1654,9 @@ QuotaManager::Observer::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-
-
-
+/*******************************************************************************
+ * Quota manager
+ ******************************************************************************/
 
 QuotaManager::QuotaManager(const nsAString& aBasePath,
                            const nsAString& aStorageName)
@@ -1678,7 +1678,7 @@ QuotaManager::~QuotaManager() {
   MOZ_ASSERT(!gInstance || gInstance == this);
 }
 
-
+// static
 nsresult QuotaManager::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1690,7 +1690,7 @@ nsresult QuotaManager::Initialize() {
   return NS_OK;
 }
 
-
+// static
 Result<MovingNotNull<RefPtr<QuotaManager>>, nsresult>
 QuotaManager::GetOrCreate() {
   AssertIsOnBackgroundThread();
@@ -1716,8 +1716,8 @@ QuotaManager::GetOrCreate() {
 
   gInstance = instance;
 
-  
-  
+  // Do this before clients have a chance to acquire a directory lock for the
+  // private repository.
   gInstance->ClearPrivateRepository();
 
   return WrapMovingNotNullUnchecked(std::move(instance));
@@ -1729,23 +1729,23 @@ Result<Ok, nsresult> QuotaManager::EnsureCreated() {
   QM_TRY_RETURN(GetOrCreate().map([](const auto& res) { return Ok{}; }))
 }
 
-
+// static
 QuotaManager* QuotaManager::Get() {
-  
+  // Does not return an owning reference.
   return gInstance;
 }
 
-
+// static
 nsIObserver* QuotaManager::GetObserver() {
   MOZ_ASSERT(NS_IsMainThread());
 
   return Observer::GetInstance();
 }
 
-
+// static
 bool QuotaManager::IsShuttingDown() { return gShutdown; }
 
-
+// static
 void QuotaManager::ShutdownInstance() {
   AssertIsOnBackgroundThread();
 
@@ -1761,7 +1761,7 @@ void QuotaManager::ShutdownInstance() {
 
     gInstance = nullptr;
   } else {
-    
+    // If we were never initialized, just set the flag to avoid late creation.
     gShutdown = true;
   }
 
@@ -1773,7 +1773,7 @@ void QuotaManager::ShutdownInstance() {
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(runnable.forget()));
 }
 
-
+// static
 void QuotaManager::Reset() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!gInstance);
@@ -1782,12 +1782,12 @@ void QuotaManager::Reset() {
   gShutdown = false;
 }
 
-
+// static
 bool QuotaManager::IsOSMetadata(const nsAString& aFileName) {
   return mozilla::dom::quota::IsOSMetadata(aFileName);
 }
 
-
+// static
 bool QuotaManager::IsDotFile(const nsAString& aFileName) {
   return mozilla::dom::quota::IsDotFile(aFileName);
 }
@@ -1832,9 +1832,9 @@ void QuotaManager::RegisterDirectoryLock(DirectoryLockImpl& aLock) {
     DirectoryLockTable& directoryLockTable =
         GetDirectoryLockTable(aLock.GetPersistenceType());
 
-    
-    
-    
+    // XXX It seems that the contents of the array are never actually used, we
+    // just use that like an inefficient use counter. Can't we just change
+    // DirectoryLockTable to a nsTHashMap<nsCStringHashKey, uint32_t>?
     directoryLockTable
         .LookupOrInsertWith(
             aLock.Origin(),
@@ -1867,8 +1867,8 @@ void QuotaManager::UnregisterDirectoryLock(DirectoryLockImpl& aLock) {
     DirectoryLockTable& directoryLockTable =
         GetDirectoryLockTable(aLock.GetPersistenceType());
 
-    
-    
+    // ClearDirectoryLockTables may have been called, so the element or entire
+    // array may not exist anymre.
     nsTArray<NotNull<DirectoryLockImpl*>>* array;
     if (directoryLockTable.Get(aLock.Origin(), &array) &&
         array->RemoveElement(&aLock) && array->IsEmpty()) {
@@ -1901,8 +1901,8 @@ uint64_t QuotaManager::CollectOriginsForEviction(
   AssertIsOnOwningThread();
   MOZ_ASSERT(aLocks.IsEmpty());
 
-  
-  
+  // XXX This looks as if this could/should also use CollectLRUOriginInfosUntil,
+  // or maybe a generalization if that.
 
   struct MOZ_STACK_CLASS Helper final {
     static void GetInactiveOriginInfos(
@@ -1917,16 +1917,16 @@ uint64_t QuotaManager::CollectOriginsForEviction(
           continue;
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Never evict PERSISTENCE_TYPE_DEFAULT data associated to a
+        // moz-extension origin, unlike websites (which may more likely using
+        // the local data as a cache but still able to retrieve the same data
+        // from the server side) extensions do not have the same data stored
+        // anywhere else and evicting the data would result into potential data
+        // loss for the users.
+        //
+        // Also, unlike a website the extensions are explicitly installed and
+        // uninstalled by the user and all data associated to the extension
+        // principal will be completely removed once the addon is uninstalled.
         if (originInfo->mGroupInfo->mPersistenceType !=
                 PERSISTENCE_TYPE_TEMPORARY &&
             originInfo->IsExtensionOrigin()) {
@@ -1951,8 +1951,8 @@ uint64_t QuotaManager::CollectOriginsForEviction(
     }
   };
 
-  
-  
+  // Split locks into separate arrays and filter out locks for persistent
+  // storage, they can't block us.
   auto [temporaryStorageLocks, defaultStorageLocks,
         privateStorageLocks] = [this] {
     nsTArray<NotNull<const DirectoryLockImpl*>> temporaryStorageLocks;
@@ -1983,8 +1983,8 @@ uint64_t QuotaManager::CollectOriginsForEviction(
                            std::move(privateStorageLocks));
   }();
 
-  
-  
+  // Enumerate and process inactive origins. This must be protected by the
+  // mutex.
   MutexAutoLock lock(mQuotaMutex);
 
   const auto [inactiveOrigins, sizeToBeFreed] =
@@ -2020,7 +2020,7 @@ uint64_t QuotaManager::CollectOriginsForEviction(
         }
 
 #ifdef DEBUG
-        
+        // Make sure the array is sorted correctly.
         const bool inactiveOriginsSorted =
             std::is_sorted(inactiveOrigins.cbegin(), inactiveOrigins.cend(),
                            [](const auto& lhs, const auto& rhs) {
@@ -2029,9 +2029,9 @@ uint64_t QuotaManager::CollectOriginsForEviction(
         MOZ_ASSERT(inactiveOriginsSorted);
 #endif
 
-        
-        
-        
+        // Create a list of inactive and the least recently used origins
+        // whose aggregate size is greater or equals the minimal size to be
+        // freed.
         uint64_t sizeToBeFreed = 0;
         for (uint32_t count = inactiveOrigins.Length(), index = 0;
              index < count; index++) {
@@ -2047,8 +2047,8 @@ uint64_t QuotaManager::CollectOriginsForEviction(
       }();
 
   if (sizeToBeFreed >= aMinSizeToBeFreed) {
-    
-    
+    // Success, add directory locks for these origins, so any other
+    // operations for them will be delayed (until origin eviction is finalized).
 
     for (const auto& originInfo : inactiveOrigins) {
       auto lock = DirectoryLockImpl::CreateForEviction(
@@ -2118,7 +2118,7 @@ nsresult QuotaManager::Init() {
                     Client::TYPE_MAX == 5,
                 "Fix the registration!");
 
-  
+  // Register clients.
   auto clients = decltype(mClients)::ValueType{};
   clients.AppendElement(indexedDB::CreateQuotaClient());
   clients.AppendElement(cache::CreateQuotaClient());
@@ -2145,10 +2145,10 @@ nsresult QuotaManager::Init() {
   return NS_OK;
 }
 
-
+// static
 void QuotaManager::MaybeRecordQuotaClientShutdownStep(
     const Client::Type aClientType, const nsACString& aStepDescription) {
-  
+  // Callable on any thread.
 
   auto* const quotaManager = QuotaManager::Get();
   MOZ_DIAGNOSTIC_ASSERT(quotaManager);
@@ -2158,10 +2158,10 @@ void QuotaManager::MaybeRecordQuotaClientShutdownStep(
   }
 }
 
-
+// static
 void QuotaManager::SafeMaybeRecordQuotaClientShutdownStep(
     const Client::Type aClientType, const nsACString& aStepDescription) {
-  
+  // Callable on any thread.
 
   auto* const quotaManager = QuotaManager::Get();
 
@@ -2172,7 +2172,7 @@ void QuotaManager::SafeMaybeRecordQuotaClientShutdownStep(
 
 void QuotaManager::RecordQuotaManagerShutdownStep(
     const nsACString& aStepDescription) {
-  
+  // Callable on any thread.
   MOZ_ASSERT(IsShuttingDown());
 
   RecordShutdownStep(Nothing{}, aStepDescription);
@@ -2180,7 +2180,7 @@ void QuotaManager::RecordQuotaManagerShutdownStep(
 
 void QuotaManager::MaybeRecordQuotaManagerShutdownStep(
     const nsACString& aStepDescription) {
-  
+  // Callable on any thread.
 
   if (IsShuttingDown()) {
     RecordQuotaManagerShutdownStep(aStepDescription);
@@ -2203,14 +2203,14 @@ void QuotaManager::RecordShutdownStep(const Maybe<Client::Type> aClientType,
 
     mShutdownSteps[*aClientType].Append(stepString + "\n"_ns);
   } else {
-    
+    // Callable on any thread.
     MutexAutoLock lock(mQuotaMutex);
 
     mQuotaManagerShutdownSteps.Append(stepString + "\n"_ns);
   }
 
 #ifdef DEBUG
-  
+  // XXX Probably this isn't the mechanism that should be used here.
 
   NS_DebugBreak(
       NS_DEBUG_WARNING,
@@ -2225,13 +2225,13 @@ void QuotaManager::Shutdown() {
   AssertIsOnOwningThread();
   MOZ_DIAGNOSTIC_ASSERT(!gShutdown);
 
-  
+  // Define some local helper functions
 
   auto flagShutdownStarted = [this]() {
     mShutdownStartedAt.init(TimeStamp::NowLoRes());
 
-    
-    
+    // Setting this flag prevents the service from being recreated and prevents
+    // further storages from being created.
     gShutdown = true;
   };
 
@@ -2304,9 +2304,9 @@ void QuotaManager::Shutdown() {
     RecordQuotaManagerShutdownStep("initiateShutdownWorkThreads"_ns);
     bool needsToWait = false;
     for (Client::Type type : AllClientTypes()) {
-      
-      
-      
+      // Clients are supposed to also AbortAllOperations from this point on
+      // to speed up shutdown, if possible. Thus pending operations
+      // might not be executed anymore.
       needsToWait |= (*mClients)[type]->InitiateShutdownWorkThreads();
     }
 
@@ -2320,10 +2320,10 @@ void QuotaManager::Shutdown() {
 
     quotaManager->RecordQuotaManagerShutdownStep("killActorsTimerCallback"_ns);
 
-    
-    
-    
-    
+    // XXX: This abort is a workaround to unblock shutdown, which
+    // ought to be removed by bug 1682326. We probably need more
+    // checks to immediately abort new operations during
+    // shutdown.
     quotaManager->GetClient(Client::IDB)->AbortAllOperations();
 
     for (Client::Type type : quotaManager->AllClientTypes()) {
@@ -2367,7 +2367,7 @@ void QuotaManager::Shutdown() {
   auto shutdownAndJoinIOThread = [this]() {
     RecordQuotaManagerShutdownStep("shutdownAndJoinIOThread"_ns);
 
-    
+    // Make sure to join with our IO thread.
     QM_WARNONLY_TRY(QM_TO_RESULT((*mIOThread)->Shutdown()));
   };
 
@@ -2378,52 +2378,52 @@ void QuotaManager::Shutdown() {
     }
   };
 
-  
+  // Body of the function
 
   ScopedLogExtraInfo scope{ScopedLogExtraInfo::kTagContextTainted,
                            "dom::quota::QuotaManager::Shutdown"_ns};
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We always need to ensure that firefox does not shutdown with a private
+  // repository still on disk. They are ideally cleaned up on PBM session end
+  // but, in some cases like PBM autostart (i.e.
+  // browser.privatebrowsing.autostart), private repository could only be
+  // cleaned up on shutdown. ClearPrivateRepository below runs a async op and is
+  // better to do it before we run the ShutdownStorageOp since it expects all
+  // cleanup operations to be done by that point. We don't need to use the
+  // returned promise here because `ClearPrivateRepository` registers the
+  // underlying `ClearPrivateRepositoryOp` in `gNormalOriginOps`.
   ClearPrivateRepository();
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // This must be called before `flagShutdownStarted`, it would fail otherwise.
+  // `ShutdownStorageOp` needs to acquire an exclusive directory lock over
+  // entire <profile>/storage which will abort any existing operations and wait
+  // for all existing directory locks to be released. So the shutdown operation
+  // will effectively run after all existing operations.
+  // Similar, to ClearPrivateRepository operation above, ShutdownStorageOp also
+  // registers it's operation in `gNormalOriginOps` so we don't need to assign
+  // returned promise.
   ShutdownStorage();
 
   flagShutdownStarted();
 
   startCrashBrowserTimer();
 
-  
-  
-  
+  // XXX: StopIdleMaintenance now just notifies all clients to abort any
+  // maintenance work.
+  // This could be done as part of QuotaClient::AbortAllOperations.
   StopIdleMaintenance();
 
-  
-  
-  
-  
-  
+  // XXX In theory, we could simplify the code below (and also the `Client`
+  // interface) by removing the `initiateShutdownWorkThreads` and
+  // `isAllClientsShutdownComplete` calls because it should be sufficient
+  // to rely on `ShutdownStorage` to abort all existing operations and to
+  // wait for all existing directory locks to be released as well.
 
   const bool needsToWait =
       initiateShutdownWorkThreads() || static_cast<bool>(gNormalOriginOps);
 
-  
-  
+  // If any clients cannot shutdown immediately, spin the event loop while we
+  // wait on all the threads to close.
   if (needsToWait) {
     startKillActorsTimer();
 
@@ -2461,7 +2461,7 @@ void QuotaManager::InitQuotaForOrigin(
       aFullOriginMetadata.mStorageOrigin, aFullOriginMetadata.mIsPrivate,
       aClientUsages, aUsageBytes, aFullOriginMetadata.mLastAccessTime,
       aFullOriginMetadata.mPersisted,
-       true));
+      /* aDirectoryExists */ true));
 }
 
 void QuotaManager::EnsureQuotaForOrigin(const OriginMetadata& aOriginMetadata) {
@@ -2480,9 +2480,9 @@ void QuotaManager::EnsureQuotaForOrigin(const OriginMetadata& aOriginMetadata) {
     groupInfo->LockedAddOriginInfo(MakeNotNull<RefPtr<OriginInfo>>(
         groupInfo, aOriginMetadata.mOrigin, aOriginMetadata.mStorageOrigin,
         aOriginMetadata.mIsPrivate, ClientUsageArray(),
-         0,
-         PR_Now(),  false,
-         false));
+        /* aUsageBytes */ 0,
+        /* aAccessTime */ PR_Now(), /* aPersisted */ false,
+        /* aDirectoryExists */ false));
   }
 }
 
@@ -2510,8 +2510,8 @@ int64_t QuotaManager::NoteOriginDirectoryCreated(
     groupInfo->LockedAddOriginInfo(MakeNotNull<RefPtr<OriginInfo>>(
         groupInfo, aOriginMetadata.mOrigin, aOriginMetadata.mStorageOrigin,
         aOriginMetadata.mIsPrivate, ClientUsageArray(),
-         0,
-         timestamp, aPersisted,  true));
+        /* aUsageBytes */ 0,
+        /* aAccessTime */ timestamp, aPersisted, /* aDirectoryExists */ true));
   }
 
   return timestamp;
@@ -2667,7 +2667,7 @@ nsresult QuotaManager::LoadQuota() {
   MOZ_ASSERT(mStorageConnection);
   MOZ_ASSERT(!mTemporaryStorageInitializedInternal);
 
-  
+  // A list of all unaccessed default or temporary origins.
   nsTArray<FullOriginMetadata> unaccessedOrigins;
 
   auto MaybeCollectUnaccessedOrigin =
@@ -2760,14 +2760,14 @@ nsresult QuotaManager::LoadQuota() {
 
           Unused << lastAccessTimeUpdated;
 
-          
-          
-          
-          
-          
-          
-          
-          
+          // We don't need to update the .metadata-v2 file on disk here,
+          // EnsureTemporaryOriginIsInitializedInternal is responsible for
+          // doing that. We just need to use correct group and last access time
+          // before initializing quota for the given origin. (Note that calling
+          // LoadFullOriginMetadataWithRestore below might update the group in
+          // the metadata file, but only as a side-effect. The actual place we
+          // ensure consistency is in
+          // EnsureTemporaryOriginIsInitializedInternal.)
 
           if (accessed) {
             QM_TRY_INSPECT(const auto& directory,
@@ -2783,10 +2783,10 @@ nsresult QuotaManager::LoadQuota() {
 
             QM_TRY(OkIf(isDirectory), Err(NS_ERROR_FILE_DESTINATION_NOT_DIR));
 
-            
-            
-            
-            
+            // Calling LoadFullOriginMetadataWithRestore might update the group
+            // in the metadata file, but only as a side-effect. The actual place
+            // we ensure consistency is in
+            // EnsureTemporaryOriginIsInitializedInternal.
 
             QM_TRY_INSPECT(const auto& metadata,
                            LoadFullOriginMetadataWithRestore(directory));
@@ -2873,8 +2873,8 @@ nsresult QuotaManager::LoadQuota() {
         QM_WARNONLY_TRY_UNWRAP(auto res, MOZ_TO_RESULT(LoadQuotaFromCache()));
         return static_cast<bool>(res);
       }()) {
-    
-    
+    // A keeper to defer the return only in Nightly, so that the telemetry data
+    // for whole profile can be collected.
 #ifdef NIGHTLY_BUILD
     nsresult statusKeeper = NS_OK;
 #endif
@@ -3021,7 +3021,7 @@ void QuotaManager::UnloadQuota() {
 already_AddRefed<QuotaObject> QuotaManager::GetQuotaObject(
     PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
     Client::Type aClientType, nsIFile* aFile, int64_t aFileSize,
-    int64_t* aFileSizeOut ) {
+    int64_t* aFileSizeOut /* = nullptr */) {
   NS_ASSERTION(!NS_IsMainThread(), "Wrong thread!");
   MOZ_ASSERT(aOriginMetadata.mPersistenceType == aPersistenceType);
 
@@ -3097,19 +3097,19 @@ already_AddRefed<QuotaObject> QuotaManager::GetQuotaObject(
       return nullptr;
     }
 
-    
-    
-    
+    // We need this extra raw pointer because we can't assign to the smart
+    // pointer directly since QuotaObject::AddRef would try to acquire the same
+    // mutex.
     const NotNull<CanonicalQuotaObject*> canonicalQuotaObject =
         originInfo->mCanonicalQuotaObjects.LookupOrInsertWith(path, [&] {
-          
-          
+          // Create a new QuotaObject. The hashtable is not responsible to
+          // delete the QuotaObject.
           return WrapNotNullUnchecked(new CanonicalQuotaObject(
               originInfo, aClientType, path, fileSize));
         });
 
-    
-    
+    // Addref the QuotaObject and move the ownership to the result. This must
+    // happen before we unlock!
     result = canonicalQuotaObject->LockedAddRef();
   }
 
@@ -3117,15 +3117,15 @@ already_AddRefed<QuotaObject> QuotaManager::GetQuotaObject(
     *aFileSizeOut = fileSize;
   }
 
-  
-  
+  // The caller becomes the owner of the QuotaObject, that is, the caller is
+  // is responsible to delete it when the last reference is removed.
   return result.forget();
 }
 
 already_AddRefed<QuotaObject> QuotaManager::GetQuotaObject(
     PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
     Client::Type aClientType, const nsAString& aPath, int64_t aFileSize,
-    int64_t* aFileSizeOut ) {
+    int64_t* aFileSizeOut /* = nullptr */) {
   NS_ASSERTION(!NS_IsMainThread(), "Wrong thread!");
 
   if (aFileSizeOut) {
@@ -3144,7 +3144,7 @@ already_AddRefed<QuotaObject> QuotaManager::GetQuotaObject(
 
   Maybe<MutexAutoLock> lock;
 
-  
+  // See the comment for mDirectoryLockIdTable in QuotaManager.h
   if (!IsOnBackgroundThread()) {
     lock.emplace(mQuotaMutex);
   }
@@ -3232,7 +3232,7 @@ Result<bool, nsresult> QuotaManager::DoesOriginDirectoryExist(
   QM_TRY_RETURN(MOZ_TO_RESULT_INVOKE_MEMBER(directory, Exists));
 }
 
-
+// static
 nsresult QuotaManager::CreateDirectoryMetadata(
     nsIFile& aDirectory, int64_t aTimestamp,
     const OriginMetadata& aOriginMetadata) {
@@ -3279,7 +3279,7 @@ nsresult QuotaManager::CreateDirectoryMetadata(
 
   QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ(origin.get())));
 
-  
+  // Currently unused (used to be isApp).
   QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(false)));
 
   QM_TRY(MOZ_TO_RESULT(stream->Flush()));
@@ -3292,7 +3292,7 @@ nsresult QuotaManager::CreateDirectoryMetadata(
   return NS_OK;
 }
 
-
+// static
 nsresult QuotaManager::CreateDirectoryMetadata2(
     nsIFile& aDirectory, int64_t aTimestamp, bool aPersisted,
     const OriginMetadata& aOriginMetadata) {
@@ -3312,22 +3312,22 @@ nsresult QuotaManager::CreateDirectoryMetadata2(
 
   QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(aPersisted)));
 
-  
+  // Reserved data 1
   QM_TRY(MOZ_TO_RESULT(stream->Write32(0)));
 
-  
+  // Reserved data 2
   QM_TRY(MOZ_TO_RESULT(stream->Write32(0)));
 
-  
+  // Currently unused (used to be suffix).
   QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ("")));
 
-  
+  // Currently unused (used to be group).
   QM_TRY(MOZ_TO_RESULT(stream->WriteStringZ("")));
 
   QM_TRY(MOZ_TO_RESULT(
       stream->WriteStringZ(aOriginMetadata.mStorageOrigin.get())));
 
-  
+  // Currently used for isPrivate (used to be used for isApp).
   QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(aOriginMetadata.mIsPrivate)));
 
   QM_TRY(MOZ_TO_RESULT(stream->Flush()));
@@ -3377,7 +3377,7 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
                  MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read32));
   Unused << reservedData1;
 
-  
+  // XXX Use for the persistence type.
   QM_TRY_INSPECT(const bool& reservedData2,
                  MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, Read32));
   Unused << reservedData2;
@@ -3396,7 +3396,7 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
       fullOriginMetadata.mStorageOrigin,
       MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsCString, binaryStream, ReadCString));
 
-  
+  // Currently used for isPrivate (used to be used for isApp).
   QM_TRY_UNWRAP(fullOriginMetadata.mIsPrivate,
                 MOZ_TO_RESULT_INVOKE_MEMBER(binaryStream, ReadBoolean));
 
@@ -3428,15 +3428,15 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
   QM_TRY_INSPECT(const bool& groupUpdated,
                  MaybeUpdateGroupForOrigin(fullOriginMetadata));
 
-  
-  
-  
+  // A workaround for a bug in GetLastModifiedTime implementation which should
+  // have returned the current time instead of INT64_MIN when there were no
+  // suitable files for getting last modified time.
   QM_TRY_INSPECT(const bool& lastAccessTimeUpdated,
                  MaybeUpdateLastAccessTimeForOrigin(fullOriginMetadata));
 
   if (groupUpdated || lastAccessTimeUpdated) {
-    
-    
+    // Only overwriting .metadata-v2 (used to overwrite .metadata too) to reduce
+    // I/O.
     QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(
         *aDirectory, fullOriginMetadata.mLastAccessTime,
         fullOriginMetadata.mPersisted, fullOriginMetadata)));
@@ -3447,9 +3447,9 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
 
 Result<FullOriginMetadata, nsresult>
 QuotaManager::LoadFullOriginMetadataWithRestore(nsIFile* aDirectory) {
-  
-  
-  
+  // XXX Once the persistence type is stored in the metadata file, this block
+  // for getting the persistence type from the parent directory name can be
+  // removed.
   nsCOMPtr<nsIFile> parentDir;
   QM_TRY(MOZ_TO_RESULT(aDirectory->GetParent(getter_AddRefs(parentDir))));
 
@@ -3460,9 +3460,9 @@ QuotaManager::LoadFullOriginMetadataWithRestore(nsIFile* aDirectory) {
   const auto& persistenceType = maybePersistenceType.value();
 
   QM_TRY_RETURN(QM_OR_ELSE_WARN(
-      
+      // Expression.
       LoadFullOriginMetadata(aDirectory, persistenceType),
-      
+      // Fallback.
       ([&aDirectory, &persistenceType,
         this](const nsresult rv) -> Result<FullOriginMetadata, nsresult> {
         QM_TRY(MOZ_TO_RESULT(RestoreDirectoryMetadata2(aDirectory)));
@@ -3480,7 +3480,7 @@ Result<OriginMetadata, nsresult> QuotaManager::GetOriginMetadata(
       const auto& leafName,
       MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoString, aDirectory, GetLeafName));
 
-  
+  // XXX Consider using QuotaManager::ParseOrigin here.
   nsCString spec;
   OriginAttributes attrs;
   nsCString originalSuffix;
@@ -3568,8 +3568,8 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
 
   Unused << created;
 
-  
-  
+  // A keeper to defer the return only in Nightly, so that the telemetry data
+  // for whole profile can be collected
 #ifdef NIGHTLY_BUILD
   nsresult statusKeeper = NS_OK;
 #endif
@@ -3611,21 +3611,21 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                         QM_TRY_UNWRAP(
                             auto maybeMetadata,
                             QM_OR_ELSE_WARN_IF(
-                                
+                                // Expression
                                 LoadFullOriginMetadataWithRestore(
                                     childDirectory)
                                     .map([](auto metadata)
                                              -> Maybe<FullOriginMetadata> {
                                       return Some(std::move(metadata));
                                     }),
-                                
+                                // Predicate.
                                 IsSpecificError<NS_ERROR_MALFORMED_URI>,
-                                
+                                // Fallback.
                                 ErrToDefaultOk<Maybe<FullOriginMetadata>>));
 
                         if (!maybeMetadata) {
-                          
-                          
+                          // Unknown directories during initialization are
+                          // allowed. Just warn if we find them.
                           UNKNOWN_FILE_WARNING(leafName);
                           break;
                         }
@@ -3639,10 +3639,10 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                             ScopedLogExtraInfo::kTagStorageOriginTainted,
                             metadata.mStorageOrigin};
 
-                        
-                        
-                        
-                        
+                        // FIXME(tt): The check for origin name consistency can
+                        // be removed once we have an upgrade to traverse origin
+                        // directories and check through the directory metadata
+                        // files.
                         const auto originSanitized =
                             MakeSanitizedOriginCString(metadata.mOrigin);
 
@@ -3654,8 +3654,8 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                               "metadata file!",
                               utf8LeafName.get(), originSanitized.get());
 
-                          
-                          
+                          // If it's the known case, we try to restore the
+                          // origin directory name if it's possible.
                           if (originSanitized.Equals(utf8LeafName + "."_ns)) {
                             const int64_t lastAccessTime =
                                 metadata.mLastAccessTime;
@@ -3666,27 +3666,27 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                             break;
                           }
 
-                          
-                          
-                          
-                          
+                          // XXXtt: Try to restore the unknown cases base on the
+                          // content for their metadata files. Note that if the
+                          // restore fails, QM should maintain a list and ensure
+                          // they won't be accessed after initialization.
                         }
 
                         QM_TRY(QM_OR_ELSE_WARN_IF(
-                            
+                            // Expression.
                             MOZ_TO_RESULT(InitializeOrigin(
                                 aPersistenceType, metadata,
                                 metadata.mLastAccessTime, metadata.mPersisted,
                                 childDirectory)),
-                            
+                            // Predicate.
                             IsDatabaseCorruptionError,
-                            
+                            // Fallback.
                             ([&childDirectory](
                                  const nsresult rv) -> Result<Ok, nsresult> {
-                              
-                              
-                              
-                              
+                              // If the origin can't be initialized due to
+                              // corruption, this is a permanent
+                              // condition, and we need to remove all data
+                              // for the origin on disk.
 
                               QM_TRY(
                                   MOZ_TO_RESULT(childDirectory->Remove(true)));
@@ -3704,14 +3704,14 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                           break;
                         }
 
-                        
-                        
+                        // Unknown files during initialization are now allowed.
+                        // Just warn if we find them.
                         UNKNOWN_FILE_WARNING(leafName);
                         break;
 
                       case nsIFileKind::DoesNotExist:
-                        
-                        
+                        // Ignore files that got removed externally while
+                        // iterating.
                         break;
                     }
 
@@ -3737,7 +3737,7 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                const auto originDirName =
                    MakeSanitizedOriginString(info.mFullOriginMetadata.mOrigin);
 
-               
+               // Check if targetDirectory exist.
                QM_TRY_INSPECT(const auto& targetDirectory,
                               CloneFileAndAppend(*directory, originDirName));
 
@@ -3753,7 +3753,7 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                QM_TRY(MOZ_TO_RESULT(
                    info.mOriginDirectory->RenameTo(nullptr, originDirName)));
 
-               
+               // XXX We don't check corruption here ?
                QM_TRY(MOZ_TO_RESULT(InitializeOrigin(
                    aPersistenceType, info.mFullOriginMetadata, info.mTimestamp,
                    info.mPersisted, targetDirectory)));
@@ -3783,19 +3783,19 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
                                         nsIFile* aDirectory) {
   AssertIsOnIOThread();
 
-  
-  
-  
+  // The ScopedLogExtraInfo is not set here on purpose, so the callers can
+  // decide if they want to set it. The extra info can be set sooner this way
+  // as well.
 
   const bool trackQuota = aPersistenceType != PERSISTENCE_TYPE_PERSISTENT;
 
-  
-  
+  // We need to initialize directories of all clients if they exists and also
+  // get the total usage to initialize the quota.
 
   ClientUsageArray clientUsages;
 
-  
-  
+  // A keeper to defer the return only in Nightly, so that the telemetry data
+  // for whole profile can be collected
 #ifdef NIGHTLY_BUILD
   nsresult statusKeeper = NS_OK;
 #endif
@@ -3827,8 +3827,8 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
                         const bool ok = Client::TypeFromText(
                             leafName, clientType, fallible);
                         if (!ok) {
-                          
-                          
+                          // Unknown directories during initialization are now
+                          // allowed. Just warn if we find them.
                           UNKNOWN_FILE_WARNING(leafName);
                           break;
                         }
@@ -3838,15 +3838,15 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
                               const auto& usageInfo,
                               (*mClients)[clientType]->InitOrigin(
                                   aPersistenceType, aOriginMetadata,
-                                   Atomic<bool>(false)));
+                                  /* aCanceled */ Atomic<bool>(false)));
 
                           MOZ_ASSERT(!clientUsages[clientType]);
 
                           if (usageInfo.TotalUsage()) {
-                            
-                            
-                            
-                            
+                            // XXX(Bug 1683863) Until we identify the root cause
+                            // of seemingly converted-from-negative usage
+                            // values, we will just treat them as unset here,
+                            // but log a warning to the browser console.
                             if (static_cast<int64_t>(*usageInfo.TotalUsage()) >=
                                 0) {
                               clientUsages[clientType] = usageInfo.TotalUsage();
@@ -3875,7 +3875,7 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
                               (*mClients)[clientType]
                                   ->InitOriginWithoutTracking(
                                       aPersistenceType, aOriginMetadata,
-                                       Atomic<bool>(false))));
+                                      /* aCanceled */ Atomic<bool>(false))));
                         }
 
                         break;
@@ -3888,7 +3888,7 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
 
                         if (IsTempMetadata(leafName)) {
                           QM_TRY(MOZ_TO_RESULT(
-                              file->Remove( false)));
+                              file->Remove(/* recursive */ false)));
 
                           break;
                         }
@@ -3897,16 +3897,16 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
                           break;
                         }
 
-                        
-                        
+                        // Unknown files during initialization are now allowed.
+                        // Just warn if we find them.
                         UNKNOWN_FILE_WARNING(leafName);
-                        
-                        
+                        // Bug 1595448 will handle the case for unknown files
+                        // like idb, cache, or ls.
                         break;
 
                       case nsIFileKind::DoesNotExist:
-                        
-                        
+                        // Ignore files that got removed externally while
+                        // iterating.
                         break;
                     }
 
@@ -3934,8 +3934,8 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
           return value + clientUsage.valueOr(0);
         });
 
-    
-    
+    // XXX Should we log more information, i.e. the whole clientUsages array, in
+    // case usage is not valid?
 
     QM_TRY(OkIf(usage.isValid()), NS_ERROR_FAILURE);
 
@@ -3978,7 +3978,7 @@ QuotaManager::UpgradeFromIndexedDBDirectoryToPersistentStorageDirectory(
     if (exists) {
       QM_WARNING("Deleting old <profile>/indexedDB directory!");
 
-      QM_TRY(MOZ_TO_RESULT(aIndexedDBDir->Remove( true)));
+      QM_TRY(MOZ_TO_RESULT(aIndexedDBDir->Remove(/* aRecursive */ true)));
 
       return NS_OK;
     }
@@ -3987,12 +3987,12 @@ QuotaManager::UpgradeFromIndexedDBDirectoryToPersistentStorageDirectory(
     QM_TRY(MOZ_TO_RESULT(
         persistentStorageDir->GetParent(getter_AddRefs(storageDir))));
 
-    
-    
-    
-    
-    
-    
+    // MoveTo() is atomic if the move happens on the same volume which should
+    // be our case, so even if we crash in the middle of the operation nothing
+    // breaks next time we try to initialize.
+    // However there's a theoretical possibility that the indexedDB directory
+    // is on different volume, but it should be rare enough that we don't have
+    // to worry about it.
     QM_TRY(MOZ_TO_RESULT(aIndexedDBDir->MoveTo(
         storageDir, nsLiteralString(PERSISTENT_DIRECTORY_NAME))));
 
@@ -4031,15 +4031,15 @@ QuotaManager::UpgradeFromPersistentStorageDirectoryToDefaultStorageDirectory(
         QM_WARNING("Deleting old <profile>/storage/persistent directory!");
 
         QM_TRY(MOZ_TO_RESULT(
-            aPersistentStorageDir->Remove( true)));
+            aPersistentStorageDir->Remove(/* aRecursive */ true)));
 
         return NS_OK;
       }
     }
 
     {
-      
-      
+      // Create real metadata files for origin directories in persistent
+      // storage.
       auto helper = MakeRefPtr<CreateOrUpgradeDirectoryMetadataHelper>(
           aPersistentStorageDir);
 
@@ -4047,7 +4047,7 @@ QuotaManager::UpgradeFromPersistentStorageDirectoryToDefaultStorageDirectory(
 
       QM_TRY(MOZ_TO_RESULT(helper->ProcessRepository()));
 
-      
+      // Upgrade metadata files for origin directories in temporary storage.
       QM_TRY_INSPECT(const auto& temporaryStorageDir,
                      QM_NewLocalFile(*mTemporaryStoragePath));
 
@@ -4073,7 +4073,7 @@ QuotaManager::UpgradeFromPersistentStorageDirectoryToDefaultStorageDirectory(
       }
     }
 
-    
+    // And finally rename persistent to default.
     QM_TRY(MOZ_TO_RESULT(aPersistentStorageDir->RenameTo(
         nullptr, nsLiteralString(DEFAULT_DIRECTORY_NAME))));
 
@@ -4146,72 +4146,72 @@ nsresult QuotaManager::UpgradeStorageFrom1_0To2_0(
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The upgrade consists of a number of logically distinct bugs that
+  // intentionally got fixed at the same time to trigger just one major
+  // version bump.
+  //
+  //
+  // Morgue directory cleanup
+  // [Feature/Bug]:
+  // The original bug that added "on demand" morgue cleanup is 1165119.
+  //
+  // [Mutations]:
+  // Morgue directories are removed from all origin directories during the
+  // upgrade process. Origin initialization and usage calculation doesn't try
+  // to remove morgue directories anymore.
+  //
+  // [Downgrade-incompatible changes]:
+  // Morgue directories can reappear if user runs an already upgraded profile
+  // in an older version of Firefox. Morgue directories then prevent current
+  // Firefox from initializing and using the storage.
+  //
+  //
+  // App data removal
+  // [Feature/Bug]:
+  // The bug that removes isApp flags is 1311057.
+  //
+  // [Mutations]:
+  // Origin directories with appIds are removed during the upgrade process.
+  //
+  // [Downgrade-incompatible changes]:
+  // Origin directories with appIds can reappear if user runs an already
+  // upgraded profile in an older version of Firefox. Origin directories with
+  // appIds don't prevent current Firefox from initializing and using the
+  // storage, but they wouldn't ever be removed again, potentially causing
+  // problems once appId is removed from origin attributes.
+  //
+  //
+  // Strip obsolete origin attributes
+  // [Feature/Bug]:
+  // The bug that strips obsolete origin attributes is 1314361.
+  //
+  // [Mutations]:
+  // Origin directories with obsolete origin attributes are renamed and their
+  // metadata files are updated during the upgrade process.
+  //
+  // [Downgrade-incompatible changes]:
+  // Origin directories with obsolete origin attributes can reappear if user
+  // runs an already upgraded profile in an older version of Firefox. Origin
+  // directories with obsolete origin attributes don't prevent current Firefox
+  // from initializing and using the storage, but they wouldn't ever be upgraded
+  // again, potentially causing problems in future.
+  //
+  //
+  // File manager directory renaming (client specific)
+  // [Feature/Bug]:
+  // The original bug that added "on demand" file manager directory renaming is
+  // 1056939.
+  //
+  // [Mutations]:
+  // All file manager directories are renamed to contain the ".files" suffix.
+  //
+  // [Downgrade-incompatible changes]:
+  // File manager directories with the ".files" suffix prevent older versions of
+  // Firefox from initializing and using the storage.
+  // File manager directories without the ".files" suffix can appear if user
+  // runs an already upgraded profile in an older version of Firefox. File
+  // manager directories without the ".files" suffix then prevent current
+  // Firefox from initializing and using the storage.
 
   const auto innerFunc = [this, &aConnection](const auto&) -> nsresult {
     QM_TRY(MOZ_TO_RESULT(UpgradeStorage<UpgradeStorageFrom1_0To2_0Helper>(
@@ -4229,8 +4229,8 @@ nsresult QuotaManager::UpgradeStorageFrom2_0To2_1(
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
-  
-  
+  // The upgrade is mainly to create a directory padding file in DOM Cache
+  // directory to record the overall padding size of an origin.
 
   const auto innerFunc = [this, &aConnection](const auto&) -> nsresult {
     QM_TRY(MOZ_TO_RESULT(UpgradeStorage<UpgradeStorageFrom2_0To2_1Helper>(
@@ -4248,8 +4248,8 @@ nsresult QuotaManager::UpgradeStorageFrom2_1To2_2(
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
-  
-  
+  // The upgrade is mainly to clean obsolete origins in the repositoies, remove
+  // asmjs client, and ".tmp" file in the idb folers.
 
   const auto innerFunc = [this, &aConnection](const auto&) -> nsresult {
     QM_TRY(MOZ_TO_RESULT(UpgradeStorage<UpgradeStorageFrom2_1To2_2Helper>(
@@ -4268,7 +4268,7 @@ nsresult QuotaManager::UpgradeStorageFrom2_2To2_3(
   MOZ_ASSERT(aConnection);
 
   const auto innerFunc = [&aConnection](const auto&) -> nsresult {
-    
+    // Table `database`
     QM_TRY(MOZ_TO_RESULT(aConnection->ExecuteSimpleSQL(
         nsLiteralCString("CREATE TABLE database"
                          "( cache_version INTEGER NOT NULL DEFAULT 0"
@@ -4307,7 +4307,7 @@ nsresult QuotaManager::MaybeRemoveLocalStorageDataAndArchive(
                  MOZ_TO_RESULT_INVOKE_MEMBER(aLsArchiveFile, Exists));
 
   if (!exists) {
-    
+    // If the ls archive doesn't exist then ls directories can't exist either.
     return NS_OK;
   }
 
@@ -4315,8 +4315,8 @@ nsresult QuotaManager::MaybeRemoveLocalStorageDataAndArchive(
 
   InvalidateQuotaCache();
 
-  
-  
+  // Finally remove the ls archive, so we don't have to check all origin
+  // directories next time this method is called.
   QM_TRY(MOZ_TO_RESULT(aLsArchiveFile.Remove(false)));
 
   return NS_OK;
@@ -4381,7 +4381,7 @@ nsresult QuotaManager::MaybeRemoveLocalStorageDirectories() {
             QM_WARNING("Deleting %s directory!",
                        NS_ConvertUTF16toUTF8(path).get());
 
-            QM_TRY(MOZ_TO_RESULT(lsDir->Remove( true)));
+            QM_TRY(MOZ_TO_RESULT(lsDir->Remove(/* aRecursive */ true)));
 
             break;
           }
@@ -4391,8 +4391,8 @@ nsresult QuotaManager::MaybeRemoveLocalStorageDirectories() {
                            MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                                nsAutoString, originDir, GetLeafName));
 
-            
-            
+            // Unknown files during upgrade are allowed. Just warn if we find
+            // them.
             if (!IsOSMetadata(leafName)) {
               UNKNOWN_FILE_WARNING(leafName);
             }
@@ -4401,7 +4401,7 @@ nsresult QuotaManager::MaybeRemoveLocalStorageDirectories() {
           }
 
           case nsIFileKind::DoesNotExist:
-            
+            // Ignore files that got removed externally while iterating.
             break;
         }
         return Ok{};
@@ -4423,24 +4423,24 @@ Result<Ok, nsresult> QuotaManager::CopyLocalStorageArchiveFromWebAppsStore(
   }
 #endif
 
-  
+  // Get the storage service first, we will need it at multiple places.
   QM_TRY_INSPECT(const auto& ss,
                  MOZ_TO_RESULT_GET_TYPED(nsCOMPtr<mozIStorageService>,
                                          MOZ_SELECT_OVERLOAD(do_GetService),
                                          MOZ_STORAGE_SERVICE_CONTRACTID));
 
-  
+  // Get the web apps store file.
   QM_TRY_INSPECT(const auto& webAppsStoreFile, QM_NewLocalFile(mBasePath));
 
   QM_TRY(MOZ_TO_RESULT(
       webAppsStoreFile->Append(nsLiteralString(WEB_APPS_STORE_FILE_NAME))));
 
-  
+  // Now check if the web apps store is useable.
   QM_TRY_INSPECT(const auto& connection,
                  CreateWebAppsStoreConnection(*webAppsStoreFile, *ss));
 
   if (connection) {
-    
+    // Find out the journal mode.
     QM_TRY_INSPECT(const auto& stmt,
                    CreateAndExecuteSingleStepStatement(
                        *connection, "PRAGMA journal_mode;"_ns));
@@ -4452,19 +4452,19 @@ Result<Ok, nsresult> QuotaManager::CopyLocalStorageArchiveFromWebAppsStore(
     QM_TRY(MOZ_TO_RESULT(stmt->Finalize()));
 
     if (journalMode.EqualsLiteral("wal")) {
-      
-      
+      // We don't copy the WAL file, so make sure the old database is fully
+      // checkpointed.
       QM_TRY(MOZ_TO_RESULT(
           connection->ExecuteSimpleSQL("PRAGMA wal_checkpoint(TRUNCATE);"_ns)));
     }
 
-    
+    // Explicitely close the connection before the old database is copied.
     QM_TRY(MOZ_TO_RESULT(connection->Close()));
 
-    
-    
-    
-    
+    // Copy the old database. The database is copied from
+    // <profile>/webappsstore.sqlite to
+    // <profile>/storage/ls-archive-tmp.sqlite
+    // We use a "-tmp" postfix since we are not done yet.
     QM_TRY_INSPECT(const auto& storageDir, QM_NewLocalFile(*mStoragePath));
 
     QM_TRY(MOZ_TO_RESULT(webAppsStoreFile->CopyTo(
@@ -4480,41 +4480,41 @@ Result<Ok, nsresult> QuotaManager::CopyLocalStorageArchiveFromWebAppsStore(
               nsCOMPtr<mozIStorageConnection>, ss, OpenUnsharedDatabase,
               lsArchiveTmpFile, mozIStorageService::CONNECTION_DEFAULT));
 
-      
-      
-      
-      
-      
+      // The archive will only be used for lazy data migration. There won't be
+      // any concurrent readers and writers that could benefit from Write-Ahead
+      // Logging. So switch to a standard rollback journal. The standard
+      // rollback journal also provides atomicity across multiple attached
+      // databases which is import for the lazy data migration to work safely.
       QM_TRY(MOZ_TO_RESULT(lsArchiveTmpConnection->ExecuteSimpleSQL(
           "PRAGMA journal_mode = DELETE;"_ns)));
 
-      
+      // Close the connection explicitly. We are going to rename the file below.
       QM_TRY(MOZ_TO_RESULT(lsArchiveTmpConnection->Close()));
     }
 
-    
+    // Finally, rename ls-archive-tmp.sqlite to ls-archive.sqlite
     QM_TRY(MOZ_TO_RESULT(lsArchiveTmpFile->MoveTo(
         nullptr, nsLiteralString(LS_ARCHIVE_FILE_NAME))));
 
     return Ok{};
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // If webappsstore database is not useable, just create an empty archive.
+  // XXX The code below should be removed and the caller should call us only
+  // when webappstore.sqlite exists. CreateWebAppsStoreConnection should be
+  // reworked to propagate database corruption instead of returning null
+  // connection.
+  // So, if there's no webappsstore.sqlite
+  // MaybeCreateOrUpgradeLocalStorageArchive will call
+  // CreateEmptyLocalStorageArchive instead of
+  // CopyLocalStorageArchiveFromWebAppsStore.
+  // If there's any corruption detected during
+  // MaybeCreateOrUpgradeLocalStorageArchive (including nested calls like
+  // CopyLocalStorageArchiveFromWebAppsStore and CreateWebAppsStoreConnection)
+  // EnsureStorageIsInitializedInternal will fallback to
+  // CreateEmptyLocalStorageArchive.
 
-  
+  // Ensure the storage directory actually exists.
   QM_TRY_INSPECT(const auto& storageDirectory, QM_NewLocalFile(*mStoragePath));
 
   QM_TRY_INSPECT(const bool& created, EnsureDirectory(*storageDirectory));
@@ -4549,8 +4549,8 @@ QuotaManager::CreateLocalStorageArchiveConnection(
   QM_TRY_INSPECT(const bool& isDirectory,
                  MOZ_TO_RESULT_INVOKE_MEMBER(aLsArchiveFile, IsDirectory));
 
-  
-  
+  // A directory with the name of the archive file is treated as corruption
+  // (similarly as wrong content of the file).
   QM_TRY(OkIf(!isDirectory), Err(NS_ERROR_FILE_CORRUPTED));
 
   QM_TRY_INSPECT(const auto& ss,
@@ -4558,16 +4558,16 @@ QuotaManager::CreateLocalStorageArchiveConnection(
                                          MOZ_SELECT_OVERLOAD(do_GetService),
                                          MOZ_STORAGE_SERVICE_CONTRACTID));
 
-  
+  // This may return NS_ERROR_FILE_CORRUPTED too.
   QM_TRY_UNWRAP(auto connection,
                 MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                     nsCOMPtr<mozIStorageConnection>, ss, OpenUnsharedDatabase,
                     &aLsArchiveFile, mozIStorageService::CONNECTION_DEFAULT));
 
-  
-  
-  
-  
+  // The legacy LS implementation removes the database and creates an empty one
+  // when the schema can't be updated. The same effect can be achieved here by
+  // mapping all errors to NS_ERROR_FILE_CORRUPTED. One such case is tested by
+  // sub test case 3 of dom/localstorage/test/unit/test_archive.js
   QM_TRY(
       MOZ_TO_RESULT(StorageDBUpdater::Update(connection))
           .mapErr([](const nsresult rv) { return NS_ERROR_FILE_CORRUPTED; }));
@@ -4632,20 +4632,20 @@ QuotaManager::UpgradeLocalStorageArchiveFromLessThan4To4(
   return connection;
 }
 
+/*
+nsresult QuotaManager::UpgradeLocalStorageArchiveFrom4To5(
+    nsCOMPtr<mozIStorageConnection>& aConnection) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(CachedNextGenLocalStorageEnabled());
 
+  nsresult rv = SaveLocalStorageArchiveVersion(aConnection, 5);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
+  return NS_OK;
+}
+*/
 
 #ifdef DEBUG
 
@@ -4654,7 +4654,7 @@ void QuotaManager::AssertStorageIsInitializedInternal() const {
   MOZ_ASSERT(IsStorageInitializedInternal());
 }
 
-#endif  
+#endif  // DEBUG
 
 nsresult QuotaManager::MaybeUpgradeToDefaultStorageDirectory(
     nsIFile& aStorageFile) {
@@ -4701,8 +4701,8 @@ nsresult QuotaManager::MaybeCreateOrUpgradeStorage(
   QM_TRY_UNWRAP(auto storageVersion,
                 MOZ_TO_RESULT_INVOKE_MEMBER(aConnection, GetSchemaVersion));
 
-  
-  
+  // Hacky downgrade logic!
+  // If we see major.minor of 3.0, downgrade it to be 2.1.
   if (storageVersion == kHackyPreDowngradeStorageVersion) {
     storageVersion = kHackyPostDowngradeStorageVersion;
     QM_TRY(MOZ_TO_RESULT(aConnection.SetSchemaVersion(storageVersion)),
@@ -4726,7 +4726,7 @@ nsresult QuotaManager::MaybeCreateOrUpgradeStorage(
     const bool newDirectory = !storageDirExists;
 
     if (newDatabase) {
-      
+      // Set the page size first.
       if (kSQLitePageSizeOverride) {
         QM_TRY(MOZ_TO_RESULT(aConnection.ExecuteSimpleSQL(nsPrintfCString(
             "PRAGMA page_size = %" PRIu32 ";", kSQLitePageSizeOverride))));
@@ -4738,9 +4738,9 @@ nsresult QuotaManager::MaybeCreateOrUpgradeStorage(
 
     QM_TRY(MOZ_TO_RESULT(transaction.Start()));
 
-    
-    
-    
+    // An upgrade method can upgrade the database, the storage or both.
+    // The upgrade loop below can only be avoided when there's no database and
+    // no storage yet (e.g. new profile).
     if (newDatabase && newDirectory) {
       QM_TRY(MOZ_TO_RESULT(CreateTables(&aConnection)));
 
@@ -4758,7 +4758,7 @@ nsresult QuotaManager::MaybeCreateOrUpgradeStorage(
           nsLiteralCString("INSERT INTO database (cache_version) "
                            "VALUES (0)"))));
     } else {
-      
+      // This logic needs to change next time we change the storage!
       static_assert(kStorageVersion == int32_t((2 << 16) + 3),
                     "Upgrade function needed due to storage version increase.");
 
@@ -4841,23 +4841,23 @@ Result<Ok, nsresult> QuotaManager::MaybeCreateOrUpgradeLocalStorageArchive(
   QM_TRY_UNWRAP(int32_t version, LoadLocalStorageArchiveVersion(*connection));
 
   if (version > kLocalStorageArchiveVersion) {
-    
-    
+    // Close local storage archive connection. We are going to remove underlying
+    // file.
     QM_TRY(MOZ_TO_RESULT(connection->Close()));
 
-    
-    
+    // This will wipe the archive and any migrated data and recopy the archive
+    // from webappsstore.sqlite.
     QM_TRY_UNWRAP(connection, DowngradeLocalStorageArchive(aLsArchiveFile));
 
     QM_TRY_UNWRAP(version, LoadLocalStorageArchiveVersion(*connection));
 
     MOZ_ASSERT(version == kLocalStorageArchiveVersion);
   } else if (version != kLocalStorageArchiveVersion) {
-    
-    
-    
-    
-    
+    // The version can be zero either when the archive didn't exist or it did
+    // exist, but the archive was created without any version information.
+    // We don't need to do any upgrades only if it didn't exist because existing
+    // archives without version information must be recopied to really fix bug
+    // 1542104. See also bug 1546305 which introduced archive versions.
     if (!lsArchiveFileExisted) {
       MOZ_ASSERT(version == 0);
 
@@ -4870,18 +4870,18 @@ Result<Ok, nsresult> QuotaManager::MaybeCreateOrUpgradeLocalStorageArchive(
 
       while (version != kLocalStorageArchiveVersion) {
         if (version < 4) {
-          
-          
+          // Close local storage archive connection. We are going to remove
+          // underlying file.
           QM_TRY(MOZ_TO_RESULT(connection->Close()));
 
-          
-          
-          
+          // This won't do an "upgrade" in a normal sense. It will wipe the
+          // archive and any migrated data and recopy the archive from
+          // webappsstore.sqlite
           QM_TRY_UNWRAP(connection, UpgradeLocalStorageArchiveFromLessThan4To4(
                                         aLsArchiveFile));
-        } 
-
-
+        } /* else if (version == 4) {
+          QM_TRY(MOZ_TO_RESULT(UpgradeLocalStorageArchiveFrom4To5(connection)));
+        } */
         else {
           QM_FAIL(Err(NS_ERROR_FAILURE), []() {
             QM_WARNING(
@@ -4897,10 +4897,10 @@ Result<Ok, nsresult> QuotaManager::MaybeCreateOrUpgradeLocalStorageArchive(
     }
   }
 
-  
-  
-  
-  
+  // At this point, we have finished initializing the local storage archive, and
+  // can continue storage initialization. We don't know though if the actual
+  // data in the archive file is readable. We can't do a PRAGMA integrity_check
+  // here though, because that would be too heavyweight.
 
   return Ok{};
 }
@@ -4912,16 +4912,16 @@ Result<Ok, nsresult> QuotaManager::CreateEmptyLocalStorageArchive(
   QM_TRY_INSPECT(const bool& exists,
                  MOZ_TO_RESULT_INVOKE_MEMBER(aLsArchiveFile, Exists));
 
-  
+  // If it exists, remove it. It might be a directory, so remove it recursively.
   if (exists) {
     QM_TRY(MOZ_TO_RESULT(aLsArchiveFile.Remove(true)));
 
-    
-    
-    
-    
-    
-    
+    // XXX If we crash right here, the next session will copy the archive from
+    // webappsstore.sqlite again!
+    // XXX Create a marker file before removing the archive which can be
+    // used in MaybeCreateOrUpgradeLocalStorageArchive to create an empty
+    // archive instead of recopying it from webapppstore.sqlite (in other
+    // words, finishing what was started here).
   }
 
   QM_TRY_INSPECT(const auto& ss,
@@ -4950,12 +4950,12 @@ RefPtr<BoolPromise> QuotaManager::InitializeStorage() {
   RefPtr<UniversalDirectoryLock> directoryLock = CreateDirectoryLockInternal(
       PersistenceScope::CreateFromNull(), OriginScope::FromNull(),
       Nullable<Client::Type>(),
-       false);
+      /* aExclusive */ false);
 
-  
-  
-  
-  
+  // If storage is initialized but there's a clear storage or shutdown storage
+  // operation already scheduled, we can't immediately resolve the promise and
+  // return from the function because the clear or shutdown storage operation
+  // uninitializes storage.
   if (mStorageInitialized &&
       !IsDirectoryLockBlockedByUninitStorageOperation(directoryLock)) {
     return BoolPromise::CreateAndResolve(true, __func__);
@@ -4979,10 +4979,10 @@ RefPtr<BoolPromise> QuotaManager::InitializeStorage(
   MOZ_ASSERT(aDirectoryLock);
   MOZ_ASSERT(aDirectoryLock->Acquired());
 
-  
-  
-  
-  
+  // If storage is initialized and the directory lock for the initialize
+  // storage operation is acquired, we can immediately resolve the promise and
+  // return from the function because there can't be a clear storage or
+  // shutdown storage operation which would uninitialize storage.
   if (mStorageInitialized) {
     DropDirectoryLock(aDirectoryLock);
 
@@ -5045,17 +5045,17 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
     QM_TRY_UNWRAP(
         auto connection,
         QM_OR_ELSE_WARN_IF(
-            
+            // Expression.
             MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                 nsCOMPtr<mozIStorageConnection>, ss, OpenUnsharedDatabase,
                 storageFile, mozIStorageService::CONNECTION_DEFAULT),
-            
+            // Predicate.
             IsDatabaseCorruptionError,
-            
+            // Fallback.
             ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
 
     if (!connection) {
-      
+      // Nuke the database file.
       QM_TRY(MOZ_TO_RESULT(storageFile->Remove(false)));
 
       QM_TRY_UNWRAP(connection, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
@@ -5064,11 +5064,11 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
                                     mozIStorageService::CONNECTION_DEFAULT));
     }
 
-    
+    // We want extra durability for this important file.
     QM_TRY(MOZ_TO_RESULT(
         connection->ExecuteSimpleSQL("PRAGMA synchronous = EXTRA;"_ns)));
 
-    
+    // Check to make sure that the storage version is correct.
     QM_TRY(MOZ_TO_RESULT(MaybeCreateOrUpgradeStorage(*connection)));
 
     QM_TRY(MaybeRemoveLocalStorageArchiveTmpFile());
@@ -5078,11 +5078,11 @@ nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
 
     if (CachedNextGenLocalStorageEnabled()) {
       QM_TRY(QM_OR_ELSE_WARN_IF(
-          
+          // Expression.
           MaybeCreateOrUpgradeLocalStorageArchive(*lsArchiveFile),
-          
+          // Predicate.
           IsDatabaseCorruptionError,
-          
+          // Fallback.
           ([&](const nsresult rv) -> Result<Ok, nsresult> {
             QM_TRY_RETURN(CreateEmptyLocalStorageArchive(*lsArchiveFile));
           })));
@@ -5133,7 +5133,7 @@ RefPtr<UniversalDirectoryLockPromise> QuotaManager::OpenStorageDirectory(
       CreateDirectoryLockInternal(PersistenceScope::CreateFromNull(),
                                   OriginScope::FromNull(),
                                   Nullable<Client::Type>(),
-                                   false);
+                                  /* aExclusive */ false);
 
   RefPtr<BoolPromise> storageDirectoryLockPromise;
 
@@ -5211,7 +5211,7 @@ RefPtr<ClientDirectoryLockPromise> QuotaManager::OpenClientDirectory(
       CreateDirectoryLockInternal(PersistenceScope::CreateFromNull(),
                                   OriginScope::FromNull(),
                                   Nullable<Client::Type>(),
-                                   false);
+                                  /* aExclusive */ false);
 
   if (mStorageInitialized &&
       !IsDirectoryLockBlockedByUninitStorageOperation(storageDirectoryLock)) {
@@ -5220,26 +5220,8 @@ RefPtr<ClientDirectoryLockPromise> QuotaManager::OpenClientDirectory(
     promises.AppendElement(storageDirectoryLock->Acquire());
   }
 
-  RefPtr<UniversalDirectoryLock> temporaryStorageDirectoryLock;
-
-  if (IsBestEffortPersistenceType(aClientMetadata.mPersistenceType)) {
-    temporaryStorageDirectoryLock = CreateDirectoryLockInternal(
-        PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
-                                        PERSISTENCE_TYPE_DEFAULT),
-        OriginScope::FromNull(), Nullable<Client::Type>(),
-         false);
-
-    if (mTemporaryStorageInitialized &&
-        !IsDirectoryLockBlockedByUninitStorageOperation(
-            temporaryStorageDirectoryLock)) {
-      temporaryStorageDirectoryLock = nullptr;
-    } else {
-      promises.AppendElement(temporaryStorageDirectoryLock->Acquire());
-    }
-  }
-
   RefPtr<ClientDirectoryLock> clientDirectoryLock =
-      CreateDirectoryLock(aClientMetadata,  false);
+      CreateDirectoryLock(aClientMetadata, /* aExclusive */ false);
 
   promises.AppendElement(clientDirectoryLock->Acquire());
 
@@ -5273,25 +5255,6 @@ RefPtr<ClientDirectoryLockPromise> QuotaManager::OpenClientDirectory(
 
                return self->InitializeStorage(std::move(storageDirectoryLock));
              })
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr(this), temporaryStorageDirectoryLock =
-                                    std::move(temporaryStorageDirectoryLock)](
-              const BoolPromise::ResolveOrRejectValue& aValue) mutable {
-            if (aValue.IsReject()) {
-              SafeDropDirectoryLockIfNotDropped(temporaryStorageDirectoryLock);
-
-              return BoolPromise::CreateAndReject(aValue.RejectValue(),
-                                                  __func__);
-            }
-
-            if (!temporaryStorageDirectoryLock) {
-              return BoolPromise::CreateAndResolve(true, __func__);
-            }
-
-            return self->InitializeTemporaryStorage(
-                std::move(temporaryStorageDirectoryLock));
-          })
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [clientDirectoryLock = std::move(clientDirectoryLock)](
                  const BoolPromise::ResolveOrRejectValue& aValue) mutable {
@@ -5334,15 +5297,15 @@ RefPtr<BoolPromise> QuotaManager::InitializePersistentOrigin(
                 GetInfoFromValidatedPrincipalInfo(aPrincipalInfo),
                 CreateAndRejectBoolPromise);
 
-  
-  
-  
-  
+  // XXX Resolve the promise immediately if the persistent origin is already
+  // initialized (this can't be done yet because there's currently no way to
+  // check if a persistent origin is already initialized on the PBackground
+  // thread).
 
   RefPtr<UniversalDirectoryLock> directoryLock = CreateDirectoryLockInternal(
       PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_PERSISTENT),
       OriginScope::FromOrigin(principalMetadata.mOrigin),
-      Nullable<Client::Type>(),  false);
+      Nullable<Client::Type>(), /* aExclusive */ false);
 
   return directoryLock->Acquire()->Then(
       GetCurrentSerialEventTarget(), __func__,
@@ -5403,15 +5366,15 @@ QuotaManager::EnsurePersistentOriginIsInitializedInternal(
           if (created) {
             const int64_t timestamp = PR_Now();
 
-            
+            // Only creating .metadata-v2 to reduce IO.
             QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
-                                                           true,
+                                                          /* aPersisted */ true,
                                                           aOriginMetadata)));
 
             return timestamp;
           }
 
-          
+          // Get the metadata. We only use the timestamp.
           QM_TRY_INSPECT(const auto& metadata,
                          LoadFullOriginMetadataWithRestore(directory));
 
@@ -5422,7 +5385,7 @@ QuotaManager::EnsurePersistentOriginIsInitializedInternal(
 
     QM_TRY(MOZ_TO_RESULT(InitializeOrigin(PERSISTENCE_TYPE_PERSISTENT,
                                           aOriginMetadata, timestamp,
-                                           true, directory)));
+                                          /* aPersisted */ true, directory)));
 
     mInitializedOriginsInternal.AppendElement(aOriginMetadata.mOrigin);
 
@@ -5443,15 +5406,15 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryOrigin(
                 GetInfoFromValidatedPrincipalInfo(aPrincipalInfo),
                 CreateAndRejectBoolPromise);
 
-  
-  
-  
-  
+  // XXX Resolve the promise immediately if the temporary origin is already
+  // initialized (this can't be done yet because there's currently no way to
+  // check if a temporary origin is already initialized on the PBackground
+  // thread).
 
   RefPtr<UniversalDirectoryLock> directoryLock = CreateDirectoryLockInternal(
       PersistenceScope::CreateFromValue(aPersistenceType),
       OriginScope::FromOrigin(principalMetadata.mOrigin),
-      Nullable<Client::Type>(),  false);
+      Nullable<Client::Type>(), /* aExclusive */ false);
 
   return directoryLock->Acquire()->Then(
       GetCurrentSerialEventTarget(), __func__,
@@ -5505,29 +5468,29 @@ QuotaManager::EnsureTemporaryOriginIsInitializedInternal(
 
   const auto innerFunc = [&aOriginMetadata, this](const auto&)
       -> mozilla::Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult> {
-    
+    // Get directory for this origin and persistence type.
     QM_TRY_UNWRAP(auto directory, GetOriginDirectory(aOriginMetadata));
 
     QM_TRY_INSPECT(const bool& created, EnsureOriginDirectory(*directory));
 
     if (created) {
       const int64_t timestamp =
-          NoteOriginDirectoryCreated(aOriginMetadata,  false);
+          NoteOriginDirectoryCreated(aOriginMetadata, /* aPersisted */ false);
 
-      
+      // Only creating .metadata-v2 to reduce IO.
       QM_TRY(MOZ_TO_RESULT(CreateDirectoryMetadata2(*directory, timestamp,
-                                                     false,
+                                                    /* aPersisted */ false,
                                                     aOriginMetadata)));
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // TODO: If the metadata file exists and we didn't call
+    //       LoadFullOriginMetadataWithRestore for it (because the quota info
+    //       was loaded from the cache), then the group in the metadata file
+    //       may be wrong, so it should be checked and eventually updated.
+    //       It's not a big deal that we are not doing it here, because the
+    //       origin will be marked as "accessed", so
+    //       LoadFullOriginMetadataWithRestore will be called for the metadata
+    //       file in next session in LoadQuotaFromCache.
 
     return std::pair(std::move(directory), created);
   };
@@ -5615,12 +5578,12 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryStorage() {
       PersistenceScope::CreateFromSet(PERSISTENCE_TYPE_TEMPORARY,
                                       PERSISTENCE_TYPE_DEFAULT),
       OriginScope::FromNull(), Nullable<Client::Type>(),
-       false);
+      /* aExclusive */ false);
 
-  
-  
-  
-  
+  // If temporary storage is initialized but there's a clear storage or
+  // shutdown storage operation already scheduled, we can't immediately resolve
+  // the promise and return from the function because the clear or shutdown
+  // storage operation uninitializes storage.
   if (mTemporaryStorageInitialized &&
       !IsDirectoryLockBlockedByUninitStorageOperation(directoryLock)) {
     return BoolPromise::CreateAndResolve(true, __func__);
@@ -5644,11 +5607,11 @@ RefPtr<BoolPromise> QuotaManager::InitializeTemporaryStorage(
   MOZ_ASSERT(aDirectoryLock);
   MOZ_ASSERT(aDirectoryLock->Acquired());
 
-  
-  
-  
-  
-  
+  // If temporary storage is initialized and the directory lock for the
+  // initialize temporary storage operation is acquired, we can immediately
+  // resolve the promise and return from the function because there can't be a
+  // clear storage or shutdown storage operation which would uninitialize
+  // temporary storage.
   if (mTemporaryStorageInitialized) {
     DropDirectoryLock(aDirectoryLock);
 
@@ -5694,7 +5657,7 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitializedInternal() {
 
     QM_TRY(MOZ_TO_RESULT(storageDir->InitWithPath(GetStoragePath())));
 
-    
+    // The storage directory must exist before calling GetTemporaryStorageLimit.
     QM_TRY_INSPECT(const bool& created, EnsureDirectory(*storageDir));
 
     Unused << created;
@@ -6022,14 +5985,14 @@ QuotaManager::AllClientTypes() {
 }
 
 uint64_t QuotaManager::GetGroupLimit() const {
-  
-  
-  
-  
+  // To avoid one group evicting all the rest, limit the amount any one group
+  // can use to 20% resp. a fifth. To prevent individual sites from using
+  // exorbitant amounts of storage where there is a lot of free space, cap the
+  // group limit to 10GB.
   const auto x = std::min<uint64_t>(mTemporaryStorageLimit / 5, 10 GB);
 
-  
-  
+  // In low-storage situations, make an exception (while not exceeding the total
+  // storage limit).
   return std::min<uint64_t>(mTemporaryStorageLimit,
                             std::max<uint64_t>(x, 10 MB));
 }
@@ -6135,7 +6098,7 @@ void QuotaManager::NotifyMaintenanceStarted() {
       })));
 }
 
-
+// static
 void QuotaManager::GetStorageId(PersistenceType aPersistenceType,
                                 const nsACString& aOrigin,
                                 Client::Type aClientType,
@@ -6150,21 +6113,21 @@ void QuotaManager::GetStorageId(PersistenceType aPersistenceType,
   aDatabaseId = str;
 }
 
-
+// static
 bool QuotaManager::IsPrincipalInfoValid(const PrincipalInfo& aPrincipalInfo) {
   switch (aPrincipalInfo.type()) {
-    
+    // A system principal is acceptable.
     case PrincipalInfo::TSystemPrincipalInfo: {
       return true;
     }
 
-    
-    
+    // Validate content principals to ensure that the spec, originNoSuffix and
+    // baseDomain are sane.
     case PrincipalInfo::TContentPrincipalInfo: {
       const ContentPrincipalInfo& info =
           aPrincipalInfo.get_ContentPrincipalInfo();
 
-      
+      // Verify the principal spec parses.
       nsCOMPtr<nsIURI> uri;
       QM_TRY(MOZ_TO_RESULT(NS_NewURI(getter_AddRefs(uri), info.spec())), false);
 
@@ -6172,7 +6135,7 @@ bool QuotaManager::IsPrincipalInfoValid(const PrincipalInfo& aPrincipalInfo) {
           BasePrincipal::CreateContentPrincipal(uri, info.attrs());
       QM_TRY(MOZ_TO_RESULT(principal), false);
 
-      
+      // Verify the principal originNoSuffix matches spec.
       QM_TRY_INSPECT(const auto& originNoSuffix,
                      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoCString, principal,
                                                        GetOriginNoSuffix),
@@ -6194,12 +6157,12 @@ bool QuotaManager::IsPrincipalInfoValid(const PrincipalInfo& aPrincipalInfo) {
         return false;
       }
 
-      
+      // Verify the principal baseDomain exists.
       if (NS_WARN_IF(info.baseDomain().IsVoid())) {
         return false;
       }
 
-      
+      // Verify the principal baseDomain matches spec.
       QM_TRY_INSPECT(const auto& baseDomain,
                      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoCString, principal,
                                                        GetBaseDomain),
@@ -6219,7 +6182,7 @@ bool QuotaManager::IsPrincipalInfoValid(const PrincipalInfo& aPrincipalInfo) {
     }
   }
 
-  
+  // Null and expanded principals are not acceptable.
   return false;
 }
 
@@ -6284,7 +6247,7 @@ QuotaManager::GetInfoFromValidatedPrincipalInfo(
   }
 }
 
-
+// static
 nsAutoCString QuotaManager::GetOriginFromValidatedPrincipalInfo(
     const PrincipalInfo& aPrincipalInfo) {
   MOZ_ASSERT(IsPrincipalInfoValid(aPrincipalInfo));
@@ -6311,7 +6274,7 @@ nsAutoCString QuotaManager::GetOriginFromValidatedPrincipalInfo(
   }
 }
 
-
+// static
 Result<PrincipalMetadata, nsresult> QuotaManager::GetInfoFromPrincipal(
     nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(aPrincipal);
@@ -6364,7 +6327,7 @@ Result<PrincipalMetadata, nsresult> QuotaManager::GetInfoFromWindow(
   return GetInfoFromPrincipal(principal);
 }
 
-
+// static
 Result<nsAutoCString, nsresult> QuotaManager::GetOriginFromPrincipal(
     nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -6390,7 +6353,7 @@ Result<nsAutoCString, nsresult> QuotaManager::GetOriginFromPrincipal(
   return origin;
 }
 
-
+// static
 Result<nsAutoCString, nsresult> QuotaManager::GetOriginFromWindow(
     nsPIDOMWindowOuter* aWindow) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -6405,7 +6368,7 @@ Result<nsAutoCString, nsresult> QuotaManager::GetOriginFromWindow(
   QM_TRY_RETURN(GetOriginFromPrincipal(principal));
 }
 
-
+// static
 PrincipalMetadata QuotaManager::GetInfoForChrome() {
   return {{},
           GetOriginForChrome(),
@@ -6414,16 +6377,16 @@ PrincipalMetadata QuotaManager::GetInfoForChrome() {
           false};
 }
 
-
+// static
 nsLiteralCString QuotaManager::GetOriginForChrome() {
   return nsLiteralCString{kChromeOrigin};
 }
 
-
+// static
 bool QuotaManager::IsOriginInternal(const nsACString& aOrigin) {
   MOZ_ASSERT(!aOrigin.IsEmpty());
 
-  
+  // The first prompt is not required for these origins.
   if (aOrigin.EqualsLiteral(kChromeOrigin) ||
       StringBeginsWith(aOrigin, nsDependentCString(kAboutHomeOriginPrefix)) ||
       StringBeginsWith(aOrigin, nsDependentCString(kIndexedDBOriginPrefix)) ||
@@ -6434,19 +6397,19 @@ bool QuotaManager::IsOriginInternal(const nsACString& aOrigin) {
   return false;
 }
 
-
+// static
 bool QuotaManager::AreOriginsEqualOnDisk(const nsACString& aOrigin1,
                                          const nsACString& aOrigin2) {
   return MakeSanitizedOriginCString(aOrigin1) ==
          MakeSanitizedOriginCString(aOrigin2);
 }
 
-
+// static
 Result<PrincipalInfo, nsresult> QuotaManager::ParseOrigin(
     const nsACString& aOrigin) {
-  
-  
-  
+  // An origin string either corresponds to a SystemPrincipalInfo or a
+  // ContentPrincipalInfo, see
+  // QuotaManager::GetOriginFromValidatedPrincipalInfo.
 
   nsCString spec;
   OriginAttributes attrs;
@@ -6476,7 +6439,7 @@ Result<PrincipalInfo, nsresult> QuotaManager::ParseOrigin(
   return std::move(principalInfo);
 }
 
-
+// static
 void QuotaManager::InvalidateQuotaCache() { gInvalidateQuotaCache = true; }
 
 uint64_t QuotaManager::LockedCollectOriginsForEviction(
@@ -6486,10 +6449,10 @@ uint64_t QuotaManager::LockedCollectOriginsForEviction(
   RefPtr<CollectOriginsHelper> helper =
       new CollectOriginsHelper(mQuotaMutex, aMinSizeToBeFreed);
 
-  
-  
-  
-  
+  // Unlock while calling out to XPCOM (code behind the dispatch method needs
+  // to acquire its own lock which can potentially lead to a deadlock and it
+  // also calls an observer that can do various stuff like IO, so it's better
+  // to not hold our mutex while that happens).
   {
     MutexAutoUnlock autoUnlock(mQuotaMutex);
 
@@ -6690,8 +6653,8 @@ QuotaManager::GetOriginInfosExceedingGlobalLimit() const {
 
   QuotaManager::OriginInfosNestedTraversable res;
   res.AppendElement(CollectLRUOriginInfosUntil(
-      
-      
+      // XXX The lambda only needs to capture this, but due to Bug 1421435 it
+      // can't.
       [&](auto inserter) {
         for (const auto& entry : mGroupInfoPairs) {
           const auto& pair = entry.GetData();
@@ -6723,18 +6686,18 @@ void QuotaManager::ClearOrigins(
     const OriginInfosNestedTraversable& aDoomedOriginInfos) {
   AssertIsOnIOThread();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // If we are in shutdown, we could break off early from clearing origins.
+  // In such cases, we would like to track the ones that were already cleared
+  // up, such that other essential cleanup could be performed on clearedOrigins.
+  // clearedOrigins is used in calls to LockedRemoveQuotaForOrigin and
+  // OriginClearCompleted below. We could have used a collection of OriginInfos
+  // rather than flattening them to OriginMetadata but groupInfo in OriginInfo
+  // is just a raw ptr and LockedRemoveQuotaForOrigin might delete groupInfo and
+  // as a result, we would not be able to get origin persistence type required
+  // in OriginClearCompleted call after lockedRemoveQuotaForOrigin call.
   nsTArray<OriginMetadata> clearedOrigins;
 
-  
+  // XXX Does this need to be done a) in order and/or b) sequentially?
   for (const auto& doomedOriginInfo :
        Flatten<OriginInfosFlatTraversable::value_type>(aDoomedOriginInfos)) {
 #ifdef DEBUG
@@ -6744,12 +6707,12 @@ void QuotaManager::ClearOrigins(
     }
 #endif
 
-    
-    
-    
-    
-    
-    
+    //  TODO: We are currently only checking for this flag here which
+    //  means that we cannot break off once we start cleaning an origin. It
+    //  could be better if we could check for shutdown flag while cleaning an
+    //  origin such that we could break off early from the cleaning process if
+    //  we are stuck cleaning on one huge origin. Bug1797098 has been filed to
+    //  track this.
     if (QuotaManager::IsShuttingDown()) {
       break;
     }
@@ -6778,14 +6741,14 @@ void QuotaManager::ClearOrigins(
 void QuotaManager::CleanupTemporaryStorage() {
   AssertIsOnIOThread();
 
-  
-  
-  
+  // Evicting origins that exceed their group limit also affects the global
+  // temporary storage usage, so these steps have to be taken sequentially.
+  // Combining them doesn't seem worth the added complexity.
   ClearOrigins(GetOriginInfosExceedingGroupLimit());
   ClearOrigins(GetOriginInfosExceedingGlobalLimit());
 
   if (mTemporaryStorageUsage > mTemporaryStorageLimit) {
-    
+    // If disk space is still low after origin clear, notify storage pressure.
     NotifyStoragePressure(mTemporaryStorageUsage);
   }
 }
@@ -6797,8 +6760,8 @@ void QuotaManager::DeleteOriginDirectory(
 
   nsresult rv = directory->Remove(true);
   if (rv != NS_ERROR_FILE_NOT_FOUND && NS_FAILED(rv)) {
-    
-    
+    // This should never fail if we've closed all storage connections
+    // correctly...
     NS_ERROR("Failed to remove directory!");
   }
 }
@@ -6836,10 +6799,10 @@ Result<Ok, nsresult> QuotaManager::ArchiveOrigins(
   QM_TRY_INSPECT(const auto& storageArchivesDir,
                  QM_NewLocalFile(*mStorageArchivesPath));
 
-  
-  
-  
-  
+  // Create another subdir, so once we decide to remove all temporary archives,
+  // we can remove only the subdir and the parent directory can still be used
+  // for something else or similar in future. Otherwise, we would have to
+  // figure out a new name for it.
   QM_TRY(MOZ_TO_RESULT(storageArchivesDir->Append(u"0"_ns)));
 
   PRExplodedTime now;
@@ -6871,11 +6834,11 @@ Result<Ok, nsresult> QuotaManager::ArchiveOrigins(
     QM_TRY_INSPECT(const auto& directory,
                    GetOriginDirectory(fullOriginMetadata));
 
-    
+    // The origin could have been removed, for example due to corruption.
     QM_TRY_INSPECT(
         const auto& moved,
         QM_OR_ELSE_WARN_IF(
-            
+            // Expression.
             MOZ_TO_RESULT(
                 directory->MoveTo(fullOriginMetadata.mPersistenceType ==
                                           PERSISTENCE_TYPE_DEFAULT
@@ -6883,9 +6846,9 @@ Result<Ok, nsresult> QuotaManager::ArchiveOrigins(
                                       : temporaryStorageArchiveDir,
                                   u""_ns))
                 .map([](Ok) { return true; }),
-            
+            // Predicate.
             ([](const nsresult rv) { return rv == NS_ERROR_FILE_NOT_FOUND; }),
-            
+            // Fallback.
             ErrToOk<false>));
 
     if (moved) {
@@ -6924,8 +6887,8 @@ void QuotaManager::ClearDirectoryLockTables() {
       for (const auto& entry : directoryLockTable) {
         const auto& array = entry.GetData();
 
-        
-        
+        // It doesn't matter which lock is used, they all have the same
+        // persistence type and origin metadata.
         MOZ_ASSERT(!array->IsEmpty());
         const auto& lock = array->ElementAt(0);
 
@@ -6941,7 +6904,7 @@ void QuotaManager::ClearDirectoryLockTables() {
 bool QuotaManager::IsSanitizedOriginValid(const nsACString& aSanitizedOrigin) {
   AssertIsOnIOThread();
 
-  
+  // Do not parse this sanitized origin string, if we already parsed it.
   return mValidOrigins.LookupOrInsertWith(
       aSanitizedOrigin, [&aSanitizedOrigin] {
         nsCString spec;
@@ -7016,14 +6979,14 @@ int64_t QuotaManager::GenerateDirectoryLockId() {
   } else {
     NS_WARNING("Quota manager has run out of ids for directory locks!");
 
-    
-    
-    
+    // There's very little chance for this to happen given the max size of
+    // 64 bit integer but if it happens we can just reset mNextDirectoryLockId
+    // to zero since such old directory locks shouldn't exist anymore.
     mNextDirectoryLockId = 0;
   }
 
-  
-  
+  // TODO: Maybe add an assertion here to check that there is no existing
+  //       directory lock with given id.
 
   return directorylockId;
 }
@@ -7059,9 +7022,9 @@ auto QuotaManager::ExecuteOriginInitialization(
       aInitialization, aContext, std::forward<Func>(aFunc));
 }
 
-
-
-
+/*******************************************************************************
+ * Local class implementations
+ ******************************************************************************/
 
 CollectOriginsHelper::CollectOriginsHelper(mozilla::Mutex& aMutex,
                                            uint64_t aMinSizeToBeFreed)
@@ -7095,8 +7058,8 @@ CollectOriginsHelper::Run() {
   QuotaManager* quotaManager = QuotaManager::Get();
   NS_ASSERTION(quotaManager, "Shouldn't be null!");
 
-  
-  
+  // We use extra stack vars here to avoid race detector warnings (the same
+  // memory accessed with and without the lock held).
   nsTArray<RefPtr<OriginDirectoryLock>> locks;
   uint64_t sizeToBeFreed =
       quotaManager->CollectOriginsForEviction(mMinSizeToBeFreed, locks);
@@ -7138,9 +7101,9 @@ StoragePressureRunnable::Run() {
 TimeStamp RecordTimeDeltaHelper::Start() {
   MOZ_ASSERT(IsOnIOThread() || IsOnBackgroundThread());
 
-  
-  
-  
+  // XXX: If a OS sleep/wake occur after mStartTime is initialized but before
+  // gLastOSWake is set, then this time duration would still be recorded with
+  // key "Normal". We are assumming this is rather rare to happen.
   mStartTime.init(TimeStamp::Now());
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(this));
 
@@ -7161,23 +7124,23 @@ RecordTimeDeltaHelper::Run() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mInitializedTime.isSome()) {
-    
-    
-    
-    
-    
-    
-    
+    // Keys for QM_QUOTA_INFO_LOAD_TIME_V0 and QM_SHUTDOWN_TIME_V0:
+    // Normal: Normal conditions.
+    // WasSuspended: There was a OS sleep so that it was suspended.
+    // TimeStampErr1: The recorded start time is unexpectedly greater than the
+    //                end time.
+    // TimeStampErr2: The initialized time for the recording class is unexpectly
+    //                greater than the last OS wake time.
     const auto key = [this, wasSuspended = gLastOSWake > *mInitializedTime]() {
       if (wasSuspended) {
         return "WasSuspended"_ns;
       }
 
-      
-      
-      
-      
-      
+      // XXX File a bug if we have data for this key.
+      // We found negative values in our query in STMO for
+      // ScalarID::QM_REPOSITORIES_INITIALIZATION_TIME. This shouldn't happen
+      // because the documentation for TimeStamp::Now() says it returns a
+      // monotonically increasing number.
       if (*mStartTime > *mEndTime) {
         return "TimeStampErr1"_ns;
       }
@@ -7294,7 +7257,7 @@ nsresult StorageOperationBase::RemoveObsoleteOrigin(
       "origin!",
       NS_ConvertUTF16toUTF8(aOriginProps.mLeafName).get());
 
-  QM_TRY(MOZ_TO_RESULT(aOriginProps.mDirectory->Remove( true)));
+  QM_TRY(MOZ_TO_RESULT(aOriginProps.mDirectory->Remove(/* recursive */ true)));
 
   return NS_OK;
 }
@@ -7318,7 +7281,7 @@ Result<bool, nsresult> StorageOperationBase::MaybeRenameOrigin(
 
   QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
       *aOriginProps.mDirectory, aOriginProps.mTimestamp,
-       false, aOriginProps.mOriginMetadata)));
+      /* aPersisted */ false, aOriginProps.mOriginMetadata)));
 
   QM_TRY_INSPECT(const auto& newFile,
                  MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
@@ -7341,7 +7304,7 @@ Result<bool, nsresult> StorageOperationBase::MaybeRenameOrigin(
       [&exists, &aOriginProps, &newLeafName] {
         if (exists) {
           QM_TRY_RETURN(MOZ_TO_RESULT(
-              aOriginProps.mDirectory->Remove( true)));
+              aOriginProps.mDirectory->Remove(/* recursive */ true)));
         }
         QM_TRY_RETURN(MOZ_TO_RESULT(
             aOriginProps.mDirectory->RenameTo(nullptr, newLeafName)));
@@ -7385,8 +7348,8 @@ nsresult StorageOperationBase::ProcessOriginDirectories() {
             MOZ_TO_RESULT(quotaManager->IsPrincipalInfoValid(principalInfo)));
 
         if (!valid) {
-          
-          
+          // Unknown directories during upgrade are allowed. Just warn if we
+          // find them.
           UNKNOWN_FILE_WARNING(originProps.mLeafName);
           originProps.mIgnore = true;
           break;
@@ -7403,7 +7366,7 @@ nsresult StorageOperationBase::ProcessOriginDirectories() {
       }
 
       case OriginProps::eObsolete: {
-        
+        // There's no way to get info for obsolete origins.
         break;
       }
 
@@ -7412,8 +7375,8 @@ nsresult StorageOperationBase::ProcessOriginDirectories() {
     }
   }
 
-  
-  
+  // Don't try to upgrade obsolete origins, remove them right after we detect
+  // them.
   for (const auto& originProps : mOriginProps) {
     if (originProps.mType == OriginProps::eObsolete) {
       MOZ_ASSERT(originProps.mOriginMetadata.mSuffix.IsEmpty());
@@ -7432,9 +7395,9 @@ nsresult StorageOperationBase::ProcessOriginDirectories() {
   return NS_OK;
 }
 
-
-
-
+// XXX Do the fallible initialization in a separate non-static member function
+// of StorageOperationBase and eventually get rid of this method and use a
+// normal constructor instead.
 template <typename PersistenceTypeFunc>
 nsresult StorageOperationBase::OriginProps::Init(
     PersistenceTypeFunc&& aPersistenceTypeFunc) {
@@ -7444,7 +7407,7 @@ nsresult StorageOperationBase::OriginProps::Init(
                  MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoString, *mDirectory,
                                                    GetLeafName));
 
-  
+  // XXX Consider using QuotaManager::ParseOrigin here.
   nsCString spec;
   OriginAttributes attrs;
   nsCString originalSuffix;
@@ -7456,11 +7419,11 @@ nsresult StorageOperationBase::OriginProps::Init(
   }
 
   const auto persistenceType = [&]() -> PersistenceType {
-    
-    
-    
-    
-    
+    // XXX We shouldn't continue with initialization if OriginParser returned
+    // anything else but ValidOrigin. Otherwise, we have to deal with empty
+    // spec when the origin is obsolete, like here. The caller should handle
+    // the errors. Until it's fixed, we have to treat obsolete origins as
+    // origins with unknown/invalid persistence type.
     if (result != OriginParser::ValidOrigin) {
       return PERSISTENCE_TYPE_INVALID;
     }
@@ -7502,8 +7465,8 @@ nsresult RepositoryOperationBase::ProcessRepository() {
                        MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                            nsAutoString, originFile, GetLeafName));
 
-        
-        
+        // Unknown files during upgrade are allowed. Just warn if we find
+        // them.
         if (!IsOSMetadata(leafName)) {
           UNKNOWN_FILE_WARNING(leafName);
         }
@@ -7515,7 +7478,7 @@ nsresult RepositoryOperationBase::ProcessRepository() {
         QM_TRY(MOZ_TO_RESULT(originProps.Init([&self](const auto& aSpec) {
           return self.PersistenceTypeFromSpec(aSpec);
         })));
-        
+        // Bypass invalid origins while upgrading
         QM_TRY(OkIf(originProps.mType != OriginProps::eInvalid), mozilla::Ok{});
 
         if (originProps.mType != OriginProps::eObsolete) {
@@ -7666,8 +7629,8 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::MaybeUpgradeOriginDirectory(
                  MOZ_TO_RESULT_INVOKE_MEMBER(metadataFile, Exists));
 
   if (!exists) {
-    
-    
+    // Directory structure upgrade needed.
+    // Move all files to IDB specific directory.
 
     nsString idbDirectoryName;
     QM_TRY(OkIf(Client::TypeToText(Client::IDB, idbDirectoryName, fallible)),
@@ -7676,17 +7639,17 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::MaybeUpgradeOriginDirectory(
     QM_TRY_INSPECT(const auto& idbDirectory,
                    CloneFileAndAppend(*aDirectory, idbDirectoryName));
 
-    
-    
-    
-    
-    
+    // Usually we only use QM_OR_ELSE_LOG_VERBOSE/QM_OR_ELSE_LOG_VERBOSE_IF
+    // with Create and NS_ERROR_FILE_ALREADY_EXISTS check, but typically the
+    // idb directory shouldn't exist during the upgrade and the upgrade runs
+    // only once in most of the cases, so the use of QM_OR_ELSE_WARN_IF is ok
+    // here.
     QM_TRY(QM_OR_ELSE_WARN_IF(
-        
+        // Expression.
         MOZ_TO_RESULT(idbDirectory->Create(nsIFile::DIRECTORY_TYPE, 0755)),
-        
+        // Predicate.
         IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
-        
+        // Fallback.
         ([&idbDirectory](const nsresult rv) -> Result<Ok, nsresult> {
           QM_TRY_INSPECT(
               const bool& isDirectory,
@@ -7760,7 +7723,7 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::ProcessOriginDirectory(
         *aOriginProps.mDirectory, aOriginProps.mTimestamp,
         aOriginProps.mOriginMetadata)));
 
-    
+    // Move internal origins to new persistent storage.
     if (PersistenceTypeFromLegacyPersistentSpec(aOriginProps.mSpec) ==
         PERSISTENCE_TYPE_PERSISTENT) {
       if (!mPermanentStorageDir) {
@@ -7787,7 +7750,7 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::ProcessOriginDirectory(
                    NS_ConvertUTF16toUTF8(leafName).get());
 
         QM_TRY(MOZ_TO_RESULT(
-            aOriginProps.mDirectory->Remove( true)));
+            aOriginProps.mDirectory->Remove(/* recursive */ true)));
       } else {
         QM_TRY(MOZ_TO_RESULT(
             aOriginProps.mDirectory->MoveTo(mPermanentStorageDir, u""_ns)));
@@ -7807,7 +7770,7 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::ProcessOriginDirectory(
 
     MOZ_ASSERT(stream);
 
-    
+    // Currently unused (used to be isApp).
     QM_TRY(MOZ_TO_RESULT(stream->WriteBoolean(false)));
   }
 
@@ -7829,8 +7792,8 @@ nsresult UpgradeStorageHelperBase::Init() {
 
 PersistenceType UpgradeStorageHelperBase::PersistenceTypeFromSpec(
     const nsCString& aSpec) {
-  
-  
+  // There's no moving of origin directories between repositories like in the
+  // CreateOrUpgradeDirectoryMetadataHelper
   return *mPersistenceType;
 }
 
@@ -7863,9 +7826,9 @@ nsresult UpgradeStorageFrom0_0To1_0Helper::ProcessOriginDirectory(
     const OriginProps& aOriginProps) {
   AssertIsOnIOThread();
 
-  
-  
-  
+  // This handles changes in origin string generation from nsIPrincipal,
+  // especially the change from: appId+inMozBrowser+originNoSuffix
+  // to: origin (with origin suffix).
   QM_TRY_INSPECT(const bool& renamed, MaybeRenameOrigin(aOriginProps));
   if (renamed) {
     return NS_OK;
@@ -7879,7 +7842,7 @@ nsresult UpgradeStorageFrom0_0To1_0Helper::ProcessOriginDirectory(
 
   QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
       *aOriginProps.mDirectory, aOriginProps.mTimestamp,
-       false, aOriginProps.mOriginMetadata)));
+      /* aPersisted */ false, aOriginProps.mOriginMetadata)));
 
   return NS_OK;
 }
@@ -7888,10 +7851,10 @@ nsresult UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveMorgueDirectory(
     const OriginProps& aOriginProps) {
   AssertIsOnIOThread();
 
-  
-  
-  
-  
+  // The Cache API was creating top level morgue directories by accident for
+  // a short time in nightly.  This unfortunately prevents all storage from
+  // working.  So recover these profiles permanently by removing these corrupt
+  // directories as part of this upgrade.
 
   QM_TRY_INSPECT(const auto& morgueDir,
                  MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
@@ -7905,7 +7868,7 @@ nsresult UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveMorgueDirectory(
   if (exists) {
     QM_WARNING("Deleting accidental morgue directory!");
 
-    QM_TRY(MOZ_TO_RESULT(morgueDir->Remove( true)));
+    QM_TRY(MOZ_TO_RESULT(morgueDir->Remove(/* recursive */ true)));
   }
 
   return NS_OK;
@@ -7915,12 +7878,12 @@ Result<bool, nsresult> UpgradeStorageFrom1_0To2_0Helper::MaybeRemoveAppsData(
     const OriginProps& aOriginProps) {
   AssertIsOnIOThread();
 
-  
-  
-  
-  
-  
-  
+  // TODO: This method was empty for some time due to accidental changes done
+  //       in bug 1320404. This led to renaming of origin directories like:
+  //         https+++developer.cdn.mozilla.net^appId=1007&inBrowser=1
+  //       to:
+  //         https+++developer.cdn.mozilla.net^inBrowser=1
+  //       instead of just removing them.
 
   const nsCString& originalSuffix = aOriginProps.mOriginalSuffix;
   if (!originalSuffix.IsEmpty()) {
@@ -7991,8 +7954,8 @@ nsresult UpgradeStorageFrom1_0To2_0Helper::ProcessOriginDirectory(
     const OriginProps& aOriginProps) {
   AssertIsOnIOThread();
 
-  
-  
+  // This handles changes in origin string generation from nsIPrincipal,
+  // especially the stripping of obsolete origin attributes like addonId.
   QM_TRY_INSPECT(const bool& renamed, MaybeRenameOrigin(aOriginProps));
   if (renamed) {
     return NS_OK;
@@ -8007,7 +7970,7 @@ nsresult UpgradeStorageFrom1_0To2_0Helper::ProcessOriginDirectory(
   if (aOriginProps.mNeedsRestore2) {
     QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
         *aOriginProps.mDirectory, aOriginProps.mTimestamp,
-         false, aOriginProps.mOriginMetadata)));
+        /* aPersisted */ false, aOriginProps.mOriginMetadata)));
   }
 
   return NS_OK;
@@ -8062,7 +8025,7 @@ nsresult UpgradeStorageFrom2_0To2_1Helper::ProcessOriginDirectory(
   if (aOriginProps.mNeedsRestore2) {
     QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
         *aOriginProps.mDirectory, aOriginProps.mTimestamp,
-         false, aOriginProps.mOriginMetadata)));
+        /* aPersisted */ false, aOriginProps.mOriginMetadata)));
   }
 
   return NS_OK;
@@ -8117,7 +8080,7 @@ nsresult UpgradeStorageFrom2_1To2_2Helper::ProcessOriginDirectory(
   if (aOriginProps.mNeedsRestore2) {
     QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
         *aOriginProps.mDirectory, aOriginProps.mTimestamp,
-         false, aOriginProps.mOriginMetadata)));
+        /* aPersisted */ false, aOriginProps.mOriginMetadata)));
   }
 
   return NS_OK;
@@ -8177,12 +8140,12 @@ nsresult RestoreDirectoryMetadata2Helper::ProcessOriginDirectory(
     const OriginProps& aOriginProps) {
   AssertIsOnIOThread();
 
-  
+  // We don't have any approach to restore aPersisted, so reset it to false.
   QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
       *aOriginProps.mDirectory, aOriginProps.mTimestamp,
-       false, aOriginProps.mOriginMetadata)));
+      /* aPersisted */ false, aOriginProps.mOriginMetadata)));
 
   return NS_OK;
 }
 
-}  
+}  // namespace mozilla::dom::quota
