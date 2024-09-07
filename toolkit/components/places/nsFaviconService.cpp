@@ -300,6 +300,30 @@ nsFaviconService::SetFaviconForPage(
   }
 
   
+  
+  
+  if (aDataURL->SchemeIs("data")) {
+    nsAutoCString sniffedMimeType;
+    uint32_t bufferLength = buffer.Length();
+    
+    
+    rv = imgLoader::GetMimeTypeFromContent((const char*)buffer.Elements(),
+                                           bufferLength, sniffedMimeType);
+    if (NS_SUCCEEDED(rv)) {
+      mimeType = sniffedMimeType;
+    } else {
+      
+      
+      const char* content = reinterpret_cast<const char*>(buffer.Elements());
+      uint32_t length = std::min(bufferLength, 255u);
+      nsDependentCSubstring substring(content, length);
+      if (substring.Find("<svg") != -1) {
+        mimeType.AssignLiteral("image/svg+xml");
+      }
+    }
+  }
+
+  
   nsCOMPtr<nsIURI> faviconURI = GetExposableURI(aFaviconURI);
   nsCOMPtr<nsIURI> pageURI = GetExposableURI(aPageURI);
 
