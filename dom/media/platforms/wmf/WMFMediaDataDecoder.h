@@ -76,6 +76,8 @@ class MFTManager {
     return MediaDataDecoder::ConversionRequired::kNeedNone;
   }
 
+  virtual bool UseZeroCopyVideoFrame() const { return false; }
+
  protected:
   
   RefPtr<MFTDecoder> mDecoder;

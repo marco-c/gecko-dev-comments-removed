@@ -156,6 +156,11 @@ WMFMediaDataDecoder::ProcessOutput(DecodedData& aResults) {
       mInputTimesSet.clear();
     }
     aResults.AppendElement(std::move(output));
+    
+    
+    if (mMFTManager->UseZeroCopyVideoFrame()) {
+      break;
+    }
     if (mDrainStatus == DrainStatus::DRAINING) {
       break;
     }
