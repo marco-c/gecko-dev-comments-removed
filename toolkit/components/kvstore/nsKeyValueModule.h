@@ -7,9 +7,10 @@
 
 #include "nsID.h"
 
-extern "C" {
 
+extern "C" {
 nsresult nsKeyValueServiceConstructor(REFNSIID aIID, void** aResult);
+nsresult nsSQLiteKeyValueServiceConstructor(REFNSIID aIID, void** aResult);
 }  
 
 #endif  
