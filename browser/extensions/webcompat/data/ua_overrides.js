@@ -1350,6 +1350,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1898923",
+    platform: "all",
+    domain: "trade-in.vodafone.com",
+    bug: "1898923",
+    config: {
+      matches: ["*://trade-in.vodafone.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
