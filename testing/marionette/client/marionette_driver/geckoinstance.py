@@ -13,6 +13,7 @@
 
 
 import codecs
+import io
 import json
 import os
 import sys
@@ -370,8 +371,15 @@ class GeckoInstance(object):
         }
 
         if self.gecko_log == "-":
-            if hasattr(sys.stdout, "buffer"):
+            if getattr(sys.stdout, "encoding") == "utf-8":
+                process_args["stream"] = sys.stdout
+            elif hasattr(sys.stdout, "buffer"):
                 process_args["stream"] = codecs.getwriter("utf-8")(sys.stdout.buffer)
+            elif isinstance(sys.stdout, io.TextIOBase):
+                
+                
+                
+                process_args["stream"] = sys.stdout
             else:
                 process_args["stream"] = codecs.getwriter("utf-8")(sys.stdout)
         else:
