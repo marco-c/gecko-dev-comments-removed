@@ -1368,6 +1368,24 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+    id: "bug1899067",
+    platform: "desktop",
+    domain: "game.granbluefantasy.jp",
+    bug: "1899067",
+    config: {
+      matches: ["*://game.granbluefantasy.jp/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
