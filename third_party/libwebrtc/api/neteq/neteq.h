@@ -94,6 +94,7 @@ struct NetEqLifetimeStatistics {
   int32_t total_interruption_duration_ms = 0;
   
   uint64_t generated_noise_samples = 0;
+  uint64_t total_processing_delay_us = 0;
 };
 
 
