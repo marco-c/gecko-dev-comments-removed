@@ -14,10 +14,6 @@ class nsUserCharacteristics {
   static void MaybeSubmitPing();
 
   
-  
-  static void StealPointerEvent(mozilla::WidgetGUIEvent* aEvent);
-
-  
 
 
 
