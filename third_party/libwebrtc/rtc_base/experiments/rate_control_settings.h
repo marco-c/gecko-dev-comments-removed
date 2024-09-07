@@ -52,8 +52,6 @@ class RateControlSettings final {
   RateControlSettings(RateControlSettings&&);
   ~RateControlSettings();
 
-  static RateControlSettings ParseFromFieldTrials();
-
   
   
   

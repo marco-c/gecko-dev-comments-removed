@@ -7300,8 +7300,7 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
   
   
   double overshoot_factor = 2.0;
-  const RateControlSettings trials =
-      RateControlSettings::ParseFromFieldTrials();
+  const RateControlSettings trials(env_.field_trials());
   if (trials.UseEncoderBitrateAdjuster()) {
     
     
