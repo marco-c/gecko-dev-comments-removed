@@ -401,29 +401,6 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
   if (aLoadInfo->GetWasSchemelessInput() &&
       !IsHttpsFirstModeEnabled(isPrivateWin)) {
     nsAutoCString urlCString;
