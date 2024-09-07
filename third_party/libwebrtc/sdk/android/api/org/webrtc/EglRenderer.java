@@ -35,6 +35,14 @@ public class EglRenderer implements VideoSink {
   public interface FrameListener { void onFrame(Bitmap frame); }
 
   
+
+
+  public interface RenderListener {
+    
+    void onRender(long timestampNs);
+  }
+
+  
   public static interface ErrorCallback {
     
     void onGlOutOfMemory();
@@ -99,6 +107,8 @@ public class EglRenderer implements VideoSink {
   };
 
   private final ArrayList<FrameListenerAndParams> frameListeners = new ArrayList<>();
+
+  private final ArrayList<RenderListener> renderListeners = new ArrayList<>();
 
   private volatile ErrorCallback errorCallback;
 
@@ -279,6 +289,7 @@ public class EglRenderer implements VideoSink {
           eglBase = null;
         }
 
+        renderListeners.clear();
         frameListeners.clear();
         eglCleanupBarrier.countDown();
       });
@@ -438,6 +449,16 @@ public class EglRenderer implements VideoSink {
 
 
 
+  public void addRenderListener(final RenderListener listener) {
+    renderListeners.add(listener);
+  }
+
+  
+
+
+
+
+
 
   public void removeFrameListener(final FrameListener listener) {
     final CountDownLatch latch = new CountDownLatch(1);
@@ -457,6 +478,36 @@ public class EglRenderer implements VideoSink {
           }
         }
       });
+    }
+    ThreadUtils.awaitUninterruptibly(latch);
+  }
+
+  
+
+
+
+
+
+
+  public void removeRenderListener(final RenderListener listener) {
+    final CountDownLatch latch = new CountDownLatch(1);
+    synchronized (threadLock) {
+      if (eglThread == null) {
+        return;
+      }
+      if (Thread.currentThread() == eglThread.getHandler().getLooper().getThread()) {
+        throw new RuntimeException("removeRenderListener must not be called on the render thread.");
+      }
+      postToRenderThread(
+          () -> {
+            latch.countDown();
+            final Iterator<RenderListener> iter = renderListeners.iterator();
+            while (iter.hasNext()) {
+              if (iter.next() == listener) {
+                iter.remove();
+              }
+            }
+          });
     }
     ThreadUtils.awaitUninterruptibly(latch);
   }
@@ -574,6 +625,10 @@ public class EglRenderer implements VideoSink {
                 eglBase.swapBuffers(frame.getTimestampNs());
               } else {
                 eglBase.swapBuffers();
+              }
+
+              for (var listener : renderListeners) {
+                listener.onRender(System.nanoTime());
               }
 
               synchronized (statisticsLock) {
