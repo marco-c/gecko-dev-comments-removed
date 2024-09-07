@@ -6,13 +6,311 @@
 
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/EmitterScope.h"
+#include "frontend/IfEmitter.h"
 #include "frontend/TryEmitter.h"
+#include "frontend/WhileEmitter.h"
+#include "vm/CompletionKind.h"
 #include "vm/DisposeJumpKind.h"
 
 using namespace js;
 using namespace js::frontend;
 
 UsingEmitter::UsingEmitter(BytecodeEmitter* bce) : bce_(bce) {}
+
+
+
+
+bool UsingEmitter::emitDisposeLoop(CompletionKind initialCompletion,
+                                   DisposeJumpKind jumpKind) {
+  MOZ_ASSERT(initialCompletion != CompletionKind::Return);
+
+  
+  if (initialCompletion == CompletionKind::Throw) {
+    if (!bce_->emit1(JSOp::True)) {
+      
+      return false;
+    }
+    if (!bce_->emit1(JSOp::Exception)) {
+      
+      return false;
+    }
+  } else {
+    if (!bce_->emit1(JSOp::False)) {
+      
+      return false;
+    }
+    if (!bce_->emit1(JSOp::Undefined)) {
+      
+      return false;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!bce_->emit1(JSOp::TakeDisposeCapability)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Dec)) {
+    
+    return false;
+  }
+
+  InternalWhileEmitter wh(bce_);
+
+  
+  
+  if (!wh.emitCond()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Zero)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Ge)) {
+    
+    return false;
+  }
+
+  if (!wh.emitBody()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Dup2)) {
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (!bce_->emit1(JSOp::GetDisposableRecord)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(1)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::IsNullOrUndefined)) {
+    
+    return false;
+  }
+
+  InternalIfEmitter ifMethodNotUndefined(bce_);
+
+  
+  if (!ifMethodNotUndefined.emitThenElse(IfEmitter::ConditionKind::Negative)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  TryEmitter tryCall(bce_, TryEmitter::Kind::TryCatch,
+                     TryEmitter::ControlKind::NonSyntactic);
+
+  if (!tryCall.emitTry()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Dup2)) {
+    
+    return false;
+  }
+
+  
+  if (!bce_->emitCall(JSOp::Call, 0)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  
+  if (!tryCall.emitCatch()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPickN(6)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPickN(7)) {
+    
+    return false;
+  }
+
+  InternalIfEmitter ifException(bce_);
+
+  
+  if (!ifException.emitThenElse()) {
+    
+    return false;
+  }
+
+  
+  if (!bce_->emit1(JSOp::CreateSuppressedError)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitUnpickN(5)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::True)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitUnpickN(6)) {
+    
+    return false;
+  }
+
+  
+  
+  if (!ifException.emitElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitUnpickN(5)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::True)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitUnpickN(6)) {
+    
+    return false;
+  }
+
+  if (!ifException.emitEnd()) {
+    
+    return false;
+  }
+
+  if (!tryCall.emitEnd()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPopN(3)) {
+    
+    return false;
+  }
+
+  if (!ifMethodNotUndefined.emitElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPopN(4)) {
+    
+    return false;
+  }
+
+  if (!ifMethodNotUndefined.emitEnd()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Dec)) {
+    
+    return false;
+  }
+
+  if (!wh.emitEnd()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPopN(2)) {
+    
+    return false;
+  }
+
+  
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  InternalIfEmitter ifThrow(bce_);
+
+  if (!ifThrow.emitThenElse()) {
+    
+    return false;
+  }
+
+  if (jumpKind == DisposeJumpKind::JumpOnError) {
+    if (!bce_->emit1(JSOp::Throw)) {
+      
+      return false;
+    }
+  } else {
+    if (!bce_->emit1(JSOp::ThrowWithoutJump)) {
+      
+      return false;
+    }
+  }
+
+  if (!ifThrow.emitElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  if (!ifThrow.emitEnd()) {
+    
+    return false;
+  }
+
+  return true;
+}
 
 bool UsingEmitter::prepareForDisposableScopeBody() {
   tryEmitter_.emplace(bce_, TryEmitter::Kind::TryFinally,
@@ -31,20 +329,17 @@ bool UsingEmitter::prepareForAssignment(UsingHint hint) {
 
 bool UsingEmitter::prepareForForOfLoopIteration() {
   MOZ_ASSERT(bce_->innermostEmitterScopeNoCheck()->hasDisposables());
-  return bce_->emit2(JSOp::DisposeDisposables,
-                     uint8_t(DisposeJumpKind::JumpOnError));
+  return emitDisposeLoop();
 }
 
 bool UsingEmitter::prepareForForOfIteratorCloseOnThrow() {
   MOZ_ASSERT(bce_->innermostEmitterScopeNoCheck()->hasDisposables());
-  return bce_->emit2(JSOp::DisposeDisposables,
-                     uint8_t(DisposeJumpKind::NoJumpOnError));
+  return emitDisposeLoop(CompletionKind::Throw, DisposeJumpKind::NoJumpOnError);
 }
 
 bool UsingEmitter::emitNonLocalJump(EmitterScope* present) {
   MOZ_ASSERT(present->hasDisposables());
-  return bce_->emit2(JSOp::DisposeDisposables,
-                     uint8_t(DisposeJumpKind::JumpOnError));
+  return emitDisposeLoop();
 }
 
 bool UsingEmitter::emitEnd() {
@@ -54,8 +349,7 @@ bool UsingEmitter::emitEnd() {
   
   
   
-  if (!bce_->emit2(JSOp::DisposeDisposables,
-                   uint8_t(DisposeJumpKind::JumpOnError))) {
+  if (!emitDisposeLoop()) {
     return false;
   }
 
@@ -86,8 +380,7 @@ bool UsingEmitter::emitEnd() {
     return false;
   }
 
-  if (!bce_->emit2(JSOp::DisposeDisposables,
-                   uint8_t(DisposeJumpKind::JumpOnError))) {
+  if (!emitDisposeLoop(CompletionKind::Throw)) {
     
     return false;
   }

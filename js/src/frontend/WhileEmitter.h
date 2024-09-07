@@ -35,7 +35,7 @@ struct BytecodeEmitter;
 
 
 class MOZ_STACK_CLASS WhileEmitter {
-#ifdef ENABLE_DECORATORS
+#if defined(ENABLE_DECORATORS) || defined(ENABLE_EXPLICIT_RESOURCE_MANAGEMENT)
  protected:
 #endif
   BytecodeEmitter* bce_;
@@ -87,7 +87,7 @@ class MOZ_STACK_CLASS WhileEmitter {
   [[nodiscard]] bool emitEnd();
 };
 
-#ifdef ENABLE_DECORATORS
+#if defined(ENABLE_DECORATORS) || defined(ENABLE_EXPLICIT_RESOURCE_MANAGEMENT)
 
 
 class MOZ_STACK_CLASS InternalWhileEmitter : public WhileEmitter {

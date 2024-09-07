@@ -2630,6 +2630,19 @@
 
 
 
+ \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(ThrowWithoutJump, throw_without_jump, NULL, 1, 1, 0, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2652,6 +2665,19 @@
 
  \
     IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(ThrowWithStackWithoutJump, throw_with_stack_without_jump, NULL, 1, 2, 0, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(CreateSuppressedError, create_suppressed_error, NULL, 1, 2, 1, JOF_BYTE)) \
     
 
 
@@ -3427,8 +3453,18 @@
 
 
 
+
  \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(DisposeDisposables, dispose_disposables, NULL, 2, 0, 0, JOF_UINT8)) \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(TakeDisposeCapability, take_dispose_capability, NULL, 1, 0, 2, JOF_BYTE)) \
+    
+
+
+
+
+
+
+ \
+    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(GetDisposableRecord, get_disposable_record, NULL, 1, 2, 3, JOF_BYTE)) \
     
 
 
@@ -3693,16 +3729,13 @@
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    IF_RECORD_TUPLE(, MACRO(239))     \
-    IF_RECORD_TUPLE(, MACRO(240))     \
-    IF_RECORD_TUPLE(, MACRO(241))     \
     IF_RECORD_TUPLE(, MACRO(242))     \
     IF_RECORD_TUPLE(, MACRO(243))     \
     IF_RECORD_TUPLE(, MACRO(244))     \
     IF_RECORD_TUPLE(, MACRO(245))     \
-    MACRO(246)                                   \
-    MACRO(247)                                   \
-    MACRO(248)                                   \
+    IF_RECORD_TUPLE(, MACRO(246))     \
+    IF_RECORD_TUPLE(, MACRO(247))     \
+    IF_RECORD_TUPLE(, MACRO(248))     \
     MACRO(249)                                   \
     MACRO(250)                                   \
     MACRO(251)                                   \
