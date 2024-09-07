@@ -75,8 +75,7 @@ class SVGGradientFrame : public SVGPaintServerFrame {
 
   void GetStops(nsTArray<ColorStop>* aStops, float aGraphicOpacity);
 
-  const SVGAnimatedTransformList* GetGradientTransformList(
-      nsIContent* aDefault);
+  SVGGradientFrame* GetGradientTransformFrame(SVGGradientFrame* aDefault);
   
   gfxMatrix GetGradientTransform(nsIFrame* aSource,
                                  const gfxRect* aOverrideBounds);
