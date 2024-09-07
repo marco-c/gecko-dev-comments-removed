@@ -63,10 +63,10 @@ enum FlipType {
   FlipType_Slide = 3  
 };
 
-enum MenuPopupAnchorType {
-  MenuPopupAnchorType_Node = 0,   
-  MenuPopupAnchorType_Point = 1,  
-  MenuPopupAnchorType_Rect = 2,   
+enum class MenuPopupAnchorType : uint8_t {
+  Node = 0,   
+  Point = 1,  
+  Rect = 2,   
 };
 
 
@@ -383,7 +383,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   void PerformMove(const Rects&);
 
   
-  bool IsAnchored() const { return mAnchorType != MenuPopupAnchorType_Point; }
+  bool IsAnchored() const { return mAnchorType != MenuPopupAnchorType::Point; }
 
   
   nsIContent* GetAnchor() const { return mAnchorContent; }
@@ -634,7 +634,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   mutable nscoord mPositionedOffset = 0;
 
   
-  MenuPopupAnchorType mAnchorType = MenuPopupAnchorType_Node;
+  MenuPopupAnchorType mAnchorType = MenuPopupAnchorType::Node;
 
   nsRect mOverrideConstraintRect;
 

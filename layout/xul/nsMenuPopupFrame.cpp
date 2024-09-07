@@ -482,7 +482,7 @@ nscoord nsMenuPopupFrame::IntrinsicISize(gfxContext* aContext,
   if (nsIFrame* menuList = GetInFlowParent()) {
     menuListOrAnchorWidth = menuList->GetRect().width;
   }
-  if (mAnchorType == MenuPopupAnchorType_Rect) {
+  if (mAnchorType == MenuPopupAnchorType::Rect) {
     menuListOrAnchorWidth = std::max(menuListOrAnchorWidth, mScreenRect.width);
   }
   
@@ -776,7 +776,7 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
   
   
   
-  if (aAnchorContent || aAnchorType == MenuPopupAnchorType_Rect) {
+  if (aAnchorContent || aAnchorType == MenuPopupAnchorType::Rect) {
     nsAutoString anchor, align, position;
     mContent->AsElement()->GetAttr(nsGkAtoms::popupanchor, anchor);
     mContent->AsElement()->GetAttr(nsGkAtoms::popupalign, align);
@@ -901,7 +901,7 @@ void nsMenuPopupFrame::InitializePopupAtScreen(nsIContent* aTriggerContent,
   mIsContextMenu = aIsContextMenu;
   mIsTopLevelContextMenu = aIsContextMenu;
   mIsNativeMenu = false;
-  mAnchorType = MenuPopupAnchorType_Point;
+  mAnchorType = MenuPopupAnchorType::Point;
   mPositionedOffset = 0;
   mPositionedByMoveToRect = false;
 }
@@ -922,7 +922,7 @@ void nsMenuPopupFrame::InitializePopupAsNativeContextMenu(
   mIsContextMenu = true;
   mIsTopLevelContextMenu = true;
   mIsNativeMenu = true;
-  mAnchorType = MenuPopupAnchorType_Point;
+  mAnchorType = MenuPopupAnchorType::Point;
   mPositionedOffset = 0;
   mPositionedByMoveToRect = false;
 }
@@ -932,7 +932,7 @@ void nsMenuPopupFrame::InitializePopupAtRect(nsIContent* aTriggerContent,
                                              const nsIntRect& aRect,
                                              bool aAttributesOverride) {
   InitializePopup(nullptr, aTriggerContent, aPosition, 0, 0,
-                  MenuPopupAnchorType_Rect, aAttributesOverride);
+                  MenuPopupAnchorType::Rect, aAttributesOverride);
   mScreenRect = ToAppUnits(aRect, AppUnitsPerCSSPixel());
 }
 
@@ -1445,7 +1445,7 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
     result.mAnchorRect = result.mUntransformedAnchorRect = [&] {
       
       
-      if (mAnchorType == MenuPopupAnchorType_Rect) {
+      if (mAnchorType == MenuPopupAnchorType::Rect) {
         return mScreenRect;
       }
       
@@ -1465,7 +1465,7 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
     
     
     
-    if (mAnchorContent || mAnchorType == MenuPopupAnchorType_Rect) {
+    if (mAnchorContent || mAnchorType == MenuPopupAnchorType::Rect) {
       
       
       
@@ -1728,12 +1728,12 @@ void nsMenuPopupFrame::PerformMove(const Rects& aRects) {
   
   const bool fixPositionToPoint =
       IsNoAutoHide() && (GetPopupLevel() != PopupLevel::Parent ||
-                         mAnchorType == MenuPopupAnchorType_Rect);
+                         mAnchorType == MenuPopupAnchorType::Rect);
   if (fixPositionToPoint) {
     
     
     const auto& margin = GetMargin();
-    mAnchorType = MenuPopupAnchorType_Point;
+    mAnchorType = MenuPopupAnchorType::Point;
     mScreenRect.x = aRects.mUsedRect.x - margin.left;
     mScreenRect.y = aRects.mUsedRect.y - margin.top;
   }
@@ -1741,8 +1741,8 @@ void nsMenuPopupFrame::PerformMove(const Rects& aRects) {
   
   
   if (IsAnchored() && !ShouldFollowAnchor() && !mUsedScreenRect.IsEmpty() &&
-      mAnchorType != MenuPopupAnchorType_Rect) {
-    mAnchorType = MenuPopupAnchorType_Rect;
+      mAnchorType != MenuPopupAnchorType::Rect) {
+    mAnchorType = MenuPopupAnchorType::Rect;
     mScreenRect = aRects.mUntransformedAnchorRect;
   }
 
@@ -2207,7 +2207,7 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
 
   mPositionedByMoveToRect = aByMoveToRect;
   mScreenRect.MoveTo(appUnitsPos);
-  if (mAnchorType == MenuPopupAnchorType_Rect) {
+  if (mAnchorType == MenuPopupAnchorType::Rect) {
     
     
     mScreenRect.height = 0;
@@ -2217,7 +2217,7 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
     mPopupAnchor = POPUPALIGNMENT_BOTTOMLEFT;
     mXPos = mYPos = 0;
   } else {
-    mAnchorType = MenuPopupAnchorType_Point;
+    mAnchorType = MenuPopupAnchorType::Point;
   }
 
   SetPopupPosition(true);
@@ -2241,7 +2241,7 @@ void nsMenuPopupFrame::MoveToAnchor(nsIContent* aAnchorContent,
 
   nsPopupState oldstate = mPopupState;
   InitializePopup(aAnchorContent, mTriggerContent, aPosition, aXPos, aYPos,
-                  MenuPopupAnchorType_Node, aAttributesOverride);
+                  MenuPopupAnchorType::Node, aAttributesOverride);
   
   mPopupState = oldstate;
 
@@ -2335,7 +2335,7 @@ void nsMenuPopupFrame::CreatePopupView() {
 }
 
 bool nsMenuPopupFrame::ShouldFollowAnchor() const {
-  if (mAnchorType != MenuPopupAnchorType_Node || !mAnchorContent) {
+  if (mAnchorType != MenuPopupAnchorType::Node || !mAnchorContent) {
     return false;
   }
 
