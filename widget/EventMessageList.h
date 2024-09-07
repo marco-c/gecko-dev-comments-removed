@@ -215,6 +215,9 @@ NS_EVENT_MESSAGE(eContextLost)
 NS_EVENT_MESSAGE(eContextRestored)
 
 
+NS_EVENT_MESSAGE(eContentVisibilityAutoStateChange)
+
+
 NS_EVENT_MESSAGE(eSVGLoad)
 NS_EVENT_MESSAGE(eSVGScroll)
 
