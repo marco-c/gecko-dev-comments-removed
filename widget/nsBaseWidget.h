@@ -706,6 +706,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   bool mUseAttachedEvents;
   bool mIMEHasFocus;
   bool mIMEHasQuit;
+  
   bool mIsFullyOccluded;
   bool mNeedFastSnaphot;
   
