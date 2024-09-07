@@ -874,6 +874,8 @@ DCSurface* DCExternalSurfaceWrapper::EnsureSurfaceForExternalImage(
   
 
   [&]() {
+    if (!StaticPrefs::gfx_webrender_dcomp_color_manage_with_filters()) return;
+
     const auto cmsMode = GfxColorManagementMode();
     if (cmsMode == CMSMode::Off) return;
 
