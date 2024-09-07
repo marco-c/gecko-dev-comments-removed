@@ -346,6 +346,12 @@
       return (this.tabpanels = document.getElementById("tabbrowser-tabpanels"));
     },
 
+    get verticalPinnedTabsContainer() {
+      return (this.verticalPinnedTabsContainer = document.getElementById(
+        "vertical-pinned-tabs-container"
+      ));
+    },
+
     addEventListener(...args) {
       this.tabpanels.addEventListener(...args);
     },
@@ -841,7 +847,15 @@
       }
 
       this.showTab(aTab);
-      this.moveTabTo(aTab, this._numPinnedTabs);
+      if (this.tabContainer.inVerticalTabsMode) {
+        let wasFocused = document.activeElement == this.selectedTab;
+        let oldPosition = aTab._tPos;
+        this.tabContainer._invalidateCachedTabs();
+        this.verticalPinnedTabsContainer.appendChild(aTab);
+        this._updateAfterMoveTabTo(aTab, oldPosition, wasFocused);
+      } else {
+        this.moveTabTo(aTab, this._numPinnedTabs);
+      }
       aTab.setAttribute("pinned", "true");
       this._updateTabBarForPinnedTabs();
       this._notifyPinnedStatus(aTab);
@@ -852,8 +866,20 @@
         return;
       }
 
-      this.moveTabTo(aTab, this._numPinnedTabs - 1);
-      aTab.removeAttribute("pinned");
+      if (this.tabContainer.inVerticalTabsMode) {
+        let wasFocused = document.activeElement == this.selectedTab;
+        let oldPosition = aTab._tPos;
+        
+        
+        
+        aTab.removeAttribute("pinned");
+        this.tabContainer._invalidateCachedTabs();
+        this.tabContainer.arrowScrollbox.prepend(aTab);
+        this._updateAfterMoveTabTo(aTab, oldPosition, wasFocused);
+      } else {
+        this.moveTabTo(aTab, this._numPinnedTabs - 1);
+        aTab.removeAttribute("pinned");
+      }
       aTab.style.marginInlineStart = "";
       aTab._pinnedUnscrollable = false;
       this._updateTabBarForPinnedTabs();
@@ -5286,11 +5312,24 @@
 
       let wasFocused = document.activeElement == this.selectedTab;
 
-      aIndex = aIndex < aTab._tPos ? aIndex : aIndex + 1;
+      let neighbor = this.tabs[aIndex];
+      if (aIndex < aTab._tPos) {
+        neighbor.before(aTab);
+      } else if (!neighbor) {
+        
+        
+        aTab.parentElement.append(aTab);
+      } else {
+        neighbor.after(aTab);
+      }
 
-      let neighbor = this.tabs[aIndex] || null;
+      
+      
       this.tabContainer._invalidateCachedTabs();
-      this.tabContainer.insertBefore(aTab, neighbor);
+      this._updateAfterMoveTabTo(aTab, oldPosition, wasFocused);
+    },
+
+    _updateAfterMoveTabTo(aTab, oldPosition, wasFocused = null) {
       this._updateTabsAfterInsert();
 
       if (wasFocused) {
@@ -5302,7 +5341,11 @@
       if (aTab.pinned) {
         this.tabContainer._positionPinnedTabs();
       }
-
+      
+      
+      if (oldPosition == aTab._tPos) {
+        return;
+      }
       var evt = document.createEvent("UIEvents");
       evt.initUIEvent("TabMove", true, false, window, oldPosition);
       aTab.dispatchEvent(evt);
