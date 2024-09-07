@@ -180,8 +180,15 @@ var gViewController = {
       
       await new Promise(resolve => {
         window.requestAnimationFrame(() => {
-          
-          window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(async () => {
+            
+            if (document.hasPendingL10nMutations) {
+              await new Promise(r => {
+                document.addEventListener("L10nMutationsFinished", r, {
+                  once: true,
+                });
+              });
+            }
             ScrollOffsets.restore();
             resolve();
           });
