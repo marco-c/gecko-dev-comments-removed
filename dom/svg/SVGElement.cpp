@@ -1564,10 +1564,7 @@ SVGViewportElement* SVGElement::GetCtx() const {
 }
 
 
-gfxMatrix SVGElement::PrependLocalTransformsTo(const gfxMatrix& aMatrix,
-                                               SVGTransformTypes aWhich) const {
-  return aMatrix;
-}
+gfxMatrix SVGElement::ChildToUserSpaceTransform() const { return {}; }
 
 SVGElement::LengthAttributesInfo SVGElement::GetLengthInfo() {
   return LengthAttributesInfo(nullptr, nullptr, 0);
