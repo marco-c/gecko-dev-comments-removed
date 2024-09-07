@@ -38,8 +38,14 @@ export function createEditor(useCm6 = false) {
   });
 }
 
-export function createHeadlessEditor() {
-  const editor = createEditor();
+
+
+
+
+
+
+export function createHeadlessEditor(useCm6) {
+  const editor = createEditor(useCm6);
   editor.appendToLocalElement(document.createElement("div"));
   return editor;
 }

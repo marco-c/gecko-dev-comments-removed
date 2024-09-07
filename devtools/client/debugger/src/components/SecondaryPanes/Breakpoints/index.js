@@ -25,6 +25,7 @@ import {
   getShouldPauseOnExceptions,
   getShouldPauseOnCaughtExceptions,
 } from "../../../selectors/index";
+import { features } from "../../../utils/prefs";
 
 const classnames = require("resource://devtools/client/shared/classnames.js");
 
@@ -44,9 +45,15 @@ class Breakpoints extends Component {
     this.removeEditor();
   }
 
-  getHeadlessEditor() {
+  
+
+
+
+
+
+  getHeadlessEditor(useCm6) {
     if (!this.headlessEditor) {
-      this.headlessEditor = createHeadlessEditor();
+      this.headlessEditor = createHeadlessEditor(useCm6);
     }
     return this.headlessEditor;
   }
@@ -119,7 +126,9 @@ class Breakpoints extends Component {
       return null;
     }
 
-    const editor = this.getHeadlessEditor();
+    
+    
+    const editor = this.getHeadlessEditor(features.codemirrorNext);
     const sources = breakpointSources.map(({ source }) => source);
     return div(
       {
