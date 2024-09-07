@@ -1359,9 +1359,6 @@ pref("dom.server-events.default-reconnection-time", 5000);
 
 
 
-
-
-
 pref("network.IDN.restriction_profile", "high");
 
 

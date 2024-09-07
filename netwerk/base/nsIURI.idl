@@ -298,11 +298,9 @@ interface nsIURI : nsISupports
 
 
 
-
     readonly attribute AUTF8String displaySpec;
 
     
-
 
 
 
