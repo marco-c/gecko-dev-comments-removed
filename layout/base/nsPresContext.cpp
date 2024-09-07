@@ -96,6 +96,7 @@
 #include "mozilla/layers/APZThreadUtils.h"
 #include "MobileViewportManager.h"
 #include "mozilla/dom/ImageTracker.h"
+#include "mozilla/dom/InteractiveWidget.h"
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocAccessible.h"
 #endif
@@ -3024,13 +3025,27 @@ void nsPresContext::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
     return;
   }
 
-  
-  
-  
-  
-  if (mDynamicToolbarHeight == 0 || aOffset == -mDynamicToolbarMaxHeight) {
-    mPresShell->MarkFixedFramesForReflow(IntrinsicDirty::None);
-    mPresShell->AddResizeEventFlushObserverIfNeeded();
+  dom::InteractiveWidget interactiveWidget = mDocument->InteractiveWidget();
+  if (interactiveWidget == InteractiveWidget::OverlaysContent &&
+      mKeyboardHeight > 0) {
+    
+    
+    
+    
+    return;
+  }
+
+  if (interactiveWidget == InteractiveWidget::ResizesContent ||
+      mKeyboardHeight == 0) {
+    
+    
+    
+    
+    
+    if (mDynamicToolbarHeight == 0 || aOffset == -mDynamicToolbarMaxHeight) {
+      mPresShell->MarkFixedFramesForReflow(IntrinsicDirty::None);
+      mPresShell->AddResizeEventFlushObserverIfNeeded();
+    }
   }
 
   mDynamicToolbarHeight = mDynamicToolbarMaxHeight + aOffset;
