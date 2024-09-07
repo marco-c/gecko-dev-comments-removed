@@ -1455,18 +1455,14 @@ impl<'i> DeclarationParserState<'i> {
             PropertyDeclaration::parse_into(&mut self.declarations, id, context, input)
         })?;
         self.importance = match input.try_parse(parse_important) {
-            Ok(()) => Importance::Important,
+            Ok(()) => {
+                if !context.allows_important_declarations() {
+                    return Err(input.new_custom_error(StyleParseErrorKind::UnexpectedImportantDeclaration));
+                }
+                Importance::Important
+            },
             Err(_) => Importance::Normal,
         };
-        if context
-            .nesting_context
-            .rule_types
-            .contains(CssRuleType::PositionTry) &&
-            matches!(self.importance, Importance::Important)
-        {
-            return Err(input
-                .new_custom_error(StyleParseErrorKind::PositionTryUnexpectedImportantDeclaration));
-        }
         
         input.expect_exhausted()?;
         self.output_block
@@ -1623,7 +1619,7 @@ fn report_one_css_error<'i>(
         
         if !matches!(
             error.kind,
-            ParseErrorKind::Custom(StyleParseErrorKind::PositionTryUnexpectedImportantDeclaration)
+            ParseErrorKind::Custom(StyleParseErrorKind::UnexpectedImportantDeclaration)
         ) {
             error = match *property {
                 PropertyId::Custom(ref c) => {
