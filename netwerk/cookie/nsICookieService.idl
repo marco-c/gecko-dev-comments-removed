@@ -5,9 +5,23 @@
 
 #include "nsISupports.idl"
 
-interface nsIURI;
 interface nsIChannel;
+interface nsICookie;
+interface nsIURI;
 webidl Document;
+
+%{C++
+namespace mozilla {
+  class OriginAttributes;
+
+  namespace net {
+    class Cookie;
+  }
+}
+%}
+
+[ref] native const_OriginAttributes(const mozilla::OriginAttributes);
+native CookiePtr(RefPtr<mozilla::net::Cookie>);
 
 
 
@@ -50,7 +64,7 @@ interface nsICookieTransactionCallback : nsISupports
 
 
 
-[scriptable, uuid(1e94e283-2811-4f43-b947-d22b1549d824)]
+[builtinclass, scriptable, uuid(1e94e283-2811-4f43-b947-d22b1549d824)]
 interface nsICookieService : nsISupports
 {
   
@@ -72,12 +86,13 @@ interface nsICookieService : nsISupports
 
 
 
+  [noscript, notxpcom, nostdcall] void getCookiesFromHost(in ACString aBaseDomain,
+                                                          in const_OriginAttributes aOriginAttributes,
+                                                          out Array<CookiePtr> aCookies);
 
-
-
-
-
-  ACString getCookieStringFromDocument(in Document aDocument);
+  
+  [noscript, notxpcom, nostdcall] void staleCookies(in Array<CookiePtr> aCookies,
+                                                    in int64_t aCurrentTimeInUsec);
 
   
 
