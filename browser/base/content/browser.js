@@ -103,6 +103,17 @@ ChromeUtils.defineESModuleGetters(this, {
   ZoomUI: "resource:///modules/ZoomUI.sys.mjs",
 });
 
+
+
+ChromeUtils.defineLazyGetter(this, "SelectableProfileService", () => {
+  if (!AppConstants.MOZ_SELECTABLE_PROFILES) {
+    return null;
+  }
+  return ChromeUtils.importESModule(
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs"
+  ).SelectableProfileService;
+});
+
 ChromeUtils.defineLazyGetter(this, "fxAccounts", () => {
   return ChromeUtils.importESModule(
     "resource://gre/modules/FxAccounts.sys.mjs"

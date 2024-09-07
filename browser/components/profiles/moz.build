@@ -5,6 +5,7 @@
 
 
 XPCSHELL_TESTS_MANIFESTS += ["tests/unit/xpcshell.toml"]
+BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 JAR_MANIFESTS += ["jar.mn"]
 
