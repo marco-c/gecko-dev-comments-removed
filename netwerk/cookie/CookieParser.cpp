@@ -701,10 +701,7 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
                              const nsACString& aExpires,
                              const nsACString& aMaxage, int64_t aCurrentTime,
                              bool aFromHttp) {
-  
-  
-  int64_t maxageCap =
-      aFromHttp ? 0 : StaticPrefs::privacy_documentCookies_maxage();
+  int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
 
   
 

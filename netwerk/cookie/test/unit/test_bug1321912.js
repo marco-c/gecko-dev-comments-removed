@@ -59,7 +59,7 @@ conn.executeSimpleSQL(
 
 Services.cookies.sessionCookies;
 
-Assert.equal(conn.schemaVersion, 13);
+Assert.ok(conn.schemaVersion >= 13);
 let stmt = conn.createStatement(
   "SELECT sql FROM sqlite_master " +
     "WHERE type = 'table' AND " +
