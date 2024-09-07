@@ -1250,16 +1250,32 @@ struct nsGridContainerFrame::TrackSizingFunctions {
       
       
       
-      const auto& sizingFunction = SizingFor(i);
-      const auto& maxCoord = sizingFunction.GetMax();
-      const auto* coord = &maxCoord;
-      if (!coord->IsBreadth()) {
-        coord = &sizingFunction.GetMin();
-        if (!coord->IsBreadth()) {
-          return 1;
+      nscoord trackSize;
+      {
+        const auto& sizingFunction = SizingFor(i);
+        const auto& maxCoord = sizingFunction.GetMax();
+        const auto& minCoord = sizingFunction.GetMin();
+        if (maxCoord.IsBreadth() && minCoord.IsBreadth()) {
+          
+          
+          
+          const nscoord minSize =
+              ::ResolveToDefiniteSize(minCoord, percentBasis);
+          const nscoord maxSize =
+              ::ResolveToDefiniteSize(maxCoord, percentBasis);
+          trackSize = std::max(maxSize, minSize);
+        } else {
+          const auto* coord = &maxCoord;
+          if (!coord->IsBreadth()) {
+            coord = &minCoord;
+            if (!coord->IsBreadth()) {
+              return 1;
+            }
+          }
+          trackSize = ::ResolveToDefiniteSize(*coord, percentBasis);
         }
       }
-      nscoord trackSize = ::ResolveToDefiniteSize(*coord, percentBasis);
+
       if (i >= mRepeatAutoStart && i < mRepeatAutoEnd) {
         
         if (trackSize < AppUnitsPerCSSPixel()) {
