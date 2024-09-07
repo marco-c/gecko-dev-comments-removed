@@ -952,19 +952,15 @@ nsImageLoadingContent::LoadImageWithChannel(nsIChannel* aChannel,
   
 
   
-  
-  
-  if (mCurrentRequest && !HaveSize(mCurrentRequest)) {
-    nsCOMPtr<nsIURI> uri;
-    aChannel->GetOriginalURI(getter_AddRefs(uri));
-    MaybeAgeRequestGeneration(uri);
-  }
-
-  
   AutoStateChanger changer(this, true);
 
   
   RefPtr<imgRequestProxy>& req = PrepareNextRequest(eImageLoadType_Normal);
+  if (req && &req == &mCurrentRequest) {
+    nsCOMPtr<nsIURI> uri;
+    aChannel->GetOriginalURI(getter_AddRefs(uri));
+    MaybeAgeRequestGeneration(uri);
+  }
   nsresult rv = loader->LoadImageWithChannel(aChannel, this, doc, aListener,
                                              getter_AddRefs(req));
   if (NS_SUCCEEDED(rv)) {
@@ -1106,13 +1102,6 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   }
 
   
-  
-  
-  if (mCurrentRequest && !HaveSize(mCurrentRequest)) {
-    MaybeAgeRequestGeneration(aNewURI);
-  }
-
-  
   AutoStateChanger changer(this, aNotify);
 
   
@@ -1127,6 +1116,10 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
       aLoadFlags | nsContentUtils::CORSModeToLoadImageFlags(GetCORSMode());
 
   RefPtr<imgRequestProxy>& req = PrepareNextRequest(aImageLoadType);
+  if (req && &req == &mCurrentRequest) {
+    MaybeAgeRequestGeneration(aNewURI);
+  }
+
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   bool result = nsContentUtils::QueryTriggeringPrincipal(
       element, aTriggeringPrincipal, getter_AddRefs(triggeringPrincipal));
