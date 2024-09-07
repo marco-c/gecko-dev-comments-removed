@@ -26,6 +26,19 @@ add_task(async function test_chat_autoopen() {
 
 
 
+add_task(async function test_chat_autoclose() {
+  SidebarController.show("viewGenaiChatSidebar");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.chat.enabled", false]],
+  });
+
+  Assert.ok(!SidebarController.isOpen, "Pref change closed sidebar");
+});
+
+
+
+
 add_task(async function test_chat_no_open() {
   await SpecialPowers.pushPrefEnv({
     set: [
