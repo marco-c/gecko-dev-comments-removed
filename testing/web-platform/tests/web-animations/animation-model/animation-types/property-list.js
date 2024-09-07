@@ -1297,6 +1297,18 @@ const gCSSProperties2 = {
       { type: 'discrete', options: [ [ 'normal', 'no-autospace' ] ] }
     ]
   },
+  'text-box-edge': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'leading', 'text' ] ] }
+    ]
+  },
+  'text-box-trim': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', 'start' ] ] }
+    ]
+  },
   'text-decoration-color': {
     
     types: [ 'color' ]
