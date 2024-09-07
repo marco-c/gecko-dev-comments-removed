@@ -1,26 +1,106 @@
 
-export function buildValidNavigatorIdentityRequest() {
+
+
+
+
+
+
+
+
+
+
+
+
+export function makeGetOptions(providersToUse = ["default"]) {
+  if (typeof providersToUse === "string") {
+    if (providersToUse === "default" || providersToUse === "openid4vp"){
+      return makeGetOptions([providersToUse]);
+    }
+  }
+  if (!Array.isArray(providersToUse) || !providersToUse?.length) {
+    return { digital: { providers: providersToUse } };
+  }
+  const providers = [];
+  for (const provider of providersToUse) {
+    switch (provider) {
+      case "openid4vp":
+        providers.push(makeOID4VPDict());
+        break;
+      case "default":
+        providers.push(makeIdentityRequestProvider(undefined, undefined));
+        break;
+      default:
+        throw new Error(`Unknown provider type: ${provider}`);
+        break;
+    }
+  }
+  return { digital: { providers } };
+}
+
+
+
+
+
+
+function makeIdentityRequestProvider(protocol = "protocol", request = {}) {
   return {
-      digital: {
-        providers: [{
-          protocol: "urn:openid.net:oid4vp",
-          request: JSON.stringify({
-            
-            client_id: "client.example.org",
-            client_id_scheme: "web-origin",
-            nonce: "n-0S6_WzA2Mj",
-            presentation_definition: {
-              
-            }
-          }),
-        }],
-      },
+    protocol,
+    request,
   };
 }
 
 
-export function requestIdentityWithActivation(test_driver, request) {
-  return test_driver.bless("request identity with activation", async function() {
-    return await navigator.identity.get(request);
+
+
+
+
+function makeOID4VPDict() {
+  return makeIdentityRequestProvider("openid4vp", {
+    
+  });
+}
+
+
+
+
+
+
+
+
+export function sendMessage(iframe, data) {
+  return new Promise((resolve, reject) => {
+    if (!iframe.contentWindow) {
+      reject(
+        new Error(
+          "iframe.contentWindow is undefined, cannot send message (something is wrong with the test that called this)."
+        )
+      );
+      return;
+    }
+    window.addEventListener("message", function messageListener(event) {
+      if (event.source === iframe.contentWindow) {
+        window.removeEventListener("message", messageListener);
+        resolve(event.data);
+      }
+    });
+    iframe.contentWindow.postMessage(data, "*");
+  });
+}
+
+
+
+
+
+
+
+
+export function loadIframe(iframe, url) {
+  return new Promise((resolve, reject) => {
+    iframe.addEventListener("load", resolve, { once: true });
+    iframe.addEventListener("error", reject, { once: true });
+    if (!iframe.isConnected) {
+      document.body.appendChild(iframe);
+    }
+    iframe.src = url.toString();
   });
 }
