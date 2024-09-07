@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_QUOTA_QUOTAUSAGEREQUESTBASE_H_
-#define DOM_QUOTA_QUOTAUSAGEREQUESTBASE_H_
+#ifndef DOM_QUOTA_QUOTAUSAGEREQUESTPARENT_H_
+#define DOM_QUOTA_QUOTAUSAGEREQUESTPARENT_H_
 
 #include "mozilla/dom/quota/BackgroundThreadObject.h"
 #include "mozilla/dom/quota/ForwardDecls.h"
@@ -13,19 +13,19 @@
 
 namespace mozilla::dom::quota {
 
-class QuotaUsageRequestBase : public BackgroundThreadObject,
-                              public PQuotaUsageRequestParent {
+class QuotaUsageRequestParent : public BackgroundThreadObject,
+                                public PQuotaUsageRequestParent {
  public:
-  QuotaUsageRequestBase() = default;
+  QuotaUsageRequestParent() = default;
 
-  NS_INLINE_DECL_REFCOUNTING(QuotaUsageRequestBase, override)
+  NS_INLINE_DECL_REFCOUNTING(QuotaUsageRequestParent, override)
 
   RefPtr<BoolPromise> OnCancel();
 
   void Destroy();
 
  private:
-  virtual ~QuotaUsageRequestBase();
+  virtual ~QuotaUsageRequestParent();
 
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
