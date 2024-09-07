@@ -167,14 +167,9 @@ var PrintUtils = {
 
 
 
-
-
-
-
   _openTabModalPrint(
     aBrowsingContext,
     aOpenWindowInfo,
-    aPrintInitiationTime,
     aPrintSelectionOnly,
     aPrintFrameOnly
   ) {
@@ -197,7 +192,7 @@ var PrintUtils = {
     });
     let dialogBox = this.getTabDialogBox(sourceBrowser);
     let { closedPromise, dialog } = dialogBox.open(
-      `chrome://global/content/print.html?printInitiationTime=${aPrintInitiationTime}`,
+      `chrome://global/content/print.html`,
       { features: "resizable=no", sizeTo: "available" },
       args
     );
@@ -241,8 +236,6 @@ var PrintUtils = {
 
 
   startPrintWindow(aBrowsingContext, aOptions) {
-    const printInitiationTime = Date.now();
-
     
     let { printSelectionOnly, printFrameOnly, windowDotPrintOpenWindowInfo } =
       aOptions || {};
@@ -272,7 +265,6 @@ var PrintUtils = {
       return this._openTabModalPrint(
         browsingContext,
         windowDotPrintOpenWindowInfo,
-        printInitiationTime,
         printSelectionOnly,
         printFrameOnly
       );
