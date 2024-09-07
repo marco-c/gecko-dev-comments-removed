@@ -160,7 +160,7 @@ extern Pages ClampedMaxPages(IndexType t, Pages initialPages,
 
 extern size_t ComputeMappedSize(Pages clampedMaxPages);
 
-extern size_t GetMaxOffsetGuardLimit(bool hugeMemory);
+extern uint64_t GetMaxOffsetGuardLimit(bool hugeMemory);
 
 
 extern bool IsValidBoundsCheckImmediate(uint32_t i);
