@@ -111,6 +111,53 @@ T* CellAllocator::NewTenuredCell(JSContext* cx, Args&&... args) {
   return new (mozilla::KnownNotNull, cell) T(std::forward<Args>(args)...);
 }
 
+#if defined(DEBUG) || defined(JS_GC_ZEAL) || defined(JS_OOM_BREAKPOINT)
+
+
+
+
+
+
+
+
+
+
+inline void PreAllocGCChecks(JSContext* cx) {
+  
+  if (!cx->suppressGC) {
+    cx->verifyIsSafeToGC();
+  }
+
+#  ifdef JS_GC_ZEAL
+  GCRuntime* gc = &cx->runtime()->gc;
+  if (gc->needZealousGC()) {
+    gc->runDebugGC();
+  }
+#  endif
+}
+
+inline bool CheckForSimulatedFailure(JSContext* cx, AllowGC allowGC) {
+  
+  if (js::oom::ShouldFailWithOOM()) {
+    
+    
+    if (allowGC) {
+      ReportOutOfMemory(cx);
+    }
+    return false;
+  }
+
+  return true;
+}
+#else
+
+inline void PreAllocGCChecks(JSContext* cx) {}
+inline bool CheckForSimulatedFailure(JSContext* cx, AllowGC allowGC) {
+  return true;
+}
+
+#endif  
+
 template <JS::TraceKind traceKind, AllowGC allowGC>
 
 void* CellAllocator::AllocNurseryOrTenuredCell(JSContext* cx,
@@ -122,8 +169,14 @@ void* CellAllocator::AllocNurseryOrTenuredCell(JSContext* cx,
   MOZ_ASSERT(thingSize == Arena::thingSize(allocKind));
   MOZ_ASSERT_IF(site && site->initialHeap() == Heap::Tenured,
                 heap == Heap::Tenured);
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
 
-  if (!PreAllocChecks<allowGC>(cx, allocKind)) {
+  if constexpr (allowGC) {
+    PreAllocGCChecks(cx);
+  }
+
+  if (!CheckForSimulatedFailure(cx, allowGC)) {
     return nullptr;
   }
 
