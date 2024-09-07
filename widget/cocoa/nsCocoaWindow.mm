@@ -164,6 +164,8 @@ void nsCocoaWindow::DestroyNativeWindow() {
   
   Show(false);
 
+  [mWindow removeTrackingArea];
+
   [mWindow releaseJSObjects];
   
   
@@ -523,6 +525,8 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
   
   
   mWindow.contentView.wantsLayer = YES;
+
+  [mWindow createTrackingArea];
 
   
   
@@ -2765,9 +2769,6 @@ void nsCocoaWindow::CocoaWindowDidResize() {
 }
 
 - (void)windowDidResize:(NSNotification*)aNotification {
-  BaseWindow* window = [aNotification object];
-  [window updateTrackingArea];
-
   if (!mGeckoWindow) return;
 
   mGeckoWindow->CocoaWindowDidResize();
@@ -3094,7 +3095,6 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
 @end
 
 @interface BaseWindow (Private)
-- (void)removeTrackingArea;
 - (void)cursorUpdated:(NSEvent*)aEvent;
 - (void)reflowTitlebarElements;
 @end
@@ -3169,7 +3169,6 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
   mDrawTitle = NO;
   mTouchBar = nil;
   mIsAnimationSuppressed = NO;
-  [self updateTrackingArea];
 
   return self;
 }
@@ -3265,7 +3264,6 @@ static NSImage* GetMenuMaskImage() {
 
 - (void)dealloc {
   [mTouchBar release];
-  [self removeTrackingArea];
   ChildViewMouseTracker::OnDestroyWindow(self);
   [super dealloc];
 }
@@ -3385,13 +3383,11 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   mViewWithTrackingArea = nil;
 }
 
-- (void)updateTrackingArea {
-  [self removeTrackingArea];
-
+- (void)createTrackingArea {
   mViewWithTrackingArea = [self.trackingAreaView retain];
-  const NSTrackingAreaOptions options = NSTrackingMouseEnteredAndExited |
-                                        NSTrackingMouseMoved |
-                                        NSTrackingActiveAlways;
+  const NSTrackingAreaOptions options =
+      NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved |
+      NSTrackingActiveAlways | NSTrackingInVisibleRect;
   mTrackingArea =
       [[NSTrackingArea alloc] initWithRect:[mViewWithTrackingArea bounds]
                                    options:options
