@@ -9,6 +9,7 @@ function checkRefCount(s, expected) {
     
     
     if (getBuildConfiguration("debug")) {
+        finishBackgroundFree();
         var repr = JSON.parse(stringRepresentation(s));
         assertEq(repr.bufferRefCount, expected);
     }
