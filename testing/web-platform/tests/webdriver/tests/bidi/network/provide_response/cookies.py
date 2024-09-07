@@ -13,8 +13,6 @@ from .. import (
     PAGE_PROVIDE_RESPONSE_HTML,
     RESPONSE_COMPLETED_EVENT,
     RESPONSE_STARTED_EVENT,
-    SET_COOKIE_TEST_IDS,
-    SET_COOKIE_TEST_PARAMETERS
 )
 
 from ... import any_int, recursive_compare
@@ -103,9 +101,230 @@ async def test_cookie_before_request_sent(
 
 
 @pytest.mark.parametrize(
+    
+    
+    
+    
+    
+    
+    
+    
+    
     "cookie, with_domain, expected_cookie",
-    SET_COOKIE_TEST_PARAMETERS,
-    ids=SET_COOKIE_TEST_IDS,
+    [
+        (
+            SetCookieHeader(
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "none",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            "default domain",
+            {
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "none",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            "alt domain",
+            {
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "none",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                name="foo",
+                path="/some/other/path",
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/some/other/path",
+                "sameSite": "none",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                http_only=True,
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                "httpOnly": True,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "none",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                name="foo",
+                path="/",
+                secure=True,
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "none",
+                "secure": True,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                expiry="Tue, 14 Feb 2040 17:41:14 GMT",
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                
+                "expiry": 2212854074,
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "none",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                max_age=3600,
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                "expiry": any_int,
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "none",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                same_site="none",
+                
+                secure=True,
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "none",
+                "secure": True,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                same_site="lax",
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "lax",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+        (
+            SetCookieHeader(
+                same_site="strict",
+                name="foo",
+                path="/",
+                value=NetworkStringValue("bar"),
+            ),
+            None,
+            {
+                "httpOnly": False,
+                "name": "foo",
+                "path": "/",
+                "sameSite": "strict",
+                "secure": False,
+                "size": 6,
+                "value": {"type": "string", "value": "bar"},
+            },
+        ),
+    ],
+    ids=[
+        "no domain",
+        "default domain",
+        "alt domain",
+        "custom path",
+        "http only",
+        "secure",
+        "expiry",
+        "max age",
+        "same site none",
+        "same site lax",
+        "same site strict",
+    ],
 )
 async def test_cookie_attributes_before_request_sent(
     setup_blocked_request,

@@ -530,12 +530,5 @@ interface nsIHttpChannelInternal : nsISupports
     [must_use] void setResponseOverride(
         in nsIReplacedHttpResponse aReplacedHttpResponse);
 
-    
-
-
-
-    [must_use] void setResponseStatus(
-        in unsigned long aStatus, in ACString aStatusText);
-
     readonly attribute nsresult lastTransportStatus;
 };
