@@ -492,7 +492,7 @@ def _setup_or_run_lldb_server(app, substs, device_serial, setup=True):
 
     
     
-    pkg_dir = device.shell_output("run-as %s pwd" % app)
+    pkg_dir = device.shell_output("run-as %s pwd" % app, attempts=3)
     if not pkg_dir or pkg_dir == "/":
         pkg_dir = "/data/data/%s" % app
         _log_warning(
