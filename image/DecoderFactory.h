@@ -12,6 +12,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/image/ImageUtils.h"
 #include "nsCOMPtr.h"
 #include "Orientation.h"
 #include "SurfaceFlags.h"
@@ -24,24 +25,6 @@ class nsICODecoder;
 class RasterImage;
 class SourceBuffer;
 class SourceBufferIterator;
-
-
-
-
-
-enum class DecoderType {
-  PNG,
-  GIF,
-  JPEG,
-  BMP,
-  BMP_CLIPBOARD,
-  ICO,
-  ICON,
-  WEBP,
-  AVIF,
-  JXL,
-  UNKNOWN
-};
 
 class DecoderFactory {
  public:
@@ -117,6 +100,15 @@ class DecoderFactory {
 
 
   static already_AddRefed<Decoder> CloneAnimationDecoder(Decoder* aDecoder);
+
+  
+
+
+
+
+
+  static already_AddRefed<Decoder> CloneAnonymousMetadataDecoder(
+      Decoder* aDecoder, const Maybe<DecoderFlags>& aDecoderFlags = Nothing());
 
   
 
