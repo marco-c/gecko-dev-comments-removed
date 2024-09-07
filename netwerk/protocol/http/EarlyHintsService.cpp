@@ -112,15 +112,8 @@ void EarlyHintsService::EarlyHint(
   }
 }
 
-void EarlyHintsService::FinalResponse(uint32_t aResponseStatus,
-                                      const nsACString& aProtocolVersion) {
-  
-  
-  CollectTelemetry(Some(aResponseStatus), aProtocolVersion);
-}
-
 void EarlyHintsService::Cancel(const nsACString& aReason) {
-  CollectTelemetry(Nothing(), ""_ns);
+  Reset();
   mOngoingEarlyHints->CancelAll(aReason);
 }
 
@@ -129,29 +122,10 @@ void EarlyHintsService::RegisterLinksAndGetConnectArgs(
   mOngoingEarlyHints->RegisterLinksAndGetConnectArgs(aCpId, aOutLinks);
 }
 
-void EarlyHintsService::CollectTelemetry(Maybe<uint32_t> aResponseStatus,
-                                         const nsACString& aProtocolVersion) {
+void EarlyHintsService::Reset() {
   if (mEarlyHintsCount == 0) {
     return;
   }
-
-  
-  
-#ifndef ANDROID
-  if (aResponseStatus) {
-    if (aProtocolVersion.EqualsLiteral("http/1.0") ||
-        aProtocolVersion.EqualsLiteral("http/1.1")) {
-      glean::netwerk::eh_response_version.Get("http_1"_ns).Add(1);
-    } else if (aProtocolVersion.EqualsLiteral("h2")) {
-      glean::netwerk::eh_response_version.Get("http_2"_ns).Add(1);
-    } else if (aProtocolVersion.EqualsLiteral("h3")) {
-      glean::netwerk::eh_response_version.Get("http_3"_ns).Add(1);
-    } else {
-      glean::netwerk::eh_response_version.Get("unknown"_ns).Add(1);
-    }
-  }
-#endif
-
   
   mEarlyHintsCount = 0;
   mFirstEarlyHint = Nothing();
