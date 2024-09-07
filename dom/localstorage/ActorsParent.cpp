@@ -8476,8 +8476,8 @@ nsresult QuotaClient::AboutToClearOrigins(
   
   
 
-  if (!aPersistenceScope.IsNull() &&
-      aPersistenceScope.GetValue() != PERSISTENCE_TYPE_DEFAULT) {
+  if (!aPersistenceScope.Matches(
+          PersistenceScope::CreateFromValue(PERSISTENCE_TYPE_DEFAULT))) {
     return NS_OK;
   }
 
