@@ -405,6 +405,7 @@ describe('Launcher specs', function () {
           );
         } else if (isFirefox) {
           expect(puppeteer.defaultArgs()).toContain('--headless');
+          expect(puppeteer.defaultArgs()).toContain('--no-remote');
           if (os.platform() === 'darwin') {
             expect(puppeteer.defaultArgs()).toContain('--foreground');
           } else {
@@ -485,7 +486,7 @@ describe('Launcher specs', function () {
         const {browser, close} = await launch(
           Object.assign({}, defaultBrowserOptions, {
             
-            ignoreDefaultArgs: [],
+            ignoreDefaultArgs: [defaultArgs[0]!],
           })
         );
         try {
@@ -493,7 +494,8 @@ describe('Launcher specs', function () {
           if (!spawnargs) {
             throw new Error('spawnargs not present');
           }
-          expect(spawnargs.indexOf(defaultArgs[0]!)).not.toBe(-1);
+          expect(spawnargs.indexOf(defaultArgs[0]!)).toBe(-1);
+          expect(spawnargs.indexOf(defaultArgs[1]!)).not.toBe(-1);
         } finally {
           await close();
         }

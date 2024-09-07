@@ -39,6 +39,9 @@ class GeckoRuntimeRunner(BaseRunner):
             self.cmdargs.append("--wait-for-browser")
 
         
+        self.env["MOZ_NO_REMOTE"] = "1"
+
+        
         self.env["GNOME_DISABLE_CRASH_DIALOG"] = "1"
         self.env["XRE_NO_WINDOWS_CRASH_DIALOG"] = "1"
 
