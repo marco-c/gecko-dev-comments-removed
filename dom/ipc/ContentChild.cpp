@@ -1732,13 +1732,6 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
         ContentProcessSandboxParams::ForThisProcess(aBroker));
   }
 #  elif defined(XP_WIN)
-  
-  
-  
-  
-  ::LoadLibraryW(L"mozavcodec.dll");
-  ::LoadLibraryW(L"mozavutil.dll");
-
   if (GetEffectiveContentSandboxLevel() > 7) {
     
     ::LoadLibraryW(L"freebl3.dll");
