@@ -2666,9 +2666,11 @@ TEST_P(ResolutionAlignmentTest, SinkWantsAlignmentApplied) {
   config.video_stream_factory = nullptr;
   video_stream_encoder_->ConfigureEncoder(std::move(config), kMaxPayloadLength);
 
+  
+  
+  const DataRate kAvailableBitrate = 3 * kSimulcastTargetBitrate;
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
-      kSimulcastTargetBitrate, kSimulcastTargetBitrate, kSimulcastTargetBitrate,
-      0, 0, 0);
+      kAvailableBitrate, kAvailableBitrate, kAvailableBitrate, 0, 0, 0);
   
   sink_.SetNumExpectedLayers(num_streams);
 
