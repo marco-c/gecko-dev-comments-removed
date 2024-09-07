@@ -3,7 +3,7 @@
 
 
 import os
-from pathlib import Path, PurePath
+from pathlib import PurePath
 
 import sphinx
 import sphinx.ext.apidoc
@@ -32,7 +32,7 @@ def read_build_config(docdir):
     trees = {}
     python_package_dirs = set()
 
-    is_main = Path(docdir) == MAIN_DOC_PATH
+    is_main = docdir == MAIN_DOC_PATH
     relevant_mozbuild_path = None if is_main else docdir
 
     
@@ -50,12 +50,11 @@ def read_build_config(docdir):
             
             
             absdir = os.path.normpath(os.path.join(build.topsrcdir, reldir, value))
-            if not is_main and absdir not in (Path(docdir), MAIN_DOC_PATH):
+            if not is_main and absdir not in (docdir, MAIN_DOC_PATH):
                 
-                try:
-                    relative_docdir = docdir.relative_to(absdir)
-                    key = os.path.join(key, os.fspath(relative_docdir))
-                except ValueError:
+                if docdir.startswith(absdir):
+                    key = os.path.join(key, docdir.split(f"{key}/")[-1])
+                else:
                     continue
 
             assert key
@@ -181,7 +180,7 @@ class _SphinxManager(object):
         
         
         
-        if Path(app.srcdir) == Path(self.topsrcdir):
+        if app.srcdir == self.topsrcdir:
             indexes = set(
                 [
                     os.path.normpath(os.path.join(p, "index"))
