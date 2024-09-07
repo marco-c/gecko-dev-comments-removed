@@ -7398,6 +7398,7 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
   }
 
   if (isTransformed || zoomedContentRoot) {
+    MOZ_ASSERT(GetParent());
     Matrix4x4 result;
     int32_t scaleFactor =
         ((aFlags & IN_CSS_UNITS) ? AppUnitsPerCSSPixel()
@@ -7407,9 +7408,6 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
 
 
     if (isTransformed) {
-      NS_ASSERTION(nsLayoutUtils::GetCrossDocParentFrameInProcess(this),
-                   "Cannot transform the viewport frame!");
-
       result = result * nsDisplayTransform::GetResultingTransformMatrix(
                             this, nsPoint(0, 0), scaleFactor,
                             nsDisplayTransform::INCLUDE_PERSPECTIVE |
@@ -7419,8 +7417,8 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
     
     
     
-    *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrameInProcess(this);
-    nsPoint delta = GetOffsetToCrossDoc(*aOutAncestor);
+    *aOutAncestor = GetParent();
+    nsPoint delta = GetPosition();
     
     result.PostTranslate(NSAppUnitsToFloatPixels(delta.x, scaleFactor),
                          NSAppUnitsToFloatPixels(delta.y, scaleFactor), 0.0f);
