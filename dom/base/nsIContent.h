@@ -40,6 +40,7 @@ struct Focusable {
   
   int32_t mTabIndex = -1;
   explicit operator bool() const { return mFocusable; }
+  [[nodiscard]] bool IsTabbable() const { return mFocusable && mTabIndex >= 0; }
 };
 
 

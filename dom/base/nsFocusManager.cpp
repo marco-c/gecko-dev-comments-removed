@@ -3515,6 +3515,27 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
           
           
           ignoreTabIndex = true;
+          
+          
+          if (startContent->IsElement() && startContent->GetPrimaryFrame() &&
+              startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
+            startContent =
+                forward ? (startContent->GetPreviousSibling()
+                               ? startContent->GetPreviousSibling()
+                               
+                               
+                               
+                               
+                               : startContent->GetParent())
+                        
+                        
+                        : startContent->GetNextNonChildNode();
+            
+            
+            if (startContent == rootElement) {
+              startContent = nullptr;
+            }
+          }
         }
       }
 
