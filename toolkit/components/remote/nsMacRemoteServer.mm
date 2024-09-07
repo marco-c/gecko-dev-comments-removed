@@ -71,13 +71,9 @@ void nsMacRemoteServer::HandleCommandLine(CFDataRef aData) {
       
       cmdLine->Run();
 
-      NSNumber* raise = dict[@"raise"];
-      if (!raise || [raise boolValue]) {
-        
-        
-        [[NSRunningApplication currentApplication]
-            activateWithOptions:NSApplicationActivateIgnoringOtherApps];
-      }
+      
+      [[NSRunningApplication currentApplication]
+          activateWithOptions:NSApplicationActivateIgnoringOtherApps];
     }
   }
 }
