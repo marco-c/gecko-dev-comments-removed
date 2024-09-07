@@ -10,11 +10,8 @@ EXPORTS += [
     'zlib.h',
 ]
 
-if CONFIG['ZLIB_IN_MOZGLUE']:
-    FINAL_LIBRARY = 'mozglue'
-else:
-    
-    FINAL_LIBRARY = 'zlib'
+
+FINAL_LIBRARY = 'zlib'
 
 
 SOURCES += [
