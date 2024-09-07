@@ -1498,8 +1498,8 @@ class PropertyView {
     
     
     return this.#tree.outputParser.parseCssProperty(this.name, value, {
-      colorSwatchClass:
-        "computed-colorswatch inspector-swatch inspector-colorswatch",
+      colorSwatchClass: "inspector-swatch inspector-colorswatch",
+      colorSwatchReadOnly: true,
       colorClass: "computed-color",
       urlClass: "theme-link",
       fontFamilyClass: "computed-font-family",
@@ -1507,10 +1507,10 @@ class PropertyView {
     });
   }
 
-  
-
-
-
+  /**
+   * Provide access to the matched SelectorViews that we are currently
+   * displaying.
+   */
   get matchedSelectorViews() {
     if (!this.#matchedSelectorViews) {
       this.#matchedSelectorViews = [];
@@ -1522,13 +1522,13 @@ class PropertyView {
     return this.#matchedSelectorViews;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * The action when a user expands matched selectors.
+   *
+   * @param {Event} event
+   *        Used to determine the class name of the targets click
+   *        event.
+   */
   onMatchedToggle(event) {
     if (event.shiftKey) {
       return;
@@ -1538,9 +1538,9 @@ class PropertyView {
     event.preventDefault();
   }
 
-  
-
-
+  /**
+   * The action when a user clicks on the MDN help link for a property.
+   */
   mdnLinkClick() {
     if (!this.link) {
       return;
@@ -1548,9 +1548,9 @@ class PropertyView {
     openContentLink(this.link);
   }
 
-  
-
-
+  /**
+   * Destroy this property view, removing event listeners
+   */
   destroy() {
     if (this.#matchedSelectorViews) {
       for (const view of this.#matchedSelectorViews) {
@@ -1574,15 +1574,15 @@ class PropertyView {
   }
 }
 
-
-
-
+/**
+ * A container to give us easy access to display data from a CssRule
+ */
 class SelectorView {
-  
-
-
-
-
+  /**
+   * @param CssComputedView tree
+   *        the owning CssComputedView
+   * @param selectorInfo
+   */
   constructor(tree, selectorInfo) {
     this.#tree = tree;
     this.selectorInfo = selectorInfo;
@@ -1595,7 +1595,7 @@ class SelectorView {
       this.source = CssLogic.l10n("rule.sourceElement");
       this.longSource = this.source;
     } else {
-      
+      // This always refers to the generated location.
       const sheet = rule.parentStyleSheet;
       const sourceSuffix = rule.line > 0 ? ":" + rule.line : "";
       this.source = CssLogic.shortSource(sheet) + sourceSuffix;
@@ -1622,13 +1622,13 @@ class SelectorView {
   #tree;
   #unsubscribeCallback;
 
-  
-
-
-
-
+  /**
+   * Decode for cssInfo.rule.status
+   * @see SelectorView.prototype.#cacheStatusNames
+   * @see CssLogic.STATUS
+   */
   static STATUS_NAMES = [
-    
+    // "Parent Match", "Matched", "Best Match"
   ];
 
   static CLASS_NAMES = ["parentmatch", "matched", "bestmatch"];
