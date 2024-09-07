@@ -142,14 +142,6 @@ extern JS_PUBLIC_API JS::Realm* EnterRealm(JSContext* cx, JSObject* target);
 
 extern JS_PUBLIC_API void LeaveRealm(JSContext* cx, JS::Realm* oldRealm);
 
-
-
-
-
-
-
-extern JS_PUBLIC_API void ResetRealmMathRandomSeed(JSContext* cx);
-
 }  
 
 
