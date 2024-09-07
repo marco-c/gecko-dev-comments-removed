@@ -2733,6 +2733,7 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
         
         DrawOptions drawOptions(aFontParams.drawOptions);
         drawOptions.mCompositionOp = CompositionOp::OP_OVER;
+        drawOptions.mAlpha = 1.0f;
         bool ok = false;
         if (paintGraph) {
           ok = COLRFonts::PaintGlyphGraph(
