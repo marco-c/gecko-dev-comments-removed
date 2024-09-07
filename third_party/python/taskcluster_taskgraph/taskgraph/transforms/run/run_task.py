@@ -86,7 +86,7 @@ def common_setup(config, task, taskdesc, command):
         if run["sparse-profile"]:
             command.append(
                 "--{}-sparse-profile=build/sparse-profiles/{}".format(
-                    repo_config.prefix,
+                    repo_config.prefix,  
                     run["sparse-profile"],
                 )
             )

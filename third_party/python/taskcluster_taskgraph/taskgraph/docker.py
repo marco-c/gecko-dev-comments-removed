@@ -173,11 +173,11 @@ def load_image(url, imageName=None, imageTag=None):
         req = get_session().get(url, stream=True)
         req.raise_for_status()
 
-        with zstd.ZstdDecompressor().stream_reader(req.raw) as ifh:
+        with zstd.ZstdDecompressor().stream_reader(req.raw) as ifh:  
             tarin = tarfile.open(
                 mode="r|",
                 fileobj=ifh,
-                bufsize=zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+                bufsize=zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,  
             )
 
             
@@ -194,8 +194,8 @@ def load_image(url, imageName=None, imageTag=None):
                 
                 if member.name == "repositories":
                     
-                    repos = json.loads(reader.read())
-                    reader.close()
+                    repos = json.loads(reader.read())  
+                    reader.close()  
 
                     
                     
@@ -217,8 +217,8 @@ def load_image(url, imageName=None, imageTag=None):
                 
                 remaining = member.size
                 while remaining:
-                    length = min(remaining, zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
-                    buf = reader.read(length)
+                    length = min(remaining, zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)  
+                    buf = reader.read(length)  
                     remaining -= len(buf)
                     yield buf
                 
@@ -226,7 +226,7 @@ def load_image(url, imageName=None, imageTag=None):
                 if remainder:
                     yield ("\0" * (512 - remainder)).encode("utf-8")
 
-                reader.close()
+                reader.close()  
 
     subprocess.run(
         ["docker", "image", "load"], input=b"".join(download_and_modify_image())

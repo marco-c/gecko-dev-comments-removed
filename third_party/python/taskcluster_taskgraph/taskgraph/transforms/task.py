@@ -72,6 +72,15 @@ task_description_schema = Schema(
                 ),
             ): object,
         },
+        Optional("priority"): Any(
+            "highest",
+            "very-high",
+            "high",
+            "medium",
+            "low",
+            "very-low",
+            "lowest",
+        ),
         
         Optional("soft-dependencies"): [str],
         
@@ -245,7 +254,7 @@ def payload_builder(name, schema):
 
     def wrap(func):
         assert name not in payload_builders, f"duplicate payload builder name {name}"
-        payload_builders[name] = PayloadBuilder(schema, func)
+        payload_builders[name] = PayloadBuilder(schema, func)  
         return func
 
     return wrap
@@ -556,7 +565,7 @@ def build_docker_worker_payload(config, task, task_def):
     if run_task and worker.get("volumes"):
         payload["env"]["TASKCLUSTER_VOLUMES"] = ";".join(sorted(worker["volumes"]))
 
-    if payload.get("cache") and skip_untrusted:
+    if payload.get("cache") and skip_untrusted:  
         payload["env"]["TASKCLUSTER_UNTRUSTED_CACHES"] = "1"
 
     if features:
