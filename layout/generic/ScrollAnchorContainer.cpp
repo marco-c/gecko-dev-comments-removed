@@ -234,7 +234,12 @@ bool ScrollAnchorContainer::CanMaintainAnchor() const {
   
   
   
-  if (Frame()->GetLogicalScrollPosition() == nsPoint()) {
+  
+  
+  const nsPoint pos = Frame()->GetLogicalScrollPosition();
+  const nscoord blockOffset =
+      Frame()->GetWritingMode().IsVertical() ? pos.x : pos.y;
+  if (blockOffset == 0) {
     return false;
   }
 
