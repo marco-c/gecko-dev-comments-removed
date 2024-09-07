@@ -7,7 +7,8 @@
 
 
 if (!window.LiveTestShimPromise) {
-  const originalUrl = document.currentScript.src;
+  const originalUrl =
+    "https://webcompat-addon-testbed.herokuapp.com/shims_test.js";
 
   const shimId = "LiveTestShim";
 
