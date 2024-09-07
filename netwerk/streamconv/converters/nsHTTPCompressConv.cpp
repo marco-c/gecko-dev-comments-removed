@@ -59,6 +59,7 @@ class ZstdWrapper {
  public:
   ZstdWrapper() {
     mDStream = ZSTD_createDStream();
+    MOZ_RELEASE_ASSERT(mDStream);  
     ZSTD_DCtx_setParameter(mDStream, ZSTD_d_windowLogMax, 23 );
   }
   ~ZstdWrapper() {
