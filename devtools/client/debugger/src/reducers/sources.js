@@ -14,7 +14,7 @@ import { createPendingSelectedLocation } from "../utils/location";
 export const UNDEFINED_LOCATION = Symbol("Undefined location");
 export const NO_LOCATION = Symbol("No location");
 
-export function initialSourcesState(state) {
+export function initialSourcesState() {
   
   return {
     
@@ -44,13 +44,6 @@ export function initialSourcesState(state) {
 
 
     mutableOriginalSources: new Map(),
-
-    
-
-
-
-
-    mutableOverrideSources: state?.mutableOverrideSources || new Map(),
 
     
 
@@ -236,18 +229,6 @@ function update(state = initialSourcesState(), action) {
 
     case "REMOVE_THREAD": {
       return removeSourcesAndActors(state, action);
-    }
-
-    case "SET_OVERRIDE": {
-      state.mutableOverrideSources.set(action.url, action.path);
-      return state;
-    }
-
-    case "REMOVE_OVERRIDE": {
-      if (state.mutableOverrideSources.has(action.url)) {
-        state.mutableOverrideSources.delete(action.url);
-      }
-      return state;
     }
   }
 
