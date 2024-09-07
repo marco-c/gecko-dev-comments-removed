@@ -2940,6 +2940,12 @@
       return group;
     },
 
+    removeTabGroup(group) {
+      this.removeTabs(group.tabs);
+      
+      group.remove();
+    },
+
     _determineURIToLoad(uriString, createLazyBrowser) {
       uriString = uriString || "about:blank";
       let aURIObject = null;
