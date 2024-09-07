@@ -481,26 +481,7 @@ int32_t gfxPlatformGtk::GetFontScaleDPI() {
 double gfxPlatformGtk::GetFontScaleFactor() {
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  int32_t dpi = GetFontScaleDPI();
-  if (dpi < 120) {
-    return 1.0;
-  }
-  if (dpi < 132) {
-    return 1.25;
-  }
-  if (dpi < 168) {
-    return 1.5;
-  }
-  return round(dpi / 96.0);
+  return GetFontScaleDPI() / 96.0;
 }
 
 gfxImageFormat gfxPlatformGtk::GetOffscreenFormat() {
