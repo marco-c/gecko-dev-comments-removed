@@ -707,7 +707,6 @@ add_task(async function wheelTests() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs[0]);
   }
-  await SpecialPowers.popPrefEnv();
 
   
   EventUtils.synthesizeMouseAtCenter(document.documentElement, {
