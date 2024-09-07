@@ -945,7 +945,7 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
   
   ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u,
                                            2u),
-                   kDefaultTimeout.ms());
+                   kLongTimeoutForRampingUp.ms());
   
   
   ASSERT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
