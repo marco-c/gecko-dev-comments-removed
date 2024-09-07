@@ -38,7 +38,7 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
   };
 
   struct TimeoutIdAndReason {
-    int32_t mId;
+    uint32_t mId;
     Reason mReason;
   };
 
@@ -157,7 +157,7 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
   UniquePtr<ProfileChunkedBuffer> mCause;
 
   
-  int32_t mTimeoutId;
+  uint32_t mTimeoutId;
 
   
   
