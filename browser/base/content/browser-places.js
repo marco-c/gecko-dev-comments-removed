@@ -1108,13 +1108,12 @@ var PlacesToolbarHelper = {
     );
 
     if (toolbar.id == "PersonalToolbar") {
+      if (!toolbar.hasAttribute("initialized")) {
+        toolbar.setAttribute("initialized", "true");
+      }
       
       
-      BookmarkingUI.updateEmptyToolbarMessage()
-        .finally(() => {
-          toolbar.toggleAttribute("initialized", true);
-        })
-        .catch(console.error);
+      BookmarkingUI.updateEmptyToolbarMessage().catch(console.error);
     }
   },
 
@@ -1531,7 +1530,8 @@ var BookmarkingUI = {
 
 
   async updateEmptyToolbarMessage() {
-    let { initialHiddenState, checkHasBookmarks } = (() => {
+    let checkNumBookmarksOnToolbar = false;
+    let hasVisibleChildren = (() => {
       
       if (
         this.toolbar.querySelector(
@@ -1541,29 +1541,25 @@ var BookmarkingUI = {
            :scope > toolbaritem:not([hidden], #personal-bookmarks)`
         )
       ) {
-        return { initialHiddenState: true, checkHasBookmarks: false };
+        return true;
       }
-
-      if (this._isCustomizing) {
-        return { initialHiddenState: true, checkHasBookmarks: false };
+      if (!this.toolbar.hasAttribute("initialized") && !this._isCustomizing) {
+        
+        
+        
+        return false;
       }
-
       
       let bookmarksToolbarItemsPlacement =
         CustomizableUI.getPlacementOfWidget("personal-bookmarks");
       let bookmarksItemInToolbar =
         bookmarksToolbarItemsPlacement?.area == CustomizableUI.AREA_BOOKMARKS;
       if (!bookmarksItemInToolbar) {
-        return { initialHiddenState: false, checkHasBookmarks: false };
+        return false;
       }
-
-      if (!this.toolbar.hasAttribute("initialized")) {
-        
-        
-        
-        return { initialHiddenState: false, checkHasBookmarks: true };
+      if (this._isCustomizing) {
+        return true;
       }
-
       
       if (
         this.toolbar.querySelector(
@@ -1571,16 +1567,19 @@ var BookmarkingUI = {
            #PlacesToolbarItems > toolbarbutton`
         )
       ) {
-        return { initialHiddenState: true, checkHasBookmarks: false };
+        return true;
       }
-      return { initialHiddenState: true, checkHasBookmarks: true };
+      checkNumBookmarksOnToolbar = true;
+      return false;
     })();
 
-    let emptyMsg = document.getElementById("personal-toolbar-empty");
-    emptyMsg.hidden = initialHiddenState;
-    if (checkHasBookmarks) {
-      emptyMsg.hidden = !(await PlacesToolbarHelper.getIsEmpty());
+    if (checkNumBookmarksOnToolbar) {
+      hasVisibleChildren = !(await PlacesToolbarHelper.getIsEmpty());
     }
+
+    let emptyMsg = document.getElementById("personal-toolbar-empty");
+    emptyMsg.hidden = hasVisibleChildren;
+    emptyMsg.toggleAttribute("nowidth", !hasVisibleChildren);
   },
 
   openLibraryIfLinkClicked(event) {
