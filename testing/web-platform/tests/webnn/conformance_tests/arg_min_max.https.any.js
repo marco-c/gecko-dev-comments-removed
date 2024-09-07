@@ -10,4 +10,4 @@
 
 
 
-runWebNNConformanceTests(['argMin', 'argMax'], buildOperationWithSingleInput);
+runWebNNConformanceTests(['argMin', 'argMax'], buildArgMinMax);
