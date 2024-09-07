@@ -198,6 +198,10 @@ export function getShouldHighlightSelectedLocation(state) {
   return state.sources.shouldHighlightSelectedLocation;
 }
 
+export function getShouldScrollToSelectedLocation(state) {
+  return state.sources.shouldScrollToSelectedLocation;
+}
+
 
 
 

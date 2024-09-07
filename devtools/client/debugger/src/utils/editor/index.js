@@ -100,6 +100,8 @@ export function toSourceLine(sourceId, line) {
   if (isWasm(sourceId)) {
     return lineToWasmOffset(sourceId, line);
   }
+  
+  
   if (features.codemirrorNext) {
     return line;
   }

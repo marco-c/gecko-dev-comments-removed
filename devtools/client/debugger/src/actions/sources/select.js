@@ -43,12 +43,14 @@ import {
 export const setSelectedLocation = (
   location,
   shouldSelectOriginalLocation,
-  shouldHighlightSelectedLocation
+  shouldHighlightSelectedLocation,
+  shouldScrollToSelectedLocation
 ) => ({
   type: "SET_SELECTED_LOCATION",
   location,
   shouldSelectOriginalLocation,
   shouldHighlightSelectedLocation,
+  shouldScrollToSelectedLocation,
 });
 
 
@@ -217,9 +219,12 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
 
 
 
+
+
+
 export function selectLocation(
   location,
-  { keepContext = true, highlight = true } = {}
+  { keepContext = true, highlight = true, scroll = true } = {}
 ) {
   return async thunkArgs => {
     const { dispatch, getState, client } = thunkArgs;
@@ -273,7 +278,12 @@ export function selectLocation(
     }
 
     dispatch(
-      setSelectedLocation(location, shouldSelectOriginalLocation, highlight)
+      setSelectedLocation(
+        location,
+        shouldSelectOriginalLocation,
+        highlight,
+        scroll
+      )
     );
 
     await dispatch(loadSourceText(source, sourceActor));
