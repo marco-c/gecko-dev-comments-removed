@@ -47,12 +47,6 @@ class AddonsSearchDetection {
         this.onRedirectedListener
       );
     }
-    
-    
-    
-    if (browser.webRequest.onBeforeRequest.hasListener(this.noOpListener)) {
-      browser.webRequest.onBeforeRequest.removeListener(this.noOpListener);
-    }
 
     
     
@@ -65,21 +59,10 @@ class AddonsSearchDetection {
       return;
     }
 
-    browser.webRequest.onBeforeRequest.addListener(
-      this.noOpListener,
-      { types: ["main_frame"], urls: patterns },
-      ["blocking"]
-    );
-
     browser.addonsSearchDetection.onRedirected.addListener(
       this.onRedirectedListener,
       { urls: patterns }
     );
-  }
-
-  
-  noOpListener() {
-    
   }
 
   async onRedirectedListener({ addonId, firstUrl, lastUrl }) {

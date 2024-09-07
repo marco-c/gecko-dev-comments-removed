@@ -212,6 +212,8 @@ this.addonsSearchDetection = class extends ExtensionAPI {
               fire.sync({ addonId, firstUrl, lastUrl });
             };
 
+            const remoteTab = context.xulBrowser.frameLoader.remoteTab;
+
             const listener = ({ requestId, url, originUrl }) => {
               
               
@@ -227,20 +229,47 @@ this.addonsSearchDetection = class extends ExtensionAPI {
                 const wrapper = ChannelWrapper.getRegisteredChannel(
                   requestId,
                   context.extension.policy,
-                  context.xulBrowser.frameLoader.remoteTab
+                  remoteTab
                 );
 
                 wrapper.addEventListener("stop", stopListener);
               }
             };
 
+            const ensureRegisterChannel = data => {
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              data.registerTraceableChannel(extension.policy, remoteTab);
+            };
+
+            const parsedFilter = {
+              types: ["main_frame"],
+              urls: ExtensionUtils.parseMatchPatterns(filter.urls),
+            };
+
+            WebRequest.onBeforeRequest.addListener(
+              ensureRegisterChannel,
+              parsedFilter,
+              
+              ["blocking"],
+              {
+                addonId: extension.id,
+                policy: extension.policy,
+                blockingAllowed: true,
+              }
+            );
+
             WebRequest.onBeforeRedirect.addListener(
               listener,
-              
-              {
-                types: ["main_frame"],
-                urls: ExtensionUtils.parseMatchPatterns(filter.urls),
-              },
+              parsedFilter,
               
               [],
               
@@ -252,6 +281,7 @@ this.addonsSearchDetection = class extends ExtensionAPI {
             );
 
             return () => {
+              WebRequest.onBeforeRequest.removeListener(ensureRegisterChannel);
               WebRequest.onBeforeRedirect.removeListener(listener);
             };
           },
