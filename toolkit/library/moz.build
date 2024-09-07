@@ -372,12 +372,8 @@ if CONFIG["OS_ARCH"] == "WINNT":
         
         
         "d3dcompiler",
+        "runtimeobject",
     ]
-
-    if CONFIG["CC_TYPE"] == "clang-cl":
-        OS_LIBS += [
-            "runtimeobject",
-        ]
 
     if CONFIG["ACCESSIBILITY"]:
         OS_LIBS += [
