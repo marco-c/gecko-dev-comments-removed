@@ -3366,7 +3366,7 @@ var XULBrowserWindow = {
     
     
     if (aIsSimulated) {
-      closeOpenPanels("panel[tabspecific='true']");
+      closeOpenPanels(":is(panel, menupopup)[tabspecific='true']");
     }
 
     
