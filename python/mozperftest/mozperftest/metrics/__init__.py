@@ -16,6 +16,11 @@ def get_layers():
 def pick_metrics(env, flavor, mach_cmd):
     if flavor in ("desktop-browser", "mobile-browser"):
         layers = get_layers()
+    elif flavor == "alert":
+        
+        
+        
+        layers = []
     else:
         
         layers = Perfherder, ConsoleOutput, Notebook, Influx
