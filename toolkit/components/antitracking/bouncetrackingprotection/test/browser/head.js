@@ -283,6 +283,9 @@ async function waitForRecordBounces(browser) {
 
 
 
+
+
+
 async function runTestBounce(options = {}) {
   let {
     bounceType,
@@ -292,6 +295,7 @@ async function runTestBounce(options = {}) {
     setStateInWebWorker = false,
     setStateInNestedWebWorker = false,
     setCookieViaImage = null,
+    expectRecordBounces = true,
     expectCandidate = true,
     expectPurge = true,
     originAttributes = {},
@@ -338,7 +342,10 @@ async function runTestBounce(options = {}) {
   let browser = tab.linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser, true, initialURL);
 
-  let promiseRecordBounces = waitForRecordBounces(browser);
+  let promiseRecordBounces;
+  if (expectRecordBounces) {
+    promiseRecordBounces = waitForRecordBounces(browser);
+  }
 
   
   let targetURL = new URL(getBaseUrl(ORIGIN_B) + "file_start.html");
@@ -371,12 +378,24 @@ async function runTestBounce(options = {}) {
   
   
   
-  await navigateLinkClick(
+  let finalTargetURL = new URL(getBaseUrl(ORIGIN_C) + "file_start.html");
+  let finalLoadPromise = BrowserTestUtils.browserLoaded(
     browser,
-    new URL(getBaseUrl(ORIGIN_C) + "file_start.html")
+    true,
+    initialURL.href
   );
+  await navigateLinkClick(browser, finalTargetURL);
+  await finalLoadPromise;
 
-  await promiseRecordBounces;
+  if (expectRecordBounces) {
+    await promiseRecordBounces;
+  } else {
+    
+    
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
 
   Assert.deepEqual(
     bounceTrackingProtection
@@ -399,11 +418,25 @@ async function runTestBounce(options = {}) {
   
   await postBounceCallback();
 
-  Assert.deepEqual(
-    await bounceTrackingProtection.testRunPurgeBounceTrackers(),
-    expectPurge ? [SITE_TRACKER] : [],
-    `Should ${expectPurge ? "" : "not "}purge state for ${SITE_TRACKER}.`
-  );
+  
+  let mode = Services.prefs.getIntPref("privacy.bounceTrackingProtection.mode");
+  let expectPurgingToThrow =
+    mode != Ci.nsIBounceTrackingProtection.MODE_ENABLED &&
+    mode != Ci.nsIBounceTrackingProtection.MODE_ENABLED_DRY_RUN;
+
+  if (expectPurgingToThrow) {
+    await Assert.rejects(
+      bounceTrackingProtection.testRunPurgeBounceTrackers(),
+      /NS_ERROR_NOT_AVAILABLE/,
+      "testRunPurgeBounceTrackers should reject when BTP is disabled."
+    );
+  } else {
+    Assert.deepEqual(
+      await bounceTrackingProtection.testRunPurgeBounceTrackers(),
+      expectPurge ? [SITE_TRACKER] : [],
+      `Should ${expectPurge ? "" : "not "}purge state for ${SITE_TRACKER}.`
+    );
+  }
 
   
   BrowserTestUtils.removeTab(tab);
