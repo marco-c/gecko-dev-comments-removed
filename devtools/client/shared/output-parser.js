@@ -222,7 +222,7 @@ class OutputParser {
       } else if (token.tokenType === "ParenthesisBlock") {
         ++depth;
       } else if (token.tokenType === "CloseParenthesis") {
-        this.#onCloseParenthesis();
+        this.#onCloseParenthesis(options);
         --depth;
         if (depth === 0) {
           break;
@@ -732,7 +732,7 @@ class OutputParser {
           break;
 
         case "CloseParenthesis":
-          this.#onCloseParenthesis();
+          this.#onCloseParenthesis(options);
 
           if (stopAtCloseParen && this.#stack.length === 0) {
             done = true;
@@ -794,7 +794,7 @@ class OutputParser {
     
     if (this.#stack.length) {
       while (this.#stack.length !== 0) {
-        this.#onCloseParenthesis();
+        this.#onCloseParenthesis(options);
       }
     }
 
@@ -807,11 +807,105 @@ class OutputParser {
     return result;
   }
 
-  #onCloseParenthesis() {
+  #onCloseParenthesis(options) {
     if (!this.#stack.length) {
       return;
     }
 
+    const stackEntry = this.#stack.at(-1);
+    if (
+      stackEntry.lowerCaseFunctionName === "light-dark" &&
+      typeof options.isDarkColorScheme === "boolean" &&
+      
+      
+      
+      
+      
+      stackEntry.separatorIndexes.length === 1
+    ) {
+      const stackEntryParts = this.#getCurrentStackParts();
+      const separatorIndex = stackEntry.separatorIndexes[0];
+      let startIndex;
+      let endIndex;
+      if (options.isDarkColorScheme) {
+        
+        
+
+        
+        
+        for (startIndex = 1; startIndex < separatorIndex; startIndex++) {
+          const part = stackEntryParts[startIndex];
+          if (typeof part !== "string" || part.trim() !== "") {
+            break;
+          }
+        }
+
+        
+        
+        for (
+          endIndex = separatorIndex - 1;
+          endIndex >= startIndex;
+          endIndex--
+        ) {
+          const part = stackEntryParts[endIndex];
+          if (typeof part !== "string" || part.trim() !== "") {
+            
+            endIndex++;
+            break;
+          }
+        }
+      } else {
+        
+        
+
+        
+        
+        for (
+          startIndex = separatorIndex + 1;
+          startIndex < stackEntryParts.length;
+          startIndex++
+        ) {
+          const part = stackEntryParts[startIndex];
+          if (typeof part !== "string" || part.trim() !== "") {
+            break;
+          }
+        }
+
+        
+        
+        
+        for (
+          endIndex = stackEntryParts.length - 1;
+          endIndex > separatorIndex;
+          endIndex--
+        ) {
+          const part = stackEntryParts[endIndex];
+          if (typeof part !== "string" || part.trim() !== "") {
+            
+            endIndex++;
+            break;
+          }
+        }
+      }
+
+      const parts = stackEntryParts.slice(startIndex, endIndex);
+
+      
+      
+      if (parts.length === 1 && Element.isInstance(parts[0])) {
+        parts[0].classList.add(options.unmatchedClass);
+      } else {
+        
+        
+        const node = this.#createNode("span", {
+          class: options.unmatchedClass,
+        });
+        node.append(...parts);
+        stackEntryParts.splice(startIndex, parts.length, node);
+      }
+    }
+
+    
     const { parts } = this.#stack.pop();
     
     
@@ -934,16 +1028,16 @@ class OutputParser {
     this.#append(container);
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Append a Flexbox|Grid highlighter toggle icon next to the value in a
+   * "display: [inline-]flex" or "display: [inline-]grid" declaration.
+   *
+   * @param {String} text
+   *        The text value to append
+   * @param {String} toggleButtonClassName
+   *        The class name for the toggle button.
+   *        If not passed/empty, the toggle button won't be created.
+   */
   #appendDisplayWithHighlighterToggle(text, toggleButtonClassName) {
     const container = this.#createNode("span", {});
 
@@ -959,16 +1053,16 @@ class OutputParser {
     this.#append(container);
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Append a CSS shapes highlighter toggle next to the value, and parse the value
+   * into spans, each containing a point that can be hovered over.
+   *
+   * @param {String} shape
+   *        The shape text value to append
+   * @param {Object} options
+   *        Options object. For valid options and default values see
+   *        #mergeOptions()
+   */
   #appendShape(shape, options) {
     const shapeTypes = [
       {
@@ -1019,17 +1113,17 @@ class OutputParser {
     this.#append(container);
   }
 
-  
-
-
-
-
-
-
-
-
-
-  
+  /**
+   * Parse the given polygon coordinates and create a span for each coordinate pair,
+   * adding it to the given container node.
+   *
+   * @param {String} coords
+   *        The string of coordinate pairs.
+   * @param {Node} container
+   *        The node to which spans containing points are added.
+   * @returns {Node} The container to which spans have been added.
+   */
+  // eslint-disable-next-line complexity
   #addPolygonPointNodes(coords, container) {
     const tokenStream = new InspectorCSSParserWrapper(coords);
     let token = tokenStream.nextToken();
@@ -1045,9 +1139,9 @@ class OutputParser {
 
     while (token) {
       if (token.tokenType === "Comma") {
-        // Comma separating coordinate pairs; add coordNode to container and reset vars
+        
         if (!isXCoord) {
-          // Y coord not added to coordNode yet
+          
           const node = this.#createNode(
             "span",
             {
@@ -2137,6 +2231,7 @@ class OutputParser {
    *          - {RegisteredPropertyResource|undefined} registeredProperty: The registered
    *            property data (syntax, initial value, inherits). Undefined if the variable
    *            is not a registered property.
+   * @param {Boolean} overrides.isDarkColorScheme: Is the currently applied color scheme dark.
    * @return {Object} Overridden options object
    */
   #mergeOptions(overrides) {
@@ -2161,6 +2256,7 @@ class OutputParser {
       getVariableData: null,
       unmatchedClass: null,
       inStartingStyleRule: false,
+      isDarkColorScheme: null,
     };
 
     for (const item in overrides) {
