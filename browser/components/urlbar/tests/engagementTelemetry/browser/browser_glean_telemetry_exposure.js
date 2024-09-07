@@ -7,6 +7,9 @@ const SPONSORED_QUERY = "sponsored";
 const NONSPONSORED_QUERY = "nonsponsored";
 
 
+requestLongerTimeout(3);
+
+
 add_setup(async function () {
   await initExposureTest();
 });
