@@ -8,9 +8,15 @@
 
 
 
-#include "api/rtp_packet_infos.h"
+#include "api/rtp_packet_info.h"
+
+#include <cstdint>
+#include <vector>
+
+#include "absl/types/optional.h"
+#include "api/rtp_headers.h"
 #include "api/units/time_delta.h"
-#include "test/gmock.h"
+#include "api/units/timestamp.h"
 #include "test/gtest.h"
 
 namespace webrtc {

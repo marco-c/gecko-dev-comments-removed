@@ -11,6 +11,7 @@
 #ifndef API_CREATE_PEERCONNECTION_FACTORY_H_
 #define API_CREATE_PEERCONNECTION_FACTORY_H_
 
+
 #include <memory>
 
 #include "api/audio/audio_device.h"
@@ -29,11 +30,9 @@ namespace rtc {
 
 
 
-class Thread;
+class Thread;  
 }  
-
 namespace webrtc {
-
 class AudioFrameProcessor;
 
 

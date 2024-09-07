@@ -14,6 +14,8 @@
 #ifdef WEBRTC_UNIT_TEST
 #include <ostream>
 #endif  
+#include <stdint.h>
+
 #include <string>
 #include <utility>  
 
