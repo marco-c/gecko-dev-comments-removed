@@ -1840,11 +1840,23 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config",
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-bff-config", "US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES");
 
+
 #if defined(EARLY_BETA_OR_EARLIER)
   pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.enabled", true);
+  
+  pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.region-topics-config", "US, CA");
+  pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.onboarding.enabled", true);
 #else
   pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.enabled", false);
+  pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.region-topics-config", "");
+  pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.onboarding.enabled", false);
 #endif
+
+
+pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.locale-topics-config", "en-US, en-GB, en-CA");
+
+pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.enabled", true);
+
 pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.endpoint", "merino.services.mozilla.com");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-spocs-config", "US,CA,DE,GB,FR,IT,ES");
@@ -1864,13 +1876,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.personalization.modelKe
 pref("browser.newtabpage.activity-stream.discoverystream.recs.personalized", false);
 
 pref("browser.newtabpage.activity-stream.discoverystream.spocs.personalized", true);
-
-
-pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.region-topics-config", "");
-
-pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.locale-topics-config", "en-US, en-GB, en-CA");
-
-pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.enabled", true);
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.dismissed", false);
