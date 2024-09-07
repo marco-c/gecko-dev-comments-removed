@@ -101,7 +101,7 @@ for (let [valtype, def, nondef] of GENERAL_TESTS) {
     }
   }
 
-  for (let arrayLength = 0; arrayLength < 5; arrayLength++) {
+  for (let arrayLength = 0; arrayLength <= 25; arrayLength++) {
     checkArray(createDefault(arrayLength), arrayLength, def, nondef);
     checkArray(create(arrayLength, nondef), arrayLength, nondef, def);
   }
@@ -2061,57 +2061,6 @@ assertErrorMessage(() => wasmEvalText(`(module
     assertEq(isDefault(arr, 3), 1, `expected default value for ${type} but got filled`);
   }
 }
-
-
-
-
-
-
-
-assertErrorMessage(() => wasmEvalText(`(module
-    (type $a (array i32))
-    (func (export "test") (result eqref)
-        ;; request exactly 2,000,000,000 bytes
-        (array.new $a (i32.const 0xABCD1234) (i32.const 500000000))
-    )
-    (func $f
-      call 0
-      drop
-    )
-    (start $f)
-)
-`), WebAssembly.RuntimeError, /too many array elements/);
-
-
-assertErrorMessage(() => wasmEvalText(`(module
-    (type $a (array f64))
-    (func (export "test") (result eqref)
-        ;; request exactly 2,000,000,000 bytes
-        (array.new_default $a (i32.const 250000000))
-    )
-    (func $f
-      call 0
-      drop
-    )
-    (start $f)
-)
-`), WebAssembly.RuntimeError, /too many array elements/);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 {
