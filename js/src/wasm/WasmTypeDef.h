@@ -842,7 +842,11 @@ class TypeDef {
     }
 
     
+    
+    MOZ_ASSERT(subSTV);
+    MOZ_ASSERT(superSTV);
     MOZ_ASSERT(subSTV->typeDef() == subTypeDef);
+    MOZ_ASSERT(superSTV->typeDef() == superTypeDef);
 
     
     
@@ -852,9 +856,6 @@ class TypeDef {
     if (subTypingDepth >= subSTV->length()) {
       return false;
     }
-
-    MOZ_ASSERT(superSTV);
-    MOZ_ASSERT(superSTV->typeDef() == superTypeDef);
 
     return subSTV->type(subTypingDepth) == superSTV;
   }
