@@ -34,7 +34,11 @@ class nsLineLayout {
                const ReflowInput& aLineContainerRI,
                const nsLineList::iterator* aLine,
                nsLineLayout* aBaseLineLayout);
-  ~nsLineLayout();
+
+  ~nsLineLayout() {
+    MOZ_COUNT_DTOR(nsLineLayout);
+    MOZ_ASSERT(!mRootSpan, "bad line-layout user");
+  }
 
   void Init(BlockReflowState* aState, nscoord aMinLineBSize,
             int32_t aLineNumber) {
@@ -92,7 +96,7 @@ class nsLineLayout {
 
   void SplitLineTo(int32_t aNewCount);
 
-  bool IsZeroBSize();
+  bool IsZeroBSize() const;
 
   
   
@@ -143,10 +147,13 @@ class nsLineLayout {
 
   bool LineAtStart() const { return mLineAtStart; }
 
-  bool LineIsBreakable() const;
+  bool LineIsBreakable() const {
+    
+    
+    return mTotalPlacedFrames || mImpactedByFloats;
+  }
 
   bool GetLineEndsInBR() const { return mLineEndsInBR; }
-
   void SetLineEndsInBR(bool aOn) { mLineEndsInBR = aOn; }
 
   
@@ -170,21 +177,18 @@ class nsLineLayout {
   
 
   bool GetFirstLetterStyleOK() const { return mFirstLetterStyleOK; }
-
   void SetFirstLetterStyleOK(bool aSetting) { mFirstLetterStyleOK = aSetting; }
 
   bool GetInFirstLetter() const { return mInFirstLetter; }
-
   void SetInFirstLetter(bool aSetting) { mInFirstLetter = aSetting; }
 
   bool GetInFirstLine() const { return mInFirstLine; }
-
   void SetInFirstLine(bool aSetting) { mInFirstLine = aSetting; }
 
   
   
   void SetDirtyNextLine() { mDirtyNextLine = true; }
-  bool GetDirtyNextLine() { return mDirtyNextLine; }
+  bool GetDirtyNextLine() const { return mDirtyNextLine; }
 
   
 
