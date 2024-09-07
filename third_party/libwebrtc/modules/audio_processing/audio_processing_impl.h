@@ -163,9 +163,6 @@ class AudioProcessingImpl : public AudioProcessing {
                            ReinitializeTransientSuppressor);
   FRIEND_TEST_ALL_PREFIXES(ApmWithSubmodulesExcludedTest,
                            BitexactWithDisabledModules);
-  FRIEND_TEST_ALL_PREFIXES(
-      AudioProcessingImplGainController2FieldTrialParametrizedTest,
-      ConfigAdjustedWhenExperimentEnabled);
 
   void set_stream_analog_level_locked(int level)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_capture_);
@@ -196,44 +193,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
   
   
-  
-  
-  
-  
-  struct GainController2ExperimentParams {
-    struct Agc2Config {
-      InputVolumeController::Config input_volume_controller;
-      AudioProcessing::Config::GainController2::AdaptiveDigital
-          adaptive_digital_controller;
-    };
-    
-    
-    absl::optional<Agc2Config> agc2_config;
-    
-    
-    bool disallow_transient_suppressor_usage;
-  };
-  
-  
-  
-  const absl::optional<GainController2ExperimentParams>
-      gain_controller2_experiment_params_;
-
-  
-  
-  static absl::optional<GainController2ExperimentParams>
-  GetGainController2ExperimentParams();
-
-  
-  
-  
-  static AudioProcessing::Config AdjustConfig(
-      const AudioProcessing::Config& config,
-      const absl::optional<GainController2ExperimentParams>& experiment_params);
-  
-  static bool UseApmVadSubModule(
-      const AudioProcessing::Config& config,
-      const absl::optional<GainController2ExperimentParams>& experiment_params);
+  static bool UseApmVadSubModule(const AudioProcessing::Config& config);
 
   TransientSuppressor::VadMode transient_suppressor_vad_mode_;
 
