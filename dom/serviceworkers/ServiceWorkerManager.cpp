@@ -564,9 +564,6 @@ RefPtr<GenericErrorResultPromise> ServiceWorkerManager::StartControllingClient(
             aRegistrationInfo->StartControllingClient();
           }
 
-          Telemetry::Accumulate(Telemetry::SERVICE_WORKER_CONTROLLED_DOCUMENTS,
-                                1);
-
           
           
           return promise->Then(
@@ -600,9 +597,6 @@ RefPtr<GenericErrorResultPromise> ServiceWorkerManager::StartControllingClient(
         clientHandle->OnDetach()->Then(
             GetMainThreadSerialEventTarget(), __func__,
             [self, aClientInfo] { self->StopControllingClient(aClientInfo); });
-
-        Telemetry::Accumulate(Telemetry::SERVICE_WORKER_CONTROLLED_DOCUMENTS,
-                              1);
 
         
         
