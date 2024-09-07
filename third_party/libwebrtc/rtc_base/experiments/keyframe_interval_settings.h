@@ -22,15 +22,13 @@ namespace webrtc {
 
 class KeyframeIntervalSettings final {
  public:
-  static KeyframeIntervalSettings ParseFromFieldTrials();
+  explicit KeyframeIntervalSettings(const FieldTrialsView& key_value_config);
 
   
   
   absl::optional<int> MinKeyframeSendIntervalMs() const;
 
  private:
-  explicit KeyframeIntervalSettings(const FieldTrialsView* key_value_config);
-
   FieldTrialOptional<int> min_keyframe_send_interval_ms_;
 };
 
