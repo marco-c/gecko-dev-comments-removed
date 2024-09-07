@@ -1442,6 +1442,29 @@ impl ClipStore {
 
     
     
+    
+    
+    
+    pub fn push_clip_instance(
+        &mut self,
+        handle: ClipDataHandle,
+    ) -> ClipNodeRange {
+        let first = self.clip_node_instances.len() as u32;
+
+        self.clip_node_instances.push(ClipNodeInstance {
+            handle,
+            flags: ClipNodeFlags::SAME_COORD_SYSTEM | ClipNodeFlags::SAME_SPATIAL_NODE,
+            visible_tiles: None,
+        });
+
+        ClipNodeRange {
+            first,
+            count: 1,
+        }
+    }
+
+    
+    
     pub fn build_clip_chain_instance(
         &mut self,
         local_prim_rect: LayoutRect,

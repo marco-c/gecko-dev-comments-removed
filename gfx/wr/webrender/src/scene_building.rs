@@ -474,7 +474,7 @@ pub struct SceneBuilder<'a> {
     pub config: FrameBuilderConfig,
 
     
-    interners: &'a mut Interners,
+    pub interners: &'a mut Interners,
 
     
     external_scroll_mapper: ScrollOffsetMapper,
@@ -1777,6 +1777,7 @@ impl<'a> SceneBuilder<'a> {
                     info.spread_radius,
                     info.border_radius,
                     info.clip_mode,
+                    self.spatial_tree.is_root_coord_system(spatial_node_index),
                 );
             }
             DisplayItem::Border(ref info) => {
@@ -1991,7 +1992,7 @@ impl<'a> SceneBuilder<'a> {
 
     
     
-    fn add_nonshadowable_primitive<P>(
+    pub fn add_nonshadowable_primitive<P>(
         &mut self,
         spatial_node_index: SpatialNodeIndex,
         clip_node_id: ClipNodeId,
