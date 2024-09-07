@@ -59,7 +59,7 @@ dictionary L10nMessage {
 
 
 
-[Func="IsChromeOrUAWidget", Exposed=Window]
+[Func="mozilla::intl::Localization::IsAPIEnabled", Exposed=Window]
 interface Localization {
   
 
