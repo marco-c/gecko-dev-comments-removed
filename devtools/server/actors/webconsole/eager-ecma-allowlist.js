@@ -237,4 +237,10 @@ const getterAllowList = [
   getter(TypedArray, Symbol.species),
 ];
 
+
+if (typeof Iterator === "function") {
+  
+  getterAllowList.push(getter(Iterator.prototype, "constructor"));
+}
+
 module.exports = { functions: functionAllowList, getters: getterAllowList };

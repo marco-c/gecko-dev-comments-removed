@@ -1011,10 +1011,16 @@ async function doEagerEvalDOMMethods(commands) {
   
   
 
+  
+  let constructorName = "Object";
+  if (typeof Iterator === "function") {
+    constructorName = "Iterator";
+  }
+
   const testDataAllowed = [
-    [`testFormData.values().constructor.name`, "Object"],
-    [`testHeaders.values().constructor.name`, "Object"],
-    [`testURLSearchParams.values().constructor.name`, "Object"],
+    [`testFormData.values().constructor.name`, constructorName],
+    [`testHeaders.values().constructor.name`, constructorName],
+    [`testURLSearchParams.values().constructor.name`, constructorName],
   ];
 
   for (const [code, expectedResult] of testDataAllowed) {
