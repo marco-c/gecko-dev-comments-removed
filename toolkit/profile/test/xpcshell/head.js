@@ -94,11 +94,13 @@ const BACKGROUNDTASKS_PROFILE_DATA = (() => {
       {
         name: "Profile1",
         path: "Path1",
+        storeID: null,
         default: false,
       },
       {
         name: "Profile3",
         path: "Path3",
+        storeID: null,
         default: false,
       },
     ],
@@ -265,6 +267,9 @@ function writeProfilesIni(profileData) {
     ini.setString(section, "Name", profile.name);
     ini.setString(section, "IsRelative", 1);
     ini.setString(section, "Path", profile.path);
+    if ("storeID" in profile) {
+      ini.setString(section, "StoreID", profile.storeID);
+    }
 
     if (profile.default) {
       ini.setString(section, "Default", "1");
@@ -359,6 +364,12 @@ function readProfilesIni() {
       let profile = {
         name: safeGet(ini, section, "Name"),
         path: safeGet(ini, section, "Path"),
+        
+        
+        
+        
+        
+        storeID: safeGet(ini, section, "StoreID") || null,
       };
 
       try {
@@ -560,6 +571,15 @@ function checkProfileService(
       serviceProfile.rootDir.path,
       expectedPath.path,
       "Should have the same path."
+    );
+
+    
+    
+    
+    Assert.equal(
+      serviceProfile.storeID,
+      expectedProfile.storeID || null,
+      "Should have the same (possibly null) StoreID."
     );
 
     if (expectedProfile.path == defaultPath) {
