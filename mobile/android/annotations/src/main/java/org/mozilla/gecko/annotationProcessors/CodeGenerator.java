@@ -631,7 +631,7 @@ public class CodeGenerator {
       if (val != null && type.isPrimitive()) {
         
         header.append(
-            "    static const "
+            "    static constexpr "
                 + Utils.getNativeReturnType(type, info)
                 + ' '
                 + info.wrapperName
