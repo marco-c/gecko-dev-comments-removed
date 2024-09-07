@@ -3260,8 +3260,9 @@ class _DSCard extends (external_React_default()).PureComponent {
       className: `ds-card ${compactImagesClassName} ${imageGradientClassName} ${titleLinesName} ${descLinesClassName} ${ctaButtonClassName} ${ctaButtonVariantClassName}`,
       ref: this.setContextMenuButtonHostRef
     }, this.props.showTopics && this.props.topic && external_React_default().createElement("span", {
-      className: "ds-card-topic"
-    }, this.props.topic), external_React_default().createElement("div", {
+      className: "ds-card-topic",
+      "data-l10n-id": `newtab-topic-label-${this.props.topic}`
+    }), external_React_default().createElement("div", {
       className: "img-wrapper"
     }, external_React_default().createElement(DSImage, {
       extraClassNames: "img",
