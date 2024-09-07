@@ -134,6 +134,10 @@ absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
   pps.num_ref_idx_l0_default_active_minus1 = reader.ReadExponentialGolomb();
   
   pps.num_ref_idx_l1_default_active_minus1 = reader.ReadExponentialGolomb();
+  if (pps.num_ref_idx_l0_default_active_minus1 > H264::kMaxReferenceIndex ||
+      pps.num_ref_idx_l1_default_active_minus1 > H264::kMaxReferenceIndex) {
+    return absl::nullopt;
+  }
   
   pps.weighted_pred_flag = reader.Read<bool>();
   
