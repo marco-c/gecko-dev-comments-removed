@@ -55,7 +55,6 @@ namespace frontend {
 class BytecodeOffset;
 class CallOrNewEmitter;
 class ClassEmitter;
-class DestructuringLHSRef;
 class ElemOpEmitter;
 class EmitterScope;
 class ErrorReporter;
@@ -752,6 +751,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   [[nodiscard]] bool emitComputedPropertyName(UnaryNode* computedPropName);
 
+  [[nodiscard]] bool emitObjAndKey(ParseNode* exprOrSuper, ParseNode* key,
+                                   ElemOpEmitter& eoe);
+
   
   
   
@@ -759,7 +761,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitElemOperands(PropertyByValue* elem,
                                       EmitElemOption opts);
 
-  [[nodiscard]] bool emitElemObjAndKey(PropertyByValue* elem,
+  [[nodiscard]] bool emitElemObjAndKey(PropertyByValue* elem, bool isSuper,
                                        ElemOpEmitter& eoe);
   [[nodiscard]] bool emitElemOpBase(JSOp op);
 
@@ -788,16 +790,16 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   
+  
   [[nodiscard]] bool emitDestructuringLHSRef(ParseNode* target,
-                                             DestructuringFlavor flav,
-                                             DestructuringLHSRef& lref);
+                                             size_t* emitted);
 
   
   
   
   
-  [[nodiscard]] bool emitSetOrInitializeDestructuring(
-      ParseNode* target, DestructuringFlavor flav, DestructuringLHSRef& lref);
+  [[nodiscard]] bool emitSetOrInitializeDestructuring(ParseNode* target,
+                                                      DestructuringFlavor flav);
 
   
   

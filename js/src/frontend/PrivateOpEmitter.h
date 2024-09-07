@@ -139,6 +139,7 @@ class MOZ_STACK_CLASS PrivateOpEmitter {
   
   
   
+  
   enum class State {
     
     Start,
@@ -215,12 +216,13 @@ class MOZ_STACK_CLASS PrivateOpEmitter {
   [[nodiscard]] bool emitBrandCheck();
 
   [[nodiscard]] bool emitReference();
+  [[nodiscard]] bool skipReference();
   [[nodiscard]] bool emitGet();
   [[nodiscard]] bool emitGetForCallOrNew();
   [[nodiscard]] bool emitAssignment();
   [[nodiscard]] bool emitIncDec(ValueUsage valueUsage);
 
-  size_t numReferenceSlots() const { return 2; }
+  [[nodiscard]] size_t numReferenceSlots() { return 2; }
 };
 
 } 
