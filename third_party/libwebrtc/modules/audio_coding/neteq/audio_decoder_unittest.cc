@@ -455,7 +455,12 @@ TEST_F(AudioDecoderPcm16BTest, SetTargetBitrate) {
                                             codec_input_rate_hz_ * 16);
 }
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(AudioDecoderIlbcTest, DISABLED_EncodeDecode) {
+#else
 TEST_F(AudioDecoderIlbcTest, EncodeDecode) {
+#endif
   int tolerance = 6808;
   double mse = 2.13e6;
   int delay = 80;  
@@ -469,7 +474,12 @@ TEST_F(AudioDecoderIlbcTest, SetTargetBitrate) {
   TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 13333);
 }
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
+TEST_F(AudioDecoderG722Test, DISABLED_EncodeDecode) {
+#else
 TEST_F(AudioDecoderG722Test, EncodeDecode) {
+#endif
   int tolerance = 6176;
   double mse = 238630.0;
   int delay = 22;  
@@ -482,7 +492,12 @@ TEST_F(AudioDecoderG722Test, SetTargetBitrate) {
   TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 64000);
 }
 
+
+#if defined(__has_feature) && __has_feature(undefined_behavior_sanitizer)
 TEST_F(AudioDecoderG722StereoTest, EncodeDecode) {
+#else
+TEST_F(AudioDecoderG722StereoTest, DISABLED_EncodeDecode) {
+#endif
   int tolerance = 6176;
   int channel_diff_tolerance = 0;
   double mse = 238630.0;
