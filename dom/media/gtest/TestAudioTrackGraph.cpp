@@ -3045,6 +3045,265 @@ TEST(TestAudioTrackGraph, PlatformProcessing)
   }
 }
 
+TEST(TestAudioTrackGraph, PlatformProcessingNonNativeToNativeSwitch)
+{
+  constexpr cubeb_input_processing_params allParams =
+      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+      CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION |
+      CUBEB_INPUT_PROCESSING_PARAM_AUTOMATIC_GAIN_CONTROL |
+      CUBEB_INPUT_PROCESSING_PARAM_VOICE_ISOLATION;
+  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
+  cubeb->SetSupportedInputProcessingParams(allParams, CUBEB_OK);
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
+      MediaTrackGraph::SYSTEM_THREAD_DRIVER,  1,
+      CubebUtils::PreferredSampleRate( false),
+      nullptr, GetMainThreadSerialEventTarget());
+
+  const CubebUtils::AudioDeviceID firstDevice = (CubebUtils::AudioDeviceID)1;
+  const CubebUtils::AudioDeviceID secondDevice = (CubebUtils::AudioDeviceID)2;
+
+  
+  RefPtr<MockAudioDataListener> firstListener =
+      MakeRefPtr<MockAudioDataListener>();
+  EXPECT_CALL(*firstListener, IsVoiceInput).WillRepeatedly(Return(true));
+  EXPECT_CALL(*firstListener, RequestedInputChannelCount)
+      .WillRepeatedly(Return(1));
+  EXPECT_CALL(*firstListener, RequestedInputProcessingParams)
+      .WillRepeatedly(Return(CUBEB_INPUT_PROCESSING_PARAM_NONE));
+
+  RefPtr<MockAudioDataListener> secondListener =
+      MakeRefPtr<MockAudioDataListener>();
+  EXPECT_CALL(*secondListener, IsVoiceInput).WillRepeatedly(Return(true));
+  EXPECT_CALL(*secondListener, RequestedInputChannelCount)
+      .WillRepeatedly(Return(1));
+  EXPECT_CALL(*secondListener, RequestedInputProcessingParams)
+      .WillRepeatedly(Return(CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION));
+
+  
+  const Result<cubeb_input_processing_params, int> noneResult(
+      CUBEB_INPUT_PROCESSING_PARAM_NONE);
+  const Result<cubeb_input_processing_params, int> echoResult(
+      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+  const Result<cubeb_input_processing_params, int> noiseResult(
+      CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  Atomic<int> numProcessingParamsResults(0);
+  {
+    InSequence s;
+    
+    EXPECT_CALL(*firstListener, NotifySetRequestedInputProcessingParamsResult(
+                                    graph, CUBEB_INPUT_PROCESSING_PARAM_NONE,
+                                    Eq(std::ref(noneResult))))
+        .WillOnce([&] { ++numProcessingParamsResults; });
+    
+    EXPECT_CALL(*firstListener,
+                NotifySetRequestedInputProcessingParamsResult(
+                    graph, CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
+                    Eq(std::ref(noiseResult))))
+        .WillOnce([&] { ++numProcessingParamsResults; });
+    
+    EXPECT_CALL(*firstListener, NotifySetRequestedInputProcessingParamsResult(
+                                    graph, CUBEB_INPUT_PROCESSING_PARAM_NONE,
+                                    Eq(std::ref(noneResult))))
+        .WillOnce([&] { ++numProcessingParamsResults; });
+    
+    EXPECT_CALL(*secondListener,
+                NotifySetRequestedInputProcessingParamsResult(
+                    graph, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION,
+                    Eq(std::ref(echoResult))))
+        .WillOnce([&] { ++numProcessingParamsResults; });
+    
+    EXPECT_CALL(*firstListener, Disconnect);
+    EXPECT_CALL(*secondListener, Disconnect);
+    EXPECT_CALL(*secondListener,
+                NotifySetRequestedInputProcessingParamsResult(
+                    graph, CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION,
+                    Eq(std::ref(echoResult))))
+        .WillOnce([&] { ++numProcessingParamsResults; });
+    
+    EXPECT_CALL(*secondListener,
+                NotifySetRequestedInputProcessingParamsResult(
+                    graph, CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
+                    Eq(std::ref(noiseResult))))
+        .WillOnce([&] { ++numProcessingParamsResults; });
+    EXPECT_CALL(*secondListener, Disconnect);
+  }
+
+  
+  RefPtr<TestDeviceInputConsumerTrack> firstTrack;
+  RefPtr<OnFallbackListener> fallbackListener;
+  DispatchFunction([&] {
+    firstTrack = TestDeviceInputConsumerTrack::Create(graph);
+    firstTrack->ConnectDeviceInput(firstDevice, firstListener,
+                                   PRINCIPAL_HANDLE_NONE);
+    fallbackListener = new OnFallbackListener(firstTrack);
+    firstTrack->AddListener(fallbackListener);
+  });
+
+  RefPtr<SmartMockCubebStream> nativeStream = WaitFor(cubeb->StreamInitEvent());
+  RefPtr<SmartMockCubebStream> nonNativeStream;
+  EXPECT_TRUE(nativeStream->mHasInput);
+  EXPECT_TRUE(nativeStream->mHasOutput);
+  EXPECT_EQ(nativeStream->InputChannels(), 1U);
+  EXPECT_EQ(nativeStream->GetInputDeviceID(), firstDevice);
+
+  while (
+      nativeStream->State()
+          .map([](cubeb_state aState) { return aState != CUBEB_STATE_STARTED; })
+          .valueOr(true)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  
+  while (fallbackListener->OnFallback()) {
+    EXPECT_EQ(nativeStream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  const auto waitForResult = [&](int aNumResult) {
+    while (numProcessingParamsResults < aNumResult) {
+      EXPECT_EQ(nativeStream->ManualDataCallback(0),
+                MockCubebStream::KeepProcessing::Yes);
+      if (nonNativeStream) {
+        EXPECT_EQ(nonNativeStream->ManualDataCallback(0),
+                  MockCubebStream::KeepProcessing::Yes);
+      }
+      NS_ProcessNextEvent();
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+  };
+
+  
+  waitForResult(1);
+
+  
+  EXPECT_CALL(*firstListener, RequestedInputProcessingParams)
+      .WillRepeatedly(Return(CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION));
+  waitForResult(2);
+
+  
+  
+  
+  EXPECT_CALL(*firstListener, RequestedInputProcessingParams)
+      .WillRepeatedly(Return(CUBEB_INPUT_PROCESSING_PARAM_NONE));
+  waitForResult(3);
+
+  
+  RefPtr<TestDeviceInputConsumerTrack> secondTrack;
+  DispatchFunction([&] {
+    secondTrack = TestDeviceInputConsumerTrack::Create(graph);
+    secondTrack->ConnectDeviceInput(secondDevice, secondListener,
+                                    PRINCIPAL_HANDLE_NONE);
+    secondTrack->AddListener(fallbackListener);
+  });
+
+  auto initPromise = TakeN(cubeb->StreamInitEvent(), 1);
+  DispatchFunction([&] {
+    
+    
+    
+    
+    
+    
+    EXPECT_EQ(nativeStream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    ProcessEventQueue();
+    EXPECT_EQ(nativeStream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+  });
+
+  std::tie(nonNativeStream) = WaitFor(initPromise).unwrap()[0];
+  EXPECT_TRUE(nonNativeStream->mHasInput);
+  EXPECT_FALSE(nonNativeStream->mHasOutput);
+  EXPECT_EQ(nonNativeStream->InputChannels(), 1U);
+  EXPECT_EQ(nonNativeStream->GetInputDeviceID(), secondDevice);
+
+  while (
+      nonNativeStream->State()
+          .map([](cubeb_state aState) { return aState != CUBEB_STATE_STARTED; })
+          .valueOr(true)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  
+  waitForResult(4);
+
+  
+  
+  
+  DispatchFunction([&] {
+    firstTrack->RemoveListener(fallbackListener);
+    secondTrack->AddListener(fallbackListener);
+    firstTrack->DisconnectDeviceInput();
+  });
+  ProcessEventQueue();
+  initPromise = TakeN(cubeb->StreamInitEvent(), 1);
+  
+  
+  EXPECT_EQ(nativeStream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::Yes);
+  
+  EXPECT_EQ(nativeStream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::No);
+  std::tie(nativeStream) = WaitFor(initPromise).unwrap()[0];
+  EXPECT_TRUE(nativeStream->mHasInput);
+  EXPECT_TRUE(nativeStream->mHasOutput);
+  EXPECT_EQ(nativeStream->InputChannels(), 1U);
+  EXPECT_EQ(nativeStream->GetInputDeviceID(), secondDevice);
+
+  while (
+      nativeStream->State()
+          .map([](cubeb_state aState) { return aState != CUBEB_STATE_STARTED; })
+          .valueOr(true)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  
+  fallbackListener->Reset();
+  while (fallbackListener->OnFallback()) {
+    EXPECT_EQ(nativeStream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  
+  nonNativeStream = nullptr;
+
+  
+  waitForResult(5);
+
+  
+  EXPECT_CALL(*secondListener, RequestedInputProcessingParams)
+      .WillRepeatedly(Return(CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION));
+  waitForResult(6);
+
+  
+  DispatchFunction([&] {
+    firstTrack->Destroy();
+    secondTrack->RemoveListener(fallbackListener);
+    secondTrack->Destroy();
+  });
+  auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
+  DispatchFunction([&] {
+    ProcessEventQueue();
+    
+    EXPECT_EQ(nativeStream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    
+    EXPECT_EQ(nativeStream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::No);
+  });
+  RefPtr<SmartMockCubebStream> destroyedStream;
+  std::tie(destroyedStream) = WaitFor(destroyPromise).unwrap()[0];
+  EXPECT_EQ(destroyedStream, nativeStream);
+  {
+    NativeInputTrack* native = graph->GetNativeInputTrackMainThread();
+    ASSERT_TRUE(!native);
+  }
+}
+
 class MockProcessedMediaTrack : public ProcessedMediaTrack {
  public:
   explicit MockProcessedMediaTrack(TrackRate aRate)

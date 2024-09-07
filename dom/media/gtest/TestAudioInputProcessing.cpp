@@ -524,6 +524,8 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
 
   webrtc::AudioProcessing::Config echoOnlyConfig;
   echoOnlyConfig.echo_canceller.enabled = true;
+  webrtc::AudioProcessing::Config noiseOnlyConfig;
+  noiseOnlyConfig.noise_suppression.enabled = true;
   webrtc::AudioProcessing::Config echoNoiseConfig = echoOnlyConfig;
   echoNoiseConfig.noise_suppression.enabled = true;
 
@@ -598,6 +600,68 @@ TEST(TestAudioInputProcessing, PlatformProcessing)
   EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
             CUBEB_INPUT_PROCESSING_PARAM_NONE);
   EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+
+  
+  aip->ApplySettings(graph, nullptr, settings);
+  EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
+            CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+                CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+  
+  aip->NotifySetRequestedInputProcessingParamsResult(
+      graph,
+      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
+      static_cast<cubeb_input_processing_params>(
+          CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION));
+  
+  EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
+            CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+                CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  EXPECT_EQ(aip->AppliedConfig(graph), webrtc::AudioProcessing::Config());
+  EXPECT_TRUE(aip->IsPassThrough(graph));
+
+  
+  
+  
+  aip->NotifySetRequestedInputProcessingParamsResult(
+      graph, CUBEB_INPUT_PROCESSING_PARAM_NONE,
+
+      CUBEB_INPUT_PROCESSING_PARAM_NONE);
+  
+  EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
+            CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+                CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  EXPECT_EQ(aip->AppliedConfig(graph), echoNoiseConfig);
+  EXPECT_FALSE(aip->IsPassThrough(graph));
+
+  
+  
+  aip->NotifySetRequestedInputProcessingParamsResult(
+      graph,
+      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
+      static_cast<cubeb_input_processing_params>(
+          CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION));
+  EXPECT_EQ(aip->RequestedInputProcessingParams(graph),
+            CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+                CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION);
+  EXPECT_EQ(aip->AppliedConfig(graph), webrtc::AudioProcessing::Config());
+  EXPECT_TRUE(aip->IsPassThrough(graph));
+
+  
+  
+  aip->Disconnect(graph);
+  aip->NotifySetRequestedInputProcessingParamsResult(
+      graph,
+      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
+          CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION,
+      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION);
+  EXPECT_EQ(aip->AppliedConfig(graph), noiseOnlyConfig);
   EXPECT_FALSE(aip->IsPassThrough(graph));
 
   aip->Stop(graph);
