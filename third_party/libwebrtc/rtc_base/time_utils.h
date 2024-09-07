@@ -129,7 +129,7 @@ int64_t TmToSeconds(const tm& tm);
 
 
 
-int64_t TimeUTCMicros();
+RTC_EXPORT int64_t TimeUTCMicros();
 
 
 
