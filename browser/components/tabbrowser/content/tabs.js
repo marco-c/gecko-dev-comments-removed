@@ -271,7 +271,13 @@
         return;
       }
 
-      if (event.button != 0 || event.target != this.arrowScrollbox) {
+      
+      
+      if (
+        event.button != 0 ||
+        event.target != this.arrowScrollbox ||
+        event.composedTarget.localName == "toolbarbutton"
+      ) {
         return;
       }
 
