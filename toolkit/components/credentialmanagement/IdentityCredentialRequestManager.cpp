@@ -76,13 +76,7 @@ void IdentityCredentialRequestManager::NotifyOfStoredCredential(
   auto listLookup = mPendingRequests.Lookup(aIDPPrincipal);
   if (listLookup) {
     for (auto& entry : listLookup.Data()) {
-      
-      if (!entry.mBrowsingContext ||
-          !entry.mBrowsingContext->GetCurrentWindowContext() ||
-          entry.mBrowsingContext->GetCurrentWindowContext()->IsDiscarded() ||
-          !entry.mBrowsingContext->GetCurrentWindowContext()->IsCurrent() ||
-          !entry.mBrowsingContext->AncestorsAreCurrent() ||
-          entry.mBrowsingContext->IsInBFCache()) {
+      if (!entry.mBrowsingContext) {
         continue;
       }
       
