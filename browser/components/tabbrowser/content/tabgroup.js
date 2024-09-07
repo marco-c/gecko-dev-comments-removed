@@ -89,6 +89,20 @@
       }
     }
 
+    
+
+
+
+    ungroupTabs() {
+      let adjacentTab = gBrowser.tabContainer.findNextTab(this.tabs.at(-1));
+
+      for (let tab of this.tabs) {
+        gBrowser.tabContainer.insertBefore(tab, adjacentTab);
+      }
+
+      this.remove();
+    }
+
     on_click(event) {
       if (event.target === this.#labelElement && event.button === 0) {
         event.preventDefault();
