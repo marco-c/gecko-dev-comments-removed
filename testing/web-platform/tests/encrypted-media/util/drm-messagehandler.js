@@ -156,7 +156,6 @@ const requestConstructors = {
             }
             url += "PlayEnablers=B621D91F-EDCC-4035-8D4B-DC71760D43E9&";    
             url += "ContentKey=" + btoa(String.fromCharCode.apply(null, content.key));
-            return url;
         }
 
         
