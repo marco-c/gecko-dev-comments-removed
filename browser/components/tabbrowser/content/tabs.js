@@ -1456,7 +1456,7 @@
       if (this.hasAttribute("overflow")) {
         
         
-        if (isEndTab || !this.arrowScrollbox._scrollButtonDown.disabled) {
+        if (isEndTab || !this.arrowScrollbox.hasAttribute("scrolledtoend")) {
           return;
         }
         
