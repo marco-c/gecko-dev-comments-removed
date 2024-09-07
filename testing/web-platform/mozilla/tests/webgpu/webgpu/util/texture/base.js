@@ -6,6 +6,8 @@ import { reifyExtent3D } from '../../util/unions.js';
 
 
 
+
+
 export function maxMipLevelCount({
   size,
   dimension = '2d'
@@ -267,12 +269,15 @@ view)
 
 export function* fullSubrectCoordinates(
 subrectOrigin,
-subrectSize)
+subrectSize,
+sampleCount = 1)
 {
   for (let z = subrectOrigin.z; z < subrectOrigin.z + subrectSize.depthOrArrayLayers; ++z) {
     for (let y = subrectOrigin.y; y < subrectOrigin.y + subrectSize.height; ++y) {
       for (let x = subrectOrigin.x; x < subrectOrigin.x + subrectSize.width; ++x) {
-        yield { x, y, z };
+        for (let sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+          yield { x, y, z, sampleIndex };
+        }
       }
     }
   }

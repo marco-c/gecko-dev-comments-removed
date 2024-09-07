@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../../shader/validation/shader_io/align.spec.js';
+import { wrapTestGroupForWorker } from '../../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

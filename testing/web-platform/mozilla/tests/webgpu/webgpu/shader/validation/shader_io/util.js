@@ -24,6 +24,10 @@ export function generateShader({ attribute,
 }) {
   let code = '';
 
+  if (attribute.includes('subgroup')) {
+    code += 'enable subgroups;\n';
+  }
+
   if (use_struct) {
     
     code += 'struct S {\n';
