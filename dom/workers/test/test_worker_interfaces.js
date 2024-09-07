@@ -138,9 +138,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AudioData", insecureContext: true },
   
-  { name: "AudioDecoder" },
+  { name: "AudioDecoder", android: false },
   
-  { name: "AudioEncoder" },
+  { name: "AudioEncoder", android: false },
   
   { name: "Blob", insecureContext: true },
   
@@ -370,13 +370,13 @@ let interfaceNamesInGlobalScope = [
   
   { name: "URLSearchParams", insecureContext: true },
   
-  { name: "VideoColorSpace", insecureContext: true },
+  { name: "VideoColorSpace", insecureContext: true, android: false },
   
-  { name: "VideoDecoder" },
+  { name: "VideoDecoder", android: false },
   
-  { name: "VideoEncoder" },
+  { name: "VideoEncoder", android: false },
   
-  { name: "VideoFrame", insecureContext: true },
+  { name: "VideoFrame", insecureContext: true, android: false },
   
   { name: "WebGL2RenderingContext", insecureContext: true },
   
