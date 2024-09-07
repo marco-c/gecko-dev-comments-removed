@@ -160,6 +160,13 @@ enum class StructuredCloneScope : uint32_t {
 
 
 
+  LastResolvedScope = DifferentProcess,
+
+  
+
+
+
+
 
 
   DifferentProcessForIndexedDB,

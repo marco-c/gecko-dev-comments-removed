@@ -491,6 +491,10 @@ struct JSStructuredCloneReader {
   
   
   
+  
+  
+  
+  
   JS::StructuredCloneScope allowedScope;
 
   const JS::CloneDataPolicy cloneDataPolicy;
@@ -3440,9 +3444,8 @@ bool JSStructuredCloneReader::readTransferMap() {
     }
 
     if (tag == SCTAG_TRANSFER_MAP_ARRAY_BUFFER) {
-      if (allowedScope == JS::StructuredCloneScope::DifferentProcess ||
-          allowedScope ==
-              JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
+      MOZ_ASSERT(allowedScope <= JS::StructuredCloneScope::LastResolvedScope);
+      if (allowedScope == JS::StructuredCloneScope::DifferentProcess) {
         
         
         
@@ -3889,6 +3892,8 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
   if (!readHeader()) {
     return false;
   }
+  MOZ_ASSERT(allowedScope <= JS::StructuredCloneScope::LastResolvedScope,
+             "allowedScope should have been resolved by now");
 
   if (!readTransferMap()) {
     return false;
