@@ -18995,7 +18995,21 @@ nsIPrincipal* Document::EffectiveCookiePrincipal() const {
   }
 
   
-  if (mActiveCookiePrincipal) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mActiveCookiePrincipal &&
+      (StaticPrefs::
+           privacy_partition_always_partition_third_party_non_cookie_storage() ||
+       mActiveCookiePrincipal != mPartitionedPrincipal)) {
     return mActiveCookiePrincipal;
   }
 
