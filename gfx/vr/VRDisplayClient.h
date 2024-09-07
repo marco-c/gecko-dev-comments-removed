@@ -7,12 +7,13 @@
 #ifndef GFX_VR_DISPLAY_CLIENT_H
 #define GFX_VR_DISPLAY_CLIENT_H
 
-#include "nsCOMPtr.h"
+#include "gfxVR.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/VRDisplayBinding.h"
+#include "nsCOMPtr.h"
 
-#include "gfxVR.h"
+#include <array>
 
 namespace mozilla {
 namespace dom {
@@ -79,7 +80,8 @@ class VRDisplayClient {
   
   
   
-  VRControllerState mLastEventControllerState[kVRControllerMaxCount];
+  std::array<VRControllerState, kVRControllerMaxCount>
+      mLastEventControllerState;
 
   
 
