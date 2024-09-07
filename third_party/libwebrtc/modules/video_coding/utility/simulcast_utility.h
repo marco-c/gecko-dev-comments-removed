@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "api/video_codecs/video_codec.h"
+#include "video/config/video_encoder_config.h"
 
 namespace webrtc {
 
@@ -26,6 +27,8 @@ class SimulcastUtility {
   static int NumberOfTemporalLayers(const VideoCodec& codec, int spatial_id);
   
   static bool IsConferenceModeScreenshare(const VideoCodec& codec);
+  static bool IsConferenceModeScreenshare(
+      const VideoEncoderConfig& encoder_config);
 };
 
 }  

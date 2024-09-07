@@ -22,6 +22,7 @@
 #include "media/base/media_constants.h"
 #include "media/base/video_adapter.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
+#include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/experiments/min_video_bitrate_experiment.h"
 #include "rtc_base/experiments/normalize_simulcast_size_experiment.h"
 #include "rtc_base/logging.h"
@@ -60,10 +61,10 @@ bool IsScaleFactorsPowerOfTwo(const webrtc::VideoEncoderConfig& config) {
   return true;
 }
 
-bool IsTemporalLayersSupported(const std::string& codec_name) {
-  return absl::EqualsIgnoreCase(codec_name, kVp8CodecName) ||
-         absl::EqualsIgnoreCase(codec_name, kVp9CodecName) ||
-         absl::EqualsIgnoreCase(codec_name, kAv1CodecName);
+bool IsTemporalLayersSupported(webrtc::VideoCodecType codec_type) {
+  return codec_type == webrtc::VideoCodecType::kVideoCodecVP8 ||
+         codec_type == webrtc::VideoCodecType::kVideoCodecVP9 ||
+         codec_type == webrtc::VideoCodecType::kVideoCodecAV1;
 }
 
 size_t FindRequiredActiveLayers(
@@ -97,23 +98,25 @@ static int GetMaxDefaultVideoBitrateKbps(int width,
   return max_bitrate;
 }
 
+int GetDefaultMaxQp(webrtc::VideoCodecType codec_type) {
+  switch (codec_type) {
+    case webrtc::kVideoCodecH264:
+    case webrtc::kVideoCodecH265:
+      return kDefaultVideoMaxQpH26x;
+    case webrtc::kVideoCodecVP8:
+    case webrtc::kVideoCodecVP9:
+    case webrtc::kVideoCodecAV1:
+    case webrtc::kVideoCodecGeneric:
+      return kDefaultVideoMaxQpVpx;
+  }
+}
+
 }  
 
-
-
-
 EncoderStreamFactory::EncoderStreamFactory(
-    std::string codec_name,
-    int max_qp,
-    bool is_screenshare,
-    bool conference_mode,
     const webrtc::VideoEncoder::EncoderInfo& encoder_info,
     absl::optional<webrtc::VideoSourceRestrictions> restrictions)
-    : codec_name_(codec_name),
-      max_qp_(max_qp),
-      is_screenshare_(is_screenshare),
-      conference_mode_(conference_mode),
-      encoder_info_requested_resolution_alignment_(
+    : encoder_info_requested_resolution_alignment_(
           encoder_info.requested_resolution_alignment),
       restrictions_(restrictions) {}
 
@@ -146,9 +149,8 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
     }
   }
 
-  if (is_simulcast || ((absl::EqualsIgnoreCase(codec_name_, kVp8CodecName) ||
-                        absl::EqualsIgnoreCase(codec_name_, kH264CodecName)) &&
-                       is_screenshare_ && conference_mode_)) {
+  if (is_simulcast ||
+      webrtc::SimulcastUtility::IsConferenceModeScreenshare(encoder_config)) {
     return CreateSimulcastOrConferenceModeScreenshareStreams(
         trials, frame_width, frame_height, encoder_config,
         experimental_min_bitrate);
@@ -164,7 +166,8 @@ EncoderStreamFactory::CreateDefaultVideoStreams(
     int height,
     const webrtc::VideoEncoderConfig& encoder_config,
     const absl::optional<webrtc::DataRate>& experimental_min_bitrate) const {
-  std::vector<webrtc::VideoStream> layers;
+  bool is_screencast = encoder_config.content_type ==
+                       webrtc::VideoEncoderConfig::ContentType::kScreen;
 
   
   
@@ -187,8 +190,7 @@ EncoderStreamFactory::CreateDefaultVideoStreams(
   int max_bitrate_bps =
       api_max_bitrate_bps.has_value()
           ? *api_max_bitrate_bps
-          : GetMaxDefaultVideoBitrateKbps(width, height, is_screenshare_) *
-                1000;
+          : GetMaxDefaultVideoBitrateKbps(width, height, is_screencast) * 1000;
 
   int min_bitrate_bps =
       experimental_min_bitrate
@@ -234,7 +236,7 @@ EncoderStreamFactory::CreateDefaultVideoStreams(
         kMinLayerSize);
   }
 
-  if (absl::EqualsIgnoreCase(codec_name_, kVp9CodecName)) {
+  if (encoder_config.codec_type == webrtc::VideoCodecType::kVideoCodecVP9) {
     RTC_DCHECK(encoder_config.encoder_specific_settings);
     
     
@@ -256,7 +258,7 @@ EncoderStreamFactory::CreateDefaultVideoStreams(
       std::vector<webrtc::SpatialLayer> svc_layers =
           webrtc::GetSvcConfig(width, height, max_framerate,
                                0, num_spatial_layers,
-                               *layer.num_temporal_layers, is_screenshare_);
+                               *layer.num_temporal_layers, is_screencast);
       int sum_max_bitrates_kbps = 0;
       for (const webrtc::SpatialLayer& spatial_layer : svc_layers) {
         sum_max_bitrates_kbps += spatial_layer.maxBitrate;
@@ -282,10 +284,15 @@ EncoderStreamFactory::CreateDefaultVideoStreams(
         encoder_config.simulcast_layers[0].target_bitrate_bps, max_bitrate_bps);
   }
   layer.max_bitrate_bps = max_bitrate_bps;
-  layer.max_qp = max_qp_;
   layer.bitrate_priority = encoder_config.bitrate_priority;
 
-  if (IsTemporalLayersSupported(codec_name_)) {
+  if (encoder_config.max_qp > 0) {
+    layer.max_qp = encoder_config.max_qp;
+  } else {
+    layer.max_qp = GetDefaultMaxQp(encoder_config.codec_type);
+  }
+
+  if (IsTemporalLayersSupported(encoder_config.codec_type)) {
     
     if (encoder_config.simulcast_layers[0].num_temporal_layers) {
       layer.num_temporal_layers =
@@ -293,8 +300,7 @@ EncoderStreamFactory::CreateDefaultVideoStreams(
     }
   }
   layer.scalability_mode = encoder_config.simulcast_layers[0].scalability_mode;
-  layers.push_back(layer);
-  return layers;
+  return {layer};
 }
 
 std::vector<webrtc::VideoStream>
@@ -304,17 +310,20 @@ EncoderStreamFactory::CreateSimulcastOrConferenceModeScreenshareStreams(
     int height,
     const webrtc::VideoEncoderConfig& encoder_config,
     const absl::optional<webrtc::DataRate>& experimental_min_bitrate) const {
+  bool is_screencast = encoder_config.content_type ==
+                       webrtc::VideoEncoderConfig::ContentType::kScreen;
   std::vector<webrtc::VideoStream> layers;
 
-  const bool temporal_layers_supported = IsTemporalLayersSupported(codec_name_);
+  const bool temporal_layers_supported =
+      IsTemporalLayersSupported(encoder_config.codec_type);
   
   
-  layers = GetSimulcastConfig(FindRequiredActiveLayers(encoder_config),
-                              encoder_config.number_of_streams, width, height,
-                              encoder_config.bitrate_priority, max_qp_,
-                              is_screenshare_ && conference_mode_,
-                              temporal_layers_supported, trials,
-                              encoder_config.codec_type);
+  layers = GetSimulcastConfig(
+      FindRequiredActiveLayers(encoder_config),
+      encoder_config.number_of_streams, width, height,
+      encoder_config.bitrate_priority, encoder_config.max_qp,
+      webrtc::SimulcastUtility::IsConferenceModeScreenshare(encoder_config),
+      temporal_layers_supported, trials, encoder_config.codec_type);
   
   
   if (experimental_min_bitrate) {
@@ -355,7 +364,7 @@ EncoderStreamFactory::CreateSimulcastOrConferenceModeScreenshareStreams(
         encoder_config.simulcast_layers[i].requested_resolution;
     
     if (encoder_config.simulcast_layers[i].num_temporal_layers &&
-        IsTemporalLayersSupported(codec_name_)) {
+        temporal_layers_supported) {
       layers[i].num_temporal_layers =
           *encoder_config.simulcast_layers[i].num_temporal_layers;
     }
@@ -419,12 +428,21 @@ EncoderStreamFactory::CreateSimulcastOrConferenceModeScreenshareStreams(
           std::min(layers[i].target_bitrate_bps, layers[i].max_bitrate_bps),
           layers[i].min_bitrate_bps);
     }
+
+    if (encoder_config.simulcast_layers[i].max_qp > 0) {
+      layers[i].max_qp = encoder_config.simulcast_layers[i].max_qp;
+    } else if (encoder_config.max_qp > 0) {
+      layers[i].max_qp = encoder_config.max_qp;
+    } else {
+      layers[i].max_qp = GetDefaultMaxQp(encoder_config.codec_type);
+    }
+
     if (i == layers.size() - 1) {
       is_highest_layer_max_bitrate_configured =
           encoder_config.simulcast_layers[i].max_bitrate_bps > 0;
     }
   }
-  if (!is_screenshare_ && !is_highest_layer_max_bitrate_configured &&
+  if (!is_screencast && !is_highest_layer_max_bitrate_configured &&
       encoder_config.max_bitrate_bps > 0) {
     
     

@@ -4077,10 +4077,6 @@ void VideoSendStreamTest::TestTemporalLayers(
           test::VideoTestConstants::kVideoSendPayloadType;
       encoder_config->video_format.name = payload_name_;
       encoder_config->codec_type = PayloadStringToCodecType(payload_name_);
-      encoder_config->video_stream_factory =
-          rtc::make_ref_counted<cricket::EncoderStreamFactory>(
-              payload_name_, 56, false,
-              false, encoder_info);
       encoder_config->max_bitrate_bps = kMaxBitrateBps;
       if (absl::EqualsIgnoreCase(payload_name_, "VP9")) {
         encoder_config->encoder_specific_settings = rtc::make_ref_counted<
