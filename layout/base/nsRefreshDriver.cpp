@@ -2168,12 +2168,6 @@ struct DocumentFrameCallbacks {
   nsTArray<FrameRequest> mCallbacks;
 };
 
-static void TakeFrameRequestCallbacksFrom(
-    Document* aDocument, nsTArray<DocumentFrameCallbacks>& aTarget) {
-  aTarget.AppendElement(aDocument);
-  aDocument->TakeFrameRequestCallbacks(aTarget.LastElement().mCallbacks);
-}
-
 void nsRefreshDriver::ScheduleAutoFocusFlush(Document* aDocument) {
   MOZ_ASSERT(!mAutoFocusFlushDocuments.Contains(aDocument));
   mAutoFocusFlushDocuments.AppendElement(aDocument);
@@ -2378,110 +2372,94 @@ void nsRefreshDriver::UpdateAnimationsAndSendEvents() {
   }
 }
 
+void nsRefreshDriver::CollectFrameRequestCallbackDocs(
+    bool aTickThrottled, nsTArray<DocumentFrameCallbacks>& aCallbacks) {
+  aCallbacks.AppendElements(mFrameRequestCallbackDocs);
+  mFrameRequestCallbackDocs.Clear();
+  if (aTickThrottled) {
+    aCallbacks.AppendElements(mThrottledFrameRequestCallbackDocs);
+    mThrottledFrameRequestCallbackDocs.Clear();
+  } else {
+    
+    
+    mThrottledFrameRequestCallbackDocs.RemoveElementsBy([&](Document* aDoc) {
+      if (!aDoc->ShouldThrottleFrameRequests()) {
+        aCallbacks.AppendElement(aDoc);
+        return true;
+      }
+      return false;
+    });
+  }
+}
+
 void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
   
-  nsTArray<DocumentFrameCallbacks> frameRequestCallbacks(
-      mFrameRequestCallbackDocs.Length() +
-      mThrottledFrameRequestCallbackDocs.Length());
-
-  
-  {
-    nsTArray<Document*> docsToRemove;
-
-    
-    
-    
-    bool tickThrottledFrameRequests = mThrottled;
-
-    if (!tickThrottledFrameRequests &&
-        aNowTime >= mNextThrottledFrameRequestTick) {
+  AutoTArray<DocumentFrameCallbacks, 8> frameRequestCallbacks;
+  const bool tickThrottledFrameRequests = [&] {
+    if (mThrottled) {
+      
+      
+      
+      return true;
+    }
+    if (aNowTime >= mNextThrottledFrameRequestTick) {
       mNextThrottledFrameRequestTick =
           aNowTime + mThrottledFrameRequestInterval;
-      tickThrottledFrameRequests = true;
+      return true;
     }
+    return false;
+  }();
 
-    for (Document* doc : mThrottledFrameRequestCallbackDocs) {
-      if (tickThrottledFrameRequests) {
-        
-        
-        
-        TakeFrameRequestCallbacksFrom(doc, frameRequestCallbacks);
-      } else if (!doc->ShouldThrottleFrameRequests()) {
-        
-        
-        
-        
-        TakeFrameRequestCallbacksFrom(doc, frameRequestCallbacks);
-        docsToRemove.AppendElement(doc);
+  CollectFrameRequestCallbackDocs(tickThrottledFrameRequests,
+                                  frameRequestCallbacks);
+  bool empty = true;
+  for (DocumentFrameCallbacks& docCallbacks : frameRequestCallbacks) {
+    docCallbacks.mDocument->TakeFrameRequestCallbacks(docCallbacks.mCallbacks);
+    empty = empty && docCallbacks.mCallbacks.IsEmpty();
+  }
+
+  if (empty) {
+    return;
+  }
+  AUTO_PROFILER_TRACING_MARKER_DOCSHELL("Paint",
+                                        "requestAnimationFrame callbacks",
+                                        GRAPHICS, GetDocShell(mPresContext));
+  for (const DocumentFrameCallbacks& docCallbacks : frameRequestCallbacks) {
+    TimeStamp startTime = TimeStamp::Now();
+
+    nsPIDOMWindowInner* innerWindow = docCallbacks.mDocument->GetInnerWindow();
+    nsCOMPtr<nsIGlobalObject> global;
+    DOMHighResTimeStamp timeStamp = 0;
+    if (innerWindow) {
+      if (Performance* perf = innerWindow->GetPerformance()) {
+        timeStamp = perf->TimeStampToDOMHighResForRendering(aNowTime);
       }
+      global = nsGlobalWindowInner::Cast(innerWindow);
+      
+    }
+    for (const auto& callback : docCallbacks.mCallbacks) {
+      if (docCallbacks.mDocument->IsCanceledFrameRequestCallback(
+              callback.mHandle)) {
+        continue;
+      }
+
+      CallbackDebuggerNotificationGuard guard(
+          global, DebuggerNotificationType::RequestAnimationFrameCallback);
+
+      
+      
+      
+      LogFrameRequestCallback::Run run(callback.mCallback);
+      MOZ_KnownLive(callback.mCallback)->Call(timeStamp);
     }
 
-    
-    
-    if (tickThrottledFrameRequests) {
-      mThrottledFrameRequestCallbackDocs.Clear();
+    if (docCallbacks.mDocument->GetReadyStateEnum() ==
+        Document::READYSTATE_COMPLETE) {
+      glean::performance_responsiveness::req_anim_frame_callback
+          .AccumulateRawDuration(TimeStamp::Now() - startTime);
     } else {
-      
-      
-      
-      for (Document* doc : docsToRemove) {
-        mThrottledFrameRequestCallbackDocs.RemoveElement(doc);
-      }
-    }
-  }
-
-  
-  for (Document* doc : mFrameRequestCallbackDocs) {
-    TakeFrameRequestCallbacksFrom(doc, frameRequestCallbacks);
-  }
-
-  
-  mFrameRequestCallbackDocs.Clear();
-
-  if (!frameRequestCallbacks.IsEmpty()) {
-    AUTO_PROFILER_TRACING_MARKER_DOCSHELL("Paint",
-                                          "requestAnimationFrame callbacks",
-                                          GRAPHICS, GetDocShell(mPresContext));
-    for (const DocumentFrameCallbacks& docCallbacks : frameRequestCallbacks) {
-      TimeStamp startTime = TimeStamp::Now();
-
-      
-      
-      nsPIDOMWindowInner* innerWindow =
-          docCallbacks.mDocument->GetInnerWindow();
-      DOMHighResTimeStamp timeStamp = 0;
-      if (innerWindow) {
-        if (Performance* perf = innerWindow->GetPerformance()) {
-          timeStamp = perf->TimeStampToDOMHighResForRendering(aNowTime);
-        }
-        
-      }
-      for (auto& callback : docCallbacks.mCallbacks) {
-        if (docCallbacks.mDocument->IsCanceledFrameRequestCallback(
-                callback.mHandle)) {
-          continue;
-        }
-
-        nsCOMPtr<nsIGlobalObject> global(innerWindow ? innerWindow->AsGlobal()
-                                                     : nullptr);
-        CallbackDebuggerNotificationGuard guard(
-            global, DebuggerNotificationType::RequestAnimationFrameCallback);
-
-        
-        
-        
-        LogFrameRequestCallback::Run run(callback.mCallback);
-        MOZ_KnownLive(callback.mCallback)->Call(timeStamp);
-      }
-
-      if (docCallbacks.mDocument->GetReadyStateEnum() ==
-          Document::READYSTATE_COMPLETE) {
-        glean::performance_responsiveness::req_anim_frame_callback
-            .AccumulateRawDuration(TimeStamp::Now() - startTime);
-      } else {
-        glean::performance_pageload::req_anim_frame_callback
-            .AccumulateRawDuration(TimeStamp::Now() - startTime);
-      }
+      glean::performance_pageload::req_anim_frame_callback
+          .AccumulateRawDuration(TimeStamp::Now() - startTime);
     }
   }
 }

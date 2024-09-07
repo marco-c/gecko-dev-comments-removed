@@ -37,6 +37,8 @@ class nsPresContext;
 class imgIRequest;
 class nsIRunnable;
 
+struct DocumentFrameCallbacks;
+
 namespace mozilla {
 class AnimationEventDispatcher;
 class PendingFullscreenEvent;
@@ -488,6 +490,15 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void FlushAutoFocusDocuments();
   void RunFullscreenSteps();
   void UpdateAnimationsAndSendEvents();
+
+  
+  
+  
+  
+  
+  void CollectFrameRequestCallbackDocs(bool aTickThrottled,
+                                       nsTArray<DocumentFrameCallbacks>&);
+
   MOZ_CAN_RUN_SCRIPT
   void RunFrameRequestCallbacks(mozilla::TimeStamp aNowTime);
   void UpdateIntersectionObservations(mozilla::TimeStamp aNowTime);
