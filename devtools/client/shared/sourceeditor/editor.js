@@ -312,7 +312,7 @@ class Editor extends EventEmitter {
     
     
     
-    if (this.config.extraKeys.Tab == undefined) {
+    if (this.config.extraKeys.Tab !== false) {
       this.config.extraKeys.Tab = cm => {
         if (config.extraKeys?.Tab) {
           
