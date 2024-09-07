@@ -6031,7 +6031,12 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery {
  public:
   
   ObjectQuery(JSContext* cx, Debugger* dbg)
-      : objects(cx), cx(cx), dbg(dbg), className(cx) {}
+      : objects(cx),
+        cx(cx),
+        dbg(dbg),
+        queryType(QueryType::None),
+        jsClassName(cx),
+        unwrappedCtorOrProto(cx) {}
 
   
   RootedObjectVector objects;
@@ -6049,14 +6054,12 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery {
     if (!GetProperty(cx, query, query, cx->names().class_, &cls)) {
       return false;
     }
-    if (!cls.isUndefined()) {
-      if (!cls.isString()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_UNEXPECTED_TYPE,
-                                  "query object's 'class' property",
-                                  "neither undefined nor a string");
-        return false;
-      }
+
+    if (cls.isUndefined()) {
+      return true;
+    }
+
+    if (cls.isString()) {
       JSLinearString* str = cls.toString()->ensureLinear(cx);
       if (!str) {
         return false;
@@ -6064,17 +6067,55 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery {
       if (!StringIsAscii(str)) {
         JS_ReportErrorNumberASCII(
             cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
-            "query object's 'class' property",
+            "query object's 'class' property string",
             "not a string containing only ASCII characters");
         return false;
       }
-      className = cls;
+      jsClassName = cls;
+      queryType = QueryType::JSClassName;
+      return true;
     }
-    return true;
+
+    if (cls.isObject()) {
+      JS::Rooted<JSObject*> obj(cx, &cls.toObject());
+      obj = UncheckedUnwrap(obj);
+      if (JS_IsDeadWrapper(obj)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_DEAD_OBJECT);
+        return false;
+      }
+      if (!obj->is<DebuggerObject>()) {
+        JS_ReportErrorNumberASCII(
+            cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
+            "query object's 'class' property object", "not Debugger.Object");
+        return false;
+      }
+
+      unwrappedCtorOrProto = obj->as<DebuggerObject>().referent();
+      unwrappedCtorOrProto = UncheckedUnwrap(unwrappedCtorOrProto);
+      if (JS_IsDeadWrapper(unwrappedCtorOrProto)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_DEAD_OBJECT);
+        return false;
+      }
+      queryType = QueryType::CtorOrProto;
+      return true;
+    }
+
+    JS_ReportErrorNumberASCII(
+        cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
+        "query object's 'class' property",
+        "none of JSClass name string, constructor/prototype debuggee object, "
+        "or undefined");
+    return false;
   }
 
   
-  void omittedQuery() { className.setUndefined(); }
+  void omittedQuery() {
+    jsClassName.setUndefined();
+    unwrappedCtorOrProto = nullptr;
+    queryType = QueryType::None;
+  }
 
   
 
@@ -6162,14 +6203,70 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery {
 
     JSObject* obj = referent.as<JSObject>();
 
-    if (!className.isUndefined()) {
-      const char* objClassName = obj->getClass()->name;
-      if (strcmp(objClassName, classNameCString.get()) != 0) {
-        return true;
+    switch (queryType) {
+      case QueryType::None:
+        break;
+      case QueryType::JSClassName: {
+        const char* objJSClassName = obj->getClass()->name;
+        if (strcmp(objJSClassName, jsClassNameCString.get()) != 0) {
+          return true;
+        }
+        break;
       }
+      case QueryType::CtorOrProto:
+        if (!hasConstructorOrPrototype(obj, unwrappedCtorOrProto, cx)) {
+          return true;
+        }
+        break;
     }
 
     return objects.append(obj);
+  }
+
+  
+  
+  
+  
+  
+  
+  static bool hasConstructorOrPrototype(JSObject* obj, JSObject* ctorOrProto,
+                                        JSContext* cx) {
+    obj = UncheckedUnwrap(obj);
+
+    while (true) {
+      if (!obj->hasStaticPrototype()) {
+        
+        break;
+      }
+
+      JSObject* proto = obj->staticPrototype();
+      if (!proto) {
+        break;
+      }
+      proto = UncheckedUnwrap(proto);
+      if (proto == ctorOrProto) {
+        return true;
+      }
+
+      JS::Value ctorVal;
+      bool result;
+      {
+        AutoRealm ar(cx, proto);
+        result = GetPropertyPure(cx, proto, NameToId(cx->names().constructor),
+                                 &ctorVal);
+      }
+      if (result && ctorVal.isObject()) {
+        JSObject* ctor = &ctorVal.toObject();
+        ctor = UncheckedUnwrap(ctor);
+        if (ctor == ctorOrProto) {
+          return true;
+        }
+      }
+
+      obj = proto;
+    }
+
+    return false;
   }
 
  private:
@@ -6179,23 +6276,35 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery {
   
   Debugger* dbg;
 
+  enum class QueryType {
+    
+    None,
+
+    
+    JSClassName,
+
+    
+    CtorOrProto,
+  };
+  QueryType queryType;
+
   
-
-
-
-  RootedValue className;
+  RootedValue jsClassName;
 
   
-  UniqueChars classNameCString;
+  UniqueChars jsClassNameCString;
+
+  
+  JS::Rooted<JSObject*> unwrappedCtorOrProto;
 
   
 
 
 
   bool prepareQuery() {
-    if (className.isString()) {
-      classNameCString = JS_EncodeStringToASCII(cx, className.toString());
-      if (!classNameCString) {
+    if (jsClassName.isString()) {
+      jsClassNameCString = JS_EncodeStringToASCII(cx, jsClassName.toString());
+      if (!jsClassNameCString) {
         return false;
       }
     }
