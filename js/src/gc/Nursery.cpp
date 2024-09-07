@@ -1579,7 +1579,8 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
 
   
   startProfile(ProfileKey::FreeMallocedBuffers);
-  gc->queueBuffersForFreeAfterMinorGC(fromSpace.mallocedBuffers);
+  gc->queueBuffersForFreeAfterMinorGC(fromSpace.mallocedBuffers,
+                                      stringBuffersToReleaseAfterMinorGC_);
   fromSpace.mallocedBufferBytes = 0;
   endProfile(ProfileKey::FreeMallocedBuffers);
 
@@ -1940,6 +1941,7 @@ void js::Nursery::sweep() {
 
   
   
+  MOZ_ASSERT(stringBuffersToReleaseAfterMinorGC_.empty());
   stringBuffers_.mutableEraseIf([&](StringAndBuffer& entry) {
     auto [str, buffer] = entry;
     MOZ_ASSERT(inCollectedRegion(str));
@@ -1947,7 +1949,10 @@ void js::Nursery::sweep() {
     if (!IsForwarded(str)) {
       MOZ_ASSERT(str->hasStringBuffer() || str->isAtomRef());
       MOZ_ASSERT_IF(str->hasStringBuffer(), str->stringBuffer() == buffer);
-      buffer->Release();
+      if (!stringBuffersToReleaseAfterMinorGC_.append(buffer)) {
+        
+        buffer->Release();
+      }
       return true;
     }
 
@@ -1955,7 +1960,10 @@ void js::Nursery::sweep() {
     if (!IsInsideNursery(dst)) {
       MOZ_ASSERT_IF(dst->hasStringBuffer() && dst->stringBuffer() == buffer,
                     buffer->RefCount() > 1);
-      buffer->Release();
+      if (!stringBuffersToReleaseAfterMinorGC_.append(buffer)) {
+        
+        buffer->Release();
+      }
       return true;
     }
 

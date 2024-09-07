@@ -730,9 +730,14 @@ class Nursery {
   
   
   using StringAndBuffer = std::pair<JSLinearString*, mozilla::StringBuffer*>;
-  using StringBufferVector =
+  using StringAndBufferVector =
       JS::GCVector<StringAndBuffer, 8, SystemAllocPolicy>;
-  StringBufferVector stringBuffers_;
+  StringAndBufferVector stringBuffers_;
+
+  
+  using StringBufferVector =
+      Vector<mozilla::StringBuffer*, 8, SystemAllocPolicy>;
+  StringBufferVector stringBuffersToReleaseAfterMinorGC_;
 
   UniquePtr<NurseryDecommitTask> decommitTask;
 

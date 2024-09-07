@@ -603,7 +603,8 @@ class GCRuntime {
   
   void queueUnusedLifoBlocksForFree(LifoAlloc* lifo);
   void queueAllLifoBlocksForFreeAfterMinorGC(LifoAlloc* lifo);
-  void queueBuffersForFreeAfterMinorGC(Nursery::BufferSet& buffers);
+  void queueBuffersForFreeAfterMinorGC(
+      Nursery::BufferSet& buffers, Nursery::StringBufferVector& stringBuffers);
 
   
   void releaseArena(Arena* arena, const AutoLockGC& lock);
@@ -1215,6 +1216,8 @@ class GCRuntime {
   MainThreadData<LifoAlloc> lifoBlocksToFreeAfterFullMinorGC;
   MainThreadData<LifoAlloc> lifoBlocksToFreeAfterNextMinorGC;
   HelperThreadLockData<Nursery::BufferSet> buffersToFreeAfterMinorGC;
+  HelperThreadLockData<Nursery::StringBufferVector>
+      stringBuffersToReleaseAfterMinorGC;
 
   
   MainThreadData<unsigned> sweepGroupIndex;
