@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=829085
+-->
 <head>
   <title>Test for Bug 829085 - non-scaling-stroke hit testing</title>
   <meta charset="utf-8"></meta>
@@ -32,19 +32,17 @@
 <script type="application/javascript">
 
   function startTest() {
-    SimpleTest.waitForFocus(function() {
-        disableNonTestMouseEvents(true);
-        // Send a click
-        synthesizeMouseExpectEvent($("svg"), 170, 100, { },
-                                   $("line"), "click",
-                                   "Testing mouse event on non-scaling-stroke");
-        disableNonTestMouseEvents(false);
-        SimpleTest.finish();
-    });
+    disableNonTestMouseEvents(true);
+    // Send a click
+    synthesizeMouseExpectEvent($("svg"), 170, 100, { },
+                               $("line"), "click",
+                               "Testing mouse event on non-scaling-stroke");
+    disableNonTestMouseEvents(false);
+    SimpleTest.finish();
   }
 
   SimpleTest.waitForExplicitFinish();
-  addLoadEvent(startTest);
+  SimpleTest.waitForFocus(startTest);
 
 </script>
 </pre>
