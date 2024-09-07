@@ -316,6 +316,14 @@ void PreallocatedProcessManagerImpl::AllocateNow() {
   }
 
   UniqueContentParentKeepAlive process = ContentParent::MakePreallocProcess();
+  if (!process) {
+    
+    
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+            ("Failed to launch prealloc process"));
+    return;
+  }
+
   process->WaitForLaunchAsync(PROCESS_PRIORITY_PREALLOC)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
