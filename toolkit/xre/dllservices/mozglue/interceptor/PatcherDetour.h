@@ -1186,6 +1186,35 @@ class WindowsDllDetourPatcher final
           return;
         }
         COPY_CODES(len);
+      } else if (*origBytes == 0x40 && origBytes[1] == 0x38 &&
+                 (origBytes[2] & (kMaskMod | kMaskRm)) ==
+                     (kModNoRegDisp | kRmNoRegDispDisp32)) {
+        int reg = origBytes[2] & kMaskReg;
+        origBytes += 3;
+
+        
+        
+
+        
+        tramp.WriteByte(0x49);
+        tramp.WriteByte(0x53);
+
+        uintptr_t absAddr = origBytes.ReadDisp32AsAbsolute();
+
+        
+        tramp.WriteByte(0x49);
+        tramp.WriteByte(0xbb);
+        tramp.WritePointer(absAddr);
+
+        
+        
+        tramp.WriteByte(0x41);
+        tramp.WriteByte(0x38);
+        tramp.WriteByte(kModNoRegDisp | reg | kRegBx);
+
+        
+        tramp.WriteByte(0x49);
+        tramp.WriteByte(0x5b);
       } else if (*origBytes == 0x40 || *origBytes == 0x41) {
         
         COPY_CODES(1);
@@ -1451,7 +1480,8 @@ class WindowsDllDetourPatcher final
       } else if ((*origBytes & 0xf8) == 0xb8) {
         
         COPY_CODES(5);
-      } else if (*origBytes == 0x33) {
+      } else if (*origBytes == 0x31 || *origBytes == 0x33) {
+        
         
         COPY_CODES(2);
       } else if (*origBytes == 0xf6) {
