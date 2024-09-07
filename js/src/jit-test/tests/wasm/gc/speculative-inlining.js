@@ -1,6 +1,9 @@
 
 
-const tierUpThreshold = 1;
+
+
+const tierUpThreshold = 2250;
+
 let {importFunc} = wasmEvalText(`
   (module (func (export "importFunc") (result i32) i32.const 2))
 `).exports;
@@ -56,6 +59,10 @@ for ([funcToInline, funcToInlineExpected] of testFuncs) {
   for (let i = 0; i <= tierUpThreshold; i++) {
     invokeTestWith(exports, funcToInline, funcToInlineExpected);
   }
+  
+  
+  
+  sleep(0.05);
   assertEq(wasmFunctionTier(test), "optimized");
 
   

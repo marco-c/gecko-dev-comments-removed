@@ -2309,11 +2309,10 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
   
   if (code().mode() == CompileMode::LazyTiering) {
-    
-    
     for (uint32_t funcIndex = codeMeta().numFuncImports;
          funcIndex < codeMeta().numFuncs(); funcIndex++) {
-      funcDefInstanceData(funcIndex)->hotnessCounter = 0;
+      funcDefInstanceData(funcIndex)->hotnessCounter =
+          computeInitialHotnessCounter(funcIndex);
     }
   }
 
@@ -2695,6 +2694,23 @@ void Instance::resetTemporaryStackLimit(JSContext* cx) {
     stackLimit_ = cx->stackLimitForJitCode(JS::StackForUntrustedScript);
   }
   onSuspendableStack_ = false;
+}
+
+int32_t Instance::computeInitialHotnessCounter(uint32_t funcIndex) {
+  MOZ_ASSERT(code().mode() == CompileMode::LazyTiering);
+  
+  
+  float thresholdF =
+      float(codeMeta()
+                .funcDefRanges[funcIndex - codeMeta().numFuncImports]
+                .bodyLength);
+  thresholdF = thresholdF * sqrtf(thresholdF);
+  thresholdF *= 150.0;
+  thresholdF = std::max<float>(thresholdF, 10.0);   
+  thresholdF = std::min<float>(thresholdF, 2.0e9);  
+  int32_t thresholdI = int32_t(thresholdF);
+  MOZ_RELEASE_ASSERT(thresholdI >= 0);
+  return thresholdI;
 }
 
 void Instance::resetHotnessCounter(uint32_t funcIndex) {
