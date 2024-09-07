@@ -245,20 +245,7 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
                     timeout = 360
                 time.sleep(timeout)
 
-            driver.set_context("chrome")
-            driver.execute_script(
-                """
-                let cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"]
-                    .createInstance(Components.interfaces.nsISupportsPRBool);
-                Services.obs.notifyObservers(cancelQuit, "quit-application-requested", null);
-                return cancelQuit.data;
-            """
-            )
-            driver.execute_script(
-                """
-                Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit)
-            """
-            )
+            driver.quit(in_app=True)
 
             
             
