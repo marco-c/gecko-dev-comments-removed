@@ -2677,8 +2677,12 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
                          : outerScript;
     }
     cx->zone()->jitZone()->clearStubFoldingBailoutData();
-    if (stub->usedByTranspiler() && owningScript->hasIonScript()) {
-      owningScript->ionScript()->resetNumFixableBailouts();
+    if (stub->usedByTranspiler()) {
+      if (owningScript->hasIonScript()) {
+        owningScript->ionScript()->resetNumFixableBailouts();
+      } else if (owningScript->hasJitScript()) {
+        owningScript->jitScript()->clearFailedICHash();
+      }
     } else {
       
       owningScript->updateLastICStubCounter();
