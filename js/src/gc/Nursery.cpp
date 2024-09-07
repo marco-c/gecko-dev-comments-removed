@@ -1911,37 +1911,12 @@ size_t Nursery::sizeOfMallocedBuffers(
   return total;
 }
 
-void js::Nursery::sweep() {
+void js::Nursery::sweepStringsWithBuffer() {
   
   
-  
-  AutoSetThreadIsSweeping setThreadSweeping(runtime()->gcContext());
 
-  MinorSweepingTracer trc(runtime());
-
-  
-  
-  cellsWithUid_.mutableEraseIf([](Cell*& cell) {
-    auto* obj = static_cast<JSObject*>(cell);
-    if (!IsForwarded(obj)) {
-      gc::RemoveUniqueId(obj);
-      return true;
-    }
-
-    JSObject* dst = Forwarded(obj);
-    gc::TransferUniqueId(dst, obj);
-
-    if (!IsInsideNursery(dst)) {
-      return true;
-    }
-
-    cell = dst;
-    return false;
-  });
-
-  
-  
   MOZ_ASSERT(stringBuffersToReleaseAfterMinorGC_.empty());
+
   stringBuffers_.mutableEraseIf([&](StringAndBuffer& entry) {
     auto [str, buffer] = entry;
     MOZ_ASSERT(inCollectedRegion(str));
@@ -1970,6 +1945,37 @@ void js::Nursery::sweep() {
     entry.first = dst;
     return false;
   });
+}
+
+void js::Nursery::sweep() {
+  
+  
+  
+  AutoSetThreadIsSweeping setThreadSweeping(runtime()->gcContext());
+
+  MinorSweepingTracer trc(runtime());
+
+  
+  
+  cellsWithUid_.mutableEraseIf([](Cell*& cell) {
+    auto* obj = static_cast<JSObject*>(cell);
+    if (!IsForwarded(obj)) {
+      gc::RemoveUniqueId(obj);
+      return true;
+    }
+
+    JSObject* dst = Forwarded(obj);
+    gc::TransferUniqueId(dst, obj);
+
+    if (!IsInsideNursery(dst)) {
+      return true;
+    }
+
+    cell = dst;
+    return false;
+  });
+
+  sweepStringsWithBuffer();
 
   for (ZonesIter zone(runtime(), SkipAtoms); !zone.done(); zone.next()) {
     zone->sweepAfterMinorGC(&trc);
