@@ -71,7 +71,7 @@ static void DoNotifyOnUnlock(DataPipeAutoLock& aLock,
 class DataPipeLink : public NodeController::PortObserver {
  public:
   DataPipeLink(bool aReceiverSide, std::shared_ptr<Mutex> aMutex,
-               ScopedPort aPort, SharedMemoryBasic::Handle aShmemHandle,
+               ScopedPort aPort, SharedMemory::Handle aShmemHandle,
                SharedMemory* aShmem, uint32_t aCapacity, nsresult aPeerStatus,
                uint32_t aOffset, uint32_t aAvailable)
       : mMutex(std::move(aMutex)),
@@ -165,7 +165,7 @@ class DataPipeLink : public NodeController::PortObserver {
   std::shared_ptr<Mutex> mMutex;
 
   ScopedPort mPort MOZ_GUARDED_BY(*mMutex);
-  SharedMemoryBasic::Handle mShmemHandle MOZ_GUARDED_BY(*mMutex);
+  SharedMemory::Handle mShmemHandle MOZ_GUARDED_BY(*mMutex);
   const RefPtr<SharedMemory> mShmem;
   const uint32_t mCapacity;
   const bool mReceiverSide;
@@ -245,7 +245,7 @@ DataPipeBase::DataPipeBase(bool aReceiverSide, nsresult aError)
       mStatus(NS_SUCCEEDED(aError) ? NS_BASE_STREAM_CLOSED : aError) {}
 
 DataPipeBase::DataPipeBase(bool aReceiverSide, ScopedPort aPort,
-                           SharedMemoryBasic::Handle aShmemHandle,
+                           SharedMemory::Handle aShmemHandle,
                            SharedMemory* aShmem, uint32_t aCapacity,
                            nsresult aPeerStatus, uint32_t aOffset,
                            uint32_t aAvailable)
@@ -318,7 +318,7 @@ nsresult DataPipeBase::ProcessSegmentsInternal(
 
     
     
-    char* start = static_cast<char*>(link->mShmem->memory()) + link->mOffset;
+    char* start = static_cast<char*>(link->mShmem->Memory()) + link->mOffset;
     char* iter = start;
     char* end = start + std::min({aCount - *aProcessedCount, link->mAvailable,
                                   link->mCapacity - link->mOffset});
@@ -480,7 +480,7 @@ bool DataPipeRead(IPC::MessageReader* aReader, RefPtr<T>* aResult) {
     aReader->FatalError("failed to read DataPipe port");
     return false;
   }
-  SharedMemoryBasic::Handle shmemHandle;
+  SharedMemory::Handle shmemHandle;
   if (!ReadParam(aReader, &shmemHandle)) {
     aReader->FatalError("failed to read DataPipe shmem");
     return false;
@@ -489,7 +489,7 @@ bool DataPipeRead(IPC::MessageReader* aReader, RefPtr<T>* aResult) {
   
   
   
-  RefPtr shmem = new SharedMemoryBasic();
+  RefPtr shmem = new SharedMemory();
   if (!shmem->SetHandle(std::move(shmemHandle),
                         SharedMemory::RightsReadWrite)) {
     aReader->FatalError("failed to create DataPipe shmem from handle");
@@ -717,7 +717,7 @@ nsresult NewDataPipe(uint32_t aCapacity, DataPipeSender** aSender,
   auto [senderPort, receiverPort] = controller->CreatePortPair();
 
   
-  auto shmem = MakeRefPtr<SharedMemoryBasic>();
+  auto shmem = MakeRefPtr<SharedMemory>();
   size_t alignedCapacity = SharedMemory::PageAlignedSize(aCapacity);
   if (!shmem->Create(alignedCapacity) || !shmem->Map(alignedCapacity)) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -726,8 +726,8 @@ nsresult NewDataPipe(uint32_t aCapacity, DataPipeSender** aSender,
   
   
   
-  SharedMemoryBasic::Handle senderShmemHandle = shmem->CloneHandle();
-  SharedMemoryBasic::Handle receiverShmemHandle = shmem->TakeHandle();
+  SharedMemory::Handle senderShmemHandle = shmem->CloneHandle();
+  SharedMemory::Handle receiverShmemHandle = shmem->TakeHandle();
   if (!senderShmemHandle || !receiverShmemHandle) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
