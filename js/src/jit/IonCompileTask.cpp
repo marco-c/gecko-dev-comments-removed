@@ -154,6 +154,10 @@ void jit::AttachFinishedCompilations(JSContext* cx) {
 static void FreeIonCompileTask(IonCompileTask* task) {
   
   
+  task->mirGen().tracker.reset();
+
+  
+  
   
   
   js_delete(task->backgroundCodegen());
