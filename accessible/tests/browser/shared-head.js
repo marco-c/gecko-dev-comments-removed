@@ -386,6 +386,10 @@ function wrapWithIFrame(doc, options = {}) {
     src = `data:${mimeType};charset=utf-8,${encodeURIComponent(doc)}`;
   }
 
+  if (options.urlSuffix) {
+    src += options.urlSuffix;
+  }
+
   iframeAttrs = {
     id: DEFAULT_IFRAME_ID,
     src,
@@ -427,20 +431,25 @@ function snippetToURL(doc, options = {}) {
     </html>`
   );
 
-  return `data:text/html;charset=utf-8,${encodedDoc}`;
+  let url = `data:text/html;charset=utf-8,${encodedDoc}`;
+  if (!gIsIframe && options.urlSuffix) {
+    url += options.urlSuffix;
+  }
+  return url;
 }
 
 function accessibleTask(doc, task, options = {}) {
   return async function () {
     gIsRemoteIframe = options.remoteIframe;
     gIsIframe = options.iframe || gIsRemoteIframe;
+    const urlSuffix = options.urlSuffix || "";
     let url;
     if (options.chrome && doc.endsWith("html")) {
       
       
-      url = `${CURRENT_DIR}${doc}`;
+      url = `${CURRENT_DIR}${doc}${urlSuffix}`;
     } else if (doc.endsWith("html") && !gIsIframe) {
-      url = `${CURRENT_CONTENT_DIR}${doc}`;
+      url = `${CURRENT_CONTENT_DIR}${doc}${urlSuffix}`;
     } else {
       url = snippetToURL(doc, options);
     }
@@ -570,6 +579,9 @@ function accessibleTask(doc, task, options = {}) {
     }
   };
 }
+
+
+
 
 
 
