@@ -547,6 +547,8 @@ nsresult ServiceWorkerPrivate::Initialize() {
   
   Maybe<uint64_t> overriddenFingerprintingSettingsArg;
   Maybe<RFPTarget> overriddenFingerprintingSettings;
+  nsCOMPtr<nsIURI> firstPartyURI;
+  bool foreignByAncestorContext = false;
   if (!principal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
     net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetPartitionKey(principal->OriginAttributesRef().mPartitionKey);
@@ -558,12 +560,12 @@ nsresult ServiceWorkerPrivate::Initialize() {
     nsAutoString scheme;
     nsAutoString pkBaseDomain;
     int32_t unused;
-    bool unused2;
+    bool _foreignByAncestorContext;
 
     if (OriginAttributes::ParsePartitionKey(
             principal->OriginAttributesRef().mPartitionKey, scheme,
-            pkBaseDomain, unused, unused2)) {
-      nsCOMPtr<nsIURI> firstPartyURI;
+            pkBaseDomain, unused, _foreignByAncestorContext)) {
+      foreignByAncestorContext = _foreignByAncestorContext;
       rv = NS_NewURI(getter_AddRefs(firstPartyURI),
                      scheme + u"://"_ns + pkBaseDomain);
       if (NS_SUCCEEDED(rv)) {
@@ -580,7 +582,6 @@ nsresult ServiceWorkerPrivate::Initialize() {
     
     
     
-    nsCOMPtr<nsIURI> firstPartyURI;
     
     
     
@@ -609,6 +610,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
   } else {
     net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetPartitionKey(uri, false);
+    firstPartyURI = uri;
 
     
     
@@ -619,6 +621,26 @@ nsresult ServiceWorkerPrivate::Initialize() {
     if (overriddenFingerprintingSettings.isSome()) {
       overriddenFingerprintingSettingsArg.emplace(
           uint64_t(overriddenFingerprintingSettings.ref()));
+    }
+  }
+
+  bool shouldResistFingerprinting =
+      nsContentUtils::ShouldResistFingerprinting_dangerous(
+          principal,
+          "Service Workers exist outside a Document or Channel; as a property "
+          "of the domain (and origin attributes). We don't have a "
+          "CookieJarSettings to perform the nested check, but we can rely on"
+          "the FPI/dFPI partition key check. The WorkerPrivate's "
+          "ShouldResistFingerprinting function for the ServiceWorker depends "
+          "on this boolean and will also consider an explicit RFPTarget.",
+          RFPTarget::IsAlwaysEnabledForPrecompute);
+
+  if (shouldResistFingerprinting && NS_SUCCEEDED(rv) && firstPartyURI) {
+    auto rfpKey = nsRFPService::GenerateKeyForServiceWorker(
+        firstPartyURI, foreignByAncestorContext);
+    if (rfpKey.isSome()) {
+      net::CookieJarSettings::Cast(cookieJarSettings)
+          ->SetFingerprintingRandomizationKey(rfpKey.ref());
     }
   }
 
@@ -685,16 +707,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
       
        nullptr,
 
-      storageAccess, isThirdPartyContextToTopWindow,
-      nsContentUtils::ShouldResistFingerprinting_dangerous(
-          principal,
-          "Service Workers exist outside a Document or Channel; as a property "
-          "of the domain (and origin attributes). We don't have a "
-          "CookieJarSettings to perform the nested check, but we can rely on"
-          "the FPI/dFPI partition key check. The WorkerPrivate's "
-          "ShouldResistFingerprinting function for the ServiceWorker depends "
-          "on this boolean and will also consider an explicit RFPTarget.",
-          RFPTarget::IsAlwaysEnabledForPrecompute),
+      storageAccess, isThirdPartyContextToTopWindow, shouldResistFingerprinting,
       overriddenFingerprintingSettingsArg,
       
       
