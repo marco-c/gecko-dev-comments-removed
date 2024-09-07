@@ -102,12 +102,8 @@ async function openAboutDevtoolsToolbox(
     shouldWaitToolboxReady ? onToolboxReady : Promise.resolve(),
   ]);
 
-  const { runtimes } = win.AboutDebugging.store.getState();
-  const isOnThisFirefox = runtimes.selectedRuntimeId === "this-firefox";
-  const isLocalWebExtension = isWebExtension && isOnThisFirefox;
-
   
-  if (isLocalWebExtension) {
+  if (isWebExtension) {
     const toolbox = await onToolboxReady;
     
     
@@ -138,7 +134,6 @@ async function openAboutDevtoolsToolbox(
   const devtoolsTab = tab.nextElementSibling;
   await waitUntil(() => gBrowser.selectedTab === devtoolsTab);
   const devtoolsBrowser = gBrowser.selectedBrowser;
-  info("Wait for about:devtools-toolbox tab to have the expected URL");
   await waitUntil(() =>
     devtoolsBrowser.contentWindow.location.href.startsWith(
       "about:devtools-toolbox?"
@@ -169,11 +164,7 @@ async function closeAboutDevtoolsToolbox(
   const devtoolsBrowser = devtoolsTab.linkedBrowser;
   const devtoolsWindow = devtoolsBrowser.contentWindow;
   const toolbox = getToolbox(devtoolsWindow);
-
-  info("Wait for requests to settle");
-  await toolbox.commands.client.waitForRequestsToSettle({
-    ignoreOrphanedFronts: true,
-  });
+  await toolbox.commands.client.waitForRequestsToSettle();
 
   info("Close about:devtools-toolbox page");
   const onToolboxDestroyed = gDevTools.once("toolbox-destroyed");
@@ -533,41 +524,3 @@ function createAddonData({
     debuggable: true,
   };
 }
-
-async function connectToLocalFirefox({ runtimeId, runtimeName, deviceName }) {
-  
-  const clientWrapper = await createLocalClientWrapper();
-
-  
-  const mocks = new Mocks();
-  const usbClient = mocks.createUSBRuntime(runtimeId, {
-    deviceName,
-    name: runtimeName,
-    clientWrapper,
-  });
-
-  
-  const disconnect = doc =>
-    disconnectFromLocalFirefox({
-      doc,
-      runtimeId,
-      deviceName,
-      mocks,
-    });
-
-  return { disconnect, mocks, usbClient };
-}
-
-
-async function disconnectFromLocalFirefox({
-  doc,
-  mocks,
-  runtimeId,
-  deviceName,
-}) {
-  info("Remove USB runtime");
-  mocks.removeUSBRuntime(runtimeId);
-  mocks.emitUSBUpdate();
-  await waitUntilUsbDeviceIsUnplugged(deviceName, doc);
-}
-
