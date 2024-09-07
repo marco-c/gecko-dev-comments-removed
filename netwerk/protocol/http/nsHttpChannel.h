@@ -486,10 +486,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   }
 
   
-  void ReportNetVSCacheTelemetry();
-  int64_t ComputeTelemetryBucketNumber(int64_t difftime_ms);
-
-  
   void ReportSystemChannelTelemetry(nsresult status);
   
   void ReportRcwnStats(bool isFromNet);
