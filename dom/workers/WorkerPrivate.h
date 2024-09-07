@@ -719,6 +719,16 @@ class WorkerPrivate final
   
   WorkerPrivate* GetParent() const { return mParent; }
 
+  
+  
+  WorkerPrivate* GetTopLevelWorker() const {
+    WorkerPrivate const* wp = this;
+    while (wp->GetParent()) {
+      wp = wp->GetParent();
+    }
+    return const_cast<WorkerPrivate*>(wp);
+  }
+
   bool IsFrozen() const {
     AssertIsOnParentThread();
     return mParentFrozen;

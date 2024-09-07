@@ -569,10 +569,7 @@ class ConsoleWorkerRunnable : public WorkerProxyToMainThreadRunnable,
     AssertIsOnMainThread();
 
     
-    WorkerPrivate* wp = aWorkerPrivate;
-    while (wp->GetParent()) {
-      wp = wp->GetParent();
-    }
+    WorkerPrivate* wp = aWorkerPrivate->GetTopLevelWorker();
 
     nsCOMPtr<nsPIDOMWindowInner> window = wp->GetWindow();
     if (!window) {
@@ -608,10 +605,7 @@ class ConsoleWorkerRunnable : public WorkerProxyToMainThreadRunnable,
     MOZ_ASSERT(aWorkerPrivate);
     AssertIsOnMainThread();
 
-    WorkerPrivate* wp = aWorkerPrivate;
-    while (wp->GetParent()) {
-      wp = wp->GetParent();
-    }
+    WorkerPrivate* wp = aWorkerPrivate->GetTopLevelWorker();
 
     MOZ_ASSERT(!wp->GetWindow());
 

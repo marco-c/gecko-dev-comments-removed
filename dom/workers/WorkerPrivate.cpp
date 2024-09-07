@@ -1368,20 +1368,11 @@ Document* WorkerPrivate::GetDocument() const {
 
 nsPIDOMWindowInner* WorkerPrivate::GetAncestorWindow() const {
   AssertIsOnMainThread();
-  if (mLoadInfo.mWindow) {
-    return mLoadInfo.mWindow;
-  }
+
   
   
-  WorkerPrivate* parent = mParent;
-  while (parent) {
-    if (parent->mLoadInfo.mWindow) {
-      return parent->mLoadInfo.mWindow;
-    }
-    parent = parent->GetParent();
-  }
-  
-  return nullptr;
+  WorkerPrivate* top = GetTopLevelWorker();
+  return top->GetWindow();
 }
 
 class EvictFromBFCacheRunnable final : public WorkerProxyToMainThreadRunnable {
