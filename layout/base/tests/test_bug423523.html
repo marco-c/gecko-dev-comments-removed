@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=423523
+-->
 <head>
   <title>Test for Bug 423523</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -18,7 +18,7 @@
   <td class="tdABB" id="tdTo">
   <p id="par1">Some text...</p></td>
   <td>
-  <div id="div1" style="border: 1px solid silver; width: 250px;" contenteditable="true">This is some editable text.</div>
+  <div id="div1" style="border: 1px solid silver; width: 250px;" contenteditable="true" inputmode="none">This is some editable text.</div>
   </td></tr>
   </tbody></table>
 
