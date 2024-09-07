@@ -790,13 +790,6 @@ class nsDisplayListBuilder {
 
 
 
-  void SubtractFromVisibleRegion(nsRegion* aVisibleRegion,
-                                 const nsRegion& aRegion);
-
-  
-
-
-
 
 
 

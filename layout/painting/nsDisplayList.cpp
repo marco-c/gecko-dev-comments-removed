@@ -1046,23 +1046,6 @@ uint32_t nsDisplayListBuilder::GetImageDecodeFlags() const {
   return flags;
 }
 
-void nsDisplayListBuilder::SubtractFromVisibleRegion(nsRegion* aVisibleRegion,
-                                                     const nsRegion& aRegion) {
-  if (aRegion.IsEmpty()) {
-    return;
-  }
-
-  nsRegion tmp;
-  tmp.Sub(*aVisibleRegion, aRegion);
-  
-  
-  
-  
-  if (tmp.GetNumRects() <= 15 || tmp.Area() <= aVisibleRegion->Area() / 2) {
-    *aVisibleRegion = tmp;
-  }
-}
-
 nsCaret* nsDisplayListBuilder::GetCaret() {
   RefPtr<nsCaret> caret = CurrentPresShellState()->mPresShell->GetCaret();
   return caret;
