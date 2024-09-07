@@ -210,7 +210,7 @@ const startupPhases = {
     },
     {
       
-      path: "TmpD:firefox-default/parent.lock",
+      path: `TmpD:firefox-${AppConstants.MOZ_UPDATE_CHANNEL}/parent.lock`,
       condition: WIN,
       stat: 1,
     },
