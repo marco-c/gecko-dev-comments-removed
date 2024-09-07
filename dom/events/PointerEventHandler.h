@@ -205,6 +205,16 @@ class PointerEventHandler final {
       bool aDontRetargetEvents, nsEventStatus* aStatus,
       nsIContent** aMouseOrTouchEventTarget = nullptr);
 
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT static void SynthesizeMoveToDispatchBoundaryEvents(
+      const WidgetMouseEvent* aEvent);
+
   static void InitPointerEventFromMouse(WidgetPointerEvent* aPointerEvent,
                                         WidgetMouseEvent* aMouseEvent,
                                         EventMessage aMessage);

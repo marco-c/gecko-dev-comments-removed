@@ -367,7 +367,16 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   bool mIgnoreRootScrollFrame = false;
 
   
+  
+  bool mIgnoreCapturingContent = false;
+
+  
   bool mClickEventPrevented = false;
+
+  
+  
+  
+  bool mSynthesizeMoveAfterDispatch = false;
 
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
@@ -378,6 +387,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     mExitFrom = aEvent.mExitFrom;
     mClickCount = aEvent.mClickCount;
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
+    mIgnoreCapturingContent = aEvent.mIgnoreCapturingContent;
     mClickEventPrevented = aEvent.mClickEventPrevented;
   }
 

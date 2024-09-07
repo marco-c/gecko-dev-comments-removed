@@ -1020,6 +1020,12 @@ class WidgetEvent : public WidgetEventTime {
   }
 
   bool IsUserAction() const;
+
+  
+
+
+
+  [[nodiscard]] bool ShouldIgnoreCapturingContent() const;
 };
 
 

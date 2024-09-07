@@ -314,6 +314,7 @@ class MouseInput : public InputData {
 
 
   bool mPreventClickEvent;
+  bool mIgnoreCapturingContent;
 };
 
 

@@ -5,6 +5,7 @@
 
 
 #include "PointerEventHandler.h"
+#include "mozilla/EventForwards.h"
 #include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "PointerEvent.h"
@@ -384,6 +385,62 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
     DispatchGotOrLostPointerCaptureEvent( true, aEvent,
                                          pendingElement);
   }
+
+  
+  
+  
+  
+  
+  if (overrideElement && !pendingElement && aEvent->mWidget &&
+      aEvent->mMessage != ePointerCancel &&
+      (aEvent->mMessage != ePointerUp || aEvent->InputSourceSupportsHover())) {
+    aEvent->mSynthesizeMoveAfterDispatch = true;
+  }
+}
+
+
+void PointerEventHandler::SynthesizeMoveToDispatchBoundaryEvents(
+    const WidgetMouseEvent* aEvent) {
+  nsCOMPtr<nsIWidget> widget = aEvent->mWidget;
+  if (NS_WARN_IF(!widget)) {
+    return;
+  }
+  Maybe<WidgetMouseEvent> mouseMoveEvent;
+  Maybe<WidgetPointerEvent> pointerMoveEvent;
+  if (aEvent->mClass == eMouseEventClass) {
+    mouseMoveEvent.emplace(true, eMouseMove, aEvent->mWidget,
+                           WidgetMouseEvent::eSynthesized);
+  } else if (aEvent->mClass == ePointerEventClass) {
+    pointerMoveEvent.emplace(true, ePointerMove, aEvent->mWidget);
+    pointerMoveEvent->mReason = WidgetMouseEvent::eSynthesized;
+
+    const WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
+    MOZ_ASSERT(pointerEvent);
+    pointerMoveEvent->mIsPrimary = pointerEvent->mIsPrimary;
+    pointerMoveEvent->mFromTouchEvent = pointerEvent->mFromTouchEvent;
+    pointerMoveEvent->mWidth = pointerEvent->mWidth;
+    pointerMoveEvent->mHeight = pointerEvent->mHeight;
+  } else {
+    MOZ_ASSERT_UNREACHABLE(
+        "The event must be WidgetMouseEvent or WidgetPointerEvent");
+  }
+  WidgetMouseEvent& event =
+      mouseMoveEvent ? mouseMoveEvent.ref() : pointerMoveEvent.ref();
+  event.mFlags.mIsSynthesizedForTests = aEvent->mFlags.mIsSynthesizedForTests;
+  event.mIgnoreCapturingContent = true;
+  event.mRefPoint = aEvent->mRefPoint;
+  event.mInputSource = aEvent->mInputSource;
+  event.mButtons = aEvent->mButtons;
+  event.mModifiers = aEvent->mModifiers;
+  event.convertToPointer = false;
+  event.AssignPointerHelperData(*aEvent);
+
+  
+  
+  
+  
+  nsEventStatus eventStatus = nsEventStatus_eIgnore;
+  widget->DispatchEvent(&event, eventStatus);
 }
 
 
@@ -452,6 +509,16 @@ Element* PointerEventHandler::GetPointerCapturingElement(
       aEvent->mMessage == ePointerDown || aEvent->mMessage == eMouseDown) {
     
     
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (aEvent->ShouldIgnoreCapturingContent()) {
     return nullptr;
   }
 
@@ -675,6 +742,10 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     shell->HandleEventWithTarget(&event, aEventTargetFrame, aEventTargetContent,
                                  aStatus, true, aMouseOrTouchEventTarget);
     PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+    
+    
+    mouseEvent->mSynthesizeMoveAfterDispatch |=
+        event.mSynthesizeMoveAfterDispatch;
   } else if (aMouseOrTouchEvent->mClass == eTouchEventClass) {
     WidgetTouchEvent* touchEvent = aMouseOrTouchEvent->AsTouchEvent();
     
