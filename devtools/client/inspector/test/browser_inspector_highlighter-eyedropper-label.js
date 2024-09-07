@@ -7,7 +7,10 @@
 
 
 
-const HIGHLIGHTER_TYPE = "EyeDropper";
+const { TYPES } = ChromeUtils.importESModule(
+  "resource://devtools/shared/highlighters.mjs"
+);
+const HIGHLIGHTER_TYPE = TYPES.EYEDROPPER;
 const ID = "eye-dropper-";
 
 const HTML = `
