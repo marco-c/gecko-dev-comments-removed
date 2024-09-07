@@ -8,7 +8,6 @@
 
 
 add_task(async function test_locks() {
-  Cu.importGlobalProperties(["locks"]);
   Assert.ok(locks, "The locks global was imported.");
   let { promise: firstPromise, resolve: firstResolve } =
     Promise.withResolvers();

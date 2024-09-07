@@ -137,6 +137,7 @@ const char* const XPCJSRuntime::mStrings[] = {
     "crypto",           
     "indexedDB",        
     "structuredClone",  
+    "locks",            
 };
 
 
