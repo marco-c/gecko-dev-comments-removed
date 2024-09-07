@@ -20,7 +20,6 @@
 #include "mozilla/StaticPrefs_content.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_view_source.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/fallible.h"
 #include "nsContentUtils.h"
@@ -265,134 +264,78 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
         case kCharsetFromInitialAutoDetectionWouldHaveBeenUTF8:
           if (plain) {
             LOGCHARDETNG(("TEXT::UtfInitial"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::UtfInitial);
           } else {
             LOGCHARDETNG(("HTML::UtfInitial"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::UtfInitial);
           }
           break;
         case kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8Generic:
           if (plain) {
             LOGCHARDETNG(("TEXT::GenericInitial"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::
-                    GenericInitial);
           } else {
             LOGCHARDETNG(("HTML::GenericInitial"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::
-                    GenericInitial);
           }
           break;
         case kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8Content:
           if (plain) {
             LOGCHARDETNG(("TEXT::ContentInitial"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::
-                    ContentInitial);
           } else {
             LOGCHARDETNG(("HTML::ContentInitial"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::
-                    ContentInitial);
           }
           break;
         case kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8DependedOnTLD:
           if (plain) {
             LOGCHARDETNG(("TEXT::TldInitial"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::TldInitial);
           } else {
             LOGCHARDETNG(("HTML::TldInitial"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::TldInitial);
           }
           break;
         case kCharsetFromFinalAutoDetectionWouldHaveBeenUTF8InitialWasASCII:
           if (plain) {
             LOGCHARDETNG(("TEXT::UtfFinal"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::UtfFinal);
           } else {
             LOGCHARDETNG(("HTML::UtfFinal"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::UtfFinal);
           }
           break;
         case kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8Generic:
           if (plain) {
             LOGCHARDETNG(("TEXT::GenericFinal"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::
-                    GenericFinal);
           } else {
             LOGCHARDETNG(("HTML::GenericFinal"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::
-                    GenericFinal);
           }
           break;
         case kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8GenericInitialWasASCII:
           if (plain) {
             LOGCHARDETNG(("TEXT::GenericFinalA"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::
-                    GenericFinalA);
           } else {
             LOGCHARDETNG(("HTML::GenericFinalA"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::
-                    GenericFinalA);
           }
           break;
         case kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8Content:
           if (plain) {
             LOGCHARDETNG(("TEXT::ContentFinal"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::
-                    ContentFinal);
           } else {
             LOGCHARDETNG(("HTML::ContentFinal"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::
-                    ContentFinal);
           }
           break;
         case kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8ContentInitialWasASCII:
           if (plain) {
             LOGCHARDETNG(("TEXT::ContentFinalA"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::
-                    ContentFinalA);
           } else {
             LOGCHARDETNG(("HTML::ContentFinalA"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::
-                    ContentFinalA);
           }
           break;
         case kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8DependedOnTLD:
           if (plain) {
             LOGCHARDETNG(("TEXT::TldFinal"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::TldFinal);
           } else {
             LOGCHARDETNG(("HTML::TldFinal"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::TldFinal);
           }
           break;
         case kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8DependedOnTLDInitialWasASCII:
           if (plain) {
             LOGCHARDETNG(("TEXT::TldFinalA"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_TEXT::TldFinalA);
           } else {
             LOGCHARDETNG(("HTML::TldFinalA"));
-            Telemetry::AccumulateCategorical(
-                Telemetry::LABELS_ENCODING_DETECTION_OUTCOME_HTML::TldFinalA);
           }
           break;
         default:
