@@ -77,6 +77,13 @@ class nsLineBreaker {
   
   
   
+  static bool ShouldCapitalize(uint32_t aChar, bool& aCapitalizeNext);
+
+  
+  
+  
+  
+  
   
   
   
