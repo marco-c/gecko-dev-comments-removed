@@ -143,6 +143,11 @@ pub struct InternalConfiguration {
     
     
     pub ping_schedule: HashMap<String, Vec<String>>,
+
+    
+    pub ping_lifetime_threshold: u64,
+    
+    pub ping_lifetime_max_time: u64,
 }
 
 

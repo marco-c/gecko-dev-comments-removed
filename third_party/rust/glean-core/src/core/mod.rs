@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use chrono::{DateTime, FixedOffset};
 use once_cell::sync::OnceCell;
@@ -96,6 +97,8 @@ where
     let lock = glean.lock().unwrap();
     Some(f(&lock))
 }
+
+
 
 
 
@@ -250,7 +253,14 @@ impl Glean {
         
         
         let data_path = Path::new(&cfg.data_path);
-        glean.data_store = Some(Database::new(data_path, cfg.delay_ping_lifetime_io)?);
+        let ping_lifetime_threshold = cfg.ping_lifetime_threshold as usize;
+        let ping_lifetime_max_time = Duration::from_millis(cfg.ping_lifetime_max_time);
+        glean.data_store = Some(Database::new(
+            data_path,
+            cfg.delay_ping_lifetime_io,
+            ping_lifetime_threshold,
+            ping_lifetime_max_time,
+        )?);
 
         
         if let Some(experimentation_id) = &cfg.experimentation_id {
@@ -329,6 +339,8 @@ impl Glean {
             experimentation_id: None,
             enable_internal_pings,
             ping_schedule: Default::default(),
+            ping_lifetime_threshold: 0,
+            ping_lifetime_max_time: 0,
         };
 
         let mut glean = Self::new(cfg).unwrap();
@@ -594,7 +606,13 @@ impl Glean {
 
     
     pub fn get_max_events(&self) -> usize {
-        self.max_events as usize
+        let remote_settings_config = self.remote_settings_config.lock().unwrap();
+
+        if let Some(max_events) = remote_settings_config.event_threshold {
+            max_events as usize
+        } else {
+            self.max_events as usize
+        }
     }
 
     
@@ -782,6 +800,8 @@ impl Glean {
         remote_settings_config
             .pings_enabled
             .extend(cfg.pings_enabled);
+
+        remote_settings_config.event_threshold = cfg.event_threshold;
 
         
         self.remote_settings_epoch.fetch_add(1, Ordering::SeqCst);

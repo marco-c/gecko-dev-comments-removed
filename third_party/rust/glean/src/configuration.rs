@@ -8,6 +8,7 @@ use crate::net::PingUploader;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::Duration;
 
 
 pub(crate) const DEFAULT_GLEAN_ENDPOINT: &str = "https://incoming.telemetry.mozilla.org";
@@ -53,6 +54,10 @@ pub struct Configuration {
     
     
     pub ping_schedule: HashMap<String, Vec<String>>,
+    
+    pub ping_lifetime_threshold: usize,
+    
+    pub ping_lifetime_max_time: Duration,
 }
 
 
@@ -105,6 +110,10 @@ pub struct Builder {
     
     
     pub ping_schedule: HashMap<String, Vec<String>>,
+    
+    pub ping_lifetime_threshold: usize,
+    
+    pub ping_lifetime_max_time: Duration,
 }
 
 impl Builder {
@@ -130,6 +139,8 @@ impl Builder {
             experimentation_id: None,
             enable_internal_pings: true,
             ping_schedule: HashMap::new(),
+            ping_lifetime_threshold: 0,
+            ping_lifetime_max_time: Duration::ZERO,
         }
     }
 
@@ -151,6 +162,8 @@ impl Builder {
             experimentation_id: self.experimentation_id,
             enable_internal_pings: self.enable_internal_pings,
             ping_schedule: self.ping_schedule,
+            ping_lifetime_threshold: self.ping_lifetime_threshold,
+            ping_lifetime_max_time: self.ping_lifetime_max_time,
         }
     }
 
@@ -211,6 +224,18 @@ impl Builder {
     
     pub fn with_ping_schedule(mut self, value: HashMap<String, Vec<String>>) -> Self {
         self.ping_schedule = value;
+        self
+    }
+
+    
+    pub fn with_ping_lifetime_threshold(mut self, value: usize) -> Self {
+        self.ping_lifetime_threshold = value;
+        self
+    }
+
+    
+    pub fn with_ping_lifetime_max_time(mut self, value: Duration) -> Self {
+        self.ping_lifetime_max_time = value;
         self
     }
 }

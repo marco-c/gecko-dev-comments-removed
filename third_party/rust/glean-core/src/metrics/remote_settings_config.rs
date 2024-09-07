@@ -31,6 +31,12 @@ pub struct RemoteSettingsConfig {
     
     #[serde(default)]
     pub pings_enabled: HashMap<String, bool>,
+
+    
+    
+    
+    #[serde(default)]
+    pub event_threshold: Option<u32>,
 }
 
 impl RemoteSettingsConfig {

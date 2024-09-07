@@ -54,6 +54,7 @@ mod metrics {
 
 
 
+#[ignore] 
 #[test]
 fn overflowing_the_task_queue_records_telemetry() {
     common::enable_test_logging();
@@ -67,14 +68,14 @@ fn overflowing_the_task_queue_records_telemetry() {
         .build();
 
     
-    for _ in 0..1010 {
+    for _ in 0..1000010 {
         metrics::rapid_counting.add(1);
     }
 
     
     common::initialize(cfg);
 
-    assert_eq!(Some(1000), metrics::rapid_counting.test_get_value(None));
+    assert_eq!(Some(1000000), metrics::rapid_counting.test_get_value(None));
 
     
     
