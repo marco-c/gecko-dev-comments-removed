@@ -435,11 +435,23 @@ class TabTracker extends TabTrackerBase {
 
 
 
-  setOpener(tab, openerTab) {
-    if (tab.ownerDocument !== openerTab.ownerDocument) {
-      throw new Error("Tab must be in the same window as its opener");
+
+  setOpener(nativeTab, openerTabId) {
+    let nativeOpenerTab = null;
+
+    if (openerTabId > -1) {
+      nativeOpenerTab = tabTracker.getTab(openerTabId);
+      if (nativeTab.ownerDocument !== nativeOpenerTab.ownerDocument) {
+        throw new ExtensionError(
+          "Opener tab must be in the same window as the tab being updated"
+        );
+      }
     }
-    tab.openerTab = openerTab;
+
+    if (nativeTab.openerTab !== nativeOpenerTab) {
+      nativeTab.openerTab = nativeOpenerTab;
+      this.emit("tab-openerTabId", { nativeTab, openerTabId });
+    }
   }
 
   deferredForTabOpen(nativeTab) {

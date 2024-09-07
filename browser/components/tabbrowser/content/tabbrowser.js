@@ -2739,7 +2739,8 @@
       }
       let openerTab =
         (openerBrowser && this.getTabForBrowser(openerBrowser)) ||
-        (relatedToCurrent && this.selectedTab);
+        (relatedToCurrent && this.selectedTab) ||
+        null;
 
       
       
