@@ -20,25 +20,25 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
-class SlowHeuristicProvider extends TestProvider {
-  get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
-  }
-
-  async startQuery(context, add) {
-    this._context = context;
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
-    for (let result of this.results) {
-      add(this, result);
-    }
+class SlowHeuristicProvider extends UrlbarTestUtils.TestProvider {
+  constructor({ results }) {
+    const delayResultsPromise = new Promise(resolve =>
+      
+      setTimeout(resolve, 300)
+    );
+    super({
+      name: "MyProvider",
+      type: UrlbarUtils.PROVIDER_TYPE.HEURISTIC,
+      results,
+      delayResultsPromise,
+    });
   }
 }
 
 
 
 
-class FastHeuristicProvider extends TestProvider {
+class FastHeuristicProvider extends UrlbarTestUtils.TestProvider {
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
   }
