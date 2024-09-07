@@ -78,7 +78,18 @@ async function ensure_tag_results(results, searchTerm) {
 
       Assert.equal(controller.matchCount, results.length);
       for (var i = 0; i < controller.matchCount; i++) {
-        Assert.equal(controller.getValueAt(i), results[i]);
+        
+        Assert.equal(
+          controller.getFinalCompleteValueAt(i),
+          results[i],
+          "Value should be the list of all the set tags plus the suggested one"
+        );
+        Assert.strictEqual(controller.getCommentAt(i), null);
+        Assert.equal(
+          controller.getLabelAt(i),
+          results[i].split(/[,;]/).pop().trim(),
+          "Label should just be the suggested tag"
+        );
       }
 
       resolve();
