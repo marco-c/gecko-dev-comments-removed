@@ -52,7 +52,8 @@ class CacheStorage final : public nsISupports,
       Namespace aNamespace, nsIGlobalObject* aGlobal,
       WorkerPrivate* aWorkerPrivate, ErrorResult& aRv);
 
-  static bool DefineCaches(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
+  static bool DefineCachesForSandbox(JSContext* aCx,
+                                     JS::Handle<JSObject*> aGlobal);
 
   
   already_AddRefed<Promise> Match(JSContext* aCx,
