@@ -506,15 +506,12 @@ extern JS_PUBLIC_API JSLinearString* GetErrorTypeName(JSContext* cx,
                                                       int16_t exnType);
 
 
-typedef enum NukeReferencesToWindow {
-  NukeWindowReferences,
-  DontNukeWindowReferences
-} NukeReferencesToWindow;
+enum NukeReferencesToWindow { NukeWindowReferences, DontNukeWindowReferences };
 
-typedef enum NukeReferencesFromTarget {
+enum NukeReferencesFromTarget {
   NukeAllReferences,
   NukeIncomingReferences,
-} NukeReferencesFromTarget;
+};
 
 
 
@@ -709,8 +706,8 @@ extern JS_PUBLIC_API bool IsSavedFrame(JSObject* obj);
 #if defined(XP_WIN)
 
 
-typedef long (*JitExceptionHandler)(void* exceptionRecord,  
-                                    void* context);         
+using JitExceptionHandler = long (*)(void* exceptionRecord,  
+                                     void* context);         
 
 
 

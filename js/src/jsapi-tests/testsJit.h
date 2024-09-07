@@ -9,7 +9,7 @@
 
 #include "jit/MacroAssembler.h"
 
-typedef void (*EnterTest)();
+using EnterTest = void (*)();
 
 
 void PrepareJit(js::jit::MacroAssembler& masm);

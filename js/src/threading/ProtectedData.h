@@ -75,7 +75,7 @@ class MOZ_RAII AutoNoteSingleThreadedRegion {
 
 template <typename Check, typename T>
 class ProtectedData {
-  typedef ProtectedData<Check, T> ThisType;
+  using ThisType = ProtectedData<Check, T>;
 
  public:
   template <typename... Args>
@@ -302,7 +302,7 @@ using HelperThreadLockData = ProtectedDataNoCheckArgs<
 
 template <typename Check, typename T>
 class ProtectedDataWriteOnce {
-  typedef ProtectedDataWriteOnce<Check, T> ThisType;
+  using ThisType = ProtectedDataWriteOnce<Check, T>;
 
  public:
   template <typename... Args>

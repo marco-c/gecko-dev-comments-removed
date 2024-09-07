@@ -285,9 +285,9 @@ class Completion {
   Variant variant;
 };
 
-typedef HashSet<WeakHeapPtr<GlobalObject*>,
-                StableCellHasher<WeakHeapPtr<GlobalObject*>>, ZoneAllocPolicy>
-    WeakGlobalObjectSet;
+using WeakGlobalObjectSet =
+    HashSet<WeakHeapPtr<GlobalObject*>,
+            StableCellHasher<WeakHeapPtr<GlobalObject*>>, ZoneAllocPolicy>;
 
 #ifdef DEBUG
 extern void CheckDebuggeeThing(BaseScript* script, bool invisibleOk);
@@ -344,7 +344,7 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<Referent*>, HeapPtr<Wrapper*>> {
   JS::Compartment* compartment;
 
  public:
-  typedef WeakMap<Key, Value> Base;
+  using Base = WeakMap<Key, Value>;
   using ReferentType = Referent;
   using WrapperType = Wrapper;
 
@@ -466,8 +466,8 @@ using Env = JSObject;
 
 
 
-typedef mozilla::Variant<BaseScript*, WasmInstanceObject*>
-    DebuggerScriptReferent;
+using DebuggerScriptReferent =
+    mozilla::Variant<BaseScript*, WasmInstanceObject*>;
 
 
 
@@ -479,8 +479,8 @@ typedef mozilla::Variant<BaseScript*, WasmInstanceObject*>
 
 
 
-typedef mozilla::Variant<ScriptSourceObject*, WasmInstanceObject*>
-    DebuggerSourceReferent;
+using DebuggerSourceReferent =
+    mozilla::Variant<ScriptSourceObject*, WasmInstanceObject*>;
 
 template <typename HookIsEnabledFun >
 class MOZ_RAII DebuggerList {
@@ -749,9 +749,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  typedef HashMap<AbstractFramePtr, HeapPtr<DebuggerFrame*>,
-                  DefaultHasher<AbstractFramePtr>, ZoneAllocPolicy>
-      FrameMap;
+  using FrameMap = HashMap<AbstractFramePtr, HeapPtr<DebuggerFrame*>,
+                           DefaultHasher<AbstractFramePtr>, ZoneAllocPolicy>;
   FrameMap frames;
 
   
@@ -778,8 +777,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  typedef DebuggerWeakMap<AbstractGeneratorObject, DebuggerFrame>
-      GeneratorWeakMap;
+  using GeneratorWeakMap =
+      DebuggerWeakMap<AbstractGeneratorObject, DebuggerFrame>;
   GeneratorWeakMap generatorFrames;
 
   
@@ -790,28 +789,28 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   
   
-  typedef DebuggerWeakMap<ScriptSourceObject, DebuggerSource, true>
-      SourceWeakMap;
+  using SourceWeakMap =
+      DebuggerWeakMap<ScriptSourceObject, DebuggerSource, true>;
   SourceWeakMap sources;
 
   
-  typedef DebuggerWeakMap<JSObject, DebuggerObject> ObjectWeakMap;
+  using ObjectWeakMap = DebuggerWeakMap<JSObject, DebuggerObject>;
   ObjectWeakMap objects;
 
   
-  typedef DebuggerWeakMap<JSObject, DebuggerEnvironment> EnvironmentWeakMap;
+  using EnvironmentWeakMap = DebuggerWeakMap<JSObject, DebuggerEnvironment>;
   EnvironmentWeakMap environments;
 
   
   
-  typedef DebuggerWeakMap<WasmInstanceObject, DebuggerScript>
-      WasmInstanceScriptWeakMap;
+  using WasmInstanceScriptWeakMap =
+      DebuggerWeakMap<WasmInstanceObject, DebuggerScript>;
   WasmInstanceScriptWeakMap wasmInstanceScripts;
 
   
   
-  typedef DebuggerWeakMap<WasmInstanceObject, DebuggerSource>
-      WasmInstanceSourceWeakMap;
+  using WasmInstanceSourceWeakMap =
+      DebuggerWeakMap<WasmInstanceObject, DebuggerSource>;
   WasmInstanceSourceWeakMap wasmInstanceSources;
 
   class QueryBase;
