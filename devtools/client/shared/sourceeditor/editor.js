@@ -745,15 +745,24 @@ class Editor extends EventEmitter {
     const lineContentMarkers = this.#lineContentMarkers;
 
     class LineContentWidget extends WidgetType {
-      constructor(line, markerId, createElementNode) {
+      constructor(line, value, markerId, createElementNode) {
         super();
         this.line = line;
+        this.value = value;
         this.markerId = markerId;
-        this.toDOM = () => createElementNode(line);
+        this.createElementNode = createElementNode;
+      }
+
+      toDOM() {
+        return this.createElementNode(this.line, this.value);
       }
 
       eq(widget) {
-        return widget.line == this.line && widget.markerId == this.markerId;
+        return (
+          widget.line == this.line &&
+          widget.markerId == this.markerId &&
+          widget.value == this.value
+        );
       }
     }
 
@@ -786,7 +795,7 @@ class Editor extends EventEmitter {
         decorationLines = marker.lines;
       }
 
-      for (const line of decorationLines) {
+      for (const { line, value } of decorationLines) {
         
         if (line < vStartLine.number || line > vEndLine.number) {
           continue;
@@ -812,6 +821,7 @@ class Editor extends EventEmitter {
           const nodeDecoration = Decoration.widget({
             widget: new LineContentWidget(
               line,
+              value,
               marker.id,
               marker.createLineElementNode
             ),

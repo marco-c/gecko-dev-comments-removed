@@ -76,9 +76,13 @@ class InlinePreviews extends Component {
       lines: Object.keys(previews).map(line => {
         
         
-        return Number(line) + 1;
+        line = Number(line);
+        return {
+          line: line + 1,
+          value: previews[line],
+        };
       }),
-      createLineElementNode: line => {
+      createLineElementNode: (line, value) => {
         const widgetNode = document.createElement("div");
         widgetNode.className = "inline-preview";
 
@@ -86,7 +90,7 @@ class InlinePreviews extends Component {
           React.createElement(
             React.Fragment,
             null,
-            previews[line - 1].map(preview =>
+            value.map(preview =>
               React.createElement(InlinePreview, {
                 line,
                 key: `${line}-${preview.name}`,
