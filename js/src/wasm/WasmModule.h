@@ -40,7 +40,7 @@ struct CompileArgs;
 
 
 
-using Tier2Listener = RefPtr<JS::OptimizedEncodingListener>;
+using CompleteTier2Listener = RefPtr<JS::OptimizedEncodingListener>;
 
 
 
@@ -90,7 +90,7 @@ class Module : public JS::WasmModule {
   
   
 
-  mutable Tier2Listener tier2Listener_;
+  mutable CompleteTier2Listener completeTier2Listener_;
 
   
   

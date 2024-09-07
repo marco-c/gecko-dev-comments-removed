@@ -1202,7 +1202,7 @@ UniqueCodeBlock ModuleGenerator::finishTier(UniqueLinkData* linkData) {
 
 SharedModule ModuleGenerator::finishModule(
     const ShareableBytes& bytecode, MutableModuleMetadata moduleMeta,
-    JS::OptimizedEncodingListener* maybeTier2Listener) {
+    JS::OptimizedEncodingListener* maybeCompleteTier2Listener) {
   MOZ_ASSERT(compilingTier1());
 
   UniqueLinkData tier1LinkData;
@@ -1348,20 +1348,22 @@ SharedModule ModuleGenerator::finishModule(
 
     
     
-    if (maybeTier2Listener && codeMeta_->features().builtinModules.hasNone()) {
-      maybeTier2Listener->storeOptimizedEncoding(serializedBytes.begin(),
-                                                 serializedBytes.length());
-      maybeTier2Listener = nullptr;
+    if (maybeCompleteTier2Listener &&
+        codeMeta_->features().builtinModules.hasNone()) {
+      maybeCompleteTier2Listener->storeOptimizedEncoding(
+          serializedBytes.begin(), serializedBytes.length());
+      maybeCompleteTier2Listener = nullptr;
     }
   }
 
   if (compileState_ == CompileState::EagerTier1) {
-    module->startTier2(bytecode, maybeTier2Listener);
-  } else if (tier() == Tier::Serialized && maybeTier2Listener &&
+    module->startTier2(bytecode, maybeCompleteTier2Listener);
+  } else if (tier() == Tier::Serialized && maybeCompleteTier2Listener &&
              codeMeta_->features().builtinModules.hasNone()) {
     Bytes bytes;
     if (module->serialize(&bytes)) {
-      maybeTier2Listener->storeOptimizedEncoding(bytes.begin(), bytes.length());
+      maybeCompleteTier2Listener->storeOptimizedEncoding(bytes.begin(),
+                                                         bytes.length());
     }
   }
 

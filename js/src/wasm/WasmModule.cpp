@@ -95,7 +95,7 @@ class Module::CompleteTier2GeneratorTaskImpl
       : bytecode_(&bytecode), module_(&module), cancelled_(false) {}
 
   ~CompleteTier2GeneratorTaskImpl() override {
-    module_->tier2Listener_ = nullptr;
+    module_->completeTier2Listener_ = nullptr;
     module_->testingTier2Active_ = false;
   }
 
@@ -140,7 +140,7 @@ class Module::CompleteTier2GeneratorTaskImpl
 
 Module::~Module() {
   
-  MOZ_ASSERT(!tier2Listener_);
+  MOZ_ASSERT(!completeTier2Listener_);
   MOZ_ASSERT(!testingTier2Active_);
 }
 
@@ -155,7 +155,7 @@ void Module::startTier2(const ShareableBytes& bytecode,
 
   
   
-  tier2Listener_ = listener;
+  completeTier2Listener_ = listener;
   testingTier2Active_ = true;
 
   StartOffThreadWasmCompleteTier2Generator(std::move(task));
@@ -172,12 +172,14 @@ bool Module::finishTier2(UniqueCodeBlock tier2CodeBlock,
   
   
 
-  if (tier2Listener_ && code_->codeMeta().features().builtinModules.hasNone()) {
+  if (completeTier2Listener_ &&
+      code_->codeMeta().features().builtinModules.hasNone()) {
     Bytes bytes;
     if (serialize(&bytes)) {
-      tier2Listener_->storeOptimizedEncoding(bytes.begin(), bytes.length());
+      completeTier2Listener_->storeOptimizedEncoding(bytes.begin(),
+                                                     bytes.length());
     }
-    tier2Listener_ = nullptr;
+    completeTier2Listener_ = nullptr;
   }
   testingTier2Active_ = false;
 
