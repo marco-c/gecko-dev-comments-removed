@@ -1,13 +1,13 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+/*
+ * rendering object for the point that anchors out-of-flow rendering
+ * objects such as floats and absolutely positioned elements
+ */
 
 #include "nsPlaceholderFrame.h"
 
@@ -45,36 +45,38 @@ NS_QUERYFRAME_HEAD(nsPlaceholderFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsIFrame)
 #endif
 
-
-void nsPlaceholderFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+/* virtual */
+void nsPlaceholderFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
                                            InlineMinISizeData* aData) {
-  
-  
-  
-  
-  
+  // Override AddInlineMinISize so that *nothing* happens. In
+  // particular, we don't want to zero out |aData->mTrailingWhitespace|,
+  // since nsLineLayout skips placeholders when trimming trailing
+  // whitespace, and we don't want to set aData->mSkipWhitespace to
+  // false.
 
-  
-  if (mOutOfFlowFrame->IsFloating()) {
-    const nscoord floatISize = nsLayoutUtils::IntrinsicForContainer(
-        aRenderingContext, mOutOfFlowFrame, IntrinsicISizeType::MinISize);
-    aData->mFloats.EmplaceBack(mOutOfFlowFrame, floatISize);
-  }
+  // ...but push floats onto aData's list.
+  AddFloatToIntrinsicISizeData(aInput, IntrinsicISizeType::MinISize, aData);
 }
 
-
-void nsPlaceholderFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
+/* virtual */
+void nsPlaceholderFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
                                             InlinePrefISizeData* aData) {
-  
-  
-  
-  
-  
+  // Override AddInlinePrefISize so that *nothing* happens. In
+  // particular, we don't want to zero out |aData->mTrailingWhitespace|,
+  // since nsLineLayout skips placeholders when trimming trailing
+  // whitespace, and we don't want to set aData->mSkipWhitespace to
+  // false.
 
-  
+  // ...but push floats onto aData's list.
+  AddFloatToIntrinsicISizeData(aInput, IntrinsicISizeType::PrefISize, aData);
+}
+
+void nsPlaceholderFrame::AddFloatToIntrinsicISizeData(
+    const IntrinsicSizeInput& aInput, IntrinsicISizeType aType,
+    InlineIntrinsicISizeData* aData) const {
   if (mOutOfFlowFrame->IsFloating()) {
     const nscoord floatISize = nsLayoutUtils::IntrinsicForContainer(
-        aRenderingContext, mOutOfFlowFrame, IntrinsicISizeType::PrefISize);
+        aInput.mContext, mOutOfFlowFrame, aType);
     aData->mFloats.EmplaceBack(mOutOfFlowFrame, floatISize);
   }
 }
@@ -83,26 +85,26 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
                                 ReflowOutput& aDesiredSize,
                                 const ReflowInput& aReflowInput,
                                 nsReflowStatus& aStatus) {
-  
-  
-  
+  // NOTE that the ReflowInput passed to this method is not fully initialized,
+  // on the grounds that reflowing a placeholder is a rather trivial operation.
+  // (See bug 1367711.)
 
 #ifdef DEBUG
-  
-  
-  
-  
-  
-  
-  
-  
+  // We should be getting reflowed before our out-of-flow. If this is our first
+  // reflow, and our out-of-flow has already received its first reflow (before
+  // us), complain.
+  //
+  // Popups are an exception though, because their position doesn't depend on
+  // the placeholder, so they don't have this requirement (and this condition
+  // doesn't hold anyways because the default popupgroup goes before than the
+  // default tooltip, for example).
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
       !mOutOfFlowFrame->IsMenuPopupFrame() &&
       !mOutOfFlowFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
-    
-    
-    
-    
+    // Unfortunately, this can currently happen when the placeholder is in a
+    // later continuation or later IB-split sibling than its out-of-flow (as
+    // is the case in some of our existing unit tests). So for now, in that
+    // case, we'll warn instead of asserting.
     bool isInContinuationOrIBSplit = false;
     nsIFrame* ancestor = this;
     while ((ancestor = ancestor->GetParent())) {
@@ -148,7 +150,7 @@ void nsPlaceholderFrame::Destroy(DestroyContext& aContext) {
     mOutOfFlowFrame = nullptr;
     oof->RemoveProperty(nsIFrame::PlaceholderFrameProperty());
 
-    
+    // Destroy the out of flow now.
     ChildListID listId = ChildListIDForOutOfFlow(GetStateBits(), oof);
     nsFrameManager* fm = PresContext()->FrameConstructor();
     fm->RemoveFrame(aContext, listId, oof);
@@ -157,13 +159,13 @@ void nsPlaceholderFrame::Destroy(DestroyContext& aContext) {
   nsIFrame::Destroy(aContext);
 }
 
-
+/* virtual */
 bool nsPlaceholderFrame::CanContinueTextRun() const {
   if (!mOutOfFlowFrame) {
     return false;
   }
-  
-  
+  // first-letter frames can continue text runs, and placeholders for floated
+  // first-letter frames can too
   return mOutOfFlowFrame->CanContinueTextRun();
 }
 
@@ -173,14 +175,14 @@ ComputedStyle* nsPlaceholderFrame::GetParentComputedStyleForOutOfFlow(
 
   Element* parentElement =
       mContent ? mContent->GetFlattenedTreeParentElement() : nullptr;
-  
+  // See the similar code in nsIFrame::DoGetParentComputedStyle.
   if (parentElement && MOZ_LIKELY(parentElement->HasServoData()) &&
       Servo_Element_IsDisplayContents(parentElement)) {
     RefPtr<ComputedStyle> style =
         ServoStyleSet::ResolveServoStyle(*parentElement);
     *aProviderFrame = nullptr;
-    
-    
+    // See the comment in GetParentComputedStyle to see why returning this as a
+    // weak ref is fine.
     return style;
   }
 
@@ -189,11 +191,11 @@ ComputedStyle* nsPlaceholderFrame::GetParentComputedStyleForOutOfFlow(
 
 ComputedStyle* nsPlaceholderFrame::GetLayoutParentStyleForOutOfFlow(
     nsIFrame** aProviderFrame) const {
-  
-  
-  
-  
-  
+  // Lie about our pseudo so we can step out of all anon boxes and
+  // pseudo-elements.  The other option would be to reimplement the
+  // {ib} split gunk here.
+  //
+  // See the hack in CorrectStyleParentFrame for why we pass `MAX`.
   *aProviderFrame = CorrectStyleParentFrame(GetParent(), PseudoStyleType::MAX);
   return *aProviderFrame ? (*aProviderFrame)->Style() : nullptr;
 }
@@ -204,7 +206,7 @@ void nsPlaceholderFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                           const nsDisplayListSet& aLists) {
   DO_GLOBAL_REFLOW_COUNT_DSP("nsPlaceholderFrame");
 }
-#endif  
+#endif  // DEBUG || (MOZ_REFLOW_PERF_DSP && MOZ_REFLOW_PERF)
 
 #ifdef DEBUG_FRAME_DUMP
 nsresult nsPlaceholderFrame::GetFrameName(nsAString& aResult) const {

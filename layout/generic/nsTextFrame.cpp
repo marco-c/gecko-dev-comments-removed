@@ -4275,11 +4275,11 @@ class nsContinuingTextFrame final : public nsTextFrame {
     return mFirstContinuation;
   };
 
-  void AddInlineMinISize(gfxContext* aRenderingContext,
+  void AddInlineMinISize(const IntrinsicSizeInput& aInput,
                          InlineMinISizeData* aData) final {
     
   }
-  void AddInlinePrefISize(gfxContext* aRenderingContext,
+  void AddInlinePrefISize(const IntrinsicSizeInput& aInput,
                           InlinePrefISizeData* aData) final {
     
   }
@@ -4404,7 +4404,7 @@ nsIFrame* nsContinuingTextFrame::FirstInFlow() const {
 
 nscoord nsTextFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                     IntrinsicISizeType aType) {
-  return IntrinsicISizeFromInline(aInput.mContext, aType);
+  return IntrinsicISizeFromInline(aInput, aType);
 }
 
 
@@ -8863,7 +8863,7 @@ static bool IsUnreflowedLetterFrame(nsIFrame* aFrame) {
 
 
 
-void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+void nsTextFrame::AddInlineMinISize(const IntrinsicSizeInput& aInput,
                                     InlineMinISizeData* aData) {
   
   
@@ -8902,7 +8902,7 @@ void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
       }
 
       
-      f->AddInlineMinISizeForFlow(aRenderingContext, aData, trtype);
+      f->AddInlineMinISizeForFlow(aInput.mContext, aData, trtype);
       lastTextRun = f->GetTextRun(trtype);
     }
   }
@@ -9030,7 +9030,7 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
 
 
 
-void nsTextFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
+void nsTextFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
                                      InlinePrefISizeData* aData) {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   TextRunType trtype = (inflation == 1.0f) ? eNotInflated : eInflated;
@@ -9062,7 +9062,7 @@ void nsTextFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
       }
 
       
-      f->AddInlinePrefISizeForFlow(aRenderingContext, aData, trtype);
+      f->AddInlinePrefISizeForFlow(aInput.mContext, aData, trtype);
       lastTextRun = f->GetTextRun(trtype);
     }
   }
