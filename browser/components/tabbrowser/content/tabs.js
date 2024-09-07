@@ -2229,13 +2229,6 @@
       
       
       
-      
-      
-      this.arrowScrollbox._updateScrollButtonsDisabledState();
-
-      
-      
-      
       if (tab.linkedPanel) {
         NewTabPagePreloading.maybeCreatePreloadedBrowser(window);
       }

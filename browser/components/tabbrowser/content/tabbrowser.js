@@ -4475,9 +4475,6 @@
         if (aNewTab) {
           gURLBar.select();
         }
-
-        
-        this.tabContainer.arrowScrollbox._updateScrollButtonsDisabledState();
       }
 
       

@@ -110,6 +110,11 @@
         
         let overflowing = contentSize - this.scrollClientSize > 0.02;
         if (overflowing == this.hasAttribute("overflowing")) {
+          if (overflowing) {
+            
+            
+            this._updateScrollButtonsDisabledState();
+          }
           return;
         }
         window.requestAnimationFrame(() => {
