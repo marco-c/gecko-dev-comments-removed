@@ -142,10 +142,17 @@ function testInstallDialogIncognitoCheckbox(
     
     
     
+    let permsLearnMore = installDialog.querySelector(
+      ".popup-notification-learnmore-link"
+    );
+    is(
+      permsLearnMore.href,
+      Services.urlFormatter.formatURLPref("app.support.baseURL") +
+        "extension-permissions",
+      "Learn more link has desired URL"
+    );
     ok(
-      BrowserTestUtils.isVisible(
-        installDialog.querySelector("#addon-webext-perm-info")
-      ),
+      BrowserTestUtils.isVisible(permsLearnMore),
       "SUMO link expected to be visible"
     );
   } else {
