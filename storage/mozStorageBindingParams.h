@@ -7,20 +7,16 @@
 #ifndef mozStorageBindingParams_h
 #define mozStorageBindingParams_h
 
-#include "nsCOMArray.h"
 #include "nsIVariant.h"
-#include "nsInterfaceHashtable.h"
 
-#include "mozStorageBindingParamsArray.h"
 #include "mozStorageStatement.h"
 #include "mozStorageAsyncStatement.h"
 #include "Variant.h"
-
+#include "nsTHashMap.h"
 #include "mozIStorageBindingParams.h"
 #include "IStorageBindingParamsInternal.h"
 
-namespace mozilla {
-namespace storage {
+namespace mozilla::storage {
 
 class BindingParams : public mozIStorageBindingParams,
                       public IStorageBindingParamsInternal {
@@ -58,9 +54,13 @@ class BindingParams : public mozIStorageBindingParams,
   virtual ~BindingParams() {}
 
   explicit BindingParams(mozIStorageBindingParamsArray* aOwningArray);
+
   
   
-  nsTArray<RefPtr<Variant_base> > mParameters;
+  
+  
+  nsTArray<RefPtr<Variant_base>> mParameters;
+
   bool mLocked;
 
  private:
@@ -102,10 +102,11 @@ class AsyncBindingParams : public BindingParams {
   virtual ~AsyncBindingParams() {}
 
  private:
-  nsInterfaceHashtable<nsCStringHashKey, nsIVariant> mNamedParameters;
+  
+  
+  nsTHashMap<nsCStringHashKey, RefPtr<Variant_base>> mNamedParameters;
 };
 
-}  
 }  
 
 #endif  

@@ -10,7 +10,6 @@
 #include "sqlite3.h"
 
 #include "nsTArray.h"
-#include "MainThreadUtils.h"
 
 #include "mozStorageBindingParamsArray.h"
 #include "mozStorageConnection.h"
@@ -19,8 +18,7 @@
 
 struct sqlite3_stmt;
 
-namespace mozilla {
-namespace storage {
+namespace mozilla::storage {
 
 class StatementData {
  public:
@@ -41,13 +39,6 @@ class StatementData {
     MOZ_ASSERT(mStatementOwner, "Must have a statement owner!");
   }
   StatementData() : mStatement(nullptr), mQueryStatusRecorded(false) {}
-  ~StatementData() {
-    
-    
-    
-    NS_ReleaseOnMainThread("StatementData::mParamsArray",
-                           mParamsArray.forget());
-  }
 
   
 
@@ -127,7 +118,13 @@ class StatementData {
 
  private:
   sqlite3_stmt* mStatement;
+
+  
+
+
+
   RefPtr<BindingParamsArray> mParamsArray;
+
   bool mQueryStatusRecorded;
 
   
@@ -137,7 +134,6 @@ class StatementData {
   nsCOMPtr<StorageBaseStatementInternal> mStatementOwner;
 };
 
-}  
 }  
 
 #endif  
