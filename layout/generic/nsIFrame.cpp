@@ -7402,9 +7402,9 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
 
 
     if (isTransformed) {
-      result = result * nsDisplayTransform::GetResultingTransformMatrix(
-                            this, nsPoint(), scaleFactor,
-                            nsDisplayTransform::INCLUDE_PERSPECTIVE);
+      result = nsDisplayTransform::GetResultingTransformMatrix(
+          this, nsPoint(), scaleFactor,
+          nsDisplayTransform::INCLUDE_PERSPECTIVE);
     }
 
     
