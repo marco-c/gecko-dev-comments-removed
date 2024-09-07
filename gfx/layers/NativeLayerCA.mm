@@ -972,11 +972,6 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
     return true;
   }
 
-  if (macIOSurface->GetPlaneCount() > 1) {
-    
-    return true;
-  }
-
   
   
 
