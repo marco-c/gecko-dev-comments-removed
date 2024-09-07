@@ -171,11 +171,6 @@ class AcmReceiver {
 
   
   
-  
-  void RemoveAllCodecs();
-
-  
-  
   absl::optional<uint32_t> GetPlayoutTimestamp();
 
   
