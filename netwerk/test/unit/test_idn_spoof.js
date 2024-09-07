@@ -221,7 +221,7 @@ let testCases = [
   
   ["xn--o-ybcg0cu0cq.com", "o\u0580\u0574\u0578\u0582\u0566\u0568.com", kUnsafe],
   
-  ["xn--49jxi3as0d0fpc.com", "\u30e2\u30d2\u30fc\u30c8\u3078\u30d6\u30f3.com", kUnsafe, "DISABLED"],
+  ["xn--49jxi3as0d0fpc.com", "\u30e2\u30d2\u30fc\u30c8\u3078\u30d6\u30f3.com", kUnsafe],
 
   
   
@@ -251,21 +251,21 @@ let testCases = [
   
   ["xn--lck2i.jp", "\u30ab\u30fd.jp", kSafe],
   
-  ["xn--u8j7t.jp", "\u304b\u30fd.jp", kUnsafe, "DISABLED"],
+  ["xn--u8j7t.jp", "\u304b\u30fd.jp", kUnsafe],
   
-  ["xn--xek368f.jp", "\u4e00\u30fd.jp", kUnsafe, "DISABLED"],
-  ["xn--a-mju.jp", "a\u30fd.jp", kUnsafe, "DISABLED"],
-  ["xn--a1-bo4a.jp", "a1\u30fd.jp", kUnsafe, "DISABLED"],
+  ["xn--xek368f.jp", "\u4e00\u30fd.jp", kUnsafe],
+  ["xn--a-mju.jp", "a\u30fd.jp", kUnsafe],
+  ["xn--a1-bo4a.jp", "a1\u30fd.jp", kUnsafe],
 
   
   
   ["xn--lck4i.jp", "\u30ab\u30fe.jp", kSafe],
   
-  ["xn--u8j9t.jp", "\u304b\u30fe.jp", kUnsafe, "DISABLED"],
+  ["xn--u8j9t.jp", "\u304b\u30fe.jp", kUnsafe],
   
-  ["xn--yek168f.jp", "\u4e00\u30fe.jp", kUnsafe, "DISABLED"],
-  ["xn--a-oju.jp", "a\u30fe.jp", kUnsafe, "DISABLED"],
-  ["xn--a1-eo4a.jp", "a1\u30fe.jp", kUnsafe, "DISABLED"],
+  ["xn--yek168f.jp", "\u4e00\u30fe.jp", kUnsafe],
+  ["xn--a-oju.jp", "a\u30fe.jp", kUnsafe],
+  ["xn--a1-eo4a.jp", "a1\u30fe.jp", kUnsafe],
 
   
   
@@ -719,7 +719,7 @@ let testCases = [
   
   ["google.xn--com-oh4ba.evil.jp", "google.com\u309a\u309a.evil.jp", kUnsafe],
   
-  ["google.xn--comevil-v04f.jp", "google.com\u30ceevil.jp", kUnsafe, "DISABLED"],
+  ["google.xn--comevil-v04f.jp", "google.com\u30ceevil.jp", kUnsafe],
   
   
   ["xn--ldk.jp", "\u30ce.jp", kSafe],
@@ -849,10 +849,10 @@ let testCases = [
 
   
   
-  ["example.xn--comtest-k63k", "example.com\u4e36test", kUnsafe, "DISABLED"],
-  ["example.xn--comtest-u83k", "example.com\u4e40test", kUnsafe, "DISABLED"],
-  ["example.xn--comtest-283k", "example.com\u4e41test", kUnsafe, "DISABLED"],
-  ["example.xn--comtest-m83k", "example.com\u4e3ftest", kUnsafe, "DISABLED"],
+  ["example.xn--comtest-k63k", "example.com\u4e36test", kUnsafe],
+  ["example.xn--comtest-u83k", "example.com\u4e40test", kUnsafe],
+  ["example.xn--comtest-283k", "example.com\u4e41test", kUnsafe],
+  ["example.xn--comtest-m83k", "example.com\u4e3ftest", kUnsafe],
   
   
   ["xn--oiqsace.com", "\u4e36\u4e40\u4e41\u4e3f.com", kSafe],
@@ -898,7 +898,7 @@ let testCases = [
   ["xn--googlecom-0y6n.com", "google\u4e5bcom.com", kUnsafe, "DISABLED"],
   ["xn--googlecom-v85n.com", "google\u4e03com.com", kUnsafe, "DISABLED"],
   ["xn--googlecom-g95n.com", "google\u4e05com.com", kUnsafe, "DISABLED"],
-  ["xn--googlecom-go6n.com", "google\u4e36com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-go6n.com", "google\u4e36com.com", kUnsafe],
   ["xn--googlecom-b76o.com", "google\u5341com.com", kUnsafe, "DISABLED"],
   ["xn--googlecom-ql3h.com", "google\u3007com.com", kUnsafe, "DISABLED"],
   ["xn--googlecom-0r5h.com", "google\u3112com.com", kUnsafe, "DISABLED"],
