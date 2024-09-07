@@ -130,7 +130,9 @@ nsresult nsMathMLmfracFrame::AttributeChanged(int32_t aNameSpaceID,
 
 nsresult nsMathMLmfracFrame::MeasureForWidth(DrawTarget* aDrawTarget,
                                              ReflowOutput& aDesiredSize) {
-  return PlaceInternal(aDrawTarget, false, aDesiredSize, true);
+  return PlaceInternal(
+      aDrawTarget, PlaceFlags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly),
+      aDesiredSize);
 }
 
 nscoord nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize) {
@@ -142,15 +144,15 @@ nscoord nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize) {
 }
 
 
-nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
+                                   const PlaceFlags& aFlags,
                                    ReflowOutput& aDesiredSize) {
-  return PlaceInternal(aDrawTarget, aPlaceOrigin, aDesiredSize, false);
+  return PlaceInternal(aDrawTarget, aFlags, aDesiredSize);
 }
 
 nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
-                                           bool aPlaceOrigin,
-                                           ReflowOutput& aDesiredSize,
-                                           bool aWidthOnly) {
+                                           const PlaceFlags& aFlags,
+                                           ReflowOutput& aDesiredSize) {
   
   
   nsBoundingMetrics bmNum, bmDen;
@@ -161,10 +163,10 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
   if (frameNum) frameDen = frameNum->GetNextSibling();
   if (!frameNum || !frameDen || frameDen->GetNextSibling()) {
     
-    if (aPlaceOrigin) {
+    if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
       ReportChildCountError();
     }
-    return PlaceAsMrow(aDrawTarget, aPlaceOrigin, aDesiredSize);
+    return PlaceAsMrow(aDrawTarget, aFlags, aDesiredSize);
   }
   GetReflowAndBoundingMetricsFor(frameNum, sizeNum, bmNum);
   GetReflowAndBoundingMetricsFor(frameDen, sizeDen, bmDen);
@@ -356,7 +358,7 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
   mReference.x = 0;
   mReference.y = aDesiredSize.BlockStartAscent();
 
-  if (aPlaceOrigin) {
+  if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
     nscoord dy;
     
     dy = 0;

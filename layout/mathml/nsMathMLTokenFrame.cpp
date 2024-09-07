@@ -149,7 +149,8 @@ void nsMathMLTokenFrame::Reflow(nsPresContext* aPresContext,
 
 
 
-nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget,
+                                   const PlaceFlags& aFlags,
                                    ReflowOutput& aDesiredSize) {
   mBoundingMetrics = nsBoundingMetrics();
   for (nsIFrame* childFrame : PrincipalChildList()) {
@@ -171,7 +172,7 @@ nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
   aDesiredSize.Height() = aDesiredSize.BlockStartAscent() +
                           std::max(mBoundingMetrics.descent, descent);
 
-  if (aPlaceOrigin) {
+  if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
     nscoord dy, dx = 0;
     for (nsIFrame* childFrame : PrincipalChildList()) {
       ReflowOutput childSize(aDesiredSize.GetWritingMode());

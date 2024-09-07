@@ -133,6 +133,32 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
 
  protected:
+  enum class PlaceFlag : uint8_t {
+    
+    
+    
+    
+    
+    
+    MeasureOnly,
+
+    
+    
+    
+    
+    
+    
+    IntrinsicSize,
+
+    
+    
+    
+    
+    
+    IgnoreBorderPadding,
+  };
+  using PlaceFlags = mozilla::EnumSet<PlaceFlag>;
+
   
 
 
@@ -155,14 +181,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-
-
-
-
-
-
-
-  virtual nsresult Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+  virtual nsresult Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
                          ReflowOutput& aDesiredSize);
 
   
@@ -197,7 +216,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-  nsresult PlaceAsMrow(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+  nsresult PlaceAsMrow(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
                        ReflowOutput& aDesiredSize);
 
   

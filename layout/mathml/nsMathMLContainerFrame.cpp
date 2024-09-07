@@ -105,7 +105,9 @@ void nsMathMLContainerFrame::GetPreferredStretchSize(
   } else if (aOptions & STRETCH_CONSIDER_EMBELLISHMENTS) {
     
     ReflowOutput reflowOutput(GetWritingMode());
-    Place(aDrawTarget, false, reflowOutput);
+    Place(aDrawTarget,
+          PlaceFlags(PlaceFlag::MeasureOnly, PlaceFlag::IgnoreBorderPadding),
+          reflowOutput);
     aPreferredStretchSize = reflowOutput.mBoundingMetrics;
   } else {
     
@@ -296,7 +298,7 @@ nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
         }
 
         
-        nsresult rv = Place(aDrawTarget, true, aDesiredStretchSize);
+        nsresult rv = Place(aDrawTarget, PlaceFlags(), aDesiredStretchSize);
         if (NS_FAILED(rv)) {
           
           DidReflowChildren(mFrames.FirstChild());
@@ -378,7 +380,9 @@ nsresult nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
       !NS_MATHML_IS_EMBELLISH_OPERATOR(mEmbellishData.flags) ||
       (mEmbellishData.coreFrame != this && !mPresentationData.baseFrame &&
        mEmbellishData.direction == NS_STRETCH_DIRECTION_UNSUPPORTED);
-  nsresult rv = Place(aDrawTarget, placeOrigin, aDesiredSize);
+  nsresult rv =
+      Place(aDrawTarget, placeOrigin ? PlaceFlags() : PlaceFlag::MeasureOnly,
+            aDesiredSize);
 
   
   
@@ -865,9 +869,6 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
       containerFrame->GetIntrinsicISizeMetrics(aRenderingContext,
                                                childDesiredSize);
     } else {
-      
-      
-      
       nscoord width = nsLayoutUtils::IntrinsicForContainer(
           aRenderingContext, childFrame, IntrinsicISizeType::PrefISize);
 
@@ -894,7 +895,9 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
   nsresult rv =
       MeasureForWidth(aRenderingContext->GetDrawTarget(), aDesiredSize);
   if (NS_FAILED(rv)) {
-    PlaceAsMrow(aRenderingContext->GetDrawTarget(), false, aDesiredSize);
+    PlaceAsMrow(aRenderingContext->GetDrawTarget(),
+                PlaceFlags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly),
+                aDesiredSize);
   }
 
   ClearSavedChildMetrics();
@@ -903,7 +906,9 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
 
 nsresult nsMathMLContainerFrame::MeasureForWidth(DrawTarget* aDrawTarget,
                                                  ReflowOutput& aDesiredSize) {
-  return Place(aDrawTarget, false, aDesiredSize);
+  return Place(aDrawTarget,
+               PlaceFlags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly),
+               aDesiredSize);
 }
 
 
@@ -1107,7 +1112,7 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
 
 
 nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
-                                       bool aPlaceOrigin,
+                                       const PlaceFlags& aFlags,
                                        ReflowOutput& aDesiredSize) {
   
   mBoundingMetrics = nsBoundingMetrics();
@@ -1139,7 +1144,7 @@ nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
   
   
 
-  if (aPlaceOrigin) {
+  if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
     PositionRowChildFrames(0, aDesiredSize.BlockStartAscent());
   }
 
@@ -1147,9 +1152,9 @@ nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
 }
 
 nsresult nsMathMLContainerFrame::PlaceAsMrow(DrawTarget* aDrawTarget,
-                                             bool aPlaceOrigin,
+                                             const PlaceFlags& aFlags,
                                              ReflowOutput& aDesiredSize) {
-  return nsMathMLContainerFrame::Place(aDrawTarget, aPlaceOrigin, aDesiredSize);
+  return nsMathMLContainerFrame::Place(aDrawTarget, aFlags, aDesiredSize);
 }
 
 void nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,

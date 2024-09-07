@@ -740,7 +740,8 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
 
   
   
-  nsresult rv = Place(aDrawTarget, true, aDesiredStretchSize);
+  nsresult rv =
+      Place(aDrawTarget, PlaceFlag::IgnoreBorderPadding, aDesiredStretchSize);
   if (NS_FAILED(rv)) {
     
     DidReflowChildren(mFrames.FirstChild());
@@ -930,10 +931,10 @@ void nsMathMLmoFrame::Reflow(nsPresContext* aPresContext,
   nsMathMLTokenFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 }
 
-nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget,
+                                const PlaceFlags& aFlags,
                                 ReflowOutput& aDesiredSize) {
-  nsresult rv =
-      nsMathMLTokenFrame::Place(aDrawTarget, aPlaceOrigin, aDesiredSize);
+  nsresult rv = nsMathMLTokenFrame::Place(aDrawTarget, aFlags, aDesiredSize);
 
   if (NS_FAILED(rv)) {
     return rv;
@@ -950,7 +951,8 @@ nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
 
 
 
-  if (!aPlaceOrigin && StyleFont()->mMathStyle == StyleMathStyle::Normal &&
+  if (aFlags.contains(PlaceFlag::MeasureOnly) &&
+      StyleFont()->mMathStyle == StyleMathStyle::Normal &&
       NS_MATHML_OPERATOR_IS_LARGEOP(mFlags) && UseMathMLChar()) {
     nsBoundingMetrics newMetrics;
     rv = mMathMLChar.Stretch(
