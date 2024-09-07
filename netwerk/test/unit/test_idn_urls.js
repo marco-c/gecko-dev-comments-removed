@@ -212,9 +212,11 @@ const testcases = [
   ],
 
   
+  
+  
   [
-    "注音符号ㄅㄆㄇㄈbopomofo",
-    "xn--bopomofo-8i5gkalm9637i876cuw0brk5f",
+    "注音符号ㄅbopomofo",
+    "xn--bopomofo-8i5gx891aylvccz9asi4e",
     false,
     true,
     true,
@@ -248,9 +250,11 @@ const testcases = [
   ],
 
   
+  
+  
   [
-    "ㄅㄆㄇㄈbopomofo注音符号",
-    "xn--bopomofo-8i5gkalm1837i876cuw0brk5f",
+    "ㄅbopomofo注音符号",
+    "xn--bopomofo-8i5g6891aylvccz9asi4e",
     false,
     true,
     true,

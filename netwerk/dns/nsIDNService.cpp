@@ -36,6 +36,7 @@ using mozilla::Preferences;
 #define NS_NET_PREF_EXTRAALLOWED "network.IDN.extra_allowed_chars"
 #define NS_NET_PREF_EXTRABLOCKED "network.IDN.extra_blocked_chars"
 #define NS_NET_PREF_IDNRESTRICTION "network.IDN.restriction_profile"
+#define ISNUMERIC(c) ((c) >= '0' && (c) <= '9')
 
 template <int N>
 static inline bool TLDEqualsLiteral(mozilla::Span<const char32_t> aTLD,
@@ -80,6 +81,34 @@ static bool isCJKSlashConfusable(char32_t aChar) {
     case 0x4E40:  
     case 0x4E41:  
     case 0x4E3F:  
+      return true;
+    default:
+      return false;
+  }
+}
+
+static bool isCJKIdeograph(char32_t aChar) {
+  switch (aChar) {
+    case 0x4E00:  
+    case 0x3127:  
+    case 0x4E28:  
+    case 0x4E5B:  
+    case 0x4E03:  
+    case 0x4E05:  
+    case 0x5341:  
+    case 0x3007:  
+    case 0x3112:  
+    case 0x311A:  
+    case 0x311F:  
+    case 0x3128:  
+    case 0x3129:  
+    case 0x3108:  
+    case 0x31BA:  
+    case 0x31B3:  
+    case 0x5DE5:  
+    case 0x31B2:  
+    case 0x8BA0:  
+    case 0x4E01:  
       return true;
     default:
       return false;
@@ -358,6 +387,26 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
     
     if (ch == 0x2BB || ch == 0x2BC) {
       return false;
+    }
+
+    
+    
+    if (isCJKIdeograph(ch)) {
+      
+      
+      
+      if (lastScript != Script::BOPOMOFO && lastScript != Script::HIRAGANA &&
+          lastScript != Script::KATAKANA && lastScript != Script::HAN &&
+          previousChar && !ISNUMERIC(previousChar)) {
+        return false;
+      }
+      
+      
+      if (nextScript != Script::BOPOMOFO && nextScript != Script::HIRAGANA &&
+          nextScript != Script::KATAKANA && nextScript != Script::HAN &&
+          current != aLabel.end() && !ISNUMERIC(*current)) {
+        return false;
+      }
     }
 
     
