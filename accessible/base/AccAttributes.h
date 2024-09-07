@@ -59,6 +59,38 @@ struct DeleteEntry {
   bool operator!=(const DeleteEntry& aOther) const { return false; }
 };
 
+
+
+
+
+
+
+
+struct TextOffsetAttribute {
+  
+  
+  int32_t mStartOffset;
+  
+  
+  int32_t mEndOffset;
+  
+  
+  RefPtr<nsAtom> mAttribute;
+
+  bool operator==(const TextOffsetAttribute& aOther) const {
+    return mStartOffset == aOther.mStartOffset &&
+           mEndOffset == aOther.mEndOffset && mAttribute == aOther.mAttribute;
+  }
+
+  bool operator!=(const TextOffsetAttribute& aOther) const {
+    return !(*this == aOther);
+  }
+
+  bool operator<(const TextOffsetAttribute& aOther) const {
+    return mStartOffset < aOther.mStartOffset;
+  }
+};
+
 class AccAttributes {
   
   
@@ -69,7 +101,8 @@ class AccAttributes {
       Variant<bool, float, double, int32_t, RefPtr<nsAtom>, nsTArray<int32_t>,
               CSSCoord, FontSize, Color, DeleteEntry, UniquePtr<nsString>,
               RefPtr<AccAttributes>, uint64_t, UniquePtr<AccGroupInfo>,
-              UniquePtr<gfx::Matrix4x4>, nsTArray<uint64_t>>;
+              UniquePtr<gfx::Matrix4x4>, nsTArray<uint64_t>,
+              nsTArray<TextOffsetAttribute>>;
   static_assert(sizeof(AttrValueType) <= 16);
   using AtomVariantMap = nsTHashMap<RefPtr<nsAtom>, AttrValueType>;
 
