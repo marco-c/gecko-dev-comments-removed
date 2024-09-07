@@ -130,8 +130,7 @@ nsresult nsMathMLmfracFrame::AttributeChanged(int32_t aNameSpaceID,
 
 nsresult nsMathMLmfracFrame::MeasureForWidth(DrawTarget* aDrawTarget,
                                              ReflowOutput& aDesiredSize) {
-  PlaceFlags flags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly);
-  return PlaceInternal(aDrawTarget, flags, aDesiredSize);
+  return PlaceInternal(aDrawTarget, false, aDesiredSize, true);
 }
 
 nscoord nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize) {
@@ -143,15 +142,15 @@ nscoord nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize) {
 }
 
 
-nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
-                                   const PlaceFlags& aFlags,
+nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
                                    ReflowOutput& aDesiredSize) {
-  return PlaceInternal(aDrawTarget, aFlags, aDesiredSize);
+  return PlaceInternal(aDrawTarget, aPlaceOrigin, aDesiredSize, false);
 }
 
 nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
-                                           const PlaceFlags& aFlags,
-                                           ReflowOutput& aDesiredSize) {
+                                           bool aPlaceOrigin,
+                                           ReflowOutput& aDesiredSize,
+                                           bool aWidthOnly) {
   
   
   nsBoundingMetrics bmNum, bmDen;
@@ -162,16 +161,13 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
   if (frameNum) frameDen = frameNum->GetNextSibling();
   if (!frameNum || !frameDen || frameDen->GetNextSibling()) {
     
-    if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
+    if (aPlaceOrigin) {
       ReportChildCountError();
     }
-    return PlaceAsMrow(aDrawTarget, aFlags, aDesiredSize);
+    return PlaceAsMrow(aDrawTarget, aPlaceOrigin, aDesiredSize);
   }
   GetReflowAndBoundingMetricsFor(frameNum, sizeNum, bmNum);
   GetReflowAndBoundingMetricsFor(frameDen, sizeDen, bmDen);
-
-  nsMargin numMargin = GetMarginForPlace(aFlags, frameNum),
-           denMargin = GetMarginForPlace(aFlags, frameDen);
 
   nsPresContext* presContext = PresContext();
   nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
@@ -213,8 +209,9 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
   
   
   
-  nscoord leftSpace = 0;
-  nscoord rightSpace = 0;
+  
+  nscoord leftSpace = onePixel;
+  nscoord rightSpace = onePixel;
   if (outermostEmbellished) {
     const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
     nsEmbellishData coreData;
@@ -278,8 +275,8 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
           oneDevPixel);
     }
 
-    nscoord actualClearance = (numShift - bmNum.descent - numMargin.bottom) -
-                              (bmDen.ascent + denMargin.top - denShift);
+    nscoord actualClearance =
+        (numShift - bmNum.descent) - (bmDen.ascent - denShift);
     
     if (actualClearance < minClearance) {
       nscoord halfGap = (minClearance - actualClearance) / 2;
@@ -315,14 +312,14 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
     }
 
     
-    nscoord actualClearanceNum = (numShift - bmNum.descent - numMargin.bottom) -
-                                 (axisHeight + actualRuleThickness / 2);
+    nscoord actualClearanceNum =
+        (numShift - bmNum.descent) - (axisHeight + actualRuleThickness / 2);
     if (actualClearanceNum < minClearanceNum) {
       numShift += (minClearanceNum - actualClearanceNum);
     }
     
-    nscoord actualClearanceDen = (axisHeight - actualRuleThickness / 2) -
-                                 (bmDen.ascent + denMargin.top - denShift);
+    nscoord actualClearanceDen =
+        (axisHeight - actualRuleThickness / 2) - (bmDen.ascent - denShift);
     if (actualClearanceDen < minClearanceDen) {
       denShift += (minClearanceDen - actualClearanceDen);
     }
@@ -333,59 +330,40 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
 
   
   
-  nscoord width = std::max(bmNum.width + numMargin.LeftRight(),
-                           bmDen.width + denMargin.LeftRight());
-  nscoord dxNum =
-      leftSpace + (width - sizeNum.Width() - numMargin.LeftRight()) / 2;
-  nscoord dxDen =
-      leftSpace + (width - sizeDen.Width() - denMargin.LeftRight()) / 2;
+  nscoord width = std::max(bmNum.width, bmDen.width);
+  nscoord dxNum = leftSpace + (width - sizeNum.Width()) / 2;
+  nscoord dxDen = leftSpace + (width - sizeDen.Width()) / 2;
   width += leftSpace + rightSpace;
 
   mBoundingMetrics.rightBearing =
-      std::max(dxNum + bmNum.rightBearing + numMargin.LeftRight(),
-               dxDen + bmDen.rightBearing + denMargin.LeftRight());
+      std::max(dxNum + bmNum.rightBearing, dxDen + bmDen.rightBearing);
   if (mBoundingMetrics.rightBearing < width - rightSpace)
     mBoundingMetrics.rightBearing = width - rightSpace;
   mBoundingMetrics.leftBearing =
       std::min(dxNum + bmNum.leftBearing, dxDen + bmDen.leftBearing);
   if (mBoundingMetrics.leftBearing > leftSpace)
     mBoundingMetrics.leftBearing = leftSpace;
-  mBoundingMetrics.ascent = bmNum.ascent + numShift + numMargin.top;
-  mBoundingMetrics.descent = bmDen.descent + denShift + denMargin.bottom;
+  mBoundingMetrics.ascent = bmNum.ascent + numShift;
+  mBoundingMetrics.descent = bmDen.descent + denShift;
   mBoundingMetrics.width = width;
 
-  aDesiredSize.SetBlockStartAscent(numMargin.top + sizeNum.BlockStartAscent() +
-                                   numShift);
-  aDesiredSize.Height() = aDesiredSize.BlockStartAscent() + sizeDen.Height() +
-                          denMargin.bottom - sizeDen.BlockStartAscent() +
-                          denShift;
+  aDesiredSize.SetBlockStartAscent(sizeNum.BlockStartAscent() + numShift);
+  aDesiredSize.Height() = aDesiredSize.BlockStartAscent() + sizeDen.Height() -
+                          sizeDen.BlockStartAscent() + denShift;
   aDesiredSize.Width() = mBoundingMetrics.width;
   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
-
-  
-  auto borderPadding = GetBorderPaddingForPlace(aFlags);
-  InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize,
-                                  mBoundingMetrics);
-  leftSpace += borderPadding.left;
-  rightSpace += borderPadding.right;
-  width += borderPadding.LeftRight();
-  dxNum += borderPadding.left;
-  dxDen += borderPadding.left;
 
   mReference.x = 0;
   mReference.y = aDesiredSize.BlockStartAscent();
 
-  if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
+  if (aPlaceOrigin) {
     nscoord dy;
     
-    dxNum += numMargin.left;
-    dy = borderPadding.top + numMargin.top;
+    dy = 0;
     FinishReflowChild(frameNum, presContext, sizeNum, nullptr, dxNum, dy,
                       ReflowChildFlags::Default);
     
-    dxDen += denMargin.left;
-    dy = aDesiredSize.Height() - sizeDen.Height() - denMargin.bottom -
-         borderPadding.bottom;
+    dy = aDesiredSize.Height() - sizeDen.Height();
     FinishReflowChild(frameDen, presContext, sizeDen, nullptr, dxDen, dy,
                       ReflowChildFlags::Default);
     
