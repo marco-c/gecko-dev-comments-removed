@@ -249,7 +249,7 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
   
   
   if (maybeCols.isSome() && mButton && mButton->GetPrimaryFrame()) {
-    const IntrinsicSizeInput input(aRenderingContext);
+    const IntrinsicSizeInput input(aRenderingContext, Nothing());
     intrinsicSize.ISize(aWM) += mButton->GetPrimaryFrame()->GetMinISize(input);
   }
 
