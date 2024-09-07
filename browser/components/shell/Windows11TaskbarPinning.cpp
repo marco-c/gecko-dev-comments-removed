@@ -9,10 +9,13 @@
 #include "nsWindowsHelpers.h"
 #include "MainThreadUtils.h"
 #include "nsThreadUtils.h"
+#include <shobjidl.h>
 #include <strsafe.h>
 
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/WinHeaderOnlyUtils.h"
 
 #include "mozilla/Logging.h"
 
@@ -27,6 +30,7 @@ static mozilla::LazyLogModule sLog("Windows11TaskbarPinning");
 
 #  include <inspectable.h>
 #  include <roapi.h>
+#  include <shlobj_core.h>
 #  include <windows.services.store.h>
 #  include <windows.foundation.h>
 #  include <windows.ui.shell.h>
@@ -101,8 +105,7 @@ static Result<ComPtr<ITaskbarManager>, HRESULT> InitializeTaskbar() {
 }
 
 Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId,
-    nsAutoString aShortcutPath) {
+    bool aCheckOnly, const nsAString& aAppUserModelId) {
   MOZ_DIAGNOSTIC_ASSERT(!NS_IsMainThread(),
                         "PinCurrentAppToTaskbarWin11 should be called off main "
                         "thread only. It blocks, waiting on things to execute "
@@ -133,6 +136,21 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
       Win11PinToTaskBarResultStatus::NotSupported;
 
   EventWrapper event;
+
+  
+  PWSTR rawCurrentIdPtr = nullptr;
+  hr = GetCurrentProcessExplicitAppUserModelID(&rawCurrentIdPtr);
+  if (FAILED(hr) || rawCurrentIdPtr == nullptr) {
+    return {hr, Win11PinToTaskBarResultStatus::Failed};
+  }
+  mozilla::UniquePtr<wchar_t, mozilla::CoTaskMemFreeDeleter> currentIdPtr(
+      rawCurrentIdPtr);
+  nsString currentId(currentIdPtr.get());
+  hr = SetCurrentProcessExplicitAppUserModelID(
+      PromiseFlatString(aAppUserModelId).get());
+  if (FAILED(hr)) {
+    return {hr, Win11PinToTaskBarResultStatus::Failed};
+  }
 
   
   
@@ -330,14 +348,16 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
   
   event.Wait();
 
+  
+  SetCurrentProcessExplicitAppUserModelID(currentId.get());
+
   return {hr, resultStatus};
 }
 
 #else  
 
 Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId,
-    nsAutoString aShortcutPath) {
+    bool aCheckOnly, const nsAString& aAppUserModelId) {
   return {S_OK, Win11PinToTaskBarResultStatus::NotSupported};
 }
 
