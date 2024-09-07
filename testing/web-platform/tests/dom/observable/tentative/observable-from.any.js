@@ -90,38 +90,119 @@ test(() => {
 
 
 
+
+
+
+
+
+
 test(() => {
-  let numTimesSymbolIteratorCalled = 0;
-  let numTimesNextCalled = 0;
+  const results = [];
 
   const iterable = {
-    [Symbol.iterator]() {
-      numTimesSymbolIteratorCalled++;
-      return {
-        next() {
-          numTimesNextCalled++;
-          return {value: undefined, done: true};
-        }
+    get [Symbol.iterator]() {
+      results.push("[Symbol.iterator] method GETTER");
+      return function() {
+        results.push("[Symbol.iterator implementation]");
+        return {
+          get next() {
+            results.push("next() method GETTER");
+            return function() {
+              results.push("next() implementation");
+              return {value: undefined, done: true};
+            };
+          },
+        };
       };
-    }
+    },
   };
 
   const observable = Observable.from(iterable);
+  assert_array_equals(results, ["[Symbol.iterator] method GETTER"]);
 
-  assert_equals(numTimesSymbolIteratorCalled, 1,
-      "Observable.from(iterable) invokes the @@iterator method getter once");
-  assert_equals(numTimesNextCalled, 0,
-      "Iterator next() is not called until subscription");
+  let thrownError = null;
+  observable.subscribe();
+  assert_array_equals(results, [
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator implementation]",
+    "next() method GETTER",
+    "next() implementation"
+  ]);
+}, "from(): [Symbol.iterator] side-effects (one observable)");
 
-  
-  
-  
-  
-  
-  const customError = new Error('@@iterator override error');
-  iterable[Symbol.iterator] = () => {
-    throw customError;
+
+
+
+
+test(() => {
+  let results = [];
+  const iterable = {
+    [Symbol.iterator]: 10,
   };
+
+  let errorThrown = null;
+  try {
+    Observable.from(iterable);
+  } catch(e) {
+    errorThrown = e;
+  }
+
+  assert_true(errorThrown instanceof TypeError);
+  assert_equals(errorThrown.message,
+      "Failed to execute 'from' on 'Observable': @@iterator must be a " +
+      "callable.");
+}, "from(): [Symbol.iterator] not callable");
+
+test(() => {
+  let results = [];
+  const customError = new Error("@@iterator override error");
+
+  const iterable = {
+    numTimesCalled: 0,
+
+    
+    
+    
+    get [Symbol.iterator]() {
+      this.numTimesCalled++;
+      results.push("[Symbol.iterator] method GETTER");
+
+      if (this.numTimesCalled === 1) {
+        return this.validIteratorImplementation;
+      } else {
+        return this.errorThrowingIteratorImplementation;
+      }
+    },
+
+    validIteratorImplementation: function() {
+      results.push("[Symbol.iterator implementation]");
+      return {
+        get next() {
+          results.push("next() method GETTER");
+          return function() {
+            results.push("next() implementation");
+            return {value: undefined, done: true};
+          }
+        }
+      };
+    },
+    errorThrowingIteratorImplementation: function() {
+      results.push("Error-throwing [Symbol.iterator] implementation");
+      throw customError;
+    },
+  };
+
+  const observable = Observable.from(iterable);
+  assert_array_equals(results, [
+    "[Symbol.iterator] method GETTER",
+  ]);
+
+  
+  
+  
+  
+  
 
   let thrownError = null;
   observable.subscribe({
@@ -130,56 +211,101 @@ test(() => {
 
   assert_equals(thrownError, customError,
       "Error thrown from next() is passed to the error() handler");
-
-  assert_equals(numTimesSymbolIteratorCalled, 1,
-      "Subscription re-invokes @@iterator method, which now is a different " +
-      "method that does *not* increment our assertion value");
-  assert_equals(numTimesNextCalled, 0, "Iterator next() is never called");
-}, "from(): [Symbol.iterator] side-effects (one observable)");
+  assert_array_equals(results, [
+    
+    "[Symbol.iterator] method GETTER",
+    
+    "[Symbol.iterator] method GETTER",
+    "Error-throwing [Symbol.iterator] implementation"
+  ]);
+}, "from(): [Symbol.iterator] is not cached");
 
 
 test(() => {
+  const results = [];
   let numTimesSymbolIteratorCalled = 0;
   let numTimesNextCalled = 0;
 
   const iterable = {
-    [Symbol.iterator]() {
-      numTimesSymbolIteratorCalled++;
+    get [Symbol.iterator]() {
+      results.push("[Symbol.iterator] method GETTER");
+      return this.internalIteratorImplementation;
+    },
+    set [Symbol.iterator](func) {
+      this.internalIteratorImplementation = func;
+    },
+
+    internalIteratorImplementation: function() {
+      results.push("[Symbol.iterator] implementation");
       return {
-        next() {
-          numTimesNextCalled++;
-          return {value: undefined, done: true};
-        }
+        get next() {
+          results.push("next() method GETTER");
+          return function() {
+            results.push("next() implementation");
+            return {value: undefined, done: true};
+          };
+        },
       };
-    }
+    },
   };
 
   const obs1 = Observable.from(iterable);
   const obs2 = Observable.from(iterable);
   const obs3 = Observable.from(iterable);
   const obs4 = Observable.from(obs3);
+  assert_equals(obs3, obs4);
 
-  assert_equals(numTimesSymbolIteratorCalled, 3, "Observable.from(iterable) invokes the iterator method getter once");
-  assert_equals(numTimesNextCalled, 0, "Iterator next() is not called until subscription");
+  assert_array_equals(results, [
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] method GETTER",
+  ]);
+
+  obs1.subscribe();
+  assert_array_equals(results, [
+    
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] method GETTER",
+    
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] implementation",
+    "next() method GETTER",
+    "next() implementation",
+  ]);
 
   iterable[Symbol.iterator] = () => {
+    results.push("Error-throwing [Symbol.iterator] implementation");
     throw new Error('Symbol.iterator override error');
   };
 
   let errorCount = 0;
 
   const observer = {error: e => errorCount++};
-  obs1.subscribe(observer);
   obs2.subscribe(observer);
   obs3.subscribe(observer);
   obs4.subscribe(observer);
-  assert_equals(errorCount, 4,
+  assert_equals(errorCount, 3,
       "Error-throwing `@@iterator` implementation is called once per " +
       "subscription");
 
-  assert_equals(numTimesSymbolIteratorCalled, 3,
-      "Subscription re-invokes the iterator method getter once");
-  assert_equals(numTimesNextCalled, 0, "Iterator next() is never called");
+  assert_array_equals(results, [
+    
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] method GETTER",
+    "[Symbol.iterator] implementation",
+    "next() method GETTER",
+    "next() implementation",
+    
+    "[Symbol.iterator] method GETTER",
+    "Error-throwing [Symbol.iterator] implementation",
+    "[Symbol.iterator] method GETTER",
+    "Error-throwing [Symbol.iterator] implementation",
+    "[Symbol.iterator] method GETTER",
+    "Error-throwing [Symbol.iterator] implementation",
+  ]);
 }, "from(): [Symbol.iterator] side-effects (many observables)");
 
 test(() => {
@@ -221,7 +347,8 @@ promise_test(async () => {
 
   await promise;
 
-  assert_array_equals(results, ["value", "complete()"], "Observable emits and completes after Promise resolves");
+  assert_array_equals(results, ["value", "complete()"],
+      "Observable emits and completes after Promise resolves");
 }, "from(): Converts Promise to Observable");
 
 promise_test(async t => {
@@ -352,3 +479,65 @@ test(() => {
   assert_array_equals(results, ["from @@iterator", "complete"]);
 }, "from(): Promise that implements @@iterator protocol gets converted as " +
    "an iterable, not Promise");
+
+
+
+
+
+
+
+promise_test(async () => {
+  const promise = new Promise(resolve => resolve('from Promise'));
+  assert_equals(promise[Symbol.iterator], undefined);
+  promise[Symbol.iterator] = null;
+  assert_equals(promise[Symbol.iterator], null);
+
+  const value = await new Promise(resolve => {
+    Observable.from(promise).subscribe(value => resolve(value));
+  });
+
+  assert_equals(value, 'from Promise');
+}, "from(): Promise whose [Symbol.iterator] returns null converts as Promise");
+
+
+
+
+
+test(() => {
+  const error = new Error('thrown from @@iterator getter');
+  const obj = {
+    get [Symbol.iterator]() {
+      throw error;
+    }
+  }
+
+  try {
+    Observable.from(obj);
+    assert_unreached("from() conversion throws");
+  } catch(e) {
+    assert_equals(e, error);
+  }
+}, "from(): Rethrows the error when Converting an object whose @@iterator " +
+   "method *getter* throws an error");
+
+test(() => {
+  const obj = {};
+  
+  
+  
+  obj[Symbol.iterator] = 10;
+
+  try {
+    Observable.from(obj);
+    assert_unreached("from() conversion throws");
+  } catch(e) {
+    assert_true(e instanceof TypeError);
+    assert_equals(e.message,
+        "Failed to execute 'from' on 'Observable': @@iterator must be a callable.");
+  }
+}, "from(): Throws 'callable' error when @@iterator property is a " +
+   "non-callable primitive");
+
+
+
+
