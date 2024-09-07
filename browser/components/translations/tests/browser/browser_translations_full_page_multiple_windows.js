@@ -6,15 +6,6 @@
 
 
 
-function focusWindow(win) {
-  const promise = BrowserTestUtils.waitForEvent(win, "focus");
-  win.focus();
-  return promise;
-}
-
-
-
-
 add_task(async function test_browser_translations_full_page_multiple_windows() {
   const window1 = window;
   const testPage1 = await loadTestPage({
