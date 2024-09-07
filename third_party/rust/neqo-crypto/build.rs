@@ -103,10 +103,10 @@ fn get_bash() -> PathBuf {
 
     
     
-    match env::var("MOZILLABUILD") {
-        Ok(d) => PathBuf::from(d).join("msys").join("bin").join("bash.exe"),
-        Err(_) => PathBuf::from("bash"),
-    }
+    env::var("MOZILLABUILD").map_or_else(
+        |_| PathBuf::from("bash"),
+        |d| PathBuf::from(d).join("msys").join("bin").join("bash.exe"),
+    )
 }
 
 fn build_nss(dir: PathBuf) {

@@ -116,12 +116,9 @@ fn zero_rtt(
         client_resumed && server_resumed
     );
 
-    let mut early_data_accepted = true;
     
     
-    if server_org && !server_resumed {
-        early_data_accepted = false;
-    }
+    let early_data_accepted = !server_org || server_resumed;
     assert_eq!(
         client.tls_info().unwrap().early_data_accepted(),
         early_data_accepted

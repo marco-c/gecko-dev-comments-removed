@@ -17,7 +17,7 @@ use std::{
 use neqo_common::{qtrace, Datagram};
 use neqo_crypto::{AntiReplay, Cipher, PrivateKey, PublicKey, ZeroRttChecker};
 use neqo_transport::{
-    server::{ActiveConnectionRef, Server, ValidateAddress},
+    server::{ConnectionRef, Server, ValidateAddress},
     ConnectionIdGenerator, Output,
 };
 
@@ -39,7 +39,7 @@ const MAX_EVENT_DATA_SIZE: usize = 1024;
 pub struct Http3Server {
     server: Server,
     http3_parameters: Http3Parameters,
-    http3_handlers: HashMap<ActiveConnectionRef, HandlerRef>,
+    http3_handlers: HashMap<ConnectionRef, HandlerRef>,
     events: Http3ServerEvents,
 }
 
@@ -84,7 +84,7 @@ impl Http3Server {
         self.server.set_qlog_dir(dir);
     }
 
-    pub fn set_validation(&mut self, v: ValidateAddress) {
+    pub fn set_validation(&self, v: ValidateAddress) {
         self.server.set_validation(v);
     }
 
@@ -130,34 +130,24 @@ impl Http3Server {
     
     fn process_http3(&mut self, now: Instant) {
         qtrace!([self], "Process http3 internal.");
+        
+        
+        #[allow(clippy::mutable_key_type)]
         let mut active_conns = self.server.active_connections();
+        active_conns.extend(
+            self.http3_handlers
+                .iter()
+                .filter(|(_, handler)| handler.borrow_mut().should_be_processed())
+                .map(|(c, _)| c)
+                .cloned(),
+        );
 
-        
-        let mut http3_active: Vec<ActiveConnectionRef> = self
-            .http3_handlers
-            .iter()
-            .filter_map(|(conn, handler)| {
-                if handler.borrow_mut().should_be_processed() && !active_conns.contains(conn) {
-                    Some(conn)
-                } else {
-                    None
-                }
-            })
-            .cloned()
-            .collect();
-        
-        
-        active_conns.append(&mut http3_active);
-        active_conns.dedup();
-        active_conns
-            .iter()
-            .for_each(|conn| self.server.add_to_waiting(conn));
-        for mut conn in active_conns {
-            self.process_events(&mut conn, now);
+        for conn in active_conns {
+            self.process_events(&conn, now);
         }
     }
 
-    fn process_events(&mut self, conn: &mut ActiveConnectionRef, now: Instant) {
+    fn process_events(&mut self, conn: &ConnectionRef, now: Instant) {
         let mut remove = false;
         let http3_parameters = &self.http3_parameters;
         {
@@ -188,7 +178,7 @@ impl Http3Server {
                             conn,
                             handler,
                             now,
-                            &mut self.events,
+                            &self.events,
                         );
                     }
                     Http3ServerConnEvent::DataWritable { stream_info } => self
@@ -259,7 +249,7 @@ impl Http3Server {
 
     
     
-    pub fn events(&mut self) -> impl Iterator<Item = Http3ServerEvent> {
+    pub fn events(&self) -> impl Iterator<Item = Http3ServerEvent> {
         self.events.events()
     }
 
@@ -272,17 +262,18 @@ impl Http3Server {
     
     
     
-    pub fn next_event(&mut self) -> Option<Http3ServerEvent> {
+    #[must_use]
+    pub fn next_event(&self) -> Option<Http3ServerEvent> {
         self.events.next_event()
     }
 }
 fn prepare_data(
     stream_info: Http3StreamInfo,
     handler_borrowed: &mut RefMut<Http3ServerHandler>,
-    conn: &mut ActiveConnectionRef,
+    conn: &ConnectionRef,
     handler: &HandlerRef,
     now: Instant,
-    events: &mut Http3ServerEvents,
+    events: &Http3ServerEvents,
 ) {
     loop {
         let mut data = vec![0; MAX_EVENT_DATA_SIZE];
@@ -365,13 +356,13 @@ mod tests {
         create_server(http3params(DEFAULT_SETTINGS))
     }
 
-    fn assert_closed(hconn: &mut Http3Server, expected: &Error) {
+    fn assert_closed(hconn: &Http3Server, expected: &Error) {
         let err = CloseReason::Application(expected.code());
         let closed = |e| matches!(e, Http3ServerEvent::StateChange{ state: Http3State::Closing(e) | Http3State::Closed(e), .. } if e == err);
         assert!(hconn.events().any(closed));
     }
 
-    fn assert_connected(hconn: &mut Http3Server) {
+    fn assert_connected(hconn: &Http3Server) {
         let connected = |e| {
             matches!(
                 e,
@@ -384,7 +375,7 @@ mod tests {
         assert!(hconn.events().any(connected));
     }
 
-    fn assert_not_closed(hconn: &mut Http3Server) {
+    fn assert_not_closed(hconn: &Http3Server) {
         let closed = |e| {
             matches!(
                 e,
@@ -595,7 +586,7 @@ mod tests {
         peer_conn.stream_close_send(control).unwrap();
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpClosedCriticalStream);
+        assert_closed(&hconn, &Error::HttpClosedCriticalStream);
     }
 
     
@@ -610,7 +601,7 @@ mod tests {
         assert_eq!(sent, Ok(4));
         let out = neqo_trans_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpMissingSettings);
+        assert_closed(&hconn, &Error::HttpMissingSettings);
     }
 
     
@@ -622,7 +613,7 @@ mod tests {
         peer_conn.control_send(&[0x4, 0x6, 0x1, 0x40, 0x64, 0x7, 0x40, 0x64]);
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpFrameUnexpected);
+        assert_closed(&hconn, &Error::HttpFrameUnexpected);
     }
 
     fn priority_update_check_id(stream_id: StreamId, valid: bool) {
@@ -639,9 +630,9 @@ mod tests {
         hconn.process(out.as_dgram_ref(), now());
         
         if valid {
-            assert_not_closed(&mut hconn);
+            assert_not_closed(&hconn);
         } else {
-            assert_closed(&mut hconn, &Error::HttpId);
+            assert_closed(&hconn, &Error::HttpId);
         }
     }
 
@@ -680,7 +671,7 @@ mod tests {
 
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpFrameUnexpected);
+        assert_closed(&hconn, &Error::HttpFrameUnexpected);
     }
 
     
@@ -732,7 +723,7 @@ mod tests {
             }
         }
         assert!(stop_sending_event_found);
-        assert_not_closed(&mut hconn);
+        assert_not_closed(&hconn);
     }
 
     
@@ -746,7 +737,7 @@ mod tests {
         let out = peer_conn.process(None, now());
         let out = hconn.process(out.as_dgram_ref(), now());
         mem::drop(peer_conn.conn.process(out.as_dgram_ref(), now()));
-        assert_closed(&mut hconn, &Error::HttpStreamCreation);
+        assert_closed(&hconn, &Error::HttpStreamCreation);
     }
 
     
@@ -794,7 +785,7 @@ mod tests {
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
 
-        assert_not_closed(&mut hconn);
+        assert_not_closed(&hconn);
 
         
         sent = peer_conn.stream_send(control_stream, &[0x5]);
@@ -833,7 +824,7 @@ mod tests {
         hconn.process(out.as_dgram_ref(), now());
 
         
-        assert_closed(&mut hconn, &Error::HttpFrameUnexpected);
+        assert_closed(&hconn, &Error::HttpFrameUnexpected);
     }
 
     
@@ -848,7 +839,7 @@ mod tests {
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
 
-        assert_closed(&mut hconn, &Error::HttpFrame);
+        assert_closed(&hconn, &Error::HttpFrame);
     }
 
     const REQUEST_WITH_BODY: &[u8] = &[
@@ -910,11 +901,7 @@ mod tests {
                     assert!(!fin);
                     headers_frames += 1;
                 }
-                Http3ServerEvent::Data {
-                    mut stream,
-                    data,
-                    fin,
-                } => {
+                Http3ServerEvent::Data { stream, data, fin } => {
                     assert_eq!(data, REQUEST_BODY);
                     assert!(fin);
                     stream
@@ -956,7 +943,7 @@ mod tests {
         while let Some(event) = hconn.next_event() {
             match event {
                 Http3ServerEvent::Headers {
-                    mut stream,
+                    stream,
                     headers,
                     fin,
                 } => {
@@ -1034,7 +1021,7 @@ mod tests {
         while let Some(event) = hconn.next_event() {
             match event {
                 Http3ServerEvent::Headers {
-                    mut stream,
+                    stream,
                     headers,
                     fin,
                 } => {
@@ -1092,7 +1079,7 @@ mod tests {
             .unwrap();
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpClosedCriticalStream);
+        assert_closed(&hconn, &Error::HttpClosedCriticalStream);
     }
 
     
@@ -1105,7 +1092,7 @@ mod tests {
             .unwrap();
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpClosedCriticalStream);
+        assert_closed(&hconn, &Error::HttpClosedCriticalStream);
     }
 
     
@@ -1118,7 +1105,7 @@ mod tests {
             .unwrap();
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpClosedCriticalStream);
+        assert_closed(&hconn, &Error::HttpClosedCriticalStream);
     }
 
     
@@ -1132,7 +1119,7 @@ mod tests {
             .unwrap();
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpClosedCriticalStream);
+        assert_closed(&hconn, &Error::HttpClosedCriticalStream);
     }
 
     
@@ -1145,7 +1132,7 @@ mod tests {
             .unwrap();
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpClosedCriticalStream);
+        assert_closed(&hconn, &Error::HttpClosedCriticalStream);
     }
 
     
@@ -1158,7 +1145,7 @@ mod tests {
             .unwrap();
         let out = peer_conn.process(None, now());
         hconn.process(out.as_dgram_ref(), now());
-        assert_closed(&mut hconn, &Error::HttpClosedCriticalStream);
+        assert_closed(&hconn, &Error::HttpClosedCriticalStream);
     }
 
     

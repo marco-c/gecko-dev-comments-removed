@@ -42,7 +42,6 @@ const MAX_DATA_HEADER_SIZE_5_LIMIT: usize = MAX_DATA_HEADER_SIZE_5 + 9;
 
 
 
-
 #[derive(Debug, PartialEq)]
 enum MessageState {
     WaitingForHeaders,
@@ -103,7 +102,7 @@ impl MessageState {
 }
 
 #[derive(Debug)]
-pub(crate) struct SendMessage {
+pub struct SendMessage {
     state: MessageState,
     message_type: MessageType,
     stream_type: Http3StreamType,
@@ -314,7 +313,7 @@ impl SendStream for SendMessage {
 impl HttpSendStream for SendMessage {
     fn send_headers(&mut self, headers: &[Header], conn: &mut Connection) -> Res<()> {
         self.state.new_headers(headers, self.message_type)?;
-        let buf = SendMessage::encode(
+        let buf = Self::encode(
             &mut self.encoder.borrow_mut(),
             headers,
             conn,

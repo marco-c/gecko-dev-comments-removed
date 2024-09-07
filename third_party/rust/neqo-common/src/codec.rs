@@ -17,19 +17,19 @@ pub struct Decoder<'a> {
 impl<'a> Decoder<'a> {
     
     #[must_use]
-    pub fn new(buf: &[u8]) -> Decoder {
+    pub const fn new(buf: &[u8]) -> Decoder {
         Decoder { buf, offset: 0 }
     }
 
     
     #[must_use]
-    pub fn remaining(&self) -> usize {
+    pub const fn remaining(&self) -> usize {
         self.buf.len() - self.offset
     }
 
     
     #[must_use]
-    pub fn offset(&self) -> usize {
+    pub const fn offset(&self) -> usize {
         self.offset
     }
 
@@ -73,7 +73,8 @@ impl<'a> Decoder<'a> {
     }
 
     
-    pub fn peek_byte(&mut self) -> Option<u8> {
+    #[must_use]
+    pub const fn peek_byte(&self) -> Option<u8> {
         if self.remaining() < 1 {
             None
         } else {
@@ -170,7 +171,7 @@ impl<'a> Debug for Decoder<'a> {
 
 impl<'a> From<&'a [u8]> for Decoder<'a> {
     #[must_use]
-    fn from(buf: &'a [u8]) -> Decoder<'a> {
+    fn from(buf: &'a [u8]) -> Self {
         Decoder::new(buf)
     }
 }
@@ -180,7 +181,7 @@ where
     T: AsRef<[u8]>,
 {
     #[must_use]
-    fn from(buf: &'a T) -> Decoder<'a> {
+    fn from(buf: &'a T) -> Self {
         Decoder::new(buf.as_ref())
     }
 }
@@ -632,7 +633,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Varint value too large")]
-    fn encoded_length_oob() {
+    const fn encoded_length_oob() {
         _ = Encoder::varint_len(1 << 62);
     }
 

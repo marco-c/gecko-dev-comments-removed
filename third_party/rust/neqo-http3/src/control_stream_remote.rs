@@ -15,7 +15,7 @@ use crate::{
 
 
 #[derive(Debug)]
-pub(crate) struct ControlStreamRemote {
+pub struct ControlStreamRemote {
     stream_id: StreamId,
     frame_reader: FrameReader,
 }

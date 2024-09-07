@@ -15,7 +15,7 @@ pub const HTTP3_UNI_STREAM_TYPE_CONTROL: u64 = 0x0;
 
 
 #[derive(Debug)]
-pub(crate) struct ControlStreamLocal {
+pub struct ControlStreamLocal {
     stream: BufferedStream,
     
     outstanding_priority_update: VecDeque<StreamId>,

@@ -18,7 +18,7 @@ use neqo_common::qwarn;
 
 use crate::packet::PacketNumber;
 
-pub(crate) const MAX_PTO_COUNTS: usize = 16;
+pub const MAX_PTO_COUNTS: usize = 16;
 
 #[derive(Default, Clone)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
@@ -134,6 +134,14 @@ pub struct Stats {
     
     
     pub pto_ack: usize,
+    
+    pub pmtud_tx: usize,
+    
+    pub pmtud_ack: usize,
+    
+    pub pmtud_lost: usize,
+    
+    pub pmtud_change: usize,
 
     
     pub resumed: bool,
@@ -205,6 +213,11 @@ impl Debug for Stats {
             f,
             "  tx: {} lost {} lateack {} ptoack {}",
             self.packets_tx, self.lost, self.late_ack, self.pto_ack
+        )?;
+        writeln!(
+            f,
+            "  pmtud: {} sent {} acked {} lost {} change",
+            self.pmtud_tx, self.pmtud_ack, self.pmtud_lost, self.pmtud_change
         )?;
         writeln!(f, "  resumed: {}", self.resumed)?;
         writeln!(f, "  frames rx:")?;

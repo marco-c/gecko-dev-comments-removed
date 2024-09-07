@@ -10,7 +10,7 @@ use std::{
     cell::RefCell,
     fmt::{self, Display},
     mem,
-    net::{IpAddr, SocketAddr},
+    net::SocketAddr,
     rc::Rc,
     time::{Duration, Instant},
 };
@@ -25,6 +25,7 @@ use crate::{
     ecn::{EcnCount, EcnInfo},
     frame::{FRAME_TYPE_PATH_CHALLENGE, FRAME_TYPE_PATH_RESPONSE, FRAME_TYPE_RETIRE_CONNECTION_ID},
     packet::PacketBuilder,
+    pmtud::Pmtud,
     recovery::{RecoveryToken, SentPacket},
     rtt::RttEstimate,
     sender::PacketSender,
@@ -33,14 +34,6 @@ use crate::{
     Stats,
 };
 
-
-
-
-
-
-pub const PATH_MTU_V6: usize = 1337;
-
-pub const PATH_MTU_V4: usize = PATH_MTU_V6 + 20;
 
 const MAX_PATH_PROBES: usize = 3;
 
@@ -211,9 +204,8 @@ impl Paths {
     #[must_use]
     fn select_primary(&mut self, path: &PathRef) -> Option<PathRef> {
         qdebug!([path.borrow()], "set as primary path");
-        let old_path = self.primary.replace(Rc::clone(path)).map(|old| {
+        let old_path = self.primary.replace(Rc::clone(path)).inspect(|old| {
             old.borrow_mut().set_primary(false);
-            old
         });
 
         
@@ -276,6 +268,7 @@ impl Paths {
         if primary_failed {
             self.primary = None;
             
+            #[allow(clippy::option_if_let_else)]
             if let Some(fallback) = self
                 .paths
                 .iter()
@@ -291,6 +284,10 @@ impl Paths {
                 false
             }
         } else {
+            
+            if let Some(path) = self.primary() {
+                path.borrow_mut().pmtud_mut().maybe_fire_raise_timer(now);
+            }
             true
         }
     }
@@ -437,13 +434,13 @@ impl Paths {
         self.to_retire.retain(|&seqno| seqno != acked);
     }
 
-    pub fn lost_ack_frequency(&mut self, lost: &AckRate) {
+    pub fn lost_ack_frequency(&self, lost: &AckRate) {
         if let Some(path) = self.primary() {
             path.borrow_mut().lost_ack_frequency(lost);
         }
     }
 
-    pub fn acked_ack_frequency(&mut self, acked: &AckRate) {
+    pub fn acked_ack_frequency(&self, acked: &AckRate) {
         if let Some(path) = self.primary() {
             path.borrow_mut().acked_ack_frequency(acked);
         }
@@ -494,7 +491,7 @@ enum ProbeState {
 
 impl ProbeState {
     
-    fn probe_needed(&self) -> bool {
+    const fn probe_needed(&self) -> bool {
         matches!(self, Self::ProbeNeeded { .. })
     }
 }
@@ -534,8 +531,6 @@ pub struct Path {
     rtt: RttEstimate,
     
     sender: PacketSender,
-    
-    ttl: u8,
 
     
     
@@ -560,7 +555,7 @@ impl Path {
         qlog: NeqoQlog,
         now: Instant,
     ) -> Self {
-        let mut sender = PacketSender::new(cc, pacing, Self::mtu_by_addr(remote.ip()), now);
+        let mut sender = PacketSender::new(cc, pacing, Pmtud::new(remote.ip()), now);
         sender.set_qlog(qlog.clone());
         Self {
             local,
@@ -573,7 +568,6 @@ impl Path {
             challenge: None,
             rtt: RttEstimate::default(),
             sender,
-            ttl: 64, 
             received_bytes: 0,
             sent_bytes: 0,
             ecn_info: EcnInfo::default(),
@@ -591,12 +585,12 @@ impl Path {
     }
 
     
-    pub fn is_primary(&self) -> bool {
+    pub const fn is_primary(&self) -> bool {
         self.primary
     }
 
     
-    pub fn is_temporary(&self) -> bool {
+    pub const fn is_temporary(&self) -> bool {
         self.remote_cid.is_none()
     }
 
@@ -655,16 +649,14 @@ impl Path {
         }
     }
 
-    fn mtu_by_addr(addr: IpAddr) -> usize {
-        match addr {
-            IpAddr::V4(_) => PATH_MTU_V4,
-            IpAddr::V6(_) => PATH_MTU_V6,
-        }
+    
+    pub fn plpmtu(&self) -> usize {
+        self.pmtud().plpmtu()
     }
 
     
-    pub fn mtu(&self) -> usize {
-        Self::mtu_by_addr(self.remote.ip())
+    pub fn pmtud(&self) -> &Pmtud {
+        self.sender.pmtud()
     }
 
     
@@ -711,21 +703,21 @@ impl Path {
         
         let tos = self.tos();
         self.ecn_info.on_packet_sent();
-        Datagram::new(self.local, self.remote, tos, Some(self.ttl), payload)
+        Datagram::new(self.local, self.remote, tos, payload)
     }
 
     
-    pub fn local_address(&self) -> SocketAddr {
+    pub const fn local_address(&self) -> SocketAddr {
         self.local
     }
 
     
-    pub fn remote_address(&self) -> SocketAddr {
+    pub const fn remote_address(&self) -> SocketAddr {
         self.remote
     }
 
     
-    pub fn is_valid(&self) -> bool {
+    pub const fn is_valid(&self) -> bool {
         self.validated.is_some()
     }
 
@@ -772,7 +764,7 @@ impl Path {
     }
 
     
-    pub fn has_probe(&self) -> bool {
+    pub const fn has_probe(&self) -> bool {
         self.challenge.is_some() || self.state.probe_needed()
     }
 
@@ -786,7 +778,6 @@ impl Path {
         if builder.remaining() < 9 {
             return false;
         }
-
         
         let resp_sent = if let Some(challenge) = self.challenge.take() {
             qtrace!([self], "Responding to path challenge {}", hex(challenge));
@@ -855,13 +846,13 @@ impl Path {
                 self.probe();
             }
         }
-        if let ProbeState::Failed = self.state {
+        if matches!(self.state, ProbeState::Failed) {
             
             false
         } else if self.primary {
             
             true
-        } else if let ProbeState::Valid = self.state {
+        } else if matches!(self.state, ProbeState::Valid) {
             
             
             
@@ -886,7 +877,7 @@ impl Path {
     }
 
     
-    pub fn rtt(&self) -> &RttEstimate {
+    pub const fn rtt(&self) -> &RttEstimate {
         &self.rtt
     }
 
@@ -896,7 +887,12 @@ impl Path {
     }
 
     
-    pub fn sender(&self) -> &PacketSender {
+    pub fn pmtud_mut(&mut self) -> &mut Pmtud {
+        self.sender.pmtud_mut()
+    }
+
+    
+    pub const fn sender(&self) -> &PacketSender {
         &self.sender
     }
 
@@ -916,7 +912,7 @@ impl Path {
                     m,
                     ack_ratio,
                     self.sender.cwnd(),
-                    self.mtu(),
+                    self.plpmtu(),
                     self.rtt.estimate(),
                 )
             },
@@ -962,7 +958,7 @@ impl Path {
             );
             stats.rtt_init_guess = true;
             self.rtt.update(
-                &mut self.qlog,
+                &self.qlog,
                 now - sent.time_sent(),
                 Duration::new(0, 0),
                 false,
@@ -979,6 +975,7 @@ impl Path {
         acked_pkts: &[SentPacket],
         ack_ecn: Option<EcnCount>,
         now: Instant,
+        stats: &mut Stats,
     ) {
         debug_assert!(self.is_primary());
 
@@ -988,11 +985,12 @@ impl Path {
                 .sender
                 .on_ecn_ce_received(acked_pkts.first().expect("must be there"));
             if cwnd_reduced {
-                self.rtt.update_ack_delay(self.sender.cwnd(), self.mtu());
+                self.rtt.update_ack_delay(self.sender.cwnd(), self.plpmtu());
             }
         }
 
-        self.sender.on_packets_acked(acked_pkts, &self.rtt, now);
+        self.sender
+            .on_packets_acked(acked_pkts, &self.rtt, now, stats);
     }
 
     
@@ -1001,6 +999,8 @@ impl Path {
         prev_largest_acked_sent: Option<Instant>,
         space: PacketNumberSpace,
         lost_packets: &[SentPacket],
+        stats: &mut Stats,
+        now: Instant,
     ) {
         debug_assert!(self.is_primary());
         let cwnd_reduced = self.sender.on_packets_lost(
@@ -1008,9 +1008,11 @@ impl Path {
             prev_largest_acked_sent,
             self.rtt.pto(space), 
             lost_packets,
+            stats,
+            now,
         );
         if cwnd_reduced {
-            self.rtt.update_ack_delay(self.sender.cwnd(), self.mtu());
+            self.rtt.update_ack_delay(self.sender.cwnd(), self.plpmtu());
         }
     }
 
@@ -1028,7 +1030,7 @@ impl Path {
                         
                         
                         
-                        self.mtu() * 5
+                        self.plpmtu() * 5
                     } else {
                         limit
                     };

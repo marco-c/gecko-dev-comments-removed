@@ -16,7 +16,7 @@ use neqo_crypto::{
     Aead, AllowZeroRtt, AuthenticationStatus, ResumptionToken,
 };
 use neqo_transport::{
-    server::{ActiveConnectionRef, Server, ValidateAddress},
+    server::{ConnectionRef, Server, ValidateAddress},
     Connection, ConnectionEvent, ConnectionParameters, State,
 };
 use test_fixture::{default_client, now, CountingConnectionIdGenerator};
@@ -41,19 +41,20 @@ pub fn default_server() -> Server {
 }
 
 
-pub fn connected_server(server: &mut Server) -> ActiveConnectionRef {
+pub fn connected_server(server: &Server) -> ConnectionRef {
+    
+    #[allow(clippy::mutable_key_type)]
     let server_connections = server.active_connections();
     
     let mut confirmed = server_connections
         .iter()
-        .filter(|c: &&ActiveConnectionRef| *c.borrow().state() == State::Confirmed);
+        .filter(|c: &&ConnectionRef| *c.borrow().state() == State::Confirmed);
     let c = confirmed.next().expect("one confirmed");
-    assert!(confirmed.next().is_none(), "only one confirmed");
     c.clone()
 }
 
 
-pub fn connect(client: &mut Connection, server: &mut Server) -> ActiveConnectionRef {
+pub fn connect(client: &mut Connection, server: &mut Server) -> ConnectionRef {
     server.set_validation(ValidateAddress::Never);
 
     assert_eq!(*client.state(), State::Init);

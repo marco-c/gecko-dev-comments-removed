@@ -386,7 +386,7 @@ fn low() {
     
     
     let stats_before = server.stats().frame_tx;
-    server.send_ticket(now, &[0; 2048]).unwrap();
+    server.send_ticket(now, &vec![0; server.plpmtu()]).unwrap();
     mem::drop(server.process_output(now));
     let stats_after = server.stats().frame_tx;
     assert_eq!(stats_after.crypto, stats_before.crypto + 1);
