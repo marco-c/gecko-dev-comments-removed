@@ -131,10 +131,10 @@ struct sctp_block_entry {
 };
 
 struct sctp_timewait {
-	uint32_t tv_sec_at_expire;	
-        uint32_t v_tag;		        
-        uint16_t lport;                 
-        uint16_t rport;                 
+	time_t tv_sec_at_expire;	
+	uint32_t v_tag;		        
+	uint16_t lport;                 
+	uint16_t rport;                 
 };
 
 struct sctp_tagblock {
@@ -347,7 +347,7 @@ struct sctp_base_info {
 
 
 struct sctp_pcb {
-	unsigned int time_of_secret_change;	
+	time_t time_of_secret_change;	
 
 	uint32_t secret_key[SCTP_HOW_MANY_SECRETS][SCTP_NUMBER_OF_SECRETS];
 	unsigned int size_of_a_cookie;

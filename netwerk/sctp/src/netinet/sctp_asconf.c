@@ -32,14 +32,6 @@
 
 
 
-#if defined(_WIN32)
-
-
-#if !defined(_CRT_RAND_S) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-#define _CRT_RAND_S
-#endif
-#endif
-
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_sysctl.h>
