@@ -252,10 +252,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   void ShutdownResourceAdaptationQueue();
 
-  void CheckForAnimatedContent(const VideoFrame& frame,
-                               int64_t time_when_posted_in_ms)
-      RTC_RUN_ON(encoder_queue_);
-
   void RequestEncoderSwitch() RTC_RUN_ON(encoder_queue_);
 
   
@@ -346,22 +342,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(encoder_queue_);
   bool accumulated_update_rect_is_valid_ RTC_GUARDED_BY(encoder_queue_) = true;
 
-  
-  absl::optional<VideoFrame::UpdateRect> last_update_rect_
-      RTC_GUARDED_BY(encoder_queue_);
-  Timestamp animation_start_time_ RTC_GUARDED_BY(encoder_queue_) =
-      Timestamp::PlusInfinity();
-  bool cap_resolution_due_to_video_content_ RTC_GUARDED_BY(encoder_queue_) =
-      false;
-  
-  
-  enum class ExpectResizeState {
-    kNoResize,              
-    kResize,                
-    kFirstFrameAfterResize  
-  } expect_resize_state_ RTC_GUARDED_BY(encoder_queue_) =
-      ExpectResizeState::kNoResize;
-
   FecControllerOverride* fec_controller_override_
       RTC_GUARDED_BY(encoder_queue_) = nullptr;
   absl::optional<int64_t> last_parameters_update_ms_
@@ -397,26 +377,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   std::vector<VideoFrameType> next_frame_types_ RTC_GUARDED_BY(encoder_queue_);
 
   FrameEncodeMetadataWriter frame_encode_metadata_writer_{this};
-
-  struct AutomaticAnimationDetectionExperiment {
-    bool enabled = false;
-    int min_duration_ms = 2000;
-    double min_area_ratio = 0.8;
-    int min_fps = 10;
-    std::unique_ptr<StructParametersParser> Parser() {
-      return StructParametersParser::Create(
-          "enabled", &enabled,                  
-          "min_duration_ms", &min_duration_ms,  
-          "min_area_ratio", &min_area_ratio,    
-          "min_fps", &min_fps);
-    }
-  };
-
-  AutomaticAnimationDetectionExperiment
-  ParseAutomatincAnimationDetectionFieldTrial() const;
-
-  AutomaticAnimationDetectionExperiment
-      automatic_animation_detection_experiment_ RTC_GUARDED_BY(encoder_queue_);
 
   
   VideoStreamInputStateProvider input_state_provider_;
@@ -471,11 +431,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   
   
-  
-  
   absl::optional<VideoSourceRestrictions> latest_restrictions_
-      RTC_GUARDED_BY(encoder_queue_);
-  absl::optional<VideoSourceRestrictions> animate_restrictions_
       RTC_GUARDED_BY(encoder_queue_);
 
   
