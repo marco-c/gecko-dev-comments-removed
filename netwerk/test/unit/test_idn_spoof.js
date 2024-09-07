@@ -326,10 +326,10 @@ let testCases = [
   ["xn--googl-3we.xn--3e0b707e", "xn--googl-3we.\ud55c\uad6d", kSafe],
 
   
-  ["xn--rsa2568fvxya.com", "\ud55c\u0307\uae00.com", kUnsafe, "DISABLED"],  
-  ["xn--rsa0336bjom.com", "\u6f22\u0307\u5b57.com", kUnsafe, "DISABLED"],  
+  ["xn--rsa2568fvxya.com", "\ud55c\u0307\uae00.com", kUnsafe],  
+  ["xn--rsa0336bjom.com", "\u6f22\u0307\u5b57.com", kUnsafe],  
   
-  ["xn--lsa922apb7a6do.com", "\u0928\u093e\u0917\u0930\u0940\u0301.com", kUnsafe, "DISABLED"],
+  ["xn--lsa922apb7a6do.com", "\u0928\u093e\u0917\u0930\u0940\u0301.com", kUnsafe],
 
   
   
