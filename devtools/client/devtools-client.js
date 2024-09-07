@@ -792,6 +792,14 @@ DevToolsClient.prototype = {
     return this._transport;
   },
 
+  
+
+
+
+  get isLocalClient() {
+    return !!this._transport.isLocalTransport;
+  },
+
   dumpPools() {
     for (const pool of this._pools) {
       console.log(`%c${pool.actorID}`, "font-weight: bold;", [

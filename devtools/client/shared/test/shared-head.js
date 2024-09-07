@@ -2392,11 +2392,35 @@ async function unregisterServiceWorker(workerUrl) {
 
 
 async function toggleJsTracer(toolbox) {
-  const { isTracingEnabled } = toolbox.commands.tracerCommand;
+  const { tracerCommand } = toolbox.commands;
+  const { isTracingEnabled } = tracerCommand;
   const { logMethod, traceOnNextInteraction, traceOnNextLoad } =
     toolbox.commands.tracerCommand.getTracingOptions();
+
+  
+  
+  const shouldWaitForToggle = !traceOnNextInteraction && !traceOnNextLoad;
+  let onTracingToggled;
+  if (shouldWaitForToggle) {
+    onTracingToggled = new Promise(resolve => {
+      tracerCommand.on("toggle", async function listener() {
+        
+        if (tracerCommand.isTracingActive == isTracingEnabled) {
+          return;
+        }
+        tracerCommand.off("toggle", listener);
+        resolve();
+      });
+    });
+  }
+
   const toolbarButton = toolbox.doc.getElementById("command-button-jstracer");
   toolbarButton.click();
+
+  if (shouldWaitForToggle) {
+    info("Waiting for the tracer to be active");
+    await onTracingToggled;
+  }
 
   const {
     TRACER_LOG_METHODS,

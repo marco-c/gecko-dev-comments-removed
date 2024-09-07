@@ -30,6 +30,10 @@ function initialState() {
 
     
     selectedTraceIndex: null,
+
+    
+    localPlatformVersion: null,
+    remotePlatformVersion: null,
   };
 }
 
@@ -125,6 +129,13 @@ function update(state = initialState(), action) {
       return {
         ...state,
         selectedTrace: null,
+      };
+    }
+    case "SET_RUNTIME_VERSIONS": {
+      return {
+        ...state,
+        localPlatformVersion: action.localPlatformVersion,
+        remotePlatformVersion: action.remotePlatformVersion,
       };
     }
   }

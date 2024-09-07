@@ -230,6 +230,14 @@ class BaseTargetActor extends Actor {
 
 
 
+  isTracerFeatureEnabled = false;
+
+  
+
+
+
+
+
 
 
 
@@ -238,6 +246,9 @@ class BaseTargetActor extends Actor {
 
 
   updateTargetConfiguration(options = {}, calledFromDocumentCreation = false) {
+    if (typeof options.isTracerFeatureEnabled === "boolean") {
+      this.isTracerFeatureEnabled = options.isTracerFeatureEnabled;
+    }
     
     if (options.tracerOptions) {
       

@@ -32,6 +32,8 @@ const SUPPORTED_OPTIONS = {
   
   customUserAgent: true,
   
+  isTracerFeatureEnabled: true,
+  
   javascriptEnabled: true,
   
   overrideDPPX: true,

@@ -39,6 +39,12 @@ LocalDebuggerTransport.prototype = {
 
 
 
+  isLocalTransport: true,
+
+  
+
+
+
   send(packet) {
     const serial = this._serial.count++;
     if (flags.wantLogging) {
