@@ -197,6 +197,12 @@ class LookAndFeel {
 
 
 
+    GTKCSDTransparencyAvailable,
+
+    
+
+
+
     GTKCSDMinimizeButton,
 
     
