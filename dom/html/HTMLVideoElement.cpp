@@ -79,7 +79,6 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(HTMLVideoElement,
 NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLVideoElement)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(HTMLVideoElement)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mVideoFrameRequestManager)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualCloneTarget)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualCloneTargetPromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualCloneSource)
@@ -88,7 +87,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(HTMLMediaElement)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLVideoElement,
                                                   HTMLMediaElement)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVideoFrameRequestManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVisualCloneTarget)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVisualCloneTargetPromise)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVisualCloneSource)
@@ -153,16 +151,6 @@ void HTMLVideoElement::Invalidate(ImageSizeChanged aImageSizeChanged,
         mVisualCloneTarget->GetVideoFrameContainer();
     if (container) {
       container->Invalidate();
-    }
-  }
-
-  if (mVideoFrameRequestManager.IsEmpty()) {
-    return;
-  }
-
-  if (RefPtr<ImageContainer> imageContainer = GetImageContainer()) {
-    if (imageContainer->HasCurrentImage()) {
-      OwnerDoc()->ScheduleVideoFrameCallbacks(this);
     }
   }
 }
@@ -687,114 +675,6 @@ void HTMLVideoElement::OnVisibilityChange(Visibility aNewVisibility) {
     mCanAutoplayFlag = true;
     return;
   }
-}
-
-void HTMLVideoElement::ResetState() {
-  HTMLMediaElement::ResetState();
-  mLastPresentedFrameID = layers::kContainerFrameID_Invalid;
-}
-
-void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
-    const TimeStamp& aNowTime, const Maybe<TimeStamp>& aNextTickTime,
-    VideoFrameCallbackMetadata& aMd, nsTArray<VideoFrameRequest>& aCallbacks) {
-  MOZ_ASSERT(aCallbacks.IsEmpty());
-
-  double currentTime = CurrentTime();
-  if (currentTime <= 0.0) {
-    return;
-  }
-
-  
-  
-  AutoTArray<ImageContainer::OwningImage, 4> images;
-  if (RefPtr<layers::ImageContainer> container = GetImageContainer()) {
-    container->GetCurrentImages(&images);
-  }
-
-  
-  
-  if (images.IsEmpty()) {
-    return;
-  }
-
-  gfx::IntSize frameSize;
-  ImageContainer::FrameID frameID = layers::kContainerFrameID_Invalid;
-  bool composited = false;
-
-  
-  
-  
-  
-  for (const auto& image : images) {
-    if (image.mTimeStamp <= aNowTime) {
-      
-      
-      
-      frameSize = image.mImage->GetSize();
-      frameID = image.mFrameID;
-      composited = true;
-    } else if (!aNextTickTime || image.mTimeStamp <= aNextTickTime.ref()) {
-      
-      
-      
-      
-      frameSize = image.mImage->GetSize();
-      frameID = image.mFrameID;
-      composited = false;
-    } else {
-      
-      break;
-    }
-  }
-
-  
-  
-  if (frameID == layers::kContainerFrameID_Invalid ||
-      frameID == mLastPresentedFrameID) {
-    return;
-  }
-
-  
-  
-  
-  if (composited) {
-    aMd.mExpectedDisplayTime = aMd.mPresentationTime;
-  }
-
-  MOZ_ASSERT(!frameSize.IsEmpty());
-
-  aMd.mWidth = frameSize.width;
-  aMd.mHeight = frameSize.height;
-  aMd.mMediaTime = currentTime;
-
-  
-  
-  
-  
-  
-  aMd.mPresentedFrames = frameID;
-
-  
-  
-  
-
-  mLastPresentedFrameID = frameID;
-  mVideoFrameRequestManager.Take(aCallbacks);
-}
-
-uint32_t HTMLVideoElement::RequestVideoFrameCallback(
-    VideoFrameRequestCallback& aCallback, ErrorResult& aRv) {
-  uint32_t handle = 0;
-  aRv = mVideoFrameRequestManager.Schedule(aCallback, &handle);
-  return handle;
-}
-
-bool HTMLVideoElement::IsVideoFrameCallbackCancelled(uint32_t aHandle) {
-  return mVideoFrameRequestManager.IsCanceled(aHandle);
-}
-
-void HTMLVideoElement::CancelVideoFrameCallback(uint32_t aHandle) {
-  mVideoFrameRequestManager.Cancel(aHandle);
 }
 
 }  
