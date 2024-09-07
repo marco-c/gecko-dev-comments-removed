@@ -5,6 +5,7 @@
 
 
 #include "nsISupports.idl"
+#include "nsIClipboard.idl"
 #include "domstubs.idl"
 
 %{C++
@@ -377,7 +378,7 @@ interface nsIEditor  : nsISupports
 
 
   [can_run_script]
-  void paste(in long aClipboardType);
+  void paste(in nsIClipboard_ClipboardType aClipboardType);
 
   
 
@@ -388,7 +389,7 @@ interface nsIEditor  : nsISupports
   
 
 
-  boolean canPaste(in long aClipboardType);
+  boolean canPaste(in nsIClipboard_ClipboardType aClipboardType);
 
   
 

@@ -6151,7 +6151,7 @@ nsresult EventStateManager::HandleMiddleClickPaste(
   
   
 
-  int32_t clipboardType = nsIClipboard::kGlobalClipboard;
+  nsIClipboard::ClipboardType clipboardType = nsIClipboard::kGlobalClipboard;
   nsCOMPtr<nsIClipboard> clipboardService =
       do_GetService("@mozilla.org/widget/clipboard;1");
   if (clipboardService && clipboardService->IsClipboardTypeSupported(
@@ -6162,8 +6162,8 @@ nsresult EventStateManager::HandleMiddleClickPaste(
   
   
   
-  if (!nsCopySupport::FireClipboardEvent(ePaste, clipboardType, aPresShell,
-                                         selection)) {
+  if (!nsCopySupport::FireClipboardEvent(ePaste, Some(clipboardType),
+                                         aPresShell, selection)) {
     *aStatus = nsEventStatus_eConsumeNoDefault;
     return NS_OK;
   }

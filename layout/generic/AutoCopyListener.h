@@ -43,10 +43,12 @@ class AutoCopyListener final {
  private:
 #ifdef XP_MACOSX
   
-  static const int16_t sClipboardID = nsIClipboard::kSelectionCache;
+  static const nsIClipboard::ClipboardType sClipboardID =
+      nsIClipboard::kSelectionCache;
 #else
   
-  static const int16_t sClipboardID = nsIClipboard::kSelectionClipboard;
+  static const nsIClipboard::ClipboardType sClipboardID =
+      nsIClipboard::kSelectionClipboard;
 #endif
 };
 

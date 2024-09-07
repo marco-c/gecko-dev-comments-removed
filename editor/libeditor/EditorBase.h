@@ -29,6 +29,7 @@
 #include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
+#include "nsIClipboard.h"            
 #include "nsIContentInlines.h"       
 #include "nsIEditor.h"               
 #include "nsISelectionController.h"  
@@ -626,7 +627,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  virtual bool CanPaste(int32_t aClipboardType) const = 0;
+  virtual bool CanPaste(nsIClipboard::ClipboardType aClipboardType) const = 0;
 
   
 
@@ -757,7 +758,8 @@ class EditorBase : public nsIEditor,
 
   enum class DispatchPasteEvent { No, Yes };
   MOZ_CAN_RUN_SCRIPT nsresult
-  PasteAsAction(int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
+  PasteAsAction(nsIClipboard::ClipboardType aClipboardType,
+                DispatchPasteEvent aDispatchPasteEvent,
                 nsIPrincipal* aPrincipal = nullptr);
 
   
@@ -789,9 +791,10 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult PasteAsQuotationAsAction(
-      int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
-      nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PasteAsQuotationAsAction(nsIClipboard::ClipboardType aClipboardType,
+                           DispatchPasteEvent aDispatchPasteEvent,
+                           nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -1165,7 +1168,8 @@ class EditorBase : public nsIEditor,
 
 
     void InitializeDataTransferWithClipboard(
-        SettingDataTransfer aSettingDataTransfer, int32_t aClipboardType);
+        SettingDataTransfer aSettingDataTransfer,
+        nsIClipboard::ClipboardType aClipboardType);
     dom::DataTransfer* GetDataTransfer() const { return mDataTransfer; }
 
     
@@ -2712,22 +2716,25 @@ class EditorBase : public nsIEditor,
     DoDefault,
   };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<ClipboardEventResult, nsresult>
-  DispatchClipboardEventAndUpdateClipboard(EventMessage aEventMessage,
-                                           int32_t aClipboardType);
+  DispatchClipboardEventAndUpdateClipboard(
+      EventMessage aEventMessage,
+      mozilla::Maybe<nsIClipboard::ClipboardType> aClipboardType);
 
   
 
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePaste(
-      AutoEditActionDataSetter& aEditActionData, int32_t aClipboardType) = 0;
+      AutoEditActionDataSetter& aEditActionData,
+      nsIClipboard::ClipboardType aClipboardType) = 0;
 
   
 
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePasteAsQuotation(
-      AutoEditActionDataSetter& aEditActionData, int32_t aClipboardType) = 0;
+      AutoEditActionDataSetter& aEditActionData,
+      nsIClipboard::ClipboardType aClipboardType) = 0;
 
   
 
