@@ -524,7 +524,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
   
   
-  if (!net_IsValidHostName(host)) {
+  if (!net_IsValidDNSHost(host)) {
     return NS_ERROR_UNKNOWN_HOST;
   }
 

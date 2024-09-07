@@ -232,7 +232,7 @@ nsresult HTMLDNSPrefetch::Prefetch(
     
     
     if (!hostname.IsEmpty() &&
-        net_IsValidHostName(NS_ConvertUTF16toUTF8(hostname))) {
+        net_IsValidDNSHost(NS_ConvertUTF16toUTF8(hostname))) {
       
       if (gNeckoChild) {
         gNeckoChild->SendHTMLDNSPrefetch(
@@ -315,7 +315,7 @@ nsresult HTMLDNSPrefetch::CancelPrefetch(
     
     
     if (!hostname.IsEmpty() &&
-        net_IsValidHostName(NS_ConvertUTF16toUTF8(hostname))) {
+        net_IsValidDNSHost(NS_ConvertUTF16toUTF8(hostname))) {
       
       if (gNeckoChild && gNeckoChild->CanSend()) {
         gNeckoChild->SendCancelHTMLDNSPrefetch(
