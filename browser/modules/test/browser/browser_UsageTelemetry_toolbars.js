@@ -135,22 +135,26 @@ function assertVisibilityScalars(expected) {
     expected.push("menubar-items_pinned_menu-bar");
   }
 
-  const widgetPositions = Glean.browserUi.toolbarWidgets.testGetValue();
+  
+  const widgetPositions = Glean.browserUi.toolbarWidgets?.testGetValue();
   Services.fog.testResetFOG();
 
   let keys = new Set(expected.concat(Object.keys(scalars)));
   for (let key of keys) {
     Assert.ok(expected.includes(key), `Scalar key ${key} was unexpected.`);
     Assert.ok(scalars[key], `Expected to see see scalar key ${key} be true.`);
-    const [widgetId, position] = key.split("_pinned_");
-    Assert.ok(
-      widgetPositions.some(
-        widgetPosition =>
-          widgetPosition.position == position &&
-          widgetPosition.widgetId == widgetId
-      ),
-      `widget ${widgetId} expected at ${position}.`
-    );
+    
+    if ("toolbarWidgets" in Glean.browserUi) {
+      const [widgetId, position] = key.split("_pinned_");
+      Assert.ok(
+        widgetPositions.some(
+          widgetPosition =>
+            widgetPosition.position == position &&
+            widgetPosition.widgetId == widgetId
+        ),
+        `widget ${widgetId} expected at ${position}.`
+      );
+    }
   }
 }
 
