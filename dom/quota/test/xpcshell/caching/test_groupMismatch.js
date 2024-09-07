@@ -38,6 +38,18 @@ async function testSteps() {
   
   installPackage("groupMismatch_profile");
 
+  info("Initializing");
+
+  request = init();
+  await requestFinished(request);
+
+  info("Initializing temporary storage");
+
+  request = initTemporaryStorage();
+  await requestFinished(request);
+
+  info("Getting origin usage");
+
   request = getOriginUsage(principal,  true);
   await requestFinished(request);
 

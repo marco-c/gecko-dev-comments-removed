@@ -1459,9 +1459,9 @@ nsresult GetOriginUsageOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   if (mFromMemory) {
     
     
-    
-    QM_TRY(MOZ_TO_RESULT(
-        aQuotaManager.EnsureTemporaryStorageIsInitializedInternal()));
+    if (!aQuotaManager.IsTemporaryStorageInitializedInternal()) {
+      return NS_OK;
+    }
 
     
     
