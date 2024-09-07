@@ -206,29 +206,10 @@ class FetchService final : public nsIObserver {
   nsresult UnregisterNetworkObserver();
 
   
-  void IncrementKeepAliveRequestCount(const nsACString& aOrigin);
-  void DecrementKeepAliveRequestCount(const nsACString& aOrigin);
-
-  
-  
-  
-  
-  
-  
-  
-  bool DoesExceedsKeepaliveResourceLimits(const nsACString& aOrigin);
-
-  
   nsTHashMap<nsRefPtrHashKey<FetchServicePromises>, RefPtr<FetchInstance> >
       mFetchInstanceTable;
   bool mObservingNetwork{false};
   bool mOffline{false};
-
-  
-  nsTHashMap<nsCStringHashKey, uint32_t> mPendingKeepAliveRequestsPerOrigin;
-
-  
-  uint32_t mTotalKeepAliveRequests{0};
 };
 
 }  
