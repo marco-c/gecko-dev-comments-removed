@@ -20,6 +20,11 @@ impl MsgHdr for libc::msghdr {
 
     fn set_control_len(&mut self, len: usize) {
         self.msg_controllen = len as _;
+        if len == 0 {
+            
+            
+            self.msg_control = std::ptr::null_mut();
+        }
     }
 
     fn control_len(&self) -> usize {

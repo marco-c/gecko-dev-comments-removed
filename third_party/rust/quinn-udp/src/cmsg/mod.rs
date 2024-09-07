@@ -124,6 +124,10 @@ pub(crate) trait MsgHdr {
 
     fn cmsg_nxt_hdr(&self, cmsg: &Self::ControlMessage) -> *mut Self::ControlMessage;
 
+    
+    
+    
+    
     fn set_control_len(&mut self, len: usize);
 
     fn control_len(&self) -> usize;
