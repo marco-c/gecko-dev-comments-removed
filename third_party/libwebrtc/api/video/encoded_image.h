@@ -200,6 +200,16 @@ class RTC_EXPORT EncodedImage {
     at_target_quality_ = at_target_quality;
   }
 
+  
+  
+  bool IsSteadyStateRefreshFrame() const {
+    return is_steady_state_refresh_frame_;
+  }
+
+  void SetIsSteadyStateRefreshFrame(bool refresh_frame) {
+    is_steady_state_refresh_frame_ = refresh_frame;
+  }
+
   webrtc::VideoFrameType FrameType() const { return _frameType; }
 
   void SetFrameType(webrtc::VideoFrameType frame_type) {
@@ -260,6 +270,9 @@ class RTC_EXPORT EncodedImage {
   bool retransmission_allowed_ = true;
   
   bool at_target_quality_ = false;
+  
+  
+  bool is_steady_state_refresh_frame_ = false;
 };
 
 }  
