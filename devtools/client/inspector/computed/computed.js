@@ -57,6 +57,7 @@ const L10N_TWISTY_EXPAND_LABEL = STYLE_INSPECTOR_L10N.getStr(
 const L10N_TWISTY_COLLAPSE_LABEL = STYLE_INSPECTOR_L10N.getStr(
   "rule.twistyCollapse.label"
 );
+const L10N_EMPTY_VARIABLE = STYLE_INSPECTOR_L10N.getStr("rule.variableEmpty");
 
 const FILTER_CHANGED_TIMEOUT = 150;
 
@@ -1484,6 +1485,14 @@ class PropertyView {
 
 
   #parseValue(value, baseURI) {
+    if (this.isCustomProperty && value === "") {
+      const doc = this.#tree.styleDocument;
+      const el = doc.createElement("span");
+      el.classList.add("empty-css-variable");
+      el.append(doc.createTextNode(`<${L10N_EMPTY_VARIABLE}>`));
+      return el;
+    }
+
     
     
     
