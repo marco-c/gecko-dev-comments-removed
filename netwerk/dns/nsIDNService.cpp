@@ -335,6 +335,11 @@ bool nsIDNService::IsLabelSafe(mozilla::Span<const char32_t> aLabel,
     }
 
     
+    if (ch == 0x259 && !TLDEqualsLiteral(aTLD, "az")) {
+      return false;
+    }
+
+    
     if (ch == 0x2BB || ch == 0x2BC) {
       return false;
     }

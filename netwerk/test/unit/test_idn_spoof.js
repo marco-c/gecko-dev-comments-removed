@@ -882,7 +882,7 @@ let testCases = [
   ["xn--mnpqr-jta.is", "mn\u00f0pqr.is", kSafe],
 
   
-  ["xn--xample-vyc.com", "\u0259xample.com", kUnsafe, "DISABLED"],
+  ["xn--xample-vyc.com", "\u0259xample.com", kUnsafe],
   ["xn--xample-vyc.az", "\u0259xample.az", kSafe],
 
   
