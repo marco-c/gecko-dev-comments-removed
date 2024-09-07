@@ -159,12 +159,6 @@ def run_tests(config, browser_config):
         browser_config["extra_args"] = []
 
     
-    
-    
-    if browser_config["develop"]:
-        browser_config["extra_args"].append("--no-remote")
-
-    
     if browser_config["subtests"]:
         browser_config["preferences"]["talos.subtests"] = browser_config["subtests"]
 
