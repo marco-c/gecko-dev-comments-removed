@@ -12,6 +12,7 @@
 #define AUDIO_REMIX_RESAMPLE_H_
 
 #include "api/audio/audio_frame.h"
+#include "api/audio/audio_view.h"
 #include "common_audio/resampler/include/push_resampler.h"
 
 namespace webrtc {
@@ -32,10 +33,7 @@ void RemixAndResample(const AudioFrame& src_frame,
 
 
 
-
-void RemixAndResample(const int16_t* src_data,
-                      size_t samples_per_channel,
-                      size_t num_channels,
+void RemixAndResample(InterleavedView<const int16_t> src_data,
                       int sample_rate_hz,
                       PushResampler<int16_t>* resampler,
                       AudioFrame* dst_frame);
