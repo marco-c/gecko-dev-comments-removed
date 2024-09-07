@@ -17,19 +17,18 @@ namespace H264 {
 
 const uint8_t kNaluTypeMask = 0x1F;
 
-std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
-                                       size_t buffer_size) {
+std::vector<NaluIndex> FindNaluIndices(rtc::ArrayView<const uint8_t> buffer) {
   
   
   
   
   std::vector<NaluIndex> sequences;
-  if (buffer_size < kNaluShortStartSequenceSize)
+  if (buffer.size() < kNaluShortStartSequenceSize)
     return sequences;
 
   static_assert(kNaluShortStartSequenceSize >= 2,
                 "kNaluShortStartSequenceSize must be larger or equals to 2");
-  const size_t end = buffer_size - kNaluShortStartSequenceSize;
+  const size_t end = buffer.size() - kNaluShortStartSequenceSize;
   for (size_t i = 0; i < end;) {
     if (buffer[i + 2] > 1) {
       i += 3;
@@ -57,7 +56,7 @@ std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
   
   auto it = sequences.rbegin();
   if (it != sequences.rend())
-    it->payload_size = buffer_size - it->payload_start_offset;
+    it->payload_size = buffer.size() - it->payload_start_offset;
 
   return sequences;
 }
@@ -66,16 +65,16 @@ NaluType ParseNaluType(uint8_t data) {
   return static_cast<NaluType>(data & kNaluTypeMask);
 }
 
-std::vector<uint8_t> ParseRbsp(const uint8_t* data, size_t length) {
+std::vector<uint8_t> ParseRbsp(rtc::ArrayView<const uint8_t> data) {
   std::vector<uint8_t> out;
-  out.reserve(length);
+  out.reserve(data.size());
 
-  for (size_t i = 0; i < length;) {
+  for (size_t i = 0; i < data.size();) {
     
     
     
     
-    if (length - i >= 3 && !data[i] && !data[i + 1] && data[i + 2] == 3) {
+    if (data.size() - i >= 3 && !data[i] && !data[i + 1] && data[i + 2] == 3) {
       
       out.push_back(data[i++]);
       out.push_back(data[i++]);
@@ -89,14 +88,13 @@ std::vector<uint8_t> ParseRbsp(const uint8_t* data, size_t length) {
   return out;
 }
 
-void WriteRbsp(const uint8_t* bytes, size_t length, rtc::Buffer* destination) {
+void WriteRbsp(rtc::ArrayView<const uint8_t> bytes, rtc::Buffer* destination) {
   static const uint8_t kZerosInStartSequence = 2;
   static const uint8_t kEmulationByte = 0x03u;
   size_t num_consecutive_zeros = 0;
-  destination->EnsureCapacity(destination->size() + length);
+  destination->EnsureCapacity(destination->size() + bytes.size());
 
-  for (size_t i = 0; i < length; ++i) {
-    uint8_t byte = bytes[i];
+  for (uint8_t byte : bytes) {
     if (byte <= kEmulationByte &&
         num_consecutive_zeros >= kZerosInStartSequence) {
       

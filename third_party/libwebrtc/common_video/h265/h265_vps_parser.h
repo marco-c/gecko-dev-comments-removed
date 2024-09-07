@@ -29,7 +29,12 @@ class RTC_EXPORT H265VpsParser {
   };
 
   
-  static absl::optional<VpsState> ParseVps(const uint8_t* data, size_t length);
+  static absl::optional<VpsState> ParseVps(rtc::ArrayView<const uint8_t> data);
+  
+  static inline absl::optional<VpsState> ParseVps(const uint8_t* data,
+                                                  size_t length) {
+    return ParseVps(rtc::MakeArrayView(data, length));
+  }
 
  protected:
   

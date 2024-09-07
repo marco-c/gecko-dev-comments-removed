@@ -135,14 +135,13 @@ void SpsVuiRewriter::UpdateStats(ParseResult result, Direction direction) {
 }
 
 SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
-    const uint8_t* buffer,
-    size_t length,
+    rtc::ArrayView<const uint8_t> buffer,
     absl::optional<SpsParser::SpsState>* sps,
     const webrtc::ColorSpace* color_space,
     rtc::Buffer* destination) {
   
   
-  std::vector<uint8_t> rbsp_buffer = H264::ParseRbsp(buffer, length);
+  std::vector<uint8_t> rbsp_buffer = H264::ParseRbsp(buffer);
   BitstreamReader source_buffer(rbsp_buffer);
   absl::optional<SpsParser::SpsState> sps_state =
       SpsParser::ParseSpsUpToVui(source_buffer);
@@ -153,7 +152,7 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
 
   
   
-  rtc::Buffer out_buffer(length + kMaxVuiSpsIncrease);
+  rtc::Buffer out_buffer(buffer.size() + kMaxVuiSpsIncrease);
   rtc::BitBufferWriter sps_writer(out_buffer.data(), out_buffer.size());
 
   
@@ -200,26 +199,25 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
     bit_offset = 0;
   }
 
-  RTC_DCHECK(byte_offset <= length + kMaxVuiSpsIncrease);
+  RTC_DCHECK(byte_offset <= buffer.size() + kMaxVuiSpsIncrease);
   RTC_CHECK(destination != nullptr);
 
   out_buffer.SetSize(byte_offset);
 
   
-  H264::WriteRbsp(out_buffer.data(), out_buffer.size(), destination);
+  H264::WriteRbsp(out_buffer, destination);
 
   return ParseResult::kVuiRewritten;
 }
 
 SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
-    const uint8_t* buffer,
-    size_t length,
+    rtc::ArrayView<const uint8_t> buffer,
     absl::optional<SpsParser::SpsState>* sps,
     const webrtc::ColorSpace* color_space,
     rtc::Buffer* destination,
     Direction direction) {
   ParseResult result =
-      ParseAndRewriteSps(buffer, length, sps, color_space, destination);
+      ParseAndRewriteSps(buffer, sps, color_space, destination);
   UpdateStats(result, direction);
   return result;
 }
@@ -227,22 +225,21 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
 rtc::Buffer SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
     rtc::ArrayView<const uint8_t> buffer,
     const webrtc::ColorSpace* color_space) {
-  std::vector<H264::NaluIndex> nalus =
-      H264::FindNaluIndices(buffer.data(), buffer.size());
+  std::vector<H264::NaluIndex> nalus = H264::FindNaluIndices(buffer);
 
   
   rtc::Buffer output_buffer(0, buffer.size() +
                                             nalus.size() * kMaxVuiSpsIncrease);
 
-  for (const H264::NaluIndex& nalu : nalus) {
+  for (const H264::NaluIndex& nalu_index : nalus) {
     
-    const uint8_t* start_code_ptr = buffer.data() + nalu.start_offset;
-    const size_t start_code_length =
-        nalu.payload_start_offset - nalu.start_offset;
-    const uint8_t* nalu_ptr = buffer.data() + nalu.payload_start_offset;
-    const size_t nalu_length = nalu.payload_size;
+    rtc::ArrayView<const uint8_t> start_code = buffer.subview(
+        nalu_index.start_offset,
+        nalu_index.payload_start_offset - nalu_index.start_offset);
+    rtc::ArrayView<const uint8_t> nalu = buffer.subview(
+        nalu_index.payload_start_offset, nalu_index.payload_size);
 
-    if (H264::ParseNaluType(nalu_ptr[0]) == H264::NaluType::kSps) {
+    if (H264::ParseNaluType(nalu[0]) == H264::NaluType::kSps) {
       
       
       
@@ -259,24 +256,24 @@ rtc::Buffer SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
 
       
       
-      output_nalu.AppendData(nalu_ptr[0]);
+      output_nalu.AppendData(nalu[0]);
 
-      ParseResult result = ParseAndRewriteSps(
-          nalu_ptr + H264::kNaluTypeSize, nalu_length - H264::kNaluTypeSize,
-          &sps, color_space, &output_nalu, Direction::kOutgoing);
+      ParseResult result =
+          ParseAndRewriteSps(nalu.subview(H264::kNaluTypeSize), &sps,
+                             color_space, &output_nalu, Direction::kOutgoing);
       if (result == ParseResult::kVuiRewritten) {
-        output_buffer.AppendData(start_code_ptr, start_code_length);
+        output_buffer.AppendData(start_code);
         output_buffer.AppendData(output_nalu.data(), output_nalu.size());
         continue;
       }
-    } else if (H264::ParseNaluType(nalu_ptr[0]) == H264::NaluType::kAud) {
+    } else if (H264::ParseNaluType(nalu[0]) == H264::NaluType::kAud) {
       
       continue;
     }
 
     
-    output_buffer.AppendData(start_code_ptr, start_code_length);
-    output_buffer.AppendData(nalu_ptr, nalu_length);
+    output_buffer.AppendData(start_code);
+    output_buffer.AppendData(nalu);
   }
   return output_buffer;
 }

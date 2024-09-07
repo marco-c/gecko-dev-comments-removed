@@ -42,7 +42,12 @@ class RTC_EXPORT SpsParser {
   };
 
   
-  static absl::optional<SpsState> ParseSps(const uint8_t* data, size_t length);
+  static absl::optional<SpsState> ParseSps(rtc::ArrayView<const uint8_t> data);
+  
+  static inline absl::optional<SpsState> ParseSps(const uint8_t* data,
+                                                  size_t length) {
+    return ParseSps(rtc::MakeArrayView(data, length));
+  }
 
  protected:
   

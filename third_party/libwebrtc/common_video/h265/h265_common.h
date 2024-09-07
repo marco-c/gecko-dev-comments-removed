@@ -77,8 +77,14 @@ struct NaluIndex {
 };
 
 
-RTC_EXPORT std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
-                                                  size_t buffer_size);
+RTC_EXPORT std::vector<NaluIndex> FindNaluIndices(
+    rtc::ArrayView<const uint8_t> buffer);
+
+
+inline std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
+                                              size_t buffer_size) {
+  return FindNaluIndices(rtc::MakeArrayView(buffer, buffer_size));
+}
 
 
 RTC_EXPORT NaluType ParseNaluType(uint8_t data);
@@ -97,12 +103,24 @@ RTC_EXPORT NaluType ParseNaluType(uint8_t data);
 
 
 
-std::vector<uint8_t> ParseRbsp(const uint8_t* data, size_t length);
+std::vector<uint8_t> ParseRbsp(rtc::ArrayView<const uint8_t> data);
+
+
+inline std::vector<uint8_t> ParseRbsp(const uint8_t* data, size_t length) {
+  return ParseRbsp(rtc::MakeArrayView(data, length));
+}
 
 
 
 
-void WriteRbsp(const uint8_t* bytes, size_t length, rtc::Buffer* destination);
+void WriteRbsp(rtc::ArrayView<const uint8_t> bytes, rtc::Buffer* destination);
+
+
+inline void WriteRbsp(const uint8_t* bytes,
+                      size_t length,
+                      rtc::Buffer* destination) {
+  WriteRbsp(rtc::MakeArrayView(bytes, length), destination);
+}
 
 uint32_t Log2Ceiling(uint32_t value);
 
