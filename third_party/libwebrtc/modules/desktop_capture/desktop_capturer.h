@@ -82,7 +82,7 @@ class RTC_EXPORT DesktopCapturer {
   struct Source {
     
     SourceId id;
-    pid_t pid;
+    pid_t pid = 0;
 
     
     
