@@ -1469,8 +1469,6 @@ nscoord nsImageFrame::GetContinuationOffset() const {
 
 nscoord nsImageFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                      IntrinsicISizeType aType) {
-  
-  
   EnsureIntrinsicSizeAndRatio();
   return mIntrinsicSize.ISize(GetWritingMode()).valueOr(0);
 }
