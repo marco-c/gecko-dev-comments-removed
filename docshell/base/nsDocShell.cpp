@@ -12957,7 +12957,8 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
               
               false,
               
-              aContent->OwnerDoc()->HasValidTransientUserGestureActivation());
+              aContent->OwnerDoc()->HasValidTransientUserGestureActivation(),
+               false);
         }
       }
     }

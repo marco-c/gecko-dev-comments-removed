@@ -1017,13 +1017,14 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
                                     nsIPrincipal* aRedirectPrincipal,
                                     BrowsingContext* aBrowsingContext,
                                     bool aTriggeredExternally,
-                                    bool aHasValidUserGestureActivation) {
+                                    bool aHasValidUserGestureActivation,
+                                    bool aNewWindowTarget) {
   NS_ENSURE_ARG_POINTER(aURI);
 
   if (XRE_IsContentProcess()) {
     mozilla::dom::ContentChild::GetSingleton()->SendLoadURIExternal(
         aURI, aTriggeringPrincipal, aRedirectPrincipal, aBrowsingContext,
-        aTriggeredExternally, aHasValidUserGestureActivation);
+        aTriggeredExternally, aHasValidUserGestureActivation, aNewWindowTarget);
     return NS_OK;
   }
 
@@ -1102,10 +1103,9 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
 
     
     
-    if (bc->IsTop() && !bc->GetTopLevelCreatedByWebContent() && wgp) {
-      RefPtr<nsIURI> uri = wgp->GetDocumentURI();
-      foundAccessibleFrame =
-          uri && uri->GetSpecOrDefault().EqualsLiteral("about:blank");
+    if (aNewWindowTarget) {
+      MOZ_ASSERT(bc->IsTop());
+      foundAccessibleFrame = true;
     }
 
     while (!foundAccessibleFrame) {
