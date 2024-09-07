@@ -155,24 +155,24 @@ class TracerActor extends Actor {
     this.logMethod = options.logMethod || TRACER_LOG_METHODS.STDOUT;
 
     let ListenerClass = null;
+    
+    let useNativeTracing = false;
     switch (this.logMethod) {
       case TRACER_LOG_METHODS.STDOUT:
         ListenerClass = StdoutTracingListener;
-        
-        options.useNativeTracing = false;
         break;
       case TRACER_LOG_METHODS.CONSOLE:
       case TRACER_LOG_METHODS.DEBUGGER_SIDEBAR:
         
         
         ListenerClass = ResourcesTracingListener;
-        options.useNativeTracing = false;
         break;
       case TRACER_LOG_METHODS.PROFILER:
         ListenerClass = ProfilerTracingListener;
         
         
         options.traceFunctionReturn = true;
+        useNativeTracing = true;
         break;
     }
     this.tracingListener = new ListenerClass({
@@ -198,7 +198,7 @@ class TracerActor extends Actor {
         
         traceFunctionReturn: !!options.traceFunctionReturn,
         
-        useNativeTracing: !!options.useNativeTracing,
+        useNativeTracing,
         
         maxDepth: options.maxDepth,
         
