@@ -4403,6 +4403,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       };
     }
     const hasSubtitleClassName = subTitle ? `has-subtitle` : ``;
+    const topicsHaveBeenPreviouslySet = this.props.Prefs.values["discoverystream.topicSelection.hasBeenUpdatedPreviously"];
     return external_React_default().createElement("section", {
       className: `collapsible-section ${this.props.className}${active ? " active" : ""}`
       
@@ -4432,11 +4433,13 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
     })), mayHaveSponsoredStories && this.props.spocMessageVariant === "variant-a" && external_React_default().createElement(SponsoredContentHighlight, {
       position: "inset-block-start inset-inline-start",
       dispatch: this.props.dispatch
-    })), mayHaveTopicsSelection && external_React_default().createElement("moz-button", {
-      label: "Personalize my feed",
-      type: "primary",
+    })), mayHaveTopicsSelection && external_React_default().createElement("div", {
+      className: "button-topic-selection"
+    }, external_React_default().createElement("moz-button", {
+      "data-l10n-id": topicsHaveBeenPreviouslySet ? "newtab-topic-selection-button-update-interests" : "newtab-topic-selection-button-pick-interests",
+      type: topicsHaveBeenPreviouslySet ? "default" : "primary",
       onClick: this.handleTopicSelectionButtonClick
-    })), external_React_default().createElement(ErrorBoundary, {
+    }))), external_React_default().createElement(ErrorBoundary, {
       className: "section-body-fallback"
     }, external_React_default().createElement("div", {
       ref: this.onBodyMount,
