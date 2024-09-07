@@ -227,7 +227,7 @@ void LocalStorageCache::Preload() {
   storageChild->AsyncPreload(this);
 }
 
-void LocalStorageCache::WaitForPreload(Telemetry::HistogramID aTelemetryID) {
+void LocalStorageCache::WaitForPreload() {
   if (!mPersistent) {
     return;
   }
@@ -246,9 +246,6 @@ void LocalStorageCache::WaitForPreload(Telemetry::HistogramID aTelemetryID) {
   }
 
   
-  Telemetry::RuntimeAutoTimer timer(aTelemetryID);
-
-  
   
   
 
@@ -263,7 +260,7 @@ void LocalStorageCache::WaitForPreload(Telemetry::HistogramID aTelemetryID) {
 nsresult LocalStorageCache::GetLength(const LocalStorage* aStorage,
                                       uint32_t* aRetval) {
   if (Persist(aStorage)) {
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_GETLENGTH_BLOCKING_MS);
+    WaitForPreload();
     if (NS_FAILED(mLoadResult)) {
       return mLoadResult;
     }
@@ -280,7 +277,7 @@ nsresult LocalStorageCache::GetKey(const LocalStorage* aStorage,
   
   
   if (Persist(aStorage)) {
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_GETKEY_BLOCKING_MS);
+    WaitForPreload();
     if (NS_FAILED(mLoadResult)) {
       return mLoadResult;
     }
@@ -301,7 +298,7 @@ nsresult LocalStorageCache::GetKey(const LocalStorage* aStorage,
 void LocalStorageCache::GetKeys(const LocalStorage* aStorage,
                                 nsTArray<nsString>& aKeys) {
   if (Persist(aStorage)) {
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_GETALLKEYS_BLOCKING_MS);
+    WaitForPreload();
   }
 
   if (NS_FAILED(mLoadResult)) {
@@ -314,7 +311,7 @@ void LocalStorageCache::GetKeys(const LocalStorage* aStorage,
 nsresult LocalStorageCache::GetItem(const LocalStorage* aStorage,
                                     const nsAString& aKey, nsAString& aRetval) {
   if (Persist(aStorage)) {
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_GETVALUE_BLOCKING_MS);
+    WaitForPreload();
     if (NS_FAILED(mLoadResult)) {
       return mLoadResult;
     }
@@ -339,7 +336,7 @@ nsresult LocalStorageCache::SetItem(const LocalStorage* aStorage,
   int64_t delta = 0;
 
   if (Persist(aStorage)) {
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_SETVALUE_BLOCKING_MS);
+    WaitForPreload();
     if (NS_FAILED(mLoadResult)) {
       return mLoadResult;
     }
@@ -397,7 +394,7 @@ nsresult LocalStorageCache::RemoveItem(const LocalStorage* aStorage,
                                        const nsAString& aKey, nsString& aOld,
                                        const MutationSource aSource) {
   if (Persist(aStorage)) {
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_REMOVEKEY_BLOCKING_MS);
+    WaitForPreload();
     if (NS_FAILED(mLoadResult)) {
       return mLoadResult;
     }
@@ -447,7 +444,7 @@ nsresult LocalStorageCache::Clear(const LocalStorage* aStorage,
     
     
     
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_CLEAR_BLOCKING_MS);
+    WaitForPreload();
     if (NS_FAILED(mLoadResult)) {
       
       
@@ -501,7 +498,7 @@ void LocalStorageCache::UnloadItems(uint32_t aUnloadFlags) {
     
     
     
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_UNLOAD_BLOCKING_MS);
+    WaitForPreload();
 
     mData[kDefaultSet].mKeys.Clear();
     ProcessUsageDelta(kDefaultSet, -mData[kDefaultSet].mOriginQuotaUsage);
@@ -514,7 +511,7 @@ void LocalStorageCache::UnloadItems(uint32_t aUnloadFlags) {
 
 #ifdef DOM_STORAGE_TESTS
   if (aUnloadFlags & kTestReload) {
-    WaitForPreload(Telemetry::LOCALDOMSTORAGE_UNLOAD_BLOCKING_MS);
+    WaitForPreload();
 
     mData[kDefaultSet].mKeys.Clear();
     mLoaded = false;  

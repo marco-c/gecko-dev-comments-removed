@@ -182,7 +182,7 @@ class LocalStorageCache : public LocalStorageCacheBridge {
 
  private:
   
-  void WaitForPreload(mozilla::Telemetry::HistogramID aTelemetryID);
+  void WaitForPreload();
 
   
   Data& DataSet(const LocalStorage* aStorage);
