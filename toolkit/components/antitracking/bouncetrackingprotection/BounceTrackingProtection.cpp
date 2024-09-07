@@ -757,8 +757,6 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
       do_GetService("@mozilla.org/clear-data-service;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsTArray<nsCString> purgedSiteHosts;
-
   
   
   nsTArray<nsCString> bounceTrackerCandidatesToRemove;
