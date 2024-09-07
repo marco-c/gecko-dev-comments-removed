@@ -141,7 +141,11 @@ class Editor extends PureComponent {
   UNSAFE_componentWillReceiveProps(nextProps) {
     let { editor } = this.state;
 
-    if (!editor && nextProps.selectedSource) {
+    if (!editor) {
+      
+      if (!nextProps.selectedSource) {
+        return;
+      }
       editor = this.setupEditor();
     }
 
