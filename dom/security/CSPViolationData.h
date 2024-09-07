@@ -36,6 +36,9 @@ struct CSPViolationData {
   using Resource = mozilla::Variant<nsCOMPtr<nsIURI>, BlockedContentSource>;
 
   
+  
+  
+  
   CSPViolationData(uint32_t aViolatedPolicyIndex, Resource&& aResource,
                    const CSPDirective aEffectiveDirective,
                    const nsACString& aSourceFile, uint32_t aLineNumber,
