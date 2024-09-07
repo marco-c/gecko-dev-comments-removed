@@ -878,7 +878,7 @@ falling back to not using job objects for managing child processes""",
         
         
         
-        rc = self.wait(timeout)
+        rc = self.wait(0)
         if rc is None:
             self.debug("kill: wait failed -- process is still alive")
         return rc
