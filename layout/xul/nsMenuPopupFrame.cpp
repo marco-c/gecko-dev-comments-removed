@@ -2160,13 +2160,19 @@ nsMargin nsMenuPopupFrame::GetMargin() const {
     margin.top += auOffset;
     margin.bottom += auOffset;
   }
+  
+  
+  
+  
   margin.top += mExtraMargin.y;
-  margin.left += mExtraMargin.x;
-  
-  
-  
   margin.bottom -= mExtraMargin.y;
-  margin.right -= mExtraMargin.x;
+  if (IsDirectionRTL()) {
+    margin.left += mExtraMargin.x;
+    margin.right -= mExtraMargin.x;
+  } else {
+    margin.left -= mExtraMargin.x;
+    margin.right += mExtraMargin.x;
+  }
   return margin;
 }
 
